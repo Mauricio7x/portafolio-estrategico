@@ -1,87 +1,39 @@
-// ============================================================================
-//  Detecta · Proxy serverless (Vercel)
-//  Cartero confiable propio: reemplaza los proxies CORS públicos.
-//  - Inyecta el App Token de Socrata (variable de entorno SOCRATA_APP_TOKEN).
-//  - Solo permite destinos en una allowlist (anti-abuso / anti-SSRF).
-//  - Reenvía JSON, HTML y binarios (PDF) preservando el content-type.
-//
-//  Uso desde el front:  /api/proxy?url=<URL_ENCODED>
-//
-//  Configura en Vercel → Project → Settings → Environment Variables:
-//     SOCRATA_APP_TOKEN = <tu app token de datos.gov.co>
-// ============================================================================
-
-const ALLOWED_HOSTS = [
-  "www.datos.gov.co",
-  "datos.gov.co",
-  "api.gdeltproject.org",
-  "news.google.com",
-  "www.colombiacompra.gov.co",
-  "community.secop.gov.co",
-  "www.secop.gov.co",
-  "prod1.secop.gov.co",
-  "www.dane.gov.co",
-];
-
-function hostAllowed(host) {
-  return ALLOWED_HOSTS.some(h => host === h || host.endsWith("." + h));
-}
+/* ============================================================================
+   /api/proxy  ·  Proxy de Socrata para el navegador (Detecta)
+   ----------------------------------------------------------------------------
+   El front llama /api/proxy?url=<URL-de-Socrata>. Este proxy:
+     1. Valida que la URL sea de datos.gov.co (evita ser un open-proxy abierto).
+     2. Inyecta el App Token de Socrata (variable de entorno) → cuota mayor.
+     3. Resuelve CORS para que el navegador no se queje.
+   Variable de entorno requerida en Vercel:  SOCRATA_APP_TOKEN
+   ========================================================================== */
 
 export default async function handler(req, res) {
-  // CORS: este proxy lo consume tu propia página servida desde Vercel.
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") { res.status(204).end(); return; }
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
+  if (req.method === "OPTIONS") return res.status(204).end();
 
   const target = req.query.url;
-  if (!target) { res.status(400).json({ error: "Falta parámetro url" }); return; }
+  if (!target) return res.status(400).json({ error: "Falta el parámetro url" });
 
   let parsed;
-  try { parsed = new URL(target); }
-  catch { res.status(400).json({ error: "URL inválida" }); return; }
-
-  if (parsed.protocol !== "https:") {
-    res.status(400).json({ error: "Solo se permite https" }); return;
-  }
-  if (!hostAllowed(parsed.hostname)) {
-    res.status(403).json({ error: "Host no permitido: " + parsed.hostname }); return;
+  try { parsed = new URL(target); } catch { return res.status(400).json({ error: "URL inválida" }); }
+  if (!/(^|\.)datos\.gov\.co$/.test(parsed.hostname)) {
+    return res.status(403).json({ error: "Solo se permiten URLs de datos.gov.co" });
   }
 
-  // Cabeceras de salida. Inyectamos el token de Socrata solo a datos.gov.co.
-  const outHeaders = {
-    "Accept": req.headers["accept"] || "application/json,text/html,*/*",
-    "User-Agent": "Detecta/1.0 (+vercel-proxy)",
-  };
-  if (parsed.hostname.endsWith("datos.gov.co") && process.env.SOCRATA_APP_TOKEN) {
-    outHeaders["X-App-Token"] = process.env.SOCRATA_APP_TOKEN;
-  }
+  const headers = { Accept: "application/json" };
+  if (process.env.SOCRATA_APP_TOKEN) headers["X-App-Token"] = process.env.SOCRATA_APP_TOKEN;
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 25000);
-    const upstream = await fetch(parsed.toString(), {
-      headers: outHeaders,
-      signal: controller.signal,
-      redirect: "follow",
-    });
-    clearTimeout(timeout);
-
-    const ct = upstream.headers.get("content-type") || "application/octet-stream";
-    res.setHeader("Content-Type", ct);
-    // Cache corto en el edge para aliviar SECOP/GDELT en recargas seguidas.
-    res.setHeader("Cache-Control", "s-maxage=120, stale-while-revalidate=600");
-
-    // Binario (PDF u otros) → buffer. Texto/JSON → passthrough de string.
-    if (ct.includes("application/pdf") || ct.includes("octet-stream")) {
-      const buf = Buffer.from(await upstream.arrayBuffer());
-      res.status(upstream.status).send(buf);
-    } else {
-      const body = await upstream.text();
-      res.status(upstream.status).send(body);
-    }
+    const r = await fetch(target, { headers });
+    const body = await r.text();
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    // cache corto en el edge para no martillar Socrata
+    res.setHeader("Cache-Control", "s-maxage=120, stale-while-revalidate=300");
+    return res.status(r.status).send(body);
   } catch (e) {
-    const msg = (e && e.name === "AbortError") ? "Tiempo de espera agotado" : (e.message || "Error de red");
-    res.status(502).json({ error: "Fallo al contactar el destino", detail: msg });
+    return res.status(502).json({ error: "Socrata no respondió", detail: String(e) });
   }
 }
