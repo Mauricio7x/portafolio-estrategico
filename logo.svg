@@ -1,8 +1,0 @@
-<svg width="32" height="32" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Detecta">
-  <circle cx="32" cy="32" r="26" fill="none" stroke="#0071e3" stroke-width="3"/>
-  <path d="M32 6 A26 26 0 0 1 50.4 50.4 L32 32 Z" fill="#0071e3" opacity="0.12"/>
-  <circle cx="32" cy="32" r="15" fill="none" stroke="#0071e3" stroke-width="2.4" opacity="0.45"/>
-  <line x1="32" y1="32" x2="50.4" y2="50.4" stroke="#0071e3" stroke-width="3" stroke-linecap="round"/>
-  <circle cx="32" cy="32" r="3.6" fill="#0071e3"/>
-  <circle cx="46" cy="18" r="4.6" fill="#0071e3"/>
-</svg>
