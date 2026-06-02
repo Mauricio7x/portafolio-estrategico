@@ -4969,5 +4969,824 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
   }catch(e){ console.error("wiring2:",e); }
 })();
 </script>
+
+<!-- ════════════════════════════════════════════════════════════════
+     MEJORAS 2026 · capa aditiva #3 — 10 ideas nuevas (todo gratis):
+     calendario .ics · comparador · vistas/deep-link · pipeline ponderado ·
+     OCR de cierre · tendencia · consorcio en vivo · alertas · tarjeta WhatsApp · PWA.
+     Vuelve a envolver renderProcesses/analizarPliego por encima de #1 y #2.
+     ════════════════════════════════════════════════════════════════ -->
+<style>
+  /* ════════════════════════════════════════════════════════════════
+     MEJORAS 2026 · capa aditiva #3 — estilos de las 10 ideas nuevas.
+     Usa los tokens existentes (var(--…)) → modo claro/oscuro automático.
+     ════════════════════════════════════════════════════════════════ */
+
+  /* — toast — */
+  .v3-toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);z-index:100000;
+    background:#1d1d1f;color:#fff;padding:11px 18px;border-radius:980px;font-size:13.5px;font-weight:500;
+    box-shadow:0 10px 34px rgba(0,0,0,.35);opacity:0;pointer-events:none;max-width:88vw;text-align:center;
+    transition:opacity .25s,transform .35s cubic-bezier(.16,1,.3,1)}
+  .v3-toast.show{opacity:1;transform:translate(-50%,0)}
+  html[data-theme="dark"] .v3-toast{background:#2a2a2c;border:1px solid #3a3a3c}
+
+  /* — botones de acción en tarjetas de proceso — */
+  .v3-act{font:inherit;font-size:12.5px;font-weight:500;color:var(--accent);background:var(--soft);
+    border:1px solid var(--line);border-radius:9px;padding:7px 12px;cursor:pointer;
+    transition:background .15s,transform .12s,box-shadow .2s}
+  .v3-act:hover{background:var(--line2)} .v3-act:active{transform:scale(.96)}
+  .v3-cmp.on{background:rgba(0,113,227,.1);border-color:var(--accent);color:var(--accent);font-weight:600}
+  html[data-theme="dark"] .v3-act{background:#2a2a2c}
+  html[data-theme="dark"] .v3-cmp.on{background:rgba(10,132,255,.18)}
+
+  /* — botones genéricos compactos (view bar, pipeline, alertas, pliego) — */
+  .v3-vb-btn{font:inherit;font-size:12.5px;font-weight:500;color:var(--accent);background:var(--panel);
+    border:1px solid var(--line);border-radius:10px;padding:8px 13px;cursor:pointer;
+    transition:background .15s,transform .12s,box-shadow .2s}
+  .v3-vb-btn:hover{box-shadow:var(--shadow)} .v3-vb-btn:active{transform:scale(.96)}
+  .v3-vb-btn:disabled{opacity:.55;cursor:default}
+  .v3-vb-btn.on{background:rgba(28,140,74,.1);border-color:rgba(28,140,74,.4);color:var(--green);font-weight:600}
+  .v3-vb-sel{font:inherit;font-size:12.5px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;
+    background:var(--panel);color:var(--ink);cursor:pointer;max-width:200px}
+  .v3-viewbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;
+    padding-top:12px;border-top:1px solid var(--line2)}
+  .v3-vb-hint{font-size:11.5px;color:var(--ink2)}
+  .v3-dl-actions{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 12px}
+
+  /* — píldora de subtítulo — */
+  .v3-pill{display:inline-block;font-size:11px;font-weight:600;color:var(--ink2);background:var(--soft);
+    border:1px solid var(--line2);border-radius:980px;padding:3px 10px;letter-spacing:.01em;vertical-align:middle;margin-left:6px}
+
+  /* — bandeja de comparación (fija, abajo) — */
+  .v3-cmp-tray{position:fixed;left:50%;bottom:18px;transform:translate(-50%,120%);z-index:600;
+    transition:transform .4s cubic-bezier(.16,1,.3,1);max-width:94vw}
+  .v3-cmp-tray.show{transform:translate(-50%,0)}
+  .v3-cmp-inner{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);
+    border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-h);padding:10px 12px}
+  .v3-cmp-label{font-size:12px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em}
+  .v3-cmp-chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;background:var(--soft);
+    border:1px solid var(--line2);border-radius:980px;padding:5px 6px 5px 11px;max-width:230px}
+  .v3-cmp-chip b{color:var(--accent);font-variant-numeric:tabular-nums}
+  .v3-chip-x{border:0;background:transparent;color:var(--ink2);cursor:pointer;font-size:13px;line-height:1;padding:2px 4px;border-radius:6px}
+  .v3-chip-x:hover{background:var(--line2);color:var(--ink)}
+  .v3-cmp-go{font:inherit;font-size:13px;font-weight:600;color:#fff;background:var(--accent);border:0;border-radius:10px;padding:9px 16px;cursor:pointer}
+  .v3-cmp-go:disabled{opacity:.5;cursor:default}
+  .v3-cmp-clear{font:inherit;font-size:12.5px;color:var(--ink2);background:transparent;border:0;cursor:pointer;padding:8px 6px}
+  .v3-cmp-clear:hover{color:var(--ink)}
+
+  /* — modal genérico — */
+  .v3-modal{position:fixed;inset:0;z-index:1000;display:none}
+  .v3-modal.show{display:block}
+  .v3-modal-back{position:absolute;inset:0;background:rgba(0,0,0,.42);backdrop-filter:blur(3px);animation:v3fade .25s ease}
+  @keyframes v3fade{from{opacity:0}to{opacity:1}}
+  .v3-modal-box{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(940px,94vw);
+    max-height:88vh;overflow:auto;background:var(--panel);border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.4);
+    padding:26px 26px 30px;animation:v3pop .32s cubic-bezier(.16,1,.3,1)}
+  @keyframes v3pop{from{opacity:0;transform:translate(-50%,-46%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+  .v3-modal-x{position:absolute;right:16px;top:14px;width:32px;height:32px;border-radius:50%;border:0;
+    background:var(--soft);color:var(--ink2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .v3-modal-x:hover{background:var(--line2);color:var(--ink)}
+  .v3-modal-head h3{font-size:20px;letter-spacing:-.02em}
+
+  /* — tabla del comparador — */
+  .v3-cmp-table-wrap{overflow-x:auto;margin-top:16px;border:1px solid var(--line2);border-radius:14px}
+  .v3-cmp-table{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
+  .v3-cmp-table th,.v3-cmp-table td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line2);vertical-align:top}
+  .v3-cmp-table thead th{position:sticky;top:0;background:var(--soft);font-weight:600;font-size:13px}
+  .v3-cmp-table thead th a{color:var(--accent);text-decoration:none}
+  .v3-cmp-table thead th a:hover{text-decoration:underline}
+  .v3-cmp-ent{font-size:11px;color:var(--ink2);font-weight:400;margin-top:2px}
+  .v3-cmp-rl{font-weight:600;color:var(--ink2);white-space:nowrap;background:var(--soft)}
+  .v3-cmp-table tbody tr:last-child td{border-bottom:0}
+  .v3-best{display:inline-block;font-size:9.5px;font-weight:700;color:#fff;background:var(--green);
+    border-radius:5px;padding:1px 6px;text-transform:uppercase;letter-spacing:.03em;vertical-align:middle}
+  .v3-cmp-note{font-size:12px;color:var(--ink2);margin-top:14px;line-height:1.5}
+
+  /* — pipeline ponderado — */
+  .v3-pipe-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:8px 0 2px}
+  .v3-pipe-card{background:var(--soft);border:1px solid var(--line2);border-radius:14px;padding:18px 20px}
+  .v3-pipe-card.accent{background:linear-gradient(135deg,var(--accent),#4da3f0);border-color:transparent;color:#fff}
+  .v3-pipe-card .l{font-size:11.5px;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+  .v3-pipe-card.accent .l,.v3-pipe-card.accent .s{color:rgba(255,255,255,.88)}
+  .v3-pipe-card .v{font-family:'Inter',sans-serif;font-size:27px;font-weight:700;letter-spacing:-.02em;margin-top:7px;line-height:1.05;font-variant-numeric:tabular-nums}
+  .v3-pipe-card .s{font-size:12px;color:var(--ink2);margin-top:7px;line-height:1.4}
+  .v3-pipe-foot{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+
+  /* — tendencia — */
+  .v3-trend-chart{margin-top:6px}
+  .v3-trend-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--ink2);margin-top:4px;padding:0 6px}
+
+  /* — calculadora de consorcio — */
+  .v3-cons-slider{margin:14px 0 6px}
+  .v3-cons-ends{display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);margin-bottom:8px}
+  .v3-cons-ends b{color:var(--ink)}
+  #v3-cons-range{width:100%;accent-color:var(--accent);height:6px;cursor:pointer}
+  .v3-cons-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:14px 0 4px}
+  .v3-cons-card{background:var(--soft);border:1px solid var(--line2);border-radius:13px;padding:15px 16px;border-left:3px solid var(--line)}
+  .v3-cons-card.ok{border-left-color:var(--green)} .v3-cons-card.bad{border-left-color:var(--red)}
+  .v3-cons-card .l{font-size:11px;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+  .v3-cons-card .v{font-family:'Inter',sans-serif;font-size:23px;font-weight:700;letter-spacing:-.02em;margin-top:6px;font-variant-numeric:tabular-nums}
+  .v3-cons-card .s{font-size:11.5px;color:var(--ink2);margin-top:5px;line-height:1.35}
+  .v3-cons-msg{font-size:13px;color:var(--ink);line-height:1.55;background:var(--soft);border-radius:12px;padding:14px 16px;margin-top:8px}
+  .v3-cons-msg b{font-weight:600}
+
+  /* — bloque de fecha de cierre del pliego — */
+  .v3-pliego-cierre{margin-top:16px;background:var(--soft);border:1px solid var(--line2);border-radius:13px;padding:16px 18px;font-size:13px;line-height:1.5}
+  .v3-pc-head{font-size:14.5px} .v3-pc-date{color:var(--accent);font-weight:700}
+  .v3-pc-sub{font-size:12.5px;color:var(--ink2);margin:7px 0 11px;line-height:1.5}
+  .v3-pc-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+  @media(max-width:640px){
+    .v3-cmp-inner{padding:9px 10px}
+    .v3-modal-box{padding:20px 16px 24px}
+    .v3-cmp-chip{max-width:150px}
+  }
+
+</style>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   MEJORAS 2026 · capa aditiva #3 — 10 ideas nuevas (todo gratis).
+   1) Exportar cierres a calendario (.ics)
+   2) Comparador lado a lado de 2–3 procesos
+   3) Búsquedas/filtros guardados + deep-link por URL (#)
+   4) Pipeline ponderado (valor × encaje × riesgo)
+   5) OCR del pliego → extrae fecha de cierre y la inyecta al proceso
+   6) Tendencia semanal (snapshots diarios en localStorage)
+   7) Calculadora de consorcio interactiva
+   8) Alertas locales (Notification API) ≤48h de cierre
+   9) Exportar tarjeta de proceso a imagen (WhatsApp)
+   No toca la lógica base: envuelve renderProcesses/analizarPliego por
+   encima de las capas #1 y #2, leyendo el ámbito global clásico.
+   ════════════════════════════════════════════════════════════════ */
+(function detectaV3(){
+  "use strict";
+  if(window.__detectaV3) return; window.__detectaV3 = true;
+
+  var RM = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+  /* ───────── helpers compartidos ───────── */
+  function esc(s){ try{ return escapeHTML(s); }catch(e){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); } }
+  function curList(){ try{ if(window._dashList && window._dashList.length) return window._dashList; if(window._lastProcesses && window._lastProcesses.length) return window._lastProcesses; }catch(e){} return []; }
+  function getProfile(){ try{ return currentProfile; }catch(e){ return "helder"; } }
+  var PROF_NAMES = {helder:"Helder", genesis:"Génesis", juntos:"Helder + Génesis"};
+  function smmlv(){ try{ return SMMLV; }catch(e){ return 1750905; } }
+  function keyOf(p){ return (p.nombre||"")+"@"+(p.entidad||"")+"@"+(p.valor||0); }
+  function hashStr(s){ s=String(s||""); var h=0; for(var i=0;i<s.length;i++){ h=((h<<5)-h+s.charCodeAt(i))|0; } return h; }
+  function money(n){ n=Math.max(0,n||0);
+    if(n>=1e9) return "$"+(n/1e9).toLocaleString("es-CO",{maximumFractionDigits:2})+" mil M";
+    if(n>=1e6) return "$"+(n/1e6).toLocaleString("es-CO",{maximumFractionDigits:1})+" M";
+    if(n>=1e3) return "$"+Math.round(n/1e3).toLocaleString("es-CO")+" mil";
+    return "$"+Math.round(n).toLocaleString("es-CO"); }
+  function fmtCOPfull(n){ return "$"+Math.round(n||0).toLocaleString("es-CO"); }
+  function fmtFecha(s){ try{ return fmtDate(s); }catch(e){ var d=new Date(s); return isNaN(d)?String(s):d.toLocaleDateString("es-CO"); } }
+  function diasHasta(f){ if(!f) return null; var t=Date.parse(f); if(isNaN(t)) return null; return Math.floor((t-Date.now())/86400000); }
+  function lsGet(k,def){ try{ var v=localStorage.getItem(k); return v==null?def:JSON.parse(v); }catch(e){ return def; } }
+  function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+  function clipText(s,n){ s=String(s||""); return s.length>n ? s.slice(0,n).replace(/\s+\S*$/,"")+"…" : s; }
+  function slug(s){ return String(s||"proceso").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40)||"proceso"; }
+  function wlSet(){ try{ return new Set(JSON.parse(localStorage.getItem("detecta-watchlist-v1")||"[]")); }catch(e){ return new Set(); } }
+  function debounce(fn,ms){ var t; return function(){ var a=arguments,c=this; clearTimeout(t); t=setTimeout(function(){ fn.apply(c,a); }, ms); }; }
+  function accentColor(){ try{ return (getComputedStyle(document.documentElement).getPropertyValue("--accent")||"").trim()||"#0071e3"; }catch(e){ return "#0071e3"; } }
+
+  /* toast minimalista */
+  var toastEl=null, toastT=null;
+  function toast(msg, ms){
+    if(!toastEl){ toastEl=document.createElement("div"); toastEl.className="v3-toast"; document.body.appendChild(toastEl); }
+    toastEl.textContent=msg; toastEl.classList.add("show");
+    clearTimeout(toastT); toastT=setTimeout(function(){ toastEl.classList.remove("show"); }, ms||2800);
+  }
+
+  /* riesgo a partir de lo ya cacheado (newsCache poblado por Noticias/Mapa) */
+  var RISK_DISCOUNT = {critical:.55, high:.35, medium:.18, low:.06, none:0};
+  function riskOfMuni(ciudad, depto){
+    try{
+      var key=((ciudad||depto)||"").trim().toLowerCase(); if(!key) return null;
+      if(typeof newsCache==="undefined" || !newsCache[key]) return null;
+      var sc=riskScore(newsCache[key]); return {score:sc, info:classifyRisk(sc)};
+    }catch(e){ return null; }
+  }
+  function fetchRiesgo(muni){
+    return new Promise(function(resolve){
+      var key=(muni||"").trim().toLowerCase();
+      try{ if(typeof newsCache!=="undefined" && newsCache[key]){ resolve(newsCache[key]); return; } }catch(e){}
+      var terminos='atentado OR "ataque armado" OR explosivo OR secuestro OR masacre OR homicidio OR asesinato OR extorsion OR "grupo armado" OR ELN OR disidencias OR "Clan del Golfo" OR paramilitar OR hostigamiento OR "mina antipersonal" OR "paro armado"';
+      var q=encodeURIComponent('"'+muni+'" ('+terminos+')');
+      var url="https://api.gdeltproject.org/api/v2/doc/doc?query="+q+"&mode=ArtList&maxrecords=40&sort=DateDesc&format=json&timespan=180d&sourcelang=spanish";
+      var ft=null; try{ ft=fetchTimeout; }catch(e){}
+      var pr = ft ? ft(url,{headers:{"Accept":"application/json"}},14000) : fetch(url);
+      Promise.resolve(pr).then(function(r){ return r&&r.ok ? r.json() : {}; }).then(function(data){
+        var arts=(data&&Array.isArray(data.articles)) ? data.articles.filter(function(a){return a.title;}).map(function(a){ return {title:a.title,url:a.url,seendate:a.seendate,domain:a.domain}; }) : [];
+        try{ newsCache[key]=arts; }catch(e){}
+        resolve(arts);
+      }).catch(function(){ resolve([]); });
+    });
+  }
+
+  /* ════════ 1 · EXPORTAR CIERRES A CALENDARIO (.ics) ════════ */
+  function pad2(n){ return (n<10?"0":"")+n; }
+  function icsUTC(d){ return d.getUTCFullYear()+pad2(d.getUTCMonth()+1)+pad2(d.getUTCDate())+"T"+pad2(d.getUTCHours())+pad2(d.getUTCMinutes())+pad2(d.getUTCSeconds())+"Z"; }
+  function icsDay(d){ return d.getFullYear()+pad2(d.getMonth()+1)+pad2(d.getDate()); }
+  function icsEsc(s){ return String(s==null?"":s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n"); }
+  function icsFold(line){
+    if(line.length<=73) return line;
+    var out=line.slice(0,73), rest=line.slice(73);
+    while(rest.length>72){ out+="\r\n "+rest.slice(0,72); rest=rest.slice(72); }
+    return out+"\r\n "+rest;
+  }
+  function parseCierre(s){ if(!s) return null; var t=Date.parse(s); if(isNaN(t)) return null;
+    return { date:new Date(t), hasTime: /\d{1,2}:\d{2}/.test(String(s)) || /T\d{2}/.test(String(s)) }; }
+  function buildICS(list){
+    var now=new Date();
+    var L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Detecta//Cierres SECOP II//ES","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:Detecta · cierres"];
+    var n=0;
+    list.forEach(function(p){
+      var c=parseCierre(p.cierre); if(!c) return;
+      if(c.date.getTime() < Date.now()-86400000) return;
+      n++;
+      var ubic=[p.ciudad,p.depto].filter(Boolean).join(", ");
+      var desc=["Entidad: "+(p.entidad||"—"), ubic?("Ubicacion: "+ubic):"", p.valor?("Valor: "+fmtCOPfull(p.valor)):"", (p._score!=null)?("Encaje: "+p._score+"/100"):"", p.url?("SECOP II: "+p.url):"", "Recordatorio generado por Detecta. Confirme siempre la fecha en el pliego."].filter(Boolean).join("\n");
+      L.push("BEGIN:VEVENT");
+      L.push("UID:detecta-"+Math.abs(hashStr(keyOf(p)))+"-"+icsDay(c.date)+"@detecta.app");
+      L.push("DTSTAMP:"+icsUTC(now));
+      if(c.hasTime){ L.push("DTSTART:"+icsUTC(c.date)); L.push("DTEND:"+icsUTC(new Date(c.date.getTime()+30*60000))); }
+      else { L.push("DTSTART;VALUE=DATE:"+icsDay(c.date)); L.push("DTEND;VALUE=DATE:"+icsDay(new Date(c.date.getTime()+86400000))); }
+      L.push(icsFold("SUMMARY:"+icsEsc("Cierre licitación: "+(p.nombre||"Proceso SECOP II"))));
+      L.push(icsFold("DESCRIPTION:"+icsEsc(desc)));
+      if(ubic) L.push(icsFold("LOCATION:"+icsEsc(ubic)));
+      if(p.url) L.push(icsFold("URL:"+icsEsc(p.url)));
+      L.push("BEGIN:VALARM","TRIGGER:-P1D","ACTION:DISPLAY",icsFold("DESCRIPTION:"+icsEsc("Mañana cierra: "+(p.nombre||""))),"END:VALARM");
+      if(c.hasTime){ L.push("BEGIN:VALARM","TRIGGER:-PT3H","ACTION:DISPLAY","DESCRIPTION:Cierre en 3 horas","END:VALARM"); }
+      L.push("END:VEVENT");
+    });
+    L.push("END:VCALENDAR");
+    return { ics:L.join("\r\n"), count:n };
+  }
+  function exportICS(list, nameHint){
+    var b=buildICS(list||[]);
+    if(!b.count){ toast("Sin fechas de cierre futuras para exportar."); return; }
+    var blob=new Blob([b.ics],{type:"text/calendar;charset=utf-8"});
+    var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download="detecta-cierres-"+(nameHint||new Date().toISOString().slice(0,10))+".ics";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 600);
+    toast(b.count===1 ? "Cierre exportado a tu calendario." : (b.count+" cierres exportados a tu calendario."));
+  }
+
+  /* ════════ 2 · COMPARADOR LADO A LADO ════════ */
+  var compareStore={};
+  function injectCompareTray(){ if(document.getElementById("v3-cmp-tray")) return; var t=document.createElement("div"); t.id="v3-cmp-tray"; t.className="v3-cmp-tray"; document.body.appendChild(t); }
+  function toggleCompare(p, btn){
+    var k=keyOf(p);
+    if(compareStore.hasOwnProperty(k)){ delete compareStore[k]; if(btn){ btn.classList.remove("on"); btn.innerHTML="⇄ Comparar"; } }
+    else {
+      if(Object.keys(compareStore).length>=3){ toast("Máximo 3 procesos para comparar."); return; }
+      compareStore[k]=p; if(btn){ btn.classList.add("on"); btn.innerHTML="⇄ En comparación"; }
+    }
+    renderCompareTray();
+  }
+  function clearCompare(){ compareStore={}; renderCompareTray(); syncCompareButtons(); }
+  function syncCompareButtons(){
+    document.querySelectorAll("#proc-list .proc").forEach(function(card){
+      var btn=card.querySelector(".v3-cmp"); if(!btn) return;
+      var k=card.dataset.wkey; if(!k) return;
+      var on=compareStore.hasOwnProperty(k);
+      btn.classList.toggle("on", on); btn.innerHTML = on ? "⇄ En comparación" : "⇄ Comparar";
+    });
+  }
+  function renderCompareTray(){
+    var tray=document.getElementById("v3-cmp-tray"); if(!tray) return;
+    var keys=Object.keys(compareStore);
+    if(!keys.length){ tray.classList.remove("show"); tray.innerHTML=""; return; }
+    var chips=keys.map(function(k){ var p=compareStore[k];
+      return '<span class="v3-cmp-chip" title="'+esc(p.nombre||"")+'"><b>'+(p._score!=null?p._score:"—")+'</b> '+esc(clipText(p.nombre||"—",24))+' <button data-k="'+esc(k)+'" class="v3-chip-x" aria-label="quitar">✕</button></span>';
+    }).join("");
+    tray.innerHTML='<div class="v3-cmp-inner"><span class="v3-cmp-label">Comparar</span>'+chips+
+      '<button class="v3-cmp-go" id="v3-cmp-go"'+(keys.length<2?" disabled":"")+'>Comparar '+keys.length+'</button>'+
+      '<button class="v3-cmp-clear" id="v3-cmp-clear">Limpiar</button></div>';
+    tray.classList.add("show");
+    tray.querySelectorAll(".v3-chip-x").forEach(function(x){ x.addEventListener("click", function(){ delete compareStore[x.dataset.k]; syncCompareButtons(); renderCompareTray(); }); });
+    var go=document.getElementById("v3-cmp-go"); if(go) go.addEventListener("click", openCompareModal);
+    var cl=document.getElementById("v3-cmp-clear"); if(cl) cl.addEventListener("click", clearCompare);
+  }
+  function riesgoTxt(p){ var r=riskOfMuni(p.ciudad,p.depto); return r ? r.info.label : "sin consultar"; }
+  function openCompareModal(){
+    var keys=Object.keys(compareStore); if(keys.length<2){ toast("Elija al menos 2 procesos para comparar."); return; }
+    var ps=keys.map(function(k){ return compareStore[k]; });
+    function band(s){ return s>=75?'<span style="color:var(--green)">Alto</span>':s>=50?'<span style="color:var(--amber)">Medio</span>':'<span style="color:var(--red)">Bajo</span>'; }
+    function kok(p){ return !!(p._k && p._k.crp>=p._crpc); }
+    var scores=ps.map(function(p){ return p._score||0; }), maxScore=Math.max.apply(null,scores);
+    var vals=ps.map(function(p){ return p.valor||0; }), maxVal=Math.max.apply(null,vals);
+    var dias=ps.map(function(p){ var d=diasHasta(p.cierre); return (d===null||d<0)?Infinity:d; }), minD=Math.min.apply(null,dias);
+    var rows=[
+      ["Encaje", ps.map(function(p,i){ return '<b style="font-size:18px;color:'+(p._score>=75?'var(--green)':p._score>=50?'var(--amber)':'var(--red)')+'">'+(p._score||0)+'</b>/100 · '+band(p._score||0)+(scores[i]===maxScore&&maxScore>0?' <span class="v3-best">mejor</span>':''); })],
+      ["Valor", ps.map(function(p,i){ return (p.valor?money(p.valor)+' <span style="color:var(--ink2);font-size:11px">('+Math.round(p.valor/smmlv()).toLocaleString("es-CO")+' SMMLV)</span>':'—')+(vals[i]===maxVal&&maxVal>0?' <span class="v3-best">mayor</span>':''); })],
+      ["K residual", ps.map(function(p){ return kok(p)?'<span style="color:var(--green)">✓ suficiente</span>':'<span style="color:var(--red)">✗ insuficiente</span>'; })],
+      ["Plazo", ps.map(function(p){ return (p.plazoMeses||"—")+" m"; })],
+      ["Fase", ps.map(function(p){ return esc(p.fase||p.estado||"—"); })],
+      ["Ubicación", ps.map(function(p){ return esc([p.ciudad,p.depto].filter(Boolean).join(", ")||"—"); })],
+      ["Radio", ps.map(function(p){ return ({terrestre:"terrestre ≤200km",aire:"aéreo ≤2h45m",remoto:"remoto",fuera:"fuera"}[p._ubic]||"—"); })],
+      ["Anticipo", ps.map(function(p){ return p._anticipo==null?'<span style="color:var(--ink2)">no verificable</span>':(p._anticipo>=20?'<span style="color:var(--green)">'+p._anticipo+'%</span>':'<span style="color:var(--red)">'+p._anticipo+'%</span>'); })],
+      ["Cierre", ps.map(function(p,i){ var d=diasHasta(p.cierre); var t=(d===null)?'<span style="color:var(--ink2)">sin fecha</span>':(d<0?'cerrado':(fmtFecha(p.cierre)+' · '+(d===0?'hoy':'en '+d+'d'))); return t+((dias[i]===minD&&minD!==Infinity)?' <span class="v3-best" style="background:var(--red)">más urgente</span>':''); })],
+      ["Riesgo (GDELT)", ps.map(function(p){ return esc(riesgoTxt(p)); })]
+    ];
+    var head='<tr><th></th>'+ps.map(function(p){ return '<th>'+(p.url?'<a href="'+esc(p.url)+'" target="_blank" rel="noopener">'+esc(clipText(p.nombre,46))+'</a>':esc(clipText(p.nombre,46)))+'<div class="v3-cmp-ent">'+esc(clipText(p.entidad||"",40))+'</div></th>'; }).join("")+'</tr>';
+    var body=rows.map(function(r){ return '<tr><td class="v3-cmp-rl">'+r[0]+'</td>'+r[1].map(function(c){ return '<td>'+c+'</td>'; }).join("")+'</tr>'; }).join("");
+    var note='<p class="v3-cmp-note">El <b>riesgo</b> aparece solo si ya consultaste el municipio (botón «Noticias» o el Mapa). «Encaje» mide ajuste con el perfil, <b>no</b> probabilidad de ganar.</p>';
+    openModal('<h3 style="margin:0">Comparador de procesos</h3><p class="desc" style="margin:4px 0 0">Lado a lado, para decidir cuál atacar primero.</p>',
+      '<div class="v3-cmp-table-wrap"><table class="v3-cmp-table"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>'+note);
+  }
+
+  /* modal genérico */
+  var modalEl=null;
+  function ensureModal(){
+    if(modalEl) return modalEl;
+    modalEl=document.createElement("div"); modalEl.className="v3-modal"; modalEl.setAttribute("role","dialog"); modalEl.setAttribute("aria-modal","true");
+    modalEl.innerHTML='<div class="v3-modal-back"></div><div class="v3-modal-box"><button class="v3-modal-x" aria-label="Cerrar">✕</button><div class="v3-modal-head"></div><div class="v3-modal-body"></div></div>';
+    document.body.appendChild(modalEl);
+    modalEl.querySelector(".v3-modal-back").addEventListener("click", closeModal);
+    modalEl.querySelector(".v3-modal-x").addEventListener("click", closeModal);
+    document.addEventListener("keydown", function(e){ if(e.key==="Escape" && modalEl.classList.contains("show")) closeModal(); });
+    return modalEl;
+  }
+  function openModal(headHTML, bodyHTML){
+    var m=ensureModal();
+    m.querySelector(".v3-modal-head").innerHTML=headHTML;
+    m.querySelector(".v3-modal-body").innerHTML=bodyHTML;
+    m.classList.add("show"); document.documentElement.style.overflow="hidden";
+    return m;
+  }
+  function closeModal(){ if(modalEl){ modalEl.classList.remove("show"); document.documentElement.style.overflow=""; } }
+
+  /* ════════ 3 · BÚSQUEDAS GUARDADAS + DEEP-LINK ════════ */
+  var suppressHash=false;
+  function activeTab(){ var t=document.querySelector("#tabs .tab.active"); return t?t.dataset.tab:"resumen"; }
+  function readState(){
+    function val(id){ var e=document.getElementById(id); return e?e.value:""; }
+    function chk(id){ var e=document.getElementById(id); return e?(e.checked?1:0):""; }
+    return { t:activeTab(), d:val("f-days"), min:val("f-min"), sc:val("f-score"), mine:chk("f-only-mine"), geo:chk("f-geo"), sav:chk("f-only-saved") };
+  }
+  function stateToHash(s){ var parts=[]; for(var k in s){ if(s[k]!=="" && s[k]!=null) parts.push(k+"="+encodeURIComponent(s[k])); } return parts.join("&"); }
+  function writeHash(){ if(suppressHash) return; var h=stateToHash(readState()); try{ history.replaceState(null,"","#"+h); }catch(e){ try{ location.hash=h; }catch(_e){} } }
+  function parseHash(){ var h=(location.hash||"").replace(/^#/,""); if(!h) return null; var o={}; h.split("&").forEach(function(kv){ var i=kv.indexOf("="); if(i<0) return; o[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1)); }); return Object.keys(o).length?o:null; }
+  function applyState(o, doLoad){
+    if(!o) return; suppressHash=true;
+    function setv(id,v){ var e=document.getElementById(id); if(e&&v!=null&&v!=="") e.value=v; }
+    function setc(id,v){ var e=document.getElementById(id); if(e&&v!=null&&v!=="") e.checked=(v==="1"||v===1||v===true); }
+    setv("f-days",o.d); setv("f-min",o.min); setv("f-score",o.sc);
+    setc("f-only-mine",o.mine); setc("f-geo",o.geo); setc("f-only-saved",o.sav);
+    var tab=o.t||"resumen", tEl=document.querySelector('#tabs .tab[data-tab="'+tab+'"]');
+    setTimeout(function(){ suppressHash=false; }, 60);
+    if(tEl){ tEl.click(); }
+    else if(doLoad && ["helder","genesis","juntos"].indexOf(tab)>=0){ try{ loadProcesses(); }catch(e){} }
+  }
+  function injectViewBar(){
+    var fs=document.querySelector("#radar-wrap .filters-simple"); if(!fs || document.getElementById("v3-viewbar")) return;
+    var bar=document.createElement("div"); bar.id="v3-viewbar"; bar.className="v3-viewbar";
+    bar.innerHTML='<button type="button" class="v3-vb-btn" id="v3-copy">🔗 Copiar enlace</button>'+
+      '<button type="button" class="v3-vb-btn" id="v3-savev">💾 Guardar vista</button>'+
+      '<select id="v3-views" class="v3-vb-sel" title="Vistas guardadas"></select>'+
+      '<button type="button" class="v3-vb-btn v3-vb-del" id="v3-delv" title="Borrar la vista seleccionada" style="display:none">🗑</button>'+
+      '<span class="v3-vb-hint">Comparte una vista exacta por enlace (#).</span>';
+    fs.parentNode.insertBefore(bar, fs.nextSibling);
+    document.getElementById("v3-copy").addEventListener("click", copyLink);
+    document.getElementById("v3-savev").addEventListener("click", saveView);
+    var sel=document.getElementById("v3-views");
+    sel.addEventListener("change", function(){
+      var v=sel.value; document.getElementById("v3-delv").style.display = v?"":"none";
+      if(!v) return; var found=lsGet("detecta-vistas-v1",[]).filter(function(x){ return x.name===v; })[0];
+      if(found){ try{ location.hash=found.hash; }catch(e){} applyState(parseHash(), true); }
+    });
+    document.getElementById("v3-delv").addEventListener("click", function(){
+      var v=document.getElementById("v3-views").value; if(!v) return;
+      lsSet("detecta-vistas-v1", lsGet("detecta-vistas-v1",[]).filter(function(x){ return x.name!==v; }));
+      refreshViews(); toast("Vista borrada.");
+    });
+    refreshViews();
+  }
+  function refreshViews(){ var sel=document.getElementById("v3-views"); if(!sel) return; var views=lsGet("detecta-vistas-v1",[]);
+    sel.innerHTML='<option value="">Vistas guardadas… ('+views.length+')</option>'+views.map(function(v){ return '<option value="'+esc(v.name)+'">'+esc(v.name)+'</option>'; }).join("");
+    var del=document.getElementById("v3-delv"); if(del) del.style.display="none";
+  }
+  function copyLink(){ writeHash(); var url=location.href;
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(function(){ toast("Enlace copiado al portapapeles."); }, function(){ fallbackCopy(url); }); }
+    else fallbackCopy(url);
+  }
+  function fallbackCopy(t){ try{ var ta=document.createElement("textarea"); ta.value=t; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); toast("Enlace copiado."); }catch(e){ toast("Copia manual: "+t); } }
+  function saveView(){ writeHash(); var name=prompt("Nombre para esta vista (filtros + perfil actual):"); if(!name) return; name=name.trim().slice(0,40); if(!name) return;
+    var views=lsGet("detecta-vistas-v1",[]).filter(function(x){ return x.name!==name; });
+    views.push({name:name, hash:(location.hash||"").replace(/^#/,"")});
+    lsSet("detecta-vistas-v1", views.slice(-20)); refreshViews(); toast("Vista «"+name+"» guardada.");
+  }
+
+  /* ════════ 4 · PIPELINE PONDERADO + 6 · TENDENCIA (paneles en Resumen) ════════ */
+  function ensureResumenPanels(){
+    var sec=document.getElementById("sec-resumen"); if(!sec) return;
+    if(!document.getElementById("v3-pipeline")){
+      var metrics=document.getElementById("dash-metrics");
+      var pan=document.createElement("div"); pan.className="panel reveal in"; pan.id="v3-pipeline";
+      pan.innerHTML='<h3>Pipeline ponderado <span class="v3-pill">valor en juego ajustado</span></h3>'+
+        '<p class="desc">No es lo mismo $1.000 M al 90% de encaje en zona verde que al 50% en zona roja. El <b>valor total</b> se ajusta por <b>encaje</b> y se descuenta por <b>riesgo</b> de seguridad (GDELT).</p>'+
+        '<div class="v3-pipe-grid" id="v3-pipe-grid"></div>'+
+        '<div class="v3-pipe-foot"><button class="v3-vb-btn" id="v3-pipe-risk">📡 Estimar riesgo de municipios top</button> <span id="v3-pipe-note" class="v3-vb-hint"></span></div>';
+      if(metrics && metrics.parentNode) metrics.parentNode.insertBefore(pan, metrics.nextSibling); else sec.appendChild(pan);
+      var rb=document.getElementById("v3-pipe-risk"); if(rb) rb.addEventListener("click", estimateRiskTop);
+    }
+    if(!document.getElementById("v3-trend")){
+      var dl=document.getElementById("dash-deadlines-wrap");
+      var pan2=document.createElement("div"); pan2.className="panel reveal in"; pan2.id="v3-trend";
+      pan2.innerHTML='<h3>Tendencia semanal <span id="v3-trend-delta" class="v3-pill"></span></h3>'+
+        '<p class="desc">Evolución del nº de oportunidades afines. Se guarda un punto por día en este navegador, para ver si el mercado se mueve.</p>'+
+        '<div id="v3-trend-chart" class="v3-trend-chart"></div>';
+      if(dl && dl.parentNode) dl.parentNode.insertBefore(pan2, dl); else sec.appendChild(pan2);
+    }
+  }
+  function renderPipeline(list){
+    ensureResumenPanels();
+    var grid=document.getElementById("v3-pipe-grid"); if(!grid) return;
+    list=list||[];
+    var raw=0, fit=0, full=0, withRisk=0;
+    list.forEach(function(p){ var v=p.valor||0, s=(p._score||0)/100; raw+=v; fit+=v*s;
+      var r=riskOfMuni(p.ciudad,p.depto); var disc=r?(RISK_DISCOUNT[r.info.level]||0):0; if(r) withRisk++;
+      full+=v*s*(1-disc);
+    });
+    var cards=[
+      {l:"Valor bruto", v:money(raw), s:list.length+" procesos en el radar"},
+      {l:"Ponderado por encaje", v:money(fit), s:raw?("≈ "+Math.round(fit/raw*100)+"% del bruto"):"—"},
+      {l:"Encaje × riesgo", v:money(full), s:(withRisk?("riesgo aplicado en "+withRisk+" de "+list.length):"sin datos de riesgo aún"), accent:true}
+    ];
+    grid.innerHTML=cards.map(function(c){ return '<div class="v3-pipe-card'+(c.accent?" accent":"")+'"><div class="l">'+esc(c.l)+'</div><div class="v">'+c.v+'</div><div class="s">'+esc(c.s)+'</div></div>'; }).join("");
+    var note=document.getElementById("v3-pipe-note");
+    if(note) note.textContent = withRisk ? ("Riesgo consultado en "+withRisk+" municipio(s).") : "Aún sin riesgo: pulsa para estimarlo o visita el Mapa.";
+  }
+  function estimateRiskTop(){
+    var list=curList(); if(!list.length){ toast("Carga el radar primero (abre un perfil)."); return; }
+    var map={};
+    list.forEach(function(p){ var key=((p.ciudad||p.depto)||"").trim().toLowerCase(); if(!key) return; if(!map[key]) map[key]={muni:(p.ciudad||p.depto), val:0}; map[key].val+=(p.valor||0); });
+    var munis=Object.keys(map).map(function(k){ return map[k]; }).sort(function(a,b){ return b.val-a.val; }).slice(0,8);
+    if(!munis.length){ toast("Sin municipios para consultar."); return; }
+    var btn=document.getElementById("v3-pipe-risk"); if(btn){ btn.disabled=true; btn.textContent="📡 Consultando…"; }
+    var i=0;
+    (function next(){
+      if(i>=munis.length){ if(btn){ btn.disabled=false; btn.textContent="📡 Estimar riesgo de municipios top"; } renderPipeline(curList()); toast("Riesgo actualizado en el pipeline."); return; }
+      fetchRiesgo(munis[i].muni).then(function(){ i++; renderPipeline(curList()); setTimeout(next, 350); });
+    })();
+  }
+  function recordSnapshot(profile, list){
+    if(!list || !list.length) return;
+    var store=lsGet("detecta-tendencia-v1",{}) || {}, arr=store[profile]||[];
+    var today=new Date().toISOString().slice(0,10);
+    var rec={ d:today, n:list.length, hi:list.filter(function(p){ return (p._score||0)>=75; }).length, val:list.reduce(function(a,p){ return a+(p.valor||0); },0) };
+    if(arr.length && arr[arr.length-1].d===today) arr[arr.length-1]=rec; else arr.push(rec);
+    store[profile]=arr.slice(-60); lsSet("detecta-tendencia-v1",store);
+  }
+  function renderTrend(){
+    ensureResumenPanels();
+    var box=document.getElementById("v3-trend-chart"); if(!box) return;
+    var arr=((lsGet("detecta-tendencia-v1",{})||{})[getProfile()]||[]).slice(-21);
+    var delta=document.getElementById("v3-trend-delta");
+    if(arr.length<2){ box.innerHTML='<div class="dash-empty">Aún acumulando historial para '+esc(PROF_NAMES[getProfile()]||getProfile())+'. Cada día que abras el radar se guarda un punto; vuelve mañana para ver la curva.</div>'; if(delta) delta.textContent=""; return; }
+    var ac=accentColor();
+    var max=Math.max.apply(null, arr.map(function(r){ return r.n; }))||1;
+    var W=Math.max(arr.length*42, 300), H=130, pad=18, step=(W-pad*2)/(arr.length-1);
+    var pts=arr.map(function(r,i){ return [pad+i*step, H-pad-(r.n/max)*(H-pad*2), r]; });
+    var path=pts.map(function(p,i){ return (i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1); }).join(" ");
+    var area="M"+pts[0][0].toFixed(1)+" "+(H-pad)+" "+pts.map(function(p){ return "L"+p[0].toFixed(1)+" "+p[1].toFixed(1); }).join(" ")+" L"+pts[pts.length-1][0].toFixed(1)+" "+(H-pad)+" Z";
+    var dots=pts.map(function(p){ return '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.2" fill="'+ac+'"><title>'+p[2].d+': '+p[2].n+' procesos · '+p[2].hi+' de alto encaje</title></circle>'; }).join("");
+    box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="width:100%;height:150px">'+
+      '<path d="'+area+'" fill="'+ac+'" opacity="0.12"/>'+
+      '<path d="'+path+'" fill="none" stroke="'+ac+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'+dots+'</svg>'+
+      '<div class="v3-trend-labels"><span>'+arr[0].d.slice(5)+'</span><span>'+arr[arr.length-1].d.slice(5)+'</span></div>';
+    if(delta){ var diff=arr[arr.length-1].n-arr[0].n; delta.textContent=(diff>0?"+":"")+diff+" vs. "+arr[0].d.slice(5); delta.style.color=diff>0?"var(--green)":diff<0?"var(--red)":"var(--ink2)"; }
+  }
+
+  /* ════════ 7 · CALCULADORA DE CONSORCIO ════════ */
+  function ensureConsorcio(){
+    var sec=document.getElementById("sec-juntos"); if(!sec || document.getElementById("v3-consorcio")) return;
+    var pan=document.createElement("div"); pan.className="panel reveal in"; pan.id="v3-consorcio";
+    pan.innerHTML='<h3>Calculadora de consorcio <span class="v3-pill">en vivo</span></h3>'+
+      '<p class="desc">Desliza el % de participación y observa cómo se recalculan la <b>capacidad residual (K)</b> y los <b>índices financieros</b> ponderados. En consorcio, la CCE pondera K e índices por participación. <b>Estimación de apoyo</b>: el pliego manda.</p>'+
+      '<div class="v3-cons-slider"><div class="v3-cons-ends"><span><b>Helder</b> <span id="v3-cons-ph">50</span>%</span><span><span id="v3-cons-pg">50</span>% <b>Génesis</b></span></div>'+
+      '<input type="range" id="v3-cons-range" min="0" max="100" value="50" step="5" aria-label="Participación de Helder"></div>'+
+      '<div class="v3-cons-grid" id="v3-cons-grid"></div><div class="v3-cons-msg" id="v3-cons-msg"></div>';
+    sec.appendChild(pan);
+    var range=document.getElementById("v3-cons-range");
+    range.addEventListener("input", function(){ computeConsorcio(+range.value); });
+    computeConsorcio(50);
+  }
+  function computeConsorcio(pH){
+    try{
+      var h=profiles.helder, g=profiles.genesis; if(!h||!g) return;
+      var fH=pH/100, fG=1-fH;
+      var kH=calcK(h,null).crp, kG=calcK(g,null).crp;
+      var kC=fH*kH+fG*kG, liq=fH*h.liquidez+fG*g.liquidez, end=fH*h.endeud+fG*g.endeud, cob=fH*h.cobertura+fG*g.cobertura;
+      var phEl=document.getElementById("v3-cons-ph"), pgEl=document.getElementById("v3-cons-pg");
+      if(phEl) phEl.textContent=pH; if(pgEl) pgEl.textContent=100-pH;
+      var cf; try{ cf=factorCF(liq); }catch(e){ cf="—"; }
+      function card(l,v,s,ok){ return '<div class="v3-cons-card'+(ok===true?" ok":ok===false?" bad":"")+'"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>'; }
+      var grid=document.getElementById("v3-cons-grid");
+      if(grid) grid.innerHTML=
+        card("K residual combinado", money(kC), "ponderado por participación", null)+
+        card("Liquidez ponderada", liq.toLocaleString("es-CO",{maximumFractionDigits:2}), "umbral típico ≥ 1,5 · CF "+cf, liq>=1.5)+
+        card("Endeudamiento ponderado", (end*100).toFixed(1)+"%", "umbral típico ≤ 50%", end<=0.5)+
+        card("Cobertura ponderada", cob.toLocaleString("es-CO",{maximumFractionDigits:2}), "veces los intereses", cob>=1);
+      var msg=document.getElementById("v3-cons-msg");
+      if(msg){
+        var partes=["Con <b>"+pH+"% Helder / "+(100-pH)+"% Génesis</b>: K combinado "+money(kC)+"."];
+        partes.push(liq>=1.5?("Liquidez ponderada holgada ("+liq.toFixed(2)+").") : ("Ojo: liquidez ponderada "+liq.toFixed(2)+", por debajo de 1,5."));
+        if(pH>=80) partes.push("Repartición muy cargada a Helder: aporta liquidez y patrimonio, pero la experiencia (contratos) la concentra Génesis.");
+        else if(pH<=20) partes.push("Repartición muy cargada a Génesis: gana volumen de experiencia, pero baja el respaldo financiero de Helder.");
+        else partes.push("Repartición equilibrada: combina la financiera de Helder con la experiencia de Génesis.");
+        msg.innerHTML=partes.join(" ");
+      }
+    }catch(e){ console.error("consorcio:",e); }
+  }
+
+  /* ════════ 8 · ALERTAS LOCALES (Notification API) ════════ */
+  function ensureAlertsUI(){
+    var wrap=document.getElementById("dash-deadlines-wrap"); if(!wrap) return;
+    var h=wrap.querySelector("h3"); if(!h || document.getElementById("v3-dl-actions")) return;
+    var bar=document.createElement("div"); bar.id="v3-dl-actions"; bar.className="v3-dl-actions";
+    bar.innerHTML='<button type="button" class="v3-vb-btn" id="v3-ics-all">⭳ Exportar cierres (.ics)</button>'+
+      '<button type="button" class="v3-vb-btn" id="v3-alerts-toggle"></button>';
+    h.parentNode.insertBefore(bar, h.nextSibling);
+    document.getElementById("v3-ics-all").addEventListener("click", function(){
+      exportICS(curList().filter(function(p){ var d=diasHasta(p.cierre); return d!==null && d>=0; }), "proximos-cierres");
+    });
+    var tg=document.getElementById("v3-alerts-toggle");
+    function paint(){ var on=lsGet("detecta-alertas-on",false);
+      tg.innerHTML = on ? "🔔 Alertas activas" : "🔕 Activar alertas ≤48h";
+      tg.classList.toggle("on", !!on);
+      tg.title = on ? "Te avisaré cuando un proceso guardado ★ entre en 48h de cierre." : "Activar notificaciones del navegador para cierres ≤48h de procesos guardados ★.";
+    }
+    tg.addEventListener("click", function(){
+      if(lsGet("detecta-alertas-on",false)){ lsSet("detecta-alertas-on",false); paint(); toast("Alertas desactivadas."); return; }
+      if(!("Notification" in window)){ toast("Tu navegador no soporta notificaciones."); return; }
+      Notification.requestPermission().then(function(perm){
+        if(perm==="granted"){ lsSet("detecta-alertas-on",true); paint(); toast("Alertas activadas: te avisaré de cierres ≤48h de lo guardado ★."); checkAlerts(); }
+        else toast("Permiso de notificaciones denegado.");
+      });
+    });
+    paint();
+  }
+  function checkAlerts(){
+    try{
+      if(!lsGet("detecta-alertas-on",false)) return;
+      if(!("Notification" in window) || Notification.permission!=="granted") return;
+      var saved=wlSet(); if(!saved.size) return;
+      var sent=lsGet("detecta-alertas-sent",{}) || {}, now=Date.now(), changed=false;
+      curList().forEach(function(p){
+        var k=keyOf(p); if(!saved.has(k)) return;
+        var ms=Date.parse(p.cierre)-now; if(isNaN(ms)) return; var hrs=ms/3600000; if(hrs<0 || hrs>48) return;
+        var sk=k+"|"+(p.cierre||""); if(sent[sk]) return;
+        var ubic=[p.ciudad,p.depto].filter(Boolean).join(", "); var d=Math.floor(hrs/24);
+        try{ new Notification("Detecta · cierre próximo", { body:(p.nombre||"Proceso")+"\n"+(hrs<24?"Cierra hoy":"Cierra en "+d+" día"+(d===1?"":"s"))+(ubic?(" · "+ubic):""), tag:sk, icon:"icon.svg" }); }catch(e){}
+        sent[sk]=now; changed=true;
+      });
+      Object.keys(sent).forEach(function(sk){ if(now-sent[sk]>30*86400000){ delete sent[sk]; changed=true; } });
+      if(changed) lsSet("detecta-alertas-sent",sent);
+    }catch(e){ console.error("alerts:",e); }
+  }
+
+  /* ════════ 9 · EXPORTAR TARJETA A IMAGEN (WhatsApp) ════════ */
+  function wrapText(ctx, text, maxW){
+    var words=String(text||"").split(/\s+/), lines=[], cur="";
+    for(var i=0;i<words.length;i++){ var test=cur?cur+" "+words[i]:words[i];
+      if(ctx.measureText(test).width>maxW && cur){ lines.push(cur); cur=words[i]; } else cur=test; }
+    if(cur) lines.push(cur); return lines;
+  }
+  function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function buildCardCanvas(p){
+    var W=1080,H=1350, cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+    var x=cv.getContext("2d"), M=84;
+    x.fillStyle="#ffffff"; x.fillRect(0,0,W,H);
+    var grad=x.createLinearGradient(0,0,W,200); grad.addColorStop(0,"#0a84ff"); grad.addColorStop(1,"#0066cc");
+    x.fillStyle=grad; x.fillRect(0,0,W,200);
+    x.textBaseline="middle"; x.textAlign="left";
+    x.fillStyle="#ffffff"; x.font="700 52px Inter, -apple-system, Helvetica, Arial, sans-serif"; x.fillText("detecta", M, 100);
+    var dw=x.measureText("detecta").width; x.fillStyle="#cfe6ff"; x.fillText(".", M+dw+2, 100);
+    x.fillStyle="rgba(255,255,255,.85)"; x.font="400 26px Inter, Arial, sans-serif"; x.textAlign="right"; x.fillText("inteligencia de licitaciones", W-M, 100); x.textAlign="left";
+    var score=p._score||0, col=score>=75?"#1c8c4a":score>=50?"#9a6b00":"#b3261e";
+    var cx=W-M-86, cy=336, rr=78;
+    x.lineWidth=18; x.strokeStyle="#e9e9ee"; x.beginPath(); x.arc(cx,cy,rr,0,Math.PI*2); x.stroke();
+    x.strokeStyle=col; x.lineCap="round"; x.beginPath(); x.arc(cx,cy,rr,-Math.PI/2, -Math.PI/2 + Math.PI*2*Math.min(score,100)/100); x.stroke();
+    x.fillStyle=col; x.font="700 56px Inter, Arial, sans-serif"; x.textAlign="center"; x.fillText(String(score), cx, cy-6);
+    x.fillStyle="#6e6e73"; x.font="600 19px Inter, Arial, sans-serif"; x.fillText("/100 ENCAJE", cx, cy+44); x.textAlign="left";
+    x.fillStyle=col; x.font="700 24px Inter, Arial, sans-serif"; x.fillText(score>=75?"ENCAJE ALTO":score>=50?"ENCAJE MEDIO":"ENCAJE BAJO", M, 300);
+    x.fillStyle="#1d1d1f"; x.font="700 44px Inter, -apple-system, Arial, sans-serif"; x.textBaseline="top";
+    var nameLines=wrapText(x, p.nombre||"Proceso de contratación", W-M*2-190).slice(0,3), ny=340;
+    nameLines.forEach(function(ln,i){ x.fillText(ln, M, ny+i*56); });
+    var y=ny+nameLines.length*56+24;
+    x.fillStyle="#6e6e73"; x.font="400 27px Inter, Arial, sans-serif";
+    var ent=wrapText(x, (p.entidad||"—")+" · "+([p.ciudad,p.depto].filter(Boolean).join(", ")||"sin ubicación"), W-M*2).slice(0,2);
+    ent.forEach(function(ln,i){ x.fillText(ln, M, y+i*36); }); y+=ent.length*36+30;
+    x.strokeStyle="#ececf1"; x.lineWidth=2; x.beginPath(); x.moveTo(M,y); x.lineTo(W-M,y); x.stroke(); y+=34;
+    var kok=!!(p._k && p._k.crp>=p._crpc);
+    var chips=[
+      ["Valor", p.valor?("$"+Math.round(p.valor).toLocaleString("es-CO")):"—"],
+      ["En SMMLV", p.valor?Math.round(p.valor/smmlv()).toLocaleString("es-CO"):"—"],
+      ["K residual", kok?"Suficiente":"Insuficiente"],
+      ["Plazo", (p.plazoMeses||"—")+" meses"],
+      ["Anticipo", p._anticipo==null?"No verificable":(p._anticipo+"%")],
+      ["Radio", ({terrestre:"Terrestre ≤200km",aire:"Aéreo ≤2h45m",remoto:"Remoto",fuera:"Fuera"}[p._ubic]||"—")]
+    ];
+    var cw=(W-M*2-30)/2, ch=92, gap=18;
+    chips.forEach(function(c,i){ var cl=i%2, row=Math.floor(i/2), bx=M+cl*(cw+30), by=y+row*(ch+gap);
+      x.fillStyle="#f5f5f7"; roundRect(x,bx,by,cw,ch,16); x.fill();
+      x.textBaseline="top"; x.fillStyle="#6e6e73"; x.font="600 19px Inter, Arial, sans-serif"; x.fillText(c[0].toUpperCase(), bx+24, by+20);
+      var vcol=(c[0]==="K residual")?(kok?"#1c8c4a":"#b3261e"):((c[0]==="Anticipo"&&p._anticipo!=null)?(p._anticipo>=20?"#1c8c4a":"#b3261e"):"#1d1d1f");
+      x.fillStyle=vcol; x.font="700 31px Inter, Arial, sans-serif"; x.fillText(c[1], bx+24, by+47);
+    });
+    y+=Math.ceil(chips.length/2)*(ch+gap)+12;
+    var d=diasHasta(p.cierre);
+    if(d!==null && d>=0){ x.textBaseline="top"; x.fillStyle=d<=2?"#b3261e":d<=7?"#9a6b00":"#1c8c4a"; x.font="700 30px Inter, Arial, sans-serif"; x.fillText((d===0?"Cierra hoy":"Cierra en "+d+" día"+(d===1?"":"s"))+" · "+fmtFecha(p.cierre), M, y); y+=48; }
+    var r=riskOfMuni(p.ciudad,p.depto);
+    if(r){ x.textBaseline="top"; x.fillStyle=r.info.color||"#6e6e73"; x.font="700 28px Inter, Arial, sans-serif"; x.fillText("Riesgo de seguridad: "+r.info.label, M, y); y+=44; }
+    x.fillStyle="#9a9aa0"; x.font="400 22px Inter, Arial, sans-serif"; x.textBaseline="bottom"; x.textAlign="left";
+    x.fillText("Generado con Detecta · "+new Date().toLocaleDateString("es-CO"), M, H-50);
+    x.textAlign="right"; x.fillText("Encaje ≠ probabilidad de ganar · confirme el pliego", W-M, H-50); x.textAlign="left";
+    return cv;
+  }
+  function shareCard(p, btn){
+    try{
+      var once=false;
+      function go(){
+        if(once) return; once=true;
+        var cv=buildCardCanvas(p);
+        cv.toBlob(function(blob){
+          if(!blob){ toast("No se pudo generar la imagen."); return; }
+          var fname="detecta-"+slug(p.nombre)+".png", file=null;
+          try{ file=new File([blob],fname,{type:"image/png"}); }catch(e){}
+          if(file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+            navigator.share({ files:[file], title:"Proceso SECOP II", text:(p.nombre||"")+" · encaje "+(p._score||0)+"/100" }).catch(function(){});
+          } else {
+            var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fname; document.body.appendChild(a); a.click();
+            setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 600);
+            toast("Imagen descargada · lista para WhatsApp.");
+          }
+        }, "image/png");
+      }
+      if(document.fonts && document.fonts.ready){ document.fonts.ready.then(go); setTimeout(go, 600); }
+      else go();
+    }catch(e){ console.error("share:",e); toast("No se pudo generar la imagen."); }
+  }
+
+  /* ════════ 5 · OCR DEL PLIEGO → FECHA DE CIERRE ════════ */
+  var MESES={enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,setiembre:9,octubre:10,noviembre:11,diciembre:12};
+  function extraerFechaCierrePliego(txt){
+    if(!txt) return null;
+    var norm=txt.replace(/\s+/g," "), low=norm.toLowerCase();
+    var anchors=["fecha de cierre","cierre del proceso","cierre de la","límite de presentación","limite de presentacion","presentación de oferta","presentacion de oferta","plazo para presentar","plazo máximo para presentar","plazo maximo para presentar","entrega de oferta","recepción de oferta","recepcion de oferta"];
+    var bestIdx=-1;
+    for(var i=0;i<anchors.length;i++){ var k=low.indexOf(anchors[i]); if(k>=0 && (bestIdx<0||k<bestIdx)) bestIdx=k; }
+    var scope=bestIdx>=0 ? norm.slice(bestIdx, bestIdx+190) : norm;
+    var date=null, m=scope.match(/(\d{1,2})\s+de\s+([a-záéíóúñ]+)\s+(?:de\s+|del\s+)?(\d{4})/i);
+    if(m){ var mo=MESES[m[2].toLowerCase()]; if(mo) date={y:+m[3],mo:mo,da:+m[1]}; }
+    if(!date){ var m2=scope.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/); if(m2) date={y:+m2[3],mo:+m2[2],da:+m2[1]}; }
+    if(!date){ var m3=scope.match(/(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/); if(m3) date={y:+m3[1],mo:+m3[2],da:+m3[3]}; }
+    if(!date) return null;
+    if(date.mo<1||date.mo>12||date.da<1||date.da>31||date.y<2020||date.y>2099) return null;
+    var hm=scope.match(/(\d{1,2})[:h](\d{2})\s*(a\.?\s*m\.?|p\.?\s*m\.?|am|pm)?/i), hh=null, mm=null;
+    if(hm){ hh=+hm[1]; mm=+hm[2]; var ap=(hm[3]||"").toLowerCase().replace(/[\s.]/g,""); if(ap==="pm"&&hh<12) hh+=12; if(ap==="am"&&hh===12) hh=0; }
+    var iso=date.y+"-"+pad2(date.mo)+"-"+pad2(date.da);
+    if(hh!=null && hh>=0 && hh<24) iso+="T"+pad2(hh)+":"+pad2(mm||0);
+    return iso;
+  }
+  function pliegoCierreAugment(){
+    try{
+      var ta=document.getElementById("pliego-text"), out=document.getElementById("pliego-result"); if(!ta||!out) return;
+      var prev=document.getElementById("v3-pliego-cierre"); if(prev) prev.remove();
+      var iso=extraerFechaCierrePliego(ta.value||"");
+      var box=document.createElement("div"); box.id="v3-pliego-cierre"; box.className="v3-pliego-cierre";
+      if(!iso){ box.innerHTML='<b>📅 Fecha de cierre:</b> no se detectó en el texto. Si el pliego trae cronograma, pega esa sección y reanaliza.'; out.appendChild(box); return; }
+      var list=curList();
+      var opts=list.slice(0,60).map(function(p,i){ return '<option value="'+i+'">'+esc(clipText(p.nombre||"—",60))+(p.cierre?" (ya tiene fecha)":"")+'</option>'; }).join("");
+      box.innerHTML='<div class="v3-pc-head">📅 <b>Fecha de cierre detectada:</b> <span class="v3-pc-date">'+esc(fmtFecha(iso))+'</span></div>'+
+        '<p class="v3-pc-sub">Cierra el hueco cuando los datos abiertos no la traen. Asóciala a un proceso del radar para que aparezca en «Próximos cierres», la cuenta regresiva y el calendario (.ics).</p>'+
+        (list.length ? '<div class="v3-pc-row"><select id="v3-pc-sel" class="v3-vb-sel">'+opts+'</select><button class="v3-vb-btn" id="v3-pc-assoc">Asociar fecha</button></div>'
+                     : '<p class="v3-pc-sub" style="color:var(--amber)">Abre primero un perfil (Helder/Génesis/Juntos) para cargar el radar y poder asociarla.</p>');
+      out.appendChild(box);
+      var btn=document.getElementById("v3-pc-assoc");
+      if(btn) btn.addEventListener("click", function(){
+        var sel=document.getElementById("v3-pc-sel"), idx=sel?+sel.value:-1, p=curList()[idx]; if(!p){ toast("Selecciona un proceso."); return; }
+        var ov=lsGet("detecta-cierres-override-v1",{}) || {}; ov[keyOf(p)]=iso; lsSet("detecta-cierres-override-v1",ov);
+        toast("Fecha asociada a «"+clipText(p.nombre,30)+"».");
+        try{ if(typeof window.renderProcesses==="function") window.renderProcesses(curList()); }catch(e){}
+      });
+    }catch(e){ console.error("pliego cierre:",e); }
+  }
+  function applyCierreOverrides(list){
+    try{ var ov=lsGet("detecta-cierres-override-v1",{}) || {};
+      list.forEach(function(p){ if(!p.cierre){ var k=keyOf(p); if(ov[k]){ p.cierre=ov[k]; p._cierreManual=true; } } });
+    }catch(e){}
+  }
+
+  /* ════════ tarjetas: inyectar botones (calendario · comparar · compartir) ════════ */
+  function augmentCards(list){
+    var cont=document.getElementById("proc-list"); if(!cont) return;
+    cont.querySelectorAll(".proc").forEach(function(card, idx){
+      var p=list[idx]; if(!p) return;
+      if(card.dataset.v3==="1") return; card.dataset.v3="1";
+      var actions=card.querySelector(".proc-actions"); if(!actions) return;
+      if(p.cierre){
+        var bCal=document.createElement("button"); bCal.type="button"; bCal.className="v3-act";
+        bCal.innerHTML="📅 Calendario"; bCal.title="Agregar el cierre a tu calendario (.ics, con recordatorio)";
+        bCal.addEventListener("click", function(){ exportICS([p], slug(p.nombre)); });
+        actions.appendChild(bCal);
+      }
+      var on=compareStore.hasOwnProperty(keyOf(p));
+      var bCmp=document.createElement("button"); bCmp.type="button"; bCmp.className="v3-act v3-cmp"+(on?" on":"");
+      bCmp.innerHTML=on?"⇄ En comparación":"⇄ Comparar"; bCmp.title="Agregar a la bandeja de comparación (hasta 3)";
+      bCmp.addEventListener("click", function(){ toggleCompare(p, bCmp); });
+      actions.appendChild(bCmp);
+      var bSh=document.createElement("button"); bSh.type="button"; bSh.className="v3-act";
+      bSh.innerHTML="📤 Compartir"; bSh.title="Generar una tarjeta en imagen lista para WhatsApp";
+      bSh.addEventListener("click", function(){ shareCard(p, bSh); });
+      actions.appendChild(bSh);
+    });
+  }
+
+  /* ════════ 10 · persistir último radar (offline) ════════ */
+  function persistLastRadar(list){ try{ if(!list||!list.length) return; lsSet("detecta-last-radar-v1", { ts:Date.now(), profile:getProfile(), list:list.slice(0,150) }); }catch(e){} }
+  function offlineBoot(){
+    try{
+      if(navigator.onLine===false){
+        var cached=lsGet("detecta-last-radar-v1",null);
+        if(cached && cached.list && cached.list.length && typeof window.renderProcesses==="function"){
+          window._lastProcesses=cached.list; window._dashList=cached.list;
+          window.renderProcesses(cached.list);
+          toast("Sin conexión: mostrando el último radar guardado.");
+        }
+      }
+    }catch(e){}
+  }
+
+  /* ════════ MONKEY-PATCH (capa más externa) ════════ */
+  if(typeof window.renderProcesses==="function"){
+    var _inner=window.renderProcesses;
+    window.renderProcesses=function(list){
+      list=list||[];
+      try{ applyCierreOverrides(list); }catch(e){}
+      var r=_inner.call(this, list);
+      try{
+        augmentCards(list); syncCompareButtons();
+        recordSnapshot(getProfile(), list);
+        renderPipeline(list); renderTrend();
+        persistLastRadar(list);
+        ensureAlertsUI(); checkAlerts();
+      }catch(e){ console.error("v3 render:",e); }
+      return r;
+    };
+  }
+  if(typeof window.analizarPliego==="function"){
+    var _ap=window.analizarPliego;
+    window.analizarPliego=function(){ var r=_ap.apply(this, arguments); try{ pliegoCierreAugment(); }catch(e){} return r; };
+  }
+
+  /* ════════ INIT + WIRING ════════ */
+  try{
+    ensureModal(); injectCompareTray(); ensureResumenPanels(); ensureConsorcio(); injectViewBar(); ensureAlertsUI();
+    renderPipeline(curList()); renderTrend();
+
+    document.querySelectorAll("#tabs .tab").forEach(function(t){
+      t.addEventListener("click", function(){
+        var tab=t.dataset.tab;
+        if(tab==="resumen"){ setTimeout(function(){ ensureResumenPanels(); renderPipeline(curList()); renderTrend(); ensureAlertsUI(); }, 40); }
+        if(tab==="juntos"){ setTimeout(ensureConsorcio, 30); }
+        setTimeout(writeHash, 80);
+      });
+    });
+
+    ["f-days","f-min","f-score","f-only-mine","f-geo","f-only-saved"].forEach(function(id){ var e=document.getElementById(id); if(e) e.addEventListener("change", debounce(writeHash, 350)); });
+    window.addEventListener("hashchange", function(){ var o=parseHash(); if(o) applyState(o, true); });
+
+    var initState=parseHash();
+    if(initState && (initState.t || initState.d || initState.min || initState.sc)) setTimeout(function(){ applyState(initState, true); }, 140);
+
+    setInterval(checkAlerts, 30*60*1000);
+    document.addEventListener("visibilitychange", function(){ if(!document.hidden) checkAlerts(); });
+
+    offlineBoot();
+  }catch(e){ console.error("v3 init:",e); }
+})();
+
+/* ════════ 10 · PWA · manifest + service worker (registro) ════════ */
+(function detectaPWA(){
+  try{
+    if(document.head && !document.querySelector('link[rel="manifest"]')){
+      function meta(name, content){ var m=document.createElement("meta"); m.name=name; m.content=content; document.head.appendChild(m); }
+      var l=document.createElement("link"); l.rel="manifest"; l.href="manifest.webmanifest"; document.head.appendChild(l);
+      var ai=document.createElement("link"); ai.rel="apple-touch-icon"; ai.href="icon.svg"; document.head.appendChild(ai);
+      if(!document.querySelector('meta[name="theme-color"]')) meta("theme-color", "#0071e3");
+      meta("apple-mobile-web-app-capable", "yes");
+      meta("apple-mobile-web-app-status-bar-style", "black-translucent");
+      meta("apple-mobile-web-app-title", "Detecta");
+    }
+    if("serviceWorker" in navigator && (location.protocol==="https:" || location.hostname==="localhost" || location.hostname==="127.0.0.1")){
+      window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
+    }
+  }catch(e){}
+})();
+
+</script>
 </body>
 </html>

@@ -48,6 +48,10 @@ Es un único `index.html` que corre 100 % en el navegador, sin paso de compilaci
   - `api/cron.js` — monitor autónomo: consulta SECOP, puntúa, verifica anticipo y avisa por **Telegram**.
   - `api/resumen.js` — resumen IA por proceso (Anthropic; **de pago**, opcional; la web usa un resumen local gratis).
   - `lib/engine.js` — motor de encaje portado a Node para que el cron calcule lo mismo que la web.
+- **PWA** (`manifest.webmanifest`, `sw.js`, `icon.svg`) — instalar "Detecta" como app y servir el
+  app-shell offline. El SW cachea solo el shell (network-first en navegación, respaldo al `index.html`);
+  los datos de SECOP/GDELT siempre van a la red. El último radar se guarda en `localStorage`
+  (`detecta-last-radar-v1`) y se re-renderiza si arrancas sin conexión.
 
 ## Reglas de negocio clave (motor de encaje, 0–100)
 1. **K residual suficiente · 35 pts** — `CRPC = (Presupuesto − Anticipo) × 12 / Plazo` debe ser ≤ a la
@@ -83,6 +87,23 @@ Dos bloques `<style>` (antes de `</style>`) y **dos bloques `<script>`** (antes 
   municipio (`aggregateMunis`), colorea por **riesgo GDELT** (consulta throttled, reusa `newsCache`). Si Leaflet
   o la red fallan, degrada a un **ranking de municipios** con riesgo bajo demanda.
 - Accesibilidad: `:focus-visible`, `prefers-reduced-motion` desactiva todo el movimiento.
+
+### Capa #3 — 10 ideas nuevas (`detectaV3`, un `<style>` + un `<script>` antes de `</body>`)
+Envuelve `renderProcesses` por encima de #1/#2 (aplica overrides de cierre **antes** de llamar al inner) y
+`analizarPliego` (post-proceso). Todo gratis, sin red salvo GDELT bajo demanda. Claves `localStorage` propias:
+1. **Calendario `.ics`** — exporta cierres (con `VALARM` −1 día / −3 h) por proceso o en lote desde "Próximos cierres".
+2. **Comparador** lado a lado de 2–3 procesos (bandeja flotante + modal): encaje, K, valor, cierre, riesgo, anticipo.
+3. **Vistas guardadas + deep-link `#`** — serializa filtros+perfil+pestaña al hash; "Copiar enlace" y vistas
+   (`detecta-vistas-v1`). Barra inyectada bajo `.filters-simple`.
+4. **Pipeline ponderado** (panel Resumen) — valor bruto → ×encaje → ×(1−descuento de riesgo GDELT). Botón para
+   estimar riesgo de los municipios top (reusa `newsCache`/`riskScore`/`classifyRisk`).
+5. **OCR → fecha de cierre** — `extraerFechaCierrePliego` parsea fechas ES en el texto del pliego y la **asocia**
+   a un proceso del radar (`detecta-cierres-override-v1`); cierra el hueco cuando datos abiertos no la traen.
+6. **Tendencia semanal** — snapshot diario por perfil (`detecta-tendencia-v1`) + sparkline SVG en Resumen.
+7. **Calculadora de consorcio** (pestaña Juntos) — slider de % participación; pondera K (`calcK`) e índices en vivo.
+8. **Alertas locales** (Notification API, `detecta-alertas-on/-sent`) — avisa de procesos guardados ★ con cierre ≤48 h.
+9. **Tarjeta a imagen** — `<canvas>` 1080×1350 lista para WhatsApp (Web Share API o descarga PNG; sin CDN).
+10. **PWA** — `manifest.webmanifest` + `sw.js` + `icon.svg` (ver Arquitectura).
 
 ## Convenciones
 - Español en UI, comentarios y mensajes de commit. Estética tipo Apple (system fonts + Inter, sutil, claro).
