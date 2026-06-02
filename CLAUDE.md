@@ -1,6 +1,10 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Detecta · Inteligencia de licitaciones SECOP II
 
-Memoria del proyecto para futuras sesiones. Si retomas el trabajo, lee esto primero.
+Memoria del proyecto. Si retomas el trabajo, lee esto primero.
 
 ## Qué es y para qué sirve
 **Detecta** es una herramienta privada para **decidir a qué licitaciones de obra civil presentarse** en
@@ -8,8 +12,21 @@ Colombia. Conecta en vivo con los **datos abiertos de SECOP II** (Colombia Compr
 `p6dx-8zbt`), filtra los procesos compatibles con dos perfiles reales y calcula, para cada uno, un
 **puntaje de encaje 0–100**. El fin es **priorizar dónde mirar primero**, no reemplazar la lectura del pliego.
 
-> Importante: el encaje mide qué tan bien encaja un proceso con el perfil (habilitantes, cuantía,
-> ubicación, capacidad, fase). **No es la probabilidad de ganar.**
+> El encaje mide qué tan bien encaja un proceso con el perfil (habilitantes, cuantía, ubicación, capacidad,
+> fase). **No es la probabilidad de ganar.**
+
+## Flujo de trabajo (no hay build, lint ni tests)
+Es un único `index.html` que corre 100 % en el navegador, sin paso de compilación.
+- **Probar a ojo:** abrir `index.html` en el navegador, o desplegar en Vercel (para que vivan `/api/*`).
+- **Validar el JS sin navegador** (este entorno no tiene Chromium): extraer cada bloque `<script>` inline y
+  pasarlo por `new Function(code)` con Node — valida sintaxis sin ejecutar. Hay 6 bloques inline.
+- **Smoke test de la capa de mejoras:** ejecutar los bloques `<script>` de mejoras en un contexto `vm` de Node
+  con un *shim* mínimo de DOM (getElementById/querySelectorAll/createElement/classList/localStorage/
+  requestAnimationFrame/Blob/URL) + mocks de `currentProfile`, `SMMLV`, `renderProcesses`, Leaflet (`L`) y
+  fetch. Confirma que init + render del dashboard + mapa + CSV + tema no lanzan en runtime.
+- **Red:** este entorno de desarrollo **no** tiene salida a `datos.gov.co` ni GDELT (allowlist). El código se
+  prueba en el navegador real del usuario. Por eso el campo de fecha de cierre se detecta de forma defensiva
+  (varios nombres candidatos) y el mapa/riesgo degradan con gracia si la red o el CDN fallan.
 
 ## Los perfiles (datos reales de los RUP, corte 07/05/2026)
 - **Helder Gustavo Rodríguez Santana** — persona natural, Ing. Civil, Purificación (Tolima).
@@ -19,19 +36,22 @@ Colombia. Conecta en vivo con los **datos abiertos de SECOP II** (Colombia Compr
 - **Helder + Génesis** — consorcio/unión temporal. Patrimonio combinado $1.318 M · 138 contratos · 393 clases.
 
 ## Arquitectura
-- **`index.html`** — TODA la app en un solo archivo (HTML+CSS+JS, sin build). Se ejecuta en el navegador.
+- **`index.html`** — TODA la app (HTML+CSS+JS, sin dependencias de pago).
   - Gate de seguridad por contraseña (SHA-256 + salt; respaldo local + `/api/auth` en producción).
-  - 8 pestañas: **Resumen** (dashboard), Helder, Génesis, Juntos, Pliego, Rentabilidad, APU, Manual.
+  - Pestañas: **Resumen** (dashboard, por defecto), Helder, Génesis, Juntos, **Mapa**, Pliego,
+    Rentabilidad, APU, Manual.
   - Whitelists UNSPSC (`UNSPSC_HELDER/GENESIS/JUNTOS`) **embebidas** en un `<script>` del `<head>`.
+  - `COORDS_MUNICIPIOS` (≈57 municipios lat/lng), `BASES`, `HUBS_AIRE`, `resolverCoords()` → geografía/radio.
+  - Motor de riesgo GDELT: `classifyArticle` → `riskScore` → `classifyRisk` (caché en `newsCache`).
 - **`api/` + `vercel.json`** (opcional, requiere Vercel + variables de entorno):
   - `api/proxy.js` — proxy de Socrata con App Token (CORS + más cuota).
   - `api/cron.js` — monitor autónomo: consulta SECOP, puntúa, verifica anticipo y avisa por **Telegram**.
-  - `api/resumen.js` — resumen IA por proceso (Anthropic; **de pago**, opcional).
+  - `api/resumen.js` — resumen IA por proceso (Anthropic; **de pago**, opcional; la web usa un resumen local gratis).
   - `lib/engine.js` — motor de encaje portado a Node para que el cron calcule lo mismo que la web.
 
 ## Reglas de negocio clave (motor de encaje, 0–100)
-1. **K residual suficiente · 35 pts** — el K exigido (`CRPC = (Presupuesto − Anticipo) × 12 / Plazo`) debe
-   ser ≤ a la capacidad residual del proponente (`CRP = CO × (E+CT+CF)/100 − SCE`, Guía CCE-EICP-GI-22).
+1. **K residual suficiente · 35 pts** — `CRPC = (Presupuesto − Anticipo) × 12 / Plazo` debe ser ≤ a la
+   capacidad residual `CRP = CO × (E+CT+CF)/100 − SCE` (Guía CCE-EICP-GI-22).
 2. **UNSPSC en el RUP · 20 pts** — match por **clase exacta de 8 dígitos** (no por segmento).
 3. **Cuantía dentro del tope · 15 pts** — topes estratégicos: Helder ~4.000 SMMLV, Génesis ~2.000, juntos ~11.000.
 4. **Fase · 10 pts** — selección activa = 10; borrador = 7; adjudicado/cerrado = 0.
@@ -43,32 +63,36 @@ UNSPSC duro → whitelist obra (cuando SECOP no declara UNSPSC) → sin OPS.
 
 - **CO** (ingreso operacional) se **estima** desde la utilidad operacional × `MARGIN_MULTIPLIER` (16.7 ≈ margen 6%),
   porque el RUP no reporta el ingreso. Es editable por el usuario (tiene prioridad si conoce el real).
-- **SMMLV 2026 = $1.750.905.**
-- Datos externos: SECOP II (datos.gov.co) y **GDELT** (índice de riesgo de seguridad por municipio, sin clave).
-- Persistencia: `localStorage` (`radar-licit-v1` para ediciones del perfil; ver claves nuevas abajo).
+- **SMMLV 2026 = $1.750.905.** Datos externos: SECOP II (datos.gov.co) y **GDELT** (riesgo de seguridad, sin clave).
 
 ## Mejoras 2026 (capa aditiva, todo gratis, sin tocar la lógica existente)
-Añadidas como **un bloque `<style>`** (antes de `</style>`) y **un bloque `<script>`** (antes de `</body>`)
-que comparten el ámbito global clásico (pueden leer `currentProfile`, `profiles`, `SMMLV`, `renderProcesses`…)
-y hacen **monkey-patch** no invasivo de `renderProcesses`/`loadProcesses`.
+Dos bloques `<style>` (antes de `</style>`) y **dos bloques `<script>`** (antes de `</body>`) que comparten el
+ámbito global clásico (leen `currentProfile`, `profiles`, `SMMLV`, `renderProcesses`, `resolverCoords`,
+`riskScore`…) y hacen **monkey-patch** no invasivo de `renderProcesses`/`loadProcesses`. La capa #2 envuelve
+`renderProcesses` por encima de la #1.
 
 - **Modo oscuro** con persistencia (`detecta-theme`) y respeto a `prefers-color-scheme`. Botón ☾/☀ en el header.
-- **Anillos de puntaje** animados (SVG) en cada tarjeta de proceso.
-- **Count-up** de números, **reveal on scroll** (IntersectionObserver) y **entrada escalonada** de tarjetas.
-- **Skeletons** mientras carga SECOP.
+- **Anillos de puntaje** (SVG), **count-up**, **reveal on scroll** (IntersectionObserver) y **entrada escalonada**
+  con easing suave tipo Apple `cubic-bezier(.16,1,.3,1)`. **Skeletons** mientras carga SECOP.
 - **Watchlist ★** por proceso (`detecta-watchlist-v1`) + filtro "Solo guardados" + **exportar CSV**.
-- **Dashboard "Resumen"** (pestaña por defecto): nº afines, encaje alto ≥75, valor total en juego,
-  mejor encaje, distribución por banda y Top 5 oportunidades.
+- **Dashboard "Resumen"** (pestaña por defecto): nº afines, encaje alto ≥75, valor total, mejor encaje,
+  distribución por banda, Top 5 y **Próximos cierres**.
+- **Cuenta regresiva de cierre** por proceso: `mapProcess` añade `cierre` (detección defensiva en `fechaCierre`,
+  porque el dataset no garantiza una columna única); badge de urgencia por tarjeta + panel en el dashboard.
+- **Mini-mapa** (pestaña Mapa): Leaflet lazy-load (unpkg) + tiles CARTO claro/oscuro; agrega oportunidades por
+  municipio (`aggregateMunis`), colorea por **riesgo GDELT** (consulta throttled, reusa `newsCache`). Si Leaflet
+  o la red fallan, degrada a un **ranking de municipios** con riesgo bajo demanda.
 - Accesibilidad: `:focus-visible`, `prefers-reduced-motion` desactiva todo el movimiento.
-- Meta tags (description, theme-color, Open Graph).
 
 ## Convenciones
 - Español en UI, comentarios y mensajes de commit. Estética tipo Apple (system fonts + Inter, sutil, claro).
-- **Sin dependencias de pago.** PDF.js y Tesseract.js (OCR del pliego) se cargan por CDN/lazy-load.
+- **Sin dependencias de pago.** PDF.js, Tesseract.js (OCR del pliego) y Leaflet (mapa) se cargan por CDN/lazy-load.
 - Cambios nuevos: preferir **capa aditiva** + monkey-patch antes que reescribir funciones existentes.
 - No debilitar el gate de seguridad ni el anti-iframe sin pedir permiso.
 
 ## Pendiente por verificar (dato del negocio)
 - **Nº de contratos de Génesis**: la ficha visible mostraba 105/138 y la config JS 108/141. Se alineó todo a
   **105 (Génesis) / 138 (juntos)** porque `numContratos` es informativo (no entra en ningún cálculo). Si el RUP
-  real dice 108, corregir en `profiles.genesis.numContratos` y `profiles.juntos.numContratos` (índice ~1207/1224).
+  real dice 108, corregir en `profiles.genesis.numContratos` y `profiles.juntos.numContratos`.
+- **Campo de fecha de cierre**: confirmar en producción (con red a SECOP) cuál de los nombres en
+  `CIERRE_CANDIDATOS` puebla `fechaCierre`; si ninguno aplica, la cuenta regresiva queda vacía (degradación limpia).

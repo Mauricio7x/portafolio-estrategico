@@ -375,13 +375,13 @@
   html[data-theme="dark"] .theme-toggle svg{transform:rotate(360deg)}
 
   /* — Reveal al hacer scroll (IntersectionObserver añade .in) — */
-  .reveal{opacity:0;transform:translateY(16px);will-change:opacity,transform;
-    transition:opacity .6s cubic-bezier(.2,.7,.2,1),transform .6s cubic-bezier(.2,.7,.2,1)}
+  .reveal{opacity:0;transform:translateY(10px);will-change:opacity,transform;
+    transition:opacity .72s cubic-bezier(.16,1,.3,1),transform .72s cubic-bezier(.16,1,.3,1)}
   .reveal.in{opacity:1;transform:none}
 
   /* — Entrada escalonada de tarjetas (KPI, procesos, dashboard) — */
-  @keyframes pop-in{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
-  .stagger-in{animation:pop-in .5s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes pop-in{from{opacity:0;transform:translateY(9px) scale(.994)}to{opacity:1;transform:none}}
+  .stagger-in{animation:pop-in .58s cubic-bezier(.16,1,.3,1) both}
 
   /* — Micro-interacción en tabs y botones — */
   .tab:active{transform:scale(.96)}
@@ -395,7 +395,7 @@
   .score-ring svg{width:54px;height:54px;transform:rotate(-90deg)}
   .score-ring .ring-bg{fill:none;stroke:var(--line2);stroke-width:5}
   .score-ring .ring-bar{fill:none;stroke-width:5;stroke-linecap:round;
-    stroke-dasharray:138.2;stroke-dashoffset:138.2;transition:stroke-dashoffset 1.1s cubic-bezier(.2,.7,.2,1)}
+    stroke-dasharray:138.2;stroke-dashoffset:138.2;transition:stroke-dashoffset 1.2s cubic-bezier(.16,1,.3,1)}
   .score-ring.rs-high .ring-bar{stroke:var(--green)}
   .score-ring.rs-mid  .ring-bar{stroke:var(--amber)}
   .score-ring.rs-low  .ring-bar{stroke:var(--red)}
@@ -431,7 +431,7 @@
   .dash-card .spark{position:absolute;right:-6px;bottom:-6px;font-size:60px;opacity:.06;line-height:1}
   .dash-dist{display:flex;align-items:flex-end;gap:14px;height:150px;padding:10px 4px 0;border-bottom:1px solid var(--line2)}
   .dash-dist .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:8px;height:100%}
-  .dash-dist .bar{width:100%;max-width:64px;border-radius:8px 8px 0 0;height:0;transition:height .9s cubic-bezier(.2,.7,.2,1)}
+  .dash-dist .bar{width:100%;max-width:64px;border-radius:8px 8px 0 0;height:0;transition:height 1s cubic-bezier(.16,1,.3,1)}
   .dash-dist .bar.b-high{background:linear-gradient(180deg,var(--green),#5fd37c)}
   .dash-dist .bar.b-mid{background:linear-gradient(180deg,var(--amber),#e6c14a)}
   .dash-dist .bar.b-low{background:linear-gradient(180deg,var(--red),#e0726b)}
@@ -446,6 +446,43 @@
   .dash-top-name{font-size:13.5px;font-weight:600;line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
   .dash-top-meta{font-size:11.5px;color:var(--ink2);margin-top:3px}
   .dash-empty{text-align:center;color:var(--ink2);padding:34px 14px;font-size:14px}
+
+  /* — Cuenta regresiva de cierre por proceso — */
+  .proc-deadline{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;
+    padding:4px 9px;border-radius:7px;white-space:nowrap;letter-spacing:.02em;margin-top:6px}
+  .proc-deadline .dl-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+  .dl-soon{background:rgba(179,38,30,.1);color:var(--red)}
+  .dl-soon .dl-dot{background:var(--red);animation:p 1.6s infinite}
+  .dl-near{background:rgba(154,107,0,.1);color:var(--amber)}.dl-near .dl-dot{background:var(--amber)}
+  .dl-ok{background:rgba(28,140,74,.1);color:var(--green)}.dl-ok .dl-dot{background:var(--green)}
+  .dl-closed{background:var(--soft);color:var(--ink2)}.dl-closed .dl-dot{background:var(--ink2)}
+  .dash-deadlines{margin-top:4px}
+  .dash-dl-item{display:flex;align-items:center;gap:14px;padding:12px 4px;border-bottom:1px solid var(--line2);text-decoration:none;color:inherit;border-radius:8px;transition:background .15s}
+  .dash-dl-item:hover{background:var(--soft)} .dash-dl-item:last-child{border-bottom:0}
+  .dash-dl-when{font-family:'Inter',sans-serif;font-weight:700;font-size:13px;width:96px;flex-shrink:0;font-variant-numeric:tabular-nums}
+  .dash-dl-main{flex:1;min-width:0}
+  .dash-dl-name{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dash-dl-meta{font-size:11.5px;color:var(--ink2);margin-top:2px}
+
+  /* — Mini-mapa de oportunidades (Leaflet, lazy-load) — */
+  #map-canvas{height:440px;border-radius:14px;overflow:hidden;background:var(--soft);z-index:0}
+  .leaflet-container{font-family:inherit !important;background:var(--soft)}
+  .map-fallback{display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:8px;text-align:center;color:var(--ink2);font-size:13px;padding:24px}
+  .map-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--ink2)}
+  .map-legend span{display:flex;align-items:center;gap:6px}
+  .map-legend i{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .map-muni-list{margin-top:6px}
+  .map-muni{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line2);cursor:pointer;border-radius:8px;transition:background .15s}
+  .map-muni:hover{background:var(--soft)} .map-muni:last-child{border-bottom:0}
+  .map-muni-rank{width:22px;text-align:center;font-weight:700;color:var(--ink2);font-family:'Inter',sans-serif;flex-shrink:0}
+  .map-muni-main{flex:1;min-width:0}
+  .map-muni-name{font-size:13.5px;font-weight:600}
+  .map-muni-meta{font-size:11.5px;color:var(--ink2);margin-top:2px}
+  .map-risk-chip{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;flex-shrink:0}
+  .map-pop b{font-weight:600}.map-pop .pop-t{font-size:13px;font-weight:700;margin-bottom:4px}
+  html[data-theme="dark"] .leaflet-popup-content-wrapper,
+  html[data-theme="dark"] .leaflet-popup-tip{background:#1f1f22;color:var(--ink);box-shadow:0 6px 24px rgba(0,0,0,.5)}
+  html[data-theme="dark"] .leaflet-bar a{background:#2a2a2c;color:var(--ink);border-color:#3a3a3c}
 
   /* — prefers-reduced-motion: desactiva todo el movimiento — */
   @media (prefers-reduced-motion: reduce){
@@ -674,6 +711,7 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
     <button class="tab" data-tab="helder">Helder</button>
     <button class="tab" data-tab="genesis">Génesis</button>
     <button class="tab" data-tab="juntos">Helder + Génesis</button>
+    <button class="tab" data-tab="mapa">Mapa</button>
     <button class="tab" data-tab="pliego">Pliego</button>
     <button class="tab" data-tab="rentab">Rentabilidad</button>
     <button class="tab" data-tab="apu">APU</button>
@@ -714,6 +752,12 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
       <h3>Top 5 oportunidades</h3>
       <p class="desc">Las de mayor encaje ahora mismo. Pulse cualquiera para abrirla en SECOP II.</p>
       <div class="dash-top" id="dash-top"><div class="dash-empty">Cargando procesos del radar…</div></div>
+    </div>
+
+    <div class="panel reveal" id="dash-deadlines-wrap">
+      <h3>Próximos cierres <span id="dash-dl-count" style="font-size:13px;color:var(--ink2);font-weight:500"></span></h3>
+      <p class="desc">Ordenados por fecha de cierre más cercana, para <b>no perder plazos</b>. La fecha sale del expediente de SECOP cuando los datos abiertos la exponen; si no, queda en el pliego.</p>
+      <div class="dash-deadlines" id="dash-deadlines"><div class="dash-empty">Cargando próximos cierres…</div></div>
     </div>
   </section>
 
@@ -796,6 +840,29 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
       <div class="strat">
         Helder aporta la capacidad financiera (liquidez 129, patrimonio &gt;$1.100M); Génesis aporta el volumen de experiencia (105 contratos). En un consorcio, los indicadores financieros se ponderan por porcentaje de participación, así que un reparto 50-50 mantiene los mínimos cómodos. Ideal para procesos donde ninguno alcanza solo los habilitantes.
       </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- MAPA · oportunidades por municipio × riesgo GDELT -->
+  <!-- ============================================================ -->
+  <section id="sec-mapa">
+    <div class="panel reveal">
+      <h3>Mapa de oportunidades · riesgo por municipio</h3>
+      <p class="desc">Cada punto es un municipio con procesos afines al perfil activo. El <b>tamaño</b> refleja cuántas oportunidades concentra; el <b>color</b>, su índice de riesgo de seguridad según <b>GDELT</b> (se consulta bajo demanda y se cachea). Cruce dónde está la plata con dónde está el riesgo, antes de mover una cuadrilla.</p>
+      <div id="map-canvas"><div class="map-fallback"><span class="loading"></span> Preparando el mapa…</div></div>
+      <div class="map-legend">
+        <span><i style="background:#1c8c4a"></i>Bajo / sin alertas</span>
+        <span><i style="background:#9a6b00"></i>Medio</span>
+        <span><i style="background:#b3261e"></i>Alto</span>
+        <span><i style="background:#7a1015"></i>Crítico</span>
+        <span><i style="background:#8e8e93"></i>Riesgo sin consultar</span>
+      </div>
+    </div>
+    <div class="panel reveal">
+      <h3>Municipios por concentración de oportunidades</h3>
+      <p class="desc">Ranking por nº de procesos y valor total para el perfil activo. Pulse uno para centrarlo en el mapa y consultar su riesgo.</p>
+      <div class="map-muni-list" id="map-muni-list"><div class="dash-empty">Cargando municipios…</div></div>
     </div>
   </section>
 
@@ -1933,6 +2000,27 @@ async function fetchWithProxy(url){
   throw new Error("Sin conexión a SECOP II (proxy propio y respaldos agotados)");
 }
 
+// El dataset de Procesos no expone una única "fecha de cierre" estable: según
+// la modalidad, el plazo para ofertar vive en distintas columnas. Buscamos de
+// forma defensiva la fecha de recepción/cierre/límite (la primera válida).
+const CIERRE_CANDIDATOS = [
+  "fecha_de_recepcion_de","fecha_de_recepci_n_de","fecha_l_mite_de_recepci",
+  "fecha_de_cierre","fecha_l_mite","fecha_de_apertura_de_respuesta","fecha_de_apertura_efectiva"
+];
+function fechaCierre(row){
+  for(const k of CIERRE_CANDIDATOS){
+    const v = row[k];
+    if(v && !isNaN(Date.parse(v))) return v;
+  }
+  for(const k in row){
+    if(/fecha/i.test(k) && /(recep|cierre|l[ií]mit|plazo)/i.test(k)){
+      const v = row[k];
+      if(v && !isNaN(Date.parse(v))) return v;
+    }
+  }
+  return null;
+}
+
 function mapProcess(row){
   const F = SECOP.f;
   // Socrata devuelve campos URL como objeto {url, description}. Sacamos .url.
@@ -1950,6 +2038,7 @@ function mapProcess(row){
     ciudad:     row[F.ciudad] || "",
     depto:      row[F.depto] || "",
     fecha:      row[F.fecha] || "",
+    cierre:     fechaCierre(row),   // fecha límite para ofertar (puede ser null)
     valor:      parseFloat(row[F.valor]) || 0,
     duracion:   parseInt(row[F.duracion]) || 12,
     unidadDur:  row[F.unidadDur] || "Meses",
@@ -4645,6 +4734,239 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     renderDashboard(window._dashList || []);
     setTimeout(function(){ entranceFor("resumen"); }, 60);
   }catch(e){ console.error("wiring:",e); }
+})();
+</script>
+
+<!-- ════════════════════════════════════════════════════════════════
+     MEJORAS 2026 · capa aditiva #2
+     Cuenta regresiva de cierre por proceso + panel "Próximos cierres" +
+     mini-mapa de oportunidades × riesgo GDELT (Leaflet lazy-load, gratis,
+     con respaldo en lista si el mapa o la red fallan). Vuelve a envolver
+     renderProcesses por encima de la capa #1, sin tocar la lógica base.
+     ════════════════════════════════════════════════════════════════ -->
+<script>
+(function detectaEnhance2(){
+  "use strict";
+  function esc(s){ try{ return escapeHTML(s); }catch(e){ return String(s==null?"":s); } }
+  function money(n){ n=Math.max(0,n||0);
+    if(n>=1e9) return "$"+(n/1e9).toLocaleString("es-CO",{maximumFractionDigits:2})+" mil M";
+    if(n>=1e6) return "$"+(n/1e6).toLocaleString("es-CO",{maximumFractionDigits:1})+" M";
+    if(n>=1e3) return "$"+Math.round(n/1e3).toLocaleString("es-CO")+" mil";
+    return "$"+Math.round(n).toLocaleString("es-CO"); }
+  function curList(){ return window._dashList || window._lastProcesses || []; }
+  function titleCase(s){ return String(s||"").toLowerCase().replace(/(^|[\s\-\/])([a-záéíóúñü])/g,function(_,sep,ch){return sep+ch.toUpperCase();}); }
+  function fmtFecha(s){ try{ return fmtDate(s); }catch(e){ var d=new Date(s); return isNaN(d)?String(s):d.toLocaleDateString("es-CO"); } }
+
+  /* ───────── CUENTA REGRESIVA DE CIERRE ───────── */
+  function diasHasta(f){ if(!f) return null; var t=Date.parse(f); if(isNaN(t)) return null; return Math.floor((t-Date.now())/86400000); }
+  function deadlineMeta(f){
+    var d=diasHasta(f); if(d===null) return null;
+    if(d<0)   return {cls:"dl-closed",txt:"Cerrado",d:d};
+    if(d===0) return {cls:"dl-soon",txt:"¡Cierra hoy!",d:d};
+    if(d<=2)  return {cls:"dl-soon",txt:"Cierra en "+d+(d===1?" día":" días"),d:d};
+    if(d<=7)  return {cls:"dl-near",txt:"Cierra en "+d+" días",d:d};
+    return {cls:"dl-ok",txt:"Cierra en "+d+" días",d:d};
+  }
+  function injectDeadlines(list){
+    var cont=document.getElementById("proc-list"); if(!cont) return;
+    cont.querySelectorAll(".proc").forEach(function(card,idx){
+      var p=list[idx]; if(!p) return;
+      var sc=card.querySelector(".proc-score"); if(!sc || sc.querySelector(".proc-deadline")) return;
+      var m=deadlineMeta(p.cierre); if(!m) return;
+      var b=document.createElement("div");
+      b.className="proc-deadline "+m.cls;
+      b.title="Cierre detectado en datos abiertos: "+fmtFecha(p.cierre)+" (confirme siempre en el pliego)";
+      b.innerHTML='<span class="dl-dot"></span>'+esc(m.txt);
+      sc.appendChild(b);
+    });
+  }
+  function renderDeadlinesPanel(list){
+    var box=document.getElementById("dash-deadlines"), cnt=document.getElementById("dash-dl-count");
+    if(!box) return;
+    var withDate=list.filter(function(p){ var d=diasHasta(p.cierre); return d!==null && d>=0; })
+                     .sort(function(a,b){ return Date.parse(a.cierre)-Date.parse(b.cierre); });
+    var soon=withDate.filter(function(p){ return diasHasta(p.cierre)<=7; }).length;
+    if(cnt) cnt.textContent = withDate.length ? "· "+soon+" en ≤7 días" : "";
+    if(!withDate.length){
+      box.innerHTML='<div class="dash-empty">No se detectó fecha de cierre en los datos abiertos de estos procesos. Suele estar dentro del pliego (pestaña «Pliego»).</div>';
+      return;
+    }
+    box.innerHTML=withDate.slice(0,8).map(function(p){
+      var m=deadlineMeta(p.cierre), col=m.cls==="dl-soon"?"var(--red)":m.cls==="dl-near"?"var(--amber)":"var(--green)";
+      var when=m.d===0?"hoy":"en "+m.d+"d";
+      var ubic=[p.ciudad,p.depto].filter(Boolean).join(", ")||"sin ubicación";
+      var inner='<div class="dash-dl-when" style="color:'+col+'">'+when+'</div>'+
+        '<div class="dash-dl-main"><div class="dash-dl-name">'+esc(p.nombre||"—")+'</div>'+
+        '<div class="dash-dl-meta">'+esc(p.entidad||"")+' · '+esc(ubic)+' · cierra '+esc(fmtFecha(p.cierre))+' · encaje '+(p._score||0)+'</div></div>';
+      return p.url ? '<a class="dash-dl-item" href="'+esc(p.url)+'" target="_blank" rel="noopener">'+inner+'</a>'
+                   : '<div class="dash-dl-item">'+inner+'</div>';
+    }).join("");
+  }
+
+  /* ───────── MINI-MAPA × RIESGO GDELT ───────── */
+  var RISK_COLORS={critical:"#7a1015",high:"#b3261e",medium:"#9a6b00",low:"#1c8c4a",none:"#1c8c4a"};
+  function muniKeyOf(m){ return (m.depto||"").trim().toLowerCase()+"|"+(m.ciudad||"").trim().toLowerCase(); }
+  function aggregateMunis(list){
+    var map={};
+    list.forEach(function(p){
+      if(!p.ciudad && !p.depto) return;
+      var pt; try{ pt=resolverCoords(p.ciudad,p.depto); }catch(e){ pt=null; }
+      if(!pt) return;
+      var k=(p.depto||"").trim().toLowerCase()+"|"+(p.ciudad||"").trim().toLowerCase();
+      if(!map[k]) map[k]={ciudad:p.ciudad||"",depto:p.depto||"",lat:pt.lat,lng:pt.lng,count:0,value:0,best:0,muni:(p.ciudad||p.depto||"")};
+      var m=map[k]; m.count++; m.value+=(p.valor||0); if((p._score||0)>m.best) m.best=p._score||0;
+    });
+    return Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){ return b.count-a.count || b.value-a.value; });
+  }
+  function riesgoMuni(muni){
+    return new Promise(function(resolve){
+      var key=(muni||"").trim().toLowerCase(), cache;
+      try{ cache=newsCache; }catch(e){ cache={}; }
+      function done(arts){
+        var score=0, info={level:"none",label:"Sin alertas"};
+        try{ score=riskScore(arts); info=classifyRisk(score); }catch(e){}
+        resolve({arts:arts,score:score,info:info});
+      }
+      if(cache[key]){ done(cache[key]); return; }
+      var terminos='atentado OR "ataque armado" OR explosivo OR secuestro OR masacre OR homicidio OR asesinato OR extorsion OR "grupo armado" OR ELN OR disidencias OR "Clan del Golfo" OR paramilitar OR hostigamiento OR "mina antipersonal" OR "paro armado"';
+      var q=encodeURIComponent('"'+muni+'" ('+terminos+')');
+      var url="https://api.gdeltproject.org/api/v2/doc/doc?query="+q+"&mode=ArtList&maxrecords=40&sort=DateDesc&format=json&timespan=180d&sourcelang=spanish";
+      var ft=null; try{ ft=fetchTimeout; }catch(e){}
+      var p = ft ? ft(url,{headers:{"Accept":"application/json"}},14000) : fetch(url);
+      Promise.resolve(p).then(function(r){ return r && r.ok ? r.json() : {}; }).then(function(data){
+        var arts=(data&&Array.isArray(data.articles))?data.articles.filter(function(a){return a.title;}).map(function(a){return {title:a.title,url:a.url,seendate:a.seendate,domain:a.domain};}):[];
+        try{ cache[key]=arts; }catch(e){}
+        done(arts);
+      }).catch(function(){ done([]); });
+    });
+  }
+
+  var leafletPromise=null;
+  function ensureLeaflet(){
+    if(window.L) return Promise.resolve(window.L);
+    if(leafletPromise) return leafletPromise;
+    leafletPromise=new Promise(function(resolve,reject){
+      try{
+        var css=document.createElement("link"); css.rel="stylesheet";
+        css.href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"; document.head.appendChild(css);
+        var s=document.createElement("script"); s.src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+        s.onload=function(){ window.L?resolve(window.L):reject(new Error("Leaflet sin L")); };
+        s.onerror=function(){ reject(new Error("CDN Leaflet bloqueado")); };
+        document.body.appendChild(s);
+      }catch(e){ reject(e); }
+    });
+    return leafletPromise;
+  }
+  function tileURL(){ return document.documentElement.getAttribute("data-theme")==="dark"
+    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+    : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"; }
+
+  var mapObj=null, mapMarkers={}, mapChips={}, riskDone=new Set(), riskQueue=[], riskBusy=false;
+  function popupHTML(m,res){
+    var risk=res?(res.info.label||"—"):"consultando…", col=res?(RISK_COLORS[res.info.level]||"#8e8e93"):"#8e8e93";
+    return '<div class="map-pop"><div class="pop-t">'+esc(titleCase(m.muni))+'</div>'+
+      '<div style="font-size:12px;line-height:1.5">'+m.count+' proceso'+(m.count===1?"":"s")+' afín'+(m.count===1?"":"es")+'<br>'+
+      '<b>'+money(m.value)+'</b> en juego<br>mejor encaje <b>'+m.best+'/100</b><br>'+
+      '<span style="display:inline-block;margin-top:6px;padding:2px 8px;border-radius:6px;background:'+col+';color:#fff;font-size:11px;font-weight:600">Riesgo '+esc(risk)+'</span></div></div>';
+  }
+  function paintRisk(m,res){
+    var k=muniKeyOf(m), color=RISK_COLORS[res.info.level]||"#8e8e93";
+    var mk=mapMarkers[k];
+    if(mk && mk.setStyle){ try{ mk.setStyle({fillColor:color,color:color}); mk.setPopupContent && mk.setPopupContent(popupHTML(m,res)); }catch(e){} }
+    var chip=mapChips[k];
+    if(chip){ chip.textContent="riesgo "+(res.info.label||"—").toLowerCase(); chip.style.background=color; chip.style.color="#fff"; }
+  }
+  function consultarRiesgo(m){ var k=muniKeyOf(m); if(riskDone.has(k)) return; riskDone.add(k); riskQueue.push(m); pumpRisk(); }
+  function autoRiesgos(munis){ munis.slice(0,12).forEach(function(m){ var k=muniKeyOf(m); if(!riskDone.has(k)){ riskDone.add(k); riskQueue.push(m); } }); pumpRisk(); }
+  function pumpRisk(){
+    if(riskBusy) return;
+    var m=riskQueue.shift(); if(!m) return;
+    riskBusy=true;
+    riesgoMuni(m.muni).then(function(res){ try{ paintRisk(m,res); }catch(e){} })
+      .catch(function(){})
+      .then(function(){ riskBusy=false; setTimeout(pumpRisk,350); });
+  }
+  function renderMuniList(munis){
+    var box=document.getElementById("map-muni-list"); if(!box) return;
+    if(!munis.length){ box.innerHTML='<div class="dash-empty">Sin municipios con coordenadas conocidas en el radar actual.</div>'; mapChips={}; return; }
+    box.innerHTML=munis.slice(0,20).map(function(m,i){
+      var k=muniKeyOf(m);
+      return '<div class="map-muni" data-k="'+esc(k)+'">'+
+        '<div class="map-muni-rank">'+(i+1)+'</div>'+
+        '<div class="map-muni-main"><div class="map-muni-name">'+esc(titleCase(m.muni))+'<span style="color:var(--ink2);font-weight:400"> · '+esc(titleCase(m.depto))+'</span></div>'+
+        '<div class="map-muni-meta">'+m.count+' proceso'+(m.count===1?"":"s")+' · '+money(m.value)+' · mejor encaje '+m.best+'</div></div>'+
+        '<div class="map-risk-chip" data-k="'+esc(k)+'" style="background:var(--soft);color:var(--ink2)">riesgo ?</div></div>';
+    }).join("");
+    mapChips={}; box.querySelectorAll(".map-risk-chip").forEach(function(c){ mapChips[c.dataset.k]=c; });
+    box.querySelectorAll(".map-muni").forEach(function(el){
+      el.addEventListener("click", function(){
+        var k=el.dataset.k, m=munis.find(function(x){return muniKeyOf(x)===k;});
+        if(!m) return;
+        if(mapObj){ try{ mapObj.setView([m.lat,m.lng],9,{animate:true}); var mk=mapMarkers[k]; if(mk&&mk.openPopup) mk.openPopup(); }catch(e){} }
+        consultarRiesgo(m);
+      });
+    });
+  }
+  function mapFallback(canvas, munis){
+    canvas.innerHTML='<div class="map-fallback">No se pudo cargar el mapa interactivo (red o CDN bloqueado).<br>Use el ranking de municipios de abajo — incluye el riesgo bajo demanda.</div>';
+    autoRiesgos(munis);
+  }
+  function buildMap(L, munis){
+    var canvas=document.getElementById("map-canvas"); if(!canvas) return;
+    canvas.innerHTML="";
+    if(mapObj){ try{ mapObj.remove(); }catch(e){} mapObj=null; }
+    mapMarkers={};
+    mapObj=L.map(canvas,{scrollWheelZoom:false}).setView([4.6,-74.1],5);
+    L.tileLayer(tileURL(),{maxZoom:12,subdomains:"abcd",attribution:'© OpenStreetMap, © CARTO'}).addTo(mapObj);
+    var maxCount=Math.max.apply(null,munis.map(function(m){return m.count;}))||1, bounds=[];
+    munis.forEach(function(m){
+      var r=8+14*Math.sqrt(m.count/maxCount);
+      var mk=L.circleMarker([m.lat,m.lng],{radius:r,color:"#8e8e93",fillColor:"#8e8e93",weight:1.5,opacity:.9,fillOpacity:.55}).addTo(mapObj);
+      mk.bindPopup(popupHTML(m,null),{closeButton:true});
+      mk.on("click", function(){ consultarRiesgo(m); });
+      mapMarkers[muniKeyOf(m)]=mk; bounds.push([m.lat,m.lng]);
+    });
+    if(bounds.length){ try{ mapObj.fitBounds(bounds,{padding:[36,36],maxZoom:8}); }catch(e){} }
+    setTimeout(function(){ try{ mapObj.invalidateSize(); }catch(e){} },60);
+    autoRiesgos(munis);
+  }
+  function renderMap(){
+    var munis=aggregateMunis(curList());
+    renderMuniList(munis);
+    var canvas=document.getElementById("map-canvas"); if(!canvas) return;
+    if(!munis.length){ canvas.innerHTML='<div class="map-fallback">Sin municipios con coordenadas en el radar actual. Cargue procesos desde un perfil.</div>'; return; }
+    ensureLeaflet().then(function(L){
+      try{ buildMap(L,munis); }catch(e){ console.error("map build:",e); mapFallback(canvas,munis); }
+    }).catch(function(){ mapFallback(canvas,munis); });
+  }
+
+  /* ───────── MONKEY-PATCH (sobre la capa #1) + wiring ───────── */
+  try{
+    if(typeof window.renderProcesses==="function"){
+      var _rp2=window.renderProcesses;
+      window.renderProcesses=function(list){
+        var r=_rp2.apply(this, arguments);
+        try{
+          injectDeadlines(list||[]);
+          renderDeadlinesPanel(list||[]);
+          var mapSec=document.getElementById("sec-mapa");
+          if(mapSec && mapSec.classList.contains("active")) renderMap();
+        }catch(e){ console.error("enhance2 render:",e); }
+        return r;
+      };
+    }
+  }catch(e){ console.error("patch2:",e); }
+
+  try{
+    document.querySelectorAll("#tabs .tab").forEach(function(t){
+      t.addEventListener("click", function(){
+        var tab=t.dataset.tab;
+        if(tab==="mapa") setTimeout(renderMap, 40);
+        if(tab==="resumen") setTimeout(function(){ renderDeadlinesPanel(curList()); }, 30);
+      });
+    });
+    renderDeadlinesPanel(curList());
+  }catch(e){ console.error("wiring2:",e); }
 })();
 </script>
 </body>
