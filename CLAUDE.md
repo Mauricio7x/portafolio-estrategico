@@ -1,0 +1,74 @@
+# Detecta · Inteligencia de licitaciones SECOP II
+
+Memoria del proyecto para futuras sesiones. Si retomas el trabajo, lee esto primero.
+
+## Qué es y para qué sirve
+**Detecta** es una herramienta privada para **decidir a qué licitaciones de obra civil presentarse** en
+Colombia. Conecta en vivo con los **datos abiertos de SECOP II** (Colombia Compra Eficiente, dataset
+`p6dx-8zbt`), filtra los procesos compatibles con dos perfiles reales y calcula, para cada uno, un
+**puntaje de encaje 0–100**. El fin es **priorizar dónde mirar primero**, no reemplazar la lectura del pliego.
+
+> Importante: el encaje mide qué tan bien encaja un proceso con el perfil (habilitantes, cuantía,
+> ubicación, capacidad, fase). **No es la probabilidad de ganar.**
+
+## Los perfiles (datos reales de los RUP, corte 07/05/2026)
+- **Helder Gustavo Rodríguez Santana** — persona natural, Ing. Civil, Purificación (Tolima).
+  Liquidez 129,12 · endeudamiento 0,04 · patrimonio $1.107 M · 33 contratos · RUP desde 2013 · 193 clases UNSPSC.
+- **Génesis Ingeniería y Construcción GIC SAS** — persona jurídica, Ibagué.
+  Liquidez 6,98 · endeudamiento 0,13 · patrimonio $211 M · 105 contratos · 343 clases UNSPSC.
+- **Helder + Génesis** — consorcio/unión temporal. Patrimonio combinado $1.318 M · 138 contratos · 393 clases.
+
+## Arquitectura
+- **`index.html`** — TODA la app en un solo archivo (HTML+CSS+JS, sin build). Se ejecuta en el navegador.
+  - Gate de seguridad por contraseña (SHA-256 + salt; respaldo local + `/api/auth` en producción).
+  - 8 pestañas: **Resumen** (dashboard), Helder, Génesis, Juntos, Pliego, Rentabilidad, APU, Manual.
+  - Whitelists UNSPSC (`UNSPSC_HELDER/GENESIS/JUNTOS`) **embebidas** en un `<script>` del `<head>`.
+- **`api/` + `vercel.json`** (opcional, requiere Vercel + variables de entorno):
+  - `api/proxy.js` — proxy de Socrata con App Token (CORS + más cuota).
+  - `api/cron.js` — monitor autónomo: consulta SECOP, puntúa, verifica anticipo y avisa por **Telegram**.
+  - `api/resumen.js` — resumen IA por proceso (Anthropic; **de pago**, opcional).
+  - `lib/engine.js` — motor de encaje portado a Node para que el cron calcule lo mismo que la web.
+
+## Reglas de negocio clave (motor de encaje, 0–100)
+1. **K residual suficiente · 35 pts** — el K exigido (`CRPC = (Presupuesto − Anticipo) × 12 / Plazo`) debe
+   ser ≤ a la capacidad residual del proponente (`CRP = CO × (E+CT+CF)/100 − SCE`, Guía CCE-EICP-GI-22).
+2. **UNSPSC en el RUP · 20 pts** — match por **clase exacta de 8 dígitos** (no por segmento).
+3. **Cuantía dentro del tope · 15 pts** — topes estratégicos: Helder ~4.000 SMMLV, Génesis ~2.000, juntos ~11.000.
+4. **Fase · 10 pts** — selección activa = 10; borrador = 7; adjudicado/cerrado = 0.
+5. **Indicadores financieros · 10 pts** — liquidez/endeudamiento holgados.
+6. **Radio operativo · 10 pts** — ≤200 km por tierra desde Bogotá/Ibagué, o vuelo ≤2h45m + ≤2h terrestres.
+
+Filtrado anti-falso-positivo en capas: geográfico → blacklist semántica (caninos, PAE, dotación…) →
+UNSPSC duro → whitelist obra (cuando SECOP no declara UNSPSC) → sin OPS.
+
+- **CO** (ingreso operacional) se **estima** desde la utilidad operacional × `MARGIN_MULTIPLIER` (16.7 ≈ margen 6%),
+  porque el RUP no reporta el ingreso. Es editable por el usuario (tiene prioridad si conoce el real).
+- **SMMLV 2026 = $1.750.905.**
+- Datos externos: SECOP II (datos.gov.co) y **GDELT** (índice de riesgo de seguridad por municipio, sin clave).
+- Persistencia: `localStorage` (`radar-licit-v1` para ediciones del perfil; ver claves nuevas abajo).
+
+## Mejoras 2026 (capa aditiva, todo gratis, sin tocar la lógica existente)
+Añadidas como **un bloque `<style>`** (antes de `</style>`) y **un bloque `<script>`** (antes de `</body>`)
+que comparten el ámbito global clásico (pueden leer `currentProfile`, `profiles`, `SMMLV`, `renderProcesses`…)
+y hacen **monkey-patch** no invasivo de `renderProcesses`/`loadProcesses`.
+
+- **Modo oscuro** con persistencia (`detecta-theme`) y respeto a `prefers-color-scheme`. Botón ☾/☀ en el header.
+- **Anillos de puntaje** animados (SVG) en cada tarjeta de proceso.
+- **Count-up** de números, **reveal on scroll** (IntersectionObserver) y **entrada escalonada** de tarjetas.
+- **Skeletons** mientras carga SECOP.
+- **Watchlist ★** por proceso (`detecta-watchlist-v1`) + filtro "Solo guardados" + **exportar CSV**.
+- **Dashboard "Resumen"** (pestaña por defecto): nº afines, encaje alto ≥75, valor total en juego,
+  mejor encaje, distribución por banda y Top 5 oportunidades.
+- Accesibilidad: `:focus-visible`, `prefers-reduced-motion` desactiva todo el movimiento.
+- Meta tags (description, theme-color, Open Graph).
+
+## Convenciones
+- Español en UI, comentarios y mensajes de commit. Estética tipo Apple (system fonts + Inter, sutil, claro).
+- **Sin dependencias de pago.** PDF.js y Tesseract.js (OCR del pliego) se cargan por CDN/lazy-load.
+- Cambios nuevos: preferir **capa aditiva** + monkey-patch antes que reescribir funciones existentes.
+- No debilitar el gate de seguridad ni el anti-iframe sin pedir permiso.
+
+## Pendiente por verificar (dato del negocio)
+- **Nº de contratos de Génesis**: la ficha visible mostraba 105/138 y la config JS 108/141. Se alineó todo a
+  **105 (Génesis) / 138 (juntos)** porque `numContratos` es informativo (no entra en ningún cálculo). Si el RUP
+  real dice 108, corregir en `profiles.genesis.numContratos` y `profiles.juntos.numContratos` (índice ~1207/1224).

@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Detecta · Inteligencia de datos para identificar la oportunidad exacta de licitación en SECOP II. Encaje por perfil, K residual, APU, rentabilidad y radar de procesos." />
+<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#0d0d0f" media="(prefers-color-scheme: dark)" />
+<meta name="color-scheme" content="light dark" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Detecta · Inteligencia de licitaciones SECOP II" />
+<meta property="og:description" content="De miles de procesos a la decisión que importa. Encaje por perfil, capacidad residual, rentabilidad y seguridad territorial — en una sola vista." />
+<meta name="twitter:card" content="summary" />
 <title>Detecta · Inteligencia de licitaciones SECOP II</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='16'%20fill='%231d1d1f'/%3E%3Ctext%20x='50%25'%20y='52%25'%20font-family='-apple-system,Helvetica,Arial'%20font-size='42'%20font-weight='700'%20fill='white'%20text-anchor='middle'%20dominant-baseline='middle'%3Ed%3C/text%3E%3Ccircle%20cx='46'%20cy='44'%20r='4'%20fill='%230071e3'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -316,6 +324,135 @@
   /* Footer */
   footer{padding:30px 0 60px;text-align:center;color:var(--ink2);font-size:12px;border-top:1px solid var(--line2);margin-top:40px}
   footer a{color:var(--accent);text-decoration:none}
+
+  /* ════════════════════════════════════════════════════════════════
+     MEJORAS 2026 · animaciones, modo oscuro, dashboard, micro-interacción
+     Todo gratis (CSS/JS nativo). Respeta prefers-reduced-motion.
+     ════════════════════════════════════════════════════════════════ */
+
+  /* — Transición global de tema (claro ⇄ oscuro) — */
+  html.theme-anim, html.theme-anim *{transition:background-color .45s ease, border-color .45s ease, color .35s ease, box-shadow .45s ease !important}
+
+  /* — Modo oscuro: se reescriben las variables y unas pocas superficies — */
+  html[data-theme="dark"]{
+    --bg:#0d0d0f; --panel:#171719; --ink:#f5f5f7; --ink2:#9a9aa0;
+    --line:#2c2c2e; --line2:#242426; --accent:#0a84ff; --accent-ink:#5aa9ff;
+    --green:#30d158; --amber:#ffd60a; --red:#ff453a;
+    --soft:#1f1f22; --shadow:0 4px 24px rgba(0,0,0,.45); --shadow-h:0 14px 44px rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+  html[data-theme="dark"] header{background:rgba(18,18,20,.82)}
+  html[data-theme="dark"] .tabs{background:#1f1f22}
+  html[data-theme="dark"] .tab.active{background:#3a3a3c;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+  html[data-theme="dark"] input:not([type=checkbox]):not([type=radio]),
+  html[data-theme="dark"] select,
+  html[data-theme="dark"] textarea{background:#1d1d1f;color:var(--ink);border-color:#3a3a3c}
+  html[data-theme="dark"] .field.est input{background:#2a2410;border-color:#5a4a12}
+  html[data-theme="dark"] .small-btn,
+  html[data-theme="dark"] .proc-actions a,
+  html[data-theme="dark"] .proc-actions button,
+  html[data-theme="dark"] .newsbtn,
+  html[data-theme="dark"] .rent-toolbar select,
+  html[data-theme="dark"] .rent-toolbar button{background:#2a2a2c;color:var(--accent)}
+  html[data-theme="dark"] .rent-toolbar button.primary{background:var(--accent);color:#fff}
+  html[data-theme="dark"] .rent-box,
+  html[data-theme="dark"] .paste-modal .inner{background:var(--panel)}
+  html[data-theme="dark"] .k-result{background:linear-gradient(135deg,#11243b,#0f1c30);border-color:#1d3a5c}
+  html[data-theme="dark"] .gloss-card .ex{background:#11243b;border-color:#1d3a5c;color:#9cc6ff}
+  html[data-theme="dark"] .airesumen{background:linear-gradient(180deg,#13233a,#101d30);border-color:#1d3a5c}
+  html[data-theme="dark"] .anticipo-badge,
+  html[data-theme="dark"] .theme-toggle{background:#1f1f22}
+  html[data-theme="dark"] .dz-icon{filter:saturate(.8) brightness(1.1)}
+  html[data-theme="dark"] ::selection{background:rgba(10,132,255,.35)}
+
+  /* — Botón de tema (sol/luna) — */
+  .theme-toggle{width:36px;height:36px;border-radius:50%;border:0;background:var(--panel);
+    box-shadow:var(--shadow);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    color:var(--ink);transition:transform .25s,box-shadow .25s;flex-shrink:0;font-family:inherit}
+  .theme-toggle:hover{box-shadow:var(--shadow-h);transform:translateY(-1px)}
+  .theme-toggle:active{transform:scale(.92)}
+  .theme-toggle svg{width:18px;height:18px;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+  html[data-theme="dark"] .theme-toggle svg{transform:rotate(360deg)}
+
+  /* — Reveal al hacer scroll (IntersectionObserver añade .in) — */
+  .reveal{opacity:0;transform:translateY(16px);will-change:opacity,transform;
+    transition:opacity .6s cubic-bezier(.2,.7,.2,1),transform .6s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  /* — Entrada escalonada de tarjetas (KPI, procesos, dashboard) — */
+  @keyframes pop-in{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+  .stagger-in{animation:pop-in .5s cubic-bezier(.2,.7,.2,1) both}
+
+  /* — Micro-interacción en tabs y botones — */
+  .tab:active{transform:scale(.96)}
+  .btn-primary,.small-btn,.proc-actions button,.proc-actions a,.newsbtn{transition:background .15s,transform .12s,box-shadow .2s}
+  .btn-primary:active,.small-btn:active,.proc-actions button:active,.newsbtn:active{transform:scale(.96)}
+  .btn-primary:hover{box-shadow:0 6px 18px rgba(0,113,227,.3)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+  /* — Anillo de puntaje (encaje) en cada tarjeta de proceso — */
+  .score-ring{position:relative;width:54px;height:54px;flex-shrink:0}
+  .score-ring svg{width:54px;height:54px;transform:rotate(-90deg)}
+  .score-ring .ring-bg{fill:none;stroke:var(--line2);stroke-width:5}
+  .score-ring .ring-bar{fill:none;stroke-width:5;stroke-linecap:round;
+    stroke-dasharray:138.2;stroke-dashoffset:138.2;transition:stroke-dashoffset 1.1s cubic-bezier(.2,.7,.2,1)}
+  .score-ring.rs-high .ring-bar{stroke:var(--green)}
+  .score-ring.rs-mid  .ring-bar{stroke:var(--amber)}
+  .score-ring.rs-low  .ring-bar{stroke:var(--red)}
+  .score-ring .ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-family:'Inter',sans-serif;font-weight:700;font-size:15px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+
+  /* — Botón guardar (★ watchlist) — */
+  .star-btn{border-color:var(--line)!important;font-size:13px!important;line-height:1}
+  .star-btn.on{color:var(--amber)!important;border-color:rgba(154,107,0,.4)!important;background:rgba(154,107,0,.06)!important}
+  .proc.saved{box-shadow:0 0 0 1.5px rgba(154,107,0,.35),var(--shadow)}
+  @keyframes star-pop{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
+  .star-btn.pop{animation:star-pop .4s ease}
+
+  /* — Skeleton loader mientras carga SECOP — */
+  .sk-card{height:118px;border-radius:14px;margin-bottom:12px;
+    background:linear-gradient(100deg,var(--line2) 30%,var(--soft) 50%,var(--line2) 70%);
+    background-size:300% 100%;animation:sk 1.3s ease-in-out infinite}
+  @keyframes sk{0%{background-position:140% 0}100%{background-position:-40% 0}}
+
+  /* — Contador de números (count-up sólo cambia el texto vía JS) — */
+  .count-up{font-variant-numeric:tabular-nums}
+
+  /* — DASHBOARD / Resumen ejecutivo — */
+  .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:18px}
+  .dash-card{background:var(--panel);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);
+    position:relative;overflow:hidden;transition:transform .25s,box-shadow .25s}
+  .dash-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-h)}
+  .dash-card .l{font-size:11.5px;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+  .dash-card .v{font-family:'Inter',sans-serif;font-size:36px;font-weight:700;letter-spacing:-.03em;margin-top:8px;line-height:1;font-variant-numeric:tabular-nums}
+  .dash-card .s{font-size:12px;color:var(--ink2);margin-top:8px;line-height:1.4}
+  .dash-card.accent{background:linear-gradient(135deg,var(--accent),#4da3f0);color:#fff}
+  .dash-card.accent .l,.dash-card.accent .s{color:rgba(255,255,255,.85)}
+  .dash-card .spark{position:absolute;right:-6px;bottom:-6px;font-size:60px;opacity:.06;line-height:1}
+  .dash-dist{display:flex;align-items:flex-end;gap:14px;height:150px;padding:10px 4px 0;border-bottom:1px solid var(--line2)}
+  .dash-dist .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:8px;height:100%}
+  .dash-dist .bar{width:100%;max-width:64px;border-radius:8px 8px 0 0;height:0;transition:height .9s cubic-bezier(.2,.7,.2,1)}
+  .dash-dist .bar.b-high{background:linear-gradient(180deg,var(--green),#5fd37c)}
+  .dash-dist .bar.b-mid{background:linear-gradient(180deg,var(--amber),#e6c14a)}
+  .dash-dist .bar.b-low{background:linear-gradient(180deg,var(--red),#e0726b)}
+  .dash-dist .cap{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+  .dash-dist .lab{font-size:11px;color:var(--ink2);text-align:center}
+  .dash-top{margin-top:6px}
+  .dash-top-item{display:flex;align-items:center;gap:14px;padding:13px 4px;border-bottom:1px solid var(--line2);text-decoration:none;color:inherit;transition:background .15s;border-radius:8px}
+  .dash-top-item:hover{background:var(--soft)}
+  .dash-top-item:last-child{border-bottom:0}
+  .dash-top-rank{font-family:'Inter',sans-serif;font-weight:700;font-size:15px;color:var(--ink2);width:22px;text-align:center;flex-shrink:0}
+  .dash-top-main{flex:1;min-width:0}
+  .dash-top-name{font-size:13.5px;font-weight:600;line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .dash-top-meta{font-size:11.5px;color:var(--ink2);margin-top:3px}
+  .dash-empty{text-align:center;color:var(--ink2);padding:34px 14px;font-size:14px}
+
+  /* — prefers-reduced-motion: desactiva todo el movimiento — */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+      transition-duration:.001ms!important;scroll-behavior:auto!important}
+    .reveal{opacity:1!important;transform:none!important}
+  }
 </style>
 <script>
 /* ================================================================
@@ -515,6 +652,9 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
     <div class="brand"><span class="wordmark">detecta<span class="brand-dot">.</span></span> <small>· inteligencia de licitaciones</small></div>
     <div class="header-right">
       <div class="live"><span class="pulse"></span><b>en vivo</b> · datos abiertos Colombia</div>
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Cambiar tema claro/oscuro" title="Cambiar entre claro y oscuro">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
       <button type="button" class="anticipo-badge" id="anticipo-trigger" title="Filtrar procesos con anticipo ≥ 20 %">
         <span class="anticipo-mark">d<span>.</span></span>
         <span class="anticipo-txt">Verificar anticipo</span>
@@ -530,7 +670,8 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
   </div>
 
   <nav class="tabs" id="tabs">
-    <button class="tab active" data-tab="helder">Helder</button>
+    <button class="tab active" data-tab="resumen">Resumen</button>
+    <button class="tab" data-tab="helder">Helder</button>
     <button class="tab" data-tab="genesis">Génesis</button>
     <button class="tab" data-tab="juntos">Helder + Génesis</button>
     <button class="tab" data-tab="pliego">Pliego</button>
@@ -540,9 +681,46 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
   </nav>
 
   <!-- ============================================================ -->
+  <!-- RESUMEN · centro de mando (dashboard agregado del radar) -->
+  <!-- ============================================================ -->
+  <section id="sec-resumen" class="active">
+    <div class="panel reveal">
+      <div class="pf-h" style="margin-bottom:2px">
+        <div>
+          <span class="badge">Centro de mando</span>
+          <h2 style="margin-top:8px;font-size:24px;letter-spacing:-.02em">Resumen ejecutivo</h2>
+          <div class="sub" style="color:var(--ink2);font-size:13.5px;margin-top:4px">Una mirada de 10 segundos al estado del radar para el perfil activo: <b id="dash-profile">Helder</b>.</div>
+        </div>
+        <button class="btn-primary" id="dash-go-radar" type="button" style="align-self:center">Ver radar completo ↓</button>
+      </div>
+    </div>
+
+    <div class="dash-grid reveal" id="dash-metrics">
+      <div class="dash-card"><div class="l">Procesos analizados</div><div class="v">—</div><div class="s">esperando carga del radar…</div></div>
+    </div>
+
+    <div class="panel reveal">
+      <h3>Distribución por encaje</h3>
+      <p class="desc">Cuántas oportunidades caen en cada banda de encaje con el perfil. Recuerde: <b>encaje ≠ probabilidad de ganar</b>.</p>
+      <div class="dash-dist" id="dash-dist"></div>
+      <div style="display:flex;gap:18px;margin-top:12px;flex-wrap:wrap;font-size:12px;color:var(--ink2)">
+        <span><b style="color:var(--green)">Alto</b> · 75–100 · atender ya</span>
+        <span><b style="color:var(--amber)">Medio</b> · 50–74 · revisar pliego</span>
+        <span><b style="color:var(--red)">Bajo</b> · 0–49 · descartar / evaluar consorcio</span>
+      </div>
+    </div>
+
+    <div class="panel reveal">
+      <h3>Top 5 oportunidades</h3>
+      <p class="desc">Las de mayor encaje ahora mismo. Pulse cualquiera para abrirla en SECOP II.</p>
+      <div class="dash-top" id="dash-top"><div class="dash-empty">Cargando procesos del radar…</div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
   <!-- HELDER -->
   <!-- ============================================================ -->
-  <section id="sec-helder" class="active">
+  <section id="sec-helder">
     <div class="pf-card">
       <div class="pf-h">
         <div>
@@ -1016,14 +1194,14 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
         <li><b>Noticias:</b> GDELT Project (agregador mundial de noticias en tiempo real, sin clave).</li>
       </ul>
       <p>Si la conexión directa falla, hay respaldo automático por proxy. Todos los cálculos (K residual, puntaje, APU) se hacen localmente; nada se envía a terceros.</p>
-      <p>Las whitelists UNSPSC se cargan desde el archivo <code>unspsc-classes.js</code> (subido al repo junto a este HTML). Ese archivo es la fuente de verdad de qué puede contratar cada perfil, derivada directamente de los RUP.</p>
+      <p>Las whitelists UNSPSC (<code>UNSPSC_HELDER</code>, <code>UNSPSC_GENESIS</code>, <code>UNSPSC_JUNTOS</code>) están <b>embebidas</b> en un <code>&lt;script&gt;</code> dentro de este mismo archivo. Son la fuente de verdad de qué puede contratar cada perfil, derivada directamente de los RUP (193, 343 y 393 clases respectivamente).</p>
     </div>
   </section>
 
   <!-- ============================================================ -->
   <!-- CONTRATOS VIGENTES + K RESIDUAL panel -->
   <!-- ============================================================ -->
-  <div id="k-panel-wrap">
+  <div id="k-panel-wrap" style="display:none">
     <div class="panel">
       <h3>Capacidad disponible para nuevas licitaciones</h3>
 
@@ -1098,7 +1276,7 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
   <!-- ============================================================ -->
   <!-- RADAR DE PROCESOS -->
   <!-- ============================================================ -->
-  <div id="radar-wrap">
+  <div id="radar-wrap" style="display:none">
     <div class="panel">
       <h3>Procesos en SECOP II</h3>
       <p class="desc">Ordenados por <b>encaje con su perfil</b>. A igual encaje, los más recientes y de mayor cuantía primero.</p>
@@ -1122,8 +1300,12 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
         <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);white-space:nowrap;padding-bottom:9px">
           <input type="checkbox" id="f-geo" checked> Solo radio operativo
         </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);white-space:nowrap;padding-bottom:9px">
+          <input type="checkbox" id="f-only-saved"> Solo guardados ★
+        </label>
         <button class="btn-primary" id="f-go">↻ Recargar</button>
         <button class="btn-primary" id="f-anti-go" style="background:var(--green)" title="Descarga los documentos de cada proceso y busca el % de anticipo. Filtra los que ofrecen ≥ 20%.">↓ Verificar anticipo ≥20%</button>
+        <button class="small-btn" id="f-csv" title="Descargar los procesos visibles como archivo CSV (Excel)" style="padding:10px 14px">⭳ CSV</button>
         <input type="number" id="f-max" value="0" style="display:none">
         <input type="number" id="f-anti" value="0" style="display:none">
       </div>
@@ -1168,7 +1350,7 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
    - Juntos: suma de ambos.
 
    Las whitelists UNSPSC (UNSPSC_HELDER, UNSPSC_GENESIS, UNSPSC_JUNTOS)
-   están en el archivo unspsc-classes.js, cargado en el <head>.
+   están definidas inline en un <script> del <head> de este mismo archivo.
    ================================================================ */
 const SMMLV = 1750905;
 // Margen operacional típico del sector obra civil colombiano ≈ 6%.
@@ -1204,7 +1386,7 @@ const profiles = {
     ingresoOp:null,
     expSMMLV:31593.88,                // mayor contrato acreditado en RUP
     profesionales:3,                  // socios + profesionales de planta (estimado conservador)
-    numContratos:108,                 // 108 contratos acreditados en el RUP
+    numContratos:105,                 // contratos acreditados en el RUP (alineado con la ficha visible)
     topeSMMLV:2000,
     base:{lat:4.439, lng:-75.232, label:"Ibagué, Tolima"},
     unspscClases: UNSPSC_GENESIS,
@@ -1221,7 +1403,7 @@ const profiles = {
     ingresoOp:null,
     expSMMLV:38362.75,                // 6.768,87 (Helder) + 31.593,88 (Génesis)
     profesionales:4,                  // 1 (Helder) + 3 (Génesis)
-    numContratos:141,                 // 33 + 108
+    numContratos:138,                 // 33 (Helder) + 105 (Génesis)
     topeSMMLV:11000,
     base:{lat:4.439, lng:-75.232, label:"Ibagué / Tolima"},
     unspscClases: UNSPSC_JUNTOS,
@@ -4148,6 +4330,321 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
   const idxBtn = document.getElementById("apu-index-fetch");
   if(idxBtn) idxBtn.onclick = fetchIndiceDANE;
   try { await loadProcesses(); } catch(e){ console.error("loadProcesses:", e); }
+})();
+</script>
+
+<!-- ════════════════════════════════════════════════════════════════
+     MEJORAS 2026 · capa aditiva (no toca la lógica existente)
+     Modo oscuro · anillos de puntaje · count-up · watchlist ★ · CSV ·
+     dashboard "Resumen" en vivo · skeletons · entrada escalonada.
+     Comparte el ámbito global con el script anterior (clásico, no módulo):
+     puede leer currentProfile, profiles, SMMLV, renderProcesses, etc.
+     ════════════════════════════════════════════════════════════════ -->
+<script>
+(function detectaEnhance(){
+  "use strict";
+  var RM = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function clip(s,n){ s=String(s||""); return s.length>n ? s.slice(0,n).replace(/\s+\S*$/,"")+"…" : s; }
+  function getProfile(){ try{ return currentProfile; }catch(e){ return "helder"; } }
+  var SM = (function(){ try{ return SMMLV; }catch(e){ return 1750905; } })();
+
+  /* ───────────────── 1 · MODO OSCURO ───────────────── */
+  try{
+    var THEME_KEY="detecta-theme";
+    var ICON_SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+    var ICON_MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    var META_LIGHT="#fafafa", META_DARK="#0d0d0f";
+    function applyTheme(t, animate){
+      if(animate && !RM){ document.documentElement.classList.add("theme-anim");
+        setTimeout(function(){ document.documentElement.classList.remove("theme-anim"); }, 500); }
+      if(t==="dark") document.documentElement.setAttribute("data-theme","dark");
+      else document.documentElement.removeAttribute("data-theme");
+      var btn=document.getElementById("theme-toggle");
+      if(btn) btn.innerHTML = (t==="dark") ? ICON_SUN : ICON_MOON;
+    }
+    var savedTheme=null; try{ savedTheme=localStorage.getItem(THEME_KEY); }catch(e){}
+    var sysDark = !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    applyTheme(savedTheme || (sysDark?"dark":"light"), false);
+    var tbtn=document.getElementById("theme-toggle");
+    if(tbtn) tbtn.addEventListener("click", function(){
+      var cur=document.documentElement.getAttribute("data-theme")==="dark"?"dark":"light";
+      var next=cur==="dark"?"light":"dark";
+      applyTheme(next, true);
+      try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
+    });
+    if(!savedTheme && window.matchMedia){
+      try{ window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(e){ applyTheme(e.matches?"dark":"light", true); }); }catch(e){}
+    }
+  }catch(e){ console.error("tema:",e); }
+
+  /* ───────────────── 2 · REVEAL on scroll (IntersectionObserver) ───────────────── */
+  var io=null;
+  try{
+    if(!RM && "IntersectionObserver" in window){
+      io=new IntersectionObserver(function(entries){
+        entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); } });
+      }, {threshold:.08, rootMargin:"0px 0px -40px 0px"});
+      document.querySelectorAll(".reveal").forEach(function(el){ io.observe(el); });
+    } else {
+      document.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); });
+    }
+    // red de seguridad: nada se queda invisible jamás
+    setTimeout(function(){ document.querySelectorAll(".reveal:not(.in)").forEach(function(el){ el.classList.add("in"); }); }, 1700);
+  }catch(e){ console.error("reveal:",e); }
+
+  /* ───────────────── 3 · entrada escalonada (replay al mostrar) ───────────────── */
+  function stagger(nodes){
+    if(RM) return;
+    Array.prototype.slice.call(nodes).slice(0,24).forEach(function(el,i){
+      el.classList.remove("stagger-in"); void el.offsetWidth;
+      el.style.animationDelay=(i*45)+"ms";
+      el.classList.add("stagger-in");
+      el.addEventListener("animationend", function h(){
+        el.classList.remove("stagger-in"); el.style.animationDelay=""; el.removeEventListener("animationend",h);
+      });
+    });
+  }
+  function entranceFor(tab){
+    var sec=document.getElementById("sec-"+tab);
+    if(sec) stagger(sec.querySelectorAll(".kpi, .dash-card, .gloss-card"));
+  }
+
+  /* ───────────────── 4 · count-up de números ───────────────── */
+  function easeOut(p){ return 1-Math.pow(1-p,3); }
+  function fmtMoneyShort(n){
+    n=Math.max(0,n||0);
+    if(n>=1e9) return "$"+(n/1e9).toLocaleString("es-CO",{maximumFractionDigits:2})+" mil M";
+    if(n>=1e6) return "$"+(n/1e6).toLocaleString("es-CO",{maximumFractionDigits:1})+" M";
+    if(n>=1e3) return "$"+Math.round(n/1e3).toLocaleString("es-CO")+" mil";
+    return "$"+Math.round(n).toLocaleString("es-CO");
+  }
+  function countUp(el, to, suffix){
+    suffix=suffix||"";
+    if(RM){ el.textContent=Math.round(to).toLocaleString("es-CO")+suffix; return; }
+    var dur=900,t0=null;
+    (function step(ts){ if(!t0)t0=ts; var p=Math.min((ts-t0)/dur,1);
+      el.textContent=Math.round(to*easeOut(p)).toLocaleString("es-CO")+suffix;
+      if(p<1) requestAnimationFrame(step); })(performance.now());
+  }
+  function countMoney(el, to){
+    if(RM){ el.textContent=fmtMoneyShort(to); return; }
+    var dur=1000,t0=null;
+    (function step(ts){ if(!t0)t0=ts; var p=Math.min((ts-t0)/dur,1);
+      el.textContent=fmtMoneyShort(to*easeOut(p)); if(p<1) requestAnimationFrame(step); })(performance.now());
+  }
+
+  /* ───────────────── 5 · WATCHLIST (★) ───────────────── */
+  var WL_KEY="detecta-watchlist-v1";
+  function wlGet(){ try{ return new Set(JSON.parse(localStorage.getItem(WL_KEY)||"[]")); }catch(e){ return new Set(); } }
+  function wlSave(set){ try{ localStorage.setItem(WL_KEY, JSON.stringify(Array.prototype.slice.call(set))); }catch(e){} }
+  function keyOf(p){ return (p.nombre||"")+"@"+(p.entidad||"")+"@"+(p.valor||0); }
+  var savedSet=wlGet();
+  function applySavedFilter(){
+    var only=document.getElementById("f-only-saved");
+    var on = !!(only && only.checked);
+    document.querySelectorAll("#proc-list .proc").forEach(function(card){
+      card.style.display = (on && !savedSet.has(card.dataset.wkey)) ? "none" : "";
+    });
+  }
+
+  /* ───────────────── 6 · ANILLO de puntaje ───────────────── */
+  function ringHTML(score){
+    var cls=score>=75?"rs-high":score>=50?"rs-mid":"rs-low";
+    var C=138.2, off=C*(1-Math.min(Math.max(score,0),100)/100);
+    return '<div class="score-ring '+cls+'" data-off="'+off.toFixed(1)+'" role="img" aria-label="Encaje '+score+' de 100">'+
+      '<svg viewBox="0 0 54 54"><circle class="ring-bg" cx="27" cy="27" r="22"/><circle class="ring-bar" cx="27" cy="27" r="22"/></svg>'+
+      '<div class="ring-num">'+score+'</div></div>';
+  }
+
+  /* ───────────────── 7 · enriquecer tarjetas de proceso ───────────────── */
+  function enhanceCards(list){
+    var cont=document.getElementById("proc-list"); if(!cont) return;
+    var cards=cont.querySelectorAll(".proc");
+    cards.forEach(function(card, idx){
+      var p=list[idx]; if(!p) return;
+      var k=keyOf(p); card.dataset.wkey=k;
+      // anillo
+      var sc=card.querySelector(".proc-score");
+      if(sc && !sc.querySelector(".score-ring")){
+        var wrap=document.createElement("div");
+        wrap.style.cssText="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end";
+        wrap.innerHTML=ringHTML(p._score);
+        sc.insertBefore(wrap, sc.firstChild);
+        var ring=wrap.querySelector(".score-ring");
+        requestAnimationFrame(function(){ requestAnimationFrame(function(){
+          var bar=ring.querySelector(".ring-bar"); if(bar) bar.style.strokeDashoffset=ring.dataset.off;
+        }); });
+      }
+      // estrella
+      var actions=card.querySelector(".proc-actions");
+      if(actions && !actions.querySelector(".star-btn")){
+        var on=savedSet.has(k);
+        var star=document.createElement("button");
+        star.type="button"; star.className="star-btn"+(on?" on":"");
+        star.textContent=on?"★ Guardado":"☆ Guardar";
+        star.title="Guardar este proceso en seguimiento (se conserva en este navegador)";
+        star.addEventListener("click", function(){
+          if(savedSet.has(k)){ savedSet.delete(k); star.classList.remove("on"); star.textContent="☆ Guardar"; card.classList.remove("saved"); }
+          else { savedSet.add(k); star.classList.add("on","pop"); star.textContent="★ Guardado"; card.classList.add("saved");
+                 setTimeout(function(){ star.classList.remove("pop"); }, 420); }
+          wlSave(savedSet); applySavedFilter();
+        });
+        actions.appendChild(star);
+      }
+      if(savedSet.has(k)) card.classList.add("saved");
+    });
+    applySavedFilter();
+  }
+
+  /* ───────────────── 8 · DASHBOARD "Resumen" ───────────────── */
+  function renderDashboard(list){
+    var names={helder:"Helder",genesis:"Génesis",juntos:"Helder + Génesis"};
+    var prof=getProfile();
+    var pe=document.getElementById("dash-profile"); if(pe) pe.textContent=names[prof]||prof;
+    var metrics=document.getElementById("dash-metrics"),
+        distEl=document.getElementById("dash-dist"),
+        topEl=document.getElementById("dash-top");
+    if(!metrics) return;
+    list=list||[];
+    if(!list.length){
+      metrics.innerHTML='<div class="dash-card"><div class="l">Procesos analizados</div><div class="v">0</div><div class="s">Aún no hay datos. Abra una pestaña de perfil para cargar el radar.</div></div>';
+      if(distEl) distEl.innerHTML="";
+      if(topEl) topEl.innerHTML='<div class="dash-empty">Sin procesos cargados todavía. Pulse «Ver radar completo».</div>';
+      return;
+    }
+    var n=list.length;
+    var high=list.filter(function(p){return p._score>=75;}).length;
+    var mid =list.filter(function(p){return p._score>=50 && p._score<75;}).length;
+    var low =n-high-mid;
+    var totalVal=list.reduce(function(a,p){return a+(p.valor||0);},0);
+    var best=list[0];
+    var cards=[
+      {l:"Procesos afines", v:n, s:"para el perfil "+(names[prof]||prof), spark:"🎯"},
+      {l:"Encaje alto · ≥75", v:high, s:high?"atención prioritaria":"ninguno por ahora", spark:"🔥", accent:true},
+      {l:"Valor total en juego", money:totalVal, s:"suma de presupuestos visibles", spark:"💰"},
+      {l:"Mejor encaje", v:best?best._score:0, suffix:"/100", s:best?clip(best.nombre,40):"—", spark:"🏆"}
+    ];
+    metrics.innerHTML=cards.map(function(c){
+      var dataTo=(c.money!=null?c.money:c.v);
+      return '<div class="dash-card'+(c.accent?" accent":"")+'">'+
+        '<div class="l">'+esc(c.l)+'</div>'+
+        '<div class="v"><span class="count-up" data-to="'+dataTo+'" data-money="'+(c.money!=null?1:0)+'" data-suffix="'+(c.suffix||"")+'">0</span></div>'+
+        '<div class="s">'+esc(c.s)+'</div><div class="spark">'+c.spark+'</div></div>';
+    }).join("");
+    metrics.querySelectorAll(".count-up").forEach(function(el){
+      var to=parseFloat(el.dataset.to)||0;
+      if(el.dataset.money==="1") countMoney(el,to);
+      else countUp(el, to, el.dataset.suffix||"");
+    });
+    // distribución
+    if(distEl){
+      var maxB=Math.max(high,mid,low,1);
+      distEl.innerHTML=[
+        {c:"b-high",v:high,lab:"Alto"},{c:"b-mid",v:mid,lab:"Medio"},{c:"b-low",v:low,lab:"Bajo"}
+      ].map(function(d){
+        return '<div class="col"><div class="cap">'+d.v+'</div><div class="bar '+d.c+'" data-h="'+(d.v/maxB*100).toFixed(1)+'"></div><div class="lab">'+d.lab+'</div></div>';
+      }).join("");
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){
+        distEl.querySelectorAll(".bar").forEach(function(b){ b.style.height=Math.max(parseFloat(b.dataset.h)||0,1.5)+"%"; });
+      }); });
+    }
+    // top 5
+    if(topEl){
+      topEl.innerHTML=list.slice(0,5).map(function(p,i){
+        var sc=p._score, col=sc>=75?"var(--green)":sc>=50?"var(--amber)":"var(--red)";
+        var ubic=[p.ciudad,p.depto].filter(Boolean).join(", ")||"sin ubicación";
+        var inner='<div class="dash-top-rank">'+(i+1)+'</div>'+
+          '<div class="dash-top-main"><div class="dash-top-name">'+esc(p.nombre||"—")+'</div>'+
+          '<div class="dash-top-meta">'+esc(p.entidad||"")+' · '+esc(ubic)+' · '+(p.valor?fmtMoneyShort(p.valor):"valor n/d")+'</div></div>'+
+          '<div style="font-family:Inter,sans-serif;font-weight:700;font-size:18px;color:'+col+';font-variant-numeric:tabular-nums;flex-shrink:0">'+sc+'</div>';
+        return p.url ? '<a class="dash-top-item" href="'+esc(p.url)+'" target="_blank" rel="noopener">'+inner+'</a>'
+                     : '<div class="dash-top-item">'+inner+'</div>';
+      }).join("");
+    }
+  }
+
+  /* ───────────────── 9 · EXPORTAR CSV ───────────────── */
+  function toCSV(){
+    var list = window._dashList || window._lastProcesses || [];
+    if(!list.length){ alert("No hay procesos para exportar. Abra un perfil para cargar el radar."); return; }
+    var only=document.getElementById("f-only-saved");
+    if(only && only.checked) list=list.filter(function(p){return savedSet.has(keyOf(p));});
+    if(!list.length){ alert("No hay procesos guardados para exportar."); return; }
+    var cols=["Encaje","Nombre","Entidad","Modalidad","Ciudad","Departamento","Fecha","Valor_COP","SMMLV","Anticipo_pct","K_residual","UNSPSC","Radio","URL"];
+    function cell(v){ v=(v==null?"":String(v)); return /[",;\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }
+    var rows=list.map(function(p){
+      var kok=(p._k && p._k.crp>=p._crpc)?"suficiente":"insuficiente";
+      return [p._score,p.nombre,p.entidad,p.modalidad,p.ciudad,p.depto,(p.fecha||"").slice(0,10),
+        p.valor||0,(p.valor?Math.round(p.valor/SM):""),(p._anticipo==null?"":p._anticipo),kok,
+        (p._clase||p._seg||""),p._ubic,(p.url||"")].map(cell).join(";");
+    });
+    var csv="﻿"+cols.join(";")+"\n"+rows.join("\n");
+    var blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="detecta-procesos-"+new Date().toISOString().slice(0,10)+".csv";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 600);
+  }
+
+  /* ───────────────── 10 · skeleton mientras carga ───────────────── */
+  function showSkeleton(){
+    var c=document.getElementById("proc-list");
+    if(c) c.innerHTML='<div class="sk-card"></div><div class="sk-card"></div><div class="sk-card"></div><div class="sk-card"></div>';
+  }
+
+  /* ───────────────── 11 · MONKEY-PATCH no invasivo ───────────────── */
+  try{
+    if(typeof window.renderProcesses==="function"){
+      var _rp=window.renderProcesses;
+      window.renderProcesses=function(list){
+        var r=_rp.apply(this, arguments);
+        try{
+          window._dashList = list || [];
+          enhanceCards(list || []);
+          renderDashboard(list || []);
+          var radar=document.getElementById("radar-wrap");
+          if(radar && radar.style.display!=="none") stagger(document.querySelectorAll("#proc-list .proc"));
+          var rsec=document.getElementById("sec-resumen");
+          if(rsec && rsec.classList.contains("active")) stagger(rsec.querySelectorAll(".dash-card"));
+        }catch(e){ console.error("enhance render:",e); }
+        return r;
+      };
+    }
+    if(typeof window.loadProcesses==="function"){
+      var _lp=window.loadProcesses;
+      window.loadProcesses=function(){ try{ showSkeleton(); }catch(e){} return _lp.apply(this, arguments); };
+    }
+  }catch(e){ console.error("patch:",e); }
+
+  /* ───────────────── 12 · WIRING de UI ───────────────── */
+  try{
+    var csvBtn=document.getElementById("f-csv"); if(csvBtn) csvBtn.addEventListener("click", toCSV);
+    var savedChk=document.getElementById("f-only-saved"); if(savedChk) savedChk.addEventListener("change", applySavedFilter);
+    var fgo=document.getElementById("f-go"); if(fgo) fgo.addEventListener("click", showSkeleton);
+
+    document.querySelectorAll("#tabs .tab").forEach(function(t){
+      t.addEventListener("click", function(){
+        var tab=t.dataset.tab;
+        if(tab==="resumen"){ try{ renderDashboard(window._dashList); }catch(e){} }
+        setTimeout(function(){ entranceFor(tab); }, 20);
+      });
+    });
+
+    var goRadar=document.getElementById("dash-go-radar");
+    if(goRadar) goRadar.addEventListener("click", function(){
+      var helder=document.querySelector('#tabs .tab[data-tab="helder"]');
+      if(helder) helder.click();
+      setTimeout(function(){ var r=document.getElementById("radar-wrap"); if(r) r.scrollIntoView({behavior:"smooth",block:"start"}); }, 80);
+    });
+
+    // primer pintado del dashboard (vacío hasta que cargue el radar) + entrada
+    renderDashboard(window._dashList || []);
+    setTimeout(function(){ entranceFor("resumen"); }, 60);
+  }catch(e){ console.error("wiring:",e); }
 })();
 </script>
 </body>
