@@ -5810,6 +5810,10 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
   .v3b-closed-note b{color:var(--ink)}
   .v3b-closed-note a{color:var(--accent);text-decoration:none;font-weight:500}
   .v3b-closed-note a:hover{text-decoration:underline}
+  /* tarjeta cerrada (solo visible si el usuario la revela): atenuada + cinta */
+  .proc.v3b-dead{opacity:.5;position:relative;filter:grayscale(.4)}
+  .proc.v3b-dead .v3b-dead-rib{position:static;display:inline-block;background:var(--red);color:#fff;
+    font-size:10.5px;font-weight:700;letter-spacing:.04em;padding:3px 10px;border-radius:7px;margin-bottom:8px}
 
   /* — explorador por municipio — */
   .v3b-exp-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0 12px}
@@ -5869,43 +5873,52 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
   function toast(msg, ms){ toastEl=document.querySelector(".v3-toast"); if(!toastEl){ toastEl=document.createElement("div"); toastEl.className="v3-toast"; document.body.appendChild(toastEl); }
     toastEl.textContent=msg; toastEl.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(function(){ toastEl.classList.remove("show"); }, ms||2800); }
 
-  /* ════ a) FILTRO DE PROCESOS CERRADOS ════ */
-  var CLOSED_RE=/adjudicad|celebrad|termin|liquidad|cerrad|desiert|revocad|descartad|suspendid|anulad/i;
+  /* ════ a) FILTRO DE PROCESOS CERRADOS / NO PRESENTABLES ════ */
+  // Estado terminal o post-oferta = NO te puedes presentar NUNCA → se ocultan
+  // SIEMPRE (el toggle NO los reactiva; mostrarlos sería una falta de respeto).
+  var CLOSED_RE=/adjudicad|celebrad|termin|liquidad|cerrad|desiert|revocad|descartad|suspendid|anulad|cancelad|evaluaci|en\s+ejecuci|ejecutad/i;
   function cierrePasado(s){ if(!s) return false; var t=Date.parse(s); if(isNaN(t)) return false;
     var c=new Date(t), n=new Date();
     return new Date(c.getFullYear(),c.getMonth(),c.getDate()).getTime() < new Date(n.getFullYear(),n.getMonth(),n.getDate()).getTime(); }
-  function isClosed(p){
-    var d=diasHasta(p.cierre);
-    if(d!==null && d<0) return true;        // mismo criterio que el badge "Cerrado" (cerró antes de ahora)
-    if(cierrePasado(p.cierre)) return true; // respaldo por día calendario
-    var st=((p.estado||"")+" "+(p.fase||"")).toLowerCase();
-    if(CLOSED_RE.test(st)) return true;
-    return false;
-  }
-  function hideClosedOn(){ return lsGet("detecta-ocultar-cerrados", true)!==false; }
+  function isTerminal(p){ var st=((p.estado||"")+" "+(p.fase||"")).toLowerCase(); return CLOSED_RE.test(st); }
+  function dateClosed(p){ var d=diasHasta(p.cierre); if(d!==null && d<0) return true; return cierrePasado(p.cierre); }
+  function isClosed(p){ return isTerminal(p) || dateClosed(p); }
+  var _reveal=false; // "mostrar de todos modos" = solo esta sesión, NO persiste como antes
+  function hideClosedOn(){ return lsGet("detecta-ocultar-cerrados", true)!==false && !_reveal; }
+  // Pintable: terminal SIEMPRE fuera; cierre-vencido fuera salvo toggle/reveal.
+  function presentable(p){ if(isTerminal(p)) return false; if(hideClosedOn() && dateClosed(p)) return false; return true; }
 
   var _rawList=[];
   function injectClosedToggle(){
     var fs=document.querySelector("#radar-wrap .filters-simple");
     if(fs && !document.getElementById("v3b-hide-wrap")){
       var lbl=document.createElement("label"); lbl.id="v3b-hide-wrap"; lbl.className="v3b-chk";
-      lbl.innerHTML='<input type="checkbox" id="v3b-hide-closed"> Ocultar cerrados';
+      lbl.innerHTML='<input type="checkbox" id="v3b-hide-closed"> Ocultar cierre vencido';
       var fgo=document.getElementById("f-go");
       if(fgo && fgo.parentNode===fs) fs.insertBefore(lbl, fgo); else fs.appendChild(lbl);
-      var chk=document.getElementById("v3b-hide-closed"); chk.checked=hideClosedOn();
-      chk.addEventListener("change", function(){ lsSet("detecta-ocultar-cerrados", chk.checked); rerender(); });
+      var chk=document.getElementById("v3b-hide-closed"); chk.checked=(lsGet("detecta-ocultar-cerrados",true)!==false);
+      chk.addEventListener("change", function(){ _reveal=false; lsSet("detecta-ocultar-cerrados", chk.checked); rerender(); });
     }
   }
   function rerender(){ try{ if(typeof window.renderProcesses==="function") window.renderProcesses(_rawList); }catch(e){} }
-  function closedNote(hiddenN){
+  function closedNote(hiddenN, terminalN){
     var host=document.getElementById("radar-wrap"); if(!host) return;
     var note=document.getElementById("v3b-closed-note");
-    if(!hiddenN){ if(note) note.remove(); return; }
+    if(!hiddenN && !terminalN){ if(note) note.remove(); return; }
     if(!note){ note=document.createElement("div"); note.id="v3b-closed-note"; note.className="v3b-closed-note";
       var status=document.getElementById("status"); if(status&&status.parentNode) status.parentNode.insertBefore(note, status); else host.appendChild(note); }
-    note.innerHTML='🔒 <b>'+hiddenN+'</b> proceso'+(hiddenN===1?"":"s")+' ya cerrado'+(hiddenN===1?"":"s")+' (cierre vencido) oculto'+(hiddenN===1?"":"s")+'. <a href="#" id="v3b-show-closed">Mostrar de todos modos</a>';
+    var parts=[];
+    if(terminalN) parts.push('<b>'+terminalN+'</b> ya adjudicado/en evaluación (no presentable)');
+    if(hiddenN) parts.push('<b>'+hiddenN+'</b> con cierre vencido');
+    note.innerHTML='🔒 Ocultos por no poder presentarte: '+parts.join(' · ')+'.'+(hiddenN?' <a href="#" id="v3b-show-closed">Ver también los de cierre vencido</a>':'');
     var a=document.getElementById("v3b-show-closed");
-    if(a) a.addEventListener("click", function(e){ e.preventDefault(); lsSet("detecta-ocultar-cerrados", false); var c=document.getElementById("v3b-hide-closed"); if(c) c.checked=false; rerender(); });
+    if(a) a.addEventListener("click", function(e){ e.preventDefault(); _reveal=true; rerender(); });
+  }
+  function tagClosed(list){
+    var cont=document.getElementById("proc-list"); if(!cont) return;
+    cont.querySelectorAll(".proc").forEach(function(card,i){ var p=list[i]; if(!p) return;
+      if(isTerminal(p) || dateClosed(p)){ card.classList.add("v3b-dead");
+        if(!card.querySelector(".v3b-dead-rib")){ var r=document.createElement("div"); r.className="v3b-dead-rib"; r.textContent="CERRADO · no puedes presentarte"; card.insertBefore(r, card.firstChild); } } });
   }
 
   /* ════ b) COBERTURA DE COORDENADAS ════ */
@@ -6075,10 +6088,16 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     window.renderProcesses=function(list){
       list=list||[];
       _rawList=list;
-      var shown = hideClosedOn() ? list.filter(function(p){ return !isClosed(p); }) : list;
+      var terminalN=0, dateN=0;
+      var shown=list.filter(function(p){
+        if(isTerminal(p)){ terminalN++; return false; }                 // nunca presentable → fuera siempre
+        if(hideClosedOn() && dateClosed(p)){ dateN++; return false; }     // cierre vencido → fuera salvo reveal
+        return true;
+      });
       var r=_inner.call(this, shown);
       try{
-        closedNote(hideClosedOn() ? (list.length-shown.length) : 0);
+        closedNote(dateN, terminalN);
+        tagClosed(curList());   // si algún vencido quedó visible (reveal), márcalo claramente
         var mapSec=document.getElementById("sec-mapa");
         if(mapSec && mapSec.classList.contains("active")){ var s=document.getElementById("v3b-exp-search"); renderExplorer(curList(), s?s.value:""); }
       }catch(e){ console.error("v3b render:",e); }
@@ -6088,6 +6107,9 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
 
   /* ════ INIT ════ */
   try{
+    // Migración única: el viejo "Mostrar de todos modos" dejaba el filtro en OFF
+    // de forma permanente. Reactivamos "ocultar cerrados" una sola vez.
+    try{ if(!lsGet("detecta-cerrados-migrado-v2",false)){ lsSet("detecta-ocultar-cerrados", true); lsSet("detecta-cerrados-migrado-v2", true); } }catch(e){}
     mergeCoords();
     injectClosedToggle();
     ensureExplorer();
@@ -6657,12 +6679,16 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
       var t=transform(list);
       var r=_inner.call(this, t);
       try{
+        // OJO: las capas internas (#3b) pueden filtrar cerrados, así que las
+        // tarjetas pintadas = curList() (lista final), NO `t`. Augmentar sobre
+        // `t` desalineaba botones/notas cuando había cerrados ocultos.
+        var shown=curList();
         refreshModalidades(list);
-        v4Augment(t);
-        recordSeen(t);
-        renderDepto(curList());
-        maybeDailyBanner(t);
-        autoRiesgo(t);
+        v4Augment(shown);
+        recordSeen(shown);
+        renderDepto(shown);
+        maybeDailyBanner(shown);
+        autoRiesgo(shown);
       }catch(e){ console.error("v4 render:",e); }
       return r;
     };

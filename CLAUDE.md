@@ -142,8 +142,13 @@ ocultar nacionales → solo ≤7 días → orden) antes de pasarla al inner. Cla
   (y soporta semanas/horas). Era la causa del "195 m" que distorsionaba el K.
 - **Logo en modo oscuro**: `.anticipo-mark` usaba `background:var(--ink)` → en oscuro quedaba blanco-sobre-blanco. Override
   a chip claro con glifo oscuro.
-- **Filtro de cerrados (#3b `isClosed`)**: alineado al badge "Cerrado" (`diasHasta(cierre) < 0`); "cierra hoy" (hora futura)
-  permanece visible.
+- **Filtro de no-presentables (#3b)**: dos niveles. `isTerminal` (estado/fase `adjudicad|celebrad|termin|liquidad|cerrad|
+  desiert|revocad|descartad|suspendid|anulad|cancelad|evaluaci|en ejecuci|ejecutad`) → **oculto SIEMPRE** (el toggle no lo
+  reactiva). `dateClosed` (`diasHasta<0` o día vencido) → oculto salvo toggle/reveal; "cierra hoy" con hora futura permanece.
+  "Mostrar" es **solo de sesión** (`_reveal`, ya no persiste). Migración única `detecta-cerrados-migrado-v2` reactiva el
+  default ON. Tarjeta revelada se atenúa con cinta "CERRADO".
+- **Alineación de tarjetas #4**: `v4Augment/recordSeen/maybeDailyBanner/autoRiesgo` usan `curList()` (lista ya filtrada por
+  #3b), no `t`; antes desalineaban botones/notas cuando había cerrados ocultos.
 
 ## Convenciones
 - Español en UI, comentarios y mensajes de commit. Estética tipo Apple (system fonts + Inter, sutil, claro).
