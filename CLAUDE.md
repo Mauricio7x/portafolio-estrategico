@@ -162,11 +162,20 @@ botón **"📋 Ficha"** (modal) para no saturar la tarjeta. Claves `localStorage
   (y soporta semanas/horas). Era la causa del "195 m" que distorsionaba el K.
 - **Logo en modo oscuro**: `.anticipo-mark` usaba `background:var(--ink)` → en oscuro quedaba blanco-sobre-blanco. Override
   a chip claro con glifo oscuro.
-- **Filtro de no-presentables (#3b)**: dos niveles. `isTerminal` (estado/fase `adjudicad|celebrad|termin|liquidad|cerrad|
-  desiert|revocad|descartad|suspendid|anulad|cancelad|evaluaci|en ejecuci|ejecutad`) → **oculto SIEMPRE** (el toggle no lo
-  reactiva). `dateClosed` (`diasHasta<0` o día vencido) → oculto salvo toggle/reveal; "cierra hoy" con hora futura permanece.
-  "Mostrar" es **solo de sesión** (`_reveal`, ya no persiste). Migración única `detecta-cerrados-migrado-v2` reactiva el
-  default ON. Tarjeta revelada se atenúa con cinta "CERRADO".
+- **Filtro de no-presentables — DOS muros**:
+  1. **Origen (base `loadProcesses`, "CAPA 5")**: descarta estado/fase terminal (`adjudicad|celebrad|termin|liquidad|cerrad|
+     desiert|revocad|descartad|suspendid|anulad|cancelad|evaluaci|en ejecuci|ejecutad`) **antes de puntuar/guardar** →
+     nunca entran al pipeline, pase lo que pase con capas o toggles. Es el muro a prueba de todo.
+  2. **Aditivo (#3b)**: `dateClosed` (`diasHasta<0` o día vencido) → oculto salvo toggle/reveal; "cierra hoy" con hora
+     futura permanece. "Mostrar" es **solo de sesión** (`_reveal`). Migración `detecta-cerrados-migrado-v3` reactiva el
+     default ON. Tarjeta revelada se atenúa con cinta "CERRADO".
+  - Si "siguen apareciendo cerrados" tras desplegar: casi siempre es **deploy/caché viejos** — el footer muestra la versión
+    (`v5.0…`); si no se ve, no está desplegada esta rama. Recarga fuerte (SW network-first).
+
+### Capa #6 — densidad de tarjeta (`detectaV6`, un `<style>` + un `<script>` antes de `</body>`)
+Corre **al final**: agrupa los botones secundarios de `.proc-actions` en un menú **"⋯ Más"** (mueve los nodos, conserva
+listeners), dejando visibles solo **📋 Ficha · ★ · ↗ SECOP II · selector de estado**. Chip persistente "🟢 Solo procesos
+abiertos" en los filtros.
 - **Alineación de tarjetas #4**: `v4Augment/recordSeen/maybeDailyBanner/autoRiesgo` usan `curList()` (lista ya filtrada por
   #3b), no `t`; antes desalineaban botones/notas cuando había cerrados ocultos.
 
