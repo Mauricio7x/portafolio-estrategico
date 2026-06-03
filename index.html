@@ -6718,5 +6718,651 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
 })();
 
 </script>
+
+<!-- ════════════════════════════════════════════════════════════════
+     MEJORAS 2026 · capa aditiva #5 — 40 ideas. Envuelve renderProcesses/
+     analizarPliego por encima de #1..#4. -->
+<style>
+  /* ════ MEJORAS 2026 · capa aditiva #5 — 40 ideas ════ */
+  .v5-card{background:var(--soft);border:1px solid var(--line2);border-radius:13px;padding:14px 16px;margin-bottom:12px}
+  .v5-card h4{font-size:13.5px;margin:0 0 8px}
+  .v5-muted{color:var(--ink2);font-size:12px}
+  .v5-sub{font-size:13px;margin-bottom:8px}
+  /* ficha */
+  .v5-f-head{display:flex;gap:14px;align-items:center;margin-bottom:14px}
+  .v5-f-score{width:54px;height:54px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-weight:700;font-size:22px;color:#fff}
+  .v5-f-score.hi{background:var(--green)} .v5-f-score.mid{background:var(--amber)} .v5-f-score.lo{background:var(--red)}
+  .v5-f-name{font-size:15px;font-weight:600;line-height:1.35}
+  .v5-f-meta{font-size:12px;color:var(--ink2);margin-top:3px}
+  .v5-steps{margin:0;padding-left:18px;font-size:13px;line-height:1.5} .v5-steps li{margin-bottom:5px}
+  .v5-ok{color:var(--green);font-size:13px;font-weight:500}
+  .v5-whatif{display:flex;align-items:center;gap:12px;font-size:14px;flex-wrap:wrap}
+  .v5-arrow{color:var(--ink2)} .v5-delta{font-weight:700;border-radius:8px;padding:2px 9px;background:var(--line2)}
+  .v5-delta.up{background:rgba(28,140,74,.15);color:var(--green)} .v5-delta.down{background:rgba(179,38,30,.12);color:var(--red)}
+  .v5-hint{font-size:12px;color:var(--ink2);margin-top:8px}
+  .v5-chips{display:flex;flex-wrap:wrap;gap:8px}
+  .v5-chip{font-size:12px;background:var(--panel);border:1px solid var(--line2);border-radius:980px;padding:5px 11px}
+  .v5-chip.warn{background:rgba(154,107,0,.1);border-color:rgba(154,107,0,.3);color:var(--amber)}
+  .v5-sim{display:flex;flex-direction:column;padding:8px 0;border-bottom:1px solid var(--line2);font-size:13px}
+  .v5-sim:last-child{border-bottom:0} .v5-sim a{color:inherit;text-decoration:none} .v5-sim a:hover{color:var(--accent)}
+  .v5-sim b{color:var(--accent);margin-right:6px} .v5-sim span{font-size:11.5px;color:var(--ink2);margin-top:2px}
+  .v5-actions{display:flex;flex-wrap:wrap;gap:8px}
+  .v5-chk-row{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:13px;cursor:pointer}
+  .v5-bita-add{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .v5-bita-add input{flex:1;min-width:120px;font:inherit;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--ink)}
+  .v5-bita-row{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:7px 0;border-bottom:1px solid var(--line2)}
+  .v5-bita-row span{color:var(--ink2);white-space:nowrap}
+  .v5-bita-row a{color:var(--accent);text-decoration:none}
+  .v5-x{border:0;background:transparent;color:var(--ink2);cursor:pointer;font-size:13px}.v5-x:hover{color:var(--red)}
+  /* badges en tarjeta */
+  .v5-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .v5-badge{font-size:10.5px;font-weight:600;border-radius:7px;padding:3px 8px;background:var(--soft);border:1px solid var(--line2);color:var(--ink2)}
+  .v5-badge.loc{background:rgba(0,113,227,.1);border-color:rgba(0,113,227,.3);color:var(--accent)}
+  .v5-badge.re{background:rgba(154,107,0,.12);border-color:rgba(154,107,0,.3);color:var(--amber)}
+  .v5-badge.mod{background:rgba(28,140,74,.12);border-color:rgba(28,140,74,.3);color:var(--green)}
+  .v5-ficha{font-weight:600!important}
+  #proc-list mark{background:rgba(255,214,10,.45);color:inherit;border-radius:3px;padding:0 2px}
+  .v5-more{display:block;margin:10px auto 0;padding:10px 22px}
+  .v5-flash{animation:v5flash 2.2s ease}
+  @keyframes v5flash{0%,100%{box-shadow:var(--shadow)}20%,60%{box-shadow:0 0 0 3px var(--accent)}}
+  /* calendario */
+  .v5-cal-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin:6px 0 12px}
+  #v5-cal-title{font-weight:600;text-transform:capitalize;min-width:160px;text-align:center}
+  .v5-cal-dows{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:5px}
+  .v5-cal-dows span{text-align:center;font-size:11px;color:var(--ink2);font-weight:600}
+  .v5-cal-cells{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  .v5-cal-cell{aspect-ratio:1;border:1px solid var(--line2);border-radius:9px;padding:5px;position:relative;font-size:12px;background:var(--panel)}
+  .v5-cal-cell.empty{border:0;background:transparent}
+  .v5-cal-cell.has{cursor:pointer;border-color:var(--accent)} .v5-cal-cell.soon{cursor:pointer;background:rgba(179,38,30,.1);border-color:var(--red)}
+  .v5-cal-n{color:var(--ink2)} .v5-cal-dot{position:absolute;right:4px;bottom:4px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;border-radius:980px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;padding:0 3px}
+  .v5-cal-cell.soon .v5-cal-dot{background:var(--red)}
+  /* entidades */
+  .v5-ent-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line2)}
+  .v5-ent-row:last-child{border-bottom:0}
+  .v5-ent-rank{width:20px;text-align:center;color:var(--ink2);font-weight:700;font-family:'Inter',sans-serif}
+  .v5-ent-name{flex:1;font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .v5-ent-meta{font-size:11.5px;color:var(--ink2);white-space:nowrap}
+  .v5-ent-avg{font-family:'Inter',sans-serif;font-weight:700;font-size:16px;width:34px;text-align:right}
+  /* estacionalidad */
+  .v5-sea-row{display:flex;align-items:flex-end;gap:6px;height:120px;padding-top:8px}
+  .v5-sea-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .v5-sea-bar{width:100%;max-width:34px;background:linear-gradient(180deg,var(--accent),#4da3f0);border-radius:6px 6px 0 0;min-height:3px}
+  .v5-sea-lab{font-size:10px;color:var(--ink2);margin-top:5px}
+  /* metodología */
+  .v5-met{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+  .v5-met-row{display:flex;gap:14px;align-items:flex-start;background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:13px 15px}
+  .v5-met-pts{flex-shrink:0;font-family:'Inter',sans-serif;font-weight:700;color:var(--accent);width:60px}
+  /* header tools */
+  .v5-htools{display:flex;gap:4px;align-items:center}
+  .v5-htool{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;font-size:12px;font-weight:600;font-family:inherit}
+  .v5-htool:hover{box-shadow:var(--shadow)}
+  html[data-theme="dark"] .v5-htool{background:#1f1f22}
+  @media(max-width:760px){ .v5-htools #v5-fa,.v5-htools #v5-fm{display:none} }
+  /* alto contraste */
+  html.v5-contrast{--ink:#000;--ink2:#2a2a2a;--line:#555;--line2:#888}
+  html.v5-contrast[data-theme="dark"]{--ink:#fff;--ink2:#e0e0e0;--line:#aaa;--line2:#777}
+  html.v5-contrast .proc,html.v5-contrast .panel,html.v5-contrast .dash-card{border:1.5px solid var(--line)}
+  /* footer version + changelog */
+  .v5-ver{display:inline} .v5-link{background:none;border:0;color:var(--accent);cursor:pointer;font:inherit;font-size:inherit;padding:0;text-decoration:underline}
+  .v5-cl-row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line2)} .v5-cl-row:last-child{border-bottom:0}
+  .v5-cl-row b{flex-shrink:0;width:50px;color:var(--accent);font-family:'Inter',sans-serif}
+  /* tour */
+  .v5-tour{position:fixed;inset:0;z-index:100000;pointer-events:none}
+  .v5-tour-box{position:absolute;pointer-events:auto;width:300px;max-width:90vw;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.4);padding:16px 18px;z-index:100002}
+  .v5-tour-t{font-size:15px;font-weight:700;margin-bottom:5px} .v5-tour-d{font-size:13px;color:var(--ink2);line-height:1.45}
+  .v5-tour-nav{display:flex;align-items:center;justify-content:space-between;margin-top:14px} .v5-tour-i{font-size:12px;color:var(--ink2)}
+  .v5-spot{position:relative;z-index:100001;box-shadow:0 0 0 4px var(--accent),0 0 0 9999px rgba(0,0,0,.55);border-radius:10px}
+  /* alertas de pliego */
+  .v5-fuera{margin-top:14px;background:rgba(179,38,30,.1);border:1px solid rgba(179,38,30,.4);color:var(--red);border-radius:12px;padding:13px 16px;font-size:13.5px}
+  .v5-amanado{margin-top:10px;background:rgba(154,107,0,.1);border:1px solid rgba(154,107,0,.35);color:var(--amber);border-radius:12px;padding:12px 15px;font-size:13px}
+
+</style>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   MEJORAS 2026 · capa aditiva #5 — 40 ideas (todo gratis, sin backend).
+   Envuelve renderProcesses/analizarPliego por encima de todo. Cada
+   feature va en try/catch; reutiliza el ámbito global clásico.
+   ════════════════════════════════════════════════════════════════ */
+(function detectaV5(){
+  "use strict";
+  if(window.__detectaV5) return; window.__detectaV5 = true;
+  var VERSION = "5.0 · jun 2026";
+
+  /* ───── helpers ───── */
+  function esc(s){ try{ return escapeHTML(s); }catch(e){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); } }
+  function curList(){ try{ if(window._dashList&&window._dashList.length) return window._dashList; if(window._lastProcesses&&window._lastProcesses.length) return window._lastProcesses; }catch(e){} return []; }
+  function getProfile(){ try{ return currentProfile; }catch(e){ return "helder"; } }
+  var PROF_NAMES={helder:"Helder", genesis:"Génesis", juntos:"Helder + Génesis"};
+  function smmlv(){ try{ return SMMLV; }catch(e){ return 1750905; } }
+  function keyOf(p){ return (p.nombre||"")+"@"+(p.entidad||"")+"@"+(p.valor||0); }
+  function hashStr(s){ s=String(s||""); var h=0; for(var i=0;i<s.length;i++){ h=((h<<5)-h+s.charCodeAt(i))|0; } return Math.abs(h); }
+  function money(n){ n=Math.max(0,n||0);
+    if(n>=1e9) return "$"+(n/1e9).toLocaleString("es-CO",{maximumFractionDigits:2})+" mil M";
+    if(n>=1e6) return "$"+(n/1e6).toLocaleString("es-CO",{maximumFractionDigits:1})+" M";
+    if(n>=1e3) return "$"+Math.round(n/1e3).toLocaleString("es-CO")+" mil";
+    return "$"+Math.round(n).toLocaleString("es-CO"); }
+  function fmtFecha(s){ try{ return fmtDate(s); }catch(e){ var d=new Date(s); return isNaN(d)?String(s):d.toLocaleDateString("es-CO"); } }
+  function diasHasta(f){ if(!f) return null; var t=Date.parse(f); if(isNaN(t)) return null; return Math.floor((t-Date.now())/86400000); }
+  function lsGet(k,def){ try{ var v=localStorage.getItem(k); return v==null?def:JSON.parse(v); }catch(e){ return def; } }
+  function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+  function clip(s,n){ s=String(s||""); return s.length>n ? s.slice(0,n).replace(/\s+\S*$/,"")+"…" : s; }
+  function norm(s){ try{ return normalizaTexto(s); }catch(e){ return (s||"").toString().normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim(); } }
+  function titleCase(s){ return String(s||"").toLowerCase().replace(/(^|[\s\-\/])([a-záéíóúñü])/g,function(_,sep,ch){ return sep+ch.toUpperCase(); }); }
+  function dl(blob,name){ var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },600); }
+  function copy(t){ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(function(){ toast("Copiado al portapapeles."); },function(){ prompt("Copia:",t); }); } else prompt("Copia:",t); }
+  var toastEl=null,toastT=null;
+  function toast(msg,ms){ toastEl=document.querySelector(".v3-toast"); if(!toastEl){ toastEl=document.createElement("div"); toastEl.className="v3-toast"; document.body.appendChild(toastEl); }
+    toastEl.textContent=msg; toastEl.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(function(){ toastEl.classList.remove("show"); },ms||2800); }
+  var modalEl=null;
+  function openModal(headHTML,bodyHTML,wide){
+    if(!modalEl){ modalEl=document.createElement("div"); modalEl.className="v3-modal"; modalEl.setAttribute("role","dialog");
+      modalEl.innerHTML='<div class="v3-modal-back"></div><div class="v3-modal-box"><button class="v3-modal-x" aria-label="Cerrar">✕</button><div class="v3-modal-head"></div><div class="v3-modal-body"></div></div>';
+      document.body.appendChild(modalEl);
+      modalEl.querySelector(".v3-modal-back").addEventListener("click",closeModal);
+      modalEl.querySelector(".v3-modal-x").addEventListener("click",closeModal);
+      document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&modalEl.classList.contains("show")) closeModal(); });
+    }
+    modalEl.querySelector(".v3-modal-box").style.maxWidth = wide?"min(1040px,95vw)":"min(820px,94vw)";
+    modalEl.querySelector(".v3-modal-head").innerHTML=headHTML;
+    modalEl.querySelector(".v3-modal-body").innerHTML=bodyHTML;
+    modalEl.classList.add("show"); document.documentElement.style.overflow="hidden"; return modalEl;
+  }
+  function closeModal(){ if(modalEl){ modalEl.classList.remove("show"); document.documentElement.style.overflow=""; } }
+
+  /* ───── #16 · IPC: valores históricos → pesos de hoy ───── */
+  var IPC={2015:6.77,2016:5.75,2017:4.09,2018:3.18,2019:3.80,2020:1.61,2021:5.62,2022:13.12,2023:9.28,2024:5.20,2025:4.50,2026:0};
+  function aPesosDeHoy(v,year){ v=+v||0; year=+year; if(!v||!year||year>=2026) return v; var f=1; for(var y=year;y<2026;y++){ if(IPC[y]!=null) f*=(1+IPC[y]/100); } return v*f; }
+
+  /* ───── heurísticas de señal ───── */
+  var DEPTOS=["amazonas","antioquia","arauca","atlantico","bolivar","boyaca","caldas","caqueta","casanare","cauca","cesar","choco","cordoba","cundinamarca","guainia","guaviare","huila","la guajira","magdalena","meta","narino","norte de santander","putumayo","quindio","risaralda","san andres","santander","sucre","tolima","valle del cauca","vaupes","vichada"];
+  function inferUbicacion(p){ // #15 lugar de ejecución real desde el texto
+    var txt=norm((p.nombre||"")+" "+(p.descripcion||""));
+    var muni="", dep="";
+    var m=txt.match(/municipio de ([a-zñ ]{3,28}?)(?:[,.\-()]| en | del | departamento| y |$)/);
+    if(m) muni=titleCase(m[1].trim());
+    if(!muni){ var m2=txt.match(/(?:vereda|corregimiento|inspecci[oó]n) [a-zñ ]+? (?:del? )?municipio de ([a-zñ ]{3,28})/); if(m2) muni=titleCase(m2[1].trim()); }
+    for(var i=0;i<DEPTOS.length;i++){ if(txt.indexOf("departamento de "+DEPTOS[i])>=0 || txt.indexOf("departamento del "+DEPTOS[i])>=0){ dep=titleCase(DEPTOS[i]); break; } }
+    if(!dep){ for(var j=0;j<DEPTOS.length;j++){ if(txt.indexOf(DEPTOS[j])>=0){ dep=titleCase(DEPTOS[j]); break; } } }
+    if(!muni && !dep) return null;
+    // ¿aporta algo distinto a la ciudad de la entidad?
+    if(muni && norm(muni)===norm(p.ciudad)) { if(!dep || norm(dep)===norm(p.depto)) return null; }
+    return { ciudad:muni, depto:dep };
+  }
+  function esPorLotes(p){ return /\blote[s]?\b|\bgrupo[s]?\s*(?:n[oº]?\s*)?\d|por\s+lotes|m[uú]ltiples?\s+[ií]tem|\bgrupos\b/i.test((p.nombre||"")+" "+(p.descripcion||"")); } // #6
+  function esReabierto(p){ return /desiert|segunda\s+(?:convocatoria|apertura|vez)|nuevamente|re[\s-]?apertura|reapertura|por\s+segunda/i.test((p.nombre||"")+" "+(p.descripcion||"")); } // #12
+  function competencia(p){ // #7
+    var m=norm(p.modalidad), base=2;
+    if(/minima\s+cuant/.test(m)) base=1;
+    else if(/menor\s+cuant/.test(m)) base=2;
+    else if(/licitaci|concurso\s+de\s+m|abierta/.test(m)) base=3;
+    var ciu=norm(p.ciudad);
+    if(/bogota|medellin|cali|barranquilla|bucaramanga|cartagena/.test(ciu)) base++;
+    base=Math.max(1,Math.min(4,base));
+    return {n:base, t:["","baja","media","alta","muy alta"][base]};
+  }
+  function plazoIrreal(p){ // #5
+    var v=p.valor||0, pm=p.plazoMeses||0; if(!v||!pm) return null;
+    var smm=v/smmlv();
+    if(pm<=1 && smm>1500) return "Plazo de 1 mes para "+Math.round(smm).toLocaleString("es-CO")+" SMMLV: revisa, suele ser error de unidad o exigencia muy apretada.";
+    if(smm/Math.max(pm,1) > 3000) return "Ritmo exigido muy alto ("+Math.round(smm/pm).toLocaleString("es-CO")+" SMMLV/mes): valida capacidad operativa.";
+    return null;
+  }
+  function margenEstimado(p){ var pct=lsGet("detecta-margen-default",8)||8; return {pct:pct, val:(p.valor||0)*pct/100}; } // #28
+
+  /* ───── #9 · cambios desde la última visita (adendas/modificaciones) ───── */
+  var SNAP_KEY="detecta-proc-snap-v1", _prevSnap=null;
+  function prevSnap(){ if(_prevSnap) return _prevSnap; _prevSnap=lsGet(SNAP_KEY,{})||{}; return _prevSnap; }
+  function cambios(p){ var prev=prevSnap()[keyOf(p)]; if(!prev) return null; var out=[];
+    if(prev.v!=null && +prev.v!==+(p.valor||0)) out.push("valor "+money(prev.v)+" → "+money(p.valor||0));
+    if((prev.c||"")!==(p.cierre||"")) out.push("cierre "+(prev.c?fmtFecha(prev.c):"—")+" → "+(p.cierre?fmtFecha(p.cierre):"—"));
+    if((prev.e||"")!==(p.estado||"")) out.push("estado "+(prev.e||"—")+" → "+(p.estado||"—"));
+    return out.length?out:null; }
+  function saveSnaps(list){ var st=lsGet(SNAP_KEY,{})||{}, now=Date.now(); list.forEach(function(p){ st[keyOf(p)]={v:p.valor||0,c:p.cierre||"",e:p.estado||"",f:p.fase||"",t:now}; });
+    var ks=Object.keys(st); if(ks.length>2000){ ks.sort(function(a,b){return (st[a].t||0)-(st[b].t||0);}); ks.slice(0,ks.length-2000).forEach(function(k){ delete st[k]; }); }
+    lsSet(SNAP_KEY,st); }
+
+  /* ───── #11 · historial propio (ganados/perdidos) ───── */
+  function historial(){ return lsGet("detecta-historial-v1",[])||[]; }
+  function histDeEntidad(entidad){ var en=norm(entidad); return historial().filter(function(h){ return norm(h.entidad).indexOf(en.slice(0,16))>=0 || en.indexOf(norm(h.entidad).slice(0,16))>=0; }); }
+  function importHistorial(text){
+    var lines=String(text||"").split(/\r?\n/).filter(function(l){ return l.trim(); }); var add=[];
+    lines.forEach(function(l){ var c=l.split(/[;\t,]/); if(c.length<2) return;
+      add.push({entidad:(c[0]||"").trim(), objeto:(c[1]||"").trim(), valor:parseFloat((c[2]||"").replace(/[^0-9.]/g,""))||0, anio:parseInt(c[3])||"", resultado:(c[4]||"").trim().toLowerCase()}); });
+    if(!add.length){ toast("No se reconocieron filas. Usa: entidad;objeto;valor;año;ganado/perdido"); return; }
+    var h=historial().concat(add); lsSet("detecta-historial-v1",h); toast(add.length+" registros importados ("+h.length+" en total)."); rerenderRadar();
+  }
+
+  /* ───── tienda kanban/ficha (responsable/adjuntos/docs/bitácora/recordatorio) ───── */
+  function kStore(){ return lsGet("detecta-kanban-v1",{})||{}; }
+  function kEntry(p){ return kStore()[keyOf(p)]||{}; }
+  function kPatch(p,patch){ var st=kStore(),k=keyOf(p),e=st[k]||{}; for(var x in patch) e[x]=patch[x];
+    e.s=e.s||{nombre:p.nombre,entidad:p.entidad,valor:p.valor,score:p._score,url:p.url,cierre:p.cierre,ciudad:p.ciudad,depto:p.depto}; e.t=Date.now(); st[k]=e; lsSet("detecta-kanban-v1",st); }
+  function bitacora(p){ return (kEntry(p).log)||[]; }
+  function logEvento(p,txt){ var e=kEntry(p), log=e.log||[]; log.push({t:Date.now(),x:txt}); kPatch(p,{log:log}); }
+
+  /* ───── DEEP-LINK a proceso (#37) ───── */
+  function rerenderRadar(){ try{ if(typeof window.renderProcesses==="function") window.renderProcesses(curList()); }catch(e){} }
+
+  /* ════════ FICHA del proceso (modal que reúne A/C/D por proceso) ════════ */
+  function fichaHTML(p){
+    var sec=[];
+    // resumen
+    var di=inferUbicacion(p);
+    sec.push('<div class="v5-f-head"><div class="v5-f-score '+(p._score>=75?"hi":p._score>=50?"mid":"lo")+'">'+(p._score||0)+'</div>'+
+      '<div><div class="v5-f-name">'+esc(p.nombre||"—")+'</div><div class="v5-f-meta">'+esc(p.entidad||"")+' · '+esc([p.ciudad,p.depto].filter(Boolean).join(", "))+' · '+(p.valor?money(p.valor):"valor n/d")+'</div></div></div>');
+    // #1 cómo subir el encaje
+    var gaps=[]; try{ gaps=faltaPara100(p._reasons||[]); }catch(e){}
+    sec.push('<div class="v5-card"><h4>📈 Cómo subir el encaje</h4>'+
+      (gaps.length? '<ul class="v5-steps">'+gaps.map(function(g){ return '<li>'+esc(g)+'</li>'; }).join("")+'</ul>'
+                  : '<div class="v5-ok">Encaje pleno en los factores evaluables. Falta confirmar el pliego.</div>')+'</div>');
+    // #2 consorcio what-if
+    try{
+      if(getProfile()!=="juntos" && typeof calcScore==="function" && profiles.juntos){
+        var r=calcScore(p, profiles.juntos); var delta=(r.score||0)-(p._score||0);
+        sec.push('<div class="v5-card"><h4>🤝 ¿Y si entras en consorcio (Helder + Génesis)?</h4>'+
+          '<div class="v5-whatif"><span>Encaje actual <b>'+(p._score||0)+'</b></span><span class="v5-arrow">→</span><span>En consorcio <b style="color:'+(r.score>=75?"var(--green)":r.score>=50?"var(--amber)":"var(--red)")+'">'+r.score+'</b></span>'+
+          '<span class="v5-delta '+(delta>0?"up":delta<0?"down":"")+'">'+(delta>0?"+":"")+delta+'</span></div>'+
+          (delta>0?'<div class="v5-hint">El consorcio mejora el encaje (más clases UNSPSC y mayor K). Evalúa repartición en la pestaña Juntos.</div>':'<div class="v5-hint">El consorcio no mejora este proceso.</div>')+'</div>');
+      }
+    }catch(e){}
+    // #8 UNSPSC
+    try{
+      var clase=p._clase||unspscClase(p.unspsc); var prof=profiles[getProfile()];
+      var inRup=clase&&prof&&prof.unspscClases&&prof.unspscClases.indexOf(clase)>=0;
+      sec.push('<div class="v5-card"><h4>🏷 UNSPSC</h4>'+(clase? ('Clase <b>'+clase+'</b>: '+(inRup?'<span style="color:var(--green)">está en tu RUP ✓</span>':'<span style="color:var(--red)">NO está en tu RUP</span> — fuera del alcance contratable de '+(PROF_NAMES[getProfile()]||getProfile())+'. '+(getProfile()!=="juntos"?'El consorcio cubre más clases.':''))) : 'SECOP no declaró UNSPSC; el encaje se evaluó por el objeto (texto).')+'</div>');
+    }catch(e){}
+    // señales
+    var chips=[];
+    if(di) chips.push('<span class="v5-chip">📍 Obra en: <b>'+esc([di.ciudad,di.depto].filter(Boolean).join(", "))+'</b></span>');
+    if(esPorLotes(p)) chips.push('<span class="v5-chip">📦 Por lotes — evalúa lote a lote</span>');
+    if(esReabierto(p)) chips.push('<span class="v5-chip">♻ Posible reapertura / desierto previo</span>');
+    var comp=competencia(p); chips.push('<span class="v5-chip">⚔ Competencia esperada: <b>'+comp.t+'</b></span>');
+    var pl=plazoIrreal(p); if(pl) chips.push('<span class="v5-chip warn">⏱ '+esc(pl)+'</span>');
+    var mg=margenEstimado(p); chips.push('<span class="v5-chip">💵 Margen estimado ('+mg.pct+'%): <b>'+money(mg.val)+'</b></span>');
+    var ch=cambios(p); if(ch) chips.push('<span class="v5-chip warn">✏ Cambió desde tu última visita: '+esc(ch.join("; "))+'</span>');
+    var he=histDeEntidad(p.entidad); if(he.length) chips.push('<span class="v5-chip">📚 Ya registraste <b>'+he.length+'</b> con esta entidad ('+he.filter(function(h){return /gan/.test(h.resultado);}).length+' ganados)</span>');
+    sec.push('<div class="v5-card"><h4>🔎 Señales</h4><div class="v5-chips">'+chips.join("")+'</div></div>');
+    // #29 similares
+    try{
+      var clase2=p._clase||unspscClase(p.unspsc), me=keyOf(p);
+      var sim=curList().filter(function(q){ if(keyOf(q)===me) return false;
+        var c2=q._clase||unspscClase(q.unspsc);
+        return (clase2&&c2===clase2) || (q.depto&&p.depto&&norm(q.depto)===norm(p.depto)) || tokenSim(p.nombre,q.nombre)>=0.34; })
+        .sort(function(a,b){ return (b._score||0)-(a._score||0); }).slice(0,5);
+      if(sim.length) sec.push('<div class="v5-card"><h4>🧩 Procesos similares</h4>'+sim.map(function(q){ return '<div class="v5-sim">'+(q.url?'<a href="'+esc(q.url)+'" target="_blank" rel="noopener">':'')+'<b>'+(q._score||0)+'</b> '+esc(clip(q.nombre,70))+(q.url?'</a>':'')+'<span>'+esc(clip(q.entidad||"",40))+(q.valor?(' · '+money(q.valor)):"")+'</span></div>'; }).join("")+'</div>');
+    }catch(e){}
+    // acciones
+    var k=hashStr(keyOf(p));
+    sec.push('<div class="v5-card"><h4>🗂 Acciones</h4><div class="v5-actions">'+
+      '<button class="v3-vb-btn" data-act="docs">📑 Documentos a preparar</button>'+
+      '<button class="v3-vb-btn" data-act="plant">✉ Plantillas</button>'+
+      '<button class="v3-vb-btn" data-act="adj">🔗 Adjuntos/enlaces</button>'+
+      '<button class="v3-vb-btn" data-act="rec">⏰ Recordatorio</button>'+
+      '<button class="v3-vb-btn" data-act="link">🔗 Copiar enlace al proceso</button>'+
+      '<button class="v3-vb-btn" data-act="rep">🚩 Reportar dato erróneo</button>'+
+      (p.url?'<a class="v3-vb-btn" href="'+esc(p.url)+'" target="_blank" rel="noopener">↗ Abrir en SECOP II</a>':'')+
+      '</div><div id="v5-act-mount"></div></div>');
+    // bitácora
+    var log=bitacora(p);
+    sec.push('<div class="v5-card"><h4>📓 Bitácora</h4>'+
+      '<div class="v5-bita-add"><input id="v5-bita-in" placeholder="Anota una acción (llamada, visita, decisión)…"><button class="v3-vb-btn" id="v5-bita-go">Añadir</button></div>'+
+      '<div id="v5-bita-list">'+(log.length? log.slice().reverse().map(function(l){ return '<div class="v5-bita-row"><span>'+fmtFecha(new Date(l.t).toISOString())+'</span> '+esc(l.x)+'</div>'; }).join("") : '<div class="v5-muted">Sin registros aún.</div>')+'</div></div>');
+    return sec.join("");
+  }
+  function tokenSim(a,b){ a=norm(a).split(/\s+/).filter(function(w){return w.length>3;}); b=new Set(norm(b).split(/\s+/)); if(!a.length) return 0; var h=0; a.forEach(function(w){ if(b.has(w)) h++; }); return h/a.length; }
+  function openFicha(p){
+    openModal('<h3 style="margin:0">Ficha del proceso</h3><p class="desc" style="margin:4px 0 0">Todo lo que necesitas para decidir y preparar.</p>', fichaHTML(p), true);
+    var mount=document.getElementById("v5-act-mount");
+    modalEl.querySelectorAll(".v5-actions [data-act]").forEach(function(b){ b.addEventListener("click", function(){ actHandler(b.getAttribute("data-act"), p, mount); }); });
+    var bg=document.getElementById("v5-bita-go"); if(bg) bg.addEventListener("click", function(){ var i=document.getElementById("v5-bita-in"); if(i&&i.value.trim()){ logEvento(p,i.value.trim()); openFicha(p); } });
+  }
+  function actHandler(act,p,mount){
+    if(act==="link"){ var url=location.origin+location.pathname+"#p="+hashStr(keyOf(p)); copy(url); return; }
+    if(act==="rep"){ var body=encodeURIComponent("Reporte de dato erróneo\n\nProceso: "+(p.nombre||"")+"\nEntidad: "+(p.entidad||"")+"\nValor: "+(p.valor||"")+"\nURL: "+(p.url||"")+"\n\nQué está mal: ");
+      var mail="mailto:?subject="+encodeURIComponent("Detecta · reporte de dato")+"&body="+body; window.location.href=mail; toast("Abriendo tu correo… o copia el detalle."); copy(decodeURIComponent(body)); return; }
+    if(act==="docs"){ mount.innerHTML=docsHTML(p); wireDocs(p,mount); return; }
+    if(act==="plant"){ mount.innerHTML=plantHTML(p); modalEl.querySelectorAll("[data-pl]").forEach(function(b){ b.addEventListener("click",function(){ copy(plantillaTexto(b.getAttribute("data-pl"),p)); }); }); return; }
+    if(act==="adj"){ mount.innerHTML=adjHTML(p); wireAdj(p,mount); return; }
+    if(act==="rec"){ mount.innerHTML=recHTML(p); var g=document.getElementById("v5-rec-go"); if(g) g.addEventListener("click",function(){ var d=parseInt(document.getElementById("v5-rec-d").value)||3; setRecordatorio(p,d); mount.innerHTML='<div class="v5-ok">Listo: te avisaré '+d+' día(s) antes del cierre (si las notificaciones están activas).</div>'; }); return; }
+  }
+  /* #17 documentos */
+  var DOC_STD=["RUP vigente","Certificado de Cámara de Comercio","Estados financieros (últimos)","RUT","Cédula / Cert. representación legal","Certificaciones de experiencia","Pólizas / garantía de seriedad","Propuesta económica","APU / análisis de precios","Compromiso de consorcio (si aplica)"];
+  function docsHTML(p){ var st=lsGet("detecta-docs-v1",{})||{}, m=st[keyOf(p)]||{};
+    return '<div class="v5-sub"><b>Documentos a preparar</b> (se guardan por proceso)</div>'+DOC_STD.map(function(d,i){ return '<label class="v5-chk-row"><input type="checkbox" data-doc="'+i+'"'+(m[d]?" checked":"")+'> '+esc(d)+'</label>'; }).join("")+'<div class="v5-muted" style="margin-top:6px">'+Object.keys(m).filter(function(k){return m[k];}).length+' / '+DOC_STD.length+' listos</div>'; }
+  function wireDocs(p,mount){ mount.querySelectorAll("[data-doc]").forEach(function(c){ c.addEventListener("change",function(){ var st=lsGet("detecta-docs-v1",{})||{},k=keyOf(p),m=st[k]||{}; m[DOC_STD[+c.getAttribute("data-doc")]]=c.checked; st[k]=m; lsSet("detecta-docs-v1",st); }); }); }
+  /* #18 plantillas */
+  function plantHTML(p){ return '<div class="v5-sub"><b>Plantillas</b> — se rellenan con tu perfil y el proceso; pulsa para copiar.</div>'+
+    '<div class="v5-actions"><button class="v3-vb-btn" data-pl="carta">✉ Carta de presentación</button><button class="v3-vb-btn" data-pl="consorcio">🤝 Compromiso de consorcio</button></div>'; }
+  function plantillaTexto(tipo,p){ var prof=profiles[getProfile()]||{}; var hoy=new Date().toLocaleDateString("es-CO");
+    if(tipo==="consorcio"){ return "COMPROMISO DE CONSORCIO\n\nEntre Helder Gustavo Rodríguez Santana y Génesis Ingeniería y Construcción GIC SAS, para participar en el proceso «"+(p.nombre||"")+"» de "+(p.entidad||"")+".\n\nParticipación: Helder ___% / Génesis ___%.\nRepresentante: ______.\nFecha: "+hoy+".\n\n(Estructura de apoyo; ajusta porcentajes y cláusulas al pliego.)"; }
+    return "Señores\n"+(p.entidad||"[ENTIDAD]")+"\n\nAsunto: Presentación de oferta — «"+(p.nombre||"")+"».\n\n"+(prof.name||"[PROPONENTE]")+", identificado conforme al RUP vigente, presenta propuesta para el proceso de la referencia, manifestando que cumple los requisitos habilitantes y acepta las condiciones del pliego.\n\nValor de referencia: "+(p.valor?("$"+Math.round(p.valor).toLocaleString("es-CO")):"____")+".\n\nCordialmente,\n"+(prof.name||"")+"\nFecha: "+hoy; }
+  /* #21 adjuntos */
+  function adjHTML(p){ var st=lsGet("detecta-adjuntos-v1",{})||{}, a=st[keyOf(p)]||[];
+    return '<div class="v5-sub"><b>Adjuntos / enlaces</b> (referencias, no se suben archivos)</div>'+
+      '<div class="v5-bita-add"><input id="v5-adj-l" placeholder="Etiqueta"><input id="v5-adj-u" placeholder="https://…"><button class="v3-vb-btn" id="v5-adj-go">Añadir</button></div>'+
+      '<div>'+(a.length? a.map(function(x,i){ return '<div class="v5-bita-row"><a href="'+esc(x.url)+'" target="_blank" rel="noopener">'+esc(x.label||x.url)+'</a> <button class="v5-x" data-adj="'+i+'">✕</button></div>'; }).join("") : '<div class="v5-muted">Sin adjuntos.</div>')+'</div>'; }
+  function wireAdj(p,mount){ var go=document.getElementById("v5-adj-go");
+    if(go) go.addEventListener("click",function(){ var l=document.getElementById("v5-adj-l").value.trim(), u=document.getElementById("v5-adj-u").value.trim(); if(!u) return; var st=lsGet("detecta-adjuntos-v1",{})||{},k=keyOf(p),a=st[k]||[]; a.push({label:l,url:u}); st[k]=a; lsSet("detecta-adjuntos-v1",st); mount.innerHTML=adjHTML(p); wireAdj(p,mount); });
+    mount.querySelectorAll("[data-adj]").forEach(function(b){ b.addEventListener("click",function(){ var st=lsGet("detecta-adjuntos-v1",{})||{},k=keyOf(p),a=st[k]||[]; a.splice(+b.getAttribute("data-adj"),1); st[k]=a; lsSet("detecta-adjuntos-v1",st); mount.innerHTML=adjHTML(p); wireAdj(p,mount); }); }); }
+  /* #19 recordatorio configurable */
+  function recHTML(p){ var st=lsGet("detecta-recordatorios-v1",{})||{}, r=st[keyOf(p)];
+    return '<div class="v5-sub"><b>Recordatorio</b> — avísame antes del cierre'+(p.cierre?(" ("+fmtFecha(p.cierre)+")"):" (sin fecha de cierre detectada)")+'</div>'+
+      '<div class="v5-bita-add">avísame <input id="v5-rec-d" type="number" min="1" max="60" value="'+(r&&r.dias||3)+'" style="width:64px"> día(s) antes <button class="v3-vb-btn" id="v5-rec-go">Guardar</button></div>'; }
+  function setRecordatorio(p,dias){ var st=lsGet("detecta-recordatorios-v1",{})||{}; st[keyOf(p)]={dias:dias, cierre:p.cierre||"", nombre:p.nombre, ciudad:p.ciudad, depto:p.depto}; lsSet("detecta-recordatorios-v1",st); logEvento(p,"Recordatorio "+dias+"d antes"); checkRecordatorios(); }
+  function checkRecordatorios(){ try{ if(!("Notification" in window) || Notification.permission!=="granted") return;
+    var st=lsGet("detecta-recordatorios-v1",{})||{}, sent=lsGet("detecta-rec-sent-v1",{})||{}, now=Date.now(), ch=false;
+    for(var k in st){ var r=st[k]; var d=diasHasta(r.cierre); if(d===null) continue; if(d<0){ continue; }
+      if(d<=r.dias){ var sk=k+"|"+r.cierre+"|"+r.dias; if(sent[sk]) continue; try{ new Notification("Detecta · recordatorio", {body:(r.nombre||"Proceso")+"\nCierra en "+d+" día"+(d===1?"":"s")+(r.ciudad?(" · "+r.ciudad):""), icon:"icon.svg"}); }catch(e){} sent[sk]=now; ch=true; } }
+    if(ch) lsSet("detecta-rec-sent-v1",sent);
+  }catch(e){} }
+
+  /* ════════ per-card augment (badges + botón Ficha + highlight + #31 paginación) ════════ */
+  var PAGE=40;
+  function highlight(el,q){ try{ if(!q||!el) return; var txt=el.textContent; var i=txt.toLowerCase().indexOf(q.toLowerCase()); if(i<0) return; el.innerHTML=esc(txt.slice(0,i))+'<mark>'+esc(txt.slice(i,i+q.length))+'</mark>'+esc(txt.slice(i+q.length)); }catch(e){} }
+  function v5Augment(list){
+    var cont=document.getElementById("proc-list"); if(!cont) return;
+    var q=""; try{ var qi=document.getElementById("v4-q"); q=qi?qi.value.trim():""; }catch(e){}
+    var cards=cont.querySelectorAll(".proc");
+    cards.forEach(function(card,idx){
+      var p=list[idx]; if(!p) return;
+      if(card.dataset.v5!=="1"){ card.dataset.v5="1";
+        // badges pasivos
+        var head=card.querySelector(".proc-h");
+        var di=inferUbicacion(p), bad=[];
+        if(di) bad.push('<span class="v5-badge loc">📍 Obra: '+esc(clip([di.ciudad,di.depto].filter(Boolean).join(", "),28))+'</span>');
+        if(esReabierto(p)) bad.push('<span class="v5-badge re">♻ reapertura</span>');
+        if(cambios(p)) bad.push('<span class="v5-badge mod">✏ modificado</span>');
+        if(esPorLotes(p)) bad.push('<span class="v5-badge">📦 lotes</span>');
+        if(bad.length && head){ var bd=document.createElement("div"); bd.className="v5-badges"; bd.innerHTML=bad.join(""); var t=head.querySelector(".proc-title"); if(t&&t.parentNode){ t.parentNode.insertBefore(bd, t.nextSibling); } else head.appendChild(bd); }
+        // botón Ficha
+        var actions=card.querySelector(".proc-actions");
+        if(actions){ var b=document.createElement("button"); b.type="button"; b.className="v3-act v5-ficha"; b.innerHTML="📋 Ficha"; b.title="Ficha completa: consorcio, similares, documentos, plantillas, recordatorio…"; b.addEventListener("click",function(){ openFicha(p); }); actions.insertBefore(b, actions.firstChild); }
+        // deep-link id
+        card.dataset.pid=hashStr(keyOf(p));
+      }
+      // highlight (cada render, según búsqueda)
+      if(q){ var t2=card.querySelector(".proc-title"); if(t2 && t2.querySelectorAll("mark").length===0) highlight(t2,q); }
+    });
+    // #31 paginación
+    paginate(cards);
+  }
+  function paginate(cards){
+    var cont=document.getElementById("proc-list"); if(!cont) return;
+    var old=document.getElementById("v5-more"); if(old) old.remove();
+    var shown=cont._v5shown||PAGE;
+    cards.forEach(function(c,i){ c.style.display = i<shown ? "" : "none"; });
+    if(cards.length>shown){
+      var btn=document.createElement("button"); btn.id="v5-more"; btn.className="v3-vb-btn v5-more"; btn.textContent="Cargar más ("+(cards.length-shown)+" restantes)";
+      btn.addEventListener("click",function(){ cont._v5shown=shown+PAGE; paginate(cont.querySelectorAll(".proc")); });
+      cont.appendChild(btn);
+    }
+  }
+
+  /* ════════ paneles en Resumen: calendario / ranking entidades / estacionalidad ════════ */
+  function ensurePanels(){
+    var sec=document.getElementById("sec-resumen"); if(!sec) return;
+    if(!document.getElementById("v5-cal")){ var d=document.getElementById("dash-deadlines-wrap");
+      var pan=document.createElement("div"); pan.className="panel reveal in"; pan.id="v5-cal";
+      pan.innerHTML='<h3>Calendario de cierres <span class="v3-pill">mes</span></h3><p class="desc">Los cierres del radar en una grilla mensual. Pulsa un día para ver sus procesos.</p><div class="v5-cal-nav"><button class="v3-vb-btn" id="v5-cal-prev">‹</button><span id="v5-cal-title"></span><button class="v3-vb-btn" id="v5-cal-next">›</button></div><div id="v5-cal-grid" class="v5-cal-grid"></div>';
+      if(d&&d.parentNode) d.parentNode.insertBefore(pan,d.nextSibling); else sec.appendChild(pan);
+      document.getElementById("v5-cal-prev").addEventListener("click",function(){ _calM--; renderCal(); });
+      document.getElementById("v5-cal-next").addEventListener("click",function(){ _calM++; renderCal(); });
+    }
+    if(!document.getElementById("v5-ent")){ var pe=document.createElement("div"); pe.className="panel reveal in"; pe.id="v5-ent";
+      pe.innerHTML='<h3>Entidades más afines a ti <span class="v3-pill">dónde encajas</span></h3><p class="desc">Entidades con mayor encaje promedio en el radar actual del perfil.</p><div id="v5-ent-list"></div>';
+      document.getElementById("sec-resumen").appendChild(pe); }
+    if(!document.getElementById("v5-sea")){ var ps=document.createElement("div"); ps.className="panel reveal in"; ps.id="v5-sea";
+      ps.innerHTML='<h3>Estacionalidad <span class="v3-pill">cuándo abren</span></h3><p class="desc">Distribución por mes de publicación de los procesos del radar — útil para planear capacidad.</p><div id="v5-sea-bars"></div>';
+      document.getElementById("sec-resumen").appendChild(ps); }
+  }
+  var _calM=0; // offset de mes desde hoy
+  function renderCal(){ ensurePanels(); var grid=document.getElementById("v5-cal-grid"); if(!grid) return;
+    var base=new Date(); base.setDate(1); base.setMonth(base.getMonth()+_calM);
+    var y=base.getFullYear(), mo=base.getMonth();
+    document.getElementById("v5-cal-title").textContent=base.toLocaleDateString("es-CO",{month:"long",year:"numeric"});
+    var byDay={}; curList().forEach(function(p){ if(!p.cierre) return; var t=Date.parse(p.cierre); if(isNaN(t)) return; var d=new Date(t); if(d.getFullYear()===y&&d.getMonth()===mo){ var k=d.getDate(); (byDay[k]=byDay[k]||[]).push(p); } });
+    var first=new Date(y,mo,1).getDay(), days=new Date(y,mo+1,0).getDate();
+    var html='<div class="v5-cal-dows">'+["D","L","M","M","J","V","S"].map(function(x){return '<span>'+x+'</span>';}).join("")+'</div><div class="v5-cal-cells">';
+    for(var i=0;i<first;i++) html+='<div class="v5-cal-cell empty"></div>';
+    for(var dd=1;dd<=days;dd++){ var ps=byDay[dd]||[]; var cls=ps.length?(ps.some(function(p){var d=diasHasta(p.cierre);return d!=null&&d>=0&&d<=2;})?"soon":"has"):"";
+      html+='<div class="v5-cal-cell '+cls+'" data-d="'+dd+'"><span class="v5-cal-n">'+dd+'</span>'+(ps.length?'<span class="v5-cal-dot">'+ps.length+'</span>':'')+'</div>'; }
+    html+='</div>'; grid.innerHTML=html;
+    grid.querySelectorAll(".v5-cal-cell[data-d]").forEach(function(c){ c.addEventListener("click",function(){ var ps=byDay[+c.getAttribute("data-d")]||[]; if(!ps.length) return;
+      openModal('<h3 style="margin:0">Cierres del '+c.getAttribute("data-d")+'</h3>', ps.map(function(p){ return '<div class="v5-sim">'+(p.url?'<a href="'+esc(p.url)+'" target="_blank" rel="noopener">':'')+'<b>'+(p._score||0)+'</b> '+esc(clip(p.nombre,70))+(p.url?'</a>':'')+'<span>'+esc(clip(p.entidad||"",40))+(p.valor?' · '+money(p.valor):"")+'</span></div>'; }).join("")); }); });
+  }
+  function renderEntidades(){ ensurePanels(); var box=document.getElementById("v5-ent-list"); if(!box) return;
+    var map={}; curList().forEach(function(p){ var e=p.entidad||"—"; if(!map[e]) map[e]={n:0,s:0,v:0}; map[e].n++; map[e].s+=(p._score||0); map[e].v+=(p.valor||0); });
+    var arr=Object.keys(map).map(function(e){ return {e:e,n:map[e].n,avg:map[e].s/map[e].n,v:map[e].v}; }).sort(function(a,b){ return b.avg-a.avg || b.n-a.n; }).slice(0,8);
+    if(!arr.length){ box.innerHTML='<div class="dash-empty">Carga el radar para ver tus entidades más afines.</div>'; return; }
+    box.innerHTML=arr.map(function(x,i){ var c=x.avg>=75?"var(--green)":x.avg>=50?"var(--amber)":"var(--red)";
+      return '<div class="v5-ent-row"><span class="v5-ent-rank">'+(i+1)+'</span><span class="v5-ent-name">'+esc(clip(titleCase(x.e),48))+'</span><span class="v5-ent-meta">'+x.n+' proc · '+money(x.v)+'</span><span class="v5-ent-avg" style="color:'+c+'">'+Math.round(x.avg)+'</span></div>'; }).join(""); }
+  function renderEstacionalidad(){ ensurePanels(); var box=document.getElementById("v5-sea-bars"); if(!box) return;
+    var M=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"], cnt=new Array(12).fill(0);
+    curList().forEach(function(p){ var t=Date.parse(p.fecha); if(isNaN(t)) return; cnt[new Date(t).getMonth()]++; });
+    var max=Math.max.apply(null,cnt)||1; if(!curList().length){ box.innerHTML='<div class="dash-empty">Carga el radar para ver la estacionalidad.</div>'; return; }
+    box.innerHTML='<div class="v5-sea-row">'+cnt.map(function(c,i){ return '<div class="v5-sea-col"><div class="v5-sea-bar" style="height:'+Math.max(c/max*100,3)+'%" title="'+c+' procesos"></div><div class="v5-sea-lab">'+M[i]+'</div></div>'; }).join("")+'</div>'; }
+
+  /* ════════ #39 Metodología (pestaña nueva) ════════ */
+  function injectMetodologia(){
+    var tabs=document.getElementById("tabs"); if(!tabs || document.getElementById("v5-tab-met")) return;
+    var btn=document.createElement("button"); btn.className="tab"; btn.id="v5-tab-met"; btn.dataset.tab="metodologia"; btn.textContent="Metodología"; tabs.appendChild(btn);
+    var main=document.querySelector("main"); var sec=document.createElement("section"); sec.id="sec-metodologia";
+    sec.innerHTML='<div class="panel reveal in"><span class="badge">Cómo funciona</span><h2 style="margin-top:8px;font-size:24px;letter-spacing:-.02em">Metodología del encaje (0–100)</h2>'+
+      '<p class="desc">El <b>encaje</b> mide qué tan bien encaja un proceso con tu perfil. <b>No es la probabilidad de ganar</b> (eso depende de competencia y precio). Se compone de 6 factores:</p>'+
+      '<div class="v5-met">'+[
+        ["K residual suficiente","35 pts","El capital de trabajo residual del perfil cubre el exigido por el proceso (CRPC = (Presupuesto − Anticipo) × 12 / Plazo)."],
+        ["UNSPSC en el RUP","20 pts","La clase de 8 dígitos del objeto está registrada en tu RUP."],
+        ["Cuantía dentro del tope","15 pts","El presupuesto no supera tu tope estratégico (en SMMLV)."],
+        ["Fase del proceso","10 pts","Hay ventana para ofertar (selección activa)."],
+        ["Indicadores financieros","10 pts","Liquidez y endeudamiento holgados frente al umbral."],
+        ["Radio operativo","10 pts","≤200 km por tierra desde Bogotá/Ibagué, o vuelo ≤2h45m + ≤2h terrestres."]
+      ].map(function(f){ return '<div class="v5-met-row"><div class="v5-met-pts">'+f[1]+'</div><div><b>'+f[0]+'</b><div class="v5-muted">'+f[2]+'</div></div></div>'; }).join("")+'</div>'+
+      '<p class="desc" style="margin-top:14px">Antes de puntuar, se descartan procesos por capas: geografía → blacklist semántica (caninos, PAE, dotación…) → UNSPSC duro → whitelist de obra (cuando SECOP no declara código). Y se ocultan los <b>no presentables</b> (adjudicados, en evaluación, cierre vencido). SMMLV 2026 = $1.750.905.</p></div>';
+    main.appendChild(sec);
+    btn.addEventListener("click",function(){ v5SwitchTo("metodologia"); });
+    document.querySelectorAll("#tabs .tab").forEach(function(t){ if(t!==btn) t.addEventListener("click",function(){ btn.classList.remove("active"); var s=document.getElementById("sec-metodologia"); if(s) s.classList.remove("active"); }); });
+  }
+  function v5SwitchTo(tab){ document.querySelectorAll("#tabs .tab").forEach(function(t){ t.classList.toggle("active", t.dataset.tab===tab); });
+    document.querySelectorAll("main section").forEach(function(s){ s.classList.remove("active"); });
+    var sec=document.getElementById("sec-"+tab); if(sec) sec.classList.add("active");
+    var kp=document.getElementById("k-panel-wrap"), rw=document.getElementById("radar-wrap"); if(kp) kp.style.display="none"; if(rw) rw.style.display="none";
+    try{ window.scrollTo({top:0,behavior:"smooth"}); }catch(e){} }
+
+  /* ════════ a11y (#33) + i18n base (#34) + changelog/version (#40) en el header ════════ */
+  function injectHeaderTools(){
+    var hr=document.querySelector(".header-right"); if(!hr || document.getElementById("v5-a11y")) return;
+    var wrap=document.createElement("div"); wrap.className="v5-htools"; wrap.id="v5-a11y";
+    wrap.innerHTML='<button class="v5-htool" id="v5-contrast" title="Alto contraste">◐</button>'+
+      '<button class="v5-htool" id="v5-fa" title="Texto más grande">A+</button>'+
+      '<button class="v5-htool" id="v5-fm" title="Texto más pequeño">A−</button>'+
+      '<button class="v5-htool" id="v5-lang" title="Idioma / language">ES</button>';
+    var tgl=document.getElementById("theme-toggle"); if(tgl) hr.insertBefore(wrap,tgl); else hr.appendChild(wrap);
+    // aplica prefs
+    if(lsGet("detecta-contraste",false)) document.documentElement.classList.add("v5-contrast");
+    var fs=lsGet("detecta-fontscale",100)||100; document.documentElement.style.fontSize=(fs)+"%";
+    document.getElementById("v5-contrast").addEventListener("click",function(){ var on=document.documentElement.classList.toggle("v5-contrast"); lsSet("detecta-contraste",on); });
+    document.getElementById("v5-fa").addEventListener("click",function(){ var v=Math.min((lsGet("detecta-fontscale",100)||100)+10,140); lsSet("detecta-fontscale",v); document.documentElement.style.fontSize=v+"%"; });
+    document.getElementById("v5-fm").addEventListener("click",function(){ var v=Math.max((lsGet("detecta-fontscale",100)||100)-10,80); lsSet("detecta-fontscale",v); document.documentElement.style.fontSize=v+"%"; });
+    document.getElementById("v5-lang").addEventListener("click",toggleLang);
+    if(lsGet("detecta-lang","es")==="en"){ applyLang("en"); }
+  }
+  var I18N_TABS={resumen:["Resumen","Overview"],helder:["Helder","Helder"],genesis:["Génesis","Génesis"],juntos:["Helder + Génesis","Helder + Génesis"],mapa:["Mapa","Map"],pliego:["Pliego","Tender doc"],rentab:["Rentabilidad","Profitability"],apu:["APU","Unit prices"],manual:["Manual","Manual"],tablero:["Tablero","Board"],metodologia:["Metodología","Methodology"]};
+  function applyLang(lang){ try{ document.documentElement.lang=lang;
+    document.querySelectorAll("#tabs .tab").forEach(function(t){ var k=t.dataset.tab; if(I18N_TABS[k]) t.textContent=I18N_TABS[k][lang==="en"?1:0]; });
+    var lb=document.getElementById("v5-lang"); if(lb) lb.textContent=lang.toUpperCase(); }catch(e){} }
+  function toggleLang(){ var cur=lsGet("detecta-lang","es"), nx=cur==="es"?"en":"es"; lsSet("detecta-lang",nx); applyLang(nx);
+    toast(nx==="en"?"Interface language: partial English (chrome only).":"Idioma: español."); }
+
+  /* changelog/version en el footer */
+  var CHANGELOG=[
+    ["5.0","40 ideas: ficha de proceso, consorcio what-if, lugar real, calendario, entidades afines, estacionalidad, metodología, a11y, i18n base, deep-link, tour, plantillas, documentos, bitácora, recordatorios, IPC, historial, paginación y más."],
+    ["4.0","20 ideas: orden/buscador, kanban, prioridad, inteligencia de entidad, selector de perfil, Excel/PDF, backup, riesgo por tarjeta, distancia, resumen diario."],
+    ["3.x","10 ideas + radar/mapa: calendario .ics, comparador, deep-link, pipeline, OCR cierre, tendencia, consorcio, alertas, tarjeta WhatsApp, PWA, oculta cerrados, explorador por municipio."]
+  ];
+  function injectFooter(){ var f=document.querySelector("footer .wrap")||document.querySelector("footer"); if(!f || document.getElementById("v5-ver")) return;
+    var s=document.createElement("div"); s.id="v5-ver"; s.className="v5-ver";
+    s.innerHTML=' · <button class="v5-link" id="v5-changelog">v'+VERSION+'</button> · <button class="v5-link" id="v5-report">reportar dato</button>';
+    f.appendChild(s);
+    document.getElementById("v5-changelog").addEventListener("click",function(){ openModal('<h3 style="margin:0">Novedades</h3>', '<div class="v5-cl">'+CHANGELOG.map(function(c){ return '<div class="v5-cl-row"><b>v'+c[0]+'</b><div>'+esc(c[1])+'</div></div>'; }).join("")+'</div>'); });
+    document.getElementById("v5-report").addEventListener("click",function(){ var body=encodeURIComponent("Reporte / sugerencia para Detecta:\n\n"); window.location.href="mailto:?subject="+encodeURIComponent("Detecta · reporte")+"&body="+body; });
+  }
+
+  /* ════════ #38 tour de bienvenida ════════ */
+  function maybeTour(){ if(lsGet("detecta-tour-v1",false)) return; setTimeout(startTour,900); }
+  function startTour(){
+    var steps=[
+      ["#v4-profile","Elige tu perfil aquí","Helder, Génesis o el consorcio. Resumen y Mapa lo respetan."],
+      ["#v4-q","Busca y ordena","Filtra por texto, modalidad, cierre o prioridad."],
+      ["#tabs","Pestañas","Resumen, Mapa, Tablero, Pliego, Metodología… (en móvil deslízalas)."],
+      [".v5-ficha","Ficha del proceso","Consorcio, similares, documentos, plantillas y recordatorios en un clic."],
+      ["#theme-toggle","Claro / oscuro","Y arriba: contraste e idioma."]
+    ];
+    var i=0, ov=document.createElement("div"); ov.className="v5-tour"; ov.innerHTML='<div class="v5-tour-box"><div class="v5-tour-t"></div><div class="v5-tour-d"></div><div class="v5-tour-nav"><span class="v5-tour-i"></span><div><button class="v3-vb-btn" id="v5-tour-skip">Saltar</button> <button class="v3-vb-btn" id="v5-tour-next">Siguiente</button></div></div></div>';
+    document.body.appendChild(ov);
+    function show(){ var s=steps[i]; var el=document.querySelector(s[0]); var box=ov.querySelector(".v5-tour-box");
+      ov.querySelector(".v5-tour-t").textContent=s[1]; ov.querySelector(".v5-tour-d").textContent=s[2]; ov.querySelector(".v5-tour-i").textContent=(i+1)+" / "+steps.length;
+      ov.querySelector("#v5-tour-next").textContent=i===steps.length-1?"Listo":"Siguiente";
+      document.querySelectorAll(".v5-spot").forEach(function(e){ e.classList.remove("v5-spot"); });
+      if(el){ el.classList.add("v5-spot"); var r=el.getBoundingClientRect(); box.style.top=Math.min(r.bottom+10+window.scrollY, window.scrollY+window.innerHeight-160)+"px"; box.style.left=Math.max(12,Math.min(r.left, window.innerWidth-320))+"px"; try{ el.scrollIntoView({block:"center",behavior:"smooth"}); }catch(e){} }
+      else { box.style.top=(window.scrollY+120)+"px"; box.style.left="50%"; }
+    }
+    function end(){ document.querySelectorAll(".v5-spot").forEach(function(e){ e.classList.remove("v5-spot"); }); ov.remove(); lsSet("detecta-tour-v1",true); }
+    ov.querySelector("#v5-tour-skip").addEventListener("click",end);
+    ov.querySelector("#v5-tour-next").addEventListener("click",function(){ i++; if(i>=steps.length){ end(); } else show(); });
+    show();
+  }
+
+  /* ════════ #36 recordar última pestaña/perfil/scroll ════════ */
+  function rememberWiring(){
+    document.querySelectorAll("#tabs .tab").forEach(function(t){ t.addEventListener("click",function(){ lsSet("detecta-last-tab",t.dataset.tab); }); });
+    window.addEventListener("beforeunload",function(){ try{ lsSet("detecta-last-scroll",{tab:(document.querySelector("#tabs .tab.active")||{}).dataset?(document.querySelector("#tabs .tab.active").dataset.tab):"",y:window.scrollY}); }catch(e){} });
+    // restaurar (solo si no hay hash que mande)
+    if(!location.hash){ var lt=lsGet("detecta-last-tab",""); if(lt && lt!=="resumen"){ var tb=document.querySelector('#tabs .tab[data-tab="'+lt+'"]'); if(tb) setTimeout(function(){ tb.click(); },200); } }
+  }
+
+  /* ════════ #37 deep-link a proceso (resaltar al cargar) ════════ */
+  function focusDeepProc(){ var m=(location.hash||"").match(/[#&]p=(\d+)/); if(!m) return; var pid=m[1];
+    setTimeout(function(){ var card=document.querySelector('#proc-list .proc[data-pid="'+pid+'"]'); if(card){ card.scrollIntoView({block:"center",behavior:"smooth"}); card.classList.add("v5-flash"); setTimeout(function(){ card.classList.remove("v5-flash"); },2200); } },400); }
+
+  /* ════════ #23 exportar kanban a Excel ════════ */
+  function exportKanbanXLS(){ var st=lsGet("detecta-kanban-v1",{})||{}; var ks=Object.keys(st).filter(function(k){ return st[k].e; });
+    if(!ks.length){ toast("Tu tablero está vacío."); return; }
+    var EST={interes:"Interesado",estudio:"En estudio",present:"Presentado",descart:"Descartado"};
+    var rows=ks.map(function(k){ var e=st[k],s=e.s||{}; return "<tr>"+[EST[e.e]||e.e,(s.score||""),s.nombre,s.entidad,(s.valor||""),(s.cierre?fmtFecha(s.cierre):""),(e.responsable||""),(e.nota||"")].map(function(v){return "<td>"+esc(v==null?"":String(v))+"</td>";}).join("")+"</tr>"; }).join("");
+    var html='<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body><table border="1"><tr>'+["Estado","Encaje","Nombre","Entidad","Valor","Cierre","Responsable","Nota"].map(function(c){return "<th>"+c+"</th>";}).join("")+"</tr>"+rows+"</table></body></html>";
+    dl(new Blob([html],{type:"application/vnd.ms-excel"}),"detecta-tablero-"+new Date().toISOString().slice(0,10)+".xls"); toast("Tablero exportado."); }
+
+  /* ════════ #11 import histórico + #23 botón, en el panel Datos ════════ */
+  function injectDatosExtras(){
+    var pan=document.getElementById("v4-datos"); if(!pan || document.getElementById("v5-hist-btn")) return;
+    var row=pan.querySelector(".v4-datos-row"); if(!row) return;
+    var b1=document.createElement("button"); b1.className="v3-vb-btn"; b1.id="v5-hist-btn"; b1.textContent="📚 Importar mi histórico"; row.appendChild(b1);
+    var b2=document.createElement("button"); b2.className="v3-vb-btn"; b2.id="v5-kanban-xls"; b2.textContent="⭳ Tablero a Excel"; row.appendChild(b2);
+    b1.addEventListener("click",function(){ openModal('<h3 style="margin:0">Importar histórico</h3>','<p class="desc">Pega tus contratos pasados, una línea por contrato, separados por <b>;</b> :<br><code>entidad;objeto;valor;año;ganado/perdido</code></p><textarea id="v5-hist-ta" style="width:100%;min-height:160px;font-family:ui-monospace,monospace;font-size:12.5px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)"></textarea><div style="margin-top:10px"><button class="v3-vb-btn" id="v5-hist-imp">Importar</button> <span class="v5-muted">Hoy: '+historial().length+' registros</span></div>');
+      var g=document.getElementById("v5-hist-imp"); if(g) g.addEventListener("click",function(){ importHistorial(document.getElementById("v5-hist-ta").value); closeModal(); }); });
+    b2.addEventListener("click",exportKanbanXLS);
+  }
+
+  /* ════════ #10 SECOP I + #16 IPC dentro de inteligencia de entidad (se inyecta al abrir el modal de entidad) ════════ */
+  function enhanceEntidadModal(){
+    try{
+      // El modal de "Inteligencia de entidad" lo crea la capa #4 (otro elemento
+      // .v3-modal), no el de #5 → recorremos todos los modales abiertos.
+      var modals=document.querySelectorAll(".v3-modal.show");
+      for(var i=0;i<modals.length;i++){
+        var head=modals[i].querySelector(".v3-modal-head"); if(!head || !/Inteligencia de entidad/.test(head.textContent)) continue;
+        var body=modals[i].querySelector(".v3-modal-body"); if(!body || body.querySelector(".v5-ent-extra")) continue;
+        var ent=(head.querySelector(".desc")||{}).textContent||"";
+        var hist=histDeEntidad(ent);
+        var extra=document.createElement("div"); extra.className="v5-ent-extra"; extra.style.marginTop="12px";
+        extra.innerHTML=(hist.length?('<div class="v5-card"><h4>📚 Tu historial con esta entidad</h4>'+hist.slice(0,8).map(function(h){ return '<div class="v5-bita-row">'+esc(clip(h.objeto||h.entidad,54))+' <span>'+(h.valor?money(aPesosDeHoy(h.valor,h.anio))+(h.anio?(" ("+h.anio+", hoy)"):"") :"")+' · '+esc(h.resultado||"")+'</span></div>'; }).join("")+'</div>'):'')+
+          '<a class="v3-vb-btn" href="https://www.datos.gov.co/browse?q='+encodeURIComponent(ent)+'" target="_blank" rel="noopener" style="margin-top:8px;display:inline-block">↗ Buscar también en SECOP I (datos.gov.co)</a>';
+        body.appendChild(extra);
+      }
+    }catch(e){}
+  }
+
+  /* ════════ #3/#13/#14/#27 augment del análisis de pliego ════════ */
+  var MES_M={enero:0,febrero:1,marzo:2,abril:3,mayo:4,junio:5,julio:6,agosto:7,septiembre:8,setiembre:8,octubre:9,noviembre:10,diciembre:11};
+  function fechasCronograma(txt){ var low=txt.replace(/\s+/g," "); var hits=[];
+    var labels=[["apertura","Apertura"],["cierre","Cierre / presentación"],["observacion","Observaciones"],["evaluaci","Evaluación"],["adjudicaci","Adjudicación"],["audiencia","Audiencia"],["manifestaci","Manifestación de interés"]];
+    labels.forEach(function(L){ var i=low.toLowerCase().indexOf(L[0]); if(i<0) return; var sc=low.slice(i,i+90);
+      var m=sc.match(/(\d{1,2})\s+de\s+([a-záéíóú]+)\s+(?:de\s+|del\s+)?(\d{4})/i)||sc.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
+      if(m){ var f; if(isNaN(+m[2])){ var mo=MES_M[m[2].toLowerCase()]; if(mo==null) return; f=new Date(+m[3],mo,+m[1]); } else f=new Date(+m[3],+m[2]-1,+m[1]); if(!isNaN(f)) hits.push({l:L[1],f:f}); }
+    }); return hits; }
+  function amañadoScore(txt){ var low=txt.toLowerCase(); var flags=[];
+    if(/marca\s+[a-z]/.test(low) && !/o\s+equivalente/.test(low)) flags.push("Exige marca sin 'o equivalente'");
+    var exp=low.match(/(\d{1,3})\s+contratos?/); if(exp && +exp[1]>=8) flags.push("Exige "+exp[1]+" contratos de experiencia (alto)");
+    if(/experiencia\s+espec[ií]fica\s+en/.test(low)) flags.push("Experiencia muy específica");
+    if(/(certificaci[oó]n|norma)\s+[a-z]{2,}\s*\d{3,}/.test(low)) flags.push("Certificación/norma puntual exigida");
+    if(/un\s+\(1\)\s+contrato/.test(low) && /por\s+(el\s+)?(100|cien)/.test(low)) flags.push("Un solo contrato por el 100% del valor");
+    return flags; }
+  function pliegoAugmentV5(){
+    try{
+      var ta=document.getElementById("pliego-text"), out=document.getElementById("pliego-result"); if(!ta||!out) return;
+      ["v5-cron","v5-fuera","v5-amanado"].forEach(function(id){ var e=document.getElementById(id); if(e) e.remove(); });
+      var txt=ta.value||""; if(!txt.trim()) return;
+      // #3 te deja fuera: lee el veredicto de la tabla base (filas con ✗)
+      var fails=[]; out.querySelectorAll("tr").forEach(function(tr){ var tds=tr.querySelectorAll("td"); if(tds.length>=4 && /✗/.test(tds[3].textContent)) fails.push(tds[0].textContent.trim()); });
+      if(fails.length){ var f=document.createElement("div"); f.id="v5-fuera"; f.className="v5-fuera"; f.innerHTML='⛔ <b>Este pliego te deja fuera</b> por: '+esc(fails.join(", "))+'. Evalúa consorcio o descártalo.'; out.appendChild(f); }
+      // #13 cronograma
+      var cron=fechasCronograma(txt);
+      if(cron.length){ var c=document.createElement("div"); c.id="v5-cron"; c.className="v5-card"; c.style.marginTop="14px";
+        c.innerHTML='<h4>🗓 Cronograma detectado</h4>'+cron.sort(function(a,b){return a.f-b.f;}).map(function(h){ return '<div class="v5-bita-row"><b>'+esc(h.l)+'</b> <span>'+h.f.toLocaleDateString("es-CO")+'</span></div>'; }).join(""); out.appendChild(c); }
+      // #14 garantía de seriedad
+      var g=txt.replace(/\s+/g," ").match(/garant[ií]a\s+de\s+seriedad[^%$]{0,80}?(\d{1,2}(?:[.,]\d+)?)\s*%/i)||txt.match(/seriedad[^%$]{0,40}?(\d{1,2})\s*%/i);
+      var gm=txt.replace(/\s+/g," ").match(/garant[ií]a\s+de\s+seriedad[^$]{0,80}?\$\s*([\d.,]{6,})/i);
+      if(g||gm){ var gb=document.getElementById("v5-cron")||out; var note=document.createElement("div"); note.className="v5-card"; note.style.marginTop="10px";
+        note.innerHTML='<h4>🛡 Garantía de seriedad</h4>'+(g?('Exigida: <b>'+g[1]+'%</b> del presupuesto'):('Monto: <b>$'+gm[1]+'</b>')); out.appendChild(note); }
+      // #27 pliego amañado
+      var fl=amañadoScore(txt);
+      if(fl.length){ var a=document.createElement("div"); a.id="v5-amanado"; a.className="v5-amanado"; a.innerHTML='⚠ <b>Señales de pliego restrictivo</b> (revisa con lupa): '+fl.map(esc).join(" · "); out.appendChild(a); }
+    }catch(e){ console.error("v5 pliego:",e); }
+  }
+
+  /* ════════ MONKEY-PATCH ════════ */
+  if(typeof window.renderProcesses==="function"){
+    var _inner=window.renderProcesses;
+    window.renderProcesses=function(list){
+      var r=_inner.apply(this, arguments);
+      try{
+        var shown=curList();
+        v5Augment(shown);
+        renderCal(); renderEntidades(); renderEstacionalidad();
+        saveSnaps(shown);
+        focusDeepProc();
+        checkRecordatorios();
+      }catch(e){ console.error("v5 render:",e); }
+      return r;
+    };
+  }
+  if(typeof window.analizarPliego==="function"){
+    var _ap=window.analizarPliego;
+    window.analizarPliego=function(){ var r=_ap.apply(this,arguments); try{ pliegoAugmentV5(); }catch(e){} return r; };
+  }
+  if(typeof window.entidadIntel!=="undefined"){} // (entidadIntel vive en #4; enriquecemos por observación)
+
+  /* ════════ INIT ════════ */
+  try{
+    prevSnap(); // congela el estado previo para detectar cambios
+    injectHeaderTools();
+    injectMetodologia();
+    injectFooter();
+    ensurePanels(); renderCal(); renderEntidades(); renderEstacionalidad();
+    rememberWiring();
+    document.querySelectorAll("#tabs .tab").forEach(function(t){ t.addEventListener("click",function(){
+      var tab=t.dataset.tab;
+      if(tab==="resumen") setTimeout(function(){ ensurePanels(); renderCal(); renderEntidades(); renderEstacionalidad(); },40);
+      if(["helder","genesis","juntos"].indexOf(tab)>=0) setTimeout(injectDatosExtras,60);
+    }); });
+    injectDatosExtras();
+    // observa apertura del modal de entidad (#4) para enriquecerlo (#10/#16/#11)
+    document.addEventListener("click",function(){ setTimeout(enhanceEntidadModal,300); });
+    setInterval(checkRecordatorios, 30*60*1000);
+    maybeTour();
+  }catch(e){ console.error("v5 init:",e); }
+})();
+
+</script>
 </body>
 </html>

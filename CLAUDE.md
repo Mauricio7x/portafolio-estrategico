@@ -137,6 +137,26 @@ ocultar nacionales → solo ≤7 días → orden) antes de pasarla al inner. Cla
 - **Barras por departamento** (Mapa). **Atajos** (`/` buscar, `j/k`, `d` tema, `1-9` pestañas, `?` ayuda).
   **Resumen diario** (banner 1×/día) + recordatorio de renovación RUP (`RUP_RENOV`). Pestañas con **scroll horizontal en móvil**.
 
+### Capa #5 — 40 ideas (`detectaV5`, un `<style>` + un `<script>` antes de `</body>`)
+Envuelve `renderProcesses`/`analizarPliego` por encima de todo. La mayoría de features por proceso se reúnen en un
+botón **"📋 Ficha"** (modal) para no saturar la tarjeta. Claves `localStorage` propias por feature.
+- **Ficha del proceso**: "cómo subir el encaje" (de `faltaPara100`), **consorcio what-if** (`calcScore(p, profiles.juntos)`),
+  UNSPSC con motivo, señales (lugar real, lotes, reapertura, competencia, plazo irreal, margen, cambios), **similares**
+  (`tokenSim`/UNSPSC/depto), **documentos** (`detecta-docs-v1`), **plantillas** (carta/consorcio), **adjuntos**
+  (`detecta-adjuntos-v1`), **recordatorio** configurable (`detecta-recordatorios-v1` + `checkRecordatorios`), **bitácora**
+  (`kanban.log`), **deep-link** `#p=<hash>` y **reportar dato** (mailto).
+- **Badges en tarjeta**: 📍 obra real (`inferUbicacion` lee el texto), ♻ reapertura, ✏ modificado (`detecta-proc-snap-v1`), 📦 lotes.
+- **Resumen**: **calendario mensual** de cierres, **entidades más afines**, **estacionalidad** (por mes de publicación).
+- **Pliego** (post-`analizarPliego`): "te deja fuera" (lee ✗ de la tabla), **cronograma** (`fechasCronograma`), **garantía de
+  seriedad**, **pliego amañado** (`amañadoScore`).
+- **Metodología** (pestaña nueva): explica los 6 factores del encaje.
+- **a11y**: alto contraste (`detecta-contraste`) + tamaño de fuente (`detecta-fontscale`). **i18n base** (es/en, solo chrome:
+  pestañas) `detecta-lang`. **Tour** de bienvenida (`detecta-tour-v1`). **Paginación** del radar (40 + "cargar más").
+  **Resaltado** de búsqueda (`<mark>`). **Recordar** última pestaña (`detecta-last-tab`).
+- **Datos**: importar histórico propio (`detecta-historial-v1`), exportar **tablero a Excel**. **IPC** (`aPesosDeHoy`) para
+  llevar valores históricos a pesos de hoy. **SECOP I** + tu historial dentro del modal de inteligencia de entidad.
+- **Footer**: versión + **changelog** + reportar.
+
 ### Correcciones de datos (en el código base, no aditivas)
 - **`plazoMeses`**: usaba `("Días").includes("dia")` → **false por el acento** (í≠i). Ahora normaliza con `normalizaTexto`
   (y soporta semanas/horas). Era la causa del "195 m" que distorsionaba el K.
