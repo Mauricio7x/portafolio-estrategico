@@ -5788,5 +5788,308 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
 })();
 
 </script>
+
+<!-- ════════════════════════════════════════════════════════════════
+     MEJORAS 2026 · capa aditiva #3b — correcciones de radar y mapa:
+     oculta procesos cerrados · amplía coordenadas + geocodificación OSM ·
+     explorador por municipio (desplegable). Envuelve renderProcesses sobre #3.
+     ════════════════════════════════════════════════════════════════ -->
+<style>
+  /* ════ MEJORAS 2026 · capa aditiva #3b — radar + mapa ════ */
+  .v3b-chk{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);white-space:nowrap;padding-bottom:9px;cursor:pointer}
+  .v3b-closed-note{font-size:12.5px;color:var(--ink2);background:var(--soft);border:1px solid var(--line2);
+    border-radius:10px;padding:9px 13px;margin-bottom:12px}
+  .v3b-closed-note b{color:var(--ink)}
+  .v3b-closed-note a{color:var(--accent);text-decoration:none;font-weight:500}
+  .v3b-closed-note a:hover{text-decoration:underline}
+
+  /* — explorador por municipio — */
+  .v3b-exp-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0 12px}
+  #v3b-exp-search{flex:1;min-width:180px;font:inherit;font-size:13px;padding:9px 13px;border:1px solid var(--line);
+    border-radius:10px;background:var(--panel);color:var(--ink)}
+  #v3b-exp-search:focus{outline:none;border-color:var(--accent)}
+  .v3b-exp{border:1px solid var(--line2);border-radius:12px;margin-bottom:8px;overflow:hidden;background:var(--panel)}
+  .v3b-exp[open]{box-shadow:var(--shadow)}
+  .v3b-exp summary{display:flex;align-items:center;gap:10px;padding:13px 15px;cursor:pointer;list-style:none;user-select:none;transition:background .15s}
+  .v3b-exp summary::-webkit-details-marker{display:none}
+  .v3b-exp summary:hover{background:var(--soft)}
+  .v3b-exp-pin{font-size:12px;color:var(--ink2);flex-shrink:0} .v3b-exp-pin.on{color:var(--green)}
+  .v3b-exp-muni{font-size:14px;font-weight:600;flex-shrink:0}
+  .v3b-exp-dep{color:var(--ink2);font-weight:400;font-size:12.5px}
+  .v3b-exp-meta{margin-left:auto;font-size:11.5px;color:var(--ink2);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .v3b-exp-body{border-top:1px solid var(--line2);padding:4px 8px 8px}
+  .v3b-exp-item{display:flex;align-items:center;gap:12px;padding:10px 7px;border-bottom:1px solid var(--line2);
+    text-decoration:none;color:inherit;border-radius:8px;transition:background .15s}
+  .v3b-exp-item:hover{background:var(--soft)} .v3b-exp-item:last-child{border-bottom:0}
+  .v3b-exp-score{font-family:'Inter',sans-serif;font-weight:700;font-size:16px;width:30px;text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums}
+  .v3b-exp-main{min-width:0;flex:1}
+  .v3b-exp-name{display:block;font-size:13px;font-weight:500;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .v3b-exp-sub{display:block;font-size:11.5px;color:var(--ink2);margin-top:2px}
+  @media(max-width:560px){ .v3b-exp summary{flex-wrap:wrap} .v3b-exp-meta{margin-left:0;width:100%;text-align:left} }
+
+</style>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   MEJORAS 2026 · capa aditiva #3b — correcciones de radar y mapa.
+   a) Oculta procesos CERRADOS (cierre vencido o estado terminal).
+   b) Amplía la cobertura de coordenadas (capitales + municipios) y
+      añade geocodificación bajo demanda (OpenStreetMap, gratis, cacheada).
+   c) "Explorador por municipio": acordeón desplegable con los procesos
+      reales de cada municipio (se acabó adivinar cuáles son).
+   Envuelve renderProcesses por encima de la capa #3 (filtra antes de pintar).
+   ════════════════════════════════════════════════════════════════ */
+(function detectaV3b(){
+  "use strict";
+  if(window.__detectaV3b) return; window.__detectaV3b = true;
+
+  /* ───── helpers ───── */
+  function esc(s){ try{ return escapeHTML(s); }catch(e){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); } }
+  function curList(){ try{ if(window._dashList && window._dashList.length) return window._dashList; if(window._lastProcesses && window._lastProcesses.length) return window._lastProcesses; }catch(e){} return []; }
+  function lsGet(k,def){ try{ var v=localStorage.getItem(k); return v==null?def:JSON.parse(v); }catch(e){ return def; } }
+  function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+  function clip(s,n){ s=String(s||""); return s.length>n ? s.slice(0,n).replace(/\s+\S*$/,"")+"…" : s; }
+  function money(n){ n=Math.max(0,n||0);
+    if(n>=1e9) return "$"+(n/1e9).toLocaleString("es-CO",{maximumFractionDigits:2})+" mil M";
+    if(n>=1e6) return "$"+(n/1e6).toLocaleString("es-CO",{maximumFractionDigits:1})+" M";
+    if(n>=1e3) return "$"+Math.round(n/1e3).toLocaleString("es-CO")+" mil";
+    return "$"+Math.round(n).toLocaleString("es-CO"); }
+  function titleCase(s){ return String(s||"").toLowerCase().replace(/(^|[\s\-\/])([a-záéíóúñü])/g,function(_,sep,ch){ return sep+ch.toUpperCase(); }); }
+  function fmtFecha(s){ try{ return fmtDate(s); }catch(e){ var d=new Date(s); return isNaN(d)?String(s):d.toLocaleDateString("es-CO"); } }
+  function diasHasta(f){ if(!f) return null; var t=Date.parse(f); if(isNaN(t)) return null; return Math.floor((t-Date.now())/86400000); }
+  function norm(s){ try{ return normalizaTexto(s); }catch(e){ return (s||"").toString().normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim(); } }
+  var toastEl=null, toastT=null;
+  function toast(msg, ms){ toastEl=document.querySelector(".v3-toast"); if(!toastEl){ toastEl=document.createElement("div"); toastEl.className="v3-toast"; document.body.appendChild(toastEl); }
+    toastEl.textContent=msg; toastEl.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(function(){ toastEl.classList.remove("show"); }, ms||2800); }
+
+  /* ════ a) FILTRO DE PROCESOS CERRADOS ════ */
+  var CLOSED_RE=/adjudicad|celebrad|termin|liquidad|cerrad|desiert|revocad|descartad|suspendid|anulad/i;
+  function cierrePasado(s){ if(!s) return false; var t=Date.parse(s); if(isNaN(t)) return false;
+    var c=new Date(t), n=new Date();
+    return new Date(c.getFullYear(),c.getMonth(),c.getDate()).getTime() < new Date(n.getFullYear(),n.getMonth(),n.getDate()).getTime(); }
+  function isClosed(p){
+    if(cierrePasado(p.cierre)) return true;
+    var st=((p.estado||"")+" "+(p.fase||"")).toLowerCase();
+    if(CLOSED_RE.test(st)) return true;
+    return false;
+  }
+  function hideClosedOn(){ return lsGet("detecta-ocultar-cerrados", true)!==false; }
+
+  var _rawList=[];
+  function injectClosedToggle(){
+    var fs=document.querySelector("#radar-wrap .filters-simple");
+    if(fs && !document.getElementById("v3b-hide-wrap")){
+      var lbl=document.createElement("label"); lbl.id="v3b-hide-wrap"; lbl.className="v3b-chk";
+      lbl.innerHTML='<input type="checkbox" id="v3b-hide-closed"> Ocultar cerrados';
+      var fgo=document.getElementById("f-go");
+      if(fgo && fgo.parentNode===fs) fs.insertBefore(lbl, fgo); else fs.appendChild(lbl);
+      var chk=document.getElementById("v3b-hide-closed"); chk.checked=hideClosedOn();
+      chk.addEventListener("change", function(){ lsSet("detecta-ocultar-cerrados", chk.checked); rerender(); });
+    }
+  }
+  function rerender(){ try{ if(typeof window.renderProcesses==="function") window.renderProcesses(_rawList); }catch(e){} }
+  function closedNote(hiddenN){
+    var host=document.getElementById("radar-wrap"); if(!host) return;
+    var note=document.getElementById("v3b-closed-note");
+    if(!hiddenN){ if(note) note.remove(); return; }
+    if(!note){ note=document.createElement("div"); note.id="v3b-closed-note"; note.className="v3b-closed-note";
+      var status=document.getElementById("status"); if(status&&status.parentNode) status.parentNode.insertBefore(note, status); else host.appendChild(note); }
+    note.innerHTML='🔒 <b>'+hiddenN+'</b> proceso'+(hiddenN===1?"":"s")+' ya cerrado'+(hiddenN===1?"":"s")+' (cierre vencido) oculto'+(hiddenN===1?"":"s")+'. <a href="#" id="v3b-show-closed">Mostrar de todos modos</a>';
+    var a=document.getElementById("v3b-show-closed");
+    if(a) a.addEventListener("click", function(e){ e.preventDefault(); lsSet("detecta-ocultar-cerrados", false); var c=document.getElementById("v3b-hide-closed"); if(c) c.checked=false; rerender(); });
+  }
+
+  /* ════ b) COBERTURA DE COORDENADAS ════ */
+  // Capitales de los 32 departamentos + municipios frecuentes. Claves
+  // normalizadas "depto|municipio". resolverCoords cae a la capital del
+  // depto si no hay match exacto, así que con las capitales TODO depto pinta.
+  var MUNI_EXTRA={
+    "antioquia|medellin":{lat:6.2442,lng:-75.5812},"antioquia|bello":{lat:6.3378,lng:-75.5636},
+    "antioquia|rionegro":{lat:6.1461,lng:-75.3771},"antioquia|apartado":{lat:7.8836,lng:-76.6256},
+    "antioquia|turbo":{lat:8.0925,lng:-76.7283},"antioquia|caucasia":{lat:7.9870,lng:-75.1980},
+    "atlantico|barranquilla":{lat:10.9685,lng:-74.7813},"atlantico|soledad":{lat:10.9170,lng:-74.7647},
+    "atlantico|malambo":{lat:10.8592,lng:-74.7747},"atlantico|sabanalarga":{lat:10.6303,lng:-74.9211},
+    "bolivar|cartagena":{lat:10.3910,lng:-75.4794},"bolivar|magangue":{lat:9.2417,lng:-74.7544},
+    "bolivar|el carmen de bolivar":{lat:9.7186,lng:-75.1219},"bolivar|turbaco":{lat:10.3306,lng:-75.4108},
+    "boyaca|paipa":{lat:5.7800,lng:-73.1175},"boyaca|villa de leyva":{lat:5.6325,lng:-73.5244},
+    "boyaca|garagoa":{lat:5.0825,lng:-73.3636},"boyaca|moniquira":{lat:5.8767,lng:-73.5733},
+    "boyaca|puerto boyaca":{lat:5.9764,lng:-74.5886},"boyaca|samaca":{lat:5.4925,lng:-73.4869},
+    "caldas|la dorada":{lat:5.4569,lng:-74.6678},"caldas|chinchina":{lat:4.9828,lng:-75.6047},
+    "caldas|riosucio":{lat:5.4214,lng:-75.7036},"caqueta|florencia":{lat:1.6144,lng:-75.6062},
+    "caqueta|san vicente del caguan":{lat:2.1186,lng:-74.7689},"casanare|yopal":{lat:5.3378,lng:-72.3959},
+    "casanare|aguazul":{lat:5.1722,lng:-72.5478},"casanare|villanueva":{lat:4.6103,lng:-72.9281},
+    "cauca|popayan":{lat:2.4448,lng:-76.6147},"cauca|santander de quilichao":{lat:3.0086,lng:-76.4850},
+    "cauca|puerto tejada":{lat:3.2333,lng:-76.4181},"cesar|valledupar":{lat:10.4631,lng:-73.2532},
+    "cesar|aguachica":{lat:8.3094,lng:-73.6078},"cesar|bosconia":{lat:9.9756,lng:-73.8889},
+    "choco|quibdo":{lat:5.6947,lng:-76.6611},"choco|istmina":{lat:5.1597,lng:-76.6850},
+    "cordoba|monteria":{lat:8.7479,lng:-75.8814},"cordoba|cerete":{lat:8.8853,lng:-75.7919},
+    "cordoba|sahagun":{lat:8.9472,lng:-75.4456},"cordoba|lorica":{lat:9.2367,lng:-75.8136},
+    "cundinamarca|soacha":{lat:4.5790,lng:-74.2169},"cundinamarca|mosquera":{lat:4.7059,lng:-74.2300},
+    "cundinamarca|madrid":{lat:4.7325,lng:-74.2644},"cundinamarca|funza":{lat:4.7164,lng:-74.2114},
+    "cundinamarca|cajica":{lat:4.9181,lng:-74.0250},"cundinamarca|ubate":{lat:5.3083,lng:-73.8156},
+    "cundinamarca|la mesa":{lat:4.6322,lng:-74.4622},"cundinamarca|villeta":{lat:5.0114,lng:-74.4708},
+    "cundinamarca|caqueza":{lat:4.4039,lng:-73.9469},"distrito capital|bogota":{lat:4.7110,lng:-74.0721},
+    "guainia|inirida":{lat:3.8653,lng:-67.9239},"guaviare|san jose del guaviare":{lat:2.5717,lng:-72.6429},
+    "huila|pitalito":{lat:1.8531,lng:-76.0508},"huila|garzon":{lat:2.1969,lng:-75.6275},
+    "huila|la plata":{lat:2.3897,lng:-75.8900},"huila|campoalegre":{lat:2.6850,lng:-75.3239},
+    "la guajira|riohacha":{lat:11.5444,lng:-72.9072},"la guajira|maicao":{lat:11.3779,lng:-72.2389},
+    "la guajira|fonseca":{lat:10.8886,lng:-72.8478},"magdalena|santa marta":{lat:11.2408,lng:-74.1990},
+    "magdalena|cienaga":{lat:11.0061,lng:-74.2469},"magdalena|fundacion":{lat:10.5219,lng:-74.1908},
+    "magdalena|el banco":{lat:9.0028,lng:-73.9756},"magdalena|plato":{lat:9.7903,lng:-74.7836},
+    "meta|villavicencio":{lat:4.1420,lng:-73.6266},"meta|acacias":{lat:3.9889,lng:-73.7567},
+    "meta|granada":{lat:3.5453,lng:-73.7064},"meta|la macarena":{lat:2.1825,lng:-73.7867},
+    "narino|pasto":{lat:1.2136,lng:-77.2811},"narino|ipiales":{lat:0.8303,lng:-77.6406},
+    "narino|tumaco":{lat:1.7986,lng:-78.7644},"narino|tuquerres":{lat:1.0867,lng:-77.6178},
+    "norte de santander|cucuta":{lat:7.8939,lng:-72.5078},"norte de santander|ocana":{lat:8.2375,lng:-73.3561},
+    "norte de santander|pamplona":{lat:7.3753,lng:-72.6486},"norte de santander|villa del rosario":{lat:7.8333,lng:-72.4744},
+    "putumayo|mocoa":{lat:1.1519,lng:-76.6483},"putumayo|puerto asis":{lat:0.5119,lng:-76.4969},
+    "quindio|armenia":{lat:4.5339,lng:-75.6811},"quindio|calarca":{lat:4.5253,lng:-75.6447},
+    "quindio|montenegro":{lat:4.5664,lng:-75.7497},"risaralda|pereira":{lat:4.8133,lng:-75.6961},
+    "risaralda|santa rosa de cabal":{lat:4.8694,lng:-75.6219},"risaralda|la virginia":{lat:4.8997,lng:-75.8825},
+    "san andres y providencia|san andres":{lat:12.5847,lng:-81.7006},"santander|bucaramanga":{lat:7.1193,lng:-73.1227},
+    "santander|floridablanca":{lat:7.0653,lng:-73.0883},"santander|giron":{lat:7.0689,lng:-73.1700},
+    "santander|barrancabermeja":{lat:7.0653,lng:-73.8547},"santander|piedecuesta":{lat:6.9925,lng:-73.0497},
+    "santander|san gil":{lat:6.5547,lng:-73.1331},"santander|socorro":{lat:6.4636,lng:-73.2611},
+    "sucre|sincelejo":{lat:9.3047,lng:-75.3978},"sucre|corozal":{lat:9.3186,lng:-75.2944},
+    "sucre|sampues":{lat:9.1839,lng:-75.3803},"tolima|ibague":{lat:4.4389,lng:-75.2322},
+    "tolima|purificacion":{lat:3.8569,lng:-74.9347},"tolima|guamo":{lat:4.0306,lng:-74.9711},
+    "tolima|libano":{lat:4.9211,lng:-75.0625},"tolima|fresno":{lat:5.1531,lng:-75.0364},
+    "tolima|cajamarca":{lat:4.4297,lng:-75.4292},"tolima|venadillo":{lat:4.7172,lng:-74.9292},
+    "tolima|flandes":{lat:4.2917,lng:-74.8161},"tolima|saldana":{lat:3.9281,lng:-75.0153},
+    "tolima|coello":{lat:4.2864,lng:-74.8908},"valle del cauca|cali":{lat:3.4516,lng:-76.5320},
+    "valle del cauca|palmira":{lat:3.5394,lng:-76.3036},"valle del cauca|buenaventura":{lat:3.8801,lng:-77.0312},
+    "valle del cauca|tulua":{lat:4.0847,lng:-76.1953},"valle del cauca|cartago":{lat:4.7464,lng:-75.9117},
+    "valle del cauca|buga":{lat:3.9008,lng:-76.2981},"valle del cauca|jamundi":{lat:3.2606,lng:-76.5386},
+    "valle del cauca|yumbo":{lat:3.5817,lng:-76.4986},"vaupes|mitu":{lat:1.2536,lng:-70.2339},
+    "vichada|puerto carreno":{lat:6.1890,lng:-67.4859},"amazonas|leticia":{lat:-4.2150,lng:-69.9406},
+    "arauca|arauca":{lat:7.0844,lng:-70.7591},"arauca|saravena":{lat:6.9531,lng:-71.8736},
+    "arauca|tame":{lat:6.4603,lng:-71.7397}
+  };
+  function mergeCoords(){ try{ if(typeof COORDS_MUNICIPIOS==="undefined") return 0; var n=0;
+    for(var k in MUNI_EXTRA){ if(!COORDS_MUNICIPIOS[k]){ COORDS_MUNICIPIOS[k]=MUNI_EXTRA[k]; n++; } }
+    // restaura cache de geocodificación previa
+    var gc=lsGet("detecta-geocache-v1",{})||{};
+    for(var g in gc){ if(gc[g] && !COORDS_MUNICIPIOS[g]){ COORDS_MUNICIPIOS[g]=gc[g]; } }
+    return n; }catch(e){ return 0; } }
+
+  function geoKey(ciudad,depto){ return norm(depto)+"|"+norm(ciudad); }
+  function hasExactCoord(ciudad,depto){ try{ return !!(typeof COORDS_MUNICIPIOS!=="undefined" && COORDS_MUNICIPIOS[geoKey(ciudad,depto)]); }catch(e){ return false; } }
+  function geocodeMuni(ciudad,depto){
+    return new Promise(function(resolve){
+      var key=geoKey(ciudad,depto), cache=lsGet("detecta-geocache-v1",{})||{};
+      if(key in cache){ resolve(cache[key]); return; }
+      var q=encodeURIComponent((ciudad?ciudad+", ":"")+(depto?depto+", ":"")+"Colombia");
+      var url="https://nominatim.openstreetmap.org/search?q="+q+"&format=json&limit=1&countrycodes=co";
+      var ft=null; try{ ft=fetchTimeout; }catch(e){}
+      var pr= ft? ft(url,{headers:{"Accept":"application/json"}},12000): fetch(url);
+      Promise.resolve(pr).then(function(r){ return r&&r.ok?r.json():[]; }).then(function(arr){
+        var pt=(Array.isArray(arr)&&arr[0])?{lat:parseFloat(arr[0].lat),lng:parseFloat(arr[0].lon)}:null;
+        if(pt && (isNaN(pt.lat)||isNaN(pt.lng))) pt=null;
+        cache[key]=pt; lsSet("detecta-geocache-v1",cache);
+        if(pt){ try{ COORDS_MUNICIPIOS[key]=pt; }catch(e){} }
+        resolve(pt);
+      }).catch(function(){ resolve(null); });
+    });
+  }
+  function municipiosFaltantes(list){
+    var seen={}, out=[];
+    list.forEach(function(p){ if(!p.ciudad && !p.depto) return; if(hasExactCoord(p.ciudad,p.depto)) return;
+      var k=geoKey(p.ciudad,p.depto); if(seen[k]) return; seen[k]=1; out.push({ciudad:p.ciudad,depto:p.depto}); });
+    return out;
+  }
+  function ubicarFaltantes(btn){
+    var faltan=municipiosFaltantes(curList());
+    if(!faltan.length){ toast("Todos los municipios del radar ya tienen ubicación."); return; }
+    var lote=faltan.slice(0,25); // respeta el uso amable de OpenStreetMap
+    if(btn){ btn.disabled=true; }
+    var i=0, geo=0;
+    (function next(){
+      if(i>=lote.length){ if(btn){ btn.disabled=false; btn.textContent="📍 Ubicar municipios faltantes en el mapa"; }
+        try{ if(typeof window.renderProcesses==="function") window.renderProcesses(curList()); }catch(e){}
+        toast(geo+" municipio(s) ubicado(s)."+(faltan.length>lote.length?" Repite para los demás.":"")); return; }
+      if(btn){ btn.textContent="📍 Ubicando "+(i+1)+"/"+lote.length+"…"; }
+      geocodeMuni(lote[i].ciudad, lote[i].depto).then(function(pt){ if(pt) geo++; i++; setTimeout(next, 1100); });
+    })();
+  }
+
+  /* ════ c) EXPLORADOR POR MUNICIPIO (acordeón) ════ */
+  function ensureExplorer(){
+    var sec=document.getElementById("sec-mapa"); if(!sec || document.getElementById("v3b-explorer")) return;
+    var pan=document.createElement("div"); pan.className="panel reveal in"; pan.id="v3b-explorer";
+    pan.innerHTML='<h3>Explorador por municipio <span class="v3-pill">desplegable</span></h3>'+
+      '<p class="desc">Agrupa los procesos del radar por municipio (ubicación de la <b>entidad</b> en SECOP). Despliega uno para ver <b>exactamente cuáles son</b> — sin adivinar. Nota: las entidades nacionales (p. ej. INVIAS) figuran en Bogotá aunque la obra sea en otra región.</p>'+
+      '<div class="v3b-exp-tools"><input id="v3b-exp-search" placeholder="Filtrar municipio o nombre de proceso…" autocomplete="off">'+
+      '<button class="v3-vb-btn" id="v3b-geo-btn">📍 Ubicar municipios faltantes en el mapa</button></div>'+
+      '<div id="v3b-exp-list"></div>';
+    sec.appendChild(pan);
+    var s=document.getElementById("v3b-exp-search"); if(s) s.addEventListener("input", function(){ renderExplorer(curList(), s.value); });
+    var g=document.getElementById("v3b-geo-btn"); if(g) g.addEventListener("click", function(){ ubicarFaltantes(g); });
+  }
+  function groupByMuni(list){
+    var map={};
+    list.forEach(function(p){
+      var ciudad=p.ciudad||"", depto=p.depto||"";
+      var k=ciudad||depto ? (norm(depto)+"|"+norm(ciudad)) : "__sinubic";
+      if(!map[k]) map[k]={ciudad:ciudad, depto:depto, items:[], value:0, best:0, ubicado:hasExactCoord(ciudad,depto)};
+      var m=map[k]; m.items.push(p); m.value+=(p.valor||0); if((p._score||0)>m.best) m.best=p._score||0;
+    });
+    return Object.keys(map).map(function(k){ return map[k]; }).sort(function(a,b){ return b.items.length-a.items.length || b.value-a.value; });
+  }
+  function renderExplorer(list, query){
+    ensureExplorer();
+    var box=document.getElementById("v3b-exp-list"); if(!box) return;
+    list=list||[]; query=(query||"").trim().toLowerCase();
+    if(query){ list=list.filter(function(p){
+      return ((p.ciudad||"")+" "+(p.depto||"")+" "+(p.nombre||"")).toLowerCase().indexOf(query)>=0; }); }
+    var groups=groupByMuni(list);
+    if(!groups.length){ box.innerHTML='<div class="dash-empty">'+(curList().length?'Ningún municipio coincide con «'+esc(query)+'».':'Carga el radar desde un perfil para ver los municipios.')+'</div>'; return; }
+    box.innerHTML=groups.map(function(g){
+      var muni = g.ciudad||g.depto ? titleCase(g.ciudad||"")+(g.depto?'<span class="v3b-exp-dep"> · '+titleCase(g.depto)+'</span>':"") : "Sin ubicación";
+      var dot = g.ubicado ? '<span class="v3b-exp-pin on" title="Ubicado en el mapa">●</span>' : '<span class="v3b-exp-pin" title="Sin coordenada exacta — usa «Ubicar municipios faltantes»">○</span>';
+      var items=g.items.slice().sort(function(a,b){ return (b._score||0)-(a._score||0); }).slice(0,40).map(function(p){
+        var sc=p._score||0, col=sc>=75?"var(--green)":sc>=50?"var(--amber)":"var(--red)";
+        var d=diasHasta(p.cierre); var cie = d===null?"":(d<0?" · cerrado":(d===0?" · cierra hoy":" · cierra en "+d+"d"));
+        var inner='<span class="v3b-exp-score" style="color:'+col+'">'+sc+'</span>'+
+          '<span class="v3b-exp-main"><span class="v3b-exp-name">'+esc(clip(p.nombre||"—",90))+'</span>'+
+          '<span class="v3b-exp-sub">'+(p.valor?money(p.valor):"valor n/d")+esc(cie)+'</span></span>';
+        return p.url ? '<a class="v3b-exp-item" href="'+esc(p.url)+'" target="_blank" rel="noopener">'+inner+'</a>' : '<div class="v3b-exp-item">'+inner+'</div>';
+      }).join("");
+      return '<details class="v3b-exp"'+(query?" open":"")+'><summary>'+dot+'<span class="v3b-exp-muni">'+muni+'</span>'+
+        '<span class="v3b-exp-meta">'+g.items.length+' proceso'+(g.items.length===1?"":"s")+' · '+money(g.value)+' · encaje máx '+g.best+'</span></summary>'+
+        '<div class="v3b-exp-body">'+items+'</div></details>';
+    }).join("");
+  }
+
+  /* ════ MONKEY-PATCH (más externo) ════ */
+  if(typeof window.renderProcesses==="function"){
+    var _inner=window.renderProcesses;
+    window.renderProcesses=function(list){
+      list=list||[];
+      _rawList=list;
+      var shown = hideClosedOn() ? list.filter(function(p){ return !isClosed(p); }) : list;
+      var r=_inner.call(this, shown);
+      try{
+        closedNote(hideClosedOn() ? (list.length-shown.length) : 0);
+        var mapSec=document.getElementById("sec-mapa");
+        if(mapSec && mapSec.classList.contains("active")){ var s=document.getElementById("v3b-exp-search"); renderExplorer(curList(), s?s.value:""); }
+      }catch(e){ console.error("v3b render:",e); }
+      return r;
+    };
+  }
+
+  /* ════ INIT ════ */
+  try{
+    mergeCoords();
+    injectClosedToggle();
+    ensureExplorer();
+    document.querySelectorAll("#tabs .tab").forEach(function(t){
+      t.addEventListener("click", function(){
+        if(t.dataset.tab==="mapa"){ setTimeout(function(){ ensureExplorer(); var s=document.getElementById("v3b-exp-search"); renderExplorer(curList(), s?s.value:""); }, 50); }
+        if(["helder","genesis","juntos"].indexOf(t.dataset.tab)>=0){ setTimeout(injectClosedToggle, 40); }
+      });
+    });
+  }catch(e){ console.error("v3b init:",e); }
+})();
+
+</script>
 </body>
 </html>

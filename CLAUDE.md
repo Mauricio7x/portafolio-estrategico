@@ -105,6 +105,19 @@ Envuelve `renderProcesses` por encima de #1/#2 (aplica overrides de cierre **ant
 9. **Tarjeta a imagen** — `<canvas>` 1080×1350 lista para WhatsApp (Web Share API o descarga PNG; sin CDN).
 10. **PWA** — `manifest.webmanifest` + `sw.js` + `icon.svg` (ver Arquitectura).
 
+### Capa #3b — correcciones de radar y mapa (`detectaV3b`, un `<style>` + un `<script>` antes de `</body>`)
+Envuelve `renderProcesses` por **encima de todo** (filtra antes de pintar; el resto de capas ve la lista filtrada).
+- **Oculta procesos CERRADOS** (`detecta-ocultar-cerrados`, default ON): `cierrePasado` (cierre vencido por día,
+  "cierra hoy" NO cuenta) + estado/fase terminal (`adjudicad|celebrad|termin|liquidad|cerrad|desiert…`). Toggle
+  "Ocultar cerrados" en los filtros + aviso con "Mostrar de todos modos".
+- **Cobertura del mapa**: `MUNI_EXTRA` (32 capitales + ~90 municipios) se **fusiona** en `COORDS_MUNICIPIOS` al
+  init (es `const` pero mutable). Como `resolverCoords` cae a la capital del depto, con las capitales **todo depto
+  pinta**. Geocodificación **bajo demanda** vía Nominatim/OSM (`geocodeMuni`, cache `detecta-geocache-v1`, negativa
+  incluida; botón "📍 Ubicar municipios faltantes", throttle 1.1 s, lote 25). Limitación honesta: `ciudad`/`depto`
+  son `ciudad_entidad`/`departamento_entidad` → entidades nacionales (INVIAS) figuran en Bogotá.
+- **Explorador por municipio** (pestaña Mapa): acordeón `<details>` que agrupa el radar por municipio y lista los
+  procesos reales (encaje, valor, cierre, enlace) + buscador. Cierra el "¿cuáles son? ¿los adivino?".
+
 ## Convenciones
 - Español en UI, comentarios y mensajes de commit. Estética tipo Apple (system fonts + Inter, sutil, claro).
 - **Sin dependencias de pago.** PDF.js, Tesseract.js (OCR del pliego) y Leaflet (mapa) se cargan por CDN/lazy-load.
