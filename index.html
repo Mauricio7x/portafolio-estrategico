@@ -362,6 +362,11 @@
   html[data-theme="dark"] .airesumen{background:linear-gradient(180deg,#13233a,#101d30);border-color:#1d3a5c}
   html[data-theme="dark"] .anticipo-badge,
   html[data-theme="dark"] .theme-toggle{background:#1f1f22}
+  /* Logo en modo oscuro: el chip "d." usaba background:var(--ink) → en oscuro
+     quedaba blanco-sobre-blanco (invisible). Se fuerza chip claro con glifo oscuro. */
+  html[data-theme="dark"] .anticipo-mark{background:#f5f5f7;color:#0d0d0f}
+  html[data-theme="dark"] .anticipo-mark span{color:var(--accent)}
+  html[data-theme="dark"] .wordmark{color:#f5f5f7}
   html[data-theme="dark"] .dz-icon{filter:saturate(.8) brightness(1.1)}
   html[data-theme="dark"] ::selection{background:rgba(10,132,255,.35)}
 
@@ -2308,10 +2313,13 @@ async function verificarAnticipos(){
 }
 
 function plazoMeses(p){
-  const u = (p.unidadDur||"").toLowerCase();
+  const u = normalizaTexto(p.unidadDur||"");   // sin acentos: "Días"→"dias" (antes fallaba por el acento)
   const d = p.duracion||12;
+  if(!d || d<=0) return 12;
   if(u.includes("dia")) return Math.max(1, Math.round(d/30));
-  if(u.includes("año") || u.includes("ano")) return d*12;
+  if(u.includes("semana")) return Math.max(1, Math.round(d/4.345));
+  if(u.includes("ano") || u.includes("año")) return d*12;
+  if(u.includes("hora")) return 1;
   return d;
 }
 
@@ -5867,7 +5875,9 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     var c=new Date(t), n=new Date();
     return new Date(c.getFullYear(),c.getMonth(),c.getDate()).getTime() < new Date(n.getFullYear(),n.getMonth(),n.getDate()).getTime(); }
   function isClosed(p){
-    if(cierrePasado(p.cierre)) return true;
+    var d=diasHasta(p.cierre);
+    if(d!==null && d<0) return true;        // mismo criterio que el badge "Cerrado" (cerró antes de ahora)
+    if(cierrePasado(p.cierre)) return true; // respaldo por día calendario
     var st=((p.estado||"")+" "+(p.fase||"")).toLowerCase();
     if(CLOSED_RE.test(st)) return true;
     return false;
@@ -6088,6 +6098,597 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
       });
     });
   }catch(e){ console.error("v3b init:",e); }
+})();
+
+</script>
+
+<!-- ════════════════════════════════════════════════════════════════
+     MEJORAS 2026 · capa aditiva #4 — 20 ideas nuevas. Envuelve
+     renderProcesses/analizarPliego por encima de #1/#2/#3/#3b.
+     ════════════════════════════════════════════════════════════════ -->
+<style>
+  /* ════ MEJORAS 2026 · capa aditiva #4 — 20 ideas ════ */
+
+  /* barra de orden + búsqueda */
+  .v4-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 4px}
+  .v4-search{flex:1;min-width:220px;font:inherit;font-size:13px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)}
+  .v4-search:focus{outline:none;border-color:var(--accent)}
+
+  /* selector de perfil en el header */
+  .v4-profile{font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border:1px solid var(--line);border-radius:980px;background:var(--panel);color:var(--ink);cursor:pointer}
+  html[data-theme="dark"] .v4-profile{background:#1f1f22}
+  @media(max-width:760px){ .v4-profile{padding:6px 9px;font-size:12px} }
+
+  /* badge "Nuevo" */
+  .v4-new{display:inline-flex;align-items:center;font-size:11px;font-weight:700;color:#fff;background:var(--green);
+    border-radius:7px;padding:3px 8px;margin-top:6px;letter-spacing:.02em;box-shadow:0 2px 8px rgba(28,140,74,.3)}
+
+  /* estado kanban + nota en tarjeta */
+  .v4-kstate{font:inherit;font-size:12.5px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--soft);color:var(--ink);cursor:pointer}
+  .v4-kstate.set{border-color:var(--accent);color:var(--accent);font-weight:600;background:rgba(0,113,227,.08)}
+  html[data-theme="dark"] .v4-kstate{background:#2a2a2c}
+
+  /* tablero kanban */
+  .v4-board{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:6px}
+  @media(max-width:900px){ .v4-board{grid-template-columns:repeat(2,1fr)} }
+  @media(max-width:560px){ .v4-board{grid-template-columns:1fr} }
+  .v4-bd-col{background:var(--soft);border:1px solid var(--line2);border-radius:14px;padding:12px;min-height:120px}
+  .v4-bd-h{font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+  .v4-bd-h span{font-size:11px;color:var(--ink2);background:var(--panel);border-radius:980px;padding:2px 9px;font-weight:600}
+  .v4-bd-card{background:var(--panel);border:1px solid var(--line2);border-radius:11px;padding:11px 12px;margin-bottom:9px;box-shadow:var(--shadow)}
+  .v4-bd-top{display:flex;gap:9px;align-items:flex-start}
+  .v4-bd-score{font-family:'Inter',sans-serif;font-weight:700;font-size:15px;flex-shrink:0;font-variant-numeric:tabular-nums}
+  .v4-bd-name{font-size:12.5px;font-weight:600;line-height:1.35;color:inherit;text-decoration:none;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  a.v4-bd-name:hover{color:var(--accent)}
+  .v4-bd-meta{font-size:11px;color:var(--ink2);margin-top:5px}
+  .v4-bd-nota{font-size:11.5px;color:var(--ink);background:var(--soft);border-radius:8px;padding:6px 9px;margin-top:7px;line-height:1.4}
+  .v4-bd-actions{display:flex;gap:6px;align-items:center;margin-top:9px}
+  .v4-bd-move{flex:1;font:inherit;font-size:11.5px;padding:5px 7px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);cursor:pointer}
+  .v4-bd-x{border:1px solid var(--line);background:transparent;color:var(--ink2);border-radius:8px;width:28px;height:28px;cursor:pointer;flex-shrink:0}
+  .v4-bd-x:hover{color:var(--red);border-color:var(--red)}
+  .v4-bd-empty{color:var(--ink2);font-size:12px;text-align:center;padding:14px 0}
+
+  /* inteligencia de entidad */
+  .v4-intel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:560px){ .v4-intel-grid{grid-template-columns:1fr} }
+  .v4-intel-c{background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:16px}
+  .v4-intel-c .l{font-size:11px;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+  .v4-intel-c .v{font-family:'Inter',sans-serif;font-size:22px;font-weight:700;margin-top:6px;font-variant-numeric:tabular-nums}
+  .v4-intel-prov{display:flex;flex-direction:column;gap:6px}
+  .v4-intel-prow{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:8px 11px;background:var(--soft);border-radius:9px}
+  .v4-intel-prow b{color:var(--accent);font-variant-numeric:tabular-nums}
+
+  /* barras por departamento */
+  .v4-dbar{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line2)}
+  .v4-dbar:last-child{border-bottom:0}
+  .v4-dbar-l{width:160px;flex-shrink:0;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .v4-dbar-l span{color:var(--ink2);font-weight:400;font-size:11px}
+  .v4-dbar-track{flex:1;height:12px;background:var(--soft);border-radius:6px;overflow:hidden}
+  .v4-dbar-fill{height:100%;background:linear-gradient(90deg,var(--accent),#4da3f0);border-radius:6px;transition:width 1s cubic-bezier(.16,1,.3,1)}
+  .v4-dbar-v{width:110px;flex-shrink:0;text-align:right;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums}
+  @media(max-width:560px){ .v4-dbar-l{width:96px} .v4-dbar-v{width:78px;font-size:11px} }
+
+  /* panel datos/export */
+  .v4-datos-row{display:flex;gap:8px;flex-wrap:wrap}
+  .v4-datos-row label.v3-vb-btn{display:inline-flex;align-items:center;cursor:pointer}
+
+  /* banner diario */
+  .v4-banner{display:flex;align-items:center;gap:11px;background:linear-gradient(135deg,rgba(0,113,227,.1),rgba(0,113,227,.03));
+    border:1px solid rgba(0,113,227,.25);border-radius:14px;padding:12px 16px;margin:18px 0 -6px}
+  .v4-banner-ico{font-size:18px;flex-shrink:0}
+  .v4-banner-txt{flex:1;font-size:13.5px;color:var(--ink);line-height:1.45}
+  .v4-banner-x{border:0;background:transparent;color:var(--ink2);cursor:pointer;font-size:14px;flex-shrink:0;padding:4px 6px;border-radius:6px}
+  .v4-banner-x:hover{background:rgba(0,0,0,.06);color:var(--ink)}
+  html[data-theme="dark"] .v4-banner{background:linear-gradient(135deg,rgba(10,132,255,.16),rgba(10,132,255,.04))}
+
+  /* checklist de pliego */
+  .v4-checklist{margin-top:16px;background:var(--soft);border:1px solid var(--line2);border-radius:13px;padding:16px 18px}
+  .v4-chk-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line2);font-size:13px;cursor:pointer}
+  .v4-chk-row:last-child{border-bottom:0}
+  .v4-chk-l{flex:1}
+  .v4-chk-hit{font-size:10.5px;font-weight:600;color:var(--green);background:rgba(28,140,74,.1);border-radius:6px;padding:2px 8px}
+  .v4-chk-miss{font-size:10.5px;font-weight:600;color:var(--ink2);background:var(--line2);border-radius:6px;padding:2px 8px}
+
+  /* atajos */
+  .v4-keys{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin-top:8px;font-size:13.5px}
+  .v4-keys kbd{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--soft);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 7px;margin-right:4px}
+
+  /* pestañas con scroll horizontal en móvil (antes envolvían en 3 filas) */
+  @media(max-width:760px){
+    .tabs{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;max-width:100%;width:auto;
+      -webkit-overflow-scrolling:touch;scrollbar-width:none;padding:5px 6px}
+    .tabs::-webkit-scrollbar{display:none}
+    .tab{flex:0 0 auto;white-space:nowrap}
+  }
+
+  /* impresión / "Guardar como PDF" del panel activo */
+  @media print{
+    header,.tabs,footer,#sec-gate,.hero,.v3-cmp-tray,.v4-toolbar,.v3-viewbar,.filters-simple,
+    .proc-actions,.v4-banner,#v4-datos,#anti-status,#status,.theme-toggle,.v4-profile,.v4-new{display:none!important}
+    html,body{background:#fff!important;color:#000!important}
+    main section:not(.active){display:none!important}
+    .panel,.dash-card,.proc,.v4-bd-card,.v3b-exp{break-inside:avoid;box-shadow:none!important;border:1px solid #ccc!important}
+    a{color:#000!important;text-decoration:none}
+  }
+
+</style>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   MEJORAS 2026 · capa aditiva #4 — 20 ideas nuevas (todo gratis).
+   Orden+buscador · filtro modalidad/semana · dedup · "nuevos" · ocultar
+   nacionales · kanban+notas · prioridad · inteligencia de entidad ·
+   checklist de pliego · selector de perfil en header · atajos · Excel/PDF ·
+   backup/restore · barras por depto · riesgo en tarjeta · distancia ·
+   resumen diario + RUP. Envuelve renderProcesses por ENCIMA de todo.
+   ════════════════════════════════════════════════════════════════ */
+(function detectaV4(){
+  "use strict";
+  if(window.__detectaV4) return; window.__detectaV4 = true;
+
+  /* ───── helpers ───── */
+  function esc(s){ try{ return escapeHTML(s); }catch(e){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); } }
+  function curList(){ try{ if(window._dashList&&window._dashList.length) return window._dashList; if(window._lastProcesses&&window._lastProcesses.length) return window._lastProcesses; }catch(e){} return []; }
+  function getProfile(){ try{ return currentProfile; }catch(e){ return "helder"; } }
+  var PROF_NAMES={helder:"Helder", genesis:"Génesis", juntos:"Helder + Génesis"};
+  function smmlv(){ try{ return SMMLV; }catch(e){ return 1750905; } }
+  function keyOf(p){ return (p.nombre||"")+"@"+(p.entidad||"")+"@"+(p.valor||0); }
+  function money(n){ n=Math.max(0,n||0);
+    if(n>=1e9) return "$"+(n/1e9).toLocaleString("es-CO",{maximumFractionDigits:2})+" mil M";
+    if(n>=1e6) return "$"+(n/1e6).toLocaleString("es-CO",{maximumFractionDigits:1})+" M";
+    if(n>=1e3) return "$"+Math.round(n/1e3).toLocaleString("es-CO")+" mil";
+    return "$"+Math.round(n).toLocaleString("es-CO"); }
+  function fmtFecha(s){ try{ return fmtDate(s); }catch(e){ var d=new Date(s); return isNaN(d)?String(s):d.toLocaleDateString("es-CO"); } }
+  function diasHasta(f){ if(!f) return null; var t=Date.parse(f); if(isNaN(t)) return null; return Math.floor((t-Date.now())/86400000); }
+  function lsGet(k,def){ try{ var v=localStorage.getItem(k); return v==null?def:JSON.parse(v); }catch(e){ return def; } }
+  function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+  function clip(s,n){ s=String(s||""); return s.length>n ? s.slice(0,n).replace(/\s+\S*$/,"")+"…" : s; }
+  function norm(s){ try{ return normalizaTexto(s); }catch(e){ return (s||"").toString().normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim(); } }
+  function titleCase(s){ return String(s||"").toLowerCase().replace(/(^|[\s\-\/])([a-záéíóúñü])/g,function(_,sep,ch){ return sep+ch.toUpperCase(); }); }
+  function dl(blob,name){ var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },600); }
+  var toastEl=null,toastT=null;
+  function toast(msg,ms){ toastEl=document.querySelector(".v3-toast"); if(!toastEl){ toastEl=document.createElement("div"); toastEl.className="v3-toast"; document.body.appendChild(toastEl); }
+    toastEl.textContent=msg; toastEl.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(function(){ toastEl.classList.remove("show"); },ms||2800); }
+
+  /* modal v4 */
+  var modalEl=null;
+  function openModal(headHTML,bodyHTML){
+    if(!modalEl){ modalEl=document.createElement("div"); modalEl.className="v3-modal"; modalEl.setAttribute("role","dialog");
+      modalEl.innerHTML='<div class="v3-modal-back"></div><div class="v3-modal-box"><button class="v3-modal-x" aria-label="Cerrar">✕</button><div class="v3-modal-head"></div><div class="v3-modal-body"></div></div>';
+      document.body.appendChild(modalEl);
+      modalEl.querySelector(".v3-modal-back").addEventListener("click",closeModal);
+      modalEl.querySelector(".v3-modal-x").addEventListener("click",closeModal);
+      document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&modalEl.classList.contains("show")) closeModal(); });
+    }
+    modalEl.querySelector(".v3-modal-head").innerHTML=headHTML;
+    modalEl.querySelector(".v3-modal-body").innerHTML=bodyHTML;
+    modalEl.classList.add("show"); document.documentElement.style.overflow="hidden"; return modalEl;
+  }
+  function closeModal(){ if(modalEl){ modalEl.classList.remove("show"); document.documentElement.style.overflow=""; } }
+
+  /* riesgo (reusa newsCache global) */
+  var RISK_DISC={critical:.55,high:.35,medium:.18,low:.06,none:0};
+  function riskOf(ciudad,depto){ try{ var key=((ciudad||depto)||"").trim().toLowerCase(); if(!key||typeof newsCache==="undefined"||!newsCache[key]) return null; var sc=riskScore(newsCache[key]); return {score:sc,info:classifyRisk(sc)}; }catch(e){ return null; } }
+  function fetchRiesgo(muni){ return new Promise(function(res){ var key=(muni||"").trim().toLowerCase();
+    try{ if(typeof newsCache!=="undefined"&&newsCache[key]){ res(newsCache[key]); return; } }catch(e){}
+    var terms='atentado OR "ataque armado" OR explosivo OR secuestro OR masacre OR homicidio OR extorsion OR "grupo armado" OR ELN OR disidencias OR "Clan del Golfo" OR paramilitar OR hostigamiento OR "mina antipersonal" OR "paro armado"';
+    var url="https://api.gdeltproject.org/api/v2/doc/doc?query="+encodeURIComponent('"'+muni+'" ('+terms+')')+"&mode=ArtList&maxrecords=40&sort=DateDesc&format=json&timespan=180d&sourcelang=spanish";
+    var ft=null; try{ ft=fetchTimeout; }catch(e){} var pr=ft?ft(url,{headers:{"Accept":"application/json"}},14000):fetch(url);
+    Promise.resolve(pr).then(function(r){ return r&&r.ok?r.json():{}; }).then(function(d){ var a=(d&&Array.isArray(d.articles))?d.articles.filter(function(x){return x.title;}).map(function(x){return {title:x.title,url:x.url,seendate:x.seendate,domain:x.domain};}):[]; try{ newsCache[key]=a; }catch(e){} res(a); }).catch(function(){ res([]); }); }); }
+
+  /* distancia desde la base más cercana */
+  function distInfo(p){ try{ var pt=resolverCoords(p.ciudad,p.depto); if(!pt) return null;
+    var dB=haversineKm(pt,BASES.bogota), dI=haversineKm(pt,BASES.ibague);
+    var base=dI<=dB?"Ibagué":"Bogotá", recto=Math.min(dB,dI), road=Math.round(recto*(typeof SINUOSIDAD!=="undefined"?SINUOSIDAD:1.35));
+    return {base:base, km:road, h:(road/50)}; }catch(e){ return null; } }
+
+  /* entidades nacionales */
+  var NAT_RE=/\b(invias|inv[ií]as|agencia nacional|unidad nacional|ministerio|instituto nacional|fondo (nacional|adaptaci|financiero)|ungrd|aerocivil|inpec|icbf|sena|superintendencia|fiscal[ií]a|registradur[ií]a|polic[ií]a nacional|ej[eé]rcito|fuerzas militares|colombia compra|presidencia|\bdane\b|\bdian\b|invima|ideam|igac|positiva|satena|ecopetrol|\bani\b)\b/i;
+  function esNacional(p){ return NAT_RE.test(norm(p.entidad)); }
+
+  /* prioridad */
+  function priority(p){ var v=p.valor||0, s=(p._score||0)/100, d=diasHasta(p.cierre);
+    var urg=(d===null)?1:(d<0?0.2:d<=3?1.4:d<=7?1.2:d<=20?1.0:0.85);
+    return s*Math.log10(Math.max(v,1)+1)*urg; }
+
+  /* nuevos desde la última visita */
+  var SEEN_KEY="detecta-vistos-v1", _prevSeen=null;
+  function prevSeen(){ if(_prevSeen) return _prevSeen; var st=lsGet(SEEN_KEY,{})||{}; _prevSeen={}; for(var pr in st){ _prevSeen[pr]=new Set(Object.keys(st[pr]||{})); } return _prevSeen; }
+  function isNew(p){ var prev=prevSeen()[getProfile()]; return prev? !prev.has(keyOf(p)) : false; }
+  function recordSeen(list){ var st=lsGet(SEEN_KEY,{})||{}, pr=getProfile(), m=st[pr]||{}, now=Date.now();
+    list.forEach(function(p){ if(!m[keyOf(p)]) m[keyOf(p)]=now; });
+    Object.keys(m).forEach(function(k){ if(now-m[k]>90*86400000) delete m[k]; });
+    st[pr]=m; lsSet(SEEN_KEY,st); }
+
+  /* ════ TRANSFORM (orden/buscador/dedup/modalidad/nacionales/semana) ════ */
+  var V4={ q:"", sort:"encaje", modal:"", national:false, week:false };
+  (function(){ var p=lsGet("detecta-v4-prefs",null); if(p){ V4.sort=p.sort||"encaje"; V4.national=!!p.national; V4.week=!!p.week; } })();
+  function savePrefs(){ lsSet("detecta-v4-prefs",{sort:V4.sort,national:V4.national,week:V4.week}); }
+  var SORTERS={
+    encaje:function(a,b){ return (b._score||0)-(a._score||0) || (b.valor||0)-(a.valor||0); },
+    cierre:function(a,b){ var da=diasHasta(a.cierre),db=diasHasta(b.cierre); da=(da===null||da<0)?99999:da; db=(db===null||db<0)?99999:db; return da-db || (b._score||0)-(a._score||0); },
+    valor:function(a,b){ return (b.valor||0)-(a.valor||0); },
+    prioridad:function(a,b){ return priority(b)-priority(a); }
+  };
+  var _v4src=[];
+  function transform(list){
+    var out=list.slice(), seen={};
+    out=out.filter(function(p){ var k=keyOf(p); if(seen[k]) return false; seen[k]=1; return true; }); // dedup
+    if(V4.q){ var q=V4.q.toLowerCase(); out=out.filter(function(p){ return ((p.nombre||"")+" "+(p.entidad||"")+" "+(p.descripcion||"")+" "+(p.ciudad||"")+" "+(p.depto||"")).toLowerCase().indexOf(q)>=0; }); }
+    if(V4.modal){ out=out.filter(function(p){ return (p.modalidad||"")===V4.modal; }); }
+    if(V4.national){ out=out.filter(function(p){ return !esNacional(p); }); }
+    if(V4.week){ out=out.filter(function(p){ var d=diasHasta(p.cierre); return d!==null&&d>=0&&d<=7; }); }
+    out.sort(SORTERS[V4.sort]||SORTERS.encaje);
+    return out;
+  }
+  function rerender(){ try{ if(typeof window.renderProcesses==="function") window.renderProcesses(_v4src); }catch(e){} }
+
+  function injectToolbar(){
+    var fs=document.querySelector("#radar-wrap .filters-simple"); if(!fs || document.getElementById("v4-toolbar")) return;
+    var bar=document.createElement("div"); bar.id="v4-toolbar"; bar.className="v4-toolbar";
+    bar.innerHTML='<input id="v4-q" class="v4-search" placeholder="🔎 Buscar en el radar (objeto, entidad, municipio)…" autocomplete="off">'+
+      '<select id="v4-sort" class="v3-vb-sel" title="Ordenar"><option value="encaje">Orden: encaje</option><option value="cierre">Orden: cierre más próximo</option><option value="valor">Orden: mayor valor</option><option value="prioridad">Orden: prioridad</option></select>'+
+      '<select id="v4-modal" class="v3-vb-sel" title="Modalidad"><option value="">Todas las modalidades</option></select>'+
+      '<label class="v3b-chk"><input type="checkbox" id="v4-week"> Solo cierran ≤7 días</label>'+
+      '<label class="v3b-chk"><input type="checkbox" id="v4-nat"> Ocultar entidades nacionales</label>';
+    var anchor=document.getElementById("v3-viewbar"); if(anchor&&anchor.parentNode){ anchor.parentNode.insertBefore(bar, anchor.nextSibling); } else { fs.parentNode.insertBefore(bar, fs.nextSibling); }
+    var q=document.getElementById("v4-q"); q.value=V4.q; q.addEventListener("input",function(){ V4.q=q.value; rerender(); });
+    var so=document.getElementById("v4-sort"); so.value=V4.sort; so.addEventListener("change",function(){ V4.sort=so.value; savePrefs(); rerender(); });
+    var mo=document.getElementById("v4-modal"); mo.addEventListener("change",function(){ V4.modal=mo.value; rerender(); });
+    var wk=document.getElementById("v4-week"); wk.checked=V4.week; wk.addEventListener("change",function(){ V4.week=wk.checked; savePrefs(); rerender(); });
+    var na=document.getElementById("v4-nat"); na.checked=V4.national; na.addEventListener("change",function(){ V4.national=na.checked; savePrefs(); rerender(); });
+  }
+  function refreshModalidades(srcList){
+    var mo=document.getElementById("v4-modal"); if(!mo) return;
+    var set={}; (srcList||[]).forEach(function(p){ if(p.modalidad) set[p.modalidad]=1; });
+    var opts=Object.keys(set).sort();
+    var cur=V4.modal;
+    mo.innerHTML='<option value="">Todas las modalidades</option>'+opts.map(function(m){ return '<option value="'+esc(m)+'">'+esc(clip(m,34))+'</option>'; }).join("");
+    if(opts.indexOf(cur)>=0) mo.value=cur; else { mo.value=""; V4.modal=""; }
+  }
+
+  /* ════ KANBAN + notas ════ */
+  var KSTORE="detecta-kanban-v1";
+  var KANBAN=[{k:"",l:"— Estado"},{k:"interes",l:"⭐ Interesado"},{k:"estudio",l:"🔍 En estudio"},{k:"present",l:"📨 Presentado"},{k:"descart",l:"🗑 Descartado"}];
+  var KCOLS=[{k:"interes",l:"⭐ Interesado"},{k:"estudio",l:"🔍 En estudio"},{k:"present",l:"📨 Presentado"},{k:"descart",l:"🗑 Descartado"}];
+  function ksnap(p){ return {nombre:p.nombre,entidad:p.entidad,valor:p.valor,score:p._score,url:p.url,cierre:p.cierre,ciudad:p.ciudad,depto:p.depto}; }
+  function kget(){ return lsGet(KSTORE,{})||{}; }
+  function kentry(p){ return kget()[keyOf(p)]||null; }
+  function ksetEstado(p,estado){ var st=kget(),k=keyOf(p),e=st[k]||{}; e.e=estado; e.t=Date.now(); e.s=ksnap(p); if(!estado && !e.nota) delete st[k]; else st[k]=e; lsSet(KSTORE,st); if(boardActive()) renderBoard(); }
+  function ksetNota(p){ var st=kget(),k=keyOf(p),e=st[k]||{}; var n=prompt("Nota para «"+clip(p.nombre,40)+"»:", e.nota||""); if(n===null) return; e.nota=n.trim(); e.t=Date.now(); e.s=ksnap(p); if(!e.e && !e.nota) delete st[k]; else st[k]=e; lsSet(KSTORE,st); toast(e.nota?"Nota guardada.":"Nota borrada."); if(boardActive()) renderBoard(); }
+  function ksetByKey(key,estado){ var st=kget(),e=st[key]; if(!e) return; e.e=estado; e.t=Date.now(); if(!estado&&!e.nota) delete st[key]; else st[key]=e; lsSet(KSTORE,st); renderBoard(); }
+  function kRemove(key){ var st=kget(); delete st[key]; lsSet(KSTORE,st); renderBoard(); }
+  function boardActive(){ var s=document.getElementById("sec-tablero"); return s&&s.classList.contains("active"); }
+
+  function injectBoardTab(){
+    var tabs=document.getElementById("tabs"); if(!tabs || document.getElementById("v4-tab-tablero")) return;
+    var btn=document.createElement("button"); btn.className="tab"; btn.id="v4-tab-tablero"; btn.dataset.tab="tablero"; btn.textContent="Tablero";
+    tabs.appendChild(btn);
+    var main=document.querySelector("main"); var sec=document.createElement("section"); sec.id="sec-tablero";
+    sec.innerHTML='<div class="panel reveal in"><div class="pf-h" style="margin-bottom:2px"><div><span class="badge">Pipeline personal</span>'+
+      '<h2 style="margin-top:8px;font-size:24px;letter-spacing:-.02em">Tablero Kanban</h2>'+
+      '<div class="sub" style="color:var(--ink2);font-size:13.5px;margin-top:4px">Mueve cada proceso por tus etapas. Se guarda en este navegador (con notas).</div></div></div></div>'+
+      '<div class="v4-board" id="v4-board"></div>';
+    main.appendChild(sec);
+    btn.addEventListener("click",function(){ v4SwitchTo("tablero"); renderBoard(); });
+    // al cambiar a otras pestañas, desactiva la del tablero
+    document.querySelectorAll("#tabs .tab").forEach(function(t){ if(t!==btn) t.addEventListener("click",function(){ btn.classList.remove("active"); var s=document.getElementById("sec-tablero"); if(s) s.classList.remove("active"); }); });
+  }
+  function v4SwitchTo(tab){
+    document.querySelectorAll("#tabs .tab").forEach(function(t){ t.classList.toggle("active", t.dataset.tab===tab); });
+    document.querySelectorAll("main section").forEach(function(s){ s.classList.remove("active"); });
+    var sec=document.getElementById("sec-"+tab); if(sec) sec.classList.add("active");
+    var prof=["helder","genesis","juntos"].indexOf(tab)>=0;
+    var kp=document.getElementById("k-panel-wrap"), rw=document.getElementById("radar-wrap");
+    if(kp) kp.style.display=prof?"":"none"; if(rw) rw.style.display=prof?"":"none";
+    try{ window.scrollTo({top:0,behavior:"smooth"}); }catch(e){}
+  }
+  function renderBoard(){
+    var box=document.getElementById("v4-board"); if(!box) return;
+    var st=kget(), keys=Object.keys(st);
+    box.innerHTML=KCOLS.map(function(col){
+      var items=keys.filter(function(k){ return st[k].e===col.k; }).sort(function(a,b){ return (st[b].t||0)-(st[a].t||0); });
+      var cards=items.map(function(k){ var e=st[k], s=e.s||{}; var sc=s.score||0, c=sc>=75?"var(--green)":sc>=50?"var(--amber)":"var(--red)";
+        var d=diasHasta(s.cierre), cie=d===null?"":(d<0?"cerrado":(d===0?"cierra hoy":"cierra en "+d+"d"));
+        var mv='<select class="v4-bd-move" data-k="'+esc(k)+'">'+KCOLS.map(function(c2){ return '<option value="'+c2.k+'"'+(c2.k===col.k?" selected":"")+'>'+c2.l+'</option>'; }).join("")+'<option value="">— quitar</option></select>';
+        return '<div class="v4-bd-card"><div class="v4-bd-top"><span class="v4-bd-score" style="color:'+c+'">'+sc+'</span>'+
+          (s.url?'<a href="'+esc(s.url)+'" target="_blank" rel="noopener" class="v4-bd-name">'+esc(clip(s.nombre||"—",70))+'</a>':'<span class="v4-bd-name">'+esc(clip(s.nombre||"—",70))+'</span>')+'</div>'+
+          '<div class="v4-bd-meta">'+esc(clip(s.entidad||"",46))+' · '+(s.valor?money(s.valor):"valor n/d")+(cie?(' · '+cie):"")+'</div>'+
+          (e.nota?'<div class="v4-bd-nota">📝 '+esc(e.nota)+'</div>':"")+
+          '<div class="v4-bd-actions">'+mv+'<button class="v4-bd-x" data-k="'+esc(k)+'" title="Quitar del tablero">✕</button></div></div>';
+      }).join("")||'<div class="v4-bd-empty">—</div>';
+      return '<div class="v4-bd-col"><div class="v4-bd-h">'+col.l+' <span>'+items.length+'</span></div><div class="v4-bd-list">'+cards+'</div></div>';
+    }).join("");
+    box.querySelectorAll(".v4-bd-move").forEach(function(s){ s.addEventListener("change",function(){ ksetByKey(s.dataset.k, s.value); }); });
+    box.querySelectorAll(".v4-bd-x").forEach(function(b){ b.addEventListener("click",function(){ kRemove(b.dataset.k); }); });
+  }
+
+  /* ════ INTELIGENCIA DE ENTIDAD (dataset de Contratos) ════ */
+  function entidadIntel(entidad){
+    openModal('<h3 style="margin:0">Inteligencia de entidad</h3><p class="desc" style="margin:4px 0 0">'+esc(entidad)+'</p>','<div class="v4-intel" id="v4-intel"><span class="loading"></span> Consultando histórico de contratación en datos abiertos…</div>');
+    var mount=document.getElementById("v4-intel");
+    var url; try{ url=SECOP_CONTRATOS+"?$q="+encodeURIComponent(entidad)+"&$limit=400"; }catch(e){ url=null; }
+    if(!url){ mount.innerHTML="No disponible."; return; }
+    var pr; try{ pr=fetchTimeout(OWN_PROXY(url),{},20000).catch(function(){ return fetchTimeout(url,{},20000); }); }catch(e){ pr=fetch(url); }
+    Promise.resolve(pr).then(function(r){ return r&&r.ok?r.json():[]; }).then(function(rows){
+      if(!Array.isArray(rows)||!rows.length){ mount.innerHTML='<div class="dash-empty">Sin histórico accesible para esta entidad (la fuente no respondió o no expone estos campos). Intenta más tarde.</div>'; return; }
+      var sample=rows[0], keys=Object.keys(sample);
+      var vCol=keys.find(function(k){ return /valor_del_contrato|valor_contrato|^valor$|valor_total/.test(k); }) || keys.find(function(k){ return /valor/.test(k) && !/anticip|adelant/.test(k); });
+      var pCol=keys.find(function(k){ return /proveedor.*adjudic|nombre.*proveedor|proveedor|contratista|adjudicatario/.test(k); });
+      var eCol=keys.find(function(k){ return /nombre_entidad|^entidad/.test(k); });
+      var rel=rows; if(eCol){ var en=norm(entidad); rel=rows.filter(function(r){ return norm(r[eCol]).indexOf(en.slice(0,Math.min(en.length,18)))>=0; }); if(!rel.length) rel=rows; }
+      var n=rel.length, total=0, provs={};
+      rel.forEach(function(r){ var v=vCol?parseFloat(String(r[vCol]).replace(/[^0-9.]/g,"")):0; if(!isNaN(v)) total+=v; var pv=pCol?(r[pCol]||""):""; if(pv) provs[pv]=(provs[pv]||0)+1; });
+      var topProv=Object.keys(provs).map(function(k){ return [k,provs[k]]; }).sort(function(a,b){ return b[1]-a[1]; }).slice(0,6);
+      var avg=n?total/n:0;
+      mount.innerHTML=
+        '<div class="v4-intel-grid">'+
+          '<div class="v4-intel-c"><div class="l">Contratos hallados</div><div class="v">'+n.toLocaleString("es-CO")+(n>=400?"+":"")+'</div></div>'+
+          '<div class="v4-intel-c"><div class="l">Valor total</div><div class="v">'+money(total)+'</div></div>'+
+          '<div class="v4-intel-c"><div class="l">Valor promedio</div><div class="v">'+money(avg)+'</div></div>'+
+        '</div>'+
+        (topProv.length?('<h4 style="margin:18px 0 8px;font-size:14px">Proveedores más frecuentes</h4>'+
+          '<div class="v4-intel-prov">'+topProv.map(function(t){ return '<div class="v4-intel-prow"><span>'+esc(clip(titleCase(t[0]),52))+'</span><b>'+t[1]+'</b></div>'; }).join("")+'</div>'):'')+
+        '<p class="v3-cmp-note">Muestra de hasta 400 contratos del dataset de Contratos Electrónicos (búsqueda por nombre). Sirve para leer cuán activa y disputada es la entidad — no es la lista completa.</p>';
+    }).catch(function(){ mount.innerHTML='<div class="dash-empty">No se pudo consultar el histórico (sin red o fuente no disponible).</div>'; });
+  }
+
+  /* ════ per-card augment ════ */
+  function v4Augment(list){
+    var cont=document.getElementById("proc-list"); if(!cont) return;
+    cont.querySelectorAll(".proc").forEach(function(card,idx){
+      var p=list[idx]; if(!p) return; if(card.dataset.v4==="1") return; card.dataset.v4="1";
+      // badge "Nuevo"
+      if(isNew(p)){ var sc=card.querySelector(".proc-score"); if(sc){ var nb=document.createElement("div"); nb.className="v4-new"; nb.textContent="✦ Nuevo"; sc.appendChild(nb); } }
+      // chips extra (prioridad/distancia/riesgo) en proc-body
+      var body=card.querySelector(".proc-body");
+      if(body){
+        var di=distInfo(p);
+        if(di){ var c1=document.createElement("div"); c1.className="chip"; c1.innerHTML='<span class="cl">Acceso</span><span class="cv">'+(di.km<8?"en la base":"≈"+di.km+" km · "+di.h.toFixed(1)+" h ("+di.base+")")+'</span>'; body.appendChild(c1); }
+        var rk=riskOf(p.ciudad,p.depto);
+        if(rk){ var c2=document.createElement("div"); c2.className="chip"; c2.innerHTML='<span class="cl">Riesgo</span><span class="cv" style="color:'+(rk.info.color||"var(--ink)")+'">'+esc(rk.info.label)+'</span>'; body.appendChild(c2); }
+      }
+      // acciones: estado kanban + nota + intel
+      var actions=card.querySelector(".proc-actions");
+      if(actions){
+        var e=kentry(p);
+        var sel=document.createElement("select"); sel.className="v4-kstate"; sel.title="Estado en tu tablero";
+        sel.innerHTML=KANBAN.map(function(o){ return '<option value="'+o.k+'"'+((e&&e.e)===o.k?" selected":"")+'>'+o.l+'</option>'; }).join("");
+        if(e&&e.e) sel.classList.add("set");
+        sel.addEventListener("change",function(){ ksetEstado(p,sel.value); sel.classList.toggle("set",!!sel.value); });
+        actions.appendChild(sel);
+        var bn=document.createElement("button"); bn.type="button"; bn.className="v3-act"; bn.innerHTML=(e&&e.nota)?"📝 Nota ✓":"📝 Nota"; bn.title="Nota personal sobre este proceso";
+        bn.addEventListener("click",function(){ ksetNota(p); bn.innerHTML=(kentry(p)||{}).nota?"📝 Nota ✓":"📝 Nota"; });
+        actions.appendChild(bn);
+        var bi=document.createElement("button"); bi.type="button"; bi.className="v3-act"; bi.innerHTML="🏛 Entidad"; bi.title="Histórico de contratación de la entidad (datos abiertos)";
+        bi.addEventListener("click",function(){ if(p.entidad&&p.entidad!=="—") entidadIntel(p.entidad); else toast("Sin entidad para consultar."); });
+        actions.appendChild(bi);
+      }
+    });
+  }
+
+  /* ════ auto-consulta de riesgo (1 vez al día, top municipios) ════ */
+  function autoRiesgo(list){
+    try{
+      if(lsGet("detecta-riesgo-auto-fecha","")===new Date().toISOString().slice(0,10)) return;
+      var map={}; list.forEach(function(p){ var k=((p.ciudad||p.depto)||"").trim().toLowerCase(); if(!k) return; if(!map[k]) map[k]={muni:(p.ciudad||p.depto),n:0}; map[k].n++; });
+      var top=Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){return b.n-a.n;}).slice(0,8);
+      if(!top.length) return; lsSet("detecta-riesgo-auto-fecha",new Date().toISOString().slice(0,10));
+      var i=0; (function nx(){ if(i>=top.length){ try{ window.renderProcesses(curList()); }catch(e){} return; } fetchRiesgo(top[i].muni).then(function(){ i++; setTimeout(nx,400); }); })();
+    }catch(e){}
+  }
+
+  /* ════ barras por departamento (sec-mapa) ════ */
+  function ensureDeptoPanel(){
+    var sec=document.getElementById("sec-mapa"); if(!sec || document.getElementById("v4-depto")) return;
+    var pan=document.createElement("div"); pan.className="panel reveal in"; pan.id="v4-depto";
+    pan.innerHTML='<h3>Valor por departamento <span class="v3-pill">dónde se concentra la plata</span></h3><p class="desc">Suma de presupuestos del radar por departamento. Útil para ver de un vistazo dónde está el volumen.</p><div id="v4-depto-bars"></div>';
+    var exp=document.getElementById("v3b-explorer"); if(exp&&exp.parentNode) exp.parentNode.insertBefore(pan, exp); else sec.appendChild(pan);
+  }
+  function renderDepto(list){
+    ensureDeptoPanel(); var box=document.getElementById("v4-depto-bars"); if(!box) return;
+    var map={}; (list||[]).forEach(function(p){ var d=p.depto||"Sin departamento"; if(!map[d]) map[d]={v:0,n:0}; map[d].v+=(p.valor||0); map[d].n++; });
+    var arr=Object.keys(map).map(function(k){ return {d:k,v:map[k].v,n:map[k].n}; }).sort(function(a,b){ return b.v-a.v; }).slice(0,12);
+    if(!arr.length){ box.innerHTML='<div class="dash-empty">Carga el radar para ver la distribución por departamento.</div>'; return; }
+    var max=Math.max.apply(null,arr.map(function(x){return x.v;}))||1;
+    box.innerHTML=arr.map(function(x){ return '<div class="v4-dbar"><div class="v4-dbar-l">'+esc(titleCase(x.d))+' <span>'+x.n+'</span></div>'+
+      '<div class="v4-dbar-track"><div class="v4-dbar-fill" style="width:'+Math.max(x.v/max*100,2).toFixed(1)+'%"></div></div>'+
+      '<div class="v4-dbar-v">'+money(x.v)+'</div></div>'; }).join("");
+  }
+
+  /* ════ selector de perfil en el header ════ */
+  function injectProfileSelector(){
+    var hr=document.querySelector(".header-right"); if(!hr || document.getElementById("v4-profile")) return;
+    var sel=document.createElement("select"); sel.id="v4-profile"; sel.className="v4-profile"; sel.title="Perfil activo (Resumen y Mapa lo respetan)";
+    sel.innerHTML='<option value="helder">Helder</option><option value="genesis">Génesis</option><option value="juntos">Helder + Génesis</option>';
+    sel.value=getProfile();
+    var tgl=document.getElementById("theme-toggle"); if(tgl) hr.insertBefore(sel,tgl); else hr.insertBefore(sel,hr.firstChild);
+    sel.addEventListener("change",function(){
+      try{ currentProfile=sel.value; }catch(e){}
+      var active=document.querySelector("#tabs .tab.active"); var at=active?active.dataset.tab:"resumen";
+      if(["helder","genesis","juntos"].indexOf(at)>=0){ var tb=document.querySelector('#tabs .tab[data-tab="'+sel.value+'"]'); if(tb) tb.click(); }
+      else { try{ loadProcesses(); }catch(e){} }
+      toast("Perfil activo: "+(PROF_NAMES[sel.value]||sel.value));
+    });
+    document.querySelectorAll('#tabs .tab[data-tab="helder"],#tabs .tab[data-tab="genesis"],#tabs .tab[data-tab="juntos"]').forEach(function(t){ t.addEventListener("click",function(){ var s=document.getElementById("v4-profile"); if(s) s.value=t.dataset.tab; }); });
+  }
+
+  /* ════ Excel / PDF / backup-restore / watchlist (panel en Resumen) ════ */
+  function exportXLS(){
+    var list=curList(); if(!list.length){ toast("Carga el radar primero."); return; }
+    var cols=["Encaje","Nombre","Entidad","Modalidad","Ciudad","Departamento","Valor_COP","SMMLV","Cierre","Anticipo_%","K","UNSPSC","Radio","Prioridad","URL"];
+    function td(v){ return "<td>"+esc(v==null?"":String(v))+"</td>"; }
+    var rows=list.map(function(p){ var kok=(p._k&&p._k.crp>=p._crpc)?"suficiente":"insuficiente";
+      return "<tr>"+[p._score,p.nombre,p.entidad,p.modalidad,p.ciudad,p.depto,(p.valor||0),(p.valor?Math.round(p.valor/smmlv()):""),(p.cierre?fmtFecha(p.cierre):""),(p._anticipo==null?"":p._anticipo),kok,(p._clase||p._seg||""),p._ubic,priority(p).toFixed(1),(p.url||"")].map(td).join("")+"</tr>"; }).join("");
+    var html='<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body><table border="1"><tr>'+cols.map(function(c){return "<th>"+c+"</th>";}).join("")+"</tr>"+rows+"</table></body></html>";
+    dl(new Blob([html],{type:"application/vnd.ms-excel"}),"detecta-radar-"+new Date().toISOString().slice(0,10)+".xls");
+    toast("Excel exportado ("+list.length+" filas).");
+  }
+  function backupAll(){
+    var data={}; for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(/^detecta-|^radar-licit/.test(k)) data[k]=localStorage.getItem(k); }
+    dl(new Blob([JSON.stringify(data,null,0)],{type:"application/json"}),"detecta-backup-"+new Date().toISOString().slice(0,10)+".json");
+    toast("Copia de seguridad descargada.");
+  }
+  function restoreAll(file){
+    var rd=new FileReader(); rd.onload=function(){ try{ var data=JSON.parse(rd.result); var n=0; for(var k in data){ if(/^detecta-|^radar-licit/.test(k)){ localStorage.setItem(k,data[k]); n++; } } toast(n+" claves restauradas. Recargando…"); setTimeout(function(){ location.reload(); },900); }catch(e){ toast("Archivo inválido."); } };
+    rd.readAsText(file);
+  }
+  function shareWatchlist(){
+    var keys=lsGet("detecta-watchlist-v1",[])||[]; if(!keys.length){ toast("No tienes procesos guardados ★."); return; }
+    var payload; try{ payload=btoa(unescape(encodeURIComponent(JSON.stringify(keys)))); }catch(e){ payload=""; }
+    var url=location.origin+location.pathname+"#w="+payload;
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function(){ toast("Enlace de tu watchlist copiado."); },function(){ prompt("Copia el enlace:",url); });
+    else prompt("Copia el enlace:",url);
+  }
+  function maybeImportWatchlist(){
+    var m=(location.hash||"").match(/[#&]w=([^&]+)/); if(!m) return;
+    try{ var keys=JSON.parse(decodeURIComponent(escape(atob(m[1])))); if(Array.isArray(keys)){ var cur=new Set(lsGet("detecta-watchlist-v1",[])||[]); var add=0; keys.forEach(function(k){ if(!cur.has(k)){ cur.add(k); add++; } }); lsSet("detecta-watchlist-v1",Array.prototype.slice.call(cur));
+      history.replaceState(null,"",location.pathname); if(add){ toast(add+" guardados importados. Recargando…"); setTimeout(function(){ location.reload(); },800); } } }catch(e){}
+  }
+  function ensureDatosPanel(){
+    var sec=document.getElementById("sec-resumen"); if(!sec || document.getElementById("v4-datos")) return;
+    var pan=document.createElement("div"); pan.className="panel reveal in"; pan.id="v4-datos";
+    pan.innerHTML='<h3>Datos y exportación</h3><p class="desc">Todo local y gratis. La copia de seguridad incluye watchlist ★, tablero, notas, vistas y ajustes.</p>'+
+      '<div class="v4-datos-row">'+
+        '<button class="v3-vb-btn" id="v4-xls">⭳ Excel (.xls)</button>'+
+        '<button class="v3-vb-btn" id="v4-print">🖨 Imprimir / PDF</button>'+
+        '<button class="v3-vb-btn" id="v4-share-wl">★ Compartir watchlist</button>'+
+        '<button class="v3-vb-btn" id="v4-backup">💾 Copia de seguridad</button>'+
+        '<label class="v3-vb-btn" for="v4-restore-file">⤴ Restaurar<input type="file" id="v4-restore-file" accept="application/json,.json" style="display:none"></label>'+
+      '</div>';
+    var anchor=document.getElementById("dash-metrics"); if(anchor&&anchor.parentNode) anchor.parentNode.insertBefore(pan, anchor); else sec.insertBefore(pan, sec.firstChild);
+    document.getElementById("v4-xls").addEventListener("click",exportXLS);
+    document.getElementById("v4-print").addEventListener("click",function(){ window.print(); });
+    document.getElementById("v4-share-wl").addEventListener("click",shareWatchlist);
+    document.getElementById("v4-backup").addEventListener("click",backupAll);
+    document.getElementById("v4-restore-file").addEventListener("change",function(e){ if(e.target.files&&e.target.files[0]) restoreAll(e.target.files[0]); });
+  }
+
+  /* ════ resumen diario + recordatorio RUP ════ */
+  var RUP_RENOV={helder:"04-28", genesis:"04-30"};
+  function diasARenovacion(){
+    var out=[]; var now=new Date();
+    for(var k in RUP_RENOV){ var mmdd=RUP_RENOV[k].split("-"); var y=now.getFullYear();
+      var d=new Date(y,+mmdd[0]-1,+mmdd[1]); if(d<now) d=new Date(y+1,+mmdd[0]-1,+mmdd[1]);
+      var dd=Math.ceil((d-now)/86400000); if(dd<=45) out.push({perfil:PROF_NAMES[k]||k, dias:dd}); }
+    return out;
+  }
+  function maybeDailyBanner(list){
+    try{
+      if(!list||!list.length) return;
+      var today=new Date().toISOString().slice(0,10);
+      if(lsGet("detecta-banner-fecha","")===today) return;
+      var nuevos=list.filter(isNew).length, cierran7=list.filter(function(p){ var d=diasHasta(p.cierre); return d!==null&&d>=0&&d<=7; }).length;
+      var rup=diasARenovacion();
+      var msgs=[];
+      msgs.push('<b>'+list.length+'</b> procesos en el radar');
+      if(nuevos) msgs.push('<b style="color:var(--green)">'+nuevos+' nuevos</b> desde tu última visita');
+      if(cierran7) msgs.push('<b style="color:var(--amber)">'+cierran7+'</b> cierran en ≤7 días');
+      rup.forEach(function(r){ msgs.push('🗂 renovación RUP '+esc(r.perfil)+' en <b>'+r.dias+' días</b>'); });
+      lsSet("detecta-banner-fecha",today);
+      var main=document.querySelector("main"); if(!main) return;
+      var b=document.getElementById("v4-banner"); if(b) b.remove();
+      b=document.createElement("div"); b.id="v4-banner"; b.className="v4-banner";
+      b.innerHTML='<span class="v4-banner-ico">☀️</span><span class="v4-banner-txt">Hoy · '+msgs.join(' · ')+'</span><button class="v4-banner-x" aria-label="cerrar">✕</button>';
+      main.insertBefore(b, main.firstChild);
+      b.querySelector(".v4-banner-x").addEventListener("click",function(){ b.remove(); });
+    }catch(e){}
+  }
+
+  /* ════ checklist de habilitantes desde el pliego ════ */
+  function pliegoChecklist(){
+    try{
+      var out=document.getElementById("pliego-result"); var ta=document.getElementById("pliego-text"); if(!out||!ta) return;
+      var prev=document.getElementById("v4-checklist"); if(prev) prev.remove();
+      var txt=(ta.value||""); if(!txt.trim()) return;
+      var low=txt.toLowerCase();
+      var items=[
+        {k:"anticipo", l:"Anticipo declarado", hit:/anticipo/.test(low)},
+        {k:"liquidez", l:"Índice de liquidez exigido", hit:/liquidez/.test(low)},
+        {k:"endeud", l:"Índice de endeudamiento", hit:/endeudamiento/.test(low)},
+        {k:"cobertura", l:"Razón de cobertura de intereses", hit:/cobertura\s+de\s+inter/.test(low)},
+        {k:"capital", l:"Capacidad/capital de trabajo (K)", hit:/capacidad\s+residual|capital\s+de\s+trabajo|\bk\s+residual/.test(low)},
+        {k:"experiencia", l:"Experiencia / contratos exigidos", hit:/experiencia|contratos?\s+(similar|ejecutad|acreditad)/.test(low)},
+        {k:"rup", l:"RUP / clasificación UNSPSC", hit:/\brup\b|unspsc|clasificaci[oó]n/.test(low)},
+        {k:"plazo", l:"Plazo de ejecución", hit:/plazo\s+de\s+ejecuci|plazo\s+del?\s+contrato/.test(low)},
+        {k:"poliza", l:"Pólizas / garantías", hit:/p[oó]liza|garant[ií]a\s+de\s+(seriedad|cumplimiento)/.test(low)},
+        {k:"visita", l:"Visita técnica (si aplica)", hit:/visita\s+(t[eé]cnica|al\s+sitio|de\s+obra)/.test(low)}
+      ];
+      var store=lsGet("detecta-pliego-checklist-v1",{})||{};
+      var box=document.createElement("div"); box.id="v4-checklist"; box.className="v4-checklist";
+      box.innerHTML='<h4 style="margin:0 0 4px;font-size:14px">Checklist de habilitantes</h4>'+
+        '<p class="v3-cmp-note" style="margin:0 0 10px">Marcadas según lo que aparece en el texto del pliego. Tildalas tú mismo a medida que las revisas (se guarda en este navegador).</p>'+
+        items.map(function(it){ var on=store[it.k]; return '<label class="v4-chk-row"><input type="checkbox" data-k="'+it.k+'"'+(on?" checked":"")+'> <span class="v4-chk-l">'+esc(it.l)+'</span>'+(it.hit?'<span class="v4-chk-hit">detectado en el pliego</span>':'<span class="v4-chk-miss">no detectado</span>')+'</label>'; }).join("");
+      out.appendChild(box);
+      box.querySelectorAll('input[type=checkbox]').forEach(function(c){ c.addEventListener("change",function(){ var s=lsGet("detecta-pliego-checklist-v1",{})||{}; s[c.dataset.k]=c.checked; lsSet("detecta-pliego-checklist-v1",s); }); });
+    }catch(e){ console.error("v4 checklist:",e); }
+  }
+
+  /* ════ atajos de teclado ════ */
+  function shortcuts(e){
+    var tag=(document.activeElement&&document.activeElement.tagName)||"";
+    if(/INPUT|TEXTAREA|SELECT/.test(tag)){ return; }
+    if(e.key==="/"){ var q=document.getElementById("v4-q"); if(q){ e.preventDefault(); q.focus(); } return; }
+    if(e.key==="?"){ e.preventDefault(); openModal('<h3 style="margin:0">Atajos de teclado</h3>',
+      '<div class="v4-keys"><div><kbd>/</kbd> buscar</div><div><kbd>j</kbd>/<kbd>k</kbd> mover entre tarjetas</div><div><kbd>d</kbd> claro/oscuro</div><div><kbd>1</kbd>…<kbd>9</kbd> ir a pestaña</div><div><kbd>?</kbd> esta ayuda</div><div><kbd>Esc</kbd> cerrar</div></div>'); return; }
+    if(e.key==="d"){ var tb=document.getElementById("theme-toggle"); if(tb) tb.click(); return; }
+    if(e.key==="j"||e.key==="k"){ var cards=Array.prototype.slice.call(document.querySelectorAll("#proc-list .proc")); if(!cards.length) return;
+      e.preventDefault(); var y=window.scrollY+140, idx=-1;
+      for(var i=0;i<cards.length;i++){ if(cards[i].getBoundingClientRect().top+window.scrollY>y){ idx=i; break; } }
+      if(e.key==="j"){ idx=idx<0?cards.length-1:idx; } else { idx=idx<=0?0:idx-2; if(idx<0) idx=0; }
+      var t=cards[Math.max(0,Math.min(idx,cards.length-1))]; if(t) t.scrollIntoView({behavior:"smooth",block:"center"}); return; }
+    if(/^[1-9]$/.test(e.key)){ var tabs=document.querySelectorAll("#tabs .tab"); var n=+e.key-1; if(tabs[n]){ e.preventDefault(); tabs[n].click(); } }
+  }
+
+  /* ════ onboarding de 1 línea por pestaña (toast la 1ª vez) ════ */
+  var TIPS={ resumen:"Vista de 10 segundos del radar. Cambia el perfil arriba a la derecha.",
+    mapa:"Despliega un municipio abajo para ver sus procesos. «Ubicar faltantes» llena el mapa.",
+    pliego:"Sube el PDF o pega el texto: extrae habilitantes, fecha de cierre y arma un checklist.",
+    tablero:"Mueve procesos por etapas (interesado → presentado) con notas. Todo local.",
+    rentab:"Carga los ítems del proceso y calcula si es rentable con tu APU.",
+    apu:"Análisis de precios unitarios para sustentar tus costos.",
+    manual:"Cómo se calcula cada cosa, en lenguaje claro." };
+  function maybeTip(tab){ try{ var seen=lsGet("detecta-tips-v1",{})||{}; if(seen[tab]||!TIPS[tab]) return; seen[tab]=1; lsSet("detecta-tips-v1",seen); setTimeout(function(){ toast("💡 "+TIPS[tab],4200); },500); }catch(e){} }
+
+  /* ════ MONKEY-PATCH (capa más externa) ════ */
+  if(typeof window.renderProcesses==="function"){
+    var _inner=window.renderProcesses;
+    window.renderProcesses=function(list){
+      list=list||[]; _v4src=list;
+      var t=transform(list);
+      var r=_inner.call(this, t);
+      try{
+        refreshModalidades(list);
+        v4Augment(t);
+        recordSeen(t);
+        renderDepto(curList());
+        maybeDailyBanner(t);
+        autoRiesgo(t);
+      }catch(e){ console.error("v4 render:",e); }
+      return r;
+    };
+  }
+  if(typeof window.analizarPliego==="function"){
+    var _ap=window.analizarPliego;
+    window.analizarPliego=function(){ var r=_ap.apply(this,arguments); try{ pliegoChecklist(); }catch(e){} return r; };
+  }
+
+  /* ════ INIT ════ */
+  try{
+    maybeImportWatchlist();
+    injectProfileSelector();
+    injectToolbar();
+    injectBoardTab();
+    ensureDatosPanel();
+    ensureDeptoPanel();
+    document.addEventListener("keydown", shortcuts);
+    document.querySelectorAll("#tabs .tab").forEach(function(t){
+      t.addEventListener("click",function(){
+        var tab=t.dataset.tab; maybeTip(tab);
+        if(tab==="mapa") setTimeout(function(){ renderDepto(curList()); },50);
+        if(["helder","genesis","juntos"].indexOf(tab)>=0) setTimeout(injectToolbar,40);
+      });
+    });
+  }catch(e){ console.error("v4 init:",e); }
 })();
 
 </script>

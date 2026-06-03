@@ -118,6 +118,33 @@ Envuelve `renderProcesses` por **encima de todo** (filtra antes de pintar; el re
 - **Explorador por municipio** (pestaña Mapa): acordeón `<details>` que agrupa el radar por municipio y lista los
   procesos reales (encaje, valor, cierre, enlace) + buscador. Cierra el "¿cuáles son? ¿los adivino?".
 
+### Capa #4 — 20 ideas nuevas (`detectaV4`, un `<style>` + un `<script>` antes de `</body>`)
+Envuelve `renderProcesses` por encima de todo: **transforma la lista** (dedup → buscador → modalidad →
+ocultar nacionales → solo ≤7 días → orden) antes de pasarla al inner. Claves `localStorage` propias.
+- **Orden + buscador** (`v4-toolbar`): orden encaje/cierre/valor/**prioridad**; búsqueda libre. Prefs en `detecta-v4-prefs`.
+- **Filtro modalidad** (derivado del radar) + **"solo cierran ≤7 días"** + **"ocultar entidades nacionales"** (`NAT_RE`).
+- **Dedup** por `keyOf`. **"✦ Nuevo"** = no estaba en `detecta-vistos-v1` del perfil (snapshot al cargar).
+- **Prioridad** = encaje × log(valor) × urgencia (cierre). **Distancia/tiempo** por tarjeta (`haversineKm`+`SINUOSIDAD`, ~50 km/h).
+- **Riesgo en tarjeta** (chip si `newsCache` lo tiene) + **auto-consulta GDELT** 1×/día de los top municipios (`detecta-riesgo-auto-fecha`).
+- **Kanban** (pestaña **Tablero** inyectada): estado por proceso (interesado/estudio/presentado/descartado) + **notas**, en
+  `detecta-kanban-v1` (guarda snapshot del proceso). Selector de estado y 📝 en cada tarjeta.
+- **Inteligencia de entidad**: botón 🏛 → consulta `SECOP_CONTRATOS` (`$q`) y agrega nº contratos, valor total/promedio y
+  top proveedores (modal). Degrada si no hay red.
+- **Selector de perfil fijo en el header** (`v4-profile`): cambia `currentProfile` y refresca Resumen/Mapa sin salir.
+- **Checklist de habilitantes** tras `analizarPliego` (`detecta-pliego-checklist-v1`); marca lo detectado en el texto.
+- **Datos y export** (panel Resumen): **Excel `.xls`** (HTML-table), **Imprimir/PDF** (`@media print`), **compartir
+  watchlist** por enlace (`#w=` base64 → merge + reload), **backup/restore** de todo `detecta-*`/`radar-licit` (JSON).
+- **Barras por departamento** (Mapa). **Atajos** (`/` buscar, `j/k`, `d` tema, `1-9` pestañas, `?` ayuda).
+  **Resumen diario** (banner 1×/día) + recordatorio de renovación RUP (`RUP_RENOV`). Pestañas con **scroll horizontal en móvil**.
+
+### Correcciones de datos (en el código base, no aditivas)
+- **`plazoMeses`**: usaba `("Días").includes("dia")` → **false por el acento** (í≠i). Ahora normaliza con `normalizaTexto`
+  (y soporta semanas/horas). Era la causa del "195 m" que distorsionaba el K.
+- **Logo en modo oscuro**: `.anticipo-mark` usaba `background:var(--ink)` → en oscuro quedaba blanco-sobre-blanco. Override
+  a chip claro con glifo oscuro.
+- **Filtro de cerrados (#3b `isClosed`)**: alineado al badge "Cerrado" (`diasHasta(cierre) < 0`); "cierra hoy" (hora futura)
+  permanece visible.
+
 ## Convenciones
 - Español en UI, comentarios y mensajes de commit. Estética tipo Apple (system fonts + Inter, sutil, claro).
 - **Sin dependencias de pago.** PDF.js, Tesseract.js (OCR del pliego) y Leaflet (mapa) se cargan por CDN/lazy-load.
