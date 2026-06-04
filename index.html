@@ -4126,7 +4126,10 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
 //  REDISEÑO — Hero rotativo (1001 combinaciones, prob. uniforme)
 // ════════════════════════════════════════════════════════════════
 (function heroRotativo(){
-  var titles = [
+  // ── Frases curadas (criterio/precisión + misión/esperanza/progreso) ──
+  // Se revisaron las antiguas: se quitaron las que sonaban forzadas y se
+  // sumaron frases de propósito (la obra civil como motor de progreso).
+  var curadas = [
     "La claridad precede al éxito.","Ver antes de decidir.","El dato ilumina el camino.",
     "Donde otros ven ruido, tú ves la señal.","La oportunidad favorece a quien observa.",
     "Anticipar es ya haber ganado.","La estrategia nace de la evidencia.",
@@ -4138,21 +4141,50 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     "La certeza se construye, no se hereda.","Quien entiende el terreno, lo conquista.",
     "La inteligencia es ver el patrón completo.","Menos suposiciones, más fundamentos.",
     "El rigor abre las puertas correctas.","El criterio se afila con evidencia.",
-    "Lo invisible se vuelve estrategia.","Toda gran obra empezó por un buen dato.",
-    "La disciplina convierte el caos en mapa.","Comprender es la mitad del contrato.",
+    "Toda gran obra empezó por un buen dato.","La disciplina convierte el caos en mapa.",
     "El detalle correcto en el momento correcto.","La oportunidad no avisa: se detecta.",
-    "Pensar despacio para avanzar seguro.","El análisis transforma riesgo en decisión.",
-    "Cada renovación es un capítulo de constancia.","La solidez se demuestra con cifras.",
-    "Donde hay método, hay ventaja.","La verdad financiera no se discute.",
-    "Lo medible se vuelve alcanzable.","Las decisiones grandes nacen de datos pequeños.",
+    "Pensar despacio para avanzar seguro.","El análisis convierte el riesgo en decisión.",
+    "La solidez se demuestra con cifras.","Donde hay método, hay ventaja.",
+    "Lo medible se vuelve alcanzable.","Las grandes decisiones nacen de datos pequeños.",
     "Ver con claridad es ya construir.","El propósito guía, el dato confirma.",
-    "La confianza se edifica sobre evidencia.","Quien observa el todo, elige mejor la parte.",
-    "El tiempo respeta a quien se prepara.","La excelencia es atención sostenida.",
-    "Una decisión informada nunca está sola.","El territorio habla; el dato traduce.",
-    "Construir con sentido empieza con saber.","La oportunidad exacta exige la mirada exacta.",
-    "Toda ventaja real comienza por entender.","El orden vence a la prisa.",
-    "La evidencia es la base de toda confianza."
-  ]; // 51 títulos
+    "La confianza se edifica sobre evidencia.","El tiempo respeta a quien se prepara.",
+    "La excelencia es atención sostenida.","El orden vence a la prisa.",
+    "Toda ventaja real comienza por entender.","La evidencia es la base de toda confianza.",
+    // — misión · esperanza · progreso —
+    "Cada obra es un puente hacia un mejor mañana.","Construimos el país una decisión a la vez.",
+    "Detrás de cada vía hay una comunidad que avanza.","Donde llega una obra, llega el futuro.",
+    "Tu trabajo levanta más que estructuras: levanta esperanza.","El desarrollo empieza con una buena decisión.",
+    "Cada contrato bien elegido transforma una región.","Construir con propósito es construir para todos.",
+    "La oportunidad de hoy es el progreso de mañana.","Elegir bien hoy es sembrar bienestar mañana.",
+    "Cada proyecto es una promesa de progreso.","El futuro de una región cabe en una buena decisión.",
+    "Obras con sentido, comunidades con futuro.","Decidir con cabeza es construir con corazón.",
+    "Lo que hoy es un proceso, mañana es un camino.","Cada acierto acerca el desarrollo a la gente.",
+    "Progreso no es azar: es preparación que encuentra oportunidad."
+  ];
+  // ── Generador de frases coherentes (miles de combinaciones con sentido) ──
+  var CUAL=["claridad","visión","constancia","disciplina","evidencia","estrategia","paciencia","preparación","esperanza","determinación","confianza","experiencia","mirada","inteligencia","planeación","convicción"];
+  var VERB=["ilumina","sostiene","construye","transforma","impulsa","anticipa","ordena","abre","fortalece","guía","multiplica","precede a","alimenta","acerca","dignifica","despierta"];
+  var OBJ=["el camino","cada oportunidad","el futuro","el progreso","toda gran obra","la confianza","el siguiente paso","tu propósito","el desarrollo","la meta","el bienestar","lo que vendrá","una región entera","el mañana"];
+  var N1=["método","visión","propósito","disciplina","datos","preparación","constancia","criterio","esperanza","rigor"];
+  var N2=["ventaja","futuro","progreso","claridad","oportunidad","confianza","resultados","dirección","avance","sentido"];
+  var INF=["comprender","anticipar","observar","prepararse","decidir con datos","mirar a tiempo","planear","construir con criterio","elegir bien","medir a tiempo"];
+  var RES=["el primer paso","ya avanzar","media victoria","ganar tiempo","reducir el azar","construir futuro","abrir el camino","sembrar progreso","decidir con calma","ver más lejos"];
+  var NM=["obra","decisión","dato","contrato","vía","proyecto","cifra","paso"];
+  var VM=["acerca","construye","transforma","impulsa","sostiene","dignifica","mejora","levanta"];
+  var OM=["una comunidad","un mejor mañana","el futuro de una región","el progreso","una oportunidad","el bienestar","una nueva historia","el desarrollo"];
+  function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+  function fix(s){ return s.replace(/ a el /g," al ").replace(/ de el /g," del ").replace(/\s+/g," ").trim(); }
+  function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+  function genTitulo(){
+    var t=Math.floor(Math.random()*4), s;
+    if(t===0) s="La "+pick(CUAL)+" "+pick(VERB)+" "+pick(OBJ);
+    else if(t===1) s="Donde hay "+pick(N1)+", hay "+pick(N2);
+    else if(t===2) s=cap(pick(INF))+" es "+pick(RES);
+    else s="Cada "+pick(NM)+" "+pick(VM)+" "+pick(OM);
+    return fix(cap(s))+".";
+  }
+  // Combinaciones del generador: 16·16·14 + 10·10 + 10·10 + 8·8·8 ≈ 4.300
+  // frases válidas, además de las ~58 curadas → muy por encima de 2.000.
   var subs = [
     "Inteligencia de datos para identificar la oportunidad exacta en el momento preciso.",
     "Análisis profundo de cada licitación, antes de comprometer un solo recurso.",
@@ -4174,21 +4206,28 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     "La precisión de tu RUP, aplicada a cada oportunidad del mercado.",
     "Una lectura serena de un mercado complejo.",
     "Comprender el contrato antes de firmarlo.",
-    "El dato correcto convierte la duda en estrategia."
-  ]; // 21 subtítulos  ->  51 x 21 = 1071 combinaciones; tomamos 1001 con prob. uniforme.
-  // Construir exactamente 1001 pares únicos con igual probabilidad (1/1001).
-  var pares = [];
-  for(var i=0;i<titles.length;i++){
-    for(var j=0;j<subs.length;j++){
-      pares.push([i,j]);
-    }
-  }
-  pares = pares.slice(0,1001); // 1001 combinaciones, cada una con prob 1/1001
-  var p = pares[Math.floor(Math.random()*pares.length)];
-  var tEl = document.getElementById("hero-title");
-  var sEl = document.getElementById("hero-sub");
-  if(tEl) tEl.textContent = titles[p[0]];
-  if(sEl) sEl.textContent = subs[p[1]];
+    "El dato correcto convierte la duda en estrategia.",
+    // — propósito —
+    "Inteligencia al servicio del progreso: cada obra, una oportunidad de avanzar.",
+    "Construir el país empieza por elegir bien dónde construir.",
+    "Convertimos datos públicos en obras con futuro.",
+    "Para que cada decisión deje huella de progreso.",
+    "El desarrollo de una región empieza con una buena oportunidad.",
+    "Menos azar, más futuro: decisiones que construyen.",
+    "La oportunidad correcta, al servicio de la gente.",
+    "Tecnología y criterio para construir lo que de verdad importa.",
+    "De la información pública al bienestar de todos."
+  ];
+  function nuevoTitulo(){ return Math.random()<0.45 ? pick(curadas) : genTitulo(); }
+  var tEl=document.getElementById("hero-title"), sEl=document.getElementById("hero-sub");
+  var RM=!!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  function setHero(){ if(tEl) tEl.textContent=nuevoTitulo(); if(sEl) sEl.textContent=pick(subs); }
+  setHero();
+  // Rotación suave cada ~11 s (respeta "reducir movimiento").
+  if(!RM){ setInterval(function(){
+    if(tEl) tEl.style.opacity="0"; if(sEl) sEl.style.opacity="0";
+    setTimeout(function(){ setHero(); if(tEl) tEl.style.opacity="1"; if(sEl) sEl.style.opacity="1"; }, 520);
+  }, 11000); }
 })();
 
 // ════════════════════════════════════════════════════════════════
