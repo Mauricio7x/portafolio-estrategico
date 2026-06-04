@@ -2740,7 +2740,7 @@ document.getElementById("k-mult").addEventListener("input", () => {
   const note = document.getElementById("k-co-note");
   if(note) note.textContent = "⚠ Estimado desde la utilidad. Reemplace por el ingreso operacional real si lo tiene.";
   updateK();
-  if(document.querySelector('.tab.active').dataset.tab === currentProfile) loadProcesses();
+  if(document.getElementById("radar-wrap") && document.getElementById("radar-wrap").style.display !== "none") loadProcesses();
 });
 // Cuando se edita CO directamente, lo guardamos como override (dato real)
 document.getElementById("k-co").addEventListener("input", () => {
@@ -2751,7 +2751,7 @@ document.getElementById("k-co").addEventListener("input", () => {
   const note = document.getElementById("k-co-note");
   if(note) note.textContent = "";
   updateK();
-  if(document.querySelector('.tab.active').dataset.tab === currentProfile) loadProcesses();
+  if(document.getElementById("radar-wrap") && document.getElementById("radar-wrap").style.display !== "none") loadProcesses();
 });
 ["k-exp","k-prof","k-liq"].forEach(id => {
   document.getElementById(id).addEventListener("input", () => {
@@ -8201,6 +8201,112 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
       if(["helder","genesis","juntos"].indexOf(t.dataset.tab)>=0) setTimeout(injectAdjBtn,70);
     }); });
   }catch(e){ console.error("v8 init:",e); }
+})();
+
+</script>
+
+<!-- ════ SIMPLIFICAR · capa #9 — menos ruido visual ════ -->
+<style>
+  /* ════ SIMPLIFICAR · capa #9 ════ */
+  html.v9-simple #tabs .tab[data-tab="helder"],
+  html.v9-simple #tabs .tab[data-tab="genesis"],
+  html.v9-simple #tabs .tab[data-tab="juntos"],
+  html.v9-simple #tabs .tab[data-tab="metodologia"]{display:none!important}
+  html.v9-hide-adv .v9-adv{display:none!important}
+  .v9-advbtn{display:block;margin:6px auto 0}
+  .v5-htools{position:relative}
+  .v9-pop{position:absolute;top:100%;right:0;margin-top:6px;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;box-shadow:var(--shadow-h);padding:6px;display:none;gap:4px;z-index:60}
+  .v9-pop.open{display:flex}
+
+</style>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   SIMPLIFICAR 2026 · capa #9 — menos ruido visual, más fácil/adictiva.
+   - Perfiles (helder/génesis/juntos) salen de las pestañas → quedan SOLO
+     en el selector del header + una pestaña "Oportunidades" (el radar del
+     perfil elegido). Metodología se absorbe en Manual.
+   - Ajustes del header (contraste/texto/idioma) → un solo botón ⚙.
+   - Resumen: lo esencial visible; el análisis avanzado tras un toggle.
+   Degrada con gracia: si algo falla, restaura las pestañas originales.
+   ════════════════════════════════════════════════════════════════ */
+(function detectaSimplify(){
+  "use strict";
+  if(window.__detectaSimplify) return; window.__detectaSimplify = true;
+  function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
+  function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+  function $(s,r){ return (r||document).querySelector(s); }
+
+  /* ── A) perfiles → "Oportunidades" + Metodología → Manual ── */
+  function perfilActual(){ var s=document.getElementById("v4-profile"); if(s&&s.value) return s.value; try{ return currentProfile; }catch(e){ return "helder"; } }
+  function abreRadar(){
+    try{
+      var prof=perfilActual();
+      var hidden=$('#tabs .tab[data-tab="'+prof+'"]');
+      if(hidden){ hidden.click(); }            // dispara base + todas las capas (carga radar/secciones)
+      var op=document.getElementById("tab-oport"); if(op) op.classList.add("active");
+      try{ lsSet("detecta-last-tab","oportunidades"); }catch(e){}
+    }catch(e){ console.error("v9 abreRadar:",e); }
+  }
+  function setupTabs(){
+    var bar=document.getElementById("tabs"); if(!bar) return;
+    document.documentElement.classList.add("v9-simple");   // CSS oculta perfiles + metodología
+    if(!document.getElementById("tab-oport")){
+      var op=document.createElement("button"); op.className="tab"; op.id="tab-oport"; op.dataset.tab="oportunidades"; op.textContent="Oportunidades";
+      var res=$('#tabs .tab[data-tab="resumen"]');
+      if(res && res.nextSibling) bar.insertBefore(op, res.nextSibling); else bar.appendChild(op);
+      op.addEventListener("click", abreRadar);
+      // al ir a otra pestaña visible, apaga "Oportunidades"
+      document.querySelectorAll("#tabs .tab").forEach(function(t){ if(t!==op) t.addEventListener("click", function(){ op.classList.remove("active"); }); });
+    }
+    // selector del header: si ya estás viendo el radar, recarga el nuevo perfil
+    var sel=document.getElementById("v4-profile");
+    if(sel && !sel.dataset.v9){ sel.dataset.v9="1"; sel.addEventListener("change", function(){
+      var rw=document.getElementById("radar-wrap"); if(rw && rw.style.display!=="none") setTimeout(abreRadar, 12);
+    }); }
+  }
+
+  /* ── B) ajustes del header (contraste/texto/idioma) → un solo ⚙ ── */
+  function headerGear(){
+    var h=document.getElementById("v5-a11y"); if(!h || document.getElementById("v9-gear")) return;
+    var btns=Array.prototype.slice.call(h.children);
+    if(btns.length<2) return;
+    var gear=document.createElement("button"); gear.id="v9-gear"; gear.className="v5-htool"; gear.textContent="⚙"; gear.setAttribute("aria-label","Ajustes"); gear.title="Ajustes: contraste, tamaño de texto, idioma";
+    var pop=document.createElement("div"); pop.className="v9-pop"; pop.id="v9-pop";
+    btns.forEach(function(b){ pop.appendChild(b); });    // mueve los botones (conserva listeners)
+    h.appendChild(gear); h.appendChild(pop);
+    gear.addEventListener("click", function(e){ e.stopPropagation(); pop.classList.toggle("open"); });
+    document.addEventListener("click", function(){ pop.classList.remove("open"); });
+    pop.addEventListener("click", function(e){ e.stopPropagation(); });
+  }
+
+  /* ── C) Resumen: esencial visible · análisis avanzado tras toggle ── */
+  var ADV=["v4-datos","v3-pipeline","v5-cal","v7-funnel","v5-ent","v5-sea","v3-trend"];
+  function tagAdv(){ ADV.forEach(function(id){ var e=document.getElementById(id); if(e) e.classList.add("v9-adv"); }); }
+  function advToggle(){
+    var sec=document.getElementById("sec-resumen"); if(!sec || document.getElementById("v9-advbtn")) return;
+    var b=document.createElement("button"); b.id="v9-advbtn"; b.className="v3-vb-btn v9-advbtn";
+    function paint(){ var on=lsGet("detecta-adv",false); document.documentElement.classList.toggle("v9-hide-adv", !on);
+      b.textContent = on ? "▲ Ocultar análisis avanzado" : "📊 Ver análisis avanzado (calendario · embudo · tendencia · entidades…)"; }
+    b.addEventListener("click", function(){ lsSet("detecta-adv", !lsGet("detecta-adv",false)); paint(); });
+    var anchor=document.getElementById("dash-deadlines-wrap");
+    if(anchor && anchor.parentNode) anchor.parentNode.insertBefore(b, anchor.nextSibling); else sec.appendChild(b);
+    paint();
+  }
+
+  /* ── INIT ── */
+  try{
+    document.documentElement.classList.add("v9-hide-adv");   // avanzado oculto por defecto
+    setupTabs(); headerGear(); tagAdv(); advToggle();
+    document.querySelectorAll("#tabs .tab").forEach(function(t){ t.addEventListener("click", function(){
+      if(t.dataset.tab==="resumen") setTimeout(function(){ tagAdv(); advToggle(); }, 60);
+    }); });
+    // si la última pestaña guardada era un perfil, abre "Oportunidades" en su lugar
+    if(["helder","genesis","juntos"].indexOf(lsGet("detecta-last-tab",""))>=0){ setTimeout(abreRadar, 260); }
+  }catch(e){
+    console.error("v9 init:",e);
+    try{ document.documentElement.classList.remove("v9-simple"); }catch(_){}   // restaura pestañas si algo falló
+  }
 })();
 
 </script>

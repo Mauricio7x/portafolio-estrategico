@@ -220,3 +220,13 @@ suave cada ~11 s (respeta `prefers-reduced-motion`).
   real dice 108, corregir en `profiles.genesis.numContratos` y `profiles.juntos.numContratos`.
 - **Campo de fecha de cierre**: confirmar en producción (con red a SECOP) cuál de los nombres en
   `CIERRE_CANDIDATOS` puebla `fechaCierre`; si ninguno aplica, la cuenta regresiva queda vacía (degradación limpia).
+
+### Capa #9 — simplificar (menos ruido) (`detectaSimplify`, un `<style>` + un `<script>`)
+- **Perfiles fuera de las pestañas**: `helder/genesis/juntos` se ocultan (clase `v9-simple`) y el radar vive en una sola
+  pestaña **Oportunidades** que abre el perfil del **selector del header** (`abreRadar` clica la pestaña de perfil oculta →
+  reusa toda la lógica base/capas). **Metodología** también se oculta (el Manual ya la cubre).
+- **Header**: contraste/texto/idioma se agrupan en un botón **⚙** (popover `.v9-pop`).
+- **Resumen**: lo esencial visible; paneles analíticos (`v3-pipeline/v5-cal/v7-funnel/v5-ent/v5-sea/v3-trend/v4-datos`) se
+  etiquetan `v9-adv` y se ocultan por defecto (`html.v9-hide-adv`) tras un toggle «Ver análisis avanzado».
+- Los dos checks base `(.tab.active).dataset.tab===currentProfile` → `radar-wrap visible` (porque el perfil ya no es pestaña).
+- Degrada con gracia: si el init falla, quita `v9-simple` y reaparecen las pestañas.
