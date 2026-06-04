@@ -7449,5 +7449,111 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
 })();
 
 </script>
+
+<!-- ════ RESPONSIVE 2026 — móvil/tablet ════ -->
+<style>
+  /* ════════════════════════════════════════════════════════════════
+     RESPONSIVE 2026 — móvil / tablet. Capa de estilos al final (gana por
+     orden). No toca la lógica. Cubre header, filtros, tarjetas, dashboard,
+     modales, mapa, calendario y el bug de zoom de iOS al enfocar inputs.
+     ════════════════════════════════════════════════════════════════ */
+  html{-webkit-text-size-adjust:100%}
+  img,svg,canvas,video{max-width:100%;height:auto}
+  *{-webkit-tap-highlight-color:rgba(0,113,227,.15)}
+  .proc-title,.proc-desc,.dash-top-name,.v5-f-name,.v3b-exp-name,.v4-bd-name{overflow-wrap:anywhere}
+
+  /* iOS hace zoom al enfocar inputs <16px: lo forzamos en móvil */
+  @media(max-width:820px){
+    input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}
+  }
+
+  /* Tablet */
+  @media(max-width:1024px){ .wrap{padding:0 18px} }
+
+  /* Teléfono grande / tablet pequeña */
+  @media(max-width:760px){
+    .wrap{padding:0 14px}
+    /* header compacto y flexible */
+    .hbar{height:auto;min-height:54px;padding:8px 0;gap:8px;flex-wrap:wrap}
+    .brand small{display:none}
+    .wordmark{font-size:20px}
+    .header-right{gap:6px;flex-wrap:wrap;justify-content:flex-end}
+    .theme-toggle{width:34px;height:34px}
+    /* hero / secciones / paneles */
+    .hero{padding:28px 0 16px}
+    section{padding:20px 0 44px}
+    .panel{padding:16px}
+    .pf-card{padding:16px}
+    .pf-h{flex-direction:column;align-items:flex-start;gap:10px}
+    /* filtros y barras: apilar cómodo */
+    .filters-simple{gap:10px}
+    .filters-simple .field{flex:1 1 46%;min-width:0}
+    .filters-simple .field input{width:100%}
+    .filters-simple>label{flex:1 1 46%}
+    .filters-simple .btn-primary,.filters-simple #f-anti-go,.filters-simple #f-csv{flex:1 1 100%}
+    .v4-toolbar{gap:8px}
+    .v4-search{flex:1 1 100%;min-width:0}
+    .v4-toolbar .v3-vb-sel{flex:1 1 47%}
+    .v3-viewbar{gap:6px} .v3-viewbar .v3-vb-hint{flex-basis:100%}
+    /* tarjeta de proceso */
+    .proc{padding:15px}
+    .proc-title{min-width:0;font-size:14.5px}
+    .proc-h{gap:10px}
+    .proc-score{align-items:flex-start}
+    .proc-body{grid-template-columns:repeat(2,1fr);gap:8px}
+    .proc-actions{gap:6px}
+    /* objetivos táctiles ≥40px */
+    .v3-act,.v3-vb-btn,.small-btn,.proc-actions button,.proc-actions a,.btn-primary,.v4-kstate,.v5-htool{min-height:40px;display:inline-flex;align-items:center;justify-content:center}
+    .tab{padding:10px 14px;min-height:38px}
+    /* dashboard */
+    .dash-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+    .dash-card{padding:16px}.dash-card .v{font-size:27px}
+    .dash-dl-when{width:72px}
+    .dash-top-meta,.dash-dl-meta{font-size:11px}
+    /* mapa */
+    #map-canvas{height:320px}
+    .map-muni-meta{font-size:11px}
+    /* modales a pantalla casi completa */
+    .v3-modal-box{padding:18px 14px 22px;border-radius:14px;max-height:92vh;width:96vw}
+    .v3-modal-head h3{font-size:17px}
+    .v3-cmp-table{min-width:440px}
+    /* banner / ficha / consorcio */
+    .v4-banner{flex-wrap:wrap;gap:8px}
+    .v5-f-score{width:46px;height:46px;font-size:18px}
+    .v5-actions{gap:6px}
+    .v3-cons-grid,.v4-intel-grid{grid-template-columns:1fr 1fr}
+    /* calendario */
+    .v5-cal-cell{padding:3px} .v5-cal-dot{min-width:14px;height:14px;font-size:9px}
+    #v5-cal-title{min-width:0}
+    /* menú ⋯ ancho */
+    .v6-menu{min-width:64vw;max-width:80vw}
+    /* tablas anchas → scroll horizontal */
+    .ptab{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    /* tablero kanban a 1 columna ya está en su media query */
+  }
+
+  /* Teléfono */
+  @media(max-width:480px){
+    .header-right .anticipo-badge{display:none} /* su función vive en el radar */
+    .dash-grid,.v3-pipe-grid{grid-template-columns:1fr}
+    .kpi-grid{grid-template-columns:repeat(2,1fr)!important}
+    .hero h1{font-size:clamp(25px,8vw,33px)}
+    .hero p{font-size:15px}
+    .v3-cons-grid,.v4-intel-grid{grid-template-columns:1fr}
+    .v5-met-row{flex-direction:column;gap:6px}
+    .v4-board{grid-template-columns:1fr}
+  }
+
+  /* móvil muy pequeño */
+  @media(max-width:360px){
+    .proc-body{grid-template-columns:1fr}
+    .filters-simple .field,.filters-simple>label{flex:1 1 100%}
+    .wordmark{font-size:18px}
+  }
+
+  /* respeta "reduce motion" también en lo nuevo (ya cubierto, refuerzo) */
+  @media (prefers-reduced-motion: reduce){ .v5-flash,.v4-dbar-fill{animation:none!important;transition:none!important} }
+
+</style>
 </body>
 </html>
