@@ -194,6 +194,11 @@ abiertos" en los filtros.
   **solo si esa pestaña está activa**. Auto-riesgo GDELT es **opt-in** (`detecta-riesgo-auto`). Paginación `_v5shown`
   **se reinicia al cambiar la búsqueda**.
 
+### Capa #8 — lote diferenciador (`detectaV8`, un `<style>` + un `<script>`)
+- **#21 Adjudicaciones recientes** (botón en Datos + en el menú ⋯ de cada tarjeta): consulta `SECOP_CONTRATOS` por entidad y lista objeto · **ganador** · valor · fecha.
+- **#51 Criterios de evaluación**: tras `analizarPliego`, `extraerCriterios` detecta el método del precio (menor precio / media aritmética / geométrica / con presupuesto) y los factores con puntaje; enlaza al simulador (#20).
+- **#111 Mapa de calor por departamento**: SVG propio (sin Leaflet/GeoJSON) con burbujas en las 33 capitales, tamaño/color por valor agregado del radar.
+
 ### Hero rotativo
 Frases curadas (revisadas; se quitaron las forzadas) + **generador combinatorio** con coherencia garantizada (contracción
 `a el→al`/`de el→del`, mayúscula y punto): ~4.300 frases válidas (criterio/precisión + misión/esperanza/progreso). Rotación
