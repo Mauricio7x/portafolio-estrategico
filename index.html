@@ -2328,45 +2328,63 @@ async function loadProcesses(){
 
   const where = whereParts.join(" AND ");
 
+  // ── CACHÉ DEL RADAR (cargar una sola vez) ──────────────────────────
+  // El resultado crudo de SECOP depende SOLO de los filtros de consulta
+  // (días/valor), no del perfil. Guardamos las filas ya mapeadas/enriquecidas
+  // (mapProcess + UNSPSC + radio + semántica, todo independiente del perfil) y,
+  // al cambiar de perfil o de pestaña, RE-PUNTUAMOS en local SIN volver a la red.
+  // El botón "↻ Recargar" fuerza descarga fresca (window._forceReload). TTL 20 min.
+  const _sig = where;
+  const _forced = window._forceReload === true; window._forceReload = false;
+  const _mc = window._mappedCache;
+  const _hit = !_forced && _mc && _mc.sig === _sig && _mc.mapped && _mc.mapped.length && (Date.now() - _mc.ts) < 20*60000;
+
   try{
-    // PAGINACIÓN — el API limita a ~50k por página; iteramos con $offset
-    // hasta agotar resultados o llegar a un tope de seguridad (60k filas).
-    const PAGE = 10000, MAX_ROWS = 60000;
-    let rows = [];
-    let offset = 0, lote;
-    do {
-      const url = `${SECOP.base}?$where=${encodeURIComponent(where)}&$order=${encodeURIComponent(F.fecha+" DESC")}&$limit=${PAGE}&$offset=${offset}`;
-      stat.innerHTML = `<span class="loading"></span> Consultando SECOP II… (${rows.length.toLocaleString()} descargados)`;
-      lote = await fetchWithProxy(url);
-      if(Array.isArray(lote) && lote.length){
-        rows = rows.concat(lote);
-        offset += PAGE;
+    let mapped, nRaw, truncado;
+    if(_hit){
+      mapped = _mc.mapped; nRaw = _mc.nRaw; truncado = _mc.truncado;
+      stat.innerHTML = '<span class="loading"></span> Radar en caché (re-puntuando, sin red)…';
+    } else {
+      // PAGINACIÓN — el API limita a ~50k por página; iteramos con $offset
+      // hasta agotar resultados o llegar a un tope de seguridad (60k filas).
+      const PAGE = 10000, MAX_ROWS = 60000;
+      let rows = [];
+      let offset = 0, lote;
+      do {
+        const url = `${SECOP.base}?$where=${encodeURIComponent(where)}&$order=${encodeURIComponent(F.fecha+" DESC")}&$limit=${PAGE}&$offset=${offset}`;
+        stat.innerHTML = `<span class="loading"></span> Consultando SECOP II… (${rows.length.toLocaleString()} descargados)`;
+        lote = await fetchWithProxy(url);
+        if(Array.isArray(lote) && lote.length){
+          rows = rows.concat(lote);
+          offset += PAGE;
+        }
+      } while(Array.isArray(lote) && lote.length === PAGE && rows.length < MAX_ROWS);
+
+      nRaw = rows.length;
+      truncado = rows.length >= MAX_ROWS;
+
+      if(nRaw === 0){
+        stat.innerHTML = `<span class="err">SECOP II respondió 0 filas.</span> Aumente "Días atrás" o baje el valor mínimo.`;
+        document.getElementById("proc-list").innerHTML = "";
+        return;
       }
-    } while(Array.isArray(lote) && lote.length === PAGE && rows.length < MAX_ROWS);
 
-    const nRaw = rows.length;
-    const truncado = rows.length >= MAX_ROWS;
-
-    if(nRaw === 0){
-      stat.innerHTML = `<span class="err">SECOP II respondió 0 filas.</span> Aumente "Días atrás" o baje el valor mínimo.`;
-      document.getElementById("proc-list").innerHTML = "";
-      return;
+      mapped = rows.map(mapProcess).map(p => {
+        const m = {
+          ...p,
+          plazoMeses: plazoMeses(p),
+          _clase: unspscClase(p.unspsc),
+          _seg: unspscSegment(p.unspsc),
+        };
+        m._sem = clasificaSemanticamente(m);
+        m._ubic = enRadioOperativo(m.ciudad, m.depto);
+        return m;
+      });
+      try{ window._mappedCache = { sig:_sig, mapped:mapped, nRaw:nRaw, truncado:truncado, ts:Date.now() }; }catch(e){}
     }
 
     const profile = profiles[currentProfile];
     const minScore = parseFloat(document.getElementById("f-score").value) || 0;
-
-    let mapped = rows.map(mapProcess).map(p => {
-      const m = {
-        ...p,
-        plazoMeses: plazoMeses(p),
-        _clase: unspscClase(p.unspsc),
-        _seg: unspscSegment(p.unspsc),
-      };
-      m._sem = clasificaSemanticamente(m);
-      m._ubic = enRadioOperativo(m.ciudad, m.depto);
-      return m;
-    });
     const counts = { raw: nRaw, geo: nRaw, blacklist: nRaw, unspsc: nRaw, semantic: nRaw, ops: nRaw, score: 0 };
 
     // ¿Aplicar el filtro geográfico como DURO? (regla de negocio #3).
@@ -4115,12 +4133,26 @@ tabs.forEach(t => t.onclick = () => {
   }
 });
 
-document.getElementById("f-go").onclick = loadProcesses;
+document.getElementById("f-go").onclick = function(){ window._forceReload = true; loadProcesses(); }; // ↻ = descarga fresca
 document.getElementById("f-anti-go").onclick = verificarAnticipos;
 ["f-min","f-max","f-anti","f-score","f-days","f-only-mine"].forEach(id => {
   const el = document.getElementById(id);
   if(el) el.addEventListener("change", loadProcesses);
 });
+
+// Precarga única al entrar: deja el radar listo en caché para que cambiar de
+// perfil o de pestaña sea instantáneo (sin volver a la red). Una sola descarga.
+(function precargaUnica(){
+  function arranca(){
+    try{
+      if(window._mappedCache) return;            // ya cargado
+      if(navigator.onLine === false) return;     // sin red: que cargue cuando el usuario abra un perfil
+      if(typeof loadProcesses === "function") loadProcesses().catch(function(){});
+    }catch(e){}
+  }
+  // tras desbloquear el gate (o de una, si no hay gate visible)
+  setTimeout(arranca, 1200);
+})();
 
 // ════════════════════════════════════════════════════════════════
 //  REDISEÑO — Hero rotativo (1001 combinaciones, prob. uniforme)
@@ -7932,6 +7964,68 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     }); });
     setInterval(checkVenc, 30*60*1000);
   }catch(e){ console.error("v7 init:",e); }
+})();
+
+</script>
+
+<!-- ════ GUÍA · instructivo de primera vez + Manual ════ -->
+<style>
+  /* ════ GUÍA · instructivo de primera vez ════ */
+  .guia-steps{margin:6px 0 0;padding-left:20px;line-height:1.55;font-size:14px}
+  .guia-steps li{margin-bottom:11px}
+  .guia-steps b{font-weight:600}
+  .guia-tip{margin-top:14px;background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:12px 15px;font-size:13px;color:var(--ink2);line-height:1.5}
+  .guia-tip b{color:var(--ink)}
+  .guia-wrap{max-height:none}
+
+</style>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   GUÍA 2026 · instructivo de primera vez + "Cómo usar Detecta" en el
+   Manual. Aditivo; usa el modal compartido window.DTC.
+   ════════════════════════════════════════════════════════════════ */
+(function detectaGuia(){
+  "use strict";
+  if(window.__detectaGuia) return; window.__detectaGuia = true;
+  var DTC = window.DTC || {};
+  function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return 1; } }
+  function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+  var GUIA =
+    '<ol class="guia-steps">'+
+      '<li><b>Elige tu perfil</b> arriba a la derecha (o en las pestañas <b>Helder · Génesis · Helder+Génesis</b>). Todo —Resumen, Mapa y el radar— se calcula para ese perfil. <em>Helder</em> es persona natural; <em>Génesis</em>, la empresa; <em>juntos</em>, el consorcio (cubre más tipos de obra).</li>'+
+      '<li><b>Lee el radar.</b> Cada tarjeta es un proceso de SECOP II con su <b>encaje 0–100</b> (el anillo de color): verde = alto (atiende ya), ámbar = medio (revisa el pliego), rojo = bajo. <b>El encaje NO es la probabilidad de ganar</b>: mide qué tan bien te calza (habilitantes, cuantía, K residual, ubicación y fase).</li>'+
+      '<li><b>Solo verás procesos abiertos.</b> Los adjudicados, en evaluación o con cierre vencido se ocultan automáticamente: a esos ya no te puedes presentar.</li>'+
+      '<li><b>Abre la “📋 Ficha”</b> de cualquier proceso: cómo subir el encaje, qué pasa si entras en <b>consorcio</b>, procesos similares, <b>documentos</b> a preparar, <b>plantillas</b> (carta / compromiso de consorcio), <b>recordatorio</b> y bitácora. Los botones secundarios están en “⋯ Más”.</li>'+
+      '<li><b>Organiza tu trabajo.</b> Guarda con <b>★</b> y mueve los procesos por etapas en la pestaña <b>Tablero</b> (Interesado → En estudio → Presentado), con notas y responsable.</li>'+
+      '<li><b>Mapa:</b> dónde se concentran las oportunidades por municipio (despliega uno para ver cuáles). <b>Pliego:</b> sube el PDF o pega el texto → extrae habilitantes, fecha de cierre, cronograma y un checklist. <b>Rentabilidad / APU:</b> calcula si el proceso te deja margen.</li>'+
+      '<li><b>Resumen</b> es tu centro de mando: <b>Copiloto</b> “¿a qué me presento esta semana?”, calendario de cierres, <b>embudo y KPIs</b>, tendencia y exportes (Excel, PDF, copia de seguridad).</li>'+
+    '</ol>'+
+    '<p class="guia-tip">💡 Tips: usa el <b>buscador</b> y el orden encima del radar; <b>☾/☀</b> cambia claro/oscuro; pulsa <b>?</b> para los atajos de teclado; en móvil <b>desliza</b> una tarjeta (★ guardar / descartar). Tus datos se guardan <b>solo en tu navegador</b>. El encaje es apoyo a la decisión, no asesoría legal: confirma siempre el pliego oficial.</p>';
+
+  function manualCard(){
+    var sec=document.getElementById("sec-manual"); if(!sec || document.getElementById("guia-uso")) return;
+    var card=document.createElement("div"); card.className="gloss-card"; card.id="guia-uso";
+    card.innerHTML='<h3>Cómo usar Detecta · guía rápida</h3>'+GUIA;
+    sec.insertBefore(card, sec.firstChild);
+  }
+  function welcome(){
+    if(!DTC.modal){ return; }
+    DTC.modal('<h3 style="margin:0">Bienvenido a Detecta 👋</h3><p class="desc" style="margin:4px 0 0">Inteligencia de licitaciones de SECOP II. En 1 minuto sabes cómo sacarle provecho.</p>',
+      '<div class="guia-wrap">'+GUIA+'</div><div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px"><button class="btn-primary" id="guia-ok">Empezar</button></div>');
+    var ok=document.getElementById("guia-ok"); if(ok) ok.addEventListener("click", function(){ if(DTC.closeModal) DTC.closeModal(); });
+  }
+  function footerLink(){
+    var f=document.querySelector("footer .wrap")||document.querySelector("footer"); if(!f || document.getElementById("guia-link")) return;
+    var s=document.createElement("span"); s.appendChild(document.createTextNode(" · "));
+    var b=document.createElement("button"); b.className="v5-link"; b.id="guia-link"; b.textContent="❓ cómo funciona"; b.addEventListener("click", welcome);
+    s.appendChild(b); f.appendChild(s);
+  }
+  try{
+    manualCard(); footerLink();
+    document.querySelectorAll("#tabs .tab").forEach(function(t){ t.addEventListener("click", function(){ if(t.dataset.tab==="manual") setTimeout(manualCard,40); }); });
+    if(!lsGet("detecta-bienvenida-v1")){ lsSet("detecta-bienvenida-v1","1"); setTimeout(welcome, 1700); }
+  }catch(e){ console.error("guia:",e); }
 })();
 
 </script>
