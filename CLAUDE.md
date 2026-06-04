@@ -184,6 +184,10 @@ abiertos" en los filtros.
 - **Sin dependencias de pago.** PDF.js, Tesseract.js (OCR del pliego) y Leaflet (mapa) se cargan por CDN/lazy-load.
 - Cambios nuevos: preferir **capa aditiva** + monkey-patch antes que reescribir funciones existentes.
 - No debilitar el gate de seguridad ni el anti-iframe sin pedir permiso.
+- **Eliminado** (jun 2026): el detector de DevTools (recarga cada 1.5 s por divergencia `outerWidth/innerWidth`) y el
+  bloqueo de F12/clic-derecho/Ctrl+U/Ctrl+S. Daban cero seguridad real y causaban **falsos positivos en móvil** (bucle de
+  recarga). Se conservan el gate por contraseña (SHA-256 + `/api/auth`) y el anti-iframe. Privacidad real → Vercel Password
+  Protection.
 
 ## Pendiente por verificar (dato del negocio)
 - **Nº de contratos de Génesis**: la ficha visible mostraba 105/138 y la config JS 108/141. Se alineó todo a

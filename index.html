@@ -650,42 +650,12 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
   });
 
   // ──────────────────────────────────────────────────────────────────
-  // Bloqueos cosméticos (frenan al curioso casual, NO al determinado).
+  // (Eliminado) Bloqueo de F12/clic-derecho/Ctrl+U y detector de DevTools
+  // por divergencia outerWidth/innerWidth con recarga cada 1.5 s. Daba CERO
+  // seguridad real (el código es público) y provocaba FALSOS POSITIVOS en
+  // móvil/tablet/ventanas acopladas → bucle de recarga. La privacidad real
+  // se delega al gate por contraseña (arriba) y a Vercel Password Protection.
   // ──────────────────────────────────────────────────────────────────
-  // Click derecho
-  document.addEventListener("contextmenu", function(e){ e.preventDefault(); return false; });
-  // F12, Ctrl+U (ver fuente), Ctrl+Shift+I/J/C (DevTools), Ctrl+S (guardar)
-  document.addEventListener("keydown", function(e){
-    var k = e.key;
-    var blocked =
-      k === "F12" ||
-      (e.ctrlKey && k && k.toLowerCase() === "u") ||
-      (e.ctrlKey && e.shiftKey && k && ["I","J","C","i","j","c"].indexOf(k) >= 0) ||
-      ((e.ctrlKey || e.metaKey) && k && k.toLowerCase() === "s");
-    if(blocked){ e.preventDefault(); e.stopPropagation(); return false; }
-  }, true);
-
-  // ──────────────────────────────────────────────────────────────────
-  // Detector heurístico de DevTools abierto. Si abren panel acoplado,
-  // hay divergencia significativa entre outerWidth y innerWidth. No es
-  // infalible (DevTools en ventana separada lo bypassea), pero suma.
-  // ──────────────────────────────────────────────────────────────────
-  function devToolsOpen(){
-    var threshold = 160;
-    return (window.outerWidth - window.innerWidth > threshold) ||
-           (window.outerHeight - window.innerHeight > threshold);
-  }
-  setInterval(function(){
-    if(devToolsOpen() && !document.documentElement.classList.contains("sec-locked")){
-      // No cerramos la app — solo limpiamos la sesión para forzar re-auth
-      try { sessionStorage.removeItem(KEY); } catch(e){}
-      document.documentElement.classList.add("sec-locked");
-      var existing = document.getElementById("sec-gate");
-      if(!existing){
-        location.reload();
-      }
-    }
-  }, 1500);
 })();
 </script>
 
