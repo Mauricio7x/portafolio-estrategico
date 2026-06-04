@@ -6508,6 +6508,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
   /* ════ auto-consulta de riesgo (1 vez al día, top municipios) ════ */
   function autoRiesgo(list){
     try{
+      if(!lsGet("detecta-riesgo-auto",false)) return; // opt-in: por defecto NO golpea GDELT al cargar (cortesía con la fuente)
       if(lsGet("detecta-riesgo-auto-fecha","")===new Date().toISOString().slice(0,10)) return;
       var map={}; list.forEach(function(p){ var k=((p.ciudad||p.depto)||"").trim().toLowerCase(); if(!k) return; if(!map[k]) map[k]={muni:(p.ciudad||p.depto),n:0}; map[k].n++; });
       var top=Object.keys(map).map(function(k){return map[k];}).sort(function(a,b){return b.n-a.n;}).slice(0,8);
@@ -7100,7 +7101,8 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
       // highlight (cada render, según búsqueda)
       if(q){ var t2=card.querySelector(".proc-title"); if(t2 && t2.querySelectorAll("mark").length===0) highlight(t2,q); }
     });
-    // #31 paginación
+    // #31 paginación — reinicia a la 1ª página cuando cambia la búsqueda
+    if(cont._v5q!==q){ cont._v5shown=PAGE; cont._v5q=q; }
     paginate(cards);
   }
   function paginate(cards){
@@ -7345,7 +7347,8 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
       try{
         var shown=curList();
         v5Augment(shown);
-        renderCal(); renderEntidades(); renderEstacionalidad();
+        // Solo recalcular los paneles del Resumen si esa pestaña está activa.
+        var _ra=document.getElementById("sec-resumen"); if(_ra && _ra.classList.contains("active")){ renderCal(); renderEntidades(); renderEstacionalidad(); }
         saveSnaps(shown);
         focusDeepProc();
         checkRecordatorios();
@@ -7374,7 +7377,15 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     }); });
     injectDatosExtras();
     // observa apertura del modal de entidad (#4) para enriquecerlo (#10/#16/#11)
-    document.addEventListener("click",function(){ setTimeout(enhanceEntidadModal,300); });
+    // En vez de escuchar CADA clic: observa cuándo se crea/activa un modal.
+    (function watchModals(){ try{
+      var bo=new MutationObserver(function(muts){ muts.forEach(function(m){ Array.prototype.forEach.call(m.addedNodes||[],function(n){
+        if(n.nodeType===1 && n.classList && n.classList.contains("v3-modal")){
+          new MutationObserver(function(){ if(n.classList.contains("show")) enhanceEntidadModal(); }).observe(n,{attributes:true,attributeFilter:["class"]});
+        }
+      }); }); });
+      bo.observe(document.body,{childList:true});
+    }catch(e){ document.addEventListener("click",function(){ setTimeout(enhanceEntidadModal,300); }); } })();
     setInterval(checkRecordatorios, 30*60*1000);
     maybeTour();
   }catch(e){ console.error("v5 init:",e); }
@@ -7564,5 +7575,365 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
   @media (prefers-reduced-motion: reduce){ .v5-flash,.v4-dbar-fill{animation:none!important;transition:none!important} }
 
 </style>
+
+<!-- ════ MEJORAS 2026 · capa aditiva #7 — consolidación + features cliente ════ -->
+<style>
+  /* ════ MEJORAS 2026 · capa aditiva #7 ════ */
+  .v7-mapobra{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink);background:var(--soft);
+    border:1px solid var(--line2);border-radius:10px;padding:9px 13px;margin-bottom:12px;cursor:pointer}
+  .v7-diag{max-height:50vh;overflow:auto;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+  .v7-diag-row{padding:6px 0;border-bottom:1px solid var(--line2)} .v7-diag-row span{color:var(--ink2);margin-right:6px}
+  /* copiloto */
+  .v7-cop-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line2)}
+  .v7-cop-row:last-child{border-bottom:0}
+  .v7-cop-main{display:flex;align-items:center;gap:11px;flex:1;min-width:0;text-decoration:none;color:inherit}
+  .v7-cop-main:hover .v7-cop-name{color:var(--accent)}
+  .v7-cop-rank{font-family:'Inter',sans-serif;font-weight:700;color:var(--ink2);width:20px;text-align:center;flex-shrink:0}
+  .v7-cop-name{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .v7-cop-meta{font-size:11.5px;color:var(--ink2);margin-top:2px}
+  .v7-cop-side{text-align:right;flex-shrink:0}
+  .v7-cop-enc{font-family:'Inter',sans-serif;font-weight:700;font-size:18px;line-height:1}
+  .v7-cop-pg{font-size:11px;color:var(--ink2);margin-top:2px}
+  /* embudo + KPIs */
+  .v7-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:14px}
+  .v7-kpi{background:var(--soft);border:1px solid var(--line2);border-radius:12px;padding:12px 14px}
+  .v7-kpi .l{font-size:11px;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+  .v7-kpi .v{font-family:'Inter',sans-serif;font-size:20px;font-weight:700;margin-top:5px;font-variant-numeric:tabular-nums}
+  .v7-fn-row{display:flex;align-items:center;gap:10px;padding:6px 0}
+  .v7-fn-l{width:120px;flex-shrink:0;font-size:12.5px;font-weight:500}
+  .v7-fn-track{flex:1;height:14px;background:var(--soft);border-radius:7px;overflow:hidden}
+  .v7-fn-fill{height:100%;background:linear-gradient(90deg,var(--accent),#4da3f0);border-radius:7px;transition:width 1s cubic-bezier(.16,1,.3,1)}
+  .v7-fn-v{width:42px;text-align:right;font-weight:600;font-size:13px;font-variant-numeric:tabular-nums}
+  @media(max-width:560px){ .v7-fn-l{width:88px} }
+  /* simulador / objeto-unspsc / vencimientos */
+  .v7-sim label,.v7-venc-row span{display:block;font-size:12px;color:var(--ink2);margin:8px 0 4px;font-weight:600}
+  .v7-sim input,.v7-sim textarea,.v7-sim select{width:100%;font:inherit;font-size:14px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)}
+  .v7-sim-row{display:flex;justify-content:space-between;gap:10px;padding:8px 11px;border-bottom:1px solid var(--line2);font-size:13px}
+  .v7-sim-row.mia{background:rgba(0,113,227,.08);border-radius:8px;font-weight:600}
+  .v7-sim-row b{color:var(--accent)}
+  .v7-venc-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0}
+  .v7-venc-row span{margin:0} .v7-venc-row input{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--ink)}
+  /* voz */
+  .v7-voice{min-width:42px} .v7-voice.on{background:var(--red)!important;color:#fff!important;animation:p 1.4s infinite}
+  /* frescura */
+  .v7-fresh{color:var(--ink2);font-size:11.5px}
+
+</style>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   MEJORAS 2026 · capa aditiva #7 — consolidación + features cliente.
+   - DTC: utilidades + modal compartidos (consolidación going-forward).
+   - Accesibilidad de modales (focus-trap + Tab + Esc) para TODOS.
+   - Telemetría de errores (captura console.error/onerror) con visor.
+   - Puente ★ watchlist ↔ "Interesado" del kanban.
+   - Mapa por lugar de obra (inferido) opcional.
+   - Features: copiloto, prob. de ganar, embudo+KPIs, simulador de
+     fórmula, objeto→UNSPSC, vencimientos, voz, borrar datos, frescura
+     del dato, aviso legal/privacidad, swipe móvil, competidores.
+   ════════════════════════════════════════════════════════════════ */
+(function detectaV7(){
+  "use strict";
+  if(window.__detectaV7) return; window.__detectaV7 = true;
+
+  /* ───── DTC: namespace de utilidades + modal compartido ───── */
+  var DTC = window.DTC = window.DTC || {};
+  DTC.esc = DTC.esc || function(s){ try{ return escapeHTML(s); }catch(e){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); } };
+  DTC.curList = DTC.curList || function(){ try{ if(window._dashList&&window._dashList.length) return window._dashList; if(window._lastProcesses&&window._lastProcesses.length) return window._lastProcesses; }catch(e){} return []; };
+  DTC.getProfile = DTC.getProfile || function(){ try{ return currentProfile; }catch(e){ return "helder"; } };
+  DTC.smmlv = DTC.smmlv || function(){ try{ return SMMLV; }catch(e){ return 1750905; } };
+  DTC.keyOf = DTC.keyOf || function(p){ return (p.nombre||"")+"@"+(p.entidad||"")+"@"+(p.valor||0); };
+  DTC.money = DTC.money || function(n){ n=Math.max(0,n||0);
+    if(n>=1e9) return "$"+(n/1e9).toLocaleString("es-CO",{maximumFractionDigits:2})+" mil M";
+    if(n>=1e6) return "$"+(n/1e6).toLocaleString("es-CO",{maximumFractionDigits:1})+" M";
+    if(n>=1e3) return "$"+Math.round(n/1e3).toLocaleString("es-CO")+" mil";
+    return "$"+Math.round(n).toLocaleString("es-CO"); };
+  DTC.fmtFecha = DTC.fmtFecha || function(s){ try{ return fmtDate(s); }catch(e){ var d=new Date(s); return isNaN(d)?String(s):d.toLocaleDateString("es-CO"); } };
+  DTC.diasHasta = DTC.diasHasta || function(f){ if(!f) return null; var t=Date.parse(f); if(isNaN(t)) return null; return Math.floor((t-Date.now())/86400000); };
+  DTC.lsGet = DTC.lsGet || function(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } };
+  DTC.lsSet = DTC.lsSet || function(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} };
+  DTC.clip = DTC.clip || function(s,n){ s=String(s||""); return s.length>n ? s.slice(0,n).replace(/\s+\S*$/,"")+"…" : s; };
+  DTC.norm = DTC.norm || function(s){ try{ return normalizaTexto(s); }catch(e){ return (s||"").toString().normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim(); } };
+  DTC.titleCase = DTC.titleCase || function(s){ return String(s||"").toLowerCase().replace(/(^|[\s\-\/])([a-záéíóúñü])/g,function(_,sep,ch){ return sep+ch.toUpperCase(); }); };
+  DTC.toast = DTC.toast || function(msg,ms){ var t=document.querySelector(".v3-toast"); if(!t){ t=document.createElement("div"); t.className="v3-toast"; document.body.appendChild(t); } t.textContent=msg; t.classList.add("show"); clearTimeout(DTC._tt); DTC._tt=setTimeout(function(){ t.classList.remove("show"); }, ms||2800); };
+  DTC.copy = DTC.copy || function(x){ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(x).then(function(){ DTC.toast("Copiado."); },function(){ prompt("Copia:",x); }); } else prompt("Copia:",x); };
+  DTC.dl = DTC.dl || function(blob,name){ var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },600); };
+  var _modal=null, _lastFocus=null;
+  DTC.modal = DTC.modal || function(head, body, wide){
+    if(!_modal){ _modal=document.createElement("div"); _modal.className="v3-modal"; _modal.setAttribute("role","dialog"); _modal.setAttribute("aria-modal","true");
+      _modal.innerHTML='<div class="v3-modal-back"></div><div class="v3-modal-box"><button class="v3-modal-x" aria-label="Cerrar">✕</button><div class="v3-modal-head"></div><div class="v3-modal-body"></div></div>';
+      document.body.appendChild(_modal);
+      _modal.querySelector(".v3-modal-back").addEventListener("click", DTC.closeModal);
+      _modal.querySelector(".v3-modal-x").addEventListener("click", DTC.closeModal);
+    }
+    _modal.querySelector(".v3-modal-box").style.maxWidth = wide?"min(1040px,95vw)":"min(820px,94vw)";
+    _modal.querySelector(".v3-modal-head").innerHTML=head;
+    _modal.querySelector(".v3-modal-body").innerHTML=body;
+    _lastFocus=document.activeElement;
+    _modal.classList.add("show"); document.documentElement.style.overflow="hidden";
+    var f=_modal.querySelector("button,a,input,select,textarea"); if(f) try{ f.focus(); }catch(e){}
+    return _modal;
+  };
+  DTC.closeModal = DTC.closeModal || function(){ if(_modal){ _modal.classList.remove("show"); document.documentElement.style.overflow=""; if(_lastFocus&&_lastFocus.focus) try{ _lastFocus.focus(); }catch(e){} } };
+  var esc=DTC.esc, curList=DTC.curList, money=DTC.money, fmtFecha=DTC.fmtFecha, diasHasta=DTC.diasHasta,
+      lsGet=DTC.lsGet, lsSet=DTC.lsSet, clip=DTC.clip, norm=DTC.norm, keyOf=DTC.keyOf, toast=DTC.toast,
+      titleCase=DTC.titleCase, getProfile=DTC.getProfile, smmlv=DTC.smmlv, modal=DTC.modal, closeModal=DTC.closeModal;
+
+  /* ───── accesibilidad: focus-trap + Esc para CUALQUIER .v3-modal abierto ───── */
+  document.addEventListener("keydown", function(e){
+    var m=document.querySelector(".v3-modal.show"); if(!m) return;
+    if(e.key==="Escape"){ var x=m.querySelector(".v3-modal-x"); if(x) x.click(); else m.classList.remove("show"); return; }
+    if(e.key==="Tab"){
+      var f=m.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])');
+      if(!f.length) return; var first=f[0], last=f[f.length-1];
+      if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+    }
+  });
+
+  /* ───── telemetría de errores (captura silenciosa + visor) ───── */
+  var _errs=[];
+  function logErr(m){ _errs.push({t:Date.now(), m:String(m).slice(0,300)}); if(_errs.length>80) _errs.shift(); }
+  try{ window.addEventListener("error", function(e){ logErr((e.message||"error")+" @"+String(e.filename||"").split("/").pop()+":"+e.lineno); }); }catch(e){}
+  try{ window.addEventListener("unhandledrejection", function(e){ logErr("promise: "+((e.reason&&e.reason.message)||e.reason)); }); }catch(e){}
+  try{ var _ce=console.error; console.error=function(){ try{ logErr(Array.prototype.map.call(arguments,String).join(" ")); }catch(_){} return _ce.apply(console, arguments); }; }catch(e){}
+  DTC.errors=function(){ return _errs.slice(); };
+  function openDiag(){ modal('<h3 style="margin:0">Diagnóstico</h3><p class="desc" style="margin:4px 0 0">Errores capturados en esta sesión (para soporte).</p>',
+    (_errs.length? '<div class="v7-diag">'+_errs.slice().reverse().map(function(e){ return '<div class="v7-diag-row"><span>'+new Date(e.t).toLocaleTimeString("es-CO")+'</span> '+esc(e.m)+'</div>'; }).join("")+'</div><button class="v3-vb-btn" id="v7-diag-clear" style="margin-top:10px">Limpiar</button>'
+      : '<div class="dash-empty">Sin errores. 🎉</div>')+'<p class="v3-cmp-note" style="margin-top:10px">Activa <code>detecta-debug</code> en consola para ver errores en vivo.</p>');
+    var c=document.getElementById("v7-diag-clear"); if(c) c.addEventListener("click",function(){ _errs.length=0; closeModal(); toast("Diagnóstico limpiado."); }); }
+
+  /* ───── puente ★ watchlist ↔ kanban "Interesado" ───── */
+  function bridgeStar(){
+    try{
+      var wl=new Set(lsGet("detecta-watchlist-v1",[])||[]);
+      var ks=lsGet("detecta-kanban-v1",{})||{}, changed=false;
+      // kanban "interes" ⇒ ★
+      for(var k in ks){ if(ks[k].e==="interes" && !wl.has(k)){ wl.add(k); changed=true; } }
+      if(changed) lsSet("detecta-watchlist-v1", Array.prototype.slice.call(wl));
+    }catch(e){}
+  }
+
+  /* ───── mapa por lugar de obra (inferido) opcional ───── */
+  var DEPTOS=["amazonas","antioquia","arauca","atlantico","bolivar","boyaca","caldas","caqueta","casanare","cauca","cesar","choco","cordoba","cundinamarca","guainia","guaviare","huila","la guajira","magdalena","meta","narino","norte de santander","putumayo","quindio","risaralda","san andres","santander","sucre","tolima","valle del cauca","vaupes","vichada"];
+  function inferUbic(p){ var txt=norm((p.nombre||"")+" "+(p.descripcion||"")); var muni="",dep="";
+    var m=txt.match(/municipio de ([a-zñ ]{3,28}?)(?:[,.\-()]| en | del | departamento| y |$)/); if(m) muni=titleCase(m[1].trim());
+    for(var i=0;i<DEPTOS.length;i++){ if(txt.indexOf("departamento de "+DEPTOS[i])>=0){ dep=titleCase(DEPTOS[i]); break; } }
+    if(!dep){ for(var j=0;j<DEPTOS.length;j++){ if(txt.indexOf(DEPTOS[j])>=0){ dep=titleCase(DEPTOS[j]); break; } } }
+    if(!muni&&!dep) return null; return {ciudad:muni,depto:dep}; }
+  function mapByWork(){ return lsGet("detecta-map-obra",false); }
+  function applyWorkLoc(list){
+    if(!mapByWork()) return list;
+    return list.map(function(p){ var u=inferUbic(p); if(!u||(!u.ciudad&&!u.depto)) return p;
+      var c=Object.assign({},p); if(u.ciudad) c.ciudad=u.ciudad; if(u.depto) c.depto=u.depto; c._obraInferida=true; return c; });
+  }
+  function injectMapToggle(){ var sec=document.getElementById("sec-mapa"); if(!sec||document.getElementById("v7-mapobra")) return;
+    var d=document.getElementById("v3b-explorer")||sec.firstChild;
+    var lbl=document.createElement("label"); lbl.id="v7-mapobra"; lbl.className="v7-mapobra"; lbl.innerHTML='<input type="checkbox" id="v7-mapobra-chk"> Ubicar por lugar de obra (inferido del texto, no por la entidad)';
+    sec.insertBefore(lbl, sec.firstChild);
+    var chk=document.getElementById("v7-mapobra-chk"); chk.checked=mapByWork();
+    chk.addEventListener("change",function(){ lsSet("detecta-map-obra",chk.checked); try{ window.renderProcesses(curList()); }catch(e){} });
+  }
+
+  /* ═══════ FEATURES ═══════ */
+
+  /* #48 prob. de ganar (heurística transparente) */
+  function compLevel(p){ var m=norm(p.modalidad), b=2; if(/minima\s+cuant/.test(m))b=1; else if(/menor\s+cuant/.test(m))b=2; else if(/licitaci|concurso|abierta/.test(m))b=3; if(/bogota|medellin|cali|barranquilla|bucaramanga|cartagena/.test(norm(p.ciudad)))b++; return Math.max(1,Math.min(4,b)); }
+  function probGanar(p){ var enc=(p._score||0)/100; var cf={1:1.0,2:0.82,3:0.62,4:0.46}[compLevel(p)];
+    var v=Math.max(0.06, Math.min(0.85, enc*cf)); return Math.round(v*100); }
+
+  /* #41 copiloto + #48 + panel en Resumen */
+  function prioridad(p){ var v=p.valor||0,s=(p._score||0)/100,d=diasHasta(p.cierre); var urg=(d===null)?1:(d<0?0.2:d<=3?1.4:d<=7?1.2:d<=20?1:0.85); return s*Math.log10(Math.max(v,1)+1)*urg; }
+  function motivos(p){ var out=[]; if((p._score||0)>=75) out.push("encaje alto"); var d=diasHasta(p.cierre); if(d!==null&&d>=0&&d<=7) out.push("cierra pronto"); if(p._ubic==="terrestre") out.push("en tu radio"); if(p._anticipo!=null&&p._anticipo>=20) out.push("anticipo ≥20%"); if(compLevel(p)<=2) out.push("poca competencia"); return out; }
+  function ensureCopiloto(){ var sec=document.getElementById("sec-resumen"); if(!sec||document.getElementById("v7-copiloto")) return;
+    var pan=document.createElement("div"); pan.className="panel reveal in"; pan.id="v7-copiloto";
+    pan.innerHTML='<h3>Copiloto · ¿a qué me presento esta semana? <span class="v3-pill">prioridad</span></h3><p class="desc">Las mejores apuestas ahora mismo: alto encaje, cierre cercano y poca competencia. La <b>prob. de ganar</b> es una estimación heurística (encaje × competencia), no una garantía.</p><div id="v7-copiloto-list"></div>';
+    var anchor=document.getElementById("v3-pipeline")||document.getElementById("dash-metrics"); if(anchor&&anchor.parentNode) anchor.parentNode.insertBefore(pan, anchor.nextSibling); else sec.appendChild(pan); }
+  function renderCopiloto(){ ensureCopiloto(); var box=document.getElementById("v7-copiloto-list"); if(!box) return;
+    var list=curList().slice().sort(function(a,b){ return prioridad(b)-prioridad(a); }).slice(0,5);
+    if(!list.length){ box.innerHTML='<div class="dash-empty">Abre un perfil para cargar el radar y recibir recomendaciones.</div>'; return; }
+    box.innerHTML=list.map(function(p,i){ var pg=probGanar(p), col=p._score>=75?"var(--green)":p._score>=50?"var(--amber)":"var(--red)";
+      var mot=motivos(p); var d=diasHasta(p.cierre);
+      return '<div class="v7-cop-row">'+(p.url?'<a href="'+esc(p.url)+'" target="_blank" rel="noopener" class="v7-cop-main">':'<div class="v7-cop-main">')+
+        '<span class="v7-cop-rank">'+(i+1)+'</span><div><div class="v7-cop-name">'+esc(clip(p.nombre,72))+'</div><div class="v7-cop-meta">'+esc(clip(p.entidad||"",40))+(p.valor?(' · '+money(p.valor)):"")+(d!=null&&d>=0?(' · cierra en '+d+'d'):"")+(mot.length?(' · '+mot.join(", ")):"")+'</div></div>'+(p.url?'</a>':'</div>')+
+        '<div class="v7-cop-side"><div class="v7-cop-enc" style="color:'+col+'">'+(p._score||0)+'</div><div class="v7-cop-pg" title="Probabilidad de ganar estimada (heurística)">~'+pg+'% ganar</div></div></div>'; }).join(""); }
+
+  /* #65 embudo + #67 KPIs (de kanban + historial) */
+  function ensureFunnel(){ var sec=document.getElementById("sec-resumen"); if(!sec||document.getElementById("v7-funnel")) return;
+    var pan=document.createElement("div"); pan.className="panel reveal in"; pan.id="v7-funnel";
+    pan.innerHTML='<h3>Embudo y KPIs <span class="v3-pill">tu pipeline</span></h3><p class="desc">De lo que ves a lo que ganas. Mueve procesos en el <b>Tablero</b> e importa tu <b>historial</b> para alimentar el win-rate.</p><div class="v7-kpis" id="v7-kpis"></div><div class="v7-funnel" id="v7-funnel-bars"></div>'; sec.appendChild(pan); }
+  function renderFunnel(){ ensureFunnel(); var k=lsGet("detecta-kanban-v1",{})||{}, hist=lsGet("detecta-historial-v1",[])||[];
+    var cnt={interes:0,estudio:0,present:0,descart:0}; for(var x in k){ if(cnt[k[x].e]!=null) cnt[k[x].e]++; }
+    var wl=(lsGet("detecta-watchlist-v1",[])||[]).length, radar=curList().length;
+    var gan=hist.filter(function(h){return /gan/.test(h.resultado);}).length, per=hist.filter(function(h){return /perd/.test(h.resultado);}).length;
+    var wr=(gan+per)?Math.round(gan/(gan+per)*100):null;
+    var valGan=hist.filter(function(h){return /gan/.test(h.resultado);}).reduce(function(a,h){return a+(+h.valor||0);},0);
+    var kp=document.getElementById("v7-kpis"); if(kp) kp.innerHTML=[
+      {l:"En el radar",v:radar},{l:"Guardados ★",v:wl},{l:"Presentados",v:cnt.present},
+      {l:"Win-rate",v:wr==null?"—":wr+"%"},{l:"Valor ganado",v:valGan?money(valGan):"—"}
+    ].map(function(c){ return '<div class="v7-kpi"><div class="l">'+c.l+'</div><div class="v">'+c.v+'</div></div>'; }).join("");
+    var steps=[["Radar",radar],["Guardados ★",wl],["Interesado",cnt.interes],["En estudio",cnt.estudio],["Presentado",cnt.present]];
+    var max=Math.max.apply(null,steps.map(function(s){return s[1];}))||1;
+    var fb=document.getElementById("v7-funnel-bars"); if(fb) fb.innerHTML=steps.map(function(s){ return '<div class="v7-fn-row"><div class="v7-fn-l">'+s[0]+'</div><div class="v7-fn-track"><div class="v7-fn-fill" style="width:'+Math.max(s[1]/max*100,2)+'%"></div></div><div class="v7-fn-v">'+s[1]+'</div></div>'; }).join(""); }
+
+  /* #20 simulador de fórmula de evaluación */
+  function simuladorFormula(){
+    modal('<h3 style="margin:0">Simulador de evaluación económica</h3><p class="desc" style="margin:4px 0 0">Pega las ofertas (una por línea) y tu oferta para ver quién puntúa mejor según la fórmula.</p>',
+      '<div class="v7-sim"><label>Presupuesto oficial</label><input id="v7-sim-pre" type="number" placeholder="ej. 500000000">'+
+      '<label>Ofertas de los competidores (una por línea, en pesos)</label><textarea id="v7-sim-ofs" placeholder="480000000\n495000000\n470000000" style="min-height:100px"></textarea>'+
+      '<label>Tu oferta</label><input id="v7-sim-mia" type="number" placeholder="ej. 475000000">'+
+      '<label>Método</label><select id="v7-sim-met"><option value="menor">Menor precio</option><option value="arit">Media aritmética (cercanía)</option><option value="geo">Media geométrica (cercanía)</option></select>'+
+      '<button class="v3-vb-btn" id="v7-sim-go" style="margin-top:10px">Calcular</button><div id="v7-sim-out" style="margin-top:12px"></div></div>');
+    var go=document.getElementById("v7-sim-go"); if(go) go.addEventListener("click",function(){
+      var pre=parseFloat(document.getElementById("v7-sim-pre").value)||0;
+      var ofs=(document.getElementById("v7-sim-ofs").value||"").split(/\n/).map(function(x){return parseFloat(x.replace(/[^0-9.]/g,""));}).filter(function(x){return x>0;});
+      var mia=parseFloat(document.getElementById("v7-sim-mia").value)||0; if(mia>0) ofs=ofs.concat([mia]);
+      var met=document.getElementById("v7-sim-met").value;
+      if(ofs.length<1){ document.getElementById("v7-sim-out").innerHTML='<div class="v5-amanado">Ingresa al menos una oferta.</div>'; return; }
+      var ref;
+      if(met==="menor"){ ref=Math.min.apply(null,ofs); }
+      else if(met==="arit"){ ref=ofs.reduce(function(a,b){return a+b;},0)/ofs.length; }
+      else { ref=Math.exp(ofs.reduce(function(a,b){return a+Math.log(b);},0)/ofs.length); }
+      var scored=ofs.map(function(o){ var s= met==="menor" ? (Math.min.apply(null,ofs)/o)*100 : (100 - Math.abs(o-ref)/ref*100); return {o:o,s:Math.max(0,s),mia:(mia>0&&Math.abs(o-mia)<1)}; }).sort(function(a,b){return b.s-a.s;});
+      var out='<div class="v5-sub"><b>Referencia ('+({menor:"menor",arit:"media aritmética",geo:"media geométrica"}[met])+'):</b> '+money(ref)+(pre?(' · presupuesto '+money(pre)):"")+'</div>';
+      out+=scored.map(function(r,i){ return '<div class="v7-sim-row'+(r.mia?" mia":"")+'"><span>'+(i+1)+'. '+money(r.o)+(r.mia?" (tu oferta)":"")+'</span><b>'+r.s.toFixed(1)+' pts</b></div>'; }).join("");
+      var pos=scored.findIndex(function(r){return r.mia;});
+      if(pos>=0) out+='<div class="'+(pos===0?"v5-ok":"v5-amanado")+'" style="margin-top:10px">'+(pos===0?"🏆 Tu oferta puntúa primero con este método.":("Tu oferta queda en posición #"+(pos+1)+" de "+scored.length+"."))+'</div>';
+      document.getElementById("v7-sim-out").innerHTML=out;
+    });
+  }
+
+  /* #47 objeto → UNSPSC (heurístico) */
+  var UNSPSC_MAP=[
+    [/paviment|asfalt|placa\s*huella|v[ií]a|carretera|and[eé]n|sardinel/,["72141100 · Construcción de carreteras","72141000 · Servicios de obra pesada"]],
+    [/acueduct|alcantarill|ptap|ptar|agua\s*potable|red(es)?\s+de\s+(agua|alcantar)/,["72151500 · Acueducto y alcantarillado","72141600 · Tuberías"]],
+    [/edificaci|construcci[oó]n\s+de\s+(edificio|sede|colegio|hospital|cancha|coliseo)/,["72121400 · Edificios comerciales/institucionales","72131000 · Construcción residencial"]],
+    [/manteni|mejorami|adecuaci|reparaci|remodel/,["72101500 · Mantenimiento de edificios","72151200 · Mantenimiento de obras"]],
+    [/interventor[ií]a/,["81101500 · Ingeniería civil","80101600 · Gerencia de proyectos"]],
+    [/consultor[ií]a|estudios?\s+y\s+dise[ñn]o|dise[ñn]o/,["81101500 · Ingeniería civil","81141500 · Planificación de proyectos"]],
+    [/puente|box\s*culvert|pont[oó]n|muro\s+de\s+contenci/,["72141100 · Carreteras y puentes"]],
+    [/el[eé]ctric|alumbrado|iluminaci|redes?\s+el[eé]ctric/,["72151500 · Instalación eléctrica","83101800 · Distribución eléctrica"]],
+    [/parque|espacio\s+p[uú]blico|urbanism/,["72103300 · Mantenimiento de áreas comunes","72141000 · Obra pesada"]]
+  ];
+  function objetoUNSPSC(){
+    modal('<h3 style="margin:0">Sugeridor de UNSPSC</h3><p class="desc" style="margin:4px 0 0">Pega el objeto del proceso; te sugiere clases UNSPSC probables (verifica siempre en el pliego).</p>',
+      '<textarea id="v7-uns-in" placeholder="Construcción y pavimentación de la vía…" style="width:100%;min-height:90px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)"></textarea><button class="v3-vb-btn" id="v7-uns-go" style="margin-top:10px">Sugerir</button><div id="v7-uns-out" style="margin-top:12px"></div>');
+    var go=document.getElementById("v7-uns-go"); if(go) go.addEventListener("click",function(){
+      var t=norm(document.getElementById("v7-uns-in").value); var hits=[];
+      UNSPSC_MAP.forEach(function(r){ if(r[0].test(t)) r[1].forEach(function(c){ if(hits.indexOf(c)<0) hits.push(c); }); });
+      document.getElementById("v7-uns-out").innerHTML = hits.length ? ('<div class="v5-sub"><b>Clases probables:</b></div>'+hits.map(function(c){ return '<div class="v7-sim-row"><span>'+esc(c)+'</span></div>'; }).join("")) : '<div class="v5-amanado">No se reconoció el tipo de obra. Revisa el pliego o usa el clasificador oficial UNSPSC.</div>';
+    });
+  }
+
+  /* #31 vencimientos de documentos */
+  var VENC=[["rup","RUP"],["polizaResp","Póliza de responsabilidad"],["camaraComercio","Cámara de Comercio"],["estadosFin","Estados financieros"],["rut","RUT"]];
+  function vencimientos(){
+    var st=lsGet("detecta-vencimientos-v1",{})||{};
+    modal('<h3 style="margin:0">Vencimientos de documentos</h3><p class="desc" style="margin:4px 0 0">Registra las fechas y te aviso cuando estén por vencer (≤30 días).</p>',
+      '<div class="v7-venc">'+VENC.map(function(v){ return '<label class="v7-venc-row"><span>'+v[1]+'</span><input type="date" data-v="'+v[0]+'" value="'+(st[v[0]]||"")+'"></label>'; }).join("")+'</div><div id="v7-venc-out" style="margin-top:10px"></div>');
+    function paint(){ var s=lsGet("detecta-vencimientos-v1",{})||{}, rows=[];
+      VENC.forEach(function(v){ var d=s[v[0]]; if(!d) return; var dd=diasHasta(d); rows.push('<div class="v7-sim-row'+(dd!=null&&dd<=30?" mia":"")+'"><span>'+v[1]+'</span><b>'+(dd==null?"—":dd<0?"VENCIDO":dd+" días")+'</b></div>'); });
+      document.getElementById("v7-venc-out").innerHTML=rows.join("")||'<div class="v5-muted">Sin fechas registradas.</div>'; }
+    document.querySelectorAll('#v7-venc-out, .v7-venc [data-v]').forEach(function(){});
+    Array.prototype.forEach.call(document.querySelectorAll('.v7-venc [data-v]'),function(inp){ inp.addEventListener("change",function(){ var s=lsGet("detecta-vencimientos-v1",{})||{}; s[inp.getAttribute("data-v")]=inp.value; lsSet("detecta-vencimientos-v1",s); paint(); checkVenc(); }); });
+    paint();
+  }
+  function checkVenc(){ try{ if(!("Notification" in window)||Notification.permission!=="granted") return; var s=lsGet("detecta-vencimientos-v1",{})||{}, sent=lsGet("detecta-venc-sent",{})||{}, ch=false;
+    VENC.forEach(function(v){ var d=s[v[0]]; if(!d) return; var dd=diasHasta(d); if(dd!=null&&dd>=0&&dd<=30){ var sk=v[0]+"|"+d; if(sent[sk]) return; try{ new Notification("Detecta · documento por vencer",{body:v[1]+" vence en "+dd+" días",icon:"icon.svg"}); }catch(e){} sent[sk]=Date.now(); ch=true; } });
+    if(ch) lsSet("detecta-venc-sent",sent); }catch(e){} }
+
+  /* #79 búsqueda por voz */
+  function injectVoice(){ var tb=document.getElementById("v4-toolbar"); var q=document.getElementById("v4-q"); if(!tb||!q||document.getElementById("v7-voice")) return;
+    var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return;
+    var b=document.createElement("button"); b.id="v7-voice"; b.type="button"; b.className="v3-vb-btn v7-voice"; b.textContent="🎤"; b.title="Buscar por voz";
+    q.parentNode.insertBefore(b, q.nextSibling);
+    b.addEventListener("click",function(){ try{ var r=new SR(); r.lang="es-CO"; r.interimResults=false; b.classList.add("on");
+      r.onresult=function(ev){ var t=ev.results[0][0].transcript; q.value=t; q.dispatchEvent(new Event("input",{bubbles:true})); toast("🎤 «"+clip(t,40)+"»"); };
+      r.onerror=function(){ toast("No se pudo escuchar."); }; r.onend=function(){ b.classList.remove("on"); }; r.start(); }catch(e){ toast("Voz no disponible."); b.classList.remove("on"); } });
+  }
+
+  /* #75 swipe móvil en tarjetas (derecha=★, izquierda=descartar) */
+  function injectSwipe(){
+    if(!('ontouchstart' in window)) return;
+    var sx=0, sy=0, cur=null;
+    document.addEventListener("touchstart",function(e){ var c=e.target.closest&&e.target.closest("#proc-list .proc"); if(!c) return; cur=c; sx=e.touches[0].clientX; sy=e.touches[0].clientY; }, {passive:true});
+    document.addEventListener("touchmove",function(e){ if(!cur) return; var dx=e.touches[0].clientX-sx, dy=e.touches[0].clientY-sy; if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>14){ cur.style.transform="translateX("+dx*0.3+"px)"; cur.style.opacity=String(1-Math.min(Math.abs(dx)/600,0.4)); } }, {passive:true});
+    document.addEventListener("touchend",function(e){ if(!cur) return; var dx=e.changedTouches[0].clientX-sx; cur.style.transition="transform .25s,opacity .25s"; cur.style.transform=""; cur.style.opacity="";
+      setTimeout(function(){ if(cur) cur.style.transition=""; },260);
+      if(dx>70){ var star=cur.querySelector(".star-btn"); if(star){ star.click(); toast("★ Guardado"); } }
+      else if(dx<-70){ var sel=cur.querySelector(".v4-kstate"); if(sel){ sel.value="descart"; sel.dispatchEvent(new Event("change",{bubbles:true})); toast("Descartado"); } }
+      cur=null; }, {passive:true});
+  }
+
+  /* #94 frescura del dato */
+  function freshness(){ try{ var st=document.getElementById("status"); if(!st) return; var t=new Date(); var tag=document.getElementById("v7-fresh");
+    if(!tag){ tag=document.createElement("span"); tag.id="v7-fresh"; tag.className="v7-fresh"; st.appendChild(tag); }
+    tag.textContent=" · datos al "+t.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"}); }catch(e){} }
+
+  /* #11/#16 competidores (dataset de Contratos) — botón en el panel Datos */
+  function competidores(){
+    var ent=prompt("Entidad o región a analizar (competidores que más ganan ahí):", (curList()[0]||{}).entidad||""); if(!ent) return;
+    modal('<h3 style="margin:0">Competidores</h3><p class="desc" style="margin:4px 0 0">'+esc(ent)+'</p>','<div id="v7-comp"><span class="loading"></span> Consultando adjudicaciones en datos abiertos…</div>');
+    var mount=document.getElementById("v7-comp"); var url;
+    try{ url=SECOP_CONTRATOS+"?$q="+encodeURIComponent(ent)+"&$limit=500"; }catch(e){ mount.innerHTML="No disponible."; return; }
+    var pr; try{ pr=fetchTimeout(OWN_PROXY(url),{},20000).catch(function(){ return fetchTimeout(url,{},20000); }); }catch(e){ pr=fetch(url); }
+    Promise.resolve(pr).then(function(r){ return r&&r.ok?r.json():[]; }).then(function(rows){
+      if(!rows||!rows.length){ mount.innerHTML='<div class="dash-empty">Sin datos accesibles (la fuente no respondió).</div>'; return; }
+      var keys=Object.keys(rows[0]); var pCol=keys.find(function(k){return /proveedor.*adjudic|nombre.*proveedor|proveedor|contratista|adjudicatario/.test(k);}); var vCol=keys.find(function(k){return /valor_del_contrato|valor_contrato|^valor$/.test(k);});
+      if(!pCol){ mount.innerHTML='<div class="dash-empty">La fuente no expone el proveedor en este conjunto.</div>'; return; }
+      var agg={}; rows.forEach(function(r){ var p=r[pCol]; if(!p) return; if(!agg[p]) agg[p]={n:0,v:0}; agg[p].n++; agg[p].v+=vCol?(parseFloat(String(r[vCol]).replace(/[^0-9.]/g,""))||0):0; });
+      var top=Object.keys(agg).map(function(k){return {p:k,n:agg[k].n,v:agg[k].v};}).sort(function(a,b){return b.n-a.n||b.v-a.v;}).slice(0,10);
+      mount.innerHTML='<div class="v5-sub"><b>Quién más gana aquí</b> (muestra de '+rows.length+' contratos):</div>'+top.map(function(t,i){ return '<div class="v7-sim-row"><span>'+(i+1)+'. '+esc(clip(titleCase(t.p),46))+'</span><b>'+t.n+' · '+money(t.v)+'</b></div>'; }).join("")+'<p class="v3-cmp-note">Tus competidores probables. Cuanta más concentración, más difícil entrar.</p>';
+    }).catch(function(){ mount.innerHTML='<div class="dash-empty">No se pudo consultar (sin red).</div>'; });
+  }
+
+  /* #91 borrar mis datos · #95/#89 aviso legal/privacidad · simulador/objeto/competidores → panel Datos */
+  function injectDatosV7(){ var pan=document.getElementById("v4-datos"); if(!pan||document.getElementById("v7-sim-btn")) return; var row=pan.querySelector(".v4-datos-row"); if(!row) return;
+    function mk(id,txt,fn){ var b=document.createElement("button"); b.className="v3-vb-btn"; b.id=id; b.textContent=txt; b.addEventListener("click",fn); row.appendChild(b); }
+    mk("v7-sim-btn","🧮 Simulador de evaluación", simuladorFormula);
+    mk("v7-uns-btn","🏷 Sugeridor UNSPSC", objetoUNSPSC);
+    mk("v7-venc-btn","📅 Vencimientos de docs", vencimientos);
+    mk("v7-comp-btn","⚔ Competidores", competidores);
+    mk("v7-del-btn","🗑 Borrar mis datos", function(){ if(!confirm("¿Borrar TODOS tus datos locales (watchlist, tablero, notas, vistas, ajustes)? No se puede deshacer.")) return; try{ var rm=[]; for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(/^detecta-|^radar-licit/.test(k)) rm.push(k); } rm.forEach(function(k){ localStorage.removeItem(k); }); }catch(e){} toast("Datos borrados. Recargando…"); setTimeout(function(){ location.reload(); },800); });
+  }
+  function avisoLegal(){ modal('<h3 style="margin:0">Aviso legal y privacidad</h3>',
+    '<div class="v5-card"><h4>No es asesoría jurídica</h4>Detecta es una herramienta de apoyo a la decisión. El <b>encaje no es probabilidad de ganar</b> ni recomendación legal. Verifica siempre el pliego oficial en SECOP II antes de decidir.</div>'+
+    '<div class="v5-card"><h4>Privacidad</h4>Tus datos (perfiles, watchlist, tablero, notas) se guardan <b>solo en este navegador</b> (localStorage). No se envían a ningún servidor de Detecta. Las consultas a SECOP/GDELT/OSM van directo a esas fuentes públicas. Puedes <b>exportar</b> o <b>borrar</b> todo desde «Datos y exportación».</div>'+
+    '<div class="v5-card"><h4>Fuentes</h4>Datos abiertos de Colombia Compra Eficiente (SECOP II, <code>p6dx-8zbt</code>; Contratos, <code>jbjy-vk9h</code>), GDELT (riesgo) y OpenStreetMap (geocodificación). SMMLV 2026 = $1.750.905.</div>'); }
+  function injectFooterV7(){ var f=document.querySelector("footer .wrap")||document.querySelector("footer"); if(!f||document.getElementById("v7-legal")) return;
+    var wrap=document.createElement("span"); wrap.className="v7-foot";
+    function sep(){ var s=document.createElement("span"); s.textContent=" · "; return s; }
+    function lk(id,txt,fn){ var b=document.createElement("button"); b.className="v5-link"; b.id=id; b.textContent=txt; b.addEventListener("click",fn); return b; }
+    wrap.appendChild(sep()); wrap.appendChild(lk("v7-legal","aviso legal",avisoLegal));
+    wrap.appendChild(sep()); wrap.appendChild(lk("v7-diag","diagnóstico",openDiag));
+    f.appendChild(wrap); }
+
+  /* ═══════ MONKEY-PATCH (más externo: aplica ubicación de obra + features) ═══════ */
+  if(typeof window.renderProcesses==="function"){
+    var _inner=window.renderProcesses;
+    window.renderProcesses=function(list){
+      var r=_inner.call(this, applyWorkLoc(list||[]));
+      try{
+        bridgeStar(); freshness(); checkVenc();
+        var ra=document.getElementById("sec-resumen"); if(ra && ra.classList.contains("active")){ renderCopiloto(); renderFunnel(); }
+      }catch(e){ console.error("v7 render:",e); }
+      return r;
+    };
+  }
+
+  /* ═══════ INIT ═══════ */
+  try{
+    ensureCopiloto(); ensureFunnel(); injectMapToggle(); injectFooterV7(); injectDatosV7(); injectVoice(); injectSwipe();
+    renderCopiloto(); renderFunnel();
+    document.querySelectorAll("#tabs .tab").forEach(function(t){ t.addEventListener("click",function(){
+      var tab=t.dataset.tab;
+      if(tab==="resumen") setTimeout(function(){ ensureCopiloto(); ensureFunnel(); renderCopiloto(); renderFunnel(); },45);
+      if(tab==="mapa") setTimeout(injectMapToggle,40);
+      if(["helder","genesis","juntos"].indexOf(tab)>=0) setTimeout(function(){ injectDatosV7(); injectVoice(); },70);
+    }); });
+    setInterval(checkVenc, 30*60*1000);
+  }catch(e){ console.error("v7 init:",e); }
+})();
+
+</script>
 </body>
 </html>

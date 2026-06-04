@@ -179,6 +179,26 @@ abiertos" en los filtros.
 - **Alineación de tarjetas #4**: `v4Augment/recordSeen/maybeDailyBanner/autoRiesgo` usan `curList()` (lista ya filtrada por
   #3b), no `t`; antes desalineaban botones/notas cuando había cerrados ocultos.
 
+### Capa #7 — consolidación + features cliente (`detectaV7`, un `<style>` + un `<script>`)
+- **`window.DTC`**: namespace compartido (utils + modal) para consolidar going-forward (las capas viejas conservan sus
+  closures; no se tocan). **Focus-trap + Tab + Esc** global para CUALQUIER `.v3-modal.show`. **Telemetría de errores**
+  (captura `console.error`/`onerror`, visor «diagnóstico» en el footer). Puente **★ watchlist ↔ "Interesado"** del kanban.
+- **Mapa por lugar de obra** (opcional, `detecta-map-obra`): el wrapper más externo clona la lista y sustituye
+  `ciudad/depto` por lo que infiere `inferUbic` del texto, así el mapa/distancia dejan de depender de la entidad.
+- **Features**: **Copiloto** "¿a qué me presento esta semana?" (prioridad + **prob. de ganar** heurística), **Embudo + KPIs**
+  (de kanban+historial), **Simulador de fórmula** de evaluación (menor precio / media aritmética / geométrica), **Sugeridor
+  UNSPSC** (objeto→clase), **Vencimientos** de documentos (`detecta-vencimientos-v1` + aviso ≤30d), **búsqueda por voz**
+  (Web Speech), **swipe** móvil (★/descartar), **competidores** (dataset Contratos), **frescura del dato**, **aviso
+  legal/privacidad** y **borrar mis datos**.
+- **Refactor**: `enhanceEntidadModal` ahora usa **MutationObserver** (no cada clic). Paneles del Resumen se recalculan
+  **solo si esa pestaña está activa**. Auto-riesgo GDELT es **opt-in** (`detecta-riesgo-auto`). Paginación `_v5shown`
+  **se reinicia al cambiar la búsqueda**.
+
+### Hero rotativo
+Frases curadas (revisadas; se quitaron las forzadas) + **generador combinatorio** con coherencia garantizada (contracción
+`a el→al`/`de el→del`, mayúscula y punto): ~4.300 frases válidas (criterio/precisión + misión/esperanza/progreso). Rotación
+suave cada ~11 s (respeta `prefers-reduced-motion`).
+
 ## Convenciones
 - Español en UI, comentarios y mensajes de commit. Estética tipo Apple (system fonts + Inter, sutil, claro).
 - **Sin dependencias de pago.** PDF.js, Tesseract.js (OCR del pliego) y Leaflet (mapa) se cargan por CDN/lazy-load.
