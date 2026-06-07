@@ -614,7 +614,16 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
     var pw = document.getElementById("sec-pw").value || "";
     if(!pw){ lockout("Ingrese la contraseña"); return; }
 
-    // 1) Validación en el servidor (producción).
+    // 1) Verificación LOCAL por hash — PRIMARIA y sin dependencias de red.
+    //    No existe /api/auth: antes, un 401/respuesta rara del servidor podía
+    //    bloquear el ingreso aunque la clave fuera correcta. Ahora la clave se
+    //    valida primero contra el hash local (SHA-256(salt+clave)).
+    try{
+      var h = await sha256(SALT + pw);
+      if(h === HASH){ try{ sessionStorage.setItem(KEY, pw); }catch(e){} unlock(); return; }
+    }catch(e){ /* crypto no disponible: intenta servidor */ }
+
+    // 2) Validación OPCIONAL en el servidor (solo si algún día existe /api/auth).
     try{
       var r = await fetch("/api/auth", {
         method:"POST",
@@ -624,22 +633,11 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
       });
       if(r.ok){
         var d = await r.json();
-        if(d && d.authenticated){ unlock(); return; }
-        lockout(); return;
+        if(d && d.authenticated){ try{ sessionStorage.setItem(KEY, pw); }catch(e){} unlock(); return; }
       }
-      // Si el endpoint existe pero rechaza (401), es contraseña incorrecta.
-      if(r.status === 401){ lockout(); return; }
-      // Otros códigos (404/500 sin /api): caemos al respaldo local.
-    }catch(e){ /* sin red/servidor: respaldo local */ }
+    }catch(e){ /* sin red/servidor */ }
 
-    // 2) Respaldo local por hash (solo para abrir el archivo sin Vercel).
-    var h = await sha256(SALT + pw);
-    if(h === HASH){
-      try { sessionStorage.setItem(KEY, pw); } catch(e){}
-      unlock();
-    } else {
-      lockout();
-    }
+    lockout();
   }
 
   document.addEventListener("DOMContentLoaded", function(){

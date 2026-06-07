@@ -15,7 +15,7 @@
    ════════════════════════════════════════════════════════════════ */
 "use strict";
 
-const VERSION = "detecta-v3-2026-06";
+const VERSION = "detecta-v4-2026-06";
 const SHELL_CACHE = "detecta-shell-" + VERSION;
 const SHELL_ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
 
