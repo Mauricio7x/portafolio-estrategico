@@ -11,7 +11,7 @@
   ],
   "functions": {
     "api/cron.js": { "maxDuration": 60 },
-    "api/sync.js": { "maxDuration": 60 },
+    "api/sync.js": { "maxDuration": 300 },
     "api/procesos.js": { "maxDuration": 30 },
     "api/resumen.js": { "maxDuration": 30 },
     "api/proxy.js": { "maxDuration": 30 }

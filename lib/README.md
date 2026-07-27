@@ -36,11 +36,17 @@ radar consume la caché.
    y responde `done:false`; la siguiente invocación (cron, Action, o el botón
    de la app) continúa. Nada se pierde ni se duplica: la lectura deduplica por
    `_k` quedándose con el `:updated_at` más reciente.
-4. **Delta con solape de 48 h** sobre `:updated_at` (campo de sistema). Los
-   cambios de estado (Convocado→Adjudicado) llegan por aquí y REEMPLAZAN el
-   registro en su mes. Si `:updated_at` no estuviera disponible, degrada a
-   `fecha_de_ultima_publicaci` y, en el peor caso, a re-bajar la ventana
-   reciente.
+4. **Delta con solape de 48 h** sobre `:updated_at` (campo de sistema),
+   **append-only**: lo bajado se escribe como chunks ADICIONALES del mes y la
+   lectura deduplica por `_k` (gana el `:updated_at` más nuevo) — así un
+   cambio de estado reemplaza de facto SIN leer+reescribir meses de 40-50k
+   filas en cada corrida (eso reventaría los 10 GB/mes de ancho de banda del
+   tier gratuito de Upstash). Cuando un mes acumula >30 chunks se **compacta**:
+   se escribe deduplicado en un rango nuevo y el manifest (`{ini, chunks}`)
+   conmuta de forma atómica antes de podar el rango viejo. Un delta cortado
+   por presupuesto **no avanza `last_sync`** (nada se pierde en silencio) y el
+   sello siempre se ancla al INICIO de la corrida. Si el backend rechaza
+   `:updated_at` (400), degrada en caliente a `fecha_de_ultima_publicaci`.
 5. **Verificación de completitud**: `count(1)` por mes ANTES de paginar
    (esperados) y auditoría final `esperados vs almacenados` (reporte en
    consola/meta; diferencias → `detecta:x:incidencias`).
@@ -75,9 +81,13 @@ radar consume la caché.
 3. **Carga inicial** (una vez, repetir hasta `done:true`):
    `curl -H "Authorization: Bearer $CRON_SECRET" "https://TU-APP.vercel.app/api/sync?modo=full"`
    (o desde el navegador `…/api/sync?modo=full&secret=TU_CRON_SECRET`).
-   Cada llamada avanza ~45 s y guarda el cursor; con ~300-600k filas/año
-   cuenta con varias decenas de invocaciones (el workflow de GitHub las
-   encadena de a 8).
+   Cada llamada avanza ~240 s (maxDuration 300) y guarda el cursor; con
+   ~300-600k filas/año son unas pocas invocaciones (el workflow de GitHub
+   encadena hasta 4). **Con Vercel Password Protection activa**, las llamadas
+   externas (curl/GitHub) necesitan además el header
+   `x-vercel-protection-bypass` con el secreto de *Protection Bypass for
+   Automation* (Settings → Deployment Protection); el cron nativo de Vercel
+   no lo necesita.
 4. **Frescura**: la vista de oportunidades comprueba la caché al cargar; si
    tiene >1 h dispara `?modo=auto` en segundo plano (chip «actualizando…»).
    El cron diario de Vercel (08:30 UTC = 03:30 Colombia) y el workflow

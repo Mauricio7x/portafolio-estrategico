@@ -123,9 +123,11 @@ const fmtCOP = n => n ? "$" + Math.round(n).toLocaleString("es-CO") : "—";
 
 /* ---------- Handler ---------- */
 export default async function handler(req, res) {
-  // Protección: el header lo manda Vercel Cron; o pasa ?secret= para probar a mano.
-  const auth = req.headers["authorization"] === `Bearer ${process.env.CRON_SECRET}`;
-  const manual = req.query.secret === process.env.CRON_SECRET;
+  // Protección: el header lo manda Vercel Cron; o pasa ?secret= para probar a
+  // mano. La guarda !!CRON_SECRET evita que 'Bearer undefined' pase como
+  // válido si la variable de entorno no está configurada.
+  const auth = !!process.env.CRON_SECRET && req.headers["authorization"] === `Bearer ${process.env.CRON_SECRET}`;
+  const manual = !!process.env.CRON_SECRET && req.query.secret === process.env.CRON_SECRET;
   if (!auth && !manual) return res.status(401).json({ error: "no autorizado" });
 
   const desde = fechaDesde(DIAS_ATRAS);

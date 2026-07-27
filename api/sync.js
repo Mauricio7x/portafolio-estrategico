@@ -27,8 +27,11 @@ function esOrigenPropio(req) {
 }
 
 export default async function handler(req, res) {
-  const conSecreto = req.headers["authorization"] === `Bearer ${process.env.CRON_SECRET}`
-    || (req.query.secret && req.query.secret === process.env.CRON_SECRET);
+  // OJO: sin la guarda !!secreto, la env var ausente produciría el literal
+  // 'Bearer undefined' y cualquiera podría pasar como autorizado.
+  const secreto = process.env.CRON_SECRET;
+  const conSecreto = !!secreto && (req.headers["authorization"] === `Bearer ${secreto}`
+    || (req.query.secret && req.query.secret === secreto));
   const propio = esOrigenPropio(req);
   if (!conSecreto && !propio) return res.status(401).json({ error: "no autorizado" });
 
@@ -41,12 +44,17 @@ export default async function handler(req, res) {
   const store = crearAlmacen({});
   const K = claves("");
 
-  // candado anti-concurrencia (55 s ≈ maxDuration)
-  const lock = await store.setNX(K.lock, String(Date.now()), 55).catch(() => false);
+  // Candado anti-concurrencia. TTL > maxDuration (300 s) para que nunca
+  // expire con la función viva; valor con token único y liberación SOLO si
+  // el token coincide (si Vercel mata la función, el finally no corre y el
+  // TTL limpia; sin token, ese DEL tardío borraría el candado de OTRA
+  // sincronización en curso).
+  const token = (globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()) + Date.now();
+  const lock = await store.setNX(K.lock, token, 320).catch(() => false);
   if (!lock) return res.status(202).json({ ok: true, enCurso: true, msg: "ya hay una sincronización corriendo" });
 
   const x = crearExtractor({ store });
-  const presupuestoMs = Math.min(parseInt(req.query.presupuesto, 10) || 45000, 50000);
+  const presupuestoMs = Math.min(parseInt(req.query.presupuesto, 10) || 240000, 280000);
   const t0 = Date.now();
   try {
     let r;
@@ -74,6 +82,6 @@ export default async function handler(req, res) {
   } catch (e) {
     return res.status(502).json({ ok: false, modo, error: String(e && e.message || e) });
   } finally {
-    await store.del(K.lock).catch(() => {});
+    try { if ((await store.get(K.lock)) === token) await store.del(K.lock); } catch (e) { /* TTL limpia */ }
   }
 }

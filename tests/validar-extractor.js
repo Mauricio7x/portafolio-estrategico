@@ -56,7 +56,7 @@ function handleSocrata(q, res) {
 
   let rows = filtra(estado.data, q.get("$where"));
   const sel = q.get("$select") || "*";
-  if (/count\(1\)/.test(sel)) { res.writeHead(200, { "Content-Type": "application/json" }); return res.end(JSON.stringify([{ n: String(rows.length) }])); }
+  if (/count\((\*|1)\)/.test(sel)) { res.writeHead(200, { "Content-Type": "application/json" }); return res.end(JSON.stringify([{ n: String(rows.length) }])); }
 
   const order = q.get("$order") || "";
   if (order === ":id") rows = rows.slice().sort((a, b) => a[":id"].localeCompare(b[":id"]));
@@ -215,16 +215,37 @@ function generarDatos(mesesDelRango, inicioSolape) {
   }
   estado.data.push({ ...estado.data[0], ":id": "row-9999999", id_del_proceso: "CO1.NEW.VIEJO", referencia_del_proceso: "NEW-V", [F]: `${mesViejo}-20T08:00:00.000`, ":updated_at": ahoraISO, estado_del_procedimiento: "Activo", nombre_del_procedimiento: "Retropublicado" });
 
+  // 4a · delta cortado por presupuesto: NO avanza last_sync (pérdida cero)
+  const syncAntes = ((await x.estado()).meta || {}).last_sync;
+  const dParcial = await x.extraerDelta({ presupuestoMs: -1 });
+  check("delta parcial reporta done:false", dParcial.done === false && dParcial.parcial === true, dParcial);
+  check("delta parcial NO avanza last_sync", ((await x.estado()).meta || {}).last_sync === syncAntes);
+
+  // 4b · delta real: nuevos + cambios de estado, sin duplicar (append-only)
   const d = await x.extraerDelta({ presupuestoMs: 60000 });
-  check("delta detecta 13 filas (5 cambiadas + 8 nuevas)", d.filas === 13, d);
-  check("delta inserta 8", d.insertados === 8, d);
-  check("delta actualiza 5", d.actualizados === 5, d);
+  check("delta detecta 13 filas (5 cambiadas + 8 nuevas)", d.done === true && d.filas === 13, d);
+  check("delta toca 2 meses", d.meses === 2, d);
   const { registros: regsViejo } = await x.leerMes(mesViejo);
   const adj = regsViejo.filter((p) => cambiados.some((c) => c[":id"] === p[":id"]));
   check("cambio de estado aplicado sin duplicar", adj.length === 5 && adj.every((p) => p.estado_del_procedimiento === "Adjudicado"), adj.length);
   const todos2 = new Set();
   for (const mes of mesesDelRango(inicioSolape)) for (const p of (await x.leerMes(mes)).registros) todos2.add(p._k);
   check("total tras delta = dataset ampliado", todos2.size === estado.data.length, { cache: todos2.size, data: estado.data.length });
+
+  // 4c · compactación: tras el umbral, el mes se reescribe deduplicado en un
+  // rango nuevo (manifest.ini avanza) sin perder registros
+  const xComp = crearExtractor({ store, dormir: sinDormir, logSink: () => {}, config: { COMPACTAR_TRAS: 0 } });
+  cambiados[0][":updated_at"] = new Date(Date.now() + 1000).toISOString();
+  cambiados[0].estado_del_procedimiento = "Celebrado";
+  const dc = await xComp.extraerDelta({ presupuestoMs: 60000 });
+  check("delta de compactación aplicado", dc.done === true && dc.filas >= 1, dc);
+  const { manifest: manComp, registros: regsComp } = await xComp.leerMes(mesViejo);
+  check("mes compactado (manifest.ini avanza)", manComp && manComp.ini > 0, manComp);
+  const regC = regsComp.find((p) => p[":id"] === cambiados[0][":id"]);
+  check("compactación conserva la versión más nueva", regC && regC.estado_del_procedimiento === "Celebrado");
+  const unicos3 = new Set(regsComp.map((p) => p._k));
+  check("compactación sin duplicados ni pérdidas", unicos3.size === regsComp.length &&
+    regsComp.length === estado.data.filter((r) => r[F].startsWith(mesViejo)).length, regsComp.length);
 
   /* ── 5 · empaquetado bajo el límite de KV ── */
   console.log("\n5 · Empaquetado en chunks");
@@ -273,6 +294,12 @@ function generarDatos(mesesDelRango, inicioSolape) {
   check(`procesos pagina el mes actual completo (${filas.length}/${esperadosDesde} en ${paginas} páginas)`, filas.length === esperadosDesde, { filas: filas.length, esperadosDesde });
   check("orden fecha DESC", filas.every((f, i) => i === 0 || String(filas[i - 1][F]) >= String(f[F])));
   check("forma Socrata intacta (mapProcess-compatible)", filas[0] && "id_del_proceso" in filas[0] && "urlproceso" in filas[0] && "fecha_de_recepcion_de" in filas[0]);
+
+  out = mkRes();
+  const minTest = 100e6;
+  await procesos({ query: { desde, limit: "1500", min: String(minTest) }, headers: { host: "app.test" } }, out);
+  check("procesos filtra min en servidor", Array.isArray(out._r.body) &&
+    out._r.body.length > 0 && out._r.body.every((f) => parseFloat(f.precio_base) >= minTest), out._r.body.length);
 
   out = mkRes();
   await procesos({ query: { desde }, headers: { host: "app.test", origin: "https://malo.example" } }, out);

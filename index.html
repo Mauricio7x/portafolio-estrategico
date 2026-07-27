@@ -1869,19 +1869,31 @@ async function cacheMeta(){
     return await r.json();
   }catch(e){ return null; }
 }
-async function cachePaginas(since, stat){
-  const LIM = 2000, MAX = 120000;
+async function cachePaginas(since, stat, minVal, maxVal){
+  // mismo tope que la ruta Socrata (60k) para que el aviso de truncado
+  // siga siendo coherente venga de donde venga el radar
+  const LIM = 1500, MAX = 60000;
   let out = [], offset = 0, lote;
+  const filtros = (minVal > 0 ? "&min=" + minVal : "") + (maxVal > 0 && maxVal < 1e15 ? "&max=" + maxVal : "");
   do{
     if(stat) stat.innerHTML = `<span class="loading"></span> Radar desde caché del servidor… (${out.length.toLocaleString()})`;
-    const r = await fetchTimeout(`/api/procesos?desde=${encodeURIComponent(since)}&limit=${LIM}&offset=${offset}`,
+    const r = await fetchTimeout(`/api/procesos?desde=${encodeURIComponent(since)}&limit=${LIM}&offset=${offset}${filtros}`,
       { headers:{Accept:"application/json"} }, 25000);
     if(!r.ok) throw new Error("cache HTTP "+r.status);
     lote = await r.json();
     if(!Array.isArray(lote)) throw new Error("cache: respuesta no-array");
     out = out.concat(lote); offset += LIM;
   }while(lote.length === LIM && out.length < MAX);
-  return out;
+  // dedup defensivo: si una sincronización terminó a mitad de la descarga,
+  // las filas pueden correrse entre páginas (duplicados). Clave estable.
+  const visto = new Map();
+  for(const f of out){
+    const k = f.id_del_proceso || f._k || f[":id"];
+    if(!k){ visto.set(Symbol(), f); continue; }
+    const prev = visto.get(k);
+    if(!prev || (f[":updated_at"]||"") >= (prev[":updated_at"]||"")) visto.set(k, f);
+  }
+  return Array.from(visto.values());
 }
 /* Indicador no bloqueante bajo el estado del radar */
 function chipSync(txt, done){
@@ -1909,8 +1921,13 @@ function dispararDeltaSiEnvejecida(meta){
   _deltaEnCurso = true;
   chipSync("🔄 actualizando datos en segundo plano…", false);
   fetchTimeout("/api/sync?modo=auto", { headers:{Accept:"application/json"} }, 55000)
-    .then(r => r.ok ? r.json() : null)
-    .then(j => { chipSync(j && (j.alDia || j.done || j.ok) ? "✓ datos actualizados — pulsa ↻ Recargar para verlos" : "", true); })
+    .then(r => r.ok || r.status === 202 ? r.json() : null)
+    .then(j => {
+      // veraz: solo anunciar actualización si el sync REALMENTE avanzó
+      if(j && (j.alDia === true || j.done === true)) chipSync("✓ datos actualizados — pulsa ↻ Recargar para verlos", true);
+      else if(j && (j.enCurso || j.msg)) chipSync("🔄 sincronización en curso en el servidor…", false);
+      else chipSync("", true);
+    })
     .catch(function(){ chipSync("", true); })
     .finally(function(){ _deltaEnCurso = false; });
 }
@@ -2294,15 +2311,22 @@ async function loadProcesses(){
       // en local (la caché no filtra nada: extracción sin filtros tempranos).
       let rows = null, origenCache = false;
       const metaC = await cacheMeta();
-      if(metaC && metaC.last_full){
+      // la caché solo cubre desde metaC.desde (año vigente − solape); si el
+      // usuario pide una ventana anterior, se va directo a Socrata
+      const cubre = metaC && metaC.last_full && (!metaC.desde || since >= metaC.desde);
+      if(cubre){
         try{
-          rows = await cachePaginas(since, stat);
+          rows = await cachePaginas(since, stat, minVal, maxVal);
           origenCache = true;
+          // cinturón local con la MISMA semántica que el $where de Socrata
           if(minVal > 0) rows = rows.filter(r => parseFloat(r[F.valor]) >= minVal);
-          if(maxVal > 0 && maxVal < 1e15) rows = rows.filter(r => (parseFloat(r[F.valor]) || 0) <= maxVal);
+          if(maxVal > 0 && maxVal < 1e15) rows = rows.filter(r => { const v = parseFloat(r[F.valor]); return !isNaN(v) && v <= maxVal; });
           dispararDeltaSiEnvejecida(metaC);
         }catch(e){ rows = null; origenCache = false; }
       }
+      // caché vacía para esta ventana → que decida Socrata (puede ser una
+      // caché desactualizada, no un "no hay procesos")
+      if(origenCache && rows && rows.length === 0){ rows = null; origenCache = false; }
       // ── ORIGEN 2 (respaldo): PAGINACIÓN directa a SECOP II, igual que
       // siempre — el API limita por página; iteramos con $offset hasta
       // agotar resultados o llegar a un tope de seguridad (60k filas).
@@ -2321,7 +2345,7 @@ async function loadProcesses(){
       }
 
       nRaw = rows.length;
-      truncado = !origenCache && rows.length >= MAX_ROWS;
+      truncado = rows.length >= MAX_ROWS; // ambos orígenes topan en 60k
 
       if(nRaw === 0){
         stat.innerHTML = `<span class="err">SECOP II respondió 0 filas.</span> Aumente "Días atrás" o baje el valor mínimo.`;

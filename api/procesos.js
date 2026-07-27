@@ -21,9 +21,9 @@ import { crearExtractor, mesesDelRango } from "../lib/extractor.js";
 import { crearAlmacen, leerJSON, claves } from "../lib/almacen.js";
 
 const CAMPO_FECHA = "fecha_de_publicacion_del";
-// 2000 filas × ~1.9 KB (peor caso, descripción truncada a 800) ≈ 3.7 MB,
+// 1500 filas × ~2.5 KB (peor caso, descripción truncada a 1500) ≈ 3.8 MB,
 // bajo el límite de respuesta de Vercel (4.5 MB). Medido en tests.
-const LIMIT_MAX = 2000;
+const LIMIT_MAX = 1500;
 const FRESCA_MS = 60 * 60e3; // "fresca" = sincronizada hace menos de 1 h
 
 function esOrigenAjeno(req) {
@@ -33,8 +33,11 @@ function esOrigenAjeno(req) {
   try { return new URL(origen).host.toLowerCase() !== propio; } catch { return true; }
 }
 
-/* memoria caliente entre invocaciones de la misma instancia */
-let _mem = { sello: null, meses: new Map() };
+/* Memoria caliente entre invocaciones de la misma instancia: se memoiza el
+   resultado FUSIONADO (dedup entre meses + orden) por mes-de-inicio, así las
+   páginas sucesivas del mismo radar son un slice y no re-hacen dedup+sort
+   sobre cientos de miles de filas. Tope de 3 rangos para acotar el heap. */
+let _mem = { sello: null, fusion: new Map() };
 
 export default async function handler(req, res) {
   if (esOrigenAjeno(req)) return res.status(403).json({ error: "Origen no autorizado" });
@@ -49,6 +52,7 @@ export default async function handler(req, res) {
     const frescaMs = meta.last_sync ? Date.now() - Date.parse(meta.last_sync) : null;
     return res.status(200).json({
       total: meta.total || 0,
+      desde: meta.desde || null,   // inicio de cobertura de la caché
       last_sync: meta.last_sync || null,
       last_full: meta.last_full || null,
       frescaMs,
@@ -68,27 +72,36 @@ export default async function handler(req, res) {
   const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
 
   // invalidar la memoria caliente si hubo sincronización nueva
-  if (_mem.sello !== meta.last_sync) _mem = { sello: meta.last_sync, meses: new Map() };
+  if (_mem.sello !== meta.last_sync) _mem = { sello: meta.last_sync, fusion: new Map() };
 
-  const x = crearExtractor({ store });
-  const meses = mesesDelRango(desde.slice(0, 7) + "-01T00:00:00.000");
-  let filas = [];
-  for (const mes of meses) {
-    if (!_mem.meses.has(mes)) {
-      const { registros } = await x.leerMes(mes);
-      _mem.meses.set(mes, registros);
+  const claveRango = desde.slice(0, 7);
+  let lista = _mem.fusion.get(claveRango);
+  if (!lista) {
+    const x = crearExtractor({ store });
+    const meses = mesesDelRango(claveRango + "-01T00:00:00.000");
+    let filas = [];
+    for (const mes of meses) filas = filas.concat((await x.leerMes(mes)).registros);
+    // dedup ENTRE meses: si un proceso cambió de mes de publicación entre
+    // sincronizaciones puede vivir en dos particiones; gana el :updated_at
+    // más reciente (leerMes ya deduplica DENTRO de cada mes).
+    const porClave = new Map();
+    for (const f of filas) {
+      const prev = porClave.get(f._k);
+      if (!prev || (f[":updated_at"] || "") >= (prev[":updated_at"] || "")) porClave.set(f._k, f);
     }
-    filas = filas.concat(_mem.meses.get(mes));
+    lista = [...porClave.values()].sort((a, b) => {
+      const A = String(a[CAMPO_FECHA] || ""), B = String(b[CAMPO_FECHA] || "");
+      return A < B ? 1 : A > B ? -1 : 0;
+    });
+    if (_mem.fusion.size >= 3) _mem.fusion.delete(_mem.fusion.keys().next().value);
+    _mem.fusion.set(claveRango, lista);
   }
-  // dedup ENTRE meses: si un proceso cambió de mes de publicación entre
-  // sincronizaciones puede vivir en dos particiones; gana el :updated_at
-  // más reciente (leerMes ya deduplica DENTRO de cada mes).
-  const porClave = new Map();
-  for (const f of filas) {
-    const prev = porClave.get(f._k);
-    if (!prev || (f[":updated_at"] || "") >= (prev[":updated_at"] || "")) porClave.set(f._k, f);
-  }
-  filas = [...porClave.values()].filter(f => String(f[CAMPO_FECHA] || "") >= desde);
-  filas.sort((a, b) => String(b[CAMPO_FECHA] || "").localeCompare(String(a[CAMPO_FECHA] || "")));
+
+  let filas = lista.filter(f => String(f[CAMPO_FECHA] || "") >= desde);
+  // filtros de valor OPCIONALES en servidor (misma semántica que el $where
+  // Socrata: min excluye nulos por NaN, max exige precio presente)
+  const min = parseFloat(req.query.min), max = parseFloat(req.query.max);
+  if (min > 0) filas = filas.filter(f => parseFloat(f.precio_base) >= min);
+  if (max > 0) filas = filas.filter(f => { const p = parseFloat(f.precio_base); return !isNaN(p) && p <= max; });
   return res.status(200).json(filas.slice(offset, offset + limit));
 }
