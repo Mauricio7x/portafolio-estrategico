@@ -49,6 +49,19 @@ Es un único `index.html` que corre 100 % en el navegador, sin paso de compilaci
   - `api/cron.js` — monitor autónomo: consulta SECOP, puntúa, verifica anticipo y avisa por **Telegram**.
   - `api/resumen.js` — resumen IA por proceso (Anthropic; **de pago**, opcional; la web usa un resumen local gratis).
   - `lib/engine.js` — motor de encaje portado a Node para que el cron calcule lo mismo que la web.
+- **Capa de datos SECOP (jul 2026)** — extracción exhaustiva del año vigente a Vercel KV, ver `lib/README.md`:
+  - `lib/extractor.js` + `lib/almacen.js` — carga completa **reanudable** (keyset por `:id`, count(1) por mes,
+    reintentos con backoff, chunks gzip por mes) + **delta** por `:updated_at` con solape 48 h (los cambios de
+    estado REEMPLAZAN por `_k`). Sonda de capacidades: solo un 400 real degrada a `$offset` (nunca un fallo de red).
+  - `api/sync.js` (modos full/delta/auto, candado SET NX, presupuesto 45 s/invocación) y `api/procesos.js`
+    (sirve la caché con la MISMA forma de campos que Socrata, `limit≤4000`, memoria caliente por instancia).
+  - `index.html`: `loadProcesses` intenta **caché-primero** (`cacheMeta`/`cachePaginas`); si la caché tiene >1 h
+    dispara `/api/sync?modo=auto` en segundo plano con chip «actualizando…» (`chipSync`). La cascada Socrata
+    queda intacta como respaldo. Filtros de valor se aplican en local sobre la caché (extracción SIN filtros).
+  - Cron Vercel diario 08:30 UTC + workflow GitHub horario opcional (`.github/workflows/sincronizacion.yml`).
+  - Respaldo de emergencia: `scripts/respaldo-csv.js` (extraer a archivo / export CSV masivo / subir a KV).
+  - **Pruebas sin red** (este entorno no alcanza datos.gov.co): `node tests/validar-extractor.js` — mock de
+    Socrata (keyset, count, 429/500 inyectados) + mock de KV REST; incluye e2e por los handlers reales.
 - **PWA** (`manifest.webmanifest`, `sw.js`, `icon.svg`) — instalar "Detecta" como app y servir el
   app-shell offline. El SW cachea solo el shell (network-first en navegación, respaldo al `index.html`);
   los datos de SECOP/GDELT siempre van a la red. El último radar se guarda en `localStorage`

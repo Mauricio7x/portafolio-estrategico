@@ -316,6 +316,9 @@
 
   /* Status */
   .status{font-size:13px;color:var(--ink2);text-align:center;margin:14px 0;padding:14px;background:var(--soft);border-radius:12px}
+  /* chip de sincronización de la capa de datos (caché del servidor) */
+  .dtc-sync{display:block;font-size:12px;color:var(--ink2);text-align:center;margin:6px 0 0;padding:5px 10px}
+  .dtc-sync.done{color:var(--green)}
   .status b{color:var(--ink);font-weight:600}
   .err{color:var(--red)}
   .loading{display:inline-block;width:12px;height:12px;border:2px solid rgba(0,113,227,.2);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;margin-right:6px}
@@ -1851,6 +1854,67 @@ async function fetchWithProxy(url){
   throw new Error("Sin conexión a SECOP II (proxy propio y respaldos agotados)");
 }
 
+/* ================================================================
+   CAPA DE DATOS ROBUSTA (jul 2026) — caché del servidor
+   /api/sync extrae el año vigente completo de SECOP II (paginación
+   estable por :id, reintentos, verificación count(1)) y lo deja en
+   Vercel KV; /api/procesos lo sirve con la MISMA forma de campos que
+   Socrata, así mapProcess/fechaCierre no cambian. Aquí solo se decide
+   el ORIGEN: caché primero, Socrata como respaldo intacto.
+   ================================================================ */
+async function cacheMeta(){
+  try{
+    const r = await fetchTimeout("/api/procesos?meta=1", { headers:{Accept:"application/json"} }, 6000);
+    if(!r.ok) return null;
+    return await r.json();
+  }catch(e){ return null; }
+}
+async function cachePaginas(since, stat){
+  const LIM = 2000, MAX = 120000;
+  let out = [], offset = 0, lote;
+  do{
+    if(stat) stat.innerHTML = `<span class="loading"></span> Radar desde caché del servidor… (${out.length.toLocaleString()})`;
+    const r = await fetchTimeout(`/api/procesos?desde=${encodeURIComponent(since)}&limit=${LIM}&offset=${offset}`,
+      { headers:{Accept:"application/json"} }, 25000);
+    if(!r.ok) throw new Error("cache HTTP "+r.status);
+    lote = await r.json();
+    if(!Array.isArray(lote)) throw new Error("cache: respuesta no-array");
+    out = out.concat(lote); offset += LIM;
+  }while(lote.length === LIM && out.length < MAX);
+  return out;
+}
+/* Indicador no bloqueante bajo el estado del radar */
+function chipSync(txt, done){
+  let el = document.getElementById("dtc-sync");
+  if(!el){
+    const st = document.getElementById("status");
+    if(!st || !st.parentNode) return;
+    el = document.createElement("span");
+    el.id = "dtc-sync"; el.className = "dtc-sync";
+    el.setAttribute("role","status"); el.setAttribute("aria-live","polite");
+    st.parentNode.insertBefore(el, st);
+  }
+  el.textContent = txt || "";
+  el.classList.toggle("done", !!done);
+  el.style.display = txt ? "" : "none";
+}
+let _deltaEnCurso = false;
+function dispararDeltaSiEnvejecida(meta){
+  if(_deltaEnCurso) return;
+  if(meta.fresca){
+    if(meta.last_sync) chipSync("✓ datos del servidor al día ("+
+      new Date(meta.last_sync).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})+")", true);
+    return;
+  }
+  _deltaEnCurso = true;
+  chipSync("🔄 actualizando datos en segundo plano…", false);
+  fetchTimeout("/api/sync?modo=auto", { headers:{Accept:"application/json"} }, 55000)
+    .then(r => r.ok ? r.json() : null)
+    .then(j => { chipSync(j && (j.alDia || j.done || j.ok) ? "✓ datos actualizados — pulsa ↻ Recargar para verlos" : "", true); })
+    .catch(function(){ chipSync("", true); })
+    .finally(function(){ _deltaEnCurso = false; });
+}
+
 // El dataset de Procesos no expone una única "fecha de cierre" estable: según
 // la modalidad, el plazo para ofertar vive en distintas columnas. Buscamos de
 // forma defensiva la fecha de recepción/cierre/límite (la primera válida).
@@ -2221,23 +2285,43 @@ async function loadProcesses(){
       mapped = _mc.mapped; nRaw = _mc.nRaw; truncado = _mc.truncado;
       stat.innerHTML = '<span class="loading"></span> Radar en caché (re-puntuando, sin red)…';
     } else {
-      // PAGINACIÓN — el API limita a ~50k por página; iteramos con $offset
-      // hasta agotar resultados o llegar a un tope de seguridad (60k filas).
       const PAGE = 10000, MAX_ROWS = 60000;
-      let rows = [];
-      let offset = 0, lote;
-      do {
-        const url = `${SECOP.base}?$where=${encodeURIComponent(where)}&$order=${encodeURIComponent(F.fecha+" DESC")}&$limit=${PAGE}&$offset=${offset}`;
-        stat.innerHTML = `<span class="loading"></span> Consultando SECOP II… (${rows.length.toLocaleString()} descargados)`;
-        lote = await fetchWithProxy(url);
-        if(Array.isArray(lote) && lote.length){
-          rows = rows.concat(lote);
-          offset += PAGE;
-        }
-      } while(Array.isArray(lote) && lote.length === PAGE && rows.length < MAX_ROWS);
+      // ── ORIGEN 1: caché del servidor (/api/procesos, capa de extracción).
+      // Si hay carga inicial completa, el radar sale de la caché KV: cobertura
+      // del año verificada con count(1) y sin depender de Socrata en caliente.
+      // Si la caché tiene >1 h, se dispara un delta en segundo plano SIN
+      // bloquear (chip "actualizando…"). Los filtros de valor se aplican
+      // en local (la caché no filtra nada: extracción sin filtros tempranos).
+      let rows = null, origenCache = false;
+      const metaC = await cacheMeta();
+      if(metaC && metaC.last_full){
+        try{
+          rows = await cachePaginas(since, stat);
+          origenCache = true;
+          if(minVal > 0) rows = rows.filter(r => parseFloat(r[F.valor]) >= minVal);
+          if(maxVal > 0 && maxVal < 1e15) rows = rows.filter(r => (parseFloat(r[F.valor]) || 0) <= maxVal);
+          dispararDeltaSiEnvejecida(metaC);
+        }catch(e){ rows = null; origenCache = false; }
+      }
+      // ── ORIGEN 2 (respaldo): PAGINACIÓN directa a SECOP II, igual que
+      // siempre — el API limita por página; iteramos con $offset hasta
+      // agotar resultados o llegar a un tope de seguridad (60k filas).
+      if(!rows){
+        rows = [];
+        let offset = 0, lote;
+        do {
+          const url = `${SECOP.base}?$where=${encodeURIComponent(where)}&$order=${encodeURIComponent(F.fecha+" DESC")}&$limit=${PAGE}&$offset=${offset}`;
+          stat.innerHTML = `<span class="loading"></span> Consultando SECOP II… (${rows.length.toLocaleString()} descargados)`;
+          lote = await fetchWithProxy(url);
+          if(Array.isArray(lote) && lote.length){
+            rows = rows.concat(lote);
+            offset += PAGE;
+          }
+        } while(Array.isArray(lote) && lote.length === PAGE && rows.length < MAX_ROWS);
+      }
 
       nRaw = rows.length;
-      truncado = rows.length >= MAX_ROWS;
+      truncado = !origenCache && rows.length >= MAX_ROWS;
 
       if(nRaw === 0){
         stat.innerHTML = `<span class="err">SECOP II respondió 0 filas.</span> Aumente "Días atrás" o baje el valor mínimo.`;
