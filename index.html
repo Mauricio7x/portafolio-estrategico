@@ -535,10 +535,10 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
   #sec-gate p{color:#86868b;font-size:13px;margin:0 0 22px;line-height:1.45}
   #sec-gate input{width:100%;padding:11px 14px;background:#1d1d1f;border:1px solid #3a3a3c;border-radius:9px;color:#f5f5f7;font-size:14px;outline:none;box-sizing:border-box;font-family:inherit}
   #sec-gate input:focus{border-color:#0a84ff}
-  #sec-gate button{margin-top:12px;width:100%;padding:11px;background:#0a84ff;color:#fff;border:0;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
-  #sec-gate button:active{background:#0066cc}
+  #sec-gate button{margin-top:12px;width:100%;padding:11px;background:#0066cc;color:#fff;border:0;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
+  #sec-gate button:active{background:#0053a6}
   #sec-gate .err{margin-top:10px;color:#ff453a;font-size:12px;min-height:16px}
-  #sec-gate .ft{margin-top:18px;color:#48484a;font-size:11px;letter-spacing:0.02em}
+  #sec-gate .ft{margin-top:18px;color:#86868b;font-size:11px;letter-spacing:0.02em}
   html.sec-locked{overflow:hidden}
   html.sec-locked body>*:not(#sec-gate){visibility:hidden!important;pointer-events:none!important}
 </style>
@@ -546,7 +546,7 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
   <div class="box">
     <h2>Acceso restringido</h2>
     <p>Esta plataforma es de uso privado.<br>Ingrese la contraseña para continuar.</p>
-    <input type="password" id="sec-pw" placeholder="Contraseña" autocomplete="off" autofocus>
+    <input type="password" id="sec-pw" placeholder="Contraseña" aria-label="Contraseña" autocomplete="off" autofocus>
     <button id="sec-go" type="button">Continuar</button>
     <div class="err" id="sec-err" aria-live="polite"></div>
     <div class="ft">Detecta</div>
@@ -670,7 +670,7 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
       <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Cambiar tema claro/oscuro" title="Cambiar entre claro y oscuro">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
-      <button type="button" class="anticipo-badge" id="anticipo-trigger" title="Filtrar procesos con anticipo ≥ 20 %">
+      <button type="button" class="anticipo-badge" id="anticipo-trigger" title="Filtrar procesos con anticipo ≥ 20 %" aria-label="Verificar anticipo ≥ 20 %">
         <span class="anticipo-mark">d<span>.</span></span>
         <span class="anticipo-txt">Verificar anticipo</span>
       </button>
@@ -852,7 +852,7 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
       <h3>Lector de pliego</h3>
       <p class="desc">Cargue el pliego en PDF o pegue el texto. La plataforma extrae <b>anticipo, liquidez, endeudamiento, cobertura y K exigido</b>, y los compara contra el perfil activo. <b>Funciona con PDFs escaneados</b>: detecta cuándo el documento no tiene capa de texto y aplica OCR (español) automáticamente.</p>
 
-      <div class="dropzone" id="pliego-drop">
+      <div class="dropzone" id="pliego-drop" tabindex="0" role="button" aria-label="Cargar pliego en PDF: arrastre el archivo o pulse Enter para seleccionarlo">
         <input type="file" id="pliego-file" accept="application/pdf,.pdf" style="display:none">
         <div class="dz-icon">📄</div>
         <div class="dz-title">Arrastre un PDF aquí o haga clic para seleccionar</div>
@@ -1328,15 +1328,15 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
 
       <div class="filters-simple">
         <div class="field">
-          <label>Días atrás</label>
+          <label for="f-days">Días atrás</label>
           <input type="number" id="f-days" value="60" step="5">
         </div>
         <div class="field">
-          <label>Valor mínimo (COP)</label>
+          <label for="f-min">Valor mínimo (COP)</label>
           <input type="number" id="f-min" value="0" step="10000000" placeholder="0 = sin mínimo">
         </div>
         <div class="field">
-          <label>Puntaje mínimo</label>
+          <label for="f-score">Puntaje mínimo</label>
           <input type="number" id="f-score" value="0" step="5" max="100">
         </div>
         <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);white-space:nowrap;padding-bottom:9px">
@@ -1355,9 +1355,9 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
         <input type="number" id="f-anti" value="0" style="display:none">
       </div>
 
-      <div class="status" id="anti-status" style="display:none"></div>
+      <div class="status" id="anti-status" style="display:none" role="status" aria-live="polite"></div>
 
-      <div class="status" id="status"><span class="loading"></span> Cargando...</div>
+      <div class="status" id="status" role="status" aria-live="polite"><span class="loading"></span> Cargando...</div>
 
       <div class="proc-list" id="proc-list"></div>
     </div>
@@ -4427,7 +4427,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     return "helder";
   }
 
-  var caretSVG = '<span class="kpi-caret"><svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 3 4-3" stroke="#1d1d1f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+  var caretSVG = '<span class="kpi-caret"><svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 3 4-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
 
   // Recorre cada grid de KPIs y hace clickeable cada tarjeta
   document.querySelectorAll(".kpi-grid").forEach(function(grid){
@@ -5360,7 +5360,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
   var modalEl=null;
   function ensureModal(){
     if(modalEl) return modalEl;
-    modalEl=document.createElement("div"); modalEl.className="v3-modal"; modalEl.setAttribute("role","dialog"); modalEl.setAttribute("aria-modal","true");
+    modalEl=document.createElement("div"); modalEl.className="v3-modal"; modalEl.setAttribute("role","dialog"); modalEl.setAttribute("aria-modal","true"); modalEl.setAttribute("aria-modal","true");
     modalEl.innerHTML='<div class="v3-modal-back"></div><div class="v3-modal-box"><button class="v3-modal-x" aria-label="Cerrar">✕</button><div class="v3-modal-head"></div><div class="v3-modal-body"></div></div>';
     document.body.appendChild(modalEl);
     modalEl.querySelector(".v3-modal-back").addEventListener("click", closeModal);
@@ -6326,7 +6326,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
   /* modal v4 */
   var modalEl=null;
   function openModal(headHTML,bodyHTML){
-    if(!modalEl){ modalEl=document.createElement("div"); modalEl.className="v3-modal"; modalEl.setAttribute("role","dialog");
+    if(!modalEl){ modalEl=document.createElement("div"); modalEl.className="v3-modal"; modalEl.setAttribute("role","dialog"); modalEl.setAttribute("aria-modal","true");
       modalEl.innerHTML='<div class="v3-modal-back"></div><div class="v3-modal-box"><button class="v3-modal-x" aria-label="Cerrar">✕</button><div class="v3-modal-head"></div><div class="v3-modal-body"></div></div>';
       document.body.appendChild(modalEl);
       modalEl.querySelector(".v3-modal-back").addEventListener("click",closeModal);
@@ -6908,7 +6908,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     toastEl.textContent=msg; toastEl.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(function(){ toastEl.classList.remove("show"); },ms||2800); }
   var modalEl=null;
   function openModal(headHTML,bodyHTML,wide){
-    if(!modalEl){ modalEl=document.createElement("div"); modalEl.className="v3-modal"; modalEl.setAttribute("role","dialog");
+    if(!modalEl){ modalEl=document.createElement("div"); modalEl.className="v3-modal"; modalEl.setAttribute("role","dialog"); modalEl.setAttribute("aria-modal","true");
       modalEl.innerHTML='<div class="v3-modal-back"></div><div class="v3-modal-box"><button class="v3-modal-x" aria-label="Cerrar">✕</button><div class="v3-modal-head"></div><div class="v3-modal-body"></div></div>';
       document.body.appendChild(modalEl);
       modalEl.querySelector(".v3-modal-back").addEventListener("click",closeModal);
@@ -8359,7 +8359,10 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
 (function(){
 "use strict";
 var CKEY="detecta-consent-v1";
-var ESSENTIAL={"detecta-consent-v1":1};
+/* Esenciales: el registro del consentimiento y las preferencias de
+   accesibilidad (personalización de interfaz, exenta de consentimiento;
+   perderlas al rechazar sería castigar la accesibilidad). */
+var ESSENTIAL={"detecta-consent-v1":1,"detecta-atajos-off":1,"detecta-contraste":1,"detecta-fontscale":1};
 var GUARDED=/^(detecta-|radar-licit)/;
 var BLOCK=false;
 
@@ -8409,7 +8412,7 @@ function buildBanner(cfgOpen){
       'restringido y registro de esta decisión. Siempre activas: sin ellas el acceso no funciona.</span></label>'+
       '<label class="dtc-c-opt"><input type="checkbox" id="dtc-func" checked> <span><b>Funcionales</b> — preferencias, '+
       'favoritos ★, tablero, notas y cachés, guardados solo en este navegador. Si las desactivas, la app no recordará '+
-      'nada entre sesiones y se borrará lo ya guardado aquí.</span></label>'+
+      'nada entre sesiones y se borrará lo ya guardado aquí (las preferencias de accesibilidad se conservan siempre).</span></label>'+
     '</div>'+
     '<div class="dtc-c-row">'+
       '<button type="button" class="dtc-c-btn primary" id="dtc-acc">Aceptar todo</button>'+
@@ -8467,6 +8470,128 @@ try{
   injectFooterLegal();
   if(!getConsent()) buildBanner(false);
 }catch(e){ console.error("capa legal:",e); }
+})();
+</script>
+
+<!-- ════ CAPA A11Y · correcciones de accesibilidad (auditoría WCAG 2.1 AA) ════ -->
+<style>
+  /* Texto solo para lectores de pantalla */
+  .dtc-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  /* Contraste AA del botón primario en tema oscuro (blanco sobre #0a84ff ≈ 3.7:1) */
+  html[data-theme="dark"] .btn-primary,
+  html[data-theme="dark"] .rent-toolbar button.primary{background:#0066cc}
+  /* Botón de atajos en el popover ⚙ */
+  #dtc-atajos{width:auto;padding:0 10px;font-size:12px}
+</style>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   CAPA A11Y (detectaA11y) — cierra los hallazgos accionables de la
+   auditoría WCAG 2.1 AA sin tocar las capas existentes:
+   nombres accesibles genéricos (title/placeholder → aria-label),
+   región viva para toasts, semántica de pestañas (tablist/tab +
+   aria-selected), dropzone operable por teclado y desactivador de
+   atajos de una tecla (WCAG 2.1.4) en el popover ⚙.
+   ════════════════════════════════════════════════════════════════ */
+(function(){
+"use strict";
+
+/* 1 · Nombres accesibles: copia title/placeholder a aria-label donde falte */
+function labelize(root){
+  try{
+    (root||document).querySelectorAll("button[title]:not([aria-label]),select[title]:not([aria-label])")
+      .forEach(function(el){ el.setAttribute("aria-label", el.title); });
+    (root||document).querySelectorAll("input[placeholder]:not([aria-label]),textarea[placeholder]:not([aria-label])")
+      .forEach(function(el){ el.setAttribute("aria-label", el.placeholder.replace(/^[^A-Za-zÁÉÍÓÚáéíóúÑñ0-9]+/,"")); });
+  }catch(e){}
+}
+
+/* 2 · Región viva: anuncia los toasts (creados por 5 capas distintas) */
+var live=document.createElement("div");
+live.id="dtc-live"; live.className="dtc-sr";
+live.setAttribute("role","status"); live.setAttribute("aria-live","polite");
+document.body.appendChild(live);
+
+/* 3 · Pestañas: semántica tablist/tab con estado sincronizado */
+function tabsARIA(){
+  var tabs=document.getElementById("tabs"); if(!tabs) return;
+  tabs.setAttribute("role","tablist");
+  tabs.querySelectorAll(".tab").forEach(function(t){
+    if(t.getAttribute("role")!=="tab") t.setAttribute("role","tab");
+    var sel=t.classList.contains("active")?"true":"false";
+    if(t.getAttribute("aria-selected")!==sel) t.setAttribute("aria-selected",sel);
+  });
+}
+
+/* Observador único de cambios de clase: toasts, pestañas y popover ⚙ */
+var mo=new MutationObserver(function(muts){
+  for(var i=0;i<muts.length;i++){
+    var t=muts[i].target;
+    if(!t || t.nodeType!==1 || !t.classList) continue;
+    if(t.classList.contains("v3-toast") && t.classList.contains("show")){
+      var txt=(t.textContent||"").trim();
+      if(txt && txt!==live.textContent) live.textContent=txt;
+    }else if(t.classList.contains("tab")){
+      t.setAttribute("aria-selected", t.classList.contains("active")?"true":"false");
+    }else if(t.id==="v9-pop"){
+      var g=document.getElementById("v9-gear");
+      if(g) g.setAttribute("aria-expanded", t.classList.contains("open")?"true":"false");
+    }
+  }
+});
+try{ mo.observe(document.body,{subtree:true,attributes:true,attributeFilter:["class"]}); }catch(e){}
+
+/* 4 · Dropzone del pliego operable por teclado (Enter/Espacio) */
+var dz=document.getElementById("pliego-drop");
+if(dz) dz.addEventListener("keydown",function(e){
+  if(e.key==="Enter"||e.key===" "){ e.preventDefault(); dz.click(); }
+});
+
+/* 5 · Atajos de una tecla desactivables (WCAG 2.1.4). El listener va en
+   captura sobre window: se ejecuta antes que el handler de la capa #4 en
+   document y corta la propagación sin afectar la escritura en campos. */
+var AKEY="detecta-atajos-off";
+function atajosOff(){ try{ return localStorage.getItem(AKEY)==="1"; }catch(e){ return false; } }
+window.addEventListener("keydown",function(e){
+  if(!atajosOff()) return;
+  var t=e.target, tag=(t&&t.tagName||"").toLowerCase();
+  if(tag==="input"||tag==="textarea"||tag==="select"||(t&&t.isContentEditable)) return;
+  if(e.ctrlKey||e.metaKey||e.altKey) return;
+  if(/^([jkd/?]|[1-9])$/.test(e.key)) e.stopPropagation();
+},true);
+
+function injectAtajosToggle(){
+  var pop=document.getElementById("v9-pop");
+  if(!pop || document.getElementById("dtc-atajos")) return;
+  var b=document.createElement("button");
+  b.id="dtc-atajos"; b.className="v5-htool"; b.type="button";
+  b.title="Activar o desactivar los atajos de teclado de una tecla (j/k, d, /, 1-9)";
+  function paint(){
+    var off=atajosOff();
+    b.textContent="⌨ Atajos: "+(off?"no":"sí");
+    b.setAttribute("aria-pressed", off?"false":"true");
+  }
+  paint();
+  b.addEventListener("click",function(){
+    try{ localStorage.setItem(AKEY, atajosOff()?"0":"1"); }catch(e){}
+    paint();
+  });
+  pop.appendChild(b);
+}
+
+/* 6 · Popover ⚙: estado expandido accesible */
+var gear=document.getElementById("v9-gear");
+if(gear){ gear.setAttribute("aria-haspopup","true"); gear.setAttribute("aria-expanded","false"); }
+
+/* 7 · Init + re-etiquetado tras cada render (elementos por tarjeta) */
+if(typeof window.renderProcesses==="function"){
+  var _rp=window.renderProcesses;
+  window.renderProcesses=function(){
+    var r=_rp.apply(this,arguments);
+    try{ labelize(document.getElementById("proc-list")||document); }catch(e){}
+    return r;
+  };
+}
+try{ labelize(document); tabsARIA(); injectAtajosToggle(); }catch(e){ console.error("capa a11y:",e); }
 })();
 </script>
 </body>

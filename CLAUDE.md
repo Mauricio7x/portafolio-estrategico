@@ -253,3 +253,16 @@ Ley 1581/2012; RNBD solo obliga a sociedades con activos >100.000 UVT — Decret
 - Si cambia la naturaleza del sitio (usuarios terceros, correos, venta del servicio): nacen de inmediato las
   obligaciones de la Ley 1581/D.1377 (política/aviso/canales de derechos) y del art. 50 del Estatuto del
   Consumidor. Revisar también RNBD si Génesis supera 100.000 UVT en activos.
+
+### Capa A11Y (`detectaA11y`, un `<style>` + un `<script>` al final, tras la capa legal) — jul 2026
+Cierra la auditoría WCAG 2.1 AA sin tocar capas: **labelize** (copia `title`/`placeholder` → `aria-label` donde
+falte; se re-ejecuta tras `renderProcesses`), **región viva** `#dtc-live` que anuncia los toasts de las 5 capas
+(un solo MutationObserver de clase para toasts + `aria-selected` de pestañas + `aria-expanded` del ⚙),
+**tablist/tab** en `#tabs`, dropzone del pliego operable por teclado, y **atajos desactivables** (WCAG 2.1.4:
+listener en captura sobre `window` + botón «⌨ Atajos» en el popover ⚙, clave `detecta-atajos-off`, en la
+allowlist esencial del consentimiento junto a `detecta-contraste`/`detecta-fontscale`).
+En el código base: `aria-label` en `#sec-pw` y `#anticipo-trigger`, `role=status aria-live` en `#status`/
+`#anti-status`, `for=` en los filtros, `aria-modal` en los modales de capas #4/#8, contraste del gate
+(botón `#0066cc`, pie `#86868b`), caret KPI con `currentColor`, y en oscuro `.btn-primary` baja a `#0066cc`.
+**APIs**: `/api/resumen` exige origen propio (gastaba la key de Anthropic con CORS `*` sin auth) y `/api/proxy`
+rechaza orígenes ajenos; ninguno necesita CORS (la web llama same-origin).

@@ -84,17 +84,31 @@ check("index.html enlaza accesibilidad", html.includes("accesibilidad.html"));
 check("gate: aviso de tratamiento", html.includes("dtc-gate-legal"));
 check("gate: no guarda la clave en claro", !html.includes("sessionStorage.setItem(KEY, pw)"));
 check("banner visible sobre el gate (override sec-locked)", html.includes("html.sec-locked body>#dtc-consent"));
+check("api/resumen exige origen propio", read("api/resumen.js").includes("esOrigenPropio") &&
+  !read("api/resumen.js").includes('Access-Control-Allow-Origin", "*"'));
+check("api/proxy rechaza origen ajeno", read("api/proxy.js").includes("esOrigenAjeno"));
+
+/* ── 5b · Accesibilidad estática ── */
+console.log("\n5b · Accesibilidad estática");
+check("gate: input con aria-label", /id="sec-pw"[^>]*aria-label="Contraseña"/.test(html));
+check("#status es región viva", /id="status" role="status" aria-live="polite"/.test(html));
+check("dropzone operable (tabindex+role)", /id="pliego-drop" tabindex="0" role="button"/.test(html));
+check("modales con aria-modal (≥4)", (html.match(/aria-modal/g) || []).length >= 4);
+check("caret KPI usa currentColor", !html.includes('stroke="#1d1d1f"'));
+check("anticipo-trigger con aria-label", /id="anticipo-trigger"[^>]*aria-label/.test(html));
+check("capa A11Y presente", html.includes("CAPA A11Y"));
+check("atajos desactivables (WCAG 2.1.4)", html.includes("detecta-atajos-off"));
 
 /* ── 6 · Smoke test del banner con jsdom (opcional) ── */
+(async () => {
 console.log("\n6 · Smoke test del banner (jsdom)");
 let JSDOM = null;
 try { JSDOM = require("jsdom").JSDOM; } catch (e) { console.log("  – jsdom no disponible: se omite (instala jsdom para el test completo)"); }
 if (JSDOM) {
-  const m = html.match(/CAPA LEGAL \(detectaLegal\)[\s\S]*?<script>([\s\S]*?)<\/script>/) ||
-            html.match(/<script>\s*\/\* ═+\n\s*CAPA LEGAL[\s\S]*?\*\/([\s\S]*?)<\/script>/);
-  // El bloque de la capa legal es el último <script> inline del documento.
-  const codigoLegal = bloques[bloques.length - 1];
-  check("capa legal encontrada (último bloque)", /CAPA LEGAL/.test(codigoLegal));
+  const codigoLegal = bloques.find(b => b.includes("CAPA LEGAL"));
+  const codigoA11y = bloques.find(b => b.includes("CAPA A11Y"));
+  check("capa legal encontrada", !!codigoLegal);
+  check("capa a11y encontrada", !!codigoA11y);
 
   function montar(preConsent) {
     const dom = new JSDOM(`<!DOCTYPE html><html class="sec-locked"><body>
@@ -134,6 +148,9 @@ if (JSDOM) {
   w.localStorage.setItem("ajeno", "1");
   check("guard no toca claves ajenas", w.localStorage.getItem("ajeno") === "1");
   check("registro de consentimiento persiste", !!w.localStorage.getItem("detecta-consent-v1"));
+  w.localStorage.setItem("detecta-contraste", "1");
+  check("preferencias de accesibilidad son esenciales (pasan el guard)",
+    w.localStorage.getItem("detecta-contraste") === "1");
 
   // 6d · Visita posterior con consentimiento previo: sin banner
   w = montar({ v: 1, esenciales: true, funcionales: true, fecha: "2026-07-27" });
@@ -147,8 +164,35 @@ if (JSDOM) {
   w.document.getElementById("dtc-save").click();
   rec = JSON.parse(w.localStorage.getItem("detecta-consent-v1"));
   check("guardar selección respeta funcionales=false", rec && rec.funcionales === false);
+
+  /* ── 7 · Smoke test de la capa A11Y ── */
+  console.log("\n7 · Smoke test de la capa A11Y (jsdom)");
+  const dom = new JSDOM(`<!DOCTYPE html><html lang="es"><body>
+    <nav id="tabs"><button class="tab active" data-tab="resumen">Resumen</button>
+    <button class="tab" data-tab="mapa">Mapa</button></nav>
+    <button id="b1" title="Alto contraste">◐</button>
+    <input id="i1" placeholder="🔎 Buscar proceso">
+    <div id="pliego-drop" tabindex="0" role="button"></div>
+    <div class="v3-toast" id="t1"></div></body></html>`,
+    { runScripts: "outside-only", url: "https://portafolio-estrategico.vercel.app/" });
+  const wa = dom.window;
+  wa.eval(codigoA11y);
+  check("labelize: title → aria-label", wa.document.getElementById("b1").getAttribute("aria-label") === "Alto contraste");
+  check("labelize: placeholder → aria-label sin emoji",
+    wa.document.getElementById("i1").getAttribute("aria-label") === "Buscar proceso");
+  check("tabs: role=tablist", wa.document.getElementById("tabs").getAttribute("role") === "tablist");
+  check("tabs: aria-selected sincronizado",
+    wa.document.querySelector('[data-tab="resumen"]').getAttribute("aria-selected") === "true" &&
+    wa.document.querySelector('[data-tab="mapa"]').getAttribute("aria-selected") === "false");
+  check("región viva para toasts creada", !!wa.document.getElementById("dtc-live"));
+  await new Promise(r => setTimeout(r, 30));
+  const t1 = wa.document.getElementById("t1");
+  t1.textContent = "★ Guardado"; t1.classList.add("show");
+  await new Promise(r => setTimeout(r, 50));
+  check("toast anunciado en la región viva", wa.document.getElementById("dtc-live").textContent === "★ Guardado");
 }
 
 /* ── Resultado ── */
 console.log(`\n${fallos === 0 ? "✅" : "❌"} ${ok} comprobaciones OK · ${fallos} fallos`);
 process.exit(fallos === 0 ? 0 : 1);
+})().catch(e => { console.error("✗ error inesperado:", e); process.exit(1); });

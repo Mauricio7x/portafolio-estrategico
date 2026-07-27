@@ -155,8 +155,10 @@
       no puede funcionar, por lo que no requieren consentimiento y no pueden desactivarse.</li>
     <li><strong>Almacenamiento funcional</strong> (localStorage): preferencias, favoritos, notas y cachés descritos
       arriba. Puedes <strong>rechazarlo desde el banner de consentimiento</strong> («Solo esenciales»): la app
-      seguirá funcionando, pero no recordará nada entre sesiones. Puedes cambiar tu decisión cuando quieras desde
-      el enlace «cookies y almacenamiento» del pie de página.</li>
+      seguirá funcionando, pero no recordará nada entre sesiones. Las <strong>preferencias de accesibilidad</strong>
+      (alto contraste, tamaño de letra, atajos de teclado) se conservan siempre, por tratarse de personalización de
+      interfaz al servicio de la accesibilidad. Puedes cambiar tu decisión cuando quieras desde el enlace
+      «cookies y almacenamiento» del pie de página.</li>
   </ul>
   <p>El proveedor de alojamiento puede emplear cookies estrictamente técnicas propias del servicio (p. ej. de
   protección del despliegue); Detecta no las controla ni las lee.</p>
@@ -165,12 +167,18 @@
   <p>Al usar la herramienta, tu navegador se conecta directamente a fuentes públicas y CDNs. Cada proveedor recibe
   tu dirección IP como parte técnica de la conexión y responde bajo sus propias políticas:</p>
   <ul>
-    <li><strong>datos.gov.co / Colombia Compra Eficiente</strong> (SECOP II y Contratos): datos abiertos de
-      contratación pública.</li>
-    <li><strong>GDELT Project</strong>: noticias para el indicador de riesgo territorial.</li>
+    <li><strong>datos.gov.co / Colombia Compra Eficiente</strong> (SECOP II, SECOP I, Contratos e IPC del DANE):
+      datos abiertos de contratación pública y de inflación. En la consulta viajan los filtros elegidos
+      (fechas, valores, nombres de entidades o municipios).</li>
+    <li><strong>GDELT Project</strong> y <strong>Google News (RSS)</strong>: noticias para el indicador de riesgo
+      territorial; la consulta incluye el nombre del municipio analizado.</li>
     <li><strong>OpenStreetMap / Nominatim</strong>: geocodificación de municipios (bajo demanda).</li>
-    <li><strong>CDNs de bibliotecas</strong> (cdnjs, unpkg) y <strong>teselas de mapa CARTO</strong>: código
-      abierto (PDF.js, Tesseract.js, Leaflet) y mapa base.</li>
+    <li><strong>CDNs de bibliotecas</strong> (cdnjs, unpkg), <strong>Google Fonts</strong> (tipografía Inter) y
+      <strong>teselas de mapa CARTO</strong>: código abierto (PDF.js, Tesseract.js, Leaflet), fuentes y mapa
+      base. cdnjs y Google Fonts se cargan al abrir la página, antes incluso de autenticarse.</li>
+    <li><strong>Proxies CORS públicos de respaldo</strong> (api.allorigins.win, corsproxy.io, api.codetabs.com,
+      thingproxy.freeboard.io): solo si el proxy propio falla, la consulta a la fuente pública se enruta por uno
+      de estos servicios, que ve la URL completa de esa consulta (nunca credenciales ni datos personales).</li>
     <li><strong>Vercel</strong>: alojamiento del sitio y de las funciones opcionales <code>/api/*</code>.</li>
     <li><strong>Funciones opcionales del servidor</strong> (solo si el administrador las configura): un monitor
       diario puede enviar avisos por <strong>Telegram</strong> al propio administrador y pueden generarse
