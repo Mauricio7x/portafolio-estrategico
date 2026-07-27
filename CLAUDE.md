@@ -230,3 +230,26 @@ suave cada ~11 s (respeta `prefers-reduced-motion`).
   etiquetan `v9-adv` y se ocultan por defecto (`html.v9-hide-adv`) tras un toggle «Ver análisis avanzado».
 - Los dos checks base `(.tab.active).dataset.tab===currentProfile` → `radar-wrap visible` (porque el perfil ya no es pestaña).
 - Degrada con gracia: si el init falla, quita `v9-simple` y reaparecen las pestañas.
+
+### Capa Legal (`detectaLegal`, un `<style>` + un `<script>` al final del `<body>`) — jul 2026
+Cumplimiento voluntario (nada era legalmente exigible para un sitio personal: excepción doméstica art. 2.a
+Ley 1581/2012; RNBD solo obliga a sociedades con activos >100.000 UVT — Decreto 090/2018; GDPR no aplica por
+ámbito territorial; la Res. 1519/2020 de accesibilidad solo rige a sujetos obligados de la Ley 1712/2014).
+- **Páginas estáticas fuera del gate** (deben poder leerse sin clave): `privacidad.html` (política de
+  tratamiento + aviso, Ley 1581 + D.1377), `terminos.html` (no-asesoría, atribuciones SECOP/OSM-ODbL/CARTO/
+  GDELT, Ley 527/1999), `accesibilidad.html` (declaración WCAG 2.1 AA, modelo W3C). Precacheadas en `sw.js`.
+- **Banner de consentimiento** (`detecta-consent-v1`): aceptar / solo esenciales / configurar. Visible sobre el
+  gate (override de `html.sec-locked` por id `#dtc-consent`). "Solo esenciales" activa un **guard**: monkey-patch
+  de `Storage.prototype.setItem` que convierte en no-op las escrituras `detecta-*`/`radar-licit*` no esenciales
+  (la clave de consentimiento está en allowlist) y **purga** lo ya guardado (con `confirm` previo). Reapertura:
+  botón «cookies y almacenamiento» del footer.
+- **Gate**: aviso de tratamiento (finalidad de la clave) + enlaces legales antes de autenticarse. La sesión ya
+  **no guarda la clave en claro**: `sec-token-v1` almacena el hash (migra sesiones viejas).
+- **`vercel.json`**: cabeceras X-Frame-Options DENY (antes solo estaba prometida en un comentario),
+  nosniff, Referrer-Policy, HSTS, Permissions-Policy (`microphone=(self)` para la búsqueda por voz), COOP.
+- **Pruebas**: `node tests/validar-legal.js` — sintaxis de TODOS los bloques inline, `node --check` de
+  api/lib/sw, contenido legal mínimo, HTTPS estricto, cabeceras, y smoke test del banner con jsdom (opcional,
+  vía NODE_PATH): aceptar/rechazar/guard/purga/persistencia/reapertura.
+- Si cambia la naturaleza del sitio (usuarios terceros, correos, venta del servicio): nacen de inmediato las
+  obligaciones de la Ley 1581/D.1377 (política/aviso/canales de derechos) y del art. 50 del Estatuto del
+  Consumidor. Revisar también RNBD si Génesis supera 100.000 UVT en activos.
