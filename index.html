@@ -599,14 +599,19 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
       .catch(function(){ /* sin servidor: el gate sigue visible */ });
   })();
 
-  // Respaldo local: sesión en sessionStorage validada por hash (solo dev).
+  // Respaldo local: sesión en sessionStorage. Se guarda el HASH, nunca la
+  // clave en claro (higiene de datos: nada sensible en reposo). Se migran
+  // sesiones antiguas que hubieran guardado la clave.
   try {
     var saved = sessionStorage.getItem(KEY);
     if(saved){
-      sha256(SALT + saved).then(function(h){
-        if(h === HASH) unlock();
-        else sessionStorage.removeItem(KEY);
-      });
+      if(saved === HASH){ unlock(); }
+      else {
+        sha256(SALT + saved).then(function(h){
+          if(h === HASH){ try{ sessionStorage.setItem(KEY, h); }catch(e){} unlock(); }
+          else sessionStorage.removeItem(KEY);
+        });
+      }
     }
   } catch(e){}
 
@@ -620,7 +625,7 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
     //    valida primero contra el hash local (SHA-256(salt+clave)).
     try{
       var h = await sha256(SALT + pw);
-      if(h === HASH){ try{ sessionStorage.setItem(KEY, pw); }catch(e){} unlock(); return; }
+      if(h === HASH){ try{ sessionStorage.setItem(KEY, h); }catch(e){} unlock(); return; }
     }catch(e){ /* crypto no disponible: intenta servidor */ }
 
     // 2) Validación OPCIONAL en el servidor (solo si algún día existe /api/auth).
@@ -633,7 +638,7 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
       });
       if(r.ok){
         var d = await r.json();
-        if(d && d.authenticated){ try{ sessionStorage.setItem(KEY, pw); }catch(e){} unlock(); return; }
+        if(d && d.authenticated){ try{ sessionStorage.setItem(KEY, await sha256(SALT + pw)); }catch(e){} unlock(); return; }
       }
     }catch(e){ /* sin red/servidor */ }
 
@@ -4972,7 +4977,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     if(mapObj){ try{ mapObj.remove(); }catch(e){} mapObj=null; }
     mapMarkers={};
     mapObj=L.map(canvas,{scrollWheelZoom:false}).setView([4.6,-74.1],5);
-    L.tileLayer(tileURL(),{maxZoom:12,subdomains:"abcd",attribution:'© OpenStreetMap, © CARTO'}).addTo(mapObj);
+    L.tileLayer(tileURL(),{maxZoom:12,subdomains:"abcd",attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors · © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'}).addTo(mapObj);
     var maxCount=Math.max.apply(null,munis.map(function(m){return m.count;}))||1, bounds=[];
     munis.forEach(function(m){
       var r=8+14*Math.sqrt(m.count/maxCount);
@@ -8307,6 +8312,162 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
   }
 })();
 
+</script>
+
+<!-- ════ CAPA LEGAL · consentimiento de almacenamiento + enlaces legales ════ -->
+<style>
+  /* Banner de consentimiento — visible incluso con el gate bloqueado */
+  #dtc-consent{position:fixed;left:14px;right:14px;bottom:14px;z-index:1000001;max-width:680px;margin:0 auto;
+    background:var(--panel,#fff);color:var(--ink,#1d1d1f);border:1px solid var(--line,#e8e8ed);border-radius:16px;
+    box-shadow:0 18px 50px rgba(0,0,0,.25);padding:16px 18px;font-size:13.5px;line-height:1.5}
+  html.sec-locked body>#dtc-consent{visibility:visible!important;pointer-events:auto!important}
+  #dtc-consent h2{margin:0 0 6px;font-size:14.5px;font-weight:650;letter-spacing:-0.01em}
+  #dtc-consent p{margin:0 0 10px;color:var(--ink2,#515154)}
+  #dtc-consent a{color:var(--acc,#0071e3)}
+  .dtc-c-row{display:flex;gap:8px;flex-wrap:wrap}
+  .dtc-c-btn{padding:8px 14px;border-radius:9px;border:1px solid var(--line,#d2d2d7);background:var(--soft,#f5f5f7);
+    color:var(--ink,#1d1d1f);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
+  .dtc-c-btn.primary{background:var(--acc,#0071e3);border-color:var(--acc,#0071e3);color:#fff}
+  .dtc-c-btn:focus-visible{outline:2px solid var(--acc,#0071e3);outline-offset:2px}
+  .dtc-c-cfg{display:none;margin:0 0 10px;border-top:1px solid var(--line,#e8e8ed);padding-top:10px}
+  #dtc-consent.cfg .dtc-c-cfg{display:block}
+  .dtc-c-opt{display:flex;gap:10px;align-items:flex-start;margin:8px 0;color:var(--ink2,#515154)}
+  .dtc-c-opt input{margin-top:3px;flex:0 0 auto}
+  .dtc-c-opt b{color:var(--ink,#1d1d1f)}
+  @media (prefers-reduced-motion:no-preference){
+    #dtc-consent{animation:dtcUp .45s cubic-bezier(.16,1,.3,1)}
+    @keyframes dtcUp{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+  }
+  /* Aviso legal dentro del gate (fondo siempre oscuro) */
+  .dtc-gate-legal{margin-top:16px;font-size:11px;color:#86868b;line-height:1.55;text-align:center}
+  .dtc-gate-legal a{color:#a1a1a6}
+  /* Enlaces legales del footer */
+  .dtc-foot a{color:inherit}
+  .dtc-foot-btn{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer}
+  .dtc-foot-btn:focus-visible{outline:2px solid var(--acc,#0071e3);outline-offset:2px;border-radius:4px}
+</style>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   CAPA LEGAL (detectaLegal) — cumplimiento Ley 1581/2012 y buenas
+   prácticas: banner de consentimiento de almacenamiento (esencial vs
+   funcional), aviso de tratamiento en el gate y enlaces legales
+   visibles. El almacenamiento esencial (sesión del gate + registro de
+   consentimiento) no requiere autorización; el funcional (preferencias,
+   watchlist, notas) se puede rechazar: un guard convierte en no-op las
+   escrituras de claves detecta- y radar-licit, y purga lo ya guardado.
+   ════════════════════════════════════════════════════════════════ */
+(function(){
+"use strict";
+var CKEY="detecta-consent-v1";
+var ESSENTIAL={"detecta-consent-v1":1};
+var GUARDED=/^(detecta-|radar-licit)/;
+var BLOCK=false;
+
+function getConsent(){ try{ var v=JSON.parse(localStorage.getItem(CKEY)||"null"); return (v && v.v===1)?v:null; }catch(e){ return null; } }
+function setConsent(func){
+  var rec={v:1,esenciales:true,funcionales:!!func,fecha:new Date().toISOString()};
+  try{ localStorage.setItem(CKEY, JSON.stringify(rec)); }catch(e){}
+  return rec;
+}
+function hasUserData(){
+  try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(GUARDED.test(k) && !ESSENTIAL[k]) return true; } }catch(e){}
+  return false;
+}
+function purge(){
+  try{
+    var rm=[],i,k;
+    for(i=0;i<localStorage.length;i++){ k=localStorage.key(i); if(GUARDED.test(k) && !ESSENTIAL[k]) rm.push(k); }
+    rm.forEach(function(k){ localStorage.removeItem(k); });
+  }catch(e){}
+}
+/* Guard: con funcionales rechazadas, las escrituras no esenciales son no-op
+   (silencioso a propósito: todas las capas toleran setItem sin efecto). */
+try{
+  var _set=Storage.prototype.setItem;
+  Storage.prototype.setItem=function(k,v){
+    if(BLOCK){ try{ if(this===window.localStorage && GUARDED.test(String(k)) && !ESSENTIAL[String(k)]) return; }catch(e){} }
+    return _set.apply(this,arguments);
+  };
+}catch(e){}
+function applyConsent(c){ BLOCK=!!(c && !c.funcionales); if(BLOCK) purge(); }
+
+function buildBanner(cfgOpen){
+  if(document.getElementById("dtc-consent")) return;
+  var c=getConsent();
+  var div=document.createElement("div");
+  div.id="dtc-consent";
+  div.setAttribute("role","region");
+  div.setAttribute("aria-label","Aviso de cookies y almacenamiento");
+  div.innerHTML=
+    '<h2>Privacidad y almacenamiento</h2>'+
+    '<p>Detecta no usa cookies de rastreo, publicidad ni analítica. Solo emplea almacenamiento <b>esencial</b> '+
+    '(tu sesión de acceso y esta decisión) y, si lo permites, almacenamiento <b>funcional</b> en tu navegador para '+
+    'recordar preferencias, favoritos y notas. Nada sale de tu dispositivo. '+
+    '<a href="./privacidad.html">Más información</a>.</p>'+
+    '<div class="dtc-c-cfg" id="dtc-cfg">'+
+      '<label class="dtc-c-opt"><input type="checkbox" checked disabled> <span><b>Esenciales</b> — sesión del acceso '+
+      'restringido y registro de esta decisión. Siempre activas: sin ellas el acceso no funciona.</span></label>'+
+      '<label class="dtc-c-opt"><input type="checkbox" id="dtc-func" checked> <span><b>Funcionales</b> — preferencias, '+
+      'favoritos ★, tablero, notas y cachés, guardados solo en este navegador. Si las desactivas, la app no recordará '+
+      'nada entre sesiones y se borrará lo ya guardado aquí.</span></label>'+
+    '</div>'+
+    '<div class="dtc-c-row">'+
+      '<button type="button" class="dtc-c-btn primary" id="dtc-acc">Aceptar todo</button>'+
+      '<button type="button" class="dtc-c-btn" id="dtc-ess">Solo esenciales</button>'+
+      '<button type="button" class="dtc-c-btn" id="dtc-tog" aria-expanded="false" aria-controls="dtc-cfg">Configurar</button>'+
+      '<button type="button" class="dtc-c-btn" id="dtc-save" hidden>Guardar selección</button>'+
+    '</div>';
+  document.body.appendChild(div);
+  var func=div.querySelector("#dtc-func");
+  if(c) func.checked=!!c.funcionales;
+  var tog=div.querySelector("#dtc-tog"), save=div.querySelector("#dtc-save");
+  function openCfg(open){ div.classList.toggle("cfg",open); tog.setAttribute("aria-expanded",open?"true":"false"); save.hidden=!open; }
+  function confirmaBorrado(){
+    return !hasUserData() || confirm("Al quedarte solo con lo esencial se borran las preferencias, favoritos y notas ya guardados en este navegador. ¿Continuar?");
+  }
+  function done(f){ applyConsent(setConsent(f)); div.remove(); }
+  div.querySelector("#dtc-acc").addEventListener("click",function(){ done(true); });
+  div.querySelector("#dtc-ess").addEventListener("click",function(){ if(confirmaBorrado()) done(false); });
+  tog.addEventListener("click",function(){ openCfg(!div.classList.contains("cfg")); });
+  save.addEventListener("click",function(){ var f=func.checked; if(f || confirmaBorrado()) done(f); });
+  if(cfgOpen){ openCfg(true); try{ div.querySelector("#dtc-acc").focus(); }catch(e){} }
+}
+
+/* Aviso de tratamiento de datos + enlaces legales ANTES de autenticarse */
+function injectGateLegal(){
+  var box=document.querySelector("#sec-gate .box");
+  if(!box || document.getElementById("dtc-gate-legal")) return;
+  var d=document.createElement("div");
+  d.id="dtc-gate-legal"; d.className="dtc-gate-legal";
+  d.innerHTML='La clave se usa únicamente para autenticarte; en tu navegador solo se guarda su hash durante la sesión. '+
+    'Al continuar aceptas los <a href="./terminos.html">Términos de Uso</a> y la '+
+    '<a href="./privacidad.html">Política de Privacidad</a> · <a href="./accesibilidad.html">Accesibilidad</a>';
+  box.appendChild(d);
+}
+
+/* Enlaces legales permanentes en el footer de la app */
+function injectFooterLegal(){
+  var f=document.querySelector("footer .wrap")||document.querySelector("footer");
+  if(!f || document.getElementById("dtc-foot")) return;
+  var s=document.createElement("span");
+  s.id="dtc-foot"; s.className="dtc-foot";
+  s.innerHTML=' · <a href="./privacidad.html">privacidad</a> · <a href="./terminos.html">términos</a>'+
+    ' · <a href="./accesibilidad.html">accesibilidad</a>'+
+    ' · <button type="button" id="dtc-foot-cookies" class="dtc-foot-btn">cookies y almacenamiento</button>';
+  f.appendChild(s);
+  s.querySelector("#dtc-foot-cookies").addEventListener("click",function(){
+    var ex=document.getElementById("dtc-consent"); if(ex) ex.remove();
+    buildBanner(true);
+  });
+}
+
+try{
+  applyConsent(getConsent());
+  injectGateLegal();
+  injectFooterLegal();
+  if(!getConsent()) buildBanner(false);
+}catch(e){ console.error("capa legal:",e); }
+})();
 </script>
 </body>
 </html>
