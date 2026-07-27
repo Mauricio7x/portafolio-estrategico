@@ -21,9 +21,13 @@ proyecto Vercel. Haz commit y push (o súbelo por el dashboard de Vercel).
 
 ## Paso 2 · Crear el almacenamiento (memoria del cron)
 
-En Vercel → tu proyecto → **Storage** → **Create Database** → **KV** (Upstash Redis).
-Al crearla, Vercel inyecta solo `KV_REST_API_URL` y `KV_REST_API_TOKEN`. No tienes
-que copiarlas a mano. (Es lo que le da memoria: recordar qué ya te avisó.)
+En [console.upstash.com](https://console.upstash.com) crea una base **Redis**
+gratuita (Regional, la región más cercana a us-east es la ideal para Vercel).
+En la pestaña **REST API** copia `UPSTASH_REDIS_REST_URL` y
+`UPSTASH_REDIS_REST_TOKEN`, y añádelas en Vercel → Settings → Environment
+Variables con esos MISMOS nombres. (Es lo que le da memoria: recordar qué ya
+te avisó y guardar la caché de procesos. Si tenías la antigua Vercel KV, sus
+variables `KV_REST_API_*` siguen funcionando como respaldo.)
 
 ## Paso 3 · Crear el bot de Telegram (2 minutos)
 
@@ -44,7 +48,7 @@ que copiarlas a mano. (Es lo que le da memoria: recordar qué ya te avisó.)
 | `CRON_SECRET` | Inventa una cadena larga aleatoria (protege el endpoint). |
 | `ANTHROPIC_API_KEY` | Tu key de Anthropic (para el resumen IA; opcional pero recomendado). |
 
-`KV_REST_API_URL` y `KV_REST_API_TOKEN` ya están desde el paso 2.
+`UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` ya están desde el paso 2.
 
 ## Paso 5 · Probar sin esperar 3 horas
 

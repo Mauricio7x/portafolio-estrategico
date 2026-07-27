@@ -2,7 +2,7 @@
 
 Módulo que garantiza la captura **completa y verificable** de los procesos de
 SECOP II (dataset Socrata `p6dx-8zbt`) del año vigente, y los sirve a la app
-desde una caché en Vercel KV. Socrata queda solo para sincronizaciones; el
+desde una caché en Upstash Redis (capa gratuita). Socrata queda solo para sincronizaciones; el
 radar consume la caché.
 
 ## Piezas
@@ -10,7 +10,8 @@ radar consume la caché.
 | Archivo | Qué hace |
 |---|---|
 | `lib/extractor.js` | Núcleo: carga completa reanudable, delta, auditoría count(1), empaquetado gzip. |
-| `lib/almacen.js` | Adaptadores de persistencia: Vercel KV (REST), archivo local, memoria. |
+| `lib/redis.js` | Cliente compartido de Upstash Redis (REST, sin SDK): comandos, credenciales y contador. |
+| `lib/almacen.js` | Adaptadores de persistencia: Upstash Redis, archivo local, memoria. |
 | `api/sync.js` | Endpoint de sincronización (`?modo=full\|delta\|auto`), con candado anti-concurrencia. |
 | `api/procesos.js` | Sirve el radar desde la caché con la **misma forma de campos** que Socrata. |
 | `scripts/respaldo-csv.js` | Emergencias: extracción a archivo local, export CSV masivo, subida a KV. |
@@ -72,8 +73,12 @@ radar consume la caché.
 
 ## Puesta en marcha (producción)
 
-1. **Vercel KV**: proyecto → Storage → Create Database → KV. Inyecta
-   `KV_REST_API_URL` y `KV_REST_API_TOKEN` (ya usadas por `api/cron.js`).
+1. **Upstash Redis (gratis)**: crear una base Regional en
+   <https://console.upstash.com> → pestaña REST API → copiar
+   `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` → añadirlas con esos
+   nombres en Vercel → Settings → Environment Variables. (Las antiguas
+   `KV_REST_API_*` de Vercel KV siguen aceptándose como respaldo; el cliente
+   compartido `lib/redis.js` resuelve las credenciales en ese orden.)
 2. **Token Socrata** (recomendado; sin él la cuota anónima se agota):
    crear app token en <https://dev.socrata.com/register> y guardarlo en la
    variable de entorno `SOCRATA_APP_TOKEN` (Vercel → Settings → Environment
@@ -115,7 +120,10 @@ radar consume la caché.
 - Vercel Hobby: crons **diarios** (por eso el workflow de GitHub) y respuesta
   ≤ 4.5 MB (por eso `/api/procesos` pagina a 2000 filas y la proyección trunca
   la descripción a 800 caracteres — medido: 2000 filas ≈ 3.7 MB en el peor caso).
-- Upstash/Vercel KV gratuito: valores ≤ 1 MB (chunks), ~256 MB total. Un año
+- Upstash gratuito: valores ≤ 1 MB (chunks), ~256 MB total y ~10 000
+  comandos/día — cada respuesta de `/api/sync` incluye `comandosRedis` para
+  vigilarlo (presupuesto medido: full inicial ≈ cientos de comandos una sola
+  vez; delta ≈ decenas; radar frío ≈ 15-25, con MGET contando como 1). Un año
   de proyección comprimida cabe con margen; si el dataset creciera mucho,
   subir de tier o recortar `CAMPOS_PROYECCION`.
 - `api/cron.js` (alertas Telegram) sigue leyendo Socrata directo (ventana de

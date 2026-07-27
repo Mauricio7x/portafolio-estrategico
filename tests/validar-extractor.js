@@ -3,9 +3,9 @@
    Detecta · Validación de la capa de extracción SECOP (sin red externa)
    ----------------------------------------------------------------------------
    Este entorno NO alcanza datos.gov.co, así que se valida contra un MOCK
-   fiel de Socrata (paginación keyset por :id, count(1), $offset, fallos 429
+   fiel de Socrata (paginación keyset por :id, count(*), $offset, fallos 429
    con Retry-After y 500 inyectados de forma determinista) y un MOCK del
-   protocolo REST de Vercel KV. Cubre:
+   protocolo REST de Upstash Redis. Cubre:
      1 · carga completa = 100 % de los esperados (count) pese a fallos
      2 · corridas interrumpidas por presupuesto → reanudan sin perder/duplicar
      3 · fallo total → incidencias + reanudación al recuperarse la fuente
@@ -144,8 +144,18 @@ function generarDatos(mesesDelRango, inicioSolape) {
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const PORT = server.address().port;
   process.env.SECOP_BASE_URL = `http://127.0.0.1:${PORT}/resource/p6dx-8zbt.json`;
-  process.env.KV_REST_API_URL = `http://127.0.0.1:${PORT}/kv`;
-  process.env.KV_REST_API_TOKEN = "token-test";
+  process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${PORT}/kv`;
+  process.env.UPSTASH_REDIS_REST_TOKEN = "token-test";
+
+  /* ── 0 · Resolución de credenciales del cliente compartido ── */
+  console.log("\n0 · lib/redis.js (Upstash)");
+  const { credenciales } = require(path.join(ROOT, "lib/redis.js"));
+  check("prefiere UPSTASH_REDIS_REST_*",
+    credenciales().url.endsWith("/kv") && credenciales().token === "token-test");
+  check("acepta KV_REST_API_* como respaldo",
+    (() => { const c = credenciales({ KV_REST_API_URL: "http://legado/kv", KV_REST_API_TOKEN: "t" });
+             return c && c.url === "http://legado/kv"; })());
+  check("sin credenciales → null", credenciales({}) === null);
 
   const { crearExtractor, mesesDelRango, inicioAnoVigente } = require(path.join(ROOT, "lib/extractor.js"));
   const { AlmacenMemoria, descomprimir } = require(path.join(ROOT, "lib/almacen.js"));
@@ -277,6 +287,7 @@ function generarDatos(mesesDelRango, inicioSolape) {
   } while (ultimo.code === 200 && ultimo.body && ultimo.body.done === false && tramos < 400);
   check(`sync full termina por tramos (${tramos})`, ultimo.code === 200 && ultimo.body.done === true, ultimo.body);
   check("sync reporta auditoría con diferencia 0", ultimo.body.auditoria && ultimo.body.auditoria.diferencia === 0, ultimo.body.auditoria);
+  check("sync reporta consumo de comandos Redis", typeof ultimo.body.comandosRedis === "number" && ultimo.body.comandosRedis > 0, ultimo.body.comandosRedis);
 
   out = mkRes();
   await procesos({ query: { meta: "1" }, headers: { host: "app.test" } }, out);

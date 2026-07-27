@@ -21,7 +21,7 @@
 
      node scripts/respaldo-csv.js subir
         Copia el contenido de `.cache-secop.json` (extraído con `extraer`)
-        a Vercel KV usando KV_REST_API_URL/KV_REST_API_TOKEN del entorno —
+        a Upstash Redis usando UPSTASH_REDIS_REST_URL/TOKEN del entorno —
         reconstrucción de la caché de producción desde tu máquina.
    ========================================================================== */
 "use strict";
@@ -65,15 +65,15 @@ async function csv(salida) {
 }
 
 async function subir() {
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
-    throw new Error("faltan KV_REST_API_URL / KV_REST_API_TOKEN en el entorno");
-  }
+  const { credenciales } = require("../lib/redis.js");
+  const cred = credenciales();
+  if (!cred) throw new Error("faltan UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN en el entorno");
   const local = JSON.parse(fs.readFileSync(RUTA, "utf8"));
-  const kv = new AlmacenKV(process.env.KV_REST_API_URL, process.env.KV_REST_API_TOKEN);
+  const kv = new AlmacenKV(cred.url, cred.token);
   const claves = Object.keys(local);
   let n = 0;
   for (const k of claves) { await kv.set(k, local[k]); n++; if (n % 25 === 0) console.log(`  …${n}/${claves.length}`); }
-  console.log(`[respaldo] subidas ${n} claves a KV`);
+  console.log(`[respaldo] subidas ${n} claves a Upstash Redis (${kv.comandos()} comandos)`);
 }
 
 const modo = process.argv[2] || "extraer";

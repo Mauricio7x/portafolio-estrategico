@@ -19,6 +19,7 @@
 
 import { crearExtractor } from "../lib/extractor.js";
 import { crearAlmacen, claves } from "../lib/almacen.js";
+import { hayCredenciales } from "../lib/redis.js";
 
 function esOrigenPropio(req) {
   const propio = String(req.headers["x-forwarded-host"] || req.headers.host || "").toLowerCase();
@@ -38,8 +39,8 @@ export default async function handler(req, res) {
   const modo = (req.query.modo || "auto").toLowerCase();
   if (modo === "full" && !conSecreto) return res.status(403).json({ error: "full requiere secreto" });
 
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
-    return res.status(503).json({ error: "Falta Vercel KV (KV_REST_API_URL/KV_REST_API_TOKEN). Ver lib/README.md" });
+  if (!hayCredenciales()) {
+    return res.status(503).json({ error: "Falta Upstash Redis (UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN). Ver lib/README.md" });
   }
   const store = crearAlmacen({});
   const K = claves("");
@@ -78,9 +79,11 @@ export default async function handler(req, res) {
         r = { ok: true, alDia: true, last_sync: meta.last_sync };
       }
     }
-    return res.status(200).json({ ok: true, modo, duracionMs: Date.now() - t0, ...r });
+    // comandosRedis: consumo de esta invocación contra el presupuesto diario
+    // del tier gratuito de Upstash (~10 000 comandos/día)
+    return res.status(200).json({ ok: true, modo, duracionMs: Date.now() - t0, comandosRedis: store.comandos ? store.comandos() : null, ...r });
   } catch (e) {
-    return res.status(502).json({ ok: false, modo, error: String(e && e.message || e) });
+    return res.status(502).json({ ok: false, modo, error: String(e && e.message || e), comandosRedis: store.comandos ? store.comandos() : null });
   } finally {
     try { if ((await store.get(K.lock)) === token) await store.del(K.lock); } catch (e) { /* TTL limpia */ }
   }

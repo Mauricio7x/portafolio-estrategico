@@ -19,6 +19,7 @@
 
 import { crearExtractor, mesesDelRango } from "../lib/extractor.js";
 import { crearAlmacen, leerJSON, claves } from "../lib/almacen.js";
+import { hayCredenciales } from "../lib/redis.js";
 
 const CAMPO_FECHA = "fecha_de_publicacion_del";
 // 1500 filas × ~2.5 KB (peor caso, descripción truncada a 1500) ≈ 3.8 MB,
@@ -41,8 +42,8 @@ let _mem = { sello: null, fusion: new Map() };
 
 export default async function handler(req, res) {
   if (esOrigenAjeno(req)) return res.status(403).json({ error: "Origen no autorizado" });
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
-    return res.status(503).json({ error: "sin KV: usa la ruta Socrata directa" });
+  if (!hayCredenciales()) {
+    return res.status(503).json({ error: "sin Upstash Redis: usa la ruta Socrata directa" });
   }
   res.setHeader("Cache-Control", "no-store");
   const store = crearAlmacen({});

@@ -7,16 +7,16 @@
      1. Consulta SECOP II y SECOP I (datos abiertos) de los últimos N días.
      2. Calcula el encaje con los 3 perfiles (Helder / Génesis / Consorcio).
      3. Para los de encaje ≥ UMBRAL, intenta leer el % de anticipo del pliego.
-     4. Compara contra los IDs ya avisados (Vercel KV) → solo alerta lo NUEVO.
+     4. Compara contra los IDs ya avisados (Upstash Redis) → solo alerta lo NUEVO.
      5. Envía a Telegram un mensaje por proceso, con resumen y "qué falta".
 
    Variables de entorno (Vercel → Settings → Environment Variables):
      SOCRATA_APP_TOKEN     token de Socrata (mismo del proxy)
      TELEGRAM_BOT_TOKEN    el que te da @BotFather
      TELEGRAM_CHAT_ID      tu chat id (ver README, paso 3)
-     CRON_SECRET           cadena aleatoria; protege el endpoint
-     KV_REST_API_URL       (auto al crear Vercel KV)
-     KV_REST_API_TOKEN     (auto al crear Vercel KV)
+     CRON_SECRET               cadena aleatoria; protege el endpoint
+     UPSTASH_REDIS_REST_URL    (consola gratuita de Upstash; ver lib/README.md)
+     UPSTASH_REDIS_REST_TOKEN  (ídem; KV_REST_API_* siguen valiendo como respaldo)
    ========================================================================== */
 
 const {
@@ -29,18 +29,12 @@ const MAX_POR_FUENTE = 400;
 const KV_SEEN = "detecta:seen";       // set de IDs ya avisados
 const KV_TTL_DIAS = 45;               // olvida IDs tras 45 días (ahorra memoria)
 
-/* ---------- Vercel KV (REST) ---------- */
-async function kv(cmd) {
-  const r = await fetch(process.env.KV_REST_API_URL, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`, "Content-Type": "application/json" },
-    body: JSON.stringify(cmd),
-  });
-  const j = await r.json();
-  return j.result;
-}
-const yaVisto = id => kv(["SISMEMBER", KV_SEEN, id]).then(x => x === 1);
-const marcarVisto = id => kv(["SADD", KV_SEEN, id]);
+/* ---------- Upstash Redis (cliente compartido, capa gratuita) ---------- */
+const { crearRedis, hayCredenciales } = require("../lib/redis.js");
+let _redis = null;
+function redis() { if (!_redis) _redis = crearRedis(); return _redis; }
+const yaVisto = id => hayCredenciales() ? redis().sismember(KV_SEEN, id).then(x => x === 1) : Promise.resolve(false);
+const marcarVisto = id => hayCredenciales() ? redis().sadd(KV_SEEN, id) : Promise.resolve(0);
 
 /* ---------- Socrata ---------- */
 async function socrata(url) {
@@ -188,7 +182,7 @@ export default async function handler(req, res) {
   }
 
   // mantener el set acotado en el tiempo
-  await kv(["EXPIRE", KV_SEEN, KV_TTL_DIAS * 86400]);
+  if (hayCredenciales()) await redis().expire(KV_SEEN, KV_TTL_DIAS * 86400);
 
   return res.status(200).json({
     ok: true, revisados: candidatos.length, fuertes: fuertes.length,

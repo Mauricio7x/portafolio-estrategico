@@ -49,7 +49,7 @@ Es un único `index.html` que corre 100 % en el navegador, sin paso de compilaci
   - `api/cron.js` — monitor autónomo: consulta SECOP, puntúa, verifica anticipo y avisa por **Telegram**.
   - `api/resumen.js` — resumen IA por proceso (Anthropic; **de pago**, opcional; la web usa un resumen local gratis).
   - `lib/engine.js` — motor de encaje portado a Node para que el cron calcule lo mismo que la web.
-- **Capa de datos SECOP (jul 2026)** — extracción exhaustiva del año vigente a Vercel KV, ver `lib/README.md`:
+- **Capa de datos SECOP (jul 2026)** — extracción exhaustiva del año vigente a Upstash Redis gratuito (`lib/redis.js`, vars `UPSTASH_REDIS_REST_*` con respaldo `KV_REST_API_*`), ver `lib/README.md`:
   - `lib/extractor.js` + `lib/almacen.js` — carga completa **reanudable** (keyset por `:id`, count(1) por mes,
     reintentos con backoff, chunks gzip por mes) + **delta** por `:updated_at` con solape 48 h (los cambios de
     estado REEMPLAZAN por `_k`). Sonda de capacidades: solo un 400 real degrada a `$offset` (nunca un fallo de red).
