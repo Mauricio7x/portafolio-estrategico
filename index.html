@@ -518,148 +518,20 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
 </script>
 </head>
 <body>
-<!-- ╔══════════════════════════════════════════════════════════════════════╗
-     ║  GATE DE SEGURIDAD — defensa en profundidad contra acceso curioso.   ║
-     ║  Capas: (1) overlay bloquea render hasta autenticación SHA-256+salt, ║
-     ║         (2) bloqueo de F12/Ctrl+U/Ctrl+Shift+I/J/C y click derecho,  ║
-     ║         (3) detector de DevTools por divergencia de viewport,        ║
-     ║         (4) anti-iframe: si self ≠ top, redirige a blanco.           ║
-     ║  Realidad: ningún JS-cliente protege contra reverse engineering      ║
-     ║  determinado. Esta capa frena al curioso casual. Para protección     ║
-     ║  real, usar Vercel Pro Password Protection (de pago).                ║
-     ╚══════════════════════════════════════════════════════════════════════╝ -->
-<style>
-  #sec-gate{position:fixed;inset:0;background:#0a0a0a;z-index:999999;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif}
-  #sec-gate .box{background:#141414;border:1px solid #2a2a2a;border-radius:14px;padding:36px 32px;width:340px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)}
-  #sec-gate h2{color:#f5f5f7;font-size:18px;font-weight:600;margin:0 0 6px;letter-spacing:-0.01em}
-  #sec-gate p{color:#86868b;font-size:13px;margin:0 0 22px;line-height:1.45}
-  #sec-gate input{width:100%;padding:11px 14px;background:#1d1d1f;border:1px solid #3a3a3c;border-radius:9px;color:#f5f5f7;font-size:14px;outline:none;box-sizing:border-box;font-family:inherit}
-  #sec-gate input:focus{border-color:#0a84ff}
-  #sec-gate button{margin-top:12px;width:100%;padding:11px;background:#0066cc;color:#fff;border:0;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
-  #sec-gate button:active{background:#0053a6}
-  #sec-gate .err{margin-top:10px;color:#ff453a;font-size:12px;min-height:16px}
-  #sec-gate .ft{margin-top:18px;color:#86868b;font-size:11px;letter-spacing:0.02em}
-  html.sec-locked{overflow:hidden}
-  html.sec-locked body>*:not(#sec-gate){visibility:hidden!important;pointer-events:none!important}
-</style>
-<div id="sec-gate" role="dialog" aria-modal="true" aria-label="Acceso restringido">
-  <div class="box">
-    <h2>Acceso restringido</h2>
-    <p>Esta plataforma es de uso privado.<br>Ingrese la contraseña para continuar.</p>
-    <input type="password" id="sec-pw" placeholder="Contraseña" aria-label="Contraseña" autocomplete="off" autofocus>
-    <button id="sec-go" type="button">Continuar</button>
-    <div class="err" id="sec-err" aria-live="polite"></div>
-    <div class="ft">Detecta</div>
-  </div>
-</div>
+<!-- ════════════════════════════════════════════════════════════════════
+     ACCESO RESTRINGIDO (jul 2026) — el gate JS (SHA-256+salt en cliente)
+     se ELIMINÓ por cosmético: el hash y la sal viajaban en este HTML y el
+     desbloqueo ocurría en el cliente, por lo que no protegía nada real.
+     La protección efectiva es Vercel Password Protection (autenticación
+     en el SERVIDOR: cubre todo el despliegue, incluidos los datos de
+     perfiles embebidos en este HTML y las páginas legales si se desea
+     excluirlas, ver docs). Activar en: Vercel → proyecto → Settings →
+     Deployment Protection ANTES de desplegar esta versión.
+     Se conserva el anti-iframe (refuerzo del X-Frame-Options: DENY).
+     ════════════════════════════════════════════════════════════════════ -->
 <script>
-(function(){
-  "use strict";
-  document.documentElement.classList.add("sec-locked");
-
-  // ──────────────────────────────────────────────────────────────────
-  // Anti-iframe (clickjacking): si la app está embebida, redirige.
-  // Defensa secundaria al X-Frame-Options: DENY del vercel.json.
-  // ──────────────────────────────────────────────────────────────────
-  try { if(window.self !== window.top){ window.top.location = "about:blank"; } } catch(e) { document.body.innerHTML=""; return; }
-
-  // ──────────────────────────────────────────────────────────────────
-  // Hash credentials: SHA-256(salt + password). Salt aleatorio único,
-  // hash precomputado SOLO como respaldo para desarrollo local (abrir el
-  // archivo sin Vercel). En producción manda /api/auth (servidor).
-  // ──────────────────────────────────────────────────────────────────
-  var SALT = "9aa0209ba3e01b551d31040e1310a3f2";
-  var HASH = "76be47878cf1c187c424e0c235340bb02bc1936c1f802ec74dab0db03b0ba4d5";
-  var KEY  = "sec-token-v1";
-
-  async function sha256(s){
-    var enc = new TextEncoder().encode(s);
-    var buf = await crypto.subtle.digest("SHA-256", enc);
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
-  }
-
-  function unlock(){
-    document.documentElement.classList.remove("sec-locked");
-    var g = document.getElementById("sec-gate");
-    if(g) g.remove();
-  }
-
-  function lockout(msg){
-    var err = document.getElementById("sec-err");
-    if(err) err.textContent = msg || "Contraseña incorrecta";
-    var pw = document.getElementById("sec-pw");
-    if(pw){ pw.value=""; pw.focus(); }
-  }
-
-  // ¿Hay sesión válida en el servidor? (cookie HttpOnly firmada)
-  (function checkServerSession(){
-    fetch("/api/auth", { method:"GET", credentials:"same-origin" })
-      .then(function(r){ return r.ok ? r.json() : {authenticated:false}; })
-      .then(function(d){ if(d && d.authenticated) unlock(); })
-      .catch(function(){ /* sin servidor: el gate sigue visible */ });
-  })();
-
-  // Respaldo local: sesión en sessionStorage. Se guarda el HASH, nunca la
-  // clave en claro (higiene de datos: nada sensible en reposo). Se migran
-  // sesiones antiguas que hubieran guardado la clave.
-  try {
-    var saved = sessionStorage.getItem(KEY);
-    if(saved){
-      if(saved === HASH){ unlock(); }
-      else {
-        sha256(SALT + saved).then(function(h){
-          if(h === HASH){ try{ sessionStorage.setItem(KEY, h); }catch(e){} unlock(); }
-          else sessionStorage.removeItem(KEY);
-        });
-      }
-    }
-  } catch(e){}
-
-  async function tryAuth(){
-    var pw = document.getElementById("sec-pw").value || "";
-    if(!pw){ lockout("Ingrese la contraseña"); return; }
-
-    // 1) Verificación LOCAL por hash — PRIMARIA y sin dependencias de red.
-    //    No existe /api/auth: antes, un 401/respuesta rara del servidor podía
-    //    bloquear el ingreso aunque la clave fuera correcta. Ahora la clave se
-    //    valida primero contra el hash local (SHA-256(salt+clave)).
-    try{
-      var h = await sha256(SALT + pw);
-      if(h === HASH){ try{ sessionStorage.setItem(KEY, h); }catch(e){} unlock(); return; }
-    }catch(e){ /* crypto no disponible: intenta servidor */ }
-
-    // 2) Validación OPCIONAL en el servidor (solo si algún día existe /api/auth).
-    try{
-      var r = await fetch("/api/auth", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        credentials:"same-origin",
-        body: JSON.stringify({ password: pw })
-      });
-      if(r.ok){
-        var d = await r.json();
-        if(d && d.authenticated){ try{ sessionStorage.setItem(KEY, await sha256(SALT + pw)); }catch(e){} unlock(); return; }
-      }
-    }catch(e){ /* sin red/servidor */ }
-
-    lockout();
-  }
-
-  document.addEventListener("DOMContentLoaded", function(){
-    var btn = document.getElementById("sec-go");
-    var pw  = document.getElementById("sec-pw");
-    if(btn) btn.addEventListener("click", tryAuth);
-    if(pw)  pw.addEventListener("keydown", function(ev){ if(ev.key === "Enter") tryAuth(); });
-  });
-
-  // ──────────────────────────────────────────────────────────────────
-  // (Eliminado) Bloqueo de F12/clic-derecho/Ctrl+U y detector de DevTools
-  // por divergencia outerWidth/innerWidth con recarga cada 1.5 s. Daba CERO
-  // seguridad real (el código es público) y provocaba FALSOS POSITIVOS en
-  // móvil/tablet/ventanas acopladas → bucle de recarga. La privacidad real
-  // se delega al gate por contraseña (arriba) y a Vercel Password Protection.
-  // ──────────────────────────────────────────────────────────────────
-})();
+  // Anti-iframe (clickjacking): defensa secundaria al X-Frame-Options: DENY del vercel.json.
+  try { if (window.self !== window.top) { window.top.location = "about:blank"; } } catch (e) { document.body.innerHTML = ""; }
 </script>
 
 <header>
@@ -854,7 +726,7 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
 
       <div class="dropzone" id="pliego-drop" tabindex="0" role="button" aria-label="Cargar pliego en PDF: arrastre el archivo o pulse Enter para seleccionarlo">
         <input type="file" id="pliego-file" accept="application/pdf,.pdf" style="display:none">
-        <div class="dz-icon">📄</div>
+        <div class="dz-icon" aria-hidden="true">📄</div>
         <div class="dz-title">Arrastre un PDF aquí o haga clic para seleccionar</div>
         <div class="dz-sub">PDF normal o escaneado · máx ~20 páginas para OCR rápido</div>
       </div>
@@ -1366,7 +1238,8 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
 
 <footer>
   <div class="wrap">
-    Detecta · Datos abiertos de Colombia Compra Eficiente (<code>p6dx-8zbt</code>) ·
+    Detecta · Sitio privado de uso personal (acceso restringido) ·
+    Datos abiertos de Colombia Compra Eficiente (<code>p6dx-8zbt</code>) ·
     <a href="https://www.colombiacompra.gov.co" target="_blank" rel="noopener">colombiacompra.gov.co</a>
   </div>
 </footer>
@@ -4634,10 +4507,11 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
         var star=document.createElement("button");
         star.type="button"; star.className="star-btn"+(on?" on":"");
         star.textContent=on?"★ Guardado":"☆ Guardar";
+        star.setAttribute("aria-pressed", on?"true":"false");
         star.title="Guardar este proceso en seguimiento (se conserva en este navegador)";
         star.addEventListener("click", function(){
-          if(savedSet.has(k)){ savedSet.delete(k); star.classList.remove("on"); star.textContent="☆ Guardar"; card.classList.remove("saved"); }
-          else { savedSet.add(k); star.classList.add("on","pop"); star.textContent="★ Guardado"; card.classList.add("saved");
+          if(savedSet.has(k)){ savedSet.delete(k); star.classList.remove("on"); star.textContent="☆ Guardar"; star.setAttribute("aria-pressed","false"); card.classList.remove("saved"); }
+          else { savedSet.add(k); star.classList.add("on","pop"); star.textContent="★ Guardado"; star.setAttribute("aria-pressed","true"); card.classList.add("saved");
                  setTimeout(function(){ star.classList.remove("pop"); }, 420); }
           wlSave(savedSet); applySavedFilter();
         });
@@ -5512,7 +5386,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     var path=pts.map(function(p,i){ return (i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1); }).join(" ");
     var area="M"+pts[0][0].toFixed(1)+" "+(H-pad)+" "+pts.map(function(p){ return "L"+p[0].toFixed(1)+" "+p[1].toFixed(1); }).join(" ")+" L"+pts[pts.length-1][0].toFixed(1)+" "+(H-pad)+" Z";
     var dots=pts.map(function(p){ return '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.2" fill="'+ac+'"><title>'+p[2].d+': '+p[2].n+' procesos · '+p[2].hi+' de alto encaje</title></circle>'; }).join("");
-    box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="width:100%;height:150px">'+
+    box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img" aria-label="Tendencia semanal de procesos afines: de '+arr[0].n+' el '+arr[0].d.slice(5)+' a '+arr[arr.length-1].n+' el '+arr[arr.length-1].d.slice(5)+'" style="width:100%;height:150px">'+
       '<path d="'+area+'" fill="'+ac+'" opacity="0.12"/>'+
       '<path d="'+path+'" fill="none" stroke="'+ac+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'+dots+'</svg>'+
       '<div class="v3-trend-labels"><span>'+arr[0].d.slice(5)+'</span><span>'+arr[arr.length-1].d.slice(5)+'</span></div>';
@@ -5575,6 +5449,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     var tg=document.getElementById("v3-alerts-toggle");
     function paint(){ var on=lsGet("detecta-alertas-on",false);
       tg.innerHTML = on ? "🔔 Alertas activas" : "🔕 Activar alertas ≤48h";
+      tg.setAttribute("aria-pressed", on?"true":"false");
       tg.classList.toggle("on", !!on);
       tg.title = on ? "Te avisaré cuando un proceso guardado ★ entre en 48h de cierre." : "Activar notificaciones del navegador para cierres ≤48h de procesos guardados ★.";
     }
@@ -6277,7 +6152,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
 
   /* impresión / "Guardar como PDF" del panel activo */
   @media print{
-    header,.tabs,footer,#sec-gate,.hero,.v3-cmp-tray,.v4-toolbar,.v3-viewbar,.filters-simple,
+    header,.tabs,footer,.hero,.v3-cmp-tray,.v4-toolbar,.v3-viewbar,.filters-simple,
     .proc-actions,.v4-banner,#v4-datos,#anti-status,#status,.theme-toggle,.v4-profile,.v4-new{display:none!important}
     html,body{background:#fff!important;color:#000!important}
     main section:not(.active){display:none!important}
@@ -6663,7 +6538,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
       var main=document.querySelector("main"); if(!main) return;
       var b=document.getElementById("v4-banner"); if(b) b.remove();
       b=document.createElement("div"); b.id="v4-banner"; b.className="v4-banner";
-      b.innerHTML='<span class="v4-banner-ico">☀️</span><span class="v4-banner-txt">Hoy · '+msgs.join(' · ')+'</span><button class="v4-banner-x" aria-label="cerrar">✕</button>';
+      b.innerHTML='<span class="v4-banner-ico" aria-hidden="true">☀️</span><span class="v4-banner-txt">Hoy · '+msgs.join(' · ')+'</span><button class="v4-banner-x" aria-label="cerrar">✕</button>';
       main.insertBefore(b, main.firstChild);
       b.querySelector(".v4-banner-x").addEventListener("click",function(){ b.remove(); });
     }catch(e){}
@@ -8320,7 +8195,6 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
   #dtc-consent{position:fixed;left:14px;right:14px;bottom:14px;z-index:1000001;max-width:680px;margin:0 auto;
     background:var(--panel,#fff);color:var(--ink,#1d1d1f);border:1px solid var(--line,#e8e8ed);border-radius:16px;
     box-shadow:0 18px 50px rgba(0,0,0,.25);padding:16px 18px;font-size:13.5px;line-height:1.5}
-  html.sec-locked body>#dtc-consent{visibility:visible!important;pointer-events:auto!important}
   #dtc-consent h2{margin:0 0 6px;font-size:14.5px;font-weight:650;letter-spacing:-0.01em}
   #dtc-consent p{margin:0 0 10px;color:var(--ink2,#515154)}
   #dtc-consent a{color:var(--acc,#0071e3)}
@@ -8338,9 +8212,6 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     #dtc-consent{animation:dtcUp .45s cubic-bezier(.16,1,.3,1)}
     @keyframes dtcUp{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
   }
-  /* Aviso legal dentro del gate (fondo siempre oscuro) */
-  .dtc-gate-legal{margin-top:16px;font-size:11px;color:#86868b;line-height:1.55;text-align:center}
-  .dtc-gate-legal a{color:#a1a1a6}
   /* Enlaces legales del footer */
   .dtc-foot a{color:inherit}
   .dtc-foot-btn{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer}
@@ -8404,12 +8275,13 @@ function buildBanner(cfgOpen){
   div.innerHTML=
     '<h2>Privacidad y almacenamiento</h2>'+
     '<p>Detecta no usa cookies de rastreo, publicidad ni analítica. Solo emplea almacenamiento <b>esencial</b> '+
-    '(tu sesión de acceso y esta decisión) y, si lo permites, almacenamiento <b>funcional</b> en tu navegador para '+
-    'recordar preferencias, favoritos y notas. Nada sale de tu dispositivo. '+
+    '(la cookie técnica del acceso restringido y esta decisión) y, si lo permites, almacenamiento <b>funcional</b> '+
+    'en tu navegador para recordar preferencias, favoritos y notas. Nada sale de tu dispositivo. '+
     '<a href="./privacidad.html">Más información</a>.</p>'+
     '<div class="dtc-c-cfg" id="dtc-cfg">'+
-      '<label class="dtc-c-opt"><input type="checkbox" checked disabled> <span><b>Esenciales</b> — sesión del acceso '+
-      'restringido y registro de esta decisión. Siempre activas: sin ellas el acceso no funciona.</span></label>'+
+      '<label class="dtc-c-opt"><input type="checkbox" checked disabled> <span><b>Esenciales</b> — cookie técnica del '+
+      'acceso restringido (la gestiona el servidor) y registro de esta decisión. Siempre activas: sin ellas el acceso '+
+      'no funciona.</span></label>'+
       '<label class="dtc-c-opt"><input type="checkbox" id="dtc-func" checked> <span><b>Funcionales</b> — preferencias, '+
       'favoritos ★, tablero, notas y cachés, guardados solo en este navegador. Si las desactivas, la app no recordará '+
       'nada entre sesiones y se borrará lo ya guardado aquí (las preferencias de accesibilidad se conservan siempre).</span></label>'+
@@ -8436,18 +8308,6 @@ function buildBanner(cfgOpen){
   if(cfgOpen){ openCfg(true); try{ div.querySelector("#dtc-acc").focus(); }catch(e){} }
 }
 
-/* Aviso de tratamiento de datos + enlaces legales ANTES de autenticarse */
-function injectGateLegal(){
-  var box=document.querySelector("#sec-gate .box");
-  if(!box || document.getElementById("dtc-gate-legal")) return;
-  var d=document.createElement("div");
-  d.id="dtc-gate-legal"; d.className="dtc-gate-legal";
-  d.innerHTML='La clave se usa únicamente para autenticarte; en tu navegador solo se guarda su hash durante la sesión. '+
-    'Al continuar aceptas los <a href="./terminos.html">Términos de Uso</a> y la '+
-    '<a href="./privacidad.html">Política de Privacidad</a> · <a href="./accesibilidad.html">Accesibilidad</a>';
-  box.appendChild(d);
-}
-
 /* Enlaces legales permanentes en el footer de la app */
 function injectFooterLegal(){
   var f=document.querySelector("footer .wrap")||document.querySelector("footer");
@@ -8466,7 +8326,6 @@ function injectFooterLegal(){
 
 try{
   applyConsent(getConsent());
-  injectGateLegal();
   injectFooterLegal();
   if(!getConsent()) buildBanner(false);
 }catch(e){ console.error("capa legal:",e); }
@@ -8482,6 +8341,11 @@ try{
   html[data-theme="dark"] .rent-toolbar button.primary{background:#0066cc}
   /* Botón de atajos en el popover ⚙ */
   #dtc-atajos{width:auto;padding:0 10px;font-size:12px}
+  /* Contraste AA en textos pequeños (10.5-12px): grises al límite → más oscuros en claro.
+     .v4-chk-miss fallaba de plano (#6e6e73 sobre #ececf1 ≈ 4.4:1). */
+  .live,footer,.v3-pill,.v5-muted,.v4-chk-miss{color:#5d5d63}
+  html[data-theme="dark"] .live,html[data-theme="dark"] footer,html[data-theme="dark"] .v3-pill,
+  html[data-theme="dark"] .v5-muted,html[data-theme="dark"] .v4-chk-miss{color:var(--ink2)}
 </style>
 <script>
 /* ════════════════════════════════════════════════════════════════
@@ -8581,6 +8445,21 @@ function injectAtajosToggle(){
 /* 6 · Popover ⚙: estado expandido accesible */
 var gear=document.getElementById("v9-gear");
 if(gear){ gear.setAttribute("aria-haspopup","true"); gear.setAttribute("aria-expanded","false"); }
+
+/* 6b · Navegación por flechas en las pestañas (sobre las visibles) */
+var tabsNav=document.getElementById("tabs");
+if(tabsNav) tabsNav.addEventListener("keydown",function(e){
+  if(["ArrowRight","ArrowLeft","Home","End"].indexOf(e.key)<0) return;
+  var all=Array.prototype.filter.call(tabsNav.querySelectorAll(".tab"),function(t){ return t.offsetParent!==null; });
+  if(!all.length) return;
+  var i=all.indexOf(document.activeElement); if(i<0) return;
+  e.preventDefault();
+  var j = e.key==="Home" ? 0
+        : e.key==="End" ? all.length-1
+        : e.key==="ArrowRight" ? (i+1)%all.length
+        : (i-1+all.length)%all.length;
+  all[j].focus();
+});
 
 /* 7 · Init + re-etiquetado tras cada render (elementos por tarjeta) */
 if(typeof window.renderProcesses==="function"){

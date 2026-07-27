@@ -74,17 +74,21 @@
     <p><strong>Detecta</strong> es una herramienta <strong>privada, de uso personal</strong>, para analizar
     licitaciones públicas de Colombia con datos abiertos de SECOP II. <strong>No recolecta datos personales de
     visitantes</strong>: no hay registro de usuarios, ni formularios de contacto, ni publicidad, ni analítica de
-    terceros, ni cookies de rastreo. Lo único que se trata es (1) una <strong>clave de acceso</strong> —de la que
-    solo se conserva un <em>hash</em> criptográfico en tu navegador durante la sesión— y (2) <strong>preferencias y
-    notas de trabajo que se guardan exclusivamente en tu propio navegador</strong> (localStorage) y nunca se envían
-    a un servidor de Detecta. Puedes ejercer los derechos de la Ley 1581 de 2012 escribiendo a
-    <a href="mailto:ymauriciopat@gmail.com">ymauriciopat@gmail.com</a>.</p>
+    terceros, ni cookies de rastreo. Lo único que se trata es (1) la <strong>clave de acceso</strong>, verificada
+    en el servidor por la protección del despliegue (Vercel Password Protection) — Detecta no la ve ni la
+    almacena — y (2) <strong>preferencias y notas de trabajo que se guardan exclusivamente en tu propio
+    navegador</strong> (localStorage) y nunca se envían a un servidor de Detecta. Responsable: «Detecta, tu
+    prioridad», persona natural domiciliada en Colombia. Puedes ejercer los derechos de la Ley 1581 de 2012
+    escribiendo a <a href="mailto:detectalicitaciones@gmail.com">detectalicitaciones@gmail.com</a>.</p>
   </section>
 
   <h2 id="responsable">1. Responsable del tratamiento</h2>
-  <p>El responsable del sitio <strong>Detecta</strong> (https://portafolio-estrategico.vercel.app) es su
-  administrador, persona natural domiciliada en Colombia. Canal de contacto para asuntos de privacidad y ejercicio
-  de derechos: <a href="mailto:ymauriciopat@gmail.com">ymauriciopat@gmail.com</a>.</p>
+  <p>El responsable del sitio <strong>Detecta</strong> (https://portafolio-estrategico.vercel.app) es
+  <strong>«Detecta, tu prioridad»</strong>, persona natural domiciliada en Colombia, que opera el sitio bajo ese
+  alias para no exponer datos personales en una página pública. Correo de contacto para asuntos de privacidad y
+  ejercicio de derechos: <a href="mailto:detectalicitaciones@gmail.com">detectalicitaciones@gmail.com</a>.
+  La identidad completa del responsable se facilitará a la autoridad competente o al titular que acredite un
+  interés legítimo, cuando la ley lo exija.</p>
 
   <h2 id="naturaleza">2. Naturaleza del sitio y ámbito de esta política</h2>
   <p>Detecta es una herramienta de análisis para decidir a qué procesos de contratación pública presentarse.
@@ -103,9 +107,9 @@
       <tr>
         <td>Clave de acceso</td>
         <td>Autenticar el ingreso a la herramienta (única finalidad).</td>
-        <td>Solo se conserva su <em>hash</em> SHA-256 con sal, en <code>sessionStorage</code> de tu navegador,
-            mientras dura la pestaña. La clave nunca se guarda en claro ni se transmite a terceros distintos del
-            propio dominio del sitio.</td>
+        <td>La verifica el servidor de despliegue (Vercel Password Protection); tu navegador solo conserva la
+            cookie técnica de esa protección durante la sesión. El código de Detecta no recibe, guarda ni
+            transmite la clave.</td>
       </tr>
       <tr>
         <td>Preferencias de interfaz (tema, idioma, contraste, tamaño de letra, pestaña activa)</td>
@@ -150,9 +154,9 @@
   <h2 id="cookies">4. Cookies y almacenamiento local</h2>
   <p>Detecta <strong>no usa cookies de rastreo, publicidad ni analítica</strong>. El sitio emplea únicamente:</p>
   <ul>
-    <li><strong>Almacenamiento esencial</strong>: el testigo de sesión del acceso (hash de la clave, en
-      <code>sessionStorage</code>) y el registro de tu decisión de consentimiento. Sin ellos el acceso restringido
-      no puede funcionar, por lo que no requieren consentimiento y no pueden desactivarse.</li>
+    <li><strong>Almacenamiento esencial</strong>: la cookie técnica del acceso restringido (la gestiona el
+      servidor de despliegue, Vercel) y el registro de tu decisión de consentimiento. Sin ellos el acceso
+      restringido no puede funcionar, por lo que no requieren consentimiento y no pueden desactivarse.</li>
     <li><strong>Almacenamiento funcional</strong> (localStorage): preferencias, favoritos, notas y cachés descritos
       arriba. Puedes <strong>rechazarlo desde el banner de consentimiento</strong> («Solo esenciales»): la app
       seguirá funcionando, pero no recordará nada entre sesiones. Las <strong>preferencias de accesibilidad</strong>
@@ -195,7 +199,7 @@
   tus datos y presentar <strong>quejas ante la Superintendencia de Industria y Comercio</strong>
   (<a href="https://www.sic.gov.co" rel="noopener">www.sic.gov.co</a>), autoridad colombiana de protección de datos.</p>
   <ul>
-    <li><strong>Canal</strong>: <a href="mailto:ymauriciopat@gmail.com">ymauriciopat@gmail.com</a>.</li>
+    <li><strong>Canal</strong>: <a href="mailto:detectalicitaciones@gmail.com">detectalicitaciones@gmail.com</a>.</li>
     <li><strong>Plazos legales</strong>: consultas, máximo 10 días hábiles (art. 14, Ley 1581); reclamos, máximo
       15 días hábiles (art. 15, Ley 1581).</li>
     <li><strong>Autoservicio</strong>: dentro de la app puedes exportar todos tus datos locales y borrarlos por
@@ -211,7 +215,8 @@
   <h2 id="seguridad">8. Medidas de seguridad</h2>
   <ul>
     <li>Todo el tráfico va cifrado por <strong>HTTPS</strong> (con HSTS).</li>
-    <li>La clave de acceso se verifica por <strong>hash SHA-256 con sal</strong>; no se almacena en claro.</li>
+    <li>El acceso se controla <strong>en el servidor</strong> (Vercel Password Protection): la clave no aparece
+      en el código del sitio ni se almacena en tu navegador.</li>
     <li>Cabeceras de seguridad: <code>X-Frame-Options: DENY</code> (anti-clickjacking),
       <code>X-Content-Type-Options: nosniff</code>, <code>Referrer-Policy</code> y
       <code>Permissions-Policy</code> restrictivas.</li>

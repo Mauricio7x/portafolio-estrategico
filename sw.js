@@ -15,7 +15,8 @@
    ════════════════════════════════════════════════════════════════ */
 "use strict";
 
-const VERSION = "detecta-v5-2026-07";
+// v6: sin gate JS — la protección es Vercel Password Protection (servidor).
+const VERSION = "detecta-v6-2026-07";
 const SHELL_CACHE = "detecta-shell-" + VERSION;
 const SHELL_ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg",
                       "./privacidad.html", "./terminos.html", "./accesibilidad.html"];

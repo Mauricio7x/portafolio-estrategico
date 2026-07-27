@@ -37,7 +37,8 @@ Es un único `index.html` que corre 100 % en el navegador, sin paso de compilaci
 
 ## Arquitectura
 - **`index.html`** — TODA la app (HTML+CSS+JS, sin dependencias de pago).
-  - Gate de seguridad por contraseña (SHA-256 + salt; respaldo local + `/api/auth` en producción).
+  - **Sin gate JS** (jul 2026): el acceso restringido lo da **Vercel Password Protection** (servidor).
+    Se conserva solo el anti-iframe. Aviso «Sitio privado» en el footer.
   - Pestañas: **Resumen** (dashboard, por defecto), Helder, Génesis, Juntos, **Mapa**, Pliego,
     Rentabilidad, APU, Manual.
   - Whitelists UNSPSC (`UNSPSC_HELDER/GENESIS/JUNTOS`) **embebidas** en un `<script>` del `<head>`.
@@ -208,11 +209,13 @@ suave cada ~11 s (respeta `prefers-reduced-motion`).
 - Español en UI, comentarios y mensajes de commit. Estética tipo Apple (system fonts + Inter, sutil, claro).
 - **Sin dependencias de pago.** PDF.js, Tesseract.js (OCR del pliego) y Leaflet (mapa) se cargan por CDN/lazy-load.
 - Cambios nuevos: preferir **capa aditiva** + monkey-patch antes que reescribir funciones existentes.
-- No debilitar el gate de seguridad ni el anti-iframe sin pedir permiso.
+- No debilitar el control de acceso (Vercel Password Protection) ni el anti-iframe sin pedir permiso.
 - **Eliminado** (jun 2026): el detector de DevTools (recarga cada 1.5 s por divergencia `outerWidth/innerWidth`) y el
   bloqueo de F12/clic-derecho/Ctrl+U/Ctrl+S. Daban cero seguridad real y causaban **falsos positivos en móvil** (bucle de
-  recarga). Se conservan el gate por contraseña (SHA-256 + `/api/auth`) y el anti-iframe. Privacidad real → Vercel Password
-  Protection.
+  recarga). **Jul 2026: también se eliminó el gate JS por contraseña** (SHA-256+salt en el HTML: cosmético,
+  fuerza bruta offline y bypass por sessionStorage). Se conserva el anti-iframe. Privacidad real → **Vercel
+  Password Protection** (activarla en el dashboard ANTES de desplegar; cubre todo el despliegue, incluidos los
+  datos de RUP embebidos en el HTML). SW en `detecta-v6-2026-07` para purgar el shell viejo.
 
 ## Pendiente por verificar (dato del negocio)
 - **Nº de contratos de Génesis**: la ficha visible mostraba 105/138 y la config JS 108/141. Se alineó todo a
@@ -243,8 +246,10 @@ Ley 1581/2012; RNBD solo obliga a sociedades con activos >100.000 UVT — Decret
   de `Storage.prototype.setItem` que convierte en no-op las escrituras `detecta-*`/`radar-licit*` no esenciales
   (la clave de consentimiento está en allowlist) y **purga** lo ya guardado (con `confirm` previo). Reapertura:
   botón «cookies y almacenamiento» del footer.
-- **Gate**: aviso de tratamiento (finalidad de la clave) + enlaces legales antes de autenticarse. La sesión ya
-  **no guarda la clave en claro**: `sec-token-v1` almacena el hash (migra sesiones viejas).
+- **Acceso** (jul 2026): el gate JS fue eliminado; la clave la verifica el servidor (Vercel Password
+  Protection) y el código no la ve ni la guarda. Responsable en páginas legales bajo alias **«Detecta, tu
+  prioridad»** + correo `detectalicitaciones@gmail.com` (sin datos personales expuestos). Constancia de
+  autorización de datos de Helder: `autorizacion_helder.md` (plantilla, pendiente de formalizar).
 - **`vercel.json`**: cabeceras X-Frame-Options DENY (antes solo estaba prometida en un comentario),
   nosniff, Referrer-Policy, HSTS, Permissions-Policy (`microphone=(self)` para la búsqueda por voz), COOP.
 - **Pruebas**: `node tests/validar-legal.js` — sintaxis de TODOS los bloques inline, `node --check` de
@@ -261,8 +266,10 @@ falte; se re-ejecuta tras `renderProcesses`), **región viva** `#dtc-live` que a
 **tablist/tab** en `#tabs`, dropzone del pliego operable por teclado, y **atajos desactivables** (WCAG 2.1.4:
 listener en captura sobre `window` + botón «⌨ Atajos» en el popover ⚙, clave `detecta-atajos-off`, en la
 allowlist esencial del consentimiento junto a `detecta-contraste`/`detecta-fontscale`).
-En el código base: `aria-label` en `#sec-pw` y `#anticipo-trigger`, `role=status aria-live` en `#status`/
-`#anti-status`, `for=` en los filtros, `aria-modal` en los modales de capas #4/#8, contraste del gate
-(botón `#0066cc`, pie `#86868b`), caret KPI con `currentColor`, y en oscuro `.btn-primary` baja a `#0066cc`.
+En el código base: `aria-label` en `#anticipo-trigger`, `role=status aria-live` en `#status`/
+`#anti-status`, `for=` en los filtros, `aria-modal` en los modales de capas #4/#8, caret KPI con
+`currentColor`, y en oscuro `.btn-primary` baja a `#0066cc`. Ronda 2 (jul 2026): `aria-pressed` en ★/🔔,
+`aria-hidden` en emojis decorativos, sparkline con `role=img`+`aria-label`, **flechas** ←/→/Home/End en las
+pestañas (sobre las visibles), y grises de 10.5-12px a `#5d5d63` en claro (`.v4-chk-miss` fallaba AA).
 **APIs**: `/api/resumen` exige origen propio (gastaba la key de Anthropic con CORS `*` sin auth) y `/api/proxy`
 rechaza orígenes ajenos; ninguno necesita CORS (la web llama same-origin).

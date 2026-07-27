@@ -81,17 +81,33 @@ if (vercel) {
 check("index.html enlaza privacidad", html.includes("privacidad.html"));
 check("index.html enlaza términos", html.includes("terminos.html"));
 check("index.html enlaza accesibilidad", html.includes("accesibilidad.html"));
-check("gate: aviso de tratamiento", html.includes("dtc-gate-legal"));
-check("gate: no guarda la clave en claro", !html.includes("sessionStorage.setItem(KEY, pw)"));
-check("banner visible sobre el gate (override sec-locked)", html.includes("html.sec-locked body>#dtc-consent"));
+check("gate JS eliminado (sin #sec-gate ni hash embebido)",
+  !html.includes("sec-gate") && !html.includes("sec-pw") && !/var HASH\s*=/.test(html));
+check("anti-iframe conservado", html.includes("window.self !== window.top"));
+check("aviso de sitio privado en el footer", html.includes("Sitio privado de uso personal"));
+check("SW en versión v6 (post-gate)", sw.includes("detecta-v6-2026-07"));
+check("alias del responsable en privacidad", read("privacidad.html").includes("Detecta, tu prioridad"));
+check("alias del responsable en términos", read("terminos.html").includes("Detecta, tu prioridad"));
+check("correo genérico (sin correo personal)",
+  read("privacidad.html").includes("detectalicitaciones@gmail.com") &&
+  !read("privacidad.html").includes("ymauriciopat") && !html.includes("ymauriciopat"));
+check("privacidad ya no menciona hash en el navegador", !read("privacidad.html").includes("sessionStorage"));
+check("constancia de autorización de Helder", fs.existsSync(path.join(ROOT, "autorizacion_helder.md")) &&
+  read("autorizacion_helder.md").includes("Ley 1581"));
 check("api/resumen exige origen propio", read("api/resumen.js").includes("esOrigenPropio") &&
   !read("api/resumen.js").includes('Access-Control-Allow-Origin", "*"'));
 check("api/proxy rechaza origen ajeno", read("api/proxy.js").includes("esOrigenAjeno"));
 
 /* ── 5b · Accesibilidad estática ── */
 console.log("\n5b · Accesibilidad estática");
-check("gate: input con aria-label", /id="sec-pw"[^>]*aria-label="Contraseña"/.test(html));
 check("#status es región viva", /id="status" role="status" aria-live="polite"/.test(html));
+check("★ con aria-pressed", html.includes('star.setAttribute("aria-pressed"'));
+check("🔔 con aria-pressed", html.includes('tg.setAttribute("aria-pressed"'));
+check("emoji del dropzone oculto a AT", /class="dz-icon" aria-hidden="true"/.test(html));
+check("sparkline con texto alternativo", html.includes('aria-label="Tendencia semanal de procesos afines'));
+check("flechas en pestañas", html.includes('"ArrowRight","ArrowLeft","Home","End"'));
+check("contraste AA de grises pequeños", html.includes(".v4-chk-miss{color:#5d5d63}") ||
+  /\.live,footer,\.v3-pill,\.v5-muted,\.v4-chk-miss\{color:#5d5d63\}/.test(html));
 check("dropzone operable (tabindex+role)", /id="pliego-drop" tabindex="0" role="button"/.test(html));
 check("modales con aria-modal (≥4)", (html.match(/aria-modal/g) || []).length >= 4);
 check("caret KPI usa currentColor", !html.includes('stroke="#1d1d1f"'));
@@ -111,8 +127,7 @@ if (JSDOM) {
   check("capa a11y encontrada", !!codigoA11y);
 
   function montar(preConsent) {
-    const dom = new JSDOM(`<!DOCTYPE html><html class="sec-locked"><body>
-      <div id="sec-gate"><div class="box"><input id="sec-pw"></div></div>
+    const dom = new JSDOM(`<!DOCTYPE html><html><body>
       <footer><div class="wrap">pie</div></footer></body></html>`,
       { runScripts: "outside-only", url: "https://portafolio-estrategico.vercel.app/" });
     const { window } = dom;
@@ -125,7 +140,6 @@ if (JSDOM) {
   // 6a · Primera visita: banner presente, gate y footer con enlaces
   let w = montar(null);
   check("primera visita: banner visible", !!w.document.getElementById("dtc-consent"));
-  check("gate recibe aviso de tratamiento", !!w.document.getElementById("dtc-gate-legal"));
   check("footer recibe enlaces legales", !!w.document.getElementById("dtc-foot"));
 
   // 6b · Aceptar todo → consentimiento funcional y banner fuera
