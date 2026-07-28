@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Política de tratamiento de datos personales y aviso de privacidad de Detecta (Ley 1581 de 2012 y Decreto 1377 de 2013, Colombia)." />
+<meta name="robots" content="noindex" />
+<meta name="color-scheme" content="light dark" />
+<title>Política de Privacidad · Detecta</title>
+<style>
+  :root{
+    --bg:#fafafa; --card:#ffffff; --ink:#1d1d1f; --ink2:#515154; --line:#e8e8ed;
+    --soft:#f5f5f7; --acc:#0071e3; --ok:#1d7d3f;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0d0d0f; --card:#161618; --ink:#f5f5f7; --ink2:#a1a1a6; --line:#2c2c2e;
+           --soft:#1d1d20; --acc:#0a84ff; --ok:#4cd07d; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",Helvetica,Arial,sans-serif;
+    font-size:15.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .skip{position:absolute;left:-9999px;top:0;background:var(--acc);color:#fff;padding:8px 14px;border-radius:0 0 8px 0;z-index:10}
+  .skip:focus{left:0}
+  header{border-bottom:1px solid var(--line);background:var(--card)}
+  .hwrap{max-width:760px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .brand{font-weight:700;font-size:19px;letter-spacing:-0.02em;color:var(--ink);text-decoration:none}
+  .brand .dot{color:var(--acc)}
+  nav.legal a{color:var(--ink2);text-decoration:none;font-size:13px;margin-left:14px}
+  nav.legal a[aria-current="page"]{color:var(--ink);font-weight:600}
+  nav.legal a:hover,nav.legal a:focus-visible{color:var(--acc)}
+  main{max-width:760px;margin:0 auto;padding:34px 22px 60px}
+  h1{font-size:28px;letter-spacing:-0.02em;line-height:1.2;margin:0 0 4px}
+  .updated{color:var(--ink2);font-size:13px;margin:0 0 26px}
+  h2{font-size:19px;letter-spacing:-0.01em;margin:34px 0 10px}
+  h3{font-size:15.5px;margin:20px 0 6px}
+  p,li{color:var(--ink)}
+  .muted{color:var(--ink2)}
+  a{color:var(--acc)}
+  :focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:4px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:14px 0}
+  .aviso{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:18px 0}
+  .aviso h2{margin-top:0}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0}
+  caption{text-align:left;font-weight:600;padding-bottom:8px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--ink2);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
+  .tblwrap{overflow-x:auto}
+  footer{border-top:1px solid var(--line);color:var(--ink2);font-size:13px}
+  .fwrap{max-width:760px;margin:0 auto;padding:18px 22px}
+  footer a{color:var(--ink2)}
+  @media print{ header nav,.skip{display:none} body{background:#fff;color:#000} }
+</style>
+</head>
+<body>
+<a class="skip" href="#contenido">Saltar al contenido</a>
+<header>
+  <div class="hwrap">
+    <a class="brand" href="./index.html">detecta<span class="dot">.</span></a>
+    <nav class="legal" aria-label="Páginas legales">
+      <a href="./privacidad.html" aria-current="page">Privacidad</a>
+      <a href="./terminos.html">Términos</a>
+      <a href="./accesibilidad.html">Accesibilidad</a>
+    </nav>
+  </div>
+</header>
+
+<main id="contenido">
+  <h1>Política de Privacidad y Tratamiento de Datos Personales</h1>
+  <p class="updated">Última actualización: 27 de julio de 2026 · Versión 1.0</p>
+
+  <section class="aviso" aria-label="Aviso de privacidad resumido">
+    <h2>Aviso de privacidad (resumen)</h2>
+    <p><strong>Detecta</strong> es una herramienta <strong>privada, de uso personal</strong>, para analizar
+    licitaciones públicas de Colombia con datos abiertos de SECOP II. <strong>No recolecta datos personales de
+    visitantes</strong>: no hay registro de usuarios, ni formularios de contacto, ni publicidad, ni analítica de
+    terceros, ni cookies de rastreo. Lo único que se trata es (1) la <strong>clave de acceso</strong>, verificada
+    en el servidor por la protección del despliegue (Vercel Password Protection) — Detecta no la ve ni la
+    almacena — y (2) <strong>preferencias y notas de trabajo que se guardan exclusivamente en tu propio
+    navegador</strong> (localStorage) y nunca se envían a un servidor de Detecta. Responsable: «Detecta, tu
+    prioridad», persona natural domiciliada en Colombia. Puedes ejercer los derechos de la Ley 1581 de 2012
+    escribiendo a <a href="mailto:detectalicitaciones@gmail.com">detectalicitaciones@gmail.com</a>.</p>
+  </section>
+
+  <h2 id="responsable">1. Responsable del tratamiento</h2>
+  <p>El responsable del sitio <strong>Detecta</strong> (https://portafolio-estrategico.vercel.app) es
+  <strong>«Detecta, tu prioridad»</strong>, persona natural domiciliada en Colombia, que opera el sitio bajo ese
+  alias para no exponer datos personales en una página pública. Correo de contacto para asuntos de privacidad y
+  ejercicio de derechos: <a href="mailto:detectalicitaciones@gmail.com">detectalicitaciones@gmail.com</a>.
+  La identidad completa del responsable se facilitará a la autoridad competente o al titular que acredite un
+  interés legítimo, cuando la ley lo exija.</p>
+
+  <h2 id="naturaleza">2. Naturaleza del sitio y ámbito de esta política</h2>
+  <p>Detecta es una herramienta de análisis para decidir a qué procesos de contratación pública presentarse.
+  Es de <strong>uso personal y exclusivo</strong> de su administrador y de los perfiles empresariales de su
+  entorno directo; el acceso está restringido por contraseña. En la medida en que el tratamiento se realiza en un
+  <strong>ámbito personal o doméstico</strong>, opera la excepción del artículo 2, literal a), de la Ley 1581 de
+  2012. Aun así, esta política se adopta <strong>voluntariamente como buena práctica</strong> y aplica a cualquier
+  dato personal que llegue a tratarse a través del sitio.</p>
+
+  <h2 id="datos">3. Qué datos se tratan, con qué finalidad y dónde quedan</h2>
+  <div class="tblwrap">
+  <table>
+    <caption>Inventario de datos tratados</caption>
+    <thead><tr><th scope="col">Dato</th><th scope="col">Finalidad</th><th scope="col">Dónde queda</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Clave de acceso</td>
+        <td>Autenticar el ingreso a la herramienta (única finalidad).</td>
+        <td>La verifica el servidor de despliegue (Vercel Password Protection); tu navegador solo conserva la
+            cookie técnica de esa protección durante la sesión. El código de Detecta no recibe, guarda ni
+            transmite la clave.</td>
+      </tr>
+      <tr>
+        <td>Preferencias de interfaz (tema, idioma, contraste, tamaño de letra, pestaña activa)</td>
+        <td>Recordar cómo te gusta usar la herramienta.</td>
+        <td><code>localStorage</code> de tu navegador. No sale de tu dispositivo.</td>
+      </tr>
+      <tr>
+        <td>Trabajo del usuario (favoritos ★, tablero, notas, vistas guardadas, recordatorios, documentos e
+            historial importado)</td>
+        <td>Guardar tu trabajo entre sesiones.</td>
+        <td><code>localStorage</code> de tu navegador. No sale de tu dispositivo. Puedes exportarlo o borrarlo
+            desde «Datos y exportación» o con «Borrar mis datos».</td>
+      </tr>
+      <tr>
+        <td>Cachés técnicas (último radar, geocodificación de municipios, caché de noticias)</td>
+        <td>Que la app funcione más rápido y parcialmente sin conexión.</td>
+        <td><code>localStorage</code> y caché del navegador (PWA). No sale de tu dispositivo.</td>
+      </tr>
+      <tr>
+        <td>Registro de consentimiento de almacenamiento</td>
+        <td>Recordar tu decisión sobre el banner de almacenamiento (esencial).</td>
+        <td><code>localStorage</code> (<code>detecta-consent-v1</code>).</td>
+      </tr>
+      <tr>
+        <td>Datos técnicos de conexión (dirección IP, agente de usuario)</td>
+        <td>Servir la página y sus datos; seguridad de la infraestructura.</td>
+        <td>Los tratan, como encargados o terceros independientes, el proveedor de alojamiento (Vercel) y las
+            fuentes que la app consulta en vivo (ver sección 5). Detecta no construye con ellos ningún perfil.</td>
+      </tr>
+      <tr>
+        <td>Datos contenidos en la información pública de contratación (nombres de entidades, funcionarios o
+            proveedores publicados en SECOP)</td>
+        <td>Mostrar y priorizar procesos de contratación pública.</td>
+        <td>Son <strong>datos de naturaleza pública</strong> (art. 10, lit. b, Ley 1581 de 2012) publicados por
+            Colombia Compra Eficiente en datos.gov.co en cumplimiento de la Ley 1712 de 2014. Detecta los muestra
+            tal cual y no los almacena en servidores propios.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 id="cookies">4. Cookies y almacenamiento local</h2>
+  <p>Detecta <strong>no usa cookies de rastreo, publicidad ni analítica</strong>. El sitio emplea únicamente:</p>
+  <ul>
+    <li><strong>Almacenamiento esencial</strong>: la cookie técnica del acceso restringido (la gestiona el
+      servidor de despliegue, Vercel) y el registro de tu decisión de consentimiento. Sin ellos el acceso
+      restringido no puede funcionar, por lo que no requieren consentimiento y no pueden desactivarse.</li>
+    <li><strong>Almacenamiento funcional</strong> (localStorage): preferencias, favoritos, notas y cachés descritos
+      arriba. Puedes <strong>rechazarlo desde el banner de consentimiento</strong> («Solo esenciales»): la app
+      seguirá funcionando, pero no recordará nada entre sesiones. Las <strong>preferencias de accesibilidad</strong>
+      (alto contraste, tamaño de letra, atajos de teclado) se conservan siempre, por tratarse de personalización de
+      interfaz al servicio de la accesibilidad. Puedes cambiar tu decisión cuando quieras desde el enlace
+      «cookies y almacenamiento» del pie de página.</li>
+  </ul>
+  <p>El proveedor de alojamiento puede emplear cookies estrictamente técnicas propias del servicio (p. ej. de
+  protección del despliegue); Detecta no las controla ni las lee.</p>
+
+  <h2 id="terceros">5. Servicios de terceros a los que la app se conecta</h2>
+  <p>Al usar la herramienta, tu navegador se conecta directamente a fuentes públicas y CDNs. Cada proveedor recibe
+  tu dirección IP como parte técnica de la conexión y responde bajo sus propias políticas:</p>
+  <ul>
+    <li><strong>datos.gov.co / Colombia Compra Eficiente</strong> (SECOP II, SECOP I, Contratos e IPC del DANE):
+      datos abiertos de contratación pública y de inflación. En la consulta viajan los filtros elegidos
+      (fechas, valores, nombres de entidades o municipios).</li>
+    <li><strong>GDELT Project</strong> y <strong>Google News (RSS)</strong>: noticias para el indicador de riesgo
+      territorial; la consulta incluye el nombre del municipio analizado.</li>
+    <li><strong>OpenStreetMap / Nominatim</strong>: geocodificación de municipios (bajo demanda).</li>
+    <li><strong>CDNs de bibliotecas</strong> (cdnjs, unpkg), <strong>Google Fonts</strong> (tipografía Inter) y
+      <strong>teselas de mapa CARTO</strong>: código abierto (PDF.js, Tesseract.js, Leaflet), fuentes y mapa
+      base. cdnjs y Google Fonts se cargan al abrir la página, antes incluso de autenticarse.</li>
+    <li><strong>Proxies CORS públicos de respaldo</strong> (api.allorigins.win, corsproxy.io, api.codetabs.com,
+      thingproxy.freeboard.io): solo si el proxy propio falla, la consulta a la fuente pública se enruta por uno
+      de estos servicios, que ve la URL completa de esa consulta (nunca credenciales ni datos personales).</li>
+    <li><strong>Vercel</strong>: alojamiento del sitio y de las funciones opcionales <code>/api/*</code>.</li>
+    <li><strong>Funciones opcionales del servidor</strong> (solo si el administrador las configura): un monitor
+      diario puede enviar avisos por <strong>Telegram</strong> al propio administrador y pueden generarse
+      resúmenes con la API de <strong>Anthropic</strong>. En ambos casos viajan únicamente datos públicos del
+      proceso de contratación; nunca datos del usuario ni la clave de acceso.</li>
+  </ul>
+  <p>No se comparte con estos proveedores ningún dato personal tuyo distinto de los datos técnicos de conexión;
+  las búsquedas que haces se envían como términos de consulta a la fuente correspondiente.</p>
+
+  <h2 id="derechos">6. Derechos del titular y cómo ejercerlos</h2>
+  <p>Conforme al artículo 8 de la Ley 1581 de 2012 y a los artículos 21 y 22 del Decreto 1377 de 2013, tienes
+  derecho a <strong>conocer, actualizar, rectificar y suprimir</strong> tus datos, <strong>revocar la
+  autorización</strong>, solicitar <strong>prueba de la autorización</strong>, ser informado sobre el uso dado a
+  tus datos y presentar <strong>quejas ante la Superintendencia de Industria y Comercio</strong>
+  (<a href="https://www.sic.gov.co" rel="noopener">www.sic.gov.co</a>), autoridad colombiana de protección de datos.</p>
+  <ul>
+    <li><strong>Canal</strong>: <a href="mailto:detectalicitaciones@gmail.com">detectalicitaciones@gmail.com</a>.</li>
+    <li><strong>Plazos legales</strong>: consultas, máximo 10 días hábiles (art. 14, Ley 1581); reclamos, máximo
+      15 días hábiles (art. 15, Ley 1581).</li>
+    <li><strong>Autoservicio</strong>: dentro de la app puedes exportar todos tus datos locales y borrarlos por
+      completo («Borrar mis datos»), sin pedirle nada a nadie: están solo en tu navegador.</li>
+  </ul>
+
+  <h2 id="transferencias">7. Transferencias internacionales</h2>
+  <p>El alojamiento (Vercel) y algunas fuentes (GDELT, CDNs) operan servidores fuera de Colombia, principalmente
+  en Estados Unidos y la Unión Europea. Esa transmisión se limita a los datos técnicos de conexión necesarios para
+  servir la página (arts. 26 y 27, Ley 1581 de 2012). Detecta no transfiere internacionalmente bases de datos
+  personales: no las tiene.</p>
+
+  <h2 id="seguridad">8. Medidas de seguridad</h2>
+  <ul>
+    <li>Todo el tráfico va cifrado por <strong>HTTPS</strong> (con HSTS).</li>
+    <li>El acceso se controla <strong>en el servidor</strong> (Vercel Password Protection): la clave no aparece
+      en el código del sitio ni se almacena en tu navegador.</li>
+    <li>Cabeceras de seguridad: <code>X-Frame-Options: DENY</code> (anti-clickjacking),
+      <code>X-Content-Type-Options: nosniff</code>, <code>Referrer-Policy</code> y
+      <code>Permissions-Policy</code> restrictivas.</li>
+    <li>No existe base de datos central de usuarios que pueda filtrarse: el trabajo vive en tu navegador.</li>
+  </ul>
+
+  <h2 id="rnbd">9. Registro Nacional de Bases de Datos (RNBD)</h2>
+  <p>El deber de inscripción en el RNBD de la Superintendencia de Industria y Comercio aplica, desde el Decreto
+  090 de 2018, a sociedades y entidades sin ánimo de lucro con activos totales superiores a 100.000 UVT y a las
+  personas jurídicas de naturaleza pública. El administrador de Detecta, persona natural que además no gestiona
+  bases de datos personales de terceros a través del sitio, <strong>no está obligado a dicho registro</strong>.
+  Si la naturaleza del sitio cambiara, esta sección se revisará.</p>
+
+  <h2 id="menores">10. Menores de edad</h2>
+  <p>El sitio no está dirigido a menores de edad ni trata deliberadamente datos de niños, niñas o adolescentes.</p>
+
+  <h2 id="vigencia">11. Vigencia y cambios</h2>
+  <p>Esta política rige desde su publicación y permanecerá vigente mientras el sitio opere. Los datos locales
+  persisten hasta que tú los borres; el testigo de sesión expira al cerrar la pestaña. Cualquier cambio sustancial
+  se publicará en esta misma página con nueva fecha de actualización.</p>
+
+  <h2 id="normas">12. Marco normativo de referencia</h2>
+  <p class="muted">Constitución Política, art. 15 · Ley 1581 de 2012 (protección de datos personales) ·
+  Decreto 1377 de 2013 (compilado en el Decreto 1074 de 2015) · Decreto 090 de 2018 (RNBD) · Ley 1266 de 2008
+  (habeas data) · Ley 527 de 1999 (mensajes de datos) · Ley 1712 de 2014 (transparencia y datos abiertos).
+  Para visitantes desde la Unión Europea: este sitio no dirige servicios al mercado de la UE ni monitoriza el
+  comportamiento de personas en la UE, por lo que no le resulta aplicable el RGPD (art. 3); aun así, los
+  principios de minimización y limitación de finalidad aquí descritos siguen su espíritu.</p>
+</main>
+
+<footer>
+  <div class="fwrap">
+    Detecta · <a href="./index.html">volver a la app</a> ·
+    <a href="./terminos.html">Términos de Uso</a> ·
+    <a href="./accesibilidad.html">Declaración de accesibilidad</a>
+  </div>
+</footer>
+</body>
+</html>

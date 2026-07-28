@@ -6,12 +6,19 @@
    Variable de entorno: ANTHROPIC_API_KEY
    ========================================================================== */
 
+/* Solo el propio sitio: la web llama same-origin (no necesita CORS) y el
+   endpoint gasta una API key de pago — sin este control, cualquiera en
+   internet podía consumirla. El navegador siempre envía Origin en POST. */
+function esOrigenPropio(req) {
+  const propio = String(req.headers["x-forwarded-host"] || req.headers.host || "").toLowerCase();
+  const origen = req.headers.origin || req.headers.referer || "";
+  try { return !!propio && new URL(origen).host.toLowerCase() === propio; } catch { return false; }
+}
+
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "usa POST" });
+  if (!esOrigenPropio(req)) return res.status(403).json({ error: "Origen no autorizado" });
   if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: "Falta ANTHROPIC_API_KEY" });
 
   const b = req.body || {};

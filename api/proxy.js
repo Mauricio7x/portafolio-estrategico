@@ -8,11 +8,20 @@
    Variable de entorno requerida en Vercel:  SOCRATA_APP_TOKEN
    ========================================================================== */
 
+/* La web llama same-origin, así que no hace falta CORS abierto. Se rechaza
+   solo cuando hay evidencia de un origen AJENO (Origin/Referer de otro host);
+   sin cabeceras no se bloquea, para no romper navegadores con extensiones de
+   privacidad agresivas — el dato servido es público en todo caso. */
+function esOrigenAjeno(req) {
+  const propio = String(req.headers["x-forwarded-host"] || req.headers.host || "").toLowerCase();
+  const origen = req.headers.origin || req.headers.referer || "";
+  if (!origen || !propio) return false;
+  try { return new URL(origen).host.toLowerCase() !== propio; } catch { return true; }
+}
+
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
   if (req.method === "OPTIONS") return res.status(204).end();
+  if (esOrigenAjeno(req)) return res.status(403).json({ error: "Origen no autorizado" });
 
   const target = req.query.url;
   if (!target) return res.status(400).json({ error: "Falta el parámetro url" });

@@ -15,9 +15,11 @@
    ════════════════════════════════════════════════════════════════ */
 "use strict";
 
-const VERSION = "detecta-v4-2026-06";
+// v6: sin gate JS — la protección es Vercel Password Protection (servidor).
+const VERSION = "detecta-v6-2026-07";
 const SHELL_CACHE = "detecta-shell-" + VERSION;
-const SHELL_ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
+const SHELL_ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg",
+                      "./privacidad.html", "./terminos.html", "./accesibilidad.html"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -61,10 +63,12 @@ self.addEventListener("fetch", (event) => {
       fetch(req)
         .then((res) => {
           const copy = res.clone();
-          caches.open(SHELL_CACHE).then((c) => c.put("./index.html", copy)).catch(() => {});
+          caches.open(SHELL_CACHE).then((c) => c.put(req, copy)).catch(() => {});
           return res;
         })
-        .catch(() => caches.match("./index.html").then((r) => r || caches.match("./")))
+        .catch(() => caches.match(req)
+          .then((r) => r || caches.match("./index.html"))
+          .then((r) => r || caches.match("./")))
     );
     return;
   }

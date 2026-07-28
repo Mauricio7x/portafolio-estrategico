@@ -1,0 +1,46 @@
+# ══════════════════════════════════════════════════════════════════════
+# Sincronización horaria de la caché SECOP (opcional).
+# Vercel Hobby solo permite crons diarios; este workflow cubre el hueco
+# llamando a /api/sync cada hora. Para activarlo, crear DOS secretos del
+# repositorio (Settings → Secrets and variables → Actions):
+#   DETECTA_URL          p. ej. https://portafolio-estrategico.vercel.app
+#   DETECTA_CRON_SECRET  el mismo CRON_SECRET configurado en Vercel
+# Sin secretos, el job termina en éxito sin hacer nada (no molesta).
+# NOTA: con Vercel Password Protection activa, el muro del edge intercepta
+# ANTES de llegar a la función (el Bearer no lo salva). Crear en Vercel el
+# "Protection Bypass for Automation" (Settings → Deployment Protection) y
+# guardar su secreto como tercer secreto del repo:
+#   DETECTA_BYPASS_SECRET  → se envía como x-vercel-protection-bypass
+# El cron NATIVO de Vercel no lo necesita (invoca por dentro del muro).
+# ══════════════════════════════════════════════════════════════════════
+name: Sincronizar caché SECOP
+
+on:
+  schedule:
+    - cron: "7 * * * *"   # cada hora, minuto 7 (evita la congestión de :00)
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Llamar /api/sync (modo auto, reanudable)
+        env:
+          URL: ${{ secrets.DETECTA_URL }}
+          SECRET: ${{ secrets.DETECTA_CRON_SECRET }}
+          BYPASS: ${{ secrets.DETECTA_BYPASS_SECRET }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$SECRET" ]; then
+            echo "Secretos no configurados: se omite (ver comentario del workflow)."
+            exit 0
+          fi
+          EXTRA=()
+          [ -n "$BYPASS" ] && EXTRA=(-H "x-vercel-protection-bypass: $BYPASS")
+          # hasta 4 invocaciones seguidas: una carga completa en curso avanza
+          # ~240 s por llamada y responde done:false hasta terminar.
+          for i in $(seq 1 4); do
+            R=$(curl -sS -m 310 -H "Authorization: Bearer $SECRET" "${EXTRA[@]}" "$URL/api/sync?modo=auto") || exit 1
+            echo "intento $i → $R"
+            echo "$R" | grep -q '"done":false' || break
+          done

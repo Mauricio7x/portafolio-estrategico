@@ -37,7 +37,8 @@ Es un único `index.html` que corre 100 % en el navegador, sin paso de compilaci
 
 ## Arquitectura
 - **`index.html`** — TODA la app (HTML+CSS+JS, sin dependencias de pago).
-  - Gate de seguridad por contraseña (SHA-256 + salt; respaldo local + `/api/auth` en producción).
+  - **Sin gate JS** (jul 2026): el acceso restringido lo da **Vercel Password Protection** (servidor).
+    Se conserva solo el anti-iframe. Aviso «Sitio privado» en el footer.
   - Pestañas: **Resumen** (dashboard, por defecto), Helder, Génesis, Juntos, **Mapa**, Pliego,
     Rentabilidad, APU, Manual.
   - Whitelists UNSPSC (`UNSPSC_HELDER/GENESIS/JUNTOS`) **embebidas** en un `<script>` del `<head>`.
@@ -48,6 +49,19 @@ Es un único `index.html` que corre 100 % en el navegador, sin paso de compilaci
   - `api/cron.js` — monitor autónomo: consulta SECOP, puntúa, verifica anticipo y avisa por **Telegram**.
   - `api/resumen.js` — resumen IA por proceso (Anthropic; **de pago**, opcional; la web usa un resumen local gratis).
   - `lib/engine.js` — motor de encaje portado a Node para que el cron calcule lo mismo que la web.
+- **Capa de datos SECOP (jul 2026)** — extracción exhaustiva del año vigente a Upstash Redis gratuito (`lib/redis.js`, vars `UPSTASH_REDIS_REST_*` con respaldo `KV_REST_API_*`), ver `lib/README.md`:
+  - `lib/extractor.js` + `lib/almacen.js` — carga completa **reanudable** (keyset por `:id`, count(1) por mes,
+    reintentos con backoff, chunks gzip por mes) + **delta** por `:updated_at` con solape 48 h (los cambios de
+    estado REEMPLAZAN por `_k`). Sonda de capacidades: solo un 400 real degrada a `$offset` (nunca un fallo de red).
+  - `api/sync.js` (modos full/delta/auto, candado SET NX, presupuesto 45 s/invocación) y `api/procesos.js`
+    (sirve la caché con la MISMA forma de campos que Socrata, `limit≤4000`, memoria caliente por instancia).
+  - `index.html`: `loadProcesses` intenta **caché-primero** (`cacheMeta`/`cachePaginas`); si la caché tiene >1 h
+    dispara `/api/sync?modo=auto` en segundo plano con chip «actualizando…» (`chipSync`). La cascada Socrata
+    queda intacta como respaldo. Filtros de valor se aplican en local sobre la caché (extracción SIN filtros).
+  - Cron Vercel diario 08:30 UTC + workflow GitHub horario opcional (`.github/workflows/sincronizacion.yml`).
+  - Respaldo de emergencia: `scripts/respaldo-csv.js` (extraer a archivo / export CSV masivo / subir a KV).
+  - **Pruebas sin red** (este entorno no alcanza datos.gov.co): `node tests/validar-extractor.js` — mock de
+    Socrata (keyset, count, 429/500 inyectados) + mock de KV REST; incluye e2e por los handlers reales.
 - **PWA** (`manifest.webmanifest`, `sw.js`, `icon.svg`) — instalar "Detecta" como app y servir el
   app-shell offline. El SW cachea solo el shell (network-first en navegación, respaldo al `index.html`);
   los datos de SECOP/GDELT siempre van a la red. El último radar se guarda en `localStorage`
@@ -208,11 +222,13 @@ suave cada ~11 s (respeta `prefers-reduced-motion`).
 - Español en UI, comentarios y mensajes de commit. Estética tipo Apple (system fonts + Inter, sutil, claro).
 - **Sin dependencias de pago.** PDF.js, Tesseract.js (OCR del pliego) y Leaflet (mapa) se cargan por CDN/lazy-load.
 - Cambios nuevos: preferir **capa aditiva** + monkey-patch antes que reescribir funciones existentes.
-- No debilitar el gate de seguridad ni el anti-iframe sin pedir permiso.
+- No debilitar el control de acceso (Vercel Password Protection) ni el anti-iframe sin pedir permiso.
 - **Eliminado** (jun 2026): el detector de DevTools (recarga cada 1.5 s por divergencia `outerWidth/innerWidth`) y el
   bloqueo de F12/clic-derecho/Ctrl+U/Ctrl+S. Daban cero seguridad real y causaban **falsos positivos en móvil** (bucle de
-  recarga). Se conservan el gate por contraseña (SHA-256 + `/api/auth`) y el anti-iframe. Privacidad real → Vercel Password
-  Protection.
+  recarga). **Jul 2026: también se eliminó el gate JS por contraseña** (SHA-256+salt en el HTML: cosmético,
+  fuerza bruta offline y bypass por sessionStorage). Se conserva el anti-iframe. Privacidad real → **Vercel
+  Password Protection** (activarla en el dashboard ANTES de desplegar; cubre todo el despliegue, incluidos los
+  datos de RUP embebidos en el HTML). SW en `detecta-v6-2026-07` para purgar el shell viejo.
 
 ## Pendiente por verificar (dato del negocio)
 - **Nº de contratos de Génesis**: la ficha visible mostraba 105/138 y la config JS 108/141. Se alineó todo a
@@ -230,3 +246,43 @@ suave cada ~11 s (respeta `prefers-reduced-motion`).
   etiquetan `v9-adv` y se ocultan por defecto (`html.v9-hide-adv`) tras un toggle «Ver análisis avanzado».
 - Los dos checks base `(.tab.active).dataset.tab===currentProfile` → `radar-wrap visible` (porque el perfil ya no es pestaña).
 - Degrada con gracia: si el init falla, quita `v9-simple` y reaparecen las pestañas.
+
+### Capa Legal (`detectaLegal`, un `<style>` + un `<script>` al final del `<body>`) — jul 2026
+Cumplimiento voluntario (nada era legalmente exigible para un sitio personal: excepción doméstica art. 2.a
+Ley 1581/2012; RNBD solo obliga a sociedades con activos >100.000 UVT — Decreto 090/2018; GDPR no aplica por
+ámbito territorial; la Res. 1519/2020 de accesibilidad solo rige a sujetos obligados de la Ley 1712/2014).
+- **Páginas estáticas fuera del gate** (deben poder leerse sin clave): `privacidad.html` (política de
+  tratamiento + aviso, Ley 1581 + D.1377), `terminos.html` (no-asesoría, atribuciones SECOP/OSM-ODbL/CARTO/
+  GDELT, Ley 527/1999), `accesibilidad.html` (declaración WCAG 2.1 AA, modelo W3C). Precacheadas en `sw.js`.
+- **Banner de consentimiento** (`detecta-consent-v1`): aceptar / solo esenciales / configurar. Visible sobre el
+  gate (override de `html.sec-locked` por id `#dtc-consent`). "Solo esenciales" activa un **guard**: monkey-patch
+  de `Storage.prototype.setItem` que convierte en no-op las escrituras `detecta-*`/`radar-licit*` no esenciales
+  (la clave de consentimiento está en allowlist) y **purga** lo ya guardado (con `confirm` previo). Reapertura:
+  botón «cookies y almacenamiento» del footer.
+- **Acceso** (jul 2026): el gate JS fue eliminado; la clave la verifica el servidor (Vercel Password
+  Protection) y el código no la ve ni la guarda. Responsable en páginas legales bajo alias **«Detecta, tu
+  prioridad»** + correo `detectalicitaciones@gmail.com` (sin datos personales expuestos). Constancia de
+  autorización de datos de Helder: `autorizacion_helder.md` (plantilla, pendiente de formalizar).
+- **`vercel.json`**: cabeceras X-Frame-Options DENY (antes solo estaba prometida en un comentario),
+  nosniff, Referrer-Policy, HSTS, Permissions-Policy (`microphone=(self)` para la búsqueda por voz), COOP.
+- **Pruebas**: `node tests/validar-legal.js` — sintaxis de TODOS los bloques inline, `node --check` de
+  api/lib/sw, contenido legal mínimo, HTTPS estricto, cabeceras, y smoke test del banner con jsdom (opcional,
+  vía NODE_PATH): aceptar/rechazar/guard/purga/persistencia/reapertura.
+- Si cambia la naturaleza del sitio (usuarios terceros, correos, venta del servicio): nacen de inmediato las
+  obligaciones de la Ley 1581/D.1377 (política/aviso/canales de derechos) y del art. 50 del Estatuto del
+  Consumidor. Revisar también RNBD si Génesis supera 100.000 UVT en activos.
+
+### Capa A11Y (`detectaA11y`, un `<style>` + un `<script>` al final, tras la capa legal) — jul 2026
+Cierra la auditoría WCAG 2.1 AA sin tocar capas: **labelize** (copia `title`/`placeholder` → `aria-label` donde
+falte; se re-ejecuta tras `renderProcesses`), **región viva** `#dtc-live` que anuncia los toasts de las 5 capas
+(un solo MutationObserver de clase para toasts + `aria-selected` de pestañas + `aria-expanded` del ⚙),
+**tablist/tab** en `#tabs`, dropzone del pliego operable por teclado, y **atajos desactivables** (WCAG 2.1.4:
+listener en captura sobre `window` + botón «⌨ Atajos» en el popover ⚙, clave `detecta-atajos-off`, en la
+allowlist esencial del consentimiento junto a `detecta-contraste`/`detecta-fontscale`).
+En el código base: `aria-label` en `#anticipo-trigger`, `role=status aria-live` en `#status`/
+`#anti-status`, `for=` en los filtros, `aria-modal` en los modales de capas #4/#8, caret KPI con
+`currentColor`, y en oscuro `.btn-primary` baja a `#0066cc`. Ronda 2 (jul 2026): `aria-pressed` en ★/🔔,
+`aria-hidden` en emojis decorativos, sparkline con `role=img`+`aria-label`, **flechas** ←/→/Home/End en las
+pestañas (sobre las visibles), y grises de 10.5-12px a `#5d5d63` en claro (`.v4-chk-miss` fallaba AA).
+**APIs**: `/api/resumen` exige origen propio (gastaba la key de Anthropic con CORS `*` sin auth) y `/api/proxy`
+rechaza orígenes ajenos; ninguno necesita CORS (la web llama same-origin).

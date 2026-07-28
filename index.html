@@ -316,6 +316,9 @@
 
   /* Status */
   .status{font-size:13px;color:var(--ink2);text-align:center;margin:14px 0;padding:14px;background:var(--soft);border-radius:12px}
+  /* chip de sincronización de la capa de datos (caché del servidor) */
+  .dtc-sync{display:block;font-size:12px;color:var(--ink2);text-align:center;margin:6px 0 0;padding:5px 10px}
+  .dtc-sync.done{color:var(--green)}
   .status b{color:var(--ink);font-weight:600}
   .err{color:var(--red)}
   .loading{display:inline-block;width:12px;height:12px;border:2px solid rgba(0,113,227,.2);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;margin-right:6px}
@@ -518,143 +521,20 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
 </script>
 </head>
 <body>
-<!-- ╔══════════════════════════════════════════════════════════════════════╗
-     ║  GATE DE SEGURIDAD — defensa en profundidad contra acceso curioso.   ║
-     ║  Capas: (1) overlay bloquea render hasta autenticación SHA-256+salt, ║
-     ║         (2) bloqueo de F12/Ctrl+U/Ctrl+Shift+I/J/C y click derecho,  ║
-     ║         (3) detector de DevTools por divergencia de viewport,        ║
-     ║         (4) anti-iframe: si self ≠ top, redirige a blanco.           ║
-     ║  Realidad: ningún JS-cliente protege contra reverse engineering      ║
-     ║  determinado. Esta capa frena al curioso casual. Para protección     ║
-     ║  real, usar Vercel Pro Password Protection (de pago).                ║
-     ╚══════════════════════════════════════════════════════════════════════╝ -->
-<style>
-  #sec-gate{position:fixed;inset:0;background:#0a0a0a;z-index:999999;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif}
-  #sec-gate .box{background:#141414;border:1px solid #2a2a2a;border-radius:14px;padding:36px 32px;width:340px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)}
-  #sec-gate h2{color:#f5f5f7;font-size:18px;font-weight:600;margin:0 0 6px;letter-spacing:-0.01em}
-  #sec-gate p{color:#86868b;font-size:13px;margin:0 0 22px;line-height:1.45}
-  #sec-gate input{width:100%;padding:11px 14px;background:#1d1d1f;border:1px solid #3a3a3c;border-radius:9px;color:#f5f5f7;font-size:14px;outline:none;box-sizing:border-box;font-family:inherit}
-  #sec-gate input:focus{border-color:#0a84ff}
-  #sec-gate button{margin-top:12px;width:100%;padding:11px;background:#0a84ff;color:#fff;border:0;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
-  #sec-gate button:active{background:#0066cc}
-  #sec-gate .err{margin-top:10px;color:#ff453a;font-size:12px;min-height:16px}
-  #sec-gate .ft{margin-top:18px;color:#48484a;font-size:11px;letter-spacing:0.02em}
-  html.sec-locked{overflow:hidden}
-  html.sec-locked body>*:not(#sec-gate){visibility:hidden!important;pointer-events:none!important}
-</style>
-<div id="sec-gate" role="dialog" aria-modal="true" aria-label="Acceso restringido">
-  <div class="box">
-    <h2>Acceso restringido</h2>
-    <p>Esta plataforma es de uso privado.<br>Ingrese la contraseña para continuar.</p>
-    <input type="password" id="sec-pw" placeholder="Contraseña" autocomplete="off" autofocus>
-    <button id="sec-go" type="button">Continuar</button>
-    <div class="err" id="sec-err" aria-live="polite"></div>
-    <div class="ft">Detecta</div>
-  </div>
-</div>
+<!-- ════════════════════════════════════════════════════════════════════
+     ACCESO RESTRINGIDO (jul 2026) — el gate JS (SHA-256+salt en cliente)
+     se ELIMINÓ por cosmético: el hash y la sal viajaban en este HTML y el
+     desbloqueo ocurría en el cliente, por lo que no protegía nada real.
+     La protección efectiva es Vercel Password Protection (autenticación
+     en el SERVIDOR: cubre todo el despliegue, incluidos los datos de
+     perfiles embebidos en este HTML y las páginas legales si se desea
+     excluirlas, ver docs). Activar en: Vercel → proyecto → Settings →
+     Deployment Protection ANTES de desplegar esta versión.
+     Se conserva el anti-iframe (refuerzo del X-Frame-Options: DENY).
+     ════════════════════════════════════════════════════════════════════ -->
 <script>
-(function(){
-  "use strict";
-  document.documentElement.classList.add("sec-locked");
-
-  // ──────────────────────────────────────────────────────────────────
-  // Anti-iframe (clickjacking): si la app está embebida, redirige.
-  // Defensa secundaria al X-Frame-Options: DENY del vercel.json.
-  // ──────────────────────────────────────────────────────────────────
-  try { if(window.self !== window.top){ window.top.location = "about:blank"; } } catch(e) { document.body.innerHTML=""; return; }
-
-  // ──────────────────────────────────────────────────────────────────
-  // Hash credentials: SHA-256(salt + password). Salt aleatorio único,
-  // hash precomputado SOLO como respaldo para desarrollo local (abrir el
-  // archivo sin Vercel). En producción manda /api/auth (servidor).
-  // ──────────────────────────────────────────────────────────────────
-  var SALT = "9aa0209ba3e01b551d31040e1310a3f2";
-  var HASH = "76be47878cf1c187c424e0c235340bb02bc1936c1f802ec74dab0db03b0ba4d5";
-  var KEY  = "sec-token-v1";
-
-  async function sha256(s){
-    var enc = new TextEncoder().encode(s);
-    var buf = await crypto.subtle.digest("SHA-256", enc);
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
-  }
-
-  function unlock(){
-    document.documentElement.classList.remove("sec-locked");
-    var g = document.getElementById("sec-gate");
-    if(g) g.remove();
-  }
-
-  function lockout(msg){
-    var err = document.getElementById("sec-err");
-    if(err) err.textContent = msg || "Contraseña incorrecta";
-    var pw = document.getElementById("sec-pw");
-    if(pw){ pw.value=""; pw.focus(); }
-  }
-
-  // ¿Hay sesión válida en el servidor? (cookie HttpOnly firmada)
-  (function checkServerSession(){
-    fetch("/api/auth", { method:"GET", credentials:"same-origin" })
-      .then(function(r){ return r.ok ? r.json() : {authenticated:false}; })
-      .then(function(d){ if(d && d.authenticated) unlock(); })
-      .catch(function(){ /* sin servidor: el gate sigue visible */ });
-  })();
-
-  // Respaldo local: sesión en sessionStorage validada por hash (solo dev).
-  try {
-    var saved = sessionStorage.getItem(KEY);
-    if(saved){
-      sha256(SALT + saved).then(function(h){
-        if(h === HASH) unlock();
-        else sessionStorage.removeItem(KEY);
-      });
-    }
-  } catch(e){}
-
-  async function tryAuth(){
-    var pw = document.getElementById("sec-pw").value || "";
-    if(!pw){ lockout("Ingrese la contraseña"); return; }
-
-    // 1) Verificación LOCAL por hash — PRIMARIA y sin dependencias de red.
-    //    No existe /api/auth: antes, un 401/respuesta rara del servidor podía
-    //    bloquear el ingreso aunque la clave fuera correcta. Ahora la clave se
-    //    valida primero contra el hash local (SHA-256(salt+clave)).
-    try{
-      var h = await sha256(SALT + pw);
-      if(h === HASH){ try{ sessionStorage.setItem(KEY, pw); }catch(e){} unlock(); return; }
-    }catch(e){ /* crypto no disponible: intenta servidor */ }
-
-    // 2) Validación OPCIONAL en el servidor (solo si algún día existe /api/auth).
-    try{
-      var r = await fetch("/api/auth", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        credentials:"same-origin",
-        body: JSON.stringify({ password: pw })
-      });
-      if(r.ok){
-        var d = await r.json();
-        if(d && d.authenticated){ try{ sessionStorage.setItem(KEY, pw); }catch(e){} unlock(); return; }
-      }
-    }catch(e){ /* sin red/servidor */ }
-
-    lockout();
-  }
-
-  document.addEventListener("DOMContentLoaded", function(){
-    var btn = document.getElementById("sec-go");
-    var pw  = document.getElementById("sec-pw");
-    if(btn) btn.addEventListener("click", tryAuth);
-    if(pw)  pw.addEventListener("keydown", function(ev){ if(ev.key === "Enter") tryAuth(); });
-  });
-
-  // ──────────────────────────────────────────────────────────────────
-  // (Eliminado) Bloqueo de F12/clic-derecho/Ctrl+U y detector de DevTools
-  // por divergencia outerWidth/innerWidth con recarga cada 1.5 s. Daba CERO
-  // seguridad real (el código es público) y provocaba FALSOS POSITIVOS en
-  // móvil/tablet/ventanas acopladas → bucle de recarga. La privacidad real
-  // se delega al gate por contraseña (arriba) y a Vercel Password Protection.
-  // ──────────────────────────────────────────────────────────────────
-})();
+  // Anti-iframe (clickjacking): defensa secundaria al X-Frame-Options: DENY del vercel.json.
+  try { if (window.self !== window.top) { window.top.location = "about:blank"; } } catch (e) { document.body.innerHTML = ""; }
 </script>
 
 <header>
@@ -665,7 +545,7 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
       <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Cambiar tema claro/oscuro" title="Cambiar entre claro y oscuro">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
-      <button type="button" class="anticipo-badge" id="anticipo-trigger" title="Filtrar procesos con anticipo ≥ 20 %">
+      <button type="button" class="anticipo-badge" id="anticipo-trigger" title="Filtrar procesos con anticipo ≥ 20 %" aria-label="Verificar anticipo ≥ 20 %">
         <span class="anticipo-mark">d<span>.</span></span>
         <span class="anticipo-txt">Verificar anticipo</span>
       </button>
@@ -847,9 +727,9 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
       <h3>Lector de pliego</h3>
       <p class="desc">Cargue el pliego en PDF o pegue el texto. La plataforma extrae <b>anticipo, liquidez, endeudamiento, cobertura y K exigido</b>, y los compara contra el perfil activo. <b>Funciona con PDFs escaneados</b>: detecta cuándo el documento no tiene capa de texto y aplica OCR (español) automáticamente.</p>
 
-      <div class="dropzone" id="pliego-drop">
+      <div class="dropzone" id="pliego-drop" tabindex="0" role="button" aria-label="Cargar pliego en PDF: arrastre el archivo o pulse Enter para seleccionarlo">
         <input type="file" id="pliego-file" accept="application/pdf,.pdf" style="display:none">
-        <div class="dz-icon">📄</div>
+        <div class="dz-icon" aria-hidden="true">📄</div>
         <div class="dz-title">Arrastre un PDF aquí o haga clic para seleccionar</div>
         <div class="dz-sub">PDF normal o escaneado · máx ~20 páginas para OCR rápido</div>
       </div>
@@ -1323,15 +1203,15 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
 
       <div class="filters-simple">
         <div class="field">
-          <label>Días atrás</label>
+          <label for="f-days">Días atrás</label>
           <input type="number" id="f-days" value="60" step="5">
         </div>
         <div class="field">
-          <label>Valor mínimo (COP)</label>
+          <label for="f-min">Valor mínimo (COP)</label>
           <input type="number" id="f-min" value="0" step="10000000" placeholder="0 = sin mínimo">
         </div>
         <div class="field">
-          <label>Puntaje mínimo</label>
+          <label for="f-score">Puntaje mínimo</label>
           <input type="number" id="f-score" value="0" step="5" max="100">
         </div>
         <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);white-space:nowrap;padding-bottom:9px">
@@ -1350,9 +1230,9 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
         <input type="number" id="f-anti" value="0" style="display:none">
       </div>
 
-      <div class="status" id="anti-status" style="display:none"></div>
+      <div class="status" id="anti-status" style="display:none" role="status" aria-live="polite"></div>
 
-      <div class="status" id="status"><span class="loading"></span> Cargando...</div>
+      <div class="status" id="status" role="status" aria-live="polite"><span class="loading"></span> Cargando...</div>
 
       <div class="proc-list" id="proc-list"></div>
     </div>
@@ -1361,7 +1241,8 @@ const UNSPSC_JUNTOS = ["11111500","11121600","11162100","12161800","20142900","2
 
 <footer>
   <div class="wrap">
-    Detecta · Datos abiertos de Colombia Compra Eficiente (<code>p6dx-8zbt</code>) ·
+    Detecta · Sitio privado de uso personal (acceso restringido) ·
+    Datos abiertos de Colombia Compra Eficiente (<code>p6dx-8zbt</code>) ·
     <a href="https://www.colombiacompra.gov.co" target="_blank" rel="noopener">colombiacompra.gov.co</a>
   </div>
 </footer>
@@ -1973,6 +1854,84 @@ async function fetchWithProxy(url){
   throw new Error("Sin conexión a SECOP II (proxy propio y respaldos agotados)");
 }
 
+/* ================================================================
+   CAPA DE DATOS ROBUSTA (jul 2026) — caché del servidor
+   /api/sync extrae el año vigente completo de SECOP II (paginación
+   estable por :id, reintentos, verificación count(1)) y lo deja en
+   Vercel KV; /api/procesos lo sirve con la MISMA forma de campos que
+   Socrata, así mapProcess/fechaCierre no cambian. Aquí solo se decide
+   el ORIGEN: caché primero, Socrata como respaldo intacto.
+   ================================================================ */
+async function cacheMeta(){
+  try{
+    const r = await fetchTimeout("/api/procesos?meta=1", { headers:{Accept:"application/json"} }, 6000);
+    if(!r.ok) return null;
+    return await r.json();
+  }catch(e){ return null; }
+}
+async function cachePaginas(since, stat, minVal, maxVal){
+  // mismo tope que la ruta Socrata (60k) para que el aviso de truncado
+  // siga siendo coherente venga de donde venga el radar
+  const LIM = 1500, MAX = 60000;
+  let out = [], offset = 0, lote;
+  const filtros = (minVal > 0 ? "&min=" + minVal : "") + (maxVal > 0 && maxVal < 1e15 ? "&max=" + maxVal : "");
+  do{
+    if(stat) stat.innerHTML = `<span class="loading"></span> Radar desde caché del servidor… (${out.length.toLocaleString()})`;
+    const r = await fetchTimeout(`/api/procesos?desde=${encodeURIComponent(since)}&limit=${LIM}&offset=${offset}${filtros}`,
+      { headers:{Accept:"application/json"} }, 25000);
+    if(!r.ok) throw new Error("cache HTTP "+r.status);
+    lote = await r.json();
+    if(!Array.isArray(lote)) throw new Error("cache: respuesta no-array");
+    out = out.concat(lote); offset += LIM;
+  }while(lote.length === LIM && out.length < MAX);
+  // dedup defensivo: si una sincronización terminó a mitad de la descarga,
+  // las filas pueden correrse entre páginas (duplicados). Clave estable.
+  const visto = new Map();
+  for(const f of out){
+    const k = f.id_del_proceso || f._k || f[":id"];
+    if(!k){ visto.set(Symbol(), f); continue; }
+    const prev = visto.get(k);
+    if(!prev || (f[":updated_at"]||"") >= (prev[":updated_at"]||"")) visto.set(k, f);
+  }
+  return Array.from(visto.values());
+}
+/* Indicador no bloqueante bajo el estado del radar */
+function chipSync(txt, done){
+  let el = document.getElementById("dtc-sync");
+  if(!el){
+    const st = document.getElementById("status");
+    if(!st || !st.parentNode) return;
+    el = document.createElement("span");
+    el.id = "dtc-sync"; el.className = "dtc-sync";
+    el.setAttribute("role","status"); el.setAttribute("aria-live","polite");
+    st.parentNode.insertBefore(el, st);
+  }
+  el.textContent = txt || "";
+  el.classList.toggle("done", !!done);
+  el.style.display = txt ? "" : "none";
+}
+let _deltaEnCurso = false;
+function dispararDeltaSiEnvejecida(meta){
+  if(_deltaEnCurso) return;
+  if(meta.fresca){
+    if(meta.last_sync) chipSync("✓ datos del servidor al día ("+
+      new Date(meta.last_sync).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})+")", true);
+    return;
+  }
+  _deltaEnCurso = true;
+  chipSync("🔄 actualizando datos en segundo plano…", false);
+  fetchTimeout("/api/sync?modo=auto", { headers:{Accept:"application/json"} }, 55000)
+    .then(r => r.ok || r.status === 202 ? r.json() : null)
+    .then(j => {
+      // veraz: solo anunciar actualización si el sync REALMENTE avanzó
+      if(j && (j.alDia === true || j.done === true)) chipSync("✓ datos actualizados — pulsa ↻ Recargar para verlos", true);
+      else if(j && (j.enCurso || j.msg)) chipSync("🔄 sincronización en curso en el servidor…", false);
+      else chipSync("", true);
+    })
+    .catch(function(){ chipSync("", true); })
+    .finally(function(){ _deltaEnCurso = false; });
+}
+
 // El dataset de Procesos no expone una única "fecha de cierre" estable: según
 // la modalidad, el plazo para ofertar vive en distintas columnas. Buscamos de
 // forma defensiva la fecha de recepción/cierre/límite (la primera válida).
@@ -2343,23 +2302,50 @@ async function loadProcesses(){
       mapped = _mc.mapped; nRaw = _mc.nRaw; truncado = _mc.truncado;
       stat.innerHTML = '<span class="loading"></span> Radar en caché (re-puntuando, sin red)…';
     } else {
-      // PAGINACIÓN — el API limita a ~50k por página; iteramos con $offset
-      // hasta agotar resultados o llegar a un tope de seguridad (60k filas).
       const PAGE = 10000, MAX_ROWS = 60000;
-      let rows = [];
-      let offset = 0, lote;
-      do {
-        const url = `${SECOP.base}?$where=${encodeURIComponent(where)}&$order=${encodeURIComponent(F.fecha+" DESC")}&$limit=${PAGE}&$offset=${offset}`;
-        stat.innerHTML = `<span class="loading"></span> Consultando SECOP II… (${rows.length.toLocaleString()} descargados)`;
-        lote = await fetchWithProxy(url);
-        if(Array.isArray(lote) && lote.length){
-          rows = rows.concat(lote);
-          offset += PAGE;
-        }
-      } while(Array.isArray(lote) && lote.length === PAGE && rows.length < MAX_ROWS);
+      // ── ORIGEN 1: caché del servidor (/api/procesos, capa de extracción).
+      // Si hay carga inicial completa, el radar sale de la caché KV: cobertura
+      // del año verificada con count(1) y sin depender de Socrata en caliente.
+      // Si la caché tiene >1 h, se dispara un delta en segundo plano SIN
+      // bloquear (chip "actualizando…"). Los filtros de valor se aplican
+      // en local (la caché no filtra nada: extracción sin filtros tempranos).
+      let rows = null, origenCache = false;
+      const metaC = await cacheMeta();
+      // la caché solo cubre desde metaC.desde (año vigente − solape); si el
+      // usuario pide una ventana anterior, se va directo a Socrata
+      const cubre = metaC && metaC.last_full && (!metaC.desde || since >= metaC.desde);
+      if(cubre){
+        try{
+          rows = await cachePaginas(since, stat, minVal, maxVal);
+          origenCache = true;
+          // cinturón local con la MISMA semántica que el $where de Socrata
+          if(minVal > 0) rows = rows.filter(r => parseFloat(r[F.valor]) >= minVal);
+          if(maxVal > 0 && maxVal < 1e15) rows = rows.filter(r => { const v = parseFloat(r[F.valor]); return !isNaN(v) && v <= maxVal; });
+          dispararDeltaSiEnvejecida(metaC);
+        }catch(e){ rows = null; origenCache = false; }
+      }
+      // caché vacía para esta ventana → que decida Socrata (puede ser una
+      // caché desactualizada, no un "no hay procesos")
+      if(origenCache && rows && rows.length === 0){ rows = null; origenCache = false; }
+      // ── ORIGEN 2 (respaldo): PAGINACIÓN directa a SECOP II, igual que
+      // siempre — el API limita por página; iteramos con $offset hasta
+      // agotar resultados o llegar a un tope de seguridad (60k filas).
+      if(!rows){
+        rows = [];
+        let offset = 0, lote;
+        do {
+          const url = `${SECOP.base}?$where=${encodeURIComponent(where)}&$order=${encodeURIComponent(F.fecha+" DESC")}&$limit=${PAGE}&$offset=${offset}`;
+          stat.innerHTML = `<span class="loading"></span> Consultando SECOP II… (${rows.length.toLocaleString()} descargados)`;
+          lote = await fetchWithProxy(url);
+          if(Array.isArray(lote) && lote.length){
+            rows = rows.concat(lote);
+            offset += PAGE;
+          }
+        } while(Array.isArray(lote) && lote.length === PAGE && rows.length < MAX_ROWS);
+      }
 
       nRaw = rows.length;
-      truncado = rows.length >= MAX_ROWS;
+      truncado = rows.length >= MAX_ROWS; // ambos orígenes topan en 60k
 
       if(nRaw === 0){
         stat.innerHTML = `<span class="err">SECOP II respondió 0 filas.</span> Aumente "Días atrás" o baje el valor mínimo.`;
@@ -4422,7 +4408,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     return "helder";
   }
 
-  var caretSVG = '<span class="kpi-caret"><svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 3 4-3" stroke="#1d1d1f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+  var caretSVG = '<span class="kpi-caret"><svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 3 4-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
 
   // Recorre cada grid de KPIs y hace clickeable cada tarjeta
   document.querySelectorAll(".kpi-grid").forEach(function(grid){
@@ -4629,10 +4615,11 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
         var star=document.createElement("button");
         star.type="button"; star.className="star-btn"+(on?" on":"");
         star.textContent=on?"★ Guardado":"☆ Guardar";
+        star.setAttribute("aria-pressed", on?"true":"false");
         star.title="Guardar este proceso en seguimiento (se conserva en este navegador)";
         star.addEventListener("click", function(){
-          if(savedSet.has(k)){ savedSet.delete(k); star.classList.remove("on"); star.textContent="☆ Guardar"; card.classList.remove("saved"); }
-          else { savedSet.add(k); star.classList.add("on","pop"); star.textContent="★ Guardado"; card.classList.add("saved");
+          if(savedSet.has(k)){ savedSet.delete(k); star.classList.remove("on"); star.textContent="☆ Guardar"; star.setAttribute("aria-pressed","false"); card.classList.remove("saved"); }
+          else { savedSet.add(k); star.classList.add("on","pop"); star.textContent="★ Guardado"; star.setAttribute("aria-pressed","true"); card.classList.add("saved");
                  setTimeout(function(){ star.classList.remove("pop"); }, 420); }
           wlSave(savedSet); applySavedFilter();
         });
@@ -4972,7 +4959,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     if(mapObj){ try{ mapObj.remove(); }catch(e){} mapObj=null; }
     mapMarkers={};
     mapObj=L.map(canvas,{scrollWheelZoom:false}).setView([4.6,-74.1],5);
-    L.tileLayer(tileURL(),{maxZoom:12,subdomains:"abcd",attribution:'© OpenStreetMap, © CARTO'}).addTo(mapObj);
+    L.tileLayer(tileURL(),{maxZoom:12,subdomains:"abcd",attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors · © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'}).addTo(mapObj);
     var maxCount=Math.max.apply(null,munis.map(function(m){return m.count;}))||1, bounds=[];
     munis.forEach(function(m){
       var r=8+14*Math.sqrt(m.count/maxCount);
@@ -5355,7 +5342,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
   var modalEl=null;
   function ensureModal(){
     if(modalEl) return modalEl;
-    modalEl=document.createElement("div"); modalEl.className="v3-modal"; modalEl.setAttribute("role","dialog"); modalEl.setAttribute("aria-modal","true");
+    modalEl=document.createElement("div"); modalEl.className="v3-modal"; modalEl.setAttribute("role","dialog"); modalEl.setAttribute("aria-modal","true"); modalEl.setAttribute("aria-modal","true");
     modalEl.innerHTML='<div class="v3-modal-back"></div><div class="v3-modal-box"><button class="v3-modal-x" aria-label="Cerrar">✕</button><div class="v3-modal-head"></div><div class="v3-modal-body"></div></div>';
     document.body.appendChild(modalEl);
     modalEl.querySelector(".v3-modal-back").addEventListener("click", closeModal);
@@ -5507,7 +5494,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     var path=pts.map(function(p,i){ return (i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1); }).join(" ");
     var area="M"+pts[0][0].toFixed(1)+" "+(H-pad)+" "+pts.map(function(p){ return "L"+p[0].toFixed(1)+" "+p[1].toFixed(1); }).join(" ")+" L"+pts[pts.length-1][0].toFixed(1)+" "+(H-pad)+" Z";
     var dots=pts.map(function(p){ return '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.2" fill="'+ac+'"><title>'+p[2].d+': '+p[2].n+' procesos · '+p[2].hi+' de alto encaje</title></circle>'; }).join("");
-    box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="width:100%;height:150px">'+
+    box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img" aria-label="Tendencia semanal de procesos afines: de '+arr[0].n+' el '+arr[0].d.slice(5)+' a '+arr[arr.length-1].n+' el '+arr[arr.length-1].d.slice(5)+'" style="width:100%;height:150px">'+
       '<path d="'+area+'" fill="'+ac+'" opacity="0.12"/>'+
       '<path d="'+path+'" fill="none" stroke="'+ac+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'+dots+'</svg>'+
       '<div class="v3-trend-labels"><span>'+arr[0].d.slice(5)+'</span><span>'+arr[arr.length-1].d.slice(5)+'</span></div>';
@@ -5570,6 +5557,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     var tg=document.getElementById("v3-alerts-toggle");
     function paint(){ var on=lsGet("detecta-alertas-on",false);
       tg.innerHTML = on ? "🔔 Alertas activas" : "🔕 Activar alertas ≤48h";
+      tg.setAttribute("aria-pressed", on?"true":"false");
       tg.classList.toggle("on", !!on);
       tg.title = on ? "Te avisaré cuando un proceso guardado ★ entre en 48h de cierre." : "Activar notificaciones del navegador para cierres ≤48h de procesos guardados ★.";
     }
@@ -6272,7 +6260,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
 
   /* impresión / "Guardar como PDF" del panel activo */
   @media print{
-    header,.tabs,footer,#sec-gate,.hero,.v3-cmp-tray,.v4-toolbar,.v3-viewbar,.filters-simple,
+    header,.tabs,footer,.hero,.v3-cmp-tray,.v4-toolbar,.v3-viewbar,.filters-simple,
     .proc-actions,.v4-banner,#v4-datos,#anti-status,#status,.theme-toggle,.v4-profile,.v4-new{display:none!important}
     html,body{background:#fff!important;color:#000!important}
     main section:not(.active){display:none!important}
@@ -6321,7 +6309,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
   /* modal v4 */
   var modalEl=null;
   function openModal(headHTML,bodyHTML){
-    if(!modalEl){ modalEl=document.createElement("div"); modalEl.className="v3-modal"; modalEl.setAttribute("role","dialog");
+    if(!modalEl){ modalEl=document.createElement("div"); modalEl.className="v3-modal"; modalEl.setAttribute("role","dialog"); modalEl.setAttribute("aria-modal","true");
       modalEl.innerHTML='<div class="v3-modal-back"></div><div class="v3-modal-box"><button class="v3-modal-x" aria-label="Cerrar">✕</button><div class="v3-modal-head"></div><div class="v3-modal-body"></div></div>';
       document.body.appendChild(modalEl);
       modalEl.querySelector(".v3-modal-back").addEventListener("click",closeModal);
@@ -6658,7 +6646,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
       var main=document.querySelector("main"); if(!main) return;
       var b=document.getElementById("v4-banner"); if(b) b.remove();
       b=document.createElement("div"); b.id="v4-banner"; b.className="v4-banner";
-      b.innerHTML='<span class="v4-banner-ico">☀️</span><span class="v4-banner-txt">Hoy · '+msgs.join(' · ')+'</span><button class="v4-banner-x" aria-label="cerrar">✕</button>';
+      b.innerHTML='<span class="v4-banner-ico" aria-hidden="true">☀️</span><span class="v4-banner-txt">Hoy · '+msgs.join(' · ')+'</span><button class="v4-banner-x" aria-label="cerrar">✕</button>';
       main.insertBefore(b, main.firstChild);
       b.querySelector(".v4-banner-x").addEventListener("click",function(){ b.remove(); });
     }catch(e){}
@@ -6903,7 +6891,7 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
     toastEl.textContent=msg; toastEl.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(function(){ toastEl.classList.remove("show"); },ms||2800); }
   var modalEl=null;
   function openModal(headHTML,bodyHTML,wide){
-    if(!modalEl){ modalEl=document.createElement("div"); modalEl.className="v3-modal"; modalEl.setAttribute("role","dialog");
+    if(!modalEl){ modalEl=document.createElement("div"); modalEl.className="v3-modal"; modalEl.setAttribute("role","dialog"); modalEl.setAttribute("aria-modal","true");
       modalEl.innerHTML='<div class="v3-modal-back"></div><div class="v3-modal-box"><button class="v3-modal-x" aria-label="Cerrar">✕</button><div class="v3-modal-head"></div><div class="v3-modal-body"></div></div>';
       document.body.appendChild(modalEl);
       modalEl.querySelector(".v3-modal-back").addEventListener("click",closeModal);
@@ -8307,6 +8295,291 @@ document.getElementById("f-anti-go").onclick = verificarAnticipos;
   }
 })();
 
+</script>
+
+<!-- ════ CAPA LEGAL · consentimiento de almacenamiento + enlaces legales ════ -->
+<style>
+  /* Banner de consentimiento — visible incluso con el gate bloqueado */
+  #dtc-consent{position:fixed;left:14px;right:14px;bottom:14px;z-index:1000001;max-width:680px;margin:0 auto;
+    background:var(--panel,#fff);color:var(--ink,#1d1d1f);border:1px solid var(--line,#e8e8ed);border-radius:16px;
+    box-shadow:0 18px 50px rgba(0,0,0,.25);padding:16px 18px;font-size:13.5px;line-height:1.5}
+  #dtc-consent h2{margin:0 0 6px;font-size:14.5px;font-weight:650;letter-spacing:-0.01em}
+  #dtc-consent p{margin:0 0 10px;color:var(--ink2,#515154)}
+  #dtc-consent a{color:var(--acc,#0071e3)}
+  .dtc-c-row{display:flex;gap:8px;flex-wrap:wrap}
+  .dtc-c-btn{padding:8px 14px;border-radius:9px;border:1px solid var(--line,#d2d2d7);background:var(--soft,#f5f5f7);
+    color:var(--ink,#1d1d1f);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
+  .dtc-c-btn.primary{background:var(--acc,#0071e3);border-color:var(--acc,#0071e3);color:#fff}
+  .dtc-c-btn:focus-visible{outline:2px solid var(--acc,#0071e3);outline-offset:2px}
+  .dtc-c-cfg{display:none;margin:0 0 10px;border-top:1px solid var(--line,#e8e8ed);padding-top:10px}
+  #dtc-consent.cfg .dtc-c-cfg{display:block}
+  .dtc-c-opt{display:flex;gap:10px;align-items:flex-start;margin:8px 0;color:var(--ink2,#515154)}
+  .dtc-c-opt input{margin-top:3px;flex:0 0 auto}
+  .dtc-c-opt b{color:var(--ink,#1d1d1f)}
+  @media (prefers-reduced-motion:no-preference){
+    #dtc-consent{animation:dtcUp .45s cubic-bezier(.16,1,.3,1)}
+    @keyframes dtcUp{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+  }
+  /* Enlaces legales del footer */
+  .dtc-foot a{color:inherit}
+  .dtc-foot-btn{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer}
+  .dtc-foot-btn:focus-visible{outline:2px solid var(--acc,#0071e3);outline-offset:2px;border-radius:4px}
+</style>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   CAPA LEGAL (detectaLegal) — cumplimiento Ley 1581/2012 y buenas
+   prácticas: banner de consentimiento de almacenamiento (esencial vs
+   funcional), aviso de tratamiento en el gate y enlaces legales
+   visibles. El almacenamiento esencial (sesión del gate + registro de
+   consentimiento) no requiere autorización; el funcional (preferencias,
+   watchlist, notas) se puede rechazar: un guard convierte en no-op las
+   escrituras de claves detecta- y radar-licit, y purga lo ya guardado.
+   ════════════════════════════════════════════════════════════════ */
+(function(){
+"use strict";
+var CKEY="detecta-consent-v1";
+/* Esenciales: el registro del consentimiento y las preferencias de
+   accesibilidad (personalización de interfaz, exenta de consentimiento;
+   perderlas al rechazar sería castigar la accesibilidad). */
+var ESSENTIAL={"detecta-consent-v1":1,"detecta-atajos-off":1,"detecta-contraste":1,"detecta-fontscale":1};
+var GUARDED=/^(detecta-|radar-licit)/;
+var BLOCK=false;
+
+function getConsent(){ try{ var v=JSON.parse(localStorage.getItem(CKEY)||"null"); return (v && v.v===1)?v:null; }catch(e){ return null; } }
+function setConsent(func){
+  var rec={v:1,esenciales:true,funcionales:!!func,fecha:new Date().toISOString()};
+  try{ localStorage.setItem(CKEY, JSON.stringify(rec)); }catch(e){}
+  return rec;
+}
+function hasUserData(){
+  try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(GUARDED.test(k) && !ESSENTIAL[k]) return true; } }catch(e){}
+  return false;
+}
+function purge(){
+  try{
+    var rm=[],i,k;
+    for(i=0;i<localStorage.length;i++){ k=localStorage.key(i); if(GUARDED.test(k) && !ESSENTIAL[k]) rm.push(k); }
+    rm.forEach(function(k){ localStorage.removeItem(k); });
+  }catch(e){}
+}
+/* Guard: con funcionales rechazadas, las escrituras no esenciales son no-op
+   (silencioso a propósito: todas las capas toleran setItem sin efecto). */
+try{
+  var _set=Storage.prototype.setItem;
+  Storage.prototype.setItem=function(k,v){
+    if(BLOCK){ try{ if(this===window.localStorage && GUARDED.test(String(k)) && !ESSENTIAL[String(k)]) return; }catch(e){} }
+    return _set.apply(this,arguments);
+  };
+}catch(e){}
+function applyConsent(c){ BLOCK=!!(c && !c.funcionales); if(BLOCK) purge(); }
+
+function buildBanner(cfgOpen){
+  if(document.getElementById("dtc-consent")) return;
+  var c=getConsent();
+  var div=document.createElement("div");
+  div.id="dtc-consent";
+  div.setAttribute("role","region");
+  div.setAttribute("aria-label","Aviso de cookies y almacenamiento");
+  div.innerHTML=
+    '<h2>Privacidad y almacenamiento</h2>'+
+    '<p>Detecta no usa cookies de rastreo, publicidad ni analítica. Solo emplea almacenamiento <b>esencial</b> '+
+    '(la cookie técnica del acceso restringido y esta decisión) y, si lo permites, almacenamiento <b>funcional</b> '+
+    'en tu navegador para recordar preferencias, favoritos y notas. Nada sale de tu dispositivo. '+
+    '<a href="./privacidad.html">Más información</a>.</p>'+
+    '<div class="dtc-c-cfg" id="dtc-cfg">'+
+      '<label class="dtc-c-opt"><input type="checkbox" checked disabled> <span><b>Esenciales</b> — cookie técnica del '+
+      'acceso restringido (la gestiona el servidor) y registro de esta decisión. Siempre activas: sin ellas el acceso '+
+      'no funciona.</span></label>'+
+      '<label class="dtc-c-opt"><input type="checkbox" id="dtc-func" checked> <span><b>Funcionales</b> — preferencias, '+
+      'favoritos ★, tablero, notas y cachés, guardados solo en este navegador. Si las desactivas, la app no recordará '+
+      'nada entre sesiones y se borrará lo ya guardado aquí (las preferencias de accesibilidad se conservan siempre).</span></label>'+
+    '</div>'+
+    '<div class="dtc-c-row">'+
+      '<button type="button" class="dtc-c-btn primary" id="dtc-acc">Aceptar todo</button>'+
+      '<button type="button" class="dtc-c-btn" id="dtc-ess">Solo esenciales</button>'+
+      '<button type="button" class="dtc-c-btn" id="dtc-tog" aria-expanded="false" aria-controls="dtc-cfg">Configurar</button>'+
+      '<button type="button" class="dtc-c-btn" id="dtc-save" hidden>Guardar selección</button>'+
+    '</div>';
+  document.body.appendChild(div);
+  var func=div.querySelector("#dtc-func");
+  if(c) func.checked=!!c.funcionales;
+  var tog=div.querySelector("#dtc-tog"), save=div.querySelector("#dtc-save");
+  function openCfg(open){ div.classList.toggle("cfg",open); tog.setAttribute("aria-expanded",open?"true":"false"); save.hidden=!open; }
+  function confirmaBorrado(){
+    return !hasUserData() || confirm("Al quedarte solo con lo esencial se borran las preferencias, favoritos y notas ya guardados en este navegador. ¿Continuar?");
+  }
+  function done(f){ applyConsent(setConsent(f)); div.remove(); }
+  div.querySelector("#dtc-acc").addEventListener("click",function(){ done(true); });
+  div.querySelector("#dtc-ess").addEventListener("click",function(){ if(confirmaBorrado()) done(false); });
+  tog.addEventListener("click",function(){ openCfg(!div.classList.contains("cfg")); });
+  save.addEventListener("click",function(){ var f=func.checked; if(f || confirmaBorrado()) done(f); });
+  if(cfgOpen){ openCfg(true); try{ div.querySelector("#dtc-acc").focus(); }catch(e){} }
+}
+
+/* Enlaces legales permanentes en el footer de la app */
+function injectFooterLegal(){
+  var f=document.querySelector("footer .wrap")||document.querySelector("footer");
+  if(!f || document.getElementById("dtc-foot")) return;
+  var s=document.createElement("span");
+  s.id="dtc-foot"; s.className="dtc-foot";
+  s.innerHTML=' · <a href="./privacidad.html">privacidad</a> · <a href="./terminos.html">términos</a>'+
+    ' · <a href="./accesibilidad.html">accesibilidad</a>'+
+    ' · <button type="button" id="dtc-foot-cookies" class="dtc-foot-btn">cookies y almacenamiento</button>';
+  f.appendChild(s);
+  s.querySelector("#dtc-foot-cookies").addEventListener("click",function(){
+    var ex=document.getElementById("dtc-consent"); if(ex) ex.remove();
+    buildBanner(true);
+  });
+}
+
+try{
+  applyConsent(getConsent());
+  injectFooterLegal();
+  if(!getConsent()) buildBanner(false);
+}catch(e){ console.error("capa legal:",e); }
+})();
+</script>
+
+<!-- ════ CAPA A11Y · correcciones de accesibilidad (auditoría WCAG 2.1 AA) ════ -->
+<style>
+  /* Texto solo para lectores de pantalla */
+  .dtc-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  /* Contraste AA del botón primario en tema oscuro (blanco sobre #0a84ff ≈ 3.7:1) */
+  html[data-theme="dark"] .btn-primary,
+  html[data-theme="dark"] .rent-toolbar button.primary{background:#0066cc}
+  /* Botón de atajos en el popover ⚙ */
+  #dtc-atajos{width:auto;padding:0 10px;font-size:12px}
+  /* Contraste AA en textos pequeños (10.5-12px): grises al límite → más oscuros en claro.
+     .v4-chk-miss fallaba de plano (#6e6e73 sobre #ececf1 ≈ 4.4:1). */
+  .live,footer,.v3-pill,.v5-muted,.v4-chk-miss{color:#5d5d63}
+  html[data-theme="dark"] .live,html[data-theme="dark"] footer,html[data-theme="dark"] .v3-pill,
+  html[data-theme="dark"] .v5-muted,html[data-theme="dark"] .v4-chk-miss{color:var(--ink2)}
+</style>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   CAPA A11Y (detectaA11y) — cierra los hallazgos accionables de la
+   auditoría WCAG 2.1 AA sin tocar las capas existentes:
+   nombres accesibles genéricos (title/placeholder → aria-label),
+   región viva para toasts, semántica de pestañas (tablist/tab +
+   aria-selected), dropzone operable por teclado y desactivador de
+   atajos de una tecla (WCAG 2.1.4) en el popover ⚙.
+   ════════════════════════════════════════════════════════════════ */
+(function(){
+"use strict";
+
+/* 1 · Nombres accesibles: copia title/placeholder a aria-label donde falte */
+function labelize(root){
+  try{
+    (root||document).querySelectorAll("button[title]:not([aria-label]),select[title]:not([aria-label])")
+      .forEach(function(el){ el.setAttribute("aria-label", el.title); });
+    (root||document).querySelectorAll("input[placeholder]:not([aria-label]),textarea[placeholder]:not([aria-label])")
+      .forEach(function(el){ el.setAttribute("aria-label", el.placeholder.replace(/^[^A-Za-zÁÉÍÓÚáéíóúÑñ0-9]+/,"")); });
+  }catch(e){}
+}
+
+/* 2 · Región viva: anuncia los toasts (creados por 5 capas distintas) */
+var live=document.createElement("div");
+live.id="dtc-live"; live.className="dtc-sr";
+live.setAttribute("role","status"); live.setAttribute("aria-live","polite");
+document.body.appendChild(live);
+
+/* 3 · Pestañas: semántica tablist/tab con estado sincronizado */
+function tabsARIA(){
+  var tabs=document.getElementById("tabs"); if(!tabs) return;
+  tabs.setAttribute("role","tablist");
+  tabs.querySelectorAll(".tab").forEach(function(t){
+    if(t.getAttribute("role")!=="tab") t.setAttribute("role","tab");
+    var sel=t.classList.contains("active")?"true":"false";
+    if(t.getAttribute("aria-selected")!==sel) t.setAttribute("aria-selected",sel);
+  });
+}
+
+/* Observador único de cambios de clase: toasts, pestañas y popover ⚙ */
+var mo=new MutationObserver(function(muts){
+  for(var i=0;i<muts.length;i++){
+    var t=muts[i].target;
+    if(!t || t.nodeType!==1 || !t.classList) continue;
+    if(t.classList.contains("v3-toast") && t.classList.contains("show")){
+      var txt=(t.textContent||"").trim();
+      if(txt && txt!==live.textContent) live.textContent=txt;
+    }else if(t.classList.contains("tab")){
+      t.setAttribute("aria-selected", t.classList.contains("active")?"true":"false");
+    }else if(t.id==="v9-pop"){
+      var g=document.getElementById("v9-gear");
+      if(g) g.setAttribute("aria-expanded", t.classList.contains("open")?"true":"false");
+    }
+  }
+});
+try{ mo.observe(document.body,{subtree:true,attributes:true,attributeFilter:["class"]}); }catch(e){}
+
+/* 4 · Dropzone del pliego operable por teclado (Enter/Espacio) */
+var dz=document.getElementById("pliego-drop");
+if(dz) dz.addEventListener("keydown",function(e){
+  if(e.key==="Enter"||e.key===" "){ e.preventDefault(); dz.click(); }
+});
+
+/* 5 · Atajos de una tecla desactivables (WCAG 2.1.4). El listener va en
+   captura sobre window: se ejecuta antes que el handler de la capa #4 en
+   document y corta la propagación sin afectar la escritura en campos. */
+var AKEY="detecta-atajos-off";
+function atajosOff(){ try{ return localStorage.getItem(AKEY)==="1"; }catch(e){ return false; } }
+window.addEventListener("keydown",function(e){
+  if(!atajosOff()) return;
+  var t=e.target, tag=(t&&t.tagName||"").toLowerCase();
+  if(tag==="input"||tag==="textarea"||tag==="select"||(t&&t.isContentEditable)) return;
+  if(e.ctrlKey||e.metaKey||e.altKey) return;
+  if(/^([jkd/?]|[1-9])$/.test(e.key)) e.stopPropagation();
+},true);
+
+function injectAtajosToggle(){
+  var pop=document.getElementById("v9-pop");
+  if(!pop || document.getElementById("dtc-atajos")) return;
+  var b=document.createElement("button");
+  b.id="dtc-atajos"; b.className="v5-htool"; b.type="button";
+  b.title="Activar o desactivar los atajos de teclado de una tecla (j/k, d, /, 1-9)";
+  function paint(){
+    var off=atajosOff();
+    b.textContent="⌨ Atajos: "+(off?"no":"sí");
+    b.setAttribute("aria-pressed", off?"false":"true");
+  }
+  paint();
+  b.addEventListener("click",function(){
+    try{ localStorage.setItem(AKEY, atajosOff()?"0":"1"); }catch(e){}
+    paint();
+  });
+  pop.appendChild(b);
+}
+
+/* 6 · Popover ⚙: estado expandido accesible */
+var gear=document.getElementById("v9-gear");
+if(gear){ gear.setAttribute("aria-haspopup","true"); gear.setAttribute("aria-expanded","false"); }
+
+/* 6b · Navegación por flechas en las pestañas (sobre las visibles) */
+var tabsNav=document.getElementById("tabs");
+if(tabsNav) tabsNav.addEventListener("keydown",function(e){
+  if(["ArrowRight","ArrowLeft","Home","End"].indexOf(e.key)<0) return;
+  var all=Array.prototype.filter.call(tabsNav.querySelectorAll(".tab"),function(t){ return t.offsetParent!==null; });
+  if(!all.length) return;
+  var i=all.indexOf(document.activeElement); if(i<0) return;
+  e.preventDefault();
+  var j = e.key==="Home" ? 0
+        : e.key==="End" ? all.length-1
+        : e.key==="ArrowRight" ? (i+1)%all.length
+        : (i-1+all.length)%all.length;
+  all[j].focus();
+});
+
+/* 7 · Init + re-etiquetado tras cada render (elementos por tarjeta) */
+if(typeof window.renderProcesses==="function"){
+  var _rp=window.renderProcesses;
+  window.renderProcesses=function(){
+    var r=_rp.apply(this,arguments);
+    try{ labelize(document.getElementById("proc-list")||document); }catch(e){}
+    return r;
+  };
+}
+try{ labelize(document); tabsARIA(); injectAtajosToggle(); }catch(e){ console.error("capa a11y:",e); }
+})();
 </script>
 </body>
 </html>

@@ -1,0 +1,90 @@
+/* ============================================================================
+   /api/sync · Sincronización de la caché SECOP (carga completa + delta)
+   ----------------------------------------------------------------------------
+   Modos (?modo=):
+     full   → carga completa del año vigente (reanudable: cada invocación
+              avanza hasta ~45 s y guarda el cursor; repetir hasta done:true).
+              Solo con secreto (es costosa).
+     delta  → nuevos/modificados desde la última sincronización (barata).
+     auto   → lo que toque: si no hay carga completa terminada, continúa la
+              full; si la hay, delta si la caché tiene >10 min; si no, no-op.
+   Auth:
+     - Authorization: Bearer CRON_SECRET  (Vercel Cron / GitHub Actions)
+     - ?secret=CRON_SECRET                (invocación manual)
+     - mismo origen (navegador de la app) → SOLO modo auto/delta, para que la
+       vista de oportunidades pueda refrescar sin exponer la carga completa.
+   Un candado en KV (SET NX EX) evita sincronizaciones concurrentes cuando
+   varios visitantes disparan el refresco a la vez.
+   ========================================================================== */
+
+import { crearExtractor } from "../lib/extractor.js";
+import { crearAlmacen, claves } from "../lib/almacen.js";
+import { hayCredenciales } from "../lib/redis.js";
+
+function esOrigenPropio(req) {
+  const propio = String(req.headers["x-forwarded-host"] || req.headers.host || "").toLowerCase();
+  const origen = req.headers.origin || req.headers.referer || "";
+  try { return !!propio && new URL(origen).host.toLowerCase() === propio; } catch { return false; }
+}
+
+export default async function handler(req, res) {
+  // OJO: sin la guarda !!secreto, la env var ausente produciría el literal
+  // 'Bearer undefined' y cualquiera podría pasar como autorizado.
+  const secreto = process.env.CRON_SECRET;
+  const conSecreto = !!secreto && (req.headers["authorization"] === `Bearer ${secreto}`
+    || (req.query.secret && req.query.secret === secreto));
+  const propio = esOrigenPropio(req);
+  if (!conSecreto && !propio) return res.status(401).json({ error: "no autorizado" });
+
+  const modo = (req.query.modo || "auto").toLowerCase();
+  if (modo === "full" && !conSecreto) return res.status(403).json({ error: "full requiere secreto" });
+
+  if (!hayCredenciales()) {
+    return res.status(503).json({ error: "Falta Upstash Redis (UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN). Ver lib/README.md" });
+  }
+  const store = crearAlmacen({});
+  const K = claves("");
+
+  // Candado anti-concurrencia. TTL > maxDuration (300 s) para que nunca
+  // expire con la función viva; valor con token único y liberación SOLO si
+  // el token coincide (si Vercel mata la función, el finally no corre y el
+  // TTL limpia; sin token, ese DEL tardío borraría el candado de OTRA
+  // sincronización en curso).
+  const token = (globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()) + Date.now();
+  const lock = await store.setNX(K.lock, token, 320).catch(() => false);
+  if (!lock) return res.status(202).json({ ok: true, enCurso: true, msg: "ya hay una sincronización corriendo" });
+
+  const x = crearExtractor({ store });
+  const presupuestoMs = Math.min(parseInt(req.query.presupuesto, 10) || 240000, 280000);
+  const t0 = Date.now();
+  try {
+    let r;
+    if (modo === "full") {
+      r = await x.extraerTodo({ presupuestoMs });
+    } else if (modo === "delta") {
+      r = await x.extraerDelta({ presupuestoMs });
+    } else { // auto
+      const est = await x.estado();
+      const meta = est.meta || {};
+      const progreso = est.progreso || {};
+      if (progreso.tipo === "full" && !progreso.terminado) {
+        if (!conSecreto) { r = { ok: true, msg: "carga completa en curso: la continúa el cron" }; }
+        else r = await x.extraerTodo({ presupuestoMs });
+      } else if (!meta.last_full) {
+        r = conSecreto ? await x.extraerTodo({ presupuestoMs })
+          : { ok: true, msg: "sin carga inicial: ejecútala con ?modo=full&secret=…" };
+      } else if (Date.now() - Date.parse(meta.last_sync || 0) > 10 * 60e3) {
+        r = await x.extraerDelta({ presupuestoMs });
+      } else {
+        r = { ok: true, alDia: true, last_sync: meta.last_sync };
+      }
+    }
+    // comandosRedis: consumo de esta invocación contra el presupuesto diario
+    // del tier gratuito de Upstash (~10 000 comandos/día)
+    return res.status(200).json({ ok: true, modo, duracionMs: Date.now() - t0, comandosRedis: store.comandos ? store.comandos() : null, ...r });
+  } catch (e) {
+    return res.status(502).json({ ok: false, modo, error: String(e && e.message || e), comandosRedis: store.comandos ? store.comandos() : null });
+  } finally {
+    try { if ((await store.get(K.lock)) === token) await store.del(K.lock); } catch (e) { /* TTL limpia */ }
+  }
+}
