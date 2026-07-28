@@ -24,9 +24,14 @@ radar consume la caché.
    cierre vive en columnas distintas según la modalidad (ver
    `CIERRE_CANDIDATOS`); un `$where` con OR sobre columnas que pueden no
    existir revienta la consulta. En su lugar se baja TODO lo publicado desde
-   `1-ene − 120 días`: cualquier proceso que cierre este año fue publicado en
-   esa ventana. **Aquí no se filtra nada más** (ni modalidad, ni cuantía, ni
-   estado): los filtros de negocio son del cliente, sobre la caché.
+   `1-ene − 60 días` (≈ 1-nov del año anterior): los procesos de SECOP II
+   rara vez superan 6 meses entre publicación y cierre, y la prioridad son
+   oportunidades de participación vigentes. Ajustable con `SECOP_SOLAPE_DIAS`.
+   Si el solape cambia con una carga en curso, el progreso **migra sin
+   reiniciar** (conserva los meses ya cerrados en rango) y las particiones
+   fuera de rango se purgan en el siguiente delta o al cerrar la full.
+   **Aquí no se filtra nada más** (ni modalidad, ni cuantía, ni estado): los
+   filtros de negocio son del cliente, sobre la caché.
 2. **Paginación keyset por `:id`** (`$order=:id` + `:id > 'último'`): estable
    aunque el dataset cambie durante la corrida. El `$order` por fecha DESC con
    `$offset` del código viejo podía saltarse filas cuando entraban registros

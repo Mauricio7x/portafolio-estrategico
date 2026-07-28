@@ -160,10 +160,14 @@ function generarDatos(mesesDelRango, inicioSolape) {
   const { crearExtractor, mesesDelRango, inicioAnoVigente } = require(path.join(ROOT, "lib/extractor.js"));
   const { AlmacenMemoria, descomprimir } = require(path.join(ROOT, "lib/almacen.js"));
 
-  const inicioSolape = new Date(Date.parse(inicioAnoVigente() + "Z") - 120 * 864e5).toISOString().slice(0, 23);
-  estado.data = generarDatos(mesesDelRango, inicioSolape);
-  const enRango = estado.data.length; // todo el dataset cae en el rango por construcción
-  console.log(`\nDataset sintético: ${enRango} filas en ${mesesDelRango(inicioSolape).length} meses (mock en :${PORT})`);
+  // La FUENTE simula meses viejos (rango de 120 días) pero el rango VIGENTE
+  // es de 60 días (~1-nov del año anterior): lo anterior NO debe extraerse.
+  const inicioViejo = new Date(Date.parse(inicioAnoVigente() + "Z") - 120 * 864e5).toISOString().slice(0, 23);
+  const inicioSolape = new Date(Date.parse(inicioAnoVigente() + "Z") - 60 * 864e5).toISOString().slice(0, 23);
+  const mesLimite = inicioSolape.slice(0, 7);
+  estado.data = generarDatos(mesesDelRango, inicioViejo);
+  const enRango = estado.data.filter((d) => d[F].slice(0, 7) >= mesLimite).length;
+  console.log(`\nDataset sintético: ${estado.data.length} filas en la fuente, ${enRango} dentro del rango vigente (≥ ${mesLimite}) (mock en :${PORT})`);
 
   const sinDormir = () => Promise.resolve();
 
@@ -183,6 +187,8 @@ function generarDatos(mesesDelRango, inicioSolape) {
     return registros.some((p) => p.estado_del_procedimiento === "Adjudicado") &&
            registros.some((p) => p.estado_del_procedimiento === "Cancelado");
   })());
+  check("los meses viejos de la fuente NO se extraen",
+    (await x.leerMes(mesesDelRango(inicioViejo)[0])).manifest === null);
 
   /* ── 2 · interrumpida por presupuesto → reanuda sin perder ni duplicar ── */
   console.log("\n2 · Reanudación por presupuesto de tiempo");
@@ -198,6 +204,24 @@ function generarDatos(mesesDelRango, inicioSolape) {
     for (const p of registros) unicos.add(p._k);
   }
   check("sin duplicados tras reanudar", unicos.size === enRango, unicos.size);
+
+  /* ── 2b · migración de rango sin reiniciar (120 → 60 días) ── */
+  console.log("\n2b · Migración de rango sin reiniciar");
+  store = new AlmacenMemoria();
+  const xViejo = crearExtractor({ store, dormir: sinDormir, logSink: () => {}, config: { SOLAPE_PUBLICACION_DIAS: 120 } });
+  let mig, vueltasV = 0;
+  do { mig = await xViejo.extraerTodo({ presupuestoMs: 5 }); vueltasV++; } while (!mig.done && vueltasV < 10);
+  check("carga con rango viejo a medias (no terminada)", mig.done === false, vueltasV);
+  const progV = (await xViejo.estado()).progreso;
+  check("el progreso viejo arranca antes del rango nuevo", progV.desde < inicioSolape, progV.desde);
+  const xNuevo = crearExtractor({ store, dormir: sinDormir, logSink: () => {} }); // solape 60 por defecto
+  const fin2 = await xNuevo.extraerTodo({ presupuestoMs: 120000 });
+  check("la migración completa la carga con el rango nuevo", fin2.done === true && fin2.auditoria.diferencia === 0, fin2.auditoria);
+  const progN = (await xNuevo.estado()).progreso;
+  check("progreso migrado (desde nuevo y sin meses viejos)",
+    progN.desde === inicioSolape && Object.keys(progN.porMes).every((m) => m >= mesLimite), progN.desde);
+  check("particiones viejas purgadas en la migración",
+    (await xNuevo.leerMes(mesesDelRango(inicioViejo)[0])).manifest === null);
 
   /* ── 3 · fallo total → incidencia; recuperación → completa ── */
   console.log("\n3 · Fuente caída e incidencias");
@@ -240,7 +264,8 @@ function generarDatos(mesesDelRango, inicioSolape) {
   check("cambio de estado aplicado sin duplicar", adj.length === 5 && adj.every((p) => p.estado_del_procedimiento === "Adjudicado"), adj.length);
   const todos2 = new Set();
   for (const mes of mesesDelRango(inicioSolape)) for (const p of (await x.leerMes(mes)).registros) todos2.add(p._k);
-  check("total tras delta = dataset ampliado", todos2.size === estado.data.length, { cache: todos2.size, data: estado.data.length });
+  const enRangoAmpliado = estado.data.filter((d) => d[F].slice(0, 7) >= mesLimite).length;
+  check("total tras delta = dataset ampliado (en rango)", todos2.size === enRangoAmpliado, { cache: todos2.size, data: enRangoAmpliado });
 
   // 4c · compactación: tras el umbral, el mes se reescribe deduplicado en un
   // rango nuevo (manifest.ini avanza) sin perder registros
@@ -256,6 +281,23 @@ function generarDatos(mesesDelRango, inicioSolape) {
   const unicos3 = new Set(regsComp.map((p) => p._k));
   check("compactación sin duplicados ni pérdidas", unicos3.size === regsComp.length &&
     regsComp.length === estado.data.filter((r) => r[F].startsWith(mesViejo)).length, regsComp.length);
+
+  // 4d · el delta purga particiones que quedaron fuera del rango vigente
+  const { claves: clavesK, escribirJSON: escrJ, comprimir: compr } = require(path.join(ROOT, "lib/almacen.js"));
+  const mesStale = mesesDelRango(inicioViejo)[0]; // p.ej. el mes más viejo de la fuente
+  const Ks = clavesK(mesStale);
+  await store.set(Ks.chunk(0), compr([{ _k: "reliquia-1" }]));
+  await escrJ(store, Ks.manifest, { ini: 0, chunks: 1, count: 1, esperados: 1 });
+  const K0s = clavesK("");
+  const metaS = JSON.parse(await store.get(K0s.meta));
+  metaS.porMes[mesStale] = { bajados: 1, esperados: 1 };
+  await escrJ(store, K0s.meta, metaS);
+  await x.extraerDelta({ presupuestoMs: 60000 });
+  check("delta purga la partición fuera de rango",
+    (await store.get(Ks.manifest)) === null && (await store.get(Ks.chunk(0))) === null);
+  const metaS2 = JSON.parse(await store.get(K0s.meta));
+  check("meta queda limpia y con cobertura honesta",
+    !metaS2.porMes[mesStale] && metaS2.desde >= inicioSolape, { desde: metaS2.desde });
 
   /* ── 5 · empaquetado bajo el límite de KV ── */
   console.log("\n5 · Empaquetado en chunks");
@@ -291,8 +333,11 @@ function generarDatos(mesesDelRango, inicioSolape) {
 
   out = mkRes();
   await procesos({ query: { meta: "1" }, headers: { host: "app.test" } }, out);
-  check("procesos?meta=1 responde", out._r.code === 200 && out._r.body.total === estado.data.length, out._r.body);
+  const enRangoE2E = estado.data.filter((d) => d[F].slice(0, 7) >= mesLimite).length;
+  check("procesos?meta=1 responde (total del rango vigente)",
+    out._r.code === 200 && out._r.body.total === enRangoE2E, out._r.body);
   check("meta.fresca tras sincronizar", out._r.body.fresca === true);
+  check("meta expone la cobertura (desde ≈ 1-nov)", out._r.body.desde === inicioSolape, out._r.body.desde);
 
   const desde = `${mesActual}-01T00:00:00.000`;
   const esperadosDesde = estado.data.filter((d) => String(d[F]) >= desde).length;

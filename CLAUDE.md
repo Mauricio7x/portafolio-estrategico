@@ -50,9 +50,13 @@ Es un único `index.html` que corre 100 % en el navegador, sin paso de compilaci
   - `api/resumen.js` — resumen IA por proceso (Anthropic; **de pago**, opcional; la web usa un resumen local gratis).
   - `lib/engine.js` — motor de encaje portado a Node para que el cron calcule lo mismo que la web.
 - **Capa de datos SECOP (jul 2026)** — extracción exhaustiva del año vigente a Upstash Redis gratuito (`lib/redis.js`, vars `UPSTASH_REDIS_REST_*` con respaldo `KV_REST_API_*`), ver `lib/README.md`:
-  - `lib/extractor.js` + `lib/almacen.js` — carga completa **reanudable** (keyset por `:id`, count(1) por mes,
+  - `lib/extractor.js` + `lib/almacen.js` — carga completa **reanudable** (keyset por `:id`, count(*) por mes,
     reintentos con backoff, chunks gzip por mes) + **delta** por `:updated_at` con solape 48 h (los cambios de
     estado REEMPLAZAN por `_k`). Sonda de capacidades: solo un 400 real degrada a `$offset` (nunca un fallo de red).
+  - **Rango**: 1-ene del año vigente − **60 días** de solape (≈1-nov; `SECOP_SOLAPE_DIAS` para cambiarlo). Si el
+    solape cambia con una carga en curso, el progreso **migra sin reiniciar** (conserva meses cerrados en rango)
+    y las particiones fuera de rango se **purgan** en el siguiente delta o al cerrar la full (también `meta.desde`).
+    La auditoría compara solo meses con count verificado (`comparados`/`sinVerificar` aparte).
   - `api/sync.js` (modos full/delta/auto, candado SET NX, presupuesto 45 s/invocación) y `api/procesos.js`
     (sirve la caché con la MISMA forma de campos que Socrata, `limit≤4000`, memoria caliente por instancia).
   - `index.html`: `loadProcesses` intenta **caché-primero** (`cacheMeta`/`cachePaginas`); si la caché tiene >1 h
