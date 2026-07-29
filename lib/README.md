@@ -110,7 +110,7 @@ radar consume la caché.
 ## Mantenimiento
 
 - **«Ya hay una sincronización corriendo» persistente**: el candado
-  `detecta:x:lock` tiene triple protección (TTL 320 s; auto-desbloqueo si el
+  `detecta:x:lock` tiene triple protección (TTL 900 s como red de Redis; auto-desbloqueo si el
   timestamp del candado supera 10 min; y un error de Redis responde **502 con
   la causa real**, nunca `enCurso`). Desbloqueo manual inmediato:
   `curl -H "Authorization: Bearer $CRON_SECRET" https://TU-APP.vercel.app/api/sync/unlock`

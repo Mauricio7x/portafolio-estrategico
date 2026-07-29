@@ -29,7 +29,8 @@ export default async function handler(req, res) {
   try {
     const habia = await store.get(K.lock);
     await store.del(K.lock);
-    return res.status(200).json({ ok: true, desbloqueado: true, habiaCandado: habia != null });
+    console.log(`[sync] desbloqueo manual (/api/sync/unlock): habiaCandado=${habia != null}`);
+    return res.status(200).json({ ok: true, desbloqueado: true, habiaCandado: habia != null, msg: "desbloqueado" });
   } catch (e) {
     return res.status(502).json({ ok: false, error: "Redis inaccesible: " + String(e && e.message || e) });
   }

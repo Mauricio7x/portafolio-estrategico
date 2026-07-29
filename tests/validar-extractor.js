@@ -418,13 +418,15 @@ function generarDatos(mesesDelRango, inicioSolape) {
   estado.kv.set(LOCK, { v: JSON.stringify({ t: Date.now(), token: "otra-corrida" }), exp: null });
   out = mkRes();
   await sync({ query: { modo: "auto" }, headers: auth }, out);
-  check("candado fresco → 202 enCurso", out._r.code === 202 && out._r.body.enCurso === true, out._r.body);
+  check("candado fresco → 202 enCurso con startedAt", out._r.code === 202 && out._r.body.enCurso === true &&
+    /^\d{4}-\d{2}-\d{2}T/.test(out._r.body.startedAt || ""), out._r.body);
   check("el candado ajeno NO se borra al chocar", estado.kv.has(LOCK));
   // b) candado MUERTO (>10 min y sin TTL) → se sobrescribe y la llamada continúa
   estado.kv.set(LOCK, { v: JSON.stringify({ t: Date.now() - 11 * 60e3, token: "muerto" }), exp: null });
   out = mkRes();
   await sync({ query: { modo: "auto" }, headers: auth }, out);
-  check("candado muerto (>10 min) → se sobrescribe y continúa", out._r.code === 200 && out._r.body.enCurso === undefined, out._r.body);
+  check("candado muerto (>10 min) → se sobrescribe y continúa (enCurso:false)",
+    out._r.code === 200 && out._r.body.enCurso === false, out._r.body);
   check("el candado propio se libera al terminar (finally)", !estado.kv.has(LOCK));
   // c) Redis caído/credenciales malas → 502 con la causa, NUNCA "enCurso"
   estado.kvFallo = true;

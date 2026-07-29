@@ -52,7 +52,8 @@ export default async function handler(req, res) {
     try {
       const habia = await store.get(K.lock);
       await store.del(K.lock);
-      return res.status(200).json({ ok: true, desbloqueado: true, habiaCandado: habia != null });
+      console.log(`[sync] desbloqueo manual (?modo=unlock): habiaCandado=${habia != null}`);
+      return res.status(200).json({ ok: true, desbloqueado: true, habiaCandado: habia != null, msg: "desbloqueado" });
     } catch (e) {
       return res.status(502).json({ ok: false, error: "Redis inaccesible: " + String(e && e.message || e) });
     }
@@ -72,27 +73,40 @@ export default async function handler(req, res) {
         Redis ni redeployar podía quitar.)
      La liberación va en finally comparando el token (nunca borra el
      candado de otra corrida). ─────────────────────────────────────────── */
-  const LOCK_TTL_S = 320, LOCK_STALE_MS = 10 * 60e3;
+  // TTL 900 s (15 min) como red de seguridad de Redis; la liberación
+  // EFECTIVA de un candado muerto llega antes, a los 10 min, por el
+  // timestamp (ambos umbrales > maxDuration 300 s: jamás matan un candado
+  // de una función viva).
+  const LOCK_TTL_S = 900, LOCK_STALE_MS = 10 * 60e3;
   const token = (globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()) + Date.now();
   const valorLock = JSON.stringify({ t: Date.now(), token });
-  let lock;
+  let lock, candadoPrevio = null;
   try {
     lock = await store.setNX(K.lock, valorLock, LOCK_TTL_S);
     if (!lock) {
       const crudo = await store.get(K.lock);
-      let previo = null;
-      try { previo = JSON.parse(crudo); } catch (e) { /* formato legado sin timestamp */ }
-      const edadMs = previo && previo.t ? Date.now() - previo.t : (crudo == null ? Infinity : null);
+      try { candadoPrevio = JSON.parse(crudo); } catch (e) { /* formato legado sin timestamp */ }
+      const edadMs = candadoPrevio && candadoPrevio.t ? Date.now() - candadoPrevio.t : (crudo == null ? Infinity : null);
       if (crudo == null || edadMs === Infinity || (edadMs != null && edadMs > LOCK_STALE_MS)) {
         // candado muerto (o desaparecido entre el setNX y el get): tómalo
+        console.log(`[sync] candado muerto (edad ${edadMs === Infinity ? "desconocida/legado" : Math.round(edadMs / 1000) + "s"}): se sobrescribe y se continúa`);
         await store.del(K.lock);
         lock = await store.setNX(K.lock, valorLock, LOCK_TTL_S);
       }
     }
   } catch (e) {
+    console.error("[sync] Redis inaccesible al tomar el candado:", String(e && e.message || e));
     return res.status(502).json({ ok: false, error: "Redis inaccesible al tomar el candado: " + String(e && e.message || e) });
   }
-  if (!lock) return res.status(202).json({ ok: true, enCurso: true, msg: "ya hay una sincronización corriendo (candado con vida; expira solo en ≤ 10 min)" });
+  if (!lock) {
+    const startedAt = candadoPrevio && candadoPrevio.t ? new Date(candadoPrevio.t).toISOString() : null;
+    console.log(`[sync] ocupado: candado vivo desde ${startedAt || "(formato legado)"}`);
+    return res.status(202).json({
+      ok: true, enCurso: true, startedAt,
+      msg: "ya hay una sincronización corriendo (se libera sola en ≤ 10 min)",
+    });
+  }
+  console.log(`[sync] inicio modo=${modo} presupuesto=${Math.min(parseInt(req.query.presupuesto, 10) || 240000, 280000)}ms`);
 
   const x = crearExtractor({ store });
   const presupuestoMs = Math.min(parseInt(req.query.presupuesto, 10) || 240000, 280000);
@@ -119,10 +133,12 @@ export default async function handler(req, res) {
         r = { ok: true, alDia: true, last_sync: meta.last_sync };
       }
     }
+    console.log(`[sync] fin modo=${modo} en ${Date.now() - t0}ms →`, JSON.stringify(r).slice(0, 300));
     // comandosRedis: consumo de esta invocación contra el presupuesto diario
     // del tier gratuito de Upstash (~10 000 comandos/día)
-    return res.status(200).json({ ok: true, modo, duracionMs: Date.now() - t0, comandosRedis: store.comandos ? store.comandos() : null, ...r });
+    return res.status(200).json({ ok: true, enCurso: false, modo, duracionMs: Date.now() - t0, comandosRedis: store.comandos ? store.comandos() : null, ...r });
   } catch (e) {
+    console.error(`[sync] ERROR modo=${modo} tras ${Date.now() - t0}ms:`, String(e && e.message || e));
     return res.status(502).json({ ok: false, modo, error: String(e && e.message || e), comandosRedis: store.comandos ? store.comandos() : null });
   } finally {
     // libera SOLO nuestro candado (por token); ante cualquier error aquí,
@@ -130,7 +146,7 @@ export default async function handler(req, res) {
     try {
       const crudo = await store.get(K.lock);
       let p = null; try { p = JSON.parse(crudo); } catch (e) { /* legado */ }
-      if ((p && p.token === token) || crudo === token) await store.del(K.lock);
+      if ((p && p.token === token) || crudo === token) { await store.del(K.lock); console.log("[sync] candado liberado"); }
     } catch (e) { /* TTL limpia */ }
   }
 }
