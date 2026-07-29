@@ -73,6 +73,8 @@ function handleSocrata(q, res) {
   res.end(JSON.stringify(rows));
 }
 function handleKV(body, res) {
+  // como Upstash real: el request completo no puede superar 1 MB
+  if (body.length > 1_000_000) { res.writeHead(400); return res.end(JSON.stringify({ error: "ERR max request size exceeded" })); }
   let cmd; try { cmd = JSON.parse(body); } catch { res.writeHead(400); return res.end("{}"); }
   const [op, ...a] = cmd;
   const m = estado.kv;
@@ -189,6 +191,10 @@ function generarDatos(mesesDelRango, inicioSolape) {
   })());
   check("los meses viejos de la fuente NO se extraen",
     (await x.leerMes(mesesDelRango(inicioViejo)[0])).manifest === null);
+  const manB = (await x.leerMes(mesesDelRango(inicioSolape)[2])).manifest;
+  check("manifest registra bytes almacenados", manB && manB.bytes > 0, manB && manB.bytes);
+  check("meta registra bytes totales", est1.meta.bytes > 0 &&
+    est1.meta.bytes === Object.values(est1.meta.porMes).reduce((a, m) => a + (m.bytes || 0), 0), est1.meta.bytes);
 
   /* ── 2 · interrumpida por presupuesto → reanuda sin perder ni duplicar ── */
   console.log("\n2 · Reanudación por presupuesto de tiempo");
@@ -309,6 +315,43 @@ function generarDatos(mesesDelRango, inicioSolape) {
   const vuelta = paquetes.flatMap((p) => descomprimir(p));
   check("integridad del round-trip", JSON.stringify(vuelta) === JSON.stringify(incompresible));
 
+  /* ── 5b · límites del tier gratuito de Upstash ── */
+  console.log("\n5b · Límites del tier gratuito");
+  const VOCAB = ("construccion mejoramiento mantenimiento rehabilitacion via terciaria urbana municipio vereda " +
+    "sector puente placa huella alcantarillado acueducto institucion educativa sede principal fase contrato obra " +
+    "publica licitacion seleccion abreviada menor cuantia interventoria estudios disenos pavimento rigido flexible " +
+    "andenes sardineles espacio deportivo parque polideportivo cubierta salon comunal centro salud plaza mercado " +
+    "relleno sanitario bocatoma tanque redes distribucion optimizacion ampliacion adecuacion").split(" ");
+  const frase = (i, n) => Array.from({ length: n }, (_, j) => VOCAB[(i * 31 + j * 7) % VOCAB.length]).join(" ");
+  const filaReal = (i) => ({
+    ":id": "row-abcd." + String(i).padStart(6, "0"), ":created_at": "2026-01-01T00:00:00.000Z",
+    ":updated_at": "2026-0" + (1 + (i % 7)) + "-1" + (i % 9) + "T0" + (i % 9) + ":00:00.000Z",
+    id_del_proceso: "CO1.BDOS." + (7e6 + i), referencia_del_proceso: "LP-" + (2026000 + i),
+    nombre_del_procedimiento: frase(i, 14).toUpperCase(),
+    descripci_n_del_procedimiento: frase(i * 3 + 1, 60 + (i % 3) * 60),
+    entidad: "ALCALDIA MUNICIPAL DE " + VOCAB[(i * 13) % VOCAB.length].toUpperCase(),
+    nit_entidad: String(800000000 + i), departamento_entidad: "Tolima", ciudad_entidad: "Ibagué",
+    modalidad_de_contratacion: ["Licitación pública", "Selección abreviada", "Mínima cuantía"][i % 3],
+    estado_del_procedimiento: ["Convocado", "Adjudicado", "Borrador"][i % 3], fase: "Presentación de ofertas",
+    fecha_de_publicacion_del: "2026-0" + (1 + (i % 7)) + "-" + String(1 + (i % 27)).padStart(2, "0") + "T10:00:00.000",
+    fecha_de_ultima_publicaci: "2026-07-01T10:00:00.000", precio_base: String(5e7 + i * 13791),
+    duracion: String(1 + (i % 12)), unidad_de_duracion: "Meses",
+    urlproceso: { url: "https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC." + (3e6 + i) },
+    codigo_principal_de_categoria: "V1.7214" + (1000 + (i % 900)), tipo_de_contrato: "Obra",
+    fecha_de_recepcion_de: "2026-08-0" + (1 + (i % 9)) + "T17:00:00.000",
+    _k: "CO1.BDOS." + (7e6 + i),
+  });
+  const xDef = crearExtractor({ store: new AlmacenMemoria(), dormir: sinDormir, logSink: () => {} });
+  const loteReal = Array.from({ length: 4000 }, (_, i) => filaReal(i));
+  const paqDef = xDef._interno.empaquetar(loteReal);
+  check("chunks por defecto ≤ 500 KB", paqDef.every((p) => p.length <= 500000), Math.max(...paqDef.map((p) => p.length)));
+  const porFila = paqDef.reduce((a, p) => a + p.length, 0) / loteReal.length;
+  const anualMB = (porFila * 600000) / 1e6;
+  check(`proyección anual ≤ 200 MB (estimado ${anualMB.toFixed(0)} MB a ${porFila.toFixed(0)} B/fila comprimida)`, anualMB <= 200, anualMB);
+  const malConfig = crearExtractor({ store: new AlmacenMemoria(), dormir: sinDormir, logSink: () => {}, config: { CHUNK_MAX_B64: 5e6 } });
+  check("tope duro de 900 KB aunque CHUNK_MAX_B64 se configure mal",
+    malConfig._interno.empaquetar(loteReal).every((p) => p.length <= 900000));
+
   /* ── 6 · e2e por los handlers reales con KV mock ── */
   console.log("\n6 · End-to-end /api/sync + /api/procesos");
   estado.kv.clear(); estado.nReq = 0;
@@ -338,6 +381,7 @@ function generarDatos(mesesDelRango, inicioSolape) {
     out._r.code === 200 && out._r.body.total === enRangoE2E, out._r.body);
   check("meta.fresca tras sincronizar", out._r.body.fresca === true);
   check("meta expone la cobertura (desde ≈ 1-nov)", out._r.body.desde === inicioSolape, out._r.body.desde);
+  check("meta expone bytes almacenados", out._r.body.bytesAlmacenados > 0, out._r.body.bytesAlmacenados);
 
   const desde = `${mesActual}-01T00:00:00.000`;
   const esperadosDesde = estado.data.filter((d) => String(d[F]) >= desde).length;

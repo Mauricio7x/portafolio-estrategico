@@ -57,7 +57,9 @@ radar consume la caché.
    (esperados) y auditoría final `esperados vs almacenados` (reporte en
    consola/meta; diferencias → `detecta:x:incidencias`).
 6. **KV con chunks gzip+base64** particionados por mes
-   (`detecta:x:mes:{YYYY-MM}:chunk:{i}`, ≤ ~950 KB por valor). Se almacena la
+   (`detecta:x:mes:{YYYY-MM}:chunk:{i}`, ≤ ~500 KB por valor — margen amplio
+   sobre el límite de 1 MB por request del tier gratuito, con tope duro de
+   900 KB en el empaquetador). Se almacena la
    **proyección** `CAMPOS_PROYECCION` (todo lo que usan la app, el
    requerimiento y la auditoría): la fila completa (~2 KB × cientos de miles)
    rebasaría el tier gratuito.
@@ -125,7 +127,11 @@ radar consume la caché.
 - Vercel Hobby: crons **diarios** (por eso el workflow de GitHub) y respuesta
   ≤ 4.5 MB (por eso `/api/procesos` pagina a 2000 filas y la proyección trunca
   la descripción a 800 caracteres — medido: 2000 filas ≈ 3.7 MB en el peor caso).
-- Upstash gratuito: valores ≤ 1 MB (chunks), ~256 MB total y ~10 000
+- Upstash gratuito: requests ≤ 1 MB (chunks a 500 KB con tope duro de
+  900 KB; un "Upstash 400: ERR max request size exceeded" ya no puede
+  ocurrir por chunks), ~256 MB de almacenamiento (consumo real visible en
+  `?meta=1` → `bytesAlmacenados`; proyección medida del año ≈ 60-150 MB;
+  la auditoría avisa e inscribe incidencia si supera 200 MB) y ~10 000
   comandos/día — cada respuesta de `/api/sync` incluye `comandosRedis` para
   vigilarlo (presupuesto medido: full inicial ≈ cientos de comandos una sola
   vez; delta ≈ decenas; radar frío ≈ 15-25, con MGET contando como 1). Un año

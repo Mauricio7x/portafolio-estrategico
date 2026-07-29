@@ -54,6 +54,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       total: meta.total || 0,
       desde: meta.desde || null,   // inicio de cobertura de la caché
+      bytesAlmacenados: meta.bytes || null, // consumo del tier gratuito (256 MB)
       last_sync: meta.last_sync || null,
       last_full: meta.last_full || null,
       frescaMs,
