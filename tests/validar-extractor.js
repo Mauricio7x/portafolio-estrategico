@@ -168,7 +168,7 @@ function generarDatos(mesesDelRango, inicioSolape) {
   check("sin credenciales → null", credenciales({}) === null);
 
   const { crearExtractor, mesesDelRango, inicioAnoVigente } = require(path.join(ROOT, "lib/extractor.js"));
-  const { AlmacenMemoria, descomprimir } = require(path.join(ROOT, "lib/almacen.js"));
+  const { AlmacenMemoria, AlmacenKV, descomprimir, escribirValorGrande, leerValoresGrandes } = require(path.join(ROOT, "lib/almacen.js"));
 
   // La FUENTE simula meses viejos (rango de 120 días) pero el rango VIGENTE
   // es de 60 días (~1-nov del año anterior): lo anterior NO debe extraerse.
@@ -359,6 +359,33 @@ function generarDatos(mesesDelRango, inicioSolape) {
   const malConfig = crearExtractor({ store: new AlmacenMemoria(), dormir: sinDormir, logSink: () => {}, config: { CHUNK_MAX_B64: 5e6 } });
   check("tope duro de 900 KB aunque CHUNK_MAX_B64 se configure mal",
     malConfig._interno.empaquetar(loteReal).every((p) => p.length <= 900000));
+
+  /* ── 5c · fragmentado de valores grandes (límite por request) ── */
+  console.log("\n5c · Fragmentado de valores grandes");
+  const storeKV = new AlmacenKV(process.env.UPSTASH_REDIS_REST_URL, "token-test");
+  const gigante = "A".repeat(2_300_000);
+  let rechazado = false;
+  try { await storeKV.set("detecta:x:test:directo", gigante); } catch (e) { rechazado = /max request size/.test(e.message); }
+  check("escritura directa de 2.3 MB → la rechaza el límite por request", rechazado);
+  await escribirValorGrande(storeKV, "detecta:x:test:grande", gigante);
+  const [reunido] = await leerValoresGrandes(storeKV, ["detecta:x:test:grande"]);
+  check("fragmentado escribe en partes y re-ensambla idéntico", reunido === gigante);
+  await storeKV.del("detecta:x:test:grande", ...Array.from({ length: 5 }, (_, j) => `detecta:x:test:grande:parte:${j}`));
+
+  // integración con leerMes: un chunk multi-parte se lee transparente
+  const storeParte = new AlmacenMemoria();
+  const xParte = crearExtractor({ store: storeParte, dormir: sinDormir, logSink: () => {} });
+  const regsParte = Array.from({ length: 40 }, (_, i) => ({
+    _k: "P" + i, [F]: "2026-05-10T10:00:00.000", ":updated_at": "2026-06-01T00:00:00.000Z",
+    nombre_del_procedimiento: require("crypto").randomBytes(150).toString("hex"),
+  }));
+  await escribirValorGrande(storeParte, "detecta:x:mes:2026-05:chunk:0", compr(regsParte), 2000);
+  await escrJ(storeParte, clavesK("2026-05").manifest, { ini: 0, chunks: 1, count: regsParte.length });
+  const { registros: regsLeidos } = await xParte.leerMes("2026-05");
+  check("leerMes re-ensambla chunks multi-parte", regsLeidos.length === 40 && regsLeidos.some((r) => r._k === "P0"), regsLeidos.length);
+  await storeParte.del("detecta:x:mes:2026-05:chunk:0:parte:1");
+  const { registros: regsRotos } = await xParte.leerMes("2026-05");
+  check("parte faltante → chunk descartado sin romper la lectura", Array.isArray(regsRotos) && regsRotos.length === 0, regsRotos.length);
 
   /* ── 6 · e2e por los handlers reales con KV mock ── */
   console.log("\n6 · End-to-end /api/sync + /api/procesos");

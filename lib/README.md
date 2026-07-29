@@ -56,6 +56,15 @@ radar consume la caché.
 5. **Verificación de completitud**: `count(1)` por mes ANTES de paginar
    (esperados) y auditoría final `esperados vs almacenados` (reporte en
    consola/meta; diferencias → `detecta:x:incidencias`).
+5b. **Valores grandes → partes transparentes**: el cinturón final contra
+   `ERR max request size exceeded`. Si un valor supera 500 KB (no debería:
+   el empaquetador ya corta antes), `escribirValorGrande` lo trocea en
+   `…:chunk:{i}:parte:{j}` — partes primero, puntero `{"__partes":n}` al
+   final (un fallo a mitad no deja punteros colgando) — y la lectura
+   (`leerValoresGrandes`, usada por `leerMes`) re-ensambla sola; si falta
+   una parte, ese chunk se descarta con aviso en vez de romper el mes.
+   El esquema, la compresión y la paginación no cambian; `?modo=purga`
+   reconoce las claves `:parte:` y limpia las huérfanas.
 6. **KV con chunks gzip+base64** particionados por mes
    (`detecta:x:mes:{YYYY-MM}:chunk:{i}`, ≤ ~500 KB por valor — margen amplio
    sobre el límite de 1 MB por request del tier gratuito, con tope duro de

@@ -70,9 +70,17 @@ async function subir() {
   if (!cred) throw new Error("faltan UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN en el entorno");
   const local = JSON.parse(fs.readFileSync(RUTA, "utf8"));
   const kv = new AlmacenKV(cred.url, cred.token);
+  const { escribirValorGrande } = require("../lib/almacen.js");
   const claves = Object.keys(local);
   let n = 0;
-  for (const k of claves) { await kv.set(k, local[k]); n++; if (n % 25 === 0) console.log(`  …${n}/${claves.length}`); }
+  for (const k of claves) {
+    // los chunks pueden venir de un archivo generado por una versión vieja
+    // (sin tope de 500 KB): el fragmentado en partes evita el límite por
+    // request; las claves de control (meta/progreso) van directas
+    if (/:chunk:\d+$/.test(k)) await escribirValorGrande(kv, k, local[k]);
+    else await kv.set(k, local[k]);
+    n++; if (n % 25 === 0) console.log(`  …${n}/${claves.length}`);
+  }
   console.log(`[respaldo] subidas ${n} claves a Upstash Redis (${kv.comandos()} comandos)`);
 }
 
