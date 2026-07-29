@@ -109,6 +109,18 @@ radar consume la caché.
 
 ## Mantenimiento
 
+- **Cuota de almacenamiento excedida (256 MB)**: la app escribe ~40-60 MB/año
+  comprimidos, así que una base llena casi siempre significa claves BASURA de
+  esquemas viejos u otras herramientas (p.ej. `oportunidad:*`) o particiones
+  huérfanas. Procedimiento: (1) censo sin tocar nada:
+  `GET /api/sync?modo=diagnostico&secret=…` → claves válidas/huérfanas/ajenas
+  con ejemplos; (2) limpieza: `GET /api/sync?modo=purga&secret=…` — borra
+  huérfanas+ajenas en lotes, jamás el esquema vigente, y se niega si hay una
+  carga completa en curso (`force=1` para insistir). La base debe ser
+  EXCLUSIVA de esta app: cualquier clave ajena se considera borrable.
+  Nota medida (jul 2026): renombrar campos a códigos cortos solo ahorraría
+  ~4 % POST-gzip (gzip ya deduplica los nombres repetidos) — no compensa
+  romper el contrato «misma forma que Socrata» del radar.
 - **«Ya hay una sincronización corriendo» persistente**: el candado
   `detecta:x:lock` tiene triple protección (TTL 900 s como red de Redis; auto-desbloqueo si el
   timestamp del candado supera 10 min; y un error de Redis responde **502 con

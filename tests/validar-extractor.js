@@ -90,8 +90,14 @@ function handleKV(body, res) {
     if (nx && viva(k)) result = null;
     else { m.set(k, { v: String(v), exp }); result = "OK"; }
   }
-  else if (op === "DEL") { result = viva(a[0]) ? 1 : 0; m.delete(a[0]); }
+  else if (op === "DEL") { result = 0; for (const k of a) { if (viva(k)) result++; m.delete(k); } }
   else if (op === "MGET") { result = a.map((k) => { const e = viva(k); return e ? e.v : null; }); }
+  else if (op === "SCAN") {
+    const patron = a[a.indexOf("MATCH") + 1] || "*";
+    const re = new RegExp("^" + patron.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*") + "$");
+    result = ["0", [...m.keys()].filter((k) => viva(k) && re.test(k))];
+  }
+  else if (op === "DBSIZE") { result = m.size; }
   res.writeHead(200, { "Content-Type": "application/json" });
   res.end(JSON.stringify({ result }));
 }
@@ -451,6 +457,37 @@ function generarDatos(mesesDelRango, inicioSolape) {
   await sync({ query: { modo: "unlock", secret: "secreto-test" }, headers: { host: "app.test" } }, out);
   check("?modo=unlock desbloquea (formato legado incluido)",
     out._r.code === 200 && out._r.body.desbloqueado === true && !estado.kv.has(LOCK), out._r.body);
+
+  /* ── 6c · diagnóstico y purga de la base (cuota excedida) ── */
+  console.log("\n6c · Diagnóstico y purga de la base");
+  // sembrar basura: esquema viejo oportunidad:*, mes fuera de rango, chunk huérfano
+  estado.kv.set("oportunidad:CO1.X.1", { v: "x".repeat(500), exp: null });
+  estado.kv.set("oportunidad:CO1.X.2", { v: "{}", exp: null });
+  const mesFuera = mesesDelRango(inicioViejo)[0];
+  estado.kv.set(`detecta:x:mes:${mesFuera}:chunk:0`, { v: "AAA", exp: null });
+  estado.kv.set(`detecta:x:mes:${mesFuera}:manifest`, { v: JSON.stringify({ ini: 0, chunks: 1 }), exp: null });
+  const mesOk = mesesDelRango(inicioSolape)[3];
+  estado.kv.set(`detecta:x:mes:${mesOk}:chunk:97`, { v: "BBB", exp: null }); // índice fuera del manifest
+  const clavesAntes = estado.kv.size;
+  out = mkRes();
+  await sync({ query: { modo: "diagnostico" }, headers: auth }, out);
+  check("diagnóstico clasifica sin borrar nada",
+    out._r.code === 200 && out._r.body.ajenas === 2 && out._r.body.huerfanas >= 3 &&
+    out._r.body.validas > 0 && estado.kv.size === clavesAntes, out._r.body);
+  out = mkRes();
+  await sync({ query: { modo: "purga" }, headers: auth }, out);
+  check("purga borra huérfanas y ajenas",
+    out._r.code === 200 && out._r.body.borradas >= 5 &&
+    !estado.kv.has("oportunidad:CO1.X.1") && !estado.kv.has(`detecta:x:mes:${mesFuera}:manifest`) &&
+    !estado.kv.has(`detecta:x:mes:${mesOk}:chunk:97`), out._r.body);
+  check("purga NO toca lo válido", estado.kv.has("detecta:x:meta") && estado.kv.has(`detecta:x:mes:${mesOk}:manifest`));
+  out = mkRes();
+  await procesos({ query: { desde, limit: "100" }, headers: { host: "app.test" } }, out);
+  check("radar intacto tras la purga", out._r.code === 200 && Array.isArray(out._r.body) && out._r.body.length === 100,
+    out._r.body && out._r.body.length);
+  out = mkRes();
+  await sync({ query: { modo: "purga" }, headers: { host: "app.test", origin: "http://app.test" } }, out);
+  check("purga sin secreto → 403", out._r.code === 403);
 
   /* ── resultado ── */
   server.close();

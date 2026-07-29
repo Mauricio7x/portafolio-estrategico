@@ -57,7 +57,7 @@ Es un único `index.html` que corre 100 % en el navegador, sin paso de compilaci
     solape cambia con una carga en curso, el progreso **migra sin reiniciar** (conserva meses cerrados en rango)
     y las particiones fuera de rango se **purgan** en el siguiente delta o al cerrar la full (también `meta.desde`).
     La auditoría compara solo meses con count verificado (`comparados`/`sinVerificar` aparte).
-  - `api/sync.js` (modos full/delta/auto, candado SET NX, presupuesto 45 s/invocación) y `api/procesos.js`
+  - `api/sync.js` (modos full/delta/auto + unlock/diagnostico/purga, candado SET NX con timestamp, presupuesto 240 s/invocación) y `api/procesos.js`
     (sirve la caché con la MISMA forma de campos que Socrata, `limit≤4000`, memoria caliente por instancia).
   - `index.html`: `loadProcesses` intenta **caché-primero** (`cacheMeta`/`cachePaginas`); si la caché tiene >1 h
     dispara `/api/sync?modo=auto` en segundo plano con chip «actualizando…» (`chipSync`). La cascada Socrata

@@ -37,7 +37,9 @@ export default async function handler(req, res) {
   if (!conSecreto && !propio) return res.status(401).json({ error: "no autorizado" });
 
   const modo = (req.query.modo || "auto").toLowerCase();
-  if (modo === "full" && !conSecreto) return res.status(403).json({ error: "full requiere secreto" });
+  if ((modo === "full" || modo === "purga" || modo === "diagnostico") && !conSecreto) {
+    return res.status(403).json({ error: modo + " requiere secreto" });
+  }
 
   if (!hayCredenciales()) {
     return res.status(503).json({ error: "Falta Upstash Redis (UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN). Ver lib/README.md" });
@@ -56,6 +58,17 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, desbloqueado: true, habiaCandado: habia != null, msg: "desbloqueado" });
     } catch (e) {
       return res.status(502).json({ ok: false, error: "Redis inaccesible: " + String(e && e.message || e) });
+    }
+  }
+
+  // Censo de la base (solo lectura, sin candado): clasifica TODAS las claves
+  // en válidas / huérfanas / ajenas. Para diagnosticar cuotas excedidas.
+  if (modo === "diagnostico") {
+    try {
+      const r0 = await crearExtractor({ store }).diagnosticar({});
+      return res.status(200).json({ ok: true, modo, comandosRedis: store.comandos ? store.comandos() : null, ...r0 });
+    } catch (e) {
+      return res.status(502).json({ ok: false, modo, error: String(e && e.message || e) });
     }
   }
 
@@ -113,7 +126,12 @@ export default async function handler(req, res) {
   const t0 = Date.now();
   try {
     let r;
-    if (modo === "full") {
+    if (modo === "purga") {
+      // borra claves huérfanas/ajenas; con el candado tomado, ningún delta
+      // puede estar escribiendo chunks que el censo aún no ve en el manifest
+      r = await x.diagnosticar({ purgar: true, force: req.query.force === "1" });
+      if (r && r.ok === false) return res.status(409).json({ ...r, modo });
+    } else if (modo === "full") {
       r = await x.extraerTodo({ presupuestoMs });
     } else if (modo === "delta") {
       r = await x.extraerDelta({ presupuestoMs });
