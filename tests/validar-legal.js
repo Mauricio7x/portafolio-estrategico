@@ -33,8 +33,9 @@ console.log(`  ✓ ${bloques.length} bloques compilados`);
 
 /* ── 2 · Sintaxis de los ficheros JS sueltos ── */
 console.log("\n2 · node --check de sw.js, api/*, lib/*");
-["sw.js", "api/proxy.js", "api/cron.js", "api/resumen.js", "api/sync.js", "api/procesos.js",
- "lib/engine.js", "lib/extractor.js", "lib/almacen.js", "lib/redis.js", "scripts/respaldo-csv.js"].forEach(f => {
+["sw.js", "api/proxy.js", "api/cron.js", "api/resumen.js", "api/sync.js", "api/sync/unlock.js",
+ "api/procesos.js", "lib/engine.js", "lib/extractor.js", "lib/almacen.js", "lib/redis.js",
+ "scripts/respaldo-csv.js"].forEach(f => {
   try { execFileSync(process.execPath, ["--check", path.join(ROOT, f)], { stdio: "pipe" }); check(f, true); }
   catch (e) { check(f, false, String(e.stderr || e.message).trim().split("\n")[0]); }
 });

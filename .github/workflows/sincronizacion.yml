@@ -39,8 +39,17 @@ jobs:
           [ -n "$BYPASS" ] && EXTRA=(-H "x-vercel-protection-bypass: $BYPASS")
           # hasta 4 invocaciones seguidas: una carga completa en curso avanza
           # ~240 s por llamada y responde done:false hasta terminar.
+          ULTIMO=""
           for i in $(seq 1 4); do
             R=$(curl -sS -m 310 -H "Authorization: Bearer $SECRET" "${EXTRA[@]}" "$URL/api/sync?modo=auto") || exit 1
             echo "intento $i → $R"
+            ULTIMO="$R"
             echo "$R" | grep -q '"done":false' || break
           done
+          # un error real (p.ej. Redis inaccesible) debe PONER EL JOB EN ROJO,
+          # no terminar en verde con el problema escondido en el log
+          if echo "$ULTIMO" | grep -q '"ok":false'; then
+            echo "::error::La sincronización falló: $ULTIMO"
+            echo "Si el error habla del candado, desbloquear con: curl -H \"Authorization: Bearer \$SECRET\" $URL/api/sync/unlock"
+            exit 1
+          fi

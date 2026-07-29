@@ -45,14 +45,54 @@ export default async function handler(req, res) {
   const store = crearAlmacen({});
   const K = claves("");
 
-  // Candado anti-concurrencia. TTL > maxDuration (300 s) para que nunca
-  // expire con la función viva; valor con token único y liberación SOLO si
-  // el token coincide (si Vercel mata la función, el finally no corre y el
-  // TTL limpia; sin token, ese DEL tardío borraría el candado de OTRA
-  // sincronización en curso).
+  // Desbloqueo de emergencia también como modo (además de /api/sync/unlock):
+  //   /api/sync?modo=unlock&secret=CRON_SECRET
+  if (modo === "unlock") {
+    if (!conSecreto) return res.status(403).json({ error: "unlock requiere secreto" });
+    try {
+      const habia = await store.get(K.lock);
+      await store.del(K.lock);
+      return res.status(200).json({ ok: true, desbloqueado: true, habiaCandado: habia != null });
+    } catch (e) {
+      return res.status(502).json({ ok: false, error: "Redis inaccesible: " + String(e && e.message || e) });
+    }
+  }
+
+  /* ── Candado anti-concurrencia con TRIPLE protección ────────────────────
+     1) TTL en Redis (320 s > maxDuration): si Vercel mata la función y el
+        finally no corre, el candado se limpia solo.
+     2) TIMESTAMP dentro del valor: si el TTL no operara (almacén sin TTL,
+        clave restaurada de un backup, etc.), un candado con más de
+        LOCK_STALE_MS se considera MUERTO y la llamada lo sobrescribe y
+        continúa, en vez de rechazar para siempre.
+     3) Un error de Redis al tomar el candado ya NO se disfraza de
+        "enCurso": responde 502 con la causa real. (El bug original: el
+        .catch(() => false) convertía credenciales inválidas o base caída
+        en un "ya hay una sincronización corriendo" eterno que ni vaciar
+        Redis ni redeployar podía quitar.)
+     La liberación va en finally comparando el token (nunca borra el
+     candado de otra corrida). ─────────────────────────────────────────── */
+  const LOCK_TTL_S = 320, LOCK_STALE_MS = 10 * 60e3;
   const token = (globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()) + Date.now();
-  const lock = await store.setNX(K.lock, token, 320).catch(() => false);
-  if (!lock) return res.status(202).json({ ok: true, enCurso: true, msg: "ya hay una sincronización corriendo" });
+  const valorLock = JSON.stringify({ t: Date.now(), token });
+  let lock;
+  try {
+    lock = await store.setNX(K.lock, valorLock, LOCK_TTL_S);
+    if (!lock) {
+      const crudo = await store.get(K.lock);
+      let previo = null;
+      try { previo = JSON.parse(crudo); } catch (e) { /* formato legado sin timestamp */ }
+      const edadMs = previo && previo.t ? Date.now() - previo.t : (crudo == null ? Infinity : null);
+      if (crudo == null || edadMs === Infinity || (edadMs != null && edadMs > LOCK_STALE_MS)) {
+        // candado muerto (o desaparecido entre el setNX y el get): tómalo
+        await store.del(K.lock);
+        lock = await store.setNX(K.lock, valorLock, LOCK_TTL_S);
+      }
+    }
+  } catch (e) {
+    return res.status(502).json({ ok: false, error: "Redis inaccesible al tomar el candado: " + String(e && e.message || e) });
+  }
+  if (!lock) return res.status(202).json({ ok: true, enCurso: true, msg: "ya hay una sincronización corriendo (candado con vida; expira solo en ≤ 10 min)" });
 
   const x = crearExtractor({ store });
   const presupuestoMs = Math.min(parseInt(req.query.presupuesto, 10) || 240000, 280000);
@@ -85,6 +125,12 @@ export default async function handler(req, res) {
   } catch (e) {
     return res.status(502).json({ ok: false, modo, error: String(e && e.message || e), comandosRedis: store.comandos ? store.comandos() : null });
   } finally {
-    try { if ((await store.get(K.lock)) === token) await store.del(K.lock); } catch (e) { /* TTL limpia */ }
+    // libera SOLO nuestro candado (por token); ante cualquier error aquí,
+    // el TTL y el detector de candados muertos hacen el resto
+    try {
+      const crudo = await store.get(K.lock);
+      let p = null; try { p = JSON.parse(crudo); } catch (e) { /* legado */ }
+      if ((p && p.token === token) || crudo === token) await store.del(K.lock);
+    } catch (e) { /* TTL limpia */ }
   }
 }

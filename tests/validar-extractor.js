@@ -73,6 +73,8 @@ function handleSocrata(q, res) {
   res.end(JSON.stringify(rows));
 }
 function handleKV(body, res) {
+  // simulación de Redis caído / credenciales inválidas
+  if (estado.kvFallo) { res.writeHead(500); return res.end(JSON.stringify({ error: "simulado: WRONGPASS invalid credentials" })); }
   // como Upstash real: el request completo no puede superar 1 MB
   if (body.length > 1_000_000) { res.writeHead(400); return res.end(JSON.stringify({ error: "ERR max request size exceeded" })); }
   let cmd; try { cmd = JSON.parse(body); } catch { res.writeHead(400); return res.end("{}"); }
@@ -408,6 +410,45 @@ function generarDatos(mesesDelRango, inicioSolape) {
   out = mkRes();
   await sync({ query: { modo: "auto" }, headers: { host: "app.test", origin: "http://app.test" } }, out);
   check("sync mismo-origen (auto) permitido", out._r.code === 200 && out._r.body.ok === true, out._r);
+
+  /* ── 6b · candado de /api/sync: nunca bloqueado permanentemente ── */
+  console.log("\n6b · Candado de /api/sync");
+  const LOCK = "detecta:x:lock";
+  // a) candado FRESCO de otra corrida → contención legítima (202 enCurso)
+  estado.kv.set(LOCK, { v: JSON.stringify({ t: Date.now(), token: "otra-corrida" }), exp: null });
+  out = mkRes();
+  await sync({ query: { modo: "auto" }, headers: auth }, out);
+  check("candado fresco → 202 enCurso", out._r.code === 202 && out._r.body.enCurso === true, out._r.body);
+  check("el candado ajeno NO se borra al chocar", estado.kv.has(LOCK));
+  // b) candado MUERTO (>10 min y sin TTL) → se sobrescribe y la llamada continúa
+  estado.kv.set(LOCK, { v: JSON.stringify({ t: Date.now() - 11 * 60e3, token: "muerto" }), exp: null });
+  out = mkRes();
+  await sync({ query: { modo: "auto" }, headers: auth }, out);
+  check("candado muerto (>10 min) → se sobrescribe y continúa", out._r.code === 200 && out._r.body.enCurso === undefined, out._r.body);
+  check("el candado propio se libera al terminar (finally)", !estado.kv.has(LOCK));
+  // c) Redis caído/credenciales malas → 502 con la causa, NUNCA "enCurso"
+  estado.kvFallo = true;
+  out = mkRes();
+  await sync({ query: { modo: "auto" }, headers: auth }, out);
+  check("error de Redis → 502 con causa real (no enCurso)",
+    out._r.code === 502 && /Redis inaccesible/.test(out._r.body.error || "") && out._r.body.enCurso === undefined, out._r.body);
+  estado.kvFallo = false;
+  // d) /api/sync/unlock: 401 sin secreto; con secreto borra el candado
+  const unlock = (await import(path.join(ROOT, "api/sync/unlock.js"))).default;
+  estado.kv.set(LOCK, { v: JSON.stringify({ t: Date.now(), token: "otra-corrida" }), exp: null });
+  out = mkRes();
+  await unlock({ query: {}, headers: {} }, out);
+  check("unlock sin secreto → 401", out._r.code === 401);
+  out = mkRes();
+  await unlock({ query: {}, headers: auth }, out);
+  check("unlock con secreto borra el candado",
+    out._r.code === 200 && out._r.body.desbloqueado === true && out._r.body.habiaCandado === true && !estado.kv.has(LOCK), out._r.body);
+  // e) también como modo del endpoint principal, incluso con formato legado
+  estado.kv.set(LOCK, { v: "token-legado-sin-json", exp: null });
+  out = mkRes();
+  await sync({ query: { modo: "unlock", secret: "secreto-test" }, headers: { host: "app.test" } }, out);
+  check("?modo=unlock desbloquea (formato legado incluido)",
+    out._r.code === 200 && out._r.body.desbloqueado === true && !estado.kv.has(LOCK), out._r.body);
 
   /* ── resultado ── */
   server.close();
