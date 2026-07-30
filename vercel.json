@@ -1,20 +1,10 @@
 {
   "crons": [
-    {
-      "path": "/api/cron",
-      "schedule": "0 12 * * *"
-    },
-    {
-      "path": "/api/sync",
-      "schedule": "30 8 * * *"
-    }
+    { "path": "/api/sync", "schedule": "30 8 * * *" }
   ],
   "functions": {
-    "api/cron.js": { "maxDuration": 60 },
     "api/sync.js": { "maxDuration": 300 },
-    "api/procesos.js": { "maxDuration": 30 },
-    "api/resumen.js": { "maxDuration": 30 },
-    "api/proxy.js": { "maxDuration": 30 }
+    "api/oportunidades.js": { "maxDuration": 60 }
   },
   "headers": [
     {
@@ -24,7 +14,7 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-        { "key": "Permissions-Policy", "value": "camera=(), geolocation=(), microphone=(self), payment=(), usb=()" },
+        { "key": "Permissions-Policy", "value": "camera=(), geolocation=(), microphone=(), payment=(), usb=()" },
         { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" }
       ]
     }
