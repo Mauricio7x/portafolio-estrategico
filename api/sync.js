@@ -1,90 +1,381 @@
 /* ============================================================================
-   /api/sync · Sincronización de la caché SECOP (carga completa + delta)
+   /api/sync · Sincronización SECOP II → Upstash Redis (full + delta, reanudable)
    ----------------------------------------------------------------------------
-   Modos (?modo=):
-     full   → carga completa del año vigente (reanudable: cada invocación
-              avanza hasta ~45 s y guarda el cursor; repetir hasta done:true).
-              Solo con secreto (es costosa).
-     delta  → nuevos/modificados desde la última sincronización (barata).
-     auto   → lo que toque: si no hay carga completa terminada, continúa la
-              full; si la hay, delta si la caché tiene >10 min; si no, no-op.
-   Auth:
-     - Authorization: Bearer CRON_SECRET  (Vercel Cron / GitHub Actions)
-     - ?secret=CRON_SECRET                (invocación manual)
-     - mismo origen (navegador de la app) → SOLO modo auto/delta, para que la
-       vista de oportunidades pueda refrescar sin exponer la carga completa.
-   Un candado en KV (SET NX EX) evita sincronizaciones concurrentes cuando
-   varios visitantes disparan el refresco a la vez.
+   GET /api/sync?modo=full|delta|auto [&presupuesto=ms] [&chain=0]
+
+     full   Recorre el año vigente mes a mes (paginación keyset por :id).
+            REANUDABLE: cada invocación avanza hasta agotar su presupuesto de
+            tiempo y persiste el cursor en licitaciones:progreso; la siguiente
+            continúa donde quedó. Al agotar presupuesto se re-invoca sola
+            (fire-and-forget a sí misma) hasta terminar.
+     delta  Solo lo nuevo/modificado desde la última sincronización, por el
+            metacampo :updated_at con solape de 48 h. Los cambios de estado
+            (Publicado → Adjudicado) REEMPLAZAN el registro vía dedup en
+            lectura (gana el :updated_at más reciente).
+     auto   Lo que toque: continuar una full inconclusa; full si nunca hubo;
+            delta si los datos tienen >5 min; si no, no-op {alDia:true}.
+
+   Cada licitación se ENRIQUECE (lib/negocio.enriquecer) ANTES de guardarse —
+   nunca se persiste sin los campos de negocio — y se aplica el prefiltro de
+   compatibilidad RUP (lib/rup.compatibleConAlgunPerfil): guardar las ~500k
+   filas/año del dataset completo reventaría el tier gratuito de Upstash y
+   las consultas; solo se guardan las compatibles con algún perfil (el conteo
+   de descartadas queda en meta para auditoría). Chunks mensuales comprimidos
+   (zlib.deflate nivel 6, ≤500 KB) en licitaciones:mes:{YYYY-MM}:chunk:{i}.
+
+   Candado: lock:sync con SET NX EX 300 — TTL SIEMPRE presente, así una
+   función muerta jamás deja el candado atascado (la causa clásica del
+   "enCurso:true eterno"); se libera en finally solo si el token coincide.
+   Sin secretos: el endpoint es idempotente, barato cuando no hay nada que
+   hacer, y el candado + presupuesto lo auto-limitan.
    ========================================================================== */
+"use strict";
 
-import { crearExtractor } from "../lib/extractor.js";
-import { crearAlmacen, claves } from "../lib/almacen.js";
-import { hayCredenciales } from "../lib/redis.js";
+const { crearRedis, hayCredenciales } = require("../lib/redis.js");
+const { CLAVES, LOCK_TTL_SEG, empaquetar, descomprimir, leerJSON, escribirJSON } = require("../lib/almacen.js");
+const { crearCliente, anoVigente, mesesDelAno } = require("../lib/socrata.js");
+const { enriquecer } = require("../lib/negocio.js");
+const { compatibleConAlgunPerfil } = require("../lib/rup.js");
 
-function esOrigenPropio(req) {
-  const propio = String(req.headers["x-forwarded-host"] || req.headers.host || "").toLowerCase();
-  const origen = req.headers.origin || req.headers.referer || "";
-  try { return !!propio && new URL(origen).host.toLowerCase() === propio; } catch { return false; }
+const PAGE = parseInt(process.env.SECOP_PAGE, 10) || 5000;
+const PRESUPUESTO_DEFAULT_MS = 45000;  // cabe en el plan Hobby (60 s)
+// Máx < TTL del candado (300 s) con margen para la cadena de reintentos de la
+// página en curso: la invocación siempre muere antes de que expire el lock.
+const PRESUPUESTO_MAX_MS = 240000;
+const SOLAPE_DELTA_MS = 48 * 3600e3;
+const FRESCO_MS = 5 * 60e3;            // <5 min → no-op en modo auto
+const COMPACTAR_TRAS_CHUNKS = 25;
+
+/* ---------- proyección: lo que la app necesita, nada más ---------- */
+const CAMPOS = [
+  ":id", ":updated_at",
+  "id_del_proceso", "referencia_del_proceso", "nombre_del_procedimiento",
+  "descripci_n_del_procedimiento", "entidad", "nit_entidad",
+  "departamento_entidad", "ciudad_entidad", "modalidad_de_contratacion",
+  "estado_del_procedimiento", "fase", "fecha_de_publicacion_del", "precio_base",
+  "duracion", "unidad_de_duracion", "codigo_principal_de_categoria",
+  "categorias_adicionales", "tipo_de_contrato",
+  "respuestas_al_procedimiento", "conteo_de_respuestas_a_ofertas", "proveedores_unicos_con",
+];
+function proyectar(fila) {
+  const out = {};
+  for (const c of CAMPOS) if (fila[c] !== undefined) out[c] = fila[c];
+  if (typeof out.descripci_n_del_procedimiento === "string" && out.descripci_n_del_procedimiento.length > 700) {
+    out.descripci_n_del_procedimiento = out.descripci_n_del_procedimiento.slice(0, 700) + "…";
+  }
+  // urlproceso llega como objeto {url, description} desde Socrata
+  const u = fila.urlproceso;
+  out.urlproceso = (u && typeof u === "object" ? u.url : u) || null;
+  // columnas de fecha de cierre: nombre no garantizado → conservar candidatas
+  for (const k in fila) {
+    if (out[k] === undefined && /fecha/i.test(k) && /(recep|cierre|l[ií]mit|plazo|apertura)/i.test(k)) out[k] = fila[k];
+  }
+  // clave de dedup: id de negocio primero (estable ante re-publicaciones que
+  // regeneran los :id de Socrata), :id como respaldo
+  out._k = fila.id_del_proceso || fila[":id"] || `${fila.fecha_de_publicacion_del}|${fila.referencia_del_proceso || ""}`;
+  return out;
 }
 
-export default async function handler(req, res) {
-  // OJO: sin la guarda !!secreto, la env var ausente produciría el literal
-  // 'Bearer undefined' y cualquiera podría pasar como autorizado.
-  const secreto = process.env.CRON_SECRET;
-  const conSecreto = !!secreto && (req.headers["authorization"] === `Bearer ${secreto}`
-    || (req.query.secret && req.query.secret === secreto));
-  const propio = esOrigenPropio(req);
-  if (!conSecreto && !propio) return res.status(401).json({ error: "no autorizado" });
+function transformar(filas) {
+  // proyección → prefiltro de compatibilidad RUP → enriquecimiento de negocio
+  return filas.map(proyectar).filter(compatibleConAlgunPerfil).map(enriquecer);
+}
 
-  const modo = (req.query.modo || "auto").toLowerCase();
-  if (modo === "full" && !conSecreto) return res.status(403).json({ error: "full requiere secreto" });
-
-  if (!hayCredenciales()) {
-    return res.status(503).json({ error: "Falta Upstash Redis (UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN). Ver lib/README.md" });
+/* ---------- escritura de chunks ---------- */
+async function escribirChunks(redis, mes, desdeIndice, registros) {
+  let i = desdeIndice;
+  for (const paquete of empaquetar(registros)) {
+    await redis.set(CLAVES.chunk(mes, i), paquete);
+    i++;
   }
-  const store = crearAlmacen({});
-  const K = claves("");
+  return i; // siguiente índice libre
+}
 
-  // Candado anti-concurrencia. TTL > maxDuration (300 s) para que nunca
-  // expire con la función viva; valor con token único y liberación SOLO si
-  // el token coincide (si Vercel mata la función, el finally no corre y el
-  // TTL limpia; sin token, ese DEL tardío borraría el candado de OTRA
-  // sincronización en curso).
-  const token = (globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()) + Date.now();
-  const lock = await store.setNX(K.lock, token, 320).catch(() => false);
-  if (!lock) return res.status(202).json({ ok: true, enCurso: true, msg: "ya hay una sincronización corriendo" });
+async function leerMes(redis, mes, manifest) {
+  if (!manifest) return [];
+  const ks = [];
+  for (let i = manifest.base || 0; i < manifest.sig; i++) ks.push(CLAVES.chunk(mes, i));
+  const registros = [];
+  for (let i = 0; i < ks.length; i += 8) {
+    const lote = await redis.mget(ks.slice(i, i + 8));
+    for (const b of lote) for (const r of (descomprimir(b) || [])) registros.push(r);
+  }
+  // dedup por _k, gana el :updated_at más reciente
+  const mapa = new Map();
+  for (const r of registros) {
+    const prev = mapa.get(r._k);
+    if (!prev || (r[":updated_at"] || "") >= (prev[":updated_at"] || "")) mapa.set(r._k, r);
+  }
+  return [...mapa.values()];
+}
 
-  const x = crearExtractor({ store });
-  const presupuestoMs = Math.min(parseInt(req.query.presupuesto, 10) || 240000, 280000);
+/* Compactación de un mes tras muchos deltas append-only: reescribe el mes
+   deduplicado en índices NUEVOS y solo después borra los viejos — un kill a
+   mitad deja duplicados (que la lectura resuelve), nunca pérdida. */
+async function compactarMes(redis, mes) {
+  const manifest = await leerJSON(redis, CLAVES.manifest(mes));
+  if (!manifest) return;
+  const registros = await leerMes(redis, mes, manifest);
+  const sig = await escribirChunks(redis, mes, manifest.sig, registros);
+  await escribirJSON(redis, CLAVES.manifest(mes), {
+    base: manifest.sig, sig, count: registros.length, updatedAt: new Date().toISOString(),
+  });
+  const viejos = [];
+  for (let i = manifest.base || 0; i < manifest.sig; i++) viejos.push(CLAVES.chunk(mes, i));
+  if (viejos.length) await redis.del(...viejos);
+}
+
+/* ============================ CARGA COMPLETA ============================ */
+async function extraerFull(redis, socrata, { presupuestoMs, reiniciar }) {
   const t0 = Date.now();
+  let p = reiniciar ? null : await leerJSON(redis, CLAVES.progreso);
+  if (!p || p.tipo !== "full" || p.terminado) {
+    p = {
+      tipo: "full", iniciado: new Date().toISOString(),
+      meses: mesesDelAno(), mesIdx: 0,
+      cursor: {}, keyset: true, chunkIdx: 0,
+      leidasMes: 0, guardadasMes: 0, esperadosMes: null, viejoSig: null,
+      porMes: {}, terminado: false,
+    };
+    await escribirJSON(redis, CLAVES.progreso, p);
+  }
+
+  while (p.mesIdx < p.meses.length) {
+    const mes = p.meses[p.mesIdx];
+
+    if (p.esperadosMes == null) {
+      try { p.esperadosMes = await socrata.contarMes(mes); }
+      catch { p.esperadosMes = -1; } // count caído no mata la carga; queda sin auditar
+      const manViejo = await leerJSON(redis, CLAVES.manifest(mes));
+      p.viejoSig = manViejo ? manViejo.sig : 0;
+      await escribirJSON(redis, CLAVES.progreso, p);
+    }
+
+    let finDeMes = false;
+    while (!finDeMes) {
+      if (Date.now() - t0 > presupuestoMs) {
+        await escribirJSON(redis, CLAVES.progreso, p);
+        return { done: false, progreso: resumen(p) };
+      }
+      let filas;
+      try {
+        filas = await socrata.paginaMes(mes, p.cursor, { pagina: PAGE, keyset: p.keyset });
+      } catch (e) {
+        if (e && e.status === 400 && p.keyset) {
+          // el backend rechazó el keyset: degradar a $offset y reiniciar el
+          // mes (los chunks ya escritos no estorban: la lectura deduplica)
+          p.keyset = false;
+          p.cursor = { offset: 0 }; p.leidasMes = 0; p.guardadasMes = 0; p.chunkIdx = 0;
+          await escribirJSON(redis, CLAVES.progreso, p);
+          continue;
+        }
+        throw e;
+      }
+      if (filas.length) {
+        if (p.keyset && filas[filas.length - 1][":id"] === undefined) {
+          throw new Error(`${mes}: el backend no devolvió :id en modo keyset (sin avance posible)`);
+        }
+        const guardables = transformar(filas);
+        if (guardables.length) p.chunkIdx = await escribirChunks(redis, mes, p.chunkIdx, guardables);
+        p.leidasMes += filas.length;
+        p.guardadasMes += guardables.length;
+        if (p.keyset) p.cursor.lastId = filas[filas.length - 1][":id"];
+        else p.cursor.offset = (p.cursor.offset || 0) + filas.length;
+        await escribirJSON(redis, CLAVES.progreso, p); // reanudable página a página
+      }
+      finDeMes = filas.length < PAGE;
+    }
+
+    // cerrar el mes: manifest nuevo + poda de chunks sobrantes de corridas viejas
+    await escribirJSON(redis, CLAVES.manifest(mes), {
+      base: 0, sig: p.chunkIdx, count: p.guardadasMes,
+      esperados: p.esperadosMes >= 0 ? p.esperadosMes : null,
+      updatedAt: new Date().toISOString(),
+    });
+    const sobrantes = [];
+    for (let i = p.chunkIdx; i < (p.viejoSig || 0); i++) sobrantes.push(CLAVES.chunk(mes, i));
+    if (sobrantes.length) await redis.del(...sobrantes);
+
+    p.porMes[mes] = { esperados: p.esperadosMes >= 0 ? p.esperadosMes : null, leidas: p.leidasMes, guardadas: p.guardadasMes };
+    p.mesIdx++; p.cursor = {}; p.chunkIdx = 0; p.leidasMes = 0; p.guardadasMes = 0;
+    p.esperadosMes = null; p.viejoSig = null;
+    await escribirJSON(redis, CLAVES.progreso, p);
+  }
+
+  p.terminado = true;
+  await escribirJSON(redis, CLAVES.progreso, p);
+
+  // purgar meses que salieron de la ventana (cambio de año) para no acumular
+  // particiones muertas en Redis para siempre
+  const meta = (await leerJSON(redis, CLAVES.meta)) || {};
+  for (const mesViejo of Object.keys(meta.porMes || {})) {
+    if (mesViejo in p.porMes) continue;
+    const man = await leerJSON(redis, CLAVES.manifest(mesViejo));
+    if (man) {
+      const ks = [];
+      for (let i = 0; i < man.sig; i++) ks.push(CLAVES.chunk(mesViejo, i));
+      if (ks.length) await redis.del(...ks);
+    }
+    await redis.del(CLAVES.manifest(mesViejo));
+  }
+
+  const totalGuardadas = Object.values(p.porMes).reduce((a, m) => a + m.guardadas, 0);
+  const totalLeidas = Object.values(p.porMes).reduce((a, m) => a + m.leidas, 0);
+  await escribirJSON(redis, CLAVES.meta, {
+    ...meta,
+    ano: anoVigente(),
+    last_full: new Date().toISOString(),
+    // el primer delta se ancla al INICIO de la full: todo lo actualizado
+    // mientras corría (pudo tardar varias invocaciones) entra después
+    last_sync: p.iniciado,
+    porMes: p.porMes,
+    total: totalGuardadas,
+    leidas: totalLeidas,
+    descartadas_prefiltro: totalLeidas - totalGuardadas,
+  });
+  return { done: true, total: totalGuardadas, leidas: totalLeidas, porMes: p.porMes };
+}
+
+/* ============================ DELTA ============================ */
+async function extraerDelta(redis, socrata, { presupuestoMs }) {
+  const t0 = Date.now();
+  const meta = (await leerJSON(redis, CLAVES.meta)) || {};
+  if (!meta.last_full) return extraerFull(redis, socrata, { presupuestoMs, reiniciar: false });
+
+  const desdeUTC = new Date(Date.parse(meta.last_sync || meta.last_full) - SOLAPE_DELTA_MS).toISOString();
+  const inicioAno = `${anoVigente()}-01-01T00:00:00.000`;
+
+  const nuevos = [];
+  const cursor = {};
+  let keyset = true, fin = false, completo = true;
+  while (!fin) {
+    if (Date.now() - t0 > presupuestoMs) { completo = false; break; }
+    let filas;
+    try {
+      filas = await socrata.paginaDelta(desdeUTC, inicioAno, cursor, { pagina: PAGE, keyset });
+    } catch (e) {
+      if (e && e.status === 400 && keyset) {
+        keyset = false; nuevos.length = 0; cursor.lastId = undefined; cursor.offset = 0;
+        continue;
+      }
+      if (e && e.status === 400) {
+        // el backend rechaza el $where del delta (:updated_at): mejor una
+        // recarga completa que datos congelados con 502 permanente
+        return extraerFull(redis, socrata, { presupuestoMs: presupuestoMs - (Date.now() - t0), reiniciar: true });
+      }
+      throw e;
+    }
+    if (keyset && filas.length && filas[filas.length - 1][":id"] === undefined) {
+      // sin :id el cursor no avanzaría (bucle infinito): degradar a $offset
+      keyset = false; nuevos.length = 0; cursor.lastId = undefined; cursor.offset = 0;
+      continue;
+    }
+    nuevos.push(...filas);
+    if (keyset && filas.length) cursor.lastId = filas[filas.length - 1][":id"];
+    else cursor.offset = (cursor.offset || 0) + filas.length;
+    fin = filas.length < PAGE;
+  }
+
+  // aplicar APPEND-ONLY por mes: la lectura deduplica por _k (gana el
+  // :updated_at más reciente) → el cambio de estado reemplaza de facto
+  const guardables = transformar(nuevos);
+  const porMes = new Map();
+  for (const r of guardables) {
+    const mes = String(r.fecha_de_publicacion_del || "").slice(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(mes) || !mes.startsWith(String(anoVigente()))) continue;
+    if (!porMes.has(mes)) porMes.set(mes, []);
+    porMes.get(mes).push(r);
+  }
+  for (const [mes, regs] of porMes) {
+    let man = (await leerJSON(redis, CLAVES.manifest(mes))) || { base: 0, sig: 0, count: 0 };
+    const sig = await escribirChunks(redis, mes, man.sig, regs);
+    man = { ...man, sig, count: (man.count || 0) + regs.length, updatedAt: new Date().toISOString() };
+    await escribirJSON(redis, CLAVES.manifest(mes), man);
+    if (sig - (man.base || 0) > COMPACTAR_TRAS_CHUNKS) await compactarMes(redis, mes);
+  }
+
+  // el sello avanza SOLO si el delta fue completo, y se ancla al INICIO de
+  // esta corrida: un delta cortado no pierde páginas en silencio
+  if (completo) meta.last_sync = new Date(t0).toISOString();
+  meta.ultimo_delta = {
+    ts: new Date().toISOString(), filas: nuevos.length, guardadas: guardables.length,
+    meses: porMes.size, parcial: !completo,
+  };
+  await escribirJSON(redis, CLAVES.meta, meta);
+  return { done: completo, delta: meta.ultimo_delta };
+}
+
+const resumen = (p) => ({
+  mes: p.meses[p.mesIdx] || null, mesIdx: p.mesIdx, deMeses: p.meses.length,
+  leidasMes: p.leidasMes, esperadosMes: p.esperadosMes,
+});
+
+/* ============================ HANDLER ============================ */
+module.exports = async function handler(req, res) {
+  const q = req.query || {};
+  const modo = String(q.modo || "auto").toLowerCase();
+  if (!["full", "delta", "auto"].includes(modo)) {
+    return res.status(400).json({ ok: false, error: "modo inválido: use full | delta | auto" });
+  }
+  if (!hayCredenciales()) {
+    return res.status(503).json({ ok: false, error: "Faltan UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN" });
+  }
+  const presupuestoMs = Math.min(parseInt(q.presupuesto, 10) || PRESUPUESTO_DEFAULT_MS, PRESUPUESTO_MAX_MS);
+  const redis = crearRedis({});
+  const socrata = crearCliente({});
+  const t0 = Date.now();
+
+  // candado con TTL: si otra sincronización corre, no estorbar
+  const token = (globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : `${Math.random()}${Date.now()}`;
+  let lock;
+  try { lock = (await redis.set(CLAVES.lock, token, { nx: true, ex: LOCK_TTL_SEG })) === "OK"; }
+  catch (e) { return res.status(502).json({ ok: false, error: `Redis: ${e.message}` }); }
+  if (!lock) return res.status(200).json({ ok: true, enCurso: true, msg: "ya hay una sincronización corriendo" });
+
+  let r, error = null;
   try {
-    let r;
     if (modo === "full") {
-      r = await x.extraerTodo({ presupuestoMs });
+      r = await extraerFull(redis, socrata, { presupuestoMs, reiniciar: true });
     } else if (modo === "delta") {
-      r = await x.extraerDelta({ presupuestoMs });
+      r = await extraerDelta(redis, socrata, { presupuestoMs });
     } else { // auto
-      const est = await x.estado();
-      const meta = est.meta || {};
-      const progreso = est.progreso || {};
-      if (progreso.tipo === "full" && !progreso.terminado) {
-        if (!conSecreto) { r = { ok: true, msg: "carga completa en curso: la continúa el cron" }; }
-        else r = await x.extraerTodo({ presupuestoMs });
-      } else if (!meta.last_full) {
-        r = conSecreto ? await x.extraerTodo({ presupuestoMs })
-          : { ok: true, msg: "sin carga inicial: ejecútala con ?modo=full&secret=…" };
-      } else if (Date.now() - Date.parse(meta.last_sync || 0) > 10 * 60e3) {
-        r = await x.extraerDelta({ presupuestoMs });
+      const progreso = await leerJSON(redis, CLAVES.progreso);
+      const meta = (await leerJSON(redis, CLAVES.meta)) || {};
+      if (progreso && progreso.tipo === "full" && !progreso.terminado) {
+        r = await extraerFull(redis, socrata, { presupuestoMs, reiniciar: false });
+      } else if (!meta.last_full || meta.ano !== anoVigente()) {
+        // sin carga inicial O cambio de año (la ventana vigente es otra):
+        // recarga completa — el delta solo cubre el año en curso
+        r = await extraerFull(redis, socrata, { presupuestoMs, reiniciar: true });
+      } else if (Date.now() - Date.parse(meta.last_sync || 0) > FRESCO_MS) {
+        r = await extraerDelta(redis, socrata, { presupuestoMs });
       } else {
-        r = { ok: true, alDia: true, last_sync: meta.last_sync };
+        r = { done: true, alDia: true, last_sync: meta.last_sync };
       }
     }
-    // comandosRedis: consumo de esta invocación contra el presupuesto diario
-    // del tier gratuito de Upstash (~10 000 comandos/día)
-    return res.status(200).json({ ok: true, modo, duracionMs: Date.now() - t0, comandosRedis: store.comandos ? store.comandos() : null, ...r });
   } catch (e) {
-    return res.status(502).json({ ok: false, modo, error: String(e && e.message || e), comandosRedis: store.comandos ? store.comandos() : null });
+    error = String((e && e.message) || e);
   } finally {
-    try { if ((await store.get(K.lock)) === token) await store.del(K.lock); } catch (e) { /* TTL limpia */ }
+    // liberar solo si el token sigue siendo nuestro (si la función murió
+    // antes, el TTL de 300 s limpia solo — jamás un candado eterno)
+    try { if ((await redis.get(CLAVES.lock)) === token) await redis.del(CLAVES.lock); } catch { /* TTL limpia */ }
   }
-}
+
+  if (error) return res.status(502).json({ ok: false, modo, error, duracionMs: Date.now() - t0 });
+
+  // presupuesto agotado con trabajo pendiente → re-invocarse (fire-and-forget)
+  // para que la carga completa termine sola; el candado ya quedó libre.
+  if (r && r.done === false && q.chain !== "0") {
+    try {
+      const proto = req.headers["x-forwarded-proto"] || "https";
+      const host = req.headers["x-forwarded-host"] || req.headers.host;
+      // con Vercel Password Protection activa, el muro del edge intercepta
+      // ANTES de la función; el bypass de automatización lo salva
+      const headers = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+        ? { "x-vercel-protection-bypass": process.env.VERCEL_AUTOMATION_BYPASS_SECRET } : undefined;
+      if (host) fetch(`${proto}://${host}/api/sync?modo=auto`, { headers }).catch(() => {});
+    } catch { /* la siguiente visita o el cron continúan */ }
+  }
+
+  return res.status(200).json({ ok: true, modo, duracionMs: Date.now() - t0, comandosRedis: redis.comandos(), ...r });
+};
