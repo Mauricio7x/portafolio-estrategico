@@ -16,12 +16,21 @@
             delta si los datos tienen >5 min; si no, no-op {alDia:true}.
 
    Cada licitación se ENRIQUECE (lib/negocio.enriquecer) ANTES de guardarse —
-   nunca se persiste sin los campos de negocio — y se aplica el prefiltro de
-   compatibilidad RUP (lib/rup.compatibleConAlgunPerfil): guardar las ~500k
-   filas/año del dataset completo reventaría el tier gratuito de Upstash y
-   las consultas; solo se guardan las compatibles con algún perfil (el conteo
-   de descartadas queda en meta para auditoría). Chunks mensuales comprimidos
-   (zlib.deflate nivel 6, ≤500 KB) en licitaciones:mes:{YYYY-MM}:chunk:{i}.
+   nunca se persiste sin los campos de negocio — y pasa la CASCADA DE FILTROS
+   antes de tocar Redis (guardar las ~500k filas/año del dataset completo
+   reventaría el tier gratuito de Upstash y las consultas):
+     1. modalidad_competitiva  (lib/filtros): fuera Contratación Directa,
+        Régimen Especial sin ofertas, Licitación Privada, RFI.
+     2. estado_abierto         (lib/filtros): fuera cerrados/desconocidos —
+        SOLO en la carga full. El DELTA los CONSERVA a propósito: un proceso
+        guardado como abierto que pasa a Adjudicado debe entrar al chunk para
+        que el dedup por :updated_at lo REEMPLACE y salga del listado; si el
+        delta lo descartara, la versión abierta quedaría congelada para
+        siempre. La consulta filtra los cerrados al servir.
+     3. compatibleConAlgunPerfil (lib/rup): objeto dentro de la unión de los
+        RUP, blacklist semántica y capa anti-suministro.
+   El conteo de descartadas queda en meta para auditoría. Chunks mensuales
+   comprimidos (zlib.deflate nivel 6, ≤500 KB) en licitaciones:mes:{…}:chunk:{i}.
 
    Candado: lock:sync con SET NX EX 300 — TTL SIEMPRE presente, así una
    función muerta jamás deja el candado atascado (la causa clásica del
@@ -36,6 +45,7 @@ const { CLAVES, LOCK_TTL_SEG, empaquetar, descomprimir, leerJSON, escribirJSON }
 const { crearCliente, anoVigente, mesesDelAno } = require("../lib/socrata.js");
 const { enriquecer } = require("../lib/negocio.js");
 const { compatibleConAlgunPerfil } = require("../lib/rup.js");
+const { modalidad_competitiva, estado_abierto } = require("../lib/filtros.js");
 
 const PAGE = parseInt(process.env.SECOP_PAGE, 10) || 5000;
 const PRESUPUESTO_DEFAULT_MS = 45000;  // cabe en el plan Hobby (60 s)
@@ -52,7 +62,7 @@ const CAMPOS = [
   "id_del_proceso", "referencia_del_proceso", "nombre_del_procedimiento",
   "descripci_n_del_procedimiento", "entidad", "nit_entidad",
   "departamento_entidad", "ciudad_entidad", "modalidad_de_contratacion",
-  "estado_del_procedimiento", "fase", "fecha_de_publicacion_del", "precio_base",
+  "estado_del_procedimiento", "fase", "adjudicado", "fecha_de_publicacion_del", "precio_base",
   "duracion", "unidad_de_duracion", "codigo_principal_de_categoria",
   "categorias_adicionales", "tipo_de_contrato",
   "respuestas_al_procedimiento", "conteo_de_respuestas_a_ofertas", "proveedores_unicos_con",
@@ -76,9 +86,19 @@ function proyectar(fila) {
   return out;
 }
 
-function transformar(filas) {
-  // proyección → prefiltro de compatibilidad RUP → enriquecimiento de negocio
-  return filas.map(proyectar).filter(compatibleConAlgunPerfil).map(enriquecer);
+/* Cascada de filtros (ver cabecera) → enriquecimiento de negocio.
+   conservarCerradas=true SOLO en el delta: los cambios a estado cerrado deben
+   guardarse para REEMPLAZAR (dedup :updated_at) la versión abierta previa. */
+function transformar(filas, { conservarCerradas = false } = {}) {
+  const out = [];
+  for (const fila of filas) {
+    const f = proyectar(fila);
+    if (!modalidad_competitiva(f)) continue;                 // sin competencia, fuera
+    if (!conservarCerradas && !estado_abierto(f)) continue;  // full: cerrados fuera de origen
+    if (!compatibleConAlgunPerfil(f)) continue;              // objeto/RUP/anti-suministro
+    out.push(enriquecer(f));
+  }
+  return out;
 }
 
 /* ---------- escritura de chunks ---------- */
@@ -277,8 +297,10 @@ async function extraerDelta(redis, socrata, { presupuestoMs }) {
   }
 
   // aplicar APPEND-ONLY por mes: la lectura deduplica por _k (gana el
-  // :updated_at más reciente) → el cambio de estado reemplaza de facto
-  const guardables = transformar(nuevos);
+  // :updated_at más reciente) → el cambio de estado reemplaza de facto.
+  // conservarCerradas: el delta GUARDA los procesos que pasaron a cerrado —
+  // así la versión "Adjudicado" pisa a la "Publicado" y sale del listado.
+  const guardables = transformar(nuevos, { conservarCerradas: true });
   const porMes = new Map();
   for (const r of guardables) {
     const mes = String(r.fecha_de_publicacion_del || "").slice(0, 7);

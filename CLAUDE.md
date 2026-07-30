@@ -41,18 +41,35 @@ lo muestra tras un gate con clave. La versión anterior (un `index.html` monolí
   aparece si el objeto lo menciona en texto o si algún día la fuente añade el campo.
 - **`plazoMeses`**: normalizar acentos antes de comparar unidades («Días».includes("dia") era
   false por la í — bug histórico del K).
-- **Prefiltro RUP al sincronizar** (`compatibleConAlgunPerfil`): sin él, el año son ~500 k filas y
-  revienta el tier gratuito de Upstash y la memoria de la función de consulta. Si cambian las
-  whitelists (`lib/unspsc.js`), hay que relanzar `/api/sync?modo=full`.
+- **Prefiltro al sincronizar** (cascada modalidad → estado → objeto): sin él, el año son ~500 k
+  filas y revienta el tier gratuito de Upstash y la memoria de la función de consulta. Si cambian
+  las whitelists (`lib/unspsc.js`) o los filtros (`lib/filtros.js`), relanzar `/api/sync?modo=full`.
+- **El delta CONSERVA los cerrados a propósito** (`transformar(..., {conservarCerradas:true})`):
+  un proceso guardado como abierto que pasa a Adjudicado debe entrar al chunk para que el dedup
+  por `:updated_at` lo reemplace y salga del listado. Si el delta lo filtrara, la versión abierta
+  quedaría congelada para siempre. La full sí excluye cerrados de origen.
+- **Estado desconocido = CERRADO** (`lib/filtros.js`): listas canónicas normalizadas, sin
+  fallbacks optimistas. Y OJO: «seleccionado» NO puede ir en la lista de cerrados — haría
+  prefijo con la fase «Selección», que es justo donde se reciben ofertas.
+- **Modalidad por lista blanca**: Contratación Directa (incluida «(con ofertas)») y Licitación
+  Privada fuera; Régimen Especial fuera SALVO «(con ofertas)»; desconocida → fuera.
+- **Capa anti-suministro**: clases de segmentos de bienes (30/39/43/48/56) + verbo de compra sin
+  verbo de obra = compra disfrazada → fuera. Un código de segmento de obra ancla el proceso.
+- **Consorcio: dos reglas distintas a propósito** — indicadores habilitantes ponderados 50/50
+  (D. 1082), pero K del plural = SUMA de las CRP de los integrantes (Guía CCE). No «promediar» K.
+- **NIT en null**: no consta en el repositorio; jamás inventarlo. CT de Génesis = 3 (estimado
+  conservador): confirmar con el dueño antes de subirlo.
 - **Límites Vercel/Upstash**: respuesta ≤4.5 MB; valor Redis ≤1 MB (chunks deflate ≤500 KB antes
   del base64); crons Hobby solo diarios — por eso la full se auto-encadena y cada visita
   refresca vía delta.
 
 ## Datos del negocio (fuente de verdad)
 
-- Perfiles y finanzas reales en `lib/rup.js` (RUP corte 31/12/2025); whitelists UNSPSC en
-  `lib/unspsc.js` (193/343 clases, generadas del RUP); blacklist/whitelist semánticas en
-  `lib/semantica.js`. SMMLV 2026 = $1.750.905.
+- Perfiles y finanzas reales en `lib/perfiles.js` (FUENTE ÚNICA; RUP corte 31/12/2025) — Génesis
+  es persona jurídica SAS; fórmula K única en `lib/capacidad.js`; filtros canónicos (estado,
+  modalidad, anti-suministro) en `lib/filtros.js`; whitelists UNSPSC en `lib/unspsc.js`
+  (193/343/393, la unión se calcula); blacklist/whitelist semánticas en `lib/semantica.js`.
+  Resumen técnico en `docs/PERFILES.md`. SMMLV 2026 = $1.750.905.
 - `autorizacion_helder.md`: constancia de autorización de datos personales (plantilla).
 - Clave del sitio: `231105` (gate del cliente, en `public/app.js`). La protección seria es
   Vercel Password Protection (servidor); no debilitarla sin permiso del dueño.

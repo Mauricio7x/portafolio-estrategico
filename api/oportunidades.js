@@ -1,7 +1,7 @@
 /* ============================================================================
    /api/oportunidades · Consulta de oportunidades viables desde la caché Redis
    ----------------------------------------------------------------------------
-   GET /api/oportunidades?perfil=helder|genesis|juntos
+   GET /api/oportunidades?perfil=helder|genesis|juntos   (alias: consorcio)
      &anticipo_min=20            (excluye anticipos DECLARADOS bajo el mínimo;
                                   0 = "sin dato" pasa el filtro y puntúa 0,
                                   porque p6dx-8zbt no trae columna de anticipo)
@@ -20,6 +20,12 @@
    → orden → paginación. El corpus deduplicado se memoiza a nivel de módulo
    (instancia serverless caliente) sellado con meta.last_sync.
 
+   Defensa en profundidad: la cascada (modalidad competitiva, estado abierto,
+   objeto/anti-suministro) ya corre en /api/sync antes de guardar, pero se
+   RE-APLICA aquí al servir — el corpus puede traer filas de sincronizaciones
+   anteriores a esta versión (hasta la próxima full) y cerradas que el delta
+   conserva a propósito para el reemplazo por :updated_at.
+
    Arranque en frío: si Redis no tiene chunks, dispara /api/sync?modo=auto en
    segundo plano (sin await) y responde 503 con mensaje claro — la web
    reintenta sola. Este es el reemplazo de raíz del viejo "Sin conexión a
@@ -29,7 +35,8 @@
 
 const { crearRedis, hayCredenciales } = require("../lib/redis.js");
 const { CLAVES, descomprimir, leerJSON } = require("../lib/almacen.js");
-const { PERFILES, rup_valido, evaluarRup } = require("../lib/rup.js");
+const { PERFILES, ALIAS_PERFIL, rup_valido, evaluarRup } = require("../lib/rup.js");
+const { modalidad_competitiva } = require("../lib/filtros.js");
 
 const POR_PAGINA_DEFAULT = 20, POR_PAGINA_MAX = 100;
 const ANTICIPO_MIN_DEFAULT = 20;
@@ -87,10 +94,12 @@ module.exports = async function handler(req, res) {
   const q = req.query || {};
   res.setHeader("Cache-Control", "no-store");
 
-  const perfil = String(q.perfil || "").toLowerCase();
-  // hasOwnProperty: un ?perfil=constructor no debe pasar por el prototipo
+  let perfil = String(q.perfil || "").toLowerCase();
+  // alias documentados (consorcio → juntos); hasOwnProperty en ambos mapas:
+  // un ?perfil=constructor no debe pasar por el prototipo
+  if (Object.prototype.hasOwnProperty.call(ALIAS_PERFIL, perfil)) perfil = ALIAS_PERFIL[perfil];
   if (!Object.prototype.hasOwnProperty.call(PERFILES, perfil)) {
-    return res.status(400).json({ ok: false, error: "falta ?perfil=helder | genesis | juntos" });
+    return res.status(400).json({ ok: false, error: "falta ?perfil=helder | genesis | juntos (alias: consorcio)" });
   }
   if (!hayCredenciales()) {
     return res.status(503).json({ ok: false, error: "Faltan credenciales de Upstash Redis en el despliegue." });
@@ -122,6 +131,7 @@ module.exports = async function handler(req, res) {
   const soloAbiertas = q.incluir_cerradas !== "1";
 
   let lista = filas.filter((l) => {
+    if (!modalidad_competitiva(l)) return false; // defensa: corpus previo al filtro
     if (soloAbiertas && !l.proceso_abierto) return false;
     // anticipo 0 = "no declarado" (el dataset no trae la columna): pasa el
     // filtro pero puntúa 0; solo se excluye el anticipo declarado bajo mínimo
