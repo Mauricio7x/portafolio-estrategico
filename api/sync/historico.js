@@ -3,6 +3,8 @@
    ----------------------------------------------------------------------------
    GET /api/sync/historico?desde=2024-01&hasta=2025-12
        [&presupuesto=ms] [&chain=0] [&reiniciar=1] [&reconstruir_indice=true]
+       [&estado=true]  → solo diagnóstico, no toca nada
+       [&reset=true]   → destraba candado y progreso (conserva lo ya bajado)
 
    PROTEGIDO: exige el token de HISTORICO_TOKEN, por header
    `x-historico-token` (preferido: no queda en los logs de acceso) o por
@@ -96,6 +98,90 @@ function autorizar(req, q) {
     };
   }
   return { ok: true };
+}
+
+/* ============================ DIAGNÓSTICO Y RESCATE ============================
+   Las dos escotillas para operar desde el navegador, sin terminal ni CLI de Redis.
+
+   ?estado=true  SOLO LEE: candado (y cuántos segundos le quedan de TTL), avance
+                 de la extracción, tamaño del corpus histórico y estado del
+                 índice. Es lo primero que hay que mirar cuando «no avanza».
+   ?reset=true   Destraba: borra el candado, el progreso de la extracción, su
+                 meta y el acumulador a medias del índice. NO toca los chunks ya
+                 guardados (licitaciones:historico:*) ni el índice publicado.
+
+   Nota sobre el candado: NUNCA queda atascado para siempre — se toma con
+   SET NX EX 600, así que una función muerta lo libera sola en 10 minutos. Y un
+   token equivocado jamás lo deja puesto: autorizar() corre ANTES de tomarlo.
+   Si algo «no avanza» y el candado está libre, la causa suele ser otra: la
+   cadena de auto-reinvocación murió (p. ej. Password Protection interceptando
+   la llamada que la función se hace a sí misma sin
+   VERCEL_AUTOMATION_BYPASS_SECRET). En ese caso NO hace falta resetear nada:
+   basta volver a llamar la misma URL y la extracción CONTINÚA donde quedó. */
+
+async function inventarioHistorico(redis) {
+  const claves = await redis.scan(CLAVES.patronChunksHist);
+  const meses = new Set();
+  for (const k of claves) {
+    const m = CLAVES.mesDeClaveHist(k);
+    if (m) meses.add(m);
+  }
+  return { chunks: claves.length, meses: meses.size };
+}
+
+async function estadoActual(redis) {
+  const [candado, ttl, progreso, metaHist, metaIndice, indiceParcial, historico] = await Promise.all([
+    redis.get(CLAVES.lockHistorico),
+    redis.ttl(CLAVES.lockHistorico).catch(() => null),
+    leerJSON(redis, CLAVES.progresoHistorico),
+    leerJSON(redis, CLAVES.metaHistorico),
+    leerJSON(redis, CLAVES.indiceMeta),
+    redis.exists(CLAVES.indiceProgreso).catch(() => 0),
+    inventarioHistorico(redis),
+  ]);
+  return {
+    candado: candado
+      ? { tomado: true, se_libera_solo_en_seg: ttl, nota: "una extracción está corriendo ahora mismo, o murió hace poco y el TTL la limpiará" }
+      : { tomado: false },
+    extraccion: progreso ? {
+      rango: `${progreso.desde}…${progreso.hasta}`,
+      terminada: !!progreso.terminado,
+      mes_en_curso: progreso.meses ? progreso.meses[progreso.mesIdx] || null : null,
+      avance: progreso.meses ? `${progreso.mesIdx}/${progreso.meses.length} meses` : null,
+      iniciada: progreso.iniciado,
+    } : null,
+    ultima_extraccion_completa: metaHist ? { ts: metaHist.ts, rango: `${metaHist.desde}…${metaHist.hasta}`, guardadas: metaHist.guardadas } : null,
+    corpus_historico: historico,
+    indice: metaIndice
+      ? { construido: metaIndice.construido, entidades: metaIndice.entidades, clasificadas: metaIndice.clasificadas, descartados: metaIndice.descartados }
+      : null,
+    indice_a_medias: indiceParcial ? true : false,
+    siguiente_paso: progreso && !progreso.terminado && !candado
+      ? "Vuelva a llamar esta URL sin ?estado: la extracción CONTINÚA donde quedó (no hace falta resetear)."
+      : candado
+        ? "Espere a que termine la tanda en curso (o a que expire el TTL) y vuelva a llamar."
+        : "Llame sin parámetros de diagnóstico para iniciar la extracción.",
+  };
+}
+
+async function resetear(redis) {
+  const antes = await inventarioHistorico(redis);
+  const borradas = await redis.del(
+    CLAVES.lockHistorico,      // 1. candado
+    CLAVES.progresoHistorico,  // 2. cursor de la extracción
+    CLAVES.metaHistorico,      // 3. resumen de la última corrida
+    CLAVES.indiceProgreso,     // acumulador a medias del índice (scratch, no dato)
+  );
+  return {
+    ok: true, reset: true,
+    msg: "Candado liberado. Vuelva a llamar sin ?reset para iniciar.",
+    claves_borradas: borradas,
+    // lo que NO se tocó: los chunks ya bajados siguen ahí, así que re-lanzar la
+    // extracción los REEMPLAZA mes a mes en vez de duplicarlos
+    corpus_historico_intacto: antes,
+    aviso: "Se descartó el progreso: la próxima corrida vuelve a recorrer el rango completo. "
+      + "Los procesos ya guardados NO se borraron y el índice publicado sigue en pie.",
+  };
 }
 
 /* ============================ EXTRACCIÓN ============================ */
@@ -224,13 +310,23 @@ module.exports = async function handler(req, res) {
   try { mesesEntre(desde, hasta); }
   catch (e) { return res.status(400).json({ ok: false, error: String(e.message) }); }
 
-  const soloIndice = ["1", "true", "si", "sí"].includes(String(q.reconstruir_indice).toLowerCase());
-  const reiniciar = ["1", "true"].includes(String(q.reiniciar).toLowerCase());
+  const siNo = (v) => ["1", "true", "si", "sí"].includes(String(v).toLowerCase());
+  const soloIndice = siNo(q.reconstruir_indice);
+  const reiniciar = siNo(q.reiniciar);
   const presupuestoMs = Math.min(parseInt(q.presupuesto, 10) || PRESUPUESTO_DEFAULT_MS, PRESUPUESTO_MAX_MS);
 
   const redis = crearRedis({});
   const socrata = crearCliente({});
   const t0 = Date.now();
+
+  // diagnóstico y rescate: ANTES del candado (uno lo lee, el otro lo borra) y
+  // detrás del mismo token que todo lo demás
+  try {
+    if (siNo(q.estado)) return res.status(200).json({ ok: true, estado: await estadoActual(redis) });
+    if (siNo(q.reset)) return res.status(200).json(await resetear(redis));
+  } catch (e) {
+    return res.status(502).json({ ok: false, error: `Redis: ${e.message}` });
+  }
 
   const token = crypto.randomUUID();
   let lock;

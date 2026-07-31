@@ -284,6 +284,12 @@ function crearMockUpstash() {
         return borradas;
       }
       case "MGET": return cmd.slice(1).map((k) => (viva(k) ? datos.get(k) : null));
+      case "TTL": {
+        const k = cmd[1];
+        if (!viva(k) && !hashes.has(k)) return -2;          // no existe
+        if (!expiras.has(k)) return -1;                      // sin expiración
+        return Math.max(0, Math.ceil((expiras.get(k) - Date.now()) / 1000));
+      }
       case "EXISTS": return viva(cmd[1]) || hashes.has(cmd[1]) ? 1 : 0;
       case "SCAN": {
         const iMatch = cmd.map((x) => String(x).toUpperCase()).indexOf("MATCH");
@@ -875,6 +881,56 @@ async function main() {
         const headerGana = await invocar(historico,
           "/api/sync/historico?reconstruir_indice=true&presupuesto=20000&chain=0&token=basura", TOKEN);
         assert.strictEqual(headerGana.status, 200, "con header válido, un token basura en la URL no debe estorbar");
+      }
+
+      /* escotillas de diagnóstico y rescate desde el navegador */
+      {
+        // ?estado=true SOLO LEE: ni candado, ni escrituras
+        const est = await invocar(historico, "/api/sync/historico?estado=true", TOKEN);
+        assert.strictEqual(est.status, 200);
+        assert.strictEqual(est.cuerpo.estado.candado.tomado, false, "?estado no debe tomar el candado");
+        assert.strictEqual(est.cuerpo.estado.extraccion.terminada, true);
+        assert.strictEqual(est.cuerpo.estado.corpus_historico.chunks > 0, true);
+        assert.ok(est.cuerpo.estado.indice.clasificadas === 3, "?estado no informa el índice");
+        assert.strictEqual(await redis.get("lock:sync:historico"), null);
+        // y está protegido igual que todo lo demás
+        assert.strictEqual((await invocar(historico, "/api/sync/historico?estado=true")).status, 401);
+        assert.strictEqual((await invocar(historico, "/api/sync/historico?reset=true")).status, 401,
+          "?reset debe exigir token: destraba, no es público");
+
+        // ?reset=true con un candado ajeno puesto a mano (el escenario a rescatar)
+        await redis.set("lock:sync:historico", "tanda-muerta", { nx: true, ex: 600 });
+        const conCandado = await invocar(historico, "/api/sync/historico?estado=true", TOKEN);
+        assert.strictEqual(conCandado.cuerpo.estado.candado.tomado, true);
+        assert.ok(conCandado.cuerpo.estado.candado.se_libera_solo_en_seg > 0,
+          "el estado debe decir en cuántos segundos se libera solo el candado");
+
+        const chunksAntes = (await redis.scan(CLAVES.patronChunksHist)).length;
+        const rst = await invocar(historico, "/api/sync/historico?reset=true", TOKEN);
+        assert.strictEqual(rst.status, 200);
+        assert.deepStrictEqual(
+          { ok: rst.cuerpo.ok, reset: rst.cuerpo.reset, msg: rst.cuerpo.msg },
+          { ok: true, reset: true, msg: "Candado liberado. Vuelva a llamar sin ?reset para iniciar." });
+        assert.strictEqual(await redis.get("lock:sync:historico"), null, "?reset no liberó el candado");
+        assert.strictEqual(await redis.get("sync:historico:progreso"), null, "?reset no borró el progreso");
+        assert.strictEqual(await redis.get("sync:historico:meta"), null, "?reset no borró la meta");
+        // …y NO tocó lo ya bajado ni el índice publicado
+        assert.strictEqual((await redis.scan(CLAVES.patronChunksHist)).length, chunksAntes,
+          "?reset borró chunks del histórico");
+        assert.strictEqual((await leerHistorico()).length, totalHist, "?reset perdió procesos históricos");
+        assert.ok(JSON.parse(await redis.get("indice:competencia:meta")).clasificadas === 3,
+          "?reset tumbó el índice publicado");
+
+        // tras el reset se puede volver a lanzar y el resultado es el mismo
+        // (la extracción REEMPLAZA los meses, no los duplica)
+        let re = await invocar(historico, `/api/sync/historico?${rango}&presupuesto=20000&chain=0`, TOKEN);
+        let vueltas = 1;
+        while (re.cuerpo.done === false) {
+          re = await invocar(historico, `/api/sync/historico?${rango}&presupuesto=20000&chain=0`, TOKEN);
+          if (++vueltas > 50) throw new Error("la extracción tras ?reset no converge");
+        }
+        assert.strictEqual((await leerHistorico()).length, totalHist,
+          "re-lanzar tras ?reset duplicó el corpus histórico");
       }
 
       /* reconstrucción del índice sin volver a bajar nada */
