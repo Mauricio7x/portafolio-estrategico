@@ -100,6 +100,8 @@ llave.
 | `chain=0` | — | Desactiva la auto-reinvocación |
 | `reiniciar=1` | — | Ignora el progreso guardado y vuelve a extraer el rango |
 | `reconstruir_indice=true` | — | **Solo** reconstruye el índice desde el histórico ya guardado (no baja nada) |
+| `estado=true` | — | **Solo lee**: candado (y TTL restante), avance, corpus histórico e índice |
+| `reset=true` | — | Destraba: borra candado, progreso y meta. **No** toca los chunks ya bajados |
 
 - Mismos filtros que el sync normal (modalidad competitiva → RUP/unión de perfiles →
   anti-suministro) **antes** de guardar; la única diferencia es que aquí no se descartan los
@@ -223,6 +225,36 @@ Una sola vez, después de desplegar:
    otra tanda está corriendo) o mirando `sync:historico:progreso`.
 4. Al terminar (`done:true`) el índice ya está construido: la respuesta trae `indice.clasificadas`
    y `indice.por_nivel`. Desde la siguiente visita la app ordena por atractividad.
+
+### Si parece que no avanza
+
+Todo se diagnostica y se rescata desde el navegador, con el mismo token:
+
+```
+…/api/sync/historico?token=<TOKEN>&estado=true    ← mirar primero (no toca nada)
+…/api/sync/historico?token=<TOKEN>&reset=true     ← solo si de verdad hace falta
+```
+
+`?estado=true` responde si el candado está tomado y **en cuántos segundos se libera solo**, por
+qué mes va la extracción, cuántos procesos hay ya guardados y cómo está el índice, más un
+`siguiente_paso` explícito. Antes de resetear, léelo: casi siempre la respuesta correcta es
+**volver a llamar la misma URL**, porque la extracción es reanudable y continúa donde quedó.
+
+| Síntoma en `?estado=true` | Qué pasa de verdad | Qué hacer |
+| --- | --- | --- |
+| `candado.tomado: true` | Hay una tanda corriendo (o murió hace poco) | Esperar; el TTL de 600 s lo libera solo |
+| `candado.tomado: false` y `extraccion.terminada: false` | La cadena de auto-reinvocación murió (típico: Password Protection interceptando la llamada que la función se hace a sí misma) | Volver a llamar la URL: **continúa**, no reinicia |
+| `extraccion.terminada: true` pero falta rango | Ese rango ya se dio por completo | Relanzar con `&reiniciar=1` |
+| Todo vacío tras un error raro | Estado inconsistente | `?reset=true` y volver a lanzar |
+
+**El candado nunca queda atascado para siempre**: se toma con `SET NX EX 600`, así que una función
+muerta lo libera sola en 10 minutos. Y un token equivocado **no** lo deja puesto: la autorización
+corre antes de tomarlo, así que un `401` no llega a tocar Redis.
+
+`?reset=true` borra el candado, `sync:historico:progreso` y `sync:historico:meta` (y el acumulador
+a medias del índice, que es scratch). **No borra** los chunks ya bajados ni el índice publicado —
+por eso relanzar después es seguro: la extracción reemplaza los meses en vez de duplicarlos. El
+precio es tiempo: se descarta el avance y el rango se recorre entero otra vez.
 
 Notas:
 
