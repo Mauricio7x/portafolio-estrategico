@@ -87,9 +87,11 @@ gente (índice de competencia sobre 2 años de adjudicaciones).
 ### `GET /api/sync/historico` (protegido)
 
 Backfill de una vez de los años que la app nunca guardó, y construcción del índice de competencia.
-**No hay cron ni auto-disparo**: se lanza a mano. Exige el token de `HISTORICO_TOKEN` en el header
-`x-historico-token` (preferido: no queda en los logs) o en `?token=`. Sin la variable definida
-responde `503` — nunca hay un default que valga como llave.
+**No hay cron ni auto-disparo**: se lanza a mano. Exige el token de `HISTORICO_TOKEN`, por header
+`x-historico-token` (preferido: no queda en los logs) **o** por `?token=` (para dispararlo desde el
+navegador, sin terminal); si llegan los dos, manda el header. La comparación es de digests SHA-256
+en tiempo constante. Sin la variable definida responde `503` — nunca hay un default que valga como
+llave.
 
 | Parámetro | Default | Descripción |
 | --- | --- | --- |
@@ -193,7 +195,7 @@ Una sola vez, después de desplegar:
 
 1. Definir `HISTORICO_TOKEN` (una cadena larga y aleatoria) en las variables de entorno del
    proyecto en Vercel y volver a desplegar.
-2. Lanzarla (el token va por header para que no quede en los logs de acceso):
+2. Lanzarla. **Con terminal** (preferido: el token va por header y no queda en los logs de acceso):
 
    ```bash
    curl -H "x-historico-token: $HISTORICO_TOKEN" \
@@ -202,6 +204,20 @@ Una sola vez, después de desplegar:
 
    Con Password Protection activa hay que añadir
    `-H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET"`.
+
+   **Sin terminal** (equipo bloqueado): pegar la URL con el token en el navegador, ya autenticado
+   en Vercel si Password Protection está activa —el muro del edge usa la cookie de sesión, así que
+   desde Chrome no hace falta el bypass—:
+
+   ```
+   https://<tu-app>.vercel.app/api/sync/historico?desde=2024-01&hasta=2025-12&token=<EL_TOKEN>
+   ```
+
+   Se valida exactamente igual que el header (y si llegaran los dos, manda el header). El precio
+   de esta vía es que **el token queda escrito** en los logs de acceso de Vercel, en el historial
+   del navegador y en cualquier proxy intermedio: conviene **rotarlo** (nuevo valor + redeploy)
+   cuando el backfill termine. Solo la primera petición lo expone — la auto-reinvocación de la
+   cadena viaja siempre por header.
 3. La función avanza en tandas de 45 s **auto-encadenadas**; la respuesta trae `done:false` mientras
    quede trabajo. Se puede consultar el avance repitiendo la llamada (responde `enCurso:true` si
    otra tanda está corriendo) o mirando `sync:historico:progreso`.
