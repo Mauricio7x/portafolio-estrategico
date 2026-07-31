@@ -12,12 +12,22 @@ año vigente de SECOP II (`p6dx-8zbt`), enriquece y guarda solo lo compatible co
 lo muestra tras un gate con clave. La versión anterior (un `index.html` monolítico de 580 KB con
 9 capas de monkey-patching) vive en la historia de git de `main` si algo hiciera falta rescatar.
 
+Desde jul 2026 el orden por defecto es **por probabilidad de ganar**: `api/sync/historico.js`
+baja de una vez 2 años de procesos ya adjudicados a un keyspace que ninguna purga toca,
+`lib/indice_competencia.js` calcula cuántos oferentes se presentan en promedio a cada entidad y
+`/api/oportunidades?ordenar_por=atractividad` (default) pone primero las entidades donde compite
+menos gente. El «para qué» es literal: abrir la app en la mañana y ver arriba lo ganable.
+
 ## Flujo de trabajo
 
 - **Sin build, sin package.json, sin dependencias.** CommonJS puro; `fetch`/`zlib` nativos.
 - **Probar:** `node tests/e2e.js` (4 iteraciones; mocks HTTP de Socrata y Upstash + handlers
   reales). Este entorno **no** tiene salida a `datos.gov.co` (allowlist del proxy) ni CLI de
   Vercel: la validación contra datos reales se hace desplegando.
+- **Tras desplegar**: (1) abrir la web — el activo cambió de nombre de clave, así que la primera
+  visita responde 503 y dispara la full sola; (2) definir `HISTORICO_TOKEN` y lanzar UNA vez
+  `/api/sync/historico?desde=2024-01&hasta=2025-12` (header `x-historico-token`). Sin ese paso la
+  app funciona igual, con todo en ⚪ «sin datos históricos».
 - Sintaxis de los JS del frontend: `new Function(código)` con Node (los cubre el paso *e* del test).
 
 ## Decisiones que no hay que re-aprender (costaron caro)
@@ -70,8 +80,43 @@ lo muestra tras un gate con clave. La versión anterior (un `index.html` monolí
   del base64); crons Hobby solo diarios — por eso la full se auto-encadena y cada visita
   refresca vía delta.
 
+### Competencia histórica por entidad (jul 2026)
+
+- **Dos keyspaces con ciclos de vida opuestos**: `licitaciones:activo:mes:*` (lo que sirve la app;
+  la full de higiene y la compactación lo purgan) y `licitaciones:historico:mes:*` (cerrados con
+  adjudicación; **NADA lo purga** — era justo esa purga la que impedía cualquier análisis). El
+  patrón viejo `licitaciones:mes:*` es legado y la full lo borra al terminar.
+- **Quién alimenta el histórico**: el DELTA, porque es el único que ve la transición abierto →
+  cerrado. `api/sync/historico.js` solo hace el backfill de lo anterior a la puesta en marcha
+  (manual, con token; admite cualquier rango, también el año en curso).
+- **El delta escribe primero el histórico y después el reemplazo en activo**: al revés se perdería
+  el dato histórico para siempre si falla a mitad. El registro cerrado SIGUE entrando al activo
+  (es lo que hace que el proceso desaparezca del listado por dedup de `:updated_at`); quien lo
+  saca físicamente es la compactación (ahora descarta cerrados) o la siguiente full.
+- **Dos proyecciones a propósito** (`lib/proyeccion.js`): la activa NO lleva datos de adjudicación
+  (no se exponen en `/api/oportunidades`, ni siquiera se guardan); la histórica sí. `repartirDelta`
+  hace las dos en una sola pasada.
+- **0 oferentes = SIN DATO**, no «nadie se presentó» (misma lógica que `anticipo_pct = 0`). Si se
+  contara como 0, el promedio de la entidad se iría al suelo y TODAS acabarían en «baja».
+- **Tertiles con `<=` y mínimo de 5 procesos**: empates al mismo nivel; con menos de 5 procesos la
+  entidad es `sin_dato`, y en el orden `sin_dato` va ANTES que `alta` (no saber no es lo mismo que
+  saber que hay 20 competidores).
+- **Columnas de adjudicación/oferentes: PENDIENTE VERIFICACIÓN** (este entorno no alcanza
+  datos.gov.co; verificado `CONNECT 403`). Por eso se leen por lista de candidatas en
+  `lib/indice_competencia.js`. Síntoma de que falta la correcta: `indice:competencia:meta` con
+  `clasificadas: 0` y `descartados.sin_oferentes` alto → añadir el nombre real y llamar
+  `/api/sync/historico?reconstruir_indice=true` (no hay que re-extraer nada).
+- **Índice publicado con swap atómico** (`indice:competencia:nuevo` → RENAME): nunca hay una
+  ventana sin índice. Construcción mes a mes y reanudable; el acumulador que se persiste es por
+  ENTIDAD (histograma), no por proceso — por eso cabe en un valor de Redis.
+- **`HISTORICO_TOKEN` sin default**: si la variable no está, el endpoint responde 503. Nunca
+  inventar una llave por defecto. El token viaja por header en la auto-reinvocación para no
+  quedar escrito en los logs de acceso de Vercel.
+
 ## Datos del negocio (fuente de verdad)
 
+- Índice de competencia por entidad en `lib/indice_competencia.js` (hash `indice:competencia`,
+  tertiles sobre el promedio de oferentes de 2 años); alimenta `ordenar_por=atractividad`.
 - Perfiles y finanzas reales en `lib/perfiles.js` (FUENTE ÚNICA; RUP corte 31/12/2025) — Génesis
   es persona jurídica SAS; fórmula K única en `lib/capacidad.js`; filtros canónicos (estado,
   modalidad, anti-suministro) en `lib/filtros.js`; whitelists UNSPSC en `lib/unspsc.js`

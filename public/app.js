@@ -7,6 +7,10 @@
    2. Consulta /api/oportunidades y pinta tarjetas. Si el backend responde 503
       (Redis vacío → sincronización recién disparada), reintenta solo con
       cuenta regresiva hasta que la carga inicial produzca datos.
+   3. El orden por defecto es «Más atractivas» (ordenar_por=atractividad):
+      primero las entidades donde históricamente se presentan menos oferentes
+      —donde es más probable ganar—, y dentro de cada grupo por puntaje. Cada
+      tarjeta muestra la banda de competencia de su entidad (🟢/🟡/🔴/⚪).
    ========================================================================== */
 "use strict";
 
@@ -18,6 +22,16 @@
 
   const $ = (id) => document.getElementById(id);
   const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+  const fmtNum = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
+
+  /* Competencia histórica de la entidad (índice sobre 2 años de adjudicaciones):
+     es lo que decide el orden por defecto — primero donde menos gente compite. */
+  const COMPETENCIA_ENTIDAD = {
+    baja: { emoji: "🟢", titulo: "Poca competencia", clases: "bg-green-50 text-green-800 ring-green-600/20" },
+    media: { emoji: "🟡", titulo: "Competencia media", clases: "bg-amber-50 text-amber-800 ring-amber-600/20" },
+    alta: { emoji: "🔴", titulo: "Alta competencia", clases: "bg-red-50 text-red-700 ring-red-600/20" },
+    sin_dato: { emoji: "⚪", titulo: "Sin datos históricos de esta entidad", clases: "bg-gray-50 text-gray-500 ring-gray-500/20" },
+  };
 
   /* ══════════ Gate ══════════ */
   let intentosClave = 0;
@@ -61,7 +75,8 @@
     const p = new URLSearchParams({ perfil: $("f-perfil").value, pagina: String(pagina), por_pagina: "20" });
     const ant = $("f-anticipo").value;
     if (ant !== "") p.set("anticipo_min", ant);
-    for (const [id, nombre] of [["f-cuantia", "cuantia_rango"], ["f-competencia", "nivel_competencia"], ["f-ubicacion", "ubicacion_valida"]]) {
+    for (const [id, nombre] of [["f-cuantia", "cuantia_rango"], ["f-competencia", "nivel_competencia"],
+      ["f-entidad", "competencia_entidad"], ["f-ubicacion", "ubicacion_valida"]]) {
       if ($(id).value) p.set(nombre, $(id).value);
     }
     p.set("ordenar_por", $("f-ordenar").value);
@@ -129,6 +144,23 @@
     return `<span class="rounded-full px-2.5 py-0.5 text-xs font-medium ${clases}">${texto}</span>`;
   }
 
+  /* Banda de competencia de la entidad. Sin índice construido todo cae en
+     "sin_dato" y la tarjeta se ve igual que antes, sin líneas rotas. */
+  function bandaCompetencia(c) {
+    const nivel = (c && c.nivel) || "sin_dato";
+    const d = COMPETENCIA_ENTIDAD[nivel] || COMPETENCIA_ENTIDAD.sin_dato;
+    let texto = d.titulo;
+    if (nivel === "sin_dato") {
+      if (c && c.total_procesos > 0) texto = `Sin datos suficientes de esta entidad (${c.total_procesos} proceso${c.total_procesos === 1 ? "" : "s"} en 2 años)`;
+    } else {
+      const prom = c.promedio_oferentes == null ? "?" : fmtNum.format(c.promedio_oferentes);
+      texto += ` — promedio ${prom} oferentes en ${c.total_procesos} proceso${c.total_procesos === 1 ? "" : "s"}`;
+    }
+    return `<p class="mt-3 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${d.clases}">
+        <span aria-hidden="true">${d.emoji}</span>${esc(texto)}
+      </p>`;
+  }
+
   function tarjeta(l) {
     const rup = l.rup || {};
     const cierre = l.fecha_cierre ? new Date(l.fecha_cierre) : null;
@@ -142,6 +174,7 @@
         <div class="min-w-0 flex-1">
           <h3 class="font-semibold leading-snug tracking-tight">${esc(l.nombre_del_procedimiento || l.id_del_proceso || "Proceso sin nombre")}</h3>
           <p class="mt-1 text-sm text-gray-500">${esc(l.entidad || "Entidad no informada")}</p>
+          ${bandaCompetencia(l.competencia_entidad)}
         </div>
         <div class="text-right">
           <p class="text-lg font-semibold tabular-nums">${fmtCOP.format(l.cuantia_cop || 0)}</p>
@@ -158,7 +191,7 @@
 
       <div class="mt-4 flex flex-wrap gap-2">
         ${chip(l.anticipo_pct > 0 ? `Anticipo ${l.anticipo_pct}%` : "Anticipo no declarado", l.anticipo_pct > 0 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-500")}
-        ${chip(`Competencia ${esc(l.nivel_competencia || "?")}`, compColor)}
+        ${chip(`Ofertas del proceso: ${esc(l.nivel_competencia || "?")}`, compColor)}
         ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
         ${chip(rup.unspsc_ok ? (rup.fuente_unspsc === "codigo" ? "RUP ✓ (UNSPSC)" : "RUP ✓ (objeto de obra)") : "RUP ✗", rup.unspsc_ok ? "bg-green-100 text-green-800" : "bg-red-100 text-red-700")}
         ${chip(rup.capacidad_ok ? (rup.co_estimado ? "Capacidad K ✓ (CO estimado)" : "Capacidad K ✓") : "Capacidad K ✗", rup.capacidad_ok ? "bg-green-100 text-green-800" : "bg-red-100 text-red-700")}
@@ -193,7 +226,7 @@
   /* ══════════ Eventos ══════════ */
   $("btn-buscar").addEventListener("click", () => { pagina = 1; reintentosSync = 0; buscar(); });
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
-  for (const id of ["f-perfil", "f-cuantia", "f-competencia", "f-ubicacion", "f-ordenar", "f-orden"]) {
+  for (const id of ["f-perfil", "f-cuantia", "f-competencia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden"]) {
     $(id).addEventListener("change", () => { pagina = 1; buscar(); });
   }
 })();
