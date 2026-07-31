@@ -785,8 +785,13 @@ async function main() {
       /* protección: sin token, con token equivocado y sin la variable definida */
       assert.strictEqual((await invocar(historico, `/api/sync/historico?${rango}&chain=0`)).status, 401,
         "sin token debía responder 401");
-      assert.strictEqual((await invocar(historico, `/api/sync/historico?${rango}&token=equivocado&chain=0`)).status, 401,
-        "token equivocado debía responder 401");
+      {
+        const r401 = await invocar(historico, `/api/sync/historico?${rango}&token=equivocado&chain=0`);
+        assert.strictEqual(r401.status, 401, "token equivocado por la URL debía responder 401");
+        // el error explica LAS DOS formas de autenticarse (el dueño puede no tener terminal)
+        assert.ok(r401.cuerpo.como_autenticar.header.includes("x-historico-token"), "el 401 no sugiere el header");
+        assert.ok(r401.cuerpo.como_autenticar.url.includes("token"), "el 401 no sugiere el token por URL");
+      }
       {
         const guardado = process.env.HISTORICO_TOKEN;
         delete process.env.HISTORICO_TOKEN;
@@ -857,6 +862,20 @@ async function main() {
       assert.strictEqual(JSON.parse(hash[filtros.norm("ALCALDÍA DE PURIFICACIÓN")]).nivel, "baja");
       assert.strictEqual(JSON.parse(hash[filtros.norm("GOBERNACIÓN DEL TOLIMA")]).nivel, "media");
       assert.strictEqual(JSON.parse(hash[filtros.norm("IDU")]).nivel, "alta");
+
+      /* el token TAMBIÉN autentica por la URL: es la única vía del dueño, que
+         dispara la carga pegando el enlace en Chrome (portátil sin terminal) */
+      {
+        const soloUrl = await invocar(historico,
+          `/api/sync/historico?reconstruir_indice=true&presupuesto=20000&chain=0&token=${encodeURIComponent(process.env.HISTORICO_TOKEN)}`);
+        assert.strictEqual(soloUrl.status, 200, "el token por URL debía autenticar igual que el header");
+        assert.strictEqual(soloUrl.cuerpo.ok, true);
+        assert.strictEqual(soloUrl.cuerpo.done, true, "la carga disparada desde el navegador no llegó a término");
+        // y si vienen los dos, MANDA EL HEADER: header bueno + URL basura → autoriza
+        const headerGana = await invocar(historico,
+          "/api/sync/historico?reconstruir_indice=true&presupuesto=20000&chain=0&token=basura", TOKEN);
+        assert.strictEqual(headerGana.status, 200, "con header válido, un token basura en la URL no debe estorbar");
+      }
 
       /* reconstrucción del índice sin volver a bajar nada */
       const rr = await invocar(historico, "/api/sync/historico?reconstruir_indice=true&presupuesto=20000&chain=0", TOKEN);

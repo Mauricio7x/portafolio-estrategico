@@ -112,6 +112,11 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - **`HISTORICO_TOKEN` sin default**: si la variable no está, el endpoint responde 503. Nunca
   inventar una llave por defecto. El token viaja por header en la auto-reinvocación para no
   quedar escrito en los logs de acceso de Vercel.
+- **Token por header O por `?token=`, y el header gana si vienen los dos**: el dueño trabaja en un
+  portátil institucional SIN terminal, así que la vía real de disparo es pegar la URL en Chrome.
+  No quitar la vía por query «por seguridad»: dejaría la extracción imposible de lanzar. El precio
+  (token en logs de acceso e historial del navegador) está asumido y documentado — rotarlo al
+  terminar el backfill. El mensaje del 401 sugiere LAS DOS formas a propósito.
 
 ## Datos del negocio (fuente de verdad)
 

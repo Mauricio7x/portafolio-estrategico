@@ -6,8 +6,9 @@
 
    PROTEGIDO: exige el token de HISTORICO_TOKEN, por header
    `x-historico-token` (preferido: no queda en los logs de acceso) o por
-   `?token=`. Sin la variable de entorno el endpoint responde 503 y no hace
-   nada — jamás hay un default que valga como llave.
+   `?token=` (para dispararlo desde el navegador, sin terminal); si vienen los
+   dos, manda el header. Sin la variable de entorno el endpoint responde 503 y
+   no hace nada — jamás hay un default que valga como llave. Ver autorizar().
 
    Qué hace, y por qué existe:
    La app borraba los procesos cerrados en cada full de higiene, así que no
@@ -52,16 +53,48 @@ const PRESUPUESTO_MAX_MS = 240000;   // < TTL del candado (600 s), con margen
 const DESDE_DEFAULT = "2024-01";
 const HASTA_DEFAULT = "2025-12";
 
-/* ---------- autorización (mismo token para todas las variantes) ---------- */
+/* ---------- autorización (mismo token para todas las variantes) ----------
+   DOS formas, validadas exactamente igual contra HISTORICO_TOKEN:
+
+     header `x-historico-token`   preferido — no queda en los logs de acceso.
+     query  `?token=…`            para disparar la carga desde el NAVEGADOR,
+                                  cuando no se pueden fijar cabeceras.
+
+   Si llegan las dos, MANDA EL HEADER (sin ambigüedad posible). La comparación
+   es de digests SHA-256 en tiempo constante: ni el contenido ni la longitud
+   del token se filtran por el tiempo de respuesta.
+
+   Advertencia consciente sobre `?token=`: una URL con el token queda escrita
+   en los logs de acceso de Vercel, en el historial del navegador y en
+   cualquier proxy intermedio. Es un intercambio aceptable para una operación
+   MANUAL y de una sola vez; conviene rotar el token cuando el backfill
+   termine. La auto-reinvocación de la cadena usa siempre el header, así que
+   solo la primera petición deja rastro. */
 function autorizar(req, q) {
+  const COMO = {
+    header: "x-historico-token: <token>",
+    url: "?token=<token>  (para dispararlo desde el navegador)",
+  };
   const esperado = process.env.HISTORICO_TOKEN || "";
   if (!esperado) {
-    return { ok: false, status: 503, error: "Defina HISTORICO_TOKEN en el proyecto de Vercel para habilitar la extracción histórica." };
+    return {
+      ok: false, status: 503,
+      error: "HISTORICO_TOKEN no está definida en este despliegue: la extracción histórica está deshabilitada. "
+        + "Añádala en Vercel (Settings → Environment Variables) y vuelva a desplegar — las variables solo entran en despliegues nuevos.",
+    };
   }
+  // el header tiene prioridad sobre la query cuando vienen los dos
   const dado = String((req.headers && req.headers["x-historico-token"]) || q.token || "");
   const a = crypto.createHash("sha256").update(dado).digest();
   const b = crypto.createHash("sha256").update(esperado).digest();
-  if (!crypto.timingSafeEqual(a, b)) return { ok: false, status: 401, error: "token inválido" };
+  if (!crypto.timingSafeEqual(a, b)) {
+    return {
+      ok: false, status: 401,
+      error: "Token inválido o ausente. Envíelo por el header «x-historico-token» o, si no puede fijar cabeceras "
+        + "(por ejemplo desde el navegador), como parámetro «token» en la URL.",
+      como_autenticar: COMO,
+    };
+  }
   return { ok: true };
 }
 
@@ -176,7 +209,12 @@ module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
   const permiso = autorizar(req, q);
-  if (!permiso.ok) return res.status(permiso.status).json({ ok: false, error: permiso.error });
+  if (!permiso.ok) {
+    return res.status(permiso.status).json({
+      ok: false, error: permiso.error,
+      ...(permiso.como_autenticar ? { como_autenticar: permiso.como_autenticar } : {}),
+    });
+  }
   if (!hayCredenciales()) {
     return res.status(503).json({ ok: false, error: "Faltan UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN" });
   }
