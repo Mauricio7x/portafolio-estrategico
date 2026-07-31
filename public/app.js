@@ -161,7 +161,7 @@
         ${chip(`Competencia ${esc(l.nivel_competencia || "?")}`, compColor)}
         ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
         ${chip(rup.unspsc_ok ? (rup.fuente_unspsc === "codigo" ? "RUP ✓ (UNSPSC)" : "RUP ✓ (objeto de obra)") : "RUP ✗", rup.unspsc_ok ? "bg-green-100 text-green-800" : "bg-red-100 text-red-700")}
-        ${chip(rup.capacidad_ok ? "Capacidad K ✓" : "Capacidad K ✗", rup.capacidad_ok ? "bg-green-100 text-green-800" : "bg-red-100 text-red-700")}
+        ${chip(rup.capacidad_ok ? (rup.co_estimado ? "Capacidad K ✓ (CO estimado)" : "Capacidad K ✓") : "Capacidad K ✗", rup.capacidad_ok ? "bg-green-100 text-green-800" : "bg-red-100 text-red-700")}
         ${cierreTxt ? chip(`Cierra ${cierreTxt}`, "bg-purple-100 text-purple-800") : ""}
         ${l.modalidad_de_contratacion ? chip(esc(l.modalidad_de_contratacion), "bg-gray-100 text-gray-600") : ""}
       </div>

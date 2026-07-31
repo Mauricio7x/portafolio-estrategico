@@ -13,10 +13,15 @@
      b. /api/sync?modo=full con presupuesto CORTO (fuerza varias invocaciones
         reanudables) + fallos 429/500 inyectados en el mock → termina, crea
         chunks, audita conteos por mes y libera el candado.
-     c. /api/oportunidades?perfil=helder → resultados con campos de negocio y
-        filtro RUP verificado contra lib/rup directamente.
+     c. /api/oportunidades?perfil=helder → resultados con campos de negocio,
+        filtro RUP, estado abierto y modalidad competitiva verificados.
+     c-bis. Corpus completo Helder: sin Contratación Directa, sin Adjudicado,
+        sin suministros puros (capa anti-suministro); la instalación/montaje
+        (verbo de obra) y los Convocado sí aparecen.
      d. perfil=genesis&anticipo_min=25&cuantia_rango=medio&ordenar_por=puntaje
         → filtros aplicados y orden descendente verificado.
+     d-bis. Consorcio: perfil=juntos y alias ?perfil=consorcio equivalentes;
+        RUP del plural verificado (K = suma de integrantes).
      d'. Delta: fila nueva + cambio de estado a Adjudicado → la nueva aparece,
         la adjudicada desaparece del listado (reemplazo por :updated_at).
      e. La raíz sirve el HTML del frontend (gate + app) y app.js compila.
@@ -56,8 +61,15 @@ function generarDataset() {
         entidad: ["ALCALDÍA DE PURIFICACIÓN", "GOBERNACIÓN DEL TOLIMA", "IDU", "ALCALDÍA DE IBAGUÉ"][i % 4],
         ciudad_entidad: ["BOGOTÁ D.C.", "IBAGUÉ", "PURIFICACIÓN", "MEDELLÍN"][i % 4],
         departamento_entidad: ["Distrito Capital de Bogotá", "Tolima", "Tolima", "Antioquia"][i % 4],
-        modalidad_de_contratacion: i % 3 ? "Licitación pública" : "Selección abreviada menor cuantía",
-        estado_del_procedimiento: i % 8 === 7 ? "Adjudicado" : "Publicado",
+        // modalidades: competitivas + no competitivas (deben filtrarse aunque
+        // el objeto sea obra perfecta)
+        modalidad_de_contratacion: i % 12 === 0 ? "Contratación directa"
+          : i % 12 === 6 ? "Contratación régimen especial"
+          : i % 3 ? "Licitación pública" : "Selección abreviada menor cuantía",
+        // estados: cerrado (Adjudicado), abierto explícito (Convocado) y
+        // Publicado. i%7 (coprimo con el i%4 de la cuantía): que los
+        // Convocado caigan en cuantías variadas, no solo en las de 9 000 M
+        estado_del_procedimiento: i % 8 === 7 ? "Adjudicado" : i % 7 === 3 ? "Convocado" : "Publicado",
         fase: "Presentación de ofertas",
         precio_base: String([60e6, 250e6, 800e6, 9e9][i % 4] + n),
         duracion: String(2 + (i % 6)), unidad_de_duracion: i % 2 ? "Meses" : "Días",
@@ -81,7 +93,9 @@ function generarDataset() {
         f.nombre_del_procedimiento = `Prestación de servicios de salud ocupacional ${n}`;
         f.descripci_n_del_procedimiento = "Servicios integrales de salud para funcionarios";
         f.codigo_principal_de_categoria = "V1.85101500"; // solo RUP Génesis
-        f.porcentaje_de_anticipo = "25";
+        // mitad con anticipo declarado BAJO el mínimo típico (10 < 25): el
+        // filtro anticipo_min debe excluirlos de verdad, no vacuamente
+        f.porcentaje_de_anticipo = i % 20 === 4 ? "10" : "25";
       } else if (tipo === 5) {
         f.nombre_del_procedimiento = `Adecuación de la sede educativa vereda ${n}`;
         f.descripci_n_del_procedimiento = "Remodelación y reforzamiento del aula múltiple"; // obra por TEXTO
@@ -93,10 +107,28 @@ function generarDataset() {
       } else if (tipo === 7) {
         f.nombre_del_procedimiento = `Suministro de alimentación escolar PAE ${n}`;
         f.descripci_n_del_procedimiento = "Paquetes alimentarios para instituciones educativas";
-      } else {
+      } else if (tipo === 8) {
         f.nombre_del_procedimiento = `Renovación de licencias de software ofimático ${n}`;
         f.descripci_n_del_procedimiento = "Adquisición de licencias microsoft para la entidad";
         f.codigo_principal_de_categoria = "V1.43231500"; // fuera de ambos RUP
+      } else {
+        // tipo 9: pareja ANTI-SUMINISTRO con el mismo código de mobiliario
+        // (segmento 56, presente en el RUP de Helder): la compra pura debe
+        // filtrarse; la instalación/montaje (verbo de obra) debe pasar.
+        // Reparto por paridad de la DECENA de i → ambos casos existen en
+        // TODOS los meses (también si la suite corre en enero). La compra
+        // pura lleva cuantía 180 M a propósito: abierta, competitiva y
+        // dentro del K de todos — si la capa fallara, SÍ se serviría (la
+        // aserción negativa no puede pasar por razones ajenas a la capa).
+        f.codigo_principal_de_categoria = "V1.56112000";
+        if (Math.floor((i - 9) / 10) % 2 === 1) {
+          f.nombre_del_procedimiento = `Suministro de mobiliario escolar ${n}`;
+          f.descripci_n_del_procedimiento = "Compra de pupitres y sillas para sedes educativas";
+          f.precio_base = "180000000";
+        } else {
+          f.nombre_del_procedimiento = `Instalación y montaje de mobiliario para aulas ${n}`;
+          f.descripci_n_del_procedimiento = "Instalación de mobiliario escolar con obras de adecuación menores";
+        }
       }
       filas.push(f);
     }
@@ -256,6 +288,9 @@ async function main() {
   const { crearRedis } = require("../lib/redis.js");
   const { empaquetar, descomprimir, CHUNK_MAX_COMPRIMIDO } = require("../lib/almacen.js");
   const { rup_valido } = require("../lib/rup.js");
+  const filtros = require("../lib/filtros.js");
+  const capacidad = require("../lib/capacidad.js");
+  const { PERFILES } = require("../lib/perfiles.js");
   const redis = crearRedis({});
 
   /* unidad: el empaquetador respeta los 500 KB comprimidos y no pierde filas */
@@ -286,6 +321,131 @@ async function main() {
       assert.strictEqual(l.anticipo_pct, esperado, `anticipo de «${texto}» → ${l.anticipo_pct}, esperaba ${esperado}`);
     }
     console.log(`· unidad anticipo: ${casos.length} casos de texto correctos (negaciones y cruces de frase)`);
+  }
+
+  /* unidad: estados canónicos — desconocido = CERRADO, sin fallback optimista */
+  {
+    const casos = [
+      [{ estado_del_procedimiento: "Convocado" }, true],
+      [{ estado_del_procedimiento: "Presentación de oferta" }, true],
+      [{ estado_del_procedimiento: "Presentación de ofertas" }, true], // variante real
+      [{ estado_del_procedimiento: "Borrador" }, true],                // prefijo de "Borrador de pliegos"
+      [{ estado_del_procedimiento: "Publicado", fase: "Presentación de ofertas" }, true],
+      [{ estado_del_procedimiento: "Adjudicado" }, false],
+      [{ estado_del_procedimiento: "En evaluación" }, false],
+      [{ estado_del_procedimiento: "Evaluación de ofertas" }, false],
+      [{ estado_del_procedimiento: "Declarado desierto" }, false],
+      [{ estado_del_procedimiento: "Publicado", adjudicado: "Si" }, false], // señal dura gana
+      [{ estado_del_procedimiento: "Publicado", fase: "Ejecución" }, false], // cerrado gana
+      [{ estado_del_procedimiento: "Estado rarísimo nuevo" }, false],  // desconocido = cerrado
+      [{}, false],                                                     // sin dato = cerrado
+    ];
+    for (const [lic, esperado] of casos) {
+      assert.strictEqual(filtros.estado_abierto(lic), esperado,
+        `estado_abierto(${JSON.stringify(lic)}) esperaba ${esperado}`);
+    }
+    console.log(`· unidad estados: ${casos.length} clasificaciones correctas (desconocido = cerrado)`);
+  }
+
+  /* unidad: modalidades — solo lista blanca competitiva */
+  {
+    const casos = [
+      ["Licitación pública", true],
+      ["Licitación pública Obra Publica", true],
+      ["Selección Abreviada de Menor Cuantía (Ley 1150 de 2007)", true],
+      ["Mínima cuantía", true],
+      ["Subasta", true],
+      ["Concurso de méritos abierto", true],
+      ["Licitación Pública Acuerdo Marco de Precios", true],
+      ["Contratación régimen especial (con ofertas)", true], // hay convocatoria
+      ["Contratación directa", false],
+      ["Contratación directa (con ofertas)", false],         // sigue siendo directa
+      ["Contratación régimen especial", false],
+      ["Licitación privada", false],
+      ["Solicitud de información a los Proveedores", false],
+      ["Enajenación de bienes con Subasta", false], // venta de activos, no obra
+      ["Enajenación de bienes con Sobre Cerrado", false],
+      ["", false],                                           // sin dato = fuera
+      ["Modalidad desconocida", false],
+    ];
+    for (const [m, esperado] of casos) {
+      assert.strictEqual(filtros.modalidad_competitiva({ modalidad_de_contratacion: m }), esperado,
+        `modalidad_competitiva(«${m}») esperaba ${esperado}`);
+    }
+    console.log(`· unidad modalidades: ${casos.length} clasificaciones correctas (lista blanca)`);
+  }
+
+  /* unidad: capa anti-suministro sobre segmentos de bienes. Cada caso se
+     evalúa contra un perfil cuyo RUP SÍ contiene la clase — así el rechazo
+     solo puede venir de la capa (se verifica anti_suministro como causa). */
+  {
+    const casos = [ // [licitación, perfil con la clase en su RUP, ¿pasa?]
+      // compra pura con el quinteto vigilado histórico (56, 43) → fuera
+      [{ nombre_del_procedimiento: "Suministro de mobiliario escolar", descripci_n_del_procedimiento: "Compra de pupitres", codigo_principal_de_categoria: "V1.56112000" }, "helder", false],
+      [{ nombre_del_procedimiento: "Adquisición de equipos de cómputo", descripci_n_del_procedimiento: "Compra de estaciones", codigo_principal_de_categoria: "V1.43211700" }, "helder", false],
+      // segmentos de bienes FUERA del quinteto histórico 30/39/43/48/56:
+      // tubería (40, el bloque más grande del RUP de Génesis) y herramientas (27)
+      [{ nombre_del_procedimiento: "Suministro de tubería y accesorios en PVC", descripci_n_del_procedimiento: "Para la red de acueducto municipal", codigo_principal_de_categoria: "V1.40171500" }, "genesis", false],
+      [{ nombre_del_procedimiento: "Adquisición de herramientas menores", descripci_n_del_procedimiento: "Ferretería para la entidad", codigo_principal_de_categoria: "V1.27111500" }, "genesis", false],
+      // redacciones reales de compra: "compraventa de" y plurales
+      [{ nombre_del_procedimiento: "Compraventa de equipos de cómputo", descripci_n_del_procedimiento: "Para las sedes educativas", codigo_principal_de_categoria: "V1.43211700" }, "helder", false],
+      [{ nombre_del_procedimiento: "Suministros de mobiliario escolar", descripci_n_del_procedimiento: "Pupitres y sillas", codigo_principal_de_categoria: "V1.56112000" }, "helder", false],
+      // mismo segmento pero con verbo de obra → pasa
+      [{ nombre_del_procedimiento: "Instalación y montaje de mobiliario", descripci_n_del_procedimiento: "Con obras de adecuación", codigo_principal_de_categoria: "V1.56112000" }, "helder", true],
+      [{ nombre_del_procedimiento: "Suministro e instalación de tubería PVC", descripci_n_del_procedimiento: "Optimización de la red de acueducto", codigo_principal_de_categoria: "V1.40171500" }, "genesis", true],
+      // código de obra (72) ancla el proceso aunque haya verbo de compra → pasa
+      [{ nombre_del_procedimiento: "Construcción de aula y suministro de materiales", descripci_n_del_procedimiento: "Obra e insumos", codigo_principal_de_categoria: "V1.72141000 V1.30111500" }, "helder", true],
+    ];
+    for (const [lic, perfilId, esperado] of casos) {
+      const ev = filtros.evaluarObjeto(lic, PERFILES[perfilId]);
+      assert.strictEqual(ev.ok, esperado,
+        `objeto_valido(«${lic.nombre_del_procedimiento}», ${perfilId}) esperaba ${esperado} (motivo: ${ev.motivo})`);
+      if (!esperado) {
+        assert.strictEqual(ev.anti_suministro, true,
+          `«${lic.nombre_del_procedimiento}» debía caer por la CAPA anti-suministro, cayó por: ${ev.motivo}`);
+      }
+    }
+    console.log(`· unidad anti-suministro: ${casos.length} casos correctos (segmentos de bienes, causa verificada)`);
+  }
+
+  /* unidad: capacidad — fórmula única, escalas de la Guía y consorcio */
+  {
+    // una sola implementación para toda la app (web y cron llegan a la misma función)
+    assert.strictEqual(require("../lib/rup.js").kContratacion, capacidad.crp,
+      "rup.kContratacion debe SER capacidad.crp (fórmula única)");
+    // escalas con >= en los cortes exactos
+    assert.strictEqual(capacidad.factorE(3, 1), 120);
+    assert.strictEqual(capacidad.factorE(2, 1), 100);
+    assert.strictEqual(capacidad.factorE(1, 1), 80);
+    assert.strictEqual(capacidad.factorE(0.9, 1), 60);
+    assert.strictEqual(capacidad.factorCT(11), 40);
+    assert.strictEqual(capacidad.factorCT(6), 30);
+    assert.strictEqual(capacidad.factorCT(1), 20);
+    assert.strictEqual(capacidad.factorCF(1.5), 40);
+    assert.strictEqual(capacidad.factorCF(1.2), 30);
+    assert.strictEqual(capacidad.factorCF(1.0), 20);
+    assert.strictEqual(capacidad.factorCF(0.9), 0);
+    // CRPC oficial: directo con plazo ≤12, proporcional lineal si >12
+    assert.strictEqual(capacidad.calcCRPC(1000e6, 30, 6), 700e6);
+    assert.strictEqual(capacidad.calcCRPC(1000e6, 30, 24), 350e6);
+    // CRP de Helder a mano: CO = 198 810 000 × 16.7 = 3 320 127 000;
+    // presupuesto 300M → 171,34 SMMLV; exp 6768,87/171,34 ≥ 3 → E=120;
+    // CT(1)=20, CF(129,12)=40; SCE = 443 141 528×0,6×8/12 = 177 256 611,2
+    // → CRP = 3 320 127 000×1,80 − 177 256 611,2 = 5 798 971 988,8
+    assert.strictEqual(Math.round(capacidad.crp(PERFILES.helder, 300e6)), 5798971989);
+    // consorcio = SUMA de las CRP de los integrantes (Guía CCE), no ponderado
+    const p = 300e6;
+    assert.ok(Math.abs(capacidad.crp(PERFILES.juntos, p)
+      - (capacidad.crp(PERFILES.helder, p) + capacidad.crp(PERFILES.genesis, p))) < 1e-6,
+      "CRP del consorcio debe ser la suma de las CRP de los integrantes");
+    // indicadores habilitantes del consorcio ponderados 50/50 (calculados)
+    assert.ok(Math.abs(PERFILES.juntos.liquidez - 68.05) < 1e-9, "liquidez ponderada 50/50");
+    assert.strictEqual(PERFILES.juntos.patrimonio, Math.round((1107252964 + 211340888) / 2));
+    assert.strictEqual(PERFILES.juntos.utilidadOp, Math.round((198810000 + 150244977) / 2));
+    // el CO estimado se declara (el RUP no trae ingreso operacional)
+    assert.strictEqual(capacidad.coEstimado(PERFILES.helder), true);
+    assert.strictEqual(capacidad.coEstimado(PERFILES.juntos), true);
+    console.log("· unidad capacidad: fórmula única, escalas de la Guía, CRPC y consorcio (suma) correctos");
   }
 
   async function limpiarRedis() {
@@ -365,9 +525,27 @@ async function main() {
       assert.strictEqual(typeof l.ubicacion_valida, "boolean", "falta ubicacion_valida");
       assert.ok(l.puntaje_ponderado >= 0 && l.puntaje_ponderado <= 100, "puntaje fuera de rango");
       assert.strictEqual(l.proceso_abierto, true, "apareció un proceso cerrado");
+      assert.ok(filtros.estado_abierto(l), "estado no abierto servido");
+      assert.ok(filtros.modalidad_competitiva(l), `modalidad no competitiva servida: ${l.modalidad_de_contratacion}`);
       assert.strictEqual(rup_valido(l, "helder"), true, `filtro RUP no aplicado: ${l.nombre_del_procedimiento}`);
       assert.ok(l.rup && l.rup.ok, "falta el detalle rup del resultado");
+      assert.strictEqual(typeof l.rup.co_estimado, "boolean", "falta co_estimado en el detalle rup");
       assert.ok(!/canino|alimentaci/i.test(l.nombre_del_procedimiento), "se coló un objeto de blacklist");
+    }
+
+    /* c-bis. corpus completo de Helder: la cascada dejó fuera lo que debía */
+    {
+      const todasH = await todasLasOportunidades("perfil=helder");
+      assert.ok(!todasH.some((l) => /directa|r[ée]gimen especial$/i.test(l.modalidad_de_contratacion)),
+        "se sirvió un proceso de Contratación Directa o régimen especial sin ofertas");
+      assert.ok(!todasH.some((l) => /Adjudicado/i.test(l.estado_del_procedimiento)),
+        "se sirvió un proceso Adjudicado");
+      assert.ok(!todasH.some((l) => /suministro de mobiliario/i.test(l.nombre_del_procedimiento)),
+        "la capa anti-suministro dejó pasar una compra pura de mobiliario");
+      assert.ok(todasH.some((l) => /Instalaci[oó]n y montaje de mobiliario/i.test(l.nombre_del_procedimiento)),
+        "la instalación/montaje (verbo de obra, segmento 56) debía pasar y no aparece");
+      assert.ok(todasH.some((l) => /Convocado/i.test(l.estado_del_procedimiento)),
+        "los procesos Convocado (abiertos) debían aparecer");
     }
 
     /* c'. parámetros hostiles: claves del prototipo no tumban el endpoint */
@@ -400,8 +578,42 @@ async function main() {
       assert.ok(l.anticipo_pct === 0 || l.anticipo_pct >= 25, `anticipo declarado bajo el mínimo: ${l.anticipo_pct}`);
       assert.strictEqual(rup_valido(l, "genesis"), true, "filtro RUP génesis no aplicado");
     }
+    // el filtro de anticipo muerde de verdad: los declarados al 10 % existen
+    // en el corpus (visibles con mínimo 5) y desaparecen con mínimo 25
+    {
+      const conMin5 = await todasLasOportunidades("perfil=genesis&anticipo_min=5");
+      assert.ok(conMin5.some((l) => l.anticipo_pct === 10), "faltan los anticipos del 10 % en el corpus");
+      const conMin25 = await todasLasOportunidades("perfil=genesis&anticipo_min=25");
+      assert.ok(!conMin25.some((l) => l.anticipo_pct === 10), "anticipo_min=25 no excluyó los declarados al 10 %");
+      assert.ok(conMin25.length < conMin5.length, "anticipo_min=25 debía excluir filas frente a anticipo_min=5");
+    }
     for (let i = 1; i < cG.resultados.length; i++) {
       assert.ok(cG.resultados[i - 1].puntaje_ponderado >= cG.resultados[i].puntaje_ponderado, "orden por puntaje roto");
+    }
+
+    /* d-bis. consorcio: perfil=juntos y su alias ?perfil=consorcio */
+    {
+      const rJ = await invocar(oportunidades, "/api/oportunidades?perfil=juntos");
+      const rC = await invocar(oportunidades, "/api/oportunidades?perfil=consorcio");
+      assert.strictEqual(rJ.status, 200, "perfil=juntos falló");
+      assert.strictEqual(rC.status, 200, "alias perfil=consorcio falló");
+      assert.ok(rJ.cuerpo.total > 0, "consorcio sin resultados");
+      assert.strictEqual(rC.cuerpo.total, rJ.cuerpo.total, "el alias consorcio difiere de juntos");
+      assert.strictEqual(rC.cuerpo.perfil, "juntos", "el alias no se canonicaliza");
+      for (const l of rJ.cuerpo.resultados) {
+        assert.strictEqual(rup_valido(l, "juntos"), true, "filtro RUP del consorcio no aplicado");
+      }
+      // el consorcio (K = suma de integrantes, tope 11 000 SMMLV) ALCANZA
+      // procesos que NINGÚN integrante puede tomar solo: las obras de 9 000 M
+      // superan el tope de Helder (7 004 M) y el de Génesis (3 502 M)
+      const todasJ = await todasLasOportunidades("perfil=juntos");
+      const soloConsorcio = todasJ.filter((l) => l.cuantia_cop > 7.1e9);
+      assert.ok(soloConsorcio.length > 0, "faltan las obras grandes que solo el consorcio alcanza");
+      for (const l of soloConsorcio.slice(0, 3)) {
+        assert.strictEqual(rup_valido(l, "helder"), false, "una obra de 9 000 M no puede ser viable para Helder solo");
+        assert.strictEqual(rup_valido(l, "genesis"), false, "una obra de 9 000 M no puede ser viable para Génesis sola");
+      }
+      assert.ok(todasJ.length >= cH.total, "el consorcio no puede ver menos que Helder");
     }
 
     /* d'. delta: fila nueva + cambio de estado (reemplazo) */
@@ -423,7 +635,19 @@ async function main() {
         codigo_principal_de_categoria: "V1.72141000",
         urlproceso: { url: "https://community.secop.gov.co/x" },
       });
-      const abierta = ds.find((f) => f.estado_del_procedimiento === "Publicado" && f.codigo_principal_de_categoria === "V1.72141000" && !f.id_del_proceso.includes("NUEVA"));
+      // elegir una fila que SÍ está guardada y listada (obra, competitiva,
+      // sin blacklist, cuantía dentro del K de Helder) y VERIFICAR su
+      // presencia ANTES del cambio — sin eso, la aserción de ausencia
+      // posterior podría pasar vacuamente
+      const abierta = ds.find((f) => f.estado_del_procedimiento === "Publicado"
+        && f.codigo_principal_de_categoria === "V1.72141000"
+        && /^Construcción/.test(f.nombre_del_procedimiento)
+        && /Licitación pública/.test(f.modalidad_de_contratacion)
+        && parseFloat(f.precio_base) < 1e9
+        && !f.id_del_proceso.includes("NUEVA"));
+      const antes = await todasLasOportunidades("perfil=helder");
+      assert.ok(antes.some((l) => l.id_del_proceso === abierta.id_del_proceso),
+        "la fila elegida para adjudicar debía estar listada ANTES del delta");
       abierta.estado_del_procedimiento = "Adjudicado";
       abierta[":updated_at"] = new Date().toISOString();
 

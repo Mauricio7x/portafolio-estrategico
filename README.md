@@ -30,14 +30,18 @@ de los dos perfiles (Helder y Génesis GIC SAS) y muestra solo las oportunidades
 | Archivo | Qué hace |
 | --- | --- |
 | `api/sync.js` | Sincronización full/delta/auto, reanudable, con candado TTL y auto-reinvocación |
-| `api/oportunidades.js` | Consulta: filtros de negocio + RUP, orden, paginación, memoria caliente |
+| `api/oportunidades.js` | Consulta: cascada de filtros + RUP, orden, paginación, memoria caliente |
+| `lib/perfiles.js` | **Fuente única** de los tres perfiles: naturaleza, financieros, CT, SCE, ponderación 50/50 del consorcio |
+| `lib/capacidad.js` | **Fórmula única** del K de contratación (CRP/CRPC, Guía CCE-EICP-GI-22) |
+| `lib/filtros.js` | Estados canónicos (desconocido = cerrado), modalidades competitivas, objeto válido + capa anti-suministro |
+| `lib/rup.js` | Orquestador: `rup_valido()`, `evaluarRup()`, prefiltro de compatibilidad |
+| `lib/unspsc.js` | Whitelists UNSPSC reales de los RUP (193 Helder · 343 Génesis · 393 unión calculada) |
 | `lib/redis.js` | Cliente REST mínimo de Upstash (GET/SET NX EX/DEL/MGET/SCAN) |
 | `lib/socrata.js` | SoQL, paginación keyset por `:id`, reintentos con backoff, calendario Colombia |
 | `lib/negocio.js` | `enriquecer()`: anticipo, cuantía, competencia, ubicación, puntaje |
-| `lib/rup.js` | Perfiles reales, K de contratación (Guía CCE), `rup_valido()`, prefiltro |
-| `lib/unspsc.js` | Whitelists UNSPSC reales de los RUP (193 Helder · 343 Génesis), generadas |
 | `lib/semantica.js` | Blacklist de objetos ajenos + whitelist de vocabulario de obra (heredadas) |
 | `lib/almacen.js` | Esquema de claves Redis + compresión/particionado de chunks |
+| `docs/PERFILES.md` | Resumen técnico de los tres perfiles (datos, estimaciones, limitaciones) |
 | `public/` | Frontend estático (Tailwind CDN, estilo Apple, gate de clave) |
 | `tests/e2e.js` | Ciclo completo con mocks de Socrata y Upstash (sin red externa) |
 
@@ -55,16 +59,18 @@ de los dos perfiles (Helder y Génesis GIC SAS) y muestra solo las oportunidades
   atascado (la vieja causa del «enCurso eterno»); se libera al terminar solo si el token coincide.
 - **Reanudable**: el cursor (mes, último `:id`, chunk) persiste en `licitaciones:progreso` tras cada
   página; al agotar el presupuesto la función **se re-invoca sola** (fire-and-forget) hasta terminar.
-- Cada licitación se **enriquece antes de guardarse** (nunca entra sin campos de negocio) y pasa el
-  **prefiltro de compatibilidad RUP** (ver abajo).
+- Cada licitación se **enriquece antes de guardarse** (nunca entra sin campos de negocio) y pasa la
+  **cascada de filtros** (ver abajo): modalidad competitiva → estado abierto → objeto válido.
 - Cambios de estado (Publicado → Adjudicado) entran por el delta y **reemplazan** el registro:
-  la lectura deduplica por `_k` quedándose con el `:updated_at` más reciente.
+  la lectura deduplica por `_k` quedándose con el `:updated_at` más reciente. Por eso el **delta
+  conserva los cerrados** (si los descartara, la versión abierta quedaría congelada en el listado);
+  la full sí los excluye de origen y la consulta nunca los sirve por defecto.
 
 ### `GET /api/oportunidades`
 
 | Parámetro | Default | Descripción |
 | --- | --- | --- |
-| `perfil` | requerido | `helder` · `genesis` · `juntos` (consorcio) |
+| `perfil` | requerido | `helder` · `genesis` · `juntos` (alias aceptado: `consorcio`) |
 | `anticipo_min` | 20 | Excluye anticipos **declarados** menores; `0` = sin dato **pasa** (ver nota) |
 | `cuantia_rango` | — | `bajo` · `medio` · `alto` |
 | `nivel_competencia` | — | `baja` · `media` · `alta` |
@@ -82,6 +88,45 @@ trae los campos de negocio y `rup` (detalle UNSPSC/K del perfil consultado).
 `/api/sync?modo=auto` en segundo plano; el frontend reintenta solo cada 20 s. Así se eliminó de
 raíz el viejo «Sin conexión a SECOP II»: antes la carga inicial exigía un secreto que nadie podía
 aportar desde el navegador y la web caía a una cascada de proxies CORS muertos.
+
+## Cascada de filtros (`lib/filtros.js`)
+
+La app muestra **exclusivamente** procesos a los que alguno de los perfiles pueda presentarse:
+abiertos a ofertas, en modalidad competitiva y con objeto de su especialidad. La cascada corre en
+la **sincronización** (antes de guardar: lo descartado ni siquiera ocupa Redis) y **de nuevo en la
+consulta** (defensa en profundidad: corpus previo al despliegue + cerrados que el delta conserva).
+
+1. **Modalidad competitiva** — lista blanca: Licitación Pública, Selección Abreviada (incl.
+   subasta), Concurso de Méritos, Mínima Cuantía, Acuerdo Marco. Excluidas: **Contratación
+   Directa** (incluida su variante «(con ofertas)»: sigue siendo directa — ahí viven las OPS),
+   **Licitación Privada**, las solicitudes de información (RFI) y la **Enajenación de bienes**
+   (venta de activos del Estado: trae «subasta» en el nombre pero no es obra). **Régimen
+   Especial** se excluye salvo la variante «(con ofertas)», donde sí hay convocatoria. Modalidad
+   vacía o desconocida → fuera.
+2. **Estado abierto** — listas canónicas normalizadas (acentos/mayúsculas) sobre
+   `estado_del_procedimiento` y `fase`, más la señal dura `adjudicado="Si"`. Abiertos:
+   Presentación de oferta, Convocado, Publicado, Abierto, Recepción de manifestaciones,
+   Presentación de observaciones, Borrador de pliegos, Adenda, Modificado. Cerrados: En
+   evaluación, Adjudicado, Celebrado, En ejecución, Terminado, Cancelado, Suspendido, Desierto,
+   Descartado, Liquidado… **Cualquier valor no clasificable se considera CERRADO** — el «+5 para
+   fases desconocidas» de la era anterior no existe en esta base de código.
+3. **Objeto válido** — blacklist semántica (caninos, PAE, dotación, seguros, software…), clase
+   UNSPSC en el RUP del perfil (o mapeo textual de obra si no declara UNSPSC) y la **capa
+   anti-suministro**: si TODAS las clases declaradas son de **segmentos UNSPSC de bienes**
+   (10–60: materiales 30, tubería 40, herramientas 27, eléctricos 39, TI 43, equipos 48,
+   mobiliario 56…) y el objeto se redacta como compra («suministro(s)/adquisición/compra/
+   compraventa/dotación/entrega de…») sin ningún verbo de obra (construcción, instalación,
+   montaje, mantenimiento, adecuación…), es una compra de bienes disfrazada y se descarta. Un
+   solo código de segmento de obra/servicios (≥70: 72 construcción, 77 ambiental, 81
+   ingeniería, 95 terrenos…) ancla el proceso y desactiva la capa. La revisión adversarial
+   demostró que enumerar solo 30/39/43/48/56 dejaba servida la «compraventa de tubería PVC»
+   (segmento 40, el bloque de bienes más grande del RUP de Génesis) — por eso el corte
+   generalizado en 70.
+
+Nota de entorno: este repositorio de desarrollo no alcanza `datos.gov.co` (allowlist del proxy),
+así que los valores de estado/modalidad no se muestrearon en vivo; de ahí la normalización
+defensiva, la clasificación multi-columna y el default conservador. La primera corrida en
+producción es la validación real.
 
 ## Reglas de negocio (`lib/negocio.js`)
 
@@ -101,36 +146,58 @@ aportar desde el navegador y la web caía a una cascada de proxies CORS muertos.
 - Extras documentados: `proceso_abierto` (estado no terminal) y `fecha_cierre` (detección
   defensiva: la columna varía por modalidad).
 
-## Filtro RUP y capacidad financiera (`lib/rup.js`)
+## Filtro RUP y capacidad financiera (`lib/perfiles.js` + `lib/capacidad.js` + `lib/rup.js`)
 
-Datos **reales** encontrados en el repositorio (embebidos en el `index.html` histórico, RUP con
-corte 31/12/2025) — no hicieron falta placeholders:
+**Fuente única de verdad**: todos los datos de perfiles viven en `lib/perfiles.js` (RUP corte
+31/12/2025, extraídos del `index.html` histórico — no hicieron falta placeholders) y la fórmula K
+en `lib/capacidad.js`. La discrepancia histórica web-vs-cron desapareció por construcción: no hay
+segunda fórmula ni datos duplicados. Detalle completo en `docs/PERFILES.md`.
 
 | | Helder | Génesis | Consorcio |
 | --- | --- | --- | --- |
-| Clases UNSPSC en RUP | 193 | 343 | 393 (unión) |
-| Liquidez | 129,12 | 6,98 | 6,98 |
-| Patrimonio | $1.107 M | $211 M | $1.319 M |
-| Utilidad operacional | $198,8 M | $150,2 M | $349,1 M |
-| Mayor contrato (SMMLV) | 6.768,87 | 31.593,88 | 38.362,75 |
+| Naturaleza | Persona natural | **Persona jurídica (SAS)** | Proponente plural |
+| Clases UNSPSC en RUP | 193 | 343 | 393 (unión calculada) |
+| Liquidez | 129,12 | 6,98 | 68,05 (ponderada 50/50) |
+| Patrimonio | $1.107 M | $211 M | $659,3 M (ponderado 50/50) |
+| Utilidad operacional | $198,8 M | $150,2 M | $174,5 M (ponderada 50/50) |
+| Mayor contrato (SMMLV) | 6.768,87 | 31.593,88 | 38.362,75 (suma) |
+| Profesionales (CT) | 1 | 3 (estimado conservador) | 4 (suma) |
 | Tope estratégico | 4.000 SMMLV | 2.000 SMMLV | 11.000 SMMLV |
 
 `rup_valido(licitacion, perfil)` exige **las dos** condiciones:
 
-1. **UNSPSC**: alguna clase de 8 dígitos del proceso está en el RUP del perfil. Si el proceso no
-   declara UNSPSC, mapeo textual tolerante (`WHITELIST_OBRA` sobre nombre + descripción). La
-   `BLACKLIST_OBJETO` (caninos, PAE, dotación, seguros, software…) excluye siempre.
-2. **Capacidad**: `CRPC ≤ CRP` **y** presupuesto ≤ tope estratégico, con
+1. **Objeto** (`lib/filtros.evaluarObjeto`): clase UNSPSC de 8 dígitos en el RUP del perfil (o
+   mapeo textual tolerante si no declara UNSPSC), sin blacklist y sin caer en la capa
+   anti-suministro.
+2. **Capacidad** (`lib/capacidad.js`): `CRPC ≤ CRP` **y** presupuesto ≤ tope estratégico, con
    `CRP = CO × (E + CT + CF)/100 − SCE` (Guía CCE-EICP-GI-22) y
-   `CRPC = (Presupuesto − Anticipo) × 12/plazo` si el plazo supera 12 meses (D. 1082/2015).
-   `CO` se estima como utilidad operacional × 16,7 (margen obra ≈ 6 %) porque el RUP no reporta
-   el ingreso. `SMMLV 2026 = $1.750.905`.
+   `CRPC = Presupuesto − Anticipo` (× 12/plazo solo si el plazo supera 12 meses, D. 1082/2015).
+   Escalas oficiales, todas con `>=`: E (experiencia/presupuesto) ≥3→120 · ≥2→100 · ≥1→80 ·
+   resto 60; CT (profesionales) ≥11→40 · ≥6→30 · ≥1→20; CF (liquidez) ≥1.5→40 · ≥1.2→30 ·
+   ≥1.0→20. `SMMLV 2026 = $1.750.905`.
 
-**Prefiltro al sincronizar**: `compatibleConAlgunPerfil()` descarta en origen lo que ningún perfil
-podría contratar (blacklist, UNSPSC fuera de la unión de ambos RUP y sin vocabulario de obra).
-El dataset trae ~40–60 k procesos/mes; guardar solo lo compatible reduce el corpus ~95 %, que es
-lo que hace viables el tier gratuito de Upstash y las consultas en frío. La cuantía **no** entra al
-prefiltro (es dinámica por perfil). Si un RUP cambia (`lib/unspsc.js`), relanzar `/api/sync?modo=full`.
+Decisiones documentadas (también advertidas en logs y señaladas en la UI):
+
+- **CO estimado**: el RUP no reporta ingreso operacional → `CO = utilidad × 16,7` (margen obra
+  ≈ 6 %). La UI marca «Capacidad K ✓ (CO estimado)».
+- **SCE**: saldos de contratos en ejecución (saldo × % participación × meses restantes/plazo,
+  tope 12). Helder tiene 2 registrados; Génesis ninguno → 0 con advertencia en logs.
+- **Consorcio**: indicadores habilitantes **ponderados por participación 50/50** (asumida: el
+  repositorio no fija otra; práctica D. 1082/2015 para proponentes plurales), pero el **K del
+  plural es la SUMA de las CRP de los integrantes** (Guía CCE-EICP-GI-22), cada una con sus
+  propios indicadores y su propio SCE.
+- **NIT**: no consta en el repositorio → `null` a propósito (completar del certificado; jamás
+  inventarlo).
+- **CT de Génesis**: 3 profesionales («estimado conservador» del histórico) → CT = 20. Si la
+  planta real fuera ≥6, CT subiría a 30 — confirmar con el dueño antes de cambiarlo.
+
+**Prefiltro al sincronizar**: la cascada (modalidad + estado + `compatibleConAlgunPerfil()`,
+que evalúa el objeto contra la unión de ambos RUP con anti-suministro incluido) descarta en
+origen lo que nadie podría contratar. El dataset trae ~40–60 k procesos/mes; guardar solo lo
+viable reduce el corpus >95 %, que es lo que hace viables el tier gratuito de Upstash y las
+consultas en frío. La cuantía **no** entra al prefiltro (es dinámica por perfil). Si un RUP
+cambia (`lib/unspsc.js`) o cambian los filtros, relanzar `/api/sync?modo=full` — también **tras
+desplegar esta versión**, para purgar del corpus lo guardado con las reglas anteriores.
 
 ## Claves en Redis
 
@@ -163,6 +230,10 @@ barato en reposo y auto-limitado por el candado).
    reintenta sola; la full avanza en tandas de 45 s **auto-encadenadas** hasta terminar.
 2. **Cron de Vercel** (`vercel.json`): `/api/sync` diario a las 08:30 UTC en modo `auto`.
 3. **Cada visita** con datos de más de 5 min dispara un `delta` (segundos, pocas filas).
+4. **Full de higiene mensual**: en modo `auto`, una `last_full` con más de 30 días fuerza recarga
+   completa. Acota la deriva que el delta no puede reflejar (procesos guardados cuya
+   modalidad/objeto mutó a inválido — limitación documentada de `conservarCerradas` — y filas
+   guardadas por reglas anteriores a un despliegue).
 
 ## Frontend
 
