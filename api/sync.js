@@ -11,26 +11,33 @@
      delta  Solo lo nuevo/modificado desde la última sincronización, por el
             metacampo :updated_at con solape de 48 h. Los cambios de estado
             (Publicado → Adjudicado) REEMPLAZAN el registro vía dedup en
-            lectura (gana el :updated_at más reciente).
+            lectura (gana el :updated_at más reciente) Y se COPIAN al corpus
+            histórico con sus datos de adjudicación.
      auto   Lo que toque: continuar una full inconclusa; full si nunca hubo;
             delta si los datos tienen >5 min; si no, no-op {alDia:true}.
 
-   Cada licitación se ENRIQUECE (lib/negocio.enriquecer) ANTES de guardarse —
-   nunca se persiste sin los campos de negocio — y pasa la CASCADA DE FILTROS
-   antes de tocar Redis (guardar las ~500k filas/año del dataset completo
-   reventaría el tier gratuito de Upstash y las consultas):
+   DOS KEYSPACES (ver lib/almacen.js):
+     licitaciones:activo:mes:{YYYY-MM}:chunk:{i}     lo que sirve la app.
+       Se purga: la full lo reescribe entero y la compactación retira lo cerrado.
+     licitaciones:historico:mes:{YYYY-MM}:chunk:{i}  memoria de largo plazo.
+       NUNCA se purga aquí. Es la materia prima del índice de competencia por
+       entidad. El delta ES quien alimenta el histórico en el día a día: es el
+       único que ve la transición abierto → cerrado. El backfill de años
+       anteriores lo hace /api/sync/historico (manual, una vez).
+
+   Cada licitación se ENRIQUECE (lib/negocio.enriquecer) ANTES de guardarse y
+   pasa la CASCADA DE FILTROS (lib/proyeccion.transformar) antes de tocar Redis
+   (guardar las ~500k filas/año del dataset completo reventaría Upstash y las
+   consultas):
      1. modalidad_competitiva  (lib/filtros): fuera Contratación Directa,
         Régimen Especial sin ofertas, Licitación Privada, RFI.
      2. estado_abierto         (lib/filtros): fuera cerrados/desconocidos —
-        SOLO en la carga full. El DELTA los CONSERVA a propósito: un proceso
-        guardado como abierto que pasa a Adjudicado debe entrar al chunk para
-        que el dedup por :updated_at lo REEMPLACE y salga del listado; si el
-        delta lo descartara, la versión abierta quedaría congelada para
-        siempre. La consulta filtra los cerrados al servir.
+        SOLO en la carga full. El DELTA los CONSERVA a propósito (ver
+        lib/proyeccion.repartirDelta).
      3. compatibleConAlgunPerfil (lib/rup): objeto dentro de la unión de los
         RUP, blacklist semántica y capa anti-suministro.
    El conteo de descartadas queda en meta para auditoría. Chunks mensuales
-   comprimidos (zlib.deflate nivel 6, ≤500 KB) en licitaciones:mes:{…}:chunk:{i}.
+   comprimidos (zlib.deflate nivel 6, ≤500 KB).
 
    Candado: lock:sync con SET NX EX 300 — TTL SIEMPRE presente, así una
    función muerta jamás deja el candado atascado (la causa clásica del
@@ -41,11 +48,12 @@
 "use strict";
 
 const { crearRedis, hayCredenciales } = require("../lib/redis.js");
-const { CLAVES, LOCK_TTL_SEG, empaquetar, descomprimir, leerJSON, escribirJSON } = require("../lib/almacen.js");
+const {
+  CLAVES, LOCK_TTL_SEG, escribirChunks, leerChunksDedup, leerJSON, escribirJSON,
+} = require("../lib/almacen.js");
 const { crearCliente, anoVigente, mesesDelAno } = require("../lib/socrata.js");
-const { enriquecer } = require("../lib/negocio.js");
-const { compatibleConAlgunPerfil } = require("../lib/rup.js");
-const { modalidad_competitiva, estado_abierto } = require("../lib/filtros.js");
+const { transformar, repartirDelta } = require("../lib/proyeccion.js");
+const { estado_abierto } = require("../lib/filtros.js");
 
 const PAGE = parseInt(process.env.SECOP_PAGE, 10) || 5000;
 const PRESUPUESTO_DEFAULT_MS = 45000;  // cabe en el plan Hobby (60 s)
@@ -55,109 +63,65 @@ const PRESUPUESTO_MAX_MS = 240000;
 const SOLAPE_DELTA_MS = 48 * 3600e3;
 const FRESCO_MS = 5 * 60e3;            // <5 min → no-op en modo auto
 const COMPACTAR_TRAS_CHUNKS = 25;
-// Full de higiene mensual: acota TODA deriva del corpus que el delta no puede
-// reflejar — la limitación documentada de conservarCerradas (un proceso ya
+// Full de higiene mensual: acota TODA deriva del corpus ACTIVO que el delta no
+// puede reflejar — la limitación documentada de conservarCerradas (un proceso ya
 // guardado cuya modalidad/objeto MUTA a inválido se descarta del delta y su
 // versión vieja quedaría congelada) y los cambios de reglas tras un despliegue.
+// El corpus HISTÓRICO no participa: esa purga es justo lo que hacía imposible
+// cualquier análisis de competencia por entidad.
 const FULL_HIGIENE_MS = 30 * 24 * 3600e3;
 
-/* ---------- proyección: lo que la app necesita, nada más ---------- */
-const CAMPOS = [
-  ":id", ":updated_at",
-  "id_del_proceso", "referencia_del_proceso", "nombre_del_procedimiento",
-  "descripci_n_del_procedimiento", "entidad", "nit_entidad",
-  "departamento_entidad", "ciudad_entidad", "modalidad_de_contratacion",
-  "estado_del_procedimiento", "fase", "adjudicado", "fecha_de_publicacion_del", "precio_base",
-  "duracion", "unidad_de_duracion", "codigo_principal_de_categoria",
-  "categorias_adicionales", "tipo_de_contrato",
-  // candidatas de anticipo declarado (lib/negocio.ANTICIPO_CAMPOS): p6dx-8zbt
-  // no las trae HOY, pero si la fuente las añade no pueden morir en la
-  // proyección — sin esto el anticipo declarado jamás llegaría a enriquecer()
-  "porcentaje_de_anticipo", "anticipo_porcentaje", "porcentaje_anticipo", "pct_anticipo", "anticipo",
-  "respuestas_al_procedimiento", "conteo_de_respuestas_a_ofertas", "proveedores_unicos_con",
-];
-function proyectar(fila) {
-  const out = {};
-  for (const c of CAMPOS) if (fila[c] !== undefined) out[c] = fila[c];
-  if (typeof out.descripci_n_del_procedimiento === "string" && out.descripci_n_del_procedimiento.length > 700) {
-    out.descripci_n_del_procedimiento = out.descripci_n_del_procedimiento.slice(0, 700) + "…";
-  }
-  // urlproceso llega como objeto {url, description} desde Socrata
-  const u = fila.urlproceso;
-  out.urlproceso = (u && typeof u === "object" ? u.url : u) || null;
-  // columnas de fecha de cierre: nombre no garantizado → conservar candidatas
-  for (const k in fila) {
-    if (out[k] === undefined && /fecha/i.test(k) && /(recep|cierre|l[ií]mit|plazo|apertura)/i.test(k)) out[k] = fila[k];
-  }
-  // clave de dedup: id de negocio primero (estable ante re-publicaciones que
-  // regeneran los :id de Socrata), :id como respaldo
-  out._k = fila.id_del_proceso || fila[":id"] || `${fila.fecha_de_publicacion_del}|${fila.referencia_del_proceso || ""}`;
-  return out;
-}
-
-/* Cascada de filtros (ver cabecera) → enriquecimiento de negocio.
-   conservarCerradas=true SOLO en el delta: los cambios a estado cerrado deben
-   guardarse para REEMPLAZAR (dedup :updated_at) la versión abierta previa.
-   Limitación asumida: si a un proceso YA guardado le muta la modalidad o el
-   objeto hacia algo inválido (rarísimo en SECOP II: la modalidad es identidad
-   del proceso y el objeto solo cambia por adenda), el delta lo descarta y la
-   versión vieja persiste hasta la full de higiene mensual (FULL_HIGIENE_MS),
-   que la purga. Guardar tumbas para todo descartado del delta (~miles/día)
-   reventaría el presupuesto de Redis: decisión consciente, no descuido. */
-function transformar(filas, { conservarCerradas = false } = {}) {
-  const out = [];
-  for (const fila of filas) {
-    const f = proyectar(fila);
-    if (!modalidad_competitiva(f)) continue;                 // sin competencia, fuera
-    if (!conservarCerradas && !estado_abierto(f)) continue;  // full: cerrados fuera de origen
-    if (!compatibleConAlgunPerfil(f)) continue;              // objeto/RUP/anti-suministro
-    out.push(enriquecer(f));
-  }
-  return out;
-}
-
 /* ---------- escritura de chunks ---------- */
-async function escribirChunks(redis, mes, desdeIndice, registros) {
-  let i = desdeIndice;
-  for (const paquete of empaquetar(registros)) {
-    await redis.set(CLAVES.chunk(mes, i), paquete);
-    i++;
-  }
-  return i; // siguiente índice libre
-}
+const chunksActivo = (redis, mes, desde, regs) => escribirChunks(redis, (i) => CLAVES.chunk(mes, i), desde, regs);
+const chunksHistorico = (redis, mes, desde, regs) => escribirChunks(redis, (i) => CLAVES.histChunk(mes, i), desde, regs);
 
 async function leerMes(redis, mes, manifest) {
   if (!manifest) return [];
   const ks = [];
   for (let i = manifest.base || 0; i < manifest.sig; i++) ks.push(CLAVES.chunk(mes, i));
-  const registros = [];
-  for (let i = 0; i < ks.length; i += 8) {
-    const lote = await redis.mget(ks.slice(i, i + 8));
-    for (const b of lote) for (const r of (descomprimir(b) || [])) registros.push(r);
-  }
-  // dedup por _k, gana el :updated_at más reciente
-  const mapa = new Map();
-  for (const r of registros) {
-    const prev = mapa.get(r._k);
-    if (!prev || (r[":updated_at"] || "") >= (prev[":updated_at"] || "")) mapa.set(r._k, r);
-  }
-  return [...mapa.values()];
+  return leerChunksDedup(redis, ks);
 }
 
 /* Compactación de un mes tras muchos deltas append-only: reescribe el mes
    deduplicado en índices NUEVOS y solo después borra los viejos — un kill a
-   mitad deja duplicados (que la lectura resuelve), nunca pérdida. */
+   mitad deja duplicados (que la lectura resuelve), nunca pérdida.
+   Aquí se CONSUMA el traslado activo → histórico: lo que ya cerró sale del
+   corpus activo (su copia con datos de adjudicación ya quedó en el histórico
+   cuando el delta lo vio cerrar). Mientras tanto no se sirve: /api/oportunidades
+   re-clasifica el estado al leer. */
 async function compactarMes(redis, mes) {
   const manifest = await leerJSON(redis, CLAVES.manifest(mes));
   if (!manifest) return;
-  const registros = await leerMes(redis, mes, manifest);
-  const sig = await escribirChunks(redis, mes, manifest.sig, registros);
+  const registros = (await leerMes(redis, mes, manifest)).filter((r) => estado_abierto(r));
+  const sig = await chunksActivo(redis, mes, manifest.sig, registros);
   await escribirJSON(redis, CLAVES.manifest(mes), {
     base: manifest.sig, sig, count: registros.length, updatedAt: new Date().toISOString(),
   });
   const viejos = [];
   for (let i = manifest.base || 0; i < manifest.sig; i++) viejos.push(CLAVES.chunk(mes, i));
   if (viejos.length) await redis.del(...viejos);
+}
+
+/* Append al corpus histórico, agrupando por mes de publicación. Append-only:
+   el índice de competencia deduplica por _k al construirse (gana el
+   :updated_at más reciente), así que un proceso que cambie dos veces no cuenta
+   dos veces. */
+async function guardarHistorico(redis, registros) {
+  const porMes = new Map();
+  for (const r of registros) {
+    const mes = String(r.fecha_de_publicacion_del || "").slice(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(mes)) continue;
+    if (!porMes.has(mes)) porMes.set(mes, []);
+    porMes.get(mes).push(r);
+  }
+  for (const [mes, regs] of porMes) {
+    const man = (await leerJSON(redis, CLAVES.histManifest(mes))) || { base: 0, sig: 0, count: 0 };
+    const sig = await chunksHistorico(redis, mes, man.sig, regs);
+    await escribirJSON(redis, CLAVES.histManifest(mes), {
+      ...man, sig, count: (man.count || 0) + regs.length, updatedAt: new Date().toISOString(),
+    });
+  }
+  return porMes.size;
 }
 
 /* ============================ CARGA COMPLETA ============================ */
@@ -211,7 +175,7 @@ async function extraerFull(redis, socrata, { presupuestoMs, reiniciar }) {
           throw new Error(`${mes}: el backend no devolvió :id en modo keyset (sin avance posible)`);
         }
         const guardables = transformar(filas);
-        if (guardables.length) p.chunkIdx = await escribirChunks(redis, mes, p.chunkIdx, guardables);
+        if (guardables.length) p.chunkIdx = await chunksActivo(redis, mes, p.chunkIdx, guardables);
         p.leidasMes += filas.length;
         p.guardadasMes += guardables.length;
         if (p.keyset) p.cursor.lastId = filas[filas.length - 1][":id"];
@@ -240,16 +204,19 @@ async function extraerFull(redis, socrata, { presupuestoMs, reiniciar }) {
   p.terminado = true;
   await escribirJSON(redis, CLAVES.progreso, p);
 
-  // purgar TODO mes fuera de la ventana vigente, descubierto por SCAN — no
-  // por meta.porMes: un mes creado solo por deltas (la full corrió en marzo y
-  // el delta escribió abril) no figura en meta y sus chunks quedarían
-  // servidos para siempre tras el cambio de año
+  // purgar TODO mes ACTIVO fuera de la ventana vigente, descubierto por SCAN —
+  // no por meta.porMes: un mes creado solo por deltas (la full corrió en marzo y
+  // el delta escribió abril) no figura en meta y sus chunks quedarían servidos
+  // para siempre tras el cambio de año. El histórico NO se toca.
   const meta = (await leerJSON(redis, CLAVES.meta)) || {};
   const clavesMes = await redis.scan(CLAVES.patronMeses);
   const muertas = clavesMes.filter((k) => {
-    const m = k.match(/^licitaciones:mes:(\d{4}-\d{2}):/);
-    return m && !(m[1] in p.porMes);
+    const m = CLAVES.mesDeClaveActiva(k);
+    return m && !(m in p.porMes);
   });
+  // corpus legado (licitaciones:mes:*, anterior a la separación activo/histórico):
+  // ya nadie lo lee — purgarlo evita pagar Redis por un corpus muerto
+  muertas.push(...(await redis.scan(CLAVES.patronLegado)));
   for (let i = 0; i < muertas.length; i += 50) await redis.del(...muertas.slice(i, i + 50));
 
   const totalGuardadas = Object.values(p.porMes).reduce((a, m) => a + m.guardadas, 0);
@@ -266,7 +233,7 @@ async function extraerFull(redis, socrata, { presupuestoMs, reiniciar }) {
     leidas: totalLeidas,
     descartadas_prefiltro: totalLeidas - totalGuardadas,
   });
-  return { done: true, total: totalGuardadas, leidas: totalLeidas, porMes: p.porMes };
+  return { done: true, total: totalGuardadas, leidas: totalLeidas, porMes: p.porMes, purgadas: muertas.length };
 }
 
 /* ============================ DELTA ============================ */
@@ -309,13 +276,18 @@ async function extraerDelta(redis, socrata, { presupuestoMs }) {
     fin = filas.length < PAGE;
   }
 
+  // reparto activo/histórico en una pasada (ver lib/proyeccion.repartirDelta)
+  const { activo, historico } = repartirDelta(nuevos);
+
+  // el HISTÓRICO se escribe PRIMERO: si algo falla, el registro cerrado aún no
+  // ha reemplazado a la versión abierta en el activo y el próximo delta lo
+  // vuelve a intentar. Al revés se perdería el dato histórico para siempre.
+  const mesesHistorico = historico.length ? await guardarHistorico(redis, historico) : 0;
+
   // aplicar APPEND-ONLY por mes: la lectura deduplica por _k (gana el
-  // :updated_at más reciente) → el cambio de estado reemplaza de facto.
-  // conservarCerradas: el delta GUARDA los procesos que pasaron a cerrado —
-  // así la versión "Adjudicado" pisa a la "Publicado" y sale del listado.
-  const guardables = transformar(nuevos, { conservarCerradas: true });
+  // :updated_at más reciente) → el cambio de estado reemplaza de facto
   const porMes = new Map();
-  for (const r of guardables) {
+  for (const r of activo) {
     const mes = String(r.fecha_de_publicacion_del || "").slice(0, 7);
     if (!/^\d{4}-\d{2}$/.test(mes) || !mes.startsWith(String(anoVigente()))) continue;
     if (!porMes.has(mes)) porMes.set(mes, []);
@@ -323,7 +295,7 @@ async function extraerDelta(redis, socrata, { presupuestoMs }) {
   }
   for (const [mes, regs] of porMes) {
     let man = (await leerJSON(redis, CLAVES.manifest(mes))) || { base: 0, sig: 0, count: 0 };
-    const sig = await escribirChunks(redis, mes, man.sig, regs);
+    const sig = await chunksActivo(redis, mes, man.sig, regs);
     man = { ...man, sig, count: (man.count || 0) + regs.length, updatedAt: new Date().toISOString() };
     await escribirJSON(redis, CLAVES.manifest(mes), man);
     if (sig - (man.base || 0) > COMPACTAR_TRAS_CHUNKS) await compactarMes(redis, mes);
@@ -333,8 +305,9 @@ async function extraerDelta(redis, socrata, { presupuestoMs }) {
   // esta corrida: un delta cortado no pierde páginas en silencio
   if (completo) meta.last_sync = new Date(t0).toISOString();
   meta.ultimo_delta = {
-    ts: new Date().toISOString(), filas: nuevos.length, guardadas: guardables.length,
-    meses: porMes.size, parcial: !completo,
+    ts: new Date().toISOString(), filas: nuevos.length, guardadas: activo.length,
+    meses: porMes.size, historicas: historico.length, meses_historico: mesesHistorico,
+    parcial: !completo,
   };
   await escribirJSON(redis, CLAVES.meta, meta);
   return { done: completo, delta: meta.ultimo_delta };
@@ -381,7 +354,7 @@ module.exports = async function handler(req, res) {
       } else if (!meta.last_full || meta.ano !== anoVigente()
           || Date.now() - Date.parse(meta.last_full) > FULL_HIGIENE_MS) {
         // sin carga inicial, cambio de año (la ventana vigente es otra) o
-        // full con más de un mes: recarga completa (higiene del corpus)
+        // full con más de un mes: recarga completa (higiene del corpus activo)
         r = await extraerFull(redis, socrata, { presupuestoMs, reiniciar: true });
       } else if (Date.now() - Date.parse(meta.last_sync || 0) > FRESCO_MS) {
         r = await extraerDelta(redis, socrata, { presupuestoMs });

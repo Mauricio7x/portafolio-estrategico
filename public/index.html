@@ -74,12 +74,22 @@
             </select>
           </label>
           <label class="block">
-            <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Competencia</span>
+            <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Ofertas del proceso</span>
             <select id="f-competencia" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
               <option value="">Todas</option>
               <option value="baja">Baja (≤ 5 ofertas)</option>
               <option value="media">Media (6–15)</option>
               <option value="alta">Alta (&gt; 15)</option>
+            </select>
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Competencia de la entidad</span>
+            <select id="f-entidad" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+              <option value="">Todas</option>
+              <option value="baja">🟢 Poca competencia</option>
+              <option value="media">🟡 Competencia media</option>
+              <option value="alta">🔴 Alta competencia</option>
+              <option value="sin_dato">⚪ Sin datos históricos</option>
             </select>
           </label>
           <label class="block">
@@ -93,10 +103,10 @@
           <label class="block">
             <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Ordenar por</span>
             <select id="f-ordenar" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-              <option value="puntaje">Puntaje</option>
-              <option value="anticipo">Anticipo</option>
-              <option value="cuantia">Cuantía</option>
-              <option value="competencia">Competencia</option>
+              <option value="atractividad">Más atractivas</option>
+              <option value="puntaje">Mayor puntaje</option>
+              <option value="cuantia">Mayor cuantía</option>
+              <option value="anticipo">Mayor anticipo</option>
             </select>
           </label>
           <label class="block">
@@ -142,8 +152,9 @@
     </main>
 
     <footer class="mx-auto max-w-5xl px-5 pb-10 pt-4 text-center text-xs text-gray-400">
-      Datos abiertos de SECOP II (Colombia Compra Eficiente, dataset p6dx-8zbt). El puntaje prioriza dónde
-      mirar primero; no reemplaza la lectura del pliego. Sitio privado.
+      Datos abiertos de SECOP II (Colombia Compra Eficiente, dataset p6dx-8zbt). El orden «más atractivas»
+      pone primero las entidades donde históricamente se presenta menos gente; el puntaje prioriza dónde
+      mirar primero. Ninguno reemplaza la lectura del pliego. Sitio privado.
     </footer>
   </div>
 

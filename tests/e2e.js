@@ -22,10 +22,18 @@
         → filtros aplicados y orden descendente verificado.
      d-bis. Consorcio: perfil=juntos y alias ?perfil=consorcio equivalentes;
         RUP del plural verificado (K = suma de integrantes).
-     d'. Delta: fila nueva + cambio de estado a Adjudicado → la nueva aparece,
-        la adjudicada desaparece del listado (reemplazo por :updated_at).
-     e. La raíz sirve el HTML del frontend (gate + app) y app.js compila.
-     f. (Documentado) Sin CLI de Vercel ni red: pruebas locales con mocks.
+     e. /api/sync/historico: protegido (sin token/token malo/sin variable),
+        extracción reanudable de los 2 años anteriores con datos de
+        adjudicación, y construcción automática del índice de competencia
+        (tertiles verificados sobre 4 entidades mock: 5, 8, 12 y 3 procesos).
+     f. Orden por atractividad: baja → media → sin_dato → alta (default de la
+        app), desempate por puntaje, filtro competencia_entidad, y la garantía
+        de que /api/oportunidades no lee del histórico ni expone adjudicaciones.
+     g. Delta: fila nueva + cambio de estado a Adjudicado → la nueva aparece, la
+        adjudicada desaparece del listado (reemplazo por :updated_at) y SE MUDA
+        al histórico con su adjudicatario; la full de higiene no lo borra.
+     h. La raíz sirve el HTML del frontend (gate + app) y app.js compila.
+     i. (Documentado) Sin CLI de Vercel ni red: pruebas locales con mocks.
    ========================================================================== */
 "use strict";
 
@@ -136,6 +144,61 @@ function generarDataset() {
   return filas;
 }
 
+/* ════════════════ dataset histórico (2 años anteriores) ════════════════
+   Cuatro entidades con distinta presión competitiva, diseñadas para caer una
+   en cada tertil (y una por debajo del mínimo de procesos):
+     ALCALDÍA DE PURIFICACIÓN   5 procesos · promedio  3 oferentes → "baja"
+     GOBERNACIÓN DEL TOLIMA     8 procesos · promedio  8 oferentes → "media"
+     IDU                       12 procesos · promedio 18 oferentes → "alta"
+     ALCALDÍA DE IBAGUÉ         3 procesos (<5)                    → "sin_dato"
+   Las cuatro existen también en el dataset del año vigente, así que el orden
+   por atractividad tiene los cuatro grupos. El nº de oferentes viaja SOLO en
+   `numero_de_ofertas`: si la proyección histórica no conservara esa columna,
+   el índice quedaría vacío y estas pruebas fallarían. */
+const ANOS_HIST = [ANO - 2, ANO - 1];
+const MESES_HIST = ANOS_HIST.flatMap((y) => Array.from({ length: 12 }, (_, i) => `${y}-${String(i + 1).padStart(2, "0")}`));
+const ENTIDADES_HIST = [
+  { entidad: "ALCALDÍA DE PURIFICACIÓN", nit: "800100001", ofertas: [2, 3, 3, 4, 3] },
+  { entidad: "GOBERNACIÓN DEL TOLIMA", nit: "800100002", ofertas: [7, 8, 9, 8, 7, 9, 8, 8] },
+  { entidad: "IDU", nit: "800100003", ofertas: [16, 17, 18, 19, 18, 17, 20, 18, 19, 17, 18, 19] },
+  { entidad: "ALCALDÍA DE IBAGUÉ", nit: "800100004", ofertas: [1, 2, 1] },
+];
+const PROMEDIO_ESPERADO = { "ALCALDÍA DE PURIFICACIÓN": 3, "GOBERNACIÓN DEL TOLIMA": 8, "IDU": 18 };
+
+function generarDatasetHistorico() {
+  const filas = [];
+  let n = 0;
+  for (const e of ENTIDADES_HIST) {
+    for (let i = 0; i < e.ofertas.length; i++) {
+      n++;
+      const mes = MESES_HIST[(n * 5) % MESES_HIST.length]; // repartidos por todo el rango
+      filas.push({
+        ":id": `hist-${String(n).padStart(4, "0")}`,
+        ":updated_at": `${mes}-20T10:00:00.000Z`,
+        id_del_proceso: `CO1.HIST.${n}`, referencia_del_proceso: `REF-HIST-${n}`,
+        fecha_de_publicacion_del: `${mes}-05T08:00:00.000`,
+        entidad: e.entidad, nit_entidad: e.nit,
+        ciudad_entidad: "IBAGUÉ", departamento_entidad: "Tolima",
+        modalidad_de_contratacion: "Licitación pública",
+        estado_del_procedimiento: "Adjudicado", fase: "Adjudicación", adjudicado: "Si",
+        precio_base: String(200e6 + n),
+        duracion: "6", unidad_de_duracion: "Meses",
+        nombre_del_procedimiento: `Construcción de placa huella histórica ${n}`,
+        descripci_n_del_procedimiento: "Obra civil de pavimentación rural ya ejecutada",
+        codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra",
+        // columnas de adjudicación (nombres pendientes de verificación en vivo)
+        numero_de_ofertas: String(e.ofertas[i]),
+        nombre_del_proveedor: `CONSTRUCTORA HIST ${n} SAS`,
+        nit_del_proveedor_adjudicado: `90010${String(n).padStart(4, "0")}`,
+        valor_total_adjudicacion: String(190e6 + n),
+        fecha_adjudicacion: `${mes}-25T10:00:00.000`,
+        urlproceso: { url: `https://community.secop.gov.co/hist/${n}` },
+      });
+    }
+  }
+  return filas;
+}
+
 /* ════════════════ mock Socrata (SoQL mínimo) ════════════════ */
 function crearMockSocrata() {
   let dataset = [];
@@ -190,6 +253,7 @@ function crearMockSocrata() {
 /* ════════════════ mock Upstash Redis REST ════════════════ */
 function crearMockUpstash() {
   const datos = new Map();   // clave → valor
+  const hashes = new Map();  // clave → Map(campo → valor)  (índice de competencia)
   const expiras = new Map(); // clave → ts de expiración
   const viva = (k) => {
     if (expiras.has(k) && Date.now() > expiras.get(k)) { datos.delete(k); expiras.delete(k); }
@@ -213,16 +277,46 @@ function crearMockUpstash() {
       }
       case "DEL": {
         let borradas = 0;
-        for (const k of cmd.slice(1)) { if (viva(k)) borradas++; datos.delete(k); expiras.delete(k); }
+        for (const k of cmd.slice(1)) {
+          if (viva(k) || hashes.has(k)) borradas++;
+          datos.delete(k); expiras.delete(k); hashes.delete(k);
+        }
         return borradas;
       }
       case "MGET": return cmd.slice(1).map((k) => (viva(k) ? datos.get(k) : null));
-      case "EXISTS": return viva(cmd[1]) ? 1 : 0;
+      case "EXISTS": return viva(cmd[1]) || hashes.has(cmd[1]) ? 1 : 0;
       case "SCAN": {
         const iMatch = cmd.map((x) => String(x).toUpperCase()).indexOf("MATCH");
         const re = globRe(cmd[iMatch + 1]);
-        const claves = [...datos.keys()].filter((k) => viva(k) && re.test(k));
+        const claves = [...datos.keys()].filter((k) => viva(k) && re.test(k))
+          .concat([...hashes.keys()].filter((k) => re.test(k)));
         return ["0", claves];
+      }
+      /* ---- hashes: el índice de competencia por entidad ---- */
+      case "HSET": {
+        const [, k, ...resto] = cmd;
+        const h = hashes.get(k) || new Map();
+        for (let i = 0; i + 1 < resto.length; i += 2) h.set(String(resto[i]), String(resto[i + 1]));
+        hashes.set(k, h);
+        return Math.floor(resto.length / 2);
+      }
+      case "HGETALL": {
+        const h = hashes.get(cmd[1]);
+        if (!h) return [];
+        const plano = [];
+        for (const [f, v] of h) plano.push(f, v);
+        return plano; // Upstash devuelve el array plano [campo, valor, …]
+      }
+      case "HGET": {
+        const h = hashes.get(cmd[1]);
+        return h && h.has(cmd[2]) ? h.get(cmd[2]) : null;
+      }
+      case "HLEN": return hashes.has(cmd[1]) ? hashes.get(cmd[1]).size : 0;
+      case "RENAME": {
+        const [, de, a] = cmd;
+        if (hashes.has(de)) { hashes.set(a, hashes.get(de)); hashes.delete(de); return "OK"; }
+        if (viva(de)) { datos.set(a, datos.get(de)); datos.delete(de); expiras.delete(de); return "OK"; }
+        throw new Error("ERR no such key"); // como Redis: RENAME de clave inexistente falla
       }
       default: throw new Error(`mock redis: comando no soportado ${op}`);
     }
@@ -242,15 +336,15 @@ function crearMockUpstash() {
       }
     });
   });
-  return { server, tamano: () => datos.size };
+  return { server, tamano: () => datos.size + hashes.size };
 }
 
 /* ════════════════ invocador de handlers estilo Vercel ════════════════ */
-function invocar(handler, urlStr) {
+function invocar(handler, urlStr, headers = {}) {
   const u = new URL(urlStr, "http://app.local");
   const req = {
     url: urlStr, method: "GET",
-    headers: { host: "app.local", "x-forwarded-proto": "https" },
+    headers: { host: "app.local", "x-forwarded-proto": "https", ...headers },
     query: Object.fromEntries(u.searchParams),
   };
   return new Promise((resolve, reject) => {
@@ -281,12 +375,15 @@ async function main() {
   process.env.UPSTASH_REDIS_REST_TOKEN = "token-de-prueba";
   process.env.SECOP_PAGE = "50";       // páginas chicas → ejercita keyset multi-página
   process.env.SECOP_BACKOFF_MS = "10"; // backoff rápido en el mock
+  process.env.HISTORICO_TOKEN = "token-historico-de-prueba";
 
   // requerir DESPUÉS de fijar el entorno (PAGE/backoff se leen al cargar)
   const sync = require("../api/sync.js");
+  const historico = require("../api/sync/historico.js");
   const oportunidades = require("../api/oportunidades.js");
   const { crearRedis } = require("../lib/redis.js");
-  const { empaquetar, descomprimir, CHUNK_MAX_COMPRIMIDO } = require("../lib/almacen.js");
+  const { empaquetar, descomprimir, CHUNK_MAX_COMPRIMIDO, CLAVES } = require("../lib/almacen.js");
+  const indiceComp = require("../lib/indice_competencia.js");
   const { rup_valido } = require("../lib/rup.js");
   const filtros = require("../lib/filtros.js");
   const capacidad = require("../lib/capacidad.js");
@@ -448,10 +545,64 @@ async function main() {
     console.log("· unidad capacidad: fórmula única, escalas de la Guía, CRPC y consorcio (suma) correctos");
   }
 
+  /* unidad: tertiles, mediana y lectura de oferentes/adjudicación del índice */
+  {
+    // seis entidades: los cortes deben repartirlas 2/2/2 y respetar empates
+    const cortes = indiceComp.cortesTertiles([2, 3, 8, 8, 18, 20]);
+    assert.strictEqual(indiceComp.nivelPorCortes(2, cortes), "baja");
+    assert.strictEqual(indiceComp.nivelPorCortes(3, cortes), "baja");
+    assert.strictEqual(indiceComp.nivelPorCortes(8, cortes), "media", "los empates deben caer en el mismo nivel");
+    assert.strictEqual(indiceComp.nivelPorCortes(18, cortes), "alta");
+    assert.strictEqual(indiceComp.nivelPorCortes(20, cortes), "alta");
+    // tres entidades (el caso del encargo): una por tertil
+    const c3 = indiceComp.cortesTertiles([3, 8, 18]);
+    assert.deepStrictEqual([3, 8, 18].map((p) => indiceComp.nivelPorCortes(p, c3)), ["baja", "media", "alta"]);
+    // todas iguales: ninguna destaca → "media" (jamás todas "baja")
+    const cIguales = indiceComp.cortesTertiles([5, 5, 5]);
+    assert.strictEqual(indiceComp.nivelPorCortes(5, cIguales), "media");
+    // mediana desde histograma, par e impar
+    assert.strictEqual(indiceComp.medianaHistograma({ 2: 1, 3: 3, 4: 1 }, 5), 3);
+    assert.strictEqual(indiceComp.medianaHistograma({ 7: 2, 8: 4, 9: 2 }, 8), 8);
+    assert.strictEqual(indiceComp.medianaHistograma({ 1: 1, 5: 1 }, 2), 3);
+    // 0 oferentes = SIN DATO (hueco del dataset), no "nadie se presentó"
+    assert.strictEqual(indiceComp.oferentesDe({ numero_de_ofertas: "0" }), null);
+    assert.strictEqual(indiceComp.oferentesDe({ numero_de_ofertas: "4" }), 4);
+    assert.strictEqual(indiceComp.oferentesDe({ proveedores_unicos_con: "9" }), 9);
+    assert.strictEqual(indiceComp.oferentesDe({}), null);
+    // evidencia de adjudicación
+    assert.strictEqual(indiceComp.esAdjudicado({ adjudicado: "Si" }), true);
+    assert.strictEqual(indiceComp.esAdjudicado({ nombre_del_proveedor: "X SAS" }), true);
+    assert.strictEqual(indiceComp.esAdjudicado({ estado_del_procedimiento: "Celebrado" }), true);
+    assert.strictEqual(indiceComp.esAdjudicado({ estado_del_procedimiento: "Publicado" }), false);
+    // la entidad se identifica igual con y sin NIT
+    assert.strictEqual(indiceComp.claveEntidad({ entidad: "ALCALDÍA DE PURIFICACIÓN" }).clave,
+      indiceComp.claveEntidad({ entidad: "Alcaldia de Purificacion", nit_entidad: "800100001" }).clave);
+    console.log("· unidad índice de competencia: tertiles con empates, mediana, oferentes 0 = sin dato");
+  }
+
   async function limpiarRedis() {
-    const claves = [...(await redis.scan("licitaciones:*")), ...(await redis.scan("lock:sync"))];
+    const claves = [
+      ...(await redis.scan("licitaciones:*")), ...(await redis.scan("lock:sync*")),
+      ...(await redis.scan("indice:*")), ...(await redis.scan("sync:historico:*")),
+    ];
     if (claves.length) await redis.del(...claves);
-    assert.strictEqual((await redis.scan("licitaciones:*")).length, 0, "Redis no quedó limpio");
+    for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*"]) {
+      assert.strictEqual((await redis.scan(patron)).length, 0, `Redis no quedó limpio: ${patron}`);
+    }
+  }
+
+  /* Todos los registros del corpus histórico, leídos como los leería el índice. */
+  async function leerHistorico() {
+    const claves = await redis.scan(CLAVES.patronChunksHist);
+    const filas = [];
+    for (const b of await redis.mget(claves)) for (const r of (descomprimir(b) || [])) filas.push(r);
+    return filas;
+  }
+  async function leerActivo() {
+    const claves = await redis.scan(CLAVES.patronChunks);
+    const filas = [];
+    for (const b of await redis.mget(claves)) for (const r of (descomprimir(b) || [])) filas.push(r);
+    return filas;
   }
 
   async function todasLasOportunidades(params) {
@@ -467,7 +618,9 @@ async function main() {
 
   async function iteracion(n) {
     const t0 = Date.now();
-    socrata.setDataset(generarDataset());
+    // el dataset trae el año vigente Y los dos anteriores: la full solo debe
+    // ver el vigente (consulta mes a mes del año en curso)
+    socrata.setDataset([...generarDataset(), ...generarDatasetHistorico()]);
     socrata.setFallos(true);
 
     /* a. limpiar Redis */
@@ -500,8 +653,12 @@ async function main() {
       if (++invocaciones > 400) throw new Error("la carga completa no converge");
     }
     assert.ok(invocaciones >= 2, "el presupuesto corto debía forzar varias invocaciones (reanudable)");
-    const chunks = await redis.scan("licitaciones:mes:*:chunk:*");
-    assert.ok(chunks.length >= MESES.length, `esperaba ≥${MESES.length} chunks, hay ${chunks.length}`);
+    const chunks = await redis.scan(CLAVES.patronChunks);
+    assert.ok(chunks.length >= MESES.length, `esperaba ≥${MESES.length} chunks activos, hay ${chunks.length}`);
+    assert.strictEqual((await redis.scan(CLAVES.patronChunksHist)).length, 0,
+      "la full NO debe escribir en el corpus histórico");
+    assert.ok(!chunks.some((k) => ANOS_HIST.some((y) => k.includes(`:mes:${y}-`))),
+      "la full del año vigente se llevó meses de años anteriores");
     const meta = JSON.parse(await redis.get("licitaciones:meta"));
     assert.ok(meta.last_full && meta.last_sync, "meta sin sellos de sincronización");
     assert.strictEqual(Object.keys(meta.porMes).length, MESES.length, "faltan meses en la auditoría");
@@ -616,7 +773,165 @@ async function main() {
       assert.ok(todasJ.length >= cH.total, "el consorcio no puede ver menos que Helder");
     }
 
-    /* d'. delta: fila nueva + cambio de estado (reemplazo) */
+    /* e. extracción histórica de los 2 años anteriores + índice de competencia.
+       Corre ANTES del delta a propósito: así el índice se verifica sobre un
+       corpus histórico conocido (28 procesos), sin la adjudicación que el
+       delta añadirá después. */
+    {
+      socrata.setFallos(false); // el histórico corre limpio; los fallos ya se probaron en la full
+      const rango = `desde=${ANOS_HIST[0]}-01&hasta=${ANOS_HIST[1]}-12`;
+      const TOKEN = { "x-historico-token": process.env.HISTORICO_TOKEN };
+
+      /* protección: sin token, con token equivocado y sin la variable definida */
+      assert.strictEqual((await invocar(historico, `/api/sync/historico?${rango}&chain=0`)).status, 401,
+        "sin token debía responder 401");
+      assert.strictEqual((await invocar(historico, `/api/sync/historico?${rango}&token=equivocado&chain=0`)).status, 401,
+        "token equivocado debía responder 401");
+      {
+        const guardado = process.env.HISTORICO_TOKEN;
+        delete process.env.HISTORICO_TOKEN;
+        const r0 = await invocar(historico, `/api/sync/historico?${rango}&chain=0`, TOKEN);
+        assert.strictEqual(r0.status, 503, "sin HISTORICO_TOKEN el endpoint debe negarse, nunca abrirse");
+        process.env.HISTORICO_TOKEN = guardado;
+      }
+      assert.strictEqual((await invocar(historico, `/api/sync/historico?desde=${ANO}-13&hasta=${ANO}-12&chain=0`, TOKEN)).status, 400,
+        "rango de meses inválido debía dar 400");
+      assert.strictEqual((await redis.scan(CLAVES.patronChunksHist)).length, 0,
+        "una petición rechazada no puede haber escrito nada");
+
+      /* extracción reanudable con presupuesto corto (varias invocaciones) */
+      let rh = await invocar(historico, `/api/sync/historico?${rango}&presupuesto=200&chain=0`, TOKEN);
+      assert.strictEqual(rh.status, 200, `histórico falló: ${JSON.stringify(rh.cuerpo).slice(0, 300)}`);
+      assert.strictEqual(rh.cuerpo.ok, true);
+      let invHist = 1;
+      while (rh.cuerpo.done === false) {
+        rh = await invocar(historico, `/api/sync/historico?${rango}&presupuesto=200&chain=0`, TOKEN);
+        assert.strictEqual(rh.cuerpo.ok, true, `continuación histórica falló: ${JSON.stringify(rh.cuerpo)}`);
+        if (++invHist > 400) throw new Error("la extracción histórica no converge");
+      }
+      assert.ok(invHist >= 2, "el presupuesto corto debía forzar varias invocaciones reanudables");
+      assert.strictEqual(await redis.get("lock:sync:historico"), null, "el candado del histórico no se liberó");
+      assert.strictEqual(await redis.get("lock:sync"), null, "el histórico no debe tocar el candado del sync normal");
+
+      /* el histórico guardó todo el rango CON datos de adjudicación */
+      const hist = await leerHistorico();
+      const totalHist = ENTIDADES_HIST.reduce((a, e) => a + e.ofertas.length, 0);
+      assert.strictEqual(hist.length, totalHist, `histórico: ${hist.length} registros, esperaba ${totalHist}`);
+      for (const r of hist) {
+        assert.ok(r.nombre_del_proveedor && r.nit_del_proveedor_adjudicado, "falta el adjudicatario en el histórico");
+        assert.ok(r.valor_total_adjudicacion && r.fecha_adjudicacion, "faltan valor/fecha de adjudicación");
+        assert.strictEqual(r.fue_adjudicado, true, "el histórico no marcó la adjudicación");
+        assert.ok(r.oferentes >= 1, "el histórico no derivó el nº de oferentes");
+      }
+
+      /* los dos corpus no se mezclan */
+      const activo = await leerActivo();
+      assert.ok(!activo.some((r) => String(r.id_del_proceso).startsWith("CO1.HIST.")),
+        "el corpus activo se contaminó con procesos históricos");
+      assert.ok(!activo.some((r) => "nombre_del_proveedor" in r),
+        "el corpus activo guardó datos de adjudicación (solo deben vivir en el histórico)");
+
+      /* índice construido automáticamente al terminar la extracción */
+      const metaIdx = JSON.parse(await redis.get("indice:competencia:meta"));
+      assert.ok(metaIdx && metaIdx.construido, "no se construyó el índice al terminar la extracción");
+      assert.strictEqual(metaIdx.entidades, ENTIDADES_HIST.length, "faltan entidades en el índice");
+      assert.strictEqual(metaIdx.clasificadas, 3, "solo las entidades con ≥5 procesos pueden clasificarse");
+      assert.strictEqual(metaIdx.procesos_contados, totalHist, "el índice no contó todos los procesos");
+      assert.strictEqual(metaIdx.min_procesos, 5);
+
+      const hash = await redis.hgetall("indice:competencia");
+      for (const e of ENTIDADES_HIST) {
+        const m = JSON.parse(hash[filtros.norm(e.entidad)]);
+        assert.strictEqual(m.procesos, e.ofertas.length, `${e.entidad}: nº de procesos`);
+        assert.strictEqual(m.oferentes_total, e.ofertas.reduce((a, b) => a + b, 0), `${e.entidad}: suma de oferentes`);
+        if (e.ofertas.length >= 5) {
+          assert.strictEqual(m.promedio, PROMEDIO_ESPERADO[e.entidad], `${e.entidad}: promedio de oferentes`);
+          assert.ok(m.mediana > 0, `${e.entidad}: mediana`);
+        } else {
+          assert.strictEqual(m.nivel, "sin_dato", "una entidad con <5 procesos no puede clasificarse");
+        }
+        // alias por NIT → mismo registro (una entidad que cambie de nombre no parte su historial)
+        assert.deepStrictEqual(JSON.parse(hash[`nit:${e.nit}`]), { ref: filtros.norm(e.entidad) });
+      }
+      // TERTILES: 3 / 8 / 18 oferentes de promedio → baja / media / alta
+      assert.strictEqual(JSON.parse(hash[filtros.norm("ALCALDÍA DE PURIFICACIÓN")]).nivel, "baja");
+      assert.strictEqual(JSON.parse(hash[filtros.norm("GOBERNACIÓN DEL TOLIMA")]).nivel, "media");
+      assert.strictEqual(JSON.parse(hash[filtros.norm("IDU")]).nivel, "alta");
+
+      /* reconstrucción del índice sin volver a bajar nada */
+      const rr = await invocar(historico, "/api/sync/historico?reconstruir_indice=true&presupuesto=20000&chain=0", TOKEN);
+      assert.strictEqual(rr.cuerpo.ok, true, `reconstrucción falló: ${JSON.stringify(rr.cuerpo).slice(0, 300)}`);
+      assert.strictEqual(rr.cuerpo.done, true, "la reconstrucción del índice quedó a medias");
+      assert.strictEqual(rr.cuerpo.extraccion, null, "reconstruir_indice no debe re-extraer");
+      assert.strictEqual(rr.cuerpo.indice.clasificadas, 3, "la reconstrucción cambió la clasificación");
+      assert.strictEqual((await leerHistorico()).length, totalHist, "la reconstrucción duplicó el histórico");
+    }
+
+    /* f. el índice se USA: orden por atractividad = dónde es más probable ganar */
+    {
+      // perfil=juntos: es el único que ve las CUATRO entidades del corpus (las
+      // obras de 9 000 M de la Alcaldía de Ibagué superan el K de cada
+      // integrante por separado), así que los cuatro grupos están presentes
+      const RANGO_NIVEL = { baja: 0, media: 1, sin_dato: 2, alta: 3 };
+      const todas = await todasLasOportunidades("perfil=juntos&ordenar_por=atractividad");
+      assert.ok(todas.length > 0, "sin resultados que ordenar");
+
+      let previo = -1;
+      for (const l of todas) {
+        assert.ok(l.competencia_entidad && RANGO_NIVEL[l.competencia_entidad.nivel] !== undefined,
+          "falta competencia_entidad en el resultado");
+        const r = RANGO_NIVEL[l.competencia_entidad.nivel];
+        assert.ok(r >= previo,
+          `orden por atractividad roto: ${l.entidad} (${l.competencia_entidad.nivel}) después de nivel ${previo}`);
+        previo = r;
+      }
+      const niveles = new Set(todas.map((l) => l.competencia_entidad.nivel));
+      for (const n of ["baja", "media", "alta", "sin_dato"]) assert.ok(niveles.has(n), `falta el grupo ${n} en el corpus`);
+      assert.strictEqual(todas[0].competencia_entidad.nivel, "baja", "la primera no es de poca competencia");
+      assert.strictEqual(todas[0].competencia_entidad.promedio_oferentes, 3);
+      assert.ok(todas[0].competencia_entidad.total_procesos >= 5);
+      assert.strictEqual(todas[todas.length - 1].competencia_entidad.nivel, "alta", "la última no es de alta competencia");
+
+      // dentro del grupo, el criterio sigue siendo el puntaje descendente
+      const soloBaja = todas.filter((l) => l.competencia_entidad.nivel === "baja");
+      for (let i = 1; i < soloBaja.length; i++) {
+        assert.ok(soloBaja[i - 1].puntaje_ponderado >= soloBaja[i].puntaje_ponderado,
+          "el desempate por puntaje dentro del grupo se rompió");
+      }
+
+      // atractividad es el orden POR DEFECTO (lo que ve el dueño al abrir la app)
+      const porDefecto = await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=100");
+      assert.strictEqual(porDefecto.cuerpo.ordenado_por, "atractividad", "el orden por defecto no es atractividad");
+      assert.strictEqual(porDefecto.cuerpo.resultados[0].id_del_proceso, todas[0].id_del_proceso);
+      assert.ok(porDefecto.cuerpo.indice_competencia && porDefecto.cuerpo.indice_competencia.entidades === 3,
+        "la respuesta no informa el estado del índice");
+
+      // los órdenes anteriores siguen funcionando
+      const porPuntaje = (await invocar(oportunidades, "/api/oportunidades?perfil=juntos&ordenar_por=puntaje&por_pagina=100")).cuerpo;
+      for (let i = 1; i < porPuntaje.resultados.length; i++) {
+        assert.ok(porPuntaje.resultados[i - 1].puntaje_ponderado >= porPuntaje.resultados[i].puntaje_ponderado,
+          "orden por puntaje roto");
+      }
+
+      // filtro por competencia de la entidad
+      const bajas = await todasLasOportunidades("perfil=juntos&competencia_entidad=baja");
+      assert.ok(bajas.length > 0 && bajas.every((l) => l.competencia_entidad.nivel === "baja"),
+        "el filtro competencia_entidad no se aplicó");
+      assert.strictEqual(bajas.length, soloBaja.length);
+
+      // /api/oportunidades NO lee del histórico NI expone datos de adjudicación
+      for (const l of todas) {
+        assert.ok(!String(l.id_del_proceso).startsWith("CO1.HIST."), "se sirvió un proceso del corpus histórico");
+        assert.ok(!ANOS_HIST.some((y) => String(l.fecha_de_publicacion_del).startsWith(String(y))),
+          "se sirvió un proceso de años anteriores (el histórico no se consulta aquí)");
+        for (const c of ["nombre_del_proveedor", "nit_del_proveedor_adjudicado", "valor_total_adjudicacion",
+          "fecha_adjudicacion", "numero_de_ofertas", "oferentes", "fue_adjudicado"]) {
+          assert.ok(!(c in l), `/api/oportunidades expuso el campo de adjudicación «${c}»`);
+        }
+      }
+    }
+
+    /* g. delta: fila nueva + cambio de estado (reemplazo y traslado al histórico) */
     {
       socrata.setFallos(false); // el delta corre limpio; los fallos ya se probaron en la full
       const ds = socrata.getDataset();
@@ -648,28 +963,70 @@ async function main() {
       const antes = await todasLasOportunidades("perfil=helder");
       assert.ok(antes.some((l) => l.id_del_proceso === abierta.id_del_proceso),
         "la fila elegida para adjudicar debía estar listada ANTES del delta");
+      const histAntes = (await leerHistorico()).length;
       abierta.estado_del_procedimiento = "Adjudicado";
+      abierta.adjudicado = "Si";
+      abierta.nombre_del_proveedor = "CONSTRUCTORA GANADORA SAS";
+      abierta.nit_del_proveedor_adjudicado = "901234567";
+      abierta.valor_total_adjudicacion = abierta.precio_base;
+      abierta.fecha_adjudicacion = `${mesActual}-20T10:00:00.000`;
+      abierta.numero_de_ofertas = "4";
       abierta[":updated_at"] = new Date().toISOString();
 
       const rd = await invocar(sync, "/api/sync?modo=delta&presupuesto=20000&chain=0");
       assert.strictEqual(rd.cuerpo.ok, true, `delta falló: ${JSON.stringify(rd.cuerpo)}`);
       assert.strictEqual(rd.cuerpo.done, true, "delta quedó parcial");
       assert.ok(rd.cuerpo.delta.guardadas >= 2, `delta debía guardar ≥2 filas, guardó ${rd.cuerpo.delta.guardadas}`);
+      assert.ok(rd.cuerpo.delta.historicas >= 1, "el delta no reportó traslados al histórico");
 
       const todas = await todasLasOportunidades("perfil=helder");
       assert.ok(todas.some((l) => l.id_del_proceso === nuevaId), "la fila nueva del delta no aparece");
       assert.ok(!todas.some((l) => l.id_del_proceso === abierta.id_del_proceso), "la fila adjudicada sigue apareciendo");
+
+      /* el proceso que cerró SE MUDÓ al histórico, con sus datos de adjudicación */
+      const hist = await leerHistorico();
+      assert.ok(hist.length > histAntes, "el delta no escribió nada en el histórico");
+      const mudado = hist.find((r) => r.id_del_proceso === abierta.id_del_proceso);
+      assert.ok(mudado, "el proceso adjudicado no llegó al corpus histórico");
+      assert.strictEqual(mudado.nombre_del_proveedor, "CONSTRUCTORA GANADORA SAS");
+      assert.strictEqual(mudado.oferentes, 4);
+      assert.strictEqual(mudado.fue_adjudicado, true);
+      assert.strictEqual(mudado.proceso_abierto, false);
+      // …y su copia en el activo (que solo existe para REEMPLAZAR a la versión
+      // abierta vía :updated_at) va sin un solo dato de adjudicación
+      const enActivo = (await leerActivo()).filter((r) => r.id_del_proceso === abierta.id_del_proceso);
+      assert.ok(enActivo.length > 0, "falta el reemplazo en el activo: la versión abierta quedaría congelada");
+      for (const r of enActivo) {
+        for (const c of ["nombre_del_proveedor", "nit_del_proveedor_adjudicado", "valor_total_adjudicacion", "numero_de_ofertas"]) {
+          assert.ok(!(c in r), `el corpus activo guardó el campo de adjudicación «${c}»`);
+        }
+      }
+      // y la purga del activo jamás toca el histórico
+      const histFinal = (await leerHistorico()).length;
+      const rFull = await invocar(sync, "/api/sync?modo=full&presupuesto=20000&chain=0");
+      assert.strictEqual(rFull.cuerpo.done, true, "la full de higiene no terminó en una invocación");
+      assert.strictEqual((await leerHistorico()).length, histFinal,
+        "una full de higiene borró parte del corpus histórico");
+      assert.ok(!(await leerActivo()).some((r) => r.id_del_proceso === abierta.id_del_proceso),
+        "la full de higiene debía dejar fuera del activo el proceso ya adjudicado");
     }
 
-    /* e. la raíz sirve el frontend (Vercel: /public es el output estático) */
+    /* h. la raíz sirve el frontend (Vercel: /public es el output estático) */
     {
       const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-      for (const debe of ['id="gate"', 'id="app"', "/app.js", "cdn.tailwindcss.com", 'id="btn-buscar"']) {
+      for (const debe of ['id="gate"', 'id="app"', "/app.js", "cdn.tailwindcss.com", 'id="btn-buscar"',
+        'id="f-entidad"', '<option value="atractividad">']) {
         assert.ok(html.includes(debe), `index.html sin ${debe}`);
       }
+      // el orden por defecto de la app debe ser el de atractividad: primera opción del selector
+      const opciones = html.slice(html.indexOf('id="f-ordenar"')).match(/<option value="([^"]+)"/g) || [];
+      assert.strictEqual(opciones[0], '<option value="atractividad"', "«Más atractivas» debe ser la opción por defecto");
       const js = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
       new Function(js); // valida sintaxis sin ejecutar
       assert.ok(js.includes('"231105"'), "app.js sin la clave de acceso");
+      for (const debe of ["bandaCompetencia", "competencia_entidad", "Poca competencia", "Alta competencia"]) {
+        assert.ok(js.includes(debe), `app.js sin ${debe} (la tarjeta no muestra la competencia de la entidad)`);
+      }
       const vercel = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
       for (const fn of Object.keys(vercel.functions)) {
         assert.ok(fs.existsSync(path.join(__dirname, "..", fn)), `vercel.json apunta a ${fn} inexistente`);
@@ -677,17 +1034,21 @@ async function main() {
       assert.ok(vercel.crons.some((c) => c.path === "/api/sync"), "falta el cron de /api/sync");
     }
 
-    return { invocaciones, chunks: chunks.length, corpus: meta.total, leidas: meta.leidas, ms: Date.now() - t0 };
+    const idx = JSON.parse(await redis.get("indice:competencia:meta"));
+    return {
+      invocaciones, chunks: chunks.length, corpus: meta.total, leidas: meta.leidas,
+      historico: (await leerHistorico()).length, entidades: idx.clasificadas, ms: Date.now() - t0,
+    };
   }
 
-  /* f. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
+  /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
      las 4 iteraciones corren contra los mocks locales con los handlers reales. */
   console.log(`Mock Socrata en :${puertoSocrata} · mock Upstash en :${puertoUpstash} · ${MESES.length} meses × 120 filas`);
   const resultados = [];
   for (let i = 1; i <= objetivo; i++) {
     const r = await iteracion(i);
     resultados.push(r);
-    console.log(`✔ iteración ${i}/${objetivo}: full en ${r.invocaciones} invocaciones reanudables · ${r.chunks} chunks · corpus ${r.corpus}/${r.leidas} filas · ${r.ms} ms`);
+    console.log(`✔ iteración ${i}/${objetivo}: full en ${r.invocaciones} invocaciones reanudables · ${r.chunks} chunks · corpus ${r.corpus}/${r.leidas} filas · histórico ${r.historico} procesos → ${r.entidades} entidades clasificadas · ${r.ms} ms`);
   }
   console.log(`\nTODAS LAS ITERACIONES PASARON (${objetivo}/${objetivo}) · peticiones Socrata simuladas: ${socrata.peticiones()}`);
   socrata.server.close();
