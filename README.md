@@ -99,9 +99,10 @@ consulta** (defensa en profundidad: corpus previo al despliegue + cerrados que e
 1. **Modalidad competitiva** — lista blanca: Licitación Pública, Selección Abreviada (incl.
    subasta), Concurso de Méritos, Mínima Cuantía, Acuerdo Marco. Excluidas: **Contratación
    Directa** (incluida su variante «(con ofertas)»: sigue siendo directa — ahí viven las OPS),
-   **Licitación Privada** y las solicitudes de información (RFI). **Régimen Especial** se excluye
-   salvo la variante «(con ofertas)», donde sí hay convocatoria. Modalidad vacía o desconocida →
-   fuera.
+   **Licitación Privada**, las solicitudes de información (RFI) y la **Enajenación de bienes**
+   (venta de activos del Estado: trae «subasta» en el nombre pero no es obra). **Régimen
+   Especial** se excluye salvo la variante «(con ofertas)», donde sí hay convocatoria. Modalidad
+   vacía o desconocida → fuera.
 2. **Estado abierto** — listas canónicas normalizadas (acentos/mayúsculas) sobre
    `estado_del_procedimiento` y `fase`, más la señal dura `adjudicado="Si"`. Abiertos:
    Presentación de oferta, Convocado, Publicado, Abierto, Recepción de manifestaciones,
@@ -111,12 +112,16 @@ consulta** (defensa en profundidad: corpus previo al despliegue + cerrados que e
    fases desconocidas» de la era anterior no existe en esta base de código.
 3. **Objeto válido** — blacklist semántica (caninos, PAE, dotación, seguros, software…), clase
    UNSPSC en el RUP del perfil (o mapeo textual de obra si no declara UNSPSC) y la **capa
-   anti-suministro**: si TODAS las clases declaradas son de segmentos de bienes (30 materiales,
-   39 eléctricos, 43 TI, 48 equipos, 56 mobiliario) y el objeto se redacta como compra
-   («suministro/adquisición/compra/dotación/entrega de…») sin ningún verbo de obra
-   (construcción, instalación, montaje, mantenimiento, adecuación…), es una compra de bienes
-   disfrazada y se descarta. Un solo código de segmento de obra (72, 77, 81, 95…) ancla el
-   proceso y desactiva la capa.
+   anti-suministro**: si TODAS las clases declaradas son de **segmentos UNSPSC de bienes**
+   (10–60: materiales 30, tubería 40, herramientas 27, eléctricos 39, TI 43, equipos 48,
+   mobiliario 56…) y el objeto se redacta como compra («suministro(s)/adquisición/compra/
+   compraventa/dotación/entrega de…») sin ningún verbo de obra (construcción, instalación,
+   montaje, mantenimiento, adecuación…), es una compra de bienes disfrazada y se descarta. Un
+   solo código de segmento de obra/servicios (≥70: 72 construcción, 77 ambiental, 81
+   ingeniería, 95 terrenos…) ancla el proceso y desactiva la capa. La revisión adversarial
+   demostró que enumerar solo 30/39/43/48/56 dejaba servida la «compraventa de tubería PVC»
+   (segmento 40, el bloque de bienes más grande del RUP de Génesis) — por eso el corte
+   generalizado en 70.
 
 Nota de entorno: este repositorio de desarrollo no alcanza `datos.gov.co` (allowlist del proxy),
 así que los valores de estado/modalidad no se muestrearon en vivo; de ahí la normalización
@@ -225,6 +230,10 @@ barato en reposo y auto-limitado por el candado).
    reintenta sola; la full avanza en tandas de 45 s **auto-encadenadas** hasta terminar.
 2. **Cron de Vercel** (`vercel.json`): `/api/sync` diario a las 08:30 UTC en modo `auto`.
 3. **Cada visita** con datos de más de 5 min dispara un `delta` (segundos, pocas filas).
+4. **Full de higiene mensual**: en modo `auto`, una `last_full` con más de 30 días fuerza recarga
+   completa. Acota la deriva que el delta no puede reflejar (procesos guardados cuya
+   modalidad/objeto mutó a inválido — limitación documentada de `conservarCerradas` — y filas
+   guardadas por reglas anteriores a un despliegue).
 
 ## Frontend
 

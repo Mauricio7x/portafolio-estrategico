@@ -93,7 +93,9 @@ function generarDataset() {
         f.nombre_del_procedimiento = `Prestación de servicios de salud ocupacional ${n}`;
         f.descripci_n_del_procedimiento = "Servicios integrales de salud para funcionarios";
         f.codigo_principal_de_categoria = "V1.85101500"; // solo RUP Génesis
-        f.porcentaje_de_anticipo = "25";
+        // mitad con anticipo declarado BAJO el mínimo típico (10 < 25): el
+        // filtro anticipo_min debe excluirlos de verdad, no vacuamente
+        f.porcentaje_de_anticipo = i % 20 === 4 ? "10" : "25";
       } else if (tipo === 5) {
         f.nombre_del_procedimiento = `Adecuación de la sede educativa vereda ${n}`;
         f.descripci_n_del_procedimiento = "Remodelación y reforzamiento del aula múltiple"; // obra por TEXTO
@@ -113,12 +115,16 @@ function generarDataset() {
         // tipo 9: pareja ANTI-SUMINISTRO con el mismo código de mobiliario
         // (segmento 56, presente en el RUP de Helder): la compra pura debe
         // filtrarse; la instalación/montaje (verbo de obra) debe pasar.
-        // Reparto por paridad del MES (n siempre es múltiplo de 10 aquí, e
-        // i ≡ 9 mod 10 fijaría la cuantía: el mes varía ambas cosas).
+        // Reparto por paridad de la DECENA de i → ambos casos existen en
+        // TODOS los meses (también si la suite corre en enero). La compra
+        // pura lleva cuantía 180 M a propósito: abierta, competitiva y
+        // dentro del K de todos — si la capa fallara, SÍ se serviría (la
+        // aserción negativa no puede pasar por razones ajenas a la capa).
         f.codigo_principal_de_categoria = "V1.56112000";
-        if (parseInt(mes.slice(5), 10) % 2 === 0) {
+        if (Math.floor((i - 9) / 10) % 2 === 1) {
           f.nombre_del_procedimiento = `Suministro de mobiliario escolar ${n}`;
           f.descripci_n_del_procedimiento = "Compra de pupitres y sillas para sedes educativas";
+          f.precio_base = "180000000";
         } else {
           f.nombre_del_procedimiento = `Instalación y montaje de mobiliario para aulas ${n}`;
           f.descripci_n_del_procedimiento = "Instalación de mobiliario escolar con obras de adecuación menores";
@@ -357,6 +363,8 @@ async function main() {
       ["Contratación régimen especial", false],
       ["Licitación privada", false],
       ["Solicitud de información a los Proveedores", false],
+      ["Enajenación de bienes con Subasta", false], // venta de activos, no obra
+      ["Enajenación de bienes con Sobre Cerrado", false],
       ["", false],                                           // sin dato = fuera
       ["Modalidad desconocida", false],
     ];
@@ -367,23 +375,37 @@ async function main() {
     console.log(`· unidad modalidades: ${casos.length} clasificaciones correctas (lista blanca)`);
   }
 
-  /* unidad: capa anti-suministro sobre segmentos de bienes */
+  /* unidad: capa anti-suministro sobre segmentos de bienes. Cada caso se
+     evalúa contra un perfil cuyo RUP SÍ contiene la clase — así el rechazo
+     solo puede venir de la capa (se verifica anti_suministro como causa). */
   {
-    const H = PERFILES.helder;
-    const casos = [
-      // compra pura con código de mobiliario (segmento 56) → fuera
-      [{ nombre_del_procedimiento: "Suministro de mobiliario escolar", descripci_n_del_procedimiento: "Compra de pupitres", codigo_principal_de_categoria: "V1.56112000" }, false],
-      [{ nombre_del_procedimiento: "Adquisición de equipos de cómputo", descripci_n_del_procedimiento: "Compra de estaciones", codigo_principal_de_categoria: "V1.43211700" }, false],
+    const casos = [ // [licitación, perfil con la clase en su RUP, ¿pasa?]
+      // compra pura con el quinteto vigilado histórico (56, 43) → fuera
+      [{ nombre_del_procedimiento: "Suministro de mobiliario escolar", descripci_n_del_procedimiento: "Compra de pupitres", codigo_principal_de_categoria: "V1.56112000" }, "helder", false],
+      [{ nombre_del_procedimiento: "Adquisición de equipos de cómputo", descripci_n_del_procedimiento: "Compra de estaciones", codigo_principal_de_categoria: "V1.43211700" }, "helder", false],
+      // segmentos de bienes FUERA del quinteto histórico 30/39/43/48/56:
+      // tubería (40, el bloque más grande del RUP de Génesis) y herramientas (27)
+      [{ nombre_del_procedimiento: "Suministro de tubería y accesorios en PVC", descripci_n_del_procedimiento: "Para la red de acueducto municipal", codigo_principal_de_categoria: "V1.40171500" }, "genesis", false],
+      [{ nombre_del_procedimiento: "Adquisición de herramientas menores", descripci_n_del_procedimiento: "Ferretería para la entidad", codigo_principal_de_categoria: "V1.27111500" }, "genesis", false],
+      // redacciones reales de compra: "compraventa de" y plurales
+      [{ nombre_del_procedimiento: "Compraventa de equipos de cómputo", descripci_n_del_procedimiento: "Para las sedes educativas", codigo_principal_de_categoria: "V1.43211700" }, "helder", false],
+      [{ nombre_del_procedimiento: "Suministros de mobiliario escolar", descripci_n_del_procedimiento: "Pupitres y sillas", codigo_principal_de_categoria: "V1.56112000" }, "helder", false],
       // mismo segmento pero con verbo de obra → pasa
-      [{ nombre_del_procedimiento: "Instalación y montaje de mobiliario", descripci_n_del_procedimiento: "Con obras de adecuación", codigo_principal_de_categoria: "V1.56112000" }, true],
+      [{ nombre_del_procedimiento: "Instalación y montaje de mobiliario", descripci_n_del_procedimiento: "Con obras de adecuación", codigo_principal_de_categoria: "V1.56112000" }, "helder", true],
+      [{ nombre_del_procedimiento: "Suministro e instalación de tubería PVC", descripci_n_del_procedimiento: "Optimización de la red de acueducto", codigo_principal_de_categoria: "V1.40171500" }, "genesis", true],
       // código de obra (72) ancla el proceso aunque haya verbo de compra → pasa
-      [{ nombre_del_procedimiento: "Construcción de aula y suministro de materiales", descripci_n_del_procedimiento: "Obra e insumos", codigo_principal_de_categoria: "V1.72141000 V1.30111500" }, true],
+      [{ nombre_del_procedimiento: "Construcción de aula y suministro de materiales", descripci_n_del_procedimiento: "Obra e insumos", codigo_principal_de_categoria: "V1.72141000 V1.30111500" }, "helder", true],
     ];
-    for (const [lic, esperado] of casos) {
-      assert.strictEqual(filtros.objeto_valido(lic, H), esperado,
-        `objeto_valido(«${lic.nombre_del_procedimiento}») esperaba ${esperado}`);
+    for (const [lic, perfilId, esperado] of casos) {
+      const ev = filtros.evaluarObjeto(lic, PERFILES[perfilId]);
+      assert.strictEqual(ev.ok, esperado,
+        `objeto_valido(«${lic.nombre_del_procedimiento}», ${perfilId}) esperaba ${esperado} (motivo: ${ev.motivo})`);
+      if (!esperado) {
+        assert.strictEqual(ev.anti_suministro, true,
+          `«${lic.nombre_del_procedimiento}» debía caer por la CAPA anti-suministro, cayó por: ${ev.motivo}`);
+      }
     }
-    console.log(`· unidad anti-suministro: ${casos.length} casos correctos (segmentos de bienes)`);
+    console.log(`· unidad anti-suministro: ${casos.length} casos correctos (segmentos de bienes, causa verificada)`);
   }
 
   /* unidad: capacidad — fórmula única, escalas de la Guía y consorcio */
@@ -556,6 +578,15 @@ async function main() {
       assert.ok(l.anticipo_pct === 0 || l.anticipo_pct >= 25, `anticipo declarado bajo el mínimo: ${l.anticipo_pct}`);
       assert.strictEqual(rup_valido(l, "genesis"), true, "filtro RUP génesis no aplicado");
     }
+    // el filtro de anticipo muerde de verdad: los declarados al 10 % existen
+    // en el corpus (visibles con mínimo 5) y desaparecen con mínimo 25
+    {
+      const conMin5 = await todasLasOportunidades("perfil=genesis&anticipo_min=5");
+      assert.ok(conMin5.some((l) => l.anticipo_pct === 10), "faltan los anticipos del 10 % en el corpus");
+      const conMin25 = await todasLasOportunidades("perfil=genesis&anticipo_min=25");
+      assert.ok(!conMin25.some((l) => l.anticipo_pct === 10), "anticipo_min=25 no excluyó los declarados al 10 %");
+      assert.ok(conMin25.length < conMin5.length, "anticipo_min=25 debía excluir filas frente a anticipo_min=5");
+    }
     for (let i = 1; i < cG.resultados.length; i++) {
       assert.ok(cG.resultados[i - 1].puntaje_ponderado >= cG.resultados[i].puntaje_ponderado, "orden por puntaje roto");
     }
@@ -572,8 +603,17 @@ async function main() {
       for (const l of rJ.cuerpo.resultados) {
         assert.strictEqual(rup_valido(l, "juntos"), true, "filtro RUP del consorcio no aplicado");
       }
-      // el consorcio (K = suma de integrantes) alcanza procesos que Helder solo no
-      assert.ok(rJ.cuerpo.total >= cH.total, "el consorcio no puede ver menos que Helder");
+      // el consorcio (K = suma de integrantes, tope 11 000 SMMLV) ALCANZA
+      // procesos que NINGÚN integrante puede tomar solo: las obras de 9 000 M
+      // superan el tope de Helder (7 004 M) y el de Génesis (3 502 M)
+      const todasJ = await todasLasOportunidades("perfil=juntos");
+      const soloConsorcio = todasJ.filter((l) => l.cuantia_cop > 7.1e9);
+      assert.ok(soloConsorcio.length > 0, "faltan las obras grandes que solo el consorcio alcanza");
+      for (const l of soloConsorcio.slice(0, 3)) {
+        assert.strictEqual(rup_valido(l, "helder"), false, "una obra de 9 000 M no puede ser viable para Helder solo");
+        assert.strictEqual(rup_valido(l, "genesis"), false, "una obra de 9 000 M no puede ser viable para Génesis sola");
+      }
+      assert.ok(todasJ.length >= cH.total, "el consorcio no puede ver menos que Helder");
     }
 
     /* d'. delta: fila nueva + cambio de estado (reemplazo) */
@@ -596,12 +636,18 @@ async function main() {
         urlproceso: { url: "https://community.secop.gov.co/x" },
       });
       // elegir una fila que SÍ está guardada y listada (obra, competitiva,
-      // sin blacklist) — así el reemplazo por :updated_at se prueba de verdad
+      // sin blacklist, cuantía dentro del K de Helder) y VERIFICAR su
+      // presencia ANTES del cambio — sin eso, la aserción de ausencia
+      // posterior podría pasar vacuamente
       const abierta = ds.find((f) => f.estado_del_procedimiento === "Publicado"
         && f.codigo_principal_de_categoria === "V1.72141000"
         && /^Construcción/.test(f.nombre_del_procedimiento)
         && /Licitación pública/.test(f.modalidad_de_contratacion)
+        && parseFloat(f.precio_base) < 1e9
         && !f.id_del_proceso.includes("NUEVA"));
+      const antes = await todasLasOportunidades("perfil=helder");
+      assert.ok(antes.some((l) => l.id_del_proceso === abierta.id_del_proceso),
+        "la fila elegida para adjudicar debía estar listada ANTES del delta");
       abierta.estado_del_procedimiento = "Adjudicado";
       abierta[":updated_at"] = new Date().toISOString();
 

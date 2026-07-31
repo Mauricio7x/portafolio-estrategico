@@ -53,8 +53,15 @@ lo muestra tras un gate con clave. La versión anterior (un `index.html` monolí
   prefijo con la fase «Selección», que es justo donde se reciben ofertas.
 - **Modalidad por lista blanca**: Contratación Directa (incluida «(con ofertas)») y Licitación
   Privada fuera; Régimen Especial fuera SALVO «(con ofertas)»; desconocida → fuera.
-- **Capa anti-suministro**: clases de segmentos de bienes (30/39/43/48/56) + verbo de compra sin
-  verbo de obra = compra disfrazada → fuera. Un código de segmento de obra ancla el proceso.
+- **Capa anti-suministro**: clases SOLO de segmentos de bienes + verbo de compra sin verbo de
+  obra = compra disfrazada → fuera. El corte de «bienes» es TODO segmento UNSPSC < 70 (no la
+  lista 30/39/43/48/56: eso dejaba servida la «compraventa de tubería PVC», segmento 40, el
+  bloque más grande del RUP de Génesis). Un código ≥ 70 (obra/servicios) ancla el proceso.
+  Y «Enajenación de bienes con Subasta» se excluye ANTES de que la lista blanca vea «subasta».
+- **Full de higiene mensual** (modo auto, `FULL_HIGIENE_MS`): el delta no puede reflejar
+  mutaciones de modalidad/objeto de procesos ya guardados (los descarta y la versión vieja
+  quedaría congelada); la full mensual acota esa deriva. Tumbas por descartado costarían
+  demasiado Redis — decisión consciente.
 - **Consorcio: dos reglas distintas a propósito** — indicadores habilitantes ponderados 50/50
   (D. 1082), pero K del plural = SUMA de las CRP de los integrantes (Guía CCE). No «promediar» K.
 - **NIT en null**: no consta en el repositorio; jamás inventarlo. CT de Génesis = 3 (estimado

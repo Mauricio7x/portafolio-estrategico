@@ -55,6 +55,11 @@ const PRESUPUESTO_MAX_MS = 240000;
 const SOLAPE_DELTA_MS = 48 * 3600e3;
 const FRESCO_MS = 5 * 60e3;            // <5 min → no-op en modo auto
 const COMPACTAR_TRAS_CHUNKS = 25;
+// Full de higiene mensual: acota TODA deriva del corpus que el delta no puede
+// reflejar — la limitación documentada de conservarCerradas (un proceso ya
+// guardado cuya modalidad/objeto MUTA a inválido se descarta del delta y su
+// versión vieja quedaría congelada) y los cambios de reglas tras un despliegue.
+const FULL_HIGIENE_MS = 30 * 24 * 3600e3;
 
 /* ---------- proyección: lo que la app necesita, nada más ---------- */
 const CAMPOS = [
@@ -65,6 +70,10 @@ const CAMPOS = [
   "estado_del_procedimiento", "fase", "adjudicado", "fecha_de_publicacion_del", "precio_base",
   "duracion", "unidad_de_duracion", "codigo_principal_de_categoria",
   "categorias_adicionales", "tipo_de_contrato",
+  // candidatas de anticipo declarado (lib/negocio.ANTICIPO_CAMPOS): p6dx-8zbt
+  // no las trae HOY, pero si la fuente las añade no pueden morir en la
+  // proyección — sin esto el anticipo declarado jamás llegaría a enriquecer()
+  "porcentaje_de_anticipo", "anticipo_porcentaje", "porcentaje_anticipo", "pct_anticipo", "anticipo",
   "respuestas_al_procedimiento", "conteo_de_respuestas_a_ofertas", "proveedores_unicos_con",
 ];
 function proyectar(fila) {
@@ -88,7 +97,13 @@ function proyectar(fila) {
 
 /* Cascada de filtros (ver cabecera) → enriquecimiento de negocio.
    conservarCerradas=true SOLO en el delta: los cambios a estado cerrado deben
-   guardarse para REEMPLAZAR (dedup :updated_at) la versión abierta previa. */
+   guardarse para REEMPLAZAR (dedup :updated_at) la versión abierta previa.
+   Limitación asumida: si a un proceso YA guardado le muta la modalidad o el
+   objeto hacia algo inválido (rarísimo en SECOP II: la modalidad es identidad
+   del proceso y el objeto solo cambia por adenda), el delta lo descarta y la
+   versión vieja persiste hasta la full de higiene mensual (FULL_HIGIENE_MS),
+   que la purga. Guardar tumbas para todo descartado del delta (~miles/día)
+   reventaría el presupuesto de Redis: decisión consciente, no descuido. */
 function transformar(filas, { conservarCerradas = false } = {}) {
   const out = [];
   for (const fila of filas) {
@@ -225,19 +240,17 @@ async function extraerFull(redis, socrata, { presupuestoMs, reiniciar }) {
   p.terminado = true;
   await escribirJSON(redis, CLAVES.progreso, p);
 
-  // purgar meses que salieron de la ventana (cambio de año) para no acumular
-  // particiones muertas en Redis para siempre
+  // purgar TODO mes fuera de la ventana vigente, descubierto por SCAN — no
+  // por meta.porMes: un mes creado solo por deltas (la full corrió en marzo y
+  // el delta escribió abril) no figura en meta y sus chunks quedarían
+  // servidos para siempre tras el cambio de año
   const meta = (await leerJSON(redis, CLAVES.meta)) || {};
-  for (const mesViejo of Object.keys(meta.porMes || {})) {
-    if (mesViejo in p.porMes) continue;
-    const man = await leerJSON(redis, CLAVES.manifest(mesViejo));
-    if (man) {
-      const ks = [];
-      for (let i = 0; i < man.sig; i++) ks.push(CLAVES.chunk(mesViejo, i));
-      if (ks.length) await redis.del(...ks);
-    }
-    await redis.del(CLAVES.manifest(mesViejo));
-  }
+  const clavesMes = await redis.scan(CLAVES.patronMeses);
+  const muertas = clavesMes.filter((k) => {
+    const m = k.match(/^licitaciones:mes:(\d{4}-\d{2}):/);
+    return m && !(m[1] in p.porMes);
+  });
+  for (let i = 0; i < muertas.length; i += 50) await redis.del(...muertas.slice(i, i + 50));
 
   const totalGuardadas = Object.values(p.porMes).reduce((a, m) => a + m.guardadas, 0);
   const totalLeidas = Object.values(p.porMes).reduce((a, m) => a + m.leidas, 0);
@@ -365,9 +378,10 @@ module.exports = async function handler(req, res) {
       const meta = (await leerJSON(redis, CLAVES.meta)) || {};
       if (progreso && progreso.tipo === "full" && !progreso.terminado) {
         r = await extraerFull(redis, socrata, { presupuestoMs, reiniciar: false });
-      } else if (!meta.last_full || meta.ano !== anoVigente()) {
-        // sin carga inicial O cambio de año (la ventana vigente es otra):
-        // recarga completa — el delta solo cubre el año en curso
+      } else if (!meta.last_full || meta.ano !== anoVigente()
+          || Date.now() - Date.parse(meta.last_full) > FULL_HIGIENE_MS) {
+        // sin carga inicial, cambio de año (la ventana vigente es otra) o
+        // full con más de un mes: recarga completa (higiene del corpus)
         r = await extraerFull(redis, socrata, { presupuestoMs, reiniciar: true });
       } else if (Date.now() - Date.parse(meta.last_sync || 0) > FRESCO_MS) {
         r = await extraerDelta(redis, socrata, { presupuestoMs });

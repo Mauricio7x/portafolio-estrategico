@@ -36,7 +36,7 @@
 const { crearRedis, hayCredenciales } = require("../lib/redis.js");
 const { CLAVES, descomprimir, leerJSON } = require("../lib/almacen.js");
 const { PERFILES, ALIAS_PERFIL, rup_valido, evaluarRup } = require("../lib/rup.js");
-const { modalidad_competitiva } = require("../lib/filtros.js");
+const { modalidad_competitiva, estado_abierto } = require("../lib/filtros.js");
 
 const POR_PAGINA_DEFAULT = 20, POR_PAGINA_MAX = 100;
 const ANTICIPO_MIN_DEFAULT = 20;
@@ -54,13 +54,16 @@ const logDev = (...a) => { if (DEV) console.log("[oportunidades]", ...a); };
 let _mem = { sello: null, filas: null };
 
 async function cargarCorpus(redis, meta) {
-  const sello = meta && meta.last_sync ? `${meta.last_sync}|${meta.last_full}` : null;
+  // el SCAN corre siempre (1 comando barato); el sello incluye el nº de
+  // chunks para que una compactación/poda concurrente (que cambia el conteo)
+  // invalide una memoización tomada a mitad de la maniobra
+  const claves = await redis.scan(CLAVES.patronChunks);
+  if (!claves.length) return null;
+  const sello = meta && meta.last_sync ? `${meta.last_sync}|${meta.last_full}|${claves.length}` : null;
   if (sello && _mem.sello === sello && _mem.filas) {
     logDev(`corpus desde memoria caliente (${_mem.filas.length} filas)`);
     return _mem.filas;
   }
-  const claves = await redis.scan(CLAVES.patronChunks);
-  if (!claves.length) return null;
   const porClave = new Map();
   for (let i = 0; i < claves.length; i += 8) {
     const lote = await redis.mget(claves.slice(i, i + 8));
@@ -132,7 +135,10 @@ module.exports = async function handler(req, res) {
 
   let lista = filas.filter((l) => {
     if (!modalidad_competitiva(l)) return false; // defensa: corpus previo al filtro
-    if (soloAbiertas && !l.proceso_abierto) return false;
+    // proceso_abierto viene sellado de la sincronización, pero se RE-CLASIFICA
+    // aquí: filas guardadas por versiones anteriores (con clasificador
+    // optimista) no deben servirse como abiertas hasta la próxima full
+    if (soloAbiertas && !(l.proceso_abierto && estado_abierto(l))) return false;
     // anticipo 0 = "no declarado" (el dataset no trae la columna): pasa el
     // filtro pero puntúa 0; solo se excluye el anticipo declarado bajo mínimo
     if (anticipoMin > 0 && l.anticipo_pct > 0 && l.anticipo_pct < anticipoMin) return false;
