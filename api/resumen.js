@@ -13,13 +13,23 @@
    departamentos están, cuántos se caen por capacidad K.
 
    REGLA DE ORO — los números tienen que ser LOS MISMOS que ve la app.
-   Por eso este endpoint NO reimplementa la cascada: llama a `evaluarRup`
-   (lib/rup → lib/filtros), lee el corpus con `leerChunksDedup` y aplica el
-   mismo `anticipo_min` por defecto y el mismo «solo abiertas» que
-   /api/oportunidades. Hay una prueba que compara `totales.visibles` contra el
-   `total` de /api/oportunidades con el mismo perfil: si divergieran, el
-   dashboard sería un segundo cálculo, y un segundo cálculo siempre acaba
-   contradiciendo al primero.
+   Por eso este endpoint NO reimplementa la cascada ni la copia: llama a la
+   MISMA función que /api/oportunidades, `lib/filtros.filtrarProcesosVisibles`.
+   Hasta ago 2026 eran dos copias idénticas —con pruebas de que los totales
+   coincidían—, pero «idénticas hoy» no es una garantía: dos copias divergen a
+   la primera corrección que se aplique a una sola, y el día que divergieran el
+   panel y la app se contradirían sin que nada fallara. Con una sola
+   implementación no hay nada que sincronizar.
+
+   Hay una prueba que compara `totales.visibles` contra el `total` de
+   /api/oportunidades y contra el `embudo.visibles` de /api/diagnostico; y el
+   propio endpoint publica su verificación cruzada en `integridad`.
+
+   LOS DESTACADOS son otra cosa: sobre los visibles aplican CUATRO filtros más
+   (cerrado explícito, «Verificar objeto», objetos de estructuración y cuantía
+   cero). La lista corta es una RECOMENDACIÓN —«empiece por aquí»— y puede ser
+   más exigente que el listado; lo que aparta lo CUENTA en
+   `destacados_descartados` y nunca toca `totales.visibles`.
 
    Diferencia con /api/diagnostico, que también recorre el embudo: el
    diagnóstico responde «¿POR QUÉ no salen más?» (contrafactuales, ejemplos,
@@ -42,9 +52,11 @@
 const { crearRedis, hayCredenciales } = require("../lib/redis.js");
 const { autorizarToken } = require("../lib/auth.js");
 const { CLAVES, RESUMEN_TTL_SEG, leerChunksDedup, leerJSON, leerJSONComprimido } = require("../lib/almacen.js");
-const { PERFILES, ALIAS_PERFIL, SMMLV, idCanonico, recargarPerfiles } = require("../lib/perfiles.js");
-const { evaluarRup } = require("../lib/rup.js");
-const { modalidad_competitiva, estado_abierto, norm } = require("../lib/filtros.js");
+const { PERFILES, ALIAS_PERFIL, recargarPerfiles } = require("../lib/perfiles.js");
+const {
+  filtrarProcesosVisibles, descartesVacios, estado_cerrado,
+  TERMINOS_ESTRUCTURACION, norm,
+} = require("../lib/filtros.js");
 const { leerIndice, leerIndiceMeta, competenciaDe } = require("../lib/indice_competencia.js");
 const { leerEquivalencias, leerEquivalenciasMeta } = require("../lib/equivalencias.js");
 const { vocabularioActivo } = require("../lib/texto_unspsc.js");
@@ -86,17 +98,19 @@ const COMPETENCIA = {
    de que el runtime traiga la ICU completa. */
 const numEs = (n) => (n == null ? "?" : String(n).replace(".", ","));
 
+/* MISMA REGLA que public/app.js.bandaCompetencia: un promedio solo se escribe
+   si hay procesos contados, nivel clasificado y promedio. En cualquier otro
+   caso, «Sin datos históricos» y NINGUNA cifra — el conteo sigue disponible
+   como dato (`top_entidades[].procesos_historicos`) y explicado en el modal,
+   pero no dentro de una frase que parece una medición. */
 function badgeCompetencia(c) {
   const nivel = (c && c.nivel) || "sin_dato";
-  const d = COMPETENCIA[nivel] || COMPETENCIA.sin_dato;
-  if (nivel === "sin_dato") {
-    const n = (c && c.total_procesos) || 0;
-    return n > 0
-      ? `${d.emoji} Sin datos suficientes de esta entidad (${n} proceso${n === 1 ? "" : "s"} en 2 años)`
-      : `${d.emoji} ${d.titulo}`;
-  }
-  const n = c.total_procesos || 0;
-  return `${d.emoji} ${d.titulo} — promedio ${numEs(c.promedio_oferentes)} oferentes en ${n} proceso${n === 1 ? "" : "s"}`;
+  const procesos = Number(c && c.total_procesos) || 0;
+  const promedio = c && c.promedio_oferentes != null ? Number(c.promedio_oferentes) : null;
+  const conBase = procesos > 0 && nivel !== "sin_dato" && promedio != null && !isNaN(promedio);
+  const d = conBase ? (COMPETENCIA[nivel] || COMPETENCIA.sin_dato) : COMPETENCIA.sin_dato;
+  if (!conBase) return `${d.emoji} ${d.titulo}`;
+  return `${d.emoji} ${d.titulo} — promedio ${numEs(promedio)} oferentes en ${procesos} proceso${procesos === 1 ? "" : "s"}`;
 }
 
 /* ---------- normalización de valores del dataset ---------- */
@@ -219,7 +233,12 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({
         ok: true, perfil: perfilId, generado: new Date().toISOString(), ttl_segundos: RESUMEN_TTL_SEG,
         mensaje: "Sin datos. Ejecute /api/sync?modo=full primero.",
-        totales: totalesVacios(), descartes: {}, top_entidades: [], procesos_destacados: [],
+        // la MISMA forma que la respuesta normal, con ceros: el panel no tiene
+        // que distinguir dos contratos según haya corpus o no
+        totales: totalesVacios(), descartes: descartesVacios(),
+        top_entidades: [], procesos_destacados: [],
+        destacados_descartados: { cerrados: 0, verificar_objeto: 0, estructuracion: 0, sin_cuantia: 0 },
+        integridad: { ok: true, avisos: [] },
         sincronizado: meta ? meta.last_sync : null, cache: false, duracion_ms: Date.now() - t0,
       });
     }
@@ -243,42 +262,22 @@ module.exports = async function handler(req, res) {
     return res.status(503).json({ ok: false, error: "Servicio de caché no disponible", retry_en_segundos: 60, detalle: e.message });
   }
 
-  /* ---------- paso 3 · la cascada, en el mismo orden que la consulta ---------- */
-  const descartes = {
-    fuera_modalidad: 0, fuera_estado: 0, fuera_convenio: 0, fuera_blacklist: 0,
-    fuera_unspsc: 0, fuera_sin_unspsc_ni_obra: 0, fuera_objeto_generico: 0,
-    fuera_no_pertinente: 0, fuera_texto_debil: 0, fuera_anti_suministro: 0,
-    fuera_capacidad_k: 0, fuera_tope_estrategico: 0, fuera_anticipo: 0,
-  };
-  const PASO_A_DESCARTE = {
-    convenio: "fuera_convenio", blacklist: "fuera_blacklist", unspsc: "fuera_unspsc",
-    sin_unspsc_ni_obra: "fuera_sin_unspsc_ni_obra", objeto_generico: "fuera_objeto_generico",
-    no_pertinente: "fuera_no_pertinente", texto_debil: "fuera_texto_debil",
-    anti_suministro: "fuera_anti_suministro",
-  };
+  /* ---------- paso 3 · LA CASCADA ----------
+     ES LA MISMA FUNCIÓN que llama /api/oportunidades, no una copia:
+     lib/filtros.filtrarProcesosVisibles. Los defaults (solo abiertas,
+     anticipo_min = 20, ruta de texto débil cerrada) son los del endpoint de
+     consulta sin ningún filtro marcado, que es justamente el conjunto que el
+     panel debe describir. Mientras las dos llamadas usen esta función, los
+     números NO PUEDEN divergir: no hay dos implementaciones que mantener. */
+  const cascada = filtrarProcesosVisibles(filas, perfilId, conocimiento);
+  const descartes = cascada.descartes;
+  const baseCapacidad = cascada.capacidad.base;
+  const superanK = cascada.capacidad.superan_k;
+  const noSuperanK = cascada.capacidad.no_superan_k;
 
-  const visibles = [];
-  let baseCapacidad = 0, superanK = 0, noSuperanK = 0;
-  const topeCop = perfil.topeSMMLV * SMMLV;
-
-  for (const l of filas) {
-    if (!modalidad_competitiva(l)) { descartes.fuera_modalidad++; continue; }
-    if (!(l.proceso_abierto && estado_abierto(l))) { descartes.fuera_estado++; continue; }
-    const rup = evaluarRup(l, perfilId, conocimiento);
-    if (rup.paso) { descartes[PASO_A_DESCARTE[rup.paso] || "fuera_unspsc"]++; continue; }
-
-    // el objeto pasó: aquí sí tiene sentido preguntar por la capacidad
-    baseCapacidad++;
-    if (!rup.capacidad_ok) {
-      if ((l.cuantia_cop || 0) > topeCop) descartes.fuera_tope_estrategico++;
-      else { descartes.fuera_capacidad_k++; noSuperanK++; }
-      continue;
-    }
-    superanK++;
-    if (l.anticipo_pct > 0 && l.anticipo_pct < ANTICIPO_MIN_DEFAULT) { descartes.fuera_anticipo++; continue; }
-
-    visibles.push({ l, rup, comp: competenciaDe(indice, l) });
-  }
+  const visibles = cascada.visibles.map((l) => ({
+    l, rup: cascada.veredictos.get(l), comp: competenciaDe(indice, l),
+  }));
 
   /* ---------- paso 4 · agregaciones (una sola pasada) ---------- */
   const totales = totalesVacios();
@@ -380,9 +379,39 @@ module.exports = async function handler(req, res) {
      Primero los de entidades con POCA competencia (ahí es donde se gana). Si el
      histórico aún no se ha descargado NADIE tiene nivel "baja", y una tabla
      vacía para siempre no informa: en ese caso se cae al mismo orden por
-     atractividad que usa la app y se DICE cuál de los dos criterios se aplicó. */
-  const conCuantia = visibles.filter((v) => (v.l.cuantia_cop || 0) > 0
-    && (v.rup.pertinencia && v.rup.pertinencia.tipo) !== "indeterminado");
+     atractividad que usa la app y se DICE cuál de los dos criterios se aplicó.
+
+     CUATRO FILTROS ADICIONALES sobre los visibles (ago 2026, defecto real: el
+     panel encabezaba con «seleccionar accionista para constituir una sociedad
+     de economía mixta» y con procesos ya adjudicados). Esta lista es una
+     RECOMENDACIÓN —«empiece por aquí»— y por eso puede ser más exigente que el
+     listado completo: un falso positivo en el puesto 1 del panel cuesta más que
+     uno en la página 4 de la app. Ninguno de los cuatro toca `totales.visibles`:
+     los procesos siguen estando en /api/oportunidades, con su tarjeta y su
+     veredicto delante, que es donde el dueño puede juzgarlos.
+
+       a. estado explícitamente CERRADO (adjudicado, desierto, cancelado…).
+          La cascada ya exige `estado_abierto`, así que esto no debería llegar a
+          disparar nunca; se comprueba igual porque es la afirmación más fuerte
+          que hace el panel («preséntese a esto») y porque una fila del corpus
+          puede haber cerrado en SECOP II sin que el delta lo haya traído aún.
+          OJO: si la fuente todavía dice «Presentación de ofertas», NINGÚN
+          filtro puede saberlo — eso solo lo arregla una sincronización.
+       b. pertinencia «Verificar objeto»: un 🟡 no puede encabezar nada.
+       c. objeto de ESTRUCTURACIÓN (accionista, socio estratégico, APP,
+          concesión…): son procesos reales y competitivos, pero lo que buscan es
+          un socio que ponga capital, no un constructor.
+       d. cuantía > 0: sin cifra no hay nada que ordenar ni que decidir. */
+  const descartadosDestacados = { cerrados: 0, verificar_objeto: 0, estructuracion: 0, sin_cuantia: 0 };
+  const conCuantia = visibles.filter((v) => {
+    if (estado_cerrado(v.l)) { descartadosDestacados.cerrados++; return false; }
+    if ((v.rup.pertinencia && v.rup.pertinencia.tipo) === "indeterminado") { descartadosDestacados.verificar_objeto++; return false; }
+    if (TERMINOS_ESTRUCTURACION.test(norm(`${v.l.nombre_del_procedimiento || ""} ${v.l.descripci_n_del_procedimiento || ""}`))) {
+      descartadosDestacados.estructuracion++; return false;
+    }
+    if (!((v.l.cuantia_cop || 0) > 0)) { descartadosDestacados.sin_cuantia++; return false; }
+    return true;
+  });
   const baja = conCuantia.filter((v) => v.comp && v.comp.nivel === "baja");
   const desde = baja.length ? "competencia_baja" : "atractividad";
   const candidatos = baja.length ? baja : conCuantia;
@@ -412,7 +441,43 @@ module.exports = async function handler(req, res) {
     url: l.urlproceso || null,
   }));
 
-  /* ---------- paso 8 · respuesta ---------- */
+  /* ---------- paso 8 · VERIFICACIÓN CRUZADA ----------
+     Comprobación de integridad antes de publicar nada. Con la cascada
+     compartida, `visibles` es por construcción lo que devolvería
+     /api/oportunidades para este perfil sin filtros marcados — pero eso es una
+     afirmación sobre el código, y lo que se publica son NÚMEROS. Aquí se
+     verifican los invariantes que harían falsos esos números:
+
+       · el conteo publicado es exactamente el de la cascada compartida;
+       · cada reparto suma los visibles (nadie se pierde entre cubetas);
+       · descartes + visibles agotan el corpus activo.
+
+     Si algo no cuadra se grita por consola Y viaja en la respuesta: un
+     `console.error` en Vercel lo lee quien mira los logs, y el dueño no mira
+     logs. `integridad.ok=false` es visible desde el propio panel. */
+  const totalDesdeOportunidades = cascada.visibles.length;
+  const avisos = [];
+  if (totales.visibles !== totalDesdeOportunidades) {
+    avisos.push(`INCONSISTENCIA: /api/resumen visibles=${totales.visibles} pero /api/oportunidades devolvería ${totalDesdeOportunidades}`);
+  }
+  const sumaDe = (o) => Object.values(o).reduce((a, b) => a + b, 0);
+  for (const [nombre, reparto] of [
+    ["por_pertinencia", totales.por_pertinencia], ["por_tier_unspsc", totales.por_tier_unspsc],
+    ["por_modalidad", totales.por_modalidad], ["por_rango_cuantia", totales.por_rango_cuantia],
+    ["por_nivel_competencia_entidad", totales.por_nivel_competencia_entidad],
+    ["por_departamento", totales.por_departamento], ["por_urgencia", totales.por_urgencia],
+    ["por_anticipo", totales.por_anticipo],
+  ]) {
+    const s = sumaDe(reparto);
+    if (s !== totales.visibles) avisos.push(`INCONSISTENCIA: totales.${nombre} suma ${s} y los visibles son ${totales.visibles}`);
+  }
+  const cubiertos = sumaDe(descartes) + totales.visibles;
+  if (cubiertos !== filas.length) {
+    avisos.push(`INCONSISTENCIA: descartes + visibles = ${cubiertos} pero el corpus activo tiene ${filas.length} filas`);
+  }
+  for (const a of avisos) console.error(`[resumen] ${a}`);
+
+  /* ---------- paso 9 · respuesta ---------- */
   const cuerpo = {
     ok: true,
     perfil: perfilId,
@@ -426,13 +491,21 @@ module.exports = async function handler(req, res) {
     ...(top_municipios.length ? { top_municipios } : {}),
     procesos_destacados,
     destacados_desde: desde,
+    // por qué un visible no llegó a la lista corta: sin esto, «faltan procesos
+    // en los destacados» solo se puede responder a ojo
+    destacados_descartados: descartadosDestacados,
+    integridad: { ok: avisos.length === 0, avisos },
     indice_competencia: indiceMeta
       ? { construido: indiceMeta.construido, entidades: indiceMeta.clasificadas, min_procesos: indiceMeta.min_procesos }
       : null,
     duracion_ms: Date.now() - t0,
-    como_leerlo: "`totales.visibles` es exactamente el `total` de /api/oportunidades con este perfil. "
+    como_leerlo: "`totales.visibles` es exactamente el `total` de /api/oportunidades con este perfil: los dos "
+      + "endpoints llaman a la MISMA función (lib/filtros.filtrarProcesosVisibles), no a dos copias. "
       + "`descartes` dice en qué paso murió cada proceso del corpus activo (suman el corpus entero con los visibles). "
-      + "`superan_k`/`no_superan_k` se cuentan sobre `base_capacidad` (los que pasaron el juicio del objeto), no sobre los visibles.",
+      + "`superan_k`/`no_superan_k` se cuentan sobre `base_capacidad` (los que pasaron el juicio del objeto), no sobre los visibles. "
+      + "`procesos_destacados` es una recomendación y aplica cuatro filtros MÁS que el listado (cerrados, «Verificar objeto», "
+      + "objetos de estructuración y cuantía 0): por eso `destacados_descartados` existe. "
+      + "`integridad.ok=false` significa que los números de esta respuesta no cuadran entre sí y no hay que creerlos.",
   };
 
   /* ---------- paso 9 · guardar en caché (TTL 300 s) ---------- */

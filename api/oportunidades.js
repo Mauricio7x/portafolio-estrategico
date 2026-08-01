@@ -60,14 +60,15 @@ const { crearRedis, hayCredenciales } = require("../lib/redis.js");
 const { CLAVES, leerChunksDedup, leerJSON, leerJSONComprimido } = require("../lib/almacen.js");
 const { PERFILES, ALIAS_PERFIL, evaluarRup } = require("../lib/rup.js");
 const { recargarPerfiles } = require("../lib/perfiles.js");
-const { modalidad_competitiva, estado_abierto } = require("../lib/filtros.js");
+const { filtrarProcesosVisibles, ANTICIPO_MIN_DEFAULT } = require("../lib/filtros.js");
 const { leerIndice, leerIndiceMeta, competenciaDe } = require("../lib/indice_competencia.js");
 const { leerEquivalencias, leerEquivalenciasMeta } = require("../lib/equivalencias.js");
 const { vocabularioActivo } = require("../lib/texto_unspsc.js");
 const { sinAdjudicacion } = require("../lib/proyeccion.js");
 
 const POR_PAGINA_DEFAULT = 20, POR_PAGINA_MAX = 100;
-const ANTICIPO_MIN_DEFAULT = 20;
+// ANTICIPO_MIN_DEFAULT vive en lib/filtros con el resto de la cascada: el panel
+// tiene que aplicar EXACTAMENTE el mismo default o sus totales no coincidirían.
 /* Puntaje de atractividad: más alto = más probable ganar. Con el orden `desc`
    por defecto, las de competencia baja quedan arriba. */
 const ATRACTIVIDAD = { baja: 3, media: 2, sin_dato: 1, alta: 0 };
@@ -241,31 +242,32 @@ module.exports = async function handler(req, res) {
      y servicios de salud). Ver lib/filtros.evaluarObjeto. */
   const opciones = { incluirTextoDebil: ["1", "true"].includes(String(q.incluir_sin_unspsc)) };
 
-  /* Veredicto del RUP memoizado por fila DENTRO de la petición: el filtro lo
-     necesita para decidir y la página lo necesita para pintar la tarjeta.
-     Calcularlo dos veces duplicaría el trabajo caro de la cascada. */
-  const _rup = new Map();
-  const rupDe = (l) => {
-    let r = _rup.get(l);
-    if (!r) { r = evaluarRup(l, perfil, conocimiento, opciones); _rup.set(l, r); }
-    return r;
-  };
+  /* ---------- LA CASCADA (una sola implementación, en lib/filtros) ----------
+     Modalidad → estado → objeto → capacidad K → tope → anticipo. Vive en
+     lib/filtros.filtrarProcesosVisibles y la llaman TAMBIÉN /api/resumen: si
+     estuviera escrita aquí, el panel tendría que copiarla y las dos copias
+     divergirían a la primera corrección que se aplicara solo a una.
+     El veredicto de cada fila vuelve memoizado (`veredictos`): el filtro lo
+     necesita para decidir y la tarjeta para pintarse; calcularlo dos veces
+     duplicaría el trabajo caro de la cascada. */
+  const { visibles, veredictos } = filtrarProcesosVisibles(filas, perfil, conocimiento, {
+    soloAbiertas, anticipoMin, incluirTextoDebil: opciones.incluirTextoDebil,
+  });
+  const rupDe = (l) => veredictos.get(l) || evaluarRup(l, perfil, conocimiento, opciones);
 
-  let lista = filas.filter((l) => {
-    if (!modalidad_competitiva(l)) return false; // defensa: corpus previo al filtro
-    // proceso_abierto viene sellado de la sincronización, pero se RE-CLASIFICA
-    // aquí: filas guardadas por versiones anteriores (con clasificador
-    // optimista) no deben servirse como abiertas hasta la próxima full
-    if (soloAbiertas && !(l.proceso_abierto && estado_abierto(l))) return false;
-    // anticipo 0 = "no declarado" (el dataset no trae la columna): pasa el
-    // filtro pero puntúa 0; solo se excluye el anticipo declarado bajo mínimo
-    if (anticipoMin > 0 && l.anticipo_pct > 0 && l.anticipo_pct < anticipoMin) return false;
+  /* ---------- estrechamiento por lo que ELIGE quien consulta ----------
+     Estos filtros NO son parte del juicio: son la pantalla del dueño. Por eso
+     van aquí y no dentro de la cascada compartida — si entraran allí,
+     `totales.visibles` del panel dependería de lo que hubiera marcado en los
+     desplegables. Todos son conjunciones, así que el orden no altera el
+     resultado. */
+  let lista = visibles.filter((l) => {
     if (fCuantia && l.cuantia_rango !== fCuantia) return false;
     if (fCompetencia && l.nivel_competencia !== fCompetencia) return false;
     if (fUbicacion !== null && l.ubicacion_valida !== fUbicacion) return false;
     if (fEntidad && compDe(l).nivel !== fEntidad) return false;
     if (fTier && (rupDe(l).tier || "ninguno") !== fTier) return false;
-    return rupDe(l).ok;
+    return true;
   });
 
   /* ---------- orden ---------- */

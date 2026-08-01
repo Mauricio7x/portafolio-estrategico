@@ -537,13 +537,28 @@
     }
     if (!cuerpo.encontrada) { celda.textContent = cuerpo.mensaje || "Sin procesos históricos de esta entidad."; return; }
     const i = cuerpo.indice || {};
+    /* EL CAMPO ES `procesos_contados`, NO `total_procesos`.
+       Aquí nació el «promedio 18,2 oferentes en 0 procesos» que se vio en
+       producción: `/api/competencia-detalle` NUNCA ha devuelto `total_procesos`
+       —ese nombre pertenece al OTRO payload, el `competencia_entidad` que
+       embebe /api/oportunidades— así que `i.total_procesos || 0` valía 0
+       SIEMPRE, con cualquier dato y con cualquier entidad. No era un dato malo:
+       era un campo inexistente leído con un `|| 0` que lo disfrazaba de cero.
+       De ahí la regla: si el conteo no viene, NO se pinta un 0 — se dice que no
+       se sabe. Un `|| 0` sobre un campo ausente convierte «no sé» en «cero», y
+       ese es el error que hay que no repetir. */
+    const contados = Number(i.procesos_contados);
+    const promedio = i.promedio_oferentes == null ? null : Number(i.promedio_oferentes);
+    const conBase = Number.isFinite(contados) && contados > 0 && promedio != null && !isNaN(promedio);
     const lista = (cuerpo.procesos || []).slice(0, 8)
       .map((p) => `<li class="truncate">· ${esc(p.objeto)} — <span class="tabular-nums">${p.numero_ofertas}</span> oferente${p.numero_ofertas === 1 ? "" : "s"}</li>`)
       .join("");
     celda.innerHTML =
       `<p class="font-medium text-gray-700">${esc(cuerpo.entidad)} · nivel ${esc(i.nivel || "sin_dato")}`
-      + ` · promedio ${i.promedio_oferentes == null ? "—" : String(i.promedio_oferentes).replace(".", ",")} oferentes`
-      + ` en ${i.total_procesos || 0} proceso${(i.total_procesos || 0) === 1 ? "" : "s"}</p>`
+      + (conBase
+        ? ` · promedio ${String(promedio).replace(".", ",")} oferentes en ${contados} proceso${contados === 1 ? "" : "s"}`
+        : " · sin procesos que sostengan un promedio")
+      + "</p>"
       + (cuerpo.mensaje ? `<p class="mt-1 text-amber-700">${esc(cuerpo.mensaje)}</p>` : "")
       + (lista ? `<ul class="mt-2 space-y-0.5">${lista}</ul>` : "")
       + `<p class="mt-2 text-gray-400">${(cuerpo.excluidos || []).length} proceso(s) excluidos del promedio, con su motivo, en /api/competencia-detalle.</p>`;

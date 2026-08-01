@@ -56,6 +56,15 @@
         Además: la clase AFÍN pasa a verse por las equivalencias recién
         aprendidas, SIN volver a sincronizar (la promesa de separar ingesta de
         juicio, verificada de punta a punta).
+     Dos defectos de producción quedaron fijados por prueba (ago 2026):
+       · badge «18.2 oferentes en 0 procesos»: el índice publicaba el promedio
+         de entidades que NO se pueden clasificar (<5 procesos). Hay una unidad
+         con 7 registros corruptos o escritos por la versión anterior, y la
+         comprobación de punta a punta sobre una entidad de 3 procesos.
+       · el panel encabezaba con «selección de accionista para constituir una
+         sociedad de economía mixta»: sigue VISIBLE en /api/oportunidades (pasa
+         la cascada con toda razón) y ya no puede encabezar los destacados.
+
      g-bis. /api/resumen (el dashboard): la invariante fuerte es que
         `totales.visibles` es EXACTAMENTE el `total` de /api/oportunidades y el
         `embudo.visibles` del diagnóstico — si divergieran, el panel sería un
@@ -230,7 +239,7 @@ function generarDataset() {
           alcanzaba.
      16.  RUTA DE TEXTO DÉBIL: sin código utilizable y sin vocabulario claro de
           obra. Fuera por defecto; vuelve con ?incluir_sin_unspsc=1. */
-const EXTRAS_POR_MES = 16;
+const EXTRAS_POR_MES = 18;
 const CLASE_AFIN = "80141600";   // fuera de los dos RUP; afín a 72141000 en el histórico
 let _seqExtra = 0;
 function extrasDelMes(mes) {
@@ -346,6 +355,33 @@ function extrasDelMes(mes) {
       // código de servicios educativos: entra a la ingesta (segmento 86) pero
       // NO está en el RUP de Helder, así que el único camino era el texto
       codigo_principal_de_categoria: "V1.86101700",
+    }),
+    /* ---- defecto de producción (ago 2026): lo que encabezaba el panel ---- */
+    base(17, {
+      /* «Seleccionar accionista para constituir una entidad mixta que
+         construya…» PASA la cascada entera con toda razón: es competitivo, tiene
+         un UNSPSC del RUP y su objeto habla de construir. Pero no es un contrato
+         de obra al que este dueño pueda presentarse — se busca un SOCIO que
+         ponga capital. Cuantía alta y entidad de competencia BAJA a propósito:
+         sin el filtro de estructuración, encabeza «los 10 más atractivos».
+         Debe seguir SIENDO VISIBLE en /api/oportunidades (ahí el dueño lo juzga
+         con la tarjeta delante) y NO puede aparecer en los destacados. */
+      nombre_del_procedimiento: `SELECCION DE ACCIONISTA PARA CONSTITUIR UNA SOCIEDAD DE ECONOMIA MIXTA ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Vinculación de un socio estratégico que aporte capital para construir y operar la infraestructura del acueducto municipal",
+      codigo_principal_de_categoria: "V1.72141000",
+      precio_base: "900000000",
+    }),
+    base(18, {
+      /* Obra normal de una entidad con SOLO 3 procesos en el histórico. En el
+         dataset general ALCALDÍA DE IBAGUÉ siempre cae en la cuantía de
+         9 000 M —se va por el tope y nunca se ve—, así que sin esta fila no
+         habría ninguna tarjeta de una entidad por debajo del mínimo y el
+         defecto del badge no se podría comprobar de punta a punta. */
+      entidad: "ALCALDÍA DE IBAGUÉ", ciudad_entidad: "IBAGUÉ",
+      nombre_del_procedimiento: `Construcción de placa huella en zona rural de Ibagué ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Obra civil de placa huella con pavimentación en concreto",
+      codigo_principal_de_categoria: "V1.72141000",
+      precio_base: "300000000",
     }),
   ];
 }
@@ -688,6 +724,13 @@ const invocarPost = (handler, urlStr, body, headers = {}) =>
   invocar(handler, urlStr, { "content-type": "application/json", ...headers }, { metodo: "POST", body });
 
 const escuchar = (server) => new Promise((r) => server.listen(0, "127.0.0.1", () => r(server.address().port)));
+
+/* Quita comentarios de un fuente antes de vigilarlo con expresiones regulares:
+   varios comentarios CITAN a propósito el código defectuoso que explican, y una
+   aserción que no los distinga acaba fallando por la explicación del arreglo. */
+const sinComentarios = (fuente) => String(fuente)
+  .replace(/\/\*[\s\S]*?\*\//g, "")
+  .replace(/^\s*\/\/.*$/gm, "");
 
 /* ════════════════ pruebas ════════════════ */
 async function main() {
@@ -1368,6 +1411,54 @@ async function main() {
     console.log("· unidad índice de competencia: tertiles con empates, mediana, oferentes 0 = sin dato");
   }
 
+  /* unidad: NINGÚN promedio sin base — el defecto «18.2 oferentes en 0 procesos»
+     ------------------------------------------------------------------------
+     `indice:competencia` NO SE PURGA NUNCA (es su razón de ser), así que en
+     producción sigue vivo el hash que escribió una versión anterior. Estos
+     casos son registros CORRUPTOS o VIEJOS metidos a mano: la guarda de
+     `competenciaDe` tiene que neutralizarlos SIN reconstruir el índice, porque
+     reconstruirlo es un paso manual que el dueño puede tardar días en dar. */
+  {
+    const lic = { entidad: "AEROCIVIL" };
+    const clave = filtros.norm("AEROCIVIL");
+    const casos = [
+      ["el defecto reportado: promedio con CERO procesos",
+        { procesos: 0, promedio: 18.2, nivel: "alta" }],
+      ["promedio por debajo del mínimo (índice escrito por la versión anterior)",
+        { procesos: 3, promedio: 18.2, nivel: "sin_dato" }],
+      ["…y aunque la versión vieja lo hubiera clasificado igualmente",
+        { procesos: 3, promedio: 18.2, nivel: "alta" }],
+      ["conteo como CADENA: '0' es truthy y colaba por la guarda anterior",
+        { procesos: "0", promedio: 18.2, nivel: "alta" }],
+      ["nivel corrupto con procesos de sobra: sin clasificación no hay cifra",
+        { procesos: 40, promedio: 18.2, nivel: "altísima" }],
+      ["nivel clasificado pero sin promedio: no se inventa",
+        { procesos: 40, promedio: null, nivel: "alta" }],
+      ["registro con el nombre nuevo del campo (procesos_contados)",
+        { procesos_contados: 3, promedio: 18.2, nivel: "alta" }],
+    ];
+    for (const [que, registro] of casos) {
+      const c = indiceComp.competenciaDe({ [clave]: registro }, lic);
+      assert.strictEqual(c.promedio_oferentes, null, `${que}: se filtró un promedio sin base`);
+      assert.strictEqual(c.nivel, "sin_dato", `${que}: no puede haber nivel sin base`);
+      assert.strictEqual(c.mediana_oferentes, null, `${que}: tampoco la mediana`);
+      assert.ok(typeof c.total_procesos === "number" && !isNaN(c.total_procesos),
+        `${que}: el conteo debe seguir siendo un número (es lo que explica el ⚪)`);
+    }
+    // …y un registro legítimo sigue pasando entero
+    const bueno = indiceComp.competenciaDe({ [clave]: { procesos: 12, promedio: 18.2, mediana: 18, nivel: "alta" } }, lic);
+    assert.deepStrictEqual(bueno, { nivel: "alta", promedio_oferentes: 18.2, mediana_oferentes: 18, total_procesos: 12 },
+      "la guarda no puede llevarse por delante un registro con base suficiente");
+    // el ESCRITOR, además, ya no publica cifras derivadas por debajo del mínimo
+    const pub = indiceComp.registroPublicado({ nombre: "X", nit: null, procesos: 3, oferentes_total: 40, promedio: 13.3, mediana: 13, nivel: "sin_dato" });
+    assert.strictEqual(pub.promedio, null);
+    assert.strictEqual(pub.mediana, null);
+    assert.strictEqual(pub.oferentes_total, null, "publicar la suma permitiría recalcular el promedio anulado");
+    assert.strictEqual(pub.procesos, 3, "el CONTEO sí se publica: es un hecho y explica el ⚪");
+    assert.strictEqual(pub.procesos_contados, 3, "alias para quien lea el campo por su nombre largo");
+    console.log(`· unidad badge sin base: ${casos.length} registros corruptos o viejos neutralizados sin reconstruir el índice`);
+  }
+
   async function limpiarRedis() {
     const claves = [
       ...(await redis.scan("licitaciones:*")), ...(await redis.scan("lock:sync*")),
@@ -1773,12 +1864,23 @@ async function main() {
       for (const e of ENTIDADES_HIST) {
         const m = JSON.parse(hash[filtros.norm(e.entidad)]);
         assert.strictEqual(m.procesos, e.ofertas.length, `${e.entidad}: nº de procesos`);
-        assert.strictEqual(m.oferentes_total, e.ofertas.reduce((a, b) => a + b, 0), `${e.entidad}: suma de oferentes`);
+        assert.strictEqual(m.procesos_contados, e.ofertas.length, `${e.entidad}: alias procesos_contados`);
         if (e.ofertas.length >= 5) {
+          assert.strictEqual(m.oferentes_total, e.ofertas.reduce((a, b) => a + b, 0), `${e.entidad}: suma de oferentes`);
           assert.strictEqual(m.promedio, PROMEDIO_ESPERADO[e.entidad], `${e.entidad}: promedio de oferentes`);
           assert.ok(m.mediana > 0, `${e.entidad}: mediana`);
         } else {
+          /* DEFECTO DE PRODUCCIÓN (ago 2026): el badge enseñaba «18.2 oferentes
+             en 0 procesos». Nacía aquí — se publicaba el `promedio` de una
+             entidad que NO se puede clasificar, y bastaba con que un consumidor
+             lo pintara sin mirar el nivel. Por debajo del mínimo no se publica
+             NINGUNA cifra derivada: ni promedio, ni mediana, ni el total de
+             oferentes con el que se podría recalcular. */
           assert.strictEqual(m.nivel, "sin_dato", "una entidad con <5 procesos no puede clasificarse");
+          assert.strictEqual(m.promedio, null, `${e.entidad}: no puede publicarse un promedio sin base`);
+          assert.strictEqual(m.mediana, null, `${e.entidad}: tampoco la mediana`);
+          assert.strictEqual(m.oferentes_total, null,
+            `${e.entidad}: publicar la suma permitiría recalcular el promedio que se acaba de anular`);
         }
         // alias por NIT → mismo registro (una entidad que cambie de nombre no parte su historial)
         assert.deepStrictEqual(JSON.parse(hash[`nit:${e.nit}`]), { ref: filtros.norm(e.entidad) });
@@ -2096,6 +2198,43 @@ async function main() {
         assert.strictEqual(c.indice.procesos_contados, 3);
         assert.strictEqual(c.indice.min_procesos, indiceComp.MIN_PROCESOS);
         assert.ok(/m[ií]nimo 5/i.test(c.mensaje), `el mensaje debe explicar el ⚪: «${c.mensaje}»`);
+        // el espejo del hash tampoco puede filtrar la cifra que se acaba de anular
+        assert.strictEqual(c.indice.publicado.promedio, null,
+          "`publicado.promedio` es un espejo del hash y en producción trae el promedio que escribió la versión anterior");
+        assert.strictEqual(c.indice.publicado.procesos, 3,
+          "el CONTEO publicado sí se conserva: es lo que permite ver de un vistazo si el índice y el recuento divergen");
+      }
+
+      /* --- (b-bis) ÍNDICE DESACTUALIZADO: hay base pero no clasificación ---
+         El segundo camino a la contradicción «⚪ + un promedio debajo». El
+         índice solo se reconstruye A MANO mientras el delta engorda el
+         histórico en cada visita, así que el recuento adelanta al hash de forma
+         permanente. El promedio es legítimo (12 procesos con oferentes) y se
+         conserva; lo que no puede faltar es la explicación de por qué la banda
+         sigue en ⚪ — si no, las dos cosas no se pueden conciliar mirando la
+         pantalla. */
+      {
+        await redis.del("indice:competencia");                 // índice sin construir
+        const cacheadas = await redis.scan("indice:detalle:*"); // y sin caché que lo tape
+        if (cacheadas.length) await redis.del(...cacheadas);
+
+        const c = (await detalle("IDU", "&refrescar=1")).cuerpo;
+        assert.strictEqual(c.indice.procesos_contados, 12, "el recuento del corpus no depende del índice");
+        assert.ok(c.indice.promedio_oferentes > 0,
+          "con 12 procesos contados el promedio tiene base y no hay razón para ocultarlo");
+        assert.strictEqual(c.indice.nivel, "sin_dato", "sin índice no hay clasificación posible");
+        assert.ok(c.mensaje && /reconstr/i.test(c.mensaje),
+          `el ⚪ con base suficiente debe explicarse y decir cómo arreglarlo: «${c.mensaje}»`);
+        assert.ok(/reconstruir_indice/.test(c.mensaje),
+          "el mensaje debe traer el parámetro exacto que lo arregla, no una vaguedad");
+
+        // …y reconstruir el índice devuelve la clasificación, sin re-extraer nada
+        const r = await invocar(historico, "/api/sync/historico?reconstruir_indice=true&presupuesto=20000&chain=0", CAB_TOKEN);
+        assert.strictEqual(r.status, 200);
+        assert.strictEqual(r.cuerpo.done, true, "la reconstrucción del índice no llegó a término");
+        const tras = (await detalle("IDU", "&refrescar=1")).cuerpo;
+        assert.strictEqual(tras.indice.nivel, "alta", "tras reconstruir, la entidad vuelve a estar clasificada");
+        assert.strictEqual(tras.mensaje, null, "clasificada y con base: no hay nada que explicar");
       }
 
       /* --- (c) entidad inexistente: respuesta explícita, no un vacío mudo --- */
@@ -2497,6 +2636,70 @@ async function main() {
       // municipios: el dataset de prueba SÍ trae ciudad_entidad
       assert.ok(c.top_municipios && c.top_municipios.length > 0, "faltan los municipios (ciudad_entidad existe en el corpus)");
 
+      /* ═══ DEFECTOS DE PRODUCCIÓN (ago 2026) ═══ */
+
+      // la verificación cruzada que publica el propio endpoint
+      assert.ok(c.integridad && c.integridad.ok === true,
+        `el endpoint declara sus números inconsistentes: ${JSON.stringify(c.integridad)}`);
+
+      /* (2) ningún proceso CERRADO puede estar entre los visibles ni encabezar
+         los destacados. La cascada ya lo impide (exige estado_abierto), y los
+         destacados lo vuelven a comprobar porque es la afirmación más fuerte
+         que hace el panel. */
+      const todosVisibles = await todasLasOportunidades("perfil=helder");
+      for (const l of todosVisibles) {
+        assert.ok(!filtros.estado_cerrado(l),
+          `un proceso cerrado llegó al listado: ${l.estado_del_procedimiento} · ${l.nombre_del_procedimiento}`);
+      }
+      assert.ok(!c.procesos_destacados.some((p) => /adjudicad|desiert|cancelad/i.test(p.objeto)),
+        "un proceso cerrado encabeza los destacados");
+      for (const p of c.procesos_destacados) {
+        const enCorpus = todosVisibles.find((l) => l.id_del_proceso === p.id_del_proceso);
+        assert.ok(enCorpus, `el destacado «${p.objeto}» no está entre los visibles de /api/oportunidades`);
+        assert.ok(!filtros.estado_cerrado(enCorpus), `el destacado «${p.objeto}» está cerrado`);
+      }
+
+      /* (3) el proceso de ESTRUCTURACIÓN: visible en la app —es real y
+         competitivo— pero JAMÁS entre los diez que el panel recomienda. */
+      const accionistaEnApp = todosVisibles.filter((l) => /SELECCION DE ACCIONISTA/i.test(l.nombre_del_procedimiento || ""));
+      assert.ok(accionistaEnApp.length > 0,
+        "el proceso de accionista debe seguir siendo VISIBLE en /api/oportunidades: pasa la cascada con toda razón");
+      assert.ok(accionistaEnApp.some((l) => (l.cuantia_cop || 0) >= 900e6),
+        "el proceso de accionista debe tener cuantía alta: si no, no probaría que encabezaría el panel");
+      assert.ok(!c.procesos_destacados.some((p) => /accionista|socio estrateg|economia mixta/i.test(p.objeto)),
+        `un proceso de estructuración encabeza los destacados: ${JSON.stringify(c.procesos_destacados.map((p) => p.objeto))}`);
+      assert.ok(c.destacados_descartados.estructuracion > 0,
+        "el panel debe CONTAR los que aparta por estructuración, no apartarlos en silencio");
+      // …y sigue contando entre los visibles: apartarlo del top no lo esconde
+      assert.ok(c.totales.visibles >= accionistaEnApp.length,
+        "los descartes de destacados no pueden tocar totales.visibles");
+
+      /* (1) entidad con MENOS de 5 procesos históricos: ni promedio ni nivel,
+         ni en el índice, ni en la API, ni en el badge. */
+      {
+        const conIbague = todosVisibles.filter((l) => /IBAGU/i.test(l.entidad || ""));
+        assert.ok(conIbague.length > 0, "el corpus de prueba tiene procesos de ALCALDÍA DE IBAGUÉ (3 en el histórico)");
+        for (const l of conIbague) {
+          assert.strictEqual(l.competencia_entidad.nivel, "sin_dato", "3 procesos no clasifican una entidad");
+          assert.strictEqual(l.competencia_entidad.promedio_oferentes, null,
+            "no puede viajar un promedio de una entidad que no se puede clasificar");
+          assert.strictEqual(l.competencia_entidad.total_procesos, 3,
+            "el CONTEO sí viaja: es lo que explica el ⚪ y no engaña a nadie");
+        }
+        const enPanel = c.top_entidades.find((e) => /IBAGU/i.test(e.entidad));
+        if (enPanel) {
+          assert.strictEqual(enPanel.competencia, "sin_dato");
+          assert.strictEqual(enPanel.promedio_oferentes, null, "el panel tampoco puede enseñar ese promedio");
+          assert.ok(!/\d/.test(enPanel.badge),
+            `el badge sin base no puede llevar NINGÚN número: «${enPanel.badge}»`);
+          assert.ok(/Sin datos hist/i.test(enPanel.badge), `el badge sin base debe decirlo: «${enPanel.badge}»`);
+        }
+        // y el badge de una entidad CON base sigue llevando su promedio
+        const conBase = c.top_entidades.find((e) => e.competencia !== "sin_dato");
+        assert.ok(conBase && /promedio/.test(conBase.badge) && /\d/.test(conBase.badge),
+          "una entidad clasificada sí debe enseñar su promedio");
+      }
+
       // 5. la segunda llamada viene de la caché, sin volver a barrer los chunks
       {
         const antes = redis.comandos();
@@ -2744,6 +2947,53 @@ async function main() {
       assert.ok(/BACKOFF_MS = \[5000, 10000, 20000\]/.test(admJs), "backoff de reintentos ≠ 5/10/20 s");
       for (const debe of ["bandaCompetencia", "competencia_entidad", "Poca competencia", "Alta competencia"]) {
         assert.ok(js.includes(debe), `app.js sin ${debe} (la tarjeta no muestra la competencia de la entidad)`);
+      }
+      /* DEFECTO «18.2 oferentes en 0 procesos»: el badge no puede interpolar un
+         promedio sin comprobar antes que haya base. La condición se llama
+         `conBase` y exige las tres cosas a la vez. */
+      {
+        const i = js.indexOf("function bandaCompetencia");
+        const cuerpo = js.slice(i, js.indexOf("\n  }", i));
+        assert.ok(i > 0 && /const conBase = /.test(cuerpo),
+          "bandaCompetencia debe decidir con `conBase` si hay base para enseñar un promedio");
+        assert.ok(/procesos > 0/.test(cuerpo) && /nivel !== "sin_dato"/.test(cuerpo) && /promedio != null/.test(cuerpo),
+          "`conBase` debe exigir procesos > 0, nivel clasificado y promedio presente");
+        assert.ok(/conBase\s*\n?\s*\?\s*`\$\{d\.titulo\} — promedio/.test(cuerpo),
+          "el promedio solo puede interpolarse en la rama `conBase`");
+        // sin base, el texto es el título de sin_dato: ninguna cifra
+        assert.ok(/:\s*d\.titulo;/.test(cuerpo), "sin base, el badge debe quedarse en el título, sin números");
+      }
+      // el modal aplica la misma regla al resumen del detalle
+      assert.ok(/i\.promedio_oferentes != null && i\.procesos_contados > 0/.test(js),
+        "el modal tampoco puede pintar un promedio sin procesos contados detrás");
+
+      /* LA CAUSA REAL del «promedio 18,2 oferentes en 0 procesos»: el detalle
+         en línea del panel leía `i.total_procesos`, un campo que
+         /api/competencia-detalle NUNCA ha devuelto (ese nombre pertenece al
+         OTRO payload, el `competencia_entidad` de /api/oportunidades). El
+         `|| 0` disfrazaba el `undefined` de cero, así que el conteo era 0
+         SIEMPRE, con cualquier entidad y cualquier dato. */
+      {
+        const i = admJs.indexOf('$("d-entidades").addEventListener');
+        // sin comentarios: lo que se vigila es el CÓDIGO. El comentario que
+        // explica el defecto cita el campo viejo a propósito.
+        const handler = sinComentarios(admJs.slice(i, admJs.indexOf("\n  });", i)));
+        assert.ok(i > 0, "no se encontró el detalle en línea del panel");
+        assert.ok(!/i\.total_procesos/.test(handler),
+          "el detalle del panel vuelve a leer `total_procesos`: ese campo NO existe en /api/competencia-detalle");
+        assert.ok(/i\.procesos_contados/.test(handler),
+          "el conteo del detalle se llama `procesos_contados` — es el nombre que devuelve el endpoint");
+        assert.ok(/const conBase = /.test(handler),
+          "el detalle del panel debe exigir base antes de pintar un promedio, igual que el badge");
+      }
+      /* Y la regla que evita repetirlo: un conteo ausente NO se pinta como 0.
+         Ningún renderizador puede convertir «no sé» en «cero» con un `|| 0`. */
+      for (const [archivo, fuente] of [["app.js", js], ["admin.js", admJs]]) {
+        // `Number(x) || 0` sí es legítimo: normaliza un valor YA leído. Lo que
+        // no puede haber es `i.campo || 0` a pelo sobre el conteo.
+        const codigo = sinComentarios(fuente).replace(/Number\([^)]*\)\s*\|\|\s*0/g, "");
+        assert.ok(!/\bi\.(?:procesos_contados|total_procesos)\s*\|\|\s*0/.test(codigo),
+          `${archivo}: un conteo leído con «|| 0» convierte un campo ausente en un cero creíble`);
       }
       /* veredicto GRADUADO en la tarjeta: un badge por la solidez del match y
          otro por el tipo de objeto. Sin esto el dueño no puede decidir. */
