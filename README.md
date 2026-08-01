@@ -290,6 +290,16 @@ consulta** (defensa en profundidad: corpus previo al despliegue + cerrados que e
    evaluación, Adjudicado, Celebrado, En ejecución, Terminado, Cancelado, Suspendido, Desierto,
    Descartado, Liquidado… **Cualquier valor no clasificable se considera CERRADO** — el «+5 para
    fases desconocidas» de la era anterior no existe en esta base de código.
+2-bis. **Convenios fuera** — «AUNAR ESFUERZOS TÉCNICOS, ADMINISTRATIVOS Y FINANCIEROS…» es la
+   fórmula de los **convenios interadministrativos y de asociación** (Ley 489/1998 art. 95-96): no
+   hay pliego, no hay oferta, no se compite. Se colaban porque muchas entidades los publican bajo
+   «Régimen Especial (con ofertas)», que sí es modalidad competitiva. La regla es deliberadamente
+   precisa para no llevarse obra real por delante: «aunar esfuerzos/recursos» descarta esté donde
+   esté (nunca es incidental), mientras que «convenio interadministrativo / de asociación / de
+   cooperación / marco» y «contrato interadministrativo» solo descartan si **encabezan** el objeto
+   — una obra legítima suele mencionarlos de pasada («construcción de placa huella **en el marco
+   del** convenio interadministrativo 123»), y esa debe seguir apareciendo.
+
 3. **Objeto válido** — blacklist semántica (caninos, PAE, dotación, seguros, software…), clase
    UNSPSC en el RUP del perfil (o mapeo textual de obra si no declara UNSPSC) y la **capa
    anti-suministro**: si TODAS las clases declaradas son de **segmentos UNSPSC de bienes**
@@ -370,6 +380,47 @@ Decisiones documentadas (también advertidas en logs y señaladas en la UI):
   inventarlo).
 - **CT de Génesis**: 3 profesionales («estimado conservador» del histórico) → CT = 20. Si la
   planta real fuera ≥6, CT subiría a 30 — confirmar con el dueño antes de cambiarlo.
+
+### Granularidad UNSPSC: se compara por CLASE, no por producto
+
+UNSPSC es jerárquico — `SS-FF-CC-PP` (segmento, familia, clase, producto). Los **393 códigos de
+los dos RUP terminan todos en `00`**: están inscritos a nivel de **clase**, que es como clasifica
+el RUP. SECOP II, en cambio, publica muchas veces el **producto** concreto de esa clase
+(`72141015`). Comparar los 8 dígitos con igualdad exacta —lo que se hacía— descartaba todo proceso
+que declarara producto: para casar hacía falta que la entidad hubiera publicado justo el `…00`.
+
+Desde entonces se compara por los **6 primeros dígitos** (`72141015` queda cubierto por
+`72141000`). Es estrictamente más permisivo que la comparación exacta y nunca al revés: una clase
+ajena al RUP sigue fuera. `/api/diagnostico` reporta las dos cifras
+(`unspsc.pasan_exacto` vs `pasan_por_clase`) para poder medir la diferencia sobre el corpus real.
+
+## `GET /api/diagnostico` (protegido)
+
+El instrumento para responder «¿por qué solo salen N procesos?» con datos. Mismo token que el
+backfill, **solo lee** (no escribe, no toma candados, no dispara sincronizaciones):
+
+```
+https://<tu-app>.vercel.app/api/diagnostico?token=<TOKEN>&perfil=helder&muestra=20
+```
+
+Devuelve, sobre el corpus activo:
+
+- **`embudo`** — bajas de cada paso **en el orden real de la consulta**: `fuera_modalidad`,
+  `fuera_estado`, `fuera_convenio`, `fuera_blacklist`, `fuera_unspsc`,
+  `fuera_sin_unspsc_ni_obra`, `fuera_anti_suministro`, `fuera_capacidad_k`,
+  `fuera_tope_estrategico`, `fuera_anticipo` y `visibles`. Los pasos suman el total: nadie
+  desaparece sin quedar contado (hay una prueba que lo verifica), y `visibles` coincide
+  exactamente con el `total` que sirve `/api/oportunidades` (otra prueba).
+- **`contrafactuales`** — cuántos procesos se recuperarían al relajar cada regla: UNSPSC exacto vs
+  por clase, sin filtro de anticipo, ignorando capacidad, incluyendo cerradas.
+- **`distribuciones`** — los valores **reales** de `modalidad_de_contratacion`,
+  `estado_del_procedimiento` y `fase` con sus conteos (lo que este repositorio nunca pudo
+  muestrear en vivo), qué términos de la blacklist dispararon, y el reparto de anticipo y cuantía.
+- **`unspsc_cobertura`** — clases distintas en el corpus, cuántas cubre el RUP por clase vs
+  exacto, y el top de clases **no** cubiertas (candidatas a revisar en el RUP).
+- **`muestra`** — N procesos visibles con su veredicto (cuantía, anticipo, K, CRPC).
+
+**Cómo leerlo**: el `fuera_*` más alto es el filtro que hay que revisar primero.
 
 **Prefiltro al sincronizar**: la cascada (modalidad + estado + `compatibleConAlgunPerfil()`,
 que evalúa el objeto contra la unión de ambos RUP con anti-suministro incluido) descarta en
@@ -518,6 +569,14 @@ variables de entorno de arriba, y desplegar. Sin build, sin dependencias. Opcion
 Password Protection en el dashboard **antes** de compartir la URL.
 
 Tras desplegar esta versión, en este orden:
+
+0. **Relanzar `/api/sync?modo=full`** si el corpus ya existía. Las reglas de objeto (convenios,
+   UNSPSC por clase) corren **también en el prefiltro de la sincronización**: lo que la regla vieja
+   descartó *nunca entró a Redis*, así que ampliarla no lo hace aparecer solo. Los convenios ya
+   guardados sí desaparecen de inmediato (la consulta re-filtra al servir), pero los procesos que
+   la comparación exacta de UNSPSC dejó fuera solo vuelven con una full. Lo mismo aplica al
+   histórico: para reconstruirlo con las reglas nuevas hay que repetir el backfill con
+   `&reiniciar=1`.
 
 1. Abrir la web: el corpus activo cambió de nombre de clave, así que la primera visita responde
    `503`, dispara la full sola y purga de paso el corpus legado.

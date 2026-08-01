@@ -140,8 +140,58 @@ function generarDataset() {
       }
       filas.push(f);
     }
+    filas.push(...extrasDelMes(mes));
   }
   return filas;
+}
+
+/* Casos que reproducen fallos reales de producción (una tanda por mes):
+     1-2. CONVENIOS publicados bajo modalidad competitiva → NO deben salir.
+     3.   Obra legítima que menciona un convenio de pasada → SÍ debe salir
+          (guarda contra el falso positivo de excluir por la palabra suelta).
+     4.   Obra con UNSPSC a nivel de PRODUCTO (72141015) dentro de una clase
+          que sí está en el RUP (72141000) → SÍ debe salir. Con la comparación
+          exacta de 8 dígitos anterior, este proceso era invisible. */
+const EXTRAS_POR_MES = 4;
+let _seqExtra = 0;
+function extrasDelMes(mes) {
+  const base = (n, extra) => ({
+    ":id": `extra-${mes}-${n}`, ":updated_at": `${mes}-06T12:00:00.000Z`,
+    id_del_proceso: `CO1.EXTRA.${mes}.${n}`, referencia_del_proceso: `REF-EXTRA-${mes}-${n}`,
+    fecha_de_publicacion_del: `${mes}-12T08:00:00.000`,
+    entidad: "ALCALDÍA DE PURIFICACIÓN", ciudad_entidad: "PURIFICACIÓN", departamento_entidad: "Tolima",
+    modalidad_de_contratacion: "Licitación pública",
+    estado_del_procedimiento: "Publicado", fase: "Presentación de ofertas",
+    precio_base: "250000000", duracion: "6", unidad_de_duracion: "Meses",
+    respuestas_al_procedimiento: "2", tipo_de_contrato: "Obra",
+    urlproceso: { url: `https://community.secop.gov.co/extra/${mes}/${n}` },
+    ...extra,
+  });
+  _seqExtra++;
+  return [
+    base(1, {
+      // el caso del reporte: convenio colado por «Régimen Especial (con ofertas)»
+      modalidad_de_contratacion: "Contratación régimen especial (con ofertas)",
+      nombre_del_procedimiento: `AUNAR ESFUERZOS TÉCNICOS; ADMINISTRATIVOS Y FINANCIEROS PARA EL MEJORAMIENTO DE VÍAS ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Convenio para el mejoramiento de la malla vial del municipio",
+      codigo_principal_de_categoria: "V1.72141000",
+    }),
+    base(2, {
+      nombre_del_procedimiento: `CONVENIO INTERADMINISTRATIVO PARA LA CONSTRUCCIÓN DE PLACA HUELLA ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Construcción de placa huella en zona rural",
+      codigo_principal_de_categoria: "V1.72141000",
+    }),
+    base(3, {
+      nombre_del_procedimiento: `Construcción de placa huella vereda El Cairo ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Obra ejecutada en el marco del convenio interadministrativo 123 de 2025, incluye suministro de materiales",
+      codigo_principal_de_categoria: "V1.72141000",
+    }),
+    base(4, {
+      nombre_del_procedimiento: `Mejoramiento de vía terciaria con producto UNSPSC específico ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Obra civil de mejoramiento vial con pavimentación",
+      codigo_principal_de_categoria: "V1.72141015", // producto de la clase 721410 (RUP: 72141000)
+    }),
+  ];
 }
 
 /* ════════════════ dataset histórico (2 años anteriores) ════════════════
@@ -386,6 +436,7 @@ async function main() {
   // requerir DESPUÉS de fijar el entorno (PAGE/backoff se leen al cargar)
   const sync = require("../api/sync.js");
   const historico = require("../api/sync/historico.js");
+  const diagnostico = require("../api/diagnostico.js");
   const oportunidades = require("../api/oportunidades.js");
   const { crearRedis } = require("../lib/redis.js");
   const { empaquetar, descomprimir, CHUNK_MAX_COMPRIMIDO, CLAVES } = require("../lib/almacen.js");
@@ -509,6 +560,90 @@ async function main() {
       }
     }
     console.log(`· unidad anti-suministro: ${casos.length} casos correctos (segmentos de bienes, causa verificada)`);
+  }
+
+  /* unidad: convenios — «aunar esfuerzos» y compañía NO son licitaciones */
+  {
+    const convenios = [
+      "AUNAR ESFUERZOS TÉCNICOS; ADMINISTRATIVOS Y FINANCIEROS PARA EL MEJORAMIENTO DE VÍAS",
+      "AUNAR ESFUERZOS TECNICOS ADMINISTRATIVOS Y FINANCIEROS",
+      "Aunar recursos para la construcción de un parque",
+      "CONVENIO INTERADMINISTRATIVO PARA LA CONSTRUCCIÓN DE PLACA HUELLA",
+      "Convenio de cooperación internacional para infraestructura educativa",
+      "CONVENIO MARCO DE APOYO A LA GESTIÓN VIAL",
+      "Contrato interadministrativo para la ejecución de obras",
+      "Convenio de asociación con entidad sin ánimo de lucro para obras",
+    ];
+    for (const nombre of convenios) {
+      assert.strictEqual(filtros.es_convenio({ nombre_del_procedimiento: nombre }), true,
+        `«${nombre.slice(0, 50)}…» debía clasificarse como convenio`);
+    }
+    // …y la obra REAL que solo menciona un convenio de pasada NO es un convenio
+    const obrasLegitimas = [
+      { nombre_del_procedimiento: "Construcción de placa huella vereda El Cairo",
+        descripci_n_del_procedimiento: "Obra ejecutada en el marco del convenio interadministrativo 123 de 2025" },
+      { nombre_del_procedimiento: "Mejoramiento de vía terciaria",
+        descripci_n_del_procedimiento: "Recursos provenientes del contrato interadministrativo suscrito con la gobernación" },
+      { nombre_del_procedimiento: "Mantenimiento de la red de alcantarillado" },
+    ];
+    for (const l of obrasLegitimas) {
+      assert.strictEqual(filtros.es_convenio(l), false,
+        `«${l.nombre_del_procedimiento}» NO es un convenio: mencionarlo no lo convierte en uno`);
+    }
+    // el convenio muere en evaluarObjeto, con motivo propio y ANTES que todo
+    const ev = filtros.evaluarObjeto({
+      nombre_del_procedimiento: "AUNAR ESFUERZOS TÉCNICOS; ADMINISTRATIVOS Y FINANCIEROS",
+      descripci_n_del_procedimiento: "Mejoramiento de vías",
+      codigo_principal_de_categoria: "V1.72141000",
+    }, PERFILES.helder);
+    assert.strictEqual(ev.ok, false);
+    assert.strictEqual(ev.paso, "convenio", `el convenio debía morir en el paso «convenio», murió en «${ev.paso}»`);
+    console.log(`· unidad convenios: ${convenios.length} excluidos, ${obrasLegitimas.length} obras legítimas conservadas`);
+  }
+
+  /* unidad: UNSPSC por CLASE, no por producto. Los 393 códigos de los RUP
+     terminan en "00" (nivel de clase); SECOP II publica muchas veces el
+     producto. La comparación exacta de 8 dígitos los hacía invisibles. */
+  {
+    assert.ok([...PERFILES.juntos.unspsc].every((c) => c.endsWith("00")),
+      "supuesto roto: los códigos del RUP ya no están a nivel de clase");
+    const conProducto = {
+      nombre_del_procedimiento: "Mejoramiento de vía terciaria",
+      descripci_n_del_procedimiento: "Obra civil de pavimentación",
+      codigo_principal_de_categoria: "V1.72141015", // producto de la clase 721410
+    };
+    assert.strictEqual(PERFILES.helder.unspsc.has("72141015"), false,
+      "el código de producto NO está literalmente en el RUP (esa es la premisa)");
+    assert.strictEqual(filtros.evaluarObjeto(conProducto, PERFILES.helder).ok, true,
+      "un producto de una clase inscrita en el RUP debe quedar cubierto");
+    // y una clase realmente ajena sigue fuera
+    const ajeno = { ...conProducto, codigo_principal_de_categoria: "V1.53102700" }; // ropa
+    assert.strictEqual(filtros.evaluarObjeto(ajeno, PERFILES.helder).ok, false,
+      "una clase fuera del RUP no puede colarse por la comparación por clase");
+    assert.strictEqual(filtros.claseDe("72141015"), "721410");
+    console.log("· unidad UNSPSC: match por clase (6 díg) cubre productos; las clases ajenas siguen fuera");
+  }
+
+  /* unidad: anti-suministro — bloquea la compra pura, jamás la obra que
+     además compra materiales (los dos casos exactos del encargo) */
+  {
+    const casos = [
+      ["CONSTRUCCIÓN DE AULA ESCOLAR INCLUYENDO SUMINISTRO DE MOBILIARIO", "V1.56112000", true],
+      ["SUMINISTRO DE MOBILIARIO ESCOLAR", "V1.56112000", false],
+      ["Construcción de vía incluyendo suministro de materiales", "V1.30111500", true],
+      ["Ejecución de obras de acueducto con suministro de tubería", "V1.40171500", true],
+      ["Adecuación de sede con adquisición de equipos", "V1.43211700", true],
+      ["Adquisición de equipos de cómputo", "V1.43211700", false],
+    ];
+    for (const [nombre, codigo, esperado] of casos) {
+      const ev = filtros.evaluarObjeto(
+        { nombre_del_procedimiento: nombre, descripci_n_del_procedimiento: "", codigo_principal_de_categoria: codigo },
+        PERFILES.juntos);
+      assert.strictEqual(ev.ok, esperado,
+        `«${nombre}» esperaba ${esperado ? "PASAR" : "caer"}, motivo: ${ev.motivo}`);
+      if (!esperado) assert.strictEqual(ev.paso, "anti_suministro", `«${nombre}» debía caer por la capa anti-suministro`);
+    }
+    console.log(`· unidad anti-suministro (obra vs compra pura): ${casos.length} casos correctos`);
   }
 
   /* unidad: capacidad — fórmula única, escalas de la Guía y consorcio */
@@ -668,9 +803,10 @@ async function main() {
     const meta = JSON.parse(await redis.get("licitaciones:meta"));
     assert.ok(meta.last_full && meta.last_sync, "meta sin sellos de sincronización");
     assert.strictEqual(Object.keys(meta.porMes).length, MESES.length, "faltan meses en la auditoría");
+    const POR_MES = 120 + EXTRAS_POR_MES;
     for (const mes of MESES) {
-      assert.strictEqual(meta.porMes[mes].leidas, 120, `${mes}: leídas ${meta.porMes[mes].leidas} ≠ 120 esperadas`);
-      assert.strictEqual(meta.porMes[mes].esperados, 120, `${mes}: count(*) no auditado`);
+      assert.strictEqual(meta.porMes[mes].leidas, POR_MES, `${mes}: leídas ${meta.porMes[mes].leidas} ≠ ${POR_MES} esperadas`);
+      assert.strictEqual(meta.porMes[mes].esperados, POR_MES, `${mes}: count(*) no auditado`);
     }
     assert.ok(meta.total > 0 && meta.total < meta.leidas, "el prefiltro RUP debía descartar parte del dataset");
     assert.strictEqual(await redis.get("lock:sync"), null, "el candado no se liberó");
@@ -709,6 +845,19 @@ async function main() {
         "la instalación/montaje (verbo de obra, segmento 56) debía pasar y no aparece");
       assert.ok(todasH.some((l) => /Convocado/i.test(l.estado_del_procedimiento)),
         "los procesos Convocado (abiertos) debían aparecer");
+
+      /* CONVENIOS: no son licitaciones y no pueden llegar a la pantalla */
+      assert.ok(!todasH.some((l) => /aunar\s+esfuerzos/i.test(l.nombre_del_procedimiento)),
+        "se sirvió un «AUNAR ESFUERZOS» (convenio interadministrativo)");
+      assert.ok(!todasH.some((l) => /^convenio\s+interadministrativo/i.test(l.nombre_del_procedimiento)),
+        "se sirvió un proceso cuyo objeto ES un convenio interadministrativo");
+      // …pero la obra real que solo MENCIONA un convenio sí debe aparecer
+      assert.ok(todasH.some((l) => /vereda El Cairo/i.test(l.nombre_del_procedimiento)),
+        "el filtro de convenios se llevó por delante una obra que solo mencionaba uno");
+      /* UNSPSC a nivel de PRODUCTO dentro de una clase del RUP: debe pasar
+         (con la comparación exacta de 8 dígitos anterior era invisible) */
+      assert.ok(todasH.some((l) => l.codigo_principal_de_categoria === "V1.72141015"),
+        "un proceso con UNSPSC de producto (72141015) de una clase del RUP (72141000) no llegó a la pantalla");
     }
 
     /* c'. parámetros hostiles: claves del prototipo no tumban el endpoint */
@@ -1084,6 +1233,40 @@ async function main() {
         "una full de higiene borró parte del corpus histórico");
       assert.ok(!(await leerActivo()).some((r) => r.id_del_proceso === abierta.id_del_proceso),
         "la full de higiene debía dejar fuera del activo el proceso ya adjudicado");
+    }
+
+    /* g-bis. /api/diagnostico: el embudo cuadra con lo que sirve la app */
+    {
+      assert.strictEqual((await invocar(diagnostico, "/api/diagnostico?perfil=helder")).status, 401,
+        "el diagnóstico expone el corpus: debe exigir token");
+      const d = await invocar(diagnostico, "/api/diagnostico?perfil=helder&muestra=20",
+        { "x-historico-token": process.env.HISTORICO_TOKEN });
+      assert.strictEqual(d.status, 200, `diagnóstico falló: ${JSON.stringify(d.cuerpo).slice(0, 300)}`);
+      const c = d.cuerpo;
+      assert.ok(c.corpus.activo.filas_unicas > 0, "el diagnóstico no ve el corpus activo");
+      assert.ok(c.corpus.historico.chunks > 0, "el diagnóstico no ve el corpus histórico");
+
+      // INVARIANTE FUERTE: lo que el embudo llama «visibles» es exactamente lo
+      // que /api/oportunidades sirve. Si divergen, el diagnóstico miente.
+      const real = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1");
+      assert.strictEqual(c.embudo.visibles, real.cuerpo.total,
+        `el embudo dice ${c.embudo.visibles} visibles y la app sirve ${real.cuerpo.total}`);
+
+      // el embudo suma: nadie se pierde sin quedar contado en algún paso
+      const bajas = Object.entries(c.embudo)
+        .filter(([k]) => k.startsWith("fuera_")).reduce((a, [, v]) => a + v, 0);
+      assert.strictEqual(bajas + c.embudo.visibles, c.embudo.total_activo,
+        "el embudo no cuadra: hay procesos que desaparecen sin motivo registrado");
+
+      // el contrafactual de UNSPSC demuestra la ganancia del match por clase
+      assert.ok(c.contrafactuales.ganancia_por_clase > 0,
+        "el corpus de prueba trae códigos de producto: la ganancia por clase no puede ser 0");
+      assert.ok(c.unspsc_cobertura.cubiertas_por_clase >= c.unspsc_cobertura.cubiertas_exacto_8_digitos,
+        "el match por clase nunca puede cubrir menos que el exacto");
+      // y las distribuciones traen los valores REALES de las columnas
+      assert.ok(Object.keys(c.distribuciones.estado_del_procedimiento).length > 0, "sin distribución de estados");
+      assert.ok(c.muestra.length > 0 && c.muestra[0].objeto, "sin muestra de procesos visibles");
+      assert.ok(!c.muestra.some((m) => /aunar esfuerzos/i.test(m.objeto)), "un convenio llegó a la muestra de visibles");
     }
 
     /* h. la raíz sirve el frontend (Vercel: /public es el output estático) */
