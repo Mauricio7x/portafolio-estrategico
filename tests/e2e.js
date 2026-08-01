@@ -2419,6 +2419,33 @@ async function main() {
         "/api/competencia-detalle", "x-historico-token", "sessionStorage", "MOTIVO_EXCLUSION"]) {
         assert.ok(js.includes(debe), `app.js sin ${debe} (el badge no abre el detalle)`);
       }
+      /* el formulario del token: clave acordada, etiqueta explícita y —sobre
+         todo— NINGÚN camino silencioso. Un botón que «no hace nada» es peor
+         que un error: el campo vacío tiene que avisar. */
+      assert.ok(/CLAVE_TOKEN = "historico_token"/.test(js), "la clave de sesión debe ser historico_token");
+      assert.ok(js.includes("Guardar y ver detalle"), "el botón debe decir «Guardar y ver detalle»");
+      assert.ok(/Pegue el token/.test(js), "el campo vacío debe avisar, nunca quedarse mudo");
+      assert.ok(/Token inválido/.test(js), "un 401 debe decir «Token inválido» y dejar escribir otro");
+      assert.ok(/\$\("btn-token"\)\.addEventListener\("click", enviar\)/.test(js)
+        && /\$\("form-token"\)\.addEventListener\("submit", enviar\)/.test(js),
+        "el envío debe estar cableado al submit Y al clic del botón");
+      assert.ok(/try \{ return sessionStorage\.getItem/.test(js),
+        "leer sessionStorage debe ir protegido: si lanza, el clic moría en silencio");
+      // mostrar/ocultar el modal no puede depender del orden del CSS generado
+      assert.ok(/style\.display = "flex"/.test(js) && /style\.display = "none"/.test(js),
+        "el modal debe fijar display en línea (las clases hidden/flex compiten por la misma propiedad)");
+
+      /* ARRANQUE: `abrirApp()` automático tiene que ir DESPUÉS de declarar el
+         estado de la vista. Estaba antes, y en cada visita repetida de la misma
+         pestaña `buscar()` reventaba en la zona muerta temporal de
+         `timerReintento` — la app se quedaba sin resultados en silencio. */
+      {
+        const iAuto = js.indexOf('sessionStorage.getItem("detecta-acceso") === "1"');
+        const iEstado = js.indexOf("let pagina = 1, reintentosSync = 0, timerReintento = null;");
+        assert.ok(iAuto > 0 && iEstado > 0, "no se encontraron el arranque automático y el estado de la vista");
+        assert.ok(iAuto > iEstado,
+          "el arranque automático corre antes de declarar timerReintento: buscar() morirá en la zona muerta temporal");
+      }
       // el badge tiene que ser pulsable y llevar la entidad consigo
       assert.ok(/data-entidad=/.test(js), "el badge debe llevar la entidad en data-entidad");
       assert.ok(/cursor-pointer/.test(js) && /hover:underline/.test(js), "el badge debe verse pulsable");

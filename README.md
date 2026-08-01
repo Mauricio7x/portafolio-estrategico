@@ -807,10 +807,17 @@ más competencia. Debajo, los **excluidos del promedio** con el motivo de cada u
 caso que más confundía: por qué una entidad aparece en ⚪. Se cierra con el botón, con `ESC` o
 haciendo clic fuera.
 
-El detalle sale de un endpoint protegido, así que el modal pide el `HISTORICO_TOKEN` la primera vez
-y lo guarda en `sessionStorage` (solo esa pestaña). **Viaja por cabecera, nunca en la URL**: una URL
-con el token quedaría en el historial del navegador y en los logs de acceso. Si el servidor lo
-rechaza, se borra y se vuelve a pedir.
+El detalle sale de un endpoint protegido, así que la primera vez el modal muestra un campo y el
+botón **«Guardar y ver detalle»**: se pega el token, se guarda en `sessionStorage` bajo
+`historico_token` (solo esa pestaña) y la consulta sale sola. Las siguientes veces va directo a los
+datos. **Viaja por cabecera, nunca en la URL**: una URL con el token quedaría en el historial del
+navegador y en los logs de acceso. Si el servidor responde `401`, el modal dice **«Token inválido»**,
+borra el guardado y deja escribir otro.
+
+Regla de la interfaz: **ninguna pulsación se queda sin respuesta visible**. Pulsar con el campo
+vacío avisa en vez de no hacer nada, el envío está cableado al `submit` del formulario *y* al clic
+del botón, y leer/escribir `sessionStorage` va protegido (en modo restringido lanzaría, y el clic
+moriría en silencio). Hay una casilla «Mostrar el token» para verificar que el pegado entró.
 
 El resumen de resultados añade el reparto («*N* con RUP ✓, *M* por verificar»), y sigue el badge
 de **Capacidad K ✓**.

@@ -62,7 +62,6 @@
     $("gate-clave").value = "";
     $("gate-clave").focus();
   });
-  if (sessionStorage.getItem("detecta-acceso") === "1") abrirApp();
 
   /* ══════════ Estados de la vista ══════════ */
   function mostrar(estado, msg) {
@@ -287,8 +286,18 @@
        · viaja por el header `x-historico-token`;
        · si falta, el propio modal lo pide; si el servidor lo rechaza, se borra
          y se vuelve a pedir. */
-  const CLAVE_TOKEN = "detecta-token-historico";
-  const tokenGuardado = () => sessionStorage.getItem(CLAVE_TOKEN) || "";
+  const CLAVE_TOKEN = "historico_token";
+  function tokenGuardado() {
+    // sessionStorage puede lanzar (modo restringido / almacenamiento
+    // particionado): sin este try el clic del badge moría en silencio
+    try { return sessionStorage.getItem(CLAVE_TOKEN) || ""; } catch { return ""; }
+  }
+  function guardarToken(t) {
+    try { sessionStorage.setItem(CLAVE_TOKEN, t); return true; } catch { return false; }
+  }
+  function olvidarToken() {
+    try { sessionStorage.removeItem(CLAVE_TOKEN); } catch { /* nada que borrar */ }
+  }
 
   const MOTIVO_EXCLUSION = {
     sin_dato_oferentes: "El proceso se adjudicó pero el dataset no dice cuántos se presentaron",
@@ -307,18 +316,25 @@
   }
   const recorta = (s, n = 80) => (String(s || "").length > n ? `${String(s).slice(0, n)}…` : String(s || ""));
 
+  /* Mostrar/ocultar toca las clases de Tailwind Y `style.display`. Las dos
+     utilidades (`hidden` y `flex`) declaran la misma propiedad, así que cuál
+     gana depende del orden del CSS generado, no del orden en que se añaden:
+     el estilo en línea deja el resultado fuera de discusión (y el modal sigue
+     funcionando aunque el CDN de Tailwind no cargue). */
   const $modal = () => $("modal-competencia");
   function cerrarModal() {
     $modal().classList.add("hidden");
     $modal().classList.remove("flex");
+    $modal().style.display = "none";
     document.removeEventListener("keydown", alPulsarTecla);
   }
   function alPulsarTecla(e) { if (e.key === "Escape") cerrarModal(); }
   function abrirModal(entidad) {
     $("modal-titulo").textContent = entidad || "Entidad no informada";
-    $("modal-cuerpo").innerHTML = '<p class="py-8 text-center text-gray-400">Cargando procesos…</p>';
+    $("modal-cuerpo").innerHTML = '<p class="py-8 text-center text-gray-400">Cargando…</p>';
     $modal().classList.remove("hidden");
     $modal().classList.add("flex");
+    $modal().style.display = "flex";
     document.addEventListener("keydown", alPulsarTecla);
   }
 
@@ -368,30 +384,57 @@
       <p class="mt-4 text-xs text-gray-400">Datos del corpus histórico (procesos ya cerrados)${d.cache ? " · desde caché" : ""}.</p>`;
   }
 
+  /* Formulario del token. REGLA: ninguna pulsación puede quedarse sin
+     respuesta visible — un botón que «no hace nada» es peor que un error. Por
+     eso el campo vacío avisa, el envío deshabilita el botón y muestra estado, y
+     el fallo de almacenamiento se cuenta en vez de morir callado. */
   function pedirToken(entidad, aviso) {
     $("modal-cuerpo").innerHTML = `
-      ${aviso ? `<p class="mb-3 rounded-lg bg-red-50 p-3 text-xs text-red-700">${esc(aviso)}</p>` : ""}
+      <div id="aviso-token" class="${aviso ? "" : "hidden "}mb-3 rounded-lg bg-red-50 p-3 text-sm font-medium text-red-700">${esc(aviso || "")}</div>
       <p class="text-gray-600">Este detalle sale del corpus histórico y está protegido con el mismo token que la
         extracción histórica (<code>HISTORICO_TOKEN</code>).</p>
-      <form id="form-token" class="mt-3 flex gap-2">
-        <input id="entrada-token" type="password" autocomplete="off" placeholder="Token"
-               class="flex-1 rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-        <button class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white">Ver</button>
+      <form id="form-token" class="mt-3 flex flex-wrap gap-2">
+        <input id="entrada-token" type="password" autocomplete="off" spellcheck="false" placeholder="Pegue aquí el token"
+               class="min-w-0 flex-1 rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+        <button id="btn-token" type="submit"
+                class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-50">
+          Guardar y ver detalle
+        </button>
       </form>
-      <p class="mt-2 text-xs text-gray-400">Se guarda solo en esta pestaña (sessionStorage) y viaja por cabecera, nunca en la URL.</p>`;
-    $("form-token").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const t = $("entrada-token").value.trim();
-      if (!t) return;
-      sessionStorage.setItem(CLAVE_TOKEN, t);
+      <label class="mt-2 flex items-center gap-2 text-xs text-gray-500">
+        <input id="ver-token" type="checkbox" class="h-3.5 w-3.5 rounded border-gray-300"> Mostrar el token
+      </label>
+      <p class="mt-2 text-xs text-gray-400">Se guarda solo en esta pestaña (sessionStorage) y viaja por cabecera,
+        nunca en la URL.</p>`;
+
+    const entrada = $("entrada-token");
+    const aviso1 = (msg) => {
+      const caja = $("aviso-token");
+      caja.textContent = msg;
+      caja.classList.remove("hidden");
+    };
+    const enviar = (e) => {
+      if (e) e.preventDefault();
+      const t = entrada.value.trim();
+      if (!t) { aviso1("Pegue el token para poder consultar el detalle."); entrada.focus(); return; }
+      if (!guardarToken(t)) { aviso1("Este navegador no permite guardar el token en la pestaña. Revise la configuración de almacenamiento."); return; }
+      $("btn-token").disabled = true;
       cargarDetalle(entidad);
+    };
+    // submit del formulario Y clic del botón: si algo llegara a suprimir el
+    // envío del formulario, el clic sigue funcionando
+    $("form-token").addEventListener("submit", enviar);
+    $("btn-token").addEventListener("click", enviar);
+    $("ver-token").addEventListener("change", (e) => {
+      entrada.type = e.target.checked ? "text" : "password";
     });
+    entrada.focus();
   }
 
   async function cargarDetalle(entidad) {
     const token = tokenGuardado();
     if (!token) return pedirToken(entidad, null);
-    $("modal-cuerpo").innerHTML = '<p class="py-8 text-center text-gray-400">Cargando procesos…</p>';
+    $("modal-cuerpo").innerHTML = '<p class="py-8 text-center text-gray-400">Consultando el histórico…</p>';
     let r, cuerpo;
     try {
       r = await fetch(`/api/competencia-detalle?entidad=${encodeURIComponent(entidad)}`,
@@ -402,10 +445,10 @@
       return;
     }
     if (r.status === 401) {
-      sessionStorage.removeItem(CLAVE_TOKEN);
-      return pedirToken(entidad, "El token no es válido. Vuelva a intentarlo.");
+      olvidarToken();
+      return pedirToken(entidad, "Token inválido. Escriba uno nuevo y vuelva a intentarlo.");
     }
-    if (!r.ok || !cuerpo.ok) {
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
       $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`)}</p>`;
       return;
     }
@@ -431,4 +474,15 @@
   for (const id of ["f-perfil", "f-cuantia", "f-competencia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden", "f-sin-unspsc"]) {
     $(id).addEventListener("change", () => { pagina = 1; buscar(); });
   }
+
+  /* ══════════ Arranque ══════════ */
+  /* Va AL FINAL a propósito. Estaba junto al gate, y en cada visita repetida
+     de la misma pestaña (`detecta-acceso` ya en sessionStorage) llamaba a
+     `buscar()` antes de que se inicializaran `pagina`/`timerReintento`: el
+     `clearTimeout(timerReintento)` de la primera línea de `buscar` reventaba
+     con «Cannot access 'timerReintento' before initialization». Como `buscar`
+     es async, el error salía por una promesa rechazada —la consola lo mostraba
+     y la app se quedaba sin resultados, en silencio— en vez de detener la
+     carga. Aquí ya está todo declarado y cableado. */
+  if (sessionStorage.getItem("detecta-acceso") === "1") abrirApp();
 })();

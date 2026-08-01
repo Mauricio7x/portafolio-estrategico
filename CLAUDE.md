@@ -198,6 +198,16 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   `lib/indice_competencia.js`. Síntoma de que falta la correcta: `indice:competencia:meta` con
   `clasificadas: 0` y `descartados.sin_oferentes` alto → añadir el nombre real y llamar
   `/api/sync/historico?reconstruir_indice=true` (no hay que re-extraer nada).
+- **En `public/app.js` el arranque automático (`abrirApp()` si ya hay `detecta-acceso`) va AL FINAL
+  del IIFE**. Estaba junto al gate y, en cada visita repetida de la MISMA pestaña, `buscar()`
+  reventaba en la zona muerta temporal de `timerReintento` (declarado más abajo). Como `buscar` es
+  async, el error salía por una promesa rechazada: la app se quedaba sin resultados EN SILENCIO y
+  parecía que el frontend «no hacía nada». Bug del día uno de la reescritura; hay prueba de que el
+  orden se mantiene.
+- **Ninguna pulsación del modal puede quedarse sin respuesta visible**: el campo de token vacío
+  AVISA (antes hacía `return` a secas y el botón parecía muerto), el envío va cableado al `submit`
+  y al `click`, y `sessionStorage` se lee/escribe dentro de `try` (en modo restringido lanza).
+  La clave de sesión es `historico_token`.
 - **El badge de competencia es AUDITABLE** (`/api/competencia-detalle` + `lib/competencia_detalle.js`):
   el modal enseña los procesos que forman el promedio y los que NO, con el motivo
   (`sin_dato_oferentes`, `sin_adjudicacion`, `insuficientes_datos`). Regla de oro: NO es un segundo
