@@ -2,7 +2,11 @@
    /api/sync/historico · Backfill del corpus histórico + índice de competencia
    ----------------------------------------------------------------------------
    GET /api/sync/historico?desde=2024-01&hasta=2025-12
-       [&presupuesto=ms] [&chain=0] [&reiniciar=1] [&reconstruir_indice=true]
+       [&presupuesto=ms] [&chain=0] [&reiniciar=1]
+       [&reconstruir_indice=true]         → solo el índice de competencia
+       [&reconstruir_equivalencias=true]  → solo las equivalencias UNSPSC
+       [&reconstruir_vocabulario=true]    → solo el vocabulario por familia
+       [&reconstruir_todo=true]           → los tres, sin re-extraer nada
        [&estado=true]  → solo diagnóstico, no toca nada
        [&reset=true]   → destraba candado y progreso (conserva lo ya bajado)
 
@@ -17,7 +21,17 @@
    había forma de saber en qué entidades se presenta poca gente. Este endpoint
    baja DE UNA VEZ el histórico (2024-2025 por defecto) a
    licitaciones:historico:mes:{YYYY-MM}:chunk:{i} — keyspace que ninguna purga
-   toca — y, al terminar, construye el índice de competencia por entidad.
+   toca — y, al terminar, DESTILA de él las tres cosas que la app aprende:
+
+     1. índice de competencia por entidad  (¿dónde se presenta menos gente?)
+     2. equivalencias funcionales UNSPSC   (¿qué clases son afines en el
+        mercado real? — los mismos contratistas ganan en ambas)
+     3. vocabulario distintivo por familia (¿qué palabras identifican a cada
+        familia? — co-señal para procesos mal codificados)
+
+   Las tres se reconstruyen SIN volver a bajar nada, y las tres son opcionales:
+   sin ellas la app funciona igual, con menos ayuda.
+
    NO se ejecuta solo: no hay cron ni auto-disparo. Se lanza a mano una vez
    desplegado. El día a día lo mantiene el delta de /api/sync (es quien ve la
    transición abierto → cerrado).
@@ -48,6 +62,8 @@ const {
 const { crearCliente, mesesEntre } = require("../../lib/socrata.js");
 const { transformar } = require("../../lib/proyeccion.js");
 const { construirIndice } = require("../../lib/indice_competencia.js");
+const { construirEquivalencias } = require("../../lib/equivalencias.js");
+const { construirVocabulario } = require("../../lib/texto_unspsc.js");
 
 const PAGE = parseInt(process.env.SECOP_PAGE, 10) || 5000;
 const PRESUPUESTO_DEFAULT_MS = 45000;
@@ -130,7 +146,7 @@ async function inventarioHistorico(redis) {
 }
 
 async function estadoActual(redis) {
-  const [candado, ttl, progreso, metaHist, metaIndice, indiceParcial, historico] = await Promise.all([
+  const [candado, ttl, progreso, metaHist, metaIndice, indiceParcial, historico, metaEquiv, metaVocab] = await Promise.all([
     redis.get(CLAVES.lockHistorico),
     redis.ttl(CLAVES.lockHistorico).catch(() => null),
     leerJSON(redis, CLAVES.progresoHistorico),
@@ -138,6 +154,8 @@ async function estadoActual(redis) {
     leerJSON(redis, CLAVES.indiceMeta),
     redis.exists(CLAVES.indiceProgreso).catch(() => 0),
     inventarioHistorico(redis),
+    leerJSON(redis, CLAVES.equivalenciasMeta),
+    leerJSON(redis, CLAVES.vocabularioMeta),
   ]);
   return {
     candado: candado
@@ -156,6 +174,12 @@ async function estadoActual(redis) {
       ? { construido: metaIndice.construido, entidades: metaIndice.entidades, clasificadas: metaIndice.clasificadas, descartados: metaIndice.descartados }
       : null,
     indice_a_medias: indiceParcial ? true : false,
+    equivalencias: metaEquiv
+      ? { construido: metaEquiv.construido, clases_con_equivalente: metaEquiv.clases_con_equivalente, pares: metaEquiv.pares, umbrales: metaEquiv.umbrales }
+      : null,
+    vocabulario: metaVocab
+      ? { construido: metaVocab.construido, familias: metaVocab.familias, procesos: metaVocab.procesos }
+      : { construido: null, familias: null, nota: "sin derivar: manda la semilla de data/vocabulario_unspsc.json" },
     siguiente_paso: progreso && !progreso.terminado && !candado
       ? "Vuelva a llamar esta URL sin ?estado: la extracción CONTINÚA donde quedó (no hace falta resetear)."
       : candado
@@ -167,10 +191,14 @@ async function estadoActual(redis) {
 async function resetear(redis) {
   const antes = await inventarioHistorico(redis);
   const borradas = await redis.del(
-    CLAVES.lockHistorico,      // 1. candado
-    CLAVES.progresoHistorico,  // 2. cursor de la extracción
-    CLAVES.metaHistorico,      // 3. resumen de la última corrida
-    CLAVES.indiceProgreso,     // acumulador a medias del índice (scratch, no dato)
+    CLAVES.lockHistorico,          // 1. candado
+    CLAVES.progresoHistorico,      // 2. cursor de la extracción
+    CLAVES.metaHistorico,          // 3. resumen de la última corrida
+    // acumuladores a medias de los tres derivados (scratch, no dato): lo ya
+    // PUBLICADO —índice, equivalencias, vocabulario— no se toca
+    CLAVES.indiceProgreso,
+    CLAVES.equivalenciasProgreso,
+    CLAVES.vocabularioProgreso,
   );
   return {
     ok: true, reset: true,
@@ -311,7 +339,14 @@ module.exports = async function handler(req, res) {
   catch (e) { return res.status(400).json({ ok: false, error: String(e.message) }); }
 
   const siNo = (v) => ["1", "true", "si", "sí"].includes(String(v).toLowerCase());
-  const soloIndice = siNo(q.reconstruir_indice);
+  /* Reconstrucciones a la carta: cada una lee el corpus histórico YA bajado y
+     no re-extrae nada. `reconstruir_todo` es el atajo para después de un
+     cambio de reglas. Si se pide alguna, NO se extrae. */
+  const todo = siNo(q.reconstruir_todo);
+  const pideIndice = todo || siNo(q.reconstruir_indice);
+  const pideEquivalencias = todo || siNo(q.reconstruir_equivalencias);
+  const pideVocabulario = todo || siNo(q.reconstruir_vocabulario);
+  const soloDerivados = pideIndice || pideEquivalencias || pideVocabulario;
   const reiniciar = siNo(q.reiniciar);
   const presupuestoMs = Math.min(parseInt(q.presupuesto, 10) || PRESUPUESTO_DEFAULT_MS, PRESUPUESTO_MAX_MS);
 
@@ -334,19 +369,29 @@ module.exports = async function handler(req, res) {
   catch (e) { return res.status(502).json({ ok: false, error: `Redis: ${e.message}` }); }
   if (!lock) return res.status(200).json({ ok: true, enCurso: true, msg: "ya hay una extracción histórica corriendo" });
 
-  let extraccion = null, indice = null, error = null;
+  let extraccion = null, indice = null, equivalencias = null, vocabulario = null, error = null;
   try {
-    if (!soloIndice) {
+    if (!soloDerivados) {
       extraccion = await extraerHistorico(redis, socrata, { presupuestoMs, desde, hasta, reiniciar });
     }
-    // el índice se construye SOLO con la extracción terminada (o si se pidió
-    // reconstruir a secas); comparte el presupuesto de la invocación y es
-    // reanudable, así que un corte aquí lo continúa la siguiente. El presupuesto
-    // nunca baja de 1 ms: construirIndice comprueba el reloj ANTES de cada mes,
-    // así que siempre avanza al menos un mes por invocación y la cadena termina.
-    if (soloIndice || (extraccion && extraccion.done)) {
-      const restante = Math.max(presupuestoMs - (Date.now() - t0), 1);
-      indice = await construirIndice(redis, { presupuestoMs: restante, reiniciar: soloIndice && reiniciar });
+    /* Los derivados se construyen SOLO con la extracción terminada (o si se
+       pidieron a secas). Los tres COMPARTEN el presupuesto de la invocación y
+       los tres son reanudables, así que un corte aquí lo continúa la
+       siguiente. El presupuesto nunca baja de 1 ms: cada constructor comprueba
+       el reloj ANTES de cada mes, así que siempre avanza al menos un mes por
+       invocación y la cadena termina.
+       Orden: índice → equivalencias → vocabulario. El índice es el que la app
+       usa en el orden por defecto, así que va primero si el tiempo aprieta. */
+    const listo = soloDerivados || (extraccion && extraccion.done);
+    const restante = () => Math.max(presupuestoMs - (Date.now() - t0), 1);
+    if (listo && (!soloDerivados || pideIndice)) {
+      indice = await construirIndice(redis, { presupuestoMs: restante(), reiniciar: pideIndice && reiniciar });
+    }
+    if (listo && (!soloDerivados || pideEquivalencias) && (!indice || indice.done)) {
+      equivalencias = await construirEquivalencias(redis, { presupuestoMs: restante(), reiniciar: pideEquivalencias && reiniciar });
+    }
+    if (listo && (!soloDerivados || pideVocabulario) && (!indice || indice.done) && (!equivalencias || equivalencias.done)) {
+      vocabulario = await construirVocabulario(redis, { presupuestoMs: restante(), reiniciar: pideVocabulario && reiniciar });
     }
   } catch (e) {
     error = String((e && e.message) || e);
@@ -356,7 +401,12 @@ module.exports = async function handler(req, res) {
 
   if (error) return res.status(502).json({ ok: false, error, duracionMs: Date.now() - t0 });
 
-  const done = (soloIndice || (extraccion && extraccion.done)) && !!(indice && indice.done);
+  // `done` exige que TODO lo pedido esté terminado: lo que no se pidió no cuenta
+  const hecho = (pedido, r) => !pedido || !!(r && r.done);
+  const done = (soloDerivados || (extraccion && extraccion.done))
+    && hecho(!soloDerivados || pideIndice, indice)
+    && hecho(!soloDerivados || pideEquivalencias, equivalencias)
+    && hecho(!soloDerivados || pideVocabulario, vocabulario);
 
   // presupuesto agotado con trabajo pendiente → re-invocarse (fire-and-forget).
   // El token viaja por HEADER: nunca queda escrito en los logs de acceso.
@@ -369,7 +419,12 @@ module.exports = async function handler(req, res) {
         headers["x-vercel-protection-bypass"] = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
       }
       const sig = new URLSearchParams({ desde, hasta });
-      if (soloIndice) sig.set("reconstruir_indice", "true");
+      if (todo) sig.set("reconstruir_todo", "true");
+      else {
+        if (pideIndice) sig.set("reconstruir_indice", "true");
+        if (pideEquivalencias) sig.set("reconstruir_equivalencias", "true");
+        if (pideVocabulario) sig.set("reconstruir_vocabulario", "true");
+      }
       if (host) fetch(`${proto}://${host}/api/sync/historico?${sig}`, { headers }).catch(() => {});
     } catch { /* relanzar a mano */ }
   }
@@ -377,6 +432,6 @@ module.exports = async function handler(req, res) {
   return res.status(200).json({
     ok: true, done, rango: { desde, hasta },
     duracionMs: Date.now() - t0, comandosRedis: redis.comandos(),
-    extraccion, indice,
+    extraccion, indice, equivalencias, vocabulario,
   });
 };

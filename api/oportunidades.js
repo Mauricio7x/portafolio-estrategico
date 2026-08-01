@@ -9,6 +9,7 @@
      &nivel_competencia=baja|media|alta        (ofertas DEL PROCESO)
      &competencia_entidad=baja|media|alta|sin_dato  (histórico DE LA ENTIDAD)
      &ubicacion_valida=true|false
+     &match=clase|familia|equivalente|texto    (solidez del match UNSPSC)
      &incluir_cerradas=1         (por defecto solo procesos abiertos)
      &ordenar_por=atractividad|anticipo|cuantia|competencia|puntaje
                                  (default ATRACTIVIDAD)
@@ -16,7 +17,10 @@
      &pagina=1&por_pagina=20     (máx 100)
 
    → { ok:true, total, resultados, pagina, por_pagina, perfil, sincronizado,
-       indice_competencia }
+       por_match, indice_competencia, conocimiento }
+   Cada resultado lleva `rup` con el veredicto GRADUADO: rup.tier
+   (clase|familia|equivalente|texto), rup.unspsc {codigo_proceso, codigo_rup,
+   mensaje} y rup.pertinencia {nivel, etiqueta, motivo}.
 
    ORDEN POR ATRACTIVIDAD (el default, y la razón de ser del índice): primero
    las entidades donde históricamente se presenta MENOS gente — ahí es más
@@ -26,20 +30,23 @@
 
    Lógica: SCAN licitaciones:activo:mes:*:chunk:* → MGET por lotes → inflate →
    dedup por _k (gana :updated_at) → filtros de negocio → rup_valido(perfil)
-   → índice de competencia → orden → paginación. El corpus deduplicado y el
-   índice se memoizan a nivel de módulo (instancia serverless caliente),
-   sellados con meta.last_sync y con la fecha de construcción del índice.
+   → índice de competencia → orden → paginación. El corpus deduplicado, el
+   índice y el conocimiento derivado se memoizan a nivel de módulo (instancia
+   serverless caliente), sellados con meta.last_sync y con la fecha de
+   construcción de cada artefacto.
+
+   AQUÍ CORRE TODO EL JUICIO (jul 2026). /api/sync guarda ancho —cualquier
+   proceso que PUEDA interesar— y es esta consulta la que aplica, por perfil:
+   matching UNSPSC jerárquico, equivalencias funcionales, co-señal de texto,
+   pertinencia del objeto, anti-suministro, capacidad K y tope. Consecuencia
+   deliberada: afinar una regla o cargar un RUP nuevo tiene efecto inmediato,
+   sin re-sincronizar nada.
 
    El corpus HISTÓRICO (licitaciones:historico:*) NO se lee aquí: de él solo
-   llega el resumen AGREGADO por entidad (promedio y nº de procesos). Los datos
-   de adjudicación —adjudicatario, NIT, valor adjudicado— nunca salen por este
-   endpoint; ni siquiera se guardan en el corpus activo.
-
-   Defensa en profundidad: la cascada (modalidad competitiva, estado abierto,
-   objeto/anti-suministro) ya corre en /api/sync antes de guardar, pero se
-   RE-APLICA aquí al servir — el corpus puede traer filas de sincronizaciones
-   anteriores a esta versión (hasta la próxima full) y cerradas que el delta
-   conserva a propósito para el reemplazo por :updated_at.
+   llega el resumen AGREGADO por entidad (promedio y nº de procesos) y el
+   conocimiento derivado (equivalencias entre clases, vocabulario por familia).
+   Los datos de adjudicación —adjudicatario, NIT, valor adjudicado— nunca salen
+   por este endpoint; ni siquiera se guardan en el corpus activo.
 
    Arranque en frío: si Redis no tiene chunks, dispara /api/sync?modo=auto en
    segundo plano (sin await) y responde 503 con mensaje claro — la web
@@ -48,10 +55,12 @@
 "use strict";
 
 const { crearRedis, hayCredenciales } = require("../lib/redis.js");
-const { CLAVES, leerChunksDedup, leerJSON } = require("../lib/almacen.js");
-const { PERFILES, ALIAS_PERFIL, rup_valido, evaluarRup } = require("../lib/rup.js");
+const { CLAVES, leerChunksDedup, leerJSON, leerJSONComprimido } = require("../lib/almacen.js");
+const { PERFILES, ALIAS_PERFIL, evaluarRup } = require("../lib/rup.js");
 const { modalidad_competitiva, estado_abierto } = require("../lib/filtros.js");
 const { leerIndice, leerIndiceMeta, competenciaDe } = require("../lib/indice_competencia.js");
+const { leerEquivalencias, leerEquivalenciasMeta } = require("../lib/equivalencias.js");
+const { vocabularioActivo } = require("../lib/texto_unspsc.js");
 const { sinAdjudicacion } = require("../lib/proyeccion.js");
 
 const POR_PAGINA_DEFAULT = 20, POR_PAGINA_MAX = 100;
@@ -114,6 +123,41 @@ async function cargarIndice(redis) {
   return { indice, meta };
 }
 
+/* Conocimiento aprendido del corpus histórico: equivalencias funcionales entre
+   clases UNSPSC y vocabulario distintivo por familia. Los dos son OPCIONALES —
+   sin backfill histórico no existen y la cascada simplemente no dispara esas
+   dos capas. Memoizado por instancia caliente contra el sello de su meta.
+   Dos GET por instancia fría, cero por petición caliente. */
+let _memConocimiento = { sello: null, conocimiento: null, meta: null };
+async function cargarConocimiento(redis) {
+  let metaEq = null;
+  try { metaEq = await leerEquivalenciasMeta(redis); } catch { /* opcional */ }
+  let metaVoc = null;
+  try { metaVoc = await leerJSON(redis, CLAVES.vocabularioMeta); } catch { /* opcional */ }
+  const sello = `${(metaEq && metaEq.construido) || "-"}|${(metaVoc && metaVoc.construido) || "-"}`;
+  if (_memConocimiento.sello === sello && _memConocimiento.conocimiento) {
+    return { conocimiento: _memConocimiento.conocimiento, meta: _memConocimiento.meta };
+  }
+  let equivalencias = null, vocabRedis = null;
+  if (metaEq && !metaEq.vacio) {
+    try { equivalencias = await leerEquivalencias(redis); } catch { /* opcional */ }
+  }
+  if (metaVoc) {
+    try { vocabRedis = await leerJSONComprimido(redis, CLAVES.vocabulario); } catch { /* opcional */ }
+  }
+  const vocabulario = vocabularioActivo(vocabRedis); // cae a la semilla del repo
+  const conocimiento = { equivalencias, vocabulario };
+  const meta = {
+    equivalencias: metaEq
+      ? { construido: metaEq.construido, clases_con_equivalente: metaEq.clases_con_equivalente || 0, pares: metaEq.pares || 0 }
+      : null,
+    vocabulario: { fuente: vocabulario.fuente, familias: vocabulario.indice.size, derivadas_del_historico: vocabulario.derivadas },
+  };
+  _memConocimiento = { sello, conocimiento, meta };
+  logDev(`conocimiento: equivalencias=${equivalencias ? Object.keys(equivalencias).length : 0} vocabulario=${vocabulario.fuente}/${vocabulario.indice.size}`);
+  return { conocimiento, meta };
+}
+
 /* Dispara la sincronización en segundo plano (mejor esfuerzo; la web también
    reintenta por su cuenta al recibir el 503). Si hay meta de una carga previa
    pero cero chunks, la caché quedó inconsistente → recarga full, no delta. */
@@ -143,11 +187,14 @@ module.exports = async function handler(req, res) {
   }
 
   const redis = crearRedis({});
-  let meta, filas, indice = null, indiceMeta = null;
+  let meta, filas, indice = null, indiceMeta = null, conocimiento = {}, conocimientoMeta = null;
   try {
     meta = await leerJSON(redis, CLAVES.meta);
     filas = await cargarCorpus(redis, meta);
-    if (filas) ({ indice, meta: indiceMeta } = await cargarIndice(redis));
+    if (filas) {
+      ({ indice, meta: indiceMeta } = await cargarIndice(redis));
+      ({ conocimiento, meta: conocimientoMeta } = await cargarConocimiento(redis));
+    }
   } catch (e) {
     return res.status(502).json({ ok: false, error: `Redis: ${e.message}` });
   }
@@ -177,6 +224,18 @@ module.exports = async function handler(req, res) {
   const fEntidad = NIVELES_ENTIDAD.includes(q.competencia_entidad) ? q.competencia_entidad : null;
   const fUbicacion = q.ubicacion_valida === undefined ? null : ["true", "1"].includes(String(q.ubicacion_valida));
   const soloAbiertas = q.incluir_cerradas !== "1";
+  // ?match=clase|familia|equivalente|texto → ver solo los de esa solidez
+  const fTier = ["clase", "familia", "equivalente", "texto"].includes(q.match) ? q.match : null;
+
+  /* Veredicto del RUP memoizado por fila DENTRO de la petición: el filtro lo
+     necesita para decidir y la página lo necesita para pintar la tarjeta.
+     Calcularlo dos veces duplicaría el trabajo caro de la cascada. */
+  const _rup = new Map();
+  const rupDe = (l) => {
+    let r = _rup.get(l);
+    if (!r) { r = evaluarRup(l, perfil, conocimiento); _rup.set(l, r); }
+    return r;
+  };
 
   let lista = filas.filter((l) => {
     if (!modalidad_competitiva(l)) return false; // defensa: corpus previo al filtro
@@ -191,7 +250,8 @@ module.exports = async function handler(req, res) {
     if (fCompetencia && l.nivel_competencia !== fCompetencia) return false;
     if (fUbicacion !== null && l.ubicacion_valida !== fUbicacion) return false;
     if (fEntidad && compDe(l).nivel !== fEntidad) return false;
-    return rup_valido(l, perfil);
+    if (fTier && (rupDe(l).tier || "ninguno") !== fTier) return false;
+    return rupDe(l).ok;
   });
 
   /* ---------- orden ---------- */
@@ -213,15 +273,25 @@ module.exports = async function handler(req, res) {
   const resultados = lista.slice((pagina - 1) * porPagina, (pagina - 1) * porPagina + porPagina)
     // sinAdjudicacion: defensa en profundidad — el corpus activo no guarda
     // datos de adjudicación, y si una fila vieja los trajera, no salen de aquí
-    .map((l) => ({ ...sinAdjudicacion(l), rup: evaluarRup(l, perfil), competencia_entidad: compDe(l) }));
+    .map((l) => ({ ...sinAdjudicacion(l), rup: rupDe(l), competencia_entidad: compDe(l) }));
+
+  // reparto por solidez del match: le dice al dueño cuántas de las que ve son
+  // «RUP ✓» y cuántas hay que verificar en el pliego
+  const por_match = { clase: 0, familia: 0, equivalente: 0, texto: 0 };
+  for (const l of lista) {
+    const t = rupDe(l).tier;
+    if (t in por_match) por_match[t]++;
+  }
 
   logDev(`perfil=${perfil} corpus=${filas.length} filtradas=${total} página=${pagina} orden=${q.ordenar_por || ORDEN_DEFAULT}`);
   return res.status(200).json({
     ok: true, total, resultados, pagina, por_pagina: porPagina, perfil,
     sincronizado: meta ? meta.last_sync : null,
     ordenado_por: Object.prototype.hasOwnProperty.call(ORDEN_CAMPOS, q.ordenar_por) ? q.ordenar_por : ORDEN_DEFAULT,
+    por_match,
     indice_competencia: indiceMeta
       ? { construido: indiceMeta.construido, entidades: indiceMeta.clasificadas, min_procesos: indiceMeta.min_procesos }
       : null,
+    conocimiento: conocimientoMeta,
   });
 };

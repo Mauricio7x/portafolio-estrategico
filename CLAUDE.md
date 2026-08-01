@@ -24,10 +24,12 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - **Probar:** `node tests/e2e.js` (4 iteraciones; mocks HTTP de Socrata y Upstash + handlers
   reales). Este entorno **no** tiene salida a `datos.gov.co` (allowlist del proxy) ni CLI de
   Vercel: la validación contra datos reales se hace desplegando.
-- **Tras desplegar**: (1) abrir la web — el activo cambió de nombre de clave, así que la primera
-  visita responde 503 y dispara la full sola; (2) definir `HISTORICO_TOKEN` y lanzar UNA vez
-  `/api/sync/historico?desde=2024-01&hasta=2025-12` (header `x-historico-token`). Sin ese paso la
-  app funciona igual, con todo en ⚪ «sin datos históricos».
+- **Tras desplegar**: (1) relanzar `/api/sync?modo=full` UNA vez — la ingesta se ensanchó y hay
+  procesos que las reglas viejas nunca dejaron entrar a Redis (es la última full que exige un
+  cambio de matching: ver «ingesta/juicio»); (2) definir `HISTORICO_TOKEN` y lanzar UNA vez
+  `/api/sync/historico?desde=2024-01&hasta=2025-12` (header `x-historico-token`), o
+  `?reconstruir_todo=true` si el histórico ya estaba bajado. Sin ese paso la app funciona igual,
+  con todo en ⚪ «sin datos históricos» y sin equivalencias.
 - Sintaxis de los JS del frontend: `new Function(código)` con Node (los cubre el paso *e* del test).
 
 ## Decisiones que no hay que re-aprender (costaron caro)
@@ -51,9 +53,10 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   aparece si el objeto lo menciona en texto o si algún día la fuente añade el campo.
 - **`plazoMeses`**: normalizar acentos antes de comparar unidades («Días».includes("dia") era
   false por la í — bug histórico del K).
-- **Prefiltro al sincronizar** (cascada modalidad → estado → objeto): sin él, el año son ~500 k
-  filas y revienta el tier gratuito de Upstash y la memoria de la función de consulta. Si cambian
-  las whitelists (`lib/unspsc.js`) o los filtros (`lib/filtros.js`), relanzar `/api/sync?modo=full`.
+- **Prefiltro al sincronizar** (cascada modalidad → estado → `admisibleParaIngesta`): sin él, el
+  año son ~500 k filas y revienta el tier gratuito de Upstash y la memoria de la función de
+  consulta. Desde jul 2026 ese prefiltro NO evalúa los RUP (ver «ingesta/juicio»): solo hay que
+  relanzar la full si se toca `admisibleParaIngesta` o la blacklist, nunca por el matching.
 - **El delta CONSERVA los cerrados a propósito** (`transformar(..., {conservarCerradas:true})`):
   un proceso guardado como abierto que pasa a Adjudicado debe entrar al chunk para que el dedup
   por `:updated_at` lo reemplace y salga del listado. Si el delta lo filtrara, la versión abierta
@@ -69,21 +72,33 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   «Régimen Especial (con ofertas)». OJO con la precisión: «aunar esfuerzos/recursos» descarta esté
   donde esté, pero «convenio interadministrativo» SOLO si encabeza el objeto — si no, se lleva por
   delante la obra real que lo menciona de pasada («…en el marco del convenio 123»).
-- **UNSPSC se compara por CLASE (6 dígitos), no por producto (8)**: los 393 códigos de los RUP
-  terminan TODOS en «00» (inscripción a nivel de clase) y SECOP II publica muchas veces el
-  producto — la igualdad exacta de 8 dígitos exigía que la entidad hubiera publicado justo el
-  «…00», así que descartaba en silencio todo lo demás. El cambio es estrictamente más permisivo;
-  una clase ajena al RUP sigue fuera. **Requiere relanzar la full**: el prefiltro corre al
-  sincronizar, así que lo que la regla vieja descartó nunca entró a Redis.
+- **UNSPSC se compara por JERARQUÍA, leyendo el NIVEL del código** (`lib/unspsc.js`): el nivel se
+  deduce de los pares «00» finales — `72000000` es un SEGMENTO, no «el producto cero». El match es
+  BIDIRECCIONAL: la clase del RUP contiene al producto publicado (tier `clase`) Y el proceso
+  publicado a nivel de familia contiene clases del RUP (tier `familia`, amplio: verificar pliego).
+  El upward matching llega hasta FAMILIA, jamás hasta segmento — subir al segmento haría casar
+  «servicios de construcción» con cualquier cosa del 72; un segmento suelto solo se rescata si el
+  objeto lo confirma. Los 393 códigos de los RUP terminan TODOS en «00» (inscripción por clase),
+  que es la premisa de todo esto y hay una prueba que la vigila.
+- **Tokenizar los códigos por RUNS de dígitos, nunca con `\d{8}`**: el `\d{8}` fabricaba códigos
+  falsos a partir de cualquier número largo del campo («1234567890» → 12345678). Solo longitudes
+  2/4/6/8; lo demás se descarta Y SE CUENTA (`distribuciones.codigos_unspsc_ilegibles`).
 - **`/api/diagnostico`** (mismo token, solo lectura) da el EMBUDO paso a paso sobre el corpus real
-  más contrafactuales. Antes de tocar un filtro «porque salen pocos», MIRARLO: dice exactamente en
-  qué paso mueren los procesos y cuántos se recuperarían al relajar cada regla. Dos invariantes
-  probadas: los pasos suman el total, y `visibles` == el `total` de /api/oportunidades.
-- **Capa anti-suministro**: clases SOLO de segmentos de bienes + verbo de compra sin verbo de
-  obra = compra disfrazada → fuera. El corte de «bienes» es TODO segmento UNSPSC < 70 (no la
-  lista 30/39/43/48/56: eso dejaba servida la «compraventa de tubería PVC», segmento 40, el
-  bloque más grande del RUP de Génesis). Un código ≥ 70 (obra/servicios) ancla el proceso.
-  Y «Enajenación de bienes con Subasta» se excluye ANTES de que la lista blanca vea «subasta».
+  más contrafactuales (`ganancia_por_jerarquia`, `ganancia_por_equivalencias`,
+  `ganancia_por_texto`, `visibles_sin_capa_pertinencia`). Antes de tocar un filtro «porque salen
+  pocos», MIRARLO: dice exactamente en qué paso mueren los procesos y cuántos se recuperarían al
+  relajar cada regla. Cuatro invariantes probadas: los pasos suman el total, `visibles` == el
+  `total` de /api/oportunidades, el reparto por tier suma exactamente los visibles, y
+  `visibles_por_pertinencia.rojo` es SIEMPRE 0.
+- **Capa anti-suministro**: ningún código que ancle obra + verbo de compra sin verbo de obra =
+  compra disfrazada → fuera. El corte de «bienes» es TODO segmento UNSPSC < 70 (no la lista
+  30/39/43/48/56: eso dejaba servida la «compraventa de tubería PVC», segmento 40, el bloque más
+  grande del RUP de Génesis). ANCLA un código ≥ 70 **salvo** los servicios no constructivos
+  (80, 84, 85, 86, 90-94): antes bastaba cualquier ≥70 y una «ADQUISICIÓN DE MOBILIARIO» con un
+  80101600 de gerencia quedaba anclada. OJO: su `VERBO_OBRA_RE` es una lista de ACCIONES, más
+  corta que `VERBOS_DE_OBRA_FUERTES` (que trae sustantivos como «acueducto») — «SUMINISTRO DE
+  TUBERÍA PARA LA RED DE ACUEDUCTO» es una compra y debe seguir cayendo aquí. Y «Enajenación de
+  bienes con Subasta» se excluye ANTES de que la lista blanca vea «subasta».
 - **Full de higiene mensual** (modo auto, `FULL_HIGIENE_MS`): el delta no puede reflejar
   mutaciones de modalidad/objeto de procesos ya guardados (los descarta y la versión vieja
   quedaría congelada); la full mensual acota esa deriva. Tumbas por descartado costarían
@@ -95,6 +110,49 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - **Límites Vercel/Upstash**: respuesta ≤4.5 MB; valor Redis ≤1 MB (chunks deflate ≤500 KB antes
   del base64); crons Hobby solo diarios — por eso la full se auto-encadena y cada visita
   refresca vía delta.
+
+### Ingesta ancha / juicio fino y pertinencia (jul 2026)
+
+- **El bug ESTRUCTURAL era el acoplamiento**: el matching UNSPSC corría en el prefiltro de ingesta,
+  así que cada mejora de la regla exigía una full y lo que la regla vieja descartó nunca había
+  entrado a Redis. Ahora `admisibleParaIngesta` (ancho, sin perfiles, <1 ms/proceso) decide qué se
+  GUARDA y `evaluarObjeto(l, perfil, conocimiento)` decide qué se SIRVE. Afinar el matching o
+  cargar un RUP nuevo tiene efecto INMEDIATO. Hay prueba de que el prefiltro no recibe perfil.
+- **La blacklist semántica SE QUEDA en la ingesta** aunque el juicio la repita: no es juicio por
+  perfil («ningún RUP de obra querrá un contrato de caninos») y es lo que evita pagar Redis por
+  medio SECOP. Quitarla no cambiaría ni un resultado, solo la factura.
+- **Capa de PERTINENCIA** (`evaluarPertinencia`, corre DESPUÉS del matching): los segmentos 80
+  (gerencia), 85 (salud) y 93 (sociales) están inscritos en los RUP porque ahí viven la gerencia
+  de proyectos y la interventoría — y por eso se colaban impresión/fotocopia, alimentos, internet,
+  cumpleaños y apoyo logístico con código válido. Regla: verbo de obra → pasa; término no
+  pertinente CON CERO verbos de obra → fuera; sin verbo pero con tier `clase` en segmento de obra
+  pura (72/77/81/95) → pasa; resto → pasa en AMARILLO. **Nunca bloquea por falta de información**:
+  en una app de oportunidades el falso negativo cuesta más que un amarillo que se revisa en 5 s.
+- **Los verbos ambiguos van CONDICIONADOS a un ancla de infraestructura cercana**: «mantenimiento
+  de la red de alcantarillado» sí, «mantenimiento de vehículos» no. Ídem instalación/montaje y
+  consultoría/supervisión/diseño/estudios. Y los términos malos tienen excepciones por lookahead:
+  «logística DE OBRA», «transporte DE MATERIALES», «seguridad VIAL».
+- **Los vocabularios nuevos se comparan sobre texto NORMALIZADO** (`norm`: sin tildes y ñ→n), así
+  que se escriben `diseno`, `senalizacion`, `cumpleanos`. Los dos heredados (BLACKLIST_OBJETO,
+  WHITELIST_OBRA) siguen comparándose sobre el texto CRUDO con `[oó]` y flag `i`: no tocarlos,
+  cambiarles la base de comparación sería una regresión silenciosa.
+- **`norm` vive en `lib/semantica.js`** (filtros la re-exporta) y **`lib/indice_competencia.js` la
+  importa de semantica, NO de filtros**: filtros → equivalencias → indice_competencia → filtros
+  sería un ciclo de requires y dejaría `norm` sin definir en tiempo de carga.
+- **Equivalencias funcionales** (`lib/equivalencias.js`): lift ≥ 3 sobre ADJUDICATARIOS (no sobre
+  procesos: una entidad con 40 procesos gemelos no puede fabricar una equivalencia), soporte ≥ 20
+  procesos en la clase inscrita y ≥ 5 adjudicatarios en la intersección. Solo se guardan pares con
+  A en la unión de los RUP. Es AYUDA A LA DECISIÓN, no habilitación jurídica — por eso el tier
+  `equivalente` es más débil que `clase` y la tarjeta lo dice.
+- **Vocabulario por familia**: `data/vocabulario_unspsc.json` es una SEMILLA CURADA A MANO, no una
+  estadística — está escrito en el propio archivo y no debe presentarse de otro modo. El derivado
+  del histórico se MEZCLA con la semilla familia a familia (una derivación flaca no puede dejar
+  sin señal a las demás). Al derivar solo se acumulan familias que algún RUP inscribe: el resto no
+  se usaría nunca.
+- **Un proceso con códigos que no casan pero con objeto inequívoco de obra se RESCATA** con el
+  tier más débil (`texto`). Es intencional: SECOP II se codifica mal a menudo. Lo que NO se
+  rescata es un objeto sin vocabulario de obra — ese muere en `fuera_unspsc`, y el diagnóstico lo
+  separa de `fuera_sin_unspsc_ni_obra`.
 
 ### Competencia histórica por entidad (jul 2026)
 
@@ -150,9 +208,12 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - Índice de competencia por entidad en `lib/indice_competencia.js` (hash `indice:competencia`,
   tertiles sobre el promedio de oferentes de 2 años); alimenta `ordenar_por=atractividad`.
 - Perfiles y finanzas reales en `lib/perfiles.js` (FUENTE ÚNICA; RUP corte 31/12/2025) — Génesis
-  es persona jurídica SAS; fórmula K única en `lib/capacidad.js`; filtros canónicos (estado,
-  modalidad, anti-suministro) en `lib/filtros.js`; whitelists UNSPSC en `lib/unspsc.js`
-  (193/343/393, la unión se calcula); blacklist/whitelist semánticas en `lib/semantica.js`.
+  es persona jurídica SAS; fórmula K única en `lib/capacidad.js`; REGLAS (estado, modalidad,
+  convenios, prefiltro de ingesta, cascada de juicio, pertinencia, anti-suministro) en
+  `lib/filtros.js`; whitelists UNSPSC + motor de matching jerárquico en `lib/unspsc.js`
+  (193/343/393, la unión se calcula); VOCABULARIOS en `lib/semantica.js`; equivalencias aprendidas
+  en `lib/equivalencias.js`; co-señal de texto en `lib/texto_unspsc.js` +
+  `data/vocabulario_unspsc.json`.
   Resumen técnico en `docs/PERFILES.md`. SMMLV 2026 = $1.750.905.
 - `autorizacion_helder.md`: constancia de autorización de datos personales (plantilla).
 - Clave del sitio: `231105` (gate del cliente, en `public/app.js`). La protección seria es
