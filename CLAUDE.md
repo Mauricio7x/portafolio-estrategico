@@ -31,6 +31,8 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   `?reconstruir_todo=true` si el histórico ya estaba bajado. Sin ese paso la app funciona igual,
   con todo en ⚪ «sin datos históricos» y sin equivalencias.
 - Sintaxis de los JS del frontend: `new Function(código)` con Node (los cubre el paso *e* del test).
+- El dashboard (`/api/resumen`) y la carga de RUP (`/api/admin/rup`) NO exigen full ni backfill:
+  viven en la capa de consulta. Cargar un RUP tampoco — el juicio corre al servir.
 
 ## Decisiones que no hay que re-aprender (costaron caro)
 
@@ -218,9 +220,9 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - **Índice publicado con swap atómico** (`indice:competencia:nuevo` → RENAME): nunca hay una
   ventana sin índice. Construcción mes a mes y reanudable; el acumulador que se persiste es por
   ENTIDAD (histograma), no por proceso — por eso cabe en un valor de Redis.
-- **La autorización vive en `lib/auth.js`, una sola vez**: tres endpoints la usan
-  (`/api/sync/historico`, `/api/diagnostico`, `/api/competencia-detalle`). Una copia que se
-  desincronice es un agujero.
+- **La autorización vive en `lib/auth.js`, una sola vez**: cinco endpoints la usan
+  (`/api/sync/historico`, `/api/diagnostico`, `/api/competencia-detalle`, `/api/resumen`,
+  `/api/admin/rup`). Una copia que se desincronice es un agujero.
 - **`HISTORICO_TOKEN` sin default**: si la variable no está, el endpoint responde 503. Nunca
   inventar una llave por defecto. El token viaja por header en la auto-reinvocación para no
   quedar escrito en los logs de acceso de Vercel.
@@ -241,11 +243,56 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   (token en logs de acceso e historial del navegador) está asumido y documentado — rotarlo al
   terminar el backfill. El mensaje del 401 sugiere LAS DOS formas a propósito.
 
+### Dashboard y RUP por archivo (ago 2026)
+
+- **`/api/resumen` NO reimplementa la cascada, la LLAMA** (`evaluarRup` + `leerChunksDedup` + el
+  mismo `anticipo_min=20` y «solo abiertas»). Hay prueba de que `totales.visibles` es EXACTAMENTE el
+  `total` de `/api/oportunidades` y el `embudo.visibles` de `/api/diagnostico`. Un panel que calcula
+  por su cuenta acaba contradiciendo a la app y entonces no se puede creer a ninguno de los dos.
+- **Cada reparto suma los visibles**, y por eso hay cubetas feas a propósito (`OTROS`,
+  `SIN_DEPARTAMENTO`, `ya_cerro`, `mas_adelante`): la alternativa es que un proceso desaparezca del
+  reparto sin que nadie lo note. `SIN_DEPARTAMENTO` no compite por un puesto del top y jamás se
+  reparte a ojo. `superan_k`/`no_superan_k` se cuentan sobre los que pasaron el juicio del OBJETO,
+  no sobre los visibles (ahí todos superan la K por construcción: el contador no diría nada).
+- **`lib/perfiles.js` sigue exportando `PERFILES` SÍNCRONO y con la misma identidad de objeto**
+  (media app lo captura al requerir): una carga de RUP REEMPLAZA sus tres propiedades, nunca el
+  objeto. Los datos del repositorio quedan congelados como `PERFILES_FALLBACK`. Si Redis no
+  responde, si la clave no existe o si el valor está corrupto, se conserva lo vigente o el respaldo
+  y NUNCA se lanza: quedarse sin perfiles deja la app muda.
+- **`lib/unspsc.js` conserva sus tres listas y sigue siendo hoja del grafo de requires.** Hacer que
+  importara los perfiles cerraría el ciclo `perfiles → unspsc → perfiles`. El RUP cargado entra por
+  `PERFILES[x].unspsc`, que es el ÚNICO punto donde el matching lee el RUP: por eso la carga tiene
+  efecto inmediato sin tocar el motor. La admisibilidad de INGESTA (`FAMILIAS_UNION`) sigue saliendo
+  de las listas del repositorio a propósito: es deliberadamente ancha y cambiarla exigiría una full.
+- **Sin TTL en la recarga**: un `GET` del sello `config:perfiles:version` en cada petición (barato)
+  y la configuración entera solo si cambió. Un TTL convertiría el «efecto inmediato» prometido en
+  «efecto dentro de N minutos», que es justo lo que el dueño no puede verificar desde el navegador.
+- **El sello se escribe AL FINAL** de la carga (whitelists → configuración → versión) y lleva
+  sufijo aleatorio además del ISO: dos cargas en el mismo milisegundo producirían el mismo sello y
+  la segunda pasaría desapercibida.
+- **`tope_smmlv` < `experiencia_smmlv` es ADVERTENCIA, no error**: el tope es apetito estratégico y
+  en el RUP REAL va por debajo (Helder 6 768 acreditados, tope 4 000). Convertirlo en error dejaría
+  el RUP del dueño imposible de cargar. Ídem el tope del plural frente al de sus integrantes.
+- **El consorcio se RE-DERIVA siempre** de sus integrantes (unión de UNSPSC, experiencia sumada, K =
+  suma de las CRP) aunque venga explícito en el archivo; una lista propia del plural se SUMA a la
+  unión, nunca la sustituye. La unión es un hecho derivado: dejar que un archivo la reduzca
+  desincronizaría al consorcio de sus miembros.
+- **Carga parcial**: subir solo Génesis conserva a Helder. Un POST rechazado no toca nada.
+- **En `public/admin.js` el arranque automático va AL FINAL del IIFE** (misma lección que costó cara
+  en `app.js`): `abrirApp()` levanta el panel y la carga de RUP, cuyas funciones leen constantes
+  declaradas más abajo. Hay prueba del orden. El refresco automático del panel **no corre con la
+  pestaña oculta** (gastar invocaciones para que nadie lo mire) y se pone al día al volver a ella.
+- La caché `resumen:{perfil}` (TTL 300 s) la **borra cualquier carga de RUP**: sus números salen del
+  RUP y quedarían mintiendo cinco minutos.
+
 ## Datos del negocio (fuente de verdad)
 
+- Perfiles: `lib/perfiles.js` es el RESPALDO (`PERFILES_FALLBACK`, RUP corte 31/12/2025) y el punto
+  de aplicación de lo que el dueño cargue por `/api/admin/rup` (validación en `lib/config_rup.js`).
 - Índice de competencia por entidad en `lib/indice_competencia.js` (hash `indice:competencia`,
   tertiles sobre el promedio de oferentes de 2 años); alimenta `ordenar_por=atractividad`.
-- Perfiles y finanzas reales en `lib/perfiles.js` (FUENTE ÚNICA; RUP corte 31/12/2025) — Génesis
+- Perfiles y finanzas reales en `lib/perfiles.js` (fuente única en código; RUP corte 31/12/2025;
+  el archivo que cargue el dueño manda sobre estos valores) — Génesis
   es persona jurídica SAS; fórmula K única en `lib/capacidad.js`; REGLAS (estado, modalidad,
   convenios, prefiltro de ingesta, cascada de juicio, pertinencia, anti-suministro) en
   `lib/filtros.js`; whitelists UNSPSC + motor de matching jerárquico en `lib/unspsc.js`

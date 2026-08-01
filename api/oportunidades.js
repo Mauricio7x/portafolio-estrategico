@@ -59,6 +59,7 @@
 const { crearRedis, hayCredenciales } = require("../lib/redis.js");
 const { CLAVES, leerChunksDedup, leerJSON, leerJSONComprimido } = require("../lib/almacen.js");
 const { PERFILES, ALIAS_PERFIL, evaluarRup } = require("../lib/rup.js");
+const { recargarPerfiles } = require("../lib/perfiles.js");
 const { modalidad_competitiva, estado_abierto } = require("../lib/filtros.js");
 const { leerIndice, leerIndiceMeta, competenciaDe } = require("../lib/indice_competencia.js");
 const { leerEquivalencias, leerEquivalenciasMeta } = require("../lib/equivalencias.js");
@@ -191,6 +192,11 @@ module.exports = async function handler(req, res) {
   const redis = crearRedis({});
   let meta, filas, indice = null, indiceMeta = null, conocimiento = {}, conocimientoMeta = null;
   try {
+    // el RUP que el dueño haya cargado (POST /api/admin/rup) manda sobre los
+    // datos del repositorio. Es UN GET del sello: solo si cambió se baja la
+    // configuración entera. Va antes de evaluar nada — si no, esta petición
+    // juzgaría con el RUP anterior y el «efecto inmediato» sería mentira.
+    await recargarPerfiles(redis);
     meta = await leerJSON(redis, CLAVES.meta);
     filas = await cargarCorpus(redis, meta);
     if (filas) {
