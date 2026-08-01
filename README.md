@@ -67,7 +67,7 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `lib/proyeccion.js` | Proyección de columnas y cascada de filtros; dos variantes: activa (sin adjudicación) e histórica |
 | `lib/perfiles.js` | Los tres perfiles: naturaleza, financieros, CT, SCE, ponderación 50/50 del consorcio. Respaldo del repositorio + aplicación del RUP cargado (`PERFILES` sigue siendo síncrono) |
 | `lib/capacidad.js` | **Fórmula única** del K de contratación (CRP/CRPC, Guía CCE-EICP-GI-22) |
-| `lib/filtros.js` | Las **reglas**: estados canónicos (desconocido = cerrado), modalidades, convenios, prefiltro de ingesta, cascada de juicio, **pertinencia** y anti-suministro |
+| `lib/filtros.js` | Las **reglas**: estados canónicos (desconocido = cerrado), modalidades, convenios, prefiltro de ingesta, cascada de juicio, **pertinencia**, anti-suministro y `filtrarProcesosVisibles` — la **única** implementación de la cascada que sirve la app y el panel |
 | `lib/rup.js` | Orquestador: `rup_valido()`, `evaluarRup()` (veredicto graduado + capacidad) |
 | `lib/unspsc.js` | Whitelists de los RUP (193 · 343 · 393 unión calculada) + **motor de matching jerárquico por niveles** |
 | `lib/redis.js` | Cliente REST mínimo de Upstash (GET/SET NX EX/DEL/MGET/SCAN) |
@@ -232,9 +232,12 @@ histórica, en qué departamentos están, cuántos se caen por capacidad K.
 | `perfil` | requerido | `helder` \| `genesis` \| `consorcio` \| `juntos`. Otro valor → `400` con `valores_validos` |
 | `token` | requerido | El mismo `HISTORICO_TOKEN` (header `x-historico-token` o `?token=`) |
 
-**No reimplementa la cascada: la llama.** Usa `evaluarRup` (→ `lib/filtros`), lee el corpus con
-`leerChunksDedup` y aplica el mismo `anticipo_min=20` y el mismo «solo abiertas» de
-`/api/oportunidades`. Hay una prueba que compara `totales.visibles` contra el `total` de
+**No reimplementa la cascada: llama a la MISMA función.**
+`lib/filtros.filtrarProcesosVisibles` es la única implementación de
+modalidad → estado → objeto → capacidad K → tope → anticipo, y la usan este endpoint y
+`/api/oportunidades`. Hasta ago 2026 eran dos copias idénticas —con pruebas de que los totales
+coincidían—, pero «idénticas hoy» no es una garantía: dos copias divergen a la primera corrección
+que se aplique a una sola. Hay una prueba que compara `totales.visibles` contra el `total` de
 `/api/oportunidades` **y** contra el `embudo.visibles` de `/api/diagnostico`: si divergieran, el
 panel sería un segundo cálculo, y un segundo cálculo acaba contradiciendo al primero.
 
@@ -257,6 +260,17 @@ Decisiones que conviene no re-aprender:
 - **`procesos_destacados` cae a orden por atractividad** cuando todavía no hay histórico (sin
   backfill nadie tiene nivel `baja` y la tabla quedaría vacía para siempre). El campo
   `destacados_desde` dice cuál de los dos criterios se aplicó — no se disimula.
+- **Los destacados aplican CUATRO filtros MÁS que el listado** (ago 2026): estado explícitamente
+  cerrado, pertinencia «Verificar objeto», objetos de **estructuración** (accionista, socio
+  estratégico, APP, concesión…) y cuantía 0. Es deliberado: la lista corta es una *recomendación*
+  —«empiece por aquí»— y un falso positivo en el puesto 1 cuesta más que uno en la página 4 de la
+  app. **Ninguno toca `totales.visibles`**: el proceso sigue en `/api/oportunidades`, con su tarjeta
+  y su veredicto delante, que es donde el dueño puede juzgarlo. Lo apartado se cuenta en
+  `destacados_descartados` — nada se va en silencio.
+- **`integridad`**: el endpoint verifica sus propios números antes de publicarlos (el conteo contra
+  la cascada compartida, cada reparto contra los visibles, y `descartes + visibles` contra el
+  corpus). Si algo no cuadra, `integridad.ok` es `false` y los avisos viajan en la respuesta además
+  de en un `console.error`: un log de Vercel lo lee quien mira los logs, y el dueño no mira logs.
 - **Caché `resumen:{perfil}` con TTL 300 s**, anunciada en la cabecera `X-Cache: HIT|MISS` y en
   `cache`. La invalida cualquier carga de RUP: sus números dependen del RUP y quedarían mintiendo
   cinco minutos.
@@ -321,6 +335,86 @@ con evidencia de adjudicación **y** con un conteo de oferentes ≥ 1. Un «0 of
 adjudicado es un hueco del dataset, no una subasta desierta: contarlo arrastraría el promedio a
 cero y **todas** las entidades acabarían clasificadas como «baja». Los descartes quedan contados
 en `indice:competencia:meta` (`descartados.sin_oferentes` / `sin_adjudicacion`) para auditarlo.
+
+### Ninguna cifra sin base detrás (defecto de producción, ago 2026)
+
+El panel llegó a decir **«promedio 18,2 oferentes en 0 procesos»**. Eran **dos** cosas distintas:
+
+**(i) El «en 0 procesos» era un campo inexistente.** El detalle en línea de `/admin.html` leía
+`i.total_procesos` de la respuesta de `/api/competencia-detalle`, que nunca ha tenido ese campo: se
+llama `procesos_contados`. `total_procesos` existe, pero en el **otro** payload —el
+`competencia_entidad` que embebe `/api/oportunidades`—, y `public/app.js` sí usa el nombre correcto
+en cada uno. El `|| 0` convertía el `undefined` en un cero perfectamente creíble, así que el conteo
+era 0 **siempre**, con cualquier entidad y con índice o sin él. La cifra del promedio era real; lo
+falso era el conteo que la acompañaba. Hay una prueba que prohíbe `i.<conteo> || 0` en los dos
+frontends: un conteo ausente se dice, no se pinta como cero.
+
+**(ii) El promedio sí podía carecer de base.** Nacía en el paso 5: se publicaba el
+`promedio` de entidades que el paso 3 acababa de declarar `sin_dato`, y bastaba con que un
+consumidor lo pintara sin mirar el nivel. El promedio de 3 procesos no es un promedio: es ruido con
+un decimal. Tres cerraduras, y las tres hacen falta:
+
+1. **El escritor** (`registroPublicado`): por debajo de `MIN_PROCESOS` no se publica **ninguna
+   cifra derivada** — ni promedio, ni mediana, ni `oferentes_total` (con la suma y el conteo se
+   recalcula el promedio que se acaba de anular). El **conteo sí** se publica: es un hecho y es lo
+   que explica el ⚪.
+2. **El lector** (`competenciaDe`), que es el **punto único de paso** de los tres consumidores
+   (tarjeta, panel y detalle). Ahí se impone la invariante: un promedio solo sale si hay
+   `procesos ≥ 5` **y** nivel clasificado **y** promedio presente. Esta es la cerradura que
+   importa: `indice:competencia` **no se purga nunca** —es su razón de ser—, así que en producción
+   sigue vivo el hash que escribió la versión anterior hasta que alguien reconstruya el índice.
+   Arreglar solo el escritor habría dejado el defecto en pantalla indefinidamente.
+3. **Los badges** (`public/app.js` y `/api/resumen`), que exigen `conBase` antes de interpolar una
+   cifra y, si no la hay, dicen «Sin datos históricos» **sin ningún número**. El desglose (cuántos
+   procesos hay y por qué no cuentan) está a un clic, en el modal, que es donde se puede explicar.
+
+`procesos_contados` se publica como alias de `procesos`, y el lector acepta los dos nombres: así un
+consumidor que pida el campo por su nombre largo no lee `undefined` y lo interpreta como cero.
+
+**Y una tercera contradicción, del mismo aire**: el detalle exigía índice clasificado para el
+`nivel` pero solo `contados ≥ 5` para el `promedio`, así que con el índice **sin reconstruir** —que
+es el estado normal, porque se construye a mano mientras el delta engorda el histórico en cada
+visita— salían juntos la banda ⚪ y un promedio, sin nada que lo conciliara. El promedio se
+conserva (12 procesos con oferentes son base de sobra) y ahora el `mensaje` dice por qué la banda
+sigue en ⚪ y con qué parámetro exacto se arregla.
+
+### Quién es «la misma entidad» (defecto de producción, ago 2026)
+
+Dos formas de confundir a dos entidades entre sí, las dos corregidas con prueba que falla sin la
+corrección:
+
+**Un NIT no identifica a una entidad.** Las regionales y unidades de un mismo organismo publican
+con el NIT de la matriz. El alias `nit:{NIT}` → `{ref: entidad}` iba **primero** en el orden de
+búsqueda, así que una entidad con su nombre bien escrito y su propio registro en el índice acababa
+enseñando el nivel de competencia de su hermana. Ahora:
+
+| Orden de búsqueda en `competenciaDe` | Por qué |
+| --- | --- |
+| 1.º clave canónica | El nombre es exacto: solo puede ser esta entidad |
+| 2.º clave legado (`norm` a secas) | Es como está escrito el hash que hay hoy en producción |
+| 3.º alias por NIT | El más **débil**: un NIT lo comparten las regionales de un organismo |
+
+Y el escritor **no publica alias para un NIT compartido por dos entidades** —un alias ambiguo no es
+un alias, es una respuesta equivocada— y los cuenta en `indice:competencia:meta.nits_ambiguos`. El
+alias sigue existiendo para lo que se creó: que un cambio de razón social no parta el historial.
+
+**La puntuación partía una entidad en dos.** `lib/competencia_detalle` tenía dos claves —una sin
+puntuación para agrupar el corpus y `norm` a secas para leer el hash—, así que
+«… RIOS NEGRO **-** NARE» y «… RIOS NEGRO NARE» se sumaban al contar (4 procesos) y no al leer (un
+registro de 3): el detalle enseñaba el promedio de un conjunto bajo una banda calculada sobre otro.
+No era un error de cálculo: eran **dos definiciones de «entidad» conviviendo**. Ahora hay una sola,
+`claveCanonica`, definida en `lib/indice_competencia` e importada por el detalle, y el índice
+agrupa con ella. Las dos direcciones no pueden volver a separarse porque no hay dos funciones que
+mantener.
+
+La clave anterior se conserva **solo para leer** (`claveLegado`): sin ese segundo intento,
+desplegar dejaría todo en ⚪ hasta que alguien reconstruyera el índice a mano.
+
+**Reconstruir el índice** para limpiar el hash viejo (no re-extrae nada, no requiere full):
+
+```
+GET /api/sync/historico?reconstruir_indice=true      (header x-historico-token, o &token=…)
+```
 
 **Cómo se usa** — `ordenar_por=atractividad` (el **default**, lo que se ve al abrir la app):
 

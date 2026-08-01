@@ -285,6 +285,89 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - La caché `resumen:{perfil}` (TTL 300 s) la **borra cualquier carga de RUP**: sus números salen del
   RUP y quedarían mintiendo cinco minutos.
 
+### Dos defectos de producción y sus cerraduras (ago 2026)
+
+- **El «en 0 procesos» era un CAMPO INEXISTENTE, no un dato malo**: el detalle en línea del panel
+  (`public/admin.js`) leía `i.total_procesos` de la respuesta de `/api/competencia-detalle`, que
+  jamás ha tenido ese campo — se llama `procesos_contados`; `total_procesos` pertenece al OTRO
+  payload, el `competencia_entidad` que embebe `/api/oportunidades`. El `|| 0` disfrazaba el
+  `undefined` de cero, así que el conteo era 0 **siempre**, con cualquier entidad y cualquier dato.
+  Dos lecciones: (1) **dos payloads distintos no pueden usar nombres parecidos para cosas
+  distintas**, y (2) **un `|| 0` sobre un conteo convierte «no sé» en «cero»** y lo hace creíble —
+  hay prueba que prohíbe `i.<conteo> || 0` en los dos frontends. La cifra del promedio era real: lo
+  falso era el conteo que la acompañaba.
+- **«⚪ Sin datos históricos» con un promedio debajo**: `detalleEntidad` exigía índice clasificado
+  para el `nivel` pero solo `contados ≥ 5` para el `promedio`, así que con el índice **sin
+  reconstruir** (que es el estado normal: se construye a mano mientras el delta engorda el
+  histórico en cada visita) salían los dos juntos y sin explicación. El promedio se conserva —12
+  procesos con oferentes son base de sobra— y ahora el `mensaje` dice por qué la banda sigue en ⚪ y
+  con qué parámetro exacto se arregla. Hay prueba que borra el índice, comprueba el mensaje y lo
+  reconstruye.
+- **«18.2 oferentes» sin base**: el índice publicaba el `promedio` de entidades que NO se
+  pueden clasificar (<5 procesos → `nivel: "sin_dato"` pero `promedio: 18.2` en el hash), y bastaba
+  con que un consumidor lo pintara sin mirar el nivel. Tres cerraduras, y las tres hacen falta:
+  (1) `registroPublicado` NO publica ninguna cifra derivada por debajo del mínimo — ni promedio, ni
+  mediana, ni `oferentes_total` (con la suma se recalcula el promedio que se acaba de anular);
+  (2) **`competenciaDe` es el punto único de paso** de los tres consumidores y ahí se impone la
+  invariante: promedio solo con `procesos ≥ 5` Y nivel clasificado Y promedio presente;
+  (3) el badge (`app.js` y `/api/resumen`) exige `conBase` antes de interpolar una cifra.
+  La (2) es la importante: **`indice:competencia` no se purga NUNCA**, así que en producción sigue
+  vivo el hash escrito por la versión anterior hasta que alguien reconstruya el índice — arreglar
+  solo el escritor habría dejado el defecto en pantalla indefinidamente. El conteo sí viaja: es un
+  hecho y es lo que explica el ⚪. `procesos_contados` se publica como alias de `procesos` y el
+  lector acepta los dos nombres.
+- **La cascada vive UNA sola vez** (`lib/filtros.filtrarProcesosVisibles`) y la llaman
+  `/api/oportunidades` y `/api/resumen`. Eran dos copias idénticas —con pruebas de que los totales
+  coincidían— pero «idénticas hoy» no es garantía: divergen a la primera corrección que se aplique
+  a una sola. El `require("./rup.js")` va **diferido dentro de la función**: en tiempo de carga
+  cerraría el ciclo `filtros → rup → filtros`. Los filtros que ELIGE quien consulta (cuantía,
+  competencia, ubicación, tier) se quedan fuera de la cascada a propósito: si entraran,
+  `totales.visibles` del panel dependería de lo que el dueño tuviera marcado en la pantalla.
+- **Los destacados del panel aplican CUATRO filtros más que el listado** (cerrado explícito,
+  «Verificar objeto», objetos de estructuración y cuantía 0) y los cuentan en
+  `destacados_descartados`. Es deliberado: la lista corta es una RECOMENDACIÓN y un falso positivo
+  en el puesto 1 cuesta más que uno en la página 4. **No tocan `totales.visibles`** — el proceso
+  sigue en `/api/oportunidades`, con su tarjeta y su veredicto delante.
+- **`TERMINOS_ESTRUCTURACION`** (`lib/semantica.js`): «seleccionar accionista para constituir una
+  sociedad de economía mixta que construya…» pasa la cascada entera **con toda razón** (es
+  competitivo, tiene UNSPSC del RUP y su objeto habla de construir), pero lo que se busca es un
+  socio que ponga capital, no un constructor. Dos precisiones que no se pueden quitar: «app» va con
+  frontera de palabra (es la sigla de Asociación Público-Privada) y «concesión **de aguas**» está
+  exceptuada — es el permiso ambiental que menciona cualquier obra de acueducto.
+- **`estado_cerrado` NO es la negación de `estado_abierto`**: hay TRES estados, no dos. Un estado
+  desconocido no está abierto (no se sirve) pero tampoco consta como cerrado; confundirlos sería
+  afirmar «adjudicado» sobre un proceso del que no se sabe nada.
+- **Lo que ningún filtro puede arreglar**: si SECOP II ya adjudicó un proceso pero la fila del
+  corpus todavía dice «Presentación de ofertas», no hay regla que lo detecte — eso lo corrige el
+  delta, no un filtro.
+
+### Identidad de la entidad: dos formas de confundir a dos entidades (ago 2026)
+
+- **Un NIT NO identifica a una entidad.** Las regionales y unidades de un mismo organismo publican
+  con el NIT de la matriz, así que `nit:{NIT}` puede corresponder a varias. El alias iba **primero**
+  en el orden de búsqueda de `competenciaDe`, de modo que una entidad con su nombre bien escrito y
+  su propio registro en el índice acababa enseñando el nivel de competencia de su hermana, en
+  silencio. Ahora el orden es **clave canónica → clave legado → alias**, y el escritor **no publica
+  alias para un NIT compartido** (un alias ambiguo no es un alias: es una respuesta equivocada);
+  los cuenta en `indice:competencia:meta.nits_ambiguos`. El alias sigue existiendo para lo que se
+  creó: que un cambio de razón social no parta el historial.
+- **La puntuación partía una entidad en dos.** `lib/competencia_detalle` tenía DOS claves —
+  `claveBusqueda` (sin puntuación) para agrupar el corpus y `claveIndice` (`norm` a secas) para leer
+  el hash—, así que «… RIOS NEGRO **-** NARE» y «… RIOS NEGRO NARE» se sumaban al contar y no al
+  leer: el detalle enseñaba el promedio de 4 procesos bajo una banda calculada sobre 3. No era un
+  error de cálculo: eran **dos definiciones de «entidad» conviviendo**. Ahora hay una sola,
+  `claveCanonica` (en `lib/indice_competencia`, importada por el detalle), y el índice agrupa con
+  ella. Las dos direcciones no pueden volver a separarse porque no hay dos funciones que mantener.
+- **`claveLegado` no se escribe jamás, solo se lee**: el hash de producción está escrito con la
+  clave anterior y `indice:competencia` no se purga nunca. Sin ese segundo intento en
+  `competenciaDe` y en el detalle, desplegar dejaría **todo** en ⚪ hasta que alguien reconstruyera
+  el índice a mano. Mismo criterio que `procesos`/`procesos_contados`.
+- **Los fixtures de identidad van por debajo del mínimo de 5 procesos a propósito**: solo entran en
+  los tertiles las entidades clasificables, así que así ejercitan la identidad sin recalcular los
+  cortes (con 5, IDU dejaría de ser «alta» y media suite se caería). Y el de la puntuación es
+  **3 + 1, no 2 + 2**: con el empate, `nombreOriginal` lo decide el orden del corpus y la prueba
+  pasaría o fallaría por azar.
+
 ## Datos del negocio (fuente de verdad)
 
 - Perfiles: `lib/perfiles.js` es el RESPALDO (`PERFILES_FALLBACK`, RUP corte 31/12/2025) y el punto

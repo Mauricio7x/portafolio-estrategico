@@ -191,18 +191,29 @@
      "sin_dato" y la tarjeta se ve igual que antes, sin líneas rotas.
      Es un BOTÓN: el promedio no puede ser una caja negra — al pulsarlo se
      abre el detalle con los procesos que lo sostienen. */
+  /* REGLA (ago 2026, defecto de producción): el badge NUNCA enseña un número
+     que no tenga detrás una clasificación real. Se vio «promedio 18.2 oferentes
+     en 0 procesos» porque se pintaba el promedio del índice sin comprobar que
+     hubiera base para él.
+
+     Un promedio se pinta SOLO si se cumplen las tres cosas a la vez: hay
+     procesos contados, el nivel está clasificado (baja/media/alta) y el
+     promedio existe. En cualquier otro caso el badge dice «Sin datos
+     históricos» y NO enseña ninguna cifra — el desglose (cuántos procesos hay y
+     por qué no cuentan) está a un clic, en el modal, que es donde se puede
+     explicar. El servidor ya impone la misma invariante en
+     lib/indice_competencia.competenciaDe: esto es la segunda cerradura. */
   function bandaCompetencia(c, entidad) {
     const nivel = (c && c.nivel) || "sin_dato";
-    const d = COMPETENCIA_ENTIDAD[nivel] || COMPETENCIA_ENTIDAD.sin_dato;
-    let texto = d.titulo;
-    if (nivel === "sin_dato") {
-      if (c && c.total_procesos > 0) texto = `Sin datos suficientes de esta entidad (${c.total_procesos} proceso${c.total_procesos === 1 ? "" : "s"} en 2 años)`;
-    } else {
-      const prom = c.promedio_oferentes == null ? "?" : fmtNum.format(c.promedio_oferentes);
-      texto += ` — promedio ${prom} oferentes en ${c.total_procesos} proceso${c.total_procesos === 1 ? "" : "s"}`;
-    }
+    const procesos = Number(c && c.total_procesos) || 0;
+    const promedio = c && c.promedio_oferentes != null ? Number(c.promedio_oferentes) : null;
+    const conBase = procesos > 0 && nivel !== "sin_dato" && promedio != null && !isNaN(promedio);
+    const d = conBase ? (COMPETENCIA_ENTIDAD[nivel] || COMPETENCIA_ENTIDAD.sin_dato) : COMPETENCIA_ENTIDAD.sin_dato;
+    const texto = conBase
+      ? `${d.titulo} — promedio ${fmtNum.format(promedio)} oferentes en ${procesos} proceso${procesos === 1 ? "" : "s"}`
+      : d.titulo;
     return `<button type="button" data-entidad="${esc(entidad || "")}"
-        title="Ver los procesos que sostienen este promedio"
+        title="${conBase ? "Ver los procesos que sostienen este promedio" : "Ver qué hay en el histórico de esta entidad"}"
         class="banda-competencia mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition hover:underline ${d.clases}">
         <span aria-hidden="true">${d.emoji}</span>${esc(texto)}
         <span aria-hidden="true" class="opacity-60">›</span>
@@ -366,7 +377,9 @@
   function pintarDetalle(d) {
     const i = d.indice || {};
     const banda = COMPETENCIA_ENTIDAD[i.nivel] || COMPETENCIA_ENTIDAD.sin_dato;
-    const resumen = i.promedio_oferentes != null
+    // misma regla que el badge: un promedio sin procesos contados detrás no se
+    // pinta (el servidor ya lo anula; aquí no se vuelve a interpolar a ciegas)
+    const resumen = i.promedio_oferentes != null && i.procesos_contados > 0
       ? `<p class="mt-1 text-gray-600">Promedio ${fmtNum.format(i.promedio_oferentes)} oferentes · ${i.procesos_contados} proceso${i.procesos_contados === 1 ? "" : "s"}</p>
          <p class="text-xs text-gray-500">Mediana ${i.mediana_oferentes ?? "?"} · Mín ${i.min_oferentes ?? "?"} · Máx ${i.max_oferentes ?? "?"}</p>`
       : "";
