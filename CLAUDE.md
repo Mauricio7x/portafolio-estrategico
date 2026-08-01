@@ -198,9 +198,19 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   `lib/indice_competencia.js`. Síntoma de que falta la correcta: `indice:competencia:meta` con
   `clasificadas: 0` y `descartados.sin_oferentes` alto → añadir el nombre real y llamar
   `/api/sync/historico?reconstruir_indice=true` (no hay que re-extraer nada).
+- **El badge de competencia es AUDITABLE** (`/api/competencia-detalle` + `lib/competencia_detalle.js`):
+  el modal enseña los procesos que forman el promedio y los que NO, con el motivo
+  (`sin_dato_oferentes`, `sin_adjudicacion`, `insuficientes_datos`). Regla de oro: NO es un segundo
+  cálculo — usa `esAdjudicado`/`oferentesDe` del índice, y hay una prueba que compara conteo,
+  promedio y nivel contra el hash publicado. Si divergieran, el detalle no serviría para verificar
+  nada. La caché (`indice:detalle:*`, TTL 1 h) guarda el sello del índice: reconstruirlo la
+  invalida entera. Una respuesta con chunks ilegibles NO se cachea.
 - **Índice publicado con swap atómico** (`indice:competencia:nuevo` → RENAME): nunca hay una
   ventana sin índice. Construcción mes a mes y reanudable; el acumulador que se persiste es por
   ENTIDAD (histograma), no por proceso — por eso cabe en un valor de Redis.
+- **La autorización vive en `lib/auth.js`, una sola vez**: tres endpoints la usan
+  (`/api/sync/historico`, `/api/diagnostico`, `/api/competencia-detalle`). Una copia que se
+  desincronice es un agujero.
 - **`HISTORICO_TOKEN` sin default**: si la variable no está, el endpoint responde 503. Nunca
   inventar una llave por defecto. El token viaja por header en la auto-reinvocación para no
   quedar escrito en los logs de acceso de Vercel.

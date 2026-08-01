@@ -14,7 +14,7 @@
    `x-historico-token` (preferido: no queda en los logs de acceso) o por
    `?token=` (para dispararlo desde el navegador, sin terminal); si vienen los
    dos, manda el header. Sin la variable de entorno el endpoint responde 503 y
-   no hace nada — jamás hay un default que valga como llave. Ver autorizar().
+   no hace nada — jamás hay un default que valga como llave (ver lib/auth.js).
 
    Qué hace, y por qué existe:
    La app borraba los procesos cerrados en cada full de higiene, así que no
@@ -56,6 +56,7 @@
 
 const crypto = require("crypto");
 const { crearRedis, hayCredenciales } = require("../../lib/redis.js");
+const { autorizarToken } = require("../../lib/auth.js");
 const {
   CLAVES, LOCK_HISTORICO_TTL_SEG, escribirChunks, leerJSON, escribirJSON,
 } = require("../../lib/almacen.js");
@@ -71,50 +72,16 @@ const PRESUPUESTO_MAX_MS = 240000;   // < TTL del candado (600 s), con margen
 const DESDE_DEFAULT = "2024-01";
 const HASTA_DEFAULT = "2025-12";
 
-/* ---------- autorización (mismo token para todas las variantes) ----------
-   DOS formas, validadas exactamente igual contra HISTORICO_TOKEN:
+/* Autorización: lib/auth.autorizarToken — el MISMO guardián que /api/diagnostico
+   y /api/competencia-detalle (header `x-historico-token` o `?token=`; con los
+   dos, manda el header).
 
-     header `x-historico-token`   preferido — no queda en los logs de acceso.
-     query  `?token=…`            para disparar la carga desde el NAVEGADOR,
-                                  cuando no se pueden fijar cabeceras.
-
-   Si llegan las dos, MANDA EL HEADER (sin ambigüedad posible). La comparación
-   es de digests SHA-256 en tiempo constante: ni el contenido ni la longitud
-   del token se filtran por el tiempo de respuesta.
-
-   Advertencia consciente sobre `?token=`: una URL con el token queda escrita
-   en los logs de acceso de Vercel, en el historial del navegador y en
-   cualquier proxy intermedio. Es un intercambio aceptable para una operación
-   MANUAL y de una sola vez; conviene rotar el token cuando el backfill
-   termine. La auto-reinvocación de la cadena usa siempre el header, así que
-   solo la primera petición deja rastro. */
-function autorizar(req, q) {
-  const COMO = {
-    header: "x-historico-token: <token>",
-    url: "?token=<token>  (para dispararlo desde el navegador)",
-  };
-  const esperado = process.env.HISTORICO_TOKEN || "";
-  if (!esperado) {
-    return {
-      ok: false, status: 503,
-      error: "HISTORICO_TOKEN no está definida en este despliegue: la extracción histórica está deshabilitada. "
-        + "Añádala en Vercel (Settings → Environment Variables) y vuelva a desplegar — las variables solo entran en despliegues nuevos.",
-    };
-  }
-  // el header tiene prioridad sobre la query cuando vienen los dos
-  const dado = String((req.headers && req.headers["x-historico-token"]) || q.token || "");
-  const a = crypto.createHash("sha256").update(dado).digest();
-  const b = crypto.createHash("sha256").update(esperado).digest();
-  if (!crypto.timingSafeEqual(a, b)) {
-    return {
-      ok: false, status: 401,
-      error: "Token inválido o ausente. Envíelo por el header «x-historico-token» o, si no puede fijar cabeceras "
-        + "(por ejemplo desde el navegador), como parámetro «token» en la URL.",
-      como_autenticar: COMO,
-    };
-  }
-  return { ok: true };
-}
+   Advertencia consciente sobre `?token=`: una URL con el token queda escrita en
+   los logs de acceso de Vercel, en el historial del navegador y en cualquier
+   proxy intermedio. Es un intercambio aceptable para una operación MANUAL y de
+   una sola vez; conviene rotar el token cuando el backfill termine. La
+   auto-reinvocación de la cadena usa siempre el header, así que solo la primera
+   petición deja rastro.
 
 /* ============================ DIAGNÓSTICO Y RESCATE ============================
    Las dos escotillas para operar desde el navegador, sin terminal ni CLI de Redis.
@@ -322,7 +289,7 @@ module.exports = async function handler(req, res) {
   const q = req.query || {};
   res.setHeader("Cache-Control", "no-store");
 
-  const permiso = autorizar(req, q);
+  const permiso = autorizarToken(req, q);
   if (!permiso.ok) {
     return res.status(permiso.status).json({
       ok: false, error: permiso.error,

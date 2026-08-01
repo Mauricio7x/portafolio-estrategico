@@ -29,8 +29,8 @@
    ========================================================================== */
 "use strict";
 
-const crypto = require("crypto");
 const { crearRedis, hayCredenciales } = require("../lib/redis.js");
+const { autorizarToken } = require("../lib/auth.js");
 const { CLAVES, leerChunksDedup, leerJSON, leerJSONComprimido } = require("../lib/almacen.js");
 const { PERFILES, ALIAS_PERFIL, evaluarRup } = require("../lib/rup.js");
 const { modalidad_competitiva, estado_abierto, evaluarObjeto } = require("../lib/filtros.js");
@@ -43,16 +43,6 @@ const { SMMLV } = require("../lib/perfiles.js");
 
 const MUESTRA_DEFAULT = 20, MUESTRA_MAX = 100;
 const TOP = 25; // filas por tabla de distribución
-
-function autorizar(req, q) {
-  const esperado = process.env.HISTORICO_TOKEN || "";
-  if (!esperado) return { ok: false, status: 503, error: "Defina HISTORICO_TOKEN para habilitar el diagnóstico." };
-  const dado = String((req.headers && req.headers["x-historico-token"]) || q.token || "");
-  const a = crypto.createHash("sha256").update(dado).digest();
-  const b = crypto.createHash("sha256").update(esperado).digest();
-  if (!crypto.timingSafeEqual(a, b)) return { ok: false, status: 401, error: "Token inválido o ausente (header «x-historico-token» o parámetro «token»)." };
-  return { ok: true };
-}
 
 /* Conteo por valor, ordenado desc y recortado — para ver los valores REALES de
    las columnas del dataset, que es lo que nunca se pudo muestrear en vivo. */
@@ -71,7 +61,7 @@ module.exports = async function handler(req, res) {
   const q = req.query || {};
   res.setHeader("Cache-Control", "no-store");
 
-  const permiso = autorizar(req, q);
+  const permiso = autorizarToken(req, q);
   if (!permiso.ok) return res.status(permiso.status).json({ ok: false, error: permiso.error });
   if (!hayCredenciales()) return res.status(503).json({ ok: false, error: "Faltan credenciales de Upstash Redis." });
 

@@ -58,6 +58,8 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `api/sync/historico.js` | **Backfill histórico** (protegido por token): 2 años a `licitaciones:historico:*` + construcción de los tres derivados (índice, equivalencias, vocabulario) |
 | `api/oportunidades.js` | Consulta: **todo el juicio fino** por perfil, competencia por entidad, orden, paginación, memoria caliente |
 | `lib/indice_competencia.js` | Índice **entidad → oferentes promedio** sobre el histórico; tertiles baja/media/alta |
+| `api/competencia-detalle.js` + `lib/competencia_detalle.js` | **Los procesos que sostienen el badge**: incluidos, excluidos y por qué (con caché de 1 h) |
+| `lib/auth.js` | Guardián único del `HISTORICO_TOKEN` para los tres endpoints protegidos |
 | `lib/equivalencias.js` | **Clases UNSPSC afines** aprendidas del histórico (lift sobre adjudicatarios) |
 | `lib/texto_unspsc.js` | El **objeto como co-señal**: vocabulario distintivo por familia (TF-IDF) + derivación |
 | `lib/proyeccion.js` | Proyección de columnas y cascada de filtros; dos variantes: activa (sin adjudicación) e histórica |
@@ -173,6 +175,48 @@ NIT, valor adjudicado) no se exponen aquí; de hecho ni siquiera se guardan en e
 `/api/sync?modo=auto` en segundo plano; el frontend reintenta solo cada 20 s. Así se eliminó de
 raíz el viejo «Sin conexión a SECOP II»: antes la carga inicial exigía un secreto que nadie podía
 aportar desde el navegador y la web caía a una cascada de proxies CORS muertos.
+
+### `GET /api/competencia-detalle` (protegido)
+
+El badge de la tarjeta afirma «🟢 Poca competencia — promedio 3 oferentes en 12 procesos». Este
+endpoint entrega **esos 12**: sin él, el promedio es una caja negra y no hay forma de saber si los
+procesos que lo sostienen son de obra civil o de cualquier otra cosa.
+
+| Parámetro | Default | Descripción |
+| --- | --- | --- |
+| `entidad` | requerido | Nombre de la entidad. Se normaliza (tildes, mayúsculas, espacios de más, puntuación); se devuelve el nombre **tal como aparece en los datos** |
+| `refrescar` | — | `1` para saltarse la caché de lectura (igual la deja al día) |
+
+Mismo `HISTORICO_TOKEN` que el resto (header `x-historico-token` o `?token=`). Devuelve tres
+bloques: `indice` (nivel, promedio, mediana, mín/máx, contados vs adjudicados), `procesos` (los que
+forman el promedio, **de menos a más oferentes**: lo relevante para decidir) y `excluidos` (los que
+NO cuentan, cada uno con su `motivo_exclusion`).
+
+**Nada se descarta en silencio** — esa era justamente la queja del ⚪ sin explicación:
+
+| `motivo_exclusion` | Qué significa |
+| --- | --- |
+| `sin_dato_oferentes` | Adjudicado, pero el dataset no dice cuántos se presentaron (0 = sin dato, nunca «nadie vino») |
+| `sin_adjudicacion` | Cerrado sin ganador: desierto, cancelado o revocado |
+| `insuficientes_datos` | La entidad no llega al mínimo de 5 procesos útiles, así que **ningún** promedio suyo es fiable. Es el ⚪ de la tarjeta, con nombre y apellido |
+
+**Es el MISMO cálculo del índice, no un segundo cálculo.** Usa los predicados de
+`lib/indice_competencia` (`esAdjudicado`, `oferentesDe`) y hay una prueba que compara, entidad por
+entidad, el promedio y el conteo reconstruidos aquí contra los publicados en `indice:competencia`.
+Si pudieran divergir, el detalle no serviría para verificar nada.
+
+Detalles de operación:
+
+- **Caché** `indice:detalle:{entidad}` con TTL de 1 h. El valor guarda el sello de construcción del
+  índice, así que **reconstruir el índice invalida todos los detalles al instante**, sin borrar
+  clave por clave ni esperar al TTL. Un acierto son 2-3 comandos Redis; un fallo barre el histórico.
+- Una respuesta calculada sobre un **chunk ilegible** no se cachea (sería congelar el error una
+  hora) y el conteo viaja en `chunks_ilegibles`.
+- Listas topadas a **200** por bloque, cortando por los más recientes; `truncado` dice cuántos hay
+  en realidad. Las **cifras del índice nunca se recortan**: el tope es de presentación.
+- **No expone adjudicatarios ni NITs**: la proyección es una lista blanca, igual que en
+  `/api/oportunidades`.
+- Redis caído o corpus ilegible → `503` con mensaje accionable, nunca un `500` mudo.
 
 ## Índice de competencia por entidad (¿dónde es más probable ganar?)
 
@@ -756,6 +800,17 @@ con cuál del RUP y por qué) va en el `title` de cada badge:
 Bajo los filtros hay un toggle **«Incluir procesos sin código UNSPSC»**, apagado por defecto: los
 procesos rescatados solo por el objeto y sin vocabulario claro de obra son ruido más que
 oportunidad, pero quedan a un clic. Cuando está encendido el resumen lo dice.
+
+**La banda de competencia es un botón.** Al pulsarla se abre un modal con los procesos que
+sostienen ese promedio: objeto, nº de oferentes, cuantía, modalidad y fecha, ordenados de menos a
+más competencia. Debajo, los **excluidos del promedio** con el motivo de cada uno — incluido el
+caso que más confundía: por qué una entidad aparece en ⚪. Se cierra con el botón, con `ESC` o
+haciendo clic fuera.
+
+El detalle sale de un endpoint protegido, así que el modal pide el `HISTORICO_TOKEN` la primera vez
+y lo guarda en `sessionStorage` (solo esa pestaña). **Viaja por cabecera, nunca en la URL**: una URL
+con el token quedaría en el historial del navegador y en los logs de acceso. Si el servidor lo
+rechaza, se borra y se vuelve a pedir.
 
 El resumen de resultados añade el reparto («*N* con RUP ✓, *M* por verificar»), y sigue el badge
 de **Capacidad K ✓**.

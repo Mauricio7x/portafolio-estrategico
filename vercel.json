@@ -6,7 +6,8 @@
     "api/sync.js": { "maxDuration": 300, "includeFiles": "data/**" },
     "api/sync/historico.js": { "maxDuration": 300, "includeFiles": "data/**" },
     "api/diagnostico.js": { "maxDuration": 60, "includeFiles": "data/**" },
-    "api/oportunidades.js": { "maxDuration": 60, "includeFiles": "data/**" }
+    "api/oportunidades.js": { "maxDuration": 60, "includeFiles": "data/**" },
+    "api/competencia-detalle.js": { "maxDuration": 60, "includeFiles": "data/**" }
   },
   "headers": [
     {

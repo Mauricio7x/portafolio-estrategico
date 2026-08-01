@@ -189,8 +189,10 @@
   }
 
   /* Banda de competencia de la entidad. Sin índice construido todo cae en
-     "sin_dato" y la tarjeta se ve igual que antes, sin líneas rotas. */
-  function bandaCompetencia(c) {
+     "sin_dato" y la tarjeta se ve igual que antes, sin líneas rotas.
+     Es un BOTÓN: el promedio no puede ser una caja negra — al pulsarlo se
+     abre el detalle con los procesos que lo sostienen. */
+  function bandaCompetencia(c, entidad) {
     const nivel = (c && c.nivel) || "sin_dato";
     const d = COMPETENCIA_ENTIDAD[nivel] || COMPETENCIA_ENTIDAD.sin_dato;
     let texto = d.titulo;
@@ -200,9 +202,12 @@
       const prom = c.promedio_oferentes == null ? "?" : fmtNum.format(c.promedio_oferentes);
       texto += ` — promedio ${prom} oferentes en ${c.total_procesos} proceso${c.total_procesos === 1 ? "" : "s"}`;
     }
-    return `<p class="mt-3 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${d.clases}">
+    return `<button type="button" data-entidad="${esc(entidad || "")}"
+        title="Ver los procesos que sostienen este promedio"
+        class="banda-competencia mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition hover:underline ${d.clases}">
         <span aria-hidden="true">${d.emoji}</span>${esc(texto)}
-      </p>`;
+        <span aria-hidden="true" class="opacity-60">›</span>
+      </button>`;
   }
 
   function tarjeta(l) {
@@ -218,7 +223,7 @@
         <div class="min-w-0 flex-1">
           <h3 class="font-semibold leading-snug tracking-tight">${esc(l.nombre_del_procedimiento || l.id_del_proceso || "Proceso sin nombre")}</h3>
           <p class="mt-1 text-sm text-gray-500">${esc(l.entidad || "Entidad no informada")}</p>
-          ${bandaCompetencia(l.competencia_entidad)}
+          ${bandaCompetencia(l.competencia_entidad, l.entidad)}
         </div>
         <div class="text-right">
           <p class="text-lg font-semibold tabular-nums">${fmtCOP.format(l.cuantia_cop || 0)}</p>
@@ -272,6 +277,153 @@
     $("pag-ant")?.addEventListener("click", () => { pagina = Math.max(1, pagina - 1); buscar(); });
     $("pag-sig")?.addEventListener("click", () => { pagina++; buscar(); });
   }
+
+  /* ══════════ Detalle de competencia (modal) ══════════
+     El badge afirma «promedio 3 oferentes en 12 procesos». Aquí se ven los 12,
+     con los que quedaron fuera del promedio y POR QUÉ. El endpoint está
+     protegido con el mismo HISTORICO_TOKEN que el diagnóstico, así que:
+       · el token se guarda en sessionStorage (nunca en la URL, que quedaría en
+         el historial del navegador y en los logs de acceso);
+       · viaja por el header `x-historico-token`;
+       · si falta, el propio modal lo pide; si el servidor lo rechaza, se borra
+         y se vuelve a pedir. */
+  const CLAVE_TOKEN = "detecta-token-historico";
+  const tokenGuardado = () => sessionStorage.getItem(CLAVE_TOKEN) || "";
+
+  const MOTIVO_EXCLUSION = {
+    sin_dato_oferentes: "El proceso se adjudicó pero el dataset no dice cuántos se presentaron",
+    sin_adjudicacion: "Cerrado sin adjudicación (desierto, cancelado o revocado)",
+    insuficientes_datos: "La entidad no llega al mínimo de procesos para calcular un promedio fiable",
+  };
+
+  /* Cuantías compactas: $999K · $350M · $1.200M */
+  function fmtCorto(cop) {
+    const n = Number(cop) || 0;
+    if (!n) return "No definida";
+    if (n >= 1e9) return `$${fmtNum.format(Math.round(n / 1e6))}M`;
+    if (n >= 1e6) return `$${Math.round(n / 1e6)}M`;
+    if (n >= 1e3) return `$${Math.round(n / 1e3)}K`;
+    return `$${n}`;
+  }
+  const recorta = (s, n = 80) => (String(s || "").length > n ? `${String(s).slice(0, n)}…` : String(s || ""));
+
+  const $modal = () => $("modal-competencia");
+  function cerrarModal() {
+    $modal().classList.add("hidden");
+    $modal().classList.remove("flex");
+    document.removeEventListener("keydown", alPulsarTecla);
+  }
+  function alPulsarTecla(e) { if (e.key === "Escape") cerrarModal(); }
+  function abrirModal(entidad) {
+    $("modal-titulo").textContent = entidad || "Entidad no informada";
+    $("modal-cuerpo").innerHTML = '<p class="py-8 text-center text-gray-400">Cargando procesos…</p>';
+    $modal().classList.remove("hidden");
+    $modal().classList.add("flex");
+    document.addEventListener("keydown", alPulsarTecla);
+  }
+
+  function filaProceso(p, conMotivo) {
+    const ofertas = p.numero_ofertas == null || p.numero_ofertas === 0
+      ? '<span class="text-gray-400">sin dato</span>' : p.numero_ofertas;
+    return `<tr class="border-t border-gray-100 align-top">
+      <td class="py-2 pr-3" title="${esc(p.objeto)}">${esc(recorta(p.objeto))}
+        <span class="block text-xs text-gray-400">${esc(p.modalidad || "")}${p.fecha_adjudicacion ? ` · ${esc(p.fecha_adjudicacion)}` : " · Sin fecha"}</span>
+        ${conMotivo ? `<span class="block text-xs text-amber-700">${esc(MOTIVO_EXCLUSION[p.motivo_exclusion] || p.motivo_exclusion || "")}</span>` : ""}
+      </td>
+      <td class="py-2 pr-3 text-right tabular-nums">${ofertas}</td>
+      <td class="py-2 text-right tabular-nums">${esc(fmtCorto(p.cuantia_cop))}</td>
+    </tr>`;
+  }
+
+  const tabla = (titulo, filas, conMotivo, nota) => !filas.length ? "" : `
+    <h3 class="mt-5 mb-1 text-sm font-semibold">${esc(titulo)} (${filas.length})</h3>
+    ${nota ? `<p class="mb-2 text-xs text-gray-500">${esc(nota)}</p>` : ""}
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead class="text-xs uppercase tracking-wide text-gray-400">
+          <tr><th class="pb-1">Objeto</th><th class="pb-1 text-right">Ofertas</th><th class="pb-1 text-right">Cuantía</th></tr>
+        </thead>
+        <tbody>${filas.map((p) => filaProceso(p, conMotivo)).join("")}</tbody>
+      </table>
+    </div>`;
+
+  function pintarDetalle(d) {
+    const i = d.indice || {};
+    const banda = COMPETENCIA_ENTIDAD[i.nivel] || COMPETENCIA_ENTIDAD.sin_dato;
+    const resumen = i.promedio_oferentes != null
+      ? `<p class="mt-1 text-gray-600">Promedio ${fmtNum.format(i.promedio_oferentes)} oferentes · ${i.procesos_contados} proceso${i.procesos_contados === 1 ? "" : "s"}</p>
+         <p class="text-xs text-gray-500">Mediana ${i.mediana_oferentes ?? "?"} · Mín ${i.min_oferentes ?? "?"} · Máx ${i.max_oferentes ?? "?"}</p>`
+      : "";
+    $("modal-cuerpo").innerHTML = `
+      <p class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${banda.clases}">
+        <span aria-hidden="true">${banda.emoji}</span>${esc(banda.titulo)}
+      </p>
+      ${resumen}
+      ${d.mensaje ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">${esc(d.mensaje)}</p>` : ""}
+      ${tabla("Procesos incluidos", d.procesos || [], false)}
+      ${tabla("Excluidos del promedio", d.excluidos || [], true,
+    "Están cerrados o adjudicados, pero no cuentan para el promedio por el motivo indicado en cada uno.")}
+      ${d.truncado ? `<p class="mt-3 text-xs text-gray-500">Se muestran los ${d.truncado.limite} más recientes de ${d.truncado.procesos || d.truncado.excluidos} procesos.</p>` : ""}
+      ${(d.procesos || []).length || (d.excluidos || []).length ? "" : '<p class="mt-4 text-gray-500">No hay procesos históricos de esta entidad.</p>'}
+      <p class="mt-4 text-xs text-gray-400">Datos del corpus histórico (procesos ya cerrados)${d.cache ? " · desde caché" : ""}.</p>`;
+  }
+
+  function pedirToken(entidad, aviso) {
+    $("modal-cuerpo").innerHTML = `
+      ${aviso ? `<p class="mb-3 rounded-lg bg-red-50 p-3 text-xs text-red-700">${esc(aviso)}</p>` : ""}
+      <p class="text-gray-600">Este detalle sale del corpus histórico y está protegido con el mismo token que la
+        extracción histórica (<code>HISTORICO_TOKEN</code>).</p>
+      <form id="form-token" class="mt-3 flex gap-2">
+        <input id="entrada-token" type="password" autocomplete="off" placeholder="Token"
+               class="flex-1 rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+        <button class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white">Ver</button>
+      </form>
+      <p class="mt-2 text-xs text-gray-400">Se guarda solo en esta pestaña (sessionStorage) y viaja por cabecera, nunca en la URL.</p>`;
+    $("form-token").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const t = $("entrada-token").value.trim();
+      if (!t) return;
+      sessionStorage.setItem(CLAVE_TOKEN, t);
+      cargarDetalle(entidad);
+    });
+  }
+
+  async function cargarDetalle(entidad) {
+    const token = tokenGuardado();
+    if (!token) return pedirToken(entidad, null);
+    $("modal-cuerpo").innerHTML = '<p class="py-8 text-center text-gray-400">Cargando procesos…</p>';
+    let r, cuerpo;
+    try {
+      r = await fetch(`/api/competencia-detalle?entidad=${encodeURIComponent(entidad)}`,
+        { headers: { "x-historico-token": token } });
+      cuerpo = await r.json();
+    } catch {
+      $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-red-600">No se pudo contactar el servidor. Intente de nuevo.</p>';
+      return;
+    }
+    if (r.status === 401) {
+      sessionStorage.removeItem(CLAVE_TOKEN);
+      return pedirToken(entidad, "El token no es válido. Vuelva a intentarlo.");
+    }
+    if (!r.ok || !cuerpo.ok) {
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`)}</p>`;
+      return;
+    }
+    pintarDetalle(cuerpo);
+  }
+
+  // delegación: las tarjetas se repintan en cada búsqueda, así que el listener
+  // vive en el contenedor y no en cada badge
+  $("lista").addEventListener("click", (e) => {
+    const b = e.target.closest(".banda-competencia");
+    if (!b) return;
+    const entidad = b.getAttribute("data-entidad");
+    abrirModal(entidad);
+    cargarDetalle(entidad);
+  });
+  $("modal-cerrar").addEventListener("click", cerrarModal);
+  $("modal-cerrar-pie").addEventListener("click", cerrarModal);
+  $("modal-fondo").addEventListener("click", cerrarModal);
 
   /* ══════════ Eventos ══════════ */
   $("btn-buscar").addEventListener("click", () => { pagina = 1; reintentosSync = 0; buscar(); });

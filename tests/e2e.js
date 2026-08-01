@@ -5,6 +5,10 @@
 
      node tests/e2e.js            → 4 iteraciones (requisito del encargo)
      node tests/e2e.js 1          → 1 iteración (desarrollo)
+     DUMP=1 node tests/e2e.js 1   → además imprime los VALORES REALES de los
+                                    casos de borde del detalle de competencia
+                                    (tabla f-bis), para re-verificarlos a ojo
+                                    después de cualquier cambio
 
    Cada iteración:
      a. Limpia Redis (SCAN licitaciones:* + lock:sync → DEL) y verifica vacío.
@@ -38,6 +42,17 @@
      f. Orden por atractividad: baja → media → sin_dato → alta (default de la
         app), desempate por puntaje, filtro competencia_entidad, y la garantía
         de que /api/oportunidades no lee del histórico ni expone adjudicaciones.
+     f-bis. /api/competencia-detalle: los procesos que sostienen el badge. La
+        invariante fuerte es que el detalle RECONSTRUYE el índice publicado
+        (mismo conteo, mismo promedio, mismo nivel) — si divergieran, no
+        serviría para verificar nada. Más los bordes: 8 con oferentes + 2 sin
+        dato, entidad bajo el mínimo, entidad inexistente, normalización con
+        tildes y puntuación, tope de la lista, caché (y su invalidación al
+        reconstruir el índice), varios meses, chunk corrupto y Redis caído.
+        NOTA: del modal solo se verifica el CABLEADO (marcado, delegación del
+        clic, las tres formas de cerrar, y que el token no viaje en la URL);
+        no hay DOM en esta suite, así que su comportamiento visual no está
+        cubierto y no se presenta como si lo estuviera.
         Además: la clase AFÍN pasa a verse por las equivalencias recién
         aprendidas, SIN volver a sincronizar (la promesa de separar ingesta de
         juicio, verificada de punta a punta).
@@ -383,6 +398,63 @@ function generarDatasetEquivalencias() {
   return filas;
 }
 
+/* ---- filas para /api/competencia-detalle ----
+   Procesos ADJUDICADOS pero SIN conteo de oferentes. Dos propósitos:
+     · GOBERNACIÓN DEL TOLIMA (8 con oferentes) suma 2 sin dato → el detalle
+       debe mostrar 8 en la tabla principal y 2 en «excluidos»;
+     · la CAR de nombre largo y con guion prueba la normalización (tildes,
+       puntuación y espacios de más) y el caso «entidad que no está en el
+       índice»: sin un solo proceso contable, no puede clasificarse.
+   Como ninguno trae oferentes, el índice de competencia los ignora y los
+   tertiles de las cuatro entidades siguen exactamente igual. */
+const ENTIDAD_CAR = "CORPORACION AUTONOMA REGIONAL DE LAS CUENCAS DE LOS RIOS NEGRO - NARE";
+const HIST_SIN_OFERENTES = [
+  { entidad: "GOBERNACIÓN DEL TOLIMA", nit: "800100002", n: 2 },
+  { entidad: ENTIDAD_CAR, nit: "800100005", n: 2 },
+  // cerrado SIN ganador: ni cuenta para el promedio ni puede desaparecer sin
+  // explicación — es el tercer motivo de exclusión
+  { entidad: "GOBERNACIÓN DEL TOLIMA", nit: "800100002", n: 1, desierto: true },
+];
+const HIST_DETALLE = HIST_SIN_OFERENTES.reduce((a, e) => a + e.n, 0);
+
+function generarDatasetDetalle() {
+  const filas = [];
+  let i = 0;
+  for (const e of HIST_SIN_OFERENTES) {
+    for (let k = 0; k < e.n; k++) {
+      i++;
+      const mes = MESES_HIST[(i * 7) % MESES_HIST.length];
+      filas.push({
+        ":id": `det-${String(i).padStart(4, "0")}`, ":updated_at": `${mes}-20T10:00:00.000Z`,
+        id_del_proceso: `CO1.DET.${i}`, referencia_del_proceso: `REF-DET-${i}`,
+        fecha_de_publicacion_del: `${mes}-05T08:00:00.000`,
+        entidad: e.entidad, nit_entidad: e.nit,
+        ciudad_entidad: "IBAGUÉ", departamento_entidad: "Tolima",
+        modalidad_de_contratacion: "Licitación pública",
+        estado_del_procedimiento: e.desierto ? "Declarado desierto" : "Adjudicado",
+        fase: e.desierto ? "Declarado desierto" : "Adjudicación",
+        ...(e.desierto ? {} : { adjudicado: "Si" }),
+        precio_base: String(800e6 + i),
+        duracion: "6", unidad_de_duracion: "Meses",
+        nombre_del_procedimiento: e.desierto
+          ? `Construccion de placa huella declarada desierta ${i}`
+          : `Construccion de puente vehicular sin conteo de oferentes ${i}`,
+        descripci_n_del_procedimiento: "Obra civil de puente en concreto reforzado",
+        codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra",
+        // SIN numero_de_ofertas a propósito: es el «sin dato» que hay que explicar
+        ...(e.desierto ? {} : {
+          nombre_del_proveedor: `CONSTRUCTORA DET ${i} SAS`,
+          nit_del_proveedor_adjudicado: `90050${String(i).padStart(4, "0")}`,
+          valor_total_adjudicacion: String(790e6 + i),
+          fecha_adjudicacion: `${mes}-25T10:00:00.000`,
+        }),
+        urlproceso: { url: `https://community.secop.gov.co/det/${i}` },
+      });
+    }
+  }
+  return filas;
+}
+
 function generarDatasetHistorico() {
   const filas = [];
   let n = 0;
@@ -605,6 +677,7 @@ async function main() {
   const sync = require("../api/sync.js");
   const historico = require("../api/sync/historico.js");
   const diagnostico = require("../api/diagnostico.js");
+  const detalleComp = require("../api/competencia-detalle.js");
   const oportunidades = require("../api/oportunidades.js");
   const { crearRedis } = require("../lib/redis.js");
   const { empaquetar, descomprimir, CHUNK_MAX_COMPRIMIDO, CLAVES } = require("../lib/almacen.js");
@@ -614,6 +687,7 @@ async function main() {
   const unspsc = require("../lib/unspsc.js");
   const equivalencias = require("../lib/equivalencias.js");
   const textoUnspsc = require("../lib/texto_unspsc.js");
+  const competenciaDetalle = require("../lib/competencia_detalle.js");
   const capacidad = require("../lib/capacidad.js");
   const { PERFILES } = require("../lib/perfiles.js");
   const redis = crearRedis({});
@@ -1194,6 +1268,34 @@ async function main() {
     console.log("· unidad capacidad: fórmula única, escalas de la Guía, CRPC y consorcio (suma) correctos");
   }
 
+  /* unidad: normalización de nombres de entidad para el detalle. Es lo que
+     decide si «  alcaldia   de purificacion » encuentra los procesos de
+     «ALCALDÍA DE PURIFICACIÓN», y tiene que ser O(1) por proceso. */
+  {
+    const { claveBusqueda, claveIndice, memoNormalizador } = competenciaDetalle;
+    const mismas = [
+      "ALCALDÍA DE PURIFICACIÓN", "alcaldia de purificacion",
+      "  ALCALDIA   DE    PURIFICACION  ", "Alcaldía de Purificación.",
+    ];
+    const ref = claveBusqueda(mismas[0]);
+    for (const v of mismas) assert.strictEqual(claveBusqueda(v), ref, `«${v}» debía normalizar igual`);
+    // la puntuación no puede partir una entidad en dos (nombres reales de CAR)
+    assert.strictEqual(claveBusqueda("CORPORACION AUTONOMA REGIONAL DE LOS RIOS NEGRO - NARE"),
+      claveBusqueda("Corporación Autónoma Regional de los Ríos Negro Nare"));
+    // …pero entidades distintas siguen siendo distintas
+    assert.notStrictEqual(claveBusqueda("ALCALDÍA DE IBAGUÉ"), claveBusqueda("ALCALDÍA DE PURIFICACIÓN"));
+    // la clave del ÍNDICE es la de lib/semantica.norm: si divergiera, el
+    // detalle leería el badge de otra entidad
+    assert.strictEqual(claveIndice("ALCALDÍA DE PURIFICACIÓN"), filtros.norm("ALCALDÍA DE PURIFICACIÓN"));
+    // memoización: el trabajo caro corre una vez por nombre DISTINTO
+    let llamadas = 0;
+    const memo = memoNormalizador((s) => { llamadas++; return claveBusqueda(s); });
+    for (let i = 0; i < 500; i++) memo("ALCALDÍA DE PURIFICACIÓN");
+    memo("IDU");
+    assert.strictEqual(llamadas, 2, `esperaba 2 normalizaciones reales, hubo ${llamadas}`);
+    console.log("· unidad detalle de competencia: normalización estable, puntuación tolerada y memoizada");
+  }
+
   /* unidad: tertiles, mediana y lectura de oferentes/adjudicación del índice */
   {
     // seis entidades: los cortes deben repartirlas 2/2/2 y respetar empates
@@ -1270,7 +1372,7 @@ async function main() {
     const t0 = Date.now();
     // el dataset trae el año vigente Y los dos anteriores: la full solo debe
     // ver el vigente (consulta mes a mes del año en curso)
-    socrata.setDataset([...generarDataset(), ...generarDatasetHistorico(), ...generarDatasetEquivalencias()]);
+    socrata.setDataset([...generarDataset(), ...generarDatasetHistorico(), ...generarDatasetEquivalencias(), ...generarDatasetDetalle()]);
     socrata.setFallos(true);
 
     /* a. limpiar Redis */
@@ -1569,15 +1671,21 @@ async function main() {
       /* el histórico guardó todo el rango CON datos de adjudicación */
       const hist = await leerHistorico();
       const conOferentes = ENTIDADES_HIST.reduce((a, e) => a + e.ofertas.length, 0);
-      const totalHist = conOferentes + HIST_EQUIVALENCIAS;
+      const totalHist = conOferentes + HIST_EQUIVALENCIAS + HIST_DETALLE;
       assert.strictEqual(hist.length, totalHist, `histórico: ${hist.length} registros, esperaba ${totalHist}`);
       for (const r of hist) {
+        // el proceso declarado desierto es el único sin datos de adjudicación
+        if (/desierta/i.test(r.nombre_del_procedimiento || "")) {
+          assert.strictEqual(r.fue_adjudicado, false, "un desierto no puede figurar como adjudicado");
+          assert.strictEqual(r.oferentes, null);
+          continue;
+        }
         assert.ok(r.nombre_del_proveedor && r.nit_del_proveedor_adjudicado, "falta el adjudicatario en el histórico");
         assert.ok(r.valor_total_adjudicacion && r.fecha_adjudicacion, "faltan valor/fecha de adjudicación");
         assert.strictEqual(r.fue_adjudicado, true, "el histórico no marcó la adjudicación");
         // el bloque de equivalencias viaja SIN conteo de oferentes a propósito
         // (así el índice de competencia no cambia): ahí `oferentes` es null
-        if (!String(r.id_del_proceso).startsWith("CO1.EQV.")) {
+        if (!/^CO1\.(EQV|DET)\./.test(String(r.id_del_proceso))) {
           assert.ok(r.oferentes >= 1, "el histórico no derivó el nº de oferentes");
         } else {
           assert.strictEqual(r.oferentes, null, "0 oferentes = SIN DATO, nunca «nadie se presentó»");
@@ -1599,7 +1707,7 @@ async function main() {
       // solo cuentan los procesos con conteo de oferentes: los del bloque de
       // equivalencias quedan como «sin dato» y no mueven ni un tertil
       assert.strictEqual(metaIdx.procesos_contados, conOferentes, "el índice no contó los procesos con oferentes");
-      assert.strictEqual(metaIdx.descartados.sin_oferentes, HIST_EQUIVALENCIAS,
+      assert.strictEqual(metaIdx.descartados.sin_oferentes, HIST_EQUIVALENCIAS + HIST_DETALLE - 1,
         "un proceso adjudicado sin conteo de oferentes debe quedar contado como descarte, no colarse como 0");
       assert.strictEqual(metaIdx.min_procesos, 5);
 
@@ -1829,6 +1937,244 @@ async function main() {
           assert.ok(!(c in l), `/api/oportunidades expuso el campo de adjudicación «${c}»`);
         }
       }
+    }
+
+    /* f-bis. /api/competencia-detalle: los procesos que SOSTIENEN el badge.
+       El promedio de la tarjeta deja de ser una caja negra: se puede abrir y
+       verificar proceso a proceso, incluidos los que NO cuentan y por qué. */
+    {
+      const TOKEN = { "x-historico-token": process.env.HISTORICO_TOKEN };
+      const detalle = async (entidad, extra = "", headers = TOKEN) => invocar(
+        detalleComp, `/api/competencia-detalle?entidad=${encodeURIComponent(entidad)}${extra}`, headers);
+
+      /* --- protección: mismo token que el resto, y nada se filtra sin él --- */
+      {
+        const sinToken = await invocar(detalleComp, "/api/competencia-detalle?entidad=IDU");
+        assert.strictEqual(sinToken.status, 401, "el detalle expone el corpus: debe exigir token");
+        assert.ok(!JSON.stringify(sinToken.cuerpo).includes("CO1.HIST."), "un 401 no puede filtrar datos");
+        assert.strictEqual((await detalle("IDU", "", { "x-historico-token": "equivocado" })).status, 401);
+        const guardado = process.env.HISTORICO_TOKEN;
+        delete process.env.HISTORICO_TOKEN;
+        assert.strictEqual((await detalle("IDU")).status, 503, "sin HISTORICO_TOKEN debe negarse, nunca abrirse");
+        process.env.HISTORICO_TOKEN = guardado;
+      }
+
+      /* --- validación de entrada --- */
+      for (const [entidad, que] of [["", "vacía"], ["   ", "solo espacios"], ["x".repeat(301), "de más de 300 caracteres"]]) {
+        const r = await detalle(entidad);
+        assert.strictEqual(r.status, 400, `una entidad ${que} debía dar 400`);
+        assert.ok(/entidad requerida/.test(r.cuerpo.error), "el 400 debe decir qué falta");
+      }
+
+      /* --- INVARIANTE: el detalle reconstruye EXACTAMENTE el badge ---
+         Si el detalle y el índice pudieran divergir, el detalle no serviría
+         para verificar nada. Se comprueba entidad por entidad contra el hash
+         publicado. */
+      const hashIdx = await redis.hgetall("indice:competencia");
+      for (const e of ENTIDADES_HIST) {
+        const r = await detalle(e.entidad, "&refrescar=1");
+        assert.strictEqual(r.status, 200, `detalle de ${e.entidad} falló`);
+        const c = r.cuerpo;
+        assert.strictEqual(c.ok, true);
+        assert.strictEqual(c.entidad, e.entidad, "debe devolver el nombre TAL COMO viene en los datos");
+        const publicado = JSON.parse(hashIdx[filtros.norm(e.entidad)]);
+        assert.strictEqual(c.indice.procesos_contados, publicado.procesos,
+          `${e.entidad}: el detalle cuenta ${c.indice.procesos_contados} y el índice ${publicado.procesos}`);
+        if (e.ofertas.length >= 5) {
+          assert.strictEqual(c.indice.promedio_oferentes, publicado.promedio,
+            `${e.entidad}: el promedio del detalle no reproduce el del badge`);
+          assert.strictEqual(c.indice.nivel, publicado.nivel, `${e.entidad}: el nivel debe ser el PUBLICADO`);
+          assert.strictEqual(c.procesos.length, e.ofertas.length, `${e.entidad}: faltan procesos en la tabla`);
+          // suma de oferentes y orden ascendente (menos competencia primero)
+          assert.strictEqual(c.procesos.reduce((a, p) => a + p.numero_ofertas, 0),
+            e.ofertas.reduce((a, b) => a + b, 0), `${e.entidad}: la suma de oferentes no cuadra`);
+          for (let i = 1; i < c.procesos.length; i++) {
+            assert.ok(c.procesos[i - 1].numero_ofertas <= c.procesos[i].numero_ofertas,
+              "los procesos deben ir de menos a más oferentes");
+          }
+          assert.ok(c.indice.min_oferentes <= c.indice.max_oferentes);
+          for (const p of c.procesos) {
+            assert.strictEqual(p.incluido_en_promedio, true);
+            assert.ok(p.objeto && p.modalidad && p.codigo_unspsc, "cada fila debe traer objeto, modalidad y UNSPSC");
+            assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(p.fecha_adjudicacion), "fecha de adjudicación normalizada");
+          }
+        }
+      }
+
+      /* --- (a) 8 con oferentes + 2 sin dato → 8 en la tabla, 2 en excluidos --- */
+      {
+        const c = (await detalle("GOBERNACIÓN DEL TOLIMA", "&refrescar=1")).cuerpo;
+        assert.strictEqual(c.procesos.length, 8, "los 8 con oferentes van a la tabla principal");
+        const sinDato = c.excluidos.filter((p) => p.motivo_exclusion === "sin_dato_oferentes");
+        assert.strictEqual(sinDato.length, 2, "los 2 sin conteo de oferentes van a «excluidos», no al limbo");
+        // y el declarado DESIERTO: cerrado sin ganador, con su propio motivo
+        const desiertos = c.excluidos.filter((p) => p.motivo_exclusion === "sin_adjudicacion");
+        assert.strictEqual(desiertos.length, 1, "un cerrado sin adjudicación tampoco puede desaparecer en silencio");
+        assert.strictEqual(desiertos[0].numero_ofertas, null);
+        assert.strictEqual(c.excluidos.length, 3);
+        assert.strictEqual(c.indice.procesos_contados, 8);
+        assert.strictEqual(c.indice.total_procesos_adjudicados, 10, "el total adjudicado incluye los que no cuentan");
+        assert.strictEqual(c.indice.total_procesos_historico, 11, "…y el histórico total incluye además el desierto");
+        // 0 oferentes = SIN DATO, jamás «nadie se presentó»
+        for (const p of sinDato) assert.strictEqual(p.numero_ofertas, 0);
+        // excluidos ordenados por fecha descendente
+        for (let i = 1; i < c.excluidos.length; i++) {
+          assert.ok(String(c.excluidos[i - 1].fecha_adjudicacion || "") >= String(c.excluidos[i].fecha_adjudicacion || ""),
+            "los excluidos van del más reciente al más antiguo");
+        }
+      }
+
+      /* --- (b) por debajo del mínimo → TODO a excluidos, con el porqué --- */
+      {
+        const c = (await detalle("ALCALDÍA DE IBAGUÉ", "&refrescar=1")).cuerpo;
+        assert.strictEqual(c.procesos.length, 0, "sin el mínimo no se presenta un promedio como si lo hubiera");
+        assert.strictEqual(c.excluidos.length, 3, "los 3 procesos deben verse, marcados");
+        for (const p of c.excluidos) {
+          assert.strictEqual(p.motivo_exclusion, "insuficientes_datos");
+          assert.strictEqual(p.incluido_en_promedio, false);
+        }
+        assert.strictEqual(c.indice.nivel, "sin_dato");
+        assert.strictEqual(c.indice.promedio_oferentes, null, "no se publica un promedio que no es fiable");
+        assert.strictEqual(c.indice.procesos_contados, 3);
+        assert.strictEqual(c.indice.min_procesos, indiceComp.MIN_PROCESOS);
+        assert.ok(/m[ií]nimo 5/i.test(c.mensaje), `el mensaje debe explicar el ⚪: «${c.mensaje}»`);
+      }
+
+      /* --- (c) entidad inexistente: respuesta explícita, no un vacío mudo --- */
+      {
+        const r = await detalle("ALCALDIA DE UN MUNICIPIO QUE NO EXISTE");
+        assert.strictEqual(r.status, 200, "no encontrar no es un error del servidor");
+        assert.strictEqual(r.cuerpo.ok, true);
+        assert.strictEqual(r.cuerpo.encontrada, false, "debe decir explícitamente que no la encontró");
+        assert.deepStrictEqual(r.cuerpo.procesos, []);
+        assert.deepStrictEqual(r.cuerpo.excluidos, []);
+        assert.ok(/no hay procesos/i.test(r.cuerpo.mensaje), "un array vacío sin explicación no sirve");
+      }
+
+      /* --- (d) normalización: tildes, mayúsculas, espacios de más, puntuación --- */
+      for (const [consulta, esperada] of [
+        ["  alcaldia   de   purificacion  ", "ALCALDÍA DE PURIFICACIÓN"],
+        ["ALCALDÍA DE PURIFICACIÓN", "ALCALDÍA DE PURIFICACIÓN"],
+        ["gobernacion del tolima", "GOBERNACIÓN DEL TOLIMA"],
+        // guion y espacios distintos: el nombre largo real de una CAR
+        ["corporacion autonoma regional de las cuencas de los rios negro nare", ENTIDAD_CAR],
+      ]) {
+        const c = (await detalle(consulta, "&refrescar=1")).cuerpo;
+        assert.strictEqual(c.encontrada, true, `«${consulta}» no encontró la entidad`);
+        assert.strictEqual(c.entidad, esperada, "debe devolver el nombre original del dataset");
+      }
+
+      /* --- (e) muchos procesos: tope y metadata, sin mentir en los conteos --- */
+      {
+        const c = (await detalle("ENTIDAD SIN CONTEO DE OFERENTES", "&refrescar=1")).cuerpo;
+        assert.strictEqual(c.excluidos.length, HIST_EQUIVALENCIAS,
+          "una entidad con muchos procesos adjudicados sin oferentes los muestra todos hasta el tope");
+        assert.strictEqual(c.indice.total_procesos_adjudicados, HIST_EQUIVALENCIAS);
+        assert.strictEqual(c.indice.nivel, "sin_dato");
+        // el tope se ejercita con un límite bajo: la LISTA se recorta pero las
+        // CIFRAS siguen siendo las reales (si no, el detalle mentiría)
+        const capado = await competenciaDetalle.detalleEntidad(redis, "ENTIDAD SIN CONTEO DE OFERENTES",
+          { usarCache: false, maxProcesos: 5 });
+        assert.strictEqual(capado.cuerpo.excluidos.length, 5, "la lista se recorta al tope");
+        assert.strictEqual(capado.cuerpo.truncado.excluidos, HIST_EQUIVALENCIAS, "…y dice cuántos hay en realidad");
+        assert.strictEqual(capado.cuerpo.indice.total_procesos_adjudicados, HIST_EQUIVALENCIAS,
+          "el recorte es de presentación: las cifras no se tocan");
+        assert.strictEqual(competenciaDetalle.MAX_PROCESOS_DETALLE, 200, "el tope real de la API es 200");
+      }
+
+      /* --- (f) caché: segunda llamada sin barrer el corpus --- */
+      {
+        const primera = await detalle("IDU", "&refrescar=1");
+        assert.strictEqual(primera.cuerpo.cache, false, "con ?refrescar=1 nunca sale de caché");
+        const segunda = await detalle("IDU");
+        assert.strictEqual(segunda.cuerpo.cache, true, "la segunda llamada debe salir de caché");
+        assert.deepStrictEqual(segunda.cuerpo.procesos, primera.cuerpo.procesos, "la caché no puede alterar la respuesta");
+        assert.ok(segunda.cuerpo.comandosRedis < primera.cuerpo.comandosRedis,
+          `la caché debe ahorrar comandos: ${segunda.cuerpo.comandosRedis} vs ${primera.cuerpo.comandosRedis}`);
+        assert.ok(segunda.cuerpo.comandosRedis <= 3, "un acierto de caché son 2-3 comandos, no un barrido");
+        // y RECONSTRUIR el índice la invalida al instante (sin esperar al TTL)
+        await invocar(historico, "/api/sync/historico?reconstruir_indice=true&presupuesto=20000&chain=0", TOKEN);
+        assert.strictEqual((await detalle("IDU")).cuerpo.cache, false,
+          "reconstruir el índice debe invalidar los detalles cacheados");
+      }
+
+      /* --- (h) el barrido cubre TODOS los meses del histórico --- */
+      {
+        const c = (await detalle("IDU", "&refrescar=1")).cuerpo;
+        const meses = new Set(c.procesos.map((p) => String(p.fecha_adjudicacion).slice(0, 7)));
+        assert.ok(meses.size > 1, `los procesos de IDU viven en varios meses: se encontraron ${meses.size}`);
+      }
+
+      /* --- seguridad: ni adjudicatarios ni NITs salen de aquí --- */
+      {
+        const crudo = JSON.stringify((await detalle("GOBERNACIÓN DEL TOLIMA", "&refrescar=1")).cuerpo);
+        for (const prohibido of ["nombre_del_proveedor", "nit_del_proveedor_adjudicado", "CONSTRUCTORA HIST",
+          "CONSTRUCTORA DET", "valor_total_adjudicacion", "90010", "90050"]) {
+          assert.ok(!crudo.includes(prohibido), `el detalle expuso «${prohibido}»`);
+        }
+      }
+
+      /* --- chunk corrupto: se omite, se cuenta y el resto sigue --- */
+      {
+        const claves = await redis.scan(CLAVES.patronChunksHist);
+        const victima = claves[0];
+        const original = await redis.get(victima);
+        await redis.set(victima, "esto-no-es-un-chunk-comprimido");
+        const c = (await detalle("IDU", "&refrescar=1")).cuerpo;
+        assert.strictEqual(c.ok, true, "un chunk corrupto no puede tumbar la consulta");
+        assert.ok(c.chunks_ilegibles >= 1, "…pero tiene que quedar contado, no en silencio");
+        await redis.set(victima, original);
+      }
+
+      /* --- Redis caído: 503 accionable, jamás un 500 mudo --- */
+      {
+        const url = process.env.UPSTASH_REDIS_REST_URL;
+        process.env.UPSTASH_REDIS_REST_URL = "http://127.0.0.1:1";  // puerto cerrado
+        const r = await detalle("IDU");
+        process.env.UPSTASH_REDIS_REST_URL = url;
+        assert.strictEqual(r.status, 503, `con Redis caído debía dar 503, dio ${r.status}`);
+        assert.ok(/no disponible/i.test(r.cuerpo.error), "el 503 debe ser accionable");
+      }
+
+      /* ---- VOLCADO DE VERIFICACIÓN (solo con DUMP=1) ---- */
+      if (process.env.DUMP === "1") {
+        const linea = (k, v) => console.log(`   [${k}] ${v}`);
+        console.log("\n=== CASOS DE BORDE (valores reales) ===");
+        const a = (await detalle("GOBERNACIÓN DEL TOLIMA", "&refrescar=1")).cuerpo;
+        linea("a) 8 con oferentes + 2 sin + 1 desierto", `procesos=${a.procesos.length} excluidos=${a.excluidos.length} `
+          + `motivos=${JSON.stringify(a.excluidos.map((p) => p.motivo_exclusion))} contados=${a.indice.procesos_contados} adjudicados=${a.indice.total_procesos_adjudicados}`);
+        const b = (await detalle("ALCALDÍA DE IBAGUÉ", "&refrescar=1")).cuerpo;
+        linea("b) bajo el mínimo", `procesos=${b.procesos.length} excluidos=${b.excluidos.length} nivel=${b.indice.nivel} motivo=${b.excluidos[0].motivo_exclusion}`);
+        linea("b) mensaje", b.mensaje);
+        const c = (await detalle("ENTIDAD QUE NO EXISTE")).cuerpo;
+        linea("c) inexistente", `status=200 encontrada=${c.encontrada} procesos=${c.procesos.length} excluidos=${c.excluidos.length}`);
+        linea("c) mensaje", c.mensaje);
+        const d = (await detalle("  alcaldia   de   purificacion  ", "&refrescar=1")).cuerpo;
+        linea("d) normalización", `pedida=«  alcaldia   de   purificacion  » → devuelta=«${d.entidad}» procesos=${d.procesos.length}`);
+        const dCar = (await detalle("corporacion autonoma regional de las cuencas de los rios negro nare", "&refrescar=1")).cuerpo;
+        linea("d) puntuación", `«…rios negro nare» → «${dCar.entidad}» excluidos=${dCar.excluidos.length}`);
+        const e1 = (await detalle("ENTIDAD SIN CONTEO DE OFERENTES", "&refrescar=1")).cuerpo;
+        const e2 = (await competenciaDetalle.detalleEntidad(redis, "ENTIDAD SIN CONTEO DE OFERENTES", { usarCache: false, maxProcesos: 5 })).cuerpo;
+        linea("e) muchos procesos", `sin tope: excluidos=${e1.excluidos.length} truncado=${JSON.stringify(e1.truncado)}`);
+        linea("e) con tope 5", `lista=${e2.excluidos.length} truncado=${JSON.stringify(e2.truncado)} cifra_real=${e2.indice.total_procesos_adjudicados}`);
+        const f1 = await detalle("IDU", "&refrescar=1");
+        const f2 = await detalle("IDU");
+        linea("f) caché", `1ª cache=${f1.cuerpo.cache} ${f1.cuerpo.duracionMs}ms ${f1.cuerpo.comandosRedis} comandos · `
+          + `2ª cache=${f2.cuerpo.cache} ${f2.cuerpo.duracionMs}ms ${f2.cuerpo.comandosRedis} comandos`);
+        const g = await invocar(detalleComp, "/api/competencia-detalle?entidad=IDU");
+        linea("g) sin token", `status=${g.status} fuga=${JSON.stringify(g.cuerpo).includes("CO1.") ? "SÍ" : "no"}`);
+        const h = (await detalle("IDU", "&refrescar=1")).cuerpo;
+        const meses = [...new Set(h.procesos.map((p) => String(p.fecha_adjudicacion).slice(0, 7)))].sort();
+        linea("h) varios meses", `${meses.length} meses distintos: ${meses.join(", ")}`);
+        const inv = JSON.parse((await redis.hgetall("indice:competencia"))[filtros.norm("IDU")]);
+        linea("INVARIANTE", `badge: promedio=${inv.promedio} procesos=${inv.procesos} nivel=${inv.nivel} · `
+          + `detalle: promedio=${h.indice.promedio_oferentes} procesos=${h.indice.procesos_contados} nivel=${h.indice.nivel}`);
+        console.log("=== FIN CASOS DE BORDE ===\n");
+      }
+
+      // la caché quedó poblada por las pruebas: se limpia para no arrastrarla
+      const cacheadas = await redis.scan("indice:detalle:*");
+      if (cacheadas.length) await redis.del(...cacheadas);
     }
 
     /* g. delta: fila nueva + cambio de estado (reemplazo y traslado al histórico) */
@@ -2063,6 +2409,30 @@ async function main() {
       }
       /* toggle «Incluir procesos sin código UNSPSC»: apagado por defecto (sin
          atributo `checked` en el HTML) y cableado al parámetro de la API */
+      /* modal de competencia: el badge deja de ser una caja negra */
+      for (const debe of ['id="modal-competencia"', 'id="modal-fondo"', 'id="modal-titulo"',
+        'id="modal-cuerpo"', 'id="modal-cerrar"', 'id="modal-cerrar-pie"', 'role="dialog"', 'aria-modal="true"']) {
+        assert.ok(html.includes(debe), `index.html sin ${debe} (falta el modal del detalle de competencia)`);
+      }
+      assert.ok(/id="modal-competencia"[^>]*\bhidden\b/.test(html), "el modal debe arrancar oculto");
+      for (const debe of ["banda-competencia", "cargarDetalle", "abrirModal", "cerrarModal",
+        "/api/competencia-detalle", "x-historico-token", "sessionStorage", "MOTIVO_EXCLUSION"]) {
+        assert.ok(js.includes(debe), `app.js sin ${debe} (el badge no abre el detalle)`);
+      }
+      // el badge tiene que ser pulsable y llevar la entidad consigo
+      assert.ok(/data-entidad=/.test(js), "el badge debe llevar la entidad en data-entidad");
+      assert.ok(/cursor-pointer/.test(js) && /hover:underline/.test(js), "el badge debe verse pulsable");
+      // las tres formas de cerrar del encargo: botón, tecla ESC y clic fuera
+      assert.ok(/"modal-cerrar"\)\.addEventListener\("click", cerrarModal\)/.test(js), "no se cierra con el botón");
+      assert.ok(/"modal-cerrar-pie"\)\.addEventListener\("click", cerrarModal\)/.test(js), "no se cierra con [Cerrar]");
+      assert.ok(/"modal-fondo"\)\.addEventListener\("click", cerrarModal\)/.test(js), "no se cierra al hacer clic fuera");
+      assert.ok(/e\.key === "Escape"/.test(js), "no se cierra con ESC");
+      // el token NUNCA puede viajar en la URL del frontend
+      assert.ok(!/competencia-detalle\?[^`"']*token=/.test(js),
+        "el token del detalle no puede ir en la URL: va por cabecera");
+      // los delegados escuchan en el contenedor: las tarjetas se repintan
+      assert.ok(/\$\("lista"\)\.addEventListener\("click"/.test(js), "el clic del badge debe ir por delegación");
+
       assert.ok(html.includes('id="f-sin-unspsc"'), "index.html sin el toggle de procesos sin código UNSPSC");
       const inputToggle = html.slice(html.indexOf('id="f-sin-unspsc"'), html.indexOf('id="f-sin-unspsc"') + 200);
       assert.ok(!/\bchecked\b/.test(inputToggle), "el toggle debe venir APAGADO por defecto");
