@@ -57,6 +57,7 @@ gente (índice de competencia sobre 2 años de adjudicaciones).
 | `lib/almacen.js` | Esquema de claves Redis + compresión/particionado de chunks |
 | `docs/PERFILES.md` | Resumen técnico de los tres perfiles (datos, estimaciones, limitaciones) |
 | `public/` | Frontend estático (Tailwind CDN, estilo Apple, gate de clave) |
+| `public/admin.html` + `admin.js` | Panel de administración: encadena la sincronización full desde el navegador, sin terminal |
 | `tests/e2e.js` | Ciclo completo con mocks de Socrata y Upstash (sin red externa) |
 
 ## Endpoints
@@ -510,6 +511,35 @@ delta escribe **primero** la copia histórica (con adjudicación) y luego la cop
 activo, que es la que hace que el proceso desaparezca del listado por dedup de `:updated_at`. Si
 fallara a mitad, se pierde un reemplazo (el próximo delta lo repite), nunca el dato histórico. La
 salida física del activo la consuma la compactación del mes o la siguiente full.
+
+## Panel de administración (`/admin.html`)
+
+Página estática con el mismo gate de clave, para operar el mantenimiento **sin terminal**.
+
+**Sincronización automática**: la carga completa avanza en tandas de ~45 s (cada invocación agota su
+presupuesto, guarda el cursor y termina). El servidor intenta re-invocarse solo, pero ese
+fire-and-forget muere cuando Password Protection intercepta la llamada que la función se hace a sí
+misma. El botón «Iniciar sincronización full automática» encadena las tandas desde el navegador
+—donde la cookie de sesión sí pasa el muro— mostrando mes en curso, filas leídas, porcentaje,
+número de tandas y una barra de progreso.
+
+| Respuesta de `/api/sync` | Qué hace el panel |
+| --- | --- |
+| `{done:false}` | espera 3 s y lanza la siguiente tanda |
+| `{enCurso:true}` | otra tanda tiene el candado: espera 10 s y reintenta |
+| `{done:true}` | se detiene y muestra «Sincronización completada» |
+| red caída o 5xx | reintenta 3 veces (5 s, 10 s, 20 s) y solo entonces falla |
+
+**Secuencia de modos** (la parte que puede colgar el encadenado): la primera tanda va con
+`modo=full` —que **reinicia** la carga— y **todas las siguientes con `modo=auto`**, que continúa la
+full inconclusa desde el cursor. Repetir `modo=full` en cada tanda volvería a empezar por enero
+indefinidamente. Hay una prueba que lo verifica contra el handler real: `auto` conserva el sello
+`iniciado` de la corrida y `full` lo cambia reiniciando en el primer mes.
+
+«Detener» solo corta el encadenado en el navegador: la tanda que ya está corriendo en el servidor
+termina sola y el avance queda guardado en `licitaciones:progreso`, así que reiniciar continúa
+donde se quedó. No se pasa `chain=0` a propósito: si la cadena del servidor funciona en ese
+despliegue, ayuda — el candado impide que las dos se estorben.
 
 ## Frontend
 

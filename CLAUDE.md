@@ -128,6 +128,10 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - **`HISTORICO_TOKEN` sin default**: si la variable no está, el endpoint responde 503. Nunca
   inventar una llave por defecto. El token viaja por header en la auto-reinvocación para no
   quedar escrito en los logs de acceso de Vercel.
+- **`/admin.html` encadena la full desde el navegador**: 1.ª tanda `modo=full` (REINICIA) y todas
+  las siguientes `modo=auto` (CONTINÚA). Repetir `full` volvería a enero para siempre — hay prueba
+  de la invariante contra el handler real. Existe porque el fire-and-forget del servidor muere con
+  Password Protection y el dueño no tiene terminal.
 - **`?estado=true` y `?reset=true`** (mismo token): la única forma que tiene el dueño de
   diagnosticar y destrabar sin terminal. `estado` solo lee (candado + TTL restante, avance,
   corpus, índice) y `reset` borra candado/progreso/meta **sin tocar los chunks ya bajados**.

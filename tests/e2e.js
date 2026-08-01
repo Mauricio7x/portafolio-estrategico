@@ -1282,6 +1282,25 @@ async function main() {
       const js = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
       new Function(js); // valida sintaxis sin ejecutar
       assert.ok(js.includes('"231105"'), "app.js sin la clave de acceso");
+
+      /* panel de administración: encadenado de la sincronización */
+      const admHtml = fs.readFileSync(path.join(__dirname, "..", "public", "admin.html"), "utf8");
+      for (const debe of ['id="gate"', 'id="app"', "/admin.js", "cdn.tailwindcss.com",
+        'id="btn-iniciar"', 'id="btn-detener"', 'id="prog-barra"', 'id="m-tandas"', 'id="chip-texto"']) {
+        assert.ok(admHtml.includes(debe), `admin.html sin ${debe}`);
+      }
+      const admJs = fs.readFileSync(path.join(__dirname, "..", "public", "admin.js"), "utf8");
+      new Function(admJs); // valida sintaxis sin ejecutar
+      assert.ok(admJs.includes('"231105"'), "admin.js sin la clave de acceso");
+      // la secuencia de modos es lo único que puede colgar el encadenado
+      assert.ok(/modo=\$\{modo\}/.test(admJs), "admin.js debe parametrizar el modo, no fijarlo");
+      assert.ok(/let modo = "full"/.test(admJs), "la primera tanda debe ser modo=full");
+      assert.ok((admJs.match(/modo = "auto"/g) || []).length >= 2,
+        "las tandas siguientes deben pasar a modo=auto (si no, la carga se reinicia sin fin)");
+      // esperas del encargo: 3 s entre tandas, 10 s con el candado tomado, backoff 5/10/20
+      assert.ok(/ESPERA_ENTRE_TANDAS_MS = 3000/.test(admJs), "espera entre tandas ≠ 3 s");
+      assert.ok(/ESPERA_CANDADO_MS = 10000/.test(admJs), "espera por candado ≠ 10 s");
+      assert.ok(/BACKOFF_MS = \[5000, 10000, 20000\]/.test(admJs), "backoff de reintentos ≠ 5/10/20 s");
       for (const debe of ["bandaCompetencia", "competencia_entidad", "Poca competencia", "Alta competencia"]) {
         assert.ok(js.includes(debe), `app.js sin ${debe} (la tarjeta no muestra la competencia de la entidad)`);
       }
@@ -1290,6 +1309,45 @@ async function main() {
         assert.ok(fs.existsSync(path.join(__dirname, "..", fn)), `vercel.json apunta a ${fn} inexistente`);
       }
       assert.ok(vercel.crons.some((c) => c.path === "/api/sync"), "falta el cron de /api/sync");
+    }
+
+    /* i. la INVARIANTE que sostiene el encadenado del panel de administración:
+       modo=full REINICIA y modo=auto CONTINÚA. Si el botón repitiera modo=full
+       en cada tanda, la carga volvería a enero para siempre y nunca terminaría.
+       Se verifica contra el handler real, no contra el código del navegador. */
+    {
+      const progreso = async () => JSON.parse(await redis.get("licitaciones:progreso"));
+
+      let r1 = await invocar(sync, "/api/sync?modo=full&presupuesto=1&chain=0");
+      assert.strictEqual(r1.cuerpo.done, false, "con presupuesto de 1 ms la full no puede terminar");
+      const p1 = await progreso();
+      assert.strictEqual(p1.mesIdx, 0, "una full nueva arranca en el primer mes");
+
+      // avanzar con AUTO hasta pasar de mes: eso demuestra que continúa
+      let vueltas = 0;
+      let p2 = p1;
+      while (p2.mesIdx < 1 && !p2.terminado && vueltas < 60) {
+        await invocar(sync, "/api/sync?modo=auto&presupuesto=150&chain=0");
+        p2 = await progreso();
+        vueltas++;
+      }
+      assert.ok(p2.mesIdx >= 1 || p2.terminado, "modo=auto no hizo avanzar la carga");
+      assert.strictEqual(p2.iniciado, p1.iniciado, "modo=auto NO puede reiniciar la carga");
+
+      // y ahora la prueba de por qué el botón no debe repetir modo=full
+      await invocar(sync, "/api/sync?modo=full&presupuesto=1&chain=0");
+      const p3 = await progreso();
+      assert.strictEqual(p3.mesIdx, 0, "modo=full debe reiniciar desde el primer mes");
+      assert.notStrictEqual(p3.iniciado, p1.iniciado, "modo=full debe empezar una corrida nueva");
+
+      // dejar el corpus completo otra vez (como lo dejaría el botón real)
+      let rf = { cuerpo: { done: false } };
+      vueltas = 0;
+      while (rf.cuerpo.done === false && vueltas < 200) {
+        rf = await invocar(sync, "/api/sync?modo=auto&presupuesto=20000&chain=0");
+        vueltas++;
+      }
+      assert.strictEqual(rf.cuerpo.done, true, "el encadenado full→auto debe converger");
     }
 
     const idx = JSON.parse(await redis.get("indice:competencia:meta"));
