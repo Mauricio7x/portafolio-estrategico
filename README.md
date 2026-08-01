@@ -57,13 +57,15 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `api/sync.js` | Sincronización full/delta/auto, reanudable, con candado TTL y auto-reinvocación |
 | `api/sync/historico.js` | **Backfill histórico** (protegido por token): 2 años a `licitaciones:historico:*` + construcción de los tres derivados (índice, equivalencias, vocabulario) |
 | `api/oportunidades.js` | Consulta: **todo el juicio fino** por perfil, competencia por entidad, orden, paginación, memoria caliente |
+| `api/resumen.js` | **Dashboard**: los mismos visibles de la app, agregados (tipo, urgencia, entidades, departamentos, capacidad K) con caché de 5 min |
+| `api/admin/rup.js` + `lib/config_rup.js` | **Carga del RUP por archivo JSON**: validación campo por campo y publicación atómica, con efecto inmediato |
 | `lib/indice_competencia.js` | Índice **entidad → oferentes promedio** sobre el histórico; tertiles baja/media/alta |
 | `api/competencia-detalle.js` + `lib/competencia_detalle.js` | **Los procesos que sostienen el badge**: incluidos, excluidos y por qué (con caché de 1 h) |
 | `lib/auth.js` | Guardián único del `HISTORICO_TOKEN` para los tres endpoints protegidos |
 | `lib/equivalencias.js` | **Clases UNSPSC afines** aprendidas del histórico (lift sobre adjudicatarios) |
 | `lib/texto_unspsc.js` | El **objeto como co-señal**: vocabulario distintivo por familia (TF-IDF) + derivación |
 | `lib/proyeccion.js` | Proyección de columnas y cascada de filtros; dos variantes: activa (sin adjudicación) e histórica |
-| `lib/perfiles.js` | **Fuente única** de los tres perfiles: naturaleza, financieros, CT, SCE, ponderación 50/50 del consorcio |
+| `lib/perfiles.js` | Los tres perfiles: naturaleza, financieros, CT, SCE, ponderación 50/50 del consorcio. Respaldo del repositorio + aplicación del RUP cargado (`PERFILES` sigue siendo síncrono) |
 | `lib/capacidad.js` | **Fórmula única** del K de contratación (CRP/CRPC, Guía CCE-EICP-GI-22) |
 | `lib/filtros.js` | Las **reglas**: estados canónicos (desconocido = cerrado), modalidades, convenios, prefiltro de ingesta, cascada de juicio, **pertinencia** y anti-suministro |
 | `lib/rup.js` | Orquestador: `rup_valido()`, `evaluarRup()` (veredicto graduado + capacidad) |
@@ -76,7 +78,7 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `lib/almacen.js` | Esquema de claves Redis + compresión/particionado de chunks |
 | `docs/PERFILES.md` | Resumen técnico de los tres perfiles (datos, estimaciones, limitaciones) |
 | `public/` | Frontend estático (Tailwind CDN, estilo Apple, gate de clave) |
-| `public/admin.html` + `admin.js` | Panel de administración: encadena la sincronización full desde el navegador, sin terminal |
+| `public/admin.html` + `admin.js` | Panel de administración: encadena la sincronización full, **dashboard de procesos** y **carga de RUP**, todo desde el navegador y sin terminal |
 | `tests/e2e.js` | Ciclo completo con mocks de Socrata y Upstash (sin red externa) |
 
 ## Endpoints
@@ -217,6 +219,85 @@ Detalles de operación:
 - **No expone adjudicatarios ni NITs**: la proyección es una lista blanca, igual que en
   `/api/oportunidades`.
 - Redis caído o corpus ilegible → `503` con mensaje accionable, nunca un `500` mudo.
+
+### `GET /api/resumen` (protegido)
+
+El panel de `/admin.html`. Responde, sobre los **mismos procesos que sirve la app**, las preguntas
+que de otro modo habría que contestar revisando 2 000 tarjetas a mano: cuántos son obra y cuántos
+consultoría, cuáles cierran esta semana, qué entidades acumulan procesos y con cuánta competencia
+histórica, en qué departamentos están, cuántos se caen por capacidad K.
+
+| Parámetro | Default | Descripción |
+| --- | --- | --- |
+| `perfil` | requerido | `helder` \| `genesis` \| `consorcio` \| `juntos`. Otro valor → `400` con `valores_validos` |
+| `token` | requerido | El mismo `HISTORICO_TOKEN` (header `x-historico-token` o `?token=`) |
+
+**No reimplementa la cascada: la llama.** Usa `evaluarRup` (→ `lib/filtros`), lee el corpus con
+`leerChunksDedup` y aplica el mismo `anticipo_min=20` y el mismo «solo abiertas» de
+`/api/oportunidades`. Hay una prueba que compara `totales.visibles` contra el `total` de
+`/api/oportunidades` **y** contra el `embudo.visibles` de `/api/diagnostico`: si divergieran, el
+panel sería un segundo cálculo, y un segundo cálculo acaba contradiciendo al primero.
+
+Qué trae: `totales` (repartos por pertinencia, tier UNSPSC, modalidad, rango de cuantía, nivel de
+competencia de la entidad, departamento, urgencia de cierre y anticipo), `descartes` (en qué paso
+murió cada proceso del corpus activo), `top_entidades` (15, con su badge idéntico al de la tarjeta),
+`top_municipios` (10, solo si el dataset trae la columna) y `procesos_destacados` (10).
+
+Decisiones que conviene no re-aprender:
+
+- **Cada reparto SUMA los visibles.** Hay cubetas «feas» a propósito (`OTROS` y `SIN_DEPARTAMENTO`
+  en departamentos; `ya_cerro` y `mas_adelante` en urgencia) porque la alternativa es que un
+  proceso desaparezca del reparto sin que nadie lo note.
+- **`superan_k` / `no_superan_k` se cuentan sobre `base_capacidad`** (los que pasaron el juicio del
+  objeto), no sobre los visibles: entre los visibles todos superan la K por construcción, y un
+  contador que siempre vale «todos» no informa de nada.
+- **`SIN_DEPARTAMENTO` no compite por un puesto del top 15** y jamás se reparte a ojo: primero
+  manda la columna `departamento_entidad` y solo si viene vacía se busca el departamento en el
+  nombre de la entidad.
+- **`procesos_destacados` cae a orden por atractividad** cuando todavía no hay histórico (sin
+  backfill nadie tiene nivel `baja` y la tabla quedaría vacía para siempre). El campo
+  `destacados_desde` dice cuál de los dos criterios se aplicó — no se disimula.
+- **Caché `resumen:{perfil}` con TTL 300 s**, anunciada en la cabecera `X-Cache: HIT|MISS` y en
+  `cache`. La invalida cualquier carga de RUP: sus números dependen del RUP y quedarían mintiendo
+  cinco minutos.
+- Corpus vacío → `200` con `visibles: 0` y el mensaje de qué ejecutar, nunca un `500` mudo.
+
+### `GET|POST /api/admin/rup` (protegido)
+
+Carga del RUP **por archivo JSON**, desde `/admin.html`. Antes los perfiles eran datos hardcodeados
+en `lib/perfiles.js`: un código UNSPSC nuevo o un indicador del balance del año exigían tocar código
+y desplegar, y el dueño no tiene terminal.
+
+- `GET` → el RUP vigente en el **mismo esquema que se sube** (`{perfiles: {helder, genesis,
+  consorcio}}`). Sin carga previa devuelve los valores del repositorio con `fuente: "hardcoded"` y
+  una advertencia. Descargar → editar → volver a subir es un ciclo cerrado, y hay una prueba que
+  pasa la salida del `GET` por el validador del `POST`.
+- `POST` → valida campo por campo, **acumulando todos los errores** (`400` con
+  `[{campo, error, valor_recibido}]`), y guarda de forma atómica.
+
+**El cambio surte efecto en la siguiente consulta**: el juicio corre al servir desde jul 2026, así
+que no hace falta re-sincronizar nada. `/api/oportunidades`, `/api/diagnostico` y `/api/resumen`
+llaman a `recargarPerfiles(redis)` antes de evaluar — un `GET` del sello `config:perfiles:version`
+y, solo si cambió, la configuración entera.
+
+Errores vs **advertencias** (la distinción importa): un `tope_smmlv` por debajo de la experiencia
+acreditada es una advertencia, no un error, porque el tope es **apetito estratégico** y en el RUP
+real de los dos perfiles va justo por debajo (Helder: 6 768 acreditados, tope 4 000). Convertirlo
+en error dejaría el RUP real imposible de cargar. Lo mismo con el tope del plural frente al de sus
+integrantes y con un segmento UNSPSC fuera del rango 10–95.
+
+Detalles de operación:
+
+- **El sello se escribe AL FINAL** (whitelists → configuración → `config:perfiles:version`): es lo
+  que hace recargar a las instancias calientes, así que nadie ve un estado a medias si la función
+  muere en mitad de la carga. Un `POST` rechazado no toca nada de lo guardado.
+- **Carga parcial**: subir solo Génesis conserva a Helder. El **consorcio se re-deriva siempre** de
+  sus integrantes (unión de UNSPSC, experiencia sumada, K = suma de las CRP) aunque venga en el
+  archivo; una lista propia del plural se **suma** a la unión, nunca la sustituye.
+- Si la configuración se borra o Redis no responde, la app vuelve al respaldo del repositorio
+  (`PERFILES_FALLBACK`) sin lanzar: quedarse sin perfiles dejaría la app muda.
+- Cuerpo máximo 5 MB (`413`); se guarda comprimido para respetar el tope real de 1 MB por valor de
+  Upstash.
 
 ## Índice de competencia por entidad (¿dónde es más probable ganar?)
 
@@ -681,6 +762,14 @@ vocabulario:unspsc                             JSON comprimido {familias: {FFFF:
 vocabulario:unspsc:meta                        JSON {construido, familias, procesos, …}
 vocabulario:unspsc:progreso                    JSON comprimido, acumulador de conteos
 
+CONFIGURACIÓN DEL DUEÑO — fuera de `licitaciones:*`: ninguna purga del corpus la toca
+config:perfiles                                JSON comprimido {perfiles:{helder,genesis,consorcio}, _meta}
+config:perfiles:version                        sello de la última carga (se escribe AL FINAL)
+config:unspsc:{perfil}:clases|familias|segmentos|completo   JSON arrays derivados del RUP cargado
+
+CACHÉ DEL PANEL
+resumen:{perfil}                               JSON del dashboard, TTL 300 s (la carga de RUP la borra)
+
 BACKFILL
 sync:historico:progreso                        JSON cursor reanudable del backfill
 sync:historico:meta                            JSON resumen de la última extracción histórica
@@ -771,6 +860,35 @@ indefinidamente. Hay una prueba que lo verifica contra el handler real: `auto` c
 termina sola y el avance queda guardado en `licitaciones:progreso`, así que reiniciar continúa
 donde se quedó. No se pasa `chain=0` a propósito: si la cadena del servidor funciona en ese
 despliegue, ayuda — el candado impide que las dos se estorben.
+
+**Token de acceso**: el panel, la carga de RUP y el detalle de competencia usan el mismo
+`HISTORICO_TOKEN`, guardado en `sessionStorage` bajo `historico_token` —**la misma clave que la
+app**, así que quien ya pidió un detalle de competencia no vuelve a pegarlo— y enviado siempre por
+cabecera, nunca en la URL.
+
+**Dashboard de procesos** (`/api/resumen`): cuatro tarjetas (visibles, obra civil, consultoría,
+cierran esta semana), barras de distribución por tipo de objeto hechas con `div`s (sin librerías),
+top de entidades —cada fila despliega en línea el detalle de competencia de esa entidad, el mismo
+`/api/competencia-detalle` que abre el modal de la app—, reparto por departamento y los 10 procesos
+más atractivos (cada fila lleva a su ficha en SECOP II). Selector de perfil persistido en
+`sessionStorage` (`dashboard_perfil`), botón «Actualizar ahora» que además esquiva la caché del
+navegador con `cache_bust`, y refresco automático cada 5 minutos —el mismo TTL de la caché del
+endpoint— **solo con la pestaña visible**: refrescar en segundo plano gasta invocaciones para que
+nadie lo mire, así que si tocaba mientras estaba oculta, se refresca al volver a ella. La tabla de
+departamentos se **oculta entera** si el dataset no trae la columna: una tabla vacía no informa,
+confunde.
+
+**Carga de RUP** (`/api/admin/rup`): seleccionar archivo → vista previa con el JSON formateado
+(recortada a 200 000 caracteres: pintar 5 MB en un `<pre>` congela la pestaña; se sube el archivo
+completo) y un resumen por perfil → «Confirmar carga». El botón se deshabilita durante el envío
+(un doble clic cargaría dos veces), los errores de validación se listan con su campo exacto y las
+advertencias se muestran **sin bloquear**. «Descargar RUP actual» genera un `rup_YYYY-MM-DD.json`
+con el RUP vigente, listo para editar y volver a subir.
+
+**Arranque**: igual que en `app.js`, el arranque automático de la sesión ya validada va **al final
+del módulo**. `abrirApp()` levanta el panel y la carga de RUP, cuyas funciones leen constantes
+declaradas más abajo; llamarlo desde donde está el gate reventaría en la zona muerta temporal y —al
+ir por una promesa rechazada— lo haría en silencio. Hay una prueba que vigila el orden.
 
 ## Frontend
 
@@ -900,6 +1018,38 @@ Lo que cubre específicamente la parte de competencia histórica:
 - Aislamiento de los dos corpus: la full no escribe en el histórico, el activo nunca guarda datos de
   adjudicación, `/api/oportunidades` no sirve procesos históricos ni expone adjudicatarios, y una
   full de higiene deja el histórico intacto.
+
+Lo que cubre específicamente el **dashboard** (`/api/resumen`):
+
+- La invariante que lo sostiene todo: `totales.visibles` es **exactamente** el `total` de
+  `/api/oportunidades` y el `embudo.visibles` de `/api/diagnostico`, para `helder` y para el
+  consorcio vía alias.
+- Los nueve repartos suman los visibles, y `descartes + visibles` suma el corpus activo entero:
+  nadie desaparece sin quedar contado.
+- `superan_k + no_superan_k + fuera_tope_estrategico = base_capacidad`, y el dataset de prueba
+  (procesos de 9 000 M) garantiza que el contador de caídos por capacidad no sea siempre 0.
+- Caché: primera llamada `X-Cache: MISS` y `cache:false`, segunda `HIT` y `cache:true` con los
+  mismos números; `Cache-Control: no-store` en las dos.
+- `401` sin token, `400` con perfil inventado (devolviendo `valores_validos`), y corpus vacío →
+  `200` con `visibles:0` y el mensaje de qué ejecutar.
+- Ningún destacado con cuantía 0 ni pertinencia «Verificar objeto», objetos recortados a 100
+  caracteres y **cero campos de adjudicación** en la respuesta.
+
+Lo que cubre específicamente la **carga de RUP** (`/api/admin/rup`):
+
+- `GET` sin carga previa devuelve los valores del repositorio, y esa salida **pasa el validador del
+  `POST`**: el ciclo descargar → editar → subir está cerrado por prueba, no por confianza.
+- 11 casos de validación, cada uno comprobando que el error apunta al **campo exacto**: `unspsc`
+  que no es arreglo, código de 7 dígitos, códigos duplicados, liquidez 0, endeudamiento escrito
+  como porcentaje (13 en vez de 0,13), tipo desconocido, plural declarado como persona natural,
+  NIT mal formado, sin perfiles, sin indicadores y sin profesionales. Más un body que no es JSON.
+- Un `POST` rechazado **no pisa** la configuración anterior.
+- Integración: tras cargar, `getPerfil`/`getUnspsc` devuelven lo cargado, el matching casa por
+  `clase` con un código que antes no existía en el RUP, 11 profesionales suben el factor CT de 20 a
+  40 y con él la K que **sirve la app**, el consorcio re-deriva la unión y sigue atado a sus
+  integrantes, y la caché del panel queda invalidada.
+- Borrar `config:*` devuelve la app al respaldo del repositorio con los números originales: nadie
+  se queda sin perfiles porque una clave desaparezca.
 
 ## Despliegue
 

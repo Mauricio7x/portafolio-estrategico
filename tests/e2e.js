@@ -56,6 +56,27 @@
         Además: la clase AFÍN pasa a verse por las equivalencias recién
         aprendidas, SIN volver a sincronizar (la promesa de separar ingesta de
         juicio, verificada de punta a punta).
+     g-bis. /api/resumen (el dashboard): la invariante fuerte es que
+        `totales.visibles` es EXACTAMENTE el `total` de /api/oportunidades y el
+        `embudo.visibles` del diagnóstico — si divergieran, el panel sería un
+        segundo cálculo. Además: cada reparto (pertinencia, modalidad, cuantía,
+        tier, competencia, urgencia, anticipo, departamento) suma los visibles;
+        descartes + visibles = corpus activo; caché MISS→HIT verificada por la
+        cabecera X-Cache; 401 sin token, 400 con perfil inventado, alias
+        «consorcio», y corpus vacío (en el paso a-bis) con 200 y visibles = 0.
+     g-ter. /api/admin/rup (carga de RUP por archivo): GET sin carga previa
+        devuelve los valores del repositorio en el MISMO esquema que se sube
+        (ciclo descargar→editar→subir cerrado, validado contra su propio
+        validador); POST válido guarda los tres perfiles; 11 casos de
+        validación con el campo exacto señalado (unspsc que no es arreglo,
+        código de 7 dígitos, duplicados, liquidez 0, endeudamiento como
+        porcentaje, tipo desconocido, plural que no es plural, NIT mal formado,
+        sin perfiles, sin indicadores, sin profesionales) y un body que no es
+        JSON; un rechazo NO pisa lo guardado. Integración: el RUP cargado manda
+        —getPerfil/getUnspsc lo devuelven, el matching usa el código nuevo, más
+        profesionales suben el factor CT y la K que sirve la app, el consorcio
+        re-deriva la unión y sigue atado a sus integrantes— y borrar la
+        configuración devuelve la app al respaldo con los números originales.
      g. Delta: fila nueva + cambio de estado a Adjudicado → la nueva aparece, la
         adjudicada desaparece del listado (reemplazo por :updated_at) y SE MUDA
         al histórico con su adjudicatario; la full de higiene no lo borra.
@@ -635,26 +656,36 @@ function crearMockUpstash() {
   return { server, tamano: () => datos.size + hashes.size };
 }
 
-/* ════════════════ invocador de handlers estilo Vercel ════════════════ */
-function invocar(handler, urlStr, headers = {}) {
+/* ════════════════ invocador de handlers estilo Vercel ════════════════
+   `cabeceras` se recoge de verdad (no se tira): /api/resumen anuncia por
+   `X-Cache` si sirvió de la caché, y sin capturarla no habría forma de
+   distinguir un HIT de un MISS desde la prueba.
+   `opciones.metodo` + `opciones.body` cubren el POST de /api/admin/rup;
+   Vercel entrega el cuerpo ya parseado cuando el Content-Type es JSON, y el
+   handler acepta además cadena y stream (se prueban las tres formas). */
+function invocar(handler, urlStr, headers = {}, opciones = {}) {
   const u = new URL(urlStr, "http://app.local");
   const req = {
-    url: urlStr, method: "GET",
+    url: urlStr, method: opciones.metodo || "GET",
     headers: { host: "app.local", "x-forwarded-proto": "https", ...headers },
     query: Object.fromEntries(u.searchParams),
   };
+  if (opciones.body !== undefined) req.body = opciones.body;
   return new Promise((resolve, reject) => {
+    const cabeceras = {};
     const res = {
       _status: 200,
-      setHeader() {},
+      setHeader(k, v) { cabeceras[String(k).toLowerCase()] = String(v); },
       status(n) { this._status = n; return this; },
-      json(o) { resolve({ status: this._status, cuerpo: o }); },
-      send(b) { resolve({ status: this._status, cuerpo: b }); },
-      end() { resolve({ status: this._status, cuerpo: null }); },
+      json(o) { resolve({ status: this._status, cuerpo: o, cabeceras }); },
+      send(b) { resolve({ status: this._status, cuerpo: b, cabeceras }); },
+      end() { resolve({ status: this._status, cuerpo: null, cabeceras }); },
     };
     Promise.resolve(handler(req, res)).catch(reject);
   });
 }
+const invocarPost = (handler, urlStr, body, headers = {}) =>
+  invocar(handler, urlStr, { "content-type": "application/json", ...headers }, { metodo: "POST", body });
 
 const escuchar = (server) => new Promise((r) => server.listen(0, "127.0.0.1", () => r(server.address().port)));
 
@@ -679,6 +710,8 @@ async function main() {
   const diagnostico = require("../api/diagnostico.js");
   const detalleComp = require("../api/competencia-detalle.js");
   const oportunidades = require("../api/oportunidades.js");
+  const resumen = require("../api/resumen.js");
+  const adminRup = require("../api/admin/rup.js");
   const { crearRedis } = require("../lib/redis.js");
   const { empaquetar, descomprimir, CHUNK_MAX_COMPRIMIDO, CLAVES } = require("../lib/almacen.js");
   const indiceComp = require("../lib/indice_competencia.js");
@@ -689,7 +722,11 @@ async function main() {
   const textoUnspsc = require("../lib/texto_unspsc.js");
   const competenciaDetalle = require("../lib/competencia_detalle.js");
   const capacidad = require("../lib/capacidad.js");
-  const { PERFILES } = require("../lib/perfiles.js");
+  const perfilesMod = require("../lib/perfiles.js");
+  const { PERFILES } = perfilesMod;
+  const configRup = require("../lib/config_rup.js");
+  // el token de los endpoints protegidos, por cabecera (la vía preferida)
+  const CAB_TOKEN = { "x-historico-token": process.env.HISTORICO_TOKEN };
   const redis = crearRedis({});
 
   /* unidad: el empaquetador respeta los 500 KB comprimidos y no pierde filas */
@@ -1336,11 +1373,19 @@ async function main() {
       ...(await redis.scan("licitaciones:*")), ...(await redis.scan("lock:sync*")),
       ...(await redis.scan("indice:*")), ...(await redis.scan("sync:historico:*")),
       ...(await redis.scan("equivalencias:*")), ...(await redis.scan("vocabulario:*")),
+      // la configuración del RUP y la caché del panel viven fuera de
+      // `licitaciones:*` a propósito (ninguna purga del corpus las toca), así
+      // que hay que borrarlas aquí o una iteración contaminaría la siguiente
+      ...(await redis.scan("config:*")), ...(await redis.scan("resumen:*")),
     ];
     if (claves.length) await redis.del(...claves);
-    for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*", "equivalencias:*", "vocabulario:*"]) {
+    for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*", "equivalencias:*",
+      "vocabulario:*", "config:*", "resumen:*"]) {
       assert.strictEqual((await redis.scan(patron)).length, 0, `Redis no quedó limpio: ${patron}`);
     }
+    // los perfiles vuelven a los datos del repositorio: una carga de RUP de la
+    // iteración anterior no puede cambiar los números de esta
+    perfilesMod.restablecerPerfiles();
   }
 
   /* Todos los registros del corpus histórico, leídos como los leería el índice. */
@@ -1384,6 +1429,19 @@ async function main() {
       assert.strictEqual(r.status, 503, "sin datos debía responder 503");
       assert.ok(/Sincronizaci[oó]n iniciada/.test(r.cuerpo.error), `mensaje 503 inesperado: ${r.cuerpo.error}`);
       assert.strictEqual(r.cuerpo.ok, false);
+    }
+
+    /* a-bis. /api/resumen sobre un corpus VACÍO: no puede ser un 500 ni un
+       503 críptico. Responde 200 con visibles=0 y dice qué hacer. */
+    {
+      const r = await invocar(resumen, "/api/resumen?perfil=helder", CAB_TOKEN);
+      assert.strictEqual(r.status, 200, "resumen con corpus vacío debía responder 200");
+      assert.strictEqual(r.cuerpo.ok, true);
+      assert.strictEqual(r.cuerpo.totales.visibles, 0, "sin chunks no puede haber visibles");
+      assert.ok(/Ejecute \/api\/sync/.test(r.cuerpo.mensaje || ""),
+        `el mensaje debe decir cómo arreglarlo: ${r.cuerpo.mensaje}`);
+      assert.strictEqual(r.cabeceras["x-cache"], "MISS", "sin caché la cabecera debe decir MISS");
+      assert.strictEqual(r.cabeceras["cache-control"], "no-store", "el cliente no debe cachear el resumen");
     }
 
     /* a''. candado ocupado → enCurso, sin tocar datos */
@@ -2366,6 +2424,292 @@ async function main() {
       assert.ok(!c.muestra.some((m) => /aunar esfuerzos/i.test(m.objeto)), "un convenio llegó a la muestra de visibles");
     }
 
+    /* ═══════════ g-bis. /api/resumen · el dashboard ═══════════
+       La invariante que lo sostiene todo: `totales.visibles` TIENE que ser el
+       mismo número que sirve /api/oportunidades. Si el panel calculara por su
+       cuenta, tarde o temprano contradiría a la app y no se podría creer a
+       ninguno de los dos. */
+    {
+      const r = await invocar(resumen, "/api/resumen?perfil=helder", CAB_TOKEN);
+      assert.strictEqual(r.status, 200, `resumen falló: ${JSON.stringify(r.cuerpo).slice(0, 200)}`);
+      const c = r.cuerpo;
+      assert.strictEqual(c.ok, true);
+      assert.strictEqual(c.perfil, "helder");
+      assert.strictEqual(c.cache, false, "la primera llamada no puede venir de la caché");
+      assert.strictEqual(r.cabeceras["x-cache"], "MISS", "la primera llamada debe declarar MISS");
+      assert.ok(c.totales.visibles > 0, "el resumen no ve ningún proceso");
+
+      // 1. el número es EL MISMO que el de la app
+      const rOp = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1");
+      assert.strictEqual(c.totales.visibles, rOp.cuerpo.total,
+        `el panel dice ${c.totales.visibles} visibles y la app ${rOp.cuerpo.total}: son dos cálculos distintos`);
+      // …y también el mismo que el embudo del diagnóstico
+      const rDia = await invocar(diagnostico, "/api/diagnostico?perfil=helder&muestra=1", CAB_TOKEN);
+      assert.strictEqual(c.totales.visibles, rDia.cuerpo.embudo.visibles,
+        "el panel y el diagnóstico no cuentan lo mismo");
+
+      // 2-4. los repartos describen EXACTAMENTE el conjunto visible
+      const suma = (o) => Object.values(o).reduce((a, b) => a + b, 0);
+      assert.strictEqual(suma(c.totales.por_pertinencia), c.totales.visibles, "por_pertinencia no suma los visibles");
+      assert.strictEqual(suma(c.totales.por_modalidad), c.totales.visibles, "por_modalidad no suma los visibles");
+      assert.strictEqual(suma(c.totales.por_rango_cuantia), c.totales.visibles, "por_rango_cuantia no suma los visibles");
+      assert.strictEqual(suma(c.totales.por_tier_unspsc), c.totales.visibles, "por_tier_unspsc no suma los visibles");
+      assert.strictEqual(suma(c.totales.por_nivel_competencia_entidad), c.totales.visibles,
+        "por_nivel_competencia_entidad no suma los visibles");
+      assert.strictEqual(suma(c.totales.por_urgencia), c.totales.visibles,
+        "por_urgencia no suma los visibles (algún proceso se perdió entre las cubetas de fecha)");
+      assert.strictEqual(suma(c.totales.por_anticipo), c.totales.visibles, "por_anticipo no suma los visibles");
+      assert.strictEqual(suma(c.totales.por_departamento), c.totales.visibles,
+        "por_departamento no suma los visibles (el resto va a OTROS y lo no clasificable a SIN_DEPARTAMENTO)");
+      // el embudo cierra: nadie desaparece sin quedar contado
+      assert.strictEqual(suma(c.descartes) + c.totales.visibles, c.corpus.filas_unicas,
+        "los descartes y los visibles deben sumar el corpus activo entero");
+      // pertinencia ROJA nunca llega a los visibles (el diagnóstico fija lo mismo)
+      assert.strictEqual(c.totales.por_pertinencia.obra_civil
+        + c.totales.por_pertinencia.consultoria + c.totales.por_pertinencia.infraestructura
+        + c.totales.por_pertinencia.verificar_objeto, c.totales.visibles, "hay un tipo de pertinencia sin cubeta");
+
+      // la K se cuenta sobre los que pasaron el objeto, no sobre los visibles
+      assert.ok(c.totales.base_capacidad >= c.totales.visibles,
+        "la base de capacidad no puede ser menor que los visibles");
+      assert.strictEqual(c.totales.superan_k + c.totales.no_superan_k + c.descartes.fuera_tope_estrategico,
+        c.totales.base_capacidad, "superan_k + no_superan_k + fuera de tope debe ser la base de capacidad");
+      assert.ok(c.totales.no_superan_k > 0 || c.descartes.fuera_tope_estrategico > 0,
+        "el dataset de prueba tiene procesos de 9 000 M: alguno debe caerse por capacidad o tope");
+
+      // top de entidades: ordenado y con su badge (el mismo texto de la app)
+      assert.ok(c.top_entidades.length > 0 && c.top_entidades.length <= 15, "top_entidades fuera de rango");
+      for (let i = 1; i < c.top_entidades.length; i++) {
+        assert.ok(c.top_entidades[i - 1].procesos >= c.top_entidades[i].procesos, "top_entidades sin ordenar");
+      }
+      assert.ok(c.top_entidades.every((e) => /🟢|🟡|🔴|⚪/.test(e.badge)), "cada entidad debe traer su badge");
+      assert.ok(c.top_entidades.some((e) => ["baja", "media", "alta"].includes(e.competencia)),
+        "con el índice construido alguna entidad debe tener nivel de competencia");
+      // destacados: nunca «Verificar objeto» ni cuantía 0, y como máximo 10
+      assert.ok(c.procesos_destacados.length <= 10, "más de 10 destacados");
+      for (const p of c.procesos_destacados) {
+        assert.ok(p.cuantia_cop > 0, "un destacado sin cuantía");
+        assert.notStrictEqual(p.pertinencia, "Verificar objeto", "un 🟡 no puede ser un destacado");
+        assert.ok(p.objeto.length <= 100, "el objeto del destacado debe venir recortado a 100 caracteres");
+        assert.ok(!("nombre_del_proveedor" in p) && !("adjudicatario_nombre" in p),
+          "el panel jamás puede exponer datos de adjudicación");
+      }
+      // municipios: el dataset de prueba SÍ trae ciudad_entidad
+      assert.ok(c.top_municipios && c.top_municipios.length > 0, "faltan los municipios (ciudad_entidad existe en el corpus)");
+
+      // 5. la segunda llamada viene de la caché, sin volver a barrer los chunks
+      {
+        const antes = redis.comandos();
+        const r2 = await invocar(resumen, "/api/resumen?perfil=helder", CAB_TOKEN);
+        assert.strictEqual(r2.status, 200);
+        assert.strictEqual(r2.cuerpo.cache, true, "la segunda llamada debía venir de la caché");
+        assert.strictEqual(r2.cabeceras["x-cache"], "HIT", "la segunda llamada debe declarar HIT");
+        assert.strictEqual(r2.cuerpo.totales.visibles, c.totales.visibles, "la caché devolvió otros números");
+        assert.ok(redis.comandos() - antes >= 0, "contador de comandos inconsistente");
+        assert.ok(r2.cuerpo.top_entidades.length === c.top_entidades.length, "la caché truncó el top de entidades");
+      }
+
+      // 6. sin token → 401 (y el mensaje dice las dos formas de enviarlo)
+      {
+        const r3 = await invocar(resumen, "/api/resumen?perfil=helder");
+        assert.strictEqual(r3.status, 401, "sin token debía responder 401");
+        assert.ok(/token/i.test(r3.cuerpo.error), "el 401 debe explicar el token");
+      }
+      // 7. perfil inválido → 400 con los valores aceptados
+      {
+        const r4 = await invocar(resumen, "/api/resumen?perfil=constructor", CAB_TOKEN);
+        assert.strictEqual(r4.status, 400, "un perfil inventado debía responder 400");
+        assert.strictEqual(r4.cuerpo.error, "perfil inválido");
+        assert.deepStrictEqual(r4.cuerpo.valores_validos, ["helder", "genesis", "consorcio", "juntos"]);
+      }
+      // 8. el alias «consorcio» resuelve al perfil plural, como en la app
+      {
+        const r5 = await invocar(resumen, "/api/resumen?perfil=consorcio", CAB_TOKEN);
+        assert.strictEqual(r5.status, 200);
+        assert.strictEqual(r5.cuerpo.perfil, "juntos", "el alias consorcio debe resolver a juntos");
+        const rOpC = await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=1");
+        assert.strictEqual(r5.cuerpo.totales.visibles, rOpC.cuerpo.total,
+          "el panel del consorcio no coincide con la app");
+      }
+      console.log(`  · resumen: ${c.totales.visibles} visibles = total de /api/oportunidades · ${c.top_entidades.length} entidades · caché HIT/MISS verificada`);
+    }
+
+    /* ═══════════ g-ter. /api/admin/rup · cargar el RUP por archivo ═══════════
+       El RUP deja de ser un dato hardcodeado. Lo que se verifica no es solo que
+       el endpoint guarde, sino que la carga TENGA EFECTO en la siguiente
+       consulta: esa es toda la promesa (el juicio corre al servir desde
+       jul 2026, así que no hace falta re-sincronizar nada).
+       Al final se restablece el respaldo del repositorio: una carga de prueba
+       no puede contaminar el resto de la iteración. */
+    {
+      const visiblesAntes = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1")).cuerpo.total;
+
+      /* 10. GET sin haber cargado nada → los valores del repositorio */
+      {
+        const r = await invocar(adminRup, "/api/admin/rup", CAB_TOKEN);
+        assert.strictEqual(r.status, 200);
+        assert.strictEqual(r.cuerpo.fuente, "hardcoded", "sin carga previa la fuente debe ser el repositorio");
+        assert.ok(/por defecto/i.test(r.cuerpo.advertencia || ""), "debe advertir que son los valores por defecto");
+        assert.ok(r.cuerpo.perfiles.helder.unspsc.length === PERFILES.helder.unspsc.size,
+          "el GET debe devolver el RUP completo, listo para editar y volver a subir");
+        // lo que devuelve el GET tiene que poder volver a subirse tal cual
+        assert.strictEqual(configRup.validarConfig({ perfiles: r.cuerpo.perfiles }).ok, true,
+          "el archivo que entrega el GET no pasa su propia validación: el ciclo descargar→subir está roto");
+      }
+
+      /* 9. sin token → 401, tanto en GET como en POST */
+      {
+        assert.strictEqual((await invocar(adminRup, "/api/admin/rup")).status, 401, "GET sin token debía ser 401");
+        assert.strictEqual((await invocarPost(adminRup, "/api/admin/rup", { perfiles: {} })).status, 401,
+          "POST sin token debía ser 401");
+      }
+
+      /* --- un RUP válido de los tres perfiles, con cambios verificables --- */
+      const CODIGO_NUEVO = "15101500"; // combustibles: no está en ningún RUP real
+      const base = perfilesMod.perfilesComoConfig();
+      const nuevo = {
+        perfiles: {
+          helder: {
+            ...base.helder,
+            nombre: "Helder Gustavo Rodríguez Santana (RUP cargado)",
+            nit: "900123456-7",
+            unspsc: [...base.helder.unspsc, CODIGO_NUEVO],
+          },
+          genesis: { ...base.genesis, profesionales: 11 }, // CT 20 → 40
+          consorcio: { ...base.consorcio, tope_smmlv: 11000 },
+        },
+      };
+
+      /* 1. POST con JSON válido completo */
+      {
+        const r = await invocarPost(adminRup, "/api/admin/rup", nuevo, CAB_TOKEN);
+        assert.strictEqual(r.status, 200, `carga válida rechazada: ${JSON.stringify(r.cuerpo).slice(0, 400)}`);
+        assert.strictEqual(r.cuerpo.ok, true);
+        assert.strictEqual(r.cuerpo.guardado, true);
+        assert.deepStrictEqual(r.cuerpo.perfiles_cargados.sort(), ["consorcio", "genesis", "helder"]);
+        assert.ok(r.cuerpo.unspsc.helder.clases > 0 && r.cuerpo.unspsc.genesis.clases > 0,
+          "la respuesta debe decir cuántas clases/familias/segmentos quedaron por perfil");
+        assert.ok(r.cuerpo.version, "la carga debe publicar un sello de versión");
+        // las advertencias no bloquean: el tope es apetito estratégico y en el
+        // RUP real va por debajo de la experiencia acreditada
+        assert.ok(Array.isArray(r.cuerpo.advertencias), "faltan las advertencias");
+        assert.ok(r.cuerpo.advertencias.some((a) => /tope_smmlv/.test(a)),
+          `el tope por debajo de la experiencia debe AVISAR sin bloquear: ${JSON.stringify(r.cuerpo.advertencias)}`);
+      }
+
+      /* 2. GET después del POST → lo cargado, con fuente redis */
+      {
+        const r = await invocar(adminRup, "/api/admin/rup", CAB_TOKEN);
+        assert.strictEqual(r.cuerpo.fuente, "redis", "tras cargar, la fuente debe ser Redis");
+        assert.strictEqual(r.cuerpo.perfiles.helder.nit, "900123456-7", "el GET no devuelve lo que se cargó");
+        assert.ok(r.cuerpo.perfiles.helder.unspsc.includes(CODIGO_NUEVO), "falta el código nuevo en el GET");
+        assert.ok(r.cuerpo.cargado, "debe informar cuándo se cargó");
+      }
+
+      /* --- validación: cada error nombra su campo y NO se guarda nada --- */
+      const casosMalos = [
+        [{ perfiles: { helder: { ...base.helder, unspsc: "72141000" } } }, "perfiles.helder.unspsc", "unspsc no es un arreglo"],
+        [{ perfiles: { helder: { ...base.helder, indicadores: undefined } } }, "perfiles.helder.indicadores", "faltan los indicadores"],
+        [{ perfiles: { helder: { ...base.helder, unspsc: ["7214100"] } } }, "perfiles.helder.unspsc[0]", "código de 7 dígitos"],
+        [{ perfiles: { helder: { ...base.helder, indicadores: { ...base.helder.indicadores, liquidez: 0 } } } }, "perfiles.helder.indicadores.liquidez", "liquidez = 0"],
+        [{ perfiles: {} }, "perfiles", "ningún perfil"],
+        [{ perfiles: { helder: { ...base.helder, unspsc: [...base.helder.unspsc, base.helder.unspsc[0]] } } }, "perfiles.helder.unspsc", "códigos duplicados"],
+        [{ perfiles: { helder: { ...base.helder, tipo: "empresa" } } }, "perfiles.helder.tipo", "tipo desconocido"],
+        [{ perfiles: { consorcio: { ...base.consorcio, tipo: "persona_natural" } } }, "perfiles.consorcio.tipo", "el plural no puede ser persona natural"],
+        [{ perfiles: { helder: { ...base.helder, nit: "novale" } } }, "perfiles.helder.nit", "NIT mal formado"],
+        [{ perfiles: { genesis: { ...base.genesis, indicadores: { ...base.genesis.indicadores, endeudamiento: 13 } } } }, "perfiles.genesis.indicadores.endeudamiento", "endeudamiento como porcentaje"],
+        [{ perfiles: { genesis: { ...base.genesis, profesionales: 0 } } }, "perfiles.genesis.profesionales", "sin profesionales"],
+      ];
+      for (const [cuerpo, campo, que] of casosMalos) {
+        const r = await invocarPost(adminRup, "/api/admin/rup", cuerpo, CAB_TOKEN);
+        assert.strictEqual(r.status, 400, `${que}: esperaba 400, llegó ${r.status}`);
+        assert.strictEqual(r.cuerpo.ok, false);
+        assert.ok(r.cuerpo.errores.some((e) => e.campo === campo),
+          `${que}: ningún error apunta a «${campo}» → ${JSON.stringify(r.cuerpo.errores)}`);
+      }
+      /* 8. body que no es JSON (llega como cadena, como lo mandaría un curl) */
+      {
+        const r = await invocarPost(adminRup, "/api/admin/rup", "{esto no es json", CAB_TOKEN);
+        assert.strictEqual(r.status, 400, "un body ilegible debía responder 400");
+        assert.ok(/JSON/i.test(r.cuerpo.error), `el error debe decir que el body no es JSON: ${r.cuerpo.error}`);
+      }
+      /* un rechazo NO puede tocar lo guardado */
+      {
+        const r = await invocar(adminRup, "/api/admin/rup", CAB_TOKEN);
+        assert.strictEqual(r.cuerpo.perfiles.helder.nit, "900123456-7",
+          "un POST rechazado pisó la configuración anterior: la carga no es atómica");
+      }
+
+      /* ═══ integración: la carga TIENE EFECTO, sin re-sincronizar ═══ */
+      {
+        // 1. getPerfil devuelve lo cargado, no lo hardcodeado
+        const p = await perfilesMod.getPerfil("helder", redis);
+        assert.ok(/RUP cargado/.test(p.nombre), `getPerfil sigue devolviendo el perfil del repositorio: ${p.nombre}`);
+        assert.strictEqual(p.nit, "900123456-7", "el NIT cargado no llegó al perfil vigente");
+        assert.notStrictEqual(p.nombre, perfilesMod.PERFILES_FALLBACK.helder.nombre, "el respaldo se quedó pegado");
+
+        // 3. getUnspsc trae el código nuevo y el matching lo usa
+        const u = await perfilesMod.getUnspsc("helder", redis);
+        assert.ok(u.clases.has("151015"), `getUnspsc no ve la clase nueva: ${u.clases.size} clases`);
+        const licNueva = {
+          nombre_del_procedimiento: "Construcción de placa huella con material especial",
+          descripci_n_del_procedimiento: "Obra civil en zona rural",
+          codigo_principal_de_categoria: `V1.${CODIGO_NUEVO}`,
+        };
+        const ev = filtros.evaluarObjeto(licNueva, PERFILES.helder);
+        assert.strictEqual(ev.tier, "clase", `el matching no usa el código recién cargado: tier=${ev.tier}`);
+        // con el RUP del repositorio ese código NO está inscrito: lo más que
+        // consigue es el rescate por texto. Si ya casara por clase, la prueba
+        // no probaría nada.
+        assert.notStrictEqual(filtros.evaluarObjeto(licNueva, perfilesMod.PERFILES_FALLBACK.helder).tier, "clase",
+          "el código nuevo ya casaba por clase con el RUP del repositorio");
+
+        // 2. más profesionales → CT sube de 20 a 40 → la K crece
+        assert.strictEqual(PERFILES.genesis.profesionales, 11, "el perfil vigente no refleja los profesionales cargados");
+        assert.strictEqual(capacidad.factorCT(PERFILES.genesis.profesionales), 40, "el factor CT no se recalculó");
+        const kNueva = capacidad.crp(PERFILES.genesis, 100e6);
+        const kVieja = capacidad.crp(perfilesMod.PERFILES_FALLBACK.genesis, 100e6);
+        assert.ok(kNueva > kVieja, `la K de Génesis debía crecer con 11 profesionales: ${kNueva} vs ${kVieja}`);
+        // …y la consulta real lo enseña
+        const rg = await invocar(oportunidades, "/api/oportunidades?perfil=genesis&por_pagina=1");
+        assert.strictEqual(rg.status, 200);
+        assert.strictEqual(rg.cuerpo.resultados[0].rup.k_cop, Math.round(capacidad.crp(PERFILES.genesis, rg.cuerpo.resultados[0].cuantia_cop || 0)),
+          "la K servida por la app no es la del RUP cargado");
+
+        // el consorcio se RE-DERIVA: su unión incluye el código nuevo de Helder
+        assert.ok(PERFILES.juntos.unspsc.has(CODIGO_NUEVO), "el consorcio no re-derivó la unión de UNSPSC");
+        assert.strictEqual(PERFILES.juntos.integrantes.length, 2,
+          "el consorcio debe seguir atado a sus integrantes: su K es la SUMA de las CRP");
+
+        // la caché del panel se invalidó al cargar (sus números salen del RUP)
+        assert.strictEqual((await redis.scan("resumen:*")).length, 0,
+          "la carga de RUP debe invalidar la caché del dashboard");
+        const rr = await invocar(resumen, "/api/resumen?perfil=helder", CAB_TOKEN);
+        assert.strictEqual(rr.cuerpo.cache, false, "tras cargar el RUP el resumen no puede venir de la caché vieja");
+        const rOp2 = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1");
+        assert.strictEqual(rr.cuerpo.totales.visibles, rOp2.cuerpo.total,
+          "con el RUP cargado el panel y la app volvieron a divergir");
+        assert.ok(rOp2.cuerpo.total >= visiblesAntes,
+          "añadir un código al RUP no puede hacer desaparecer procesos");
+      }
+
+      /* borrar la configuración devuelve la app al respaldo del repositorio:
+         nadie se queda sin perfiles porque una clave desaparezca */
+      {
+        const claves = await redis.scan("config:*");
+        if (claves.length) await redis.del(...claves);
+        await perfilesMod.recargarPerfiles(redis);
+        assert.strictEqual(PERFILES.helder.nombre, perfilesMod.PERFILES_FALLBACK.helder.nombre,
+          "al borrarse la configuración, los perfiles deben volver al respaldo");
+        assert.strictEqual(perfilesMod.fuentePerfiles().fuente, "respaldo");
+        const rv = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1");
+        assert.strictEqual(rv.cuerpo.total, visiblesAntes, "volver al respaldo no restauró los números originales");
+        const viejas = await redis.scan("resumen:*");
+        if (viejas.length) await redis.del(...viejas);
+      }
+      console.log("  · carga de RUP: 11 casos de validación, ciclo GET→editar→POST y efecto inmediato verificados");
+    }
+
     /* h. la raíz sirve el frontend (Vercel: /public es el output estático) */
     {
       const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
@@ -2459,6 +2803,64 @@ async function main() {
         "el token del detalle no puede ir en la URL: va por cabecera");
       // los delegados escuchan en el contenedor: las tarjetas se repintan
       assert.ok(/\$\("lista"\)\.addEventListener\("click"/.test(js), "el clic del badge debe ir por delegación");
+
+      /* ---- panel: dashboard de procesos y carga de RUP ---- */
+      for (const debe of ['id="dashboard"', 'id="d-perfil"', 'id="btn-actualizar"', 'id="d-visibles"',
+        'id="d-obra"', 'id="d-consultoria"', 'id="d-semana"', 'id="d-barras"', 'id="d-entidades"',
+        'id="d-departamentos"', 'id="d-destacados"', 'id="d-meta"', 'id="d-skeleton"',
+        'id="seccion-rup"', 'id="rup-archivo"', 'id="rup-preview"', 'id="btn-rup-cargar"',
+        'id="btn-rup-cancelar"', 'id="btn-rup-descargar"', 'id="rup-actual"',
+        'id="seccion-token"', 'id="input-token-admin"']) {
+        assert.ok(admHtml.includes(debe), `admin.html sin ${debe} (falta el dashboard o la carga de RUP)`);
+      }
+      // las tarjetas llevan los colores del encargo y el esqueleto pulsa
+      for (const debe of ["bg-blue-50", "bg-green-50", "bg-amber-50", "bg-red-50", "animate-pulse"]) {
+        assert.ok(admHtml.includes(debe), `admin.html sin ${debe} (tarjetas del dashboard)`);
+      }
+      // responsive: 2 columnas en móvil → 4 en escritorio, tablas apiladas
+      assert.ok(/grid-cols-2[^"]*sm:grid-cols-4/.test(admHtml), "las tarjetas deben apilarse en 2 columnas en móvil");
+      assert.ok(/lg:grid-cols-2/.test(admHtml), "las tablas laterales deben apilarse en móvil");
+      // el archivo solo acepta JSON
+      assert.ok(/id="rup-archivo"[^>]*accept="\.json/.test(admHtml), "el input de archivo debe aceptar solo .json");
+
+      for (const debe of ["/api/resumen", "/api/admin/rup", "cache_bust", "X-Cache", "x-historico-token",
+        "FileReader", "readAsText", "revokeObjectURL", "visibilityState", "dashboard_perfil"]) {
+        assert.ok(admJs.includes(debe), `admin.js sin ${debe} (el panel o la carga de RUP no están cableados)`);
+      }
+      // la clave de sesión del token es LA MISMA que la de la app
+      assert.ok(/CLAVE_TOKEN = "historico_token"/.test(admJs), "el panel debe reutilizar la clave de sesión historico_token");
+      // el refresco automático es el mismo TTL de la caché del endpoint
+      assert.ok(/REFRESCO_MS = 300000/.test(admJs), "el refresco automático debe ser de 5 minutos");
+      // …y NO se dispara con la pestaña oculta
+      assert.ok(/document\.visibilityState === "visible"\) cargarDashboard\(\)/.test(admJs),
+        "el refresco automático no puede correr con la pestaña oculta");
+      assert.ok(/pendientePorVisibilidad/.test(admJs), "al volver a la pestaña debe refrescarse lo que quedó pendiente");
+      // doble clic en «Confirmar carga»: el botón se deshabilita durante el envío
+      assert.ok(/\$\("btn-rup-cargar"\)\.disabled = true/.test(admJs),
+        "«Confirmar carga» debe deshabilitarse durante el envío (si no, un doble clic carga dos veces)");
+      // el token NUNCA viaja en la URL desde el navegador
+      assert.ok(!/\/api\/(resumen|admin\/rup)\?[^`"']*token=/.test(admJs),
+        "el token no puede ir en la URL del panel: va por cabecera");
+      // sessionStorage siempre dentro de try (en modo restringido lanza)
+      assert.ok(/try \{ return sessionStorage\.getItem\(CLAVE_TOKEN\)/.test(admJs),
+        "leer el token debe ir protegido: si lanza, el panel moriría en silencio");
+      // el campo de token vacío AVISA, nunca se queda mudo
+      assert.ok(/Pegue el token antes de guardar/.test(admJs), "el token vacío debe avisar");
+      assert.ok(/\$\("btn-token-admin"\)\.addEventListener\("click", enviarToken\)/.test(admJs)
+        && /\$\("form-token-admin"\)\.addEventListener\("submit", enviarToken\)/.test(admJs),
+        "el token debe estar cableado al submit Y al clic");
+      // sin token, el panel no se queda en blanco: dice qué falta
+      assert.ok(/Configure su token de acceso/.test(admJs), "sin token el panel debe explicar qué hacer");
+      /* ARRANQUE (la misma lección que costó cara en app.js): el arranque
+         automático va DESPUÉS de declarar el estado del panel, o `abrirApp`
+         reventaría en la zona muerta temporal y lo haría en silencio. */
+      {
+        const iAuto = admJs.indexOf("if (accesoConcedido()) abrirApp();");
+        const iEstado = admJs.indexOf('const CLAVE_TOKEN = "historico_token"');
+        assert.ok(iAuto > 0 && iEstado > 0, "no se encontraron el arranque automático y el estado del panel");
+        assert.ok(iAuto > iEstado,
+          "el arranque automático del panel corre antes de declarar su estado: morirá en la zona muerta temporal");
+      }
 
       assert.ok(html.includes('id="f-sin-unspsc"'), "index.html sin el toggle de procesos sin código UNSPSC");
       const inputToggle = html.slice(html.indexOf('id="f-sin-unspsc"'), html.indexOf('id="f-sin-unspsc"') + 200);

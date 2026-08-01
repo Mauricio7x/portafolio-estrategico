@@ -39,7 +39,7 @@ const {
 } = require("../lib/unspsc.js");
 const { leerEquivalencias, leerEquivalenciasMeta, explicarEquivalencias } = require("../lib/equivalencias.js");
 const { vocabularioActivo } = require("../lib/texto_unspsc.js");
-const { SMMLV } = require("../lib/perfiles.js");
+const { SMMLV, recargarPerfiles } = require("../lib/perfiles.js");
 
 const MUESTRA_DEFAULT = 20, MUESTRA_MAX = 100;
 const TOP = 25; // filas por tabla de distribución
@@ -70,7 +70,8 @@ module.exports = async function handler(req, res) {
   if (!Object.prototype.hasOwnProperty.call(PERFILES, perfilId)) {
     return res.status(400).json({ ok: false, error: "perfil inválido: helder | genesis | juntos" });
   }
-  const perfil = PERFILES[perfilId];
+  // se reasigna tras recargar el RUP cargado por el dueño (ver más abajo)
+  let perfil = PERFILES[perfilId];
   const nMuestra = Math.min(Math.max(parseInt(q.muestra, 10) || MUESTRA_DEFAULT, 1), MUESTRA_MAX);
   const anticipoMin = q.anticipo_min !== undefined ? parseFloat(q.anticipo_min) || 0 : 20;
 
@@ -78,6 +79,10 @@ module.exports = async function handler(req, res) {
   const t0 = Date.now();
   let filas, meta, clavesAct, clavesHist, equivalencias = null, eqMeta = null, vocabRedis = null, vocMeta = null;
   try {
+    // el RUP cargado (POST /api/admin/rup) manda sobre los datos del
+    // repositorio: el embudo tiene que medirse contra el RUP VIGENTE
+    await recargarPerfiles(redis);
+    perfil = PERFILES[perfilId];
     meta = await leerJSON(redis, CLAVES.meta);
     clavesAct = await redis.scan(CLAVES.patronChunks);
     clavesHist = await redis.scan(CLAVES.patronChunksHist);

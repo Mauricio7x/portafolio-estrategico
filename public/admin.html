@@ -37,7 +37,7 @@
   <!-- ══════════ Administración ══════════ -->
   <div id="app" class="hidden">
     <header class="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur">
-      <div class="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
         <div>
           <h1 class="text-lg font-semibold tracking-tight">Administración</h1>
           <p class="text-xs text-gray-500">Mantenimiento del corpus de SECOP II</p>
@@ -46,7 +46,7 @@
       </div>
     </header>
 
-    <main class="mx-auto max-w-3xl px-5 py-8">
+    <main class="mx-auto max-w-6xl px-5 py-8">
       <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -114,6 +114,187 @@
         una espera. Detener solo interrumpe el encadenamiento desde el navegador; la tanda en curso en el
         servidor termina sola.
       </p>
+
+      <!-- ══════════ Token de los endpoints protegidos ══════════ -->
+      <section id="seccion-token" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Token de acceso</h2>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+          El panel, la carga de RUP y el detalle de competencia usan el mismo token
+          (<code class="rounded bg-gray-100 px-1 text-xs">HISTORICO_TOKEN</code>). Se guarda solo en esta
+          pestaña y viaja por cabecera, nunca en la URL.
+        </p>
+        <form id="form-token-admin" class="mt-4 flex flex-wrap items-center gap-3">
+          <input id="input-token-admin" type="password" autocomplete="off" placeholder="Pegue el token"
+                 class="w-full max-w-sm rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+          <button id="btn-token-admin" type="submit"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">
+            Guardar token
+          </button>
+          <button id="btn-token-olvidar" type="button"
+                  class="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+            Olvidar
+          </button>
+          <span id="token-estado" class="text-sm text-gray-500"></span>
+        </form>
+      </section>
+
+      <!-- ══════════ Dashboard de procesos ══════════ -->
+      <section id="dashboard" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Dashboard de procesos</h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">
+              Qué hay hoy sobre la mesa: los mismos procesos que sirve la app, agregados para decidir dónde
+              concentrar el esfuerzo. Los totales coinciden con los de la pantalla principal.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="block">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
+              <select id="d-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="helder">Helder</option>
+                <option value="genesis">Génesis</option>
+                <option value="consorcio">Consorcio</option>
+              </select>
+            </label>
+            <button id="btn-actualizar" type="button"
+                    class="mt-5 inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              <span id="d-spin" class="hidden h-3 w-3 rounded-full border-2 border-gray-300 border-t-gray-700 spin"></span>
+              Actualizar ahora
+            </button>
+          </div>
+        </div>
+
+        <p id="d-aviso" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+
+        <!-- esqueleto mientras carga -->
+        <div id="d-skeleton" class="mt-6 hidden animate-pulse space-y-4">
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
+            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
+          </div>
+          <div class="h-32 rounded-2xl bg-gray-100"></div>
+          <div class="h-56 rounded-2xl bg-gray-100"></div>
+        </div>
+
+        <div id="d-contenido" class="mt-6 hidden">
+          <!-- fila 1 · tarjetas -->
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="rounded-2xl bg-blue-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-blue-900/60">Total visibles</p>
+              <p id="d-visibles" class="mt-1 text-3xl font-semibold tabular-nums text-blue-950">—</p>
+              <p class="text-xs text-blue-900/60">procesos</p>
+            </div>
+            <div class="rounded-2xl bg-green-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-green-900/60">Obra civil</p>
+              <p id="d-obra" class="mt-1 text-3xl font-semibold tabular-nums text-green-950">—</p>
+              <p id="d-obra-pct" class="text-xs text-green-900/60">🏗️ — del total</p>
+            </div>
+            <div class="rounded-2xl bg-amber-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-amber-900/60">Consultoría</p>
+              <p id="d-consultoria" class="mt-1 text-3xl font-semibold tabular-nums text-amber-950">—</p>
+              <p id="d-consultoria-pct" class="text-xs text-amber-900/60">📐 — del total</p>
+            </div>
+            <div class="rounded-2xl bg-red-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-red-900/60">Cierran esta semana</p>
+              <p id="d-semana" class="mt-1 text-3xl font-semibold tabular-nums text-red-950">—</p>
+              <p class="text-xs text-red-900/60">⏰ próximos 7 días</p>
+            </div>
+          </div>
+
+          <!-- fila 2 · distribución por tipo -->
+          <div class="mt-6">
+            <h3 class="text-sm font-semibold tracking-tight">Distribución por tipo de objeto</h3>
+            <div id="d-barras" class="mt-3 space-y-2"></div>
+          </div>
+
+          <!-- fila 3 · entidades y departamentos -->
+          <div class="mt-6 grid gap-6 lg:grid-cols-2">
+            <div>
+              <h3 class="text-sm font-semibold tracking-tight">Top 10 entidades con más procesos</h3>
+              <p class="mt-0.5 text-xs text-gray-400">Pulse una fila para ver los procesos que sostienen su nivel de competencia.</p>
+              <div class="mt-2 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                    <tr><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2 text-right">Procesos</th><th class="py-1 pr-2">Competencia</th><th class="py-1 text-right">Prom. oferentes</th></tr>
+                  </thead>
+                  <tbody id="d-entidades" class="divide-y divide-gray-100"></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="d-departamentos-box">
+              <h3 class="text-sm font-semibold tracking-tight">Distribución por departamento</h3>
+              <div class="mt-2 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                    <tr><th class="py-1 pr-2">Departamento</th><th class="py-1 pr-2 text-right">Procesos</th><th class="py-1 text-right">% del total</th></tr>
+                  </thead>
+                  <tbody id="d-departamentos" class="divide-y divide-gray-100"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- fila 4 · destacados -->
+          <div class="mt-6">
+            <h3 id="d-destacados-titulo" class="text-sm font-semibold tracking-tight">Top 10 procesos más atractivos</h3>
+            <div class="mt-2 overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                  <tr><th class="py-1 pr-2">Objeto</th><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2 text-right">Cuantía</th><th class="py-1 pr-2">Cierre</th><th class="py-1 pr-2">Competencia</th><th class="py-1">Pertinencia</th></tr>
+                </thead>
+                <tbody id="d-destacados" class="divide-y divide-gray-100"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- fila 5 · metadatos -->
+          <p id="d-meta" class="mt-6 text-xs text-gray-400"></p>
+        </div>
+      </section>
+
+      <!-- ══════════ Carga de RUP ══════════ -->
+      <section id="seccion-rup" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Carga de RUP</h2>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+          Los perfiles RUP determinan qué licitaciones son visibles. Cargue un archivo JSON con los códigos
+          UNSPSC, los indicadores financieros y la capacidad de cada perfil. El cambio surte efecto en la
+          siguiente consulta: no hace falta volver a sincronizar.
+        </p>
+
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <input id="rup-archivo" type="file" accept=".json,application/json"
+                 class="block max-w-sm text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
+          <button id="btn-rup-descargar" type="button"
+                  class="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+            📥 Descargar RUP actual (JSON)
+          </button>
+        </div>
+
+        <div id="rup-vista" class="mt-5 hidden">
+          <h3 class="text-sm font-semibold tracking-tight">Vista previa</h3>
+          <ul id="rup-resumen" class="mt-2 space-y-1 text-sm text-gray-700"></ul>
+          <pre id="rup-preview" class="mt-3 max-h-72 overflow-auto rounded-xl bg-gray-50 p-4 font-mono text-xs text-gray-600 ring-1 ring-inset ring-gray-900/5"></pre>
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button id="btn-rup-cargar" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              ✅ Confirmar carga
+            </button>
+            <button id="btn-rup-cancelar" type="button"
+                    class="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+              🗑 Cancelar
+            </button>
+          </div>
+        </div>
+
+        <p id="rup-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <ul id="rup-errores" class="mt-3 hidden space-y-1 rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></ul>
+
+        <div class="mt-6 border-t border-gray-100 pt-4">
+          <h3 class="text-sm font-semibold tracking-tight">RUP actual</h3>
+          <div id="rup-actual" class="mt-2 text-sm text-gray-600">—</div>
+        </div>
+      </section>
     </main>
   </div>
 
