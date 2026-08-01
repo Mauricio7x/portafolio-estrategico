@@ -86,6 +86,10 @@
     }
     p.set("ordenar_por", $("f-ordenar").value);
     p.set("orden", $("f-orden").value);
+    // apagado por defecto: sin código del RUP y sin vocabulario claro de obra,
+    // el proceso es ruido (software, equipos, servicios de salud…). Encenderlo
+    // los devuelve, siempre marcados como «Objeto sugiere obra».
+    if ($("f-sin-unspsc").checked) p.set("incluir_sin_unspsc", "1");
     return p;
   }
 
@@ -254,7 +258,8 @@
     const porVerificar = (m.familia || 0) + (m.equivalente || 0) + (m.texto || 0);
     $("resumen-resultados").textContent =
       `${cuerpo.total} oportunidad${cuerpo.total === 1 ? "" : "es"} para el perfil «${$("f-perfil").selectedOptions[0].text}»`
-      + (m.clase !== undefined ? ` · ${m.clase} con RUP ✓${porVerificar ? `, ${porVerificar} por verificar` : ""}` : "");
+      + (m.clase !== undefined ? ` · ${m.clase} con RUP ✓${porVerificar ? `, ${porVerificar} por verificar` : ""}` : "")
+      + (cuerpo.incluye_sin_unspsc ? " · incluye procesos sin código UNSPSC" : "");
     $("lista").innerHTML = cuerpo.resultados.map(tarjeta).join("");
 
     const totalPaginas = Math.max(1, Math.ceil(cuerpo.total / cuerpo.por_pagina));
@@ -271,7 +276,7 @@
   /* ══════════ Eventos ══════════ */
   $("btn-buscar").addEventListener("click", () => { pagina = 1; reintentosSync = 0; buscar(); });
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
-  for (const id of ["f-perfil", "f-cuantia", "f-competencia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden"]) {
+  for (const id of ["f-perfil", "f-cuantia", "f-competencia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden", "f-sin-unspsc"]) {
     $(id).addEventListener("change", () => { pagina = 1; buscar(); });
   }
 })();

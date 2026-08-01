@@ -183,8 +183,18 @@ function generarDataset() {
           fabricaba un código falso a partir de él; ahora se descarta y el
           objeto la rescata.
      12.  Proceso de una clase AFÍN (80141600) sin vocabulario de obra: solo
-          puede entrar por las equivalencias aprendidas del histórico. */
-const EXTRAS_POR_MES = 12;
+          puede entrar por las equivalencias aprendidas del histórico.
+
+   Lo que destapó el diagnóstico REAL sobre producción (ago 2026):
+     13-14. OBJETOS GENÉRICOS: el «objeto» es el nombre del trámite y su código
+          interno («CONVOCATORIA PUBLICA», «CONCURSO DE MERITOS INV-CM-001»).
+          No describen nada, no hay forma de juzgarlos → fuera.
+     15.  INTERNET: bloqueante aunque el objeto hable de instalar y canalizar
+          redes. La regla normal (término ajeno + CERO verbos de obra) no lo
+          alcanzaba.
+     16.  RUTA DE TEXTO DÉBIL: sin código utilizable y sin vocabulario claro de
+          obra. Fuera por defecto; vuelve con ?incluir_sin_unspsc=1. */
+const EXTRAS_POR_MES = 16;
 const CLASE_AFIN = "80141600";   // fuera de los dos RUP; afín a 72141000 en el histórico
 let _seqExtra = 0;
 function extrasDelMes(mes) {
@@ -268,6 +278,38 @@ function extrasDelMes(mes) {
       nombre_del_procedimiento: `Gestion tecnica y administrativa del proyecto fase II ${_seqExtra}`,
       descripci_n_del_procedimiento: "Acompañamiento profesional al proyecto municipal",
       codigo_principal_de_categoria: `V1.${CLASE_AFIN}`,
+    }),
+
+    /* ---- lo que el diagnóstico REAL destapó (ago 2026) ---- */
+    base(13, {
+      // objeto genérico: el «objeto» es el nombre del trámite
+      nombre_del_procedimiento: "CONVOCATORIA PUBLICA",
+      descripci_n_del_procedimiento: "",
+      codigo_principal_de_categoria: "V1.72141000",
+    }),
+    base(14, {
+      // objeto genérico: trámite + código interno
+      nombre_del_procedimiento: `CONCURSO DE MERITOS INV-CM-00${_seqExtra}-2026`,
+      descripci_n_del_procedimiento: "",
+      codigo_principal_de_categoria: "V1.72151000",
+    }),
+    base(15, {
+      // internet: BLOQUEANTE aunque el objeto hable de instalar y canalizar
+      nombre_del_procedimiento: `PRESTACION DEL SERVICIO DE INTERNET DEDICADO ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Incluye la instalación y canalización de redes en las sedes",
+      codigo_principal_de_categoria: "V1.80101600",
+    }),
+    base(16, {
+      // ruta de TEXTO sin pertinencia verde: fuera por defecto, dentro con el
+      // toggle. Sin código y sin un solo verbo de obra; entra al tier "texto"
+      // solo porque comparte 3 términos genéricos con el vocabulario de la
+      // familia 7212 (institucion, educativa, sede) — exactamente la fuga que
+      // metía servicios y equipos en el listado real.
+      nombre_del_procedimiento: `Servicio integral para la institucion educativa sede principal ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Atencion de las necesidades de la institucion durante la vigencia",
+      // código de servicios educativos: entra a la ingesta (segmento 86) pero
+      // NO está en el RUP de Helder, así que el único camino era el texto
+      codigo_principal_de_categoria: "V1.86101700",
     }),
   ];
 }
@@ -828,6 +870,83 @@ async function main() {
         assert.ok(["verde", "amarillo"].includes(ev.pertinencia.nivel), `«${nombre}»: nivel de pertinencia`);
       }
     }
+    /* términos BLOQUEANTES: descartan aunque el objeto traiga verbos de obra.
+       La regla normal (término ajeno + CERO verbos) no los alcanzaba. */
+    {
+      const bloqueantes = [
+        "PRESTACION DEL SERVICIO DE INTERNET DEDICADO CON INSTALACION Y CANALIZACION DE REDES",
+        "SERVICIO DE INTERNET BANDA ANCHA PARA LAS SEDES EDUCATIVAS",
+        // «conectividad» ya la ataja la blacklist heredada; el bloqueante cubre
+        // la redacción que sí llegaba: internet + trabajos sobre la red
+        "SERVICIO DE INTERNET DEDICADO Y MANTENIMIENTO DE LA RED DE FIBRA DE LA ALCALDIA",
+      ];
+      for (const nombre of bloqueantes) {
+        const ev = filtros.evaluarObjeto(
+          { nombre_del_procedimiento: nombre, codigo_principal_de_categoria: "V1.80101600" }, PERFILES.helder);
+        assert.strictEqual(ev.ok, false, `«${nombre.slice(0, 40)}…» debía caer aunque mencione obra`);
+        assert.strictEqual(ev.paso, "no_pertinente");
+        assert.strictEqual(ev.pertinencia.bloqueante, true, "debe constar que fue un término bloqueante");
+      }
+      // …y el tendido de una red de fibra SÍ es obra: el bloqueante de fibra
+      // exige contexto de servicio (canal, enlace, ancho de banda, proveedor)
+      const obraFibra = filtros.evaluarObjeto({
+        nombre_del_procedimiento: "CANALIZACION Y TENDIDO DE FIBRA OPTICA EN LA VIA PRINCIPAL",
+        codigo_principal_de_categoria: "V1.72141000",
+      }, PERFILES.helder);
+      assert.strictEqual(obraFibra.ok, true, "el bloqueante de fibra no puede llevarse por delante una obra real");
+    }
+
+    /* OBJETOS GENÉRICOS: el «objeto» es el nombre del trámite y su código
+       interno. Los tres casos son textuales del diagnóstico de producción. */
+    {
+      const genericos = ["CONVOCATORIA PUBLICA", "CONCURSO DE MERITOS INV-CM-001-2026", "INFI CM001-2026", "OBRA"];
+      for (const nombre of genericos) {
+        const ev = filtros.evaluarObjeto(
+          { nombre_del_procedimiento: nombre, codigo_principal_de_categoria: "V1.72141000" }, PERFILES.helder);
+        assert.strictEqual(ev.ok, false, `«${nombre}» no describe nada y no debería mostrarse`);
+        assert.strictEqual(ev.paso, "objeto_generico", `«${nombre}» debía caer como objeto genérico, cayó en «${ev.paso}»`);
+        assert.strictEqual(ev.pertinencia.etiqueta, "Objeto genérico");
+      }
+      // …pero el mismo código interno CON descripción del trabajo sí pasa
+      const conObjeto = ["CM-001-2026 CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL CAIRO",
+        "CONVOCATORIA PUBLICA PARA EL MEJORAMIENTO DE LA VIA TERCIARIA"];
+      for (const nombre of conObjeto) {
+        const ev = filtros.evaluarObjeto(
+          { nombre_del_procedimiento: nombre, codigo_principal_de_categoria: "V1.72141000" }, PERFILES.helder);
+        assert.strictEqual(ev.ok, true, `«${nombre}» sí describe el trabajo: no es genérico`);
+      }
+      assert.strictEqual(filtros.esObjetoGenerico("convocatoria publica").generico, true);
+      assert.strictEqual(filtros.esObjetoGenerico("construccion de placa huella").generico, false);
+    }
+
+    /* RUTA DE TEXTO: sin código del RUP, la pertinencia tiene que llegar a
+       VERDE. Un 🟡 «verificar» sin código no es evidencia de nada — es la fuga
+       que metía servicios y equipos por el vocabulario genérico de familia. */
+    {
+      const debil = {
+        nombre_del_procedimiento: "Servicio integral para la institucion educativa sede principal",
+        descripci_n_del_procedimiento: "Atencion de las necesidades de la institucion",
+        codigo_principal_de_categoria: "V1.86101700", // fuera del RUP de Helder
+      };
+      const voc = textoUnspsc.vocabularioActivo(null);
+      const cerrado = filtros.evaluarObjeto(debil, PERFILES.helder, { vocabulario: voc });
+      assert.strictEqual(cerrado.tier, "texto", "el vocabulario de familia sí lo lleva al tier texto");
+      assert.strictEqual(cerrado.pertinencia.nivel, "amarillo");
+      assert.strictEqual(cerrado.ok, false, "por defecto la ruta de texto exige pertinencia verde");
+      assert.strictEqual(cerrado.paso, "texto_debil");
+      // el toggle lo devuelve, con su etiqueta de «verificar»
+      const abierto = filtros.evaluarObjeto(debil, PERFILES.helder, { vocabulario: voc }, { incluirTextoDebil: true });
+      assert.strictEqual(abierto.ok, true, "?incluir_sin_unspsc=1 debe devolverlo");
+      assert.strictEqual(abierto.tier, "texto");
+      // …y un objeto de obra SIN código sigue entrando siempre (pertinencia verde)
+      const obraSinCodigo = filtros.evaluarObjeto(
+        { nombre_del_procedimiento: "Adecuación de la sede educativa vereda El Cairo",
+          descripci_n_del_procedimiento: "Remodelación del aula múltiple" }, PERFILES.helder, { vocabulario: voc });
+      assert.strictEqual(obraSinCodigo.ok, true, "la obra sin código no puede perderse: su pertinencia es verde");
+      assert.strictEqual(obraSinCodigo.tier, "texto");
+      assert.strictEqual(obraSinCodigo.pertinencia.nivel, "verde");
+    }
+
     // el veredicto es GRADUADO, nunca booleano: tipo de trabajo detectado
     const consul = filtros.evaluarObjeto({ nombre_del_procedimiento: "INTERVENTORÍA TÉCNICA DE OBRA", codigo_principal_de_categoria: "V1.80101500" }, PERFILES.helder);
     assert.strictEqual(consul.pertinencia.tipo, "consultoria");
@@ -879,6 +998,42 @@ async function main() {
     assert.strictEqual(equivalencias.equivalenteDe({ 801416: [{ clase: "999999", lift: 9 }] }, cod, idxHelder), null,
       "una afinidad hacia una clase que el perfil NO tiene no sirve de nada");
     console.log("· unidad equivalencias: lift por adjudicatarios, tres umbrales y búsqueda por perfil");
+  }
+
+  /* unidad: por qué NO hay equivalencias. Un índice en cero tiene cuatro
+     explicaciones posibles y un 0 no las distingue: el diagnóstico debe
+     decirlo en castellano y decir qué hacer. */
+  {
+    const sinConstruir = equivalencias.explicarEquivalencias(null);
+    assert.strictEqual(sinConstruir.hay, false);
+    assert.ok(/reconstruir_equivalencias/.test(sinConstruir.por_que.join(" ")),
+      "si nunca se construyó, hay que decir cómo construirlo");
+
+    // el caso típico del backfill real: el dataset no trae adjudicatario
+    const sinAdjudicatario = equivalencias.explicarEquivalencias({
+      pares: 0, procesos_contados: 100, pares_evaluados: 0,
+      descartados: { sin_adjudicacion: 12, sin_adjudicatario: 900, sin_clase: 3 },
+      umbrales: { lift_min: 3, soporte_min: 20, adjudicatarios_min: 5 },
+    });
+    assert.ok(/sin nombre ni nit/i.test(sinAdjudicatario.por_que.join(" ")),
+      "la causa más probable (sin adjudicatario en el dataset) debe nombrarse");
+    assert.ok(/columnas de adjudicatario/i.test(sinAdjudicatario.que_hacer),
+      "y debe decir qué hacer: revisar los nombres de columna");
+
+    // el caso «hay datos, pero ningún par alcanza los umbrales»
+    const umbrales = equivalencias.explicarEquivalencias({
+      pares: 0, procesos_contados: 5000, pares_evaluados: 40, adjudicatarios: 900,
+      descartados: { sin_adjudicacion: 0, sin_adjudicatario: 0, sin_clase: 0 },
+      fallos_por_umbral: { pocos_adjudicatarios: 38, poco_soporte: 2, lift_bajo: 0 },
+      umbrales: { lift_min: 3, soporte_min: 20, adjudicatarios_min: 5 },
+    });
+    assert.ok(/5 adjudicatarios en com/i.test(umbrales.por_que.join(" ")),
+      "debe decir cuántos pares murieron en cada umbral");
+    assert.ok(/ampliar el rango/i.test(umbrales.que_hacer));
+
+    // y cuando SÍ hay, lo dice sin alarmar
+    assert.strictEqual(equivalencias.explicarEquivalencias({ pares: 3, adjudicatarios: 50, procesos_contados: 900 }).hay, true);
+    console.log("· unidad equivalencias (por qué no hay): cuatro causas distinguidas, cada una con su siguiente paso");
   }
 
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
@@ -1250,6 +1405,40 @@ async function main() {
       /* ---- la clase AFÍN todavía NO es visible: el histórico no se ha bajado ---- */
       assert.ok(!todasH.some((l) => l.codigo_principal_de_categoria === `V1.${CLASE_AFIN}`),
         "sin equivalencias aprendidas, una clase fuera del RUP y sin objeto de obra no puede verse");
+
+      /* ---- lo que destapó el diagnóstico real: nada de esto puede verse ---- */
+      for (const [patron, que] of [
+        [/^CONVOCATORIA PUBLICA/i, "objeto genérico «CONVOCATORIA PUBLICA»"],
+        [/CONCURSO DE MERITOS INV-CM/i, "objeto genérico (trámite + código interno)"],
+        [/INTERNET DEDICADO/i, "internet, aunque el objeto mencione instalación y canalización"],
+        [/Servicio integral para la institucion educativa/i, "ruta de texto sin pertinencia verde"],
+      ]) {
+        assert.ok(!todasH.some((l) => patron.test(l.nombre_del_procedimiento)),
+          `se sirvió lo que no debía: ${que}`);
+      }
+
+      /* ---- el TOGGLE «Incluir procesos sin código UNSPSC» ---- */
+      {
+        const conToggle = await todasLasOportunidades("perfil=helder&incluir_sin_unspsc=1");
+        const debiles = conToggle.filter((l) => /Servicio integral para la institucion educativa/i.test(l.nombre_del_procedimiento));
+        assert.ok(debiles.length > 0, "?incluir_sin_unspsc=1 debe devolver la ruta de texto débil");
+        for (const l of debiles) {
+          assert.strictEqual(l.rup.tier, "texto");
+          assert.strictEqual(l.rup.pertinencia.nivel, "amarillo", "vuelven marcados como «verificar», nunca en verde");
+        }
+        assert.ok(conToggle.length > todasH.length, "el toggle solo puede AÑADIR procesos");
+        // …pero el toggle NO reabre nada de lo demás: genéricos, internet y
+        // falsos positivos siguen fuera con él encendido
+        for (const patron of [/^CONVOCATORIA PUBLICA/i, /INTERNET DEDICADO/i, /IMPRESI[OÓ]N Y FOTOCOPIA/i]) {
+          assert.ok(!conToggle.some((l) => patron.test(l.nombre_del_procedimiento)),
+            "el toggle de texto no puede reabrir objetos genéricos ni servicios ajenos");
+        }
+        const r1 = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1");
+        assert.strictEqual(r1.cuerpo.incluye_sin_unspsc, false, "el toggle está apagado por defecto");
+        const r2 = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1&incluir_sin_unspsc=1");
+        assert.strictEqual(r2.cuerpo.incluye_sin_unspsc, true);
+        assert.ok(r2.cuerpo.total > r1.cuerpo.total, "con el toggle encendido debe haber más resultados");
+      }
 
       /* ---- el reparto por solidez del match viaja en la respuesta ---- */
       const m1 = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1")).cuerpo;
@@ -1765,13 +1954,42 @@ async function main() {
       assert.ok(c.embudo.fuera_no_pertinente >= 4 * MESES.length,
         `los 4 falsos positivos por mes debían morir en pertinencia: ${c.embudo.fuera_no_pertinente}`);
       assert.strictEqual(c.contrafactuales.visibles_sin_capa_pertinencia,
-        c.embudo.visibles + c.embudo.fuera_no_pertinente, "el contrafactual de pertinencia no cuadra");
+        c.embudo.visibles + c.embudo.fuera_no_pertinente + c.embudo.fuera_objeto_generico,
+        "el contrafactual de pertinencia no cuadra");
+
+      /* OBJETOS GENÉRICOS: el «objeto» es el nombre del trámite y su código */
+      assert.ok(c.embudo.fuera_objeto_generico >= 2 * MESES.length,
+        `los objetos genéricos por mes debían caer: ${c.embudo.fuera_objeto_generico}`);
+      assert.ok(c.matching.objetos_genericos_ejemplos.some((g) => /CONVOCATORIA PUBLICA/i.test(g.objeto)),
+        "el diagnóstico no muestra qué objetos genéricos se descartaron");
+
+      /* RUTA DE TEXTO DÉBIL: contada aparte, con sus ejemplos y su contrafactual */
+      assert.ok(c.embudo.fuera_texto_debil >= MESES.length,
+        `la ruta de texto sin pertinencia verde debía filtrarse: ${c.embudo.fuera_texto_debil}`);
+      assert.strictEqual(c.contrafactuales.visibles_incluyendo_texto_debil,
+        c.embudo.visibles + c.embudo.fuera_texto_debil,
+        "el contrafactual del toggle «sin código UNSPSC» no cuadra");
+      assert.ok(c.matching.texto_debil_ejemplos.length > 0, "sin ejemplos de lo que devolvería el toggle");
+
+      /* EQUIVALENCIAS: el diagnóstico explica POR QUÉ están como están */
+      const porQue = c.conocimiento.equivalencias_por_que;
+      assert.ok(porQue && Array.isArray(porQue.por_que) && porQue.por_que.length > 0,
+        "el diagnóstico no explica el estado del índice de equivalencias");
+      assert.strictEqual(porQue.hay, true, "en esta corrida SÍ hay equivalencias aprendidas");
+      assert.ok(c.conocimiento.equivalencias.pares_evaluados > 0,
+        "el diagnóstico debe reportar cuántos pares se evaluaron");
+      assert.ok(c.conocimiento.equivalencias.descartados,
+        "el diagnóstico debe reportar los descartes del aprendizaje");
       const terminos = Object.keys(c.distribuciones.no_pertinente_terminos_que_dispararon);
       // «logistico» es el término del CUMPLEAÑOS: se reporta el PRIMERO que
       // aparece en el objeto («APOYO LOGISTICO PARA EL CUMPLEAÑOS…»)
-      for (const t of ["impresion", "alimentos", "internet", "logistico"]) {
+      for (const t of ["impresion", "alimentos", "logistico"]) {
         assert.ok(terminos.includes(t), `el diagnóstico no reporta el término «${t}» como causa`);
       }
+      // internet viaja como término BLOQUEANTE, así que el tramo reportado es
+      // el de la expresión completa («servicio de internet», «internet dedicado»)
+      assert.ok(terminos.some((t) => /internet/.test(t)),
+        `el diagnóstico no reporta ningún término de internet: ${terminos.join(" · ")}`);
       assert.ok(c.matching.no_pertinentes_ejemplos.length > 0, "sin ejemplos de falsos positivos bloqueados");
 
       /* el reparto por solidez del match cuadra con los visibles */
@@ -1843,6 +2061,12 @@ async function main() {
         "Objeto sugiere obra", "PERTINENCIA", "por_match"]) {
         assert.ok(js.includes(debe), `app.js sin ${debe} (la tarjeta no muestra el veredicto graduado)`);
       }
+      /* toggle «Incluir procesos sin código UNSPSC»: apagado por defecto (sin
+         atributo `checked` en el HTML) y cableado al parámetro de la API */
+      assert.ok(html.includes('id="f-sin-unspsc"'), "index.html sin el toggle de procesos sin código UNSPSC");
+      const inputToggle = html.slice(html.indexOf('id="f-sin-unspsc"'), html.indexOf('id="f-sin-unspsc"') + 200);
+      assert.ok(!/\bchecked\b/.test(inputToggle), "el toggle debe venir APAGADO por defecto");
+      assert.ok(js.includes("incluir_sin_unspsc"), "app.js no envía el parámetro del toggle");
       const vercel = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
       for (const fn of Object.keys(vercel.functions)) {
         assert.ok(fs.existsSync(path.join(__dirname, "..", fn)), `vercel.json apunta a ${fn} inexistente`);

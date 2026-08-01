@@ -149,6 +149,7 @@ llave.
 | `competencia_entidad` | — | Histórico **de la entidad**: `baja` · `media` · `alta` · `sin_dato` |
 | `ubicacion_valida` | — | `true` · `false` |
 | `match` | — | Solidez del match UNSPSC: `clase` · `familia` · `equivalente` · `texto` |
+| `incluir_sin_unspsc` | — | `1` para reabrir la ruta de texto sin pertinencia verde (toggle de la UI) |
 | `incluir_cerradas` | — | `1` para incluir procesos en estado terminal |
 | `ordenar_por` | **`atractividad`** | `atractividad` · `anticipo` · `cuantia` · `competencia` · `puntaje` |
 | `orden` | `desc` | `asc` · `desc` |
@@ -348,7 +349,10 @@ Cada paso deja su nombre en `paso`, que es lo que `/api/diagnostico` agrega para
 6. **Equivalencias funcionales** aprendidas del histórico → tier `equivalente`.
 7. **El objeto como co-señal** (vocabulario por familia o verbo de obra) → tier `texto`. Si nada
    de esto confirma nada → `fuera_sin_unspsc_ni_obra`.
-8. **Pertinencia del objeto** — la capa nueva (ver abajo). No pertinente → `fuera_no_pertinente`.
+8. **Pertinencia del objeto** — la capa nueva (ver abajo). Objeto genérico → `fuera_objeto_generico`;
+   servicio ajeno o término bloqueante → `fuera_no_pertinente`.
+8-bis. **Ruta de texto débil** — un tier `texto` que no llegó a pertinencia verde se descarta
+   (`fuera_texto_debil`) salvo con `?incluir_sin_unspsc=1`.
 9. **Anti-suministro** — si **ningún** código ANCLA el proceso como obra y el objeto se redacta
    como compra («suministro/adquisición/compra/compraventa/dotación/entrega/arrendamiento de…»)
    sin ningún verbo de obra, es una compra disfrazada. Ancla un código de segmento ≥ 70 **salvo**
@@ -398,10 +402,26 @@ La regla corre **después** del matching (si el código ya falló, no hay nada q
 
 | Situación | Veredicto |
 | --- | --- |
+| Hay **término bloqueante** (servicio de internet, ancho de banda, canal dedicado…) | 🔴 **fuera, aunque el objeto hable de obra** |
+| El objeto es **genérico** (menos de 15 caracteres, o solo el nombre del trámite y su código) | 🔴 **fuera**: no describe nada |
 | Hay verbo de obra (construcción, pavimentación, acueducto, interventoría…) | 🟢 pertinente |
-| Hay término no pertinente (alimentos, evento, impresión, internet, vigilancia, software, seguros, dotación…) **y cero** verbos de obra | 🔴 **no pertinente** → fuera |
+| Hay término no pertinente (alimentos, evento, impresión, vigilancia, software, seguros, dotación…) **y cero** verbos de obra | 🔴 **no pertinente** → fuera |
 | Sin verbo de obra pero con match `clase` en un segmento de obra/ingeniería pura (72, 77, 81, 95) | 🟢 pertinente: el código es sólido |
-| Resto (objeto corto o genérico) | 🟡 **pertinente con advertencia** — «verificar objeto» |
+| Resto (objeto poco explícito) | 🟡 **pertinente con advertencia** — «verificar objeto» |
+
+**Términos bloqueantes** (ago 2026, del diagnóstico real): la regla normal exige *cero* verbos de
+obra, y «PRESTACIÓN DEL SERVICIO DE INTERNET DEDICADO **CON INSTALACIÓN Y CANALIZACIÓN DE REDES**»
+traía verbos de sobra. Un bloqueante descarta sin más. La lista es **corta a propósito** y solo
+debe crecer con falsos positivos confirmados: se lleva por delante hasta la obra bien escrita que
+mencione la palabra. Por eso «fibra óptica» exige contexto de servicio (canal, enlace, ancho de
+banda, proveedor) y no descarta el tendido de una red, que sí es obra.
+
+**Objetos genéricos** (ago 2026): «CONVOCATORIA PUBLICA», «CONCURSO DE MERITOS INV-CM-001-2026»,
+«INFI CM001-2026» son el número del proceso, no una descripción. Se descartan cuando el objeto
+mide menos de 15 caracteres, o cuando —tras quitarle las palabras de trámite (convocatoria,
+concurso, licitación, pliego, vigencia…) y los tokens que son códigos— quedan menos de dos
+palabras con contenido **y** no hay ningún verbo de obra. «CM-001-2026 CONSTRUCCIÓN DE PLACA
+HUELLA» sí dice qué es y pasa.
 
 Los verbos ambiguos van **condicionados a un ancla de infraestructura cercana**, como pide el
 propio dominio: «mantenimiento» cuenta como obra en «mantenimiento de la red de alcantarillado»
@@ -437,6 +457,18 @@ decisión, no una habilitación jurídica**: quien decide si el RUP alcanza es e
 Para procesos sin código utilizable (o con el segmento suelto), el objeto confirma: si comparte
 **≥ 3 términos distintivos** con una familia que el RUP del perfil sí tiene → tier `texto` con la
 familia sugerida; si no, pero el objeto es inequívocamente de obra → tier `texto` genérico.
+
+**La ruta de texto exige pertinencia VERDE** (ago 2026). En el diagnóstico real 1 077 procesos
+entraron por aquí y buena parte era ruido: equipos tecnológicos, servicios de salud y objetos
+vagos que compartían tres términos genéricos con el vocabulario de una familia (*institución*,
+*educativa*, *sede*). Un proceso que **no** tiene código del RUP **y** tampoco dice claramente que
+sea obra no es una oportunidad. Con código del RUP sí se conserva el 🟡 (ahí el código es la
+evidencia); la ruta de texto no tiene esa red.
+
+Se puede reabrir con `?incluir_sin_unspsc=1` — el toggle **«Incluir procesos sin código UNSPSC»**
+de la interfaz, apagado por defecto. Los que vuelven llegan siempre marcados como «Objeto sugiere
+obra» + «Verificar objeto», y el toggle **no** reabre nada más: objetos genéricos, bloqueantes y
+falsos positivos siguen fuera con él encendido.
 
 `data/vocabulario_unspsc.json` viaja en el repositorio como **semilla curada a mano** —no es el
 resultado de un cálculo, y así está escrito en el propio archivo—. Con el histórico ya en Redis,
@@ -537,8 +569,9 @@ Devuelve, sobre el corpus activo:
 
 - **`embudo`** — bajas de cada paso **en el orden real de la consulta**: `fuera_modalidad`,
   `fuera_estado`, `fuera_convenio`, `fuera_blacklist`, `fuera_unspsc`,
-  `fuera_sin_unspsc_ni_obra`, **`fuera_no_pertinente`**, `fuera_anti_suministro`,
-  `fuera_capacidad_k`, `fuera_tope_estrategico`, `fuera_anticipo` y `visibles`. Los pasos suman el
+  `fuera_sin_unspsc_ni_obra`, **`fuera_objeto_generico`**, **`fuera_no_pertinente`**,
+  **`fuera_texto_debil`**, `fuera_anti_suministro`, `fuera_capacidad_k`,
+  `fuera_tope_estrategico`, `fuera_anticipo` y `visibles`. Los pasos suman el
   total: nadie desaparece sin quedar contado (hay una prueba que lo verifica), y `visibles`
   coincide exactamente con el `total` que sirve `/api/oportunidades` (otra prueba).
 - **`contrafactuales`** — cuánto aporta cada mecanismo y cuánto se recuperaría al relajar cada
@@ -548,9 +581,14 @@ Devuelve, sobre el corpus activo:
   cerradas.
 - **`matching`** — reparto de los visibles por `tier` (clase/familia/equivalente/texto) y por
   nivel de pertinencia (verde/amarillo/rojo, el rojo siempre en 0), más ejemplos concretos de lo
-  rescatado y de los falsos positivos bloqueados.
-- **`conocimiento`** — estado de las equivalencias (con sus umbrales) y del vocabulario (si manda
-  la semilla del repositorio o el derivado del histórico).
+  rescatado, de los falsos positivos bloqueados, de los **objetos genéricos** descartados y de lo
+  que devolvería el toggle **«Incluir procesos sin código UNSPSC»** (`texto_debil_ejemplos`).
+- **`conocimiento`** — estado de las equivalencias (con sus umbrales, adjudicatarios, pares
+  evaluados y descartes) y del vocabulario (si manda la semilla del repositorio o el derivado).
+  **`conocimiento.equivalencias_por_que`** traduce ese estado a causas en castellano: un índice en
+  cero puede significar que nunca se construyó, que el dataset no trae adjudicatario, que nadie
+  ganó en dos clases a la vez o que ningún par alcanza los umbrales — y cada causa lleva su
+  siguiente paso. Un `0` solo no distingue ninguna de las cuatro.
 - **`distribuciones`** — los valores **reales** de `modalidad_de_contratacion`,
   `estado_del_procedimiento` y `fase` con sus conteos (lo que este repositorio nunca pudo
   muestrear en vivo), qué términos de la blacklist y de la capa de pertinencia dispararon, los
@@ -715,6 +753,10 @@ con cuál del RUP y por qué) va en el `title` de cada badge:
 | `Obra civil` / `Infraestructura` / `Consultoría` | El objeto es del dominio, con su tipo detectado |
 | `Verificar objeto` | El objeto no lo dice explícitamente: mirar el pliego |
 
+Bajo los filtros hay un toggle **«Incluir procesos sin código UNSPSC»**, apagado por defecto: los
+procesos rescatados solo por el objeto y sin vocabulario claro de obra son ruido más que
+oportunidad, pero quedan a un clic. Cuando está encendido el resumen lo dice.
+
 El resumen de resultados añade el reparto («*N* con RUP ✓, *M* por verificar»), y sigue el badge
 de **Capacidad K ✓**.
 
@@ -763,6 +805,16 @@ Lo que cubre específicamente la parte de **matching UNSPSC y pertinencia**:
   tira los términos presentes en todas las familias, y la mezcla derivado + semilla.
 - **Ingesta vs juicio**: un proceso dudoso **se guarda** en Redis y **no se sirve**; el prefiltro
   de ingesta no recibe perfil (si lo recibiera, cargar un RUP nuevo exigiría re-sincronizar).
+- **Términos bloqueantes**: el internet cae aunque el objeto hable de instalar y canalizar redes,
+  y el tendido de fibra en una vía sigue pasando (el bloqueante de fibra exige contexto de
+  servicio).
+- **Objetos genéricos**: «CONVOCATORIA PUBLICA», «CONCURSO DE MERITOS INV-CM-001-2026» e «INFI
+  CM001-2026» caen; los mismos códigos internos **con** descripción del trabajo pasan.
+- **Ruta de texto**: un tier `texto` en 🟡 está fuera por defecto y vuelve con
+  `?incluir_sin_unspsc=1` (marcado como «verificar»), mientras la obra sin código —pertinencia
+  verde— nunca se pierde. El toggle solo añade: no reabre genéricos ni bloqueantes.
+- **Equivalencias en cero**: las cuatro causas posibles se distinguen entre sí y cada una trae su
+  siguiente paso.
 - **Extremo a extremo**: los falsos positivos no llegan a la pantalla aunque estén en Redis; la
   obra publicada por familia, por segmento y con código ilegible sí; y la clase afín pasa de
   invisible a visible en cuanto se aprenden las equivalencias, **sin volver a sincronizar**.

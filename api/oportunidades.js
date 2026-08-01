@@ -10,6 +10,8 @@
      &competencia_entidad=baja|media|alta|sin_dato  (histórico DE LA ENTIDAD)
      &ubicacion_valida=true|false
      &match=clase|familia|equivalente|texto    (solidez del match UNSPSC)
+     &incluir_sin_unspsc=1       (abre la ruta de TEXTO cuando la pertinencia no
+                                  llegó a verde; apagada por defecto)
      &incluir_cerradas=1         (por defecto solo procesos abiertos)
      &ordenar_por=atractividad|anticipo|cuantia|competencia|puntaje
                                  (default ATRACTIVIDAD)
@@ -226,6 +228,12 @@ module.exports = async function handler(req, res) {
   const soloAbiertas = q.incluir_cerradas !== "1";
   // ?match=clase|familia|equivalente|texto → ver solo los de esa solidez
   const fTier = ["clase", "familia", "equivalente", "texto"].includes(q.match) ? q.match : null;
+  /* Toggle «Incluir procesos sin código UNSPSC» (apagado por defecto). Sin él,
+     un proceso rescatado SOLO por el objeto tiene que llegar a pertinencia
+     VERDE para verse: sin código del RUP y sin vocabulario claro de obra no
+     hay evidencia de nada (en el corpus real esa ruta metía software, equipos
+     y servicios de salud). Ver lib/filtros.evaluarObjeto. */
+  const opciones = { incluirTextoDebil: ["1", "true"].includes(String(q.incluir_sin_unspsc)) };
 
   /* Veredicto del RUP memoizado por fila DENTRO de la petición: el filtro lo
      necesita para decidir y la página lo necesita para pintar la tarjeta.
@@ -233,7 +241,7 @@ module.exports = async function handler(req, res) {
   const _rup = new Map();
   const rupDe = (l) => {
     let r = _rup.get(l);
-    if (!r) { r = evaluarRup(l, perfil, conocimiento); _rup.set(l, r); }
+    if (!r) { r = evaluarRup(l, perfil, conocimiento, opciones); _rup.set(l, r); }
     return r;
   };
 
@@ -288,7 +296,7 @@ module.exports = async function handler(req, res) {
     ok: true, total, resultados, pagina, por_pagina: porPagina, perfil,
     sincronizado: meta ? meta.last_sync : null,
     ordenado_por: Object.prototype.hasOwnProperty.call(ORDEN_CAMPOS, q.ordenar_por) ? q.ordenar_por : ORDEN_DEFAULT,
-    por_match,
+    por_match, incluye_sin_unspsc: opciones.incluirTextoDebil,
     indice_competencia: indiceMeta
       ? { construido: indiceMeta.construido, entidades: indiceMeta.clasificadas, min_procesos: indiceMeta.min_procesos }
       : null,

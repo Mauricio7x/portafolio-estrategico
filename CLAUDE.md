@@ -128,6 +128,19 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   pertinente CON CERO verbos de obra → fuera; sin verbo pero con tier `clase` en segmento de obra
   pura (72/77/81/95) → pasa; resto → pasa en AMARILLO. **Nunca bloquea por falta de información**:
   en una app de oportunidades el falso negativo cuesta más que un amarillo que se revisa en 5 s.
+- **Tres reglas que salieron del diagnóstico REAL (ago 2026), no de la teoría**:
+  (1) `TERMINOS_BLOQUEANTES` (internet y familia) descartan AUNQUE haya verbo de obra — la regla
+  normal exige cero verbos y «SERVICIO DE INTERNET DEDICADO CON INSTALACIÓN Y CANALIZACIÓN DE
+  REDES» los traía. La lista es CORTA a propósito: un bloqueante se lleva por delante hasta la
+  obra bien escrita, por eso «fibra óptica» exige contexto de servicio.
+  (2) `esObjetoGenerico`: «CONVOCATORIA PUBLICA», «CONCURSO DE MERITOS INV-CM-001-2026» son el
+  número del proceso, no una descripción → fuera (<15 caracteres, o sin contenido tras quitar
+  palabras de trámite y códigos, y sin verbo de obra). OJO: es la única regla que descarta un
+  proceso con UNSPSC sólido, así que el diagnóstico muestra ejemplos para poder vigilarla.
+  (3) **La ruta de TEXTO exige pertinencia VERDE**: 1 077 procesos entraban por texto y el
+  vocabulario genérico de familia (institucion/educativa/sede) metía equipos y servicios. Sin
+  código del RUP, el objeto es la única evidencia; un 🟡 ahí no es evidencia de nada. Se reabre con
+  `?incluir_sin_unspsc=1` (toggle apagado por defecto), que SOLO añade esa ruta.
 - **Los verbos ambiguos van CONDICIONADOS a un ancla de infraestructura cercana**: «mantenimiento
   de la red de alcantarillado» sí, «mantenimiento de vehículos» no. Ídem instalación/montaje y
   consultoría/supervisión/diseño/estudios. Y los términos malos tienen excepciones por lookahead:
@@ -139,6 +152,11 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - **`norm` vive en `lib/semantica.js`** (filtros la re-exporta) y **`lib/indice_competencia.js` la
   importa de semantica, NO de filtros**: filtros → equivalencias → indice_competencia → filtros
   sería un ciclo de requires y dejaría `norm` sin definir en tiempo de carga.
+- **Un índice de equivalencias en CERO tiene cuatro causas distintas** y un `0` no las distingue:
+  nunca se construyó, el dataset no trae adjudicatario (la típica), nadie ganó en dos clases a la
+  vez, o ningún par alcanza los umbrales. `explicarEquivalencias()` las traduce y `/api/diagnostico`
+  las sirve en `conocimiento.equivalencias_por_que` con su siguiente paso. Antes de bajar un
+  umbral, MIRAR eso: si el problema son las columnas de adjudicatario, bajar el lift no arregla nada.
 - **Equivalencias funcionales** (`lib/equivalencias.js`): lift ≥ 3 sobre ADJUDICATARIOS (no sobre
   procesos: una entidad con 40 procesos gemelos no puede fabricar una equivalencia), soporte ≥ 20
   procesos en la clase inscrita y ≥ 5 adjudicatarios en la intersección. Solo se guardan pares con

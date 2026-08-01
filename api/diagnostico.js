@@ -37,7 +37,7 @@ const { modalidad_competitiva, estado_abierto, evaluarObjeto } = require("../lib
 const {
   codigosDeLicitacion, normalizarCodigo, indiceDe, emparejar, cubiertoPorPrefijo, claseDe,
 } = require("../lib/unspsc.js");
-const { leerEquivalencias, leerEquivalenciasMeta } = require("../lib/equivalencias.js");
+const { leerEquivalencias, leerEquivalenciasMeta, explicarEquivalencias } = require("../lib/equivalencias.js");
 const { vocabularioActivo } = require("../lib/texto_unspsc.js");
 const { SMMLV } = require("../lib/perfiles.js");
 
@@ -114,7 +114,9 @@ module.exports = async function handler(req, res) {
     fuera_blacklist: 0,
     fuera_unspsc: 0,
     fuera_sin_unspsc_ni_obra: 0,
+    fuera_objeto_generico: 0,
     fuera_no_pertinente: 0,
+    fuera_texto_debil: 0,
     fuera_anti_suministro: 0,
     fuera_capacidad_k: 0,
     fuera_tope_estrategico: 0,
@@ -133,12 +135,15 @@ module.exports = async function handler(req, res) {
     visibles_ignorando_capacidad: 0,
     visibles_incluyendo_cerradas: 0,
     visibles_sin_capa_pertinencia: 0,
+    visibles_incluyendo_texto_debil: 0,  // lo que aparecería con el toggle encendido
   };
   const porTier = { clase: 0, familia: 0, equivalente: 0, texto: 0 };
   const porPertinencia = { verde: 0, amarillo: 0, rojo: 0 };
   const motivosBlacklist = [];
   const terminosNoPertinentes = [];
   const noPertinentes = [];
+  const genericos = [];
+  const textoDebil = [];
   const clasesEnCorpus = [];
   const codigosInvalidos = [];
   const modalidadesFuera = [];
@@ -197,6 +202,23 @@ module.exports = async function handler(req, res) {
 
     if (ev.paso === "unspsc") { embudo.fuera_unspsc++; continue; }
     if (ev.paso === "sin_unspsc_ni_obra") { embudo.fuera_sin_unspsc_ni_obra++; continue; }
+    if (ev.paso === "objeto_generico") {
+      embudo.fuera_objeto_generico++;
+      if (genericos.length < TOP) {
+        genericos.push({ objeto: recortar(l.nombre_del_procedimiento, 90), unspsc: l.codigo_principal_de_categoria, motivo: ev.pertinencia && ev.pertinencia.motivo });
+      }
+      continue;
+    }
+    if (ev.paso === "texto_debil") {
+      // no es un descarte «duro»: es lo que el toggle «Incluir procesos sin
+      // código UNSPSC» vuelve a mostrar. Se cuenta aparte para poder medirlo.
+      embudo.fuera_texto_debil++;
+      contrafactuales.visibles_incluyendo_texto_debil++;
+      if (textoDebil.length < TOP) {
+        textoDebil.push({ objeto: recortar(l.nombre_del_procedimiento, 90), unspsc: l.codigo_principal_de_categoria || "(sin código)" });
+      }
+      continue;
+    }
     if (ev.paso === "no_pertinente") {
       embudo.fuera_no_pertinente++;
       terminosNoPertinentes.push(ev.termino);
@@ -242,7 +264,10 @@ module.exports = async function handler(req, res) {
   // cerradas: cuántas se recuperarían al servirlas (solo para dimensionar)
   contrafactuales.visibles_incluyendo_cerradas = embudo.visibles + embudo.fuera_estado;
   // sin la capa de pertinencia volverían los falsos positivos de siempre
-  contrafactuales.visibles_sin_capa_pertinencia = embudo.visibles + embudo.fuera_no_pertinente;
+  contrafactuales.visibles_sin_capa_pertinencia = embudo.visibles + embudo.fuera_no_pertinente + embudo.fuera_objeto_generico;
+  // el toggle de la UI: cuántos se sumarían al encenderlo (aproximado por
+  // arriba — los que además pasarían capacidad y anticipo son ≤ este número)
+  contrafactuales.visibles_incluyendo_texto_debil += embudo.visibles;
 
   /* ---------- distribuciones del corpus REAL ---------- */
   const distribuciones = {
@@ -306,11 +331,22 @@ module.exports = async function handler(req, res) {
       visibles_por_pertinencia: porPertinencia,
       rescatados_ejemplos: rescatados,
       no_pertinentes_ejemplos: noPertinentes,
+      objetos_genericos_ejemplos: genericos,
+      texto_debil_ejemplos: textoDebil,
     },
     conocimiento: {
       equivalencias: eqMeta
-        ? { construido: eqMeta.construido, clases_con_equivalente: eqMeta.clases_con_equivalente || 0, pares: eqMeta.pares || 0, umbrales: eqMeta.umbrales || null }
+        ? {
+          construido: eqMeta.construido, clases_con_equivalente: eqMeta.clases_con_equivalente || 0,
+          pares: eqMeta.pares || 0, umbrales: eqMeta.umbrales || null,
+          adjudicatarios: eqMeta.adjudicatarios || 0, procesos_contados: eqMeta.procesos_contados || 0,
+          pares_evaluados: eqMeta.pares_evaluados || 0,
+          descartados: eqMeta.descartados || null, fallos_por_umbral: eqMeta.fallos_por_umbral || null,
+        }
         : null,
+      // por qué el índice está como está (vacío, lleno o sin construir):
+      // cuatro causas posibles que un 0 no distingue
+      equivalencias_por_que: explicarEquivalencias(eqMeta),
       vocabulario: { fuente: vocabulario.fuente, familias: vocabulario.indice.size, derivadas_del_historico: vocabulario.derivadas, construido: vocMeta ? vocMeta.construido : null },
     },
     distribuciones,
@@ -320,6 +356,8 @@ module.exports = async function handler(req, res) {
     como_leerlo: "embudo va en orden: cada `fuera_*` son procesos que murieron en ESE paso y no llegaron al siguiente. "
       + "El paso con el número más alto es el que hay que revisar primero. "
       + "`contrafactuales` dice cuántos se recuperarían al relajar cada regla y cuánto aportó cada mecanismo nuevo. "
-      + "`matching.no_pertinentes_ejemplos` son los falsos positivos que la capa de pertinencia acaba de sacar de la pantalla.",
+      + "`matching.no_pertinentes_ejemplos` son los falsos positivos que la capa de pertinencia acaba de sacar de la pantalla, "
+      + "`matching.texto_debil_ejemplos` lo que volvería con el toggle «Incluir procesos sin código UNSPSC», "
+      + "y `conocimiento.equivalencias_por_que` explica en castellano por qué el índice de equivalencias está como está.",
   });
 };
