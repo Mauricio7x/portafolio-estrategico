@@ -341,6 +341,33 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   corpus todavía dice «Presentación de ofertas», no hay regla que lo detecte — eso lo corrige el
   delta, no un filtro.
 
+### Identidad de la entidad: dos formas de confundir a dos entidades (ago 2026)
+
+- **Un NIT NO identifica a una entidad.** Las regionales y unidades de un mismo organismo publican
+  con el NIT de la matriz, así que `nit:{NIT}` puede corresponder a varias. El alias iba **primero**
+  en el orden de búsqueda de `competenciaDe`, de modo que una entidad con su nombre bien escrito y
+  su propio registro en el índice acababa enseñando el nivel de competencia de su hermana, en
+  silencio. Ahora el orden es **clave canónica → clave legado → alias**, y el escritor **no publica
+  alias para un NIT compartido** (un alias ambiguo no es un alias: es una respuesta equivocada);
+  los cuenta en `indice:competencia:meta.nits_ambiguos`. El alias sigue existiendo para lo que se
+  creó: que un cambio de razón social no parta el historial.
+- **La puntuación partía una entidad en dos.** `lib/competencia_detalle` tenía DOS claves —
+  `claveBusqueda` (sin puntuación) para agrupar el corpus y `claveIndice` (`norm` a secas) para leer
+  el hash—, así que «… RIOS NEGRO **-** NARE» y «… RIOS NEGRO NARE» se sumaban al contar y no al
+  leer: el detalle enseñaba el promedio de 4 procesos bajo una banda calculada sobre 3. No era un
+  error de cálculo: eran **dos definiciones de «entidad» conviviendo**. Ahora hay una sola,
+  `claveCanonica` (en `lib/indice_competencia`, importada por el detalle), y el índice agrupa con
+  ella. Las dos direcciones no pueden volver a separarse porque no hay dos funciones que mantener.
+- **`claveLegado` no se escribe jamás, solo se lee**: el hash de producción está escrito con la
+  clave anterior y `indice:competencia` no se purga nunca. Sin ese segundo intento en
+  `competenciaDe` y en el detalle, desplegar dejaría **todo** en ⚪ hasta que alguien reconstruyera
+  el índice a mano. Mismo criterio que `procesos`/`procesos_contados`.
+- **Los fixtures de identidad van por debajo del mínimo de 5 procesos a propósito**: solo entran en
+  los tertiles las entidades clasificables, así que así ejercitan la identidad sin recalcular los
+  cortes (con 5, IDU dejaría de ser «alta» y media suite se caería). Y el de la puntuación es
+  **3 + 1, no 2 + 2**: con el empate, `nombreOriginal` lo decide el orden del corpus y la prueba
+  pasaría o fallaría por azar.
+
 ## Datos del negocio (fuente de verdad)
 
 - Perfiles: `lib/perfiles.js` es el RESPALDO (`PERFILES_FALLBACK`, RUP corte 31/12/2025) y el punto

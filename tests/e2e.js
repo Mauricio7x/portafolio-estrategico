@@ -56,6 +56,17 @@
         Además: la clase AFÍN pasa a verse por las equivalencias recién
         aprendidas, SIN volver a sincronizar (la promesa de separar ingesta de
         juicio, verificada de punta a punta).
+     IDENTIDAD DE LA ENTIDAD (ago 2026), dos formas de confundir a dos
+     entidades entre sí — las dos con prueba que falla sin la corrección:
+       · un NIT NO identifica una entidad (las regionales publican con el de la
+         matriz). El alias `nit:{NIT}` iba PRIMERO en la búsqueda, así que una
+         entidad con su nombre bien escrito heredaba las cifras de su hermana.
+         Ahora manda el nombre exacto y un alias ambiguo ni se publica.
+       · la puntuación partía una entidad en dos: el índice agrupaba con `norm`
+         y el detalle sin puntuación, de modo que «… - EAAA» y «… EAAA» se
+         sumaban al contar (4 procesos) pero no al leer el hash (3). Una sola
+         `claveCanonica` para las dos direcciones.
+
      Dos defectos de producción quedaron fijados por prueba (ago 2026):
        · badge «18.2 oferentes en 0 procesos»: el índice publicaba el promedio
          de entidades que NO se pueden clasificar (<5 procesos). Hay una unidad
@@ -407,6 +418,40 @@ const ENTIDADES_HIST = [
 ];
 const PROMEDIO_ESPERADO = { "ALCALDÍA DE PURIFICACIÓN": 3, "GOBERNACIÓN DEL TOLIMA": 8, "IDU": 18 };
 
+/* ---- IDENTIDAD DE ENTIDAD: los dos defectos de ago 2026 ----
+   Las cuatro entradas van DEBAJO del mínimo de 5 procesos a propósito: así
+   ejercitan la identidad de la entidad sin tocar los tertiles (solo entran en
+   el reparto las entidades clasificables, y estas no lo son). Si alguna llegara
+   a 5, los cortes se recalcularían y IDU dejaría de ser «alta».
+
+   · NIT COMPARTIDO: dos regionales del mismo organismo publican con el NIT de
+     la matriz. El alias `nit:{NIT}` solo puede apuntar a una, y la otra
+     heredaba sus cifras. Se distinguen por el CONTEO (3 vs 4): con el alias
+     mandando, al menos una de las dos consultas devuelve el número de su
+     hermana, sea cual sea el orden en que se escribieron.
+   · GUION: la MISMA entidad escrita de dos formas que solo difieren en la
+     puntuación. El índice las separaba (2 y 2, ninguna llega al mínimo) y el
+     detalle las sumaba (4): el badge y el detalle hablaban de conjuntos
+     distintos. Con la clave canónica son una sola, con 4 procesos. */
+const NIT_COMPARTIDO = "899999074";
+const AEROCIVIL_NORTE = "AEROCIVIL REGIONAL NORTE";
+const AEROCIVIL_SUR = "AEROCIVIL REGIONAL SUR";
+const NIT_GUION = "800100006";
+const ENTIDAD_GUION = "EMPRESA DE ACUEDUCTO Y ALCANTARILLADO - EAAA";
+const ENTIDAD_GUION_SIN = "EMPRESA DE ACUEDUCTO Y ALCANTARILLADO EAAA";
+const CLASE_IDENTIDAD = "72151000"; // fuera de la clase A de las equivalencias
+const ENTIDADES_HIST_IDENTIDAD = [
+  { entidad: AEROCIVIL_NORTE, nit: NIT_COMPARTIDO, ofertas: [1, 1, 2], codigo: CLASE_IDENTIDAD },
+  { entidad: AEROCIVIL_SUR, nit: NIT_COMPARTIDO, ofertas: [25, 28, 30, 26], codigo: CLASE_IDENTIDAD },
+  // 3 + 1, no 2 + 2, y el reparto importa: así la grafía CON guion es la
+  // dominante y `nombreOriginal` es predecible. Con 2 + 2 el desempate lo
+  // decide el orden del corpus y la prueba pasaría o fallaría por azar.
+  { entidad: ENTIDAD_GUION, nit: NIT_GUION, ofertas: [4, 5, 6], codigo: CLASE_IDENTIDAD },
+  { entidad: ENTIDAD_GUION_SIN, nit: NIT_GUION, ofertas: [7], codigo: CLASE_IDENTIDAD },
+];
+// 4 canónicas + NORTE + SUR + la del guion ya FUSIONADA en una sola entidad
+const ENTIDADES_EN_INDICE = ENTIDADES_HIST.length + 3;
+
 /* ---- bloque para las EQUIVALENCIAS FUNCIONALES ----
    Objetivo: que el par (72141000 → 80141600) supere los tres umbrales
    (lift ≥ 3, soporte ≥ 20 procesos en la clase inscrita, ≥ 5 adjudicatarios
@@ -515,7 +560,7 @@ function generarDatasetDetalle() {
 function generarDatasetHistorico() {
   const filas = [];
   let n = 0;
-  for (const e of ENTIDADES_HIST) {
+  for (const e of [...ENTIDADES_HIST, ...ENTIDADES_HIST_IDENTIDAD]) {
     for (let i = 0; i < e.ofertas.length; i++) {
       n++;
       const mes = MESES_HIST[(n * 5) % MESES_HIST.length]; // repartidos por todo el rango
@@ -532,7 +577,11 @@ function generarDatasetHistorico() {
         duracion: "6", unidad_de_duracion: "Meses",
         nombre_del_procedimiento: `Construcción de placa huella histórica ${n}`,
         descripci_n_del_procedimiento: "Obra civil de pavimentación rural ya ejecutada",
-        codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra",
+        /* La clase va por fixture: los de IDENTIDAD usan 72151000 (la misma que
+           el relleno de equivalencias) para no tocar el conteo de
+           adjudicatarios de 72141000, que es la clase A del único par que
+           debe superar los tres umbrales de lift/soporte/intersección. */
+        codigo_principal_de_categoria: `V1.${e.codigo || "72141000"}`, tipo_de_contrato: "Obra",
         // columnas de adjudicación (nombres pendientes de verificación en vivo)
         numero_de_ofertas: String(e.ofertas[i]),
         nombre_del_proveedor: `CONSTRUCTORA HIST ${n} SAS`,
@@ -1364,9 +1413,20 @@ async function main() {
       claveBusqueda("Corporación Autónoma Regional de los Ríos Negro Nare"));
     // …pero entidades distintas siguen siendo distintas
     assert.notStrictEqual(claveBusqueda("ALCALDÍA DE IBAGUÉ"), claveBusqueda("ALCALDÍA DE PURIFICACIÓN"));
-    // la clave del ÍNDICE es la de lib/semantica.norm: si divergiera, el
-    // detalle leería el badge de otra entidad
-    assert.strictEqual(claveIndice("ALCALDÍA DE PURIFICACIÓN"), filtros.norm("ALCALDÍA DE PURIFICACIÓN"));
+    /* LAS DOS CLAVES SON LA MISMA FUNCIÓN (ago 2026). Antes eran dos: el
+       recuento agrupaba sin puntuación y el índice se leía con ella, así que
+       «… - NARE» y «… NARE» se sumaban al contar y no al leer. Que sean
+       idénticas es la corrección; comprobarlo con un nombre sin puntuación no
+       probaría nada, por eso el caso lleva guion. */
+    assert.strictEqual(claveIndice, claveBusqueda,
+      "agrupar el corpus y leer el índice tienen que usar LA MISMA definición de entidad");
+    assert.strictEqual(claveIndice("CORPORACION ... RIOS NEGRO - NARE"),
+      claveIndice("Corporación ... Ríos Negro Nare"),
+      "la clave del índice tampoco puede partir una entidad por un guion");
+    // y es la misma que usa el índice al construirse
+    assert.strictEqual(claveIndice("ALCALDÍA DE PURIFICACIÓN"),
+      indiceComp.claveEntidad({ entidad: "ALCALDÍA DE PURIFICACIÓN" }).clave,
+      "el detalle debe leer el hash con la clave con la que el índice lo escribió");
     // memoización: el trabajo caro corre una vez por nombre DISTINTO
     let llamadas = 0;
     const memo = memoNormalizador((s) => { llamadas++; return claveBusqueda(s); });
@@ -1457,6 +1517,45 @@ async function main() {
     assert.strictEqual(pub.procesos, 3, "el CONTEO sí se publica: es un hecho y explica el ⚪");
     assert.strictEqual(pub.procesos_contados, 3, "alias para quien lea el campo por su nombre largo");
     console.log(`· unidad badge sin base: ${casos.length} registros corruptos o viejos neutralizados sin reconstruir el índice`);
+  }
+
+  /* unidad: IDENTIDAD DE LA ENTIDAD — el nombre exacto manda sobre el alias
+     ------------------------------------------------------------------------
+     Un NIT NO identifica una entidad: las regionales de un organismo publican
+     con el de la matriz. El alias `nit:{NIT}` iba PRIMERO en la búsqueda, así
+     que una entidad con su nombre bien escrito y su propio registro acababa
+     enseñando las cifras de su hermana. Estos hashes son los que hay HOY en
+     producción (con alias ambiguos ya escritos): la corrección tiene que
+     neutralizarlos sin reconstruir nada. */
+  {
+    const NORTE = indiceComp.claveCanonica(AEROCIVIL_NORTE);
+    const SUR = indiceComp.claveCanonica(AEROCIVIL_SUR);
+    const hash = {
+      [NORTE]: { nombre: AEROCIVIL_NORTE, procesos: 9, promedio: 2, mediana: 2, nivel: "baja" },
+      [SUR]: { nombre: AEROCIVIL_SUR, procesos: 40, promedio: 27.6, mediana: 28, nivel: "alta" },
+      [`nit:${NIT_COMPARTIDO}`]: { ref: SUR }, // el alias ambiguo, apuntando a UNA
+    };
+    const norte = indiceComp.competenciaDe(hash, { entidad: AEROCIVIL_NORTE, nit_entidad: NIT_COMPARTIDO });
+    assert.strictEqual(norte.nivel, "baja",
+      "el nombre EXACTO tiene que ganarle al alias: si no, esta entidad hereda el nivel de su hermana");
+    assert.strictEqual(norte.total_procesos, 9, "…y sus cifras, no las de la otra");
+    const sur = indiceComp.competenciaDe(hash, { entidad: AEROCIVIL_SUR, nit_entidad: NIT_COMPARTIDO });
+    assert.strictEqual(sur.nivel, "alta", "la entidad a la que sí apunta el alias no puede verse afectada");
+
+    // el alias SIGUE sirviendo para lo que existe: un cambio de razón social
+    // (nombre que no está en el índice) resuelve por NIT
+    const renombrada = indiceComp.competenciaDe(hash, { entidad: "AEROCIVIL REGIONAL SUR SAS", nit_entidad: NIT_COMPARTIDO });
+    assert.strictEqual(renombrada.nivel, "alta", "sin el nombre en el índice, el alias por NIT sigue siendo el puente");
+
+    /* Y la clave LEGADO: el hash de producción está escrito con `norm` a secas
+       (con la puntuación dentro). Desplegar no puede dejarlo todo en ⚪. */
+    const conGuion = { [filtros.norm(ENTIDAD_GUION)]: { procesos: 12, promedio: 9, mediana: 9, nivel: "media" } };
+    assert.strictEqual(indiceComp.competenciaDe(conGuion, { entidad: ENTIDAD_GUION }).nivel, "media",
+      "un índice escrito con la clave anterior tiene que seguir resolviéndose hasta que se reconstruya");
+    // y la clave canónica ve la misma entidad escrita de las dos formas
+    assert.strictEqual(indiceComp.claveCanonica(ENTIDAD_GUION), indiceComp.claveCanonica(ENTIDAD_GUION_SIN),
+      "dos grafías que solo difieren en la puntuación son la MISMA entidad");
+    console.log("· unidad identidad de entidad: el nombre exacto gana al alias por NIT; clave legado y canónica resuelven");
   }
 
   async function limpiarRedis() {
@@ -1819,7 +1918,8 @@ async function main() {
 
       /* el histórico guardó todo el rango CON datos de adjudicación */
       const hist = await leerHistorico();
-      const conOferentes = ENTIDADES_HIST.reduce((a, e) => a + e.ofertas.length, 0);
+      const conOferentes = [...ENTIDADES_HIST, ...ENTIDADES_HIST_IDENTIDAD]
+        .reduce((a, e) => a + e.ofertas.length, 0);
       const totalHist = conOferentes + HIST_EQUIVALENCIAS + HIST_DETALLE;
       assert.strictEqual(hist.length, totalHist, `histórico: ${hist.length} registros, esperaba ${totalHist}`);
       for (const r of hist) {
@@ -1851,7 +1951,8 @@ async function main() {
       /* índice construido automáticamente al terminar la extracción */
       const metaIdx = JSON.parse(await redis.get("indice:competencia:meta"));
       assert.ok(metaIdx && metaIdx.construido, "no se construyó el índice al terminar la extracción");
-      assert.strictEqual(metaIdx.entidades, ENTIDADES_HIST.length, "faltan entidades en el índice");
+      assert.strictEqual(metaIdx.entidades, ENTIDADES_EN_INDICE,
+        "faltan entidades en el índice (o las dos grafías de la del guion no se fusionaron en una)");
       assert.strictEqual(metaIdx.clasificadas, 3, "solo las entidades con ≥5 procesos pueden clasificarse");
       // solo cuentan los procesos con conteo de oferentes: los del bloque de
       // equivalencias quedan como «sin dato» y no mueven ni un tertil
@@ -1889,6 +1990,34 @@ async function main() {
       assert.strictEqual(JSON.parse(hash[filtros.norm("ALCALDÍA DE PURIFICACIÓN")]).nivel, "baja");
       assert.strictEqual(JSON.parse(hash[filtros.norm("GOBERNACIÓN DEL TOLIMA")]).nivel, "media");
       assert.strictEqual(JSON.parse(hash[filtros.norm("IDU")]).nivel, "alta");
+
+      /* ═══ IDENTIDAD DE LA ENTIDAD, sobre el índice REAL ═══ */
+      {
+        const clave = indiceComp.claveCanonica;
+        // (1) NIT compartido: cada regional conserva SUS cifras…
+        const indice = await indiceComp.leerIndice(redis);
+        const norte = indiceComp.competenciaDe(indice, { entidad: AEROCIVIL_NORTE, nit_entidad: NIT_COMPARTIDO });
+        const sur = indiceComp.competenciaDe(indice, { entidad: AEROCIVIL_SUR, nit_entidad: NIT_COMPARTIDO });
+        assert.strictEqual(norte.total_procesos, 3, "la regional NORTE debe traer sus 3 procesos, no los de su hermana");
+        assert.strictEqual(sur.total_procesos, 4, "la regional SUR debe traer sus 4 procesos, no los de su hermana");
+        // …y el alias ambiguo NO se publica: apuntar a una de las dos es mentir
+        assert.ok(!Object.prototype.hasOwnProperty.call(hash, `nit:${NIT_COMPARTIDO}`),
+          "un NIT compartido por dos entidades no puede publicar alias: solo podría apuntar a una");
+        assert.strictEqual(metaIdx.nits_ambiguos, 1, "la meta debe CONTAR los NITs ambiguos, no ocultarlos");
+        // el alias de un NIT que sí identifica a una sola entidad sigue ahí
+        assert.deepStrictEqual(JSON.parse(hash[`nit:${ENTIDADES_HIST[0].nit}`]),
+          { ref: clave(ENTIDADES_HIST[0].entidad) },
+          "un NIT no ambiguo conserva su alias: es lo que evita partir el historial al cambiar de razón social");
+
+        // (2) GUION: las dos grafías son UNA entidad, con 4 procesos
+        const fusionada = JSON.parse(hash[clave(ENTIDAD_GUION)]);
+        assert.strictEqual(fusionada.procesos, 4,
+          "las dos grafías (con guion y sin él) tienen que agruparse en una sola entidad de 4 procesos");
+        assert.ok(!Object.prototype.hasOwnProperty.call(hash, filtros.norm(ENTIDAD_GUION)),
+          "la clave con puntuación ya no debe escribirse: la canónica es la única que se publica");
+        assert.strictEqual(indiceComp.competenciaDe(indice, { entidad: ENTIDAD_GUION_SIN, nit_entidad: NIT_GUION }).total_procesos, 4,
+          "consultar por la otra grafía debe dar exactamente la misma entidad");
+      }
 
       /* el token TAMBIÉN autentica por la URL: es la única vía del dueño, que
          dispara la carga pegando el enlace en Chrome (portátil sin terminal) */
@@ -2203,6 +2332,30 @@ async function main() {
           "`publicado.promedio` es un espejo del hash y en producción trae el promedio que escribió la versión anterior");
         assert.strictEqual(c.indice.publicado.procesos, 3,
           "el CONTEO publicado sí se conserva: es lo que permite ver de un vistazo si el índice y el recuento divergen");
+      }
+
+      /* --- (b-ter) GUION: el recuento y el índice tienen que agrupar IGUAL ---
+         El defecto: el detalle quitaba la puntuación al agrupar el corpus y NO
+         al leer el hash. «… - EAAA» y «… EAAA» se sumaban al contar (4) pero el
+         registro leído era el de una sola grafía (2), así que el detalle
+         enseñaba un promedio de un conjunto y la banda salía de otro. Ahora
+         las dos direcciones usan `claveCanonica`. */
+      {
+        const c = (await detalle(ENTIDAD_GUION, "&refrescar=1")).cuerpo;
+        assert.strictEqual(c.encontrada, true);
+        assert.strictEqual(c.entidad, ENTIDAD_GUION,
+          "el nombre devuelto es el MÁS FRECUENTE del dataset: el que lleva guion");
+        assert.strictEqual(c.indice.procesos_contados, 4, "las dos grafías son la misma entidad: 2 + 2");
+        assert.strictEqual(c.indice.publicado.procesos, c.indice.procesos_contados,
+          "el índice y el recuento tienen que agrupar por la MISMA definición de entidad");
+        // consultar por la otra grafía da exactamente lo mismo
+        const c2 = (await detalle(ENTIDAD_GUION_SIN, "&refrescar=1")).cuerpo;
+        assert.strictEqual(c2.indice.procesos_contados, 4, "la grafía sin guion debe encontrar la misma entidad");
+        assert.strictEqual(c2.entidad_normalizada, c.entidad_normalizada,
+          "las dos grafías tienen que normalizar a la misma clave");
+        // …y escribiéndola a mano con tildes, minúsculas y espacios de más
+        const c3 = (await detalle("  empresa   de acueducto y alcantarillado eaaa ", "&refrescar=1")).cuerpo;
+        assert.strictEqual(c3.indice.procesos_contados, 4, "la normalización debe tolerar el texto que escribe una persona");
       }
 
       /* --- (b-bis) ÍNDICE DESACTUALIZADO: hay base pero no clasificación ---

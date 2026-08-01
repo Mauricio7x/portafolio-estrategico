@@ -378,6 +378,38 @@ visita— salían juntos la banda ⚪ y un promedio, sin nada que lo conciliara.
 conserva (12 procesos con oferentes son base de sobra) y ahora el `mensaje` dice por qué la banda
 sigue en ⚪ y con qué parámetro exacto se arregla.
 
+### Quién es «la misma entidad» (defecto de producción, ago 2026)
+
+Dos formas de confundir a dos entidades entre sí, las dos corregidas con prueba que falla sin la
+corrección:
+
+**Un NIT no identifica a una entidad.** Las regionales y unidades de un mismo organismo publican
+con el NIT de la matriz. El alias `nit:{NIT}` → `{ref: entidad}` iba **primero** en el orden de
+búsqueda, así que una entidad con su nombre bien escrito y su propio registro en el índice acababa
+enseñando el nivel de competencia de su hermana. Ahora:
+
+| Orden de búsqueda en `competenciaDe` | Por qué |
+| --- | --- |
+| 1.º clave canónica | El nombre es exacto: solo puede ser esta entidad |
+| 2.º clave legado (`norm` a secas) | Es como está escrito el hash que hay hoy en producción |
+| 3.º alias por NIT | El más **débil**: un NIT lo comparten las regionales de un organismo |
+
+Y el escritor **no publica alias para un NIT compartido por dos entidades** —un alias ambiguo no es
+un alias, es una respuesta equivocada— y los cuenta en `indice:competencia:meta.nits_ambiguos`. El
+alias sigue existiendo para lo que se creó: que un cambio de razón social no parta el historial.
+
+**La puntuación partía una entidad en dos.** `lib/competencia_detalle` tenía dos claves —una sin
+puntuación para agrupar el corpus y `norm` a secas para leer el hash—, así que
+«… RIOS NEGRO **-** NARE» y «… RIOS NEGRO NARE» se sumaban al contar (4 procesos) y no al leer (un
+registro de 3): el detalle enseñaba el promedio de un conjunto bajo una banda calculada sobre otro.
+No era un error de cálculo: eran **dos definiciones de «entidad» conviviendo**. Ahora hay una sola,
+`claveCanonica`, definida en `lib/indice_competencia` e importada por el detalle, y el índice
+agrupa con ella. Las dos direcciones no pueden volver a separarse porque no hay dos funciones que
+mantener.
+
+La clave anterior se conserva **solo para leer** (`claveLegado`): sin ese segundo intento,
+desplegar dejaría todo en ⚪ hasta que alguien reconstruyera el índice a mano.
+
 **Reconstruir el índice** para limpiar el hash viejo (no re-extrae nada, no requiere full):
 
 ```
