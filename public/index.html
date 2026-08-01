@@ -61,8 +61,11 @@
           </label>
           <label class="block">
             <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Anticipo mínimo declarado (%)</span>
-            <input id="f-anticipo" type="number" min="0" max="100" value="20"
+            <input id="f-anticipo" type="number" min="0" max="100" step="5" value="20" list="anticipos"
+                   title="0 = sin filtro. Los procesos sin anticipo declarado (la mayoría) pasan siempre."
                    class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+            <datalist id="anticipos"><option value="0"></option><option value="10"></option><option value="20"></option><option value="30"></option></datalist>
+            <span class="mt-1 block text-[11px] text-gray-400">0 = sin filtro · los «sin dato» nunca se excluyen</span>
           </label>
           <label class="block">
             <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuantía</span>

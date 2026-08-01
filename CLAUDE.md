@@ -63,6 +63,22 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   prefijo con la fase «Selección», que es justo donde se reciben ofertas.
 - **Modalidad por lista blanca**: Contratación Directa (incluida «(con ofertas)») y Licitación
   Privada fuera; Régimen Especial fuera SALVO «(con ofertas)»; desconocida → fuera.
+- **Convenios NO son licitaciones** (`es_convenio` en `lib/filtros.js`, corre ANTES que todo lo
+  demás del objeto): «AUNAR ESFUERZOS TÉCNICOS, ADMINISTRATIVOS Y FINANCIEROS…» es la fórmula del
+  convenio interadministrativo/de asociación y se colaba porque las entidades lo publican bajo
+  «Régimen Especial (con ofertas)». OJO con la precisión: «aunar esfuerzos/recursos» descarta esté
+  donde esté, pero «convenio interadministrativo» SOLO si encabeza el objeto — si no, se lleva por
+  delante la obra real que lo menciona de pasada («…en el marco del convenio 123»).
+- **UNSPSC se compara por CLASE (6 dígitos), no por producto (8)**: los 393 códigos de los RUP
+  terminan TODOS en «00» (inscripción a nivel de clase) y SECOP II publica muchas veces el
+  producto — la igualdad exacta de 8 dígitos exigía que la entidad hubiera publicado justo el
+  «…00», así que descartaba en silencio todo lo demás. El cambio es estrictamente más permisivo;
+  una clase ajena al RUP sigue fuera. **Requiere relanzar la full**: el prefiltro corre al
+  sincronizar, así que lo que la regla vieja descartó nunca entró a Redis.
+- **`/api/diagnostico`** (mismo token, solo lectura) da el EMBUDO paso a paso sobre el corpus real
+  más contrafactuales. Antes de tocar un filtro «porque salen pocos», MIRARLO: dice exactamente en
+  qué paso mueren los procesos y cuántos se recuperarían al relajar cada regla. Dos invariantes
+  probadas: los pasos suman el total, y `visibles` == el `total` de /api/oportunidades.
 - **Capa anti-suministro**: clases SOLO de segmentos de bienes + verbo de compra sin verbo de
   obra = compra disfrazada → fuera. El corte de «bienes» es TODO segmento UNSPSC < 70 (no la
   lista 30/39/43/48/56: eso dejaba servida la «compraventa de tubería PVC», segmento 40, el
