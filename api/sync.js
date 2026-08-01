@@ -26,16 +26,24 @@
        anteriores lo hace /api/sync/historico (manual, una vez).
 
    Cada licitación se ENRIQUECE (lib/negocio.enriquecer) ANTES de guardarse y
-   pasa la CASCADA DE FILTROS (lib/proyeccion.transformar) antes de tocar Redis
-   (guardar las ~500k filas/año del dataset completo reventaría Upstash y las
-   consultas):
+   pasa el PREFILTRO DE INGESTA (lib/proyeccion.transformar) antes de tocar
+   Redis (guardar las ~500k filas/año del dataset completo reventaría Upstash y
+   las consultas):
      1. modalidad_competitiva  (lib/filtros): fuera Contratación Directa,
         Régimen Especial sin ofertas, Licitación Privada, RFI.
      2. estado_abierto         (lib/filtros): fuera cerrados/desconocidos —
         SOLO en la carga full. El DELTA los CONSERVA a propósito (ver
         lib/proyeccion.repartirDelta).
-     3. compatibleConAlgunPerfil (lib/rup): objeto dentro de la unión de los
-        RUP, blacklist semántica y capa anti-suministro.
+     3. admisibleParaIngesta   (lib/filtros): ANCHO y sin perfiles — no es
+        convenio, no está en la blacklist y trae un UNSPSC de servicios/obra
+        (segmentos 70-95) o de una familia que algún RUP inscribe; o, sin
+        código utilizable, un objeto textualmente de obra.
+
+   Lo que este endpoint YA NO decide (jul 2026): el matching UNSPSC por perfil,
+   la pertinencia del objeto, el anti-suministro y la capacidad. Todo eso corre
+   en /api/oportunidades al servir, así que afinar esas reglas o cargar un RUP
+   nuevo NO exige volver a bajar el año.
+
    El conteo de descartadas queda en meta para auditoría. Chunks mensuales
    comprimidos (zlib.deflate nivel 6, ≤500 KB).
 

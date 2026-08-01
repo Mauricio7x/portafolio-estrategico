@@ -1,0 +1,74 @@
+{
+  "_meta": {
+    "que_es": "Vocabulario distintivo por FAMILIA UNSPSC (4 dígitos). Lo usa lib/texto_unspsc.js como co-señal cuando un proceso no trae código utilizable: si el objeto comparte >=3 términos con una familia que el RUP del perfil sí tiene, el proceso se rescata con el tier más débil ('texto') y la UI pide verificar el pliego.",
+    "origen": "SEMILLA CURADA A MANO con el vocabulario real de la contratación de obra pública en Colombia. NO es el resultado de un cálculo estadístico: el entorno donde se escribió no alcanza datos.gov.co. Sirve para que la capa funcione desde el primer despliegue.",
+    "como_reemplazarla": "Con el corpus histórico ya en Redis: GET /api/sync/historico?reconstruir_vocabulario=true (mismo HISTORICO_TOKEN). Deriva el vocabulario DE VERDAD (TF-IDF simplificado sobre los objetos de los procesos adjudicados), lo publica en la clave Redis 'vocabulario:unspsc' y a partir de ahí manda el derivado: esta semilla queda solo como respaldo.",
+    "solo_familias_del_rup": "Se siembran únicamente familias que alguno de los dos RUP tiene inscritas; el matching por texto exige además que la familia esté en el RUP del perfil consultado, así que sembrar otras no serviría de nada.",
+    "formato": "familias: { \"FFFF\": [\"termino\", ...] }. Términos en minúscula, sin tildes y con ñ->n (se comparan contra texto normalizado con lib/semantica.norm)."
+  },
+  "familias": {
+    "7210": [
+      "demolicion", "descapote", "desmonte", "limpieza", "terreno", "adecuacion",
+      "preparacion", "cerramiento", "campamento", "provisional", "escombros",
+      "retiro", "maquinaria", "volqueta", "retroexcavadora", "alquiler"
+    ],
+    "7212": [
+      "edificio", "edificacion", "aula", "aulas", "sede", "sedes", "colegio",
+      "escuela", "institucion", "educativa", "hospital", "puesto", "salud",
+      "vivienda", "viviendas", "mejoramiento", "remodelacion", "ampliacion",
+      "cubierta", "mamposteria", "enchape", "bateria", "sanitaria", "comedor",
+      "salon", "biblioteca", "coliseo", "polideportivo", "cancha"
+    ],
+    "7214": [
+      "placa", "huella", "placahuella", "pavimentacion", "pavimento", "asfalto",
+      "afirmado", "carretera", "carreteable", "terciaria", "vial", "vias",
+      "alcantarilla", "culvert", "cuneta", "cunetas", "sardinel", "anden",
+      "andenes", "gavion", "gaviones", "muro", "contencion", "excavacion",
+      "terraplen", "subbase", "granular", "concreto", "puente", "peatonal",
+      "drenaje", "box", "banqueo", "obra", "obras"
+    ],
+    "7215": [
+      "hidrosanitaria", "hidraulica", "sanitaria", "electrica", "electricas",
+      "acometida", "luminaria", "luminarias", "iluminacion", "alumbrado",
+      "cableado", "subestacion", "transformador", "tablero", "pintura",
+      "impermeabilizacion", "carpinteria", "metalica", "instalacion",
+      "redes", "tuberia", "acueducto", "alcantarillado", "pozo", "tanque"
+    ],
+    "7710": [
+      "ambiental", "ambientales", "residuos", "vertimientos", "mitigacion",
+      "compensacion", "forestal", "reforestacion", "arborizacion", "monitoreo",
+      "muestreo", "licencia", "manejo", "saneamiento", "erosion", "talud",
+      "taludes", "cuenca", "quebrada", "rio"
+    ],
+    "8110": [
+      "estudios", "diseno", "disenos", "consultoria", "interventoria",
+      "supervision", "tecnica", "topografia", "topografico", "geotecnico",
+      "suelos", "estructural", "hidraulico", "hidrologico", "calculo",
+      "planos", "factibilidad", "prefactibilidad", "presupuesto",
+      "especificaciones", "apiques", "laboratorio", "ensayos"
+    ],
+    "9510": [
+      "terreno", "terrenos", "lote", "predio", "predios", "adecuacion",
+      "urbanizacion", "loteo", "parcelacion", "cerramiento", "encerramiento"
+    ],
+    "9512": [
+      "edificacion", "estructura", "estructuras", "permanente", "vivienda",
+      "muro", "muros", "tanque", "tanques", "torre", "bodega", "cubierta",
+      "instalaciones", "planta", "reservorio"
+    ],
+    "3010": [
+      "acero", "cemento", "concreto", "agregados", "varilla", "malla",
+      "ladrillo", "bloque", "arena", "triturado", "grava", "hierro",
+      "estructural", "prefabricado", "materiales"
+    ],
+    "4017": [
+      "tuberia", "accesorios", "valvula", "valvulas", "hidrante", "codo",
+      "union", "acople", "polietileno", "presion", "novafort", "sanitaria",
+      "conduccion", "distribucion", "acueducto"
+    ],
+    "7211": [
+      "residencial", "vivienda", "viviendas", "unifamiliar", "mejoramiento",
+      "saludable", "habitacional", "urbanizacion", "casa", "casas"
+    ]
+  }
+}

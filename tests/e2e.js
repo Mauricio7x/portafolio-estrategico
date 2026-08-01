@@ -17,18 +17,30 @@
         filtro RUP, estado abierto y modalidad competitiva verificados.
      c-bis. Corpus completo Helder: sin Contratación Directa, sin Adjudicado,
         sin suministros puros (capa anti-suministro); la instalación/montaje
-        (verbo de obra) y los Convocado sí aparecen.
+        (verbo de obra) y los Convocado sí aparecen. Además:
+        · los CUATRO falsos positivos de producción (impresión/fotocopia,
+          alimentos, internet, cumpleaños — todos con UNSPSC del RUP) NO se
+          sirven, aunque sí están GUARDADOS en Redis (ingesta ancha);
+        · los falsos negativos sí: obra publicada por familia (tier "familia"),
+          por segmento suelto y con el código ilegible (tier "texto");
+        · la clase AFÍN todavía no se ve — aún no se ha aprendido nada.
      d. perfil=genesis&anticipo_min=25&cuantia_rango=medio&ordenar_por=puntaje
         → filtros aplicados y orden descendente verificado.
      d-bis. Consorcio: perfil=juntos y alias ?perfil=consorcio equivalentes;
         RUP del plural verificado (K = suma de integrantes).
      e. /api/sync/historico: protegido (sin token/token malo/sin variable),
         extracción reanudable de los 2 años anteriores con datos de
-        adjudicación, y construcción automática del índice de competencia
-        (tertiles verificados sobre 4 entidades mock: 5, 8, 12 y 3 procesos).
+        adjudicación, y construcción automática de los TRES derivados:
+        índice de competencia (tertiles verificados sobre 4 entidades mock:
+        5, 8, 12 y 3 procesos), EQUIVALENCIAS funcionales (un único par supera
+        los tres umbrales) y VOCABULARIO por familia. Reconstruir cada uno por
+        separado no re-extrae nada.
      f. Orden por atractividad: baja → media → sin_dato → alta (default de la
         app), desempate por puntaje, filtro competencia_entidad, y la garantía
         de que /api/oportunidades no lee del histórico ni expone adjudicaciones.
+        Además: la clase AFÍN pasa a verse por las equivalencias recién
+        aprendidas, SIN volver a sincronizar (la promesa de separar ingesta de
+        juicio, verificada de punta a punta).
      g. Delta: fila nueva + cambio de estado a Adjudicado → la nueva aparece, la
         adjudicada desaparece del listado (reemplazo por :updated_at) y SE MUDA
         al histórico con su adjudicatario; la full de higiene no lo borra.
@@ -151,8 +163,29 @@ function generarDataset() {
           (guarda contra el falso positivo de excluir por la palabra suelta).
      4.   Obra con UNSPSC a nivel de PRODUCTO (72141015) dentro de una clase
           que sí está en el RUP (72141000) → SÍ debe salir. Con la comparación
-          exacta de 8 dígitos anterior, este proceso era invisible. */
-const EXTRAS_POR_MES = 4;
+          exacta de 8 dígitos anterior, este proceso era invisible.
+
+   FALSOS POSITIVOS confirmados en producción (código del RUP + objeto ajeno).
+   Los cinco tienen modalidad competitiva, estado abierto y cuantía dentro del
+   K de todos los perfiles: si la capa de PERTINENCIA fallara, se servirían de
+   verdad — las aserciones negativas no pueden pasar vacuamente.
+     5.   Impresión y fotocopia        (80101600, en el RUP de Helder)
+     6.   Suministro de alimentos      (80111600, en el RUP de Helder)
+     7.   Internet dedicado            (80101600)
+     8.   Cumpleaños del municipio     (80111600, logística de eventos)
+
+   FALSOS NEGATIVOS que el matching jerárquico rescata:
+     9.   Obra publicada a nivel de FAMILIA (72140000): el prefijo de 6 dígitos
+          la leía como «clase 721400», inexistente, y la tiraba.
+     10.  Obra publicada solo con el SEGMENTO (72000000): no basta por sí sola,
+          la confirma el objeto → tier "texto".
+     11.  Obra con el código ILEGIBLE (número de 10 dígitos): el `\d{8}` viejo
+          fabricaba un código falso a partir de él; ahora se descarta y el
+          objeto la rescata.
+     12.  Proceso de una clase AFÍN (80141600) sin vocabulario de obra: solo
+          puede entrar por las equivalencias aprendidas del histórico. */
+const EXTRAS_POR_MES = 12;
+const CLASE_AFIN = "80141600";   // fuera de los dos RUP; afín a 72141000 en el histórico
 let _seqExtra = 0;
 function extrasDelMes(mes) {
   const base = (n, extra) => ({
@@ -191,6 +224,51 @@ function extrasDelMes(mes) {
       descripci_n_del_procedimiento: "Obra civil de mejoramiento vial con pavimentación",
       codigo_principal_de_categoria: "V1.72141015", // producto de la clase 721410 (RUP: 72141000)
     }),
+
+    /* ---- falsos positivos: UNSPSC del RUP con objeto que NO es obra ---- */
+    base(5, {
+      nombre_del_procedimiento: `PRESTACION DE SERVICIOS DE IMPRESIÓN Y FOTOCOPIA ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Servicio de reprografía para las dependencias de la alcaldía",
+      codigo_principal_de_categoria: "V1.80101600",
+    }),
+    base(6, {
+      nombre_del_procedimiento: `SUMINISTRO DE ALIMENTOS PARA PREPARAR RACIONES ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Entrega de mercados para la población vulnerable",
+      codigo_principal_de_categoria: "V1.80111600",
+    }),
+    base(7, {
+      nombre_del_procedimiento: `PRESTACIÓN DEL SERVICIO DE INTERNET DEDICADO ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Canal dedicado para las sedes administrativas",
+      codigo_principal_de_categoria: "V1.80101600",
+    }),
+    base(8, {
+      nombre_del_procedimiento: `APOYO LOGISTICO PARA EL CUMPLEAÑOS DEL MUNICIPIO ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Tarima, sonido y logística para la celebración",
+      codigo_principal_de_categoria: "V1.80111600",
+    }),
+
+    /* ---- falsos negativos que el matching jerárquico rescata ---- */
+    base(9, {
+      nombre_del_procedimiento: `Construcción de puente vehicular publicado por familia ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Obra civil de puente en concreto reforzado",
+      codigo_principal_de_categoria: "V1.72140000", // FAMILIA, no clase
+    }),
+    base(10, {
+      nombre_del_procedimiento: `Rehabilitación de vía urbana publicada por segmento ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Obra de rehabilitación vial con pavimento asfáltico",
+      codigo_principal_de_categoria: "V1.72000000", // SEGMENTO suelto
+    }),
+    base(11, {
+      nombre_del_procedimiento: `Pavimentación de andenes con código ilegible ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Obra de urbanismo y espacio público en el casco urbano",
+      codigo_principal_de_categoria: "1234567890", // 10 dígitos: no es un UNSPSC
+    }),
+    base(12, {
+      // sin una sola palabra de obra: solo las equivalencias pueden rescatarlo
+      nombre_del_procedimiento: `Gestion tecnica y administrativa del proyecto fase II ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Acompañamiento profesional al proyecto municipal",
+      codigo_principal_de_categoria: `V1.${CLASE_AFIN}`,
+    }),
   ];
 }
 
@@ -214,6 +292,54 @@ const ENTIDADES_HIST = [
   { entidad: "ALCALDÍA DE IBAGUÉ", nit: "800100004", ofertas: [1, 2, 1] },
 ];
 const PROMEDIO_ESPERADO = { "ALCALDÍA DE PURIFICACIÓN": 3, "GOBERNACIÓN DEL TOLIMA": 8, "IDU": 18 };
+
+/* ---- bloque para las EQUIVALENCIAS FUNCIONALES ----
+   Objetivo: que el par (72141000 → 80141600) supere los tres umbrales
+   (lift ≥ 3, soporte ≥ 20 procesos en la clase inscrita, ≥ 5 adjudicatarios
+   en la intersección) y que NINGÚN otro par los supere.
+
+     · NITS_AFINES adjudicatarios ganan en las DOS clases          → intersección
+     · NITS_RELLENO adjudicatarios ganan solo en otra clase del RUP → bajan P(B)
+       y con ello suben el lift: lift = total_NITs / |ganadores de A|
+
+   Estos procesos NO traen columna de oferentes a propósito: así el índice de
+   competencia los cuenta como «sin dato» y las cuatro entidades del test
+   siguen dando exactamente los mismos tertiles. */
+const CLASE_AFIN_HIST = "80141600";  // fuera de los dos RUP
+const NITS_AFINES = 6;               // > el mínimo de 5 adjudicatarios
+const NITS_RELLENO = 80;             // 34 ganadores en A sobre 114 NITs → lift ≈ 3,35
+const HIST_EQUIVALENCIAS = NITS_AFINES * 2 + NITS_RELLENO;
+
+function generarDatasetEquivalencias() {
+  const filas = [];
+  const fila = (i, clase, nit) => ({
+    ":id": `eqv-${String(i).padStart(4, "0")}`,
+    ":updated_at": `${MESES_HIST[i % MESES_HIST.length]}-20T10:00:00.000Z`,
+    id_del_proceso: `CO1.EQV.${i}`, referencia_del_proceso: `REF-EQV-${i}`,
+    fecha_de_publicacion_del: `${MESES_HIST[i % MESES_HIST.length]}-05T08:00:00.000`,
+    entidad: "ENTIDAD SIN CONTEO DE OFERENTES", nit_entidad: "800100009",
+    ciudad_entidad: "IBAGUÉ", departamento_entidad: "Tolima",
+    modalidad_de_contratacion: "Licitación pública",
+    estado_del_procedimiento: "Adjudicado", fase: "Adjudicación", adjudicado: "Si",
+    precio_base: String(150e6 + i), duracion: "6", unidad_de_duracion: "Meses",
+    nombre_del_procedimiento: `Construcción de obra adjudicada ${i}`,
+    descripci_n_del_procedimiento: "Obra civil ya ejecutada",
+    codigo_principal_de_categoria: `V1.${clase}`, tipo_de_contrato: "Obra",
+    nombre_del_proveedor: `CONSTRUCTORA EQV ${nit} SAS`,
+    nit_del_proveedor_adjudicado: nit,
+    valor_total_adjudicacion: String(140e6 + i),
+    fecha_adjudicacion: `${MESES_HIST[i % MESES_HIST.length]}-25T10:00:00.000`,
+    urlproceso: { url: `https://community.secop.gov.co/eqv/${i}` },
+  });
+  let i = 0;
+  for (let k = 0; k < NITS_AFINES; k++) {
+    const nit = `90200000${k}`;
+    filas.push(fila(i++, "72141000", nit));      // clase inscrita en los dos RUP
+    filas.push(fila(i++, CLASE_AFIN_HIST, nit)); // clase afín, fuera de los RUP
+  }
+  for (let k = 0; k < NITS_RELLENO; k++) filas.push(fila(i++, "72151000", `90300${String(k).padStart(4, "0")}`));
+  return filas;
+}
 
 function generarDatasetHistorico() {
   const filas = [];
@@ -443,6 +569,9 @@ async function main() {
   const indiceComp = require("../lib/indice_competencia.js");
   const { rup_valido } = require("../lib/rup.js");
   const filtros = require("../lib/filtros.js");
+  const unspsc = require("../lib/unspsc.js");
+  const equivalencias = require("../lib/equivalencias.js");
+  const textoUnspsc = require("../lib/texto_unspsc.js");
   const capacidad = require("../lib/capacidad.js");
   const { PERFILES } = require("../lib/perfiles.js");
   const redis = crearRedis({});
@@ -601,27 +730,251 @@ async function main() {
     console.log(`· unidad convenios: ${convenios.length} excluidos, ${obrasLegitimas.length} obras legítimas conservadas`);
   }
 
-  /* unidad: UNSPSC por CLASE, no por producto. Los 393 códigos de los RUP
-     terminan en "00" (nivel de clase); SECOP II publica muchas veces el
-     producto. La comparación exacta de 8 dígitos los hacía invisibles. */
+  /* unidad: NORMALIZACIÓN de códigos UNSPSC. El `\d{8}` anterior fabricaba
+     códigos falsos a partir de cualquier número largo del campo. */
+  {
+    const casos = [
+      ["V1.72141000", ["72141000"], []],
+      ["v1_72141015", ["72141015"], []],
+      ["V1.72141000 V1.30111500", ["72141000", "30111500"], []],
+      ["72141000;72151000", ["72141000", "72151000"], []],
+      ["V1.7214", ["72140000"], []],            // familia: se rellena a 8
+      ["V1.721410", ["72141000"], []],          // clase
+      ["V1.72", ["72000000"], []],              // segmento
+      ["1234567890", [], ["1234567890"]],       // 10 dígitos: NO es un UNSPSC
+      ["123", [], ["123"]],                     // longitud inválida
+      ["00000000", [], ["00000000"]],           // segmento 00 no existe
+      ["", [], []],
+    ];
+    for (const [crudo, esperados, invalidos] of casos) {
+      const r = unspsc.extraerCodigos(crudo);
+      assert.deepStrictEqual(r.codigos.map((c) => c.codigo), esperados, `extraerCodigos(«${crudo}»)`);
+      assert.deepStrictEqual(r.invalidos, invalidos, `inválidos de «${crudo}»`);
+    }
+    // el NIVEL se lee por los pares "00" finales: es lo que distingue
+    // 72000000 (segmento) de 72141015 (producto)
+    assert.strictEqual(unspsc.normalizarCodigo("72000000").tipo, "segmento");
+    assert.strictEqual(unspsc.normalizarCodigo("72140000").tipo, "familia");
+    assert.strictEqual(unspsc.normalizarCodigo("72141000").tipo, "clase");
+    assert.strictEqual(unspsc.normalizarCodigo("72141015").tipo, "producto");
+    assert.strictEqual(unspsc.normalizarCodigo("72100000").tipo, "familia", "7210 es familia, no segmento");
+    console.log(`· unidad UNSPSC (normalización): ${casos.length} campos tokenizados, niveles correctos`);
+  }
+
+  /* unidad: MATCHING JERÁRQUICO bidireccional. Los cuatro casos del encargo. */
   {
     assert.ok([...PERFILES.juntos.unspsc].every((c) => c.endsWith("00")),
       "supuesto roto: los códigos del RUP ya no están a nivel de clase");
-    const conProducto = {
-      nombre_del_procedimiento: "Mejoramiento de vía terciaria",
-      descripci_n_del_procedimiento: "Obra civil de pavimentación",
-      codigo_principal_de_categoria: "V1.72141015", // producto de la clase 721410
-    };
+    const idx = unspsc.indiceDe(PERFILES.helder.unspsc);
+    const tier = (codigo) => unspsc.emparejar(unspsc.extraerCodigos(codigo).codigos, idx).tier;
+
+    // a. RUP 72141000 ⊃ proceso 72141015 (producto dentro de la clase)
+    assert.strictEqual(tier("72141015"), "clase");
     assert.strictEqual(PERFILES.helder.unspsc.has("72141015"), false,
       "el código de producto NO está literalmente en el RUP (esa es la premisa)");
-    assert.strictEqual(filtros.evaluarObjeto(conProducto, PERFILES.helder).ok, true,
-      "un producto de una clase inscrita en el RUP debe quedar cubierto");
-    // y una clase realmente ajena sigue fuera
-    const ajeno = { ...conProducto, codigo_principal_de_categoria: "V1.53102700" }; // ropa
-    assert.strictEqual(filtros.evaluarObjeto(ajeno, PERFILES.helder).ok, false,
-      "una clase fuera del RUP no puede colarse por la comparación por clase");
-    assert.strictEqual(filtros.claseDe("72141015"), "721410");
-    console.log("· unidad UNSPSC: match por clase (6 díg) cubre productos; las clases ajenas siguen fuera");
+    // b. proceso 72140000 (familia) ⊃ RUP 72141000 → match AMPLIO
+    assert.strictEqual(tier("72140000"), "familia");
+    // c. mismo código
+    assert.strictEqual(tier("72141000"), "clase");
+    // d. el SEGMENTO suelto NO basta por sí solo (haría casar todo el 72)
+    assert.strictEqual(tier("72000000"), "ninguno");
+    assert.strictEqual(unspsc.emparejar(unspsc.extraerCodigos("72000000").codigos, idx).segmento_afin, true,
+      "el segmento afín debe quedar anotado para que lo confirme el texto");
+    // e. familia distinta → NO match
+    assert.strictEqual(tier("80111500"), "ninguno");
+    assert.strictEqual(tier("53102700"), "ninguno"); // ropa
+
+    // el índice precomputado del perfil (clases/familias/segmentos)
+    assert.strictEqual(idx.clases.size, PERFILES.helder.unspsc.size, "193 clases de Helder");
+    assert.ok(idx.familias.size < idx.clases.size && idx.familias.size > 0, "familias derivadas");
+    assert.strictEqual(idx.segmentos.size, 26, "26 segmentos en el RUP de Helder");
+    // el consorcio usa la UNIÓN, jamás la intersección
+    assert.strictEqual(PERFILES.juntos.unspsc.size,
+      new Set([...PERFILES.helder.unspsc, ...PERFILES.genesis.unspsc]).size,
+      "el consorcio debe ver la unión de los dos RUP");
+    assert.ok(PERFILES.juntos.unspsc.size > PERFILES.genesis.unspsc.size,
+      "la unión no puede ser menor que cualquiera de los dos RUP");
+    console.log("· unidad UNSPSC (jerarquía): clase ⊃ producto, familia ⊃ clase, segmento NO basta");
+  }
+
+  /* unidad: PERTINENCIA del objeto. Los cinco falsos positivos confirmados en
+     producción, con su código UNSPSC realmente inscrito en el RUP. */
+  {
+    const casos = [ // [objeto, código, ¿pertinente?]
+      ["CONSTRUCCIÓN DE AULA ESCOLAR", "V1.80101600", true],
+      ["PRESTACION DE SERVICIOS DE IMPRESIÓN Y FOTOCOPIA", "V1.80101600", false],
+      ["INTERVENTORÍA TÉCNICA DE OBRA", "V1.80101500", true],
+      ["SUMINISTRO DE ALIMENTOS PARA PREPARAR RACIONES", "V1.80111600", false],
+      ["APOYO LOGISTICO PARA EL CUMPLEAÑOS DEL MUNICIPIO", "V1.80111600", false],
+      ["PRESTACIÓN DEL SERVICIO DE INTERNET DEDICADO", "V1.80101600", false],
+      ["APOYO LOGISTICO PARA GRUPO DE PILONERAS", "V1.93141700", false],
+      // el código de obra pura sostiene un objeto escueto (no se bloquea por
+      // falta de información: eso sería un falso negativo)
+      ["MEJORAMIENTO SEDE FASE II", "V1.72141000", true],
+      // …y la logística DE OBRA no es un evento
+      ["LOGISTICA DE OBRA PARA LA CONSTRUCCIÓN DEL PARQUE", "V1.72141000", true],
+    ];
+    for (const [nombre, codigo, esperado] of casos) {
+      const ev = filtros.evaluarObjeto(
+        { nombre_del_procedimiento: nombre, descripci_n_del_procedimiento: "", codigo_principal_de_categoria: codigo },
+        PERFILES.helder);
+      assert.strictEqual(ev.ok, esperado, `«${nombre}» esperaba ${esperado ? "PASAR" : "caer"} (motivo: ${ev.motivo})`);
+      assert.strictEqual(ev.tier, "clase", `«${nombre}»: el código sí está en el RUP, el tier debía ser "clase"`);
+      if (!esperado) {
+        assert.strictEqual(ev.paso, "no_pertinente", `«${nombre}» debía caer por PERTINENCIA, cayó en «${ev.paso}»`);
+        assert.strictEqual(ev.pertinencia.nivel, "rojo");
+        assert.ok(ev.termino, "el veredicto debe decir QUÉ término lo delató");
+      } else {
+        assert.ok(["verde", "amarillo"].includes(ev.pertinencia.nivel), `«${nombre}»: nivel de pertinencia`);
+      }
+    }
+    // el veredicto es GRADUADO, nunca booleano: tipo de trabajo detectado
+    const consul = filtros.evaluarObjeto({ nombre_del_procedimiento: "INTERVENTORÍA TÉCNICA DE OBRA", codigo_principal_de_categoria: "V1.80101500" }, PERFILES.helder);
+    assert.strictEqual(consul.pertinencia.tipo, "consultoria");
+    const infra = filtros.evaluarObjeto({ nombre_del_procedimiento: "Optimización de la red de acueducto", codigo_principal_de_categoria: "V1.72141000" }, PERFILES.helder);
+    assert.strictEqual(infra.pertinencia.tipo, "infraestructura");
+    // «mantenimiento» solo cuenta como obra si va con infraestructura
+    assert.strictEqual(filtros.hayVerboDeObra(filtros.norm("Mantenimiento de la red de alcantarillado")), true);
+    assert.strictEqual(filtros.hayVerboDeObra(filtros.norm("Mantenimiento de vehículos oficiales")), false);
+    console.log(`· unidad pertinencia: ${casos.length} objetos clasificados (los falsos positivos de producción, fuera)`);
+  }
+
+  /* unidad: EQUIVALENCIAS funcionales. El lift se calcula sobre
+     ADJUDICATARIOS, no sobre procesos: una entidad que saque 40 procesos
+     gemelos no puede fabricar una equivalencia. */
+  {
+    const acc = { porNit: {}, procesosPorClase: {}, nNits: 0 };
+    // 6 adjudicatarios ganan en la clase inscrita (721410) Y en la afín (801416)
+    for (let k = 0; k < 6; k++) acc.porNit[`nit:9020000${k}`] = ["721410", "801416"];
+    // 40 adjudicatarios más, solo en clases del RUP: bajan P(B) y suben el lift
+    for (let k = 0; k < 40; k++) acc.porNit[`nit:9030000${k}`] = ["721510"];
+    acc.procesosPorClase = { 721410: 30, 801416: 6, 721510: 40 };
+    const { mapa, totalNits } = equivalencias.calcularPares(acc);
+    assert.strictEqual(totalNits, 46);
+    assert.ok(mapa["801416"], "la clase afín debía quedar registrada");
+    assert.strictEqual(mapa["801416"][0].clase, "721410");
+    assert.ok(mapa["801416"][0].lift >= equivalencias.LIFT_MIN, `lift ${mapa["801416"][0].lift} bajo el umbral`);
+    assert.strictEqual(mapa["801416"][0].adjudicatarios, 6);
+    assert.ok(!mapa["721410"], "una clase YA inscrita no necesita equivalencia");
+
+    // umbral de adjudicatarios: con 4 en la intersección no hay equivalencia
+    const flojo = { porNit: {}, procesosPorClase: { 721410: 30, 801416: 4, 721510: 40 }, nNits: 0 };
+    for (let k = 0; k < 4; k++) flojo.porNit[`nit:a${k}`] = ["721410", "801416"];
+    for (let k = 0; k < 40; k++) flojo.porNit[`nit:b${k}`] = ["721510"];
+    assert.deepStrictEqual(equivalencias.calcularPares(flojo).mapa, {},
+      "con menos de 5 adjudicatarios en común no puede nacer una equivalencia");
+    // umbral de soporte: la clase inscrita necesita ≥20 procesos históricos
+    const pocoSoporte = { ...acc, procesosPorClase: { 721410: 10, 801416: 6, 721510: 40 } };
+    assert.deepStrictEqual(equivalencias.calcularPares(pocoSoporte).mapa, {},
+      "sin soporte suficiente en la clase inscrita, el cociente es ruido");
+
+    // y la búsqueda: un proceso de la clase afín casa con el perfil que tiene
+    // la clase inscrita, y NO con uno que no la tenga
+    const idxHelder = unspsc.indiceDe(PERFILES.helder.unspsc);
+    const cod = unspsc.extraerCodigos("V1.80141600").codigos;
+    const eq = equivalencias.equivalenteDe(mapa, cod, idxHelder);
+    assert.ok(eq && eq.tier === "equivalente", "el proceso de la clase afín debía casar por equivalencia");
+    assert.strictEqual(eq.codigo_rup, "72141000");
+    assert.ok(/evidencia hist[oó]rica/i.test(eq.mensaje), "el mensaje debe decir de dónde sale la afinidad");
+    assert.strictEqual(equivalencias.equivalenteDe({ 801416: [{ clase: "999999", lift: 9 }] }, cod, idxHelder), null,
+      "una afinidad hacia una clase que el perfil NO tiene no sirve de nada");
+    console.log("· unidad equivalencias: lift por adjudicatarios, tres umbrales y búsqueda por perfil");
+  }
+
+  /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
+  {
+    const idx = unspsc.indiceDe(PERFILES.helder.unspsc);
+    const voc = textoUnspsc.vocabularioActivo(null); // semilla del repositorio
+    assert.strictEqual(voc.fuente, "semilla");
+    // el derivado del histórico se MEZCLA con la semilla, familia a familia:
+    // una derivación flaca no puede dejar sin señal a las demás familias
+    const mezcla = textoUnspsc.vocabularioActivo({ familias: { 7214: ["alfa", "beta", "gamma", "delta"] } });
+    assert.strictEqual(mezcla.derivadas, 1);
+    assert.strictEqual(mezcla.indice.size, voc.indice.size, "la mezcla conserva todas las familias de la semilla");
+    assert.ok(mezcla.indice.get("7214").has("alfa"), "el derivado manda en SU familia");
+    assert.ok(mezcla.indice.get("8110").has("topografia"), "la semilla sigue en las familias sin derivado");
+    assert.ok(voc.indice.size > 0, "la semilla del repositorio no se cargó");
+    // ≥3 términos distintivos de una familia que el perfil SÍ tiene
+    const sug = textoUnspsc.sugerirFamilia(
+      filtros.norm("Construcción de placa huella y cunetas en la vía terciaria"), voc, idx.familias);
+    assert.ok(sug && sug.familia === "7214", `esperaba familia 7214, llegó ${sug && sug.familia}`);
+    assert.ok(sug.terminos.length >= 3, "el umbral es de 3 términos distintivos");
+    // dos términos no bastan
+    assert.strictEqual(textoUnspsc.sugerirFamilia(filtros.norm("Compra de concreto"), voc, idx.familias), null);
+    // una familia que el perfil no tiene no puede sugerirse
+    assert.strictEqual(textoUnspsc.sugerirFamilia(
+      filtros.norm("Suministro de tuberia con valvula y accesorios de acueducto"), voc, new Set(["9999"])), null);
+
+    // derivación TF-IDF: un término que sale en TODAS las familias no distingue
+    const registros = [
+      ...Array.from({ length: 25 }, (_, i) => ({ f: ["7214"], t: `contrato construccion placa huella vereda ${i}` })),
+      ...Array.from({ length: 25 }, (_, i) => ({ f: ["8110"], t: `contrato estudios disenos topografia proyecto ${i}` })),
+    ];
+    const der = textoUnspsc.derivarVocabulario(registros, { familiasDe: (r) => r.f, textoDe: (r) => r.t });
+    assert.ok(der.familias["7214"].includes("placa"), "el término distintivo debía sobrevivir");
+    assert.ok(!der.familias["7214"].includes("contrato"), "un término presente en todas las familias no distingue nada");
+    assert.ok(der.familias["8110"].includes("topografia"));
+    console.log(`· unidad texto: vocabulario semilla (${voc.indice.size} familias), umbral de 3 términos y TF-IDF`);
+  }
+
+  /* unidad: INGESTA vs JUICIO. La ingesta guarda ancho (no sabe de perfiles);
+     el juicio fino descarta al servir. Es lo que permite afinar el matching
+     sin volver a bajar el año entero. */
+  {
+    const casos = [ // [licitación, ¿se GUARDA?, ¿la ve HELDER?]
+      // servicio administrativo con código del RUP: se guarda, no se sirve
+      [{ nombre_del_procedimiento: "PRESTACION DE SERVICIOS DE IMPRESIÓN Y FOTOCOPIA", codigo_principal_de_categoria: "V1.80101600" }, true, false],
+      // obra con código ajeno a los RUP: se guarda (segmento de servicios)…
+      [{ nombre_del_procedimiento: "Construcción de placa huella", codigo_principal_de_categoria: "V1.78111800" }, true, true],
+      // …y una obra sin código también, por el objeto
+      [{ nombre_del_procedimiento: "Construcción de placa huella rural" }, true, true],
+      // un convenio jamás entra
+      [{ nombre_del_procedimiento: "AUNAR ESFUERZOS PARA EL MEJORAMIENTO DE VÍAS", codigo_principal_de_categoria: "V1.72141000" }, false, false],
+      // ni un objeto de la blacklist (ningún RUP de obra lo querrá nunca)
+      [{ nombre_del_procedimiento: "Adquisición de caninos antinarcóticos", codigo_principal_de_categoria: "V1.72141000" }, false, false],
+      // ni un bien de una familia que ningún RUP inscribe, sin objeto de obra
+      [{ nombre_del_procedimiento: "Compra de instrumentos musicales", codigo_principal_de_categoria: "V1.60121000" }, false, false],
+    ];
+    for (const [lic, guarda, sirve] of casos) {
+      assert.strictEqual(filtros.admisibleParaIngesta(lic), guarda,
+        `ingesta de «${lic.nombre_del_procedimiento}» esperaba ${guarda}`);
+      assert.strictEqual(filtros.evaluarObjeto(lic, PERFILES.helder).ok, sirve,
+        `juicio de «${lic.nombre_del_procedimiento}» esperaba ${sirve}`);
+    }
+    // el prefiltro de ingesta NO puede depender de los RUP: si dependiera,
+    // cargar un RUP nuevo obligaría a re-sincronizar (el bug estructural)
+    assert.strictEqual(filtros.admisibleParaIngesta.length, 1, "admisibleParaIngesta no recibe perfil");
+    console.log(`· unidad ingesta/juicio: ${casos.length} casos (la ingesta guarda lo que el juicio descarta)`);
+  }
+
+  /* unidad: PRESUPUESTO DE TIEMPO. Los dos límites del encargo, medidos sobre
+     un corpus del tamaño real (2 600 procesos):
+       ingesta  < 1 ms por proceso (corre dentro de la sincronización)
+       consulta < 500 ms por el corpus entero (corre en cada petición) */
+  {
+    const N = 2600;
+    const corpus = Array.from({ length: N }, (_, i) => ({
+      nombre_del_procedimiento: [
+        `Construcción de placa huella en la vereda ${i}`,
+        `PRESTACION DE SERVICIOS DE IMPRESIÓN Y FOTOCOPIA ${i}`,
+        `Mantenimiento de la red de alcantarillado sector ${i}`,
+        `Gestion tecnica y administrativa del proyecto fase ${i}`,
+      ][i % 4],
+      descripci_n_del_procedimiento: `Descripción del proceso número ${i} con detalle suficiente para ejercitar los regex de pertinencia y de anticipo, incluyendo texto de relleno realista.`,
+      codigo_principal_de_categoria: ["V1.72141015", "V1.80101600", "V1.72140000", "1234567890"][i % 4],
+      precio_base: String(200e6 + i),
+    }));
+
+    let t = Date.now();
+    for (const l of corpus) filtros.admisibleParaIngesta(l);
+    const msIngesta = Date.now() - t;
+    assert.ok(msIngesta < N, `la ingesta tardó ${msIngesta} ms en ${N} procesos (límite: 1 ms por proceso)`);
+
+    t = Date.now();
+    for (const l of corpus) filtros.evaluarObjeto(l, PERFILES.helder, {});
+    const msConsulta = Date.now() - t;
+    assert.ok(msConsulta < 500, `el juicio fino tardó ${msConsulta} ms sobre ${N} procesos (límite: 500 ms)`);
+    console.log(`· unidad rendimiento: ingesta ${msIngesta} ms y juicio ${msConsulta} ms sobre ${N} procesos (límites 2600/500)`);
   }
 
   /* unidad: anti-suministro — bloquea la compra pura, jamás la obra que
@@ -725,9 +1078,10 @@ async function main() {
     const claves = [
       ...(await redis.scan("licitaciones:*")), ...(await redis.scan("lock:sync*")),
       ...(await redis.scan("indice:*")), ...(await redis.scan("sync:historico:*")),
+      ...(await redis.scan("equivalencias:*")), ...(await redis.scan("vocabulario:*")),
     ];
     if (claves.length) await redis.del(...claves);
-    for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*"]) {
+    for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*", "equivalencias:*", "vocabulario:*"]) {
       assert.strictEqual((await redis.scan(patron)).length, 0, `Redis no quedó limpio: ${patron}`);
     }
   }
@@ -761,7 +1115,7 @@ async function main() {
     const t0 = Date.now();
     // el dataset trae el año vigente Y los dos anteriores: la full solo debe
     // ver el vigente (consulta mes a mes del año en curso)
-    socrata.setDataset([...generarDataset(), ...generarDatasetHistorico()]);
+    socrata.setDataset([...generarDataset(), ...generarDatasetHistorico(), ...generarDatasetEquivalencias()]);
     socrata.setFallos(true);
 
     /* a. limpiar Redis */
@@ -858,6 +1212,56 @@ async function main() {
          (con la comparación exacta de 8 dígitos anterior era invisible) */
       assert.ok(todasH.some((l) => l.codigo_principal_de_categoria === "V1.72141015"),
         "un proceso con UNSPSC de producto (72141015) de una clase del RUP (72141000) no llegó a la pantalla");
+
+      /* ---- FALSOS POSITIVOS: código del RUP, objeto ajeno → NO se sirven ---- */
+      for (const [patron, que] of [
+        [/IMPRESI[OÓ]N Y FOTOCOPIA/i, "impresión y fotocopia (80101600)"],
+        [/SUMINISTRO DE ALIMENTOS/i, "suministro de alimentos (80111600)"],
+        [/INTERNET DEDICADO/i, "internet dedicado (80101600)"],
+        [/CUMPLEA[NÑ]OS/i, "logística de un cumpleaños (80111600)"],
+      ]) {
+        assert.ok(!todasH.some((l) => patron.test(l.nombre_del_procedimiento)),
+          `la capa de pertinencia dejó pasar un falso positivo: ${que}`);
+      }
+
+      /* ---- FALSOS NEGATIVOS: el matching jerárquico y el texto los rescatan ---- */
+      const rescatados = [
+        [/publicado por familia/i, "familia", "obra publicada a nivel de FAMILIA (72140000)"],
+        [/publicada por segmento/i, "texto", "obra publicada solo con el SEGMENTO (72000000)"],
+        [/c[oó]digo ilegible/i, "texto", "obra cuyo código no es un UNSPSC (10 dígitos)"],
+      ];
+      for (const [patron, tierEsperado, que] of rescatados) {
+        const l = todasH.find((x) => patron.test(x.nombre_del_procedimiento));
+        assert.ok(l, `no se rescató ${que}`);
+        assert.strictEqual(l.rup.tier, tierEsperado, `${que}: tier ${l.rup.tier}, esperaba ${tierEsperado}`);
+        assert.ok(l.rup.unspsc.mensaje, "el veredicto debe explicar por qué casó");
+        assert.ok(l.rup.pertinencia && l.rup.pertinencia.etiqueta, "falta la etiqueta de pertinencia");
+      }
+
+      /* ---- INGESTA ANCHA + JUICIO FINO: lo guardado ≠ lo servido ---- */
+      const enRedis = await leerActivo();
+      assert.ok(enRedis.some((r) => /IMPRESI[OÓ]N Y FOTOCOPIA/i.test(r.nombre_del_procedimiento)),
+        "la ingesta debe GUARDAR el proceso dudoso (si lo filtrara, afinar la regla exigiría otra full)");
+      assert.ok(enRedis.some((r) => r.codigo_principal_de_categoria === `V1.${CLASE_AFIN}`),
+        "la ingesta debe guardar la clase afín aunque ningún RUP la tenga");
+      assert.ok(!enRedis.some((r) => /aunar\s+esfuerzos/i.test(r.nombre_del_procedimiento)),
+        "un convenio no puede llegar ni siquiera a Redis");
+
+      /* ---- la clase AFÍN todavía NO es visible: el histórico no se ha bajado ---- */
+      assert.ok(!todasH.some((l) => l.codigo_principal_de_categoria === `V1.${CLASE_AFIN}`),
+        "sin equivalencias aprendidas, una clase fuera del RUP y sin objeto de obra no puede verse");
+
+      /* ---- el reparto por solidez del match viaja en la respuesta ---- */
+      const m1 = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1")).cuerpo;
+      assert.ok(m1.por_match && m1.por_match.clase > 0 && m1.por_match.familia > 0 && m1.por_match.texto > 0,
+        `la respuesta debe repartir por tier: ${JSON.stringify(m1.por_match)}`);
+      assert.strictEqual(Object.values(m1.por_match).reduce((a, b) => a + b, 0), m1.total,
+        "el reparto por tier debe sumar exactamente el total");
+      // …y se puede filtrar por él
+      const soloClase = await todasLasOportunidades("perfil=helder&match=clase");
+      assert.ok(soloClase.length > 0 && soloClase.every((l) => l.rup.tier === "clase"),
+        "?match=clase debe devolver solo los de match sólido");
+      assert.strictEqual(soloClase.length, m1.por_match.clase);
     }
 
     /* c'. parámetros hostiles: claves del prototipo no tumban el endpoint */
@@ -975,13 +1379,20 @@ async function main() {
 
       /* el histórico guardó todo el rango CON datos de adjudicación */
       const hist = await leerHistorico();
-      const totalHist = ENTIDADES_HIST.reduce((a, e) => a + e.ofertas.length, 0);
+      const conOferentes = ENTIDADES_HIST.reduce((a, e) => a + e.ofertas.length, 0);
+      const totalHist = conOferentes + HIST_EQUIVALENCIAS;
       assert.strictEqual(hist.length, totalHist, `histórico: ${hist.length} registros, esperaba ${totalHist}`);
       for (const r of hist) {
         assert.ok(r.nombre_del_proveedor && r.nit_del_proveedor_adjudicado, "falta el adjudicatario en el histórico");
         assert.ok(r.valor_total_adjudicacion && r.fecha_adjudicacion, "faltan valor/fecha de adjudicación");
         assert.strictEqual(r.fue_adjudicado, true, "el histórico no marcó la adjudicación");
-        assert.ok(r.oferentes >= 1, "el histórico no derivó el nº de oferentes");
+        // el bloque de equivalencias viaja SIN conteo de oferentes a propósito
+        // (así el índice de competencia no cambia): ahí `oferentes` es null
+        if (!String(r.id_del_proceso).startsWith("CO1.EQV.")) {
+          assert.ok(r.oferentes >= 1, "el histórico no derivó el nº de oferentes");
+        } else {
+          assert.strictEqual(r.oferentes, null, "0 oferentes = SIN DATO, nunca «nadie se presentó»");
+        }
       }
 
       /* los dos corpus no se mezclan */
@@ -996,7 +1407,11 @@ async function main() {
       assert.ok(metaIdx && metaIdx.construido, "no se construyó el índice al terminar la extracción");
       assert.strictEqual(metaIdx.entidades, ENTIDADES_HIST.length, "faltan entidades en el índice");
       assert.strictEqual(metaIdx.clasificadas, 3, "solo las entidades con ≥5 procesos pueden clasificarse");
-      assert.strictEqual(metaIdx.procesos_contados, totalHist, "el índice no contó todos los procesos");
+      // solo cuentan los procesos con conteo de oferentes: los del bloque de
+      // equivalencias quedan como «sin dato» y no mueven ni un tertil
+      assert.strictEqual(metaIdx.procesos_contados, conOferentes, "el índice no contó los procesos con oferentes");
+      assert.strictEqual(metaIdx.descartados.sin_oferentes, HIST_EQUIVALENCIAS,
+        "un proceso adjudicado sin conteo de oferentes debe quedar contado como descarte, no colarse como 0");
       assert.strictEqual(metaIdx.min_procesos, 5);
 
       const hash = await redis.hgetall("indice:competencia");
@@ -1088,7 +1503,56 @@ async function main() {
       assert.strictEqual(rr.cuerpo.done, true, "la reconstrucción del índice quedó a medias");
       assert.strictEqual(rr.cuerpo.extraccion, null, "reconstruir_indice no debe re-extraer");
       assert.strictEqual(rr.cuerpo.indice.clasificadas, 3, "la reconstrucción cambió la clasificación");
+      assert.strictEqual(rr.cuerpo.equivalencias, null, "reconstruir_indice solo reconstruye el índice");
       assert.strictEqual((await leerHistorico()).length, totalHist, "la reconstrucción duplicó el histórico");
+
+      /* ---- EQUIVALENCIAS FUNCIONALES aprendidas del histórico ----
+         Se construyeron solas al terminar la extracción; aquí se verifica el
+         contenido y que reconstruirlas no re-extraiga nada. */
+      {
+        const metaEq = JSON.parse(await redis.get("equivalencias:unspsc:meta"));
+        assert.ok(metaEq && metaEq.construido, "no se construyeron las equivalencias al terminar la extracción");
+        assert.deepStrictEqual(metaEq.umbrales,
+          { lift_min: equivalencias.LIFT_MIN, soporte_min: equivalencias.SOPORTE_MIN, adjudicatarios_min: equivalencias.NITS_INTERSECCION_MIN },
+          "los umbrales deben quedar publicados junto al resultado");
+        const mapa = await equivalencias.leerEquivalencias(redis);
+        const clave = CLASE_AFIN.slice(0, 6);
+        assert.ok(mapa && mapa[clave], `la clase afín ${clave} no quedó en el índice de equivalencias`);
+        assert.strictEqual(mapa[clave][0].clase, "721410", "la afinidad debe apuntar a la clase inscrita en el RUP");
+        assert.ok(mapa[clave][0].lift >= equivalencias.LIFT_MIN);
+        assert.strictEqual(mapa[clave][0].adjudicatarios, NITS_AFINES);
+        // NADA MÁS pasó los umbrales: el corpus está diseñado para un solo par
+        assert.strictEqual(Object.keys(mapa).length, 1,
+          `los umbrales dejaron pasar pares que no debían: ${Object.keys(mapa).join(", ")}`);
+        assert.strictEqual(metaEq.identificados_por_nombre, 0,
+          "el histórico de prueba trae NIT: no debería hacer falta el respaldo por nombre");
+
+        // reconstruir SOLO las equivalencias: ni re-extrae ni toca el índice
+        const re = await invocar(historico, "/api/sync/historico?reconstruir_equivalencias=true&presupuesto=20000&chain=0", TOKEN);
+        assert.strictEqual(re.cuerpo.done, true, `la reconstrucción de equivalencias quedó a medias: ${JSON.stringify(re.cuerpo).slice(0, 200)}`);
+        assert.strictEqual(re.cuerpo.extraccion, null, "reconstruir_equivalencias no debe re-extraer");
+        assert.strictEqual(re.cuerpo.indice, null, "reconstruir_equivalencias no debe tocar el índice");
+        assert.strictEqual(re.cuerpo.equivalencias.pares, metaEq.pares, "la reconstrucción cambió el resultado");
+        assert.strictEqual((await leerHistorico()).length, totalHist, "la reconstrucción duplicó el histórico");
+      }
+
+      /* ---- VOCABULARIO por familia derivado del histórico ----
+         El corpus de prueba no llega al mínimo de procesos por familia, así
+         que el resultado correcto es «sigue mandando la semilla»: lo que se
+         verifica es que lo diga, no que invente un vocabulario. */
+      {
+        const rv = await invocar(historico, "/api/sync/historico?reconstruir_vocabulario=true&presupuesto=20000&chain=0", TOKEN);
+        assert.strictEqual(rv.cuerpo.done, true, "la reconstrucción del vocabulario quedó a medias");
+        assert.strictEqual(rv.cuerpo.extraccion, null, "reconstruir_vocabulario no debe re-extraer");
+        assert.ok(rv.cuerpo.vocabulario, "sin resultado de vocabulario");
+        assert.strictEqual(rv.cuerpo.vocabulario.solo_familias_del_rup, true,
+          "solo se acumulan las familias que algún RUP inscribe (el resto no se usaría nunca)");
+        assert.ok(rv.cuerpo.vocabulario.procesos > 0, "el vocabulario no leyó ningún proceso histórico");
+        // el estado lo reporta, y la app sigue usando la semilla del repositorio
+        const est = await invocar(historico, "/api/sync/historico?estado=true", TOKEN);
+        assert.ok(est.cuerpo.estado.equivalencias.pares > 0, "?estado no informa las equivalencias");
+        assert.ok("vocabulario" in est.cuerpo.estado, "?estado no informa el vocabulario");
+      }
     }
 
     /* f. el índice se USA: orden por atractividad = dónde es más probable ganar */
@@ -1142,6 +1606,29 @@ async function main() {
       assert.ok(bajas.length > 0 && bajas.every((l) => l.competencia_entidad.nivel === "baja"),
         "el filtro competencia_entidad no se aplicó");
       assert.strictEqual(bajas.length, soloBaja.length);
+
+      /* ---- EFECTO INMEDIATO del conocimiento nuevo, sin re-sincronizar ----
+         El proceso de la clase afín (80141600) NO tiene una sola palabra de
+         obra y su clase no está en ningún RUP: antes de aprender las
+         equivalencias era invisible (verificado en c-bis). Ahora entra, con
+         el tier "equivalente" y su explicación. Y el corpus no se ha vuelto a
+         bajar: es exactamente la promesa de separar ingesta de juicio. */
+      {
+        const conAfin = (await todasLasOportunidades("perfil=helder"))
+          .filter((l) => l.codigo_principal_de_categoria === `V1.${CLASE_AFIN}`);
+        assert.ok(conAfin.length > 0,
+          "las equivalencias aprendidas no rescataron la clase afín (efecto inmediato, sin full)");
+        for (const l of conAfin) {
+          assert.strictEqual(l.rup.tier, "equivalente", "el rescate por afinidad debe llevar su propio tier");
+          assert.strictEqual(l.rup.unspsc.codigo_rup, "72141000", "debe decir CON QUÉ clase del RUP es afín");
+          assert.ok(/evidencia hist[oó]rica/i.test(l.rup.unspsc.mensaje), "la tarjeta debe explicar de dónde sale");
+          assert.ok(l.rup.pertinencia.nivel === "amarillo",
+            "sin vocabulario de obra el veredicto es «verificar», no un verde");
+        }
+        // …y sigue fuera para quien NO tenga la clase inscrita a la que es afín
+        const soloEquivalente = await todasLasOportunidades(`perfil=helder&match=equivalente`);
+        assert.ok(soloEquivalente.length > 0 && soloEquivalente.every((l) => l.rup.tier === "equivalente"));
+      }
 
       // /api/oportunidades NO lee del histórico NI expone datos de adjudicación
       for (const l of todas) {
@@ -1258,14 +1745,60 @@ async function main() {
       assert.strictEqual(bajas + c.embudo.visibles, c.embudo.total_activo,
         "el embudo no cuadra: hay procesos que desaparecen sin motivo registrado");
 
-      // el contrafactual de UNSPSC demuestra la ganancia del match por clase
-      assert.ok(c.contrafactuales.ganancia_por_clase > 0,
-        "el corpus de prueba trae códigos de producto: la ganancia por clase no puede ser 0");
+      /* los contrafactuales miden CADA mecanismo nuevo por separado */
+      assert.ok(c.contrafactuales.pasarian_unspsc_jerarquico > c.contrafactuales.pasarian_unspsc_prefijo,
+        "el matching jerárquico debe cubrir MÁS que el prefijo de 6 dígitos (el corpus trae familias)");
+      assert.ok(c.contrafactuales.pasarian_unspsc_prefijo >= c.contrafactuales.pasarian_unspsc_exacto,
+        "el prefijo nunca puede cubrir menos que la comparación exacta de 8 dígitos");
+      assert.ok(c.contrafactuales.ganancia_por_jerarquia >= MESES.length,
+        `la obra publicada por FAMILIA (una por mes) debía recuperarse: ganancia ${c.contrafactuales.ganancia_por_jerarquia}`);
+      assert.ok(c.contrafactuales.ganancia_por_texto >= MESES.length,
+        "las obras con segmento suelto y con código ilegible se rescatan por el objeto");
+      assert.ok(c.contrafactuales.ganancia_por_equivalencias >= MESES.length,
+        `las equivalencias aprendidas debían rescatar la clase afín: ${c.contrafactuales.ganancia_por_equivalencias}`);
       assert.ok(c.unspsc_cobertura.cubiertas_por_clase >= c.unspsc_cobertura.cubiertas_exacto_8_digitos,
-        "el match por clase nunca puede cubrir menos que el exacto");
+        "el match jerárquico nunca puede cubrir menos que el exacto");
+      assert.ok(c.unspsc_cobertura.codigos_ilegibles >= MESES.length,
+        "los códigos que no son UNSPSC deben quedar CONTADOS, no desaparecer en silencio");
+
+      /* la capa de pertinencia sacó de la pantalla los falsos positivos */
+      assert.ok(c.embudo.fuera_no_pertinente >= 4 * MESES.length,
+        `los 4 falsos positivos por mes debían morir en pertinencia: ${c.embudo.fuera_no_pertinente}`);
+      assert.strictEqual(c.contrafactuales.visibles_sin_capa_pertinencia,
+        c.embudo.visibles + c.embudo.fuera_no_pertinente, "el contrafactual de pertinencia no cuadra");
+      const terminos = Object.keys(c.distribuciones.no_pertinente_terminos_que_dispararon);
+      // «logistico» es el término del CUMPLEAÑOS: se reporta el PRIMERO que
+      // aparece en el objeto («APOYO LOGISTICO PARA EL CUMPLEAÑOS…»)
+      for (const t of ["impresion", "alimentos", "internet", "logistico"]) {
+        assert.ok(terminos.includes(t), `el diagnóstico no reporta el término «${t}» como causa`);
+      }
+      assert.ok(c.matching.no_pertinentes_ejemplos.length > 0, "sin ejemplos de falsos positivos bloqueados");
+
+      /* el reparto por solidez del match cuadra con los visibles */
+      const sumaTiers = Object.values(c.matching.visibles_por_tier).reduce((a, b) => a + b, 0);
+      assert.strictEqual(sumaTiers, c.embudo.visibles,
+        "todo visible debe tener un tier (clase, familia, equivalente o texto) y ninguno más");
+      assert.strictEqual(Object.values(c.matching.visibles_por_pertinencia).reduce((a, b) => a + b, 0),
+        c.embudo.visibles, "todo visible debe tener un nivel de pertinencia");
+      assert.strictEqual(c.matching.visibles_por_pertinencia.rojo, 0,
+        "un objeto NO pertinente jamás puede quedar entre los visibles");
+      assert.ok(c.matching.visibles_por_tier.clase > 0 && c.matching.visibles_por_tier.familia > 0
+        && c.matching.visibles_por_tier.texto > 0 && c.matching.visibles_por_tier.equivalente > 0,
+        `el corpus de prueba tiene los cuatro tipos de match: ${JSON.stringify(c.matching.visibles_por_tier)}`);
+
+      /* el conocimiento derivado se reporta (y el vocabulario dice de dónde sale) */
+      assert.ok(c.conocimiento.equivalencias && c.conocimiento.equivalencias.pares > 0,
+        "el diagnóstico no ve las equivalencias publicadas");
+      assert.ok(["semilla", "historico+semilla"].includes(c.conocimiento.vocabulario.fuente),
+        `fuente del vocabulario inesperada: ${c.conocimiento.vocabulario.fuente}`);
+      assert.ok(c.conocimiento.vocabulario.familias >= textoUnspsc.vocabularioActivo(null).indice.size,
+        "el vocabulario derivado MEZCLA con la semilla: nunca puede dejar menos familias que ella");
+
       // y las distribuciones traen los valores REALES de las columnas
       assert.ok(Object.keys(c.distribuciones.estado_del_procedimiento).length > 0, "sin distribución de estados");
       assert.ok(c.muestra.length > 0 && c.muestra[0].objeto, "sin muestra de procesos visibles");
+      assert.ok(c.muestra.every((m) => m.match && m.pertinencia),
+        "la muestra debe traer el veredicto graduado (match + pertinencia), no un sí/no");
       assert.ok(!c.muestra.some((m) => /aunar esfuerzos/i.test(m.objeto)), "un convenio llegó a la muestra de visibles");
     }
 
@@ -1304,10 +1837,24 @@ async function main() {
       for (const debe of ["bandaCompetencia", "competencia_entidad", "Poca competencia", "Alta competencia"]) {
         assert.ok(js.includes(debe), `app.js sin ${debe} (la tarjeta no muestra la competencia de la entidad)`);
       }
+      /* veredicto GRADUADO en la tarjeta: un badge por la solidez del match y
+         otro por el tipo de objeto. Sin esto el dueño no puede decidir. */
+      for (const debe of ["badgesRup", "MATCH_UNSPSC", "RUP ✓", "RUP ~ (familia)", "RUP ≈ (clase afín)",
+        "Objeto sugiere obra", "PERTINENCIA", "por_match"]) {
+        assert.ok(js.includes(debe), `app.js sin ${debe} (la tarjeta no muestra el veredicto graduado)`);
+      }
       const vercel = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
       for (const fn of Object.keys(vercel.functions)) {
         assert.ok(fs.existsSync(path.join(__dirname, "..", fn)), `vercel.json apunta a ${fn} inexistente`);
+        // la semilla de vocabulario viaja con la función: si dejara de
+        // empaquetarse, la co-señal de texto se quedaría muda en producción
+        assert.strictEqual(vercel.functions[fn].includeFiles, "data/**",
+          `${fn} no empaqueta data/** (la semilla de vocabulario no llegaría al despliegue)`);
       }
+      const semilla = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "vocabulario_unspsc.json"), "utf8"));
+      assert.ok(semilla.familias && Object.keys(semilla.familias).length >= 5, "semilla de vocabulario vacía");
+      assert.ok(/semilla/i.test(semilla._meta.origen),
+        "el archivo debe declarar que es una semilla curada, no una estadística del histórico");
       assert.ok(vercel.crons.some((c) => c.path === "/api/sync"), "falta el cron de /api/sync");
     }
 

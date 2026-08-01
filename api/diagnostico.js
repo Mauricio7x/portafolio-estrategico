@@ -13,28 +13,32 @@
    procesos?» con datos en vez de con intuiciones, y para volver a medir después
    de cada cambio de regla.
 
-   Además de los conteos actuales calcula CONTRAFACTUALES: cuántos procesos
-   pasarían si se relajara cada regla (match UNSPSC exacto vs por clase,
-   anticipo mínimo, tope de capacidad…). Sin eso no se puede saber qué regla
-   conviene tocar.
+   Dos invariantes que las pruebas fijan:
+     · los pasos SUMAN el total (nadie desaparece sin quedar contado);
+     · `embudo.visibles` == el `total` de /api/oportunidades con el mismo perfil.
 
-   Nota de granularidad UNSPSC (el hallazgo que motivó el endpoint): los 393
-   códigos de los RUP terminan todos en "00" — están inscritos a nivel de CLASE.
-   SECOP II publica muchas veces el PRODUCTO de esa clase. Por eso se reporta
-   `unspsc.pasan_exacto` (comparación vieja, 8 dígitos) frente a
-   `unspsc.pasan_por_clase` (la vigente, 6 dígitos): la diferencia es el número
-   de procesos que la comparación exacta estaba tirando a la basura.
+   Además calcula CONTRAFACTUALES: cuánto aporta cada mecanismo nuevo frente a
+   la regla vieja (prefijo de 6 dígitos) y cuántos procesos se recuperarían al
+   relajar cada regla. Sin eso no se puede saber qué regla conviene tocar.
+
+     ganancia_por_jerarquia    match jerárquico (familia↔clase, niveles bien
+                               leídos) que el prefijo de 6 dígitos perdía
+     ganancia_por_equivalencias clases afines aprendidas del histórico
+     ganancia_por_texto        objetos de obra rescatados por la co-señal
+     pasarian_unspsc_exacto    la comparación original de 8 dígitos
    ========================================================================== */
 "use strict";
 
 const crypto = require("crypto");
 const { crearRedis, hayCredenciales } = require("../lib/redis.js");
-const { CLAVES, leerChunksDedup, leerJSON } = require("../lib/almacen.js");
+const { CLAVES, leerChunksDedup, leerJSON, leerJSONComprimido } = require("../lib/almacen.js");
 const { PERFILES, ALIAS_PERFIL, evaluarRup } = require("../lib/rup.js");
+const { modalidad_competitiva, estado_abierto, evaluarObjeto } = require("../lib/filtros.js");
 const {
-  norm, modalidad_competitiva, estado_abierto, es_convenio,
-  unspscClasesDe, claseDe, clasesDelRup, evaluarObjeto,
-} = require("../lib/filtros.js");
+  codigosDeLicitacion, normalizarCodigo, indiceDe, emparejar, cubiertoPorPrefijo, claseDe,
+} = require("../lib/unspsc.js");
+const { leerEquivalencias, leerEquivalenciasMeta } = require("../lib/equivalencias.js");
+const { vocabularioActivo } = require("../lib/texto_unspsc.js");
 const { SMMLV } = require("../lib/perfiles.js");
 
 const MUESTRA_DEFAULT = 20, MUESTRA_MAX = 100;
@@ -82,15 +86,22 @@ module.exports = async function handler(req, res) {
 
   const redis = crearRedis({});
   const t0 = Date.now();
-  let filas, meta, clavesAct, clavesHist;
+  let filas, meta, clavesAct, clavesHist, equivalencias = null, eqMeta = null, vocabRedis = null, vocMeta = null;
   try {
     meta = await leerJSON(redis, CLAVES.meta);
     clavesAct = await redis.scan(CLAVES.patronChunks);
     clavesHist = await redis.scan(CLAVES.patronChunksHist);
     filas = await leerChunksDedup(redis, clavesAct);
+    eqMeta = await leerEquivalenciasMeta(redis);
+    if (eqMeta && !eqMeta.vacio) equivalencias = await leerEquivalencias(redis);
+    vocMeta = await leerJSON(redis, CLAVES.vocabularioMeta);
+    if (vocMeta) vocabRedis = await leerJSONComprimido(redis, CLAVES.vocabulario);
   } catch (e) {
     return res.status(502).json({ ok: false, error: `Redis: ${e.message}` });
   }
+  const vocabulario = vocabularioActivo(vocabRedis);
+  const conocimiento = { equivalencias, vocabulario };
+  const idxPerfil = indiceDe(perfil.unspsc);
 
   const mesesDe = (claves, extraer) => new Set(claves.map(extraer).filter(Boolean)).size;
 
@@ -103,6 +114,7 @@ module.exports = async function handler(req, res) {
     fuera_blacklist: 0,
     fuera_unspsc: 0,
     fuera_sin_unspsc_ni_obra: 0,
+    fuera_no_pertinente: 0,
     fuera_anti_suministro: 0,
     fuera_capacidad_k: 0,
     fuera_tope_estrategico: 0,
@@ -110,26 +122,37 @@ module.exports = async function handler(req, res) {
     visibles: 0,
   };
   const contrafactuales = {
-    pasarian_unspsc_exacto: 0,     // comparación vieja (8 dígitos)
-    pasarian_unspsc_por_clase: 0,  // comparación vigente (6 dígitos)
-    ganancia_por_clase: 0,
+    pasarian_unspsc_exacto: 0,       // comparación original (8 dígitos)
+    pasarian_unspsc_prefijo: 0,      // la regla anterior (prefijo de 6 dígitos)
+    pasarian_unspsc_jerarquico: 0,   // la vigente (niveles + bidireccional)
+    ganancia_por_jerarquia: 0,       // jerárquico y NO prefijo
+    ganancia_por_equivalencias: 0,   // rescatados por afinidad histórica
+    ganancia_por_texto: 0,           // rescatados por la co-señal del objeto
     visibles_sin_filtro_anticipo: 0,
     visibles_si_anticipo_10: 0,
     visibles_ignorando_capacidad: 0,
     visibles_incluyendo_cerradas: 0,
+    visibles_sin_capa_pertinencia: 0,
   };
+  const porTier = { clase: 0, familia: 0, equivalente: 0, texto: 0 };
+  const porPertinencia = { verde: 0, amarillo: 0, rojo: 0 };
   const motivosBlacklist = [];
+  const terminosNoPertinentes = [];
+  const noPertinentes = [];
   const clasesEnCorpus = [];
+  const codigosInvalidos = [];
   const modalidadesFuera = [];
   const estadosFuera = [];
   const convenios = [];
   const muestra = [];
-  const visibles = [];
-  const rupClases = clasesDelRup(perfil.unspsc);
+  const rescatados = [];
+  const rupClases = idxPerfil.clases;
 
   for (const l of filas) {
     const paso = { objeto: recortar(l.nombre_del_procedimiento), entidad: l.entidad, unspsc: l.codigo_principal_de_categoria };
-    for (const c of unspscClasesDe(l)) clasesEnCorpus.push(c);
+    const { codigos, invalidos } = codigosDeLicitacion(l);
+    for (const c of codigos) clasesEnCorpus.push(c.codigo);
+    for (const bruto of invalidos) codigosInvalidos.push(bruto);
 
     if (!modalidad_competitiva(l)) {
       embudo.fuera_modalidad++; modalidadesFuera.push(l.modalidad_de_contratacion); continue;
@@ -142,28 +165,50 @@ module.exports = async function handler(req, res) {
 
     // el objeto se evalúa aunque esté cerrada, para poder separar «la perdí por
     // estado» de «además la perdería por objeto»
-    const ev = evaluarObjeto(l, perfil);
+    const ev = evaluarObjeto(l, perfil, conocimiento);
     if (!abierta) continue;
 
     if (ev.paso === "convenio") { embudo.fuera_convenio++; convenios.push(recortar(l.nombre_del_procedimiento, 90)); continue; }
     if (ev.paso === "blacklist") { embudo.fuera_blacklist++; motivosBlacklist.push(ev.termino); continue; }
 
-    // contrafactual UNSPSC: exacto vs por clase, solo entre las que llegan aquí
-    const clases = unspscClasesDe(l);
-    if (clases.length) {
-      const exacto = clases.some((c) => perfil.unspsc.has(c));
-      const porClase = clases.some((c) => rupClases.has(claseDe(c)));
+    /* contrafactuales de UNSPSC, solo entre las que llegan aquí:
+       exacto (8 díg) ⊂ prefijo (6 díg) ⊂ jerárquico (+ familia↔clase) */
+    if (codigos.length) {
+      const ocho = codigos.map((c) => c.codigo);
+      const exacto = ocho.some((c) => perfil.unspsc.has(c));
+      const prefijo = cubiertoPorPrefijo(ocho, idxPerfil);
+      const jerarquico = emparejar(codigos, idxPerfil).tier !== "ninguno";
       if (exacto) contrafactuales.pasarian_unspsc_exacto++;
-      if (porClase) contrafactuales.pasarian_unspsc_por_clase++;
-      if (porClase && !exacto) contrafactuales.ganancia_por_clase++;
+      if (prefijo) contrafactuales.pasarian_unspsc_prefijo++;
+      if (jerarquico) contrafactuales.pasarian_unspsc_jerarquico++;
+      if (jerarquico && !prefijo) {
+        contrafactuales.ganancia_por_jerarquia++;
+        if (rescatados.length < TOP) rescatados.push({ por: "jerarquia", codigo: ocho.join(" "), objeto: recortar(l.nombre_del_procedimiento, 80) });
+      }
+    }
+    if (ev.tier === "equivalente") {
+      contrafactuales.ganancia_por_equivalencias++;
+      if (rescatados.length < TOP) rescatados.push({ por: "equivalencia", codigo: ev.unspsc.codigo_proceso, rup: ev.unspsc.codigo_rup, objeto: recortar(l.nombre_del_procedimiento, 80) });
+    }
+    if (ev.tier === "texto") {
+      contrafactuales.ganancia_por_texto++;
+      if (rescatados.length < TOP) rescatados.push({ por: "texto", familia: ev.unspsc.familia_sugerida || null, objeto: recortar(l.nombre_del_procedimiento, 80) });
     }
 
     if (ev.paso === "unspsc") { embudo.fuera_unspsc++; continue; }
     if (ev.paso === "sin_unspsc_ni_obra") { embudo.fuera_sin_unspsc_ni_obra++; continue; }
+    if (ev.paso === "no_pertinente") {
+      embudo.fuera_no_pertinente++;
+      terminosNoPertinentes.push(ev.termino);
+      if (noPertinentes.length < TOP) {
+        noPertinentes.push({ objeto: recortar(l.nombre_del_procedimiento, 90), unspsc: l.codigo_principal_de_categoria, termino: ev.termino });
+      }
+      continue;
+    }
     if (ev.paso === "anti_suministro") { embudo.fuera_anti_suministro++; continue; }
 
     // capacidad (K y tope estratégico), con el detalle del perfil consultado
-    const rup = evaluarRup(l, perfilId);
+    const rup = evaluarRup(l, perfilId, conocimiento);
     const dentroTope = (l.cuantia_cop || 0) <= perfil.topeSMMLV * SMMLV;
     if (!rup.capacidad_ok) {
       if (!dentroTope) embudo.fuera_tope_estrategico++; else embudo.fuera_capacidad_k++;
@@ -177,19 +222,27 @@ module.exports = async function handler(req, res) {
     if (anticipoMin > 0 && l.anticipo_pct > 0 && l.anticipo_pct < anticipoMin) { embudo.fuera_anticipo++; continue; }
 
     embudo.visibles++;
-    visibles.push(l);
+    // los repartos describen EXACTAMENTE el conjunto visible: se cuentan aquí
+    // (después de capacidad y anticipo), no antes
+    if (ev.tier in porTier) porTier[ev.tier]++;
+    if (ev.pertinencia && ev.pertinencia.nivel in porPertinencia) porPertinencia[ev.pertinencia.nivel]++;
     if (muestra.length < nMuestra) {
       muestra.push({
         ...paso,
         modalidad: l.modalidad_de_contratacion, estado: l.estado_del_procedimiento, fase: l.fase,
         cuantia_cop: l.cuantia_cop, anticipo_pct: l.anticipo_pct,
-        k_cop: rup.k_cop, crpc_cop: rup.crpc_cop, fuente_unspsc: ev.fuente_unspsc,
+        k_cop: rup.k_cop, crpc_cop: rup.crpc_cop,
+        match: ev.tier, match_msg: ev.unspsc && ev.unspsc.mensaje,
+        pertinencia: ev.pertinencia && ev.pertinencia.etiqueta,
+        fuente_unspsc: ev.fuente_unspsc,
       });
     }
   }
 
   // cerradas: cuántas se recuperarían al servirlas (solo para dimensionar)
   contrafactuales.visibles_incluyendo_cerradas = embudo.visibles + embudo.fuera_estado;
+  // sin la capa de pertinencia volverían los falsos positivos de siempre
+  contrafactuales.visibles_sin_capa_pertinencia = embudo.visibles + embudo.fuera_no_pertinente;
 
   /* ---------- distribuciones del corpus REAL ---------- */
   const distribuciones = {
@@ -199,6 +252,7 @@ module.exports = async function handler(req, res) {
     modalidades_descartadas: tabla(modalidadesFuera),
     estado_fase_descartados: tabla(estadosFuera),
     blacklist_terminos_que_dispararon: tabla(motivosBlacklist),
+    no_pertinente_terminos_que_dispararon: tabla(terminosNoPertinentes),
     anticipo: {
       sin_dato_0: filas.filter((l) => !(l.anticipo_pct > 0)).length,
       entre_1_y_9: filas.filter((l) => l.anticipo_pct > 0 && l.anticipo_pct < 10).length,
@@ -206,19 +260,24 @@ module.exports = async function handler(req, res) {
       desde_20: filas.filter((l) => l.anticipo_pct >= 20).length,
     },
     cuantia_rango: tabla(filas.map((l) => l.cuantia_rango)),
+    codigos_unspsc_ilegibles: tabla(codigosInvalidos),
   };
 
   /* ---------- cobertura UNSPSC ---------- */
   const cuentaClases = new Map();
   for (const c of clasesEnCorpus) cuentaClases.set(c, (cuentaClases.get(c) || 0) + 1);
   const distintas = [...cuentaClases.keys()];
-  const cubiertasPorClase = distintas.filter((c) => rupClases.has(claseDe(c)));
+  // cobertura con la regla VIGENTE (jerárquica), código a código
+  const cubre = (c) => emparejar([normalizarCodigo(c)].filter(Boolean), idxPerfil).tier !== "ninguno";
+  const cubiertasJerarquico = distintas.filter(cubre);
   const cubiertasExacto = distintas.filter((c) => perfil.unspsc.has(c));
   const unspsc_cobertura = {
     clases_distintas_en_corpus: distintas.length,
-    cubiertas_por_clase: cubiertasPorClase.length,
+    cubiertas_por_clase: cubiertasJerarquico.length,
     cubiertas_exacto_8_digitos: cubiertasExacto.length,
     codigos_rup_del_perfil: perfil.unspsc.size,
+    familias_rup_del_perfil: idxPerfil.familias.size,
+    codigos_ilegibles: codigosInvalidos.length,
     top_no_cubiertas: Object.fromEntries(
       [...cuentaClases.entries()].filter(([c]) => !rupClases.has(claseDe(c)))
         .sort((a, b) => b[1] - a[1]).slice(0, TOP)),
@@ -242,12 +301,25 @@ module.exports = async function handler(req, res) {
     },
     embudo,
     contrafactuales,
+    matching: {
+      visibles_por_tier: porTier,
+      visibles_por_pertinencia: porPertinencia,
+      rescatados_ejemplos: rescatados,
+      no_pertinentes_ejemplos: noPertinentes,
+    },
+    conocimiento: {
+      equivalencias: eqMeta
+        ? { construido: eqMeta.construido, clases_con_equivalente: eqMeta.clases_con_equivalente || 0, pares: eqMeta.pares || 0, umbrales: eqMeta.umbrales || null }
+        : null,
+      vocabulario: { fuente: vocabulario.fuente, familias: vocabulario.indice.size, derivadas_del_historico: vocabulario.derivadas, construido: vocMeta ? vocMeta.construido : null },
+    },
     distribuciones,
     unspsc_cobertura,
     convenios_detectados: convenios.slice(0, TOP),
     muestra,
     como_leerlo: "embudo va en orden: cada `fuera_*` son procesos que murieron en ESE paso y no llegaron al siguiente. "
       + "El paso con el número más alto es el que hay que revisar primero. "
-      + "`contrafactuales` dice cuántos se recuperarían al relajar cada regla.",
+      + "`contrafactuales` dice cuántos se recuperarían al relajar cada regla y cuánto aportó cada mecanismo nuevo. "
+      + "`matching.no_pertinentes_ejemplos` son los falsos positivos que la capa de pertinencia acaba de sacar de la pantalla.",
   });
 };

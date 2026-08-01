@@ -11,6 +11,11 @@
       primero las entidades donde históricamente se presentan menos oferentes
       —donde es más probable ganar—, y dentro de cada grupo por puntaje. Cada
       tarjeta muestra la banda de competencia de su entidad (🟢/🟡/🔴/⚪).
+   4. Veredicto GRADUADO en cada tarjeta (jul 2026): el badge de matching dice
+      con qué FUERZA encaja en el RUP (RUP ✓ por clase · RUP ~ por familia ·
+      RUP ≈ por clase afín · «Objeto sugiere obra») y el de pertinencia qué
+      TIPO de trabajo es (Obra civil · Infraestructura · Consultoría ·
+      Verificar objeto). El detalle completo va en el `title` de cada badge.
    ========================================================================== */
 "use strict";
 
@@ -140,8 +145,43 @@
   /* ══════════ Pintado ══════════ */
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  function chip(texto, clases) {
-    return `<span class="rounded-full px-2.5 py-0.5 text-xs font-medium ${clases}">${texto}</span>`;
+  function chip(texto, clases, titulo) {
+    const t = titulo ? ` title="${esc(titulo)}"` : "";
+    return `<span${t} class="rounded-full px-2.5 py-0.5 text-xs font-medium ${clases}">${texto}</span>`;
+  }
+
+  /* Veredicto GRADUADO del matching UNSPSC. Nunca es un sí/no: dice CON QUÉ
+     FUERZA el proceso encaja en el RUP, y el detalle completo viaja en el
+     title (por qué casó, con qué clase del RUP).
+       clase       la clase del RUP contiene al código publicado → sólido
+       familia     la entidad publicó a nivel de familia → amplio, ver pliego
+       equivalente clase afín según el histórico de adjudicaciones
+       texto       sin código utilizable; lo confirma el objeto */
+  const MATCH_UNSPSC = {
+    clase: { texto: "RUP ✓", clases: "bg-green-100 text-green-800" },
+    familia: { texto: "RUP ~ (familia)", clases: "bg-lime-100 text-lime-800" },
+    equivalente: { texto: "RUP ≈ (clase afín)", clases: "bg-amber-100 text-amber-800" },
+    texto: { texto: "Objeto sugiere obra", clases: "bg-amber-100 text-amber-800" },
+    ninguno: { texto: "RUP ✗", clases: "bg-red-100 text-red-700" },
+  };
+  /* Pertinencia del objeto: ¿es obra/consultoría o un servicio que se coló por
+     tener un UNSPSC inscrito? Los rojos no deberían llegar nunca a la lista
+     (se filtran en el servidor); el badge existe para que se note si uno pasa. */
+  const PERTINENCIA = {
+    verde: "bg-green-100 text-green-800",
+    amarillo: "bg-amber-100 text-amber-800",
+    rojo: "bg-red-100 text-red-700",
+  };
+
+  function badgesRup(rup) {
+    const m = MATCH_UNSPSC[(rup && rup.tier) || "ninguno"] || MATCH_UNSPSC.ninguno;
+    const u = (rup && rup.unspsc) || {};
+    const detalle = [u.mensaje, u.codigo_proceso ? `Proceso: ${u.codigo_proceso}` : null,
+      u.codigo_rup ? `RUP: ${u.codigo_rup}` : null].filter(Boolean).join(" · ");
+    let salida = chip(m.texto, m.clases, detalle);
+    const p = rup && rup.pertinencia;
+    if (p) salida += chip(esc(p.etiqueta || ""), PERTINENCIA[p.nivel] || PERTINENCIA.amarillo, p.motivo || "");
+    return salida;
   }
 
   /* Banda de competencia de la entidad. Sin índice construido todo cae en
@@ -193,7 +233,7 @@
         ${chip(l.anticipo_pct > 0 ? `Anticipo ${l.anticipo_pct}%` : "Anticipo no declarado", l.anticipo_pct > 0 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-500")}
         ${chip(`Ofertas del proceso: ${esc(l.nivel_competencia || "?")}`, compColor)}
         ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
-        ${chip(rup.unspsc_ok ? (rup.fuente_unspsc === "codigo" ? "RUP ✓ (UNSPSC)" : "RUP ✓ (objeto de obra)") : "RUP ✗", rup.unspsc_ok ? "bg-green-100 text-green-800" : "bg-red-100 text-red-700")}
+        ${badgesRup(rup)}
         ${chip(rup.capacidad_ok ? (rup.co_estimado ? "Capacidad K ✓ (CO estimado)" : "Capacidad K ✓") : "Capacidad K ✗", rup.capacidad_ok ? "bg-green-100 text-green-800" : "bg-red-100 text-red-700")}
         ${cierreTxt ? chip(`Cierra ${cierreTxt}`, "bg-purple-100 text-purple-800") : ""}
         ${l.modalidad_de_contratacion ? chip(esc(l.modalidad_de_contratacion), "bg-gray-100 text-gray-600") : ""}
@@ -208,8 +248,13 @@
 
   function pintar(cuerpo) {
     mostrar("resultados");
+    // el reparto por solidez del match dice de un vistazo cuántas son «RUP ✓»
+    // y cuántas hay que verificar en el pliego
+    const m = cuerpo.por_match || {};
+    const porVerificar = (m.familia || 0) + (m.equivalente || 0) + (m.texto || 0);
     $("resumen-resultados").textContent =
-      `${cuerpo.total} oportunidad${cuerpo.total === 1 ? "" : "es"} para el perfil «${$("f-perfil").selectedOptions[0].text}»`;
+      `${cuerpo.total} oportunidad${cuerpo.total === 1 ? "" : "es"} para el perfil «${$("f-perfil").selectedOptions[0].text}»`
+      + (m.clase !== undefined ? ` · ${m.clase} con RUP ✓${porVerificar ? `, ${porVerificar} por verificar` : ""}` : "");
     $("lista").innerHTML = cuerpo.resultados.map(tarjeta).join("");
 
     const totalPaginas = Math.max(1, Math.ceil(cuerpo.total / cuerpo.por_pagina));
