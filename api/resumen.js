@@ -499,8 +499,10 @@ module.exports = async function handler(req, res) {
       ? { construido: indiceMeta.construido, entidades: indiceMeta.clasificadas, min_procesos: indiceMeta.min_procesos }
       : null,
     duracion_ms: Date.now() - t0,
-    como_leerlo: "`totales.visibles` es exactamente el `total` de /api/oportunidades con este perfil: los dos "
-      + "endpoints llaman a la MISMA función (lib/filtros.filtrarProcesosVisibles), no a dos copias. "
+    como_leerlo: "`totales.visibles` es el `total` de /api/oportunidades con este perfil y `solo_viables=false`: "
+      + "los dos endpoints llaman a la MISMA función (lib/filtros.filtrarProcesosVisibles), no a dos copias. "
+      + "Con `solo_viables=true` (su default) el listado sirve MENOS: la puerta de caja (lib/puertas, P3) es "
+      + "posterior a la cascada y retira los procesos que la empresa no podría financiar. "
       + "`descartes` dice en qué paso murió cada proceso del corpus activo (suman el corpus entero con los visibles). "
       + "`superan_k`/`no_superan_k` se cuentan sobre `base_capacidad` (los que pasaron el juicio del objeto), no sobre los visibles. "
       + "`procesos_destacados` es una recomendación y aplica cuatro filtros MÁS que el listado (cerrados, «Verificar objeto», "

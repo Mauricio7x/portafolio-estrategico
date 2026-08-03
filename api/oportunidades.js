@@ -1,6 +1,12 @@
 /* ============================================================================
    /api/oportunidades · Consulta de oportunidades viables desde la caché Redis
    ----------------------------------------------------------------------------
+   PROTEGIDO con HISTORICO_TOKEN (lib/auth), por header `x-historico-token` o
+   `?token=`. Cada resultado lleva `rup` con k_cop, crpc_cop, tope_cop y
+   co_estimado —derivados del patrimonio, la utilidad operacional y la liquidez
+   de una persona natural identificada— y ahora también el patrimonio en las
+   puertas. La clave del gate de public/app.js es del CLIENTE: no protege nada.
+
    GET /api/oportunidades?perfil=helder|genesis|juntos   (alias: consorcio)
      &anticipo_min=20            (excluye anticipos DECLARADOS bajo el mínimo;
                                   0 = "sin dato" pasa el filtro y puntúa 0,
@@ -13,22 +19,31 @@
      &incluir_sin_unspsc=1       (abre la ruta de TEXTO cuando la pertinencia no
                                   llegó a verde; apagada por defecto)
      &incluir_cerradas=1         (por defecto solo procesos abiertos)
-     &ordenar_por=atractividad|anticipo|cuantia|competencia|puntaje
+     &solo_viables=true|false    (default TRUE: oculta lo que no pasa P1-P3)
+     &ordenar_por=atractividad|ve|p_ganar|anticipo|cuantia|competencia|puntaje
                                  (default ATRACTIVIDAD)
      &orden=asc|desc             (default desc)
      &pagina=1&por_pagina=20     (máx 100)
 
-   → { ok:true, total, resultados, pagina, por_pagina, perfil, sincronizado,
-       por_match, indice_competencia, conocimiento }
+   → { ok:true, total, viables, no_viables, solo_viables, resultados, pagina,
+       por_pagina, perfil, sincronizado, por_match, indice_competencia,
+       conocimiento }
    Cada resultado lleva `rup` con el veredicto GRADUADO: rup.tier
    (clase|familia|equivalente|texto), rup.unspsc {codigo_proceso, codigo_rup,
    mensaje} y rup.pertinencia {nivel, etiqueta, motivo}.
 
-   ORDEN POR ATRACTIVIDAD (el default, y la razón de ser del índice): primero
-   las entidades donde históricamente se presenta MENOS gente — ahí es más
-   probable ganar. Grupos: baja → media → sin_dato → alta; dentro de cada uno,
-   por puntaje ponderado descendente. "sin_dato" va por delante de "alta" a
-   propósito: no saber no es lo mismo que saber que hay 20 competidores.
+   LAS CUATRO PUERTAS (ago 2026, docs/ATRACTIVIDAD.md). `puntaje_ponderado` ya
+   no viaja en la respuesta: lo sustituyen tres campos con significado propio,
+   que NO se promedian entre sí porque compensar aquí es un error de categoría
+   (no poder financiar la obra no se compensa con cuantía alta):
+
+     puertas   {p1_rup, p2_k, p3_caja, p4_competencia, pasa_todas, no_viable_por}
+     p_ganar   probabilidad estimada 0-1, con su desglose y su FUENTE
+     ve        valor esperado = p_ganar × cuantía
+
+   ORDEN POR ATRACTIVIDAD (el default): primero lo que pasa las cuatro puertas
+   y, dentro de cada grupo, por VALOR ESPERADO descendente. La viabilidad manda
+   sobre `orden=asc|desc`: lo que no se puede tomar va al final, siempre.
 
    Lógica: SCAN licitaciones:activo:mes:*:chunk:* → MGET por lotes → inflate →
    dedup por _k (gana :updated_at) → filtros de negocio → rup_valido(perfil)
@@ -58,6 +73,7 @@
 
 const { crearRedis, hayCredenciales } = require("../lib/redis.js");
 const { CLAVES, leerChunksDedup, leerJSON, leerJSONComprimido } = require("../lib/almacen.js");
+const { autorizarToken } = require("../lib/auth.js");
 const { PERFILES, ALIAS_PERFIL, evaluarRup } = require("../lib/rup.js");
 const { recargarPerfiles } = require("../lib/perfiles.js");
 const { filtrarProcesosVisibles, ANTICIPO_MIN_DEFAULT } = require("../lib/filtros.js");
@@ -65,18 +81,32 @@ const { leerIndice, leerIndiceMeta, competenciaDe } = require("../lib/indice_com
 const { leerEquivalencias, leerEquivalenciasMeta } = require("../lib/equivalencias.js");
 const { vocabularioActivo } = require("../lib/texto_unspsc.js");
 const { sinAdjudicacion } = require("../lib/proyeccion.js");
+const { evaluarPuertas } = require("../lib/puertas.js");
+const {
+  estimarPDetalle, valorEsperado, promediosPorDepartamento, indiceColisionCierres, claveColision,
+} = require("../lib/probabilidad.js");
 
 const POR_PAGINA_DEFAULT = 20, POR_PAGINA_MAX = 100;
 // ANTICIPO_MIN_DEFAULT vive en lib/filtros con el resto de la cascada: el panel
 // tiene que aplicar EXACTAMENTE el mismo default o sus totales no coincidirían.
-/* Puntaje de atractividad: más alto = más probable ganar. Con el orden `desc`
-   por defecto, las de competencia baja quedan arriba. */
-const ATRACTIVIDAD = { baja: 3, media: 2, sin_dato: 1, alta: 0 };
+/* ORDEN POR ATRACTIVIDAD (el default, reescrito en ago 2026): primero lo que
+   PASA LAS CUATRO PUERTAS y, dentro de cada grupo, por VALOR ESPERADO
+   descendente. El criterio anterior —agrupar por banda de competencia de la
+   entidad y desempatar por `puntaje_ponderado`— se retiró porque ese puntaje
+   tenía su tercer componente constante en todo lo servido: el desempate real lo
+   acababa haciendo la fecha de publicación (docs/ATRACTIVIDAD.md §0).
+   La viabilidad manda SIEMPRE sobre `orden=asc|desc`: un proceso que no se
+   puede tomar no encabeza la lista ni pidiéndolo al revés. */
 const ORDEN_CAMPOS = {
-  atractividad: (l, comp) => ATRACTIVIDAD[comp.nivel] ?? 1,
+  atractividad: (l, ctx) => ctx.ve || 0,
   anticipo: (l) => l.anticipo_pct || 0,
   cuantia: (l) => l.cuantia_cop || 0,
   competencia: (l) => ({ baja: 1, media: 2, alta: 3 }[l.nivel_competencia] || 0),
+  ve: (l, ctx) => ctx.ve || 0,
+  p_ganar: (l, ctx) => ctx.p_ganar || 0,
+  // legado: `puntaje_ponderado` ya no viaja en la respuesta (lo sustituyen
+  // puertas/p_ganar/ve), pero el campo sigue existiendo en la fila y el orden
+  // se conserva para no romper enlaces guardados
   puntaje: (l) => l.puntaje_ponderado || 0,
 };
 const ORDEN_DEFAULT = "atractividad";
@@ -102,7 +132,10 @@ async function cargarCorpus(redis, meta) {
     logDev(`corpus desde memoria caliente (${_mem.filas.length} filas)`);
     return _mem.filas;
   }
-  const filas = await leerChunksDedup(redis, claves);
+  // `senales`: el dedup deriva de paso, sin coste, lo que solo existe ENTRE
+  // versiones — nº de reescrituras y si el cierre se prorrogó. La prórroga es
+  // la única señal de competencia observable ANTES del cierre (lib/probabilidad).
+  const filas = await leerChunksDedup(redis, claves, { senales: true });
   if (sello) _mem = { sello, filas };
   logDev(`corpus leído de Redis: ${claves.length} chunks → ${filas.length} filas únicas`);
   return filas;
@@ -179,6 +212,23 @@ module.exports = async function handler(req, res) {
   const q = req.query || {};
   res.setHeader("Cache-Control", "no-store");
 
+  /* PROTEGIDO con el mismo HISTORICO_TOKEN que el resto de endpoints con datos
+     sensibles (lib/auth). Va ANTES que cualquier otra comprobación: sin token
+     no se confirma ni se niega nada, ni siquiera qué perfiles existen.
+     Por qué: cada resultado lleva `rup` con k_cop, crpc_cop, tope_cop y
+     co_estimado, que se derivan del patrimonio, la utilidad operacional y la
+     liquidez de una PERSONA NATURAL identificada por nombre completo
+     (lib/perfiles). La clave 231105 de public/app.js es una barrera de
+     cortesía en el cliente: no protege la API, y quien conociera la ruta veía
+     esas cifras sin credencial alguna. */
+  const permiso = autorizarToken(req, q);
+  if (!permiso.ok) {
+    return res.status(permiso.status).json({
+      ok: false, error: permiso.error,
+      ...(permiso.como_autenticar ? { como_autenticar: permiso.como_autenticar } : {}),
+    });
+  }
+
   let perfil = String(q.perfil || "").toLowerCase();
   // alias documentados (consorcio → juntos); hasOwnProperty en ambos mapas:
   // un ?perfil=constructor no debe pasar por el prototipo
@@ -241,6 +291,10 @@ module.exports = async function handler(req, res) {
      hay evidencia de nada (en el corpus real esa ruta metía software, equipos
      y servicios de salud). Ver lib/filtros.evaluarObjeto. */
   const opciones = { incluirTextoDebil: ["1", "true"].includes(String(q.incluir_sin_unspsc)) };
+  /* ?solo_viables=false → enseña también lo que NO pasa las puertas, atenuado y
+     con el motivo. Encendido por defecto: la lista es para decidir, y un
+     proceso que no se puede tomar estorba más de lo que informa. */
+  const soloViables = !["0", "false", "no"].includes(String(q.solo_viables || "").toLowerCase());
 
   /* ---------- LA CASCADA (una sola implementación, en lib/filtros) ----------
      Modalidad → estado → objeto → capacidad K → tope → anticipo. Vive en
@@ -250,10 +304,41 @@ module.exports = async function handler(req, res) {
      El veredicto de cada fila vuelve memoizado (`veredictos`): el filtro lo
      necesita para decidir y la tarjeta para pintarse; calcularlo dos veces
      duplicaría el trabajo caro de la cascada. */
-  const { visibles, veredictos } = filtrarProcesosVisibles(filas, perfil, conocimiento, {
+  const { visibles, veredictos, noViables } = filtrarProcesosVisibles(filas, perfil, conocimiento, {
     soloAbiertas, anticipoMin, incluirTextoDebil: opciones.incluirTextoDebil,
+    retenerNoViables: !soloViables,
   });
   const rupDe = (l) => veredictos.get(l) || evaluarRup(l, perfil, conocimiento, opciones);
+
+  /* ---------- LAS CUATRO PUERTAS, P(ganar) y VALOR ESPERADO ----------
+     Sustituyen al `puntaje_ponderado` como criterio de decisión (lib/puertas,
+     lib/probabilidad, docs/ATRACTIVIDAD.md). Se calculan AQUÍ y no en la
+     ingesta: dependen del perfil consultado y de los datos derivados del
+     histórico, así que sellarlos en el chunk daba el mismo orden a los tres
+     perfiles y hasta 30 días de deriva hasta la siguiente full.
+     Los dos índices auxiliares se derivan del corpus que ya está en memoria:
+     cero comandos de Redis, una pasada cada uno. */
+  const promediosDepto = promediosPorDepartamento(filas, compDe);
+  const colisiones = indiceColisionCierres(filas);
+  const _eval = new Map(); // memo por fila dentro de la petición
+  const evalDe = (l) => {
+    let e = _eval.get(l);
+    if (e) return e;
+    const competencia = compDe(l);
+    const depto = String(l.departamento_entidad || "").trim().toUpperCase();
+    const clave = claveColision(l);
+    const detalle = estimarPDetalle(l, {
+      competencia,
+      promedio_departamento: depto ? promediosDepto.get(depto) : null,
+      colision_cierres: clave ? (colisiones.get(clave) || 0) : 0,
+    });
+    const puertas = evaluarPuertas(l, perfil, {
+      rup: rupDe(l), competencia, conocimiento, incluirTextoDebil: opciones.incluirTextoDebil,
+    });
+    e = { puertas, p_ganar: detalle.p, p_ganar_detalle: detalle, ve: valorEsperado(l, detalle.p) };
+    _eval.set(l, e);
+    return e;
+  };
 
   /* ---------- estrechamiento por lo que ELIGE quien consulta ----------
      Estos filtros NO son parte del juicio: son la pantalla del dueño. Por eso
@@ -261,24 +346,41 @@ module.exports = async function handler(req, res) {
      `totales.visibles` del panel dependería de lo que hubiera marcado en los
      desplegables. Todos son conjunciones, así que el orden no altera el
      resultado. */
-  let lista = visibles.filter((l) => {
+  const estrecha = (l) => {
     if (fCuantia && l.cuantia_rango !== fCuantia) return false;
     if (fCompetencia && l.nivel_competencia !== fCompetencia) return false;
     if (fUbicacion !== null && l.ubicacion_valida !== fUbicacion) return false;
     if (fEntidad && compDe(l).nivel !== fEntidad) return false;
     if (fTier && (rupDe(l).tier || "ninguno") !== fTier) return false;
     return true;
-  });
+  };
+
+  let lista = visibles.filter(estrecha);
+  /* La caja (P3) es una puerta NUEVA: la cascada compartida no la conoce, así
+     que un proceso que pasa objeto, K y tope puede seguir siendo inviable por
+     no poder financiarlo. Con `solo_viables` encendido se retira aquí; apagado,
+     se conserva y se marca — junto con los que la cascada apartó por RUP o por
+     capacidad, que vuelven desde `noViables`. */
+  if (soloViables) {
+    lista = lista.filter((l) => evalDe(l).puertas.pasa_todas);
+  } else {
+    lista = lista.concat(noViables.map((n) => n.fila).filter(estrecha));
+  }
 
   /* ---------- orden ---------- */
-  const campo = Object.prototype.hasOwnProperty.call(ORDEN_CAMPOS, q.ordenar_por)
-    ? ORDEN_CAMPOS[q.ordenar_por] : ORDEN_CAMPOS[ORDEN_DEFAULT];
+  const ordenarPor = Object.prototype.hasOwnProperty.call(ORDEN_CAMPOS, q.ordenar_por) ? q.ordenar_por : ORDEN_DEFAULT;
+  const campo = ORDEN_CAMPOS[ordenarPor];
   const dir = q.orden === "asc" ? 1 : -1;
   lista.sort((a, b) => {
-    const d = campo(a, compDe(a)) - campo(b, compDe(b));
+    const ea = evalDe(a), eb = evalDe(b);
+    // la viabilidad manda sobre cualquier criterio y sobre `orden`: lo que no
+    // se puede tomar va al final, siempre
+    const va = ea.puertas.pasa_todas ? 1 : 0, vb = eb.puertas.pasa_todas ? 1 : 0;
+    if (va !== vb) return vb - va;
+    const d = campo(a, ea) - campo(b, eb);
     if (d) return d * dir;
-    const p = (a.puntaje_ponderado || 0) - (b.puntaje_ponderado || 0); // desempate estable
-    if (p) return -p;
+    const v = (ea.ve || 0) - (eb.ve || 0); // desempate estable por valor esperado
+    if (v) return -v;
     return String(b.fecha_de_publicacion_del || "").localeCompare(String(a.fecha_de_publicacion_del || ""));
   });
 
@@ -289,7 +391,25 @@ module.exports = async function handler(req, res) {
   const resultados = lista.slice((pagina - 1) * porPagina, (pagina - 1) * porPagina + porPagina)
     // sinAdjudicacion: defensa en profundidad — el corpus activo no guarda
     // datos de adjudicación, y si una fila vieja los trajera, no salen de aquí
-    .map((l) => ({ ...sinAdjudicacion(l), rup: rupDe(l), competencia_entidad: compDe(l) }));
+    .map((l) => {
+      const e = evalDe(l);
+      const fila = sinAdjudicacion(l);
+      // `puntaje_ponderado` deja de viajar: lo sustituyen las puertas, la
+      // probabilidad y el valor esperado. Sigue calculándose en la ingesta
+      // (lib/negocio) porque /api/resumen lo usa, pero no es criterio de
+      // decisión y enseñarlo invitaba a leerlo como si lo fuera.
+      delete fila.puntaje_ponderado;
+      return {
+        ...fila,
+        rup: rupDe(l),
+        competencia_entidad: compDe(l),
+        puertas: e.puertas,
+        p_ganar: e.p_ganar,
+        p_ganar_detalle: e.p_ganar_detalle,
+        ve: e.ve,
+        viable: e.puertas.pasa_todas,
+      };
+    });
 
   // reparto por solidez del match: le dice al dueño cuántas de las que ve son
   // «RUP ✓» y cuántas hay que verificar en el pliego
@@ -299,11 +419,17 @@ module.exports = async function handler(req, res) {
     if (t in por_match) por_match[t]++;
   }
 
-  logDev(`perfil=${perfil} corpus=${filas.length} filtradas=${total} página=${pagina} orden=${q.ordenar_por || ORDEN_DEFAULT}`);
+  // cuántas de las servidas pasan las cuatro puertas: es la cifra que dice si
+  // la lista es de trabajo o de lectura
+  let viables = 0;
+  for (const l of lista) if (evalDe(l).puertas.pasa_todas) viables++;
+
+  logDev(`perfil=${perfil} corpus=${filas.length} filtradas=${total} viables=${viables} página=${pagina} orden=${ordenarPor}`);
   return res.status(200).json({
     ok: true, total, resultados, pagina, por_pagina: porPagina, perfil,
     sincronizado: meta ? meta.last_sync : null,
-    ordenado_por: Object.prototype.hasOwnProperty.call(ORDEN_CAMPOS, q.ordenar_por) ? q.ordenar_por : ORDEN_DEFAULT,
+    ordenado_por: ordenarPor,
+    solo_viables: soloViables, viables, no_viables: total - viables,
     por_match, incluye_sin_unspsc: opciones.incluirTextoDebil,
     indice_competencia: indiceMeta
       ? { construido: indiceMeta.construido, entidades: indiceMeta.clasificadas, min_procesos: indiceMeta.min_procesos }

@@ -736,9 +736,54 @@ cifra de aquí en un pliego sin abrir la fuente.
   en `lib/equivalencias.js`; co-señal de texto en `lib/texto_unspsc.js` +
   `data/vocabulario_unspsc.json`.
   Resumen técnico en `docs/PERFILES.md`. SMMLV 2026 = $1.750.905.
+- Las CUATRO PUERTAS en `lib/puertas.js` y `P(ganar)`/VE en `lib/probabilidad.js`; el diseño y por
+  qué, en `docs/ATRACTIVIDAD.md`.
 - `autorizacion_helder.md`: constancia de autorización de datos personales (plantilla).
-- Clave del sitio: `231105` (gate del cliente, en `public/app.js`). La protección seria es
-  Vercel Password Protection (servidor); no debilitarla sin permiso del dueño.
+- Clave del sitio: `231105` (gate del cliente, en `public/app.js`). **No protege la API**: es una
+  cortesía del navegador. La protección de servidor es `HISTORICO_TOKEN` (`lib/auth.js`) —que desde
+  ago 2026 exige TAMBIÉN `/api/oportunidades`— y, encima, Vercel Password Protection. No debilitar
+  ninguna de las dos sin permiso del dueño.
+
+### Puertas, probabilidad y valor esperado (ago 2026)
+
+- **`/api/oportunidades` EXIGE token.** Servía `k_cop`, `crpc_cop`, `tope_cop` y `co_estimado`
+  —derivados del patrimonio, la utilidad operacional y la liquidez de una persona natural
+  identificada por nombre completo— sin credencial alguna. El guardián se comprueba ANTES que nada:
+  sin token no se confirma ni se niega nada, ni siquiera qué perfiles existen. El frontend guarda el
+  token en `sessionStorage` y lo manda por cabecera; es el MISMO formulario que ya usaba el detalle
+  de competencia (una credencial, dos usos).
+- **Una suma ponderada es COMPENSATORIA, y aquí compensar es un error de categoría.** Por eso
+  `puntaje_ponderado` dejó de viajar en la respuesta: no poder financiar una obra no se compensa con
+  cuantía alta. Lo sustituyen cuatro puertas + `p_ganar` + `ve`, que NO se promedian entre sí. El
+  campo sigue calculándose en `lib/negocio.js` porque `/api/resumen` lo usa; no es criterio de nada.
+- **P3 · CAJA es la puerta que de verdad ata, y no necesitó un dato nuevo**: `patrimonio ≥
+  (cuantía − anticipo) × 0,20`, con `precio_base` y `duracion`, que ya se proyectan. Génesis
+  (patrimonio $211 M) ante un proceso de $3.100 M tendría que financiar ~$620 M — y lo veía con
+  «Capacidad K ✓» en verde, porque el K del RUP mide HABILITACIÓN, no capacidad de financiar.
+  En plural el patrimonio se SUMA (el ponderado 50/50 es para indicadores habilitantes) y cada
+  integrante responde por el 100 % (Ley 80/1993 art. 7).
+- **P4 · COMPETENCIA nunca bloquea**: informa. De penalizar ya se encarga `p_ganar`.
+- **Regla de faltantes**: un dato ausente no vale 0 ni 1 — la puerta marca `sin_dato` y DEJA PASAR.
+  Cerrar por ignorancia esconde oportunidades y el usuario no puede ni enterarse. Corolario ya
+  verificado: sin `precio_base`, `evaluarRup` devolvía `capacidad_ok:true` con `crpc_cop:0` (porque
+  `factorE` da 120 «sin presupuesto no hay ratio» y `0 ≤ K`) — chip verde sobre la nada.
+- **La probabilidad viaja SIEMPRE con su fuente** (`entidad` → `departamento` → `conservador` = 5
+  rivales, `P = 1/6`). «Histórico de la entidad» no es lo mismo que «supuesto», y enseñar el 17 %
+  sin decir de dónde sale convierte una estimación en una promesa. Los cuatro factores de ajuste son
+  SUPUESTOS CON NOMBRE, no coeficientes ajustados: no hay etiqueta contra la que calibrarlos.
+- **La PRÓRROGA DEL CIERRE es la única señal de competencia observable ANTES del cierre.** El
+  contador de oferentes es ex-post: en un proceso abierto vale 0 por construcción, y como
+  `nivelCompetencia(0) = "baja" = 100`, ese componente del viejo puntaje era constante en todo lo
+  servido. La prórroga sale gratis del dedup de lectura, que ya recorre todas las versiones de cada
+  `_k` (`lib/almacen.leerChunksDedup`, bandera `senales` — bajo bandera para no tocar a
+  `/api/resumen` ni al histórico, que leen por la misma función).
+- **`solo_viables=true` es el default y NO es lo mismo que `filtrarProcesosVisibles`**: la puerta de
+  caja es posterior a la cascada, así que el listado sirve menos que `totales.visibles` del panel.
+  Está dicho en el `como_leerlo` de `/api/resumen`; si alguien vuelve a igualarlos, mentirá.
+- **«No viable» ≠ «no es de este negocio»**: `retenerNoViables` solo devuelve lo que falla por una
+  razón que el dueño puede leer y discutir (clase fuera del RUP, capacidad insuficiente). Un
+  proceso de software o un convenio no vuelven — devolverlos inundaría la lista con exactamente el
+  ruido que quitó la cascada de pertinencia.
 
 ## Convenciones
 

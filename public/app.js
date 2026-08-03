@@ -8,9 +8,21 @@
       (Redis vacío → sincronización recién disparada), reintenta solo con
       cuenta regresiva hasta que la carga inicial produzca datos.
    3. El orden por defecto es «Más atractivas» (ordenar_por=atractividad):
-      primero las entidades donde históricamente se presentan menos oferentes
-      —donde es más probable ganar—, y dentro de cada grupo por puntaje. Cada
-      tarjeta muestra la banda de competencia de su entidad (🟢/🟡/🔴/⚪).
+      primero lo que pasa las CUATRO PUERTAS y, dentro de cada grupo, por valor
+      esperado. Cada tarjeta muestra la banda de competencia de su entidad
+      (🟢/🟡/🔴/⚪).
+   3-bis. LAS CUATRO PUERTAS (ago 2026) sustituyen a la barra de puntaje 0-100:
+      RUP · K · Caja · Competencia, cada una con su cifra en el `title`, más
+      «Prob. estimada» y «Valor esperado». Lo que no pasa una puerta se atenúa
+      con el motivo en vez de desaparecer, y el toggle «Mostrar solo viables»
+      (encendido) decide si aparece. El porqué está en docs/ATRACTIVIDAD.md: una
+      suma ponderada es compensatoria, y no poder financiar una obra no se
+      compensa con cuantía alta.
+   3-ter. /api/oportunidades está PROTEGIDO en el servidor (HISTORICO_TOKEN):
+      sirve el K, el CRPC y el patrimonio de una persona natural identificada.
+      El token se guarda en sessionStorage, viaja por cabecera y lo pide el
+      mismo formulario que ya usaba el detalle de competencia. El gate de la
+      clave 231105 es una cortesía del cliente y nunca protegió la API.
    4. Veredicto GRADUADO en cada tarjeta (jul 2026): el badge de matching dice
       con qué FUERZA encaja en el RUP (RUP ✓ por clase · RUP ~ por familia ·
       RUP ≈ por clase afín · «Objeto sugiere obra») y el de pertinencia qué
@@ -85,6 +97,10 @@
     }
     p.set("ordenar_por", $("f-ordenar").value);
     p.set("orden", $("f-orden").value);
+    // encendido por defecto: la lista es para decidir, y un proceso que no se
+    // puede tomar estorba más de lo que informa. Apagarlo los devuelve
+    // atenuados y con el motivo, nunca mezclados con los viables.
+    if (!$("f-solo-viables").checked) p.set("solo_viables", "false");
     // apagado por defecto: sin código del RUP y sin vocabulario claro de obra,
     // el proceso es ruido (software, equipos, servicios de salud…). Encenderlo
     // los devuelve, siempre marcados como «Objeto sugiere obra».
@@ -95,10 +111,15 @@
   async function buscar() {
     clearTimeout(timerReintento);
     const peticion = ++peticionActual;
+    /* El endpoint está PROTEGIDO en el servidor (HISTORICO_TOKEN): sirve el K,
+       el CRPC y el patrimonio de una persona natural identificada. Sin token no
+       se pide nada — se abre el mismo formulario del detalle de competencia. */
+    const token = tokenGuardado();
+    if (!token) return pedirTokenParaBuscar(null);
     mostrar("estado-carga", "Buscando oportunidades…");
     let r, cuerpo;
     try {
-      r = await fetch(`/api/oportunidades?${parametros()}`);
+      r = await fetch(`/api/oportunidades?${parametros()}`, { headers: { "x-historico-token": token } });
       cuerpo = await r.json();
     } catch {
       if (peticion !== peticionActual) return; // llegó tarde: ya hay otra búsqueda
@@ -110,6 +131,10 @@
     if (peticion !== peticionActual) return; // respuesta obsoleta: descartar
 
     if (r.status === 503 && cuerpo && cuerpo.sincronizando) return esperarSincronizacion();
+    if (r.status === 401) {
+      olvidarToken();
+      return pedirTokenParaBuscar("Token inválido. Escriba uno nuevo y vuelva a intentarlo.");
+    }
     if (!r.ok || !cuerpo.ok) {
       return mostrar("estado-error", (cuerpo && cuerpo.error) || `Error del servidor (${r.status}). Intente de nuevo.`);
     }
@@ -220,15 +245,76 @@
       </button>`;
   }
 
+  /* ══════════ Las cuatro puertas ══════════
+     Sustituyen a la barra de puntaje 0-100. Un número sin unidades invitaba a
+     leerse como probabilidad y su tercer componente era constante en todo lo
+     servido (docs/ATRACTIVIDAD.md). Cada puerta enseña su veredicto Y la cifra
+     que lo sostiene en el `title`: una puerta cerrada sin su número no se puede
+     discutir ni corregir. */
+  const VERDE = "bg-green-100 text-green-800";
+  const AMBAR = "bg-amber-100 text-amber-800";
+  const ROJO = "bg-red-100 text-red-700";
+  const GRIS = "bg-gray-100 text-gray-500";
+
+  function badgePuerta(etiqueta, puerta) {
+    const p = puerta || {};
+    if (p.sin_dato) return chip(`⚪ ${etiqueta} ?`, GRIS, p.mensaje || "Sin datos para evaluar esta puerta");
+    if (!p.pasa) return chip(`🔴 ${etiqueta} ✗`, ROJO, p.mensaje || "");
+    if (p.advertencia) return chip(`🟡 ${etiqueta} ~`, AMBAR, p.mensaje || "");
+    return chip(`🟢 ${etiqueta} ✓`, VERDE, p.mensaje || "");
+  }
+
+  function badgesPuertas(puertas) {
+    const g = puertas || {};
+    return [
+      badgePuerta("RUP", g.p1_rup),
+      badgePuerta("K", g.p2_k),
+      badgePuerta("Caja", g.p3_caja),
+      badgePuerta("Competencia", g.p4_competencia),
+    ].join("");
+  }
+
+  /* Probabilidad y valor esperado. La probabilidad SIEMPRE viaja con su fuente:
+     «histórico de la entidad» no es lo mismo que «supuesto conservador», y
+     enseñar el 17 % sin decir de dónde sale es lo que convierte una estimación
+     en una promesa. */
+  const FUENTE_P = {
+    entidad: "Basada en el histórico de oferentes de esta entidad",
+    departamento: "La entidad no tiene histórico suficiente: se usa el promedio de su departamento",
+    conservador: "Sin histórico de la entidad ni del departamento: supuesto conservador de 5 rivales",
+  };
+
+  function bloqueProbabilidad(l) {
+    const d = l.p_ganar_detalle || {};
+    const pct = Math.round((Number(l.p_ganar) || 0) * 100);
+    const ajustes = (d.ajustes || []).map((a) => `${a.nombre} ×${a.factor}: ${a.motivo}`).join("\n");
+    const titulo = [FUENTE_P[d.fuente] || "", d.rivales_esperados != null ? `Rivales esperados: ${d.rivales_esperados}` : "", ajustes]
+      .filter(Boolean).join("\n");
+    return `
+      <div class="mt-4 flex flex-wrap items-baseline gap-x-6 gap-y-1 rounded-xl bg-gray-50 px-4 py-3">
+        <span title="${esc(titulo)}" class="text-sm text-gray-600">
+          Prob. estimada: <strong class="tabular-nums text-gray-900">${pct}%</strong>
+        </span>
+        <span class="text-sm text-gray-600">
+          Valor esperado: <strong class="tabular-nums text-gray-900">${esc(fmtCorto(l.ve))}</strong>
+        </span>
+        <span class="text-xs text-gray-400">${esc(FUENTE_P[d.fuente] ? d.fuente : "")}</span>
+      </div>`;
+  }
+
   function tarjeta(l) {
     const rup = l.rup || {};
     const cierre = l.fecha_cierre ? new Date(l.fecha_cierre) : null;
     const cierreTxt = cierre && !isNaN(cierre) ? cierre.toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }) : null;
-    const puntaje = Math.max(0, Math.min(100, l.puntaje_ponderado || 0));
     const compColor = { baja: "bg-green-100 text-green-800", media: "bg-amber-100 text-amber-800", alta: "bg-red-100 text-red-700" }[l.nivel_competencia] || "bg-gray-100 text-gray-600";
+    const puertas = l.puertas || {};
+    // «No viable» se ATENÚA, no se esconde (cuando el toggle lo permite): ver un
+    // proceso grande caído por caja enseña más que su ausencia
+    const noViable = l.viable === false;
+    const motivos = (puertas.no_viable_por || []).join(" · ");
 
     return `
-    <article class="tarjeta rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
+    <article class="tarjeta rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5${noViable ? " opacity-50" : ""}">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
           <h3 class="font-semibold leading-snug tracking-tight">${esc(l.nombre_del_procedimiento || l.id_del_proceso || "Proceso sin nombre")}</h3>
@@ -241,20 +327,23 @@
         </div>
       </div>
 
-      <div class="mt-4 flex items-center gap-3">
-        <div class="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
-          <div class="h-full rounded-full ${puntaje >= 75 ? "bg-green-500" : puntaje >= 50 ? "bg-amber-400" : "bg-gray-300"}" style="width:${puntaje}%"></div>
-        </div>
-        <span class="text-sm font-semibold tabular-nums">${puntaje}</span>
+      ${noViable ? `<p class="mt-3">${chip(`No viable${motivos ? ` — ${esc(motivos)}` : ""}`, "bg-red-100 text-red-700 ring-1 ring-inset ring-red-600/20",
+    "No pasa una de las puertas: pase el cursor por los badges para ver por qué")}</p>` : ""}
+
+      <div class="mt-4 flex flex-wrap gap-2">
+        ${badgesPuertas(puertas)}
       </div>
+
+      ${bloqueProbabilidad(l)}
 
       <div class="mt-4 flex flex-wrap gap-2">
         ${chip(l.anticipo_pct > 0 ? `Anticipo ${l.anticipo_pct}%` : "Anticipo no declarado", l.anticipo_pct > 0 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-500")}
         ${chip(`Ofertas del proceso: ${esc(l.nivel_competencia || "?")}`, compColor)}
         ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
         ${badgesRup(rup)}
-        ${chip(rup.capacidad_ok ? (rup.co_estimado ? "Capacidad K ✓ (CO estimado)" : "Capacidad K ✓") : "Capacidad K ✗", rup.capacidad_ok ? "bg-green-100 text-green-800" : "bg-red-100 text-red-700")}
+        ${rup.co_estimado ? chip("K sobre CO estimado", "bg-gray-100 text-gray-500", "La capacidad se calcula con un ingreso operacional estimado: no sirve para acreditar") : ""}
         ${cierreTxt ? chip(`Cierra ${cierreTxt}`, "bg-purple-100 text-purple-800") : ""}
+        ${l._cierre_prorrogado ? chip("Cierre prorrogado", "bg-indigo-100 text-indigo-800", "El cierre se movió por adenda: suele indicar que no llegaron ofertas suficientes") : ""}
         ${l.modalidad_de_contratacion ? chip(esc(l.modalidad_de_contratacion), "bg-gray-100 text-gray-600") : ""}
       </div>
 
@@ -273,6 +362,8 @@
     const porVerificar = (m.familia || 0) + (m.equivalente || 0) + (m.texto || 0);
     $("resumen-resultados").textContent =
       `${cuerpo.total} oportunidad${cuerpo.total === 1 ? "" : "es"} para el perfil «${$("f-perfil").selectedOptions[0].text}»`
+      + (cuerpo.viables !== undefined ? ` · ${cuerpo.viables} pasan las cuatro puertas` : "")
+      + (cuerpo.no_viables ? `, ${cuerpo.no_viables} no viable${cuerpo.no_viables === 1 ? "" : "s"}` : "")
       + (m.clase !== undefined ? ` · ${m.clase} con RUP ✓${porVerificar ? `, ${porVerificar} por verificar` : ""}` : "")
       + (cuerpo.incluye_sin_unspsc ? " · incluye procesos sin código UNSPSC" : "");
     $("lista").innerHTML = cuerpo.resultados.map(tarjeta).join("");
@@ -401,7 +492,7 @@
      respuesta visible — un botón que «no hace nada» es peor que un error. Por
      eso el campo vacío avisa, el envío deshabilita el botón y muestra estado, y
      el fallo de almacenamiento se cuenta en vez de morir callado. */
-  function pedirToken(entidad, aviso) {
+  function pedirToken(aviso, alGuardar) {
     $("modal-cuerpo").innerHTML = `
       <div id="aviso-token" class="${aviso ? "" : "hidden "}mb-3 rounded-lg bg-red-50 p-3 text-sm font-medium text-red-700">${esc(aviso || "")}</div>
       <p class="text-gray-600">Este detalle sale del corpus histórico y está protegido con el mismo token que la
@@ -432,7 +523,7 @@
       if (!t) { aviso1("Pegue el token para poder consultar el detalle."); entrada.focus(); return; }
       if (!guardarToken(t)) { aviso1("Este navegador no permite guardar el token en la pestaña. Revise la configuración de almacenamiento."); return; }
       $("btn-token").disabled = true;
-      cargarDetalle(entidad);
+      alGuardar();
     };
     // submit del formulario Y clic del botón: si algo llegara a suprimir el
     // envío del formulario, el clic sigue funcionando
@@ -444,9 +535,19 @@
     entrada.focus();
   }
 
+  /* Mismo formulario, otra consecuencia: al guardar el token se relanza la
+     búsqueda y se cierra el modal. La lista y el detalle comparten credencial,
+     así que quien acaba de escribirlo para una cosa ya no lo necesita para la
+     otra. */
+  function pedirTokenParaBuscar(aviso) {
+    mostrar(null);
+    abrirModal("Acceso a los datos");
+    pedirToken(aviso, () => { cerrarModal(); buscar(); });
+  }
+
   async function cargarDetalle(entidad) {
     const token = tokenGuardado();
-    if (!token) return pedirToken(entidad, null);
+    if (!token) return pedirToken(null, () => cargarDetalle(entidad));
     $("modal-cuerpo").innerHTML = '<p class="py-8 text-center text-gray-400">Consultando el histórico…</p>';
     let r, cuerpo;
     try {
@@ -459,7 +560,7 @@
     }
     if (r.status === 401) {
       olvidarToken();
-      return pedirToken(entidad, "Token inválido. Escriba uno nuevo y vuelva a intentarlo.");
+      return pedirToken("Token inválido. Escriba uno nuevo y vuelva a intentarlo.", () => cargarDetalle(entidad));
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
       $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`)}</p>`;
@@ -484,7 +585,8 @@
   /* ══════════ Eventos ══════════ */
   $("btn-buscar").addEventListener("click", () => { pagina = 1; reintentosSync = 0; buscar(); });
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
-  for (const id of ["f-perfil", "f-cuantia", "f-competencia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden", "f-sin-unspsc"]) {
+  for (const id of ["f-perfil", "f-cuantia", "f-competencia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
+    "f-sin-unspsc", "f-solo-viables"]) {
     $(id).addEventListener("change", () => { pagina = 1; buscar(); });
   }
 

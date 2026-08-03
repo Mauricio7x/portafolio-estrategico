@@ -61,7 +61,9 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `api/admin/rup.js` + `lib/config_rup.js` | **Carga del RUP por archivo JSON**: validación campo por campo y publicación atómica, con efecto inmediato |
 | `lib/indice_competencia.js` | Índice **entidad → oferentes promedio** sobre el histórico; tertiles baja/media/alta |
 | `api/competencia-detalle.js` + `lib/competencia_detalle.js` | **Los procesos que sostienen el badge**: incluidos, excluidos y por qué (con caché de 1 h) |
-| `lib/auth.js` | Guardián único del `HISTORICO_TOKEN` para los tres endpoints protegidos |
+| `lib/auth.js` | Guardián único del `HISTORICO_TOKEN` para **todos** los endpoints protegidos, `/api/oportunidades` incluido |
+| `lib/puertas.js` | **Las cuatro puertas** de viabilidad (RUP · K · Caja · Competencia): sustituyen al puntaje 0-100 como criterio de decisión |
+| `lib/probabilidad.js` | **P(ganar)** y valor esperado, con la fuente de cada estimación y las señales ex-ante (prórroga del cierre, colisión de cierres) |
 | `lib/equivalencias.js` | **Clases UNSPSC afines** aprendidas del histórico (lift sobre adjudicatarios) |
 | `lib/texto_unspsc.js` | El **objeto como co-señal**: vocabulario distintivo por familia (TF-IDF) + derivación |
 | `lib/proyeccion.js` | Proyección de columnas y cascada de filtros; dos variantes: activa (sin adjudicación) e histórica |
@@ -72,7 +74,7 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `lib/unspsc.js` | Whitelists de los RUP (193 · 343 · 393 unión calculada) + **motor de matching jerárquico por niveles** |
 | `lib/redis.js` | Cliente REST mínimo de Upstash (GET/SET NX EX/DEL/MGET/SCAN) |
 | `lib/socrata.js` | SoQL, paginación keyset por `:id`, reintentos con backoff, calendario Colombia |
-| `lib/negocio.js` | `enriquecer()`: anticipo, cuantía, competencia, ubicación, puntaje |
+| `lib/negocio.js` | `enriquecer()`: anticipo, cuantía, competencia, ubicación (y el `puntaje_ponderado` de legado, que ya no se sirve) |
 | `lib/semantica.js` | Los **vocabularios**: `norm`, blacklist de objetos ajenos, whitelist de obra (heredadas), verbos de obra y términos no pertinentes |
 | `data/vocabulario_unspsc.json` | Semilla curada de términos distintivos por familia UNSPSC (respaldo del derivado) |
 | `lib/almacen.js` | Esquema de claves Redis + compresión/particionado de chunks |
@@ -142,7 +144,15 @@ llave.
 - Los tres son **opcionales**: sin backfill histórico la app funciona igual, con todo en ⚪ «sin
   datos históricos», sin equivalencias y con la semilla de vocabulario del repositorio.
 
-### `GET /api/oportunidades`
+### `GET /api/oportunidades` (protegido)
+
+**Exige `HISTORICO_TOKEN`** (header `x-historico-token` o `?token=`), como el resto de endpoints con
+datos sensibles. Cada resultado lleva `k_cop`, `crpc_cop`, `tope_cop` y el patrimonio de las
+puertas: cifras derivadas del patrimonio, la utilidad operacional y la liquidez de una **persona
+natural identificada por nombre completo** (`lib/perfiles.js`). El gate de la clave `231105` vive en
+`public/app.js` —en el **cliente**— y nunca protegió la API: quien conociera la ruta veía esas cifras
+sin credencial alguna. El token se comprueba **antes que nada**: sin él no se confirma ni se niega
+nada, ni siquiera qué perfiles existen.
 
 | Parámetro | Default | Descripción |
 | --- | --- | --- |
@@ -155,15 +165,17 @@ llave.
 | `match` | — | Solidez del match UNSPSC: `clase` · `familia` · `equivalente` · `texto` |
 | `incluir_sin_unspsc` | — | `1` para reabrir la ruta de texto sin pertinencia verde (toggle de la UI) |
 | `incluir_cerradas` | — | `1` para incluir procesos en estado terminal |
-| `ordenar_por` | **`atractividad`** | `atractividad` · `anticipo` · `cuantia` · `competencia` · `puntaje` |
+| `solo_viables` | **`true`** | Oculta lo que no pasa las puertas P1-P3. Con `false` aparecen al final, marcados |
+| `ordenar_por` | **`atractividad`** | `atractividad` · `ve` · `p_ganar` · `anticipo` · `cuantia` · `competencia` · `puntaje` (legado) |
 | `orden` | `desc` | `asc` · `desc` |
 | `pagina` / `por_pagina` | 1 / 20 | `por_pagina` máx 100 |
 
-Respuesta: `{ ok, total, resultados, pagina, por_pagina, perfil, sincronizado, ordenado_por,
-por_match, indice_competencia, conocimiento }`. `por_match` reparte el total por solidez del
-match (cuántas son «RUP ✓» y cuántas hay que verificar). Cada resultado trae los campos de
-negocio, `rup` con el **veredicto graduado** —`tier`, `unspsc {codigo_proceso, codigo_rup,
-mensaje}`, `pertinencia {nivel, etiqueta, motivo}`, `capacidad_ok`, `k_cop`, `crpc_cop`— y:
+Respuesta: `{ ok, total, viables, no_viables, solo_viables, resultados, pagina, por_pagina, perfil,
+sincronizado, ordenado_por, por_match, indice_competencia, conocimiento }`. `por_match` reparte el
+total por solidez del match (cuántas son «RUP ✓» y cuántas hay que verificar). Cada resultado trae
+los campos de negocio, `rup` con el **veredicto graduado** —`tier`, `unspsc {codigo_proceso,
+codigo_rup, mensaje}`, `pertinencia {nivel, etiqueta, motivo}`, `capacidad_ok`, `k_cop`, `crpc_cop`—
+y:
 
 ```json
 "competencia_entidad": { "nivel": "baja", "promedio_oferentes": 3, "mediana_oferentes": 3, "total_procesos": 12 }
@@ -171,6 +183,59 @@ mensaje}`, `pertinencia {nivel, etiqueta, motivo}`, `capacidad_ok`, `k_cop`, `cr
 
 Del corpus histórico solo sale ese **resumen agregado**. Los datos de adjudicación (adjudicatario,
 NIT, valor adjudicado) no se exponen aquí; de hecho ni siquiera se guardan en el corpus activo.
+
+#### Las cuatro puertas, `p_ganar` y `ve` (ago 2026)
+
+`puntaje_ponderado` **ya no viaja en la respuesta**. Lo sustituyen tres campos con significado
+propio que **no se promedian entre sí**, porque compensar aquí es un error de categoría: no poder
+financiar la obra no se compensa con cuantía alta. El razonamiento completo está en
+[`docs/ATRACTIVIDAD.md`](docs/ATRACTIVIDAD.md).
+
+```json
+"puertas": {
+  "p1_rup":  { "pasa": true,  "tier": "clase", "mensaje": "La clase UNSPSC del proceso está inscrita en su RUP." },
+  "p2_k":    { "pasa": true,  "crp": 4516364009, "crpc": 340000000, "mensaje": "Consume 8 % de su capacidad residual…" },
+  "p3_caja": { "pasa": false, "patrimonio": 211340888, "financiacion_requerida": 620000000, "mensaje": "…" },
+  "p4_competencia": { "pasa": true, "nivel": "baja", "promedio_oferentes": 3, "mensaje": "…" },
+  "pasa_todas": false, "no_viable_por": ["Caja"]
+},
+"p_ganar": 0.325, "ve": 110500000, "viable": false,
+"p_ganar_detalle": { "base": 0.25, "rivales_esperados": 3, "fuente": "entidad", "ajustes": [ … ] }
+```
+
+- **P1 · RUP** (`lib/filtros.evaluarObjeto`): `clase`/`familia` pasan; `equivalente`/`texto` pasan
+  **con advertencia**; `ninguno` —o morir en cualquier capa de la cascada del objeto— no pasa.
+- **P2 · K** (`lib/capacidad.js`): pasa si `CRPC ≤ CRP`. Sin `precio_base` marca `sin_dato` y **no**
+  se presenta como capacidad verificada: `factorE` devuelve 120 «sin presupuesto no hay ratio» y
+  `CRPC = 0 ≤ K`, así que la puerta se abriría sobre la nada.
+- **P3 · Caja** (`lib/puertas.js`, **nueva**): pasa si `patrimonio ≥ (cuantía − anticipo) × 0,20`.
+  Es la puerta que de verdad ata y no necesitó un dato nuevo. Caso real: Génesis (patrimonio
+  $211 M) ante un proceso de $3.100 M tendría que financiar ~$620 M — y hasta ahora lo veía con
+  «Capacidad K ✓» en verde, porque el K del RUP mide **habilitación**, no si se puede financiar la
+  obra. En proponente plural el patrimonio se **suma** (no se pondera 50/50: eso es para
+  indicadores habilitantes) y cada integrante responde por el 100 % (Ley 80/1993 art. 7).
+- **P4 · Competencia**: **nunca bloquea**. Informa y advierte si es alta; de la penalización ya se
+  encarga `p_ganar`.
+- **Regla de faltantes**: un dato ausente no vale 0 ni 1. La puerta marca `sin_dato` y **deja
+  pasar** — cerrar por ignorancia esconde oportunidades reales y el usuario no puede ni enterarse.
+
+`p_ganar ≈ 1 / (1 + rivales esperados)`, con los rivales tomados en cascada del **histórico de la
+entidad** → **promedio de su departamento** → **supuesto conservador de 5** (`P = 1/6`), y cuatro
+ajustes declarados: competencia baja ×1,30 · alta ×0,70 · **cierre prorrogado ×1,20** · **colisión
+de cierres ×1,15**. La fuente viaja siempre en `p_ganar_detalle.fuente`: «histórico de la entidad»
+no es lo mismo que «supuesto», y enseñar el 17 % sin decir de dónde sale convierte una estimación en
+una promesa. Los factores son **supuestos con nombre**, no coeficientes ajustados: no hay etiqueta
+contra la que calibrarlos. `ve = p_ganar × cuantía`.
+
+**La prórroga del cierre** es la única señal de competencia observable **antes** del cierre que hay
+en el corpus (el contador de oferentes es ex-post: en un proceso abierto vale 0 por construcción).
+Sale gratis del dedup de lectura, que ya recorre todas las versiones de cada `_k`
+(`lib/almacen.leerChunksDedup`, bandera `senales`): si una versión anterior cerraba antes que la
+vigente, la entidad movió el cierre — y eso pasa casi siempre porque no llegaron ofertas suficientes.
+
+**Orden por atractividad** (el default): primero lo que pasa las cuatro puertas y, dentro de cada
+grupo, por **valor esperado** descendente. La viabilidad manda sobre `orden=asc|desc`: lo que no se
+puede tomar va al final, siempre.
 
 **Arranque en frío**: si Redis no tiene chunks, responde `503` con
 `"Datos no disponibles. Sincronización iniciada. Intente en unos minutos."` y dispara

@@ -106,8 +106,9 @@
           <label class="block">
             <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Ordenar por</span>
             <select id="f-ordenar" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-              <option value="atractividad">Más atractivas</option>
-              <option value="puntaje">Mayor puntaje</option>
+              <option value="atractividad">Más atractivas (viables · valor esperado)</option>
+              <option value="ve">Mayor valor esperado</option>
+              <option value="p_ganar">Mayor probabilidad</option>
               <option value="cuantia">Mayor cuantía</option>
               <option value="anticipo">Mayor anticipo</option>
             </select>
@@ -125,6 +126,14 @@
             <span class="text-sm text-gray-600">
               Incluir procesos sin código UNSPSC
               <span class="block text-xs text-gray-400">Rescatados solo por el objeto y sin vocabulario claro de obra: más ruido</span>
+            </span>
+          </label>
+          <label class="flex items-end gap-2 pb-2 sm:col-span-2">
+            <input id="f-solo-viables" type="checkbox" checked
+                   class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+            <span class="text-sm text-gray-600">
+              Mostrar solo viables
+              <span class="block text-xs text-gray-400">Al apagarlo aparecen también, atenuados, los que no pasan RUP, K o caja</span>
             </span>
           </label>
           <div class="flex items-end">

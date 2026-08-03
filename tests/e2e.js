@@ -1626,7 +1626,7 @@ async function main() {
   async function todasLasOportunidades(params) {
     const filas = [];
     for (let pag = 1; pag < 50; pag++) {
-      const r = await invocar(oportunidades, `/api/oportunidades?${params}&por_pagina=100&pagina=${pag}`);
+      const r = await invocar(oportunidades, `/api/oportunidades?${params}&por_pagina=100&pagina=${pag}`, CAB_TOKEN);
       assert.strictEqual(r.status, 200, `esperaba 200, llegó ${r.status}: ${JSON.stringify(r.cuerpo).slice(0, 200)}`);
       filas.push(...r.cuerpo.resultados);
       if (filas.length >= r.cuerpo.total) break;
@@ -1646,7 +1646,7 @@ async function main() {
 
     /* a'. Redis vacío → 503 con mensaje de sincronización */
     {
-      const r = await invocar(oportunidades, "/api/oportunidades?perfil=helder");
+      const r = await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN);
       assert.strictEqual(r.status, 503, "sin datos debía responder 503");
       assert.ok(/Sincronizaci[oó]n iniciada/.test(r.cuerpo.error), `mensaje 503 inesperado: ${r.cuerpo.error}`);
       assert.strictEqual(r.cuerpo.ok, false);
@@ -1702,7 +1702,7 @@ async function main() {
     assert.strictEqual(await redis.get("lock:sync"), null, "el candado no se liberó");
 
     /* c. oportunidades para Helder */
-    const rHelder = await invocar(oportunidades, "/api/oportunidades?perfil=helder");
+    const rHelder = await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN);
     assert.strictEqual(rHelder.status, 200);
     const cH = rHelder.cuerpo;
     assert.ok(cH.ok && cH.total > 0 && cH.resultados.length > 0, "helder sin resultados");
@@ -1712,7 +1712,13 @@ async function main() {
       assert.ok(["bajo", "medio", "alto"].includes(l.cuantia_rango), "cuantia_rango inválido");
       assert.ok(["baja", "media", "alta"].includes(l.nivel_competencia), "nivel_competencia inválido");
       assert.strictEqual(typeof l.ubicacion_valida, "boolean", "falta ubicacion_valida");
-      assert.ok(l.puntaje_ponderado >= 0 && l.puntaje_ponderado <= 100, "puntaje fuera de rango");
+      // `puntaje_ponderado` ya NO viaja: lo sustituyen las cuatro puertas, la
+      // probabilidad y el valor esperado (docs/ATRACTIVIDAD.md)
+      assert.ok(!("puntaje_ponderado" in l), "el puntaje ponderado sigue viajando en la respuesta");
+      assert.ok(l.puertas && l.puertas.p1_rup && l.puertas.p2_k && l.puertas.p3_caja && l.puertas.p4_competencia,
+        "falta el veredicto de las cuatro puertas");
+      assert.ok(typeof l.p_ganar === "number" && l.p_ganar > 0 && l.p_ganar <= 1, "p_ganar fuera de rango");
+      assert.strictEqual(l.ve, Math.round((l.cuantia_cop || 0) * l.p_ganar), "VE no es p_ganar × cuantía");
       assert.strictEqual(l.proceso_abierto, true, "apareció un proceso cerrado");
       assert.ok(filtros.estado_abierto(l), "estado no abierto servido");
       assert.ok(filtros.modalidad_competitiva(l), `modalidad no competitiva servida: ${l.modalidad_de_contratacion}`);
@@ -1832,15 +1838,15 @@ async function main() {
           assert.ok(!conToggle.some((l) => patron.test(l.nombre_del_procedimiento)),
             "el toggle de texto no puede reabrir objetos genéricos ni servicios ajenos");
         }
-        const r1 = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1");
+        const r1 = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN);
         assert.strictEqual(r1.cuerpo.incluye_sin_unspsc, false, "el toggle está apagado por defecto");
-        const r2 = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1&incluir_sin_unspsc=1");
+        const r2 = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1&incluir_sin_unspsc=1", CAB_TOKEN);
         assert.strictEqual(r2.cuerpo.incluye_sin_unspsc, true);
         assert.ok(r2.cuerpo.total > r1.cuerpo.total, "con el toggle encendido debe haber más resultados");
       }
 
       /* ---- el reparto por solidez del match viaja en la respuesta ---- */
-      const m1 = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1")).cuerpo;
+      const m1 = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN)).cuerpo;
       assert.ok(m1.por_match && m1.por_match.clase > 0 && m1.por_match.familia > 0 && m1.por_match.texto > 0,
         `la respuesta debe repartir por tier: ${JSON.stringify(m1.por_match)}`);
       assert.strictEqual(Object.values(m1.por_match).reduce((a, b) => a + b, 0), m1.total,
@@ -1858,7 +1864,7 @@ async function main() {
       "/api/oportunidades?perfil=__proto__",
       "/api/oportunidades?perfil=hasownproperty",
     ]) {
-      const r = await invocar(oportunidades, url);
+      const r = await invocar(oportunidades, url, CAB_TOKEN);
       assert.strictEqual(r.status, 400, `${url} debía dar 400, dio ${r.status}`);
     }
     for (const url of [
@@ -1866,14 +1872,14 @@ async function main() {
       "/api/oportunidades?perfil=helder&ordenar_por=hasOwnProperty",
       "/api/oportunidades?perfil=helder&anticipo_min=abc&pagina=-3&por_pagina=99999",
     ]) {
-      const r = await invocar(oportunidades, url);
+      const r = await invocar(oportunidades, url, CAB_TOKEN);
       assert.strictEqual(r.status, 200, `${url} debía degradar a 200, dio ${r.status}`);
       assert.ok(r.cuerpo.ok && r.cuerpo.resultados.length > 0, `${url} sin resultados`);
     }
 
     /* d. génesis con filtros y orden */
     const rGen = await invocar(oportunidades,
-      "/api/oportunidades?perfil=genesis&anticipo_min=25&cuantia_rango=medio&ordenar_por=puntaje");
+      "/api/oportunidades?perfil=genesis&anticipo_min=25&cuantia_rango=medio&ordenar_por=ve", CAB_TOKEN);
     assert.strictEqual(rGen.status, 200);
     const cG = rGen.cuerpo;
     assert.ok(cG.ok && cG.total > 0, "génesis sin resultados");
@@ -1892,13 +1898,13 @@ async function main() {
       assert.ok(conMin25.length < conMin5.length, "anticipo_min=25 debía excluir filas frente a anticipo_min=5");
     }
     for (let i = 1; i < cG.resultados.length; i++) {
-      assert.ok(cG.resultados[i - 1].puntaje_ponderado >= cG.resultados[i].puntaje_ponderado, "orden por puntaje roto");
+      assert.ok(cG.resultados[i - 1].ve >= cG.resultados[i].ve, "orden por valor esperado roto");
     }
 
     /* d-bis. consorcio: perfil=juntos y su alias ?perfil=consorcio */
     {
-      const rJ = await invocar(oportunidades, "/api/oportunidades?perfil=juntos");
-      const rC = await invocar(oportunidades, "/api/oportunidades?perfil=consorcio");
+      const rJ = await invocar(oportunidades, "/api/oportunidades?perfil=juntos", CAB_TOKEN);
+      const rC = await invocar(oportunidades, "/api/oportunidades?perfil=consorcio", CAB_TOKEN);
       assert.strictEqual(rJ.status, 200, "perfil=juntos falló");
       assert.strictEqual(rC.status, 200, "alias perfil=consorcio falló");
       assert.ok(rJ.cuerpo.total > 0, "consorcio sin resultados");
@@ -2195,52 +2201,64 @@ async function main() {
       // perfil=juntos: es el único que ve las CUATRO entidades del corpus (las
       // obras de 9 000 M de la Alcaldía de Ibagué superan el K de cada
       // integrante por separado), así que los cuatro grupos están presentes
-      const RANGO_NIVEL = { baja: 0, media: 1, sin_dato: 2, alta: 3 };
       const todas = await todasLasOportunidades("perfil=juntos&ordenar_por=atractividad");
       assert.ok(todas.length > 0, "sin resultados que ordenar");
 
-      let previo = -1;
+      /* ORDEN NUEVO (ago 2026): primero lo que pasa las cuatro puertas y,
+         dentro de cada grupo, por VALOR ESPERADO descendente. El criterio
+         anterior —agrupar por banda de competencia y desempatar por
+         `puntaje_ponderado`— se retiró porque ese puntaje tenía su tercer
+         componente constante en todo lo servido (docs/ATRACTIVIDAD.md §0). */
+      let vistoNoViable = false, veAnterior = Infinity;
       for (const l of todas) {
-        assert.ok(l.competencia_entidad && RANGO_NIVEL[l.competencia_entidad.nivel] !== undefined,
-          "falta competencia_entidad en el resultado");
-        const r = RANGO_NIVEL[l.competencia_entidad.nivel];
-        assert.ok(r >= previo,
-          `orden por atractividad roto: ${l.entidad} (${l.competencia_entidad.nivel}) después de nivel ${previo}`);
-        previo = r;
+        assert.ok(l.competencia_entidad, "falta competencia_entidad en el resultado");
+        assert.ok(l.puertas && typeof l.puertas.pasa_todas === "boolean", "falta el veredicto de las puertas");
+        if (!l.puertas.pasa_todas) { vistoNoViable = true; veAnterior = Infinity; continue; }
+        assert.ok(!vistoNoViable, `un viable (${l.id_del_proceso}) apareció después de uno no viable`);
+        assert.ok(l.ve <= veAnterior, `orden por valor esperado roto en ${l.id_del_proceso}`);
+        veAnterior = l.ve;
       }
+      // el índice de competencia sigue alimentando la probabilidad: la entidad
+      // con histórico propio no usa el supuesto conservador
       const niveles = new Set(todas.map((l) => l.competencia_entidad.nivel));
       for (const n of ["baja", "media", "alta", "sin_dato"]) assert.ok(niveles.has(n), `falta el grupo ${n} en el corpus`);
-      assert.strictEqual(todas[0].competencia_entidad.nivel, "baja", "la primera no es de poca competencia");
-      assert.strictEqual(todas[0].competencia_entidad.promedio_oferentes, 3);
-      assert.ok(todas[0].competencia_entidad.total_procesos >= 5);
-      assert.strictEqual(todas[todas.length - 1].competencia_entidad.nivel, "alta", "la última no es de alta competencia");
-
-      // dentro del grupo, el criterio sigue siendo el puntaje descendente
-      const soloBaja = todas.filter((l) => l.competencia_entidad.nivel === "baja");
-      for (let i = 1; i < soloBaja.length; i++) {
-        assert.ok(soloBaja[i - 1].puntaje_ponderado >= soloBaja[i].puntaje_ponderado,
-          "el desempate por puntaje dentro del grupo se rompió");
-      }
+      const conBaja = todas.filter((l) => l.competencia_entidad.nivel === "baja");
+      assert.ok(conBaja.length > 0, "el corpus no trae ninguna entidad de poca competencia");
+      assert.strictEqual(conBaja[0].competencia_entidad.promedio_oferentes, 3);
+      assert.strictEqual(conBaja[0].p_ganar_detalle.fuente, "entidad",
+        "con histórico de la entidad, la probabilidad no puede salir de un supuesto");
+      // 1/(1+3) = 0,25 y el ajuste por competencia baja lo sube a 0,325
+      assert.ok(Math.abs(conBaja[0].p_ganar_detalle.base - 0.25) < 1e-6,
+        `P base con promedio 3 debería ser 0,25 y fue ${conBaja[0].p_ganar_detalle.base}`);
+      assert.ok(conBaja[0].p_ganar > conBaja[0].p_ganar_detalle.base,
+        "la competencia baja debe ajustar la probabilidad al alza");
+      // una entidad de competencia alta tiene que quedar por debajo de una baja
+      const conAlta = todas.filter((l) => l.competencia_entidad.nivel === "alta");
+      assert.ok(conAlta.length > 0 && conAlta[0].p_ganar < conBaja[0].p_ganar,
+        "la entidad de alta competencia no puede tener más probabilidad que la de baja");
 
       // atractividad es el orden POR DEFECTO (lo que ve el dueño al abrir la app)
-      const porDefecto = await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=100");
+      const porDefecto = await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=100", CAB_TOKEN);
       assert.strictEqual(porDefecto.cuerpo.ordenado_por, "atractividad", "el orden por defecto no es atractividad");
+      assert.strictEqual(porDefecto.cuerpo.solo_viables, true, "solo_viables debe venir encendido por defecto");
       assert.strictEqual(porDefecto.cuerpo.resultados[0].id_del_proceso, todas[0].id_del_proceso);
       assert.ok(porDefecto.cuerpo.indice_competencia && porDefecto.cuerpo.indice_competencia.entidades === 3,
         "la respuesta no informa el estado del índice");
 
-      // los órdenes anteriores siguen funcionando
-      const porPuntaje = (await invocar(oportunidades, "/api/oportunidades?perfil=juntos&ordenar_por=puntaje&por_pagina=100")).cuerpo;
-      for (let i = 1; i < porPuntaje.resultados.length; i++) {
-        assert.ok(porPuntaje.resultados[i - 1].puntaje_ponderado >= porPuntaje.resultados[i].puntaje_ponderado,
-          "orden por puntaje roto");
+      // los órdenes anteriores siguen funcionando (aunque el puntaje ya no viaje)
+      const porCuantia = (await invocar(oportunidades, "/api/oportunidades?perfil=juntos&ordenar_por=cuantia&por_pagina=100", CAB_TOKEN)).cuerpo;
+      for (let i = 1; i < porCuantia.resultados.length; i++) {
+        assert.ok(porCuantia.resultados[i - 1].cuantia_cop >= porCuantia.resultados[i].cuantia_cop,
+          "orden por cuantía roto");
       }
+      assert.strictEqual((await invocar(oportunidades, "/api/oportunidades?perfil=juntos&ordenar_por=puntaje", CAB_TOKEN)).status, 200,
+        "el orden legado por puntaje dejó de responder");
 
       // filtro por competencia de la entidad
       const bajas = await todasLasOportunidades("perfil=juntos&competencia_entidad=baja");
       assert.ok(bajas.length > 0 && bajas.every((l) => l.competencia_entidad.nivel === "baja"),
         "el filtro competencia_entidad no se aplicó");
-      assert.strictEqual(bajas.length, soloBaja.length);
+      assert.strictEqual(bajas.length, conBaja.length);
 
       /* ---- EFECTO INMEDIATO del conocimiento nuevo, sin re-sincronizar ----
          El proceso de la clase afín (80141600) NO tiene una sola palabra de
@@ -2274,6 +2292,153 @@ async function main() {
           "fecha_adjudicacion", "numero_de_ofertas", "oferentes", "fue_adjudicado"]) {
           assert.ok(!(c in l), `/api/oportunidades expuso el campo de adjudicación «${c}»`);
         }
+      }
+    }
+
+    /* f-ter. LAS CUATRO PUERTAS + P(ganar) + valor esperado (ago 2026).
+       Sustituyen al `puntaje_ponderado` como criterio de decisión. Lo que se
+       comprueba aquí es lo que el puntaje NO podía comprobar: que un proceso
+       que la empresa no puede financiar deje de aparecer como oportunidad
+       aunque su cuantía sea alta y su K alcance. */
+    {
+      const { evaluarPuertas } = require("../lib/puertas.js");
+      const { estimarPDetalle, valorEsperado, PROMEDIO_CONSERVADOR,
+        FACTOR_COMPETENCIA_BAJA, FACTOR_CIERRE_PRORROGADO, FACTOR_COLISION_CIERRES } = require("../lib/probabilidad.js");
+      const { PERFILES } = require("../lib/perfiles.js");
+
+      /* 1 · un proceso que pasa las cuatro puertas */
+      const deGenesis = await todasLasOportunidades("perfil=genesis");
+      const base = deGenesis.find((l) => l.puertas.pasa_todas);
+      assert.ok(base, "ningún proceso de génesis pasa las cuatro puertas");
+      for (const p of ["p1_rup", "p2_k", "p3_caja", "p4_competencia"]) {
+        assert.strictEqual(base.puertas[p].pasa, true, `pasa_todas=true con ${p} cerrada`);
+      }
+      assert.deepStrictEqual(base.puertas.no_viable_por, [], "un viable no puede traer motivos de inviabilidad");
+
+      /* 2 · el mismo proceso a 3.100 M: la K alcanza y la CAJA no.
+         Es el caso real que motivó la puerta (docs/ATRACTIVIDAD.md): Génesis
+         tiene patrimonio de ~$211 M y financiar el 20 % de 3.100 M son ~$620 M.
+         Hoy este proceso se mostraba con «Capacidad K ✓» en verde. */
+      const CUANTIA_GRANDE = 3100e6;
+      const grande = { ...base, cuantia_cop: CUANTIA_GRANDE, precio_base: String(CUANTIA_GRANDE), anticipo_pct: 0 };
+      const pg = evaluarPuertas(grande, "genesis", { rup: base.rup, competencia: base.competencia_entidad });
+      assert.strictEqual(pg.p1_rup.pasa, true, "el objeto no cambió: P1 debe seguir abierta");
+      assert.strictEqual(pg.p2_k.pasa, true, "3.100 M caben en la K de génesis: P2 debe seguir abierta");
+      assert.strictEqual(pg.p3_caja.pasa, false, "la caja de génesis no puede financiar 3.100 M");
+      assert.strictEqual(pg.pasa_todas, false, "pasa_todas debe caer si cae una sola puerta");
+      assert.deepStrictEqual(pg.no_viable_por, ["Caja"], "el motivo de inviabilidad debe nombrar la caja");
+      assert.strictEqual(pg.p3_caja.financiacion_requerida, Math.round(CUANTIA_GRANDE * 0.20));
+      assert.strictEqual(pg.p3_caja.patrimonio, Math.round(PERFILES.genesis.patrimonio));
+      assert.ok(pg.p3_caja.patrimonio < pg.p3_caja.financiacion_requerida);
+      // y con anticipo declarado la exigencia baja, porque hay menos que financiar
+      const conAnticipo = evaluarPuertas({ ...grande, anticipo_pct: 30 }, "genesis",
+        { rup: base.rup, competencia: base.competencia_entidad });
+      assert.ok(conAnticipo.p3_caja.financiacion_requerida < pg.p3_caja.financiacion_requerida,
+        "el anticipo declarado debe reducir la financiación requerida");
+
+      /* 3 · P(ganar): entidad con promedio 3 oferentes → P base = 1/(1+3) */
+      const comp3 = { nivel: "media", promedio_oferentes: 3, total_procesos: 10 };
+      const d3 = estimarPDetalle({}, { competencia: comp3 });
+      assert.strictEqual(d3.base, 0.25, `P base con promedio 3 debería ser 0,25 y fue ${d3.base}`);
+      assert.strictEqual(d3.p, 0.25, "la competencia media no ajusta la probabilidad");
+      assert.strictEqual(d3.fuente, "entidad");
+      // competencia baja la sube; sin datos cae al supuesto conservador 1/6
+      const dBaja = estimarPDetalle({}, { competencia: { ...comp3, nivel: "baja" } });
+      assert.strictEqual(dBaja.p, Math.round(0.25 * FACTOR_COMPETENCIA_BAJA * 1e4) / 1e4);
+      const dSin = estimarPDetalle({}, {});
+      assert.strictEqual(dSin.fuente, "conservador");
+      assert.strictEqual(dSin.p, Math.round((1 / (1 + PROMEDIO_CONSERVADOR)) * 1e4) / 1e4);
+      // el promedio del departamento es el respaldo entre la entidad y el supuesto
+      const dDepto = estimarPDetalle({}, { promedio_departamento: 9 });
+      assert.strictEqual(dDepto.fuente, "departamento");
+      assert.strictEqual(dDepto.p, 0.1);
+      // señales ex-ante: prórroga del cierre y colisión de cierres
+      const dPro = estimarPDetalle({ _cierre_prorrogado: true }, { competencia: comp3 });
+      assert.strictEqual(dPro.p, Math.round(0.25 * FACTOR_CIERRE_PRORROGADO * 1e4) / 1e4);
+      assert.ok(dPro.ajustes.some((a) => a.nombre === "cierre_prorrogado"), "el ajuste debe viajar explicado");
+      const dCol = estimarPDetalle({}, { competencia: comp3, colision_cierres: 3 });
+      assert.strictEqual(dCol.p, Math.round(0.25 * FACTOR_COLISION_CIERRES * 1e4) / 1e4);
+      assert.strictEqual(estimarPDetalle({}, { competencia: comp3, colision_cierres: 1 }).p, 0.25,
+        "un proceso solo no colisiona consigo mismo");
+      // ninguna combinación puede salirse de [0,1] ni devolver algo no finito
+      for (const ctx of [{}, { competencia: { nivel: "baja", promedio_oferentes: 0, total_procesos: 1 } },
+        { promedio_departamento: -5 }, { competencia: { nivel: "alta", promedio_oferentes: 231, total_procesos: 40 } }]) {
+        const p = estimarPDetalle({ _cierre_prorrogado: true }, { ...ctx, colision_cierres: 9 }).p;
+        assert.ok(Number.isFinite(p) && p > 0 && p <= 1, `p fuera de rango: ${p}`);
+      }
+
+      /* 3-bis · la señal de PRÓRROGA DEL CIERRE sale del dedup de lectura.
+         Es la única señal de competencia observable ANTES del cierre que hay en
+         el corpus (el contador de oferentes es ex-post: en un proceso abierto
+         vale 0 por construcción). Se comprueba contra un redis de mentira para
+         no depender de que el mock traiga justo una adenda con cambio de fecha. */
+      {
+        const { comprimir, leerChunksDedup } = require("../lib/almacen.js");
+        const v1 = { _k: "P-1", ":updated_at": "2026-07-01T00:00:00.000Z", fecha_cierre: "2026-07-20" };
+        const v2 = { _k: "P-1", ":updated_at": "2026-07-10T00:00:00.000Z", fecha_cierre: "2026-08-05" }; // prorrogado
+        const q1 = { _k: "P-2", ":updated_at": "2026-07-01T00:00:00.000Z", fecha_cierre: "2026-07-20" };
+        const q2 = { _k: "P-2", ":updated_at": "2026-07-10T00:00:00.000Z", fecha_cierre: "2026-07-20" }; // adenda sin mover el cierre
+        const falso = { mget: async () => [comprimir([v1, q1]), comprimir([v2, q2])] };
+        const filas = await leerChunksDedup(falso, ["a", "b"], { senales: true });
+        const p1 = filas.find((f) => f._k === "P-1"), p2 = filas.find((f) => f._k === "P-2");
+        assert.strictEqual(p1.fecha_cierre, "2026-08-05", "el dedup debe quedarse con la versión más reciente");
+        assert.strictEqual(p1._versiones, 2, "no se contaron las versiones vistas");
+        assert.strictEqual(p1._cierre_prorrogado, true, "no se detectó la prórroga del cierre");
+        assert.strictEqual(p2._cierre_prorrogado, false, "una adenda que NO mueve el cierre no es una prórroga");
+        // sin la bandera, el dedup se comporta exactamente como antes
+        const sinSenales = await leerChunksDedup(falso, ["a", "b"]);
+        assert.ok(sinSenales.every((f) => f._versiones === undefined && f._cierre_prorrogado === undefined),
+          "las señales no pueden aparecer sin pedirlas: /api/resumen y el histórico leen por aquí");
+      }
+
+      /* 4 · valor esperado = P(ganar) × cuantía */
+      assert.strictEqual(valorEsperado({ cuantia_cop: 400e6 }, 0.25), 100e6);
+      assert.strictEqual(valorEsperado({ cuantia_cop: 0 }, 0.25), 0);
+      for (const l of deGenesis) assert.strictEqual(l.ve, Math.round(l.cuantia_cop * l.p_ganar), "VE inconsistente");
+
+      /* 5 · ?solo_viables=false enseña lo no viable, SIEMPRE al final */
+      const conTodo = (await invocar(oportunidades,
+        "/api/oportunidades?perfil=genesis&solo_viables=false&por_pagina=100", CAB_TOKEN)).cuerpo;
+      assert.strictEqual(conTodo.solo_viables, false);
+      assert.ok(conTodo.total >= deGenesis.length, "solo_viables=false no puede devolver menos filas");
+      assert.strictEqual(conTodo.viables + conTodo.no_viables, conTodo.total, "el reparto viables/no viables no cuadra");
+      assert.ok(conTodo.no_viables > 0,
+        "el corpus de prueba debe traer algún no viable: si no, esta prueba pasaría sin comprobar nada");
+      let yaHuboNoViable = false;
+      for (const l of conTodo.resultados) {
+        if (!l.viable) { yaHuboNoViable = true; assert.ok(l.puertas.no_viable_por.length > 0, "un no viable sin motivo"); }
+        else assert.ok(!yaHuboNoViable, "un viable apareció después de uno no viable");
+      }
+      // y con el toggle encendido (default) NINGUNO de los no viables se sirve
+      for (const l of deGenesis) assert.strictEqual(l.viable, true, "solo_viables=true sirvió un proceso no viable");
+    }
+
+    /* f-quater. /api/oportunidades EXIGE token: sirve el K, el CRPC y el
+       patrimonio de una persona natural identificada. La clave del gate de
+       public/app.js es del cliente y nunca protegió la API. */
+    {
+      assert.strictEqual((await invocar(oportunidades, "/api/oportunidades?perfil=helder")).status, 401,
+        "/api/oportunidades respondió sin token");
+      const r401 = await invocar(oportunidades, "/api/oportunidades?perfil=helder&token=equivocado");
+      assert.strictEqual(r401.status, 401, "un token equivocado no puede pasar");
+      assert.ok(r401.cuerpo.como_autenticar.header.includes("x-historico-token"), "el 401 no dice cómo autenticarse");
+      // el 401 va ANTES de cualquier otra comprobación: sin token no se
+      // confirma ni se niega nada, ni siquiera qué perfiles existen
+      assert.strictEqual((await invocar(oportunidades, "/api/oportunidades")).status, 401,
+        "sin perfil y sin token debe responder 401, no 400");
+      // con token: por header y por query, las dos formas válidas
+      assert.strictEqual((await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN)).status, 200,
+        "con token válido por header debería responder 200");
+      assert.strictEqual((await invocar(oportunidades,
+        `/api/oportunidades?perfil=helder&token=${encodeURIComponent(process.env.HISTORICO_TOKEN)}`)).status, 200,
+      "con token válido por query debería responder 200");
+      // sin la variable de entorno el endpoint se NIEGA, jamás se abre
+      {
+        const guardado = process.env.HISTORICO_TOKEN;
+        delete process.env.HISTORICO_TOKEN;
+        const r0 = await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN);
+        assert.strictEqual(r0.status, 503, "sin HISTORICO_TOKEN el endpoint debe negarse, nunca abrirse");
+        process.env.HISTORICO_TOKEN = guardado;
       }
     }
 
@@ -2669,7 +2834,7 @@ async function main() {
 
       // INVARIANTE FUERTE: lo que el embudo llama «visibles» es exactamente lo
       // que /api/oportunidades sirve. Si divergen, el diagnóstico miente.
-      const real = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1");
+      const real = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN);
       assert.strictEqual(c.embudo.visibles, real.cuerpo.total,
         `el embudo dice ${c.embudo.visibles} visibles y la app sirve ${real.cuerpo.total}`);
 
@@ -2781,7 +2946,7 @@ async function main() {
       assert.ok(c.totales.visibles > 0, "el resumen no ve ningún proceso");
 
       // 1. el número es EL MISMO que el de la app
-      const rOp = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1");
+      const rOp = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN);
       assert.strictEqual(c.totales.visibles, rOp.cuerpo.total,
         `el panel dice ${c.totales.visibles} visibles y la app ${rOp.cuerpo.total}: son dos cálculos distintos`);
       // …y también el mismo que el embudo del diagnóstico
@@ -2932,7 +3097,7 @@ async function main() {
         const r5 = await invocar(resumen, "/api/resumen?perfil=consorcio", CAB_TOKEN);
         assert.strictEqual(r5.status, 200);
         assert.strictEqual(r5.cuerpo.perfil, "juntos", "el alias consorcio debe resolver a juntos");
-        const rOpC = await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=1");
+        const rOpC = await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=1", CAB_TOKEN);
         assert.strictEqual(r5.cuerpo.totales.visibles, rOpC.cuerpo.total,
           "el panel del consorcio no coincide con la app");
       }
@@ -2947,7 +3112,7 @@ async function main() {
        Al final se restablece el respaldo del repositorio: una carga de prueba
        no puede contaminar el resto de la iteración. */
     {
-      const visiblesAntes = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1")).cuerpo.total;
+      const visiblesAntes = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN)).cuerpo.total;
 
       /* 10. GET sin haber cargado nada → los valores del repositorio */
       {
@@ -3076,7 +3241,7 @@ async function main() {
         const kVieja = capacidad.crp(perfilesMod.PERFILES_FALLBACK.genesis, 100e6);
         assert.ok(kNueva > kVieja, `la K de Génesis debía crecer con 11 profesionales: ${kNueva} vs ${kVieja}`);
         // …y la consulta real lo enseña
-        const rg = await invocar(oportunidades, "/api/oportunidades?perfil=genesis&por_pagina=1");
+        const rg = await invocar(oportunidades, "/api/oportunidades?perfil=genesis&por_pagina=1", CAB_TOKEN);
         assert.strictEqual(rg.status, 200);
         assert.strictEqual(rg.cuerpo.resultados[0].rup.k_cop, Math.round(capacidad.crp(PERFILES.genesis, rg.cuerpo.resultados[0].cuantia_cop || 0)),
           "la K servida por la app no es la del RUP cargado");
@@ -3091,7 +3256,7 @@ async function main() {
           "la carga de RUP debe invalidar la caché del dashboard");
         const rr = await invocar(resumen, "/api/resumen?perfil=helder", CAB_TOKEN);
         assert.strictEqual(rr.cuerpo.cache, false, "tras cargar el RUP el resumen no puede venir de la caché vieja");
-        const rOp2 = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1");
+        const rOp2 = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN);
         assert.strictEqual(rr.cuerpo.totales.visibles, rOp2.cuerpo.total,
           "con el RUP cargado el panel y la app volvieron a divergir");
         assert.ok(rOp2.cuerpo.total >= visiblesAntes,
@@ -3107,7 +3272,7 @@ async function main() {
         assert.strictEqual(PERFILES.helder.nombre, perfilesMod.PERFILES_FALLBACK.helder.nombre,
           "al borrarse la configuración, los perfiles deben volver al respaldo");
         assert.strictEqual(perfilesMod.fuentePerfiles().fuente, "respaldo");
-        const rv = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1");
+        const rv = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN);
         assert.strictEqual(rv.cuerpo.total, visiblesAntes, "volver al respaldo no restauró los números originales");
         const viejas = await redis.scan("resumen:*");
         if (viejas.length) await redis.del(...viejas);
