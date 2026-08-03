@@ -859,6 +859,13 @@ async function main() {
       [{ estado_del_procedimiento: "Presentación de ofertas" }, true], // variante real
       [{ estado_del_procedimiento: "Borrador" }, true],                // prefijo de "Borrador de pliegos"
       [{ estado_del_procedimiento: "Publicado", fase: "Presentación de ofertas" }, true],
+      // "Activo": valor documentado de `estado` en p6dx-8zbt. Se descartaba en
+      // silencio por caer en "desconocido = cerrado" (ver lib/filtros).
+      [{ estado_del_procedimiento: "Activo" }, true],
+      [{ estado_del_procedimiento: "Activo", fase: "Selección" }, true],
+      // ...pero el cierre sigue ganando: añadirlo NO puede resucitar un cerrado
+      [{ estado_del_procedimiento: "Activo", fase: "Adjudicación" }, false],
+      [{ estado_del_procedimiento: "Activo", adjudicado: "Si" }, false],
       [{ estado_del_procedimiento: "Adjudicado" }, false],
       [{ estado_del_procedimiento: "En evaluación" }, false],
       [{ estado_del_procedimiento: "Evaluación de ofertas" }, false],

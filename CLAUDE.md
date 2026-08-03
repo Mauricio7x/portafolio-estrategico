@@ -29,8 +29,10 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   reales). Este entorno **no** tiene salida a `datos.gov.co` (allowlist del proxy) ni CLI de
   Vercel: la validación contra datos reales se hace desplegando.
 - **Tras desplegar**: (1) relanzar `/api/sync?modo=full` UNA vez — la ingesta se ensanchó y hay
-  procesos que las reglas viejas nunca dejaron entrar a Redis (es la última full que exige un
-  cambio de matching: ver «ingesta/juicio»); (2) definir `HISTORICO_TOKEN` y lanzar UNA vez
+  procesos que las reglas viejas nunca dejaron entrar a Redis (ver «ingesta/juicio»), y desde ago 2026
+  también los que se perdían por el estado `Activo` que faltaba en `ESTADOS_ABIERTOS`; el filtro de
+  estado corre en la INGESTA, así que sin la full esos procesos no aparecen; (2) definir
+  `HISTORICO_TOKEN` y lanzar UNA vez
   `/api/sync/historico?desde=2024-01&hasta=2025-12` (header `x-historico-token`), o
   `?reconstruir_todo=true` si el histórico ya estaba bajado. Sin ese paso la app funciona igual,
   con todo en ⚪ «sin datos históricos» y sin equivalencias.
@@ -640,13 +642,23 @@ cifra de aquí en un pliego sin abrir la fuente.
   períodos normales sin saberlo**, y el backfill (`?desde=2024-01`) no tiene ningún tramo «limpio».
   Mitigación barata: exponer el reparto temporal en `/api/competencia-detalle` (el modal ya enseña qué
   procesos cuentan). Cara y mejor: segmentar el índice por período.
-- **🚩 Hipótesis verificable sin desplegar: el estado `Activo`.** La enumeración documentada de
-  `estado` de `p6dx-8zbt` es **Activo · Adjudicado · Desierto · Celebrado**, y `fase` es **Planeación ·
-  Selección · Evaluación · Adjudicación · Contratación · Ejecución**. `ESTADOS_ABIERTOS` en
-  `lib/filtros.js` **no contiene «activo» ni «seleccion»**. Con la regla «desconocido = CERRADO», un
-  proceso con `estado="Activo"` y `fase="Selección"` se descartaría **en silencio**. No está
-  confirmado que el dataset use esos literales. **Mirar `/api/diagnostico` ANTES de tocar las listas**
-  — es exactamente para lo que existe.
+- **El estado `Activo` faltaba en `ESTADOS_ABIERTOS` — CORREGIDO (ago 2026).** La enumeración
+  documentada de `estado` de `p6dx-8zbt` es **Activo · Adjudicado · Desierto · Celebrado**, y `fase` es
+  **Planeación · Selección · Evaluación · Adjudicación · Contratación · Ejecución**. «activo» no
+  estaba en ninguna de las dos listas y, con la regla «desconocido = CERRADO», **todo proceso
+  publicado con ese literal se descartaba EN SILENCIO** — y no lo salvaba la fase, porque «Selección»
+  tampoco figura. Ya está añadido, con prueba. **Es seguro porque en `estado_abierto` los cerrados
+  ganan siempre**: `Activo` + fase `Adjudicación`, o `adjudicado="Si"`, sigue cerrado (hay caso de
+  prueba de las dos cosas), y un estado de verdad desconocido sigue contando como cerrado.
+  ⚠️ **Exige relanzar `/api/sync?modo=full` UNA vez**: el filtro de estado corre en la INGESTA
+  (`lib/proyeccion.transformar` excluye los no abiertos de origen), así que esos procesos **nunca
+  entraron a Redis** y ninguna consulta los recupera sola. Es la excepción a «afinar el juicio tiene
+  efecto inmediato»: esto no es juicio, es ingesta.
+  **Queda un hueco menor, deliberadamente sin tocar**: un proceso con `estado` vacío y solo
+  `fase="Selección"` sigue contando como cerrado. Meter «seleccion» en la lista haría que
+  «Seleccionado» pasara a abierto por prefijo — que es justo el choque que el código ya advierte. Si
+  el embudo de `/api/diagnostico` muestra volumen muriendo ahí, resolverlo exige mirar el dato real
+  primero.
 - **La CCE confirma que las entidades comparten NIT.** El equipo de analítica de la propia agencia
   advierte que «no hay bases maestras de entidades y proveedores; las entidades pueden compartir NIT
   entre departamentos». La corrección de identidad de ago 2026 (no publicar alias para NIT compartido;

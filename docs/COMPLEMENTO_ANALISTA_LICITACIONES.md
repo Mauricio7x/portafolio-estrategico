@@ -566,11 +566,13 @@ CERRADO, sin fallbacks optimistas»**, cualquier proceso cuyas dos columnas clas
 `estado = "Activo"` y `fase = "Selección"` sería descartado **en silencio**: la full lo excluye de
 origen y jamás llega al corpus.
 
-No se puede confirmar desde este entorno si el dataset usa `Activo` en `estado_del_procedimiento`, ni
-con qué frecuencia. **Pero es comprobable en un minuto y sin desplegar nada:** `/api/diagnostico` ya
-agrega el embudo por paso sobre el corpus real. Si el paso de estado descarta un volumen
-desproporcionado, esta es la primera hipótesis a mirar. **No tocar las listas antes de mirar el
-diagnóstico** — la regla del proyecto es precisamente esa.
+> ✅ **CORREGIDO (ago 2026).** `«activo»` se añadió a `ESTADOS_ABIERTOS`, con prueba de que el cierre
+> sigue ganando (`Activo` + fase `Adjudicación` y `adjudicado="Si"` siguen cerrados) y de que un
+> estado realmente desconocido sigue contando como cerrado. **Exige relanzar `/api/sync?modo=full`
+> una vez**: el filtro de estado corre en la ingesta, así que esos procesos nunca entraron a Redis.
+> **Sigue abierto el caso de `fase="Selección"` sin `estado`**: añadir «seleccion» a la lista haría
+> que «Seleccionado» pasara a abierto por prefijo —el choque que el propio código advierte—, así que
+> eso sí exige mirar antes el embudo de `/api/diagnostico` sobre el corpus real.
 
 **3. Las adiciones y el valor final no están en este dataset.** Están en **Contratos Electrónicos
 (`jbjy-vk9h`)**. Esto matiza la propuesta de «banda de descuento» registrada en `CLAUDE.md`: con
@@ -696,7 +698,7 @@ Para futuras sesiones. Ordenado por lo que más cambiaría una decisión.
 | # | Tema | Por qué quedó pendiente | Cómo cerrarlo |
 |---|---|---|---|
 | P-01 | **Diccionario de las 59 columnas de `p6dx-8zbt`** | 403 en `datos.gov.co`, `dev.socrata.com` y el manual M-MUDA-02 de CCE | Descargar el [manual de datos abiertos](https://www.colombiacompra.gov.co/wp-content/uploads/2024/09/manual_de_datos_abiertos_actualizado.pdf) desde una red sin restricción, o `GET https://www.datos.gov.co/api/views/p6dx-8zbt.json` |
-| P-02 | **¿Aparece `Activo` en `estado_del_procedimiento`?** | Requiere el corpus real | **Mirar `/api/diagnostico`** en producción: reparto del embudo en el paso de estado. No requiere nueva extracción |
+| P-02 | ~~¿Aparece `Activo` en `estado_del_procedimiento`?~~ → **queda el caso `fase="Selección"` sin `estado`** | `Activo` ya se corrigió; «seleccion» no se añadió porque chocaría por prefijo con «Seleccionado» | **Mirar `/api/diagnostico`** en producción: reparto del embudo en el paso de estado. No requiere nueva extracción |
 | P-03 | **Radicado y fecha exactos de la unificación sobre salvedades** | 403 en relatoría CCE y Función Pública | Abrir el [PDF de relatoría](https://relatoria.colombiacompra.gov.co/wp-content/uploads/2025/06/25000233600020160173703.pdf) desde otra red |
 | P-04 | **Texto de los documentos tipo v.2 (Res. 539/2025)**: fórmulas de experiencia e indicadores exactos | 403 en colombiacompra.gov.co | Descargar los documentos tipo y **extraer los umbrales reales** para calibrar el semáforo de [V-10](#v-10--los-indicadores-habilitantes-tienen-valores-de-referencia-y-eso-hace-usable-la-señal-3) |
 | P-05 | **Tabla oficial de cuantías 2026** por rango de presupuesto de entidad | 403 en el PDF de MinEnergía | Recuperar el PDF; permitiría a la app **predecir la modalidad** por cuantía y entidad (truco #3 automatizado) |
