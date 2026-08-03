@@ -1,7 +1,8 @@
 # CLAUDE.md
 
 **Al iniciar cada sesión, lee `docs/GUIA_ANALISTA_LICITACIONES.md` para comprender el dominio del
-proyecto.**
+proyecto.** Y `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md`, que audita el manual, **corrige dos cosas
+que dice mal** y trae lo verificado en 2025-2026 (documentos tipo v.2, ley de garantías, dataset).
 
 Memoria del proyecto para Claude Code. Si retomas el trabajo, lee primero `README.md`
 (arquitectura, endpoints, claves Redis, reglas de negocio) y vuelve aquí para el contexto.
@@ -611,6 +612,86 @@ memoria en una fuente de error. `✅` implementado · `🟡` parcial · `⬜` no
 | **Subsanación → tabla de trazabilidad automática** | No existe. La app decide **a qué presentarse**, no arma la carpeta. Sería un generador de plantilla a partir de la ficha del proceso | ⬜ |
 | **Consorcios → antecedentes del socio (SIRI/Contraloría/RNMC)** | No existe y **no es automatizable con datos abiertos**: son portales con captcha, no APIs. Lo que sí está: el consorcio `juntos` se **re-deriva siempre** de sus integrantes. La parte accionable sería una **lista de verificación** de las 5 fuentes del truco #15 | ⬜ |
 | **Costos ocultos → calculadora de rentabilidad** | **No existe ninguna calculadora de rentabilidad.** Hoy la cuantía se muestra como si fuera ingreso. Faltan los 10 conceptos del Cap. 11, empezando por la **contribución del 5 %** y las estampillas | ⬜ |
+
+### Investigación de contraste (ago 2026) — correcciones al manual y hallazgos verificados
+
+Detalle, fuentes y temas pendientes en `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md`. Aquí solo lo que
+cambia una decisión. **Advertencia de método:** este entorno recibe **403 en `datos.gov.co`,
+`colombiacompra.gov.co`, `relatoria.colombiacompra.gov.co`, `dev.socrata.com` y `funcionpublica.gov.co`**
+— varios hallazgos se apoyan en fuentes secundarias y están marcados en el complemento. No usar una
+cifra de aquí en un pliego sin abrir la fuente.
+
+- **DOS CORRECCIONES AL MANUAL.** (1) **Salvedades**: el manual afirma que firmar sin salvedades cierra
+  la vía judicial *siempre*. El Consejo de Estado **unificó** (Sección Tercera, 27 jul 2023) que su
+  ausencia al pactar **suspensiones, prórrogas o modificaciones NO impide** reclamar; la exigencia
+  legal opera en la **liquidación bilateral**, y ahí la salvedad debe ser **concreta y específica**
+  (una genérica no sirve). Se conserva la conducta, se corrige la razón. (2) **Anticipo**: hay **techo
+  legal del 50 %**, la fiducia **no** aplica a menor ni mínima cuantía, y **anticipo ≠ pago
+  anticipado** (el segundo entra al patrimonio del contratista desde el desembolso y no se amortiza).
+- **Las cifras retóricas del manual no son datos.** «El 40 % de los procesos se define en el
+  traslado», «el 95 % nunca descarga las ofertas», «el 90 % de las reclamaciones se pierden», «el
+  80 % de los procesos amañados»: **no tienen fuente y no se encontró ninguna**. No calibrar nada con
+  ellas.
+- **🚩 El ciclo electoral contamina `indice_competencia` y no está modelado.** Ley de garantías 2026:
+  convenios interadministrativos bloqueados desde el **8 nov 2025**, contratación directa desde el
+  **31 ene 2026**, ambos hasta el **31 may 2026** (21 jun con segunda vuelta). Durante esa ventana las
+  entidades **tuvieron que competir**, así que hay un pico de procesos y probablemente más oferentes.
+  El promedio de 2 años sobre el que ordena `ordenar_por=atractividad` **mezcla ese período con
+  períodos normales sin saberlo**, y el backfill (`?desde=2024-01`) no tiene ningún tramo «limpio».
+  Mitigación barata: exponer el reparto temporal en `/api/competencia-detalle` (el modal ya enseña qué
+  procesos cuentan). Cara y mejor: segmentar el índice por período.
+- **🚩 Hipótesis verificable sin desplegar: el estado `Activo`.** La enumeración documentada de
+  `estado` de `p6dx-8zbt` es **Activo · Adjudicado · Desierto · Celebrado**, y `fase` es **Planeación ·
+  Selección · Evaluación · Adjudicación · Contratación · Ejecución**. `ESTADOS_ABIERTOS` en
+  `lib/filtros.js` **no contiene «activo» ni «seleccion»**. Con la regla «desconocido = CERRADO», un
+  proceso con `estado="Activo"` y `fase="Selección"` se descartaría **en silencio**. No está
+  confirmado que el dataset use esos literales. **Mirar `/api/diagnostico` ANTES de tocar las listas**
+  — es exactamente para lo que existe.
+- **La CCE confirma que las entidades comparten NIT.** El equipo de analítica de la propia agencia
+  advierte que «no hay bases maestras de entidades y proveedores; las entidades pueden compartir NIT
+  entre departamentos». La corrección de identidad de ago 2026 (no publicar alias para NIT compartido;
+  orden canónica → legado → alias) **era el problema conocido del dataset**, no una precaución
+  excesiva. Misma fuente: los campos de fecha «tienen en general muchos valores nulos» — coherente con
+  la detección defensiva de `fecha_cierre`.
+- **La banda de descuento son DOS métricas, no una.** `p6dx-8zbt` da `precio_base` y
+  `valor_total_adjudicacion` → **descuento en la adjudicación** (lo que sirve para fijar precio). El
+  **valor realmente pagado**, después de adiciones, vive en **otro dataset**: `jbjy-vk9h` (Contratos
+  Electrónicos). No mezclarlas: una predice cómo se gana, la otra cómo se ejecuta. Otros IDs útiles:
+  `qmzu-gj57` (proveedores), `rpmr-utcd` (SECOP integrado). Límites de la API: **~1.000 pet./hora con
+  App Token** (~100 sin él), **200 filas por petición**, y el dataset tiene **59 campos**.
+- **Documentos tipo: tienen VERSIÓN, y cambió.** Resolución **539 de 2025** adopta la **v.2** de obra
+  pública de **infraestructura social** para avisos publicados **desde el 16 feb 2026**: amplía a
+  **Institucional y Vivienda**, rediseña las fórmulas de experiencia y actualiza los requisitos
+  financieros. Transporte va por su propia línea (**v.4**, Res. 465 de 2024). Un pliego que sigue la
+  versión vieja está **desactualizado**, que no es lo mismo que ser un pliego sastre (señal #12).
+- **Valores de referencia que hacen operable la señal #3**: liquidez **≥ 1.2**, endeudamiento
+  **≤ 65 %**, cobertura de intereses **≥ 2**; el RUP verifica sobre los **últimos 3 años fiscales**
+  (por eso un mal cierre contamina tres, no uno). Con esto, «liquidez ≥ 3.7» es *más del triple* del
+  estándar y el argumento de pluralidad se escribe con cifras.
+- **Precios unitarios vs. precio global es la variable de riesgo que el manual omite.** En global el
+  riesgo de cantidades es del contratista y **no se reconocen mayores cantidades**; en unitarios las
+  cantidades del pliego son **un estimativo** y las mayores cantidades ordenadas **deben reconocerse**.
+  Y una **mayor cantidad NO es una adición** (adición = ampliación del alcance físico), así que **el
+  tope del 50 % del art. 40 de la Ley 80 no la limita**. Alcanzable en la app: detectar «a precio
+  global» / «a precios unitarios» en el objeto y etiquetarlo en la tarjeta.
+- **Reajuste de precios (ICOCIV del DANE, sucesor del ICCP)**: en un año con **SMMLV +23 %**, un
+  contrato sin cláusula de reajuste que cruza diciembre pierde margen por construcción. La app ya
+  normaliza el plazo (`plazoMesesDe`): es el disparador natural de una alerta.
+- **Inhabilidad por incumplimiento reiterado** (no está en el manual): **5 multas**, o **2
+  declaratorias de incumplimiento**, o **2 multas + 1 incumplimiento** en el **mismo año fiscal** →
+  **3 años** de inhabilidad desde la inscripción en el RUP. Convierte «negociar una multa» en decisión
+  estratégica y da criterio cuantitativo al due diligence del socio (truco #15).
+- **Contribución del 5 %**: base = valor total **sin impuestos**; **aplica también a las adiciones**;
+  es **permanente** (art. 8 Ley 1738/2014 sobre art. 120 Ley 418/1997 mod. Ley 1106/2006) — ignorar
+  artículos que digan «vigente hasta este año».
+- **Cifras 2026 verificadas contra fuente externa**: SMMLV **$1.750.905** (coincide con el valor del
+  repositorio); umbral MiPyme **$511.708.497**. 🚩 El alza del 23 % se fijó por decreto sin acuerdo y
+  **está en litigio ante el Consejo de Estado**: una anulación movería **todos** los umbrales en SMMLV
+  de la app a la vez (`SMMLV`, `topeSMMLV`, factor E).
+- **Lo que NO se encontró, dicho explícitamente**: tasa de procesos desiertos en obra, volumen anual de
+  procesos de obra, promedio de oferentes por cuantía y tasa de adiciones **no están publicados en
+  fuentes accesibles**. Pero **la app ya tiene la mejor fuente para casi todo eso**: su propio
+  `licitaciones:historico:mes:*`, que ninguna purga toca. Calcularlas en casa, no buscarlas afuera.
 
 **Cuatro consecuencias de diseño que se derivan del manual y que no hay que re-discutir:**
 
