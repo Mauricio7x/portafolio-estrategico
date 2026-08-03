@@ -1,5 +1,8 @@
 # CLAUDE.md
 
+**Al iniciar cada sesión, lee `docs/GUIA_ANALISTA_LICITACIONES.md` para comprender el dominio del
+proyecto.**
+
 Memoria del proyecto para Claude Code. Si retomas el trabajo, lee primero `README.md`
 (arquitectura, endpoints, claves Redis, reglas de negocio) y vuelve aquí para el contexto.
 
@@ -367,6 +370,263 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   cortes (con 5, IDU dejaría de ser «alta» y media suite se caería). Y el de la puntuación es
   **3 + 1, no 2 + 2**: con el empate, `nombreOriginal` lo decide el orden del corpus y la prueba
   pasaría o fallaría por azar.
+
+## CONOCIMIENTO DE DOMINIO: CONTRATACIÓN PÚBLICA COLOMBIANA
+
+Destilado accionable del **Manual del Analista de Licitaciones** (edición 2026). El manual completo
+—21 capítulos, glosario y mandamientos— vive en `docs/GUIA_ANALISTA_LICITACIONES.md`; aquí queda
+solo lo que cambia decisiones. **Toda decisión técnica de este repositorio debe estar informada por
+este cuerpo de conocimiento**: la app no es un buscador de filas, es una herramienta para decidir a
+qué presentarse, y el criterio de «qué es una buena oportunidad» sale de aquí.
+
+### Los 9 errores que descalifican en SECOP II
+
+1. **Guardar la oferta y no darle «Presentar»** — «En creación» al cierre = no existe. *El error #1
+   del país.*
+2. Cargar el archivo en la **sección equivocada** (precio en carpeta técnica = revelación anticipada).
+3. Superar el **límite de peso** por archivo sin verificar.
+4. PDF **corrupto o con contraseña**.
+5. **Certificado digital vencido**.
+6. No responder un **«mensaje» dentro de la plataforma** (los correos externos no cuentan).
+7. Dejar **campos del formulario en blanco** porque «ya está en el PDF» — *el formulario prevalece*.
+8. Oferta económica en **formato distinto al exigido**.
+9. **Empezar a cargar el día del cierre.**
+
+### Habilitante vs. puntaje — la distinción más importante del oficio
+
+| | Habilitantes | Factores de puntaje |
+|---|---|---|
+| Qué son | Capacidad jurídica, financiera, organizacional, experiencia | Calidad, precio, industria nacional, sociales |
+| Efecto | Habilita o rechaza. **No dan puntos** (Ley 1150 art. 5 num. 1) | Ordenan a los habilitados |
+| ¿Subsanables? | **SÍ**, hasta el término de traslado | **NO. JAMÁS.** |
+
+**Regla mnemotécnica: NO subsanable = puntaje.** Tener el habilitante «de más» (30 años cuando piden
+5) da exactamente **cero** puntos. Tampoco son subsanables: la oferta económica, la **no presentación**
+de la garantía de seriedad (sí sus defectos formales), la falta de capacidad, y cualquier
+circunstancia **ocurrida después del cierre** (se reexpide un certificado; no se crea un hecho nuevo).
+
+### Los 4 métodos de ponderación económica y cómo se sortea
+
+1. **Media aritmética** — gana el más cercano al promedio de las hábiles.
+2. **Media aritmética alta** — promedio solo de las que están por encima de la media.
+3. **Media geométrica con presupuesto oficial** — el presupuesto entra como dato más (a veces varias
+   veces).
+4. **Menor valor** — el más barato se lleva todos los puntos.
+
+**El método NO se conoce antes: se sortea el día de la audiencia con el primer decimal de la TRM.**
+Se conocen las reglas del precio *después* de haber presentado el precio. Consecuencia: **tirar el
+precio al piso es matemáticamente malo** — gana en 1 de 4 métodos y en los otros 3 te aleja de la
+media. El enfoque correcto es **valor esperado**: banda de descuento histórica del ganador frente al
+presupuesto oficial en esa entidad (típicamente **5–12 % en obra**), ubicarse donde se gana bajo más
+métodos, y verificar que el margen sobreviva. Y ojo con el **precio artificialmente bajo**: la entidad
+debe requerir justificación (D. 1082 art. 2.2.1.1.2.2.4) y sin estructura de costos, rechaza.
+
+### Las 12 señales de pliego sastre
+
+1. **Experiencia hiperespecífica** sin razón técnica (cada adjetivo recorta el universo).
+2. **Códigos UNSPSC inusuales o excesivamente restrictivos** para el objeto.
+3. **Indicadores financieros con precisión rara** (liquidez ≥ 3.7) — los razonables son redondos.
+4. **Personal clave con certificación de una sola institución**.
+5. **Plazos mínimos legales para todo.**
+6. **Adendas técnicas a 24 horas del cierre.**
+7. **Marca o especificación de un solo fabricante** sin «o equivalente».
+8. **Ficha técnica que solo un distribuidor autorizado entrega.**
+9. **Respuestas a observaciones evasivas o copiadas** («se mantiene lo establecido»).
+10. **Apertura en fechas estratégicas** (23 dic., Semana Santa, puentes).
+11. **Uno o dos oferentes** (uno sin capacidad) en el histórico de esa entidad para ese objeto.
+12. **Desviación injustificada de los documentos tipo** (Ley 2022/2020).
+
+**Se detecta por el conjunto, no por la pieza.** Al detectarlo: (A) observar con redacción alternativa,
+(B) retirarse temprano —frecuentemente lo correcto—, (C) denunciar. Lo que **no** se hace es
+presentarse «a ver qué pasa»: un pliego sastre bien hecho no se gana por insistencia.
+
+### La estructura de una subsanación que funciona
+
+El evaluador tiene 40 ofertas y poco tiempo: **hazle el trabajo**.
+
+1. Referencia del proceso y del oferente.
+2. **Cita textual** del requerimiento, entre comillas.
+3. Respuesta directa **en una sola frase**.
+4. **Tabla de trazabilidad:** `Lo que pidió | Documento aportado | Folio | Dónde queda acreditado`.
+5. Documentos **en el mismo orden de la tabla, foliados**.
+
+☠️ Nunca «mejorar» la oferta al subsanar: eso es modificarla → rechazo + constancia en el expediente.
+**Responde exactamente lo que te preguntaron, ni una línea más.** Y **subsana proactivamente**: en
+cuanto el informe te marque «no cumple», radica sin esperar el requerimiento.
+
+### La estructura de una observación quirúrgica
+
+`Requisito del pliego (numeral + cita textual)` → `Lo aportado por el oferente (folio n.º)` →
+`Incumplimiento (el pliego exige A; el documento acredita B)` → `Consecuencia solicitada (declarar NO
+HÁBIL / descontar puntaje)` → `Soporte (copia del folio)`.
+
+Con cita textual y folio, **el comité debe motivar por escrito por qué la rechaza**. Sin ellos se
+archiva en dos líneas.
+
+**Al proyecto de pliego** (la ventana más poderosa y desaprovechada) la observación se acepta cuando
+**le resuelve un problema a la entidad, no a ti**: cita el numeral, explica el **riesgo de declaratoria
+de desierta y la restricción de pluralidad**, cita la norma (Ley 1150 art. 5, Ley 80 art. 24, Ley
+2022/2020) y **entrega la redacción alternativa lista para pegar** — el comité saturado la copia
+literal en la adenda. *No digas «déjenme entrar»; di «así se les puede caer el proceso, y aquí está
+el arreglo».*
+
+### Los costos que casi nadie suma
+
+| Concepto | Típico | Nota |
+|---|---|---|
+| **Contribución especial de obra pública** | **5 %** del contrato | Ley 418/1997. *El olvido más caro del país* |
+| **Estampillas** dptales./municipales | 0.5–5 % acumulado | Varían por entidad. **Verificar siempre** |
+| Retención en la fuente / ReteICA | 1–11 % / 0.4–1.4 % | Según concepto y municipio |
+| Pólizas y garantías | 1–3 % | Según riesgo e historial con la aseguradora |
+| **Costo financiero del capital de trabajo** | Variable **y grande** | El Estado paga tarde: 2 % mensual financiando 40 % durante 6 meses ≈ **5 puntos de margen** |
+| **Fiducia del anticipo** | — | Anticipo va a patrimonio autónomo (Ley 1474/2011 art. 91): no es plata tuya |
+| Ensayos, laboratorios, certificaciones | 0.5–2 % | **No están en el APU** |
+| PMA, señalización, SST | 1–3 % | Obligatorios y se olvidan |
+| Liquidación, actas, cierre | 0.5 % | El contrato no termina cuando termina |
+
+Sobre el **AIU**: A 12–20 %, I 3–5 % (**es seguro, no utilidad**), U 5–10 %. **Regla no negociable:
+flujo de caja mes a mes ANTES de fijar el precio.** Si el acumulado se hunde: anticipo, subir precio,
+o no presentarse.
+
+### La regla de las 24 horas
+
+**Cargar y presentar el día anterior al cierre.** SECOP II permite retirar y modificar cuantas veces
+se quiera hasta la hora exacta; presentar temprano no revela nada. **El cierre de las 3:00 p.m. es la
+hora en que más ofertas mueren en Colombia** (internet, luz, servidor congestionado). Y **pantallazo
+con reloj** mostrando el estado «Presentada»: sin evidencia, la palabra no vale nada ante el expediente.
+
+### Fuentes de inteligencia anticipada
+
+| Fuente | Qué da | Cuándo |
+|---|---|---|
+| **PAA en SECOP II** | Objeto, valor, mes previsto y modalidad de todo el año | **31 de enero** |
+| **Plan de Desarrollo** | Metas que la entidad debe cumplir → **predice el PAA del año entrante** | Cada 4 años |
+| **Presupuesto aprobado** | Plata por rubro; confirma o desmiente el PAA | Diciembre |
+| **Histórico SECOP** | Quién ganó, a qué precio, con qué descuento, con qué consorcio | Permanente |
+| **Estudios del sector** | El análisis de mercado de la propia entidad | Con el proyecto de pliego |
+| **Informes de la Contraloría** | Qué le criticaron → **predice qué requisitos endurecerá** | Anual |
+
+**El PAA da seis meses de ventaja** sobre una competencia que se entera el día del aviso y tiene 20
+días. Es un documento público que casi nadie lee.
+
+### Consorcio vs. Unión Temporal
+
+Ambos (Ley 80 art. 7): **responsabilidad solidaria total**, sin personería jurídica, con NIT fiscal, y
+**suman experiencia y capacidad**. Diferencia única: las **sanciones** — en UT según el porcentaje
+declarado; en consorcio, **a todos por igual**.
+
+☠️ **Errores mortales:** (1) documento sin firmas de todos los R.L.; (2) sin autorización de junta
+cuando el monto supera las facultades del R.L.; (3) **porcentajes que no suman 100 %**; (4) **el que
+aporta la experiencia con participación por debajo del mínimo del pliego** (a menudo 30–40 %) — el
+pliego la desconoce entera; (5) **un integrante inhabilitado contamina al consorcio completo**.
+
+**Due diligence de 20 minutos** antes de firmar: SIRI (Procuraduría), boletín de responsables fiscales
+(Contraloría), antecedentes judiciales (Policía), **RNMC**, e histórico en SECOP (incumplimientos,
+multas, caducidades). Todo público y gratis. Se reparte por **quién aporta lo que el pliego necesita**,
+no por quién pone más plata.
+
+### Factores de desempate (Ley 2069/2020, art. 35) — 13 criterios sucesivos
+
+Nacionales → MIPYME → cooperativas → **discapacidad (≥10 % de la nómina)** → mujeres cabeza de familia
+y población vulnerable → emprendimientos de mujeres → población indígena/negra/afro/raizal/palenquera/
+Rrom → jóvenes 18–28 → … → **sorteo por balotas**.
+
+Con documentos tipo los puntajes están comprimidos y **los empates son frecuentes**: acreditar todos
+los criterios que legítimamente se cumplan es *la póliza más barata del oficio*.
+
+### El traslado como inteligencia competitiva gratuita
+
+Términos: **licitación 5 días hábiles · selección abreviada y concurso de méritos 3 · mínima cuantía
+1**. Durante el traslado se hacen **tres cosas a la vez**: subsanar lo propio, revisar lo ajeno,
+observar el informe.
+
+**Todas las ofertas de todos los competidores son públicas y descargables.** Aunque se pierda el
+proceso, quedan: precio exacto y % de descuento de cada uno, su estructura de costos si hubo APU
+desagregado, **sus certificaciones de experiencia** (el mapa de qué contratos tienen y con quién), su
+composición de consorcio, sus indicadores y **qué les faltó**. En dos años eso es una base de datos de
+la competencia que ninguna consultora vende — y **el 95 % de los oferentes nunca la descarga**.
+
+### Verdades procesales que ahorran dinero
+
+- **Contra la adjudicación NO procede recurso** (Ley 1150 art. 9): es irrevocable. La vía es judicial
+  (CPACA arts. 138/141), previa conciliación, caducidad **4 meses**, y **no devuelve el contrato**:
+  indemniza, años después. *El 90 % de las veces lo racional es documentar, aprender y ganar el
+  siguiente.* **La denuncia administrativa (Procuraduría/Contraloría/SIC) mueve más que la demanda.**
+- **Sí procede reposición** contra: declaratoria de desierta (Ley 80 art. 30-11), actos sancionatorios
+  (Ley 1474 art. 86) y actos definitivos sin norma especial. **10 días hábiles** (CPACA art. 76).
+- **El rechazo de la oferta** es acto de trámite: se ataca con el definitivo. Por eso **las
+  observaciones al informe son la única oportunidad real** de corregir el rumbo.
+- **Post-adjudicación:** sin aprobación de garantías no hay acta de inicio; **el plazo corre desde el
+  acta, no desde la firma** — no movilizar antes, y **no firmarla si la entidad no entregó predio,
+  diseños, licencias o permisos** (dejar constancia escrita). Adición ≤ **50 %** del valor inicial en
+  SMMLV; la prórroga no tiene ese límite. **Firmar el acta de liquidación sin salvedades cierra la vía
+  judicial para siempre.** Documentar cada hecho **el día que ocurre**.
+- **La ética aquí es aritmética, no moral:** el analista es quien firma y queda en el expediente; la
+  sanción por colusión (C.P. art. 410A) es prisión, multa SIC de hasta 100.000 SMLMV a la empresa y
+  2.000 al individuo, e **inhabilidad de hasta 20 años** = cierre. Regla de oro del contacto:
+  **«¿me incomodaría que esto se publicara?»** Si sí, no se hace. Canal formal siempre.
+
+### Los 20 mandamientos del analista
+
+1. Cargar la oferta **el día anterior** al cierre. Siempre.
+2. Verificar que el estado diga **«Presentada»**, no «En creación».
+3. Leer **las causales de rechazo** antes que cualquier otra cosa.
+4. Separar la carpeta en **pila de puntaje** (paranoia triple) y **pila habilitante**.
+5. Descargar el **PAA en febrero** y armar el calendario del año.
+6. Renovar el **RUP** antes del quinto día hábil de abril.
+7. Observar el proyecto de pliego con **redacción alternativa lista para pegar**.
+8. Nunca prometer un **personal clave** que no está vinculado.
+9. Verificar los **antecedentes del socio** de consorcio antes de firmar.
+10. Sumar **la contribución del 5 %** y las estampillas. Siempre.
+11. Hacer el **flujo de caja mes a mes** antes de fijar el precio.
+12. Responder la subsanación con **tabla de trazabilidad** y ni una línea de más.
+13. **Descargar todas las ofertas** de los competidores en cada traslado.
+14. Acreditar **todos los factores de desempate** que legítimamente se cumplan.
+15. **No firmar el acta de inicio** si la entidad no entregó lo suyo.
+16. **Documentar cada hecho el día que ocurre**, con foto y radicado.
+17. **Nunca firmar el acta de liquidación sin salvedades.**
+18. **Canal formal siempre.** Si incomodaría que se publicara, no se hace.
+19. Hacer el **postmortem** de cada proceso, ganado o perdido.
+20. Mantener la **tasa de rechazo por forma en cero**. Es lo único que depende enteramente de ti.
+
+### APLICACIÓN EN EL PROYECTO
+
+Mapeo explícito manual → código, **con estado real verificado contra el repositorio** (ago 2026). El
+estado importa tanto como el mapeo: escribir aquí que algo «ya está» cuando no está convertiría esta
+memoria en una fuente de error. `✅` implementado · `🟡` parcial · `⬜` no existe (propuesta).
+
+| Concepto del manual | Qué hay hoy en la app | Estado |
+|---|---|---|
+| **Modalidades de selección** (Cap. 3) | `MODALIDADES_COMPETITIVAS` / `MODALIDADES_EXCLUIDAS` en `lib/filtros.js` reproducen exactamente la tabla del manual: licitación, selección abreviada, subasta, concurso de méritos, mínima cuantía, acuerdo marco dentro; **contratación directa fuera** (no hay concurso) | ✅ |
+| **Convenios no son licitaciones** | `es_convenio` (Ley 489/1998 arts. 95-96): «aunar esfuerzos» y convenio interadministrativo al encabezar el objeto | ✅ |
+| **RUP = pasaporte; UNSPSC a nivel de clase** (Cap. 5) | `lib/unspsc.js` compara por **jerarquía leyendo el nivel** del código; los 393 códigos de los RUP terminan en «00» (inscripción por clase) y hay prueba que lo vigila. `/api/admin/rup` carga el RUP con efecto inmediato | ✅ |
+| **Capacidad residual K** (Guía CCE-EICP-GI-22) | `lib/capacidad.js`: `CRP = CO × (E+CT+CF)/100 − SCE`, `CRPC` con anticipo y plazo (D. 1082 art. 2.2.1.1.1.6.4). **K del plural = suma de las CRP**, indicadores habilitantes 50/50 — las dos reglas distintas del Cap. 10/11 | ✅ |
+| **Nicho incómodo / menos competencia > más puntaje** (truco #22, Palanca 4) | `ordenar_por=atractividad` (default) + `lib/indice_competencia.js`: tertiles sobre el promedio de oferentes por entidad. Es literalmente la tesis de la Palanca 4 en código. `topeSMMLV` es apetito estratégico, no límite del RUP | ✅ |
+| **Anticipo y flujo de caja** (truco #16) | `lib/negocio.js` pondera anticipo al 0.4 del `puntaje_ponderado` — el manual explica **por qué** pesa tanto: sin anticipo se financia al Estado. **`anticipo_pct = 0` sigue significando «sin dato»**, no «sin anticipo» | ✅ |
+| **Traslado / histórico como base de datos** (truco #17) | `licitaciones:historico:mes:*` — keyspace que **ninguna purga toca**, con adjudicatario, valor adjudicado y nº de oferentes. Es la versión estructural del consejo «guarda todo lo del traslado» | ✅ |
+| **PAA → alertar antes de que salga el proceso** (truco #9) | La app ingiere **solo `p6dx-8zbt`** (procesos ya publicados). El PAA es otro dataset y **no se lee**. Hoy la app avisa cuando el proceso ya salió: la ventaja de seis meses del manual está sin explotar | ⬜ |
+| **Pliego sastre → detección** (12 señales) | La única señal computable hoy es la **#11** (histórico de 1-2 oferentes), vía `indice_competencia`. **Y está interpretada al revés**: baja competencia se presenta como *atractiva*. Es ambigua — puede ser un nicho ganable **o** un pliego sastre. Las señales 1/3/4/5/6/7 exigen el texto del pliego, que el dataset no trae. **El tier `familia` NO es la señal #2**: indica codificación amplia, lo contrario de restrictiva | 🟡 |
+| **Precio bajo incertidumbre → banda de descuento** (truco #11) | **No existe, pero el dato ya está guardado**: `lib/proyeccion.js` (proyección histórica) conserva `CAMPOS_VALOR_ADJUDICADO` junto a `precio_base`, así que `descuento = 1 − valor_adjudicado / precio_base` es calculable por entidad **sin re-extraer nada**. Es la funcionalidad nueva de mayor rendimiento por esfuerzo | ⬜ |
+| **Traslado → descargar ofertas de competidores** | El dataset no trae documentos de oferta: solo `urlproceso`. Automatizarlo exigiría raspar SECOP II (fuera de la arquitectura actual: sin dependencias, serverless, respuesta ≤4.5 MB). Alcanzable: enlazar la ficha del proceso y **listar adjudicatarios recurrentes por entidad** desde el histórico | ⬜ |
+| **Subsanación → tabla de trazabilidad automática** | No existe. La app decide **a qué presentarse**, no arma la carpeta. Sería un generador de plantilla a partir de la ficha del proceso | ⬜ |
+| **Consorcios → antecedentes del socio (SIRI/Contraloría/RNMC)** | No existe y **no es automatizable con datos abiertos**: son portales con captcha, no APIs. Lo que sí está: el consorcio `juntos` se **re-deriva siempre** de sus integrantes. La parte accionable sería una **lista de verificación** de las 5 fuentes del truco #15 | ⬜ |
+| **Costos ocultos → calculadora de rentabilidad** | **No existe ninguna calculadora de rentabilidad.** Hoy la cuantía se muestra como si fuera ingreso. Faltan los 10 conceptos del Cap. 11, empezando por la **contribución del 5 %** y las estampillas | ⬜ |
+
+**Cuatro consecuencias de diseño que se derivan del manual y que no hay que re-discutir:**
+
+- **La app juega en las etapas 1-9 del ciclo, no en las 10-14.** Decide a qué presentarse. Todo lo de
+  traslado, subsanación, audiencia y ejecución es contexto para *elegir mejor*, no funcionalidad
+  pendiente — salvo lo que se declare explícitamente arriba.
+- **Baja competencia es ambigua y hay que decirlo en pantalla.** El manual sostiene las dos lecturas:
+  nicho rentable (Palanca 4) **y** señal #11 de pliego sastre. Un badge que solo diga «⭐ poca
+  competencia» está afirmando una de las dos sin evidencia.
+- **Un habilitante «de más» no da puntos.** No tiene sentido puntuar en la app «cuánto sobra» de
+  experiencia o de K: para el pliego eso vale cero. Lo que importa es el **pasa/no pasa** (por eso el
+  veredicto es graduado por tier + pertinencia, no una nota).
+- **El falso negativo cuesta más que el amarillo.** Es la regla de pertinencia ya vigente, y el manual
+  la respalda por el otro lado: el recurso escaso es **el tiempo del equipo** (Palanca 3, opción B), no
+  la lista de resultados. Un 🟡 se descarta en 5 s; una oportunidad que la app nunca mostró no se
+  recupera.
 
 ## Datos del negocio (fuente de verdad)
 
