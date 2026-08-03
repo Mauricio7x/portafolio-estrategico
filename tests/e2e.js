@@ -250,7 +250,7 @@ function generarDataset() {
           alcanzaba.
      16.  RUTA DE TEXTO DÉBIL: sin código utilizable y sin vocabulario claro de
           obra. Fuera por defecto; vuelve con ?incluir_sin_unspsc=1. */
-const EXTRAS_POR_MES = 18;
+const EXTRAS_POR_MES = 19;
 const CLASE_AFIN = "80141600";   // fuera de los dos RUP; afín a 72141000 en el histórico
 let _seqExtra = 0;
 function extrasDelMes(mes) {
@@ -393,6 +393,22 @@ function extrasDelMes(mes) {
       descripci_n_del_procedimiento: "Obra civil de placa huella con pavimentación en concreto",
       codigo_principal_de_categoria: "V1.72141000",
       precio_base: "300000000",
+    }),
+    base(19, {
+      /* ESTADO «Activo» de punta a punta. El caso unitario prueba que
+         `estado_abierto` lo clasifica bien; esta fila prueba lo que de verdad
+         importaba: que la FULL lo ingiere y que llega a la pantalla. Es donde
+         se descartaba en silencio — el filtro de estado corre en la INGESTA
+         (`lib/proyeccion.transformar` excluye de origen lo que no está
+         abierto), así que un proceso «Activo» no es que se filtrara al
+         servirlo: nunca entraba a Redis, y por eso el arreglo exige una full.
+         Va con fase «Selección», que tampoco está en ninguna de las dos listas:
+         así el proceso depende ÚNICAMENTE de que «activo» esté en la lista. */
+      nombre_del_procedimiento: `Construcción de puente vehicular con estado Activo ${_seqExtra}`,
+      descripci_n_del_procedimiento: "Obra civil de puente en concreto reforzado sobre la quebrada",
+      codigo_principal_de_categoria: "V1.72141000",
+      estado_del_procedimiento: "Activo", fase: "Selección",
+      precio_base: "400000000",
     }),
   ];
 }
@@ -866,6 +882,14 @@ async function main() {
       // ...pero el cierre sigue ganando: añadirlo NO puede resucitar un cerrado
       [{ estado_del_procedimiento: "Activo", fase: "Adjudicación" }, false],
       [{ estado_del_procedimiento: "Activo", adjudicado: "Si" }, false],
+      /* ...y NO puede arrastrar al literal que significa lo contrario. La
+         coincidencia es por prefijo en ambos sentidos, así que un vecino como
+         «Inactivo» es justo lo que una lista de estados puede tragarse sin que
+         nadie lo note — y servir como abierto un proceso desactivado sería peor
+         que el defecto que «activo» vino a arreglar. */
+      [{ estado_del_procedimiento: "Inactivo" }, false],
+      [{ estado_del_procedimiento: "INACTIVO" }, false],
+      [{ estado_del_procedimiento: "Desactivado" }, false],
       [{ estado_del_procedimiento: "Adjudicado" }, false],
       [{ estado_del_procedimiento: "En evaluación" }, false],
       [{ estado_del_procedimiento: "Evaluación de ofertas" }, false],
@@ -1711,6 +1735,24 @@ async function main() {
         "la instalación/montaje (verbo de obra, segmento 56) debía pasar y no aparece");
       assert.ok(todasH.some((l) => /Convocado/i.test(l.estado_del_procedimiento)),
         "los procesos Convocado (abiertos) debían aparecer");
+
+      /* ESTADO «Activo»: el defecto era que se descartaban EN SILENCIO. El caso
+         unitario prueba la clasificación; esto prueba que la full los ingiere y
+         que llegan a la pantalla, que es lo que el dueño no veía. */
+      {
+        const activos = todasH.filter((l) => /estado Activo/i.test(l.nombre_del_procedimiento || ""));
+        assert.strictEqual(activos.length, MESES.length,
+          `un proceso «Activo» por mes debía llegar al listado; llegaron ${activos.length} de ${MESES.length}`);
+        for (const l of activos) {
+          assert.strictEqual(l.estado_del_procedimiento, "Activo");
+          assert.strictEqual(l.proceso_abierto, true,
+            "el sello guardado en la ingesta también tiene que decir abierto: es un AND con la reclasificación");
+          assert.ok(filtros.estado_abierto(l), "la reclasificación al servir debe confirmarlo");
+        }
+        // y siguen guardados en Redis, no es que la consulta los rescate
+        assert.ok((await leerActivo()).some((r) => /estado Activo/i.test(r.nombre_del_procedimiento || "")),
+          "los «Activo» tienen que estar GUARDADOS: el filtro de estado corre en la ingesta");
+      }
 
       /* CONVENIOS: no son licitaciones y no pueden llegar a la pantalla */
       assert.ok(!todasH.some((l) => /aunar\s+esfuerzos/i.test(l.nombre_del_procedimiento)),
