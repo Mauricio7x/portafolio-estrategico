@@ -1143,6 +1143,25 @@ cobertura:{perfil}:{exp|base}                  JSON comprimido de la auditoría 
                                                (el valor lleva el sello del RUP y el de la experiencia:
                                                 cargar cualquiera de los dos la invalida sola)
 
+CATÁLOGO DE PRECIOS APU — configuración de referencia. NINGUNA purga lo toca.
+apu:insumos:{id}                               HASH {nombre, unidad, tipo, fuente, precio_base,
+                                                     precio_{region} ×5, precio_origen_{region} ×5,
+                                                     fecha_actualizacion}
+apu:items:{codigo}                             HASH {descripcion, unidad, capitulo, unspsc_segmento,
+                                                     unspsc_clases (JSON), herramienta_menor_pct,
+                                                     insumos (JSON: [{insumo_id, cantidad_por_unidad,
+                                                     rendimiento, desperdicio, distancia_km?}]),
+                                                     fuente, fecha_actualizacion}
+apu:factores_region:{region}                   HASH {nombre, ciudad_cabecera, factor_materiales,
+                                                     factor_mano_obra, factor_equipo, factor_transporte,
+                                                     aiu_tipico, aiu_detalle (JSON), prestacional_tipico,
+                                                     indice_ciudad_recuperado, fecha_actualizacion}
+apu:catalogo:manifest                          JSON {version, chunks, registros}   ← caché de lectura
+apu:catalogo:chunk:{i}                         base64(zlib.deflate(JSON[], nivel 6)) ≤ 500 KB
+apu:catalogo:meta                              JSON {version, version_catalogo, cargado_el, insumos,
+                                                     items, regiones, icociv, …}   ← SELLO, se escribe
+                                                     AL FINAL de la carga
+
 BACKFILL
 sync:historico:progreso                        JSON cursor reanudable del backfill
 sync:historico:meta                            JSON resumen de la última extracción histórica
@@ -1171,6 +1190,84 @@ La auditoría de completitud vive en `meta.porMes`: `esperados` (`count(*)` de S
 | Delta | añade y reemplaza por `:updated_at` | **añade** los que cerraron |
 | `/api/sync/historico` | no lo toca | reemplaza mes a mes el rango pedido |
 | `reconstruir_*` | no lo toca | no lo toca (solo re-lee y republica los derivados) |
+| Carga del catálogo APU | **no lo toca** | **no lo toca** (escribe solo en `apu:*`) |
+
+## Catálogo de precios APU (`lib/apu/catalogo.js`)
+
+La base de precios con la que se costea un ítem de obra. Estructura oficial **INVIAS/IDU**:
+
+```
+Costo Directo   = Mano de Obra + Materiales + Equipo/Herramienta + Transporte
+Precio Unitario = Costo Directo × (1 + AIU)
+```
+
+| Capítulo | Fórmula |
+| --- | --- |
+| Mano de obra | `(precio_base × prestacional) ÷ rendimiento` |
+| Materiales | `precio_base × cantidad_por_unidad × (1 + desperdicio)` |
+| Equipo | `precio_base ÷ rendimiento` |
+| Transporte | `precio_base × cantidad_por_unidad × distancia_km` |
+| Herramienta menor | `herramienta_menor_pct × total de mano de obra` |
+
+**48 insumos · 17 ítems · 5 regiones** (Bogotá/Sabana, Medellín/Antioquia, Costa Atlántica, Eje
+Cafetero, Santanderes). La semilla curada vive en `data/apu_catalogo.json` y declara la `fuente` de
+cada precio: `recuperado` (estaba en `modulo_apu.html`, borrado en el commit `d69cfe8`, y se trajo a
+la base vigente con el **ICOCIV del DANE**, +4,70 % anual, boletín de marzo 2026), `derivado` (se
+calcula de otros: las cuadrillas) o `estimado` (referencia razonada, **no** una cotización). Método
+completo y separación línea por línea en **`docs/APU_Y_RENTABILIDAD.md`**.
+
+### `POST /api/admin/apu/cargar-catalogo` (protegido) · `GET /api/apu/catalogo` (público)
+
+| Endpoint | Token | Qué hace |
+| --- | --- | --- |
+| `POST /api/admin/apu/cargar-catalogo` | **sí** | valida y puebla Redis. `?forzar=true` reescribe |
+| `GET /api/admin/apu/cargar-catalogo` | **sí** | qué hay cargado, sin escribir |
+| `GET /api/apu/catalogo` | **no** | ítems + insumos + regiones. `?insumo=` · `?region=` · `?bloque=` |
+
+La consulta es pública **a propósito y sin excepción a la regla del proyecto**: lo que no sale sin
+llave son las *cifras del perfil* (patrimonio, K, CRPC, tope), que son datos financieros de personas
+identificadas. Aquí solo hay precios de mercado de referencia. Lo que sí exige llave es
+**escribirlos**.
+
+### Decisiones que no hay que re-aprender
+
+- **Los precios regionales se DERIVAN, no se transcriben.** La semilla trae un precio base (Bogotá)
+  por insumo y cuatro factores por región; los cinco `precio_{region}` salen de multiplicarlos según
+  el **tipo** del insumo — en la Costa el material sube (1,10) mientras el jornal baja (0,97), y con
+  un índice único los dos irían al mismo sitio. Transcribir 5 × 48 números a mano habría creado 240
+  sitios donde el catálogo puede desincronizarse de sus propios factores. Una cotización real gana
+  (`precios_cotizados`) y el hash publica `precio_origen_{region}` para saber cuál se está mirando.
+- **Los cuatro factores no pueden separarse del único dato duro que los respalda.** La fuente
+  recuperada trae **un** índice por ciudad; la desagregación es razonada, no medida. La cerradura:
+  recomponerlos con la estructura de costos de obra civil (45 % materiales · 30 % mano de obra ·
+  18 % equipo · 7 % transporte) tiene que caer a **menos de 0,015** del índice de la ciudad cabecera.
+  Hay prueba región por región.
+- **Las cuadrillas son la SUMA de sus jornales** (`299.000 = 95.000 + 3 × 68.000`, recuperado). Se
+  declara en `componentes` y se valida: si alguien sube el jornal del ayudante y no la cuadrilla, el
+  catálogo diría dos cosas distintas sobre el mismo día de trabajo.
+- **Un cero no puede ser un precio.** Es la regla de `anticipo_pct = 0` aplicada entera: un insumo a
+  0 no es «gratis», es «no lo sé». Por eso la **herramienta menor no es un insumo** (no tiene precio
+  propio: es un % de la mano de obra) y vive como `herramienta_menor_pct` del ítem.
+- **🚩 El transporte va en m³, no en kilogramos.** En `modulo_apu.html` el APU del acero llevaba
+  `1.200 × 1,05 × 15` = **$18.900 de acarreo por kilo**, más del doble que el propio acero: la tarifa
+  está en $/m³-km y le pasaban kg. Aquí `cantidad_por_unidad` de una línea de transporte va **siempre
+  en m³ de material movido** (para el acero, `1,05 kg ÷ 7.850 kg/m³ ≈ 0,00013 m³`). Hay prueba de que
+  el acarreo no puede volver a pasar del 1 % del APU del acero.
+- **La carga es TODO O NADA y el sello va al final.** Se valida el catálogo entero antes del primer
+  `HSET` (mismo criterio que un POST de RUP rechazado, que no toca nada) y `apu:catalogo:meta` se
+  escribe después de los hashes y del snapshot: mientras no cambie, nadie ve un estado a medias.
+- **El snapshot es CACHÉ, los hashes son la VERDAD.** Servir el catálogo desde los hashes son ~70
+  comandos por petición; desde el snapshot comprimido, dos. Pero dos fuentes de verdad es el defecto
+  que este proyecto ya pagó caro, así que el snapshot lleva **la misma `version`** que la meta y quien
+  lo lee la compara: si no casa —o si un chunk está corrupto— cae a los hashes **y lo dice** en `via`.
+  Hay prueba de que las dos vías devuelven exactamente lo mismo.
+- **`cargado` es un booleano; la fecha es `cargado_el`.** Se llamaban igual y el spread de la meta
+  pisaba al booleano con una cadena (siempre veraz): el panel habría dicho «cargado» sobre un Redis
+  vacío. Es el choque `total_procesos`/`procesos_contados` otra vez, y tiene su prueba de tipo.
+- **Lo que el catálogo NO incluye**: AIU aparte del `aiu_tipico` de referencia, y **ninguno** de los
+  costos ocultos del Cap. 11 (contribución del 5 %, estampillas, retenciones, pólizas, costo
+  financiero del capital de trabajo, ensayos, PMA/SST, liquidación). El APU es costo directo; eso va
+  encima. La calculadora de rentabilidad es la Fase 2.
 
 ## Variables de entorno
 
