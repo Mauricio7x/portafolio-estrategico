@@ -120,6 +120,18 @@ const MESES = (() => {
   return Array.from({ length: mFin }, (_, i) => `${ANO}-${String(i + 1).padStart(2, "0")}`);
 })();
 
+/* Fechas de CIERRE del corpus sintético, relativas a hoy (ago 2026).
+   Antes eran `${mes}-25`, es decir, dentro del mes de publicación — y como el
+   dataset abarca todo el año en curso, la mayoría quedaban en el PASADO. Eso
+   era irreal (un proceso abierto tiene su cierre por delante) y desde que el
+   reloj cierra procesos (`lib/filtros.cierre_vencido`) habría vaciado el
+   corpus de prueba. Se fijan en el futuro para lo que debe estar abierto, y
+   hay una constante aparte para el caso vencido, que es el del defecto. */
+const iso = (ms) => new Date(ms).toISOString().slice(0, 10);
+const CIERRE_FUTURO = `${iso(Date.now() + 30 * 86400e3)}T17:00:00.000`;
+const CIERRE_FUTURO_2 = `${iso(Date.now() + 45 * 86400e3)}T17:00:00.000`;
+const CIERRE_VENCIDO = `${iso(Date.now() - 60 * 86400e3)}T17:00:00.000`;
+
 function generarDataset() {
   const filas = [];
   let n = 0;
@@ -153,8 +165,8 @@ function generarDataset() {
         urlproceso: { url: `https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.${n}` },
         tipo_de_contrato: "Obra",
       };
-      if (i % 5 === 0) f.fecha_de_recepcion_de = `${mes}-25T17:00:00.000`;
-      else if (i % 5 === 1) f.fecha_limite_de_recepcion_respuestas = `${mes}-26T17:00:00.000`;
+      if (i % 5 === 0) f.fecha_de_recepcion_de = CIERRE_FUTURO;
+      else if (i % 5 === 1) f.fecha_limite_de_recepcion_respuestas = CIERRE_FUTURO_2;
       // tipos de objeto: obra por código (helder/génesis/ambos), obra por texto,
       // blacklist y no-afines — para ejercitar todas las ramas del filtro RUP
       if (tipo <= 2) {
@@ -226,6 +238,31 @@ function generarDataset() {
         f.modalidad_de_contratacion = "Licitación pública";
         f.estado_del_procedimiento = "Publicado";
         delete f.porcentaje_de_anticipo;
+      }
+      /* DEFECTO DE PRODUCCIÓN (ago 2026), reproducido tal cual se reportó:
+         «INVITACION PRIVADA EDUH-Turbo», objeto de optimización de
+         alcantarillado, fecha límite 20/02/2026 — ya adjudicado y aún servido
+         como abierto seis meses después. Dos reglas tienen que matarlo, y se
+         prueban POR SEPARADO (i === 13 lleva las dos; i === 17 solo la fecha),
+         porque si solo se comprobara el caso combinado bastaría con que una de
+         las dos funcionara para que la prueba pasara. */
+      if (i === 13) {
+        f.nombre_del_procedimiento = `INVITACION PRIVADA EDUH-Turbo ${n}`;
+        f.descripci_n_del_procedimiento = "LA OPTIMIZACION DE LOS SISTEMAS DE ALCANTARILLADO DEL MUNICIPIO";
+        f.codigo_principal_de_categoria = "V1.72141000"; // objeto y código impecables: solo la modalidad y el reloj lo delatan
+        f.modalidad_de_contratacion = "Invitación Privada";
+        f.estado_del_procedimiento = "Publicado"; // el corpus lo conserva abierto
+        f.precio_base = "800000000";
+        f.fecha_de_recepcion_de = CIERRE_VENCIDO;
+      } else if (i === 17) {
+        // MISMO objeto y modalidad competitiva: lo único que lo cierra es el reloj
+        f.nombre_del_procedimiento = `Optimización de sistemas de alcantarillado con fecha vencida ${n}`;
+        f.descripci_n_del_procedimiento = "Obra civil de optimización de las redes de alcantarillado del municipio";
+        f.codigo_principal_de_categoria = "V1.72141000";
+        f.modalidad_de_contratacion = "Licitación pública";
+        f.estado_del_procedimiento = "Publicado";
+        f.precio_base = "800000000";
+        f.fecha_de_recepcion_de = CIERRE_VENCIDO;
       }
       filas.push(f);
     }
@@ -925,6 +962,70 @@ async function main() {
         `estado_abierto(${JSON.stringify(lic)}) esperaba ${esperado}`);
     }
     console.log(`· unidad estados: ${casos.length} clasificaciones correctas (desconocido = cerrado)`);
+
+    /* EL RELOJ CIERRA PROCESOS (ago 2026, defecto de producción).
+       «INVITACION PRIVADA EDUH-Turbo» cerraba el 20/02/2026 y seguía servido
+       como abierto en agosto. Ninguna columna de estado lo desmentía.
+
+       El «ahora» se INYECTA para que estas aserciones no dependan del día en
+       que corra la suite: una prueba de husos horarios que se calibra sola
+       contra el reloj real no prueba nada y falla sola en la frontera. */
+    {
+      // 4 ago 2026, 12:00 UTC = 07:00 en Colombia
+      const AHORA = Date.parse("2026-08-04T12:00:00.000Z");
+      const conCierre = (fecha, extra = {}) => ({ estado_del_procedimiento: "Publicado", fecha_cierre: fecha, ...extra });
+
+      // el caso reportado, textual
+      const eduh = conCierre("2026-02-20T17:00:00.000");
+      assert.strictEqual(filtros.cierre_vencido(eduh, AHORA), true, "20/02/2026 ya venció el 4/08/2026");
+      assert.strictEqual(filtros.estado_abierto(eduh, AHORA), false,
+        "un proceso con la fecha límite vencida NO puede seguir abierto, diga lo que diga el estado");
+      assert.strictEqual(filtros.estado_cerrado(eduh, AHORA), true,
+        "…y la fecha vencida es un hecho: consta como cerrado");
+
+      // futuro: intacto
+      const futuro = conCierre("2026-12-20T17:00:00.000");
+      assert.strictEqual(filtros.estado_abierto(futuro, AHORA), true, "un cierre futuro no puede cerrar el proceso");
+      assert.strictEqual(filtros.estado_cerrado(futuro, AHORA), false);
+
+      /* LA FRONTERA DEL HUSO, que es donde está el error caro. El dataset
+         publica hora Colombia FLOTANTE (sin zona) y `Date.parse` la lee como
+         UTC, adelantándola 5 h. Sin la corrección, un proceso que cierra HOY a
+         las 17:00 en Colombia (= 22:00 UTC) se daría por vencido a las 17:00
+         UTC — cinco horas antes — y desaparecería del listado el mismo día en
+         que había que presentarse. */
+      assert.strictEqual(filtros.estado_abierto(conCierre("2026-08-04T17:00:00.000"), AHORA), true,
+        "el que cierra HOY a las 17:00 de Colombia sigue abierto a las 07:00 de Colombia");
+      assert.strictEqual(filtros.estado_abierto(conCierre("2026-08-04T06:00:00.000"), AHORA), false,
+        "el que cerró HOY a las 06:00 de Colombia ya venció a las 07:00");
+      // exactamente en el instante del cierre todavía NO está vencido
+      assert.strictEqual(filtros.cierre_vencido(conCierre("2026-08-04T07:00:00.000"), AHORA), false,
+        "justo en la hora del cierre el proceso aún no está vencido");
+
+      // sin fecha o con fecha ilegible NO se inventa un cierre (regla de faltantes)
+      assert.strictEqual(filtros.cierre_vencido({ estado_del_procedimiento: "Publicado" }, AHORA), false);
+      assert.strictEqual(filtros.cierre_vencido(conCierre(""), AHORA), false);
+      assert.strictEqual(filtros.cierre_vencido(conCierre("no es una fecha"), AHORA), false);
+      assert.strictEqual(filtros.estado_abierto(conCierre("no es una fecha"), AHORA), true,
+        "una fecha ilegible no puede cerrar un proceso: sería cerrar por ignorancia");
+
+      /* En la INGESTA la fila todavía no pasó por `enriquecer`, así que no
+         trae `fecha_cierre` resuelto: la regla tiene que derivarlo de las
+         columnas crudas o el filtro no serviría de nada en la full. */
+      assert.strictEqual(filtros.cierre_vencido(
+        { estado_del_procedimiento: "Publicado", fecha_de_recepcion_de: "2026-02-20T17:00:00.000" }, AHORA), true,
+        "la regla debe leer las columnas crudas cuando aún no hay fecha_cierre");
+      assert.strictEqual(filtros.estado_abierto(
+        { estado_del_procedimiento: "Publicado", fecha_limite_de_recepcion_respuestas: "2026-02-20T17:00:00.000" }, AHORA), false,
+        "…por cualquiera de las columnas candidatas");
+
+      // y la fecha vencida gana también a los estados abiertos más explícitos
+      for (const est of ["Convocado", "Presentación de ofertas", "Activo"]) {
+        assert.strictEqual(filtros.estado_abierto({ estado_del_procedimiento: est, fecha_cierre: "2026-02-20T17:00:00.000" }, AHORA), false,
+          `«${est}» con fecha vencida sigue siendo un proceso cerrado`);
+      }
+      console.log("· unidad reloj: la fecha de cierre vencida cierra el proceso, con la frontera del huso horario probada");
+    }
   }
 
   /* unidad: modalidades — solo lista blanca competitiva */
@@ -942,6 +1043,11 @@ async function main() {
       ["Contratación directa (con ofertas)", false],         // sigue siendo directa
       ["Contratación régimen especial", false],
       ["Licitación privada", false],
+      // «Invitación Privada» (defecto de producción ago 2026): la entidad elige
+      // a quién invita, así que no hay concurso abierto al que presentarse
+      ["Invitación Privada", false],
+      ["INVITACION PRIVADA EDUH-Turbo", false],
+      ["Invitación privada de mínima cuantía", false], // la exclusión gana a la lista blanca
       ["Solicitud de información a los Proveedores", false],
       ["Enajenación de bienes con Subasta", false], // venta de activos, no obra
       ["Enajenación de bienes con Sobre Cerrado", false],
@@ -2469,33 +2575,137 @@ async function main() {
       assert.strictEqual(puenteHel.viable, true);
     }
 
-    /* f-quater. /api/oportunidades EXIGE token: sirve el K, el CRPC y el
-       patrimonio de una persona natural identificada. La clave del gate de
-       public/app.js es del cliente y nunca protegió la API. */
+    /* f-ter-bis. EL DEFECTO REPORTADO, de punta a punta: ni la invitación
+       privada ni el proceso con la fecha límite vencida pueden salir servidos.
+       Se comprueban por separado —uno cae por modalidad, el otro solo por el
+       reloj— porque el caso reportado traía las dos causas a la vez y con una
+       sola aserción bastaría con que funcionara una de ellas. */
     {
-      assert.strictEqual((await invocar(oportunidades, "/api/oportunidades?perfil=helder")).status, 401,
-        "/api/oportunidades respondió sin token");
+      const todo = await todasLasOportunidades("perfil=juntos&solo_viables=false&incluir_sin_unspsc=1");
+      const nombres = todo.map((l) => String(l.nombre_del_procedimiento || ""));
+
+      assert.ok(!nombres.some((s) => /INVITACION PRIVADA/i.test(s)),
+        "una «Invitación Privada» se sigue sirviendo: no es una modalidad competitiva");
+      assert.ok(!nombres.some((s) => /fecha vencida/i.test(s)),
+        "un proceso con la fecha límite vencida se sigue sirviendo como abierto");
+
+      /* Y NINGÚN proceso servido puede tener el cierre en el pasado. Es la
+         invariante de verdad: las dos aserciones anteriores vigilan los dos
+         fixtures, esta vigila el corpus entero. */
+      const AHORA = Date.now();
+      for (const l of todo) {
+        if (!l.fecha_cierre) continue;
+        assert.ok(!filtros.cierre_vencido(l, AHORA),
+          `se sirvió «${l.nombre_del_procedimiento}» con cierre ${l.fecha_cierre}, ya vencido`);
+      }
+
+      /* Estos dos NO aparecen en el embudo del diagnóstico, y es lo correcto:
+         la INGESTA ya los descartó de origen (la full no guarda lo que no es
+         competitivo ni lo que no está abierto), así que nunca llegan al corpus
+         activo que el diagnóstico recorre. El embudo mide lo que SÍ se guardó. */
+      const dia = (await invocar(diagnostico, "/api/diagnostico?perfil=juntos&muestra=1", CAB_TOKEN)).cuerpo;
+      assert.ok(dia.embudo.total_activo > 0, "el diagnóstico no ve corpus");
+      assert.ok(dia.corpus.activo.filas_unicas < MESES.length * 120,
+        "la ingesta tiene que haber descartado filas del dataset: si guardara todo, el prefiltro no está corriendo");
+    }
+
+    /* f-quater. /api/oportunidades con TOKEN OPCIONAL (ago 2026).
+       Los clientes entran por la web pública y solo necesitan ver a qué
+       presentarse; exigirles credencial dejaba la app inservible para ellos.
+       Lo que no puede salir sin token son las CIFRAS del perfil, que derivan
+       del patrimonio, la utilidad operacional y la liquidez de una persona
+       natural identificada por nombre completo. */
+    {
+      /* 1 · sin token: 200, con datos y sin finanzas */
+      const pub = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=5");
+      assert.strictEqual(pub.status, 200, "sin token la lista pública tiene que servirse");
+      assert.strictEqual(pub.cuerpo.finanzas_visibles, false, "sin token las finanzas no pueden declararse visibles");
+      assert.ok(pub.cuerpo.total > 0 && pub.cuerpo.resultados.length > 0, "la lista pública llegó vacía");
+
+      /* 2 · el veredicto SÍ viaja: es el producto, y sin él la app no sirve */
+      for (const l of pub.cuerpo.resultados) {
+        assert.ok(l.puertas && l.puertas.p1_rup && l.puertas.p3_caja, "sin token deben seguir viajando las puertas");
+        assert.strictEqual(typeof l.viable, "boolean", "el veredicto de viabilidad no puede desaparecer");
+        assert.ok(Number.isFinite(l.p_ganar) && Number.isFinite(l.ve), "p_ganar y ve no son sensibles: deben viajar");
+        // …y los campos financieros llegan en null, no borrados (un `undefined`
+        // se leería como cero, que es el defecto que este proyecto ya pagó)
+        for (const c of ["k_cop", "crpc_cop", "tope_cop", "co_estimado"]) {
+          assert.ok(c in l.rup, `rup.${c} debe seguir existiendo como clave`);
+          assert.strictEqual(l.rup[c], null, `rup.${c} tiene que venir en null sin token`);
+        }
+        for (const c of ["crp", "crpc", "tope"]) {
+          if (c in l.puertas.p2_k) assert.strictEqual(l.puertas.p2_k[c], null, `p2_k.${c} tiene que venir en null`);
+        }
+        assert.strictEqual(l.puertas.p3_caja.patrimonio, null, "el patrimonio no puede salir sin token");
+        // lo derivable de datos PÚBLICOS se conserva: no protege nada ocultarlo
+        assert.ok(Number.isFinite(l.puertas.p3_caja.financiacion_requerida),
+          "financiacion_requerida sale de la cuantía publicada: no hay por qué ocultarla");
+      }
+
+      /* 3 · LA INVARIANTE FUERTE: ninguna cifra real del perfil puede aparecer
+         en el payload público, ni como campo NI DENTRO DE UN MENSAJE. Los
+         mensajes de las puertas llevaban los importes en el texto («…su
+         patrimonio es $211.340.888»), así que anular los campos y dejar el
+         texto habría sido una redacción de mentira. Se serializa la respuesta
+         entera y se buscan las cifras, con y sin separadores de miles. */
+      {
+        const p = PERFILES.helder;
+        const kReal = capacidad.crp(p, 800e6);
+        const secretos = [p.patrimonio, p.utilidadOp, Math.round(kReal), Math.round(p.topeSMMLV * perfilesMod.SMMLV)];
+        const json = JSON.stringify(pub.cuerpo);
+        for (const n of secretos) {
+          for (const forma of [String(n), Number(n).toLocaleString("es-CO"), String(Math.round(n / 1e6))+"M"]) {
+            if (forma.length < 6) continue; // cadenas cortas darían falsos positivos
+            assert.ok(!json.includes(forma),
+              `la respuesta pública filtra una cifra del perfil: «${forma}»`);
+          }
+        }
+      }
+
+      /* 4 · con token: vuelven las cifras, por las dos vías válidas */
+      for (const [via, r] of [
+        ["header", await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=5", CAB_TOKEN)],
+        ["query", await invocar(oportunidades,
+          `/api/oportunidades?perfil=helder&por_pagina=5&token=${encodeURIComponent(process.env.HISTORICO_TOKEN)}`)],
+      ]) {
+        assert.strictEqual(r.status, 200, `con token por ${via} debería responder 200`);
+        assert.strictEqual(r.cuerpo.finanzas_visibles, true, `con token por ${via} las finanzas deben declararse visibles`);
+        const l = r.cuerpo.resultados[0];
+        assert.ok(Number.isFinite(l.rup.k_cop) && l.rup.k_cop > 0, `con token por ${via} el K tiene que viajar`);
+        assert.ok(Number.isFinite(l.puertas.p3_caja.patrimonio) && l.puertas.p3_caja.patrimonio > 0,
+          `con token por ${via} el patrimonio tiene que viajar`);
+      }
+
+      /* 5 · un token PRESENTE pero inválido es un ERROR, no un modo público:
+         quien se molestó en mandarlo tiene que enterarse de que está mal. */
       const r401 = await invocar(oportunidades, "/api/oportunidades?perfil=helder&token=equivocado");
-      assert.strictEqual(r401.status, 401, "un token equivocado no puede pasar");
+      assert.strictEqual(r401.status, 401, "un token equivocado no puede degradar en silencio a modo público");
       assert.ok(r401.cuerpo.como_autenticar.header.includes("x-historico-token"), "el 401 no dice cómo autenticarse");
-      // el 401 va ANTES de cualquier otra comprobación: sin token no se
-      // confirma ni se niega nada, ni siquiera qué perfiles existen
-      assert.strictEqual((await invocar(oportunidades, "/api/oportunidades")).status, 401,
-        "sin perfil y sin token debe responder 401, no 400");
-      // con token: por header y por query, las dos formas válidas
-      assert.strictEqual((await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN)).status, 200,
-        "con token válido por header debería responder 200");
-      assert.strictEqual((await invocar(oportunidades,
-        `/api/oportunidades?perfil=helder&token=${encodeURIComponent(process.env.HISTORICO_TOKEN)}`)).status, 200,
-      "con token válido por query debería responder 200");
-      // sin la variable de entorno el endpoint se NIEGA, jamás se abre
+
+      /* 6 · sin perfil sigue siendo un 400: ya no hay nada que proteger antes */
+      assert.strictEqual((await invocar(oportunidades, "/api/oportunidades")).status, 400,
+        "sin perfil y sin token debe responder 400 (el token dejó de ser obligatorio)");
+
+      /* 7 · sin la variable de entorno la lista PÚBLICA sigue funcionando —es
+         lo que ven los clientes— y solo se niega quien pida el modo con token */
       {
         const guardado = process.env.HISTORICO_TOKEN;
         delete process.env.HISTORICO_TOKEN;
-        const r0 = await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN);
-        assert.strictEqual(r0.status, 503, "sin HISTORICO_TOKEN el endpoint debe negarse, nunca abrirse");
+        const rPub = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1");
+        assert.strictEqual(rPub.status, 200, "sin HISTORICO_TOKEN la lista pública debe seguir sirviéndose");
+        assert.strictEqual(rPub.cuerpo.finanzas_visibles, false);
+        const r503 = await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN);
+        assert.strictEqual(r503.status, 503, "sin HISTORICO_TOKEN el modo con token debe negarse, jamás abrirse");
         process.env.HISTORICO_TOKEN = guardado;
       }
+
+      /* 8 · los DEMÁS endpoints no se relajaron */
+      assert.strictEqual((await invocar(diagnostico, "/api/diagnostico?perfil=helder")).status, 401,
+        "/api/diagnostico dejó de exigir token");
+      assert.strictEqual((await invocar(resumen, "/api/resumen?perfil=helder")).status, 401,
+        "/api/resumen dejó de exigir token");
+      assert.strictEqual((await invocar(detalleComp, "/api/competencia-detalle?entidad=IDU")).status, 401,
+        "/api/competencia-detalle dejó de exigir token");
     }
 
     /* f-bis. /api/competencia-detalle: los procesos que SOSTIENEN el badge.
@@ -3381,6 +3591,36 @@ async function main() {
       const js = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
       new Function(js); // valida sintaxis sin ejecutar
       assert.ok(js.includes('"231105"'), "app.js sin la clave de acceso");
+
+      /* ---- LA LISTA NO PIDE TOKEN (ago 2026) ----
+         El cliente entra a ver oportunidades; pedirle una credencial dejaba la
+         app inservible para él. Lo que se vigila aquí es que `buscar()` no
+         pueda volver a bloquearse: ni exigiendo token antes de llamar, ni
+         abriendo el formulario cuando falta. */
+      {
+        const i = js.indexOf("async function buscar()");
+        const cuerpo = js.slice(i, js.indexOf("\n  }", i));
+        assert.ok(i > 0, "no se encontró buscar() en app.js");
+        assert.ok(!/pedirToken/.test(cuerpo),
+          "buscar() volvió a abrir el formulario del token: la lista pública no puede pedir credencial");
+        assert.ok(!/if\s*\(!token\)/.test(cuerpo),
+          "buscar() volvió a exigir token antes de consultar");
+        assert.ok(/olvidarToken\(\)/.test(cuerpo) && /return buscar\(\)/.test(cuerpo),
+          "un 401 por token caducado debe olvidarlo y reintentar sin él, no bloquear");
+      }
+      // `pedirTokenParaBuscar` era el atajo que bloqueaba la lista: no vuelve
+      assert.ok(!js.includes("pedirTokenParaBuscar"),
+        "pedirTokenParaBuscar volvió: la lista no puede depender de un token");
+      // …pero el formulario SIGUE existiendo para el detalle de competencia,
+      // que sí exige credencial porque abre el corpus histórico de una entidad
+      assert.ok(/function pedirToken\(/.test(js) && /cargarDetalle/.test(js),
+        "el formulario del token debe seguir existiendo para el detalle de competencia");
+      {
+        const i = js.indexOf("async function cargarDetalle");
+        const cuerpo = js.slice(i, js.indexOf("\n  }", i));
+        assert.ok(i > 0 && /pedirToken\(/.test(cuerpo),
+          "cargarDetalle debe seguir pidiendo el token: /api/competencia-detalle no se relajó");
+      }
 
       /* panel de administración: encadenado de la sincronización */
       const admHtml = fs.readFileSync(path.join(__dirname, "..", "public", "admin.html"), "utf8");

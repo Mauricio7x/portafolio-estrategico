@@ -1,11 +1,29 @@
 /* ============================================================================
    /api/oportunidades · Consulta de oportunidades viables desde la caché Redis
    ----------------------------------------------------------------------------
-   PROTEGIDO con HISTORICO_TOKEN (lib/auth), por header `x-historico-token` o
-   `?token=`. Cada resultado lleva `rup` con k_cop, crpc_cop, tope_cop y
-   co_estimado —derivados del patrimonio, la utilidad operacional y la liquidez
-   de una persona natural identificada— y ahora también el patrimonio en las
-   puertas. La clave del gate de public/app.js es del CLIENTE: no protege nada.
+   TOKEN OPCIONAL (ago 2026), y es el único endpoint donde lo es. Los clientes
+   entran por la web pública y solo necesitan ver a qué presentarse; exigirles
+   una credencial dejaba la herramienta inservible para ellos.
+
+     sin token   → 200 con todo, pero con las FINANZAS REDACTADAS: `k_cop`,
+                   `crpc_cop`, `tope_cop`, `co_estimado`, `puertas.p2_k.{crp,
+                   crpc,tope}` y `puertas.p3_caja.patrimonio` viajan en `null`,
+                   y los MENSAJES de esas puertas se sustituyen por versiones
+                   sin cifras (los originales las llevaban dentro del texto).
+                   `finanzas_visibles:false` lo declara en la respuesta.
+     con token    → 200 con las cifras. Un token presente pero inválido da 401,
+                   en vez de degradar en silencio a modo público.
+
+   Qué se conserva sin token y por qué: el VEREDICTO de cada puerta (es el
+   producto) y los derivados de datos públicos (`financiacion_requerida` sale de
+   la cuantía publicada). El límite de este enfoque —el booleano de P3 permite
+   acotar el patrimonio por bisección con muchos procesos— está documentado en
+   lib/publico.js; se acepta a cambio de que la app sirva para algo sin llave.
+
+   Los demás endpoints NO cambian: /api/diagnostico, /api/resumen,
+   /api/competencia-detalle, /api/admin/rup y /api/sync/historico siguen
+   exigiendo HISTORICO_TOKEN. La clave del gate de public/app.js es del CLIENTE
+   y nunca protegió nada.
 
    GET /api/oportunidades?perfil=helder|genesis|juntos   (alias: consorcio)
      &anticipo_min=20            (excluye anticipos DECLARADOS bajo el mínimo;
@@ -74,6 +92,7 @@
 const { crearRedis, hayCredenciales } = require("../lib/redis.js");
 const { CLAVES, leerChunksDedup, leerJSON, leerJSONComprimido } = require("../lib/almacen.js");
 const { autorizarToken } = require("../lib/auth.js");
+const { sinFinanzas } = require("../lib/publico.js");
 const { PERFILES, ALIAS_PERFIL, evaluarRup } = require("../lib/rup.js");
 const { recargarPerfiles } = require("../lib/perfiles.js");
 const { filtrarProcesosVisibles, ANTICIPO_MIN_DEFAULT } = require("../lib/filtros.js");
@@ -221,12 +240,33 @@ module.exports = async function handler(req, res) {
      (lib/perfiles). La clave 231105 de public/app.js es una barrera de
      cortesía en el cliente: no protege la API, y quien conociera la ruta veía
      esas cifras sin credencial alguna. */
-  const permiso = autorizarToken(req, q);
-  if (!permiso.ok) {
-    return res.status(permiso.status).json({
-      ok: false, error: permiso.error,
-      ...(permiso.como_autenticar ? { como_autenticar: permiso.como_autenticar } : {}),
-    });
+  /* EL TOKEN ES OPCIONAL AQUÍ (ago 2026), y solo aquí. Los clientes entran por
+     la web pública y lo único que necesitan es ver a qué presentarse; exigirles
+     una credencial convertía la herramienta en inservible para ellos. Lo que NO
+     puede salir sin credencial son las cifras del perfil, así que:
+
+       sin token   → se sirve todo, con las finanzas redactadas (lib/publico)
+       con token   → se sirve todo, con las finanzas
+
+     Un token PRESENTE pero inválido responde 401 en vez de degradar en
+     silencio: quien se molestó en mandarlo tiene que enterarse de que está mal
+     —normalmente es un error de copiado— y no quedarse creyendo que su
+     despliegue sirve las finanzas cuando no lo hace.
+
+     El resto de endpoints NO cambia: /api/diagnostico, /api/resumen,
+     /api/competencia-detalle, /api/admin/rup y /api/sync/historico siguen
+     exigiendo el token, porque exponen el corpus, el panel o la escritura. */
+  const tokenPresente = !!((req.headers && req.headers["x-historico-token"]) || q.token);
+  let conFinanzas = false;
+  if (tokenPresente) {
+    const permiso = autorizarToken(req, q);
+    if (!permiso.ok) {
+      return res.status(permiso.status).json({
+        ok: false, error: permiso.error,
+        ...(permiso.como_autenticar ? { como_autenticar: permiso.como_autenticar } : {}),
+      });
+    }
+    conFinanzas = true;
   }
 
   let perfil = String(q.perfil || "").toLowerCase();
@@ -402,7 +442,7 @@ module.exports = async function handler(req, res) {
          evidencia en vez de por decreto. Se conserva también porque
          /api/resumen lo calcula: dos consumidores del mismo campo no pueden
          discrepar sobre si existe. */
-      return {
+      const salida = {
         ...fila,
         rup: rupDe(l),
         competencia_entidad: compDe(l),
@@ -412,6 +452,10 @@ module.exports = async function handler(req, res) {
         ve: e.ve,
         viable: e.puertas.pasa_todas,
       };
+      // sin token, el veredicto viaja SIN las cifras que lo sostienen: el K, el
+      // CRPC y el patrimonio derivan de las finanzas de una persona natural
+      // identificada (lib/publico explica qué se redacta y qué no)
+      return conFinanzas ? salida : sinFinanzas(salida);
     });
 
   // reparto por solidez del match: le dice al dueño cuántas de las que ve son
@@ -433,6 +477,8 @@ module.exports = async function handler(req, res) {
     sincronizado: meta ? meta.last_sync : null,
     ordenado_por: ordenarPor,
     solo_viables: soloViables, viables, no_viables: total - viables,
+    // ¿se están sirviendo las cifras financieras? Sin token, no.
+    finanzas_visibles: conFinanzas,
     por_match, incluye_sin_unspsc: opciones.incluirTextoDebil,
     indice_competencia: indiceMeta
       ? { construido: indiceMeta.construido, entidades: indiceMeta.clasificadas, min_procesos: indiceMeta.min_procesos }

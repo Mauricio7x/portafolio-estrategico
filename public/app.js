@@ -18,11 +18,17 @@
       (encendido) decide si aparece. El porqué está en docs/ATRACTIVIDAD.md: una
       suma ponderada es compensatoria, y no poder financiar una obra no se
       compensa con cuantía alta.
-   3-ter. /api/oportunidades está PROTEGIDO en el servidor (HISTORICO_TOKEN):
-      sirve el K, el CRPC y el patrimonio de una persona natural identificada.
-      El token se guarda en sessionStorage, viaja por cabecera y lo pide el
-      mismo formulario que ya usaba el detalle de competencia. El gate de la
-      clave 231105 es una cortesía del cliente y nunca protegió la API.
+   3-ter. LA LISTA NO PIDE TOKEN (ago 2026). Los clientes entran aquí a ver a
+      qué presentarse y no tienen por qué tener credencial: se llama a
+      /api/oportunidades sin cabecera y el servidor responde 200 con las cifras
+      financieras REDACTADAS (`finanzas_visibles:false`) — el veredicto de cada
+      puerta viaja igual, que es lo que se viene a ver. Si el dueño ya guardó el
+      token en la pestaña (porque abrió el detalle de competencia) se manda y
+      vuelven las cifras, pero su ausencia NUNCA bloquea ni abre un formulario;
+      un 401 por token caducado se resuelve olvidándolo y reintentando sin él.
+      El formulario del token sobrevive solo para /api/competencia-detalle, que
+      sí exige credencial y se abre por una acción explícita del dueño.
+      El gate de la clave 231105 es una cortesía del cliente y no protege la API.
    4. Veredicto GRADUADO en cada tarjeta (jul 2026): el badge de matching dice
       con qué FUERZA encaja en el RUP (RUP ✓ por clase · RUP ~ por familia ·
       RUP ≈ por clase afín · «Objeto sugiere obra») y el de pertinencia qué
@@ -111,15 +117,18 @@
   async function buscar() {
     clearTimeout(timerReintento);
     const peticion = ++peticionActual;
-    /* El endpoint está PROTEGIDO en el servidor (HISTORICO_TOKEN): sirve el K,
-       el CRPC y el patrimonio de una persona natural identificada. Sin token no
-       se pide nada — se abre el mismo formulario del detalle de competencia. */
-    const token = tokenGuardado();
-    if (!token) return pedirTokenParaBuscar(null);
+    /* SIN TOKEN (ago 2026). La lista es lo que vienen a ver los clientes, así
+       que no se les pide credencial: el servidor responde 200 y redacta las
+       cifras financieras (`finanzas_visibles:false`). Si el dueño ya guardó el
+       token en esta pestaña —porque abrió el detalle de competencia— se manda
+       y entonces sí vuelven las cifras; pero su AUSENCIA nunca bloquea nada ni
+       abre un formulario. */
     mostrar("estado-carga", "Buscando oportunidades…");
     let r, cuerpo;
     try {
-      r = await fetch(`/api/oportunidades?${parametros()}`, { headers: { "x-historico-token": token } });
+      const token = tokenGuardado();
+      r = await fetch(`/api/oportunidades?${parametros()}`,
+        token ? { headers: { "x-historico-token": token } } : undefined);
       cuerpo = await r.json();
     } catch {
       if (peticion !== peticionActual) return; // llegó tarde: ya hay otra búsqueda
@@ -131,9 +140,13 @@
     if (peticion !== peticionActual) return; // respuesta obsoleta: descartar
 
     if (r.status === 503 && cuerpo && cuerpo.sincronizando) return esperarSincronizacion();
+    /* Un 401 aquí solo puede venir de un token GUARDADO que ya no vale (rotado
+       o mal copiado). Se olvida y se reintenta SIN él: la lista pública sigue
+       estando disponible, así que degradar es mejor que bloquear al cliente
+       con un formulario que no necesita para nada. */
     if (r.status === 401) {
       olvidarToken();
-      return pedirTokenParaBuscar("Token inválido. Escriba uno nuevo y vuelva a intentarlo.");
+      return buscar();
     }
     if (!r.ok || !cuerpo.ok) {
       return mostrar("estado-error", (cuerpo && cuerpo.error) || `Error del servidor (${r.status}). Intente de nuevo.`);
@@ -535,16 +548,11 @@
     entrada.focus();
   }
 
-  /* Mismo formulario, otra consecuencia: al guardar el token se relanza la
-     búsqueda y se cierra el modal. La lista y el detalle comparten credencial,
-     así que quien acaba de escribirlo para una cosa ya no lo necesita para la
-     otra. */
-  function pedirTokenParaBuscar(aviso) {
-    mostrar(null);
-    abrirModal("Acceso a los datos");
-    pedirToken(aviso, () => { cerrarModal(); buscar(); });
-  }
-
+  /* El formulario del token SOBREVIVE, pero solo para el detalle de
+     competencia: /api/competencia-detalle sí exige credencial porque abre el
+     corpus histórico de una entidad. Es una acción EXPLÍCITA del dueño (pulsar
+     la banda de competencia), no algo que el cliente se encuentre al entrar.
+     La lista nunca llega hasta aquí. */
   async function cargarDetalle(entidad) {
     const token = tokenGuardado();
     if (!token) return pedirToken(null, () => cargarDetalle(entidad));

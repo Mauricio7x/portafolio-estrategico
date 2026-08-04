@@ -343,9 +343,31 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - **`estado_cerrado` NO es la negación de `estado_abierto`**: hay TRES estados, no dos. Un estado
   desconocido no está abierto (no se sirve) pero tampoco consta como cerrado; confundirlos sería
   afirmar «adjudicado» sobre un proceso del que no se sabe nada.
-- **Lo que ningún filtro puede arreglar**: si SECOP II ya adjudicó un proceso pero la fila del
-  corpus todavía dice «Presentación de ofertas», no hay regla que lo detecte — eso lo corrige el
-  delta, no un filtro.
+- **EL RELOJ CIERRA PROCESOS** (`cierre_vencido`, ago 2026). Defecto de producción: «INVITACION
+  PRIVADA EDUH-Turbo», con fecha límite 20/02/2026, seguía servido como abierto SEIS MESES después —
+  ninguna columna de estado lo desmentía. Si `fecha_cierre` ya pasó, el proceso está cerrado **diga
+  lo que diga el estado declarado**, y eso vale tanto para `estado_abierto` como para
+  `estado_cerrado` (la fecha vencida es un HECHO, no una inferencia). Esto acota mucho —no elimina—
+  el hueco de «ningún filtro puede arreglarlo»: lo que SECOP II adjudicó sin mover el estado ni
+  publicar fecha de cierre sigue dependiendo del delta.
+- **La hora Colombia NO es un detalle en esa regla.** El dataset publica timestamps FLOTANTES sin
+  zona y `Date.parse` los lee como UTC, adelantándolos 5 h. Comparar contra `Date.now()` a secas
+  cerraría los procesos **cinco horas antes de tiempo** y borraría del listado justo los que cierran
+  HOY. Por eso se compara contra `ahora − 5 h`. Si algún día llegara una columna CON zona, la resta
+  la haría 5 h indulgente — el error cae del lado de mostrar de más, que es el correcto aquí. Hay
+  prueba con el «ahora» INYECTADO: una prueba de husos que se calibra contra el reloj real no prueba
+  nada y falla sola en la frontera.
+- **La regla corre TAMBIÉN en la ingesta**, donde la fila aún no pasó por `enriquecer` y no tiene
+  `fecha_cierre` resuelto: `cierre_vencido` deriva la fecha de las columnas crudas con la misma
+  `fechaCierre` de `lib/negocio` (require DIFERIDO dentro de la función — en tiempo de carga
+  cerraría el ciclo `filtros → negocio → filtros`).
+- **«Invitación Privada» NO es modalidad competitiva**: la entidad elige a quién invita, así que no
+  hay convocatoria abierta. Se colaba porque ninguna de sus palabras casaba con las exclusiones y su
+  objeto era obra impecable. Va como subcadena, así que cubre las variantes con sufijo.
+- **Los fixtures del e2e cierran en el FUTURO** (`CIERRE_FUTURO`), no dentro del mes de publicación:
+  con el reloj cerrando procesos, unas fechas pasadas habrían vaciado el corpus de prueba. Y hay dos
+  fixtures del defecto, separados a propósito — uno cae por modalidad y otro **solo** por el reloj—,
+  porque con el caso combinado bastaría con que una de las dos reglas funcionara.
 
 ### Identidad de la entidad: dos formas de confundir a dos entidades (ago 2026)
 
@@ -746,12 +768,32 @@ cifra de aquí en un pliego sin abrir la fuente.
 
 ### Puertas, probabilidad y valor esperado (ago 2026)
 
-- **`/api/oportunidades` EXIGE token.** Servía `k_cop`, `crpc_cop`, `tope_cop` y `co_estimado`
-  —derivados del patrimonio, la utilidad operacional y la liquidez de una persona natural
-  identificada por nombre completo— sin credencial alguna. El guardián se comprueba ANTES que nada:
-  sin token no se confirma ni se niega nada, ni siquiera qué perfiles existen. El frontend guarda el
-  token en `sessionStorage` y lo manda por cabecera; es el MISMO formulario que ya usaba el detalle
-  de competencia (una credencial, dos usos).
+- **`/api/oportunidades` tiene el token OPCIONAL, y es el ÚNICO endpoint así** (ago 2026). Los
+  clientes entran por la web pública a ver a qué presentarse: exigirles credencial dejaba la
+  herramienta inservible para ellos. Lo que no puede salir sin llave son las CIFRAS del perfil
+  —`k_cop`, `crpc_cop`, `tope_cop`, `co_estimado`, `p2_k.{crp,crpc,tope}` y `p3_caja.patrimonio`,
+  todas derivadas del patrimonio, la utilidad operacional y la liquidez de una persona natural
+  identificada por nombre completo—. Sin token viajan en `null` y la respuesta declara
+  `finanzas_visibles:false`; con token vuelven. Un token PRESENTE pero inválido da **401**, nunca
+  degradación silenciosa: quien se molestó en mandarlo tiene que enterarse de que está mal.
+- **Redactar campos NO basta: los MENSAJES llevaban las cifras dentro.** `p2_k.mensaje` decía
+  «…(CRPC $324M / K $5.799M)» y `p3_caja.mensaje` «…su patrimonio es $211.340.888». Anular los
+  campos y dejar el texto habría sido una redacción de mentira. `lib/publico.js` sustituye los dos,
+  y la prueba **serializa la respuesta pública entera y busca las cifras reales de los perfiles**
+  (crudas, con separadores de miles y en millones): si alguna aparece, falla.
+- **Queda un canal de INFERENCIA y es deliberado.** El booleano de cada puerta sigue viajando —sin
+  él la app no sirve— y `p3_caja.pasa` es `patrimonio ≥ cuantía × 0,20`: con muchos procesos de
+  cuantías distintas se puede acotar el patrimonio por bisección. Es el límite real de publicar el
+  veredicto sin credencial, no un descuido. Si algún día pesa más que la utilidad, la salida no es
+  redactar mejor: es volver a exigir token.
+- **Lo derivable de datos PÚBLICOS se conserva**: `financiacion_requerida` sale de la cuantía
+  publicada × 0,20. Ocultarlo no protegería nada y quitaría información que el cliente puede
+  recalcular con la ficha del proceso.
+- **Los DEMÁS endpoints no se relajaron**: `/api/diagnostico`, `/api/resumen`,
+  `/api/competencia-detalle`, `/api/admin/rup` y `/api/sync/historico` siguen exigiendo el token, y
+  hay prueba de los cuatro primeros. En el frontend el formulario del token **sobrevive solo** para
+  el detalle de competencia (acción explícita del dueño); `buscar()` no puede volver a pedirlo, y
+  hay prueba que lo prohíbe.
 - **Una suma ponderada es COMPENSATORIA, y aquí compensar es un error de categoría.** Por eso
   `puntaje_ponderado` dejó de ser criterio de decisión: no poder financiar una obra no se compensa
   con cuantía alta. Lo sustituyen cuatro puertas + `p_ganar` + `ve`, que NO se promedian entre sí.
