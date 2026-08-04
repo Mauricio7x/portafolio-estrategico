@@ -138,6 +138,24 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
     puesto haciéndose pasar por «no descuenta nada»: es la confusión entre «no sé» y «cero» otra vez.
   · La familia sale de `normalizarCodigo(...).familia`, NO de un `slice(0,4)` a mano: recortar aquí
     sería una segunda definición de «familia».
+  · **El SEGMENTO (2 díg.) se usa para AGRUPAR, nunca para emparejar.** Subir el matching UNSPSC al
+    segmento sigue prohibido (`lib/unspsc`): casaría «servicios de construcción» con cualquier cosa
+    del 72. Pero para una estadística de precio, más muestra por celda es mejor, así que los
+    segmentos van ANIDADOS dentro de cada entidad con mínimo propio de 3 — y cada uno publica sus
+    `procesos` y su `min_procesos` para que se lea sabiendo que 3 procesos son orientativos.
+  · **La baja NO sale sin token** (`lib/publico`): `baja_mercado`, `baja_entidad` y `baja_segmento`
+    viajan en `null` sin credencial. No son finanzas del dueño —son mercado derivado de datos
+    públicos— sino la ventaja competitiva que construye la app. Se anulan los TRES, incluido el
+    objeto entero: `baja_mercado.mensaje` dice «Descuento típico del 8 %…» y dejarlo sería la misma
+    redacción de mentira que dejaba el patrimonio dentro del texto de P3. Queda el mismo canal de
+    inferencia ya documentado: `ordenar_por=baja` ordena en el servidor, así que un cliente sin token
+    puede deducir el RANGO relativo aunque no vea las cifras.
+  · **La reconstrucción manual vive en `/api/indice-baja?reconstruir=true`, NO en `/api/diagnostico`**:
+    el diagnóstico está documentado como SOLO LEE —no escribe, no toma candados, no dispara
+    sincronizaciones— y esa garantía es justo lo que permite llamarlo cuando algo va mal.
+  · **Al cerrar una full el índice se reconstruye con `await` y presupuesto corto**, no con un
+    fire-and-forget: en serverless la función se congela al responder y una promesa suelta no tiene
+    ninguna garantía de terminar. Con presupuesto corto o acaba, o deja el progreso escrito.
 - **El veredicto de un bloque no puede leer un campo que ese bloque no publica.** El censo contaba en
   `utiles` y publicaba `con_dato_util`; la conclusión leía `grupos.*.utiles`, o sea `undefined`, y
   `undefined > 0` es `false` en silencio: anunciaba «ninguna candidata trae datos» encima de un

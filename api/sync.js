@@ -62,12 +62,16 @@ const {
 const { crearCliente, anoVigente, mesesDelAno } = require("../lib/socrata.js");
 const { transformar, repartirDelta } = require("../lib/proyeccion.js");
 const { estado_abierto } = require("../lib/filtros.js");
+const { construirIndiceBaja } = require("../lib/indice_baja.js");
 
 const PAGE = parseInt(process.env.SECOP_PAGE, 10) || 5000;
 const PRESUPUESTO_DEFAULT_MS = 45000;  // cabe en el plan Hobby (60 s)
 // Máx < TTL del candado (300 s) con margen para la cadena de reintentos de la
 // página en curso: la invocación siempre muere antes de que expire el lock.
 const PRESUPUESTO_MAX_MS = 240000;
+/* Presupuesto CORTO para el índice de baja al cerrar una full: no puede comerse
+   el tiempo de la sincronización, y la construcción es reanudable. */
+const PRESUPUESTO_BAJA_MS = 8000;
 const SOLAPE_DELTA_MS = 48 * 3600e3;
 const FRESCO_MS = 5 * 60e3;            // <5 min → no-op en modo auto
 const COMPACTAR_TRAS_CHUNKS = 25;
@@ -394,5 +398,26 @@ module.exports = async function handler(req, res) {
     } catch { /* la siguiente visita o el cron continúan */ }
   }
 
-  return res.status(200).json({ ok: true, modo, duracionMs: Date.now() - t0, comandosRedis: redis.comandos(), ...r });
+  /* Índice de baja: se reconstruye al TERMINAR una full, sin bloquear la
+     respuesta. Por qué aquí y por qué así:
+       · la full reescribe el corpus activo, pero el delta que corre dentro de
+         ella es lo que alimenta el HISTÓRICO, así que tras una full completa
+         hay adjudicaciones nuevas que el índice todavía no ha visto;
+       · va con `await` sobre un presupuesto CORTO (no fire-and-forget a otra
+         URL): en serverless la función se congela al responder, así que una
+         promesa suelta no tiene ninguna garantía de terminar. Con presupuesto
+         corto o bien acaba, o bien deja el progreso escrito y lo continúa la
+         siguiente llamada — la construcción es reanudable;
+       · si falla, NO tumba el sync: el índice es un derivado y su ausencia solo
+         deja las tarjetas sin badge de baja. */
+  let baja = null;
+  if (r && r.done === true && q.baja !== "0") {
+    try {
+      baja = await construirIndiceBaja(redis, { presupuestoMs: PRESUPUESTO_BAJA_MS });
+    } catch (e) {
+      baja = { done: false, error: String((e && e.message) || e) };
+    }
+  }
+
+  return res.status(200).json({ ok: true, modo, duracionMs: Date.now() - t0, comandosRedis: redis.comandos(), ...r, baja });
 };

@@ -97,7 +97,7 @@ const { PERFILES, ALIAS_PERFIL, evaluarRup } = require("../lib/rup.js");
 const { recargarPerfiles } = require("../lib/perfiles.js");
 const { filtrarProcesosVisibles, ANTICIPO_MIN_DEFAULT } = require("../lib/filtros.js");
 const { leerIndice, leerIndiceMeta, competenciaDe } = require("../lib/indice_competencia.js");
-const { leerIndiceBaja, leerIndiceBajaMeta, bajaDeMercado } = require("../lib/indice_baja.js");
+const { leerIndiceBaja, leerIndiceBajaMeta, bajaDeMercado, bajaSegmentoDe } = require("../lib/indice_baja.js");
 const { leerEquivalencias, leerEquivalenciasMeta } = require("../lib/equivalencias.js");
 const { vocabularioActivo } = require("../lib/texto_unspsc.js");
 const { sinAdjudicacion } = require("../lib/proyeccion.js");
@@ -485,7 +485,13 @@ module.exports = async function handler(req, res) {
         ...fila,
         rup: rupDe(l),
         competencia_entidad: compDe(l),
+        /* Inteligencia de precio. `baja_mercado` es el objeto completo con su
+           cascada y su origen; `baja_entidad` y `baja_segmento` son los dos
+           escalares que pide el contrato del encargo. Los tres se anulan sin
+           token en lib/publico. */
         baja_mercado: e.baja,
+        baja_entidad: e.baja && e.baja.baja_mediana != null ? e.baja.baja_mediana : null,
+        baja_segmento: bajaSegmentoDe(indiceBaja, l),
         puertas: e.puertas,
         p_ganar: e.p_ganar,
         p_ganar_detalle: e.p_ganar_detalle,

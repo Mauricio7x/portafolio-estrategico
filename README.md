@@ -612,6 +612,97 @@ nombre, basta añadirlo a `lib/indice_competencia.js` y **reconstruir el índice
 backfill `indice:competencia:meta` reporta `clasificadas: 0` y `descartados.sin_oferentes` alto,
 ese es exactamente el síntoma de que la candidata correcta falta en la lista.
 
+## Índice de baja de mercado (¿a qué precio se adjudica?)
+
+El índice de competencia dice **cuántos** se presentan. Este dice **a cuánto se adjudica**, que es la
+otra mitad de la decisión de precio. Sale entero del corpus histórico que ya está en Redis: **no
+re-extrae nada de SECOP II**.
+
+```
+BAJA = (precio_base − valor_total_adjudicacion) / precio_base · 100
+```
+
+**Cómo se calcula** (`lib/indice_baja.js`, sobre `licitaciones:historico:mes:*:chunk:*`):
+
+1. Recorre el histórico **mes a mes** (reanudable, con candado `lock:indice_baja` de 300 s) y
+   deduplica por `_k`.
+2. Se queda solo con los procesos que tienen `precio_base > 0`, valor adjudicado `> 0` y un
+   **adjudicatario real** (`nit_del_proveedor_adjudicado` distinto de «No Definido»: si no hubo
+   ganador, su valor adjudicado no es un precio de mercado).
+3. Aplica **dos filtros de higiene** que salieron del censo del corpus real, no de la teoría:
+   - adjudicado **< 30 %** del oficial → lote parcial o error (295 casos en producción);
+   - adjudicado **> 110 %** del oficial → dato malo (221 casos).
+   Una baja negativa **leve** sí se conserva: no es un error.
+4. Acumula un **histograma** por grupo (no la lista de procesos): es lo que permite reanudar la
+   construcción sin reventar el tope de 1 MB por valor de Upstash. El precio es resolución de
+   1 punto porcentual, que sobra para decidir.
+5. Publica cuatro hashes con **swap atómico** (`…:nuevo` + `RENAME`) más `indice:baja:meta`.
+
+**Cuatro granularidades, en cascada de más específica a más general:**
+
+| Granularidad | Responde | Mínimo |
+|---|---|---|
+| `entidad_familia` | «INVIAS baja 8 % en obra vial y 2 % en consultoría» | 5 procesos |
+| `entidad` | «INVIAS baja 6 % en general» | 5 procesos |
+| `departamento_familia` | respaldo cuando la entidad no tiene base propia | 5 procesos |
+| `departamento` | último respaldo territorial | 5 procesos |
+| `segmentos` (anidados en la entidad) | baja por segmento UNSPSC de 2 dígitos | **3 procesos** |
+
+`bajaDeMercado(indice, lic)` las prueba en ese orden y **siempre** reporta cuál respondió en
+`granularidad_utilizada`: una cifra sin su origen no se puede auditar ni discutir. La cascada **solo
+baja en especificidad** — pedir `entidad` no puede acabar respondiendo con `entidad_familia`.
+
+**Niveles con cortes FIJOS**, no tertiles: `alto` (> 5 % de baja) · `medio` (2–5 %) · `bajo` (< 2 %).
+«Muchos oferentes» solo significa algo comparado con el mercado, pero 8 puntos de baja son 8 puntos
+de margen compita quien compita. Con tertiles siempre habría un tercio «alto» aunque nadie descontara.
+
+**Aquí el CERO sí es un dato**, al revés que `anticipo_pct = 0` o el contador de oferentes: adjudicar
+por el presupuesto oficial es un hecho normal y en producción es **la mediana**. Tratarlo como
+ausencia vaciaría el índice. Lo que sí es «sin dato» es no tener las dos mitades en la misma fila.
+Por eso `indice:baja:meta.baja_exactamente_cero` viaja siempre: si un día se dispara hacia el total,
+la causa no sería el mercado sino que `valor_total_adjudicacion` esté copiando a `precio_base`.
+
+**Dónde se usa:**
+
+- `/api/oportunidades` → `baja_mercado`, `baja_entidad` y `baja_segmento` en cada proceso
+  (**solo con token**: es inteligencia de precio), y el orden `?ordenar_por=baja`, que pone primero
+  las entidades que **menos** descuentan — se puede ofertar cerca del oficial y conservar margen.
+  `sin_dato` puntúa −1 y jamás encabeza la lista haciéndose pasar por «no descuenta nada».
+- `lib/probabilidad.js` → dos ajustes sobre `P(ganar)`: ×0,85 si la entidad descuenta más del 5 %
+  (ganar exige bajar) y ×1,10 si adjudica cerca del oficial.
+- `/api/diagnostico` → bloque `baja_de_mercado`, con el reparto por granularidad **sobre los
+  visibles**: dice si el índice alcanza a cubrir lo que la app sirve hoy.
+- `/admin.html` → tarjeta con la baja del mercado y los dos top-3, más el botón de reconstrucción.
+
+### `GET /api/indice-baja` (protegido)
+
+```
+GET /api/indice-baja                    → índice completo + meta   (caché 1 h, X-Cache: HIT|MISS)
+GET /api/indice-baja?entidad=INVIAS     → una entidad, por nombre o por NIT
+GET /api/indice-baja?entidad=899999055  → por NIT: devuelve TODAS las que lo comparten
+GET /api/indice-baja?reconstruir=true   → lo reconstruye (no re-extrae nada de SECOP II)
+GET /api/indice-baja?refrescar=1        → salta la caché
+```
+
+Un NIT compartido devuelve **todas** las entidades que lo usan en vez de elegir una en silencio: las
+regionales de un mismo organismo publican con el NIT de la matriz, y un alias ambiguo no es un alias
+sino una respuesta equivocada.
+
+La reconstrucción vive **aquí y no en `/api/diagnostico`**, que está documentado como *solo lee* —no
+escribe, no toma candados, no dispara sincronizaciones—: esa garantía es lo que permite llamarlo sin
+miedo cuando algo va mal en producción.
+
+### Cómo construirlo
+
+Se construye solo al terminar un `/api/sync?modo=full` y tras un backfill histórico. A mano:
+
+```
+GET /api/sync/historico?reconstruir_baja=true   (comparte presupuesto con los otros derivados)
+GET /api/indice-baja?reconstruir=true           (endpoint dedicado)
+```
+
+También va incluido en `?reconstruir_todo=true`. Ninguna de las dos vías re-extrae nada.
+
 ## Cómo ejecutar la extracción histórica inicial
 
 Una sola vez, después de desplegar:
@@ -1022,6 +1113,15 @@ indice:competencia                             HASH entidad → {procesos, prome
                                                (+ alias «nit:{NIT}» → {ref: entidad})
 indice:competencia:meta                        JSON {construido, cortes, por_nivel, descartados, …}
 indice:competencia:progreso                    JSON comprimido, acumulador reanudable del índice
+indice:baja:entidad                            HASH entidad → {baja_mediana, baja_promedio, p25, p75,
+                                               nivel, oferentes_promedio, segmentos:{SS:{…}}}
+indice:baja:entidad_familia                    HASH «entidad|FFFF» → mismas métricas
+indice:baja:departamento_familia               HASH «DEPTO|FFFF»   → mismas métricas
+indice:baja:departamento                       HASH «DEPTO»        → mismas métricas
+indice:baja:meta                               JSON {generado, baja_mediana_global, descartados, …}
+indice:baja:progreso                           JSON comprimido, acumulador reanudable (histogramas)
+indice:baja:cache                              JSON comprimido, respuesta de /api/indice-baja (TTL 1 h)
+lock:indice_baja                               candado de construcción (TTL 300 s)
 equivalencias:unspsc                           JSON comprimido {claseB: [{clase:A, lift, …}]}
 equivalencias:unspsc:meta                      JSON {construido, pares, umbrales, descartados, …}
 equivalencias:unspsc:progreso                  JSON comprimido, acumulador por adjudicatario
