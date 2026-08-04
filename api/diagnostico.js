@@ -42,6 +42,7 @@ const { vocabularioActivo } = require("../lib/texto_unspsc.js");
 const { SMMLV, recargarPerfiles } = require("../lib/perfiles.js");
 const { leerIndice, competenciaDe } = require("../lib/indice_competencia.js");
 const { evaluarPuertas } = require("../lib/puertas.js");
+const { censarColumnasHistoricas } = require("../lib/columnas_historicas.js");
 
 const MUESTRA_DEFAULT = 20, MUESTRA_MAX = 100;
 const TOP = 25; // filas por tabla de distribución
@@ -346,6 +347,18 @@ module.exports = async function handler(req, res) {
         .sort((a, b) => b[1] - a[1]).slice(0, TOP)),
   };
 
+  /* ---------- censo de columnas del corpus histórico ----------
+     Va aparte y con su propio try a propósito: recorre el OTRO keyspace
+     (`licitaciones:historico:*`) y una caída suya no puede tumbar el embudo,
+     que es a lo que se viene casi siempre. No depende del perfil —mide columnas
+     del dataset, no ajuste al RUP—, así que `?perfil=` no lo cambia. */
+  let columnas_historicas;
+  try {
+    columnas_historicas = await censarColumnasHistoricas(redis);
+  } catch (e) {
+    columnas_historicas = { ok: false, error: `no se pudo censar el histórico: ${e.message}` };
+  }
+
   return res.status(200).json({
     ok: true,
     perfil: perfilId,
@@ -387,6 +400,9 @@ module.exports = async function handler(req, res) {
     },
     distribuciones,
     unspsc_cobertura,
+    // ¿qué columnas de adjudicación trae de verdad el histórico ya bajado?
+    // Es lo que decide si la baja de mercado se puede calcular (ver lib/columnas_historicas)
+    columnas_historicas,
     convenios_detectados: convenios.slice(0, TOP),
     muestra,
     como_leerlo: "embudo va en orden: cada `fuera_*` son procesos que murieron en ESE paso y no llegaron al siguiente. "
@@ -394,6 +410,8 @@ module.exports = async function handler(req, res) {
       + "`contrafactuales` dice cuántos se recuperarían al relajar cada regla y cuánto aportó cada mecanismo nuevo. "
       + "`matching.no_pertinentes_ejemplos` son los falsos positivos que la capa de pertinencia acaba de sacar de la pantalla, "
       + "`matching.texto_debil_ejemplos` lo que volvería con el toggle «Incluir procesos sin código UNSPSC», "
-      + "y `conocimiento.equivalencias_por_que` explica en castellano por qué el índice de equivalencias está como está.",
+      + "y `conocimiento.equivalencias_por_que` explica en castellano por qué el índice de equivalencias está como está. "
+      + "`columnas_historicas` es otra cosa: no mira el embudo sino el corpus HISTÓRICO, y dice con qué nombre exacto "
+      + "llegó cada columna de adjudicación y si la baja de mercado se puede calcular con lo que ya está bajado.",
   });
 };

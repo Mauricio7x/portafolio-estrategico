@@ -3386,6 +3386,79 @@ async function main() {
       assert.ok(c.muestra.every((m) => m.match && m.pertinencia),
         "la muestra debe traer el veredicto graduado (match + pertinencia), no un sí/no");
       assert.ok(!c.muestra.some((m) => /aunar esfuerzos/i.test(m.objeto)), "un convenio llegó a la muestra de visibles");
+
+      /* ── columnas_historicas: el censo no puede contradecir a quien lee ──
+         El censo y el índice de competencia recorren el MISMO corpus con las
+         MISMAS listas de candidatas (lib/columnas_historicas las importa de
+         lib/indice_competencia, no las copia). Si discreparan sobre si una
+         columna existe, el diagnóstico no serviría para diagnosticar: diría que
+         hay una columna que el índice no mira, o al revés. */
+      const ch = c.columnas_historicas;
+      assert.ok(ch && !ch.error, `el censo de columnas falló: ${ch && ch.error}`);
+      assert.ok(ch.corpus.procesos_unicos > 0, "el censo no ve el corpus histórico");
+
+      for (const [id, g] of Object.entries(ch.grupos)) {
+        // «útil» (número > 0) es un subconjunto de «presente»: un campo en cero
+        // es SIN DATO, y las dos cifras existen para que no se confundan
+        assert.ok(g.con_dato_util <= g.con_dato,
+          `${id}: ${g.con_dato_util} útiles sobre ${g.con_dato} presentes`);
+        assert.ok(g.con_dato <= ch.corpus.procesos_unicos,
+          `${id}: más filas con dato que procesos en el corpus`);
+        // el campo efectivo es el PRIMER candidato con datos, en el mismo orden
+        // en que `primero()` los resuelve — que es el que el índice acabará leyendo
+        const primerConDatos = Object.entries(g.candidatas).find(([, s]) => s.utiles > 0);
+        assert.strictEqual(g.campo_efectivo, primerConDatos ? primerConDatos[0] : null,
+          `${id}: campo_efectivo no es el primer candidato con datos`);
+        for (const [nombre, s] of Object.entries(g.candidatas)) {
+          assert.ok(s.muestra.length <= 3, `${id}.${nombre}: muestra de más de 3 valores`);
+          assert.ok(s.utiles === 0 || s.muestra.length > 0,
+            `${id}.${nombre}: ${s.utiles} valores útiles y ninguna muestra que enseñar`);
+        }
+        // `claves_observadas` es la verdad literal del JSON guardado: si un
+        // campo es el efectivo, tiene que estar ahí
+        if (g.campo_efectivo) {
+          assert.ok(ch.claves_observadas[g.campo_efectivo] > 0,
+            `${g.campo_efectivo} es campo_efectivo pero no aparece en claves_observadas`);
+        }
+      }
+
+      /* LA INVARIANTE QUE IMPORTA: si el índice clasificó entidades es porque
+         leyó oferentes, así que el censo TIENE que ver esa misma columna. */
+      const idxMeta = JSON.parse((await redis.get(CLAVES.indiceMeta)) || "null");
+      if (idxMeta && idxMeta.clasificadas > 0) {
+        assert.ok(ch.conclusion.campo_numero_ofertas,
+          `el índice clasificó ${idxMeta.clasificadas} entidades pero el censo no ve columna de oferentes`);
+        assert.ok(ch.grupos.numero_ofertas.con_dato_util > 0,
+          "el índice leyó oferentes y el censo cuenta cero");
+      }
+
+      /* La baja exige las DOS mitades en la MISMA fila: el veredicto no puede
+         afirmar que se puede calcular si no hay ni un par completo. */
+      assert.ok(ch.baja_de_mercado.procesos_con_par_completo <= ch.corpus.procesos_unicos,
+        "más pares completos que procesos en el corpus");
+      assert.strictEqual(ch.conclusion.se_puede_calcular_baja,
+        ch.baja_de_mercado.procesos_con_par_completo > 0,
+        "el veredicto de la baja no coincide con los pares realmente contados");
+      assert.ok(ch.conclusion.veredicto && ch.conclusion.siguiente_paso,
+        "el censo debe decir en castellano qué pasa y cuál es el siguiente paso");
+
+      /* El VEREDICTO no puede contradecir a las cifras que lo acompañan. Es la
+         trampa de `i.total_procesos`: `grupos.*.utiles` no existe en el objeto
+         publicado (se llama `con_dato_util`), y leerlo daba `undefined > 0` =
+         false, así que el texto anunciaba «ninguna candidata trae datos» encima
+         de un campo_efectivo resuelto y una baja ya calculada. */
+      assert.strictEqual(ch.conclusion.existe_valor_adjudicado,
+        ch.grupos.valor_adjudicado.campo_efectivo != null,
+        "existe_valor_adjudicado no coincide con el campo efectivo resuelto");
+      assert.strictEqual(ch.conclusion.campo_valor_adjudicado,
+        ch.grupos.valor_adjudicado.campo_efectivo,
+        "la conclusión y el grupo nombran columnas distintas");
+      if (ch.grupos.valor_adjudicado.con_dato_util > 0) {
+        assert.ok(ch.conclusion.existe_valor_adjudicado,
+          `hay ${ch.grupos.valor_adjudicado.con_dato_util} valores adjudicados y el veredicto dice que no existen`);
+        assert.ok(!/Ninguna de las/.test(ch.conclusion.veredicto),
+          `el veredicto niega el valor adjudicado que él mismo contó: ${ch.conclusion.veredicto}`);
+      }
     }
 
     /* ═══════════ g-bis. /api/resumen · el dashboard ═══════════

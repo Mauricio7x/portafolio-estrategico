@@ -98,6 +98,23 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   relajar cada regla. Cuatro invariantes probadas: los pasos suman el total, `visibles` == el
   `total` de /api/oportunidades, el reparto por tier suma exactamente los visibles, y
   `visibles_por_pertinencia.rojo` es SIEMPRE 0.
+- **`columnas_historicas`** (bloque del mismo `/api/diagnostico`, `lib/columnas_historicas.js`)
+  censa el corpus HISTÓRICO y responde con qué nombre EXACTO llegó cada columna de adjudicación y si
+  la baja de mercado (`1 − adjudicado/precio_base`) se puede calcular con lo ya bajado. Sustituye al
+  síntoma indirecto de siempre (`indice:competencia:meta` con `clasificadas: 0`). Tres reglas:
+  (1) las listas de candidatas se IMPORTAN de `lib/indice_competencia` —igual que `numero` y
+  `primero`—, nunca se copian: si divergieran, el diagnóstico informaría de una columna que el
+  índice no mira; (2) `con_dato` y `con_dato_util` se cuentan aparte porque un campo en cero es SIN
+  DATO, no cero pesos; (3) un 0 tiene DOS causas que el censo no distingue —la fuente no la publica,
+  o la proyección no la guarda—, y por eso se publica `claves_observadas` con la verdad literal del
+  JSON almacenado. La baja exige las dos mitades en la MISMA fila: sumar coberturas por separado da
+  un número más bonito y falso.
+- **El veredicto de un bloque no puede leer un campo que ese bloque no publica.** El censo contaba en
+  `utiles` y publicaba `con_dato_util`; la conclusión leía `grupos.*.utiles`, o sea `undefined`, y
+  `undefined > 0` es `false` en silencio: anunciaba «ninguna candidata trae datos» encima de un
+  `campo_efectivo` ya resuelto y una baja ya calculada. Es `i.total_procesos` otra vez, y la
+  cerradura es la misma: derivar el veredicto de `campo_efectivo` (fuente única de esa verdad) y una
+  prueba que prohíbe que el texto contradiga a las cifras que lo acompañan.
 - **Capa anti-suministro**: ningún código que ancle obra + verbo de compra sin verbo de obra =
   compra disfrazada → fuera. El corte de «bienes» es TODO segmento UNSPSC < 70 (no la lista
   30/39/43/48/56: eso dejaba servida la «compraventa de tubería PVC», segmento 40, el bloque más
