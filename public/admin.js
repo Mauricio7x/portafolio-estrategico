@@ -396,11 +396,23 @@
      este proyecto ya pagó con `i.total_procesos`. */
   function pintarBaja(b) {
     const box = $("d-baja-box");
+    const cifras = $("d-baja-cifras");
+    /* La caja se muestra SIEMPRE que haya panel: si se ocultara cuando no hay
+       índice, el botón de reconstruir sería invisible justo cuando hace falta,
+       que es el único momento en que sirve de algo. */
+    box.classList.remove("hidden");
     if (!b || b.baja_mediana_global == null || !b.entidades_clasificadas) {
-      box.classList.add("hidden");
+      cifras.classList.add("hidden");
+      $("d-baja-actualizado").textContent = "sin construir";
+      $("d-baja-meta").textContent =
+        "El índice de baja no se ha construido todavía. Pulse «Reconstruir»: recorre el histórico ya "
+        + "descargado y no vuelve a pedir nada a SECOP II.";
       return;
     }
-    box.classList.remove("hidden");
+    cifras.classList.remove("hidden");
+    $("d-baja-actualizado").textContent = b.construido
+      ? `actualizado ${new Date(b.construido).toLocaleString("es-CO")}`
+      : "";
     $("d-baja-global").textContent = `${fmt1.format(b.baja_mediana_global)} %`;
     $("d-baja-rango").textContent = b.baja_p25_global != null && b.baja_p75_global != null
       ? `p25 ${fmt1.format(b.baja_p25_global)} % · p75 ${fmt1.format(b.baja_p75_global)} %`
@@ -424,6 +436,48 @@
       const ul = $(id);
       ul.textContent = "";
       for (const r of filas || []) ul.appendChild(linea(r));
+    }
+  }
+
+  /* Reconstrucción manual del índice de baja. Recorre el histórico entero, así
+     que puede no terminar en una sola invocación: `done:false` NO es un error,
+     es «sigue en marcha», y hay que decirlo con esas palabras — un botón que
+     dijera «falló» cuando en realidad va por la mitad haría que el dueño lo
+     pulsara una y otra vez. */
+  async function reconstruirBaja() {
+    const btn = $("d-baja-reconstruir");
+    const msg = $("d-baja-msg");
+    const token = leerToken();
+    const decir = (texto, clases) => {
+      msg.textContent = texto;
+      msg.className = `mt-2 rounded-lg px-3 py-2 text-xs ${clases}`;
+      msg.classList.remove("hidden");
+    };
+    if (!token) return decir("Falta el token: guárdelo arriba antes de reconstruir.", "bg-amber-50 text-amber-800");
+
+    btn.disabled = true;
+    decir("Reconstruyendo sobre el histórico ya descargado…", "bg-gray-50 text-gray-600");
+    try {
+      const r = await fetch("/api/indice-baja?reconstruir=true",
+        { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+      const c = await r.json().catch(() => ({}));
+      if (!r.ok || !c.ok) {
+        decir(c.error || `Error ${r.status}`, "bg-red-50 text-red-700");
+      } else if (c.reconstruido && c.reconstruido.enCurso) {
+        decir("Ya hay una reconstrucción en curso: espere a que termine.", "bg-amber-50 text-amber-800");
+      } else if (c.reconstruido && c.reconstruido.done === false) {
+        decir("Reconstrucción a medias (presupuesto agotado). Vuelva a pulsar para continuar: "
+          + "el avance queda guardado.", "bg-amber-50 text-amber-800");
+      } else {
+        const m = c.reconstruido || {};
+        decir(`Listo: ${fmt.format(m.procesos_analizados || 0)} adjudicaciones · `
+          + `${fmt.format(m.entidades_clasificadas || 0)} entidades clasificadas.`, "bg-green-50 text-green-800");
+        cargarDashboard({ forzar: true });   // los números del panel acaban de cambiar
+      }
+    } catch (e) {
+      decir(`Sin respuesta del servidor: ${e.message}`, "bg-red-50 text-red-700");
+    } finally {
+      btn.disabled = false;
     }
   }
 
@@ -543,6 +597,7 @@
   });
 
   $("btn-actualizar").addEventListener("click", () => cargarDashboard({ forzar: true }));
+  $("d-baja-reconstruir").addEventListener("click", reconstruirBaja);
   $("d-perfil").addEventListener("change", () => {
     guardarPerfil($("d-perfil").value);
     ultimoResumen = null;   // otro perfil: sí conviene el esqueleto

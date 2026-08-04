@@ -965,6 +965,7 @@ async function main() {
   const historico = require("../api/sync/historico.js");
   const diagnostico = require("../api/diagnostico.js");
   const detalleComp = require("../api/competencia-detalle.js");
+  const indiceBajaApi = require("../api/indice-baja.js");
   const oportunidades = require("../api/oportunidades.js");
   const resumen = require("../api/resumen.js");
   const adminRup = require("../api/admin/rup.js");
@@ -1544,6 +1545,30 @@ async function main() {
       proc(7, MODERADA, 1, { depto: "CALDAS" }),
       proc(8, MODERADA, 2, { depto: "CALDAS" }),
     ];
+
+    /* 0. CÁLCULO sobre un proceso sintético: baja = (base − adjudicado)/base.
+       1.000M de presupuesto y 850M adjudicados son exactamente 15 %. Se
+       construye con cinco iguales para superar el mínimo y poder leer la cifra
+       publicada, que es la única forma de comprobar el cálculo de extremo a
+       extremo (el histograma redondea a punto porcentual entero). */
+    {
+      const uno = (i) => ({
+        _k: `s-${i}`, ":updated_at": "2025-03-01T00:00:00.000",
+        entidad: "ENTIDAD SINTETICA", nit_entidad: "800000001",
+        departamento_entidad: "BOGOTA", codigo_principal_de_categoria: "72141100",
+        precio_base: "1000000000", valor_total_adjudicacion: "850000000",
+        nit_del_proveedor_adjudicado: "901234567",
+      });
+      const rs = redisFalso({ "2025-03": [1, 2, 3, 4, 5].map(uno) });
+      const meta = await indiceBaja.construirIndiceBaja(rs);
+      assert.strictEqual(meta.procesos_analizados, 5);
+      assert.strictEqual(meta.baja_mediana_global, 15, "1.000M → 850M tiene que ser 15 % de baja");
+      const b = indiceBaja.bajaDeMercado(await indiceBaja.leerIndiceBaja(rs),
+        { entidad: "ENTIDAD SINTETICA", departamento_entidad: "BOGOTA", codigo_principal_de_categoria: "72141100" });
+      assert.strictEqual(b.baja_mediana, 15);
+      assert.strictEqual(b.baja_promedio, 15, "el promedio y la mediana coinciden con cinco valores iguales");
+      assert.strictEqual(b.nivel, "alto", "15 % de baja está por encima del corte del 5 %");
+    }
 
     /* 1. se construye y analiza los 8 */
     let redis = redisFalso({ "2025-03": filas });
@@ -2646,6 +2671,84 @@ async function main() {
         console.log(`  · índice de baja: ${mb.procesos_analizados} adjudicaciones · `
           + `${mb.entidades_clasificadas} entidades clasificadas · mediana global ${mb.baja_mediana_global} % · `
           + `${conBase.length} tarjetas con baja en el orden`);
+
+        /* ── /api/indice-baja: protegido, completo, por entidad y reconstruible ── */
+        assert.strictEqual((await invocar(indiceBajaApi, "/api/indice-baja")).status, 401,
+          "/api/indice-baja expone inteligencia de precio: debe exigir token");
+        assert.strictEqual((await invocar(indiceBajaApi, "/api/indice-baja?token=equivocado")).status, 401,
+          "un token presente pero inválido tiene que dar 401, nunca degradación silenciosa");
+
+        const rIdx = await invocar(indiceBajaApi, "/api/indice-baja", TOKEN);
+        assert.strictEqual(rIdx.status, 200);
+        assert.strictEqual(rIdx.cuerpo.construido, true, "el índice debía estar construido a esta altura");
+        assert.ok(rIdx.cuerpo.indice.entidad && rIdx.cuerpo.grupos.entidad > 0, "el índice llegó vacío");
+        // las cuatro granularidades viajan
+        for (const g of ["entidad", "entidad_familia", "departamento_familia", "departamento"]) {
+          assert.ok(g in rIdx.cuerpo.indice, `falta la granularidad ${g} en el índice servido`);
+        }
+
+        /* segundo golpe: la caché responde HIT y con el MISMO contenido */
+        const rIdx2 = await invocar(indiceBajaApi, "/api/indice-baja", TOKEN);
+        assert.strictEqual(rIdx2.cuerpo.grupos.entidad, rIdx.cuerpo.grupos.entidad,
+          "la caché devolvió un índice distinto al recién calculado");
+
+        /* ?entidad= por nombre y por NIT */
+        const clasif = Object.entries(rIdx.cuerpo.indice.entidad)
+          .find(([, m]) => m && !m.ref && m.nivel !== "sin_dato" && m.nombre);
+        assert.ok(clasif, "no hay ninguna entidad clasificada que consultar");
+        const rEnt = await invocar(indiceBajaApi,
+          `/api/indice-baja?entidad=${encodeURIComponent(clasif[1].nombre)}`, TOKEN);
+        assert.strictEqual(rEnt.status, 200, `consulta por nombre falló: ${JSON.stringify(rEnt.cuerpo).slice(0, 200)}`);
+        assert.strictEqual(rEnt.cuerpo.entidades[0].baja_mediana, clasif[1].baja_mediana,
+          "la consulta por entidad no devuelve la misma cifra que el índice completo");
+        // promedio y mediana conviven, y el promedio NO se publica sin base
+        assert.ok(rEnt.cuerpo.entidades[0].baja_promedio != null, "falta baja_promedio");
+        assert.ok(rEnt.cuerpo.entidades[0].procesos_contados >= 5);
+        if (clasif[1].nit) {
+          const rNit = await invocar(indiceBajaApi, `/api/indice-baja?entidad=${clasif[1].nit}`, TOKEN);
+          assert.strictEqual(rNit.status, 200, "la consulta por NIT debía resolver");
+          assert.ok(rNit.cuerpo.entidades.length >= 1);
+        }
+        assert.strictEqual((await invocar(indiceBajaApi, "/api/indice-baja?entidad=ENTIDAD+QUE+NO+EXISTE", TOKEN)).status, 404,
+          "una entidad sin registro debe dar 404, no un objeto vacío que parezca un cero");
+
+        /* reconstrucción por el endpoint dedicado */
+        const rRe = await invocar(indiceBajaApi, "/api/indice-baja?reconstruir=true", TOKEN);
+        assert.strictEqual(rRe.status, 200);
+        assert.strictEqual(rRe.cuerpo.reconstruido.done, true, "la reconstrucción manual no terminó");
+
+        /* ── el gating por token: baja_* SOLO con credencial ──
+           `/api/oportunidades` es el único endpoint con token OPCIONAL. La baja
+           es inteligencia de precio y no puede salir sin él. */
+        const rPub = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=10");
+        assert.strictEqual(rPub.status, 200, "sin token la app pública tiene que seguir respondiendo");
+        assert.strictEqual(rPub.cuerpo.finanzas_visibles, false);
+        for (const l of rPub.cuerpo.resultados) {
+          assert.strictEqual(l.baja_entidad, null, "baja_entidad salió sin token");
+          assert.strictEqual(l.baja_segmento, null, "baja_segmento salió sin token");
+          assert.strictEqual(l.baja_mercado, null, "baja_mercado salió sin token");
+        }
+        // y el texto tampoco puede llevar la cifra dentro (lección de p3_caja)
+        assert.ok(!/[Dd]escuento t[íi]pico/.test(JSON.stringify(rPub.cuerpo)),
+          "un mensaje de baja se coló en la respuesta pública");
+
+        /* con token vuelven, y baja_entidad coincide con la mediana del objeto */
+        const rPriv = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=25", CAB_TOKEN);
+        let conBaja = 0;
+        for (const l of rPriv.cuerpo.resultados) {
+          if (l.baja_mercado && l.baja_mercado.baja_mediana != null) {
+            conBaja++;
+            assert.strictEqual(l.baja_entidad, l.baja_mercado.baja_mediana,
+              "baja_entidad y baja_mercado.baja_mediana no pueden discrepar");
+          } else {
+            assert.strictEqual(l.baja_entidad, null, "sin base, baja_entidad tiene que ser null");
+          }
+          if (l.baja_segmento) {
+            assert.ok(l.baja_segmento.procesos >= 3 && l.baja_segmento.baja_mediana != null,
+              `segmento sin base: ${JSON.stringify(l.baja_segmento)}`);
+          }
+        }
+        assert.ok(conBaja > 0, "con token ninguna tarjeta trajo baja: el gating no se estaría probando");
       }
 
       /* escotillas de diagnóstico y rescate desde el navegador */
