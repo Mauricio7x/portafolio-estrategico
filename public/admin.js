@@ -31,6 +31,7 @@
 
   const $ = (id) => document.getElementById(id);
   const fmt = new Intl.NumberFormat("es-CO");
+  const fmt1 = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   /* ══════════ Gate ══════════ */
@@ -389,11 +390,50 @@
     programarRefresco();
   }
 
+  /* Baja de mercado. Sin índice construido la tarjeta NO se pinta: enseñar
+     «0 %» cuando lo que pasa es que nadie ha reconstruido el índice sería
+     convertir «no sé» en «el mercado no descuenta», que es justo el error que
+     este proyecto ya pagó con `i.total_procesos`. */
+  function pintarBaja(b) {
+    const box = $("d-baja-box");
+    if (!b || b.baja_mediana_global == null || !b.entidades_clasificadas) {
+      box.classList.add("hidden");
+      return;
+    }
+    box.classList.remove("hidden");
+    $("d-baja-global").textContent = `${fmt1.format(b.baja_mediana_global)} %`;
+    $("d-baja-rango").textContent = b.baja_p25_global != null && b.baja_p75_global != null
+      ? `p25 ${fmt1.format(b.baja_p25_global)} % · p75 ${fmt1.format(b.baja_p75_global)} %`
+      : "";
+    $("d-baja-meta").textContent =
+      `${fmt.format(b.entidades_clasificadas)} entidades con ≥ ${b.min_procesos} procesos · ${fmt.format(b.procesos_analizados || 0)} adjudicaciones analizadas`;
+    const linea = (r) => {
+      const li = document.createElement("li");
+      li.className = "flex items-baseline justify-between gap-2";
+      const n = document.createElement("span");
+      n.className = "truncate text-gray-700";
+      n.textContent = r.entidad;                       // textContent: nunca HTML de un dato
+      n.title = `${r.entidad} · ${r.procesos} procesos`;
+      const v = document.createElement("span");
+      v.className = "shrink-0 tabular-nums font-medium";
+      v.textContent = `${fmt1.format(r.baja_mediana)} %`;
+      li.append(n, v);
+      return li;
+    };
+    for (const [id, filas] of [["d-baja-mas", b.mas_descuentan], ["d-baja-menos", b.menos_descuentan]]) {
+      const ul = $(id);
+      ul.textContent = "";
+      for (const r of filas || []) ul.appendChild(linea(r));
+    }
+  }
+
   function pintarDashboard(c, cache) {
     const t = c.totales || {};
     const per = t.por_pertinencia || {};
     const total = t.visibles || 0;
     $("d-contenido").classList.remove("hidden");
+
+    pintarBaja(c.baja_mercado);
 
     $("d-visibles").textContent = fmt.format(total);
     $("d-obra").textContent = fmt.format(per.obra_civil || 0);

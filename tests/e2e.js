@@ -1487,6 +1487,202 @@ async function main() {
     console.log("· unidad equivalencias (por qué no hay): cuatro causas distinguidas, cada una con su siguiente paso");
   }
 
+  /* unidad: ÍNDICE DE BAJA DE MERCADO (lib/indice_baja) ─────────────────────
+     Se construye contra un Redis de mentira con chunks históricos escritos a
+     mano: así los ocho casos fijan EXACTAMENTE el umbral que se quiere probar,
+     que con el corpus generado del fixture dependería del azar del generador. */
+  {
+    const indiceBaja = require("../lib/indice_baja.js");
+    const { comprimir, CLAVES } = require("../lib/almacen.js");
+
+    /* Redis mínimo: solo lo que usa construirIndiceBaja/leerIndiceBaja. */
+    function redisFalso(filasPorMes) {
+      const kv = new Map(), hashes = new Map();
+      for (const [mes, filas] of Object.entries(filasPorMes)) {
+        kv.set(`licitaciones:historico:mes:${mes}:chunk:0`, comprimir(filas));
+      }
+      const like = (p) => new RegExp("^" + p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\\*/g, ".*") + "$");
+      return {
+        scan: async (p) => [...kv.keys()].filter((k) => like(p).test(k)),
+        mget: async (ks) => ks.map((k) => kv.get(k) ?? null),
+        get: async (k) => kv.get(k) ?? null,
+        set: async (k, v) => { kv.set(k, v); return "OK"; },
+        del: async (...ks) => { for (const k of ks.flat()) { kv.delete(k); hashes.delete(k); } return 1; },
+        hset: async (k, obj) => {
+          const h = hashes.get(k) || {};
+          for (const [f, v] of Object.entries(obj)) h[f] = JSON.stringify(v);
+          hashes.set(k, h); return 1;
+        },
+        hgetall: async (k) => hashes.get(k) || {},
+        rename: async (a, b) => { hashes.set(b, hashes.get(a) || {}); hashes.delete(a); return "OK"; },
+      };
+    }
+
+    /* `pb` presupuesto, `baja` en %, y el resto de campos que exigen los filtros */
+    const proc = (id, entidad, baja, extra = {}) => ({
+      _k: `p-${id}`, ":updated_at": "2025-03-01T00:00:00.000",
+      entidad, nit_entidad: "800000000",
+      departamento_entidad: extra.depto || "ANTIOQUIA",
+      codigo_principal_de_categoria: extra.codigo || "72141100",
+      precio_base: "1000000000",
+      valor_total_adjudicacion: String(Math.round(1000000000 * (1 - baja / 100))),
+      nit_del_proveedor_adjudicado: "901234567",
+      nombre_del_proveedor: "CONSTRUCTORA DE PRUEBA SAS",
+      ...extra.campos,
+    });
+
+    // 5 procesos de AGRESIVA con baja 5-10 %, 3 de MODERADA con baja 0-2 %
+    const AGRESIVA = "AGENCIA AGRESIVA DE INFRAESTRUCTURA";
+    const MODERADA = "ALCALDIA MODERADA";
+    const filas = [
+      proc(1, AGRESIVA, 6), proc(2, AGRESIVA, 7), proc(3, AGRESIVA, 8),
+      proc(4, AGRESIVA, 9), proc(5, AGRESIVA, 10),
+      // MODERADA va en OTRO departamento a propósito: si compartiera el de
+      // AGRESIVA, su falta de base propia caería al fallback departamental y el
+      // caso 3 mediría el fallback en vez del mínimo de procesos.
+      proc(6, MODERADA, 0, { depto: "CALDAS" }),
+      proc(7, MODERADA, 1, { depto: "CALDAS" }),
+      proc(8, MODERADA, 2, { depto: "CALDAS" }),
+    ];
+
+    /* 1. se construye y analiza los 8 */
+    let redis = redisFalso({ "2025-03": filas });
+    let r = await indiceBaja.construirIndiceBaja(redis);
+    assert.strictEqual(r.done, true, "el índice de baja no terminó");
+    assert.strictEqual(r.procesos_analizados, 8, `analizados: ${r.procesos_analizados}`);
+    let idx = await indiceBaja.leerIndiceBaja(redis);
+
+    /* 2. la entidad que baja 5-10 % se clasifica «alto» */
+    const bAgresiva = indiceBaja.bajaDeMercado(idx, { entidad: AGRESIVA, departamento_entidad: "ANTIOQUIA", codigo_principal_de_categoria: "72141100" });
+    assert.strictEqual(bAgresiva.nivel, "alto", `AGRESIVA debía ser «alto»: ${JSON.stringify(bAgresiva)}`);
+    assert.strictEqual(bAgresiva.baja_mediana, 8, `mediana de AGRESIVA: ${bAgresiva.baja_mediana}`);
+    assert.strictEqual(bAgresiva.procesos_contados, 5);
+
+    /* 3. la que baja 0-2 % NO se clasifica: son 3 procesos y el mínimo es 5.
+       Es la regla de siempre —ninguna cifra derivada por debajo del mínimo— y
+       el conteo SÍ viaja, porque es un hecho y explica el gris de la tarjeta. */
+    const bModerada = indiceBaja.bajaDeMercado(idx, { entidad: MODERADA, departamento_entidad: "CALDAS", codigo_principal_de_categoria: "72141100" });
+    assert.strictEqual(bModerada.nivel, "sin_dato", "3 procesos no pueden clasificar");
+    assert.strictEqual(bModerada.baja_mediana, null, "sin base no se publica mediana");
+    assert.strictEqual(bModerada.procesos_contados, 3, "el conteo es un hecho y tiene que viajar");
+    // y NO se toma prestada la cifra de la otra entidad: son departamentos
+    // distintos y ninguno de los dos niveles de respaldo tiene base
+    assert.strictEqual(bModerada.granularidad_utilizada, null,
+      "sin base en ningún nivel, la granularidad utilizada tiene que ser null");
+    // con 5 procesos de baja 0-2 % sí sale «bajo»
+    const redisB = redisFalso({ "2025-03": [
+      proc(10, MODERADA, 0), proc(11, MODERADA, 1), proc(12, MODERADA, 1),
+      proc(13, MODERADA, 2), proc(14, MODERADA, 2),
+    ] });
+    await indiceBaja.construirIndiceBaja(redisB);
+    const bModerada5 = indiceBaja.bajaDeMercado(await indiceBaja.leerIndiceBaja(redisB),
+      { entidad: MODERADA, departamento_entidad: "ANTIOQUIA", codigo_principal_de_categoria: "72141100" });
+    assert.strictEqual(bModerada5.nivel, "bajo", `con 5 procesos al 0-2 % debía ser «bajo»: ${JSON.stringify(bModerada5)}`);
+
+    /* 4. entidad+familia MANDA sobre entidad sola.
+       AGRESIVA baja 8 % en la familia 7214 pero solo 1 % en la 8110: si la
+       cascada respondiera con el agregado de la entidad, la consultoría
+       heredaría el descuento de la obra vial. */
+    const mixto = [
+      proc(20, AGRESIVA, 8, { codigo: "72141100" }), proc(21, AGRESIVA, 8, { codigo: "72141100" }),
+      proc(22, AGRESIVA, 8, { codigo: "72141100" }), proc(23, AGRESIVA, 9, { codigo: "72141100" }),
+      proc(24, AGRESIVA, 9, { codigo: "72141100" }),
+      proc(25, AGRESIVA, 1, { codigo: "81101500" }), proc(26, AGRESIVA, 1, { codigo: "81101500" }),
+      proc(27, AGRESIVA, 1, { codigo: "81101500" }), proc(28, AGRESIVA, 0, { codigo: "81101500" }),
+      proc(29, AGRESIVA, 0, { codigo: "81101500" }),
+    ];
+    const redisM = redisFalso({ "2025-03": mixto });
+    await indiceBaja.construirIndiceBaja(redisM);
+    const idxM = await indiceBaja.leerIndiceBaja(redisM);
+    const vial = indiceBaja.bajaDeMercado(idxM, { entidad: AGRESIVA, departamento_entidad: "ANTIOQUIA", codigo_principal_de_categoria: "72141100" });
+    const consult = indiceBaja.bajaDeMercado(idxM, { entidad: AGRESIVA, departamento_entidad: "ANTIOQUIA", codigo_principal_de_categoria: "81101500" });
+    assert.strictEqual(vial.granularidad_utilizada, "entidad_familia", "debía responder la familia, no la entidad");
+    assert.strictEqual(consult.granularidad_utilizada, "entidad_familia");
+    assert.strictEqual(vial.nivel, "alto", `obra vial: ${JSON.stringify(vial)}`);
+    assert.strictEqual(consult.nivel, "bajo", `consultoría: ${JSON.stringify(consult)}`);
+    assert.ok(vial.baja_mediana > consult.baja_mediana,
+      "la familia tiene que distinguir obra vial de consultoría dentro de la MISMA entidad");
+
+    /* 5. fallback a departamento+familia cuando la entidad no tiene base propia.
+       Cinco alcaldías distintas del mismo departamento y familia: ninguna llega
+       al mínimo por sí sola, pero el departamento sí. */
+    const porDepto = [1, 2, 3, 4, 5].map((i) => proc(30 + i, `ALCALDIA MUNICIPAL ${i}`, 6, { depto: "CHOCO" }));
+    const redisD = redisFalso({ "2025-03": porDepto });
+    await indiceBaja.construirIndiceBaja(redisD);
+    const idxD = await indiceBaja.leerIndiceBaja(redisD);
+    const nueva = { entidad: "ALCALDIA MUNICIPAL 1", departamento_entidad: "CHOCO", codigo_principal_de_categoria: "72141100" };
+    const bDepto = indiceBaja.bajaDeMercado(idxD, nueva);
+    assert.strictEqual(bDepto.granularidad_utilizada, "departamento_familia",
+      `sin base de entidad debía caer al departamento: ${JSON.stringify(bDepto)}`);
+    assert.strictEqual(bDepto.procesos_contados, 5);
+    assert.ok(/CHOCO/.test(bDepto.mensaje), "el mensaje debe decir que la cifra es del departamento, no de la entidad");
+
+    /* 6. adjudicado < 30 % del oficial → fuera (lotes parciales) */
+    const conLotes = redisFalso({ "2025-03": [
+      ...filas.slice(0, 5),
+      proc(40, AGRESIVA, 75), proc(41, AGRESIVA, 90),   // baja 75 % y 90 % = adjudicado al 25 % y 10 %
+    ] });
+    const rLotes = await indiceBaja.construirIndiceBaja(conLotes);
+    assert.strictEqual(rLotes.descartados.bajo_30_pct, 2, `lotes parciales descartados: ${rLotes.descartados.bajo_30_pct}`);
+    assert.strictEqual(rLotes.procesos_analizados, 5, "los lotes parciales no pueden entrar al promedio");
+
+    /* 7. adjudicado > 110 % del oficial → fuera (dato malo) */
+    const conSobre = redisFalso({ "2025-03": [
+      ...filas.slice(0, 5),
+      proc(50, AGRESIVA, -15), proc(51, AGRESIVA, -30),  // adjudicado al 115 % y 130 %
+    ] });
+    const rSobre = await indiceBaja.construirIndiceBaja(conSobre);
+    assert.strictEqual(rSobre.descartados.sobre_110_pct, 2, `sobre el 110 % descartados: ${rSobre.descartados.sobre_110_pct}`);
+    assert.strictEqual(rSobre.procesos_analizados, 5);
+    // y una baja negativa LEVE (−5 %) sí se conserva: no es un error de dato
+    const conLeve = redisFalso({ "2025-03": [...filas.slice(0, 5), proc(52, AGRESIVA, -5)] });
+    assert.strictEqual((await indiceBaja.construirIndiceBaja(conLeve)).procesos_analizados, 6,
+      "una baja negativa leve es un dato válido, no un error");
+
+    /* 7-bis. adjudicatario «No Definido» → fuera: no hubo ganador, así que su
+       valor adjudicado no es un precio de mercado. */
+    const sinGanador = redisFalso({ "2025-03": [
+      ...filas.slice(0, 5),
+      proc(60, AGRESIVA, 5, { campos: { nit_del_proveedor_adjudicado: "No Definido" } }),
+    ] });
+    const rSinG = await indiceBaja.construirIndiceBaja(sinGanador);
+    assert.strictEqual(rSinG.descartados.adjudicatario_no_definido, 1,
+      "«No Definido» no es un adjudicatario real");
+
+    /* 7-ter. el swap es ATÓMICO y no deja restos: reconstruir con menos datos
+       no puede dejar vivos los grupos de la corrida anterior. */
+    const idxTrasSwap = await indiceBaja.leerIndiceBaja(conLeve);
+    assert.ok(!Object.keys(idxTrasSwap.entidad).some((k) => /moderada/i.test(k)),
+      "el índice conservó entidades de una construcción anterior: el swap no fue limpio");
+
+    /* 7-quater. el cero NO es «sin dato» aquí. Cinco procesos adjudicados
+       exactamente por el presupuesto son un hecho —la entidad no descuenta— y
+       tienen que clasificar «bajo», no desaparecer. */
+    const todoCero = redisFalso({ "2025-03": [0, 0, 0, 0, 0].map((b, i) => proc(70 + i, MODERADA, b)) });
+    const rCero = await indiceBaja.construirIndiceBaja(todoCero);
+    assert.strictEqual(rCero.procesos_analizados, 5, "una baja de 0 % es un dato, no una ausencia");
+    assert.strictEqual(rCero.baja_exactamente_cero, 5);
+    assert.strictEqual(rCero.baja_mediana_global, 0);
+    const bCero = indiceBaja.bajaDeMercado(await indiceBaja.leerIndiceBaja(todoCero),
+      { entidad: MODERADA, departamento_entidad: "ANTIOQUIA", codigo_principal_de_categoria: "72141100" });
+    assert.strictEqual(bCero.nivel, "bajo", "adjudicar por el presupuesto es «baja baja», no «sin dato»");
+    assert.strictEqual(bCero.baja_mediana, 0);
+
+    /* 7-quinquies. el ajuste de probabilidad usa la baja y NO la inventa */
+    const probabilidad = require("../lib/probabilidad.js");
+    const ctx = { competencia: { nivel: "media", promedio_oferentes: 4, total_procesos: 30 } };
+    const pNeutro = probabilidad.estimarPDetalle({}, ctx).p;
+    const pAlta = probabilidad.estimarPDetalle({}, { ...ctx, baja: bAgresiva }).p;
+    const pBaja = probabilidad.estimarPDetalle({}, { ...ctx, baja: bCero }).p;
+    assert.ok(pAlta < pNeutro, "una entidad que descuenta mucho debe bajar P(ganar a buen precio)");
+    assert.ok(pBaja > pNeutro, "una entidad que adjudica cerca del oficial debe subirla");
+    assert.strictEqual(probabilidad.estimarPDetalle({}, { ...ctx, baja: bModerada }).p, pNeutro,
+      "una baja «sin_dato» no puede mover la probabilidad");
+
+    console.log("· unidad índice de baja: 3 granularidades en cascada, filtros de lote parcial y dato malo, "
+      + "el cero como dato y el ajuste de P(ganar)");
+  }
+
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
   {
     const idx = unspsc.indiceDe(PERFILES.helder.unspsc);
@@ -2378,6 +2574,78 @@ async function main() {
         const headerGana = await invocar(historico,
           "/api/sync/historico?reconstruir_indice=true&presupuesto=20000&chain=0&token=basura", TOKEN);
         assert.strictEqual(headerGana.status, 200, "con header válido, un token basura en la URL no debe estorbar");
+      }
+
+      /* ── el índice de BAJA se construye por el mismo endpoint y llega a la app ──
+         Aquí se prueba el CABLEADO, no la aritmética (eso está en la prueba de
+         unidad): que `?reconstruir_baja=true` publique, que /api/oportunidades
+         lleve el campo en cada tarjeta y que el orden nuevo exista. */
+      {
+        const rBaja = await invocar(historico,
+          "/api/sync/historico?reconstruir_baja=true&presupuesto=20000&chain=0", TOKEN);
+        assert.strictEqual(rBaja.status, 200, "reconstruir_baja falló");
+        assert.strictEqual(rBaja.cuerpo.done, true, "la reconstrucción de la baja no terminó");
+        assert.ok(rBaja.cuerpo.baja, "el endpoint no reporta el resultado del índice de baja");
+        const mb = rBaja.cuerpo.baja;
+        assert.strictEqual(mb.min_procesos, 5);
+        // los descartes más los analizados tienen que dar las filas leídas:
+        // nadie desaparece sin quedar contado, igual que en el embudo
+        const d = mb.descartados;
+        assert.strictEqual(
+          mb.procesos_analizados + d.sin_precio_base + d.sin_adjudicado
+            + d.adjudicatario_no_definido + d.bajo_30_pct + d.sobre_110_pct,
+          mb.filas_leidas,
+          "los descartes del índice de baja no suman las filas leídas");
+
+        // y NO re-extrae nada: los chunks históricos quedan como estaban
+        const chunksHist = (await redis.scan(CLAVES.patronChunksHist)).length;
+        assert.ok(chunksHist > 0, "el histórico debía seguir ahí");
+
+        /* la app lo sirve: cada tarjeta lleva `baja_mercado` y nunca una cifra
+           sin base (misma invariante que la banda de competencia) */
+        const rOp = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=25", CAB_TOKEN);
+        assert.strictEqual(rOp.status, 200);
+        assert.ok(rOp.cuerpo.resultados.length > 0, "sin resultados no se puede comprobar el campo");
+        for (const l of rOp.cuerpo.resultados) {
+          const b = l.baja_mercado;
+          assert.ok(b && typeof b.nivel === "string", "una tarjeta llegó sin baja_mercado");
+          assert.ok(["alto", "medio", "bajo", "sin_dato"].includes(b.nivel), `nivel raro: ${b.nivel}`);
+          if (b.nivel === "sin_dato") {
+            assert.strictEqual(b.baja_mediana, null, "sin_dato no puede traer una mediana");
+          } else {
+            assert.ok(b.procesos_contados >= 5 && b.baja_mediana != null,
+              `cifra sin base en la tarjeta: ${JSON.stringify(b)}`);
+            assert.ok(b.granularidad_utilizada, "una baja con base tiene que decir de dónde sale");
+          }
+        }
+
+        /* ?ordenar_por=baja: las que MENOS descuentan van primero, y `sin_dato`
+           jamás se cuela en cabeza haciéndose pasar por «no descuenta nada» */
+        const rOrd = await invocar(oportunidades,
+          "/api/oportunidades?perfil=helder&ordenar_por=baja&por_pagina=50", CAB_TOKEN);
+        assert.strictEqual(rOrd.status, 200);
+        assert.strictEqual(rOrd.cuerpo.ordenado_por, "baja", "el orden nuevo no se reconoció");
+        const conBase = [];
+        let vistoSinDato = false;
+        for (const l of rOrd.cuerpo.resultados) {
+          if (!l.viable) break;                       // la viabilidad manda sobre el orden
+          const b = l.baja_mercado;
+          if (b.baja_mediana == null) { vistoSinDato = true; continue; }
+          assert.ok(!vistoSinDato,
+            "un proceso CON baja apareció después de uno sin dato: el sin_dato se coló delante");
+          conBase.push(b.baja_mediana);
+        }
+        for (let i = 1; i < conBase.length; i++) {
+          assert.ok(conBase[i] >= conBase[i - 1],
+            `el orden por baja no es ascendente: ${conBase.join(" · ")}`);
+        }
+        // la prueba no puede pasar en vacío: si NADA clasificara, las dos
+        // comprobaciones de arriba serían tautologías
+        assert.ok(mb.entidades_clasificadas > 0,
+          "ninguna entidad clasificó: el resto de aserciones de este bloque no probarían nada");
+        console.log(`  · índice de baja: ${mb.procesos_analizados} adjudicaciones · `
+          + `${mb.entidades_clasificadas} entidades clasificadas · mediana global ${mb.baja_mediana_global} % · `
+          + `${conBase.length} tarjetas con baja en el orden`);
       }
 
       /* escotillas de diagnóstico y rescate desde el navegador */
@@ -3441,6 +3709,24 @@ async function main() {
         "el veredicto de la baja no coincide con los pares realmente contados");
       assert.ok(ch.conclusion.veredicto && ch.conclusion.siguiente_paso,
         "el censo debe decir en castellano qué pasa y cuál es el siguiente paso");
+
+      /* ── baja_de_mercado: el bloque existe y su reparto CUADRA ──
+         `cobertura_visibles_por_granularidad` describe el conjunto visible, así
+         que tiene que sumarlo exacto — misma regla que el reparto por tier y por
+         pertinencia. `sin_dato` es una cubeta más justamente para eso. */
+      const bm = c.baja_de_mercado;
+      assert.ok(bm, "el diagnóstico no publica el bloque baja_de_mercado");
+      assert.strictEqual(bm.min_procesos, 5, "el mínimo del índice de baja debe viajar");
+      const sumaGran = Object.values(bm.cobertura_visibles_por_granularidad).reduce((a, b) => a + b, 0);
+      assert.strictEqual(sumaGran, c.embudo.visibles,
+        `el reparto por granularidad (${sumaGran}) debe sumar los visibles (${c.embudo.visibles})`);
+      const sumaNiv = Object.values(bm.entidades_por_nivel).reduce((a, b) => a + b, 0);
+      assert.strictEqual(sumaNiv, bm.entidades, "el reparto por nivel debe sumar las entidades del índice");
+      // ningún ejemplo puede llevar cifra sin base: es la misma invariante del badge
+      for (const e of [...bm.ejemplos_baja_alta, ...bm.ejemplos_baja_baja]) {
+        assert.ok(e.procesos >= bm.min_procesos && e.nivel !== "sin_dato" && e.baja_mediana != null,
+          `ejemplo con cifra sin base: ${JSON.stringify(e)}`);
+      }
 
       /* El VEREDICTO no puede contradecir a las cifras que lo acompañan. Es la
          trampa de `i.total_procesos`: `grupos.*.utiles` no existe en el objeto

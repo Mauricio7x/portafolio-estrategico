@@ -56,6 +56,17 @@
     sin_dato: { emoji: "⚪", titulo: "Sin datos históricos de esta entidad", clases: "bg-gray-50 text-gray-500 ring-gray-500/20" },
   };
 
+  /* Baja de mercado de la entidad (lib/indice_baja): cuánto descuenta el
+     ganador frente al presupuesto oficial. MENOS baja es MEJOR — se puede
+     ofertar cerca del oficial y conservar margen— así que el verde es el 0 %.
+     Al revés que el resto de badges, aquí el CERO es un dato y no una ausencia:
+     una entidad que adjudica por el presupuesto es exactamente lo que se busca. */
+  const BAJA_MERCADO = {
+    bajo: { clases: "bg-green-100 text-green-800" },
+    medio: { clases: "bg-amber-100 text-amber-800" },
+    alto: { clases: "bg-red-100 text-red-700" },
+    sin_dato: { clases: "bg-gray-100 text-gray-500" },
+  };
   /* ══════════ Gate ══════════ */
   let intentosClave = 0;
   function abrirApp() {
@@ -189,6 +200,21 @@
   function chip(texto, clases, titulo) {
     const t = titulo ? ` title="${esc(titulo)}"` : "";
     return `<span${t} class="rounded-full px-2.5 py-0.5 text-xs font-medium ${clases}">${texto}</span>`;
+  }
+
+  function chipBaja(b) {
+    const nivel = (b && b.nivel) || "sin_dato";
+    const procesos = Number(b && b.procesos_contados) || 0;
+    const mediana = b && b.baja_mediana != null ? Number(b.baja_mediana) : null;
+    // misma invariante que la banda de competencia: sin base no se interpola
+    // una cifra. `procesos_contados` sí viaja, es un hecho y explica el gris.
+    const conBase = nivel !== "sin_dato" && mediana != null && !isNaN(mediana) && procesos > 0;
+    const d = conBase ? (BAJA_MERCADO[nivel] || BAJA_MERCADO.sin_dato) : BAJA_MERCADO.sin_dato;
+    if (!conBase) {
+      return chip("Baja típica: sin datos", d.clases,
+        (b && b.mensaje) || "No hay procesos adjudicados suficientes para estimar el descuento");
+    }
+    return chip(`Baja típica: ${fmtNum.format(mediana)}%`, d.clases, b.mensaje);
   }
 
   /* Veredicto GRADUADO del matching UNSPSC. Nunca es un sí/no: dice CON QUÉ
@@ -352,6 +378,7 @@
       <div class="mt-4 flex flex-wrap gap-2">
         ${chip(l.anticipo_pct > 0 ? `Anticipo ${l.anticipo_pct}%` : "Anticipo no declarado", l.anticipo_pct > 0 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-500")}
         ${chip(`Ofertas del proceso: ${esc(l.nivel_competencia || "?")}`, compColor)}
+        ${chipBaja(l.baja_mercado)}
         ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
         ${badgesRup(rup)}
         ${rup.co_estimado ? chip("K sobre CO estimado", "bg-gray-100 text-gray-500", "La capacidad se calcula con un ingreso operacional estimado: no sirve para acreditar") : ""}

@@ -109,6 +109,35 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   o la proyección no la guarda—, y por eso se publica `claves_observadas` con la verdad literal del
   JSON almacenado. La baja exige las dos mitades en la MISMA fila: sumar coberturas por separado da
   un número más bonito y falso.
+- **Índice de BAJA de mercado** (`lib/indice_baja.js`, `indice:baja:*`): cuánto descuenta el ganador
+  frente al presupuesto (`1 − adjudicado/precio_base`). Es la otra mitad de la decisión de precio —el
+  de competencia dice CUÁNTOS se presentan, este A CUÁNTO se adjudica— y sale entero del histórico ya
+  bajado. Se reconstruye con `?reconstruir_baja=true` (incluido en `?reconstruir_todo=true`), sin
+  re-extraer nada. Decisiones que no hay que re-aprender:
+  · **TRES HASHES, no una clave por entidad**: `entidad_familia` → `entidad` → `departamento_familia`.
+    Con claves sueltas no habría swap atómico (RENAME solo mueve una clave) y la lectura serían N
+    comandos por petición en vez de tres. Mismo motivo que `indice:competencia`.
+  · **La cascada solo BAJA en especificidad.** Pedir `entidad` no puede acabar respondiendo con
+    `entidad_familia`: sería devolver algo más específico de lo que se preguntó. Y
+    `granularidad_utilizada` viaja SIEMPRE — una cifra sin su origen no se puede discutir.
+  · **Cortes FIJOS (5 % / 2 %), no tertiles.** «Muchos oferentes» solo significa algo comparado con el
+    mercado, pero 8 puntos de baja son 8 puntos de margen compita quien compita. Con tertiles siempre
+    habría un tercio «alto» aunque nadie descontara.
+  · **Aquí el CERO SÍ es un dato**, al revés que `anticipo_pct = 0` y que el contador de oferentes:
+    adjudicar por el presupuesto oficial es un hecho normal y en producción es la MEDIANA. Tratarlo
+    como ausencia vaciaría el índice. Lo que sí es «sin dato» es no tener las dos mitades en la MISMA
+    fila. `baja_exactamente_cero` viaja en la meta: si se dispara al 100 %, la causa no es el mercado
+    sino que `valor_total_adjudicacion` está copiando a `precio_base`.
+  · **Dos filtros de higiene salidos del censo real, no de la teoría**: adjudicado < 30 % del oficial
+    (295 casos: lotes parciales) y > 110 % (221 casos: dato malo). Una baja negativa LEVE sí se
+    conserva — no es un error.
+  · **La «baja del mercado» del panel sale de un histograma GLOBAL** escrito en la misma pasada, no de
+    promediar las medianas por entidad: eso pesaría igual a una alcaldía con 5 procesos que a una
+    gobernación con 500, y las dos cifras acabarían discrepando sin saber cuál mirar.
+  · **`ordenar_por=baja` puntúa `100 − baja` y da −1 al `sin_dato`.** Con 0 se colaría en el primer
+    puesto haciéndose pasar por «no descuenta nada»: es la confusión entre «no sé» y «cero» otra vez.
+  · La familia sale de `normalizarCodigo(...).familia`, NO de un `slice(0,4)` a mano: recortar aquí
+    sería una segunda definición de «familia».
 - **El veredicto de un bloque no puede leer un campo que ese bloque no publica.** El censo contaba en
   `utiles` y publicaba `con_dato_util`; la conclusión leía `grupos.*.utiles`, o sea `undefined`, y
   `undefined > 0` es `false` en silencio: anunciaba «ninguna candidata trae datos» encima de un

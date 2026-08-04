@@ -38,7 +38,7 @@
                                   llegó a verde; apagada por defecto)
      &incluir_cerradas=1         (por defecto solo procesos abiertos)
      &solo_viables=true|false    (default TRUE: oculta lo que no pasa P1-P3)
-     &ordenar_por=atractividad|ve|p_ganar|anticipo|cuantia|competencia|puntaje
+     &ordenar_por=atractividad|ve|p_ganar|anticipo|cuantia|competencia|baja|puntaje
                                  (default ATRACTIVIDAD)
      &orden=asc|desc             (default desc)
      &pagina=1&por_pagina=20     (máx 100)
@@ -97,6 +97,7 @@ const { PERFILES, ALIAS_PERFIL, evaluarRup } = require("../lib/rup.js");
 const { recargarPerfiles } = require("../lib/perfiles.js");
 const { filtrarProcesosVisibles, ANTICIPO_MIN_DEFAULT } = require("../lib/filtros.js");
 const { leerIndice, leerIndiceMeta, competenciaDe } = require("../lib/indice_competencia.js");
+const { leerIndiceBaja, leerIndiceBajaMeta, bajaDeMercado } = require("../lib/indice_baja.js");
 const { leerEquivalencias, leerEquivalenciasMeta } = require("../lib/equivalencias.js");
 const { vocabularioActivo } = require("../lib/texto_unspsc.js");
 const { sinAdjudicacion } = require("../lib/proyeccion.js");
@@ -127,6 +128,13 @@ const ORDEN_CAMPOS = {
   // puertas/p_ganar/ve), pero el campo sigue existiendo en la fila y el orden
   // se conserva para no romper enlaces guardados
   puntaje: (l) => l.puntaje_ponderado || 0,
+  /* Baja de mercado: MENOS descuento es MEJOR, porque se puede ofertar más
+     cerca del presupuesto. El orden por defecto es descendente, así que el
+     campo devuelve `100 − baja` para que la entidad que menos descuenta quede
+     arriba. Y `sin_dato` vale −1, nunca 0: si valiera 0 se colaría en el primer
+     puesto haciéndose pasar por «no descuenta nada», que es justo la confusión
+     entre «no sé» y «cero» que este proyecto ya pagó una vez. */
+  baja: (l, ctx) => (ctx.baja && ctx.baja.baja_mediana != null ? 100 - ctx.baja.baja_mediana : -1),
 };
 const ORDEN_DEFAULT = "atractividad";
 const NIVELES_ENTIDAD = ["baja", "media", "alta", "sin_dato"];
@@ -139,6 +147,9 @@ let _mem = { sello: null, filas: null };
 /* Índice de competencia memoizado (sello = fecha de construcción + nº entidades):
    evita un HGETALL del hash completo en cada petición de una instancia caliente. */
 let _memIndice = { sello: null, indice: null, meta: null };
+/* Índice de BAJA de mercado, memoizado igual y por lo mismo: son tres HGETALL
+   (uno por granularidad) que no hace falta repetir en cada petición. */
+let _memBaja = { sello: null, indice: null, meta: null };
 
 async function cargarCorpus(redis, meta) {
   // el SCAN corre siempre (1 comando barato); el sello incluye el nº de
@@ -176,6 +187,22 @@ async function cargarIndice(redis) {
   try { indice = await leerIndice(redis); } catch { /* índice opcional */ }
   _memIndice = { sello, indice, meta };
   logDev(`índice leído de Redis: ${indice ? Object.keys(indice).length : 0} claves`);
+  return { indice, meta };
+}
+
+/* Índice de baja de mercado. Mismo contrato que el de competencia: si no se ha
+   construido, se devuelve vacío y todas las entidades quedan en "sin_dato" —
+   la app sigue funcionando exactamente igual, solo sin el badge de baja. */
+async function cargarIndiceBaja(redis) {
+  let meta = null;
+  try { meta = await leerIndiceBajaMeta(redis); } catch { /* índice opcional */ }
+  if (!meta) { _memBaja = { sello: null, indice: null, meta: null }; return { indice: null, meta: null }; }
+  const sello = `${meta.generado}|${meta.procesos_analizados}`;
+  if (_memBaja.sello === sello && _memBaja.indice) return { indice: _memBaja.indice, meta };
+  let indice = null;
+  try { indice = await leerIndiceBaja(redis); } catch { /* índice opcional */ }
+  _memBaja = { sello, indice, meta };
+  logDev(`índice de baja leído de Redis: ${indice ? Object.keys(indice.entidad || {}).length : 0} entidades`);
   return { indice, meta };
 }
 
@@ -281,7 +308,7 @@ module.exports = async function handler(req, res) {
   }
 
   const redis = crearRedis({});
-  let meta, filas, indice = null, indiceMeta = null, conocimiento = {}, conocimientoMeta = null;
+  let meta, filas, indice = null, indiceMeta = null, indiceBaja = null, conocimiento = {}, conocimientoMeta = null;
   try {
     // el RUP que el dueño haya cargado (POST /api/admin/rup) manda sobre los
     // datos del repositorio. Es UN GET del sello: solo si cambió se baja la
@@ -292,6 +319,7 @@ module.exports = async function handler(req, res) {
     filas = await cargarCorpus(redis, meta);
     if (filas) {
       ({ indice, meta: indiceMeta } = await cargarIndice(redis));
+      ({ indice: indiceBaja } = await cargarIndiceBaja(redis));
       ({ conocimiento, meta: conocimientoMeta } = await cargarConocimiento(redis));
     }
   } catch (e) {
@@ -314,6 +342,15 @@ module.exports = async function handler(req, res) {
     let c = _comp.get(l);
     if (!c) { c = competenciaDe(indice, l); _comp.set(l, c); }
     return c;
+  };
+
+  /* baja de mercado de la entidad, memoizada igual: el orden `?ordenar_por=baja`
+     la consulta n·log n veces */
+  const _baja = new Map();
+  const bajaDe = (l) => {
+    let b = _baja.get(l);
+    if (!b) { b = bajaDeMercado(indiceBaja, l); _baja.set(l, b); }
+    return b;
   };
 
   /* ---------- filtros ---------- */
@@ -365,17 +402,19 @@ module.exports = async function handler(req, res) {
     let e = _eval.get(l);
     if (e) return e;
     const competencia = compDe(l);
+    const baja = bajaDe(l);
     const depto = String(l.departamento_entidad || "").trim().toUpperCase();
     const clave = claveColision(l);
     const detalle = estimarPDetalle(l, {
       competencia,
+      baja,
       promedio_departamento: depto ? promediosDepto.get(depto) : null,
       colision_cierres: clave ? (colisiones.get(clave) || 0) : 0,
     });
     const puertas = evaluarPuertas(l, perfil, {
       rup: rupDe(l), competencia, conocimiento, incluirTextoDebil: opciones.incluirTextoDebil,
     });
-    e = { puertas, p_ganar: detalle.p, p_ganar_detalle: detalle, ve: valorEsperado(l, detalle.p) };
+    e = { puertas, p_ganar: detalle.p, p_ganar_detalle: detalle, ve: valorEsperado(l, detalle.p), baja };
     _eval.set(l, e);
     return e;
   };
@@ -446,6 +485,7 @@ module.exports = async function handler(req, res) {
         ...fila,
         rup: rupDe(l),
         competencia_entidad: compDe(l),
+        baja_mercado: e.baja,
         puertas: e.puertas,
         p_ganar: e.p_ganar,
         p_ganar_detalle: e.p_ganar_detalle,
@@ -480,6 +520,13 @@ module.exports = async function handler(req, res) {
     // ¿se están sirviendo las cifras financieras? Sin token, no.
     finanzas_visibles: conFinanzas,
     por_match, incluye_sin_unspsc: opciones.incluirTextoDebil,
+    indice_baja: _memBaja.meta
+      ? {
+        generado: _memBaja.meta.generado,
+        entidades: _memBaja.meta.entidades_clasificadas,
+        min_procesos: _memBaja.meta.min_procesos,
+      }
+      : null,
     indice_competencia: indiceMeta
       ? { construido: indiceMeta.construido, entidades: indiceMeta.clasificadas, min_procesos: indiceMeta.min_procesos }
       : null,

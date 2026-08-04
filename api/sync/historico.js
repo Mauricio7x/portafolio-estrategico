@@ -6,7 +6,8 @@
        [&reconstruir_indice=true]         → solo el índice de competencia
        [&reconstruir_equivalencias=true]  → solo las equivalencias UNSPSC
        [&reconstruir_vocabulario=true]    → solo el vocabulario por familia
-       [&reconstruir_todo=true]           → los tres, sin re-extraer nada
+       [&reconstruir_baja=true]           → solo el índice de baja de mercado
+       [&reconstruir_todo=true]           → los cuatro, sin re-extraer nada
        [&estado=true]  → solo diagnóstico, no toca nada
        [&reset=true]   → destraba candado y progreso (conserva lo ya bajado)
 
@@ -65,6 +66,7 @@ const { transformar } = require("../../lib/proyeccion.js");
 const { construirIndice } = require("../../lib/indice_competencia.js");
 const { construirEquivalencias } = require("../../lib/equivalencias.js");
 const { construirVocabulario } = require("../../lib/texto_unspsc.js");
+const { construirIndiceBaja } = require("../../lib/indice_baja.js");
 
 const PAGE = parseInt(process.env.SECOP_PAGE, 10) || 5000;
 const PRESUPUESTO_DEFAULT_MS = 45000;
@@ -313,7 +315,8 @@ module.exports = async function handler(req, res) {
   const pideIndice = todo || siNo(q.reconstruir_indice);
   const pideEquivalencias = todo || siNo(q.reconstruir_equivalencias);
   const pideVocabulario = todo || siNo(q.reconstruir_vocabulario);
-  const soloDerivados = pideIndice || pideEquivalencias || pideVocabulario;
+  const pideBaja = todo || siNo(q.reconstruir_baja);
+  const soloDerivados = pideIndice || pideEquivalencias || pideVocabulario || pideBaja;
   const reiniciar = siNo(q.reiniciar);
   const presupuestoMs = Math.min(parseInt(q.presupuesto, 10) || PRESUPUESTO_DEFAULT_MS, PRESUPUESTO_MAX_MS);
 
@@ -336,7 +339,7 @@ module.exports = async function handler(req, res) {
   catch (e) { return res.status(502).json({ ok: false, error: `Redis: ${e.message}` }); }
   if (!lock) return res.status(200).json({ ok: true, enCurso: true, msg: "ya hay una extracción histórica corriendo" });
 
-  let extraccion = null, indice = null, equivalencias = null, vocabulario = null, error = null;
+  let extraccion = null, indice = null, equivalencias = null, vocabulario = null, baja = null, error = null;
   try {
     if (!soloDerivados) {
       extraccion = await extraerHistorico(redis, socrata, { presupuestoMs, desde, hasta, reiniciar });
@@ -347,17 +350,21 @@ module.exports = async function handler(req, res) {
        siguiente. El presupuesto nunca baja de 1 ms: cada constructor comprueba
        el reloj ANTES de cada mes, así que siempre avanza al menos un mes por
        invocación y la cadena termina.
-       Orden: índice → equivalencias → vocabulario. El índice es el que la app
-       usa en el orden por defecto, así que va primero si el tiempo aprieta. */
+       Orden: índice → baja → equivalencias → vocabulario. Los dos primeros
+       alimentan la tarjeta y el orden por defecto, así que van delante si el
+       tiempo aprieta. */
     const listo = soloDerivados || (extraccion && extraccion.done);
     const restante = () => Math.max(presupuestoMs - (Date.now() - t0), 1);
     if (listo && (!soloDerivados || pideIndice)) {
       indice = await construirIndice(redis, { presupuestoMs: restante(), reiniciar: pideIndice && reiniciar });
     }
-    if (listo && (!soloDerivados || pideEquivalencias) && (!indice || indice.done)) {
+    if (listo && (!soloDerivados || pideBaja) && (!indice || indice.done)) {
+      baja = await construirIndiceBaja(redis, { presupuestoMs: restante(), reiniciar: pideBaja && reiniciar });
+    }
+    if (listo && (!soloDerivados || pideEquivalencias) && (!indice || indice.done) && (!baja || baja.done)) {
       equivalencias = await construirEquivalencias(redis, { presupuestoMs: restante(), reiniciar: pideEquivalencias && reiniciar });
     }
-    if (listo && (!soloDerivados || pideVocabulario) && (!indice || indice.done) && (!equivalencias || equivalencias.done)) {
+    if (listo && (!soloDerivados || pideVocabulario) && (!indice || indice.done) && (!baja || baja.done) && (!equivalencias || equivalencias.done)) {
       vocabulario = await construirVocabulario(redis, { presupuestoMs: restante(), reiniciar: pideVocabulario && reiniciar });
     }
   } catch (e) {
@@ -372,6 +379,7 @@ module.exports = async function handler(req, res) {
   const hecho = (pedido, r) => !pedido || !!(r && r.done);
   const done = (soloDerivados || (extraccion && extraccion.done))
     && hecho(!soloDerivados || pideIndice, indice)
+    && hecho(!soloDerivados || pideBaja, baja)
     && hecho(!soloDerivados || pideEquivalencias, equivalencias)
     && hecho(!soloDerivados || pideVocabulario, vocabulario);
 
@@ -389,6 +397,7 @@ module.exports = async function handler(req, res) {
       if (todo) sig.set("reconstruir_todo", "true");
       else {
         if (pideIndice) sig.set("reconstruir_indice", "true");
+        if (pideBaja) sig.set("reconstruir_baja", "true");
         if (pideEquivalencias) sig.set("reconstruir_equivalencias", "true");
         if (pideVocabulario) sig.set("reconstruir_vocabulario", "true");
       }
@@ -399,6 +408,6 @@ module.exports = async function handler(req, res) {
   return res.status(200).json({
     ok: true, done, rango: { desde, hasta },
     duracionMs: Date.now() - t0, comandosRedis: redis.comandos(),
-    extraccion, indice, equivalencias, vocabulario,
+    extraccion, indice, baja, equivalencias, vocabulario,
   });
 };

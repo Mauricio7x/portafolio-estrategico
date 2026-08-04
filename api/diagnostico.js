@@ -43,6 +43,7 @@ const { SMMLV, recargarPerfiles } = require("../lib/perfiles.js");
 const { leerIndice, competenciaDe } = require("../lib/indice_competencia.js");
 const { evaluarPuertas } = require("../lib/puertas.js");
 const { censarColumnasHistoricas } = require("../lib/columnas_historicas.js");
+const { leerIndiceBaja, leerIndiceBajaMeta, bajaDeMercado, MIN_PROCESOS: MIN_BAJA } = require("../lib/indice_baja.js");
 
 const MUESTRA_DEFAULT = 20, MUESTRA_MAX = 100;
 const TOP = 25; // filas por tabla de distribución
@@ -81,7 +82,7 @@ module.exports = async function handler(req, res) {
   const redis = crearRedis({});
   const t0 = Date.now();
   let filas, meta, clavesAct, clavesHist, equivalencias = null, eqMeta = null, vocabRedis = null, vocMeta = null;
-  let indiceComp = null;
+  let indiceComp = null, indiceBaja = null, bajaMeta = null;
   try {
     // el RUP cargado (POST /api/admin/rup) manda sobre los datos del
     // repositorio: el embudo tiene que medirse contra el RUP VIGENTE
@@ -96,6 +97,8 @@ module.exports = async function handler(req, res) {
     try { indiceComp = await leerIndice(redis); } catch { /* índice opcional */ }
     eqMeta = await leerEquivalenciasMeta(redis);
     if (eqMeta && !eqMeta.vacio) equivalencias = await leerEquivalencias(redis);
+    try { indiceBaja = await leerIndiceBaja(redis); bajaMeta = await leerIndiceBajaMeta(redis); }
+    catch { /* índice de baja opcional */ }
     vocMeta = await leerJSON(redis, CLAVES.vocabularioMeta);
     if (vocMeta) vocabRedis = await leerJSONComprimido(redis, CLAVES.vocabulario);
   } catch (e) {
@@ -138,6 +141,11 @@ module.exports = async function handler(req, res) {
      coincidir con `viables` de /api/oportunidades para el mismo perfil: si
      divergen, hay dos cálculos de puertas y el diagnóstico deja de servir para
      verificar nada. */
+  /* Con qué resolución responde el índice de baja sobre lo que la app sirve
+     HOY. Se cuenta en el MISMO bucle que los demás repartos del conjunto
+     visible: `sin_dato` es una cubeta más para que el reparto sume los
+     visibles y se pueda auditar. */
+  const bajaPorGranularidad = { entidad_familia: 0, entidad: 0, departamento_familia: 0, sin_dato: 0 };
   const distribucion_puertas = {
     pasan_todas: 0, pasan_rup_y_k: 0,
     fallan_p1: 0, fallan_p2: 0, fallan_p3: 0, fallan_p4: 0,
@@ -284,6 +292,7 @@ module.exports = async function handler(req, res) {
     // (después de capacidad y anticipo), no antes
     if (ev.tier in porTier) porTier[ev.tier]++;
     if (ev.pertinencia && ev.pertinencia.nivel in porPertinencia) porPertinencia[ev.pertinencia.nivel]++;
+    bajaPorGranularidad[bajaDeMercado(indiceBaja, l).granularidad_utilizada || "sin_dato"]++;
     if (muestra.length < nMuestra) {
       muestra.push({
         ...paso,
@@ -347,6 +356,51 @@ module.exports = async function handler(req, res) {
         .sort((a, b) => b[1] - a[1]).slice(0, TOP)),
   };
 
+  /* ---------- baja de mercado: qué sabe el índice y qué alcanza a cubrir ----
+     Los ejemplos salen del hash (lo que el índice SABE) y el reparto por
+     granularidad de recorrer el corpus activo con `bajaDeMercado` (lo que el
+     índice alcanza a RESPONDER sobre lo que la app sirve hoy). Son dos
+     preguntas distintas y las dos hacen falta: un índice con 900 entidades que
+     no cubre ninguna de las que están abiertas no sirve de nada. */
+  const baja_de_mercado = (() => {
+    const porEntidad = (indiceBaja && indiceBaja.entidad) || {};
+    const registros = Object.entries(porEntidad)
+      .map(([clave, m]) => ({ clave, ...m }))
+      .filter((r) => r && !r.ref);
+    const porNivel = { alto: 0, medio: 0, bajo: 0, sin_dato: 0 };
+    for (const r of registros) {
+      const n = Object.prototype.hasOwnProperty.call(porNivel, r.nivel) ? r.nivel : "sin_dato";
+      porNivel[n]++;
+    }
+    const clasificados = registros.filter((r) => r.baja_mediana != null && r.nivel !== "sin_dato");
+    const ejemplo = (r) => ({
+      entidad: r.nombre || r.clave,
+      baja_mediana: r.baja_mediana,
+      baja_p25: r.baja_p25,
+      baja_p75: r.baja_p75,
+      procesos: r.procesos_contados ?? r.procesos,
+      nivel: r.nivel,
+    });
+    // el reparto por granularidad se contó en el bucle del embudo, sobre el
+    // conjunto visible y en la misma pasada que los demás repartos
+    const porGranularidad = bajaPorGranularidad;
+    return {
+      construido: bajaMeta ? bajaMeta.generado : null,
+      min_procesos: MIN_BAJA,
+      entidades: registros.length,
+      entidades_por_nivel: porNivel,
+      procesos_analizados: bajaMeta ? bajaMeta.procesos_analizados : null,
+      baja_exactamente_cero: bajaMeta ? bajaMeta.baja_exactamente_cero : null,
+      descartados: bajaMeta ? bajaMeta.descartados : null,
+      ejemplos_baja_alta: clasificados.slice().sort((a, b) => b.baja_mediana - a.baja_mediana).slice(0, 10).map(ejemplo),
+      ejemplos_baja_baja: clasificados.slice().sort((a, b) => a.baja_mediana - b.baja_mediana).slice(0, 10).map(ejemplo),
+      cobertura_visibles_por_granularidad: porGranularidad,
+      cobertura_visibles_pct: embudo.visibles
+        ? Math.round(((embudo.visibles - porGranularidad.sin_dato) / embudo.visibles) * 1000) / 10
+        : null,
+    };
+  })();
+
   /* ---------- censo de columnas del corpus histórico ----------
      Va aparte y con su propio try a propósito: recorre el OTRO keyspace
      (`licitaciones:historico:*`) y una caída suya no puede tumbar el embudo,
@@ -400,6 +454,8 @@ module.exports = async function handler(req, res) {
     },
     distribuciones,
     unspsc_cobertura,
+    // cuánto descuentan los ganadores, y si el índice alcanza a cubrir lo abierto
+    baja_de_mercado,
     // ¿qué columnas de adjudicación trae de verdad el histórico ya bajado?
     // Es lo que decide si la baja de mercado se puede calcular (ver lib/columnas_historicas)
     columnas_historicas,
@@ -412,6 +468,9 @@ module.exports = async function handler(req, res) {
       + "`matching.texto_debil_ejemplos` lo que volvería con el toggle «Incluir procesos sin código UNSPSC», "
       + "y `conocimiento.equivalencias_por_que` explica en castellano por qué el índice de equivalencias está como está. "
       + "`columnas_historicas` es otra cosa: no mira el embudo sino el corpus HISTÓRICO, y dice con qué nombre exacto "
-      + "llegó cada columna de adjudicación y si la baja de mercado se puede calcular con lo que ya está bajado.",
+      + "llegó cada columna de adjudicación y si la baja de mercado se puede calcular con lo que ya está bajado. "
+      + "`baja_de_mercado` dice cuánto descuentan los ganadores por entidad y, sobre todo, "
+      + "`cobertura_visibles_por_granularidad`: de los procesos que la app sirve HOY, cuántos tienen "
+      + "baja con resolución de tipo de obra, cuántos solo de entidad y cuántos ninguna.",
   });
 };

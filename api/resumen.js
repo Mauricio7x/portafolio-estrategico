@@ -58,6 +58,7 @@ const {
   TERMINOS_ESTRUCTURACION, norm,
 } = require("../lib/filtros.js");
 const { leerIndice, leerIndiceMeta, competenciaDe } = require("../lib/indice_competencia.js");
+const { leerIndiceBaja, leerIndiceBajaMeta } = require("../lib/indice_baja.js");
 const { leerEquivalencias, leerEquivalenciasMeta } = require("../lib/equivalencias.js");
 const { vocabularioActivo } = require("../lib/texto_unspsc.js");
 
@@ -162,6 +163,39 @@ const fechaValida = (v) => {
 };
 
 /* ---------- respuesta de corpus vacío ---------- */
+/* Tarjeta de baja de mercado del panel. Se alimenta SOLO del índice publicado
+   (lib/indice_baja): el panel no recalcula nada, igual que no recalcula la
+   cascada. La cifra global sale del histograma ponderado por proceso que
+   escribe el propio índice — promediar aquí las medianas por entidad daría otro
+   número y el panel acabaría contradiciendo a la tarjeta. */
+function bajaMercadoPanel(indiceBaja, bajaMeta) {
+  if (!bajaMeta) return null;
+  const porEntidad = (indiceBaja && indiceBaja.entidad) || {};
+  const clasificadas = Object.entries(porEntidad)
+    .map(([clave, m]) => ({ clave, ...m }))
+    .filter((r) => r && !r.ref && r.baja_mediana != null && r.nivel && r.nivel !== "sin_dato");
+  const fila = (r) => ({
+    entidad: r.nombre || r.clave,
+    baja_mediana: r.baja_mediana,
+    procesos: r.procesos_contados ?? r.procesos,
+    nivel: r.nivel,
+  });
+  const porBaja = clasificadas.slice().sort(
+    (a, b) => b.baja_mediana - a.baja_mediana || String(a.clave).localeCompare(String(b.clave)));
+  return {
+    construido: bajaMeta.generado,
+    min_procesos: bajaMeta.min_procesos,
+    entidades_clasificadas: clasificadas.length,
+    procesos_analizados: bajaMeta.procesos_analizados,
+    // la baja del mercado entero, ponderada por proceso
+    baja_mediana_global: bajaMeta.baja_mediana_global ?? null,
+    baja_p25_global: bajaMeta.baja_p25_global ?? null,
+    baja_p75_global: bajaMeta.baja_p75_global ?? null,
+    mas_descuentan: porBaja.slice(0, 3).map(fila),
+    menos_descuentan: porBaja.slice().reverse().slice(0, 3).map(fila),
+  };
+}
+
 function totalesVacios() {
   return {
     visibles: 0,
@@ -226,6 +260,7 @@ module.exports = async function handler(req, res) {
 
   /* ---------- paso 2 · corpus activo ---------- */
   let meta = null, filas = null, indice = null, indiceMeta = null, conocimiento = {};
+  let indiceBaja = null, bajaMeta = null;
   try {
     meta = await leerJSON(redis, CLAVES.meta);
     const claves = await redis.scan(CLAVES.patronChunks);
@@ -248,6 +283,10 @@ module.exports = async function handler(req, res) {
     try {
       indiceMeta = await leerIndiceMeta(redis);
       if (indiceMeta) indice = await leerIndice(redis);
+    } catch { /* opcional */ }
+    try {
+      bajaMeta = await leerIndiceBajaMeta(redis);
+      if (bajaMeta) indiceBaja = await leerIndiceBaja(redis);
     } catch { /* opcional */ }
     let equivalencias = null, vocabRedis = null;
     try {
@@ -498,6 +537,7 @@ module.exports = async function handler(req, res) {
     indice_competencia: indiceMeta
       ? { construido: indiceMeta.construido, entidades: indiceMeta.clasificadas, min_procesos: indiceMeta.min_procesos }
       : null,
+    baja_mercado: bajaMercadoPanel(indiceBaja, bajaMeta),
     duracion_ms: Date.now() - t0,
     como_leerlo: "`totales.visibles` es el `total` de /api/oportunidades con este perfil y `solo_viables=false`: "
       + "los dos endpoints llaman a la MISMA función (lib/filtros.filtrarProcesosVisibles), no a dos copias. "
