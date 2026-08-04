@@ -195,15 +195,18 @@ module.exports = async function handler(req, res) {
   }
 
   /* el dashboard cachea sus totales 5 minutos y salen de ESTE RUP: dejarlos
-     vivos enseñaría números de la configuración anterior */
+     vivos enseñaría números de la configuración anterior. Lo mismo vale para la
+     auditoría de cobertura (TTL 1 h): su lista de «códigos que te faltan» se
+     calcula contra ESTA whitelist, así que un código recién inscrito seguiría
+     apareciendo como hueco durante una hora. */
   let cacheBorrada = 0;
   try {
-    const viejas = await redis.scan(CLAVES.patronResumen);
+    const viejas = [...await redis.scan(CLAVES.patronResumen), ...await redis.scan(CLAVES.patronCobertura)];
     if (viejas.length) {
       await redis.del(...viejas);
       cacheBorrada = viejas.length;
     }
-  } catch { /* la caché caduca sola en 5 minutos: no vale un 500 */ }
+  } catch { /* las dos cachés caducan solas: no valen un 500 */ }
 
   /* el consorcio se REDERIVA de sus integrantes aunque no venga en el archivo
      (unión de UNSPSC, experiencia sumada, K = suma de CRP): hay que decirlo */

@@ -631,6 +631,96 @@ function generarDatasetDetalle() {
   return filas;
 }
 
+/* ---- bloque para la AUDITORÍA DE COBERTURA DEL RUP (ago 2026) ----
+   Tres códigos que NO están en el RUP de Helder, elegidos para que cada uno
+   caiga en una casilla distinta de la clasificación y ninguna prueba pase por
+   casualidad:
+
+     72131600 · 15 procesos · objeto IDÉNTICO al de la experiencia cargada
+               (score 1.0) y segmento de obra pura → CRÍTICO.
+     72132000 ·  3 procesos · un solo término en común de seis (score 0.167:
+               moderado, por encima del 0.15 con el que se entra al análisis y
+               por debajo del 0.20 de ALTO) y NINGUNO altamente similar → BAJO.
+               Es el caso que distingue las dos lecturas posibles del encargo.
+     85121700 ·  4 procesos · salud: score 0 → ni siquiera entra al análisis, y
+               tiene que aparecer en «excluidos_por_baja_relevancia» con su
+               motivo. Está en el RUP de Génesis y no en el de Helder, que es
+               justo lo que hace que la auditoría dependa del perfil.
+
+   Van SIN conteo de oferentes (como el bloque de equivalencias): así el índice
+   de competencia los cuenta como «sin dato» y los tertiles de las cuatro
+   entidades no se mueven ni un milímetro. Y con entidad propia, para no
+   engordar los «excluidos» de ninguna entidad que el detalle ya audita.
+
+   Los objetos NO llevan descripción a propósito: el score va calibrado al
+   tercer decimal y cualquier palabra de más lo movería de casilla. */
+const ENTIDAD_COBERTURA = "MUNICIPIO DE ALVARADO";
+const COD_COB_CRITICO = "72131600";
+const COD_COB_BAJO = "72132000";
+const COD_COB_SALUD = "85121700";
+const COBERTURA_BLOQUES = [
+  { codigo: COD_COB_CRITICO, n: 15, nombre: "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL PORVENIR", descripcion: "PAVIMENTACION RURAL" },
+  { codigo: COD_COB_BAJO, n: 3, nombre: "REHABILITACION DE PUENTE PEATONAL SOBRE QUEBRADA GRANDE MUNICIPIO", descripcion: "" },
+  { codigo: COD_COB_SALUD, n: 4, nombre: "PRESTACION DE SERVICIOS DE APOYO A LA GESTION EN SALUD OCUPACIONAL", descripcion: "" },
+];
+const HIST_COBERTURA = COBERTURA_BLOQUES.reduce((a, b) => a + b.n, 0);
+
+function generarDatasetCobertura() {
+  const filas = [];
+  let i = 0;
+  for (const b of COBERTURA_BLOQUES) {
+    for (let k = 0; k < b.n; k++) {
+      i++;
+      const mes = MESES_HIST[(i * 3) % MESES_HIST.length];
+      filas.push({
+        ":id": `cob-${String(i).padStart(4, "0")}`, ":updated_at": `${mes}-18T10:00:00.000Z`,
+        id_del_proceso: `CO1.COB.${i}`, referencia_del_proceso: `REF-COB-${i}`,
+        fecha_de_publicacion_del: `${mes}-04T08:00:00.000`,
+        entidad: ENTIDAD_COBERTURA, nit_entidad: "800100010",
+        ciudad_entidad: "ALVARADO", departamento_entidad: "Tolima",
+        modalidad_de_contratacion: "Licitación pública",
+        estado_del_procedimiento: "Adjudicado", fase: "Adjudicación", adjudicado: "Si",
+        precio_base: String(300e6 + i * 1e6),
+        duracion: "6", unidad_de_duracion: "Meses",
+        nombre_del_procedimiento: b.nombre,
+        descripci_n_del_procedimiento: b.descripcion,
+        codigo_principal_de_categoria: `V1.${b.codigo}`, tipo_de_contrato: "Obra",
+        // SIN numero_de_ofertas: no pueden mover los tertiles del índice
+        nombre_del_proveedor: `CONSTRUCTORA COB ${i} SAS`,
+        nit_del_proveedor_adjudicado: `90040${String(i).padStart(4, "0")}`,
+        valor_total_adjudicacion: String(290e6 + i),
+        fecha_adjudicacion: `${mes}-26T10:00:00.000`,
+        urlproceso: { url: `https://community.secop.gov.co/cob/${i}` },
+      });
+    }
+  }
+  return filas;
+}
+
+/* La experiencia REAL que se carga en las pruebas: tres contratos ejecutados
+   con el vocabulario del oficio del dueño. El del CRÍTICO comparte con el
+   primero todos sus términos; el del BAJO, exactamente uno. */
+const CONTRATOS_EXPERIENCIA = [
+  {
+    no_contrato: "001-2024", entidad: "ALCALDIA MUNICIPAL DE PURIFICACION",
+    objeto: "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL PORVENIR DEL MUNICIPIO DE PURIFICACION",
+    modalidad: "Licitacion publica", participacion: 100, valor_cop: 350000000,
+    fecha_inicio: "2024-03-15", fecha_fin: "2024-09-15", valor_smmlv: 450.5,
+  },
+  {
+    no_contrato: "014-2024", entidad: "GOBERNACION DEL TOLIMA",
+    objeto: "MEJORAMIENTO Y PAVIMENTACION DE VIA TERCIARIA EN EL SECTOR RURAL",
+    modalidad: "Seleccion abreviada", participacion: 60, valor_cop: 1200000000,
+    fecha_inicio: "2024-06-01", fecha_fin: "2025-02-01", valor_smmlv: 1500,
+  },
+  {
+    no_contrato: "007-2025", entidad: "ALCALDIA DE IBAGUE",
+    objeto: "CONSTRUCCION DE ALCANTARILLADO SANITARIO PARA EL BARRIO CENTRO",
+    modalidad: "Licitacion publica", participacion: 100, valor_cop: 800000000,
+    fecha_inicio: "2025-01-20", fecha_fin: "2025-10-20", valor_smmlv: 900,
+  },
+];
+
 function generarDatasetHistorico() {
   const filas = [];
   let n = 0;
@@ -1716,6 +1806,72 @@ async function main() {
     console.log("· unidad identidad de entidad: el nombre exacto gana al alias por NIT; clave legado y canónica resuelven");
   }
 
+  /* unidad: experiencia ejecutada — tokenización, similitud y criticidad.
+     Las tres cosas que deciden qué se le recomienda inscribir al dueño, sin
+     Redis de por medio. */
+  {
+    const exp = require("../lib/experiencia.js");
+    const cob = require("../lib/cobertura_rup.js");
+
+    // tokenizar: fuera las stopwords, fuera los códigos, y sin tildes
+    const t = exp.tokenizar("PRESTACIÓN DE SERVICIOS PARA LA CONSTRUCCIÓN DE PLACA HUELLA CM-001 DE 2024");
+    assert.deepStrictEqual(t, ["construccion", "placa", "huella"],
+      `la tokenización dejó pasar trámite o códigos: ${JSON.stringify(t)}`);
+    assert.deepStrictEqual(exp.tokenizar("Diseño y señalización vial"), ["disenno".replace("nn", "n"), "senalizacion", "vial"],
+      "los términos deben compararse sin tildes ni ñ (misma base que el resto del proyecto)");
+
+    // vocabulario: frecuencia por CONTRATO, no por aparición
+    const v = exp.construirVocabulario([
+      { objeto: "CONSTRUCCION DE PLACA HUELLA, PLACA HUELLA Y MAS PLACA HUELLA" },
+      { objeto: "CONSTRUCCION DE ALCANTARILLADO SANITARIO" },
+    ]);
+    assert.strictEqual(v.terminos.construccion, 2, "«construccion» está en los dos contratos");
+    assert.strictEqual(v.terminos.placa, 1, "la frecuencia se cuenta por contrato, no por repetición dentro del objeto");
+
+    // similitud: el denominador son los términos ÚNICOS del objeto comparado
+    const set = new Set(Object.keys(v.terminos));
+    assert.strictEqual(exp.similitud("CONSTRUCCION DE PLACA HUELLA", set).score, 1);
+    assert.strictEqual(exp.similitud("SUMINISTRO DE PAPELERIA", set).score, 0);
+    assert.strictEqual(exp.nivelRelevancia(0.31), "alta");
+    assert.strictEqual(exp.nivelRelevancia(0.15), "moderada"); // el umbral ENTRA
+    assert.strictEqual(exp.nivelRelevancia(0.149), "baja");
+
+    // validación: los dos casos que el encargo nombra explícitamente
+    assert.strictEqual(exp.validarContratos({ contratos: [] }).ok, false, "un arreglo vacío no es una carga");
+    assert.strictEqual(exp.validarContratos({
+      contratos: [{ objeto: "CONSTRUCCION DE PLACA HUELLA", valor_smmlv: 450.5 }],
+    }).ok, true, "con valor_smmlv basta: no hacen falta los dos valores");
+    // los números que llegan como cadena (copiar y pegar de una hoja de cálculo)
+    assert.strictEqual(exp.numeroTolerante("350.000.000"), 350000000);
+    assert.strictEqual(exp.numeroTolerante("450,5"), 450.5);
+
+    // segmentos: 70-95 menos los servicios NO constructivos (la misma lista de
+    // la capa anti-suministro: si allí no ancla obra, aquí no es hueco de obra)
+    assert.deepStrictEqual(["72", "77", "95", "56", "80", "85", "99"].map(cob.segmentoAdmisible),
+      [true, true, true, false, false, false, false]);
+
+    // criticidad: la cascada, con el caso ambiguo del encargo resuelto
+    const c = (procesos, altamente, score, obraClara = true) =>
+      cob.clasificar({ procesos, altamente, scorePromedio: score, obraClara, conExperiencia: true });
+    assert.strictEqual(c(15, 15, 1), "CRÍTICO");
+    assert.strictEqual(c(15, 15, 1, false), "ALTO", "sin ser obra pura, 15 procesos no obligan a inscribir");
+    assert.strictEqual(c(12, 0, 0.16), "ALTO", "≥10 procesos sin ninguno muy similar no llega a CRÍTICO");
+    assert.strictEqual(c(6, 1, 0.18), "ALTO");
+    assert.strictEqual(c(3, 1, 0.25), "ALTO", "con ≥2 procesos, el promedio ≥0,20 basta para ALTO");
+    assert.strictEqual(c(3, 1, 0.17), "MEDIO");
+    assert.strictEqual(c(3, 0, 0.17), "BAJO", "pocos procesos y ninguno muy similar: evidencia débil");
+    assert.strictEqual(c(1, 1, 1), "BAJO", "un solo proceso nunca es evidencia suficiente");
+    // sin experiencia la cascada cae a los conteos y NO inventa un score
+    const cb = (procesos) => cob.clasificar({ procesos, altamente: 0, scorePromedio: 0, obraClara: true, conExperiencia: false });
+    assert.deepStrictEqual([cb(10), cb(5), cb(2), cb(1)], ["CRÍTICO", "ALTO", "MEDIO", "BAJO"]);
+
+    // el puntaje combinado del encargo: 60 % volumen, 40 % similitud
+    assert.strictEqual(cob.puntajeCombinado(10, 0.5), Math.round((10 * 0.6 + 50 * 0.4) * 100) / 100);
+    assert.ok(cob.puntajeCombinado(10, 0.9) > cob.puntajeCombinado(10, 0.1),
+      "a igual volumen, más similitud tiene que ordenar antes");
+    console.log("· unidad experiencia/cobertura: tokenización, similitud, validación y la cascada de criticidad");
+  }
+
   async function limpiarRedis() {
     const claves = [
       ...(await redis.scan("licitaciones:*")), ...(await redis.scan("lock:sync*")),
@@ -1725,10 +1881,13 @@ async function main() {
       // `licitaciones:*` a propósito (ninguna purga del corpus las toca), así
       // que hay que borrarlas aquí o una iteración contaminaría la siguiente
       ...(await redis.scan("config:*")), ...(await redis.scan("resumen:*")),
+      // la caché de la auditoría de cobertura vive una hora: sin borrarla, la
+      // iteración siguiente auditaría con el histórico de la anterior
+      ...(await redis.scan("cobertura:*")),
     ];
     if (claves.length) await redis.del(...claves);
     for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*", "equivalencias:*",
-      "vocabulario:*", "config:*", "resumen:*"]) {
+      "vocabulario:*", "config:*", "resumen:*", "cobertura:*"]) {
       assert.strictEqual((await redis.scan(patron)).length, 0, `Redis no quedó limpio: ${patron}`);
     }
     // los perfiles vuelven a los datos del repositorio: una carga de RUP de la
@@ -1765,7 +1924,8 @@ async function main() {
     const t0 = Date.now();
     // el dataset trae el año vigente Y los dos anteriores: la full solo debe
     // ver el vigente (consulta mes a mes del año en curso)
-    socrata.setDataset([...generarDataset(), ...generarDatasetHistorico(), ...generarDatasetEquivalencias(), ...generarDatasetDetalle()]);
+    socrata.setDataset([...generarDataset(), ...generarDatasetHistorico(), ...generarDatasetEquivalencias(),
+      ...generarDatasetDetalle(), ...generarDatasetCobertura()]);
     socrata.setFallos(true);
 
     /* a. limpiar Redis */
@@ -2107,7 +2267,7 @@ async function main() {
       const hist = await leerHistorico();
       const conOferentes = [...ENTIDADES_HIST, ...ENTIDADES_HIST_IDENTIDAD]
         .reduce((a, e) => a + e.ofertas.length, 0);
-      const totalHist = conOferentes + HIST_EQUIVALENCIAS + HIST_DETALLE;
+      const totalHist = conOferentes + HIST_EQUIVALENCIAS + HIST_DETALLE + HIST_COBERTURA;
       assert.strictEqual(hist.length, totalHist, `histórico: ${hist.length} registros, esperaba ${totalHist}`);
       for (const r of hist) {
         // el proceso declarado desierto es el único sin datos de adjudicación
@@ -2121,7 +2281,7 @@ async function main() {
         assert.strictEqual(r.fue_adjudicado, true, "el histórico no marcó la adjudicación");
         // el bloque de equivalencias viaja SIN conteo de oferentes a propósito
         // (así el índice de competencia no cambia): ahí `oferentes` es null
-        if (!/^CO1\.(EQV|DET)\./.test(String(r.id_del_proceso))) {
+        if (!/^CO1\.(EQV|DET|COB)\./.test(String(r.id_del_proceso))) {
           assert.ok(r.oferentes >= 1, "el histórico no derivó el nº de oferentes");
         } else {
           assert.strictEqual(r.oferentes, null, "0 oferentes = SIN DATO, nunca «nadie se presentó»");
@@ -2144,7 +2304,7 @@ async function main() {
       // solo cuentan los procesos con conteo de oferentes: los del bloque de
       // equivalencias quedan como «sin dato» y no mueven ni un tertil
       assert.strictEqual(metaIdx.procesos_contados, conOferentes, "el índice no contó los procesos con oferentes");
-      assert.strictEqual(metaIdx.descartados.sin_oferentes, HIST_EQUIVALENCIAS + HIST_DETALLE - 1,
+      assert.strictEqual(metaIdx.descartados.sin_oferentes, HIST_EQUIVALENCIAS + HIST_DETALLE + HIST_COBERTURA - 1,
         "un proceso adjudicado sin conteo de oferentes debe quedar contado como descarte, no colarse como 0");
       assert.strictEqual(metaIdx.min_procesos, 5);
 
@@ -3578,6 +3738,283 @@ async function main() {
       console.log("  · carga de RUP: 11 casos de validación, ciclo GET→editar→POST y efecto inmediato verificados");
     }
 
+    /* ═══ g-quater. Experiencia ejecutada + auditoría de cobertura del RUP ═══
+       Dos endpoints nuevos que responden a una pregunta que la app no sabía
+       contestar: «¿qué códigos UNSPSC usa el mercado para lo que YO ya hago, y
+       cuáles no tengo inscritos?».
+
+       Este bloque corre DESPUÉS del de RUP a propósito: allí se borra `config:*`
+       al terminar, así que aquí se empieza sin experiencia cargada — que es
+       exactamente el estado en el que hay que comprobar el método base antes de
+       comprobar el que usa la experiencia real.
+
+       El corpus está diseñado para que cada casilla de la clasificación tenga un
+       caso y ninguno pase por casualidad (ver COBERTURA_BLOQUES). */
+    {
+      const experiencia = require("../api/admin/experiencia.js");
+      const coberturaApi = require("../api/admin/cobertura-rup.js");
+      const libExp = require("../lib/experiencia.js");
+
+      /* 8. sin token → 401 en los dos endpoints, en GET y en POST */
+      {
+        assert.strictEqual((await invocar(experiencia, "/api/admin/experiencia")).status, 401,
+          "GET de experiencia sin token debía ser 401");
+        assert.strictEqual((await invocarPost(experiencia, "/api/admin/experiencia", { contratos: [] })).status, 401,
+          "POST de experiencia sin token debía ser 401");
+        assert.strictEqual((await invocar(coberturaApi, "/api/admin/cobertura-rup?perfil=helder")).status, 401,
+          "la auditoría de cobertura sin token debía ser 401");
+        // …y un token MALO tampoco pasa (no hay degradación silenciosa)
+        assert.strictEqual((await invocar(coberturaApi, "/api/admin/cobertura-rup?perfil=helder&token=basura")).status, 401);
+      }
+
+      /* 3-bis. GET sin haber cargado nada: no es un error, es un estado — y lo
+         dice con la frase que el panel enseña tal cual */
+      {
+        const r = await invocar(experiencia, "/api/admin/experiencia", CAB_TOKEN);
+        assert.strictEqual(r.status, 200);
+        assert.strictEqual(r.cuerpo.cargada, false);
+        assert.deepStrictEqual(r.cuerpo.contratos, []);
+        assert.ok(/No hay experiencia cargada/.test(r.cuerpo.mensaje || ""),
+          `sin experiencia el GET debe explicar qué hacer: ${r.cuerpo.mensaje}`);
+      }
+
+      /* 5. AUDITORÍA SIN EXPERIENCIA → método base (vocabulario de obra).
+         Lo que se verifica es que NO se invente una similitud: el score viaja
+         en null y la respuesta lo declara. */
+      let sinExp = null;
+      {
+        const r = await invocar(coberturaApi, "/api/admin/cobertura-rup?perfil=helder", CAB_TOKEN);
+        assert.strictEqual(r.status, 200, `auditoría sin experiencia falló: ${JSON.stringify(r.cuerpo).slice(0, 300)}`);
+        sinExp = r.cuerpo;
+        assert.strictEqual(sinExp.ok, true);
+        assert.strictEqual(sinExp.experiencia_utilizada, false, "sin cargar nada no puede decir que usó la experiencia");
+        assert.strictEqual(sinExp.contratos_experiencia, 0);
+        assert.ok(/No hay experiencia cargada/.test(sinExp.mensaje || ""),
+          `la auditoría debe avisar de que está en el método base: ${sinExp.mensaje}`);
+        assert.ok(sinExp.faltantes.length > 0, "el método base tiene que detectar huecos igualmente");
+        for (const f of sinExp.faltantes) {
+          assert.strictEqual(f.score_similitud_promedio, null,
+            `sin experiencia no puede publicarse un score de similitud (${f.codigo})`);
+        }
+        // el bloque de 15 procesos se detecta también por el método base
+        const critico = sinExp.faltantes.find((f) => f.codigo === COD_COB_CRITICO);
+        assert.ok(critico, `el método base no detectó ${COD_COB_CRITICO}`);
+        assert.strictEqual(critico.criticidad, "CRÍTICO", "15 procesos de obra pura son CRÍTICO con o sin experiencia");
+      }
+
+      /* 2. POST con JSON inválido → 400, con el campo exacto señalado y SIN
+         guardar nada. Los casos son los del encargo más los bordes del tope. */
+      {
+        const malos = [
+          [{ contratos: [] }, "contratos", "arreglo vacío"],
+          [{ contratos: "no soy un arreglo" }, "contratos", "no es un arreglo"],
+          [{}, "contratos", "sin la clave contratos"],
+          [{ contratos: [{ objeto: "", valor_cop: 1e6 }] }, "contratos[0].objeto", "objeto vacío"],
+          [{ contratos: [{ objeto: "x".repeat(1001), valor_cop: 1e6 }] }, "contratos[0].objeto", "objeto de más de 1000 caracteres"],
+          [{ contratos: [{ objeto: "CONSTRUCCION DE PLACA HUELLA" }] }, "contratos[0].valor_smmlv", "sin valor_cop ni valor_smmlv"],
+          [{ contratos: [{ objeto: "CONSTRUCCION DE PLACA HUELLA", valor_cop: 1e6, participacion: 140 }] },
+            "contratos[0].participacion", "participación fuera de 0-100"],
+          [{ contratos: Array.from({ length: libExp.MAX_CONTRATOS + 1 }, () => ({ objeto: "CONSTRUCCION DE VIA", valor_cop: 1e6 })) },
+            "contratos", "más de 500 contratos"],
+        ];
+        for (const [cuerpo, campo, que] of malos) {
+          const r = await invocarPost(experiencia, "/api/admin/experiencia", cuerpo, CAB_TOKEN);
+          assert.strictEqual(r.status, 400, `${que}: esperaba 400, llegó ${r.status}`);
+          assert.strictEqual(r.cuerpo.ok, false);
+          assert.ok(r.cuerpo.errores.some((e) => e.campo === campo),
+            `${que}: ningún error apunta a «${campo}» → ${JSON.stringify(r.cuerpo.errores).slice(0, 300)}`);
+        }
+        // un body que no es JSON (como lo mandaría un curl mal escrito)
+        const r = await invocarPost(experiencia, "/api/admin/experiencia", "{esto no es json", CAB_TOKEN);
+        assert.strictEqual(r.status, 400);
+        assert.ok(/JSON/i.test(r.cuerpo.error), `el error debe decir que el body no es JSON: ${r.cuerpo.error}`);
+        // y NADA de esto pudo guardar
+        assert.strictEqual((await invocar(experiencia, "/api/admin/experiencia", CAB_TOKEN)).cuerpo.cargada, false,
+          "una carga rechazada dejó experiencia guardada");
+      }
+
+      /* 1. POST válido → 200 con el vocabulario extraído */
+      {
+        const r = await invocarPost(experiencia, "/api/admin/experiencia",
+          { contratos: CONTRATOS_EXPERIENCIA }, CAB_TOKEN);
+        assert.strictEqual(r.status, 200, `carga válida rechazada: ${JSON.stringify(r.cuerpo).slice(0, 300)}`);
+        assert.strictEqual(r.cuerpo.ok, true);
+        assert.strictEqual(r.cuerpo.contratos_cargados, CONTRATOS_EXPERIENCIA.length);
+        assert.ok(r.cuerpo.terminos_extraidos > 0, "no se extrajo ningún término del objeto de los contratos");
+        for (const t of ["construccion", "placa", "huella", "pavimentacion", "alcantarillado"]) {
+          assert.ok(r.cuerpo.ejemplos_terminos.includes(t), `falta «${t}» entre los términos extraídos`);
+        }
+        // las palabras de trámite NO son vocabulario del oficio: si entraran,
+        // cualquier objeto del dataset ganaría similitud gratis
+        for (const t of ["prestacion", "servicios", "contrato", "para", "del"]) {
+          assert.ok(!r.cuerpo.ejemplos_terminos.includes(t), `«${t}» es una stopword y se coló en el vocabulario`);
+        }
+        assert.ok(r.cuerpo.version && r.cuerpo.cargado, "la carga debe publicar sello y fecha");
+        assert.ok(/auditoría de cobertura/i.test(r.cuerpo.nota || ""),
+          "tras cargar hay que decir cuál es el siguiente paso");
+      }
+
+      /* 3. GET después del POST → los contratos, tal como se cargaron */
+      {
+        const r = await invocar(experiencia, "/api/admin/experiencia", CAB_TOKEN);
+        assert.strictEqual(r.status, 200);
+        assert.strictEqual(r.cuerpo.cargada, true);
+        assert.strictEqual(r.cuerpo.contratos_cargados, CONTRATOS_EXPERIENCIA.length);
+        assert.strictEqual(r.cuerpo.contratos[0].no_contrato, CONTRATOS_EXPERIENCIA[0].no_contrato);
+        assert.strictEqual(r.cuerpo.contratos[0].objeto, CONTRATOS_EXPERIENCIA[0].objeto);
+        assert.strictEqual(r.cuerpo.contratos[0].valor_smmlv, CONTRATOS_EXPERIENCIA[0].valor_smmlv);
+        assert.ok(r.cuerpo.terminos_extraidos > 0, "el GET debe informar del vocabulario vigente");
+      }
+
+      /* 4 · 6 · 7. AUDITORÍA CON EXPERIENCIA: la priorización por similitud */
+      let conExp = null;
+      {
+        const r = await invocar(coberturaApi, "/api/admin/cobertura-rup?perfil=helder", CAB_TOKEN);
+        assert.strictEqual(r.status, 200, `auditoría con experiencia falló: ${JSON.stringify(r.cuerpo).slice(0, 300)}`);
+        conExp = r.cuerpo;
+        assert.strictEqual(conExp.experiencia_utilizada, true, "la experiencia recién cargada no se usó");
+        assert.strictEqual(conExp.contratos_experiencia, CONTRATOS_EXPERIENCIA.length);
+        assert.ok(conExp.terminos_experiencia > 0);
+        assert.strictEqual(conExp.cache, false, "cargar experiencia tiene que invalidar la caché de la auditoría");
+
+        /* 6. 15 procesos con el objeto de su experiencia → CRÍTICO y PRIMERO */
+        const critico = conExp.faltantes.find((f) => f.codigo === COD_COB_CRITICO);
+        assert.ok(critico, `${COD_COB_CRITICO} no aparece entre los códigos faltantes`);
+        assert.strictEqual(critico.criticidad, "CRÍTICO");
+        assert.strictEqual(critico.procesos_adjudicados, 15);
+        assert.strictEqual(critico.procesos_altamente_relevantes, 15,
+          "los 15 objetos son idénticos a un contrato ejecutado: todos altamente relevantes");
+        assert.strictEqual(critico.score_similitud_promedio, 1,
+          "un objeto cuyos términos están TODOS en la experiencia tiene similitud 1");
+        assert.strictEqual(critico.segmento, "72");
+        assert.strictEqual(critico.familia, "7213");
+        assert.strictEqual(conExp.faltantes[0].codigo, COD_COB_CRITICO,
+          "el puntaje combinado (volumen + similitud) debe poner el crítico en el primer puesto");
+        assert.ok(/INSCRIBIR/.test(critico.recomendacion), `la recomendación debe ser accionable: ${critico.recomendacion}`);
+        // ejemplos: hasta 5, los más similares primero, con la entidad y la cuantía
+        assert.ok(critico.ejemplos_objetos.length > 0 && critico.ejemplos_objetos.length <= 5,
+          "hasta 5 ejemplos de objeto por código");
+        for (let i = 1; i < critico.ejemplos_objetos.length; i++) {
+          assert.ok(critico.ejemplos_objetos[i - 1].similitud >= critico.ejemplos_objetos[i].similitud,
+            "los ejemplos deben ir de más a menos similares");
+        }
+        assert.strictEqual(critico.entidades_top[0].entidad, ENTIDAD_COBERTURA);
+        assert.strictEqual(critico.entidades_top[0].procesos, 15);
+        assert.ok(critico.entidades_top.length <= 3, "top 3 de entidades por código");
+        assert.ok(critico.cuantia.min > 0 && critico.cuantia.max >= critico.cuantia.min
+          && critico.cuantia.promedio >= critico.cuantia.min, "rango de cuantías incoherente");
+
+        /* 7. 3 procesos con un solo término en común → BAJO.
+           Es el caso que separa las dos lecturas posibles del encargo: por
+           conteo caería en MEDIO (2-4 procesos), pero sin un solo objeto
+           altamente similar y con el promedio por debajo de 0,20 la evidencia
+           es débil y la clasificación tiene que decirlo. */
+        const bajo = conExp.faltantes.find((f) => f.codigo === COD_COB_BAJO);
+        assert.ok(bajo, `${COD_COB_BAJO} no aparece entre los códigos faltantes`);
+        assert.strictEqual(bajo.procesos_adjudicados, 3);
+        assert.strictEqual(bajo.procesos_altamente_relevantes, 0);
+        assert.strictEqual(bajo.procesos_moderadamente_relevantes, 3);
+        assert.ok(bajo.score_similitud_promedio >= libExp.UMBRAL_MODERADA && bajo.score_similitud_promedio < 0.2,
+          `el caso está calibrado entre 0,15 y 0,20: llegó ${bajo.score_similitud_promedio}`);
+        assert.strictEqual(bajo.criticidad, "BAJO");
+        assert.ok(critico.puntaje > bajo.puntaje, "el orden por puntaje combinado no separa el crítico del bajo");
+
+        /* el código de SALUD ni siquiera entra al análisis, y se dice por qué */
+        assert.ok(!conExp.faltantes.some((f) => f.codigo === COD_COB_SALUD),
+          "un código de un nicho donde nunca se ha trabajado no puede recomendarse");
+        const excluido = conExp.excluidos_por_baja_relevancia.find((e) => e.codigo === COD_COB_SALUD);
+        assert.ok(excluido, "lo excluido por baja relevancia tiene que verse, no desaparecer en silencio");
+        assert.strictEqual(excluido.procesos, 4);
+        assert.ok(/fuera del nicho/.test(excluido.motivo), `el motivo debe explicarse: ${excluido.motivo}`);
+
+        /* lo que YA está en el RUP no puede aparecer como hueco */
+        for (const f of conExp.faltantes) {
+          assert.ok(!PERFILES.helder.unspsc.has(f.codigo),
+            `${f.codigo} está inscrito en el RUP de Helder y se reporta como faltante`);
+          assert.ok(f.segmento >= "70" && f.segmento <= "95", `segmento fuera de obra: ${f.segmento}`);
+          assert.ok(!filtros.SEGMENTOS_SERVICIOS_NO_CONSTRUCTIVOS.has(f.segmento),
+            `${f.codigo}: los segmentos de servicios no constructivos no pueden ser un hueco de obra`);
+        }
+
+        /* INVARIANTE del embudo: cada proceso del histórico muere en exactamente
+           un paso. Sin esto, cualquier cifra de la auditoría es indemostrable. */
+        const e = conExp.embudo;
+        assert.strictEqual(
+          e.sin_adjudicacion + e.baja_relevancia + e.no_pertinentes + e.sin_codigo_utilizable
+          + e.sin_codigo_faltante + e.con_codigo_faltante,
+          e.procesos_historico,
+          "los pasos del embudo de cobertura no suman el total del histórico");
+        assert.strictEqual(conExp.resumen.procesos_analizados, e.procesos_historico);
+        assert.strictEqual(conExp.resumen.procesos_relevantes,
+          e.procesos_historico - e.sin_adjudicacion - e.baja_relevancia);
+        assert.strictEqual(conExp.resumen.codigos_faltantes_detectados, conExp.faltantes.length);
+        assert.strictEqual(conExp.resumen.criticos + conExp.resumen.altos + conExp.resumen.medios + conExp.resumen.bajos,
+          conExp.faltantes.length, "el reparto por criticidad debe sumar los códigos faltantes");
+        assert.strictEqual(conExp.resumen.codigos_en_rup, PERFILES.helder.unspsc.size);
+      }
+
+      /* la auditoría depende del PERFIL, no solo del corpus: para Génesis el
+         código de salud SÍ está inscrito, así que no puede figurar ni como
+         hueco ni como excluido por relevancia */
+      {
+        const r = await invocar(coberturaApi, "/api/admin/cobertura-rup?perfil=genesis", CAB_TOKEN);
+        assert.strictEqual(r.status, 200);
+        assert.strictEqual(r.cuerpo.perfil, "genesis");
+        assert.ok(!r.cuerpo.excluidos_por_baja_relevancia.some((x) => x.codigo === COD_COB_SALUD),
+          "85121700 está en el RUP de Génesis: no es ni hueco ni exclusión");
+        assert.ok(r.cuerpo.faltantes.some((f) => f.codigo === COD_COB_CRITICO),
+          "el hueco de obra es el mismo para los dos perfiles");
+        assert.strictEqual(r.cuerpo.resumen.codigos_en_rup, PERFILES.genesis.unspsc.size);
+      }
+
+      /* toggle ?usar_experiencia=false: vuelve al método base sin borrar nada */
+      {
+        const r = await invocar(coberturaApi, "/api/admin/cobertura-rup?perfil=helder&usar_experiencia=false", CAB_TOKEN);
+        assert.strictEqual(r.cuerpo.experiencia_utilizada, false, "el toggle no apagó la priorización por experiencia");
+        assert.strictEqual((await invocar(experiencia, "/api/admin/experiencia", CAB_TOKEN)).cuerpo.cargada, true,
+          "consultar sin experiencia no puede borrar la experiencia cargada");
+      }
+
+      /* caché: la segunda consulta idéntica viene de Redis, ?refrescar la salta,
+         y una carga nueva de experiencia la invalida entera */
+      {
+        const hit = await invocar(coberturaApi, "/api/admin/cobertura-rup?perfil=helder", CAB_TOKEN);
+        assert.strictEqual(hit.cuerpo.cache, true, "la segunda consulta idéntica debía venir de la caché");
+        assert.strictEqual(hit.cuerpo.faltantes.length, conExp.faltantes.length, "la caché devolvió otra cosa");
+        const fresca = await invocar(coberturaApi, "/api/admin/cobertura-rup?perfil=helder&refrescar=1", CAB_TOKEN);
+        assert.strictEqual(fresca.cuerpo.cache, false, "?refrescar debe recalcular");
+
+        await invocarPost(experiencia, "/api/admin/experiencia", { contratos: CONTRATOS_EXPERIENCIA }, CAB_TOKEN);
+        const tras = await invocar(coberturaApi, "/api/admin/cobertura-rup?perfil=helder", CAB_TOKEN);
+        assert.strictEqual(tras.cuerpo.cache, false,
+          "cargar experiencia nueva tiene que invalidar la auditoría cacheada");
+      }
+
+      /* usos incorrectos: el perfil es obligatorio (no hay default: servir el
+         de otro perfil sería la peor forma de equivocarse) y la auditoría no
+         escribe nada */
+      {
+        assert.strictEqual((await invocar(coberturaApi, "/api/admin/cobertura-rup", CAB_TOKEN)).status, 400,
+          "sin perfil debía responder 400");
+        assert.strictEqual((await invocar(coberturaApi, "/api/admin/cobertura-rup?perfil=inventado", CAB_TOKEN)).status, 400);
+        assert.strictEqual(
+          (await invocar(coberturaApi, "/api/admin/cobertura-rup?perfil=helder", CAB_TOKEN, { metodo: "POST" })).status, 405,
+          "la auditoría solo lee: un POST debe responder 405");
+        // el alias del consorcio funciona igual que en el resto de la API
+        assert.strictEqual((await invocar(coberturaApi, "/api/admin/cobertura-rup?perfil=consorcio", CAB_TOKEN)).cuerpo.perfil,
+          "juntos", "el alias «consorcio» debe resolver al perfil plural");
+      }
+
+      /* no contaminar lo que viene después: la experiencia y la caché se borran
+         (el resto de la iteración cuenta procesos y no puede heredar esto) */
+      {
+        const claves = [...await redis.scan("config:experiencia*"), ...await redis.scan("cobertura:*")];
+        if (claves.length) await redis.del(...claves);
+      }
+      console.log(`  · cobertura RUP: ${conExp.faltantes.length} códigos faltantes (${conExp.resumen.criticos} críticos) `
+        + `sobre ${conExp.resumen.procesos_analizados} procesos históricos · método base y con experiencia verificados`);
+    }
+
     /* h. la raíz sirve el frontend (Vercel: /public es el output estático) */
     {
       const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
@@ -3806,6 +4243,48 @@ async function main() {
         assert.ok(iAuto > iEstado,
           "el arranque automático del panel corre antes de declarar su estado: morirá en la zona muerta temporal");
       }
+
+      /* ---- panel: experiencia ejecutada y auditoría de cobertura ---- */
+      for (const debe of ['id="seccion-experiencia"', 'id="exp-json"', 'id="btn-exp-cargar"',
+        'id="btn-exp-confirmar"', 'id="btn-exp-cancelar"', 'id="btn-exp-descargar"',
+        'id="exp-preview"', 'id="exp-actual"', 'id="exp-mensaje"', 'id="exp-errores"',
+        'id="seccion-cobertura"', 'id="c-perfil"', 'id="c-usar-experiencia"', 'id="btn-cobertura"',
+        'id="btn-cobertura-exportar"', 'id="c-faltantes"', 'id="c-criticos"', 'id="c-altos"',
+        'id="c-medios"', 'id="c-bajos"', 'id="c-alerta"', 'id="c-skeleton"', 'id="c-excluidos"']) {
+        assert.ok(admHtml.includes(debe), `admin.html sin ${debe} (falta la experiencia o la auditoría de cobertura)`);
+      }
+      // el toggle de priorización por experiencia viene ENCENDIDO (el encargo:
+      // «activado por defecto si hay experiencia cargada»; admin.js lo apaga
+      // solo cuando el GET dice que no hay nada cargado)
+      {
+        const i = admHtml.indexOf('id="c-usar-experiencia"');
+        assert.ok(/\bchecked\b/.test(admHtml.slice(i, i + 200)), "el toggle de experiencia debe venir activado");
+      }
+      // sin experiencia cargada el panel dice exactamente qué hacer
+      assert.ok(/No hay experiencia cargada\. Cargue sus contratos ejecutados/.test(admJs),
+        "sin experiencia el panel debe enseñar el mensaje del encargo, no una caja vacía");
+      for (const debe of ["/api/admin/experiencia", "/api/admin/cobertura-rup", "usar_experiencia",
+        "descargarJSON", "🔴", "🟠", "🟡", "⚪", "ejecutarAuditoria", "cargarExperienciaActual"]) {
+        assert.ok(admJs.includes(debe), `admin.js sin ${debe} (la experiencia o la auditoría no están cableadas)`);
+      }
+      // doble clic en «Confirmar carga» de experiencia: mismo blindaje que el RUP
+      assert.ok(/\$\("btn-exp-confirmar"\)\.disabled = true/.test(admJs),
+        "«Confirmar carga» de la experiencia debe deshabilitarse durante el envío");
+      // el token tampoco viaja en la URL de los endpoints nuevos
+      assert.ok(!/\/api\/admin\/(experiencia|cobertura-rup)\?[^`"']*token=/.test(admJs),
+        "el token de la experiencia y de la auditoría va por cabecera, nunca en la URL");
+      // la auditoría NO se dispara sola: recorre el histórico entero
+      {
+        const i = admJs.indexOf("function arrancarPaneles()");
+        const cuerpo = admJs.slice(i, admJs.indexOf("\n  }", i));
+        assert.ok(i > 0 && /cargarExperienciaActual\(\)/.test(cuerpo),
+          "el arranque debe consultar la experiencia cargada (decide el estado del toggle)");
+        assert.ok(!/ejecutarAuditoria\(\)/.test(cuerpo),
+          "la auditoría recorre el histórico entero: no puede lanzarse sola al abrir el panel");
+      }
+      // el resumen del panel exige base antes de dividir (misma lección del «|| 0»)
+      assert.ok(/analizados > 0 \? Math\.round/.test(admJs),
+        "el porcentaje de procesos relevantes no puede calcularse sin comprobar el denominador");
 
       assert.ok(html.includes('id="f-sin-unspsc"'), "index.html sin el toggle de procesos sin código UNSPSC");
       const inputToggle = html.slice(html.indexOf('id="f-sin-unspsc"'), html.indexOf('id="f-sin-unspsc"') + 200);

@@ -292,6 +292,7 @@
     pintarEstadoToken();
     cargarDashboard();
     cargarRupActual();
+    cargarExperienciaActual();
   }
   $("form-token-admin").addEventListener("submit", enviarToken);
   $("btn-token-admin").addEventListener("click", enviarToken);
@@ -721,6 +722,13 @@
     await cargarRupActual();
     ultimoResumen = null;
     cargarDashboard({ forzar: true }); // los totales dependen del RUP recién cargado
+    /* la auditoría de cobertura mide contra la whitelist que acaba de cambiar:
+       lo pintado ya no corresponde y dejarlo a la vista sería enseñar como
+       «hueco» un código recién inscrito */
+    ultimaCobertura = null;
+    $("c-contenido").classList.add("hidden");
+    $("btn-cobertura-exportar").disabled = true;
+    avisoCobertura("RUP cargado: vuelva a ejecutar la auditoría para ver los huecos del RUP nuevo.", "aviso");
   });
 
   async function cargarRupActual() {
@@ -762,16 +770,371 @@
     } catch (e) {
       return mensajeRup(`No se pudo descargar el RUP: ${(e && e.message) || "sin conexión"}.`, "error");
     }
-    const blob = new Blob([JSON.stringify({ perfiles: cuerpo.perfiles }, null, 2)], { type: "application/json" });
+    // `descargarJSON` está declarado más abajo (declaración de función: se
+    // hoistea), y es el MISMO camino de descarga que usan la experiencia y la
+    // auditoría — tres copias del Blob + <a> temporal era una de más
+    descargarJSON({ perfiles: cuerpo.perfiles }, `rup_${new Date().toISOString().slice(0, 10)}.json`);
+    mensajeRup("Archivo descargado. Edítelo y vuelva a subirlo para actualizar el RUP.", "ok");
+  });
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     EXPERIENCIA EJECUTADA (/api/admin/experiencia)
+     --------------------------------------------------------------------------
+     El RUP dice a qué PUEDE presentarse el dueño; esta lista dice en qué SABE
+     trabajar. Se pega como JSON, se previsualiza y se confirma — el mismo
+     ritual de la carga de RUP, porque es el mismo tipo de dato: una fuente de
+     verdad que cambia lo que la app recomienda.
+     ══════════════════════════════════════════════════════════════════════════ */
+  let expPendiente = null;
+  const EXP_PREVIEW = 5;   // contratos que se enseñan antes de confirmar
+
+  function mensajeExp(texto, tipo) {
+    const p = $("exp-mensaje");
+    if (!texto) return p.classList.add("hidden");
+    p.className = "mt-5 rounded-xl px-4 py-3 text-sm " + ({
+      ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
+      error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
+      aviso: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20",
+    }[tipo] || "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20");
+    p.textContent = texto;
+  }
+  function erroresExp(lista) {
+    const ul = $("exp-errores");
+    if (!lista || !lista.length) return ul.classList.add("hidden");
+    ul.classList.remove("hidden");
+    ul.innerHTML = lista.map((e) => (typeof e === "string"
+      ? `<li>• ${esc(e)}</li>`
+      : `<li>• <code class="font-mono">${esc(e.campo)}</code>: ${esc(e.error)}</li>`)).join("");
+  }
+  function limpiarExp() {
+    expPendiente = null;
+    $("exp-vista").classList.add("hidden");
+    $("exp-preview").innerHTML = "";
+    mensajeExp(null);
+    erroresExp(null);
+  }
+
+  /* Vista previa: los primeros 5 contratos, con lo que se va a guardar de cada
+     uno. Es la última oportunidad de ver que el pegado salió bien. */
+  $("btn-exp-cargar").addEventListener("click", () => {
+    const crudo = $("exp-json").value.trim();
+    erroresExp(null);
+    if (!crudo) return mensajeExp("Pegue el JSON con sus contratos ejecutados antes de cargar.", "aviso");
+    let datos = null;
+    try { datos = JSON.parse(crudo); } catch (e) {
+      $("exp-vista").classList.add("hidden");
+      expPendiente = null;
+      return mensajeExp(`El texto no es JSON válido: ${e.message}`, "error");
+    }
+    const lista = datos && Array.isArray(datos.contratos) ? datos.contratos
+      : (Array.isArray(datos) ? datos : null);
+    if (!lista || !lista.length) {
+      $("exp-vista").classList.add("hidden");
+      expPendiente = null;
+      return mensajeExp('El JSON debe traer un arreglo «contratos» con al menos un contrato.', "error");
+    }
+    expPendiente = { contratos: lista };
+    $("exp-vista").classList.remove("hidden");
+    $("exp-vista-nota").textContent = lista.length > EXP_PREVIEW
+      ? `Primeros ${EXP_PREVIEW} de ${fmt.format(lista.length)} contratos.`
+      : `${fmt.format(lista.length)} contrato(s).`;
+    $("exp-preview").innerHTML = lista.slice(0, EXP_PREVIEW).map((c) => `<tr class="align-top">
+        <td class="py-2 pr-2 whitespace-nowrap">${esc(c.no_contrato || "—")}</td>
+        <td class="py-2 pr-2 text-gray-500">${esc(c.entidad || "—")}</td>
+        <td class="py-2 pr-2">${esc(String(c.objeto || "").slice(0, 160))}</td>
+        <td class="py-2 pr-2 text-right tabular-nums">${c.valor_cop == null ? "—" : fmtCOP.format(Number(c.valor_cop))}</td>
+        <td class="py-2 text-right tabular-nums">${c.valor_smmlv == null ? "—" : esc(String(c.valor_smmlv))}</td>
+      </tr>`).join("");
+    mensajeExp(`Revise la vista previa y confirme para guardar ${fmt.format(lista.length)} contrato(s).`, "aviso");
+  });
+
+  $("btn-exp-cancelar").addEventListener("click", limpiarExp);
+
+  $("btn-exp-confirmar").addEventListener("click", async () => {
+    if (!expPendiente) return mensajeExp("Pegue y revise primero el JSON de contratos.", "aviso");
+    const token = leerToken();
+    if (!token) return mensajeExp("Guarde antes el token de acceso, arriba.", "aviso");
+    // un doble clic cargaría dos veces
+    $("btn-exp-confirmar").disabled = true;
+    const etiqueta = $("btn-exp-confirmar").textContent;
+    $("btn-exp-confirmar").textContent = "Cargando…";
+    erroresExp(null);
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch("/api/admin/experiencia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-historico-token": token },
+        body: JSON.stringify(expPendiente),
+      });
+      cuerpo = await r.json();
+    } catch (e) {
+      $("btn-exp-confirmar").disabled = false;
+      $("btn-exp-confirmar").textContent = etiqueta;
+      return mensajeExp(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
+    }
+    $("btn-exp-confirmar").disabled = false;
+    $("btn-exp-confirmar").textContent = etiqueta;
+
+    if (r.status === 401) {
+      olvidarToken(); pintarEstadoToken();
+      return mensajeExp("Token inválido. Guárdelo de nuevo arriba y reintente.", "error");
+    }
+    if (r.status === 400 && cuerpo && cuerpo.errores) {
+      mensajeExp(cuerpo.error || "El JSON no pasó la validación: no se guardó nada.", "error");
+      return erroresExp(cuerpo.errores);
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      return mensajeExp((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`, "error");
+    }
+    const ejemplos = (cuerpo.ejemplos_terminos || []).slice(0, 12).join(", ");
+    mensajeExp(`Experiencia cargada: ${fmt.format(cuerpo.contratos_cargados)} contratos, `
+      + `${fmt.format(cuerpo.terminos_extraidos)} términos extraídos`
+      + (ejemplos ? ` (${ejemplos}…). ` : ". ")
+      + "Ejecute la auditoría de cobertura para ver qué códigos le faltan basados en su experiencia real.", "ok");
+    expPendiente = null;
+    $("exp-vista").classList.add("hidden");
+    $("exp-json").value = "";
+    await cargarExperienciaActual();
+    // la auditoría cacheada se calculó con el vocabulario anterior
+    $("c-usar-experiencia").checked = true;
+    avisoCobertura("Experiencia cargada. Ejecute la auditoría de cobertura para ver qué códigos le faltan "
+      + "basados en su experiencia real.", "ok");
+  });
+
+  async function cargarExperienciaActual() {
+    const caja = $("exp-actual");
+    const token = leerToken();
+    if (!token) { caja.textContent = "Guarde el token de acceso para consultar la experiencia cargada."; return; }
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch("/api/admin/experiencia", { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+      cuerpo = await r.json();
+    } catch {
+      caja.textContent = "No se pudo consultar la experiencia cargada.";
+      return;
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      caja.textContent = (cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`;
+      return;
+    }
+    if (!cuerpo.cargada) {
+      caja.innerHTML = '<p class="rounded-xl bg-amber-50 px-4 py-3 text-amber-800 ring-1 ring-inset ring-amber-600/20">'
+        + "No hay experiencia cargada. Cargue sus contratos ejecutados para auditar la cobertura de sus RUP.</p>";
+      // el toggle de la auditoría arranca apagado si no hay nada que usar
+      $("c-usar-experiencia").checked = false;
+      return;
+    }
+    $("c-usar-experiencia").checked = true;
+    const ejemplos = (cuerpo.ejemplos_terminos || []).slice(0, 15).map((t) => `<code class="rounded bg-gray-100 px-1">${esc(t)}</code>`).join(" ");
+    caja.innerHTML =
+      `<p><span class="font-medium">${fmt.format(cuerpo.contratos_cargados)} contratos</span> · `
+      + `${fmt.format(cuerpo.terminos_extraidos)} términos del oficio`
+      + (cuerpo.cargado ? ` · Cargado: ${esc(String(cuerpo.cargado).slice(0, 19).replace("T", " "))}` : "") + "</p>"
+      + (ejemplos ? `<p class="mt-2 text-xs leading-6 text-gray-500">${ejemplos}</p>` : "");
+  }
+
+  $("btn-exp-descargar").addEventListener("click", async () => {
+    const token = leerToken();
+    if (!token) return mensajeExp("Guarde antes el token de acceso, arriba.", "aviso");
+    let cuerpo = null;
+    try {
+      const r = await fetch("/api/admin/experiencia", { headers: { "x-historico-token": token }, cache: "no-store" });
+      cuerpo = await r.json();
+      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `HTTP ${r.status}`);
+    } catch (e) {
+      return mensajeExp(`No se pudo descargar la experiencia: ${(e && e.message) || "sin conexión"}.`, "error");
+    }
+    if (!cuerpo.cargada) return mensajeExp("No hay experiencia cargada todavía: no hay nada que descargar.", "aviso");
+    descargarJSON({ contratos: cuerpo.contratos }, `experiencia_${new Date().toISOString().slice(0, 10)}.json`);
+    mensajeExp("Archivo descargado. Edítelo y vuelva a pegarlo para actualizar la experiencia.", "ok");
+  });
+
+  /* Descarga común (experiencia y auditoría): un Blob y un <a> temporal. */
+  function descargarJSON(objeto, nombre) {
+    const blob = new Blob([JSON.stringify(objeto, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `rup_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = nombre;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    mensajeRup("Archivo descargado. Edítelo y vuelva a subirlo para actualizar el RUP.", "ok");
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     AUDITORÍA DE COBERTURA RUP (/api/admin/cobertura-rup)
+     --------------------------------------------------------------------------
+     Recorre el histórico entero, así que NO se dispara sola: se ejecuta a
+     petición y el servidor cachea el resultado una hora (la caché se invalida
+     al cargar un RUP o una experiencia nuevos).
+     ══════════════════════════════════════════════════════════════════════════ */
+  const CRITICIDAD_UI = {
+    "CRÍTICO": { emoji: "🔴", clases: "bg-red-50 text-red-700" },
+    ALTO: { emoji: "🟠", clases: "bg-orange-50 text-orange-800" },
+    MEDIO: { emoji: "🟡", clases: "bg-amber-50 text-amber-800" },
+    BAJO: { emoji: "⚪", clases: "bg-gray-100 text-gray-600" },
+  };
+  let coberturaCargando = false;
+  let ultimaCobertura = null;
+
+  function avisoCobertura(texto, tipo) {
+    const p = $("c-aviso");
+    if (!texto) return p.classList.add("hidden");
+    p.className = "mt-5 rounded-xl px-4 py-3 text-sm " + ({
+      ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
+      error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
+      aviso: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20",
+    }[tipo] || "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20");
+    p.innerHTML = texto;
+  }
+
+  function cargandoCobertura(v) {
+    coberturaCargando = v;
+    $("btn-cobertura").disabled = v;
+    $("c-spin").classList.toggle("hidden", !v);
+    $("c-skeleton").classList.toggle("hidden", !v);
+  }
+
+  async function ejecutarAuditoria() {
+    if (coberturaCargando) return;
+    const token = leerToken();
+    if (!token) {
+      return avisoCobertura(
+        'Configure su token de acceso en la sección <a href="#seccion-token" class="font-medium underline">Token de acceso</a> para ejecutar la auditoría.',
+        "aviso");
+    }
+    const perfil = $("c-perfil").value;
+    const usar = $("c-usar-experiencia").checked ? "true" : "false";
+    avisoCobertura(null);
+    cargandoCobertura(true);
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch(`/api/admin/cobertura-rup?perfil=${encodeURIComponent(perfil)}&usar_experiencia=${usar}`,
+        { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+      cuerpo = await r.json();
+    } catch (e) {
+      cargandoCobertura(false);
+      return avisoCobertura(`No se pudo contactar el servidor: ${esc((e && e.message) || "sin conexión")}.`, "error");
+    }
+    cargandoCobertura(false);
+
+    if (r.status === 401) {
+      olvidarToken(); pintarEstadoToken();
+      return avisoCobertura('Token inválido. Escriba uno nuevo en <a href="#seccion-token" class="font-medium underline">Token de acceso</a>.', "error");
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      return avisoCobertura(esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`), "error");
+    }
+    if (cuerpo.mensaje) avisoCobertura(esc(cuerpo.mensaje), "aviso");
+    ultimaCobertura = cuerpo;
+    $("btn-cobertura-exportar").disabled = false;
+    pintarCobertura(cuerpo);
+  }
+
+  function pintarCobertura(c) {
+    const res = c.resumen || {};
+    $("c-contenido").classList.remove("hidden");
+    $("c-criticos").textContent = fmt.format(res.criticos);
+    $("c-altos").textContent = fmt.format(res.altos);
+    $("c-medios").textContent = fmt.format(res.medios);
+    $("c-bajos").textContent = fmt.format(res.bajos);
+
+    /* la alerta solo aparece si de verdad hay críticos: una alerta permanente
+       deja de leerse a la semana */
+    const alerta = $("c-alerta");
+    alerta.classList.toggle("hidden", !res.criticos);
+    if (res.criticos) {
+      alerta.textContent = c.experiencia_utilizada
+        ? `Detectados ${res.criticos} código(s) críticos que coinciden con su experiencia. `
+          + "Debería inscribirlos en su próxima renovación de RUP."
+        : `Detectados ${res.criticos} código(s) críticos de obra. Cargue su experiencia ejecutada para `
+          + "priorizarlos por su nicho real.";
+    }
+
+    const relevantes = Number(res.procesos_relevantes), analizados = Number(res.procesos_analizados);
+    const porcentaje = analizados > 0 ? Math.round((relevantes / analizados) * 100) : 0;
+    $("c-cobertura-nota").textContent = c.experiencia_utilizada
+      ? `Analizados ${fmt.format(relevantes)} procesos relevantes de ${fmt.format(analizados)} adjudicados `
+        + `(${porcentaje} % coinciden con su experiencia · ${fmt.format(c.contratos_experiencia)} contratos, `
+        + `${fmt.format(c.terminos_experiencia)} términos).`
+      : `Analizados ${fmt.format(relevantes)} procesos de obra de ${fmt.format(analizados)} adjudicados. `
+        + "Sin experiencia cargada, la similitud no se mide.";
+
+    const filas = c.faltantes || [];
+    $("c-faltantes").innerHTML = filas.length ? filas.map((f, i) => {
+      const d = CRITICIDAD_UI[f.criticidad] || CRITICIDAD_UI.BAJO;
+      const sim = f.score_similitud_promedio == null ? "—" : `${Math.round(f.score_similitud_promedio * 100)} %`;
+      const media = (f.cuantia && f.cuantia.promedio != null) ? fmtCOP.format(f.cuantia.promedio) : "—";
+      return `<tr class="fila-cobertura cursor-pointer align-top hover:bg-gray-50" data-idx="${i}">
+          <td class="py-2 pr-2 font-mono">${esc(f.codigo)}</td>
+          <td class="py-2 pr-2"><span class="rounded-lg px-2 py-0.5 text-xs font-medium ${d.clases}">${d.emoji} ${esc(f.criticidad)}</span></td>
+          <td class="py-2 pr-2 text-right tabular-nums">${fmt.format(f.procesos_adjudicados)}</td>
+          <td class="py-2 pr-2 text-right tabular-nums">${c.experiencia_utilizada ? fmt.format(f.procesos_altamente_relevantes) : "—"}</td>
+          <td class="py-2 pr-2 text-right tabular-nums">${sim}</td>
+          <td class="py-2 pr-2 text-right tabular-nums">${media}</td>
+          <td class="py-2 text-gray-500">${esc(f.recomendacion || "")}</td>
+        </tr>`;
+    }).join("") : '<tr><td colspan="7" class="py-3 text-gray-400">Ningún código faltante con los criterios actuales.</td></tr>';
+
+    /* lo excluido se enseña, nunca desaparece en silencio: es la mitad de la
+       explicación de por qué la lista de arriba es corta */
+    const noPert = c.excluidos_por_no_pertinentes || [];
+    const bajaRel = c.excluidos_por_baja_relevancia || [];
+    const bloque = (titulo, lista, texto) => (lista.length
+      ? `<details class="mt-2"><summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">${titulo} (${lista.length})</summary>`
+        + `<ul class="mt-2 space-y-1 text-xs text-gray-500">`
+        + lista.map((e) => `<li>· <code class="font-mono">${esc(e.codigo)}</code> — ${fmt.format(e.procesos)} proceso(s): ${esc(texto(e))}</li>`).join("")
+        + "</ul></details>"
+      : "");
+    $("c-excluidos").innerHTML =
+      bloque("Excluidos por objeto no pertinente", noPert, (e) => e.motivo || "")
+      + bloque("Excluidos por baja relevancia frente a su experiencia", bajaRel, (e) => e.motivo || "");
+
+    const partes = [
+      `Perfil: ${esc(c.perfil_nombre || c.perfil)}`,
+      `Generado: ${String(c.generado || "").slice(0, 19).replace("T", " ")}`,
+      `Caché: ${c.cache ? "HIT" : "MISS"}`,
+      `${fmt.format(c.resumen.codigos_en_rup)} códigos inscritos`,
+    ];
+    if (c.truncado) partes.push(`Mostrando ${c.faltantes.length} de ${fmt.format(c.truncado.faltantes)} códigos`);
+    $("c-meta").textContent = partes.join(" · ");
+  }
+
+  /* detalle expandible: ejemplos de objeto y entidades que más usan el código */
+  $("c-faltantes").addEventListener("click", (e) => {
+    const fila = e.target.closest(".fila-cobertura");
+    if (!fila || !ultimaCobertura) return;
+    const abierta = fila.nextElementSibling;
+    if (abierta && abierta.classList.contains("detalle-cobertura")) return abierta.remove();
+    const f = (ultimaCobertura.faltantes || [])[Number(fila.getAttribute("data-idx"))];
+    if (!f) return;
+    const ejemplos = (f.ejemplos_objetos || []).map((x) => `<li class="truncate">· ${esc(x.objeto)}`
+      + (x.similitud == null ? "" : ` <span class="text-gray-400">(similitud ${Math.round(x.similitud * 100)} %)</span>`)
+      + `</li>`).join("");
+    const entidades = (f.entidades_top || []).map((x) => `<li>· ${esc(x.entidad)} — ${fmt.format(x.procesos)} proceso(s)</li>`).join("");
+    const tr = document.createElement("tr");
+    tr.className = "detalle-cobertura bg-gray-50";
+    tr.innerHTML = `<td colspan="7" class="px-2 py-3 text-xs text-gray-500">
+        <p class="font-medium text-gray-700">Segmento ${esc(f.segmento)} · familia ${esc(f.familia)}
+          · cuantías ${f.cuantia.min == null ? "—" : fmtCOP.format(f.cuantia.min)} a ${f.cuantia.max == null ? "—" : fmtCOP.format(f.cuantia.max)}</p>
+        ${ejemplos ? `<p class="mt-2 font-medium text-gray-600">Objetos de ejemplo</p><ul class="mt-1 space-y-0.5">${ejemplos}</ul>` : ""}
+        ${entidades ? `<p class="mt-2 font-medium text-gray-600">Entidades que más lo usan</p><ul class="mt-1 space-y-0.5">${entidades}</ul>` : ""}
+      </td>`;
+    fila.after(tr);
+  });
+
+  $("btn-cobertura").addEventListener("click", ejecutarAuditoria);
+  $("btn-cobertura-exportar").addEventListener("click", () => {
+    if (!ultimaCobertura) return;
+    descargarJSON(ultimaCobertura, `cobertura_rup_${ultimaCobertura.perfil}_${new Date().toISOString().slice(0, 10)}.json`);
+  });
+  $("c-perfil").addEventListener("change", () => {
+    // otro perfil, otra whitelist: lo pintado ya no corresponde
+    $("c-contenido").classList.add("hidden");
+    ultimaCobertura = null;
+    $("btn-cobertura-exportar").disabled = true;
+    avisoCobertura("Perfil cambiado: ejecute la auditoría para este perfil.", "aviso");
   });
 
   /* ══════════ Arranque ══════════
@@ -781,9 +1144,14 @@
      pasar el gate— ya estará todo inicializado. */
   function arrancarPaneles() {
     $("d-perfil").value = leerPerfil();
+    $("c-perfil").value = leerPerfil();
     pintarEstadoToken();
     cargarDashboard();
     cargarRupActual();
+    // la experiencia se consulta al arrancar (es barato y decide si el toggle
+    // de la auditoría empieza encendido); la AUDITORÍA no, que recorre el
+    // histórico entero y solo debe correr cuando alguien la pide
+    cargarExperienciaActual();
   }
   if (accesoConcedido()) abrirApp();
 })();

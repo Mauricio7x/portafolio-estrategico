@@ -295,6 +295,161 @@
           <div id="rup-actual" class="mt-2 text-sm text-gray-600">—</div>
         </div>
       </section>
+
+      <!-- ══════════ Experiencia ejecutada ══════════ -->
+      <section id="seccion-experiencia" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Experiencia ejecutada</h2>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+          Sus contratos ya ejecutados: los objetos en los que usted <em>sabe</em> trabajar. Sirven para
+          priorizar la auditoría de cobertura — un código muy usado en un nicho donde nunca ha trabajado
+          no es un hueco de su RUP. Pegue un JSON con la lista y confirme.
+        </p>
+
+        <label class="mt-4 block">
+          <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Contratos (JSON)</span>
+          <textarea id="exp-json" rows="8" spellcheck="false"
+                    class="w-full rounded-xl border border-gray-300 p-4 font-mono text-xs outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"
+                    placeholder='{"contratos": [{"no_contrato": "001-2024", "entidad": "ALCALDIA MUNICIPAL DE PURIFICACION", "objeto": "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL PORVENIR", "modalidad": "Licitacion publica", "participacion": 100, "valor_cop": 350000000, "fecha_inicio": "2024-03-15", "fecha_fin": "2024-09-15", "valor_smmlv": 450.5}]}'></textarea>
+        </label>
+
+        <div class="mt-3 flex flex-wrap items-center gap-3">
+          <button id="btn-exp-cargar" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Cargar experiencia
+          </button>
+          <button id="btn-exp-descargar" type="button"
+                  class="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+            📥 Descargar experiencia actual
+          </button>
+        </div>
+
+        <div id="exp-vista" class="mt-5 hidden">
+          <h3 class="text-sm font-semibold tracking-tight">Vista previa</h3>
+          <p id="exp-vista-nota" class="mt-0.5 text-xs text-gray-400"></p>
+          <div class="mt-2 overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                <tr><th class="py-1 pr-2">N.º</th><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2">Objeto</th><th class="py-1 pr-2 text-right">Valor</th><th class="py-1 text-right">SMMLV</th></tr>
+              </thead>
+              <tbody id="exp-preview" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button id="btn-exp-confirmar" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              ✅ Confirmar carga
+            </button>
+            <button id="btn-exp-cancelar" type="button"
+                    class="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+              🗑 Cancelar
+            </button>
+          </div>
+        </div>
+
+        <p id="exp-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <ul id="exp-errores" class="mt-3 hidden space-y-1 rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></ul>
+
+        <div class="mt-6 border-t border-gray-100 pt-4">
+          <h3 class="text-sm font-semibold tracking-tight">Experiencia actual</h3>
+          <div id="exp-actual" class="mt-2 text-sm text-gray-600">—</div>
+        </div>
+      </section>
+
+      <!-- ══════════ Auditoría de cobertura RUP ══════════ -->
+      <section id="seccion-cobertura" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Auditoría de cobertura RUP</h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">
+              Con qué códigos UNSPSC adjudica el mercado las obras que usted ejecuta, y cuáles no están
+              inscritos en su RUP. Se calcula sobre el histórico de procesos ya adjudicados; el RUP se
+              renueva una vez al año, así que esta lista es la que hay que mirar antes de renovarlo.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-end gap-3">
+            <label class="block">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
+              <select id="c-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="helder">Helder</option>
+                <option value="genesis">Génesis</option>
+                <option value="consorcio">Consorcio</option>
+              </select>
+            </label>
+            <button id="btn-cobertura" type="button"
+                    class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              <span id="c-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
+              Ejecutar auditoría
+            </button>
+            <button id="btn-cobertura-exportar" type="button" disabled
+                    class="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              ⬇ Exportar a JSON
+            </button>
+          </div>
+        </div>
+
+        <label class="mt-4 inline-flex items-center gap-2 text-sm text-gray-600">
+          <input id="c-usar-experiencia" type="checkbox" checked
+                 class="rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+          Usar mi experiencia para priorizar
+        </label>
+
+        <p id="c-aviso" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+
+        <div id="c-skeleton" class="mt-6 hidden animate-pulse space-y-4">
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
+            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
+          </div>
+          <div class="h-56 rounded-2xl bg-gray-100"></div>
+        </div>
+
+        <div id="c-contenido" class="mt-6 hidden">
+          <p id="c-alerta" class="mb-4 hidden rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></p>
+
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="rounded-2xl bg-red-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-red-900/60">🔴 Críticos</p>
+              <p id="c-criticos" class="mt-1 text-3xl font-semibold tabular-nums text-red-950">—</p>
+              <p class="text-xs text-red-900/60">inscribir ya</p>
+            </div>
+            <div class="rounded-2xl bg-orange-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-orange-900/60">🟠 Altos</p>
+              <p id="c-altos" class="mt-1 text-3xl font-semibold tabular-nums text-orange-950">—</p>
+              <p class="text-xs text-orange-900/60">evaluar</p>
+            </div>
+            <div class="rounded-2xl bg-amber-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-amber-900/60">🟡 Medios</p>
+              <p id="c-medios" class="mt-1 text-3xl font-semibold tabular-nums text-amber-950">—</p>
+              <p class="text-xs text-amber-900/60">vigilar</p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">⚪ Bajos</p>
+              <p id="c-bajos" class="mt-1 text-3xl font-semibold tabular-nums text-gray-800">—</p>
+              <p class="text-xs text-gray-500">sin urgencia</p>
+            </div>
+          </div>
+
+          <p id="c-cobertura-nota" class="mt-4 text-sm text-gray-600"></p>
+
+          <div class="mt-4 overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                <tr>
+                  <th class="py-1 pr-2">Código</th><th class="py-1 pr-2">Criticidad</th>
+                  <th class="py-1 pr-2 text-right">Adjudicados</th><th class="py-1 pr-2 text-right">Muy similares</th>
+                  <th class="py-1 pr-2 text-right">Similitud</th><th class="py-1 pr-2 text-right">Cuantía media</th>
+                  <th class="py-1">Recomendación</th>
+                </tr>
+              </thead>
+              <tbody id="c-faltantes" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <p class="mt-2 text-xs text-gray-400">Pulse una fila para ver los objetos de ejemplo y las entidades que más usan ese código.</p>
+
+          <div id="c-excluidos" class="mt-6"></div>
+          <p id="c-meta" class="mt-6 text-xs text-gray-400"></p>
+        </div>
+      </section>
     </main>
   </div>
 
