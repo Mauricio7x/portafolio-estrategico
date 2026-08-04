@@ -753,9 +753,16 @@ cifra de aquí en un pliego sin abrir la fuente.
   token en `sessionStorage` y lo manda por cabecera; es el MISMO formulario que ya usaba el detalle
   de competencia (una credencial, dos usos).
 - **Una suma ponderada es COMPENSATORIA, y aquí compensar es un error de categoría.** Por eso
-  `puntaje_ponderado` dejó de viajar en la respuesta: no poder financiar una obra no se compensa con
-  cuantía alta. Lo sustituyen cuatro puertas + `p_ganar` + `ve`, que NO se promedian entre sí. El
-  campo sigue calculándose en `lib/negocio.js` porque `/api/resumen` lo usa; no es criterio de nada.
+  `puntaje_ponderado` dejó de ser criterio de decisión: no poder financiar una obra no se compensa
+  con cuantía alta. Lo sustituyen cuatro puertas + `p_ganar` + `ve`, que NO se promedian entre sí.
+  **El campo SIGUE viajando en la respuesta** aunque la tarjeta no lo pinte: es lo que permite el
+  A/B por URL (`ordenar_por=puntaje` contra el orden nuevo) para promover el orden nuevo con
+  evidencia en vez de por decreto, y `/api/resumen` lo calcula — dos consumidores del mismo campo no
+  pueden discrepar sobre si existe. Hay prueba de que sigue presente.
+- **`pasa_rup_y_k` se publica aparte de `pasa_todas`**: es la categoría «técnicamente viable aunque
+  financieramente ajustado» (el objeto es suyo y la K alcanza, pero la caja no llega). No es un
+  proceso a descartar: es uno que habría que financiar con anticipo, crédito o consorcio. Esa
+  distinción es una decisión de negocio, no un filtro, y por eso no se colapsa en un booleano.
 - **P3 · CAJA es la puerta que de verdad ata, y no necesitó un dato nuevo**: `patrimonio ≥
   (cuantía − anticipo) × 0,20`, con `precio_base` y `duracion`, que ya se proyectan. Génesis
   (patrimonio $211 M) ante un proceso de $3.100 M tendría que financiar ~$620 M — y lo veía con
@@ -784,6 +791,26 @@ cifra de aquí en un pliego sin abrir la fuente.
   razón que el dueño puede leer y discutir (clase fuera del RUP, capacidad insuficiente). Un
   proceso de software o un convenio no vuelven — devolverlos inundaría la lista con exactamente el
   ruido que quitó la cascada de pertinencia.
+- **El diagnóstico también publica las puertas**, y la invariante que las ata a la app cambió de
+  forma. Antes era «`embudo.visibles` == `total` de /api/oportunidades»; con `solo_viables`
+  encendido por defecto eso solo se cumplía **por casualidad**, mientras ningún proceso fallara una
+  puerta. La relación exacta es **`embudo.visibles = viables + distribucion_puertas.fallan_p3`**, y
+  además `distribucion_puertas.pasan_todas` tiene que ser el `viables` de la app. Hay prueba de las
+  dos: si divergen, hay dos cálculos de puertas y ninguno de los dos endpoints sirve para verificar
+  al otro.
+- **Las puertas van ANIDADAS en el embudo (`embudo.puertas.*`), no sueltas.** El embudo es una
+  CASCADA con invariante probada de que los `fuera_*` más `visibles` suman el total; las puertas
+  corren DESPUÉS, sobre los visibles, y un mismo proceso puede fallar dos a la vez. Sumarlas con el
+  resto rompería la invariante y daría a entender que un proceso se pierde dos veces.
+- **`fallan_p1` y `fallan_p2` son SIEMPRE 0 en el diagnóstico, y no es un fallo**: la cascada ya
+  descartó antes lo que no es del RUP y lo que excede la capacidad, así que entre los visibles esas
+  dos puertas no pueden cerrar. La que filtra de verdad en esa posición es **P3**. Hay prueba de las
+  dos igualdades para que nadie «arregle» un cero que es correcto.
+- **El corpus de prueba trae un fixture dedicado a P3** (puente de 2.500 M, sin anticipo, obra en
+  ambos RUP): pasa objeto, K y tope, así que llega vivo hasta la caja, y ahí **cierra para Génesis
+  (211 M) y abre para Helder (1.107 M)**. Sin él, P3 solo se probaba con objetos sintéticos y la
+  suite pasaba verde sin que ningún proceso del corpus ejercitara la puerta nueva a través del
+  endpoint. Es además la prueba de que la puerta depende del PERFIL, no del proceso.
 
 ## Convenciones
 

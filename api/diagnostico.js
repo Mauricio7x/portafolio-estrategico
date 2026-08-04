@@ -40,6 +40,8 @@ const {
 const { leerEquivalencias, leerEquivalenciasMeta, explicarEquivalencias } = require("../lib/equivalencias.js");
 const { vocabularioActivo } = require("../lib/texto_unspsc.js");
 const { SMMLV, recargarPerfiles } = require("../lib/perfiles.js");
+const { leerIndice, competenciaDe } = require("../lib/indice_competencia.js");
+const { evaluarPuertas } = require("../lib/puertas.js");
 
 const MUESTRA_DEFAULT = 20, MUESTRA_MAX = 100;
 const TOP = 25; // filas por tabla de distribución
@@ -78,6 +80,7 @@ module.exports = async function handler(req, res) {
   const redis = crearRedis({});
   const t0 = Date.now();
   let filas, meta, clavesAct, clavesHist, equivalencias = null, eqMeta = null, vocabRedis = null, vocMeta = null;
+  let indiceComp = null;
   try {
     // el RUP cargado (POST /api/admin/rup) manda sobre los datos del
     // repositorio: el embudo tiene que medirse contra el RUP VIGENTE
@@ -87,6 +90,9 @@ module.exports = async function handler(req, res) {
     clavesAct = await redis.scan(CLAVES.patronChunks);
     clavesHist = await redis.scan(CLAVES.patronChunksHist);
     filas = await leerChunksDedup(redis, clavesAct);
+    // el índice solo alimenta P4, que nunca cierra; se lee igualmente para que
+    // el diagnóstico evalúe las puertas con los MISMOS insumos que la consulta
+    try { indiceComp = await leerIndice(redis); } catch { /* índice opcional */ }
     eqMeta = await leerEquivalenciasMeta(redis);
     if (eqMeta && !eqMeta.vacio) equivalencias = await leerEquivalencias(redis);
     vocMeta = await leerJSON(redis, CLAVES.vocabularioMeta);
@@ -117,6 +123,23 @@ module.exports = async function handler(req, res) {
     fuera_tope_estrategico: 0,
     fuera_anticipo: 0,
     visibles: 0,
+    /* PUERTAS — anidadas a propósito, y no es cosmético. El embudo de arriba es
+       una CASCADA: cada proceso muere en exactamente un paso, y hay invariante
+       probada de que los `fuera_*` más `visibles` suman el total. Las puertas
+       NO son pasos de esa cascada: corren DESPUÉS, sobre los ya visibles, y un
+       mismo proceso puede fallar dos a la vez (sin RUP y sin caja). Sumarlas
+       con el resto rompería la invariante y daría a entender que un proceso se
+       pierde dos veces. Van aquí dentro para encontrarse donde se buscan, sin
+       contaminar la aritmética. */
+    puertas: { fuera_p1_rup: 0, fuera_p2_k: 0, fuera_p3_caja: 0 },
+  };
+  /* Reparto de puertas sobre el conjunto VISIBLE. `pasan_todas` tiene que
+     coincidir con `viables` de /api/oportunidades para el mismo perfil: si
+     divergen, hay dos cálculos de puertas y el diagnóstico deja de servir para
+     verificar nada. */
+  const distribucion_puertas = {
+    pasan_todas: 0, pasan_rup_y_k: 0,
+    fallan_p1: 0, fallan_p2: 0, fallan_p3: 0, fallan_p4: 0,
   };
   const contrafactuales = {
     pasarian_unspsc_exacto: 0,       // comparación original (8 dígitos)
@@ -131,6 +154,8 @@ module.exports = async function handler(req, res) {
     visibles_incluyendo_cerradas: 0,
     visibles_sin_capa_pertinencia: 0,
     visibles_incluyendo_texto_debil: 0,  // lo que aparecería con el toggle encendido
+    visibles_solo_viables: 0,            // los que pasan las CUATRO puertas
+    visibles_sin_filtro_caja: 0,         // …y los que pasarían ignorando P3
   };
   const porTier = { clase: 0, familia: 0, equivalente: 0, texto: 0 };
   const porPertinencia = { verde: 0, amarillo: 0, rojo: 0 };
@@ -239,6 +264,21 @@ module.exports = async function handler(req, res) {
     if (anticipoMin > 0 && l.anticipo_pct > 0 && l.anticipo_pct < anticipoMin) { embudo.fuera_anticipo++; continue; }
 
     embudo.visibles++;
+
+    /* PUERTAS sobre el conjunto visible, con el MISMO `evaluarPuertas` que
+       sirve /api/oportunidades — no con una segunda cuenta. Un diagnóstico que
+       calcula por su cuenta acaba contradiciendo a la app, que es justo el
+       defecto que este endpoint existe para detectar. */
+    const puertas = evaluarPuertas(l, perfilId, { rup, competencia: competenciaDe(indiceComp, l) });
+    if (!puertas.p1_rup.pasa) { embudo.puertas.fuera_p1_rup++; distribucion_puertas.fallan_p1++; }
+    if (!puertas.p2_k.pasa) { embudo.puertas.fuera_p2_k++; distribucion_puertas.fallan_p2++; }
+    if (!puertas.p3_caja.pasa) { embudo.puertas.fuera_p3_caja++; distribucion_puertas.fallan_p3++; }
+    if (!puertas.p4_competencia.pasa) distribucion_puertas.fallan_p4++; // por diseño: siempre 0
+    if (puertas.pasa_todas) { distribucion_puertas.pasan_todas++; contrafactuales.visibles_solo_viables++; }
+    if (puertas.pasa_rup_y_k) {
+      distribucion_puertas.pasan_rup_y_k++;
+      contrafactuales.visibles_sin_filtro_caja++; // qué se recuperaría al apagar P3
+    }
     // los repartos describen EXACTAMENTE el conjunto visible: se cuentan aquí
     // (después de capacidad y anticipo), no antes
     if (ev.tier in porTier) porTier[ev.tier]++;
@@ -320,6 +360,7 @@ module.exports = async function handler(req, res) {
       leidas_por_la_full: meta ? meta.leidas : null,
     },
     embudo,
+    distribucion_puertas,
     contrafactuales,
     matching: {
       visibles_por_tier: porTier,

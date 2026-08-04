@@ -394,11 +394,14 @@ module.exports = async function handler(req, res) {
     .map((l) => {
       const e = evalDe(l);
       const fila = sinAdjudicacion(l);
-      // `puntaje_ponderado` deja de viajar: lo sustituyen las puertas, la
-      // probabilidad y el valor esperado. Sigue calculándose en la ingesta
-      // (lib/negocio) porque /api/resumen lo usa, pero no es criterio de
-      // decisión y enseñarlo invitaba a leerlo como si lo fuera.
-      delete fila.puntaje_ponderado;
+      /* `puntaje_ponderado` SIGUE viajando, y a propósito. Ya no es criterio de
+         decisión —lo sustituyen las puertas, la probabilidad y el valor
+         esperado, y la tarjeta no lo pinta— pero retirarlo del contrato de la
+         API cierra la puerta al A/B por URL (`ordenar_por=puntaje` contra el
+         orden nuevo), que es justo lo que permite promover el orden nuevo con
+         evidencia en vez de por decreto. Se conserva también porque
+         /api/resumen lo calcula: dos consumidores del mismo campo no pueden
+         discrepar sobre si existe. */
       return {
         ...fila,
         rup: rupDe(l),

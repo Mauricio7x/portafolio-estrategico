@@ -206,6 +206,27 @@ function generarDataset() {
           f.descripci_n_del_procedimiento = "Instalación de mobiliario escolar con obras de adecuación menores";
         }
       }
+      /* FIXTURE DE LA PUERTA DE CAJA (P3). Sin él, P3 se prueba solo con
+         objetos sintéticos y NINGÚN proceso del corpus la ejercita de punta a
+         punta: la suite pasaría verde sin haber comprobado nunca que la puerta
+         nueva filtra algo de verdad en el endpoint.
+         2.500 M, obra en el RUP de ambos y SIN anticipo:
+           · financiación estimada = 20 % de 2.500 M = 500 M
+           · patrimonio de Génesis  = 211 M   → P3 CIERRA
+           · patrimonio de Helder   = 1.107 M → P3 abre
+         y 2.500 M queda bajo el tope estratégico de Génesis (2.000 SMMLV ≈
+         3.502 M) y bajo su K, así que llega vivo hasta P3: es la única puerta
+         que puede matarlo. */
+      if (i === 11) {
+        f.nombre_del_procedimiento = `Construcción de puente vehicular sobre el río ${n}`;
+        f.descripci_n_del_procedimiento = "Obra civil de construcción de puente vehicular. No se pagará anticipo.";
+        f.codigo_principal_de_categoria = "V1.72141000";
+        f.precio_base = "2500000000";
+        f.duracion = "10"; f.unidad_de_duracion = "Meses";
+        f.modalidad_de_contratacion = "Licitación pública";
+        f.estado_del_procedimiento = "Publicado";
+        delete f.porcentaje_de_anticipo;
+      }
       filas.push(f);
     }
     filas.push(...extrasDelMes(mes));
@@ -1712,9 +1733,14 @@ async function main() {
       assert.ok(["bajo", "medio", "alto"].includes(l.cuantia_rango), "cuantia_rango inválido");
       assert.ok(["baja", "media", "alta"].includes(l.nivel_competencia), "nivel_competencia inválido");
       assert.strictEqual(typeof l.ubicacion_valida, "boolean", "falta ubicacion_valida");
-      // `puntaje_ponderado` ya NO viaja: lo sustituyen las cuatro puertas, la
-      // probabilidad y el valor esperado (docs/ATRACTIVIDAD.md)
-      assert.ok(!("puntaje_ponderado" in l), "el puntaje ponderado sigue viajando en la respuesta");
+      /* `puntaje_ponderado` SÍ viaja, aunque ya no sea criterio de decisión: lo
+         sustituyen las cuatro puertas, la probabilidad y el valor esperado, y la
+         tarjeta no lo pinta. Se conserva en el contrato de la API porque es lo
+         que permite el A/B por URL (`ordenar_por=puntaje` contra el orden nuevo)
+         y porque /api/resumen lo calcula — dos consumidores del mismo campo no
+         pueden discrepar sobre si existe. */
+      assert.strictEqual(typeof l.puntaje_ponderado, "number",
+        "puntaje_ponderado tiene que seguir viajando para poder comparar el orden nuevo contra el viejo");
       assert.ok(l.puertas && l.puertas.p1_rup && l.puertas.p2_k && l.puertas.p3_caja && l.puertas.p4_competencia,
         "falta el veredicto de las cuatro puertas");
       assert.ok(typeof l.p_ganar === "number" && l.p_ganar > 0 && l.p_ganar <= 1, "p_ganar fuera de rango");
@@ -2327,6 +2353,14 @@ async function main() {
       assert.strictEqual(pg.p3_caja.pasa, false, "la caja de génesis no puede financiar 3.100 M");
       assert.strictEqual(pg.pasa_todas, false, "pasa_todas debe caer si cae una sola puerta");
       assert.deepStrictEqual(pg.no_viable_por, ["Caja"], "el motivo de inviabilidad debe nombrar la caja");
+      /* `pasa_rup_y_k` es la categoría «técnicamente viable aunque
+         financieramente ajustado»: no es un proceso a descartar, es uno que
+         habría que financiar (anticipo, crédito o consorcio). Por eso se
+         publica aparte de `pasa_todas`. */
+      assert.strictEqual(pg.pasa_rup_y_k, true, "el objeto es suyo y la K alcanza: pasa_rup_y_k debe seguir en true");
+      assert.strictEqual(base.puertas.pasa_rup_y_k, true);
+      const sinRupNiK = evaluarPuertas(grande, "genesis", { rup: { tier: "ninguno", unspsc: {} }, competencia: null });
+      assert.strictEqual(sinRupNiK.pasa_rup_y_k, false, "sin RUP no puede ser técnicamente viable");
       assert.strictEqual(pg.p3_caja.financiacion_requerida, Math.round(CUANTIA_GRANDE * 0.20));
       assert.strictEqual(pg.p3_caja.patrimonio, Math.round(PERFILES.genesis.patrimonio));
       assert.ok(pg.p3_caja.patrimonio < pg.p3_caja.financiacion_requerida);
@@ -2411,6 +2445,28 @@ async function main() {
       }
       // y con el toggle encendido (default) NINGUNO de los no viables se sirve
       for (const l of deGenesis) assert.strictEqual(l.viable, true, "solo_viables=true sirvió un proceso no viable");
+
+      /* 6 · LA PUERTA DE CAJA MUERDE DE PUNTA A PUNTA, y depende del PERFIL.
+         El fixture del puente (2.500 M, sin anticipo, obra en ambos RUP) pasa
+         objeto, K y tope, así que llega vivo hasta P3 — y ahí Génesis (211 M de
+         patrimonio) no puede financiar los 500 M mientras Helder (1.107 M) sí.
+         Sin esta comprobación, P3 solo se probaba con objetos sintéticos y
+         ningún proceso del corpus la ejercitaba a través del endpoint. */
+      const ES_FIXTURE_CAJA = (l) => l.cuantia_cop === 2500000000;
+      // por todas las páginas: los no viables caen al FINAL de la lista
+      const puenteGen = (await todasLasOportunidades("perfil=genesis&solo_viables=false")).find(ES_FIXTURE_CAJA);
+      assert.ok(puenteGen, "no llegó el fixture del puente de 2.500 M al corpus de Génesis");
+      assert.strictEqual(puenteGen.viable, false, "Génesis no puede financiar el puente: tiene que salir no viable");
+      assert.strictEqual(puenteGen.puertas.p1_rup.pasa, true, "…pero su objeto sí es del RUP");
+      assert.strictEqual(puenteGen.puertas.p2_k.pasa, true, "…y su K alcanza");
+      assert.deepStrictEqual(puenteGen.puertas.no_viable_por, ["Caja"], "el único motivo debe ser la caja");
+      assert.strictEqual(puenteGen.puertas.p3_caja.financiacion_requerida, 500000000);
+
+      const puenteHel = (await todasLasOportunidades("perfil=helder&solo_viables=false")).find(ES_FIXTURE_CAJA);
+      assert.ok(puenteHel, "el fixture del puente no aparece para Helder");
+      assert.strictEqual(puenteHel.puertas.p3_caja.pasa, true,
+        "el MISMO proceso tiene que ser financiable para Helder: la puerta depende del perfil, no del proceso");
+      assert.strictEqual(puenteHel.viable, true);
     }
 
     /* f-quater. /api/oportunidades EXIGE token: sirve el K, el CRPC y el
@@ -2832,11 +2888,43 @@ async function main() {
       assert.ok(c.corpus.activo.filas_unicas > 0, "el diagnóstico no ve el corpus activo");
       assert.ok(c.corpus.historico.chunks > 0, "el diagnóstico no ve el corpus histórico");
 
-      // INVARIANTE FUERTE: lo que el embudo llama «visibles» es exactamente lo
-      // que /api/oportunidades sirve. Si divergen, el diagnóstico miente.
+      /* INVARIANTE FUERTE, reformulada al añadirse las puertas. Antes era
+         «embudo.visibles == total de /api/oportunidades» y se cumplía por
+         casualidad: con `solo_viables` encendido por defecto el total ya no es
+         el conjunto de la cascada, y solo coincidía mientras ningún proceso
+         fallara una puerta. La relación EXACTA es:
+
+             embudo.visibles = viables + los que cierra P3
+
+         y por el otro lado el reparto de puertas del diagnóstico tiene que ser
+         el mismo que el de la app. Si divergen, hay dos cálculos de puertas y
+         ninguno de los dos endpoints sirve para verificar al otro. */
       const real = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN);
-      assert.strictEqual(c.embudo.visibles, real.cuerpo.total,
-        `el embudo dice ${c.embudo.visibles} visibles y la app sirve ${real.cuerpo.total}`);
+      assert.strictEqual(c.embudo.visibles, real.cuerpo.viables + c.distribucion_puertas.fallan_p3,
+        `el embudo dice ${c.embudo.visibles} visibles y la app ${real.cuerpo.viables} viables + ${c.distribucion_puertas.fallan_p3} sin caja`);
+      assert.strictEqual(c.distribucion_puertas.pasan_todas, real.cuerpo.viables,
+        "el diagnóstico y la app no cuentan los mismos viables");
+      assert.strictEqual(c.contrafactuales.visibles_solo_viables, c.distribucion_puertas.pasan_todas,
+        "el contrafactual de viables tiene que ser el mismo conteo");
+
+      /* Las puertas van ANIDADAS en el embudo y NO entran en su suma: son
+         posteriores a la cascada y un proceso puede fallar dos a la vez. */
+      assert.ok(c.embudo.puertas && typeof c.embudo.puertas.fuera_p3_caja === "number",
+        "el embudo no publica el reparto de puertas");
+      assert.strictEqual(c.embudo.puertas.fuera_p3_caja, c.distribucion_puertas.fallan_p3);
+      assert.strictEqual(c.distribucion_puertas.fallan_p4, 0,
+        "P4 no puede cerrar nunca: la competencia informa el orden, no la elegibilidad");
+      /* P1 y P2 son 0 en esta posición, y no es un fallo: la cascada ya
+         descartó antes lo que no es del RUP y lo que excede la capacidad, así
+         que entre los visibles esas dos puertas no pueden cerrar. */
+      assert.strictEqual(c.distribucion_puertas.fallan_p1, 0,
+        "entre los visibles P1 no puede cerrar: la cascada ya filtró por objeto");
+      assert.strictEqual(c.distribucion_puertas.fallan_p2, 0,
+        "entre los visibles P2 no puede cerrar: la cascada ya filtró por capacidad");
+      assert.strictEqual(c.contrafactuales.visibles_sin_filtro_caja, c.distribucion_puertas.pasan_rup_y_k,
+        "el contrafactual «ignorando la caja» tiene que ser el conteo de pasan_rup_y_k");
+      assert.ok(c.distribucion_puertas.pasan_rup_y_k >= c.distribucion_puertas.pasan_todas,
+        "pasan_rup_y_k incluye a los que además pasan caja");
 
       // el embudo suma: nadie se pierde sin quedar contado en algún paso
       const bajas = Object.entries(c.embudo)
