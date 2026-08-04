@@ -3,6 +3,8 @@
 **Al iniciar cada sesión, lee `docs/GUIA_ANALISTA_LICITACIONES.md` para comprender el dominio del
 proyecto.** Y `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md`, que audita el manual, **corrige dos cosas
 que dice mal** y trae lo verificado en 2025-2026 (documentos tipo v.2, ley de garantías, dataset).
+Para todo lo de precios y costeo, `docs/APU_Y_RENTABILIDAD.md` (fuentes recuperadas, qué es dato y
+qué es estimación, y qué NO cubre todavía el catálogo).
 
 Memoria del proyecto para Claude Code. Si retomas el trabajo, lee primero `README.md`
 (arquitectura, endpoints, claves Redis, reglas de negocio) y vuelve aquí para el contexto.
@@ -747,7 +749,8 @@ memoria en una fuente de error. `✅` implementado · `🟡` parcial · `⬜` no
 | **Traslado → descargar ofertas de competidores** | El dataset no trae documentos de oferta: solo `urlproceso`. Automatizarlo exigiría raspar SECOP II (fuera de la arquitectura actual: sin dependencias, serverless, respuesta ≤4.5 MB). Alcanzable: enlazar la ficha del proceso y **listar adjudicatarios recurrentes por entidad** desde el histórico | ⬜ |
 | **Subsanación → tabla de trazabilidad automática** | No existe. La app decide **a qué presentarse**, no arma la carpeta. Sería un generador de plantilla a partir de la ficha del proceso | ⬜ |
 | **Consorcios → antecedentes del socio (SIRI/Contraloría/RNMC)** | No existe y **no es automatizable con datos abiertos**: son portales con captcha, no APIs. Lo que sí está: el consorcio `juntos` se **re-deriva siempre** de sus integrantes. La parte accionable sería una **lista de verificación** de las 5 fuentes del truco #15 | ⬜ |
-| **Costos ocultos → calculadora de rentabilidad** | **No existe ninguna calculadora de rentabilidad.** Hoy la cuantía se muestra como si fuera ingreso. Faltan los 10 conceptos del Cap. 11, empezando por la **contribución del 5 %** y las estampillas | ⬜ |
+| **APU · base de precios regionalizada** (Cap. 11) | `lib/apu/catalogo.js` + `data/apu_catalogo.json`: estructura oficial INVIAS/IDU (CD = MO + materiales + equipo + transporte), 48 insumos × 5 regiones, 17 ítems con composición y rendimiento, factores de ajuste regional. Se carga con `POST /api/admin/apu/cargar-catalogo` y se consulta sin token en `GET /api/apu/catalogo`. Los precios son de **referencia**, no cotizaciones, y cada uno declara su `fuente` | ✅ |
+| **Costos ocultos → calculadora de rentabilidad** | **Sigue sin existir la calculadora.** Ya está la mitad de abajo (el APU da el costo directo por ítem), pero la cuantía se sigue mostrando como si fuera ingreso y faltan los 10 conceptos del Cap. 11, empezando por la **contribución del 5 %** y las estampillas. Es la Fase 2 y ahora tiene sobre qué apoyarse | 🟡 |
 
 ### Investigación de contraste (ago 2026) — correcciones al manual y hallazgos verificados
 
@@ -855,6 +858,76 @@ cifra de aquí en un pliego sin abrir la fuente.
   la lista de resultados. Un 🟡 se descarta en 5 s; una oportunidad que la app nunca mostró no se
   recupera.
 
+### Catálogo de precios APU (ago 2026)
+
+- **La investigación que el encargo daba por escrita NO existía.** `docs/APU_Y_RENTABILIDAD.md` no
+  estaba en `main`, ni en la historia de `docs/`, ni en ninguna rama. Lo que sí existía es
+  `modulo_apu.html`, **borrado en el commit `d69cfe8`**, y dentro llevaba toda la investigación de
+  precios del proyecto: estructura INVIAS/IDU, precios base de Bogotá, índice de costo de las 32
+  capitales y el ajuste ICOCIV del DANE. Se recuperó (`git show d69cfe8^:modulo_apu.html`), se
+  consolidó en el documento que faltaba y **cada precio declara si es recuperado, derivado o
+  estimado**. Antes de dar por perdida una fuente que el encargo cita, mirar la historia de git.
+- **Los precios regionales se DERIVAN de un precio base y cuatro factores, nunca se transcriben.**
+  Transcribir 5 × 48 números habría creado 240 sitios donde el catálogo puede desincronizarse de sus
+  propios factores. Y el factor que se aplica depende del **tipo** del insumo: en la Costa el material
+  sube (1,10) mientras el jornal baja (0,97) — con un índice único los dos irían al mismo sitio. Una
+  cotización real gana sobre la derivación (`precios_cotizados`) y el hash publica
+  `precio_origen_{region}`: una cifra sin su origen no se puede discutir, igual que
+  `granularidad_utilizada` en el índice de baja.
+- **La desagregación de los cuatro factores es RAZONADA, no medida, y por eso lleva cerradura.** La
+  fuente recuperada solo trae **un** índice por ciudad. Recomponer los cuatro factores con la
+  estructura de costos de obra civil (45/30/18/7) tiene que caer a menos de **0,015** del índice de la
+  ciudad cabecera; hay prueba región por región. Sin ella, cualquiera podría retocar un factor «a ojo»
+  y el catálogo dejaría de tener detrás el único dato duro que lo respalda.
+- **`indice_ciudad_recuperado` contiene lo que su nombre dice**: el índice de la CIUDAD cabecera, no
+  el promedio de la región. Meter ahí el promedio ponderado de las siete capitales de la Costa
+  (1,057) habría puesto un dato derivado en un campo que anuncia un dato recuperado, y el contraste
+  habría dejado de ser contra la fuente.
+- **🚩 Un error de la fuente recuperada que NO se replicó**: su plantilla de acero cobraba el acarreo
+  como `1.200 × 1,05 × 15` = **$18.900 por kilo**, más del doble que el acero — la tarifa está en
+  $/m³-km y le pasaban kilogramos. Aquí `cantidad_por_unidad` de una línea de transporte va SIEMPRE en
+  **m³ de material movido** (acero: `1,05 kg ÷ 7.850 kg/m³ ≈ 0,00013 m³`). Un APU con el 78 % en
+  acarreo haría fijar precio muy por encima del mercado y perder todo proceso donde el acero pese.
+  Hay prueba de que el acarreo no puede volver a pasar del 1 % del APU del acero.
+- **Un cero no puede ser un precio** — la regla de `anticipo_pct = 0`, entera. Un insumo a 0 no es
+  «gratis», es «no lo sé», y con él se costearía a la baja sin que nadie lo notara. Por eso la
+  **herramienta menor no es un insumo**: no tiene precio propio (es un % de la mano de obra) y vive
+  como `herramienta_menor_pct` del ítem. La validación rechaza precios ≤ 0 y rendimientos ≤ 0 (esto
+  último sería una división por cero: precio infinito, no «gratis»).
+- **Las cuadrillas son la SUMA de sus jornales** y lo declaran en `componentes`. Estaba así en la
+  fuente (`299.000 = 95.000 + 3 × 68.000`) y se valida: si alguien sube el jornal del ayudante y no la
+  cuadrilla, el catálogo diría dos cosas distintas sobre el mismo día de trabajo.
+- **El AIU NO se regionaliza.** El campo existe porque el encargo lo pide, pero lleva el mismo valor
+  en las cinco regiones (A 15 / I 5 / U 5, el default recuperado, dentro de las bandas del manual). El
+  AIU lo fija el pliego y el riesgo del contrato, no la geografía: un gradiente regional sería
+  fabricar una precisión que nadie midió. Ídem el factor prestacional (1,55): lo fija la ley.
+- **El SNAPSHOT es caché; los HASHES son la verdad.** Servir el catálogo desde los hashes son ~70
+  comandos por petición y desde el snapshot comprimido son dos, pero dos fuentes de verdad es el
+  defecto que este proyecto ya pagó caro. El snapshot lleva **la misma `version`** que la meta y quien
+  lo lee la compara: si no casa, o si un chunk está corrupto, cae a los hashes **y lo dice** en `via`.
+  Hay prueba de que las dos vías devuelven exactamente lo mismo.
+- **`cargado` es un BOOLEANO y la fecha es `cargado_el`.** Se llamaban igual, la meta se esparce sobre
+  la respuesta y la cadena pisaba al booleano en silencio: el panel habría dicho «cargado» sobre un
+  Redis vacío, porque una cadena no vacía siempre es veraz. Es exactamente
+  `total_procesos`/`procesos_contados` otra vez —dos cosas distintas con nombres que colisionan— y la
+  cerradura es una prueba de TIPO, no de valor.
+- **La consulta es PÚBLICA y no es una excepción a la regla del token.** La regla es que no salen sin
+  llave las CIFRAS DEL PERFIL (patrimonio, K, CRPC, tope), que son datos financieros de personas
+  identificadas. El catálogo son precios de mercado de referencia: no hay nada que redactar. Lo que sí
+  exige llave es ESCRIBIRLOS, y por eso la carga vive en `/api/admin/`.
+- **La carga es TODO O NADA y el sello va al final**, igual que el POST de RUP: se valida el catálogo
+  entero antes del primer `HSET`, y `apu:catalogo:meta` se escribe después de los hashes y del
+  snapshot. Un catálogo a medias daría precios que parecen buenos.
+- **El botón del panel fuerza la reescritura (`?forzar=true`) aunque la librería sea idempotente por
+  defecto.** `cargarCatalogo()` no reescribe si el sello ya está —que es lo que pide el encargo—, pero
+  una pulsación que no hace nada visible es peor que un error (la lección del modal). Consultar el
+  estado sí corre al arrancar el panel: es público y son dos comandos; CARGAR escribe ~70 claves y
+  solo corre cuando alguien pulsa.
+- **Lo que el catálogo NO incluye, dicho en la propia respuesta**: ni AIU aplicado ni **ninguno** de
+  los costos ocultos del Cap. 11 (contribución del 5 %, estampillas, retenciones, pólizas, costo
+  financiero del capital de trabajo, ensayos, PMA/SST, liquidación). El APU es costo directo; eso va
+  encima y es «el olvido más caro del país». La calculadora de rentabilidad es la Fase 2.
+
 ## Datos del negocio (fuente de verdad)
 
 - Perfiles: `lib/perfiles.js` es el RESPALDO (`PERFILES_FALLBACK`, RUP corte 31/12/2025) y el punto
@@ -874,6 +947,9 @@ cifra de aquí en un pliego sin abrir la fuente.
   Resumen técnico en `docs/PERFILES.md`. SMMLV 2026 = $1.750.905.
 - Las CUATRO PUERTAS en `lib/puertas.js` y `P(ganar)`/VE en `lib/probabilidad.js`; el diseño y por
   qué, en `docs/ATRACTIVIDAD.md`.
+- Catálogo de precios APU en `lib/apu/catalogo.js` + semilla `data/apu_catalogo.json` (48 insumos,
+  17 ítems, 5 regiones); la investigación de fuentes, en `docs/APU_Y_RENTABILIDAD.md`. No toca la
+  ingesta ni el corpus: vive en `apu:*`.
 - `autorizacion_helder.md`: constancia de autorización de datos personales (plantilla).
 - Clave del sitio: `231105` (gate del cliente, en `public/app.js`). **No protege la API**: es una
   cortesía del navegador. La protección de servidor es `HISTORICO_TOKEN` (`lib/auth.js`) —que desde

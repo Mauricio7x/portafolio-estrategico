@@ -1232,6 +1232,126 @@
     avisoCobertura("Perfil cambiado: ejecute la auditoría para este perfil.", "aviso");
   });
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     CATÁLOGO DE PRECIOS APU (/api/apu/catalogo · /api/admin/apu/cargar-catalogo)
+     --------------------------------------------------------------------------
+     CONSULTAR el catálogo es público y barato (dos comandos de Redis), así que
+     el estado se pinta al arrancar el panel. CARGARLO escribe ~70 claves y va
+     con token: solo cuando alguien pulsa el botón.
+     ══════════════════════════════════════════════════════════════════════════ */
+  let apuCargando = false;
+
+  function mensajeApu(texto, tipo) {
+    const p = $("apu-mensaje");
+    if (!texto) return p.classList.add("hidden");
+    p.className = "mt-5 rounded-xl px-4 py-3 text-sm " + ({
+      ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
+      error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
+      aviso: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20",
+    }[tipo] || "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20");
+    p.innerHTML = texto;
+  }
+
+  function pintarApu(c) {
+    /* los conteos salen del payload del catálogo, NUNCA con `|| 0`: un
+       «undefined || 0» convierte «no sé» en «cero» y lo hace creíble — es
+       exactamente el defecto del «en 0 procesos» que costó caro. Sin dato, «—». */
+    const num = (v) => (Number.isFinite(Number(v)) ? fmt.format(Number(v)) : "—");
+    const t = c.totales || {};
+    $("apu-insumos").textContent = num(t.insumos);
+    $("apu-items").textContent = num(t.items);
+    $("apu-regiones").textContent = num(t.regiones);
+    $("apu-base").textContent = c.base_precios || "—";
+    $("apu-icociv").textContent = c.icociv
+      ? `ICOCIV ${c.icociv.boletin} · +${c.icociv.variacion_anual_general_pct} % anual`
+      : "sin ajuste sectorial";
+
+    const regiones = c.regiones || [];
+    $("apu-detalle").classList.toggle("hidden", !regiones.length);
+    $("apu-regiones-tabla").innerHTML = regiones.map((r) => `<tr>
+        <td class="py-2 pr-2 font-medium">${esc(r.nombre)}</td>
+        <td class="py-2 pr-2 text-gray-500">${esc(r.ciudad_cabecera || "—")}</td>
+        <td class="py-2 pr-2 text-right tabular-nums">${r.factor_materiales}</td>
+        <td class="py-2 pr-2 text-right tabular-nums">${r.factor_mano_obra}</td>
+        <td class="py-2 pr-2 text-right tabular-nums">${r.factor_equipo}</td>
+        <td class="py-2 pr-2 text-right tabular-nums">${r.factor_transporte}</td>
+        <td class="py-2 text-right tabular-nums">${Math.round(Number(r.aiu_tipico) * 100)} %</td>
+      </tr>`).join("");
+
+    $("apu-meta").textContent = [
+      `Versión ${esc(c.version_catalogo || "—")}`,
+      `Cargado: ${String(c.cargado_el || "").slice(0, 19).replace("T", " ") || "—"}`,
+      `Lectura: ${c.via || "—"}`,
+    ].join(" · ");
+  }
+
+  async function cargarEstadoApu() {
+    let r = null;
+    try {
+      r = await fetch("/api/apu/catalogo", { headers: { Accept: "application/json" }, cache: "no-store" });
+    } catch {
+      return mensajeApu("No se pudo consultar el catálogo APU (sin red).", "error");
+    }
+    let c = null;
+    try { c = await r.json(); } catch { c = null; }
+    if (!r.ok || !c || !c.ok) {
+      $("apu-detalle").classList.add("hidden");
+      return mensajeApu((c && c.error ? esc(c.error) : "El catálogo APU no está cargado.")
+        + " Pulse «Cargar catálogo APU» para poblarlo.", "aviso");
+    }
+    mensajeApu("");
+    pintarApu(c);
+  }
+
+  async function cargarCatalogoApu() {
+    if (apuCargando) return;
+    const token = leerToken();
+    if (!token) return mensajeApu("Configure su token de acceso para cargar el catálogo.", "aviso");
+
+    apuCargando = true;
+    // doble clic: el botón se deshabilita durante el envío o se carga dos veces
+    $("btn-apu-cargar").disabled = true;
+    $("apu-spin").classList.remove("hidden");
+    mensajeApu("Cargando el catálogo en Redis…", "info");
+
+    let r = null;
+    try {
+      r = await fetch("/api/admin/apu/cargar-catalogo?forzar=true", {
+        method: "POST",
+        headers: { "x-historico-token": token, Accept: "application/json" },
+      });
+    } catch {
+      apuCargando = false;
+      $("btn-apu-cargar").disabled = false;
+      $("apu-spin").classList.add("hidden");
+      return mensajeApu("No se pudo contactar con el servidor. Reintente.", "error");
+    }
+    let c = null;
+    try { c = await r.json(); } catch { c = null; }
+    apuCargando = false;
+    $("btn-apu-cargar").disabled = false;
+    $("apu-spin").classList.add("hidden");
+
+    if (r.status === 401) return mensajeApu("Token inválido. Guarde uno nuevo arriba y reintente.", "error");
+    if (!r.ok || !c || !c.ok) {
+      const errores = (c && c.errores || []).slice(0, 6)
+        .map((e) => `<li>· <code class="font-mono">${esc(e.campo)}</code>: ${esc(e.error)}</li>`).join("");
+      return mensajeApu((c && c.error ? esc(c.error) : "No se pudo cargar el catálogo.")
+        + (errores ? `<ul class="mt-2 space-y-1 text-xs">${errores}</ul>` : ""), "error");
+    }
+
+    mensajeApu(c.escrito
+      ? `Catálogo cargado: ${fmt.format(c.insumos)} insumos, ${fmt.format(c.items)} ítems y `
+        + `${fmt.format(c.regiones)} regiones en ${fmt.format(c.comandos_redis)} comandos de Redis. `
+        + "Los precios son de referencia: cotice antes de presentar oferta."
+      : esc(c.nota || "El catálogo ya estaba cargado."), "ok");
+    // repintar desde el endpoint público: así lo que se ve es lo que hay en
+    // Redis, no lo que el POST dijo que iba a escribir
+    await cargarEstadoApu();
+  }
+
+  $("btn-apu-cargar").addEventListener("click", cargarCatalogoApu);
+
   /* ══════════ Arranque ══════════
      AL FINAL del IIFE, después de declarar todo lo que estas funciones usan.
      `arrancarPaneles` es una declaración de función (se hoistea), así que
@@ -1247,6 +1367,9 @@
     // de la auditoría empieza encendido); la AUDITORÍA no, que recorre el
     // histórico entero y solo debe correr cuando alguien la pide
     cargarExperienciaActual();
+    // consultar el catálogo APU es público y son dos comandos; CARGARLO escribe
+    // ~70 claves y solo corre cuando alguien pulsa el botón
+    cargarEstadoApu();
   }
   if (accesoConcedido()) abrirApp();
 })();
