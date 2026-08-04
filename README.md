@@ -59,6 +59,8 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `api/oportunidades.js` | Consulta: **todo el juicio fino** por perfil, competencia por entidad, orden, paginación, memoria caliente |
 | `api/resumen.js` | **Dashboard**: los mismos visibles de la app, agregados (tipo, urgencia, entidades, departamentos, capacidad K) con caché de 5 min |
 | `api/admin/rup.js` + `lib/config_rup.js` | **Carga del RUP por archivo JSON**: validación campo por campo y publicación atómica, con efecto inmediato |
+| `api/admin/experiencia.js` + `lib/experiencia.js` | **Contratos ya ejecutados** → vocabulario del oficio: en qué *sabe* trabajar el dueño (el RUP solo dice a qué *puede* presentarse) |
+| `api/admin/cobertura-rup.js` + `lib/cobertura_rup.js` | **Qué códigos UNSPSC le faltan al RUP**: los que el mercado adjudica para objetos como los suyos y no tiene inscritos, priorizados por similitud con su experiencia real |
 | `lib/indice_competencia.js` | Índice **entidad → oferentes promedio** sobre el histórico; tertiles baja/media/alta |
 | `api/competencia-detalle.js` + `lib/competencia_detalle.js` | **Los procesos que sostienen el badge**: incluidos, excluidos y por qué (con caché de 1 h) |
 | `lib/auth.js` | Guardián único del `HISTORICO_TOKEN` para **todos** los endpoints protegidos, `/api/oportunidades` incluido |
@@ -80,7 +82,7 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `lib/almacen.js` | Esquema de claves Redis + compresión/particionado de chunks |
 | `docs/PERFILES.md` | Resumen técnico de los tres perfiles (datos, estimaciones, limitaciones) |
 | `public/` | Frontend estático (Tailwind CDN, estilo Apple, gate de clave) |
-| `public/admin.html` + `admin.js` | Panel de administración: encadena la sincronización full, **dashboard de procesos** y **carga de RUP**, todo desde el navegador y sin terminal |
+| `public/admin.html` + `admin.js` | Panel de administración: encadena la sincronización full, **dashboard de procesos**, **carga de RUP**, **experiencia ejecutada** y **auditoría de cobertura**, todo desde el navegador y sin terminal |
 | `tests/e2e.js` | Ciclo completo con mocks de Socrata y Upstash (sin red externa) |
 
 ## Endpoints
@@ -377,6 +379,112 @@ Detalles de operación:
   (`PERFILES_FALLBACK`) sin lanzar: quedarse sin perfiles dejaría la app muda.
 - Cuerpo máximo 5 MB (`413`); se guarda comprimido para respetar el tope real de 1 MB por valor de
   Upstash.
+- Una carga de RUP **invalida las dos cachés que dependen de él**: la del dashboard (`resumen:*`,
+  TTL 5 min) y la de la auditoría de cobertura (`cobertura:*`, TTL 1 h). Sin eso, un código recién
+  inscrito seguiría apareciendo como «hueco» durante una hora.
+
+### `GET|POST /api/admin/experiencia` (protegido)
+
+La lista de contratos **ya ejecutados** por el dueño. El RUP dice a qué *puede* presentarse; esto
+dice en qué *sabe* trabajar, y son dos cosas distintas.
+
+```jsonc
+POST /api/admin/experiencia          // header x-historico-token
+{
+  "contratos": [{
+    "no_contrato": "001-2024",
+    "entidad": "ALCALDIA MUNICIPAL DE PURIFICACION",
+    "objeto": "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL PORVENIR…",
+    "modalidad": "Licitacion publica",
+    "participacion": 100,
+    "valor_cop": 350000000,
+    "fecha_inicio": "2024-03-15", "fecha_fin": "2024-09-15",
+    "valor_smmlv": 450.5
+  }]
+}
+→ { ok, contratos_cargados, terminos_extraidos, ejemplos_terminos: [...] }
+```
+
+Validación (`400` con `[{campo, error}]`, sin guardar nada): `objeto` obligatorio y ≤ 1 000
+caracteres, **`valor_smmlv` o `valor_cop`** con un número positivo, `participacion` entre 0 y 100,
+máximo **500 contratos** por carga y arreglo no vacío. Los números pueden llegar como cadena
+(`"350.000.000"`, `"450,5"`): el dueño arma este JSON copiando de una hoja de cálculo.
+
+De cada objeto se extrae un **vocabulario del oficio** (`lib/experiencia.js`), y ahí están las tres
+decisiones que importan:
+
+- se tokeniza sobre texto **normalizado** (`lib/semantica.norm`: sin tildes, ñ→n, minúsculas), la
+  misma base de comparación que el resto de vocabularios nuevos del proyecto;
+- **los tokens con dígitos se descartan** (`2024`, `cm001`): son el número del proceso, no el
+  trabajo — la misma lección de `esObjetoGenerico`. Si entraran, cualquier proceso que mencione un
+  año ganaría similitud gratis;
+- las **stopwords** incluyen el trámite contractual (`prestacion`, `servicios`, `contrato`,
+  `objeto`): un término que está en *todos* los objetos no distingue ninguno.
+
+`GET` devuelve lo cargado (o `cargada: false` con el mensaje que el panel enseña tal cual). Guardar
+**borra la caché de la auditoría de cobertura**: sus números salen de este vocabulario.
+
+### `GET /api/admin/cobertura-rup` (protegido)
+
+**Qué códigos UNSPSC le faltan al RUP.** Recorre `licitaciones:historico:mes:*` (procesos ya
+adjudicados, el keyspace que ninguna purga toca) y responde con qué códigos adjudica el mercado los
+objetos que el dueño ejecuta y que **no están inscritos**. Es la lista que hay que mirar antes de
+cada renovación anual del RUP.
+
+```
+GET /api/admin/cobertura-rup?perfil=helder[&usar_experiencia=false][&refrescar=1]
+```
+
+`perfil` es **obligatorio** (helder | genesis | consorcio): no hay default, porque la respuesta se
+lee como «lo que te falta a ti» y servir la de otro perfil por omisión sería la peor forma de
+equivocarse. Cascada, en orden:
+
+| Paso | Regla | De dónde sale |
+| --- | --- | --- |
+| a | proceso **adjudicado** | `esAdjudicado` de `lib/indice_competencia` |
+| b | **relevancia**: similitud ≥ 0.15 con la experiencia cargada; sin ella, vocabulario de obra | `lib/experiencia` / `filtros.hayVerboDeObra` |
+| c | **pertinencia** del objeto | `filtros.evaluarPertinencia`, tal cual |
+| d | código **a nivel de clase o producto** y **no inscrito** en el RUP | `lib/unspsc` |
+| e | **segmento** 70–95 menos los servicios no constructivos | `filtros.SEGMENTOS_SERVICIOS_NO_CONSTRUCTIVOS` |
+
+Los pasos (c) y (e) **reutilizan** las listas que ya decidían otra cosa en la app, no unas nuevas:
+si un segmento no ancla obra para la capa anti-suministro, tampoco puede ser un hueco de obra aquí.
+
+Cada código faltante viaja con: procesos adjudicados, cuántos son **altamente** (≥ 0.30) y
+**moderadamente** (≥ 0.15) similares, score promedio, hasta 5 objetos de ejemplo (los más parecidos
+primero, con los términos en común), top 3 de entidades, rango de cuantías, segmento/familia y una
+recomendación en prosa. El orden es el **puntaje combinado** `procesos × 0.6 + score × 100 × 0.4`.
+
+**Criticidad** (cascada; el primer nivel que se cumple manda):
+
+| Nivel | Con experiencia cargada | Sin ella |
+| --- | --- | --- |
+| 🔴 CRÍTICO | ≥ 10 procesos **y** ≥ 1 altamente similar **y** segmento de obra pura (72/77/81/95) | ≥ 10 y obra pura |
+| 🟠 ALTO | ≥ 5 procesos, o ≥ 2 con score promedio ≥ 0.20 | ≥ 5 |
+| 🟡 MEDIO | ≥ 2 procesos y ≥ 1 altamente similar | ≥ 2 |
+| ⚪ BAJO | el resto | 1 proceso |
+
+El encargo describía estos umbrales con condiciones que se solapan («2-4 procesos **o** score ≥
+0.1» y «1 proceso **o** score < 0.1» clasifican de dos formas el mismo código). Se resolvió como
+cascada, con la lectura que el propio encargo fija en sus casos: **3 procesos con similitud floja
+son BAJO**. Y **un solo proceso nunca pasa de BAJO**, por perfecta que sea la similitud: un contrato
+no es una tendencia, y lo que está en juego es un código que hay que sostener un año en el RUP.
+
+**Sin experiencia cargada el score viaja en `null`**, no en 0: no se inventa una cifra de similitud
+contra una experiencia que nadie ha cargado, y la respuesta lo declara en `experiencia_utilizada` y
+en `mensaje`.
+
+Lo excluido **se enseña**, nunca desaparece: `excluidos_por_no_pertinentes` y
+`excluidos_por_baja_relevancia` (con el score que los dejó fuera). Y el `embudo` tiene invariante
+probada — `sin_adjudicacion + baja_relevancia + no_pertinentes + sin_codigo_utilizable +
+sin_codigo_faltante + con_codigo_faltante = procesos_historico`: cada proceso muere en exactamente
+un paso, o ninguna cifra de la auditoría sería demostrable.
+
+Solo lee (un `POST` responde `405`). Cachea 1 h en `cobertura:{perfil}:{exp|base}`; el valor lleva
+el sello del RUP **y** el de la experiencia, así que cargar cualquiera de los dos la invalida sola.
+`?refrescar=1` la salta. No requiere full ni backfill para funcionar, pero **sí necesita corpus
+histórico**: sin él lo dice explícitamente, en vez de devolver una lista vacía que se leería como
+«no te falta nada».
 
 ## Índice de competencia por entidad (¿dónde es más probable ganar?)
 
@@ -925,9 +1033,15 @@ CONFIGURACIÓN DEL DUEÑO — fuera de `licitaciones:*`: ninguna purga del corpu
 config:perfiles                                JSON comprimido {perfiles:{helder,genesis,consorcio}, _meta}
 config:perfiles:version                        sello de la última carga (se escribe AL FINAL)
 config:unspsc:{perfil}:clases|familias|segmentos|completo   JSON arrays derivados del RUP cargado
+config:experiencia                             JSON comprimido {contratos:[…], _meta}  (contratos ya ejecutados)
+config:experiencia:terminos                    JSON comprimido {terminos:{palabra: nº de contratos}, …}
+config:experiencia:version                     sello de la última carga (se escribe AL FINAL)
 
 CACHÉ DEL PANEL
 resumen:{perfil}                               JSON del dashboard, TTL 300 s (la carga de RUP la borra)
+cobertura:{perfil}:{exp|base}                  JSON comprimido de la auditoría de cobertura, TTL 1 h
+                                               (el valor lleva el sello del RUP y el de la experiencia:
+                                                cargar cualquiera de los dos la invalida sola)
 
 BACKFILL
 sync:historico:progreso                        JSON cursor reanudable del backfill
@@ -1043,6 +1157,29 @@ completo) y un resumen por perfil → «Confirmar carga». El botón se deshabil
 (un doble clic cargaría dos veces), los errores de validación se listan con su campo exacto y las
 advertencias se muestran **sin bloquear**. «Descargar RUP actual» genera un `rup_YYYY-MM-DD.json`
 con el RUP vigente, listo para editar y volver a subir.
+
+**Experiencia ejecutada** (`/api/admin/experiencia`): un `textarea` donde se pega el JSON de
+contratos ya ejecutados → vista previa de los **primeros 5** en tabla (n.º, entidad, objeto, valor,
+SMMLV) → «Confirmar carga», que también se deshabilita durante el envío. Al terminar se enseñan
+cuántos contratos entraron, cuántos términos se extrajeron y una muestra de ellos. «Descargar
+experiencia actual» genera un `experiencia_YYYY-MM-DD.json` editable. Si no hay nada cargado, la
+caja dice exactamente qué hacer («No hay experiencia cargada. Cargue sus contratos ejecutados para
+auditar la cobertura de sus RUP») en vez de quedarse en blanco.
+
+**Auditoría de cobertura RUP** (`/api/admin/cobertura-rup`): selector de perfil, toggle «Usar mi
+experiencia para priorizar» —encendido por defecto, y `admin.js` lo apaga solo si el `GET` de
+experiencia dice que no hay nada cargado— y botón «Ejecutar auditoría» con su spinner y esqueleto.
+El resultado son cuatro tarjetas por criticidad (🔴🟠🟡⚪), la frase «Analizados N procesos
+relevantes de M adjudicados (X % coinciden con su experiencia)», la tabla de códigos faltantes
+ordenada por puntaje combinado —**cada fila se despliega** con los objetos de ejemplo y las
+entidades que más usan ese código—, los dos bloques de excluidos en `<details>` y «Exportar a
+JSON». Si hay críticos, sale una alerta encima; si no hay, **no sale** (una alerta permanente deja
+de leerse a la semana).
+
+**La auditoría no se dispara sola** y es la única parte del panel que no lo hace: recorre el
+histórico entero, así que corre solo cuando alguien la pide. Cargar un RUP o una experiencia
+nuevos **oculta** lo pintado y avisa de que hay que volver a ejecutarla: la whitelist o el
+vocabulario contra los que se midió acaban de cambiar.
 
 **Arranque**: igual que en `app.js`, el arranque automático de la sesión ya validada va **al final
 del módulo**. `abrirApp()` levanta el panel y la carga de RUP, cuyas funciones leen constantes
@@ -1209,6 +1346,37 @@ Lo que cubre específicamente la **carga de RUP** (`/api/admin/rup`):
   integrantes, y la caché del panel queda invalidada.
 - Borrar `config:*` devuelve la app al respaldo del repositorio con los números originales: nadie
   se queda sin perfiles porque una clave desaparezca.
+
+Lo que cubre específicamente la **experiencia ejecutada** y la **auditoría de cobertura**
+(`/api/admin/experiencia` + `/api/admin/cobertura-rup`):
+
+- El corpus histórico de prueba trae tres bloques diseñados para que **cada casilla de la
+  clasificación tenga un caso y ninguno pase por casualidad**: `72131600` con 15 procesos de objeto
+  idéntico a un contrato ejecutado (similitud 1,0 → 🔴 CRÍTICO y primer puesto por puntaje),
+  `72132000` con 3 procesos y **un solo término en común de seis** (0,167: dentro del análisis,
+  fuera de ALTO, sin ninguno altamente similar → ⚪ BAJO) y `85121700` de salud con 4 procesos
+  (similitud 0 → ni entra, y aparece en `excluidos_por_baja_relevancia` con su motivo).
+- Los objetos de esos bloques **no llevan descripción a propósito**: el score está calibrado al
+  tercer decimal y cualquier palabra de más los movería de casilla.
+- 8 casos de validación con el campo exacto señalado (arreglo vacío, no es arreglo, sin la clave,
+  objeto vacío, objeto de más de 1 000 caracteres, sin `valor_cop` ni `valor_smmlv`, participación
+  fuera de 0-100, más de 500 contratos), más un body que no es JSON — y ninguno guarda nada.
+- El vocabulario extraído contiene `construccion`/`placa`/`huella`/`pavimentacion` y **no**
+  contiene `prestacion`/`servicios`/`contrato`: si el trámite entrara, cualquier objeto del dataset
+  ganaría similitud gratis.
+- Auditoría **sin** experiencia: detecta los mismos huecos por el vocabulario de obra pero publica
+  `score_similitud_promedio: null` en todos — no se inventa una similitud que nadie midió.
+- La auditoría **depende del perfil**: `85121700` está en el RUP de Génesis y no en el de Helder,
+  así que para Génesis no es ni hueco ni exclusión.
+- Ningún código ya inscrito aparece como faltante, ningún segmento fuera de 70–95 ni de servicios
+  no constructivos se cuela, y el **embudo suma** el histórico entero.
+- Caché: segunda consulta idéntica `cache:true`, `?refrescar=1` recalcula, y **cargar experiencia
+  nueva la invalida**. `401` sin token y con token inválido en los dos endpoints, `400` sin perfil
+  y con perfil inventado, `405` a un `POST` sobre la auditoría, y el alias `consorcio` resuelve.
+- Unidad, sin Redis: tokenización (fuera trámite y códigos, sin tildes), frecuencia por contrato y
+  no por repetición, denominador de la similitud, umbrales que **entran** en 0,15 y 0,30, números
+  escritos como cadena (`"350.000.000"`), la lista de segmentos admisibles y **la cascada de
+  criticidad completa**, incluidos los casos que el encargo dejaba ambiguos.
 
 ## Despliegue
 

@@ -226,9 +226,10 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - **Índice publicado con swap atómico** (`indice:competencia:nuevo` → RENAME): nunca hay una
   ventana sin índice. Construcción mes a mes y reanudable; el acumulador que se persiste es por
   ENTIDAD (histograma), no por proceso — por eso cabe en un valor de Redis.
-- **La autorización vive en `lib/auth.js`, una sola vez**: cinco endpoints la usan
+- **La autorización vive en `lib/auth.js`, una sola vez**: siete endpoints la usan
   (`/api/sync/historico`, `/api/diagnostico`, `/api/competencia-detalle`, `/api/resumen`,
-  `/api/admin/rup`). Una copia que se desincronice es un agujero.
+  `/api/admin/rup`, `/api/admin/experiencia`, `/api/admin/cobertura-rup`). Una copia que se
+  desincronice es un agujero.
 - **`HISTORICO_TOKEN` sin default**: si la variable no está, el endpoint responde 503. Nunca
   inventar una llave por defecto. El token viaja por header en la auto-reinvocación para no
   quedar escrito en los logs de acceso de Vercel.
@@ -290,6 +291,52 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   pestaña oculta** (gastar invocaciones para que nadie lo mire) y se pone al día al volver a ella.
 - La caché `resumen:{perfil}` (TTL 300 s) la **borra cualquier carga de RUP**: sus números salen del
   RUP y quedarían mintiendo cinco minutos.
+
+### Experiencia ejecutada y cobertura del RUP (ago 2026)
+
+- **El RUP dice a qué PUEDE presentarse el dueño; sus contratos ejecutados dicen en qué SABE
+  trabajar.** Son dos fuentes distintas y la app solo conocía la primera. `/api/admin/experiencia`
+  guarda la lista real de contratos (`config:experiencia`) y destila de sus objetos un vocabulario
+  del oficio (`config:experiencia:terminos`); `/api/admin/cobertura-rup` lo cruza con el histórico
+  adjudicado para responder lo único que importa antes de la renovación anual: **qué códigos usa el
+  mercado para lo que este señor ya hace, y cuáles no tiene inscritos**.
+- **La auditoría NO reinventa ninguna regla: reutiliza las que ya decidían otra cosa.** La
+  pertinencia es `evaluarPertinencia` tal cual; los segmentos que pueden ser un hueco son 70–95
+  MENOS `SEGMENTOS_SERVICIOS_NO_CONSTRUCTIVOS` (si un segmento no ancla obra para la capa
+  anti-suministro, tampoco puede ser un hueco de obra); «claramente obra civil» es
+  `SEGMENTOS_OBRA_PURA`. Inventar tres listas paralelas habría creado tres definiciones de «obra»
+  que divergen a la primera corrección.
+- **Los tokens con dígitos se descartan del vocabulario** (`2024`, `cm001`): es la misma lección de
+  `esObjetoGenerico`. Si entraran, cualquier proceso que mencione un año ganaría similitud gratis.
+  Y las stopwords incluyen el TRÁMITE contractual (`prestacion`, `servicios`, `contrato`,
+  `objeto`): un término que está en todos los objetos no distingue ninguno.
+- **Sin experiencia cargada el score viaja en `null`, jamás en 0.** El método base (vocabulario de
+  obra) responde «esto es obra», que es mucho menos que «esto es TU obra», y publicar un 0 como si
+  fuera una similitud medida sería la misma clase de mentira que el `|| 0` sobre un conteo.
+- **La criticidad del encargo tenía umbrales que se solapan** («2-4 procesos **o** score ≥ 0.1» y
+  «1 proceso **o** score < 0.1» clasifican de dos formas el mismo código de 3 procesos flojos). Se
+  resolvió como CASCADA y con la lectura que el propio encargo fija en sus casos de prueba: 3
+  procesos con similitud floja son BAJO. Y **un solo proceso nunca pasa de BAJO**, por perfecta que
+  sea la similitud: un contrato no es una tendencia y lo que está en juego es un código que hay que
+  sostener un año entero en el RUP.
+- **La caché de la auditoría lleva el sello del RUP Y el de la experiencia** (`cobertura:{perfil}:
+  {exp|base}`, TTL 1 h). Cargar cualquiera de los dos la invalida sola — además de borrarla a mano
+  en los dos POST, que es lo que hace visible el efecto al instante. Una caché que solo se borra a
+  mano es una caché que algún día no se borra.
+- **La auditoría es el único panel que NO se dispara solo**: recorre el histórico entero. Corre
+  cuando alguien pulsa el botón, y cargar un RUP o una experiencia oculta lo pintado con un aviso
+  (la whitelist o el vocabulario contra los que se midió acaban de cambiar).
+- **`perfil` es obligatorio, sin default.** La respuesta se lee como «lo que te falta a TI»; servir
+  la de otro perfil por omisión sería la peor forma posible de equivocarse. Hay prueba de que
+  `85121700` es hueco para Helder y no lo es para Génesis, que es lo que demuestra que la auditoría
+  depende del perfil y no solo del corpus.
+- **Los fixtures del histórico van SIN conteo de oferentes** (como los de equivalencias): así el
+  índice de competencia los cuenta como «sin dato» y los tertiles de las cuatro entidades no se
+  mueven. Y con entidad propia, para no engordar los «excluidos» de ninguna entidad que
+  `/api/competencia-detalle` ya audita con conteos exactos.
+- **Los objetos de esos fixtures no llevan descripción a propósito**: el score está calibrado al
+  tercer decimal (0,167 = un término en común de seis, entre el 0,15 que deja entrar y el 0,20 de
+  ALTO) y cualquier palabra de más los movería de casilla — la prueba pasaría o fallaría por azar.
 
 ### Dos defectos de producción y sus cerraduras (ago 2026)
 
@@ -625,6 +672,7 @@ memoria en una fuente de error. `✅` implementado · `🟡` parcial · `⬜` no
 | **Modalidades de selección** (Cap. 3) | `MODALIDADES_COMPETITIVAS` / `MODALIDADES_EXCLUIDAS` en `lib/filtros.js` reproducen exactamente la tabla del manual: licitación, selección abreviada, subasta, concurso de méritos, mínima cuantía, acuerdo marco dentro; **contratación directa fuera** (no hay concurso) | ✅ |
 | **Convenios no son licitaciones** | `es_convenio` (Ley 489/1998 arts. 95-96): «aunar esfuerzos» y convenio interadministrativo al encabezar el objeto | ✅ |
 | **RUP = pasaporte; UNSPSC a nivel de clase** (Cap. 5) | `lib/unspsc.js` compara por **jerarquía leyendo el nivel** del código; los 393 códigos de los RUP terminan en «00» (inscripción por clase) y hay prueba que lo vigila. `/api/admin/rup` carga el RUP con efecto inmediato | ✅ |
+| **Renovar el RUP antes del 5.º día hábil de abril** (mandamiento 6) — *con qué códigos* | `/api/admin/cobertura-rup` cruza el histórico adjudicado con la whitelist del perfil y devuelve los códigos faltantes priorizados por similitud con la experiencia REAL (`/api/admin/experiencia`). El manual dice *cuándo* renovar; esto responde *con qué* | ✅ |
 | **Capacidad residual K** (Guía CCE-EICP-GI-22) | `lib/capacidad.js`: `CRP = CO × (E+CT+CF)/100 − SCE`, `CRPC` con anticipo y plazo (D. 1082 art. 2.2.1.1.1.6.4). **K del plural = suma de las CRP**, indicadores habilitantes 50/50 — las dos reglas distintas del Cap. 10/11 | ✅ |
 | **Nicho incómodo / menos competencia > más puntaje** (truco #22, Palanca 4) | `ordenar_por=atractividad` (default) + `lib/indice_competencia.js`: tertiles sobre el promedio de oferentes por entidad. Es literalmente la tesis de la Palanca 4 en código. `topeSMMLV` es apetito estratégico, no límite del RUP | ✅ |
 | **Anticipo y flujo de caja** (truco #16) | `lib/negocio.js` pondera anticipo al 0.4 del `puntaje_ponderado` — el manual explica **por qué** pesa tanto: sin anticipo se financia al Estado. **`anticipo_pct = 0` sigue significando «sin dato»**, no «sin anticipo» | ✅ |
@@ -747,6 +795,8 @@ cifra de aquí en un pliego sin abrir la fuente.
 
 - Perfiles: `lib/perfiles.js` es el RESPALDO (`PERFILES_FALLBACK`, RUP corte 31/12/2025) y el punto
   de aplicación de lo que el dueño cargue por `/api/admin/rup` (validación en `lib/config_rup.js`).
+- Experiencia REALMENTE ejecutada en `lib/experiencia.js` (`config:experiencia` + su vocabulario);
+  la auditoría de huecos del RUP, en `lib/cobertura_rup.js`. Ninguna de las dos toca la ingesta.
 - Índice de competencia por entidad en `lib/indice_competencia.js` (hash `indice:competencia`,
   tertiles sobre el promedio de oferentes de 2 años); alimenta `ordenar_por=atractividad`.
 - Perfiles y finanzas reales en `lib/perfiles.js` (fuente única en código; RUP corte 31/12/2025;
