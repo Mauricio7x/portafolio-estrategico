@@ -97,6 +97,20 @@
         profesionales suben el factor CT y la K que sirve la app, el consorcio
         re-deriva la unión y sigue atado a sus integrantes— y borrar la
         configuración devuelve la app al respaldo con los números originales.
+     g-quinquies. /api/apu/inferir (motor de ítems APU): protegido con el mismo
+        token; el GET SOLO LEE (se comprueba que no escribe ni una clave `apu:*`)
+        y declara si el motor va con la semilla del código o con lo publicado en
+        Redis; inferir funciona SIN sembrar —que es el estado de un despliegue
+        nuevo—; sembrar cambia el origen a «redis» sin cambiar NI UN ítem ni una
+        confianza, y dos siembras seguidas dan sellos distintos; derivar lee el
+        histórico REAL y solo AÑADE términos a los curados. Y la comprobación
+        que la muestra de la unidad no puede dar, porque allí los objetos los
+        elige quien escribe la prueba: sobre el CORPUS de verdad, todos los
+        objetos de obra producen ítems y ninguno de los que no son obra produce
+        ninguno. Dos defectos reales quedaron fijados ahí: un servicio de
+        internet publicado en el segmento 80 sugería «interventoría», y una
+        adquisición de caninos publicada con un 72141000 se habría llevado un
+        APU de carretera entero.
      g. Delta: fila nueva + cambio de estado a Adjudicado → la nueva aparece, la
         adjudicada desaparece del listado (reemplazo por :updated_at) y SE MUDA
         al histórico con su adjudicatario; la full de higiene no lo borra.
@@ -969,6 +983,7 @@ async function main() {
   const oportunidades = require("../api/oportunidades.js");
   const resumen = require("../api/resumen.js");
   const adminRup = require("../api/admin/rup.js");
+  const apuInferir = require("../api/apu/inferir.js");
   const { crearRedis } = require("../lib/redis.js");
   const { empaquetar, descomprimir, CHUNK_MAX_COMPRIMIDO, CLAVES } = require("../lib/almacen.js");
   const indiceComp = require("../lib/indice_competencia.js");
@@ -2093,6 +2108,338 @@ async function main() {
     console.log("· unidad experiencia/cobertura: tokenización, similitud, validación y la cascada de criticidad");
   }
 
+  /* unidad: motor de inferencia de ítems APU (lib/apu/*).
+     Sin Redis: el motor tiene que funcionar con las semillas del catálogo, que
+     es justo el estado de un despliegue nuevo. */
+  {
+    const cat = require("../lib/apu/catalogo.js");
+    const inf = require("../lib/apu/inferencia.js");
+
+    /* 1 · Integridad referencial del catálogo. Un `item_id` fantasma en el
+       mapeo o en el diccionario no rompe nada visiblemente: simplemente ese
+       término deja de poder sugerir nada, en silencio. */
+    {
+      const ids = new Set(cat.CATALOGO.map((i) => i.item_id));
+      assert.strictEqual(ids.size, cat.CATALOGO.length, "hay item_id duplicados en el catálogo");
+      for (const i of cat.CATALOGO) {
+        assert.ok(cat.CAPITULOS[i.capitulo], `${i.item_id}: capítulo desconocido «${i.capitulo}»`);
+        assert.ok(i.descripcion && i.unidad, `${i.item_id}: descripción o unidad vacías`);
+      }
+      for (const [clave, items] of Object.entries(cat.MAPEO_UNSPSC_SEMILLA)) {
+        assert.ok(/^\d+$/.test(clave) && clave.length % 2 === 0 && clave.length <= 8,
+          `MAPEO_UNSPSC_SEMILLA: «${clave}» no es un prefijo UNSPSC válido`);
+        for (const id of items) assert.ok(ids.has(id), `MAPEO_UNSPSC_SEMILLA[${clave}] apunta a «${id}», que no existe`);
+      }
+      for (const [t, v] of Object.entries(cat.DICCIONARIO_SEMILLA)) {
+        for (const id of v.items) assert.ok(ids.has(id), `DICCIONARIO_SEMILLA[${t}] apunta a «${id}», que no existe`);
+        assert.ok(v.peso > 0 && v.peso <= 1, `DICCIONARIO_SEMILLA[${t}]: peso fuera de (0,1]`);
+      }
+      // ningún ítem puede ser inalcanzable: uno que ninguna ruta sugiere solo
+      // existe para teclearlo a mano, y entonces no pinta nada en un motor de
+      // inferencia
+      const alcanzables = new Set();
+      for (const v of Object.values(cat.MAPEO_UNSPSC_SEMILLA)) v.forEach((x) => alcanzables.add(x));
+      for (const v of Object.values(cat.DICCIONARIO_SEMILLA)) v.items.forEach((x) => alcanzables.add(x));
+      const huerfanos = [...ids].filter((x) => !alcanzables.has(x));
+      assert.deepStrictEqual(huerfanos, [], `ítems que ninguna ruta puede sugerir: ${huerfanos.join(", ")}`);
+    }
+
+    /* 2 · La trampa de las preposiciones. El tokenizador quita las stopwords,
+       así que un n-grama del objeto JAMÁS contiene el «de»: sin canonicalizar
+       las claves, TODA entrada con preposición sería letra muerta y nadie lo
+       notaría — casaría cero veces y el motor seguiría pareciendo que funciona. */
+    {
+      assert.strictEqual(inf.canonizar("pozo de inspección"), "pozo inspeccion");
+      assert.strictEqual(inf.canonizar("muro de contención"), "muro contencion");
+      assert.strictEqual(inf.canonizar("estudios y diseños"), "estudios disenos");
+      const { gramas } = inf.ngramas("MANTENIMIENTO DE LA PLACA HUELLA DE LA VÍA", 3);
+      assert.ok(gramas.has("placa huella"),
+        "el bigrama debe formarse SOBRE los tokens ya filtrados, no sobre el texto crudo");
+      // ninguna clave del diccionario compilado puede quedar sin poder casar
+      const { mapa, maxTokens } = inf.compilarDiccionario(cat.DICCIONARIO_SEMILLA);
+      for (const clave of mapa.keys()) {
+        assert.ok(clave.split(" ").length <= maxTokens,
+          `«${clave}» tiene más tokens que el máximo con el que se generan n-gramas: no casaría nunca`);
+        assert.strictEqual(inf.canonizar(clave), clave, `«${clave}» no es su propia forma canónica`);
+      }
+    }
+
+    /* 3 · Un id fantasma no puede puntuar, y un prefijo inválido tampoco. */
+    {
+      const d = inf.compilarDiccionario({ "termino raro": { peso: 1, items: ["no_existe_este_item"] } });
+      assert.strictEqual(d.mapa.size, 0, "un término cuyos ítems no existen no puede entrar al diccionario");
+      assert.strictEqual(d.descartados, 1, "y tiene que quedar CONTADO, no desaparecer en silencio");
+      const m = inf.compilarMapeo({ 7: ["est_concreto_21"], abc: ["est_concreto_21"], 7214: ["est_concreto_21"] });
+      assert.deepStrictEqual([...m.mapa.keys()], ["7214"], "solo los prefijos UNSPSC de longitud par entran");
+      assert.strictEqual(m.descartados, 2);
+    }
+
+    /* 4 · Jerarquía del código: el nivel se LEE (lib/unspsc), no se recorta. */
+    {
+      assert.strictEqual(inf.prefijosDe("no-es-un-codigo"), null);
+      const p = inf.prefijosDe("72141000");
+      assert.deepStrictEqual(p.niveles.map((x) => x.prefijo), ["721410", "7214", "72"],
+        "los prefijos van del más específico al más general");
+      const prod = inf.prefijosDe("72141015");
+      assert.strictEqual(prod.niveles[0].nivel, "producto",
+        "un código de producto tiene que empezar por sí mismo antes de subir a la clase");
+    }
+
+    /* 5 · EL EMPATE DEL UMBRAL. El encargo fija texto = 0.3 y umbral = 0.3: con
+       «>» un objeto reconocido SOLO por el término más inequívoco del
+       diccionario daría exactamente 0.30 y quedaría fuera. La ruta de texto
+       entera moriría en silencio. Esta es la prueba que lo impide. */
+    {
+      const r = await inf.inferirItems("Optimización de la red de alcantarillado del municipio", null, null);
+      assert.ok(r.items.length > 0, "un objeto de obra sin código UNSPSC no puede quedarse sin ítems");
+      assert.ok(r.items.every((i) => i.origen === "texto"), "sin código, todo tiene que venir por texto");
+      assert.ok(r.items.some((i) => i.confianza === inf.UMBRAL),
+        `el ítem que entra justo en el umbral (${inf.UMBRAL}) tiene que sobrevivir al «≥»`);
+      assert.ok(r.items.some((i) => i.item_id === "hid_tuberia_alcantarillado"),
+        "«alcantarillado» tiene que sugerir la tubería de alcantarillado");
+    }
+
+    /* 6 · Las dos rutas se suman y la especificidad gradúa el 0.7. */
+    {
+      const soloCodigo = await inf.inferirItems("", "72141000", null);
+      assert.ok(soloCodigo.items.length > 0, "un código de clase mapeado tiene que sugerir por sí solo");
+      assert.ok(soloCodigo.items.every((i) => i.origen === "unspsc"));
+      assert.ok(soloCodigo.items.every((i) => i.confianza <= inf.PESO_UNSPSC + 1e-9),
+        "sin texto, ningún ítem puede pasar del peso base del UNSPSC");
+
+      const ambas = await inf.inferirItems("Construcción de placa huella", "72141000", null);
+      const placa = ambas.items.find((i) => i.item_id === "pav_placa_huella");
+      assert.ok(placa && placa.origen === "unspsc+texto", "el ítem tocado por las dos rutas debe declararlo");
+      assert.ok(placa.confianza > inf.PESO_UNSPSC, "las dos rutas juntas tienen que superar a una sola");
+
+      // el segmento vale menos que la clase (en lib/unspsc está PROHIBIDO subir
+      // al segmento para EMPAREJAR con el RUP; aquí solo se sugiere, y por eso
+      // se permite pero valiendo menos)
+      const porSegmento = await inf.inferirItems("", "40000000", null);
+      const porFamilia = await inf.inferirItems("", "40170000", null);
+      const maxSeg = Math.max(...porSegmento.items.map((i) => i.confianza));
+      const maxFam = Math.max(...porFamilia.items.map((i) => i.confianza));
+      assert.ok(maxSeg < maxFam, `el segmento (${maxSeg}) no puede valer tanto como la familia (${maxFam})`);
+    }
+
+    /* 7 · OR ruidoso: dos términos flojos se refuerzan pero jamás pasan de 1.
+       Se mide CON un código presente a propósito: por la ruta de texto sola,
+       un término flojo no llega al umbral (ver la comprobación siguiente), así
+       que sin el código las dos variantes darían 0 y la comparación no
+       mediría nada. */
+    {
+      // los términos de prueba NO pueden llevar stopwords: «otro flojo» se
+      // canoniza a «flojo» y chocaría con la otra entrada, midiendo la fusión
+      // de claves en vez del OR ruidoso
+      const d = inf.compilarDiccionario({
+        alfa: { peso: 0.4, items: ["est_concreto_21"] },
+        beta: { peso: 0.4, items: ["est_concreto_21"] },
+      });
+      assert.strictEqual(d.mapa.size, 2, "los dos términos de prueba tienen que ser distintos tras canonizar");
+      const con = {
+        mapeo: new Map([["7214", ["est_concreto_21"]]]),
+        diccionario: d.mapa, maxTokens: d.maxTokens, origen: {}, descartados: {}, version: null,
+      };
+      const base = inf.PESO_UNSPSC * inf.ESPECIFICIDAD.familia;   // 0.7 × 0.9 = 0.63
+      // el texto de prueba tiene que PASAR la puerta de pertinencia: «alfa» a
+      // secas es un objeto genérico (<15 caracteres, sin verbo de obra) y el
+      // motor lo descartaría antes de puntuar nada
+      const uno = await inf.inferirItems("construccion alfa", "72140000", null, { conocimiento: con });
+      const dos = await inf.inferirItems("construccion alfa beta", "72140000", null, { conocimiento: con });
+      const f1 = uno.items[0].confianza, f2 = dos.items[0].confianza;
+      assert.ok(f2 > f1, "dos términos deben pesar más que uno");
+      // 1 − (1−0.4)² = 0.64 → 0.63 + 0.3 × 0.64 = 0.822 (la SUMA daría 0.87)
+      assert.strictEqual(f2, Math.round((base + inf.PESO_TEXTO * (1 - 0.6 * 0.6)) * 100) / 100,
+        "la fuerza del texto tiene que ser el OR ruidoso, no la suma");
+      assert.strictEqual(f1, Math.round((base + inf.PESO_TEXTO * 0.4) * 100) / 100);
+    }
+
+    /* 7-bis · CONSECUENCIA DELIBERADA del umbral, escrita para que nadie la
+       «arregle»: por la ruta de TEXTO SOLA únicamente pasan los términos
+       decisivos (peso 1), porque `0.3 × fuerza ≥ 0.3` exige fuerza = 1. Ni
+       siquiera dos términos de peso 0.9 juntos llegan (0.297). Es intencional
+       y es la misma regla que ya gobierna la ruta de texto del juicio del RUP:
+       sin código, el objeto es la única evidencia, y una palabra ambigua no es
+       evidencia de nada. Con un código delante, esos mismos términos flojos sí
+       aportan — que es exactamente para lo que sirven. */
+    {
+      const flojo = inf.compilarDiccionario({
+        alfa: { peso: 0.9, items: ["est_concreto_21"] },
+        beta: { peso: 0.9, items: ["est_concreto_21"] },
+      });
+      const conFlojo = { mapeo: new Map(), diccionario: flojo.mapa, maxTokens: 1, origen: {}, descartados: {}, version: null };
+      assert.strictEqual((await inf.inferirItems("construccion alfa beta", null, null, { conocimiento: conFlojo })).total, 0,
+        "dos términos de peso 0.9 (fuerza 0.99) NO pueden llegar al umbral por texto solo");
+
+      const decisivo = inf.compilarDiccionario({ alfa: { peso: 1, items: ["est_concreto_21"] } });
+      const conDecisivo = { mapeo: new Map(), diccionario: decisivo.mapa, maxTokens: 1, origen: {}, descartados: {}, version: null };
+      const r = await inf.inferirItems("construccion alfa", null, null, { conocimiento: conDecisivo });
+      assert.strictEqual(r.total, 1, "un término decisivo sí tiene que pasar por texto solo");
+      assert.strictEqual(r.items[0].confianza, inf.UMBRAL, "y lo hace justo en el umbral, gracias al «≥»");
+    }
+
+    /* 7-quater · LA PUERTA DE PERTINENCIA, y el defecto real que la motivó.
+       «PRESTACIÓN DEL SERVICIO DE INTERNET DEDICADO» viene publicado con un
+       código del segmento 80 (gerencia) —que está en los RUP porque ahí viven
+       la gerencia de proyectos y la interventoría— y el mapeo le sugería
+       «interventoría». La regla NO se reinventa aquí: se llama a
+       `evaluarPertinencia` de lib/filtros, que es la que ya decidía esto. */
+    {
+      const internet = await inf.inferirItems(
+        "PRESTACIÓN DEL SERVICIO DE INTERNET DEDICADO PARA LA ALCALDÍA", "V1.80101600", null);
+      assert.strictEqual(internet.total, 0,
+        `un servicio de internet no puede sugerir ítems de obra: llegaron ${internet.items.map((i) => i.item_id).join(", ")}`);
+      assert.ok(internet.no_pertinente && internet.no_pertinente.motivo,
+        "y tiene que decir POR QUÉ no sugirió nada, no devolver una lista vacía sin explicación");
+
+      // el mismo código, con un objeto que SÍ es interventoría de obra, sigue
+      // funcionando: la puerta filtra por el objeto, no por el segmento
+      const inter = await inf.inferirItems("INTERVENTORÍA TÉCNICA AL CONTRATO DE OBRA", "V1.80101600", null);
+      assert.ok(inter.items.some((i) => i.item_id === "con_interventoria"),
+        "la interventoría de obra real sí tiene que sugerir su ítem");
+
+      // un objeto genérico (el número del proceso) tampoco pasa, aunque traiga
+      // un UNSPSC impecable — misma regla que `esObjetoGenerico` en el juicio
+      const generico = await inf.inferirItems("CONVOCATORIA PUBLICA", "V1.72141000", null);
+      assert.strictEqual(generico.total, 0, "un objeto genérico no describe ninguna obra que presupuestar");
+    }
+
+    /* 7-ter · Dos redacciones que canonizan igual son UN término: gana el peso
+       mayor y se unen los ítems. Si quedaran como dos entradas, el OR ruidoso
+       contaría la misma palabra dos veces y se reforzaría a sí misma. */
+    {
+      const choque = inf.compilarDiccionario({
+        "pozo de inspeccion": { peso: 0.5, items: ["hid_pozo_inspeccion"] },
+        "pozo inspeccion": { peso: 0.9, items: ["est_concreto_21"] },
+      });
+      assert.strictEqual(choque.mapa.size, 1, "dos redacciones del mismo término son una sola entrada");
+      assert.strictEqual(choque.mapa.get("pozo inspeccion").peso, 0.9, "gana el peso mayor");
+      assert.deepStrictEqual(choque.mapa.get("pozo inspeccion").items.sort(),
+        ["est_concreto_21", "hid_pozo_inspeccion"], "y se unen los ítems de las dos");
+    }
+
+    /* 8 · LA CANTIDAD ES SIEMPRE null. No es un hueco por llenar: sin pliego no
+       se puede estimar, y un número inventado no se distingue de uno medido.
+       Es la misma regla de `anticipo_pct = 0` y del contador de oferentes. */
+    {
+      for (const [obj, cod] of [
+        ["Construcción de placa huella en la vereda El Cairo", "72141000"],
+        ["Optimización de la red de acueducto", null],
+        ["", "72141000"],
+      ]) {
+        const r = await inf.inferirItems(obj, cod, "Tolima");
+        assert.ok(r.items.length > 0, `sin ítems no se prueba nada: «${obj}»`);
+        for (const i of r.items) {
+          assert.strictEqual(i.cantidad_sugerida, null,
+            `${i.item_id}: la cantidad tiene que viajar en null SIEMPRE`);
+          assert.ok("cantidad_sugerida" in i, "el campo tiene que existir: la ausencia es una afirmación, no un olvido");
+        }
+        assert.ok(/no se puede estimar/i.test(r.cantidad_sugerida_motivo),
+          "la respuesta tiene que decir POR QUÉ la cantidad va vacía");
+      }
+    }
+
+    /* 9 · El departamento no altera los ítems. Está aceptado y se devuelve, pero
+       la geografía cambia lo que las cosas CUESTAN, no lo que hay que ejecutar:
+       inventar aquí una diferencia de alcance sería fabricar información. */
+    {
+      const a = await inf.inferirItems("Construcción de placa huella", "72141000", "Amazonas");
+      const b = await inf.inferirItems("Construcción de placa huella", "72141000", "Bogotá D.C.");
+      assert.deepStrictEqual(a.items.map((i) => i.item_id), b.items.map((i) => i.item_id),
+        "el departamento no puede cambiar QUÉ ítems se sugieren");
+      assert.deepStrictEqual(a.items.map((i) => i.confianza), b.items.map((i) => i.confianza));
+      assert.strictEqual(b.diagnostico.departamento, "bogota d.c.", "el departamento se normaliza y se devuelve");
+    }
+
+    /* 10 · Objetos que NO son obra civil no pueden sugerir ítems de obra. */
+    {
+      for (const obj of [
+        "Suministro de alimentación escolar PAE para las sedes rurales",
+        "Adquisición de caninos antinarcóticos",
+        "Renovación de licencias de software ofimático",
+        "CONVOCATORIA PUBLICA",
+      ]) {
+        const r = await inf.inferirItems(obj, null, null);
+        assert.strictEqual(r.total, 0, `«${obj}» no puede producir ítems de obra: llegaron ${r.items.map((i) => i.item_id).join(", ")}`);
+      }
+    }
+
+    /* 11 · PRECISIÓN sobre objetos con la forma de los reales de SECOP II.
+       Para cada uno se declara el conjunto de ítems que un ingeniero civil
+       consideraría plausibles en su APU; la precisión es la fracción de lo
+       sugerido que cae dentro. Se mide, se imprime y se exige un mínimo: un
+       motor de sugerencias que acierta la mitad es ruido, no ayuda. */
+    {
+      const MUESTRA = [
+        {
+          objeto: "Construcción de placa huella en zona rural del municipio, vereda El Cairo",
+          unspsc: "V1.72141000",
+          debe: ["pav_placa_huella", "est_concreto_21", "est_acero_refuerzo", "pav_subbase"],
+          plausibles: ["pav_placa_huella", "est_concreto_21", "est_concreto_28", "est_acero_refuerzo", "est_formaleta",
+            "pav_subbase", "pav_base_granular", "pav_afirmado", "pav_imprimacion", "pav_mezcla_asfaltica",
+            "pav_pavimento_rigido", "pav_cuneta", "mt_excavacion_manual", "mt_excavacion_mecanica",
+            "mt_relleno_seleccionado", "mt_retiro_sobrantes", "mt_terraplen", "mt_conformacion_subrasante",
+            "prel_localizacion_replanteo", "prel_descapote", "prel_demolicion_pavimento",
+            "hid_alcantarilla", "sen_senalizacion_horizontal", "sen_senalizacion_vertical",
+            "amb_manejo_transito", "amb_pma", "amb_sst"],
+        },
+        {
+          objeto: "Mejoramiento de vía terciaria tramo La Esperanza - El Progreso",
+          unspsc: "72141000",
+          debe: ["pav_afirmado", "mt_conformacion_subrasante", "pav_cuneta"],
+          plausibles: ["pav_placa_huella", "pav_afirmado", "pav_subbase", "pav_base_granular", "pav_imprimacion",
+            "pav_mezcla_asfaltica", "pav_pavimento_rigido", "pav_cuneta", "est_concreto_21", "est_acero_refuerzo",
+            "mt_excavacion_manual", "mt_excavacion_mecanica", "mt_relleno_seleccionado", "mt_retiro_sobrantes",
+            "mt_terraplen", "mt_conformacion_subrasante", "prel_localizacion_replanteo", "prel_descapote",
+            "prel_demolicion_pavimento", "hid_alcantarilla", "sen_senalizacion_horizontal",
+            "sen_senalizacion_vertical", "amb_manejo_transito", "amb_pma", "amb_sst"],
+        },
+        {
+          objeto: "Optimización del sistema de alcantarillado sanitario del casco urbano",
+          unspsc: null,
+          debe: ["hid_tuberia_alcantarillado", "hid_pozo_inspeccion", "mt_excavacion_mecanica"],
+          plausibles: ["hid_tuberia_alcantarillado", "hid_pozo_inspeccion", "hid_domiciliaria",
+            "mt_excavacion_mecanica", "mt_relleno_seleccionado", "mt_retiro_sobrantes", "prel_demolicion_pavimento"],
+        },
+        {
+          objeto: "INTERVENTORÍA TÉCNICA, ADMINISTRATIVA Y FINANCIERA AL CONTRATO DE OBRA",
+          unspsc: "V1.80101600",
+          debe: ["con_interventoria"],
+          plausibles: ["con_interventoria"],
+        },
+        {
+          objeto: "Adecuación y mantenimiento de la sede educativa rural, incluye cubierta y unidad sanitaria",
+          unspsc: "V1.72121400",
+          debe: ["edi_mamposteria", "edi_cubierta_metalica", "hid_unidad_sanitaria"],
+          plausibles: ["edi_mamposteria", "edi_panete", "edi_estuco_pintura", "edi_cubierta_metalica",
+            "edi_cubierta_teja", "edi_piso_ceramica", "edi_enchape", "edi_ventaneria", "edi_impermeabilizacion",
+            "edi_aparato_sanitario", "edi_cielo_raso", "est_concreto_21", "est_concreto_28", "est_acero_refuerzo",
+            "est_formaleta", "est_estructura_metalica", "hid_unidad_sanitaria", "hid_tuberia_alcantarillado"],
+        },
+      ];
+
+      let aciertos = 0, sugeridos = 0;
+      const detalle = [];
+      for (const caso of MUESTRA) {
+        const r = await inf.inferirItems(caso.objeto, caso.unspsc, null);
+        const ids = r.items.map((i) => i.item_id);
+        assert.ok(ids.length > 0, `«${caso.objeto.slice(0, 40)}…» no produjo ningún ítem`);
+        for (const id of caso.debe) {
+          assert.ok(ids.includes(id),
+            `«${caso.objeto.slice(0, 40)}…» tenía que sugerir «${id}»; llegaron: ${ids.join(", ")}`);
+        }
+        const buenos = ids.filter((id) => caso.plausibles.includes(id));
+        aciertos += buenos.length;
+        sugeridos += ids.length;
+        detalle.push(`${buenos.length}/${ids.length}`);
+      }
+      const precision = aciertos / sugeridos;
+      assert.ok(precision >= 0.85,
+        `precisión de la inferencia ${(precision * 100).toFixed(1)} % — por debajo del mínimo exigido (85 %)`);
+      console.log(`· unidad inferencia APU: precisión ${(precision * 100).toFixed(1)} % sobre ${MUESTRA.length} objetos reales (${detalle.join(", ")}) · ${cat.CATALOGO.length} ítems, ${Object.keys(cat.DICCIONARIO_SEMILLA).length} términos`);
+    }
+  }
+
   async function limpiarRedis() {
     const claves = [
       ...(await redis.scan("licitaciones:*")), ...(await redis.scan("lock:sync*")),
@@ -2105,10 +2452,16 @@ async function main() {
       // la caché de la auditoría de cobertura vive una hora: sin borrarla, la
       // iteración siguiente auditaría con el histórico de la anterior
       ...(await redis.scan("cobertura:*")),
+      // el conocimiento del motor APU tampoco lo purga nada: si una iteración
+      // siembra o deriva el diccionario, la siguiente arrancaría con él ya
+      // publicado y las pruebas que comprueban «origen: semilla» pasarían o
+      // fallarían según el ORDEN de las iteraciones, que es la peor forma
+      // posible de que una suite sea verde
+      ...(await redis.scan("apu:*")),
     ];
     if (claves.length) await redis.del(...claves);
     for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*", "equivalencias:*",
-      "vocabulario:*", "config:*", "resumen:*", "cobertura:*"]) {
+      "vocabulario:*", "config:*", "resumen:*", "cobertura:*", "apu:*"]) {
       assert.strictEqual((await redis.scan(patron)).length, 0, `Redis no quedó limpio: ${patron}`);
     }
     // los perfiles vuelven a los datos del repositorio: una carga de RUP de la
@@ -4477,6 +4830,141 @@ async function main() {
         + `sobre ${conExp.resumen.procesos_analizados} procesos históricos · método base y con experiencia verificados`);
     }
 
+    /* g-quinquies. /api/apu/inferir — el motor de ítems APU de punta a punta.
+       Lo que se comprueba aquí y no se puede comprobar en la unidad: la
+       protección por token, que el GET NO escriba, que sembrar cambie de
+       verdad el origen del conocimiento, que derivar lea el histórico REAL y
+       —lo más importante— que sobre el corpus de verdad el motor separe la
+       obra civil de lo que no lo es. */
+    {
+      /* 1 · protección: sin token, con token malo y sin variable de entorno */
+      assert.strictEqual((await invocar(apuInferir, "/api/apu/inferir")).status, 401,
+        "/api/apu/inferir sin token debe dar 401");
+      assert.strictEqual((await invocar(apuInferir, "/api/apu/inferir?token=equivocado")).status, 401,
+        "/api/apu/inferir con token malo debe dar 401");
+      assert.strictEqual(
+        (await invocarPost(apuInferir, "/api/apu/inferir", { objeto: "Construcción de placa huella" })).status, 401,
+        "el POST también exige token");
+      {
+        const guardado = process.env.HISTORICO_TOKEN;
+        delete process.env.HISTORICO_TOKEN;
+        assert.strictEqual((await invocar(apuInferir, "/api/apu/inferir", CAB_TOKEN)).status, 503,
+          "sin HISTORICO_TOKEN el endpoint responde 503, nunca con una llave por defecto");
+        process.env.HISTORICO_TOKEN = guardado;
+      }
+
+      /* 2 · el GET solo LEE: arranca sobre la semilla del catálogo y no
+         publica nada por el hecho de haber sido consultado */
+      const antes = await invocar(apuInferir, "/api/apu/inferir", CAB_TOKEN);
+      assert.strictEqual(antes.status, 200);
+      assert.strictEqual(antes.cuerpo.conocimiento.origen.mapeo, "semilla",
+        "sin sembrar, el motor tiene que declarar que va con la semilla del código");
+      assert.strictEqual(antes.cuerpo.conocimiento.origen.diccionario, "semilla");
+      assert.strictEqual((await redis.scan("apu:*")).length, 0,
+        "el GET NO puede escribir: es la misma promesa que sostiene a /api/diagnostico");
+      assert.ok(antes.cuerpo.catalogo.items > 50, "el catálogo tiene que llegar entero");
+
+      /* 3 · inferir funciona SIN Redis sembrado (semilla), que es el estado de
+         un despliegue nuevo: un motor mudo hasta que alguien siembre sería
+         justo lo que lib/perfiles evita con su respaldo */
+      const conSemilla = await invocarPost(apuInferir, "/api/apu/inferir",
+        { objeto: "Construcción de placa huella en la vereda El Cairo", unspsc: "V1.72141000", departamento: "Tolima" }, CAB_TOKEN);
+      assert.strictEqual(conSemilla.status, 200);
+      assert.ok(conSemilla.cuerpo.total > 0, "con la semilla ya se tienen que sugerir ítems");
+      assert.ok(conSemilla.cuerpo.items.some((i) => i.item_id === "pav_placa_huella"));
+      for (const i of conSemilla.cuerpo.items) {
+        assert.strictEqual(i.cantidad_sugerida, null, "la cantidad viaja en null SIEMPRE, también por HTTP");
+      }
+      assert.strictEqual(conSemilla.cuerpo.departamento, "Tolima", "el departamento se devuelve tal cual llegó");
+
+      /* 4 · sin objeto ni código, 400 con el ejemplo de cómo se llama */
+      const vacio = await invocarPost(apuInferir, "/api/apu/inferir", { departamento: "Tolima" }, CAB_TOKEN);
+      assert.strictEqual(vacio.status, 400, "sin objeto y sin código no hay nada de dónde inferir");
+      assert.ok(vacio.cuerpo.ejemplo && vacio.cuerpo.ejemplo.objeto, "el 400 tiene que enseñar cómo se llama bien");
+
+      /* 5 · sembrar: ahora el conocimiento vive en Redis y se DECLARA */
+      const sembrado = await invocarPost(apuInferir, "/api/apu/inferir?sembrar=true", {}, CAB_TOKEN);
+      assert.strictEqual(sembrado.status, 200);
+      assert.ok(sembrado.cuerpo.ok && sembrado.cuerpo.terminos > 0 && sembrado.cuerpo.claves_mapeo > 0);
+      const tras = await invocar(apuInferir, "/api/apu/inferir", CAB_TOKEN);
+      assert.strictEqual(tras.cuerpo.conocimiento.origen.mapeo, "redis");
+      assert.strictEqual(tras.cuerpo.conocimiento.origen.diccionario, "redis");
+      assert.ok(tras.cuerpo.conocimiento.version, "el sello tiene que quedar escrito");
+      // el sello lleva sufijo aleatorio: dos siembras en el mismo milisegundo
+      // no pueden producir la misma versión (o la segunda pasaría inadvertida)
+      const sembrado2 = await invocarPost(apuInferir, "/api/apu/inferir?sembrar=true", {}, CAB_TOKEN);
+      assert.notStrictEqual(sembrado2.cuerpo.version, sembrado.cuerpo.version,
+        "dos siembras seguidas tienen que producir sellos distintos");
+
+      // y lo publicado da EXACTAMENTE lo mismo que la semilla: publicar no
+      // puede cambiar en silencio lo que el motor responde
+      const trasSembrar = await invocarPost(apuInferir, "/api/apu/inferir",
+        { objeto: "Construcción de placa huella en la vereda El Cairo", unspsc: "V1.72141000" }, CAB_TOKEN);
+      assert.deepStrictEqual(
+        trasSembrar.cuerpo.items.map((i) => [i.item_id, i.confianza]),
+        conSemilla.cuerpo.items.map((i) => [i.item_id, i.confianza]),
+        "sembrar la semilla no puede cambiar ni un ítem ni una confianza");
+
+      /* 6 · derivar del histórico REAL (el corpus que dejó el paso e) */
+      const derivado = await invocarPost(apuInferir, "/api/apu/inferir?derivar=true", {}, CAB_TOKEN);
+      assert.strictEqual(derivado.status, 200);
+      assert.ok(derivado.cuerpo.ok, `la derivación falló: ${JSON.stringify(derivado.cuerpo).slice(0, 200)}`);
+      assert.ok(derivado.cuerpo.procesos_historico > 0, "tenía que leer el histórico");
+      assert.ok(derivado.cuerpo.procesos_con_codigo_mapeado > 0,
+        "el puente término→ítem pasa por el código UNSPSC: sin procesos mapeados no hay derivación posible");
+      // la derivación MEZCLA sobre la semilla, no la sustituye: los términos
+      // curados tienen que seguir ahí (una derivación flaca no puede dejar sin
+      // señal a lo que ya funcionaba)
+      const trasDerivar = await invocarPost(apuInferir, "/api/apu/inferir",
+        { objeto: "Construcción de placa huella en la vereda El Cairo", unspsc: "V1.72141000" }, CAB_TOKEN);
+      assert.ok(trasDerivar.cuerpo.items.some((i) => i.item_id === "pav_placa_huella"),
+        "tras derivar, el término curado «placa huella» tiene que seguir funcionando");
+      assert.ok(trasDerivar.cuerpo.diagnostico.conocimiento.terminos_en_diccionario
+        >= tras.cuerpo.conocimiento.terminos_en_diccionario,
+        "derivar solo puede AÑADIR términos, nunca quitar los curados");
+
+      /* 7 · EL CORPUS REAL: sobre las filas que de verdad hay en Redis, el
+         motor tiene que sugerir para la obra civil y callarse para lo demás.
+         Es lo que la muestra de la unidad no puede demostrar, porque allí los
+         objetos los elige quien escribe la prueba. */
+      const activo = await leerActivo();
+      let obraConItems = 0, obraSinItems = 0, noObraConItems = 0, noObra = 0;
+      const NO_OBRA = /alimentaci[oó]n|caninos|software|fotocopia|internet|cumplea|mobiliario escolar/i;
+      const OBRA = /placa huella|v[ií]a terciaria|puente vehicular|alcantarillado|sede educativa|pavimenta/i;
+      const vistos = new Set();
+      for (const fila of activo) {
+        const nombre = String(fila.nombre_del_procedimiento || "");
+        if (vistos.has(nombre)) continue;         // el corpus repite plantillas
+        vistos.add(nombre);
+        const esNoObra = NO_OBRA.test(nombre);
+        const esObra = OBRA.test(nombre);
+        if (!esObra && !esNoObra) continue;
+        /* Se manda el objeto COMPLETO (nombre + descripción), que es lo que un
+           usuario pega y lo que el resto de la app juzga: el nombre solo dice
+           «adecuación de la sede educativa» —dónde—, y las actividades
+           («remodelación y reforzamiento del aula») viven en la descripción. */
+        const objetoCompleto = `${nombre} ${fila.descripci_n_del_procedimiento || ""}`.trim();
+        const r = await invocarPost(apuInferir, "/api/apu/inferir",
+          { objeto: objetoCompleto, unspsc: fila.codigo_principal_de_categoria || null }, CAB_TOKEN);
+        assert.strictEqual(r.status, 200);
+        if (esNoObra) {
+          noObra++;
+          if (r.cuerpo.total > 0) {
+            noObraConItems++;
+            assert.fail(`«${nombre}» no es obra civil y produjo ${r.cuerpo.total} ítems: `
+              + r.cuerpo.items.map((i) => i.item_id).join(", "));
+          }
+        } else if (r.cuerpo.total > 0) obraConItems++;
+        else { obraSinItems++; assert.fail(`«${nombre}» es obra civil y no produjo ningún ítem`); }
+      }
+      assert.ok(obraConItems >= 5, `esperaba al menos 5 objetos de obra del corpus con ítems, hubo ${obraConItems}`);
+      assert.ok(noObra >= 3, `esperaba al menos 3 objetos que no son obra en el corpus, hubo ${noObra}`);
+
+      console.log(`  · inferencia APU: ${obraConItems}/${obraConItems + obraSinItems} objetos de obra del corpus con ítems `
+        + `y 0/${noObra} falsos positivos · semilla→Redis verificado · derivación sobre `
+        + `${derivado.cuerpo.procesos_historico} procesos históricos (${derivado.cuerpo.terminos_nuevos} términos nuevos)`);
+    }
+
     /* h. la raíz sirve el frontend (Vercel: /public es el output estático) */
     {
       const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
@@ -4747,6 +5235,48 @@ async function main() {
       // el resumen del panel exige base antes de dividir (misma lección del «|| 0»)
       assert.ok(/analizados > 0 \? Math\.round/.test(admJs),
         "el porcentaje de procesos relevantes no puede calcularse sin comprobar el denominador");
+
+      /* ---- Inferencia de ítems APU ---- */
+      for (const debe of ['id="seccion-apu"', 'id="apu-objeto"', 'id="apu-unspsc"', 'id="apu-departamento"',
+        'id="btn-apu-inferir"', 'id="apu-items"', 'id="apu-aviso"', 'id="apu-skeleton"',
+        'id="apu-contenido"', 'id="apu-resumen"', 'id="apu-cantidad-nota"', 'id="apu-conocimiento"',
+        'id="btn-apu-todos"', 'id="btn-apu-ninguno"', 'id="btn-apu-exportar"',
+        'id="btn-apu-sembrar"', 'id="btn-apu-derivar"']) {
+        assert.ok(admHtml.includes(debe), `admin.html sin ${debe} (falta el módulo de inferencia APU)`);
+      }
+      // el campo del objeto es un textarea: un <input> de una línea para un
+      // objeto contractual de 300 caracteres es inutilizable
+      assert.ok(/<textarea id="apu-objeto"/.test(admHtml), "el objeto debe capturarse en un textarea");
+      for (const debe of ["/api/apu/inferir", "inferirApu", "apuSeleccion", "cargarConocimientoApu"]) {
+        assert.ok(admJs.includes(debe), `admin.js sin ${debe} (la inferencia APU no está cableada)`);
+      }
+      // el token tampoco viaja en la URL de este endpoint
+      assert.ok(!/\/api\/apu\/inferir\?[^`"']*token=/.test(admJs),
+        "el token de la inferencia APU va por cabecera, nunca en la URL");
+      /* La SELECCIÓN no puede vivir en el DOM: la tabla se repinta con
+         innerHTML y eso borra el estado de las casillas. Tiene que haber una
+         estructura fuera del DOM que sobreviva al repintado. */
+      assert.ok(/const apuSeleccion = new Set\(\)/.test(admJs),
+        "la selección de ítems debe vivir en un Set, no en las casillas (el repintado las borra)");
+      assert.ok(/apuSeleccion\.has\(it\.item_id\) \? " checked" : ""/.test(admJs),
+        "al repintar, cada casilla debe recuperar su estado del Set");
+      /* La cantidad se pinta como «—» y NUNCA como 0: misma lección que
+         prohíbe `|| 0` sobre un conteo — un cero se lee como una medición. */
+      assert.ok(/cantidad_sugerida == null \? "—"/.test(admJs),
+        "la cantidad ausente se pinta «—», nunca 0");
+      assert.ok(!/cantidad_sugerida\s*\|\|\s*0/.test(sinComentarios(admJs)),
+        "un «|| 0» sobre la cantidad convertiría «no se puede estimar» en «cero»");
+      /* La INFERENCIA no se dispara sola al abrir el panel; el estado del
+         motor (un GET de dos claves) sí, y es lo que hace descubrible el
+         botón de sembrar. */
+      {
+        const i = admJs.indexOf("function arrancarPaneles()");
+        const cuerpo = admJs.slice(i, admJs.indexOf("\n  }", i));
+        assert.ok(/cargarConocimientoApu\(\)/.test(cuerpo),
+          "el arranque debe consultar el estado del motor APU (distingue «semilla» de «publicado»)");
+        assert.ok(!/inferirApu\(\)/.test(cuerpo) && !/accionApu\(/.test(cuerpo),
+          "ni la inferencia ni «aprender del histórico» pueden lanzarse solas al abrir el panel");
+      }
 
       assert.ok(html.includes('id="f-sin-unspsc"'), "index.html sin el toggle de procesos sin código UNSPSC");
       const inputToggle = html.slice(html.indexOf('id="f-sin-unspsc"'), html.indexOf('id="f-sin-unspsc"') + 200);

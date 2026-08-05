@@ -1232,6 +1232,244 @@
     avisoCobertura("Perfil cambiado: ejecute la auditoría para este perfil.", "aviso");
   });
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     INFERENCIA DE ÍTEMS APU (/api/apu/inferir)
+     --------------------------------------------------------------------------
+     Del objeto de una licitación a los ítems que llevaría su APU. Tres cosas
+     que este módulo hace a propósito y conviene no «simplificar»:
+
+     · La SELECCIÓN vive en un Set de JavaScript, no en el DOM. La tabla se
+       repinta con innerHTML —igual que la de cobertura— y eso borra el estado
+       de cualquier <input> que estuviera dentro. Si las casillas fueran la
+       única memoria de lo marcado, «Marcar todos» seguido de un repintado
+       perdería la selección sin que nadie lo notase.
+     · No hay handler de clic sobre la FILA. Las dos tablas que ya existen
+       (cobertura y entidades) usan `closest()` sobre la fila entera; aquí eso
+       chocaría con la casilla, que es un control con su propio clic. Se
+       escucha «change» y solo sobre los <input>.
+     · La CANTIDAD se pinta como «—» y nunca como 0. Es la misma regla que
+       prohíbe `|| 0` sobre un conteo: un cero se lee como una medición.
+     ══════════════════════════════════════════════════════════════════════════ */
+  let apuCargando = false;
+  let ultimaInferencia = null;
+  const apuSeleccion = new Set();   // item_id marcados (sobrevive al repintado)
+
+  function avisoApu(texto, tipo) {
+    const p = $("apu-aviso");
+    if (!texto) return p.classList.add("hidden");
+    p.className = "mt-5 rounded-xl px-4 py-3 text-sm " + ({
+      ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
+      error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
+      aviso: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20",
+    }[tipo] || "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20");
+    p.innerHTML = texto;
+  }
+
+  function cargandoApu(v) {
+    apuCargando = v;
+    $("btn-apu-inferir").disabled = v;
+    $("apu-spin").classList.toggle("hidden", !v);
+    $("apu-skeleton").classList.toggle("hidden", !v);
+  }
+
+  /* Confianza → banda de color. Los cortes son los del motor: 0.7 es lo que
+     vale un código UNSPSC de clase por sí solo, y 0.3 el umbral de entrada. */
+  function bandaApu(c) {
+    if (c >= 0.7) return { clases: "bg-green-50 text-green-800", etiqueta: "alta" };
+    if (c >= 0.5) return { clases: "bg-amber-50 text-amber-800", etiqueta: "media" };
+    return { clases: "bg-gray-100 text-gray-600", etiqueta: "baja" };
+  }
+
+  async function inferirApu() {
+    if (apuCargando) return;
+    const token = leerToken();
+    if (!token) {
+      return avisoApu(
+        'Configure su token de acceso en la sección <a href="#seccion-token" class="font-medium underline">Token de acceso</a> para inferir ítems.',
+        "aviso");
+    }
+    const objeto = $("apu-objeto").value.trim();
+    const unspsc = $("apu-unspsc").value.trim();
+    const departamento = $("apu-departamento").value.trim();
+    if (!objeto && !unspsc) {
+      return avisoApu("Escriba el objeto de la licitación (o al menos un código UNSPSC): sin ninguno de los dos no hay nada de dónde inferir.", "aviso");
+    }
+    avisoApu(null);
+    cargandoApu(true);
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch("/api/apu/inferir", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-historico-token": token },
+        body: JSON.stringify({ objeto, unspsc: unspsc || null, departamento: departamento || null }),
+      });
+      cuerpo = await r.json();
+    } catch (e) {
+      cargandoApu(false);
+      return avisoApu(`No se pudo contactar el servidor: ${esc((e && e.message) || "sin conexión")}.`, "error");
+    }
+    cargandoApu(false);
+
+    if (r.status === 401) {
+      olvidarToken(); pintarEstadoToken();
+      return avisoApu('Token inválido. Escriba uno nuevo en <a href="#seccion-token" class="font-medium underline">Token de acceso</a>.', "error");
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      return avisoApu(esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`), "error");
+    }
+
+    ultimaInferencia = cuerpo;
+    // objeto nuevo, selección nueva: arrancan marcados los que el motor propuso
+    apuSeleccion.clear();
+    for (const it of cuerpo.items || []) apuSeleccion.add(it.item_id);
+    pintarApu(cuerpo);
+  }
+
+  function pintarApu(c) {
+    $("apu-contenido").classList.remove("hidden");
+    const items = c.items || [];
+
+    if (!items.length) {
+      avisoApu("Ningún ítem del catálogo supera el umbral para este objeto. Suele significar que el objeto "
+        + "no es de obra civil, o que está escrito con el número del proceso y no con una descripción.", "aviso");
+    }
+
+    const totalTexto = `${fmt.format(items.length)} ítem${items.length === 1 ? "" : "s"} sugerido${items.length === 1 ? "" : "s"}`;
+    const recorte = c.recortados > 0 ? ` · se ocultaron ${fmt.format(c.recortados)} por debajo del tope` : "";
+    $("apu-resumen").innerHTML = `${totalTexto}${recorte}. <span class="text-gray-400">Desmarque los que no apliquen.</span>`;
+
+    $("apu-items").innerHTML = items.length ? items.map((it) => {
+      const b = bandaApu(it.confianza);
+      const marcado = apuSeleccion.has(it.item_id) ? " checked" : "";
+      // la cantidad NO se estima: «—» y nunca un 0 que parezca medido
+      const cantidad = it.cantidad_sugerida == null ? "—" : fmt.format(it.cantidad_sugerida);
+      return `<tr class="align-top">
+          <td class="py-2 pr-2">
+            <input type="checkbox" data-item="${esc(it.item_id)}"${marcado}
+                   class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+          </td>
+          <td class="py-2 pr-2">${esc(it.descripcion)}
+            <span class="block font-mono text-xs text-gray-400">${esc(it.item_id)}</span></td>
+          <td class="py-2 pr-2 text-gray-500">${esc(it.capitulo_nombre || "")}</td>
+          <td class="py-2 pr-2 text-center">${esc(it.unidad)}</td>
+          <td class="py-2 pr-2 text-right tabular-nums text-gray-400">${cantidad}</td>
+          <td class="py-2 pr-2 text-right">
+            <span class="rounded-lg px-2 py-0.5 text-xs font-medium tabular-nums ${b.clases}">${Math.round(it.confianza * 100)} %</span></td>
+          <td class="py-2 text-xs text-gray-500">${esc((it.motivos || []).join(" · "))}</td>
+        </tr>`;
+    }).join("") : '<tr><td colspan="7" class="py-3 text-gray-400">Ningún ítem supera el umbral para este objeto.</td></tr>';
+
+    $("apu-cantidad-nota").textContent = c.cantidad_sugerida_motivo || "";
+
+    const d = c.diagnostico || {};
+    const partes = [];
+    const reconocidos = (d.terminos_reconocidos || []).map((t) => t.termino);
+    if (reconocidos.length) partes.push(`Términos reconocidos: ${reconocidos.join(", ")}`);
+    const codigos = (d.codigos_leidos || []).map((x) => `${x.codigo} (${x.nivel})`);
+    if (codigos.length) partes.push(`Códigos leídos: ${codigos.join(", ")}`);
+    if (d.codigo_no_legible) partes.push(`Código no legible: ${d.codigo_no_legible}`);
+    if (d.departamento) partes.push(`Departamento: ${d.departamento} (no altera los ítems)`);
+    $("apu-meta").textContent = partes.join(" · ");
+
+    $("btn-apu-exportar").disabled = apuSeleccion.size === 0;
+  }
+
+  /* Estado del conocimiento del motor (GET, solo lee). Es barato y es lo que
+     hace descubrible el botón de sembrar: sin él, «semilla» y «publicado en
+     Redis» se ven exactamente igual desde la pantalla. */
+  async function cargarConocimientoApu() {
+    const caja = $("apu-conocimiento");
+    const token = leerToken();
+    if (!token) { caja.textContent = "Guarde el token de acceso para consultar el estado del motor."; return; }
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch("/api/apu/inferir", { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+      cuerpo = await r.json();
+    } catch {
+      caja.textContent = "No se pudo consultar el estado del motor.";
+      return;
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      caja.textContent = (cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`;
+      return;
+    }
+    const k = cuerpo.conocimiento || {};
+    const origen = k.origen || {};
+    caja.textContent = `${fmt.format(cuerpo.catalogo.items)} ítems en el catálogo · `
+      + `${fmt.format(k.terminos_en_diccionario)} términos · ${fmt.format(k.claves_en_mapeo)} claves UNSPSC · `
+      + `mapeo: ${origen.mapeo}, diccionario: ${origen.diccionario}`
+      + (k.version ? ` · versión ${String(k.version).slice(0, 19).replace("T", " ")}` : "");
+  }
+
+  /* Sembrar y derivar comparten forma: POST con un parámetro explícito, y el
+     estado del motor se relee al terminar para que lo pintado no mienta. */
+  async function accionApu(param, etiqueta) {
+    const token = leerToken();
+    if (!token) return avisoApu("Guarde antes el token de acceso, arriba.", "aviso");
+    avisoApu(`${etiqueta}…`, null);
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch(`/api/apu/inferir?${param}=true`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-historico-token": token },
+        body: "{}",
+      });
+      cuerpo = await r.json();
+    } catch (e) {
+      return avisoApu(`No se pudo contactar el servidor: ${esc((e && e.message) || "sin conexión")}.`, "error");
+    }
+    if (r.status === 401) {
+      olvidarToken(); pintarEstadoToken();
+      return avisoApu("Token inválido.", "error");
+    }
+    if (!r.ok) return avisoApu(esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`), "error");
+    // `ok:false` con 200 es una respuesta con causa (p. ej. no hay histórico):
+    // se enseña tal cual, con su siguiente paso, en vez de decir «falló»
+    if (cuerpo && cuerpo.ok === false) {
+      return avisoApu(esc([cuerpo.motivo, cuerpo.siguiente_paso].filter(Boolean).join(" · ") || "Sin cambios."), "aviso");
+    }
+    const detalle = param === "derivar"
+      ? `${fmt.format(cuerpo.terminos_nuevos)} términos nuevos y ${fmt.format(cuerpo.terminos_ampliados)} ampliados sobre ${fmt.format(cuerpo.procesos_historico)} procesos.`
+      : `${fmt.format(cuerpo.terminos)} términos y ${fmt.format(cuerpo.claves_mapeo)} claves publicadas.`;
+    avisoApu(esc(detalle), "ok");
+    cargarConocimientoApu();
+  }
+
+  /* Delegación SOLO sobre las casillas (ver la nota de arriba: nada de
+     `closest()` sobre la fila, que se comería el clic del control). */
+  $("apu-items").addEventListener("change", (e) => {
+    const caja = e.target.closest("input[type=checkbox][data-item]");
+    if (!caja) return;
+    const id = caja.getAttribute("data-item");
+    if (caja.checked) apuSeleccion.add(id); else apuSeleccion.delete(id);
+    $("btn-apu-exportar").disabled = apuSeleccion.size === 0;
+  });
+
+  function marcarTodosApu(valor) {
+    if (!ultimaInferencia) return;
+    apuSeleccion.clear();
+    if (valor) for (const it of ultimaInferencia.items || []) apuSeleccion.add(it.item_id);
+    for (const caja of $("apu-items").querySelectorAll("input[type=checkbox][data-item]")) caja.checked = valor;
+    $("btn-apu-exportar").disabled = apuSeleccion.size === 0;
+  }
+
+  $("btn-apu-inferir").addEventListener("click", inferirApu);
+  $("btn-apu-todos").addEventListener("click", () => marcarTodosApu(true));
+  $("btn-apu-ninguno").addEventListener("click", () => marcarTodosApu(false));
+  $("btn-apu-sembrar").addEventListener("click", () => accionApu("sembrar", "Publicando la semilla"));
+  $("btn-apu-derivar").addEventListener("click", () => accionApu("derivar", "Aprendiendo del histórico"));
+  $("btn-apu-exportar").addEventListener("click", () => {
+    if (!ultimaInferencia) return;
+    const elegidos = (ultimaInferencia.items || []).filter((it) => apuSeleccion.has(it.item_id));
+    descargarJSON({
+      objeto: ultimaInferencia.objeto,
+      unspsc: ultimaInferencia.unspsc,
+      departamento: ultimaInferencia.departamento,
+      items: elegidos,
+      nota: ultimaInferencia.cantidad_sugerida_motivo,
+    }, `apu_items_${new Date().toISOString().slice(0, 10)}.json`);
+  });
+
   /* ══════════ Arranque ══════════
      AL FINAL del IIFE, después de declarar todo lo que estas funciones usan.
      `arrancarPaneles` es una declaración de función (se hoistea), así que
@@ -1247,6 +1485,10 @@
     // de la auditoría empieza encendido); la AUDITORÍA no, que recorre el
     // histórico entero y solo debe correr cuando alguien la pide
     cargarExperienciaActual();
+    // ídem el estado del motor APU: un GET que solo lee dos claves y es lo que
+    // distingue en pantalla «semilla en código» de «publicado en Redis». La
+    // INFERENCIA no se dispara sola, y «aprender del histórico» menos aún
+    cargarConocimientoApu();
   }
   if (accesoConcedido()) abrirApp();
 })();

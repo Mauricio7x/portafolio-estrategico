@@ -481,6 +481,118 @@
           <p id="c-meta" class="mt-6 text-xs text-gray-400"></p>
         </div>
       </section>
+
+      <!-- ══════════ Inferencia de ítems APU ══════════ -->
+      <section id="seccion-apu" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Inferencia de ítems APU</h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">
+              Pegue el objeto de una licitación y obtenga los ítems de obra que su APU probablemente
+              llevará. Sirve para no partir de una hoja en blanco: es una sugerencia con casillas, no
+              un presupuesto. <b>Las cantidades van vacías siempre</b> — sin el pliego (planos y
+              cantidades de obra) no se pueden estimar, y un número inventado no se distingue de uno medido.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-end gap-3">
+            <button id="btn-apu-inferir" type="button"
+                    class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              <span id="apu-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
+              Inferir ítems
+            </button>
+            <button id="btn-apu-exportar" type="button" disabled
+                    class="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              ⬇ Exportar selección
+            </button>
+          </div>
+        </div>
+
+        <label class="mt-5 block">
+          <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Objeto de la licitación</span>
+          <textarea id="apu-objeto" rows="3" placeholder="Construcción de placa huella en la vereda El Cairo del municipio de…"
+                    class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10"></textarea>
+        </label>
+
+        <div class="mt-3 grid gap-3 sm:grid-cols-3">
+          <label class="block">
+            <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Código UNSPSC (opcional)</span>
+            <input id="apu-unspsc" type="text" inputmode="numeric" placeholder="72141000"
+                   class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Departamento (opcional)</span>
+            <input id="apu-departamento" type="text" placeholder="Tolima"
+                   class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+          </label>
+          <div class="flex items-end">
+            <p class="text-xs text-gray-400">
+              El departamento no cambia qué ítems salen: la geografía cambia lo que
+              <i>cuestan</i>, no lo que hay que ejecutar. Queda para la fase de precios.
+            </p>
+          </div>
+        </div>
+
+        <p id="apu-aviso" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+
+        <div id="apu-skeleton" class="mt-6 hidden animate-pulse space-y-4">
+          <div class="h-16 rounded-2xl bg-gray-100"></div>
+          <div class="h-56 rounded-2xl bg-gray-100"></div>
+        </div>
+
+        <div id="apu-contenido" class="mt-6 hidden">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p id="apu-resumen" class="text-sm text-gray-600"></p>
+            <div class="flex gap-2">
+              <button id="btn-apu-todos" type="button"
+                      class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-gray-100">
+                Marcar todos
+              </button>
+              <button id="btn-apu-ninguno" type="button"
+                      class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-gray-100">
+                Desmarcar todos
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-4 overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                <tr>
+                  <th class="py-1 pr-2 w-8"></th>
+                  <th class="py-1 pr-2">Ítem</th><th class="py-1 pr-2">Capítulo</th>
+                  <th class="py-1 pr-2 text-center">Unidad</th><th class="py-1 pr-2 text-right">Cantidad</th>
+                  <th class="py-1 pr-2 text-right">Confianza</th><th class="py-1">Por qué</th>
+                </tr>
+              </thead>
+              <tbody id="apu-items" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+
+          <p id="apu-cantidad-nota" class="mt-3 rounded-xl bg-gray-50 px-4 py-3 text-xs text-gray-500 ring-1 ring-inset ring-gray-500/20"></p>
+          <p id="apu-meta" class="mt-6 text-xs text-gray-400"></p>
+        </div>
+
+        <div class="mt-6 border-t border-gray-100 pt-4">
+          <p class="text-xs text-gray-500">
+            <b>Conocimiento del motor.</b> <span id="apu-conocimiento">—</span>
+          </p>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <button id="btn-apu-sembrar" type="button"
+                    class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-gray-100">
+              Publicar semilla en Redis
+            </button>
+            <button id="btn-apu-derivar" type="button"
+                    class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-gray-100">
+              Aprender del histórico
+            </button>
+          </div>
+          <p class="mt-2 text-xs text-gray-400">
+            «Aprender del histórico» recorre el corpus de procesos ya adjudicados y amplía el
+            diccionario con los términos que acompañan sistemáticamente a cada código. Es un barrido
+            caro: corre solo cuando se pulsa.
+          </p>
+        </div>
+      </section>
     </main>
   </div>
 
