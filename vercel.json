@@ -2,6 +2,12 @@
   "crons": [
     { "path": "/api/sync", "schedule": "30 8 * * *" }
   ],
+  "rewrites": [
+    {
+      "source": "/api/admin/cargar-experiencia-genesis",
+      "destination": "/api/admin/experiencia?origen=repositorio"
+    }
+  ],
   "functions": {
     "api/sync.js": { "maxDuration": 300, "includeFiles": "data/**" },
     "api/sync/historico.js": { "maxDuration": 300, "includeFiles": "data/**" },

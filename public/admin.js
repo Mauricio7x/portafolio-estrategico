@@ -233,8 +233,17 @@
     mensaje("Encadenado detenido. El avance quedó guardado en Redis: al volver a iniciar, la carga continúa donde se quedó (la tanda que estuviera corriendo en el servidor termina sola).", "aviso");
   }
 
-  $("btn-iniciar").addEventListener("click", () => {
-    if (activo) return;
+  /* Arranque de la full, con NOMBRE porque tiene dos disparadores: el botón de
+     esta sección y el paso 3 de la puesta en producción de la experiencia.
+     Extraerlo —en vez de que el otro simule un clic o repita el cuerpo— es lo
+     que garantiza que la invariante «1.ª tanda full, siguientes auto» valga
+     para los dos: repetir `full` volvería a enero para siempre, y una segunda
+     copia de este arranque es exactamente donde eso se rompería sin que nadie
+     lo notara.
+     Devuelve `false` si no hizo nada (ya había un encadenado corriendo), para
+     que quien lo llame no anuncie un paso que no ocurrió. */
+  function iniciarFull() {
+    if (activo) return false;
     activo = true;
     tandas = 0;
     $("m-tandas").textContent = "0";
@@ -245,7 +254,9 @@
     bitacora("▶ iniciando carga completa");
     botones(true);
     encadenar();
-  });
+    return true;
+  }
+  $("btn-iniciar").addEventListener("click", iniciarFull);
   $("btn-detener").addEventListener("click", () => detener("usuario"));
 
   // cerrar la pestaña a mitad no rompe nada, pero conviene avisarlo
@@ -277,6 +288,12 @@
       ? "Token guardado en esta pestaña ✓"
       : "Sin token: el panel y la carga de RUP no pueden consultar el servidor.";
     $("token-estado").className = hay ? "text-sm text-green-700" : "text-sm text-amber-700";
+    /* La puesta en producción SOLO se ve con token: sus tres pasos escriben en
+       Redis, y un botón que no puede funcionar es peor que un botón ausente.
+       Se cablea aquí porque `pintarEstadoToken` ya corre al arrancar el panel y
+       en cada guardado/olvido del token: un solo sitio del que depender. */
+    const prod = $("exp-produccion");
+    if (prod) prod.classList.toggle("hidden", !hay);
   }
 
   function enviarToken(e) {
@@ -1091,6 +1108,193 @@
       + (ejemplos ? `<p class="mt-2 text-xs leading-6 text-gray-500">${ejemplos}</p>` : "");
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     PUESTA EN PRODUCCIÓN SIN TERMINAL
+     --------------------------------------------------------------------------
+     El dueño no tiene terminal: `cargar_experiencia.sh` no le sirve. Estos son
+     sus tres pasos con clics, y ninguno reimplementa nada:
+
+       1. POST /api/admin/experiencia?origen=repositorio — el MISMO endpoint de
+          la carga manual, que lee los contratos del archivo del repositorio en
+          vez del cuerpo. No hay una segunda ruta que pueda divergir.
+       2. `ejecutarAuditoria()`, la que ya usa el botón de la sección de
+          cobertura, con el selector puesto en «genesis».
+       3. `iniciarFull()`, el arranque encadenado de la sección de
+          sincronización. Se REUTILIZA para que la invariante «1.ª tanda full,
+          siguientes auto» no tenga dos copias.
+
+     Todo se narra en la bitácora del panel, que es donde el dueño ya mira el
+     avance de la sincronización. */
+  let cadenaCorriendo = false;
+
+  function botonesProduccion(bloqueados) {
+    for (const id of ["btn-exp-cadena", "btn-exp-repo", "btn-exp-cobertura", "btn-exp-full"]) {
+      if ($(id)) $(id).disabled = bloqueados;
+    }
+  }
+
+  /* Ninguna pulsación puede quedarse sin respuesta visible — la lección del
+     modal del token. Sin token se AVISA y se lleva al usuario al sitio. */
+  function exigirToken(que) {
+    const token = leerToken();
+    if (!token) {
+      bitacora(`✘ ${que}: falta el token de acceso`);
+      mensajeExp("Guarde antes el token de acceso, en la sección «Token de acceso».", "aviso");
+      const s = $("seccion-token");
+      if (s && s.scrollIntoView) s.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    return token;
+  }
+
+  /* Paso 1 · los contratos del repositorio. Devuelve true solo si se guardaron:
+     la cadena no puede seguir anunciando pasos sobre una carga que falló. */
+  async function cargarExperienciaDelRepositorio() {
+    const token = exigirToken("cargar la experiencia de Génesis");
+    if (!token) return false;
+    bitacora("▶ 1/3 cargando experiencia de Génesis desde el repositorio…");
+    erroresExp(null);
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch("/api/admin/experiencia?origen=repositorio", {
+        method: "POST",
+        headers: { "x-historico-token": token, Accept: "application/json" },
+      });
+    } catch (e) {
+      bitacora("✘ 1/3 sin conexión con el servidor");
+      mensajeExp(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
+      return false;
+    }
+    /* El parseo va APARTE del fetch: el muro del edge (Vercel Password
+       Protection) responde HTML con 401/403, así que `r.json()` LANZA. Con las
+       dos cosas en el mismo `try`, ese muro se diagnosticaba como «sin
+       conexión» — y la respuesta es justo la contraria: hay conexión y hay que
+       iniciar sesión. Es el mismo tratamiento que ya da el encadenado de la
+       sincronización unas líneas más arriba. */
+    try { cuerpo = await r.json(); } catch { cuerpo = null; }
+    if (!cuerpo && (r.status === 401 || r.status === 403)) {
+      bitacora(`✘ 1/3 el despliegue rechazó la petición (${r.status})`);
+      mensajeExp("El despliegue rechazó la petición (401/403). Si tiene Password Protection activa, "
+        + "inicie sesión en Vercel en esta misma pestaña y reintente.", "error");
+      return false;
+    }
+    if (r.status === 401) {
+      olvidarToken(); pintarEstadoToken();
+      bitacora("✘ 1/3 token inválido");
+      mensajeExp("Token inválido. Guárdelo de nuevo arriba y reintente.", "error");
+      return false;
+    }
+    if (r.status === 400 && cuerpo && cuerpo.errores) {
+      bitacora(`✘ 1/3 el archivo del repositorio no pasa la validación (${cuerpo.errores.length} errores)`);
+      mensajeExp(cuerpo.nota || cuerpo.error || "El archivo del repositorio no pasó la validación.", "error");
+      erroresExp(cuerpo.errores);
+      return false;
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      bitacora(`✘ 1/3 error del servidor (${r.status})`);
+      mensajeExp((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`, "error");
+      return false;
+    }
+    /* Los conteos se pintan como VIENEN. Un `|| 0` aquí convertiría un «no sé»
+       del servidor en un cero creíble — el defecto que este panel ya pagó con
+       «en 0 procesos». */
+    const n = cuerpo.contratos_cargados;
+    const t = cuerpo.terminos_extraidos;
+    bitacora(`✔ 1/3 experiencia cargada · ${fmt.format(n)} contratos · ${fmt.format(t)} términos`
+      + (cuerpo.archivo ? ` · ${cuerpo.archivo}` : ""));
+    const ejemplos = (cuerpo.ejemplos_terminos || []).slice(0, 12).join(", ");
+    mensajeExp(`Experiencia cargada desde el repositorio: ${fmt.format(n)} contratos, `
+      + `${fmt.format(t)} términos extraídos${ejemplos ? ` (${ejemplos}…)` : ""}. `
+      + "Ya puede auditar la cobertura del RUP.", "ok");
+    await cargarExperienciaActual();
+    /* Lo que hubiera pintado la auditoría se midió contra el vocabulario
+       ANTERIOR: dejarlo en pantalla al lado de «106 contratos cargados» sería
+       una cifra vieja con aspecto de nueva. El servidor ya invalida su caché;
+       esto invalida lo que se está mirando. */
+    invalidarCoberturaPintada("Experiencia recargada: vuelva a ejecutar la auditoría para medirla contra ella.");
+    return true;
+  }
+
+  /* Paso 2 · la auditoría, con el perfil puesto en Génesis. NO se reimplementa:
+     se pone el selector y se llama a la misma función del botón de su sección,
+     que es la que sabe pintar la tabla, los excluidos y los avisos. */
+  async function auditarCoberturaGenesis() {
+    const token = exigirToken("auditar la cobertura");
+    if (!token) return false;
+    bitacora("▶ 2/3 auditando cobertura del RUP de Génesis…");
+    /* Fijar `.value` desde código NO dispara `change`, que es quien esconde lo
+       pintado: sin esto, la auditoría de OTRO perfil se quedaría en pantalla
+       bajo un selector que dice «Génesis». Y NO se persiste el perfil: la clave
+       la comparte el DASHBOARD, y este paso no tiene por qué decidir con qué
+       perfil se abre el panel la próxima vez. */
+    $("c-perfil").value = "genesis";
+    invalidarCoberturaPintada(null);
+    const s = $("seccion-cobertura");
+    if (s && s.scrollIntoView) s.scrollIntoView({ behavior: "smooth", block: "start" });
+    /* El resultado se PROPAGA. `ejecutarAuditoria` puede fallar por token, por
+       red o por el servidor, y anunciar «✔ 2/3» sobre una auditoría que no
+       corrió —y seguir al paso 3— es exactamente lo que la cadena existe para
+       evitar. */
+    const ok = await ejecutarAuditoria();
+    bitacora(ok
+      ? "✔ 2/3 auditoría de cobertura ejecutada — el detalle está en su sección"
+      : "✘ 2/3 la auditoría de cobertura no se pudo ejecutar");
+    return ok;
+  }
+
+  /* Paso 3 · la full. Reutiliza el arranque encadenado de arriba, que es quien
+     sabe que la 1.ª tanda va en `full` y las siguientes en `auto`. */
+  function sincronizacionFull() {
+    bitacora("▶ 3/3 lanzando la sincronización completa…");
+    const arrancada = iniciarFull();
+    if (!arrancada) {
+      bitacora("• 3/3 ya había un encadenado en curso — se deja terminar");
+      mensajeExp("Ya hay una sincronización en curso: se deja terminar en vez de reiniciarla desde enero.", "aviso");
+      return false;
+    }
+    const s = $("seccion-sync");
+    if (s && s.scrollIntoView) s.scrollIntoView({ behavior: "smooth", block: "start" });
+    return true;
+  }
+
+  $("btn-exp-repo").addEventListener("click", async () => {
+    if (cadenaCorriendo) return;
+    botonesProduccion(true);
+    try { await cargarExperienciaDelRepositorio(); } finally { botonesProduccion(false); }
+  });
+  $("btn-exp-cobertura").addEventListener("click", async () => {
+    if (cadenaCorriendo) return;
+    botonesProduccion(true);
+    try { await auditarCoberturaGenesis(); } finally { botonesProduccion(false); }
+  });
+  $("btn-exp-full").addEventListener("click", () => {
+    if (cadenaCorriendo) return;
+    sincronizacionFull();
+  });
+
+  /* Los tres en orden. Se PARA en el primer paso que falle: encadenar una
+     auditoría sobre una carga que no ocurrió daría un resultado creíble y
+     equivocado, que es peor que no darlo. */
+  $("btn-exp-cadena").addEventListener("click", async () => {
+    if (cadenaCorriendo) return;
+    cadenaCorriendo = true;
+    botonesProduccion(true);
+    bitacora("▶ puesta en producción: 3 pasos");
+    try {
+      if (!(await cargarExperienciaDelRepositorio())) {
+        bitacora("■ cadena detenida en el paso 1");
+        return;
+      }
+      if (!(await auditarCoberturaGenesis())) {
+        bitacora("■ cadena detenida en el paso 2");
+        return;
+      }
+      sincronizacionFull();
+    } finally {
+      cadenaCorriendo = false;
+      botonesProduccion(false);
+    }
+  });
+
   $("btn-exp-descargar").addEventListener("click", async () => {
     const token = leerToken();
     if (!token) return mensajeExp("Guarde antes el token de acceso, arriba.", "aviso");
@@ -1154,13 +1358,17 @@
     $("c-skeleton").classList.toggle("hidden", !v);
   }
 
+  /* Devuelve `true` solo si la auditoría se pintó. La cadena de la puesta en
+     producción lo necesita: sin un booleano, quien la encadena escribe «✔» y
+     sigue al paso siguiente sobre una auditoría que nunca corrió. */
   async function ejecutarAuditoria() {
-    if (coberturaCargando) return;
+    if (coberturaCargando) return false;
     const token = leerToken();
     if (!token) {
-      return avisoCobertura(
+      avisoCobertura(
         'Configure su token de acceso en la sección <a href="#seccion-token" class="font-medium underline">Token de acceso</a> para ejecutar la auditoría.',
         "aviso");
+      return false;
     }
     const perfil = $("c-perfil").value;
     const usar = $("c-usar-experiencia").checked ? "true" : "false";
@@ -1173,21 +1381,25 @@
       cuerpo = await r.json();
     } catch (e) {
       cargandoCobertura(false);
-      return avisoCobertura(`No se pudo contactar el servidor: ${esc((e && e.message) || "sin conexión")}.`, "error");
+      avisoCobertura(`No se pudo contactar el servidor: ${esc((e && e.message) || "sin conexión")}.`, "error");
+      return false;
     }
     cargandoCobertura(false);
 
     if (r.status === 401) {
       olvidarToken(); pintarEstadoToken();
-      return avisoCobertura('Token inválido. Escriba uno nuevo en <a href="#seccion-token" class="font-medium underline">Token de acceso</a>.', "error");
+      avisoCobertura('Token inválido. Escriba uno nuevo en <a href="#seccion-token" class="font-medium underline">Token de acceso</a>.', "error");
+      return false;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      return avisoCobertura(esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`), "error");
+      avisoCobertura(esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`), "error");
+      return false;
     }
     if (cuerpo.mensaje) avisoCobertura(esc(cuerpo.mensaje), "aviso");
     ultimaCobertura = cuerpo;
     $("btn-cobertura-exportar").disabled = false;
     pintarCobertura(cuerpo);
+    return true;
   }
 
   function pintarCobertura(c) {
@@ -1287,12 +1499,18 @@
     if (!ultimaCobertura) return;
     descargarJSON(ultimaCobertura, `cobertura_rup_${ultimaCobertura.perfil}_${new Date().toISOString().slice(0, 10)}.json`);
   });
-  $("c-perfil").addEventListener("change", () => {
-    // otro perfil, otra whitelist: lo pintado ya no corresponde
+  /* Otro perfil, otra whitelist: lo pintado ya no corresponde. Va con NOMBRE
+     porque fijar `c-perfil.value` desde código NO dispara `change`, y el paso 2
+     de la puesta en producción hace justo eso: sin llamarla, la auditoría de
+     OTRO perfil se quedaría pintada debajo de un selector que dice «Génesis». */
+  function invalidarCoberturaPintada(motivo) {
     $("c-contenido").classList.add("hidden");
     ultimaCobertura = null;
     $("btn-cobertura-exportar").disabled = true;
-    avisoCobertura("Perfil cambiado: ejecute la auditoría para este perfil.", "aviso");
+    if (motivo) avisoCobertura(motivo, "aviso");
+  }
+  $("c-perfil").addEventListener("change", () => {
+    invalidarCoberturaPintada("Perfil cambiado: ejecute la auditoría para este perfil.");
   });
 
   /* ══════════════════════════════════════════════════════════════════════════
