@@ -517,6 +517,9 @@
           objeto: $("objeto").value.trim(),
           departamento: $("departamento").value,
           entidad: $("entidad").value.trim(),
+          // el proceso de SECOP al que pertenece: es lo que enciende
+          // «APU listo» en su fila del panel
+          id_proceso: ($("id-proceso") && $("id-proceso").value.trim()) || null,
           items: filas,
           config: leerConfig(),
           total: ultimoCalculo ? ultimoCalculo.resumen.precio_final : null,
@@ -750,7 +753,141 @@
   }
 
   /* ─────────────────────────── arranque ─────────────────────────────── */
+
+  /* ════════════════════ Precarga desde el panel y rentabilidad ═══════════════
+     El botón «APU» de una fila de /admin.html abre esta página con el proceso
+     en la querystring. Sin esa precarga habría que copiar a mano el objeto, el
+     departamento, la entidad y la cuantía de cada proceso, que es justo el
+     trabajo que el botón existe para ahorrar. */
+  function precargarDesdeURL() {
+    let p;
+    try { p = new URLSearchParams(location.search); } catch { return false; }
+    const poner = (id, clave) => {
+      const v = p.get(clave);
+      if (v != null && v !== "" && $(id)) $(id).value = v;
+    };
+    poner("objeto", "objeto");
+    poner("codigos-unspsc", "unspsc");
+    poner("entidad", "entidad");
+    poner("id-proceso", "id_proceso");
+    poner("cuantia", "cuantia");
+    poner("plazo-meses", "plazo");
+    const perfil = p.get("perfil");
+    if (perfil && $("perfil") && [...$("perfil").options].some((o) => o.value === perfil)) $("perfil").value = perfil;
+    // el NIT viaja aparte: el índice de baja se consulta por NOMBRE, y el NIT
+    // solo sirve de puente cuando la entidad no viene (ver /api/apu/rentabilidad)
+    nitProceso = p.get("entidad_nit") || "";
+    const dpto = p.get("departamento");
+    if (dpto && $("departamento")) {
+      const opciones = [...$("departamento").options];
+      const hit = opciones.find((o) => norml(o.value) === norml(dpto) || norml(o.textContent) === norml(dpto));
+      if (hit) $("departamento").value = hit.value;
+    }
+    const hayProceso = !!(p.get("id_proceso") || p.get("objeto"));
+    if (hayProceso) $("seccion-proceso").classList.remove("hidden");
+    return hayProceso;
+  }
+  const norml = (x) => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+  let nitProceso = "";
+
+  const copRent = (n) => (n == null ? "—" : `$${nf.format(Math.round(n))}`);
+  const pctRent = (n) => (n == null ? "—" : `${nf2.format(n)} %`);
+
+  function tarjetaRent(titulo, valor, nota, tono) {
+    const color = tono === "mal" ? "text-red-600" : tono === "bien" ? "text-green-700" : "text-gray-900";
+    return `<div class="rounded-xl bg-gray-50 p-4">
+      <p class="text-xs font-medium uppercase tracking-wide text-gray-500">${esc(titulo)}</p>
+      <p class="mt-1 text-lg font-semibold num ${color}">${valor}</p>
+      ${nota ? `<p class="mt-1 text-xs text-gray-500">${esc(nota)}</p>` : ""}
+    </div>`;
+  }
+
+  async function calcularRentabilidad() {
+    if (!filas.length) { mensaje("Agregue ítems antes de calcular la rentabilidad.", "error"); return; }
+    const btn = $("btn-rentabilidad");
+    btn.disabled = true;
+    const antes = btn.textContent;
+    btn.textContent = "Calculando…";
+    try {
+      const cuerpo = {
+        items: filas.map((f) => ({ item_id: f.item_id, cantidad: f.cantidad, rendimiento_override: f.rendimiento_override })),
+        departamento: $("departamento").value,
+        config: leerConfig(),
+        entidad: $("entidad").value.trim(),
+        entidad_nit: nitProceso,
+        unspsc: $("codigos-unspsc").value.trim(),
+        cuantia: Number($("cuantia").value) || null,
+        plazo_meses: Number($("plazo-meses").value) || 12,
+        perfil: $("perfil").value,
+      };
+      const c = await api("/api/apu/rentabilidad", { method: "POST", body: cuerpo });
+      if (!c) return; // el usuario canceló el diálogo del token
+      pintarRentabilidad(c);
+      mensaje("Rentabilidad actualizada.", "ok");
+    } catch (e) {
+      mensaje(`No se pudo calcular la rentabilidad: ${e.message}`, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = antes;
+    }
+  }
+
+  function pintarRentabilidad(c) {
+    const r = c.rentabilidad;
+    if (!r) return;
+    $("seccion-rentabilidad").classList.remove("hidden");
+    const t = [];
+    t.push(tarjetaRent("Precio total calculado", copRent(r.precio_total),
+      c.presupuesto && c.presupuesto.resumen ? `Costo directo ${copRent(r.costo_directo)}` : null));
+    t.push(tarjetaRent("Costo directo total", copRent(r.costo_directo), "Sin AIU: va declarado aparte"));
+    t.push(tarjetaRent("Margen bruto", pctRent(r.margen_bruto_pct), "(Precio − Costo directo) / Precio"));
+    t.push(tarjetaRent("Margen neto esperado", pctRent(r.margen_neto_pct),
+      r.margen_es_cota_superior ? "COTA SUPERIOR: faltan las deducciones del pliego" : "Antes de renta",
+      r.margen_neto_pct != null && r.margen_neto_pct < 3 ? "mal" : "bien"));
+    t.push(tarjetaRent("Probabilidad de ganar",
+      r.p_ganar != null ? pctRent(r.p_ganar * 100) : "—",
+      r.p_ganar_detalle && r.p_ganar_detalle.modulada
+        ? `Base ${pctRent((r.p_ganar_detalle.p_base || 0) * 100)} × ${r.p_ganar_detalle.multiplicador} por precio`
+        : "Sin baja histórica: no se modula por precio"));
+    t.push(tarjetaRent("Valor esperado de la ganancia", copRent(r.veg),
+      `P(ganar) × utilidad − ${copRent(r.costo_preparacion)} de preparar la oferta`,
+      r.veg != null && r.veg <= 0 ? "mal" : "bien"));
+    t.push(tarjetaRent("Utilidad esperada", copRent(r.utilidad_esperada), "Antes de impuesto de renta",
+      r.utilidad_esperada <= 0 ? "mal" : null));
+    t.push(tarjetaRent("Capital de trabajo máximo", copRent(r.k_max), "Decide si se PUEDE, no si vale la pena"));
+    t.push(tarjetaRent("Payback",
+      r.payback_meses != null ? `${r.payback_meses} ${r.payback_meses === 1 ? "mes" : "meses"}` : "no retorna",
+      r.flujo && !r.flujo.anticipo_es_dato ? "Anticipo sin dato: es una cota" : "Hasta recuperar el capital expuesto"));
+    $("rentabilidad").innerHTML = t.join("");
+
+    const a = c.ajuste_competitivo || {};
+    const piso = c.precio_piso || {};
+    const partes = [];
+    if (a.aplicable) {
+      partes.push(`<p><strong>Baja mediana del mercado: ${pctRent(a.baja_mediana_pct)}</strong>
+        <span class="text-gray-500">(${esc(a.granularidad_utilizada || "")}, ${a.procesos_contados} procesos)</span></p>
+        <p class="mt-1">Precio sugerido: <strong>${copRent(a.precio_sugerido)}</strong>${a.baja_propia_pct != null
+          ? ` · su oferta descuenta ${pctRent(a.baja_propia_pct)}` : ""}</p>`);
+    } else {
+      partes.push(`<p class="rounded-lg bg-gray-100 px-3 py-2">⚪ ${esc(a.mensaje || "Sin índice de baja para esta entidad.")}</p>`);
+    }
+    if (piso.escenarios) {
+      partes.push(`<p class="mt-3">Precio piso · σ 8 %: <strong>${copRent(piso.escenarios.sigma_8.precio_piso)}</strong>
+        · σ 15 %: <strong>${copRent(piso.escenarios.sigma_15.precio_piso)}</strong></p>
+        <p class="mt-1 text-xs text-gray-500">${esc(piso.nota || "")}</p>`);
+    }
+    if (r.p_ganar_detalle && r.p_ganar_detalle.mensaje) {
+      partes.push(`<p class="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-900">${esc(r.p_ganar_detalle.mensaje)}
+        <br><span class="opacity-80">${esc(r.p_ganar_detalle.supuesto || "")}</span></p>`);
+    }
+    $("rentabilidad-precio").innerHTML = partes.join("");
+    $("rentabilidad-avisos").innerHTML = (r.advertencias || [])
+      .map((x) => `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(x)}</p>`).join("");
+  }
+
   async function arrancar() {
+    const hayProceso = precargarDesdeURL();
+    $("btn-rentabilidad").addEventListener("click", calcularRentabilidad);
     sincronizarBaja();
     pintarTabla();
     try {
@@ -759,6 +896,9 @@
     } catch (e) {
       mensaje(`No se pudo cargar el catálogo: ${e.message}`, "error");
     }
+    // el departamento del proceso solo se puede fijar cuando el catálogo ya
+    // llenó el desplegable: antes no existe la opción que hay que seleccionar
+    if (hayProceso) precargarDesdeURL();
   }
 
   /* EL ARRANQUE AUTOMÁTICO VA AQUÍ, AL FINAL DEL IIFE, y no junto al gate:

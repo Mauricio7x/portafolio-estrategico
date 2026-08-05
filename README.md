@@ -80,7 +80,8 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `lib/semantica.js` | Los **vocabularios**: `norm`, blacklist de objetos ajenos, whitelist de obra (heredadas), verbos de obra y términos no pertinentes |
 | `data/vocabulario_unspsc.json` | Semilla curada de términos distintivos por familia UNSPSC (respaldo del derivado) |
 | `lib/almacen.js` | Esquema de claves Redis + compresión/particionado de chunks |
-| `api/apu/[accion].js` | **Editor de APU** — una sola función para seis acciones (catálogo, inferir, calcular, guardar, cargar, listar): el plan Hobby de Vercel admite 12 funciones por despliegue |
+| `api/apu/[accion].js` | **Editor de APU** — una sola función para siete acciones (catálogo, inferir, calcular, **rentabilidad**, guardar, cargar, listar): el plan Hobby de Vercel admite 12 funciones por despliegue |
+| `lib/apu/rentabilidad.js` | Lo que el presupuesto no responde: flujo de caja mes a mes, capital expuesto, **payback**, precio piso, maldición del ganador y **VEG** |
 | `lib/apu/tipologias.js` | Las 22 tipologías cerradas y el mapa departamento→región. `regionDeDepartamento` es el punto único de paso y **jamás devuelve una región de relleno** |
 | `lib/apu/inferencia.js` | Objeto del proceso → tipología de obra e ítems: léxico con puntaje (Nivel A) + UNSPSC como **veto** (Nivel B) |
 | `lib/apu/calculo.js` | Del costo directo al precio: cantidades, AIU, ajuste competitivo, margen y alertas. **No reimplementa** el costo directo: llama a `costoDirecto()` del catálogo |
@@ -1321,6 +1322,68 @@ La auditoría de completitud vive en `meta.porMes`: `esperados` (`count(*)` de S
 | `/api/sync/historico` | no lo toca | reemplaza mes a mes el rango pedido |
 | `reconstruir_*` | no lo toca | no lo toca (solo re-lee y republica los derivados) |
 | Carga del catálogo APU | **no lo toca** | **no lo toca** (escribe solo en `apu:*`) |
+
+## Rentabilidad del proceso (`lib/apu/rentabilidad.js` + `POST /api/apu/rentabilidad`)
+
+El editor responde **cuánto cuesta**. Esta capa responde las dos preguntas que faltan, y son
+distintas entre sí:
+
+| Pregunta | Indicador | Qué decide |
+|---|---|---|
+| ¿Vale la pena? | margen bruto y neto | Si el contrato deja dinero |
+| ¿Se puede? | **`K_max`** (capital de trabajo máximo expuesto) y **payback** | Si la empresa puede EJECUTARLO |
+| ¿Cuánto vale la oportunidad? | **`VEG` = P(ganar) × utilidad − costo de preparar** | El **orden primario**, no el margen |
+
+Un contrato puede tener utilidad contable positiva todo el tiempo y caja negativa todo el tiempo:
+se quiebra por caja. Por eso los tres se publican por separado y ninguno se promedia con otro.
+
+**Es la única acción del módulo que toca la red**: lee `indice:baja:*`, `indice:competencia` y
+`lib/probabilidad`. Va aparte de `calcular` —que es aritmética pura— para no pagar dos lecturas de
+Redis en cada tecla del editor.
+
+### `P(ganar | precio)` no es una sigmoide, es una mezcla
+
+En obra pública colombiana **el método de ponderación económica se SORTEA en la audiencia** (Ley 1882
+de 2018): el proponente elige su precio sin saber si le tocará media geométrica o menor valor. La
+consecuencia va contra la intuición: **ofertar más barato no maximiza la probabilidad de ganar**.
+
+```
+P(b) = 0,25 · P_menor_valor(b)  +  0,75 · P_central(b)
+       └ sigmoide: crece con la baja      └ campana: alejarse del centro RESTA
+```
+
+La sigmoide sigue publicándose aparte (`p_menor_valor`) para que se vea de dónde sale cada mitad. El
+resultado se aplica como **multiplicador** sobre la `p` de `lib/probabilidad`, normalizado para valer
+**exactamente 1 en la mediana del mercado**: así ofertar al centro devuelve la misma probabilidad que
+ya publica `/api/oportunidades`. Dos cifras distintas del mismo número es el defecto que este
+repositorio ya pagó dos veces.
+
+La **forma** de esa curva usa un `n` de referencia fijo. El efecto de nivel de la competencia ya lo
+lleva `p_base`; meterlo también en la forma lo contaba dos veces y hacía que catorce oferentes dieran
+*más* probabilidad que tres.
+
+### El botón «APU» y el badge «APU listo»
+
+Cada fila de «Top 10 procesos más atractivos» en `/admin.html` lleva un botón **APU** que abre el
+editor con el proceso precargado por querystring (`objeto`, `unspsc`, `departamento`, `cuantia`,
+`entidad`, `entidad_nit`, `id_proceso`, `perfil`, `plazo`). Al guardar, el borrador queda asociado a
+ese `id_proceso` y al perfil, y la fila muestra **✅ APU listo**.
+
+El listado se pide **aparte de `/api/resumen`**, cuya respuesta se cachea 300 s: un presupuesto
+recién guardado no puede tardar cinco minutos en encender el badge.
+
+### Honestidad del dato
+
+- **Sin `deducciones_pct` del pliego el margen es una COTA SUPERIOR**, no una estimación, y la
+  respuesta lo declara en `margen_es_cota_superior`. Un bloque de deducciones de hasta ~10 % del valor
+  es mayor que el margen típico: omitirlo invierte el signo del negocio.
+- **`anticipo_pct` vacío es AUSENCIA DE DATO**, no 0 %: el flujo resultante es una cota inferior y el
+  payback se marca como tal.
+- **El payback exige haber estado expuesto**: sin esa condición, un contrato con anticipo daría
+  payback = mes 1 por el propio anticipo, que es dinero de la entidad y no capital devuelto.
+- **El precio piso decide con σ = 15 %**, no con 8 %: la prima crece con σ, así que usar el valor bajo
+  sin calibrar es anti-conservador.
+- **Sin índice de baja no hay precio sugerido.** «Sin dato» no es «no descuenta nada».
 
 ## Catálogo de precios APU (`lib/apu/catalogo.js`)
 

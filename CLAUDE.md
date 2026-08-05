@@ -958,6 +958,64 @@ cifra de aquí en un pliego sin abrir la fuente.
   la lista de resultados. Un 🟡 se descarta en 5 s; una oportunidad que la app nunca mostró no se
   recupera.
 
+### Rentabilidad del proceso: VEG, caja y payback (ago 2026)
+
+El editor responde *cuánto cuesta*. `lib/apu/rentabilidad.js` + `POST /api/apu/rentabilidad`
+responden *cuánto vale la oportunidad* y *si la empresa puede ejecutarla*.
+
+- **EL COSTO DIRECTO NO SE RECALCULA AQUÍ.** `desdePresupuesto()` toma el `resumen` de
+  `lib/apu/calculo.js` tal cual y le añade la capa que aquel no cubre. Un segundo cálculo del costo
+  directo divergiría del primero a la primera corrección que se aplicara a uno solo, y una diferencia
+  del 3 % entre dos motores de APU no se ve en pantalla: se ve cuando se pierde el proceso.
+- **La acción va APARTE de `calcular`, y no dentro.** Es la única del módulo que toca la RED (índice
+  de baja, índice de competencia, `lib/probabilidad`); fundirlas obligaría a pagar dos lecturas de
+  Redis en cada tecla del editor.
+- **`P(ganar | precio)` NO es una sigmoide monótona: es una MEZCLA** de «menor valor» (25 %) y
+  métodos centrales (75 %). El método de ponderación **se sortea** en la audiencia (Ley 1882/2018),
+  así que ofertar más barato no maximiza la probabilidad de ganar: la compra en un escenario de
+  cuatro y la destruye en los otros tres. La sigmoide sigue publicándose aparte (`p_menor_valor`).
+- **El multiplicador de precio vale EXACTAMENTE 1 en la mediana del mercado.** Sin esa normalización,
+  `/api/apu/rentabilidad` y `/api/oportunidades` publicarían dos probabilidades distintas del mismo
+  proceso. Hay prueba de la igualdad.
+- **La FORMA de esa curva usa un `n` de REFERENCIA FIJO (6), no los oferentes de la entidad.** El
+  efecto de nivel ya lo lleva `p_base` (`1/(1+rivales)`). Meterlo también en la forma lo contaba dos
+  veces y rompía A.10 en el extremo: con una baja muy por encima de la mediana, el término central
+  (1/n) del DENOMINADOR se encoge con `n`, infla el multiplicador y catorce oferentes acababan dando
+  MÁS probabilidad que tres. Además no hay con qué calibrar esa dependencia —la curva se infiere, el
+  corpus no trae las ofertas perdedoras—, así que fijar la forma hace la monotonía **demostrable** en
+  vez de afortunada.
+- **El AIU y la estructura de costos son DOS descomposiciones del mismo `V`.** El AIU es la
+  estructura de PRECIO que se declara en la oferta: su «A» cubre nominalmente dirección de obra,
+  pólizas, ensayos e impuestos. La rentabilidad usa la de COSTO, donde esas tres son líneas
+  separadas. Usar la «A» declarada como si fuera el indirecto Y sumar aparte garantías e impuestos
+  cobraba la administración dos veces y dejaba en rojo presupuestos sanos. Corolario: la **«I» del
+  AIU tampoco es un costo** — es el ingreso que financia la prima de riesgo; restar las dos contaba
+  el imprevisto dos veces.
+- **`C_indirecto` es función del PLAZO** y por eso lleva el factor `T/T_ref` con una referencia
+  declarada: sin él, alargar el plazo sin obra adicional no movería la utilidad, y la invariante A.11
+  dice que no puede SUBIRLA.
+- **El payback exige haber estado EXPUESTO.** Sin esa condición, un contrato con anticipo daría
+  payback = mes 1 por el propio anticipo, que es dinero de la entidad y no capital devuelto.
+- **El precio piso decide con σ = 15 %, no con 8 %.** La prima de la maldición del ganador CRECE con
+  σ, así que usar el valor bajo sin calibrar produce un piso más bajo — exactamente el error caro.
+- **Sin `deducciones_pct` del pliego el margen es una COTA SUPERIOR**, y viaja declarado. Un bloque
+  de deducciones de hasta ~10 % del valor es mayor que el margen típico: omitirlo invierte el signo.
+- **El borrador guarda su `id_proceso`, que NO puede ser su `id`.** El `id` del borrador lo propone
+  el cliente y `ID_RE` no admite puntos, mientras que `id_del_proceso` de SECOP los trae
+  (`CO1.REQ.123`). Son dos claves distintas a propósito, y la del proceso es la única con la que el
+  panel puede encender «APU listo».
+- **El listado de borradores se pide APARTE de `/api/resumen`**, cuya respuesta se cachea 300 s: un
+  presupuesto recién guardado no puede tardar cinco minutos en encender el badge — es la misma razón
+  por la que una carga de RUP borra esa caché. Aquí no hace falta borrar nada porque no se cachea, y
+  `procesos_con_presupuesto` viaja como lista de PERTENENCIA, no como conteo, para que el frontend no
+  pueda convertir un «no sé» en un cero con un `|| 0`.
+- **El botón «APU» vive DENTRO de una fila cuyo clic abre SECOP II**, así que su clic burbujea: sin
+  la guarda `closest(".btn-apu")` al principio del manejador, pulsarlo abriría además la ficha en
+  otra pestaña. Hay prueba de que la guarda va ANTES de resolver la fila.
+- **En `public/apu.js` la precarga del departamento corre DESPUÉS de cargar el catálogo.** Antes no
+  existe la opción del desplegable que hay que seleccionar y la precarga se perdería en silencio; hay
+  prueba del orden.
+
 ### Catálogo de precios APU (ago 2026)
 
 - **La investigación que el encargo daba por escrita NO existía.** `docs/APU_Y_RENTABILIDAD.md` no
