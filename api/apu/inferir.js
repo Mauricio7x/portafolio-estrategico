@@ -160,6 +160,7 @@ module.exports = async function handler(req, res) {
         terminos_ampliados: r.terminos_ampliados,
         experiencia_cargada: r.experiencia_cargada,
         umbrales: r.umbrales,
+        universo_lift: r.universo_lift,
       });
     } catch (e) {
       return res.status(503).json({ ok: false, error: `Se derivó pero no se pudo publicar: ${e.message}` });

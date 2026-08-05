@@ -169,9 +169,10 @@ quiere que un término de 0.9 sugiera por sí solo, lo que hay que mover es **su
 diccionario —dato, discutible, auditable— y **no el umbral**, que es lo que sostiene que la lista
 no se llene de ruido.
 
-### 4.4 Las dos puertas de entrada (y los dos defectos reales que las motivaron)
+### 4.4 Las tres puertas de entrada (y los defectos reales que las motivaron)
 
 El motor **no reinventa** ninguna noción de «esto no es obra»: llama a las reglas que ya existen.
+Tres definiciones paralelas de «obra» divergirían a la primera corrección.
 
 1. **`BLACKLIST_OBJETO`** (`lib/semantica`), sobre texto **CRUDO** —lleva `[oó]` y flag `i`;
    cambiarle la base de comparación sería una regresión silenciosa—. Hace falta porque
@@ -182,8 +183,15 @@ El motor **no reinventa** ninguna noción de «esto no es obra»: llama a las re
    código del segmento **80** (gerencia), sugería «interventoría». No es un fallo del mapeo: el 80
    está en los RUP porque ahí viven la gerencia de proyectos y la interventoría, y es exactamente
    el agujero por el que ya se colaron impresión, alimentos e internet en el juicio del RUP.
+3. **`esSuministroPuro`** (`lib/filtros`). El mapeo cubre **a propósito** segmentos de bienes (30
+   materiales, 40 tubería, 26 eléctricos), porque una obra publicada con un `4017` sí lleva
+   tubería. El precio de esa cobertura es que una **compra pura** con el mismo código se llevaría
+   un APU de red entero. La regla ya existente lo distingue sin ambigüedad: solo dispara si
+   **ningún** código ancla obra (segmento ≥ 70 que no sea de servicios no constructivos) **y** el
+   texto es de adquisición **sin** ningún verbo de obra. Por eso «SUMINISTRO DE TUBERÍA» cae y
+   «SUMINISTRO **E INSTALACIÓN** DE TUBERÍA» pasa.
 
-Las dos **solo se aplican si hay texto**. Si el llamante manda un código a secas no hay objeto que
+Las tres **solo se aplican si hay texto**. Si el llamante manda un código a secas no hay objeto que
 evaluar, y tratar esa ausencia como «no pertinente» sería cerrar por ignorancia — la regla de
 faltantes de las cuatro puertas dice justo lo contrario.
 
@@ -224,6 +232,22 @@ vocabulario por familia de `lib/texto_unspsc`.
 Un 0 aquí tiene causas distinguibles (`sin_historico`, `sin_codigos_mapeados`,
 `redis_inaccesible`) y por eso el resultado las publica con su siguiente paso, en vez de devolver
 un número pelado.
+
+**Dos pasadas, y la primera existe por memoria.** `ítem → (término → n)` haría que cada proceso
+metiera todos sus n-gramas en cada uno de sus ítems mapeados, y un proceso de vía mapea 22 ítems:
+el vocabulario entero duplicado 22 veces. Sobre un histórico real eso son millones de entradas y la
+función se queda sin memoria — *en el corpus de prueba no se nota, que es justo por lo que hay que
+escribirlo*. La primera pasada cuenta cada término una vez y **poda**: un término que no alcanza el
+soporte mínimo en todo el corpus no puede alcanzarlo dentro de ningún ítem. Lo que el tope recorta
+se **informa** (`terminos_podados_por_tope`): un recorte silencioso se lee como «esto es todo lo
+que había».
+
+**Y lo que la derivación NO tiene, dicho en voz alta:** recorre el histórico entero en una sola
+invocación, sin presupuesto de tiempo, sin reanudación y sin candado — igual que
+`/api/admin/cobertura-rup`, y por el mismo motivo (corre a petición, y publicar es idempotente, así
+que dos derivaciones simultáneas no corrompen nada). Lo que puede pasar es que un histórico muy
+grande agote los 60 s de la función. Cuando ocurra, lo que hay que hacer es lo que ya hacen
+`/api/sync` y el índice de baja —presupuesto + progreso reanudable—, no subir el `maxDuration`.
 
 ### 4.7 El endpoint
 

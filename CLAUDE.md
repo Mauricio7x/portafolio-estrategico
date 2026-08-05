@@ -559,17 +559,44 @@ muestra como si fuera ingreso. Diseño completo y plan de la Fase 3 en `docs/APU
   cambia lo que las cosas CUESTAN, no lo que hay que ejecutar. Es el gancho de la Fase 3 (índice
   por ciudad del módulo viejo + ICOCIV). Hay prueba de que Amazonas y Bogotá dan lo mismo — dejar
   el parámetro sin usar Y sin decirlo sería decorativo; decirlo es la diferencia.
-- **DOS DEFECTOS REALES encontrados sobre el corpus, y la regla que los cierra es la que YA
-  existía.** (1) «PRESTACIÓN DEL SERVICIO DE INTERNET DEDICADO», publicada en el segmento **80**,
+- **TRES DEFECTOS REALES encontrados sobre el corpus, y las reglas que los cierran son las que YA
+  existían.** (1) «PRESTACIÓN DEL SERVICIO DE INTERNET DEDICADO», publicada en el segmento **80**,
   sugería «interventoría» — el 80 está en los RUP porque ahí viven la gerencia y la interventoría,
   el mismo agujero por el que se colaron impresión y alimentos. (2) «ADQUISICIÓN DE CANINOS
   ANTINARCÓTICOS», publicada con un **72141000**, se habría llevado un APU de carretera entero.
-  Se cierran llamando a `evaluarPertinencia` y a `BLACKLIST_OBJETO`, **no** inventando una segunda
-  definición de «esto no es obra» que divergiría a la primera corrección. `BLACKLIST_OBJETO` se
-  aplica sobre texto **CRUDO**, como manda su documentación.
-- **Las dos puertas solo corren SI HAY TEXTO.** Con un código a secas no hay objeto que evaluar, y
+  (3) Una **compra pura** con código de bienes («COMPRAVENTA DE TUBERÍA PVC», segmento 40) se
+  habría llevado un APU de red de acueducto: el mapeo cubre los segmentos de bienes A PROPÓSITO
+  —una obra publicada con un 4017 sí lleva tubería— y ese es el precio.
+  Se cierran llamando a `evaluarPertinencia`, `BLACKLIST_OBJETO` y `esSuministroPuro`, **no**
+  inventando una segunda definición de «esto no es obra» que divergiría a la primera corrección.
+  `BLACKLIST_OBJETO` se aplica sobre texto **CRUDO**, como manda su documentación, y
+  `esSuministroPuro` sigue distinguiendo «SUMINISTRO DE TUBERÍA» de «SUMINISTRO **E INSTALACIÓN**
+  DE TUBERÍA» sin que haya que tocarlo.
+- **Las tres puertas solo corren SI HAY TEXTO.** Con un código a secas no hay objeto que evaluar, y
   tratar esa ausencia como «no pertinente» sería cerrar por ignorancia — justo lo contrario de la
   regla de faltantes de las cuatro puertas.
+- **`publicarConocimiento` NO puede reescribir la semilla sobre la tabla que no le pasaron.**
+  `?derivar=true` publica solo el diccionario, y con el respaldo en código como valor por defecto
+  eso revertía `apu:mapeo_unspsc` a la semilla, borrando en silencio lo que el dueño hubiera
+  editado. Contradecía «Redis manda, el código respalda», «lo derivado se MEZCLA, jamás sustituye»
+  y la carga parcial del RUP («subir solo Génesis conserva a Helder») — las tres a la vez— y dejaba
+  sin sentido el propio mensaje del GET, que invita a editar la tabla en Redis. Ahora lo que falta
+  se toma de **lo publicado**, y la semilla solo entra cuando no hay nada. Ídem `derivarDiccionario`:
+  deriva sobre lo VIGENTE, no sobre la semilla, o aprendería para un mundo y contestaría en otro.
+- **La derivación va en DOS PASADAS, y la primera existe por MEMORIA.** `ítem → (término → n)`
+  duplica el vocabulario una vez por ítem mapeado, y un proceso de vía mapea 22: sobre un histórico
+  real son millones de entradas y la función se queda sin memoria. **En el corpus de prueba no se
+  nota**, que es exactamente por lo que hay que dejarlo escrito. La primera pasada cuenta y poda
+  (un término que no llega al soporte mínimo global no puede llegar dentro de ningún ítem), y lo
+  que el tope recorta se INFORMA. Lo que la derivación sigue sin tener —presupuesto, reanudación,
+  candado— está documentado: es la forma de `/api/admin/cobertura-rup`, y si un día agota los 60 s
+  la salida es presupuesto + progreso, no subir el `maxDuration`.
+- **Un peso disparatado en el diccionario (0, negativo, `"mucho"`) se DESCARTA y se cuenta**, nunca
+  se convierte en 1: 1 es el MÁXIMO, así que un término mal escrito acabaría pesando más que uno
+  curado a conciencia. El peso ausente sí vale 1 — es el contrato de la forma abreviada
+  `termino: [items]`. Y un término más largo que el mayor n-grama que se genera también se
+  descarta: entraría, ocuparía sitio y no casaría JAMÁS, que es la trampa de las preposiciones otra
+  vez. Por eso el tope de n-grama es **un solo número** (`MAX_NGRAMA`) y no dos que puedan divergir.
 - **Una lista vacía tiene DOS causas y `[]` no las distingue**: el objeto no es de obra (y entonces
   viaja `no_pertinente` con su motivo), o es obra y nada llegó al umbral (viaja `sin_sugerencias`
   diciendo qué hacer). «ADECUACIÓN DE LA SEDE EDUCATIVA» sin código es el caso real: sus términos

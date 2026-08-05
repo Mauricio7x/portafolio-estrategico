@@ -2172,6 +2172,48 @@ async function main() {
       const m = inf.compilarMapeo({ 7: ["est_concreto_21"], abc: ["est_concreto_21"], 7214: ["est_concreto_21"] });
       assert.deepStrictEqual([...m.mapa.keys()], ["7214"], "solo los prefijos UNSPSC de longitud par entran");
       assert.strictEqual(m.descartados, 2);
+
+      /* Un peso DISPARATADO no puede convertirse en 1, que es el máximo: un
+         término mal escrito acabaría pesando más que uno curado a conciencia.
+         La forma abreviada (sin peso) sí vale 1, que es su contrato. */
+      for (const malo of [0, -1, "mucho", null, NaN]) {
+        const d = inf.compilarDiccionario({ "termino de prueba": { peso: malo, items: ["est_concreto_21"] } });
+        assert.strictEqual(d.mapa.size, 0, `peso ${JSON.stringify(malo)} no puede entrar al diccionario`);
+        assert.strictEqual(d.descartados, 1, `peso ${JSON.stringify(malo)} tiene que quedar CONTADO`);
+      }
+      const abreviada = inf.compilarDiccionario({ "termino de prueba": ["est_concreto_21"] });
+      assert.strictEqual(abreviada.mapa.get("termino prueba").peso, 1,
+        "la forma abreviada (sin peso) vale 1: es su contrato");
+
+      /* Un término más largo que el mayor n-grama que se genera no casaría
+         JAMÁS: entraría, ocuparía sitio y no puntuaría nunca — muerto y en
+         silencio, la misma forma de fallar que la trampa de las preposiciones. */
+      const largo = inf.compilarDiccionario({
+        "uno dos tres cuatro cinco seis siete ocho": { peso: 1, items: ["est_concreto_21"] },
+      });
+      assert.strictEqual(largo.mapa.size, 0, "un término más largo que el mayor n-grama no puede entrar");
+      assert.strictEqual(largo.descartados, 1, "y tiene que quedar contado");
+    }
+
+    /* 3-bis · El corte por longitud del objeto respeta la palabra entera:
+       partirla fabricaría un token que el objeto no contiene («…PAVIMENTA» de
+       «PAVIMENTACIÓN») y ese token podría casar con un término del diccionario.
+       Es un dato inventado, aunque sea pequeño. */
+    {
+      const relleno = "palabra ".repeat(300);              // supera MAX_OBJETO
+      const { tokens } = inf.ngramas(`${relleno}pavimentacion`, 3);
+      assert.ok(!tokens.some((t) => t !== "palabra" && "pavimentacion".startsWith(t) && t !== "pavimentacion"),
+        `el corte partió una palabra y fabricó un token: ${tokens.filter((t) => t !== "palabra").join(", ")}`);
+    }
+
+    /* 3-ter · `opts.conocimiento` parcial se COMPLETA en vez de reventar: un
+       llamante que pase solo el diccionario no puede llevarse un TypeError
+       cuyo mensaje no dice nada de lo que faltó. */
+    {
+      const d = inf.compilarDiccionario({ alcantarillado: { peso: 1, items: ["hid_tuberia_alcantarillado"] } });
+      const r = await inf.inferirItems("Optimizacion de la red de alcantarillado", null, null,
+        { conocimiento: { diccionario: d.mapa } });      // sin mapeo, sin maxTokens, sin origen
+      assert.strictEqual(r.total, 1, "un conocimiento parcial tiene que completarse y seguir funcionando");
     }
 
     /* 4 · Jerarquía del código: el nivel se LEE (lib/unspsc), no se recorta. */
@@ -2302,6 +2344,29 @@ async function main() {
       // un UNSPSC impecable — misma regla que `esObjetoGenerico` en el juicio
       const generico = await inf.inferirItems("CONVOCATORIA PUBLICA", "V1.72141000", null);
       assert.strictEqual(generico.total, 0, "un objeto genérico no describe ninguna obra que presupuestar");
+
+      /* TERCERA puerta: ANTI-SUMINISTRO. El mapeo cubre a propósito segmentos de
+         BIENES (30 materiales, 40 tubería, 26 eléctricos) porque una obra
+         publicada con un 4017 sí lleva tubería; el precio es que una COMPRA PURA
+         con el mismo código se llevaría un APU de red entero. La regla es la del
+         repositorio (`esSuministroPuro`), no una nueva, y por eso distingue
+         «SUMINISTRO DE TUBERÍA» de «SUMINISTRO E INSTALACIÓN DE TUBERÍA». */
+      for (const [obj, cod] of [
+        ["COMPRAVENTA DE TUBERIA PVC PARA LA ENTIDAD", "V1.40171500"],
+        ["SUMINISTRO DE TUBERIA PARA LA RED DE ACUEDUCTO", "V1.40171500"],
+        ["ADQUISICION DE MOBILIARIO ESCOLAR", "V1.56112000"],
+      ]) {
+        const r = await inf.inferirItems(obj, cod, null);
+        assert.strictEqual(r.total, 0, `«${obj}» es una compra: no hay actividades que presupuestar`);
+        assert.strictEqual(r.no_pertinente.tipo, "suministro_puro");
+      }
+      for (const [obj, cod] of [
+        ["SUMINISTRO E INSTALACION DE TUBERIA PARA LA OPTIMIZACION DE LA RED DE ACUEDUCTO", "V1.40171500"],
+        ["CONSTRUCCION DE AULA INCLUYENDO SUMINISTRO DE MOBILIARIO", "V1.72121400"],
+      ]) {
+        const r = await inf.inferirItems(obj, cod, null);
+        assert.ok(r.total > 0, `«${obj}» SÍ es obra: la puerta anti-suministro no puede llevárselo`);
+      }
     }
 
     /* 7-ter · Dos redacciones que canonizan igual son UN término: gana el peso
@@ -4927,6 +4992,38 @@ async function main() {
         conSemilla.cuerpo.items.map((i) => [i.item_id, i.confianza]),
         "sembrar la semilla no puede cambiar ni un ítem ni una confianza");
 
+      /* 5-bis · LA TABLA QUE NO SE PASA NO SE TOCA, y «no tocar» es conservar lo
+         PUBLICADO, no reescribir la semilla encima. `?derivar=true` publica solo
+         el diccionario: con la semilla como valor por defecto, eso revertía
+         `apu:mapeo_unspsc` y borraba en silencio lo que el dueño hubiera
+         editado — «Redis manda, el código respalda» dejaba de ser cierto justo
+         donde más importa, y el mensaje del GET («publique para poder editarla
+         sin desplegar») se quedaba sin sentido. */
+      {
+        const mapeoVigente = JSON.parse(await redis.get("apu:mapeo_unspsc"));
+        mapeoVigente["7216"] = ["est_concreto_21"];   // el dueño añade una clave
+        delete mapeoVigente["30"];                    // …y quita otra
+        await redis.set("apu:mapeo_unspsc", JSON.stringify(mapeoVigente));
+
+        const dicVigente = JSON.parse(await redis.get("apu:diccionario_terminos"));
+        dicVigente["termino del dueno"] = { peso: 1, items: ["est_concreto_21"], origen: "manual" };
+        await redis.set("apu:diccionario_terminos", JSON.stringify(dicVigente));
+
+        await invocarPost(apuInferir, "/api/apu/inferir?derivar=true", {}, CAB_TOKEN);
+
+        const tras = JSON.parse(await redis.get("apu:mapeo_unspsc"));
+        assert.ok("7216" in tras, "derivar borró una clave del mapeo que el dueño había añadido");
+        assert.ok(!("30" in tras), "derivar resucitó una clave del mapeo que el dueño había borrado");
+        const dicTras = JSON.parse(await redis.get("apu:diccionario_terminos"));
+        assert.ok("termino del dueno" in dicTras, "derivar borró un término que el dueño había añadido");
+
+        // y «sembrar» SÍ tiene que restablecer la semilla: es lo que promete
+        await invocarPost(apuInferir, "/api/apu/inferir?sembrar=true", {}, CAB_TOKEN);
+        const trasSembrar2 = JSON.parse(await redis.get("apu:mapeo_unspsc"));
+        assert.ok(!("7216" in trasSembrar2) && "30" in trasSembrar2,
+          "«Publicar semilla» tiene que devolver las tablas del código, o el botón no hace lo que dice");
+      }
+
       /* 6 · derivar del histórico REAL (el corpus que dejó el paso e) */
       const derivado = await invocarPost(apuInferir, "/api/apu/inferir?derivar=true", {}, CAB_TOKEN);
       assert.strictEqual(derivado.status, 200);
@@ -4934,6 +5031,16 @@ async function main() {
       assert.ok(derivado.cuerpo.procesos_historico > 0, "tenía que leer el histórico");
       assert.ok(derivado.cuerpo.procesos_con_codigo_mapeado > 0,
         "el puente término→ítem pasa por el código UNSPSC: sin procesos mapeados no hay derivación posible");
+      /* EL UNIVERSO DEL LIFT. Un lift es un cociente de dos probabilidades y las
+         dos tienen que medirse sobre el MISMO universo. Contando el denominador
+         sobre TODAS las filas y el numerador solo sobre las que tienen código
+         mapeado, `P(t)` sale menor de lo que es y el lift sale INFLADO: el filtro
+         dejaría pasar términos que no llegan al umbral que dice aplicar. */
+      assert.strictEqual(derivado.cuerpo.universo_lift, derivado.cuerpo.procesos_con_codigo_mapeado,
+        "las dos mitades del lift tienen que medirse sobre el mismo universo");
+      assert.ok(derivado.cuerpo.procesos_con_codigo_mapeado < derivado.cuerpo.procesos_historico,
+        "el corpus de prueba tiene que traer procesos SIN código mapeado, o los dos universos "
+        + "coincidirían y esta comprobación no estaría probando nada");
       // la derivación MEZCLA sobre la semilla, no la sustituye: los términos
       // curados tienen que seguir ahí (una derivación flaca no puede dejar sin
       // señal a lo que ya funcionaba)
