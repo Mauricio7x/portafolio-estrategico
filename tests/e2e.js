@@ -2155,6 +2155,834 @@ async function main() {
     console.log("· unidad experiencia/cobertura: tokenización, similitud, validación y la cascada de criticidad");
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     UNIDAD · APU: parseo de la tabla de cantidades de un pliego
+     ──────────────────────────────────────────────────────────────────────────
+     Todo lo de este bloque es FUNCIÓN PURA sobre texto sintético: ni Redis, ni
+     Socrata, ni red. El endpoint /api/apu/extraer-texto también entra aquí
+     porque tampoco toca Redis — es una función sobre el cuerpo de la petición.
+     ══════════════════════════════════════════════════════════════════════════ */
+  {
+    const pliego = require("../lib/apu_pliego.js");
+    const mapeo = require("../lib/apu_mapeo.js");
+    const cat = require("../lib/apu_catalogo.js");
+    const ocrMod = require("../lib/apu_ocr.js");
+    const apiExtraer = require("../lib/apu_extraer.js");
+    const apiDescargar = require("../lib/apu_descargar.js");
+    const TAB = "\t";
+
+    /* 1. NÚMEROS EN FORMATO COLOMBIANO. Punto de miles, coma decimal.
+       Invertirlo multiplica por 1000, que es el error silencioso más caro de
+       todo el módulo, así que la tabla es explícita caso por caso. */
+    {
+      const casos = [
+        ["1.234.567,89", 1234567.89], ["1.234.567", 1234567], ["1.234", 1234],
+        ["1.5", 1.5], ["1.50", 1.5], ["12,5", 12.5], ["0,00", 0], ["$ 45.000", 45000],
+        ["1.234.56", 1234.56], ["-500", -500], ["  8.450,00  ", 8450],
+        // lo que NO es un número: el nº del contrato, texto, comas dobles
+        ["2024-350", null], ["abc", null], ["1,2,3", null], ["", null], ["CM-001", null],
+      ];
+      for (const [entrada, esperado] of casos) {
+        assert.strictEqual(pliego.numeroColombiano(entrada), esperado,
+          `numeroColombiano(${JSON.stringify(entrada)}) debía dar ${esperado}`);
+      }
+    }
+
+    /* 2. UNIDADES: la celda tiene que SER una unidad, no contenerla. Si valiera
+       «contiene», «SUMINISTRO» casaría con «un» y toda línea de prosa pasaría
+       por fila de ítem. */
+    {
+      const eq = [["M3", "m3"], ["m³", "m3"], ["UND", "un"], ["GLB", "gl"],
+        ["METRO CUADRADO", "m2"], ["ML", "ml"], ["Kgs", "kg"], ["  M2 ", "m2"], ["TONELADAS", "ton"]];
+      for (const [entrada, esperado] of eq) {
+        assert.strictEqual(pliego.unidadCanonica(entrada), esperado, `unidadCanonica(${entrada})`);
+      }
+      for (const no of ["SUMINISTRO", "CONCRETO DE 21 MPA", "", "xyz", "unidades sanitarias"]) {
+        assert.strictEqual(pliego.unidadCanonica(no), null, `«${no}» no es una unidad`);
+      }
+    }
+
+    /* 3. CABECERAS: ≥3 grupos en una fila la convierten en cabecera, y gana la
+       coincidencia más ESPECÍFICA («CANTIDAD TOTAL» es cantidad, no total). */
+    {
+      const g = pliego.grupoDeCabecera;
+      assert.strictEqual(g("ÍTEM"), "item");
+      assert.strictEqual(g("DESCRIPCIÓN"), "descripcion");
+      assert.strictEqual(g("VR UNITARIO"), "unitario");
+      assert.strictEqual(g("VALOR TOTAL"), "total");
+      assert.strictEqual(g("CANTIDAD TOTAL"), "cantidad", "gana el patrón más largo, no el primero de la lista");
+      // los formularios abrevian con puntos de forma inconsistente: las tres formas
+      assert.deepStrictEqual([g("U.M."), g("U M"), g("UM")], ["unidad", "unidad", "unidad"]);
+      assert.strictEqual(g("SUBBASE GRANULAR"), null, "una descripción no es una cabecera");
+    }
+
+    /* 4. PARSEO POSICIONAL sobre un formulario completo: cabecera, capítulos con
+       su subtotal, filas con precio, AIU declarado y anticipo. */
+    const FORMULARIO = [
+      "MUNICIPIO DE PURIFICACION - TOLIMA",
+      "FORMULARIO 1 - PRESUPUESTO OFICIAL",
+      "",
+      ["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"].join(TAB),
+      ["1", "PRELIMINARES"].join(TAB),
+      ["1.1", "LOCALIZACION Y REPLANTEO", "M2", "1.250,00", "2.500", "3.125.000"].join(TAB),
+      ["1.2", "DESCAPOTE Y LIMPIEZA", "M2", "1.250,00", "3.200", "4.000.000"].join(TAB),
+      ["", "SUBTOTAL CAPITULO 1", "", "", "", "7.125.000"].join(TAB),
+      ["2", "ESTRUCTURA DE PAVIMENTO"].join(TAB),
+      ["2.1", "SUBBASE GRANULAR COMPACTADA", "M3", "375,00", "95.000", "35.625.000"].join(TAB),
+      ["2.2", "CONCRETO DE 21 MPA (3000 PSI) PARA HUELLAS", "M3", "180,50", "620.000", "111.910.000"].join(TAB),
+      ["2.3", "ACERO DE REFUERZO FIGURADO FY=420 MPA", "KG", "8.450,00", "6.800", "57.460.000"].join(TAB),
+      ["", "SUBTOTAL CAPITULO 2", "", "", "", "204.995.000"].join(TAB),
+      "",
+      "ADMINISTRACION A: 15%", "IMPREVISTOS I: 3%", "UTILIDAD U: 5%",
+      "ANTICIPO: 30%",
+      "Pagina 1 de 3",
+    ].join("\n");
+    {
+      const r = pliego.parsearPliego(FORMULARIO, { precio_base: 262124860 });
+      assert.strictEqual(r.items.length, 5, `esperaba 5 ítems, llegaron ${r.items.length}`);
+      assert.ok(r.items.every((i) => i.via === "posicional"), "con cabecera todas las filas van por posición");
+      assert.strictEqual(r.items[3].cantidad, 180.5, "«180,50» es ciento ochenta y medio, no 18050");
+      assert.strictEqual(r.items[3].total_oficial, 111910000);
+      assert.strictEqual(r.items[3].capitulo.numeral, "2", "la fila cuelga del capítulo vigente");
+      assert.deepStrictEqual(r.capitulos.map((c) => c.numeral), ["1", "2"]);
+      assert.strictEqual(r.capitulos[0].subtotal_declarado, 7125000);
+      assert.ok(r.validacion.capitulos.every((c) => c.estado === "cuadra"), "los dos capítulos deben cuadrar");
+      assert.strictEqual(r.validacion.filas.cuadran, 5, "las cinco filas cuadran: cantidad × unitario = total");
+
+      /* EL DEFECTO DE «ANTICIPO: 30%» PEGADO A LA ÚLTIMA DESCRIPCIÓN.
+         La regla de «continuación de una descripción partida en dos líneas» se
+         llevaba las líneas de metadato y le inventaba al último ítem una
+         descripción que no está en el pliego. Una línea que tiene su propio
+         lector no es prosa suelta. */
+      assert.strictEqual(r.items[4].descripcion_original, "ACERO DE REFUERZO FIGURADO FY=420 MPA",
+        "una línea de metadato (AIU, anticipo) no puede acabar dentro de la descripción de un ítem");
+      assert.ok(r.diagnostico.descartadas.metadatos >= 4,
+        "las líneas de AIU y anticipo se cuentan como metadatos, no como «no reconocidas»");
+
+      // AIU declarado y anticipo, leídos del texto
+      assert.strictEqual(r.aiu_declarado.A, 0.15);
+      assert.strictEqual(Math.round(r.aiu_declarado.total * 100) / 100, 0.23);
+      assert.strictEqual(r.anticipo.anticipo_pct, 0.3);
+      assert.strictEqual(r.anticipo.pago_anticipado_pct, null, "el formulario no declara pago anticipado");
+      /* Con una mitad ausente, el veredicto del tope legal es `null` —«no sé»—, no
+         `false`. Un 30 % de anticipo NO permite afirmar que la suma no excede el
+         50 %: el pago anticipado podría ser un 25 %. Antes se sumaba con `|| 0` y
+         se publicaba `false`, que es afirmar algo que no se sabe. */
+      assert.strictEqual(r.anticipo.excede_tope_legal, null,
+        "con el pago anticipado sin leer, el tope legal no se puede afirmar ni negar");
+      assert.strictEqual(r.anticipo.completo, false);
+      assert.strictEqual(r.anticipo.suma_conocida, 0.3, "la suma publicada es la de lo CONOCIDO, y se llama así");
+
+      /* NIVEL DOCUMENTO: el IVA sobre la utilidad NO es un detalle. Con U = 5 %
+         el presupuesto se divide por (1+0,23+0,19·0,05) y esa es la variante que
+         cuadra; ignorar `t·U` haría fallar el chequeo de forma sistemática. */
+      assert.strictEqual(r.validacion.documento.estado, "cuadra");
+      assert.strictEqual(r.validacion.documento.via, "aiu_declarado");
+      assert.strictEqual(r.validacion.documento.variante_que_cuadro, "con_iva",
+        "la variante que cuadra tiene que quedar registrada: es información sobre cómo presupuesta la entidad");
+      assert.strictEqual(r.confianza.color, "verde", "5/5 filas y el total con AIU declarado: verde");
+    }
+
+    /* 5. SIN CABECERA → firma de unidad. «Una celda que es exactamente una de
+       estas es la señal más barata y fiable de que la fila es un ítem». */
+    {
+      const r = pliego.parsearPliego([
+        ["EXCAVACION MANUAL EN MATERIAL COMUN", "M3", "420,00"].join(TAB),
+        ["RELLENO COMPACTADO CON MATERIAL SELECCIONADO", "M3", "380,50"].join(TAB),
+      ].join("\n"));
+      assert.strictEqual(r.items.length, 2);
+      assert.ok(r.items.every((i) => i.via === "firma_unidad"));
+      assert.strictEqual(r.items[0].cantidad, 420, "con un solo número a la derecha, ese número es la CANTIDAD");
+      assert.strictEqual(r.items[0].unitario_oficial, null, "…y no un precio: suponerlo dejaría el ítem sin cantidad");
+      /* CANTIDADES SIN PRECIOS es el caso «frecuente y benigno»: no hay
+         aritmética que validar, así que ni rojo (sigue siendo la mayor parte del
+         valor) ni verde (verde significa «se usa automáticamente»). */
+      assert.strictEqual(r.confianza.color, "amarillo");
+      assert.strictEqual(r.confianza.motivo, "sin_precios_unitarios");
+    }
+
+    /* 6. TEXTO APLANADO (un solo espacio entre celdas): último recurso, y se
+       marca como tal para poder distinguirlo en el diagnóstico. */
+    {
+      const r = pliego.parsearPliego("1.1 SUMINISTRO E INSTALACION DE TUBERIA PVC ML 1.250,00 45.000 56.250.000");
+      assert.strictEqual(r.items.length, 1);
+      assert.strictEqual(r.items[0].via, "aplanada");
+      assert.strictEqual(r.items[0].numeral, "1.1");
+      assert.strictEqual(r.items[0].descripcion_original, "SUMINISTRO E INSTALACION DE TUBERIA PVC");
+      assert.strictEqual(r.items[0].cantidad, 1250);
+      assert.strictEqual(r.items[0].total_oficial, 56250000);
+    }
+
+    /* 6-bis. DOS LÍMITES QUE ENCONTRÓ tests/apu_bench.js Y QUE YA ESTÁN CERRADOS.
+       Los dos producían lo mismo: un ítem que no existe en el pliego más una
+       cantidad perdida, que es la peor combinación posible aquí. */
+    {
+      // (a) CELDAS COMBINADAS: la unidad se corre a la columna del precio y las
+      // cifras quedan a la IZQUIERDA. Sin el rescate, la descripción se comía la
+      // cantidad («ANDEN EN CONCRETO 640,00») y `cantidad` salía null.
+      const combinada = pliego.parsearPliego([
+        ["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VALOR UNITARIO"].join(TAB),
+        ["1", "ANDEN EN CONCRETO", "", "640,00", "M2"].join(TAB),
+      ].join("\n"));
+      assert.strictEqual(combinada.items.length, 1);
+      assert.strictEqual(combinada.items[0].descripcion_original, "ANDEN EN CONCRETO",
+        "una celda numérica suelta no forma parte de la descripción");
+      assert.strictEqual(combinada.items[0].cantidad, 640);
+      assert.strictEqual(combinada.items[0].unidad, "m2");
+
+      // (b) APLANADO con una unidad MENCIONADA dentro de la descripción: se elige
+      // la ÚLTIMA palabra-unidad SEGUIDA DE UN NÚMERO, porque en un formulario la
+      // unidad va delante de la cantidad. Con la primera, «…DE 50 M3 EN CONCRETO
+      // UND 2,00» devolvía «TANQUE DE ALMACENAMIENTO DE 50» medido en m3.
+      const dentro = pliego.parsearPliego(
+        "1.1 TANQUE DE ALMACENAMIENTO DE 50 M3 EN CONCRETO UND 2,00 45.000.000 90.000.000");
+      assert.strictEqual(dentro.items.length, 1);
+      assert.strictEqual(dentro.items[0].descripcion_original, "TANQUE DE ALMACENAMIENTO DE 50 M3 EN CONCRETO");
+      assert.strictEqual(dentro.items[0].unidad, "un", "la unidad de pago es UND, no el «M3» del texto");
+      assert.strictEqual(dentro.items[0].cantidad, 2);
+    }
+
+    /* 6-ter. SIETE DEFECTOS QUE PRODUCÍAN UNA CIFRA EQUIVOCADA Y CREÍBLE, que es
+       lo peor que este módulo puede hacer. Los siete reproducidos antes de
+       corregirlos; esta batería es su cerradura. */
+    {
+      // (a) UNA CELDA VACÍA descolocaba TODO el mapa de columnas: `dividirCeldas`
+      //     filtraba los huecos y `cantidad` acababa leyendo el PRECIO UNITARIO.
+      const hueco = pliego.parsearPliego([
+        ["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"].join(TAB),
+        ["2.1", "SUBBASE GRANULAR", "M3", "", "95.000", "35.625.000"].join(TAB),
+      ].join("\n"));
+      assert.strictEqual(hueco.items.length, 1);
+      assert.strictEqual(hueco.items[0].cantidad, null, "la cantidad está en blanco: es «sin dato», no el unitario");
+      assert.strictEqual(hueco.items[0].unitario_oficial, 95000, "y el unitario sigue en su columna");
+
+      // (b) LA CANTIDAD ES LA CIFRA ADYACENTE A LA UNIDAD. Con el orden
+      //     CANTIDAD|UNIDAD y sin cabecera se leía el unitario como cantidad.
+      const izq = pliego.parsearPliego(
+        ["1.1", "SUBBASE GRANULAR COMPACTADA", "375,00", "M3", "95.000", "35.625.000"].join(TAB));
+      assert.strictEqual(izq.items[0].cantidad, 375, "375 m³, no 95.000");
+      assert.strictEqual(izq.items[0].unitario_oficial, 95000);
+
+      // (c) EL AIU Y EL IVA DESGLOSADOS no son costo directo: entraban en la suma
+      //     del documento e inflaban el costo directo.
+      const conAiu = pliego.parsearPliego([
+        ["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"].join(TAB),
+        ["1", "CONCRETO ESTRUCTURAL", "M3", "10", "1.000.000", "10.000.000"].join(TAB),
+        ["", "ADMINISTRACION 15%", "GL", "1,00", "1.500.000", "1.500.000"].join(TAB),
+        ["", "IVA SOBRE UTILIDAD", "GL", "1,00", "95.000", "95.000"].join(TAB),
+      ].join("\n"));
+      assert.strictEqual(conAiu.items.length, 1, "solo el concreto es costo directo");
+      assert.strictEqual(conAiu.diagnostico.descartadas.no_costo_directo, 2);
+      assert.strictEqual(conAiu.validacion.documento.costo_directo_sumado, 10000000,
+        "el AIU desglosado no puede sumarse al costo directo");
+
+      // (d) LA PROSA NO ES UNA FILA. La vía aplanada convertía frases en ítems
+      //     con unidad y cantidad inventadas — y es la vía normal del OCR.
+      for (const frase of [
+        "SE PAGARA POR ML 1.000 METROS DE TUBERIA INSTALADA",
+        "LA VIA A INTERVENIR TIENE UNA LONGITUD DE 1.000 M APROXIMADAMENTE",
+      ]) {
+        assert.strictEqual(pliego.parsearPliego(frase).items.length, 0,
+          `«${frase}» no es una fila de ítem: no puede producir uno`);
+      }
+
+      // (e) CABECERA PARTIDA EN DOS LÍNEAS («VALOR|VALOR» + «UNITARIO|TOTAL»):
+      //     los dos mapeaban a `total` y ganaba el primero, así que `total`
+      //     quedaba anclado a la columna del precio unitario.
+      const partida = pliego.parsearPliego([
+        ["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VALOR", "VALOR"].join(TAB),
+        ["UNITARIO", "TOTAL"].join(TAB),
+        ["1.1", "SUBBASE", "M3", "375,00", "95.000", "35.625.000"].join(TAB),
+      ].join("\n"));
+      assert.strictEqual(partida.items[0].unitario_oficial, 95000);
+      assert.strictEqual(partida.items[0].total_oficial, 35625000);
+
+      // (f) DOS CAPÍTULOS CON EL MISMO NUMERAL (dos grupos que reinician la
+      //     numeración) sumaban sus hijas juntas y los dos salían «no_cuadra».
+      const dosGrupos = pliego.parsearPliego([
+        ["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"].join(TAB),
+        ["1", "PRELIMINARES"].join(TAB),
+        ["1.1", "UNO", "M3", "10", "10.000", "100.000"].join(TAB),
+        ["", "TOTAL CAPITULO 1", "", "", "", "100.000"].join(TAB),
+        ["1", "SEGUNDO GRUPO"].join(TAB),
+        ["1.1", "DOS", "M3", "20", "10.000", "200.000"].join(TAB),
+        ["", "TOTAL CAPITULO 1", "", "", "", "200.000"].join(TAB),
+      ].join("\n"));
+      assert.strictEqual(dosGrupos.validacion.capitulos.length, 2);
+      assert.ok(dosGrupos.validacion.capitulos.every((c) => c.estado === "cuadra"),
+        `dos capítulos «1» distintos no pueden sumar sus hijas juntas: ${JSON.stringify(dosGrupos.validacion.capitulos.map((c) => c.estado))}`);
+
+      // (g) «HOJALATA» se descartaba como pie de página porque «hoja» hacía
+      //     prefijo sin frontera de palabra.
+      assert.strictEqual(pliego.parsearPliego(["HOJALATA CALIBRE 26 PARA CANAL", "ML", "120,00"].join(TAB)).items.length, 1,
+        "«HOJALATA» no es un pie de página");
+
+      /* Y el reparto del diagnóstico SUMA: cada línea acaba en una cubeta. Sin
+         esto, las líneas de continuación hacían `continue` sin contarse y los
+         conteos dejaban de cuadrar con `lineas_leidas`. */
+      const suma = Object.values(conAiu.diagnostico.descartadas).reduce((a, b) => a + b, 0)
+        + conAiu.items.length + conAiu.capitulos.length;
+      assert.strictEqual(suma, conAiu.diagnostico.lineas_leidas,
+        `el reparto del diagnóstico no suma las líneas leídas: ${suma} vs ${conAiu.diagnostico.lineas_leidas}`);
+    }
+
+    /* 6-quater. EL SEMÁFORO NO PUEDE DAR VERDE SOBRE UNA LISTA A MEDIAS.
+       Las filas sin cantidad legible no entran en el denominador del ratio (no hay
+       aritmética que hacer), así que por sí solas no bajaban la confianza: se
+       llegaba a VERDE con la mayoría de las cantidades sin leer — y el aviso «N
+       ítem(s) quedaron SIN CANTIDAD legible» salía en la MISMA respuesta,
+       contradiciendo a la insignia. */
+    {
+      const cab = ["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VR UNITARIO", "VR TOTAL"].join(TAB);
+      const conIlegibles = pliego.parsearPliego([
+        cab,
+        ["1", "EXCAVACION MANUAL", "M3", "100,00", "10.000", "1.000.000"].join(TAB),
+        ["2", "RELLENO COMPACTADO", "M3", "50,00", "20.000", "1.000.000"].join(TAB),
+        ["3", "CONCRETO PARA ANDENES", "M2", "ILEGIBLE", "5.000", "1.000.000"].join(TAB),
+        ["4", "SUB BASE GRANULAR", "M3", "-", "5.000", "1.000.000"].join(TAB),
+        ["5", "TUBERIA PVC INSTALADA", "ML", "N/A", "5.000", "1.000.000"].join(TAB),
+        "ADMINISTRACION A: 15%", "IMPREVISTOS I: 3%", "UTILIDAD U: 5%",
+      ].join("\n"), { precio_base: 5000000 * (1 + 0.23 + 0.19 * 0.05) });
+      assert.strictEqual(conIlegibles.diagnostico.items_sin_cantidad, 3);
+      assert.notStrictEqual(conIlegibles.confianza.color, "verde",
+        "con 3 de 5 cantidades ilegibles NO puede haber verde: verde significa «se usa automáticamente»");
+      assert.strictEqual(conIlegibles.confianza.motivo, "cantidades_ilegibles");
+
+      // y el verde exige MUESTRA: «1 de 1 cuadra» daba 100 % y verde
+      const unaSola = pliego.parsearPliego([
+        cab, ["1", "CONCRETO ESTRUCTURAL", "M3", "10", "1.000.000", "10.000.000"].join(TAB),
+        "ADMINISTRACION A: 15%", "IMPREVISTOS I: 3%", "UTILIDAD U: 5%",
+      ].join("\n"), { precio_base: 10000000 * (1 + 0.23 + 0.19 * 0.05) });
+      assert.strictEqual(unaSola.confianza.motivo, "muestra_insuficiente",
+        "un verde apoyado en una sola fila no es una validación");
+
+      // con muestra suficiente y todo legible, sí es verde
+      const seis = [];
+      for (let i = 1; i <= 6; i++) seis.push([`1.${i}`, `ITEM ${i}`, "M3", "10", "1.000.000", "10.000.000"].join(TAB));
+      const bueno = pliego.parsearPliego([cab, ...seis,
+        "ADMINISTRACION A: 15%", "IMPREVISTOS I: 3%", "UTILIDAD U: 5%",
+      ].join("\n"), { precio_base: 60000000 * (1 + 0.23 + 0.19 * 0.05) });
+      assert.strictEqual(bueno.confianza.color, "verde", JSON.stringify(bueno.confianza));
+      assert.ok(pliego.MIN_FILAS_VERDE >= 5, "el mínimo de muestra para el verde no puede bajar de 5");
+    }
+
+    /* 7. UNA CANTIDAD ILEGIBLE ES `null`, JAMÁS 0. Es la misma regla que
+       `anticipo_pct = 0` = «sin dato» y que el contador de oferentes; aquí un
+       cero inventado en una cantidad de obra es plata. */
+    {
+      const r = pliego.parsearPliego([
+        ["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD"].join(TAB),
+        ["1.1", "CONCRETO ESTRUCTURAL", "M3", "ILEGIBLE"].join(TAB),
+      ].join("\n"));
+      assert.strictEqual(r.items.length, 1, "la fila NO se descarta por tener la cantidad ilegible");
+      assert.strictEqual(r.items[0].cantidad, null, "una cantidad ilegible es null, no 0");
+      assert.strictEqual(r.diagnostico.items_sin_cantidad, 1);
+    }
+
+    /* 8. TOLERANCIAS: derivadas de la FUENTE del error, no de un porcentaje del
+       total. El error por redondear el unitario al peso es cantidad × 0,5. */
+    {
+      assert.strictEqual(pliego.toleranciaFila(40000), 20001, "cantidad/2 + 1");
+      assert.strictEqual(pliego.toleranciaFila(0), 1, "el suelo es $1: nunca 0");
+      // una fila de 500 M con un dígito mal leído debe caer, y con un
+      // porcentaje del total (0,5 % = $2,5 M) no caería
+      const fila = { cantidad: 1, unitario_oficial: 500000000, total_oficial: 502000000 };
+      assert.strictEqual(pliego.validarFila(fila).estado, "no_cuadra",
+        "$2 M de desviación en una fila de cantidad 1 tiene que caer");
+      assert.strictEqual(pliego.validarFila({ cantidad: 100, unitario_oficial: 1000, total_oficial: 100000 }).estado, "cuadra");
+      assert.strictEqual(pliego.validarFila({ cantidad: 100, unitario_oficial: null, total_oficial: 1 }).estado, "sin_datos");
+    }
+
+    /* 9. EL BARRIDO DIAGNÓSTICO NUNCA PRODUCE VERDE. Con 25 puntos de parámetro
+       libre casi cualquier suma encuentra un AIU que «cuadra», incluidas las
+       tablas incompletas que este nivel debía cazar. */
+    {
+      const sinAiu = FORMULARIO.split("\n").filter((l) => !/ADMINISTRACION|IMPREVISTOS|UTILIDAD/.test(l)).join("\n");
+      const r = pliego.parsearPliego(sinAiu, { precio_base: 262124860 });
+      assert.strictEqual(r.validacion.documento.estado, "diagnostico");
+      assert.strictEqual(r.validacion.documento.via, "barrido");
+      assert.notStrictEqual(r.confianza.color, "verde",
+        "sin AIU declarado no puede haber verde, por bien que cuadren las filas");
+      assert.strictEqual(r.confianza.color, "amarillo");
+      assert.strictEqual(r.confianza.motivo, "total_no_cuadra");
+    }
+
+    /* 10. SEMÁFORO: matriz de DOS EJES, exhaustiva y sin huecos. */
+    {
+      const s = (filasConPrecio, filasCuadran, totalCuadraDeclarado) =>
+        pliego.semaforo({ filasConPrecio, filasCuadran, totalCuadraDeclarado }).color;
+      assert.strictEqual(s(100, 100, true), "verde");
+      assert.strictEqual(s(100, 100, false), "amarillo", "filas perfectas pero total sin cuadrar: amarillo");
+      assert.strictEqual(s(100, 95, true), "amarillo", "90-98 % es amarillo aunque el total cuadre");
+      assert.strictEqual(s(100, 95, false), "amarillo");
+      assert.strictEqual(s(100, 89, true), "rojo", "<90 % descarta el parseo entero");
+      assert.strictEqual(s(100, 89, false), "rojo");
+      assert.strictEqual(s(100, 98, true), "verde", "el corte del 98 % ENTRA");
+      assert.strictEqual(s(100, 90, true), "amarillo", "el corte del 90 % ENTRA (no es rojo)");
+      assert.strictEqual(s(0, 0, false), "amarillo", "sin precios: ni rojo ni verde");
+    }
+
+    /* 11. ANTICIPO + PAGO ANTICIPADO ≤ 50 %: si el parseo produce más, el parseo
+       está mal, no el pliego (tope del parágrafo del art. 40 de la Ley 80). Y son
+       DOS campos distintos: el anticipo se amortiza, el pago anticipado ingresa. */
+    {
+      const a = pliego.leerAnticipo(["ANTICIPO: 40%", "PAGO ANTICIPADO: 20%"]);
+      assert.strictEqual(a.anticipo_pct, 0.4);
+      assert.strictEqual(a.pago_anticipado_pct, 0.2);
+      assert.strictEqual(a.excede_tope_legal, true, "40 % + 20 % = 60 % supera el tope legal del 50 %");
+      const b = pliego.leerAnticipo(["ANTICIPO DEL 30%", "PAGO ANTICIPADO: 20%"]);
+      assert.strictEqual(b.excede_tope_legal, false, "30 % + 20 % = 50 % justo: no excede");
+      assert.strictEqual(pliego.leerAnticipo(["nada que ver"]), null);
+
+      /* CUATRO DEFECTOS DEL LECTOR, los cuatro medidos, los cuatro cerrados. Los
+         tres primeros publicaban un porcentaje que el pliego no dice. */
+      // (a) el % se busca junto a SU palabra, no al principio de la línea
+      assert.strictEqual(pliego.leerAnticipo(["EL AIU SERA DEL 25% Y EL ANTICIPO DEL 30%"]).anticipo_pct, 0.3,
+        "tomar el primer % de la línea confundía el AIU con el anticipo");
+      // (b) los dos conceptos en UNA línea son dos campos, no uno
+      const juntos = pliego.leerAnticipo(["ANTICIPO: 30%   PAGO ANTICIPADO: 10%"]);
+      assert.strictEqual(juntos.anticipo_pct, 0.3);
+      assert.strictEqual(juntos.pago_anticipado_pct, 0.1,
+        "con los dos conceptos en la misma línea, antes se perdía uno y el otro se llevaba su valor");
+      // (c) la ventana NO cruza el punto: son frases distintas
+      assert.strictEqual(pliego.leerAnticipo(["NO SE PACTARA ANTICIPO. LA RETENCION EN GARANTIA SERA DEL 5%"]), null,
+        "un pliego que dice que NO hay anticipo no puede acabar declarando un 5 %");
+      // (d) tres cifras: con `\\d{1,2}` el motor capturaba «00» y publicaba 0 %,
+      //     que en este proyecto significa «sin dato»
+      const cien = pliego.leerAnticipo(["ANTICIPO: 100%"]);
+      assert.strictEqual(cien.anticipo_pct, 1, "«100%» no puede leerse como 0 %");
+      assert.strictEqual(cien.excede_tope_legal, true);
+
+      /* Y las dos correcciones del AIU, por el mismo motivo: fabricaban un AIU. */
+      assert.strictEqual(pliego.leerAiu(["IMPREVISTOS EQUIVALENTES A 3% Y UTILIDAD A 5%"]), null,
+        "la «a» de preposición no puede fijar la Administración del AIU");
+      const abreviado = pliego.leerAiu(["A: 12%  I: 3%  U: 5%"]);
+      assert.ok(abreviado && abreviado.A === 0.12 && abreviado.I === 0.03 && abreviado.U === 0.05,
+        "la forma abreviada que la cabecera del módulo anuncia tiene que leerse de verdad");
+    }
+
+    /* 12. EL CATÁLOGO NO PUBLICA NINGÚN CÓDIGO «INV-». §1.D.3: «nunca inventar
+       un código INV que no exista». El índice oficial de las Especificaciones
+       INVÍAS nunca se pudo abrir, así que la numeración es una hipótesis y viaja
+       aparte. Esta prueba es la cerradura de esa regla. */
+    {
+      assert.ok(cat.ITEMS.length >= 60, `el catálogo tiene ${cat.ITEMS.length} ítems: muy pocos`);
+      for (const it of cat.ITEMS) {
+        assert.ok(/^LOC-/.test(it.codigo_item),
+          `${it.codigo_item}: todo código del catálogo debe nacer «LOC-» mientras el artículo INVÍAS no esté verificado`);
+        assert.ok(pliego.UNIDADES_CANONICAS.has(it.unidad),
+          `${it.codigo_item}: la unidad «${it.unidad}» no está en el conjunto canónico`);
+        assert.ok(it.tipologias.length && it.tipologias.every((t) => cat.TIPOLOGIAS[t]),
+          `${it.codigo_item}: tipología inexistente en el catálogo cerrado`);
+        assert.ok(it.sinonimos.length, `${it.codigo_item}: sin sinónimos no se puede mapear nada`);
+      }
+      assert.strictEqual(Object.keys(cat.TIPOLOGIAS).length, 22, "el catálogo de tipologías es CERRADO: 22");
+      // las familias 5510 y 7213 no están en ningún RUP: citarlas aquí las
+      // convertiría en evidencia de habilitación, que es justo lo que no son
+      const familias = new Set(Object.values(cat.TIPOLOGIAS).flatMap((t) => t.familias));
+      assert.ok(!familias.has("5510") && !familias.has("7213"),
+        "5510 y 7213 no están inscritas en ningún RUP: no pueden figurar en el catálogo de tipologías");
+      // el código INV que se emitiría queda PREPARADO pero marcado sin verificar
+      const conArticulo = cat.ITEMS.find((i) => i.articulo_invias_candidato);
+      const propuesto = cat.codigoInviasPropuesto(conArticulo);
+      assert.ok(/^INV-/.test(propuesto.codigo) && propuesto.verificado === false,
+        "el código INVÍAS propuesto tiene que viajar marcado como NO verificado");
+    }
+
+    /* 13. TOKENIZACIÓN DEL MAPEO: CONSERVA LOS DÍGITOS, al revés que
+       `experiencia.tokenizar`, que los descarta a propósito. Aquí «21» (MPa),
+       «420» (fy) y «21» (RDE) son justo lo que distingue un ítem de su hermano y
+       lo que mueve el precio. Son dos preguntas distintas y por eso hay dos
+       reglas; esta prueba existe para que nadie las «unifique». */
+    {
+      const exp2 = require("../lib/experiencia.js");
+      const conDigitos = mapeo.tokenizarItem("CONCRETO DE 21 MPA PARA HUELLAS");
+      assert.ok(conDigitos.includes("21"), `el mapeo de ítems debe conservar «21»: ${JSON.stringify(conDigitos)}`);
+      assert.ok(!exp2.tokenizar("CONCRETO DE 21 MPA PARA HUELLAS").includes("21"),
+        "experiencia.tokenizar SIGUE descartando los dígitos: son dos reglas distintas a propósito");
+      // los verbos de ejecución están en casi todas las filas: no distinguen ninguna
+      assert.ok(!mapeo.tokenizarItem("SUMINISTRO E INSTALACION DE TUBERIA").includes("suministro"));
+      // una cifra de plata no es una especificación
+      assert.ok(!mapeo.tokenizarItem("VALOR 56250000").includes("56250000"));
+    }
+
+    /* 14. MAPEO al catálogo: firme, revisar y personalizado. */
+    {
+      const r = pliego.parsearPliego([
+        ["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD"].join(TAB),
+        ["1.1", "LOCALIZACION Y REPLANTEO", "M2", "1.250"].join(TAB),
+        ["1.2", "ACERO DE REFUERZO FIGURADO FY=420 MPA", "KG", "8.450"].join(TAB),
+        ["1.3", "SUMINISTRO E INSTALACION DE TUBERIA PVC RDE 21 DE 6 PULGADAS", "ML", "320"].join(TAB),
+        ["1.4", "ALQUILER DE DRON PARA REGISTRO FOTOGRAFICO SEMANAL", "MES", "6"].join(TAB),
+      ].join("\n"));
+      const m = mapeo.mapearTabla(r.items, {
+        objeto_proceso: "CONSTRUCCION DE PLACA HUELLA EN LA VIA TERCIARIA VEREDA EL PORVENIR",
+        unspsc: ["72141000"],
+      });
+      assert.deepStrictEqual(m.tipologias_usadas, ["VIA-PH"], "el objeto es inequívocamente placa huella");
+      assert.strictEqual(m.items[0].item_id, "LOC-PRE-LOCALIZACION");
+      assert.strictEqual(m.items[0].nivel_mapeo, "firme");
+      assert.strictEqual(m.items[1].item_id, "LOC-CON-ACERO");
+
+      /* LA TIPOLOGÍA ES UN PESO, NO UN FILTRO. Cuando acotaba el catálogo, en un
+         proceso de placa huella la fila del cruce de drenaje («TUBERÍA PVC»)
+         caía a «personalizado» porque ese ítem no figura en VIA-PH. Un
+         presupuesto de obra mezcla tipologías por construcción. */
+      assert.strictEqual(m.items[2].item_id, "LOC-RED-TUBPVC",
+        "un ítem de otra tipología tiene que poder mapearse: la tipología inclina, no veta");
+
+      // sin match no se descarta la fila: nace un ítem PERSONALIZADO con sus datos
+      assert.strictEqual(m.items[3].item_id, null);
+      assert.strictEqual(m.items[3].personalizado, true);
+      assert.strictEqual(m.items[3].descripcion_original, "ALQUILER DE DRON PARA REGISTRO FOTOGRAFICO SEMANAL");
+      assert.strictEqual(m.items[3].unidad, "mes", "el personalizado conserva su unidad tal como venía");
+      assert.strictEqual(m.items[3].cantidad, 6, "…y su cantidad");
+
+      // el reparto tiene que SUMAR el total: si un ítem se quedara sin
+      // categoría, desaparecería del recuento sin que nadie lo notara
+      const s = m.resumen_mapeo;
+      assert.strictEqual(s.firmes + s.revisar + s.personalizados, s.total,
+        "firmes + revisar + personalizados debe sumar exactamente el total");
+    }
+
+    /* 15. LEVENSHTEIN RESCATA EL TEXTO DE OCR. Un reconocimiento cambia «O» por
+       «0» y el solapamiento de términos falla ENTERO ante un carácter distinto;
+       la distancia de edición apenas se mueve. Sin esta señal la vía de OCR no
+       mapearía casi nada. */
+    {
+      assert.strictEqual(mapeo.levenshtein("concreto", "c0ncret0"), 2);
+      assert.strictEqual(mapeo.levenshtein("igual", "igual"), 0);
+      const m = mapeo.mapearItem({ descripcion_original: "C0NCRET0 DE 21 MPA PARA HUELLAS", unidad: "m3" },
+        { tipologias: ["VIA-PH"] });
+      assert.strictEqual(m.item_id, "LOC-CON-HUELLA",
+        "con dos caracteres corrompidos por el OCR el ítem debe seguir mapeándose");
+      assert.ok(m.confianza > mapeo.UMBRAL_ACEPTAR);
+    }
+
+    /* 16. LA UNIDAD NO SE CONVIERTE NUNCA: se marca la discrepancia y se
+       conserva la DEL PLIEGO, que es la que se va a pagar. Pasar m² a m³ exige
+       un espesor que el catálogo no conoce. */
+    {
+      const m = mapeo.mapearItem({ descripcion_original: "ACERO DE REFUERZO FIGURADO 420 MPA", unidad: "ton" }, {});
+      assert.strictEqual(m.item_id, "LOC-CON-ACERO");
+      assert.strictEqual(m.unidad, "ton", "se conserva la unidad del pliego");
+      assert.strictEqual(m.unidad_catalogo, "kg");
+      assert.strictEqual(m.unidad_discrepante, true);
+    }
+
+    /* 17. TIPOLOGÍA DEL OBJETO: léxico determinista con puntaje, y el UNSPSC
+       como refuerzo suave que SUMA pero no veta (7215 y 7214 son compatibles con
+       casi todo, así que vetar con ellos sería decidir por la evidencia débil). */
+    {
+      const t = cat.tipologiasProbables("MEJORAMIENTO DE VIA TERCIARIA MEDIANTE PLACA HUELLA", ["72141000"]);
+      assert.strictEqual(t[0].tipologia, "VIA-PH");
+      assert.ok(t[0].evidencia.includes("placa huella"), "la evidencia textual tiene que viajar con el puntaje");
+      const conFamilia = cat.tipologiasProbables("CONSTRUCCION DE ALCANTARILLADO SANITARIO", ["72152000"]);
+      const sinFamilia = cat.tipologiasProbables("CONSTRUCCION DE ALCANTARILLADO SANITARIO", []);
+      assert.strictEqual(conFamilia[0].tipologia, "ALC-RED");
+      assert.ok(conFamilia[0].puntaje > sinFamilia[0].puntaje, "la familia UNSPSC refuerza, no decide");
+      assert.deepStrictEqual(cat.tipologiasProbables("COMPRA DE PAPELERIA Y UTILES DE OFICINA", []), [],
+        "sin término ancla no se inventa una tipología: se puede decir «no sé»");
+    }
+
+    /* 18. OCR: sin `OCRSPACE_API_KEY` no se inventa nada — se dice qué falta y
+       cómo se arregla. Igual que `HISTORICO_TOKEN` responde 503 cuando no está,
+       nunca hay un default que valga como llave. */
+    {
+      assert.strictEqual(process.env.OCRSPACE_API_KEY, undefined, "la suite no debe traer clave de OCR configurada");
+      assert.strictEqual(ocrMod.hayClaveOcr(), false);
+      const r = await ocrMod.ocrPaginas([{ base64: "AAAA" }]);
+      assert.strictEqual(r.ok, false);
+      assert.strictEqual(r.status, 503);
+      assert.ok(/OCRSPACE_API_KEY/.test(r.error), "el mensaje tiene que nombrar la variable que falta");
+      // tamaño de un base64 sin materializar el Buffer
+      assert.strictEqual(ocrMod.bytesDeBase64("AAAA"), 3);
+      assert.strictEqual(ocrMod.bytesDeBase64("AAA="), 2);
+      assert.ok(/^data:image\/jpeg;base64,/.test(ocrMod.conPrefijoData("AAAA")),
+        "OCR.space exige el prefijo data:; sin él responde un error que no dice qué falta");
+
+      /* LA CLAVE NO PUEDE VIAJAR EN UN MENSAJE DE ERROR. El cuerpo de error del
+         proveedor se le muestra al usuario (es el único diagnóstico útil), pero lo
+         escribe un tercero a partir de una petición que LLEVA la clave. */
+      const claveAntes = process.env.OCRSPACE_API_KEY;
+      process.env.OCRSPACE_API_KEY = "SUPERSECRETA-123";
+      try {
+        const tachado = ocrMod.tacharClave("Bad request for apikey=SUPERSECRETA-123 on this plan");
+        assert.ok(!tachado.includes("SUPERSECRETA-123"),
+          "el texto remoto reenviado al usuario debe llevar la clave tachada");
+      } finally {
+        if (claveAntes === undefined) delete process.env.OCRSPACE_API_KEY;
+        else process.env.OCRSPACE_API_KEY = claveAntes;
+      }
+
+      /* Y LA RAMA `url` NO EXISTE: aceptar `{url}` y pasarlo a OCR.space hacía del
+         endpoint un SSRF por delegación —el tercero descargaba lo que se le
+         dijera— y además se saltaba el control de tamaño. */
+      const fuenteOcr = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib", "apu_ocr.js"), "utf8"));
+      assert.ok(!/cuerpo\.set\("url"/.test(fuenteOcr),
+        "lib/apu_ocr no puede mandar una `url` a OCR.space: sería un SSRF por delegación");
+      const fuenteExtraer = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib", "apu_extraer.js"), "utf8"));
+      assert.ok(/base64: p\.base64/.test(fuenteExtraer),
+        "el endpoint debe COPIAR solo base64 y mime, no pasar los objetos del cliente tal cual");
+    }
+
+    /* 18-bis. EL PROTOCOLO DE OCR.space, contra un `fetch` sustituido. Sin esto
+       la integración entera quedaba sin probar salvo el caso «no hay clave», que
+       es el único que no depende del proveedor. Lo que se vigila:
+         · la `apikey` viaja por HEADER (es lo que exige su API), nunca en el cuerpo;
+         · `base64Image` lleva el prefijo `data:`;
+         · UN 200 NO ES ÉXITO: el fallo viaja DENTRO del 200
+           (`IsErroredOnProcessing`, `OCRExitCode` 3/4) y sin comprobarlo se
+           devolvería texto vacío como si la página no tuviera nada;
+         · una página que excede el tope se rechaza ANTES de gastar la petición. */
+    {
+      const fetchOriginal = global.fetch;
+      const claveOriginal = process.env.OCRSPACE_API_KEY;
+      process.env.OCRSPACE_API_KEY = "clave-de-prueba";
+      let capturada = null;
+      const responder = (cuerpo, status = 200) => {
+        global.fetch = async (url, opciones) => {
+          capturada = { url, opciones };
+          return {
+            ok: status >= 200 && status < 300, status,
+            headers: { get: () => null },
+            json: async () => cuerpo,
+            text: async () => JSON.stringify(cuerpo),
+          };
+        };
+      };
+      try {
+        // (a) 200 con texto: el camino bueno, y el contrato de la petición
+        responder({ OCRExitCode: 1, IsErroredOnProcessing: false, ParsedResults: [{ ParsedText: "1 CONCRETO M3 100" }] });
+        const bueno = await ocrMod.ocrPagina({ base64: "QUJD", mime: "image/jpeg" });
+        assert.strictEqual(bueno.ok, true);
+        assert.strictEqual(bueno.texto, "1 CONCRETO M3 100");
+        assert.strictEqual(capturada.opciones.headers.apikey, "clave-de-prueba",
+          "la apikey de OCR.space va por HEADER: es lo que exige su API");
+        assert.ok(!/apikey/.test(capturada.opciones.body), "la clave no puede viajar también en el cuerpo");
+        assert.ok(/base64Image=data%3Aimage%2Fjpeg%3Bbase64%2CQUJD/.test(capturada.opciones.body),
+          "base64Image debe llevar el prefijo data: URI-codificado");
+        assert.ok(/isTable=true/.test(capturada.opciones.body) && /language=spa/.test(capturada.opciones.body),
+          "isTable y el idioma español no son opcionales para leer una tabla de un pliego colombiano");
+
+        // (b) UN 200 NO ES ÉXITO: el fallo viene dentro
+        responder({ OCRExitCode: 3, IsErroredOnProcessing: true, ErrorMessage: ["Unable to recognize the file type"] });
+        const dentro = await ocrMod.ocrPagina({ base64: "QUJD" });
+        assert.strictEqual(dentro.ok, false, "IsErroredOnProcessing dentro de un 200 es un FALLO");
+        assert.ok(/Unable to recognize/.test(dentro.error), "el detalle del proveedor tiene que llegar al usuario");
+
+        // (c) 200 con texto vacío: tampoco es éxito
+        responder({ OCRExitCode: 1, IsErroredOnProcessing: false, ParsedResults: [{ ParsedText: "   " }] });
+        assert.strictEqual((await ocrMod.ocrPagina({ base64: "QUJD" })).ok, false,
+          "una página sin texto reconocido no puede pasar por éxito");
+
+        // (d) clave rechazada: mensaje que nombra la variable, y NO se reintenta
+        responder({}, 401);
+        let llamadas = 0;
+        const contando = global.fetch;
+        global.fetch = async (u, o) => { llamadas++; return contando(u, o); };
+        const rechazada = await ocrMod.ocrPagina({ base64: "QUJD" });
+        assert.strictEqual(rechazada.ok, false);
+        assert.strictEqual(rechazada.status, 401);
+        assert.strictEqual(llamadas, 1, "un 4xx NO se reintenta: repetirlo gasta cuota del plan gratuito");
+        assert.ok(/OCRSPACE_API_KEY/.test(rechazada.error));
+
+        // (e) la página que no cabe se rechaza ANTES de gastar la petición
+        global.fetch = async () => { throw new Error("no debía llamarse"); };
+        const grande = await ocrMod.ocrPagina({ base64: "A".repeat(2 * 1024 * 1024), mime: "image/jpeg" });
+        assert.strictEqual(grande.ok, false);
+        assert.strictEqual(grande.status, 413);
+        assert.ok(/topa en/.test(grande.error), "el error debe decir el tope y qué hacer (bajar la escala)");
+      } finally {
+        // restaurar SIEMPRE: dejar un fetch sustituido rompería el resto de la suite
+        global.fetch = fetchOriginal;
+        if (claveOriginal === undefined) delete process.env.OCRSPACE_API_KEY;
+        else process.env.OCRSPACE_API_KEY = claveOriginal;
+      }
+      assert.strictEqual(ocrMod.hayClaveOcr(), false, "la clave de prueba tiene que quedar retirada");
+    }
+
+    /* 19. EL ENDPOINT: token obligatorio, contrato por GET, y «sin tablas» es un
+       RESULTADO (200 con diagnóstico), no un error del servidor. */
+    {
+      // sin token: 401, como el resto de la administración
+      const sinToken = await invocar(apiExtraer, "/api/apu/extraer-texto");
+      assert.strictEqual(sinToken.status, 401, "/api/apu/extraer-texto no puede servirse sin token");
+      const sinTokenDesc = await invocar(apiDescargar, "/api/apu/descargar", {}, { metodo: "POST" });
+      assert.strictEqual(sinTokenDesc.status, 401, "/api/apu/descargar tampoco");
+
+      // GET: el contrato y el estado del catálogo y del OCR
+      const contrato = await invocar(apiExtraer, "/api/apu/extraer-texto", CAB_TOKEN);
+      assert.strictEqual(contrato.status, 200);
+      assert.strictEqual(contrato.cuerpo.catalogo.tipologias, 22);
+      assert.strictEqual(contrato.cuerpo.ocr.configurado, false);
+      assert.ok(/puede tener errores/i.test(contrato.cuerpo.advertencia),
+        "la advertencia de limitaciones viaja en el contrato del endpoint");
+
+      // método no permitido
+      const malMetodo = await invocar(apiExtraer, "/api/apu/extraer-texto", CAB_TOKEN, { metodo: "DELETE" });
+      assert.strictEqual(malMetodo.status, 405);
+
+      // POST completo
+      const ok = await invocarPost(apiExtraer, "/api/apu/extraer-texto", {
+        texto_extraido: FORMULARIO,
+        objeto_proceso: "CONSTRUCCION DE PLACA HUELLA EN LA VIA TERCIARIA",
+        unspsc: "72141000, 72152000",
+        precio_base: 262124860,
+      }, CAB_TOKEN);
+      assert.strictEqual(ok.status, 200, JSON.stringify(ok.cuerpo).slice(0, 300));
+      assert.strictEqual(ok.cuerpo.items.length, 5);
+      assert.strictEqual(ok.cuerpo.confianza.color, "verde");
+      assert.strictEqual(ok.cuerpo.fuente, "pdf_nativo");
+      assert.ok(/puede tener errores/i.test(ok.cuerpo.advertencia),
+        "la advertencia viaja SIEMPRE, también cuando el semáforo está verde");
+      assert.strictEqual(ok.cabeceras["cache-control"], "no-store");
+
+      // «sin tablas» → 200 con el diagnóstico: un 4xx haría creer que el envío
+      // estaba mal cuando lo que pasa es que el documento no era el formulario
+      const sinTabla = await invocarPost(apiExtraer, "/api/apu/extraer-texto", {
+        texto_extraido: "EL PRESENTE PLIEGO DE CONDICIONES REGULA EL PROCESO DE SELECCION ABREVIADA "
+          + "Y ESTABLECE LOS REQUISITOS HABILITANTES QUE DEBEN ACREDITAR LOS PROPONENTES INTERESADOS.",
+      }, CAB_TOKEN);
+      assert.strictEqual(sinTabla.status, 200);
+      assert.strictEqual(sinTabla.cuerpo.ok, true);
+      assert.deepStrictEqual(sinTabla.cuerpo.items, []);
+      assert.strictEqual(sinTabla.cuerpo.confianza.color, "rojo");
+      assert.ok(sinTabla.cuerpo.diagnostico, "sin filas hay que devolver el diagnóstico o no se puede corregir nada");
+
+      // texto demasiado corto: 400 que EXPLICA la vía del OCR
+      const corto = await invocarPost(apiExtraer, "/api/apu/extraer-texto", { texto_extraido: "hola" }, CAB_TOKEN);
+      assert.strictEqual(corto.status, 400);
+      assert.ok(/OCR/.test(corto.cuerpo.error), "el error tiene que señalar la salida (OCR) cuando no hay texto");
+
+      // pedir OCR sin clave configurada: 503 con la instrucción, no un 500
+      const pideOcr = await invocarPost(apiExtraer, "/api/apu/extraer-texto", {
+        texto_extraido: "", imagenes_base64: [{ base64: "AAAA", mime: "image/jpeg" }],
+      }, CAB_TOKEN);
+      assert.strictEqual(pideOcr.status, 503);
+      assert.ok(/OCRSPACE_API_KEY/.test(pideOcr.cuerpo.error));
+
+      // cuerpo que no es JSON
+      const basura = await invocar(apiExtraer, "/api/apu/extraer-texto", { ...CAB_TOKEN, "content-type": "application/json" },
+        { metodo: "POST", body: "{no es json" });
+      assert.strictEqual(basura.status, 400);
+      assert.ok(/JSON/.test(basura.cuerpo.error));
+
+      /* `solo_reconocer`: devuelve el texto SIN parsear para que el cliente pueda
+         ENCADENAR tandas. Existe porque el tope de páginas por llamada viene del
+         reloj de la función, así que un formulario escaneado de 40 páginas no cabe
+         en una invocación; el cliente acumula y manda el texto completo al final.
+         Parsear cada tanda por separado partiría la tabla y ni los capítulos ni la
+         suma del documento cuadrarían. */
+      {
+        const fetchOriginal = global.fetch;
+        const claveOriginal = process.env.OCRSPACE_API_KEY;
+        process.env.OCRSPACE_API_KEY = "clave-de-prueba";
+        global.fetch = async () => ({
+          ok: true, status: 200, headers: { get: () => null },
+          json: async () => ({
+            OCRExitCode: 1, IsErroredOnProcessing: false,
+            ParsedResults: [{ ParsedText: "1.1 CONCRETO ESTRUCTURAL M3 96,20" }],
+          }),
+          text: async () => "",
+        });
+        try {
+          const tanda = await invocarPost(apiExtraer, "/api/apu/extraer-texto", {
+            texto_extraido: "", solo_reconocer: true,
+            imagenes_base64: [{ base64: "QUJD", mime: "image/jpeg" }],
+          }, CAB_TOKEN);
+          assert.strictEqual(tanda.status, 200);
+          assert.strictEqual(tanda.cuerpo.solo_reconocer, true);
+          assert.strictEqual(tanda.cuerpo.texto_ocr, "1.1 CONCRETO ESTRUCTURAL M3 96,20",
+            "el texto reconocido tiene que volver, o el cliente no puede encadenar tandas");
+          assert.strictEqual(tanda.cuerpo.items, undefined, "con `solo_reconocer` NO se parsea");
+          assert.ok(/puede tener errores/i.test(tanda.cuerpo.advertencia),
+            "la advertencia viaja también en la respuesta de solo reconocer");
+        } finally {
+          global.fetch = fetchOriginal;
+          if (claveOriginal === undefined) delete process.env.OCRSPACE_API_KEY;
+          else process.env.OCRSPACE_API_KEY = claveOriginal;
+        }
+      }
+    }
+
+    /* 20. SSRF en /api/apu/descargar: un endpoint que baja una URL arbitraria
+       desde dentro de la infraestructura tiene que estar acotado, y la
+       comprobación no puede quedarse solo en el primer salto. */
+    {
+      const malas = [
+        "http://ejemplo.com/a.pdf",                 // sin cifrar
+        "https://localhost/a.pdf",
+        "https://127.0.0.1/a.pdf",
+        "https://169.254.169.254/latest/meta-data",  // metadatos de la nube
+        "https://10.0.0.5/a.pdf",
+        "https://192.168.1.1/a.pdf",
+        "https://172.16.0.1/a.pdf",
+        "https://interno.local/a.pdf",
+        "file:///etc/passwd",
+        "no-es-una-url",
+      ];
+      for (const url of malas) {
+        const r = await invocarPost(apiDescargar, "/api/apu/descargar", { url }, CAB_TOKEN);
+        assert.strictEqual(r.status, 400, `«${url}» tenía que rechazarse con 400, llegó ${r.status}`);
+      }
+      /* IPv4 escrita como IPv6 y credenciales embebidas: dos formas de saltarse
+         las reglas de host que las listas de literales no veían. */
+      for (const url of [
+        "https://[::ffff:127.0.0.1]/a.pdf",
+        "https://[::ffff:169.254.169.254]/latest/meta-data",
+        "https://[::1]/a.pdf",
+        "https://usuario:clave@ejemplo.com/a.pdf",
+      ]) {
+        const r = await invocarPost(apiDescargar, "/api/apu/descargar", { url }, CAB_TOKEN);
+        assert.strictEqual(r.status, 400, `«${url}» tenía que rechazarse con 400, llegó ${r.status}`);
+      }
+
+      /* Y AL CONTRARIO: las reglas de IPv6 no pueden rechazar dominios REALES.
+         Escritas sin delimitador («^fc», «^fd») y aplicadas a cualquier hostname,
+         bastaba que el dominio empezara por «fc» o «fd» para tratarlo como
+         dirección interna, y `fdn.gov.co` es un portal público.
+
+         Se comprueba contra `urlSegura`, que es la capa del NOMBRE. No contra el
+         handler completo: la capa siguiente resuelve el DNS, y en este entorno
+         todo resuelve por el proxy a direcciones privadas, así que el handler
+         rechazaría estos hosts por una razón legítima y distinta —y la prueba
+         mediría el sandbox en vez de la regla. */
+      for (const host of ["fdn.gov.co", "fcm.org.co", "fd-publico.example", "fcbarcelona.com"]) {
+        const v = apiDescargar.urlSegura(`https://${host}/pliego.pdf`);
+        assert.strictEqual(v.ok, true,
+          `«${host}» es un dominio público y la regla de nombre lo rechaza: ${v.error}`);
+      }
+      // …y la capa del nombre sigue rechazando lo que debe
+      for (const host of ["localhost", "algo.internal", "[::1]", "[::ffff:127.0.0.1]", "10.0.0.5"]) {
+        assert.strictEqual(apiDescargar.urlSegura(`https://${host}/a.pdf`).ok, false, `«${host}» debía rechazarse`);
+      }
+
+      /* EL ORÁCULO DE LECTURA: cuando lo descargado no es un PDF, la respuesta NO
+         puede devolver bytes del cuerpo remoto. Con un destino interno alcanzable,
+         eso convertía el SSRF ciego en una lectura. */
+      {
+        const fuenteD = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib", "apu_descargar.js"), "utf8"));
+        assert.ok(!/primeros_bytes/.test(fuenteD),
+          "descargar.js no puede devolver los primeros bytes del cuerpo remoto: es un oráculo de lectura");
+        assert.ok(/dns\.lookup\(/.test(fuenteD),
+          "descargar.js debe RESOLVER el nombre y validar la IP: validar la cadena del hostname no protege de nada");
+      }
+
+      const malMetodo = await invocar(apiDescargar, "/api/apu/descargar", CAB_TOKEN);
+      assert.strictEqual(malMetodo.status, 405);
+      // el código tiene que seguir las redirecciones A MANO: seguirlas
+      // automáticamente permitiría saltar de un host público a uno interno
+      const fuente = fs.readFileSync(path.join(__dirname, "..", "lib", "apu_descargar.js"), "utf8");
+      assert.ok(/redirect:\s*"manual"/.test(sinComentarios(fuente)),
+        "descargar.js debe pedir `redirect: \"manual\"`: una redirección a una IP interna es el salto clásico del SSRF");
+    }
+
+    console.log(`· unidad APU: números colombianos, cabeceras, 3 vías de reconocimiento, 3 niveles de `
+      + `validación, semáforo de 2 ejes, mapeo al catálogo (${cat.ITEMS.length} ítems), protocolo de OCR `
+      + `(el fallo dentro del 200) y SSRF`);
+  }
+
   /* unidad: el catálogo de precios APU · las tres invariantes que atan sus
      números a la investigación recuperada, y la validación que impide guardar
      un catálogo con el que se calcularían precios malos.
@@ -5786,13 +6614,137 @@ async function main() {
       }
       /* Y la regla que evita repetirlo: un conteo ausente NO se pinta como 0.
          Ningún renderizador puede convertir «no sé» en «cero» con un `|| 0`. */
-      for (const [archivo, fuente] of [["app.js", js], ["admin.js", admJs]]) {
+      /* EL LECTOR DE PLIEGOS SE DESPACHA DESDE `api/apu/[accion].js`, no desde
+         ficheros propios, y no es una preferencia de estilo: el plan Hobby de
+         Vercel admite 12 funciones por despliegue y con `extraer-texto.js` y
+         `descargar.js` sueltos eran 14 — el despliegue entero se rechazaba. Si
+         alguien las vuelve a sacar a `api/`, esta prueba lo dice antes de que lo
+         diga Vercel. */
+      {
+        const despachador = fs.readFileSync(path.join(__dirname, "..", "api", "apu", "[accion].js"), "utf8");
+        for (const accion of ["extraer-texto", "descargar"]) {
+          assert.ok(despachador.includes(`"${accion}"`),
+            `api/apu/[accion].js no registra la acción «${accion}»`);
+        }
+        assert.ok(/require\("\.\.\/\.\.\/lib\/apu_extraer\.js"\)/.test(despachador)
+          && /require\("\.\.\/\.\.\/lib\/apu_descargar\.js"\)/.test(despachador),
+          "el despachador debe delegar en lib/apu_extraer y lib/apu_descargar");
+        assert.ok(!fs.existsSync(path.join(__dirname, "..", "api", "apu", "extraer-texto.js")),
+          "extraer-texto volvió a ser una función propia: son 13 y el plan Hobby admite 12");
+        assert.ok(!fs.existsSync(path.join(__dirname, "..", "api", "apu", "descargar.js")),
+          "descargar volvió a ser una función propia: son 13 y el plan Hobby admite 12");
+      }
+
+      /* ══════ página /pliego.html: lectura de pliegos PDF ══════
+         Vive APARTE de /apu.html (el editor de APU) a propósito: son dos
+         preguntas distintas —«¿qué dice este pliego?» y «¿cuánto cuesta este
+         ítem?»— y cada página tiene su catálogo. Ver CLAUDE.md. */
+      const apuHtml = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.html"), "utf8");
+      const apuJs = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+      new Function(apuJs); // valida sintaxis sin ejecutar
+      for (const debe of ['id="gate"', 'id="app"', "/pliego.js", "cdn.tailwindcss.com",
+        'id="btn-extraer"', 'id="btn-ocr"', 'id="pliego-archivo"', 'id="pliego-url"',
+        'id="r-items"', 'id="prog-barra"', 'id="aviso-limitaciones"']) {
+        assert.ok(apuHtml.includes(debe), `pliego.html sin ${debe}`);
+      }
+      assert.ok(apuJs.includes('"231105"'), "pliego.js sin la clave de acceso");
+      assert.ok(/accept="\.pdf,application\/pdf"/.test(apuHtml), "el selector debe aceptar PDF");
+      assert.ok(/type="url"/.test(apuHtml), "falta el campo de URL del pliego (muchos pliegos SECOP son URLs públicas)");
+
+      /* PUNTO 4 DEL ENCARGO: las limitaciones se documentan EN LA UI, y con esa
+         frase. Va en un bloque que no se puede cerrar: una advertencia que hay
+         que ir a buscar no es una advertencia. */
+      assert.ok(/La extracci[oó]n autom[aá]tica puede tener errores/i.test(apuHtml),
+        "apu.html debe advertir que la extracción automática puede tener errores");
+      assert.ok(/[Vv]erifique siempre los datos/i.test(apuHtml),
+        "apu.html debe pedir verificar los datos antes de usar el APU");
+      assert.ok(!/aviso-limitaciones[^>]*hidden/.test(apuHtml),
+        "el bloque de limitaciones no puede nacer oculto");
+
+      /* pdf.js SE CARGA DESDE CDN Y EN EL NAVEGADOR: es la decisión de
+         arquitectura de toda la capa (pdfjs-dist en Node pesa decenas de MB y
+         hay que sacarlo del request path). Si alguien lo moviera al servidor,
+         esta prueba lo delata. */
+      assert.ok(/pdfjsLib/.test(apuJs) && /getTextContent/.test(apuJs),
+        "apu.js debe extraer el texto con pdf.js en el navegador");
+      assert.ok(/workerSrc/.test(apuJs), "hay que fijar el workerSrc de pdf.js o cae a modo síncrono");
+      assert.ok(/const PDFJS_VERSION = "[\d.]+"/.test(apuJs),
+        "la versión de pdf.js va en una constante: actualizarla debe ser una línea");
+      // el texto viaja con las COLUMNAS separadas por tabulador: es de lo que
+      // depende `dividirCeldas` en el servidor
+      assert.ok(/salida \+= "\\t"/.test(apuJs),
+        "apu.js debe separar las columnas con TABULADOR al reconstruir las filas por coordenadas");
+
+      /* ARRANQUE AL FINAL DEL IIFE (la lección que costó cara en app.js y se
+         repitió en admin.js): el arranque no puede correr antes de declarar el
+         estado que sus funciones leen. */
+      {
+        const iAuto = apuJs.indexOf("if (accesoConcedido()) abrirApp();");
+        const iEstado = apuJs.indexOf("let filas = [];");
+        assert.ok(iAuto > 0 && iEstado > 0, "no se encontraron el arranque automático y el estado de la página");
+        assert.ok(iAuto > iEstado,
+          "el arranque automático de /apu corre antes de declarar su estado: morirá en la zona muerta temporal");
+      }
+      // ninguna pulsación sin respuesta visible: el token vacío AVISA
+      assert.ok(/if \(!v\) \{[^}]*mensaje\(/.test(sinComentarios(apuJs)),
+        "el token vacío debe avisar, no hacer `return` a secas (el botón parecería muerto)");
+      // sessionStorage se lee y se escribe dentro de try: en modo restringido lanza
+      assert.ok(!/[^{]\s*sessionStorage\.(?:get|set|remove)Item[^}]*$/m.test(sinComentarios(apuJs))
+        || /try \{ return sessionStorage/.test(apuJs),
+        "sessionStorage debe usarse dentro de try/catch");
+
+      for (const [archivo, fuente] of [["app.js", js], ["admin.js", admJs], ["apu.js", apuJs]]) {
         // `Number(x) || 0` sí es legítimo: normaliza un valor YA leído. Lo que
         // no puede haber es `i.campo || 0` a pelo sobre el conteo.
         const codigo = sinComentarios(fuente).replace(/Number\([^)]*\)\s*\|\|\s*0/g, "");
         assert.ok(!/\bi\.(?:procesos_contados|total_procesos)\s*\|\|\s*0/.test(codigo),
           `${archivo}: un conteo leído con «|| 0» convierte un campo ausente en un cero creíble`);
       }
+
+      /* Y la versión de esa misma regla para las CANTIDADES de obra, que es
+         donde más caro sale: una cantidad ausente se pinta «sin dato», nunca 0.
+         Un cero inventado en una cantidad de obra es plata. */
+      {
+        const codigo = sinComentarios(apuJs);
+        assert.ok(!/\bf\.(?:cantidad|unitario_oficial|total_oficial)\s*\|\|\s*0/.test(codigo),
+          "apu.js: una cantidad leída con «|| 0» convierte «no sé» en cero");
+        assert.ok(/v == null \? "" :/.test(codigo),
+          "la celda de una cantidad ausente debe quedar VACÍA, no en 0");
+      }
+
+      /* LAS DOS IMPLEMENTACIONES DEL NÚMERO COLOMBIANO NO PUEDEN DIVERGIR.
+         `numeroLocal` (public/apu.js) duplica a mano `numeroColombiano`
+         (lib/apu_pliego): la duplicación está justificada —un <input> del
+         navegador no puede requerir un módulo de Node— pero «justificada» no es
+         «libre». Sin una prueba que las ate, una corrección aplicada a una sola
+         hace que el número que el dueño escribe a mano y el que el servidor leyó
+         del PDF signifiquen cosas distintas, y eso no se vería nunca.
+         Se extrae la función del fuente y se comparan sobre la misma batería. */
+      {
+        const libPliego = require("../lib/apu_pliego.js");
+        const i = apuJs.indexOf("function numeroLocal(");
+        assert.ok(i > 0, "no se encontró numeroLocal en apu.js");
+        const fin = apuJs.indexOf("\n  }", i);
+        const fuenteFn = apuJs.slice(i, fin + 4);
+        // eslint-disable-next-line no-new-func
+        const numeroLocal = new Function(`${fuenteFn}; return numeroLocal;`)();
+        const bateria = ["1.234.567,89", "1.234.567", "1.234", "1.5", "1.50", "12,5", "0,00",
+          "375.0000", "3.14159", "1.2.3456", "-500", "  8.450,00  ", "2024-350", "abc", "1,2,3", "",
+          "CM-001", "$ 45.000", "100", "0", "1.000.000"];
+        for (const caso of bateria) {
+          assert.strictEqual(numeroLocal(caso), libPliego.numeroColombiano(caso),
+            `numeroLocal y numeroColombiano discrepan en ${JSON.stringify(caso)}: `
+            + `${numeroLocal(caso)} vs ${libPliego.numeroColombiano(caso)}`);
+        }
+      }
+
+      /* La página no puede prometer que el documento NO SALE y a la vez ofrecer
+         un botón que manda sus páginas a un tercero. La excepción se declara. */
+      assert.ok(/OCR\.space<\/strong>, un servicio externo/.test(apuHtml)
+        || /s[íi] salen/.test(apuHtml),
+        "apu.html debe advertir que la vía de OCR envía las páginas a un servicio externo");
+      assert.ok(!/no se sube a ning[úu]n servidor/.test(apuHtml),
+        "esa promesa es falsa mientras exista el botón de OCR: las páginas salen a OCR.space");
       /* veredicto GRADUADO en la tarjeta: un badge por la solidez del match y
          otro por el tipo de objeto. Sin esto el dueño no puede decidir. */
       for (const debe of ["badgesRup", "MATCH_UNSPSC", "RUP ✓", "RUP ~ (familia)", "RUP ≈ (clase afín)",
@@ -5998,6 +6950,18 @@ async function main() {
         assert.strictEqual(vercel.functions[fn].includeFiles, "data/**",
           `${fn} no empaqueta data/** (la semilla de vocabulario no llegaría al despliegue)`);
       }
+      /* El catálogo de ítems APU es la otra semilla que viaja en `data/**`, y le
+         toca la misma vigilancia: si dejara de empaquetarse, /api/apu/extraer-texto
+         no podría mapear nada y el fallo saldría en producción, no aquí. */
+      const catalogo = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "catalogo_apu.json"), "utf8"));
+      assert.ok(Array.isArray(catalogo.items) && catalogo.items.length >= 60, "catálogo de ítems APU vacío o incompleto");
+      assert.ok(/semilla curada a mano/i.test(catalogo._meta.origen),
+        "el catálogo debe declarar que es una semilla curada, no una estadística");
+      assert.ok(/nunca inventar un c[oó]digo INV/i.test(catalogo._meta.por_que_ningun_codigo_INV),
+        "el catálogo debe dejar escrito por qué ningún código es «INV-»");
+      assert.ok(catalogo.items.every((i) => /^LOC-/.test(i.codigo_item)),
+        "ningún código del catálogo puede publicarse como «INV-» sin haber abierto la especificación oficial");
+
       const semilla = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "vocabulario_unspsc.json"), "utf8"));
       assert.ok(semilla.familias && Object.keys(semilla.familias).length >= 5, "semilla de vocabulario vacía");
       assert.ok(/semilla/i.test(semilla._meta.origen),

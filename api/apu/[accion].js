@@ -62,7 +62,14 @@ const {
 const MAX_BYTES = 2 * 1024 * 1024;   // 2 MB de cuerpo; el tope de Vercel es 4,5
 const MAX_ITEMS = 400;               // un presupuesto de obra menor no pasa de ~150
 const MAX_PRESUPUESTOS = 100;        // tope del listado
-const ACCIONES = ["catalogo", "inferir", "calcular", "rentabilidad", "guardar", "cargar", "listar"];
+/* «extraer-texto» y «descargar» son el LECTOR DE PLIEGOS y viven aquí por una
+   razón dura, no estética: el plan Hobby de Vercel admite 12 funciones por
+   despliegue y con dos ficheros propios eran 14 — el despliegue entero se
+   rechazaba. Su lógica está en lib/apu_extraer.js y lib/apu_descargar.js; este
+   despachador solo las llama. Las dos son AJENAS al catálogo de precios: no leen
+   Redis ni el catálogo, así que se despachan ANTES de tocarlo. */
+const ACCIONES = ["catalogo", "inferir", "calcular", "rentabilidad", "guardar", "cargar", "listar",
+  "extraer-texto", "descargar"];
 const PUBLICAS = ["catalogo"];
 
 const AVISO = "Precios de REFERENCIA regionalizada, no cotizaciones. Verifique contra cotización real "
@@ -141,6 +148,12 @@ module.exports = async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
     return res.status(404).json({ ok: false, error: `Acción «${accion}» desconocida.`, acciones: ACCIONES });
   }
+
+  /* El lector de pliegos se despacha aquí, antes de cualquier cosa del catálogo:
+     no toca Redis, no necesita el catálogo de precios y trae su propia
+     autorización (el mismo HISTORICO_TOKEN, vía lib/auth). */
+  if (accion === "extraer-texto") return require("../../lib/apu_extraer.js")(req, res);
+  if (accion === "descargar") return require("../../lib/apu_descargar.js")(req, res);
 
   const publica = PUBLICAS.includes(accion);
   if (publica) {
