@@ -1,0 +1,64 @@
+{
+  "_meta": {
+    "origen": "docs/APU_Y_RENTABILIDAD.md §1.B.2 — «Diseño de la matriz de ajuste regional». Documento de DISEÑO, no de hallazgos.",
+    "advertencia": "TODOS los coeficientes son PRELIMINARES A CALIBRAR. Valen como punto de partida y como FORMATO de la tabla, no como dato medido. Por eso los 32 departamentos se publican en estado «estimado» (🟡) y ninguno en «calibrado» (🟢): el documento es explícito en que si al calibrar ningún departamento alcanza 🟢, se publica toda la matriz en 🟡 y se dice.",
+    "un_factor_por_componente": "Nunca un número único por departamento. Los cuatro componentes —material, mano de obra, equipo y transporte— se mueven por razones distintas: el SMMLV es un PISO NACIONAL (no hay un Chocó barato en mano de obra; lo que varía es el rendimiento), mientras el material se mueve con el flete y la competencia entre proveedores. Un F único aplicado a una obra intensiva en concreto y a otra intensiva en mano de obra daría el mismo ajuste a dos presupuestos con estructuras de costo opuestas.",
+    "referencia": "Promedio nacional de los APU regionalizados del INVÍAS = 1,00. NO Bogotá: el INVÍAS la excluye de su universo de ~140 provincias y anclar ahí dejaría a casi todo el país por debajo de 1 en mano de obra.",
+    "prohibido_default": "Un departamento sin factor NO recibe 1,00. Un F = 1 por defecto afirma «aquí construir cuesta lo mismo que el promedio nacional», que es una afirmación falsa y creíble sobre Vaupés. La ausencia de factor se propaga como ausencia (estado «sin_base»), nunca como neutralidad.",
+    "granularidad": "33 unidades (32 departamentos + Bogotá D.C.), que es exactamente lo que trae SECOP en `departamento_entidad`. El municipio entra SOLO por la vía del flete (distancia al centro de abastecimiento), que es donde la variación intradepartamental es grande. Estimar 1.100 factores con el histórico disponible no es sostenible.",
+    "flete_relativo": "NO es un multiplicador del precio: es el `k_modo` efectivo de la ruta típica del departamento, un múltiplo del $/ton-km troncal. Se aplica al término ADITIVO de transporte, jamás al precio del material.",
+    "version": "1.0.0"
+  },
+
+  "transporte": {
+    "tarifa_troncal_ton_km": 450,
+    "fuente_tarifa": "ilustrativo — el documento cita un rango de $194 a $704/ton-km en rutas troncales [INCIERTO]. La fuente correcta es el SICE-TAC del Mintransporte para la ruta origen-destino real.",
+    "nota": "El flete es ADITIVO (Σ toneladas × km × tarifa × k_modo), no un multiplicador. Con distancia de acarreo 0 se entiende que el precio del material ya está PUESTO EN OBRA y no se añade flete: es el caso por defecto y hay que decirlo, porque sumarlo dos veces es el error que el diseño advierte."
+  },
+
+  "categorias": {
+    "A": { "nombre": "Eje metropolitano",                   "material": [0.95, 1.03], "mano_obra": [1.00, 1.08], "equipo": [0.95, 1.02], "flete_relativo": [1.0, 1.2] },
+    "B": { "nombre": "Andino cercano",                      "material": [1.00, 1.08], "mano_obra": [0.96, 1.03], "equipo": [1.00, 1.06], "flete_relativo": [1.1, 1.5] },
+    "C": { "nombre": "Andino alejado / montañoso",          "material": [1.06, 1.18], "mano_obra": [0.95, 1.03], "equipo": [1.05, 1.15], "flete_relativo": [1.4, 2.0] },
+    "D": { "nombre": "Costa y llanos con red primaria",     "material": [1.04, 1.16], "mano_obra": [0.98, 1.06], "equipo": [1.02, 1.12], "flete_relativo": [1.2, 1.8] },
+    "E": { "nombre": "Apartado con acceso terrestre difícil","material": [1.18, 1.45], "mano_obra": [1.00, 1.12], "equipo": [1.15, 1.35], "flete_relativo": [2.0, 4.0] },
+    "F": { "nombre": "Sin acceso terrestre",                "material": [1.55, 2.60], "mano_obra": [1.05, 1.25], "equipo": [1.40, 2.00], "flete_relativo": null }
+  },
+
+  "notas_categorias": {
+    "F": "El flete va por TARIFA ($/kg aéreo o $/ton marítimo), no por múltiplo de la troncal: no depende linealmente de la distancia. San Andrés no es «muy lejos», es una isla, y su banda de material puede superar la de Amazonas.",
+    "E": "Vichada es un caso partido: La Primavera y Santa Rosalía se comportan como E; Cumaribo y buena parte de Puerto Carreño, como F. Un municipio sin conexión terrestre ESCALA de categoría aunque su departamento esté en E. Lo mismo en el Pacífico chocoano y el Bajo Baudó.",
+    "mano_obra": "La banda 0,95–1,08 en A–D es deliberadamente estrecha: el SMMLV es un piso nacional. Sube en E–F no por salario sino por RENDIMIENTO (jornada efectiva menor por clima y logística) y por importación de cuadrilla."
+  },
+
+  "departamentos": {
+    "CUNDINAMARCA": "A", "ANTIOQUIA": "A", "VALLE DEL CAUCA": "A", "ATLANTICO": "A",
+
+    "BOYACA": "B", "SANTANDER": "B", "CALDAS": "B", "RISARALDA": "B", "QUINDIO": "B", "TOLIMA": "B",
+
+    "HUILA": "C", "CAUCA": "C", "NARINO": "C", "NORTE DE SANTANDER": "C",
+
+    "BOLIVAR": "D", "MAGDALENA": "D", "CESAR": "D", "CORDOBA": "D", "SUCRE": "D", "META": "D", "CASANARE": "D",
+
+    "LA GUAJIRA": "E", "CHOCO": "E", "ARAUCA": "E", "CAQUETA": "E", "PUTUMAYO": "E", "GUAVIARE": "E", "VICHADA": "E",
+
+    "AMAZONAS": "F", "VAUPES": "F", "GUAINIA": "F", "SAN ANDRES Y PROVIDENCIA": "F"
+  },
+
+  "sin_base": {
+    "BOGOTA D.C.": "El INVÍAS excluye a Bogotá de su universo de 140 provincias y no hay otra fuente cargada. Publicar una banda «previsible» sería exactamente el número creíble sin respaldo que el resto del diseño prohíbe. Se levanta cargando la base de precios de referencia del IDU (SIIP Viales) y el histórico propio de entidades distritales."
+  },
+
+  "alias_departamentos": {
+    "BOGOTA": "BOGOTA D.C.",
+    "BOGOTA DC": "BOGOTA D.C.",
+    "BOGOTA D C": "BOGOTA D.C.",
+    "DISTRITO CAPITAL DE BOGOTA": "BOGOTA D.C.",
+    "SAN ANDRES": "SAN ANDRES Y PROVIDENCIA",
+    "ARCHIPIELAGO DE SAN ANDRES PROVIDENCIA Y SANTA CATALINA": "SAN ANDRES Y PROVIDENCIA",
+    "SAN ANDRES PROVIDENCIA Y SANTA CATALINA": "SAN ANDRES Y PROVIDENCIA",
+    "VALLE": "VALLE DEL CAUCA",
+    "GUAJIRA": "LA GUAJIRA",
+    "NTE DE SANTANDER": "NORTE DE SANTANDER"
+  }
+}
