@@ -4877,6 +4877,28 @@ async function main() {
       }
       assert.strictEqual(conSemilla.cuerpo.departamento, "Tolima", "el departamento se devuelve tal cual llegó");
 
+      /* 3-bis · UNA LISTA VACÍA TIENE DOS CAUSAS, y las dos tienen que LLEGAR
+         al cliente. El motor las distingue; si el endpoint no las reenviara,
+         serían campos que se calculan, se publican y nadie transporta —
+         `i.total_procesos` mirando al otro lado del cable. */
+      {
+        const noObra = await invocarPost(apuInferir, "/api/apu/inferir",
+          { objeto: "PRESTACIÓN DEL SERVICIO DE INTERNET DEDICADO PARA LA ALCALDÍA", unspsc: "V1.80101600" }, CAB_TOKEN);
+        assert.strictEqual(noObra.cuerpo.total, 0);
+        assert.ok(noObra.cuerpo.no_pertinente && noObra.cuerpo.no_pertinente.motivo,
+          "el endpoint tiene que reenviar POR QUÉ el objeto no es de obra");
+        assert.strictEqual(noObra.cuerpo.sin_sugerencias, null,
+          "las dos causas son excluyentes: si no es obra, no es «es obra pero nada llegó al umbral»");
+
+        // es obra (verbo fuerte) pero sus términos dicen DÓNDE, no QUÉ
+        const sinNada = await invocarPost(apuInferir, "/api/apu/inferir",
+          { objeto: "Adecuación de la sede educativa de la vereda El Cairo" }, CAB_TOKEN);
+        assert.strictEqual(sinNada.cuerpo.total, 0);
+        assert.strictEqual(sinNada.cuerpo.no_pertinente, null, "es obra: no puede venir marcado como no pertinente");
+        assert.ok(sinNada.cuerpo.sin_sugerencias && /umbral/i.test(sinNada.cuerpo.sin_sugerencias),
+          "una lista vacía sobre un objeto de obra tiene que explicarse, no devolverse a secas");
+      }
+
       /* 4 · sin objeto ni código, 400 con el ejemplo de cómo se llama */
       const vacio = await invocarPost(apuInferir, "/api/apu/inferir", { departamento: "Tolima" }, CAB_TOKEN);
       assert.strictEqual(vacio.status, 400, "sin objeto y sin código no hay nada de dónde inferir");
@@ -5250,6 +5272,11 @@ async function main() {
       for (const debe of ["/api/apu/inferir", "inferirApu", "apuSeleccion", "cargarConocimientoApu"]) {
         assert.ok(admJs.includes(debe), `admin.js sin ${debe} (la inferencia APU no está cableada)`);
       }
+      /* El panel tiene que PINTAR la explicación que el servidor manda, no una
+         redacción propia: dos textos para el mismo hecho se contradicen en
+         cuanto se corrija uno de los dos. */
+      assert.ok(/c\.no_pertinente/.test(admJs) && /c\.sin_sugerencias/.test(admJs),
+        "con 0 ítems el panel debe usar la causa que envía el servidor, no un texto genérico propio");
       // el token tampoco viaja en la URL de este endpoint
       assert.ok(!/\/api\/apu\/inferir\?[^`"']*token=/.test(admJs),
         "el token de la inferencia APU va por cabecera, nunca en la URL");

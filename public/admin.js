@@ -1329,9 +1329,21 @@
     $("apu-contenido").classList.remove("hidden");
     const items = c.items || [];
 
+    /* Una lista vacía tiene DOS causas y el servidor ya las distingue: o el
+       objeto no es de obra (`no_pertinente`, con el término que lo veta), o es
+       obra y nada llegó al umbral (`sin_sugerencias`, con qué hacer). Pintar
+       aquí un texto genérico propio desperdiciaría la explicación exacta que
+       viaja en la respuesta — y dejaría dos redacciones que se contradicen en
+       cuanto una de las dos se corrija. */
     if (!items.length) {
-      avisoApu("Ningún ítem del catálogo supera el umbral para este objeto. Suele significar que el objeto "
-        + "no es de obra civil, o que está escrito con el número del proceso y no con una descripción.", "aviso");
+      if (c.no_pertinente) {
+        avisoApu(`Este objeto no es de obra civil: ${esc(c.no_pertinente.motivo)}. `
+          + "No se sugiere ningún ítem aunque venga publicado con un código UNSPSC de construcción.", "aviso");
+      } else if (c.sin_sugerencias) {
+        avisoApu(esc(c.sin_sugerencias), "aviso");
+      } else {
+        avisoApu("Ningún ítem del catálogo supera el umbral para este objeto.", "aviso");
+      }
     }
 
     const totalTexto = `${fmt.format(items.length)} ítem${items.length === 1 ? "" : "s"} sugerido${items.length === 1 ? "" : "s"}`;

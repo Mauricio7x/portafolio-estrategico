@@ -194,6 +194,12 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ ok: false, error: `La inferencia falló: ${e.message}` });
   }
 
+  /* Una lista vacía tiene DOS causas y `[]` no las distingue. El motor las
+     separa —`no_pertinente` (no es obra) y `sin_sugerencias` (es obra, pero
+     nada llegó al umbral)— y aquí hay que REENVIARLAS: un campo que se calcula,
+     se publica y nadie transporta es peor que no calcularlo, porque parece que
+     la explicación existe. Es la lección de `i.total_procesos` mirando al otro
+     lado del cable. */
   return res.status(200).json({
     ok: true,
     objeto,
@@ -202,6 +208,8 @@ module.exports = async function handler(req, res) {
     items: r.items,
     total: r.total,
     recortados: r.recortados,
+    no_pertinente: r.no_pertinente || null,
+    sin_sugerencias: r.sin_sugerencias || null,
     cantidad_sugerida_motivo: r.cantidad_sugerida_motivo,
     diagnostico: r.diagnostico,
     como_leerlo: "Cada ítem viaja con su confianza y con los motivos que la produjeron (el código UNSPSC "
