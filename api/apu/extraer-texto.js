@@ -108,6 +108,8 @@ function contrato() {
       unspsc: "string[] · opcional; refuerza la tipología",
       precio_base: "number · opcional; ancla externa del nivel Documento de la validación",
       imagenes_base64: `[{base64, mime}] · opcional; respaldo por OCR para PDF escaneado (máx. ${MAX_PAGINAS_POR_LOTE} páginas por llamada, ${Math.round(MAX_BYTES_IMAGEN / 1024)} KB por página)`,
+      solo_reconocer: "boolean · opcional; con imagenes_base64 devuelve «texto_ocr» SIN parsear, para poder "
+        + "encadenar tandas de un documento largo y parsear el texto completo al final",
     },
     limites: { cuerpo_max_mb: 4, texto_minimo_caracteres: MIN_TEXTO },
     umbrales: {
@@ -174,6 +176,30 @@ module.exports = async function handler(req, res) {
       });
     }
     texto = ocr.texto;
+
+    /* ── SOLO RECONOCER, sin parsear ──
+       El tope de páginas por llamada existe por el reloj de la función (OCR.space
+       tarda segundos por página y `maxDuration` son 60 s), así que un formulario
+       escaneado de 40 páginas NO cabe en una sola invocación. La salida es que el
+       cliente ENCADENE tandas —el mismo patrón con que /admin.html encadena la
+       full— y para eso necesita el texto reconocido de vuelta: acumula las tandas
+       y al final manda el texto completo por `texto_extraido` para parsearlo
+       ENTERO de una vez. Parsear cada tanda por separado partiría la tabla en
+       trozos y ni los capítulos ni la suma del documento cuadrarían. */
+    if (datos.solo_reconocer === true) {
+      return res.status(200).json({
+        ok: true,
+        solo_reconocer: true,
+        texto_ocr: texto,
+        ocr: {
+          usado: true, paginas_leidas: ocr.paginas_leidas, paginas_pedidas: ocr.paginas_pedidas,
+          paginas_procesadas: ocr.paginas_procesadas, truncado: ocr.truncado, fallos: ocr.fallos,
+        },
+        advertencia: ADVERTENCIA,
+        nota: "Texto reconocido, SIN parsear. Acumule las tandas y mándelas juntas por «texto_extraido» "
+          + "para que la tabla se parsee completa: por trozos, ni los capítulos ni la suma del documento cuadran.",
+      });
+    }
   }
 
   if (texto.trim().length < MIN_TEXTO) {

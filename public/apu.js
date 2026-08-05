@@ -729,42 +729,83 @@
     mensaje(null); avisos(null);
     ocupado(true);
     try {
-      const total = Math.min(docPdf.numPages, MAX_PAGINAS_OCR);
-      if (docPdf.numPages > MAX_PAGINAS_OCR) {
-        mensaje(`El PDF tiene ${docPdf.numPages} páginas y el OCR procesa ${MAX_PAGINAS_OCR} por llamada `
-          + `(límite del plan gratuito). Se leerán las ${total} primeras.`, "aviso");
-      }
-      const paginas = [];
+      /* TANDAS ENCADENADAS. El servidor topa en MAX_PAGINAS_OCR por llamada
+         —OCR.space tarda segundos por página y la función tiene 60 s—, así que un
+         formulario escaneado de 40 páginas no cabe en una sola invocación. Se
+         encadena: cada tanda pide `solo_reconocer` y devuelve su texto, se
+         acumula todo, y al final se manda el texto COMPLETO a parsear. Parsear
+         cada tanda por separado partiría la tabla y ni los capítulos ni la suma
+         del documento cuadrarían. Mismo patrón que /admin.html con la full. */
+      const total = docPdf.numPages;
+      const tandas = Math.ceil(total / MAX_PAGINAS_OCR);
       const nolegibles = [];
-      for (let n = 1; n <= total; n++) {
-        chip(`Rasterizando página ${n} de ${total}…`, { girando: true });
-        progreso(n - 1, total, `Preparando página ${n} de ${total} para OCR…`);
-        await new Promise((r) => setTimeout(r, 0));
-        const img = await rasterizarPagina(docPdf, n);
-        if (img) paginas.push(img);
-        else nolegibles.push(n);
+      const fallos = [];
+      const trozos = [];
+
+      for (let tanda = 0; tanda < tandas; tanda++) {
+        const desde = tanda * MAX_PAGINAS_OCR + 1;
+        const hasta = Math.min(desde + MAX_PAGINAS_OCR - 1, total);
+        const paginas = [];
+        for (let n = desde; n <= hasta; n++) {
+          chip(`Rasterizando página ${n} de ${total}…`, { girando: true });
+          progreso(n - 1, total, `Preparando página ${n} de ${total} para OCR…`);
+          await new Promise((r) => setTimeout(r, 0));
+          const img = await rasterizarPagina(docPdf, n);
+          if (img) paginas.push(img);
+          else nolegibles.push(n);
+        }
+        if (!paginas.length) continue;
+
+        chip(`Reconociendo páginas ${desde}-${hasta} de ${total} (tanda ${tanda + 1}/${tandas})…`, { girando: true });
+        progreso(hasta, total, `Reconociendo páginas ${desde}-${hasta} de ${total}…`);
+        const rt = await pedir("/api/apu/extraer-texto", {
+          texto_extraido: "", imagenes_base64: paginas, solo_reconocer: true,
+        });
+        if (rt.sinToken) { progreso(null); chip("Sin token", {}); return mensaje("Guarde primero el token de acceso, arriba.", "aviso"); }
+        if (rt.red) { progreso(null); chip("Sin conexión", {}); return mensaje(`No se pudo contactar el servidor: ${rt.red}.`, "error"); }
+        if (rt.estado === 401) { progreso(null); chip("Token inválido", {}); return mensaje("Token inválido. Guárdelo de nuevo arriba y reintente.", "error"); }
+        if (!rt.cuerpo || !rt.cuerpo.ok) {
+          /* Una tanda que falla NO tira el documento entero: se registra y se
+             sigue. 35 páginas leídas valen mucho más que un error global — y si
+             el problema es la clave o la cuota, `pedir` ya habrá devuelto 401/503
+             y se corta arriba. */
+          fallos.push(`páginas ${desde}-${hasta}: ${(rt.cuerpo && rt.cuerpo.error) || `error ${rt.estado}`}`);
+          continue;
+        }
+        if (rt.cuerpo.texto_ocr) trozos.push(rt.cuerpo.texto_ocr);
+        for (const f of (rt.cuerpo.ocr && rt.cuerpo.ocr.fallos) || []) {
+          fallos.push(`página ${desde + (f.pagina - 1)}: ${f.error}`);
+        }
       }
-      progreso(total, total, "Enviando a reconocer…");
-      if (!paginas.length) {
-        chip("No se pudo preparar ninguna página", {});
-        return mensaje("Ninguna página cabe en el límite de tamaño del OCR ni en la escala más baja. "
-          + "Extraiga la tabla a mano.", "error");
+
+      if (!trozos.length) {
+        progreso(null);
+        chip("El OCR no devolvió texto", {});
+        avisos(fallos.length ? fallos : null);
+        return mensaje(nolegibles.length === total
+          ? "Ninguna página cabe en el límite de tamaño del OCR ni en la escala más baja. Extraiga la tabla a mano."
+          : "El OCR no devolvió texto de ninguna página.", "error");
       }
-      chip("Reconociendo texto (OCR)…", { girando: true });
+
+      // ahora sí: el texto COMPLETO, parseado de una vez
+      chip("Analizando la tabla reconocida…", { girando: true });
+      progreso(total, total, "Analizando la tabla…");
       const ctx = contexto();
       const r = await pedir("/api/apu/extraer-texto", {
-        texto_extraido: "",
-        imagenes_base64: paginas,
+        texto_extraido: trozos.join("\n"),
         objeto_proceso: ctx.objeto_proceso,
         unspsc: ctx.unspsc,
         precio_base: ctx.precio_base,
       });
       progreso(null);
       manejarRespuesta(r);
-      if (nolegibles.length) {
-        avisos([`Páginas que no se pudieron preparar para OCR: ${nolegibles.join(", ")}.`]
-          .concat((r.cuerpo && r.cuerpo.avisos) || []));
-      }
+      // el texto vino de un OCR: la respuesta dirá `pdf_nativo` porque llegó como
+      // texto, así que hay que decirlo aquí o el aviso sobre la tasa de error
+      // del OCR no aparecería
+      const extra = ["El texto se obtuvo por OCR: la tasa de error es más alta que en un PDF nativo."]
+        .concat(nolegibles.length ? [`Páginas que no se pudieron preparar para OCR: ${nolegibles.join(", ")}.`] : [])
+        .concat(fallos);
+      avisos(extra.concat((r.cuerpo && r.cuerpo.avisos) || []));
     } catch (e) {
       progreso(null);
       chip("Error", {});

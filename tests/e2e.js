@@ -2623,6 +2623,43 @@ async function main() {
         { metodo: "POST", body: "{no es json" });
       assert.strictEqual(basura.status, 400);
       assert.ok(/JSON/.test(basura.cuerpo.error));
+
+      /* `solo_reconocer`: devuelve el texto SIN parsear para que el cliente pueda
+         ENCADENAR tandas. Existe porque el tope de páginas por llamada viene del
+         reloj de la función, así que un formulario escaneado de 40 páginas no cabe
+         en una invocación; el cliente acumula y manda el texto completo al final.
+         Parsear cada tanda por separado partiría la tabla y ni los capítulos ni la
+         suma del documento cuadrarían. */
+      {
+        const fetchOriginal = global.fetch;
+        const claveOriginal = process.env.OCRSPACE_API_KEY;
+        process.env.OCRSPACE_API_KEY = "clave-de-prueba";
+        global.fetch = async () => ({
+          ok: true, status: 200, headers: { get: () => null },
+          json: async () => ({
+            OCRExitCode: 1, IsErroredOnProcessing: false,
+            ParsedResults: [{ ParsedText: "1.1 CONCRETO ESTRUCTURAL M3 96,20" }],
+          }),
+          text: async () => "",
+        });
+        try {
+          const tanda = await invocarPost(apiExtraer, "/api/apu/extraer-texto", {
+            texto_extraido: "", solo_reconocer: true,
+            imagenes_base64: [{ base64: "QUJD", mime: "image/jpeg" }],
+          }, CAB_TOKEN);
+          assert.strictEqual(tanda.status, 200);
+          assert.strictEqual(tanda.cuerpo.solo_reconocer, true);
+          assert.strictEqual(tanda.cuerpo.texto_ocr, "1.1 CONCRETO ESTRUCTURAL M3 96,20",
+            "el texto reconocido tiene que volver, o el cliente no puede encadenar tandas");
+          assert.strictEqual(tanda.cuerpo.items, undefined, "con `solo_reconocer` NO se parsea");
+          assert.ok(/puede tener errores/i.test(tanda.cuerpo.advertencia),
+            "la advertencia viaja también en la respuesta de solo reconocer");
+        } finally {
+          global.fetch = fetchOriginal;
+          if (claveOriginal === undefined) delete process.env.OCRSPACE_API_KEY;
+          else process.env.OCRSPACE_API_KEY = claveOriginal;
+        }
+      }
     }
 
     /* 20. SSRF en /api/apu/descargar: un endpoint que baja una URL arbitraria
