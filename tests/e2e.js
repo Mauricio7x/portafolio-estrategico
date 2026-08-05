@@ -5810,6 +5810,118 @@ async function main() {
           "cargar experiencia nueva tiene que invalidar la auditoría cacheada");
       }
 
+      /* ---- CARGA DESDE EL REPOSITORIO (?origen=repositorio) ----
+         El dueño no tiene terminal: `cargar_experiencia.sh` no le sirve y el
+         panel tiene que poder cargar los 106 contratos de Génesis con un clic.
+         La tentación era un endpoint nuevo, y habría roto el DESPLIEGUE ENTERO
+         (12 funciones es el tope del plan Hobby y el repositorio está en 12), así
+         que vive en ESTE endpoint como una fuente distinta de los contratos.
+         Lo que hay que probar no es que «funcione», sino que sea EL MISMO camino
+         que la carga manual: si fueran dos, divergirían. */
+      {
+        const archivoRepo = path.join(__dirname, "..", "experiencia_genesis_106.json");
+        const delRepo = JSON.parse(fs.readFileSync(archivoRepo, "utf8"));
+
+        /* protegido igual que el resto: el origen no puede ser una puerta trasera */
+        assert.strictEqual(
+          (await invocarPost(experiencia, "/api/admin/experiencia?origen=repositorio", null)).status, 401,
+          "?origen=repositorio tiene que exigir token como cualquier otra carga");
+
+        /* SIN CUERPO: es lo que permite dispararlo con un botón (y con el
+           rewrite) sin fabricar un JSON que el servidor ya tiene */
+        const r = await invocarPost(experiencia, "/api/admin/experiencia?origen=repositorio", null, CAB_TOKEN);
+        assert.strictEqual(r.status, 200, `la carga desde el repositorio falló: ${JSON.stringify(r.cuerpo).slice(0, 300)}`);
+        assert.strictEqual(r.cuerpo.ok, true);
+        assert.strictEqual(r.cuerpo.origen, "repositorio",
+          "la respuesta tiene que declarar de dónde salieron los contratos: dos orígenes, dos respuestas distinguibles");
+        assert.strictEqual(r.cuerpo.archivo, "experiencia_genesis_106.json");
+
+        /* ATA la respuesta al ARCHIVO REAL del repositorio. Sin esto, el
+           endpoint podría estar leyendo otra cosa —o una copia rancia— y la
+           prueba pasaría igual. */
+        assert.strictEqual(r.cuerpo.contratos_cargados, delRepo.contratos.length,
+          "el endpoint no cargó exactamente los contratos del archivo versionado");
+        assert.ok(r.cuerpo.terminos_extraidos > 0, "sin vocabulario la carga no sirve para nada");
+        assert.ok(r.cuerpo.version && r.cuerpo.cargado, "la carga desde el repositorio también sella");
+        assert.ok(/repositorio/i.test(r.cuerpo.nota || ""),
+          "la nota debe decir que vino del repositorio, no repetir la de la carga manual");
+
+        /* EL ALIAS PEGADO EN CHROME ES UN **GET**, y esa es la vía de disparo
+           documentada del dueño (no tiene terminal). Antes la rama GET retornaba
+           ANTES de mirar el origen y respondía `200 {ok:true, cargada:false,
+           contratos_cargados:0}`: un «no hice nada» con cara de éxito, con un
+           cero que además se lee como «cargué cero contratos». Misma familia que
+           «en 0 procesos» y que un `|| 0` sobre un conteo. Ahora es un 405 que
+           dice cómo hacerlo de verdad. */
+        {
+          const getAlias = await invocar(experiencia, "/api/admin/experiencia?origen=repositorio", CAB_TOKEN);
+          assert.strictEqual(getAlias.status, 405,
+            "un GET al alias no puede responder 200 ok:true sin haber cargado nada");
+          assert.strictEqual(getAlias.cabeceras.allow, "POST", "un 405 tiene que decir qué método sí vale");
+          assert.strictEqual(getAlias.cuerpo.ok, false);
+          assert.ok(/admin\.html|Cargar Experiencia/i.test(getAlias.cuerpo.como_hacerlo || ""),
+            "el 405 tiene que decir CÓMO hacerlo: quien pegó la URL no tiene terminal para averiguarlo");
+          // y no puede haber escrito nada por el camino
+          const trasGet = await invocar(experiencia, "/api/admin/experiencia", CAB_TOKEN);
+          assert.strictEqual(trasGet.cuerpo.contratos_cargados, delRepo.contratos.length,
+            "el GET rechazado no puede haber tocado lo guardado");
+        }
+
+        /* Un `origen` mal escrito NO puede caer en silencio en la rama del
+           cuerpo y cargar otra cosa: cae en el 400 de «body vacío», que es
+           ruidoso. Por eso el flag va en la QUERY y no en el cuerpo — el
+           validador ignora las claves extra de la raíz, así que un flag mal
+           escrito DENTRO del JSON cargaría los contratos pegados con un 200
+           idéntico: fuente equivocada y sin síntoma. */
+        {
+          const malEscrito = await invocarPost(experiencia, "/api/admin/experiencia?origen=repo", null, CAB_TOKEN);
+          assert.strictEqual(malEscrito.status, 400,
+            "un origen desconocido tiene que fallar ruidosamente, no cargar el cuerpo en silencio");
+          assert.strictEqual(malEscrito.cuerpo.origen, "cuerpo");
+        }
+
+        /* y queda REALMENTE guardado: el GET lo ve */
+        const g = await invocar(experiencia, "/api/admin/experiencia", CAB_TOKEN);
+        assert.strictEqual(g.cuerpo.cargada, true);
+        assert.strictEqual(g.cuerpo.contratos_cargados, delRepo.contratos.length);
+        assert.strictEqual(g.cuerpo.contratos[0].objeto, delRepo.contratos[0].objeto,
+          "lo guardado no coincide con el primer contrato del archivo del repositorio");
+
+        /* EL MISMO VALIDADOR: el archivo versionado pasa el validador del
+           proyecto. Si algún día dejara de pasarlo, el 400 lo diría con `nota`
+           y esta prueba lo caza antes de que llegue a producción. */
+        const val = require("../lib/experiencia.js").validarContratos(delRepo);
+        assert.strictEqual(val.ok, true,
+          `experiencia_genesis_106.json no pasa validarContratos: ${JSON.stringify((val.errores || []).slice(0, 3))}`);
+
+        /* LOS DOS PRIMEROS PASOS DEL PANEL, ENCADENADOS DE VERDAD. Es el
+           entregable: cargar los 106 y auditar Génesis con ELLOS. Probados por
+           separado, el encadenado solo estaría verificado por regex sobre el
+           fuente del frontend — y lo que el dueño va a pulsar es la cadena. */
+        {
+          const aud = await invocar(coberturaApi,
+            "/api/admin/cobertura-rup?perfil=genesis&refrescar=1", CAB_TOKEN);
+          assert.strictEqual(aud.status, 200, "la auditoría tras cargar del repositorio falló");
+          assert.strictEqual(aud.cuerpo.experiencia_utilizada, true,
+            "tras cargar los 106 contratos la auditoría tiene que usarlos, no caer al método base");
+          assert.strictEqual(aud.cuerpo.contratos_experiencia, delRepo.contratos.length,
+            "la auditoría no midió contra los 106 contratos recién cargados");
+        }
+
+        /* COMPATIBILIDAD (punto 4 del encargo): la carga manual sigue viva y
+           manda. Se restaura además el fixture, que es lo que esperan las
+           pruebas de abajo. */
+        const manual = await invocarPost(experiencia, "/api/admin/experiencia",
+          { contratos: CONTRATOS_EXPERIENCIA }, CAB_TOKEN);
+        assert.strictEqual(manual.status, 200, "la carga manual dejó de funcionar");
+        assert.strictEqual(manual.cuerpo.origen, "cuerpo",
+          "la carga manual tiene que declararse como tal");
+        assert.strictEqual(manual.cuerpo.archivo, undefined,
+          "una carga manual no viene de ningún archivo del repositorio: el campo no puede aparecer");
+        assert.strictEqual(manual.cuerpo.contratos_cargados, CONTRATOS_EXPERIENCIA.length,
+          "la carga manual no reemplazó a la del repositorio");
+      }
+
       /* usos incorrectos: el perfil es obligatorio (no hay default: servir el
          de otro perfil sería la peor forma de equivocarse) y la auditoría no
          escribe nada */
@@ -6547,6 +6659,20 @@ async function main() {
           `${nFunciones} funciones bajo api/: el plan Hobby de Vercel admite 12 por despliegue y lo rechazaría entero`);
         assert.ok(!fs.existsSync(path.join(__dirname, "..", "api", "apu", "catalogo.js")),
           "api/apu/catalogo.js volvió a existir: con él se pasa del límite de 12 funciones");
+
+        /* LA CARGA DE LA EXPERIENCIA DESDE EL REPOSITORIO NO PUEDE SER UN
+           ARCHIVO PROPIO, por lo mismo. La URL que pidió el encargo existe como
+           REWRITE —que no cuenta como función— y tiene que apuntar al endpoint
+           real con su origen: un rewrite que apunte a otra cosa sería una URL
+           que promete algo que no hace. */
+        assert.ok(!fs.existsSync(path.join(__dirname, "..", "api", "admin", "cargar-experiencia-genesis.js")),
+          "api/admin/cargar-experiencia-genesis.js como archivo propio son 13 funciones: Vercel rechaza el despliegue ENTERO");
+        const rw = (vc.rewrites || []).find((x) => x.source === "/api/admin/cargar-experiencia-genesis");
+        assert.ok(rw, "falta el rewrite que expone /api/admin/cargar-experiencia-genesis");
+        assert.ok(/^\/api\/admin\/experiencia\?/.test(rw.destination),
+          `el rewrite tiene que apuntar al endpoint real, no a ${rw.destination}`);
+        assert.ok(/origen=repositorio/.test(rw.destination),
+          "sin origen=repositorio el alias cargaría el cuerpo de la petición, que en un POST sin cuerpo es un 400");
       }
 
       console.log(`  · APU: ${tipologias.meta().tipologias_n} tipologías · ${catalogoLib.SEMILLA.items.length} ítems · `
@@ -7356,6 +7482,118 @@ async function main() {
         "descargarJSON", "🔴", "🟠", "🟡", "⚪", "ejecutarAuditoria", "cargarExperienciaActual"]) {
         assert.ok(admJs.includes(debe), `admin.js sin ${debe} (la experiencia o la auditoría no están cableadas)`);
       }
+      /* ---- panel: PUESTA EN PRODUCCIÓN SIN TERMINAL ----
+         El dueño no tiene terminal. Los tres pasos de `cargar_experiencia.sh`
+         tienen que poder darse con clics, y —lo que de verdad importa— sin
+         reimplementar ninguno de los tres. */
+      {
+        for (const debe of ['id="exp-produccion"', 'id="btn-exp-cadena"', 'id="btn-exp-repo"',
+          'id="btn-exp-cobertura"', 'id="btn-exp-full"', 'id="seccion-sync"']) {
+          assert.ok(admHtml.includes(debe), `admin.html sin ${debe} (falta la puesta en producción sin terminal)`);
+        }
+        /* Oculto por defecto: los tres pasos ESCRIBEN en Redis y un botón que no
+           puede funcionar es peor que un botón ausente. Lo enseña
+           `pintarEstadoToken`, que ya corre al arrancar y en cada cambio de
+           token: un solo sitio del que depender. */
+        const iProd = admHtml.indexOf('id="exp-produccion"');
+        assert.ok(/\bhidden\b/.test(admHtml.slice(iProd, iProd + 200)),
+          "el bloque de puesta en producción tiene que venir OCULTO: sin token sus tres pasos no pueden funcionar");
+        const admJsLimpio = sinComentarios(admJs);
+        /* La aserción mira la EXPRESIÓN, no la cercanía: con una comprobación
+           de proximidad, cambiar `!hay` por `true` dejaría el bloque oculto para
+           siempre con la suite en verde. */
+        assert.ok(/pintarEstadoToken[\s\S]{0,600}\$\("exp-produccion"\)/.test(admJsLimpio),
+          "la visibilidad del bloque debe colgar de pintarEstadoToken, no de un tercer sitio que se desincronice");
+        assert.ok(/classList\.toggle\("hidden", !hay\)/.test(admJsLimpio),
+          "el bloque tiene que enseñarse CON token y ocultarse sin él: la condición es parte de la prueba");
+
+        /* NO SE REIMPLEMENTA NADA. Los tres pasos llaman a lo que ya existía:
+           el endpoint de la carga manual con otro origen, la misma
+           `ejecutarAuditoria` del botón de cobertura y el mismo `iniciarFull`
+           del encadenado. Una segunda copia de la full es donde se rompería la
+           invariante «1.ª tanda full, siguientes auto» sin que nadie lo notara. */
+        assert.ok(admJsLimpio.includes("/api/admin/experiencia?origen=repositorio"),
+          "el botón debe llamar al endpoint existente con ?origen=repositorio, no a una ruta nueva");
+        /* Y POR POST: un GET a esa URL es un 405 (y antes era un 200 que no
+           cargaba nada). Sin esta aserción, cambiar el método sobrevivía la
+           suite entera. */
+        {
+          const i = admJsLimpio.indexOf("/api/admin/experiencia?origen=repositorio");
+          assert.ok(/method:\s*"POST"/.test(admJsLimpio.slice(i, i + 200)),
+            "la carga desde el repositorio tiene que ir por POST: un GET no escribe nada");
+        }
+        /* El muro del edge devuelve HTML, así que `r.json()` LANZA: con el
+           parseo dentro del mismo try que el fetch, Password Protection se
+           diagnostica como «sin conexión», que es lo contrario de la verdad. */
+        assert.ok(/Password Protection[\s\S]{0,200}reintente/.test(admJsLimpio)
+          || /(401\/403)/.test(admJsLimpio),
+          "el rechazo del edge tiene que nombrarse, no confundirse con una caída de red");
+        /* Cargar experiencia nueva invalida lo pintado: una auditoría medida
+           contra el vocabulario anterior al lado de «106 contratos cargados» es
+           una cifra vieja con aspecto de nueva. */
+        {
+          const i = admJsLimpio.indexOf("async function cargarExperienciaDelRepositorio");
+          const cuerpo = admJsLimpio.slice(i, admJsLimpio.indexOf("\n  }", i));
+          assert.ok(/invalidarCoberturaPintada\(/.test(cuerpo),
+            "tras recargar la experiencia hay que invalidar la auditoría pintada");
+        }
+        assert.ok(/function iniciarFull\(/.test(admJsLimpio),
+          "el arranque de la full debe tener nombre para poder reutilizarse");
+        /* Cuenta el CUERPO de `iniciarFull`, no `let modo = "full"` — esa
+           cadena vive en `encadenar`, así que contarla no mediría lo que dice.
+           Lo que no puede haber es un segundo arranque de la full. */
+        assert.strictEqual((admJsLimpio.match(/bitacora\("▶ iniciando carga completa"\)/g) || []).length, 1,
+          "hay más de un arranque de la full: la invariante «1.ª full, siguientes auto» tendría dos copias");
+        assert.strictEqual((admJsLimpio.match(/let modo = "full"/g) || []).length, 1,
+          "el bucle de encadenado tiene que arrancar en `full` una sola vez");
+        assert.ok(/sincronizacionFull[\s\S]{0,400}iniciarFull\(\)/.test(admJsLimpio),
+          "el paso 3 debe REUTILIZAR iniciarFull, no repetir su cuerpo");
+        assert.ok(/auditarCoberturaGenesis[\s\S]{0,900}ejecutarAuditoria\(\)/.test(admJsLimpio),
+          "el paso 2 debe REUTILIZAR ejecutarAuditoria, no reimplementar la auditoría");
+        /* Y TIENE QUE PROPAGAR SU RESULTADO. `ejecutarAuditoria` sale por
+           cuatro caminos de fallo (sin token, red, 401, error del servidor); si
+           el paso 2 devolviera `true` a secas, la cadena cantaría «✔ 2/3» sobre
+           una auditoría que no corrió y lanzaría la full igual. Pasó: lo
+           encontró la revisión adversaria y las cinco lentes coincidieron. */
+        assert.ok(/return false/.test(admJsLimpio.slice(admJsLimpio.indexOf("async function ejecutarAuditoria"))),
+          "ejecutarAuditoria tiene que poder decir que FALLÓ, o quien la encadena no puede saberlo");
+        {
+          const i = admJsLimpio.indexOf("async function auditarCoberturaGenesis");
+          const cuerpo = admJsLimpio.slice(i, admJsLimpio.indexOf("\n  }", i));
+          assert.ok(/const ok = await ejecutarAuditoria\(\)/.test(cuerpo) && /return ok;/.test(cuerpo),
+            "el paso 2 debe devolver lo que DE VERDAD pasó, no un `true` incondicional");
+          assert.ok(!/\breturn true;/.test(cuerpo),
+            "un `return true` incondicional en el paso 2 hace que la cadena nunca pueda detenerse ahí");
+          /* Fijar `.value` no dispara `change`: sin invalidar, la auditoría de
+             OTRO perfil se queda pintada bajo el selector de Génesis. */
+          assert.ok(/invalidarCoberturaPintada\(/.test(cuerpo),
+            "cambiar el perfil desde código no dispara `change`: hay que invalidar lo pintado a mano");
+          assert.ok(!/guardarPerfil\(/.test(cuerpo),
+            "el paso 2 no puede persistir el perfil: esa clave la comparte el DASHBOARD, que es otra pantalla");
+        }
+        assert.ok(/auditarCoberturaGenesis[\s\S]{0,400}"genesis"/.test(admJsLimpio),
+          "el paso 2 tiene que fijar el perfil en genesis: la auditoría de otro perfil sería la peor forma de equivocarse");
+
+        /* La cadena PARA en el primer paso que falle: encadenar una auditoría
+           sobre una carga que no ocurrió da un resultado creíble y equivocado. */
+        assert.ok(/if \(!\(await cargarExperienciaDelRepositorio\(\)\)\)/.test(admJsLimpio),
+          "la cadena debe detenerse si la carga falla");
+        assert.ok(/if \(!\(await auditarCoberturaGenesis\(\)\)\)/.test(admJsLimpio),
+          "la cadena debe detenerse si la auditoría falla");
+
+        /* Ninguna pulsación sin respuesta visible (la lección del modal) y el
+           avance en la bitácora, que es lo que pidió el encargo. */
+        assert.ok(/function exigirToken/.test(admJsLimpio),
+          "sin token, los botones tienen que AVISAR: un botón mudo parece roto");
+        for (const paso of ["1/3", "2/3", "3/3"]) {
+          assert.ok(admJsLimpio.includes(paso), `la bitácora no narra el paso ${paso}`);
+        }
+        /* Un `|| 0` sobre un conteo convierte «no sé» en «cero» y lo hace
+           creíble: es el defecto de «en 0 procesos», y aquí serían contratos. */
+        assert.ok(!/cuerpo\.(contratos_cargados|terminos_extraidos)\s*\|\|\s*0/.test(admJsLimpio),
+          "un `|| 0` sobre los conteos de la carga convierte un «no sé» del servidor en un cero creíble");
+      }
+
       // doble clic en «Confirmar carga» de experiencia: mismo blindaje que el RUP
       assert.ok(/\$\("btn-exp-confirmar"\)\.disabled = true/.test(admJs),
         "«Confirmar carga» de la experiencia debe deshabilitarse durante el envío");

@@ -426,6 +426,66 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   {exp|base}`, TTL 1 h). Cargar cualquiera de los dos la invalida sola — además de borrarla a mano
   en los dos POST, que es lo que hace visible el efecto al instante. Una caché que solo se borra a
   mano es una caché que algún día no se borra.
+- **PUESTA EN PRODUCCIÓN SIN TERMINAL (ago 2026), y la restricción que la definió.** El dueño no
+  tiene terminal, así que `cargar_experiencia.sh` no le sirve y los tres pasos tenían que darse con
+  clics desde `/admin.html`. Lo natural era crear `api/admin/cargar-experiencia-genesis.js` y
+  **habría roto el despliegue ENTERO**: el plan Hobby admite 12 funciones y el repositorio está
+  exactamente en 12 (misma restricción que impidió `/api/baja-mercado` y que plegó
+  `/api/apu/catalogo`). No falla el endpoint nuevo: falla el sitio.
+  · **Va plegado en `/api/admin/experiencia` como `?origen=repositorio`**, y eso REGALA lo que el
+    encargo pedía aparte («sin duplicar código»): lo único que cambia es DE DÓNDE salen los
+    contratos; desde `validarContratos` en adelante es el mismo camino, el mismo guardado y la misma
+    invalidación de caché. `origen` viaja en la respuesta para poder distinguir las dos formas.
+  · **La URL literal del encargo existe como `rewrite` de vercel.json**, que no cuenta como función.
+    Hay prueba de que apunta al endpoint real CON `origen=repositorio` — un alias que apuntara a otra
+    cosa sería una URL que promete algo que no hace. **El panel llama a la canónica**: si el rewrite
+    fallara, el botón tiene que seguir funcionando.
+  · **El archivo se lee con `require` ESTÁTICO, jamás con `fs` sobre una ruta construida.** Es como
+    el repositorio carga todos sus JSON y es lo que hace que el tracer de Vercel lo meta en el
+    bundle; con ruta dinámica el archivo no viaja al despliegue y el endpoint respondería 500 SOLO EN
+    PRODUCCIÓN, porque en local funciona. `includeFiles` apunta a `data/**` y este archivo está en la
+    raíz, así que por ahí tampoco entraría.
+  · **El origen se lee de la QUERY, no del cuerpo**: así la carga es un POST SIN CUERPO, que es lo
+    que permite dispararla con un botón —y con el alias— sin fabricar un JSON que el servidor ya
+    tiene.
+  · **Los tres pasos del panel no reimplementan ninguno.** El 2 llama a la misma `ejecutarAuditoria()`
+    del botón de cobertura con el perfil fijado en `genesis`; el 3 a `iniciarFull()`, extraído del
+    listener de «Iniciar sincronización». Hay prueba de que `let modo = "full"` aparece **una sola
+    vez**: una segunda copia es donde se rompería «1.ª tanda full, siguientes auto» —repetir `full`
+    vuelve a enero para siempre— sin que nadie lo notara.
+  · **EL ALIAS PEGADO EN CHROME ES UN GET, y por poco miente.** La rama GET retornaba ANTES de
+    mirar `origen`, así que `GET /api/admin/cargar-experiencia-genesis` respondía
+    `200 {ok:true, cargada:false, contratos_cargados:0}` — un «no hice nada» con cara de éxito, y con
+    un cero que se lee como «cargué cero contratos». Misma familia que «en 0 procesos» y que `|| 0`
+    sobre un conteo, y le tocaba justo al único usuario que existe: el dueño sin terminal, cuya vía
+    documentada es pegar la URL en el navegador. Ahora el origen se resuelve ANTES de despachar por
+    método y un GET da **405 con `Allow: POST` y con `como_hacerlo`**. NO se convirtió en un
+    «GET que escribe» —lo dispararía cualquier prefetch del navegador—, aunque `/api/sync` sí lo
+    haga: allí es una sincronización idempotente y aquí es una escritura de configuración.
+  · **El bloque va OCULTO sin token** (sus tres pasos escriben en Redis) y su visibilidad cuelga de
+    `pintarEstadoToken`, que ya corre al arrancar y en cada cambio de token: un solo sitio. Y **la
+    cadena se detiene en el primer paso que falle**: auditar sobre una carga que no ocurrió daría un
+    resultado creíble y equivocado.
+  · **EL PASO 2 NO PODÍA FALLAR, y la prueba que lo vigilaba era una regex sobre el fuente.**
+    `ejecutarAuditoria` no devolvía nada —cuatro salidas de error con `return avisoCobertura(…)`, que
+    es `undefined`—, así que el `return true` del paso 2 era incondicional: la cadena escribía
+    «✔ 2/3» y lanzaba la full sobre una auditoría que no había corrido. Lo encontró una revisión
+    adversaria y **las cinco lentes coincidieron**. Ahora `ejecutarAuditoria` devuelve booleano y el
+    paso 2 lo PROPAGA. Lección de método: comprobar por regex que una función se LLAMA no prueba que
+    su resultado se MIRE.
+  · **Fijar `c-perfil.value` desde código NO dispara `change`**, que es justo quien esconde lo
+    pintado: sin invalidar a mano, la auditoría de OTRO perfil se quedaba en pantalla bajo un
+    selector que decía «Génesis». La invalidación se extrajo a `invalidarCoberturaPintada` para que
+    el listener y el paso 2 no tengan dos copias. Y el paso 2 **no persiste el perfil**: esa clave la
+    comparte el DASHBOARD, que es otra pantalla.
+  · **El parseo del JSON va APARTE del `fetch`**: el muro del edge (Vercel Password Protection)
+    responde HTML, así que `r.json()` LANZA y, con las dos cosas en el mismo `try`, ese muro se
+    diagnosticaba como «sin conexión» — lo contrario de la verdad, porque hay conexión y lo que hace
+    falta es iniciar sesión. El encadenado de la sincronización ya lo trataba bien; ahora los dos.
+  · **El flag va en la QUERY y no en el cuerpo, y hay una razón medida**: `validarContratos` lee solo
+    `datos.contratos` e IGNORA las claves extra de la raíz, así que un flag mal escrito DENTRO del
+    JSON cargaría los contratos pegados con un 200 idéntico —fuente equivocada y sin síntoma—.
+    En la query, un `?origen=repo` cae al 400 de «body vacío», que es ruidoso. Hay prueba.
 - **La auditoría es el único panel que NO se dispara solo**: recorre el histórico entero. Corre
   cuando alguien pulsa el botón, y cargar un RUP o una experiencia oculta lo pintado con un aviso
   (la whitelist o el vocabulario contra los que se midió acaban de cambiar).

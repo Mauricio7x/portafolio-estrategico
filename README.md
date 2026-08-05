@@ -419,8 +419,49 @@ POST /api/admin/experiencia          // header x-historico-token
     "valor_smmlv": 450.5
   }]
 }
-→ { ok, contratos_cargados, terminos_extraidos, ejemplos_terminos: [...] }
+→ { ok, origen: "cuerpo", contratos_cargados, terminos_extraidos, ejemplos_terminos: [...] }
 ```
+
+**Y sin pegar nada** (ago 2026). Los 106 contratos de Génesis ya viajan en el repositorio
+(`experiencia_genesis_106.json`), así que el servidor no necesita que nadie se los mande:
+
+```
+POST /api/admin/experiencia?origen=repositorio     // sin cuerpo
+POST /api/admin/cargar-experiencia-genesis         // el mismo, por su alias
+→ { ok, origen: "repositorio", archivo, contratos_cargados, terminos_extraidos, … }
+```
+
+Existe porque **el dueño no tiene terminal**: `cargar_experiencia.sh` no le sirve y necesitaba
+hacerlo con un clic. Tres decisiones que sostienen esto:
+
+- **No es un endpoint nuevo, y no podía serlo.** El plan Hobby de Vercel admite **12 funciones por
+  despliegue** y el repositorio está exactamente en 12 (hay prueba que las cuenta): un archivo más
+  bajo `api/` no rompe el endpoint nuevo, **rompe el sitio entero**. La URL que se pidió existe como
+  `rewrite` en `vercel.json` — que no cuenta como función—, y hay prueba de que apunta al endpoint
+  real con su `origen`. El panel llama a la canónica a propósito: si el rewrite fallara, el botón
+  tiene que seguir funcionando.
+- **Plegarlo aquí regala la no-duplicación.** Lo único que cambia entre las dos formas es de dónde
+  salen los contratos; desde `validarContratos` en adelante es literalmente el mismo camino —el
+  mismo guardado, la misma invalidación de la caché de cobertura, la misma forma de respuesta—, así
+  que no hay dos rutas que puedan divergir. `origen` viaja en la respuesta para poder distinguirlas.
+- **El archivo se lee con `require` estático**, no con `fs` sobre una ruta construida: es como el
+  repositorio carga todos sus JSON, y es lo que hace que el tracer de Vercel **lo meta en el
+  bundle**. Con una ruta dinámica el archivo no viaja al despliegue y el endpoint respondería 500
+  **solo en producción** (`includeFiles` apunta a `data/**` y este archivo está en la raíz).
+
+El origen se lee de la **query** y no del cuerpo por dos razones. La primera: así la carga es un POST
+**sin cuerpo**, que es lo que permite dispararla con un botón —y con el alias— sin fabricar un JSON
+que el servidor ya tiene. La segunda es de seguridad del dato: `validarContratos` lee solo
+`datos.contratos` e **ignora las claves extra de la raíz**, así que un flag mal escrito *dentro* del
+JSON cargaría los contratos pegados con un 200 idéntico —fuente equivocada y sin síntoma—; en la
+query, un `?origen=repo` cae al 400 de «body vacío», que es ruidoso. Hay prueba de las dos cosas.
+
+Y **un GET al alias da `405` con `Allow: POST`**, no un 200. Pegar la URL en Chrome es un GET, que es
+justo la vía de disparo del dueño sin terminal: la rama GET retornaba antes de mirar el origen y
+respondía `200 {ok:true, cargada:false, contratos_cargados:0}` — un «no hice nada» con cara de éxito
+y un cero que se lee como «cargué cero contratos». El 405 explica en `como_hacerlo` cuál es el botón.
+No se convirtió en un «GET que escribe» —lo dispararía cualquier prefetch del navegador—, aunque
+`/api/sync` sí lo haga: allí es una sincronización idempotente y aquí una escritura de configuración.
 
 Validación (`400` con `[{campo, error}]`, sin guardar nada): `objeto` obligatorio y ≤ 1 000
 caracteres, **`valor_smmlv` o `valor_cop`** con un número positivo, `participacion` entre 0 y 100,
@@ -1909,6 +1950,24 @@ cuántos contratos entraron, cuántos términos se extrajeron y una muestra de e
 experiencia actual» genera un `experiencia_YYYY-MM-DD.json` editable. Si no hay nada cargado, la
 caja dice exactamente qué hacer («No hay experiencia cargada. Cargue sus contratos ejecutados para
 auditar la cobertura de sus RUP») en vez de quedarse en blanco.
+
+**Puesta en producción sin terminal** (ago 2026, en la misma sección): los tres pasos de
+`cargar_experiencia.sh` con clics — «Cargar Experiencia Génesis» (`POST …?origen=repositorio`),
+«Auditar Cobertura Génesis» y «Sincronización Full» — más un botón que los encadena. El avance se
+narra en la **bitácora** del panel, que es donde el dueño ya mira la sincronización.
+
+Ninguno de los tres reimplementa nada, y eso es lo que se vigila con pruebas: el paso 2 llama a la
+misma `ejecutarAuditoria()` del botón de su sección con el perfil fijado en `genesis`, y el paso 3 a
+`iniciarFull()`, el arranque encadenado extraído del listener de «Iniciar sincronización». Una
+segunda copia de ese arranque es justo donde se rompería la invariante **«1.ª tanda `full`,
+siguientes `auto`»** sin que nadie lo notara — repetir `full` volvería a enero para siempre—, así que
+hay una prueba que cuenta que `let modo = "full"` aparece **exactamente una vez**.
+
+El bloque va **oculto sin token** (sus tres pasos escriben en Redis, y un botón que no puede
+funcionar es peor que un botón ausente) y su visibilidad cuelga de `pintarEstadoToken`, que ya corre
+al arrancar el panel y en cada cambio de token: un solo sitio del que depender. La cadena **se
+detiene en el primer paso que falle**: encadenar una auditoría sobre una carga que no ocurrió daría
+un resultado creíble y equivocado, que es peor que no darlo.
 
 **Auditoría de cobertura RUP** (`/api/admin/cobertura-rup`): selector de perfil, toggle «Usar mi
 experiencia para priorizar» —encendido por defecto, y `admin.js` lo apaga solo si el `GET` de

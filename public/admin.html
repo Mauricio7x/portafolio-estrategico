@@ -51,7 +51,7 @@
     </header>
 
     <main class="mx-auto max-w-6xl px-5 py-8">
-      <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+      <section id="seccion-sync" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 class="font-semibold tracking-tight">Sincronización</h2>
@@ -367,6 +367,41 @@
           priorizar la auditoría de cobertura — un código muy usado en un nicho donde nunca ha trabajado
           no es un hueco de su RUP. Pegue un JSON con la lista y confirme.
         </p>
+
+        <!-- Puesta en producción SIN TERMINAL. Los 106 contratos de Génesis ya
+             viajan en el repositorio (experiencia_genesis_106.json), así que el
+             servidor no necesita que nadie le pegue nada: basta pedírselo.
+             Va oculto sin token porque los tres pasos escriben en Redis. -->
+        <div id="exp-produccion" class="mt-4 hidden rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+          <h3 class="text-sm font-semibold tracking-tight">Puesta en producción, sin terminal</h3>
+          <p class="mt-1 max-w-2xl text-sm text-gray-500">
+            Los 106 contratos de Génesis ya están en el repositorio: no hace falta pegarlos. Estos
+            tres pasos son los mismos de <code class="rounded bg-white px-1 py-0.5 text-xs">cargar_experiencia.sh</code>,
+            con clics. El avance se escribe en la <a href="#bitacora" class="font-medium underline">bitácora</a>.
+          </p>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <button id="btn-exp-cadena" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              ▶ Hacer los tres pasos
+            </button>
+            <button id="btn-exp-repo" type="button"
+                    class="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              1 · Cargar Experiencia Génesis
+            </button>
+            <button id="btn-exp-cobertura" type="button"
+                    class="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              2 · Auditar Cobertura Génesis
+            </button>
+            <button id="btn-exp-full" type="button"
+                    class="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              3 · Sincronización Full
+            </button>
+          </div>
+          <p id="exp-produccion-estado" class="mt-3 text-xs text-gray-500">
+            El paso 3 <strong>reinicia</strong> la ingesta desde enero y puede tardar varias tandas: se
+            encadena solo en la sección «Sincronización», arriba. Los pasos 1 y 2 son inmediatos.
+          </p>
+        </div>
 
         <label class="mt-4 block">
           <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Contratos (JSON)</span>
