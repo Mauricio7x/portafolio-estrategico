@@ -290,10 +290,10 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - **Índice publicado con swap atómico** (`indice:competencia:nuevo` → RENAME): nunca hay una
   ventana sin índice. Construcción mes a mes y reanudable; el acumulador que se persiste es por
   ENTIDAD (histograma), no por proceso — por eso cabe en un valor de Redis.
-- **La autorización vive en `lib/auth.js`, una sola vez**: siete endpoints la usan
-  (`/api/sync/historico`, `/api/diagnostico`, `/api/competencia-detalle`, `/api/resumen`,
-  `/api/admin/rup`, `/api/admin/experiencia`, `/api/admin/cobertura-rup`). Una copia que se
-  desincronice es un agujero.
+- **La autorización vive en `lib/auth.js`, una sola vez**: nueve endpoints la usan
+  (`/api/sync/historico`, `/api/diagnostico`, `/api/competencia-detalle`, `/api/indice-baja`,
+  `/api/resumen`, `/api/admin/rup`, `/api/admin/experiencia`, `/api/admin/cobertura-rup`,
+  `/api/apu/inferir`). Una copia que se desincronice es un agujero.
 - **`HISTORICO_TOKEN` sin default**: si la variable no está, el endpoint responde 503. Nunca
   inventar una llave por defecto. El token viaja por header en la auto-reinvocación para no
   quedar escrito en los logs de acceso de Vercel.
@@ -506,6 +506,103 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   cortes (con 5, IDU dejaría de ser «alta» y media suite se caería). Y el de la puntuación es
   **3 + 1, no 2 + 2**: con el empate, `nombreOriginal` lo decide el orden del corpus y la prueba
   pasaría o fallaría por azar.
+
+### Módulo APU: catálogo e inferencia de ítems (ago 2026)
+
+El «para qué» es la tercera pregunta que la app no sabía responder. Las cuatro puertas dicen
+«¿puedo?», `p_ganar` dice «¿me lo llevo?», y faltaba **«¿me deja dinero?»** — hoy la cuantía se
+muestra como si fuera ingreso. Diseño completo y plan de la Fase 3 en `docs/APU_Y_RENTABILIDAD.md`.
+
+- **La Fase 1 no estaba en `main`.** El encargo daba por hechos `lib/apu/catalogo.js` y
+  `docs/APU_Y_RENTABILIDAD.md`; **no existen en ningún ref** (verificado con `git log --all`). Lo
+  que sí había era un `modulo_apu.html` borrado en may 2026, de la app monolítica anterior a la
+  reescritura, con la estructura INVIAS/IDU, índices de costo de 32 capitales, tipologías del
+  ICOCIV y tres plantillas completas. **De ahí sale el catálogo**, no de cero.
+- **Catálogo (98 ítems, 11 capítulos) = DATOS; inferencia = MOTOR.** Misma separación que
+  `lib/semantica` (vocabulario) frente a `lib/filtros` (juicio). `catalogo.js` es HOJA del grafo de
+  requires: no importa nada del proyecto, así que ningún ciclo puede nacer ahí.
+- **`item_id` es la llave estable**: viaja a Redis, al mapeo, al diccionario y a lo que el dueño
+  guarde. Se AÑADEN ítems; no se rebautizan. Hay prueba de integridad referencial (todo `item_id`
+  citado existe) y de que **ningún ítem es inalcanzable** — uno al que ninguna ruta llega solo
+  existe para teclearlo a mano, y entonces no pinta nada en un motor de inferencia.
+- **El catálogo es CURADO y hay que decirlo**, como `data/vocabulario_unspsc.json`. No es una
+  estadística del histórico. Lo que sí se deriva son TÉRMINOS, y llegan con peso menor.
+- **`confianza = 0.7 × especificidad + 0.3 × fuerza_texto`, umbral 0.3 comparado con «≥».** El
+  «≥» no es cosmético: con «>», un objeto reconocido SOLO por el término más inequívoco del
+  diccionario («placa huella», peso 1) daría exactamente 0.30 y **la ruta de texto entera moriría
+  en silencio**, justo en los objetos que el motor mejor entiende. Hay prueba del empate.
+- **La especificidad GRADÚA el 0.7** (clase/producto 1, familia 0.9, segmento 0.7). En `lib/unspsc`
+  está PROHIBIDO subir al segmento para EMPAREJAR con el RUP porque ahí se decide una
+  HABILITACIÓN; aquí solo se SUGIERE, con casillas para desmarcar, así que el segmento se usa
+  —igual que `lib/indice_baja` lo usa para AGRUPAR— pero valiendo menos. La diferencia entre las
+  dos situaciones es **lo que está en juego**, no el código.
+- **La fuerza del texto es un OR RUIDOSO** (`1 − Π(1 − peso)`), no una suma: sumando, seis términos
+  de peso 0.2 valdrían más que «alcantarillado».
+- **Los términos se escriben como se dicen y se comparan como se tokenizan.** «pozo de inspección»
+  se canoniza a `pozo inspeccion`: el tokenizador quita las stopwords y un n-grama del objeto
+  JAMÁS contendría el «de». Sin canonicalizar la clave, **toda entrada con preposición sería letra
+  muerta** — casaría cero veces y nadie lo notaría. Hay prueba de que ninguna clave compilada
+  supera el `maxTokens` con el que se generan n-gramas.
+- **CONSECUENCIA DELIBERADA del umbral, escrita para que nadie la «arregle»**: como el techo del
+  texto es 0.3 y el umbral es 0.3, **por texto SOLO pasan los términos decisivos (peso 1)** — ni
+  dos de peso 0.9 juntos llegan (0.297). Es la misma regla que ya gobierna la ruta de texto del
+  juicio del RUP: sin código, el objeto es la única evidencia. Los términos flojos no son
+  inútiles: con un código delante aportan sobre esos 0.63-0.7 y mueven el orden. Si algún día se
+  quiere que un 0.9 sugiera solo, lo que se mueve es **su peso** (dato, discutible, auditable), no
+  el umbral.
+- **La CANTIDAD viaja en `null` SIEMPRE**, con `cantidad_sugerida_motivo` al lado. Sin el pliego
+  (planos, cantidades de obra, formulario 1) no se puede estimar y `p6dx-8zbt` no lo publica. Es
+  `anticipo_pct = 0` y el contador de oferentes otra vez: **un número inventado no se distingue de
+  uno medido**. El campo existe para que la ausencia sea una afirmación y no un olvido, y el
+  frontend lo pinta «—», nunca 0.
+- **El departamento se acepta, se normaliza y se DEVUELVE, pero no cambia los ítems.** La geografía
+  cambia lo que las cosas CUESTAN, no lo que hay que ejecutar. Es el gancho de la Fase 3 (índice
+  por ciudad del módulo viejo + ICOCIV). Hay prueba de que Amazonas y Bogotá dan lo mismo — dejar
+  el parámetro sin usar Y sin decirlo sería decorativo; decirlo es la diferencia.
+- **DOS DEFECTOS REALES encontrados sobre el corpus, y la regla que los cierra es la que YA
+  existía.** (1) «PRESTACIÓN DEL SERVICIO DE INTERNET DEDICADO», publicada en el segmento **80**,
+  sugería «interventoría» — el 80 está en los RUP porque ahí viven la gerencia y la interventoría,
+  el mismo agujero por el que se colaron impresión y alimentos. (2) «ADQUISICIÓN DE CANINOS
+  ANTINARCÓTICOS», publicada con un **72141000**, se habría llevado un APU de carretera entero.
+  Se cierran llamando a `evaluarPertinencia` y a `BLACKLIST_OBJETO`, **no** inventando una segunda
+  definición de «esto no es obra» que divergiría a la primera corrección. `BLACKLIST_OBJETO` se
+  aplica sobre texto **CRUDO**, como manda su documentación.
+- **Las dos puertas solo corren SI HAY TEXTO.** Con un código a secas no hay objeto que evaluar, y
+  tratar esa ausencia como «no pertinente» sería cerrar por ignorancia — justo lo contrario de la
+  regla de faltantes de las cuatro puertas.
+- **Una lista vacía tiene DOS causas y `[]` no las distingue**: el objeto no es de obra (y entonces
+  viaja `no_pertinente` con su motivo), o es obra y nada llegó al umbral (viaja `sin_sugerencias`
+  diciendo qué hacer). «ADECUACIÓN DE LA SEDE EDUCATIVA» sin código es el caso real: sus términos
+  dicen DÓNDE se trabaja, no QUÉ se ejecuta.
+- **Redis manda, el código respalda** (`apu:mapeo_unspsc`, `apu:diccionario_terminos`,
+  `apu:conocimiento:version`). El motor funciona sin sembrar —el estado de un despliegue nuevo— y
+  DECLARA el origen de cada tabla en `conocimiento.origen`. Nunca lanza. Es `PERFILES_FALLBACK`
+  otra vez. El sello va AL FINAL y con sufijo aleatorio: dos siembras en el mismo milisegundo
+  darían el mismo sello y la segunda pasaría desapercibida (hay prueba).
+- **El GET de `/api/apu/inferir` SOLO LEE y hay prueba de que no escribe ni una clave `apu:*`.**
+  No se siembra sola al inferir: sería un camino de lectura que escribe. Las tres acciones
+  (`?sembrar=true`, `?derivar=true`) viven en el MISMO endpoint porque el que escribe una tabla
+  tiene que ser el que la posee — misma decisión que puso la reconstrucción en
+  `/api/indice-baja?reconstruir=true` y no en `/api/diagnostico`.
+- **Un término derivado del histórico no sabe a qué ítem pertenece: el PUENTE es el código UNSPSC**
+  con el que la entidad publicó el proceso. `lift = P(t|ítem)/P(t)` ≥ 2, soporte ≥ 8. Lo derivado
+  se MEZCLA con la semilla (nunca la sustituye), pesa menos (0.4 frente a 1) y sube a 0.5 si el
+  término también está en `config:experiencia:terminos` — dos fuentes independientes que coinciden
+  valen más que una. Un 0 publica su causa (`sin_historico`, `sin_codigos_mapeados`,
+  `redis_inaccesible`) con el siguiente paso, como `equivalencias_por_que`.
+- **`apu:*` va en la limpieza de `tests/e2e.js`.** Nada lo purga: si una iteración siembra, la
+  siguiente arrancaría con el conocimiento ya publicado y las pruebas de «origen: semilla»
+  pasarían o fallarían **según el orden de las iteraciones** — la peor forma posible de que una
+  suite sea verde.
+- **En `public/admin.js` la selección de ítems vive en un `Set` FUERA DEL DOM.** La tabla se
+  repinta con `innerHTML` (igual que la de cobertura) y eso borra el estado de las casillas; si
+  fueran la única memoria de lo marcado, «Marcar todos» + repintado perdería la selección sin que
+  nadie lo notase. Y **no hay handler de clic sobre la fila**: las dos tablas que ya existen usan
+  `closest()` sobre la fila entera, lo que aquí chocaría con el clic propio de la casilla.
+- **La precisión medida (100 % sobre 5 objetos) es PARCIALMENTE CIRCULAR y así está escrito**: las
+  listas de «plausibles» las escribió quien escribió el diccionario. La medida que no es circular
+  es la del corpus completo en `g-quinquies`, donde los objetos no los elige la prueba: **384/384**
+  objetos de obra con ítems y **0/56** falsos positivos.
 
 ## CONOCIMIENTO DE DOMINIO: CONTRATACIÓN PÚBLICA COLOMBIANA
 
@@ -747,7 +844,8 @@ memoria en una fuente de error. `✅` implementado · `🟡` parcial · `⬜` no
 | **Traslado → descargar ofertas de competidores** | El dataset no trae documentos de oferta: solo `urlproceso`. Automatizarlo exigiría raspar SECOP II (fuera de la arquitectura actual: sin dependencias, serverless, respuesta ≤4.5 MB). Alcanzable: enlazar la ficha del proceso y **listar adjudicatarios recurrentes por entidad** desde el histórico | ⬜ |
 | **Subsanación → tabla de trazabilidad automática** | No existe. La app decide **a qué presentarse**, no arma la carpeta. Sería un generador de plantilla a partir de la ficha del proceso | ⬜ |
 | **Consorcios → antecedentes del socio (SIRI/Contraloría/RNMC)** | No existe y **no es automatizable con datos abiertos**: son portales con captcha, no APIs. Lo que sí está: el consorcio `juntos` se **re-deriva siempre** de sus integrantes. La parte accionable sería una **lista de verificación** de las 5 fuentes del truco #15 | ⬜ |
-| **Costos ocultos → calculadora de rentabilidad** | **No existe ninguna calculadora de rentabilidad.** Hoy la cuantía se muestra como si fuera ingreso. Faltan los 10 conceptos del Cap. 11, empezando por la **contribución del 5 %** y las estampillas | ⬜ |
+| **APU: qué ítems lleva la obra** (Cap. 11, estructura INVIAS/IDU) | `lib/apu/catalogo.js` (98 ítems, 11 capítulos) + `lib/apu/inferencia.js`: del objeto contractual a los ítems de su APU, con confianza y motivos. `POST /api/apu/inferir` y panel en `/admin.html`. **La cantidad va en `null` siempre**: sin el pliego no se puede estimar | ✅ |
+| **Costos ocultos → calculadora de rentabilidad** | **Sigue sin existir.** Hoy la cuantía se muestra como si fuera ingreso, y faltan los 10 conceptos del Cap. 11 empezando por la **contribución del 5 %** y las estampillas. Lo que ya está es el paso previo: los ítems (Fase 2) y la banda de descuento (`lib/indice_baja`). Falta el precio unitario y la resta — plan en `docs/APU_Y_RENTABILIDAD.md` § 5 | 🟡 |
 
 ### Investigación de contraste (ago 2026) — correcciones al manual y hallazgos verificados
 
@@ -874,6 +972,9 @@ cifra de aquí en un pliego sin abrir la fuente.
   Resumen técnico en `docs/PERFILES.md`. SMMLV 2026 = $1.750.905.
 - Las CUATRO PUERTAS en `lib/puertas.js` y `P(ganar)`/VE en `lib/probabilidad.js`; el diseño y por
   qué, en `docs/ATRACTIVIDAD.md`.
+- Ítems de obra y motor de inferencia APU en `lib/apu/` (`catalogo.js` = datos curados,
+  `inferencia.js` = motor y persistencia `apu:*`); diseño, precisión medida y plan de la Fase 3
+  (precios, ICOCIV, rentabilidad) en `docs/APU_Y_RENTABILIDAD.md`. Ninguno toca la ingesta.
 - `autorizacion_helder.md`: constancia de autorización de datos personales (plantilla).
 - Clave del sitio: `231105` (gate del cliente, en `public/app.js`). **No protege la API**: es una
   cortesía del navegador. La protección de servidor es `HISTORICO_TOKEN` (`lib/auth.js`) —que desde

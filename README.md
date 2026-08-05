@@ -486,6 +486,60 @@ el sello del RUP **y** el de la experiencia, así que cargar cualquiera de los d
 histórico**: sin él lo dice explícitamente, en vez de devolver una lista vacía que se leería como
 «no te falta nada».
 
+### `POST|GET /api/apu/inferir` (protegido)
+
+Del objeto de una licitación a los **ítems de obra que llevaría su APU**. Diseño completo, precisión
+medida y plan de la Fase 3 (precios) en `docs/APU_Y_RENTABILIDAD.md`.
+
+```bash
+curl -X POST https://…/api/apu/inferir \
+  -H "x-historico-token: $TOKEN" -H 'content-type: application/json' \
+  -d '{"objeto":"Construcción de placa huella en la vereda El Cairo","unspsc":"72141000","departamento":"Tolima"}'
+```
+
+```jsonc
+{
+  "ok": true,
+  "total": 25,
+  "items": [
+    { "item_id": "pav_placa_huella", "descripcion": "Placa huella en concreto reforzado",
+      "unidad": "m²", "cantidad_sugerida": null, "confianza": 1,
+      "capitulo": "pavimentos", "capitulo_nombre": "Pavimentos y vías",
+      "origen": "unspsc+texto", "motivos": ["UNSPSC 721410 (clase)", "«placa huella»"] }
+  ],
+  "cantidad_sugerida_motivo": "Sin el pliego (planos, cantidades de obra, formulario 1) no se puede…",
+  "diagnostico": { "terminos_reconocidos": […], "codigos_leidos": […], "conocimiento": { "origen": {…} } }
+}
+```
+
+`confianza = 0.7 × especificidad_del_código + 0.3 × fuerza_del_texto`, tope 1, y entra quien llegue
+a **0.3** — comparado con **`≥`**, no con `>`: un objeto reconocido solo por el término más
+inequívoco del diccionario da exactamente 0.30, y con `>` la ruta de texto entera moriría por un
+empate.
+
+**La cantidad viaja en `null` SIEMPRE**, con su motivo al lado. Sin el pliego no se puede estimar y
+el dataset no lo publica; es la misma regla que `anticipo_pct = 0` («sin dato», no «sin anticipo»).
+El **departamento** se acepta y se devuelve pero no cambia los ítems: la geografía cambia lo que
+cuestan, no lo que hay que ejecutar.
+
+Cuatro llamadas, y solo una escribe:
+
+| Llamada | Qué hace |
+|---|---|
+| `POST /api/apu/inferir` | infiere `{ objeto, unspsc, departamento }` |
+| `GET  /api/apu/inferir` | estado del conocimiento — **solo lee**, con prueba de que no escribe |
+| `POST /api/apu/inferir?sembrar=true` | publica las semillas del catálogo en Redis |
+| `POST /api/apu/inferir?derivar=true` | aprende términos del histórico y publica |
+
+No se siembra sola al inferir: sería un camino de lectura que escribe. El motor **funciona sin
+Redis sembrado** —el estado de un despliegue nuevo— y declara el origen de cada tabla.
+
+Dos objetos NO producen ningún ítem, y lo dicen: los que la `BLACKLIST_OBJETO` veta (una
+«adquisición de caninos» publicada con un 72141000 se habría llevado un APU de carretera entero) y
+los que `evaluarPertinencia` marca en rojo (un «servicio de internet» publicado en el segmento 80
+—donde viven la gerencia y la interventoría— sugería «interventoría»). Las dos reglas se **llaman**,
+no se reimplementan.
+
 ## Índice de competencia por entidad (¿dónde es más probable ganar?)
 
 El puntaje ponderado dice *dónde mirar primero*. El índice dice *dónde compite menos gente*, que
@@ -1137,6 +1191,15 @@ config:experiencia                             JSON comprimido {contratos:[…],
 config:experiencia:terminos                    JSON comprimido {terminos:{palabra: nº de contratos}, …}
 config:experiencia:version                     sello de la última carga (se escribe AL FINAL)
 
+CONOCIMIENTO DEL MOTOR APU — Redis manda, `lib/apu/catalogo.js` es el respaldo en código.
+Si no hay nada publicado (o Redis no responde) el motor usa las semillas y lo DECLARA
+en `conocimiento.origen`; nunca se queda mudo y nunca lanza.
+apu:mapeo_unspsc                               JSON {prefijo UNSPSC («72», «7214», «721410») → [item_id]}
+apu:diccionario_terminos                       JSON {término → {peso, items:[item_id], origen}}
+apu:conocimiento:version                       sello de la última publicación (se escribe AL FINAL,
+                                               con sufijo aleatorio: dos siembras en el mismo ms
+                                               darían el mismo sello y la segunda pasaría inadvertida)
+
 CACHÉ DEL PANEL
 resumen:{perfil}                               JSON del dashboard, TTL 300 s (la carga de RUP la borra)
 cobertura:{perfil}:{exp|base}                  JSON comprimido de la auditoría de cobertura, TTL 1 h
@@ -1276,10 +1339,25 @@ entidades que más usan ese código—, los dos bloques de excluidos en `<detail
 JSON». Si hay críticos, sale una alerta encima; si no hay, **no sale** (una alerta permanente deja
 de leerse a la semana).
 
-**La auditoría no se dispara sola** y es la única parte del panel que no lo hace: recorre el
-histórico entero, así que corre solo cuando alguien la pide. Cargar un RUP o una experiencia
-nuevos **oculta** lo pintado y avisa de que hay que volver a ejecutarla: la whitelist o el
-vocabulario contra los que se midió acaban de cambiar.
+**La auditoría no se dispara sola**: recorre el histórico entero, así que corre solo cuando alguien
+la pide. Cargar un RUP o una experiencia nuevos **oculta** lo pintado y avisa de que hay que volver
+a ejecutarla: la whitelist o el vocabulario contra los que se midió acaban de cambiar.
+
+**Inferencia de ítems APU** (`/api/apu/inferir`): un `textarea` con el objeto de la licitación, dos
+campos opcionales (código UNSPSC y departamento) y el botón «Inferir ítems». El resultado es una
+tabla con **casilla por ítem** —todas marcadas de salida—, su capítulo, su unidad, la cantidad
+(siempre «—», nunca 0), la confianza en banda de color y la columna «Por qué» con el código y los
+términos que dispararon cada fila. «Marcar todos» / «Desmarcar todos» y «Exportar selección» a JSON.
+
+Debajo, el **estado del conocimiento del motor** (cuántos ítems, términos y claves, y si vienen de
+la semilla del código o de Redis) con dos botones: «Publicar semilla en Redis» y «Aprender del
+histórico». Ese estado sí se consulta al arrancar —es un `GET` de dos claves, y es lo único que
+distingue en pantalla «semilla» de «publicado»—; **la inferencia y el aprendizaje, no**.
+
+La **selección vive en un `Set` fuera del DOM**: la tabla se repinta con `innerHTML` y eso borraría
+el estado de las casillas, así que «Marcar todos» seguido de un repintado perdería lo marcado sin
+que nadie lo notase. Y no hay handler de clic sobre la fila —las otras dos tablas del panel usan
+`closest()` sobre la fila entera—, porque aquí chocaría con el clic propio de la casilla.
 
 **Arranque**: igual que en `app.js`, el arranque automático de la sesión ya validada va **al final
 del módulo**. `abrirApp()` levanta el panel y la carga de RUP, cuyas funciones leen constantes
@@ -1477,6 +1555,41 @@ Lo que cubre específicamente la **experiencia ejecutada** y la **auditoría de 
   no por repetición, denominador de la similitud, umbrales que **entran** en 0,15 y 0,30, números
   escritos como cadena (`"350.000.000"`), la lista de segmentos admisibles y **la cascada de
   criticidad completa**, incluidos los casos que el encargo dejaba ambiguos.
+
+Lo que cubre específicamente el **motor de inferencia APU** (`lib/apu/*` + `/api/apu/inferir`):
+
+- **Integridad referencial del catálogo**: todo `item_id` citado por el mapeo o el diccionario
+  existe, todo capítulo existe, ningún `item_id` está duplicado y **ningún ítem es inalcanzable**
+  — uno al que ninguna ruta llega solo existe para teclearlo a mano.
+- **La trampa de las preposiciones**: `canonizar("pozo de inspección") === "pozo inspeccion"`, el
+  bigrama se forma sobre los tokens ya filtrados, y **ninguna clave compilada supera el `maxTokens`
+  con el que se generan n-gramas** (una que lo superara no casaría jamás, en silencio).
+- **El empate del umbral**: un objeto reconocido solo por texto entra **exactamente** en 0.3, y hay
+  aserción de que ese ítem sobrevive — con `>` la ruta de texto entera moriría.
+- **La consecuencia deliberada**: dos términos de peso 0.9 (fuerza 0.99) **no** llegan al umbral
+  por texto solo; uno de peso 1 sí. Escrito como prueba para que nadie lo «arregle».
+- **OR ruidoso, no suma**: con dos términos de 0.4 el resultado es 0.822 y no 0.87. Y dos
+  redacciones que canonizan igual son **una** entrada (gana el peso mayor, se unen los ítems): si
+  quedaran dos, la misma palabra se reforzaría a sí misma.
+- **Jerarquía**: los prefijos van de específico a general y **un código de familia no fabrica una
+  clase** que no existe (`72140000` no busca «721400»).
+- **La cantidad es `null` SIEMPRE**, por las tres rutas y también por HTTP, y la respuesta dice por
+  qué.
+- **El departamento no cambia nada**: Amazonas y Bogotá devuelven los mismos ítems con las mismas
+  confianzas, y el valor se normaliza y se devuelve.
+- **Las dos puertas de entrada**, con los defectos reales que las motivaron: un servicio de
+  internet publicado en el segmento 80 no sugiere «interventoría», pero una interventoría de obra
+  **con el mismo código** sí; un objeto genérico («CONVOCATORIA PUBLICA») no pasa aunque traiga un
+  UNSPSC impecable.
+- **El GET no escribe**: se comprueba que tras consultarlo no existe ni una clave `apu:*`.
+- **Sembrar no cambia lo que el motor responde**: los ítems y las confianzas antes y después de
+  publicar son idénticos, y dos siembras seguidas dan **sellos distintos**.
+- **Derivar solo AÑADE**: tras aprender del histórico, el término curado «placa huella» sigue
+  funcionando y el diccionario no encogió.
+- **El CORPUS REAL, que es la medida que no elige quien escribe la prueba**: **384/384** objetos de
+  obra civil producen ítems y **0/56** de los que no son obra producen alguno.
+- La precisión sobre 5 objetos con forma real (100 %) se publica **declarando que es parcialmente
+  circular**: las listas de «plausibles» las escribió quien escribió el diccionario.
 
 ## Despliegue
 
