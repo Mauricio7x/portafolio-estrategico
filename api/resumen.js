@@ -490,6 +490,12 @@ module.exports = async function handler(req, res) {
     departamento_entidad: l.departamento_entidad || null,
     unspsc: l.codigo_principal_de_categoria || null,
     plazo_meses: plazoMesesDe(l),
+    /* Y la MODALIDAD (ago 2026): desde que el índice de baja se abre por
+       modalidad, sin ella /apu.html pediría la rentabilidad con la baja
+       MEZCLADA de la entidad mientras la tarjeta de /api/oportunidades enseña
+       la de licitación pública. Dos cifras del mismo proceso, y la del editor
+       —que es con la que se fija el precio— sería la mala. */
+    modalidad: l.modalidad_de_contratacion || null,
   }));
 
   /* ---------- paso 8 · VERIFICACIÓN CRUZADA ----------

@@ -155,6 +155,40 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
     redacción de mentira que dejaba el patrimonio dentro del texto de P3. Queda el mismo canal de
     inferencia ya documentado: `ordenar_por=baja` ordena en el servidor, así que un cliente sin token
     puede deducir el RANGO relativo aunque no vea las cifras.
+  · **POR MODALIDAD (ago 2026), y la premisa hay que matizarla.** La mediana global es 0 % y eso
+    sugiere que nunca hay que descontar; la causa es que la mínima cuantía se adjudica una y otra vez
+    por el presupuesto oficial y arrastra la cifra. Pero **el corpus histórico YA está filtrado a
+    modalidades competitivas** (`transformar` aplica `modalidad_competitiva` ANTES de guardar): no
+    entraba Contratación Directa, se mezclaban las SEIS competitivas entre sí. La lista blanca sigue
+    haciendo un trabajo real al reagrupar porque `licitaciones:historico:mes:*` NO SE PURGA NUNCA y
+    quedan vivos registros ingeridos antes de que «Invitación Privada» y «Enajenación» pasaran a
+    excluidas — esos van a `sin_modalidad`, que se cuenta.
+    · **La modalidad REFINA DENTRO de cada nivel, no es un nivel más.** `GRANULARIDADES` es una
+      cascada ordenada con la invariante de que solo baja en especificidad; como escalón obligaría a
+      decidir si «entidad+modalidad» es más o menos específica que «entidad+familia», que no tiene
+      respuesta buena. `granularidad_utilizada` conserva su significado EXACTO y `modalidad_utilizada`
+      dice si hubo refinamiento: dos preguntas, dos campos.
+    · **Las cubetas se DERIVAN de `MODALIDADES_COMPETITIVAS`** con `require` DIFERIDO (misma técnica y
+      mismo motivo que `lib/apu/inferencia`), más UNA que no sale de ahí: «régimen especial (con
+      ofertas)», que `modalidad_competitiva` acepta por su propia rama antes de mirar la lista blanca.
+      Sin esa cubeta esos procesos perderían su baja. Hay prueba que ATA las dos funciones: todo lo que
+      la ingesta acepta tiene cubeta y nada que rechace la tiene.
+    · **Mínimo 5, el de la entidad, no el laxo del segmento (3)**: partir en cubetas hace más fácil
+      quedarse sin muestra, y aquí SÍ hay a dónde caer —la cifra mezclada—, mientras que el segmento
+      es el último recurso antes de no decir nada.
+    · **Compatibilidad, que es lo que de verdad podía romperse**: `indice:baja` no se purga nunca, así
+      que en producción sigue vivo el hash sin `por_modalidad`. Sin esa clave `bajaDeMercado` responde
+      EXACTAMENTE como antes; desplegar no exige reconstruir. Misma lección que `claveLegado`.
+    · **`sin_modalidad` + Σ procesos de las cubetas = `procesos_analizados`**, con prueba. Sin esa
+      igualdad una modalidad se perdería en silencio y las cifras seguirían pareciendo razonables,
+      solo que sobre menos procesos.
+    · **La modalidad viaja hasta `/api/apu/rentabilidad`** (resumen → URL del botón APU → editor).
+      Su `lic` es SINTÉTICO: sin ese hilo respondería con la baja MEZCLADA mientras la tarjeta de
+      `/api/oportunidades` enseña la de licitación pública — dos cifras del mismo proceso, y la mala
+      sería la del editor, que es con la que se fija el precio.
+    · **No existe `/api/baja-mercado` y no puede existir**: el plan Hobby admite 12 funciones y el
+      repositorio está exactamente en 12 (hay prueba que las cuenta). `?modalidad=` vive en
+      `/api/indice-baja`; `baja_mercado` es el CAMPO que sirve `/api/oportunidades`.
   · **La reconstrucción manual vive en `/api/indice-baja?reconstruir=true`, NO en `/api/diagnostico`**:
     el diagnóstico está documentado como SOLO LEE —no escribe, no toma candados, no dispara
     sincronizaciones— y esa garantía es justo lo que permite llamarlo cuando algo va mal.

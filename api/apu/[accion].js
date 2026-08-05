@@ -326,6 +326,16 @@ module.exports = async function handler(req, res) {
       nit_entidad: String(datos.entidad_nit || "").replace(/\D/g, ""),
       departamento_entidad: String(datos.departamento || ""),
       codigo_principal_de_categoria: String(datos.unspsc || ""),
+      /* La MODALIDAD viaja hasta aquí a propósito (ago 2026). Desde que el
+         índice de baja se abre por modalidad, `bajaDeMercado` la lee del propio
+         proceso: si este `lic` sintético no la trajera, /api/apu/rentabilidad
+         respondería con la baja MEZCLADA de la entidad mientras
+         /api/oportunidades responde con la de licitación pública para EL MISMO
+         proceso — dos cifras distintas del mismo hecho, que es justo lo que la
+         normalización del multiplicador existe para evitar. Sin ella (llamada a
+         mano, sin el enlace del panel) se degrada a la mezclada, que es el
+         comportamiento anterior. */
+      modalidad_de_contratacion: String(datos.modalidad || "").trim(),
     };
     let baja = null, competencia = null, pBase = null, nombrePorNit = null;
     let mercado = { disponible: false, motivo: "sin credenciales de Redis" };

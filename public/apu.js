@@ -771,6 +771,7 @@
     poner("entidad", "entidad");
     poner("id-proceso", "id_proceso");
     poner("cuantia", "cuantia");
+    modalidadProceso = p.get("modalidad") || "";
     poner("plazo-meses", "plazo");
     const perfil = p.get("perfil");
     if (perfil && $("perfil") && [...$("perfil").options].some((o) => o.value === perfil)) $("perfil").value = perfil;
@@ -789,6 +790,7 @@
   }
   const norml = (x) => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
   let nitProceso = "";
+  let modalidadProceso = "";
 
   const copRent = (n) => (n == null ? "—" : `$${nf.format(Math.round(n))}`);
   const pctRent = (n) => (n == null ? "—" : `${nf2.format(n)} %`);
@@ -815,6 +817,9 @@
         config: leerConfig(),
         entidad: $("entidad").value.trim(),
         entidad_nit: nitProceso,
+        // sin esto la rentabilidad usaría la baja MEZCLADA de la entidad y
+        // discreparía de la tarjeta del panel para el mismo proceso
+        modalidad: modalidadProceso,
         unspsc: $("codigos-unspsc").value.trim(),
         cuantia: Number($("cuantia").value) || null,
         plazo_meses: Number($("plazo-meses").value) || 12,
