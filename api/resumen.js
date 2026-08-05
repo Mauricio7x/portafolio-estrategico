@@ -57,6 +57,9 @@ const {
   filtrarProcesosVisibles, descartesVacios, estado_cerrado,
   TERMINOS_ESTRUCTURACION, norm,
 } = require("../lib/filtros.js");
+// `plazoMesesDe` para precargar el plazo en el editor de APU: normaliza acentos
+// antes de comparar unidades («Días».includes("dia") era false por la í)
+const { plazoMesesDe } = require("../lib/rup.js");
 const { leerIndice, leerIndiceMeta, competenciaDe } = require("../lib/indice_competencia.js");
 const { leerIndiceBaja, leerIndiceBajaMeta } = require("../lib/indice_baja.js");
 const { leerEquivalencias, leerEquivalenciasMeta } = require("../lib/equivalencias.js");
@@ -478,6 +481,15 @@ module.exports = async function handler(req, res) {
     match_tier: rup.tier,
     badge: badgeCompetencia(comp),
     url: l.urlproceso || null,
+    /* Lo que necesita el botón «APU» de la fila para precargar el editor. Sale
+       de la fila `l`, que ya los trae proyectados: sin ellos /apu.html se
+       abriría sin departamento (no habría factores de precio), sin NIT (no
+       habría puente al índice de baja) y sin UNSPSC (la inferencia perdería su
+       segunda evidencia y saldría 🟡 por falta de códigos, no por duda real). */
+    nit_entidad: l.nit_entidad || null,
+    departamento_entidad: l.departamento_entidad || null,
+    unspsc: l.codigo_principal_de_categoria || null,
+    plazo_meses: plazoMesesDe(l),
   }));
 
   /* ---------- paso 8 · VERIFICACIÓN CRUZADA ----------

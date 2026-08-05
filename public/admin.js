@@ -386,6 +386,9 @@
     }
     avisoDashboard(cuerpo.mensaje ? esc(cuerpo.mensaje) : null, "aviso");
     ultimoResumen = cuerpo;
+    // ANTES de pintar: `celdaApuProceso` consulta `apuListos` al construir la
+    // fila, y si el listado llegara después el badge saldría una pintada tarde
+    await cargarApuListos(perfil);
     pintarDashboard(cuerpo, r.headers.get("X-Cache") || (cuerpo.cache ? "HIT" : "MISS"));
     programarRefresco();
   }
@@ -548,9 +551,10 @@
           <td class="py-2 pr-2 text-right tabular-nums">${fmtCOP.format(p.cuantia_cop || 0)}</td>
           <td class="py-2 pr-2 text-gray-500">${cierre && !isNaN(cierre) ? cierre.toLocaleDateString("es-CO", { day: "numeric", month: "short" }) : "—"}</td>
           <td class="py-2 pr-2"><span class="rounded-lg px-2 py-0.5 text-xs font-medium ${d.clases}">${d.emoji} ${d.texto}</span></td>
-          <td class="py-2 text-gray-500">${esc(p.pertinencia || "")}</td>
+          <td class="py-2 pr-2 text-gray-500">${esc(p.pertinencia || "")}</td>
+          <td class="py-2 whitespace-nowrap">${celdaApuProceso(p)}</td>
         </tr>`;
-    }).join("") : '<tr><td colspan="6" class="py-3 text-gray-400">Ningún proceso cumple los criterios de destacado.</td></tr>';
+    }).join("") : '<tr><td colspan="7" class="py-3 text-gray-400">Ningún proceso cumple los criterios de destacado.</td></tr>';
 
     pintarMeta(c, cache);
   }
@@ -662,11 +666,67 @@
 
   // una fila de destacados lleva al proceso en SECOP II (es la ficha real)
   $("d-destacados").addEventListener("click", (e) => {
+    // el botón «APU» vive DENTRO de la fila, así que su clic burbujea hasta
+    // aquí: sin esta guarda, pulsarlo abriría además SECOP II en otra pestaña
+    if (e.target.closest(".btn-apu")) return;
     const fila = e.target.closest(".fila-proceso");
     if (!fila) return;
     const url = fila.getAttribute("data-url");
     if (url) window.open(url, "_blank", "noopener,noreferrer");
   });
+
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     APU por proceso · botón de la fila y badge «APU listo»
+     ──────────────────────────────────────────────────────────────────────────
+     El botón abre /apu.html con el proceso precargado; el badge dice si ese
+     proceso ya tiene un borrador guardado para el perfil elegido.
+
+     EL LISTADO SE PIDE APARTE DE /api/resumen, cuya respuesta se cachea 300 s:
+     un presupuesto recién guardado no puede tardar cinco minutos en encender el
+     badge — es la misma razón por la que una carga de RUP borra esa caché.
+     Aquí no hace falta borrar nada, porque no se cachea.
+
+     `procesos_con_presupuesto` es una lista de PERTENENCIA, no un conteo: la
+     pregunta es «¿este proceso tiene borrador?», y así el frontend no puede
+     convertir un «no sé» en un cero con un `|| 0`. */
+  let apuListos = new Set();
+
+  async function cargarApuListos(perfil) {
+    apuListos = new Set();
+    const token = leerToken();
+    if (!token) return;
+    try {
+      const r = await fetch(`/api/apu/listar?perfil=${encodeURIComponent(perfil)}`, {
+        headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store",
+      });
+      if (!r.ok) return; // el panel no puede caerse porque el listado de APU falle
+      const c = await r.json().catch(() => null);
+      if (c && c.ok && Array.isArray(c.procesos_con_presupuesto)) apuListos = new Set(c.procesos_con_presupuesto);
+    } catch { /* sin conexión: se pinta sin badges, no se rompe el panel */ }
+  }
+
+  function celdaApuProceso(p) {
+    if (!leerToken()) return '<span class="text-xs text-gray-400">—</span>';
+    const id = p.id_del_proceso;
+    const listo = id != null && apuListos.has(String(id));
+    const q = new URLSearchParams();
+    if (p.objeto) q.set("objeto", p.objeto);
+    if (p.entidad) q.set("entidad", p.entidad);
+    if (p.nit_entidad) q.set("entidad_nit", p.nit_entidad);
+    if (p.departamento_entidad) q.set("departamento", p.departamento_entidad);
+    if (p.unspsc) q.set("unspsc", p.unspsc);
+    if (p.cuantia_cop != null) q.set("cuantia", String(p.cuantia_cop));
+    if (id != null) q.set("id_proceso", String(id));
+    if (p.plazo_meses != null) q.set("plazo", String(p.plazo_meses));
+    q.set("perfil", $("d-perfil").value);
+    return `<a class="btn-apu rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50"`
+      + ` href="/apu.html?${esc(q.toString())}" title="Calcular APU y rentabilidad de este proceso">APU</a>`
+      + (listo
+        ? ' <span class="rounded-lg px-2 py-0.5 text-xs font-medium bg-green-50 text-green-800"'
+          + ' title="Ya hay un presupuesto guardado para este proceso y perfil">✅ APU listo</span>'
+        : "");
+  }
 
   /* ══════════════════════════════════════════════════════════════════════════
      CARGA DE RUP (/api/admin/rup)

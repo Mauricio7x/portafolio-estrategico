@@ -87,6 +87,50 @@
         <div id="inferencia" class="mt-4 hidden rounded-xl p-4 text-sm"></div>
       </section>
 
+      <!-- ══════ 1-bis · El proceso (precarga desde el panel) ══════
+           Se rellena solo cuando se llega desde el botón «APU» de una fila de
+           /admin.html. Sin estos tres datos el bloque de rentabilidad no puede
+           existir: la cuantía es el techo contra el que se mide la baja, la
+           entidad es la llave del índice y el id del proceso es lo que enciende
+           el badge «APU listo» en el panel. -->
+      <section id="seccion-proceso" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Proceso de SECOP II</h2>
+        <div class="mt-4 grid gap-4 sm:grid-cols-3">
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Id del proceso</span>
+            <input id="id-proceso" type="text" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Presupuesto oficial (COP)</span>
+            <input id="cuantia" type="number" min="0" step="1000" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+            <span class="mt-1 block text-xs text-gray-400">Es el techo: la baja se mide contra él.</span>
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Plazo (meses)</span>
+            <input id="plazo-meses" type="number" min="1" max="60" step="1" value="8" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+          </label>
+        </div>
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <button id="btn-rentabilidad" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Calcular rentabilidad
+          </button>
+          <span class="text-xs text-gray-500">Consulta el índice de baja y el de competencia de esta entidad.</span>
+        </div>
+      </section>
+
+      <!-- ══════ Rentabilidad estimada ══════ -->
+      <section id="seccion-rentabilidad" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Rentabilidad estimada</h2>
+        <p class="mt-1 max-w-3xl text-sm text-gray-500">
+          El indicador de decisión es el <strong>VEG</strong>, no el margen: es el único que descuenta el
+          costo de preparar una oferta, que se paga se gane o no.
+        </p>
+        <div id="rentabilidad" class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
+        <div id="rentabilidad-precio" class="mt-5 text-sm"></div>
+        <div id="rentabilidad-avisos" class="mt-4 space-y-2"></div>
+      </section>
+
       <!-- ══════ 2 · Configuración ══════ -->
       <section class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">2 · Configuración</h2>

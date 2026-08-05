@@ -51,6 +51,10 @@ const {
 } = require("../../lib/apu/catalogo.js");
 const { inferir } = require("../../lib/apu/inferencia.js");
 const { calcularPresupuesto, normalizarCatalogo } = require("../../lib/apu/calculo.js");
+const { desdePresupuesto, ajusteCompetitivo, precioPiso } = require("../../lib/apu/rentabilidad.js");
+const { leerIndiceBaja, bajaDeMercado } = require("../../lib/indice_baja.js");
+const { leerIndice: leerIndiceComp, competenciaDe } = require("../../lib/indice_competencia.js");
+const { estimarPDetalle } = require("../../lib/probabilidad.js");
 const {
   departamentosConocidos, departamentosConRegion, meta: metaTipologias,
 } = require("../../lib/apu/tipologias.js");
@@ -58,7 +62,7 @@ const {
 const MAX_BYTES = 2 * 1024 * 1024;   // 2 MB de cuerpo; el tope de Vercel es 4,5
 const MAX_ITEMS = 400;               // un presupuesto de obra menor no pasa de ~150
 const MAX_PRESUPUESTOS = 100;        // tope del listado
-const ACCIONES = ["catalogo", "inferir", "calcular", "guardar", "cargar", "listar"];
+const ACCIONES = ["catalogo", "inferir", "calcular", "rentabilidad", "guardar", "cargar", "listar"];
 const PUBLICAS = ["catalogo"];
 
 const AVISO = "Precios de REFERENCIA regionalizada, no cotizaciones. Verifique contra cotización real "
@@ -153,7 +157,7 @@ module.exports = async function handler(req, res) {
   }
 
   const metodo = String(req.method || "GET").toUpperCase();
-  const esPost = ["inferir", "calcular", "guardar"].includes(accion);
+  const esPost = ["inferir", "calcular", "rentabilidad", "guardar"].includes(accion);
   if (esPost && metodo !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ ok: false, error: `«${accion}» exige POST.` });
@@ -273,6 +277,102 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  /* ══════════════════ rentabilidad ══════════════════
+     Lo que `calcular` NO responde: cuánto vale la oportunidad y si la empresa
+     puede ejecutarla. Va aparte y no dentro de `calcular` porque necesita
+     RED —el índice de baja y el de competencia— mientras que `calcular` es
+     aritmética pura: fundirlas obligaría a pagar dos lecturas de Redis en cada
+     tecla del editor.
+
+     EL PUENTE DEL NIT Y SU LÍMITE. El encargo pide que `entidad_nit` dispare la
+     consulta del índice de baja, pero ese índice está indexado por NOMBRE
+     canónico: la propia Colombia Compra Eficiente advierte que las entidades
+     COMPARTEN NIT entre dependencias. Cuando solo llega el NIT se intenta
+     resolver el nombre por el alias del índice de competencia, que únicamente
+     publica alias para NITs NO ambiguos. Si el NIT está compartido no hay
+     alias, no hay puente y sale `sin_dato` — que es la respuesta correcta:
+     devolver la baja de la entidad hermana es el defecto que se corrigió en
+     ago 2026. */
+  if (accion === "rentabilidad") {
+    const items = Array.isArray(datos.items) ? datos.items : [];
+    if (items.length > MAX_ITEMS) {
+      return res.status(400).json({ ok: false, error: `Demasiados ítems (${items.length}). El tope es ${MAX_ITEMS}.` });
+    }
+    let presupuesto;
+    try {
+      presupuesto = calcularPresupuesto({
+        items, departamento: String(datos.departamento || ""),
+        config: datos.config || {}, catalogo: await catalogoParaCalcular(redis),
+      });
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: `No se pudo calcular: ${e.message}` });
+    }
+
+    const lic = {
+      entidad: String(datos.entidad || "").trim(),
+      nit_entidad: String(datos.entidad_nit || "").replace(/\D/g, ""),
+      departamento_entidad: String(datos.departamento || ""),
+      codigo_principal_de_categoria: String(datos.unspsc || ""),
+    };
+    let baja = null, competencia = null, pBase = null, nombrePorNit = null;
+    let mercado = { disponible: false, motivo: "sin credenciales de Redis" };
+    if (redis) {
+      try {
+        const [iBaja, iComp] = await Promise.all([leerIndiceBaja(redis), leerIndiceComp(redis)]);
+        if (!lic.entidad && lic.nit_entidad) {
+          const alias = iComp[`nit:${lic.nit_entidad}`];
+          const reg = alias && alias.ref ? iComp[alias.ref] : alias;
+          if (reg && reg.nombre) { nombrePorNit = reg.nombre; lic.entidad = reg.nombre; }
+        }
+        baja = bajaDeMercado(iBaja, lic);
+        competencia = competenciaDe(iComp, lic);
+        pBase = estimarPDetalle(lic, { competencia, baja });
+        mercado = {
+          disponible: true, entidad_consultada: lic.entidad || null,
+          nombre_resuelto_por_nit: nombrePorNit,
+          nit_sin_puente: !!(lic.nit_entidad && !lic.entidad),
+        };
+      } catch (e) { mercado = { disponible: false, motivo: `Redis: ${e.message}` }; }
+    }
+
+    const cuantia = Number(datos.cuantia);
+    const r = desdePresupuesto(presupuesto, {
+      presupuesto_oficial: Number.isFinite(cuantia) && cuantia > 0 ? cuantia : null,
+      plazo_meses: Number(datos.plazo_meses) || 12,
+      dso_dias: Number(datos.dso_dias) || undefined,
+      p_base: pBase ? pBase.p : null,
+      competencia, baja,
+    });
+    const oferentes = competencia && competencia.nivel !== "sin_dato" ? competencia.promedio_oferentes : null;
+    const piso = precioPiso({
+      costo_directo: presupuesto.resumen.costo_directo_total,
+      administracion_pct: presupuesto.configuracion.aiu_pct,
+      imprevistos_pct: presupuesto.configuracion.imprevistos_pct,
+      tau_ingreso_pct: r.costos.impuestos && presupuesto.resumen.precio_final
+        ? Math.round(r.costos.impuestos * 1000 / presupuesto.resumen.precio_final) / 10 : 0,
+      garantias: r.costos.garantias, costo_financiero: r.costos.financiero,
+      oferentes, presupuesto_oficial: Number.isFinite(cuantia) && cuantia > 0 ? cuantia : null,
+    });
+
+    return res.status(200).json({
+      ok: true, perfil: perfilDe(q, datos) || null,
+      presupuesto, rentabilidad: r, precio_piso: piso,
+      mercado, baja_mercado: baja, competencia_entidad: competencia, p_ganar_base: pBase,
+      ajuste_competitivo: ajusteCompetitivo({
+        baja, presupuesto_oficial: Number.isFinite(cuantia) && cuantia > 0 ? cuantia : null,
+        precio_oferta: presupuesto.resumen.precio_final,
+      }),
+      como_leerlo: {
+        orden: "El indicador de decisión es el VEG, no el margen: es el único que descuenta el costo de "
+          + "preparar una oferta, que se paga se gane o no.",
+        caja: "K_max decide si la empresa PUEDE; el margen decide si VALE LA PENA. Son dos preguntas "
+          + "distintas y ninguna sustituye a la otra.",
+        precio: "El ajuste competitivo NO recomienda minimizar: el método de ponderación económica se "
+          + "SORTEA en la audiencia, y el centro del mercado gana en tres de los cuatro métodos.",
+      },
+    });
+  }
+
   /* ───────── de aquí en adelante, borradores por perfil ───────── */
   const perfil = perfilDe(q, datos);
   if (!perfil) {
@@ -303,6 +403,11 @@ module.exports = async function handler(req, res) {
       objeto: String(datos.objeto || "").slice(0, 4000),
       departamento: String(datos.departamento || ""),
       entidad: String(datos.entidad || "").slice(0, 300),
+      /* El proceso de SECOP al que pertenece el borrador. Es lo que permite al
+         panel encender «APU listo» en su fila: el `id` del borrador lo propone
+         el cliente y no tiene por qué parecerse al del proceso (de hecho no
+         puede serlo — `id_del_proceso` trae puntos y ID_RE no los admite). */
+      id_proceso: String(datos.id_proceso || "").slice(0, 120) || null,
       items,
       config: datos.config || {},
       guardado,
@@ -382,6 +487,7 @@ module.exports = async function handler(req, res) {
       presupuestos.push({
         id: r.id, nombre: r.nombre, objeto: String(r.objeto || "").slice(0, 160),
         departamento: r.departamento || null, entidad: r.entidad || null,
+        id_proceso: r.id_proceso || null,
         items: Array.isArray(r.items) ? r.items.length : 0,
         total_guardado: r.total_guardado ?? null,
         guardado: r.guardado,
@@ -397,6 +503,10 @@ module.exports = async function handler(req, res) {
     truncado: claves.length > MAX_PRESUPUESTOS,
     ilegibles,
     presupuestos,
+    /* Los procesos de SECOP con borrador, para el badge del panel. Es una lista
+       de PERTENENCIA, no un conteo: así el frontend no puede convertir un «no
+       sé» en un cero con un `|| 0`. */
+    procesos_con_presupuesto: [...new Set(presupuestos.map((x) => x.id_proceso).filter(Boolean))],
     ttl_dias: Math.round(APU_TTL_SEG / 86400),
   });
 };

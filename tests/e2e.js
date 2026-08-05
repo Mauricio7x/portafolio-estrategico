@@ -150,6 +150,18 @@
         índice regional recompuesto no se separa 0,015 del recuperado y el
         acarreo del acero va en m³ (el error de la fuente recuperada, que lo
         pasaba en kg y ponía el 78 % del APU en transporte).
+     j-bis. RENTABILIDAD del proceso y badge «APU listo». La acción
+        /api/apu/rentabilidad es la ÚNICA del módulo que toca la red (índice de
+        baja + índice de competencia + lib/probabilidad), y de ahí que vaya
+        aparte de `calcular`, que es aritmética pura. Se comprueban los seis
+        indicadores del encargo —precio, costo directo, margen bruto, P(ganar),
+        VEG y payback—, que el precio de la rentabilidad sea EL MISMO que el del
+        presupuesto, que el ajuste competitivo salga del índice REAL (y que sin
+        base no invente un precio), el precio piso decidiendo con σ = 15 %, las
+        monotonías del anexo A.4 (A.9 anticipo↑ ⇒ K_max no sube; A.10 oferentes↑
+        ⇒ P(ganar) no sube y MG(n) no baja; A.12 DSO↑ ⇒ C_financiero no baja), y
+        que el borrador quede asociado a su `id_proceso` — que es lo único con lo
+        que el panel puede encender «APU listo», y es POR PERFIL.
      h. La raíz sirve el HTML del frontend (gate + app) y app.js compila.
      i. (Documentado) Sin CLI de Vercel ni red: pruebas locales con mocks.
    ========================================================================== */
@@ -5087,6 +5099,46 @@ async function main() {
         assert.ok(/Number\.isFinite\(n\) \? /.test(limpio),
           "las cifras deben comprobarse con Number.isFinite antes de pintarse");
 
+        /* ---- precarga desde el panel y bloque de rentabilidad ---- */
+        assert.ok(/new URLSearchParams\(location\.search\)/.test(limpio),
+          "el editor debe precargarse desde la querystring: es lo que hace útil al botón «APU» de la fila");
+        assert.ok(limpio.includes("/api/apu/rentabilidad"), "apu.js no llama a la acción de rentabilidad");
+        for (const debe of ["id-proceso", "btn-rentabilidad", "seccion-rentabilidad"]) {
+          assert.ok(apuHtml.includes(`id="${debe}"`), `apu.html sin #${debe}`);
+        }
+        // el borrador tiene que llevar SU proceso, o el badge del panel no
+        // tendría con qué encenderse
+        assert.ok(/id_proceso:/.test(limpio), "al guardar hay que mandar el id del proceso");
+        /* El departamento se fija DESPUÉS de cargar el catálogo: antes no existe
+           la opción del desplegable que hay que seleccionar, y la precarga se
+           perdería en silencio. */
+        {
+          const i = limpio.indexOf("async function arrancar()");
+          const cuerpoArranque = limpio.slice(i, i + 900);
+          assert.ok(cuerpoArranque.indexOf("await cargarCatalogo()") < cuerpoArranque.lastIndexOf("precargarDesdeURL()"),
+            "la segunda precarga tiene que ir DESPUÉS de cargar el catálogo, o el departamento no se seleccionaría");
+        }
+
+        /* ---- el enganche en el panel ----
+           `admin.js` se lee aquí y no se reutiliza la variable del paso h: ese
+           bloque va DESPUÉS y su `const` no está en el alcance de este. */
+        const admJsApu = fs.readFileSync(path.join(__dirname, "..", "public", "admin.js"), "utf8");
+        const admHtmlApu = fs.readFileSync(path.join(__dirname, "..", "public", "admin.html"), "utf8");
+        const limpioAdmin = sinComentarios(admJsApu);
+        assert.ok(/closest\("\.btn-apu"\)/.test(limpioAdmin),
+          "admin.js debe ignorar el clic del botón APU en el manejador de la fila, o abriría además SECOP II");
+        assert.ok(limpioAdmin.indexOf('e.target.closest(".btn-apu")') < limpioAdmin.indexOf('const fila = e.target.closest(".fila-proceso")'),
+          "la guarda del botón APU tiene que ir ANTES de resolver la fila");
+        assert.ok(/function celdaApuProceso\([\s\S]{0,200}leerToken\(\)/.test(limpioAdmin),
+          "el botón APU solo se pinta con token en la pestaña");
+        assert.ok(limpioAdmin.includes("/api/apu/listar?perfil="),
+          "el listado de borradores se consulta aparte de /api/resumen, que se cachea 300 s");
+        assert.ok(limpioAdmin.indexOf("await cargarApuListos(perfil)") < limpioAdmin.indexOf("pintarDashboard(cuerpo,"),
+          "el listado tiene que cargarse ANTES de pintar, o el badge saldría una pintada tarde");
+        assert.ok(admHtmlApu.includes("<th class=\"py-1\">APU</th>"), "admin.html sin la columna APU");
+        assert.ok(limpioAdmin.includes('colspan="7"'),
+          "el estado vacío de la tabla tiene que cubrir las 7 columnas, no 6");
+
         // el campo de token vacío AVISA (no puede hacer `return` a secas)
         {
           const i = limpio.indexOf('$("form-token").addEventListener');
@@ -5448,6 +5500,185 @@ async function main() {
       console.log(`  · catálogo APU: ${carga.cuerpo.insumos} insumos × ${REGIONES.length} regiones, `
         + `${carga.cuerpo.items} ítems (${carga.cuerpo.chunks} chunk, ${carga.cuerpo.bytes_snapshot} B comprimidos) · `
         + "snapshot ≡ hashes, rancio y corrupto caen a hashes");
+    }
+
+    /* ═══════════ j-bis. RENTABILIDAD del proceso y badge «APU listo» ═══════════
+       Lo que el editor de APU no respondía: cuánto vale la oportunidad y si la
+       empresa puede ejecutarla. La acción `rentabilidad` es la única del módulo
+       que toca la RED —el índice de baja y el de competencia—, y de ahí que vaya
+       aparte de `calcular`, que es aritmética pura.
+
+       El caso es el del encargo: «MEJORAMIENTO DE VÍA TERCIARIA EN EL MUNICIPIO
+       DE JERICÓ, ANTIOQUIA», con una entidad que SÍ tiene histórico en el corpus
+       sintético — con una que no lo tuviera, el ajuste competitivo saldría
+       `sin_dato` y la prueba no comprobaría nada del índice. */
+    {
+      const apuR = require("../api/apu/[accion].js");
+      const rent = require("../lib/apu/rentabilidad.js");
+      const tipR = require("../lib/apu/tipologias.js");
+
+      const ITEMS = tipR.itemsDeTipologia("VIA-PH").map((c) => ({
+        item_id: c, cantidad: c === "INV-PH.1" ? 2700 : (c === "INV-640.1" ? 18000 : 600),
+      }));
+      const CUERPO = {
+        items: ITEMS,
+        departamento: "Antioquia",
+        config: { aiu_pct: 28, imprevistos_pct: 5, utilidad_pct: 7 },
+        entidad: "GOBERNACIÓN DEL TOLIMA",
+        entidad_nit: "800100002",
+        unspsc: "V1.72141000",
+        cuantia: 1500000000,
+        plazo_meses: 8,
+        perfil: "helder",
+      };
+
+      // la acción nueva exige token como las demás (publica la baja de mercado)
+      assert.strictEqual((await invocar(apuR, "/api/apu/rentabilidad", {}, { metodo: "POST", body: {} })).status, 401,
+        "/api/apu/rentabilidad sirvió sin token");
+
+      const r = await invocar(apuR, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: CUERPO });
+      assert.strictEqual(r.status, 200, `rentabilidad falló: ${JSON.stringify(r.cuerpo).slice(0, 300)}`);
+      const c = r.cuerpo;
+
+      /* ---- los seis indicadores que pide el encargo ---- */
+      const ren = c.rentabilidad;
+      for (const campo of ["precio_total", "costo_directo", "margen_bruto_pct", "veg", "k_max"]) {
+        assert.ok(ren[campo] != null, `falta el indicador «${campo}»`);
+      }
+      assert.ok("payback_meses" in ren, "el payback tiene que viajar aunque sea null (no retorna en el horizonte)");
+      assert.strictEqual(ren.precio_total, c.presupuesto.resumen.precio_final,
+        "el precio de la rentabilidad tiene que ser EL MISMO que el del presupuesto: dos cifras del mismo "
+        + "número que discrepan es el defecto que este repositorio ya pagó dos veces");
+      assert.strictEqual(ren.costo_directo, c.presupuesto.resumen.costo_directo_total);
+      assert.strictEqual(ren.margen_bruto_pct,
+        Math.round((ren.precio_total - ren.costo_directo) * 1e4 / ren.precio_total) / 100);
+
+      /* ---- el mercado se consulta de verdad ---- */
+      assert.ok(c.mercado.disponible, "el mercado debía consultarse: hay Redis y hay índices");
+      assert.ok(c.baja_mercado, "la baja de mercado tiene que viajar");
+      assert.ok(c.competencia_entidad, "y la competencia de la entidad también");
+      if (c.ajuste_competitivo.aplicable) {
+        assert.strictEqual(c.ajuste_competitivo.precio_sugerido,
+          Math.round(CUERPO.cuantia * (1 - c.ajuste_competitivo.baja_mediana_pct / 100)),
+          "el sugerido es el presupuesto oficial descontado la baja mediana, exactamente");
+        assert.ok(c.ajuste_competitivo.granularidad_utilizada, "una cifra sin su origen no se puede discutir");
+      } else {
+        assert.strictEqual(c.ajuste_competitivo.precio_sugerido, null,
+          "sin base de baja no puede haber precio sugerido: sin dato NO es «no descuenta nada»");
+      }
+      assert.ok(c.precio_piso && c.precio_piso.precio_piso_decision > 0,
+        "el precio piso es una salida visible, junto al presupuesto oficial");
+      assert.strictEqual(c.precio_piso.precio_piso_decision, c.precio_piso.escenarios.sigma_15.precio_piso,
+        "el piso que decide es el del escenario alto: usar el bajo sin calibrar es anti-conservador");
+
+      /* ---- honestidad del dato ---- */
+      assert.strictEqual(ren.margen_es_cota_superior, true,
+        "sin `deducciones_pct` del pliego el margen es una COTA SUPERIOR y hay que decirlo");
+      assert.strictEqual(ren.flujo.anticipo_es_dato, false,
+        "sin anticipo declarado, `anticipo_pct = 0` es AUSENCIA DE DATO");
+      assert.ok(ren.flujo.nota_anticipo.includes("AUSENCIA DE DATO"));
+      assert.ok(ren.advertencias.length > 0, "un resultado sin advertencias, con este catálogo, sería una mentira");
+
+      /* ---- las monotonías del anexo A.4, sobre el módulo ---- */
+      {
+        const base = {
+          valor_contrato: 1200e6, costo_total: 860e6, plazo_meses: 8, costo_indirecto: 100e6,
+        };
+        const sin = rent.flujoCaja({ ...base, anticipo_pct: 0 });
+        const con = rent.flujoCaja({ ...base, anticipo_pct: 30, anticipo_es_dato: true });
+        assert.ok(con.k_max <= sin.k_max, "A.9: si el anticipo sube, K_max NO puede subir");
+        assert.ok(rent.flujoCaja({ ...base, dso_dias: 150 }).costo_financiero
+          >= rent.flujoCaja({ ...base, dso_dias: 60 }).costo_financiero,
+          "A.12: si el DSO sube, C_financiero NO puede bajar");
+        // el payback exige haber estado EXPUESTO: con anticipo, el mes 1 en
+        // positivo es dinero de la entidad, no capital devuelto
+        assert.ok(sin.payback_meses === null || sin.payback_meses > 1,
+          "el payback no puede ser el mes 1 por el propio anticipo");
+
+        // A.10 con el `p_base` de VERDAD, que es donde vive el efecto de nivel
+        const comun = {
+          baja_mediana_pct: 8, baja_p25: 5, baja_p75: 12, baja_ofertada_pct: 8,
+        };
+        const pocos = rent.pGanarPorPrecio({ ...comun, p_base: 1 / 4, oferentes: 3 });
+        const muchos = rent.pGanarPorPrecio({ ...comun, p_base: 1 / 15, oferentes: 14 });
+        assert.ok(muchos.p < pocos.p, "A.10: si suben los oferentes, P(ganar) NO puede subir");
+        assert.strictEqual(pocos.multiplicador, 1,
+          "ofertar en la mediana devuelve EXACTAMENTE la probabilidad base, o /api/apu y /api/oportunidades "
+          + "publicarían dos cifras distintas del mismo proceso");
+        assert.strictEqual(pocos.oferentes_forma, rent.N_REFERENCIA_CURVA,
+          "la FORMA de la curva usa un n de referencia fijo; el NIVEL lo pone p_base");
+        // la sigmoide del régimen «menor valor» sí crece con la baja…
+        const arriba = rent.pGanarPorPrecio({ ...comun, baja_ofertada_pct: 20, p_base: 0.2, oferentes: 6 });
+        const abajo = rent.pGanarPorPrecio({ ...comun, baja_ofertada_pct: 2, p_base: 0.2, oferentes: 6 });
+        assert.ok(arriba.p_menor_valor > abajo.p_menor_valor,
+          "bajo «menor valor» más baja tiene que dar más probabilidad: esa es la sigmoide");
+        // …y el régimen central es una campana: alejarse del centro RESTA
+        const centro = rent.pGanarPorPrecio({ ...comun, p_base: 0.2, oferentes: 6 });
+        assert.ok(centro.p_central > arriba.p_central && centro.p_central > abajo.p_central,
+          "bajo métodos centrales alejarse del centro resta, se aleje hacia donde se aleje");
+        assert.ok(centro.supuesto.includes("25 %"), "la mezcla tiene que declarar su supuesto");
+        // sin mediana de mercado NO se modula: sin dato no es «baja 0 %»
+        assert.strictEqual(rent.pGanarPorPrecio({ p_base: 0.2, baja_ofertada_pct: 8 }).modulada, false);
+        // la maldición del ganador crece con los oferentes y con σ
+        assert.ok(rent.primaMaldicion(1000e6, 12).valor > rent.primaMaldicion(1000e6, 3).valor,
+          "A.10: si suben los oferentes, MG(n) NO puede bajar");
+        assert.ok(rent.primaMaldicion(1000e6, 6, { sigma_est: 0.15 }).valor
+          > rent.primaMaldicion(1000e6, 6, { sigma_est: 0.08 }).valor);
+        assert.strictEqual(rent.primaMaldicion(1000e6, null).estimado, true,
+          "sin dato de competencia no se puede suponer que hay pocos rivales");
+      }
+
+      /* ---- el borrador se asocia al PROCESO, que es lo que enciende el badge ---- */
+      {
+        const ID_PROCESO = "CO1.APU.JERICO";
+        const guardar = await invocar(apuR, "/api/apu/guardar", CAB_TOKEN, {
+          metodo: "POST",
+          body: {
+            id: "jerico-ph", perfil: "helder", nombre: "Placa huella Jericó",
+            objeto: "MEJORAMIENTO DE VÍA TERCIARIA EN EL MUNICIPIO DE JERICÓ, ANTIOQUIA",
+            departamento: "Antioquia", entidad: CUERPO.entidad,
+            id_proceso: ID_PROCESO, items: ITEMS, config: CUERPO.config,
+            total: c.presupuesto.resumen.precio_final,
+          },
+        });
+        assert.strictEqual(guardar.status, 200, `no se pudo guardar: ${JSON.stringify(guardar.cuerpo).slice(0, 200)}`);
+
+        const listado = await invocar(apuR, "/api/apu/listar?perfil=helder", CAB_TOKEN);
+        assert.strictEqual(listado.status, 200);
+        assert.ok(listado.cuerpo.procesos_con_presupuesto.includes(ID_PROCESO),
+          "el listado tiene que decir QUÉ PROCESOS tienen borrador: es lo que enciende «APU listo» en el panel");
+        const ficha = listado.cuerpo.presupuestos.find((x) => x.id === "jerico-ph");
+        assert.strictEqual(ficha.id_proceso, ID_PROCESO, "la ficha del listado tiene que llevar su proceso");
+
+        // EL BORRADOR ES POR PERFIL: el de Helder no puede salir por Génesis
+        const otro = await invocar(apuR, "/api/apu/listar?perfil=genesis", CAB_TOKEN);
+        assert.strictEqual(otro.cuerpo.procesos_con_presupuesto.length, 0,
+          "un borrador de un perfil NO puede aparecer en el listado de otro");
+
+        // se limpia: el paso h-bis comprueba que una carga rechazada no deja
+        // nada escrito en `apu:*`, y un borrador de aquí se lo llevaría por delante
+        const mios = await redis.scan("apu:presupuesto:*");
+        if (mios.length) await redis.del(...mios);
+      }
+
+      /* ---- el panel entrega lo que el botón «APU» necesita para precargar ---- */
+      {
+        const res = await invocar(resumen, "/api/resumen?perfil=helder", CAB_TOKEN);
+        assert.strictEqual(res.status, 200);
+        const dest = res.cuerpo.procesos_destacados || [];
+        assert.ok(dest.length > 0, "sin destacados no se puede comprobar la precarga del botón APU");
+        for (const p of dest) {
+          for (const campo of ["nit_entidad", "departamento_entidad", "unspsc", "plazo_meses"]) {
+            assert.ok(campo in p, `el destacado no trae «${campo}» y el botón APU no podría precargar el editor`);
+          }
+        }
+        assert.ok(dest.some((p) => p.departamento_entidad),
+          "al menos un destacado tiene que traer departamento, o los factores de precio no se precargarían nunca");
+      }
+
+      console.log(`  · rentabilidad APU: margen bruto ${ren.margen_bruto_pct} % · P(ganar) ${ren.p_ganar} · `
+        + `VEG ${Math.round((ren.veg || 0) / 1e6)} M · K_max ${Math.round(ren.k_max / 1e6)} M · `
+        + `payback ${ren.payback_meses ?? "—"} · badge por proceso verificado`);
     }
 
     /* h. la raíz sirve el frontend (Vercel: /public es el output estático) */
