@@ -507,6 +507,116 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   **3 + 1, no 2 + 2**: con el empate, `nombreOriginal` lo decide el orden del corpus y la prueba
   pasaría o fallaría por azar.
 
+### Editor de APU: del objeto del proceso a un presupuesto (ago 2026)
+
+Base documental: `docs/APU_Y_RENTABILIDAD.md` (§1.B.2 matriz regional, §1.C anatomía del APU y factor
+prestacional, §1.D clasificador y biblioteca, §1.H qué cabe en Vercel). **Los precios y rendimientos
+del catálogo son ILUSTRATIVOS y están pendientes de calibración** — lo declara el propio archivo, lo
+repite la respuesta del endpoint y lo pinta la UI en una franja que no se puede cerrar. Presentarlos
+de otro modo sería exactamente la clase de cifra creíble sin respaldo que el resto del proyecto
+prohíbe.
+
+- **Los datos viven en `data/*.json`, no en Redis** (`apu_catalogo`, `apu_tipologias`, `apu_regional`):
+  un precio mal puesto es un error de NEGOCIO y tiene que verse en un diff, revisarse por PR y
+  desplegarse con el código. Cuesta cero comandos y cero ancho de banda de Upstash — que es el
+  presupuesto que se agota primero (10 GB/mes). Mismo precedente que `data/vocabulario_unspsc.json`.
+- **`lib/apu/*` es HOJA del grafo de requires** salvo por `semantica` y `unspsc`, que también lo son.
+  El motor calcula precios; **no decide si un proceso es del dueño** — eso sigue siendo `lib/unspsc`
+  contra la whitelist del perfil. Importar `perfiles` o `filtros` cerraría un ciclo y, peor, mezclaría
+  dos preguntas distintas.
+- **DOS CORRECCIONES A LA FÓRMULA DEL ENCARGO, las dos con prueba.** (1) `(cantidad / rendimiento) ×
+  costo_hora` ya es el TOTAL del ítem, no el unitario: sumarlo a unos materiales que sí son por unidad
+  y volver a multiplicar por `cantidad` cobra la cuadrilla `cantidad` veces (en un ítem de 500 m², 500
+  cuadrillas). Se conserva la fórmula del encargo para el total y el unitario se DERIVA dividiendo, con
+  lo que se cumple además la invariante 7 del informe. (2) **AIU es Administración + Imprevistos +
+  Utilidad: se SUMA, no se compone.** El `aiu_pct` del encargo es la «A». `20/5/3` compuesto da
+  29,78 % contra 28 % aditivo, y el aditivo es el de los pliegos tipo. `modo_aiu: "compuesto"` sigue
+  disponible —la decisión es del dueño— pero el defecto no puede ser el que descuadra contra el
+  formulario de la entidad.
+- **El rendimiento DIVIDE.** Es el error canónico del APU y por eso hay prueba de monotonía: bajar el
+  rendimiento tiene que ENCARECER la mano de obra sin tocar los materiales. El equipo se divide igual
+  (una mezcladora se alquila por día, no por m³) y la herramienta menor es un % de la mano de obra.
+- **Salario mensual ≠ jornal por día laborado.** Un factor de 1,45 sobre uno y sobre otro describen
+  costos que difieren ~30 %: es la fuente número uno de APU incomparables entre sí. Por eso
+  `DIAS_LABORADOS_MES = 23` (no los 30 pagados) y `JORNADA_HORAS = 8` son explícitos y editables. El
+  factor prestacional por defecto es **1,59** (Génesis SAS exonerada del art. 114-1 ET, ARL IV, con
+  auxilio de transporte). Helder, persona natural con un solo empleado, NO está exonerado: su factor
+  sube ~13,5 puntos y la UI lo dice.
+- **La matriz regional es UN FACTOR POR COMPONENTE** (material, mano de obra, equipo, transporte),
+  jamás un número por departamento: el SMMLV es un piso nacional —no hay un Chocó barato en mano de
+  obra— mientras el material se mueve con el flete. Un F único daría el mismo ajuste a una obra
+  intensiva en concreto y a una intensiva en cuadrilla.
+- **`factorRegionalDe` es el punto único de paso, y PROHIBIDO `|| 1`.** Un F = 1 por defecto afirma
+  «aquí construir cuesta lo mismo que el promedio nacional», que es falso y creíble sobre Vaupés. La
+  ausencia se propaga como ausencia (`estado: "sin_base"`). **Bogotá sale ⚪ a propósito**: el INVÍAS la
+  excluye de sus 140 provincias y no hay otra fuente cargada. Ningún departamento se publica como
+  🟢 «calibrado» — la matriz entera es preliminar y se dice, en vez de ensanchar el criterio para poder
+  pintar verde.
+- **El flete es ADITIVO y solo con distancia declarada.** Con `distancia_acarreo_km = 0` se entiende
+  que el material ya está PUESTO EN OBRA: sumarlo ahí sería cobrarlo dos veces. El `flete_relativo` de
+  la tabla NO es un multiplicador del precio, es el `k_modo` de la ruta típica.
+- **El clasificador es una cascada de tres niveles y solo están los dos primeros.** Nivel A léxico
+  (ancla 3 · apoyo 1 · excluye −4, exigiendo verbo de obra de `lib/semantica`), Nivel B UNSPSC como
+  evidencia INDEPENDIENTE cuyo valor real es **vetar** (placa huella con código 4017 es una red, no una
+  vía → 🟡). El **Nivel C (LLM de desempate) NO se implementó**: el proyecto no tiene dependencias ni
+  llamadas externas, y meter una en la ruta de una petición añadiría latencia y un fallo a un cálculo
+  hoy determinista. La máquina de estados está escrita para funcionar sin él y cae a 🟡 o ⚪ donde el
+  informe invocaría a C. Su contrato ya está fijado por si algún día entra: `evidencia_textual` debe
+  ser subcadena LITERAL del objeto.
+- **`anclas` son los términos que el informe publica en su tabla, uno a uno.** Demoterlos a `apoyo`
+  (peso 1) fue el primer intento y dejó a TODAS las tipologías por debajo del umbral de 🟢: una placa
+  huella perfectamente escrita sacaba 5 puntos de los 8 necesarios. Los términos derivados van en
+  `apoyo`; mezclar las dos listas vuelve a romperlo.
+- **Los términos se comparan con frontera de palabra Y plural tolerado.** Sin el plural, media tabla no
+  dispararía nunca (SECOP dice «vías terciarias», no «vía terciaria»); sin la frontera, «parque»
+  clasificaría un mantenimiento de **parque**adero como espacio público. `includes` a secas falla en el
+  segundo caso y una frontera estricta en el primero: hacen falta las dos cosas.
+- **El margen `P1−P2` es condición DURA, no un promedio ponderado**: dos tipologías empatadas nunca dan
+  🟢 aunque el puntaje absoluto sea alto. El falso positivo caro es el verde, porque es el único estado
+  que genera un presupuesto completo sin pedir que se lea el pliego. Y los tres estados **suman
+  exactamente los objetos evaluados**, con prueba: la misma invariante de `/api/diagnostico`.
+- **Decimal COLOMBIANO en la extracción de cantidades**: el punto separa miles y la coma decimales.
+  Invertirlo divide la obra por mil. Más el lookbehind (sin él «1500 km» captura 500, error de factor 3
+  y silencioso) y la **regla de atribución a ≤ 6 palabras**: sin ella «…PLACA HUELLA VEREDA X, CONTRATO
+  2024-350» produce 2024 km.
+- **UNA sola función serverless para las seis acciones** (`api/apu/[accion].js`). El plan Hobby de
+  Vercel admite **12 funciones por despliegue** y el repositorio ya declaraba 10: cuatro archivos
+  sueltos (`calcular`, `guardar`, `cargar`, `listar`) habrían dado 14 y **falla el despliegue entero**,
+  no el endpoint nuevo. Una ruta dinámica cuenta como una y conserva las cuatro URL del encargo sin
+  reescrituras. Hay prueba que cuenta los archivos bajo `api/`. `accion` se lee de `req.query` **y del
+  path como respaldo**: la suite invoca los handlers sin enrutador, y un handler que solo funciona
+  detrás del enrutador es un handler que no se puede probar.
+- **El listado NO tiene índice aparte**: SCAN + MGET sobre las propias claves. Un índice con TTL se
+  desincroniza en cuanto caduca un borrador y empezaría a listar presupuestos que ya no existen. La
+  clave ES la fuente de verdad. Un valor corrupto se CUENTA (`ilegibles`) en vez de tumbar la respuesta.
+- **`anticipo_pct` aquí distingue `null` de `0`**, al revés que el campo homónimo del corpus de SECOP.
+  Es legítimo y se declara: allí el 0 lo pone un dataset que no publica el dato; aquí lo teclea una
+  persona que sabe que el proceso no tiene anticipo. Sin dato se calcula el escenario conservador.
+- **`margen_final` es literalmente lo que pidió el encargo** (`precio_final − costo_directo_total`) y
+  por eso NO descuenta impuestos: la contribución del 5 % de obra pública (Ley 418/1997), las
+  estampillas y el ReteICA se cargan en `deducciones_pct` y producen `margen_despues_deducciones`.
+  Mientras no se carguen, una alerta recuerda la contribución con su cifra en pesos — es «el olvido más
+  caro del país» y un margen que la ignora es optimista en cinco puntos.
+- **El .xlsx se escribe a mano (`public/xlsx.js`), sin SheetJS y sin `package.json`.** No es purismo,
+  son dos hechos verificados: (1) SheetJS dejó de publicar en npm tras la **0.18.5**, que es lo que
+  `npm install xlsx` instala, con dos advisories «high» y `npm audit` respondiendo literalmente **«No
+  fix available»**; (2) la edición libre **IGNORA los estilos de celda al escribir** — se comprobó
+  fijando `ws.A1.s = {font:{bold:true}, fill:{…}}` y el `styles.xml` resultante sale con
+  `<fonts count="1">`. Un «formato profesional de APU» no es alcanzable con esa librería. El escritor
+  propio da control total y la prueba audita el ZIP entrada por entrada. Método **STORE** (sin
+  comprimir): es ZIP válido, lo abren Excel/LibreOffice/Numbers y evita depender de que el navegador
+  traiga `CompressionStream`.
+- **En `public/apu.js` el arranque automático va AL FINAL del IIFE**, tercera vez que se aplica la
+  misma lección (`app.js`, `admin.js`): junto al gate moriría en la zona muerta temporal en la segunda
+  visita de la misma pestaña, y por una promesa rechazada, o sea EN SILENCIO. Hay prueba del orden.
+- **El editor se enlaza desde `/admin.html`, no se embebe.** `vercel.json` sirve todo el sitio con
+  `X-Frame-Options: DENY`, así que el iframe que el encargo daba como alternativa quedaría en blanco en
+  producción aunque funcione en local. Debilitar esa cabecera por una comodidad de navegación sería
+  pagar una protección real por nada.
+- **Todas las acciones exigen `HISTORICO_TOKEN`**, incluidas `catalogo` e `inferir`: son la materia
+  prima con la que se arma una oferta, y el gate 231105 es una cortesía del navegador que no protege
+  ninguna API. `/api/oportunidades` sigue siendo el único con el token opcional, por su motivo propio.
+
 ## CONOCIMIENTO DE DOMINIO: CONTRATACIÓN PÚBLICA COLOMBIANA
 
 Destilado accionable del **Manual del Analista de Licitaciones** (edición 2026). El manual completo

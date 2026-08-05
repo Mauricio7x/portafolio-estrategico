@@ -80,8 +80,18 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `lib/semantica.js` | Los **vocabularios**: `norm`, blacklist de objetos ajenos, whitelist de obra (heredadas), verbos de obra y términos no pertinentes |
 | `data/vocabulario_unspsc.json` | Semilla curada de términos distintivos por familia UNSPSC (respaldo del derivado) |
 | `lib/almacen.js` | Esquema de claves Redis + compresión/particionado de chunks |
+| `api/apu/[accion].js` | **Editor de APU** — una sola función para seis acciones (catálogo, inferir, calcular, guardar, cargar, listar): el plan Hobby de Vercel admite 12 funciones por despliegue |
+| `lib/apu/catalogo.js` | Biblioteca de APU + matriz regional. `factorRegionalDe` es el punto único de paso y **jamás devuelve 1,00 por defecto** |
+| `lib/apu/inferencia.js` | Objeto del proceso → tipología de obra e ítems: léxico con puntaje (Nivel A) + UNSPSC como **veto** (Nivel B) |
+| `lib/apu/calculo.js` | **Punto único de cálculo** del presupuesto: materiales con desperdicio, mano de obra por rendimiento y factor prestacional, equipo, herramienta menor, acarreo, AIU y ajuste competitivo |
+| `data/apu_catalogo.json` | 51 insumos y 36 ítems de obra con cuadrilla, equipo y rendimiento. **Precios ILUSTRATIVOS, pendientes de calibración** (lo declara el propio archivo) |
+| `data/apu_tipologias.json` | Las 22 tipologías cerradas con sus términos ancla, de apoyo y de exclusión |
+| `data/apu_regional.json` | Matriz de ajuste **por componente** (material · mano de obra · equipo · transporte) para 32 departamentos; Bogotá va ⚪ sin base |
+| `docs/APU_Y_RENTABILIDAD.md` | La investigación que sostiene toda esta capa: fuentes de precios, factor prestacional, AIU, clasificador y qué cabe en Vercel |
 | `docs/PERFILES.md` | Resumen técnico de los tres perfiles (datos, estimaciones, limitaciones) |
 | `public/` | Frontend estático (Tailwind CDN, estilo Apple, gate de clave) |
+| `public/apu.html` + `apu.js` | Editor de APU: tabla editable, inferencia desde el objeto, sugerencia del factor de baja desde el histórico, borradores y exportación |
+| `public/xlsx.js` | **Escritor `.xlsx` propio, sin dependencias** (ZIP + OOXML con estilos reales). Ver «Exportación a Excel» |
 | `public/admin.html` + `admin.js` | Panel de administración: encadena la sincronización full, **dashboard de procesos**, **carga de RUP**, **experiencia ejecutada** y **auditoría de cobertura**, todo desde el navegador y sin terminal |
 | `tests/e2e.js` | Ciclo completo con mocks de Socrata y Upstash (sin red externa) |
 
@@ -1092,6 +1102,136 @@ UNSPSC por perfil, la pertinencia, el anti-suministro y la cuantía — todo eso
 consulta, así que **cambiar esas reglas o cargar un RUP nuevo NO exige una `full`**. Solo lo
 exige tocar `admisibleParaIngesta` o la blacklist.
 
+## Editor de APU (`/apu.html` + `/api/apu/*`)
+
+Del objeto del proceso a un presupuesto con desglose por insumo, exportable a Excel. Base documental:
+`docs/APU_Y_RENTABILIDAD.md`.
+
+> ⚠️ **Los precios y rendimientos del catálogo son ILUSTRATIVOS y están pendientes de calibración.**
+> Lo declara `data/apu_catalogo.json`, lo repite cada respuesta del endpoint y lo pinta la UI en una
+> franja que no se puede cerrar. Sirven para decidir **a qué presentarse**, no para firmar una oferta.
+
+### Las seis acciones (todas exigen `HISTORICO_TOKEN`)
+
+| Acción | Verbo | Qué hace |
+| --- | --- | --- |
+| `/api/apu/catalogo` | GET | Ítems, insumos, las 22 tipologías y los 33 departamentos (puebla la UI) |
+| `/api/apu/inferir` | POST | `{objeto, codigos_unspsc}` → tipología, estado 🟢/🟡/⚪, ítems sugeridos y magnitudes legibles |
+| `/api/apu/calcular` | POST | `{items, departamento, config}` → desglose por ítem + resumen + alertas |
+| `/api/apu/guardar` | POST | Borrador a `apu:presupuesto:{perfil}:{id}`, **TTL 30 días** |
+| `/api/apu/cargar` | GET | `?id=…&perfil=…` |
+| `/api/apu/listar` | GET | Borradores vigentes del perfil (SCAN + MGET, sin índice aparte) |
+
+**Van en UNA sola función** (`api/apu/[accion].js`, ruta dinámica). El plan Hobby de Vercel admite
+**12 Serverless Functions por despliegue** y el repositorio ya declaraba 10: cuatro archivos sueltos
+habrían dado 14 y **falla el despliegue entero**, no solo el endpoint nuevo. Hay una prueba que cuenta
+los archivos bajo `api/`.
+
+### La fórmula
+
+```
+material_unitario  = Σ  precio_insumo · cantidad · (1 + desperdicio)
+mano_obra_total    = (cantidad / rendimiento_hora) · costo_hora_cuadrilla · factor_prestacional
+equipo_total       = (cantidad / rendimiento_hora) · costo_hora_equipo   + herramienta_menor(% de MO)
+transporte_unit    = toneladas · distancia_km · tarifa_ton_km · k_modo    ← solo si hay distancia
+costo_unitario     = (material + mano_obra + equipo + transporte) unitarios, cada uno × su factor regional
+costo_total_item   = costo_unitario · cantidad
+
+precio_venta       = costo_directo_total · (1 + A% + I% + U%)        ← AIU ADITIVO (defecto)
+precio_final       = precio_venta · (1 − factor_baja/100)            ← si hay ajuste competitivo
+margen_final       = precio_final − costo_directo_total
+```
+
+**Dos correcciones a la especificación original, las dos con prueba.**
+
+1. `(cantidad / rendimiento) · costo_hora` ya es el **total** del ítem, no el unitario. Sumarlo a unos
+   materiales que sí van por unidad y volver a multiplicar por `cantidad` cobra la cuadrilla `cantidad`
+   veces (en un ítem de 500 m², 500 cuadrillas). Se conserva esa fórmula para el total y **el unitario
+   se deriva dividiendo**, con lo que `cantidad × unitario = total` se cumple por construcción.
+2. **AIU es Administración + Imprevistos + Utilidad: se suma, no se compone.** Componerlo
+   (`20/5/3` → 29,78 % contra 28 %) da un AIU que no coincide con el del formulario de la entidad.
+   `modo_aiu: "compuesto"` sigue disponible; el defecto es `aditivo`.
+
+**El rendimiento DIVIDE.** Es el error canónico del APU y hay prueba de monotonía: bajarlo encarece la
+mano de obra sin tocar los materiales.
+
+**Salario mensual ≠ jornal por día laborado.** `DIAS_LABORADOS_MES = 23` (no los 30 pagados) y
+`JORNADA_HORAS = 8` son explícitos: un factor de 1,45 sobre una base y sobre la otra describen costos
+que difieren ~30 %. El factor prestacional por defecto es **1,59** (SAS exonerada del art. 114-1 ET,
+ARL IV, con auxilio de transporte); una persona natural con un solo empleado no está exonerada y su
+factor sube unos 13,5 puntos.
+
+### Ajuste regional: un factor **por componente**
+
+Nunca un número por departamento. El SMMLV es un piso nacional —no hay un Chocó barato en mano de
+obra— mientras el material se mueve con el flete. Seis categorías (A eje metropolitano … F sin acceso
+terrestre) con banda publicada junto al valor central.
+
+- **Prohibido `|| 1`.** Un departamento sin base no recibe 1,00: un F = 1 por defecto afirma «aquí
+  construir cuesta lo mismo que el promedio nacional», que es falso y creíble sobre Vaupés. La ausencia
+  se propaga como ausencia (`estado: "sin_base"`).
+- **Bogotá va ⚪ a propósito**: el INVÍAS la excluye de sus 140 provincias y no hay otra fuente cargada.
+- **Ningún departamento se publica como 🟢 «calibrado»**: la matriz entera es preliminar y se dice, en
+  vez de ensanchar el criterio para poder pintar verde.
+- **El flete es aditivo y solo con distancia declarada.** Con `distancia_acarreo_km = 0` se entiende que
+  el material ya está *puesto en obra*: sumarlo ahí sería cobrarlo dos veces.
+
+### El clasificador
+
+Cascada de tres niveles, de la que están implementados los dos primeros:
+
+- **Nivel A · léxico** sobre texto normalizado: `P = 3·anclas + 1·apoyo − 4·excluye`, exigiendo un verbo
+  de obra de `lib/semantica`.
+- **Nivel B · UNSPSC** como evidencia *independiente*, cuyo valor real es **vetar**: una placa huella
+  cuyo único código sea de acueducto es una red, no una vía → 🟡.
+- **Nivel C · LLM de desempate: NO implementado**, a propósito. El proyecto no tiene dependencias ni
+  llamadas externas, y meter una en la ruta de una petición añadiría latencia y un punto de fallo a un
+  cálculo hoy determinista y auditable. La máquina de estados funciona sin él y cae a 🟡 o ⚪ donde el
+  informe invocaría a C.
+
+| Estado | Condición | Qué se hace |
+| --- | --- | --- |
+| 🟢 verde | `P1 ≥ 8` **y** `P1 − P2 ≥ 4` **y** B compatible | Presupuesto completo |
+| 🟡 amarillo | `P1 ≥ 6` sin margen claro, o B ausente, o B incompatible | Se genera, marcado «verificar pliego» |
+| ⚪ no determinada | `P1 < 6`, sin verbo de obra, o cualquier caso restante | **No se presupuesta** |
+
+Los tres estados **suman exactamente los objetos evaluados** (misma invariante que `/api/diagnostico`).
+El margen `P1 − P2` es condición *dura*: dos tipologías empatadas nunca dan verde, porque el falso
+positivo caro es el 🟢 — es el único estado que presupuesta sin pedir que se lea el pliego.
+
+**Cantidades desde el objeto**: decimal colombiano (el punto separa miles; invertirlo divide la obra
+por mil), lookbehind (sin él «1500 km» captura 500) y **atribución a ≤ 6 palabras** de un término ancla
+(sin ella «…VEREDA X, CONTRATO 2024-350» produce 2024 km).
+
+### Exportación a Excel: por qué **no** SheetJS
+
+El `.xlsx` lo escribe `public/xlsx.js`, a mano, sin `package.json`. No es purismo — son dos hechos
+verificados:
+
+1. **SheetJS dejó de publicar en npm tras la 0.18.5** (se mudó a su propio CDN). `npm install xlsx`
+   instala esa versión, que arrastra dos advisories *high* —prototype pollution `GHSA-4r6h-8v6p-xvw6` y
+   ReDoS `GHSA-5pgg-2g8v-p4x9`— y `npm audit` responde literalmente **«No fix available»**: no hay
+   versión a la que actualizar.
+2. **La edición libre IGNORA los estilos de celda al escribir.** Se comprobó fijando
+   `ws.A1.s = {font:{bold:true}, fill:{…}}`: el `xl/styles.xml` resultante sale con `<fonts count="1">`
+   y ni rastro del formato. Los formatos numéricos sí pasan; negritas, rellenos y bordes no. Un
+   «formato profesional de APU» no es alcanzable con esa librería.
+
+Un `.xlsx` es un ZIP de XML, así que el escritor entero cabe en un archivo y da control total: franja
+de título, encabezados en negrita, bordes, moneda, anchos de columna, celdas combinadas y panel
+congelado. Método **STORE** (sin comprimir): es ZIP válido, lo abren Excel, LibreOffice y Numbers, y
+evita depender de que el navegador traiga `CompressionStream`. El módulo corre en navegador y en Node
+a propósito, para que la suite genere un libro de verdad y **audite el ZIP entrada por entrada**.
+
+Salen dos hojas: **Presupuesto** (lo que se entrega) y **Desglose** (insumo a insumo, lo que permite
+defenderlo si la entidad pregunta).
+
+### Integración con el panel
+
+`/admin.html` **enlaza** el editor; no lo embebe. `vercel.json` sirve todo el sitio con
+`X-Frame-Options: DENY`, así que un iframe quedaría en blanco en producción aunque funcione en local, y
+debilitar esa cabecera por una comodidad de navegación sería pagar una protección real por nada.
+
 ## Claves en Redis
 
 Dos keyspaces con ciclos de vida **opuestos**: el activo se purga, el histórico no.
@@ -1140,6 +1280,7 @@ config:experiencia:version                     sello de la última carga (se esc
 CACHÉ DEL PANEL
 resumen:{perfil}                               JSON del dashboard, TTL 300 s (la carga de RUP la borra)
 cobertura:{perfil}:{exp|base}                  JSON comprimido de la auditoría de cobertura, TTL 1 h
+apu:presupuesto:{perfil}:{id}                  JSON comprimido del borrador de APU, TTL 30 días
                                                (el valor lleva el sello del RUP y el de la experiencia:
                                                 cargar cualquiera de los dos la invalida sola)
 
