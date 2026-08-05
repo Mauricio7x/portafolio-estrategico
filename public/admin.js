@@ -719,6 +719,9 @@
     if (p.cuantia_cop != null) q.set("cuantia", String(p.cuantia_cop));
     if (id != null) q.set("id_proceso", String(id));
     if (p.plazo_meses != null) q.set("plazo", String(p.plazo_meses));
+    // la modalidad decide QUÉ baja de mercado se usa para fijar el precio: sin
+    // ella el editor cotizaría contra la mediana mezclada de la entidad
+    if (p.modalidad) q.set("modalidad", p.modalidad);
     q.set("perfil", $("d-perfil").value);
     return `<a class="btn-apu rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50"`
       + ` href="/apu.html?${esc(q.toString())}" title="Calcular APU y rentabilidad de este proceso">APU</a>`

@@ -759,6 +759,65 @@ function generarDatasetCobertura() {
   return filas;
 }
 
+/* ---- bloque para la BAJA POR MODALIDAD (ago 2026) ----
+   El resto del corpus histórico generado es TODO «Licitación pública», así que
+   sin este bloque la prueba de `?modalidad=` comprobaría el cableado sobre una
+   sola cubeta: filtraría, sí, pero no podría demostrar que dos modalidades dan
+   respuestas DISTINTAS, que es justamente el defecto que se corrige.
+
+   Una entidad que hace las dos cosas: seis licitaciones públicas que descuentan
+   ~10 % y seis mínimas cuantías adjudicadas por el presupuesto oficial (0 %). La
+   mediana MEZCLADA de esa entidad queda a medio camino y no describe a ninguna
+   de las dos, que es el problema en una sola frase.
+
+   Tres precauciones, las tres heredadas de los bloques de arriba:
+     · ENTIDAD Y DEPARTAMENTO PROPIOS, para no mover las cifras de ninguna
+       entidad que otras pruebas ya auditan con conteos exactos.
+     · SIN `numero_de_ofertas`, para que el índice de competencia los cuente como
+       «sin dato» y los tertiles no se muevan ni un milímetro.
+     · CÓDIGO YA INSCRITO en el RUP de Helder (72141000, el mismo que usan los
+       demás fixtures), para no fabricar un «código faltante» que descuadraría la
+       auditoría de cobertura. */
+const ENTIDAD_MODALIDAD = "MUNICIPIO DE DOS MODALIDADES";
+const MODALIDAD_BLOQUES = [
+  { modalidad: "Licitación pública", n: 6, baja: 10 },
+  { modalidad: "Mínima cuantía", n: 6, baja: 0 },
+];
+const HIST_MODALIDAD = MODALIDAD_BLOQUES.reduce((a, b) => a + b.n, 0);
+
+function generarDatasetModalidad() {
+  const filas = [];
+  let i = 0;
+  for (const b of MODALIDAD_BLOQUES) {
+    for (let k = 0; k < b.n; k++) {
+      i++;
+      const mes = MESES_HIST[(i * 11) % MESES_HIST.length];
+      const base = 500e6;
+      filas.push({
+        ":id": `mod-${String(i).padStart(4, "0")}`, ":updated_at": `${mes}-19T10:00:00.000Z`,
+        id_del_proceso: `CO1.MOD.${i}`, referencia_del_proceso: `REF-MOD-${i}`,
+        fecha_de_publicacion_del: `${mes}-06T08:00:00.000`,
+        entidad: ENTIDAD_MODALIDAD, nit_entidad: "800100011",
+        ciudad_entidad: "SAN JUAN", departamento_entidad: "Casanare",
+        modalidad_de_contratacion: b.modalidad,
+        estado_del_procedimiento: "Adjudicado", fase: "Adjudicación", adjudicado: "Si",
+        precio_base: String(base),
+        duracion: "6", unidad_de_duracion: "Meses",
+        nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA EN VIA TERCIARIA",
+        descripci_n_del_procedimiento: "Obra civil de pavimentacion rural en concreto",
+        codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra",
+        // SIN numero_de_ofertas: no pueden mover los tertiles del índice
+        nombre_del_proveedor: `CONSTRUCTORA MOD ${i} SAS`,
+        nit_del_proveedor_adjudicado: `90060${String(i).padStart(4, "0")}`,
+        valor_total_adjudicacion: String(Math.round(base * (1 - b.baja / 100))),
+        fecha_adjudicacion: `${mes}-27T10:00:00.000`,
+        urlproceso: { url: `https://community.secop.gov.co/mod/${i}` },
+      });
+    }
+  }
+  return filas;
+}
+
 /* La experiencia REAL que se carga en las pruebas: tres contratos ejecutados
    con el vocabulario del oficio del dueño. El del CRÍTICO comparte con el
    primero todos sus términos; el del BAJO, exactamente uno. */
@@ -1766,8 +1825,175 @@ async function main() {
     assert.strictEqual(probabilidad.estimarPDetalle({}, { ...ctx, baja: bModerada }).p, pNeutro,
       "una baja «sin_dato» no puede mover la probabilidad");
 
+    /* ══════════════ 8. BAJA POR MODALIDAD (ago 2026) ══════════════
+       EL DEFECTO, reproducido: una entidad que hace las dos cosas. Ocho mínimas
+       cuantías adjudicadas por el presupuesto oficial (0 %) y seis licitaciones
+       públicas que descuentan de verdad (8-13 %). La mediana MEZCLADA es 0 %, y
+       leída como «aquí no hay que descontar» se pierde toda licitación pública
+       de esa entidad. La cifra no estaba mal calculada: estaba mal AGRUPADA. */
+    const MIXTA = "ALCALDIA MIXTA";
+    const procMod = (id, baja, modalidad) => proc(id, MIXTA, baja, {
+      campos: { modalidad_de_contratacion: modalidad },
+    });
+    const filasMod = [
+      ...[8, 9, 10, 11, 12, 13].map((b, i) => procMod(`lp${i}`, b, "Licitación pública")),
+      ...[0, 0, 0, 0, 0, 0, 0, 0].map((b, i) => procMod(`mc${i}`, b, "Mínima cuantía")),
+    ];
+    {
+      const rs = redisFalso({ "2025-03": filasMod });
+      const meta = await indiceBaja.construirIndiceBaja(rs);
+      assert.strictEqual(meta.procesos_analizados, 14);
+      assert.strictEqual(meta.baja_mediana_global, 0,
+        "la mediana mezclada tiene que seguir siendo 0 %: es el defecto, y si cambiara la prueba no lo estaría midiendo");
+
+      assert.ok(meta.por_modalidad && typeof meta.por_modalidad === "object",
+        "la meta del índice de baja tiene que publicar `por_modalidad`");
+      const gLP = meta.por_modalidad["licitacion publica"];
+      const gMC = meta.por_modalidad["minima cuantia"];
+      assert.ok(gLP && gMC, "las dos modalidades tienen que tener cubeta global");
+      assert.strictEqual(gLP.baja_mediana, 10, "licitación pública descuenta el 10 %, y la global lo escondía");
+      assert.strictEqual(gLP.nivel, "alto");
+      assert.strictEqual(gMC.baja_mediana, 0);
+      assert.strictEqual(gMC.nivel, "bajo");
+      assert.strictEqual(gLP.etiqueta, "Licitación pública",
+        "se AGRUPA por la clave canónica y se MUESTRA la original, igual que claveCanonica/nombre en las entidades");
+
+      /* LAS CUBETAS SUMAN LOS ANALIZADOS. Sin esta igualdad, una modalidad
+         podría perderse por el camino —un literal nuevo del dataset, una
+         excluida que ya no casa— y nadie lo notaría: las cifras seguirían
+         pareciendo razonables, solo que sobre menos procesos. Es la misma
+         invariante que exige el embudo de /api/diagnostico. */
+      const enCubetas = Object.values(meta.por_modalidad).reduce((a, s) => a + s.procesos, 0);
+      assert.strictEqual(enCubetas + meta.sin_modalidad, meta.procesos_analizados,
+        "las cubetas de modalidad más `sin_modalidad` deben sumar EXACTAMENTE los analizados");
+
+      /* La cascada refina DENTRO del nivel: mismo `granularidad_utilizada`, y
+         `modalidad_utilizada` es lo que dice si hubo refinamiento. Son dos
+         preguntas distintas y por eso son dos campos distintos. */
+      const idxM = await indiceBaja.leerIndiceBaja(rs);
+      const base = { entidad: MIXTA, departamento_entidad: "ANTIOQUIA", codigo_principal_de_categoria: "72141100" };
+      const bLP = indiceBaja.bajaDeMercado(idxM, { ...base, modalidad_de_contratacion: "Licitación pública" });
+      const bMC = indiceBaja.bajaDeMercado(idxM, { ...base, modalidad_de_contratacion: "Mínima cuantía" });
+      assert.strictEqual(bLP.baja_mediana, 10, "un proceso de licitación pública tiene que ver la baja de licitación pública");
+      assert.strictEqual(bLP.nivel, "alto");
+      assert.strictEqual(bLP.modalidad_utilizada, "licitacion publica");
+      assert.strictEqual(bMC.baja_mediana, 0);
+      assert.strictEqual(bMC.modalidad_utilizada, "minima cuantia");
+      assert.strictEqual(bLP.granularidad_utilizada, bMC.granularidad_utilizada,
+        "la modalidad refina DENTRO del nivel: no puede cambiar la granularidad que respondió");
+      assert.ok(/Licitación pública/.test(bLP.mensaje),
+        "el mensaje tiene que decir de qué modalidad habla, y con la ortografía del dataset");
+
+      /* Un proceso SIN modalidad legible cae a la cifra mezclada, no a un error
+         ni a una de las dos cubetas elegida a dedo. */
+      const bMezcla = indiceBaja.bajaDeMercado(idxM, base);
+      assert.strictEqual(bMezcla.modalidad_utilizada, null);
+      assert.strictEqual(bMezcla.baja_mediana, 0, "sin modalidad se responde la mezclada, que aquí es 0 %");
+      assert.strictEqual(bMezcla.procesos_contados, 14, "…y sobre los 14 procesos, no sobre una cubeta");
+      // `modalidad: null` explícito desactiva el refinamiento: es lo que permite
+      // comparar las dos cifras sin construir un proceso falso
+      assert.strictEqual(
+        indiceBaja.bajaDeMercado(idxM, { ...base, modalidad_de_contratacion: "Licitación pública" }, { modalidad: null }).baja_mediana,
+        0, "`modalidad: null` tiene que devolver la mezclada aunque el proceso traiga modalidad");
+
+      /* Una cubeta POR DEBAJO del mínimo no publica cifra y la cascada cae a la
+         mezclada. Es la lección de «18,2 oferentes en 0 procesos» aplicada a la
+         partición nueva: partir en más cubetas hace más fácil quedarse sin
+         muestra, así que el umbral tiene que seguir mandando. */
+      const rsPoco = redisFalso({ "2025-03": [
+        ...[0, 0, 0, 0, 0, 0].map((b, i) => procMod(`z${i}`, b, "Mínima cuantía")),
+        ...[9, 10].map((b, i) => procMod(`y${i}`, b, "Licitación pública")),
+      ] });
+      await indiceBaja.construirIndiceBaja(rsPoco);
+      const idxPoco = await indiceBaja.leerIndiceBaja(rsPoco);
+      const bPoco = indiceBaja.bajaDeMercado(idxPoco, { ...base, modalidad_de_contratacion: "Licitación pública" });
+      assert.strictEqual(bPoco.modalidad_utilizada, null,
+        "2 procesos no son base: la cubeta no puede publicar cifra");
+      assert.strictEqual(bPoco.baja_mediana, 0, "y se responde la mezclada de la entidad");
+      const cubetaPoco = idxPoco.entidad[Object.keys(idxPoco.entidad)[0]].por_modalidad["licitacion publica"];
+      assert.strictEqual(cubetaPoco.procesos, 2, "el CONTEO sí se publica: es un hecho y explica el ⚪");
+      assert.strictEqual(cubetaPoco.baja_mediana, null, "…pero ninguna cifra derivada por debajo del mínimo");
+    }
+
+    /* COMPATIBILIDAD: `indice:baja` NO SE PURGA NUNCA, así que en producción
+       sigue vivo el hash que escribió la versión anterior, SIN `por_modalidad`.
+       Si `bajaDeMercado` no se degradara sola, desplegar dejaría la app sin baja
+       hasta que alguien reconstruyera el índice a mano — el mismo defecto que
+       obligó a inventar `claveLegado` en el índice de competencia. */
+    {
+      const rs = redisFalso({ "2025-03": filasMod });
+      await indiceBaja.construirIndiceBaja(rs);
+      const idxViejo = await indiceBaja.leerIndiceBaja(rs);
+      for (const mapa of Object.values(idxViejo)) {
+        for (const reg of Object.values(mapa)) delete reg.por_modalidad;   // el hash de ayer
+      }
+      const b = indiceBaja.bajaDeMercado(idxViejo, {
+        entidad: MIXTA, departamento_entidad: "ANTIOQUIA",
+        codigo_principal_de_categoria: "72141100",
+        modalidad_de_contratacion: "Licitación pública",
+      });
+      assert.strictEqual(b.baja_mediana, 0, "sin `por_modalidad` se responde la mezclada de siempre");
+      assert.strictEqual(b.modalidad_utilizada, null);
+      assert.strictEqual(b.procesos_contados, 14);
+      assert.ok(b.nivel && b.mensaje, "y la respuesta sigue completa: nada de undefined por el campo que falta");
+    }
+
+    /* LAS CUBETAS NO SON UNA SEGUNDA LISTA BLANCA. `modalidadCanonica` tiene que
+       aceptar EXACTAMENTE lo que `modalidad_competitiva` deja entrar al corpus:
+       si aceptara de más, el índice agruparía procesos que la ingesta nunca
+       guardó; si de menos, procesos legítimos caerían en `sin_modalidad` y su
+       baja se perdería. Dos listas de «qué es competitivo» divergen a la primera
+       corrección que se aplique a una sola. */
+    {
+      const { modalidad_competitiva } = require("../lib/filtros.js");
+      const CASOS = [
+        "Licitación pública", "LICITACION PUBLICA", "Selección abreviada",
+        "Selección abreviada de menor cuantía", "Subasta inversa", "Concurso de méritos",
+        "Mínima cuantía", "Acuerdo marco de precios",
+        "Contratación régimen especial (con ofertas)",   // competitiva por su propia rama
+        "Contratación directa", "Contratación régimen especial", "Invitación Privada",
+        "Licitación privada", "Enajenación de bienes con Subasta", "",
+      ];
+      for (const m of CASOS) {
+        const lic = { modalidad_de_contratacion: m };
+        assert.strictEqual(
+          indiceBaja.modalidadCanonica(lic) !== null, modalidad_competitiva(lic),
+          `«${m}»: la cubeta y la lista blanca de la ingesta discrepan — una de las dos está mintiendo`,
+        );
+      }
+      // y «Enajenación… con Subasta» no puede acabar en la cubeta «subasta»
+      assert.strictEqual(indiceBaja.modalidadCanonica({ modalidad_de_contratacion: "Enajenación de bienes con Subasta" }), null,
+        "la enajenación trae la palabra «subasta» y tiene que caer ANTES de que la lista blanca la vea");
+      assert.ok(indiceBaja.modalidadesConocidas().includes(indiceBaja.REGIMEN_ESPECIAL),
+        "el régimen especial con ofertas es competitivo: sin cubeta, sus procesos perderían su baja");
+    }
+
+    /* El módulo importa `filtros` de forma DIFERIDA y no cierra ciclo, igual que
+       lib/apu/inferencia. Se comprueba sobre el grafo real, no de palabra. */
+    {
+      const fsMod = require("fs"), pathMod = require("path");
+      const raiz = pathMod.join(__dirname, "..");
+      const deps = (rel) => [...fsMod.readFileSync(pathMod.join(raiz, rel), "utf8")
+        .matchAll(/require\("(\.[^"]+)"\)/g)]
+        .map((m) => pathMod.normalize(pathMod.join(pathMod.dirname(rel), m[1])));
+      const visto = new Set(); const pila = ["lib/filtros.js"];
+      while (pila.length) {
+        const f = pila.pop();
+        if (visto.has(f) || !f.endsWith(".js")) continue;
+        visto.add(f);
+        try { for (const d of deps(f)) pila.push(d); } catch { /* no es un módulo del repo */ }
+      }
+      assert.ok(!visto.has("lib/indice_baja.js"),
+        "la cadena de `filtros` no puede alcanzar `indice_baja`: sería un ciclo de requires");
+      const fuenteBaja = fs.readFileSync(pathMod.join(raiz, "lib", "indice_baja.js"), "utf8");
+      const cabecera = fuenteBaja.slice(0, fuenteBaja.indexOf("function tablaModalidades"));
+      assert.ok(!/require\("\.\/filtros\.js"\)/.test(cabecera),
+        "el require de filtros va DIFERIDO dentro de la función, igual que en lib/apu/inferencia");
+    }
+
     console.log("· unidad índice de baja: 3 granularidades en cascada, filtros de lote parcial y dato malo, "
-      + "el cero como dato y el ajuste de P(ganar)");
+      + "el cero como dato, el ajuste de P(ganar) y la baja POR MODALIDAD (cubetas que suman, "
+      + "mínimo respetado y degradación al hash sin `por_modalidad`)");
   }
 
   /* unidad: TEXTO como co-señal (vocabulario por familia + verbo de obra) */
@@ -3175,7 +3401,7 @@ async function main() {
     // el dataset trae el año vigente Y los dos anteriores: la full solo debe
     // ver el vigente (consulta mes a mes del año en curso)
     socrata.setDataset([...generarDataset(), ...generarDatasetHistorico(), ...generarDatasetEquivalencias(),
-      ...generarDatasetDetalle(), ...generarDatasetCobertura()]);
+      ...generarDatasetDetalle(), ...generarDatasetCobertura(), ...generarDatasetModalidad()]);
     socrata.setFallos(true);
 
     /* a. limpiar Redis */
@@ -3517,7 +3743,7 @@ async function main() {
       const hist = await leerHistorico();
       const conOferentes = [...ENTIDADES_HIST, ...ENTIDADES_HIST_IDENTIDAD]
         .reduce((a, e) => a + e.ofertas.length, 0);
-      const totalHist = conOferentes + HIST_EQUIVALENCIAS + HIST_DETALLE + HIST_COBERTURA;
+      const totalHist = conOferentes + HIST_EQUIVALENCIAS + HIST_DETALLE + HIST_COBERTURA + HIST_MODALIDAD;
       assert.strictEqual(hist.length, totalHist, `histórico: ${hist.length} registros, esperaba ${totalHist}`);
       for (const r of hist) {
         // el proceso declarado desierto es el único sin datos de adjudicación
@@ -3529,9 +3755,10 @@ async function main() {
         assert.ok(r.nombre_del_proveedor && r.nit_del_proveedor_adjudicado, "falta el adjudicatario en el histórico");
         assert.ok(r.valor_total_adjudicacion && r.fecha_adjudicacion, "faltan valor/fecha de adjudicación");
         assert.strictEqual(r.fue_adjudicado, true, "el histórico no marcó la adjudicación");
-        // el bloque de equivalencias viaja SIN conteo de oferentes a propósito
-        // (así el índice de competencia no cambia): ahí `oferentes` es null
-        if (!/^CO1\.(EQV|DET|COB)\./.test(String(r.id_del_proceso))) {
+        // los bloques dedicados (equivalencias, detalle, cobertura y modalidad)
+        // viajan SIN conteo de oferentes a propósito, para que el índice de
+        // competencia los cuente como «sin dato» y los tertiles no se muevan
+        if (!/^CO1\.(EQV|DET|COB|MOD)\./.test(String(r.id_del_proceso))) {
           assert.ok(r.oferentes >= 1, "el histórico no derivó el nº de oferentes");
         } else {
           assert.strictEqual(r.oferentes, null, "0 oferentes = SIN DATO, nunca «nadie se presentó»");
@@ -3554,7 +3781,8 @@ async function main() {
       // solo cuentan los procesos con conteo de oferentes: los del bloque de
       // equivalencias quedan como «sin dato» y no mueven ni un tertil
       assert.strictEqual(metaIdx.procesos_contados, conOferentes, "el índice no contó los procesos con oferentes");
-      assert.strictEqual(metaIdx.descartados.sin_oferentes, HIST_EQUIVALENCIAS + HIST_DETALLE + HIST_COBERTURA - 1,
+      assert.strictEqual(metaIdx.descartados.sin_oferentes,
+        HIST_EQUIVALENCIAS + HIST_DETALLE + HIST_COBERTURA + HIST_MODALIDAD - 1,
         "un proceso adjudicado sin conteo de oferentes debe quedar contado como descarte, no colarse como 0");
       assert.strictEqual(metaIdx.min_procesos, 5);
 
@@ -3700,6 +3928,10 @@ async function main() {
         console.log(`  · índice de baja: ${mb.procesos_analizados} adjudicaciones · `
           + `${mb.entidades_clasificadas} entidades clasificadas · mediana global ${mb.baja_mediana_global} % · `
           + `${conBase.length} tarjetas con baja en el orden`);
+        console.log("    por modalidad: "
+          + Object.entries(mb.por_modalidad || {})
+            .map(([m, s]) => `${m} ${s.baja_mediana}% (${s.procesos})`).join(" · ")
+          + ` · sin cubeta: ${mb.sin_modalidad}`);
 
         /* ── /api/indice-baja: protegido, completo, por entidad y reconstruible ── */
         assert.strictEqual((await invocar(indiceBajaApi, "/api/indice-baja")).status, 401,
@@ -3740,6 +3972,103 @@ async function main() {
         }
         assert.strictEqual((await invocar(indiceBajaApi, "/api/indice-baja?entidad=ENTIDAD+QUE+NO+EXISTE", TOKEN)).status, 404,
           "una entidad sin registro debe dar 404, no un objeto vacío que parezca un cero");
+
+        /* ── ?modalidad= : la baja abierta por modalidad de contratación ──
+           La mediana global mezcla mínima cuantía —adjudicada una y otra vez por
+           el presupuesto oficial— con licitación pública, donde sí se compite por
+           precio, y leerla como «aquí no hay que descontar» cuesta procesos. */
+        {
+          const porMod = rIdx.cuerpo.meta.por_modalidad;
+          assert.ok(porMod && Object.keys(porMod).length, "la meta tiene que traer `por_modalidad`");
+          /* las cubetas suman los analizados, también de punta a punta y sobre
+             el corpus generado: es la invariante que impide que una modalidad se
+             pierda en silencio */
+          const enCubetas = Object.values(porMod).reduce((a, s) => a + s.procesos, 0);
+          assert.strictEqual(enCubetas + rIdx.cuerpo.meta.sin_modalidad, rIdx.cuerpo.meta.procesos_analizados,
+            "las cubetas de modalidad más `sin_modalidad` no suman los analizados");
+          for (const m of Object.keys(porMod)) {
+            assert.ok(rIdx.cuerpo.meta.modalidades_conocidas.includes(m),
+              `la cubeta «${m}» no está entre las modalidades conocidas: se agrupó algo que la ingesta no acepta`);
+          }
+
+          /* DOS cubetas como mínimo, y con MEDIANAS DISTINTAS. Sin esto la
+             prueba comprobaría el cableado sobre una sola modalidad: filtraría
+             bien y no demostraría nada del defecto, que es precisamente que
+             mezclarlas devuelve una cifra que no describe a ninguna. */
+          assert.ok(Object.keys(porMod).length >= 2,
+            "el corpus de prueba tiene que traer al menos dos modalidades: con una sola, "
+            + "`?modalidad=` no puede demostrar que discrimina");
+          const lp = porMod["licitacion publica"], mc = porMod["minima cuantia"];
+          assert.ok(lp && mc, "faltan las dos cubetas del bloque de modalidad");
+          assert.ok(lp.baja_mediana > mc.baja_mediana,
+            `la licitación pública tiene que descontar más que la mínima cuantía (${lp.baja_mediana} vs ${mc.baja_mediana}): `
+            + "si coincidieran, separar por modalidad no cambiaría ninguna decisión y la prueba sería decorativa");
+          const laMod = "licitacion publica";
+          const rMod = await invocar(indiceBajaApi,
+            `/api/indice-baja?modalidad=${encodeURIComponent(laMod)}`, TOKEN);
+          assert.strictEqual(rMod.status, 200, `?modalidad= falló: ${JSON.stringify(rMod.cuerpo).slice(0, 200)}`);
+          assert.strictEqual(rMod.cuerpo.modalidad, laMod);
+          assert.deepStrictEqual(rMod.cuerpo.global_modalidad, porMod[laMod],
+            "la global servida con ?modalidad= tiene que ser la MISMA de la meta, no un segundo cálculo");
+          // filtra de verdad: nunca puede devolver más grupos que el índice entero
+          assert.ok(rMod.cuerpo.grupos.entidad <= rIdx.cuerpo.grupos.entidad,
+            "el índice filtrado por modalidad no puede tener más grupos que el completo");
+          for (const reg of Object.values(rMod.cuerpo.indice.entidad)) {
+            assert.strictEqual(reg.modalidad, laMod, "un grupo servido bajo ?modalidad= tiene que ser de esa modalidad");
+            assert.ok(reg.procesos_todas_las_modalidades >= reg.procesos,
+              "el conteo de la cubeta no puede superar al del grupo entero");
+          }
+
+          /* una modalidad desconocida es 400 CON la lista, no un 200 vacío:
+             escribir mal el parámetro y recibir «no hay datos» es
+             indistinguible de que no los haya */
+          const rMala = await invocar(indiceBajaApi, "/api/indice-baja?modalidad=contratacion+directa", TOKEN);
+          assert.strictEqual(rMala.status, 400,
+            "la contratación directa no está en el histórico (la ingesta la descarta): 400, no 200 vacío");
+          assert.ok(Array.isArray(rMala.cuerpo.modalidades_validas) && rMala.cuerpo.modalidades_validas.length,
+            "un 400 por modalidad tiene que decir cuáles son las válidas");
+          assert.strictEqual((await invocar(indiceBajaApi, "/api/indice-baja?modalidad=", TOKEN)).status, 400,
+            "?modalidad= vacío es un error de la petición, no «todas»");
+
+          /* ?entidad= y ?modalidad= COMPONEN */
+          const rEntMod = await invocar(indiceBajaApi,
+            `/api/indice-baja?entidad=${encodeURIComponent(clasif[1].nombre)}&modalidad=${encodeURIComponent(laMod)}`,
+            TOKEN);
+          assert.ok([200, 404].includes(rEntMod.status), "entidad+modalidad debe resolver o dar un 404 explicado");
+          if (rEntMod.status === 200) {
+            assert.strictEqual(rEntMod.cuerpo.modalidad, laMod);
+            assert.strictEqual(rEntMod.cuerpo.entidades[0].modalidad, laMod);
+          } else {
+            assert.strictEqual(rEntMod.cuerpo.entidad_encontrada, true,
+              "un 404 por falta de esa modalidad tiene que distinguirse del 404 de entidad inexistente");
+          }
+        }
+
+        /* ── la tarjeta usa la modalidad DEL PROCESO ──
+           `bajaDeMercado` la lee del propio registro, así que /api/oportunidades
+           no necesitó cambiar: lo que hay que comprobar es que la modalidad
+           llegó viva hasta la fila servida y que el refinamiento se aplicó. */
+        {
+          const rTar = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=60", CAB_TOKEN);
+          const conMod = rTar.cuerpo.resultados.filter(
+            (l) => l.baja_mercado && l.baja_mercado.modalidad_utilizada);
+          assert.ok(conMod.length > 0,
+            "ninguna tarjeta se refinó por modalidad: el resto de aserciones de este bloque no probarían nada");
+          for (const l of conMod) {
+            assert.ok(rIdx.cuerpo.meta.modalidades_conocidas.includes(l.baja_mercado.modalidad_utilizada),
+              "una tarjeta trae una modalidad que no es una cubeta conocida");
+            assert.ok(l.baja_mercado.baja_mediana != null && l.baja_mercado.procesos_contados >= 5,
+              "una baja refinada por modalidad sigue exigiendo base: mínimo de procesos y mediana presente");
+          }
+          // el campo viaja SIEMPRE, también cuando no hubo refinamiento: si
+          // faltara, un consumidor no podría distinguir «no se refinó» de «no
+          // existe el campo» — la misma cerradura que `granularidad_utilizada`
+          for (const l of rTar.cuerpo.resultados) {
+            if (!l.baja_mercado) continue;
+            assert.ok("modalidad_utilizada" in l.baja_mercado,
+              "`modalidad_utilizada` tiene que viajar en TODA baja servida, aunque sea null");
+          }
+        }
 
         /* reconstrucción por el endpoint dedicado */
         const rRe = await invocar(indiceBajaApi, "/api/indice-baja?reconstruir=true", TOKEN);

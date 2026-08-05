@@ -664,10 +664,43 @@ BAJA = (precio_base − valor_total_adjudicacion) / precio_base · 100
 | `departamento_familia` | respaldo cuando la entidad no tiene base propia | 5 procesos |
 | `departamento` | último respaldo territorial | 5 procesos |
 | `segmentos` (anidados en la entidad) | baja por segmento UNSPSC de 2 dígitos | **3 procesos** |
+| `por_modalidad` (anidado en **todos** los grupos) | baja por modalidad de contratación | 5 procesos |
 
 `bajaDeMercado(indice, lic)` las prueba en ese orden y **siempre** reporta cuál respondió en
 `granularidad_utilizada`: una cifra sin su origen no se puede auditar ni discutir. La cascada **solo
 baja en especificidad** — pedir `entidad` no puede acabar respondiendo con `entidad_familia`.
+
+### Por modalidad de contratación (ago 2026)
+
+La mediana global mezclaba **Licitación Pública con Mínima Cuantía**, y el daño va en una dirección
+concreta: la mínima cuantía se adjudica una y otra vez por el presupuesto oficial, así que arrastra la
+mediana al **0 %** y deja la impresión de que *nunca hay que descontar* — justo en los procesos
+grandes, que son los que se ganan o se pierden por precio.
+
+Una precisión que evita malinterpretar la cifra: el corpus histórico **ya está filtrado** a modalidades
+competitivas (`transformar` aplica `modalidad_competitiva` **antes** de guardar), así que aquí nunca
+entró Contratación Directa. Lo que se mezclaba eran las **seis competitivas entre sí**. Aun así la
+lista blanca hace un trabajo real al reagrupar: `licitaciones:historico:mes:*` **no se purga nunca**,
+de modo que siguen vivos registros ingeridos *antes* de que «Invitación Privada» y «Enajenación»
+pasaran a excluidas — esos caen en `sin_modalidad` y **se cuentan**.
+
+- Las cubetas se **derivan** de `MODALIDADES_COMPETITIVAS` (`lib/filtros`), nunca se copian; el
+  `require` va **diferido**, igual que en `lib/apu/inferencia`, y hay prueba de que no hay ciclo. Una
+  prueba ata `modalidadCanonica` a `modalidad_competitiva`: **todo lo que la ingesta acepta tiene
+  cubeta y nada que rechace la tiene**.
+- **La modalidad refina *dentro* de cada nivel, no es un nivel más.** `GRANULARIDADES` es una cascada
+  ordenada con la invariante de que solo baja en especificidad; meter la modalidad como escalón
+  obligaría a decidir si «entidad+modalidad» es más o menos específico que «entidad+familia», pregunta
+  que no tiene respuesta buena. `granularidad_utilizada` conserva **exactamente** su significado y
+  `modalidad_utilizada` dice si hubo refinamiento — dos preguntas, dos campos.
+- Se **agrupa** por la clave canónica (`licitacion publica`) y se **muestra** la original del dataset
+  (`Licitación pública`), igual que `claveCanonica`/`nombre` en las entidades.
+- **Compatibilidad**: `indice:baja` no se purga nunca, así que en producción sigue vivo el hash de la
+  versión anterior, **sin `por_modalidad`**. Sin esa clave `bajaDeMercado` se comporta *exactamente*
+  como antes — no hace falta reconstruir el índice para que la app siga sirviendo. Hay prueba.
+- `meta.por_modalidad` publica la misma apertura **global**, y `sin_modalidad` + Σ procesos de las
+  cubetas = `procesos_analizados`, con prueba: sin esa igualdad una modalidad podría perderse en
+  silencio y las cifras seguirían pareciendo razonables, solo que sobre menos procesos.
 
 **Niveles con cortes FIJOS**, no tertiles: `alto` (> 5 % de baja) · `medio` (2–5 %) · `bajo` (< 2 %).
 «Muchos oferentes» solo significa algo comparado con el mercado, pero 8 puntos de baja son 8 puntos
@@ -697,9 +730,25 @@ la causa no sería el mercado sino que `valor_total_adjudicacion` esté copiando
 GET /api/indice-baja                    → índice completo + meta   (caché 1 h, X-Cache: HIT|MISS)
 GET /api/indice-baja?entidad=INVIAS     → una entidad, por nombre o por NIT
 GET /api/indice-baja?entidad=899999055  → por NIT: devuelve TODAS las que lo comparten
+GET /api/indice-baja?modalidad=licitacion+publica
+                                        → la misma estructura, con la baja de ESA modalidad
+                                          (+ `global_modalidad`, la cifra de mercado de esa modalidad)
+GET /api/indice-baja?entidad=INVIAS&modalidad=minima+cuantia   → los dos COMPONEN
 GET /api/indice-baja?reconstruir=true   → lo reconstruye (no re-extrae nada de SECOP II)
 GET /api/indice-baja?refrescar=1        → salta la caché
 ```
+
+`?modalidad=` se canoniza con **la misma función que agrupa al construir el índice**: si aceptara algo
+que la construcción no agrupa, la consulta devolvería vacío sin explicar por qué. Una modalidad
+desconocida —incluida `contratacion directa`, que la ingesta nunca guardó— es un **400 con la lista de
+las válidas**, no un 200 vacío: escribir mal el parámetro y recibir «no hay datos» es indistinguible de
+que no los haya. Con `?entidad=` además, un 404 distingue «esa entidad no existe» de «existe pero no
+tiene adjudicaciones de esa modalidad», y en el segundo caso dice cuáles sí tiene.
+
+**No hay endpoint `/api/baja-mercado`.** El plan Hobby de Vercel admite **12 funciones por despliegue**
+y el repositorio ya está exactamente en 12 (hay prueba que las cuenta), así que un archivo más rompería
+el despliegue entero, no solo el endpoint nuevo. `baja_mercado` es el **campo** que `/api/oportunidades`
+sirve en cada proceso; el endpoint del índice es este.
 
 Un NIT compartido devuelve **todas** las entidades que lo usan en vez de elegir una en silencio: las
 regionales de un mismo organismo publican con el NIT de la matriz, y un alias ambiguo no es un alias
