@@ -7570,8 +7570,16 @@ async function main() {
             "cambiar el perfil desde código no dispara `change`: hay que invalidar lo pintado a mano");
           assert.ok(!/guardarPerfil\(/.test(cuerpo),
             "el paso 2 no puede persistir el perfil: esa clave la comparte el DASHBOARD, que es otra pantalla");
+          /* La guarda de «auditoría en vuelo» tiene que estar ANTES de tocar el
+             selector: si no, cuando responda la que estaba corriendo (otro
+             perfil), sus cifras quedan pintadas bajo el rótulo «Génesis». */
+          const iGuarda = cuerpo.indexOf("coberturaCargando");
+          const iSelector = cuerpo.indexOf('$("c-perfil").value');
+          assert.ok(iGuarda > 0 && iSelector > 0 && iGuarda < iSelector,
+            "la guarda de «ya hay una auditoría en curso» va ANTES de mover el selector, "
+            + "o las cifras de otro perfil acaban rotuladas como Génesis");
         }
-        assert.ok(/auditarCoberturaGenesis[\s\S]{0,400}"genesis"/.test(admJsLimpio),
+        assert.ok(/auditarCoberturaGenesis[\s\S]{0,900}"genesis"/.test(admJsLimpio),
           "el paso 2 tiene que fijar el perfil en genesis: la auditoría de otro perfil sería la peor forma de equivocarse");
 
         /* La cadena PARA en el primer paso que falle: encadenar una auditoría

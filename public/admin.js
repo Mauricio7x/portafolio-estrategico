@@ -1220,6 +1220,20 @@
   async function auditarCoberturaGenesis() {
     const token = exigirToken("auditar la cobertura");
     if (!token) return false;
+    /* La guarda de «ya hay una auditoría en vuelo» va ANTES de tocar el
+       selector, y merece su propio mensaje. Si se comprueba después —dentro de
+       `ejecutarAuditoria`, que sale por ahí devolviendo `false`— el selector ya
+       quedó en «genesis» y, cuando responda la auditoría que estaba corriendo
+       (la de OTRO perfil), `pintarCobertura` estampa SUS cifras bajo un rótulo
+       que dice Génesis. La cadena se detiene igual, pero la pantalla queda
+       mintiendo: es «la peor forma de equivocarse» que este mismo paso
+       documenta, por la puerta de atrás. */
+    if (coberturaCargando) {
+      bitacora("✘ 2/3 ya hay una auditoría en curso — no se toca nada");
+      mensajeExp("Ya hay una auditoría de cobertura en curso. Espere a que termine y reintente: "
+        + "cambiar el perfil ahora dejaría sus cifras rotuladas como Génesis.", "aviso");
+      return false;
+    }
     bitacora("▶ 2/3 auditando cobertura del RUP de Génesis…");
     /* Fijar `.value` desde código NO dispara `change`, que es quien esconde lo
        pintado: sin esto, la auditoría de OTRO perfil se quedaría en pantalla

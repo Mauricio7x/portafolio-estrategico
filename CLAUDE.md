@@ -473,6 +473,11 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
     adversaria y **las cinco lentes coincidieron**. Ahora `ejecutarAuditoria` devuelve booleano y el
     paso 2 lo PROPAGA. Lección de método: comprobar por regex que una función se LLAMA no prueba que
     su resultado se MIRE.
+  · **La guarda de «auditoría EN VUELO» va ANTES de tocar el selector.** Comprobarla después —dentro
+    de `ejecutarAuditoria`, que sale por ahí— deja el selector en «genesis» y, cuando responde la
+    auditoría que estaba corriendo (OTRO perfil), `pintarCobertura` estampa SUS cifras bajo ese
+    rótulo. La cadena se detiene igual, pero la pantalla miente: es «la peor forma de equivocarse»
+    que el propio paso documenta, entrando por la puerta de atrás. Hay prueba del ORDEN.
   · **Fijar `c-perfil.value` desde código NO dispara `change`**, que es justo quien esconde lo
     pintado: sin invalidar a mano, la auditoría de OTRO perfil se quedaba en pantalla bajo un
     selector que decía «Génesis». La invalidación se extrajo a `invalidarCoberturaPintada` para que
