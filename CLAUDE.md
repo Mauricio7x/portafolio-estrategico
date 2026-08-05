@@ -1329,14 +1329,33 @@ responden *cuánto vale la oportunidad* y *si la empresa puede ejecutarla*.
   de aplicación de lo que el dueño cargue por `/api/admin/rup` (validación en `lib/config_rup.js`).
 - Experiencia REALMENTE ejecutada en `lib/experiencia.js` (`config:experiencia` + su vocabulario);
   la auditoría de huecos del RUP, en `lib/cobertura_rup.js`. Ninguna de las dos toca la ingesta.
-  ⚠️ **Los 106 contratos de Génesis NO existen en el repositorio y NO se inventan.** Buscados de
-  forma exhaustiva (ago 2026): las 25 ramas remotas, **todos** los `.json` que han existido jamás
-  (son 7, ninguno de contratos) y **los 1 041 blobs del object store incluidos los colgantes e
-  inalcanzables** — cero resultados. Es la misma regla del «NIT en null: jamás inventarlo», y aquí
-  con más razón: este vocabulario decide **con qué códigos se renueva el RUP**. Campos exactos,
-  ejemplo y cómo aportarlos en **`EXPERIENCIA_PENDIENTE.md`**; los tres pasos de puesta en
-  producción, en **`cargar_experiencia.sh`**. Sin el archivo la auditoría **funciona igual**, con el
-  método base y `score` en `null` («no medido», no «cero»).
+  ✅ **`experiencia_genesis_106.json` YA ESTÁ en la raíz** (ago 2026). No salió de git —se buscó
+  antes de forma exhaustiva y no estaba: 25 ramas remotas, los 7 `.json` que han existido jamás y
+  los 1 041 blobs del object store incluidos los colgantes— sino del **PDF del RUP 2023 que aportó
+  el dueño**. Cómo se extrajo, qué columna alimenta cada campo y qué quedó en `null`, en
+  **`EXPERIENCIA_PENDIENTE.md`**; los tres pasos de puesta en producción, en
+  **`cargar_experiencia.sh`**. Cinco decisiones que no hay que re-litigar:
+  · **Las filas se delimitan con las REGLAS HORIZONTALES que dibuja el PDF**, no por proximidad
+    vertical entre líneas. Con el punto medio entre filas, el objeto de una fila alta se colaba en
+    la siguiente —pasó, y se vio— y un texto REAL en la fila EQUIVOCADA es peor que un hueco:
+    parece dato bueno. El texto se lee por COORDENADAS, como en `lib/apu_pliego`.
+  · **`valor_smmlv` es la columna TOTAL, no la ponderada por participación.** El PDF trae las dos.
+    Con la total, `valor_cop` y `valor_smmlv` describen LO MISMO (el contrato) y `participacion`
+    deriva la parte; con la ponderada, un campo sería el total y el otro la parte. Además la
+    ponderada falta en 10 filas y en una de ellas tampoco hay `valor_cop`: ese contrato no habría
+    pasado la validación.
+  · **54 `participacion` y 11 `modalidad` en `null` son CELDAS VACÍAS del PDF, no fallos.** En 44 de
+    esas 54 la ponderada iguala al total (o sea, 100 %), y aun así **no se dedujo**: rellenarlo
+    sería inferir, no leer. Misma regla que `anticipo_pct = 0` y que el `score` en `null`.
+  · **Las anomalías de la fuente se conservan**: la fila 97 dice `30/12/2202` (año imposible), la 19
+    termina antes de empezar, y las erratas del objeto («MOVIMEINTOS», «AGUIAS LLUVIAS») quedan
+    literales — el objeto es la evidencia. Lo único que se normalizó es el FORMATO de `25--04-2015`,
+    que es legible sin ambigüedad: cambiar el formato no es cambiar el contenido.
+  · **El control cruzado que prueba que las columnas se leyeron bien**: en toda fila con las tres
+    cifras impresas se cumple `SMMLV ponderado = SMMLV total × participación`. Si las columnas se
+    hubieran leído corridas, esa identidad no cuadraría en ninguna.
+  ⚠️ **Sigue prohibido inventar un contrato**: este vocabulario decide con qué códigos se renueva el
+  RUP. Sin el archivo la auditoría **funcionaba igual**, con el método base y `score` en `null`.
 - Índice de competencia por entidad en `lib/indice_competencia.js` (hash `indice:competencia`,
   tertiles sobre el promedio de oferentes de 2 años); alimenta `ordenar_por=atractividad`.
 - Perfiles y finanzas reales en `lib/perfiles.js` (fuente única en código; RUP corte 31/12/2025;
