@@ -626,6 +626,23 @@ muestra como si fuera ingreso. Diseño completo y plan de la Fase 3 en `docs/APU
   fueran la única memoria de lo marcado, «Marcar todos» + repintado perdería la selección sin que
   nadie lo notase. Y **no hay handler de clic sobre la fila**: las dos tablas que ya existen usan
   `closest()` sobre la fila entera, lo que aquí chocaría con el clic propio de la casilla.
+- **NADA de lo pintado sobrevive a que deje de corresponder con lo preguntado**, y son TRES
+  situaciones, no una: una inferencia que falla (si no, el error convive con los ítems del objeto
+  ANTERIOR y se leen como suyos), el objeto/código/departamento editado sin volver a inferir, y una
+  publicación o derivación de conocimiento (lo pintado se midió con el motor anterior — misma regla
+  que ya aplica cargar un RUP sobre la auditoría de cobertura). Todas pasan por
+  `olvidarInferencia()`, que es un punto único a propósito, y hay prueba de que los tres caminos de
+  fallo de la inferencia lo llaman.
+- **«Aprender del histórico» se deshabilita durante el envío**: recorre el histórico entero y
+  publica al terminar, así que un doble clic lanzaría dos barridos y dos publicaciones que se
+  pisan. Mismo blindaje que «Confirmar carga» del RUP y de la experiencia.
+- **El objeto viaja SOLO por el cuerpo del POST, nunca por query.** El token sí se admite por
+  `?token=` —el dueño no tiene terminal y esa es su vía real de disparo, con el precio asumido—,
+  pero el objeto no tiene ese problema: quien puede hacer un POST puede mandarlo en el body, y
+  aceptarlo por la URL solo lo dejaría escrito en los logs de acceso sin ganar nada.
+- **Los `motivo` del servidor son SLUGS** (`sin_codigos_mapeados`) para poder compararlos; el panel
+  los traduce antes de enseñarlos y deja detrás el `siguiente_paso`. Un slug en pantalla no es una
+  explicación.
 - **La precisión medida (100 % sobre 5 objetos) es PARCIALMENTE CIRCULAR y así está escrito**: las
   listas de «plausibles» las escribió quien escribió el diccionario. La medida que no es circular
   es la del corpus completo en `g-quinquies`, donde los objetos no los elige la prueba: **384/384**

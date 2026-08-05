@@ -1251,6 +1251,7 @@
        prohíbe `|| 0` sobre un conteo: un cero se lee como una medición.
      ══════════════════════════════════════════════════════════════════════════ */
   let apuCargando = false;
+  let apuAccionEnCurso = false;
   let ultimaInferencia = null;
   const apuSeleccion = new Set();   // item_id marcados (sobrevive al repintado)
 
@@ -1270,6 +1271,22 @@
     $("btn-apu-inferir").disabled = v;
     $("apu-spin").classList.toggle("hidden", !v);
     $("apu-skeleton").classList.toggle("hidden", !v);
+  }
+
+  /* Retira lo pintado. Se llama en TRES situaciones distintas y por la misma
+     razón: lo que hay en pantalla dejó de corresponder a lo que se preguntó.
+       · una inferencia que falla (si no, el error convive con la tabla del
+         objeto anterior y se lee como si fuera suya);
+       · el objeto, el código o el departamento cambian sin volver a inferir;
+       · se publica o se aprende conocimiento nuevo — el motor con el que se
+         midió lo pintado acaba de cambiar, igual que cargar un RUP oculta la
+         auditoría de cobertura. */
+  function olvidarInferencia(aviso) {
+    $("apu-contenido").classList.add("hidden");
+    ultimaInferencia = null;
+    apuSeleccion.clear();
+    $("btn-apu-exportar").disabled = true;
+    if (aviso) avisoApu(aviso, "aviso");
   }
 
   /* Confianza → banda de color. Los cortes son los del motor: 0.7 es lo que
@@ -1306,15 +1323,21 @@
       cuerpo = await r.json();
     } catch (e) {
       cargandoApu(false);
+      olvidarInferencia();
       return avisoApu(`No se pudo contactar el servidor: ${esc((e && e.message) || "sin conexión")}.`, "error");
     }
     cargandoApu(false);
 
+    /* CUALQUIER fallo tiene que llevarse la tabla anterior. Si no, el error
+       queda al lado de los ítems del objeto PREVIO y se leen como si fueran del
+       que se acaba de escribir — que es la misma mentira que un veredicto
+       contradiciendo a las cifras que lo acompañan. */
     if (r.status === 401) {
-      olvidarToken(); pintarEstadoToken();
+      olvidarToken(); pintarEstadoToken(); olvidarInferencia();
       return avisoApu('Token inválido. Escriba uno nuevo en <a href="#seccion-token" class="font-medium underline">Token de acceso</a>.', "error");
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
+      olvidarInferencia();
       return avisoApu(esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`), "error");
     }
 
@@ -1413,11 +1436,29 @@
       + (k.version ? ` · versión ${String(k.version).slice(0, 19).replace("T", " ")}` : "");
   }
 
+  /* Los motivos por los que una derivación no cambia nada llegan como slug —el
+     servidor los publica así para poder compararlos—, pero un slug en pantalla
+     no es una explicación: el dueño no tiene por qué saber qué es
+     «sin_codigos_mapeados». El `siguiente_paso` del servidor viaja aparte y se
+     enseña detrás. */
+  const MOTIVO_APU = {
+    sin_historico: "No hay corpus histórico todavía",
+    sin_codigos_mapeados: "El histórico no trae códigos UNSPSC que el mapeo cubra",
+    redis_inaccesible: "No se pudo leer el histórico en Redis",
+  };
+
   /* Sembrar y derivar comparten forma: POST con un parámetro explícito, y el
      estado del motor se relee al terminar para que lo pintado no mienta. */
   async function accionApu(param, etiqueta) {
     const token = leerToken();
     if (!token) return avisoApu("Guarde antes el token de acceso, arriba.", "aviso");
+    if (apuAccionEnCurso) return;
+    /* «Aprender del histórico» lo recorre entero y publica al terminar: un
+       doble clic lanzaría dos barridos y dos publicaciones que se pisan. Mismo
+       blindaje que «Confirmar carga» del RUP y de la experiencia. */
+    apuAccionEnCurso = true;
+    $("btn-apu-sembrar").disabled = true;
+    $("btn-apu-derivar").disabled = true;
     avisoApu(`${etiqueta}…`, null);
     let r = null, cuerpo = null;
     try {
@@ -1429,6 +1470,10 @@
       cuerpo = await r.json();
     } catch (e) {
       return avisoApu(`No se pudo contactar el servidor: ${esc((e && e.message) || "sin conexión")}.`, "error");
+    } finally {
+      apuAccionEnCurso = false;
+      $("btn-apu-sembrar").disabled = false;
+      $("btn-apu-derivar").disabled = false;
     }
     if (r.status === 401) {
       olvidarToken(); pintarEstadoToken();
@@ -1436,15 +1481,21 @@
     }
     if (!r.ok) return avisoApu(esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`), "error");
     // `ok:false` con 200 es una respuesta con causa (p. ej. no hay histórico):
-    // se enseña tal cual, con su siguiente paso, en vez de decir «falló»
+    // se enseña traducida y con su siguiente paso, en vez de decir «falló»
     if (cuerpo && cuerpo.ok === false) {
-      return avisoApu(esc([cuerpo.motivo, cuerpo.siguiente_paso].filter(Boolean).join(" · ") || "Sin cambios."), "aviso");
+      const causa = MOTIVO_APU[cuerpo.motivo] || cuerpo.motivo || "Sin cambios";
+      return avisoApu(esc([causa, cuerpo.siguiente_paso].filter(Boolean).join(". ")), "aviso");
     }
     const detalle = param === "derivar"
       ? `${fmt.format(cuerpo.terminos_nuevos)} términos nuevos y ${fmt.format(cuerpo.terminos_ampliados)} ampliados sobre ${fmt.format(cuerpo.procesos_historico)} procesos.`
       : `${fmt.format(cuerpo.terminos)} términos y ${fmt.format(cuerpo.claves_mapeo)} claves publicadas.`;
-    avisoApu(esc(detalle), "ok");
     cargarConocimientoApu();
+    /* El conocimiento cambió: lo que estuviera pintado se midió con el motor
+       ANTERIOR. Misma regla que ya aplica cargar un RUP sobre la auditoría. */
+    if (ultimaInferencia) {
+      return olvidarInferencia(`${esc(detalle)} El motor cambió: vuelva a inferir para ver los ítems con el conocimiento nuevo.`);
+    }
+    avisoApu(esc(detalle), "ok");
   }
 
   /* Delegación SOLO sobre las casillas (ver la nota de arriba: nada de
@@ -1463,6 +1514,17 @@
     if (valor) for (const it of ultimaInferencia.items || []) apuSeleccion.add(it.item_id);
     for (const caja of $("apu-items").querySelectorAll("input[type=checkbox][data-item]")) caja.checked = valor;
     $("btn-apu-exportar").disabled = apuSeleccion.size === 0;
+  }
+
+  /* Cambiar el objeto (o el código, o el departamento) sin volver a inferir
+     dejaría la tabla anterior debajo de un texto nuevo, y se leería como si le
+     correspondiera. Mismo criterio que el `change` de `c-perfil`, que ya
+     invalida la auditoría al cambiar de whitelist. */
+  for (const id of ["apu-objeto", "apu-unspsc", "apu-departamento"]) {
+    $(id).addEventListener("input", () => {
+      if (!ultimaInferencia) return;
+      olvidarInferencia("La consulta cambió: pulse «Inferir ítems» para actualizar la tabla.");
+    });
   }
 
   $("btn-apu-inferir").addEventListener("click", inferirApu);

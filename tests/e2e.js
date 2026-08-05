@@ -5384,6 +5384,28 @@ async function main() {
          cuanto se corrija uno de los dos. */
       assert.ok(/c\.no_pertinente/.test(admJs) && /c\.sin_sugerencias/.test(admJs),
         "con 0 ítems el panel debe usar la causa que envía el servidor, no un texto genérico propio");
+      /* NADA de lo pintado puede sobrevivir a que deje de corresponder con lo
+         preguntado: una inferencia que falla, un objeto que se edita, o un
+         conocimiento que se republica. Si sobreviviera, el usuario leería los
+         ítems del objeto ANTERIOR como si fueran del nuevo. */
+      assert.ok(/function olvidarInferencia\(/.test(admJs),
+        "hace falta un punto único que retire la tabla cuando deja de corresponder");
+      {
+        const i = admJs.indexOf("async function inferirApu()");
+        const cuerpo = admJs.slice(i, admJs.indexOf("\n  function pintarApu", i));
+        assert.strictEqual((cuerpo.match(/olvidarInferencia\(/g) || []).length, 3,
+          "los TRES caminos de fallo de la inferencia (red, 401, error del servidor) deben retirar la tabla");
+      }
+      assert.ok(/for \(const id of \["apu-objeto", "apu-unspsc", "apu-departamento"\]\)/.test(admJs),
+        "editar la consulta sin volver a inferir debe invalidar la tabla ya pintada");
+      /* Doble clic en «Aprender del histórico»: lo recorre entero y publica al
+         terminar, así que dos barridos simultáneos se pisarían al publicar.
+         Mismo blindaje que «Confirmar carga» del RUP y de la experiencia. */
+      assert.ok(/\$\("btn-apu-derivar"\)\.disabled = true/.test(admJs),
+        "«Aprender del histórico» debe deshabilitarse durante el envío");
+      // el motivo del servidor es un slug para poder compararlo: no se pinta crudo
+      assert.ok(/const MOTIVO_APU = \{/.test(admJs),
+        "los motivos del servidor son slugs: hay que traducirlos antes de enseñarlos");
       // el token tampoco viaja en la URL de este endpoint
       assert.ok(!/\/api\/apu\/inferir\?[^`"']*token=/.test(admJs),
         "el token de la inferencia APU va por cabecera, nunca en la URL");

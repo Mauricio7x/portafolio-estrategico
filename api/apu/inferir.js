@@ -175,10 +175,16 @@ module.exports = async function handler(req, res) {
     return res.status(cuerpo.status).json(salida);
   }
 
+  /* Los tres parámetros van por el CUERPO y solo por el cuerpo. El token sí se
+     admite por query —el dueño trabaja en un portátil sin terminal y esa es su
+     única vía de disparo, con el precio asumido y documentado—, pero el objeto
+     no tiene ese problema: quien puede hacer un POST puede mandarlo en el body.
+     Aceptarlo por la URL solo lo dejaría escrito en los logs de acceso de
+     Vercel y en el historial del navegador, sin ganar nada a cambio. */
   const datos = cuerpo.datos && typeof cuerpo.datos === "object" ? cuerpo.datos : {};
-  const objeto = datos.objeto != null ? String(datos.objeto) : (q.objeto != null ? String(q.objeto) : "");
-  const unspsc = datos.unspsc != null ? datos.unspsc : (q.unspsc != null ? q.unspsc : null);
-  const departamento = datos.departamento != null ? String(datos.departamento) : (q.departamento != null ? String(q.departamento) : null);
+  const objeto = datos.objeto != null ? String(datos.objeto) : "";
+  const unspsc = datos.unspsc != null ? datos.unspsc : null;
+  const departamento = datos.departamento != null ? String(datos.departamento) : null;
 
   if (!objeto.trim() && !(unspsc != null && String(unspsc).trim())) {
     return res.status(400).json({

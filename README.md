@@ -1359,6 +1359,11 @@ el estado de las casillas, así que «Marcar todos» seguido de un repintado per
 que nadie lo notase. Y no hay handler de clic sobre la fila —las otras dos tablas del panel usan
 `closest()` sobre la fila entera—, porque aquí chocaría con el clic propio de la casilla.
 
+**Nada de lo pintado sobrevive a que deje de corresponder con lo preguntado**, y son tres
+situaciones: una inferencia que falla (si no, el error convive con los ítems del objeto *anterior*
+y se leen como suyos), la consulta editada sin volver a inferir, y una publicación o derivación de
+conocimiento (lo pintado se midió con el motor anterior). Las tres pasan por `olvidarInferencia()`.
+
 **Arranque**: igual que en `app.js`, el arranque automático de la sesión ya validada va **al final
 del módulo**. `abrirApp()` levanta el panel y la carga de RUP, cuyas funciones leen constantes
 declaradas más abajo; llamarlo desde donde está el gate reventaría en la zona muerta temporal y —al
