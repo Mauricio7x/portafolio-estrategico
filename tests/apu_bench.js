@@ -383,7 +383,7 @@ console.log(`\nADVERTENCIA, y no es una fórmula de cortesía: el corpus es SINT
 console.log(`escribió quien escribió el parser, así que la tanda principal mide sobre todo`);
 console.log(`la robustez ante las variantes que su autor PREVIÓ. Los casos adversarios están`);
 console.log(`para acotar eso. Ninguna de las dos cifras es la cobertura del universo real de`);
-console.log(`pliegos de SECOP II, que sigue SIN MEDIR: docs/APU_Y_RENTABILIDAD.md §1.G.7 la`);
+console.log(`pliegos de SECOP II, que sigue SIN MEDIR: docs/APU_INFORME_COMPLETO.md §1.G.7 la`);
 console.log(`deja como vacío explícito ("[SUPUESTO], no medidos") y esto no lo cierra.\n`);
 
 /* Suelos de regresión: si el parser empeora por debajo de esto, esto falla. Son

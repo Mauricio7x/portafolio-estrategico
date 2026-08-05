@@ -1,0 +1,437 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "base_precios": "2026-08",
+    "moneda": "COP",
+    "region_base": "bogota_sabana",
+    "origen": "SEMILLA CURADA. Los precios marcados fuente=\"recuperado\" salen de modulo_apu.html (borrado en el commit d69cfe8, recuperable con `git show d69cfe8^:modulo_apu.html`), llevados de su base de marzo 2025 a la base vigente con la variación anual general del ICOCIV. Los marcados fuente=\"estimado\" son valores de referencia razonados, NO cotizaciones: verificar contra cotización real antes de presentar oferta. Detalle y método en docs/APU_Y_RENTABILIDAD.md.",
+    "icociv": {
+      "boletin": "Marzo 2026",
+      "fuente": "DANE · Índice de Costos de la Construcción de Infraestructura de Ingeniería Civil",
+      "variacion_anual_general_pct": 4.7,
+      "factor_aplicado": 1.047,
+      "base_original_precios_recuperados": "2025-03"
+    },
+    "prestacional": 1.55,
+    "prestacional_nota": "Prestaciones sociales, parafiscales y ARL sobre el jornal base. Lo fija la ley, no el mercado: NO varía por región.",
+    "estructura_costos_obra_civil": {
+      "materiales": 0.45,
+      "mano_obra": 0.30,
+      "equipo": 0.18,
+      "transporte": 0.07,
+      "nota": "Ponderación con la que se recompone el índice regional y se contrasta contra el índice de ciudad recuperado. Hay prueba de que el compuesto no se separa más de 0,015 del recuperado."
+    },
+    "formulas": {
+      "mano_obra": "(precio_base × prestacional) ÷ rendimiento",
+      "materiales": "precio_base × cantidad_por_unidad × (1 + desperdicio)",
+      "equipo": "precio_base ÷ rendimiento",
+      "transporte": "precio_base × cantidad_por_unidad × distancia_km",
+      "herramienta_menor": "herramienta_menor_pct × (total del capítulo de mano de obra)",
+      "costo_directo": "mano_obra + materiales + equipo + herramienta_menor + transporte",
+      "precio_unitario": "costo_directo × (1 + aiu)",
+      "nota_rendimiento": "unidades de obra por DÍA para insumos tarifados por día; por HORA para los tarifados por hora. La unidad del insumo manda.",
+      "nota_transporte": "cantidad_por_unidad de una línea de transporte va SIEMPRE en m³ de material movido por unidad del ítem. Pasarle kilogramos era el error de la fuente recuperada (ver docs/APU_Y_RENTABILIDAD.md §1)."
+    }
+  },
+
+  "regiones": [
+    {
+      "id": "bogota_sabana",
+      "nombre": "Bogotá / Sabana",
+      "ciudad_cabecera": "Bogotá D.C.",
+      "indice_ciudad_recuperado": 1.00,
+      "factor_materiales": 1.00,
+      "factor_mano_obra": 1.00,
+      "factor_equipo": 1.00,
+      "factor_transporte": 1.00,
+      "aiu_tipico": { "a": 0.15, "i": 0.05, "u": 0.05 },
+      "prestacional_tipico": 1.55
+    },
+    {
+      "id": "medellin_antioquia",
+      "nombre": "Medellín / Antioquia",
+      "ciudad_cabecera": "Medellín (Antioquia)",
+      "indice_ciudad_recuperado": 1.02,
+      "factor_materiales": 1.01,
+      "factor_mano_obra": 1.04,
+      "factor_equipo": 0.98,
+      "factor_transporte": 1.05,
+      "aiu_tipico": { "a": 0.15, "i": 0.05, "u": 0.05 },
+      "prestacional_tipico": 1.55
+    },
+    {
+      "id": "costa_atlantica",
+      "nombre": "Costa Atlántica",
+      "ciudad_cabecera": "Barranquilla (Atlántico)",
+      "indice_ciudad_recuperado": 1.05,
+      "factor_materiales": 1.10,
+      "factor_mano_obra": 0.97,
+      "factor_equipo": 1.08,
+      "factor_transporte": 1.12,
+      "aiu_tipico": { "a": 0.15, "i": 0.05, "u": 0.05 },
+      "prestacional_tipico": 1.55
+    },
+    {
+      "id": "eje_cafetero",
+      "nombre": "Eje Cafetero",
+      "ciudad_cabecera": "Pereira (Risaralda)",
+      "indice_ciudad_recuperado": 0.97,
+      "factor_materiales": 0.97,
+      "factor_mano_obra": 0.93,
+      "factor_equipo": 1.02,
+      "factor_transporte": 1.04,
+      "aiu_tipico": { "a": 0.15, "i": 0.05, "u": 0.05 },
+      "prestacional_tipico": 1.55
+    },
+    {
+      "id": "santanderes",
+      "nombre": "Santanderes",
+      "ciudad_cabecera": "Bucaramanga (Santander)",
+      "indice_ciudad_recuperado": 0.99,
+      "factor_materiales": 0.99,
+      "factor_mano_obra": 0.94,
+      "factor_equipo": 1.01,
+      "factor_transporte": 1.05,
+      "aiu_tipico": { "a": 0.15, "i": 0.05, "u": 0.05 },
+      "prestacional_tipico": 1.55
+    }
+  ],
+
+  "insumos": [
+    { "id": "cemento_gris_50kg", "nombre": "Cemento gris tipo I", "unidad": "saco 50 kg", "tipo": "material", "precio_base": 33504, "fuente": "recuperado" },
+    { "id": "arena_de_rio", "nombre": "Arena de río lavada", "unidad": "m3", "tipo": "material", "precio_base": 81666, "fuente": "recuperado" },
+    { "id": "triturado_3_4", "nombre": "Triturado 3/4\"", "unidad": "m3", "tipo": "material", "precio_base": 96324, "fuente": "recuperado" },
+    { "id": "acero_refuerzo_60000_psi", "nombre": "Acero de refuerzo 60.000 PSI", "unidad": "kg", "tipo": "material", "precio_base": 4397, "fuente": "recuperado", "densidad_kg_m3": 7850 },
+    { "id": "agua", "nombre": "Agua para obra", "unidad": "m3", "tipo": "material", "precio_base": 9423, "fuente": "recuperado" },
+    { "id": "ladrillo_tolete_comun", "nombre": "Ladrillo tolete común", "unidad": "und", "tipo": "material", "precio_base": 890, "fuente": "recuperado" },
+    { "id": "concreto_premezclado_3000_psi", "nombre": "Concreto premezclado 3.000 PSI (21 MPa)", "unidad": "m3", "tipo": "material", "precio_base": 620000, "fuente": "estimado" },
+    { "id": "concreto_premezclado_mr_40", "nombre": "Concreto premezclado MR-40 para pavimento", "unidad": "m3", "tipo": "material", "precio_base": 780000, "fuente": "estimado" },
+    { "id": "asfalto_mdc_19", "nombre": "Mezcla densa en caliente MDC-19 (con cemento asfáltico AC-19)", "unidad": "ton", "tipo": "material", "precio_base": 560000, "fuente": "estimado", "densidad_ton_m3": 2.35 },
+    { "id": "cemento_asfaltico_ca_60_70", "nombre": "Cemento asfáltico CA 60-70", "unidad": "kg", "tipo": "material", "precio_base": 4100, "fuente": "estimado" },
+    { "id": "emulsion_asfaltica_crl_1", "nombre": "Emulsión asfáltica CRL-1 para imprimación", "unidad": "kg", "tipo": "material", "precio_base": 3800, "fuente": "estimado" },
+    { "id": "material_seleccionado_prestamo", "nombre": "Material seleccionado de préstamo para terraplén", "unidad": "m3", "tipo": "material", "precio_base": 42000, "fuente": "estimado" },
+    { "id": "material_subbase_sbg_a", "nombre": "Material de subbase granular SBG-A", "unidad": "m3", "tipo": "material", "precio_base": 78000, "fuente": "estimado" },
+    { "id": "material_base_bg_a", "nombre": "Material de base granular BG-A", "unidad": "m3", "tipo": "material", "precio_base": 92000, "fuente": "estimado" },
+    { "id": "malla_electrosoldada_m_188", "nombre": "Malla electrosoldada M-188", "unidad": "m2", "tipo": "material", "precio_base": 15500, "fuente": "estimado" },
+    { "id": "tuberia_concreto_reforzado_36", "nombre": "Tubería de concreto reforzado Ø36\"", "unidad": "ml", "tipo": "material", "precio_base": 385000, "fuente": "estimado" },
+    { "id": "tuberia_pvc_presion_1_2", "nombre": "Tubería PVC presión Ø1/2\" RDE 9", "unidad": "ml", "tipo": "material", "precio_base": 4200, "fuente": "estimado" },
+    { "id": "accesorio_pvc_presion_1_2", "nombre": "Accesorio PVC presión Ø1/2\"", "unidad": "und", "tipo": "material", "precio_base": 3800, "fuente": "estimado" },
+    { "id": "bloque_concreto_15", "nombre": "Bloque de concreto 15×20×40", "unidad": "und", "tipo": "material", "precio_base": 3400, "fuente": "estimado" },
+    { "id": "pintura_vinilo_tipo_1", "nombre": "Pintura vinilo tipo 1", "unidad": "gal", "tipo": "material", "precio_base": 78000, "fuente": "estimado" },
+    { "id": "estuco_plastico", "nombre": "Estuco plástico", "unidad": "gal", "tipo": "material", "precio_base": 52000, "fuente": "estimado" },
+    { "id": "madera_formaleta", "nombre": "Madera ordinaria para formaleta", "unidad": "m2", "tipo": "material", "precio_base": 26000, "fuente": "estimado" },
+    { "id": "teja_fibrocemento_no_8", "nombre": "Teja de fibrocemento perfil 7 No. 8", "unidad": "und", "tipo": "material", "precio_base": 62000, "fuente": "estimado" },
+    { "id": "perfil_metalico_estructural", "nombre": "Perfil metálico estructural (correa C)", "unidad": "kg", "tipo": "material", "precio_base": 9800, "fuente": "estimado" },
+    { "id": "geotextil_no_tejido_2000", "nombre": "Geotextil no tejido NT-2000", "unidad": "m2", "tipo": "material", "precio_base": 6900, "fuente": "estimado" },
+    { "id": "alambre_negro_18", "nombre": "Alambre negro calibre 18", "unidad": "kg", "tipo": "material", "precio_base": 7600, "fuente": "estimado" },
+
+    { "id": "mo_oficial_construccion", "nombre": "Oficial de construcción", "unidad": "dia", "tipo": "mano_obra", "precio_base": 99465, "fuente": "recuperado" },
+    { "id": "mo_ayudante_construccion", "nombre": "Ayudante de construcción", "unidad": "dia", "tipo": "mano_obra", "precio_base": 71196, "fuente": "recuperado" },
+    { "id": "mo_cuadrilla_1of_1ay", "nombre": "Cuadrilla 1 oficial + 1 ayudante", "unidad": "dia", "tipo": "mano_obra", "precio_base": 170661, "fuente": "recuperado", "componentes": { "mo_oficial_construccion": 1, "mo_ayudante_construccion": 1 } },
+    { "id": "mo_cuadrilla_1of_3ay", "nombre": "Cuadrilla 1 oficial + 3 ayudantes", "unidad": "dia", "tipo": "mano_obra", "precio_base": 313053, "fuente": "recuperado", "componentes": { "mo_oficial_construccion": 1, "mo_ayudante_construccion": 3 } },
+    { "id": "mo_cuadrilla_1of_5ay", "nombre": "Cuadrilla 1 oficial + 5 ayudantes (pavimentación)", "unidad": "dia", "tipo": "mano_obra", "precio_base": 455445, "fuente": "derivado", "componentes": { "mo_oficial_construccion": 1, "mo_ayudante_construccion": 5 } },
+    { "id": "mo_maestro_obra", "nombre": "Maestro de obra", "unidad": "dia", "tipo": "mano_obra", "precio_base": 145000, "fuente": "estimado" },
+    { "id": "mo_operario_equipo_pesado", "nombre": "Operario de equipo pesado", "unidad": "dia", "tipo": "mano_obra", "precio_base": 128000, "fuente": "estimado" },
+    { "id": "mo_oficial_hidrosanitario", "nombre": "Oficial hidrosanitario", "unidad": "dia", "tipo": "mano_obra", "precio_base": 118000, "fuente": "estimado" },
+    { "id": "mo_pintor", "nombre": "Pintor", "unidad": "dia", "tipo": "mano_obra", "precio_base": 105000, "fuente": "estimado" },
+
+    { "id": "eq_mezcladora_1_saco", "nombre": "Mezcladora de 1 saco", "unidad": "dia", "tipo": "equipo", "precio_base": 88995, "fuente": "recuperado" },
+    { "id": "eq_vibrador_concreto", "nombre": "Vibrador de concreto", "unidad": "dia", "tipo": "equipo", "precio_base": 68055, "fuente": "recuperado" },
+    { "id": "eq_retroexcavadora_oruga", "nombre": "Retroexcavadora sobre oruga 320", "unidad": "hora", "tipo": "equipo", "precio_base": 185000, "fuente": "estimado" },
+    { "id": "eq_vibrocompactador_10ton", "nombre": "Vibrocompactador 10 ton", "unidad": "hora", "tipo": "equipo", "precio_base": 165000, "fuente": "estimado" },
+    { "id": "eq_motoniveladora_135hp", "nombre": "Motoniveladora 135 HP", "unidad": "hora", "tipo": "equipo", "precio_base": 215000, "fuente": "estimado" },
+    { "id": "eq_finisher_asfalto", "nombre": "Finisher (extendedora de asfalto)", "unidad": "hora", "tipo": "equipo", "precio_base": 320000, "fuente": "estimado" },
+    { "id": "eq_carrotanque_irrigador", "nombre": "Carrotanque irrigador de asfalto", "unidad": "hora", "tipo": "equipo", "precio_base": 145000, "fuente": "estimado" },
+    { "id": "eq_rana_compactadora", "nombre": "Rana compactadora (canguro)", "unidad": "dia", "tipo": "equipo", "precio_base": 72000, "fuente": "estimado" },
+    { "id": "eq_cortadora_concreto", "nombre": "Cortadora de concreto", "unidad": "dia", "tipo": "equipo", "precio_base": 95000, "fuente": "estimado" },
+    { "id": "eq_formaleta_metalica_muro", "nombre": "Formaleta metálica de muro (alquiler)", "unidad": "m2-dia", "tipo": "equipo", "precio_base": 3350, "fuente": "estimado" },
+    { "id": "eq_equipo_topografia", "nombre": "Equipo de topografía (estación total + comisión)", "unidad": "dia", "tipo": "equipo", "precio_base": 165000, "fuente": "estimado" },
+
+    { "id": "tr_acarreo_material", "nombre": "Acarreo de material en volqueta", "unidad": "m3-km", "tipo": "transporte", "precio_base": 1256, "fuente": "recuperado" },
+    { "id": "tr_volqueta_doble_troque", "nombre": "Volqueta doble troque (viaje cerrado)", "unidad": "viaje", "tipo": "transporte", "precio_base": 320000, "fuente": "estimado" }
+  ],
+
+  "items": [
+    {
+      "codigo": "INV-201.1",
+      "descripcion": "Desmonte y limpieza en bosque",
+      "unidad": "m2",
+      "capitulo": "Explanaciones",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72141000"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "estimado",
+      "insumos": [
+        { "insumo_id": "mo_cuadrilla_1of_1ay", "cantidad_por_unidad": null, "rendimiento": 180, "desperdicio": 0 },
+        { "insumo_id": "eq_retroexcavadora_oruga", "cantidad_por_unidad": null, "rendimiento": 200, "desperdicio": 0 }
+      ]
+    },
+    {
+      "codigo": "INV-210.1",
+      "descripcion": "Excavación mecánica de la explanación en material común",
+      "unidad": "m3",
+      "capitulo": "Explanaciones",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72141000"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "estimado",
+      "insumos": [
+        { "insumo_id": "mo_cuadrilla_1of_1ay", "cantidad_por_unidad": null, "rendimiento": 120, "desperdicio": 0 },
+        { "insumo_id": "eq_retroexcavadora_oruga", "cantidad_por_unidad": null, "rendimiento": 35, "desperdicio": 0 },
+        { "insumo_id": "tr_acarreo_material", "cantidad_por_unidad": 1.25, "rendimiento": null, "desperdicio": 0, "distancia_km": 8 }
+      ]
+    },
+    {
+      "codigo": "INV-220.1",
+      "descripcion": "Terraplén / relleno compactado con material seleccionado",
+      "unidad": "m3",
+      "capitulo": "Explanaciones",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72141000"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "estimado",
+      "insumos": [
+        { "insumo_id": "mo_cuadrilla_1of_3ay", "cantidad_por_unidad": null, "rendimiento": 90, "desperdicio": 0 },
+        { "insumo_id": "material_seleccionado_prestamo", "cantidad_por_unidad": 1.30, "rendimiento": null, "desperdicio": 0.05 },
+        { "insumo_id": "eq_vibrocompactador_10ton", "cantidad_por_unidad": null, "rendimiento": 25, "desperdicio": 0 },
+        { "insumo_id": "eq_motoniveladora_135hp", "cantidad_por_unidad": null, "rendimiento": 45, "desperdicio": 0 },
+        { "insumo_id": "tr_acarreo_material", "cantidad_por_unidad": 1.30, "rendimiento": null, "desperdicio": 0, "distancia_km": 10 }
+      ]
+    },
+    {
+      "codigo": "INV-320.1",
+      "descripcion": "Subbase granular SBG-A compactada",
+      "unidad": "m3",
+      "capitulo": "Afirmados, subbases y bases",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72141100"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "estimado",
+      "insumos": [
+        { "insumo_id": "mo_cuadrilla_1of_3ay", "cantidad_por_unidad": null, "rendimiento": 110, "desperdicio": 0 },
+        { "insumo_id": "material_subbase_sbg_a", "cantidad_por_unidad": 1.25, "rendimiento": null, "desperdicio": 0.05 },
+        { "insumo_id": "eq_vibrocompactador_10ton", "cantidad_por_unidad": null, "rendimiento": 30, "desperdicio": 0 },
+        { "insumo_id": "eq_motoniveladora_135hp", "cantidad_por_unidad": null, "rendimiento": 55, "desperdicio": 0 },
+        { "insumo_id": "tr_acarreo_material", "cantidad_por_unidad": 1.25, "rendimiento": null, "desperdicio": 0, "distancia_km": 25 }
+      ]
+    },
+    {
+      "codigo": "INV-330.1",
+      "descripcion": "Base granular BG-A compactada",
+      "unidad": "m3",
+      "capitulo": "Afirmados, subbases y bases",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72141100"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "estimado",
+      "insumos": [
+        { "insumo_id": "mo_cuadrilla_1of_3ay", "cantidad_por_unidad": null, "rendimiento": 100, "desperdicio": 0 },
+        { "insumo_id": "material_base_bg_a", "cantidad_por_unidad": 1.25, "rendimiento": null, "desperdicio": 0.05 },
+        { "insumo_id": "eq_vibrocompactador_10ton", "cantidad_por_unidad": null, "rendimiento": 28, "desperdicio": 0 },
+        { "insumo_id": "eq_motoniveladora_135hp", "cantidad_por_unidad": null, "rendimiento": 50, "desperdicio": 0 },
+        { "insumo_id": "tr_acarreo_material", "cantidad_por_unidad": 1.25, "rendimiento": null, "desperdicio": 0, "distancia_km": 25 }
+      ]
+    },
+    {
+      "codigo": "INV-450.2",
+      "descripcion": "Pavimento asfáltico en mezcla densa en caliente MDC-19",
+      "unidad": "m3",
+      "capitulo": "Pavimentos asfálticos",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72141100"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "estimado",
+      "insumos": [
+        { "insumo_id": "mo_cuadrilla_1of_5ay", "cantidad_por_unidad": null, "rendimiento": 60, "desperdicio": 0 },
+        { "insumo_id": "asfalto_mdc_19", "cantidad_por_unidad": 2.35, "rendimiento": null, "desperdicio": 0.03 },
+        { "insumo_id": "eq_finisher_asfalto", "cantidad_por_unidad": null, "rendimiento": 12, "desperdicio": 0 },
+        { "insumo_id": "eq_vibrocompactador_10ton", "cantidad_por_unidad": null, "rendimiento": 15, "desperdicio": 0 },
+        { "insumo_id": "tr_acarreo_material", "cantidad_por_unidad": 1.00, "rendimiento": null, "desperdicio": 0, "distancia_km": 30 }
+      ]
+    },
+    {
+      "codigo": "INV-500.1",
+      "descripcion": "Pavimento de concreto hidráulico MR-40",
+      "unidad": "m3",
+      "capitulo": "Pavimentos de concreto",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72141100"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "estimado",
+      "insumos": [
+        { "insumo_id": "mo_cuadrilla_1of_3ay", "cantidad_por_unidad": null, "rendimiento": 12, "desperdicio": 0 },
+        { "insumo_id": "concreto_premezclado_mr_40", "cantidad_por_unidad": 1.00, "rendimiento": null, "desperdicio": 0.03 },
+        { "insumo_id": "eq_cortadora_concreto", "cantidad_por_unidad": null, "rendimiento": 20, "desperdicio": 0 },
+        { "insumo_id": "eq_vibrador_concreto", "cantidad_por_unidad": null, "rendimiento": 15, "desperdicio": 0 },
+        { "insumo_id": "tr_acarreo_material", "cantidad_por_unidad": 1.00, "rendimiento": null, "desperdicio": 0, "distancia_km": 20 }
+      ]
+    },
+    {
+      "codigo": "INV-630.4",
+      "descripcion": "Concreto clase D de 3.000 PSI (21 MPa) para placa, mezclado en obra",
+      "unidad": "m3",
+      "capitulo": "Estructuras y drenajes",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72141200"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "recuperado",
+      "insumos": [
+        { "insumo_id": "mo_cuadrilla_1of_3ay", "cantidad_por_unidad": null, "rendimiento": 8, "desperdicio": 0 },
+        { "insumo_id": "cemento_gris_50kg", "cantidad_por_unidad": 7, "rendimiento": null, "desperdicio": 0.05 },
+        { "insumo_id": "arena_de_rio", "cantidad_por_unidad": 0.55, "rendimiento": null, "desperdicio": 0.05 },
+        { "insumo_id": "triturado_3_4", "cantidad_por_unidad": 0.85, "rendimiento": null, "desperdicio": 0.05 },
+        { "insumo_id": "agua", "cantidad_por_unidad": 0.18, "rendimiento": null, "desperdicio": 0 },
+        { "insumo_id": "eq_mezcladora_1_saco", "cantidad_por_unidad": null, "rendimiento": 8, "desperdicio": 0 },
+        { "insumo_id": "eq_vibrador_concreto", "cantidad_por_unidad": null, "rendimiento": 8, "desperdicio": 0 },
+        { "insumo_id": "tr_acarreo_material", "cantidad_por_unidad": 1.00, "rendimiento": null, "desperdicio": 0, "distancia_km": 15 }
+      ]
+    },
+    {
+      "codigo": "INV-640.1",
+      "descripcion": "Acero de refuerzo 60.000 PSI figurado e instalado",
+      "unidad": "kg",
+      "capitulo": "Estructuras y drenajes",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72141200"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "recuperado",
+      "insumos": [
+        { "insumo_id": "mo_cuadrilla_1of_1ay", "cantidad_por_unidad": null, "rendimiento": 120, "desperdicio": 0 },
+        { "insumo_id": "acero_refuerzo_60000_psi", "cantidad_por_unidad": 1.05, "rendimiento": null, "desperdicio": 0.03 },
+        { "insumo_id": "alambre_negro_18", "cantidad_por_unidad": 0.02, "rendimiento": null, "desperdicio": 0 },
+        { "insumo_id": "tr_acarreo_material", "cantidad_por_unidad": 0.00013, "rendimiento": null, "desperdicio": 0, "distancia_km": 15 }
+      ]
+    },
+    {
+      "codigo": "INV-661.1",
+      "descripcion": "Cuneta revestida en concreto de 3.000 PSI",
+      "unidad": "ml",
+      "capitulo": "Estructuras y drenajes",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72141200"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "estimado",
+      "insumos": [
+        { "insumo_id": "mo_cuadrilla_1of_3ay", "cantidad_por_unidad": null, "rendimiento": 45, "desperdicio": 0 },
+        { "insumo_id": "concreto_premezclado_3000_psi", "cantidad_por_unidad": 0.075, "rendimiento": null, "desperdicio": 0.05 },
+        { "insumo_id": "malla_electrosoldada_m_188", "cantidad_por_unidad": 1.05, "rendimiento": null, "desperdicio": 0.05 },
+        { "insumo_id": "tr_acarreo_material", "cantidad_por_unidad": 0.075, "rendimiento": null, "desperdicio": 0, "distancia_km": 15 }
+      ]
+    },
+    {
+      "codigo": "INV-673.1",
+      "descripcion": "Alcantarilla en tubería de concreto reforzado Ø36\"",
+      "unidad": "ml",
+      "capitulo": "Estructuras y drenajes",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72141300"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "estimado",
+      "insumos": [
+        { "insumo_id": "mo_cuadrilla_1of_3ay", "cantidad_por_unidad": null, "rendimiento": 6, "desperdicio": 0 },
+        { "insumo_id": "tuberia_concreto_reforzado_36", "cantidad_por_unidad": 1.00, "rendimiento": null, "desperdicio": 0.02 },
+        { "insumo_id": "cemento_gris_50kg", "cantidad_por_unidad": 0.35, "rendimiento": null, "desperdicio": 0.05 },
+        { "insumo_id": "arena_de_rio", "cantidad_por_unidad": 0.03, "rendimiento": null, "desperdicio": 0.05 },
+        { "insumo_id": "eq_retroexcavadora_oruga", "cantidad_por_unidad": null, "rendimiento": 1.2, "desperdicio": 0 },
+        { "insumo_id": "tr_acarreo_material", "cantidad_por_unidad": 0.60, "rendimiento": null, "desperdicio": 0, "distancia_km": 20 }
+      ]
+    },
+    {
+      "codigo": "INV-PH.1",
+      "descripcion": "Placa huella en concreto de 3.000 PSI, e = 0,15 m",
+      "unidad": "m2",
+      "capitulo": "Vías terciarias (guía INVIAS de placa huella)",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72141100"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "estimado",
+      "insumos": [
+        { "insumo_id": "mo_cuadrilla_1of_3ay", "cantidad_por_unidad": null, "rendimiento": 18, "desperdicio": 0 },
+        { "insumo_id": "concreto_premezclado_3000_psi", "cantidad_por_unidad": 0.15, "rendimiento": null, "desperdicio": 0.05 },
+        { "insumo_id": "acero_refuerzo_60000_psi", "cantidad_por_unidad": 6.5, "rendimiento": null, "desperdicio": 0.03 },
+        { "insumo_id": "madera_formaleta", "cantidad_por_unidad": 0.12, "rendimiento": null, "desperdicio": 0.20 },
+        { "insumo_id": "eq_vibrador_concreto", "cantidad_por_unidad": null, "rendimiento": 18, "desperdicio": 0 },
+        { "insumo_id": "tr_acarreo_material", "cantidad_por_unidad": 0.15, "rendimiento": null, "desperdicio": 0, "distancia_km": 15 }
+      ]
+    },
+    {
+      "codigo": "EDI-MAM.1",
+      "descripcion": "Mampostería en ladrillo tolete común",
+      "unidad": "m2",
+      "capitulo": "Edificación · muros",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72121400"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "recuperado",
+      "insumos": [
+        { "insumo_id": "mo_cuadrilla_1of_1ay", "cantidad_por_unidad": null, "rendimiento": 12, "desperdicio": 0 },
+        { "insumo_id": "ladrillo_tolete_comun", "cantidad_por_unidad": 58, "rendimiento": null, "desperdicio": 0.05 },
+        { "insumo_id": "cemento_gris_50kg", "cantidad_por_unidad": 0.4, "rendimiento": null, "desperdicio": 0.05 },
+        { "insumo_id": "arena_de_rio", "cantidad_por_unidad": 0.04, "rendimiento": null, "desperdicio": 0.05 },
+        { "insumo_id": "tr_acarreo_material", "cantidad_por_unidad": 0.08, "rendimiento": null, "desperdicio": 0, "distancia_km": 15 }
+      ]
+    },
+    {
+      "codigo": "EDI-PAN.1",
+      "descripcion": "Pañete liso 1:4 sobre muro",
+      "unidad": "m2",
+      "capitulo": "Edificación · acabados",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72121400"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "estimado",
+      "insumos": [
+        { "insumo_id": "mo_cuadrilla_1of_1ay", "cantidad_por_unidad": null, "rendimiento": 22, "desperdicio": 0 },
+        { "insumo_id": "cemento_gris_50kg", "cantidad_por_unidad": 0.18, "rendimiento": null, "desperdicio": 0.08 },
+        { "insumo_id": "arena_de_rio", "cantidad_por_unidad": 0.022, "rendimiento": null, "desperdicio": 0.08 },
+        { "insumo_id": "agua", "cantidad_por_unidad": 0.008, "rendimiento": null, "desperdicio": 0 }
+      ]
+    },
+    {
+      "codigo": "EDI-PIN.1",
+      "descripcion": "Pintura en vinilo tipo 1, tres manos sobre estuco",
+      "unidad": "m2",
+      "capitulo": "Edificación · acabados",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72121400"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "estimado",
+      "insumos": [
+        { "insumo_id": "mo_pintor", "cantidad_por_unidad": null, "rendimiento": 35, "desperdicio": 0 },
+        { "insumo_id": "pintura_vinilo_tipo_1", "cantidad_por_unidad": 0.12, "rendimiento": null, "desperdicio": 0.08 },
+        { "insumo_id": "estuco_plastico", "cantidad_por_unidad": 0.08, "rendimiento": null, "desperdicio": 0.08 }
+      ]
+    },
+    {
+      "codigo": "EDI-CUB.1",
+      "descripcion": "Cubierta en teja de fibrocemento sobre estructura metálica",
+      "unidad": "m2",
+      "capitulo": "Edificación · cubiertas",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72121400"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "estimado",
+      "insumos": [
+        { "insumo_id": "mo_cuadrilla_1of_1ay", "cantidad_por_unidad": null, "rendimiento": 25, "desperdicio": 0 },
+        { "insumo_id": "teja_fibrocemento_no_8", "cantidad_por_unidad": 0.55, "rendimiento": null, "desperdicio": 0.08 },
+        { "insumo_id": "perfil_metalico_estructural", "cantidad_por_unidad": 8.5, "rendimiento": null, "desperdicio": 0.05 },
+        { "insumo_id": "tr_acarreo_material", "cantidad_por_unidad": 0.05, "rendimiento": null, "desperdicio": 0, "distancia_km": 15 }
+      ]
+    },
+    {
+      "codigo": "EDI-HID.1",
+      "descripcion": "Punto hidráulico en PVC presión Ø1/2\"",
+      "unidad": "pto",
+      "capitulo": "Edificación · instalaciones",
+      "unspsc_segmento": "72",
+      "unspsc_clases": ["72151500"],
+      "herramienta_menor_pct": 0.05,
+      "fuente": "estimado",
+      "insumos": [
+        { "insumo_id": "mo_oficial_hidrosanitario", "cantidad_por_unidad": null, "rendimiento": 6, "desperdicio": 0 },
+        { "insumo_id": "tuberia_pvc_presion_1_2", "cantidad_por_unidad": 6, "rendimiento": null, "desperdicio": 0.08 },
+        { "insumo_id": "accesorio_pvc_presion_1_2", "cantidad_por_unidad": 5, "rendimiento": null, "desperdicio": 0.05 }
+      ]
+    }
+  ]
+}

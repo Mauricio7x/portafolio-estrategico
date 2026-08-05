@@ -386,6 +386,9 @@
     }
     avisoDashboard(cuerpo.mensaje ? esc(cuerpo.mensaje) : null, "aviso");
     ultimoResumen = cuerpo;
+    // ANTES de pintar: `celdaApuProceso` consulta `apuListos` al construir la
+    // fila, y si el listado llegara después el badge saldría una pintada tarde
+    await cargarApuListos(perfil);
     pintarDashboard(cuerpo, r.headers.get("X-Cache") || (cuerpo.cache ? "HIT" : "MISS"));
     programarRefresco();
   }
@@ -548,9 +551,10 @@
           <td class="py-2 pr-2 text-right tabular-nums">${fmtCOP.format(p.cuantia_cop || 0)}</td>
           <td class="py-2 pr-2 text-gray-500">${cierre && !isNaN(cierre) ? cierre.toLocaleDateString("es-CO", { day: "numeric", month: "short" }) : "—"}</td>
           <td class="py-2 pr-2"><span class="rounded-lg px-2 py-0.5 text-xs font-medium ${d.clases}">${d.emoji} ${d.texto}</span></td>
-          <td class="py-2 text-gray-500">${esc(p.pertinencia || "")}</td>
+          <td class="py-2 pr-2 text-gray-500">${esc(p.pertinencia || "")}</td>
+          <td class="py-2 whitespace-nowrap">${celdaApuProceso(p)}</td>
         </tr>`;
-    }).join("") : '<tr><td colspan="6" class="py-3 text-gray-400">Ningún proceso cumple los criterios de destacado.</td></tr>';
+    }).join("") : '<tr><td colspan="7" class="py-3 text-gray-400">Ningún proceso cumple los criterios de destacado.</td></tr>';
 
     pintarMeta(c, cache);
   }
@@ -662,11 +666,67 @@
 
   // una fila de destacados lleva al proceso en SECOP II (es la ficha real)
   $("d-destacados").addEventListener("click", (e) => {
+    // el botón «APU» vive DENTRO de la fila, así que su clic burbujea hasta
+    // aquí: sin esta guarda, pulsarlo abriría además SECOP II en otra pestaña
+    if (e.target.closest(".btn-apu")) return;
     const fila = e.target.closest(".fila-proceso");
     if (!fila) return;
     const url = fila.getAttribute("data-url");
     if (url) window.open(url, "_blank", "noopener,noreferrer");
   });
+
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     APU por proceso · botón de la fila y badge «APU listo»
+     ──────────────────────────────────────────────────────────────────────────
+     El botón abre /apu.html con el proceso precargado; el badge dice si ese
+     proceso ya tiene un borrador guardado para el perfil elegido.
+
+     EL LISTADO SE PIDE APARTE DE /api/resumen, cuya respuesta se cachea 300 s:
+     un presupuesto recién guardado no puede tardar cinco minutos en encender el
+     badge — es la misma razón por la que una carga de RUP borra esa caché.
+     Aquí no hace falta borrar nada, porque no se cachea.
+
+     `procesos_con_presupuesto` es una lista de PERTENENCIA, no un conteo: la
+     pregunta es «¿este proceso tiene borrador?», y así el frontend no puede
+     convertir un «no sé» en un cero con un `|| 0`. */
+  let apuListos = new Set();
+
+  async function cargarApuListos(perfil) {
+    apuListos = new Set();
+    const token = leerToken();
+    if (!token) return;
+    try {
+      const r = await fetch(`/api/apu/listar?perfil=${encodeURIComponent(perfil)}`, {
+        headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store",
+      });
+      if (!r.ok) return; // el panel no puede caerse porque el listado de APU falle
+      const c = await r.json().catch(() => null);
+      if (c && c.ok && Array.isArray(c.procesos_con_presupuesto)) apuListos = new Set(c.procesos_con_presupuesto);
+    } catch { /* sin conexión: se pinta sin badges, no se rompe el panel */ }
+  }
+
+  function celdaApuProceso(p) {
+    if (!leerToken()) return '<span class="text-xs text-gray-400">—</span>';
+    const id = p.id_del_proceso;
+    const listo = id != null && apuListos.has(String(id));
+    const q = new URLSearchParams();
+    if (p.objeto) q.set("objeto", p.objeto);
+    if (p.entidad) q.set("entidad", p.entidad);
+    if (p.nit_entidad) q.set("entidad_nit", p.nit_entidad);
+    if (p.departamento_entidad) q.set("departamento", p.departamento_entidad);
+    if (p.unspsc) q.set("unspsc", p.unspsc);
+    if (p.cuantia_cop != null) q.set("cuantia", String(p.cuantia_cop));
+    if (id != null) q.set("id_proceso", String(id));
+    if (p.plazo_meses != null) q.set("plazo", String(p.plazo_meses));
+    q.set("perfil", $("d-perfil").value);
+    return `<a class="btn-apu rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50"`
+      + ` href="/apu.html?${esc(q.toString())}" title="Calcular APU y rentabilidad de este proceso">APU</a>`
+      + (listo
+        ? ' <span class="rounded-lg px-2 py-0.5 text-xs font-medium bg-green-50 text-green-800"'
+          + ' title="Ya hay un presupuesto guardado para este proceso y perfil">✅ APU listo</span>'
+        : "");
+  }
 
   /* ══════════════════════════════════════════════════════════════════════════
      CARGA DE RUP (/api/admin/rup)
@@ -1232,6 +1292,126 @@
     avisoCobertura("Perfil cambiado: ejecute la auditoría para este perfil.", "aviso");
   });
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     CATÁLOGO DE PRECIOS APU (/api/apu/catalogo · /api/admin/apu/cargar-catalogo)
+     --------------------------------------------------------------------------
+     CONSULTAR el catálogo es público y barato (dos comandos de Redis), así que
+     el estado se pinta al arrancar el panel. CARGARLO escribe ~70 claves y va
+     con token: solo cuando alguien pulsa el botón.
+     ══════════════════════════════════════════════════════════════════════════ */
+  let apuCargando = false;
+
+  function mensajeApu(texto, tipo) {
+    const p = $("apu-mensaje");
+    if (!texto) return p.classList.add("hidden");
+    p.className = "mt-5 rounded-xl px-4 py-3 text-sm " + ({
+      ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
+      error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
+      aviso: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20",
+    }[tipo] || "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20");
+    p.innerHTML = texto;
+  }
+
+  function pintarApu(c) {
+    /* los conteos salen del payload del catálogo, NUNCA con `|| 0`: un
+       «undefined || 0» convierte «no sé» en «cero» y lo hace creíble — es
+       exactamente el defecto del «en 0 procesos» que costó caro. Sin dato, «—». */
+    const num = (v) => (Number.isFinite(Number(v)) ? fmt.format(Number(v)) : "—");
+    const t = c.totales || {};
+    $("apu-insumos").textContent = num(t.insumos);
+    $("apu-items").textContent = num(t.items);
+    $("apu-regiones").textContent = num(t.regiones);
+    $("apu-base").textContent = c.base_precios || "—";
+    $("apu-icociv").textContent = c.icociv
+      ? `ICOCIV ${c.icociv.boletin} · +${c.icociv.variacion_anual_general_pct} % anual`
+      : "sin ajuste sectorial";
+
+    const regiones = c.regiones || [];
+    $("apu-detalle").classList.toggle("hidden", !regiones.length);
+    $("apu-regiones-tabla").innerHTML = regiones.map((r) => `<tr>
+        <td class="py-2 pr-2 font-medium">${esc(r.nombre)}</td>
+        <td class="py-2 pr-2 text-gray-500">${esc(r.ciudad_cabecera || "—")}</td>
+        <td class="py-2 pr-2 text-right tabular-nums">${r.factor_materiales}</td>
+        <td class="py-2 pr-2 text-right tabular-nums">${r.factor_mano_obra}</td>
+        <td class="py-2 pr-2 text-right tabular-nums">${r.factor_equipo}</td>
+        <td class="py-2 pr-2 text-right tabular-nums">${r.factor_transporte}</td>
+        <td class="py-2 text-right tabular-nums">${Math.round(Number(r.aiu_tipico) * 100)} %</td>
+      </tr>`).join("");
+
+    $("apu-meta").textContent = [
+      `Versión ${esc(c.version_catalogo || "—")}`,
+      `Cargado: ${String(c.cargado_el || "").slice(0, 19).replace("T", " ") || "—"}`,
+      `Lectura: ${c.via || "—"}`,
+    ].join(" · ");
+  }
+
+  async function cargarEstadoApu() {
+    let r = null;
+    try {
+      r = await fetch("/api/apu/catalogo", { headers: { Accept: "application/json" }, cache: "no-store" });
+    } catch {
+      return mensajeApu("No se pudo consultar el catálogo APU (sin red).", "error");
+    }
+    let c = null;
+    try { c = await r.json(); } catch { c = null; }
+    if (!r.ok || !c || !c.ok) {
+      $("apu-detalle").classList.add("hidden");
+      return mensajeApu((c && c.error ? esc(c.error) : "El catálogo APU no está cargado.")
+        + " Pulse «Cargar catálogo APU» para poblarlo.", "aviso");
+    }
+    mensajeApu("");
+    pintarApu(c);
+  }
+
+  async function cargarCatalogoApu() {
+    if (apuCargando) return;
+    const token = leerToken();
+    if (!token) return mensajeApu("Configure su token de acceso para cargar el catálogo.", "aviso");
+
+    apuCargando = true;
+    // doble clic: el botón se deshabilita durante el envío o se carga dos veces
+    $("btn-apu-cargar").disabled = true;
+    $("apu-spin").classList.remove("hidden");
+    mensajeApu("Cargando el catálogo en Redis…", "info");
+
+    let r = null;
+    try {
+      r = await fetch("/api/admin/apu/cargar-catalogo?forzar=true", {
+        method: "POST",
+        headers: { "x-historico-token": token, Accept: "application/json" },
+      });
+    } catch {
+      apuCargando = false;
+      $("btn-apu-cargar").disabled = false;
+      $("apu-spin").classList.add("hidden");
+      return mensajeApu("No se pudo contactar con el servidor. Reintente.", "error");
+    }
+    let c = null;
+    try { c = await r.json(); } catch { c = null; }
+    apuCargando = false;
+    $("btn-apu-cargar").disabled = false;
+    $("apu-spin").classList.add("hidden");
+
+    if (r.status === 401) return mensajeApu("Token inválido. Guarde uno nuevo arriba y reintente.", "error");
+    if (!r.ok || !c || !c.ok) {
+      const errores = (c && c.errores || []).slice(0, 6)
+        .map((e) => `<li>· <code class="font-mono">${esc(e.campo)}</code>: ${esc(e.error)}</li>`).join("");
+      return mensajeApu((c && c.error ? esc(c.error) : "No se pudo cargar el catálogo.")
+        + (errores ? `<ul class="mt-2 space-y-1 text-xs">${errores}</ul>` : ""), "error");
+    }
+
+    mensajeApu(c.escrito
+      ? `Catálogo cargado: ${fmt.format(c.insumos)} insumos, ${fmt.format(c.items)} ítems y `
+        + `${fmt.format(c.regiones)} regiones en ${fmt.format(c.comandos_redis)} comandos de Redis. `
+        + "Los precios son de referencia: cotice antes de presentar oferta."
+      : esc(c.nota || "El catálogo ya estaba cargado."), "ok");
+    // repintar desde el endpoint público: así lo que se ve es lo que hay en
+    // Redis, no lo que el POST dijo que iba a escribir
+    await cargarEstadoApu();
+  }
+
+  $("btn-apu-cargar").addEventListener("click", cargarCatalogoApu);
+
   /* ══════════ Arranque ══════════
      AL FINAL del IIFE, después de declarar todo lo que estas funciones usan.
      `arrancarPaneles` es una declaración de función (se hoistea), así que
@@ -1247,6 +1427,9 @@
     // de la auditoría empieza encendido); la AUDITORÍA no, que recorre el
     // histórico entero y solo debe correr cuando alguien la pide
     cargarExperienciaActual();
+    // consultar el catálogo APU es público y son dos comandos; CARGARLO escribe
+    // ~70 claves y solo corre cuando alguien pulsa el botón
+    cargarEstadoApu();
   }
   if (accesoConcedido()) abrirApp();
 })();

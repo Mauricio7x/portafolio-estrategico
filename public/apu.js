@@ -1,875 +1,912 @@
 /* ============================================================================
-   Detecta · APU — lectura del formulario de cantidades de un pliego
+   public/apu · Editor de Análisis de Precios Unitarios
    ----------------------------------------------------------------------------
-   EL PDF SE LEE AQUÍ, EN EL NAVEGADOR. `pdfjs-dist` en Node pesa decenas de MB y
-   hay que sacarlo del request path; el OCR «no cabe en el mismo proceso»
-   (docs/APU_Y_RENTABILIDAD.md §1.G.3). El navegador ya tiene un motor de PDF y
-   tiempo de sobra, así que hace la parte cara y al servidor solo le manda TEXTO.
-   Es la misma decisión que llevó el encadenado de la full a /admin.html: poner el
-   trabajo donde hay recursos, no donde queda más elegante en el diagrama.
+   Cuatro cosas que no son adorno:
 
-   CÓMO SE CONSERVAN LAS COLUMNAS, que es lo único que de verdad importa.
-   `getTextContent()` devuelve fragmentos con su matriz de transformación, así que
-   cada uno tiene coordenada X e Y. Se agrupa por Y (tolerancia ≈ ½ altura de
-   línea) para formar la FILA y se mira el HUECO en X entre fragmento y fragmento
-   para decidir el separador: hueco grande → TABULADOR (cambio de columna), hueco
-   pequeño → espacio. `lib/apu_pliego.dividirCeldas` lee esos tabuladores. Si en
-   vez de esto se mandara `str` concatenado, las columnas se perderían y el parseo
-   dependería de heurísticas de último recurso.
+   1. EL ARRANQUE AUTOMÁTICO VA AL FINAL DEL IIFE. Es la lección que ya costó
+      cara dos veces en este repositorio (`app.js` y `admin.js`): si `abrirApp()`
+      se llama junto al gate, revienta en la zona muerta temporal de las
+      constantes declaradas más abajo, y como todo es asíncrono el error sale
+      por una promesa rechazada — la página se queda en blanco EN SILENCIO.
 
-   pdf.js SE CARGA CUANDO SE NECESITA, no al abrir la página: son ~1 MB de CDN y
-   el dueño puede entrar solo a mirar lo que ya extrajo. Si el CDN no responde, se
-   dice con esas palabras en vez de dejar un botón muerto.
+   2. NINGÚN `|| 0` SOBRE UNA CIFRA DEL SERVIDOR. Un `|| 0` convierte «no sé» en
+      «cero» y lo hace creíble. Las cifras ausentes se pintan «—», que es lo que
+      son. La suite tiene una prueba que lo prohíbe en los tres frontends.
 
-   TRES VÍAS DE ENTRADA, y las tres acaban en el mismo endpoint:
-     · archivo PDF        → pdf.js → texto
-     · URL del PDF        → /api/apu/descargar (el navegador no puede: CORS) → pdf.js
-     · PDF escaneado      → pdf.js no saca texto → se rasteriza cada página a JPEG
-                            y se manda a OCR (/api/apu/extraer-texto lo reenvía a
-                            OCR.space con la clave del servidor)
+   3. EL TOKEN VIAJA POR CABECERA, NUNCA EN LA URL. Queda fuera de los logs de
+      acceso de Vercel y del historial del navegador. Se guarda en
+      `sessionStorage` bajo la MISMA clave que usa el resto de la app
+      (`historico_token`), así que quien ya lo escribió en el panel no lo repite.
 
-   NINGUNA PULSACIÓN SE QUEDA SIN RESPUESTA VISIBLE — lección que ya costó cara en
-   app.js: el token vacío AVISA en vez de hacer `return` a secas, el formulario va
-   cableado al `submit`, y `sessionStorage` se lee y se escribe dentro de `try`
-   porque en modo restringido lanza.
+   4. NINGUNA PULSACIÓN SE QUEDA SIN RESPUESTA VISIBLE. Un botón que no hace
+      nada parece roto aunque el fallo sea del servidor.
    ========================================================================== */
-"use strict";
+(function () {
+  "use strict";
 
-(() => {
+  /* ─────────────────────────── gate del sitio ─────────────────────────── */
   const CLAVE = "231105";
-  const MAX_INTENTOS_CLAVE = 3;
-  const CLAVE_TOKEN = "historico_token";
-
-  /* pdf.js desde CDN, con la versión CLAVADA y por un motivo que no es
-     cosmético: **desde la v4, `pdfjs-dist` ya no publica build UMD** — es ESM
-     puro (`.mjs`), incluido `legacy/build/`. La 3.11.174 es la última que expone
-     `window.pdfjsLib` con un `<script src>` clásico, que es lo que encaja con el
-     patrón de IIFE de este proyecto. Un `@latest` rompería la carga de golpe y
-     en silencio, así que la versión va en una constante y no se «actualiza»
-     sin comprobar antes que siga existiendo un build UMD. */
-  const PDFJS_VERSION = "3.11.174";
-  const PDFJS_URL = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.js`;
-  const PDFJS_WORKER = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.js`;
-
-  const MAX_PAGINAS_OCR = 5;              // el servidor topa igual: ver lib/apu_ocr
-  const TOPE_BYTES_PAGINA = 1000 * 1024;  // margen bajo el ~1 MB del plan gratuito
-  const MIN_TEXTO_UTIL = 40;              // suelo absoluto: por debajo no hay tabla que buscar
-  /* Un PDF escaneado devuelve `items: []` por página. Pero un escaneo con
-     cabecera vectorial devuelve unos pocos caracteres por página y pasaría el
-     suelo absoluto, así que el criterio de verdad es POR PÁGINA. Y el diagnóstico
-     que se muestra dice «parece escaneado», nunca «el pliego está vacío»:
-     ausencia de capa de texto es SIN DATO, no un documento sin contenido — el
-     mismo error de categoría que `anticipo_pct = 0`. */
-  const MIN_CARACTERES_POR_PAGINA = 100;
-
   const $ = (id) => document.getElementById(id);
-  const fmt = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 });
-  const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
-  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  /* ══════════ Gate ══════════ */
-  let intentosClave = 0;
-  const accesoConcedido = () => { try { return sessionStorage.getItem("detecta-acceso") === "1"; } catch { return false; } };
+  const accesoConcedido = () => {
+    try { return sessionStorage.getItem("detecta-acceso") === "1"; } catch { return false; }
+  };
+
   function abrirApp() {
     try { sessionStorage.setItem("detecta-acceso", "1"); } catch { /* sesión restringida */ }
-    $("gate").remove();
+    $("gate").classList.add("hidden");
     $("app").classList.remove("hidden");
-    // el panel arranca aquí, nunca antes: sus funciones usan constantes
-    // declaradas al final del módulo (ver «Arranque»)
-    arrancarPanel();
+    arrancar();
   }
-  function bloquear() {
-    $("gate").innerHTML =
-      '<div class="text-center"><p class="text-2xl font-semibold">Acceso denegado</p>'
-      + '<p class="mt-2 text-sm text-gray-500">Este sitio es privado.</p></div>';
-  }
+
   $("gate-form").addEventListener("submit", (e) => {
     e.preventDefault();
     if ($("gate-clave").value === CLAVE) return abrirApp();
-    intentosClave++;
-    if (intentosClave >= MAX_INTENTOS_CLAVE) return bloquear();
     const err = $("gate-error");
-    const quedan = MAX_INTENTOS_CLAVE - intentosClave;
-    err.textContent = `Acceso denegado (${quedan} intento${quedan === 1 ? "" : "s"} restante${quedan === 1 ? "" : "s"}).`;
+    err.textContent = "Clave incorrecta.";
     err.classList.remove("hidden");
     $("gate-clave").value = "";
     $("gate-clave").focus();
   });
 
-  /* ══════════ Token ══════════ */
+  /* ──────────────────────────── token de la API ───────────────────────── */
+  const CLAVE_TOKEN = "historico_token";
+  let esperandoToken = null;
+
   const leerToken = () => { try { return sessionStorage.getItem(CLAVE_TOKEN) || ""; } catch { return ""; } };
-  const guardarToken = (v) => { try { sessionStorage.setItem(CLAVE_TOKEN, v); } catch { /* sesión restringida */ } };
-  const olvidarToken = () => { try { sessionStorage.removeItem(CLAVE_TOKEN); } catch { /* sesión restringida */ } };
+  const guardarToken = (t) => { try { sessionStorage.setItem(CLAVE_TOKEN, t); } catch { /* modo restringido */ } };
+  const olvidarToken = () => { try { sessionStorage.removeItem(CLAVE_TOKEN); } catch { /* ídem */ } };
 
-  function pintarEstadoToken() {
-    const t = leerToken();
-    $("token-estado").textContent = t ? `Token guardado (${t.length} caracteres).` : "Sin token: la lectura de pliegos no funcionará.";
-    $("token-estado").className = `text-sm ${t ? "text-green-700" : "text-amber-700"}`;
+  function pedirToken(motivo) {
+    $("token-error").textContent = motivo || "";
+    $("token-error").classList.toggle("hidden", !motivo);
+    $("modal-token").classList.remove("hidden");
+    $("modal-token").classList.add("flex");
+    $("campo-token").value = "";
+    $("campo-token").focus();
+    return new Promise((resolve) => { esperandoToken = resolve; });
   }
-  $("form-token-apu").addEventListener("submit", (e) => {
+
+  function cerrarModalToken(valor) {
+    $("modal-token").classList.add("hidden");
+    $("modal-token").classList.remove("flex");
+    if (esperandoToken) { esperandoToken(valor); esperandoToken = null; }
+  }
+
+  $("form-token").addEventListener("submit", (e) => {
     e.preventDefault();
-    const v = $("input-token-apu").value.trim();
-    // AVISAR en vez de `return` a secas: un botón que no responde parece roto
-    if (!v) { pintarEstadoToken(); return mensaje("Pegue el token antes de guardar.", "aviso"); }
-    guardarToken(v);
-    $("input-token-apu").value = "";
-    pintarEstadoToken();
-    mensaje("Token guardado en esta pestaña.", "ok");
-    cargarContrato();
+    const t = $("campo-token").value.trim();
+    if (!t) {
+      // AVISA en vez de hacer `return` a secas: un botón que no responde
+      // parece roto y el dueño no tiene forma de saber que faltaba el campo
+      $("token-error").textContent = "Escriba el token: el campo está vacío.";
+      $("token-error").classList.remove("hidden");
+      return;
+    }
+    guardarToken(t);
+    cerrarModalToken(t);
   });
-  $("btn-token-olvidar").addEventListener("click", () => {
-    olvidarToken(); pintarEstadoToken(); mensaje("Token olvidado.", "info");
+  $("btn-token-cancelar").addEventListener("click", () => cerrarModalToken(null));
+  $("modal-token").addEventListener("click", (e) => { if (e.target === $("modal-token")) cerrarModalToken(null); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$("modal-token").classList.contains("hidden")) cerrarModalToken(null);
   });
 
-  /* ══════════ Mensajes, chip y progreso ══════════ */
-  function mensaje(texto, tipo) {
-    const p = $("pliego-mensaje");
-    if (!texto) return p.classList.add("hidden");
-    p.className = "mt-5 rounded-xl px-4 py-3 text-sm " + ({
-      ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
-      error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
-      aviso: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20",
-    }[tipo] || "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20");
-    p.textContent = texto;
-    p.classList.remove("hidden");
-  }
-  function avisos(lista) {
-    const ul = $("pliego-avisos");
-    if (!lista || !lista.length) return ul.classList.add("hidden");
-    ul.classList.remove("hidden");
-    ul.innerHTML = lista.map((a) => `<li>• ${esc(a)}</li>`).join("");
-  }
-  function chip(texto, { girando = false } = {}) {
-    $("chip-texto").textContent = texto;
-    $("chip-icono").textContent = girando ? "◔" : "•";
-    $("chip-icono").className = girando ? "spin inline-block" : "inline-block";
-  }
-  function progreso(hecho, total, etiqueta) {
-    const caja = $("prog-caja");
-    if (total == null) return caja.classList.add("hidden");
-    caja.classList.remove("hidden");
-    const pct = total > 0 ? Math.round((hecho / total) * 100) : 0;
-    $("prog-barra").style.width = `${pct}%`;
-    $("prog-texto").textContent = etiqueta || `${hecho} de ${total} (${pct} %)`;
-  }
-  function ocupado(v) {
-    for (const id of ["btn-extraer", "btn-ocr", "btn-limpiar"]) $(id).disabled = v;
-    if (!v) $("btn-ocr").disabled = !docPdf;
-  }
-
-  /* ══════════ Número colombiano (SOLO para editar) ══════════
-     El parseo que DECIDE vive en lib/apu_pliego.numeroColombiano, en el
-     servidor. Esta copia existe porque un <input> del navegador no puede
-     requerir un módulo de Node, y se limita a lo que necesita la edición
-     manual: leer lo que el dueño escribe en una celda. Misma naturaleza que
-     `revisarEnCliente` en admin.js — conveniencia, no autoridad. La regla es la
-     misma a propósito (coma = decimal, punto = miles) porque tener dos reglas
-     distintas para el mismo número sería peor que tener dos implementaciones. */
-  function numeroLocal(bruto) {
-    const t = String(bruto == null ? "" : bruto).trim();
-    if (!t) return null;
-    if (!/^[\s$.,\-+0-9]+$/.test(t)) return null;
-    let cuerpo = t.replace(/[\s$+]/g, "");
-    let signo = 1;
-    if (cuerpo.startsWith("-")) { signo = -1; cuerpo = cuerpo.slice(1); }
-    if (cuerpo.includes("-") || !/\d/.test(cuerpo)) return null;
-    let entero = cuerpo, decimal = "";
-    if (cuerpo.includes(",")) {
-      const partes = cuerpo.split(",");
-      if (partes.length > 2) return null;
-      entero = partes[0].replace(/\./g, "");
-      decimal = partes[1] || "";
-    } else if (cuerpo.includes(".")) {
-      const grupos = cuerpo.split(".");
-      const ultimo = grupos[grupos.length - 1];
-      if (ultimo.length === 3 && grupos.length >= 2) entero = grupos.join("");
-      else if (ultimo.length >= 1 && ultimo.length <= 2) { entero = grupos.slice(0, -1).join(""); decimal = ultimo; }
-      // UN solo punto y 4+ dígitos detrás es un DECIMAL de muchas cifras
-      // («375.0000» de un Excel, «3.14159»); con varios puntos no encaja en
-      // ninguna convención y es `null`. Tiene que decir lo MISMO que
-      // lib/apu_pliego.numeroColombiano — hay una prueba que compara las dos.
-      else if (grupos.length === 2) { entero = grupos[0]; decimal = ultimo; }
-      else return null;
+  /* Llamada autenticada. Si el token falta o el servidor responde 401, lo pide
+     UNA vez y reintenta; si el usuario cancela, devuelve null y quien llamó
+     enseña el aviso. Nunca deja la interfaz girando para siempre. */
+  async function api(ruta, opciones = {}, reintento = true) {
+    let token = leerToken();
+    if (!token) {
+      token = await pedirToken("Esta acción necesita el token del despliegue.");
+      if (!token) return null;
     }
-    if (!/^\d*$/.test(entero) || !/^\d*$/.test(decimal)) return null;
-    const n = parseFloat(`${entero || "0"}.${decimal || "0"}`);
-    return Number.isFinite(n) ? signo * n : null;
-  }
-
-  /* ══════════ pdf.js ══════════ */
-  /* EL WORKER NO PUEDE APUNTAR AL CDN, y esto es un defecto real, no una
-     precaución: `new Worker(url)` clásico NO admite una URL de otro origen, así
-     que `workerSrc = "https://cdnjs…/pdf.worker.min.js"` es el fallo
-     intermitente típico de pdf.js — funciona en unos navegadores y en otros
-     revienta al abrir el primer documento.
-
-     La salida es traer el worker por `fetch` (cdnjs sí manda
-     `Access-Control-Allow-Origin: *`) y construir un **blob del mismo origen**.
-     Tres niveles, de mejor a peor, y ninguno silencioso:
-       1. blob local  → worker de verdad, la pestaña no se congela;
-       2. URL directa → puede fallar según el navegador, pero si funciona, mejor
-          que nada;
-       3. sin worker  → pdf.js corre en el hilo principal: FUNCIONA y congela la
-          interfaz mientras lee. Se avisa en el chip, porque una pestaña que
-          parece colgada sin explicación es peor que una lenta anunciada. */
-  let pdfjsCargando = null;
-
-  async function fijarWorker(lib) {
+    const cfg = {
+      method: opciones.method || "GET",
+      headers: { "x-historico-token": token },
+    };
+    if (opciones.body !== undefined) {
+      cfg.headers["Content-Type"] = "application/json";
+      cfg.body = JSON.stringify(opciones.body);
+    }
+    let r;
     try {
-      const r = await fetch(PDFJS_WORKER, { cache: "force-cache" });
-      if (!r.ok) throw new Error(String(r.status));
-      const blob = new Blob([await r.text()], { type: "application/javascript" });
-      lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
-      return "blob";
-    } catch {
-      try {
-        lib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
-        return "cdn";
-      } catch {
-        try { lib.GlobalWorkerOptions.workerSrc = ""; } catch { /* nada más que hacer */ }
-        return "sin_worker";
-      }
-    }
-  }
-
-  function cargarPdfJs() {
-    if (pdfjsCargando) return pdfjsCargando;
-    pdfjsCargando = new Promise((resolve, reject) => {
-      if (window.pdfjsLib) return resolve(window.pdfjsLib);
-      const s = document.createElement("script");
-      s.src = PDFJS_URL;
-      s.async = true;
-      s.onload = () => {
-        if (!window.pdfjsLib) {
-          return reject(new Error("pdf.js se cargó pero no expuso «pdfjsLib»: probablemente la versión "
-            + "del CDN ya no trae build UMD. Fije una versión 3.x."));
-        }
-        resolve(window.pdfjsLib);
-      };
-      s.onerror = () => reject(new Error(
-        "No se pudo cargar pdf.js desde el CDN. Sin él el PDF no se puede leer en el navegador. "
-        + "Compruebe la conexión, o pegue la tabla en un archivo .txt y súbala."));
-      document.head.appendChild(s);
-    }).then(async (lib) => {
-      const modo = await fijarWorker(lib);
-      if (modo === "sin_worker") {
-        mensaje("pdf.js no pudo arrancar su worker: la lectura corre en el hilo principal y la pestaña "
-          + "se quedará quieta mientras trabaja. Es lento, no está roto.", "aviso");
-      }
-      return lib;
-    }).catch((e) => { pdfjsCargando = null; throw e; });
-    return pdfjsCargando;
-  }
-
-  /* Fragmentos de una página → líneas con las COLUMNAS separadas por TABULADOR.
-     Es la pieza de la que depende todo el parseo del servidor. */
-  function lineasDePagina(fragmentos) {
-    const utiles = (fragmentos || []).filter((f) => f && typeof f.str === "string" && f.str.trim() !== ""
-      && Array.isArray(f.transform) && f.transform.length >= 6);
-    /* Se agrupa por CUBETAS de Y, no recorriendo las filas ya creadas. La
-       búsqueda lineal era O(F²) sobre los fragmentos de la página: un PDF que
-       ponga cada glifo en su propia coordenada Y —cosa que un documento hostil o
-       simplemente raro puede hacer— congelaba la pestaña decenas de segundos por
-       página, sin repintado y sin forma de cancelar. Con cubetas es O(F).
-
-       Se prueban la cubeta propia y sus dos vecinas: un fragmento a un pelo del
-       borde tiene que caer en la misma fila que el de al lado, y sin mirar las
-       vecinas se partiría la fila en dos por un redondeo. */
-    const ALTO_CUBETA = 3;              // unidades de PDF; ≈ media línea de 6-7 pt
-    const cubetas = new Map();
-    const filas = [];
-    for (const f of utiles) {
-      const x = Number(f.transform[4]) || 0;
-      const y = Number(f.transform[5]) || 0;
-      const alto = Math.abs(Number(f.height) || Number(f.transform[3]) || 10) || 10;
-      const tol = Math.max(alto * 0.5, 2);
-      const base = Math.round(y / ALTO_CUBETA);
-      let fila = null;
-      for (const k of [base, base - 1, base + 1]) {
-        const cand = cubetas.get(k);
-        if (cand && Math.abs(cand.y - y) <= tol) { fila = cand; break; }
-      }
-      if (!fila) {
-        fila = { y, alto, piezas: [] };
-        filas.push(fila);
-        cubetas.set(base, fila);
-      }
-      fila.alto = Math.max(fila.alto, alto);
-      fila.piezas.push({ x, ancho: Math.abs(Number(f.width) || 0), texto: f.str });
-    }
-    // en un PDF la Y crece HACIA ARRIBA: la primera línea es la de mayor Y
-    filas.sort((a, b) => b.y - a.y);
-    return filas.map((fila) => {
-      fila.piezas.sort((a, b) => a.x - b.x);
-      const umbralTab = Math.max(fila.alto * 1.0, 5);
-      const umbralEspacio = Math.max(fila.alto * 0.18, 1);
-      let salida = "";
-      let previa = null;
-      for (const p of fila.piezas) {
-        if (previa) {
-          const hueco = p.x - (previa.x + previa.ancho);
-          if (hueco >= umbralTab) salida += "\t";
-          else if (hueco >= umbralEspacio) salida += " ";
-        }
-        salida += p.texto;
-        previa = p;
-      }
-      return salida.replace(/[ \t]+$/, "");
-    }).filter((l) => l.trim() !== "").join("\n");
-  }
-
-  let docPdf = null;          // documento pdf.js vivo (para el reintento por OCR)
-  let nombrePdf = null;
-
-  async function abrirPdf(datos, nombre) {
-    const pdfjs = await cargarPdfJs();
-    let doc = null;
-    try {
-      doc = await pdfjs.getDocument({ data: datos, isEvalSupported: false }).promise;
+      r = await fetch(ruta, cfg);
     } catch (e) {
-      const m = String((e && e.message) || e);
-      if (/password/i.test(m)) {
-        throw new Error("El PDF está protegido con contraseña: pdf.js no puede abrirlo. "
-          + "Quite la protección (es además una de las causas de rechazo en SECOP II) y reintente.");
-      }
-      throw new Error(`El PDF no se pudo abrir: puede estar corrupto o no ser un PDF. (${m})`);
+      throw new Error(`Sin conexión con el servidor (${e.message}).`);
     }
-    if (!doc.numPages) throw new Error("El PDF no tiene páginas.");
-    docPdf = doc;
-    nombrePdf = nombre || null;
-    return doc;
-  }
-
-  async function textoDelPdf(doc) {
-    const trozos = [];
-    for (let n = 1; n <= doc.numPages; n++) {
-      progreso(n - 1, doc.numPages, `Leyendo página ${n} de ${doc.numPages}…`);
-      // ceder el hilo: sin esto la barra no se repinta en documentos largos
-      await new Promise((r) => setTimeout(r, 0));
-      const pagina = await doc.getPage(n);
-      const contenido = await pagina.getTextContent();
-      const lineas = lineasDePagina(contenido.items);
-      if (lineas) trozos.push(lineas);
+    if (r.status === 401 && reintento) {
+      olvidarToken();
+      const nuevo = await pedirToken("El token no es válido. Vuelva a escribirlo.");
+      if (!nuevo) return null;
+      return api(ruta, opciones, false);
     }
-    progreso(doc.numPages, doc.numPages, `${doc.numPages} página(s) leídas.`);
-    return trozos.join("\n");
-  }
-
-  /* ── rasterizado para OCR ──
-     Se baja la escala y la calidad hasta que la página cabe en el tope del plan
-     gratuito. Si ni la más pequeña cabe, se dice: mandarla igual gastaría una
-     petición para recibir un 413. */
-  const bytesDeB64 = (b64) => {
-    const s = String(b64 || "").replace(/\s+/g, "");
-    const relleno = (s.match(/=+$/) || [""])[0].length;
-    return Math.floor((s.length * 3) / 4) - relleno;
-  };
-
-  async function rasterizarPagina(doc, n) {
-    const pagina = await doc.getPage(n);
-    for (const escala of [2, 1.6, 1.3, 1, 0.8]) {
-      const vista = pagina.getViewport({ scale: escala });
-      const lienzo = document.createElement("canvas");
-      lienzo.width = Math.max(1, Math.ceil(vista.width));
-      lienzo.height = Math.max(1, Math.ceil(vista.height));
-      const ctx = lienzo.getContext("2d");
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, lienzo.width, lienzo.height);
-      await pagina.render({ canvasContext: ctx, viewport: vista }).promise;
-      for (const calidad of [0.85, 0.7, 0.55]) {
-        const url = lienzo.toDataURL("image/jpeg", calidad);
-        const b64 = url.slice(url.indexOf(",") + 1);
-        if (bytesDeB64(b64) <= TOPE_BYTES_PAGINA) return { base64: b64, mime: "image/jpeg" };
-      }
+    let cuerpo = null;
+    try { cuerpo = await r.json(); } catch { /* respuesta no-JSON */ }
+    if (!r.ok) {
+      throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
     }
-    return null;
+    return cuerpo;
   }
 
-  /* ══════════ Llamadas al servidor ══════════ */
-  async function pedir(ruta, cuerpo) {
-    const token = leerToken();
-    if (!token) return { estado: 0, cuerpo: null, sinToken: true };
-    let r = null, datos = null;
-    try {
-      r = await fetch(ruta, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-historico-token": token },
-        body: JSON.stringify(cuerpo),
-      });
-    } catch (e) {
-      return { estado: 0, cuerpo: null, red: (e && e.message) || "sin conexión" };
-    }
-    try { datos = await r.json(); } catch { datos = null; }
-    if (r.status === 401) { olvidarToken(); pintarEstadoToken(); }
-    return { estado: r.status, cuerpo: datos };
+  /* ─────────────────────────── formato ──────────────────────────────── */
+  const nf = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 });
+  const nf2 = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 });
+
+  /* `pesos`/`num` reciben `null` cuando el servidor no tiene el dato y pintan
+     «—». Es justo lo contrario de un `|| 0`: no inventan un cero creíble. */
+  const pesos = (n) => (Number.isFinite(n) ? `$${nf.format(n)}` : "—");
+  const num = (n) => (Number.isFinite(n) ? nf2.format(n) : "—");
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  function mensaje(texto, tipo = "info") {
+    const el = $("accion-mensaje");
+    const colores = { info: "text-gray-600", ok: "text-emerald-700", error: "text-red-600" };
+    el.className = `mt-3 text-sm ${colores[tipo] || colores.info}`;
+    el.textContent = texto;
   }
 
-  let contrato = null;
-  async function cargarContrato() {
-    const token = leerToken();
-    if (!token) return;
-    try {
-      const r = await fetch("/api/apu/extraer-texto", {
-        headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store",
-      });
-      if (!r.ok) return;
-      contrato = await r.json();
-      pintarCatalogo();
-    } catch { /* el contrato es una comodidad: sin él la extracción sigue funcionando */ }
-  }
+  /* ─────────────────────────── estado ──────────────────────────────── */
+  let CATALOGO = null;      // respuesta de /api/apu/catalogo
+  let filas = [];           // [{item_id, descripcion, unidad, cantidad, rendimiento_override}]
+  let ultimoCalculo = null; // respuesta de /api/apu/calcular
+  let idActual = null;      // id del presupuesto cargado/guardado
 
-  function pintarCatalogo() {
-    if (!contrato || !contrato.catalogo) return;
-    const ocr = contrato.ocr && contrato.ocr.configurado;
-    $("btn-ocr").title = ocr
-      ? "Rasteriza las páginas y las manda a reconocer (OCR.space)."
-      : (contrato.ocr && contrato.ocr.nota) || "OCR no configurado.";
-  }
-
-  /* ══════════ Estado de la tabla editable ══════════ */
-  let filas = [];             // lo que se pinta y se edita
-  let ultimaRespuesta = null;
-
-  function nuevaFila(base = {}) {
+  /* ─────────────────────── configuración de la UI ───────────────────── */
+  function leerConfig() {
+    const anticipoCrudo = $("anticipo").value.trim();
+    const dedCrudo = $("deducciones").value.trim();
     return {
-      numeral: base.numeral == null ? "" : String(base.numeral),
-      descripcion_original: base.descripcion_original == null ? "" : String(base.descripcion_original),
-      item_id: base.item_id == null ? "" : String(base.item_id),
-      unidad: base.unidad == null ? "" : String(base.unidad),
-      cantidad: base.cantidad == null ? null : Number(base.cantidad),
-      unitario_oficial: base.unitario_oficial == null ? null : Number(base.unitario_oficial),
-      total_oficial: base.total_oficial == null ? null : Number(base.total_oficial),
-      nivel_mapeo: base.nivel_mapeo || "manual",
-      personalizado: Boolean(base.personalizado),
-      confianza: base.confianza == null ? null : Number(base.confianza),
-      unidad_catalogo: base.unidad_catalogo == null ? null : String(base.unidad_catalogo),
-      unidad_discrepante: Boolean(base.unidad_discrepante),
-      descripcion_catalogo: base.descripcion_catalogo == null ? null : String(base.descripcion_catalogo),
-      articulo_invias_candidato: base.articulo_invias_candidato == null ? null : String(base.articulo_invias_candidato),
-      validacion_fila: base.validacion_fila || null,
-      editada: false,
+      modo_aiu: $("modo-aiu").value,
+      aiu_pct: Number($("aiu").value),
+      utilidad_pct: Number($("utilidad").value),
+      imprevistos_pct: Number($("imprevistos").value),
+      // vacío = SIN DATO, no cero. La diferencia la respeta el motor.
+      anticipo_pct: anticipoCrudo === "" ? null : Number(anticipoCrudo),
+      aplicar_ajuste_competitivo: $("ajuste-competitivo").checked,
+      factor_baja: Number($("factor-baja").value),
+      deducciones_pct: dedCrudo === "" ? null : Number(dedCrudo),
     };
   }
 
-  const INSIGNIA = {
-    firme: ["bg-green-50 text-green-800 ring-green-600/20", "Firme"],
-    revisar: ["bg-amber-50 text-amber-800 ring-amber-600/20", "Revisar"],
-    personalizado: ["bg-blue-50 text-blue-800 ring-blue-600/20", "Personalizado"],
-    manual: ["bg-gray-100 text-gray-600 ring-gray-500/20", "Manual"],
-  };
+  function aplicarConfig(c) {
+    if (!c) return;
+    if (c.modo_aiu) $("modo-aiu").value = c.modo_aiu;
+    if (c.aiu_pct != null) $("aiu").value = c.aiu_pct;
+    if (c.utilidad_pct != null) $("utilidad").value = c.utilidad_pct;
+    if (c.imprevistos_pct != null) $("imprevistos").value = c.imprevistos_pct;
+    $("anticipo").value = c.anticipo_pct == null ? "" : c.anticipo_pct;
+    $("ajuste-competitivo").checked = !!c.aplicar_ajuste_competitivo;
+    if (c.factor_baja != null) $("factor-baja").value = c.factor_baja;
+    $("deducciones").value = c.deducciones_pct == null ? "" : c.deducciones_pct;
+    sincronizarBaja();
+  }
 
-  const SEMAFORO = {
-    verde: ["bg-green-100 text-green-800", "🟢 Verde · filas y total cuadran"],
-    amarillo: ["bg-amber-100 text-amber-800", "🟡 Amarillo · exige confirmación humana"],
-    rojo: ["bg-red-100 text-red-800", "🔴 Rojo · parseo poco fiable"],
-  };
+  function sincronizarBaja() {
+    const activo = $("ajuste-competitivo").checked;
+    $("factor-baja").disabled = !activo;
+    $("btn-sugerir-baja").disabled = !activo;
+  }
+  $("ajuste-competitivo").addEventListener("change", sincronizarBaja);
 
-  /* «sin dato» NUNCA se pinta como 0: cero y «no sé» son cosas distintas, y es
-     el defecto que este proyecto ya cerró dos veces. */
-  const celdaNumero = (v) => (v == null ? "" : fmt.format(v));
+  /* ────────────────────────── catálogo ─────────────────────────────── */
+  async function cargarCatalogo() {
+    const r = await api("/api/apu/catalogo");
+    if (!r) return;
+    CATALOGO = r;
+
+    $("aviso-precios").textContent = r.aviso
+      || "Precios de referencia regionalizada, no cotizaciones: verifique contra cotización real antes de ofertar.";
+
+    const dep = $("departamento");
+    const conRegion = new Set(r.departamentos_con_region || []);
+    /* El desplegable marca cuáles tienen precio de referencia y cuáles no. Sin
+       la marca, elegir Chocó parecería exactamente igual de fiable que elegir
+       Antioquia, y no lo es: uno se calcula con su región y el otro con la base. */
+    dep.innerHTML = '<option value="">— Sin departamento —</option>'
+      + (r.departamentos || []).map((d) => {
+        const marca = conRegion.has(d) ? "" : "  ⚪ sin región cotizada";
+        return `<option value="${esc(d)}">${esc(d)}${esc(marca)}</option>`;
+      }).join("");
+
+    const sel = $("item-nuevo");
+    sel.innerHTML = (r.items || [])
+      .map((i) => `<option value="${esc(i.codigo)}">${esc(i.descripcion)} (${esc(i.unidad)})</option>`)
+      .join("");
+  }
+
+  /* ────────────────────────── inferencia ───────────────────────────── */
+  $("btn-inferir").addEventListener("click", async () => {
+    const objeto = $("objeto").value.trim();
+    if (!objeto) {
+      pintarInferencia({ estado: "no_determinada", mensaje: "Escriba el objeto del proceso antes de inferir." });
+      return;
+    }
+    const btn = $("btn-inferir");
+    btn.disabled = true;
+    btn.textContent = "Infiriendo…";
+    try {
+      const r = await api("/api/apu/inferir", {
+        method: "POST",
+        body: { objeto, codigos_unspsc: $("codigos-unspsc").value.trim() },
+      });
+      if (!r) return;
+      pintarInferencia(r);
+      if (r.items && r.items.length) {
+        filas = r.items.map((i) => ({
+          item_id: i.codigo, descripcion: i.descripcion || i.codigo, unidad: i.unidad,
+          cantidad: 0, rendimiento_override: null,
+        }));
+        ultimoCalculo = null;
+        pintarTabla();
+      }
+    } catch (e) {
+      pintarInferencia({ estado: "no_determinada", mensaje: `No se pudo inferir: ${e.message}` });
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Inferir ítems";
+    }
+  });
+
+  function pintarInferencia(r) {
+    const caja = $("inferencia");
+    const estilos = {
+      verde: "bg-emerald-50 text-emerald-900",
+      amarillo: "bg-amber-50 text-amber-900",
+      no_determinada: "bg-gray-100 text-gray-700",
+    };
+    const emoji = { verde: "🟢", amarillo: "🟡", no_determinada: "⚪" };
+    caja.className = `mt-4 rounded-xl p-4 text-sm ${estilos[r.estado] || estilos.no_determinada}`;
+    caja.classList.remove("hidden");
+
+    let html = `<p class="font-medium">${emoji[r.estado] || "⚪"} ${esc(r.mensaje || "")}</p>`;
+    if (r.tipologia) {
+      html += `<p class="mt-1 text-xs opacity-80">Tipología <strong>${esc(r.tipologia.codigo)}</strong> · `
+        + `${esc(r.tipologia.nombre)} · unidad dominante ${esc(r.tipologia.unidad_dominante || "—")} · `
+        + `puntaje ${r.puntaje}, margen ${r.margen}</p>`;
+      if (r.tipologia.sin_apu && r.tipologia.nota) {
+        html += `<p class="mt-2 rounded-lg bg-white/60 p-2 text-xs">⚠️ ${esc(r.tipologia.nota)}</p>`;
+      }
+    }
+    if (r.cantidades && r.cantidades.length) {
+      html += `<p class="mt-2 text-xs opacity-80">Magnitudes legibles en el objeto: `
+        + r.cantidades.map((c) => `<strong>${num(c.valor)} ${esc(c.unidad)}</strong>`).join(" · ")
+        + " — verifíquelas contra el formulario de cantidades del pliego.</p>";
+    }
+    if (r.unspsc && r.unspsc.presente) {
+      html += `<p class="mt-1 text-xs opacity-70">Familias UNSPSC leídas: ${r.unspsc.familias.map(esc).join(", ")}</p>`;
+    }
+    caja.innerHTML = html;
+  }
+
+  /* ────────────────────────── tabla de ítems ───────────────────────── */
+  $("btn-agregar").addEventListener("click", () => {
+    if (!CATALOGO) return;
+    const codigo = $("item-nuevo").value;
+    const def = CATALOGO.items.find((i) => i.codigo === codigo);
+    if (!def) return;
+    filas.push({
+      item_id: def.codigo, descripcion: def.descripcion, unidad: def.unidad,
+      cantidad: 0, rendimiento_override: null,
+    });
+    ultimoCalculo = null;
+    pintarTabla();
+  });
 
   function pintarTabla() {
-    const cuerpo = $("r-items");
+    const cuerpo = $("tabla");
+    $("tabla-vacia").classList.toggle("hidden", filas.length > 0);
+    $("btn-calcular").disabled = filas.length === 0;
+    $("btn-exportar").disabled = !ultimoCalculo;
+
     cuerpo.innerHTML = filas.map((f, i) => {
-      const [clase, etiqueta] = INSIGNIA[f.nivel_mapeo] || INSIGNIA.manual;
-      const cuadre = f.validacion_fila && f.validacion_fila.estado === "no_cuadra"
-        ? '<span class="ml-1 text-red-600" title="cantidad × unitario ≠ total">≠</span>' : "";
-      const disc = f.unidad_discrepante
-        ? `<span class="ml-1 text-amber-600" title="El catálogo la mide en ${esc(f.unidad_catalogo)}; no se convierte">⚠</span>` : "";
-      const sinCantidad = f.cantidad == null
-        ? '<span class="text-xs text-amber-700">sin dato</span>' : "";
-      return `<tr data-i="${i}" class="align-top">
-        <td class="py-1.5 pr-2 text-xs text-gray-400">${esc(f.numeral || "")}</td>
-        <td class="py-1.5 pr-2"><input data-campo="descripcion_original" value="${esc(f.descripcion_original)}"
-             class="celda-edit w-full min-w-[16rem] rounded-lg border border-transparent px-2 py-1 text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none"></td>
-        <td class="py-1.5 pr-2"><input data-campo="item_id" list="catalogo-items" value="${esc(f.item_id)}"
-             placeholder="(personalizado)"
-             class="celda-edit w-40 rounded-lg border border-transparent px-2 py-1 font-mono text-xs hover:border-gray-300 focus:border-gray-900 focus:outline-none"></td>
-        <td class="py-1.5 pr-2"><input data-campo="unidad" value="${esc(f.unidad)}"
-             class="celda-edit w-16 rounded-lg border border-transparent px-2 py-1 text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none">${disc}</td>
-        <td class="py-1.5 pr-2 text-right"><input data-campo="cantidad" value="${esc(celdaNumero(f.cantidad))}"
-             class="celda-edit w-24 rounded-lg border border-transparent px-2 py-1 text-right text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none">${sinCantidad}</td>
-        <td class="py-1.5 pr-2 text-right"><input data-campo="unitario_oficial" value="${esc(celdaNumero(f.unitario_oficial))}"
-             class="celda-edit w-28 rounded-lg border border-transparent px-2 py-1 text-right text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none"></td>
-        <td class="py-1.5 pr-2 text-right"><input data-campo="total_oficial" value="${esc(celdaNumero(f.total_oficial))}"
-             class="celda-edit w-32 rounded-lg border border-transparent px-2 py-1 text-right text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none">${cuadre}</td>
-        <td class="py-1.5 pr-2"><span class="rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${clase}">${etiqueta}</span>
-            ${f.editada ? '<span class="ml-1 text-[11px] text-gray-400">editada</span>' : ""}</td>
-        <td class="py-1.5"><button data-borrar="${i}" type="button" title="Quitar la fila"
-             class="rounded-lg px-2 py-1 text-xs text-gray-400 transition hover:bg-red-50 hover:text-red-600">✕</button></td>
+      const def = CATALOGO ? CATALOGO.items.find((x) => x.codigo === f.item_id) : null;
+      const rendPorDefecto = def && Number.isFinite(def.rendimiento_dia) ? def.rendimiento_dia : null;
+      return `<tr data-fila="${i}">
+        <td class="py-2 pr-3">
+          <span class="font-medium">${esc(f.descripcion || f.item_id)}</span>
+          <span class="block text-xs text-gray-400">${esc(f.item_id)}</span>
+        </td>
+        <td class="py-2 pr-3 text-gray-500">${esc(f.unidad || "—")}</td>
+        <td class="py-2 pr-3 text-right">
+          <input type="number" min="0" step="any" data-campo="cantidad" data-fila="${i}"
+                 value="${f.cantidad || ""}" placeholder="0"
+                 class="edit w-24 rounded border border-gray-200 px-2 py-1 text-right num">
+        </td>
+        <td class="py-2 pr-3 text-right">
+          <input type="number" min="0" step="any" data-campo="rendimiento" data-fila="${i}"
+                 value="${f.rendimiento_override == null ? "" : f.rendimiento_override}"
+                 placeholder="${rendPorDefecto == null ? "—" : num(rendPorDefecto)}"
+                 class="edit w-24 rounded border border-gray-200 px-2 py-1 text-right num">
+        </td>
+        <td class="py-2 pr-3 text-right num" data-celda="material-${i}">—</td>
+        <td class="py-2 pr-3 text-right num" data-celda="mano_obra-${i}">—</td>
+        <td class="py-2 pr-3 text-right num" data-celda="equipo-${i}">—</td>
+        <td class="py-2 pr-3 text-right num" data-celda="transporte-${i}">—</td>
+        <td class="py-2 pr-3 text-right num font-medium" data-celda="unitario-${i}">—</td>
+        <td class="py-2 pr-3 text-right num font-semibold" data-celda="total-${i}">—</td>
+        <td class="py-2 text-right">
+          <button type="button" data-quitar="${i}"
+                  class="rounded px-2 py-1 text-xs text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                  aria-label="Quitar ítem">✕</button>
+        </td>
       </tr>`;
     }).join("");
-    pintarTarjetas();
+
+    if (ultimoCalculo) pintarCalculoEnTabla(ultimoCalculo);
   }
 
-  function pintarTarjetas() {
-    const conCantidad = filas.filter((f) => f.cantidad != null).length;
-    const sumaTotales = filas.reduce((a, f) => a + (f.total_oficial == null ? 0 : f.total_oficial), 0);
-    const conTotal = filas.filter((f) => f.total_oficial != null).length;
-    const tarjeta = (titulo, valor, nota) => `<div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-        <p class="text-xs uppercase tracking-wide text-gray-400">${esc(titulo)}</p>
-        <p class="mt-1 text-lg font-semibold tracking-tight">${valor}</p>
-        ${nota ? `<p class="mt-0.5 text-[11px] text-gray-400">${esc(nota)}</p>` : ""}
-      </div>`;
-    $("r-tarjetas").innerHTML = [
-      tarjeta("Ítems", fmt.format(filas.length), `${filas.filter((f) => f.nivel_mapeo === "firme").length} mapeados en firme`),
-      tarjeta("Con cantidad", fmt.format(conCantidad),
-        filas.length - conCantidad ? `${filas.length - conCantidad} sin dato` : "todas legibles"),
-      tarjeta("Suma de totales", conTotal ? fmtCOP.format(sumaTotales) : "sin dato",
-        conTotal ? `sobre ${conTotal} de ${filas.length} filas` : "el pliego no trae precios"),
-      tarjeta("Personalizados", fmt.format(filas.filter((f) => f.personalizado || !f.item_id).length),
-        "fuera del catálogo: no es un error"),
-    ].join("");
-  }
-
-  $("r-items").addEventListener("input", (e) => {
-    const campo = e.target.getAttribute && e.target.getAttribute("data-campo");
+  /* Delegación: la tabla se repinta entera y unos manejadores por fila se
+     perderían en cada repintado. */
+  $("tabla").addEventListener("input", (e) => {
+    const campo = e.target.getAttribute("data-campo");
     if (!campo) return;
-    const tr = e.target.closest("tr");
-    const i = Number(tr && tr.getAttribute("data-i"));
-    if (!Number.isInteger(i) || !filas[i]) return;
-    const bruto = e.target.value;
-    if (campo === "cantidad" || campo === "unitario_oficial" || campo === "total_oficial") {
-      // vacío = «sin dato» (null), no 0. Escribir 0 sí es escribir un cero.
-      filas[i][campo] = bruto.trim() === "" ? null : numeroLocal(bruto);
+    const i = Number(e.target.getAttribute("data-fila"));
+    if (!filas[i]) return;
+    const crudo = e.target.value.trim();
+    if (campo === "cantidad") {
+      filas[i].cantidad = crudo === "" ? 0 : Number(crudo);
     } else {
-      filas[i][campo] = bruto;
+      // vacío = usar el rendimiento del catálogo, no «rendimiento cero»
+      filas[i].rendimiento_override = crudo === "" ? null : Number(crudo);
     }
-    filas[i].editada = true;
-    if (campo === "item_id") {
-      filas[i].personalizado = !bruto.trim();
-      filas[i].nivel_mapeo = "manual";
-    }
-    pintarTarjetas();
   });
 
-  $("r-items").addEventListener("click", (e) => {
-    const idx = e.target.getAttribute && e.target.getAttribute("data-borrar");
-    if (idx == null) return;
-    const i = Number(idx);
-    if (!Number.isInteger(i)) return;
-    filas.splice(i, 1);
+  $("tabla").addEventListener("click", (e) => {
+    const quitar = e.target.getAttribute("data-quitar");
+    if (quitar === null) return;
+    filas.splice(Number(quitar), 1);
+    ultimoCalculo = null;
     pintarTabla();
   });
 
-  $("btn-agregar").addEventListener("click", () => {
-    filas.push(nuevaFila({}));
-    pintarTabla();
-  });
-
-  $("btn-exportar").addEventListener("click", () => {
-    const salida = {
-      _meta: {
-        generado: new Date().toISOString(),
-        archivo: nombrePdf,
-        advertencia: (ultimaRespuesta && ultimaRespuesta.advertencia)
-          || "La extracción automática puede tener errores. Verifique los datos contra el pliego original.",
-        confianza: ultimaRespuesta && ultimaRespuesta.confianza,
-        editado_a_mano: filas.some((f) => f.editada),
-      },
-      objeto_proceso: $("pliego-objeto").value.trim() || null,
-      unspsc: $("pliego-unspsc").value.trim() || null,
-      precio_base: numeroLocal($("pliego-precio").value),
-      items: filas.map((f, i) => ({
-        orden: i + 1, numeral: f.numeral || null, item_id: f.item_id || null,
-        descripcion_original: f.descripcion_original, unidad: f.unidad || null,
-        cantidad: f.cantidad, unitario_oficial: f.unitario_oficial, total_oficial: f.total_oficial,
-        personalizado: Boolean(f.personalizado || !f.item_id), editada: f.editada,
-      })),
-      validacion: ultimaRespuesta && ultimaRespuesta.validacion,
-    };
-    const blob = new Blob([JSON.stringify(salida, null, 2)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `apu_items_${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  });
-
-  /* ══════════ Pintado del resultado ══════════ */
-  function pintarResultado(cuerpo) {
-    ultimaRespuesta = cuerpo;
-    filas = (cuerpo.items || []).map(nuevaFila);
-    $("seccion-resultado").classList.remove("hidden");
-
-    const [claseSem, textoSem] = SEMAFORO[(cuerpo.confianza && cuerpo.confianza.color) || "amarillo"] || SEMAFORO.amarillo;
-    $("r-semaforo").className = `rounded-full px-3 py-1 text-xs font-semibold ${claseSem}`;
-    $("r-semaforo").textContent = textoSem;
-
-    // datalist del catálogo: los códigos que el servidor conoce
-    const vistos = [...new Set((cuerpo.items || []).map((i) => i.item_id).filter(Boolean))];
-    $("catalogo-items").innerHTML = vistos.map((c) => `<option value="${esc(c)}"></option>`).join("");
-
-    pintarTabla();
-
-    const v = cuerpo.validacion || {};
-    const f = v.filas || {};
-    const doc = v.documento || {};
-    const partes = [];
-    if (f.con_precio) {
-      partes.push(`Filas con precio: ${f.cuadran} de ${f.con_precio} cuadran`
-        + `${f.ratio == null ? "" : ` (${(f.ratio * 100).toFixed(1)} %)`}.`);
-    } else {
-      partes.push("El documento no trae precios unitarios: no hay aritmética de fila que validar.");
-    }
-    if (doc.estado === "cuadra") partes.push(`La suma cuadra con el presupuesto oficial usando el AIU declarado (variante ${esc(doc.variante_que_cuadro || "—")}).`);
-    else if (doc.estado === "diagnostico") partes.push("Sin AIU declarado: el cuadre del documento es diagnóstico y no produce verde.");
-    else if (doc.estado === "no_cuadra") partes.push("La suma NO cuadra con el presupuesto oficial.");
-    if (cuerpo.fuente === "ocr") partes.push("Texto obtenido por OCR: la tasa de error es más alta que en un PDF nativo.");
-    $("r-nota").textContent = partes.join(" ");
-
-    const d = cuerpo.diagnostico || {};
-    $("r-diagnostico").innerHTML = [
-      `<p><strong>Líneas leídas:</strong> ${fmt.format(d.lineas_leidas == null ? 0 : d.lineas_leidas)}${d.truncado ? " (truncado)" : ""}</p>`,
-      `<p><strong>Cabecera detectada:</strong> ${d.cabecera_detectada ? esc(d.cabecera_detectada.join(", ")) : "ninguna — se usó la firma de unidad"}</p>`,
-      `<p><strong>Vías de reconocimiento:</strong> ${esc(JSON.stringify(d.vias_de_reconocimiento || {}))}</p>`,
-      `<p><strong>Descartadas:</strong> ${esc(JSON.stringify(d.descartadas || {}))}</p>`,
-      (d.ejemplos_no_reconocidos && d.ejemplos_no_reconocidos.length)
-        ? `<div><strong>Líneas no reconocidas (muestra):</strong><ul class="mt-1 space-y-0.5 font-mono">${d.ejemplos_no_reconocidos.map((l) => `<li class="truncate">${esc(l)}</li>`).join("")}</ul></div>`
-        : "",
-      (cuerpo.tipologias_probables && cuerpo.tipologias_probables.length)
-        ? `<p><strong>Tipología del objeto:</strong> ${cuerpo.tipologias_probables.map((t) => `${esc(t.nombre)} (${t.puntaje})`).join(" · ")}</p>`
-        : "<p><strong>Tipología del objeto:</strong> no determinada (sin objeto o sin términos ancla)</p>",
-    ].filter(Boolean).join("");
-
-    avisos(cuerpo.avisos);
-  }
-
-  /* ══════════ Flujo principal ══════════ */
-  function contexto() {
-    return {
-      objeto_proceso: $("pliego-objeto").value.trim(),
-      unspsc: $("pliego-unspsc").value.trim(),
-      precio_base: numeroLocal($("pliego-precio").value),
-    };
-  }
-
-  async function bytesDeEntrada() {
-    const archivo = $("pliego-archivo").files && $("pliego-archivo").files[0];
-    const url = $("pliego-url").value.trim();
-
-    if (archivo) {
-      const nombre = archivo.name || "documento";
-      if (/\.txt$/i.test(nombre) || archivo.type === "text/plain") {
-        const texto = await archivo.text();
-        return { texto, nombre };
-      }
-      const buffer = await archivo.arrayBuffer();
-      return { datos: new Uint8Array(buffer), nombre };
-    }
-    if (url) {
-      chip("Descargando el PDF…", { girando: true });
-      const r = await pedir("/api/apu/descargar", { url });
-      if (r.sinToken) throw new Error("Guarde primero el token de acceso.");
-      if (r.red) throw new Error(`No se pudo contactar el servidor: ${r.red}.`);
-      if (r.estado !== 200 || !r.cuerpo || !r.cuerpo.ok) {
-        throw new Error((r.cuerpo && r.cuerpo.error) || `El servidor respondió ${r.estado}.`);
-      }
-      const bin = atob(r.cuerpo.base64);
-      const datos = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) datos[i] = bin.charCodeAt(i);
-      return { datos, nombre: url.split("/").pop() || "documento.pdf" };
-    }
-    throw new Error("Seleccione un archivo PDF o pegue la URL del pliego.");
-  }
-
-  async function extraer() {
-    mensaje(null); avisos(null);
-    if (!leerToken()) return mensaje("Guarde primero el token de acceso, arriba.", "aviso");
-    ocupado(true);
-    docPdf = null;
-    $("btn-ocr").disabled = true;
+  /* ────────────────────────── cálculo ──────────────────────────────── */
+  $("btn-calcular").addEventListener("click", async () => {
+    const btn = $("btn-calcular");
+    btn.disabled = true;
+    btn.textContent = "Calculando…";
     try {
-      const entrada = await bytesDeEntrada();
-      let texto = entrada.texto || "";
-      if (!texto) {
-        chip("Abriendo el PDF…", { girando: true });
-        const doc = await abrirPdf(entrada.datos, entrada.nombre);
-        chip(`Leyendo ${doc.numPages} página(s)…`, { girando: true });
-        texto = await textoDelPdf(doc);
-        $("btn-ocr").disabled = false;
-      } else {
-        nombrePdf = entrada.nombre;
-      }
-      progreso(null);
+      const r = await api("/api/apu/calcular", {
+        method: "POST",
+        body: {
+          items: filas.map((f) => ({
+            item_id: f.item_id,
+            cantidad: f.cantidad,
+            rendimiento_override: f.rendimiento_override,
+          })),
+          departamento: $("departamento").value,
+          config: leerConfig(),
+        },
+      });
+      if (!r) return;
+      ultimoCalculo = r;
+      pintarCalculoEnTabla(r);
+      pintarResumen(r);
+      mensaje("Presupuesto calculado.", "ok");
+    } catch (e) {
+      mensaje(`No se pudo calcular: ${e.message}`, "error");
+    } finally {
+      btn.disabled = filas.length === 0;
+      btn.textContent = "Calcular APU";
+      $("btn-exportar").disabled = !ultimoCalculo;
+    }
+  });
 
-      const largo = texto.trim().length;
-      const paginas = docPdf ? docPdf.numPages : 1;
-      const porPagina = largo / paginas;
-      if (largo < MIN_TEXTO_UTIL || (docPdf && porPagina < MIN_CARACTERES_POR_PAGINA)) {
-        chip("Sin capa de texto: parece escaneado", {});
-        mensaje(`pdf.js extrajo ${largo} caracteres en ${paginas} página(s) (${porPagina.toFixed(0)} por página): `
-          + "este PDF no tiene capa de texto utilizable, casi seguro es un escaneo. Eso no significa que el "
-          + "documento esté vacío. Pulse «Reintentar con OCR» para rasterizar las páginas y mandarlas a reconocer.",
-        "aviso");
+  function celda(nombre, i) { return document.querySelector(`[data-celda="${nombre}-${i}"]`); }
+
+  function pintarCalculoEnTabla(r) {
+    r.items.forEach((it, i) => {
+      const fila = document.querySelector(`tr[data-fila="${i}"]`);
+      if (fila) fila.classList.toggle("bg-red-50", !!it.incompleto);
+      const campos = [
+        ["material", it.costo_material_unitario], ["mano_obra", it.costo_mano_obra_unitario],
+        ["equipo", it.costo_equipo_unitario], ["transporte", it.costo_transporte_unitario],
+        ["unitario", it.costo_directo_unitario], ["total", it.costo_total],
+      ];
+      for (const [nombre, valor] of campos) {
+        const c = celda(nombre, i);
+        if (c) c.textContent = pesos(valor);   // `null` → «—», jamás «$0»
+      }
+      if (it.incompleto) {
+        const c = celda("unitario", i);
+        if (c) c.title = it.mensaje || `Sin precio: ${(it.insumos_sin_precio || []).join(", ")}`;
+      }
+    });
+  }
+
+  function pintarResumen(r) {
+    $("seccion-resumen").classList.remove("hidden");
+    const s = r.resumen;
+
+    $("r-directo").textContent = pesos(s.costo_directo_total);
+    $("r-venta").textContent = pesos(s.precio_venta);
+    $("r-aiu").textContent = `AIU ${num(r.configuracion.aiu_total_pct)} % (${r.configuracion.modo_aiu})`;
+    $("r-final").textContent = pesos(s.precio_final);
+    $("r-baja").textContent = r.configuracion.aplicar_ajuste_competitivo
+      ? `Baja aplicada: ${num(r.configuracion.factor_baja)} %`
+      : "Sin ajuste competitivo";
+    $("r-margen").textContent = pesos(s.margen_final);
+    $("r-margen-pct").textContent = s.margen_pct == null
+      ? "—" : `${num(s.margen_pct)} % sobre el costo directo`;
+
+    // el color del margen es información, no decoración: en rojo cuando el
+    // precio no cubre el costo directo
+    const caja = $("r-margen-caja");
+    const enPerdida = Number.isFinite(s.margen_final) && s.margen_final <= 0;
+    caja.className = `rounded-2xl p-4 ${enPerdida ? "bg-red-50" : "bg-emerald-50"}`;
+    $("r-margen").className = `mt-1 text-2xl font-semibold tabular-nums ${enPerdida ? "text-red-950" : "text-emerald-950"}`;
+
+    const comp = s.por_componente;
+    const totalCD = s.costo_directo_total;
+    const parte = (v) => (Number.isFinite(v) && Number.isFinite(totalCD) && totalCD > 0
+      ? `${num((v / totalCD) * 100)} %` : "—");
+    $("r-componentes").innerHTML = [
+      ["Materiales", comp.material], ["Mano de obra", comp.mano_obra],
+      ["Equipo y herramienta", comp.equipo], ["Transporte", comp.transporte],
+    ].map(([k, v]) => `<tr><td class="py-1.5">${k}</td>`
+      + `<td class="py-1.5 text-right num">${pesos(v)}</td>`
+      + `<td class="py-1.5 text-right num text-gray-400">${parte(v)}</td></tr>`).join("")
+      + `<tr class="font-semibold"><td class="py-1.5">Costo directo</td>`
+      + `<td class="py-1.5 text-right num">${pesos(totalCD)}</td><td></td></tr>`;
+
+    const c = r.configuracion;
+    $("r-aiu-detalle").innerHTML = [
+      [`Administración (${num(c.aiu_pct)} %)`, s.administracion],
+      [`Imprevistos (${num(c.imprevistos_pct)} %)`, s.imprevistos],
+      [`Utilidad (${num(c.utilidad_pct)} %)`, s.utilidad],
+      ["Precio de venta", s.precio_venta],
+      ["Precio final", s.precio_final],
+      ["Financiación requerida (20 %)", s.financiacion_requerida],
+      ["IVA sobre la utilidad (informativo)", s.iva_sobre_utilidad],
+      ["Contribución 5 % obra pública", s.contribucion_obra_publica],
+      ["Margen tras deducciones", s.margen_despues_deducciones],
+    ].map(([k, v]) => `<tr><td class="py-1.5">${esc(k)}</td>`
+      + `<td class="py-1.5 text-right num">${pesos(v)}</td></tr>`).join("");
+
+    $("r-alertas").innerHTML = (r.alertas || []).map((a) =>
+      `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">${esc(a)}</p>`).join("");
+
+    const reg = r.ajuste_regional;
+    const f = reg.factores;
+    $("regional-nota").textContent = reg.estado === "mapeado" && f
+      ? `🟢 ${reg.region_nombre} · material ×${num(f.materiales)} · mano de obra ×${num(f.mano_obra)} · equipo ×${num(f.equipo)} · transporte ×${num(f.transporte)}`
+      : `⚪ Sin región cotizada: se calculó con la región base «${esc(reg.region_utilizada || "—")}».`;
+  }
+
+  /* ────────────── sugerencia del factor de baja (histórico) ─────────── */
+  $("btn-sugerir-baja").addEventListener("click", async () => {
+    const entidad = $("entidad").value.trim();
+    if (!entidad) {
+      $("baja-nota").textContent = "Escriba la entidad para consultar su histórico de adjudicaciones.";
+      return;
+    }
+    $("baja-nota").textContent = "Consultando el índice de baja…";
+    try {
+      const r = await api(`/api/indice-baja?entidad=${encodeURIComponent(entidad)}`);
+      if (!r) { $("baja-nota").textContent = "Consulta cancelada."; return; }
+      const e = (r.entidades && r.entidades[0]) || null;
+      /* Se exige BASE antes de interpolar una cifra: mediana presente y
+         procesos por encima del mínimo. Es la misma invariante que impuso
+         `competenciaDe` tras el defecto de «18,2 oferentes en 0 procesos». */
+      const procesos = e ? (e.procesos ?? e.procesos_contados) : null;
+      if (!e || e.baja_mediana == null || !Number.isFinite(procesos) || procesos < r.min_procesos) {
+        $("baja-nota").textContent = `⚪ Sin base suficiente para «${entidad}»: hacen falta ${r.min_procesos} adjudicaciones con presupuesto y valor adjudicado.`;
         return;
       }
-
-      chip("Analizando la tabla…", { girando: true });
-      await enviarTexto(texto);
-    } catch (e) {
-      progreso(null);
-      chip("Error", {});
-      mensaje((e && e.message) || "Error desconocido al leer el pliego.", "error");
-    } finally {
-      ocupado(false);
+      $("factor-baja").value = e.baja_mediana;
+      $("baja-nota").textContent = `Mediana histórica: ${num(e.baja_mediana)} % sobre ${procesos} procesos`
+        + (e.nivel ? ` (nivel ${e.nivel})` : "") + ". Es el descuento típico, no una recomendación.";
+    } catch (err) {
+      $("baja-nota").textContent = `No se pudo consultar: ${err.message}`;
     }
-  }
+  });
 
-  async function enviarTexto(texto) {
-    const ctx = contexto();
-    const r = await pedir("/api/apu/extraer-texto", {
-      texto_extraido: texto,
-      objeto_proceso: ctx.objeto_proceso,
-      unspsc: ctx.unspsc,
-      precio_base: ctx.precio_base,
-    });
-    manejarRespuesta(r);
-  }
-
-  function manejarRespuesta(r) {
-    if (r.sinToken) return mensaje("Guarde primero el token de acceso, arriba.", "aviso");
-    if (r.red) { chip("Sin conexión", {}); return mensaje(`No se pudo contactar el servidor: ${r.red}.`, "error"); }
-    if (r.estado === 401) { chip("Token inválido", {}); return mensaje("Token inválido. Guárdelo de nuevo arriba y reintente.", "error"); }
-    if (!r.cuerpo || !r.cuerpo.ok) {
-      chip("Error", {});
-      return mensaje((r.cuerpo && r.cuerpo.error) || `El servidor respondió ${r.estado}.`, "error");
-    }
-    if (!r.cuerpo.items || !r.cuerpo.items.length) {
-      chip("Sin filas reconocidas", {});
-      pintarResultado(r.cuerpo);
-      return mensaje(r.cuerpo.mensaje || "No se reconoció ninguna fila de ítem.", "aviso");
-    }
-    chip(`${r.cuerpo.items.length} ítem(s) extraídos`, {});
-    pintarResultado(r.cuerpo);
-    mensaje(`Se extrajeron ${r.cuerpo.items.length} ítem(s). Revíselos antes de usarlos.`, "ok");
-  }
-
-  async function reintentarConOcr() {
-    if (!docPdf) return mensaje("Cargue primero un PDF: el OCR trabaja sobre sus páginas.", "aviso");
-    if (contrato && contrato.ocr && contrato.ocr.configurado === false) {
-      return mensaje(contrato.ocr.nota || "El OCR no está configurado en este despliegue.", "aviso");
-    }
-    mensaje(null); avisos(null);
-    ocupado(true);
+  /* ──────────────────────── guardar / cargar ───────────────────────── */
+  $("btn-guardar").addEventListener("click", async () => {
+    if (!filas.length) { mensaje("No hay ítems que guardar.", "error"); return; }
+    const btn = $("btn-guardar");
+    btn.disabled = true;
     try {
-      /* TANDAS ENCADENADAS. El servidor topa en MAX_PAGINAS_OCR por llamada
-         —OCR.space tarda segundos por página y la función tiene 60 s—, así que un
-         formulario escaneado de 40 páginas no cabe en una sola invocación. Se
-         encadena: cada tanda pide `solo_reconocer` y devuelve su texto, se
-         acumula todo, y al final se manda el texto COMPLETO a parsear. Parsear
-         cada tanda por separado partiría la tabla y ni los capítulos ni la suma
-         del documento cuadrarían. Mismo patrón que /admin.html con la full. */
-      const total = docPdf.numPages;
-      const tandas = Math.ceil(total / MAX_PAGINAS_OCR);
-      const nolegibles = [];
-      const fallos = [];
-      const trozos = [];
-
-      for (let tanda = 0; tanda < tandas; tanda++) {
-        const desde = tanda * MAX_PAGINAS_OCR + 1;
-        const hasta = Math.min(desde + MAX_PAGINAS_OCR - 1, total);
-        const paginas = [];
-        for (let n = desde; n <= hasta; n++) {
-          chip(`Rasterizando página ${n} de ${total}…`, { girando: true });
-          progreso(n - 1, total, `Preparando página ${n} de ${total} para OCR…`);
-          await new Promise((r) => setTimeout(r, 0));
-          const img = await rasterizarPagina(docPdf, n);
-          if (img) paginas.push(img);
-          else nolegibles.push(n);
-        }
-        if (!paginas.length) continue;
-
-        chip(`Reconociendo páginas ${desde}-${hasta} de ${total} (tanda ${tanda + 1}/${tandas})…`, { girando: true });
-        progreso(hasta, total, `Reconociendo páginas ${desde}-${hasta} de ${total}…`);
-        const rt = await pedir("/api/apu/extraer-texto", {
-          texto_extraido: "", imagenes_base64: paginas, solo_reconocer: true,
-        });
-        if (rt.sinToken) { progreso(null); chip("Sin token", {}); return mensaje("Guarde primero el token de acceso, arriba.", "aviso"); }
-        if (rt.red) { progreso(null); chip("Sin conexión", {}); return mensaje(`No se pudo contactar el servidor: ${rt.red}.`, "error"); }
-        if (rt.estado === 401) { progreso(null); chip("Token inválido", {}); return mensaje("Token inválido. Guárdelo de nuevo arriba y reintente.", "error"); }
-        if (!rt.cuerpo || !rt.cuerpo.ok) {
-          /* Una tanda que falla NO tira el documento entero: se registra y se
-             sigue. 35 páginas leídas valen mucho más que un error global — y si
-             el problema es la clave o la cuota, `pedir` ya habrá devuelto 401/503
-             y se corta arriba. */
-          fallos.push(`páginas ${desde}-${hasta}: ${(rt.cuerpo && rt.cuerpo.error) || `error ${rt.estado}`}`);
-          continue;
-        }
-        if (rt.cuerpo.texto_ocr) trozos.push(rt.cuerpo.texto_ocr);
-        for (const f of (rt.cuerpo.ocr && rt.cuerpo.ocr.fallos) || []) {
-          fallos.push(`página ${desde + (f.pagina - 1)}: ${f.error}`);
-        }
-      }
-
-      if (!trozos.length) {
-        progreso(null);
-        chip("El OCR no devolvió texto", {});
-        avisos(fallos.length ? fallos : null);
-        return mensaje(nolegibles.length === total
-          ? "Ninguna página cabe en el límite de tamaño del OCR ni en la escala más baja. Extraiga la tabla a mano."
-          : "El OCR no devolvió texto de ninguna página.", "error");
-      }
-
-      // ahora sí: el texto COMPLETO, parseado de una vez
-      chip("Analizando la tabla reconocida…", { girando: true });
-      progreso(total, total, "Analizando la tabla…");
-      const ctx = contexto();
-      const r = await pedir("/api/apu/extraer-texto", {
-        texto_extraido: trozos.join("\n"),
-        objeto_proceso: ctx.objeto_proceso,
-        unspsc: ctx.unspsc,
-        precio_base: ctx.precio_base,
+      const r = await api("/api/apu/guardar", {
+        method: "POST",
+        body: {
+          id: idActual || undefined,
+          perfil: $("perfil").value,
+          nombre: $("nombre-presupuesto").value.trim(),
+          objeto: $("objeto").value.trim(),
+          departamento: $("departamento").value,
+          entidad: $("entidad").value.trim(),
+          // el proceso de SECOP al que pertenece: es lo que enciende
+          // «APU listo» en su fila del panel
+          id_proceso: ($("id-proceso") && $("id-proceso").value.trim()) || null,
+          items: filas,
+          config: leerConfig(),
+          total: ultimoCalculo ? ultimoCalculo.resumen.precio_final : null,
+        },
       });
-      progreso(null);
-      manejarRespuesta(r);
-      // el texto vino de un OCR: la respuesta dirá `pdf_nativo` porque llegó como
-      // texto, así que hay que decirlo aquí o el aviso sobre la tasa de error
-      // del OCR no aparecería
-      const extra = ["El texto se obtuvo por OCR: la tasa de error es más alta que en un PDF nativo."]
-        .concat(nolegibles.length ? [`Páginas que no se pudieron preparar para OCR: ${nolegibles.join(", ")}.`] : [])
-        .concat(fallos);
-      avisos(extra.concat((r.cuerpo && r.cuerpo.avisos) || []));
+      if (!r) return;
+      idActual = r.id;
+      mensaje(`Guardado como «${r.nombre}» (id ${r.id}). ${r.nota}`, "ok");
     } catch (e) {
-      progreso(null);
-      chip("Error", {});
-      mensaje((e && e.message) || "Error desconocido durante el OCR.", "error");
+      mensaje(`No se pudo guardar: ${e.message}`, "error");
     } finally {
-      ocupado(false);
+      btn.disabled = false;
+    }
+  });
+
+  $("btn-listar").addEventListener("click", async () => {
+    const caja = $("lista-presupuestos");
+    try {
+      const r = await api(`/api/apu/listar?perfil=${encodeURIComponent($("perfil").value)}`);
+      if (!r) return;
+      caja.classList.remove("hidden");
+      if (!r.presupuestos.length) {
+        caja.innerHTML = `<p class="text-sm text-gray-500">No hay presupuestos guardados para este perfil. Los borradores viven ${r.ttl_dias} días.</p>`;
+        return;
+      }
+      caja.innerHTML = `<table class="w-full text-sm">
+        <thead class="text-left text-xs uppercase tracking-wide text-gray-400"><tr>
+          <th class="py-1 pr-2">Nombre</th><th class="py-1 pr-2">Departamento</th>
+          <th class="py-1 pr-2 text-right">Ítems</th><th class="py-1 pr-2 text-right">Total</th>
+          <th class="py-1 pr-2">Guardado</th><th class="py-1"></th>
+        </tr></thead><tbody class="divide-y divide-gray-100">${
+        r.presupuestos.map((p) => `<tr>
+          <td class="py-2 pr-2 font-medium">${esc(p.nombre)}</td>
+          <td class="py-2 pr-2 text-gray-500">${esc(p.departamento || "—")}</td>
+          <td class="py-2 pr-2 text-right num">${p.items}</td>
+          <td class="py-2 pr-2 text-right num">${pesos(p.total_guardado)}</td>
+          <td class="py-2 pr-2 text-gray-500">${esc(String(p.guardado).slice(0, 16).replace("T", " "))}</td>
+          <td class="py-2 text-right"><button type="button" data-cargar="${esc(p.id)}"
+              class="rounded border border-gray-300 px-2 py-1 text-xs font-medium transition hover:bg-gray-50">Cargar</button></td>
+        </tr>`).join("")}</tbody></table>`;
+    } catch (e) {
+      mensaje(`No se pudo listar: ${e.message}`, "error");
+    }
+  });
+
+  $("lista-presupuestos").addEventListener("click", async (e) => {
+    const id = e.target.getAttribute("data-cargar");
+    if (!id) return;
+    try {
+      const r = await api(`/api/apu/cargar?id=${encodeURIComponent(id)}&perfil=${encodeURIComponent($("perfil").value)}`);
+      if (!r) return;
+      const p = r.presupuesto;
+      idActual = p.id;
+      $("nombre-presupuesto").value = p.nombre || "";
+      $("objeto").value = p.objeto || "";
+      $("departamento").value = p.departamento || "";
+      $("entidad").value = p.entidad || "";
+      aplicarConfig(p.config);
+      filas = (p.items || []).map((f) => {
+        const def = CATALOGO ? CATALOGO.items.find((x) => x.codigo === f.item_id) : null;
+        return {
+          item_id: f.item_id,
+          descripcion: f.descripcion || (def ? def.descripcion : f.item_id),
+          unidad: f.unidad || (def ? def.unidad : null),
+          cantidad: f.cantidad,
+          rendimiento_override: f.rendimiento_override == null ? null : f.rendimiento_override,
+        };
+      });
+      ultimoCalculo = null;
+      pintarTabla();
+      $("seccion-resumen").classList.add("hidden");
+      $("lista-presupuestos").classList.add("hidden");
+      mensaje(r.catalogo_cambiado
+        ? `Cargado «${p.nombre}». ⚠️ ${r.nota}`
+        : `Cargado «${p.nombre}». Pulse «Calcular APU» para ver los totales.`, r.catalogo_cambiado ? "error" : "ok");
+    } catch (err) {
+      mensaje(`No se pudo cargar: ${err.message}`, "error");
+    }
+  });
+
+  /* ─────────────────────── exportación a Excel ──────────────────────── */
+  $("btn-exportar").addEventListener("click", () => {
+    if (!ultimoCalculo) { mensaje("Calcule el presupuesto antes de exportarlo.", "error"); return; }
+    try {
+      const bytes = XLSXApu.construirLibro(construirHojas(ultimoCalculo));
+      const nombre = ($("nombre-presupuesto").value.trim() || "presupuesto-apu")
+        .replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-").toLowerCase();
+      XLSXApu.descargar(bytes, `${nombre || "presupuesto-apu"}.xlsx`);
+      mensaje("Excel generado.", "ok");
+    } catch (e) {
+      mensaje(`No se pudo generar el Excel: ${e.message}`, "error");
+    }
+  });
+
+  /* Dos hojas: el presupuesto (lo que se entrega) y el desglose insumo a
+     insumo (lo que permite defenderlo si la entidad lo pregunta). */
+  function construirHojas(r) {
+    const c = r.configuracion;
+    const s = r.resumen;
+    const hoy = new Date().toISOString().slice(0, 10);
+    const titulo = $("nombre-presupuesto").value.trim() || "Presupuesto de obra";
+
+    /* ---------- hoja 1 · presupuesto ---------- */
+    const filasHoja = [
+      [{ v: "ANÁLISIS DE PRECIOS UNITARIOS", s: "titulo" }],
+      [{ v: titulo, s: "negrita" }],
+      [{ v: `Fecha: ${hoy}   ·   Departamento: ${r.departamento || "—"}   ·   Entidad: ${$("entidad").value.trim() || "—"}`, s: "subtitulo" }],
+      [{ v: $("objeto").value.trim().slice(0, 400), s: "subtitulo" }],
+      [],
+      [
+        { v: "Ítem", s: "encabezado" }, { v: "Descripción", s: "encabezado" },
+        { v: "Unidad", s: "encabezado" }, { v: "Cantidad", s: "encabezado" },
+        { v: "Rendim./día", s: "encabezado" }, { v: "Material", s: "encabezado" },
+        { v: "Mano de obra", s: "encabezado" }, { v: "Equipo", s: "encabezado" },
+        { v: "Transporte", s: "encabezado" }, { v: "Vr. unitario", s: "encabezado" },
+        { v: "Vr. total", s: "encabezado" },
+      ],
+    ];
+
+    for (const it of r.items) {
+      filasHoja.push([
+        { v: it.item_id, s: "texto" },
+        { v: it.descripcion || "—", s: "texto" },
+        { v: it.unidad || "—", s: "texto" },
+        { v: it.cantidad, s: "cantidad" },
+        { v: it.rendimiento_dia, s: "cantidad" },
+        { v: it.costo_material_unitario, s: "moneda" },
+        { v: it.costo_mano_obra_unitario, s: "moneda" },
+        { v: it.costo_equipo_unitario, s: "moneda" },
+        { v: it.costo_transporte_unitario, s: "moneda" },
+        { v: it.costo_directo_unitario, s: "moneda" },
+        { v: it.costo_total, s: "moneda" },
+      ]);
+    }
+
+    filasHoja.push([]);
+    const resumenFilas = [
+      ["COSTO DIRECTO TOTAL", s.costo_directo_total, "destacado"],
+      [`Administración (A) ${c.aiu_pct} %`, s.administracion, "normal"],
+      [`Imprevistos (I) ${c.imprevistos_pct} %`, s.imprevistos, "normal"],
+      [`Utilidad (U) ${c.utilidad_pct} %`, s.utilidad, "normal"],
+      [`AIU total ${c.aiu_total_pct} % (${c.modo_aiu})`, null, "normal"],
+      ["PRECIO DE VENTA", s.precio_venta, "resumen"],
+    ];
+    if (c.aplicar_ajuste_competitivo) {
+      resumenFilas.push([`Ajuste competitivo −${c.factor_baja} %`, null, "normal"]);
+      resumenFilas.push(["PRECIO FINAL OFERTADO", s.precio_final, "destacado"]);
+    }
+    resumenFilas.push(["Margen sobre costo directo", s.margen_final, "resumen"]);
+    resumenFilas.push(["Financiación requerida (20 %)", s.financiacion_requerida, "normal"]);
+    resumenFilas.push(["Contribución 5 % obra pública (informativo)", s.contribucion_obra_publica, "normal"]);
+    resumenFilas.push(["IVA sobre la utilidad (informativo)", s.iva_sobre_utilidad, "normal"]);
+
+    for (const [etiqueta, valor, tipo] of resumenFilas) {
+      const estiloTexto = tipo === "destacado" ? "destacadoTexto" : tipo === "resumen" ? "resumenTexto" : "totalTexto";
+      const estiloValor = tipo === "destacado" ? "destacadoMoneda" : tipo === "resumen" ? "resumenMoneda" : "totalMoneda";
+      filasHoja.push([
+        { v: etiqueta, s: estiloTexto }, null, null, null, null, null, null, null, null,
+        null, { v: valor, s: estiloValor },
+      ]);
+    }
+
+    filasHoja.push([]);
+    filasHoja.push([{ v: (r.como_leerlo && r.como_leerlo.precios) || "", s: "nota" }]);
+    for (const a of r.alertas || []) filasHoja.push([{ v: a, s: "nota" }]);
+
+    const nFilas = filasHoja.length;
+    const hoja1 = {
+      nombre: "Presupuesto",
+      filas: filasHoja,
+      anchos: [16, 46, 9, 12, 12, 14, 14, 14, 13, 15, 17],
+      altos: { 0: 26 },
+      congelar: 6,
+      fusiones: ["A1:K1", "A2:K2", "A3:K3", "A4:K4",
+        ...Array.from({ length: nFilas }, (_, i) => i)
+          .filter((i) => filasHoja[i].length === 1 && filasHoja[i][0] && filasHoja[i][0].s === "nota")
+          .map((i) => `A${i + 1}:K${i + 1}`)],
+    };
+
+    /* ---------- hoja 2 · desglose por insumo ---------- */
+    const det = [
+      [{ v: "DESGLOSE DE PRECIOS UNITARIOS", s: "titulo" }],
+      [{ v: `${titulo} · ${hoy}`, s: "subtitulo" }],
+      [],
+    ];
+    for (const it of r.items) {
+      if (it.incompleto && !it.detalle) {
+        det.push([{ v: `${it.item_id} — ${it.mensaje || "sin datos"}`, s: "negrita" }], []);
+        continue;
+      }
+      det.push([{ v: `${it.item_id} · ${it.descripcion} · ${it.unidad}`, s: "negrita" }]);
+      det.push([
+        { v: "Insumo", s: "encabezado" }, { v: "Descripción", s: "encabezado" },
+        { v: "Unidad", s: "encabezado" }, { v: "Cantidad", s: "encabezado" },
+        { v: "Desperd. %", s: "encabezado" }, { v: "Vr. unitario", s: "encabezado" },
+        { v: "Valor", s: "encabezado" },
+      ]);
+      for (const m of (it.detalle && it.detalle.materiales) || []) {
+        det.push([
+          { v: m.codigo, s: "texto" }, { v: m.descripcion, s: "texto" }, { v: m.unidad, s: "texto" },
+          { v: m.cantidad_con_desperdicio, s: "cantidad" }, { v: m.desperdicio_pct, s: "cantidad" },
+          { v: m.precio_unitario, s: "moneda" }, { v: m.valor, s: "moneda" },
+        ]);
+      }
+      for (const o of (it.detalle && it.detalle.cuadrilla) || []) {
+        det.push([
+          { v: o.codigo, s: "texto" }, { v: o.descripcion, s: "texto" }, { v: "hora", s: "texto" },
+          { v: o.cantidad, s: "cantidad" }, null,
+          { v: o.costo_hora, s: "moneda2" }, null,
+        ]);
+      }
+      for (const o of (it.detalle && it.detalle.equipo) || []) {
+        det.push([
+          { v: o.codigo, s: "texto" }, { v: o.descripcion, s: "texto" }, { v: "hora", s: "texto" },
+          { v: o.cantidad, s: "cantidad" }, null,
+          { v: o.costo_hora, s: "moneda2" }, null,
+        ]);
+      }
+      det.push([
+        { v: `Rendimiento ${it.rendimiento_dia}/día · prestacional ${r.ajuste_regional.prestacional} · herramienta menor ${it.detalle ? it.detalle.herramienta_menor_pct : "—"} %`, s: "nota" },
+      ]);
+      det.push([
+        { v: "Valor unitario", s: "resumenTexto" }, null, null, null, null, null,
+        { v: it.costo_directo_unitario, s: "resumenMoneda" },
+      ]);
+      det.push([]);
+    }
+
+    const hoja2 = { nombre: "Desglose", filas: det, anchos: [16, 42, 10, 13, 12, 15, 16] };
+    return [hoja1, hoja2];
+  }
+
+  /* ─────────────────────────── arranque ─────────────────────────────── */
+
+  /* ════════════════════ Precarga desde el panel y rentabilidad ═══════════════
+     El botón «APU» de una fila de /admin.html abre esta página con el proceso
+     en la querystring. Sin esa precarga habría que copiar a mano el objeto, el
+     departamento, la entidad y la cuantía de cada proceso, que es justo el
+     trabajo que el botón existe para ahorrar. */
+  function precargarDesdeURL() {
+    let p;
+    try { p = new URLSearchParams(location.search); } catch { return false; }
+    const poner = (id, clave) => {
+      const v = p.get(clave);
+      if (v != null && v !== "" && $(id)) $(id).value = v;
+    };
+    poner("objeto", "objeto");
+    poner("codigos-unspsc", "unspsc");
+    poner("entidad", "entidad");
+    poner("id-proceso", "id_proceso");
+    poner("cuantia", "cuantia");
+    poner("plazo-meses", "plazo");
+    const perfil = p.get("perfil");
+    if (perfil && $("perfil") && [...$("perfil").options].some((o) => o.value === perfil)) $("perfil").value = perfil;
+    // el NIT viaja aparte: el índice de baja se consulta por NOMBRE, y el NIT
+    // solo sirve de puente cuando la entidad no viene (ver /api/apu/rentabilidad)
+    nitProceso = p.get("entidad_nit") || "";
+    const dpto = p.get("departamento");
+    if (dpto && $("departamento")) {
+      const opciones = [...$("departamento").options];
+      const hit = opciones.find((o) => norml(o.value) === norml(dpto) || norml(o.textContent) === norml(dpto));
+      if (hit) $("departamento").value = hit.value;
+    }
+    const hayProceso = !!(p.get("id_proceso") || p.get("objeto"));
+    if (hayProceso) $("seccion-proceso").classList.remove("hidden");
+    return hayProceso;
+  }
+  const norml = (x) => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+  let nitProceso = "";
+
+  const copRent = (n) => (n == null ? "—" : `$${nf.format(Math.round(n))}`);
+  const pctRent = (n) => (n == null ? "—" : `${nf2.format(n)} %`);
+
+  function tarjetaRent(titulo, valor, nota, tono) {
+    const color = tono === "mal" ? "text-red-600" : tono === "bien" ? "text-green-700" : "text-gray-900";
+    return `<div class="rounded-xl bg-gray-50 p-4">
+      <p class="text-xs font-medium uppercase tracking-wide text-gray-500">${esc(titulo)}</p>
+      <p class="mt-1 text-lg font-semibold num ${color}">${valor}</p>
+      ${nota ? `<p class="mt-1 text-xs text-gray-500">${esc(nota)}</p>` : ""}
+    </div>`;
+  }
+
+  async function calcularRentabilidad() {
+    if (!filas.length) { mensaje("Agregue ítems antes de calcular la rentabilidad.", "error"); return; }
+    const btn = $("btn-rentabilidad");
+    btn.disabled = true;
+    const antes = btn.textContent;
+    btn.textContent = "Calculando…";
+    try {
+      const cuerpo = {
+        items: filas.map((f) => ({ item_id: f.item_id, cantidad: f.cantidad, rendimiento_override: f.rendimiento_override })),
+        departamento: $("departamento").value,
+        config: leerConfig(),
+        entidad: $("entidad").value.trim(),
+        entidad_nit: nitProceso,
+        unspsc: $("codigos-unspsc").value.trim(),
+        cuantia: Number($("cuantia").value) || null,
+        plazo_meses: Number($("plazo-meses").value) || 12,
+        perfil: $("perfil").value,
+      };
+      const c = await api("/api/apu/rentabilidad", { method: "POST", body: cuerpo });
+      if (!c) return; // el usuario canceló el diálogo del token
+      pintarRentabilidad(c);
+      mensaje("Rentabilidad actualizada.", "ok");
+    } catch (e) {
+      mensaje(`No se pudo calcular la rentabilidad: ${e.message}`, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = antes;
     }
   }
 
-  function limpiar() {
-    filas = []; ultimaRespuesta = null; docPdf = null; nombrePdf = null;
-    $("pliego-archivo").value = "";
-    $("pliego-url").value = "";
-    $("seccion-resultado").classList.add("hidden");
-    $("r-items").innerHTML = "";
-    $("btn-ocr").disabled = true;
-    progreso(null);
-    mensaje(null); avisos(null);
-    chip("Sin pliego cargado", {});
+  function pintarRentabilidad(c) {
+    const r = c.rentabilidad;
+    if (!r) return;
+    $("seccion-rentabilidad").classList.remove("hidden");
+    const t = [];
+    t.push(tarjetaRent("Precio total calculado", copRent(r.precio_total),
+      c.presupuesto && c.presupuesto.resumen ? `Costo directo ${copRent(r.costo_directo)}` : null));
+    t.push(tarjetaRent("Costo directo total", copRent(r.costo_directo), "Sin AIU: va declarado aparte"));
+    t.push(tarjetaRent("Margen bruto", pctRent(r.margen_bruto_pct), "(Precio − Costo directo) / Precio"));
+    t.push(tarjetaRent("Margen neto esperado", pctRent(r.margen_neto_pct),
+      r.margen_es_cota_superior ? "COTA SUPERIOR: faltan las deducciones del pliego" : "Antes de renta",
+      r.margen_neto_pct != null && r.margen_neto_pct < 3 ? "mal" : "bien"));
+    t.push(tarjetaRent("Probabilidad de ganar",
+      r.p_ganar != null ? pctRent(r.p_ganar * 100) : "—",
+      r.p_ganar_detalle && r.p_ganar_detalle.modulada
+        ? `Base ${pctRent((r.p_ganar_detalle.p_base || 0) * 100)} × ${r.p_ganar_detalle.multiplicador} por precio`
+        : "Sin baja histórica: no se modula por precio"));
+    t.push(tarjetaRent("Valor esperado de la ganancia", copRent(r.veg),
+      `P(ganar) × utilidad − ${copRent(r.costo_preparacion)} de preparar la oferta`,
+      r.veg != null && r.veg <= 0 ? "mal" : "bien"));
+    t.push(tarjetaRent("Utilidad esperada", copRent(r.utilidad_esperada), "Antes de impuesto de renta",
+      r.utilidad_esperada <= 0 ? "mal" : null));
+    t.push(tarjetaRent("Capital de trabajo máximo", copRent(r.k_max), "Decide si se PUEDE, no si vale la pena"));
+    t.push(tarjetaRent("Payback",
+      r.payback_meses != null ? `${r.payback_meses} ${r.payback_meses === 1 ? "mes" : "meses"}` : "no retorna",
+      r.flujo && !r.flujo.anticipo_es_dato ? "Anticipo sin dato: es una cota" : "Hasta recuperar el capital expuesto"));
+    $("rentabilidad").innerHTML = t.join("");
+
+    const a = c.ajuste_competitivo || {};
+    const piso = c.precio_piso || {};
+    const partes = [];
+    if (a.aplicable) {
+      partes.push(`<p><strong>Baja mediana del mercado: ${pctRent(a.baja_mediana_pct)}</strong>
+        <span class="text-gray-500">(${esc(a.granularidad_utilizada || "")}, ${a.procesos_contados} procesos)</span></p>
+        <p class="mt-1">Precio sugerido: <strong>${copRent(a.precio_sugerido)}</strong>${a.baja_propia_pct != null
+          ? ` · su oferta descuenta ${pctRent(a.baja_propia_pct)}` : ""}</p>`);
+    } else {
+      partes.push(`<p class="rounded-lg bg-gray-100 px-3 py-2">⚪ ${esc(a.mensaje || "Sin índice de baja para esta entidad.")}</p>`);
+    }
+    if (piso.escenarios) {
+      partes.push(`<p class="mt-3">Precio piso · σ 8 %: <strong>${copRent(piso.escenarios.sigma_8.precio_piso)}</strong>
+        · σ 15 %: <strong>${copRent(piso.escenarios.sigma_15.precio_piso)}</strong></p>
+        <p class="mt-1 text-xs text-gray-500">${esc(piso.nota || "")}</p>`);
+    }
+    if (r.p_ganar_detalle && r.p_ganar_detalle.mensaje) {
+      partes.push(`<p class="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-900">${esc(r.p_ganar_detalle.mensaje)}
+        <br><span class="opacity-80">${esc(r.p_ganar_detalle.supuesto || "")}</span></p>`);
+    }
+    $("rentabilidad-precio").innerHTML = partes.join("");
+    $("rentabilidad-avisos").innerHTML = (r.advertencias || [])
+      .map((x) => `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(x)}</p>`).join("");
   }
 
-  $("btn-extraer").addEventListener("click", extraer);
-  $("btn-ocr").addEventListener("click", reintentarConOcr);
-  $("btn-limpiar").addEventListener("click", limpiar);
-  // elegir un archivo descarta la URL y al revés: mezclar las dos vías es la
-  // forma más fácil de leer un documento distinto del que se cree
-  $("pliego-archivo").addEventListener("change", () => { if ($("pliego-archivo").files.length) $("pliego-url").value = ""; });
-  $("pliego-url").addEventListener("input", () => { if ($("pliego-url").value.trim()) $("pliego-archivo").value = ""; });
-
-  /* ══════════ Arranque ══════════
-     AL FINAL del IIFE, después de declarar todo lo que estas funciones usan.
-     `arrancarPanel` es una declaración de función (se hoistea), así que
-     `abrirApp` puede llamarla desde arriba: cuando de verdad se ejecute —al
-     pasar el gate— ya estará todo inicializado. Es la lección que costó cara en
-     app.js, donde el arranque junto al gate reventaba en la zona muerta temporal
-     y la app se quedaba en silencio. */
-  function arrancarPanel() {
-    pintarEstadoToken();
-    chip("Sin pliego cargado", {});
-    cargarContrato();
+  async function arrancar() {
+    const hayProceso = precargarDesdeURL();
+    $("btn-rentabilidad").addEventListener("click", calcularRentabilidad);
+    sincronizarBaja();
+    pintarTabla();
+    try {
+      await cargarCatalogo();
+      pintarTabla(); // el catálogo aporta los rendimientos por defecto del placeholder
+    } catch (e) {
+      mensaje(`No se pudo cargar el catálogo: ${e.message}`, "error");
+    }
+    // el departamento del proceso solo se puede fijar cuando el catálogo ya
+    // llenó el desplegable: antes no existe la opción que hay que seleccionar
+    if (hayProceso) precargarDesdeURL();
   }
+
+  /* EL ARRANQUE AUTOMÁTICO VA AQUÍ, AL FINAL DEL IIFE, y no junto al gate:
+     `abrirApp()` llama a `arrancar()`, que usa `CATALOGO`, `filas` y las
+     funciones declaradas arriba. Colocado junto al gate, en la segunda visita
+     de la MISMA pestaña (con `detecta-acceso` ya en sessionStorage) se
+     ejecutaría antes de esas declaraciones y moriría en la zona muerta
+     temporal — por una promesa rechazada, o sea EN SILENCIO. Es exactamente el
+     bug que ya se pagó en app.js y en admin.js. */
   if (accesoConcedido()) abrirApp();
 })();

@@ -1,0 +1,773 @@
+{
+  "_meta": {
+    "origen": "Catálogo CERRADO de 22 tipologías de docs/APU_Y_RENTABILIDAD.md §1.D.1, transcrito a listas de términos sobre texto NORMALIZADO (lib/semantica.norm: sin tildes, ñ→n).",
+    "por_que_cerrado": "Un catálogo abierto no se puede probar ni auditar, y una tipología mal asignada produce un presupuesto absurdo. Añadir una tipología es un cambio de datos revisable en un diff, no una regla nueva escondida en el código.",
+    "anclas_vs_apoyo": "`anclas` son los «términos ancla del objeto» que el informe publica en su tabla, uno a uno y sin añadir ni quitar: son los que pesan 3. `apoyo` sale de la columna «ítems característicos» de la misma tabla y del vocabulario de obra corriente, y pesa 1. Mezclar las dos listas rebajaría los términos que el informe eligió como decisivos al mismo nivel que un accesorio, y ninguna tipología volvería a alcanzar el umbral de 🟢.",
+    "pesos": "ancla = 3 · apoyo = 1 · excluye = −4. Los pesos viven en lib/apu/inferencia.js (un solo sitio), no aquí.",
+    "familias_no_inscritas": "5510 y 7213 NO están en el RUP de Helder ni en el de Génesis. Se citan como contexto del clasificador y JAMÁS como evidencia de habilitación: quien decide si el objeto es del dueño sigue siendo lib/unspsc.js contra la whitelist del perfil.",
+    "nota_edi_vis": "La familia de edificación residencial (7213) no aparece en ningún RUP. EDI-VIS no se habilita por esa vía: entra por 7214/7215 o por la ruta de texto.",
+    "version": "2.0.0",
+    "items": "Cada tipología nombra EXPLÍCITAMENTE los códigos de `data/apu_catalogo.json` que la componen, en orden constructivo. Explícito y no derivado del capítulo o del UNSPSC: el capítulo es texto libre y 7215 casa con casi todo, así que una derivación automática acabaría proponiendo pañete para una alcantarilla. Una lista VACÍA es un dato, no un olvido: significa que el catálogo todavía no cubre esa tipología, y el clasificador lo dice en vez de proponer ítems de otra cosa."
+  },
+  "tipologias": [
+    {
+      "codigo": "VIA-PH",
+      "nombre": "Placa huella",
+      "unidad_dominante": "ml",
+      "familias": [
+        "7214",
+        "7215",
+        "9512"
+      ],
+      "anclas": [
+        "placa huella",
+        "placahuella",
+        "huella",
+        "riel",
+        "via terciaria"
+      ],
+      "apoyo": [
+        "franja central",
+        "berma cuneta",
+        "piedra pegada",
+        "junta de dilatacion",
+        "curado",
+        "subbase granular"
+      ],
+      "excluye": [
+        "placa polideportiva",
+        "placa de contrapiso",
+        "huella de carbono"
+      ],
+      "items": [
+        "INV-201.1",
+        "INV-210.1",
+        "INV-320.1",
+        "INV-PH.1",
+        "INV-640.1",
+        "INV-661.1"
+      ]
+    },
+    {
+      "codigo": "VIA-FLEX",
+      "nombre": "Pavimento flexible",
+      "unidad_dominante": "m2",
+      "familias": [
+        "7214",
+        "7215",
+        "9512"
+      ],
+      "anclas": [
+        "pavimentacion",
+        "asfalto",
+        "asfaltico",
+        "asfaltica",
+        "mezcla densa",
+        "mdc",
+        "imprimacion"
+      ],
+      "apoyo": [
+        "base granular",
+        "subbase granular",
+        "explanacion",
+        "sello",
+        "demarcacion",
+        "carpeta asfaltica",
+        "repavimentacion"
+      ],
+      "excluye": [
+        "pavimento rigido",
+        "concreto hidraulico"
+      ],
+      "items": [
+        "INV-201.1",
+        "INV-210.1",
+        "INV-320.1",
+        "INV-330.1",
+        "INV-450.2"
+      ]
+    },
+    {
+      "codigo": "VIA-RIG",
+      "nombre": "Pavimento rígido",
+      "unidad_dominante": "m2",
+      "familias": [
+        "7214",
+        "7215",
+        "9512"
+      ],
+      "anclas": [
+        "pavimento rigido",
+        "concreto hidraulico",
+        "losa",
+        "placa de concreto"
+      ],
+      "apoyo": [
+        "mr-40",
+        "pasadores",
+        "sello de juntas",
+        "sardinel",
+        "curado",
+        "subbase granular",
+        "pavimentacion"
+      ],
+      "excluye": [
+        "mezcla densa",
+        "asfaltico",
+        "asfaltica"
+      ],
+      "items": [
+        "INV-201.1",
+        "INV-210.1",
+        "INV-320.1",
+        "INV-500.1",
+        "INV-640.1"
+      ]
+    },
+    {
+      "codigo": "VIA-MANT",
+      "nombre": "Mantenimiento y rehabilitación vial",
+      "unidad_dominante": "ml",
+      "familias": [
+        "7215",
+        "9512",
+        "7212"
+      ],
+      "anclas": [
+        "mantenimiento vial",
+        "mantenimiento de vias",
+        "mantenimiento de la via",
+        "parcheo",
+        "afirmado",
+        "roceria",
+        "conformacion",
+        "repavimentacion"
+      ],
+      "apoyo": [
+        "rehabilitacion de vias",
+        "limpieza de cunetas",
+        "bacheo",
+        "retiro de derrumbes",
+        "malla vial",
+        "mantenimiento rutinario",
+        "via terciaria"
+      ],
+      "excluye": [
+        "mantenimiento de vehiculos",
+        "mantenimiento de equipos",
+        "mantenimiento de software",
+        "mantenimiento de aires"
+      ],
+      "items": [
+        "INV-201.1",
+        "INV-320.1",
+        "INV-450.2",
+        "INV-661.1"
+      ]
+    },
+    {
+      "codigo": "VIA-SEN",
+      "nombre": "Señalización vial",
+      "unidad_dominante": "un",
+      "familias": [
+        "7215",
+        "9512",
+        "5510"
+      ],
+      "anclas": [
+        "senalizacion vial",
+        "demarcacion",
+        "senal vertical",
+        "tachas",
+        "senalizacion horizontal"
+      ],
+      "apoyo": [
+        "tacha reflectiva",
+        "defensa metalica",
+        "captafaros",
+        "senalizacion vertical",
+        "linea continua"
+      ],
+      "excluye": [
+        "senalizacion de emergencia",
+        "avisos publicitarios"
+      ],
+      "items": []
+    },
+    {
+      "codigo": "DRE-OBR",
+      "nombre": "Drenaje y alcantarillas",
+      "unidad_dominante": "ml",
+      "familias": [
+        "7214",
+        "7215",
+        "4017"
+      ],
+      "anclas": [
+        "alcantarilla",
+        "box culvert",
+        "boxculvert",
+        "cuneta",
+        "filtro",
+        "descole",
+        "encole",
+        "sumidero"
+      ],
+      "apoyo": [
+        "obras de drenaje",
+        "cabezote",
+        "solado",
+        "filtro frances",
+        "obras menores de drenaje",
+        "tuberia de concreto"
+      ],
+      "excluye": [
+        "alcantarillado sanitario",
+        "red de alcantarillado",
+        "filtro de agua potable"
+      ],
+      "items": [
+        "INV-210.1",
+        "INV-630.4",
+        "INV-661.1",
+        "INV-673.1"
+      ]
+    },
+    {
+      "codigo": "EST-MUR",
+      "nombre": "Muros de contención y gaviones",
+      "unidad_dominante": "m3",
+      "familias": [
+        "7214",
+        "7215",
+        "3010"
+      ],
+      "anclas": [
+        "muro de contencion",
+        "gavion",
+        "pantalla anclada",
+        "tierra reforzada"
+      ],
+      "apoyo": [
+        "concreto ciclopeo",
+        "trasdos",
+        "contencion",
+        "enrocado",
+        "geotextil",
+        "concreto estructural"
+      ],
+      "excluye": [
+        "muro divisorio",
+        "muro de cerramiento"
+      ],
+      "items": [
+        "INV-210.1",
+        "INV-220.1",
+        "INV-630.4",
+        "INV-640.1"
+      ]
+    },
+    {
+      "codigo": "EST-PTE",
+      "nombre": "Puentes menores y pontones",
+      "unidad_dominante": "m2",
+      "familias": [
+        "7214",
+        "7215",
+        "9512"
+      ],
+      "anclas": [
+        "puente vehicular",
+        "puente peatonal",
+        "ponton",
+        "estribo",
+        "viga"
+      ],
+      "apoyo": [
+        "viga prefabricada",
+        "tablero",
+        "losa de puente",
+        "baranda",
+        "pilote",
+        "junta de calzada",
+        "puente colgante"
+      ],
+      "excluye": [],
+      "items": [
+        "INV-630.4",
+        "INV-640.1"
+      ]
+    },
+    {
+      "codigo": "MIT-GEO",
+      "nombre": "Mitigación y estabilización",
+      "unidad_dominante": "m3",
+      "familias": [
+        "7214",
+        "7712",
+        "8115"
+      ],
+      "anclas": [
+        "mitigacion",
+        "estabilizacion",
+        "talud",
+        "jarillon",
+        "socavacion",
+        "obras de proteccion"
+      ],
+      "apoyo": [
+        "geomalla",
+        "subdren",
+        "empradizacion",
+        "terraceo",
+        "enrocado",
+        "descapote",
+        "gavion"
+      ],
+      "excluye": [
+        "mitigacion del riesgo financiero"
+      ],
+      "items": [
+        "INV-210.1",
+        "INV-220.1"
+      ]
+    },
+    {
+      "codigo": "AGU-RED",
+      "nombre": "Acueducto — redes",
+      "unidad_dominante": "ml",
+      "familias": [
+        "7215",
+        "4017",
+        "4018",
+        "8110"
+      ],
+      "anclas": [
+        "acueducto",
+        "red de acueducto",
+        "aduccion",
+        "conduccion",
+        "domiciliaria"
+      ],
+      "apoyo": [
+        "prueba hidrostatica",
+        "valvula",
+        "tuberia pvc",
+        "cama de arena",
+        "excavacion en zanja",
+        "accesorios",
+        "optimizacion"
+      ],
+      "excluye": [
+        "planta de tratamiento de agua potable",
+        "ptap"
+      ],
+      "items": [
+        "INV-210.1",
+        "INV-220.1"
+      ]
+    },
+    {
+      "codigo": "ALC-RED",
+      "nombre": "Alcantarillado — redes",
+      "unidad_dominante": "ml",
+      "familias": [
+        "7215",
+        "4017",
+        "4018",
+        "8110"
+      ],
+      "anclas": [
+        "alcantarillado",
+        "red sanitaria",
+        "pluvial",
+        "pozo de inspeccion",
+        "colector"
+      ],
+      "apoyo": [
+        "novafort",
+        "estanqueidad",
+        "conexion domiciliaria",
+        "entibado",
+        "excavacion en zanja",
+        "sumidero"
+      ],
+      "excluye": [
+        "planta de tratamiento de aguas residuales",
+        "ptar"
+      ],
+      "items": [
+        "INV-210.1",
+        "INV-220.1",
+        "INV-673.1"
+      ]
+    },
+    {
+      "codigo": "AGU-PTAP",
+      "nombre": "PTAP y almacenamiento",
+      "unidad_dominante": "gl",
+      "familias": [
+        "7215",
+        "8110",
+        "4015"
+      ],
+      "anclas": [
+        "ptap",
+        "planta de tratamiento de agua potable",
+        "tanque",
+        "bocatoma",
+        "desarenador"
+      ],
+      "apoyo": [
+        "floculador",
+        "caseta de cloracion",
+        "filtros",
+        "dosificacion",
+        "almacenamiento de agua"
+      ],
+      "excluye": [
+        "aguas residuales",
+        "tanque de combustible"
+      ],
+      "items": [
+        "INV-630.4",
+        "INV-640.1"
+      ]
+    },
+    {
+      "codigo": "ALC-PTAR",
+      "nombre": "PTAR",
+      "unidad_dominante": "gl",
+      "familias": [
+        "7215",
+        "7712",
+        "8110"
+      ],
+      "anclas": [
+        "ptar",
+        "aguas residuales",
+        "laguna de oxidacion",
+        "lodos activados"
+      ],
+      "apoyo": [
+        "reactor uasb",
+        "lechos de secado",
+        "emisario final",
+        "tratamiento preliminar"
+      ],
+      "excluye": [
+        "agua potable"
+      ],
+      "items": [
+        "INV-630.4",
+        "INV-640.1"
+      ]
+    },
+    {
+      "codigo": "SAN-BAS",
+      "nombre": "Saneamiento básico rural",
+      "unidad_dominante": "un",
+      "familias": [
+        "7214",
+        "7215",
+        "4017"
+      ],
+      "anclas": [
+        "unidad sanitaria",
+        "bateria sanitaria",
+        "pozo septico",
+        "sistema individual"
+      ],
+      "apoyo": [
+        "saneamiento basico",
+        "campo de infiltracion",
+        "solucion individual",
+        "aparatos sanitarios",
+        "mamposteria"
+      ],
+      "excluye": [],
+      "items": [
+        "INV-630.4",
+        "EDI-MAM.1",
+        "EDI-CUB.1",
+        "EDI-HID.1"
+      ]
+    },
+    {
+      "codigo": "EDI-EDU",
+      "nombre": "Aulas y colegios",
+      "unidad_dominante": "m2",
+      "familias": [
+        "7212",
+        "7214",
+        "7215"
+      ],
+      "anclas": [
+        "aula",
+        "colegio",
+        "institucion educativa",
+        "sede educativa",
+        "restaurante escolar"
+      ],
+      "apoyo": [
+        "infraestructura educativa",
+        "escuela",
+        "salon de clases",
+        "ambiente escolar",
+        "cubierta",
+        "mamposteria",
+        "bateria sanitaria"
+      ],
+      "excluye": [
+        "dotacion",
+        "mobiliario escolar",
+        "material didactico",
+        "transporte escolar"
+      ],
+      "items": [
+        "INV-630.4",
+        "INV-640.1",
+        "EDI-MAM.1",
+        "EDI-PAN.1",
+        "EDI-PIN.1",
+        "EDI-CUB.1",
+        "EDI-HID.1"
+      ]
+    },
+    {
+      "codigo": "EDI-INST",
+      "nombre": "Edificaciones institucionales",
+      "unidad_dominante": "m2",
+      "familias": [
+        "7212",
+        "7214",
+        "7215"
+      ],
+      "anclas": [
+        "alcaldia",
+        "cdi",
+        "casa de la cultura",
+        "puesto de salud",
+        "estacion de bomberos"
+      ],
+      "apoyo": [
+        "edificio publico",
+        "sede administrativa",
+        "centro de desarrollo infantil",
+        "hospital",
+        "centro de salud",
+        "cubierta",
+        "mamposteria"
+      ],
+      "excluye": [
+        "dotacion hospitalaria",
+        "equipos biomedicos"
+      ],
+      "items": [
+        "INV-630.4",
+        "INV-640.1",
+        "EDI-MAM.1",
+        "EDI-PAN.1",
+        "EDI-PIN.1",
+        "EDI-CUB.1",
+        "EDI-HID.1"
+      ]
+    },
+    {
+      "codigo": "EDI-VIS",
+      "nombre": "Vivienda VIS y mejoramiento",
+      "unidad_dominante": "un",
+      "familias": [
+        "7214",
+        "7215"
+      ],
+      "anclas": [
+        "vivienda",
+        "vis",
+        "vip",
+        "mejoramiento de vivienda",
+        "unidad habitacional"
+      ],
+      "apoyo": [
+        "vivienda rural",
+        "placa de contrapiso",
+        "enchape",
+        "cocina",
+        "unidad sanitaria",
+        "vivienda de interes social"
+      ],
+      "excluye": [
+        "subsidio de vivienda",
+        "arrendamiento",
+        "titulacion"
+      ],
+      "items": [
+        "INV-630.4",
+        "EDI-MAM.1",
+        "EDI-PAN.1",
+        "EDI-PIN.1",
+        "EDI-CUB.1",
+        "EDI-HID.1"
+      ]
+    },
+    {
+      "codigo": "DEP-POL",
+      "nombre": "Polideportivos y canchas",
+      "unidad_dominante": "m2",
+      "familias": [
+        "7212",
+        "7214",
+        "7215"
+      ],
+      "anclas": [
+        "polideportivo",
+        "cancha",
+        "coliseo",
+        "cubierta metalica",
+        "placa polideportiva"
+      ],
+      "apoyo": [
+        "graderia",
+        "escenario deportivo",
+        "demarcacion deportiva",
+        "cancha sintetica",
+        "iluminacion"
+      ],
+      "excluye": [
+        "implementos deportivos",
+        "dotacion deportiva",
+        "uniformes"
+      ],
+      "items": [
+        "INV-320.1",
+        "INV-500.1",
+        "INV-640.1",
+        "EDI-CUB.1"
+      ]
+    },
+    {
+      "codigo": "URB-PAR",
+      "nombre": "Parques y espacio público",
+      "unidad_dominante": "m2",
+      "familias": [
+        "7214",
+        "7215",
+        "9512"
+      ],
+      "anclas": [
+        "parque",
+        "espacio publico",
+        "anden",
+        "plazoleta",
+        "biosaludable",
+        "ciclorruta"
+      ],
+      "apoyo": [
+        "sardinel",
+        "adoquin",
+        "mobiliario urbano",
+        "zonas verdes",
+        "juegos infantiles",
+        "demolicion"
+      ],
+      "excluye": [
+        "parque automotor",
+        "parqueadero"
+      ],
+      "items": [
+        "INV-320.1",
+        "INV-630.4",
+        "INV-661.1"
+      ]
+    },
+    {
+      "codigo": "ELE-RED",
+      "nombre": "Redes eléctricas y alumbrado",
+      "unidad_dominante": "un",
+      "familias": [
+        "7215",
+        "3911",
+        "3912",
+        "8110"
+      ],
+      "anclas": [
+        "electrificacion",
+        "alumbrado publico",
+        "luminaria",
+        "subestacion",
+        "red de media tension"
+      ],
+      "apoyo": [
+        "poste",
+        "transformador",
+        "retie",
+        "puesta a tierra",
+        "redes electricas",
+        "conductor"
+      ],
+      "excluye": [
+        "suministro de energia",
+        "comercializacion de energia"
+      ],
+      "items": []
+    },
+    {
+      "codigo": "DRA-CAU",
+      "nombre": "Dragado y limpieza de cauces",
+      "unidad_dominante": "m3",
+      "familias": [
+        "7215",
+        "7712"
+      ],
+      "anclas": [
+        "dragado",
+        "limpieza de cauce",
+        "canal",
+        "box coulvert",
+        "rectificacion"
+      ],
+      "apoyo": [
+        "conformacion de taludes",
+        "disposicion final",
+        "descolmatacion",
+        "retiro de material"
+      ],
+      "excluye": [
+        "canal de television",
+        "canal de atencion"
+      ],
+      "items": [
+        "INV-210.1"
+      ]
+    },
+    {
+      "codigo": "CON-EST",
+      "nombre": "Consultoría, estudios y diseños",
+      "unidad_dominante": "mes",
+      "familias": [
+        "8110",
+        "8114",
+        "8115",
+        "8010"
+      ],
+      "anclas": [
+        "interventoria",
+        "estudios y disenos",
+        "consultoria",
+        "supervision tecnica"
+      ],
+      "apoyo": [
+        "diseno estructural",
+        "estudio de suelos",
+        "geotecnico",
+        "factibilidad",
+        "topografia",
+        "ensayos de laboratorio"
+      ],
+      "excluye": [],
+      "sin_apu": true,
+      "nota": "NO se costea por APU. En Colombia la consultoría y la interventoría se cotizan por FACTOR MULTIPLICADOR sobre el sueldo básico del personal, más costos directos, y el AIU no aplica. Presupuestarla con la maquinaria de APU produce un documento con la estructura equivocada aunque el total se parezca.",
+      "items": []
+    }
+  ]
+}

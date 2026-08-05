@@ -80,8 +80,25 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `lib/semantica.js` | Los **vocabularios**: `norm`, blacklist de objetos ajenos, whitelist de obra (heredadas), verbos de obra y términos no pertinentes |
 | `data/vocabulario_unspsc.json` | Semilla curada de términos distintivos por familia UNSPSC (respaldo del derivado) |
 | `lib/almacen.js` | Esquema de claves Redis + compresión/particionado de chunks |
+| `api/apu/[accion].js` | **Editor de APU** — una sola función para siete acciones (catálogo, inferir, calcular, **rentabilidad**, guardar, cargar, listar): el plan Hobby de Vercel admite 12 funciones por despliegue |
+| `lib/apu/rentabilidad.js` | Lo que el presupuesto no responde: flujo de caja mes a mes, capital expuesto, **payback**, precio piso, maldición del ganador y **VEG** |
+| `lib/apu/tipologias.js` | Las 22 tipologías cerradas y el mapa departamento→región. `regionDeDepartamento` es el punto único de paso y **jamás devuelve una región de relleno** |
+| `lib/apu/inferencia.js` | Objeto del proceso → tipología de obra e ítems: léxico con puntaje (Nivel A) + UNSPSC como **veto** (Nivel B) |
+| `lib/apu/calculo.js` | Del costo directo al precio: cantidades, AIU, ajuste competitivo, margen y alertas. **No reimplementa** el costo directo: llama a `costoDirecto()` del catálogo |
+| `data/apu_tipologias.json` | Las 22 tipologías con sus términos ancla, de apoyo, de exclusión y los ítems que las componen |
+| `data/apu_regional.json` | Departamento (como lo publica SECOP) → región de precios del catálogo. 14 con región, **19 declarados sin base** |
+| `lib/apu_pliego.js` | **Lector de pliegos**: del texto de un PDF a la tabla de cantidades. 3 vías de reconocimiento de fila, 3 niveles de validación aritmética y semáforo de 2 ejes |
+| `lib/apu_mapeo.js` | Descripción del pliego → ítem del catálogo, por 4 señales ponderadas (términos, Levenshtein, unidad, tipología) |
+| `lib/apu_catalogo.js` + `data/catalogo_apu.json` | **Diccionario de reconocimiento**: 93 ítems SIN precios, con sinónimos. No confundir con `data/apu_catalogo.json`, que es la biblioteca de costeo |
+| `lib/apu_ocr.js` | Respaldo por OCR (OCR.space) para pliegos escaneados. Una petición por página |
+| `lib/apu_extraer.js` + `lib/apu_descargar.js` | La lógica de las acciones `extraer-texto` y `descargar` de `api/apu/[accion].js`. Están en `lib/` porque el plan Hobby de Vercel admite 12 funciones y con dos ficheros más eran 14 |
+| `docs/APU_Y_RENTABILIDAD.md` | La investigación que sostiene el CATÁLOGO DE PRECIOS: fuentes, factor prestacional, AIU, ICOCIV y regionalización |
+| `docs/APU_INFORME_COMPLETO.md` | El **informe** completo de investigación y diseño (§1.A-§1.I): el que citan los comentarios del código. Incluye lo que NO se implementó y por qué |
 | `docs/PERFILES.md` | Resumen técnico de los tres perfiles (datos, estimaciones, limitaciones) |
 | `public/` | Frontend estático (Tailwind CDN, estilo Apple, gate de clave) |
+| `public/pliego.html` + `pliego.js` | **Lector de pliegos**: pdf.js en el navegador, columnas por coordenadas, progreso por página, tabla editable y respaldo por OCR |
+| `public/apu.html` + `apu.js` | Editor de APU: tabla editable, inferencia desde el objeto, sugerencia del factor de baja desde el histórico, borradores y exportación |
+| `public/xlsx.js` | **Escritor `.xlsx` propio, sin dependencias** (ZIP + OOXML con estilos reales). Ver «Exportación a Excel» |
 | `public/admin.html` + `admin.js` | Panel de administración: encadena la sincronización full, **dashboard de procesos**, **carga de RUP**, **experiencia ejecutada** y **auditoría de cobertura**, todo desde el navegador y sin terminal |
 | `tests/e2e.js` | Ciclo completo con mocks de Socrata y Upstash (sin red externa) |
 
@@ -1039,7 +1056,7 @@ familia) y leía mal los segmentos sueltos. El motor jerárquico actual cubre la
 reglas sobre el corpus real (`pasarian_unspsc_exacto` ⊂ `pasarian_unspsc_prefijo` ⊂
 `pasarian_unspsc_jerarquico`).
 
-## Módulo APU · lectura del formulario de cantidades de un pliego (ago 2026)
+## Lector de pliegos · el formulario de cantidades de un PDF (ago 2026)
 
 **Qué resuelve.** El formulario de cantidades (Formulario 1 · presupuesto oficial) «vale más que todo
 lo demás junto»: con **ítem + unidad + cantidad** se puede valorar un proceso completo con precios
@@ -1048,12 +1065,27 @@ ese documento en una lista estructurada y editable.
 
 **Qué NO resuelve, y conviene tenerlo claro antes de leer el resto:** no hay precios. No es una
 biblioteca de APU valorados, no calcula rentabilidad, no propone AIU. Entrega ítem, unidad y cantidad
-—y el AIU **declarado** cuando el pliego lo declara, solo para validar la aritmética—.
+—y el AIU **declarado** cuando el pliego lo declara, solo para validar la aritmética—. Eso lo hace el
+**editor de APU** (`/apu.html`, `lib/apu/*`), que es otra cosa y vive aparte.
+
+**Dos páginas y dos catálogos, a propósito.** El lector (`/pliego.html`) usa
+`data/catalogo_apu.json`: 93 ítems **sin precios** y con sinónimos, es decir un **diccionario de
+reconocimiento** para casar el texto de un pliego. El editor (`/apu.html`) usa
+`data/apu_catalogo.json`: 17 ítems **con precios**, composición y rendimiento, es decir la
+**biblioteca de costeo**. Son preguntas distintas —«¿qué ítem es esta fila?» frente a «¿cuánto cuesta
+este ítem?»— y fusionarlas obligaría a elegir entre perder recall de reconocimiento o inventar
+precios. Lo que sí se hace es **emitir el código del catálogo de precios cuando el ítem reconocido
+existe allí**, para que no haya dos identidades del mismo ítem.
+
+**Los dos endpoints son ACCIONES de `api/apu/[accion].js`, no ficheros propios**, y por una razón
+dura: el plan Hobby de Vercel admite **12 funciones por despliegue** y con dos ficheros más eran 14 —
+el despliegue entero se rechazaba. Su lógica vive en `lib/apu_extraer.js` y `lib/apu_descargar.js`;
+el despachador solo las llama, y las despacha *antes* de tocar Redis porque ninguna lo necesita.
 
 ### Dónde corre cada cosa, y por qué
 
 ```
-NAVEGADOR (/apu.html)                          SERVIDOR                     TERCERO
+NAVEGADOR (/pliego.html)                          SERVIDOR                     TERCERO
 ────────────────────                           ────────                     ───────
 PDF (archivo)  ──┐
                  ├─▶ pdf.js (CDN, v3 UMD)
@@ -1094,7 +1126,7 @@ de otro origen**, así que apuntar `workerSrc` al CDN es el fallo intermitente t
 trae por `fetch` y se envuelve en un `Blob` local. Tres niveles: blob → URL directa → sin worker (en
 el hilo principal: funciona y congela la pestaña, y **se avisa**).
 
-### `GET|POST /api/apu/extraer-texto` (protegido)
+### `GET|POST /api/apu/extraer-texto` (protegido · acción de `api/apu/[accion].js`)
 
 `GET` devuelve el contrato, los umbrales, el catálogo vigente y si el OCR está configurado.
 `POST` recibe `{ texto_extraido, objeto_proceso, unspsc, precio_base, imagenes_base64 }` y devuelve
@@ -1213,7 +1245,7 @@ duplicar el ml). Son dos preguntas distintas, y hay una prueba que impide «unif
 **La unidad no se convierte NUNCA.** Pasar m² a m³ exige un espesor que el catálogo no conoce. Cuando
 difieren se marca `unidad_discrepante` y se conserva **la del pliego**, que es la que se va a pagar.
 
-### `POST /api/apu/descargar` (protegido)
+### `POST /api/apu/descargar` (protegido · acción de `api/apu/[accion].js`)
 
 Baja el PDF de una URL porque **el navegador no puede** (política de mismo origen; los portales de
 contratación no mandan `Access-Control-Allow-Origin`). Devuelve el PDF en base64 para que pdf.js lo
@@ -1250,7 +1282,7 @@ Sin la variable no se inventa nada: **503 con la instrucción exacta** de cómo 
 de OCR.space no es éxito — el fallo viaja **dentro** del 200 (`IsErroredOnProcessing`, `OCRExitCode`
 1/2/3/4), así que se comprueba o se devolvería texto vacío como si la página no tuviera nada.
 
-### Frontend `/apu.html`
+### Frontend `/pliego.html`
 
 Botón **«Cargar pliego (PDF)»**, archivo o URL, progreso por página, y una tabla **editable** donde
 todo se corrige a mano (los totales se recalculan) y se exporta a JSON. Las **limitaciones se
@@ -1342,6 +1374,126 @@ UNSPSC por perfil, la pertinencia, el anti-suministro y la cuantía — todo eso
 consulta, así que **cambiar esas reglas o cargar un RUP nuevo NO exige una `full`**. Solo lo
 exige tocar `admisibleParaIngesta` o la blacklist.
 
+## Editor de APU (`/apu.html` + `/api/apu/*`)
+
+Del objeto del proceso a un presupuesto con desglose por insumo, exportable a Excel. Se apoya en el
+**catálogo de precios en Redis** y añade lo que aquel no cubre: qué obra es, cuántas unidades, el AIU,
+la baja de mercado y el margen. Base documental: `docs/APU_Y_RENTABILIDAD.md`.
+
+> ⚠️ Precios de **referencia regionalizada, no cotizaciones**. Verifique contra cotización real antes de
+> presentar oferta. El presupuesto sirve para decidir **a qué presentarse**, no para firmar.
+
+### Las seis acciones
+
+| Acción | Verbo | Token | Qué hace |
+| --- | --- | --- | --- |
+| `/api/apu/catalogo` | GET | **no** | Ítems, insumos y regiones; `?insumo=`, `?region=`, `?bloque=` |
+| `/api/apu/inferir` | POST | sí | `{objeto, codigos_unspsc}` → tipología, estado 🟢/🟡/⚪, ítems y magnitudes |
+| `/api/apu/calcular` | POST | sí | `{items, departamento, config}` → desglose + resumen + alertas |
+| `/api/apu/guardar` | POST | sí | Borrador a `apu:presupuesto:{perfil}:{id}`, **TTL 30 días** |
+| `/api/apu/cargar` | GET | sí | `?id=…&perfil=…` |
+| `/api/apu/listar` | GET | sí | Borradores del perfil (SCAN + MGET, sin índice aparte) |
+
+**El catálogo es público y eso es la regla, no una excepción**: lo que no sale sin llave son las cifras
+del *perfil*. Escribir el catálogo sí exige llave (`/api/admin/apu/cargar-catalogo`).
+
+**Van en UNA sola función** (`api/apu/[accion].js`, ruta dinámica). El plan Hobby de Vercel admite **12
+Serverless Functions por despliegue** y el repositorio ya estaba en 12: un archivo más y falla el
+despliegue **entero**. Por eso `/api/apu/catalogo` dejó de tener archivo propio y se plegó ahí —misma
+URL, mismo contrato, sigue siendo público—. Hay una prueba que cuenta los archivos bajo `api/` y otra
+que impide que el archivo suelto reaparezca.
+
+### Qué calcula, y qué NO recalcula
+
+`lib/apu/calculo.js` **no reimplementa el costo directo**: llama a `costoDirecto()` del catálogo, donde
+ya viven las cuatro fórmulas del APU. Un segundo cálculo «equivalente hoy» diverge a la primera
+corrección que se aplique a uno solo, y aquí serían pesos.
+
+```
+costo_unitario   = costoDirecto(item, catálogo, región)      ← materiales, MO, equipo, transporte
+costo_total_item = costo_unitario · cantidad
+
+precio_venta     = costo_directo_total · (1 + A% + I% + U%)  ← AIU ADITIVO (defecto)
+precio_final     = precio_venta · (1 − factor_baja/100)      ← si hay ajuste competitivo
+margen_final     = precio_final − costo_directo_total
+```
+
+**Dos correcciones a la especificación original, las dos con prueba.**
+
+1. `(cantidad / rendimiento) · costo_hora` ya es el **total** del ítem. Sumarlo a unos materiales que sí
+   van por unidad y volver a multiplicar por `cantidad` cobra la cuadrilla `cantidad` veces (en un ítem
+   de 500 m², 500 cuadrillas). Se calcula el unitario y se multiplica **una** vez, con lo que
+   `cantidad × unitario = total` se cumple por construcción.
+2. **AIU se suma, no se compone.** Componerlo (`15/5/5` → 26,8 % contra 25 %) da un AIU que no coincide
+   con el del formulario de la entidad. `modo_aiu: "compuesto"` sigue disponible; el defecto es
+   `aditivo`.
+
+**El rendimiento DIVIDE** (error canónico del APU; hay prueba de monotonía), y el
+`rendimiento_override` trabaja **sobre una copia**: el catálogo se comparte entre peticiones de la
+misma instancia caliente y mutarlo filtraría el override de un presupuesto al siguiente.
+
+### Región: traducción, no una segunda matriz
+
+El catálogo cotiza por **región** (cinco, con ciudad cabecera) y SECOP publica **departamento**.
+`data/apu_regional.json` traduce; los factores viven en el catálogo y solo ahí.
+
+- Las cinco regiones cubren **14 de los 33** departamentos. Los otros **19 salen `sin_base`**, con el
+  motivo escrito uno a uno. Asignar Vaupés a «Costa Atlántica» porque no hay nada mejor sería inventarse
+  un dato.
+- **Prohibido `|| 1`.** Un factor 1,00 de relleno afirma «aquí construir cuesta lo mismo que en Bogotá».
+- **El presupuesto sale igual**, con la región base y diciéndolo: no bloquear por falta de información.
+  El desplegable marca qué departamentos no tienen precio de referencia.
+- Sin catálogo en Redis se usa la **semilla del repositorio** y se declara en `catalogo.fuente`. Hay
+  prueba de que las dos vías dan el mismo costo directo.
+
+### El clasificador
+
+- **Nivel A · léxico**: `P = 3·anclas + 1·apoyo − 4·excluye`, exigiendo un verbo de obra de
+  `lib/semantica`.
+- **Nivel B · UNSPSC** como evidencia *independiente*, cuyo valor real es **vetar**: una placa huella
+  cuyo único código sea de acueducto es una red, no una vía → 🟡.
+- **Nivel C · LLM de desempate: NO implementado**, a propósito. El proyecto no tiene dependencias ni
+  llamadas externas, y meter una en la ruta de una petición añadiría latencia y un punto de fallo a un
+  cálculo hoy determinista. La máquina de estados funciona sin él.
+
+| Estado | Condición | Qué se hace |
+| --- | --- | --- |
+| 🟢 verde | `P1 ≥ 8` **y** `P1 − P2 ≥ 4` **y** B compatible | Presupuesto completo |
+| 🟡 amarillo | `P1 ≥ 6` sin margen claro, o B ausente, o B incompatible | Se genera, marcado «verificar pliego» |
+| ⚪ no determinada | `P1 < 6`, sin verbo de obra, o cualquier caso restante | **No se presupuesta** |
+
+Los tres estados **suman exactamente los objetos evaluados**. El margen `P1 − P2` es condición *dura*:
+el falso positivo caro es el 🟢, el único estado que presupuesta sin pedir el pliego. **19 de las 22
+tipologías tienen ítems en el catálogo**; VIA-SEN, ELE-RED y CON-EST no, y el clasificador lo dice en
+vez de proponer ítems de otra cosa.
+
+**Cantidades desde el objeto**: decimal colombiano (el punto separa miles; invertirlo divide la obra por
+mil), lookbehind (sin él «1500 km» captura 500) y **atribución a ≤ 6 palabras** de un término ancla (sin
+ella «…VEREDA X, CONTRATO 2024-350» produce 2024 km).
+
+### Exportación a Excel: por qué **no** SheetJS
+
+El `.xlsx` lo escribe `public/xlsx.js`, a mano, sin `package.json`. No es purismo — son dos hechos
+verificados:
+
+1. **SheetJS dejó de publicar en npm tras la 0.18.5** (se mudó a su propio CDN). `npm install xlsx`
+   instala esa versión, con dos advisories *high* (`GHSA-4r6h-8v6p-xvw6`, `GHSA-5pgg-2g8v-p4x9`) y
+   `npm audit` respondiendo literalmente **«No fix available»**.
+2. **La edición libre ignora los estilos de celda al escribir.** Fijando
+   `ws.A1.s = {font:{bold:true}, fill:{…}}`, el `xl/styles.xml` sale con `<fonts count="1">`. Un
+   «formato profesional de APU» no es alcanzable con esa librería.
+
+Un `.xlsx` es un ZIP de XML, así que el escritor cabe en un archivo y da control total: franja de
+título, encabezados, bordes, moneda, anchos, celdas combinadas y panel congelado. Método **STORE**: ZIP
+válido que abren Excel, LibreOffice y Numbers, sin depender de `CompressionStream`. Corre en navegador
+**y en Node** a propósito, para que la suite genere un libro real y **audite el ZIP entrada por
+entrada**. Salen dos hojas: **Presupuesto** y **Desglose** (insumo a insumo).
+
+### Integración con el panel
+
+`/admin.html` **enlaza** el editor; no lo embebe. `vercel.json` sirve todo el sitio con
+`X-Frame-Options: DENY`, así que un iframe quedaría en blanco en producción aunque funcione en local.
+
 ## Claves en Redis
 
 Dos keyspaces con ciclos de vida **opuestos**: el activo se purga, el histórico no.
@@ -1390,8 +1542,28 @@ config:experiencia:version                     sello de la última carga (se esc
 CACHÉ DEL PANEL
 resumen:{perfil}                               JSON del dashboard, TTL 300 s (la carga de RUP la borra)
 cobertura:{perfil}:{exp|base}                  JSON comprimido de la auditoría de cobertura, TTL 1 h
+apu:presupuesto:{perfil}:{id}                  JSON comprimido del borrador de APU, TTL 30 días
                                                (el valor lleva el sello del RUP y el de la experiencia:
                                                 cargar cualquiera de los dos la invalida sola)
+
+CATÁLOGO DE PRECIOS APU — configuración de referencia. NINGUNA purga lo toca.
+apu:insumos:{id}                               HASH {nombre, unidad, tipo, fuente, precio_base,
+                                                     precio_{region} ×5, precio_origen_{region} ×5,
+                                                     fecha_actualizacion}
+apu:items:{codigo}                             HASH {descripcion, unidad, capitulo, unspsc_segmento,
+                                                     unspsc_clases (JSON), herramienta_menor_pct,
+                                                     insumos (JSON: [{insumo_id, cantidad_por_unidad,
+                                                     rendimiento, desperdicio, distancia_km?}]),
+                                                     fuente, fecha_actualizacion}
+apu:factores_region:{region}                   HASH {nombre, ciudad_cabecera, factor_materiales,
+                                                     factor_mano_obra, factor_equipo, factor_transporte,
+                                                     aiu_tipico, aiu_detalle (JSON), prestacional_tipico,
+                                                     indice_ciudad_recuperado, fecha_actualizacion}
+apu:catalogo:manifest                          JSON {version, chunks, registros}   ← caché de lectura
+apu:catalogo:chunk:{i}                         base64(zlib.deflate(JSON[], nivel 6)) ≤ 500 KB
+apu:catalogo:meta                              JSON {version, version_catalogo, cargado_el, insumos,
+                                                     items, regiones, icociv, …}   ← SELLO, se escribe
+                                                     AL FINAL de la carga
 
 BACKFILL
 sync:historico:progreso                        JSON cursor reanudable del backfill
@@ -1421,6 +1593,146 @@ La auditoría de completitud vive en `meta.porMes`: `esperados` (`count(*)` de S
 | Delta | añade y reemplaza por `:updated_at` | **añade** los que cerraron |
 | `/api/sync/historico` | no lo toca | reemplaza mes a mes el rango pedido |
 | `reconstruir_*` | no lo toca | no lo toca (solo re-lee y republica los derivados) |
+| Carga del catálogo APU | **no lo toca** | **no lo toca** (escribe solo en `apu:*`) |
+
+## Rentabilidad del proceso (`lib/apu/rentabilidad.js` + `POST /api/apu/rentabilidad`)
+
+El editor responde **cuánto cuesta**. Esta capa responde las dos preguntas que faltan, y son
+distintas entre sí:
+
+| Pregunta | Indicador | Qué decide |
+|---|---|---|
+| ¿Vale la pena? | margen bruto y neto | Si el contrato deja dinero |
+| ¿Se puede? | **`K_max`** (capital de trabajo máximo expuesto) y **payback** | Si la empresa puede EJECUTARLO |
+| ¿Cuánto vale la oportunidad? | **`VEG` = P(ganar) × utilidad − costo de preparar** | El **orden primario**, no el margen |
+
+Un contrato puede tener utilidad contable positiva todo el tiempo y caja negativa todo el tiempo:
+se quiebra por caja. Por eso los tres se publican por separado y ninguno se promedia con otro.
+
+**Es la única acción del módulo que toca la red**: lee `indice:baja:*`, `indice:competencia` y
+`lib/probabilidad`. Va aparte de `calcular` —que es aritmética pura— para no pagar dos lecturas de
+Redis en cada tecla del editor.
+
+### `P(ganar | precio)` no es una sigmoide, es una mezcla
+
+En obra pública colombiana **el método de ponderación económica se SORTEA en la audiencia** (Ley 1882
+de 2018): el proponente elige su precio sin saber si le tocará media geométrica o menor valor. La
+consecuencia va contra la intuición: **ofertar más barato no maximiza la probabilidad de ganar**.
+
+```
+P(b) = 0,25 · P_menor_valor(b)  +  0,75 · P_central(b)
+       └ sigmoide: crece con la baja      └ campana: alejarse del centro RESTA
+```
+
+La sigmoide sigue publicándose aparte (`p_menor_valor`) para que se vea de dónde sale cada mitad. El
+resultado se aplica como **multiplicador** sobre la `p` de `lib/probabilidad`, normalizado para valer
+**exactamente 1 en la mediana del mercado**: así ofertar al centro devuelve la misma probabilidad que
+ya publica `/api/oportunidades`. Dos cifras distintas del mismo número es el defecto que este
+repositorio ya pagó dos veces.
+
+La **forma** de esa curva usa un `n` de referencia fijo. El efecto de nivel de la competencia ya lo
+lleva `p_base`; meterlo también en la forma lo contaba dos veces y hacía que catorce oferentes dieran
+*más* probabilidad que tres.
+
+### El botón «APU» y el badge «APU listo»
+
+Cada fila de «Top 10 procesos más atractivos» en `/admin.html` lleva un botón **APU** que abre el
+editor con el proceso precargado por querystring (`objeto`, `unspsc`, `departamento`, `cuantia`,
+`entidad`, `entidad_nit`, `id_proceso`, `perfil`, `plazo`). Al guardar, el borrador queda asociado a
+ese `id_proceso` y al perfil, y la fila muestra **✅ APU listo**.
+
+El listado se pide **aparte de `/api/resumen`**, cuya respuesta se cachea 300 s: un presupuesto
+recién guardado no puede tardar cinco minutos en encender el badge.
+
+### Honestidad del dato
+
+- **Sin `deducciones_pct` del pliego el margen es una COTA SUPERIOR**, no una estimación, y la
+  respuesta lo declara en `margen_es_cota_superior`. Un bloque de deducciones de hasta ~10 % del valor
+  es mayor que el margen típico: omitirlo invierte el signo del negocio.
+- **`anticipo_pct` vacío es AUSENCIA DE DATO**, no 0 %: el flujo resultante es una cota inferior y el
+  payback se marca como tal.
+- **El payback exige haber estado expuesto**: sin esa condición, un contrato con anticipo daría
+  payback = mes 1 por el propio anticipo, que es dinero de la entidad y no capital devuelto.
+- **El precio piso decide con σ = 15 %**, no con 8 %: la prima crece con σ, así que usar el valor bajo
+  sin calibrar es anti-conservador.
+- **Sin índice de baja no hay precio sugerido.** «Sin dato» no es «no descuenta nada».
+
+## Catálogo de precios APU (`lib/apu/catalogo.js`)
+
+La base de precios con la que se costea un ítem de obra. Estructura oficial **INVIAS/IDU**:
+
+```
+Costo Directo   = Mano de Obra + Materiales + Equipo/Herramienta + Transporte
+Precio Unitario = Costo Directo × (1 + AIU)
+```
+
+| Capítulo | Fórmula |
+| --- | --- |
+| Mano de obra | `(precio_base × prestacional) ÷ rendimiento` |
+| Materiales | `precio_base × cantidad_por_unidad × (1 + desperdicio)` |
+| Equipo | `precio_base ÷ rendimiento` |
+| Transporte | `precio_base × cantidad_por_unidad × distancia_km` |
+| Herramienta menor | `herramienta_menor_pct × total de mano de obra` |
+
+**48 insumos · 17 ítems · 5 regiones** (Bogotá/Sabana, Medellín/Antioquia, Costa Atlántica, Eje
+Cafetero, Santanderes). La semilla curada vive en `data/apu_catalogo.json` y declara la `fuente` de
+cada precio: `recuperado` (estaba en `modulo_apu.html`, borrado en el commit `d69cfe8`, y se trajo a
+la base vigente con el **ICOCIV del DANE**, +4,70 % anual, boletín de marzo 2026), `derivado` (se
+calcula de otros: las cuadrillas) o `estimado` (referencia razonada, **no** una cotización). Método
+completo y separación línea por línea en **`docs/APU_Y_RENTABILIDAD.md`**.
+
+### `POST /api/admin/apu/cargar-catalogo` (protegido) · `GET /api/apu/catalogo` (público)
+
+| Endpoint | Token | Qué hace |
+| --- | --- | --- |
+| `POST /api/admin/apu/cargar-catalogo` | **sí** | valida y puebla Redis. `?forzar=true` reescribe |
+| `GET /api/admin/apu/cargar-catalogo` | **sí** | qué hay cargado, sin escribir |
+| `GET /api/apu/catalogo` | **no** | ítems + insumos + regiones. `?insumo=` · `?region=` · `?bloque=` |
+
+La consulta es pública **a propósito y sin excepción a la regla del proyecto**: lo que no sale sin
+llave son las *cifras del perfil* (patrimonio, K, CRPC, tope), que son datos financieros de personas
+identificadas. Aquí solo hay precios de mercado de referencia. Lo que sí exige llave es
+**escribirlos**.
+
+### Decisiones que no hay que re-aprender
+
+- **Los precios regionales se DERIVAN, no se transcriben.** La semilla trae un precio base (Bogotá)
+  por insumo y cuatro factores por región; los cinco `precio_{region}` salen de multiplicarlos según
+  el **tipo** del insumo — en la Costa el material sube (1,10) mientras el jornal baja (0,97), y con
+  un índice único los dos irían al mismo sitio. Transcribir 5 × 48 números a mano habría creado 240
+  sitios donde el catálogo puede desincronizarse de sus propios factores. Una cotización real gana
+  (`precios_cotizados`) y el hash publica `precio_origen_{region}` para saber cuál se está mirando.
+- **Los cuatro factores no pueden separarse del único dato duro que los respalda.** La fuente
+  recuperada trae **un** índice por ciudad; la desagregación es razonada, no medida. La cerradura:
+  recomponerlos con la estructura de costos de obra civil (45 % materiales · 30 % mano de obra ·
+  18 % equipo · 7 % transporte) tiene que caer a **menos de 0,015** del índice de la ciudad cabecera.
+  Hay prueba región por región.
+- **Las cuadrillas son la SUMA de sus jornales** (`299.000 = 95.000 + 3 × 68.000`, recuperado). Se
+  declara en `componentes` y se valida: si alguien sube el jornal del ayudante y no la cuadrilla, el
+  catálogo diría dos cosas distintas sobre el mismo día de trabajo.
+- **Un cero no puede ser un precio.** Es la regla de `anticipo_pct = 0` aplicada entera: un insumo a
+  0 no es «gratis», es «no lo sé». Por eso la **herramienta menor no es un insumo** (no tiene precio
+  propio: es un % de la mano de obra) y vive como `herramienta_menor_pct` del ítem.
+- **🚩 El transporte va en m³, no en kilogramos.** En `modulo_apu.html` el APU del acero llevaba
+  `1.200 × 1,05 × 15` = **$18.900 de acarreo por kilo**, más del doble que el propio acero: la tarifa
+  está en $/m³-km y le pasaban kg. Aquí `cantidad_por_unidad` de una línea de transporte va **siempre
+  en m³ de material movido** (para el acero, `1,05 kg ÷ 7.850 kg/m³ ≈ 0,00013 m³`). Hay prueba de que
+  el acarreo no puede volver a pasar del 1 % del APU del acero.
+- **La carga es TODO O NADA y el sello va al final.** Se valida el catálogo entero antes del primer
+  `HSET` (mismo criterio que un POST de RUP rechazado, que no toca nada) y `apu:catalogo:meta` se
+  escribe después de los hashes y del snapshot: mientras no cambie, nadie ve un estado a medias.
+- **El snapshot es CACHÉ, los hashes son la VERDAD.** Servir el catálogo desde los hashes son ~70
+  comandos por petición; desde el snapshot comprimido, dos. Pero dos fuentes de verdad es el defecto
+  que este proyecto ya pagó caro, así que el snapshot lleva **la misma `version`** que la meta y quien
+  lo lee la compara: si no casa —o si un chunk está corrupto— cae a los hashes **y lo dice** en `via`.
+  Hay prueba de que las dos vías devuelven exactamente lo mismo.
+- **`cargado` es un booleano; la fecha es `cargado_el`.** Se llamaban igual y el spread de la meta
+  pisaba al booleano con una cadena (siempre veraz): el panel habría dicho «cargado» sobre un Redis
+  vacío. Es el choque `total_procesos`/`procesos_contados` otra vez, y tiene su prueba de tipo.
+- **Lo que el catálogo NO incluye**: AIU aparte del `aiu_tipico` de referencia, y **ninguno** de los
+  costos ocultos del Cap. 11 (contribución del 5 %, estampillas, retenciones, pólizas, costo
+  financiero del capital de trabajo, ensayos, PMA/SST, liquidación). El APU es costo directo; eso va
+  encima. La calculadora de rentabilidad es la Fase 2.
 
 ## Variables de entorno
 
