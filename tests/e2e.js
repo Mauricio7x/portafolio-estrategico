@@ -5641,6 +5641,148 @@ async function main() {
         for (const e of Object.keys(conteo)) assert.ok(inferencia.ESTADOS.includes(e));
       }
 
+      /* ---- j.3-bis TRES PUERTAS ANTI-FALSO-POSITIVO ----
+         Los tres casos salieron del corpus REAL y los tres están reproducidos
+         contra el motor antes de existir la puerta: sin ellas, `inferir` sugería
+         obra para procesos que no lo son. El peor era el segundo, que salía
+         VERDE —el único estado que presupuesta sin pedir el pliego— con seis
+         ítems de placa huella para un contrato de caninos.
+
+         Cada caso lo caza una puerta DISTINTA, y por eso se comprueba el motivo
+         y no solo el estado: si una sola puerta cazara los tres, las otras dos
+         estarían de adorno y nadie lo notaría hasta que una dejara de hacer
+         falta. Las tres reutilizan la regla que ya existe en el repositorio
+         (BLACKLIST_OBJETO, evaluarPertinencia, esSuministroPuro): tres listas
+         paralelas de «esto no es obra» divergirían a la primera corrección. */
+      {
+        const CASOS = [
+          {
+            nombre: "servicio de internet → sugería interventoría",
+            objeto: "SERVICIO DE INTERNET DEDICADO E INTERVENTORIA A LA SUPERVISION TECNICA DE LA RED",
+            codigos: "80101600",
+            motivo: "no_pertinente",
+            porque: "el segmento 80 está en los RUP porque ahí viven la gerencia y la interventoría",
+          },
+          {
+            nombre: "caninos con código de vías → APU de carretera",
+            objeto: "ADIESTRAMIENTO DE CANINOS Y MANTENIMIENTO DE LA PLACA HUELLA DE LA VIA TERCIARIA VEREDA EL PORVENIR",
+            codigos: "72141000",
+            motivo: "blacklist_objeto",
+            porque: "la PERTINENCIA no cubre «caninos»: hace falta la blacklist heredada",
+          },
+          {
+            nombre: "compraventa de tubería → APU de acueducto",
+            objeto: "COMPRAVENTA DE TUBERIA PVC PARA LA RED DE ACUEDUCTO",
+            codigos: "40174000",
+            motivo: "suministro_puro",
+            porque: "ningún código ancla obra y el texto es de adquisición sin verbo de obra",
+          },
+        ];
+
+        for (const c of CASOS) {
+          // por el endpoint, que es por donde llega de verdad
+          const r = await invocarPost(apu, "/api/apu/inferir",
+            { objeto: c.objeto, codigos_unspsc: c.codigos }, CAB_TOKEN);
+          assert.strictEqual(r.status, 200, `${c.nombre}: un rechazo es un RESULTADO, no un error`);
+          assert.strictEqual(r.cuerpo.estado, "no_determinada",
+            `${c.nombre}: tiene que salir ⚪ — ${c.porque}`);
+          assert.strictEqual(r.cuerpo.motivo, c.motivo,
+            `${c.nombre}: lo caza otra puerta (${r.cuerpo.motivo}), así que «${c.motivo}» no está haciendo su trabajo`);
+          assert.strictEqual(r.cuerpo.items.length, 0, `${c.nombre}: un ⚪ NO puede proponer ítems`);
+          assert.strictEqual(r.cuerpo.tipologia, null, `${c.nombre}: tampoco puede nombrar una tipología`);
+          assert.deepStrictEqual(r.cuerpo.cantidades, [], `${c.nombre}: ni leerle cantidades`);
+          assert.ok(r.cuerpo.no_pertinente && r.cuerpo.no_pertinente.nivel === "rojo",
+            `${c.nombre}: el rechazo debe viajar con su motivo auditable, no solo como estado`);
+          // el mensaje tiene que EXPLICARLO: un ⚪ sin razón no se puede discutir
+          assert.ok(/no es de obra|suministro|COMPRA/i.test(r.cuerpo.mensaje),
+            `${c.nombre}: el mensaje no dice por qué se rechazó`);
+        }
+        // las tres puertas son distintas: si dos casos comparten motivo, sobra una
+        assert.strictEqual(new Set(CASOS.map((c) => c.motivo)).size, 3,
+          "los tres casos deben caer por tres puertas distintas");
+
+        /* NO SE PUEDE SOBREBLOQUEAR, que es el error simétrico y el que dejaría
+           la herramienta inservible. Cuatro objetos de obra legítima que TIENEN
+           que seguir pasando, incluido el que separa una compra pura de una obra
+           con suministro dentro: «SUMINISTRO E INSTALACIÓN» sí es obra. */
+        const LEGITIMOS = [
+          ["CONSTRUCCION DE PLACA HUELLA EN LA VIA TERCIARIA VEREDA EL PORVENIR", "72141000", "VIA-PH"],
+          ["SUMINISTRO E INSTALACION DE TUBERIA PVC PARA LA RED DE ACUEDUCTO", "40174000", "AGU-RED"],
+          ["CONSTRUCCION DE ALCANTARILLADO SANITARIO Y POZOS DE INSPECCION", "72152000", "ALC-RED"],
+          ["INTERVENTORIA TECNICA A LA CONSTRUCCION DE PLACA HUELLA EN VIA TERCIARIA", "81101500", null],
+        ];
+        for (const [objeto, codigos, tipEsperada] of LEGITIMOS) {
+          const r = inferencia.inferir(objeto, { codigos_unspsc: codigos });
+          assert.notStrictEqual(r.estado, "no_determinada",
+            `las puertas bloquearon obra legítima: «${objeto.slice(0, 50)}…» (${r.motivo})`);
+          if (tipEsperada) {
+            assert.strictEqual(r.tipologia.codigo, tipEsperada,
+              `«${objeto.slice(0, 40)}…» debía seguir clasificándose como ${tipEsperada}`);
+          }
+        }
+
+        /* SOLO EL ROJO RECHAZA. El amarillo de `evaluarPertinencia` significa «el
+           objeto no lo dice explícitamente», y cerrar por eso sería bloquear por
+           falta de información — lo contrario de la doctrina del proyecto. Se
+           vigila en el código porque un `!p.ok` de más lo rompería en silencio. */
+        {
+          const fuente = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib", "apu", "inferencia.js"), "utf8"));
+          assert.ok(/p\.nivel === "rojo"/.test(fuente),
+            "la puerta de pertinencia debe exigir ROJO: el amarillo no puede bloquear");
+          /* Y el `require` de filtros va DIFERIDO dentro de la función: `filtros`
+             participa en dos ciclos que resuelve con esta misma técnica, así que
+             pedirlo en tiempo de carga ataría este módulo a ese nudo. */
+          const cabecera = fuente.slice(0, fuente.indexOf("function tieneVerboDeObra"));
+          assert.ok(!/require\("\.\.\/filtros\.js"\)/.test(cabecera),
+            "el require de filtros no puede ir en tiempo de carga: va diferido dentro de la función");
+          assert.ok(/require\("\.\.\/filtros\.js"\)/.test(fuente),
+            "las tres puertas tienen que LLAMAR a filtros, no reimplementar sus listas");
+          // y no se han fabricado listas paralelas
+          for (const prohibido of ["BLACKLIST_APU", "NO_PERTINENTE_APU", "SUMINISTRO_RE"]) {
+            assert.ok(!fuente.includes(prohibido),
+              `${prohibido}: una segunda definición de «esto no es obra» diverge a la primera corrección`);
+          }
+        }
+
+        /* NO HAY CICLO DE REQUIRES. Hoy la cadena de `filtros` no alcanza
+           `apu/`, y esta prueba lo comprueba de verdad en vez de suponerlo: si
+           alguien añadiera `apu/*` a esa cadena, el diferido salva la carga pero
+           conviene enterarse igual. */
+        {
+          const alcanzados = new Set();
+          const recorrer = (rel, prof) => {
+            if (alcanzados.has(rel) || prof > 6) return;
+            alcanzados.add(rel);
+            let src = "";
+            try { src = fs.readFileSync(path.join(__dirname, "..", "lib", rel), "utf8"); } catch { return; }
+            for (const m of src.matchAll(/require\("\.\/([a-z_/]+)\.js"\)/g)) recorrer(`${m[1]}.js`, prof + 1);
+          };
+          recorrer("filtros.js", 0);
+          assert.ok(![...alcanzados].some((f) => f.startsWith("apu")),
+            `la cadena de filtros alcanza apu/ → ciclo: ${[...alcanzados].filter((f) => f.startsWith("apu")).join(", ")}`);
+        }
+
+        /* La invariante exhaustiva SIGUE valiendo con las puertas puestas: los
+           rechazos nuevos son `no_determinada`, no un cuarto estado inventado. */
+        const conPuertas = [
+          "CONSTRUCCION DE PLACA HUELLA EN VIA TERCIARIA",
+          "ADIESTRAMIENTO DE CANINOS Y MANTENIMIENTO DE LA PLACA HUELLA",
+          "COMPRAVENTA DE TUBERIA PVC PARA LA RED DE ACUEDUCTO",
+          "SERVICIO DE INTERNET DEDICADO E INTERVENTORIA A LA SUPERVISION TECNICA",
+          "MEJORAMIENTO DE LA RED DE ACUEDUCTO DEL CORREGIMIENTO",
+        ];
+        const cuenta = { verde: 0, amarillo: 0, no_determinada: 0 };
+        for (const o of conPuertas) {
+          const e = inferencia.inferir(o, { codigos_unspsc: "40174000" }).estado;
+          assert.ok(inferencia.ESTADOS.includes(e), `estado fuera del catálogo cerrado: «${e}»`);
+          cuenta[e]++;
+        }
+        assert.strictEqual(cuenta.verde + cuenta.amarillo + cuenta.no_determinada, conPuertas.length,
+          "las puertas no pueden hacer que un objeto se pierda sin quedar contado en algún estado");
+        console.log(`  · inferencia APU: 3 falsos positivos del corpus real cerrados por 3 puertas distintas `
+          + `(blacklist · pertinencia · anti-suministro) y obra legítima intacta`);
+      }
+
       /* ---- j.4 cálculo: las invariantes aritméticas ---- */
       const itemsPrueba = [
         { item_id: "INV-PH.1", cantidad: 900 },

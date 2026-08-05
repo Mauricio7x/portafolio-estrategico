@@ -723,6 +723,32 @@ documental: `docs/APU_Y_RENTABILIDAD.md`.
 - **Sin catálogo en Redis se usa la semilla del repositorio, y se DICE** (`catalogo.fuente`). Hay prueba
   de que las dos vías dan el MISMO costo directo: son la misma tabla por dos caminos, y si divergieran el
   presupuesto cambiaría según quién hubiera corrido la carga.
+- **TRES PUERTAS ANTI-FALSO-POSITIVO antes de emitir un ítem (ago 2026), y las tres LLAMAN a la regla
+  que ya existía.** Faltaban, y el corpus real dio los tres casos: «SERVICIO DE INTERNET DEDICADO E
+  INTERVENTORÍA…» sugería CON-EST (el segmento 80 está en los RUP porque ahí viven la gerencia y la
+  interventoría); «ADIESTRAMIENTO DE CANINOS Y MANTENIMIENTO DE LA PLACA HUELLA…» con un 72141000 salía
+  **VERDE con 6 ítems** —un APU de placa huella entero para un contrato de caninos, y el verde es el
+  único estado que presupuesta sin pedir el pliego—; y «COMPRAVENTA DE TUBERÍA PVC» con un 4017 daba
+  AGU-RED con ítems. El orden importa y cada puerta caza un caso distinto:
+  · **`BLACKLIST_OBJETO` primero y sobre el texto CRUDO** (lleva `[oó]` y flag `i`: cambiarle la base de
+    comparación sería una regresión silenciosa). Hace falta porque la PERTINENCIA **no cubre «caninos»**.
+  · **`evaluarPertinencia(textoNorm, {codigos})`**, y **solo el ROJO rechaza**: su amarillo significa «el
+    objeto no lo dice explícitamente», y cerrar por eso sería bloquear por falta de información. Se le
+    pasa el texto NORMALIZADO — su contrato es `(textoNorm, …)`, y con texto crudo sus vocabularios no
+    casarían y la puerta quedaría abierta en silencio.
+  · **`esSuministroPuro(textoNorm, codigos)`**, que necesita los códigos por SEGMENTO: `nivelB` los
+    devuelve ya normalizados en vez de recalcularlos. Sin códigos devuelve `false` por diseño.
+  Las tres reutilizan la regla del repositorio a propósito: **tres listas paralelas de «esto no es obra»
+  divergen a la primera corrección que se aplique a una sola**, y hay prueba que prohíbe fabricarlas.
+  Los rechazos son `no_determinada`, no un cuarto estado: la invariante de que los estados suman los
+  evaluados sigue valiendo. Hay prueba por MUTACIÓN de que las tres son necesarias —desactivar
+  cualquiera resucita su caso— y otra de que no se sobrebloquea obra legítima («SUMINISTRO E
+  INSTALACIÓN DE TUBERÍA» sí es obra y sigue pasando).
+- **`lib/apu/inferencia.js` YA NO ES HOJA, y el comentario que decía lo contrario se corrigió.** Depende
+  de `filtros`, con el `require` **DIFERIDO dentro de la función**: `filtros` participa en dos ciclos que
+  resuelve con esa misma técnica (`filtros → rup → filtros`, `filtros → negocio → filtros`), así que
+  pedirlo en tiempo de carga ataría este módulo a ese nudo. Hoy la cadena de `filtros` no alcanza `apu/`
+  —hay prueba que recorre el grafo y lo comprueba—, pero el diferido lo hace cierto por construcción.
 - **El clasificador es una cascada de tres niveles y solo están los dos primeros.** Nivel A léxico
   (ancla 3 · apoyo 1 · excluye −4, exigiendo verbo de obra de `lib/semantica`), Nivel B UNSPSC como
   evidencia INDEPENDIENTE cuyo valor real es **vetar** (placa huella con código 4017 es una red, no una
