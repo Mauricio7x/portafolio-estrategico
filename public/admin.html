@@ -42,7 +42,10 @@
           <h1 class="text-lg font-semibold tracking-tight">Administración</h1>
           <p class="text-xs text-gray-500">Mantenimiento del corpus de SECOP II</p>
         </div>
-        <a href="/" class="text-sm font-medium text-blue-600 hover:underline">← Volver a la app</a>
+        <div class="flex items-center gap-4">
+          <a href="/apu.html" id="nav-apu" class="text-sm font-medium text-blue-600 hover:underline">Editor de APU</a>
+          <a href="/" class="text-sm font-medium text-blue-600 hover:underline">← Volver a la app</a>
+        </div>
       </div>
     </header>
 
@@ -328,6 +331,34 @@
       </section>
 
       <!-- ══════════ Experiencia ejecutada ══════════ -->
+      <!-- ══════════ Editor de APU ══════════
+           Va como ENLACE y no como iframe a propósito: `vercel.json` sirve todo
+           el sitio con `X-Frame-Options: DENY`, así que un iframe de /apu.html
+           quedaría en blanco en producción aunque funcione en local. Debilitar
+           esa cabecera para encajar una pestaña sería pagar una protección real
+           por una comodidad de navegación. -->
+      <section id="seccion-apu" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="max-w-2xl">
+            <h2 class="font-semibold tracking-tight">Editor de APU y rentabilidad</h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Del objeto del proceso a un presupuesto con desglose por insumo: el clasificador propone
+              la tipología de obra y sus ítems característicos, el motor calcula materiales con
+              desperdicio, mano de obra por rendimiento y factor prestacional, equipo, acarreo y AIU, y
+              el resultado se exporta a Excel. Los borradores se guardan 30 días.
+            </p>
+            <p class="mt-2 text-xs text-amber-700">
+              Los precios del catálogo son ilustrativos y están pendientes de calibración: sirven para
+              decidir a qué presentarse, no para firmar una oferta.
+            </p>
+          </div>
+          <a href="/apu.html" id="btn-abrir-apu"
+             class="shrink-0 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">
+            Abrir el editor →
+          </a>
+        </div>
+      </section>
+
       <section id="seccion-experiencia" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">Experiencia ejecutada</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500">

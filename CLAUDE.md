@@ -509,6 +509,106 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   **3 + 1, no 2 + 2**: con el empate, `nombreOriginal` lo decide el orden del corpus y la prueba
   pasaría o fallaría por azar.
 
+### Editor de APU: del objeto del proceso a un presupuesto (ago 2026)
+
+Se apoya en el **catálogo de precios en Redis** (`lib/apu/catalogo.js` + `/api/admin/apu/cargar-catalogo`)
+y añade lo que aquel no cubre: qué obra es, cuántas unidades, el AIU, la baja y el margen. Base
+documental: `docs/APU_Y_RENTABILIDAD.md`.
+
+- **`lib/apu/calculo.js` NO reimplementa el costo directo: LLAMA a `costoDirecto()` del catálogo.** Ahí
+  viven ya las cuatro fórmulas del APU (mano de obra ÷ rendimiento con prestacional, materiales con
+  desperdicio, equipo ÷ rendimiento, transporte por distancia, herramienta menor como % de la MO). Un
+  segundo cálculo «equivalente hoy» diverge a la primera corrección que se aplique a uno solo — es la
+  lección de `total_procesos`/`procesos_contados`, y aquí serían pesos.
+- **`lib/apu/tipologias.js` está separado del catálogo de precios a propósito.** Aquel es PRECIO: vive
+  en Redis, lo carga un administrador y cambia con el mercado. Esto es VOCABULARIO y TRADUCCIÓN: cambia
+  con el criterio de negocio, tiene que verse en un diff y **no puede depender de que alguien haya
+  corrido la carga**. Mezclarlos habría atado el clasificador —que funciona sin Redis— al estado de una
+  clave que puede no existir.
+- **DOS CORRECCIONES A LA FÓRMULA DEL ENCARGO, las dos con prueba.** (1) `(cantidad / rendimiento) ×
+  costo_hora` ya es el TOTAL del ítem, no el unitario: sumarlo a unos materiales que sí son por unidad y
+  volver a multiplicar por `cantidad` cobra la cuadrilla `cantidad` veces (en un ítem de 500 m², 500
+  cuadrillas). El APU clásico calcula el UNITARIO y multiplica una vez; se obtiene el número que el
+  encargo pretendía y además se cumple `cantidad × unitario = total`. (2) **AIU es Administración +
+  Imprevistos + Utilidad: se SUMA, no se compone.** El `aiu_pct` del encargo es la «A». `15/5/5`
+  compuesto da 26,8 % contra 25 % aditivo, y el aditivo es el de los pliegos tipo. `modo_aiu:
+  "compuesto"` sigue disponible; el defecto no puede ser el que descuadra contra el formulario.
+- **El rendimiento DIVIDE.** Error canónico del APU, con prueba de monotonía: bajarlo encarece la mano
+  de obra sin tocar los materiales. Y el `rendimiento_override` **trabaja sobre una copia**: el catálogo
+  es compartido entre peticiones de la misma instancia caliente y mutarlo filtraría el override del
+  presupuesto de uno al de otro. Hay prueba de eso también.
+- **`regionDeDepartamento` es el punto único de paso y PROHIBIDO `|| 1`.** El catálogo cotiza por REGIÓN
+  (cinco, con ciudad cabecera) y SECOP publica DEPARTAMENTO: `data/apu_regional.json` traduce. Las cinco
+  regiones cubren **14 de los 33** departamentos; los otros 19 salen `sin_base` con su motivo escrito.
+  Asignar Vaupés a «Costa Atlántica» porque no hay nada mejor sería inventarse un dato, y un factor 1,00
+  de relleno afirma «aquí construir cuesta lo mismo que en Bogotá». El presupuesto **sale igual**, con la
+  región base y diciéndolo: no bloquear por falta de información. El desplegable marca cuáles no tienen
+  precio de referencia — sin la marca, elegir Chocó parecería tan fiable como elegir Antioquia.
+- **Sin catálogo en Redis se usa la semilla del repositorio, y se DICE** (`catalogo.fuente`). Hay prueba
+  de que las dos vías dan el MISMO costo directo: son la misma tabla por dos caminos, y si divergieran el
+  presupuesto cambiaría según quién hubiera corrido la carga.
+- **El clasificador es una cascada de tres niveles y solo están los dos primeros.** Nivel A léxico
+  (ancla 3 · apoyo 1 · excluye −4, exigiendo verbo de obra de `lib/semantica`), Nivel B UNSPSC como
+  evidencia INDEPENDIENTE cuyo valor real es **vetar** (placa huella con código 4017 es una red, no una
+  vía → 🟡). El **Nivel C (LLM de desempate) NO se implementó**: el proyecto no tiene dependencias ni
+  llamadas externas, y meter una en la ruta de una petición añadiría latencia y un fallo a un cálculo hoy
+  determinista. La máquina de estados funciona sin él y cae a 🟡 o ⚪ donde el informe invocaría a C.
+- **`anclas` son los términos que el informe publica en su tabla, uno a uno.** Demoterlos a `apoyo`
+  (peso 1) fue el primer intento y dejó a TODAS las tipologías por debajo del umbral de 🟢: una placa
+  huella perfectamente escrita sacaba 5 puntos de los 8 necesarios.
+- **Los términos se comparan con frontera de palabra Y plural tolerado.** Sin el plural, media tabla no
+  dispararía nunca (SECOP dice «vías terciarias»); sin la frontera, «parque» clasificaría un
+  mantenimiento de **parque**adero como espacio público. `includes` a secas falla en el segundo caso y
+  una frontera estricta en el primero.
+- **El margen `P1−P2` es condición DURA**: dos tipologías empatadas nunca dan 🟢 aunque el puntaje
+  absoluto sea alto. El falso positivo caro es el verde, el único estado que presupuesta sin pedir el
+  pliego. Y los tres estados **suman exactamente los objetos evaluados**, con prueba.
+- **Una tipología sin ítems en el catálogo lo DICE.** 19 de las 22 tienen cobertura; VIA-SEN, ELE-RED y
+  CON-EST no. Una lista vacía es un dato, no un olvido, y el mensaje lo explica en vez de proponer ítems
+  de otra cosa. El mapa tipología→ítems es EXPLÍCITO en el JSON: derivarlo del capítulo (texto libre) o
+  del UNSPSC (7215 casa con casi todo) acabaría proponiendo pañete para una alcantarilla.
+- **Decimal COLOMBIANO en la extracción de cantidades**: el punto separa miles. Invertirlo divide la obra
+  por mil. Más el lookbehind (sin él «1500 km» captura 500) y la **regla de atribución a ≤ 6 palabras**:
+  sin ella «…PLACA HUELLA VEREDA X, CONTRATO 2024-350» produce 2024 km.
+- **UNA sola función serverless para las seis acciones** (`api/apu/[accion].js`). El plan Hobby de Vercel
+  admite **12 funciones por despliegue** y el repositorio ya estaba en 12: un archivo más y **falla el
+  despliegue entero**, no el endpoint nuevo. Por eso `/api/apu/catalogo` dejó de tener archivo propio y
+  se plegó aquí — **misma URL, mismo contrato y sigue siendo PÚBLICO**. Hay prueba que cuenta los
+  archivos bajo `api/` y otra que prohíbe que el archivo suelto reaparezca. `accion` se lee de
+  `req.query` **y del path como respaldo**: la suite invoca los handlers sin enrutador, y un handler que
+  solo funciona detrás del enrutador es un handler que no se puede probar.
+- **`catalogo` es público; las otras cinco exigen token.** No es una excepción a la regla del proyecto,
+  es la regla: lo que no sale sin llave son las CIFRAS DEL PERFIL. El catálogo son precios de referencia
+  de mercado; escribirlos sí exige llave. `inferir`, `calcular`, `guardar`, `cargar` y `listar` sí la
+  piden: son la máquina de armar una oferta y los borradores de un perfil concreto.
+- **El listado NO tiene índice aparte**: SCAN + MGET sobre las propias claves. Un índice con TTL se
+  desincroniza en cuanto caduca un borrador y listaría presupuestos que ya no existen. La clave ES la
+  fuente de verdad. Un valor corrupto se CUENTA (`ilegibles`) en vez de tumbar la respuesta.
+- **`anticipo_pct` aquí distingue `null` de `0`**, al revés que el campo homónimo del corpus de SECOP. Es
+  legítimo y se declara: allí el 0 lo pone un dataset que no publica el dato; aquí lo teclea una persona
+  que sabe que el proceso no tiene anticipo. Sin dato se calcula el escenario conservador.
+- **`margen_final` es literalmente lo que pidió el encargo** (`precio_final − costo_directo_total`) y por
+  eso NO descuenta impuestos: la contribución del 5 % (Ley 418/1997), las estampillas y el ReteICA se
+  cargan en `deducciones_pct` y producen `margen_despues_deducciones`. Mientras no se carguen, una alerta
+  recuerda la contribución con su cifra en pesos — es «el olvido más caro del país».
+- **El .xlsx se escribe a mano (`public/xlsx.js`), sin SheetJS y sin `package.json`.** No es purismo, son
+  dos hechos verificados: (1) SheetJS dejó de publicar en npm tras la **0.18.5**, que es lo que
+  `npm install xlsx` instala, con dos advisories «high» y `npm audit` respondiendo literalmente **«No fix
+  available»**; (2) la edición libre **IGNORA los estilos de celda al escribir** — se comprobó fijando
+  `ws.A1.s = {font:{bold:true}, fill:{…}}` y el `styles.xml` sale con `<fonts count="1">`. Un «formato
+  profesional de APU» no es alcanzable con esa librería. El escritor propio da control total y la prueba
+  audita el ZIP entrada por entrada. Método **STORE** (sin comprimir): es ZIP válido, lo abren
+  Excel/LibreOffice/Numbers y evita depender de que el navegador traiga `CompressionStream`.
+- **En `public/apu.js` el arranque automático va AL FINAL del IIFE**, tercera vez que se aplica la misma
+  lección (`app.js`, `admin.js`): junto al gate moriría en la zona muerta temporal en la segunda visita
+  de la misma pestaña, y por una promesa rechazada, o sea EN SILENCIO. Hay prueba del orden.
+- **El editor se enlaza desde `/admin.html`, no se embebe.** `vercel.json` sirve todo el sitio con
+  `X-Frame-Options: DENY`, así que el iframe que el encargo daba como alternativa quedaría en blanco en
+  producción aunque funcione en local.
+- **El bloque `j` del e2e corre ANTES de `h-bis` y limpia `apu:*` al terminar.** Necesita el estado «sin
+  catálogo cargado» para probar la degradación a la semilla, y `h-bis` necesita Redis limpio para probar
+  la carga. El orden no es casual y la limpieza tampoco.
+
 ## CONOCIMIENTO DE DOMINIO: CONTRATACIÓN PÚBLICA COLOMBIANA
 
 Destilado accionable del **Manual del Analista de Licitaciones** (edición 2026). El manual completo
