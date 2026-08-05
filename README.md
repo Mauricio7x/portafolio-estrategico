@@ -1039,6 +1039,222 @@ familia) y leía mal los segmentos sueltos. El motor jerárquico actual cubre la
 reglas sobre el corpus real (`pasarian_unspsc_exacto` ⊂ `pasarian_unspsc_prefijo` ⊂
 `pasarian_unspsc_jerarquico`).
 
+## Módulo APU · lectura del formulario de cantidades de un pliego (ago 2026)
+
+**Qué resuelve.** El formulario de cantidades (Formulario 1 · presupuesto oficial) «vale más que todo
+lo demás junto»: con **ítem + unidad + cantidad** se puede valorar un proceso completo con precios
+propios, y sin él hay que inferir las cantidades del objeto, que es adivinar. Este módulo convierte
+ese documento en una lista estructurada y editable.
+
+**Qué NO resuelve, y conviene tenerlo claro antes de leer el resto:** no hay precios. No es una
+biblioteca de APU valorados, no calcula rentabilidad, no propone AIU. Entrega ítem, unidad y cantidad
+—y el AIU **declarado** cuando el pliego lo declara, solo para validar la aritmética—.
+
+### Dónde corre cada cosa, y por qué
+
+```
+NAVEGADOR (/apu.html)                          SERVIDOR                     TERCERO
+────────────────────                           ────────                     ───────
+PDF (archivo)  ──┐
+                 ├─▶ pdf.js (CDN, v3 UMD)
+URL del PDF ─────┘   getTextContent()
+      │              agrupa por Y  → fila
+      │              hueco en X    → TAB
+      │                    │
+      │                    └─ texto ──▶ POST /api/apu/extraer-texto
+      └─ CORS ──▶ POST /api/apu/descargar        │  parsearPliego  (3 vías)
+                  (SSRF acotado, %PDF- verificado)│  validación     (3 niveles)
+                                                  │  semáforo       (2 ejes)
+sin capa de texto                                 │  mapearTabla    → catálogo
+      │                                           ▼
+      └─▶ rasteriza a JPEG <1MB ──▶ imagenes_base64 ──▶ OCR.space
+          (una petición por página)                     (apikey del servidor)
+```
+
+**El PDF se lee en el navegador, no en la función.** `pdfjs-dist` en Node pesa decenas de MB y hay
+que sacarlo del *request path*; el OCR «no cabe en el mismo proceso». Medido: `tesseract.js@7` +
+`spa.traineddata` son **51 MB de `node_modules`** y 9 dependencias npm — cabe en el límite de 250 MB
+de Vercel, pero rompe la regla central del proyecto (sin `package.json`, sin dependencias) y necesita
+además un rasterizador nativo. El navegador ya tiene motor de PDF y tiempo de sobra: hace la parte
+cara y manda **texto**. El texto de un pliego de 120 páginas son ~0,34 MB contra el tope de 4,5 MB del
+cuerpo de una función: sobra un factor de 13.
+
+**Las columnas se conservan por coordenadas.** `getTextContent()` devuelve cada fragmento con su
+matriz de transformación. `public/apu.js` agrupa por **Y** (tolerancia ≈ ½ altura de línea) para
+formar la fila y mide el **hueco en X** entre fragmentos para decidir el separador: hueco grande →
+**TABULADOR**, hueco pequeño → espacio. Si en vez de esto se mandara `str` concatenado, las columnas
+se perderían y todo el parseo dependería de heurísticas de último recurso.
+
+**La versión de pdf.js está clavada en 3.11.174 por un motivo, no por inercia:** desde la v4,
+`pdfjs-dist` ya **no publica build UMD** (es ESM puro, incluido `legacy/build/`), así que un `@latest`
+dejaría de definir `window.pdfjsLib` y rompería la carga de golpe y en silencio.
+
+**El worker se construye como blob del mismo origen.** `new Worker(url)` clásico **no admite una URL
+de otro origen**, así que apuntar `workerSrc` al CDN es el fallo intermitente típico de pdf.js. Se
+trae por `fetch` y se envuelve en un `Blob` local. Tres niveles: blob → URL directa → sin worker (en
+el hilo principal: funciona y congela la pestaña, y **se avisa**).
+
+### `GET|POST /api/apu/extraer-texto` (protegido)
+
+`GET` devuelve el contrato, los umbrales, el catálogo vigente y si el OCR está configurado.
+`POST` recibe `{ texto_extraido, objeto_proceso, unspsc, precio_base, imagenes_base64 }` y devuelve
+`items[]` con `{ item_id, descripcion_original, unidad, cantidad, confianza, … }`.
+
+**No toca Redis**: ni lee el corpus, ni escribe, ni toma candados. Es una función pura sobre el cuerpo
+de la petición, así que no puede dejar nada a medias.
+
+**Tres vías de reconocimiento de fila, y las tres hacen falta:**
+
+| Vía | Cuándo | Cómo |
+| --- | --- | --- |
+| `posicional` | hay una fila con **≥3 cabeceras** conocidas (`ITEM`·`DESCRIPCION`·`UNIDAD`·`CANTIDAD`·`VR UNITARIO`·`VR TOTAL`) | esa fila define las columnas; las siguientes se leen por posición |
+| `firma_unidad` | no hay cabecera, o está partida en dos líneas | «una celda que **es** exactamente una unidad es la señal más barata y fiable de que la fila es un ítem de obra» |
+| `aplanada` | el texto llegó con un solo espacio entre celdas | último recurso: se elige la **última** palabra-unidad **seguida de un número** |
+
+La vía `posicional` es la que da la aritmética. El texto de OCR casi nunca la activa —`isTable=true` de
+OCR.space promete texto **línea a línea**, no columnas— y por eso el OCR es un respaldo, no la vía
+principal.
+
+**Números en formato colombiano.** Punto de miles, coma decimal. Si hay coma, la coma es el decimal;
+si solo hay puntos y el último grupo tiene **exactamente 3 dígitos** → miles; si tiene 1-2 → decimal.
+Invertirlo multiplica por 1000, que es el error silencioso más caro del módulo. Queda una ambigüedad
+residual (`1.234` ¿mil doscientos treinta y cuatro o 1,234?) que **la resuelve la aritmética** cuando
+hay precios; sin precios, no se resuelve, y está medida en `tests/apu_bench.js`.
+
+**Tres niveles de validación, con tolerancias derivadas de la FUENTE del error:**
+
+| Nivel | Invariante | Tolerancia | Por qué esa |
+| --- | --- | --- | --- |
+| Fila | `cantidad × unitario = total` | `max(cantidad/2 + 1, $1)` **pesos** | el error por redondear el unitario al peso es `cantidad × 0,5`. Un porcentaje del total sería incorrecto en las dos direcciones: en una fila de $500 M un 0,5 % admite $2,5 M y **esconde un dígito mal leído** |
+| Capítulo | `Σ filas hijas = subtotal` | `max($10, 0,1 %)` | aquí sí se acumulan redondeos de muchas filas |
+| Documento | `Σ capítulos = precio_base / (1 + A + I + U + t·U)` | `0,5 %` | `t = 0,19`: sobre la **utilidad** se causa IVA en construcción |
+
+Se prueban **las dos variantes** (con y sin IVA) y se registra **cuál cuadró**: es información sobre
+cómo presupuesta esa entidad. Ignorar `t·U` no es un detalle — con `U = 10 %` el IVA añade ≈1,9 pp,
+casi **cuatro veces** la tolerancia del 0,5 %.
+
+**El AIU se LEE, no se adivina.** Si el pliego lo declara, el nivel Documento se verifica con ese
+valor y **puede** dar verde. Si no, se hace un barrido en 10-35 % que es **DIAGNÓSTICO y nunca produce
+verde**: con 25 puntos de parámetro libre continuo casi cualquier suma encuentra un AIU que «cuadra»,
+incluidas las tablas incompletas que este nivel debía cazar.
+
+**Semáforo: matriz de dos ejes, sin huecos.**
+
+| Filas que cuadran | Total cuadra con AIU **declarado** | Total no cuadra (o solo por barrido) |
+| --- | --- | --- |
+| **≥ 98 %** | 🟢 **verde** | 🟡 amarillo |
+| **90-98 %** | 🟡 amarillo | 🟡 amarillo |
+| **< 90 %** | 🔴 **rojo** — se descarta el parseo | 🔴 rojo |
+
+Caso aparte, **frecuente y benigno**: cantidades **sin** precios unitarios. El nivel Fila no existe y
+el Documento tampoco, así que la única validación es estructural → **amarillo**, nunca rojo (sigue
+siendo la mayor parte del valor) ni verde (verde significa «se usa automáticamente», y sin aritmética
+no hay nada que respalde un ≥98 %).
+
+**Aquí el falso positivo cuesta más que el falso negativo** — al revés que en el filtrado de
+oportunidades. Un 🟡 en la lista de licitaciones se descarta en 5 s; un ítem inventado o una cantidad
+mal leída en un presupuesto es un riesgo económico directo. De ahí que el semáforo pueda **descartar
+el parseo entero** y que la regla sea: nunca se usa automáticamente una lista a medias.
+
+### El catálogo de ítems (`data/catalogo_apu.json` + `lib/apu_catalogo.js`)
+
+93 ítems de obra con su unidad de pago, las tipologías que los usan y los sinónimos con que las
+entidades los escriben. Más el **catálogo cerrado de 22 tipologías** con sus términos ancla.
+
+**Ningún código es `INV-`, y es una regla dura, no una omisión.** «Nunca inventar un código INV que no
+exista; si no hay artículo, el ítem nace `LOC-`». El índice oficial de las Especificaciones INVÍAS
+2022 (Res. 4561/2022) nunca se pudo abrir desde el entorno de desarrollo (HTTP 403), así que la
+numeración de artículos y las unidades de pago están **sin verificar**. El artículo probable viaja
+aparte, en `articulo_invias_candidato`, marcado como hipótesis; `codigoInviasPropuesto()` compone el
+código que se **emitiría** al confirmarlo. Hay prueba que prohíbe publicar un `INV-`.
+
+**No hay precios**: ni rendimientos, ni composición de insumos, ni jornales. Esa capa exige precios
+verificados y ninguna de esas fuentes es accesible; un precio inventado en un APU es plata.
+
+### Mapeo al catálogo (`lib/apu_mapeo.js`)
+
+Cuatro señales ponderadas, y ninguna sola alcanza:
+
+| Señal | Peso | Para qué |
+| --- | --- | --- |
+| Solapamiento de términos con los sinónimos | 0,60 → **0,55** | señal principal y la más auditable: se devuelven las palabras que sumaron |
+| **Levenshtein** sobre la descripción canónica | **0,22** | existe **por el OCR**: un reconocimiento escribe `C0NCRET0` y el solapamiento de términos falla entero ante un carácter cambiado |
+| Unidad de pago coincidente | 0,13 | coincidir no da vía libre y discrepar **no veta** |
+| Tipología del proceso | 0,10 | **peso, no filtro** (ver abajo) |
+
+`≥ 0,35` se ata a un ítem del catálogo; `≥ 0,60` con margen ≥ 0,08 sobre el segundo es **firme**; por
+debajo del umbral nace un ítem **personalizado** con su descripción y unidad tal como venían — eso no
+es un fallo: **el pliego manda**.
+
+**La tipología es un peso y no un filtro, y esto se corrigió con un caso medido.** Cuando acotaba el
+catálogo, en un proceso de placa huella (`VIA-PH`) la fila del cruce de drenaje —«SUMINISTRO E
+INSTALACIÓN DE TUBERÍA PVC», que casi siempre está— caía a «personalizado» porque `LOC-RED-TUBPVC` no
+figura en `VIA-PH`. **Un presupuesto de obra mezcla tipologías por construcción.**
+
+**Su tokenizador CONSERVA los dígitos**, al contrario que `experiencia.tokenizar`, que los descarta a
+propósito («2024», «cm001»: el número del proceso, no el trabajo). Aquí `21` (MPa), `420` (fy) y `21`
+(RDE) son justo lo que distingue un ítem de su hermano y lo que **mueve el precio** (RDE 41→21 puede
+duplicar el ml). Son dos preguntas distintas, y hay una prueba que impide «unificarlas».
+
+**La unidad no se convierte NUNCA.** Pasar m² a m³ exige un espesor que el catálogo no conoce. Cuando
+difieren se marca `unidad_discrepante` y se conserva **la del pliego**, que es la que se va a pagar.
+
+### `POST /api/apu/descargar` (protegido)
+
+Baja el PDF de una URL porque **el navegador no puede** (política de mismo origen; los portales de
+contratación no mandan `Access-Control-Allow-Origin`). Devuelve el PDF en base64 para que pdf.js lo
+lea en el navegador — extraer el texto en el servidor exigiría `pdfjs-dist`.
+
+Es un SSRF de manual, así que está acotado por **cinco** cosas a la vez: token obligatorio · solo
+`https:` · el host no puede ser IP literal, `localhost`, un rango privado ni un dominio interno ·
+las redirecciones se siguen **a mano revalidando cada salto** (una redirección a `169.254.169.254` es
+el salto clásico) · el tamaño se controla **mientras se lee**, no por `Content-Length`. Y se verifica
+la firma **`%PDF-`**: los portales sirven HTML de sesión con `Content-Type: application/pdf`.
+
+### OCR (`lib/apu_ocr.js`) — respaldo, no vía principal
+
+Se activa cuando pdf.js no encuentra capa de texto. El criterio es **por página** (<100 caracteres de
+media), no absoluto: un escaneo con cabecera vectorial devuelve unos pocos caracteres por página y
+pasaría un umbral global. Y el mensaje dice «parece escaneado», nunca «el pliego está vacío»:
+**ausencia de capa de texto es SIN DATO**, no un documento sin contenido — el mismo error de categoría
+que `anticipo_pct = 0`.
+
+El navegador rasteriza cada página a JPEG bajando escala y calidad hasta caber por debajo de ~1 MB, y
+manda **una petición por página**. Así se esquivan los tres límites a la vez: el tope de tamaño de
+fichero del plan gratuito, su tope de páginas por PDF, y el de 4,5 MB del cuerpo de la función. La
+`apikey` **nunca sale al navegador**: vive en `OCRSPACE_API_KEY` y el endpoint la usa por header.
+
+Sin la variable no se inventa nada: **503 con la instrucción exacta** de cómo configurarla. Y un 200
+de OCR.space no es éxito — el fallo viaja **dentro** del 200 (`IsErroredOnProcessing`, `OCRExitCode`
+1/2/3/4), así que se comprueba o se devolvería texto vacío como si la página no tuviera nada.
+
+### Frontend `/apu.html`
+
+Botón **«Cargar pliego (PDF)»**, archivo o URL, progreso por página, y una tabla **editable** donde
+todo se corrige a mano (los totales se recalculan) y se exporta a JSON. Las **limitaciones se
+documentan en la propia página**, arriba y sin poder cerrarse: una advertencia que hay que ir a buscar
+no es una advertencia.
+
+Una cantidad ausente se pinta **«sin dato»**, nunca 0 — hay prueba que prohíbe un `|| 0` sobre las
+cantidades, igual que la que ya existía para los conteos. Y el arranque va **al final del IIFE**,
+misma lección que costó cara en `app.js` y se repitió en `admin.js`.
+
+### Tasa de acierto (`node tests/apu_bench.js`)
+
+| Corpus | Recall de filas | Unidad | Cantidad | Filas espurias |
+| --- | --- | --- | --- | --- |
+| 10 formularios sintéticos (38 filas) | **100 %** | 100 % | 100 % | 0 |
+| 5 casos **adversarios** | 100 % | 100 % | **87,5 %** | 0 |
+
+Mapeo al catálogo: **97,4 %** con código, **84,2 %** en firme.
+
+**El corpus es sintético y lo escribió quien escribió el parser**, así que la tanda principal mide
+sobre todo la robustez ante las variantes que su autor previó; los casos adversarios están para
+acotar eso, y encontraron tres defectos reales (celdas combinadas, unidad mencionada dentro de la
+descripción, ambigüedad decimal) de los que **dos se corrigieron y el tercero queda publicado**.
+Ninguna de las dos cifras es la cobertura del universo real de pliegos de SECOP II, que sigue **sin
+medir**.
+
 ## `GET /api/diagnostico` (protegido)
 
 El instrumento para responder «¿por qué solo salen N procesos?» con datos. Mismo token que el
@@ -1179,6 +1395,7 @@ La auditoría de completitud vive en `meta.porMes`: `esperados` (`count(*)` de S
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Redis (respaldo: `KV_REST_API_*`) |
 | `HISTORICO_TOKEN` | **Llave de `/api/sync/historico`**. Sin ella el endpoint responde 503 (no hay default) |
 | `SOCRATA_APP_TOKEN` | Más cuota en datos.gov.co (header `X-App-Token`) |
+| `OCRSPACE_API_KEY` | **Opcional.** Respaldo por OCR para pliegos escaneados (`/api/apu/extraer-texto`). Sin ella el endpoint responde 503 con la instrucción de cómo configurarla; el resto del módulo APU funciona igual (los PDF con capa de texto no la necesitan) |
 | `UBICACION_VALIDA` | Ubicación objetivo (default `BOGOTÁ D.C.`; admite lista con comas) |
 | `SECOP_BASE_URL`, `SECOP_PAGE`, `SECOP_BACKOFF_MS` | Solo pruebas/ajustes |
 

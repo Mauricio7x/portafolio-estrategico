@@ -28,6 +28,9 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - **Probar:** `node tests/e2e.js` (4 iteraciones; mocks HTTP de Socrata y Upstash + handlers
   reales). Este entorno **no** tiene salida a `datos.gov.co` (allowlist del proxy) ni CLI de
   Vercel: la validación contra datos reales se hace desplegando.
+  Y `node tests/apu_bench.js`, que **mide** la tasa de acierto del parseo de tablas de pliego sobre
+  un corpus sintético y publica los casos donde falla. Responde «¿cuánto acierta?», que es una cifra;
+  la suite responde «¿sigue funcionando?», que es un sí/no.
 - **Tras desplegar**: (1) relanzar `/api/sync?modo=full` UNA vez — la ingesta se ensanchó y hay
   procesos que las reglas viejas nunca dejaron entrar a Redis (ver «ingesta/juicio»), y desde ago 2026
   también los que se perdían por el estado `Activo` que faltaba en `ESTADOS_ABIERTOS`; el filtro de
@@ -507,6 +510,107 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   **3 + 1, no 2 + 2**: con el empate, `nombreOriginal` lo decide el orden del corpus y la prueba
   pasaría o fallaría por azar.
 
+### Módulo APU: lectura del formulario de cantidades de un pliego (ago 2026)
+
+- **La premisa del encargo era falsa y hay que dejarlo escrito**: se pidió una «Fase 4» dando por
+  hecho que las «Fases 1-3 del módulo APU» estaban en `main`. **No existía nada de APU en `main`**:
+  ni catálogo, ni página `/apu`, ni `lib/apu*.js`. Lo único que había era el documento de diseño
+  `docs/APU_Y_RENTABILIDAD.md`, y **tampoco está en `main`** — vive en la rama sin fusionar
+  `claude/apu-rentabilidad-licitaciones-vxom4c`. Se construyó además el sustrato mínimo (catálogo de
+  ítems + página) para que la extracción tuviera destino. **Y la numeración del encargo no es la del
+  documento**: el doc planifica TRES fases (1 = MVP con datos propios, 2 = fuentes externas
+  gratuitas, 3 = inversión/LLM) y el catálogo de ítems es entregable de su **Fase 2**.
+- **El PDF se lee en el NAVEGADOR, y la decisión está medida, no intuida.** `tesseract.js@7` +
+  `spa.traineddata` son **51 MB de `node_modules`** y 9 dependencias npm; cabe en el límite de 250 MB
+  de Vercel, pero rompe la regla central del proyecto y **además necesita un rasterizador nativo**
+  (`pdfjs-dist` en Node exige `canvas`, módulo compilado). El texto de un pliego de 120 páginas son
+  ~0,34 MB contra el tope de **4,5 MB** del cuerpo de una función: mandando texto sobra un factor de
+  13. Los 50 MB son del DESPLIEGUE, no de la invocación — son dos límites distintos que se confunden
+  siempre.
+- **Las columnas se conservan por COORDENADAS, no por `str` concatenado**: agrupar por Y forma la
+  fila, el hueco en X decide TAB o espacio. Si el navegador mandara el texto aplanado, el parseo
+  entero dependería de la vía de último recurso. Es la pieza de la que cuelga todo lo demás.
+- **pdf.js va CLAVADO en 3.11.174**: desde la v4 `pdfjs-dist` ya NO publica build UMD (es ESM puro,
+  incluido `legacy/build/`), así que un `@latest` dejaría de definir `window.pdfjsLib` y rompería la
+  carga **de golpe y en silencio**.
+- **`workerSrc` NO puede apuntar al CDN**: `new Worker(url)` clásico no admite otro origen, y ese es
+  el fallo intermitente típico de pdf.js. Se trae por `fetch` y se envuelve en un **blob del mismo
+  origen**. Tres niveles: blob → URL directa → sin worker (hilo principal: funciona, congela la
+  pestaña, **y se avisa**).
+- **AQUÍ EL FALSO POSITIVO CUESTA MÁS QUE EL FALSO NEGATIVO** — al revés que en el filtrado de
+  oportunidades, y es la inversión más importante de este módulo. Un 🟡 en la lista se descarta en
+  5 s; un ítem inventado o una cantidad mal leída en un presupuesto es plata. Por eso el semáforo
+  puede DESCARTAR el parseo entero y por eso nunca se usa automáticamente una lista a medias.
+- **Tolerancia de FILA en pesos, jamás en porcentaje del total**: `max(cantidad/2 + 1, $1)`, porque el
+  error por redondear el unitario al peso es `cantidad × 0,5`. Un 0,5 % en una fila de $500 M admite
+  $2,5 M y **esconde justo el dígito mal leído que la regla debía cazar**; y en una fila barata con
+  cantidad enorme se queda corto y produce falsos rojos.
+- **El AIU se LEE, no se adivina, y el barrido NUNCA produce verde.** Con un parámetro libre continuo
+  de 25 puntos (10-35 %) casi cualquier suma de costos directos encuentra un AIU que «cuadra»,
+  incluidas las tablas incompletas. Y **el IVA sobre la utilidad no es un detalle**: con `U = 10 %`
+  añade ≈1,9 pp, casi **cuatro veces** la tolerancia del 0,5 %, así que se prueban las dos variantes
+  y se registra CUÁL cuadró (es información sobre cómo presupuesta esa entidad).
+- **Cantidades sin precios unitarios = AMARILLO**, ni rojo ni verde. Es el caso «frecuente y
+  benigno»: sin aritmética no hay nada que respalde un ≥98 % de filas correctas (así que no es verde,
+  que significa «se usa automáticamente»), pero ítem + unidad + cantidad «sigue siendo la mayor parte
+  del valor» (así que no es rojo).
+- **Una cantidad ilegible es `null`, JAMÁS 0** — la misma regla que `anticipo_pct = 0` y que el
+  contador de oferentes, aquí con consecuencia económica directa. Hay prueba que prohíbe
+  `f.cantidad || 0` en el frontend, hermana de la que ya prohibía `i.<conteo> || 0`.
+- **NINGÚN CÓDIGO `INV-` SE PUBLICA.** «Nunca inventar un código INV que no exista; si no hay
+  artículo, el ítem nace `LOC-`». El índice oficial de las Especificaciones INVÍAS 2022 (Res.
+  4561/2022) nunca se pudo abrir (403), así que la numeración y las unidades de pago están SIN
+  VERIFICAR: el artículo probable viaja en `articulo_invias_candidato` como hipótesis y
+  `codigoInviasPropuesto()` deja preparado el código que se emitiría al confirmarlo. Hay prueba.
+- **El catálogo NO tiene precios**, y eso es la mitad de lo que lo hace publicable: sin base de
+  precios verificada, un rendimiento o un jornal inventados serían plata, no un dato incómodo.
+- **La TIPOLOGÍA es un peso (0,10), no un filtro del catálogo.** Empezó siendo filtro y estaba mal,
+  medido con un caso: en un proceso de placa huella la fila del cruce de drenaje («TUBERÍA PVC»)
+  caía a «personalizado» porque `LOC-RED-TUBPVC` no figura en `VIA-PH`. **Un presupuesto de obra
+  mezcla tipologías por construcción.**
+- **El tokenizador del mapeo CONSERVA los dígitos**, al revés que `experiencia.tokenizar`, que los
+  descarta a propósito. Allí «2024» es el número del proceso; aquí «21» (MPa), «420» (fy) y «21»
+  (RDE) son lo que distingue un ítem de su hermano y lo que **mueve el precio** (RDE 41→21 puede
+  duplicar el ml). Dos preguntas distintas, dos reglas distintas, y una prueba que impide
+  «unificarlas» — la misma clase de decisión que separar `TERMINOS_BLOQUEANTES` de
+  `TERMINOS_NO_PERTINENTES`.
+- **La unidad NO se convierte nunca**: pasar m² a m³ exige un espesor que el catálogo no conoce. Se
+  marca `unidad_discrepante` y se conserva **la del pliego**, que es la que se va a pagar.
+- **Sin match nace un ítem PERSONALIZADO, la fila jamás se descarta.** Si la entidad va a pagar por
+  ese ítem, tiene que estar en la lista aunque el catálogo no lo conozca. No es un fallo del mapeo.
+- **`isTable=true` de OCR.space promete texto LÍNEA A LÍNEA, no columnas.** Consecuencia: el texto de
+  OCR casi nunca activa la vía posicional —cae en la de firma de unidad o en la aplanada— y por eso
+  el OCR es un respaldo del que hay que decir que lee peor, no disimularlo con una opción de nombre
+  tranquilizador.
+- **Escaneado se detecta POR PÁGINA (<100 caracteres de media), no con un umbral global**: un escaneo
+  con cabecera vectorial devuelve unos pocos caracteres por página y pasaría el suelo absoluto. Y el
+  mensaje dice «parece escaneado», nunca «el pliego está vacío»: **ausencia de capa de texto es SIN
+  DATO**.
+- **Un 200 de OCR.space no es éxito**: el fallo viaja DENTRO del 200 (`IsErroredOnProcessing`,
+  `OCRExitCode` 1/2/3/4). Sin comprobarlo se devolvería texto vacío como si la página no tuviera nada.
+  Un 4xx NO se reintenta (gasta cuota del plan gratuito); 429/5xx sí, con backoff y `Retry-After`.
+- **`/api/apu/descargar` existe porque el navegador NO puede** bajar el PDF (mismo origen; los
+  portales no mandan CORS), y es un SSRF de manual: token · solo `https:` · sin IP literal,
+  `localhost`, rango privado ni dominio interno · **redirecciones a mano revalidando cada salto**
+  (`169.254.169.254` es el salto clásico) · tamaño controlado **mientras se lee**. Y se verifica la
+  firma **`%PDF-`**: los portales sirven HTML de sesión con `Content-Type: application/pdf`.
+- **`/api/apu/extraer-texto` NO toca Redis**: ni lee el corpus, ni escribe, ni toma candados. No
+  necesita credenciales de Upstash y no puede dejar nada a medias. Nada del módulo APU toca la
+  ingesta, la purga ni `limpiarRedis` del arnés.
+- **«Sin tablas» es un RESULTADO, no un error**: 200 con la lista vacía y el diagnóstico. Un 4xx haría
+  creer que el envío estaba mal cuando lo que pasa es que el documento no era el Formulario 1.
+- **Una línea de metadato no es prosa suelta.** La regla de «continuación de una descripción partida
+  en dos líneas» pegaba «ANTICIPO: 30%» al final del último ítem, **inventándole una descripción que
+  no está en el pliego**. Las líneas que tienen su propio lector (`leerAiu`, `leerAnticipo`) tienen su
+  propia cubeta en el diagnóstico: contarlas como «no reconocidas» también sería falso.
+- **`tests/apu_bench.js` publica el LÍMITE, no solo el acierto.** 100 % de recall sobre 10 formularios
+  sintéticos no significa gran cosa cuando el corpus lo escribió quien escribió el parser: mide la
+  habilidad del autor para prever variantes. Por eso hay una tanda **adversaria sin suelos de
+  regresión**, y encontró tres defectos reales —celdas combinadas, unidad mencionada dentro de la
+  descripción, ambigüedad decimal—; **dos se corrigieron y el tercero queda publicado**. La
+  distribución real de formatos de SECOP II sigue **sin medir** (§1.G.7 la deja como vacío explícito)
+  y ninguna cifra del banco la sustituye.
+
 ## CONOCIMIENTO DE DOMINIO: CONTRATACIÓN PÚBLICA COLOMBIANA
 
 Destilado accionable del **Manual del Analista de Licitaciones** (edición 2026). El manual completo
@@ -747,7 +851,8 @@ memoria en una fuente de error. `✅` implementado · `🟡` parcial · `⬜` no
 | **Traslado → descargar ofertas de competidores** | El dataset no trae documentos de oferta: solo `urlproceso`. Automatizarlo exigiría raspar SECOP II (fuera de la arquitectura actual: sin dependencias, serverless, respuesta ≤4.5 MB). Alcanzable: enlazar la ficha del proceso y **listar adjudicatarios recurrentes por entidad** desde el histórico | ⬜ |
 | **Subsanación → tabla de trazabilidad automática** | No existe. La app decide **a qué presentarse**, no arma la carpeta. Sería un generador de plantilla a partir de la ficha del proceso | ⬜ |
 | **Consorcios → antecedentes del socio (SIRI/Contraloría/RNMC)** | No existe y **no es automatizable con datos abiertos**: son portales con captcha, no APIs. Lo que sí está: el consorcio `juntos` se **re-deriva siempre** de sus integrantes. La parte accionable sería una **lista de verificación** de las 5 fuentes del truco #15 | ⬜ |
-| **Costos ocultos → calculadora de rentabilidad** | **No existe ninguna calculadora de rentabilidad.** Hoy la cuantía se muestra como si fuera ingreso. Faltan los 10 conceptos del Cap. 11, empezando por la **contribución del 5 %** y las estampillas | ⬜ |
+| **Formulario de cantidades del pliego → ítem + unidad + cantidad** (Cap. 11, §1.G del doc de diseño) | `/apu.html` + `/api/apu/extraer-texto`: pdf.js en el navegador extrae el texto conservando columnas por coordenadas, `lib/apu_pliego.js` reconoce las filas por 3 vías, valida en 3 niveles y las gradúa con un semáforo de 2 ejes, `lib/apu_mapeo.js` las mapea al catálogo de `data/catalogo_apu.json`. OCR.space como respaldo para escaneados. **Entrega cantidades, NO precios** | ✅ |
+| **Costos ocultos → calculadora de rentabilidad** | **No existe ninguna calculadora de rentabilidad.** Hoy la cuantía se muestra como si fuera ingreso. Faltan los 10 conceptos del Cap. 11, empezando por la **contribución del 5 %** y las estampillas. Lo que YA está es la mitad de arriba: la lista de cantidades sobre la que se calcularía | ⬜ |
 
 ### Investigación de contraste (ago 2026) — correcciones al manual y hallazgos verificados
 
@@ -874,6 +979,11 @@ cifra de aquí en un pliego sin abrir la fuente.
   Resumen técnico en `docs/PERFILES.md`. SMMLV 2026 = $1.750.905.
 - Las CUATRO PUERTAS en `lib/puertas.js` y `P(ganar)`/VE en `lib/probabilidad.js`; el diseño y por
   qué, en `docs/ATRACTIVIDAD.md`.
+- Módulo APU (cantidades del pliego, **sin precios**): catálogo de 93 ítems y 22 tipologías en
+  `data/catalogo_apu.json` + `lib/apu_catalogo.js`; parseo y validación en `lib/apu_pliego.js`;
+  mapeo por similitud en `lib/apu_mapeo.js`; OCR de respaldo en `lib/apu_ocr.js`; endpoints en
+  `api/apu/`; frontend en `public/apu.html` + `public/apu.js`. El diseño completo —incluido todo lo
+  que NO se implementó y por qué— en `docs/APU_Y_RENTABILIDAD.md`.
 - `autorizacion_helder.md`: constancia de autorización de datos personales (plantilla).
 - Clave del sitio: `231105` (gate del cliente, en `public/app.js`). **No protege la API**: es una
   cortesía del navegador. La protección de servidor es `HISTORICO_TOKEN` (`lib/auth.js`) —que desde
