@@ -644,9 +644,25 @@ muestra como si fuera ingreso. Diseño completo y plan de la Fase 3 en `docs/APU
   los traduce antes de enseñarlos y deja detrás el `siguiente_paso`. Un slug en pantalla no es una
   explicación.
 - **La precisión medida (100 % sobre 5 objetos) es PARCIALMENTE CIRCULAR y así está escrito**: las
-  listas de «plausibles» las escribió quien escribió el diccionario. La medida que no es circular
-  es la del corpus completo en `g-quinquies`, donde los objetos no los elige la prueba: **384/384**
-  objetos de obra con ítems y **0/56** falsos positivos.
+  listas de «plausibles» las escribió quien escribió el diccionario, así que cubren de sobra lo que
+  el motor puede devolver y la cifra sale 100 % **casi por construcción**. Por eso cada caso trae
+  además dos listas FALSIFICABLES —`debe` (14 ítems que tienen que salir) y `jamas` (31 que ese
+  objeto no puede llevar nunca, escritos desde el oficio: «una vía no lleva ventanería», «una
+  interventoría no ejecuta ni un m³ de concreto»)—, que son las que de verdad pueden tumbar la
+  prueba. Y la medida que no elige quien la escribe es la del corpus completo en `g-quinquies`:
+  **384/384** objetos de obra con ítems y **64/64** de los que no son obra sin ninguno.
+- **Las pruebas están verificadas POR MUTACIÓN, y cuatro mutantes sobrevivían.** Sobrevivir
+  significa que la línea que el assert dice proteger se puede borrar y la suite sigue verde: el
+  `break` del prefijo más específico, la rama de `BLACKLIST_OBJETO` (el caso que la motivó nunca
+  llegaba a ejercitarla porque sin código la lista salía vacía de todos modos), el peso de lo
+  derivado y el tope de 1 MB. Los diez mutantes de la lista mueren hoy, cada uno con su mensaje.
+  **Y dos contadores del log eran código muerto**: con un `assert.fail` DENTRO del bucle, la
+  corrida abortaba antes de incrementarlos, así que «384/384 y 0/56» era una tautología — dos
+  cifras que no podían ser otra cosa. Ahora se acumulan y se juzgan después del bucle.
+- **Cada patrón de las listas del bucle del corpus tiene que casar con alguna fila**, y hay
+  aserción de ello: tres no casaban con nada (`caninos` y `software` los descarta la blacklist en
+  la INGESTA, y el fixture de `alcantarillado` cierra vencido), de modo que el mensaje afirmaba una
+  cobertura que no existía.
 
 ## CONOCIMIENTO DE DOMINIO: CONTRATACIÓN PÚBLICA COLOMBIANA
 

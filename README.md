@@ -1592,9 +1592,18 @@ Lo que cubre específicamente el **motor de inferencia APU** (`lib/apu/*` + `/ap
 - **Derivar solo AÑADE**: tras aprender del histórico, el término curado «placa huella» sigue
   funcionando y el diccionario no encogió.
 - **El CORPUS REAL, que es la medida que no elige quien escribe la prueba**: **384/384** objetos de
-  obra civil producen ítems y **0/56** de los que no son obra producen alguno.
+  obra civil producen ítems y **64/64** de los que no son obra no producen ninguno. Los contadores
+  se acumulan y se juzgan **después** del bucle: con un `assert.fail` dentro, los del numerador
+  eran código muerto y el mensaje era una tautología. Y cada patrón de las dos listas tiene que
+  casar con alguna fila, o el mensaje afirmaría una cobertura que no existe.
 - La precisión sobre 5 objetos con forma real (100 %) se publica **declarando que es parcialmente
-  circular**: las listas de «plausibles» las escribió quien escribió el diccionario.
+  circular** —las listas de «plausibles» las escribió quien escribió el diccionario—, y por eso
+  cada caso trae además **14 ítems exigidos y 31 prohibidos**, que sí pueden tumbar la prueba.
+- **Verificación por mutación**: diez cambios deliberados al código de producción (quitar el
+  `break` del prefijo más específico, desactivar la blacklist, cantidad en 0, apagar la
+  pertinencia, lift sobre universos distintos, revertir la tabla no pasada a la semilla, peso de lo
+  derivado a 1, quitar el tope de 1 MB, `>` en vez de `≥`, canonizar sin tokenizar) hacen fallar la
+  suite. Cuatro de ellos sobrevivían antes.
 
 ## Despliegue
 

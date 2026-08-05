@@ -272,19 +272,32 @@ Redis y lo declara; el GET dice si falta sembrar y con qué llamada exacta se ar
 
 ### 4.8 Precisión medida
 
-Sobre **5 objetos con la forma de los reales de SECOP II**, declarando para cada uno el conjunto de
-ítems que un ingeniero civil consideraría plausibles: **100 %** (25/25, 22/22, 7/7, 1/1, 13/13).
+Sobre **5 objetos con la forma de los reales de SECOP II**: **100 %** (25/25, 22/22, 7/7, 1/1,
+13/13) de lo sugerido cae dentro del conjunto de ítems plausibles declarado para cada uno.
 
-> **Cómo hay que leer ese número.** Las listas de «plausibles» las escribió quien escribió el
-> diccionario, así que la medida es **parcialmente circular** y no debe presentarse como una
-> validación independiente. Lo que sí demuestra es que no hay contradicciones internas ni ítems
-> absurdos colándose.
+> ⚠️ **Cómo hay que leer ese número, y por qué solo no vale.** Las listas de «plausibles» las
+> escribió quien escribió el diccionario, así que cubren de sobra lo que el motor puede devolver:
+> la fracción sale 100 % **casi por construcción**. Es **parcialmente circular** y sirve para
+> detectar contradicciones internas, no como validación independiente.
 
-La medida **no circular** es la del corpus completo, en el paso `g-quinquies` de `tests/e2e.js`,
-donde los objetos no los elige quien escribe la prueba:
+Por eso cada caso declara además **dos listas falsificables**, que son las que de verdad pueden
+tumbar la prueba:
 
-**384/384** objetos de obra civil del corpus producen ítems · **0/56** falsos positivos entre los
-que no son obra.
+| Lista | Qué | Cuántos |
+|---|---|---|
+| `debe` | ítems que **tienen** que salir (recall) | 14 |
+| `jamas` | ítems que ese objeto **no puede llevar nunca** — se escriben desde el oficio («una vía no lleva ventanería»; «una interventoría no ejecuta ni un m³ de concreto»), no mirando el mapeo | 31 |
+
+Y la medida que **no elige quien escribe la prueba** es la del corpus completo, en el paso
+`g-quinquies`: **384/384** objetos de obra civil producen ítems · **64/64** de los que no son obra
+no producen ninguno.
+
+**Las pruebas están verificadas por mutación.** Diez cambios deliberados al código de producción
+—quitar el `break` del prefijo más específico, desactivar la blacklist, poner la cantidad en 0,
+apagar la pertinencia, medir el lift sobre universos distintos, revertir la tabla no pasada a la
+semilla, subir el peso de lo derivado a 1, quitar el tope de 1 MB, cambiar el `≥` del umbral por
+`>`, canonizar sin tokenizar— **hacen fallar la suite**, cada uno con su mensaje. Cuatro de ellos
+sobrevivían antes de esta ronda.
 
 ---
 

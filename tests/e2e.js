@@ -2225,6 +2225,29 @@ async function main() {
       const prod = inf.prefijosDe("72141015");
       assert.strictEqual(prod.niveles[0].nivel, "producto",
         "un código de producto tiene que empezar por sí mismo antes de subir a la clase");
+      // un código de familia NO puede fabricar una clase que no existe
+      assert.deepStrictEqual(inf.prefijosDe("72140000").niveles.map((x) => x.prefijo), ["7214", "72"]);
+      assert.deepStrictEqual(inf.prefijosDe("72000000").niveles.map((x) => x.prefijo), ["72"]);
+
+      /* EL PREFIJO MÁS ESPECÍFICO MANDA, y no se acumula con los de arriba.
+         Sin esa parada, un código de clase sumaría además los ítems de su
+         familia y de su segmento: el mapeo dejaría de ser una cascada y pasaría
+         a ser una unión, que es una regla distinta y más ruidosa. (Mutación que
+         sobrevivía: quitar el `break` dejaba la suite verde.) */
+      {
+        const con = {
+          mapeo: new Map([
+            ["721410", ["pav_placa_huella"]],
+            ["7214", ["mt_terraplen"]],
+            ["72", ["amb_sst"]],
+          ]),
+          diccionario: new Map(), maxTokens: 1, origen: {}, descartados: {}, version: null,
+        };
+        const r = await inf.inferirItems("Construccion de obra vial del municipio", "72141000", null, { conocimiento: con });
+        assert.deepStrictEqual(r.items.map((i) => i.item_id), ["pav_placa_huella"],
+          "solo puede puntuar el prefijo más específico que exista en el mapeo");
+        assert.strictEqual(r.items[0].confianza, inf.PESO_UNSPSC, "y lo hace con el peso de su nivel (clase)");
+      }
     }
 
     /* 5 · EL EMPATE DEL UMBRAL. El encargo fija texto = 0.3 y umbral = 0.3: con
@@ -2327,6 +2350,23 @@ async function main() {
        «interventoría». La regla NO se reinventa aquí: se llama a
        `evaluarPertinencia` de lib/filtros, que es la que ya decidía esto. */
     {
+      /* LA BLACKLIST, con el código que la hace necesaria. «ADQUISICIÓN DE
+         CANINOS ANTINARCÓTICOS» no trae ningún término no pertinente, así que
+         la pertinencia la deja pasar; en el corpus real viene publicada con un
+         72141000 —código de vías— que le regalaría un APU de carretera entero.
+         El caso hay que probarlo AQUÍ y con el código puesto: sin él la lista
+         saldría vacía de todos modos y la rama quedaría sin cubrir (mutación
+         que sobrevivía). */
+      const caninos = await inf.inferirItems(
+        "ADQUISICIÓN DE CANINOS ANTINARCÓTICOS PARA LA POLICÍA", "V1.72141000", null);
+      assert.strictEqual(caninos.total, 0,
+        `la blacklist tiene que atajarlo pese al código de vías: llegaron ${caninos.items.map((i) => i.item_id).join(", ")}`);
+      assert.strictEqual(caninos.no_pertinente.tipo, "blacklist");
+      assert.ok(/canin/i.test(caninos.no_pertinente.termino), "y tiene que decir QUÉ término lo vetó");
+      // el mismo código, con obra de verdad, sigue sugiriendo
+      assert.ok((await inf.inferirItems("Construcción de placa huella", "V1.72141000", null)).total > 0,
+        "la blacklist no puede llevarse por delante la obra bien escrita con el mismo código");
+
       const internet = await inf.inferirItems(
         "PRESTACIÓN DEL SERVICIO DE INTERNET DEDICADO PARA LA ALCALDÍA", "V1.80101600", null);
       assert.strictEqual(internet.total, 0,
@@ -2414,6 +2454,24 @@ async function main() {
         "el departamento no puede cambiar QUÉ ítems se sugieren");
       assert.deepStrictEqual(a.items.map((i) => i.confianza), b.items.map((i) => i.confianza));
       assert.strictEqual(b.diagnostico.departamento, "bogota d.c.", "el departamento se normaliza y se devuelve");
+
+      /* El ORDEN tiene que ser DETERMINISTA: hay cuatro asserts que comparan
+         listas de ítems posición a posición, y con empates de confianza (que los
+         hay: 25 ítems y muchos a 1) un orden que dependa del recorrido del Set
+         los haría pasar o fallar por azar. El desempate es capítulo y luego
+         `item_id`, los dos estables. */
+      const orden1 = (await inf.inferirItems("Construcción de placa huella", "72141000", null)).items;
+      const orden2 = (await inf.inferirItems("Construcción de placa huella", "72141000", null)).items;
+      assert.deepStrictEqual(orden1.map((i) => i.item_id), orden2.map((i) => i.item_id),
+        "dos llamadas idénticas tienen que devolver el mismo orden");
+      for (let i = 1; i < orden1.length; i++) {
+        const a2 = orden1[i - 1], b2 = orden1[i];
+        assert.ok(a2.confianza >= b2.confianza, "el orden principal es por confianza descendente");
+        if (a2.confianza === b2.confianza && a2.capitulo === b2.capitulo) {
+          assert.ok(a2.item_id < b2.item_id,
+            `empate sin desempate estable: «${a2.item_id}» debería ir después de «${b2.item_id}»`);
+        }
+      }
     }
 
     /* 10 · Objetos que NO son obra civil no pueden sugerir ítems de obra. */
@@ -2430,16 +2488,30 @@ async function main() {
     }
 
     /* 11 · PRECISIÓN sobre objetos con la forma de los reales de SECOP II.
-       Para cada uno se declara el conjunto de ítems que un ingeniero civil
-       consideraría plausibles en su APU; la precisión es la fracción de lo
-       sugerido que cae dentro. Se mide, se imprime y se exige un mínimo: un
-       motor de sugerencias que acierta la mitad es ruido, no ayuda. */
+       Para cada uno se declaran TRES listas, y las tres hacen falta:
+
+         `debe`       ítems que TIENEN que salir (recall). Falsificable.
+         `jamas`      ítems que NO pueden salir nunca para ese objeto. Es la
+                      lista que de verdad puede tumbar la prueba, y por eso
+                      existe: se escribe pensando en el oficio («una vía no
+                      lleva ventanería ni una PTAP»), no mirando el mapeo.
+         `plausibles` el universo aceptable, para poder poner una cifra.
+
+       ⚠️ LA CIFRA DE PRECISIÓN ES PARCIALMENTE CIRCULAR y hay que decirlo: las
+       listas de `plausibles` las escribió quien escribió el diccionario, así
+       que cubren de sobra lo que el motor puede devolver y la fracción sale
+       100 % casi por construcción. Sirve para detectar contradicciones
+       internas, NO como validación independiente. Lo falsificable es `debe` y
+       `jamas`; y la medida que no elige quien escribe la prueba es la del
+       corpus completo, en el paso g-quinquies. */
     {
       const MUESTRA = [
         {
           objeto: "Construcción de placa huella en zona rural del municipio, vereda El Cairo",
           unspsc: "V1.72141000",
           debe: ["pav_placa_huella", "est_concreto_21", "est_acero_refuerzo", "pav_subbase"],
+          // una vía no lleva ventanería, ni planta de tratamiento, ni subestación
+          jamas: ["edi_ventaneria", "edi_piso_ceramica", "hid_ptap", "hid_ptar", "ele_subestacion", "urb_grama_sintetica", "con_interventoria"],
           plausibles: ["pav_placa_huella", "est_concreto_21", "est_concreto_28", "est_acero_refuerzo", "est_formaleta",
             "pav_subbase", "pav_base_granular", "pav_afirmado", "pav_imprimacion", "pav_mezcla_asfaltica",
             "pav_pavimento_rigido", "pav_cuneta", "mt_excavacion_manual", "mt_excavacion_mecanica",
@@ -2452,6 +2524,7 @@ async function main() {
           objeto: "Mejoramiento de vía terciaria tramo La Esperanza - El Progreso",
           unspsc: "72141000",
           debe: ["pav_afirmado", "mt_conformacion_subrasante", "pav_cuneta"],
+          jamas: ["edi_ventaneria", "edi_mamposteria", "hid_ptap", "ele_subestacion", "urb_cancha", "con_interventoria"],
           plausibles: ["pav_placa_huella", "pav_afirmado", "pav_subbase", "pav_base_granular", "pav_imprimacion",
             "pav_mezcla_asfaltica", "pav_pavimento_rigido", "pav_cuneta", "est_concreto_21", "est_acero_refuerzo",
             "mt_excavacion_manual", "mt_excavacion_mecanica", "mt_relleno_seleccionado", "mt_retiro_sobrantes",
@@ -2463,6 +2536,7 @@ async function main() {
           objeto: "Optimización del sistema de alcantarillado sanitario del casco urbano",
           unspsc: null,
           debe: ["hid_tuberia_alcantarillado", "hid_pozo_inspeccion", "mt_excavacion_mecanica"],
+          jamas: ["pav_placa_huella", "edi_ventaneria", "ele_subestacion", "urb_cancha", "con_interventoria", "est_estructura_metalica"],
           plausibles: ["hid_tuberia_alcantarillado", "hid_pozo_inspeccion", "hid_domiciliaria",
             "mt_excavacion_mecanica", "mt_relleno_seleccionado", "mt_retiro_sobrantes", "prel_demolicion_pavimento"],
         },
@@ -2470,12 +2544,15 @@ async function main() {
           objeto: "INTERVENTORÍA TÉCNICA, ADMINISTRATIVA Y FINANCIERA AL CONTRATO DE OBRA",
           unspsc: "V1.80101600",
           debe: ["con_interventoria"],
+          // una interventoría NO ejecuta obra: no lleva ni un m3 de concreto
+          jamas: ["est_concreto_21", "est_concreto_28", "est_acero_refuerzo", "pav_placa_huella", "mt_excavacion_mecanica", "edi_mamposteria"],
           plausibles: ["con_interventoria"],
         },
         {
           objeto: "Adecuación y mantenimiento de la sede educativa rural, incluye cubierta y unidad sanitaria",
           unspsc: "V1.72121400",
           debe: ["edi_mamposteria", "edi_cubierta_metalica", "hid_unidad_sanitaria"],
+          jamas: ["pav_placa_huella", "pav_mezcla_asfaltica", "hid_ptap", "ele_subestacion", "sen_defensa_metalica", "con_interventoria"],
           plausibles: ["edi_mamposteria", "edi_panete", "edi_estuco_pintura", "edi_cubierta_metalica",
             "edi_cubierta_teja", "edi_piso_ceramica", "edi_enchape", "edi_ventaneria", "edi_impermeabilizacion",
             "edi_aparato_sanitario", "edi_cielo_raso", "est_concreto_21", "est_concreto_28", "est_acero_refuerzo",
@@ -2483,16 +2560,33 @@ async function main() {
         },
       ];
 
-      let aciertos = 0, sugeridos = 0;
+      let aciertos = 0, sugeridos = 0, exigidos = 0;
       const detalle = [];
       for (const caso of MUESTRA) {
         const r = await inf.inferirItems(caso.objeto, caso.unspsc, null);
         const ids = r.items.map((i) => i.item_id);
         assert.ok(ids.length > 0, `«${caso.objeto.slice(0, 40)}…» no produjo ningún ítem`);
+
+        // recall: lo que TIENE que salir
         for (const id of caso.debe) {
           assert.ok(ids.includes(id),
             `«${caso.objeto.slice(0, 40)}…» tenía que sugerir «${id}»; llegaron: ${ids.join(", ")}`);
         }
+        exigidos += caso.debe.length;
+
+        /* la comprobación que de verdad puede tumbar esto: un ítem que el
+           oficio dice que NO pertenece a ese objeto (una vía con ventanería,
+           una interventoría con m³ de concreto) */
+        const intrusos = ids.filter((id) => caso.jamas.includes(id));
+        assert.deepStrictEqual(intrusos, [],
+          `«${caso.objeto.slice(0, 40)}…» sugirió ítems que ese objeto NO puede llevar: ${intrusos.join(", ")}`);
+
+        // …y las listas tienen que ser coherentes entre sí, o `jamas` no vigila nada
+        for (const id of caso.jamas) {
+          assert.ok(!caso.plausibles.includes(id), `«${id}» está a la vez en «jamas» y en «plausibles»`);
+          assert.ok(cat.CATALOGO.some((x) => x.item_id === id), `«${id}» de «jamas» no existe en el catálogo`);
+        }
+
         const buenos = ids.filter((id) => caso.plausibles.includes(id));
         aciertos += buenos.length;
         sugeridos += ids.length;
@@ -2501,7 +2595,9 @@ async function main() {
       const precision = aciertos / sugeridos;
       assert.ok(precision >= 0.85,
         `precisión de la inferencia ${(precision * 100).toFixed(1)} % — por debajo del mínimo exigido (85 %)`);
-      console.log(`· unidad inferencia APU: precisión ${(precision * 100).toFixed(1)} % sobre ${MUESTRA.length} objetos reales (${detalle.join(", ")}) · ${cat.CATALOGO.length} ítems, ${Object.keys(cat.DICCIONARIO_SEMILLA).length} términos`);
+      console.log(`· unidad inferencia APU: precisión ${(precision * 100).toFixed(1)} % sobre ${MUESTRA.length} objetos reales `
+        + `(${detalle.join(", ")}; cifra parcialmente circular — lo falsificable son ${exigidos} ítems exigidos y `
+        + `${MUESTRA.reduce((a, c) => a + c.jamas.length, 0)} prohibidos) · ${cat.CATALOGO.length} ítems, ${Object.keys(cat.DICCIONARIO_SEMILLA).length} términos`);
     }
   }
 
@@ -4902,6 +4998,8 @@ async function main() {
        —lo más importante— que sobre el corpus de verdad el motor separe la
        obra civil de lo que no lo es. */
     {
+      const libApu = require("../lib/apu/inferencia.js");
+
       /* 1 · protección: sin token, con token malo y sin variable de entorno */
       assert.strictEqual((await invocar(apuInferir, "/api/apu/inferir")).status, 401,
         "/api/apu/inferir sin token debe dar 401");
@@ -5052,22 +5150,72 @@ async function main() {
         >= tras.cuerpo.conocimiento.terminos_en_diccionario,
         "derivar solo puede AÑADIR términos, nunca quitar los curados");
 
+      /* LO DERIVADO PESA MENOS QUE LO CURADO: es estadística, no oficio. Sin
+         esta comprobación, subir el peso del derivado a 1 dejaba la suite verde
+         y un término aprendido pasaría a sugerir por sí solo, que es justo lo
+         que el umbral reserva a los términos decisivos. */
+      {
+        const publicado = JSON.parse(await redis.get("apu:diccionario_terminos"));
+        const derivados = Object.entries(publicado).filter(([, v]) => /historico/.test(String(v.origen || "")));
+        assert.ok(derivados.length > 0, "la derivación no dejó ningún término marcado como derivado");
+        for (const [t, v] of derivados) {
+          assert.ok(v.peso >= libApu.PESO_DERIVADO && v.peso <= libApu.PESO_DERIVADO_MAX,
+            `«${t}» derivado con peso ${v.peso}, fuera de [${libApu.PESO_DERIVADO}, ${libApu.PESO_DERIVADO_MAX}]`);
+          assert.ok(v.peso < 1, "un término derivado NUNCA puede pesar lo que uno curado a mano");
+          assert.ok(v.items.length > 0, `«${t}» derivado sin ningún ítem: no puede sugerir nada`);
+        }
+        // los curados siguen intactos
+        assert.strictEqual(publicado["placa huella"].peso, 1, "derivar no puede tocar el peso de un término curado");
+      }
+
+      /* EL TOPE DE 1 MB POR VALOR DE UPSTASH se comprueba ANTES de la primera
+         escritura: pasarse fallaba contra un error de Upstash sin contexto y
+         con el sello a medio escribir. */
+      {
+        const enorme = {};
+        for (let i = 0; i < 40000; i++) enorme[`termino inventado numero ${i}`] = { peso: 0.5, items: ["est_concreto_21"] };
+        await assert.rejects(
+          () => libApu.publicarConocimiento(redis, { diccionario: enorme }),
+          /tope por valor de Upstash/,
+          "publicar por encima de 1 MB tiene que fallar con un mensaje que diga qué pasó");
+        // y no puede haber dejado el diccionario a medias
+        const intacto = JSON.parse(await redis.get("apu:diccionario_terminos"));
+        assert.ok(intacto["placa huella"], "un rechazo por tamaño no puede tocar lo publicado");
+      }
+
       /* 7 · EL CORPUS REAL: sobre las filas que de verdad hay en Redis, el
          motor tiene que sugerir para la obra civil y callarse para lo demás.
          Es lo que la muestra de la unidad no puede demostrar, porque allí los
          objetos los elige quien escribe la prueba. */
       const activo = await leerActivo();
-      let obraConItems = 0, obraSinItems = 0, noObraConItems = 0, noObra = 0;
-      const NO_OBRA = /alimentaci[oó]n|caninos|software|fotocopia|internet|cumplea|mobiliario escolar/i;
-      const OBRA = /placa huella|v[ií]a terciaria|puente vehicular|alcantarillado|sede educativa|pavimenta/i;
+      /* Los contadores se ACUMULAN y se juzgan DESPUÉS del bucle. Con un
+         `assert.fail` dentro, los contadores del numerador eran código muerto
+         —la corrida abortaba antes de incrementarlos— y el log «384/384 y 0/56»
+         era una tautología: dos cifras que no podían ser otra cosa. Un número
+         que no puede variar no informa de nada. */
+      /* Solo patrones que de verdad casan con alguna fila SERVIDA. Fuera quedan
+         los que describen un corpus que no existe en `activo:*`: «caninos» y
+         «software» los descarta la blacklist en la INGESTA (nunca entran a
+         Redis) y el fixture de «alcantarillado» cierra vencido, así que el
+         reloj lo saca del listado. Enumerarlos aquí haría creer que el
+         resultado los cubrió — la blacklist de la ingesta se prueba en su
+         propio paso, y la del motor en la unidad. */
+      const NO_OBRA = [/aliment(?:os|aci[oó]n)/i, /fotocopia/i, /internet/i, /cumplea/i, /mobiliario escolar/i];
+      const OBRA = [/placa huella/i, /v[ií]a terciaria/i, /puente vehicular/i, /sede educativa/i, /pavimenta/i];
+      const casaAlguna = (lista, s) => lista.some((re) => re.test(s));
+      const usadas = new Map([...NO_OBRA, ...OBRA].map((re) => [re.source, 0]));
+
+      const fallosObra = [], fallosNoObra = [];
+      let obraConItems = 0, noObraSinItems = 0, noObra = 0;
       const vistos = new Set();
       for (const fila of activo) {
         const nombre = String(fila.nombre_del_procedimiento || "");
         if (vistos.has(nombre)) continue;         // el corpus repite plantillas
         vistos.add(nombre);
-        const esNoObra = NO_OBRA.test(nombre);
-        const esObra = OBRA.test(nombre);
+        const esNoObra = casaAlguna(NO_OBRA, nombre);
+        const esObra = casaAlguna(OBRA, nombre);
         if (!esObra && !esNoObra) continue;
+        for (const re of [...NO_OBRA, ...OBRA]) if (re.test(nombre)) usadas.set(re.source, usadas.get(re.source) + 1);
         /* Se manda el objeto COMPLETO (nombre + descripción), que es lo que un
            usuario pega y lo que el resto de la app juzga: el nombre solo dice
            «adecuación de la sede educativa» —dónde—, y las actividades
@@ -5079,18 +5227,26 @@ async function main() {
         if (esNoObra) {
           noObra++;
           if (r.cuerpo.total > 0) {
-            noObraConItems++;
-            assert.fail(`«${nombre}» no es obra civil y produjo ${r.cuerpo.total} ítems: `
-              + r.cuerpo.items.map((i) => i.item_id).join(", "));
-          }
+            fallosNoObra.push(`«${nombre}» → ${r.cuerpo.items.map((i) => i.item_id).join(", ")}`);
+          } else noObraSinItems++;
         } else if (r.cuerpo.total > 0) obraConItems++;
-        else { obraSinItems++; assert.fail(`«${nombre}» es obra civil y no produjo ningún ítem`); }
+        else fallosObra.push(nombre);
       }
+
+      /* Cada alternativa de las dos listas tiene que casar con alguna fila: una
+         que no case describe un corpus que no existe y engorda el mensaje
+         haciendo creer que se cubrió algo más. */
+      const muertas = [...usadas].filter(([, n]) => n === 0).map(([src]) => src);
+      assert.deepStrictEqual(muertas, [],
+        `patrones que no casan con ninguna fila del corpus (el mensaje afirmaría cobertura que no hay): ${muertas.join(", ")}`);
+
+      assert.deepStrictEqual(fallosNoObra, [], `objetos que NO son obra y produjeron ítems:\n${fallosNoObra.join("\n")}`);
+      assert.deepStrictEqual(fallosObra, [], `objetos de obra que no produjeron ningún ítem:\n${fallosObra.join("\n")}`);
       assert.ok(obraConItems >= 5, `esperaba al menos 5 objetos de obra del corpus con ítems, hubo ${obraConItems}`);
       assert.ok(noObra >= 3, `esperaba al menos 3 objetos que no son obra en el corpus, hubo ${noObra}`);
 
-      console.log(`  · inferencia APU: ${obraConItems}/${obraConItems + obraSinItems} objetos de obra del corpus con ítems `
-        + `y 0/${noObra} falsos positivos · semilla→Redis verificado · derivación sobre `
+      console.log(`  · inferencia APU: ${obraConItems}/${obraConItems + fallosObra.length} objetos de obra del corpus con ítems `
+        + `y ${noObraSinItems}/${noObra} de los que no son obra sin ninguno · semilla→Redis verificado · derivación sobre `
         + `${derivado.cuerpo.procesos_historico} procesos históricos (${derivado.cuerpo.terminos_nuevos} términos nuevos)`);
     }
 
