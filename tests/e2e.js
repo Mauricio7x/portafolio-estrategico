@@ -102,32 +102,54 @@
         al histórico con su adjudicatario; la full de higiene no lo borra.
      j. EDITOR DE APU (ago 2026). Las seis acciones de /api/apu/[accion] —una
         sola función, porque el plan Hobby de Vercel admite 12 por despliegue y
-        cuatro archivos sueltos habrían dado 14— con las tres familias de
-        invariantes que hacen creíble un presupuesto:
+        el repositorio ya estaba en 12; por eso `/api/apu/catalogo` se plegó
+        ahí, conservando URL, contrato y su condición de PÚBLICO—. Corre ANTES
+        de h-bis para poder probar el estado «sin catálogo cargado», y limpia
+        `apu:*` al terminar para que h-bis empiece de cero.
+        Tres familias de invariantes:
           · ARITMÉTICAS: `cantidad × unitario = total` por fila y los cuatro
             componentes suman el costo directo. Es la corrección de fondo al
             encargo, que sumaba un TOTAL de mano de obra a unos materiales
             UNITARIOS y volvía a multiplicar por la cantidad — cobrando la
             cuadrilla `cantidad` veces. También que el AIU ADITIVO (el de los
             pliegos tipo) da menos que el compuesto: si dieran igual, la
-            corrección no estaría aplicada.
+            corrección no estaría aplicada. Y que el catálogo de Redis y la
+            semilla del repositorio dan el MISMO costo directo: son la misma
+            tabla por dos caminos.
           · DE MONOTONÍA: bajar el rendimiento ENCARECE (el rendimiento divide,
             y un signo invertido ahí es el error canónico del APU) sin tocar los
-            materiales; más anticipo no puede exigir más financiación propia.
-          · DE HONESTIDAD: un ítem sin precio NO suma cero al total (se cuenta
-            aparte y publica `null`); Bogotá y un departamento inventado salen
-            «sin_base» sin factor —un F = 1 por defecto afirma algo falso y
-            creíble—; `anticipo_pct` distingue `null` (sin dato) de `0` (sin
-            anticipo); y un borrador corrupto se CUENTA en vez de tumbar el
-            listado.
+            materiales; el override no puede mutar el catálogo compartido; y más
+            anticipo no puede exigir más financiación propia.
+          · DE HONESTIDAD: un ítem que no está en el catálogo NO suma cero al
+            total; un departamento sin región cotizada no se asigna a la más
+            parecida ni recibe factor de relleno —sale «sin_base» con su motivo,
+            y el presupuesto se calcula igual con la región base DICIÉNDOLO—;
+            `anticipo_pct` distingue `null` (sin dato) de `0` (sin anticipo); y
+            un borrador corrupto se CUENTA en vez de tumbar el listado.
         Más: los tres estados de la inferencia suman los objetos evaluados, el
-        UNSPSC VETA (placa huella + código de acueducto → 🟡), el decimal
-        colombiano («1.500» son mil quinientos) y la regla de atribución (un
-        número de contrato no es una cantidad); persistencia por perfil con TTL
-        de 30 días REALMENTE puesto; y el .xlsx generado se audita entrada por
-        entrada — fuentes, negrita, relleno, formato de moneda, celdas
-        combinadas y escape del XML—, que es justo lo que la edición libre de
-        SheetJS descarta en silencio al escribir.
+        UNSPSC VETA (placa huella + código de acueducto → 🟡), una tipología sin
+        ítems en el catálogo lo dice, el decimal colombiano («1.500» son mil
+        quinientos) y la regla de atribución (un número de contrato no es una
+        cantidad); persistencia por perfil con TTL de 30 días REALMENTE puesto;
+        y el .xlsx generado se audita entrada por entrada —fuentes, negrita,
+        relleno, formato de moneda, celdas combinadas y escape del XML—, que es
+        justo lo que la edición libre de SheetJS descarta en silencio al
+        escribir.
+     h-bis. Catálogo de precios APU (lib/apu/catalogo + los dos endpoints): el
+        esquema literal del encargo leído de Redis (`apu:insumos:*` con unidad,
+        `precio_{region}` y fecha; `apu:items:*` con descripción, unidad,
+        segmento UNSPSC y la composición en JSON; `apu:factores_region:*` con
+        los cuatro factores, el AIU y el prestacional). Carga protegida (401 sin
+        token, 401 con token malo, 503 sin la variable, y un rechazo no escribe
+        nada), consulta PÚBLICA, idempotencia (segundo POST no reescribe;
+        `?forzar=true` sí, con sello nuevo) y las tres funciones del encargo
+        leyendo Redis. La invariante fuerte: el SNAPSHOT comprimido y los HASHES
+        devuelven exactamente lo mismo, y un snapshot rancio o con un chunk
+        corrupto cae a los hashes en vez de servir el catálogo anterior.
+        Aparte, en las unidades: las cuadrillas son la suma de sus jornales, el
+        índice regional recompuesto no se separa 0,015 del recuperado y el
+        acarreo del acero va en m³ (el error de la fuente recuperada, que lo
+        pasaba en kg y ponía el 78 % del APU en transporte).
      h. La raíz sirve el HTML del frontend (gate + app) y app.js compila.
      i. (Documentado) Sin CLI de Vercel ni red: pruebas locales con mocks.
    ========================================================================== */
@@ -2121,6 +2143,141 @@ async function main() {
     console.log("· unidad experiencia/cobertura: tokenización, similitud, validación y la cascada de criticidad");
   }
 
+  /* unidad: el catálogo de precios APU · las tres invariantes que atan sus
+     números a la investigación recuperada, y la validación que impide guardar
+     un catálogo con el que se calcularían precios malos.
+     ------------------------------------------------------------------------
+     Los precios «recuperados» salen de `modulo_apu.html` (borrado en d69cfe8);
+     los estimados son referencia razonada. La diferencia está declarada insumo
+     por insumo y documentada en docs/APU_Y_RENTABILIDAD.md. */
+  {
+    const apu = require("../lib/apu/catalogo.js");
+    const S = apu.SEMILLA;
+
+    const v = apu.validarCatalogo();
+    assert.ok(v.ok, `la semilla del catálogo no valida: ${JSON.stringify(v.errores.slice(0, 3))}`);
+    assert.ok(S.insumos.length >= 20, `el encargo pide ≥20 insumos, hay ${S.insumos.length}`);
+    assert.ok(S.items.length >= 15, `el encargo pide ≥15 ítems, hay ${S.items.length}`);
+    assert.strictEqual(S.regiones.length, 5, "el encargo pide exactamente 5 regiones");
+
+    /* 1 · UN CERO NO ES UN PRECIO. Es la regla de `anticipo_pct = 0` aplicada
+       aquí: un insumo a 0 no es «gratis», es «no lo sé», y con él se costearía
+       una oferta a la baja sin que nadie lo notara. */
+    for (const i of S.insumos) {
+      assert.ok(Number(i.precio_base) > 0, `insumo ${i.id} con precio_base no positivo`);
+      assert.ok(["material", "mano_obra", "equipo", "transporte"].includes(i.tipo), `insumo ${i.id} con tipo inválido`);
+    }
+
+    /* 2 · LAS CUADRILLAS SON LA SUMA DE SUS JORNALES. Estaba así en la fuente
+       recuperada (299.000 = 95.000 + 3 × 68.000) y es lo que impide que alguien
+       suba el jornal del ayudante y deje el catálogo diciendo dos cosas
+       distintas sobre el mismo día de trabajo. */
+    const porId = new Map(S.insumos.map((i) => [i.id, i]));
+    let cuadrillas = 0;
+    for (const i of S.insumos) {
+      if (!i.componentes) continue;
+      cuadrillas++;
+      const suma = Object.entries(i.componentes)
+        .reduce((a, [ref, n]) => a + Number(porId.get(ref).precio_base) * Number(n), 0);
+      assert.strictEqual(Math.round(suma), Math.round(Number(i.precio_base)),
+        `la cuadrilla ${i.id} no es la suma de sus jornales`);
+    }
+    assert.ok(cuadrillas >= 3, "deberían declararse al menos tres cuadrillas por composición");
+
+    /* 3 · LOS CUATRO FACTORES REGIONALES NO PUEDEN SEPARARSE DEL ÚNICO DATO
+       DURO QUE LOS RESPALDA. La fuente recuperada trae UN índice por ciudad;
+       la desagregación en materiales/mano de obra/equipo/transporte es
+       razonada, no medida. La cerradura: recomponerlos con la estructura de
+       costos típica tiene que devolver el índice de la ciudad cabecera. Si
+       alguien retoca un factor «a ojo», esto lo detiene. */
+    const w = S._meta.estructura_costos_obra_civil;
+    assert.ok(Math.abs(w.materiales + w.mano_obra + w.equipo + w.transporte - 1) < 1e-9,
+      "la estructura de costos con la que se recompone el índice debe sumar 1");
+    for (const r of S.regiones) {
+      const compuesto = r.factor_materiales * w.materiales + r.factor_mano_obra * w.mano_obra
+        + r.factor_equipo * w.equipo + r.factor_transporte * w.transporte;
+      assert.ok(Math.abs(compuesto - r.indice_ciudad_recuperado) <= 0.015,
+        `${r.id}: el índice recompuesto (${compuesto.toFixed(4)}) se separa del recuperado `
+        + `(${r.indice_ciudad_recuperado}) más de 0,015`);
+    }
+
+    /* 4 · el catálogo SIRVE: los 17 ítems producen costo directo positivo en
+       las 5 regiones, y el gradiente regional va en el sentido correcto. */
+    const concreto = S.items.find((i) => i.codigo === "INV-630.4");
+    const cdPorRegion = {};
+    for (const r of S.regiones) {
+      for (const it of S.items) {
+        assert.ok(apu.costoDirecto(it, S, r.id).total > 0, `${it.codigo} sin costo directo en ${r.id}`);
+      }
+      cdPorRegion[r.id] = apu.costoDirecto(concreto, S, r.id).total;
+    }
+    assert.ok(cdPorRegion.costa_atlantica > cdPorRegion.bogota_sabana,
+      "la Costa tiene que costar más que Bogotá para un ítem intensivo en materiales");
+    assert.ok(cdPorRegion.eje_cafetero < cdPorRegion.bogota_sabana,
+      "el Eje Cafetero tiene que costar menos que Bogotá");
+
+    /* 5 · EL ERROR DE LA FUENTE RECUPERADA NO SE REPLICÓ. En `modulo_apu.html`
+       el APU del acero llevaba `tarifa 1200 × cant 1.05 × dist 15` = $18.900 de
+       acarreo POR KILO, más del doble que el propio acero: la tarifa está en
+       $/m³-km y le pasaban kilogramos. Aquí el transporte va en m³ y por eso es
+       calderilla. Un APU de acero con el 78 % en acarreo haría fijar precio muy
+       por encima del mercado y perder todo proceso donde el acero pese. */
+    {
+      const cd = apu.costoDirecto(S.items.find((i) => i.codigo === "INV-640.1"), S, "bogota_sabana");
+      assert.ok(cd.capitulos.transporte / cd.total < 0.01,
+        `el acarreo es el ${Math.round(cd.capitulos.transporte / cd.total * 100)} % del APU del acero: `
+        + "vuelve a estar en kilogramos en vez de en m³");
+      assert.ok(cd.capitulos.materiales > cd.capitulos.transporte * 100,
+        "en el acero el material tiene que dominar sobre el acarreo, no al revés");
+    }
+
+    /* 6 · la validación RECHAZA, con el campo exacto señalado, y no salva nada
+       a medias. Cuatro formas realistas de romper un catálogo. */
+    const clonar = () => JSON.parse(JSON.stringify(S));
+    const casos = [
+      ["precio en cero", (c) => { c.insumos[0].precio_base = 0; }, /precio_base/],
+      ["insumo fantasma", (c) => { c.items[0].insumos[0].insumo_id = "no_existe"; }, /insumo_id/],
+      ["cuadrilla descuadrada", (c) => { c.insumos.find((i) => i.id === "mo_ayudante_construccion").precio_base = 80000; }, /componentes|precio_base/],
+      ["rendimiento cero", (c) => {
+        const it = c.items.find((x) => x.insumos.some((l) => l.rendimiento));
+        it.insumos.find((l) => l.rendimiento).rendimiento = 0;
+      }, /rendimiento/],
+    ];
+    for (const [nombre, romper, patron] of casos) {
+      const roto = clonar();
+      romper(roto);
+      const r = apu.validarCatalogo(roto);
+      assert.ok(!r.ok, `«${nombre}» debería invalidar el catálogo y no lo hizo`);
+      assert.ok(r.errores.some((e) => patron.test(e.campo)),
+        `«${nombre}»: ningún error señala el campo esperado (${patron}) — llegaron ${JSON.stringify(r.errores.slice(0, 2))}`);
+    }
+
+    /* 7 · derivación de precios: material y jornal NO se encarecen igual, y por
+       eso el insumo lleva `tipo`. En la Costa el material sube (1,10) mientras
+       el jornal baja (0,97): con un índice único los dos irían al mismo sitio. */
+    {
+      const costa = S.regiones.find((r) => r.id === "costa_atlantica");
+      const cemento = porId.get("cemento_gris_50kg");
+      const oficial = porId.get("mo_oficial_construccion");
+      assert.strictEqual(apu.precioEnRegion(cemento, costa).precio,
+        Math.round(cemento.precio_base * costa.factor_materiales));
+      assert.strictEqual(apu.precioEnRegion(oficial, costa).precio,
+        Math.round(oficial.precio_base * costa.factor_mano_obra));
+      assert.ok(apu.precioEnRegion(cemento, costa).precio > cemento.precio_base
+        && apu.precioEnRegion(oficial, costa).precio < oficial.precio_base,
+        "en la Costa el material sube y el jornal baja: no pueden compartir factor");
+      assert.strictEqual(apu.precioEnRegion(cemento, costa).origen, "derivado",
+        "sin cotización real el precio es DERIVADO y tiene que decirlo");
+      // una cotización real manda sobre el factor, y lo declara
+      const conCotizacion = { ...cemento, precios_cotizados: { costa_atlantica: 41000 } };
+      assert.deepStrictEqual(apu.precioEnRegion(conCotizacion, costa), { precio: 41000, origen: "cotizado" });
+    }
+
+    console.log(`· unidad catálogo APU: ${S.insumos.length} insumos, ${S.items.length} ítems, `
+      + `${S.regiones.length} regiones · cuadrillas cuadradas, índice regional recompuesto ≤0,015 `
+      + "y el acarreo del acero en m³ (no en kg)");
+  }
+
   async function limpiarRedis() {
     const claves = [
       ...(await redis.scan("licitaciones:*")), ...(await redis.scan("lock:sync*")),
@@ -2133,10 +2290,14 @@ async function main() {
       // la caché de la auditoría de cobertura vive una hora: sin borrarla, la
       // iteración siguiente auditaría con el histórico de la anterior
       ...(await redis.scan("cobertura:*")),
+      // el catálogo APU tampoco lo toca ninguna purga del corpus (vive en
+      // `apu:*`, como el RUP en `config:*`): si no se borra aquí, la iteración
+      // siguiente encontraría el sello puesto y no ejercitaría la carga
+      ...(await redis.scan("apu:*")),
     ];
     if (claves.length) await redis.del(...claves);
     for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*", "equivalencias:*",
-      "vocabulario:*", "config:*", "resumen:*", "cobertura:*"]) {
+      "vocabulario:*", "config:*", "resumen:*", "cobertura:*", "apu:*"]) {
       assert.strictEqual((await redis.scan(patron)).length, 0, `Redis no quedó limpio: ${patron}`);
     }
     // los perfiles vuelven a los datos del repositorio: una carga de RUP de la
@@ -4508,8 +4669,14 @@ async function main() {
     /* ════════════════════════════════════════════════════════════════════
        j. EDITOR DE APU (ago 2026): catálogo, inferencia, cálculo y borradores.
 
-       Lo que de verdad se vigila aquí no es que el endpoint responda 200, sino
-       las tres familias de invariantes que hacen creíble un presupuesto:
+       Corre ANTES del bloque h-bis a propósito: allí el catálogo de precios se
+       carga en Redis, y aquí hace falta el estado contrario —sin cargar— para
+       comprobar la degradación honesta a la semilla del repositorio. Al final
+       del bloque se carga, se verifica que el cálculo cambia de vía, y se borra
+       todo `apu:*` para que h-bis empiece de cero como espera.
+
+       Lo que de verdad se vigila no es que el endpoint responda 200, sino las
+       tres familias de invariantes que hacen creíble un presupuesto:
 
          · ARITMÉTICAS  — `cantidad × unitario = total` por fila (invariante 7
            del informe) y los cuatro componentes suman el costo directo. Si no
@@ -4517,62 +4684,65 @@ async function main() {
          · DE MONOTONÍA — el rendimiento DIVIDE (bajarlo tiene que encarecer) y
            subir el anticipo no puede subir la financiación requerida. Son las
            dos que atrapan un signo invertido, que es el error clásico del APU.
-         · DE HONESTIDAD — un ítem sin precio NO suma cero al total, y un
-           departamento sin base NO recibe factor 1,00.
+         · DE HONESTIDAD — un ítem que no está en el catálogo NO suma cero al
+           total, y un departamento sin región cotizada NO se asigna a la más
+           parecida ni recibe factor 1,00.
        ════════════════════════════════════════════════════════════════════ */
     {
       const apu = require("../api/apu/[accion].js");
       const calculo = require("../lib/apu/calculo.js");
       const inferencia = require("../lib/apu/inferencia.js");
-      const catalogoApu = require("../lib/apu/catalogo.js");
+      const tipologias = require("../lib/apu/tipologias.js");
+      const catalogoLib = require("../lib/apu/catalogo.js");
 
-      /* ---- j.1 autorización: los seis verbos exigen token ---- */
-      for (const [ruta, metodo] of [["catalogo", "GET"], ["inferir", "POST"], ["calcular", "POST"],
+      /* ---- j.1 autorización: `catalogo` PÚBLICO, las otras cinco con token ---- */
+      for (const [ruta, metodo] of [["inferir", "POST"], ["calcular", "POST"],
         ["guardar", "POST"], ["cargar", "GET"], ["listar", "GET"]]) {
         const sinTok = await invocar(apu, `/api/apu/${ruta}`, {}, { metodo, body: {} });
         assert.strictEqual(sinTok.status, 401, `/api/apu/${ruta} sirvió sin token`);
         const malTok = await invocar(apu, `/api/apu/${ruta}`, { "x-historico-token": "no" }, { metodo, body: {} });
         assert.strictEqual(malTok.status, 401, `/api/apu/${ruta} aceptó un token inválido`);
       }
+      /* El catálogo NO exige token, y eso es la regla del proyecto, no una
+         excepción: lo que no sale sin llave son las cifras del PERFIL. Aquí son
+         precios de referencia de mercado. Sin catálogo cargado responde 503 con
+         el siguiente paso, nunca un 200 con listas vacías — un `[]` afirmaría
+         «no hay insumos», que no es lo mismo que «no lo he cargado». */
       {
-        const guardado = process.env.HISTORICO_TOKEN;
-        delete process.env.HISTORICO_TOKEN;
         const r = await invocar(apu, "/api/apu/catalogo");
-        assert.strictEqual(r.status, 503, "sin HISTORICO_TOKEN el endpoint debe responder 503, no inventar una llave");
-        process.env.HISTORICO_TOKEN = guardado;
+        assert.notStrictEqual(r.status, 401, "el catálogo de precios NO puede exigir token");
+        assert.strictEqual(r.status, 503, "sin catálogo cargado debía responder 503");
+        assert.ok(/cargar-catalogo/.test(r.cuerpo.siguiente_paso || ""), "el 503 debe decir cómo cargarlo");
+        assert.ok(!("insumos" in r.cuerpo), "sin catálogo no puede viajar una lista de insumos vacía");
       }
       // acción inexistente y verbo equivocado
       assert.strictEqual((await invocar(apu, "/api/apu/inventada", CAB_TOKEN)).status, 404);
-      assert.strictEqual((await invocar(apu, "/api/apu/calcular", CAB_TOKEN)).status, 405,
-        "«calcular» exige POST");
-      assert.strictEqual((await invocarPost(apu, "/api/apu/listar", {}, CAB_TOKEN)).status, 405,
-        "«listar» exige GET");
+      assert.strictEqual((await invocar(apu, "/api/apu/calcular", CAB_TOKEN)).status, 405, "«calcular» exige POST");
+      assert.strictEqual((await invocarPost(apu, "/api/apu/listar", {}, CAB_TOKEN)).status, 405, "«listar» exige GET");
 
-      /* ---- j.2 catálogo ---- */
-      const cat = await invocar(apu, "/api/apu/catalogo", CAB_TOKEN);
-      assert.strictEqual(cat.status, 200);
-      assert.ok(cat.cuerpo.items.length >= 20, "el catálogo de ítems llegó vacío o casi");
-      assert.strictEqual(cat.cuerpo.tipologias.length, 22, "el catálogo cerrado son 22 tipologías");
-      assert.strictEqual(cat.cuerpo.departamentos.length, 33, "33 unidades: 32 departamentos + Bogotá");
-      assert.ok(/ilustrativ/i.test(cat.cuerpo.advertencia || ""),
-        "el catálogo debe declarar que sus precios son ilustrativos; presentarlos como medidos sería la mentira que el informe prohíbe");
-      // todo ítem apunta a insumos que existen: un catálogo con referencias
-      // rotas produce presupuestos incompletos sin que nadie sepa por qué
-      for (const it of catalogoApu.ITEMS) {
-        for (const m of it.materiales || []) {
-          assert.ok(catalogoApu.insumoPorCodigo(m.insumo), `${it.codigo} referencia el insumo inexistente ${m.insumo}`);
+      /* ---- j.2 las dos tablas del repositorio (tipologías y regiones) ---- */
+      {
+        const m = tipologias.meta();
+        assert.strictEqual(m.tipologias_n, 22, "el catálogo cerrado son 22 tipologías");
+        assert.strictEqual(m.departamentos_con_region + m.departamentos_sin_base, 33,
+          "32 departamentos + Bogotá: el mapa tiene que cubrirlos todos, con región o declarados sin base");
+
+        /* Toda tipología apunta a códigos que EXISTEN en el catálogo de precios.
+           Una referencia rota produciría presupuestos incompletos sin que nadie
+           supiera por qué. */
+        const validos = new Set(catalogoLib.SEMILLA.items.map((i) => i.codigo));
+        for (const t of tipologias.TIPOLOGIAS) {
+          for (const c of tipologias.itemsDeTipologia(t.codigo)) {
+            assert.ok(validos.has(c), `la tipología ${t.codigo} referencia el ítem inexistente ${c}`);
+          }
         }
-        for (const c of Object.keys(it.cuadrilla || {})) {
-          assert.ok(catalogoApu.insumoPorCodigo(c), `${it.codigo} referencia la mano de obra inexistente ${c}`);
-        }
-        for (const e of Object.keys(it.equipo || {})) {
-          assert.ok(catalogoApu.insumoPorCodigo(e), `${it.codigo} referencia el equipo inexistente ${e}`);
-        }
-        assert.ok(catalogoApu.UNIDADES.includes(it.unidad), `${it.codigo} usa la unidad no declarada «${it.unidad}»`);
-        // la regla dura del informe: nunca inventar un código INV
-        if (String(it.codigo).startsWith("INV-")) {
-          assert.strictEqual(it.verificacion, "hipotesis_invias",
-            `${it.codigo} lleva prefijo INV- sin declararse como hipótesis: el articulado del INVÍAS no se ha verificado`);
+        /* Y todo departamento con región apunta a una región que EXISTE. Las dos
+           mitades del mapa van en el mismo PR justo por esto. */
+        const regiones = new Set(catalogoLib.SEMILLA.regiones.map((r) => r.id));
+        for (const d of tipologias.departamentosConRegion()) {
+          const r = tipologias.regionDeDepartamento(d);
+          assert.strictEqual(r.estado, "mapeado");
+          assert.ok(regiones.has(r.region), `${d} apunta a la región inexistente «${r.region}»`);
         }
       }
 
@@ -4582,7 +4752,9 @@ async function main() {
           { objeto: "CONSTRUCCION DE PLACA HUELLA EN LA VIA TERCIARIA VEREDA EL RETIRO, 1.500 ml", codigos_unspsc: "72141100" }, CAB_TOKEN);
         assert.strictEqual(verde.cuerpo.estado, "verde", "una placa huella bien escrita con su UNSPSC debe salir 🟢");
         assert.strictEqual(verde.cuerpo.tipologia.codigo, "VIA-PH");
-        assert.ok(verde.cuerpo.items.length > 0, "un 🟢 tiene que proponer ítems");
+        assert.ok(verde.cuerpo.items.length > 0, "un 🟢 con catálogo tiene que proponer ítems");
+        assert.ok(verde.cuerpo.items.every((i) => i.codigo && i.en_catalogo),
+          "los ítems propuestos deben existir en el catálogo y venir enriquecidos con su descripción");
         // decimal COLOMBIANO: «1.500» son mil quinientos, no uno coma cinco
         assert.deepStrictEqual(verde.cuerpo.cantidades.map((c) => [c.valor, c.unidad]), [[1500, "ml"]],
           "el punto separa MILES: leerlo como decimal divide la obra por mil");
@@ -4599,6 +4771,14 @@ async function main() {
           { objeto: "SUMINISTRO DE PAPELERIA Y UTILES DE OFICINA PARA LA ALCALDIA" }, CAB_TOKEN);
         assert.strictEqual(suministro.cuerpo.estado, "no_determinada");
         assert.strictEqual(suministro.cuerpo.items.length, 0, "un ⚪ NO puede proponer ítems");
+
+        // una tipología SIN cobertura en el catálogo lo DICE en vez de callarse
+        const sinItems = inferencia.inferir("SUMINISTRO E INSTALACION DE SENALIZACION VIAL VERTICAL Y DEMARCACION HORIZONTAL DE LA MALLA VIAL");
+        if (sinItems.tipologia && sinItems.tipologia.codigo === "VIA-SEN") {
+          assert.strictEqual(sinItems.items.length, 0);
+          assert.ok(/no tiene .tems|a mano/i.test(sinItems.mensaje),
+            "si el catálogo no cubre la tipología hay que decirlo, no devolver una lista vacía sin explicación");
+        }
 
         // la regla de atribución: un número de contrato no es una cantidad
         const atribucion = inferencia.inferir("CONSTRUCCION DE PLACA HUELLA VEREDA X CONTRATO 2024-350");
@@ -4623,11 +4803,11 @@ async function main() {
 
       /* ---- j.4 cálculo: las invariantes aritméticas ---- */
       const itemsPrueba = [
-        { item_id: "INV-630-21MPA", cantidad: 120 },
-        { item_id: "INV-640-420", cantidad: 4800 },
-        { item_id: "LOC-PREL-LOC", cantidad: 4500 },
+        { item_id: "INV-PH.1", cantidad: 900 },
+        { item_id: "INV-320.1", cantidad: 120 },
+        { item_id: "INV-640.1", cantidad: 3200 },
       ];
-      const cfgBase = { aiu_pct: 20, utilidad_pct: 8, imprevistos_pct: 3 };
+      const cfgBase = { aiu_pct: 15, utilidad_pct: 5, imprevistos_pct: 5 };
       const calc = await invocarPost(apu, "/api/apu/calcular",
         { items: itemsPrueba, departamento: "ANTIOQUIA", config: cfgBase }, CAB_TOKEN);
       assert.strictEqual(calc.status, 200);
@@ -4635,11 +4815,9 @@ async function main() {
         const r = calc.cuerpo;
         let sumaTotales = 0;
         for (const it of r.items) {
-          // cantidad × unitario = total, con la tolerancia del redondeo a 2 dec
           const esperado = it.costo_directo_unitario * it.cantidad;
           assert.ok(Math.abs(esperado - it.costo_total) <= Math.max(0.5, it.cantidad * 0.01),
             `${it.item_id}: cantidad × unitario (${esperado}) ≠ total (${it.costo_total})`);
-          // los cuatro componentes suman el unitario
           const suma = it.costo_material_unitario + it.costo_mano_obra_unitario
             + it.costo_equipo_unitario + it.costo_transporte_unitario;
           assert.ok(Math.abs(suma - it.costo_directo_unitario) < 0.01,
@@ -4651,26 +4829,29 @@ async function main() {
         const pc = r.resumen.por_componente;
         assert.ok(Math.abs((pc.material + pc.mano_obra + pc.equipo + pc.transporte) - r.resumen.costo_directo_total) < 1,
           "el reparto por componente no suma el costo directo: un peso se pierde sin que nadie lo note");
+        assert.ok(pc.transporte > 0, "los ítems de la prueba llevan acarreo: el capítulo de transporte no puede salir en cero");
+
+        // sin catálogo en Redis se usa la SEMILLA, y se DICE
+        assert.strictEqual(r.catalogo.fuente, "semilla");
+        assert.ok(r.alertas.some((a) => /no est. cargado en Redis/i.test(a)),
+          "si el precio sale de la semilla y no del catálogo cargado, hay que decirlo");
 
         // AIU ADITIVO por defecto (el de los pliegos tipo)
         assert.strictEqual(r.configuracion.modo_aiu, "aditivo");
-        assert.strictEqual(r.configuracion.aiu_total_pct, 31);
-        assert.ok(Math.abs(r.resumen.precio_venta - r.resumen.costo_directo_total * 1.31) < 1,
+        assert.strictEqual(r.configuracion.aiu_total_pct, 25);
+        assert.ok(Math.abs(r.resumen.precio_venta - r.resumen.costo_directo_total * 1.25) < 1,
           "el AIU aditivo debe multiplicar por 1 + A + I + U");
-        // y sus tres sumandos reconstruyen exactamente la diferencia
         const aiuCop = r.resumen.administracion + r.resumen.imprevistos + r.resumen.utilidad;
         assert.ok(Math.abs(aiuCop - (r.resumen.precio_venta - r.resumen.costo_directo_total)) < 1,
           "A + I + U en pesos debe ser exactamente lo que se añade al costo directo");
       }
 
-      /* el modo COMPUESTO (la fórmula literal del encargo) sigue disponible y
-         da MÁS que el aditivo: la diferencia es real y por eso el defecto no
-         puede ser el compuesto */
+      /* el modo COMPUESTO (la fórmula literal del encargo) sigue disponible y da
+         MÁS que el aditivo: la diferencia es real y por eso el defecto no puede
+         ser el compuesto */
       {
         const comp = calculo.calcularPresupuesto({
-          items: itemsPrueba, departamento: "ANTIOQUIA",
-          config: { ...cfgBase, modo_aiu: "compuesto" },
-        });
+          items: itemsPrueba, departamento: "ANTIOQUIA", config: { ...cfgBase, modo_aiu: "compuesto" } });
         const adit = calculo.calcularPresupuesto({ items: itemsPrueba, departamento: "ANTIOQUIA", config: cfgBase });
         assert.ok(comp.resumen.precio_venta > adit.resumen.precio_venta,
           "componer el AIU tiene que dar más caro que sumarlo; si dieran igual, la corrección no estaría aplicada");
@@ -4681,18 +4862,21 @@ async function main() {
       /* ---- j.5 monotonía: el rendimiento DIVIDE ---- */
       {
         const rapido = calculo.calcularPresupuesto({
-          items: [{ item_id: "INV-630-21MPA", cantidad: 100, rendimiento_override: 16 }], config: cfgBase });
+          items: [{ item_id: "INV-PH.1", cantidad: 100, rendimiento_override: 40 }], config: cfgBase });
         const lento = calculo.calcularPresupuesto({
-          items: [{ item_id: "INV-630-21MPA", cantidad: 100, rendimiento_override: 4 }], config: cfgBase });
+          items: [{ item_id: "INV-PH.1", cantidad: 100, rendimiento_override: 10 }], config: cfgBase });
         assert.ok(lento.items[0].costo_mano_obra_unitario > rapido.items[0].costo_mano_obra_unitario,
           "bajar el rendimiento tiene que ENCARECER la mano de obra: el rendimiento divide, no multiplica");
         assert.ok(Math.abs(lento.items[0].costo_material_unitario - rapido.items[0].costo_material_unitario) < 0.01,
           "el rendimiento no puede cambiar el costo de MATERIALES");
         assert.strictEqual(lento.items[0].rendimiento_es_override, true);
+        // y el override NO puede haber mutado el catálogo compartido
+        const otraVez = calculo.calcularPresupuesto({ items: [{ item_id: "INV-PH.1", cantidad: 100 }], config: cfgBase });
+        assert.ok(otraVez.items[0].costo_mano_obra_unitario !== lento.items[0].costo_mano_obra_unitario,
+          "el rendimiento del catálogo quedó pisado por un override: el catálogo es compartido entre peticiones");
       }
 
-      /* subir el anticipo no puede subir la financiación requerida (invariante
-         9 del informe, en su versión de caja) */
+      /* subir el anticipo no puede subir la financiación requerida */
       {
         const sinAnt = calculo.calcularPresupuesto({ items: itemsPrueba, config: { ...cfgBase, anticipo_pct: 0 } });
         const conAnt = calculo.calcularPresupuesto({ items: itemsPrueba, config: { ...cfgBase, anticipo_pct: 30 } });
@@ -4708,7 +4892,7 @@ async function main() {
           "un 0 tecleado por una persona SÍ es un dato: significa «sin anticipo»");
       }
 
-      /* ---- j.6 honestidad: sin precio no vale cero, sin base no vale 1,00 --- */
+      /* ---- j.6 honestidad: sin precio no vale cero, sin región no vale 1,00 --- */
       {
         const conRoto = calculo.calcularPresupuesto({
           items: [...itemsPrueba, { item_id: "ITEM-QUE-NO-EXISTE", cantidad: 50 }], config: cfgBase });
@@ -4720,45 +4904,37 @@ async function main() {
         assert.strictEqual(roto.costo_total, null, "un ítem sin datos publica null, jamás 0");
         assert.strictEqual(roto.motivo, "item_desconocido");
 
-        // Bogotá está declarada SIN BASE y no puede recibir un factor de relleno
-        const bog = catalogoApu.factorRegionalDe("BOGOTA D.C.");
-        assert.strictEqual(bog.estado, "sin_base");
-        assert.strictEqual(bog.material, null, "un departamento sin base no puede publicar factor; un 1,00 por defecto afirma algo falso y creíble");
-        assert.strictEqual(catalogoApu.factorRegionalDe("REPUBLICA DE NARNIA").estado, "sin_base");
-        // ningún departamento se publica como «calibrado»: la matriz está sin calibrar y se dice
-        for (const d of catalogoApu.departamentosConocidos()) {
-          assert.notStrictEqual(catalogoApu.factorRegionalDe(d).estado, "calibrado",
-            `${d} se publica como calibrado y la matriz entera es preliminar`);
+        /* Un departamento sin región cotizada NO se asigna a la más parecida.
+           Chocó tiene motivo declarado; un departamento inventado también sale
+           sin base. Ninguno de los dos recibe factor de relleno. */
+        for (const d of ["CHOCO", "VAUPES", "REPUBLICA DE NARNIA"]) {
+          const reg = tipologias.regionDeDepartamento(d);
+          assert.strictEqual(reg.estado, "sin_base", `${d} debía salir sin base`);
+          assert.strictEqual(reg.region, null, `${d} recibió una región de relleno`);
+          assert.ok(reg.mensaje, `${d} sale sin base y sin decir por qué`);
         }
         // los alias resuelven a la misma celda (SECOP escribe el nombre de varias formas)
-        assert.strictEqual(catalogoApu.factorRegionalDe("VALLE").categoria,
-          catalogoApu.factorRegionalDe("VALLE DEL CAUCA").categoria);
-        assert.strictEqual(catalogoApu.factorRegionalDe("Bogotá").estado, "sin_base");
+        assert.strictEqual(tipologias.regionDeDepartamento("Bogotá").region, "bogota_sabana");
+        assert.strictEqual(tipologias.regionDeDepartamento("VALLE").estado,
+          tipologias.regionDeDepartamento("VALLE DEL CAUCA").estado);
 
-        // el ajuste regional MUEVE el precio, y en la dirección correcta
-        const choco = calculo.calcularPresupuesto({ items: itemsPrueba, departamento: "CHOCO", config: cfgBase });
-        const antioquia = calculo.calcularPresupuesto({ items: itemsPrueba, departamento: "ANTIOQUIA", config: cfgBase });
-        assert.ok(choco.resumen.costo_directo_total > antioquia.resumen.costo_directo_total,
-          "Chocó (categoría E) tiene que salir más caro que Antioquia (categoría A)");
-        // y sin base NO se aplica ningún factor: el resultado es el de referencia
-        const sinBase = calculo.calcularPresupuesto({ items: itemsPrueba, departamento: "BOGOTA D.C.", config: cfgBase });
-        const neutro = calculo.calcularPresupuesto({ items: itemsPrueba, departamento: "", config: cfgBase });
-        assert.strictEqual(sinBase.resumen.costo_directo_total, neutro.resumen.costo_directo_total,
-          "sin base regional el presupuesto va sin ajuste, no con un factor inventado");
+        // el presupuesto SALE igual, con la región base, y lo declara
+        const sinBase = calculo.calcularPresupuesto({ items: itemsPrueba, departamento: "CHOCO", config: cfgBase });
+        assert.strictEqual(sinBase.ajuste_regional.estado, "sin_base");
+        assert.ok(sinBase.resumen.costo_directo_total > 0, "sin región el presupuesto se calcula igual: no bloquear por falta de información");
+        assert.ok(sinBase.alertas.some((a) => /Sin referencia regional/i.test(a)),
+          "usar la región base sin decirlo sería presentar Bogotá como si fuera Chocó");
+        assert.strictEqual(sinBase.ajuste_regional.region_utilizada, catalogoLib.SEMILLA._meta.region_base);
+
+        // y la región SÍ mueve el precio cuando la hay
+        const costa = calculo.calcularPresupuesto({ items: itemsPrueba, departamento: "ATLANTICO", config: cfgBase });
+        const bogota = calculo.calcularPresupuesto({ items: itemsPrueba, departamento: "CUNDINAMARCA", config: cfgBase });
+        assert.strictEqual(costa.ajuste_regional.region, "costa_atlantica");
+        assert.notStrictEqual(costa.resumen.costo_directo_total, bogota.resumen.costo_directo_total,
+          "dos regiones con factores distintos no pueden dar el mismo costo directo");
       }
 
-      /* ---- j.7 transporte: aditivo y solo con distancia declarada ---- */
-      {
-        const cerca = calculo.calcularPresupuesto({ items: itemsPrueba, departamento: "CHOCO", config: cfgBase });
-        const lejos = calculo.calcularPresupuesto({
-          items: itemsPrueba, departamento: "CHOCO", config: { ...cfgBase, distancia_acarreo_km: 80 } });
-        assert.strictEqual(cerca.resumen.por_componente.transporte, 0,
-          "con acarreo 0 no se añade flete: el precio del material ya está puesto en obra y cobrarlo dos veces es el error clásico");
-        assert.ok(lejos.resumen.por_componente.transporte > 0, "con 80 km declarados tiene que haber flete");
-        assert.ok(lejos.resumen.costo_directo_total > cerca.resumen.costo_directo_total);
-      }
-
-      /* ---- j.8 ajuste competitivo y sus alertas ---- */
+      /* ---- j.7 ajuste competitivo y sus alertas ---- */
       {
         const conBaja = await invocarPost(apu, "/api/apu/calcular", {
           items: itemsPrueba, departamento: "ANTIOQUIA",
@@ -4776,16 +4952,14 @@ async function main() {
         assert.ok(suicida.resumen.margen_final < 0, "con 45 % de baja el margen es negativo");
         assert.ok(suicida.alertas.some((a) => /p[eé]rdida/i.test(a)),
           "un precio por debajo del costo directo tiene que decirlo en una alerta");
-        // y la contribución del 5 % se recuerda mientras no se carguen deducciones
         assert.ok(suicida.alertas.some((a) => /contribuci[oó]n/i.test(a)),
           "el margen sin deducciones debe advertir de la contribución del 5 %, «el olvido más caro del país»");
-        const conDed = calculo.calcularPresupuesto({
-          items: itemsPrueba, config: { ...cfgBase, deducciones_pct: 9 } });
+        const conDed = calculo.calcularPresupuesto({ items: itemsPrueba, config: { ...cfgBase, deducciones_pct: 9 } });
         assert.ok(conDed.resumen.margen_despues_deducciones < conDed.resumen.margen_final,
           "cargar deducciones tiene que reducir el margen");
       }
 
-      /* ---- j.9 persistencia: guardar → cargar → listar, con TTL ---- */
+      /* ---- j.8 persistencia: guardar → cargar → listar, con TTL ---- */
       {
         const cuerpoGuardar = {
           perfil: "helder", nombre: "Placa huella vereda El Retiro",
@@ -4806,11 +4980,10 @@ async function main() {
         assert.strictEqual(c.status, 200);
         assert.strictEqual(c.cuerpo.presupuesto.nombre, cuerpoGuardar.nombre);
         assert.strictEqual(c.cuerpo.presupuesto.items.length, itemsPrueba.length);
-        assert.strictEqual(c.cuerpo.catalogo_cambiado, false);
 
         // los presupuestos son POR PERFIL: el de Helder no aparece en Génesis
-        const otro = await invocar(apu, `/api/apu/cargar?id=${id}&perfil=genesis`, CAB_TOKEN);
-        assert.strictEqual(otro.status, 404, "un presupuesto de Helder no puede cargarse como de Génesis");
+        assert.strictEqual((await invocar(apu, `/api/apu/cargar?id=${id}&perfil=genesis`, CAB_TOKEN)).status, 404,
+          "un presupuesto de Helder no puede cargarse como de Génesis");
 
         const l = await invocar(apu, "/api/apu/listar?perfil=helder", CAB_TOKEN);
         assert.strictEqual(l.status, 200);
@@ -4819,8 +4992,8 @@ async function main() {
         assert.strictEqual((await invocar(apu, "/api/apu/listar?perfil=genesis", CAB_TOKEN)).cuerpo.total, 0);
 
         // id con caracteres que romperían el keyspace de Redis
-        const malId = await invocarPost(apu, "/api/apu/guardar", { ...cuerpoGuardar, id: "abc:*:def" }, CAB_TOKEN);
-        assert.strictEqual(malId.status, 400, "un id con «:» o «*» podría escribir fuera de su keyspace");
+        assert.strictEqual((await invocarPost(apu, "/api/apu/guardar", { ...cuerpoGuardar, id: "abc:*:def" }, CAB_TOKEN)).status, 400,
+          "un id con «:» o «*» podría escribir fuera de su keyspace");
         assert.strictEqual((await invocar(apu, "/api/apu/cargar?id=noexiste&perfil=helder", CAB_TOKEN)).status, 404);
         assert.strictEqual((await invocarPost(apu, "/api/apu/guardar",
           { ...cuerpoGuardar, perfil: "inventado" }, CAB_TOKEN)).status, 400);
@@ -4831,10 +5004,44 @@ async function main() {
         assert.strictEqual(lc.status, 200, "un valor ilegible no puede tumbar el listado");
         assert.strictEqual(lc.cuerpo.ilegibles, 1, "el ilegible tiene que CONTARSE, no desaparecer en silencio");
         assert.ok(lc.cuerpo.presupuestos.some((p) => p.id === id), "el resto del listado debe seguir sirviéndose");
+      }
 
-        // no contaminar lo que venga después
-        const sobras = await redis.scan("apu:presupuesto:*");
+      /* ---- j.9 con el catálogo YA cargado: la vía cambia y el precio también --
+         Es la prueba de que el editor consume el catálogo de Redis y no se queda
+         pegado a la semilla del repositorio. Al terminar se borra todo `apu:*`
+         para que el bloque h-bis empiece con Redis limpio, como espera. */
+      {
+        const apuCargarCat = require("../api/admin/apu/cargar-catalogo.js");
+        const carga = await invocar(apuCargarCat, "/api/admin/apu/cargar-catalogo", CAB_TOKEN, { metodo: "POST" });
+        assert.strictEqual(carga.status, 200, "no se pudo cargar el catálogo de precios");
+
+        const pub = await invocar(apu, "/api/apu/catalogo");
+        assert.strictEqual(pub.status, 200, "con el catálogo cargado el endpoint público debe servirlo");
+        assert.ok(pub.cuerpo.items.length > 0 && pub.cuerpo.insumos.length > 0 && pub.cuerpo.regiones.length > 0);
+        assert.strictEqual(pub.cuerpo.tipologias, 22, "el catálogo público también expone el vocabulario de tipologías");
+        assert.strictEqual(pub.cuerpo.departamentos.length, 33);
+        // los cortes por parámetro siguen funcionando desde la ruta dinámica
+        assert.strictEqual((await invocar(apu, "/api/apu/catalogo?bloque=items")).status, 200);
+        assert.strictEqual((await invocar(apu, "/api/apu/catalogo?insumo=unicornio")).status, 404);
+        assert.strictEqual((await invocar(apu, "/api/apu/catalogo?region=marte")).status, 404);
+
+        const desdeRedis = await invocarPost(apu, "/api/apu/calcular",
+          { items: itemsPrueba, departamento: "ANTIOQUIA", config: cfgBase }, CAB_TOKEN);
+        assert.strictEqual(desdeRedis.cuerpo.catalogo.fuente, "redis",
+          "con el catálogo cargado el cálculo tiene que leerlo de Redis, no de la semilla");
+        assert.ok(!desdeRedis.cuerpo.alertas.some((a) => /no est. cargado en Redis/i.test(a)));
+
+        /* LA INVARIANTE FUERTE: catálogo cargado y semilla dan el MISMO precio.
+           Son la misma tabla por dos caminos; si divergieran, el presupuesto
+           cambiaría según quién hubiera corrido la carga y ninguna de las dos
+           cifras serviría para decidir nada. */
+        const desdeSemilla = calculo.calcularPresupuesto({ items: itemsPrueba, departamento: "ANTIOQUIA", config: cfgBase });
+        assert.strictEqual(desdeRedis.cuerpo.resumen.costo_directo_total, desdeSemilla.resumen.costo_directo_total,
+          "el catálogo de Redis y la semilla del repositorio dan precios distintos: son la misma tabla por dos caminos");
+
+        const sobras = await redis.scan("apu:*");
         if (sobras.length) await redis.del(...sobras);
+        assert.strictEqual((await redis.scan("apu:*")).length, 0, "el bloque j dejó claves apu:* y h-bis empieza de cero");
       }
 
       /* ---- j.10 el frontend: cableado, orden del arranque y el «|| 0» ---- */
@@ -4892,6 +5099,11 @@ async function main() {
         assert.ok(/procesos\s*<\s*r\.min_procesos/.test(limpio),
           "sugerir el factor de baja sin comprobar el mínimo de procesos repetiría el defecto de «18,2 oferentes en 0 procesos»");
 
+        // el desplegable distingue los departamentos SIN región cotizada: sin la
+        // marca, elegir Chocó parecería igual de fiable que elegir Antioquia
+        assert.ok(/sin regi.n cotizada/i.test(limpio),
+          "el desplegable de departamentos debe marcar cuáles no tienen precio de referencia");
+
         // el panel enlaza el editor, y como ENLACE: X-Frame-Options: DENY
         // impide el iframe que el encargo daba como alternativa
         const admHtml2 = fs.readFileSync(path.join(__dirname, "..", "public", "admin.html"), "utf8");
@@ -4911,14 +5123,13 @@ async function main() {
               [{ v: "ANÁLISIS DE PRECIOS UNITARIOS", s: "titulo" }],
               [{ v: 'Obra "El Retiro" & Cía <test>', s: "negrita" }],
               [{ v: "Ítem", s: "encabezado" }, { v: "Total", s: "encabezado" }],
-              [{ v: "INV-630-21MPA", s: "texto" }, { v: 59023041.6, s: "moneda" }],
+              [{ v: "INV-PH.1", s: "texto" }, { v: 59023041.6, s: "moneda" }],
             ],
             anchos: [20, 18], congelar: 3, fusiones: ["A1:B1"],
           },
           { nombre: "Desglose", filas: [[{ v: "detalle", s: "normal" }]] },
         ]);
         assert.ok(bytes.length > 2000, "el libro salió sospechosamente pequeño");
-        // firma de ZIP local ("PK\x03\x04") y de fin de directorio central
         assert.deepStrictEqual([...bytes.slice(0, 4)], [0x50, 0x4b, 0x03, 0x04], "no es un ZIP");
         const buf = Buffer.from(bytes);
         assert.ok(buf.includes(Buffer.from([0x50, 0x4b, 0x05, 0x06])), "falta el fin del directorio central");
@@ -4926,7 +5137,6 @@ async function main() {
         // el contenido de las partes clave, leído del propio ZIP
         const partes = {};
         {
-          // lector de ZIP mínimo: basta con las entradas STORE que escribimos
           let i = 0;
           while (i < buf.length - 4 && buf.readUInt32LE(i) === 0x04034b50) {
             const tam = buf.readUInt32LE(i + 18);
@@ -4950,12 +5160,8 @@ async function main() {
         assert.ok(partes["xl/styles.xml"].includes("<b/>"), "falta la negrita");
         assert.ok(partes["xl/styles.xml"].includes("FF111827"), "falta el relleno de la franja de título");
         // el código de formato viaja ESCAPADO (`&quot;$&quot;#,##0`): es XML, y
-        // un lector real lo devuelve como `"$"#,##0`. Comprobar la forma sin
-        // escapar habría fallado sobre un archivo correcto.
+        // un lector real lo devuelve como `"$"#,##0`.
         assert.ok(partes["xl/styles.xml"].includes("&quot;$&quot;#,##0"), "falta el formato de moneda");
-        // los cuatro numFmt cierran su atributo: si una comilla del código de
-        // formato saliera sin escapar, el elemento no casaría y el archivo
-        // estaría roto para Excel
         assert.strictEqual((partes["xl/styles.xml"].match(/<numFmt numFmtId="\d+" formatCode="[^"]*"\/>/g) || []).length, 4,
           "un formatCode con comillas sin escapar rompe el atributo XML y con él el archivo entero");
         assert.ok(partes["xl/styles.xml"].includes("cellStyles"), "sin el estilo «Normal» los lectores aplican el suyo encima");
@@ -4977,22 +5183,271 @@ async function main() {
         assert.strictEqual(vc.functions["api/apu/[accion].js"].includeFiles, "data/**",
           "sin data/** el catálogo de APU no llega al despliegue");
 
-        /* EL LÍMITE DE HOBBY SON 12 FUNCIONES POR DESPLIEGUE, y se pasa
-           contando ARCHIVOS bajo api/, no entradas de vercel.json. Cuatro
-           archivos sueltos (calcular, guardar, cargar, listar) habrían dado 14
-           y el despliegue falla ENTERO, no solo el endpoint nuevo. Por eso el
-           APU va en una ruta dinámica, que cuenta como una. */
+        /* EL LÍMITE DE HOBBY SON 12 FUNCIONES POR DESPLIEGUE, y se cuenta por
+           ARCHIVOS bajo api/, no por entradas de vercel.json. Es un fallo de
+           DESPLIEGUE COMPLETO, no del endpoint nuevo, así que conviene que
+           salte aquí y no en producción. Por eso `/api/apu/catalogo` se plegó
+           en la ruta dinámica en vez de conservar su archivo propio. */
         const contar = (dir) => fs.readdirSync(dir, { withFileTypes: true })
           .reduce((n, e) => n + (e.isDirectory() ? contar(path.join(dir, e.name))
             : (e.name.endsWith(".js") ? 1 : 0)), 0);
         const nFunciones = contar(path.join(__dirname, "..", "api"));
         assert.ok(nFunciones <= 12,
           `${nFunciones} funciones bajo api/: el plan Hobby de Vercel admite 12 por despliegue y lo rechazaría entero`);
+        assert.ok(!fs.existsSync(path.join(__dirname, "..", "api", "apu", "catalogo.js")),
+          "api/apu/catalogo.js volvió a existir: con él se pasa del límite de 12 funciones");
       }
 
-      console.log(`  · APU: ${cat.cuerpo.items.length} ítems · ${cat.cuerpo.tipologias.length} tipologías · `
-        + `33 departamentos · invariantes aritméticas, de monotonía y de honestidad verificadas · `
-        + `.xlsx con estilos reales · ${(await (async () => (await redis.scan("apu:*")).length)())} claves residuales`);
+      console.log(`  · APU: ${tipologias.meta().tipologias_n} tipologías · ${catalogoLib.SEMILLA.items.length} ítems · `
+        + `${tipologias.meta().departamentos_con_region}/33 departamentos con región cotizada · `
+        + `invariantes aritméticas, de monotonía y de honestidad verificadas · .xlsx con estilos reales`);
+    }
+
+    /* ═══════════ h-bis. Catálogo de precios APU en Redis ═══════════
+       El encargo fija el esquema (hash por insumo, por ítem y por región), así
+       que las aserciones se escriben contra ESE esquema y no contra lo que el
+       código devuelva: si alguien renombra un campo, esto lo detiene.
+
+       La invariante fuerte del bloque es la del SNAPSHOT: el catálogo se sirve
+       desde un JSON comprimido para no pagar 70 comandos por petición, pero los
+       hashes son la fuente de verdad. Se comprueba que las dos vías devuelven
+       exactamente lo mismo y que el snapshot rancio o corrupto NO se sirve —
+       dos fuentes de verdad que discrepan es el defecto que este proyecto ya
+       pagó caro con `total_procesos`/`procesos_contados`. */
+    {
+      const apuCargar = require("../api/admin/apu/cargar-catalogo.js");
+      /* `/api/apu/catalogo` lo sirve ahora la ruta DINÁMICA junto con las otras
+         cinco acciones del editor. El archivo suelto desapareció por el límite
+         de 12 funciones del plan Hobby —12 archivos bajo api/ más el del editor
+         eran 13 y el despliegue falla entero—, pero la URL, el contrato y el
+         hecho de que sea PÚBLICA se conservan intactos, que es justo lo que
+         siguen comprobando estas aserciones. */
+      const apuPublico = require("../api/apu/[accion].js");
+      const apuLib = require("../lib/apu/catalogo.js");
+      const S = apuLib.SEMILLA;
+      const REGIONES = S.regiones.map((r) => r.id);
+
+      const clavesCorpus = async () => (await redis.scan("licitaciones:*")).length;
+      const corpusAntes = await clavesCorpus();
+
+      /* --- el endpoint público sobre un catálogo que no está: 503 que DICE qué
+         hacer, no un 200 con listas vacías (un [] afirmaría «no hay insumos») --- */
+      {
+        const r = await invocar(apuPublico, "/api/apu/catalogo");
+        assert.strictEqual(r.status, 503, "sin catálogo cargado debía responder 503");
+        assert.strictEqual(r.cuerpo.cargado, false);
+        assert.ok(/cargar-catalogo/.test(r.cuerpo.siguiente_paso), "el 503 debe decir cómo cargarlo");
+        assert.ok(!("insumos" in r.cuerpo), "sin catálogo no puede viajar una lista de insumos vacía");
+      }
+
+      /* --- la carga está PROTEGIDA: las tres formas de no tener permiso --- */
+      {
+        assert.strictEqual((await invocar(apuCargar, "/api/admin/apu/cargar-catalogo", {}, { metodo: "POST" })).status, 401,
+          "sin token debía ser 401");
+        assert.strictEqual((await invocar(apuCargar, "/api/admin/apu/cargar-catalogo?token=malo", {}, { metodo: "POST" })).status, 401,
+          "con token equivocado debía ser 401");
+        const guardado = process.env.HISTORICO_TOKEN;
+        delete process.env.HISTORICO_TOKEN;
+        const r = await invocar(apuCargar, "/api/admin/apu/cargar-catalogo", CAB_TOKEN, { metodo: "POST" });
+        assert.strictEqual(r.status, 503, "sin HISTORICO_TOKEN en el entorno debía ser 503, nunca una llave por defecto");
+        process.env.HISTORICO_TOKEN = guardado;
+        // y un 401 no puede haber escrito nada
+        assert.strictEqual((await redis.scan("apu:*")).length, 0, "un rechazo de autorización escribió en Redis");
+      }
+
+      /* --- carga --- */
+      const carga = await invocar(apuCargar, "/api/admin/apu/cargar-catalogo", CAB_TOKEN, { metodo: "POST" });
+      assert.strictEqual(carga.status, 200, `la carga falló: ${JSON.stringify(carga.cuerpo).slice(0, 300)}`);
+      assert.strictEqual(carga.cuerpo.ok, true);
+      assert.strictEqual(carga.cuerpo.escrito, true, "la primera carga tiene que escribir");
+      assert.strictEqual(carga.cuerpo.insumos, S.insumos.length);
+      assert.strictEqual(carga.cuerpo.items, S.items.length);
+      assert.strictEqual(carga.cuerpo.regiones, S.regiones.length);
+
+      /* --- el ESQUEMA DE CLAVES que fija el encargo, leído de Redis --- */
+      {
+        const kIns = await redis.scan("apu:insumos:*");
+        const kItm = await redis.scan("apu:items:*");
+        const kReg = await redis.scan("apu:factores_region:*");
+        assert.strictEqual(kIns.length, S.insumos.length, "faltan hashes apu:insumos:*");
+        assert.strictEqual(kItm.length, S.items.length, "faltan hashes apu:items:*");
+        assert.strictEqual(kReg.length, S.regiones.length, "faltan hashes apu:factores_region:*");
+
+        // insumo: unidad + precio_{region} + fecha_actualizacion (el encargo, literal)
+        const h = await redis.hgetall("apu:insumos:cemento_gris_50kg");
+        assert.ok(h.unidad, "el hash del insumo no trae «unidad»");
+        assert.ok(h.fecha_actualizacion, "el hash del insumo no trae «fecha_actualizacion»");
+        for (const reg of REGIONES) {
+          const p = Number(h[`precio_${reg}`]);
+          assert.ok(Number.isFinite(p) && p > 0, `el insumo no trae precio_${reg} positivo`);
+        }
+        // …y ese precio es EXACTAMENTE la derivación declarada, no un número suelto
+        const cemento = S.insumos.find((i) => i.id === "cemento_gris_50kg");
+        for (const r of S.regiones) {
+          assert.strictEqual(Number(h[`precio_${r.id}`]), Math.round(cemento.precio_base * r.factor_materiales),
+            `precio_${r.id} del cemento no coincide con precio_base × factor_materiales`);
+        }
+
+        // ítem: descripcion, unidad, unspsc_segmento e insumos (JSON del encargo)
+        const hi = await redis.hgetall("apu:items:INV-630.4");
+        assert.ok(hi.descripcion && hi.unidad, "el hash del ítem no trae descripción o unidad");
+        assert.ok(/^\d{2}$/.test(hi.unspsc_segmento), "unspsc_segmento debe ser el segmento de dos dígitos");
+        const comp = JSON.parse(hi.insumos);
+        assert.ok(Array.isArray(comp) && comp.length, "«insumos» del ítem debe ser un array JSON");
+        for (const linea of comp) {
+          for (const campo of ["insumo_id", "cantidad_por_unidad", "rendimiento", "desperdicio"]) {
+            assert.ok(campo in linea, `la composición del ítem no trae «${campo}»`);
+          }
+          assert.ok(await redis.hlen(`apu:insumos:${linea.insumo_id}`) > 0
+            || (await redis.hgetall(`apu:insumos:${linea.insumo_id}`)).id,
+            `el ítem referencia el insumo ${linea.insumo_id}, que no está en Redis`);
+        }
+
+        // región: los seis campos del encargo
+        const hr = await redis.hgetall("apu:factores_region:costa_atlantica");
+        for (const campo of ["factor_materiales", "factor_mano_obra", "factor_equipo",
+          "factor_transporte", "aiu_tipico", "prestacional_tipico"]) {
+          assert.ok(Number.isFinite(Number(hr[campo])), `el hash de región no trae «${campo}» numérico`);
+        }
+      }
+
+      /* --- el catálogo NO toca el corpus: vive en `apu:*` y ninguna purga de
+         la ingesta lo alcanza, ni él a ella --- */
+      assert.strictEqual(await clavesCorpus(), corpusAntes,
+        "cargar el catálogo APU modificó claves de `licitaciones:*`");
+
+      /* --- idempotencia: «llena Redis si las claves no existen». Un segundo
+         POST sin forzar no reescribe 70 claves para dejarlas igual --- */
+      {
+        const r2 = await invocar(apuCargar, "/api/admin/apu/cargar-catalogo", CAB_TOKEN, { metodo: "POST" });
+        assert.strictEqual(r2.status, 200);
+        assert.strictEqual(r2.cuerpo.escrito, false, "la segunda carga no debía reescribir");
+        assert.strictEqual(r2.cuerpo.ya_cargado, true);
+        assert.strictEqual(r2.cuerpo.version, carga.cuerpo.version, "sin escribir, el sello no puede cambiar");
+        // …y con forzar sí, con sello NUEVO (dos cargas en el mismo milisegundo
+        // darían el mismo ISO: por eso el sello lleva sufijo aleatorio)
+        const r3 = await invocar(apuCargar, "/api/admin/apu/cargar-catalogo?forzar=true", CAB_TOKEN, { metodo: "POST" });
+        assert.strictEqual(r3.cuerpo.escrito, true, "con forzar=true tiene que reescribir");
+        assert.notStrictEqual(r3.cuerpo.version, carga.cuerpo.version, "una recarga tiene que cambiar el sello");
+      }
+
+      /* --- consulta PÚBLICA: sin token, a propósito. Aquí no hay cifras del
+         perfil (patrimonio, K, CRPC): son precios de mercado --- */
+      const publico = await invocar(apuPublico, "/api/apu/catalogo");
+      assert.strictEqual(publico.status, 200, "el catálogo debe servirse SIN token");
+      assert.strictEqual(publico.cuerpo.ok, true);
+      assert.strictEqual(publico.cuerpo.via, "snapshot", "el catálogo entero debe salir del snapshot, no de 70 hashes");
+      assert.strictEqual(publico.cuerpo.items.length, S.items.length);
+      assert.strictEqual(publico.cuerpo.insumos.length, S.insumos.length);
+      assert.strictEqual(publico.cuerpo.regiones.length, S.regiones.length);
+      assert.ok(/referencia/i.test(publico.cuerpo.aviso) && /cotizaci/i.test(publico.cuerpo.aviso),
+        "la respuesta debe advertir que son precios de referencia, no cotizaciones");
+      // todo insumo servido trae sus cinco precios
+      for (const i of publico.cuerpo.insumos) {
+        for (const reg of REGIONES) {
+          assert.ok(Number(i.precios[reg]) > 0, `el insumo ${i.insumo} no trae precio en ${reg}`);
+        }
+      }
+
+      /* --- consultas puntuales y sus 404 --- */
+      {
+        const r = await invocar(apuPublico, "/api/apu/catalogo?insumo=cemento_gris_50kg");
+        assert.strictEqual(r.status, 200);
+        assert.strictEqual(r.cuerpo.insumo.unidad, "saco 50 kg");
+        assert.strictEqual(Object.keys(r.cuerpo.insumo.precios).length, 5);
+        assert.strictEqual((await invocar(apuPublico, "/api/apu/catalogo?insumo=unicornio")).status, 404,
+          "un insumo inexistente es 404, no un 200 con precio 0");
+
+        const rr = await invocar(apuPublico, "/api/apu/catalogo?region=costa_atlantica");
+        assert.strictEqual(rr.status, 200);
+        assert.strictEqual(rr.cuerpo.region.factor_materiales, 1.10);
+        assert.strictEqual((await invocar(apuPublico, "/api/apu/catalogo?region=marte")).status, 404);
+
+        const ri = await invocar(apuPublico, "/api/apu/catalogo?bloque=items");
+        assert.strictEqual(ri.cuerpo.items.length, S.items.length);
+        assert.ok(!ri.cuerpo.insumos, "?bloque=items no debe arrastrar los insumos");
+      }
+
+      /* --- las tres funciones del encargo, leyendo Redis de verdad --- */
+      {
+        const p = await apuLib.obtenerPreciosInsumo(redis, "mo_oficial_construccion");
+        assert.strictEqual(p.tipo, "mano_obra");
+        assert.strictEqual(p.precios.bogota_sabana, 99465, "el jornal de oficial recuperado cambió sin querer");
+        assert.strictEqual(await apuLib.obtenerPreciosInsumo(redis, "no_existe"), null,
+          "un insumo inexistente devuelve null, jamás un objeto con ceros");
+
+        const { items } = await apuLib.obtenerItems(redis);
+        assert.strictEqual(items.length, S.items.length);
+        assert.ok(items.every((i) => Array.isArray(i.insumos) && i.insumos.length),
+          "obtenerItems debe devolver la composición ya parseada");
+
+        const f = await apuLib.obtenerFactoresRegion(redis, "eje_cafetero");
+        assert.strictEqual(f.factor_mano_obra, 0.93);
+        assert.strictEqual(f.prestacional_tipico, 1.55, "el factor prestacional recuperado es 1,55");
+        assert.strictEqual(await apuLib.obtenerFactoresRegion(redis, "marte"), null);
+      }
+
+      /* --- LA INVARIANTE FUERTE: snapshot y hashes dicen LO MISMO ---
+         El snapshot existe para no pagar 70 comandos por petición, pero es una
+         caché: si divergiera de los hashes, ninguna de las dos vías serviría
+         para verificar a la otra. Se borra el manifest, se vuelve a pedir el
+         catálogo por la vía lenta y se comparan los tres bloques enteros. */
+      {
+        const porSnapshot = publico.cuerpo;
+        await redis.del("apu:catalogo:manifest");
+        const porHashes = await invocar(apuPublico, "/api/apu/catalogo");
+        assert.strictEqual(porHashes.cuerpo.via, "hashes", "sin manifest hay que caer a los hashes y decirlo");
+        const orden = (xs, k) => [...xs].sort((a, b) => String(a[k]).localeCompare(String(b[k])));
+        assert.deepStrictEqual(orden(porHashes.cuerpo.insumos, "insumo"), orden(porSnapshot.insumos, "insumo"),
+          "el snapshot y los hashes discrepan en los insumos");
+        assert.deepStrictEqual(orden(porHashes.cuerpo.items, "codigo"), orden(porSnapshot.items, "codigo"),
+          "el snapshot y los hashes discrepan en los ítems");
+        assert.deepStrictEqual(orden(porHashes.cuerpo.regiones, "region"), orden(porSnapshot.regiones, "region"),
+          "el snapshot y los hashes discrepan en las regiones");
+
+        // un snapshot RANCIO (de otra versión) no se sirve: se cae a los hashes
+        await invocar(apuCargar, "/api/admin/apu/cargar-catalogo?forzar=true", CAB_TOKEN, { metodo: "POST" });
+        const man = JSON.parse(await redis.get("apu:catalogo:manifest"));
+        await redis.set("apu:catalogo:manifest", JSON.stringify({ ...man, version: "sello-viejo" }));
+        assert.strictEqual((await invocar(apuPublico, "/api/apu/catalogo")).cuerpo.via, "hashes",
+          "un snapshot de otra versión NO puede servirse: sería el catálogo anterior");
+
+        // y un chunk corrupto tampoco tumba la consulta
+        await invocar(apuCargar, "/api/admin/apu/cargar-catalogo?forzar=true", CAB_TOKEN, { metodo: "POST" });
+        await redis.set("apu:catalogo:chunk:0", "esto-no-es-deflate-base64");
+        const conCorrupto = await invocar(apuPublico, "/api/apu/catalogo");
+        assert.strictEqual(conCorrupto.status, 200, "un chunk corrupto no puede tumbar el catálogo");
+        assert.strictEqual(conCorrupto.cuerpo.via, "hashes");
+        assert.strictEqual(conCorrupto.cuerpo.items.length, S.items.length);
+        // dejarlo sano para lo que venga después
+        await invocar(apuCargar, "/api/admin/apu/cargar-catalogo?forzar=true", CAB_TOKEN, { metodo: "POST" });
+      }
+
+      /* --- GET del endpoint protegido: estado, sin escribir --- */
+      {
+        const r = await invocar(apuCargar, "/api/admin/apu/cargar-catalogo", CAB_TOKEN);
+        assert.strictEqual(r.status, 200);
+        /* `cargado` es el BOOLEANO «¿está cargado?» y `cargado_el` la marca de
+           tiempo. Con los dos llamándose igual, el spread de la meta pisaba al
+           booleano con una cadena —siempre veraz— y el panel habría dicho «sí»
+           aunque no lo estuviera. Es el mismo choque de nombres que
+           `total_procesos`/`procesos_contados`, y esta es su cerradura. */
+        assert.strictEqual(typeof r.cuerpo.cargado, "boolean",
+          "«cargado» tiene que seguir siendo booleano: la fecha va en «cargado_el»");
+        assert.strictEqual(r.cuerpo.cargado, true);
+        assert.ok(/^\d{4}-\d{2}-\d{2}T/.test(r.cuerpo.cargado_el), "«cargado_el» debe ser la fecha ISO de la carga");
+        assert.strictEqual(r.cuerpo.desactualizado, false, "recién cargado no puede estar desactualizado");
+        assert.strictEqual(r.cuerpo.version_catalogo, S._meta.version);
+        assert.strictEqual((await invocar(apuCargar, "/api/admin/apu/cargar-catalogo?token=malo")).status, 401,
+          "el GET del endpoint de carga también exige token");
+        // método no soportado
+        assert.strictEqual((await invocar(apuCargar, "/api/admin/apu/cargar-catalogo", CAB_TOKEN,
+          { metodo: "DELETE" })).status, 405);
+      }
+
+      console.log(`  · catálogo APU: ${carga.cuerpo.insumos} insumos × ${REGIONES.length} regiones, `
+        + `${carga.cuerpo.items} ítems (${carga.cuerpo.chunks} chunk, ${carga.cuerpo.bytes_snapshot} B comprimidos) · `
+        + "snapshot ≡ hashes, rancio y corrupto caen a hashes");
     }
 
     /* h. la raíz sirve el frontend (Vercel: /public es el output estático) */
@@ -5265,6 +5720,40 @@ async function main() {
       // el resumen del panel exige base antes de dividir (misma lección del «|| 0»)
       assert.ok(/analizados > 0 \? Math\.round/.test(admJs),
         "el porcentaje de procesos relevantes no puede calcularse sin comprobar el denominador");
+
+      /* ---- panel: catálogo de precios APU ---- */
+      for (const debe of ['id="seccion-apu"', 'id="btn-apu-cargar"', 'id="apu-mensaje"', 'id="apu-insumos"',
+        'id="apu-items"', 'id="apu-regiones"', 'id="apu-base"', 'id="apu-icociv"', 'id="apu-spin"',
+        'id="apu-detalle"', 'id="apu-regiones-tabla"', 'id="apu-meta"']) {
+        assert.ok(admHtml.includes(debe), `admin.html sin ${debe} (falta la sección del catálogo APU)`);
+      }
+      assert.ok(/Cargar catálogo APU/.test(admHtml), "el botón debe decir «Cargar catálogo APU»");
+      for (const debe of ["/api/apu/catalogo", "/api/admin/apu/cargar-catalogo", "cargarCatalogoApu",
+        "cargarEstadoApu", "x-historico-token"]) {
+        assert.ok(admJs.includes(debe), `admin.js sin ${debe} (el catálogo APU no está cableado)`);
+      }
+      // doble clic: mismo blindaje que el RUP y la experiencia
+      assert.ok(/\$\("btn-apu-cargar"\)\.disabled = true/.test(admJs),
+        "«Cargar catálogo APU» debe deshabilitarse durante el envío");
+      // el token va por cabecera, nunca en la URL
+      assert.ok(!/\/api\/admin\/apu\/cargar-catalogo\?[^`"']*token=/.test(admJs),
+        "el token de la carga del catálogo va por cabecera, nunca en la URL");
+      // sin token el botón no puede quedarse mudo
+      assert.ok(/Configure su token de acceso para cargar el catálogo/.test(admJs),
+        "sin token, el botón del catálogo debe explicar qué falta");
+      /* CONSULTAR el catálogo es público y son dos comandos → sí se dispara al
+         arrancar. CARGARLO escribe ~70 claves → jamás solo. */
+      {
+        const i = admJs.indexOf("function arrancarPaneles()");
+        const cuerpo = admJs.slice(i, admJs.indexOf("\n  }", i));
+        assert.ok(i > 0 && /cargarEstadoApu\(\)/.test(cuerpo),
+          "el arranque debe consultar el estado del catálogo APU (es público y barato)");
+        assert.ok(!/cargarCatalogoApu\(\)/.test(cuerpo),
+          "cargar el catálogo escribe ~70 claves: no puede dispararse solo al abrir el panel");
+      }
+      // los conteos del catálogo tampoco pueden convertir «no sé» en «cero»
+      assert.ok(!/\bt\.(insumos|items|regiones)\s*\|\|\s*0/.test(sinComentarios(admJs)),
+        "admin.js: un conteo del catálogo leído con «|| 0» convierte un campo ausente en un cero creíble");
 
       assert.ok(html.includes('id="f-sin-unspsc"'), "index.html sin el toggle de procesos sin código UNSPSC");
       const inputToggle = html.slice(html.indexOf('id="f-sin-unspsc"'), html.indexOf('id="f-sin-unspsc"') + 200);

@@ -164,8 +164,6 @@
       imprevistos_pct: Number($("imprevistos").value),
       // vacío = SIN DATO, no cero. La diferencia la respeta el motor.
       anticipo_pct: anticipoCrudo === "" ? null : Number(anticipoCrudo),
-      factor_prestacional: Number($("factor-prestacional").value),
-      distancia_acarreo_km: Number($("distancia").value),
       aplicar_ajuste_competitivo: $("ajuste-competitivo").checked,
       factor_baja: Number($("factor-baja").value),
       deducciones_pct: dedCrudo === "" ? null : Number(dedCrudo),
@@ -179,8 +177,6 @@
     if (c.utilidad_pct != null) $("utilidad").value = c.utilidad_pct;
     if (c.imprevistos_pct != null) $("imprevistos").value = c.imprevistos_pct;
     $("anticipo").value = c.anticipo_pct == null ? "" : c.anticipo_pct;
-    if (c.factor_prestacional != null) $("factor-prestacional").value = c.factor_prestacional;
-    if (c.distancia_acarreo_km != null) $("distancia").value = c.distancia_acarreo_km;
     $("ajuste-competitivo").checked = !!c.aplicar_ajuste_competitivo;
     if (c.factor_baja != null) $("factor-baja").value = c.factor_baja;
     $("deducciones").value = c.deducciones_pct == null ? "" : c.deducciones_pct;
@@ -200,15 +196,22 @@
     if (!r) return;
     CATALOGO = r;
 
-    $("aviso-precios").textContent = r.advertencia
-      || "Los precios del catálogo son ilustrativos y están pendientes de calibración.";
+    $("aviso-precios").textContent = r.aviso
+      || "Precios de referencia regionalizada, no cotizaciones: verifique contra cotización real antes de ofertar.";
 
     const dep = $("departamento");
+    const conRegion = new Set(r.departamentos_con_region || []);
+    /* El desplegable marca cuáles tienen precio de referencia y cuáles no. Sin
+       la marca, elegir Chocó parecería exactamente igual de fiable que elegir
+       Antioquia, y no lo es: uno se calcula con su región y el otro con la base. */
     dep.innerHTML = '<option value="">— Sin departamento —</option>'
-      + r.departamentos.map((d) => `<option value="${esc(d)}">${esc(d)}</option>`).join("");
+      + (r.departamentos || []).map((d) => {
+        const marca = conRegion.has(d) ? "" : "  ⚪ sin región cotizada";
+        return `<option value="${esc(d)}">${esc(d)}${esc(marca)}</option>`;
+      }).join("");
 
     const sel = $("item-nuevo");
-    sel.innerHTML = r.items
+    sel.innerHTML = (r.items || [])
       .map((i) => `<option value="${esc(i.codigo)}">${esc(i.descripcion)} (${esc(i.unidad)})</option>`)
       .join("");
   }
@@ -232,7 +235,7 @@
       pintarInferencia(r);
       if (r.items && r.items.length) {
         filas = r.items.map((i) => ({
-          item_id: i.codigo, descripcion: i.descripcion, unidad: i.unidad,
+          item_id: i.codigo, descripcion: i.descripcion || i.codigo, unidad: i.unidad,
           cantidad: 0, rendimiento_override: null,
         }));
         ultimoCalculo = null;
@@ -465,9 +468,10 @@
       `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">${esc(a)}</p>`).join("");
 
     const reg = r.ajuste_regional;
-    $("regional-nota").textContent = reg.estado === "estimado"
-      ? `🟡 Categoría ${reg.categoria} · material ×${num(reg.material)} · mano de obra ×${num(reg.mano_obra)} · equipo ×${num(reg.equipo)}`
-      : "⚪ Sin base regional: sin ajuste.";
+    const f = reg.factores;
+    $("regional-nota").textContent = reg.estado === "mapeado" && f
+      ? `🟢 ${reg.region_nombre} · material ×${num(f.materiales)} · mano de obra ×${num(f.mano_obra)} · equipo ×${num(f.equipo)} · transporte ×${num(f.transporte)}`
+      : `⚪ Sin región cotizada: se calculó con la región base «${esc(reg.region_utilizada || "—")}».`;
   }
 
   /* ────────────── sugerencia del factor de baja (histórico) ─────────── */
@@ -732,7 +736,7 @@
         ]);
       }
       det.push([
-        { v: `Rendimiento ${it.rendimiento_dia}/día · factor prestacional ${c.factor_prestacional} · herramienta menor ${it.detalle ? it.detalle.herramienta_menor_pct : "—"} %`, s: "nota" },
+        { v: `Rendimiento ${it.rendimiento_dia}/día · prestacional ${r.ajuste_regional.prestacional} · herramienta menor ${it.detalle ? it.detalle.herramienta_menor_pct : "—"} %`, s: "nota" },
       ]);
       det.push([
         { v: "Valor unitario", s: "resumenTexto" }, null, null, null, null, null,

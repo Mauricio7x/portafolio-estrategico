@@ -1,35 +1,44 @@
 /* ============================================================================
    /api/apu/[accion] · Editor de APU: catálogo, inferencia, cálculo y borradores
    ----------------------------------------------------------------------------
-     GET  /api/apu/catalogo    ítems, insumos, tipologías y departamentos
+     GET  /api/apu/catalogo    ítems + insumos + regiones  (PÚBLICO)
+       …?insumo=cemento_gris_50kg   los precios de UN insumo
+       …?region=costa_atlantica     los factores de UNA región
+       …?bloque=items|insumos|regiones
      POST /api/apu/inferir     objeto del proceso → tipología + ítems sugeridos
      POST /api/apu/calcular    presupuesto completo con desglose por ítem
      POST /api/apu/guardar     guarda el borrador (TTL 30 días)
      GET  /api/apu/cargar?id=  recupera un borrador
      GET  /api/apu/listar      borradores vigentes del perfil
 
-   POR QUÉ UNA SOLA FUNCIÓN Y NO CUATRO ARCHIVOS
-   ---------------------------------------------
+   POR QUÉ UNA SOLA FUNCIÓN Y NO SEIS ARCHIVOS
+   -------------------------------------------
    El plan Hobby de Vercel admite **12 Serverless Functions por despliegue** y
-   este repositorio ya declara 10. Cuatro archivos nuevos serían 14 y el
-   despliegue falla entero — no el endpoint nuevo: el despliegue.
+   el repositorio ya está en 12. Un archivo más y falla el despliegue ENTERO, no
+   el endpoint nuevo. Una ruta DINÁMICA (`[accion].js`) cuenta como UNA sola y
+   conserva exactamente las URL de todas las acciones, sin reescrituras en
+   `vercel.json`.
 
-   Una ruta DINÁMICA (`[accion].js`) cuenta como UNA sola función y conserva
-   exactamente las cuatro URL que pedía el encargo, sin reescrituras en
-   `vercel.json`. El repositorio queda en 11, con margen para una más.
+   `/api/apu/catalogo` vivía en su propio archivo y se plegó aquí por eso mismo.
+   **Su contrato no cambia**: misma URL, mismos parámetros, mismas respuestas y
+   —lo importante— sigue siendo PÚBLICO.
 
    `accion` se lee de `req.query` (que es de donde la saca Vercel) Y, si falta,
    del PATH. Lo segundo no es adorno: la suite de pruebas invoca los handlers
-   directamente y no hay enrutador que rellene el parámetro. Un handler que
-   solo funcione detrás del enrutador es un handler que no se puede probar.
+   directamente y no hay enrutador que rellene el parámetro. Un handler que solo
+   funcione detrás del enrutador es un handler que no se puede probar.
 
-   PROTEGIDO con el mismo `HISTORICO_TOKEN` que el resto (lib/auth: header
-   `x-historico-token` o `?token=`, el header manda si vienen los dos). TODAS
-   las acciones, incluidas `catalogo` e `inferir`: son la materia prima con la
-   que se arma una oferta, y el gate 231105 de la web es una cortesía del
-   navegador que no protege ninguna API. `/api/oportunidades` sigue siendo el
-   único endpoint con el token opcional, y sigue siéndolo por su motivo propio
-   (los clientes entran por ahí a ver a qué presentarse).
+   ── AUTORIZACIÓN: `catalogo` PÚBLICO, el resto con token ──────────────────
+   No es una excepción a la regla del proyecto, es la regla. Lo que no sale sin
+   llave son las CIFRAS DEL PERFIL —patrimonio, K, CRPC, tope— y lo derivado del
+   histórico del dueño. El catálogo son precios de referencia de mercado, los
+   mismos que publica cualquier revista de construcción; escribirlos sí exige
+   llave (`/api/admin/apu/cargar-catalogo`).
+
+   Las otras cinco acciones sí la exigen: `inferir` y `calcular` son la máquina
+   de armar una oferta, y `guardar`/`cargar`/`listar` tocan los borradores de un
+   perfil concreto. El gate 231105 de la web es una cortesía del navegador y no
+   protege ninguna API.
    ========================================================================== */
 "use strict";
 
@@ -37,14 +46,32 @@ const { crearRedis, hayCredenciales } = require("../../lib/redis.js");
 const { autorizarToken } = require("../../lib/auth.js");
 const { CLAVES, APU_TTL_SEG, escribirJSONComprimido, leerJSONComprimido, descomprimir } = require("../../lib/almacen.js");
 const { idCanonico, PERFILES } = require("../../lib/perfiles.js");
-const catalogo = require("../../lib/apu/catalogo.js");
+const {
+  SEMILLA, obtenerCatalogo, obtenerPreciosInsumo, obtenerFactoresRegion,
+} = require("../../lib/apu/catalogo.js");
 const { inferir } = require("../../lib/apu/inferencia.js");
-const { calcularPresupuesto } = require("../../lib/apu/calculo.js");
+const { calcularPresupuesto, normalizarCatalogo } = require("../../lib/apu/calculo.js");
+const {
+  departamentosConocidos, departamentosConRegion, meta: metaTipologias,
+} = require("../../lib/apu/tipologias.js");
 
 const MAX_BYTES = 2 * 1024 * 1024;   // 2 MB de cuerpo; el tope de Vercel es 4,5
 const MAX_ITEMS = 400;               // un presupuesto de obra menor no pasa de ~150
 const MAX_PRESUPUESTOS = 100;        // tope del listado
 const ACCIONES = ["catalogo", "inferir", "calcular", "guardar", "cargar", "listar"];
+const PUBLICAS = ["catalogo"];
+
+const AVISO = "Precios de REFERENCIA regionalizada, no cotizaciones. Verifique contra cotización real "
+  + "antes de presentar oferta. El costo directo NO incluye AIU ni los costos ocultos "
+  + "(contribución del 5 %, estampillas, pólizas, financiación): ver docs/APU_Y_RENTABILIDAD.md.";
+
+const NO_CARGADO = {
+  ok: false,
+  cargado: false,
+  error: "El catálogo APU no está cargado en Redis.",
+  siguiente_paso: "Un administrador debe llamar POST /api/admin/apu/cargar-catalogo con el token, "
+    + "o pulsar «Cargar catálogo APU» en /admin.html.",
+};
 
 /* El id lo propone el cliente; se sanea aquí porque forma parte de una clave de
    Redis. Sin esto, un id con «:» o «*» podría escribir fuera de su keyspace o
@@ -90,18 +117,39 @@ function perfilDe(q, cuerpo) {
   return PERFILES[id] ? id : null;
 }
 
+/* El catálogo con el que se calcula: Redis si está cargado, la semilla del
+   repositorio si no. La VÍA viaja siempre en la respuesta — un precio sin su
+   origen no se puede discutir, que es la misma regla de `granularidad_utilizada`
+   del índice de baja. */
+async function catalogoParaCalcular(redis) {
+  try {
+    const c = await obtenerCatalogo(redis);
+    if (c && c.cargado) return normalizarCatalogo(c);
+  } catch { /* Redis caído: la semilla sirve igual y la respuesta lo dirá */ }
+  return null;
+}
+
 module.exports = async function handler(req, res) {
   const q = req.query || {};
-  res.setHeader("Cache-Control", "no-store");
+  const accion = accionDe(req, q);
 
-  const permiso = autorizarToken(req, q);
-  if (!permiso.ok) {
-    return res.status(permiso.status).json({ ok: false, error: permiso.error, como_autenticar: permiso.como_autenticar });
+  if (!ACCIONES.includes(accion)) {
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(404).json({ ok: false, error: `Acción «${accion}» desconocida.`, acciones: ACCIONES });
   }
 
-  const accion = accionDe(req, q);
-  if (!ACCIONES.includes(accion)) {
-    return res.status(404).json({ ok: false, error: `Acción «${accion}» desconocida.`, acciones: ACCIONES });
+  const publica = PUBLICAS.includes(accion);
+  if (publica) {
+    // el catálogo solo cambia cuando alguien lo recarga: cachear es correcto
+    res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=3600");
+  } else {
+    res.setHeader("Cache-Control", "no-store");
+    const permiso = autorizarToken(req, q);
+    if (!permiso.ok) {
+      return res.status(permiso.status).json({
+        ok: false, error: permiso.error, como_autenticar: permiso.como_autenticar,
+      });
+    }
   }
 
   const metodo = String(req.method || "GET").toUpperCase();
@@ -115,35 +163,94 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ ok: false, error: `«${accion}» exige GET.` });
   }
 
+  if (!hayCredenciales()) {
+    return res.status(503).json({ ok: false, error: "Faltan credenciales de Upstash Redis en el despliegue." });
+  }
+  const redis = crearRedis({});
+
   const cuerpo = esPost ? await leerCuerpo(req) : { ok: true, datos: {} };
   if (!cuerpo.ok) return res.status(cuerpo.status).json({ ok: false, error: cuerpo.error });
   const datos = cuerpo.datos || {};
 
-  /* ══════════════════ catálogo (lo que puebla la UI) ══════════════════ */
+  /* ══════════════════ catálogo (PÚBLICO) ══════════════════
+     Mismo contrato que tenía en su archivo propio: los tres cortes por
+     parámetro y el catálogo entero. Un 503 con `siguiente_paso` cuando no está
+     cargado, nunca un 200 con listas vacías — un `[]` afirmaría «no hay
+     insumos», que es distinto de «no lo he cargado». */
   if (accion === "catalogo") {
-    return res.status(200).json({
-      ok: true,
-      meta: catalogo.meta(),
-      unidades: catalogo.UNIDADES,
-      departamentos: catalogo.departamentosConocidos(),
-      tipologias: catalogo.TIPOLOGIAS.map((t) => ({
-        codigo: t.codigo, nombre: t.nombre, unidad_dominante: t.unidad_dominante,
-        sin_apu: !!t.sin_apu, items: catalogo.itemsDeTipologia(t.codigo).length,
-      })),
-      items: catalogo.ITEMS.map((i) => ({
-        codigo: i.codigo, descripcion: i.descripcion, unidad: i.unidad,
-        rendimiento_dia: i.rendimiento_dia, tipologias: i.tipologias,
-        articulo_invias: i.articulo_invias || null, verificacion: i.verificacion || null,
-      })),
-      advertencia: (catalogo.CATALOGO._meta || {}).advertencia || null,
-    });
+    try {
+      if (q.insumo) {
+        const i = await obtenerPreciosInsumo(redis, q.insumo);
+        if (!i) {
+          return res.status(404).json({
+            ok: false,
+            error: `No existe el insumo «${q.insumo}» en el catálogo cargado.`,
+            nota: "Consulte GET /api/apu/catalogo?bloque=insumos para ver los identificadores disponibles.",
+          });
+        }
+        return res.status(200).json({ ok: true, insumo: i, aviso: AVISO });
+      }
+
+      if (q.region) {
+        const r = await obtenerFactoresRegion(redis, q.region);
+        if (!r) {
+          return res.status(404).json({
+            ok: false,
+            error: `No existe la región «${q.region}» en el catálogo cargado.`,
+            nota: "Consulte GET /api/apu/catalogo?bloque=regiones para ver las regiones disponibles.",
+          });
+        }
+        return res.status(200).json({ ok: true, region: r, aviso: AVISO });
+      }
+
+      const cat = await obtenerCatalogo(redis);
+      if (!cat || !cat.cargado) return res.status(503).json(NO_CARGADO);
+
+      const base = {
+        ok: true, cargado: true, via: cat.via,
+        version: cat.meta ? cat.meta.version : null,
+        generado: cat.meta ? cat.meta.generado : null,
+        aviso: AVISO,
+      };
+      const bloque = String(q.bloque || "").toLowerCase();
+      if (bloque === "items") return res.status(200).json({ ...base, items: cat.items });
+      if (bloque === "insumos") return res.status(200).json({ ...base, insumos: cat.insumos });
+      if (bloque === "regiones") return res.status(200).json({ ...base, regiones: cat.regiones });
+
+      return res.status(200).json({
+        ...base,
+        regiones: cat.regiones, insumos: cat.insumos, items: cat.items,
+        // lo que el editor necesita además del catálogo de precios y que no
+        // vive en Redis: el vocabulario de tipologías y el mapa de departamentos
+        tipologias: metaTipologias().tipologias_n,
+        departamentos: departamentosConocidos(),
+        departamentos_con_region: departamentosConRegion(),
+      });
+    } catch (e) {
+      return res.status(503).json({ ok: false, error: `No se pudo leer el catálogo: ${e.message}` });
+    }
   }
 
   /* ══════════════════ inferir (objeto → ítems) ══════════════════ */
   if (accion === "inferir") {
     const objeto = String(datos.objeto || datos.descripcion || "");
     const r = inferir(objeto, { codigos_unspsc: String(datos.codigos_unspsc || "") });
-    return res.status(200).json({ ok: true, ...r });
+
+    // los códigos que devuelve la inferencia se enriquecen con el catálogo:
+    // `lib/apu/inferencia` es hoja y no puede leer precios por su cuenta
+    const cat = (await catalogoParaCalcular(redis)) || SEMILLA;
+    const items = (r.items || []).map((codigo) => {
+      const def = (cat.items || []).find((i) => String(i.codigo) === String(codigo)) || null;
+      return {
+        codigo,
+        descripcion: def ? def.descripcion : null,
+        unidad: def ? def.unidad : null,
+        en_catalogo: !!def,
+        cantidad: null,
+      };
+    });
+
+    return res.status(200).json({ ...r, ok: true, items });
   }
 
   /* ══════════════════ calcular ══════════════════ */
@@ -153,10 +260,12 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ ok: false, error: `Demasiados ítems (${items.length}). El tope es ${MAX_ITEMS}.` });
     }
     try {
+      const catalogo = await catalogoParaCalcular(redis);
       const r = calcularPresupuesto({
         items,
         departamento: String(datos.departamento || ""),
         config: datos.config || {},
+        catalogo,
       });
       return res.status(200).json(r);
     } catch (e) {
@@ -164,11 +273,7 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  /* ───────── de aquí en adelante hace falta Redis ───────── */
-  if (!hayCredenciales()) {
-    return res.status(503).json({ ok: false, error: "Faltan credenciales de Upstash Redis en el despliegue." });
-  }
-  const redis = crearRedis({});
+  /* ───────── de aquí en adelante, borradores por perfil ───────── */
   const perfil = perfilDe(q, datos);
   if (!perfil) {
     return res.status(400).json({ ok: false, error: "Perfil desconocido. Use helder, genesis o juntos." });
@@ -187,6 +292,12 @@ module.exports = async function handler(req, res) {
     }
 
     const guardado = new Date().toISOString();
+    let versionCatalogo = null;
+    try {
+      const cat = await obtenerCatalogo(redis);
+      versionCatalogo = cat && cat.meta ? cat.meta.version : null;
+    } catch { /* sin catálogo el borrador se guarda igual; lo dirá al cargarlo */ }
+
     const registro = {
       id, perfil, nombre,
       objeto: String(datos.objeto || "").slice(0, 4000),
@@ -195,12 +306,13 @@ module.exports = async function handler(req, res) {
       items,
       config: datos.config || {},
       guardado,
-      // El TOTAL se guarda para que el listado no tenga que recalcular 40
-      // presupuestos. Es una cifra DERIVADA y por eso viaja con su sello: si el
-      // catálogo de precios cambia, el guardado deja de coincidir con el que
-      // saldría hoy, y el listado lo dice en vez de fingir que sigue vigente.
+      /* El TOTAL se guarda para que el listado no tenga que recalcular 40
+         presupuestos. Es una cifra DERIVADA y por eso viaja con el sello del
+         catálogo: si los precios cambian, el guardado deja de coincidir con el
+         que saldría hoy, y al cargarlo se dice en vez de fingir que sigue
+         vigente. */
       total_guardado: Number.isFinite(Number(datos.total)) ? Number(datos.total) : null,
-      catalogo_version: (catalogo.CATALOGO._meta || {}).version || null,
+      catalogo_version: versionCatalogo,
     };
 
     try {
@@ -231,12 +343,17 @@ module.exports = async function handler(req, res) {
         error: `No hay ningún presupuesto «${id}» para el perfil ${perfil}. Puede que haya caducado: los borradores viven ${Math.round(APU_TTL_SEG / 86400)} días.`,
       });
     }
-    const vigente = (catalogo.CATALOGO._meta || {}).version || null;
+    let vigente = null;
+    try {
+      const cat = await obtenerCatalogo(redis);
+      vigente = cat && cat.meta ? cat.meta.version : null;
+    } catch { /* ídem */ }
+    const cambiado = !!(registro.catalogo_version && vigente && registro.catalogo_version !== vigente);
     return res.status(200).json({
       ok: true,
       presupuesto: registro,
-      catalogo_cambiado: !!(registro.catalogo_version && vigente && registro.catalogo_version !== vigente),
-      nota: registro.catalogo_version && vigente && registro.catalogo_version !== vigente
+      catalogo_cambiado: cambiado,
+      nota: cambiado
         ? "El catálogo de precios cambió desde que se guardó este presupuesto: vuelva a calcular antes de usar los totales."
         : null,
     });
@@ -258,8 +375,8 @@ module.exports = async function handler(req, res) {
     try { valores = await redis.mget(lote); } catch { ilegibles += lote.length; continue; }
     for (const v of valores) {
       if (v == null) { ilegibles++; continue; }
-      // `descomprimir` ya devuelve null ante un valor corrupto en vez de
-      // lanzar: un borrador ilegible no puede tumbar el listado entero
+      // `descomprimir` devuelve null ante un valor corrupto en vez de lanzar:
+      // un borrador ilegible no puede tumbar el listado entero
       const r = descomprimir(v);
       if (!r || !r.id) { ilegibles++; continue; }
       presupuestos.push({
