@@ -1448,6 +1448,38 @@ El catálogo cotiza por **región** (cinco, con ciudad cabecera) y SECOP publica
 
 ### El clasificador
 
+**Antes del Nivel A, tres puertas anti-falso-positivo** (ago 2026). El clasificador puntuaba el
+léxico sin preguntarse primero si el objeto es siquiera de obra, y el corpus real dio los tres casos:
+un **servicio de internet** (segmento 80) que salía como «interventoría», un contrato de **caninos**
+con código de vías que salía **🟢 verde con seis ítems de placa huella**, y una **compraventa de
+tubería** que se llevaba un APU de red de acueducto.
+
+| Puerta | Regla reutilizada | `motivo` | Base de comparación |
+| --- | --- | --- | --- |
+| 1 · blacklist | `BLACKLIST_OBJETO` (`lib/semantica`) | `blacklist_objeto` | texto **crudo** — la expresión lleva `[oó]` y flag `i`, y normalizarla sería una regresión silenciosa |
+| 2 · pertinencia | `evaluarPertinencia` (`lib/filtros`) | `no_pertinente` | texto **normalizado**, que es su contrato |
+| 3 · anti-suministro | `esSuministroPuro` (`lib/filtros`) | `suministro_puro` | normalizado + los códigos que ya parseó el Nivel B |
+
+Cuatro decisiones que sostienen esto:
+
+- **Las tres LLAMAN a la regla que ya existe**, nunca a una lista nueva: tres definiciones paralelas
+  de «esto no es obra» divergen a la primera corrección aplicada a una sola. Hay prueba que prohíbe
+  que aparezcan listas propias en el módulo.
+- **Solo el ROJO rechaza.** El 🟡 de `evaluarPertinencia` significa «el objeto no lo dice
+  explícitamente», y cerrar por eso sería bloquear por falta de información — lo contrario de la
+  doctrina. Hay prueba sobre el fuente de que la condición es `p.nivel === "rojo"`.
+- **El módulo ya no es hoja** (depende de `filtros`) y el comentario lo dice en vez de afirmar lo
+  contrario. El `require` va **diferido dentro de la función**: `filtros` resuelve con esa misma
+  técnica sus dos ciclos (`→ rup →` y `→ negocio →`), y pedirlo en tiempo de carga ataría este módulo
+  a ese nudo. Hoy no hay ciclo y hay prueba de ello; el diferido lo hace cierto por construcción.
+- **No se inventa un cuarto estado**: los rechazos salen ⚪, que es el que no presupuesta, y la
+  invariante de que los estados suman los evaluados sigue valiendo. El rechazo viaja con su motivo
+  auditable en `no_pertinente: {nivel, tipo, termino}` — un ⚪ sin razón no se puede discutir.
+
+El error simétrico —sobrebloquear— también está probado con obra legítima que **tiene** que seguir
+pasando, incluida la frontera que de verdad importa: «SUMINISTRO **E INSTALACIÓN** DE TUBERÍA» es
+obra; «COMPRAVENTA DE TUBERÍA» no.
+
 - **Nivel A · léxico**: `P = 3·anclas + 1·apoyo − 4·excluye`, exigiendo un verbo de obra de
   `lib/semantica`.
 - **Nivel B · UNSPSC** como evidencia *independiente*, cuyo valor real es **vetar**: una placa huella
@@ -1460,7 +1492,7 @@ El catálogo cotiza por **región** (cinco, con ciudad cabecera) y SECOP publica
 | --- | --- | --- |
 | 🟢 verde | `P1 ≥ 8` **y** `P1 − P2 ≥ 4` **y** B compatible | Presupuesto completo |
 | 🟡 amarillo | `P1 ≥ 6` sin margen claro, o B ausente, o B incompatible | Se genera, marcado «verificar pliego» |
-| ⚪ no determinada | `P1 < 6`, sin verbo de obra, o cualquier caso restante | **No se presupuesta** |
+| ⚪ no determinada | `P1 < 6`, sin verbo de obra, **rechazado por una de las tres puertas**, o cualquier caso restante | **No se presupuesta** |
 
 Los tres estados **suman exactamente los objetos evaluados**. El margen `P1 − P2` es condición *dura*:
 el falso positivo caro es el 🟢, el único estado que presupuesta sin pedir el pliego. **19 de las 22
