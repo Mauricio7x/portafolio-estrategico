@@ -1295,6 +1295,14 @@ responden *cuánto vale la oportunidad* y *si la empresa puede ejecutarla*.
   de aplicación de lo que el dueño cargue por `/api/admin/rup` (validación en `lib/config_rup.js`).
 - Experiencia REALMENTE ejecutada en `lib/experiencia.js` (`config:experiencia` + su vocabulario);
   la auditoría de huecos del RUP, en `lib/cobertura_rup.js`. Ninguna de las dos toca la ingesta.
+  ⚠️ **Los 106 contratos de Génesis NO existen en el repositorio y NO se inventan.** Buscados de
+  forma exhaustiva (ago 2026): las 25 ramas remotas, **todos** los `.json` que han existido jamás
+  (son 7, ninguno de contratos) y **los 1 041 blobs del object store incluidos los colgantes e
+  inalcanzables** — cero resultados. Es la misma regla del «NIT en null: jamás inventarlo», y aquí
+  con más razón: este vocabulario decide **con qué códigos se renueva el RUP**. Campos exactos,
+  ejemplo y cómo aportarlos en **`EXPERIENCIA_PENDIENTE.md`**; los tres pasos de puesta en
+  producción, en **`cargar_experiencia.sh`**. Sin el archivo la auditoría **funciona igual**, con el
+  método base y `score` en `null` («no medido», no «cero»).
 - Índice de competencia por entidad en `lib/indice_competencia.js` (hash `indice:competencia`,
   tertiles sobre el promedio de oferentes de 2 años); alimenta `ordenar_por=atractividad`.
 - Perfiles y finanzas reales en `lib/perfiles.js` (fuente única en código; RUP corte 31/12/2025;
