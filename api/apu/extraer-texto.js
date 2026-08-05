@@ -162,7 +162,13 @@ module.exports = async function handler(req, res) {
   /* ── respaldo por OCR ──
      Solo si NO llegó texto utilizable. Con texto nativo disponible, gastar una
      petición del plan gratuito para leer peor la misma página no tiene sentido. */
-  const imagenes = Array.isArray(datos.imagenes_base64) ? datos.imagenes_base64 : [];
+  /* SE COPIAN SOLO `base64` Y `mime`. Pasar los objetos del cliente tal cual
+     dejaba que un campo `url` llegara hasta OCR.space, que lo descargaría por
+     nosotros: un SSRF por delegación, y además saltándose el control de tamaño.
+     Aquí se declara la forma exacta de lo que entra. */
+  const imagenes = (Array.isArray(datos.imagenes_base64) ? datos.imagenes_base64 : [])
+    .filter((p) => p && typeof p === "object" && typeof p.base64 === "string")
+    .map((p) => ({ base64: p.base64, mime: typeof p.mime === "string" ? p.mime : "image/jpeg" }));
   if (texto.trim().length < MIN_TEXTO && imagenes.length) {
     if (!hayClaveOcr()) {
       return res.status(503).json({ ok: false, error: MENSAJE_SIN_CLAVE, ocr_configurado: false });

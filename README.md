@@ -1146,6 +1146,14 @@ incluidas las tablas incompletas que este nivel debía cazar.
 | **90-98 %** | 🟡 amarillo | 🟡 amarillo |
 | **< 90 %** | 🔴 **rojo** — se descarta el parseo | 🔴 rojo |
 
+**El verde exige tres cosas más, y las tres salen de un defecto medido.** El ratio se
+calcula sobre las filas que traen las tres cifras, así que las filas sin cantidad
+legible salían del denominador en vez de contar contra él: se llegaba a **verde con
+la mayoría de las cantidades sin leer**, y el aviso «N ítem(s) quedaron SIN CANTIDAD
+legible» aparecía en la *misma* respuesta, contradiciendo a la insignia. Ahora verde
+exige además **ninguna cantidad ilegible**, **≥ 5 filas validadas** (con «1 de 1
+cuadra» daba 100 % y verde) y que **al menos la mitad de los ítems** esté validada.
+
 Caso aparte, **frecuente y benigno**: cantidades **sin** precios unitarios. El nivel Fila no existe y
 el Documento tampoco, así que la única validación es estructural → **amarillo**, nunca rojo (sigue
 siendo la mayor parte del valor) ni verde (verde significa «se usa automáticamente», y sin aritmética
@@ -1177,14 +1185,20 @@ Cuatro señales ponderadas, y ninguna sola alcanza:
 
 | Señal | Peso | Para qué |
 | --- | --- | --- |
-| Solapamiento de términos con los sinónimos | 0,60 → **0,55** | señal principal y la más auditable: se devuelven las palabras que sumaron |
+| Solapamiento de términos con los sinónimos | **0,55** | señal principal y la más auditable: se devuelven las palabras que sumaron |
 | **Levenshtein** sobre la descripción canónica | **0,22** | existe **por el OCR**: un reconocimiento escribe `C0NCRET0` y el solapamiento de términos falla entero ante un carácter cambiado |
-| Unidad de pago coincidente | 0,13 | coincidir no da vía libre y discrepar **no veta** |
-| Tipología del proceso | 0,10 | **peso, no filtro** (ver abajo) |
+| Unidad de pago coincidente | **0,13** | coincidir no da vía libre y discrepar **no veta** |
+| Tipología del proceso | **0,10** | **peso, no filtro** (ver abajo) |
 
-`≥ 0,35` se ata a un ítem del catálogo; `≥ 0,60` con margen ≥ 0,08 sobre el segundo es **firme**; por
-debajo del umbral nace un ítem **personalizado** con su descripción y unidad tal como venían — eso no
-es un fallo: **el pliego manda**.
+`≥ 0,35` se ata a un ítem del catálogo; por debajo nace un ítem **personalizado** con su descripción y
+unidad tal como venían — eso no es un fallo: **el pliego manda**.
+
+**«Firme» exige `≥ 0,60`, margen `≥ 0,12` sobre el segundo candidato y al menos dos términos
+coincidentes.** El margen era 0,08 y se quedaba corto por una razón medida: el solapamiento se divide
+por los términos del *pliego*, así que una descripción corta y genérica alcanza 1,0 en la señal
+principal sin ser específica de nada — «CONCRETO 3000 PSI» casaba **en firme** con el concreto de placa
+huella cuando podía ser igual de bien el estructural o el de pavimento rígido, y lo que separaba a los
+tres era exactamente 0,083. Un empate no da firme por alto que sea el puntaje absoluto.
 
 **La tipología es un peso y no un filtro, y esto se corrigió con un caso medido.** Cuando acotaba el
 catálogo, en un proceso de placa huella (`VIA-PH`) la fila del cruce de drenaje —«SUMINISTRO E
@@ -1205,11 +1219,19 @@ Baja el PDF de una URL porque **el navegador no puede** (política de mismo orig
 contratación no mandan `Access-Control-Allow-Origin`). Devuelve el PDF en base64 para que pdf.js lo
 lea en el navegador — extraer el texto en el servidor exigiría `pdfjs-dist`.
 
-Es un SSRF de manual, así que está acotado por **cinco** cosas a la vez: token obligatorio · solo
-`https:` · el host no puede ser IP literal, `localhost`, un rango privado ni un dominio interno ·
-las redirecciones se siguen **a mano revalidando cada salto** (una redirección a `169.254.169.254` es
-el salto clásico) · el tamaño se controla **mientras se lee**, no por `Content-Length`. Y se verifica
-la firma **`%PDF-`**: los portales sirven HTML de sesión con `Content-Type: application/pdf`.
+Es un SSRF de manual, así que está acotado por **seis** cosas a la vez: token obligatorio · solo
+`https:` y sin credenciales embebidas · el host no puede ser IP literal (v4, v6, ni `::ffff:` mapeada),
+`localhost` ni un dominio interno · **se resuelve el nombre y se valida la IP** · las redirecciones se
+siguen **a mano revalidando nombre Y IP en cada salto** (`169.254.169.254` es el salto clásico) · el
+tamaño se controla **mientras se lee**, no por `Content-Length`. Y se verifica la firma **`%PDF-`**:
+los portales sirven HTML de sesión con `Content-Type: application/pdf`.
+
+**La comprobación de la IP resuelta era la que faltaba, y es la que de verdad protege**: validar la
+*cadena* del hostname no sirve de nada por sí sola, porque cualquier dominio público puede apuntar a
+`127.0.0.1` o a `169.254.169.254`. Queda una ventana TOCTOU conocida (*DNS rebinding*) que exigiría
+fijar la IP en la conexión, cosa que el `fetch` nativo no permite: está dicha, no disimulada. Y cuando
+lo descargado no es un PDF **no se devuelve ningún byte del cuerpo remoto** — eso convertía el endpoint
+en un oráculo de lectura de servicios internos.
 
 ### OCR (`lib/apu_ocr.js`) — respaldo, no vía principal
 
@@ -1246,7 +1268,7 @@ misma lección que costó cara en `app.js` y se repitió en `admin.js`.
 | 10 formularios sintéticos (38 filas) | **100 %** | 100 % | 100 % | 0 |
 | 5 casos **adversarios** | 100 % | 100 % | **87,5 %** | 0 |
 
-Mapeo al catálogo: **97,4 %** con código, **84,2 %** en firme.
+Mapeo al catálogo: **97,4 %** con código, **81,6 %** en firme.
 
 **El corpus es sintético y lo escribió quien escribió el parser**, así que la tanda principal mide
 sobre todo la robustez ante las variantes que su autor previó; los casos adversarios están para
@@ -1254,6 +1276,18 @@ acotar eso, y encontraron tres defectos reales (celdas combinadas, unidad mencio
 descripción, ambigüedad decimal) de los que **dos se corrigieron y el tercero queda publicado**.
 Ninguna de las dos cifras es la cobertura del universo real de pliegos de SECOP II, que sigue **sin
 medir**.
+
+Una revisión adversaria posterior encontró **diez defectos más que el banco no cubría**, todos
+reproducidos ejecutando código y todos corregidos: una celda vacía descolocaba el mapa de columnas y
+`cantidad` leía el precio unitario; con el orden `CANTIDAD | UNIDAD` y sin cabecera pasaba lo mismo;
+el AIU y el IVA desglosados como partidas entraban en el costo directo; la vía aplanada convertía
+prosa en ítems; una cabecera partida en dos líneas anclaba `total` a la columna del unitario; el
+lector de anticipo tomaba el primer `%` de la línea (confundiendo el AIU con el anticipo) y no sabía
+leer los dos conceptos juntos; `\d{1,2}` convertía «100 %» en 0 %; la «a» de preposición fijaba la
+Administración del AIU; `375.0000` se leía como 3 750 000; y dos capítulos con el mismo numeral
+sumaban sus hijas juntas. **La lección de método es que el banco medía lo que su autor previó y
+la revisión adversaria medía lo que no** — y por eso la batería de regresión de esos diez casos vive
+ahora en `tests/e2e.js`.
 
 ## `GET /api/diagnostico` (protegido)
 

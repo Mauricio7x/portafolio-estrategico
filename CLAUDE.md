@@ -603,6 +603,67 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   en dos líneas» pegaba «ANTICIPO: 30%» al final del último ítem, **inventándole una descripción que
   no está en el pliego**. Las líneas que tienen su propio lector (`leerAiu`, `leerAnticipo`) tienen su
   propia cubeta en el diagnóstico: contarlas como «no reconocidas» también sería falso.
+- **DIEZ DEFECTOS QUE EL BANCO NO VIO Y LA REVISIÓN ADVERSARIA SÍ.** El banco daba 100 % y estaba
+  midiendo lo que su autor previó; una revisión con lentes independientes (corrección, doctrina,
+  seguridad, honestidad) encontró diez cifras equivocadas y creíbles, que es lo peor que este módulo
+  puede producir. Los diez reproducidos ejecutando código antes de tocar nada:
+  · **Una celda VACÍA descolocaba todo el mapa de columnas**: `dividirCeldas` filtraba los huecos, así
+    que con `2.1|SUBBASE|M3||95.000|35.625.000` la cantidad leía el PRECIO UNITARIO. Ahora los huecos se
+    conservan cuando el separador es TAB y hay DOS vistas de la línea: posicional (con huecos) y
+    compacta (sin ellos, para lo que razona por adyacencia).
+  · **La cantidad es la cifra ADYACENTE a la unidad**, a un lado o al otro. Dar prioridad a la derecha
+    «porque es el orden normal» leía el unitario como cantidad con el orden `CANTIDAD | UNIDAD`, que es
+    tan corriente que el propio banco lo tiene como caso.
+  · **El AIU y el IVA desglosados como partidas** entraban en la suma del documento e inflaban el costo
+    directo justo en los pliegos que mejor desglosan su AIU (`NO_ES_COSTO_DIRECTO_RE`, anclada al
+    PRINCIPIO: «ADMINISTRACION DELEGADA DE OBRA» puede ser una partida real).
+  · **La vía aplanada convertía PROSA en ítems**: «SE PAGARA POR ML 1.000 METROS…» producía el ítem «SE
+    PAGARA POR», ml, 1.000. Ahora la descripción no puede terminar en palabra de enlace y hace falta
+    numeral o dos cifras. Es la vía normal del OCR, así que es donde más apretar.
+  · **Cabecera partida en dos líneas** («VALOR|VALOR» + «UNITARIO|TOTAL»): las dos celdas mapeaban a
+    `total` y ganaba la primera, anclando `total` a la columna del unitario. Se resuelve por el orden,
+    que en un formulario es invariable.
+  · **`leerAnticipo` tomaba el primer `%` de la línea**: «EL AIU SERA DEL 25% Y EL ANTICIPO DEL 30%» →
+    anticipo 25 %. Y con los dos conceptos en una línea perdía uno. Ahora el `%` se busca junto a SU
+    palabra, sin cruzar el punto («NO SE PACTARA ANTICIPO. LA RETENCION… 5%» ya no declara un anticipo).
+  · **`\d{1,2}` convertía «100%» en 0 %** — un 0 que aquí significa «sin dato». Ahora `\d{1,3}`.
+  · **La «a» de preposición fijaba la Administración**: «IMPREVISTOS EQUIVALENTES A 3%» → A = 3 %. La
+    inicial suelta ahora exige separador o paréntesis; la palabra completa vale sola.
+  · **`375.0000` daba 3 750 000** (mil veces): un punto con 4+ dígitos detrás es un DECIMAL, no miles.
+    Con varios puntos y 4+ detrás, `null` — «no sé», no un número inventado.
+  · **Dos capítulos con el mismo numeral** (dos grupos que reinician la numeración) sumaban sus hijas
+    juntas: el acumulador se indexa por ÍNDICE, no por numeral. Y el subtotal se asigna al capítulo que
+    el TEXTO nombra, no al último empujado (con subcapítulos, el último es 1.2 cuando llega el total de 1).
+- **El VERDE exige tres cosas más que el ratio de filas.** Las filas sin cantidad legible salían del
+  denominador en vez de contar contra él, así que se llegaba a verde con la mayoría de las cantidades
+  sin leer — y el aviso «N ítem(s) SIN CANTIDAD legible» salía en la MISMA respuesta, contradiciendo a
+  la insignia. Verde exige ahora: ninguna cantidad ilegible, ≥5 filas validadas (con «1 de 1 cuadra»
+  daba 100 %) y ≥50 % de los ítems validados.
+- **«Firme» en el mapeo exige MARGEN 0,12, no 0,08, y ≥2 términos coincidentes.** El solapamiento se
+  divide por los términos del PLIEGO, así que una descripción corta y genérica alcanza 1,0 sin ser
+  específica: «CONCRETO 3000 PSI» casaba en firme con el concreto de placa huella pudiendo ser el
+  estructural o el de pavimento rígido, y lo que separaba a los tres era 0,083.
+- **Validar la CADENA del hostname no protege de nada.** El SSRF de `/api/apu/descargar` seguía abierto:
+  cualquier dominio público puede apuntar a `127.0.0.1` o a `169.254.169.254`. Ahora **se resuelve el
+  nombre y se valida la IP**, en el primer salto y en cada redirección. Y tres precisiones: `::ffff:`
+  mapeada es IPv4 disfrazada y no la veía ninguna de las dos familias de reglas; `^fc`/`^fd` sin
+  delimitador rechazaban dominios REALES (`fdn.gov.co`) como internos, así que las reglas IPv6 solo se
+  aplican a literales IPv6; y **`primeros_bytes` en el 415 era un oráculo de lectura** de servicios
+  internos. Queda la ventana TOCTOU del *rebinding*, dicha y no disimulada.
+- **La clave del OCR viajaba en los mensajes de error.** El cuerpo de error de OCR.space se le muestra
+  al usuario (es el único diagnóstico útil), pero lo escribe un tercero a partir de una petición que
+  LLEVA la `OCRSPACE_API_KEY` y hay servicios que la repiten («Bad request for apikey=…»). Se tacha
+  antes de reenviarlo. Y **la rama `{url}` de `ocrPagina` desapareció**: aceptar una URL y pasarla a
+  OCR.space era un SSRF POR DELEGACIÓN que además se saltaba el control de tamaño.
+- **Las dos implementaciones del número colombiano están ATADAS POR UNA PRUEBA.** `numeroLocal` en
+  public/apu.js duplica a `numeroColombiano` porque un `<input>` no puede requerir un módulo de Node —
+  duplicación justificada, no libre. La prueba extrae la función del fuente y compara las dos sobre la
+  misma batería; **cazó una divergencia real en cuanto se escribió** (`375.0000` corregido solo en el
+  servidor). Sin ella, el número que el dueño escribe a mano y el que el servidor leyó del PDF
+  significan cosas distintas y nadie se enteraría.
+- **La página no puede prometer que el documento NO SALE y ofrecer un botón que lo manda a un
+  tercero.** Decía «no se sube a ningún servidor» con el botón de OCR al lado, que envía las páginas
+  rasterizadas a OCR.space. La excepción se declara ahora en la propia sección, antes de pulsar.
 - **`tests/apu_bench.js` publica el LÍMITE, no solo el acierto.** 100 % de recall sobre 10 formularios
   sintéticos no significa gran cosa cuando el corpus lo escribió quien escribió el parser: mide la
   habilidad del autor para prever variantes. Por eso hay una tanda **adversaria sin suelos de

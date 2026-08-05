@@ -184,7 +184,12 @@
       const ultimo = grupos[grupos.length - 1];
       if (ultimo.length === 3 && grupos.length >= 2) entero = grupos.join("");
       else if (ultimo.length >= 1 && ultimo.length <= 2) { entero = grupos.slice(0, -1).join(""); decimal = ultimo; }
-      else entero = grupos.join("");
+      // UN solo punto y 4+ dígitos detrás es un DECIMAL de muchas cifras
+      // («375.0000» de un Excel, «3.14159»); con varios puntos no encaja en
+      // ninguna convención y es `null`. Tiene que decir lo MISMO que
+      // lib/apu_pliego.numeroColombiano — hay una prueba que compara las dos.
+      else if (grupos.length === 2) { entero = grupos[0]; decimal = ultimo; }
+      else return null;
     }
     if (!/^\d*$/.test(entero) || !/^\d*$/.test(decimal)) return null;
     const n = parseFloat(`${entero || "0"}.${decimal || "0"}`);
@@ -261,15 +266,34 @@
   function lineasDePagina(fragmentos) {
     const utiles = (fragmentos || []).filter((f) => f && typeof f.str === "string" && f.str.trim() !== ""
       && Array.isArray(f.transform) && f.transform.length >= 6);
+    /* Se agrupa por CUBETAS de Y, no recorriendo las filas ya creadas. La
+       búsqueda lineal era O(F²) sobre los fragmentos de la página: un PDF que
+       ponga cada glifo en su propia coordenada Y —cosa que un documento hostil o
+       simplemente raro puede hacer— congelaba la pestaña decenas de segundos por
+       página, sin repintado y sin forma de cancelar. Con cubetas es O(F).
+
+       Se prueban la cubeta propia y sus dos vecinas: un fragmento a un pelo del
+       borde tiene que caer en la misma fila que el de al lado, y sin mirar las
+       vecinas se partiría la fila en dos por un redondeo. */
+    const ALTO_CUBETA = 3;              // unidades de PDF; ≈ media línea de 6-7 pt
+    const cubetas = new Map();
     const filas = [];
     for (const f of utiles) {
       const x = Number(f.transform[4]) || 0;
       const y = Number(f.transform[5]) || 0;
       const alto = Math.abs(Number(f.height) || Number(f.transform[3]) || 10) || 10;
       const tol = Math.max(alto * 0.5, 2);
+      const base = Math.round(y / ALTO_CUBETA);
       let fila = null;
-      for (const cand of filas) { if (Math.abs(cand.y - y) <= tol) { fila = cand; break; } }
-      if (!fila) { fila = { y, alto, piezas: [] }; filas.push(fila); }
+      for (const k of [base, base - 1, base + 1]) {
+        const cand = cubetas.get(k);
+        if (cand && Math.abs(cand.y - y) <= tol) { fila = cand; break; }
+      }
+      if (!fila) {
+        fila = { y, alto, piezas: [] };
+        filas.push(fila);
+        cubetas.set(base, fila);
+      }
       fila.alto = Math.max(fila.alto, alto);
       fila.piezas.push({ x, ancho: Math.abs(Number(f.width) || 0), texto: f.str });
     }
