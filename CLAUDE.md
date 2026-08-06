@@ -396,6 +396,48 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - La caché `resumen:{perfil}` (TTL 300 s) la **borra cualquier carga de RUP**: sus números salen del
   RUP y quedarían mintiendo cinco minutos.
 
+### Onboarding: RUP en PDF → perfil dinámico (ago 2026)
+
+- **El PDF se lee en el NAVEGADOR, otra vez** (`public/onboarding.js`, pdf.js clavado en la MISMA
+  versión que `pliego.js` — hay prueba que compara las dos constantes). Al servidor viaja solo el
+  texto con columnas por TAB; `lib/rup_pdf.js` extrae códigos, indicadores, experiencia y vigencia,
+  y el resultado se valida con `lib/config_rup.validarPerfilDinamico` — la MISMA `validarPerfil` de
+  la carga manual, no una copia. No existe un «RUP de PDF» distinto de un «RUP de archivo».
+- **Va plegado en `POST /api/admin/rup?origen=pdf`** (12 funciones es el tope y el repositorio está
+  en 12); el alias literal `/api/admin/rup-desde-pdf` es un `rewrite` de vercel.json y la landing
+  llama a la CANÓNICA. Un GET responde 405 con `como_hacerlo` — jamás un «GET que escribe».
+- **ES LA ÚNICA ESCRITURA SIN TOKEN del repositorio, a propósito.** El onboarding es el producto:
+  pedir credencial a quien llega a subir su RUP mata la landing (la misma lógica del token opcional
+  de `/api/oportunidades`). Cerraduras, todas con prueba: ids `rup_…` generados en el SERVIDOR
+  (jamás del cliente), solo puede escribir `config:perfiles:rup_*` y `config:unspsc:rup_*` (no
+  alcanza ni los tres perfiles del dueño ni el sello `config:perfiles:version` — escribir el sello
+  haría recargar los perfiles fijos), TTL de 45 días, tope absoluto de perfiles vivos y cuerpo ≤5 MB.
+  Sin token las cifras del perfil dinámico viajan REDACTADAS por `lib/publico`, igual que las del dueño.
+- **El perfil dinámico se INYECTA en `PERFILES`** (`lib/perfil_dinamico.js`): todo el juicio resuelve
+  `PERFILES[perfilId]` sobre el objeto vivo, así que inyectar es lo que evita cambiar firmas en media
+  app. Se relee de Redis en CADA petición (un GET pequeño; mismo criterio que el sello sin TTL) y un
+  perfil caducado responde **404 con `perfil_caducado:true`** — la web lo usa para olvidar el perfil
+  guardado; sin ese campo, todas las visitas siguientes fallarían igual y sin explicación.
+- **Códigos: runs de dígitos de EXACTAMENTE 8** (nunca `\d{8}` suelto, ni los runs de 2/4/6 que
+  acepta `lib/unspsc.extraerCodigos` para el campo de categoría — aquí serían ruido puro), más las
+  filas Segmento|Familia|Clase|Producto SOLO dentro de la sección del clasificador. Fuera de la
+  sección un run de 8 exige terminar en «00» (la premisa de inscripción por clase) Y que la línea no
+  sea de dinero/contacto — «UTILIDAD OPERACIONAL 12000000» tiene un run de 8 con segmento válido que
+  terminaría en el RUP como código. Lo descartado SE CUENTA (`codigos_ilegibles`).
+- **Lo único que se DERIVA es la utilidad operacional** (rentabilidad del patrimonio × patrimonio:
+  identidad del D. 1082, declarada en advertencias). Los dos SUPUESTOS van declarados:
+  profesionales = 1 (suelo del factor CT) y tope estratégico = 2 × mayor contrato acreditado. El NIT
+  exige el guion del dígito de verificación: partir «NIT 900123456» inventaría un DV.
+- **La landing es la primera pantalla** (`#onboarding` nace visible; el gate nace oculto pero SIGUE
+  existiendo para los perfiles del dueño). El copy en voseo es literal del encargo. `app.js` decide
+  la vista al arrancar (perfil `rup_…` en URL o localStorage → dashboard sin gate; sesión con clave →
+  dashboard clásico; nada → landing) y el arranque sigue AL FINAL del IIFE.
+- **Experiencia en CSV** (`public/formato_experiencia.csv`, con comentarios `#` que declaran que es
+  OPCIONAL): la conversión CSV→JSON corre en el navegador y el endpoint es el de siempre
+  (`POST /api/admin/experiencia`, CON token: escribe configuración compartida). El campo `unspsc`
+  del formato es opcional y **solo se escribe cuando viene** — los contratos guardados con el
+  esquema anterior conservan su forma exacta, con prueba.
+
 ### Experiencia ejecutada y cobertura del RUP (ago 2026)
 
 - **El RUP dice a qué PUEDE presentarse el dueño; sus contratos ejecutados dicen en qué SABE

@@ -10,6 +10,10 @@
     {
       "source": "/api/probabilidad-desglose",
       "destination": "/api/competencia-detalle?vista=probabilidad"
+    },
+    {
+      "source": "/api/admin/rup-desde-pdf",
+      "destination": "/api/admin/rup?origen=pdf"
     }
   ],
   "functions": {

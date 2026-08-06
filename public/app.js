@@ -67,10 +67,39 @@
     alto: { clases: "bg-red-100 text-red-700" },
     sin_dato: { clases: "bg-gray-100 text-gray-500" },
   };
+  /* ══════════ Perfil de RUP subido (onboarding, ago 2026) ══════════
+     onboarding.js guarda {id, nombre} en localStorage al terminar la subida y
+     redirige a /?perfil=rup_…; aquí se decide la vista y se inyecta la opción
+     en el selector. localStorage SIEMPRE dentro de try: en modo restringido
+     lanza, y el arranque no puede morir por eso. */
+  const CLAVE_PERFIL_RUP = "detecta_perfil_rup";
+  const ID_RUP_RE = /^rup_[a-z0-9]{6,24}$/;
+  function perfilRupGuardado() {
+    try {
+      const v = JSON.parse(localStorage.getItem(CLAVE_PERFIL_RUP) || "null");
+      return v && typeof v.id === "string" && ID_RUP_RE.test(v.id) ? v : null;
+    } catch { return null; }
+  }
+  function olvidarPerfilRup() {
+    try { localStorage.removeItem(CLAVE_PERFIL_RUP); } catch { /* nada que borrar */ }
+  }
+  function activarPerfilRup(p) {
+    const sel = $("f-perfil");
+    if (![...sel.options].some((o) => o.value === p.id)) {
+      const opcion = document.createElement("option");
+      opcion.value = p.id;
+      opcion.textContent = p.nombre ? `Mi RUP · ${p.nombre}` : "Mi RUP (subido en PDF)";
+      sel.insertBefore(opcion, sel.firstChild);
+    }
+    sel.value = p.id;
+  }
+
   /* ══════════ Gate ══════════ */
   let intentosClave = 0;
   function abrirApp() {
     sessionStorage.setItem("detecta-acceso", "1");
+    const onboarding = document.getElementById("onboarding");
+    if (onboarding) onboarding.classList.add("hidden");
     $("gate").remove();
     $("app").classList.remove("hidden");
     buscar();
@@ -158,6 +187,14 @@
     if (r.status === 401) {
       olvidarToken();
       return buscar();
+    }
+    /* El perfil de un RUP subido CADUCA (TTL en el servidor). El 404 trae
+       `perfil_caducado` para poder distinguirlo de cualquier otro error: se
+       olvida el perfil guardado y se dice qué hacer — dejarlo puesto haría
+       fallar todas las visitas siguientes con el mismo mensaje. */
+    if (r.status === 404 && cuerpo && cuerpo.perfil_caducado) {
+      olvidarPerfilRup();
+      return mostrar("estado-error", cuerpo.error || "El perfil de su RUP caducó. Vuelva a la página de inicio y súbalo de nuevo.");
     }
     if (!r.ok || !cuerpo.ok) {
       return mostrar("estado-error", (cuerpo && cuerpo.error) || `Error del servidor (${r.status}). Intente de nuevo.`);
@@ -831,6 +868,27 @@
      con «Cannot access 'timerReintento' before initialization». Como `buscar`
      es async, el error salía por una promesa rechazada —la consola lo mostraba
      y la app se quedaba sin resultados, en silencio— en vez de detener la
-     carga. Aquí ya está todo declarado y cableado. */
-  if (sessionStorage.getItem("detecta-acceso") === "1") abrirApp();
+     carga. Aquí ya está todo declarado y cableado.
+
+     Tres vistas posibles, en este orden de decisión (ago 2026):
+       1. hay un perfil de RUP (en la URL `?perfil=rup_…` o guardado por el
+          onboarding) → dashboard con ese perfil, sin gate: el gate protege el
+          acceso a los perfiles del dueño, no el tablero del propio RUP;
+       2. la pestaña ya pasó el gate → dashboard clásico;
+       3. nada de lo anterior → la landing de onboarding (#onboarding, que
+          nace visible en el HTML precisamente para este caso). */
+  const perfilUrl = (() => {
+    try { return new URLSearchParams(window.location.search).get("perfil") || ""; } catch { return ""; }
+  })();
+  const guardadoRup = perfilRupGuardado();
+  const perfilRup = ID_RUP_RE.test(perfilUrl)
+    ? { id: perfilUrl, nombre: guardadoRup && guardadoRup.id === perfilUrl ? guardadoRup.nombre : "" }
+    : guardadoRup;
+  if (perfilRup) {
+    activarPerfilRup(perfilRup);
+    abrirApp();
+  } else if (sessionStorage.getItem("detecta-acceso") === "1") {
+    abrirApp();
+  }
+  // sin perfil y sin sesión: se queda la landing, que nace visible en el HTML
 })();

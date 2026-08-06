@@ -16,8 +16,83 @@
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased">
 
-  <!-- ══════════ Gate de acceso (clave del sitio) ══════════ -->
-  <div id="gate" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-50">
+  <!-- ══════════ Onboarding · landing del primer acceso (ago 2026) ══════════
+       Visible por defecto (si el JS no cargara, al menos se ve el mensaje).
+       app.js la esconde cuando hay un perfil de RUP guardado o una sesión con
+       clave; onboarding.js maneja todo lo que pasa dentro. El PDF se lee en el
+       NAVEGADOR (pdf.js, misma técnica que /pliego.html): al servidor solo
+       viaja el texto extraído. -->
+  <div id="onboarding" class="min-h-screen">
+    <main class="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-6 py-16 text-center">
+      <div class="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-900 text-2xl text-white">◔</div>
+      <h1 class="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">Convertí tu RUP en contratos.</h1>
+      <p class="mt-5 max-w-xl text-lg leading-relaxed text-gray-500">
+        Subí tu RUP. Te mostramos solo las licitaciones que podés ganar, cuánto ofertar, y cuánto ganarías.
+        Como si la app hubiera sido construida exclusivamente para tu empresa.
+      </p>
+
+      <button id="btn-subir-rup" type="button"
+              class="mt-10 rounded-2xl bg-emerald-600 px-10 py-4 text-lg font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-600/30">
+        SUBIR RUP (PDF)
+      </button>
+      <input id="rup-archivo" type="file" accept="application/pdf,.pdf" class="hidden" aria-label="Certificado RUP en PDF">
+      <p class="mt-3 text-xs text-gray-400">El PDF se lee en tu navegador; al servidor solo viaja el texto extraído para armar tu perfil.</p>
+
+      <!-- progreso de la extracción -->
+      <div id="rup-progreso" class="mt-8 hidden w-full max-w-md">
+        <div class="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+          <div id="rup-barra" class="h-2 rounded-full bg-emerald-600 transition-all" style="width:0%"></div>
+        </div>
+        <p id="rup-progreso-msg" class="mt-2 text-sm text-gray-500">Preparando…</p>
+      </div>
+
+      <!-- resultado / error -->
+      <div id="rup-mensaje" class="mt-6 hidden w-full max-w-md rounded-xl px-4 py-3 text-left text-sm"></div>
+      <ul id="rup-avisos" class="mt-3 hidden w-full max-w-md space-y-1 text-left text-xs text-amber-800"></ul>
+
+      <div class="mt-12 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
+        <button id="btn-exp-toggle" type="button"
+                title="Esto ayuda a identificar mejor tus licitaciones ideales. No es obligatorio."
+                class="text-gray-500 underline decoration-dotted underline-offset-4 transition hover:text-gray-900">
+          Cargar experiencia laboral (opcional)
+        </button>
+        <span class="text-gray-300" aria-hidden="true">·</span>
+        <button id="btn-ir-gate" type="button"
+                class="text-gray-500 underline decoration-dotted underline-offset-4 transition hover:text-gray-900">
+          Acceso con clave (perfiles existentes)
+        </button>
+      </div>
+
+      <!-- experiencia laboral OPCIONAL: formato estándar en CSV -->
+      <section id="exp-panel" class="mt-6 hidden w-full max-w-md rounded-2xl bg-white p-5 text-left shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="text-sm font-semibold">Experiencia laboral (opcional)</h2>
+        <p class="mt-1 text-xs text-gray-500">
+          No es obligatoria: solo se usa para mejorar las recomendaciones (afinar qué licitaciones se parecen
+          a lo que ya ejecutaste). Descargá el formato, completalo y subilo.
+        </p>
+        <a href="/formato_experiencia.csv" download
+           class="mt-3 inline-block text-sm font-medium text-blue-600 hover:underline">Descargar formato (CSV) ↓</a>
+        <div class="mt-3 grid gap-2">
+          <input id="exp-archivo" type="file" accept=".csv,text/csv" aria-label="Archivo CSV de experiencia"
+                 class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-gray-200">
+          <input id="exp-token" type="password" autocomplete="off" placeholder="Token de administración"
+                 title="La carga de experiencia escribe configuración compartida: exige el token del administrador."
+                 class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+          <button id="btn-exp-cargar" type="button"
+                  class="rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">
+            Cargar experiencia
+          </button>
+        </div>
+        <p id="exp-mensaje" class="mt-3 hidden rounded-lg px-3 py-2 text-xs"></p>
+      </section>
+    </main>
+  </div>
+
+  <!-- ══════════ Gate de acceso (clave del sitio) ══════════
+       Nace oculto: la primera pantalla es el onboarding. Se abre desde
+       «Acceso con clave» (onboarding.js) o no llega a verse si ya hay
+       sesión o un perfil de RUP guardado (app.js). -->
+  <div id="gate" class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-50">
     <div class="w-full max-w-sm px-8 text-center">
       <div class="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-900 text-2xl text-white">◔</div>
       <h1 class="text-2xl font-semibold tracking-tight">Detecta</h1>
@@ -213,6 +288,7 @@
     </div>
   </div>
 
+  <script src="/onboarding.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

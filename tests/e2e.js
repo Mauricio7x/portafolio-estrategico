@@ -6486,6 +6486,264 @@ async function main() {
         + `sobre ${conExp.resumen.procesos_analizados} procesos históricos · método base y con experiencia verificados`);
     }
 
+    /* ═══ g-quinquies. Onboarding: RUP en PDF → perfil dinámico → dashboard ═══
+       El PDF se lee en el navegador (public/onboarding.js); aquí se ejercita lo
+       que ve el servidor: POST /api/admin/rup?origen=pdf SIN token (la única
+       escritura pública del repositorio, con TTL y tope de perfiles como
+       cerraduras), la extracción de lib/rup_pdf sobre un certificado sintético,
+       y que /api/oportunidades?perfil=rup_… sirva ese perfil SIN tocar los tres
+       del dueño. Los errores tienen que ser accionables: son para un
+       contratista anónimo que no tiene a quién preguntarle. */
+    {
+      const perfilDinamico = require("../lib/perfil_dinamico.js");
+      const anoActual = new Date().getFullYear();
+      // renovación en el año en curso: `verificar_vigencia` no puede depender
+      // de cuándo corra la suite (una prueba calibrada contra el reloj real
+      // falla sola en la frontera — la lección del «ahora» inyectado)
+      const TEXTO_RUP = [
+        "CAMARA DE COMERCIO DE IBAGUE",
+        "CERTIFICADO DEL REGISTRO UNICO DE PROPONENTES - RUP",
+        "RAZON SOCIAL: CONSTRUCTORA DEL SUR S.A.S.",
+        "NIT: 901234567-8",
+        "TELEFONO 3123456789",
+        "FECHA DE INSCRIPCION: 15/04/2020",
+        `FECHA DE ULTIMA RENOVACION: 10/04/${anoActual}`,
+        "INFORMACION FINANCIERA A 31 DE DICIEMBRE DE 2025",
+        "INDICE DE LIQUIDEZ\t3,25",
+        "INDICE DE ENDEUDAMIENTO\t35,00%",
+        "RAZON DE COBERTURA DE INTERESES\t8,40",
+        "PATRIMONIO\t$ 850.000.000",
+        "UTILIDAD OPERACIONAL\t$ 120.000.000",
+        "CODIGO INTERNO 20240315",
+        "EXPERIENCIA",
+        "CONTRATO\tOBJETO\tVALOR SMMLV",
+        "1\tCONSTRUCCION DE PLACA HUELLA\t1.250,50 SMMLV",
+        "2\tMANTENIMIENTO VIA TERCIARIA\t2.480,00 SMMLV",
+        "CLASIFICACION DE BIENES Y SERVICIOS - UNSPSC",
+        "SEGMENTO\tFAMILIA\tCLASE\tPRODUCTO",
+        "72\t14\t10\t00",
+        "72\t15\t41\t00",
+        "81\t10\t15\t00",
+        "F-72141100",
+      ].join("\n");
+
+      /* 1 · pegar el alias en Chrome es un GET → 405 con instrucciones, jamás
+         un «GET que escribe» (misma regla que cargar-experiencia-genesis) */
+      {
+        const r = await invocar(adminRup, "/api/admin/rup?origen=pdf");
+        assert.strictEqual(r.status, 405, "GET de la vía PDF debía ser 405");
+        assert.strictEqual(r.cabeceras.allow, "POST");
+        assert.ok(r.cuerpo.como_hacerlo, "el 405 debe decir cómo hacerlo de verdad");
+      }
+
+      /* 2 · POST SIN token → 200 con el contrato del encargo:
+         { perfil_id, unspsc_count, k, vigencia, resumen } */
+      const r = await invocarPost(adminRup, "/api/admin/rup?origen=pdf",
+        { texto_extraido: TEXTO_RUP, nombre_archivo: "rup.pdf" });
+      assert.strictEqual(r.status, 200, `la carga por PDF falló: ${JSON.stringify(r.cuerpo).slice(0, 400)}`);
+      assert.ok(/^rup_[a-z0-9]+$/.test(r.cuerpo.perfil_id), `perfil_id inesperado: ${r.cuerpo.perfil_id}`);
+      assert.strictEqual(r.cuerpo.unspsc_count, 4, "debía leer 4 códigos (2 por pares, 1 de 8 dígitos, 1 con prefijo F-)");
+      assert.ok(r.cuerpo.k > 0, "la K estimada debe ser positiva");
+      assert.strictEqual(r.cuerpo.vigencia.fecha_inscripcion, "2020-04-15");
+      assert.strictEqual(r.cuerpo.vigencia.fecha_renovacion, `${anoActual}-04-10`);
+      assert.strictEqual(r.cuerpo.vigencia.verificar_vigencia, false);
+      assert.strictEqual(r.cuerpo.resumen.nombre, "CONSTRUCTORA DEL SUR S.A.S.");
+      assert.strictEqual(r.cuerpo.resumen.tipo, "persona_juridica");
+      assert.strictEqual(r.cuerpo.resumen.nit, "901234567-8");
+      assert.strictEqual(r.cuerpo.resumen.indicadores.liquidez, 3.25);
+      assert.strictEqual(r.cuerpo.resumen.indicadores.endeudamiento, 0.35, "«35,00%» debía interpretarse como 0,35");
+      assert.strictEqual(r.cuerpo.resumen.indicadores.patrimonio, 850000000);
+      assert.strictEqual(r.cuerpo.resumen.experiencia_smmlv, 2480, "la experiencia es el MAYOR contrato en SMMLV");
+      assert.deepStrictEqual(
+        [r.cuerpo.resumen.clases, r.cuerpo.resumen.familias, r.cuerpo.resumen.segmentos], [4, 3, 2],
+        "las whitelists derivadas no cuadran con los 4 códigos");
+      // el run «20240315» (fuera de sección, no termina en 00) se DESCARTA y SE CUENTA
+      assert.ok(r.cuerpo.diagnostico.codigos_ilegibles >= 1, "el run que no es código debía contarse como ilegible");
+      // los dos supuestos van DECLARADOS: profesionales=1 y tope=2×experiencia
+      assert.ok(r.cuerpo.advertencias.some((a) => /profesionales/.test(a)), "falta la advertencia de profesionales");
+      assert.strictEqual(r.cuerpo.resumen.tope_smmlv, 4960, "tope por defecto = 2 × mayor contrato acreditado");
+      const id = r.cuerpo.perfil_id;
+
+      /* 3 · guardado con TTL de verdad, sin tocar el sello de los tres perfiles */
+      {
+        const ttl = await redis.ttl(`config:perfiles:${id}`);
+        assert.ok(ttl > 0 && ttl <= 45 * 24 * 3600, `el perfil dinámico se guardó sin TTL (ttl=${ttl})`);
+        const ttlU = await redis.ttl(`config:unspsc:${id}:completo`);
+        assert.ok(ttlU > 0, "las whitelists del perfil dinámico deben caducar con él");
+        assert.strictEqual(await redis.get(CLAVES.configPerfilesVersion), null,
+          "la carga por PDF no puede escribir el sello global: haría recargar los perfiles del dueño");
+      }
+
+      /* 4 · la app SIRVE el perfil dinámico: sin token, con las finanzas
+         redactadas (lib/publico aplica igual que a los perfiles del dueño) */
+      {
+        const op = await invocar(oportunidades, `/api/oportunidades?perfil=${id}&por_pagina=100`);
+        assert.strictEqual(op.status, 200, `la consulta con el perfil dinámico falló: ${JSON.stringify(op.cuerpo).slice(0, 300)}`);
+        assert.ok(op.cuerpo.total > 0, "el RUP subido incluye 72141000 y debía ver las placas huella del corpus");
+        assert.strictEqual(op.cuerpo.finanzas_visibles, false, "sin token las finanzas no pueden declararse visibles");
+        assert.ok(op.cuerpo.resultados.some((l) => /placa huella/i.test(l.nombre_del_procedimiento || "") && l.rup.tier === "clase"),
+          "la placa huella debía casar por CLASE con el 72141000 del RUP subido");
+        assert.ok(!op.cuerpo.resultados.some((l) => /salud ocupacional/i.test(l.nombre_del_procedimiento || "")),
+          "salud ocupacional (85101500) NO está en el RUP subido y no debía servirse");
+        for (const l of op.cuerpo.resultados) {
+          assert.strictEqual(l.rup.k_cop, null, "sin token, la K del perfil dinámico también viaja redactada");
+        }
+        // …y con token las cifras vuelven, como en cualquier perfil
+        const conTok = await invocar(oportunidades, `/api/oportunidades?perfil=${id}&por_pagina=1`, CAB_TOKEN);
+        assert.ok(conTok.cuerpo.resultados[0].rup.k_cop > 0, "con token la K del perfil dinámico debe viajar");
+      }
+
+      /* 5 · los tres perfiles del dueño NO se tocan */
+      {
+        assert.strictEqual(PERFILES.helder.nombre, perfilesMod.PERFILES_FALLBACK.helder.nombre,
+          "la carga por PDF pisó el perfil de Helder");
+        const oh = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN);
+        assert.strictEqual(oh.status, 200);
+        assert.ok(oh.cuerpo.total > 0, "helder dejó de ver oportunidades tras una carga dinámica ajena");
+      }
+
+      /* 6 · errores ACCIONABLES */
+      {
+        // perfil dinámico inexistente → 404 con `perfil_caducado` (la web lo
+        // usa para olvidar el perfil guardado y mandar al onboarding)
+        const nf = await invocar(oportunidades, "/api/oportunidades?perfil=rup_noexiste99");
+        assert.strictEqual(nf.status, 404, "un rup_ inexistente debía ser 404, no un 400 genérico");
+        assert.strictEqual(nf.cuerpo.perfil_caducado, true);
+        // id con formato inválido → 400 (ni viaje a Redis ni 404 confuso)
+        assert.strictEqual((await invocar(oportunidades, "/api/oportunidades?perfil=rup_x!")).status, 400);
+        // texto sin códigos → el mensaje del encargo, con qué verificar
+        const malo = await invocarPost(adminRup, "/api/admin/rup?origen=pdf",
+          { texto_extraido: "ACTA DE REUNION ORDINARIA DEL CONSEJO DIRECTIVO. ".repeat(10) });
+        assert.strictEqual(malo.status, 400);
+        assert.ok(/UNSPSC/.test(malo.cuerpo.error) && /RUP\s+vigente/i.test(malo.cuerpo.error),
+          `el error debe decir qué verificar: ${malo.cuerpo.error}`);
+        // sin texto_extraido → 400 que explica el contrato (el servidor no lee PDF binario)
+        const sinTexto = await invocarPost(adminRup, "/api/admin/rup?origen=pdf", { pdf_base64: "JVBERi0..." });
+        assert.strictEqual(sinTexto.status, 400);
+        assert.ok(/texto_extraido/.test(sinTexto.cuerpo.error));
+      }
+
+      /* 7 · utilidad DERIVADA de la rentabilidad del patrimonio (identidad del
+         D. 1082, no un invento) — y declarada en advertencias */
+      {
+        const t2 = [
+          "REGISTRO UNICO DE PROPONENTES",
+          "RAZON SOCIAL: OBRAS DEL NORTE LTDA",
+          "INDICE DE LIQUIDEZ: 2,10",
+          "INDICE DE ENDEUDAMIENTO: 0,40",
+          "RENTABILIDAD DEL PATRIMONIO: 14,12%",
+          "PATRIMONIO: 500.000.000",
+          "EXPERIENCIA: MAYOR CONTRATO 1.000 SMMLV",
+          "CLASIFICACION DE BIENES Y SERVICIOS",
+          "72141000",
+          "RELLENO PARA QUE EL TEXTO SUPERE EL MINIMO DEL EXTRACTOR ".repeat(5),
+        ].join("\n");
+        const rd = await invocarPost(adminRup, "/api/admin/rup?origen=pdf", { texto_extraido: t2 });
+        assert.strictEqual(rd.status, 200, `la utilidad derivada falló: ${JSON.stringify(rd.cuerpo).slice(0, 300)}`);
+        assert.strictEqual(rd.cuerpo.resumen.indicadores.utilidad_operacional, 70600000,
+          "utilidad derivada = rentabilidad × patrimonio (0,1412 × 500 M)");
+        assert.ok(rd.cuerpo.advertencias.some((a) => /deriv/i.test(a)), "la derivación tiene que declararse");
+        assert.ok(rd.cuerpo.diagnostico.utilidad_derivada === true);
+      }
+
+      /* 8 · experiencia: el campo `unspsc` OPCIONAL del formato CSV, sin romper
+         la forma de los contratos ya guardados */
+      {
+        const exp = require("../lib/experiencia.js");
+        const base = { objeto: "Construcción de placa huella vereda El Placer", valor_cop: "350.000.000", entidad: "ALCALDIA", fecha_inicio: "15/01/2023", fecha_fin: "20/08/2023" };
+        const v1 = exp.validarContratos({ contratos: [{ ...base, unspsc: "72141000" }] });
+        assert.strictEqual(v1.ok, true, `contrato con unspsc rechazado: ${JSON.stringify(v1.errores)}`);
+        assert.strictEqual(v1.contratos[0].unspsc, "72141000");
+        const v2 = exp.validarContratos({ contratos: [{ ...base, unspsc: "123" }] });
+        assert.strictEqual(v2.ok, false, "un unspsc de 3 dígitos debía rechazarse");
+        assert.ok(v2.errores.some((e) => e.campo === "contratos[0].unspsc"), "el error debe nombrar el campo");
+        const v3 = exp.validarContratos({ contratos: [base] });
+        assert.strictEqual(v3.ok, true);
+        assert.ok(!("unspsc" in v3.contratos[0]),
+          "sin unspsc la clave NO se escribe: los contratos del esquema anterior conservan su forma exacta");
+      }
+
+      /* 9 · el formato CSV publicado pasa su propio validador (las filas de
+         ejemplo no pueden estar rotas: son lo primero que el usuario copia) */
+      {
+        const exp = require("../lib/experiencia.js");
+        const csv = fs.readFileSync(path.join(__dirname, "..", "public", "formato_experiencia.csv"), "utf8");
+        assert.ok(/OPCIONAL/i.test(csv), "el CSV debe declarar en sus comentarios que es opcional");
+        const utiles = csv.split(/\r\n|\r|\n/).filter((l) => l.trim() && !l.trim().startsWith("#"));
+        assert.strictEqual(utiles[0], "objeto,valor_cop,fecha_inicio,fecha_fin,entidad,unspsc",
+          "la cabecera del formato cambió: rompería la conversión del onboarding");
+        const contratos = utiles.slice(1).map((l) => {
+          const [objeto, valor_cop, fecha_inicio, fecha_fin, entidad, unspsc] = l.split(",");
+          return { objeto, valor_cop, fecha_inicio, fecha_fin, entidad, ...(unspsc ? { unspsc } : {}) };
+        });
+        const v = exp.validarContratos({ contratos });
+        assert.strictEqual(v.ok, true, `las filas de ejemplo no pasan el validador: ${JSON.stringify(v.errores)}`);
+        assert.strictEqual(v.contratos[0].unspsc, "72141000");
+      }
+
+      /* 10 · cableado del frontend (sin DOM: marcado y llamadas, no
+         comportamiento visual — y se presenta como lo que es) */
+      {
+        const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        for (const debe of ['id="onboarding"', "Convertí tu RUP en contratos.", 'id="rup-archivo"',
+          'id="btn-subir-rup"', "/onboarding.js", "formato_experiencia.csv",
+          "Cargar experiencia laboral (opcional)", 'id="rup-progreso"', 'id="btn-ir-gate"']) {
+          assert.ok(html.includes(debe), `index.html sin ${debe}`);
+        }
+        // el gate SIGUE existiendo (nace oculto): el acceso con clave a los
+        // perfiles del dueño no desaparece por añadir el onboarding
+        assert.ok(/id="gate"[^>]*class="[^"]*hidden/.test(html) || /class="[^"]*hidden[^"]*"[^>]*id="gate"/.test(html),
+          "el gate debe nacer oculto: la primera pantalla es el onboarding");
+        assert.ok(html.indexOf('id="onboarding"') < html.indexOf('id="gate"'), "el onboarding va antes del gate");
+
+        const ob = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
+        new Function(ob); // valida sintaxis sin ejecutar
+        const obSin = sinComentarios(ob);
+        // llama a la CANÓNICA, no al alias del rewrite (si el rewrite fallara,
+        // el botón tiene que seguir funcionando)
+        assert.ok(obSin.includes("/api/admin/rup?origen=pdf"), "onboarding.js debe llamar a la ruta canónica");
+        assert.ok(!/fetch\(\s*["'`]\/api\/admin\/rup-desde-pdf/.test(obSin),
+          "onboarding.js no puede depender del rewrite para funcionar");
+        // la versión de pdf.js va CLAVADA y es LA MISMA que la de pliego.js:
+        // dos versiones distintas del mismo motor en el mismo sitio es la
+        // divergencia silenciosa clásica
+        const plg = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+        const vOb = /const PDFJS_VERSION = "([^"]+)"/.exec(ob);
+        const vPlg = /const PDFJS_VERSION = "([^"]+)"/.exec(plg);
+        assert.ok(vOb && vPlg && vOb[1] === vPlg[1],
+          `onboarding.js y pliego.js usan versiones distintas de pdf.js: ${vOb && vOb[1]} vs ${vPlg && vPlg[1]}`);
+        // la misma prohibición que ya vigila los conteos en los demás frontends
+        assert.ok(!/\.(unspsc_count|contratos_cargados|terminos_extraidos)\s*\|\|\s*0/.test(obSin),
+          "un `|| 0` sobre un conteo convierte «no sé» en «cero»");
+
+        const js = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const jsSin = sinComentarios(js);
+        assert.ok(jsSin.includes("detecta_perfil_rup"), "app.js debe leer el perfil guardado por el onboarding");
+        assert.ok(jsSin.includes("perfil_caducado") && /olvidarPerfilRup\(\)/.test(jsSin),
+          "un 404 de perfil caducado debe olvidar el perfil guardado, no repetirse para siempre");
+
+        // el alias literal existe como rewrite (no como función: el plan Hobby
+        // está en 12 exactas) y apunta al endpoint real CON el origen
+        const vercel = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
+        const rw = (vercel.rewrites || []).find((x) => x.source === "/api/admin/rup-desde-pdf");
+        assert.ok(rw && rw.destination === "/api/admin/rup?origen=pdf",
+          "el alias /api/admin/rup-desde-pdf debe apuntar a /api/admin/rup?origen=pdf");
+      }
+
+      /* 11 · limpieza: los perfiles dinámicos no contaminan lo que sigue */
+      {
+        const dinamicas = [
+          ...await redis.scan(CLAVES.patronPerfilesDinamicos),
+          ...await redis.scan(CLAVES.patronUnspscDinamicos),
+        ];
+        if (dinamicas.length) await redis.del(...dinamicas);
+        perfilDinamico.olvidarPerfilesDinamicos();
+        assert.ok(!Object.keys(PERFILES).some((k) => k.startsWith("rup_")),
+          "quedaron perfiles dinámicos inyectados en PERFILES");
+      }
+      console.log(`  · onboarding RUP por PDF: 4 códigos leídos, TTL puesto, perfil dinámico servido sin tocar a los fijos, errores accionables y cableado del frontend verificados`);
+    }
+
     /* ════════════════════════════════════════════════════════════════════
        j. EDITOR DE APU (ago 2026): catálogo, inferencia, cálculo y borradores.
 

@@ -31,14 +31,24 @@
 
 const { crearRedis, hayCredenciales } = require("../../lib/redis.js");
 const { autorizarToken } = require("../../lib/auth.js");
-const { CLAVES, escribirJSONComprimido, leerJSONComprimido } = require("../../lib/almacen.js");
-const { validarConfig, derivarUnspsc } = require("../../lib/config_rup.js");
+const {
+  CLAVES, escribirJSONComprimido, leerJSONComprimido, PERFIL_DINAMICO_TTL_SEG,
+} = require("../../lib/almacen.js");
+const { validarConfig, validarPerfilDinamico, derivarUnspsc } = require("../../lib/config_rup.js");
 const {
   PERFILES, aplicarConfig, invalidarCachePerfiles, recargarPerfiles,
-  fuentePerfiles, perfilesComoConfig, idCanonico,
+  fuentePerfiles, perfilesComoConfig, idCanonico, perfilDesdeConfig,
 } = require("../../lib/perfiles.js");
+const { extraerRupDeTexto } = require("../../lib/rup_pdf.js");
+const { generarIdDinamico } = require("../../lib/perfil_dinamico.js");
+const { crp } = require("../../lib/capacidad.js");
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB de cuerpo (requerimiento)
+/* Tope de perfiles dinámicos vivos a la vez. La acción `?origen=pdf` es
+   PÚBLICA (ver abajo), así que además del TTL hace falta un freno absoluto
+   para que nadie llene el tier gratuito de Upstash a base de POSTs. 300
+   perfiles × ~5 claves pequeñas queda lejísimos de cualquier límite real. */
+const MAX_PERFILES_DINAMICOS = 300;
 
 /* Cuerpo de la petición. Vercel ya deja `req.body` parseado cuando el
    Content-Type es JSON, pero no siempre (ni en las pruebas), así que se
@@ -92,9 +102,150 @@ function resumenPerfiles() {
   return out;
 }
 
+/* ══════════════ POST /api/admin/rup?origen=pdf · onboarding ══════════════
+   El contratista sube su certificado RUP desde la landing; el navegador lo lee
+   con pdf.js (public/onboarding.js) y aquí llega SOLO el texto. Se extrae el
+   perfil (lib/rup_pdf), se valida con el MISMO esquema de la carga manual
+   (lib/config_rup.validarPerfilDinamico) y se guarda como perfil DINÁMICO
+   (`config:perfiles:rup_*`, con TTL de 45 días).
+
+   ES PÚBLICO A PROPÓSITO, y es la única escritura sin token del repositorio;
+   el porqué y las cerraduras, para no re-litigarlo:
+     · el onboarding ES el producto: pedir una credencial a quien llega a subir
+       su RUP dejaría la landing inservible (la misma razón por la que
+       /api/oportunidades tiene el token opcional);
+     · SOLO escribe claves `config:perfiles:rup_*` / `config:unspsc:rup_*`
+       (ids generados aquí, jamás del cliente): no puede tocar los tres
+       perfiles del dueño, ni su sello `config:perfiles:version`, ni el corpus;
+     · TTL de 45 días + tope absoluto de perfiles vivos (MAX_PERFILES_DINAMICOS)
+       + tope de cuerpo de 5 MB: el abuso cuesta poco y caduca solo;
+     · las cifras del perfil dinámico quedan bajo la MISMA redacción de
+       lib/publico: sin token, /api/oportunidades las sirve en null.
+   El alias literal /api/admin/rup-desde-pdf es un rewrite de vercel.json (el
+   plan Hobby está en 12 funciones exactas y una más rompe el despliegue
+   entero); la landing llama a la CANÓNICA por si el rewrite fallara. */
+async function cargarRupDesdePdf(req, res) {
+  const metodo = String(req.method || "GET").toUpperCase();
+  if (metodo !== "POST") {
+    /* pegar el alias en Chrome es un GET: decir cómo hacerlo de verdad, nunca
+       un «GET que escribe» (lo dispararía cualquier prefetch del navegador) */
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({
+      ok: false,
+      origen: "pdf",
+      error: "La carga de un RUP en PDF solo se hace por POST: un GET no escribe nada.",
+      como_hacerlo: "Abrí la página de inicio y usá el botón «SUBIR RUP (PDF)»: el navegador extrae el texto "
+        + "del certificado y lo envía solo. A mano: POST /api/admin/rup-desde-pdf con JSON {\"texto_extraido\": \"…\"}.",
+    });
+  }
+  if (!hayCredenciales()) {
+    return res.status(503).json({ ok: false, error: "Faltan credenciales de Upstash Redis en el despliegue." });
+  }
+
+  const cuerpo = await leerCuerpo(req);
+  if (!cuerpo.ok) {
+    const salida = { ok: false, error: cuerpo.error };
+    if (cuerpo.max_mb) salida.max_mb = cuerpo.max_mb;
+    return res.status(cuerpo.status).json(salida);
+  }
+  const texto = cuerpo.datos && cuerpo.datos.texto_extraido;
+  if (typeof texto !== "string" || !texto.trim()) {
+    return res.status(400).json({
+      ok: false,
+      error: "Falta «texto_extraido»: el navegador debe extraer el texto del PDF (pdf.js) y enviarlo aquí. "
+        + "El servidor no recibe el PDF binario a propósito — no tiene con qué leerlo.",
+    });
+  }
+
+  const extraccion = extraerRupDeTexto(texto);
+  if (!extraccion.ok) {
+    return res.status(400).json({ ok: false, error: extraccion.error, diagnostico: extraccion.diagnostico || null });
+  }
+
+  const id = generarIdDinamico();
+  const v = validarPerfilDinamico(id, extraccion.config);
+  if (!v.ok) {
+    return res.status(400).json({
+      ok: false,
+      error: `Los datos extraídos del certificado no pasan la validación (${v.errores.length} error${v.errores.length === 1 ? "" : "es"}): no se guardó nada. `
+        + "Revisá el PDF o cargá el RUP a mano desde /admin.html.",
+      errores: v.errores,
+      advertencias: [...extraccion.advertencias, ...v.advertencias],
+      diagnostico: extraccion.diagnostico,
+    });
+  }
+
+  const redis = crearRedis({});
+  try {
+    const vivos = await redis.scan(CLAVES.patronPerfilesDinamicos);
+    if (vivos.length >= MAX_PERFILES_DINAMICOS) {
+      return res.status(503).json({
+        ok: false,
+        error: "Se alcanzó el tope de perfiles creados por PDF. Intentá de nuevo en unos días (los perfiles "
+          + "sin uso caducan solos) o contactá al administrador del sitio.",
+      });
+    }
+  } catch (e) {
+    return res.status(503).json({ ok: false, error: `No se pudo consultar Redis. Reintentá. (${e.message})` });
+  }
+
+  /* guardado con TTL. El perfil se escribe AL FINAL: es la única clave que
+     mira lib/perfil_dinamico, así que nadie puede servir un estado a medias. */
+  const cargado = new Date().toISOString();
+  const d = derivarUnspsc(v.perfil.unspsc);
+  const ttl = PERFIL_DINAMICO_TTL_SEG;
+  try {
+    await redis.set(CLAVES.configUnspsc(id, "clases"), JSON.stringify(d.clases), { ex: ttl });
+    await redis.set(CLAVES.configUnspsc(id, "familias"), JSON.stringify(d.familias), { ex: ttl });
+    await redis.set(CLAVES.configUnspsc(id, "segmentos"), JSON.stringify(d.segmentos), { ex: ttl });
+    await redis.set(CLAVES.configUnspsc(id, "completo"), JSON.stringify(d), { ex: ttl });
+    await escribirJSONComprimido(redis, CLAVES.configPerfilDinamico(id), {
+      perfil: v.perfil,
+      _meta: { cargado, origen: "pdf", vigencia: extraccion.vigencia },
+    }, { ttl });
+  } catch (e) {
+    return res.status(503).json({ ok: false, error: `No se pudo guardar el perfil. Reintentá. (${e.message})` });
+  }
+
+  /* K estimada (techo): la CRP del perfil sin un proceso concreto (factor E en
+     su máximo). La K frente a CADA proceso la calcula la app al servir. */
+  const k = Math.round(crp(perfilDesdeConfig(id, v.perfil, null), 0));
+
+  return res.status(200).json({
+    ok: true,
+    guardado: true,
+    perfil_id: id,
+    unspsc_count: v.perfil.unspsc.length,
+    k,
+    k_declarada_smmlv: extraccion.k_declarada_smmlv != null ? extraccion.k_declarada_smmlv : null,
+    vigencia: extraccion.vigencia,
+    resumen: {
+      nombre: v.perfil.nombre,
+      tipo: v.perfil.tipo,
+      nit: v.perfil.nit != null ? v.perfil.nit : null,
+      indicadores: v.perfil.indicadores,
+      experiencia_smmlv: v.perfil.experiencia_smmlv,
+      tope_smmlv: v.perfil.tope_smmlv,
+      profesionales: v.perfil.profesionales,
+      clases: d.clases.length, familias: d.familias.length, segmentos: d.segmentos.length,
+    },
+    advertencias: [...extraccion.advertencias, ...v.advertencias],
+    diagnostico: extraccion.diagnostico,
+    caducidad_dias: Math.round(PERFIL_DINAMICO_TTL_SEG / 86400),
+    url_dashboard: `/?perfil=${id}`,
+    nota: "El perfil quedó guardado con caducidad; re-subir el RUP lo renueva. Las cifras financieras del "
+      + "perfil solo viajan redactadas en la consulta pública (lib/publico), igual que las de los perfiles del dueño.",
+  });
+}
+
 module.exports = async function handler(req, res) {
   const q = req.query || {};
   res.setHeader("Cache-Control", "no-store");
+
+  /* El origen se resuelve ANTES de autorizar y de despachar por método (la
+     lección de /api/admin/experiencia): la vía del PDF es pública y tiene su
+     propio manejador; todo lo demás sigue exigiendo el token como siempre. */
+  if (String(q.origen || "").toLowerCase() === "pdf") return cargarRupDesdePdf(req, res);
 
   const permiso = autorizarToken(req, q);
   if (!permiso.ok) return res.status(permiso.status).json({ ok: false, error: permiso.error });
