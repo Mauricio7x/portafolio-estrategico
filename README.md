@@ -97,6 +97,7 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `docs/APU_Y_RENTABILIDAD.md` | La investigación que sostiene el CATÁLOGO DE PRECIOS: fuentes, factor prestacional, AIU, ICOCIV y regionalización |
 | `docs/APU_INFORME_COMPLETO.md` | El **informe** completo de investigación y diseño (§1.A-§1.I): el que citan los comentarios del código. Incluye lo que NO se implementó y por qué |
 | `docs/PERFILES.md` | Resumen técnico de los tres perfiles (datos, estimaciones, limitaciones) |
+| `docs/AUDITORIA_INTEGRAL.md` | **Censo del sistema** (ago 2026): qué módulo hace qué, qué está probado, qué endpoint pide llave y por qué, qué está duplicado, qué está muerto y qué falta — con las correcciones pendientes ordenadas por impacto en las adjudicaciones |
 | `public/` | Frontend estático (Tailwind CDN, estilo Apple, gate de clave) |
 | `public/pliego.html` + `pliego.js` | **Lector de pliegos**: pdf.js en el navegador, columnas por coordenadas, progreso por página, tabla editable y respaldo por OCR |
 | `public/apu.html` + `apu.js` | Editor de APU: tabla editable, inferencia desde el objeto, sugerencia del factor de baja desde el histórico, borradores y exportación |
