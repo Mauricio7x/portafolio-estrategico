@@ -8564,6 +8564,27 @@ async function main() {
         assert.strictEqual(vercel.functions[fn].includeFiles, "data/**",
           `${fn} no empaqueta data/** (la semilla de vocabulario no llegaría al despliegue)`);
       }
+      /* …Y LA DIRECCIÓN CONTRARIA, que es la que faltaba (ago 2026, defecto real).
+         La comprobación de arriba solo recorre `vercel.json`, así que un archivo
+         NUEVO bajo `api/` podía desplegarse sin entrada: sin `includeFiles` no le
+         viaja `data/**` y sin `maxDuration` se queda con el tope por defecto de la
+         plataforma. Le pasó a `api/indice-baja.js`, que acepta
+         `?reconstruir=true&presupuesto=60000` y habría muerto mucho antes de
+         terminar — un fallo que no falla en local y que nadie ve hasta producción. */
+      {
+        const bajoApi = [];
+        const recorrer = (rel) => {
+          for (const e of fs.readdirSync(path.join(__dirname, "..", rel), { withFileTypes: true })) {
+            if (e.isDirectory()) recorrer(`${rel}/${e.name}`);
+            else if (e.name.endsWith(".js")) bajoApi.push(`${rel}/${e.name}`);
+          }
+        };
+        recorrer("api");
+        for (const fn of bajoApi) {
+          assert.ok(vercel.functions[fn],
+            `${fn} es una función serverless y no está declarada en vercel.json: se desplegaría sin data/** y con el maxDuration por defecto`);
+        }
+      }
       /* El catálogo de ítems APU es la otra semilla que viaja en `data/**`, y le
          toca la misma vigilancia: si dejara de empaquetarse, /api/apu/extraer-texto
          no podría mapear nada y el fallo saldría en producción, no aquí. */
