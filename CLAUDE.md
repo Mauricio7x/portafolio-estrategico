@@ -1147,13 +1147,14 @@ memoria en una fuente de error. `✅` implementado · `🟡` parcial · `⬜` no
 | **Traslado / histórico como base de datos** (truco #17) | `licitaciones:historico:mes:*` — keyspace que **ninguna purga toca**, con adjudicatario, valor adjudicado y nº de oferentes. Es la versión estructural del consejo «guarda todo lo del traslado» | ✅ |
 | **PAA → alertar antes de que salga el proceso** (truco #9) | La app ingiere **solo `p6dx-8zbt`** (procesos ya publicados). El PAA es otro dataset y **no se lee**. Hoy la app avisa cuando el proceso ya salió: la ventaja de seis meses del manual está sin explotar | ⬜ |
 | **Pliego sastre → detección** (12 señales) | La única señal computable hoy es la **#11** (histórico de 1-2 oferentes), vía `indice_competencia`. **Y está interpretada al revés**: baja competencia se presenta como *atractiva*. Es ambigua — puede ser un nicho ganable **o** un pliego sastre. Las señales 1/3/4/5/6/7 exigen el texto del pliego, que el dataset no trae. **El tier `familia` NO es la señal #2**: indica codificación amplia, lo contrario de restrictiva | 🟡 |
-| **Precio bajo incertidumbre → banda de descuento** (truco #11) | **No existe, pero el dato ya está guardado**: `lib/proyeccion.js` (proyección histórica) conserva `CAMPOS_VALOR_ADJUDICADO` junto a `precio_base`, así que `descuento = 1 − valor_adjudicado / precio_base` es calculable por entidad **sin re-extraer nada**. Es la funcionalidad nueva de mayor rendimiento por esfuerzo | ⬜ |
+| **Precio bajo incertidumbre → banda de descuento** (truco #11) | `lib/indice_baja.js` (`indice:baja:*`, tres granularidades en cascada + segmento + modalidad): `descuento = 1 − valor_adjudicado / precio_base` por entidad, sin re-extraer nada. Ya viaja en la tarjeta (`baja_mercado`, solo con token) y ordena con `?ordenar_por=baja` | ✅ |
 | **Traslado → descargar ofertas de competidores** | El dataset no trae documentos de oferta: solo `urlproceso`. Automatizarlo exigiría raspar SECOP II (fuera de la arquitectura actual: sin dependencias, serverless, respuesta ≤4.5 MB). Alcanzable: enlazar la ficha del proceso y **listar adjudicatarios recurrentes por entidad** desde el histórico | ⬜ |
 | **Subsanación → tabla de trazabilidad automática** | No existe. La app decide **a qué presentarse**, no arma la carpeta. Sería un generador de plantilla a partir de la ficha del proceso | ⬜ |
 | **Consorcios → antecedentes del socio (SIRI/Contraloría/RNMC)** | No existe y **no es automatizable con datos abiertos**: son portales con captcha, no APIs. Lo que sí está: el consorcio `juntos` se **re-deriva siempre** de sus integrantes. La parte accionable sería una **lista de verificación** de las 5 fuentes del truco #15 | ⬜ |
 | **Formulario de cantidades del pliego → ítem + unidad + cantidad** (Cap. 11, §1.G del informe) | `/pliego.html` + `/api/apu/extraer-texto`: pdf.js en el navegador extrae el texto conservando columnas por coordenadas, `lib/apu_pliego.js` reconoce las filas por 3 vías, valida en 3 niveles y las gradúa con un semáforo de 2 ejes, `lib/apu_mapeo.js` las mapea al diccionario de reconocimiento de `data/catalogo_apu.json` y emite el código del catálogo de precios cuando el ítem existe allí. OCR.space como respaldo para escaneados. **Entrega cantidades, NO precios** | ✅ |
 | **APU · base de precios regionalizada** (Cap. 11) | `lib/apu/catalogo.js` + `data/apu_catalogo.json`: estructura oficial INVIAS/IDU (CD = MO + materiales + equipo + transporte), 48 insumos × 5 regiones, 17 ítems con composición y rendimiento, factores de ajuste regional. Se carga con `POST /api/admin/apu/cargar-catalogo` y se consulta sin token en `GET /api/apu/catalogo`. Los precios son de **referencia**, no cotizaciones, y cada uno declara su `fuente` | ✅ |
 | **Costos ocultos → calculadora de rentabilidad** | **Sigue sin existir la calculadora.** Ya está la mitad de abajo (el APU da el costo directo por ítem), pero la cuantía se sigue mostrando como si fuera ingreso y faltan los 10 conceptos del Cap. 11, empezando por la **contribución del 5 %** y las estampillas. Es la Fase 2 y ahora tiene sobre qué apoyarse | 🟡 |
+| **Precio bajo incertidumbre → a qué precio ofertar** (truco #11) | `lib/apu/optimizador.js` + el bloque `optimizador` de `/api/apu/rentabilidad` + el recuadro «Precio sugerido» del editor: barre las bajas plausibles alrededor de la mediana de la entidad y devuelve el precio que MAXIMIZA el valor esperado, con la curva y tres opciones (conservador / óptimo / agresivo). Es el consejo del manual —«valor esperado, no mínimo precio», porque el método de ponderación se sortea— convertido en una cifra que se puede aplicar con un botón | ✅ |
 
 ### Investigación de contraste (ago 2026) — correcciones al manual y hallazgos verificados
 
@@ -1318,6 +1319,84 @@ responden *cuánto vale la oportunidad* y *si la empresa puede ejecutarla*.
 - **En `public/apu.js` la precarga del departamento corre DESPUÉS de cargar el catálogo.** Antes no
   existe la opción del desplegable que hay que seleccionar y la precarga se perdería en silencio; hay
   prueba del orden.
+
+### Optimizador de precio de oferta (ago 2026)
+
+`lib/apu/optimizador.js` + el bloque `optimizador` de `POST /api/apu/rentabilidad` + el recuadro
+«Precio sugerido» de `/apu.html`. Cierra el circuito: el editor decía cuánto CUESTA y la
+rentabilidad cuánto DEJA ese precio; esto responde **a qué precio ofertar**, que es la decisión.
+Hasta aquí el dueño miraba la baja mediana y descontaba a ojo.
+
+- **NO REIMPLEMENTA NADA: llama a `rentabilidad()` una vez por punto de la rejilla.** Un segundo
+  cálculo del margen o de la probabilidad divergiría del primero, y la divergencia sería entre el
+  precio que la app RECOMIENDA y el margen que enseña para ese mismo precio. Dos invariantes
+  probadas lo atan: el punto evaluado en el precio VIGENTE reproduce EXACTAMENTE el bloque de
+  rentabilidad (VEG, P, margen, K_max) y el punto en la mediana del mercado devuelve EXACTAMENTE la
+  `p` de `/api/oportunidades` —el multiplicador de precio está normalizado a 1 ahí—.
+- **TRES CORRECCIONES AL ENCARGO, las tres con prueba:**
+  · **El descuento se mide contra el PRESUPUESTO OFICIAL, no contra el precio de venta.** El encargo
+    pedía barrer «mediana − 10pp … + 5pp» y, en la misma frase, `precio = precio_venta × (1 −
+    d/100)`. Las dos mitades no hablan de lo mismo: la baja de `lib/indice_baja` está DEFINIDA como
+    `1 − adjudicado/precio_base`. En el corpus el precio de venta es el **69 %** de la cuantía, así
+    que barrer la perilla sobre ese rango habría puesto toda la curva en una zona de baja real del
+    30 %, donde la probabilidad es residual. La perilla viaja aparte y **por punto**, como
+    `descuento_apu_pct`, con `precio_apu_resultante` (lo que SALDRÁ del editor, calculado con el
+    `red` importado de `lib/apu/calculo` — reescribirlo incumpliría la promesa por céntimos).
+  · **El VEG que decide no es `P × margen bruto`.** Ese margen no ha pagado la contribución del 5 %,
+    ni estampillas, ni pólizas, ni el costo financiero, ni la maldición del ganador. `veg` es el
+    MISMO del bloque de rentabilidad (`P × utilidad neta − costo de preparar`) y es el que elige; la
+    fórmula literal del encargo se publica al lado como `veg_margen_bruto` para que la diferencia se
+    vea. Dos cifras con el mismo nombre y distinto significado es `cargado`/`cargado_el` otra vez.
+  · **Un precio por encima del presupuesto oficial no es una opción**: con mediana 7 % el rango del
+    encargo arranca en −3 %, o sea un 3 % SOBRE el techo. La rejilla se recorta en 0 y lo declara
+    (`rango.recortado_en_cero`). Dejar esos puntos los ofrecería como alternativas.
+- **LAS TRES OPCIONES SON LOS EXTREMOS DE LA MESETA DEL VEG (±5 % del máximo), no un ±N pp
+  inventado.** Y se camina CONTIGUAMENTE desde el óptimo: la curva es el producto de una mezcla de
+  dos regímenes por un margen lineal y no hay garantía de que sea unimodal, así que tomar el mínimo
+  y el máximo de la banda saltaría un valle y ofrecería como «casi igual de bueno» un precio
+  separado por una zona que no lo es. Si la meseta colapsa **se dice** (el óptimo es agudo) en vez
+  de fabricar tres puntos distintos.
+- **EL DEFECTO CONOCIDO NO MUEVE EL PRECIO RECOMENDADO, y hay que contarlo exacto.** El precio se
+  cobra DOS VECES (`docs/PROBABILIDAD_MEJORADA.md` §2.5c: `lib/probabilidad` ya multiplica por un
+  factor de baja y aquí se vuelve a modular por precio sobre esa `p`). Ese factor es CONSTANTE a lo
+  largo del barrido y `argmax_d [k·f(d) − c]` no depende de `k > 0`: afecta al NIVEL del VEG, no al
+  argmax. Hay prueba que escala `p_base` y comprueba que el descuento óptimo no se mueve **y que el
+  VEG sí**. Decir «queda arreglado» sería falso; decir «invalida la recomendación», también.
+- **Sin centro de mercado NO hay recomendación.** Con la probabilidad plana el óptimo saldría
+  siempre en «no descuente nada», que no es una recomendación sino la ausencia de una disfrazada de
+  consejo. `aplicable:false` con su `motivo` (`sin_centro_de_mercado`, `sin_presupuesto_oficial`,
+  `sin_costo_directo`, `rango_sobre_el_presupuesto`) y `sin_punto_rentable` en **`null`, no
+  `false`**: no es que no haya precio rentable, es que no se miró ninguno.
+- **Las deducciones ESCALAN con el precio.** `fiscal.tau_costo_valor` llega en pesos calculado sobre
+  el precio vigente, pero debajo son PORCENTAJES del valor del contrato (contribución del 5 % +
+  estampillas). Dejarlo fijo mientras se barre haría que bajar la oferta no ahorrara ni un peso de
+  contribución y el barrido se inclinaría a precios bajos por una razón falsa. En el precio de
+  referencia el objeto viaja TAL CUAL —sin reescalar ni redondear—, que es lo que hace exacta la
+  igualdad con el bloque de rentabilidad.
+- **La rejilla manda el DESCUENTO y el punto vigente manda el PRECIO.** Los puntos de la curva
+  redondean al peso (un precio recomendado con céntimos no se puede ofertar); el punto vigente entra
+  verbatim, porque `precio_final` sale de `calcularPresupuesto` con dos decimales y redondearlo
+  bastaría para romper la igualdad. Hay prueba con un precio final CON decimales.
+- **`contextoDePresupuesto` se EXTRAJO de `desdePresupuesto`, no se copió.** El endpoint necesita la
+  misma traducción del presupuesto (AIU, fiscal, anticipo) para el optimizador; dos traducciones del
+  mismo presupuesto habrían calculado la recomendación con una estructura fiscal y el margen que se
+  enseña al lado con otra.
+- **Va DENTRO de la acción `rentabilidad`, no en una nueva**: 12 funciones es el tope del plan Hobby
+  y el repositorio está en 12 (hay prueba que las cuenta). Además allí ya están leídos el índice de
+  baja, el de competencia y la `p` del proceso. `id_proceso` viaja y vuelve pero **no condiciona el
+  cálculo**: es una etiqueta, y esconder la respuesta a quien escribió la cuantía pero no el id
+  sería negarle el dato por no haber rellenado un rótulo. El `costo_directo_total` del cuerpo **no
+  se acepta**: sería una segunda fuente de verdad del costo y podría recomendar un precio que no
+  corresponde a los ítems en pantalla.
+- **Frontend**: el recuadro sale SOLO tras «Calcular APU» cuando hay `id_proceso`, y solo si el
+  cálculo salió bien —recomendar sobre un presupuesto que falló sería creíble y equivocado—. El
+  botón «Aplicar este descuento al APU» escribe `descuento_apu_pct` (jamás `descuento`), enciende el
+  ajuste competitivo y **recalcula por el mismo camino** que el botón «Calcular APU»: rellenar el
+  campo sin recalcular dejaría el resumen enseñando el precio anterior. Hay prueba de las dos cosas.
+  Cuando el precio óptimo está por encima del precio de venta el botón se deshabilita **y se
+  explica** («le sobra margen: suba la utilidad o la administración»), que es el caso normal cuando
+  la cuantía publicada está muy por encima del APU. La curva se pinta con un SVG en línea: el
+  proyecto no tiene dependencias y una polilínea no justifica la primera.
 
 ### Catálogo de precios APU (ago 2026)
 
@@ -1494,6 +1573,10 @@ responden *cuánto vale la oportunidad* y *si la empresa puede ejecutarla*.
 - Catálogo de precios APU en `lib/apu/catalogo.js` + semilla `data/apu_catalogo.json` (48 insumos,
   17 ítems, 5 regiones); la investigación de fuentes, en `docs/APU_Y_RENTABILIDAD.md`. No toca la
   ingesta ni el corpus: vive en `apu:*`.
+- Del costo al precio: `lib/apu/calculo.js` (presupuesto y AIU) → `lib/apu/rentabilidad.js` (margen,
+  caja, VEG y payback de UN precio) → `lib/apu/optimizador.js` (**qué precio**: barre las bajas
+  plausibles llamando al anterior y devuelve el máximo VEG con su curva). Los tres se sirven desde
+  la acción `rentabilidad` de `api/apu/[accion].js` y se pintan en `/apu.html`.
 - `autorizacion_helder.md`: constancia de autorización de datos personales (plantilla).
 - Clave del sitio: `231105` (gate del cliente, en `public/app.js`). **No protege la API**: es una
   cortesía del navegador. La protección de servidor es `HISTORICO_TOKEN` (`lib/auth.js`) —que desde

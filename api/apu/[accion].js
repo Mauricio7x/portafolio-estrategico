@@ -7,6 +7,9 @@
        …?bloque=items|insumos|regiones
      POST /api/apu/inferir     objeto del proceso → tipología + ítems sugeridos
      POST /api/apu/calcular    presupuesto completo con desglose por ítem
+     POST /api/apu/rentabilidad  margen, caja, VEG, payback **y el OPTIMIZADOR
+                               DE PRECIO**: el precio que maximiza el valor
+                               esperado, con la curva entera para graficar
      POST /api/apu/guardar     guarda el borrador (TTL 30 días)
      GET  /api/apu/cargar?id=  recupera un borrador
      GET  /api/apu/listar      borradores vigentes del perfil
@@ -51,7 +54,10 @@ const {
 } = require("../../lib/apu/catalogo.js");
 const { inferir } = require("../../lib/apu/inferencia.js");
 const { calcularPresupuesto, normalizarCatalogo } = require("../../lib/apu/calculo.js");
-const { desdePresupuesto, ajusteCompetitivo, precioPiso } = require("../../lib/apu/rentabilidad.js");
+const {
+  desdePresupuesto, contextoDePresupuesto, ajusteCompetitivo, precioPiso,
+} = require("../../lib/apu/rentabilidad.js");
+const { optimizarPrecioOferta } = require("../../lib/apu/optimizador.js");
 const { leerIndiceBaja, bajaDeMercado } = require("../../lib/indice_baja.js");
 const { leerIndice: leerIndiceComp, competenciaDe } = require("../../lib/indice_competencia.js");
 const { estimarPDetalle } = require("../../lib/probabilidad.js");
@@ -377,6 +383,60 @@ module.exports = async function handler(req, res) {
       oferentes, presupuesto_oficial: Number.isFinite(cuantia) && cuantia > 0 ? cuantia : null,
     });
 
+    /* ── OPTIMIZADOR DE PRECIO ──────────────────────────────────────────
+       El paso que faltaba: hasta aquí la app publicaba los datos (baja mediana,
+       competencia, probabilidad, margen) y el contratista decidía a ojo cuánto
+       descontar. Esto barre el rango de bajas plausibles y devuelve el precio
+       que MAXIMIZA el valor esperado de la ganancia, con la curva entera para
+       que la recomendación se pueda discutir en vez de creer.
+
+       Va DENTRO de esta acción y no en una nueva: el plan Hobby de Vercel
+       admite 12 funciones y el repositorio está exactamente en 12 (hay prueba
+       que las cuenta). Además aquí ya están leídos el índice de baja, el de
+       competencia y la `p` del proceso: en su propia acción habría que pagar
+       otra vez esas dos lecturas de Redis para responder lo mismo.
+
+       El contexto sale de `contextoDePresupuesto`, la MISMA traducción que usa
+       `desdePresupuesto` para el bloque de rentabilidad de arriba. Copiarla
+       aquí habría creado dos estructuras fiscales del mismo presupuesto, y la
+       recomendación de precio se calcularía con una y el margen que se enseña
+       al lado con la otra.
+
+       `id_proceso` viaja y se devuelve, pero NO condiciona el cálculo: es una
+       etiqueta. Lo que hace falta de verdad es la cuantía, el costo directo y
+       un centro de mercado, y esconder la respuesta a quien escribió la cuantía
+       pero no el id sería negarle el dato por no haber rellenado un rótulo. */
+    const ctxPres = contextoDePresupuesto(presupuesto);
+    const opt = datos.optimizador && typeof datos.optimizador === "object" ? datos.optimizador : {};
+    const optimizador = optimizarPrecioOferta(
+      {
+        id_proceso: String(datos.id_proceso || "").slice(0, 120) || null,
+        entidad: lic.entidad || null,
+        presupuesto_oficial: Number.isFinite(cuantia) && cuantia > 0 ? cuantia : null,
+        baja, competencia,
+        p_base: pBase ? pBase.p : null,
+        precio_venta: presupuesto.resumen.precio_venta,
+        precio_actual: presupuesto.resumen.precio_final,
+      },
+      /* El costo directo entra como PARÁMETRO, salido del presupuesto que se
+         acaba de calcular. El encargo admite recibirlo del cliente; aquí no se
+         acepta, y es a propósito: un `costo_directo_total` del cuerpo sería una
+         segunda fuente de verdad del costo y podría recomendar un precio que no
+         corresponde a los ítems que se están viendo en pantalla. */
+      presupuesto.resumen.costo_directo_total,
+      {
+        aiu: ctxPres.aiu,
+        fiscal: ctxPres.fiscal,
+        anticipo_pct: ctxPres.anticipo_pct,
+        anticipo_es_dato: ctxPres.anticipo_es_dato,
+        plazo_meses: Number(datos.plazo_meses) || 12,
+        dso_dias: Number(datos.dso_dias) || undefined,
+        precio_piso: piso.precio_piso_decision,
+        paso_pp: opt.paso_pp, desde_pp: opt.desde_pp, hasta_pp: opt.hasta_pp,
+        tolerancia_pct: opt.tolerancia_pct, costo_preparacion: opt.costo_preparacion,
+      },
+    );
+
     return res.status(200).json({
       ok: true, perfil: perfilDe(q, datos) || null,
       presupuesto, rentabilidad: r, precio_piso: piso,
@@ -385,6 +445,7 @@ module.exports = async function handler(req, res) {
         baja, presupuesto_oficial: Number.isFinite(cuantia) && cuantia > 0 ? cuantia : null,
         precio_oferta: presupuesto.resumen.precio_final,
       }),
+      optimizador,
       como_leerlo: {
         orden: "El indicador de decisión es el VEG, no el margen: es el único que descuenta el costo de "
           + "preparar una oferta, que se paga se gane o no.",
@@ -392,6 +453,10 @@ module.exports = async function handler(req, res) {
           + "distintas y ninguna sustituye a la otra.",
         precio: "El ajuste competitivo NO recomienda minimizar: el método de ponderación económica se "
           + "SORTEA en la audiencia, y el centro del mercado gana en tres de los cuatro métodos.",
+        optimo: "«optimizador» va un paso más allá del ajuste competitivo: aquel dice dónde está el CENTRO "
+          + "del mercado y este dice a qué precio el valor esperado es MÁXIMO, que casi nunca es el mismo "
+          + "punto. El descuento del optimizador se mide contra el presupuesto oficial; para escribirlo en "
+          + "la perilla del editor está «descuento_apu_pct» de cada punto.",
       },
     });
   }

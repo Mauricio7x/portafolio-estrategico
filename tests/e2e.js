@@ -162,6 +162,33 @@
         ⇒ P(ganar) no sube y MG(n) no baja; A.12 DSO↑ ⇒ C_financiero no baja), y
         que el borrador quede asociado a su `id_proceso` — que es lo único con lo
         que el panel puede encender «APU listo», y es POR PERFIL.
+     j-ter. OPTIMIZADOR DE PRECIO DE OFERTA (lib/apu/optimizador + el bloque
+        `optimizador` de /api/apu/rentabilidad). Barre el rango de bajas
+        plausibles llamando a `rentabilidad()` una vez por punto y devuelve el
+        precio que MAXIMIZA el valor esperado, con la curva entera.
+        Lo que se vigila no es la aritmética del barrido sino tres confusiones:
+          · DOS DESCUENTOS QUE NO SON EL MISMO NÚMERO — la baja contra el
+            presupuesto oficial (la del mercado, la que se compara con la
+            mediana) y la perilla «factor de baja» del editor (contra el precio
+            de venta). En el corpus el precio de venta es el 69 % de la cuantía:
+            confundirlas mueve el precio un tercio. Hay prueba de que el botón
+            escribe `descuento_apu_pct` y NO `descuento`, y un viaje de ida y
+            vuelta por los handlers reales —incluido el caso con precio final
+            CON DECIMALES, que es donde se rompería.
+          · DOS CÁLCULOS DE LA MISMA CIFRA — el punto de la curva evaluado en el
+            precio vigente reproduce EXACTAMENTE el bloque de rentabilidad (VEG,
+            P, margen y K_max), y el punto en la mediana del mercado devuelve
+            EXACTAMENTE la `p` que publica /api/oportunidades.
+          · UNA RECOMENDACIÓN FABRICADA — sin centro de mercado, sin presupuesto
+            oficial o sin costo directo NO sale un «óptimo»: sale el motivo.
+        Más: la rejilla recortada en descuento 0 (ofertar por encima del techo
+        descalifica), las monotonías que no dependen del modelo (más descuento ⇒
+        menos precio y menos margen) y la que sí pero solo donde es demostrable
+        (por DEBAJO de la mediana la probabilidad no puede caer), las tres
+        opciones como extremos de la MESETA del VEG —con un caso de máximo
+        interior donde son tres precios distintos—, y que escalar la `p` base no
+        mueva el precio recomendado (el precio se cobra dos veces en
+        docs/PROBABILIDAD_MEJORADA §2.5c: afecta al NIVEL del VEG, no al argmax).
      h. La raíz sirve el HTML del frontend (gate + app) y app.js compila.
      i. (Documentado) Sin CLI de Vercel ni red: pruebas locales con mocks.
    ========================================================================== */
@@ -7616,6 +7643,334 @@ async function main() {
       console.log(`  · rentabilidad APU: margen bruto ${ren.margen_bruto_pct} % · P(ganar) ${ren.p_ganar} · `
         + `VEG ${Math.round((ren.veg || 0) / 1e6)} M · K_max ${Math.round(ren.k_max / 1e6)} M · `
         + `payback ${ren.payback_meses ?? "—"} · badge por proceso verificado`);
+    }
+
+    /* ═══════════ j-ter. OPTIMIZADOR DE PRECIO DE OFERTA ═══════════
+       El paso que convierte la inteligencia de datos en una decisión: hasta
+       ahora la app publicaba la baja mediana y el contratista decidía a ojo
+       cuánto descontar. `lib/apu/optimizador` barre el rango de bajas
+       plausibles y devuelve el precio que MAXIMIZA el valor esperado.
+
+       Lo que de verdad puede romperse aquí no es la aritmética del barrido sino
+       tres confusiones, y las tres tienen su prueba:
+         (1) DOS DESCUENTOS QUE NO SON EL MISMO NÚMERO — la baja contra el
+             presupuesto oficial (la del mercado) y la perilla del editor
+             (contra el precio de venta). En el corpus el precio de venta es el
+             69 % de la cuantía: confundirlas mueve el precio un tercio.
+         (2) DOS CÁLCULOS DE LA MISMA CIFRA — el punto de la curva evaluado en
+             el precio vigente tiene que reproducir EXACTAMENTE el bloque de
+             rentabilidad, y el punto en la mediana del mercado tiene que
+             devolver EXACTAMENTE la `p` que ya publica /api/oportunidades.
+         (3) UNA RECOMENDACIÓN FABRICADA — sin centro de mercado no puede salir
+             un «óptimo»: sin dato NO es «baja del 0 %». */
+    {
+      const apuO = require("../api/apu/[accion].js");
+      const opti = require("../lib/apu/optimizador.js");
+      const tipO = require("../lib/apu/tipologias.js");
+      const { calcularPresupuesto } = require("../lib/apu/calculo.js");
+
+      const ITEMS_O = tipO.itemsDeTipologia("VIA-PH").map((c) => ({
+        item_id: c, cantidad: c === "INV-PH.1" ? 2700 : (c === "INV-640.1" ? 18000 : 600),
+      }));
+      const CFG_O = { aiu_pct: 28, imprevistos_pct: 5, utilidad_pct: 7 };
+      const cuerpoCon = (extra) => ({
+        items: ITEMS_O, departamento: "Antioquia", config: CFG_O,
+        entidad: "GOBERNACIÓN DEL TOLIMA", entidad_nit: "800100002",
+        unspsc: "V1.72141000", plazo_meses: 8, perfil: "helder",
+        id_proceso: "CO1.APU.JERICO", ...extra,
+      });
+
+      /* ---- j-ter.1 · el caso holgado: la cuantía por encima del APU ---- */
+      const rr = await invocar(apuO, "/api/apu/rentabilidad", CAB_TOKEN,
+        { metodo: "POST", body: cuerpoCon({ cuantia: 1500000000 }) });
+      assert.strictEqual(rr.status, 200, `optimizador falló: ${JSON.stringify(rr.cuerpo).slice(0, 300)}`);
+      const co = rr.cuerpo;
+      const o = co.optimizador;
+      assert.ok(o, "/api/apu/rentabilidad no trae el bloque «optimizador»");
+      assert.strictEqual(o.aplicable, true,
+        `el optimizador debía aplicar (hay baja, cuantía y costo directo): ${o.motivo} — ${o.mensaje}`);
+      assert.strictEqual(o.id_proceso, "CO1.APU.JERICO", "el id del proceso viaja y vuelve");
+
+      const mediana = o.centro_mercado.baja_mediana_pct;
+      assert.ok(Number.isFinite(mediana), "sin mediana no hay centro de mercado y no debería haber curva");
+
+      /* La rejilla del encargo: 0,5 pp de paso, −10/+5 pp alrededor de la
+         mediana, RECORTADA en 0 — un descuento negativo es un precio POR ENCIMA
+         del presupuesto oficial, y eso no se evalúa: descalifica la oferta. */
+      assert.strictEqual(o.rango.paso_pct, 0.5, "el paso de la rejilla es 0,5 pp");
+      assert.strictEqual(o.rango.pedido_desde_pct, mediana - 10, "el rango pedido arranca 10 pp bajo la mediana");
+      assert.strictEqual(o.rango.hasta_pct, mediana + 5, "…y termina 5 pp por encima");
+      assert.strictEqual(o.rango.desde_pct, Math.max(0, mediana - 10), "la rejilla se recorta en descuento 0");
+      assert.strictEqual(o.rango.recortado_en_cero, mediana - 10 < 0);
+      assert.strictEqual(o.curva.length, o.rango.puntos);
+      assert.strictEqual(o.curva.length,
+        Math.round((o.rango.hasta_pct - o.rango.desde_pct) / o.rango.paso_pct) + 1);
+      for (const p of o.curva) {
+        assert.ok(p.descuento >= 0, "ningún punto puede ofertar por encima del presupuesto oficial");
+      }
+
+      /* ---- j-ter.2 · el precio se DERIVA del descuento, y el margen del precio ---- */
+      const CD = co.presupuesto.resumen.costo_directo_total;
+      for (const p of o.curva) {
+        assert.strictEqual(p.precio, Math.round(1500000000 * (1 - p.descuento / 100)),
+          `el precio del punto ${p.descuento} % no es la cuantía descontada esa baja`);
+        assert.strictEqual(p.margen, p.precio - CD,
+          "«margen» es precio − costo directo total, exactamente como lo pidió el encargo");
+        assert.strictEqual(p.veg_margen_bruto, Math.round(p.probabilidad * p.margen),
+          "la fórmula literal del encargo se publica al lado de la que decide");
+      }
+      // monotonías que NO dependen del modelo: más descuento ⇒ menos precio y
+      // menos margen. Si alguna se rompiera, el barrido estaría mal ordenado.
+      for (let i = 1; i < o.curva.length; i++) {
+        assert.ok(o.curva[i].descuento > o.curva[i - 1].descuento, "la rejilla tiene que ir en orden");
+        assert.ok(o.curva[i].precio < o.curva[i - 1].precio, "más descuento no puede dar más precio");
+        assert.ok(o.curva[i].margen < o.curva[i - 1].margen, "más descuento no puede dar más margen");
+      }
+      /* Y una que SÍ depende del modelo, pero solo donde es demostrable: por
+         DEBAJO de la mediana las dos mitades de la mezcla crecen con la baja
+         (la sigmoide de «menor valor» y el lado izquierdo de la campana), así
+         que la probabilidad no puede bajar. Por encima de la mediana la mezcla
+         deja de ser monótona a propósito —esa es toda la tesis del módulo— y
+         exigirlo ahí sería exigir que ofertar más barato siempre gane más. */
+      const izquierda = o.curva.filter((p) => p.descuento <= mediana);
+      for (let i = 1; i < izquierda.length; i++) {
+        assert.ok(izquierda[i].probabilidad >= izquierda[i - 1].probabilidad,
+          `por debajo del centro del mercado la probabilidad no puede caer al descontar más `
+          + `(${izquierda[i - 1].descuento} % → ${izquierda[i].descuento} %)`);
+      }
+
+      /* ---- j-ter.3 · NO ES UN SEGUNDO CÁLCULO ----
+         Las dos igualdades que atan el optimizador al resto de la app. Si
+         divergieran, la app recomendaría un precio con una cuenta y enseñaría
+         su margen con otra — el defecto que este repositorio ya pagó dos veces. */
+      const centro = o.curva.find((p) => p.descuento === mediana);
+      assert.ok(centro, "la mediana del mercado tiene que caer en la rejilla");
+      assert.strictEqual(centro.probabilidad, co.p_ganar_base.p,
+        "ofertar en la mediana del mercado tiene que devolver EXACTAMENTE la probabilidad que publica "
+        + "/api/oportunidades: el multiplicador de precio está normalizado a 1 ahí");
+      const act = o.punto_actual;
+      assert.ok(act, "el punto vigente tiene que viajar: es lo que hace accionable la recomendación");
+      assert.strictEqual(act.precio, co.presupuesto.resumen.precio_final);
+      assert.strictEqual(act.veg, co.rentabilidad.veg,
+        "el punto vigente de la curva y el bloque de rentabilidad son la MISMA cuenta");
+      assert.strictEqual(act.probabilidad, co.rentabilidad.p_ganar);
+      assert.strictEqual(act.margen, co.rentabilidad.margen_bruto_cop);
+      assert.strictEqual(act.k_max, co.rentabilidad.k_max);
+
+      /* ---- j-ter.4 · el óptimo es el máximo de VERDAD, y las tres opciones ---- */
+      const vegMax = Math.max(...o.curva.map((p) => p.veg));
+      assert.strictEqual(o.optimo.veg, vegMax, "el «óptimo» tiene que ser el máximo de la curva publicada");
+      assert.strictEqual(o.precio_optimo, o.optimo.precio);
+      assert.strictEqual(o.descuento_optimo_pct, o.optimo.descuento);
+      assert.strictEqual(o.veg_optimo, o.optimo.veg);
+      assert.strictEqual(o.probabilidad_optima, o.optimo.probabilidad);
+      const op = o.opciones;
+      assert.ok(op.conservador.descuento <= op.optimo.descuento
+        && op.optimo.descuento <= op.agresivo.descuento,
+        "conservador ≤ óptimo ≤ agresivo en descuento, por construcción");
+      assert.ok(op.conservador.margen >= op.optimo.margen && op.optimo.margen >= op.agresivo.margen,
+        "el conservador es el de MÁS margen y el agresivo el de menos: si no, las etiquetas mienten");
+      // las tres viven dentro de la meseta declarada: no son un ±N pp inventado
+      const umbral = o.optimo.veg - Math.abs(o.optimo.veg) * (op.meseta.tolerancia_pct / 100);
+      for (const k of ["conservador", "optimo", "agresivo"]) {
+        assert.ok(op[k].veg >= umbral,
+          `la opción «${k}» está fuera de la meseta del ${op.meseta.tolerancia_pct} %`);
+      }
+      assert.strictEqual(op.meseta.desde_pct, op.conservador.descuento);
+      assert.strictEqual(op.meseta.hasta_pct, op.agresivo.descuento);
+      assert.strictEqual(op.meseta.colapsada,
+        op.conservador.descuento === op.agresivo.descuento);
+
+      /* ---- j-ter.5 · LOS DOS DESCUENTOS NO SON EL MISMO NÚMERO ----
+         Aquí el precio de venta del APU es ~69 % de la cuantía, así que el
+         precio óptimo cae POR ENCIMA de él: no hay descuento que aplicar, y
+         decir que sí dejaría al botón produciendo un precio distinto del
+         recomendado. Es el caso que el encargo no contemplaba. */
+      assert.ok(co.presupuesto.resumen.precio_venta < 1500000000,
+        "el fixture tiene que dejar el precio de venta por debajo de la cuantía, o no prueba nada");
+      assert.ok(o.optimo.descuento_apu_pct < 0 && o.optimo.aplicable_al_apu === false,
+        "con la cuantía muy por encima del APU, el «descuento» del editor sale negativo y NO es aplicable");
+      assert.strictEqual(o.optimo.precio_apu_resultante, null,
+        "sin descuento aplicable no puede publicarse un precio resultante");
+      assert.ok(o.alertas.some((a) => /POR ENCIMA de su precio de venta/.test(a)),
+        "y hay que DECIRLO, no dejar el botón muerto");
+
+      /* ---- j-ter.6 · el caso ajustado: la cuantía por debajo del APU ----
+         Aquí sí hay descuento que aplicar, y se comprueba el VIAJE DE IDA Y
+         VUELTA por los handlers reales: la perilla que publica el optimizador,
+         metida en /api/apu/calcular, tiene que dar EXACTAMENTE el precio que el
+         optimizador prometió. */
+      const rr2 = await invocar(apuO, "/api/apu/rentabilidad", CAB_TOKEN,
+        { metodo: "POST", body: cuerpoCon({ cuantia: 1000000000 }) });
+      assert.strictEqual(rr2.status, 200);
+      const o2 = rr2.cuerpo.optimizador;
+      assert.strictEqual(o2.aplicable, true);
+      const aplicables = o2.curva.filter((p) => p.aplicable_al_apu);
+      assert.ok(aplicables.length > 0,
+        "con la cuantía por debajo del precio de venta tiene que haber puntos aplicables al APU");
+      for (const p of aplicables) {
+        assert.ok(p.descuento_apu_pct >= 0 && p.descuento_apu_pct <= opti.FACTOR_BAJA_MAX,
+          "la perilla del editor solo admite entre 0 % y 60 %");
+      }
+      {
+        const p = aplicables[0];
+        const rec = await invocar(apuO, "/api/apu/rentabilidad", CAB_TOKEN, {
+          metodo: "POST",
+          body: cuerpoCon({
+            cuantia: 1000000000,
+            config: { ...CFG_O, aplicar_ajuste_competitivo: true, factor_baja: p.descuento_apu_pct },
+          }),
+        });
+        assert.strictEqual(rec.status, 200);
+        const final = rec.cuerpo.presupuesto.resumen.precio_final;
+        assert.strictEqual(final, p.precio_apu_resultante,
+          "«precio_apu_resultante» promete lo que va a salir del editor al pulsar Aplicar: si no cuadra al "
+          + "céntimo, el botón entrega un precio distinto del recomendado y nadie se entera");
+        assert.ok(Math.abs(final - p.precio) <= p.precio * 0.0001,
+          "…y ese precio tiene que quedar a menos de un 0,01 % del recomendado (el resto es el redondeo "
+          + "a los dos decimales que se pueden teclear en la perilla)");
+
+        /* EL PRECIO CON DECIMALES, que es donde se rompería la igualdad. Con
+           una baja aplicada, `precio_final` sale con dos decimales; si el punto
+           vigente lo redondeara al peso para evaluarlo, dejaría de reproducir
+           el bloque de rentabilidad — y esa igualdad es lo único que garantiza
+           que la recomendación y el margen que se enseña son la MISMA cuenta. */
+        assert.notStrictEqual(final % 1, 0,
+          "este caso tiene que dejar el precio final con decimales, o no prueba el redondeo");
+        const actual2 = rec.cuerpo.optimizador.punto_actual;
+        assert.strictEqual(actual2.precio, final, "el punto vigente evalúa el precio TAL CUAL, sin redondear");
+        assert.strictEqual(actual2.veg, rec.cuerpo.rentabilidad.veg);
+        assert.strictEqual(actual2.probabilidad, rec.cuerpo.rentabilidad.p_ganar);
+        assert.strictEqual(actual2.margen, rec.cuerpo.rentabilidad.margen_bruto_cop);
+      }
+
+      /* ---- j-ter.6-bis · un máximo INTERIOR, que es donde las tres opciones
+         significan algo ----
+         En los dos casos de arriba el máximo cae en un extremo del rango: es
+         real (con esa cuantía el margen aguanta cualquier baja plausible) pero
+         deja sin ejercitar la meseta. Con una cuantía intermedia la curva sube
+         y vuelve a bajar, y ahí conservador / óptimo / agresivo son tres puntos
+         distintos con las tres propiedades que el encargo les atribuye. */
+      {
+        const presI = calcularPresupuesto({ items: ITEMS_O, departamento: "Antioquia", config: CFG_O });
+        const oi = opti.optimizarPrecioOferta(
+          {
+            presupuesto_oficial: 1150000000, p_base: 0.25,
+            baja: { nivel: "alto", baja_mediana: 8, baja_p25: 5, baja_p75: 12, procesos_contados: 40 },
+            precio_venta: presI.resumen.precio_venta, precio_actual: presI.resumen.precio_final,
+          },
+          presI.resumen.costo_directo_total, {},
+        );
+        assert.strictEqual(oi.rango.optimo_en_el_borde, null, "este caso tiene el máximo DENTRO del rango");
+        const c1 = oi.opciones.conservador, c2 = oi.opciones.optimo, c3 = oi.opciones.agresivo;
+        assert.ok(c1.descuento < c2.descuento && c2.descuento < c3.descuento,
+          "con máximo interior las tres opciones son tres precios distintos");
+        assert.ok(c1.margen > c2.margen && c2.margen > c3.margen,
+          "conservador = MÁS margen; agresivo = menos. Si no, las etiquetas mienten");
+        assert.ok(c3.probabilidad > c1.probabilidad,
+          "…y el agresivo compra probabilidad: es lo que el dueño está pagando con el margen");
+        assert.ok(c2.veg >= c1.veg && c2.veg >= c3.veg, "el óptimo es el de más VEG de los tres");
+        assert.strictEqual(oi.opciones.meseta.colapsada, false);
+        assert.strictEqual(c2.perdida_veg_pct, 0, "el óptimo no pierde nada contra sí mismo");
+        assert.ok(c1.perdida_veg_pct > 0 && c1.perdida_veg_pct <= oi.opciones.meseta.tolerancia_pct);
+        assert.ok(c3.perdida_veg_pct > 0 && c3.perdida_veg_pct <= oi.opciones.meseta.tolerancia_pct);
+        assert.strictEqual(c1.diferencia_vs_optimo.veg, c1.veg - c2.veg);
+        // el VEG que DECIDE no es el del encargo: `P × margen bruto` no ha
+        // pagado la contribución del 5 % ni la financiación, y por eso es mayor
+        assert.ok(c2.veg_margen_bruto > c2.veg,
+          "el VEG sobre margen BRUTO tiene que ser mayor que el que descuenta los costos ocultos: si "
+          + "coincidieran, o no se están restando o se están restando dos veces");
+      }
+
+      /* ---- j-ter.7 · sin centro de mercado NO hay recomendación ----
+         SIN DATO no es «baja del 0 %». Con la probabilidad plana el óptimo
+         saldría siempre en «no descuente nada», que no es una recomendación:
+         es la ausencia de una, disfrazada de consejo. */
+      {
+        const presO = calcularPresupuesto({ items: ITEMS_O, departamento: "Antioquia", config: CFG_O });
+        const sinBaja = opti.optimizarPrecioOferta(
+          {
+            presupuesto_oficial: 1500000000, p_base: 0.2,
+            baja: { nivel: "sin_dato", baja_mediana: null, procesos_contados: 0, mensaje: "Sin datos históricos de baja para esta entidad." },
+            precio_venta: presO.resumen.precio_venta, precio_actual: presO.resumen.precio_final,
+          },
+          presO.resumen.costo_directo_total, {},
+        );
+        assert.strictEqual(sinBaja.aplicable, false);
+        assert.strictEqual(sinBaja.motivo, "sin_centro_de_mercado");
+        assert.strictEqual(sinBaja.precio_optimo, null, "sin centro de mercado no puede haber precio óptimo");
+        assert.deepStrictEqual(sinBaja.curva, []);
+        assert.strictEqual(sinBaja.sin_punto_rentable, null,
+          "`null`, no `false`: no es que no haya precio rentable, es que no se miró ninguno");
+        assert.ok(/SIN DATO no es/i.test(sinBaja.mensaje), "hay que decir por qué, no callar");
+
+        // …y sin presupuesto oficial tampoco: «descuento» no significaría nada
+        const sinPo = opti.optimizarPrecioOferta(
+          { presupuesto_oficial: null, p_base: 0.2, baja: { nivel: "medio", baja_mediana: 7 } },
+          presO.resumen.costo_directo_total, {},
+        );
+        assert.strictEqual(sinPo.aplicable, false);
+        assert.strictEqual(sinPo.motivo, "sin_presupuesto_oficial");
+
+        // …ni sin costo directo: no hay margen que optimizar
+        assert.strictEqual(opti.optimizarPrecioOferta(
+          { presupuesto_oficial: 1e9, p_base: 0.2, baja: { nivel: "medio", baja_mediana: 7 } }, 0, {},
+        ).motivo, "sin_costo_directo");
+
+        /* ---- j-ter.8 · EL PRECIO RECOMENDADO NO DEPENDE DEL DEFECTO CONOCIDO ----
+           docs/PROBABILIDAD_MEJORADA.md §2.5c: el precio se cobra DOS VECES
+           (lib/probabilidad ya multiplica por un factor de baja y aquí se vuelve
+           a modular por precio). Ese factor es CONSTANTE a lo largo del barrido,
+           y `argmax_d [k·f(d) − c]` no depende de `k > 0`: mueve el NIVEL del
+           VEG, no el precio elegido. Decir «queda arreglado» sería falso; decir
+           «invalida la recomendación» también. Esto lo demuestra. */
+        const proceso = {
+          presupuesto_oficial: 1500000000,
+          baja: { nivel: "medio", baja_mediana: 7, baja_p25: 4, baja_p75: 12, procesos_contados: 40 },
+          precio_venta: presO.resumen.precio_venta, precio_actual: presO.resumen.precio_final,
+        };
+        const conP = (p) => opti.optimizarPrecioOferta({ ...proceso, p_base: p },
+          presO.resumen.costo_directo_total, {});
+        const a = conP(0.20), b = conP(0.16);
+        assert.strictEqual(a.descuento_optimo_pct, b.descuento_optimo_pct,
+          "escalar la probabilidad base no puede mover el precio recomendado");
+        assert.ok(b.veg_optimo < a.veg_optimo, "…pero sí baja el VEG: el nivel no es invariante, y se dice");
+      }
+
+      /* ---- j-ter.9 · el editor: recuadro, botón y la perilla correcta ---- */
+      {
+        const html = fs.readFileSync(path.join(__dirname, "..", "public", "apu.html"), "utf8");
+        const js = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "apu.js"), "utf8"));
+        for (const debe of ["seccion-precio-sugerido", "ps-precio", "ps-descuento", "ps-veg", "ps-prob",
+          "ps-opciones", "ps-curva", "btn-aplicar-descuento"]) {
+          assert.ok(html.includes(`id="${debe}"`), `apu.html sin #${debe}`);
+        }
+        assert.ok(/pintarPrecioSugerido\(c\.optimizador\)/.test(js),
+          "apu.js tiene que pintar el bloque «optimizador» de la respuesta");
+        /* EL BOTÓN ESCRIBE LA PERILLA DEL APU, NO LA BAJA DEL MERCADO. Es la
+           confusión que cuesta un tercio del precio en este mismo corpus: el
+           `descuento` se mide contra el presupuesto oficial y `factor-baja` se
+           aplica sobre el precio de venta. */
+        assert.ok(/\$\("factor-baja"\)\.value\s*=\s*punto\.descuento_apu_pct/.test(js),
+          "«Aplicar este descuento al APU» tiene que escribir `descuento_apu_pct`, no `descuento`");
+        assert.ok(!/\$\("factor-baja"\)\.value\s*=\s*punto\.descuento\b/.test(js),
+          "escribir la baja del mercado en la perilla del editor produciría un precio distinto del recomendado");
+        // el recuadro sale SOLO tras calcular el APU cuando hay proceso asociado
+        assert.ok(/if \(ok && \$\("id-proceso"\)\.value\.trim\(\)\) await calcularRentabilidad\(\{ auto: true \}\)/.test(js),
+          "tras calcular el APU con proceso asociado, el precio sugerido tiene que salir solo");
+        // aplicar RECALCULA: rellenar el campo y no recalcular dejaría el
+        // resumen enseñando el precio anterior
+        assert.ok(/async function aplicarDescuentoApu[\s\S]{0,900}await calcularApu\(\)/.test(js),
+          "aplicar el descuento tiene que recalcular el presupuesto por el mismo camino que el botón");
+        // el recuadro nunca queda mudo: si no hay con qué sugerir, DICE por qué
+        assert.ok(/ps-sin-datos/.test(js), "el estado «no aplicable» tiene que pintarse con su motivo");
+      }
+
+      console.log(`  · optimizador de precio: ${o.curva.length} precios entre ${o.rango.desde_pct} % y `
+        + `${o.rango.hasta_pct} % · óptimo ${o.descuento_optimo_pct} % → ${Math.round(o.precio_optimo / 1e6)} M `
+        + `(VEG ${Math.round(o.veg_optimo / 1e6)} M, P ${o.probabilidad_optima}) · meseta `
+        + `${op.meseta.desde_pct}–${op.meseta.hasta_pct} % · punto vigente ≡ bloque de rentabilidad · `
+        + "perilla del APU ida y vuelta");
     }
 
     /* h. la raíz sirve el frontend (Vercel: /public es el output estático) */
