@@ -48,6 +48,9 @@
 
 const { crearRedis, hayCredenciales } = require("../../lib/redis.js");
 const { autorizarToken } = require("../../lib/auth.js");
+// el lector del cuerpo vive en lib/cuerpo: era la MISMA función copiada en tres
+// endpoints y una de las copias ya había derivado (ver la cabecera de ese módulo)
+const { leerCuerpo } = require("../../lib/cuerpo.js");
 const { CLAVES } = require("../../lib/almacen.js");
 const {
   MAX_CONTRATOS, MAX_OBJETO,
@@ -91,41 +94,6 @@ function contratosDelRepositorio() {
       pista: "El archivo vive en la raíz del repositorio. Si falta en el despliegue, use la carga "
         + "manual pegando el JSON en el panel: el resto del camino es exactamente el mismo.",
     };
-  }
-}
-
-/* Cuerpo de la petición. Vercel deja `req.body` parseado cuando el
-   Content-Type es JSON, pero no siempre (ni en las pruebas): se cubren los tres
-   casos —objeto, cadena y stream—, igual que en /api/admin/rup. */
-async function leerCuerpo(req) {
-  if (req.body !== undefined && req.body !== null && typeof req.body === "object") {
-    return { ok: true, datos: req.body };
-  }
-  let crudo = typeof req.body === "string" ? req.body : null;
-  if (crudo === null) {
-    crudo = await new Promise((resolve, reject) => {
-      let buf = "", exceso = false;
-      if (typeof req.on !== "function") return resolve("");
-      req.on("data", (c) => {
-        if (exceso) return;
-        buf += c;
-        if (Buffer.byteLength(buf, "utf8") > MAX_BYTES) { exceso = true; buf = ""; }
-      });
-      req.on("end", () => resolve(exceso ? null : buf));
-      req.on("error", reject);
-    });
-    if (crudo === null) return { ok: false, status: 413, error: "Body demasiado grande", max_mb: 5 };
-  }
-  if (Buffer.byteLength(String(crudo || ""), "utf8") > MAX_BYTES) {
-    return { ok: false, status: 413, error: "Body demasiado grande", max_mb: 5 };
-  }
-  if (!String(crudo || "").trim()) {
-    return { ok: false, status: 400, error: "Body vacío: se esperaba un JSON con la clave «contratos»" };
-  }
-  try {
-    return { ok: true, datos: JSON.parse(crudo) };
-  } catch (e) {
-    return { ok: false, status: 400, error: `Body no es JSON válido: ${e.message}` };
   }
 }
 
@@ -221,7 +189,7 @@ module.exports = async function handler(req, res) {
       });
     }
   } else {
-    cuerpo = await leerCuerpo(req);
+    cuerpo = await leerCuerpo(req, { maxBytes: MAX_BYTES, que: "contratos" });
     if (!cuerpo.ok) {
       const salida = { ok: false, origen: "cuerpo", error: cuerpo.error };
       if (cuerpo.max_mb) salida.max_mb = cuerpo.max_mb;

@@ -22,6 +22,7 @@
     "api/admin/experiencia.js": { "maxDuration": 60, "includeFiles": "data/**" },
     "api/admin/cobertura-rup.js": { "maxDuration": 60, "includeFiles": "data/**" },
     "api/competencia-detalle.js": { "maxDuration": 60, "includeFiles": "data/**" },
+    "api/indice-baja.js": { "maxDuration": 300, "includeFiles": "data/**" },
     "api/apu/[accion].js": { "maxDuration": 60, "includeFiles": "data/**" },
     "api/admin/apu/cargar-catalogo.js": { "maxDuration": 60, "includeFiles": "data/**" }
   },

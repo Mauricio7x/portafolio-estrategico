@@ -208,8 +208,20 @@ module.exports = async function handler(req, res) {
        devolver el mismo error para dos causas. */
     let entidades = coincidencias;
     if (modalidad) {
-      entidades = coincidencias.map(porModalidadDe).filter(Boolean)
-        .map((e, i) => ({ clave: coincidencias[i] ? coincidencias[i].clave : null, ...e }));
+      /* La clave se pega ANTES de filtrar, no después. Filtrar primero y usar el
+         índice del arreglo YA FILTRADO para volver a `coincidencias` desalinea
+         los pares en cuanto un grupo se cae: con un NIT compartido por tres
+         entidades y solo la segunda con adjudicaciones de esta modalidad, la
+         respuesta salía con las cifras de la SEGUNDA bajo la clave de la
+         PRIMERA. Es exactamente la clase de error que este endpoint existe para
+         no cometer —una cifra bajo el rótulo de otra entidad—, y encima solo se
+         manifiesta en el caso que motivó devolver varias coincidencias. */
+      entidades = coincidencias
+        .map((c) => {
+          const e = porModalidadDe(c);
+          return e ? { clave: c.clave, ...e } : null;
+        })
+        .filter(Boolean);
       if (!entidades.length) {
         return res.status(404).json({
           ok: false,

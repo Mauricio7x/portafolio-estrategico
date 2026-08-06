@@ -60,14 +60,22 @@ const {
 // `plazoMesesDe` para precargar el plazo en el editor de APU: normaliza acentos
 // antes de comparar unidades («Días».includes("dia") era false por la í)
 const { plazoMesesDe } = require("../lib/rup.js");
+const { ANTICIPO_PLENO_PCT } = require("../lib/negocio.js");
 const { leerIndice, leerIndiceMeta, competenciaDe } = require("../lib/indice_competencia.js");
 const { leerIndiceBaja, leerIndiceBajaMeta } = require("../lib/indice_baja.js");
 const { leerEquivalencias, leerEquivalenciasMeta } = require("../lib/equivalencias.js");
 const { vocabularioActivo } = require("../lib/texto_unspsc.js");
 
 const PERFILES_VALIDOS = ["helder", "genesis", "consorcio", "juntos"];
-const ANTICIPO_MIN_DEFAULT = 20;   // el mismo default de /api/oportunidades
-const ANTICIPO_PLENO = 20;         // ≥20 % = anticipo que sirve (lib/negocio)
+/* «Anticipo que sirve» (≥20 %) es la MISMA constante con la que lib/negocio
+   puntúa el anticipo, así que se importa en vez de copiarse: dos 20 escritos en
+   dos archivos son dos definiciones del mismo umbral y divergen a la primera
+   corrección que se aplique a una sola.
+   Aquí vivía además un `ANTICIPO_MIN_DEFAULT = 20` que NO usaba nadie: el
+   mínimo de la cascada lo pone `lib/filtros.filtrarProcesosVisibles` por
+   defecto, que es justo a lo que este endpoint la llama. Una constante muerta
+   que replica un default real es peor que ninguna: se lee como si mandara. */
+const ANTICIPO_PLENO = ANTICIPO_PLENO_PCT;
 const TOP_ENTIDADES = 15, TOP_DEPARTAMENTOS = 15, TOP_MUNICIPIOS = 10, TOP_DESTACADOS = 10;
 const DIA_MS = 86400000;
 

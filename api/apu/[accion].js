@@ -47,6 +47,12 @@
 
 const { crearRedis, hayCredenciales } = require("../../lib/redis.js");
 const { autorizarToken } = require("../../lib/auth.js");
+/* El lector del cuerpo vive en lib/cuerpo: era la MISMA función copiada en tres
+   endpoints y ESTA era la copia que había derivado —le faltaba comprobar el tope
+   en la rama de cuerpo ya parseado como cadena, así que su límite documentado de
+   2 MB no se cumplía por ahí—. Aquí un cuerpo vacío sigue siendo `{}` y no un
+   400: varias acciones se disparan con un POST sin cuerpo. */
+const { leerCuerpo } = require("../../lib/cuerpo.js");
 const { CLAVES, APU_TTL_SEG, escribirJSONComprimido, leerJSONComprimido, descomprimir } = require("../../lib/almacen.js");
 const { idCanonico, PERFILES } = require("../../lib/perfiles.js");
 const {
@@ -99,33 +105,6 @@ function accionDe(req, q) {
   if (q && q.accion) return String(q.accion).toLowerCase();
   const ruta = String((req && req.url) || "").split("?")[0].replace(/\/+$/, "");
   return ruta.slice(ruta.lastIndexOf("/") + 1).toLowerCase();
-}
-
-/* Vercel deja `req.body` parseado con Content-Type JSON, pero no siempre (ni en
-   las pruebas): se cubren los tres casos —objeto, cadena y stream—. Es el mismo
-   lector de /api/admin/rup y por el mismo motivo. */
-async function leerCuerpo(req) {
-  if (req.body !== undefined && req.body !== null && typeof req.body === "object") {
-    return { ok: true, datos: req.body };
-  }
-  let crudo = typeof req.body === "string" ? req.body : null;
-  if (crudo === null) {
-    crudo = await new Promise((resolve, reject) => {
-      let buf = "", exceso = false;
-      if (typeof req.on !== "function") return resolve("");
-      req.on("data", (c) => {
-        if (exceso) return;
-        buf += c;
-        if (Buffer.byteLength(buf, "utf8") > MAX_BYTES) { exceso = true; buf = ""; }
-      });
-      req.on("end", () => resolve(exceso ? null : buf));
-      req.on("error", reject);
-    });
-    if (crudo === null) return { ok: false, status: 413, error: "Body demasiado grande.", max_mb: 2 };
-  }
-  if (!String(crudo || "").trim()) return { ok: true, datos: {} };
-  try { return { ok: true, datos: JSON.parse(crudo) }; }
-  catch (e) { return { ok: false, status: 400, error: `Body no es JSON válido: ${e.message}` }; }
 }
 
 function perfilDe(q, cuerpo) {
@@ -191,7 +170,7 @@ module.exports = async function handler(req, res) {
   }
   const redis = crearRedis({});
 
-  const cuerpo = esPost ? await leerCuerpo(req) : { ok: true, datos: {} };
+  const cuerpo = esPost ? await leerCuerpo(req, { maxBytes: MAX_BYTES }) : { ok: true, datos: {} };
   if (!cuerpo.ok) return res.status(cuerpo.status).json({ ok: false, error: cuerpo.error });
   const datos = cuerpo.datos || {};
 
