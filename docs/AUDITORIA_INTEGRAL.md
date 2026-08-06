@@ -24,13 +24,13 @@ tocó —porque altera lógica de negocio o exige una decisión del dueño— es
 | Endpoints con token | 10 archivos exigen · 1 lo tiene opcional · 1 no pide · 8 de las 9 acciones del despachador APU |
 | Cobertura de pruebas | los 12 endpoints y los 38 módulos de `lib/` se ejercitan; 3 (`auth`, `semantica`, `socrata`) solo indirectamente |
 | Correcciones aplicadas | **8**, en 7 commits atómicos |
-| Deuda con dueño | 6 decisiones abiertas (§4) |
+| Deuda con dueño | 5 decisiones abiertas (§4) · §4.1 **resuelto** en ago 2026 |
 
 **El diagnóstico en una frase:** el sistema está **notablemente sano por dentro** —una sola
 implementación de cada regla, invariantes probadas que atan un endpoint a otro, y un historial
 escrito de por qué cada decisión es como es— y su deuda real **no es de código sino de alcance**: la
-app decide bien sobre lo que ve, pero **ve tarde** (ingiere procesos ya publicados, no el PAA) y
-**tiene una señal que miente en la tarjeta** (§4.1).
+app decide bien sobre lo que ve, pero **ve tarde**: ingiere procesos ya publicados, no el PAA.
+(La señal que mentía en la tarjeta —§4.1— ya se retiró.)
 
 ---
 
@@ -251,11 +251,11 @@ atan un endpoint a otro**. Ejemplos verificados:
 1. **El corpus de pruebas es sintético y lo escribió quien escribió el parser.** `tests/apu_bench.js`
    lo declara él mismo y por eso trae una tanda adversaria sin suelos de regresión. La distribución
    real de formatos de SECOP II **sigue sin medir**.
-2. **Un fixture inventa un dato que la fuente real no publica** (§4.1): la generación de procesos
-   activos asigna `respuestas_al_procedimiento = i % 20`, una columna que SECOP II solo publica
-   *ex-post*. Por eso `nivel_competencia` **parece** una señal viva en las pruebas y la aserción
-   `["baja","media","alta"].includes(...)` pasa siempre. **Es la razón de que el defecto de §4.1
-   haya sobrevivido.**
+2. ~~**Un fixture inventa un dato que la fuente real no publica**~~ — **corregido con §4.1**: la
+   generación de procesos activos asignaba `respuestas_al_procedimiento = i % 20`, una columna que
+   SECOP II solo publica *ex-post*, y eso hacía que `nivel_competencia` **pareciera** una señal viva
+   en las pruebas. **Era la razón de que el defecto de §4.1 sobreviviera.** Ahora solo la llevan los
+   procesos adjudicados y la suite **mide** cuántos valores distintos toma el campo (1 de 1).
 3. **Ninguna prueba vigila el SIGNO del VEG.** La de rentabilidad solo exige `veg != null`, y el VEG
    es **el único umbral duro sobre `p`** de todo el repositorio (§4.2).
 4. **No hay pruebas de concurrencia real** (dos cargas de RUP simultáneas, dos reconstrucciones); se
@@ -268,7 +268,7 @@ atan un endpoint a otro**. Ejemplos verificados:
 
 Todo lo de esta sección altera lógica de negocio o exige una decisión que no es del auditor.
 
-### 4.1 · 🔴 «Ofertas del proceso: baja» es un cero disfrazado de medición — LA MÁS URGENTE
+### 4.1 · ✔ RESUELTO (ago 2026) · «Ofertas del proceso: baja» era un cero disfrazado de medición
 
 **Qué pasa.** `lib/negocio.enriquecer` calcula `nivel_competencia` así:
 
@@ -292,22 +292,25 @@ el único sitio que el dueño mira siempre: la tarjeta. Un verde que dice «poca
 100 % de los procesos no es una señal débil: es una afirmación falsa, y compite visualmente con el
 badge **que sí tiene base** (`competencia_entidad`, el del histórico).
 
-**Por qué no lo corrijo yo.** Arreglarlo obliga a introducir un cuarto valor `sin_dato` en
-`nivelCompetencia`, y eso toca: el chip, el filtro de la UI, la cubeta
-`por_nivel_competencia_entidad` del panel (que tiene invariante probada de que **suma los
-visibles**), `ORDEN_CAMPOS.competencia` y la aserción `["baja","media","alta"].includes(...)`. Es
-lógica de negocio y es UI — las dos cosas excluidas del encargo.
+**Resuelto con la opción A** (retirar el chip y el filtro), que era la recomendada. Se descartaron
+la B —añadir `sin_dato` como cuarto nivel obligaba a tocar tres invariantes probadas para conservar
+un campo que la fuente no publica— y la C.
 
-**Lo que hay que decidir.** Tres opciones, y la recomendación:
+**Qué se hizo:**
 
-| Opción | Coste | Efecto |
-| --- | --- | --- |
-| **A. Retirar el chip y el filtro** *(recomendada)* | ~30 líneas | Deja de mentir. El badge del histórico ya responde la misma pregunta **con base** |
-| B. Añadir `sin_dato` como cuarto nivel | ~80 líneas + tocar 3 invariantes probadas | Honesto y conserva el campo por si algún día la fuente publica la columna |
-| C. Dejarlo | 0 | Sigue en pantalla un verde sin respaldo |
+| Dónde | Cambio |
+| --- | --- |
+| `public/index.html` | Fuera el desplegable «Ofertas del proceso» |
+| `public/app.js` | Fuera el chip, su paleta de color y el envío del parámetro. Prueba que prohíbe que `nivel_competencia` reaparezca en el fuente |
+| `api/oportunidades.js` | Fuera el filtro `?nivel_competencia=`, que queda **inerte** (no 400: un enlace guardado no puede vaciarle la lista a nadie) |
+| `api/oportunidades.js` | **`?ordenar_por=competencia` leía el campo de la FILA**, o sea no ordenaba nada, mientras README y CLAUDE.md llevaban un mes afirmando que ordenaba por la entidad. Ahora lee el nivel de la entidad: el código alcanzó a su documentación |
+| `tests/e2e.js` | El fixture solo publica `respuestas_al_procedimiento` en procesos **adjudicados**, que es lo que hace SECOP II. El histórico conserva sus conteos: 184 procesos y 3 entidades clasificadas, sin mover un dígito |
+| `tests/e2e.js` | **La medida sustituye a la regex**: la suite cuenta cuántos valores distintos toma el campo en el corpus servido y lo publica en cada corrida — **1 en 384 procesos** |
 
-Y **la prueba tiene que cambiar con ello**: el fixture debe dejar de inventar
-`respuestas_al_procedimiento` en procesos abiertos (§3.5.2), o el arreglo pasará desapercibido.
+**Lo que NO se tocó, y es deliberado:** `nivel_competencia` sigue en la proyección y en la respuesta.
+Sacarlo del registro exigiría una full y no arregla nada; lo que no podía seguir es **presentarse
+como una medición**. Si algún día SECOP II publicara el conteo en procesos abiertos, el campo está
+ahí y la cifra que la suite publica lo delataría sola.
 
 ### 4.2 · 🟠 `P(ganar)` cobra el precio dos veces, y eso mueve el único umbral duro
 
@@ -388,7 +391,7 @@ esfuerzo, no un compromiso.
 | # | Acción | Impacto | Coste | Quién decide |
 | ---: | --- | --- | --- | --- |
 | **1** | **Relanzar en producción `?modo=full` una vez y el backfill histórico** con `HISTORICO_TOKEN` | **Máximo, y es operación, no código.** Sin el backfill, todo el orden por defecto (`atractividad`) sale en ⚪ y la app ordena por un supuesto conservador. Sin la full, los procesos con estado `Activo` **nunca entraron a Redis** | 2 clics en `/admin.html` | — (hacerlo ya) |
-| **2** | **Quitar el chip y el filtro «Ofertas del proceso»** (§4.1) | Alto: retira una afirmación falsa del 100 % de las tarjetas y deja de competir con el badge que sí tiene base | ~30 líneas + 1 fixture | **Dueño** |
+| ~~2~~ | ~~Quitar el chip y el filtro «Ofertas del proceso»~~ (§4.1) | **HECHO** (ago 2026): retirada una afirmación falsa del 100 % de las tarjetas, y de paso corregido `?ordenar_por=competencia`, que leía el mismo campo muerto | — | — |
 | **3** | **Leer el PAA** (§4.3) | **El mayor del catálogo**: seis meses de ventaja frente a una competencia que se entera el día del aviso | Alto (dataset + keyspace + pantalla) | **Dueño** |
 | **4** | **Separar `p` de `p_sin_precio`** y dejar de cobrar el precio dos veces (§4.2) | Alto: corrige el único umbral duro del sistema, que hoy declara inviables procesos que no lo son | Medio-alto (2 módulos) | **Dueño** |
 | **5** | **Prueba del signo del VEG** | Medio: hoy nadie vigila la cifra que decide si vale la pena presentarse | ~20 líneas | — (hacerlo ya) |

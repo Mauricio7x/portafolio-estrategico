@@ -30,7 +30,6 @@
                                   0 = "sin dato" pasa el filtro y puntúa 0,
                                   porque p6dx-8zbt no trae columna de anticipo)
      &cuantia_rango=bajo|medio|alto
-     &nivel_competencia=baja|media|alta        (ofertas DEL PROCESO)
      &competencia_entidad=baja|media|alta|sin_dato  (histórico DE LA ENTIDAD)
      &ubicacion_valida=true|false
      &match=clase|familia|equivalente|texto    (solidez del match UNSPSC)
@@ -356,7 +355,6 @@ module.exports = async function handler(req, res) {
   /* ---------- filtros ---------- */
   const anticipoMin = q.anticipo_min !== undefined ? parseFloat(q.anticipo_min) : ANTICIPO_MIN_DEFAULT;
   const fCuantia = ["bajo", "medio", "alto"].includes(q.cuantia_rango) ? q.cuantia_rango : null;
-  const fCompetencia = ["baja", "media", "alta"].includes(q.nivel_competencia) ? q.nivel_competencia : null;
   const fEntidad = NIVELES_ENTIDAD.includes(q.competencia_entidad) ? q.competencia_entidad : null;
   const fUbicacion = q.ubicacion_valida === undefined ? null : ["true", "1"].includes(String(q.ubicacion_valida));
   const soloAbiertas = q.incluir_cerradas !== "1";
@@ -427,7 +425,6 @@ module.exports = async function handler(req, res) {
      resultado. */
   const estrecha = (l) => {
     if (fCuantia && l.cuantia_rango !== fCuantia) return false;
-    if (fCompetencia && l.nivel_competencia !== fCompetencia) return false;
     if (fUbicacion !== null && l.ubicacion_valida !== fUbicacion) return false;
     if (fEntidad && compDe(l).nivel !== fEntidad) return false;
     if (fTier && (rupDe(l).tier || "ninguno") !== fTier) return false;

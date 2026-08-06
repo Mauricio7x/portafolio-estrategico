@@ -181,14 +181,13 @@ nada, ni siquiera qué perfiles existen.
 | `perfil` | requerido | `helder` · `genesis` · `juntos` (alias aceptado: `consorcio`) |
 | `anticipo_min` | 20 | Excluye anticipos **declarados** menores; `0` = sin dato **pasa** (ver nota) |
 | `cuantia_rango` | — | `bajo` · `medio` · `alto` |
-| `nivel_competencia` | — | Ofertas **del proceso**: `baja` · `media` · `alta` |
-| `competencia_entidad` | — | Histórico **de la entidad**: `baja` · `media` · `alta` · `sin_dato` |
+| `competencia_entidad` | — | Histórico **de la entidad**: `baja` · `media` · `alta` · `sin_dato`. **Es el único filtro de competencia**: el de «ofertas del proceso» se retiró en ago 2026 (ver abajo) |
 | `ubicacion_valida` | — | `true` · `false` |
 | `match` | — | Solidez del match UNSPSC: `clase` · `familia` · `equivalente` · `texto` |
 | `incluir_sin_unspsc` | — | `1` para reabrir la ruta de texto sin pertinencia verde (toggle de la UI) |
 | `incluir_cerradas` | — | `1` para incluir procesos en estado terminal |
 | `solo_viables` | **`true`** | Oculta lo que no pasa las puertas P1-P3. Con `false` aparecen al final, marcados |
-| `ordenar_por` | **`atractividad`** | `atractividad` · `ve` · `p_ganar` · `anticipo` · `cuantia` · `competencia` · `puntaje` (legado) |
+| `ordenar_por` | **`atractividad`** | `atractividad` · `ve` · `p_ganar` · `anticipo` · `cuantia` · `competencia` (nivel de la **entidad**) · `puntaje` (legado) |
 | `orden` | `desc` | `asc` · `desc` |
 | `pagina` / `por_pagina` | 1 / 20 | `por_pagina` máx 100 |
 
@@ -270,6 +269,10 @@ diferencia según el dato viniera de la entidad o del departamento, y como los t
 índice. El nivel **sigue viajando** en la tarjeta, sigue filtrando (`?competencia_entidad=`) y sigue
 ordenando (`?ordenar_por=competencia`): lo único que ya no hace es multiplicar `p`. Detalle y cifras
 en `docs/PROBABILIDAD_MEJORADA.md`.
+
+> `?ordenar_por=competencia` ordenaba en realidad por el `nivel_competencia` **de la fila**, no por el
+> de la entidad — y aquel es constante en el corpus activo, así que no ordenaba nada. Corregido en
+> ago 2026: ahora lee el nivel de la entidad, que es lo que este párrafo llevaba afirmando.
 
 **La prórroga del cierre** es la única señal de competencia observable **antes** del cierre que hay
 en el corpus (el contador de oferentes es ex-post: en un proceso abierto vale 0 por construcción).
@@ -1208,7 +1211,13 @@ producción es la validación real.
 - `cuantia_rango`: `bajo` < 100 M COP · `medio` 100–500 M · `alto` > 500 M (campo `precio_base`,
   con respaldos `valor_total`/`cuantia_definitiva`).
 - `nivel_competencia`: `baja` ≤ 5 ofertas · `media` 6–15 · `alta` > 15
-  (`respuestas_al_procedimiento` y equivalentes; sin dato = 0 = baja).
+  (`respuestas_al_procedimiento` y equivalentes). **Sigue en el registro pero ya no se sirve al ojo
+  humano** (ago 2026): esas columnas son **ex-post** y el corpus activo solo tiene procesos abiertos,
+  así que ahí el campo vale `baja` **siempre** —la suite lo mide y lo publica en cada corrida—. Se
+  retiraron el chip de la tarjeta y el filtro `?nivel_competencia=`; quien responde esa pregunta con
+  base es `competencia_entidad`, y su badge ya está a dos centímetros en la misma tarjeta. El campo
+  no se retira del registro porque eso exigiría una full; lo que se retira es **presentarlo como una
+  medición**. Historia completa en `docs/AUDITORIA_INTEGRAL.md` §4.1.
 - `ubicacion_valida`: ciudad/departamento de la entidad vs `UBICACION_VALIDA`
   (default `BOGOTÁ D.C.`; admite lista separada por comas, p. ej. `BOGOTÁ D.C.,TOLIMA`).
 - `puntaje_ponderado` = `0.4·anticipo + 0.3·cuantía + 0.3·competencia`, donde

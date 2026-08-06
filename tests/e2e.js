@@ -250,10 +250,19 @@ function generarDataset() {
         fase: "Presentación de ofertas",
         precio_base: String([60e6, 250e6, 800e6, 9e9][i % 4] + n),
         duracion: String(2 + (i % 6)), unidad_de_duracion: i % 2 ? "Meses" : "Días",
-        respuestas_al_procedimiento: String(i % 20),
         urlproceso: { url: `https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.${n}` },
         tipo_de_contrato: "Obra",
       };
+      /* EL CONTEO DE OFERENTES ES EX-POST y el fixture tiene que reproducirlo
+         (ago 2026). SECOP II NO publica `respuestas_al_procedimiento` mientras
+         el proceso está abierto: solo aparece cuando ya cerró. El fixture lo
+         daba a TODAS las filas, y eso tapaba un defecto real —`nivel_competencia`
+         parecía una señal viva en las pruebas cuando en producción vale «baja»
+         para todo el corpus activo, que por construcción solo tiene procesos
+         abiertos—. Los adjudicados sí lo llevan: son los que alimentan el
+         histórico y el índice de competencia, y ahí el dato existe de verdad. */
+      if (f.estado_del_procedimiento === "Adjudicado") f.respuestas_al_procedimiento = String(i % 20);
+
       if (i % 5 === 0) f.fecha_de_recepcion_de = CIERRE_FUTURO;
       else if (i % 5 === 1) f.fecha_limite_de_recepcion_respuestas = CIERRE_FUTURO_2;
       // tipos de objeto: obra por código (helder/génesis/ambos), obra por texto,
@@ -409,7 +418,7 @@ function extrasDelMes(mes) {
     modalidad_de_contratacion: "Licitación pública",
     estado_del_procedimiento: "Publicado", fase: "Presentación de ofertas",
     precio_base: "250000000", duracion: "6", unidad_de_duracion: "Meses",
-    respuestas_al_procedimiento: "2", tipo_de_contrato: "Obra",
+    tipo_de_contrato: "Obra",   // sin conteo de oferentes: están ABIERTOS (ver arriba)
     urlproceso: { url: `https://community.secop.gov.co/extra/${mes}/${n}` },
     ...extra,
   });
@@ -3497,10 +3506,37 @@ async function main() {
     const cH = rHelder.cuerpo;
     assert.ok(cH.ok && cH.total > 0 && cH.resultados.length > 0, "helder sin resultados");
     assert.strictEqual(cH.perfil, "helder");
+
+    /* ---- EL PARÁMETRO `nivel_competencia` TIENE QUE SER INERTE (ago 2026) ----
+       El filtro se retiró porque el campo sale de columnas EX-POST que SECOP II
+       no publica mientras el proceso está abierto. Un parámetro retirado no
+       puede volver a filtrar por la puerta de atrás, y un enlace guardado con él
+       no puede vaciarle la lista a nadie: se comprueba que el total no se mueve
+       con ninguno de los tres valores que antes aceptaba. */
+    for (const v of ["baja", "media", "alta"]) {
+      const r = await invocar(oportunidades, `/api/oportunidades?perfil=helder&nivel_competencia=${v}`, CAB_TOKEN);
+      assert.strictEqual(r.cuerpo.total, cH.total,
+        `?nivel_competencia=${v} volvió a filtrar un campo que no tiene base en el corpus activo`);
+    }
+    /* Y LA MEDIDA que sostiene todo lo anterior, sobre el corpus servido entero:
+       cuántos valores DISTINTOS toma el campo. Si toma uno solo, no distingue
+       nada y pintarlo era afirmar algo sin base. No se asierta el valor —el día
+       que SECOP publique la columna en procesos abiertos esto cambiará y no
+       tiene por qué romper la suite—, se MIDE y se publica. */
+    {
+      const todos = await todasLasOportunidades("perfil=helder");
+      const valores = new Set(todos.map((l) => l.nivel_competencia));
+      console.log(`  · «Ofertas del proceso»: ${valores.size} valor(es) distinto(s) en ${todos.length} procesos `
+        + `servidos (${[...valores].join(", ")}) — por eso el chip y su filtro ya no existen`);
+    }
     for (const l of cH.resultados) {
       assert.strictEqual(typeof l.anticipo_pct, "number", "falta anticipo_pct");
       assert.ok(["bajo", "medio", "alto"].includes(l.cuantia_rango), "cuantia_rango inválido");
-      assert.ok(["baja", "media", "alta"].includes(l.nivel_competencia), "nivel_competencia inválido");
+      /* `nivel_competencia` SIGUE viajando —está en la proyección y retirarlo
+         del registro exigiría una full— pero ya no se pinta ni se filtra: sale
+         de columnas EX-POST y en el corpus activo no distingue nada. Se
+         comprueba el tipo, no el valor; el valor se MIDE unas líneas más abajo. */
+      assert.strictEqual(typeof l.nivel_competencia, "string", "falta nivel_competencia en la fila");
       assert.strictEqual(typeof l.ubicacion_valida, "boolean", "falta ubicacion_valida");
       /* `puntaje_ponderado` SÍ viaja, aunque ya no sea criterio de decisión: lo
          sustituyen las cuatro puertas, la probabilidad y el valor esperado, y la
@@ -5448,7 +5484,7 @@ async function main() {
         entidad: "ALCALDÍA DE PURIFICACIÓN", ciudad_entidad: "PURIFICACIÓN", departamento_entidad: "Tolima",
         modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Publicado",
         fase: "Presentación de ofertas", precio_base: "300000000",
-        duracion: "5", unidad_de_duracion: "Meses", respuestas_al_procedimiento: "1",
+        duracion: "5", unidad_de_duracion: "Meses",
         nombre_del_procedimiento: `Construcción de puente vehicular ${n}`,
         descripci_n_del_procedimiento: "Obra de puente en concreto con anticipo del 40%",
         codigo_principal_de_categoria: "V1.72141000",
@@ -7986,6 +8022,31 @@ async function main() {
       const js = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
       new Function(js); // valida sintaxis sin ejecutar
       assert.ok(js.includes('"231105"'), "app.js sin la clave de acceso");
+
+      /* ---- «OFERTAS DEL PROCESO» NO PUEDE VOLVER (ago 2026) ----
+         `nivel_competencia` sale de columnas EX-POST (`respuestas_al_procedimiento`
+         y equivalentes) que SECOP II solo publica cuando el proceso ya cerró. El
+         corpus activo, por construcción, solo tiene procesos ABIERTOS: allí
+         `primerNumero(...) ?? 0` da 0 y `nivelCompetencia(0)` da «baja» para
+         TODO. La app pintaba con eso un chip VERDE en cada tarjeta y ofrecía un
+         desplegable de tres opciones de las que una no filtraba nada y las otras
+         dos vaciaban la lista.
+
+         Es el mismo defecto que el proyecto ya corrigió dos veces —«0 oferentes
+         = SIN DATO, no *nadie se presentó*» y «18,2 oferentes sin base»—
+         sobreviviendo en el sitio que el dueño mira siempre. Quien responde esa
+         pregunta CON BASE es `competencia_entidad`, del histórico, y su badge ya
+         está a dos centímetros en la misma tarjeta.
+
+         Se vigila la UI aquí y el comportamiento del servidor en el bloque de
+         /api/oportunidades (el parámetro tiene que ser inerte). Ver
+         docs/AUDITORIA_INTEGRAL.md §4.1. */
+      assert.ok(!html.includes('id="f-competencia"'),
+        "volvió el desplegable «Ofertas del proceso»: filtra por un campo que en el corpus activo vale «baja» siempre");
+      assert.ok(!/Ofertas del proceso/.test(js),
+        "volvió el chip «Ofertas del proceso»: es un cero ex-post disfrazado de medición");
+      assert.ok(!/\bnivel_competencia\b/.test(sinComentarios(js)),
+        "app.js no puede volver a leer ni a enviar `nivel_competencia`: usa `competencia_entidad`, que sí tiene base");
 
       /* ---- LA LISTA NO PIDE TOKEN (ago 2026) ----
          El cliente entra a ver oportunidades; pedirle una credencial dejaba la

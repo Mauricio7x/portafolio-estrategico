@@ -108,7 +108,11 @@
     const p = new URLSearchParams({ perfil: $("f-perfil").value, pagina: String(pagina), por_pagina: "20" });
     const ant = $("f-anticipo").value;
     if (ant !== "") p.set("anticipo_min", ant);
-    for (const [id, nombre] of [["f-cuantia", "cuantia_rango"], ["f-competencia", "nivel_competencia"],
+    /* NO se envía `nivel_competencia` (ago 2026): ese campo sale de columnas
+       EX-POST que SECOP II no publica mientras el proceso está abierto, así que
+       en el corpus activo vale «baja» siempre. Quien responde esta pregunta con
+       base es `competencia_entidad`, del histórico. Ver docs/AUDITORIA_INTEGRAL §4.1. */
+    for (const [id, nombre] of [["f-cuantia", "cuantia_rango"],
       ["f-entidad", "competencia_entidad"], ["f-ubicacion", "ubicacion_valida"]]) {
       if ($(id).value) p.set(nombre, $(id).value);
     }
@@ -364,7 +368,6 @@
     const rup = l.rup || {};
     const cierre = l.fecha_cierre ? new Date(l.fecha_cierre) : null;
     const cierreTxt = cierre && !isNaN(cierre) ? cierre.toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }) : null;
-    const compColor = { baja: "bg-green-100 text-green-800", media: "bg-amber-100 text-amber-800", alta: "bg-red-100 text-red-700" }[l.nivel_competencia] || "bg-gray-100 text-gray-600";
     const puertas = l.puertas || {};
     // «No viable» se ATENÚA, no se esconde (cuando el toggle lo permite): ver un
     // proceso grande caído por caja enseña más que su ausencia
@@ -396,7 +399,6 @@
 
       <div class="mt-4 flex flex-wrap gap-2">
         ${chip(l.anticipo_pct > 0 ? `Anticipo ${l.anticipo_pct}%` : "Anticipo no declarado", l.anticipo_pct > 0 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-500")}
-        ${chip(`Ofertas del proceso: ${esc(l.nivel_competencia || "?")}`, compColor)}
         ${chipBaja(l.baja_mercado)}
         ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
         ${badgesRup(rup)}
@@ -818,7 +820,7 @@
   /* ══════════ Eventos ══════════ */
   $("btn-buscar").addEventListener("click", () => { pagina = 1; reintentosSync = 0; buscar(); });
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
-  for (const id of ["f-perfil", "f-cuantia", "f-competencia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
+  for (const id of ["f-perfil", "f-cuantia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
     "f-sin-unspsc", "f-solo-viables"]) {
     $(id).addEventListener("change", () => { pagina = 1; buscar(); });
   }
