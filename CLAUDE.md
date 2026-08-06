@@ -1444,11 +1444,20 @@ responden *cuánto vale la oportunidad* y *si la empresa puede ejecutarla*.
     cambiaban OTRAS entidades. `competencia.nivel` **sigue viajando, filtrando y ordenando**: lo
     único que ya no hace es multiplicar. Hay prueba de que no puede reaparecer.
   · ✅ **La baja de mercado es una RAMPA continua**, no dos escalones: ×1,10 hasta 2 % de baja, lineal
-    hasta ×0,85 en 5 %, plana después. Los EXTREMOS son idénticos a los de antes —fuera de [2, 5] no
-    se mueve un dígito, y ahí está la masa, porque la mediana del mercado es 0 %— así que lo único
-    que cambia es la banda intermedia, donde antes cruzar el 5 % costaba un 15 % de probabilidad
-    sobre una mediana publicada con resolución de UN punto porcentual. **Suavizar no es calibrar**:
-    1,10 y 0,85 siguen siendo supuestos puestos a mano.
+    hasta ×0,85 en 5 %, plana después. **Suavizar no es calibrar**: 1,10 y 0,85 siguen siendo
+    supuestos puestos a mano. Y hay que contar bien lo que mejora, porque es fácil prometer de más:
+    · **La rampa suaviza la FUNCIÓN; el DATO sigue cuantizado.** `indice:baja` publica la mediana como
+      una cubeta ENTERA (`Math.round`), así que en producción solo existen …2, 3, 4, 5… y lo que se ve
+      es una ESCALERA DE CUATRO PELDAÑOS, no una curva. Lo que baja es la ALTURA del peldaño más alto:
+      **del 15,0 % al 8,9 %**. «Ya no hay saltos» sería falso, y hay prueba que fija ese 8,9 %.
+    · **Las comparaciones pasaron de ESTRICTAS a INCLUSIVAS y eso mueve dos valores frecuentes.** Antes
+      `>5` y `<2` dejaban las medianas de exactamente 2 y 5 en la zona neutra (×1,00); ahora 2 → ×1,10
+      y 5 → ×0,85. Lo que de verdad no se mueve un dígito es el INTERIOR de las mesetas (0, 1, 6, 7…),
+      no sus bordes. La ALCALDÍA DE PURIFICACIÓN del corpus tiene mediana exactamente 5 y su `p` cae de
+      0,325 a 0,2125 por las DOS causas a la vez.
+    · **Los codos de la rampa NO coinciden con las fronteras de `nivelPorBaja`** (`>5` → «alto»,
+      `>=2` → «medio»): una mediana de 5 se rotula «medio» y recibe el ×0,85. Deliberado: rotular y
+      multiplicar son dos preguntas distintas. No «arreglar» una para que case con la otra.
     · **`numero()` NO sirve de guarda para «sin dato»**: `Number(null)` y `Number("")` son 0, los dos
       finitos, así que la ausencia entraba como «baja del 0 %» y salía premiada con ×1,10. La
       ausencia se descarta ANTES de tocar `Number`, y hay prueba con los cinco valores vacíos.
@@ -1456,6 +1465,15 @@ responden *cuánto vale la oportunidad* y *si la empresa puede ejecutarla*.
       reproduzca `p` a mano desde la tarjeta; hay prueba. Y el ajuste se emite SIEMPRE que haya dato
       —también cuando el factor sale exactamente 1— porque si no, «no aparece» significaría a la vez
       «no hay dato» y «no mueve nada»: el «no sé» contra el «cero» otra vez.
+  · ⚠️ **CONSECUENCIA AGUAS ABAJO que nadie pidió y que se va a ver**: `lib/apu/rentabilidad` toma
+    esta `p` como su `p_base` (`api/apu/[accion].js`), y `veg = p × utilidad − c_preparación` es **el
+    único umbral DURO sobre `p` de todo el repositorio** —lo demás ordena o pinta—. Retirar el tertil
+    baja `p` un 23 % en las entidades de POCA competencia, que son justo las que el editor de APU va a
+    ver: un VEG apenas positivo pasa a negativo y `filtros_duros.veg_no_positivo` empieza a decir «el
+    valor esperado no cubre el costo de preparar la oferta» en presupuestos que ayer salían verdes.
+    **No es un defecto: es que antes el número estaba inflado por contar la competencia dos veces.**
+    Medido en la suite: la `p_ganar` del bloque de rentabilidad pasó de 0,2091 a 0,1777. Y la prueba
+    solo exige `veg != null`, así que el SIGNO no lo vigila nadie.
   · ⬜ **Sin corregir**: el corte duro en 5 procesos (×2,60 de salto) y el defecto SEMÁNTICO de la
     baja —penaliza a una entidad por dónde está el centro de su mercado en vez de por la distancia a
     la que uno puede ofertar de ese centro, y como `/api/apu/[accion].js` consume esta `p` como su

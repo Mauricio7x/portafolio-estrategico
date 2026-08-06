@@ -228,8 +228,10 @@ financiar la obra no se compensa con cuantía alta. El razonamiento completo est
 
 El ejemplo **cuadra a mano y tiene que seguir cuadrando**: `base × Π factores = p_ganar`
 (`0,25 × 0,85 = 0,2125`) y `ve = p_ganar × cuantía` (`0,2125 × $340 M`). El factor que se publica es
-el mismo que se aplicó — publicar uno y multiplicar por otro haría del desglose una explicación que
-no explica su propio resultado. Sin token, ese `factor` viaja en `null` y el `motivo` pierde la
+el mismo que se aplicó, y la base también se redondea **antes** de multiplicar, no al publicarla:
+así la única diferencia posible es media unidad del último decimal (el redondeo final de `p`), y hay
+prueba que barre el espacio de parámetros para fijarlo. Publicar una cifra y multiplicar por otra
+haría del desglose una explicación que no da su propio resultado. Sin token, ese `factor` viaja en `null` y el `motivo` pierde la
 cifra: es inteligencia de precio (ver «Lo que no sale sin token»).
 
 - **P1 · RUP** (`lib/filtros.evaluarObjeto`): `clase`/`familia` pasan; `equivalente`/`texto` pasan
@@ -782,8 +784,19 @@ la causa no sería el mercado sino que `valor_total_adjudicacion` esté copiando
 - `lib/probabilidad.js` → **un** ajuste sobre `P(ganar)`, continuo: una rampa que va de ×1,10 cuando
   la entidad adjudica por el presupuesto oficial (≤2 % de baja) a ×0,85 cuando descuenta ≥5 %
   (ganar exige bajar), interpolando linealmente entre los dos. Eran dos escalones hasta ago 2026, y
-  cruzar el corte del 5 % costaba un 15 % de probabilidad sobre una mediana que este índice publica
-  con resolución de **un punto porcentual**: 4,9 % y 5,1 % son la misma entidad medida dos veces.
+  cruzar el corte del 5 % costaba un **15 %** de probabilidad de golpe.
+  **Y aquí hay que contar bien lo que mejora.** La rampa suaviza la *función*, pero el *dato* sigue
+  cuantizado: este índice publica la mediana como una **cubeta entera** del histograma, así que en
+  producción solo existen …2, 3, 4, 5… y lo que se ve no es una curva sino una **escalera de cuatro
+  peldaños** (`≤2 → ×1,10 · 3 → ×1,0167 · 4 → ×0,9333 · ≥5 → ×0,85`). Lo que baja es la **altura del
+  peldaño más alto: del 15,0 % al 8,9 %**. Decir «ya no hay saltos» sería falso.
+  ⚠️ Dos avisos más. (1) Las comparaciones pasaron de estrictas (`>5`, `<2`) a **inclusivas**, así que
+  las medianas de exactamente **2 y 5 cambiaron de factor** (antes caían en la zona neutra ×1,00;
+  ahora reciben ×1,10 y ×0,85): son valores frecuentes, no una sutileza de frontera. (2) Los codos de
+  la rampa **no** coinciden con las fronteras del badge de `nivelPorBaja` (`>5` → «alto», `>=2` →
+  «medio»), así que una mediana de exactamente 5 se pinta «medio» y recibe el ×0,85. Es deliberado
+  —«cómo se rotula» y «cuánto multiplica» son dos preguntas— pero conviene saberlo antes de
+  «arreglar» una de las dos para que case con la otra.
 - `/api/diagnostico` → bloque `baja_de_mercado`, con el reparto por granularidad **sobre los
   visibles**: dice si el índice alcanza a cubrir lo que la app sirve hoy.
 - `/admin.html` → tarjeta con la baja del mercado y los dos top-3, más el botón de reconstrucción.

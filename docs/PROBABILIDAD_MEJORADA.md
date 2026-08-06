@@ -156,7 +156,7 @@ El efecto neto está medido: `f_comp` **no añade información, añade dispersi�
 la desviación típica de `p` con `f_comp` es 0,121 contra 0,104 de la probabilidad verdadera — la
 fórmula está **más segura de sí misma que la realidad** [SIM].
 
-### 2.3 · `f_prórroga` (×1,20) — el mejor motivado de los seis, y hoy no calibrable
+### 2.3 · `f_prórroga` (×1,20) — el mejor motivado de todos, y hoy no calibrable
 
 Es la única señal de competencia **observable antes del cierre** (el contador de oferentes es
 ex-post y vale 0 en todo proceso abierto). El mecanismo causal es direccional y creíble: una
@@ -229,9 +229,16 @@ para el margen y **no** una probabilidad más alta de ganar.
 
 ### 2.6 · `clamp` y apilamiento
 
-Los cuatro factores al alza se multiplican: `1,30 × 1,20 × 1,10 × 1,15 = ×1,9734`, que sobre una
-base de 0,50 da 0,9867 y se recorta a 0,95 [CÓD]. Nada garantiza que el producto de cuatro
-supuestos independientes tenga sentido; el `clamp` es una red, no un diseño. Se conserva.
+Cuando se escribió esta auditoría, los cuatro factores al alza se multiplicaban:
+`1,30 × 1,20 × 1,10 × 1,15 = ×1,9734`, que sobre una base de 0,50 daba 0,9867 y se recortaba a
+0,95 [CÓD]. Nada garantiza que el producto de cuatro supuestos independientes tenga sentido; el
+`clamp` es una red, no un diseño. Se conserva.
+
+**Tras A1 el apilamiento es `1,20 × 1,10 × 1,15 = ×1,518`** [CÓD], que sobre esa misma base de 0,50
+da 0,759 y **ya no toca el techo**: el `clamp` solo muerde desde una base ≥ 0,6258, o sea con menos
+de 0,6 rivales esperados — que el índice no puede producir, porque solo cuenta procesos con al
+menos un oferente. Es decir: **hoy el techo de 0,95 es red muerta**, y eso es una mejora silenciosa
+(un recorte activo significaba que la cuenta se salía de rango por acumulación de supuestos).
 
 ### Veredicto resumido
 
@@ -410,7 +417,8 @@ f_precio = mult( min(b_max, b̂_mkt) )   con σ̂ del IQR encogido  (mult = lib/
 | `mult()` | curva de precio | `lib/apu/rentabilidad.pGanarPorPrecio` | no (reutilizada) |
 
 **Constantes libres no calibrables: de 9 a 2** (`f_prórroga`, `f_colisión`), y las dos con plan de
-medición. `m` y `m_b` se estiman de los datos; `b_max` se calcula del APU o lo declara el dueño;
+medición. A1 y A1b ya se llevaron `1,30` y `0,70`, así que hoy van **7**; `0,85`, `1,10`, `2 %` y
+`5 %` siguen vivos como extremos y codos de la rampa. `m` y `m_b` se estiman de los datos; `b_max` se calcula del APU o lo declara el dueño;
 los cortes 2 %/5 % y los factores 1,30/0,70/0,85/1,10 desaparecen.
 
 ### 3.7 · Qué se publica en `p_ganar_detalle`
@@ -607,7 +615,7 @@ exactamente la magnitud que justifica un **A/B por URL antes de cambiar el defau
 | L5 | **El ciclo electoral contamina el índice y sigue sin modelarse** [DOC]: el promedio de 2 años mezcla la ventana de la ley de garantías 2026 (8 nov 2025 – 31 may 2026), donde las entidades **tuvieron que competir** | Es preexistente y la propuesta no lo empeora. Pero sí lo hace **visible**: la antigüedad por celda es Fase B, y sin ella no se puede desestacionalizar | Reparto temporal por celda ⇒ si el pico es grande, segmentar el índice por período |
 | L6 | **`promediosPorDepartamento` no se encoge**: es una media de medias de entidad, con el mismo problema en un nivel más arriba | Efecto de segundo orden: el departamento solo actúa como prior, y un prior ruidoso pesa `(1−w)` | Si `w` medio < 0,3 en producción, el prior manda y hay que encogerlo también |
 | L7 | **La banda es una posterior del MODELO, no un intervalo de confianza del mundo.** No cubre inhabilidades, RUP vencido, experiencia específica ni indicadores del pliego | Es el mismo límite que ya declara el techo de 0,95 [DOC]. La banda mide ignorancia sobre `λ`, no sobre el pliego | Un rechazo por habilitación en un proceso con banda estrecha ⇒ el rótulo miente y hay que cambiarlo |
-| L8 | **Retirar `f_comp` baja `p` a las entidades de poca competencia**, que son la tesis comercial de la app (Palanca 4) | El orden por VE apenas cambia (§5.6) y el nicho sigue arriba **por el `1/(1+r̂)`, que ya lo separa**. Lo que se retira es el estiramiento, no la señal | Si el top-20 nuevo produce más procesos «que no miraría», se revierte: es un A/B, no un despliegue |
+| L8 | **Retirar `f_comp` baja `p` a las entidades de poca competencia** (−23 %, que son la tesis comercial de la app, Palanca 4) | El orden por VE apenas cambia (§5.6) y el nicho sigue arriba **por el `1/(1+r̂)`, que ya lo separa**. Lo que se retira es el estiramiento, no la señal | ⚠️ **Se desplegó DIRECTO, sin A/B ni flag** — el plan prometía un A/B y no lo hubo, y conviene decirlo en vez de dejar la promesa escrita. Revertir es `git revert` del commit de A1. Señal para hacerlo: que el top-20 empiece a traer procesos «que no miraría» |
 | L9 | **Un `p` menos disperso puede leerse como «la app ya no distingue»** | Se acompaña de la banda y de `peso_datos`: distinguir es mostrar cuánto se sabe, no separar más las cifras | Ninguna: es un cambio de lectura, y va en el `como_leerlo` |
 | L10 | **La reconstrucción del índice es obligatoria para encender la mejora**, y en producción se lanza a mano desde el navegador | `?reconstruir_indice=true` no re-extrae nada y ya existe. Sin reconstruir, comportamiento idéntico al de hoy | Ninguna |
 
@@ -627,7 +635,7 @@ Ordenada por (mejora medida ÷ coste). **A1 es la única que no exige reconstrui
 | # | Cambio | Dónde | Mejora [SIM] | Coste | Prueba que lo ata |
 |---|---|---|---|---|---|
 | **A1** ✅ | **Retirar `f_comp` (×1,30/×0,70)** — **HECHO** (ago 2026) | `lib/probabilidad.js` | **−27 % MAE** | 3 líneas | ✅ El ajuste `competencia_*` ya no aparece en ningún desglose (prueba sobre los tres niveles y sobre el corpus entero); ✅ el mismo nº de rivales da la misma `p` venga de la entidad o del departamento; ✅ A.10 y la monotonía intactas |
-| **A1b** ✅ | **Suavizar `f_baja` a una rampa continua** — **HECHO** (ago 2026). No estaba en el plan original como paso propio: es la mitad barata de A4, la que quita el SALTO sin tocar la semántica ni `lib/apu/rentabilidad` | `lib/probabilidad.js` | elimina los saltos de −9,1 % y −15,0 %; **no** cambia nada fuera de la banda [2, 5] | 1 h | ✅ Continuidad (salto máximo < 0,002 barriendo la banda); ✅ monotonía no creciente; ✅ extremos idénticos a los de antes; ✅ `sin_dato` ⇒ ningún ajuste (con guarda propia: `Number(null)` es 0); ✅ `base × Π factores = p` |
+| **A1b** ✅ | **Suavizar `f_baja` a una rampa continua** — **HECHO** (ago 2026). No estaba en el plan original como paso propio: es la mitad barata de A4, la que quita el SALTO sin tocar la semántica ni `lib/apu/rentabilidad` | `lib/probabilidad.js` | elimina los saltos de −9,1 % y −15,0 %; **no** cambia nada fuera de la banda [2, 5] | 1 h | ✅ Continuidad de la FUNCIÓN (salto máximo < 0,002); ✅ monotonía no creciente; ✅ en el dominio REAL (mediana entera) el peldaño más alto cae del 15,0 % al **8,9 %** — la rampa suaviza la función, no el dato; ✅ los bordes 2 y 5 **cambian** (comparación estricta → inclusiva) y quedan fijados; ✅ `sin_dato` ⇒ ningún ajuste, con la guarda **en el camino real** (`numero(null)` es 0 y la dejaba muerta); ✅ `base × Π factores = p` |
 | **A2** | Publicar `μ_global`, `τ̂²` y `m` en `indice:competencia:meta`; publicar `rivales_estimados` y `peso_datos` por entidad. **`promedio` sigue en `null` bajo el mínimo** | `lib/indice_competencia.js` | habilita A3 | medio día + reconstruir índice | Que un hash SIN los campos nuevos dé exactamente la `p` de hoy (compatibilidad, como `claveLegado`); que `promedio` siga anulado bajo el mínimo |
 | **A3** | **Encogimiento**: `competenciaDe` devuelve `r̂` y `w`; `estimarPDetalle` los usa | `lib/indice_competencia.js`, `lib/probabilidad.js` | **−38 % MAE** acumulado; elimina el salto ×2,60 | 1 día | Continuidad: `p(n=4)` y `p(n=5)` con el mismo promedio difieren <10 %; `w` monótona en `n`; `τ̂² ≤ 0` ⇒ todo al prior y se declara |
 | **A4** | **Sustituir `f_baja` por `f_precio`**, llamando a `pGanarPorPrecio`; encoger `b̂_mkt` y `σ̂` hacia `b_ref` de la modalidad. **Pendiente**: A1b ya quitó los escalones, pero **el castigo al centro sigue ahí** — la rampa suavizó el salto, no la semántica | `lib/probabilidad.js` | elimina el castigo al centro | 1 día | Con `b_max ≥ b̂_mkt` ⇒ `f_precio = 1` exacto; **prohibido** que `lib/probabilidad` reimplemente la curva |

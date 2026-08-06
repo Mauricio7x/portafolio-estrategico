@@ -326,7 +326,14 @@
   function bloqueProbabilidad(l) {
     const d = l.p_ganar_detalle || {};
     const pct = Math.round((Number(l.p_ganar) || 0) * 100);
-    const ajustes = (d.ajustes || []).map((a) => `${a.nombre} ×${a.factor}: ${a.motivo}`).join("\n");
+    /* `a.factor` puede venir en `null`: sin token, lib/publico redacta el factor
+       del ajuste por baja de mercado (es invertible y revelaría la mediana que
+       `baja_mercado` acaba de ocultar). Sin esta guarda el cliente público —que
+       es justo para quien se abrió el endpoint— leía «baja_mercado ×null: …».
+       El ajuste SÍ se enseña: que exista es un hecho, y esconderlo sería otra
+       forma de mentir. Lo que falta es la cifra, y el motivo ya lo explica. */
+    const ajustes = (d.ajustes || [])
+      .map((a) => `${a.nombre}${a.factor == null ? "" : ` ×${a.factor}`}: ${a.motivo}`).join("\n");
     const titulo = [FUENTE_P[d.fuente] || "", d.rivales_esperados != null ? `Rivales esperados: ${d.rivales_esperados}` : "", ajustes]
       .filter(Boolean).join("\n");
     return `
