@@ -152,6 +152,12 @@
   let filas = [];           // [{item_id, descripcion, unidad, cantidad, rendimiento_override}]
   let ultimoCalculo = null; // respuesta de /api/apu/calcular
   let idActual = null;      // id del presupuesto cargado/guardado
+  let ultimoOptimizador = null; // bloque `optimizador` de /api/apu/rentabilidad
+  /* Guarda de reentrada: «Calcular APU» dispara la rentabilidad sola cuando hay
+     proceso asociado, y aplicar un descuento vuelve a calcular el APU. Sin esto
+     dos pulsaciones seguidas dejarían dos peticiones en vuelo pintando la misma
+     caja en el orden en que respondan. */
+  let rentabilidadEnVuelo = false;
 
   /* ─────────────────────── configuración de la UI ───────────────────── */
   function leerConfig() {
@@ -361,8 +367,11 @@
     pintarTabla();
   });
 
-  /* ────────────────────────── cálculo ──────────────────────────────── */
-  $("btn-calcular").addEventListener("click", async () => {
+  /* ────────────────────────── cálculo ────────────────────────────────
+     Extraído del listener para que «Aplicar este descuento al APU» pueda
+     recalcular por el MISMO camino. Dos rutas de cálculo se desincronizan a la
+     primera corrección que se aplique a una sola. */
+  async function calcularApu() {
     const btn = $("btn-calcular");
     btn.disabled = true;
     btn.textContent = "Calculando…";
@@ -379,18 +388,32 @@
           config: leerConfig(),
         },
       });
-      if (!r) return;
+      if (!r) return false;
       ultimoCalculo = r;
       pintarCalculoEnTabla(r);
       pintarResumen(r);
       mensaje("Presupuesto calculado.", "ok");
+      return true;
     } catch (e) {
       mensaje(`No se pudo calcular: ${e.message}`, "error");
+      return false;
     } finally {
       btn.disabled = filas.length === 0;
       btn.textContent = "Calcular APU";
       $("btn-exportar").disabled = !ultimoCalculo;
     }
+  }
+
+  $("btn-calcular").addEventListener("click", async () => {
+    const ok = await calcularApu();
+    /* EL PRECIO SUGERIDO SALE SOLO cuando el APU pertenece a un proceso. Es lo
+       que pide el encargo y es lo que convierte el editor en una decisión: sin
+       esto, el dueño calcula el costo y se queda otra vez mirando la baja
+       mediana para decidir a ojo. Solo se dispara si el cálculo salió bien —
+       recomendar un precio sobre un presupuesto que falló sería creíble y
+       equivocado— y con proceso asociado, porque sin cuantía publicada no hay
+       techo contra el que medir un descuento. */
+    if (ok && $("id-proceso").value.trim()) await calcularRentabilidad({ auto: true });
   });
 
   function celda(nombre, i) { return document.querySelector(`[data-celda="${nombre}-${i}"]`); }
@@ -792,8 +815,10 @@
   let nitProceso = "";
   let modalidadProceso = "";
 
-  const copRent = (n) => (n == null ? "—" : `$${nf.format(Math.round(n))}`);
-  const pctRent = (n) => (n == null ? "—" : `${nf2.format(n)} %`);
+  /* `Number.isFinite` y no `== null`: un NaN colado desde el servidor se
+     pintaría como «NaN %», que es peor que un «—» porque parece una cifra. */
+  const copRent = (n) => (Number.isFinite(n) ? `$${nf.format(Math.round(n))}` : "—");
+  const pctRent = (n) => (Number.isFinite(n) ? `${nf2.format(n)} %` : "—");
 
   function tarjetaRent(titulo, valor, nota, tono) {
     const color = tono === "mal" ? "text-red-600" : tono === "bien" ? "text-green-700" : "text-gray-900";
@@ -804,8 +829,13 @@
     </div>`;
   }
 
-  async function calcularRentabilidad() {
-    if (!filas.length) { mensaje("Agregue ítems antes de calcular la rentabilidad.", "error"); return; }
+  async function calcularRentabilidad({ auto = false } = {}) {
+    if (!filas.length) {
+      if (!auto) mensaje("Agregue ítems antes de calcular la rentabilidad.", "error");
+      return;
+    }
+    if (rentabilidadEnVuelo) return;
+    rentabilidadEnVuelo = true;
     const btn = $("btn-rentabilidad");
     btn.disabled = true;
     const antes = btn.textContent;
@@ -823,15 +853,24 @@
         unspsc: $("codigos-unspsc").value.trim(),
         cuantia: Number($("cuantia").value) || null,
         plazo_meses: Number($("plazo-meses").value) || 12,
+        // etiqueta: viaja y vuelve, pero no condiciona el optimizador
+        id_proceso: $("id-proceso").value.trim() || null,
         perfil: $("perfil").value,
       };
       const c = await api("/api/apu/rentabilidad", { method: "POST", body: cuerpo });
       if (!c) return; // el usuario canceló el diálogo del token
       pintarRentabilidad(c);
-      mensaje("Rentabilidad actualizada.", "ok");
+      pintarPrecioSugerido(c.optimizador);
+      mensaje(auto ? "Rentabilidad y precio sugerido actualizados." : "Rentabilidad actualizada.", "ok");
     } catch (e) {
       mensaje(`No se pudo calcular la rentabilidad: ${e.message}`, "error");
+      /* También en automático hay que dejar rastro visible: si no, tras pulsar
+         «Calcular APU» el recuadro simplemente no aparecería y el dueño no
+         tendría forma de distinguir «falló» de «este proceso no da para
+         sugerir un precio». */
+      pintarPrecioSugerido({ aplicable: false, mensaje: `No se pudo calcular el precio sugerido: ${e.message}` });
     } finally {
+      rentabilidadEnVuelo = false;
       btn.disabled = false;
       btn.textContent = antes;
     }
@@ -890,9 +929,190 @@
       .map((x) => `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(x)}</p>`).join("");
   }
 
+  /* ════════════════════ Precio sugerido (optimizador) ════════════════════
+     DOS DESCUENTOS QUE NO SON EL MISMO NÚMERO, y es lo único que hay que tener
+     claro para leer este bloque:
+       · `descuento`          la baja contra el PRESUPUESTO OFICIAL. Es la que
+                              ve el mercado y la que se compara con la mediana
+                              histórica de la entidad.
+       · `descuento_apu_pct`  lo que hay que escribir en la perilla «Factor de
+                              baja», que se aplica sobre SU precio de venta.
+     Coinciden solo si el APU da exactamente la cuantía publicada. El botón
+     escribe SIEMPRE el segundo; escribir el primero produciría un precio
+     distinto del recomendado sin que nada lo delatara. */
+  function pintarPrecioSugerido(o) {
+    const sec = $("seccion-precio-sugerido");
+    const sin = $("ps-sin-datos");
+    const cuerpo = $("ps-cuerpo");
+    sec.classList.remove("hidden");
+    ultimoOptimizador = o && o.aplicable ? o : null;
+
+    if (!o || !o.aplicable) {
+      cuerpo.classList.add("hidden");
+      sin.classList.remove("hidden");
+      sin.textContent = `⚪ ${(o && o.mensaje) || "No hay con qué sugerir un precio para este proceso."}`;
+      $("ps-origen").textContent = "";
+      return;
+    }
+    sin.classList.add("hidden");
+    cuerpo.classList.remove("hidden");
+
+    const centro = o.centro_mercado || {};
+    $("ps-origen").textContent = `Centro del mercado: ${pctRent(centro.baja_mediana_pct)} de baja`
+      + (centro.granularidad_utilizada ? ` · ${centro.granularidad_utilizada}` : "")
+      + (centro.modalidad_utilizada ? ` · ${centro.modalidad_utilizada}` : "")
+      + ` · ${centro.procesos_contados} procesos`;
+
+    const op = o.optimo;
+    $("ps-precio").textContent = copRent(op.precio);
+    $("ps-precio-nota").textContent = `Presupuesto oficial ${copRent(o.presupuesto_oficial)}`;
+    $("ps-descuento").textContent = pctRent(op.descuento);
+    $("ps-veg").textContent = copRent(op.veg);
+    $("ps-veg-nota").textContent = "P(ganar) × utilidad neta − costo de preparar la oferta";
+    $("ps-prob").textContent = op.probabilidad == null ? "—" : pctRent(op.probabilidad * 100);
+    const comp = o.comparacion_con_actual;
+    $("ps-prob-nota").textContent = comp && comp.diferencia_veg != null
+      ? (comp.ya_esta_en_el_optimo
+        ? "Su precio actual YA está en el óptimo."
+        : `Frente a su precio actual: ${copRent(comp.diferencia_veg)} de VEG`)
+      : "";
+
+    // el color del VEG es información: en rojo cuando ni el mejor precio del
+    // rango cubre el costo de preparar la oferta
+    $("ps-veg").className = `mt-1 text-2xl font-semibold tabular-nums ${o.sin_punto_rentable ? "text-red-700" : ""}`;
+
+    /* ---- las tres opciones ----
+       `opc` y `meseta` se declaran ANTES de `fila`, que las lee: declaradas
+       después caerían en la zona muerta temporal en cuanto `fila` se llamara
+       desde el `.map` de abajo. Es la misma lección del arranque automático,
+       en pequeño y dentro de una función. */
+    const opc = o.opciones || {};
+    const meseta = opc.meseta || {};
+    const fila = (clave, p) => {
+      if (!p) return "";
+      const destacada = clave === "optimo";
+      /* Cuando la meseta está pegada al máximo por un lado, esa opción ES el
+         óptimo. Repetir la fila sin decirlo se lee como un fallo de pintado;
+         decirlo es información: moverse en esa dirección ya cuesta caro. */
+      const igual = !destacada && p.descuento === op.descuento;
+      const nota = igual
+        ? `Coincide con el óptimo: moverse hacia ahí ya cuesta más del ${num(meseta.tolerancia_pct)} % del valor esperado.`
+        : p.explicacion || "";
+      return `<tr class="${destacada ? "bg-blue-50/60 font-medium" : igual ? "text-gray-400" : ""}">
+        <td class="py-2 pr-3">${esc(p.etiqueta || clave)}
+          <span class="block text-xs font-normal text-gray-400">${esc(nota)}</span></td>
+        <td class="py-2 pr-3 text-right num">${pctRent(p.descuento)}</td>
+        <td class="py-2 pr-3 text-right num">${copRent(p.precio)}</td>
+        <td class="py-2 pr-3 text-right num">${p.probabilidad == null ? "—" : pctRent(p.probabilidad * 100)}</td>
+        <td class="py-2 pr-3 text-right num">${copRent(p.margen)}</td>
+        <td class="py-2 pr-3 text-right num">${copRent(p.veg)}</td>
+        <td class="py-2 text-right">
+          <button type="button" data-aplicar="${esc(clave)}" ${p.aplicable_al_apu ? "" : "disabled"}
+                  title="${p.aplicable_al_apu ? `Escribe ${num(p.descuento_apu_pct)} % en el factor de baja` : "Ese precio está por encima de su precio de venta: no hay descuento que aplicar"}"
+                  class="rounded border border-gray-300 px-2 py-1 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-30">Aplicar</button>
+        </td>
+      </tr>`;
+    };
+    $("ps-opciones").innerHTML = ["conservador", "optimo", "agresivo"].map((k) => fila(k, opc[k])).join("");
+
+    $("ps-meseta").textContent = meseta.colapsada
+      ? `El óptimo es agudo: moverse un solo paso cuesta más del ${num(meseta.tolerancia_pct)} % del valor esperado, `
+        + "así que las tres opciones coinciden."
+      : `Meseta del valor esperado: entre ${pctRent(meseta.desde_pct)} y ${pctRent(meseta.hasta_pct)} de baja `
+        + `(${num(meseta.ancho_pp)} pp) el VEG no cae más del ${num(meseta.tolerancia_pct)} %. Dentro de esa banda `
+        + "la elección es de apetito de riesgo, no de aritmética.";
+
+    /* ---- el botón principal ---- */
+    const btn = $("btn-aplicar-descuento");
+    btn.disabled = !op.aplicable_al_apu;
+    $("ps-aplicar-nota").textContent = op.aplicable_al_apu
+      ? `Escribe ${num(op.descuento_apu_pct)} % en «Factor de baja» (sobre su precio de venta) y recalcula: `
+        + `el APU dará ${copRent(op.precio_apu_resultante)}.`
+      : "No aplicable: el precio óptimo está por encima de su precio de venta. El ajuste competitivo solo baja.";
+
+    $("ps-curva").innerHTML = curvaSVG(o);
+    $("ps-alertas").innerHTML = (o.alertas || [])
+      .map((x) => `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">${esc(x)}</p>`).join("");
+  }
+
+  /* Curva VEG vs descuento en SVG en línea. Sin librería: el proyecto no tiene
+     dependencias y una polilínea no justifica la primera. Marca el óptimo y
+     —cuando cae dentro del rango— el precio vigente, que es lo que convierte la
+     gráfica en «dónde estoy y a dónde debería moverme». */
+  function curvaSVG(o) {
+    const pts = (o.curva || []).filter((p) => Number.isFinite(p.veg) && Number.isFinite(p.descuento));
+    if (pts.length < 2) return "";
+    const W = 720, H = 180, mL = 64, mR = 14, mT = 14, mB = 30;
+    const xs = pts.map((p) => p.descuento);
+    const ys = pts.map((p) => p.veg);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs);
+    const y0 = Math.min(...ys, 0);
+    let y1 = Math.max(...ys, 0);
+    if (y1 === y0) y1 = y0 + 1;
+    const px = (d) => mL + (W - mL - mR) * (x1 === x0 ? 0.5 : (d - x0) / (x1 - x0));
+    const py = (v) => mT + (H - mT - mB) * (1 - (v - y0) / (y1 - y0));
+
+    const linea = pts.map((p) => `${px(p.descuento).toFixed(1)},${py(p.veg).toFixed(1)}`).join(" ");
+    const cero = py(0);
+    const op = o.optimo;
+    const actual = o.punto_actual;
+    const dentro = actual && Number.isFinite(actual.descuento) && actual.descuento >= x0 && actual.descuento <= x1;
+
+    return `<svg viewBox="0 0 ${W} ${H}" class="h-44 w-full min-w-[560px]" role="img"
+      aria-label="Valor esperado de la ganancia según el descuento sobre el presupuesto oficial">
+      <line x1="${mL}" y1="${cero.toFixed(1)}" x2="${W - mR}" y2="${cero.toFixed(1)}" stroke="#d1d5db" stroke-dasharray="3 3"/>
+      <polyline points="${linea}" fill="none" stroke="#2563eb" stroke-width="2"/>
+      <line x1="${px(op.descuento).toFixed(1)}" y1="${mT}" x2="${px(op.descuento).toFixed(1)}" y2="${H - mB}"
+            stroke="#2563eb" stroke-width="1" stroke-dasharray="2 3"/>
+      <circle cx="${px(op.descuento).toFixed(1)}" cy="${py(op.veg).toFixed(1)}" r="4" fill="#2563eb"/>
+      ${dentro ? `<circle cx="${px(actual.descuento).toFixed(1)}" cy="${py(actual.veg).toFixed(1)}" r="4"
+            fill="none" stroke="#111827" stroke-width="2"/>` : ""}
+      <text x="${mL}" y="${H - 10}" font-size="11" fill="#9ca3af">${esc(nf2.format(x0))} %</text>
+      <text x="${W - mR}" y="${H - 10}" font-size="11" fill="#9ca3af" text-anchor="end">${esc(nf2.format(x1))} %</text>
+      <text x="${px(op.descuento).toFixed(1)}" y="${H - 10}" font-size="11" fill="#2563eb" text-anchor="middle">óptimo ${esc(nf2.format(op.descuento))} %</text>
+      <text x="4" y="${(py(y1) + 4).toFixed(1)}" font-size="11" fill="#9ca3af">${esc(copRent(y1))}</text>
+      ${cero - py(y1) >= 14 ? `<text x="4" y="${(cero + 4).toFixed(1)}" font-size="11" fill="#9ca3af">$0</text>` : ""}
+    </svg>`;
+  }
+
+  /* ── «Aplicar este descuento al APU» ──────────────────────────────────
+     Escribe la perilla, enciende el ajuste competitivo y RECALCULA por el mismo
+     camino que el botón «Calcular APU». Una pulsación que solo rellenara el
+     campo dejaría al resumen enseñando el precio anterior. */
+  async function aplicarDescuentoApu(punto) {
+    if (!punto) return;
+    if (!punto.aplicable_al_apu) {
+      $("ps-aplicar-nota").textContent = "No aplicable: ese precio está por encima de su precio de venta, "
+        + "así que no es un descuento. Suba la utilidad o la administración si quiere que el APU lo refleje.";
+      return;
+    }
+    $("ajuste-competitivo").checked = true;
+    sincronizarBaja();
+    $("factor-baja").value = punto.descuento_apu_pct;
+    $("baja-nota").textContent = `Del precio sugerido: ${num(punto.descuento_apu_pct)} % sobre su precio de venta, `
+      + `que equivale a ${num(punto.descuento)} % de baja contra el presupuesto oficial.`;
+    mensaje(`Descuento aplicado (${num(punto.descuento_apu_pct)} %). Recalculando…`, "info");
+    const ok = await calcularApu();
+    if (ok && $("id-proceso").value.trim()) await calcularRentabilidad({ auto: true });
+  }
+
+  $("btn-aplicar-descuento").addEventListener("click", () => {
+    if (!ultimoOptimizador) return;
+    aplicarDescuentoApu(ultimoOptimizador.optimo);
+  });
+
+  // delegación: la tabla se repinta entera en cada cálculo
+  $("ps-opciones").addEventListener("click", (e) => {
+    const clave = e.target.getAttribute("data-aplicar");
+    if (!clave || !ultimoOptimizador) return;
+    aplicarDescuentoApu((ultimoOptimizador.opciones || {})[clave]);
+  });
+
   async function arrancar() {
     const hayProceso = precargarDesdeURL();
-    $("btn-rentabilidad").addEventListener("click", calcularRentabilidad);
+    // envuelto en una flecha a propósito: pasarla directa le entregaría el
+    // MouseEvent como opciones y `{auto}` se leería de un objeto que no lo es
+    $("btn-rentabilidad").addEventListener("click", () => calcularRentabilidad());
     sincronizarBaja();
     pintarTabla();
     try {

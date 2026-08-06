@@ -131,6 +131,93 @@
         <div id="rentabilidad-avisos" class="mt-4 space-y-2"></div>
       </section>
 
+      <!-- ══════ Precio sugerido · optimizador ══════
+           Va ANTES de la configuración a propósito: su botón escribe justamente
+           en la perilla «Factor de baja» de la sección 2, y una recomendación
+           que aparece por debajo del mando que modifica se lee después de haber
+           decidido. El descuento que se muestra es el que ve el MERCADO (contra
+           el presupuesto oficial); el que se escribe en la perilla es el del
+           APU (contra el precio de venta), y no son el mismo número. -->
+      <section id="seccion-precio-sugerido" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-baseline justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Precio sugerido</h2>
+            <p class="mt-1 max-w-3xl text-sm text-gray-500">
+              El precio que <strong>maximiza el valor esperado</strong>, no el que maximiza la probabilidad
+              ni el que maximiza el margen. Bajar más allá del óptimo compra probabilidad en uno solo de los
+              cuatro métodos de ponderación —que se sortean en la audiencia— y regala margen en los cuatro.
+            </p>
+          </div>
+          <span id="ps-origen" class="text-xs text-gray-400"></span>
+        </div>
+
+        <!-- estado «no aplicable»: dice POR QUÉ, nunca una recomendación vacía -->
+        <div id="ps-sin-datos" class="mt-4 hidden rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700"></div>
+
+        <div id="ps-cuerpo" class="hidden">
+          <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-2xl bg-blue-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-blue-900/60">Precio óptimo</p>
+              <p id="ps-precio" class="mt-1 text-2xl font-semibold tabular-nums text-blue-950">—</p>
+              <p id="ps-precio-nota" class="text-xs text-blue-900/60"></p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Descuento sugerido</p>
+              <p id="ps-descuento" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p class="text-xs text-gray-500">Sobre el presupuesto oficial</p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">VEG esperado</p>
+              <p id="ps-veg" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p id="ps-veg-nota" class="text-xs text-gray-500"></p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Probabilidad a ese precio</p>
+              <p id="ps-prob" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p id="ps-prob-nota" class="text-xs text-gray-500"></p>
+            </div>
+          </div>
+
+          <div class="mt-5 flex flex-wrap items-center gap-3">
+            <button id="btn-aplicar-descuento" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              Aplicar este descuento al APU
+            </button>
+            <span id="ps-aplicar-nota" class="text-xs text-gray-500"></span>
+          </div>
+
+          <!-- Las tres opciones. No son un ±N pp inventado: son los extremos y
+               el máximo de la meseta del VEG. -->
+          <div class="mt-6 overflow-x-auto">
+            <table class="w-full min-w-[720px] text-sm">
+              <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
+                <tr>
+                  <th class="py-2 pr-3">Opción</th>
+                  <th class="py-2 pr-3 text-right">Descuento</th>
+                  <th class="py-2 pr-3 text-right">Precio</th>
+                  <th class="py-2 pr-3 text-right">Probabilidad</th>
+                  <th class="py-2 pr-3 text-right">Margen</th>
+                  <th class="py-2 pr-3 text-right">VEG</th>
+                  <th class="py-2"></th>
+                </tr>
+              </thead>
+              <tbody id="ps-opciones" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <p id="ps-meseta" class="mt-2 text-xs text-gray-500"></p>
+
+          <!-- Curva VEG vs precio. SVG en línea: el proyecto no tiene
+               dependencias y una gráfica de una polilínea no justifica la
+               primera. -->
+          <div class="mt-6">
+            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500">Valor esperado según el descuento</h3>
+            <div id="ps-curva" class="mt-2 overflow-x-auto"></div>
+          </div>
+
+          <div id="ps-alertas" class="mt-4 space-y-2"></div>
+        </div>
+      </section>
+
       <!-- ══════ 2 · Configuración ══════ -->
       <section class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">2 · Configuración</h2>
