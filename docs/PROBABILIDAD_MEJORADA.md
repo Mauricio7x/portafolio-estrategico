@@ -1,7 +1,9 @@
 # Probabilidad de ganar — auditoría de la fórmula vigente y propuesta de mejora
 
-> Documento de **análisis y propuesta**. No trae código de implementación: fórmulas, justificación,
-> impacto medido y plan por fases. El código se escribe después, si esto convence.
+> Documento de **análisis y propuesta**, con su plan por fases. Se escribió antes de tocar el
+> código; **dos de sus pasos ya están implementados** — ver el bloque de ESTADO justo debajo.
+> Los §1-§7 son el DIAGNÓSTICO tal como se levantó y se leen en pasado: dicen por qué se hizo cada
+> cosa, no cómo está el código hoy.
 >
 > Convenciones de origen, como en `docs/ATRACTIVIDAD.md`:
 > **[CÓD]** verificado ejecutando el código real de este repositorio · **[SIM]** simulación con
@@ -11,6 +13,22 @@
 > Este entorno **no alcanza Redis de producción ni `datos.gov.co`** (allowlist del proxy). Ninguna
 > cifra de aquí es una medición del corpus real, y las que provienen de simulación lo dicen.
 
+> ## ESTADO DE IMPLEMENTACIÓN (ago 2026)
+>
+> El documento se escribió como propuesta y **dos pasos ya están en el código**. Se marca aquí
+> arriba porque un plan que no dice qué parte ya se hizo se lee mal en las dos direcciones.
+>
+> | | Paso | Estado |
+> |---|---|---|
+> | **A1** | Retirar el ajuste por tertil de competencia | ✅ **hecho** |
+> | **A1b** | Suavizar la baja a una rampa continua (mitad barata de A4) | ✅ **hecho** |
+> | A2, A3 | Publicar `μ`/`τ̂²`/`m` y encoger los rivales | ⬜ pendiente — el corte duro en 5 procesos **sigue vivo** |
+> | A4, A5 | `f_precio` y separar `p` de `p_sin_precio` | ⬜ pendiente — **el castigo al centro y la doble cuenta de precio siguen vivos** |
+> | A6, A7 | Banda de credibilidad · medir la colisión | ⬜ pendiente |
+>
+> Lo que NO hay que malinterpretar: **suavizar la baja no la calibra**, y la rampa **no** arregla el
+> defecto semántico de §2.5c — solo le quitó el salto.
+
 ---
 
 ## 0. Dos correcciones al encargo, antes de proponer nada
@@ -18,10 +36,11 @@
 ### 0.1 La baja de mercado YA está en la fórmula. Lo que falta no es incorporarla
 
 El encargo describe la fórmula vigente como «`P_base` + ajustes por competencia, prórroga y
-colisión» y presenta la baja como un dato que «esta fórmula no aprovecha». **No es así desde ago
-2026**: `lib/probabilidad.js:66-69` define `FACTOR_BAJA_ALTA = 0.85` y `FACTOR_BAJA_BAJA = 1.10`
-con cortes en 5 % y 2 %, y `api/oportunidades.js:408-410` le pasa el objeto `baja` en cada evaluación.
-Son **seis** ajustes, no cuatro, y la cabecera del módulo los enumera.
+colisión» y presenta la baja como un dato que «esta fórmula no aprovecha». **No era así ya en ago
+2026**: `lib/probabilidad.js` definía `FACTOR_BAJA_ALTA = 0.85` y `FACTOR_BAJA_BAJA = 1.10` con
+cortes en 5 % y 2 %, y `api/oportunidades.js:408-410` le pasa el objeto `baja` en cada evaluación.
+Eran **seis** ajustes, no cuatro, y la cabecera del módulo los enumeraba. (Hoy son **tres**: se
+retiró el tertil de competencia y los dos escalones de la baja se fundieron en una rampa.)
 
 Esto cambia el encargo de sitio, y para mejor: el problema no es que falte la señal, es **cómo
 entra** — con dos escalones sobre una mediana ruidosa, y con una semántica que se contradice con
@@ -50,11 +69,15 @@ Lo que esos 11 667 sí permiten —y es mucho— son **dos calibraciones reales*
 
 **La consecuencia de diseño es la tesis de todo este documento**: si solo dos piezas de la fórmula
 son calibrables, mejorar la fórmula significa **reducir el número de constantes no calibrables, no
-añadir más**. Hoy son nueve. La propuesta las deja en dos, y las dos con plan de medición.
+añadir más**. Eran nueve al levantar la auditoría; A1 se llevó dos por delante y quedan siete. La
+propuesta completa las deja en dos, y las dos con plan de medición.
 
 ---
 
-## 1. La fórmula actual, explicada
+## 1. La fórmula que había hasta ago 2026, explicada
+
+> Es el punto de partida de la auditoría, no el estado del código. Los pasos A1 y A1b ya la
+> cambiaron: hoy `f_comp` no existe y `f_baja` es una rampa continua.
 
 ```
 rivales r ←  cascada:  promedio de oferentes de LA ENTIDAD (índice, ≥5 procesos)
@@ -74,7 +97,9 @@ P = clamp( 1/(1+r) · f_comp · f_prórroga · f_colisión · f_baja , 0,01 , 0,
 
 Nueve constantes libres (`5`, `1,30`, `0,70`, `1,20`, `1,15`, `0,85`, `1,10`, `5 %`, `2 %`),
 **ninguna calibrada** — el propio módulo lo declara: «son SUPUESTOS declarados, no coeficientes
-ajustados» (`lib/probabilidad.js:48-51`). Esa honestidad es correcta; el problema es la cantidad.
+ajustados». Esa honestidad es correcta; el problema es la cantidad. Tras A1 y A1b quedan **siete**
+(`1,30` y `0,70` desaparecieron); `0,85`, `1,10`, `2 %` y `5 %` siguen vivos como extremos y codos
+de la rampa, y **suavizar no es calibrar**.
 
 ---
 
@@ -213,10 +238,10 @@ supuestos independientes tenga sentido; el `clamp` es una red, no un diseño. Se
 | Factor | ¿Justificado con los datos? | Veredicto |
 |---|---|---|
 | cascada de rivales | sí, salvo el corte duro en 5 | **arreglar** — encogimiento continuo |
-| `f_comp` ×1,30/×0,70 | **no** — es el mismo dato dos veces, con cortes relativos | **retirar** |
+| `f_comp` ×1,30/×0,70 | **no** — es el mismo dato dos veces, con cortes relativos | ✅ **retirado** (A1, ago 2026) |
 | `f_prórroga` ×1,20 | mecanismo sólido, magnitud no medida | **conservar** + plan de medición (Fase B) |
 | `f_colisión` ×1,15 | mecanismo sólido, magnitud no medida | **conservar** + **medir ya** (Fase A) |
-| `f_baja` ×0,85/×1,10 | **no** — escalones, cortes absolutos, penaliza el centro, doble cuenta | **sustituir** |
+| `f_baja` ×0,85/×1,10 | **no** — escalones, cortes absolutos, penaliza el centro, doble cuenta | 🟡 **escalones eliminados** (A1b); penalizar el centro y la doble cuenta **siguen vivos** → A4/A5 |
 | `clamp` | red de seguridad, no modelo | conservar |
 
 ---
@@ -285,7 +310,10 @@ oferentes por entidad** (`lib/indice_competencia.js:243`), así que `k` **es est
 alguien lo publique. La magnitud del error que se está aceptando está medida (§5.5): entre 3 % y
 27 % de subestimación de `P`, y **siempre en la misma dirección**.
 
-### 3.3 · Paso 3 — El factor de precio, que sustituye a los dos escalones de la baja
+### 3.3 · Paso 3 — El factor de precio (A4, pendiente)
+
+> A1b ya sustituyó los dos escalones por una rampa continua, que es la mitad barata de este paso.
+> Lo que sigue pendiente es la otra mitad: **dejar de penalizar el centro del mercado**.
 
 La corrección conceptual: **lo que mueve la probabilidad no es dónde está el centro del mercado,
 sino a qué distancia de él puedo ofertar sin perder plata.**
@@ -425,7 +453,7 @@ y la fórmula no.
 
 | | media | mediana | p10 | p90 | **sd** |
 |---|---|---|---|---|---|
-| ACTUAL | 0,217 | 0,179 | 0,081 | 0,411 | **0,130** |
+| PREVIA (hasta ago 2026) | 0,217 | 0,179 | 0,081 | 0,411 | **0,130** |
 | PROPUESTA | 0,199 | 0,188 | 0,110 | 0,302 | **0,077** |
 | VERDADERA | 0,211 | 0,188 | 0,110 | 0,341 | **0,099** |
 
@@ -444,13 +472,13 @@ dispersión se publica **como banda** (§3.5) y no se mete en el punto.
 
 | | MAE | RMSE | sesgo |
 |---|---|---|---|
-| ACTUAL | 0,0571 | 0,0830 | +0,0065 |
+| PREVIA (hasta ago 2026) | 0,0571 | 0,0830 | +0,0065 |
 | PROPUESTA | **0,0339** | **0,0546** | −0,0111 |
 | | **−40,6 %** | **−34,2 %** | |
 
 Por tamaño de muestra de la entidad:
 
-| procesos de la entidad | procesos servidos | MAE actual | MAE propuesta | mejora |
+| procesos de la entidad | procesos servidos | MAE previa | MAE propuesta | mejora |
 |---|---|---|---|---|
 | 1-4 | 663 | 0,0761 | 0,0461 | **39 %** |
 | 5-9 | 692 | 0,0650 | 0,0351 | **46 %** |
@@ -467,8 +495,8 @@ Sin esto la propuesta sería un paquete de tómalo-o-déjalo y el plan de fases 
 
 | variante | MAE | RMSE | sd(p) | mejora |
 |---|---|---|---|---|
-| **A** · ACTUAL (corte en 5 + tertiles) | 0,0511 | 0,0707 | 0,1213 | — |
-| **B** · quitar **solo los tertiles** | 0,0376 | 0,0636 | 0,0741 | **27 %** |
+| **A** · PREVIA hasta ago 2026 (corte en 5 + tertiles) | 0,0511 | 0,0707 | 0,1213 | — |
+| **B** · quitar **solo los tertiles** — ⬅ **es lo que corre hoy** (A1) | 0,0376 | 0,0636 | 0,0741 | **27 %** |
 | **C** · quitar **solo el corte** (promedio crudo aunque n<5) | 0,0515 | 0,0706 | 0,1384 | **−1 %** |
 | **D** · promedio crudo, sin tertiles, sin encoger | 0,0308 | 0,0498 | 0,0852 | **40 %** |
 | **E** · PROPUESTA (encogimiento + sin tertiles) | 0,0315 | 0,0528 | 0,0711 | **38 %** |
@@ -477,8 +505,9 @@ Sin esto la propuesta sería un paquete de tómalo-o-déjalo y el plan de fases 
 
 Tres lecturas, y las tres cambian el plan:
 
-1. **Retirar los tertiles es el cambio más barato y el segundo más grande** (−27 %): tres líneas de
-   código, ningún dato nuevo, ninguna reconstrucción del índice.
+1. **Retirar los tertiles era el cambio más barato y el segundo más grande** (−27 %): tres líneas de
+   código, ningún dato nuevo, ninguna reconstrucción del índice. Por eso fue el primero que se
+   ejecutó (A1, ago 2026).
 2. **Quitar el corte en 5 POR SÍ SOLO EMPEORA** (−1 %, es decir, un pelo peor). Usar un promedio de
    2 procesos en crudo es ruido, y los tertiles lo amplifican. **No se puede hacer C sin B o sin el
    encogimiento** — es la trampa en la que caería quien leyera §2.1 y solo bajara `MIN_PROCESOS`.
@@ -548,7 +577,8 @@ exactamente la magnitud que justifica un **A/B por URL antes de cambiar el defau
 1. **Menos parámetros no calibrables: de 9 a 2**, y los dos con plan de medición. Es la única
    ventaja que importa a largo plazo.
 2. **Desaparecen tres discontinuidades verificadas**: ×2,60 en el quinto proceso, −32 % por medio
-   rival en el corte del tertil, −15 % por dos décimas de baja.
+   rival en el corte del tertil, −15 % por dos décimas de baja. **Dos ya cayeron** con A1 y A1b;
+   queda viva la ×2,60 del quinto proceso, que es lo que cierran A2/A3.
 3. **La probabilidad de un proceso deja de depender de otras entidades.** Los tertiles son
    relativos y se recalculan con cada reconstrucción; `r̂` solo mira a la entidad y a su prior.
 4. **La incertidumbre se publica** (`p_lo`, `p_hi`, `peso_datos`) en vez de esconderse detrás de un
@@ -596,10 +626,11 @@ Ordenada por (mejora medida ÷ coste). **A1 es la única que no exige reconstrui
 
 | # | Cambio | Dónde | Mejora [SIM] | Coste | Prueba que lo ata |
 |---|---|---|---|---|---|
-| **A1** | **Retirar `f_comp` (×1,30/×0,70)** | `lib/probabilidad.js` | **−27 % MAE** | 3 líneas | El ajuste `competencia_baja/alta` ya no aparece en ningún desglose; `p` sigue siendo monótona decreciente en los rivales; A.10 intacta |
+| **A1** ✅ | **Retirar `f_comp` (×1,30/×0,70)** — **HECHO** (ago 2026) | `lib/probabilidad.js` | **−27 % MAE** | 3 líneas | ✅ El ajuste `competencia_*` ya no aparece en ningún desglose (prueba sobre los tres niveles y sobre el corpus entero); ✅ el mismo nº de rivales da la misma `p` venga de la entidad o del departamento; ✅ A.10 y la monotonía intactas |
+| **A1b** ✅ | **Suavizar `f_baja` a una rampa continua** — **HECHO** (ago 2026). No estaba en el plan original como paso propio: es la mitad barata de A4, la que quita el SALTO sin tocar la semántica ni `lib/apu/rentabilidad` | `lib/probabilidad.js` | elimina los saltos de −9,1 % y −15,0 %; **no** cambia nada fuera de la banda [2, 5] | 1 h | ✅ Continuidad (salto máximo < 0,002 barriendo la banda); ✅ monotonía no creciente; ✅ extremos idénticos a los de antes; ✅ `sin_dato` ⇒ ningún ajuste (con guarda propia: `Number(null)` es 0); ✅ `base × Π factores = p` |
 | **A2** | Publicar `μ_global`, `τ̂²` y `m` en `indice:competencia:meta`; publicar `rivales_estimados` y `peso_datos` por entidad. **`promedio` sigue en `null` bajo el mínimo** | `lib/indice_competencia.js` | habilita A3 | medio día + reconstruir índice | Que un hash SIN los campos nuevos dé exactamente la `p` de hoy (compatibilidad, como `claveLegado`); que `promedio` siga anulado bajo el mínimo |
 | **A3** | **Encogimiento**: `competenciaDe` devuelve `r̂` y `w`; `estimarPDetalle` los usa | `lib/indice_competencia.js`, `lib/probabilidad.js` | **−38 % MAE** acumulado; elimina el salto ×2,60 | 1 día | Continuidad: `p(n=4)` y `p(n=5)` con el mismo promedio difieren <10 %; `w` monótona en `n`; `τ̂² ≤ 0` ⇒ todo al prior y se declara |
-| **A4** | **Sustituir `f_baja` por `f_precio`**, llamando a `pGanarPorPrecio`; encoger `b̂_mkt` y `σ̂` hacia `b_ref` de la modalidad | `lib/probabilidad.js` | elimina los escalones y el castigo al centro | 1 día | Con `b_max ≥ b̂_mkt` ⇒ `f_precio = 1` exacto; continuidad en 2 % y 5 %; **prohibido** que `lib/probabilidad` reimplemente la curva |
+| **A4** | **Sustituir `f_baja` por `f_precio`**, llamando a `pGanarPorPrecio`; encoger `b̂_mkt` y `σ̂` hacia `b_ref` de la modalidad. **Pendiente**: A1b ya quitó los escalones, pero **el castigo al centro sigue ahí** — la rampa suavizó el salto, no la semántica | `lib/probabilidad.js` | elimina el castigo al centro | 1 día | Con `b_max ≥ b̂_mkt` ⇒ `f_precio = 1` exacto; **prohibido** que `lib/probabilidad` reimplemente la curva |
 | **A5** | **Separar `p` de `p_sin_precio`** y que `/api/apu/rentabilidad` consuma la segunda | `lib/probabilidad.js`, `api/apu/[accion].js` | corrige la doble cuenta de precio | horas | Ofertar en la mediana devuelve la base **sin ningún factor de precio aplicado** (hoy la prueba pasa contra un `p_base` ya penalizado) |
 | **A6** | **Banda `p_lo`/`p_hi`** + `ordenar_por=ve_conservador` como **opción** | `lib/probabilidad.js`, `api/oportunidades.js` | hace visible la incertidumbre | medio día | `p_lo ≤ p ≤ p_hi` siempre; amplitud decreciente en `n_e`; el default **no** cambia |
 | **A7** | **Medir `f_colisión` sobre el histórico** (§9.3) y ajustarla o retirarla | script de diagnóstico | convierte un supuesto en un dato | horas | La cifra publicada en la meta con su `n` |
@@ -639,7 +670,7 @@ Los tres corren **sobre el corpus ya bajado**, sin extraer una sola fila de SECO
    1,0 = calibrado, <1 = la app exagera las diferencias entre entidades)
    · cobertura de la banda al 90 % (¿cae el observado dentro el 90 % de las veces?)
 5. Comparar contra tres referencias obligatorias:
-       (a) la fórmula actual (corte en 5 + tertiles)
+       (a) la fórmula vigente (corte en 5, SIN tertiles desde A1)
        (b) el promedio global μ para todos          ← si (b) gana, la dimensión entidad no existe
        (c) el promedio crudo de la entidad, sin encoger
 ```

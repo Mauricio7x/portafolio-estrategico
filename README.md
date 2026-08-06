@@ -218,9 +218,19 @@ financiar la obra no se compensa con cuantía alta. El razonamiento completo est
   "p4_competencia": { "pasa": true, "nivel": "baja", "promedio_oferentes": 3, "mensaje": "…" },
   "pasa_todas": false, "no_viable_por": ["Caja"]
 },
-"p_ganar": 0.325, "ve": 110500000, "viable": false,
-"p_ganar_detalle": { "base": 0.25, "rivales_esperados": 3, "fuente": "entidad", "ajustes": [ … ] }
+"p_ganar": 0.2125, "ve": 72250000, "viable": false,
+"p_ganar_detalle": {
+  "base": 0.25, "rivales_esperados": 3, "fuente": "entidad",
+  "ajustes": [ { "nombre": "baja_mercado", "factor": 0.85,
+                 "motivo": "la entidad adjudica ~8 % por debajo del presupuesto: ganar exige descontar" } ]
+}
 ```
+
+El ejemplo **cuadra a mano y tiene que seguir cuadrando**: `base × Π factores = p_ganar`
+(`0,25 × 0,85 = 0,2125`) y `ve = p_ganar × cuantía` (`0,2125 × $340 M`). El factor que se publica es
+el mismo que se aplicó — publicar uno y multiplicar por otro haría del desglose una explicación que
+no explica su propio resultado. Sin token, ese `factor` viaja en `null` y el `motivo` pierde la
+cifra: es inteligencia de precio (ver «Lo que no sale sin token»).
 
 - **P1 · RUP** (`lib/filtros.evaluarObjeto`): `clase`/`familia` pasan; `equivalente`/`texto` pasan
   **con advertencia**; `ninguno` —o morir en cualquier capa de la cascada del objeto— no pasa.
@@ -239,12 +249,22 @@ financiar la obra no se compensa con cuantía alta. El razonamiento completo est
   pasar** — cerrar por ignorancia esconde oportunidades reales y el usuario no puede ni enterarse.
 
 `p_ganar ≈ 1 / (1 + rivales esperados)`, con los rivales tomados en cascada del **histórico de la
-entidad** → **promedio de su departamento** → **supuesto conservador de 5** (`P = 1/6`), y cuatro
-ajustes declarados: competencia baja ×1,30 · alta ×0,70 · **cierre prorrogado ×1,20** · **colisión
-de cierres ×1,15**. La fuente viaja siempre en `p_ganar_detalle.fuente`: «histórico de la entidad»
+entidad** → **promedio de su departamento** → **supuesto conservador de 5** (`P = 1/6`), y tres
+ajustes declarados: **cierre prorrogado ×1,20** · **colisión de cierres ×1,15** · **baja de mercado**,
+una rampa continua de ×1,10 (la entidad adjudica por el presupuesto oficial) a ×0,85 (descuenta
+≥5 %). La fuente viaja siempre en `p_ganar_detalle.fuente`: «histórico de la entidad»
 no es lo mismo que «supuesto», y enseñar el 17 % sin decir de dónde sale convierte una estimación en
 una promesa. Los factores son **supuestos con nombre**, no coeficientes ajustados: no hay etiqueta
-contra la que calibrarlos. `ve = p_ganar × cuantía`.
+contra la que calibrarlos, y suavizar la baja **no la calibra**. `ve = p_ganar × cuantía`.
+
+El **ajuste por tertil de competencia** (×1,30 «baja» / ×0,70 «alta») se retiró en ago 2026: `nivel`
+es el tertil del **mismo promedio** que ya está dentro de `rivales`, así que multiplicaba por la
+competencia dos veces. Saltaba −32 % de probabilidad por **medio rival** en el corte, daba ×1,30 de
+diferencia según el dato viniera de la entidad o del departamento, y como los tertiles son
+**relativos**, la probabilidad de un proceso cambiaba porque cambiaban **otras** entidades del
+índice. El nivel **sigue viajando** en la tarjeta, sigue filtrando (`?competencia_entidad=`) y sigue
+ordenando (`?ordenar_por=competencia`): lo único que ya no hace es multiplicar `p`. Detalle y cifras
+en `docs/PROBABILIDAD_MEJORADA.md`.
 
 **La prórroga del cierre** es la única señal de competencia observable **antes** del cierre que hay
 en el corpus (el contador de oferentes es ex-post: en un proceso abierto vale 0 por construcción).
@@ -759,8 +779,11 @@ la causa no sería el mercado sino que `valor_total_adjudicacion` esté copiando
   (**solo con token**: es inteligencia de precio), y el orden `?ordenar_por=baja`, que pone primero
   las entidades que **menos** descuentan — se puede ofertar cerca del oficial y conservar margen.
   `sin_dato` puntúa −1 y jamás encabeza la lista haciéndose pasar por «no descuenta nada».
-- `lib/probabilidad.js` → dos ajustes sobre `P(ganar)`: ×0,85 si la entidad descuenta más del 5 %
-  (ganar exige bajar) y ×1,10 si adjudica cerca del oficial.
+- `lib/probabilidad.js` → **un** ajuste sobre `P(ganar)`, continuo: una rampa que va de ×1,10 cuando
+  la entidad adjudica por el presupuesto oficial (≤2 % de baja) a ×0,85 cuando descuenta ≥5 %
+  (ganar exige bajar), interpolando linealmente entre los dos. Eran dos escalones hasta ago 2026, y
+  cruzar el corte del 5 % costaba un 15 % de probabilidad sobre una mediana que este índice publica
+  con resolución de **un punto porcentual**: 4,9 % y 5,1 % son la misma entidad medida dos veces.
 - `/api/diagnostico` → bloque `baja_de_mercado`, con el reparto por granularidad **sobre los
   visibles**: dice si el índice alcanza a cubrir lo que la app sirve hoy.
 - `/admin.html` → tarjeta con la baja del mercado y los dos top-3, más el botón de reconstrucción.

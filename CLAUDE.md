@@ -1434,13 +1434,34 @@ responden *cuánto vale la oportunidad* y *si la empresa puede ejecutarla*.
   Resumen técnico en `docs/PERFILES.md`. SMMLV 2026 = $1.750.905.
 - Las CUATRO PUERTAS en `lib/puertas.js` y `P(ganar)`/VE en `lib/probabilidad.js`; el diseño y por
   qué, en `docs/ATRACTIVIDAD.md`.
-  ⚠️ `docs/PROBABILIDAD_MEJORADA.md` es una **PROPUESTA SIN IMPLEMENTAR** (ago 2026): audita los seis
-  factores vigentes ejecutando el código y documenta cuatro defectos reproducidos —el corte duro en 5
-  procesos (×2,60 de salto), el doble conteo del tertil sobre el mismo promedio, los escalones de la
-  baja en 2 %/5 %, y que `f_baja` penaliza ofertar en el CENTRO del mercado y cuenta el precio dos
-  veces con `pGanarPorPrecio`—. Nada de eso está corregido en el código: leerlo como estado actual
-  sería exactamente el error que esta memoria evita. Trae además los tres protocolos de calibración
-  que el histórico ya permite correr hoy.
+  `docs/PROBABILIDAD_MEJORADA.md` audita los factores ejecutando el código y documenta cuatro
+  defectos reproducidos. **DOS YA ESTÁN CORREGIDOS y dos NO** — y la distinción es justo lo que esta
+  memoria existe para no perder:
+  · ✅ **El tertil de competencia ya no multiplica** (ago 2026). Era el MISMO promedio dos veces:
+    `nivel` es el tertil de `promedio_oferentes`, que ya está dentro de `rivales`. Saltaba −32 % por
+    MEDIO rival en el corte, daba ×1,30 de diferencia según el dato viniera de la entidad o del
+    departamento, y como los tertiles son RELATIVOS la probabilidad de un proceso cambiaba porque
+    cambiaban OTRAS entidades. `competencia.nivel` **sigue viajando, filtrando y ordenando**: lo
+    único que ya no hace es multiplicar. Hay prueba de que no puede reaparecer.
+  · ✅ **La baja de mercado es una RAMPA continua**, no dos escalones: ×1,10 hasta 2 % de baja, lineal
+    hasta ×0,85 en 5 %, plana después. Los EXTREMOS son idénticos a los de antes —fuera de [2, 5] no
+    se mueve un dígito, y ahí está la masa, porque la mediana del mercado es 0 %— así que lo único
+    que cambia es la banda intermedia, donde antes cruzar el 5 % costaba un 15 % de probabilidad
+    sobre una mediana publicada con resolución de UN punto porcentual. **Suavizar no es calibrar**:
+    1,10 y 0,85 siguen siendo supuestos puestos a mano.
+    · **`numero()` NO sirve de guarda para «sin dato»**: `Number(null)` y `Number("")` son 0, los dos
+      finitos, así que la ausencia entraba como «baja del 0 %» y salía premiada con ×1,10. La
+      ausencia se descarta ANTES de tocar `Number`, y hay prueba con los cinco valores vacíos.
+    · **El factor se publica REDONDEADO y se aplica REDONDEADO**, para que `base × Π factores`
+      reproduzca `p` a mano desde la tarjeta; hay prueba. Y el ajuste se emite SIEMPRE que haya dato
+      —también cuando el factor sale exactamente 1— porque si no, «no aparece» significaría a la vez
+      «no hay dato» y «no mueve nada»: el «no sé» contra el «cero» otra vez.
+  · ⬜ **Sin corregir**: el corte duro en 5 procesos (×2,60 de salto) y el defecto SEMÁNTICO de la
+    baja —penaliza a una entidad por dónde está el centro de su mercado en vez de por la distancia a
+    la que uno puede ofertar de ese centro, y como `/api/apu/[accion].js` consume esta `p` como su
+    `p_base`, el precio se cobra DOS VECES—. La rampa quitó el salto, no esto. Cerrarlo exige separar
+    `p` de `p_sin_precio` y coordinar con `lib/apu/rentabilidad` (pasos A4/A5 del plan).
+  El documento trae además los tres protocolos de calibración que el histórico ya permite correr hoy.
 - Lector de pliegos (cantidades del pliego, **sin precios**): diccionario de reconocimiento de 93
   ítems y 22 tipologías en `data/catalogo_apu.json` + `lib/apu_catalogo.js`; parseo y validación en
   `lib/apu_pliego.js`; mapeo por similitud en `lib/apu_mapeo.js`; OCR de respaldo en

@@ -71,8 +71,13 @@ const ANTICIPO_PLENO = 20;         // ≥20 % = anticipo que sirve (lib/negocio)
 const TOP_ENTIDADES = 15, TOP_DEPARTAMENTOS = 15, TOP_MUNICIPIOS = 10, TOP_DESTACADOS = 10;
 const DIA_MS = 86400000;
 
-/* Orden de atractividad: el mismo criterio del default de /api/oportunidades
-   («sin_dato» por delante de «alta»: no saber no es saber que hay 20). */
+/* Orden de los DESTACADOS del panel, por banda de competencia de la entidad
+   («sin_dato» por delante de «alta»: no saber no es saber que hay 20).
+   NO es el criterio de /api/oportunidades, que ordena por VALOR ESPERADO desde
+   ago 2026 — decía que sí y era falso. Y desde que el tertil dejó de multiplicar
+   `p_ganar`, esta lista corta es el ÚNICO sitio del sistema donde la banda de
+   competencia sigue decidiendo un orden. Es deliberado: los destacados son una
+   recomendación de dónde mirar primero, no la estimación de nada. */
 const ATRACTIVIDAD = { baja: 3, media: 2, sin_dato: 1, alta: 0 };
 
 /* Los 32 departamentos + Bogotá, normalizados. Se usan SOLO como respaldo:
