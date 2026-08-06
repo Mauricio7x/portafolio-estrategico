@@ -1434,6 +1434,13 @@ responden *cuánto vale la oportunidad* y *si la empresa puede ejecutarla*.
   Resumen técnico en `docs/PERFILES.md`. SMMLV 2026 = $1.750.905.
 - Las CUATRO PUERTAS en `lib/puertas.js` y `P(ganar)`/VE en `lib/probabilidad.js`; el diseño y por
   qué, en `docs/ATRACTIVIDAD.md`.
+  ⚠️ `docs/PROBABILIDAD_MEJORADA.md` es una **PROPUESTA SIN IMPLEMENTAR** (ago 2026): audita los seis
+  factores vigentes ejecutando el código y documenta cuatro defectos reproducidos —el corte duro en 5
+  procesos (×2,60 de salto), el doble conteo del tertil sobre el mismo promedio, los escalones de la
+  baja en 2 %/5 %, y que `f_baja` penaliza ofertar en el CENTRO del mercado y cuenta el precio dos
+  veces con `pGanarPorPrecio`—. Nada de eso está corregido en el código: leerlo como estado actual
+  sería exactamente el error que esta memoria evita. Trae además los tres protocolos de calibración
+  que el histórico ya permite correr hoy.
 - Lector de pliegos (cantidades del pliego, **sin precios**): diccionario de reconocimiento de 93
   ítems y 22 tipologías en `data/catalogo_apu.json` + `lib/apu_catalogo.js`; parseo y validación en
   `lib/apu_pliego.js`; mapeo por similitud en `lib/apu_mapeo.js`; OCR de respaldo en
