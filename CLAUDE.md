@@ -1603,6 +1603,34 @@ Hasta aquí el dueño miraba la baja mediana y descontaba a ojo.
   cuantías distintas se puede acotar el patrimonio por bisección. Es el límite real de publicar el
   veredicto sin credencial, no un descuido. Si algún día pesa más que la utilidad, la salida no es
   redactar mejor: es volver a exigir token.
+- **TERCER canal de inferencia aceptado: la BAJA DE MERCADO se despeja del propio `p_ganar` por
+  aritmética inversa.** `lib/publico` anula `baja_mercado`, `baja_entidad` y `baja_segmento`, y
+  —desde ago 2026— también el `factor` y el `motivo` del ajuste `baja_mercado` dentro de
+  `p_ganar_detalle.ajustes`, porque el número iba escrito en la frase (el defecto de `p2_k.mensaje`
+  y `p3_caja.mensaje`, repetido en un tercer sitio). Lo que NO se puede anular sin romper el
+  producto es la explicación de la cifra: `p_ganar`, `base` y `rivales_esperados` siguen viajando
+  —«la probabilidad viaja SIEMPRE con su fuente»— y los otros dos ajustes son constantes conocidas
+  que además declaran si aplicaron. Con eso,
+  `p / base ÷ 1,20^prórroga ÷ 1,15^colisión` devuelve el factor de baja.
+  · **Lo que se filtra es un RANGO, no un valor**, y hay que contarlo exacto: `lib/indice_baja`
+    publica la mediana como una cubeta ENTERA del histograma (`Math.round`) y la rampa satura fuera
+    de [2 %, 5 %], así que el canal distingue CUATRO clases —{≤2 → ×1,10 · 3 → ×1,0167 ·
+    4 → ×0,9333 · ≥5 → ×0,85}— donde antes de la rampa distinguía tres. Es el mismo canal de rango
+    ya aceptado para `ordenar_por=baja` (que ordena en el servidor), una clase más ancho: no es una
+    fuga nueva.
+  · **Por qué se acepta.** Explotarlo exige un competidor capaz de despejar la cadena de factores
+    de `lib/probabilidad` — y ese mismo competidor puede calcular la baja por su cuenta bajando
+    `p6dx-8zbt`, que es público y trae `precio_base` y `valor_total_adjudicacion`. Lo que la app
+    aporta es la agregación, la cascada de granularidad y el corte por modalidad, no el dato bruto.
+    Es la misma lógica por la que se conserva `financiacion_requerida` (cuantía × 0,20,
+    recalculable con la ficha del proceso): ocultar lo que el otro puede recomputar no protege
+    nada y sí quita producto.
+  · **Qué costaría cerrarlo**: anular también `base` y `rivales_esperados`, es decir, dejar al
+    cliente público con una probabilidad sin decirle de dónde sale. Eso es un cambio de producto,
+    no una corrección. Si algún día pesa más que la utilidad, la salida es la misma que para P2 y
+    P3: volver a exigir token, no redactar mejor.
+  · La medición —con las cifras y el porqué de cada clase— vive en `lib/publico.js`, junto al
+    código que redacta. Aquí queda registrada la decisión.
 - **Lo derivable de datos PÚBLICOS se conserva**: `financiacion_requerida` sale de la cuantía
   publicada × 0,20. Ocultarlo no protegería nada y quitaría información que el cliente puede
   recalcular con la ficha del proceso.
