@@ -31,6 +31,9 @@
 
 const { crearRedis, hayCredenciales } = require("../../lib/redis.js");
 const { autorizarToken } = require("../../lib/auth.js");
+// el lector del cuerpo vive en lib/cuerpo: era la MISMA función copiada en tres
+// endpoints y una de las copias ya había derivado (ver la cabecera de ese módulo)
+const { leerCuerpo } = require("../../lib/cuerpo.js");
 const { CLAVES, escribirJSONComprimido, leerJSONComprimido } = require("../../lib/almacen.js");
 const { validarConfig, derivarUnspsc } = require("../../lib/config_rup.js");
 const {
@@ -39,41 +42,6 @@ const {
 } = require("../../lib/perfiles.js");
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB de cuerpo (requerimiento)
-
-/* Cuerpo de la petición. Vercel ya deja `req.body` parseado cuando el
-   Content-Type es JSON, pero no siempre (ni en las pruebas), así que se
-   cubren los tres casos: objeto, cadena y stream. */
-async function leerCuerpo(req) {
-  if (req.body !== undefined && req.body !== null && typeof req.body === "object") {
-    return { ok: true, datos: req.body };
-  }
-  let crudo = typeof req.body === "string" ? req.body : null;
-  if (crudo === null) {
-    crudo = await new Promise((resolve, reject) => {
-      let buf = "", exceso = false;
-      if (typeof req.on !== "function") return resolve("");
-      req.on("data", (c) => {
-        if (exceso) return;
-        buf += c;
-        if (Buffer.byteLength(buf, "utf8") > MAX_BYTES) { exceso = true; buf = ""; }
-      });
-      req.on("end", () => resolve(exceso ? null : buf));
-      req.on("error", reject);
-    });
-    if (crudo === null) return { ok: false, status: 413, error: "Body demasiado grande", max_mb: 5 };
-  }
-  if (Buffer.byteLength(String(crudo || ""), "utf8") > MAX_BYTES) {
-    return { ok: false, status: 413, error: "Body demasiado grande", max_mb: 5 };
-  }
-  if (!String(crudo || "").trim()) {
-    return { ok: false, status: 400, error: "Body vacío: se esperaba un JSON con la clave «perfiles»" };
-  }
-  try {
-    return { ok: true, datos: JSON.parse(crudo) };
-  } catch (e) {
-    return { ok: false, status: 400, error: `Body no es JSON válido: ${e.message}` };
-  }
-}
 
 /* Resumen legible de lo que quedó cargado (lo que enseña la UI). */
 function resumenPerfiles() {
@@ -139,7 +107,7 @@ module.exports = async function handler(req, res) {
   }
 
   /* ══════════════════ POST · cargar un RUP ══════════════════ */
-  const cuerpo = await leerCuerpo(req);
+  const cuerpo = await leerCuerpo(req, { maxBytes: MAX_BYTES, que: "perfiles" });
   if (!cuerpo.ok) {
     const salida = { ok: false, error: cuerpo.error };
     if (cuerpo.max_mb) salida.max_mb = cuerpo.max_mb;
