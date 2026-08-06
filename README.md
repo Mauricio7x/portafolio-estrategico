@@ -62,7 +62,8 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `api/admin/experiencia.js` + `lib/experiencia.js` | **Contratos ya ejecutados** → vocabulario del oficio: en qué *sabe* trabajar el dueño (el RUP solo dice a qué *puede* presentarse) |
 | `api/admin/cobertura-rup.js` + `lib/cobertura_rup.js` | **Qué códigos UNSPSC le faltan al RUP**: los que el mercado adjudica para objetos como los suyos y no tiene inscritos, priorizados por similitud con su experiencia real |
 | `lib/indice_competencia.js` | Índice **entidad → oferentes promedio** sobre el histórico; tertiles baja/media/alta |
-| `api/competencia-detalle.js` + `lib/competencia_detalle.js` | **Los procesos que sostienen el badge**: incluidos, excluidos y por qué (con caché de 1 h) |
+| `api/competencia-detalle.js` + `lib/competencia_detalle.js` | **Auditoría de las dos cifras de la tarjeta**, dos vistas en una función: los procesos que sostienen el badge (incluidos, excluidos y por qué, caché de 1 h) y el **desglose de la probabilidad** (`?vista=probabilidad`) |
+| `lib/probabilidad_desglose.js` | **Por qué ese 23 %**: los seis pasos del cálculo con fórmula, datos con la fuente citada, aritmética escrita y aporte en puntos porcentuales. No recalcula nada — narra la traza de `lib/probabilidad` |
 | `lib/auth.js` | Guardián único del `HISTORICO_TOKEN` para **todos** los endpoints protegidos, `/api/oportunidades` incluido |
 | `lib/puertas.js` | **Las cuatro puertas** de viabilidad (RUP · K · Caja · Competencia): sustituyen al puntaje 0-100 como criterio de decisión |
 | `lib/probabilidad.js` | **P(ganar)** y valor esperado, con la fuente de cada estimación y las señales ex-ante (prórroga del cierre, colisión de cierres) |
@@ -286,6 +287,15 @@ aportar desde el navegador y la web caía a una cascada de proxies CORS muertos.
 
 ### `GET /api/competencia-detalle` (protegido)
 
+Auditoría de las **dos cifras** que enseña una tarjeta y que hasta ago 2026 no se podían discutir.
+Son **dos vistas de una sola función serverless** (`?vista=entidad`, por defecto, y
+`?vista=probabilidad`), y eso no es estética: el plan Hobby de Vercel admite **12 funciones** por
+despliegue y el repositorio está exactamente en 12. Un archivo más y no falla el endpoint nuevo:
+falla el despliegue entero. Es la misma restricción que plegó `/api/apu/catalogo` en
+`api/apu/[accion].js` y que impidió `/api/baja-mercado`.
+
+#### Vista `entidad` (por defecto)
+
 El badge de la tarjeta afirma «🟢 Poca competencia — promedio 3 oferentes en 12 procesos». Este
 endpoint entrega **esos 12**: sin él, el promedio es una caja negra y no hay forma de saber si los
 procesos que lo sostienen son de obra civil o de cualquier otra cosa.
@@ -325,6 +335,85 @@ Detalles de operación:
 - **No expone adjudicatarios ni NITs**: la proyección es una lista blanca, igual que en
   `/api/oportunidades`.
 - Redis caído o corpus ilegible → `503` con mensaje accionable, nunca un `500` mudo.
+
+#### Vista `probabilidad` — el desglose justificado (ago 2026)
+
+```
+GET /api/competencia-detalle?vista=probabilidad&id_proceso=CO1.REQ.4821   ← canónica
+GET /api/probabilidad-desglose?id_proceso=CO1.REQ.4821                    ← alias (rewrite)
+```
+
+La tarjeta dice «Prob. estimada: 23 %». Un contratista no puede decidir con eso: no sabe si es
+buena, ni qué la causa, ni cómo discutirla. Esta vista devuelve la **misma cifra** abierta en seis
+pasos, cada uno con `formula`, `datos_entrada` (con la **fuente citada**), `calculo`, `resultado`,
+`confianza` y `aporte_pp`. Lo consume el modal que se abre al pulsar la cifra en la app.
+
+| Parámetro | Default | Descripción |
+| --- | --- | --- |
+| `id_proceso` | requerido | `id_del_proceso` de SECOP II. Se busca en el corpus **activo** y, si no está, en el **histórico** (el desglose de un proceso ya adjudicado es el que sirve para contrastar) |
+| `costo_preparacion` | — | Costo estimado de preparar la oferta, en COP. **Sin default**: no existe en ninguna fuente del proyecto y ponerle uno sería inventarse la cifra con la que se decide si vale la pena presentarse |
+| `refrescar` | — | `1` para saltarse la caché |
+
+**La URL del encargo, `/api/probabilidad-desglose`, existe como `rewrite` de `vercel.json`** — que
+no cuenta como función. Hay prueba de que apunta al endpoint real *con* `vista=probabilidad`. El
+frontend llama a la **canónica**: si el rewrite fallara, el modal tiene que seguir funcionando
+(misma lección que `/api/admin/cargar-experiencia-genesis`).
+
+**Los seis pasos** — siempre los seis, también cuando no aplican:
+
+| # | Paso | Fórmula |
+| --- | --- | --- |
+| 1 | Probabilidad base por competencia histórica | `P_base = 1 / (1 + promedio_oferentes_entidad)` |
+| 2 | Nivel de competencia de la entidad — **informativo: NO multiplica** | `× 1` — su efecto ya está entero en el paso 1 |
+| 3 | Prórroga del cierre | `× 1,20` si el cierre se movió por adenda |
+| 4 | Baja de mercado de la entidad | rampa: `× 1,10` hasta 2 % · `× 0,85` desde 5 % · interpolación lineal entre ambos |
+| 5 | Colisión de cierres | `× 1,15` si la entidad cierra ≥2 procesos **el mismo día** |
+| 6 | Límite `[0,01 · 0,95]` y redondeo | `min(0,95, max(0,01, P))` |
+
+Publicar solo los pasos que mordieron dejaría al lector sin poder distinguir «no hubo prórroga» de
+«no se miró la prórroga», que es justo la distinción que esto existe para hacer.
+
+**El paso 2 se conserva aunque ya no multiplique**, y por la misma razón: el nivel de competencia SÍ
+se le enseña al dueño en la tarjeta, así que un desglose que lo omitiera lo dejaría sin explicación
+de por qué un «competencia baja» bien visible no suma ni un punto. El paso narra el nivel, publica
+`factor_aplicado: 1` y explica el doble conteo que motivó retirarlo. Hay prueba de que aporta 0 pp.
+
+**Dos invariantes lo sostienen, y hay prueba de las dos:**
+
+1. **`probabilidad_final` es EXACTAMENTE el `p_ganar` que sirve `/api/oportunidades`** para ese
+   mismo proceso. `desglosarProbabilidad` **no recalcula nada**: narra la traza de
+   `lib/probabilidad.trazaP`, que es la única implementación. Un segundo cálculo «equivalente hoy»
+   divergiría a la primera corrección aplicada a uno solo, y aquí la divergencia sería entre el
+   número que se enseña y el número que lo justifica.
+2. **La suma de los seis `aporte_pp` es exactamente la cifra final.** El paso 6 absorbe además el
+   residuo del redondeo a dos decimales de los cinco anteriores — que es literalmente lo que ese
+   paso hace. Una tabla de aportes que no cuadra con su total es peor que no tener tabla.
+
+**Confianza**, con vocabulario cerrado (`Alta` · `Media` · `Baja` · `Sin dato`): sale del número de
+procesos que respaldan cada dato (`≥10` → Alta, `≥5` → Media, respaldo por departamento → Baja) y
+de si el dato existe. **Un ajuste (pasos 2-5) con `Sin dato` aporta exactamente 0 pp**: el dato no
+está y no se aproxima. El **paso 1 es la excepción declarada** — con `Sin dato` sigue aportando los
+puntos del supuesto conservador de 5 rivales, porque un cero ahí dejaría la probabilidad en cero,
+que no es más honesto sino otro número inventado (y el que peor decisión provoca). El supuesto
+viaja escrito en `datos_entrada.fuente` y en el `fundamento`, y hay prueba de que lo declara.
+
+Además de `desglose`, la respuesta trae `resumen_ejecutivo` (3-4 líneas en lenguaje de negocio, con
+el umbral `costo ÷ probabilidad` cuando se envía un costo) y `justificacion_texto`, el texto plano
+que copia el botón **«Copiar justificación»** del modal — el mismo contenido en otro formato, no un
+segundo desglose.
+
+- **Caché** `indice:desglose_p:{id}` con **TTL de 300 s**. El sello incluye el corpus, los dos
+  índices **y el costo de preparación consultado**: servir desde caché un resumen calculado con
+  otro costo sería recomendar sobre una cifra que nadie pidió.
+- `id_proceso` ausente → `400` con el ejemplo de uso; inexistente → `404` con el motivo, nunca un
+  `200` con el desglose de otra cosa. Vista desconocida → `400` **antes** de tocar Redis.
+
+> **Dos discrepancias entre el encargo y el código, resueltas a favor del código.** El encargo
+> describe la colisión de cierres como «≤7 días»: `lib/probabilidad.claveColision` agrupa por
+> `entidad|YYYY-MM-DD`, es decir el **mismo día exacto**, y ensancharlo no sería documentar sino
+> cambiar la probabilidad de todo el corpus. Y el encargo lista cuatro factores cuando el código
+> aplica **seis**: faltaban los dos de baja de mercado, que son los que convierten la respuesta en
+> «P(ganar *a un precio que valga la pena*)».
 
 ### `GET /api/resumen` (protegido)
 

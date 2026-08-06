@@ -323,6 +323,11 @@
     conservador: "Sin histórico de la entidad ni del departamento: supuesto conservador de 5 rivales",
   };
 
+  /* «Prob. estimada» es CLICABLE (ago 2026): abre el desglose paso a paso.
+     El subrayado punteado es lo que anuncia que se puede pulsar — un número que
+     esconde un modal sin ninguna marca es un modal que nadie encuentra. El
+     `title` con el resumen de los ajustes SE CONSERVA: sigue siendo la
+     respuesta de 1 segundo, y el modal es la de 30. */
   function bloqueProbabilidad(l) {
     const d = l.p_ganar_detalle || {};
     const pct = Math.round((Number(l.p_ganar) || 0) * 100);
@@ -334,13 +339,20 @@
        forma de mentir. Lo que falta es la cifra, y el motivo ya lo explica. */
     const ajustes = (d.ajustes || [])
       .map((a) => `${a.nombre}${a.factor == null ? "" : ` ×${a.factor}`}: ${a.motivo}`).join("\n");
-    const titulo = [FUENTE_P[d.fuente] || "", d.rivales_esperados != null ? `Rivales esperados: ${d.rivales_esperados}` : "", ajustes]
-      .filter(Boolean).join("\n");
+    const titulo = [FUENTE_P[d.fuente] || "", d.rivales_esperados != null ? `Rivales esperados: ${d.rivales_esperados}` : "", ajustes,
+      "Pulse para ver el desglose completo del cálculo"].filter(Boolean).join("\n");
+    // sin id no hay nada que consultar: se pinta el texto de siempre, no un
+    // botón que al pulsarlo tenga que disculparse
+    const id = l.id_del_proceso || "";
+    const cifra = `Prob. estimada: <strong class="tabular-nums text-gray-900">${pct}%</strong>`;
     return `
       <div class="mt-4 flex flex-wrap items-baseline gap-x-6 gap-y-1 rounded-xl bg-gray-50 px-4 py-3">
-        <span title="${esc(titulo)}" class="text-sm text-gray-600">
-          Prob. estimada: <strong class="tabular-nums text-gray-900">${pct}%</strong>
-        </span>
+        ${id
+    ? `<button type="button" class="detalle-probabilidad cursor-pointer text-left text-sm text-gray-600 underline decoration-dotted decoration-gray-400 underline-offset-4 transition hover:text-gray-900 hover:decoration-gray-900"
+             data-id="${esc(id)}" data-objeto="${esc(l.nombre_del_procedimiento || id)}" title="${esc(titulo)}">
+             ${cifra} <span aria-hidden="true" class="opacity-60">›</span>
+           </button>`
+    : `<span title="${esc(titulo)}" class="text-sm text-gray-600">${cifra}</span>`}
         <span class="text-sm text-gray-600">
           Valor esperado: <strong class="tabular-nums text-gray-900">${esc(fmtCorto(l.ve))}</strong>
         </span>
@@ -471,6 +483,10 @@
      el estilo en línea deja el resultado fuera de discusión (y el modal sigue
      funcionando aunque el CDN de Tailwind no cargue). */
   const $modal = () => $("modal-competencia");
+  /* Lo que hay que copiar cuando se pulsa «Copiar justificación». Se guarda al
+     pintar y se BORRA al abrir: si no, el botón de un desglose seguiría
+     copiando el del proceso anterior. */
+  let textoParaCopiar = "";
   function cerrarModal() {
     $modal().classList.add("hidden");
     $modal().classList.remove("flex");
@@ -478,9 +494,21 @@
     document.removeEventListener("keydown", alPulsarTecla);
   }
   function alPulsarTecla(e) { if (e.key === "Escape") cerrarModal(); }
-  function abrirModal(entidad) {
-    $("modal-titulo").textContent = entidad || "Entidad no informada";
-    $("modal-cuerpo").innerHTML = '<p class="py-8 text-center text-gray-400">Cargando…</p>';
+  /* Spinner mientras carga, no un «Cargando…» seco: la consulta recorre el
+     corpus entero la primera vez (después la sirve la caché de 300 s). */
+  const cargando = (msg) =>
+    `<div class="py-10 text-center">
+       <div class="spin mx-auto h-8 w-8 rounded-full border-2 border-gray-200 border-t-gray-900"></div>
+       <p class="mt-3 text-sm text-gray-400">${esc(msg)}</p>
+     </div>`;
+  function abrirModal(titulo, rotulo = "Competencia histórica", msg = "Cargando…") {
+    $("modal-rotulo").textContent = rotulo;
+    $("modal-titulo").textContent = titulo || "Entidad no informada";
+    $("modal-titulo").title = titulo || "";
+    $("modal-cuerpo").innerHTML = cargando(msg);
+    textoParaCopiar = "";
+    $("modal-copiar").classList.add("hidden");
+    $("modal-copiar").textContent = "Copiar justificación";
     $modal().classList.remove("hidden");
     $modal().classList.add("flex");
     $modal().style.display = "flex";
@@ -533,6 +561,132 @@
       ${d.truncado ? `<p class="mt-3 text-xs text-gray-500">Se muestran los ${d.truncado.limite} más recientes de ${d.truncado.procesos || d.truncado.excluidos} procesos.</p>` : ""}
       ${(d.procesos || []).length || (d.excluidos || []).length ? "" : '<p class="mt-4 text-gray-500">No hay procesos históricos de esta entidad.</p>'}
       <p class="mt-4 text-xs text-gray-400">Datos del corpus histórico (procesos ya cerrados)${d.cache ? " · desde caché" : ""}.</p>`;
+  }
+
+  /* ══════════ Desglose de la probabilidad (modal) ══════════
+     «Prob. estimada: 23 %» sin justificar es una caja negra: el contratista no
+     sabe si es buena ni qué la causa. Aquí se abre en seis pasos con la
+     fórmula, los datos con su fuente citada, la aritmética escrita y los puntos
+     porcentuales que aporta cada uno — y la columna de aportes SUMA la cifra
+     del encabezado, que es lo que la hace auditable.
+
+     El endpoint exige el mismo HISTORICO_TOKEN que el detalle de competencia y
+     se reutiliza su formulario tal cual: es otra acción explícita del dueño
+     sobre el corpus, no algo que un cliente se encuentre al entrar.
+
+     Se llama a la ruta CANÓNICA (/api/competencia-detalle?vista=probabilidad) y
+     no al alias /api/probabilidad-desglose: el alias es un rewrite de
+     vercel.json y, si fallara, el modal tiene que seguir funcionando. */
+  const CONFIANZA = {
+    Alta: "bg-green-100 text-green-800",
+    Media: "bg-amber-100 text-amber-800",
+    Baja: "bg-red-100 text-red-700",
+    "Sin dato": "bg-gray-100 text-gray-500",
+  };
+
+  const signoPP = (n) => `${Number(n) > 0 ? "+" : Number(n) < 0 ? "−" : ""}${fmtNum.format(Math.abs(Number(n) || 0))} pp`;
+
+  function filaPaso(s) {
+    const datos = Object.entries(s.datos_entrada || {})
+      .filter(([k, v]) => k !== "fuente" && v !== null && v !== undefined && v !== "")
+      .map(([k, v]) => `<span class="whitespace-nowrap"><span class="text-gray-400">${esc(k)}:</span> ${esc(typeof v === "object" ? JSON.stringify(v) : String(v))}</span>`)
+      .join(" · ");
+    return `<tr class="border-t border-gray-100 align-top">
+      <td class="py-3 pr-3 text-right tabular-nums text-gray-400">${esc(s.paso)}</td>
+      <td class="py-3 pr-3">
+        <p class="font-medium">${esc(s.nombre)}</p>
+        <p class="mt-1 font-mono text-[11px] leading-relaxed text-gray-500">${esc(s.formula)}</p>
+        ${datos ? `<p class="mt-1 text-xs text-gray-600">${datos}</p>` : ""}
+        <p class="mt-1 text-xs text-gray-400">Fuente: ${esc((s.datos_entrada || {}).fuente || "—")}</p>
+        <p class="mt-1 font-mono text-[11px] text-gray-900">${esc(s.calculo)}</p>
+        <p class="mt-1 text-xs italic text-gray-500">${esc(s.fundamento)}</p>
+      </td>
+      <td class="py-3 pr-3 text-right tabular-nums font-medium">${esc(s.resultado)}</td>
+      <td class="py-3 pr-3 text-right tabular-nums ${Number(s.aporte_pp) < 0 ? "text-red-700" : "text-gray-900"}">${esc(signoPP(s.aporte_pp))}</td>
+      <td class="py-3 text-right">
+        <span class="inline-block rounded-md px-2 py-0.5 text-xs font-medium ${CONFIANZA[s.confianza] || CONFIANZA["Sin dato"]}">${esc(s.confianza)}</span>
+      </td>
+    </tr>`;
+  }
+
+  function pintarDesglose(d) {
+    const pasos = d.desglose || [];
+    const p = d.proceso || {};
+    textoParaCopiar = d.justificacion_texto || "";
+    $("modal-copiar").classList.toggle("hidden", !textoParaCopiar);
+    $("modal-cuerpo").innerHTML = `
+      <div class="rounded-2xl bg-gray-50 px-5 py-4">
+        <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Probabilidad de adjudicación</p>
+        <p class="mt-1 text-4xl font-semibold tabular-nums tracking-tight">${fmtNum.format(d.probabilidad_final_pct)}%</p>
+        <p class="mt-1 text-xs text-gray-500">
+          ${esc(p.entidad || "")}${p.departamento ? ` · ${esc(p.departamento)}` : ""}
+          ${p.cuantia_cop ? ` · ${esc(fmtCorto(p.cuantia_cop))}` : ""}
+          · Valor esperado ${esc(fmtCorto((d.contexto || {}).valor_esperado_cop))}
+        </p>
+      </div>
+
+      <div class="mt-5 overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="text-xs uppercase tracking-wide text-gray-400">
+            <tr>
+              <th class="pb-1 text-right">#</th>
+              <th class="pb-1">Paso, fórmula y datos</th>
+              <th class="pb-1 text-right">Resultado</th>
+              <th class="pb-1 text-right">Aporte</th>
+              <th class="pb-1 text-right">Confianza</th>
+            </tr>
+          </thead>
+          <tbody>${pasos.map(filaPaso).join("")}</tbody>
+          <tfoot>
+            <tr class="border-t-2 border-gray-200 font-medium">
+              <td></td>
+              <td class="py-2 text-gray-500">Suma de los aportes</td>
+              <td></td>
+              <td class="py-2 pr-3 text-right tabular-nums">${fmtNum.format(d.suma_aportes_pp)} pp</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="mt-5 rounded-xl border border-gray-900/10 bg-white p-4">
+        <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Resumen ejecutivo</p>
+        <p class="mt-2 whitespace-pre-line leading-relaxed text-gray-800">${esc(d.resumen_ejecutivo || "")}</p>
+      </div>
+
+      <p class="mt-4 text-xs text-gray-400">${esc(d.como_leerlo || "")}
+        ${d.corpus === "historico" ? " · Proceso del corpus histórico (ya cerrado)." : ""}${d.cache ? " · desde caché" : ""}</p>`;
+  }
+
+  async function cargarDesglose(id) {
+    const token = tokenGuardado();
+    if (!token) return pedirToken(null, () => cargarDesglose(id));
+    $("modal-cuerpo").innerHTML = cargando("Reconstruyendo el cálculo…");
+    let r, cuerpo;
+    try {
+      r = await fetch(`/api/competencia-detalle?vista=probabilidad&id_proceso=${encodeURIComponent(id)}`,
+        { headers: { "x-historico-token": token } });
+    } catch {
+      $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-red-600">No se pudo contactar el servidor. Intente de nuevo.</p>';
+      return;
+    }
+    /* El parseo va APARTE del fetch: el muro del edge (Vercel Password
+       Protection) responde HTML, así que `r.json()` LANZA y, con las dos cosas
+       en el mismo `try`, ese muro se diagnosticaría como «sin conexión» —lo
+       contrario de la verdad—. */
+    try { cuerpo = await r.json(); } catch {
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.</p>`;
+      return;
+    }
+    if (r.status === 401) {
+      olvidarToken();
+      return pedirToken("Token inválido. Escriba uno nuevo y vuelva a intentarlo.", () => cargarDesglose(id));
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`)}</p>`;
+      return;
+    }
+    pintarDesglose(cuerpo);
   }
 
   /* Formulario del token. REGLA: ninguna pulsación puede quedarse sin
@@ -614,11 +768,48 @@
   // delegación: las tarjetas se repintan en cada búsqueda, así que el listener
   // vive en el contenedor y no en cada badge
   $("lista").addEventListener("click", (e) => {
+    /* La probabilidad va PRIMERO: su botón vive dentro de la tarjeta y, si se
+       resolviera después, un `closest` más laxo podría quedárselo antes. Son
+       dos vistas del mismo modal y solo puede ganar una. */
+    const prob = e.target.closest(".detalle-probabilidad");
+    if (prob) {
+      const id = prob.getAttribute("data-id");
+      abrirModal(prob.getAttribute("data-objeto") || id, "Desglose de la probabilidad", "Reconstruyendo el cálculo…");
+      cargarDesglose(id);
+      return;
+    }
     const b = e.target.closest(".banda-competencia");
     if (!b) return;
     const entidad = b.getAttribute("data-entidad");
-    abrirModal(entidad);
+    abrirModal(entidad, "Competencia histórica");
     cargarDetalle(entidad);
+  });
+  /* Copiar la justificación entera en texto plano, lista para pegar en un
+     informe. `navigator.clipboard` no existe en contexto no seguro ni en
+     navegadores viejos, así que hay respaldo con `execCommand` — y si las dos
+     fallan se DICE, en vez de dejar el botón fingiendo que copió. */
+  $("modal-copiar").addEventListener("click", async () => {
+    const btn = $("modal-copiar");
+    if (!textoParaCopiar) { btn.textContent = "Nada que copiar"; return; }
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(textoParaCopiar);
+      ok = true;
+    } catch {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = textoParaCopiar;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch { ok = false; }
+    }
+    btn.textContent = ok ? "Copiada ✓" : "No se pudo copiar — selecciónela a mano";
+    setTimeout(() => { btn.textContent = "Copiar justificación"; }, 2500);
   });
   $("modal-cerrar").addEventListener("click", cerrarModal);
   $("modal-cerrar-pie").addEventListener("click", cerrarModal);
