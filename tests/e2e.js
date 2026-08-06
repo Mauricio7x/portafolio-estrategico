@@ -4498,6 +4498,274 @@ async function main() {
         "la ingesta tiene que haber descartado filas del dataset: si guardara todo, el prefiltro no está corriendo");
     }
 
+    /* f-ter-ter. DESGLOSE JUSTIFICADO DE LA PROBABILIDAD (ago 2026).
+       «Prob. estimada: 23 %» sin justificar es una caja negra. El endpoint
+       abre la cifra en seis pasos con fórmula, datos, fuente y aporte en
+       puntos porcentuales.
+
+       DOS INVARIANTES SOSTIENEN TODO EL MÓDULO, y sin ellas no serviría para
+       auditar nada:
+         (1) `probabilidad_final` es EXACTAMENTE el `p_ganar` que /api/oportunidades
+             sirve para ese mismo proceso. Si divergieran, el desglose estaría
+             explicando un cálculo distinto del que se enseña — la peor forma
+             posible de equivocarse aquí.
+         (2) la suma de los `aporte_pp` de los seis pasos es EXACTAMENTE la
+             cifra final. Una tabla de aportes que no cuadra con su total es
+             peor que no tener tabla.
+       Más la regla de honestidad: un paso sin datos aporta 0 pp, nunca una
+       aproximación. */
+    {
+      const desgloseDe = (qs, cab = CAB_TOKEN) =>
+        invocar(detalleComp, `/api/competencia-detalle?vista=probabilidad&${qs}`, cab);
+
+      /* 0 · protección: el endpoint abre el corpus, así que exige token. Un
+         token PRESENTE pero inválido es 401, jamás una degradación silenciosa. */
+      const sinToken = await desgloseDe("id_proceso=CO1.REQ.1", {});
+      assert.strictEqual(sinToken.status, 401, "el desglose sin token tiene que dar 401");
+      assert.strictEqual(sinToken.cuerpo.ok, false);
+      const tokenMalo = await desgloseDe("id_proceso=CO1.REQ.1", { "x-historico-token": "no-es" });
+      assert.strictEqual(tokenMalo.status, 401, "un token inválido tiene que dar 401");
+
+      /* 1 · argumentos: sin id → 400 con la forma de llamarlo; id inexistente
+         → 404 con el motivo, nunca un 200 con el desglose de otra cosa. */
+      const sinId = await desgloseDe("", CAB_TOKEN);
+      assert.strictEqual(sinId.status, 400, "sin id_proceso tiene que dar 400");
+      assert.ok(/id_proceso/.test(sinId.cuerpo.error), "el 400 debe nombrar el parámetro que falta");
+      assert.ok(sinId.cuerpo.como_hacerlo, "un 400 sin ejemplo de uso deja al dueño sin saber qué hacer");
+      const noExiste = await desgloseDe("id_proceso=CO1.REQ.NO-EXISTE-JAMAS", CAB_TOKEN);
+      assert.strictEqual(noExiste.status, 404, "un id inexistente tiene que dar 404");
+      // y una vista inventada muere ANTES de tocar Redis o gastar el token
+      const vistaMala = await invocar(detalleComp, "/api/competencia-detalle?vista=inventada", CAB_TOKEN);
+      assert.strictEqual(vistaMala.status, 400, "una vista desconocida tiene que dar 400");
+
+      /* 2 · un proceso real del corpus, con todos sus datos */
+      const servidos = await todasLasOportunidades("perfil=helder");
+      const conId = servidos.filter((l) => l.id_del_proceso);
+      assert.ok(conId.length > 0, "ningún proceso servido trae id_del_proceso: el modal no tendría a qué llamar");
+      const muestra = conId[0];
+      const r = await desgloseDe(`id_proceso=${encodeURIComponent(muestra.id_del_proceso)}`);
+      assert.strictEqual(r.status, 200, `el desglose de ${muestra.id_del_proceso} falló: ${JSON.stringify(r.cuerpo).slice(0, 200)}`);
+      const d = r.cuerpo;
+      assert.strictEqual(d.ok, true);
+      assert.strictEqual(d.corpus, "activo", "un proceso servido por la app vive en el corpus activo");
+
+      /* 3 · LOS SEIS PASOS, en orden y con todos sus campos. Van SIEMPRE los
+         seis, también los que no aplican: publicar solo los que mordieron
+         dejaría al lector sin poder distinguir «no hubo prórroga» de «no se
+         miró la prórroga», que es justo la distinción que esto existe para
+         hacer. */
+      const ESPERADOS = [
+        "Probabilidad base por competencia histórica",
+        "Ajuste por nivel de competencia de la entidad",
+        "Ajuste por prórroga del cierre",
+        "Ajuste por baja de mercado de la entidad",
+        "Ajuste por colisión de cierres",
+        "Límite final y redondeo",
+      ];
+      assert.strictEqual(d.desglose.length, 6, `el desglose debe traer 6 pasos y trajo ${d.desglose.length}`);
+      assert.deepStrictEqual(d.desglose.map((s) => s.nombre), ESPERADOS, "los pasos no son los esperados o están desordenados");
+      const CONFIANZAS = ["Alta", "Media", "Baja", "Sin dato"];
+      d.desglose.forEach((s, i) => {
+        assert.strictEqual(s.paso, i + 1, "los pasos deben venir numerados 1..6");
+        for (const campo of ["nombre", "formula", "datos_entrada", "calculo", "resultado", "confianza", "fundamento"]) {
+          assert.ok(s[campo] !== undefined && s[campo] !== null && s[campo] !== "",
+            `el paso ${s.paso} llegó sin «${campo}»`);
+        }
+        assert.ok(CONFIANZAS.includes(s.confianza), `confianza «${s.confianza}» fuera del vocabulario`);
+        assert.ok(typeof s.aporte_pp === "number" && Number.isFinite(s.aporte_pp),
+          `el paso ${s.paso} no trae un aporte numérico`);
+        assert.ok(s.datos_entrada.fuente, `el paso ${s.paso} no cita la fuente de sus datos`);
+        /* HONESTIDAD: un AJUSTE sin dato aporta CERO. Aproximar «porque casi
+           siempre es 1» es exactamente lo que este proyecto prohíbe en
+           `anticipo_pct = 0` y en el contador de oferentes.
+           El paso 1 queda FUERA de la regla a propósito y no por comodidad: es
+           la BASE, no un ajuste, y un cero ahí dejaría la probabilidad en cero
+           —otro número inventado— en vez de en el supuesto conservador. Su
+           «Sin dato» se cobra por otra vía, la de abajo: tiene que declarar el
+           supuesto por escrito. */
+        if (s.confianza === "Sin dato" && s.paso >= 2 && s.paso <= 5) {
+          assert.strictEqual(s.aporte_pp, 0, `el ajuste del paso ${s.paso} dice «Sin dato» y aun así aporta ${s.aporte_pp} pp`);
+        }
+      });
+      const base = d.desglose[0];
+      if (base.confianza === "Sin dato") {
+        assert.ok(/supuesto conservador/i.test(base.datos_entrada.fuente) && /supuesto/i.test(base.fundamento),
+          "un paso 1 «Sin dato» que aporta puntos TIENE que decir por escrito que son un supuesto, no una medición");
+      }
+
+      /* 4 · INVARIANTE (2): la columna de aportes SUMA la cifra final. */
+      const suma = Math.round(d.desglose.reduce((s, x) => s + x.aporte_pp, 0) * 100) / 100;
+      assert.strictEqual(suma, d.probabilidad_final_pct,
+        `los aportes suman ${suma} pp y la probabilidad final es ${d.probabilidad_final_pct} %`);
+      assert.strictEqual(d.suma_aportes_pp, d.probabilidad_final_pct,
+        "el campo `suma_aportes_pp` tiene que venir ya cuadrado con la cifra final");
+      assert.strictEqual(Math.round(d.probabilidad_final * 1e4) / 100, d.probabilidad_final_pct,
+        "la versión en fracción y la versión en porcentaje no describen el mismo número");
+
+      /* 5 · INVARIANTE (1), la importante: es la MISMA cifra que enseña la app.
+         Se comprueba sobre VARIOS procesos y no sobre uno: con uno solo podría
+         coincidir por casualidad (media lista comparte entidad y factores). */
+      for (const l of conId.slice(0, 6)) {
+        const rr = await desgloseDe(`id_proceso=${encodeURIComponent(l.id_del_proceso)}`);
+        assert.strictEqual(rr.status, 200, `sin desglose para ${l.id_del_proceso}`);
+        assert.strictEqual(rr.cuerpo.probabilidad_final, l.p_ganar,
+          `el desglose de ${l.id_del_proceso} dice ${rr.cuerpo.probabilidad_final} y la tarjeta ${l.p_ganar}`);
+        assert.strictEqual(rr.cuerpo.contexto.valor_esperado_cop, l.ve,
+          "el valor esperado del desglose no coincide con el de la tarjeta");
+        const s2 = Math.round(rr.cuerpo.desglose.reduce((s, x) => s + x.aporte_pp, 0) * 100) / 100;
+        assert.strictEqual(s2, rr.cuerpo.probabilidad_final_pct, "los aportes no cuadran en todos los procesos");
+      }
+
+      /* 5-bis · y no es un segundo cálculo: `desglosarProbabilidad` NARRA la
+         traza de `trazaP`. Se comprueba contra `estimarPDetalle` —el contrato
+         que consume la app— sobre el mismo proceso y el mismo contexto. */
+      {
+        const { desglosarProbabilidad, generarResumenEjecutivo } = require("../lib/probabilidad_desglose.js");
+        const { estimarPDetalle, trazaP } = require("../lib/probabilidad.js");
+        const { competenciaDe, leerIndice } = require("../lib/indice_competencia.js");
+        const { leerIndiceBaja, bajaDeMercado } = require("../lib/indice_baja.js");
+        const idx = await leerIndice(redis);
+        const idxBaja = await leerIndiceBaja(redis);
+        const lic = { entidad: muestra.entidad, departamento_entidad: muestra.departamento_entidad,
+          codigo_principal_de_categoria: muestra.codigo_principal_de_categoria,
+          modalidad_de_contratacion: muestra.modalidad_de_contratacion,
+          precio_base: muestra.cuantia_cop, cuantia_cop: muestra.cuantia_cop,
+          fecha_cierre: muestra.fecha_cierre, _cierre_prorrogado: false, _versiones: 1 };
+        const ctx = { competencia: competenciaDe(idx, lic), baja: bajaDeMercado(idxBaja, lic), colision_cierres: 2 };
+        const ref = estimarPDetalle(lic, ctx);
+        const nar = desglosarProbabilidad(lic, idx, idxBaja, { colision_cierres: 2 });
+        assert.strictEqual(nar.probabilidad_final, ref.p, "el desglose no reproduce a estimarPDetalle");
+        assert.strictEqual(nar.rivales_esperados, ref.rivales_esperados);
+        assert.strictEqual(nar.fuente_del_promedio, ref.fuente);
+        // y `estimarPDetalle` sigue siendo exactamente la proyección de la traza
+        const t = trazaP(lic, ctx);
+        assert.deepStrictEqual(ref.ajustes, t.pasos.map(({ nombre, factor, motivo }) => ({ nombre, factor, motivo })),
+          "estimarPDetalle y trazaP discrepan sobre los ajustes aplicados");
+        assert.strictEqual(ref.p, Math.round(t.p * 1e4) / 1e4, "estimarPDetalle no publica la p de la traza");
+        assert.strictEqual(ref.base, Math.round(t.base * 1e4) / 1e4);
+
+        /* Un desglose sin ningún índice no puede reventar ni inventar: cae al
+           supuesto conservador y dice «Sin dato» donde no sabe. */
+        const pelado = desglosarProbabilidad({ entidad: "ENTIDAD QUE NO EXISTE" }, null, null, {});
+        assert.strictEqual(pelado.fuente_del_promedio, "conservador");
+        assert.strictEqual(pelado.suma_aportes_pp, pelado.probabilidad_final_pct);
+        assert.ok(pelado.pasos.slice(1, 5).every((s) => s.confianza === "Sin dato" && s.aporte_pp === 0),
+          "sin datos, los CUATRO AJUSTES tienen que decir «Sin dato» y aportar 0 pp");
+        /* Y el paso 1 sigue aportando el supuesto conservador, que es
+           1/(1+5) = 16,67 %: bajarlo a 0 pp no sería más honesto, sería dejar
+           la probabilidad en cero — otro número inventado, y encima el que peor
+           decisión provoca (descartar la oportunidad). */
+        assert.strictEqual(pelado.pasos[0].confianza, "Sin dato");
+        assert.strictEqual(pelado.pasos[0].aporte_pp, 16.67,
+          "sin ningún histórico, la base tiene que ser el supuesto conservador 1/(1+5), no un cero");
+        assert.strictEqual(pelado.probabilidad_final, 0.1667);
+
+        /* El resumen ejecutivo es un informe, no una especulación: nada de
+           «podría», «probablemente» ni «se estima que». */
+        const resumen = generarResumenEjecutivo(nar, 3200000);
+        assert.ok(resumen.split("\n").length >= 3, "el resumen ejecutivo debe tener al menos 3 líneas");
+        for (const prohibida of [/podr[ií]a/i, /probablemente/i, /se estima que/i, /quiz[aá]/i, /tal vez/i]) {
+          assert.ok(!prohibida.test(resumen), `el resumen ejecutivo especula: «${resumen}»`);
+        }
+        assert.ok(/\$3\.200\.000/.test(resumen), "el resumen debe citar el costo de preparación recibido");
+        // sin costo NO se inventa una cifra en pesos
+        const sinCosto = generarResumenEjecutivo(nar, null);
+        assert.ok(!/\$/.test(sinCosto.split("\n").pop()),
+          "sin costo de preparación no se puede inventar una cifra en pesos");
+      }
+
+      /* 6 · resumen ejecutivo y texto para copiar viajan en la respuesta */
+      assert.ok(typeof d.resumen_ejecutivo === "string" && d.resumen_ejecutivo.split("\n").length >= 3,
+        "el endpoint no devolvió un resumen ejecutivo de al menos 3 líneas");
+      assert.ok(/PROBABILIDAD DE ADJUDICACIÓN/.test(d.justificacion_texto),
+        "falta el texto plano que copia el botón «Copiar justificación»");
+      assert.ok(d.justificacion_texto.includes(d.resumen_ejecutivo),
+        "el texto para copiar tiene que llevar dentro el mismo resumen que se pinta: dos textos distintos serían dos verdades");
+
+      /* 7 · caché de 300 s, y su sello. El costo de preparación entra en el
+         sello a propósito: servir desde caché el resumen calculado con OTRO
+         costo sería recomendar sobre una cifra que nadie pidió. */
+      assert.strictEqual(d.cache, false, "la primera consulta no puede venir de caché");
+      const rep = await desgloseDe(`id_proceso=${encodeURIComponent(muestra.id_del_proceso)}`);
+      assert.strictEqual(rep.cuerpo.cache, true, "la segunda consulta idéntica tiene que servirse desde caché");
+      const refresca = await invocar(detalleComp,
+        `/api/competencia-detalle?vista=probabilidad&refrescar=1&id_proceso=${encodeURIComponent(muestra.id_del_proceso)}`, CAB_TOKEN);
+      assert.strictEqual(refresca.cuerpo.cache, false, "?refrescar=1 tiene que saltarse la caché");
+      const conCosto = await desgloseDe(`id_proceso=${encodeURIComponent(muestra.id_del_proceso)}&costo_preparacion=3200000`);
+      assert.strictEqual(conCosto.cuerpo.cache, false, "otro costo de preparación no puede resolverse con la caché del anterior");
+      assert.strictEqual(conCosto.cuerpo.contexto.costo_preparacion_cop, 3200000);
+      assert.ok(/\$3\.200\.000/.test(conCosto.cuerpo.resumen_ejecutivo), "el costo recibido no llegó al resumen");
+      assert.strictEqual(conCosto.cuerpo.probabilidad_final, d.probabilidad_final,
+        "el costo de preparación no puede mover la probabilidad: es un umbral de decisión, no una entrada del cálculo");
+
+      /* 8 · LA VISTA POR DEFECTO NO CAMBIÓ. El endpoint de entidad es el que ya
+         estaba y plegar el desglose dentro no puede haberlo movido. */
+      const porEntidad = await invocar(detalleComp,
+        "/api/competencia-detalle?entidad=ALCALDÍA DE PURIFICACIÓN", CAB_TOKEN);
+      assert.strictEqual(porEntidad.status, 200, "la vista de entidad dejó de responder");
+      assert.ok(porEntidad.cuerpo.indice, "la vista de entidad ya no devuelve su índice");
+
+      /* 9 · EL ALIAS. `/api/probabilidad-desglose` es la URL del encargo y no
+         puede ser una función propia: el plan Hobby admite 12 y el repositorio
+         está en 12. Vive como rewrite, y hay que comprobar las dos mitades:
+         que vercel.json apunte al endpoint real CON la vista correcta, y que el
+         handler resuelva esa vista también por el PATH — un handler que solo
+         funciona detrás del enrutador es un handler que no se puede probar. */
+      {
+        const vc = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
+        const alias = (vc.rewrites || []).find((x) => x.source === "/api/probabilidad-desglose");
+        assert.ok(alias, "vercel.json no declara el alias /api/probabilidad-desglose");
+        assert.strictEqual(alias.destination, "/api/competencia-detalle?vista=probabilidad",
+          "el alias tiene que apuntar al endpoint real CON la vista: un alias que apunta a otra cosa promete algo que no hace");
+        assert.ok(fs.existsSync(path.join(__dirname, "..", "api", "competencia-detalle.js")),
+          "el alias apunta a un archivo que no existe");
+        // el mismo handler, invocado por el path del alias y SIN `vista` en la query
+        const porPath = await invocar(detalleComp,
+          `/api/probabilidad-desglose?id_proceso=${encodeURIComponent(muestra.id_del_proceso)}`, CAB_TOKEN);
+        assert.strictEqual(porPath.status, 200, "el desglose no se resuelve por el path del alias");
+        assert.strictEqual(porPath.cuerpo.probabilidad_final, d.probabilidad_final,
+          "el alias y la ruta canónica tienen que dar la misma cifra");
+      }
+
+      /* 10 · CABLEADO DEL FRONTEND. No hay DOM en esta suite, así que esto
+         vigila el marcado y las llamadas, no el comportamiento visual — y se
+         presenta como lo que es. */
+      {
+        const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        const js = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const jsSinComentarios = sinComentarios(js);
+        for (const id of ["modal-rotulo", "modal-copiar"]) {
+          assert.ok(html.includes(`id="${id}"`), `falta #${id} en index.html`);
+        }
+        assert.ok(/class="hidden[^"]*"[^>]*id="modal-copiar"|id="modal-copiar"[\s\S]{0,200}?hidden|hidden[\s\S]{0,200}?id="modal-copiar"/.test(html),
+          "el botón de copiar tiene que nacer oculto: solo aparece en el desglose y cuando hay algo que copiar");
+        assert.ok(jsSinComentarios.includes("detalle-probabilidad"),
+          "«Prob. estimada» no es clicable: falta la clase del disparador");
+        assert.ok(/decoration-dotted/.test(jsSinComentarios),
+          "el subrayado punteado es lo que anuncia que la cifra se puede pulsar");
+        /* LLAMA A LA CANÓNICA, no al alias: el alias es un rewrite y, si
+           fallara, el modal tiene que seguir funcionando. Misma lección que
+           /api/admin/cargar-experiencia-genesis. */
+        assert.ok(jsSinComentarios.includes("/api/competencia-detalle?vista=probabilidad&id_proceso="),
+          "el modal tiene que llamar a la ruta canónica, no al alias del rewrite");
+        assert.ok(!/fetch\(\s*[`"']\/api\/probabilidad-desglose/.test(jsSinComentarios),
+          "el frontend no puede depender del rewrite para funcionar");
+        // el token viaja por cabecera, NUNCA en la URL (historial y logs de acceso)
+        assert.ok(!/vista=probabilidad[^`"']*token=/.test(jsSinComentarios),
+          "el token no puede viajar en la URL del desglose");
+        /* Y la misma prohibición que ya vigila los conteos: un `|| 0` sobre un
+           aporte convertiría «no sé» en «cero» y lo haría creíble. */
+        assert.ok(!/\.aporte_pp\s*\|\|\s*0/.test(jsSinComentarios),
+          "un `|| 0` sobre el aporte convierte «sin dato» en «cero»");
+      }
+
+      const conf = d.desglose.map((s) => s.confianza);
+      console.log(`  · desglose de P(ganar): ${d.probabilidad_final_pct} % en ${d.desglose.length} pasos `
+        + `(Σ aportes ${d.suma_aportes_pp} pp ≡ la cifra) · confianza ${conf.filter((c) => c === "Alta").length}A/`
+        + `${conf.filter((c) => c === "Media").length}M/${conf.filter((c) => c === "Baja").length}B/`
+        + `${conf.filter((c) => c === "Sin dato").length}sin · alias, caché y cableado verificados`);
+    }
+
     /* f-quater. /api/oportunidades con TOKEN OPCIONAL (ago 2026).
        Los clientes entran por la web pública y solo necesitan ver a qué
        presentarse; exigirles credencial dejaba la app inservible para ellos.

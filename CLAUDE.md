@@ -330,9 +330,10 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   ventana sin índice. Construcción mes a mes y reanudable; el acumulador que se persiste es por
   ENTIDAD (histograma), no por proceso — por eso cabe en un valor de Redis.
 - **La autorización vive en `lib/auth.js`, una sola vez**: siete endpoints la usan
-  (`/api/sync/historico`, `/api/diagnostico`, `/api/competencia-detalle`, `/api/resumen`,
-  `/api/admin/rup`, `/api/admin/experiencia`, `/api/admin/cobertura-rup`). Una copia que se
-  desincronice es un agujero.
+  (`/api/sync/historico`, `/api/diagnostico`, `/api/competencia-detalle` —sus DOS vistas, la de
+  entidad y la del desglose de probabilidad—, `/api/resumen`, `/api/admin/rup`,
+  `/api/admin/experiencia`, `/api/admin/cobertura-rup`). Una copia que se desincronice es un
+  agujero.
 - **`HISTORICO_TOKEN` sin default**: si la variable no está, el endpoint responde 503. Nunca
   inventar una llave por defecto. El token viaja por header en la auto-reinvocación para no
   quedar escrito en los logs de acceso de Vercel.
@@ -1432,8 +1433,10 @@ responden *cuánto vale la oportunidad* y *si la empresa puede ejecutarla*.
   en `lib/equivalencias.js`; co-señal de texto en `lib/texto_unspsc.js` +
   `data/vocabulario_unspsc.json`.
   Resumen técnico en `docs/PERFILES.md`. SMMLV 2026 = $1.750.905.
-- Las CUATRO PUERTAS en `lib/puertas.js` y `P(ganar)`/VE en `lib/probabilidad.js`; el diseño y por
-  qué, en `docs/ATRACTIVIDAD.md`.
+- Las CUATRO PUERTAS en `lib/puertas.js` y `P(ganar)`/VE en `lib/probabilidad.js` (`trazaP` es la
+  única implementación de la cadena; `estimarPDetalle` es su vista redondeada); el desglose
+  justificado paso a paso, en `lib/probabilidad_desglose.js` + `/api/competencia-detalle?vista=
+  probabilidad`. El diseño y por qué, en `docs/ATRACTIVIDAD.md`.
 - Lector de pliegos (cantidades del pliego, **sin precios**): diccionario de reconocimiento de 93
   ítems y 22 tipologías en `data/catalogo_apu.json` + `lib/apu_catalogo.js`; parseo y validación en
   `lib/apu_pliego.js`; mapeo por similitud en `lib/apu_mapeo.js`; OCR de respaldo en
@@ -1536,6 +1539,80 @@ responden *cuánto vale la oportunidad* y *si la empresa puede ejecutarla*.
   (211 M) y abre para Helder (1.107 M)**. Sin él, P3 solo se probaba con objetos sintéticos y la
   suite pasaba verde sin que ningún proceso del corpus ejercitara la puerta nueva a través del
   endpoint. Es además la prueba de que la puerta depende del PERFIL, no del proceso.
+
+### Desglose justificado de P(ganar) (ago 2026)
+
+`lib/probabilidad_desglose.js` + `/api/competencia-detalle?vista=probabilidad` (alias
+`/api/probabilidad-desglose`) abren el «Prob. estimada: 23 %» en SEIS pasos con fórmula, datos con
+la fuente citada, aritmética escrita y aporte en puntos porcentuales. La cifra sin justificar era
+una caja negra: el contratista no sabía si era buena, ni qué la causaba, ni cómo discutirla.
+
+- **NO ES UN SEGUNDO CÁLCULO, y esa es toda la arquitectura del módulo.** `lib/probabilidad.trazaP`
+  pasó a ser la ÚNICA implementación y publica la cadena multiplicativa SIN REDONDEAR (`p_antes`/
+  `p_despues` de cada ajuste); `estimarPDetalle` es su vista redondeada —contrato intacto, mismos
+  campos y mismos valores— y el desglose es su vista NARRADA. Reimplementar la cadena para poder
+  explicarla era la salida obvia y es exactamente la que este proyecto ya pagó cara
+  (`total_procesos`/`procesos_contados`, `cargado`/`cargado_el`): dos cuentas «equivalentes hoy»
+  divergen a la primera corrección aplicada a una sola, y aquí la divergencia sería entre el número
+  que enseña la tarjeta y el número que lo justifica. Hay prueba de que `probabilidad_final` es
+  EXACTAMENTE el `p_ganar` de `/api/oportunidades` para el mismo proceso, sobre varios procesos: con
+  uno solo coincidiría por casualidad, porque media lista comparte entidad y factores.
+- **La suma de los `aporte_pp` ES la cifra final, con prueba.** Cada aporte es la diferencia REAL
+  que ese paso introdujo (`p_despues − p_antes`), así que telescopan; el paso 6 —límites y
+  redondeo— absorbe además el residuo de redondear a dos decimales los cinco anteriores, que es
+  literalmente lo que ese paso hace. Una tabla de aportes que no cuadra con su total es peor que no
+  tener tabla.
+- **Los SEIS pasos viajan SIEMPRE, también los que no aplican.** Publicar solo los que mordieron
+  dejaría al lector sin distinguir «no hubo prórroga» de «no se miró la prórroga», que es justo la
+  distinción que el módulo existe para hacer.
+- **«Sin dato» ⇒ 0 pp… salvo en el paso 1, y la excepción hay que dejarla escrita** porque parece
+  una contradicción y una prueba la cazó. Un AJUSTE (pasos 2-5) sin sus datos aporta exactamente 0.
+  Pero el paso 1 es la BASE: sin histórico de la entidad ni del departamento su confianza también es
+  «Sin dato» y aun así aporta los puntos del supuesto conservador de 5 rivales. Bajarlo a «Baja»
+  sería peor —«Baja» se lee como «poca muestra» y aquí no hay NINGUNA— y ponerlo a 0 pp dejaría la
+  probabilidad en cero, que no es más honesto: es otro número inventado, y encima el que peor
+  decisión provoca (descartar la oportunidad). El supuesto viaja escrito en `datos_entrada.fuente` y
+  en el `fundamento`, y hay prueba de que los dos lo declaran.
+- **DOS DISCREPANCIAS ENTRE EL ENCARGO Y EL CÓDIGO, resueltas a favor del CÓDIGO.** (1) El encargo
+  describe la colisión de cierres como «≥2 procesos que cierran en ≤7 días»; `claveColision` agrupa
+  por `entidad|YYYY-MM-DD`, o sea el MISMO DÍA. Ensancharlo a una ventana no es documentar, es
+  cambiar la probabilidad de todo el corpus. (2) El encargo lista CUATRO factores y el código aplica
+  SEIS: faltaban los dos de baja de mercado (×0,85 / ×1,10), que son los que convierten la respuesta
+  en «P(ganar A UN PRECIO QUE VALGA LA PENA»). Omitirlos habría dejado fuera del desglose un ajuste
+  que sí mueve la cifra que se enseña.
+- **NO HAY ARCHIVO NUEVO BAJO `api/` Y NO PUEDE HABERLO**: el plan Hobby admite 12 funciones y el
+  repositorio está exactamente en 12 (hay prueba que las cuenta). Va plegado en
+  `api/competencia-detalle.js` como `?vista=probabilidad` —encaja: las dos vistas responden «de dónde
+  sale ese número de la tarjeta», sobre el mismo corpus y con el mismo token— y la URL literal del
+  encargo vive como `rewrite` de `vercel.json`, que no cuenta como función. Misma restricción que
+  plegó `/api/apu/catalogo` y que impidió `/api/baja-mercado`. **El frontend llama a la CANÓNICA**:
+  si el rewrite fallara, el modal tiene que seguir funcionando. La vista se resuelve de `req.query`
+  **y del path como respaldo** (igual que `accion` en `api/apu/[accion].js`): un handler que solo
+  funciona detrás del enrutador es un handler que no se puede probar.
+- **La vista desconocida muere ANTES de autorizar y de tocar Redis**: así no gasta ni el token ni
+  una lectura del corpus.
+- **`costo_preparacion` no tiene default y entra en el sello de la caché.** No existe en ninguna
+  fuente del proyecto, así que ponerle uno sería inventarse la cifra con la que se decide si vale la
+  pena presentarse; sin él el resumen enuncia el umbral en MÚLTIPLOS del costo, que es igual de
+  accionable y no afirma nada que no se sepa. Y va en el sello porque servir desde caché el resumen
+  calculado con OTRO costo sería recomendar sobre una cifra que nadie pidió. No mueve la
+  probabilidad —es un umbral de decisión, no una entrada del cálculo— y hay prueba.
+- **El modal es el MISMO de competencia, no uno nuevo.** El esqueleto (fondo, las tres formas de
+  cerrar, scroll, foco) es idéntico y duplicarlo habría duplicado también sus arreglos; lo que
+  cambia —rótulo, título y botón de copiar— lo fija `app.js` al abrirlo. En la delegación del clic
+  **la probabilidad se resuelve PRIMERO**: su botón vive dentro de la tarjeta y son dos vistas del
+  mismo modal, así que solo puede ganar una.
+- **El botón «Copiar justificación» nace oculto y `textoParaCopiar` se borra al ABRIR**: si no, el
+  botón de un desglose seguiría copiando el del proceso anterior. Y si el portapapeles falla por las
+  dos vías (`navigator.clipboard` no existe en contexto no seguro) **se dice**, en vez de fingir que
+  copió — la regla del modal: ninguna pulsación sin respuesta visible.
+- **El parseo del JSON va APARTE del `fetch`**, tercera vez que se aplica la misma lección: el muro
+  del edge (Password Protection) responde HTML, `r.json()` lanza, y con las dos cosas en el mismo
+  `try` ese muro se diagnostica como «sin conexión» — lo contrario de la verdad.
+- **DOS PREMISAS DEL ENCARGO NO DESCRIBÍAN ESTE REPOSITORIO** y se resolvieron por la regla de «usar
+  los patrones del proyecto», que el propio encargo fija: pedía **Bootstrap 5** y un **tema oscuro**
+  (la app no tiene dependencias, usa Tailwind por CDN y es clara), y situaba el «Prob. estimada» en
+  `/admin.html` + `admin.js`, donde **no se muestra**: vive en `public/app.js` + `index.html`.
 
 ## Convenciones
 

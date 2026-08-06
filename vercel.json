@@ -6,6 +6,10 @@
     {
       "source": "/api/admin/cargar-experiencia-genesis",
       "destination": "/api/admin/experiencia?origen=repositorio"
+    },
+    {
+      "source": "/api/probabilidad-desglose",
+      "destination": "/api/competencia-detalle?vista=probabilidad"
     }
   ],
   "functions": {
