@@ -396,6 +396,72 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - La caché `resumen:{perfil}` (TTL 300 s) la **borra cualquier carga de RUP**: sus números salen del
   RUP y quedarían mintiendo cinco minutos.
 
+### Onboarding: RUP en PDF → perfil dinámico (ago 2026)
+
+- **El PDF se lee en el NAVEGADOR, otra vez** (`public/onboarding.js`, pdf.js clavado en la MISMA
+  versión que `pliego.js` — hay prueba que compara las dos constantes). Al servidor viaja solo el
+  texto con columnas por TAB; `lib/rup_pdf.js` extrae códigos, indicadores, experiencia y vigencia,
+  y el resultado se valida con `lib/config_rup.validarPerfilDinamico` — la MISMA `validarPerfil` de
+  la carga manual, no una copia. No existe un «RUP de PDF» distinto de un «RUP de archivo».
+- **Va plegado en `POST /api/admin/rup?origen=pdf`** (12 funciones es el tope y el repositorio está
+  en 12); el alias literal `/api/admin/rup-desde-pdf` es un `rewrite` de vercel.json y la landing
+  llama a la CANÓNICA. Un GET responde 405 con `como_hacerlo` — jamás un «GET que escribe».
+- **ES LA ÚNICA ESCRITURA SIN TOKEN del repositorio, a propósito.** El onboarding es el producto:
+  pedir credencial a quien llega a subir su RUP mata la landing (la misma lógica del token opcional
+  de `/api/oportunidades`). Cerraduras, todas con prueba: ids `rup_…` generados en el SERVIDOR
+  (jamás del cliente), solo puede escribir `config:perfiles:rup_*` y `config:unspsc:rup_*` (no
+  alcanza ni los tres perfiles del dueño ni el sello `config:perfiles:version` — escribir el sello
+  haría recargar los perfiles fijos), TTL de 45 días, tope absoluto de perfiles vivos y cuerpo ≤5 MB.
+  Sin token las cifras del perfil dinámico viajan REDACTADAS por `lib/publico`, igual que las del dueño.
+- **El perfil dinámico se INYECTA en `PERFILES`** (`lib/perfil_dinamico.js`): todo el juicio resuelve
+  `PERFILES[perfilId]` sobre el objeto vivo, así que inyectar es lo que evita cambiar firmas en media
+  app. Se relee de Redis en CADA petición (un GET pequeño; mismo criterio que el sello sin TTL) y un
+  perfil caducado responde **404 con `perfil_caducado:true`** — la web lo usa para olvidar el perfil
+  guardado; sin ese campo, todas las visitas siguientes fallarían igual y sin explicación.
+- **Códigos: runs de dígitos de EXACTAMENTE 8** (nunca `\d{8}` suelto, ni los runs de 2/4/6 que
+  acepta `lib/unspsc.extraerCodigos` para el campo de categoría — aquí serían ruido puro), más las
+  filas Segmento|Familia|Clase|Producto SOLO dentro de la sección del clasificador. Fuera de la
+  sección un run de 8 exige terminar en «00» (la premisa de inscripción por clase) Y que la línea no
+  sea de dinero/contacto — «UTILIDAD OPERACIONAL 12000000» tiene un run de 8 con segmento válido que
+  terminaría en el RUP como código. Lo descartado SE CUENTA (`codigos_ilegibles`).
+- **Lo único que se DERIVA es la utilidad operacional** (rentabilidad del patrimonio × patrimonio:
+  identidad del D. 1082, declarada en advertencias). Los dos SUPUESTOS van declarados:
+  profesionales = 1 (suelo del factor CT) y tope estratégico = 2 × mayor contrato acreditado. El NIT
+  exige el guion del dígito de verificación: partir «NIT 900123456» inventaría un DV.
+- **La landing es la primera pantalla** (`#onboarding` nace visible; el gate nace oculto pero SIGUE
+  existiendo para los perfiles del dueño). El copy en voseo es literal del encargo. `app.js` decide
+  la vista al arrancar (perfil `rup_…` en URL o localStorage → dashboard sin gate; sesión con clave →
+  dashboard clásico; nada → landing) y el arranque sigue AL FINAL del IIFE.
+- **Experiencia en CSV** (`public/formato_experiencia.csv`, con comentarios `#` que declaran que es
+  OPCIONAL): la conversión CSV→JSON corre en el navegador y el endpoint es el de siempre
+  (`POST /api/admin/experiencia`, CON token: escribe configuración compartida — y la UI LO DICE,
+  porque prometerle al visitante que «afina sus recomendaciones» cuando escribe la configuración del
+  dueño sería mentirle). El campo `unspsc` del formato es opcional y **solo se escribe cuando
+  viene** — los contratos guardados con el esquema anterior conservan su forma exacta, con prueba.
+- **SIETE DEFECTOS QUE LA REVISIÓN ADVERSARIA ENCONTRÓ ANTES DE PRODUCCIÓN**, todos con prueba:
+  · **La fecha de corte contaminaba el indicador**: «PATRIMONIO A 31/12/2025 $850.000.000» leía 31.
+    Las fechas se TACHAN del tramo antes de buscar el número (`sinFechas`).
+  · **Un año se volvía la experiencia**: el máximo de una línea con «SMMLV» incluía «2023». La cifra
+    es la ADYACENTE a la unidad — la misma regla que la cantidad junto a la unidad en `apu_pliego`.
+    Las tablas con la unidad solo en la cabecera caen al error accionable, no a un dato inventado.
+  · **ReDoS en la detección de sección**: `(clasificaci)[^]*?(bienes)` sobre una línea hostil de MB
+    (endpoint público, cuerpo de 5 MB) era cuadrática. Ahora son `includes` lineales.
+  · **Sin tope de códigos por perfil**: un cuerpo hostil con miles de runs de 8 fabricaba perfiles
+    enormes en Redis. `MAX_CODIGOS = 2000` → error, no truncado silencioso.
+  · **Redis caído ≠ perfil caducado**: en instancia fría el fallo de lectura devolvía `null`, el
+    endpoint respondía 404 `perfil_caducado` y la web BORRABA el perfil guardado del cliente. Ahora
+    el error se propaga (502) y solo el 404 real borra — y solo si el guardado ES el que caducó.
+  · **`?perfil=rup_…` pegado en la URL saltaba el gate** dejando los perfiles del dueño en el
+    selector. `abrirApp` ya no marca `detecta-acceso` (eso lo hace el gate al validar la clave) y
+    quien entra sin gate ve el selector PODADO a su propio perfil.
+  · **La comilla de pulgadas rompía el CSV**: «Tubería de 4" en PVC» abría modo comillas a mitad de
+    celda y fusionaba filas en un contrato falso que PASABA el validador. Una comilla solo abre
+    campo al PRINCIPIO de la celda (RFC 4180). Y el CSV ANSI de Excel-Windows se re-decodifica como
+    windows-1252 si el UTF-8 produce reemplazos.
+  Además, **las dos copias de `lineasDePagina` (onboarding.js/pliego.js) quedaron ATADAS por una
+  prueba que las EJECUTA** sobre los mismos fragmentos (el patrón de `numeroLocal`), no solo por la
+  constante de versión de pdf.js.
+
 ### Experiencia ejecutada y cobertura del RUP (ago 2026)
 
 - **El RUP dice a qué PUEDE presentarse el dueño; sus contratos ejecutados dicen en qué SABE

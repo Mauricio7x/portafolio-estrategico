@@ -1,0 +1,15 @@
+# Formato de experiencia laboral de Detecta — OPCIONAL.
+# Cargar tu experiencia NO es obligatorio: estos datos solo se usan para mejorar las
+# recomendaciones (identificar mejor qué licitaciones se parecen a lo que ya ejecutaste).
+# Columnas:
+#   objeto        texto del contrato tal como aparece en el acta o certificación
+#   valor_cop     valor en pesos colombianos (se aceptan puntos de miles: 350.000.000)
+#   fecha_inicio  dd/mm/aaaa
+#   fecha_fin     dd/mm/aaaa
+#   entidad       nombre de la entidad contratante
+#   unspsc        código UNSPSC del contrato (8 dígitos) — opcional pero recomendado
+# Las líneas que empiezan con # son comentarios y se ignoran al cargar.
+objeto,valor_cop,fecha_inicio,fecha_fin,entidad,unspsc
+Construcción de placa huella en la vereda El Placer,350000000,15/01/2023,20/08/2023,ALCALDIA DE PURIFICACION,72141000
+Mantenimiento rutinario de la vía terciaria San Luis - La Palma,180000000,01/03/2024,30/06/2024,GOBERNACION DEL TOLIMA,72141000
+Interventoría técnica a la construcción del acueducto veredal,95000000,10/02/2022,15/12/2022,ALCALDIA DE IBAGUE,81101500

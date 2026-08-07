@@ -94,6 +94,7 @@ const { autorizarToken } = require("../lib/auth.js");
 const { sinFinanzas } = require("../lib/publico.js");
 const { PERFILES, ALIAS_PERFIL, evaluarRup } = require("../lib/rup.js");
 const { recargarPerfiles } = require("../lib/perfiles.js");
+const { esPerfilDinamico, cargarPerfilDinamico } = require("../lib/perfil_dinamico.js");
 const { filtrarProcesosVisibles, ANTICIPO_MIN_DEFAULT } = require("../lib/filtros.js");
 const { leerIndice, leerIndiceMeta, competenciaDe } = require("../lib/indice_competencia.js");
 const { leerIndiceBaja, leerIndiceBajaMeta, bajaDeMercado, bajaSegmentoDe } = require("../lib/indice_baja.js");
@@ -305,8 +306,16 @@ module.exports = async function handler(req, res) {
   // alias documentados (consorcio → juntos); hasOwnProperty en ambos mapas:
   // un ?perfil=constructor no debe pasar por el prototipo
   if (Object.prototype.hasOwnProperty.call(ALIAS_PERFIL, perfil)) perfil = ALIAS_PERFIL[perfil];
-  if (!Object.prototype.hasOwnProperty.call(PERFILES, perfil)) {
-    return res.status(400).json({ ok: false, error: "falta ?perfil=helder | genesis | juntos (alias: consorcio)" });
+  /* perfiles DINÁMICOS (onboarding: RUP subido en PDF): un id `rup_…` se
+     resuelve contra Redis MÁS ADELANTE, cuando ya hay cliente. Aquí solo se
+     valida el FORMATO — un id malformado es un 400 como cualquier perfil
+     inexistente, no un viaje a Redis. */
+  const perfilDinamico = esPerfilDinamico(perfil);
+  if (!perfilDinamico && !Object.prototype.hasOwnProperty.call(PERFILES, perfil)) {
+    return res.status(400).json({
+      ok: false,
+      error: "falta ?perfil=helder | genesis | juntos (alias: consorcio) — o el id de un RUP subido (rup_…)",
+    });
   }
   if (!hayCredenciales()) {
     return res.status(503).json({ ok: false, error: "Faltan credenciales de Upstash Redis en el despliegue." });
@@ -320,6 +329,18 @@ module.exports = async function handler(req, res) {
     // configuración entera. Va antes de evaluar nada — si no, esta petición
     // juzgaría con el RUP anterior y el «efecto inmediato» sería mentira.
     await recargarPerfiles(redis);
+    /* el perfil dinámico se relee en CADA petición (un GET de un valor
+       pequeño): así re-subir un RUP tiene efecto inmediato y un perfil
+       caducado deja de servirse ya — con un 404 que dice qué hacer, no con
+       una lista vacía inexplicable. */
+    if (perfilDinamico && !(await cargarPerfilDinamico(redis, perfil))) {
+      return res.status(404).json({
+        ok: false,
+        perfil_caducado: true,
+        error: "El perfil de este RUP no existe o ya caducó (los perfiles subidos por PDF duran 45 días). "
+          + "Volvé a la página de inicio y subí tu RUP de nuevo: toma menos de un minuto.",
+      });
+    }
     meta = await leerJSON(redis, CLAVES.meta);
     filas = await cargarCorpus(redis, meta);
     if (filas) {

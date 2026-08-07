@@ -67,10 +67,49 @@
     alto: { clases: "bg-red-100 text-red-700" },
     sin_dato: { clases: "bg-gray-100 text-gray-500" },
   };
+  /* ══════════ Perfil de RUP subido (onboarding, ago 2026) ══════════
+     onboarding.js guarda {id, nombre} en localStorage al terminar la subida y
+     redirige a /?perfil=rup_…; aquí se decide la vista y se inyecta la opción
+     en el selector. localStorage SIEMPRE dentro de try: en modo restringido
+     lanza, y el arranque no puede morir por eso. */
+  const CLAVE_PERFIL_RUP = "detecta_perfil_rup";
+  const ID_RUP_RE = /^rup_[a-z0-9]{6,24}$/;
+  function perfilRupGuardado() {
+    try {
+      const v = JSON.parse(localStorage.getItem(CLAVE_PERFIL_RUP) || "null");
+      return v && typeof v.id === "string" && ID_RUP_RE.test(v.id) ? v : null;
+    } catch { return null; }
+  }
+  function olvidarPerfilRup() {
+    try { localStorage.removeItem(CLAVE_PERFIL_RUP); } catch { /* nada que borrar */ }
+  }
+  /* `soloEste`: quien entra por su RUP (sin pasar el gate) ve SOLO su perfil.
+     Dejar los tres perfiles del dueño en el selector convertiría cualquier
+     `/?perfil=rup_…` pegado en la barra en un salto del gate — el gate es una
+     cortesía del cliente, pero no hay por qué regalarlo. Quien sí pasó el
+     gate en esta pestaña conserva el selector completo. */
+  function activarPerfilRup(p, { soloEste = false } = {}) {
+    const sel = $("f-perfil");
+    if (![...sel.options].some((o) => o.value === p.id)) {
+      const opcion = document.createElement("option");
+      opcion.value = p.id;
+      opcion.textContent = p.nombre ? `Mi RUP · ${p.nombre}` : "Mi RUP (subido en PDF)";
+      sel.insertBefore(opcion, sel.firstChild);
+    }
+    if (soloEste) {
+      for (const o of [...sel.options]) { if (o.value !== p.id) o.remove(); }
+    }
+    sel.value = p.id;
+  }
+
   /* ══════════ Gate ══════════ */
   let intentosClave = 0;
+  /* abrirApp NO escribe `detecta-acceso`: esa marca significa «pasó el gate»
+     y la pone el propio gate al validar la clave. Escribirla aquí haría que
+     entrar por un perfil de RUP contara como haber pasado el gate. */
   function abrirApp() {
-    sessionStorage.setItem("detecta-acceso", "1");
+    const onboarding = document.getElementById("onboarding");
+    if (onboarding) onboarding.classList.add("hidden");
     $("gate").remove();
     $("app").classList.remove("hidden");
     buscar();
@@ -82,7 +121,12 @@
   }
   $("gate-form").addEventListener("submit", (e) => {
     e.preventDefault();
-    if ($("gate-clave").value === CLAVE) return abrirApp();
+    if ($("gate-clave").value === CLAVE) {
+      // sessionStorage puede lanzar en modo restringido: la clave correcta
+      // tiene que abrir la app igual, solo que sin recordar la sesión
+      try { sessionStorage.setItem("detecta-acceso", "1"); } catch { /* sesión no recordada */ }
+      return abrirApp();
+    }
     intentosClave++;
     if (intentosClave >= MAX_INTENTOS_CLAVE) return bloquear();
     const err = $("gate-error");
@@ -144,7 +188,6 @@
       const token = tokenGuardado();
       r = await fetch(`/api/oportunidades?${parametros()}`,
         token ? { headers: { "x-historico-token": token } } : undefined);
-      cuerpo = await r.json();
     } catch {
       if (peticion !== peticionActual) return; // llegó tarde: ya hay otra búsqueda
       // durante la sincronización inicial un fallo transitorio no debe cortar
@@ -152,6 +195,11 @@
       if (reintentosSync > 0) return esperarSincronizacion();
       return mostrar("estado-error", "No se pudo contactar el servidor. Revise su conexión e intente de nuevo.");
     }
+    /* el parseo va APARTE del fetch (cuarta vez que se aplica la lección): el
+       muro del edge (Vercel Password Protection) responde HTML, así que
+       `r.json()` lanza — y con las dos cosas en el mismo try ese muro se
+       diagnosticaba como «sin conexión», lo contrario de la verdad. */
+    try { cuerpo = await r.json(); } catch { cuerpo = null; }
     if (peticion !== peticionActual) return; // respuesta obsoleta: descartar
 
     if (r.status === 503 && cuerpo && cuerpo.sincronizando) return esperarSincronizacion();
@@ -163,8 +211,23 @@
       olvidarToken();
       return buscar();
     }
-    if (!r.ok || !cuerpo.ok) {
-      return mostrar("estado-error", (cuerpo && cuerpo.error) || `Error del servidor (${r.status}). Intente de nuevo.`);
+    /* El perfil de un RUP subido CADUCA (TTL en el servidor). El 404 trae
+       `perfil_caducado` para poder distinguirlo de cualquier otro error: se
+       olvida el perfil guardado y se dice qué hacer — dejarlo puesto haría
+       fallar todas las visitas siguientes con el mismo mensaje. Se olvida
+       SOLO si el guardado es el que acaba de caducar: con `?perfil=rup_A`
+       vencido en la URL y un rup_B válido guardado, borrar a ciegas se
+       llevaría el perfil bueno por el malo. */
+    if (r.status === 404 && cuerpo && cuerpo.perfil_caducado) {
+      const guardado = perfilRupGuardado();
+      if (guardado && guardado.id === $("f-perfil").value) olvidarPerfilRup();
+      return mostrar("estado-error", cuerpo.error || "El perfil de su RUP caducó. Vuelva a la página de inicio y súbalo de nuevo.");
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      return mostrar("estado-error", (cuerpo && cuerpo.error)
+        || (cuerpo === null
+          ? `El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`
+          : `Error del servidor (${r.status}). Intente de nuevo.`));
     }
 
     reintentosSync = 0;
@@ -833,6 +896,33 @@
      con «Cannot access 'timerReintento' before initialization». Como `buscar`
      es async, el error salía por una promesa rechazada —la consola lo mostraba
      y la app se quedaba sin resultados, en silencio— en vez de detener la
-     carga. Aquí ya está todo declarado y cableado. */
-  if (sessionStorage.getItem("detecta-acceso") === "1") abrirApp();
+     carga. Aquí ya está todo declarado y cableado.
+
+     Tres vistas posibles, en este orden de decisión (ago 2026):
+       1. hay un perfil de RUP (en la URL `?perfil=rup_…` o guardado por el
+          onboarding) → dashboard con ese perfil, sin gate: el gate protege el
+          acceso a los perfiles del dueño, no el tablero del propio RUP;
+       2. la pestaña ya pasó el gate → dashboard clásico;
+       3. nada de lo anterior → la landing de onboarding (#onboarding, que
+          nace visible en el HTML precisamente para este caso). */
+  const perfilUrl = (() => {
+    try { return new URLSearchParams(window.location.search).get("perfil") || ""; } catch { return ""; }
+  })();
+  const guardadoRup = perfilRupGuardado();
+  const perfilRup = ID_RUP_RE.test(perfilUrl)
+    ? { id: perfilUrl, nombre: guardadoRup && guardadoRup.id === perfilUrl ? guardadoRup.nombre : "" }
+    : guardadoRup;
+  /* sessionStorage puede lanzar en modo restringido: el arranque no puede
+     morir por eso (la landing quedaría muda con la consola como único aviso) */
+  let sesionConClave = false;
+  try { sesionConClave = sessionStorage.getItem("detecta-acceso") === "1"; } catch { sesionConClave = false; }
+  if (perfilRup) {
+    // sin gate pasado, el selector queda SOLO con el perfil del RUP: entrar
+    // por URL no puede regalar los perfiles del dueño
+    activarPerfilRup(perfilRup, { soloEste: !sesionConClave });
+    abrirApp();
+  } else if (sesionConClave) {
+    abrirApp();
+  }
+  // sin perfil y sin sesión: se queda la landing, que nace visible en el HTML
 })();
