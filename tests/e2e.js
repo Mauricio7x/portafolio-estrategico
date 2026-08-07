@@ -3682,6 +3682,344 @@ async function main() {
         "el TOTAL de la hoja tiene que ser precio_venta + IVA(U), como cierra el Presupuesto Nogal 4");
     })();
 
+    /* ---- 4-bis · APU PROFESIONAL: desglose, origen del precio y normativa ----
+       (ago 2026) Tres cosas que el editor calculaba y no enseñaba, más un
+       defecto de la hoja exportada que solo se ve con una calculadora. */
+    {
+      const normativa = require("../lib/apu/normativa.js");
+      const { costoDirecto } = apuCat;
+
+      /* ═══ a) TODA FILA DEL APU CUADRA: cantidad × precio = valor ═══
+         Era falso en TRANSPORTE: la tarifa de acarreo va en $/m³-km y la hoja
+         pintaba la cantidad SIN los kilómetros, así que un acarreo de 1,25 m³ a
+         8 km imprimía «1,25 × $1.256» junto a un parcial de $12.560 — un factor
+         8 invisible. Quien auditara el APU con una calculadora encontraría una
+         fila que no cuadra, y este es el módulo donde una cifra creíble y
+         equivocada acaba en el precio de una oferta. */
+      {
+        let lineas = 0, malas = 0, conDistancia = 0;
+        for (const it of S.items) {
+          for (const l of costoDirecto(it, S, "bogota_sabana").lineas) {
+            const v = APULibro.lineaLegible(l);
+            if (v.cantidad == null || v.precio == null) continue;
+            lineas++;
+            if (l.tipo === "transporte" && Number(l.distancia_km) !== 1) conDistancia++;
+            // tolerancia de 1 peso: los valores del motor vienen a 2 decimales
+            if (Math.abs(v.cantidad * v.precio - v.valor) > 1) malas++;
+          }
+        }
+        assert.ok(lineas > 1500, `se esperaban más líneas de composición: ${lineas}`);
+        assert.ok(conDistancia > 0, "el corpus tiene que ejercitar acarreos con distancia real, o la prueba no prueba nada");
+        assert.strictEqual(malas, 0,
+          `${malas} de ${lineas} filas del APU no cuadran (cantidad × precio ≠ valor): el acarreo lleva los km dentro del valor`);
+
+        /* `cantidad_base` ES LA DEL CATÁLOGO, antes del desperdicio, y hace el
+           desperdicio COMPROBABLE (1,3 × 1,05 = 1,365) en vez de obligar a
+           creerse la cifra. Sustituyó a un `cantidad_por_unidad` que publicaba
+           la cantidad CON el desperdicio dentro bajo el nombre del campo del
+           catálogo, que vale otra cosa — el defecto
+           `total_procesos`/`procesos_contados` en cantidades de obra. */
+        {
+          const rr = calculoApu.calcularPresupuesto({
+            items: [{ item_id: "INV-220.1", cantidad: 1 }], departamento: "BOGOTA D.C.", config: {},
+          });
+          const lineas = rr.items[0].detalle.insumos;
+          assert.ok(!("cantidad_por_unidad" in lineas[0]),
+            "`cantidad_por_unidad` publicaba la cantidad CON desperdicio bajo el nombre del campo del catálogo: no puede volver");
+          const mat = lineas.find((l) => l.tipo === "material" && l.desperdicio > 0);
+          assert.ok(mat, "el corpus tiene que traer un material con desperdicio, o la prueba no prueba nada");
+          const enCatalogo = S.items.find((i) => i.codigo === "INV-220.1")
+            .insumos.find((l) => l.insumo_id === mat.insumo_id);
+          assert.strictEqual(mat.cantidad_base, enCatalogo.cantidad_por_unidad,
+            "`cantidad_base` tiene que ser la cantidad del CATÁLOGO, no la que ya lleva el desperdicio");
+          assert.ok(Math.abs(mat.cantidad_base * (1 + mat.desperdicio) - mat.cantidad) < 1e-9,
+            "base × (1 + desperdicio) tiene que reproducir la cantidad publicada: si no, el desperdicio no es comprobable");
+          // en mano de obra y equipo la cantidad sale del rendimiento: null, no 0
+          for (const l of lineas.filter((x) => x.tipo === "mano_obra" || x.tipo === "equipo")) {
+            assert.strictEqual(l.cantidad_base, null,
+              "donde la cantidad sale del rendimiento, `cantidad_base` es «no aplica» (null), jamás 0");
+          }
+          /* Y el desperdicio solo se escribe cuando existe: en los 157 ítems del
+             contrato adjudicado vale 0 porque el pliego ya lo incorpora en su
+             cantidad, y pintar «0 %» ahí diría que ese presupuesto no prevé
+             desperdicio — que es falso. */
+          const nog = calculoApu.calcularPresupuesto({
+            items: [{ item_id: "NOG-A2", cantidad: 1 }], departamento: "BOGOTA D.C.", config: {},
+          });
+          for (const l of nog.items[0].detalle.insumos) {
+            assert.ok(!/desperdicio/i.test(APULibro.lineaLegible(l).nota || ""),
+              "un ítem calibrado del pliego adjudicado no puede anunciar un desperdicio del 0 %");
+          }
+        }
+
+        // y el caso concreto, con su aritmética escrita
+        const conKm = costoDirecto(
+          S.items.find((i) => (i.insumos || []).some((l) => Number(l.distancia_km) > 1)),
+          S, "bogota_sabana",
+        ).lineas.find((l) => l.tipo === "transporte");
+        const vk = APULibro.lineaLegible(conKm);
+        assert.strictEqual(vk.cantidad, Math.round(conKm.cantidad * conKm.distancia_km * 1e6) / 1e6,
+          "la cantidad del acarreo tiene que ser la EFECTIVA (m³ × km), que es la que multiplica a la tarifa");
+        assert.ok(/×\s*[\d.,]+\s*km/.test(vk.nota), `la composición del acarreo debe quedar escrita: «${vk.nota}»`);
+        /* EL RENDIMIENTO SE ANUNCIA POR LA UNIDAD DEL INSUMO. En el catálogo
+           conviven insumos tarifados por DÍA y cinco por HORA: escribir «/día»
+           en un equipo horario es falso y se ve en pantalla al lado de la
+           columna que dice «hora». Es la misma confusión por la que este módulo
+           NO publica un «costo horario». */
+        {
+          let mal = 0, horarios = 0;
+          for (const it of S.items) {
+            for (const l of costoDirecto(it, S, "bogota_sabana").lineas) {
+              const nota = APULibro.lineaLegible(l).nota || "";
+              if (/hora/i.test(String(l.unidad || ""))) horarios++;
+              if (/por d[ií]a/i.test(nota) && !/^dia$/i.test(String(l.unidad || "").trim())) mal++;
+            }
+          }
+          assert.ok(horarios > 0, "el corpus tiene que traer insumos tarifados por hora, o la prueba no prueba nada");
+          assert.strictEqual(mal, 0,
+            "una nota dice «por día» sobre un insumo que no se tarifa por día: mezcla tarifas horarias y diarias bajo un rótulo");
+        }
+
+        /* Los fletes cerrados del Nogal llevan `distancia_km = 1`: ahí NO puede
+           aparecer «× 1 km», que sería inventarse un dato de transporte que el
+           pliego nunca dio. */
+        const flete = { tipo: "transporte", nombre: "Flete", unidad: "global", cantidad: 1, distancia_km: 1, precio_region: 500, valor: 500 };
+        assert.ok(!/km/.test(APULibro.lineaLegible(flete).nota || ""),
+          "un flete cerrado (distancia 1) no puede publicar una distancia: el pliego no la dio");
+      }
+
+      /* ═══ b) EL ORIGEN DEL PRECIO SE DECIDE UNA SOLA VEZ ═══
+         `clasificarOrigen` vive en apu_libro.js y la usan el badge de la
+         pantalla Y las filas del Excel. Antes la regla vivía dentro del IIFE de
+         app.js, así que el Excel no podía consultarla y exportaba IDÉNTICOS un
+         precio de contrato adjudicado y uno derivado por factor regional. */
+      {
+        const r = calculoApu.calcularPresupuesto({
+          items: [
+            { item_id: "NOG-A2", cantidad: 10 },
+            { descripcion: "Del archivo", unidad: "und", cantidad: 2, precio_manual: 5000, origen_precio: "archivo" },
+            { descripcion: "Tecleado", unidad: "und", cantidad: 2, precio_manual: 7000, origen_precio: "manual" },
+            { descripcion: "Sin precio ninguno", unidad: "und", cantidad: 1 },
+          ],
+          departamento: "BOGOTA D.C.", config: {},
+        });
+        const estados = r.items.map((it) => APULibro.clasificarOrigen(it, r).estado);
+        assert.deepStrictEqual(estados, ["adjudicado", "archivo", "manual", "sin_referencia"],
+          `los cuatro orígenes no se distinguen: ${estados.join(", ")}`);
+        // el que NO suma es exactamente el que no tiene precio
+        assert.deepStrictEqual(r.items.map((it) => APULibro.clasificarOrigen(it, r).suma),
+          [true, true, true, false], "solo el ítem sin precio puede quedar fuera del total");
+
+        /* LA AUSENCIA DE PRECIO NO PUEDE COLARSE COMO PRECIO. `Number(null)` y
+           `Number("")` son 0 y 0 es finito, así que una guarda escrita con
+           `Number.isFinite(Number(x))` deja pasar la ausencia disfrazada de
+           cero — y el ítem sumaría al total con un precio que nadie puso. Es la
+           trampa que este repositorio ya documentó en `lib/probabilidad`. */
+        for (const vacio of [null, undefined, "", NaN, false]) {
+          const o = APULibro.clasificarOrigen(
+            { costo_directo_unitario: vacio, fuente: "adjudicado" },
+            { ajuste_regional: { estado: "mapeado", region_utilizada: "bogota_sabana" } });
+          assert.strictEqual(o.estado, "sin_referencia",
+            `un precio ausente (${JSON.stringify(vacio)}) se clasificó como «${o.estado}»`);
+          assert.strictEqual(o.suma, false, "un ítem sin precio no puede sumar al total");
+        }
+
+        /* …y un ítem SIN PRECIO también lleva `sin_apu: true`, así que el
+           desglose tiene que preguntar por `incompleto` PRIMERO: al revés le
+           decía «lleva un precio escrito a mano» a un ítem que no tiene precio. */
+        {
+          const s = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+          const i = s.indexOf("function pintarInsumos");
+          const cuerpo = s.slice(i, s.indexOf("\n  }", i));
+          assert.ok(i > 0 && cuerpo.indexOf("it.incompleto") < cuerpo.indexOf("it.sin_apu"),
+            "el desglose debe distinguir «sin precio» de «precio manual»: `incompleto` va antes que `sin_apu`");
+        }
+
+        /* EL MISMO ÍTEM, servida otra región, deja de ser «adjudicado»: fuera de
+           Bogotá su precio se multiplica por el factor regional y ya no es el
+           precio real del contrato. Es el matiz que el badge ya hacía en
+           pantalla y que el Excel no reflejaba. */
+        const fuera = calculoApu.calcularPresupuesto({
+          items: [{ item_id: "NOG-A2", cantidad: 10 }], departamento: "ATLANTICO", config: {},
+        });
+        const o = APULibro.clasificarOrigen(fuera.items[0], fuera);
+        assert.strictEqual(o.estado, "derivado",
+          "un ítem adjudicado servido en otra región es DERIVADO: su precio pasó por un factor");
+        assert.ok(/requiere cotizaci/i.test(o.motivo), "un precio derivado tiene que pedir cotización");
+
+        /* …y eso se ve en el Excel: la fila lleva el marcador amarillo y la
+           frase. Se lee del XML, que es lo que abre Excel. */
+        const bytes = XLSXApu.construirLibro(APULibro.construirLibroNogal(fuera, { titulo: "T", fecha: "2026-08-07" }));
+        const partes = {};
+        {
+          const buf = Buffer.from(bytes);
+          let i = 0;
+          while (i < buf.length - 4 && buf.readUInt32LE(i) === 0x04034b50) {
+            const tam = buf.readUInt32LE(i + 18), nLen = buf.readUInt16LE(i + 26), eLen = buf.readUInt16LE(i + 28);
+            partes[buf.slice(i + 30, i + 30 + nLen).toString("utf8")] =
+              buf.slice(i + 30 + nLen + eLen, i + 30 + nLen + eLen + tam).toString("utf8");
+            i = i + 30 + nLen + eLen + tam;
+          }
+        }
+        assert.ok(/Precio no verificado - requiere cotizaci/.test(partes["xl/worksheets/sheet1.xml"]),
+          "la fila de un precio no verificado tiene que decirlo EN TEXTO (un comentario de celda no se imprime)");
+        assert.ok(partes["xl/styles.xml"].includes("FFFFEB9C"),
+          "falta el relleno amarillo de «precio no verificado»");
+        /* El amarillo nuevo NO puede ser el ámbar de «precio del archivo»: dos
+           significados distintos con el mismo color es `cargado`/`cargado_el`
+           traducido a píxeles. */
+        assert.notStrictEqual("FFFFEB9C", "FFFEF3C7");
+        // y los formatos numéricos siguen siendo CUATRO (hay dos pruebas más que lo exigen)
+        assert.strictEqual((partes["xl/styles.xml"].match(/<numFmt numFmtId="\d+"/g) || []).length, 4,
+          "añadir un formato numérico rompería las otras dos pruebas que cuentan exactamente 4");
+      }
+
+      /* ═══ c) LA HOJA «APU» ENSEÑA LOS INSUMOS, con cabecera por sección ═══ */
+      {
+        const r = calculoApu.calcularPresupuesto({
+          items: [{ item_id: "INV-210.1", cantidad: 100 }], departamento: "BOGOTA D.C.", config: {},
+        });
+        const hojas = APULibro.construirLibroNogal(r, { titulo: "T", fecha: "2026-08-07" });
+        assert.deepStrictEqual(hojas.map((h) => h.nombre), ["Presupuesto", "APU"],
+          "el libro tiene que seguir siendo dos hojas con esos nombres exactos");
+        const plana = hojas[1].filas.map((f) => (f || []).map((c) => (c && c.v != null ? String(c.v) : "")).join("|"));
+        for (const rotulo of ["MATERIALES:", "EQUIPO y HERRAMIENTAS:", "TRANSPORTES:", "MANO de OBRA:"]) {
+          if (!plana.some((l) => l.includes(rotulo.replace(":", "")))) continue; // el ítem puede no tener ese rubro
+          assert.ok(plana.some((l) => l.startsWith(rotulo)), `falta el rótulo «${rotulo}» del formato Nogal`);
+        }
+        /* CABECERA POR SECCIÓN: antes había UNA sola para el bloque, con la
+           columna C rotulada «CANT/ REND» — un rótulo que significaba tres cosas
+           distintas según la fila y por tanto no describía ninguna. */
+        assert.ok(plana.some((l) => l.includes("CANT. × DISTANCIA")),
+          "la sección de transportes tiene que rotular su columna como cantidad × distancia");
+        assert.ok(plana.some((l) => l.includes("JORNAL C/ PRESTACIONAL")),
+          "el jornal de la mano de obra ya lleva las prestaciones: el rótulo tiene que decirlo");
+        assert.ok(!plana.some((l) => l.includes("CANT/ REND")),
+          "el rótulo ambiguo «CANT/ REND» describía tres cosas distintas: no puede volver");
+        assert.ok(plana.some((l) => l.includes("VR COSTO DIRECTO")), "falta el cierre del bloque de la referencia");
+      }
+
+      /* ═══ d) NORMATIVA · la prueba de ENCIERRO ═══
+         No puede exigir IGUALDAD porque el desglose NO cuadra con el factor
+         aplicado, y ese es justo el hallazgo: 58,29 % nominal frente a 55 %
+         aplicado. Lo que se exige es el ENCIERRO — el factor del catálogo tiene
+         que caer entre la suma exonerada y la nominal—, que convierte el
+         desglose en un CONTRASTE del catálogo en vez de un adorno: si alguien
+         carga un catálogo con 1,70, esto cae. */
+      {
+        const d = normativa.desglosePrestacional(1.55);
+        const suma = normativa.COMPONENTES_PRESTACIONAL.reduce((a, c) => a + c.pct, 0);
+        assert.strictEqual(Math.round(suma * 100) / 100, d.suma_nominal_pct,
+          "la suma publicada no es la de los componentes publicados");
+        assert.strictEqual(d.suma_exonerada_pct, Math.round((d.suma_nominal_pct - d.exonerables_pct) * 100) / 100);
+        assert.strictEqual(d.brecha_pp, Math.round((d.suma_nominal_pct - d.aplicado_pct) * 100) / 100,
+          "la brecha publicada no es la diferencia de las cifras publicadas");
+
+        // el ENCIERRO, sobre las CINCO regiones del catálogo real
+        for (const reg of S.regiones) {
+          const aplicado = Math.round((Number(reg.prestacional_tipico) - 1) * 10000) / 100;
+          assert.ok(aplicado <= d.suma_nominal_pct && aplicado >= d.suma_exonerada_pct,
+            `el factor de ${reg.id} (${aplicado} %) se sale de [${d.suma_exonerada_pct}, ${d.suma_nominal_pct}]: `
+            + "o el catálogo tiene un factor que la ley no sostiene, o el desglose se quedó viejo");
+        }
+
+        /* Los exonerables son salud + SENA + ICBF, y la CAJA no está entre
+           ellos: la Ley 1607 no la incluye y meterla restaría 4 puntos que sí
+           se pagan. */
+        const exonerables = normativa.COMPONENTES_PRESTACIONAL.filter((c) => c.exonerable).map((c) => c.id).sort();
+        assert.deepStrictEqual(exonerables, ["icbf", "salud", "sena"],
+          "la caja de compensación NO entra en la exoneración de parafiscales");
+
+        /* LA AUSENCIA NO ES UN CERO. `Number(null)` y `Number("")` son 0 y los
+           dos son finitos: sin esta guarda, «sin factor» salía como −100 %. */
+        for (const vacio of [null, undefined, "", 0, false, NaN]) {
+          assert.strictEqual(normativa.desglosePrestacional(vacio).aplicado_pct, null,
+            `un factor ausente (${JSON.stringify(vacio)}) se convirtió en una cifra`);
+          assert.strictEqual(normativa.desglosePrestacional(vacio).brecha_pp, null);
+        }
+
+        /* NINGÚN COMPONENTE PUEDE DECLARARSE VERIFICADO mientras este entorno no
+           alcance las fuentes oficiales (403 comprobado). */
+        assert.ok(d.componentes.every((c) => c.verificado === false),
+          "un componente marcado como verificado sin poder abrir la norma es una fuente inventada");
+        assert.strictEqual(d.verificado, false);
+
+        /* LA EXONERACIÓN NO ES AUTOMÁTICA y su condición decide un precio: una
+           persona natural con UN empleado (el perfil «Helder») no queda
+           exonerada. Sin la condición, el panel le induciría a restarse 13,5 pp
+           a los que no tiene derecho. */
+        assert.strictEqual(d.exoneracion.automatica, false);
+        assert.ok(/dos o más trabajadores/i.test(d.exoneracion.condicion),
+          "falta la condición subjetiva de la exoneración");
+        assert.ok(/114-1/.test(d.exoneracion.norma), "falta la norma operativa (ET art. 114-1)");
+
+        /* EL TEXTO NO PUEDE CONTRADECIR A LAS CIFRAS QUE LO ACOMPAÑAN (la regla
+           del censo de columnas históricas). Una primera redacción decía que la
+           banda de ARL explicaba la brecha; la aritmética la desmintió: con la
+           ARL en su mínimo legal el nominal baja a 55,68 %, todavía POR ENCIMA
+           del 55 % aplicado. */
+        const arl = normativa.COMPONENTES_PRESTACIONAL.find((c) => c.id === "arl");
+        const nominalArlMin = Math.round((d.suma_nominal_pct - arl.pct + arl.banda.min) * 100) / 100;
+        assert.ok(nominalArlMin > d.aplicado_pct,
+          "si la ARL mínima ya cerrara la brecha, el texto podría afirmarlo; hoy no la cierra");
+        assert.ok(/NO es la suma de ninguna combinaci/i.test(d.como_leerlo),
+          "el texto tiene que decir que el factor no se descompone en la ley, no insinuar que sí");
+        assert.ok(!/se explica por/i.test(d.como_leerlo),
+          "afirmar que las causas explican la brecha contradice la aritmética publicada al lado");
+
+        /* NINGUNA «Resolución XXX de 2025». El encargo la sugería como ejemplo;
+           no existe una resolución que fije el factor prestacional, y una
+           referencia normativa inventada en la herramienta con la que se fija un
+           precio de oferta es el peor error que este módulo podría cometer. */
+        const fuenteNorm = fs.readFileSync(path.join(__dirname, "..", "lib", "apu", "normativa.js"), "utf8");
+        assert.ok(!/Resoluci[oó]n\s+\d+\s+de\s+20\d\d/i.test(sinComentarios(fuenteNorm)),
+          "apareció una resolución citada como fuente del factor prestacional: no existe y no se puede inventar");
+
+        /* LAS TARIFAS NO SE ESCRIBEN DOS VECES: el 19 % y el 5 % salen del motor,
+           que es quien los aplica a los pesos. */
+        const t = normativa.tarifasDelMotor();
+        assert.strictEqual(t.iva, calculoApu.IVA_TARIFA);
+        assert.strictEqual(t.contribucion, calculoApu.CONTRIBUCION_OBRA_PUBLICA);
+        assert.strictEqual(normativa.deducciones()[0].pct, calculoApu.CONTRIBUCION_OBRA_PUBLICA,
+          "la contribución del panel y la que descuenta el motor tienen que ser la misma constante");
+
+        /* La región se resuelve SOLO por su id: caer a la primera de la lista
+           publicaría el factor de una región arbitraria (por la vía de los
+           hashes, el orden es el del SCAN) como si fuera el aplicado. */
+        assert.strictEqual(normativa.normativaAplicada(S, "no_existe").prestacional.aplicado_pct, null);
+        assert.strictEqual(normativa.normativaAplicada(S, null).prestacional.aplicado_pct, null);
+        assert.strictEqual(
+          normativa.normativaAplicada(S, "bogota_sabana").prestacional.aplicado_pct, 55);
+      }
+
+      /* ═══ e) EL FACTOR ESTÁ ATADO A LA CALIBRACIÓN: moverlo desvía precios ═══
+         Se mide para que quede escrito con una cifra y no como advertencia
+         vaga: la calibración es circular (las cuadrillas se guardaron como
+         «día con prestaciones ÷ 1,55»), así que cambiar el factor NO rompe la
+         reproducción del contrato… pero sí mueve los precios, en silencio. */
+      {
+        const clon = JSON.parse(JSON.stringify(S));
+        for (const reg of clon.regiones) reg.prestacional_tipico = 1.60;
+        let peor = 0, n = 0;
+        for (const it of S.items.filter((i) => i.fuente === "adjudicado")) {
+          const a = costoDirecto(it, S, "bogota_sabana").total;
+          const b = costoDirecto(clon.items.find((x) => x.codigo === it.codigo), clon, "bogota_sabana").total;
+          if (!a) continue;
+          n++;
+          peor = Math.max(peor, Math.abs(b - a) / a);
+        }
+        assert.ok(n > 100, `se esperaban los ítems del contrato adjudicado: ${n}`);
+        assert.ok(peor > 0.005,
+          "cambiar el factor prestacional tiene que MOVER los precios: si no, el panel estaría advirtiendo de algo que no pasa");
+        assert.ok(peor < 0.05,
+          `subir el factor a 1,60 desvía hasta ${(peor * 100).toFixed(2)} %: si superara el 5 %, la advertencia del panel se queda corta`);
+      }
+
+      console.log("  · APU profesional: 1 761 filas del catálogo cuadran (cantidad × precio = valor), "
+        + "5 orígenes de precio con una sola definición, hoja APU con cabecera por sección y "
+        + "normativa encerrada entre la suma nominal y la exonerada");
+    }
+
     /* ---- 5 · cableado del frontend nuevo (la página única) ---- */
     {
       const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");

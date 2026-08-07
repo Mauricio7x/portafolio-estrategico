@@ -1652,6 +1652,129 @@ Encargo del dueño: «una sola página, cero fricción». Se retiraron `admin.ht
   `if (!leerToken()) return "—"`, que con el token integrado es inalcanzable. Un código que insinúa
   que el botón puede no pintarse es documentación falsa.
 
+### APU profesional: desglose visible, origen del precio y normativa (ago 2026)
+
+Encargo: mostrar el desglose real por insumo, exportar dos hojas, marcar la confianza
+del precio y publicar la normativa. **Tres de las cinco premisas estaban
+desactualizadas** y hay que dejarlo escrito: `lib/apu/xlsx.js` NO existe (el
+exportador son `public/xlsx.js` + `public/apu_libro.js`), ese exportador YA generaba
+las dos hojas «Presupuesto» y «APU» con desglose por rubro, y `/api/apu/calcular` YA
+devolvía `detalle.insumos` con nombre, unidad, cantidad, precio, rendimiento,
+desperdicio y distancia. El hueco real era otro y estaba más abajo.
+
+- **DEFECTO REAL ENCONTRADO POR VERIFICACIÓN, no por el encargo: las filas de
+  TRANSPORTE de la hoja APU no cuadraban.** La tarifa de acarreo va en **$/m³-km** y
+  `costoDirecto` calcula `precio × cantidad × distancia_km`, pero la hoja pintaba
+  cantidad y precio **sin los kilómetros**: un acarreo de 1,25 m³ a 8 km imprimía
+  «1,25 × $1.256» al lado de un parcial de **$12.560** — un factor 8 invisible.
+  Quien auditara el APU con una calculadora encontraba una fila que no cuadra, y
+  este es el módulo donde «el falso positivo cuesta más que el falso negativo».
+  Ahora se publica la cantidad EFECTIVA (m³·km) y la composición («1,25 m3 × 8 km»)
+  va escrita. **Invariante nueva con prueba: `cantidad × precio = valor` en las
+  1 761 líneas del catálogo.** Los fletes cerrados del Nogal llevan `distancia_km =
+  1` y NO publican distancia: ese 1 no es un dato que el pliego haya dado.
+- **`cantidad_por_unidad` de `detalle.insumos` publicaba OTRA COSA que el campo del
+  catálogo con ese nombre**: para un material con 5 % de desperdicio el catálogo dice
+  1,30 y esto publicaba 1,365 —la cantidad CON el desperdicio ya dentro—. Dos cosas
+  distintas con el mismo nombre es `total_procesos`/`procesos_contados` en cantidades
+  de obra: quien se fiara del nombre volvería a multiplicar por el desperdicio y lo
+  cobraría dos veces. Nadie lo consumía todavía; se sustituyó por **`cantidad_base`**
+  (la del catálogo, `null` donde la cantidad sale del rendimiento), que además hace el
+  desperdicio COMPROBABLE en pantalla: «1,3 + 5 % de desperdicio» se verifica
+  (1,3 × 1,05 = 1,365) en vez de tener que creerse la cifra.
+- **El desperdicio solo se escribe cuando es > 0** (28 de 1 761 líneas): en los 157
+  ítems calibrados del contrato adjudicado vale 0 porque **el pliego ya lo incorpora
+  en su cantidad**, así que pintar «0,00 %» ahí afirmaría que ese presupuesto no
+  prevé desperdicio — falso. Hay prueba de que un ítem NOG-\* no puede anunciarlo.
+- **`lineaLegible` y `clasificarOrigen` viven en `public/apu_libro.js` (UMD) y las
+  usan LAS DOS presentaciones**: el desglose en pantalla y la hoja del Excel. La
+  regla del origen vivía dentro del IIFE de `app.js`, así que el Excel no podía
+  consultarla y **exportaba idénticos un precio de contrato adjudicado y uno
+  derivado por factor regional** — el hueco real detrás de la tarea 3. `index.html`
+  carga `apu_libro.js` ANTES que `app.js`, así que `APULibro` está disponible.
+- **CINCO estados de origen, no cuatro.** El encargo pide 🟢/🟡/🔴/⚪, pero «precio
+  del ARCHIVO importado» y «precio TECLEADO a mano» no se pueden colapsar: la
+  política de precios de la importación hace que el del archivo MANDE y quede
+  declarado, y fundirlos perdería esa trazabilidad. Y el verde exige DOS
+  condiciones: `fuente="adjudicado"` **y** región `bogota_sabana` — fuera de Bogotá
+  el mismo precio se multiplica por el factor regional y deja de ser el precio real.
+- **NO se implementaron comentarios de celda de Excel, y la razón no es pereza.**
+  Exigen `comments1.xml` + `vmlDrawing1.vml` + un nivel de OPC que el paquete no
+  tiene (`xl/worksheets/_rels/`) + `xmlns:r` y `<legacyDrawing>` en la hoja: ~85
+  líneas y **dos modos de fallo que hacen que Excel se niegue a abrir el libro
+  ENTERO**. Además un comentario **no se imprime** (y el presupuesto se entrega
+  impreso o en PDF), no se filtra, no se copia y `public/xlsx_lectura.js` no lo lee
+  al reimportar. La advertencia va como TEXTO en la descripción + relleno amarillo
+  (`FFFFEB9C`, distinto del ámbar `FFFEF3C7` para que dos significados no compartan
+  color) + leyenda al pie. **Un archivo roto cuesta más que un globo que falta.**
+- **Cabecera POR SECCIÓN en la hoja APU**, conservando las CINCO columnas A-E de la
+  referencia (su cierre `ROUND(SUM(Ea:Eb)/2)` solo tiene sentido si parciales y
+  subtotales comparten la E). El rótulo `CANT/ REND` significaba tres cosas distintas
+  según la fila y por tanto no describía ninguna.
+- **«Costo horario» NO se puede publicar y no se publica.** El catálogo cotiza por
+  DÍA, la calibración Nogal (149/157 exactos) está construida sobre el día, y **cinco
+  insumos de equipo YA se tarifan por hora** mientras otros 46 van por día: una
+  columna «costo horario» mezclaría una tarifa horaria real con 46 tarifas diarias
+  divididas por una jornada inventada. No existe ninguna jornada en el repositorio y
+  elegir 7,33 h u 8 h mueve la mano de obra un ~9 %. Se muestra el precio por la
+  UNIDAD DEL INSUMO, que es el dato real, con la unidad al lado.
+- **El desglose se pinta AL EXPANDIR, no al construir la tabla** (`pintarInsumos`):
+  con 200-300 ítems importados, ~10 filas de insumo por ítem son miles de nodos que
+  nadie está mirando. Y `pintarCalculoEnTabla` **invalida** lo pintado en cada
+  cálculo: un desglose abierto no puede seguir enseñando los insumos del cálculo
+  anterior — cifras viejas con aspecto de nuevas.
+- **`lib/apu/normativa.js` explica, el catálogo decide.** El factor que se APLICA
+  sigue saliendo de `regiones[…].prestacional_tipico` (Redis); el módulo lo RECIBE y
+  nunca lo importa — ponerle un default lo convertiría en una segunda fuente de
+  verdad de una cifra que multiplica jornales. Va en código y no en el catálogo por
+  el mismo criterio que `lib/apu/tipologias.js`: es ley y criterio, tiene que verse
+  en un diff y no puede depender de que alguien haya corrido la carga.
+- **EL 1,55 ES UN SUPUESTO, no un dato, y el rótulo «recuperado» engaña**: se
+  recuperó de un comentario del `modulo_apu.html` borrado que decía «factor
+  prestacional típico obra pública Colombia ≈ 1.55». Recuperar un supuesto no lo
+  convierte en dato. Y **no es una perilla libre**: las nueve cuadrillas del Nogal se
+  guardaron como `día con prestaciones ÷ 1,55` (calibración CIRCULAR: reproduciría
+  igual con 1,40), así que moverlo no rompe la reproducción pero **sí desvía los 157
+  ítems NOG-\*** (≈1 % de media, 2,89 % en el peor caso) en silencio. Hay prueba que
+  lo mide.
+- **LA SUMA NO CUADRA Y SE PUBLICA LA BRECHA.** Nominal de ley 58,29 % · aplicado
+  55,00 % · exonerado 44,79 %. Una primera redacción de este módulo decía que la
+  brecha «se explica» por la exoneración y la banda de ARL; **la aritmética lo
+  desmintió**: con la ARL de clase V en su mínimo legal (4,350 %) el nominal baja a
+  55,68 %, todavía POR ENCIMA del 55 % aplicado. El texto dice ahora que el 55 % **no
+  se descompone en ninguna combinación legal exacta** y que cae entre las dos cotas,
+  que es donde debe caer un factor de referencia. Hay prueba de que el texto no puede
+  volver a afirmar lo contrario de las cifras que lo acompañan.
+- **La prueba es de ENCIERRO, no de igualdad** (no puede exigir que cuadre porque no
+  cuadra): el factor de las CINCO regiones tiene que caer en [suma_exonerada,
+  suma_nominal]. Eso convierte el desglose en un CONTRASTE del catálogo en vez de un
+  adorno — si alguien carga 1,70, la prueba cae.
+- **LA EXONERACIÓN NO ES AUTOMÁTICA y su condición decide un precio.** El ET art.
+  114-1 exonera a personas jurídicas contribuyentes y a personas naturales **solo si
+  ocupan dos o más trabajadores**. El perfil «Helder» es persona natural con UN
+  profesional: un panel que ofreciera «−13,5 pp» sin la condición le induciría a
+  restarse algo a lo que probablemente no tiene derecho, y eso viaja al precio.
+- **NINGUNA «Resolución XXX de 2025».** El encargo la sugería como ejemplo de fuente;
+  no existe una resolución que fije el factor prestacional, este entorno no alcanza
+  las fuentes oficiales (403) y una referencia normativa inventada en la herramienta
+  con la que se fija un precio de oferta es el peor error que este módulo podría
+  cometer. Todos los componentes viajan con `verificado: false` y hay prueba que
+  prohíbe que aparezca una resolución citada como fuente.
+- **Las tarifas del 19 % y el 5 % se IMPORTAN de `lib/apu/calculo.js`** (que es quien
+  las aplica a los pesos) con `require` diferido: estaban escritas dos veces. Y la
+  mejor cita normativa del módulo —la del IVA sobre la utilidad (art. 3 D. 1372/1992,
+  hoy art. 1.3.1.7.9 D. 1625/2016)— vivía en `como_leerlo.iva`, un campo que la
+  pestaña APU no pinta: se movió aquí. El panel dice **las dos mitades** de esa
+  verdad, porque cada media es falsa del otro artefacto: el motor NO suma el IVA al
+  precio final y la hoja de Excel SÍ lo suma a su TOTAL.
+- **La normativa viaja también en la respuesta de `calcular`, para la región QUE SE
+  USÓ.** Cableada solo al catálogo publicaba siempre la región base: hoy las cinco
+  comparten factor y no se nota, pero el día que se regionalicen el panel diría
+  «55 %» mientras el motor aplicó otro. Y `normativaAplicada` **ya no cae a la
+  primera región de la lista** cuando no encuentra la pedida: por la vía de los
+  hashes ese orden es el del SCAN, o sea una región arbitraria publicada como si
+  fuera la aplicada.
+
 ### Rediseño Apple Glass, eliminación de RUP y probabilidad en frases (ago 2026)
 
 Encargo: paleta Apple (claro #f5f5f7 / oscuro #000, acento #007AFF, vidrio con `backdrop-filter`),

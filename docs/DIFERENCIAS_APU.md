@@ -62,8 +62,27 @@ Diferencias deliberadas:
   medio peso (ver `docs/CALIBRACION_APU.md`).
 - **Etiquetas del cierre más explícitas** («IVA sobre la utilidad (19 %)» en vez de
   «IVA» a secas) y una **leyenda de marcadores** al pie: la referencia no necesita
-  marcadores porque todos sus ítems tienen APU; el generado distingue ámbar
-  (precio del archivo, sin APU de respaldo) y rojo (sin precio).
+  marcadores porque todos sus ítems tienen APU; el generado distingue **tres**
+  colores (ago 2026) — amarillo (precio con APU pero derivado por factor regional
+  o estimado: no verificado), ámbar (precio del archivo o tecleado, sin APU de
+  respaldo) y rojo (sin precio, no suma).
+- **CABECERA POR SECCIÓN en la hoja «APU»** (ago 2026), en vez de una sola para el
+  bloque entero. La referencia rotula la columna C como `CANT/ REND`, un rótulo que
+  significa tres cosas distintas según la fila (cantidad de material, días por
+  unidad de obra, cantidad de acarreo) y por tanto no describe ninguna. El generado
+  emite `CANTIDAD` · `CANT. POR UNIDAD` · `CANT. × DISTANCIA` · `JORNAL C/
+  PRESTACIONAL` según el rubro. **Se conservan las CINCO columnas A-E** de la
+  referencia: su cierre `ROUND(SUM(Ea:Eb)/2)` solo tiene sentido si los parciales y
+  los subtotales comparten la columna E.
+- **Las filas de acarreo publican la cantidad EFECTIVA (m³·km), no los m³.** Es una
+  corrección, no una diferencia de estilo: la tarifa va en $/m³-km y el valor lleva
+  dentro un factor `distancia_km` que la fila no enseñaba, así que un acarreo de
+  1,25 m³ a 8 km imprimía «1,25 × $1.256» junto a un parcial de $12.560 — un factor
+  8 invisible para quien auditara la fila con una calculadora. Ahora **toda fila
+  cumple `cantidad × precio = valor`** (1 761 líneas del catálogo verificadas en la
+  suite) y la composición («1,25 m3 × 8 km») viaja escrita en la descripción. Los
+  fletes cerrados del Nogal llevan `distancia_km = 1` y **no** publican distancia:
+  ese 1 no es un dato de transporte que el pliego haya dado.
 - **Los ítems con precio del archivo no llevan APU inventado**: la referencia
   desglosa el 100 % de sus ítems porque sus APU existen; fabricar composiciones
   para cuadrar los precios del eléctrico sería inventar cantidades. El bloque de
