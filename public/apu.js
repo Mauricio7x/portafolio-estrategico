@@ -645,21 +645,27 @@
       $("departamento").value = p.departamento || "";
       $("entidad").value = p.entidad || "";
       aplicarConfig(p.config);
+      /* los NÚMEROS del borrador se COERCIONAN al cargar: van a parar dentro de
+         atributos `value="…"` de la tabla, y un texto guardado a mano en el
+         borrador no puede convertirse en marcado. Un valor ilegible cae a
+         vacío/null, nunca a un cero inventado. */
+      const numONull = (v) => (Number.isFinite(Number(v)) && v !== null && v !== "" ? Number(v) : null);
       filas = (p.items || []).map((f) => {
         const def = CATALOGO && f.item_id ? CATALOGO.items.find((x) => x.codigo === f.item_id) : null;
+        const precioManual = numONull(f.precio_manual);
         return {
           item_id: f.item_id || null,
           codigo: f.codigo || null,
           capitulo: f.capitulo || null,
           descripcion: f.descripcion || (def ? def.descripcion : f.item_id),
           unidad: f.unidad || (def ? def.unidad : null),
-          cantidad: f.cantidad,
-          rendimiento_override: f.rendimiento_override == null ? null : f.rendimiento_override,
+          cantidad: numONull(f.cantidad) ?? 0,
+          rendimiento_override: numONull(f.rendimiento_override),
           // los borradores guardados antes de la importación no traen estos
           // campos: `undefined` y `null` significan lo mismo aquí (sin precio manual)
-          precio_manual: f.precio_manual == null ? null : f.precio_manual,
-          origen_precio: f.origen_precio || null,
-          sugerencia: f.sugerencia || null,
+          precio_manual: precioManual != null && precioManual > 0 ? precioManual : null,
+          origen_precio: f.origen_precio === "archivo" || f.origen_precio === "manual" ? f.origen_precio : null,
+          sugerencia: f.sugerencia == null ? null : String(f.sugerencia).slice(0, 200),
         };
       });
       ultimoCalculo = null;

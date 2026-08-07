@@ -1570,7 +1570,9 @@ Hasta aquí el dueño miraba la baja mediana y descontaba a ojo.
   La sugerencia se acepta por casilla en la vista previa. Un precio 0 (del archivo o tecleado) es
   «sin dato», jamás gratis. Los ítems con precio manual suman al total pero caen en
   `por_componente.sin_desglose`, y **material+mano_obra+equipo+transporte+sin_desglose = costo
-  directo total** tiene prueba.
+  directo total** tiene prueba. Y un precio/cantidad que llegue como TEXTO a la API se lee con
+  `numeroColombiano` (punto = MILES): el parser ingenuo leía «74.596» como 74,596 pesos — mil veces
+  menos, la familia de «375.0000» — y hay prueba que lo clava.
 - **El LECTOR parsea el ZIP por el DIRECTORIO CENTRAL** (un xlsx en streaming deja los tamaños del
   local header en 0) y la descompresión se INYECTA (`DecompressionStream` en navegador,
   `zlib.inflateRawSync` en Node y pruebas); sin inflador y con partes DEFLATE el error sugiere CSV,

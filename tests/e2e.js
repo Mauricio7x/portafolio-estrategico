@@ -3476,6 +3476,21 @@ async function main() {
 
       assert.strictEqual(m.filas[4].precio_archivo, null, "un 0 del archivo no es un precio");
 
+      /* un precio o una cantidad que llegan como TEXTO se leen con la
+         convención COLOMBIANA (el punto separa MILES): el parser ingenuo leía
+         «74.596» como 74,596 pesos — mil veces menos, la familia del defecto
+         «375.0000». La API no puede depender de que el cliente mande números. */
+      const texto = mapearFilasImportadas([
+        { descripcion: "Cable", unidad: "ML", cantidad: "1.234,5", precio_archivo: "74.596" },
+      ], S);
+      assert.strictEqual(texto.filas[0].precio_archivo, 74596, "«74.596» como texto son 74.596 pesos, no 74,596");
+      assert.strictEqual(texto.filas[0].cantidad, 1234.5);
+      const manualTexto = calculoApu.calcularPresupuesto({
+        items: [{ descripcion: "x", unidad: "u", cantidad: 2, precio_manual: "74.596" }],
+      });
+      assert.strictEqual(manualTexto.items[0].costo_directo_unitario, 74596,
+        "precio_manual como texto también usa la convención colombiana");
+
       // el plural tolerado: sin él «Desmonte de Cielo Raso» no encontraba
       // «DESMONTES DE CIELO RASOS» (defecto medido antes de corregirlo)
       const des = mapearFilasImportadas([{ descripcion: "Desmonte de Cielo Raso", unidad: "m2", cantidad: 10 }], S);
