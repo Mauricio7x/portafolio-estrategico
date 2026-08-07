@@ -389,7 +389,7 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   unión, nunca la sustituye. La unión es un hecho derivado: dejar que un archivo la reduzca
   desincronizaría al consorcio de sus miembros.
 - **Carga parcial**: subir solo Génesis conserva a Helder. Un POST rechazado no toca nada.
-- **En `public/admin.js` el arranque automático va AL FINAL del IIFE** (misma lección que costó cara
+- **(Hoy `admin.js` vive dentro de `public/app.js` — ver «Página única», ago 2026.) En su época, el arranque automático iba AL FINAL del IIFE** (misma lección que costó cara
   en `app.js`): `abrirApp()` levanta el panel y la carga de RUP, cuyas funciones leen constantes
   declaradas más abajo. Hay prueba del orden. El refresco automático del panel **no corre con la
   pestaña oculta** (gastar invocaciones para que nadie lo mire) y se pone al día al volver a ella.
@@ -529,7 +529,7 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
     método y un GET da **405 con `Allow: POST` y con `como_hacerlo`**. NO se convirtió en un
     «GET que escribe» —lo dispararía cualquier prefetch del navegador—, aunque `/api/sync` sí lo
     haga: allí es una sincronización idempotente y aquí es una escritura de configuración.
-  · **El bloque va OCULTO sin token** (sus tres pasos escriben en Redis) y su visibilidad cuelga de
+  · **(Superado por el token integrado, ago 2026: el bloque nace VISIBLE — ver «Página única».) Entonces iba OCULTO sin token** (sus tres pasos escriben en Redis) y su visibilidad colgaba de
     `pintarEstadoToken`, que ya corre al arrancar y en cada cambio de token: un solo sitio. Y **la
     cadena se detiene en el primer paso que falle**: auditar sobre una carga que no ocurrió daría un
     resultado creíble y equivocado.
@@ -967,10 +967,10 @@ documental: `docs/APU_Y_RENTABILIDAD.md`.
   profesional de APU» no es alcanzable con esa librería. El escritor propio da control total y la prueba
   audita el ZIP entrada por entrada. Método **STORE** (sin comprimir): es ZIP válido, lo abren
   Excel/LibreOffice/Numbers y evita depender de que el navegador traiga `CompressionStream`.
-- **En `public/apu.js` el arranque automático va AL FINAL del IIFE**, tercera vez que se aplica la misma
+- **(Hoy `apu.js` vive dentro de `public/app.js` — ver «Página única», ago 2026.) En su época, el arranque automático iba AL FINAL del IIFE**, tercera vez que se aplicó la misma
   lección (`app.js`, `admin.js`): junto al gate moriría en la zona muerta temporal en la segunda visita
   de la misma pestaña, y por una promesa rechazada, o sea EN SILENCIO. Hay prueba del orden.
-- **El editor se enlaza desde `/admin.html`, no se embebe.** `vercel.json` sirve todo el sitio con
+- **El editor no se embebe por iframe** (hoy es una pestaña de la misma página; entonces se enlazaba desde `/admin.html`). `vercel.json` sirve todo el sitio con
   `X-Frame-Options: DENY`, así que el iframe que el encargo daba como alternativa quedaría en blanco en
   producción aunque funcione en local.
 - **El bloque `j` del e2e corre ANTES de `h-bis` y limpia `apu:*` al terminar.** Necesita el estado «sin
@@ -1594,6 +1594,63 @@ Hasta aquí el dueño miraba la baja mediana y descontaba a ojo.
   catálogo, el mapeo o el formato. El snapshot `tests/electrico_nogal_filas.json` deja el flujo
   reproducible sin el archivo original del dueño. Diferencias contra los dos Excel de referencia,
   ítem a ítem, en `docs/DIFERENCIAS_APU.md`.
+
+### Página única y token integrado (ago 2026)
+
+Encargo del dueño: «una sola página, cero fricción». Se retiraron `admin.html`, `apu.html`,
+`pliego.html`, `admin.js` y `apu.js`; queda `index.html` (tres pestañas: 🏠 `#/licitaciones` ·
+📊 `#/apu` · ⚙️ `#/admin`, tema oscuro `#0f172a`, barra inferior en móvil) y `public/app.js` como
+único módulo principal, ENSAMBLADO de los tres anteriores. Decisiones que no hay que re-aprender:
+
+- **El TOKEN va INTEGRADO en el frontend** (`const TOKEN = "MiExtraccion2025"`, en app.js, pliego.js
+  y onboarding.js) y el usuario NO ve ningún formulario, prompt ni error de token. Es decisión
+  explícita del dueño y hay que contarla exacta: **ese literal no es un secreto** — cualquiera que
+  lea el fuente lo ve — y la capa de seguridad REAL es Vercel Password Protection (más el gate de
+  clave del cliente). **Los endpoints NO se relajaron**: siguen exigiendo `HISTORICO_TOKEN` en el
+  servidor; lo que cambió es quién lo teclea. Un 401 se explica como lo que es («HISTORICO_TOKEN no
+  coincide con el de la aplicación»), jamás como «token inválido, escriba otro». En la lista pública
+  `tokenRechazado` degrada a la vista sin cifras en vez de entrar en bucle de 401 — el mismo
+  contrato que tenía un token caducado de sesión. La suite PROHÍBE que vuelvan `pedirToken`,
+  `exigirToken`, `pintarEstadoToken`, `CLAVE_TOKEN` y los formularios (`modal-token`,
+  `seccion-token`) — y que el token viaje en una URL.
+- **Un solo gate y un solo arranque, AL FINAL del IIFE** (la lección de siempre, ahora una sola
+  vez): el ancla de la prueba es `const guardadoRup = perfilRupGuardado();` DESPUÉS de
+  `let CATALOGO = null;` (estado del editor) y de `let dashboardCargando = false;` (estado del
+  panel). Cada pestaña arranca lo suyo la PRIMERA vez que se abre (`arrancadas.{apu,admin,pliego}`):
+  abrir la app no dispara el panel ni la carga del catálogo si nadie los mira.
+- **`pliego.js` y `onboarding.js` SIGUEN siendo archivos propios**: sus funciones (`numeroLocal`,
+  `lineasDePagina`, `parsearCsv`) están atadas por pruebas que las EXTRAEN por archivo. `pliego.js`
+  ya no arranca solo: expone `window.__pliegoArrancar` y la pestaña APU lo llama una vez. Su marcado
+  vive en `index.html` (sección plegada de la pestaña APU) con ids `pl-*` donde colisionaban.
+- **Ids renombrados porque dos elementos no pueden compartir id**: el RUP en JSON del panel es
+  `rup-json-archivo`/`rup-json-mensaje` (`rup-archivo` es el PDF del onboarding); el validador del
+  JSON de experiencia es `btn-exp-validar`/`exp-json-mensaje` (`btn-exp-cargar`/`exp-mensaje` son la
+  carga por CSV, cableada por onboarding.js y movida de la landing a la pestaña admin); el progreso
+  del lector es `pl-prog-barra` (`prog-barra` es el de la sincronización).
+- **El botón «APU» de una tarjeta o fila ya no abre otra página**: es `<button class="btn-apu"
+  data-apu-q="…">` y `abrirEditorConProceso` fija `paramsProceso` y cambia de pestaña. **La MISMA
+  cadena de parámetros** que viajaba a `/apu.html` viaja ahora en memoria: `precargarDesdeURL` no
+  cambió de contrato (y conserva `location.search` de respaldo para enlaces guardados). En las
+  delegaciones el `.btn-apu` se resuelve ANTES que la fila/banda, como siempre.
+- **`exp-produccion` nace VISIBLE**: colgaba de `pintarEstadoToken` («enséñalo si hay token»), y con
+  el token integrado esa condición es verdadera por construcción. Un bloque oculto sin nadie que lo
+  desoculte es un botón que no existe. Ídem «Nuevo RUP (PDF)» del panel: al elegir archivo se
+  ENSEÑA la landing, porque el progreso y los errores se pintan allí y dejarlos en una sección
+  oculta sería un botón mudo.
+- **Las URLs viejas redirigen** (`vercel.json` → `redirects`): `/admin.html` → `/#/admin`,
+  `/apu.html` y `/pliego.html` → `/#/apu`. Y hay prueba de que los cinco archivos retirados no
+  pueden volver: uno resucitado no lo cargaría nadie y quedaría desincronizado de app.js en
+  silencio, que es peor que un 404.
+- **El ensamblado NO tocó los invariantes que la suite ya vigilaba**: `let modo = "full"` sigue
+  apareciendo UNA vez, `modo = "auto"` ≥ 2, la cadena Génesis para en el primer paso que falla, el
+  desglose de probabilidad reproduce `p_ganar`, y las constantes del encadenado
+  (`ESPERA_ENTRE_TANDAS_MS`/`ESPERA_CANDADO_MS`/`BACKOFF_MS`) viven en la cabecera compartida — se
+  perdieron en el primer corte del ensamblado y la suite no lo habría visto: fue una auditoría de
+  «declarado en el original, referenciado en el ensamblado, sin declarar» la que las cazó. Esa
+  auditoría es la herramienta para cualquier consolidación futura.
+- **La guarda muerta se quitó, no se conservó por nostalgia**: `celdaApuProceso` abría con
+  `if (!leerToken()) return "—"`, que con el token integrado es inalcanzable. Un código que insinúa
+  que el botón puede no pintarse es documentación falsa.
 
 ## Datos del negocio (fuente de verdad)
 

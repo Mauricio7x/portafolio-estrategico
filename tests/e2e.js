@@ -3682,16 +3682,16 @@ async function main() {
         "el TOTAL de la hoja tiene que ser precio_venta + IVA(U), como cierra el Presupuesto Nogal 4");
     })();
 
-    /* ---- 5 · cableado del frontend nuevo ---- */
+    /* ---- 5 · cableado del frontend nuevo (la página única) ---- */
     {
-      const html = fs.readFileSync(path.join(__dirname, "..", "public", "apu.html"), "utf8");
+      const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
       for (const debe of ['id="btn-importar"', 'id="archivo-importar"', 'id="modal-importar"',
         'id="imp-tabla"', 'id="btn-imp-aplicar"', "/xlsx_lectura.js", "/apu_libro.js"]) {
-        assert.ok(html.includes(debe), `apu.html sin ${debe}`);
+        assert.ok(html.includes(debe), `index.html sin ${debe}`);
       }
-      const js = fs.readFileSync(path.join(__dirname, "..", "public", "apu.js"), "utf8");
-      assert.ok(js.includes("/api/apu/importar"), "apu.js no llama a la acción de importación");
-      assert.ok(js.includes("DecompressionStream"), "apu.js debe inflar los .xlsx DEFLATE del Excel real");
+      const js = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      assert.ok(js.includes("/api/apu/importar"), "app.js no llama a la acción de importación");
+      assert.ok(js.includes("DecompressionStream"), "app.js debe inflar los .xlsx DEFLATE del Excel real");
       assert.ok(!js.includes("FormData"), "el ARCHIVO no viaja al servidor: solo las filas parseadas");
       const fuenteLect = fs.readFileSync(path.join(__dirname, "..", "public", "xlsx_lectura.js"), "utf8");
       const fuenteLibro = fs.readFileSync(path.join(__dirname, "..", "public", "apu_libro.js"), "utf8");
@@ -7072,9 +7072,12 @@ async function main() {
          comportamiento visual — y se presenta como lo que es) */
       {
         const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        /* «Cargar experiencia laboral» vive desde ago 2026 en la pestaña de
+           administración de la MISMA página (id="exp-panel"), no en la landing:
+           la landing quedó en dos acciones (subir RUP / acceso con clave). */
         for (const debe of ['id="onboarding"', "Convertí tu RUP en contratos.", 'id="rup-archivo"',
           'id="btn-subir-rup"', "/onboarding.js", "formato_experiencia.csv",
-          "Cargar experiencia laboral (opcional)", 'id="rup-progreso"', 'id="btn-ir-gate"']) {
+          'id="exp-panel"', 'id="btn-exp-cargar"', 'id="rup-progreso"', 'id="btn-ir-gate"']) {
           assert.ok(html.includes(debe), `index.html sin ${debe}`);
         }
         // el gate SIGUE existiendo (nace oculto): el acceso con clave a los
@@ -7752,55 +7755,74 @@ async function main() {
         assert.strictEqual((await redis.scan("apu:*")).length, 0, "el bloque j dejó claves apu:* y h-bis empieza de cero");
       }
 
-      /* ---- j.10 el frontend: cableado, orden del arranque y el «|| 0» ---- */
+      /* ---- j.10 el frontend: cableado, orden del arranque y el «|| 0» ----
+         Desde ago 2026 la app es UNA página (index.html) y UN archivo
+         (app.js): el editor de APU vive en la pestaña #/apu y el panel en
+         #/admin. Las invariantes son las mismas; el archivo donde se miran, no. */
       {
-        const apuHtml = fs.readFileSync(path.join(__dirname, "..", "public", "apu.html"), "utf8");
-        const apuJs = fs.readFileSync(path.join(__dirname, "..", "public", "apu.js"), "utf8");
+        const unoHtml = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        const unoJs = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
         const xlsxJs = fs.readFileSync(path.join(__dirname, "..", "public", "xlsx.js"), "utf8");
-        new Function(apuJs); // valida sintaxis sin ejecutar
+        new Function(unoJs); // valida sintaxis sin ejecutar
         new Function(xlsxJs);
 
         for (const debe of ['id="gate"', 'id="app"', 'id="objeto"', 'id="btn-inferir"', 'id="departamento"',
           'id="aiu"', 'id="utilidad"', 'id="imprevistos"', 'id="anticipo"', 'id="ajuste-competitivo"',
           'id="factor-baja"', 'id="btn-sugerir-baja"', 'id="tabla"', 'id="btn-calcular"', 'id="btn-agregar"',
-          'id="btn-exportar"', 'id="btn-guardar"', 'id="btn-listar"', 'id="modal-token"', 'id="seccion-resumen"',
-          "/apu.js", "/xlsx.js", "cdn.tailwindcss.com"]) {
-          assert.ok(apuHtml.includes(debe), `apu.html sin ${debe}`);
+          'id="btn-exportar"', 'id="btn-guardar"', 'id="btn-listar"', 'id="seccion-resumen"',
+          'id="tab-apu"', 'data-tab="apu"',
+          "/app.js", "/xlsx.js", "cdn.tailwindcss.com"]) {
+          assert.ok(unoHtml.includes(debe), `index.html sin ${debe}`);
         }
-        assert.ok(apuJs.includes('"231105"'), "apu.js sin la clave del gate");
+        assert.ok(unoJs.includes('"231105"'), "app.js sin la clave del gate");
+
+        /* EL TOKEN VA INTEGRADO (decisión del dueño, ago 2026): no existe
+           ningún formulario ni modal que lo pida — Vercel Password Protection
+           es la capa de seguridad real y el token solo guarda las escrituras
+           de Redis y las cifras del perfil. */
+        assert.ok(unoJs.includes('const TOKEN = "MiExtraccion2025"'), "app.js sin el token integrado");
+        assert.ok(!unoHtml.includes('id="modal-token"') && !unoHtml.includes('id="form-token"'),
+          "el formulario del token no puede reaparecer en la página");
 
         /* EL ARRANQUE AUTOMÁTICO VA AL FINAL DEL IIFE. Misma lección que ya
-           costó cara en app.js y en admin.js: colocado junto al gate, en la
-           segunda visita de la misma pestaña moriría en la zona muerta
-           temporal y lo haría EN SILENCIO (promesa rechazada). */
+           costó cara tres veces: colocado junto al gate, en la segunda visita
+           de la misma pestaña moriría en la zona muerta temporal y lo haría
+           EN SILENCIO (promesa rechazada). El arranque final tiene que ir
+           DESPUÉS del estado de los tres módulos consolidados. */
         {
-          const iAuto = apuJs.indexOf("if (accesoConcedido()) abrirApp();");
-          const iEstado = apuJs.indexOf("let CATALOGO = null;");
-          assert.ok(iAuto > 0 && iEstado > 0, "no se encontraron el arranque automático y el estado del editor");
-          assert.ok(iAuto > iEstado,
+          const iAuto = unoJs.indexOf("const guardadoRup = perfilRupGuardado();");
+          const iEditor = unoJs.indexOf("let CATALOGO = null;");
+          const iPanel = unoJs.indexOf("let dashboardCargando = false;");
+          assert.ok(iAuto > 0 && iEditor > 0 && iPanel > 0, "no se encontraron el arranque automático y el estado de los módulos");
+          assert.ok(iAuto > iEditor && iAuto > iPanel,
             "el arranque automático corre antes de declarar el estado: morirá en la zona muerta temporal");
         }
 
         // el token va por CABECERA, jamás en la URL (logs de acceso e historial)
-        assert.ok(!/\/api\/apu\/[a-z]+\?[^`"']*token=/.test(apuJs),
+        assert.ok(!/\/api\/apu\/[a-z]+\?[^`"']*token=/.test(unoJs),
           "el token de /api/apu no puede viajar en la URL");
-        assert.ok(apuJs.includes('"x-historico-token"'), "apu.js debe mandar el token por cabecera");
+        assert.ok(unoJs.includes('"x-historico-token"'), "app.js debe mandar el token por cabecera");
 
         /* NINGÚN `|| 0` SOBRE UNA CIFRA DEL SERVIDOR: convierte «no sé» en
-           «cero» y lo hace creíble. Es la prueba que ya existe para los otros
-           dos frontends, extendida al tercero. */
-        const limpio = sinComentarios(apuJs);
+           «cero» y lo hace creíble. */
+        const limpio = sinComentarios(unoJs);
         assert.ok(!/\b(?:it|p|s|r|e)\.[a-z_]*(?:total|procesos|contados|mediana|margen|precio|costo)[a-z_]*\s*\|\|\s*0/i.test(limpio),
           "un «|| 0» sobre una cifra del servidor convierte «no sé» en «cero»");
         assert.ok(/Number\.isFinite\(n\) \? /.test(limpio),
           "las cifras deben comprobarse con Number.isFinite antes de pintarse");
 
-        /* ---- precarga desde el panel y bloque de rentabilidad ---- */
-        assert.ok(/new URLSearchParams\(location\.search\)/.test(limpio),
-          "el editor debe precargarse desde la querystring: es lo que hace útil al botón «APU» de la fila");
-        assert.ok(limpio.includes("/api/apu/rentabilidad"), "apu.js no llama a la acción de rentabilidad");
+        /* ---- precarga desde el panel y bloque de rentabilidad ----
+           El botón «APU» de una tarjeta o de una fila ya no abre otra página:
+           fija `paramsProceso` y cambia a la pestaña. La MISMA cadena de
+           parámetros de siempre, en memoria; la querystring queda de respaldo
+           para los enlaces guardados. */
+        assert.ok(/let paramsProceso/.test(limpio) && /new URLSearchParams\(location\.search\)/.test(limpio),
+          "el editor debe precargarse de paramsProceso con la querystring de respaldo");
+        assert.ok(/function abrirEditorConProceso\(/.test(limpio),
+          "sin abrirEditorConProceso el botón APU de una fila no tiene a dónde llevar");
+        assert.ok(limpio.includes("/api/apu/rentabilidad"), "app.js no llama a la acción de rentabilidad");
         for (const debe of ["id-proceso", "btn-rentabilidad", "seccion-rentabilidad"]) {
-          assert.ok(apuHtml.includes(`id="${debe}"`), `apu.html sin #${debe}`);
+          assert.ok(unoHtml.includes(`id="${debe}"`), `index.html sin #${debe}`);
         }
         // el borrador tiene que llevar SU proceso, o el badge del panel no
         // tendría con qué encenderse
@@ -7815,33 +7837,19 @@ async function main() {
             "la segunda precarga tiene que ir DESPUÉS de cargar el catálogo, o el departamento no se seleccionaría");
         }
 
-        /* ---- el enganche en el panel ----
-           `admin.js` se lee aquí y no se reutiliza la variable del paso h: ese
-           bloque va DESPUÉS y su `const` no está en el alcance de este. */
-        const admJsApu = fs.readFileSync(path.join(__dirname, "..", "public", "admin.js"), "utf8");
-        const admHtmlApu = fs.readFileSync(path.join(__dirname, "..", "public", "admin.html"), "utf8");
-        const limpioAdmin = sinComentarios(admJsApu);
-        assert.ok(/closest\("\.btn-apu"\)/.test(limpioAdmin),
-          "admin.js debe ignorar el clic del botón APU en el manejador de la fila, o abriría además SECOP II");
-        assert.ok(limpioAdmin.indexOf('e.target.closest(".btn-apu")') < limpioAdmin.indexOf('const fila = e.target.closest(".fila-proceso")'),
+        /* ---- el enganche en el panel (mismo archivo, pestaña admin) ---- */
+        assert.ok(/closest\("\.btn-apu"\)/.test(limpio),
+          "el manejador de la fila debe resolver el botón APU, o abriría además SECOP II");
+        assert.ok(limpio.indexOf('e.target.closest(".btn-apu")', limpio.indexOf('$("d-destacados")')) <
+          limpio.indexOf('const fila = e.target.closest(".fila-proceso")'),
           "la guarda del botón APU tiene que ir ANTES de resolver la fila");
-        assert.ok(/function celdaApuProceso\([\s\S]{0,200}leerToken\(\)/.test(limpioAdmin),
-          "el botón APU solo se pinta con token en la pestaña");
-        assert.ok(limpioAdmin.includes("/api/apu/listar?perfil="),
+        assert.ok(limpio.includes("/api/apu/listar?perfil="),
           "el listado de borradores se consulta aparte de /api/resumen, que se cachea 300 s");
-        assert.ok(limpioAdmin.indexOf("await cargarApuListos(perfil)") < limpioAdmin.indexOf("pintarDashboard(cuerpo,"),
+        assert.ok(limpio.indexOf("await cargarApuListos(perfil)") < limpio.indexOf("pintarDashboard(cuerpo,"),
           "el listado tiene que cargarse ANTES de pintar, o el badge saldría una pintada tarde");
-        assert.ok(admHtmlApu.includes("<th class=\"py-1\">APU</th>"), "admin.html sin la columna APU");
-        assert.ok(limpioAdmin.includes('colspan="7"'),
+        assert.ok(unoHtml.includes("<th class=\"py-1\">APU</th>"), "index.html sin la columna APU");
+        assert.ok(limpio.includes('colspan="7"'),
           "el estado vacío de la tabla tiene que cubrir las 7 columnas, no 6");
-
-        // el campo de token vacío AVISA (no puede hacer `return` a secas)
-        {
-          const i = limpio.indexOf('$("form-token").addEventListener');
-          const cuerpo = limpio.slice(i, i + 700);
-          assert.ok(/token-error/.test(cuerpo) && /if \(!t\)/.test(cuerpo),
-            "el envío del token con el campo vacío debe avisar, no dejar el botón mudo");
-        }
 
         // la sugerencia de baja exige BASE antes de interpolar una cifra
         assert.ok(/procesos\s*<\s*r\.min_procesos/.test(limpio),
@@ -7852,13 +7860,10 @@ async function main() {
         assert.ok(/sin regi.n cotizada/i.test(limpio),
           "el desplegable de departamentos debe marcar cuáles no tienen precio de referencia");
 
-        // el panel enlaza el editor, y como ENLACE: X-Frame-Options: DENY
-        // impide el iframe que el encargo daba como alternativa
-        const admHtml2 = fs.readFileSync(path.join(__dirname, "..", "public", "admin.html"), "utf8");
-        assert.ok(admHtml2.includes('id="seccion-apu"') && admHtml2.includes('href="/apu.html"'),
-          "admin.html no enlaza el editor de APU");
-        assert.ok(!/<iframe[^>]+apu\.html/.test(admHtml2),
-          "no puede embeberse por iframe: el sitio se sirve con X-Frame-Options: DENY");
+        // el editor vive en una PESTAÑA de la misma página: nada apunta ya a
+        // /apu.html y ningún iframe lo embebe (X-Frame-Options: DENY)
+        assert.ok(!unoHtml.includes('href="/apu.html"') && !/<iframe/.test(unoHtml),
+          "el editor es una pestaña: ni enlaces a /apu.html ni iframes");
       }
 
       /* ---- j.11 el exportador .xlsx: un ZIP válido, con estilos de verdad --- */
@@ -8685,14 +8690,14 @@ async function main() {
 
       /* ---- j-ter.9 · el editor: recuadro, botón y la perilla correcta ---- */
       {
-        const html = fs.readFileSync(path.join(__dirname, "..", "public", "apu.html"), "utf8");
-        const js = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "apu.js"), "utf8"));
+        const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        const js = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
         for (const debe of ["seccion-precio-sugerido", "ps-precio", "ps-descuento", "ps-veg", "ps-prob",
           "ps-opciones", "ps-curva", "btn-aplicar-descuento"]) {
-          assert.ok(html.includes(`id="${debe}"`), `apu.html sin #${debe}`);
+          assert.ok(html.includes(`id="${debe}"`), `index.html sin #${debe}`);
         }
         assert.ok(/pintarPrecioSugerido\(c\.optimizador\)/.test(js),
-          "apu.js tiene que pintar el bloque «optimizador» de la respuesta");
+          "app.js tiene que pintar el bloque «optimizador» de la respuesta");
         /* EL BOTÓN ESCRIBE LA PERILLA DEL APU, NO LA BAJA DEL MERCADO. Es la
            confusión que cuesta un tercio del precio en este mismo corpus: el
            `descuento` se mide contra el presupuesto oficial y `factor-baja` se
@@ -8807,26 +8812,36 @@ async function main() {
         assert.ok(/×0\.85/.test(pintado(detalle.ajustes.find((a) => a.nombre === "baja_mercado"))),
           "con el factor presente, el tooltip tiene que pintarlo");
       }
-      // …pero el formulario SIGUE existiendo para el detalle de competencia,
-      // que sí exige credencial porque abre el corpus histórico de una entidad
-      assert.ok(/function pedirToken\(/.test(js) && /cargarDetalle/.test(js),
-        "el formulario del token debe seguir existiendo para el detalle de competencia");
+      /* …y el detalle de competencia usa el TOKEN INTEGRADO (ago 2026): el
+         endpoint sigue exigiendo credencial en el servidor, pero el usuario ya
+         no ve ningún formulario — `pedirToken` murió con la página única. */
+      assert.ok(!/function pedirToken\(/.test(js),
+        "pedirToken volvió: el token va integrado y ningún formulario debe pedirlo");
       {
         const i = js.indexOf("async function cargarDetalle");
         const cuerpo = js.slice(i, js.indexOf("\n  }", i));
-        assert.ok(i > 0 && /pedirToken\(/.test(cuerpo),
-          "cargarDetalle debe seguir pidiendo el token: /api/competencia-detalle no se relajó");
+        assert.ok(i > 0 && /leerToken\(\)/.test(cuerpo),
+          "cargarDetalle debe mandar el token integrado: /api/competencia-detalle no se relajó");
       }
 
-      /* panel de administración: encadenado de la sincronización */
-      const admHtml = fs.readFileSync(path.join(__dirname, "..", "public", "admin.html"), "utf8");
-      for (const debe of ['id="gate"', 'id="app"', "/admin.js", "cdn.tailwindcss.com",
-        'id="btn-iniciar"', 'id="btn-detener"', 'id="prog-barra"', 'id="m-tandas"', 'id="chip-texto"']) {
-        assert.ok(admHtml.includes(debe), `admin.html sin ${debe}`);
+      /* LAS PÁGINAS RETIRADAS NO PUEDEN VOLVER: la app es UNA página y un
+         archivo resucitado no lo cargaría nadie — quedaría desincronizado de
+         app.js en silencio, que es peor que un 404. Sus URLs viejas viven como
+         `redirects` en vercel.json. */
+      for (const viejo of ["admin.html", "apu.html", "pliego.html", "admin.js", "apu.js"]) {
+        assert.ok(!fs.existsSync(path.join(__dirname, "..", "public", viejo)),
+          `public/${viejo} volvió: la app es una sola página (index.html + app.js)`);
       }
-      const admJs = fs.readFileSync(path.join(__dirname, "..", "public", "admin.js"), "utf8");
-      new Function(admJs); // valida sintaxis sin ejecutar
-      assert.ok(admJs.includes('"231105"'), "admin.js sin la clave de acceso");
+
+      /* panel de administración: pestaña #/admin de la MISMA página. Los
+         alias conservan los nombres históricos de las variables para no tocar
+         cien aserciones que siguen midiendo lo mismo. */
+      const admHtml = html;
+      for (const debe of ['id="tab-admin"', 'data-tab="admin"',
+        'id="btn-iniciar"', 'id="btn-detener"', 'id="prog-barra"', 'id="m-tandas"', 'id="chip-texto"']) {
+        assert.ok(admHtml.includes(debe), `index.html sin ${debe}`);
+      }
+      const admJs = js;
       // la secuencia de modos es lo único que puede colgar el encadenado
       assert.ok(/modo=\$\{modo\}/.test(admJs), "admin.js debe parametrizar el modo, no fijarlo");
       assert.ok(/let modo = "full"/.test(admJs), "la primera tanda debe ser modo=full");
@@ -8900,19 +8915,22 @@ async function main() {
           "descargar volvió a ser una función propia: son 13 y el plan Hobby admite 12");
       }
 
-      /* ══════ página /pliego.html: lectura de pliegos PDF ══════
-         Vive APARTE de /apu.html (el editor de APU) a propósito: son dos
-         preguntas distintas —«¿qué dice este pliego?» y «¿cuánto cuesta este
-         ítem?»— y cada página tiene su catálogo. Ver CLAUDE.md. */
-      const apuHtml = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.html"), "utf8");
+      /* ══════ lector de pliegos PDF: sección de la pestaña APU ══════
+         `pliego.js` sigue siendo un ARCHIVO propio (sus funciones están atadas
+         por pruebas que las extraen por archivo) pero su marcado vive en
+         index.html — dentro de la pestaña APU, plegado en un <details>. Son
+         dos preguntas distintas —«¿qué dice este pliego?» y «¿cuánto cuesta
+         este ítem?»— y cada una conserva su catálogo. Ver CLAUDE.md. */
+      const apuHtml = html;
       const apuJs = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
       new Function(apuJs); // valida sintaxis sin ejecutar
-      for (const debe of ['id="gate"', 'id="app"', "/pliego.js", "cdn.tailwindcss.com",
+      for (const debe of ["/pliego.js",
         'id="btn-extraer"', 'id="btn-ocr"', 'id="pliego-archivo"', 'id="pliego-url"',
-        'id="r-items"', 'id="prog-barra"', 'id="aviso-limitaciones"']) {
-        assert.ok(apuHtml.includes(debe), `pliego.html sin ${debe}`);
+        'id="r-items"', 'id="pl-prog-barra"', 'id="aviso-limitaciones"']) {
+        assert.ok(apuHtml.includes(debe), `index.html sin ${debe}`);
       }
-      assert.ok(apuJs.includes('"231105"'), "pliego.js sin la clave de acceso");
+      // el gate es UNO solo y vive en app.js: pliego.js no puede llevar copia
+      assert.ok(!apuJs.includes('"231105"'), "pliego.js no puede duplicar el gate: hay uno solo en app.js");
       assert.ok(/accept="\.pdf,application\/pdf"/.test(apuHtml), "el selector debe aceptar PDF");
       assert.ok(/type="url"/.test(apuHtml), "falta el campo de URL del pliego (muchos pliegos SECOP son URLs públicas)");
 
@@ -8940,25 +8958,23 @@ async function main() {
       assert.ok(/salida \+= "\\t"/.test(apuJs),
         "apu.js debe separar las columnas con TABULADOR al reconstruir las filas por coordenadas");
 
-      /* ARRANQUE AL FINAL DEL IIFE (la lección que costó cara en app.js y se
-         repitió en admin.js): el arranque no puede correr antes de declarar el
-         estado que sus funciones leen. */
+      /* ARRANQUE AL FINAL DEL IIFE (la lección que costó cara tres veces): el
+         lector no arranca solo — expone `window.__pliegoArrancar` y la pestaña
+         APU lo llama la primera vez que se abre. La exposición va al FINAL,
+         después de declarar el estado que sus funciones leen. */
       {
-        const iAuto = apuJs.indexOf("if (accesoConcedido()) abrirApp();");
+        const iAuto = apuJs.indexOf("window.__pliegoArrancar");
         const iEstado = apuJs.indexOf("let filas = [];");
-        assert.ok(iAuto > 0 && iEstado > 0, "no se encontraron el arranque automático y el estado de la página");
+        assert.ok(iAuto > 0 && iEstado > 0, "no se encontraron el gancho de arranque y el estado del lector");
         assert.ok(iAuto > iEstado,
-          "el arranque automático de /apu corre antes de declarar su estado: morirá en la zona muerta temporal");
+          "el gancho de arranque del lector se expone antes de declarar su estado: morirá en la zona muerta temporal");
       }
-      // ninguna pulsación sin respuesta visible: el token vacío AVISA
-      assert.ok(/if \(!v\) \{[^}]*mensaje\(/.test(sinComentarios(apuJs)),
-        "el token vacío debe avisar, no hacer `return` a secas (el botón parecería muerto)");
-      // sessionStorage se lee y se escribe dentro de try: en modo restringido lanza
-      assert.ok(!/[^{]\s*sessionStorage\.(?:get|set|remove)Item[^}]*$/m.test(sinComentarios(apuJs))
-        || /try \{ return sessionStorage/.test(apuJs),
-        "sessionStorage debe usarse dentro de try/catch");
+      // el token va integrado también aquí: ni formulario ni sessionStorage
+      assert.ok(apuJs.includes('const TOKEN = "MiExtraccion2025"'), "pliego.js sin el token integrado");
+      assert.ok(!/sessionStorage\.(?:get|set|remove)Item/.test(sinComentarios(apuJs)),
+        "pliego.js ya no guarda nada en sessionStorage: el token va integrado y el gate es de app.js");
 
-      for (const [archivo, fuente] of [["app.js", js], ["admin.js", admJs], ["apu.js", apuJs]]) {
+      for (const [archivo, fuente] of [["app.js", js], ["pliego.js", apuJs]]) {
         // `Number(x) || 0` sí es legítimo: normaliza un valor YA leído. Lo que
         // no puede haber es `i.campo || 0` a pelo sobre el conteo.
         const codigo = sinComentarios(fuente).replace(/Number\([^)]*\)\s*\|\|\s*0/g, "");
@@ -9028,18 +9044,16 @@ async function main() {
         "/api/competencia-detalle", "x-historico-token", "sessionStorage", "MOTIVO_EXCLUSION"]) {
         assert.ok(js.includes(debe), `app.js sin ${debe} (el badge no abre el detalle)`);
       }
-      /* el formulario del token: clave acordada, etiqueta explícita y —sobre
-         todo— NINGÚN camino silencioso. Un botón que «no hace nada» es peor
-         que un error: el campo vacío tiene que avisar. */
-      assert.ok(/CLAVE_TOKEN = "historico_token"/.test(js), "la clave de sesión debe ser historico_token");
-      assert.ok(js.includes("Guardar y ver detalle"), "el botón debe decir «Guardar y ver detalle»");
-      assert.ok(/Pegue el token/.test(js), "el campo vacío debe avisar, nunca quedarse mudo");
-      assert.ok(/Token inválido/.test(js), "un 401 debe decir «Token inválido» y dejar escribir otro");
-      assert.ok(/\$\("btn-token"\)\.addEventListener\("click", enviar\)/.test(js)
-        && /\$\("form-token"\)\.addEventListener\("submit", enviar\)/.test(js),
-        "el envío debe estar cableado al submit Y al clic del botón");
-      assert.ok(/try \{ return sessionStorage\.getItem/.test(js),
-        "leer sessionStorage debe ir protegido: si lanza, el clic moría en silencio");
+      /* EL TOKEN VA INTEGRADO (ago 2026): el usuario no ve ningún formulario
+         ni mensaje de token. Un 401 del despliegue —HISTORICO_TOKEN distinto
+         del integrado— se dice con esas palabras, no con «Token inválido». */
+      assert.ok(!/CLAVE_TOKEN/.test(js), "la clave de sesión del token murió con el formulario");
+      assert.ok(!js.includes("Guardar y ver detalle") && !/Pegue el token/.test(js),
+        "reapareció el formulario del token: el usuario nunca debe teclearlo");
+      assert.ok(/HISTORICO_TOKEN no coincide/.test(js),
+        "un 401 debe explicarse como lo que es: el token integrado no coincide con el del despliegue");
+      assert.ok(/try \{ return sessionStorage\.getItem/.test(js) || /try \{ sesionConClave = sessionStorage\.getItem/.test(js),
+        "leer sessionStorage debe ir protegido: si lanza, el arranque moriría en silencio");
       // mostrar/ocultar el modal no puede depender del orden del CSS generado
       assert.ok(/style\.display = "flex"/.test(js) && /style\.display = "none"/.test(js),
         "el modal debe fijar display en línea (las clases hidden/flex compiten por la misma propiedad)");
@@ -9069,31 +9083,34 @@ async function main() {
       // los delegados escuchan en el contenedor: las tarjetas se repintan
       assert.ok(/\$\("lista"\)\.addEventListener\("click"/.test(js), "el clic del badge debe ir por delegación");
 
-      /* ---- panel: dashboard de procesos y carga de RUP ---- */
+      /* ---- panel: dashboard de procesos y carga de RUP ----
+         El input del RUP en JSON se llama `rup-json-archivo` desde la página
+         única: `rup-archivo` es el PDF del onboarding (otra sección, otro
+         formato) y dos inputs no pueden compartir id. */
       for (const debe of ['id="dashboard"', 'id="d-perfil"', 'id="btn-actualizar"', 'id="d-visibles"',
         'id="d-obra"', 'id="d-consultoria"', 'id="d-semana"', 'id="d-barras"', 'id="d-entidades"',
         'id="d-departamentos"', 'id="d-destacados"', 'id="d-meta"', 'id="d-skeleton"',
-        'id="seccion-rup"', 'id="rup-archivo"', 'id="rup-preview"', 'id="btn-rup-cargar"',
-        'id="btn-rup-cancelar"', 'id="btn-rup-descargar"', 'id="rup-actual"',
-        'id="seccion-token"', 'id="input-token-admin"']) {
-        assert.ok(admHtml.includes(debe), `admin.html sin ${debe} (falta el dashboard o la carga de RUP)`);
+        'id="seccion-rup"', 'id="rup-json-archivo"', 'id="rup-preview"', 'id="btn-rup-cargar"',
+        'id="btn-rup-cancelar"', 'id="btn-rup-descargar"', 'id="rup-actual"']) {
+        assert.ok(admHtml.includes(debe), `index.html sin ${debe} (falta el dashboard o la carga de RUP)`);
       }
+      // el formulario del token no existe en ninguna pestaña
+      assert.ok(!admHtml.includes('id="seccion-token"') && !admHtml.includes('id="input-token-admin"'),
+        "reapareció la sección del token del panel: el token va integrado");
       // las tarjetas llevan los colores del encargo y el esqueleto pulsa
       for (const debe of ["bg-blue-50", "bg-green-50", "bg-amber-50", "bg-red-50", "animate-pulse"]) {
-        assert.ok(admHtml.includes(debe), `admin.html sin ${debe} (tarjetas del dashboard)`);
+        assert.ok(admHtml.includes(debe), `index.html sin ${debe} (tarjetas del dashboard)`);
       }
       // responsive: 2 columnas en móvil → 4 en escritorio, tablas apiladas
       assert.ok(/grid-cols-2[^"]*sm:grid-cols-4/.test(admHtml), "las tarjetas deben apilarse en 2 columnas en móvil");
       assert.ok(/lg:grid-cols-2/.test(admHtml), "las tablas laterales deben apilarse en móvil");
-      // el archivo solo acepta JSON
-      assert.ok(/id="rup-archivo"[^>]*accept="\.json/.test(admHtml), "el input de archivo debe aceptar solo .json");
+      // el archivo del RUP en JSON solo acepta JSON
+      assert.ok(/id="rup-json-archivo"[^>]*accept="\.json/.test(admHtml), "el input del RUP en JSON debe aceptar solo .json");
 
       for (const debe of ["/api/resumen", "/api/admin/rup", "cache_bust", "X-Cache", "x-historico-token",
         "FileReader", "readAsText", "revokeObjectURL", "visibilityState", "dashboard_perfil"]) {
-        assert.ok(admJs.includes(debe), `admin.js sin ${debe} (el panel o la carga de RUP no están cableados)`);
+        assert.ok(admJs.includes(debe), `app.js sin ${debe} (el panel o la carga de RUP no están cableados)`);
       }
-      // la clave de sesión del token es LA MISMA que la de la app
-      assert.ok(/CLAVE_TOKEN = "historico_token"/.test(admJs), "el panel debe reutilizar la clave de sesión historico_token");
       // el refresco automático es el mismo TTL de la caché del endpoint
       assert.ok(/REFRESCO_MS = 300000/.test(admJs), "el refresco automático debe ser de 5 minutos");
       // …y NO se dispara con la pestaña oculta
@@ -9106,35 +9123,26 @@ async function main() {
       // el token NUNCA viaja en la URL desde el navegador
       assert.ok(!/\/api\/(resumen|admin\/rup)\?[^`"']*token=/.test(admJs),
         "el token no puede ir en la URL del panel: va por cabecera");
-      // sessionStorage siempre dentro de try (en modo restringido lanza)
-      assert.ok(/try \{ return sessionStorage\.getItem\(CLAVE_TOKEN\)/.test(admJs),
-        "leer el token debe ir protegido: si lanza, el panel moriría en silencio");
-      // el campo de token vacío AVISA, nunca se queda mudo
-      assert.ok(/Pegue el token antes de guardar/.test(admJs), "el token vacío debe avisar");
-      assert.ok(/\$\("btn-token-admin"\)\.addEventListener\("click", enviarToken\)/.test(admJs)
-        && /\$\("form-token-admin"\)\.addEventListener\("submit", enviarToken\)/.test(admJs),
-        "el token debe estar cableado al submit Y al clic");
-      // sin token, el panel no se queda en blanco: dice qué falta
-      assert.ok(/Configure su token de acceso/.test(admJs), "sin token el panel debe explicar qué hacer");
-      /* ARRANQUE (la misma lección que costó cara en app.js): el arranque
-         automático va DESPUÉS de declarar el estado del panel, o `abrirApp`
-         reventaría en la zona muerta temporal y lo haría en silencio. */
-      {
-        const iAuto = admJs.indexOf("if (accesoConcedido()) abrirApp();");
-        const iEstado = admJs.indexOf('const CLAVE_TOKEN = "historico_token"');
-        assert.ok(iAuto > 0 && iEstado > 0, "no se encontraron el arranque automático y el estado del panel");
-        assert.ok(iAuto > iEstado,
-          "el arranque automático del panel corre antes de declarar su estado: morirá en la zona muerta temporal");
-      }
+      // el perfil recordado se lee protegido (en modo restringido lanza)
+      assert.ok(/try \{ return sessionStorage\.getItem\(CLAVE_PERFIL\)/.test(admJs),
+        "leer el perfil recordado debe ir protegido: si lanza, el panel moriría en silencio");
+      /* ARRANQUE PEREZOSO: el panel arranca la PRIMERA vez que se abre su
+         pestaña (activarPestana → arrancarPaneles), nunca al cargar la página:
+         abrir la app no puede gastar invocaciones en un panel que nadie mira. */
+      assert.ok(/arrancadas\.admin\b[\s\S]{0,120}arrancarPaneles\(\)/.test(admJs),
+        "el panel debe arrancar perezoso desde su pestaña, una sola vez");
 
-      /* ---- panel: experiencia ejecutada y auditoría de cobertura ---- */
-      for (const debe of ['id="seccion-experiencia"', 'id="exp-json"', 'id="btn-exp-cargar"',
+      /* ---- panel: experiencia ejecutada y auditoría de cobertura ----
+         El botón de validar el JSON se llama `btn-exp-validar` en la página
+         única: `btn-exp-cargar` es el de la carga por CSV (onboarding.js), y
+         dos botones no pueden compartir id. Ídem `exp-json-mensaje`. */
+      for (const debe of ['id="seccion-experiencia"', 'id="exp-json"', 'id="btn-exp-validar"',
         'id="btn-exp-confirmar"', 'id="btn-exp-cancelar"', 'id="btn-exp-descargar"',
-        'id="exp-preview"', 'id="exp-actual"', 'id="exp-mensaje"', 'id="exp-errores"',
+        'id="exp-preview"', 'id="exp-actual"', 'id="exp-json-mensaje"', 'id="exp-errores"',
         'id="seccion-cobertura"', 'id="c-perfil"', 'id="c-usar-experiencia"', 'id="btn-cobertura"',
         'id="btn-cobertura-exportar"', 'id="c-faltantes"', 'id="c-criticos"', 'id="c-altos"',
         'id="c-medios"', 'id="c-bajos"', 'id="c-alerta"', 'id="c-skeleton"', 'id="c-excluidos"']) {
-        assert.ok(admHtml.includes(debe), `admin.html sin ${debe} (falta la experiencia o la auditoría de cobertura)`);
+        assert.ok(admHtml.includes(debe), `index.html sin ${debe} (falta la experiencia o la auditoría de cobertura)`);
       }
       // el toggle de priorización por experiencia viene ENCENDIDO (el encargo:
       // «activado por defecto si hay experiencia cargada»; admin.js lo apaga
@@ -9157,23 +9165,17 @@ async function main() {
       {
         for (const debe of ['id="exp-produccion"', 'id="btn-exp-cadena"', 'id="btn-exp-repo"',
           'id="btn-exp-cobertura"', 'id="btn-exp-full"', 'id="seccion-sync"']) {
-          assert.ok(admHtml.includes(debe), `admin.html sin ${debe} (falta la puesta en producción sin terminal)`);
+          assert.ok(admHtml.includes(debe), `index.html sin ${debe} (falta la puesta en producción sin terminal)`);
         }
-        /* Oculto por defecto: los tres pasos ESCRIBEN en Redis y un botón que no
-           puede funcionar es peor que un botón ausente. Lo enseña
-           `pintarEstadoToken`, que ya corre al arrancar y en cada cambio de
-           token: un solo sitio del que depender. */
+        /* SIEMPRE VISIBLE desde el token integrado: la condición «hay token»
+           es verdadera por construcción, así que `pintarEstadoToken` murió y
+           un bloque que naciera oculto no lo desocultaría nadie. */
         const iProd = admHtml.indexOf('id="exp-produccion"');
-        assert.ok(/\bhidden\b/.test(admHtml.slice(iProd, iProd + 200)),
-          "el bloque de puesta en producción tiene que venir OCULTO: sin token sus tres pasos no pueden funcionar");
+        assert.ok(!/\bhidden\b/.test(admHtml.slice(iProd, admHtml.indexOf(">", iProd) + 1)),
+          "el bloque de puesta en producción nacería oculto y ya no existe pintarEstadoToken para enseñarlo");
         const admJsLimpio = sinComentarios(admJs);
-        /* La aserción mira la EXPRESIÓN, no la cercanía: con una comprobación
-           de proximidad, cambiar `!hay` por `true` dejaría el bloque oculto para
-           siempre con la suite en verde. */
-        assert.ok(/pintarEstadoToken[\s\S]{0,600}\$\("exp-produccion"\)/.test(admJsLimpio),
-          "la visibilidad del bloque debe colgar de pintarEstadoToken, no de un tercer sitio que se desincronice");
-        assert.ok(/classList\.toggle\("hidden", !hay\)/.test(admJsLimpio),
-          "el bloque tiene que enseñarse CON token y ocultarse sin él: la condición es parte de la prueba");
+        assert.ok(!/pintarEstadoToken/.test(admJsLimpio),
+          "pintarEstadoToken volvió: con el token integrado no hay estado de token que pintar");
 
         /* NO SE REIMPLEMENTA NADA. Los tres pasos llaman a lo que ya existía:
            el endpoint de la carga manual con otro origen, la misma
@@ -9258,9 +9260,10 @@ async function main() {
           "la cadena debe detenerse si la auditoría falla");
 
         /* Ninguna pulsación sin respuesta visible (la lección del modal) y el
-           avance en la bitácora, que es lo que pidió el encargo. */
-        assert.ok(/function exigirToken/.test(admJsLimpio),
-          "sin token, los botones tienen que AVISAR: un botón mudo parece roto");
+           avance en la bitácora, que es lo que pidió el encargo. `exigirToken`
+           murió con el formulario: con el token integrado no hay nada que exigir. */
+        assert.ok(!/exigirToken/.test(admJsLimpio),
+          "exigirToken volvió: el token va integrado y ningún botón puede pedirlo");
         for (const paso of ["1/3", "2/3", "3/3"]) {
           assert.ok(admJsLimpio.includes(paso), `la bitácora no narra el paso ${paso}`);
         }
@@ -9298,7 +9301,7 @@ async function main() {
       assert.ok(/Cargar catálogo APU/.test(admHtml), "el botón debe decir «Cargar catálogo APU»");
       for (const debe of ["/api/apu/catalogo", "/api/admin/apu/cargar-catalogo", "cargarCatalogoApu",
         "cargarEstadoApu", "x-historico-token"]) {
-        assert.ok(admJs.includes(debe), `admin.js sin ${debe} (el catálogo APU no está cableado)`);
+        assert.ok(admJs.includes(debe), `app.js sin ${debe} (el catálogo APU no está cableado)`);
       }
       // doble clic: mismo blindaje que el RUP y la experiencia
       assert.ok(/\$\("btn-apu-cargar"\)\.disabled = true/.test(admJs),
@@ -9306,9 +9309,6 @@ async function main() {
       // el token va por cabecera, nunca en la URL
       assert.ok(!/\/api\/admin\/apu\/cargar-catalogo\?[^`"']*token=/.test(admJs),
         "el token de la carga del catálogo va por cabecera, nunca en la URL");
-      // sin token el botón no puede quedarse mudo
-      assert.ok(/Configure su token de acceso para cargar el catálogo/.test(admJs),
-        "sin token, el botón del catálogo debe explicar qué falta");
       /* CONSULTAR el catálogo es público y son dos comandos → sí se dispara al
          arrancar. CARGARLO escribe ~70 claves → jamás solo. */
       {
