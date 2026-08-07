@@ -301,6 +301,11 @@
             <p class="mt-1 text-sm text-gray-500">Cantidad y rendimiento son editables. El rendimiento DIVIDE: bajarlo encarece.</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
+            <input id="archivo-importar" type="file" accept=".xlsx,.csv" class="hidden">
+            <button id="btn-importar" type="button"
+                    class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium transition hover:bg-gray-50">
+              ⬆ Cargar ítems desde Excel
+            </button>
             <select id="item-nuevo" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"></select>
             <button id="btn-agregar" type="button"
                     class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium transition hover:bg-gray-50">+ Añadir</button>
@@ -310,6 +315,11 @@
             </button>
           </div>
         </div>
+        <p class="mt-2 text-xs text-gray-400">
+          El Excel debe traer al menos las columnas <strong>Descripción · Unidad · Cantidad</strong> (Ítem y Valor
+          Unitario son opcionales). El archivo se lee EN SU NAVEGADOR; al servidor solo viajan las filas. Un precio que
+          venga en el archivo <strong>manda</strong> y queda declarado como tal.
+        </p>
 
         <div class="mt-4 overflow-x-auto">
           <table class="w-full min-w-[1100px] text-sm">
@@ -319,6 +329,7 @@
                 <th class="py-2 pr-3">Unidad</th>
                 <th class="py-2 pr-3 text-right">Cantidad</th>
                 <th class="py-2 pr-3 text-right">Rendim./día</th>
+                <th class="py-2 pr-3 text-right">Precio manual</th>
                 <th class="py-2 pr-3 text-right">Material</th>
                 <th class="py-2 pr-3 text-right">Mano de obra</th>
                 <th class="py-2 pr-3 text-right">Equipo</th>
@@ -400,6 +411,45 @@
     </main>
   </div>
 
+  <!-- ══════════ Modal de vista previa de la importación ══════════
+       El archivo ya se leyó y el servidor ya mapeó: aquí el usuario VE qué se
+       reconoció y decide. Las sugerencias en ámbar («revisar») no cobran el
+       precio del catálogo por su cuenta: cada una trae su casilla y solo entra
+       si se marca — nunca se usa automáticamente una lista a medias. -->
+  <div id="modal-importar" class="fixed inset-0 z-40 hidden items-center justify-center bg-gray-900/40 p-4">
+    <div class="flex max-h-[90vh] w-full max-w-5xl flex-col rounded-2xl bg-white p-6 shadow-xl">
+      <div class="flex items-baseline justify-between gap-3">
+        <h3 class="font-semibold tracking-tight">Vista previa de la importación</h3>
+        <span id="imp-resumen" class="text-xs text-gray-500"></span>
+      </div>
+      <div id="imp-avisos" class="mt-3 space-y-1"></div>
+      <div class="mt-3 min-h-0 flex-1 overflow-auto rounded-xl border border-gray-200">
+        <table class="w-full min-w-[860px] text-sm">
+          <thead class="sticky top-0 bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-400">
+            <tr>
+              <th class="px-2 py-2">Ítem</th>
+              <th class="px-2 py-2">Descripción</th>
+              <th class="px-2 py-2">Und.</th>
+              <th class="px-2 py-2 text-right">Cant.</th>
+              <th class="px-2 py-2 text-right">Precio archivo</th>
+              <th class="px-2 py-2">Mapeo al catálogo</th>
+            </tr>
+          </thead>
+          <tbody id="imp-tabla" class="divide-y divide-gray-100"></tbody>
+        </table>
+      </div>
+      <div class="mt-4 flex flex-wrap items-center justify-end gap-2">
+        <span id="imp-nota" class="mr-auto text-xs text-gray-500"></span>
+        <button type="button" id="btn-imp-cancelar"
+                class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50">Cancelar</button>
+        <button type="button" id="btn-imp-aplicar"
+                class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">
+          Añadir al presupuesto
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ══════════ Modal del token ══════════ -->
   <div id="modal-token" class="fixed inset-0 z-40 hidden items-center justify-center bg-gray-900/40 p-4">
     <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
@@ -424,6 +474,8 @@
   </div>
 
   <script src="/xlsx.js"></script>
+  <script src="/xlsx_lectura.js"></script>
+  <script src="/apu_libro.js"></script>
   <script src="/apu.js"></script>
 </body>
 </html>

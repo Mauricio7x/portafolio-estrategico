@@ -148,7 +148,8 @@
     "FF111827",                       // 2 franja de título (gris 900)
     "FF374151",                       // 3 encabezado de tabla (gris 700)
     "FFF3F4F6",                       // 4 fila de resumen (gris 100)
-    "FFFEF3C7",                       // 5 destacado (ámbar 100)
+    "FFFEF3C7",                       // 5 destacado (ámbar 100) — precio sin APU de respaldo
+    "FFFEE2E2",                       // 6 alerta (rojo 100) — fila sin precio: no suma y se ve
   ];
   const FORMATOS = {                  // numFmtId ≥ 164 = personalizado
     moneda: { id: 164, codigo: '"$"#,##0' },
@@ -176,6 +177,16 @@
     destacadoTexto: [1, 5, 1, 0, "left"],
     destacadoMoneda: [1, 5, 1, FORMATOS.moneda.id, "right"],
     nota: [4, 0, 0, 0, "left"],
+    /* Estilos añadidos para el formato Nogal (ago 2026). Van AL FINAL a
+       propósito: el orden de este objeto ES el contrato (renumera las celdas) y
+       añadir por el final conserva los índices de todos los anteriores. Ningún
+       formato numérico nuevo: los cuatro `numFmt` existentes son suficientes y
+       hay una prueba que exige exactamente cuatro. */
+    capituloTexto: [1, 4, 1, 0, "left"],                        // fila de capítulo del presupuesto
+    alertaTexto: [1, 6, 1, 0, "left"],                          // fila SIN precio (rojo)
+    alertaMoneda: [1, 6, 1, FORMATOS.moneda.id, "right"],
+    destacadoCantidad: [1, 5, 1, FORMATOS.cantidad.id, "right"],
+    moneda2Negrita: [1, 4, 1, FORMATOS.moneda2.id, "right"],    // subtotales de la hoja APU
   };
   const ORDEN_ESTILOS = Object.keys(ESTILOS);
   const indiceEstilo = (nombre) => Math.max(0, ORDEN_ESTILOS.indexOf(nombre)) + 1; // 0 = estilo por defecto
@@ -250,7 +261,17 @@
         if (!c) return "";
         const ref = `${letraColumna(iCol)}${n}`;
         const s = ` s="${indiceEstilo(c.s)}"`;
-        if (c.f) return `<c r="${ref}"${s}><f>${esc(c.f)}</f></c>`;
+        /* Una fórmula viaja CON su valor cacheado cuando quien la escribe lo
+           conoce: sin `<v>` algunos lectores enseñan la celda vacía hasta
+           recalcular, y el número que se calculó aquí es exactamente el que la
+           fórmula debe reproducir. El `=` inicial se QUITA: en OOXML el
+           elemento <f> lo lleva implícito, y un `=` literal dentro produce
+           `==D7*E7` — una fórmula rota en todas las celdas del libro. */
+        if (c.f) {
+          const formula = String(c.f).replace(/^=/, "");
+          const cache = typeof c.v === "number" && Number.isFinite(c.v) ? `<v>${c.v}</v>` : "";
+          return `<c r="${ref}"${s}><f>${esc(formula)}</f>${cache}</c>`;
+        }
         if (c.t === "n") {
           const v = Number(c.v);
           if (!Number.isFinite(v)) return `<c r="${ref}"${s}/>`;

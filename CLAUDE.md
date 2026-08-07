@@ -1534,6 +1534,67 @@ Hasta aquí el dueño miraba la baja mediana y descontaba a ojo.
   financiero del capital de trabajo, ensayos, PMA/SST, liquidación). El APU es costo directo; eso va
   encima y es «el olvido más caro del país». La calculadora de rentabilidad es la Fase 2.
 
+### Calibración Nogal, importación de Excel y libro APU (ago 2026)
+
+- **El catálogo se calibró con un contrato ADJUDICADO del propio dueño**: «Presupuesto Nogal 4»
+  (UPN-VAD-CP-009-2025, Consorcio Infraestructura 1A, Bogotá 2025). 157 ítems `NOG-*` y 389 insumos
+  con `fuente: "adjudicado"` — el cuarto origen, más fuerte que recuperado/derivado/estimado. El
+  motor REPRODUCE el `VR COSTO DIRECTO` del pliego: 149 exactos al peso, 7 a ±$1, y **NOG-B57 +$55
+  clavado en prueba** (su APU traía una línea de equipo con cantidad NEGATIVA que el esquema no
+  admite; se descartó declarándolo). Método y anomalías respetadas en `docs/CALIBRACION_APU.md`.
+- **La verdad de cada APU del pliego es el RANGO de su fórmula** `ROUND(SUM(Ea:Eb)/2)`, no la
+  proximidad de las filas: con texto, «EQUIPO CASSETTE 360…» parecía cabecera de sección y el aire
+  acondicionado perdía $14,9 M. Y en C78/C79/C80 el subtotal del pliego OMITE una línea (queda a
+  medio peso en su CD): se reproduce SU aritmética con peso 0,5, listado en
+  `_meta.calibracion.lineas_a_peso_medio`. El precio adjudicado manda sobre la corrección «obvia».
+- **Las cuadrillas del Nogal cotizan el día CON prestaciones**: el catálogo guarda `precio ÷ 1,55`
+  (el motor re-aplica el prestacional regional) y conserva el literal en
+  `precio_dia_con_prestaciones`. SIN `componentes`: el pliego no publica los jornales y inventarlos
+  rompería la validación que exige que una cuadrilla sume sus partes. Los FLETES del Nogal son
+  valores cerrados por ítem → `distancia_km = 1` con la cantidad del pliego.
+- **`cargarCatalogo` escribe por LOTES de 16 con `Promise.all`**: ~620 claves en serie contra la API
+  REST de Upstash rozaban el `maxDuration` de 60 s. Claves distintas, orden irrelevante, sello al
+  final: la garantía «todo o nada visible» no cambia.
+- **«Cargar ítems desde Excel»**: el archivo se lee EN EL NAVEGADOR (`public/xlsx_lectura.js`, UMD
+  navegador+Node como xlsx.js) y al servidor viajan solo las filas; la acción `importar` de
+  `api/apu/[accion].js` (POST, token) las mapea contra el catálogo con `lib/apu/importar.js`, que
+  REUTILIZA las primitivas de `lib/apu_mapeo` (tokenización que conserva dígitos, umbrales, margen
+  0,12) — no una segunda definición de similitud. Capa propia: **plural tolerado a ambos lados**
+  (sin ella «Desmonte de Cielo Raso» no casaba con «DESMONTES DE CIELO RASOS»; el catálogo de
+  precios no tiene sinónimos curados que lo compensen) y unidad CANÓNICA por grafía (m≈ml,
+  UND≈un) sin convertir jamás.
+- **POLÍTICA DE PRECIOS DE LA IMPORTACIÓN, medida con el caso real**: el precio del ARCHIVO manda
+  siempre (`precio_manual`, `origen_precio:"archivo"`, ítem del catálogo como referencia declarada
+  en `cd_catalogo`); un mapeo «revisar» SIN precio del archivo NO cobra el catálogo por su cuenta —
+  la fila «PENDIENTE-POSIBLE USO DE RIEL…» (24 und, $0) salía presupuestada en $2,9 M inventados.
+  La sugerencia se acepta por casilla en la vista previa. Un precio 0 (del archivo o tecleado) es
+  «sin dato», jamás gratis. Los ítems con precio manual suman al total pero caen en
+  `por_componente.sin_desglose`, y **material+mano_obra+equipo+transporte+sin_desglose = costo
+  directo total** tiene prueba. Y un precio/cantidad que llegue como TEXTO a la API se lee con
+  `numeroColombiano` (punto = MILES): el parser ingenuo leía «74.596» como 74,596 pesos — mil veces
+  menos, la familia de «375.0000» — y hay prueba que lo clava.
+- **El LECTOR parsea el ZIP por el DIRECTORIO CENTRAL** (un xlsx en streaming deja los tamaños del
+  local header en 0) y la descompresión se INYECTA (`DecompressionStream` en navegador,
+  `zlib.inflateRawSync` en Node y pruebas); sin inflador y con partes DEFLATE el error sugiere CSV,
+  nunca una lista vacía. `numeroLocal` es la TERCERA copia de `numeroColombiano` y `parsearCsv` la
+  SEGUNDA de onboarding: las pruebas las EJECUTAN sobre la misma batería, no comparan strings.
+- **La exportación es el formato Nogal** (`public/apu_libro.js`, UMD: el navegador y el generador de
+  Node usan EL MISMO constructor): capítulos a dos niveles, fórmulas `=D×E` y cierre A/I/U +
+  **IVA 19 % sobre la utilidad** + TOTAL (como cierra la referencia), firmas, y hoja «APU» por ítem
+  desde `detalle.insumos` — que ahora sale de las `lineas` de `costoDirecto` (el MISMO cálculo que
+  produjo el total; el desglose anterior reconstruía a ciegas y no podía respaldar la cifra).
+  Marcadores con contrato: ÁMBAR = precio sin APU de respaldo (suma y se declara), ROJO = sin
+  precio (no suma, celdas de dinero VACÍAS).
+- **En OOXML `<f>` lleva el `=` implícito**: escribirlo produce `==D7*E7` y rompe la celda en todos
+  los lectores — pasó, y hay prueba de que ningún `<f>` empieza por `=` y de que toda fórmula viaja
+  con su valor cacheado (igual al del motor). Los estilos nuevos van AL FINAL de `ESTILOS` (el
+  orden es el contrato) y **ningún numFmt nuevo**: la prueba exige exactamente 4.
+- **`tests/generar_electrico_nogal.js` es DETERMINISTA** (misma entrada → mismos bytes: fecha ZIP
+  fija, sin relojes): regenerar `tests/electrico_nogal_apu.xlsx` solo cambia bytes si cambió el
+  catálogo, el mapeo o el formato. El snapshot `tests/electrico_nogal_filas.json` deja el flujo
+  reproducible sin el archivo original del dueño. Diferencias contra los dos Excel de referencia,
+  ítem a ítem, en `docs/DIFERENCIAS_APU.md`.
+
 ## Datos del negocio (fuente de verdad)
 
 - Perfiles: `lib/perfiles.js` es el RESPALDO (`PERFILES_FALLBACK`, RUP corte 31/12/2025) y el punto

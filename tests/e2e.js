@@ -3380,6 +3380,329 @@ async function main() {
       + "y el acarreo del acero en m³ (no en kg)");
   }
 
+  /* ══════════ UNIDAD · calibración Nogal, importación de Excel y libro APU ══════════
+     (ago 2026, corre una vez). Tres piezas nuevas y sus cerraduras:
+     1. La CALIBRACIÓN: los 157 APU del Presupuesto Nogal 4 (contrato adjudicado
+        UPN-VAD-CP-009-2025) entraron al catálogo como ítems NOG-* y el motor
+        tiene que REPRODUCIR el costo directo publicado en el pliego. Si esta
+        igualdad se rompe, el catálogo dice precios que el contrato real no dijo.
+     2. La IMPORTACIÓN: mapeo de filas de un Excel contra el catálogo, con la
+        política de precios declarada (el del archivo manda; una sugerencia
+        «revisar» sin precio NO cobra el catálogo por su cuenta).
+     3. El LECTOR y el LIBRO: round-trip real contra el escritor propio, la vía
+        DEFLATE con inflador inyectado, y las copias de `numeroLocal`/`parsearCsv`
+        ATADAS ejecutándolas — no comparando strings. */
+  {
+    const apuCat = require("../lib/apu/catalogo.js");
+    const S = apuCat.SEMILLA;
+    const { mapearFilasImportadas, unidadCanonica } = require("../lib/apu/importar.js");
+    const calculoApu = require("../lib/apu/calculo.js");
+    const XLSXApu = require("../public/xlsx.js");
+    const XLSXLectura = require("../public/xlsx_lectura.js");
+    const APULibro = require("../public/apu_libro.js");
+    const zlib = require("zlib");
+
+    /* ---- 1 · la calibración reproduce el pliego adjudicado ---- */
+    {
+      const nogs = S.items.filter((i) => /^NOG-/.test(i.codigo));
+      assert.ok(nogs.length >= 150, `la calibración Nogal debía aportar ≥150 ítems y hay ${nogs.length}`);
+      assert.ok(nogs.every((i) => i.fuente === "adjudicado"),
+        "todo ítem NOG-* declara fuente «adjudicado»: viene de un contrato real, no de una estimación");
+      let exactos = 0, aUnPeso = 0;
+      for (const it of nogs) {
+        if (it.cd_adjudicado == null) continue;
+        const delta = apuCat.costoDirecto(it, S, "bogota_sabana").total - Math.round(it.cd_adjudicado);
+        if (it.codigo === "NOG-B57") {
+          /* la única desviación admitida, y va CLAVADA: el APU original traía
+             una línea de equipo con cantidad NEGATIVA (un ajuste del autor del
+             pliego) que el esquema no admite; se descartó declarándolo. Si el
+             delta se mueve de +55, alguien tocó el ítem sin re-litigar esto. */
+          assert.strictEqual(delta, 55, `NOG-B57 debía quedar +55 sobre el pliego y quedó ${delta >= 0 ? "+" : ""}${delta}`);
+          continue;
+        }
+        assert.ok(Math.abs(delta) <= 1,
+          `${it.codigo}: el motor da ${delta > 0 ? "+" : ""}${delta} pesos contra el VR COSTO DIRECTO del pliego`);
+        if (delta === 0) exactos++; else aUnPeso++;
+      }
+      assert.ok(exactos >= 145, `la reproducción exacta cayó a ${exactos} ítems (±$1: ${aUnPeso})`);
+      // dos anclas concretas, legibles contra el archivo fuente
+      const a2 = S.items.find((i) => i.codigo === "NOG-A2");
+      assert.strictEqual(apuCat.costoDirecto(a2, S, "bogota_sabana").total, 24463,
+        "NOG-A2 (desmonte de cubierta) debía costar exactamente $24.463, el VR COSTO DIRECTO del pliego");
+      const c80 = S.items.find((i) => i.codigo === "NOG-C80");
+      assert.strictEqual(apuCat.costoDirecto(c80, S, "bogota_sabana").total, 122568,
+        "NOG-C80 (canaleta metálica) debía costar exactamente $122.568");
+      // las cuadrillas del Nogal guardan el jornal base (÷1,55) y el motor lo
+      // recompone: el día CON prestaciones tiene que volver a ±$2 del pliego
+      const cuadrilla = S.insumos.find((i) => i.id === "nog_cuadrilla_1_of_1_ay");
+      assert.ok(cuadrilla, "falta la cuadrilla 1 OF + 1 AY del Nogal");
+      assert.ok(Math.abs(Math.round(cuadrilla.precio_base) * 1.55 - 368915.68) <= 2,
+        "la cuadrilla del Nogal debía recomponer $368.915,68/día con el prestacional 1,55");
+    }
+
+    /* ---- 2 · importación: mapeo y política de precios ---- */
+    {
+      const filas = [
+        // firme con precio del archivo: el precio del ARCHIVO manda y el ítem queda de referencia
+        { codigo: "1.3", descripcion: "Suministro e instalación de canaleta metalica calibre 20-22 con división, pintura electrostática de 15x5 cm", unidad: "ML", cantidad: 14, precio_archivo: 74596 },
+        // revisar SIN precio: el catálogo NO cobra por su cuenta (caso «PENDIENTE» medido)
+        { descripcion: "PENDIENTE-POSIBLE USO DE RIEL Y LUMINARIA SYLVANIA", unidad: "UND", cantidad: 24 },
+        // firme sin precio: el precio sale del catálogo, que es la razón de la calibración
+        { descripcion: "Pisos en alfagres", unidad: "m2", cantidad: 75 },
+        // personalizado puro: ni mapeo ni precio
+        { descripcion: "Obra de arte conmemorativa en bronce", unidad: "und", cantidad: 1 },
+        // precio 0 del archivo = SIN precio, jamás «gratis»
+        { descripcion: "Salidas iluminación", unidad: "UND", cantidad: 3, precio_archivo: 0 },
+      ];
+      const m = mapearFilasImportadas(filas, S);
+      const r = m.resumen_mapeo;
+      assert.strictEqual(r.firmes + r.revisar + r.personalizados, r.total,
+        "las tres categorías del mapeo tienen que SUMAR el total: una fila sin categoría desaparece en silencio");
+
+      const canaleta = m.filas[0];
+      assert.strictEqual(canaleta.entrada_calculo.precio_manual, 74596, "el precio del archivo manda");
+      assert.strictEqual(canaleta.entrada_calculo.origen_precio, "archivo");
+      assert.ok(canaleta.item_id, "la canaleta debía mapear al catálogo (como referencia)");
+
+      const pendiente = m.filas[1];
+      assert.strictEqual(pendiente.nivel_mapeo, "revisar");
+      assert.strictEqual(pendiente.entrada_calculo.item_id, null,
+        "un mapeo «revisar» SIN precio del archivo no puede cobrar el catálogo por su cuenta: eran $2,9 M inventados");
+      assert.strictEqual(pendiente.entrada_calculo.precio_manual, null);
+
+      const alfagres = m.filas[2];
+      assert.strictEqual(alfagres.nivel_mapeo, "firme");
+      assert.strictEqual(alfagres.entrada_calculo.item_id, "NOG-B2", "un mapeo firme sin precio usa el catálogo");
+
+      assert.strictEqual(m.filas[4].precio_archivo, null, "un 0 del archivo no es un precio");
+
+      /* un precio o una cantidad que llegan como TEXTO se leen con la
+         convención COLOMBIANA (el punto separa MILES): el parser ingenuo leía
+         «74.596» como 74,596 pesos — mil veces menos, la familia del defecto
+         «375.0000». La API no puede depender de que el cliente mande números. */
+      const texto = mapearFilasImportadas([
+        { descripcion: "Cable", unidad: "ML", cantidad: "1.234,5", precio_archivo: "74.596" },
+      ], S);
+      assert.strictEqual(texto.filas[0].precio_archivo, 74596, "«74.596» como texto son 74.596 pesos, no 74,596");
+      assert.strictEqual(texto.filas[0].cantidad, 1234.5);
+      const manualTexto = calculoApu.calcularPresupuesto({
+        items: [{ descripcion: "x", unidad: "u", cantidad: 2, precio_manual: "74.596" }],
+      });
+      assert.strictEqual(manualTexto.items[0].costo_directo_unitario, 74596,
+        "precio_manual como texto también usa la convención colombiana");
+
+      // el plural tolerado: sin él «Desmonte de Cielo Raso» no encontraba
+      // «DESMONTES DE CIELO RASOS» (defecto medido antes de corregirlo)
+      const des = mapearFilasImportadas([{ descripcion: "Desmonte de Cielo Raso", unidad: "m2", cantidad: 10 }], S);
+      assert.strictEqual(des.filas[0].item_id, "NOG-A3", "el plural tolerado debía casar el desmonte con NOG-A3");
+
+      // unidades: grafías equivalentes, sin convertir jamás
+      assert.strictEqual(unidadCanonica("M"), unidadCanonica("ml"));
+      assert.strictEqual(unidadCanonica("UND"), unidadCanonica("un"));
+      assert.notStrictEqual(unidadCanonica("m2"), unidadCanonica("m3"));
+
+      /* el CÁLCULO con esas entradas: el manual suma y se declara; el sin
+         precio NO suma; el reparto por componente + sin_desglose cierra */
+      const calc = calculoApu.calcularPresupuesto({
+        items: m.filas.map((f) => f.entrada_calculo),
+        departamento: "BOGOTA D.C.",
+        config: { aiu_pct: 19.17, imprevistos_pct: 1.5, utilidad_pct: 5.33 },
+      });
+      const itCanaleta = calc.items[0];
+      assert.strictEqual(itCanaleta.sin_apu, true);
+      assert.strictEqual(itCanaleta.costo_directo_unitario, 74596);
+      assert.strictEqual(itCanaleta.costo_total, 74596 * 14);
+      assert.ok(Number.isFinite(itCanaleta.cd_catalogo) && itCanaleta.cd_catalogo !== 74596,
+        "cd_catalogo debía publicar la referencia del catálogo para que la diferencia SE VEA");
+      const itPendiente = calc.items[1];
+      assert.strictEqual(itPendiente.incompleto, true, "sin precio y sin mapeo aceptado la fila queda SIN precio");
+      assert.strictEqual(itPendiente.costo_total, null, "y publica null, jamás 0");
+      const pc = calc.resumen.por_componente;
+      assert.ok(Math.abs((pc.material + pc.mano_obra + pc.equipo + pc.transporte + pc.sin_desglose)
+        - calc.resumen.costo_directo_total) < 1,
+        "material + mano de obra + equipo + transporte + sin_desglose tiene que SUMAR el costo directo");
+      assert.ok(pc.sin_desglose > 0, "los ítems con precio del archivo caen en la cubeta sin_desglose");
+      assert.ok(calc.alertas.some((a) => /archivo importado/i.test(a)),
+        "un precio del archivo sin APU de respaldo tiene que declararse en las alertas");
+      // un precio manual en 0 tampoco es un precio por la puerta del cálculo
+      const cero = calculoApu.calcularPresupuesto({
+        items: [{ descripcion: "Ítem con cero", unidad: "und", cantidad: 5, precio_manual: 0 }],
+      });
+      assert.strictEqual(cero.items[0].incompleto, true, "precio_manual = 0 es «sin dato», no «gratis»");
+    }
+
+    /* ---- 3 · lector: round-trip real, DEFLATE inyectado y copias atadas ---- */
+    await (async () => {
+      const bytes = XLSXApu.construirLibro([{
+        nombre: "Formulario",
+        filas: [
+          [{ v: "ÍTEM", s: "encabezado" }, { v: "DESCRIPCIÓN", s: "encabezado" }, { v: "UNIDAD", s: "encabezado" },
+            { v: "CANTIDAD", s: "encabezado" }, { v: "VALOR UNITARIO", s: "encabezado" }],
+          ["1.1", 'Tubería de 4" en PVC & <especial>', "ML", 57, 30172],
+          ["CAPITULO B"],
+          ["1.2", "Cable cobre No 12", "ML", null, 17552],
+        ],
+      }]);
+      const libro = await XLSXLectura.leerLibro(bytes);
+      assert.strictEqual(libro.hojas[0].nombre, "Formulario");
+      assert.strictEqual(libro.hojas[0].filas[1][1], 'Tubería de 4" en PVC & <especial>',
+        "el escape XML tiene que sobrevivir el viaje de ida y vuelta");
+      const det = XLSXLectura.detectarFilasApu(libro.hojas[0].filas);
+      assert.strictEqual(det.filas.length, 2);
+      assert.strictEqual(det.filas[1].cantidad, null, "una cantidad ilegible es null, JAMÁS 0");
+      assert.strictEqual(det.filas[1].capitulo, "CAPITULO B");
+
+      /* la vía DEFLATE: un ZIP artesanal con método 8 y el inflador inyectado.
+         Los tamaños salen del directorio central a propósito (un xlsx escrito
+         en streaming deja el local header en 0). */
+      const contenido = Buffer.from("<x>hola deflate</x>");
+      const comprimido = zlib.deflateRawSync(contenido);
+      const nombre = Buffer.from("prueba.xml");
+      const local = Buffer.alloc(30);
+      local.writeUInt32LE(0x04034b50, 0); local.writeUInt16LE(20, 4); local.writeUInt16LE(0x0800, 6);
+      local.writeUInt16LE(8, 8); local.writeUInt32LE(0, 10); local.writeUInt32LE(0, 14);
+      local.writeUInt32LE(0, 18); local.writeUInt32LE(0, 22); // tamaños EN CERO en el local, como el streaming
+      local.writeUInt16LE(nombre.length, 26); local.writeUInt16LE(0, 28);
+      const central = Buffer.alloc(46);
+      central.writeUInt32LE(0x02014b50, 0); central.writeUInt16LE(20, 4); central.writeUInt16LE(20, 6);
+      central.writeUInt16LE(0x0800, 8); central.writeUInt16LE(8, 10);
+      central.writeUInt32LE(0, 16); central.writeUInt32LE(comprimido.length, 20);
+      central.writeUInt32LE(contenido.length, 24); central.writeUInt16LE(nombre.length, 28);
+      central.writeUInt32LE(0, 42);
+      const offCentral = 30 + nombre.length + comprimido.length;
+      const eocd = Buffer.alloc(22);
+      eocd.writeUInt32LE(0x06054b50, 0); eocd.writeUInt16LE(1, 8); eocd.writeUInt16LE(1, 10);
+      eocd.writeUInt32LE(46 + nombre.length, 12); eocd.writeUInt32LE(offCentral, 16);
+      const zipDeflate = Buffer.concat([local, nombre, comprimido, central, nombre, eocd]);
+      const z = XLSXLectura.leerZip(new Uint8Array(zipDeflate));
+      const inflado = await z.extraer("prueba.xml", async (u8) => zlib.inflateRawSync(Buffer.from(u8)));
+      assert.strictEqual(Buffer.from(inflado).toString("utf8"), "<x>hola deflate</x>",
+        "una parte DEFLATE debe salir por el inflador inyectado");
+      let sinInflador = null;
+      try { await z.extraer("prueba.xml", null); } catch (e) { sinInflador = e.message; }
+      assert.ok(/CSV/i.test(sinInflador || ""),
+        "sin inflador el error tiene que ser accionable (sugerir CSV), no una lista vacía con cara de éxito");
+
+      /* numeroLocal: TERCERA copia, atada EJECUTÁNDOLA contra lib/apu_pliego */
+      const libPliego = require("../lib/apu_pliego.js");
+      const fuenteLectura = fs.readFileSync(path.join(__dirname, "..", "public", "xlsx_lectura.js"), "utf8");
+      const i0 = fuenteLectura.indexOf("function numeroLocal(");
+      assert.ok(i0 > 0, "no se encontró numeroLocal en xlsx_lectura.js");
+      const fin0 = fuenteLectura.indexOf("\n  }", i0);
+      const fnNumero = new Function(`${fuenteLectura.slice(i0, fin0 + 4)}; return numeroLocal;`)();
+      for (const caso of ["1.234.567,89", "1.234.567", "1.234", "1.5", "1.50", "12,5", "0,00",
+        "375.0000", "3.14159", "1.2.3456", "-500", "  8.450,00  ", "2024-350", "abc", "1,2,3", "",
+        "CM-001", "$ 45.000", "100", "0", "1.000.000"]) {
+        assert.strictEqual(fnNumero(caso), libPliego.numeroColombiano(caso),
+          `numeroLocal (xlsx_lectura) y numeroColombiano (lib) discrepan en «${caso}»`);
+      }
+
+      /* parsearCsv: la copia de onboarding y la de xlsx_lectura, EJECUTADAS
+         sobre los mismos fragmentos hostiles */
+      const fuenteOnboarding = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
+      const extraerFn = (src, nombreFn) => {
+        const i = src.indexOf(`function ${nombreFn}(`);
+        assert.ok(i > 0, `no se encontró ${nombreFn}`);
+        const fin = src.indexOf("\n  }", i);
+        return new Function(`${src.slice(i, fin + 4)}; return ${nombreFn};`)();
+      };
+      const csvOnboarding = extraerFn(fuenteOnboarding, "parsearCsv");
+      const csvLectura = XLSXLectura.parsearCsv;
+      for (const frag of [
+        'a;b;"c;con sep";d\n1;2;3;4',
+        'x;Tubería de 4" en PVC;z\n# comentario\n;;\nfin;;',
+        '﻿col1,col2\n"multi\nlínea",2',
+      ]) {
+        assert.deepStrictEqual(csvLectura(frag), csvOnboarding(frag),
+          "parsearCsv de xlsx_lectura y de onboarding divergieron: son la misma regla en dos sitios");
+      }
+    })();
+
+    /* ---- 4 · el libro con formato Nogal: fórmulas, marcadores y cierre AIU ---- */
+    await (async () => {
+      const calc = calculoApu.calcularPresupuesto({
+        items: [
+          { item_id: "NOG-A2", cantidad: 126, capitulo: "CUBIERTA" },
+          { descripcion: "Ítem del archivo con precio", unidad: "und", cantidad: 4, precio_manual: 98637, origen_precio: "archivo", capitulo: "RED" },
+          { descripcion: "Ítem sin precio ninguno", unidad: "und", cantidad: 2 },
+        ],
+        departamento: "BOGOTA D.C.",
+        config: { aiu_pct: 19.17, imprevistos_pct: 1.5, utilidad_pct: 5.33 },
+      });
+      const hojas = APULibro.construirLibroNogal(calc, { titulo: "PRUEBA NOGAL", entidad: "UPN", fecha: "2026-08-07" });
+      const bytes = XLSXApu.construirLibro(hojas);
+      const libro = await XLSXLectura.leerLibro(bytes);
+      assert.deepStrictEqual(libro.hojas.map((h) => h.nombre), ["Presupuesto", "APU"]);
+
+      const rejilla = libro.hojas[0].filas;
+      const plana = rejilla.map((f) => (f || []).map((c) => (c == null ? "" : String(c))).join("|"));
+      assert.ok(plana.some((l) => l.includes("CUBIERTA")), "el capítulo tiene que aparecer como fila propia");
+      assert.ok(plana.some((l) => l.includes("COSTOS DIRECTOS")), "falta el cierre COSTOS DIRECTOS");
+      assert.ok(plana.some((l) => /IVA sobre la utilidad/.test(l)),
+        "el IVA sobre la utilidad es parte del formato Nogal: sin él el TOTAL no cuadra contra la referencia");
+      assert.ok(plana.some((l) => l.includes("SIN PRECIO")), "el ítem sin precio tiene que quedar MARCADO, no desaparecer");
+      assert.ok(plana.some((l) => /Elabor/.test(l)), "faltan las firmas (Elaboró/Revisó/Aprobó)");
+
+      /* la fila del ítem sin precio NO puede publicar un 0 en sus celdas de
+         valor: se busca su fila y se exige que no haya número */
+      const filaSin = rejilla.find((f) => (f || []).some((c) => typeof c === "string" && c.includes("Ítem sin precio")));
+      assert.ok(filaSin, "no se encontró la fila del ítem sin precio");
+      assert.ok(typeof filaSin[4] !== "number" && typeof filaSin[5] !== "number",
+        "la fila sin precio publicó dinero: un $0 sería un precio inventado (la cantidad sí puede viajar)");
+
+      /* las fórmulas van SIN el «=» inicial en <f> (OOXML lo lleva implícito) y
+         CON valor cacheado — el defecto «==D7*E7» rompía todas las celdas */
+      const xml = (() => {
+        const buf = Buffer.from(bytes);
+        let i = 0; const partes = {};
+        while (i < buf.length - 4 && buf.readUInt32LE(i) === 0x04034b50) {
+          const tam = buf.readUInt32LE(i + 18); const nLen = buf.readUInt16LE(i + 26); const eLen = buf.readUInt16LE(i + 28);
+          const nom = buf.slice(i + 30, i + 30 + nLen).toString("utf8");
+          partes[nom] = buf.slice(i + 30 + nLen + eLen, i + 30 + nLen + eLen + tam).toString("utf8");
+          i = i + 30 + nLen + eLen + tam;
+        }
+        return partes;
+      })();
+      const hoja1 = xml["xl/worksheets/sheet1.xml"];
+      assert.ok(/<f>D\d+\*E\d+<\/f><v>/.test(hoja1), "las fórmulas =D×E deben viajar sin «=» y con valor cacheado");
+      assert.ok(!/<f>=/.test(hoja1), "un «=» dentro de <f> produce ==FÓRMULA: la celda rota en todos los lectores");
+      assert.ok(/<f>SUM\(F\d+:F\d+\)<\/f>/.test(hoja1), "falta la fórmula SUM del cierre COSTOS DIRECTOS");
+      // los estilos nuevos existen y los cuatro numFmt siguen siendo cuatro
+      const estilos = xml["xl/styles.xml"];
+      assert.ok(estilos.includes("FFFEE2E2"), "falta el relleno rojo de alerta (fila sin precio)");
+      assert.strictEqual((estilos.match(/<numFmt numFmtId="\d+" formatCode="[^"]*"\/>/g) || []).length, 4,
+        "los formatos numéricos personalizados siguen siendo exactamente 4");
+
+      /* y el TOTAL del formato Nogal: CD + (A+I+U) + IVA(U), verificado con la
+         rejilla leída — el mismo número que publica el motor */
+      const filaTotal = rejilla.find((f) => (f || []).some((c) => c === "TOTAL"));
+      const total = filaTotal ? filaTotal.find((c) => typeof c === "number") : null;
+      const esperado = Math.round(calc.resumen.precio_venta + calc.resumen.iva_sobre_utilidad);
+      assert.strictEqual(total, esperado,
+        "el TOTAL de la hoja tiene que ser precio_venta + IVA(U), como cierra el Presupuesto Nogal 4");
+    })();
+
+    /* ---- 5 · cableado del frontend nuevo ---- */
+    {
+      const html = fs.readFileSync(path.join(__dirname, "..", "public", "apu.html"), "utf8");
+      for (const debe of ['id="btn-importar"', 'id="archivo-importar"', 'id="modal-importar"',
+        'id="imp-tabla"', 'id="btn-imp-aplicar"', "/xlsx_lectura.js", "/apu_libro.js"]) {
+        assert.ok(html.includes(debe), `apu.html sin ${debe}`);
+      }
+      const js = fs.readFileSync(path.join(__dirname, "..", "public", "apu.js"), "utf8");
+      assert.ok(js.includes("/api/apu/importar"), "apu.js no llama a la acción de importación");
+      assert.ok(js.includes("DecompressionStream"), "apu.js debe inflar los .xlsx DEFLATE del Excel real");
+      assert.ok(!js.includes("FormData"), "el ARCHIVO no viaja al servidor: solo las filas parseadas");
+      const fuenteLect = fs.readFileSync(path.join(__dirname, "..", "public", "xlsx_lectura.js"), "utf8");
+      const fuenteLibro = fs.readFileSync(path.join(__dirname, "..", "public", "apu_libro.js"), "utf8");
+      new Function(fuenteLect); // valida sintaxis sin ejecutar
+      new Function(fuenteLibro);
+    }
+
+    console.log("· unidad importación APU: calibración Nogal reproducida (157 APU, 1 desviación declarada), "
+      + "mapeo con política de precios, lector STORE+DEFLATE, copias atadas y libro Nogal auditado");
+  }
+
   async function limpiarRedis() {
     const claves = [
       ...(await redis.scan("licitaciones:*")), ...(await redis.scan("lock:sync*")),
@@ -7297,6 +7620,51 @@ async function main() {
         const conDed = calculo.calcularPresupuesto({ items: itemsPrueba, config: { ...cfgBase, deducciones_pct: 9 } });
         assert.ok(conDed.resumen.margen_despues_deducciones < conDed.resumen.margen_final,
           "cargar deducciones tiene que reducir el margen");
+      }
+
+      /* ---- j.7-bis importación: la acción nueva, por el handler real ---- */
+      {
+        // misma regla que las demás acciones de armar oferta: token obligatorio
+        assert.strictEqual((await invocarPost(apu, "/api/apu/importar", { filas: [{ descripcion: "x" }] }, {})).status, 401,
+          "/api/apu/importar sirvió sin token");
+        assert.strictEqual((await invocarPost(apu, "/api/apu/importar", { filas: [{ descripcion: "x" }] },
+          { "x-historico-token": "no" })).status, 401, "…aceptó un token inválido");
+        const get = await invocar(apu, "/api/apu/importar", CAB_TOKEN);
+        assert.strictEqual(get.status, 405, "«importar» exige POST");
+        assert.strictEqual((await invocarPost(apu, "/api/apu/importar", {}, CAB_TOKEN)).status, 400,
+          "sin filas el error debe ser accionable, no un mapeo vacío con cara de éxito");
+
+        const imp = await invocarPost(apu, "/api/apu/importar", {
+          filas: [
+            { codigo: "1.3", descripcion: "Suministro e instalación de canaleta metalica 15x5 con división", unidad: "ML", cantidad: 14, precio_archivo: 74596 },
+            { descripcion: "Pisos en alfagres", unidad: "m2", cantidad: 75 },
+            { descripcion: "Obra de arte conmemorativa en bronce", unidad: "und", cantidad: 1 },
+          ],
+          departamento: "BOGOTA D.C.",
+        }, CAB_TOKEN);
+        assert.strictEqual(imp.status, 200);
+        const rm = imp.cuerpo.resumen_mapeo;
+        assert.strictEqual(rm.firmes + rm.revisar + rm.personalizados, rm.total,
+          "las categorías del mapeo tienen que sumar el total");
+        assert.strictEqual(imp.cuerpo.catalogo.fuente, "semilla",
+          "en el bloque j el catálogo no está en Redis: la vía tiene que decir «semilla»");
+        assert.strictEqual(imp.cuerpo.filas[0].entrada_calculo.precio_manual, 74596,
+          "el precio del archivo manda y viaja como precio_manual");
+
+        /* …y las entradas del mapeo se calculan por el MISMO camino de siempre */
+        const calcImp = await invocarPost(apu, "/api/apu/calcular", {
+          items: imp.cuerpo.filas.map((f) => f.entrada_calculo),
+          departamento: "BOGOTA D.C.",
+          config: cfgBase,
+        }, CAB_TOKEN);
+        assert.strictEqual(calcImp.status, 200);
+        assert.strictEqual(calcImp.cuerpo.items[0].sin_apu, true);
+        assert.ok(Number.isFinite(calcImp.cuerpo.items[0].cd_catalogo),
+          "el ítem con precio del archivo y mapeo publica la referencia del catálogo");
+        const pcImp = calcImp.cuerpo.resumen.por_componente;
+        assert.ok(Math.abs((pcImp.material + pcImp.mano_obra + pcImp.equipo + pcImp.transporte + pcImp.sin_desglose)
+          - calcImp.cuerpo.resumen.costo_directo_total) < 1,
+          "el reparto por componente + sin_desglose tiene que sumar el costo directo también vía handler");
       }
 
       /* ---- j.8 persistencia: guardar → cargar → listar, con TTL ---- */
