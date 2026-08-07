@@ -98,14 +98,14 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `docs/APU_INFORME_COMPLETO.md` | El **informe** completo de investigación y diseño (§1.A-§1.I): el que citan los comentarios del código. Incluye lo que NO se implementó y por qué |
 | `docs/PERFILES.md` | Resumen técnico de los tres perfiles (datos, estimaciones, limitaciones) |
 | `docs/AUDITORIA_INTEGRAL.md` | **Censo del sistema** (ago 2026): qué módulo hace qué, qué está probado, qué endpoint pide llave y por qué, qué está duplicado, qué está muerto y qué falta — con las correcciones pendientes ordenadas por impacto en las adjudicaciones |
-| `public/` | Frontend estático (Tailwind CDN, estilo Apple, gate de clave) |
-| `public/pliego.html` + `pliego.js` | **Lector de pliegos**: pdf.js en el navegador, columnas por coordenadas, progreso por página, tabla editable y respaldo por OCR |
-| `public/apu.html` + `apu.js` | Editor de APU: tabla editable, inferencia desde el objeto, **carga de ítems desde Excel/CSV** (con vista previa y mapeo al catálogo), sugerencia del factor de baja, borradores y exportación con formato Nogal |
+| `public/` | Frontend estático (Tailwind CDN, tema oscuro, gate de clave). **UNA sola página** desde ago 2026: `index.html` con tres pestañas (`#/licitaciones` · `#/apu` · `#/admin`) y `app.js` como único módulo principal. Las URLs viejas (`/admin.html`, `/apu.html`, `/pliego.html`) viven como `redirects` en `vercel.json` |
+| `public/index.html` + `app.js` | La página única: landing de onboarding, gate, tablero de oportunidades, **editor de APU** (pestaña `#/apu`: inferencia, carga desde Excel/CSV, desglose por ítem plegable, badges de origen del precio, precio sugerido) y **administración** (pestaña `#/admin`: dashboard, carga de RUP —JSON o PDF—, experiencia, cobertura, catálogo APU y sincronización plegada). El token de escritura va INTEGRADO (`MiExtraccion2025`): el usuario nunca lo teclea — la seguridad real es Vercel Password Protection |
+| `public/pliego.js` | **Lector de pliegos** (sección de la pestaña APU): pdf.js en el navegador, columnas por coordenadas, progreso por página y respaldo por OCR. Sigue siendo archivo propio: sus funciones están atadas por pruebas que las extraen por archivo |
+| `public/onboarding.js` | La landing: RUP en PDF → perfil dinámico, y carga de experiencia por CSV (panel en la pestaña admin) |
 | `public/xlsx_lectura.js` | Lector .xlsx/.csv propio (ZIP + XML, DEFLATE inyectable) — la otra mitad de `public/xlsx.js`. Corre en navegador y en Node |
 | `public/apu_libro.js` | El presupuesto calculado → libro Excel con formato del **Presupuesto Nogal 4** (capítulos, fórmulas, AIU + IVA sobre utilidad, firmas, hoja APU por ítem) |
 | `lib/apu/importar.js` | Filas importadas → ítems del catálogo de precios: mapeo con plural tolerado y política de precios declarada (el del archivo manda; una sugerencia sin precio no cobra sola) |
 | `public/xlsx.js` | **Escritor `.xlsx` propio, sin dependencias** (ZIP + OOXML con estilos reales). Ver «Exportación a Excel» |
-| `public/admin.html` + `admin.js` | Panel de administración: encadena la sincronización full, **dashboard de procesos**, **carga de RUP**, **experiencia ejecutada** y **auditoría de cobertura**, todo desde el navegador y sin terminal |
 | `tests/e2e.js` | Ciclo completo con mocks de Socrata y Upstash (sin red externa) |
 
 ## Endpoints
@@ -425,7 +425,7 @@ segundo desglose.
 
 ### `GET /api/resumen` (protegido)
 
-El panel de `/admin.html`. Responde, sobre los **mismos procesos que sirve la app**, las preguntas
+El panel (pestaña `#/admin` de la página única). Responde, sobre los **mismos procesos que sirve la app**, las preguntas
 que de otro modo habría que contestar revisando 2 000 tarjetas a mano: cuántos son obra y cuántos
 consultoría, cuáles cierran esta semana, qué entidades acumulan procesos y con cuánta competencia
 histórica, en qué departamentos están, cuántos se caen por capacidad K.
@@ -481,7 +481,7 @@ Decisiones que conviene no re-aprender:
 
 ### `GET|POST /api/admin/rup` (protegido)
 
-Carga del RUP **por archivo JSON**, desde `/admin.html`. Antes los perfiles eran datos hardcodeados
+Carga del RUP **por archivo JSON**, desde la pestaña `#/admin`. Antes los perfiles eran datos hardcodeados
 en `lib/perfiles.js`: un código UNSPSC nuevo o un indicador del balance del año exigían tocar código
 y desplegar, y el dueño no tiene terminal.
 
@@ -690,7 +690,7 @@ en `indice:competencia:meta` (`descartados.sin_oferentes` / `sin_adjudicacion`) 
 
 El panel llegó a decir **«promedio 18,2 oferentes en 0 procesos»**. Eran **dos** cosas distintas:
 
-**(i) El «en 0 procesos» era un campo inexistente.** El detalle en línea de `/admin.html` leía
+**(i) El «en 0 procesos» era un campo inexistente.** El detalle en línea del panel leía
 `i.total_procesos` de la respuesta de `/api/competencia-detalle`, que nunca ha tenido ese campo: se
 llama `procesos_contados`. `total_procesos` existe, pero en el **otro** payload —el
 `competencia_entidad` que embebe `/api/oportunidades`—, y `public/app.js` sí usa el nombre correcto
@@ -896,7 +896,7 @@ la causa no sería el mercado sino que `valor_total_adjudicacion` esté copiando
   «arreglar» una de las dos para que case con la otra.
 - `/api/diagnostico` → bloque `baja_de_mercado`, con el reparto por granularidad **sobre los
   visibles**: dice si el índice alcanza a cubrir lo que la app sirve hoy.
-- `/admin.html` → tarjeta con la baja del mercado y los dos top-3, más el botón de reconstrucción.
+- la pestaña `#/admin` → tarjeta con la baja del mercado y los dos top-3, más el botón de reconstrucción.
 
 ### `GET /api/indice-baja` (protegido)
 
@@ -1295,11 +1295,11 @@ ese documento en una lista estructurada y editable.
 **Qué NO resuelve, y conviene tenerlo claro antes de leer el resto:** no hay precios. No es una
 biblioteca de APU valorados, no calcula rentabilidad, no propone AIU. Entrega ítem, unidad y cantidad
 —y el AIU **declarado** cuando el pliego lo declara, solo para validar la aritmética—. Eso lo hace el
-**editor de APU** (`/apu.html`, `lib/apu/*`), que es otra cosa y vive aparte.
+**editor de APU** (pestaña `#/apu`, `lib/apu/*`), que es otra cosa y vive aparte.
 
-**Dos páginas y dos catálogos, a propósito.** El lector (`/pliego.html`) usa
+**Dos secciones y dos catálogos, a propósito.** El lector (sección «Cargar pliego PDF» de la pestaña APU) usa
 `data/catalogo_apu.json`: 93 ítems **sin precios** y con sinónimos, es decir un **diccionario de
-reconocimiento** para casar el texto de un pliego. El editor (`/apu.html`) usa
+reconocimiento** para casar el texto de un pliego. El editor (la misma pestaña `#/apu`) usa
 `data/apu_catalogo.json`: 174 ítems **con precios** (17 de referencia + 157 del contrato adjudicado Nogal 2025, ver `docs/CALIBRACION_APU.md`), composición y rendimiento, es decir la
 **biblioteca de costeo**. Son preguntas distintas —«¿qué ítem es esta fila?» frente a «¿cuánto cuesta
 este ítem?»— y fusionarlas obligaría a elegir entre perder recall de reconocimiento o inventar
@@ -1314,7 +1314,7 @@ el despachador solo las llama, y las despacha *antes* de tocar Redis porque ning
 ### Dónde corre cada cosa, y por qué
 
 ```
-NAVEGADOR (/pliego.html)                          SERVIDOR                     TERCERO
+NAVEGADOR (lector de pliegos)                          SERVIDOR                     TERCERO
 ────────────────────                           ────────                     ───────
 PDF (archivo)  ──┐
                  ├─▶ pdf.js (CDN, v3 UMD)
@@ -1511,7 +1511,7 @@ Sin la variable no se inventa nada: **503 con la instrucción exacta** de cómo 
 de OCR.space no es éxito — el fallo viaja **dentro** del 200 (`IsErroredOnProcessing`, `OCRExitCode`
 1/2/3/4), así que se comprueba o se devolvería texto vacío como si la página no tuviera nada.
 
-### Frontend `/pliego.html`
+### Frontend del lector de pliegos (sección de la pestaña `#/apu`)
 
 Botón **«Cargar pliego (PDF)»**, archivo o URL, progreso por página, y una tabla **editable** donde
 todo se corrige a mano (los totales se recalculan) y se exporta a JSON. Las **limitaciones se
@@ -1603,7 +1603,7 @@ UNSPSC por perfil, la pertinencia, el anti-suministro y la cuantía — todo eso
 consulta, así que **cambiar esas reglas o cargar un RUP nuevo NO exige una `full`**. Solo lo
 exige tocar `admisibleParaIngesta` o la blacklist.
 
-## Editor de APU (`/apu.html` + `/api/apu/*`)
+## Editor de APU (pestaña `#/apu` + `/api/apu/*`)
 
 Del objeto del proceso a un presupuesto con desglose por insumo, exportable a Excel. Se apoya en el
 **catálogo de precios en Redis** y añade lo que aquel no cubre: qué obra es, cuántas unidades, el AIU,
@@ -1759,7 +1759,7 @@ entrada**. Salen dos hojas: **Presupuesto** y **Desglose** (insumo a insumo).
 
 ### Integración con el panel
 
-`/admin.html` **enlaza** el editor; no lo embebe. `vercel.json` sirve todo el sitio con
+El panel y el editor son pestañas de la misma página; nada se embebe por iframe. `vercel.json` sirve todo el sitio con
 `X-Frame-Options: DENY`, así que un iframe quedaría en blanco en producción aunque funcione en local.
 
 ## Claves en Redis
@@ -1904,7 +1904,7 @@ lleva `p_base`; meterlo también en la forma lo contaba dos veces y hacía que c
 
 ### El botón «APU» y el badge «APU listo»
 
-Cada fila de «Top 10 procesos más atractivos» en `/admin.html` lleva un botón **APU** que abre el
+Cada fila de «Top 10 procesos más atractivos» del panel lleva un botón **APU** que abre el
 editor con el proceso precargado por querystring (`objeto`, `unspsc`, `departamento`, `cuantia`,
 `entidad`, `entidad_nit`, `id_proceso`, `perfil`, `plazo`). Al guardar, el borrador queda asociado a
 ese `id_proceso` y al perfil, y la fila muestra **✅ APU listo**.
@@ -2042,7 +2042,7 @@ activo, que es la que hace que el proceso desaparezca del listado por dedup de `
 fallara a mitad, se pierde un reemplazo (el próximo delta lo repite), nunca el dato histórico. La
 salida física del activo la consuma la compactación del mes o la siguiente full.
 
-## Panel de administración (`/admin.html`)
+## Panel de administración (pestaña `#/admin`)
 
 Página estática con el mismo gate de clave, para operar el mantenimiento **sin terminal**.
 
@@ -2345,7 +2345,7 @@ Tras desplegar esta versión, en este orden:
    así que hay procesos que las reglas anteriores nunca dejaron entrar a Redis y que solo aparecen
    tras una recarga completa. Es la **última vez** que hará falta por un cambio de matching:
    de aquí en adelante afinar el matching, la pertinencia o cargar un RUP nuevo tiene efecto
-   inmediato (todo eso corre al servir la consulta). El panel `/admin.html` la encadena desde el
+   inmediato (todo eso corre al servir la consulta). El panel (pestaña `#/admin`) la encadena desde el
    navegador si no hay terminal.
 1. Abrir la web. Los falsos positivos (impresión, alimentos, internet, eventos) desaparecen de
    inmediato, sin esperar a la full: la consulta re-filtra al servir.

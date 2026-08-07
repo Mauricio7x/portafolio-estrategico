@@ -36,9 +36,10 @@
 "use strict";
 
 (() => {
-  const CLAVE = "231105";
-  const MAX_INTENTOS_CLAVE = 3;
-  const CLAVE_TOKEN = "historico_token";
+  /* token integrado: la misma constante de app.js (decisión del dueño, ago
+     2026 — la capa de seguridad real es Vercel Password Protection) */
+  const TOKEN = "MiExtraccion2025";
+  const leerToken = () => TOKEN;
 
   /* pdf.js desde CDN, con la versión CLAVADA y por un motivo que no es
      cosmético: **desde la v4, `pdfjs-dist` ya no publica build UMD** — es ESM
@@ -67,59 +68,9 @@
   const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  /* ══════════ Gate ══════════ */
-  let intentosClave = 0;
-  const accesoConcedido = () => { try { return sessionStorage.getItem("detecta-acceso") === "1"; } catch { return false; } };
-  function abrirApp() {
-    try { sessionStorage.setItem("detecta-acceso", "1"); } catch { /* sesión restringida */ }
-    $("gate").remove();
-    $("app").classList.remove("hidden");
-    // el panel arranca aquí, nunca antes: sus funciones usan constantes
-    // declaradas al final del módulo (ver «Arranque»)
-    arrancarPanel();
-  }
-  function bloquear() {
-    $("gate").innerHTML =
-      '<div class="text-center"><p class="text-2xl font-semibold">Acceso denegado</p>'
-      + '<p class="mt-2 text-sm text-gray-500">Este sitio es privado.</p></div>';
-  }
-  $("gate-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    if ($("gate-clave").value === CLAVE) return abrirApp();
-    intentosClave++;
-    if (intentosClave >= MAX_INTENTOS_CLAVE) return bloquear();
-    const err = $("gate-error");
-    const quedan = MAX_INTENTOS_CLAVE - intentosClave;
-    err.textContent = `Acceso denegado (${quedan} intento${quedan === 1 ? "" : "s"} restante${quedan === 1 ? "" : "s"}).`;
-    err.classList.remove("hidden");
-    $("gate-clave").value = "";
-    $("gate-clave").focus();
-  });
-
-  /* ══════════ Token ══════════ */
-  const leerToken = () => { try { return sessionStorage.getItem(CLAVE_TOKEN) || ""; } catch { return ""; } };
-  const guardarToken = (v) => { try { sessionStorage.setItem(CLAVE_TOKEN, v); } catch { /* sesión restringida */ } };
-  const olvidarToken = () => { try { sessionStorage.removeItem(CLAVE_TOKEN); } catch { /* sesión restringida */ } };
-
-  function pintarEstadoToken() {
-    const t = leerToken();
-    $("token-estado").textContent = t ? `Token guardado (${t.length} caracteres).` : "Sin token: la lectura de pliegos no funcionará.";
-    $("token-estado").className = `text-sm ${t ? "text-green-700" : "text-amber-700"}`;
-  }
-  $("form-token-apu").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const v = $("input-token-apu").value.trim();
-    // AVISAR en vez de `return` a secas: un botón que no responde parece roto
-    if (!v) { pintarEstadoToken(); return mensaje("Pegue el token antes de guardar.", "aviso"); }
-    guardarToken(v);
-    $("input-token-apu").value = "";
-    pintarEstadoToken();
-    mensaje("Token guardado en esta pestaña.", "ok");
-    cargarContrato();
-  });
-  $("btn-token-olvidar").addEventListener("click", () => {
-    olvidarToken(); pintarEstadoToken(); mensaje("Token olvidado.", "info");
-  });
+  /* El gate y el formulario del token murieron con la página unificada: el
+     gate es UNO y vive en app.js; el token va integrado y se inyecta en cada
+     petición. Este módulo solo cablea su sección dentro de la pestaña APU. */
 
   /* ══════════ Mensajes, chip y progreso ══════════ */
   function mensaje(texto, tipo) {
@@ -140,17 +91,17 @@
     ul.innerHTML = lista.map((a) => `<li>• ${esc(a)}</li>`).join("");
   }
   function chip(texto, { girando = false } = {}) {
-    $("chip-texto").textContent = texto;
-    $("chip-icono").textContent = girando ? "◔" : "•";
-    $("chip-icono").className = girando ? "spin inline-block" : "inline-block";
+    $("pl-chip-texto").textContent = texto;
+    $("pl-chip-icono").textContent = girando ? "◔" : "•";
+    $("pl-chip-icono").className = girando ? "spin inline-block" : "inline-block";
   }
   function progreso(hecho, total, etiqueta) {
-    const caja = $("prog-caja");
+    const caja = $("pl-prog-caja");
     if (total == null) return caja.classList.add("hidden");
     caja.classList.remove("hidden");
     const pct = total > 0 ? Math.round((hecho / total) * 100) : 0;
-    $("prog-barra").style.width = `${pct}%`;
-    $("prog-texto").textContent = etiqueta || `${hecho} de ${total} (${pct} %)`;
+    $("pl-prog-barra").style.width = `${pct}%`;
+    $("pl-prog-texto").textContent = etiqueta || `${hecho} de ${total} (${pct} %)`;
   }
   function ocupado(v) {
     for (const id of ["btn-extraer", "btn-ocr", "btn-limpiar"]) $(id).disabled = v;
@@ -400,7 +351,6 @@
       return { estado: 0, cuerpo: null, red: (e && e.message) || "sin conexión" };
     }
     try { datos = await r.json(); } catch { datos = null; }
-    if (r.status === 401) { olvidarToken(); pintarEstadoToken(); }
     return { estado: r.status, cuerpo: datos };
   }
 
@@ -552,12 +502,12 @@
     pintarTabla();
   });
 
-  $("btn-agregar").addEventListener("click", () => {
+  $("pl-btn-agregar").addEventListener("click", () => {
     filas.push(nuevaFila({}));
     pintarTabla();
   });
 
-  $("btn-exportar").addEventListener("click", () => {
+  $("pl-btn-exportar").addEventListener("click", () => {
     const salida = {
       _meta: {
         generado: new Date().toISOString(),
@@ -675,7 +625,6 @@
 
   async function extraer() {
     mensaje(null); avisos(null);
-    if (!leerToken()) return mensaje("Guarde primero el token de acceso, arriba.", "aviso");
     ocupado(true);
     docPdf = null;
     $("btn-ocr").disabled = true;
@@ -730,7 +679,7 @@
   function manejarRespuesta(r) {
     if (r.sinToken) return mensaje("Guarde primero el token de acceso, arriba.", "aviso");
     if (r.red) { chip("Sin conexión", {}); return mensaje(`No se pudo contactar el servidor: ${r.red}.`, "error"); }
-    if (r.estado === 401) { chip("Token inválido", {}); return mensaje("Token inválido. Guárdelo de nuevo arriba y reintente.", "error"); }
+    if (r.estado === 401) { chip("Token rechazado", {}); return mensaje("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error"); }
     if (!r.cuerpo || !r.cuerpo.ok) {
       chip("Error", {});
       return mensaje((r.cuerpo && r.cuerpo.error) || `El servidor respondió ${r.estado}.`, "error");
@@ -787,7 +736,7 @@
         });
         if (rt.sinToken) { progreso(null); chip("Sin token", {}); return mensaje("Guarde primero el token de acceso, arriba.", "aviso"); }
         if (rt.red) { progreso(null); chip("Sin conexión", {}); return mensaje(`No se pudo contactar el servidor: ${rt.red}.`, "error"); }
-        if (rt.estado === 401) { progreso(null); chip("Token inválido", {}); return mensaje("Token inválido. Guárdelo de nuevo arriba y reintente.", "error"); }
+        if (rt.estado === 401) { progreso(null); chip("Token rechazado", {}); return mensaje("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error"); }
         if (!rt.cuerpo || !rt.cuerpo.ok) {
           /* Una tanda que falla NO tira el documento entero: se registra y se
              sigue. 35 páginas leídas valen mucho más que un error global — y si
@@ -867,9 +816,12 @@
      app.js, donde el arranque junto al gate reventaba en la zona muerta temporal
      y la app se quedaba en silencio. */
   function arrancarPanel() {
-    pintarEstadoToken();
     chip("Sin pliego cargado", {});
     cargarContrato();
   }
-  if (accesoConcedido()) abrirApp();
+  /* app.js lo llama al abrir la pestaña APU por PRIMERA vez: los elementos ya
+     existen (la sección vive en index.html) y no se gasta una petición del
+     contrato para quien nunca abre el lector. Va después de declarar todo lo
+     que usa — la lección de la zona muerta temporal, intacta. */
+  window.__pliegoArrancar = arrancarPanel;
 })();

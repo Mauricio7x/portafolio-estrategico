@@ -28,7 +28,9 @@
      de vercel.json y, si fallara, el botón tiene que seguir funcionando */
   const CANONICA = "/api/admin/rup?origen=pdf";
   const CLAVE_PERFIL_RUP = "detecta_perfil_rup";
-  const CLAVE_TOKEN = "historico_token";
+  // token integrado (decisión del dueño, ago 2026): la carga de experiencia
+  // escribe configuración compartida y el servidor sigue exigiéndolo
+  const TOKEN = "MiExtraccion2025";
 
   const PDFJS_VERSION = "3.11.174"; // misma que pliego.js — no «actualizar» sin build UMD
   const PDFJS_URL = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.js`;
@@ -355,15 +357,11 @@
     p.classList.remove("hidden");
   }
 
-  $("btn-exp-toggle").addEventListener("click", () => $("exp-panel").classList.toggle("hidden"));
-
   $("btn-exp-cargar").addEventListener("click", async () => {
     mensajeExp(null);
     const archivo = $("exp-archivo").files && $("exp-archivo").files[0];
     if (!archivo) return mensajeExp("Elegí primero el archivo CSV (podés partir del formato de ejemplo).", "error");
-    let token = $("exp-token").value.trim();
-    if (!token) { try { token = sessionStorage.getItem(CLAVE_TOKEN) || ""; } catch { token = ""; } }
-    if (!token) return mensajeExp("La carga de experiencia escribe configuración compartida: pegá el token de administración.", "error");
+    const token = TOKEN;
 
     let convertido = null;
     try {
@@ -390,7 +388,7 @@
     try { cuerpo = await r.json(); } catch {
       return mensajeExp(`El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, iniciá sesión y reintentá.`, "error");
     }
-    if (r.status === 401) return mensajeExp("Token inválido: verificá el token de administración y reintentá.", "error");
+    if (r.status === 401) return mensajeExp("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
     if (!r.ok || !cuerpo.ok) {
       const detalle = cuerpo && cuerpo.errores && cuerpo.errores.length
         ? ` Primer error: ${cuerpo.errores[0].campo} — ${cuerpo.errores[0].error}.` : "";

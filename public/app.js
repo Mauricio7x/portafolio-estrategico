@@ -1,39 +1,26 @@
 /* ============================================================================
-   Detecta · Frontend (sin build, sin dependencias — Tailwind por CDN)
+   Portafolio Estratégico · Frontend unificado (una página, tres pestañas)
    ----------------------------------------------------------------------------
-   1. Gate de clave (231105). Nota honesta: es una barrera de cortesía en el
-      cliente; la protección real del despliegue es Vercel Password Protection
-      (servidor), que puede activarse encima sin tocar este código.
-   2. Consulta /api/oportunidades y pinta tarjetas. Si el backend responde 503
-      (Redis vacío → sincronización recién disparada), reintenta solo con
-      cuenta regresiva hasta que la carga inicial produzca datos.
-   3. El orden por defecto es «Más atractivas» (ordenar_por=atractividad):
-      primero lo que pasa las CUATRO PUERTAS y, dentro de cada grupo, por valor
-      esperado. Cada tarjeta muestra la banda de competencia de su entidad
-      (🟢/🟡/🔴/⚪).
-   3-bis. LAS CUATRO PUERTAS (ago 2026) sustituyen a la barra de puntaje 0-100:
-      RUP · K · Caja · Competencia, cada una con su cifra en el `title`, más
-      «Prob. estimada» y «Valor esperado». Lo que no pasa una puerta se atenúa
-      con el motivo en vez de desaparecer, y el toggle «Mostrar solo viables»
-      (encendido) decide si aparece. El porqué está en docs/ATRACTIVIDAD.md: una
-      suma ponderada es compensatoria, y no poder financiar una obra no se
-      compensa con cuantía alta.
-   3-ter. LA LISTA NO PIDE TOKEN (ago 2026). Los clientes entran aquí a ver a
-      qué presentarse y no tienen por qué tener credencial: se llama a
-      /api/oportunidades sin cabecera y el servidor responde 200 con las cifras
-      financieras REDACTADAS (`finanzas_visibles:false`) — el veredicto de cada
-      puerta viaja igual, que es lo que se viene a ver. Si el dueño ya guardó el
-      token en la pestaña (porque abrió el detalle de competencia) se manda y
-      vuelven las cifras, pero su ausencia NUNCA bloquea ni abre un formulario;
-      un 401 por token caducado se resuelve olvidándolo y reintentando sin él.
-      El formulario del token sobrevive solo para /api/competencia-detalle, que
-      sí exige credencial y se abre por una acción explícita del dueño.
-      El gate de la clave 231105 es una cortesía del cliente y no protege la API.
-   4. Veredicto GRADUADO en cada tarjeta (jul 2026): el badge de matching dice
-      con qué FUERZA encaja en el RUP (RUP ✓ por clase · RUP ~ por familia ·
-      RUP ≈ por clase afín · «Objeto sugiere obra») y el de pertinencia qué
-      TIPO de trabajo es (Obra civil · Infraestructura · Consultoría ·
-      Verificar objeto). El detalle completo va en el `title` de cada badge.
+   ago 2026: index.html es la ÚNICA página. Este archivo consolida los tres
+   módulos que antes vivían en páginas separadas — el tablero de oportunidades
+   (app.js), el editor de APU (apu.js) y la administración (admin.js) — en un
+   solo IIFE con tres pestañas. pliego.js y onboarding.js siguen siendo archivos
+   propios (los cargan <script> de index.html) porque sus funciones están atadas
+   por pruebas que las extraen por archivo.
+
+   EL TOKEN VA INTEGRADO (decisión del dueño, ago 2026). `TOKEN` se inyecta en
+   la cabecera `x-historico-token` de TODA llamada a la API y el usuario no ve
+   ningún formulario de token. No es un secreto: la capa de seguridad real del
+   despliegue es Vercel Password Protection, y el token queda como llave del
+   servidor (las APIs NO se relajaron). Rotarlo = cambiar HISTORICO_TOKEN en
+   Vercel y esta constante a la vez. Si no coinciden, la lista degrada a la
+   vista pública (cifras redactadas) y los paneles lo dicen con esas palabras.
+
+   Las lecciones caras siguen vigentes y las pruebas las vigilan aquí:
+   · el arranque automático va AL FINAL del IIFE (zona muerta temporal);
+   · ningún `|| 0` sobre una cifra del servidor;
+   · el parseo del JSON va APARTE del fetch (el muro del edge responde HTML);
+   · ninguna pulsación se queda sin respuesta visible.
    ========================================================================== */
 "use strict";
 
@@ -42,10 +29,118 @@
   const MAX_INTENTOS_CLAVE = 3;
   const REINTENTO_SYNC_SEG = 20;   // espera entre reintentos tras un 503
   const MAX_REINTENTOS_SYNC = 30;  // ~10 min: suficiente para la carga inicial
+  // encadenado de la sincronización (pestaña admin)
+  const ESPERA_ENTRE_TANDAS_MS = 3000;   // {done:false} → siguiente tanda
+  const ESPERA_CANDADO_MS = 10000;       // {enCurso:true} → otra tanda corre
+  const BACKOFF_MS = [5000, 10000, 20000]; // red/5xx: 3 reintentos crecientes
 
   const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
   const fmtNum = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
+  const fmt = new Intl.NumberFormat("es-CO");
+  const fmt1 = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
+  const nf = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 });
+  const nf2 = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 });
+  /* `pesos`/`num` reciben `null` cuando el servidor no tiene el dato y pintan
+     «—». Es justo lo contrario de un `|| 0`: no inventan un cero creíble. */
+  const pesos = (n) => (Number.isFinite(n) ? `$${nf.format(n)}` : "—");
+  const num = (n) => (Number.isFinite(n) ? nf2.format(n) : "—");
+
+  /* ══════════ Token integrado ══════════
+     `tokenRechazado`: si el despliegue rechaza el token integrado (su
+     HISTORICO_TOKEN es otro), la lista pública DEGRADA a la vista sin cifras en
+     vez de entrar en bucle de 401 — el mismo contrato que tenía un token
+     caducado guardado en la pestaña. */
+  const TOKEN = "MiExtraccion2025";
+  let tokenRechazado = false;
+  const tokenGuardado = () => (tokenRechazado ? "" : TOKEN);
+  const leerToken = () => TOKEN;
+  function olvidarToken() { tokenRechazado = true; }
+
+  /* ══════════ Gate (una sola copia para toda la página) ══════════ */
+  let intentosClave = 0;
+  /* abrirApp NO escribe `detecta-acceso`: esa marca significa «pasó el gate»
+     y la pone el propio gate al validar la clave. */
+  function abrirApp() {
+    const onboarding = document.getElementById("onboarding");
+    if (onboarding) onboarding.classList.add("hidden");
+    const gate = $("gate");
+    if (gate) gate.remove();
+    $("app").classList.remove("hidden");
+    let hash = "";
+    try { hash = (location.hash.match(/^#\/([a-z]+)/) || [])[1] || ""; } catch { hash = ""; }
+    activarPestana(hash || "licitaciones", { empujarHash: false });
+    buscar();
+  }
+  function bloquear() {
+    $("gate").innerHTML =
+      '<div class="text-center"><p class="text-2xl font-semibold">Acceso denegado</p>' +
+      '<p class="mt-2 text-sm text-gray-500">Este sitio es privado.</p></div>';
+  }
+  $("gate-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if ($("gate-clave").value === CLAVE) {
+      // sessionStorage puede lanzar en modo restringido: la clave correcta
+      // tiene que abrir la app igual, solo que sin recordar la sesión
+      try { sessionStorage.setItem("detecta-acceso", "1"); } catch { /* sesión no recordada */ }
+      return abrirApp();
+    }
+    intentosClave++;
+    if (intentosClave >= MAX_INTENTOS_CLAVE) return bloquear();
+    const err = $("gate-error");
+    err.textContent = `Acceso denegado (${MAX_INTENTOS_CLAVE - intentosClave} intento${MAX_INTENTOS_CLAVE - intentosClave === 1 ? "" : "s"} restante${MAX_INTENTOS_CLAVE - intentosClave === 1 ? "" : "s"}).`;
+    err.classList.remove("hidden");
+    $("gate-clave").value = "";
+    $("gate-clave").focus();
+  });
+
+  /* ══════════ Pestañas ══════════
+     Tres secciones, una página. La pestaña viva se refleja en la URL (#/apu)
+     para que recargar conserve el sitio; en móvil los mismos botones son la
+     barra inferior (data-tab compartido). Cada pestaña arranca lo suyo la
+     PRIMERA vez que se abre: abrir la app no dispara el panel de admin ni la
+     carga del catálogo de APU si nadie los mira. */
+  const PESTANAS = ["licitaciones", "apu", "admin"];
+  const arrancadas = { apu: false, admin: false, pliego: false };
+  function activarPestana(nombre, { empujarHash = true } = {}) {
+    const destino = PESTANAS.includes(nombre) ? nombre : "licitaciones";
+    for (const p of PESTANAS) {
+      const seccion = $(`tab-${p}`);
+      if (seccion) seccion.classList.toggle("hidden", p !== destino);
+    }
+    document.querySelectorAll("[data-tab]").forEach((b) => {
+      b.classList.toggle("activa", b.getAttribute("data-tab") === destino);
+    });
+    if (empujarHash) { try { history.replaceState(null, "", `#/${destino}`); } catch { /* entorno raro */ } }
+    if (destino === "apu" && !arrancadas.apu) { arrancadas.apu = true; arrancar(); }
+    if (destino === "apu" && !arrancadas.pliego && typeof window.__pliegoArrancar === "function") {
+      arrancadas.pliego = true;
+      window.__pliegoArrancar();
+    }
+    if (destino === "admin" && !arrancadas.admin) { arrancadas.admin = true; arrancarPaneles(); }
+    try { window.scrollTo({ top: 0 }); } catch { /* sin scroll */ }
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-tab]");
+    if (b) activarPestana(b.getAttribute("data-tab"));
+  });
+  window.addEventListener("hashchange", () => {
+    let hash = "";
+    try { hash = (location.hash.match(/^#\/([a-z]+)/) || [])[1] || ""; } catch { hash = ""; }
+    if (hash) activarPestana(hash, { empujarHash: false });
+  });
+
+  /* El botón «APU» de una tarjeta o de una fila del panel: precarga el proceso
+     en el editor y cambia a su pestaña. Antes esto abría /apu.html con una
+     querystring; la MISMA cadena de parámetros viaja ahora en memoria, así que
+     `precargarDesdeURL` no cambió de contrato. */
+  function abrirEditorConProceso(q) {
+    paramsProceso = q instanceof URLSearchParams ? q : new URLSearchParams(String(q || ""));
+    const yaArrancado = arrancadas.apu;
+    activarPestana("apu");
+    if (yaArrancado) precargarDesdeURL();
+  }
 
   /* Competencia histórica de la entidad (índice sobre 2 años de adjudicaciones):
      es lo que decide el orden por defecto — primero donde menos gente compite. */
@@ -101,40 +196,6 @@
     }
     sel.value = p.id;
   }
-
-  /* ══════════ Gate ══════════ */
-  let intentosClave = 0;
-  /* abrirApp NO escribe `detecta-acceso`: esa marca significa «pasó el gate»
-     y la pone el propio gate al validar la clave. Escribirla aquí haría que
-     entrar por un perfil de RUP contara como haber pasado el gate. */
-  function abrirApp() {
-    const onboarding = document.getElementById("onboarding");
-    if (onboarding) onboarding.classList.add("hidden");
-    $("gate").remove();
-    $("app").classList.remove("hidden");
-    buscar();
-  }
-  function bloquear() {
-    $("gate").innerHTML =
-      '<div class="text-center"><p class="text-2xl font-semibold">Acceso denegado</p>' +
-      '<p class="mt-2 text-sm text-gray-500">Este sitio es privado.</p></div>';
-  }
-  $("gate-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    if ($("gate-clave").value === CLAVE) {
-      // sessionStorage puede lanzar en modo restringido: la clave correcta
-      // tiene que abrir la app igual, solo que sin recordar la sesión
-      try { sessionStorage.setItem("detecta-acceso", "1"); } catch { /* sesión no recordada */ }
-      return abrirApp();
-    }
-    intentosClave++;
-    if (intentosClave >= MAX_INTENTOS_CLAVE) return bloquear();
-    const err = $("gate-error");
-    err.textContent = `Acceso denegado (${MAX_INTENTOS_CLAVE - intentosClave} intento${MAX_INTENTOS_CLAVE - intentosClave === 1 ? "" : "s"} restante${MAX_INTENTOS_CLAVE - intentosClave === 1 ? "" : "s"}).`;
-    err.classList.remove("hidden");
-    $("gate-clave").value = "";
-    $("gate-clave").focus();
-  });
 
   /* ══════════ Estados de la vista ══════════ */
   function mostrar(estado, msg) {
@@ -262,7 +323,7 @@
   }
 
   /* ══════════ Pintado ══════════ */
-  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  /* `esc` vive en la cabecera compartida */
 
   function chip(texto, clases, titulo) {
     const t = titulo ? ` title="${esc(titulo)}"` : "";
@@ -427,6 +488,25 @@
       </div>`;
   }
 
+  /* La querystring que antes viajaba a /apu.html: mismos nombres de parámetro
+     (el editor los lee con el MISMO precargarDesdeURL de siempre). */
+  function qApu(l) {
+    const q = new URLSearchParams();
+    if (l.nombre_del_procedimiento) q.set("objeto", l.nombre_del_procedimiento);
+    if (l.entidad) q.set("entidad", l.entidad);
+    if (l.nit_entidad) q.set("entidad_nit", String(l.nit_entidad));
+    if (l.departamento_entidad) q.set("departamento", l.departamento_entidad);
+    const unspsc = l.codigo_principal_de_categoria
+      || (l.rup && l.rup.unspsc && l.rup.unspsc.codigo_proceso) || "";
+    if (unspsc) q.set("unspsc", String(unspsc));
+    if (l.cuantia_cop != null) q.set("cuantia", String(l.cuantia_cop));
+    if (l.id_del_proceso != null) q.set("id_proceso", String(l.id_del_proceso));
+    if (l.plazo_meses != null) q.set("plazo", String(l.plazo_meses));
+    if (l.modalidad_de_contratacion) q.set("modalidad", l.modalidad_de_contratacion);
+    q.set("perfil", $("f-perfil").value);
+    return q.toString();
+  }
+
   function tarjeta(l) {
     const rup = l.rup || {};
     const cierre = l.fecha_cierre ? new Date(l.fecha_cierre) : null;
@@ -471,9 +551,13 @@
         ${l.modalidad_de_contratacion ? chip(esc(l.modalidad_de_contratacion), "bg-gray-100 text-gray-600") : ""}
       </div>
 
-      <div class="mt-4 flex items-center justify-between text-sm">
+      <div class="mt-4 flex items-center justify-between gap-3 text-sm">
         <span class="text-gray-400">${esc(l.estado_del_procedimiento || "")}</span>
-        ${l.urlproceso ? `<a href="${esc(l.urlproceso)}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 hover:underline">Ver en SECOP II ↗</a>` : ""}
+        <span class="flex items-center gap-3">
+          <button type="button" class="btn-apu rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50"
+                  data-apu-q="${esc(qApu(l))}" title="Calcular APU y rentabilidad de este proceso en la pestaña APU">📊 APU</button>
+          ${l.urlproceso ? `<a href="${esc(l.urlproceso)}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 hover:underline">Ver en SECOP II ↗</a>` : ""}
+        </span>
       </div>
     </article>`;
   }
@@ -505,25 +589,12 @@
 
   /* ══════════ Detalle de competencia (modal) ══════════
      El badge afirma «promedio 3 oferentes en 12 procesos». Aquí se ven los 12,
-     con los que quedaron fuera del promedio y POR QUÉ. El endpoint está
-     protegido con el mismo HISTORICO_TOKEN que el diagnóstico, así que:
-       · el token se guarda en sessionStorage (nunca en la URL, que quedaría en
-         el historial del navegador y en los logs de acceso);
-       · viaja por el header `x-historico-token`;
-       · si falta, el propio modal lo pide; si el servidor lo rechaza, se borra
-         y se vuelve a pedir. */
-  const CLAVE_TOKEN = "historico_token";
-  function tokenGuardado() {
-    // sessionStorage puede lanzar (modo restringido / almacenamiento
-    // particionado): sin este try el clic del badge moría en silencio
-    try { return sessionStorage.getItem(CLAVE_TOKEN) || ""; } catch { return ""; }
-  }
-  function guardarToken(t) {
-    try { sessionStorage.setItem(CLAVE_TOKEN, t); return true; } catch { return false; }
-  }
-  function olvidarToken() {
-    try { sessionStorage.removeItem(CLAVE_TOKEN); } catch { /* nada que borrar */ }
-  }
+     con los que quedaron fuera del promedio y POR QUÉ. El endpoint exige
+     HISTORICO_TOKEN; el token integrado viaja por el header `x-historico-token`
+     (nunca en la URL) y el usuario no ve ningún formulario. */
+  /* el token va integrado (ver cabecera): las utilidades de sesión murieron
+     con el formulario. `tokenGuardado`/`olvidarToken` viven arriba, junto a
+     TOKEN, porque la degradación ante un 401 sigue siendo la misma. */
 
   const MOTIVO_EXCLUSION = {
     sin_dato_oferentes: "El proceso se adjudicó pero el dataset no dice cuántos se presentaron",
@@ -724,8 +795,7 @@
   }
 
   async function cargarDesglose(id) {
-    const token = tokenGuardado();
-    if (!token) return pedirToken(null, () => cargarDesglose(id));
+    const token = leerToken();
     $("modal-cuerpo").innerHTML = cargando("Reconstruyendo el cálculo…");
     let r, cuerpo;
     try {
@@ -744,8 +814,8 @@
       return;
     }
     if (r.status === 401) {
-      olvidarToken();
-      return pedirToken("Token inválido. Escriba uno nuevo y vuelva a intentarlo.", () => cargarDesglose(id));
+      $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-red-600">El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.</p>';
+      return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
       $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`)}</p>`;
@@ -754,61 +824,10 @@
     pintarDesglose(cuerpo);
   }
 
-  /* Formulario del token. REGLA: ninguna pulsación puede quedarse sin
-     respuesta visible — un botón que «no hace nada» es peor que un error. Por
-     eso el campo vacío avisa, el envío deshabilita el botón y muestra estado, y
-     el fallo de almacenamiento se cuenta en vez de morir callado. */
-  function pedirToken(aviso, alGuardar) {
-    $("modal-cuerpo").innerHTML = `
-      <div id="aviso-token" class="${aviso ? "" : "hidden "}mb-3 rounded-lg bg-red-50 p-3 text-sm font-medium text-red-700">${esc(aviso || "")}</div>
-      <p class="text-gray-600">Este detalle sale del corpus histórico y está protegido con el mismo token que la
-        extracción histórica (<code>HISTORICO_TOKEN</code>).</p>
-      <form id="form-token" class="mt-3 flex flex-wrap gap-2">
-        <input id="entrada-token" type="password" autocomplete="off" spellcheck="false" placeholder="Pegue aquí el token"
-               class="min-w-0 flex-1 rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-        <button id="btn-token" type="submit"
-                class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-50">
-          Guardar y ver detalle
-        </button>
-      </form>
-      <label class="mt-2 flex items-center gap-2 text-xs text-gray-500">
-        <input id="ver-token" type="checkbox" class="h-3.5 w-3.5 rounded border-gray-300"> Mostrar el token
-      </label>
-      <p class="mt-2 text-xs text-gray-400">Se guarda solo en esta pestaña (sessionStorage) y viaja por cabecera,
-        nunca en la URL.</p>`;
-
-    const entrada = $("entrada-token");
-    const aviso1 = (msg) => {
-      const caja = $("aviso-token");
-      caja.textContent = msg;
-      caja.classList.remove("hidden");
-    };
-    const enviar = (e) => {
-      if (e) e.preventDefault();
-      const t = entrada.value.trim();
-      if (!t) { aviso1("Pegue el token para poder consultar el detalle."); entrada.focus(); return; }
-      if (!guardarToken(t)) { aviso1("Este navegador no permite guardar el token en la pestaña. Revise la configuración de almacenamiento."); return; }
-      $("btn-token").disabled = true;
-      alGuardar();
-    };
-    // submit del formulario Y clic del botón: si algo llegara a suprimir el
-    // envío del formulario, el clic sigue funcionando
-    $("form-token").addEventListener("submit", enviar);
-    $("btn-token").addEventListener("click", enviar);
-    $("ver-token").addEventListener("change", (e) => {
-      entrada.type = e.target.checked ? "text" : "password";
-    });
-    entrada.focus();
-  }
-
-  /* El formulario del token SOBREVIVE, pero solo para el detalle de
-     competencia: /api/competencia-detalle sí exige credencial porque abre el
-     corpus histórico de una entidad. Es una acción EXPLÍCITA del dueño (pulsar
-     la banda de competencia), no algo que el cliente se encuentre al entrar.
-     La lista nunca llega hasta aquí. */
+  /* El detalle de competencia exige credencial en el servidor; el token
+     integrado la aporta sin formulario. La lista nunca llega hasta aquí. */
   async function cargarDetalle(entidad) {
-    const token = tokenGuardado();
-    if (!token) return pedirToken(null, () => cargarDetalle(entidad));
+    const token = leerToken();
     $("modal-cuerpo").innerHTML = '<p class="py-8 text-center text-gray-400">Consultando el histórico…</p>';
     let r, cuerpo;
     try {
@@ -820,8 +839,8 @@
       return;
     }
     if (r.status === 401) {
-      olvidarToken();
-      return pedirToken("Token inválido. Escriba uno nuevo y vuelva a intentarlo.", () => cargarDetalle(entidad));
+      $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-red-600">El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.</p>';
+      return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
       $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`)}</p>`;
@@ -841,6 +860,11 @@
       const id = prob.getAttribute("data-id");
       abrirModal(prob.getAttribute("data-objeto") || id, "Desglose de la probabilidad", "Reconstruyendo el cálculo…");
       cargarDesglose(id);
+      return;
+    }
+    const apuBtn = e.target.closest(".btn-apu");
+    if (apuBtn) {
+      abrirEditorConProceso(new URLSearchParams(apuBtn.getAttribute("data-apu-q") || ""));
       return;
     }
     const b = e.target.closest(".banda-competencia");
@@ -886,6 +910,2697 @@
   for (const id of ["f-perfil", "f-cuantia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
     "f-sin-unspsc", "f-solo-viables"]) {
     $(id).addEventListener("change", () => { pagina = 1; buscar(); });
+  }
+
+
+  /* Llamada autenticada del editor: el token integrado viaja en cabecera en
+     todas las peticiones. Un 401 solo puede significar que HISTORICO_TOKEN del
+     despliegue no coincide con el token integrado, y se dice con esas palabras
+     — no hay formulario que abrir ni token que re-pedir. */
+  async function api(ruta, opciones = {}) {
+    const cfg = {
+      method: opciones.method || "GET",
+      headers: { "x-historico-token": leerToken() },
+    };
+    if (opciones.body !== undefined) {
+      cfg.headers["Content-Type"] = "application/json";
+      cfg.body = JSON.stringify(opciones.body);
+    }
+    let r;
+    try {
+      r = await fetch(ruta, cfg);
+    } catch (e) {
+      throw new Error(`Sin conexión con el servidor (${e.message}).`);
+    }
+    /* el parseo va APARTE del fetch: el muro del edge responde HTML */
+    let cuerpo = null;
+    try { cuerpo = await r.json(); } catch { /* respuesta no-JSON */ }
+    if (r.status === 401) {
+      throw new Error("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.");
+    }
+    if (!r.ok) {
+      throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
+    }
+    return cuerpo;
+  }
+
+  /* ══════════════════════ EDITOR DE APU (pestaña 2) ══════════════════════ */
+  function msgApu(texto, tipo = "info") {
+    const el = $("accion-mensaje");
+    const colores = { info: "text-gray-600", ok: "text-emerald-700", error: "text-red-600" };
+    el.className = `mt-3 text-sm ${colores[tipo] || colores.info}`;
+    el.textContent = texto;
+  }
+
+  /* ─────────────────────────── estado ──────────────────────────────── */
+  let CATALOGO = null;      // respuesta de /api/apu/catalogo
+  let filas = [];           // [{item_id, descripcion, unidad, cantidad, rendimiento_override}]
+  let ultimoCalculo = null; // respuesta de /api/apu/calcular
+  let idActual = null;      // id del presupuesto cargado/guardado
+  let ultimoOptimizador = null; // bloque `optimizador` de /api/apu/rentabilidad
+  /* Guarda de reentrada: «Calcular APU» dispara la rentabilidad sola cuando hay
+     proceso asociado, y aplicar un descuento vuelve a calcular el APU. Sin esto
+     dos pulsaciones seguidas dejarían dos peticiones en vuelo pintando la misma
+     caja en el orden en que respondan. */
+  let rentabilidadEnVuelo = false;
+
+  /* ─────────────────────── configuración de la UI ───────────────────── */
+  function leerConfig() {
+    const anticipoCrudo = $("anticipo").value.trim();
+    const dedCrudo = $("deducciones").value.trim();
+    return {
+      modo_aiu: $("modo-aiu").value,
+      aiu_pct: Number($("aiu").value),
+      utilidad_pct: Number($("utilidad").value),
+      imprevistos_pct: Number($("imprevistos").value),
+      // vacío = SIN DATO, no cero. La diferencia la respeta el motor.
+      anticipo_pct: anticipoCrudo === "" ? null : Number(anticipoCrudo),
+      aplicar_ajuste_competitivo: $("ajuste-competitivo").checked,
+      factor_baja: Number($("factor-baja").value),
+      deducciones_pct: dedCrudo === "" ? null : Number(dedCrudo),
+    };
+  }
+
+  function aplicarConfig(c) {
+    if (!c) return;
+    if (c.modo_aiu) $("modo-aiu").value = c.modo_aiu;
+    if (c.aiu_pct != null) $("aiu").value = c.aiu_pct;
+    if (c.utilidad_pct != null) $("utilidad").value = c.utilidad_pct;
+    if (c.imprevistos_pct != null) $("imprevistos").value = c.imprevistos_pct;
+    $("anticipo").value = c.anticipo_pct == null ? "" : c.anticipo_pct;
+    $("ajuste-competitivo").checked = !!c.aplicar_ajuste_competitivo;
+    if (c.factor_baja != null) $("factor-baja").value = c.factor_baja;
+    $("deducciones").value = c.deducciones_pct == null ? "" : c.deducciones_pct;
+    sincronizarBaja();
+  }
+
+  function sincronizarBaja() {
+    const activo = $("ajuste-competitivo").checked;
+    $("factor-baja").disabled = !activo;
+    $("btn-sugerir-baja").disabled = !activo;
+  }
+  $("ajuste-competitivo").addEventListener("change", sincronizarBaja);
+
+  /* ────────────────────────── catálogo ─────────────────────────────── */
+  async function cargarCatalogo() {
+    const r = await api("/api/apu/catalogo");
+    if (!r) return;
+    CATALOGO = r;
+
+    $("aviso-precios").textContent = r.aviso
+      || "Precios de referencia regionalizada, no cotizaciones: verifique contra cotización real antes de ofertar.";
+
+    const dep = $("departamento");
+    const conRegion = new Set(r.departamentos_con_region || []);
+    /* El desplegable marca cuáles tienen precio de referencia y cuáles no. Sin
+       la marca, elegir Chocó parecería exactamente igual de fiable que elegir
+       Antioquia, y no lo es: uno se calcula con su región y el otro con la base. */
+    dep.innerHTML = '<option value="">— Sin departamento —</option>'
+      + (r.departamentos || []).map((d) => {
+        const marca = conRegion.has(d) ? "" : "  ⚪ sin región cotizada";
+        return `<option value="${esc(d)}">${esc(d)}${esc(marca)}</option>`;
+      }).join("");
+
+    const sel = $("item-nuevo");
+    sel.innerHTML = (r.items || [])
+      .map((i) => `<option value="${esc(i.codigo)}">${esc(i.descripcion)} (${esc(i.unidad)})</option>`)
+      .join("");
+  }
+
+  /* ────────────────────────── inferencia ───────────────────────────── */
+  $("btn-inferir").addEventListener("click", async () => {
+    const objeto = $("objeto").value.trim();
+    if (!objeto) {
+      pintarInferencia({ estado: "no_determinada", mensaje: "Escriba el objeto del proceso antes de inferir." });
+      return;
+    }
+    const btn = $("btn-inferir");
+    btn.disabled = true;
+    btn.textContent = "Infiriendo…";
+    try {
+      const r = await api("/api/apu/inferir", {
+        method: "POST",
+        body: { objeto, codigos_unspsc: $("codigos-unspsc").value.trim() },
+      });
+      if (!r) return;
+      pintarInferencia(r);
+      if (r.items && r.items.length) {
+        filas = r.items.map((i) => ({
+          item_id: i.codigo, descripcion: i.descripcion || i.codigo, unidad: i.unidad,
+          cantidad: 0, rendimiento_override: null,
+        }));
+        ultimoCalculo = null;
+        pintarTabla();
+      }
+    } catch (e) {
+      pintarInferencia({ estado: "no_determinada", mensaje: `No se pudo inferir: ${e.message}` });
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Inferir ítems";
+    }
+  });
+
+  function pintarInferencia(r) {
+    const caja = $("inferencia");
+    const estilos = {
+      verde: "bg-emerald-50 text-emerald-900",
+      amarillo: "bg-amber-50 text-amber-900",
+      no_determinada: "bg-gray-100 text-gray-700",
+    };
+    const emoji = { verde: "🟢", amarillo: "🟡", no_determinada: "⚪" };
+    caja.className = `mt-4 rounded-xl p-4 text-sm ${estilos[r.estado] || estilos.no_determinada}`;
+    caja.classList.remove("hidden");
+
+    let html = `<p class="font-medium">${emoji[r.estado] || "⚪"} ${esc(r.mensaje || "")}</p>`;
+    if (r.tipologia) {
+      html += `<p class="mt-1 text-xs opacity-80">Tipología <strong>${esc(r.tipologia.codigo)}</strong> · `
+        + `${esc(r.tipologia.nombre)} · unidad dominante ${esc(r.tipologia.unidad_dominante || "—")} · `
+        + `puntaje ${r.puntaje}, margen ${r.margen}</p>`;
+      if (r.tipologia.sin_apu && r.tipologia.nota) {
+        html += `<p class="mt-2 rounded-lg bg-white/60 p-2 text-xs">⚠️ ${esc(r.tipologia.nota)}</p>`;
+      }
+    }
+    if (r.cantidades && r.cantidades.length) {
+      html += `<p class="mt-2 text-xs opacity-80">Magnitudes legibles en el objeto: `
+        + r.cantidades.map((c) => `<strong>${num(c.valor)} ${esc(c.unidad)}</strong>`).join(" · ")
+        + " — verifíquelas contra el formulario de cantidades del pliego.</p>";
+    }
+    if (r.unspsc && r.unspsc.presente) {
+      html += `<p class="mt-1 text-xs opacity-70">Familias UNSPSC leídas: ${r.unspsc.familias.map(esc).join(", ")}</p>`;
+    }
+    caja.innerHTML = html;
+  }
+
+  /* ────────────────────────── tabla de ítems ───────────────────────── */
+  $("btn-agregar").addEventListener("click", () => {
+    if (!CATALOGO) return;
+    const codigo = $("item-nuevo").value;
+    const def = CATALOGO.items.find((i) => i.codigo === codigo);
+    if (!def) return;
+    filas.push({
+      item_id: def.codigo, descripcion: def.descripcion, unidad: def.unidad,
+      cantidad: 0, rendimiento_override: null,
+    });
+    ultimoCalculo = null;
+    pintarTabla();
+  });
+
+  function pintarTabla() {
+    const cuerpo = $("tabla");
+    $("tabla-vacia").classList.toggle("hidden", filas.length > 0);
+    $("btn-calcular").disabled = filas.length === 0;
+    $("btn-exportar").disabled = !ultimoCalculo;
+
+    /* Una sola cadena y un solo innerHTML: con 200-300 ítems importados, armar
+       nodos uno a uno congela la pestaña. Los manejadores van DELEGADOS, así
+       que repintar entero no pierde ninguno. El desglose por componente vive en
+       una fila de DETALLE plegada por ítem: la tabla enseña lo que se decide
+       (cantidad, precio, total) y el porqué se abre al pulsar el ítem. */
+    cuerpo.innerHTML = filas.map((f, i) => {
+      const def = CATALOGO && f.item_id ? CATALOGO.items.find((x) => x.codigo === f.item_id) : null;
+      const rendPorDefecto = def && Number.isFinite(def.rendimiento_dia) ? def.rendimiento_dia : null;
+      const capitulo = f.capitulo
+        ? `<span class="block text-[11px] uppercase tracking-wide text-gray-400">${esc(f.capitulo)}</span>` : "";
+      const sugerencia = !f.item_id && f.sugerencia
+        ? `<span class="block text-[11px] text-gray-400">Sugerencia del catálogo: ${esc(f.sugerencia)}</span>` : "";
+      return `<tr data-fila="${i}" title="Pulse el ítem para abrir su desglose">
+        <td class="cursor-pointer py-2 pr-3">
+          ${capitulo}
+          <span class="font-medium">${esc(f.descripcion || f.item_id || "—")}</span>
+          <span class="block text-xs text-gray-400"><span aria-hidden="true">▸</span> ${esc(f.item_id || (f.codigo ? `fila ${f.codigo} del archivo` : "personalizado"))}</span>
+          ${sugerencia}
+        </td>
+        <td class="py-2 pr-3 text-gray-500">${esc(f.unidad || "—")}</td>
+        <td class="py-2 pr-3 text-right">
+          <input type="number" min="0" step="any" data-campo="cantidad" data-fila="${i}"
+                 value="${f.cantidad || ""}" placeholder="0"
+                 class="edit w-24 rounded border border-gray-200 px-2 py-1 text-right num">
+        </td>
+        <td class="py-2 pr-3 text-right">
+          <input type="number" min="0" step="any" data-campo="precio" data-fila="${i}"
+                 value="${f.precio_manual == null ? "" : f.precio_manual}"
+                 placeholder="${f.item_id ? "del catálogo" : "requerido"}"
+                 class="edit w-28 rounded border border-gray-200 px-2 py-1 text-right num">
+        </td>
+        <td class="py-2 pr-3 text-right num font-medium" data-celda="unitario-${i}">—</td>
+        <td class="py-2 pr-3 text-right num font-semibold" data-celda="total-${i}">—</td>
+        <td class="py-2 pr-3" data-celda="origen-${i}"></td>
+        <td class="py-2 text-right">
+          <button type="button" data-quitar="${i}"
+                  class="rounded px-2 py-1 text-xs text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                  aria-label="Quitar ítem">✕</button>
+        </td>
+      </tr>
+      <tr data-detalle="${i}" class="hidden bg-gray-50">
+        <td colspan="8" class="px-3 py-3">
+          <div class="grid gap-3 text-xs sm:grid-cols-5">
+            <label class="block">
+              <span class="text-[11px] uppercase tracking-wide text-gray-400">Rendim./día</span>
+              <input type="number" min="0" step="any" data-campo="rendimiento" data-fila="${i}"
+                     value="${f.rendimiento_override == null ? "" : f.rendimiento_override}"
+                     placeholder="${rendPorDefecto == null ? "—" : num(rendPorDefecto)}"
+                     class="edit mt-1 w-24 rounded border border-gray-200 px-2 py-1 text-right num">
+            </label>
+            <div><span class="text-[11px] uppercase tracking-wide text-gray-400">Material</span>
+              <p class="mt-1 num" data-celda="material-${i}">—</p></div>
+            <div><span class="text-[11px] uppercase tracking-wide text-gray-400">Mano de obra</span>
+              <p class="mt-1 num" data-celda="mano_obra-${i}">—</p></div>
+            <div><span class="text-[11px] uppercase tracking-wide text-gray-400">Equipo</span>
+              <p class="mt-1 num" data-celda="equipo-${i}">—</p></div>
+            <div><span class="text-[11px] uppercase tracking-wide text-gray-400">Transporte</span>
+              <p class="mt-1 num" data-celda="transporte-${i}">—</p></div>
+          </div>
+          <p class="mt-2 text-[11px] text-gray-400">El rendimiento DIVIDE: bajarlo encarece la mano de obra sin tocar los materiales.</p>
+        </td>
+      </tr>`;
+    }).join("");
+
+    if (ultimoCalculo) pintarCalculoEnTabla(ultimoCalculo);
+  }
+
+  /* Delegación: la tabla se repinta entera y unos manejadores por fila se
+     perderían en cada repintado. */
+  $("tabla").addEventListener("input", (e) => {
+    const campo = e.target.getAttribute("data-campo");
+    if (!campo) return;
+    const i = Number(e.target.getAttribute("data-fila"));
+    if (!filas[i]) return;
+    const crudo = e.target.value.trim();
+    if (campo === "cantidad") {
+      filas[i].cantidad = crudo === "" ? 0 : Number(crudo);
+    } else if (campo === "precio") {
+      /* vacío O cero = SIN precio manual, jamás «precio cero»: un 0 aquí sería
+         un precio inventado (la regla de anticipo_pct = 0). Si la fila tiene
+         ítem del catálogo, quitar el precio manual vuelve al precio calculado. */
+      const n = Number(crudo);
+      filas[i].precio_manual = crudo === "" || !Number.isFinite(n) || n <= 0 ? null : n;
+      if (filas[i].precio_manual != null && filas[i].origen_precio !== "archivo") {
+        filas[i].origen_precio = "manual";
+      }
+      if (filas[i].precio_manual == null && filas[i].origen_precio === "manual") {
+        filas[i].origen_precio = null;
+      }
+    } else {
+      // vacío = usar el rendimiento del catálogo, no «rendimiento cero»
+      filas[i].rendimiento_override = crudo === "" ? null : Number(crudo);
+    }
+  });
+
+  $("tabla").addEventListener("click", (e) => {
+    const quitar = e.target.getAttribute("data-quitar");
+    if (quitar !== null) {
+      filas.splice(Number(quitar), 1);
+      ultimoCalculo = null;
+      pintarTabla();
+      return;
+    }
+    // clic en la fila, fuera de un control: abre/cierra el desglose del ítem
+    if (e.target.closest("input,button,a")) return;
+    const filaDom = e.target.closest("tr[data-fila]");
+    if (!filaDom) return;
+    const det = $("tabla").querySelector(`tr[data-detalle="${filaDom.getAttribute("data-fila")}"]`);
+    if (det) det.classList.toggle("hidden");
+  });
+
+  /* Origen del precio, en un badge que no puede mentir: 🟢 solo cuando el
+     precio sale de un contrato ADJUDICADO servido en su región de origen
+     (Bogotá); referencia o derivado por factor regional → 🟡; el precio del
+     archivo/manual se declara como tal; sin precio → 🔴 y NO suma. */
+  function badgeOrigen(it, r) {
+    const b = (t, clases, titulo) => `<span title="${esc(titulo || "")}" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium ${clases}">${t}</span>`;
+    if (it.incompleto) return b("🔴 Sin precio", "bg-red-100 text-red-700", it.mensaje || "No suma al total: un 0 sería un precio inventado");
+    if (it.sin_apu) {
+      return b(it.origen_precio === "archivo" ? "📄 Del archivo" : "✍️ Manual", "bg-amber-100 text-amber-800",
+        Number.isFinite(it.cd_catalogo)
+          ? `Sin APU de respaldo. Referencia del catálogo: ${pesos(it.cd_catalogo)}`
+          : "Sin APU de respaldo en el catálogo");
+    }
+    const reg = (r && r.ajuste_regional) || {};
+    if (it.fuente === "adjudicado" && reg.estado === "mapeado" && reg.region_utilizada === "bogota_sabana") {
+      return b("🟢 Precio verificado", "bg-green-100 text-green-800",
+        "Precio de contrato adjudicado real (Presupuesto Nogal 4, Bogotá 2025)");
+    }
+    return b("🟡 Estimado regional", "bg-amber-100 text-amber-800",
+      `Fuente: ${it.fuente || "referencia"} · región ${reg.region_nombre || reg.region_utilizada || "—"}`
+      + (reg.estado === "mapeado" ? "" : " (departamento sin región cotizada: se usó la base y se declara)"));
+  }
+
+  /* ────────────────────────── cálculo ────────────────────────────────
+     Extraído del listener para que «Aplicar este descuento al APU» pueda
+     recalcular por el MISMO camino. Dos rutas de cálculo se desincronizan a la
+     primera corrección que se aplique a una sola. */
+  async function calcularApu() {
+    const btn = $("btn-calcular");
+    btn.disabled = true;
+    btn.textContent = "Calculando…";
+    try {
+      const r = await api("/api/apu/calcular", {
+        method: "POST",
+        body: {
+          items: filas.map((f) => ({
+            item_id: f.item_id,
+            codigo: f.codigo || null,
+            descripcion: f.descripcion || null,
+            unidad: f.unidad || null,
+            capitulo: f.capitulo || null,
+            cantidad: f.cantidad,
+            rendimiento_override: f.rendimiento_override,
+            // null = sin precio manual; el motor distingue null de 0 a propósito
+            precio_manual: f.precio_manual == null ? null : f.precio_manual,
+            origen_precio: f.origen_precio || null,
+          })),
+          departamento: $("departamento").value,
+          config: leerConfig(),
+        },
+      });
+      if (!r) return false;
+      ultimoCalculo = r;
+      pintarCalculoEnTabla(r);
+      pintarResumen(r);
+      msgApu("Presupuesto calculado.", "ok");
+      return true;
+    } catch (e) {
+      msgApu(`No se pudo calcular: ${e.message}`, "error");
+      return false;
+    } finally {
+      btn.disabled = filas.length === 0;
+      btn.textContent = "Calcular APU";
+      $("btn-exportar").disabled = !ultimoCalculo;
+    }
+  }
+
+  $("btn-calcular").addEventListener("click", async () => {
+    const ok = await calcularApu();
+    /* EL PRECIO SUGERIDO SALE SOLO cuando el APU pertenece a un proceso. Es lo
+       que pide el encargo y es lo que convierte el editor en una decisión: sin
+       esto, el dueño calcula el costo y se queda otra vez mirando la baja
+       mediana para decidir a ojo. Solo se dispara si el cálculo salió bien —
+       recomendar un precio sobre un presupuesto que falló sería creíble y
+       equivocado— y con proceso asociado, porque sin cuantía publicada no hay
+       techo contra el que medir un descuento. */
+    if (ok && $("id-proceso").value.trim()) await calcularRentabilidad({ auto: true });
+  });
+
+  function pintarCalculoEnTabla(r) {
+    /* Las filas se resuelven UNA vez; las celdas del desglose viven en la fila
+       de DETALLE, así que se buscan por su data-celda dentro de la tabla. */
+    const filasDom = $("tabla").querySelectorAll("tr[data-fila]");
+    const tabla = $("tabla");
+    r.items.forEach((it, i) => {
+      const fila = filasDom[i];
+      if (!fila) return;
+      fila.classList.toggle("bg-red-50", !!it.incompleto);
+      // ámbar = suma al total con precio manual/del archivo, sin APU detrás
+      fila.classList.toggle("bg-amber-50", !it.incompleto && !!it.sin_apu);
+      const campos = [
+        ["material", it.costo_material_unitario], ["mano_obra", it.costo_mano_obra_unitario],
+        ["equipo", it.costo_equipo_unitario], ["transporte", it.costo_transporte_unitario],
+        ["unitario", it.costo_directo_unitario], ["total", it.costo_total],
+      ];
+      for (const [nombre, valor] of campos) {
+        const celda = tabla.querySelector(`[data-celda="${nombre}-${i}"]`);
+        if (celda) celda.textContent = pesos(valor);   // `null` → «—», jamás «$0»
+      }
+      const org = tabla.querySelector(`[data-celda="origen-${i}"]`);
+      if (org) org.innerHTML = badgeOrigen(it, r);
+    });
+  }
+
+  function pintarResumen(r) {
+    $("seccion-resumen").classList.remove("hidden");
+    const s = r.resumen;
+
+    $("r-directo").textContent = pesos(s.costo_directo_total);
+    $("r-venta").textContent = pesos(s.precio_venta);
+    $("r-aiu").textContent = `AIU ${num(r.configuracion.aiu_total_pct)} % (${r.configuracion.modo_aiu})`;
+    $("r-final").textContent = pesos(s.precio_final);
+    $("r-baja").textContent = r.configuracion.aplicar_ajuste_competitivo
+      ? `Baja aplicada: ${num(r.configuracion.factor_baja)} %`
+      : "Sin ajuste competitivo";
+    $("r-margen").textContent = pesos(s.margen_final);
+    $("r-margen-pct").textContent = s.margen_pct == null
+      ? "—" : `${num(s.margen_pct)} % sobre el costo directo`;
+
+    // el color del margen es información, no decoración: en rojo cuando el
+    // precio no cubre el costo directo
+    const caja = $("r-margen-caja");
+    const enPerdida = Number.isFinite(s.margen_final) && s.margen_final <= 0;
+    caja.className = `rounded-2xl p-4 ${enPerdida ? "bg-red-50" : "bg-emerald-50"}`;
+    $("r-margen").className = `mt-1 text-2xl font-semibold tabular-nums ${enPerdida ? "text-red-950" : "text-emerald-950"}`;
+
+    const comp = s.por_componente;
+    const totalCD = s.costo_directo_total;
+    const parte = (v) => (Number.isFinite(v) && Number.isFinite(totalCD) && totalCD > 0
+      ? `${num((v / totalCD) * 100)} %` : "—");
+    $("r-componentes").innerHTML = [
+      ["Materiales", comp.material], ["Mano de obra", comp.mano_obra],
+      ["Equipo y herramienta", comp.equipo], ["Transporte", comp.transporte],
+    ].map(([k, v]) => `<tr><td class="py-1.5">${k}</td>`
+      + `<td class="py-1.5 text-right num">${pesos(v)}</td>`
+      + `<td class="py-1.5 text-right num text-gray-400">${parte(v)}</td></tr>`).join("")
+      + `<tr class="font-semibold"><td class="py-1.5">Costo directo</td>`
+      + `<td class="py-1.5 text-right num">${pesos(totalCD)}</td><td></td></tr>`;
+
+    const c = r.configuracion;
+    $("r-aiu-detalle").innerHTML = [
+      [`Administración (${num(c.aiu_pct)} %)`, s.administracion],
+      [`Imprevistos (${num(c.imprevistos_pct)} %)`, s.imprevistos],
+      [`Utilidad (${num(c.utilidad_pct)} %)`, s.utilidad],
+      ["Precio de venta", s.precio_venta],
+      ["Precio final", s.precio_final],
+      ["Financiación requerida (20 %)", s.financiacion_requerida],
+      ["IVA sobre la utilidad (informativo)", s.iva_sobre_utilidad],
+      ["Contribución 5 % obra pública", s.contribucion_obra_publica],
+      ["Margen tras deducciones", s.margen_despues_deducciones],
+    ].map(([k, v]) => `<tr><td class="py-1.5">${esc(k)}</td>`
+      + `<td class="py-1.5 text-right num">${pesos(v)}</td></tr>`).join("");
+
+    $("r-alertas").innerHTML = (r.alertas || []).map((a) =>
+      `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">${esc(a)}</p>`).join("");
+
+    const reg = r.ajuste_regional;
+    const f = reg.factores;
+    $("regional-nota").textContent = reg.estado === "mapeado" && f
+      ? `🟢 ${reg.region_nombre} · material ×${num(f.materiales)} · mano de obra ×${num(f.mano_obra)} · equipo ×${num(f.equipo)} · transporte ×${num(f.transporte)}`
+      : `⚪ Sin región cotizada: se calculó con la región base «${esc(reg.region_utilizada || "—")}».`;
+  }
+
+  /* ────────────── sugerencia del factor de baja (histórico) ─────────── */
+  $("btn-sugerir-baja").addEventListener("click", async () => {
+    const entidad = $("entidad").value.trim();
+    if (!entidad) {
+      $("baja-nota").textContent = "Escriba la entidad para consultar su histórico de adjudicaciones.";
+      return;
+    }
+    $("baja-nota").textContent = "Consultando el índice de baja…";
+    try {
+      const r = await api(`/api/indice-baja?entidad=${encodeURIComponent(entidad)}`);
+      if (!r) { $("baja-nota").textContent = "Consulta cancelada."; return; }
+      const e = (r.entidades && r.entidades[0]) || null;
+      /* Se exige BASE antes de interpolar una cifra: mediana presente y
+         procesos por encima del mínimo. Es la misma invariante que impuso
+         `competenciaDe` tras el defecto de «18,2 oferentes en 0 procesos». */
+      const procesos = e ? (e.procesos ?? e.procesos_contados) : null;
+      if (!e || e.baja_mediana == null || !Number.isFinite(procesos) || procesos < r.min_procesos) {
+        $("baja-nota").textContent = `⚪ Sin base suficiente para «${entidad}»: hacen falta ${r.min_procesos} adjudicaciones con presupuesto y valor adjudicado.`;
+        return;
+      }
+      $("factor-baja").value = e.baja_mediana;
+      $("baja-nota").textContent = `Mediana histórica: ${num(e.baja_mediana)} % sobre ${procesos} procesos`
+        + (e.nivel ? ` (nivel ${e.nivel})` : "") + ". Es el descuento típico, no una recomendación.";
+    } catch (err) {
+      $("baja-nota").textContent = `No se pudo consultar: ${err.message}`;
+    }
+  });
+
+  /* ──────────────────────── guardar / cargar ───────────────────────── */
+  $("btn-guardar").addEventListener("click", async () => {
+    if (!filas.length) { msgApu("No hay ítems que guardar.", "error"); return; }
+    const btn = $("btn-guardar");
+    btn.disabled = true;
+    try {
+      const r = await api("/api/apu/guardar", {
+        method: "POST",
+        body: {
+          id: idActual || undefined,
+          perfil: $("perfil").value,
+          nombre: $("nombre-presupuesto").value.trim(),
+          objeto: $("objeto").value.trim(),
+          departamento: $("departamento").value,
+          entidad: $("entidad").value.trim(),
+          // el proceso de SECOP al que pertenece: es lo que enciende
+          // «APU listo» en su fila del panel
+          id_proceso: ($("id-proceso") && $("id-proceso").value.trim()) || null,
+          items: filas,
+          config: leerConfig(),
+          total: ultimoCalculo ? ultimoCalculo.resumen.precio_final : null,
+        },
+      });
+      if (!r) return;
+      idActual = r.id;
+      msgApu(`Guardado como «${r.nombre}» (id ${r.id}). ${r.nota}`, "ok");
+    } catch (e) {
+      msgApu(`No se pudo guardar: ${e.message}`, "error");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $("btn-listar").addEventListener("click", async () => {
+    const caja = $("lista-presupuestos");
+    try {
+      const r = await api(`/api/apu/listar?perfil=${encodeURIComponent($("perfil").value)}`);
+      if (!r) return;
+      caja.classList.remove("hidden");
+      if (!r.presupuestos.length) {
+        caja.innerHTML = `<p class="text-sm text-gray-500">No hay presupuestos guardados para este perfil. Los borradores viven ${r.ttl_dias} días.</p>`;
+        return;
+      }
+      caja.innerHTML = `<table class="w-full text-sm">
+        <thead class="text-left text-xs uppercase tracking-wide text-gray-400"><tr>
+          <th class="py-1 pr-2">Nombre</th><th class="py-1 pr-2">Departamento</th>
+          <th class="py-1 pr-2 text-right">Ítems</th><th class="py-1 pr-2 text-right">Total</th>
+          <th class="py-1 pr-2">Guardado</th><th class="py-1"></th>
+        </tr></thead><tbody class="divide-y divide-gray-100">${
+        r.presupuestos.map((p) => `<tr>
+          <td class="py-2 pr-2 font-medium">${esc(p.nombre)}</td>
+          <td class="py-2 pr-2 text-gray-500">${esc(p.departamento || "—")}</td>
+          <td class="py-2 pr-2 text-right num">${p.items}</td>
+          <td class="py-2 pr-2 text-right num">${pesos(p.total_guardado)}</td>
+          <td class="py-2 pr-2 text-gray-500">${esc(String(p.guardado).slice(0, 16).replace("T", " "))}</td>
+          <td class="py-2 text-right"><button type="button" data-cargar="${esc(p.id)}"
+              class="rounded border border-gray-300 px-2 py-1 text-xs font-medium transition hover:bg-gray-50">Cargar</button></td>
+        </tr>`).join("")}</tbody></table>`;
+    } catch (e) {
+      msgApu(`No se pudo listar: ${e.message}`, "error");
+    }
+  });
+
+  $("lista-presupuestos").addEventListener("click", async (e) => {
+    const id = e.target.getAttribute("data-cargar");
+    if (!id) return;
+    try {
+      const r = await api(`/api/apu/cargar?id=${encodeURIComponent(id)}&perfil=${encodeURIComponent($("perfil").value)}`);
+      if (!r) return;
+      const p = r.presupuesto;
+      idActual = p.id;
+      $("nombre-presupuesto").value = p.nombre || "";
+      $("objeto").value = p.objeto || "";
+      $("departamento").value = p.departamento || "";
+      $("entidad").value = p.entidad || "";
+      aplicarConfig(p.config);
+      /* los NÚMEROS del borrador se COERCIONAN al cargar: van a parar dentro de
+         atributos `value="…"` de la tabla, y un texto guardado a mano en el
+         borrador no puede convertirse en marcado. Un valor ilegible cae a
+         vacío/null, nunca a un cero inventado. */
+      const numONull = (v) => (Number.isFinite(Number(v)) && v !== null && v !== "" ? Number(v) : null);
+      filas = (p.items || []).map((f) => {
+        const def = CATALOGO && f.item_id ? CATALOGO.items.find((x) => x.codigo === f.item_id) : null;
+        const precioManual = numONull(f.precio_manual);
+        return {
+          item_id: f.item_id || null,
+          codigo: f.codigo || null,
+          capitulo: f.capitulo || null,
+          descripcion: f.descripcion || (def ? def.descripcion : f.item_id),
+          unidad: f.unidad || (def ? def.unidad : null),
+          cantidad: numONull(f.cantidad) ?? 0,
+          rendimiento_override: numONull(f.rendimiento_override),
+          // los borradores guardados antes de la importación no traen estos
+          // campos: `undefined` y `null` significan lo mismo aquí (sin precio manual)
+          precio_manual: precioManual != null && precioManual > 0 ? precioManual : null,
+          origen_precio: f.origen_precio === "archivo" || f.origen_precio === "manual" ? f.origen_precio : null,
+          sugerencia: f.sugerencia == null ? null : String(f.sugerencia).slice(0, 200),
+        };
+      });
+      ultimoCalculo = null;
+      pintarTabla();
+      $("seccion-resumen").classList.add("hidden");
+      $("lista-presupuestos").classList.add("hidden");
+      msgApu(r.catalogo_cambiado
+        ? `Cargado «${p.nombre}». ⚠️ ${r.nota}`
+        : `Cargado «${p.nombre}». Pulse «Calcular APU» para ver los totales.`, r.catalogo_cambiado ? "error" : "ok");
+    } catch (err) {
+      msgApu(`No se pudo cargar: ${err.message}`, "error");
+    }
+  });
+
+  /* ─────────────────────── exportación a Excel ────────────────────────
+     El formato lo arma `public/apu_libro.js` (formato del Presupuesto Nogal 4:
+     capítulos, fórmulas =D×E, bloque A/I/U + IVA sobre la utilidad, firmas y
+     hoja APU con el desglose por insumo). Vive fuera de este IIFE para que el
+     generador de Node use EXACTAMENTE el mismo constructor: dos copias del
+     formato divergen a la primera corrección. */
+  $("btn-exportar").addEventListener("click", () => {
+    if (!ultimoCalculo) { msgApu("Calcule el presupuesto antes de exportarlo.", "error"); return; }
+    try {
+      const hojas = APULibro.construirLibroNogal(ultimoCalculo, {
+        titulo: $("nombre-presupuesto").value.trim() || "Presupuesto de obra",
+        objeto: $("objeto").value.trim().slice(0, 400) || null,
+        entidad: $("entidad").value.trim() || null,
+        departamento: $("departamento").value || null,
+        fecha: new Date().toISOString().slice(0, 10),
+      });
+      const bytes = XLSXApu.construirLibro(hojas);
+      const nombre = ($("nombre-presupuesto").value.trim() || "presupuesto-apu")
+        .replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-").toLowerCase();
+      XLSXApu.descargar(bytes, `${nombre || "presupuesto-apu"}.xlsx`);
+      msgApu("Excel generado (formato APU profesional: presupuesto + análisis por ítem).", "ok");
+    } catch (e) {
+      msgApu(`No se pudo generar el Excel: ${e.message}`, "error");
+    }
+  });
+
+
+  /* ════════════════════ Importación desde Excel/CSV ════════════════════
+     El archivo se lee EN EL NAVEGADOR (public/xlsx_lectura.js): al servidor
+     viajan solo las filas estructuradas, que `/api/apu/importar` mapea contra
+     el catálogo calibrado. La vista previa enseña el mapeo ANTES de tocar la
+     tabla, y una sugerencia 🟡 («revisar») solo cobra precio del catálogo si su
+     casilla queda marcada — nunca se usa automáticamente una lista a medias. */
+  let importacion = null;
+
+  $("btn-importar").addEventListener("click", () => $("archivo-importar").click());
+
+  $("archivo-importar").addEventListener("change", async (e) => {
+    const archivo = e.target.files && e.target.files[0];
+    e.target.value = "";                    // permite volver a elegir el mismo archivo
+    if (!archivo) return;
+    const btn = $("btn-importar");
+    btn.disabled = true;
+    const antes = btn.textContent;
+    btn.textContent = "Leyendo…";
+    try {
+      const crudas = await leerArchivoImportado(archivo);
+      if (!crudas.filas.length) {
+        msgApu(`No se encontraron ítems en «${archivo.name}». ${(crudas.avisos || []).join(" ")}`, "error");
+        return;
+      }
+      const r = await api("/api/apu/importar", {
+        method: "POST",
+        body: { filas: crudas.filas, departamento: $("departamento").value },
+      });
+      if (!r) return;                       // canceló el diálogo del token
+      importacion = { ...r, avisos_lectura: crudas.avisos || [], nombre_archivo: archivo.name };
+      abrirModalImportar();
+    } catch (err) {
+      msgApu(`No se pudo importar: ${err.message}`, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = antes;
+    }
+  });
+
+  /* inflador para los .xlsx de Excel real (partes DEFLATE): el del navegador.
+     Si no existe y el archivo lo necesita, xlsx_lectura responde con el error
+     accionable («use un navegador reciente o exporte a CSV»). */
+  async function inflarNavegador(u8) {
+    const ds = new DecompressionStream("deflate-raw");
+    const respuesta = new Response(new Blob([u8]).stream().pipeThrough(ds));
+    return new Uint8Array(await respuesta.arrayBuffer());
+  }
+
+  async function leerArchivoImportado(archivo) {
+    const bytes = new Uint8Array(await archivo.arrayBuffer());
+    if (/\.csv$/i.test(archivo.name)) {
+      /* Excel-Windows guarda «CSV» en ANSI (windows-1252): si el UTF-8 produce
+         reemplazos se re-decodifica — la misma regla del CSV de experiencia */
+      let texto = new TextDecoder("utf-8").decode(bytes);
+      if (texto.includes("�")) texto = new TextDecoder("windows-1252").decode(bytes);
+      return XLSXLectura.detectarFilasApu(XLSXLectura.parsearCsv(texto));
+    }
+    const inflar = typeof DecompressionStream === "function" ? inflarNavegador : null;
+    const libro = await XLSXLectura.leerLibro(bytes, { inflar });
+    const mejor = XLSXLectura.elegirHoja(libro);
+    if (!mejor) return { filas: [], avisos: ["El libro no trae hojas."] };
+    return mejor.resultado;
+  }
+
+  function abrirModalImportar() {
+    const m = importacion.resumen_mapeo;
+    $("imp-resumen").textContent = `${importacion.nombre_archivo} · ${m.total} ítems · `
+      + `${m.firmes} firmes · ${m.revisar} por revisar · ${m.personalizados} personalizados · `
+      + `${m.con_precio_archivo} con precio del archivo`;
+    $("imp-avisos").innerHTML = (importacion.avisos_lectura || [])
+      .map((a) => `<p class="rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-900">${esc(a)}</p>`).join("");
+
+    const chip = (f) => {
+      if (f.nivel_mapeo === "firme") {
+        return `<span class="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] text-emerald-900">🟢 firme</span> `
+          + `<span class="text-xs text-gray-600">${esc(f.descripcion_catalogo || "")}</span>`;
+      }
+      if (f.nivel_mapeo === "revisar") {
+        const marcada = f.precio_archivo != null ? "checked" : "";
+        return `<label class="flex items-start gap-1.5">
+          <input type="checkbox" data-aceptar="${f.orden}" ${marcada} class="mt-0.5 h-3.5 w-3.5 rounded border-gray-300">
+          <span class="text-xs"><span class="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-900">🟡 revisar · ${Math.round((f.confianza ?? 0) * 100)} %</span>
+          ${esc(f.descripcion_catalogo || "")}</span></label>`;
+      }
+      return `<span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">⚪ personalizado</span>`
+        + (f.precio_archivo == null ? ' <span class="text-[11px] font-medium text-red-600">sin precio: escríbalo en la tabla antes de calcular</span>' : "");
+    };
+
+    $("imp-tabla").innerHTML = importacion.filas.map((f) => `
+      <tr class="${f.precio_archivo == null && !f.item_id ? "bg-red-50" : ""}">
+        <td class="px-2 py-1.5 text-xs text-gray-500">${esc(f.codigo_archivo || "—")}</td>
+        <td class="px-2 py-1.5">${f.capitulo ? `<span class="block text-[10px] uppercase text-gray-400">${esc(f.capitulo)}</span>` : ""}${esc(f.descripcion)}</td>
+        <td class="px-2 py-1.5 text-gray-500">${esc(f.unidad || "—")}</td>
+        <td class="px-2 py-1.5 text-right num">${f.cantidad == null ? "—" : num(f.cantidad)}</td>
+        <td class="px-2 py-1.5 text-right num">${f.precio_archivo == null ? "—" : pesos(f.precio_archivo)}</td>
+        <td class="px-2 py-1.5">${chip(f)}</td>
+      </tr>`).join("");
+
+    $("imp-nota").textContent = "El precio del archivo MANDA y queda declarado. Una sugerencia 🟡 sin precio solo usa el catálogo si su casilla queda marcada.";
+    $("modal-importar").classList.remove("hidden");
+    $("modal-importar").classList.add("flex");
+  }
+
+  function cerrarModalImportar() {
+    $("modal-importar").classList.add("hidden");
+    $("modal-importar").classList.remove("flex");
+  }
+  $("btn-imp-cancelar").addEventListener("click", cerrarModalImportar);
+  $("modal-importar").addEventListener("click", (e) => {
+    if (e.target === $("modal-importar")) cerrarModalImportar();
+  });
+
+  $("btn-imp-aplicar").addEventListener("click", async () => {
+    if (!importacion) return;
+    const aceptadas = new Set([...$("imp-tabla").querySelectorAll("input[data-aceptar]:checked")]
+      .map((x) => Number(x.getAttribute("data-aceptar"))));
+    const nuevas = importacion.filas.map((f) => {
+      const base = f.entrada_calculo || {};
+      // en «revisar» la casilla decide si el ítem del catálogo entra (como
+      // precio cuando no hay precio del archivo; como referencia cuando sí)
+      const itemId = f.nivel_mapeo === "revisar"
+        ? (aceptadas.has(f.orden) ? f.item_id : null)
+        : base.item_id || null;
+      return {
+        item_id: itemId,
+        codigo: base.codigo || null,
+        capitulo: base.capitulo || null,
+        descripcion: base.descripcion || f.descripcion,
+        unidad: base.unidad || f.unidad,
+        cantidad: base.cantidad ?? 0,
+        rendimiento_override: null,
+        precio_manual: base.precio_manual ?? null,
+        origen_precio: base.origen_precio || null,
+        sugerencia: f.descripcion_catalogo || null,
+      };
+    });
+    filas = filas.concat(nuevas);
+    ultimoCalculo = null;
+    cerrarModalImportar();
+    pintarTabla();
+    msgApu(`${nuevas.length} ítem(s) añadidos desde «${importacion.nombre_archivo}». Calculando…`, "ok");
+    await calcularApu();
+  });
+
+  /* ─────────────────────────── arranque ─────────────────────────────── */
+
+  /* ════════════════════ Precarga desde el panel y rentabilidad ═══════════════
+     El botón «APU» de una fila de /admin.html abre esta página con el proceso
+     en la querystring. Sin esa precarga habría que copiar a mano el objeto, el
+     departamento, la entidad y la cuantía de cada proceso, que es justo el
+     trabajo que el botón existe para ahorrar. */
+  let paramsProceso = null;   // los fija abrirEditorConProceso (botón APU de una tarjeta)
+  function precargarDesdeURL() {
+    let p = paramsProceso;
+    if (!p) { try { p = new URLSearchParams(location.search); } catch { return false; } }
+    const poner = (id, clave) => {
+      const v = p.get(clave);
+      if (v != null && v !== "" && $(id)) $(id).value = v;
+    };
+    poner("objeto", "objeto");
+    poner("codigos-unspsc", "unspsc");
+    poner("entidad", "entidad");
+    poner("id-proceso", "id_proceso");
+    poner("cuantia", "cuantia");
+    modalidadProceso = p.get("modalidad") || "";
+    poner("plazo-meses", "plazo");
+    const perfil = p.get("perfil");
+    if (perfil && $("perfil") && [...$("perfil").options].some((o) => o.value === perfil)) $("perfil").value = perfil;
+    // el NIT viaja aparte: el índice de baja se consulta por NOMBRE, y el NIT
+    // solo sirve de puente cuando la entidad no viene (ver /api/apu/rentabilidad)
+    nitProceso = p.get("entidad_nit") || "";
+    const dpto = p.get("departamento");
+    if (dpto && $("departamento")) {
+      const opciones = [...$("departamento").options];
+      const hit = opciones.find((o) => norml(o.value) === norml(dpto) || norml(o.textContent) === norml(dpto));
+      if (hit) $("departamento").value = hit.value;
+    }
+    const hayProceso = !!(p.get("id_proceso") || p.get("objeto"));
+    if (hayProceso) $("seccion-proceso").classList.remove("hidden");
+    return hayProceso;
+  }
+  const norml = (x) => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+  let nitProceso = "";
+  let modalidadProceso = "";
+
+  /* `Number.isFinite` y no `== null`: un NaN colado desde el servidor se
+     pintaría como «NaN %», que es peor que un «—» porque parece una cifra. */
+  const copRent = (n) => (Number.isFinite(n) ? `$${nf.format(Math.round(n))}` : "—");
+  const pctRent = (n) => (Number.isFinite(n) ? `${nf2.format(n)} %` : "—");
+
+  function tarjetaRent(titulo, valor, nota, tono) {
+    const color = tono === "mal" ? "text-red-600" : tono === "bien" ? "text-green-700" : "text-gray-900";
+    return `<div class="rounded-xl bg-gray-50 p-4">
+      <p class="text-xs font-medium uppercase tracking-wide text-gray-500">${esc(titulo)}</p>
+      <p class="mt-1 text-lg font-semibold num ${color}">${valor}</p>
+      ${nota ? `<p class="mt-1 text-xs text-gray-500">${esc(nota)}</p>` : ""}
+    </div>`;
+  }
+
+  async function calcularRentabilidad({ auto = false } = {}) {
+    if (!filas.length) {
+      if (!auto) msgApu("Agregue ítems antes de calcular la rentabilidad.", "error");
+      return;
+    }
+    if (rentabilidadEnVuelo) return;
+    rentabilidadEnVuelo = true;
+    const btn = $("btn-rentabilidad");
+    btn.disabled = true;
+    const antes = btn.textContent;
+    btn.textContent = "Calculando…";
+    try {
+      const cuerpo = {
+        items: filas.map((f) => ({ item_id: f.item_id, cantidad: f.cantidad, rendimiento_override: f.rendimiento_override })),
+        departamento: $("departamento").value,
+        config: leerConfig(),
+        entidad: $("entidad").value.trim(),
+        entidad_nit: nitProceso,
+        // sin esto la rentabilidad usaría la baja MEZCLADA de la entidad y
+        // discreparía de la tarjeta del panel para el mismo proceso
+        modalidad: modalidadProceso,
+        unspsc: $("codigos-unspsc").value.trim(),
+        cuantia: Number($("cuantia").value) || null,
+        plazo_meses: Number($("plazo-meses").value) || 12,
+        // etiqueta: viaja y vuelve, pero no condiciona el optimizador
+        id_proceso: $("id-proceso").value.trim() || null,
+        perfil: $("perfil").value,
+      };
+      const c = await api("/api/apu/rentabilidad", { method: "POST", body: cuerpo });
+      if (!c) return; // el usuario canceló el diálogo del token
+      pintarRentabilidad(c);
+      pintarPrecioSugerido(c.optimizador);
+      msgApu(auto ? "Rentabilidad y precio sugerido actualizados." : "Rentabilidad actualizada.", "ok");
+    } catch (e) {
+      msgApu(`No se pudo calcular la rentabilidad: ${e.message}`, "error");
+      /* También en automático hay que dejar rastro visible: si no, tras pulsar
+         «Calcular APU» el recuadro simplemente no aparecería y el dueño no
+         tendría forma de distinguir «falló» de «este proceso no da para
+         sugerir un precio». */
+      pintarPrecioSugerido({ aplicable: false, mensaje: `No se pudo calcular el precio sugerido: ${e.message}` });
+    } finally {
+      rentabilidadEnVuelo = false;
+      btn.disabled = false;
+      btn.textContent = antes;
+    }
+  }
+
+  function pintarRentabilidad(c) {
+    const r = c.rentabilidad;
+    if (!r) return;
+    $("seccion-rentabilidad").classList.remove("hidden");
+    const t = [];
+    t.push(tarjetaRent("Precio total calculado", copRent(r.precio_total),
+      c.presupuesto && c.presupuesto.resumen ? `Costo directo ${copRent(r.costo_directo)}` : null));
+    t.push(tarjetaRent("Costo directo total", copRent(r.costo_directo), "Sin AIU: va declarado aparte"));
+    t.push(tarjetaRent("Margen bruto", pctRent(r.margen_bruto_pct), "(Precio − Costo directo) / Precio"));
+    t.push(tarjetaRent("Margen neto esperado", pctRent(r.margen_neto_pct),
+      r.margen_es_cota_superior ? "COTA SUPERIOR: faltan las deducciones del pliego" : "Antes de renta",
+      r.margen_neto_pct != null && r.margen_neto_pct < 3 ? "mal" : "bien"));
+    t.push(tarjetaRent("Probabilidad de ganar",
+      r.p_ganar != null ? pctRent(r.p_ganar * 100) : "—",
+      r.p_ganar_detalle && r.p_ganar_detalle.modulada
+        ? `Base ${pctRent((r.p_ganar_detalle.p_base || 0) * 100)} × ${r.p_ganar_detalle.multiplicador} por precio`
+        : "Sin baja histórica: no se modula por precio"));
+    t.push(tarjetaRent("Valor esperado de la ganancia", copRent(r.veg),
+      `P(ganar) × utilidad − ${copRent(r.costo_preparacion)} de preparar la oferta`,
+      r.veg != null && r.veg <= 0 ? "mal" : "bien"));
+    t.push(tarjetaRent("Utilidad esperada", copRent(r.utilidad_esperada), "Antes de impuesto de renta",
+      r.utilidad_esperada <= 0 ? "mal" : null));
+    t.push(tarjetaRent("Capital de trabajo máximo", copRent(r.k_max), "Decide si se PUEDE, no si vale la pena"));
+    t.push(tarjetaRent("Payback",
+      r.payback_meses != null ? `${r.payback_meses} ${r.payback_meses === 1 ? "mes" : "meses"}` : "no retorna",
+      r.flujo && !r.flujo.anticipo_es_dato ? "Anticipo sin dato: es una cota" : "Hasta recuperar el capital expuesto"));
+    $("rentabilidad").innerHTML = t.join("");
+
+    const a = c.ajuste_competitivo || {};
+    const piso = c.precio_piso || {};
+    const partes = [];
+    if (a.aplicable) {
+      partes.push(`<p><strong>Baja mediana del mercado: ${pctRent(a.baja_mediana_pct)}</strong>
+        <span class="text-gray-500">(${esc(a.granularidad_utilizada || "")}, ${a.procesos_contados} procesos)</span></p>
+        <p class="mt-1">Precio sugerido: <strong>${copRent(a.precio_sugerido)}</strong>${a.baja_propia_pct != null
+          ? ` · su oferta descuenta ${pctRent(a.baja_propia_pct)}` : ""}</p>`);
+    } else {
+      partes.push(`<p class="rounded-lg bg-gray-100 px-3 py-2">⚪ ${esc(a.mensaje || "Sin índice de baja para esta entidad.")}</p>`);
+    }
+    if (piso.escenarios) {
+      partes.push(`<p class="mt-3">Precio piso · σ 8 %: <strong>${copRent(piso.escenarios.sigma_8.precio_piso)}</strong>
+        · σ 15 %: <strong>${copRent(piso.escenarios.sigma_15.precio_piso)}</strong></p>
+        <p class="mt-1 text-xs text-gray-500">${esc(piso.nota || "")}</p>`);
+    }
+    if (r.p_ganar_detalle && r.p_ganar_detalle.mensaje) {
+      partes.push(`<p class="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-900">${esc(r.p_ganar_detalle.mensaje)}
+        <br><span class="opacity-80">${esc(r.p_ganar_detalle.supuesto || "")}</span></p>`);
+    }
+    $("rentabilidad-precio").innerHTML = partes.join("");
+    $("rentabilidad-avisos").innerHTML = (r.advertencias || [])
+      .map((x) => `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(x)}</p>`).join("");
+  }
+
+  /* ════════════════════ Precio sugerido (optimizador) ════════════════════
+     DOS DESCUENTOS QUE NO SON EL MISMO NÚMERO, y es lo único que hay que tener
+     claro para leer este bloque:
+       · `descuento`          la baja contra el PRESUPUESTO OFICIAL. Es la que
+                              ve el mercado y la que se compara con la mediana
+                              histórica de la entidad.
+       · `descuento_apu_pct`  lo que hay que escribir en la perilla «Factor de
+                              baja», que se aplica sobre SU precio de venta.
+     Coinciden solo si el APU da exactamente la cuantía publicada. El botón
+     escribe SIEMPRE el segundo; escribir el primero produciría un precio
+     distinto del recomendado sin que nada lo delatara. */
+  function pintarPrecioSugerido(o) {
+    const sec = $("seccion-precio-sugerido");
+    const sin = $("ps-sin-datos");
+    const cuerpo = $("ps-cuerpo");
+    sec.classList.remove("hidden");
+    ultimoOptimizador = o && o.aplicable ? o : null;
+
+    if (!o || !o.aplicable) {
+      cuerpo.classList.add("hidden");
+      sin.classList.remove("hidden");
+      sin.textContent = `⚪ ${(o && o.mensaje) || "No hay con qué sugerir un precio para este proceso."}`;
+      $("ps-origen").textContent = "";
+      return;
+    }
+    sin.classList.add("hidden");
+    cuerpo.classList.remove("hidden");
+
+    const centro = o.centro_mercado || {};
+    $("ps-origen").textContent = `Centro del mercado: ${pctRent(centro.baja_mediana_pct)} de baja`
+      + (centro.granularidad_utilizada ? ` · ${centro.granularidad_utilizada}` : "")
+      + (centro.modalidad_utilizada ? ` · ${centro.modalidad_utilizada}` : "")
+      + ` · ${centro.procesos_contados} procesos`;
+
+    const op = o.optimo;
+    $("ps-precio").textContent = copRent(op.precio);
+    $("ps-precio-nota").textContent = `Presupuesto oficial ${copRent(o.presupuesto_oficial)}`;
+    $("ps-descuento").textContent = pctRent(op.descuento);
+    $("ps-veg").textContent = copRent(op.veg);
+    $("ps-veg-nota").textContent = "P(ganar) × utilidad neta − costo de preparar la oferta";
+    $("ps-prob").textContent = op.probabilidad == null ? "—" : pctRent(op.probabilidad * 100);
+    const comp = o.comparacion_con_actual;
+    $("ps-prob-nota").textContent = comp && comp.diferencia_veg != null
+      ? (comp.ya_esta_en_el_optimo
+        ? "Su precio actual YA está en el óptimo."
+        : `Frente a su precio actual: ${copRent(comp.diferencia_veg)} de VEG`)
+      : "";
+
+    // el color del VEG es información: en rojo cuando ni el mejor precio del
+    // rango cubre el costo de preparar la oferta
+    $("ps-veg").className = `mt-1 text-2xl font-semibold tabular-nums ${o.sin_punto_rentable ? "text-red-700" : ""}`;
+
+    /* ---- las tres opciones ----
+       `opc` y `meseta` se declaran ANTES de `fila`, que las lee: declaradas
+       después caerían en la zona muerta temporal en cuanto `fila` se llamara
+       desde el `.map` de abajo. Es la misma lección del arranque automático,
+       en pequeño y dentro de una función. */
+    const opc = o.opciones || {};
+    const meseta = opc.meseta || {};
+    const fila = (clave, p) => {
+      if (!p) return "";
+      const destacada = clave === "optimo";
+      /* Cuando la meseta está pegada al máximo por un lado, esa opción ES el
+         óptimo. Repetir la fila sin decirlo se lee como un fallo de pintado;
+         decirlo es información: moverse en esa dirección ya cuesta caro. */
+      const igual = !destacada && p.descuento === op.descuento;
+      const nota = igual
+        ? `Coincide con el óptimo: moverse hacia ahí ya cuesta más del ${num(meseta.tolerancia_pct)} % del valor esperado.`
+        : p.explicacion || "";
+      return `<tr class="${destacada ? "bg-blue-50/60 font-medium" : igual ? "text-gray-400" : ""}">
+        <td class="py-2 pr-3">${esc(p.etiqueta || clave)}
+          <span class="block text-xs font-normal text-gray-400">${esc(nota)}</span></td>
+        <td class="py-2 pr-3 text-right num">${pctRent(p.descuento)}</td>
+        <td class="py-2 pr-3 text-right num">${copRent(p.precio)}</td>
+        <td class="py-2 pr-3 text-right num">${p.probabilidad == null ? "—" : pctRent(p.probabilidad * 100)}</td>
+        <td class="py-2 pr-3 text-right num">${copRent(p.margen)}</td>
+        <td class="py-2 pr-3 text-right num">${copRent(p.veg)}</td>
+        <td class="py-2 text-right">
+          <button type="button" data-aplicar="${esc(clave)}" ${p.aplicable_al_apu ? "" : "disabled"}
+                  title="${p.aplicable_al_apu ? `Escribe ${num(p.descuento_apu_pct)} % en el factor de baja` : "Ese precio está por encima de su precio de venta: no hay descuento que aplicar"}"
+                  class="rounded border border-gray-300 px-2 py-1 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-30">Aplicar</button>
+        </td>
+      </tr>`;
+    };
+    $("ps-opciones").innerHTML = ["conservador", "optimo", "agresivo"].map((k) => fila(k, opc[k])).join("");
+
+    $("ps-meseta").textContent = meseta.colapsada
+      ? `El óptimo es agudo: moverse un solo paso cuesta más del ${num(meseta.tolerancia_pct)} % del valor esperado, `
+        + "así que las tres opciones coinciden."
+      : `Meseta del valor esperado: entre ${pctRent(meseta.desde_pct)} y ${pctRent(meseta.hasta_pct)} de baja `
+        + `(${num(meseta.ancho_pp)} pp) el VEG no cae más del ${num(meseta.tolerancia_pct)} %. Dentro de esa banda `
+        + "la elección es de apetito de riesgo, no de aritmética.";
+
+    /* ---- el botón principal ---- */
+    const btn = $("btn-aplicar-descuento");
+    btn.disabled = !op.aplicable_al_apu;
+    $("ps-aplicar-nota").textContent = op.aplicable_al_apu
+      ? `Escribe ${num(op.descuento_apu_pct)} % en «Factor de baja» (sobre su precio de venta) y recalcula: `
+        + `el APU dará ${copRent(op.precio_apu_resultante)}.`
+      : "No aplicable: el precio óptimo está por encima de su precio de venta. El ajuste competitivo solo baja.";
+
+    $("ps-curva").innerHTML = curvaSVG(o);
+    $("ps-alertas").innerHTML = (o.alertas || [])
+      .map((x) => `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">${esc(x)}</p>`).join("");
+  }
+
+  /* Curva VEG vs descuento en SVG en línea. Sin librería: el proyecto no tiene
+     dependencias y una polilínea no justifica la primera. Marca el óptimo y
+     —cuando cae dentro del rango— el precio vigente, que es lo que convierte la
+     gráfica en «dónde estoy y a dónde debería moverme». */
+  function curvaSVG(o) {
+    const pts = (o.curva || []).filter((p) => Number.isFinite(p.veg) && Number.isFinite(p.descuento));
+    if (pts.length < 2) return "";
+    const W = 720, H = 180, mL = 64, mR = 14, mT = 14, mB = 30;
+    const xs = pts.map((p) => p.descuento);
+    const ys = pts.map((p) => p.veg);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs);
+    const y0 = Math.min(...ys, 0);
+    let y1 = Math.max(...ys, 0);
+    if (y1 === y0) y1 = y0 + 1;
+    const px = (d) => mL + (W - mL - mR) * (x1 === x0 ? 0.5 : (d - x0) / (x1 - x0));
+    const py = (v) => mT + (H - mT - mB) * (1 - (v - y0) / (y1 - y0));
+
+    const linea = pts.map((p) => `${px(p.descuento).toFixed(1)},${py(p.veg).toFixed(1)}`).join(" ");
+    const cero = py(0);
+    const op = o.optimo;
+    const actual = o.punto_actual;
+    const dentro = actual && Number.isFinite(actual.descuento) && actual.descuento >= x0 && actual.descuento <= x1;
+
+    return `<svg viewBox="0 0 ${W} ${H}" class="h-44 w-full min-w-[560px]" role="img"
+      aria-label="Valor esperado de la ganancia según el descuento sobre el presupuesto oficial">
+      <line x1="${mL}" y1="${cero.toFixed(1)}" x2="${W - mR}" y2="${cero.toFixed(1)}" stroke="#d1d5db" stroke-dasharray="3 3"/>
+      <polyline points="${linea}" fill="none" stroke="#2563eb" stroke-width="2"/>
+      <line x1="${px(op.descuento).toFixed(1)}" y1="${mT}" x2="${px(op.descuento).toFixed(1)}" y2="${H - mB}"
+            stroke="#2563eb" stroke-width="1" stroke-dasharray="2 3"/>
+      <circle cx="${px(op.descuento).toFixed(1)}" cy="${py(op.veg).toFixed(1)}" r="4" fill="#2563eb"/>
+      ${dentro ? `<circle cx="${px(actual.descuento).toFixed(1)}" cy="${py(actual.veg).toFixed(1)}" r="4"
+            fill="none" stroke="#111827" stroke-width="2"/>` : ""}
+      <text x="${mL}" y="${H - 10}" font-size="11" fill="#9ca3af">${esc(nf2.format(x0))} %</text>
+      <text x="${W - mR}" y="${H - 10}" font-size="11" fill="#9ca3af" text-anchor="end">${esc(nf2.format(x1))} %</text>
+      <text x="${px(op.descuento).toFixed(1)}" y="${H - 10}" font-size="11" fill="#2563eb" text-anchor="middle">óptimo ${esc(nf2.format(op.descuento))} %</text>
+      <text x="4" y="${(py(y1) + 4).toFixed(1)}" font-size="11" fill="#9ca3af">${esc(copRent(y1))}</text>
+      ${cero - py(y1) >= 14 ? `<text x="4" y="${(cero + 4).toFixed(1)}" font-size="11" fill="#9ca3af">$0</text>` : ""}
+    </svg>`;
+  }
+
+  /* ── «Aplicar este descuento al APU» ──────────────────────────────────
+     Escribe la perilla, enciende el ajuste competitivo y RECALCULA por el mismo
+     camino que el botón «Calcular APU». Una pulsación que solo rellenara el
+     campo dejaría al resumen enseñando el precio anterior. */
+  async function aplicarDescuentoApu(punto) {
+    if (!punto) return;
+    if (!punto.aplicable_al_apu) {
+      $("ps-aplicar-nota").textContent = "No aplicable: ese precio está por encima de su precio de venta, "
+        + "así que no es un descuento. Suba la utilidad o la administración si quiere que el APU lo refleje.";
+      return;
+    }
+    $("ajuste-competitivo").checked = true;
+    sincronizarBaja();
+    $("factor-baja").value = punto.descuento_apu_pct;
+    $("baja-nota").textContent = `Del precio sugerido: ${num(punto.descuento_apu_pct)} % sobre su precio de venta, `
+      + `que equivale a ${num(punto.descuento)} % de baja contra el presupuesto oficial.`;
+    msgApu(`Descuento aplicado (${num(punto.descuento_apu_pct)} %). Recalculando…`, "info");
+    const ok = await calcularApu();
+    if (ok && $("id-proceso").value.trim()) await calcularRentabilidad({ auto: true });
+  }
+
+  $("btn-aplicar-descuento").addEventListener("click", () => {
+    if (!ultimoOptimizador) return;
+    aplicarDescuentoApu(ultimoOptimizador.optimo);
+  });
+
+  // delegación: la tabla se repinta entera en cada cálculo
+  $("ps-opciones").addEventListener("click", (e) => {
+    const clave = e.target.getAttribute("data-aplicar");
+    if (!clave || !ultimoOptimizador) return;
+    aplicarDescuentoApu((ultimoOptimizador.opciones || {})[clave]);
+  });
+
+  async function arrancar() {
+    const hayProceso = precargarDesdeURL();
+    // envuelto en una flecha a propósito: pasarla directa le entregaría el
+    // MouseEvent como opciones y `{auto}` se leería de un objeto que no lo es
+    $("btn-rentabilidad").addEventListener("click", () => calcularRentabilidad());
+    sincronizarBaja();
+    pintarTabla();
+    try {
+      await cargarCatalogo();
+      pintarTabla(); // el catálogo aporta los rendimientos por defecto del placeholder
+    } catch (e) {
+      msgApu(`No se pudo cargar el catálogo: ${e.message}`, "error");
+    }
+    // el departamento del proceso solo se puede fijar cuando el catálogo ya
+    // llenó el desplegable: antes no existe la opción que hay que seleccionar
+    if (hayProceso) precargarDesdeURL();
+  }
+
+
+  /* ══════════ Estado del encadenado ══════════ */
+  let activo = false;      // el bucle sigue vivo
+  let tandas = 0;
+  let timerEspera = null;
+
+  function estado(texto, { girando = false } = {}) {
+    $("chip-texto").textContent = texto;
+    $("chip-spin").classList.toggle("hidden", !girando);
+  }
+  function mensaje(texto, tipo) {
+    const p = $("mensaje");
+    if (!texto) return p.classList.add("hidden");
+    p.className = "mt-5 rounded-xl px-4 py-3 text-sm " + ({
+      ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
+      error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
+      aviso: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20",
+    }[tipo] || "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20");
+    p.textContent = texto;
+  }
+  function bitacora(linea) {
+    const li = document.createElement("li");
+    const hora = new Date().toLocaleTimeString("es-CO", { hour12: false });
+    li.innerHTML = `<span class="text-gray-400">${hora}</span> ${esc(linea)}`;
+    $("bitacora").prepend(li);
+    while ($("bitacora").children.length > 60) $("bitacora").lastChild.remove();
+  }
+
+  /* Porcentaje global: meses completos + fracción del mes en curso. */
+  function pintarProgreso(p) {
+    if (!p) return;
+    const deMeses = p.deMeses || 1;
+    const dentroDelMes = p.esperadosMes > 0 ? Math.min(p.leidasMes / p.esperadosMes, 1) : 0;
+    const pct = Math.max(0, Math.min(100, ((p.mesIdx || 0) + dentroDelMes) / deMeses * 100));
+    $("prog-barra").style.width = `${pct}%`;
+    $("prog-pct").textContent = `${pct.toFixed(1)} %`;
+    $("prog-mes").textContent = p.mes ? `Mes ${p.mes} · ${(p.mesIdx || 0) + 1} de ${deMeses}` : "—";
+    $("m-mes").textContent = p.mes || "—";
+    $("m-filas").textContent = p.esperadosMes > 0
+      ? `${fmt.format(p.leidasMes || 0)} / ${fmt.format(p.esperadosMes)}`
+      : fmt.format(p.leidasMes || 0);
+  }
+  function completar(cuerpo) {
+    $("prog-barra").style.width = "100%";
+    $("prog-pct").textContent = "100 %";
+    $("prog-mes").textContent = "Carga completa";
+    if (cuerpo && cuerpo.total != null) {
+      $("m-total").textContent = fmt.format(cuerpo.total);
+      $("m-filas").textContent = cuerpo.leidas != null ? fmt.format(cuerpo.leidas) : "—";
+    }
+  }
+
+  /* Espera cancelable con cuenta regresiva; resuelve false si se detuvo. */
+  function esperar(ms, etiqueta) {
+    return new Promise((resolve) => {
+      let restante = Math.round(ms / 1000);
+      const tic = () => {
+        if (!activo) return resolve(false);
+        estado(`${etiqueta} (${restante} s)`, { girando: true });
+        if (restante-- <= 0) return resolve(true);
+        timerEspera = setTimeout(tic, 1000);
+      };
+      tic();
+    });
+  }
+
+  /* Una llamada, con reintentos ante fallo de red o 5xx. Devuelve el cuerpo
+     JSON, o null si se agotaron los reintentos (o se detuvo el bucle). */
+  async function llamarConReintentos(modo) {
+    const presupuesto = $("f-presupuesto").value;
+    for (let intento = 0; intento <= BACKOFF_MS.length; intento++) {
+      if (!activo) return null;
+      let r = null, cuerpo = null, fallo = null;
+      try {
+        r = await fetch(`/api/sync?modo=${modo}&presupuesto=${presupuesto}`, { headers: { Accept: "application/json" } });
+        try { cuerpo = await r.json(); } catch { cuerpo = null; } // el muro del edge devuelve HTML
+      } catch (e) {
+        fallo = e && e.message ? e.message : "sin conexión";
+      }
+      if (!activo) return null;
+
+      if (r && (r.status === 401 || r.status === 403)) {
+        mensaje("El despliegue rechazó la petición (401/403). Si tiene Password Protection activa, inicie sesión en Vercel en esta misma pestaña y reintente.", "error");
+        return null;
+      }
+      if (r && r.ok && cuerpo && cuerpo.ok) return cuerpo;
+
+      // 4xx con cuerpo: error de uso, no se reintenta
+      if (r && !r.ok && r.status < 500 && cuerpo && cuerpo.error) {
+        mensaje(`El servidor rechazó la sincronización: ${cuerpo.error}`, "error");
+        return null;
+      }
+
+      const detalle = fallo || (cuerpo && cuerpo.error) || (r ? `HTTP ${r.status}` : "respuesta ilegible");
+      if (intento === BACKOFF_MS.length) {
+        mensaje(`La sincronización falló tras ${BACKOFF_MS.length} reintentos: ${detalle}. El avance quedó guardado: puede volver a iniciar.`, "error");
+        bitacora(`✘ ${detalle} — reintentos agotados`);
+        return null;
+      }
+      bitacora(`⚠ ${detalle} — reintento ${intento + 1}/${BACKOFF_MS.length}`);
+      if (!(await esperar(BACKOFF_MS[intento], "Reintentando"))) return null;
+    }
+    return null;
+  }
+
+  /* ══════════ Bucle principal ══════════ */
+  async function encadenar() {
+    // 1.ª tanda: full (reinicia). Siguientes: auto (continúa) — ver cabecera.
+    let modo = "full";
+    while (activo) {
+      estado(tandas === 0 ? "Ejecutando…" : `Ejecutando… (tanda ${tandas + 1})`, { girando: true });
+      const cuerpo = await llamarConReintentos(modo);
+      if (!activo) break;
+      if (!cuerpo) { detener("error"); return; }
+
+      if (cuerpo.enCurso) {
+        // otra tanda tiene el candado: acompañarla, nunca reiniciarla
+        modo = "auto";
+        bitacora("• candado tomado por otra tanda — esperando");
+        estado("Esperando candado…", { girando: true });
+        if (!(await esperar(ESPERA_CANDADO_MS, "Esperando candado"))) break;
+        continue;
+      }
+
+      tandas++;
+      $("m-tandas").textContent = String(tandas);
+
+      if (cuerpo.done === true) {
+        completar(cuerpo);
+        bitacora(cuerpo.alDia
+          ? "✔ los datos ya estaban al día"
+          : `✔ carga completa · ${fmt.format(cuerpo.total || 0)} guardadas de ${fmt.format(cuerpo.leidas || 0)} leídas`);
+        estado("Completado");
+        mensaje(cuerpo.alDia
+          ? "Sincronización completada: los datos ya estaban al día."
+          : `Sincronización completada en ${tandas} tanda${tandas === 1 ? "" : "s"}. ${fmt.format(cuerpo.total || 0)} procesos guardados.`, "ok");
+        activo = false;
+        botones(false);
+        return;
+      }
+
+      pintarProgreso(cuerpo.progreso);
+      const p = cuerpo.progreso || {};
+      bitacora(`tanda ${tandas} · ${p.mes || "?"} (${(p.mesIdx || 0) + 1}/${p.deMeses || "?"}) · ${fmt.format(p.leidasMes || 0)} filas · ${Math.round((cuerpo.duracionMs || 0) / 1000)} s`);
+      modo = "auto"; // a partir de aquí SIEMPRE continuar, nunca reiniciar
+      if (!(await esperar(ESPERA_ENTRE_TANDAS_MS, "Siguiente tanda"))) break;
+    }
+    if (!activo) return; // detenido por el usuario: el estado ya se pintó
+  }
+
+  function botones(corriendo) {
+    $("btn-iniciar").disabled = corriendo;
+    $("btn-detener").disabled = !corriendo;
+    $("f-presupuesto").disabled = corriendo;
+  }
+
+  function detener(motivo) {
+    activo = false;
+    clearTimeout(timerEspera);
+    botones(false);
+    if (motivo === "error") { estado("Error"); return; }
+    estado("Detenido");
+    bitacora("■ encadenado detenido por el usuario");
+    mensaje("Encadenado detenido. El avance quedó guardado en Redis: al volver a iniciar, la carga continúa donde se quedó (la tanda que estuviera corriendo en el servidor termina sola).", "aviso");
+  }
+
+  /* Arranque de la full, con NOMBRE porque tiene dos disparadores: el botón de
+     esta sección y el paso 3 de la puesta en producción de la experiencia.
+     Extraerlo —en vez de que el otro simule un clic o repita el cuerpo— es lo
+     que garantiza que la invariante «1.ª tanda full, siguientes auto» valga
+     para los dos: repetir `full` volvería a enero para siempre, y una segunda
+     copia de este arranque es exactamente donde eso se rompería sin que nadie
+     lo notara.
+     Devuelve `false` si no hizo nada (ya había un encadenado corriendo), para
+     que quien lo llame no anuncie un paso que no ocurrió. */
+  function iniciarFull() {
+    if (activo) return false;
+    activo = true;
+    tandas = 0;
+    $("m-tandas").textContent = "0";
+    $("m-total").textContent = "—";
+    $("prog-barra").style.width = "0%";
+    $("prog-pct").textContent = "0 %";
+    mensaje(null);
+    bitacora("▶ iniciando carga completa");
+    botones(true);
+    encadenar();
+    return true;
+  }
+  $("btn-iniciar").addEventListener("click", iniciarFull);
+  $("btn-detener").addEventListener("click", () => detener("usuario"));
+
+  // cerrar la pestaña a mitad no rompe nada, pero conviene avisarlo
+  window.addEventListener("beforeunload", (e) => {
+    if (!activo) return;
+    e.preventDefault();
+    e.returnValue = "";
+  });
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     TOKEN de los endpoints protegidos
+     --------------------------------------------------------------------------
+     La MISMA clave de sesión que usa la app (`historico_token`): quien ya pidió
+     un detalle de competencia no tiene que volver a pegarlo aquí. Las lecturas
+     y escrituras van dentro de try porque en modo restringido sessionStorage
+     LANZA, y un panel que muere en silencio es exactamente lo que no queremos.
+     ══════════════════════════════════════════════════════════════════════════ */
+  const CLAVE_PERFIL = "dashboard_perfil";
+  const leerPerfil = () => { try { return sessionStorage.getItem(CLAVE_PERFIL) || "helder"; } catch { return "helder"; } };
+  const guardarPerfil = (v) => { try { sessionStorage.setItem(CLAVE_PERFIL, v); } catch { /* sesión restringida */ } };
+
+  /* El formulario del token del panel murió con el token integrado: los
+     bloques que dependían de él (la puesta en producción de la experiencia)
+     están siempre visibles y los 401 se explican como lo que son. */
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     DASHBOARD de procesos (/api/resumen)
+     ══════════════════════════════════════════════════════════════════════════ */
+  const REFRESCO_MS = 300000;              // el mismo TTL de la caché del endpoint
+  const COMPETENCIA_UI = {
+    baja: { emoji: "🟢", texto: "Poca", clases: "bg-green-50 text-green-800" },
+    media: { emoji: "🟡", texto: "Media", clases: "bg-amber-50 text-amber-800" },
+    alta: { emoji: "🔴", texto: "Alta", clases: "bg-red-50 text-red-700" },
+    sin_dato: { emoji: "⚪", texto: "Sin dato", clases: "bg-gray-50 text-gray-500" },
+  };
+  const BARRAS = [
+    ["obra_civil", "Obra civil", "bg-green-500"],
+    ["consultoria", "Consultoría", "bg-amber-500"],
+    ["infraestructura", "Infraestructura", "bg-blue-500"],
+    ["verificar_objeto", "Verificar objeto", "bg-gray-400"],
+  ];
+  /* `fmtCOP` vive en la cabecera compartida */
+  const pct = (n, total) => (total > 0 ? Math.round((n / total) * 100) : 0);
+
+  let dashboardCargando = false;
+  let ultimoResumen = null;
+  let timerRefresco = null, timerCuenta = null, proximoRefresco = 0;
+  let pendientePorVisibilidad = false;
+
+  function avisoDashboard(texto, tipo) {
+    const p = $("d-aviso");
+    if (!texto) return p.classList.add("hidden");
+    p.className = "mt-5 rounded-xl px-4 py-3 text-sm " + ({
+      ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
+      error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
+      aviso: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20",
+    }[tipo] || "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20");
+    p.innerHTML = texto;
+  }
+
+  function cargandoDashboard(v) {
+    dashboardCargando = v;
+    $("btn-actualizar").disabled = v;
+    $("d-spin").classList.toggle("hidden", !v);
+    // el esqueleto solo se enseña la PRIMERA vez: en los refrescos automáticos
+    // vaciar la pantalla para volver a pintar lo mismo es peor que no hacer nada
+    $("d-skeleton").classList.toggle("hidden", !(v && !ultimoResumen));
+  }
+
+  async function cargarDashboard({ forzar = false } = {}) {
+    if (dashboardCargando) return;
+    const token = leerToken();
+    const perfil = $("d-perfil").value;
+    cargandoDashboard(true);
+    let r = null, cuerpo = null;
+    try {
+      // cache_bust solo cambia la URL (el servidor lo ignora): impide que el
+      // navegador reutilice su propia respuesta al pulsar «Actualizar ahora»
+      const bust = forzar ? `&cache_bust=${Date.now()}` : "";
+      r = await fetch(`/api/resumen?perfil=${encodeURIComponent(perfil)}${bust}`,
+        { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+      cuerpo = await r.json();
+    } catch (e) {
+      cargandoDashboard(false);
+      return avisoDashboard(`No se pudo contactar el servidor: ${esc((e && e.message) || "sin conexión")}.`, "error");
+    }
+    cargandoDashboard(false);
+
+    if (r.status === 401) {
+      return avisoDashboard("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
+    }
+    if (r.status === 503) {
+      return avisoDashboard(`${esc((cuerpo && cuerpo.error) || "Servicio no disponible")}. Puede iniciar una carga en la sección de sincronización, arriba.`, "error");
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      return avisoDashboard(esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`), "error");
+    }
+    avisoDashboard(cuerpo.mensaje ? esc(cuerpo.mensaje) : null, "aviso");
+    ultimoResumen = cuerpo;
+    // ANTES de pintar: `celdaApuProceso` consulta `apuListos` al construir la
+    // fila, y si el listado llegara después el badge saldría una pintada tarde
+    await cargarApuListos(perfil);
+    pintarDashboard(cuerpo, r.headers.get("X-Cache") || (cuerpo.cache ? "HIT" : "MISS"));
+    programarRefresco();
+  }
+
+  /* Baja de mercado. Sin índice construido la tarjeta NO se pinta: enseñar
+     «0 %» cuando lo que pasa es que nadie ha reconstruido el índice sería
+     convertir «no sé» en «el mercado no descuenta», que es justo el error que
+     este proyecto ya pagó con `i.total_procesos`. */
+  function pintarBaja(b) {
+    const box = $("d-baja-box");
+    const cifras = $("d-baja-cifras");
+    /* La caja se muestra SIEMPRE que haya panel: si se ocultara cuando no hay
+       índice, el botón de reconstruir sería invisible justo cuando hace falta,
+       que es el único momento en que sirve de algo. */
+    box.classList.remove("hidden");
+    if (!b || b.baja_mediana_global == null || !b.entidades_clasificadas) {
+      cifras.classList.add("hidden");
+      $("d-baja-actualizado").textContent = "sin construir";
+      $("d-baja-meta").textContent =
+        "El índice de baja no se ha construido todavía. Pulse «Reconstruir»: recorre el histórico ya "
+        + "descargado y no vuelve a pedir nada a SECOP II.";
+      return;
+    }
+    cifras.classList.remove("hidden");
+    $("d-baja-actualizado").textContent = b.construido
+      ? `actualizado ${new Date(b.construido).toLocaleString("es-CO")}`
+      : "";
+    $("d-baja-global").textContent = `${fmt1.format(b.baja_mediana_global)} %`;
+    $("d-baja-rango").textContent = b.baja_p25_global != null && b.baja_p75_global != null
+      ? `p25 ${fmt1.format(b.baja_p25_global)} % · p75 ${fmt1.format(b.baja_p75_global)} %`
+      : "";
+    $("d-baja-meta").textContent =
+      `${fmt.format(b.entidades_clasificadas)} entidades con ≥ ${b.min_procesos} procesos · ${fmt.format(b.procesos_analizados || 0)} adjudicaciones analizadas`;
+    const linea = (r) => {
+      const li = document.createElement("li");
+      li.className = "flex items-baseline justify-between gap-2";
+      const n = document.createElement("span");
+      n.className = "truncate text-gray-700";
+      n.textContent = r.entidad;                       // textContent: nunca HTML de un dato
+      n.title = `${r.entidad} · ${r.procesos} procesos`;
+      const v = document.createElement("span");
+      v.className = "shrink-0 tabular-nums font-medium";
+      v.textContent = `${fmt1.format(r.baja_mediana)} %`;
+      li.append(n, v);
+      return li;
+    };
+    for (const [id, filas] of [["d-baja-mas", b.mas_descuentan], ["d-baja-menos", b.menos_descuentan]]) {
+      const ul = $(id);
+      ul.textContent = "";
+      for (const r of filas || []) ul.appendChild(linea(r));
+    }
+  }
+
+  /* Reconstrucción manual del índice de baja. Recorre el histórico entero, así
+     que puede no terminar en una sola invocación: `done:false` NO es un error,
+     es «sigue en marcha», y hay que decirlo con esas palabras — un botón que
+     dijera «falló» cuando en realidad va por la mitad haría que el dueño lo
+     pulsara una y otra vez. */
+  async function reconstruirBaja() {
+    const btn = $("d-baja-reconstruir");
+    const msg = $("d-baja-msg");
+    const token = leerToken();
+    const decir = (texto, clases) => {
+      msg.textContent = texto;
+      msg.className = `mt-2 rounded-lg px-3 py-2 text-xs ${clases}`;
+      msg.classList.remove("hidden");
+    };
+    btn.disabled = true;
+    decir("Reconstruyendo sobre el histórico ya descargado…", "bg-gray-50 text-gray-600");
+    try {
+      const r = await fetch("/api/indice-baja?reconstruir=true",
+        { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+      const c = await r.json().catch(() => ({}));
+      if (!r.ok || !c.ok) {
+        decir(c.error || `Error ${r.status}`, "bg-red-50 text-red-700");
+      } else if (c.reconstruido && c.reconstruido.enCurso) {
+        decir("Ya hay una reconstrucción en curso: espere a que termine.", "bg-amber-50 text-amber-800");
+      } else if (c.reconstruido && c.reconstruido.done === false) {
+        decir("Reconstrucción a medias (presupuesto agotado). Vuelva a pulsar para continuar: "
+          + "el avance queda guardado.", "bg-amber-50 text-amber-800");
+      } else {
+        const m = c.reconstruido || {};
+        decir(`Listo: ${fmt.format(m.procesos_analizados || 0)} adjudicaciones · `
+          + `${fmt.format(m.entidades_clasificadas || 0)} entidades clasificadas.`, "bg-green-50 text-green-800");
+        cargarDashboard({ forzar: true });   // los números del panel acaban de cambiar
+      }
+    } catch (e) {
+      decir(`Sin respuesta del servidor: ${e.message}`, "bg-red-50 text-red-700");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function pintarDashboard(c, cache) {
+    const t = c.totales || {};
+    const per = t.por_pertinencia || {};
+    const total = t.visibles || 0;
+    $("d-contenido").classList.remove("hidden");
+
+    pintarBaja(c.baja_mercado);
+
+    $("d-visibles").textContent = fmt.format(total);
+    $("d-obra").textContent = fmt.format(per.obra_civil || 0);
+    $("d-obra-pct").textContent = `🏗️ ${pct(per.obra_civil || 0, total)} % del total`;
+    $("d-consultoria").textContent = fmt.format(per.consultoria || 0);
+    $("d-consultoria-pct").textContent = `📐 ${pct(per.consultoria || 0, total)} % del total`;
+    $("d-semana").textContent = fmt.format((t.por_urgencia || {}).cierra_esta_semana || 0);
+
+    /* barras: divs con width en %, sin librerías */
+    $("d-barras").innerHTML = BARRAS.map(([clave, etiqueta, color]) => {
+      const n = per[clave] || 0;
+      const p = pct(n, total);
+      return `<div class="flex items-center gap-3 text-sm">
+          <span class="w-32 shrink-0 text-gray-600">${etiqueta}</span>
+          <div class="h-3 flex-1 overflow-hidden rounded-full bg-gray-100">
+            <div class="barra h-full rounded-full ${color}" style="width:${p}%"></div>
+          </div>
+          <span class="w-24 shrink-0 text-right tabular-nums text-gray-500">${p} % (${fmt.format(n)})</span>
+        </div>`;
+    }).join("");
+
+    /* entidades */
+    const ent = (c.top_entidades || []).slice(0, 10);
+    $("d-entidades").innerHTML = ent.length ? ent.map((e) => {
+      const d = COMPETENCIA_UI[e.competencia] || COMPETENCIA_UI.sin_dato;
+      return `<tr class="fila-entidad cursor-pointer align-top hover:bg-gray-50" data-entidad="${esc(e.entidad)}" title="Ver los procesos que sostienen este promedio">
+          <td class="py-2 pr-2">${esc(e.entidad)}</td>
+          <td class="py-2 pr-2 text-right tabular-nums">${fmt.format(e.procesos)}</td>
+          <td class="py-2 pr-2"><span class="rounded-lg px-2 py-0.5 text-xs font-medium ${d.clases}">${d.emoji} ${d.texto}</span></td>
+          <td class="py-2 text-right tabular-nums">${e.promedio_oferentes == null ? "—" : String(e.promedio_oferentes).replace(".", ",")}</td>
+        </tr>`;
+    }).join("") : '<tr><td colspan="4" class="py-3 text-gray-400">Sin entidades que mostrar.</td></tr>';
+
+    /* departamentos: si el dataset no trae la columna, la tabla se OCULTA
+       entera (una tabla vacía no informa, confunde) */
+    const deps = Object.entries(c.totales.por_departamento || {});
+    const hayDeps = deps.some(([k, n]) => n > 0 && k !== "SIN_DEPARTAMENTO");
+    $("d-departamentos-box").classList.toggle("hidden", !hayDeps);
+    if (hayDeps) {
+      $("d-departamentos").innerHTML = deps.map(([dep, n]) => `<tr>
+          <td class="py-2 pr-2">${esc(dep)}</td>
+          <td class="py-2 pr-2 text-right tabular-nums">${fmt.format(n)}</td>
+          <td class="py-2 text-right tabular-nums text-gray-500">${pct(n, total)} %</td>
+        </tr>`).join("");
+    }
+
+    /* destacados */
+    $("d-destacados-titulo").textContent = c.destacados_desde === "competencia_baja"
+      ? "Top 10 procesos más atractivos (entidades con poca competencia)"
+      : "Top 10 procesos más atractivos (aún sin histórico de competencia)";
+    const dest = c.procesos_destacados || [];
+    $("d-destacados").innerHTML = dest.length ? dest.map((p) => {
+      const d = COMPETENCIA_UI[p.competencia] || COMPETENCIA_UI.sin_dato;
+      const cierre = p.cierre ? new Date(p.cierre) : null;
+      return `<tr class="fila-proceso align-top ${p.url ? "cursor-pointer hover:bg-gray-50" : ""}" data-url="${esc(p.url || "")}" title="${esc(p.badge || "")}">
+          <td class="py-2 pr-2">${esc(p.objeto)}</td>
+          <td class="py-2 pr-2 text-gray-500">${esc(p.entidad)}</td>
+          <td class="py-2 pr-2 text-right tabular-nums">${fmtCOP.format(p.cuantia_cop || 0)}</td>
+          <td class="py-2 pr-2 text-gray-500">${cierre && !isNaN(cierre) ? cierre.toLocaleDateString("es-CO", { day: "numeric", month: "short" }) : "—"}</td>
+          <td class="py-2 pr-2"><span class="rounded-lg px-2 py-0.5 text-xs font-medium ${d.clases}">${d.emoji} ${d.texto}</span></td>
+          <td class="py-2 pr-2 text-gray-500">${esc(p.pertinencia || "")}</td>
+          <td class="py-2 whitespace-nowrap">${celdaApuProceso(p)}</td>
+        </tr>`;
+    }).join("") : '<tr><td colspan="7" class="py-3 text-gray-400">Ningún proceso cumple los criterios de destacado.</td></tr>';
+
+    pintarMeta(c, cache);
+  }
+
+  function pintarMeta(c, cache) {
+    const gen = new Date(c.generado);
+    const partes = [
+      `Última actualización: ${isNaN(gen) ? "—" : gen.toLocaleString("es-CO", { hour12: false })}`,
+      `Perfil: ${$("d-perfil").selectedOptions[0].text}`,
+      `Caché: ${cache}`,
+    ];
+    if (c.corpus && c.corpus.sincronizado) partes.push(`Corpus sincronizado: ${String(c.corpus.sincronizado).slice(0, 16).replace("T", " ")}`);
+    $("d-meta").dataset.base = partes.join(" · ");
+    pintarCuentaAtras();
+  }
+
+  function pintarCuentaAtras() {
+    const base = $("d-meta").dataset.base || "";
+    const restan = Math.max(0, Math.round((proximoRefresco - Date.now()) / 1000));
+    const mm = String(Math.floor(restan / 60)), ss = String(restan % 60).padStart(2, "0");
+    $("d-meta").textContent = proximoRefresco ? `${base} · Próxima actualización en ${mm}:${ss}` : base;
+  }
+
+  /* Refresco automático cada 5 min SOLO con la pestaña visible: refrescar en
+     segundo plano gasta invocaciones de Vercel para que nadie lo mire. Si la
+     pestaña estaba oculta cuando tocaba, se refresca al volver a ella. */
+  function programarRefresco() {
+    clearTimeout(timerRefresco);
+    clearInterval(timerCuenta);
+    proximoRefresco = Date.now() + REFRESCO_MS;
+    pintarCuentaAtras();
+    timerCuenta = setInterval(pintarCuentaAtras, 1000);
+    timerRefresco = setTimeout(() => {
+      if (document.visibilityState === "visible") cargarDashboard();
+      else pendientePorVisibilidad = true; // se hará al volver a la pestaña
+    }, REFRESCO_MS);
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    if (pendientePorVisibilidad || (proximoRefresco && Date.now() > proximoRefresco)) {
+      pendientePorVisibilidad = false;
+      cargarDashboard();
+    }
+  });
+
+  $("btn-actualizar").addEventListener("click", () => cargarDashboard({ forzar: true }));
+  $("d-baja-reconstruir").addEventListener("click", reconstruirBaja);
+  $("d-perfil").addEventListener("change", () => {
+    guardarPerfil($("d-perfil").value);
+    ultimoResumen = null;   // otro perfil: sí conviene el esqueleto
+    cargarDashboard();
+  });
+
+  /* Detalle de competencia de una entidad, en línea bajo su fila (el mismo
+     /api/competencia-detalle que abre el modal de la app; aquí se despliega en
+     la propia tabla en vez de duplicar el modal). */
+  $("d-entidades").addEventListener("click", async (e) => {
+    const fila = e.target.closest(".fila-entidad");
+    if (!fila) return;
+    const abierta = fila.nextElementSibling;
+    if (abierta && abierta.classList.contains("detalle-entidad")) return abierta.remove();
+    const entidad = fila.getAttribute("data-entidad");
+    const tr = document.createElement("tr");
+    tr.className = "detalle-entidad bg-gray-50";
+    tr.innerHTML = '<td colspan="4" class="px-2 py-3 text-xs text-gray-500">Cargando el detalle…</td>';
+    fila.after(tr);
+    const celda = tr.firstElementChild;
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch(`/api/competencia-detalle?entidad=${encodeURIComponent(entidad)}`,
+        { headers: { "x-historico-token": leerToken() } });
+      cuerpo = await r.json();
+    } catch {
+      celda.textContent = "No se pudo contactar el servidor.";
+      return;
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      celda.textContent = (cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`;
+      return;
+    }
+    if (!cuerpo.encontrada) { celda.textContent = cuerpo.mensaje || "Sin procesos históricos de esta entidad."; return; }
+    const i = cuerpo.indice || {};
+    /* EL CAMPO ES `procesos_contados`, NO `total_procesos`.
+       Aquí nació el «promedio 18,2 oferentes en 0 procesos» que se vio en
+       producción: `/api/competencia-detalle` NUNCA ha devuelto `total_procesos`
+       —ese nombre pertenece al OTRO payload, el `competencia_entidad` que
+       embebe /api/oportunidades— así que `i.total_procesos || 0` valía 0
+       SIEMPRE, con cualquier dato y con cualquier entidad. No era un dato malo:
+       era un campo inexistente leído con un `|| 0` que lo disfrazaba de cero.
+       De ahí la regla: si el conteo no viene, NO se pinta un 0 — se dice que no
+       se sabe. Un `|| 0` sobre un campo ausente convierte «no sé» en «cero», y
+       ese es el error que hay que no repetir. */
+    const contados = Number(i.procesos_contados);
+    const promedio = i.promedio_oferentes == null ? null : Number(i.promedio_oferentes);
+    const conBase = Number.isFinite(contados) && contados > 0 && promedio != null && !isNaN(promedio);
+    const lista = (cuerpo.procesos || []).slice(0, 8)
+      .map((p) => `<li class="truncate">· ${esc(p.objeto)} — <span class="tabular-nums">${p.numero_ofertas}</span> oferente${p.numero_ofertas === 1 ? "" : "s"}</li>`)
+      .join("");
+    celda.innerHTML =
+      `<p class="font-medium text-gray-700">${esc(cuerpo.entidad)} · nivel ${esc(i.nivel || "sin_dato")}`
+      + (conBase
+        ? ` · promedio ${String(promedio).replace(".", ",")} oferentes en ${contados} proceso${contados === 1 ? "" : "s"}`
+        : " · sin procesos que sostengan un promedio")
+      + "</p>"
+      + (cuerpo.mensaje ? `<p class="mt-1 text-amber-700">${esc(cuerpo.mensaje)}</p>` : "")
+      + (lista ? `<ul class="mt-2 space-y-0.5">${lista}</ul>` : "")
+      + `<p class="mt-2 text-gray-400">${(cuerpo.excluidos || []).length} proceso(s) excluidos del promedio, con su motivo, en /api/competencia-detalle.</p>`;
+  });
+
+  // una fila de destacados lleva al proceso en SECOP II (es la ficha real)
+  $("d-destacados").addEventListener("click", (e) => {
+    // el botón «APU» vive DENTRO de la fila, así que su clic burbujea hasta
+    // aquí: la guarda va ANTES de resolver la fila — sin ella, pulsarlo
+    // abriría además la ficha de SECOP II en otra pestaña
+    const apuBtn = e.target.closest(".btn-apu");
+    if (apuBtn) {
+      abrirEditorConProceso(new URLSearchParams(apuBtn.getAttribute("data-apu-q") || ""));
+      return;
+    }
+    const fila = e.target.closest(".fila-proceso");
+    if (!fila) return;
+    const url = fila.getAttribute("data-url");
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  });
+
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     APU por proceso · botón de la fila y badge «APU listo»
+     ──────────────────────────────────────────────────────────────────────────
+     El botón abre /apu.html con el proceso precargado; el badge dice si ese
+     proceso ya tiene un borrador guardado para el perfil elegido.
+
+     EL LISTADO SE PIDE APARTE DE /api/resumen, cuya respuesta se cachea 300 s:
+     un presupuesto recién guardado no puede tardar cinco minutos en encender el
+     badge — es la misma razón por la que una carga de RUP borra esa caché.
+     Aquí no hace falta borrar nada, porque no se cachea.
+
+     `procesos_con_presupuesto` es una lista de PERTENENCIA, no un conteo: la
+     pregunta es «¿este proceso tiene borrador?», y así el frontend no puede
+     convertir un «no sé» en un cero con un `|| 0`. */
+  let apuListos = new Set();
+
+  async function cargarApuListos(perfil) {
+    apuListos = new Set();
+    const token = leerToken();
+    if (!token) return;
+    try {
+      const r = await fetch(`/api/apu/listar?perfil=${encodeURIComponent(perfil)}`, {
+        headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store",
+      });
+      if (!r.ok) return; // el panel no puede caerse porque el listado de APU falle
+      const c = await r.json().catch(() => null);
+      if (c && c.ok && Array.isArray(c.procesos_con_presupuesto)) apuListos = new Set(c.procesos_con_presupuesto);
+    } catch { /* sin conexión: se pinta sin badges, no se rompe el panel */ }
+  }
+
+  function celdaApuProceso(p) {
+    const id = p.id_del_proceso;
+    const listo = id != null && apuListos.has(String(id));
+    const q = new URLSearchParams();
+    if (p.objeto) q.set("objeto", p.objeto);
+    if (p.entidad) q.set("entidad", p.entidad);
+    if (p.nit_entidad) q.set("entidad_nit", p.nit_entidad);
+    if (p.departamento_entidad) q.set("departamento", p.departamento_entidad);
+    if (p.unspsc) q.set("unspsc", p.unspsc);
+    if (p.cuantia_cop != null) q.set("cuantia", String(p.cuantia_cop));
+    if (id != null) q.set("id_proceso", String(id));
+    if (p.plazo_meses != null) q.set("plazo", String(p.plazo_meses));
+    // la modalidad decide QUÉ baja de mercado se usa para fijar el precio: sin
+    // ella el editor cotizaría contra la mediana mezclada de la entidad
+    if (p.modalidad) q.set("modalidad", p.modalidad);
+    q.set("perfil", $("d-perfil").value);
+    return `<button type="button" class="btn-apu rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50"`
+      + ` data-apu-q="${esc(q.toString())}" title="Calcular APU y rentabilidad de este proceso en la pestaña APU">APU</button>`
+      + (listo
+        ? ' <span class="rounded-lg px-2 py-0.5 text-xs font-medium bg-green-50 text-green-800"'
+          + ' title="Ya hay un presupuesto guardado para este proceso y perfil">✅ APU listo</span>'
+        : "");
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     CARGA DE RUP (/api/admin/rup)
+     ══════════════════════════════════════════════════════════════════════════ */
+  let rupPendiente = null;
+  const MAX_PREVIEW = 200000; // caracteres pintados en la vista previa
+
+  function mensajeRup(texto, tipo) {
+    const p = $("rup-json-mensaje");
+    if (!texto) return p.classList.add("hidden");
+    p.className = "mt-5 rounded-xl px-4 py-3 text-sm " + ({
+      ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
+      error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
+      aviso: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20",
+    }[tipo] || "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20");
+    p.textContent = texto;
+  }
+  function erroresRup(lista) {
+    const ul = $("rup-errores");
+    if (!lista || !lista.length) return ul.classList.add("hidden");
+    ul.classList.remove("hidden");
+    ul.innerHTML = lista.map((e) => (typeof e === "string"
+      ? `<li>• ${esc(e)}</li>`
+      : `<li>• <code class="font-mono">${esc(e.campo)}</code>: ${esc(e.error)}${e.valor_recibido == null ? "" : ` (recibido: <code class="font-mono">${esc(JSON.stringify(e.valor_recibido))}</code>)`}</li>`)).join("");
+  }
+
+  function limpiarRup() {
+    rupPendiente = null;
+    $("rup-json-archivo").value = "";
+    $("rup-vista").classList.add("hidden");
+    $("rup-preview").textContent = "";
+    $("rup-resumen").innerHTML = "";
+    mensajeRup(null);
+    erroresRup(null);
+  }
+
+  /* Validación de conveniencia, previa al envío: NO decide nada (la de verdad
+     corre en el servidor, que es quien guarda) — solo evita un viaje de ida y
+     vuelta por un archivo obviamente incompleto. */
+  function revisarEnCliente(datos) {
+    const avisos = [];
+    const perfiles = (datos && datos.perfiles) || {};
+    const claves = Object.keys(perfiles);
+    if (!claves.length) avisos.push("El archivo no trae ningún perfil bajo «perfiles».");
+    for (const k of claves) {
+      const p = perfiles[k] || {};
+      if (!Array.isArray(p.unspsc) || !p.unspsc.length) avisos.push(`${k}: la lista «unspsc» está vacía o no es un arreglo.`);
+      const ind = p.indicadores || {};
+      for (const campo of ["liquidez", "patrimonio", "utilidad_operacional"]) {
+        if (!(typeof ind[campo] === "number" && ind[campo] > 0)) avisos.push(`${k}: «indicadores.${campo}» debe ser un número positivo.`);
+      }
+    }
+    return avisos;
+  }
+
+  function resumirRup(datos) {
+    const perfiles = (datos && datos.perfiles) || {};
+    return Object.entries(perfiles).map(([clave, p]) => {
+      const n = Array.isArray(p.unspsc) ? p.unspsc.length : 0;
+      const ind = p.indicadores || {};
+      // K aproximada, SOLO para la vista previa (se enseña como «aprox.»): la
+      // fórmula real, con SCE y los factores E/CT/CF de la Guía CCE, corre en
+      // el servidor — lib/capacidad.js es la única implementación que decide.
+      const co = ind.ingreso_operacional || (ind.utilidad_operacional || 0) * 16.7;
+      const kAprox = Math.round(co * 2 / 100);
+      return `<li><span class="font-medium">${esc(p.nombre || clave)}</span>: ${n} códigos UNSPSC · `
+        + `${p.profesionales || 0} profesional(es) · tope ${fmt.format(p.tope_smmlv || 0)} SMMLV · `
+        + `K aprox. ${fmtCOP.format(kAprox)}</li>`;
+    }).join("");
+  }
+
+  $("rup-json-archivo").addEventListener("change", () => {
+    const f = $("rup-json-archivo").files && $("rup-json-archivo").files[0];
+    mensajeRup(null); erroresRup(null);
+    if (!f) return limpiarRup();
+    const lector = new FileReader();
+    lector.onerror = () => mensajeRup("No se pudo leer el archivo.", "error");
+    lector.onload = () => {
+      let datos = null;
+      try { datos = JSON.parse(String(lector.result)); } catch (e) {
+        rupPendiente = null;
+        $("rup-vista").classList.add("hidden");
+        return mensajeRup(`El archivo no es JSON válido: ${e.message}`, "error");
+      }
+      rupPendiente = datos;
+      $("rup-vista").classList.remove("hidden");
+      // la vista previa se RECORTA (el archivo puede llegar a 5 MB y pintar
+      // eso en un <pre> congela la pestaña); lo que se sube es el JSON entero
+      const bonito = JSON.stringify(datos, null, 2);
+      $("rup-preview").textContent = bonito.length > MAX_PREVIEW
+        ? `${bonito.slice(0, MAX_PREVIEW)}\n\n… (vista previa recortada: ${fmt.format(bonito.length)} caracteres en total; se subirá el archivo completo)`
+        : bonito;
+      $("rup-resumen").innerHTML = resumirRup(datos);
+      $("btn-rup-cargar").disabled = false;
+      const avisos = revisarEnCliente(datos);
+      if (avisos.length) {
+        mensajeRup("Revise estos puntos antes de confirmar (la validación definitiva la hace el servidor):", "aviso");
+        erroresRup(avisos);
+      }
+    };
+    lector.readAsText(f);
+  });
+
+  $("btn-rup-cancelar").addEventListener("click", limpiarRup);
+
+  $("btn-rup-cargar").addEventListener("click", async () => {
+    if (!rupPendiente) return mensajeRup("Seleccione primero un archivo JSON.", "aviso");
+    const token = leerToken();
+    // deshabilitar durante el envío: un doble clic cargaría dos veces
+    $("btn-rup-cargar").disabled = true;
+    const etiqueta = $("btn-rup-cargar").textContent;
+    $("btn-rup-cargar").textContent = "Cargando…";
+    erroresRup(null);
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch("/api/admin/rup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-historico-token": token },
+        body: JSON.stringify(rupPendiente),
+      });
+      cuerpo = await r.json();
+    } catch (e) {
+      $("btn-rup-cargar").disabled = false;
+      $("btn-rup-cargar").textContent = etiqueta;
+      return mensajeRup(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
+    }
+    $("btn-rup-cargar").disabled = false;
+    $("btn-rup-cargar").textContent = etiqueta;
+
+    if (r.status === 401) {
+      return mensajeRup("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
+    }
+    if (r.status === 400 && cuerpo && cuerpo.errores) {
+      mensajeRup(cuerpo.error || "El archivo no pasó la validación: no se guardó nada.", "error");
+      return erroresRup(cuerpo.errores);
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      return mensajeRup((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`, "error");
+    }
+    mensajeRup(`RUP cargado correctamente (${cuerpo.perfiles_cargados.join(", ")}). Los cambios surten efecto inmediato.`, "ok");
+    // las advertencias NO bloquean: se enseñan y ya está
+    erroresRup(cuerpo.advertencias && cuerpo.advertencias.length ? cuerpo.advertencias : null);
+    rupPendiente = null;
+    $("rup-json-archivo").value = "";
+    $("rup-vista").classList.add("hidden");
+    await cargarRupActual();
+    ultimoResumen = null;
+    cargarDashboard({ forzar: true }); // los totales dependen del RUP recién cargado
+    /* la auditoría de cobertura mide contra la whitelist que acaba de cambiar:
+       lo pintado ya no corresponde y dejarlo a la vista sería enseñar como
+       «hueco» un código recién inscrito */
+    ultimaCobertura = null;
+    $("c-contenido").classList.add("hidden");
+    $("btn-cobertura-exportar").disabled = true;
+    avisoCobertura("RUP cargado: vuelva a ejecutar la auditoría para ver los huecos del RUP nuevo.", "aviso");
+  });
+
+  async function cargarRupActual() {
+    const caja = $("rup-actual");
+    const token = leerToken();
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch("/api/admin/rup", { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+      cuerpo = await r.json();
+    } catch {
+      caja.textContent = "No se pudo consultar el RUP vigente.";
+      return;
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      caja.textContent = (cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`;
+      return;
+    }
+    const resumen = Object.entries(cuerpo.resumen || {})
+      .map(([k, v]) => `<li><span class="font-medium">${esc(v.nombre || k)}</span>: ${v.codigos} códigos UNSPSC · ${v.clases} clases · ${v.familias} familias · tope ${fmt.format(v.tope_smmlv || 0)} SMMLV</li>`)
+      .join("");
+    caja.innerHTML =
+      `<p>Fuente: <span class="font-medium">${cuerpo.fuente === "redis" ? "archivo cargado (Redis)" : "valores por defecto del repositorio"}</span>`
+      + (cuerpo.cargado ? ` · Cargado: ${esc(String(cuerpo.cargado).slice(0, 19).replace("T", " "))}` : "") + "</p>"
+      + (cuerpo.fuente === "hardcoded"
+        ? '<p class="mt-2 rounded-xl bg-amber-50 px-4 py-3 text-amber-800 ring-1 ring-inset ring-amber-600/20">Usando perfiles por defecto. Cargue su RUP para mayor precisión.</p>'
+        : "")
+      + (resumen ? `<ul class="mt-2 space-y-1">${resumen}</ul>` : "");
+  }
+
+  $("btn-rup-descargar").addEventListener("click", async () => {
+    const token = leerToken();
+    let cuerpo = null;
+    try {
+      const r = await fetch("/api/admin/rup", { headers: { "x-historico-token": token }, cache: "no-store" });
+      cuerpo = await r.json();
+      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `HTTP ${r.status}`);
+    } catch (e) {
+      return mensajeRup(`No se pudo descargar el RUP: ${(e && e.message) || "sin conexión"}.`, "error");
+    }
+    // `descargarJSON` está declarado más abajo (declaración de función: se
+    // hoistea), y es el MISMO camino de descarga que usan la experiencia y la
+    // auditoría — tres copias del Blob + <a> temporal era una de más
+    descargarJSON({ perfiles: cuerpo.perfiles }, `rup_${new Date().toISOString().slice(0, 10)}.json`);
+    mensajeRup("Archivo descargado. Edítelo y vuelva a subirlo para actualizar el RUP.", "ok");
+  });
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     EXPERIENCIA EJECUTADA (/api/admin/experiencia)
+     --------------------------------------------------------------------------
+     El RUP dice a qué PUEDE presentarse el dueño; esta lista dice en qué SABE
+     trabajar. Se pega como JSON, se previsualiza y se confirma — el mismo
+     ritual de la carga de RUP, porque es el mismo tipo de dato: una fuente de
+     verdad que cambia lo que la app recomienda.
+     ══════════════════════════════════════════════════════════════════════════ */
+  let expPendiente = null;
+  const EXP_PREVIEW = 5;   // contratos que se enseñan antes de confirmar
+
+  function mensajeExp(texto, tipo) {
+    const p = $("exp-json-mensaje");
+    if (!texto) return p.classList.add("hidden");
+    p.className = "mt-5 rounded-xl px-4 py-3 text-sm " + ({
+      ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
+      error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
+      aviso: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20",
+    }[tipo] || "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20");
+    p.textContent = texto;
+  }
+  function erroresExp(lista) {
+    const ul = $("exp-errores");
+    if (!lista || !lista.length) return ul.classList.add("hidden");
+    ul.classList.remove("hidden");
+    ul.innerHTML = lista.map((e) => (typeof e === "string"
+      ? `<li>• ${esc(e)}</li>`
+      : `<li>• <code class="font-mono">${esc(e.campo)}</code>: ${esc(e.error)}</li>`)).join("");
+  }
+  function limpiarExp() {
+    expPendiente = null;
+    $("exp-vista").classList.add("hidden");
+    $("exp-preview").innerHTML = "";
+    mensajeExp(null);
+    erroresExp(null);
+  }
+
+  /* Vista previa: los primeros 5 contratos, con lo que se va a guardar de cada
+     uno. Es la última oportunidad de ver que el pegado salió bien. */
+  $("btn-exp-validar").addEventListener("click", () => {
+    const crudo = $("exp-json").value.trim();
+    erroresExp(null);
+    if (!crudo) return mensajeExp("Pegue el JSON con sus contratos ejecutados antes de cargar.", "aviso");
+    let datos = null;
+    try { datos = JSON.parse(crudo); } catch (e) {
+      $("exp-vista").classList.add("hidden");
+      expPendiente = null;
+      return mensajeExp(`El texto no es JSON válido: ${e.message}`, "error");
+    }
+    const lista = datos && Array.isArray(datos.contratos) ? datos.contratos
+      : (Array.isArray(datos) ? datos : null);
+    if (!lista || !lista.length) {
+      $("exp-vista").classList.add("hidden");
+      expPendiente = null;
+      return mensajeExp('El JSON debe traer un arreglo «contratos» con al menos un contrato.', "error");
+    }
+    expPendiente = { contratos: lista };
+    $("exp-vista").classList.remove("hidden");
+    $("exp-vista-nota").textContent = lista.length > EXP_PREVIEW
+      ? `Primeros ${EXP_PREVIEW} de ${fmt.format(lista.length)} contratos.`
+      : `${fmt.format(lista.length)} contrato(s).`;
+    $("exp-preview").innerHTML = lista.slice(0, EXP_PREVIEW).map((c) => `<tr class="align-top">
+        <td class="py-2 pr-2 whitespace-nowrap">${esc(c.no_contrato || "—")}</td>
+        <td class="py-2 pr-2 text-gray-500">${esc(c.entidad || "—")}</td>
+        <td class="py-2 pr-2">${esc(String(c.objeto || "").slice(0, 160))}</td>
+        <td class="py-2 pr-2 text-right tabular-nums">${c.valor_cop == null ? "—" : fmtCOP.format(Number(c.valor_cop))}</td>
+        <td class="py-2 text-right tabular-nums">${c.valor_smmlv == null ? "—" : esc(String(c.valor_smmlv))}</td>
+      </tr>`).join("");
+    mensajeExp(`Revise la vista previa y confirme para guardar ${fmt.format(lista.length)} contrato(s).`, "aviso");
+  });
+
+  $("btn-exp-cancelar").addEventListener("click", limpiarExp);
+
+  $("btn-exp-confirmar").addEventListener("click", async () => {
+    if (!expPendiente) return mensajeExp("Pegue y revise primero el JSON de contratos.", "aviso");
+    const token = leerToken();
+    // un doble clic cargaría dos veces
+    $("btn-exp-confirmar").disabled = true;
+    const etiqueta = $("btn-exp-confirmar").textContent;
+    $("btn-exp-confirmar").textContent = "Cargando…";
+    erroresExp(null);
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch("/api/admin/experiencia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-historico-token": token },
+        body: JSON.stringify(expPendiente),
+      });
+      cuerpo = await r.json();
+    } catch (e) {
+      $("btn-exp-confirmar").disabled = false;
+      $("btn-exp-confirmar").textContent = etiqueta;
+      return mensajeExp(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
+    }
+    $("btn-exp-confirmar").disabled = false;
+    $("btn-exp-confirmar").textContent = etiqueta;
+
+    if (r.status === 401) {
+      return mensajeExp("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
+    }
+    if (r.status === 400 && cuerpo && cuerpo.errores) {
+      mensajeExp(cuerpo.error || "El JSON no pasó la validación: no se guardó nada.", "error");
+      return erroresExp(cuerpo.errores);
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      return mensajeExp((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`, "error");
+    }
+    const ejemplos = (cuerpo.ejemplos_terminos || []).slice(0, 12).join(", ");
+    mensajeExp(`Experiencia cargada: ${fmt.format(cuerpo.contratos_cargados)} contratos, `
+      + `${fmt.format(cuerpo.terminos_extraidos)} términos extraídos`
+      + (ejemplos ? ` (${ejemplos}…). ` : ". ")
+      + "Ejecute la auditoría de cobertura para ver qué códigos le faltan basados en su experiencia real.", "ok");
+    expPendiente = null;
+    $("exp-vista").classList.add("hidden");
+    $("exp-json").value = "";
+    await cargarExperienciaActual();
+    // la auditoría cacheada se calculó con el vocabulario anterior
+    $("c-usar-experiencia").checked = true;
+    avisoCobertura("Experiencia cargada. Ejecute la auditoría de cobertura para ver qué códigos le faltan "
+      + "basados en su experiencia real.", "ok");
+  });
+
+  async function cargarExperienciaActual() {
+    const caja = $("exp-actual");
+    const token = leerToken();
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch("/api/admin/experiencia", { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+      cuerpo = await r.json();
+    } catch {
+      caja.textContent = "No se pudo consultar la experiencia cargada.";
+      return;
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      caja.textContent = (cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`;
+      return;
+    }
+    if (!cuerpo.cargada) {
+      caja.innerHTML = '<p class="rounded-xl bg-amber-50 px-4 py-3 text-amber-800 ring-1 ring-inset ring-amber-600/20">'
+        + "No hay experiencia cargada. Cargue sus contratos ejecutados para auditar la cobertura de sus RUP.</p>";
+      // el toggle de la auditoría arranca apagado si no hay nada que usar
+      $("c-usar-experiencia").checked = false;
+      return;
+    }
+    $("c-usar-experiencia").checked = true;
+    const ejemplos = (cuerpo.ejemplos_terminos || []).slice(0, 15).map((t) => `<code class="rounded bg-gray-100 px-1">${esc(t)}</code>`).join(" ");
+    caja.innerHTML =
+      `<p><span class="font-medium">${fmt.format(cuerpo.contratos_cargados)} contratos</span> · `
+      + `${fmt.format(cuerpo.terminos_extraidos)} términos del oficio`
+      + (cuerpo.cargado ? ` · Cargado: ${esc(String(cuerpo.cargado).slice(0, 19).replace("T", " "))}` : "") + "</p>"
+      + (ejemplos ? `<p class="mt-2 text-xs leading-6 text-gray-500">${ejemplos}</p>` : "");
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     PUESTA EN PRODUCCIÓN SIN TERMINAL
+     --------------------------------------------------------------------------
+     El dueño no tiene terminal: `cargar_experiencia.sh` no le sirve. Estos son
+     sus tres pasos con clics, y ninguno reimplementa nada:
+
+       1. POST /api/admin/experiencia?origen=repositorio — el MISMO endpoint de
+          la carga manual, que lee los contratos del archivo del repositorio en
+          vez del cuerpo. No hay una segunda ruta que pueda divergir.
+       2. `ejecutarAuditoria()`, la que ya usa el botón de la sección de
+          cobertura, con el selector puesto en «genesis».
+       3. `iniciarFull()`, el arranque encadenado de la sección de
+          sincronización. Se REUTILIZA para que la invariante «1.ª tanda full,
+          siguientes auto» no tenga dos copias.
+
+     Todo se narra en la bitácora del panel, que es donde el dueño ya mira el
+     avance de la sincronización. */
+  let cadenaCorriendo = false;
+
+  function botonesProduccion(bloqueados) {
+    for (const id of ["btn-exp-cadena", "btn-exp-repo", "btn-exp-cobertura", "btn-exp-full"]) {
+      if ($(id)) $(id).disabled = bloqueados;
+    }
+  }
+
+  /* Paso 1 · los contratos del repositorio. Devuelve true solo si se guardaron:
+     la cadena no puede seguir anunciando pasos sobre una carga que falló. */
+  async function cargarExperienciaDelRepositorio() {
+    const token = leerToken();
+    bitacora("▶ 1/3 cargando experiencia de Génesis desde el repositorio…");
+    erroresExp(null);
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch("/api/admin/experiencia?origen=repositorio", {
+        method: "POST",
+        headers: { "x-historico-token": token, Accept: "application/json" },
+      });
+    } catch (e) {
+      bitacora("✘ 1/3 sin conexión con el servidor");
+      mensajeExp(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
+      return false;
+    }
+    /* El parseo va APARTE del fetch: el muro del edge (Vercel Password
+       Protection) responde HTML con 401/403, así que `r.json()` LANZA. Con las
+       dos cosas en el mismo `try`, ese muro se diagnosticaba como «sin
+       conexión» — y la respuesta es justo la contraria: hay conexión y hay que
+       iniciar sesión. Es el mismo tratamiento que ya da el encadenado de la
+       sincronización unas líneas más arriba. */
+    try { cuerpo = await r.json(); } catch { cuerpo = null; }
+    if (!cuerpo && (r.status === 401 || r.status === 403)) {
+      bitacora(`✘ 1/3 el despliegue rechazó la petición (${r.status})`);
+      mensajeExp("El despliegue rechazó la petición (401/403). Si tiene Password Protection activa, "
+        + "inicie sesión en Vercel en esta misma pestaña y reintente.", "error");
+      return false;
+    }
+    if (r.status === 401) {
+      bitacora("✘ 1/3 el despliegue rechazó el token integrado");
+      mensajeExp("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
+      return false;
+    }
+    if (r.status === 400 && cuerpo && cuerpo.errores) {
+      bitacora(`✘ 1/3 el archivo del repositorio no pasa la validación (${cuerpo.errores.length} errores)`);
+      mensajeExp(cuerpo.nota || cuerpo.error || "El archivo del repositorio no pasó la validación.", "error");
+      erroresExp(cuerpo.errores);
+      return false;
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      bitacora(`✘ 1/3 error del servidor (${r.status})`);
+      mensajeExp((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`, "error");
+      return false;
+    }
+    /* Los conteos se pintan como VIENEN. Un `|| 0` aquí convertiría un «no sé»
+       del servidor en un cero creíble — el defecto que este panel ya pagó con
+       «en 0 procesos». */
+    const n = cuerpo.contratos_cargados;
+    const t = cuerpo.terminos_extraidos;
+    bitacora(`✔ 1/3 experiencia cargada · ${fmt.format(n)} contratos · ${fmt.format(t)} términos`
+      + (cuerpo.archivo ? ` · ${cuerpo.archivo}` : ""));
+    const ejemplos = (cuerpo.ejemplos_terminos || []).slice(0, 12).join(", ");
+    mensajeExp(`Experiencia cargada desde el repositorio: ${fmt.format(n)} contratos, `
+      + `${fmt.format(t)} términos extraídos${ejemplos ? ` (${ejemplos}…)` : ""}. `
+      + "Ya puede auditar la cobertura del RUP.", "ok");
+    await cargarExperienciaActual();
+    /* Lo que hubiera pintado la auditoría se midió contra el vocabulario
+       ANTERIOR: dejarlo en pantalla al lado de «106 contratos cargados» sería
+       una cifra vieja con aspecto de nueva. El servidor ya invalida su caché;
+       esto invalida lo que se está mirando. */
+    invalidarCoberturaPintada("Experiencia recargada: vuelva a ejecutar la auditoría para medirla contra ella.");
+    return true;
+  }
+
+  /* Paso 2 · la auditoría, con el perfil puesto en Génesis. NO se reimplementa:
+     se pone el selector y se llama a la misma función del botón de su sección,
+     que es la que sabe pintar la tabla, los excluidos y los avisos. */
+  async function auditarCoberturaGenesis() {
+    /* La guarda de «ya hay una auditoría en vuelo» va ANTES de tocar el
+       selector, y merece su propio mensaje. Si se comprueba después —dentro de
+       `ejecutarAuditoria`, que sale por ahí devolviendo `false`— el selector ya
+       quedó en «genesis» y, cuando responda la auditoría que estaba corriendo
+       (la de OTRO perfil), `pintarCobertura` estampa SUS cifras bajo un rótulo
+       que dice Génesis. La cadena se detiene igual, pero la pantalla queda
+       mintiendo: es «la peor forma de equivocarse» que este mismo paso
+       documenta, por la puerta de atrás. */
+    if (coberturaCargando) {
+      bitacora("✘ 2/3 ya hay una auditoría en curso — no se toca nada");
+      mensajeExp("Ya hay una auditoría de cobertura en curso. Espere a que termine y reintente: "
+        + "cambiar el perfil ahora dejaría sus cifras rotuladas como Génesis.", "aviso");
+      return false;
+    }
+    bitacora("▶ 2/3 auditando cobertura del RUP de Génesis…");
+    /* Fijar `.value` desde código NO dispara `change`, que es quien esconde lo
+       pintado: sin esto, la auditoría de OTRO perfil se quedaría en pantalla
+       bajo un selector que dice «Génesis». Y NO se persiste el perfil: la clave
+       la comparte el DASHBOARD, y este paso no tiene por qué decidir con qué
+       perfil se abre el panel la próxima vez. */
+    $("c-perfil").value = "genesis";
+    invalidarCoberturaPintada(null);
+    const s = $("seccion-cobertura");
+    if (s && s.scrollIntoView) s.scrollIntoView({ behavior: "smooth", block: "start" });
+    /* El resultado se PROPAGA. `ejecutarAuditoria` puede fallar por token, por
+       red o por el servidor, y anunciar «✔ 2/3» sobre una auditoría que no
+       corrió —y seguir al paso 3— es exactamente lo que la cadena existe para
+       evitar. */
+    const ok = await ejecutarAuditoria();
+    bitacora(ok
+      ? "✔ 2/3 auditoría de cobertura ejecutada — el detalle está en su sección"
+      : "✘ 2/3 la auditoría de cobertura no se pudo ejecutar");
+    return ok;
+  }
+
+  /* Paso 3 · la full. Reutiliza el arranque encadenado de arriba, que es quien
+     sabe que la 1.ª tanda va en `full` y las siguientes en `auto`. */
+  function sincronizacionFull() {
+    bitacora("▶ 3/3 lanzando la sincronización completa…");
+    const arrancada = iniciarFull();
+    if (!arrancada) {
+      bitacora("• 3/3 ya había un encadenado en curso — se deja terminar");
+      mensajeExp("Ya hay una sincronización en curso: se deja terminar en vez de reiniciarla desde enero.", "aviso");
+      return false;
+    }
+    const s = $("seccion-sync");
+    if (s && s.scrollIntoView) s.scrollIntoView({ behavior: "smooth", block: "start" });
+    return true;
+  }
+
+  $("btn-exp-repo").addEventListener("click", async () => {
+    if (cadenaCorriendo) return;
+    botonesProduccion(true);
+    try { await cargarExperienciaDelRepositorio(); } finally { botonesProduccion(false); }
+  });
+  $("btn-exp-cobertura").addEventListener("click", async () => {
+    if (cadenaCorriendo) return;
+    botonesProduccion(true);
+    try { await auditarCoberturaGenesis(); } finally { botonesProduccion(false); }
+  });
+  $("btn-exp-full").addEventListener("click", () => {
+    if (cadenaCorriendo) return;
+    sincronizacionFull();
+  });
+
+  /* Los tres en orden. Se PARA en el primer paso que falle: encadenar una
+     auditoría sobre una carga que no ocurrió daría un resultado creíble y
+     equivocado, que es peor que no darlo. */
+  $("btn-exp-cadena").addEventListener("click", async () => {
+    if (cadenaCorriendo) return;
+    cadenaCorriendo = true;
+    botonesProduccion(true);
+    bitacora("▶ puesta en producción: 3 pasos");
+    try {
+      if (!(await cargarExperienciaDelRepositorio())) {
+        bitacora("■ cadena detenida en el paso 1");
+        return;
+      }
+      if (!(await auditarCoberturaGenesis())) {
+        bitacora("■ cadena detenida en el paso 2");
+        return;
+      }
+      sincronizacionFull();
+    } finally {
+      cadenaCorriendo = false;
+      botonesProduccion(false);
+    }
+  });
+
+  $("btn-exp-descargar").addEventListener("click", async () => {
+    const token = leerToken();
+    let cuerpo = null;
+    try {
+      const r = await fetch("/api/admin/experiencia", { headers: { "x-historico-token": token }, cache: "no-store" });
+      cuerpo = await r.json();
+      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `HTTP ${r.status}`);
+    } catch (e) {
+      return mensajeExp(`No se pudo descargar la experiencia: ${(e && e.message) || "sin conexión"}.`, "error");
+    }
+    if (!cuerpo.cargada) return mensajeExp("No hay experiencia cargada todavía: no hay nada que descargar.", "aviso");
+    descargarJSON({ contratos: cuerpo.contratos }, `experiencia_${new Date().toISOString().slice(0, 10)}.json`);
+    mensajeExp("Archivo descargado. Edítelo y vuelva a pegarlo para actualizar la experiencia.", "ok");
+  });
+
+  /* Descarga común (experiencia y auditoría): un Blob y un <a> temporal. */
+  function descargarJSON(objeto, nombre) {
+    const blob = new Blob([JSON.stringify(objeto, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     AUDITORÍA DE COBERTURA RUP (/api/admin/cobertura-rup)
+     --------------------------------------------------------------------------
+     Recorre el histórico entero, así que NO se dispara sola: se ejecuta a
+     petición y el servidor cachea el resultado una hora (la caché se invalida
+     al cargar un RUP o una experiencia nuevos).
+     ══════════════════════════════════════════════════════════════════════════ */
+  const CRITICIDAD_UI = {
+    "CRÍTICO": { emoji: "🔴", clases: "bg-red-50 text-red-700" },
+    ALTO: { emoji: "🟠", clases: "bg-orange-50 text-orange-800" },
+    MEDIO: { emoji: "🟡", clases: "bg-amber-50 text-amber-800" },
+    BAJO: { emoji: "⚪", clases: "bg-gray-100 text-gray-600" },
+  };
+  let coberturaCargando = false;
+  let ultimaCobertura = null;
+
+  function avisoCobertura(texto, tipo) {
+    const p = $("c-aviso");
+    if (!texto) return p.classList.add("hidden");
+    p.className = "mt-5 rounded-xl px-4 py-3 text-sm " + ({
+      ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
+      error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
+      aviso: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20",
+    }[tipo] || "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20");
+    p.innerHTML = texto;
+  }
+
+  function cargandoCobertura(v) {
+    coberturaCargando = v;
+    $("btn-cobertura").disabled = v;
+    $("c-spin").classList.toggle("hidden", !v);
+    $("c-skeleton").classList.toggle("hidden", !v);
+  }
+
+  /* Devuelve `true` solo si la auditoría se pintó. La cadena de la puesta en
+     producción lo necesita: sin un booleano, quien la encadena escribe «✔» y
+     sigue al paso siguiente sobre una auditoría que nunca corrió. */
+  async function ejecutarAuditoria() {
+    if (coberturaCargando) return false;
+    const token = leerToken();
+    const perfil = $("c-perfil").value;
+    const usar = $("c-usar-experiencia").checked ? "true" : "false";
+    avisoCobertura(null);
+    cargandoCobertura(true);
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch(`/api/admin/cobertura-rup?perfil=${encodeURIComponent(perfil)}&usar_experiencia=${usar}`,
+        { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+      cuerpo = await r.json();
+    } catch (e) {
+      cargandoCobertura(false);
+      avisoCobertura(`No se pudo contactar el servidor: ${esc((e && e.message) || "sin conexión")}.`, "error");
+      return false;
+    }
+    cargandoCobertura(false);
+
+    if (r.status === 401) {
+      avisoCobertura("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
+      return false;
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      avisoCobertura(esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`), "error");
+      return false;
+    }
+    if (cuerpo.mensaje) avisoCobertura(esc(cuerpo.mensaje), "aviso");
+    ultimaCobertura = cuerpo;
+    $("btn-cobertura-exportar").disabled = false;
+    pintarCobertura(cuerpo);
+    return true;
+  }
+
+  function pintarCobertura(c) {
+    const res = c.resumen || {};
+    $("c-contenido").classList.remove("hidden");
+    $("c-criticos").textContent = fmt.format(res.criticos);
+    $("c-altos").textContent = fmt.format(res.altos);
+    $("c-medios").textContent = fmt.format(res.medios);
+    $("c-bajos").textContent = fmt.format(res.bajos);
+
+    /* la alerta solo aparece si de verdad hay críticos: una alerta permanente
+       deja de leerse a la semana */
+    const alerta = $("c-alerta");
+    alerta.classList.toggle("hidden", !res.criticos);
+    if (res.criticos) {
+      alerta.textContent = c.experiencia_utilizada
+        ? `Detectados ${res.criticos} código(s) críticos que coinciden con su experiencia. `
+          + "Debería inscribirlos en su próxima renovación de RUP."
+        : `Detectados ${res.criticos} código(s) críticos de obra. Cargue su experiencia ejecutada para `
+          + "priorizarlos por su nicho real.";
+    }
+
+    const relevantes = Number(res.procesos_relevantes), analizados = Number(res.procesos_analizados);
+    const porcentaje = analizados > 0 ? Math.round((relevantes / analizados) * 100) : 0;
+    $("c-cobertura-nota").textContent = c.experiencia_utilizada
+      ? `Analizados ${fmt.format(relevantes)} procesos relevantes de ${fmt.format(analizados)} adjudicados `
+        + `(${porcentaje} % coinciden con su experiencia · ${fmt.format(c.contratos_experiencia)} contratos, `
+        + `${fmt.format(c.terminos_experiencia)} términos).`
+      : `Analizados ${fmt.format(relevantes)} procesos de obra de ${fmt.format(analizados)} adjudicados. `
+        + "Sin experiencia cargada, la similitud no se mide.";
+
+    const filas = c.faltantes || [];
+    $("c-faltantes").innerHTML = filas.length ? filas.map((f, i) => {
+      const d = CRITICIDAD_UI[f.criticidad] || CRITICIDAD_UI.BAJO;
+      const sim = f.score_similitud_promedio == null ? "—" : `${Math.round(f.score_similitud_promedio * 100)} %`;
+      const media = (f.cuantia && f.cuantia.promedio != null) ? fmtCOP.format(f.cuantia.promedio) : "—";
+      return `<tr class="fila-cobertura cursor-pointer align-top hover:bg-gray-50" data-idx="${i}">
+          <td class="py-2 pr-2 font-mono">${esc(f.codigo)}</td>
+          <td class="py-2 pr-2"><span class="rounded-lg px-2 py-0.5 text-xs font-medium ${d.clases}">${d.emoji} ${esc(f.criticidad)}</span></td>
+          <td class="py-2 pr-2 text-right tabular-nums">${fmt.format(f.procesos_adjudicados)}</td>
+          <td class="py-2 pr-2 text-right tabular-nums">${c.experiencia_utilizada ? fmt.format(f.procesos_altamente_relevantes) : "—"}</td>
+          <td class="py-2 pr-2 text-right tabular-nums">${sim}</td>
+          <td class="py-2 pr-2 text-right tabular-nums">${media}</td>
+          <td class="py-2 text-gray-500">${esc(f.recomendacion || "")}</td>
+        </tr>`;
+    }).join("") : '<tr><td colspan="7" class="py-3 text-gray-400">Ningún código faltante con los criterios actuales.</td></tr>';
+
+    /* lo excluido se enseña, nunca desaparece en silencio: es la mitad de la
+       explicación de por qué la lista de arriba es corta */
+    const noPert = c.excluidos_por_no_pertinentes || [];
+    const bajaRel = c.excluidos_por_baja_relevancia || [];
+    const bloque = (titulo, lista, texto) => (lista.length
+      ? `<details class="mt-2"><summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">${titulo} (${lista.length})</summary>`
+        + `<ul class="mt-2 space-y-1 text-xs text-gray-500">`
+        + lista.map((e) => `<li>· <code class="font-mono">${esc(e.codigo)}</code> — ${fmt.format(e.procesos)} proceso(s): ${esc(texto(e))}</li>`).join("")
+        + "</ul></details>"
+      : "");
+    $("c-excluidos").innerHTML =
+      bloque("Excluidos por objeto no pertinente", noPert, (e) => e.motivo || "")
+      + bloque("Excluidos por baja relevancia frente a su experiencia", bajaRel, (e) => e.motivo || "");
+
+    const partes = [
+      `Perfil: ${esc(c.perfil_nombre || c.perfil)}`,
+      `Generado: ${String(c.generado || "").slice(0, 19).replace("T", " ")}`,
+      `Caché: ${c.cache ? "HIT" : "MISS"}`,
+      `${fmt.format(c.resumen.codigos_en_rup)} códigos inscritos`,
+    ];
+    if (c.truncado) partes.push(`Mostrando ${c.faltantes.length} de ${fmt.format(c.truncado.faltantes)} códigos`);
+    $("c-meta").textContent = partes.join(" · ");
+  }
+
+  /* detalle expandible: ejemplos de objeto y entidades que más usan el código */
+  $("c-faltantes").addEventListener("click", (e) => {
+    const fila = e.target.closest(".fila-cobertura");
+    if (!fila || !ultimaCobertura) return;
+    const abierta = fila.nextElementSibling;
+    if (abierta && abierta.classList.contains("detalle-cobertura")) return abierta.remove();
+    const f = (ultimaCobertura.faltantes || [])[Number(fila.getAttribute("data-idx"))];
+    if (!f) return;
+    const ejemplos = (f.ejemplos_objetos || []).map((x) => `<li class="truncate">· ${esc(x.objeto)}`
+      + (x.similitud == null ? "" : ` <span class="text-gray-400">(similitud ${Math.round(x.similitud * 100)} %)</span>`)
+      + `</li>`).join("");
+    const entidades = (f.entidades_top || []).map((x) => `<li>· ${esc(x.entidad)} — ${fmt.format(x.procesos)} proceso(s)</li>`).join("");
+    const tr = document.createElement("tr");
+    tr.className = "detalle-cobertura bg-gray-50";
+    tr.innerHTML = `<td colspan="7" class="px-2 py-3 text-xs text-gray-500">
+        <p class="font-medium text-gray-700">Segmento ${esc(f.segmento)} · familia ${esc(f.familia)}
+          · cuantías ${f.cuantia.min == null ? "—" : fmtCOP.format(f.cuantia.min)} a ${f.cuantia.max == null ? "—" : fmtCOP.format(f.cuantia.max)}</p>
+        ${ejemplos ? `<p class="mt-2 font-medium text-gray-600">Objetos de ejemplo</p><ul class="mt-1 space-y-0.5">${ejemplos}</ul>` : ""}
+        ${entidades ? `<p class="mt-2 font-medium text-gray-600">Entidades que más lo usan</p><ul class="mt-1 space-y-0.5">${entidades}</ul>` : ""}
+      </td>`;
+    fila.after(tr);
+  });
+
+  $("btn-cobertura").addEventListener("click", ejecutarAuditoria);
+  $("btn-cobertura-exportar").addEventListener("click", () => {
+    if (!ultimaCobertura) return;
+    descargarJSON(ultimaCobertura, `cobertura_rup_${ultimaCobertura.perfil}_${new Date().toISOString().slice(0, 10)}.json`);
+  });
+  /* Otro perfil, otra whitelist: lo pintado ya no corresponde. Va con NOMBRE
+     porque fijar `c-perfil.value` desde código NO dispara `change`, y el paso 2
+     de la puesta en producción hace justo eso: sin llamarla, la auditoría de
+     OTRO perfil se quedaría pintada debajo de un selector que dice «Génesis». */
+  function invalidarCoberturaPintada(motivo) {
+    $("c-contenido").classList.add("hidden");
+    ultimaCobertura = null;
+    $("btn-cobertura-exportar").disabled = true;
+    if (motivo) avisoCobertura(motivo, "aviso");
+  }
+  $("c-perfil").addEventListener("change", () => {
+    invalidarCoberturaPintada("Perfil cambiado: ejecute la auditoría para este perfil.");
+  });
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     CATÁLOGO DE PRECIOS APU (/api/apu/catalogo · /api/admin/apu/cargar-catalogo)
+     --------------------------------------------------------------------------
+     CONSULTAR el catálogo es público y barato (dos comandos de Redis), así que
+     el estado se pinta al arrancar el panel. CARGARLO escribe ~70 claves y va
+     con token: solo cuando alguien pulsa el botón.
+     ══════════════════════════════════════════════════════════════════════════ */
+  let apuCargando = false;
+
+  function mensajeApu(texto, tipo) {
+    const p = $("apu-mensaje");
+    if (!texto) return p.classList.add("hidden");
+    p.className = "mt-5 rounded-xl px-4 py-3 text-sm " + ({
+      ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
+      error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
+      aviso: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20",
+    }[tipo] || "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20");
+    p.innerHTML = texto;
+  }
+
+  function pintarApu(c) {
+    /* los conteos salen del payload del catálogo, NUNCA con `|| 0`: un
+       «undefined || 0» convierte «no sé» en «cero» y lo hace creíble — es
+       exactamente el defecto del «en 0 procesos» que costó caro. Sin dato, «—». */
+    const num = (v) => (Number.isFinite(Number(v)) ? fmt.format(Number(v)) : "—");
+    const t = c.totales || {};
+    $("apu-insumos").textContent = num(t.insumos);
+    $("apu-items").textContent = num(t.items);
+    $("apu-regiones").textContent = num(t.regiones);
+    $("apu-base").textContent = c.base_precios || "—";
+    $("apu-icociv").textContent = c.icociv
+      ? `ICOCIV ${c.icociv.boletin} · +${c.icociv.variacion_anual_general_pct} % anual`
+      : "sin ajuste sectorial";
+
+    const regiones = c.regiones || [];
+    $("apu-detalle").classList.toggle("hidden", !regiones.length);
+    $("apu-regiones-tabla").innerHTML = regiones.map((r) => `<tr>
+        <td class="py-2 pr-2 font-medium">${esc(r.nombre)}</td>
+        <td class="py-2 pr-2 text-gray-500">${esc(r.ciudad_cabecera || "—")}</td>
+        <td class="py-2 pr-2 text-right tabular-nums">${r.factor_materiales}</td>
+        <td class="py-2 pr-2 text-right tabular-nums">${r.factor_mano_obra}</td>
+        <td class="py-2 pr-2 text-right tabular-nums">${r.factor_equipo}</td>
+        <td class="py-2 pr-2 text-right tabular-nums">${r.factor_transporte}</td>
+        <td class="py-2 text-right tabular-nums">${Math.round(Number(r.aiu_tipico) * 100)} %</td>
+      </tr>`).join("");
+
+    $("apu-meta").textContent = [
+      `Versión ${esc(c.version_catalogo || "—")}`,
+      `Cargado: ${String(c.cargado_el || "").slice(0, 19).replace("T", " ") || "—"}`,
+      `Lectura: ${c.via || "—"}`,
+    ].join(" · ");
+  }
+
+  async function cargarEstadoApu() {
+    let r = null;
+    try {
+      r = await fetch("/api/apu/catalogo", { headers: { Accept: "application/json" }, cache: "no-store" });
+    } catch {
+      return mensajeApu("No se pudo consultar el catálogo APU (sin red).", "error");
+    }
+    let c = null;
+    try { c = await r.json(); } catch { c = null; }
+    if (!r.ok || !c || !c.ok) {
+      $("apu-detalle").classList.add("hidden");
+      return mensajeApu((c && c.error ? esc(c.error) : "El catálogo APU no está cargado.")
+        + " Pulse «Cargar catálogo APU» para poblarlo.", "aviso");
+    }
+    mensajeApu("");
+    pintarApu(c);
+  }
+
+  async function cargarCatalogoApu() {
+    if (apuCargando) return;
+    const token = leerToken();
+    apuCargando = true;
+    // doble clic: el botón se deshabilita durante el envío o se carga dos veces
+    $("btn-apu-cargar").disabled = true;
+    $("apu-spin").classList.remove("hidden");
+    mensajeApu("Cargando el catálogo en Redis…", "info");
+
+    let r = null;
+    try {
+      r = await fetch("/api/admin/apu/cargar-catalogo?forzar=true", {
+        method: "POST",
+        headers: { "x-historico-token": token, Accept: "application/json" },
+      });
+    } catch {
+      apuCargando = false;
+      $("btn-apu-cargar").disabled = false;
+      $("apu-spin").classList.add("hidden");
+      return mensajeApu("No se pudo contactar con el servidor. Reintente.", "error");
+    }
+    let c = null;
+    try { c = await r.json(); } catch { c = null; }
+    apuCargando = false;
+    $("btn-apu-cargar").disabled = false;
+    $("apu-spin").classList.add("hidden");
+
+    if (r.status === 401) return mensajeApu("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
+    if (!r.ok || !c || !c.ok) {
+      const errores = (c && c.errores || []).slice(0, 6)
+        .map((e) => `<li>· <code class="font-mono">${esc(e.campo)}</code>: ${esc(e.error)}</li>`).join("");
+      return mensajeApu((c && c.error ? esc(c.error) : "No se pudo cargar el catálogo.")
+        + (errores ? `<ul class="mt-2 space-y-1 text-xs">${errores}</ul>` : ""), "error");
+    }
+
+    mensajeApu(c.escrito
+      ? `Catálogo cargado: ${fmt.format(c.insumos)} insumos, ${fmt.format(c.items)} ítems y `
+        + `${fmt.format(c.regiones)} regiones en ${fmt.format(c.comandos_redis)} comandos de Redis. `
+        + "Los precios son de referencia: cotice antes de presentar oferta."
+      : esc(c.nota || "El catálogo ya estaba cargado."), "ok");
+    // repintar desde el endpoint público: así lo que se ve es lo que hay en
+    // Redis, no lo que el POST dijo que iba a escribir
+    await cargarEstadoApu();
+  }
+
+  $("btn-apu-cargar").addEventListener("click", cargarCatalogoApu);
+
+
+  /* «Nuevo RUP (PDF)»: reutiliza el flujo del onboarding tal cual — el input
+     del PDF vive en la landing (#rup-archivo) y onboarding.js hace el resto.
+     Al elegir archivo se ENSEÑA la landing: el progreso y los errores se
+     pintan allí, y dejarlos en una sección oculta sería un botón mudo. */
+  $("btn-nuevo-rup").addEventListener("click", () => {
+    const input = document.getElementById("rup-archivo");
+    if (!input) return;
+    input.addEventListener("change", () => {
+      if (!input.files || !input.files.length) return;
+      $("app").classList.add("hidden");
+      const ob = document.getElementById("onboarding");
+      if (ob) ob.classList.remove("hidden");
+    }, { once: true });
+    input.click();
+  });
+
+  /* Reconstrucción del índice de competencia: el mismo endpoint de siempre
+     (/api/sync/historico?reconstruir_indice=true), ahora con botón. `done:false`
+     no es un error: es «siga pulsando, el avance queda guardado». */
+  $("d-comp-reconstruir").addEventListener("click", async () => {
+    const btn = $("d-comp-reconstruir");
+    const msg = $("d-comp-msg");
+    btn.disabled = true;
+    msg.textContent = "Reconstruyendo sobre el histórico ya descargado…";
+    try {
+      const r = await fetch("/api/sync/historico?reconstruir_indice=true",
+        { headers: { "x-historico-token": leerToken(), Accept: "application/json" }, cache: "no-store" });
+      let c = null;
+      try { c = await r.json(); } catch { c = null; }
+      if (r.status === 401) msg.textContent = "El despliegue rechazó el token integrado (HISTORICO_TOKEN no coincide).";
+      else if (!r.ok || !c || !c.ok) msg.textContent = (c && c.error) || `Error ${r.status}.`;
+      else if (c.indice && c.indice.done === false) msg.textContent = "Reconstrucción a medias (presupuesto agotado): vuelva a pulsar, el avance queda guardado.";
+      else msg.textContent = "Índice de competencia reconstruido.";
+    } catch (e) {
+      msg.textContent = `Sin respuesta del servidor: ${e.message}`;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  function arrancarPaneles() {
+    $("d-perfil").value = leerPerfil();
+    $("c-perfil").value = leerPerfil();
+    cargarDashboard();
+    cargarRupActual();
+    // la experiencia se consulta al arrancar (es barato y decide si el toggle
+    // de la auditoría empieza encendido); la AUDITORÍA no, que recorre el
+    // histórico entero y solo debe correr cuando alguien la pide
+    cargarExperienciaActual();
+    // consultar el catálogo APU es público y son dos comandos; CARGARLO escribe
+    // ~70 claves y solo corre cuando alguien pulsa el botón
+    cargarEstadoApu();
   }
 
   /* ══════════ Arranque ══════════ */

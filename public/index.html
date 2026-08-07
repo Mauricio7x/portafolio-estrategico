@@ -4,92 +4,143 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Detecta · Oportunidades SECOP II</title>
+  <title>Portafolio Estratégico · Licitaciones, APU y administración</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, Roboto, sans-serif; }
+    /* ══════════ Tema oscuro (#0f172a) ══════════
+       El fondo y el texto base van aquí; las plantillas que el JS genera desde
+       hace meses usan utilidades CLARAS (bg-white, text-gray-600…). En vez de
+       reescribir cientos de cadenas —y divergir a la primera corrección—, una
+       CAPA DE PIEL las re-mapea a la paleta oscura con mayor especificidad
+       (#app .bg-white gana a .bg-white sin importar el orden de los estilos que
+       inyecta el CDN de Tailwind). La UI nueva ya se escribe en clases oscuras. */
+    body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, Roboto, sans-serif;
+           background: #0f172a; color: #e2e8f0; }
     .spin { animation: giro 0.9s linear infinite; }
     @keyframes giro { to { transform: rotate(360deg); } }
+    .barra { transition: width .4s ease; }
     .tarjeta { transition: transform .18s ease, box-shadow .18s ease; }
-    .tarjeta:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,.08); }
+    .tarjeta:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,.45); }
+    .num, .tabular-nums { font-variant-numeric: tabular-nums; }
+    .edit { outline: none; }
+    .edit:focus { background: #1e3a8a33; box-shadow: inset 0 0 0 2px #3b82f6; border-radius: 4px; }
+    .celda-edit { min-width: 0; }
+
+    /* pestañas: la activa se ilumina, las demás quedan tenues; el contenido
+       entra con una transición corta */
+    .pestana { color: #64748b; border-bottom: 2px solid transparent; transition: color .15s ease, border-color .15s ease; }
+    .pestana:hover { color: #cbd5e1; }
+    .pestana.activa { color: #f8fafc; border-color: #34d399; }
+    .pestana-movil { color: #64748b; transition: color .15s ease; }
+    .pestana-movil.activa { color: #34d399; }
+    .panel-pestana { animation: entra .18s ease; }
+    @keyframes entra { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    /* ── piel oscura sobre las utilidades claras de las plantillas existentes ── */
+    #app .bg-white, #onboarding .bg-white { background-color: #1e293b; }
+    #app .bg-white\/80 { background-color: rgba(15, 23, 42, .85); }
+    #app .bg-gray-50, #onboarding .bg-gray-50 { background-color: #16233a; }
+    #app .bg-gray-100, #onboarding .bg-gray-100 { background-color: #243247; }
+    #app .hover\:bg-gray-50:hover, #app .hover\:bg-gray-100:hover { background-color: #2b3b53; }
+    #app .text-gray-900, #onboarding .text-gray-900 { color: #f1f5f9; }
+    #app .text-gray-800 { color: #e2e8f0; }
+    #app .text-gray-700, #onboarding .text-gray-700 { color: #cbd5e1; }
+    #app .text-gray-600, #onboarding .text-gray-600 { color: #b6c2d4; }
+    #app .text-gray-500, #onboarding .text-gray-500 { color: #94a3b8; }
+    #app .text-gray-400, #onboarding .text-gray-400 { color: #7c8ba1; }
+    #app .text-gray-300 { color: #64748b; }
+    #app .border-gray-100, #app .divide-gray-100 > * + * { border-color: #263449; }
+    #app .border-gray-200, #onboarding .border-gray-200 { border-color: #2e405c; }
+    #app .border-gray-300, #onboarding .border-gray-300 { border-color: #3b4f6e; }
+    #app .ring-gray-900\/5, #onboarding .ring-gray-900\/5 { --tw-ring-color: rgba(148, 163, 184, .14); }
+    #app input, #app select, #app textarea, #onboarding input { background-color: #0f1b2d; color: #e2e8f0; border-color: #3b4f6e; }
+    #app input::placeholder, #app textarea::placeholder { color: #64748b; }
+    #app .bg-gray-900 { background-color: #34d399; color: #052e22; }
+    #app .bg-gray-900 * { color: #052e22; }
+    #app .hover\:bg-gray-700:hover { background-color: #6ee7b7; }
+    #app .text-white { color: #052e22; }
+    #app .text-blue-600 { color: #7dd3fc; }
+    #app .bg-blue-50 { background-color: rgba(59, 130, 246, .12); }
+    #app .bg-green-50, #app .bg-emerald-50 { background-color: rgba(16, 185, 129, .12); }
+    #app .bg-amber-50 { background-color: rgba(245, 158, 11, .12); }
+    #app .bg-red-50 { background-color: rgba(239, 68, 68, .12); }
+    #app .bg-orange-50 { background-color: rgba(249, 115, 22, .12); }
+    #app .bg-purple-100 { background-color: rgba(168, 85, 247, .18); }
+    #app .bg-indigo-100 { background-color: rgba(99, 102, 241, .18); }
+    #app .bg-blue-100 { background-color: rgba(59, 130, 246, .2); }
+    #app .bg-green-100, #app .bg-emerald-100 { background-color: rgba(16, 185, 129, .18); }
+    #app .bg-lime-100 { background-color: rgba(132, 204, 22, .18); }
+    #app .bg-amber-100 { background-color: rgba(245, 158, 11, .18); }
+    #app .bg-red-100 { background-color: rgba(239, 68, 68, .18); }
+    #app .text-green-800, #app .text-green-700, #app .text-emerald-800, #app .text-green-950, #app .text-emerald-950 { color: #6ee7b7; }
+    #app .text-green-900\/60, #app .text-emerald-900\/60 { color: #34d39999; }
+    #app .text-lime-800 { color: #bef264; }
+    #app .text-amber-800, #app .text-amber-700, #app .text-amber-900, #app .text-amber-950 { color: #fcd34d; }
+    #app .text-amber-900\/60 { color: #f59e0b99; }
+    #app .text-red-700, #app .text-red-600, #app .text-red-800, #app .text-red-950 { color: #fca5a5; }
+    #app .text-red-900\/60 { color: #ef444499; }
+    #app .text-blue-800, #app .text-blue-900, #app .text-blue-950 { color: #93c5fd; }
+    #app .text-blue-900\/60 { color: #60a5fa99; }
+    #app .text-orange-800, #app .text-orange-950 { color: #fdba74; }
+    #app .text-orange-900\/60 { color: #f9731699; }
+    #app .text-purple-800 { color: #d8b4fe; }
+    #app .text-indigo-800 { color: #a5b4fc; }
+    #app .text-emerald-900\/60 { color: #34d39999; }
+    #app .bg-blue-50\/60 { background-color: rgba(59, 130, 246, .1); }
+    #app .bg-amber-50\/60 { background-color: rgba(245, 158, 11, .1); }
+    /* los modales comparten piel con la app */
+    #modal-competencia .bg-white, #modal-importar .bg-white { background-color: #1e293b; }
+    #modal-competencia .text-gray-900 { color: #f1f5f9; }
+    #modal-competencia .bg-gray-50, #modal-importar .bg-gray-50 { background-color: #16233a; }
+    #modal-competencia .bg-gray-100, #modal-importar .bg-gray-100 { background-color: #243247; }
+    #modal-competencia input, #modal-importar input { background-color: #0f1b2d; color: #e2e8f0; border-color: #3b4f6e; }
+    #modal-competencia .bg-gray-900, #modal-importar .bg-gray-900 { background-color: #34d399; color: #052e22; }
+
+    /* la barra inferior móvil deja sitio al final del contenido */
+    @media (max-width: 767px) { main { padding-bottom: 5.5rem; } }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased">
+<body class="antialiased">
 
-  <!-- ══════════ Onboarding · landing del primer acceso (ago 2026) ══════════
+  <!-- ══════════ Onboarding · landing del primer acceso ══════════
        Visible por defecto (si el JS no cargara, al menos se ve el mensaje).
        app.js la esconde cuando hay un perfil de RUP guardado o una sesión con
        clave; onboarding.js maneja todo lo que pasa dentro. El PDF se lee en el
-       NAVEGADOR (pdf.js, misma técnica que /pliego.html): al servidor solo
-       viaja el texto extraído. -->
+       NAVEGADOR: al servidor solo viaja el texto extraído. -->
   <div id="onboarding" class="min-h-screen">
     <main class="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-6 py-16 text-center">
-      <div class="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-900 text-2xl text-white">◔</div>
-      <h1 class="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">Convertí tu RUP en contratos.</h1>
-      <p class="mt-5 max-w-xl text-lg leading-relaxed text-gray-500">
+      <div class="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-2xl text-slate-950">◔</div>
+      <h1 class="text-4xl font-semibold leading-tight tracking-tight text-slate-50 sm:text-5xl">Convertí tu RUP en contratos.</h1>
+      <p class="mt-5 max-w-xl text-lg leading-relaxed text-slate-400">
         Subí tu RUP. Te mostramos solo las licitaciones que podés ganar, cuánto ofertar, y cuánto ganarías.
         Como si la app hubiera sido construida exclusivamente para tu empresa.
       </p>
 
       <button id="btn-subir-rup" type="button"
-              class="mt-10 rounded-2xl bg-emerald-600 px-10 py-4 text-lg font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-600/30">
+              class="mt-10 rounded-2xl bg-emerald-500 px-10 py-4 text-lg font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-500/30">
         SUBIR RUP (PDF)
       </button>
       <input id="rup-archivo" type="file" accept="application/pdf,.pdf" class="hidden" aria-label="Certificado RUP en PDF">
-      <p class="mt-3 text-xs text-gray-400">El PDF se lee en tu navegador; al servidor solo viaja el texto extraído para armar tu perfil.</p>
+      <p class="mt-3 text-xs text-slate-500">El PDF se lee en tu navegador; al servidor solo viaja el texto extraído para armar tu perfil.</p>
 
       <!-- progreso de la extracción -->
       <div id="rup-progreso" class="mt-8 hidden w-full max-w-md">
-        <div class="h-2 w-full overflow-hidden rounded-full bg-gray-200">
-          <div id="rup-barra" class="h-2 rounded-full bg-emerald-600 transition-all" style="width:0%"></div>
+        <div class="h-2 w-full overflow-hidden rounded-full bg-slate-700">
+          <div id="rup-barra" class="h-2 rounded-full bg-emerald-500 transition-all" style="width:0%"></div>
         </div>
-        <p id="rup-progreso-msg" class="mt-2 text-sm text-gray-500">Preparando…</p>
+        <p id="rup-progreso-msg" class="mt-2 text-sm text-slate-400">Preparando…</p>
       </div>
 
       <!-- resultado / error -->
       <div id="rup-mensaje" class="mt-6 hidden w-full max-w-md rounded-xl px-4 py-3 text-left text-sm"></div>
-      <ul id="rup-avisos" class="mt-3 hidden w-full max-w-md space-y-1 text-left text-xs text-amber-800"></ul>
+      <ul id="rup-avisos" class="mt-3 hidden w-full max-w-md space-y-1 text-left text-xs text-amber-300"></ul>
 
       <div class="mt-12 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
-        <button id="btn-exp-toggle" type="button"
-                title="Esto ayuda a identificar mejor tus licitaciones ideales. No es obligatorio."
-                class="text-gray-500 underline decoration-dotted underline-offset-4 transition hover:text-gray-900">
-          Cargar experiencia laboral (opcional)
-        </button>
-        <span class="text-gray-300" aria-hidden="true">·</span>
         <button id="btn-ir-gate" type="button"
-                class="text-gray-500 underline decoration-dotted underline-offset-4 transition hover:text-gray-900">
+                class="text-slate-400 underline decoration-dotted underline-offset-4 transition hover:text-slate-100">
           Acceso con clave (perfiles existentes)
         </button>
       </div>
-
-      <!-- experiencia laboral OPCIONAL: formato estándar en CSV -->
-      <section id="exp-panel" class="mt-6 hidden w-full max-w-md rounded-2xl bg-white p-5 text-left shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="text-sm font-semibold">Experiencia laboral (opcional)</h2>
-        <p class="mt-1 text-xs text-gray-500">
-          No es obligatoria: solo se usa para mejorar las recomendaciones (afinar qué licitaciones se parecen
-          a lo que ya se ejecutó). Descargá el formato, completalo y subilo.
-        </p>
-        <p class="mt-2 text-xs text-amber-700">
-          Hoy la experiencia se guarda como configuración <strong>compartida</strong> del sitio (la del
-          administrador) — por eso pide token. La experiencia por perfil de RUP llega con la unificación
-          de la interfaz.
-        </p>
-        <a href="/formato_experiencia.csv" download
-           class="mt-3 inline-block text-sm font-medium text-blue-600 hover:underline">Descargar formato (CSV) ↓</a>
-        <div class="mt-3 grid gap-2">
-          <input id="exp-archivo" type="file" accept=".csv,text/csv" aria-label="Archivo CSV de experiencia"
-                 class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-gray-200">
-          <input id="exp-token" type="password" autocomplete="off" placeholder="Token de administración"
-                 title="La carga de experiencia escribe configuración compartida: exige el token del administrador."
-                 class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-          <button id="btn-exp-cargar" type="button"
-                  class="rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">
-            Cargar experiencia
-          </button>
-        </div>
-        <p id="exp-mensaje" class="mt-3 hidden rounded-lg px-3 py-2 text-xs"></p>
-      </section>
     </main>
   </div>
 
@@ -97,51 +148,71 @@
        Nace oculto: la primera pantalla es el onboarding. Se abre desde
        «Acceso con clave» (onboarding.js) o no llega a verse si ya hay
        sesión o un perfil de RUP guardado (app.js). -->
-  <div id="gate" class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-50">
+  <div id="gate" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950">
     <div class="w-full max-w-sm px-8 text-center">
-      <div class="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-900 text-2xl text-white">◔</div>
-      <h1 class="text-2xl font-semibold tracking-tight">Detecta</h1>
-      <p class="mt-1 text-sm text-gray-500">Sitio privado. Ingrese la clave de acceso.</p>
+      <div class="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-2xl text-slate-950">◔</div>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-50">Portafolio Estratégico</h1>
+      <p class="mt-1 text-sm text-slate-400">Sitio privado. Ingrese la clave de acceso.</p>
       <form id="gate-form" class="mt-6">
         <input id="gate-clave" type="password" inputmode="numeric" autocomplete="off" autofocus
-               class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-center text-lg tracking-widest outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"
+               class="w-full rounded-xl border border-slate-600 bg-slate-900 px-4 py-3 text-center text-lg tracking-widest text-slate-100 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
                placeholder="••••••" aria-label="Clave de acceso">
         <button type="submit"
-                class="mt-3 w-full rounded-xl bg-gray-900 py-3 font-medium text-white transition hover:bg-gray-700">
+                class="mt-3 w-full rounded-xl bg-emerald-500 py-3 font-medium text-slate-950 transition hover:bg-emerald-400">
           Entrar
         </button>
       </form>
-      <p id="gate-error" class="mt-4 hidden text-sm font-medium text-red-600"></p>
+      <p id="gate-error" class="mt-4 hidden text-sm font-medium text-red-400"></p>
     </div>
   </div>
 
-  <!-- ══════════ App ══════════ -->
+  <!-- ══════════ App unificada: una página, tres pestañas ══════════ -->
   <div id="app" class="hidden">
-    <header class="border-b border-gray-200 bg-white/80 backdrop-blur sticky top-0 z-10">
-      <div class="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
-        <div>
-          <h1 class="text-lg font-semibold tracking-tight">Detecta</h1>
-          <p class="text-xs text-gray-500">Oportunidades de licitación · SECOP II en vivo</p>
+    <header class="sticky top-0 z-20 border-b border-slate-800 bg-slate-900/85 backdrop-blur">
+      <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-3">
+        <div class="flex items-center gap-3">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-lg text-slate-950">◔</div>
+          <div>
+            <h1 class="text-base font-semibold tracking-tight text-slate-50">Portafolio Estratégico</h1>
+            <p class="hidden text-[11px] text-slate-500 sm:block">SECOP II en vivo · APU · administración</p>
+          </div>
         </div>
-        <div class="flex items-center gap-4">
-          <span id="sello-sync" class="hidden rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-500"></span>
-          <a href="/pliego.html" class="text-sm font-medium text-blue-600 hover:underline">Leer pliego</a>
-        </div>
-      </div>
-    </header>
 
-    <main class="mx-auto max-w-5xl px-5 py-8">
-      <!-- Controles -->
-      <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <label class="block">
-            <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
-            <select id="f-perfil" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+        <!-- pestañas (escritorio) -->
+        <nav class="order-3 -mb-px hidden items-center gap-6 md:flex" aria-label="Secciones">
+          <button type="button" data-tab="licitaciones" class="pestana activa px-1 pb-2 pt-1 text-sm font-medium">🏠 Licitaciones</button>
+          <button type="button" data-tab="apu" class="pestana px-1 pb-2 pt-1 text-sm font-medium">📊 APU</button>
+          <button type="button" data-tab="admin" class="pestana px-1 pb-2 pt-1 text-sm font-medium">⚙️ Administración</button>
+        </nav>
+
+        <div class="flex items-center gap-3">
+          <span id="sello-sync" class="hidden rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-400 lg:inline-block"></span>
+          <label class="flex items-center gap-2">
+            <span class="hidden text-[11px] uppercase tracking-wide text-slate-500 sm:inline">Perfil</span>
+            <select id="f-perfil" class="rounded-lg border-slate-600 bg-slate-900 py-1.5 text-sm text-slate-100 focus:border-emerald-400 focus:ring-emerald-400/20">
               <option value="helder">Helder (persona natural)</option>
               <option value="genesis">Génesis GIC SAS (persona jurídica)</option>
               <option value="juntos">Consorcio Helder + Génesis</option>
             </select>
           </label>
+        </div>
+      </div>
+    </header>
+
+    <!-- pestañas (móvil): barra inferior estilo app nativa -->
+    <nav class="fixed inset-x-0 bottom-0 z-20 border-t border-slate-800 bg-slate-900/95 backdrop-blur md:hidden" aria-label="Secciones (móvil)">
+      <div class="mx-auto grid max-w-md grid-cols-3">
+        <button type="button" data-tab="licitaciones" class="pestana-movil activa flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium"><span class="text-lg leading-none">🏠</span>Licitaciones</button>
+        <button type="button" data-tab="apu" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium"><span class="text-lg leading-none">📊</span>APU</button>
+        <button type="button" data-tab="admin" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium"><span class="text-lg leading-none">⚙️</span>Admin</button>
+      </div>
+    </nav>
+
+    <!-- ════════════════════ PESTAÑA 1 · Licitaciones ════════════════════ -->
+    <main id="tab-licitaciones" class="panel-pestana mx-auto max-w-5xl px-5 py-8">
+      <!-- Controles -->
+      <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <label class="block">
             <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Anticipo mínimo declarado (%)</span>
             <input id="f-anticipo" type="number" min="0" max="100" step="5" value="20" list="anticipos"
@@ -221,46 +292,1051 @@
 
       <!-- Estados -->
       <div id="estado-carga" class="mt-10 hidden text-center">
-        <div class="spin mx-auto h-8 w-8 rounded-full border-2 border-gray-300 border-t-gray-900"></div>
-        <p id="estado-carga-msg" class="mt-3 text-sm text-gray-500">Buscando oportunidades…</p>
+        <div class="spin mx-auto h-8 w-8 rounded-full border-2 border-slate-600 border-t-emerald-400"></div>
+        <p id="estado-carga-msg" class="mt-3 text-sm text-slate-400">Buscando oportunidades…</p>
       </div>
 
       <div id="estado-error" class="mt-10 hidden text-center">
-        <p id="estado-error-msg" class="mx-auto max-w-md text-sm text-gray-600"></p>
+        <p id="estado-error-msg" class="mx-auto max-w-md text-sm text-slate-300"></p>
         <button id="btn-reintentar"
-                class="mt-4 rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-100">
+                class="mt-4 rounded-xl border border-slate-600 bg-slate-800 px-5 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-700">
           Reintentar
         </button>
       </div>
 
-      <div id="estado-vacio" class="mt-10 hidden text-center text-sm text-gray-500">
+      <div id="estado-vacio" class="mt-10 hidden text-center text-sm text-slate-400">
         No se encontraron oportunidades con estos filtros.
       </div>
 
       <!-- Resultados -->
       <section id="resultados" class="mt-8 hidden">
-        <p id="resumen-resultados" class="mb-4 text-sm text-gray-500"></p>
+        <p id="resumen-resultados" class="mb-4 text-sm text-slate-400"></p>
         <div id="lista" class="grid gap-4"></div>
         <div id="paginacion" class="mt-6 flex items-center justify-center gap-3 text-sm"></div>
       </section>
+
+      <footer class="pb-6 pt-10 text-center text-xs text-slate-600">
+        Datos abiertos de SECOP II (Colombia Compra Eficiente, dataset p6dx-8zbt). El orden «más atractivas»
+        pone primero las entidades donde históricamente se presenta menos gente. Ninguno reemplaza la lectura
+        del pliego. Sitio privado.
+      </footer>
     </main>
 
-    <footer class="mx-auto max-w-5xl px-5 pb-10 pt-4 text-center text-xs text-gray-400">
-      Datos abiertos de SECOP II (Colombia Compra Eficiente, dataset p6dx-8zbt). El orden «más atractivas»
-      pone primero las entidades donde históricamente se presenta menos gente; el puntaje prioriza dónde
-      mirar primero. Ninguno reemplaza la lectura del pliego. Sitio privado.
-    </footer>
+    <!-- ════════════════════ PESTAÑA 2 · APU ════════════════════ -->
+    <main id="tab-apu" class="panel-pestana mx-auto hidden max-w-7xl px-5 py-8">
+      <div id="aviso-precios" class="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-2.5 text-center text-xs text-amber-200"></div>
+
+      <!-- ══════ Paso 1 · ¿Qué vas a construir? ══════ -->
+      <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-slate-950">1</span>¿Qué vas a construir?</h2>
+        <p class="mt-1 text-sm text-gray-500">
+          Pegue el objeto de la licitación y pulse «Inferir ítems», o cargue directamente un Excel con sus
+          ítems y cantidades. También puede leer el formulario de cantidades de un pliego en PDF, más abajo.
+        </p>
+        <div class="mt-4 grid gap-3 lg:grid-cols-[2fr,1fr]">
+          <textarea id="objeto" rows="3" placeholder="CONSTRUCCIÓN DE PLACA HUELLA EN LA VÍA TERCIARIA…"
+                    class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"></textarea>
+          <div class="space-y-3">
+            <input id="codigos-unspsc" type="text" placeholder="Códigos UNSPSC (opcional): 72141100"
+                   class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900">
+            <div class="grid grid-cols-2 gap-2">
+              <button id="btn-inferir" type="button"
+                      class="rounded-xl bg-gray-900 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+                Inferir ítems
+              </button>
+              <button id="btn-importar" type="button"
+                      class="rounded-xl border border-gray-300 py-2.5 text-sm font-medium transition hover:bg-gray-50">
+                ⬆ Cargar desde Excel
+              </button>
+            </div>
+            <input id="archivo-importar" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+          </div>
+        </div>
+        <div id="inferencia" class="mt-4 hidden rounded-xl p-4 text-sm"></div>
+        <p class="mt-2 text-xs text-gray-400">
+          El Excel debe traer al menos <strong>Descripción · Unidad · Cantidad</strong> (Ítem y Valor Unitario son
+          opcionales). El archivo se lee EN SU NAVEGADOR; al servidor solo viajan las filas. Un precio que venga
+          en el archivo <strong>manda</strong> y queda declarado como tal.
+        </p>
+
+        <!-- ══════ Lector de pliegos (PDF), plegado ══════ -->
+        <details id="seccion-pliego-wrap" class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+          <summary class="cursor-pointer text-sm font-medium">📄 Cargar Pliego (PDF) — extraer el formulario de cantidades</summary>
+
+          <div id="seccion-pliego" class="mt-4">
+            <p id="aviso-limitaciones" class="max-w-3xl rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20">
+              ⚠️ <strong>La extracción automática puede tener errores. Verifique siempre los datos contra el pliego
+              original antes de usar el APU.</strong> El semáforo mide coherencia aritmética, no fidelidad; una
+              cantidad ilegible sale como «sin dato», nunca 0; las adendas modifican cantidades; la unidad del pliego
+              se conserva y no se convierte.
+            </p>
+            <p class="mt-3 max-w-3xl text-sm text-gray-500">
+              Suba el <strong>formulario de cantidades</strong> (Formulario 1 · presupuesto oficial). El PDF se lee
+              <strong>en su navegador</strong>: al servidor solo viaja el texto extraído, no el archivo.
+            </p>
+            <p class="mt-2 max-w-3xl rounded-xl bg-gray-100 px-4 py-3 text-xs text-gray-600">
+              <strong>Excepción, y conviene saberla antes de pulsar:</strong> si el PDF resulta ser un escaneo sin texto y
+              usa «Reintentar con OCR», las páginas <strong>sí salen</strong> — se convierten en imágenes y se envían a
+              <strong>OCR.space</strong>, un servicio externo, para que las lea. No lo haga con un documento que no pueda
+              salir de su equipo.
+            </p>
+
+            <div class="mt-5 grid gap-5 lg:grid-cols-2">
+              <div>
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Archivo PDF</span>
+                <input id="pliego-archivo" type="file" accept=".pdf,application/pdf"
+                       class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
+                <p class="mt-1 text-[11px] text-gray-400">También sirve un archivo de texto (.txt) con la tabla ya copiada.</p>
+              </div>
+              <div>
+                <label class="block">
+                  <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">…o URL del PDF</span>
+                  <input id="pliego-url" type="url" spellcheck="false" placeholder="https://…/formulario1.pdf"
+                         class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+                </label>
+                <p class="mt-1 text-[11px] text-gray-400">
+                  El PDF se baja por el servidor (el navegador no puede: CORS). Muchos portales exigen sesión
+                  para los adjuntos: si falla, baje el archivo a mano y súbalo.
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-5 grid gap-4 sm:grid-cols-3">
+              <label class="block sm:col-span-2">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Objeto del proceso (opcional)</span>
+                <input id="pliego-objeto" type="text" spellcheck="false"
+                       placeholder="CONSTRUCCION DE PLACA HUELLA EN LA VIA TERCIARIA…"
+                       class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Códigos UNSPSC (opcional)</span>
+                <input id="pliego-unspsc" type="text" spellcheck="false" placeholder="72141000, 72152000"
+                       class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+              </label>
+            </div>
+
+            <label class="mt-4 block max-w-xs">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Presupuesto oficial (COP, opcional)</span>
+              <input id="pliego-precio" type="text" inputmode="numeric" spellcheck="false" placeholder="262.124.860"
+                     class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+              <span class="mt-1 block text-[11px] text-gray-400">Ancla externa: valida la suma del documento contra el techo de la entidad.</span>
+            </label>
+
+            <div class="mt-5 flex flex-wrap items-center gap-3">
+              <button id="btn-extraer" type="button"
+                      class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+                📄 Cargar pliego (PDF)
+              </button>
+              <button id="btn-ocr" type="button" disabled
+                      class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+                🔍 Reintentar con OCR
+              </button>
+              <button id="btn-limpiar" type="button"
+                      class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+                🗑 Limpiar
+              </button>
+              <span id="pl-chip-estado" class="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                <span id="pl-chip-icono" aria-hidden="true">•</span><span id="pl-chip-texto">Sin pliego cargado</span>
+              </span>
+            </div>
+
+            <div id="pl-prog-caja" class="mt-4 hidden">
+              <div class="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                <div id="pl-prog-barra" class="barra h-2 w-0 rounded-full bg-gray-900"></div>
+              </div>
+              <p id="pl-prog-texto" class="mt-1 text-xs text-gray-500"></p>
+            </div>
+
+            <p id="pliego-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+            <ul id="pliego-avisos" class="mt-3 hidden space-y-1 rounded-xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20"></ul>
+          </div>
+
+          <!-- resultado del pliego -->
+          <section id="seccion-resultado" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 class="font-semibold tracking-tight">Ítems extraídos del pliego</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                  Todo es editable: corrija lo que el parser leyó mal. Los cambios viven solo en esta pestaña hasta que exporte.
+                </p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <span id="r-semaforo" class="rounded-full px-3 py-1 text-xs font-semibold"></span>
+                <button id="pl-btn-exportar" type="button"
+                        class="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
+                  📥 Exportar JSON
+                </button>
+                <button id="pl-btn-agregar" type="button"
+                        class="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
+                  ➕ Añadir fila
+                </button>
+              </div>
+            </div>
+
+            <div id="r-tarjetas" class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"></div>
+
+            <div class="mt-5 overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                  <tr>
+                    <th class="py-1 pr-2">N.º</th>
+                    <th class="py-1 pr-2">Descripción del pliego</th>
+                    <th class="py-1 pr-2">Ítem del catálogo</th>
+                    <th class="py-1 pr-2">Unidad</th>
+                    <th class="py-1 pr-2 text-right">Cantidad</th>
+                    <th class="py-1 pr-2 text-right">Vr. unitario</th>
+                    <th class="py-1 pr-2 text-right">Vr. total</th>
+                    <th class="py-1">Mapeo</th>
+                    <th class="py-1"></th>
+                  </tr>
+                </thead>
+                <tbody id="r-items" class="divide-y divide-gray-100"></tbody>
+              </table>
+            </div>
+            <datalist id="catalogo-items"></datalist>
+
+            <p id="r-nota" class="mt-4 text-xs text-gray-400"></p>
+
+            <details class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+              <summary class="cursor-pointer text-sm font-medium">Diagnóstico del parseo</summary>
+              <div id="r-diagnostico" class="mt-3 space-y-2 text-xs text-gray-600"></div>
+            </details>
+          </section>
+        </details>
+      </section>
+
+      <!-- ══════ Proceso de SECOP (precarga desde una tarjeta) ══════ -->
+      <section id="seccion-proceso" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Proceso de SECOP II</h2>
+        <div class="mt-4 grid gap-4 sm:grid-cols-3">
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Id del proceso</span>
+            <input id="id-proceso" type="text" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Presupuesto oficial (COP)</span>
+            <input id="cuantia" type="number" min="0" step="1000" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+            <span class="mt-1 block text-xs text-gray-400">Es el techo: la baja se mide contra él.</span>
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Plazo (meses)</span>
+            <input id="plazo-meses" type="number" min="1" max="60" step="1" value="8" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+          </label>
+        </div>
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <button id="btn-rentabilidad" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Calcular rentabilidad
+          </button>
+          <span class="text-xs text-gray-500">Consulta el índice de baja y el de competencia de esta entidad.</span>
+        </div>
+      </section>
+
+      <!-- ══════ Rentabilidad estimada ══════ -->
+      <section id="seccion-rentabilidad" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Rentabilidad estimada</h2>
+        <p class="mt-1 max-w-3xl text-sm text-gray-500">
+          El indicador de decisión es el <strong>VEG</strong>, no el margen: es el único que descuenta el
+          costo de preparar una oferta, que se paga se gane o no.
+        </p>
+        <div id="rentabilidad" class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
+        <div id="rentabilidad-precio" class="mt-5 text-sm"></div>
+        <div id="rentabilidad-avisos" class="mt-4 space-y-2"></div>
+      </section>
+
+      <!-- ══════ Precio sugerido · optimizador ══════ -->
+      <section id="seccion-precio-sugerido" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-baseline justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Precio sugerido</h2>
+            <p class="mt-1 max-w-3xl text-sm text-gray-500">
+              El precio que <strong>maximiza el valor esperado</strong>. Bajar más allá del óptimo compra
+              probabilidad en uno solo de los cuatro métodos de ponderación —que se sortean en la audiencia—
+              y regala margen en los cuatro.
+            </p>
+          </div>
+          <span id="ps-origen" class="text-xs text-gray-400"></span>
+        </div>
+
+        <div id="ps-sin-datos" class="mt-4 hidden rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700"></div>
+
+        <div id="ps-cuerpo" class="hidden">
+          <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-2xl bg-green-50 p-4 ring-1 ring-inset ring-emerald-500/30">
+              <p class="text-xs font-medium uppercase tracking-wide text-green-900/60">Precio óptimo</p>
+              <p id="ps-precio" class="mt-1 text-2xl font-semibold tabular-nums text-green-950">—</p>
+              <p id="ps-precio-nota" class="text-xs text-green-900/60"></p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Descuento sugerido</p>
+              <p id="ps-descuento" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p class="text-xs text-gray-500">Sobre el presupuesto oficial</p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">VEG esperado</p>
+              <p id="ps-veg" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p id="ps-veg-nota" class="text-xs text-gray-500"></p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Probabilidad a ese precio</p>
+              <p id="ps-prob" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p id="ps-prob-nota" class="text-xs text-gray-500"></p>
+            </div>
+          </div>
+
+          <div class="mt-5 flex flex-wrap items-center gap-3">
+            <button id="btn-aplicar-descuento" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              Aplicar este descuento al APU
+            </button>
+            <span id="ps-aplicar-nota" class="text-xs text-gray-500"></span>
+          </div>
+
+          <!-- Las tres opciones: Conservador | Óptimo | Agresivo (la óptima en verde) -->
+          <div class="mt-6 overflow-x-auto">
+            <table class="w-full min-w-[720px] text-sm">
+              <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
+                <tr>
+                  <th class="py-2 pr-3">Opción</th>
+                  <th class="py-2 pr-3 text-right">Descuento</th>
+                  <th class="py-2 pr-3 text-right">Precio</th>
+                  <th class="py-2 pr-3 text-right">Probabilidad</th>
+                  <th class="py-2 pr-3 text-right">Margen</th>
+                  <th class="py-2 pr-3 text-right">VEG</th>
+                  <th class="py-2"></th>
+                </tr>
+              </thead>
+              <tbody id="ps-opciones" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <p id="ps-meseta" class="mt-2 text-xs text-gray-500"></p>
+
+          <div class="mt-6">
+            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500">Valor esperado según el descuento</h3>
+            <div id="ps-curva" class="mt-2 overflow-x-auto"></div>
+          </div>
+
+          <div id="ps-alertas" class="mt-4 space-y-2"></div>
+        </div>
+      </section>
+
+      <!-- ══════ Paso 2 · ¿Dónde? (y configuración) ══════ -->
+      <section class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-slate-950">2</span>¿Dónde?</h2>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Departamento</span>
+            <select id="departamento" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"></select>
+            <span id="regional-nota" class="mt-1 block text-xs text-gray-400">Los factores de precio los trae el catálogo, por región.</span>
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Administración (A) %</span>
+            <input id="aiu" type="number" min="0" max="100" step="0.5" value="15"
+                   class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+            <span class="mt-1 block text-xs text-gray-400">Típico 8–20 %</span>
+          </label>
+          <label class="flex items-center gap-2 pt-5 text-sm">
+            <input id="ajuste-competitivo" type="checkbox" class="h-4 w-4 rounded border-gray-300">
+            <span class="font-medium">Ajuste competitivo</span>
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Factor de baja %</span>
+            <div class="mt-1 flex gap-2">
+              <input id="factor-baja" type="number" min="0" max="60" step="0.1" value="0" disabled
+                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num disabled:bg-gray-100">
+              <button id="btn-sugerir-baja" type="button" disabled
+                      class="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-40">
+                Sugerir
+              </button>
+            </div>
+            <span id="baja-nota" class="mt-1 block text-xs text-gray-400">Banda típica en obra: 5–12 %.</span>
+          </label>
+        </div>
+
+        <details class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+          <summary class="cursor-pointer text-sm font-medium">Configuración avanzada</summary>
+          <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Imprevistos (I) %</span>
+              <input id="imprevistos" type="number" min="0" max="100" step="0.5" value="5"
+                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Utilidad (U) %</span>
+              <input id="utilidad" type="number" min="0" max="100" step="0.5" value="5"
+                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Anticipo %</span>
+              <input id="anticipo" type="number" min="0" max="50" step="1" placeholder="sin dato"
+                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+              <span class="mt-1 block text-xs text-gray-400">Vacío = sin dato · techo legal 50 %</span>
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Deducciones de acta %</span>
+              <input id="deducciones" type="number" min="0" max="30" step="0.1" placeholder="sin cargar"
+                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+              <span class="mt-1 block text-xs text-gray-400">Contribución 5 % + estampillas + ReteICA</span>
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Entidad (para la baja)</span>
+              <input id="entidad" type="text" placeholder="Nombre de la entidad"
+                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Modo AIU</span>
+              <select id="modo-aiu" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+                <option value="aditivo">Aditivo (1 + A + I + U)</option>
+                <option value="compuesto">Compuesto (multiplicativo)</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Perfil del borrador</span>
+              <select id="perfil" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+                <option value="helder">Helder</option>
+                <option value="genesis">Génesis</option>
+                <option value="juntos">Consorcio</option>
+              </select>
+            </label>
+          </div>
+        </details>
+      </section>
+
+      <!-- ══════ Paso 3 · Calcular ══════ -->
+      <section class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-slate-950">3</span>Ítems y cálculo</h2>
+            <p class="mt-1 text-sm text-gray-500">Cantidad y precio manual son editables. Pulse un ítem para ver su desglose (materiales · mano de obra · equipo · transporte).</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="item-nuevo" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"></select>
+            <button id="btn-agregar" type="button"
+                    class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium transition hover:bg-gray-50">+ Añadir</button>
+          </div>
+        </div>
+
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full min-w-[900px] text-sm">
+            <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
+              <tr>
+                <th class="py-2 pr-3">Ítem</th>
+                <th class="py-2 pr-3">Unidad</th>
+                <th class="py-2 pr-3 text-right">Cantidad</th>
+                <th class="py-2 pr-3 text-right">Precio manual</th>
+                <th class="py-2 pr-3 text-right">Precio unitario</th>
+                <th class="py-2 pr-3 text-right">Total</th>
+                <th class="py-2 pr-3">Origen</th>
+                <th class="py-2"></th>
+              </tr>
+            </thead>
+            <tbody id="tabla" class="divide-y divide-gray-100"></tbody>
+          </table>
+        </div>
+        <p id="tabla-vacia" class="mt-6 text-center text-sm text-gray-400">
+          Sin ítems. Infiera desde el objeto, cargue un Excel o añádalos a mano.
+        </p>
+
+        <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-5">
+          <button id="btn-calcular" type="button"
+                  class="rounded-xl bg-gray-900 px-8 py-3 text-base font-semibold text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Calcular APU
+          </button>
+          <input id="nombre-presupuesto" type="text" placeholder="Nombre del presupuesto"
+                 class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
+          <button id="btn-guardar" type="button"
+                  class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Guardar</button>
+          <button id="btn-listar" type="button"
+                  class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50">Cargar…</button>
+          <button id="btn-exportar" type="button"
+                  class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">
+            Exportar Excel
+          </button>
+        </div>
+        <p id="accion-mensaje" class="mt-3 text-sm"></p>
+        <div id="lista-presupuestos" class="mt-4 hidden"></div>
+      </section>
+
+      <!-- ══════ Resumen ══════ -->
+      <section id="seccion-resumen" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Resumen del presupuesto</h2>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="rounded-2xl bg-gray-100 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Costo directo</p>
+            <p id="r-directo" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+          </div>
+          <div class="rounded-2xl bg-gray-100 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Precio de venta</p>
+            <p id="r-venta" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+            <p id="r-aiu" class="text-xs text-gray-500"></p>
+          </div>
+          <div class="rounded-2xl bg-blue-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-blue-900/60">Precio final</p>
+            <p id="r-final" class="mt-1 text-2xl font-semibold tabular-nums text-blue-950">—</p>
+            <p id="r-baja" class="text-xs text-blue-900/60"></p>
+          </div>
+          <div id="r-margen-caja" class="rounded-2xl bg-emerald-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-emerald-900/60">Margen</p>
+            <p id="r-margen" class="mt-1 text-2xl font-semibold tabular-nums text-emerald-950">—</p>
+            <p id="r-margen-pct" class="text-xs text-emerald-900/60"></p>
+          </div>
+        </div>
+
+        <div class="mt-5 grid gap-4 lg:grid-cols-2">
+          <div>
+            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500">Reparto del costo directo</h3>
+            <table class="mt-2 w-full text-sm">
+              <tbody id="r-componentes" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <div>
+            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500">Del costo directo al precio</h3>
+            <table class="mt-2 w-full text-sm">
+              <tbody id="r-aiu-detalle" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="r-alertas" class="mt-5 space-y-2"></div>
+      </section>
+    </main>
+
+    <!-- ════════════════════ PESTAÑA 3 · Administración ════════════════════ -->
+    <main id="tab-admin" class="panel-pestana mx-auto hidden max-w-6xl px-5 py-8">
+
+      <!-- ══════ Perfiles y RUP ══════ -->
+      <section id="seccion-rup" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Perfiles y RUP</h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">
+              Los perfiles RUP determinan qué licitaciones son visibles. Suba un RUP nuevo en PDF (crea un
+              perfil propio) o cargue el archivo JSON de los perfiles del dueño. El cambio surte efecto en la
+              siguiente consulta: no hace falta volver a sincronizar.
+            </p>
+          </div>
+          <button id="btn-nuevo-rup" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">
+            ➕ Nuevo RUP (PDF)
+          </button>
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <input id="rup-json-archivo" type="file" accept=".json,application/json"
+                 class="block max-w-sm text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
+          <button id="btn-rup-descargar" type="button"
+                  class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+            📥 Descargar RUP actual (JSON)
+          </button>
+        </div>
+
+        <div id="rup-vista" class="mt-5 hidden">
+          <h3 class="text-sm font-semibold tracking-tight">Vista previa</h3>
+          <ul id="rup-resumen" class="mt-2 space-y-1 text-sm text-gray-700"></ul>
+          <pre id="rup-preview" class="mt-3 max-h-72 overflow-auto rounded-xl bg-gray-50 p-4 font-mono text-xs text-gray-600 ring-1 ring-inset ring-gray-900/5"></pre>
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button id="btn-rup-cargar" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              ✅ Confirmar carga
+            </button>
+            <button id="btn-rup-cancelar" type="button"
+                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+              🗑 Cancelar
+            </button>
+          </div>
+        </div>
+
+        <p id="rup-json-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <ul id="rup-errores" class="mt-3 hidden space-y-1 rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></ul>
+
+        <div class="mt-6 border-t border-gray-100 pt-4">
+          <h3 class="text-sm font-semibold tracking-tight">RUP actual</h3>
+          <div id="rup-actual" class="mt-2 text-sm text-gray-600">—</div>
+        </div>
+      </section>
+
+      <!-- ══════ Dashboard de procesos ══════ -->
+      <section id="dashboard" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Dashboard de procesos</h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">
+              Qué hay hoy sobre la mesa: los mismos procesos que sirve la app, agregados para decidir dónde
+              concentrar el esfuerzo. Los totales coinciden con los de la pestaña de licitaciones.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="block">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
+              <select id="d-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="helder">Helder</option>
+                <option value="genesis">Génesis</option>
+                <option value="consorcio">Consorcio</option>
+              </select>
+            </label>
+            <button id="btn-actualizar" type="button"
+                    class="mt-5 inline-flex items-center gap-2 rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              <span id="d-spin" class="hidden h-3 w-3 rounded-full border-2 border-gray-300 border-t-gray-700 spin"></span>
+              Actualizar ahora
+            </button>
+          </div>
+        </div>
+
+        <p id="d-aviso" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+
+        <div id="d-skeleton" class="mt-6 hidden animate-pulse space-y-4">
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
+            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
+          </div>
+          <div class="h-32 rounded-2xl bg-gray-100"></div>
+          <div class="h-56 rounded-2xl bg-gray-100"></div>
+        </div>
+
+        <div id="d-contenido" class="mt-6 hidden">
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="rounded-2xl bg-blue-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-blue-900/60">Total visibles</p>
+              <p id="d-visibles" class="mt-1 text-3xl font-semibold tabular-nums text-blue-950">—</p>
+              <p class="text-xs text-blue-900/60">procesos</p>
+            </div>
+            <div class="rounded-2xl bg-green-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-green-900/60">Obra civil</p>
+              <p id="d-obra" class="mt-1 text-3xl font-semibold tabular-nums text-green-950">—</p>
+              <p id="d-obra-pct" class="text-xs text-green-900/60">🏗️ — del total</p>
+            </div>
+            <div class="rounded-2xl bg-amber-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-amber-900/60">Consultoría</p>
+              <p id="d-consultoria" class="mt-1 text-3xl font-semibold tabular-nums text-amber-950">—</p>
+              <p id="d-consultoria-pct" class="text-xs text-amber-900/60">📐 — del total</p>
+            </div>
+            <div class="rounded-2xl bg-red-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-red-900/60">Cierran esta semana</p>
+              <p id="d-semana" class="mt-1 text-3xl font-semibold tabular-nums text-red-950">—</p>
+              <p class="text-xs text-red-900/60">⏰ próximos 7 días</p>
+            </div>
+          </div>
+
+          <!-- índices: baja de mercado + competencia (reconstrucción colapsada) -->
+          <div id="d-baja-box" class="mt-6 hidden rounded-2xl border border-gray-200 p-5">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+              <h3 class="text-sm font-semibold tracking-tight">Baja de mercado</h3>
+              <p id="d-baja-actualizado" class="text-xs text-gray-500"></p>
+            </div>
+            <p id="d-baja-msg" class="mt-2 hidden rounded-lg px-3 py-2 text-xs"></p>
+            <p id="d-baja-meta" class="mt-1 text-xs text-gray-500"></p>
+            <div id="d-baja-cifras" class="mt-3 grid gap-6 sm:grid-cols-3">
+              <div>
+                <p class="text-xs text-gray-500">Descuento típico del mercado</p>
+                <p id="d-baja-global" class="mt-1 text-3xl font-semibold tabular-nums">—</p>
+                <p id="d-baja-rango" class="text-xs text-gray-500"></p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">Entidades que más descuentan</p>
+                <ul id="d-baja-mas" class="mt-1 space-y-1 text-sm"></ul>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">Entidades que menos descuentan</p>
+                <ul id="d-baja-menos" class="mt-1 space-y-1 text-sm"></ul>
+              </div>
+            </div>
+            <details class="mt-4">
+              <summary class="cursor-pointer text-xs text-gray-500 hover:text-gray-700">Reconstrucción de índices (avanzado)</summary>
+              <div class="mt-3 flex flex-wrap items-center gap-3">
+                <button id="d-baja-reconstruir" type="button"
+                  class="rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-50">
+                  Reconstruir índice de baja
+                </button>
+                <button id="d-comp-reconstruir" type="button"
+                  class="rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-50">
+                  Reconstruir índice de competencia
+                </button>
+                <span id="d-comp-msg" class="text-xs text-gray-500"></span>
+              </div>
+              <p class="mt-2 text-[11px] text-gray-400">Recorren el histórico ya descargado: no vuelven a pedir nada a SECOP II.</p>
+            </details>
+          </div>
+
+          <div class="mt-6">
+            <h3 class="text-sm font-semibold tracking-tight">Distribución por tipo de objeto</h3>
+            <div id="d-barras" class="mt-3 space-y-2"></div>
+          </div>
+
+          <div class="mt-6 grid gap-6 lg:grid-cols-2">
+            <div>
+              <h3 class="text-sm font-semibold tracking-tight">Top 10 entidades con más procesos</h3>
+              <p class="mt-0.5 text-xs text-gray-400">Pulse una fila para ver los procesos que sostienen su nivel de competencia.</p>
+              <div class="mt-2 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                    <tr><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2 text-right" title="Procesos visibles hoy para este perfil">Procesos<br><span class="font-normal normal-case text-gray-300">visibles hoy</span></th><th class="py-1 pr-2">Competencia</th><th class="py-1 text-right" title="Promedio de oferentes en el histórico de 2 años">Prom. oferentes<br><span class="font-normal normal-case text-gray-300">histórico 2 años</span></th></tr>
+                  </thead>
+                  <tbody id="d-entidades" class="divide-y divide-gray-100"></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="d-departamentos-box">
+              <h3 class="text-sm font-semibold tracking-tight">Distribución por departamento</h3>
+              <div class="mt-2 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                    <tr><th class="py-1 pr-2">Departamento</th><th class="py-1 pr-2 text-right">Procesos</th><th class="py-1 text-right">% del total</th></tr>
+                  </thead>
+                  <tbody id="d-departamentos" class="divide-y divide-gray-100"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <h3 id="d-destacados-titulo" class="text-sm font-semibold tracking-tight">Top 10 procesos más atractivos</h3>
+            <div class="mt-2 overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                  <tr><th class="py-1 pr-2">Objeto</th><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2 text-right">Cuantía</th><th class="py-1 pr-2">Cierre</th><th class="py-1 pr-2">Competencia</th><th class="py-1 pr-2">Pertinencia</th><th class="py-1">APU</th></tr>
+                </thead>
+                <tbody id="d-destacados" class="divide-y divide-gray-100"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <p id="d-meta" class="mt-6 text-xs text-gray-400"></p>
+        </div>
+      </section>
+
+      <!-- ══════ Experiencia ejecutada ══════ -->
+      <section id="seccion-experiencia" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Experiencia ejecutada</h2>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+          Sus contratos ya ejecutados: los objetos en los que usted <em>sabe</em> trabajar. Sirven para
+          priorizar la auditoría de cobertura. Cargue un CSV con el formato estándar, o pegue un JSON.
+        </p>
+
+        <!-- carga por CSV (formato estándar) — la cablea onboarding.js -->
+        <div id="exp-panel" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+          <h3 class="text-sm font-semibold tracking-tight">Cargar experiencia desde CSV</h3>
+          <a href="/formato_experiencia.csv" download
+             class="mt-2 inline-block text-sm font-medium text-blue-600 hover:underline">Descargar formato (CSV) ↓</a>
+          <div class="mt-3 grid gap-2 sm:max-w-md">
+            <input id="exp-archivo" type="file" accept=".csv,text/csv" aria-label="Archivo CSV de experiencia"
+                   class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-gray-200">
+            <button id="btn-exp-cargar" type="button"
+                    class="rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">
+              Cargar experiencia (CSV)
+            </button>
+          </div>
+          <p id="exp-mensaje" class="mt-3 hidden rounded-lg px-3 py-2 text-xs"></p>
+        </div>
+
+        <!-- Puesta en producción SIN TERMINAL: los 3 pasos de Génesis -->
+        <div id="exp-produccion" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+          <h3 class="text-sm font-semibold tracking-tight">Puesta en producción, sin terminal</h3>
+          <p class="mt-1 max-w-2xl text-sm text-gray-500">
+            Los 106 contratos de Génesis ya están en el repositorio: no hace falta pegarlos. Estos
+            tres pasos son los mismos de <code class="rounded bg-white px-1 py-0.5 text-xs">cargar_experiencia.sh</code>,
+            con clics. El avance se escribe en la <a href="#bitacora" class="font-medium underline">bitácora</a>.
+          </p>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <button id="btn-exp-cadena" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              ▶ Hacer los tres pasos
+            </button>
+            <button id="btn-exp-repo" type="button"
+                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              1 · Cargar Experiencia Génesis
+            </button>
+            <button id="btn-exp-cobertura" type="button"
+                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              2 · Auditar Cobertura Génesis
+            </button>
+            <button id="btn-exp-full" type="button"
+                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              3 · Sincronización Full
+            </button>
+          </div>
+          <p id="exp-produccion-estado" class="mt-3 text-xs text-gray-500">
+            El paso 3 <strong>reinicia</strong> la ingesta desde enero y puede tardar varias tandas: se
+            encadena solo en la sección «Sincronización», abajo. Los pasos 1 y 2 son inmediatos.
+          </p>
+        </div>
+
+        <label class="mt-4 block">
+          <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Contratos (JSON)</span>
+          <textarea id="exp-json" rows="8" spellcheck="false"
+                    class="w-full rounded-xl border border-gray-300 p-4 font-mono text-xs outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"
+                    placeholder='{"contratos": [{"no_contrato": "001-2024", "entidad": "ALCALDIA MUNICIPAL DE PURIFICACION", "objeto": "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL PORVENIR", "modalidad": "Licitacion publica", "participacion": 100, "valor_cop": 350000000, "fecha_inicio": "2024-03-15", "fecha_fin": "2024-09-15", "valor_smmlv": 450.5}]}'></textarea>
+        </label>
+
+        <div class="mt-3 flex flex-wrap items-center gap-3">
+          <button id="btn-exp-validar" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Cargar experiencia (JSON)
+          </button>
+          <button id="btn-exp-descargar" type="button"
+                  class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+            📥 Descargar experiencia actual
+          </button>
+        </div>
+
+        <div id="exp-vista" class="mt-5 hidden">
+          <h3 class="text-sm font-semibold tracking-tight">Vista previa</h3>
+          <p id="exp-vista-nota" class="mt-0.5 text-xs text-gray-400"></p>
+          <div class="mt-2 overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                <tr><th class="py-1 pr-2">N.º</th><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2">Objeto</th><th class="py-1 pr-2 text-right">Valor</th><th class="py-1 text-right">SMMLV</th></tr>
+              </thead>
+              <tbody id="exp-preview" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button id="btn-exp-confirmar" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              ✅ Confirmar carga
+            </button>
+            <button id="btn-exp-cancelar" type="button"
+                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+              🗑 Cancelar
+            </button>
+          </div>
+        </div>
+
+        <p id="exp-json-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <ul id="exp-errores" class="mt-3 hidden space-y-1 rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></ul>
+
+        <div class="mt-6 border-t border-gray-100 pt-4">
+          <h3 class="text-sm font-semibold tracking-tight">Experiencia actual</h3>
+          <div id="exp-actual" class="mt-2 text-sm text-gray-600">—</div>
+        </div>
+      </section>
+
+      <!-- ══════ Auditoría de cobertura RUP ══════ -->
+      <section id="seccion-cobertura" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Auditoría de cobertura RUP</h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">
+              Con qué códigos UNSPSC adjudica el mercado las obras que usted ejecuta, y cuáles no están
+              inscritos en su RUP. El RUP se renueva una vez al año: esta lista es la que hay que mirar antes.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-end gap-3">
+            <label class="block">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
+              <select id="c-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="helder">Helder</option>
+                <option value="genesis">Génesis</option>
+                <option value="consorcio">Consorcio</option>
+              </select>
+            </label>
+            <button id="btn-cobertura" type="button"
+                    class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              <span id="c-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
+              Ejecutar auditoría
+            </button>
+            <button id="btn-cobertura-exportar" type="button" disabled
+                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              ⬇ Exportar a JSON
+            </button>
+          </div>
+        </div>
+
+        <label class="mt-4 inline-flex items-center gap-2 text-sm text-gray-600">
+          <input id="c-usar-experiencia" type="checkbox" checked
+                 class="rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+          Usar mi experiencia para priorizar
+        </label>
+
+        <p id="c-aviso" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+
+        <div id="c-skeleton" class="mt-6 hidden animate-pulse space-y-4">
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
+            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
+          </div>
+          <div class="h-56 rounded-2xl bg-gray-100"></div>
+        </div>
+
+        <div id="c-contenido" class="mt-6 hidden">
+          <p id="c-alerta" class="mb-4 hidden rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></p>
+
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="rounded-2xl bg-red-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-red-900/60">🔴 Críticos</p>
+              <p id="c-criticos" class="mt-1 text-3xl font-semibold tabular-nums text-red-950">—</p>
+              <p class="text-xs text-red-900/60">inscribir ya</p>
+            </div>
+            <div class="rounded-2xl bg-orange-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-orange-900/60">🟠 Altos</p>
+              <p id="c-altos" class="mt-1 text-3xl font-semibold tabular-nums text-orange-950">—</p>
+              <p class="text-xs text-orange-900/60">evaluar</p>
+            </div>
+            <div class="rounded-2xl bg-amber-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-amber-900/60">🟡 Medios</p>
+              <p id="c-medios" class="mt-1 text-3xl font-semibold tabular-nums text-amber-950">—</p>
+              <p class="text-xs text-amber-900/60">vigilar</p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">⚪ Bajos</p>
+              <p id="c-bajos" class="mt-1 text-3xl font-semibold tabular-nums text-gray-800">—</p>
+              <p class="text-xs text-gray-500">sin urgencia</p>
+            </div>
+          </div>
+
+          <p id="c-cobertura-nota" class="mt-4 text-sm text-gray-600"></p>
+
+          <div class="mt-4 overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                <tr>
+                  <th class="py-1 pr-2">Código</th><th class="py-1 pr-2">Criticidad</th>
+                  <th class="py-1 pr-2 text-right">Adjudicados</th><th class="py-1 pr-2 text-right">Muy similares</th>
+                  <th class="py-1 pr-2 text-right">Similitud</th><th class="py-1 pr-2 text-right">Cuantía media</th>
+                  <th class="py-1">Recomendación</th>
+                </tr>
+              </thead>
+              <tbody id="c-faltantes" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <p class="mt-2 text-xs text-gray-400">Pulse una fila para ver los objetos de ejemplo y las entidades que más usan ese código.</p>
+
+          <div id="c-excluidos" class="mt-6"></div>
+          <p id="c-meta" class="mt-6 text-xs text-gray-400"></p>
+        </div>
+      </section>
+
+      <!-- ══════ Catálogo de precios APU ══════ -->
+      <section id="seccion-apu" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Catálogo de precios APU</h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">
+              La base de precios con la que se costea un ítem de obra: insumos, ítems (INVIAS, edificación y
+              los 157 del contrato Nogal adjudicado) y factores por región. Son precios de
+              <b>referencia</b>, no cotizaciones.
+            </p>
+          </div>
+          <button id="btn-apu-cargar" type="button"
+                  class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            <span id="apu-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
+            Cargar catálogo APU
+          </button>
+        </div>
+
+        <p id="apu-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+
+        <div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div class="rounded-2xl bg-blue-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-blue-700/70">Insumos</p>
+            <p id="apu-insumos" class="mt-1 text-3xl font-semibold tabular-nums text-blue-900">—</p>
+            <p class="text-xs text-blue-700/70">materiales, mano de obra, equipo</p>
+          </div>
+          <div class="rounded-2xl bg-green-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-green-700/70">Ítems</p>
+            <p id="apu-items" class="mt-1 text-3xl font-semibold tabular-nums text-green-900">—</p>
+            <p class="text-xs text-green-700/70">actividades con composición</p>
+          </div>
+          <div class="rounded-2xl bg-amber-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-amber-700/70">Regiones</p>
+            <p id="apu-regiones" class="mt-1 text-3xl font-semibold tabular-nums text-amber-900">—</p>
+            <p class="text-xs text-amber-700/70">factores de ajuste</p>
+          </div>
+          <div class="rounded-2xl bg-gray-100 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Base de precios</p>
+            <p id="apu-base" class="mt-1 text-3xl font-semibold tabular-nums text-gray-800">—</p>
+            <p id="apu-icociv" class="text-xs text-gray-500">—</p>
+          </div>
+        </div>
+
+        <div id="apu-detalle" class="mt-6 hidden overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+              <tr>
+                <th class="py-1 pr-2">Región</th><th class="py-1 pr-2">Ciudad base</th>
+                <th class="py-1 pr-2 text-right">Materiales</th><th class="py-1 pr-2 text-right">Mano de obra</th>
+                <th class="py-1 pr-2 text-right">Equipo</th><th class="py-1 pr-2 text-right">Transporte</th>
+                <th class="py-1 text-right">AIU típico</th>
+              </tr>
+            </thead>
+            <tbody id="apu-regiones-tabla" class="divide-y divide-gray-100"></tbody>
+          </table>
+        </div>
+
+        <p id="apu-meta" class="mt-6 text-xs text-gray-400"></p>
+      </section>
+
+      <!-- ══════ Sincronización (avanzado, colapsada) ══════ -->
+      <details id="sync-wrap" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <summary class="cursor-pointer font-semibold tracking-tight">Sincronización con SECOP II (avanzado)</summary>
+        <section id="seccion-sync" class="mt-4">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <p class="max-w-xl text-sm text-gray-500">
+              La carga completa avanza en tandas: cada invocación trabaja hasta agotar su presupuesto de
+              tiempo, guarda el cursor y termina. Este botón encadena las tandas solo, hasta que la carga
+              concluya. Puede cerrar la pestaña y volver: el avance queda guardado.
+            </p>
+            <label class="block shrink-0">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Duración por tanda</span>
+              <select id="f-presupuesto" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="45000">45 s (seguro)</option>
+                <option value="120000">120 s</option>
+                <option value="240000">240 s (menos tandas)</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="mt-5 flex flex-wrap items-center gap-3">
+            <button id="btn-iniciar"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              Iniciar sincronización full automática
+            </button>
+            <button id="btn-detener" disabled
+                    class="rounded-xl border border-gray-300 px-5 py-2.5 font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              Detener
+            </button>
+            <span id="chip-estado" class="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+              <span id="chip-spin" class="hidden h-3 w-3 rounded-full border-2 border-gray-300 border-t-gray-700 spin"></span>
+              <span id="chip-texto">En reposo</span>
+            </span>
+          </div>
+
+          <div class="mt-6">
+            <div class="flex items-end justify-between text-sm">
+              <span id="prog-mes" class="font-medium text-gray-700">—</span>
+              <span id="prog-pct" class="tabular-nums text-gray-500">0 %</span>
+            </div>
+            <div class="mt-2 h-2 overflow-hidden rounded-full bg-gray-100">
+              <div id="prog-barra" class="barra h-full rounded-full bg-gray-900" style="width:0%"></div>
+            </div>
+            <dl class="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+              <div><dt class="text-xs uppercase tracking-wide text-gray-400">Tandas</dt><dd id="m-tandas" class="mt-0.5 font-semibold tabular-nums">0</dd></div>
+              <div><dt class="text-xs uppercase tracking-wide text-gray-400">Mes</dt><dd id="m-mes" class="mt-0.5 font-semibold tabular-nums">—</dd></div>
+              <div><dt class="text-xs uppercase tracking-wide text-gray-400">Filas del mes</dt><dd id="m-filas" class="mt-0.5 font-semibold tabular-nums">—</dd></div>
+              <div><dt class="text-xs uppercase tracking-wide text-gray-400">Guardadas</dt><dd id="m-total" class="mt-0.5 font-semibold tabular-nums">—</dd></div>
+            </dl>
+          </div>
+
+          <p id="mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+
+          <details class="mt-5">
+            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Detalle de las tandas</summary>
+            <ol id="bitacora" class="mt-3 space-y-1 font-mono text-xs text-gray-500"></ol>
+          </details>
+
+          <p class="mt-6 text-center text-xs text-gray-400">
+            La sincronización es idempotente y está protegida por un candado con TTL: si dos tandas coinciden,
+            una espera. Detener solo interrumpe el encadenamiento desde el navegador; la tanda en curso en el
+            servidor termina sola.
+          </p>
+        </section>
+      </details>
+    </main>
   </div>
 
-  <!-- Modal de AUDITORÍA, compartido por las dos cifras que se pueden abrir en
-       una tarjeta: los procesos que sostienen el badge de competencia y el
-       desglose paso a paso de la probabilidad. Uno solo y no dos: el esqueleto
-       (fondo, tres formas de cerrar, scroll, foco) es idéntico y duplicarlo
-       sería duplicar también sus arreglos. Lo que cambia —el rótulo, el título
-       y el botón de copiar— lo fija app.js al abrirlo. -->
+  <!-- ══════════ Modal de AUDITORÍA (competencia + desglose de probabilidad) ══════════ -->
   <div id="modal-competencia" class="fixed inset-0 z-50 hidden items-center justify-center p-4"
        role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
-    <div id="modal-fondo" class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"></div>
+    <div id="modal-fondo" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
     <div class="relative flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-xl ring-1 ring-gray-900/5">
       <header class="flex items-start justify-between gap-4 border-b border-gray-100 p-5">
         <div class="min-w-0">
@@ -272,10 +1348,8 @@
       </header>
       <div id="modal-cuerpo" class="overflow-y-auto p-5 text-sm"></div>
       <footer class="flex items-center justify-end gap-3 border-t border-gray-100 p-4">
-        <!-- Solo aparece en el desglose de probabilidad, y solo cuando hay algo
-             que copiar: un botón visible que no hace nada es peor que un error. -->
         <button id="modal-copiar" type="button"
-                class="hidden rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
+                class="hidden rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
           Copiar justificación
         </button>
         <button id="modal-cerrar-pie"
@@ -284,7 +1358,46 @@
     </div>
   </div>
 
+  <!-- ══════════ Modal de vista previa de la importación de Excel ══════════ -->
+  <div id="modal-importar" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-950/70 p-4">
+    <div class="flex max-h-[90vh] w-full max-w-5xl flex-col rounded-2xl bg-white p-6 shadow-xl">
+      <div class="flex items-baseline justify-between gap-3">
+        <h3 class="font-semibold tracking-tight">Vista previa de la importación</h3>
+        <span id="imp-resumen" class="text-xs text-gray-500"></span>
+      </div>
+      <div id="imp-avisos" class="mt-3 space-y-1"></div>
+      <div class="mt-3 min-h-0 flex-1 overflow-auto rounded-xl border border-gray-200">
+        <table class="w-full min-w-[860px] text-sm">
+          <thead class="sticky top-0 bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-400">
+            <tr>
+              <th class="px-2 py-2">Ítem</th>
+              <th class="px-2 py-2">Descripción</th>
+              <th class="px-2 py-2">Und.</th>
+              <th class="px-2 py-2 text-right">Cant.</th>
+              <th class="px-2 py-2 text-right">Precio archivo</th>
+              <th class="px-2 py-2">Mapeo al catálogo</th>
+            </tr>
+          </thead>
+          <tbody id="imp-tabla" class="divide-y divide-gray-100"></tbody>
+        </table>
+      </div>
+      <div class="mt-4 flex flex-wrap items-center justify-end gap-2">
+        <span id="imp-nota" class="mr-auto text-xs text-gray-500"></span>
+        <button type="button" id="btn-imp-cancelar"
+                class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50">Cancelar</button>
+        <button type="button" id="btn-imp-aplicar"
+                class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">
+          Añadir al presupuesto
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script src="/onboarding.js"></script>
+  <script src="/xlsx.js"></script>
+  <script src="/xlsx_lectura.js"></script>
+  <script src="/apu_libro.js"></script>
+  <script src="/pliego.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>
