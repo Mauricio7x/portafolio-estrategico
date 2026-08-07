@@ -30,7 +30,6 @@
                                   0 = "sin dato" pasa el filtro y puntúa 0,
                                   porque p6dx-8zbt no trae columna de anticipo)
      &cuantia_rango=bajo|medio|alto
-     &nivel_competencia=baja|media|alta        (ofertas DEL PROCESO)
      &competencia_entidad=baja|media|alta|sin_dato  (histórico DE LA ENTIDAD)
      &ubicacion_valida=true|false
      &match=clase|familia|equivalente|texto    (solidez del match UNSPSC)
@@ -122,7 +121,13 @@ const ORDEN_CAMPOS = {
   atractividad: (l, ctx) => ctx.ve || 0,
   anticipo: (l) => l.anticipo_pct || 0,
   cuantia: (l) => l.cuantia_cop || 0,
-  competencia: (l) => ({ baja: 1, media: 2, alta: 3 }[l.nivel_competencia] || 0),
+  /* Competencia: el nivel de la ENTIDAD (histórico), no el `nivel_competencia`
+     de la fila. Aquel sale de columnas EX-POST que SECOP II no publica mientras
+     el proceso está abierto, así que en el corpus activo vale «baja» para todo y
+     ordenar por él no ordenaba nada. Es el mismo campo que ya filtra
+     `?competencia_entidad=` y el que pinta el badge, que es lo que README y
+     CLAUDE.md decían que ordenaba aquí desde el principio. */
+  competencia: (l, ctx) => ({ baja: 1, media: 2, alta: 3 }[ctx.competencia_nivel] || 0),
   ve: (l, ctx) => ctx.ve || 0,
   p_ganar: (l, ctx) => ctx.p_ganar || 0,
   // legado: `puntaje_ponderado` ya no viaja en la respuesta (lo sustituyen
@@ -377,7 +382,6 @@ module.exports = async function handler(req, res) {
   /* ---------- filtros ---------- */
   const anticipoMin = q.anticipo_min !== undefined ? parseFloat(q.anticipo_min) : ANTICIPO_MIN_DEFAULT;
   const fCuantia = ["bajo", "medio", "alto"].includes(q.cuantia_rango) ? q.cuantia_rango : null;
-  const fCompetencia = ["baja", "media", "alta"].includes(q.nivel_competencia) ? q.nivel_competencia : null;
   const fEntidad = NIVELES_ENTIDAD.includes(q.competencia_entidad) ? q.competencia_entidad : null;
   const fUbicacion = q.ubicacion_valida === undefined ? null : ["true", "1"].includes(String(q.ubicacion_valida));
   const soloAbiertas = q.incluir_cerradas !== "1";
@@ -435,7 +439,12 @@ module.exports = async function handler(req, res) {
     const puertas = evaluarPuertas(l, perfil, {
       rup: rupDe(l), competencia, conocimiento, incluirTextoDebil: opciones.incluirTextoDebil,
     });
-    e = { puertas, p_ganar: detalle.p, p_ganar_detalle: detalle, ve: valorEsperado(l, detalle.p), baja };
+    e = {
+      puertas, p_ganar: detalle.p, p_ganar_detalle: detalle, ve: valorEsperado(l, detalle.p), baja,
+      // el nivel de la entidad viaja en el contexto porque `?ordenar_por=competencia`
+      // ordena por él (y no por el `nivel_competencia` de la fila, que es ex-post)
+      competencia_nivel: (competencia && competencia.nivel) || "sin_dato",
+    };
     _eval.set(l, e);
     return e;
   };
@@ -448,7 +457,6 @@ module.exports = async function handler(req, res) {
      resultado. */
   const estrecha = (l) => {
     if (fCuantia && l.cuantia_rango !== fCuantia) return false;
-    if (fCompetencia && l.nivel_competencia !== fCompetencia) return false;
     if (fUbicacion !== null && l.ubicacion_valida !== fUbicacion) return false;
     if (fEntidad && compDe(l).nivel !== fEntidad) return false;
     if (fTier && (rupDe(l).tier || "ninguno") !== fTier) return false;

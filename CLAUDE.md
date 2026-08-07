@@ -1737,6 +1737,26 @@ Hasta aquí el dueño miraba la baja mediana y descontaba a ojo.
   servido. La prórroga sale gratis del dedup de lectura, que ya recorre todas las versiones de cada
   `_k` (`lib/almacen.leerChunksDedup`, bandera `senales` — bajo bandera para no tocar a
   `/api/resumen` ni al histórico, que leen por la misma función).
+- **…Y ESA MISMA CONSTANTE SE SEGUÍA PINTANDO (corregido ago 2026).** Retirar `nivel_competencia` del
+  puntaje no bastó: la tarjeta le ponía un chip VERDE («Ofertas del proceso: baja») en cada proceso y
+  `index.html` ofrecía un desplegable de tres opciones —una no filtraba nada y las otras dos vaciaban
+  la lista—. Es el defecto de «0 oferentes = SIN DATO» y el de «18,2 oferentes sin base» por tercera
+  vez, ahora en el único sitio que el dueño mira siempre. Cuatro decisiones:
+  · **Se retira la PRESENTACIÓN, no el campo.** `nivel_competencia` sigue en la proyección y en la
+    respuesta: sacarlo del registro exigiría una full y no arregla nada. Lo que no puede seguir es
+    presentarse como una medición. Quien responde esa pregunta CON BASE es `competencia_entidad`, y
+    su badge ya está en la misma tarjeta a dos centímetros.
+  · **`?nivel_competencia=` queda INERTE, no da 400.** Un enlace guardado no puede vaciarle la lista a
+    nadie; hay prueba de que el total no se mueve con ninguno de los tres valores.
+  · **`?ordenar_por=competencia` leía el campo de la FILA, no el de la entidad** — o sea, no ordenaba
+    nada—, mientras README y CLAUDE.md llevaban desde jul 2026 afirmando que ordenaba por la entidad.
+    Ahora lee `competencia_nivel` del contexto ya calculado: el código alcanzó a su documentación.
+  · **EL FIXTURE TAPABA EL DEFECTO Y POR ESO SOBREVIVIÓ.** La suite daba
+    `respuestas_al_procedimiento` a TODAS las filas, incluidas las abiertas, así que la señal parecía
+    viva en las pruebas. Ahora solo la llevan las adjudicadas —que es lo que hace SECOP II— y el
+    histórico conserva sus conteos intactos (184 procesos, 3 entidades clasificadas, sin cambios). La
+    suite además MIDE y publica cuántos valores distintos toma el campo en el corpus servido: **1 en
+    384 procesos**. Una cifra medida vale más que una regex sobre el fuente.
 - **`solo_viables=true` es el default y NO es lo mismo que `filtrarProcesosVisibles`**: la puerta de
   caja es posterior a la cascada, así que el listado sirve menos que `totales.visibles` del panel.
   Está dicho en el `como_leerlo` de `/api/resumen`; si alguien vuelve a igualarlos, mentirá.

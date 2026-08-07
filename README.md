@@ -64,7 +64,8 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `lib/indice_competencia.js` | Índice **entidad → oferentes promedio** sobre el histórico; tertiles baja/media/alta |
 | `api/competencia-detalle.js` + `lib/competencia_detalle.js` | **Auditoría de las dos cifras de la tarjeta**, dos vistas en una función: los procesos que sostienen el badge (incluidos, excluidos y por qué, caché de 1 h) y el **desglose de la probabilidad** (`?vista=probabilidad`) |
 | `lib/probabilidad_desglose.js` | **Por qué ese 23 %**: los seis pasos del cálculo con fórmula, datos con la fuente citada, aritmética escrita y aporte en puntos porcentuales. No recalcula nada — narra la traza de `lib/probabilidad` |
-| `lib/auth.js` | Guardián único del `HISTORICO_TOKEN` para **todos** los endpoints protegidos, `/api/oportunidades` incluido |
+| `lib/auth.js` | Guardián único del `HISTORICO_TOKEN` para **todos** los endpoints protegidos (doce puntos de llamada), `/api/oportunidades` incluido |
+| `lib/cuerpo.js` | Lector único del cuerpo JSON (objeto · cadena · stream) con su tope y su política de cuerpo vacío. Vivía triplicado en los tres endpoints que reciben POST |
 | `lib/puertas.js` | **Las cuatro puertas** de viabilidad (RUP · K · Caja · Competencia): sustituyen al puntaje 0-100 como criterio de decisión |
 | `lib/probabilidad.js` | **P(ganar)** y valor esperado, con la fuente de cada estimación y las señales ex-ante (prórroga del cierre, colisión de cierres) |
 | `lib/equivalencias.js` | **Clases UNSPSC afines** aprendidas del histórico (lift sobre adjudicatarios) |
@@ -81,7 +82,7 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `lib/semantica.js` | Los **vocabularios**: `norm`, blacklist de objetos ajenos, whitelist de obra (heredadas), verbos de obra y términos no pertinentes |
 | `data/vocabulario_unspsc.json` | Semilla curada de términos distintivos por familia UNSPSC (respaldo del derivado) |
 | `lib/almacen.js` | Esquema de claves Redis + compresión/particionado de chunks |
-| `api/apu/[accion].js` | **Editor de APU** — una sola función para siete acciones (catálogo, inferir, calcular, **rentabilidad**, guardar, cargar, listar): el plan Hobby de Vercel admite 12 funciones por despliegue |
+| `api/apu/[accion].js` | **Editor de APU y lector de pliegos** — una sola función para nueve acciones (catálogo, inferir, calcular, **rentabilidad**, guardar, cargar, listar, extraer-texto, descargar): el plan Hobby de Vercel admite 12 funciones por despliegue |
 | `lib/apu/rentabilidad.js` | Lo que el presupuesto no responde: flujo de caja mes a mes, capital expuesto, **payback**, precio piso, maldición del ganador y **VEG** |
 | `lib/apu/tipologias.js` | Las 22 tipologías cerradas y el mapa departamento→región. `regionDeDepartamento` es el punto único de paso y **jamás devuelve una región de relleno** |
 | `lib/apu/inferencia.js` | Objeto del proceso → tipología de obra e ítems: léxico con puntaje (Nivel A) + UNSPSC como **veto** (Nivel B) |
@@ -96,6 +97,7 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `docs/APU_Y_RENTABILIDAD.md` | La investigación que sostiene el CATÁLOGO DE PRECIOS: fuentes, factor prestacional, AIU, ICOCIV y regionalización |
 | `docs/APU_INFORME_COMPLETO.md` | El **informe** completo de investigación y diseño (§1.A-§1.I): el que citan los comentarios del código. Incluye lo que NO se implementó y por qué |
 | `docs/PERFILES.md` | Resumen técnico de los tres perfiles (datos, estimaciones, limitaciones) |
+| `docs/AUDITORIA_INTEGRAL.md` | **Censo del sistema** (ago 2026): qué módulo hace qué, qué está probado, qué endpoint pide llave y por qué, qué está duplicado, qué está muerto y qué falta — con las correcciones pendientes ordenadas por impacto en las adjudicaciones |
 | `public/` | Frontend estático (Tailwind CDN, estilo Apple, gate de clave) |
 | `public/pliego.html` + `pliego.js` | **Lector de pliegos**: pdf.js en el navegador, columnas por coordenadas, progreso por página, tabla editable y respaldo por OCR |
 | `public/apu.html` + `apu.js` | Editor de APU: tabla editable, inferencia desde el objeto, sugerencia del factor de baja desde el histórico, borradores y exportación |
@@ -179,14 +181,13 @@ nada, ni siquiera qué perfiles existen.
 | `perfil` | requerido | `helder` · `genesis` · `juntos` (alias aceptado: `consorcio`) |
 | `anticipo_min` | 20 | Excluye anticipos **declarados** menores; `0` = sin dato **pasa** (ver nota) |
 | `cuantia_rango` | — | `bajo` · `medio` · `alto` |
-| `nivel_competencia` | — | Ofertas **del proceso**: `baja` · `media` · `alta` |
-| `competencia_entidad` | — | Histórico **de la entidad**: `baja` · `media` · `alta` · `sin_dato` |
+| `competencia_entidad` | — | Histórico **de la entidad**: `baja` · `media` · `alta` · `sin_dato`. **Es el único filtro de competencia**: el de «ofertas del proceso» se retiró en ago 2026 (ver abajo) |
 | `ubicacion_valida` | — | `true` · `false` |
 | `match` | — | Solidez del match UNSPSC: `clase` · `familia` · `equivalente` · `texto` |
 | `incluir_sin_unspsc` | — | `1` para reabrir la ruta de texto sin pertinencia verde (toggle de la UI) |
 | `incluir_cerradas` | — | `1` para incluir procesos en estado terminal |
 | `solo_viables` | **`true`** | Oculta lo que no pasa las puertas P1-P3. Con `false` aparecen al final, marcados |
-| `ordenar_por` | **`atractividad`** | `atractividad` · `ve` · `p_ganar` · `anticipo` · `cuantia` · `competencia` · `puntaje` (legado) |
+| `ordenar_por` | **`atractividad`** | `atractividad` · `ve` · `p_ganar` · `anticipo` · `cuantia` · `competencia` (nivel de la **entidad**) · `puntaje` (legado) |
 | `orden` | `desc` | `asc` · `desc` |
 | `pagina` / `por_pagina` | 1 / 20 | `por_pagina` máx 100 |
 
@@ -268,6 +269,10 @@ diferencia según el dato viniera de la entidad o del departamento, y como los t
 índice. El nivel **sigue viajando** en la tarjeta, sigue filtrando (`?competencia_entidad=`) y sigue
 ordenando (`?ordenar_por=competencia`): lo único que ya no hace es multiplicar `p`. Detalle y cifras
 en `docs/PROBABILIDAD_MEJORADA.md`.
+
+> `?ordenar_por=competencia` ordenaba en realidad por el `nivel_competencia` **de la fila**, no por el
+> de la entidad — y aquel es constante en el corpus activo, así que no ordenaba nada. Corregido en
+> ago 2026: ahora lee el nivel de la entidad, que es lo que este párrafo llevaba afirmando.
 
 **La prórroga del cierre** es la única señal de competencia observable **antes** del cierre que hay
 en el corpus (el contador de oferentes es ex-post: en un proceso abierto vale 0 por construcción).
@@ -1206,7 +1211,13 @@ producción es la validación real.
 - `cuantia_rango`: `bajo` < 100 M COP · `medio` 100–500 M · `alto` > 500 M (campo `precio_base`,
   con respaldos `valor_total`/`cuantia_definitiva`).
 - `nivel_competencia`: `baja` ≤ 5 ofertas · `media` 6–15 · `alta` > 15
-  (`respuestas_al_procedimiento` y equivalentes; sin dato = 0 = baja).
+  (`respuestas_al_procedimiento` y equivalentes). **Sigue en el registro pero ya no se sirve al ojo
+  humano** (ago 2026): esas columnas son **ex-post** y el corpus activo solo tiene procesos abiertos,
+  así que ahí el campo vale `baja` **siempre** —la suite lo mide y lo publica en cada corrida—. Se
+  retiraron el chip de la tarjeta y el filtro `?nivel_competencia=`; quien responde esa pregunta con
+  base es `competencia_entidad`, y su badge ya está a dos centímetros en la misma tarjeta. El campo
+  no se retira del registro porque eso exigiría una full; lo que se retira es **presentarlo como una
+  medición**. Historia completa en `docs/AUDITORIA_INTEGRAL.md` §4.1.
 - `ubicacion_valida`: ciudad/departamento de la entidad vs `UBICACION_VALIDA`
   (default `BOGOTÁ D.C.`; admite lista separada por comas, p. ej. `BOGOTÁ D.C.,TOLIMA`).
 - `puntaje_ponderado` = `0.4·anticipo + 0.3·cuantía + 0.3·competencia`, donde
@@ -1598,16 +1609,23 @@ la baja de mercado y el margen. Base documental: `docs/APU_Y_RENTABILIDAD.md`.
 > ⚠️ Precios de **referencia regionalizada, no cotizaciones**. Verifique contra cotización real antes de
 > presentar oferta. El presupuesto sirve para decidir **a qué presentarse**, no para firmar.
 
-### Las seis acciones
+### Las nueve acciones
 
 | Acción | Verbo | Token | Qué hace |
 | --- | --- | --- | --- |
 | `/api/apu/catalogo` | GET | **no** | Ítems, insumos y regiones; `?insumo=`, `?region=`, `?bloque=` |
 | `/api/apu/inferir` | POST | sí | `{objeto, codigos_unspsc}` → tipología, estado 🟢/🟡/⚪, ítems y magnitudes |
 | `/api/apu/calcular` | POST | sí | `{items, departamento, config}` → desglose + resumen + alertas |
+| `/api/apu/rentabilidad` | POST | sí | Margen, caja, VEG, payback, precio piso **y el optimizador de precio** |
 | `/api/apu/guardar` | POST | sí | Borrador a `apu:presupuesto:{perfil}:{id}`, **TTL 30 días** |
 | `/api/apu/cargar` | GET | sí | `?id=…&perfil=…` |
 | `/api/apu/listar` | GET | sí | Borradores del perfil (SCAN + MGET, sin índice aparte) |
+| `/api/apu/extraer-texto` | POST | sí | **Lector de pliegos**: texto del PDF → tabla de cantidades (`lib/apu_extraer.js`) |
+| `/api/apu/descargar` | POST | sí | Baja el PDF del pliego, que el navegador no puede (`lib/apu_descargar.js`) |
+
+Las dos últimas son del **lector de pliegos**, no del editor, y se despachan antes de tocar el
+catálogo: no leen Redis ni lo necesitan. Están aquí por la misma restricción de las 12 funciones —
+con dos archivos propios eran 14.
 
 **El catálogo es público y eso es la regla, no una excepción**: lo que no sale sin llave son las cifras
 del *perfil*. Escribir el catálogo sí exige llave (`/api/admin/apu/cargar-catalogo`).
@@ -1983,17 +2001,23 @@ identificadas. Aquí solo hay precios de mercado de referencia. Lo que sí exige
 
 ## Variables de entorno
 
-| Variable | Uso |
-| --- | --- |
-| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Redis (respaldo: `KV_REST_API_*`) |
-| `HISTORICO_TOKEN` | **Llave de `/api/sync/historico`**. Sin ella el endpoint responde 503 (no hay default) |
-| `SOCRATA_APP_TOKEN` | Más cuota en datos.gov.co (header `X-App-Token`) |
-| `OCRSPACE_API_KEY` | **Opcional.** Respaldo por OCR para pliegos escaneados (`/api/apu/extraer-texto`). Sin ella el endpoint responde 503 con la instrucción de cómo configurarla; el resto del módulo APU funciona igual (los PDF con capa de texto no la necesitan) |
-| `UBICACION_VALIDA` | Ubicación objetivo (default `BOGOTÁ D.C.`; admite lista con comas) |
-| `SECOP_BASE_URL`, `SECOP_PAGE`, `SECOP_BACKOFF_MS` | Solo pruebas/ajustes |
+| Variable | Obligatoria | Uso |
+| --- | --- | --- |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | **Sí** | Redis (respaldo legado: `KV_REST_API_URL` / `KV_REST_API_TOKEN`). Sin ellas **todos** los endpoints que tocan Redis responden 503 (`lib/redis.hayCredenciales`) |
+| `HISTORICO_TOKEN` | **Sí** | **La llave de todo lo protegido**, no solo de `/api/sync/historico`: la comparten los doce puntos de llamada de `lib/auth.js` (el panel, el diagnóstico, los dos índices, la carga de RUP y de experiencia, la auditoría de cobertura, la carga del catálogo APU y las cinco acciones no públicas del editor). Sin ella el 503 es global — no hay default que valga como llave. El nombre es histórico: nació para el backfill |
+| `SOCRATA_APP_TOKEN` | No | Más cuota en datos.gov.co (header `X-App-Token`): ~1 000 peticiones/hora frente a ~100 sin él |
+| `OCRSPACE_API_KEY` | No | Respaldo por OCR para pliegos escaneados (`/api/apu/extraer-texto`). Sin ella ese respaldo responde 503 explicando cómo configurarla; el resto del módulo APU funciona igual (los PDF con capa de texto no la necesitan) |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` | No | Atraviesa **Vercel Deployment Protection** en las llamadas que la app se hace a sí misma: la auto-reinvocación de `/api/sync` y de `/api/sync/historico`, y el disparo en frío desde `/api/oportunidades`. Con Password Protection activo y sin ella, el muro del edge responde HTML a la propia función y **la cadena de sincronización muere en silencio** — es la causa típica de una full que no termina |
+| `UBICACION_VALIDA` | No | Ubicación objetivo (default `BOGOTÁ D.C.`; admite lista separada por comas) |
+| `SECOP_BASE_URL`, `SECOP_PAGE`, `SECOP_BACKOFF_MS` | No | Solo pruebas/ajustes: base del dataset, tamaño de página y backoff |
+| `NODE_ENV`, `VERCEL` | — | Las pone la plataforma. Solo deciden si se emiten los `logDev` (`!VERCEL && NODE_ENV !== "production"`) |
 
 `DETECTA_URL` y `DETECTA_CRON_SECRET` ya no se usan (el sync no necesita secreto: es idempotente,
 barato en reposo y auto-limitado por el candado).
+
+> Las variables de entorno de Vercel **solo entran en despliegues nuevos**: añadir una y no volver
+> a desplegar deja el 503 en pie. El mensaje de `lib/auth.js` lo dice, porque es el error que más
+> se repite.
 
 ## Sincronización en producción
 
