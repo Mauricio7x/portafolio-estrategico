@@ -150,6 +150,12 @@
     "FFF3F4F6",                       // 4 fila de resumen (gris 100)
     "FFFEF3C7",                       // 5 destacado (ámbar 100) — precio sin APU de respaldo
     "FFFEE2E2",                       // 6 alerta (rojo 100) — fila sin precio: no suma y se ve
+    /* 7 «precio no verificado» (ago 2026). Amarillo DISTINTO del ámbar del 5 a
+       propósito: aquel significa «precio del archivo, sin APU detrás» y este
+       «hay APU, pero el precio no sale de un contrato adjudicado en esta
+       región». Compartir color haría que dos cosas distintas se vieran igual —
+       `cargado`/`cargado_el` traducido a píxeles. */
+    "FFFFEB9C",
   ];
   const FORMATOS = {                  // numFmtId ≥ 164 = personalizado
     moneda: { id: 164, codigo: '"$"#,##0' },
@@ -187,6 +193,13 @@
     alertaMoneda: [1, 6, 1, FORMATOS.moneda.id, "right"],
     destacadoCantidad: [1, 5, 1, FORMATOS.cantidad.id, "right"],
     moneda2Negrita: [1, 4, 1, FORMATOS.moneda2.id, "right"],    // subtotales de la hoja APU
+    /* Precio con APU pero SIN respaldo de contrato adjudicado en la región
+       servida (ago 2026). Van al final por la misma razón de siempre —el orden
+       ES el contrato— y REUTILIZAN los formatos numéricos existentes: los
+       cuatro `numFmt` siguen siendo cuatro y hay DOS pruebas que lo exigen. */
+    noVerificadoTexto: [0, 7, 1, 0, "left"],
+    noVerificadoMoneda: [0, 7, 1, FORMATOS.moneda.id, "right"],
+    noVerificadoCantidad: [0, 7, 1, FORMATOS.cantidad.id, "right"],
   };
   const ORDEN_ESTILOS = Object.keys(ESTILOS);
   const indiceEstilo = (nombre) => Math.max(0, ORDEN_ESTILOS.indexOf(nombre)) + 1; // 0 = estilo por defecto

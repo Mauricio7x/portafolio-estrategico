@@ -799,6 +799,18 @@
             </label>
           </div>
         </details>
+
+        <!-- ══════ Normativa: qué hay detrás de los factores ══════
+             Plegado a propósito: es una referencia que se consulta, no algo que
+             haya que decidir en cada presupuesto. Lo pinta `pintarNormativa`
+             desde el bloque `normativa` de la respuesta del servidor — ninguna
+             tasa está escrita en el HTML, para que no haya dos fuentes. -->
+        <details id="normativa-wrap" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+          <summary class="cursor-pointer text-sm font-medium">📋 Normativa aplicada · factor prestacional, AIU, IVA y deducciones</summary>
+          <div id="normativa" class="mt-4 text-sm">
+            <p class="text-xs text-gray-400">Cargando el catálogo…</p>
+          </div>
+        </details>
       </section>
 
       <!-- ══════ Paso 3 · Calcular ══════ -->

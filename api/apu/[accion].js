@@ -71,6 +71,7 @@ const { estimarPDetalle } = require("../../lib/probabilidad.js");
 const {
   departamentosConocidos, departamentosConRegion, meta: metaTipologias,
 } = require("../../lib/apu/tipologias.js");
+const { normativaAplicada } = require("../../lib/apu/normativa.js");
 
 const MAX_BYTES = 2 * 1024 * 1024;   // 2 MB de cuerpo; el tope de Vercel es 4,5
 const MAX_ITEMS = 400;               // un presupuesto de obra menor no pasa de ~150
@@ -228,6 +229,13 @@ module.exports = async function handler(req, res) {
         tipologias: metaTipologias().tipologias_n,
         departamentos: departamentosConocidos(),
         departamentos_con_region: departamentosConRegion(),
+        /* La NORMATIVA que hay detrás de los factores (ago 2026). Viaja con el
+           catálogo y no en una acción propia: es la explicación de unos números
+           que ya van en esta respuesta, y son 12 funciones el tope del plan
+           Hobby. El factor que se APLICA lo sigue poniendo el catálogo; este
+           bloque solo lo desglosa y cita su norma — `lib/apu/normativa` recibe
+           el catálogo, no lo importa, para no volverse una segunda fuente. */
+        normativa: normativaAplicada(cat, cat.meta ? cat.meta.region_base : null),
       });
     } catch (e) {
       return res.status(503).json({ ok: false, error: `No se pudo leer el catálogo: ${e.message}` });
@@ -302,7 +310,14 @@ module.exports = async function handler(req, res) {
         config: datos.config || {},
         catalogo,
       });
-      return res.status(200).json(r);
+      /* La normativa viaja con el cálculo y para la región QUE SE USÓ, no para
+         la región base. Hoy las cinco regiones comparten el mismo factor
+         prestacional y la diferencia no se nota; el día que se regionalicen, un
+         panel cableado a la base diría «55 %» mientras el motor aplicó otro —
+         dos payloads con nombres parecidos y cifras distintas, que es el
+         defecto `total_procesos`/`procesos_contados` otra vez. */
+      const region = (r.ajuste_regional && r.ajuste_regional.region_utilizada) || null;
+      return res.status(200).json({ ...r, normativa: normativaAplicada(catalogo, region) });
     } catch (e) {
       return res.status(500).json({ ok: false, error: `No se pudo calcular: ${e.message}` });
     }

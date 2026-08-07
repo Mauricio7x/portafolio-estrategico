@@ -39,6 +39,175 @@
 
   const fin = (n) => (Number.isFinite(n) ? n : null);
 
+  /* ═══════════════ Cómo se LEE una línea de insumo ═══════════════════════
+     UNA sola definición, que usan la hoja «APU» del Excel y el desglose que
+     pinta el editor en pantalla. Dos copias divergirían a la primera
+     corrección, y la divergencia sería entre el APU que el dueño ve y el que
+     entrega a la entidad — la lección de `total_procesos`/`procesos_contados`,
+     aquí en pesos.
+
+     LA INVARIANTE QUE ESTO EXISTE PARA CUMPLIR: en toda fila,
+     `cantidad × precio = valor`. No se cumplía en TRANSPORTE y era un defecto
+     real del APU exportado: la tarifa de acarreo está en $/m³-km, así que el
+     valor lleva un factor `distancia_km` que la fila NO enseñaba. Un acarreo de
+     1,25 m³ a 8 km imprimía «1,25 × $1.256» al lado de un parcial de $12.560 —
+     ocho veces más, sin nada que lo explicara. Quien auditara el APU encontraría
+     una fila que no cuadra por un factor 8. Aquí la cantidad que se publica es
+     la EFECTIVA (m³·km) y la composición viaja escrita en la descripción.
+
+     El resto de rubros ya cuadraba y no se toca:
+       · material    cantidad ya trae el desperdicio incorporado
+       · mano_obra   el precio que multiplica es el jornal CON prestacional
+       · equipo      cantidad = 1 / rendimiento (días por unidad de obra) */
+  function lineaLegible(l) {
+    const nombre = l.nombre || l.insumo_id || "—";
+    const desperdicio = Number(l.desperdicio) || 0;
+    const km = Number(l.distancia_km);
+    const rend = Number(l.rendimiento);
+    let cantidad = fin(Number(l.cantidad));
+    let unidad = l.unidad || "—";
+    const notas = [];
+
+    if (l.tipo === "transporte" && Number.isFinite(km) && km > 0) {
+      /* Cantidad EFECTIVA: es la que multiplica a la tarifa. La unidad del
+         insumo YA dice sobre qué se cotiza («m3-km» = pesos por m³ y por km),
+         así que se conserva tal cual — componerla otra vez daría «m3-km-km».
+         Los fletes cerrados del Nogal viajan con `distancia_km = 1`: ahí no hay
+         nada que explicar y la nota se calla en vez de escribir «× 1 km». */
+      cantidad = cantidad == null ? null : Math.round(cantidad * km * 1e6) / 1e6;
+      if (km !== 1) {
+        const base = String(l.unidad || "").replace(/-?km$/i, "") || "und";
+        notas.push(`${fmtNum(Number(l.cantidad))} ${base} × ${fmtNum(km)} km`);
+      }
+    }
+    /* El desperdicio se enseña COMPROBABLE: «1,3 + 5 % de desperdicio» permite
+       verificar 1,3 × 1,05 = 1,365 en vez de tener que creerse la cifra. Y solo
+       cuando es > 0: en los 157 ítems calibrados del contrato adjudicado vale 0
+       porque el pliego YA lo incorpora en su cantidad, así que pintar «0,00 %»
+       ahí afirmaría que ese presupuesto no prevé desperdicio — falso, y del
+       tipo de falsedad que este módulo existe para no cometer. */
+    if (l.tipo === "material" && desperdicio > 0) {
+      const base = Number(l.cantidad_base);
+      notas.push(Number.isFinite(base)
+        ? `${fmtNum(base)} + ${fmtNum(desperdicio * 100)} % de desperdicio`
+        : `incl. ${fmtNum(desperdicio * 100)} % de desperdicio`);
+    }
+    /* EL RENDIMIENTO VA POR LA UNIDAD DEL INSUMO, no «por día». En el catálogo
+       conviven 55 insumos tarifados por DÍA y 5 por HORA (retroexcavadora,
+       vibrocompactador, motoniveladora, finisher, carrotanque): escribir «/día»
+       en los horarios es falso, y encima se ve en pantalla al lado de la
+       columna que dice «hora». Es la misma confusión por la que este módulo NO
+       publica un «costo horario» —mezclaría una tarifa horaria real con otras
+       divididas por una jornada inventada—, cometida un nivel más abajo. */
+    if ((l.tipo === "mano_obra" || l.tipo === "equipo") && Number.isFinite(rend) && rend > 0) {
+      const porUnidad = String(l.unidad || "").trim().toLowerCase() || "unidad";
+      notas.push(`rendimiento ${fmtNum(rend)} por ${porUnidad}`);
+    }
+    if (l.tipo === "mano_obra" && Number.isFinite(Number(l.precio_region)) && Number(l.precio_region) > 0
+        && Number.isFinite(Number(l.precio_aplicado))) {
+      const factor = Number(l.precio_aplicado) / Number(l.precio_region);
+      // el jornal que multiplica ya lleva las prestaciones: sin decirlo, la
+      // fila parece cobrar de más respecto del jornal que el dueño conoce
+      if (factor > 1.001) notas.push(`jornal × ${fmtNum(factor)} prestacional`);
+    }
+
+    return {
+      nombre,
+      // el precio que MULTIPLICA, que en mano de obra es el día con prestaciones
+      precio: fin(Number(l.tipo === "mano_obra" ? l.precio_aplicado : l.precio_region)),
+      cantidad,
+      unidad,
+      valor: fin(Number(l.valor)),
+      nota: notas.join(" · "),
+      descripcion: notas.length ? `${nombre}  (${notas.join(" · ")})` : nombre,
+      tipo: l.tipo,
+    };
+  }
+
+  /* formateo local: este archivo es UMD y no puede requerir nada del IIFE */
+  function fmtNum(n) {
+    if (!Number.isFinite(Number(n))) return "—";
+    return new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 }).format(Number(n));
+  }
+
+  /* ═════════════ De dónde sale el precio de un ítem ══════════════════════
+     UNA definición, dos presentaciones: el badge de la tabla en pantalla
+     (`badgeOrigen` en app.js) y el marcador de la hoja del Excel llaman a ESTA
+     función. Vivía solo en el IIFE de app.js, así que el Excel exportaba
+     IDÉNTICOS un precio respaldado por el contrato adjudicado y uno derivado
+     por factor regional — el hueco real que había detrás del encargo.
+
+     Cinco estados, no cuatro. El encargo pide 🟢/🟡/🔴/⚪, pero «precio del
+     ARCHIVO importado» y «precio TECLEADO a mano» no se pueden colapsar: la
+     política de precios de la importación (CLAUDE.md) hace que el precio del
+     archivo MANDE y quede declarado como tal, y fundirlos perdería esa
+     trazabilidad justo donde importa —una cifra que vino de un Excel ajeno—.
+     Los dos comparten el tratamiento visual de «lo puso una persona». */
+  /* `Number(null)` y `Number("")` son 0, y 0 es finito: usar
+     `Number.isFinite(Number(x))` como guarda de «sin precio» deja pasar la
+     AUSENCIA disfrazada de cero. Hoy el motor siempre acompaña un
+     `costo_directo_unitario: null` con `incompleto: true` —que se comprueba
+     antes— así que la puerta no se cruza; pero es la trampa que este proyecto
+     ya documentó en `lib/probabilidad` («numero() no sirve de guarda») y
+     dejarla abierta es esperar a que alguien la cruce. */
+  function precioONull(v) {
+    if (v === null || v === undefined || v === "" || typeof v === "boolean") return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function clasificarOrigen(it, r) {
+    const reg = (r && r.ajuste_regional) || {};
+    if (!it || it.incompleto || precioONull(it.costo_directo_unitario) == null) {
+      return {
+        estado: "sin_referencia",
+        emoji: "🔴",
+        etiqueta: "Sin referencia",
+        suma: false,
+        motivo: (it && it.mensaje)
+          || "No hay precio en el catálogo ni escrito a mano. NO suma al total: un $0 sería un precio inventado.",
+      };
+    }
+    if (it.sin_apu) {
+      const delArchivo = it.origen_precio === "archivo";
+      return {
+        estado: delArchivo ? "archivo" : "manual",
+        emoji: delArchivo ? "📄" : "⚪",
+        etiqueta: delArchivo ? "Del archivo" : "Manual",
+        suma: true,
+        motivo: (Number.isFinite(Number(it.cd_catalogo))
+          ? `Sin APU de respaldo. Referencia del catálogo: $${Math.round(it.cd_catalogo).toLocaleString("es-CO")}. `
+          : "Sin APU de respaldo en el catálogo. ")
+          + (delArchivo
+            ? "El precio viene del archivo importado y manda sobre el catálogo."
+            : "El precio lo escribió usted a mano."),
+      };
+    }
+    /* VERDE solo con las dos condiciones: precio de un contrato adjudicado Y
+       servido en la región donde se adjudicó. Fuera de Bogotá el mismo precio
+       se multiplica por el factor regional y deja de ser «el precio real». */
+    if (it.fuente === "adjudicado" && reg.estado === "mapeado" && reg.region_utilizada === "bogota_sabana") {
+      return {
+        estado: "adjudicado",
+        emoji: "🟢",
+        etiqueta: "Adjudicado · Nogal 4 (2025)",
+        suma: true,
+        motivo: "Precio de un contrato ADJUDICADO real (Presupuesto Nogal 4, UPN-VAD-CP-009-2025, Bogotá 2025), "
+          + "servido en su misma región.",
+      };
+    }
+    return {
+      estado: "derivado",
+      emoji: "🟡",
+      etiqueta: "Derivado regional",
+      suma: true,
+      motivo: `Precio ${it.fuente || "de referencia"} ajustado por el factor de la región `
+        + `${reg.region_nombre || reg.region_utilizada || "base"}`
+        + (reg.estado === "mapeado" ? "" : " (su departamento no tiene región cotizada: se usó la base y se declara)")
+        + ". Precio no verificado: requiere cotización.",
+    };
+  }
+
   /* ─────────────────── hoja 1 · Presupuesto (formato Nogal) ────────────── */
   function hojaPresupuesto(r, meta) {
     const c = r.configuracion;
@@ -69,15 +238,36 @@
       }
       consecutivo++;
       const codigo = it.codigo || it.item_id || String(consecutivo);
-      const sinPrecio = it.incompleto || !Number.isFinite(it.costo_directo_unitario);
-      const marcado = !sinPrecio && it.sin_apu;
-      const estiloTexto = sinPrecio ? "alertaTexto" : marcado ? "destacadoTexto" : "texto";
-      const estiloMoneda = sinPrecio ? "alertaTexto" : marcado ? "destacadoMoneda" : "moneda";
-      const estiloCant = sinPrecio ? "alertaTexto" : marcado ? "destacadoCantidad" : "cantidad";
+      /* El estado sale de `clasificarOrigen`, la MISMA función que decide el
+         badge de la pantalla: antes el Excel solo distinguía dos estados y un
+         precio derivado por factor regional salía idéntico a uno respaldado por
+         el contrato adjudicado. */
+      const org = clasificarOrigen(it, r);
+      const sinPrecio = org.estado === "sin_referencia";
+      const marcado = org.estado === "archivo" || org.estado === "manual";
+      const noVerificado = org.estado === "derivado";
+      const estiloTexto = sinPrecio ? "alertaTexto" : marcado ? "destacadoTexto"
+        : noVerificado ? "noVerificadoTexto" : "texto";
+      const estiloMoneda = sinPrecio ? "alertaTexto" : marcado ? "destacadoMoneda"
+        : noVerificado ? "noVerificadoMoneda" : "moneda";
+      const estiloCant = sinPrecio ? "alertaTexto" : marcado ? "destacadoCantidad"
+        : noVerificado ? "noVerificadoCantidad" : "cantidad";
 
       const n = fila([
         { v: codigo, s: estiloTexto },
-        { v: (it.descripcion || "—") + (sinPrecio ? "   ⛔ SIN PRECIO: no suma al total" : ""), s: estiloTexto },
+        {
+          v: (it.descripcion || "—")
+            + (sinPrecio ? "   ⛔ SIN PRECIO: no suma al total" : "")
+            /* La advertencia va como TEXTO y no como comentario de celda: un
+               comentario no se imprime (y el presupuesto se entrega impreso o
+               en PDF), no se filtra, no se copia y el propio lector del
+               proyecto no lo lee al reimportar. Además exigiría estrenar VML y
+               un nivel de OPC nuevo, con dos modos de fallo que hacen que Excel
+               se niegue a abrir el libro ENTERO. Un archivo roto cuesta más que
+               un globo que falta. */
+            + (noVerificado ? "   ⚠️ Precio no verificado - requiere cotización" : ""),
+          s: estiloTexto,
+        },
         { v: it.unidad || "—", s: estiloTexto },
         Number.isFinite(it.cantidad) ? { v: it.cantidad, s: estiloCant } : { v: "—", s: estiloTexto },
         // sin precio las celdas van VACÍAS con fondo rojo: un $0 sería un precio
@@ -127,7 +317,12 @@
     fila([]);
 
     const notas = [];
-    notas.push("Leyenda: fila ÁMBAR = precio del archivo importado o tecleado a mano, sin APU de respaldo en el catálogo (suma al total y queda declarado). Fila ROJA = ítem sin precio: NO suma al total — un $0 sería un precio inventado.");
+    /* La leyenda declara los TRES colores. Con tres estados y dos declarados,
+       callarse uno sería mentir justo en la fila que existe para no mentir. */
+    notas.push("Leyenda: fila SIN COLOR = precio de un contrato adjudicado (Nogal 4, 2025) servido en su misma región. "
+      + "Fila AMARILLA = precio con APU pero derivado por factor regional o estimado: no está verificado y requiere cotización. "
+      + "Fila ÁMBAR = precio del archivo importado o tecleado a mano, sin APU de respaldo en el catálogo (suma al total y queda declarado). "
+      + "Fila ROJA = ítem sin precio: NO suma al total — un $0 sería un precio inventado.");
     if ((r.como_leerlo && r.como_leerlo.precios)) notas.push(r.como_leerlo.precios);
     for (const a of r.alertas || []) notas.push(a);
     for (const nota of notas) fusionA_F(fila([{ v: nota, s: "nota" }]));
@@ -143,11 +338,24 @@
   }
 
   /* ─────────────────── hoja 2 · APU por ítem (formato Nogal) ───────────── */
+  /* El orden y las grafías («EQUIPO y HERRAMIENTAS», «MANO de OBRA») vienen del
+     Presupuesto Nogal 4: no se tocan.
+
+     CADA SECCIÓN LLEVA SU PROPIA CABECERA (ago 2026). Antes había una sola para
+     el bloque entero, con la columna C rotulada «CANT/ REND» — un rótulo que
+     significaba tres cosas distintas según la fila (cantidad de material, días
+     por unidad de obra, m³ de acarreo) y por tanto no describía ninguna. Cuesta
+     tres filas por ítem y hace que cada etiqueta sea verdadera para lo que tiene
+     debajo. Se conservan las CINCO columnas A-E de la referencia: la hoja del
+     pliego cierra con `ROUND(SUM(Ea:Eb)/2)`, que solo tiene sentido si los
+     parciales y los subtotales comparten la columna E. */
   const SECCIONES_APU = [
-    ["material", "MATERIALES:"],
-    ["equipo", "EQUIPO y HERRAMIENTAS:"],
-    ["transporte", "TRANSPORTES:"],
-    ["mano_obra", "MANO de OBRA:"],
+    ["material", "MATERIALES:", ["DESCRIPCIÓN", "UNIDAD", "CANTIDAD", "VR UNITARIO", "VR PARCIAL"]],
+    ["equipo", "EQUIPO y HERRAMIENTAS:", ["DESCRIPCIÓN", "UNIDAD", "CANT. POR UNIDAD", "VR POR UNIDAD", "VR PARCIAL"]],
+    ["transporte", "TRANSPORTES:", ["DESCRIPCIÓN", "UNIDAD", "CANT. × DISTANCIA", "TARIFA", "VR PARCIAL"]],
+    // el jornal que multiplica YA lleva las prestaciones dentro: decirlo en el
+    // rótulo evita que la fila parezca cobrar de más frente al jornal conocido
+    ["mano_obra", "MANO de OBRA:", ["DESCRIPCIÓN", "UNIDAD", "CANT. POR UNIDAD", "JORNAL C/ PRESTACIONAL", "VR PARCIAL"]],
   ];
 
   function hojaApu(r, meta) {
@@ -197,29 +405,27 @@
         continue;
       }
 
-      fila([
-        { v: "DESCRIPCIÓN", s: "encabezado" }, { v: "UNIDAD", s: "encabezado" },
-        { v: "CANT/ REND", s: "encabezado" }, { v: "PRECIO UNITARIO", s: "encabezado" },
-        { v: "VR PARCIAL", s: "encabezado" },
-      ]);
-
       const insumos = (it.detalle && it.detalle.insumos) || [];
-      for (const [tipo, rotulo] of SECCIONES_APU) {
+      for (const [tipo, rotulo, cabecera] of SECCIONES_APU) {
         const delTipo = insumos.filter((l) => l.tipo === tipo);
         const esEquipo = tipo === "equipo";
         const hm = esEquipo && it.detalle && it.detalle.herramienta_menor_pct > 0
           ? it.detalle.herramienta_menor_unitario : null;
         if (!delTipo.length && hm == null) continue;
         fila([{ v: rotulo, s: "negrita" }]);
+        fila(cabecera.map((t) => ({ v: t, s: "encabezado" })));
         let subtotal = 0;
         for (const l of delTipo) {
+          /* `lineaLegible` es la MISMA función que usa el desglose en pantalla:
+             la cantidad que se imprime es la que multiplica al precio, así que
+             la fila cuadra siempre (incluido el acarreo, que lleva los km). */
+          const v = lineaLegible(l);
           fila([
-            { v: l.nombre || l.insumo_id, s: "texto" },
-            { v: l.unidad || "—", s: "texto" },
-            { v: fin(l.cantidad), s: "cantidad" },
-            // en mano de obra el precio que multiplica es el día CON prestaciones
-            { v: fin(tipo === "mano_obra" ? l.precio_aplicado : l.precio_region), s: "moneda2" },
-            { v: fin(l.valor), s: "moneda2" },
+            { v: v.descripcion, s: "texto" },
+            { v: v.unidad, s: "texto" },
+            { v: v.cantidad, s: "cantidad" },
+            { v: v.precio, s: "moneda2" },
+            { v: v.valor, s: "moneda2" },
           ]);
           subtotal += l.valor || 0;
         }
@@ -257,5 +463,10 @@
     return [hojaPresupuesto(r, meta), hojaApu(r, meta)];
   }
 
-  return { construirLibroNogal };
+  /* `lineaLegible` y `clasificarOrigen` se exportan a propósito: el editor
+     pinta su desglose y su badge con ESTAS funciones, no con copias suyas. Dos
+     definiciones de «de dónde sale este precio» divergirían a la primera
+     corrección, y la divergencia sería entre lo que el dueño ve en pantalla y
+     lo que entrega a la entidad. */
+  return { construirLibroNogal, lineaLegible, clasificarOrigen };
 });

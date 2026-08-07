@@ -1066,10 +1066,110 @@
         return `<option value="${esc(d)}">${esc(d)}${esc(marca)}</option>`;
       }).join("");
 
+    // la normativa viaja con el catálogo: se pinta en cuanto llega
+    pintarNormativa(r.normativa);
+
     const sel = $("item-nuevo");
     sel.innerHTML = (r.items || [])
       .map((i) => `<option value="${esc(i.codigo)}">${esc(i.descripcion)} (${esc(i.unidad)})</option>`)
       .join("");
+  }
+
+  /* ════════════════ Normativa: qué hay detrás de los factores ════════════════
+     El editor multiplicaba por 1,55 el jornal, por el AIU el costo directo y
+     por 19 % la utilidad sin decir de dónde sale ninguno de los tres. Un número
+     sin su norma no se puede defender ante un interventor.
+
+     NINGUNA TASA SE ESCRIBE AQUÍ: todo sale del bloque `normativa` que sirve el
+     servidor (`lib/apu/normativa.js`). Escribirlas en el frontend habría creado
+     una segunda fuente de verdad de unas cifras que ya deciden pesos.
+
+     Y lo que se pinta con más cuidado es lo que NO cuadra: la suma nominal de
+     las tasas de ley (58,29 %) no es el factor que aplica el catálogo (55 %).
+     Se enseñan las tres cifras y la brecha, porque afirmar que el 55 % «es la
+     suma de la ley» sería falso y este es el módulo donde una cifra creíble y
+     equivocada acaba en el precio de una oferta. */
+  function pintarNormativa(n) {
+    const caja = $("normativa");
+    if (!caja) return;
+    if (!n || !n.prestacional) {
+      caja.innerHTML = '<p class="text-xs text-gray-400">El catálogo todavía no está cargado: sin él no hay factores que explicar.</p>';
+      return;
+    }
+    const p = n.prestacional;
+    const pct = (v) => (Number.isFinite(Number(v)) ? `${num(v)} %` : "—");
+
+    const filas = (p.componentes || []).map((c) => `
+      <tr class="align-top">
+        <td class="py-1 pr-2">${esc(c.nombre)}${c.base === "cesantias" ? '<span class="block text-[10px] text-gray-400">12 % de las cesantías, ya convertido a % del salario</span>' : ""}</td>
+        <td class="py-1 pr-2 text-right num font-medium">${pct(c.pct)}</td>
+        <td class="py-1 pr-2 text-gray-500">${esc((p.grupos || {})[c.grupo] || c.grupo)}</td>
+        <td class="py-1 text-gray-500">${esc(c.norma)}<span class="block text-[10px] text-gray-400">${esc(c.detalle || "")}</span></td>
+      </tr>`).join("");
+
+    /* Los tres totales van SIEMPRE los tres: enseñar solo el aplicado escondería
+       que no se descompone, y enseñar solo el nominal sugeriría que es lo que
+       se cobra. */
+    const totales = [
+      ["Suma nominal de las tasas de ley", p.suma_nominal_pct],
+      ["Con exoneración de parafiscales (si aplica)", p.suma_exonerada_pct],
+      ["FACTOR QUE APLICA EL CATÁLOGO", p.aplicado_pct],
+    ].map(([k, v], i) => `<tr class="${i === 2 ? "font-semibold" : ""}">
+        <td class="py-1 pr-2">${esc(k)}</td><td class="py-1 text-right num">${pct(v)}</td></tr>`).join("");
+
+    caja.innerHTML = `
+      <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Factor prestacional sobre el jornal</h3>
+      <p class="mt-1 text-xs text-gray-500">
+        ${p.aplicado_pct == null
+    ? "Sin región resuelta no hay factor aplicado contra el que contrastar el desglose."
+    : `El motor multiplica el jornal base por <strong class="num">${num(p.factor_aplicado)}</strong> antes de dividirlo por el rendimiento.`}
+      </p>
+      <div class="mt-2 overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead class="text-left text-[10px] uppercase tracking-wide text-gray-400">
+            <tr><th class="pb-1 pr-2">Componente</th><th class="pb-1 pr-2 text-right">Tasa</th>
+                <th class="pb-1 pr-2">Grupo</th><th class="pb-1">Norma</th></tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">${filas}</tbody>
+        </table>
+      </div>
+      <table class="mt-3 w-full max-w-md text-xs">
+        <tbody class="divide-y divide-gray-100">${totales}</tbody>
+      </table>
+      <p class="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-900">${esc(p.como_leerlo || "")}</p>
+      <p class="mt-2 text-[11px] text-gray-500"><strong>Exoneración:</strong> ${esc(p.exoneracion.condicion)}
+        <span class="block text-gray-400">${esc(p.exoneracion.norma)}</span></p>
+      <p class="mt-2 text-[11px] text-gray-500"><strong>Procedencia del factor:</strong> ${esc(p.procedencia || "")}</p>
+      <p class="mt-1 text-[11px] text-gray-500">${esc(p.atado_a_calibracion || "")}</p>
+
+      <h3 class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-500">AIU · bandas típicas</h3>
+      <table class="mt-1 w-full text-xs">
+        <tbody class="divide-y divide-gray-100">
+          ${Object.values(n.aiu || {}).map((a) => `<tr class="align-top">
+            <td class="py-1 pr-2">${esc(a.nombre)}<span class="block text-[10px] text-gray-400">${esc(a.detalle)}</span></td>
+            <td class="py-1 pr-2 text-right num whitespace-nowrap">${num(a.banda.min)} – ${num(a.banda.max)} %</td>
+            <td class="py-1 text-gray-500">${esc(a.fuente)}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table>
+      <p class="mt-1 text-[11px] text-gray-400">${esc(n.fuente_defaults || "")}</p>
+
+      <h3 class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-500">IVA sobre la utilidad</h3>
+      <p class="mt-1 text-xs"><strong class="num">${pct(n.iva_sobre_utilidad_pct)}</strong>
+        <span class="text-gray-500">· ${esc(n.iva_norma || "")}</span></p>
+      <p class="mt-1 text-[11px] text-gray-500">${esc(n.iva_nota || "")}</p>
+
+      <h3 class="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-500">Deducciones sobre el valor del contrato</h3>
+      <table class="mt-1 w-full text-xs">
+        <tbody class="divide-y divide-gray-100">
+          ${(n.deducciones || []).map((d) => `<tr class="align-top">
+            <td class="py-1 pr-2">${esc(d.nombre)}<span class="block text-[10px] text-gray-400">${esc(d.detalle)}</span></td>
+            <td class="py-1 pr-2 text-right num whitespace-nowrap">${d.pct == null ? "según la entidad" : pct(d.pct)}</td>
+            <td class="py-1 text-gray-500">${esc(d.norma)}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table>
+      <p class="mt-3 rounded-lg bg-gray-100 px-3 py-2 text-[11px] text-gray-600">⚠️ ${esc(p.advertencia || "")}</p>`;
   }
 
   /* ────────────────────────── inferencia ───────────────────────────── */
@@ -1216,6 +1316,10 @@
               <p class="mt-1 num" data-celda="transporte-${i}">—</p></div>
           </div>
           <p class="mt-2 text-[11px] text-gray-400">El rendimiento DIVIDE: bajarlo encarece la mano de obra sin tocar los materiales.</p>
+          <!-- El APU insumo por insumo se pinta AL EXPANDIR (ver pintarInsumos):
+               con 200-300 items, meter aqui ~10 filas por item son miles de nodos
+               que nadie esta mirando. -->
+          <div data-celda="insumos-${i}" class="mt-3"></div>
         </td>
       </tr>`;
     }).join("");
@@ -1251,6 +1355,94 @@
     }
   });
 
+  /* ══════════ El APU insumo por insumo, dentro del desglose ══════════
+     Cuatro columnas —MATERIALES · MANO DE OBRA · EQUIPO · TRANSPORTE— y dentro
+     de cada una sus insumos con cantidad, unidad, precio unitario y subtotal.
+
+     Las filas las LEE `APULibro.lineaLegible`, la misma función que escribe la
+     hoja «APU» del Excel: así lo que el dueño ve en pantalla y lo que entrega a
+     la entidad no pueden decir cosas distintas del mismo ítem. Es también lo
+     que hace que cada fila CUADRE (cantidad × precio = subtotal), incluido el
+     acarreo, cuya tarifa va por m³-km.
+
+     La herramienta menor NO es un insumo: es un % de la mano de obra y no tiene
+     precio propio, así que se pinta aparte y diciendo de qué es porcentaje. */
+  const RUBROS_APU = [
+    ["material", "Materiales"],
+    ["mano_obra", "Mano de obra"],
+    ["equipo", "Equipo"],
+    ["transporte", "Transporte"],
+  ];
+
+  function pintarInsumos(i) {
+    const caja = $("tabla").querySelector(`[data-celda="insumos-${i}"]`);
+    if (!caja) return;
+    const it = ultimoCalculo && ultimoCalculo.items ? ultimoCalculo.items[i] : null;
+    const det = it && it.detalle;
+    if (!det || !Array.isArray(det.insumos) || !det.insumos.length) {
+      /* Se DICE cuál de los tres casos es. Una caja vacía haría pensar que el
+         ítem no tiene composición cuando lo que falta es pulsar «Calcular APU».
+         Y `incompleto` va ANTES que `sin_apu`: un ítem SIN PRECIO también lleva
+         `sin_apu: true`, así que preguntando primero por `sin_apu` se le decía
+         «lleva un precio escrito a mano» a un ítem que no tiene precio ninguno. */
+      caja.innerHTML = `<p class="text-[11px] text-gray-400">${
+        !ultimoCalculo ? "Pulse «Calcular APU» para ver el desglose de este ítem."
+          : it && it.incompleto ? esc(it.mensaje || "Este ítem no tiene precio: escriba uno o asígnele un ítem del catálogo. Sin precio NO suma al total.")
+            : it && it.sin_apu ? "Este ítem lleva un precio escrito a mano o traído del archivo: no tiene APU de respaldo en el catálogo."
+              : "Este ítem no tiene composición en el catálogo."}</p>`;
+      caja.setAttribute("data-pintado", "1");
+      return;
+    }
+
+    const cuerpoRubro = (tipo) => {
+      const lineas = det.insumos.filter((l) => l.tipo === tipo).map((l) => APULibro.lineaLegible(l));
+      const hm = tipo === "equipo" && det.herramienta_menor_pct > 0 ? det.herramienta_menor_unitario : null;
+      if (!lineas.length && hm == null) return "";
+      const subtotal = lineas.reduce((a, l) => a + (Number(l.valor) || 0), 0) + (hm || 0);
+      const filasHtml = lineas.map((l) => `
+        <tr class="align-top">
+          <td class="py-1 pr-2">${esc(l.nombre)}${l.nota ? `<span class="block text-[10px] text-gray-400">${esc(l.nota)}</span>` : ""}</td>
+          <td class="py-1 pr-2 text-gray-500">${esc(l.unidad)}</td>
+          <td class="py-1 pr-2 text-right num">${l.cantidad == null ? "—" : num(l.cantidad)}</td>
+          <td class="py-1 pr-2 text-right num">${pesos(l.precio)}</td>
+          <td class="py-1 text-right num font-medium">${pesos(l.valor)}</td>
+        </tr>`).join("")
+        + (hm == null ? "" : `
+        <tr class="align-top">
+          <td class="py-1 pr-2">Herramienta menor<span class="block text-[10px] text-gray-400">${num(det.herramienta_menor_pct * 100)} % de la mano de obra</span></td>
+          <td class="py-1 pr-2 text-gray-500">%</td>
+          <td class="py-1 pr-2 text-right num">—</td>
+          <td class="py-1 pr-2 text-right num">—</td>
+          <td class="py-1 text-right num font-medium">${pesos(hm)}</td>
+        </tr>`);
+      return `
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">${esc(RUBROS_APU.find((x) => x[0] === tipo)[1])}</p>
+          <table class="mt-1 w-full text-[11px]">
+            <thead class="text-left text-[10px] uppercase tracking-wide text-gray-400">
+              <tr><th class="pb-1 pr-2">Insumo</th><th class="pb-1 pr-2">Und.</th>
+                  <th class="pb-1 pr-2 text-right">Cant.</th><th class="pb-1 pr-2 text-right">Vr. unit.</th>
+                  <th class="pb-1 text-right">Subtotal</th></tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">${filasHtml}</tbody>
+            <tfoot><tr class="border-t border-gray-200">
+              <td colspan="4" class="py-1 pr-2 text-right font-medium text-gray-500">Subtotal</td>
+              <td class="py-1 text-right num font-semibold">${pesos(Math.round(subtotal * 100) / 100)}</td>
+            </tr></tfoot>
+          </table>
+        </div>`;
+    };
+
+    const rubros = RUBROS_APU.map(([t]) => cuerpoRubro(t)).filter(Boolean).join("");
+    caja.innerHTML = `
+      <div class="grid gap-4 xl:grid-cols-2">${rubros}</div>
+      <p class="mt-3 border-t border-gray-200 pt-2 text-right text-xs font-semibold">
+        Total costo directo del ítem: <span class="num">${pesos(it.costo_directo_unitario)}</span>
+        <span class="font-normal text-gray-400"> por ${esc(it.unidad || "unidad")}</span>
+      </p>`;
+    caja.setAttribute("data-pintado", "1");
+  }
+
   $("tabla").addEventListener("click", (e) => {
     const quitar = e.target.getAttribute("data-quitar");
     if (quitar !== null) {
@@ -1263,31 +1455,40 @@
     if (e.target.closest("input,button,a")) return;
     const filaDom = e.target.closest("tr[data-fila]");
     if (!filaDom) return;
-    const det = $("tabla").querySelector(`tr[data-detalle="${filaDom.getAttribute("data-fila")}"]`);
-    if (det) det.classList.toggle("hidden");
+    const i = filaDom.getAttribute("data-fila");
+    const det = $("tabla").querySelector(`tr[data-detalle="${i}"]`);
+    if (!det) return;
+    const abriendo = det.classList.contains("hidden");
+    det.classList.toggle("hidden");
+    // se pinta al ABRIR y solo una vez; `pintarCalculoEnTabla` borra la marca
+    // cuando hay números nuevos, para que un desglose abierto no quede rancio
+    if (abriendo) {
+      const caja = $("tabla").querySelector(`[data-celda="insumos-${i}"]`);
+      if (caja && caja.getAttribute("data-pintado") !== "1") pintarInsumos(Number(i));
+    }
   });
 
   /* Origen del precio, en un badge que no puede mentir: 🟢 solo cuando el
      precio sale de un contrato ADJUDICADO servido en su región de origen
      (Bogotá); referencia o derivado por factor regional → 🟡; el precio del
      archivo/manual se declara como tal; sin precio → 🔴 y NO suma. */
+  /* El badge NO decide nada: la regla vive en `APULibro.clasificarOrigen`, que
+     es la MISMA que marca las filas del Excel exportado. Cuando la decisión
+     vivía aquí dentro, el Excel no podía consultarla y exportaba idénticos un
+     precio de contrato adjudicado y uno derivado por factor regional. Aquí solo
+     se traduce el estado a la paleta. */
+  const CLASES_ORIGEN = {
+    adjudicado: "bg-green-100 text-green-800",
+    derivado: "bg-amber-100 text-amber-800",
+    archivo: "bg-amber-100 text-amber-800",
+    manual: "bg-gray-100 text-gray-600",
+    sin_referencia: "bg-red-100 text-red-700",
+  };
+
   function badgeOrigen(it, r) {
-    const b = (t, clases, titulo) => `<span title="${esc(titulo || "")}" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium ${clases}">${t}</span>`;
-    if (it.incompleto) return b("🔴 Sin precio", "bg-red-100 text-red-700", it.mensaje || "No suma al total: un 0 sería un precio inventado");
-    if (it.sin_apu) {
-      return b(it.origen_precio === "archivo" ? "📄 Del archivo" : "✍️ Manual", "bg-amber-100 text-amber-800",
-        Number.isFinite(it.cd_catalogo)
-          ? `Sin APU de respaldo. Referencia del catálogo: ${pesos(it.cd_catalogo)}`
-          : "Sin APU de respaldo en el catálogo");
-    }
-    const reg = (r && r.ajuste_regional) || {};
-    if (it.fuente === "adjudicado" && reg.estado === "mapeado" && reg.region_utilizada === "bogota_sabana") {
-      return b("🟢 Precio verificado", "bg-green-100 text-green-800",
-        "Precio de contrato adjudicado real (Presupuesto Nogal 4, Bogotá 2025)");
-    }
-    return b("🟡 Estimado regional", "bg-amber-100 text-amber-800",
-      `Fuente: ${it.fuente || "referencia"} · región ${reg.region_nombre || reg.region_utilizada || "—"}`
-      + (reg.estado === "mapeado" ? "" : " (departamento sin región cotizada: se usó la base y se declara)"));
+    const o = APULibro.clasificarOrigen(it, r);
+    return `<span title="${esc(o.motivo || "")}" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASES_ORIGEN[o.estado] || CLASES_ORIGEN.derivado}">`
+      + `${o.emoji} ${esc(o.etiqueta)}</span>`;
   }
 
   /* ────────────────────────── cálculo ────────────────────────────────
@@ -1322,6 +1523,9 @@
       ultimoCalculo = r;
       pintarCalculoEnTabla(r);
       pintarResumen(r);
+      /* Repintar con la normativa del CÁLCULO: viene para la región que el
+         motor usó de verdad, no para la región base del catálogo. */
+      if (r.normativa) pintarNormativa(r.normativa);
       msgApu("Presupuesto calculado.", "ok");
       return true;
     } catch (e) {
@@ -1368,6 +1572,18 @@
       }
       const org = tabla.querySelector(`[data-celda="origen-${i}"]`);
       if (org) org.innerHTML = badgeOrigen(it, r);
+
+      /* El desglose de insumos se INVALIDA con cada cálculo: si no, un ítem que
+         quedó abierto seguiría enseñando los insumos del cálculo anterior —
+         cifras viejas con aspecto de nuevas, que es la clase de error que este
+         proyecto ya pagó. Se REPINTA en el acto solo si está abierto; si está
+         plegado, se pintará al abrirlo. */
+      const caja = tabla.querySelector(`[data-celda="insumos-${i}"]`);
+      if (caja) {
+        caja.removeAttribute("data-pintado");
+        const det = tabla.querySelector(`tr[data-detalle="${i}"]`);
+        if (det && !det.classList.contains("hidden")) pintarInsumos(i);
+      }
     });
   }
 

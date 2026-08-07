@@ -103,7 +103,8 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `public/pliego.js` | **Lector de pliegos** (sección de la pestaña APU): pdf.js en el navegador, columnas por coordenadas, progreso por página y respaldo por OCR. Sigue siendo archivo propio: sus funciones están atadas por pruebas que las extraen por archivo |
 | `public/onboarding.js` | La landing: RUP en PDF → perfil dinámico, y carga de experiencia por CSV (panel en la pestaña admin) |
 | `public/xlsx_lectura.js` | Lector .xlsx/.csv propio (ZIP + XML, DEFLATE inyectable) — la otra mitad de `public/xlsx.js`. Corre en navegador y en Node |
-| `public/apu_libro.js` | El presupuesto calculado → libro Excel con formato del **Presupuesto Nogal 4** (capítulos, fórmulas, AIU + IVA sobre utilidad, firmas, hoja APU por ítem) |
+| `public/apu_libro.js` | El presupuesto calculado → libro Excel con formato del **Presupuesto Nogal 4** (capítulos, fórmulas, AIU + IVA sobre utilidad, firmas, hoja APU por ítem con cabecera por sección). Además es el hogar de `lineaLegible` y `clasificarOrigen`: **una** definición de «cómo se lee una línea de insumo» y de «de dónde sale este precio», que usan la hoja del Excel **y** el desglose en pantalla |
+| `lib/apu/normativa.js` | **Qué hay detrás de los factores**: desglose del prestacional componente a componente con su norma, bandas del AIU, IVA sobre la utilidad y deducciones. Explica; no decide — el factor que se aplica lo sigue poniendo el catálogo, y este módulo lo **recibe** para contrastarlo |
 | `lib/apu/importar.js` | Filas importadas → ítems del catálogo de precios: mapeo con plural tolerado y política de precios declarada (el del archivo manda; una sugerencia sin precio no cobra sola) |
 | `public/xlsx.js` | **Escritor `.xlsx` propio, sin dependencias** (ZIP + OOXML con estilos reales). Ver «Exportación a Excel» |
 | `tests/e2e.js` | Ciclo completo con mocks de Socrata y Upstash (sin red externa) |
@@ -1967,12 +1968,24 @@ completo y separación línea por línea en **`docs/APU_Y_RENTABILIDAD.md`**.
 | --- | --- | --- |
 | `POST /api/admin/apu/cargar-catalogo` | **sí** | valida y puebla Redis. `?forzar=true` reescribe |
 | `GET /api/admin/apu/cargar-catalogo` | **sí** | qué hay cargado, sin escribir |
-| `GET /api/apu/catalogo` | **no** | ítems + insumos + regiones. `?insumo=` · `?region=` · `?bloque=` |
+| `GET /api/apu/catalogo` | **no** | ítems + insumos + regiones + **`normativa`**. `?insumo=` · `?region=` · `?bloque=` |
 
 La consulta es pública **a propósito y sin excepción a la regla del proyecto**: lo que no sale sin
 llave son las *cifras del perfil* (patrimonio, K, CRPC, tope), que son datos financieros de personas
 identificadas. Aquí solo hay precios de mercado de referencia. Lo que sí exige llave es
 **escribirlos**.
+
+El bloque **`normativa`** (ago 2026, también en la respuesta de `calcular`, ahí para la región que el
+motor usó de verdad) publica lo que hay detrás de los factores que multiplican el APU: el desglose
+del prestacional componente a componente con su norma, las bandas del AIU, el IVA sobre la utilidad
+con su cita, y las deducciones. **Lo importante es lo que declara que NO cuadra**: la suma nominal de
+las tasas de ley da 58,29 %, el catálogo aplica 55,00 % y con la exoneración de parafiscales bajaría
+a 44,79 % — el 55 % cae entre las dos y **no se descompone en ninguna combinación legal exacta**. No
+se ajustó ningún componente para cuadrarlo, y hay una prueba de **encierro** (no de igualdad) que
+exige que el factor de las cinco regiones caiga dentro de esa banda: si alguien carga un catálogo con
+1,70, la suite lo detiene. Ningún componente se declara verificado —este entorno no alcanza las
+fuentes oficiales— y **no se cita ninguna resolución**: no existe una que fije el factor prestacional
+y una norma inventada aquí acabaría en el precio de una oferta.
 
 ### Decisiones que no hay que re-aprender
 
