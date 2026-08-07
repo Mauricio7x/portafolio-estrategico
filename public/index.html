@@ -7,97 +7,197 @@
   <title>Portafolio Estratégico · Licitaciones, APU y administración</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* ══════════ Tema oscuro (#0f172a) ══════════
-       El fondo y el texto base van aquí; las plantillas que el JS genera desde
-       hace meses usan utilidades CLARAS (bg-white, text-gray-600…). En vez de
+    /* ══════════ Sistema de diseño Apple Glass (ago 2026) ══════════
+       Claro por defecto y oscuro por `prefers-color-scheme`, todo sobre custom
+       properties. Las plantillas que el JS genera desde hace meses usan
+       utilidades de Tailwind (bg-white, text-gray-600, bg-gray-900…): en vez de
        reescribir cientos de cadenas —y divergir a la primera corrección—, una
-       CAPA DE PIEL las re-mapea a la paleta oscura con mayor especificidad
+       CAPA DE PIEL las re-mapea a esta paleta con mayor especificidad
        (#app .bg-white gana a .bg-white sin importar el orden de los estilos que
-       inyecta el CDN de Tailwind). La UI nueva ya se escribe en clases oscuras. */
-    body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, Roboto, sans-serif;
-           background: #0f172a; color: #e2e8f0; }
+       inyecta el CDN de Tailwind). Paleta permitida: #f5f5f7 · #000000 ·
+       #1d1d1f · #86868b · #98989d · #007AFF · #34C759 · #FF9500 · #FF3B30 ·
+       #FFCC00 y sus rgba. */
+    :root {
+      --bg-primary: #f5f5f7;
+      --bg-card: rgba(255,255,255,0.72);
+      --bg-card-dark: rgba(30,30,32,0.72);
+      --bg-inset: rgba(0,0,0,0.03);
+      --bg-inset-2: rgba(0,0,0,0.05);
+      --campo-bg: rgba(255,255,255,0.85);
+      --text-primary: #1d1d1f;
+      --text-secondary: #86868b;
+      --accent: #007AFF;
+      --accent-light: rgba(0,122,255,0.12);
+      --ok: #34C759;
+      --ok-light: rgba(52,199,89,0.14);
+      --ok-texto: rgba(0,0,0,0.72);
+      --warn: #FF9500;
+      --warn-light: rgba(255,149,0,0.14);
+      --danger: #FF3B30;
+      --danger-light: rgba(255,59,48,0.10);
+      --border: rgba(0,0,0,0.08);
+      --border-dark: rgba(255,255,255,0.10);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+      --radius-sm: 12px;
+      --radius-md: 18px;
+      --radius-lg: 24px;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+      --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
+      --transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      --barra-bg: rgba(245,245,247,0.72);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #000000;
+        --bg-card: rgba(30,30,32,0.72);
+        --bg-inset: rgba(255,255,255,0.04);
+        --bg-inset-2: rgba(255,255,255,0.07);
+        --campo-bg: rgba(30,30,32,0.85);
+        --text-primary: #f5f5f7;
+        --text-secondary: #98989d;
+        --accent-light: rgba(0,122,255,0.22);
+        --ok-light: rgba(52,199,89,0.18);
+        --ok-texto: rgba(255,255,255,0.88);
+        --warn-light: rgba(255,149,0,0.18);
+        --danger-light: rgba(255,59,48,0.16);
+        --border: rgba(255,255,255,0.10);
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+        --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
+        --barra-bg: rgba(0,0,0,0.72);
+      }
+    }
+
+    body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-sans);
+           -webkit-font-smoothing: antialiased; transition: background 0.3s ease, color 0.3s ease; }
     .spin { animation: giro 0.9s linear infinite; }
     @keyframes giro { to { transform: rotate(360deg); } }
     .barra { transition: width .4s ease; }
-    .tarjeta { transition: transform .18s ease, box-shadow .18s ease; }
-    .tarjeta:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,.45); }
-    .num, .tabular-nums { font-variant-numeric: tabular-nums; }
-    .edit { outline: none; }
-    .edit:focus { background: #1e3a8a33; box-shadow: inset 0 0 0 2px #3b82f6; border-radius: 4px; }
+    .tarjeta { transition: var(--transition); }
+    .tarjeta:hover { transform: scale(1.004); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+    .num, .tabular-nums, .font-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .edit { outline: none; border-radius: 4px; }
+    .edit:focus { background: var(--accent-light); box-shadow: inset 0 -2px 0 var(--accent); }
     .celda-edit { min-width: 0; }
 
-    /* pestañas: la activa se ilumina, las demás quedan tenues; el contenido
-       entra con una transición corta */
-    .pestana { color: #64748b; border-bottom: 2px solid transparent; transition: color .15s ease, border-color .15s ease; }
-    .pestana:hover { color: #cbd5e1; }
-    .pestana.activa { color: #f8fafc; border-color: #34d399; }
-    .pestana-movil { color: #64748b; transition: color .15s ease; }
-    .pestana-movil.activa { color: #34d399; }
-    .panel-pestana { animation: entra .18s ease; }
+    /* fondo decorativo de la landing (radial sutil con el acento) */
+    .fondo-decorativo { position: fixed; top: -200px; right: -200px; width: 500px; height: 500px;
+      border-radius: 50%; background: radial-gradient(circle, var(--accent-light) 0%, transparent 70%);
+      pointer-events: none; z-index: -1; }
+    @media (prefers-color-scheme: dark) { .fondo-decorativo { opacity: 0.5; } }
+
+    /* barra superior fija con vidrio */
+    .barra-superior { position: sticky; top: 0; z-index: 50;
+      -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+      background: var(--barra-bg); border-bottom: 1px solid var(--border); }
+
+    /* pestañas: pills — la activa lleva el acento; el contenido entra suave */
+    .pestana { display: inline-flex; align-items: center; height: 32px; padding: 0 12px;
+      border-radius: 8px; font-size: 13px; font-weight: 400; color: var(--text-secondary);
+      transition: var(--transition); }
+    .pestana:hover { color: var(--text-primary); background: var(--bg-inset-2); }
+    .pestana.activa { color: var(--text-primary); background: var(--accent-light); font-weight: 500; }
+    .pestana-movil { color: var(--text-secondary); transition: color .15s ease; }
+    .pestana-movil.activa { color: var(--accent); }
+    .panel-pestana { animation: entra .28s cubic-bezier(0.4, 0, 0.2, 1); }
     @keyframes entra { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
-    /* ── piel oscura sobre las utilidades claras de las plantillas existentes ── */
-    #app .bg-white, #onboarding .bg-white { background-color: #1e293b; }
-    #app .bg-white\/80 { background-color: rgba(15, 23, 42, .85); }
-    #app .bg-gray-50, #onboarding .bg-gray-50 { background-color: #16233a; }
-    #app .bg-gray-100, #onboarding .bg-gray-100 { background-color: #243247; }
-    #app .hover\:bg-gray-50:hover, #app .hover\:bg-gray-100:hover { background-color: #2b3b53; }
-    #app .text-gray-900, #onboarding .text-gray-900 { color: #f1f5f9; }
-    #app .text-gray-800 { color: #e2e8f0; }
-    #app .text-gray-700, #onboarding .text-gray-700 { color: #cbd5e1; }
-    #app .text-gray-600, #onboarding .text-gray-600 { color: #b6c2d4; }
-    #app .text-gray-500, #onboarding .text-gray-500 { color: #94a3b8; }
-    #app .text-gray-400, #onboarding .text-gray-400 { color: #7c8ba1; }
-    #app .text-gray-300 { color: #64748b; }
-    #app .border-gray-100, #app .divide-gray-100 > * + * { border-color: #263449; }
-    #app .border-gray-200, #onboarding .border-gray-200 { border-color: #2e405c; }
-    #app .border-gray-300, #onboarding .border-gray-300 { border-color: #3b4f6e; }
-    #app .ring-gray-900\/5, #onboarding .ring-gray-900\/5 { --tw-ring-color: rgba(148, 163, 184, .14); }
-    #app input, #app select, #app textarea, #onboarding input { background-color: #0f1b2d; color: #e2e8f0; border-color: #3b4f6e; }
-    #app input::placeholder, #app textarea::placeholder { color: #64748b; }
-    #app .bg-gray-900 { background-color: #34d399; color: #052e22; }
-    #app .bg-gray-900 * { color: #052e22; }
-    #app .hover\:bg-gray-700:hover { background-color: #6ee7b7; }
-    #app .text-white { color: #052e22; }
-    #app .text-blue-600 { color: #7dd3fc; }
-    #app .bg-blue-50 { background-color: rgba(59, 130, 246, .12); }
-    #app .bg-green-50, #app .bg-emerald-50 { background-color: rgba(16, 185, 129, .12); }
-    #app .bg-amber-50 { background-color: rgba(245, 158, 11, .12); }
-    #app .bg-red-50 { background-color: rgba(239, 68, 68, .12); }
-    #app .bg-orange-50 { background-color: rgba(249, 115, 22, .12); }
-    #app .bg-purple-100 { background-color: rgba(168, 85, 247, .18); }
-    #app .bg-indigo-100 { background-color: rgba(99, 102, 241, .18); }
-    #app .bg-blue-100 { background-color: rgba(59, 130, 246, .2); }
-    #app .bg-green-100, #app .bg-emerald-100 { background-color: rgba(16, 185, 129, .18); }
-    #app .bg-lime-100 { background-color: rgba(132, 204, 22, .18); }
-    #app .bg-amber-100 { background-color: rgba(245, 158, 11, .18); }
-    #app .bg-red-100 { background-color: rgba(239, 68, 68, .18); }
-    #app .text-green-800, #app .text-green-700, #app .text-emerald-800, #app .text-green-950, #app .text-emerald-950 { color: #6ee7b7; }
-    #app .text-green-900\/60, #app .text-emerald-900\/60 { color: #34d39999; }
-    #app .text-lime-800 { color: #bef264; }
-    #app .text-amber-800, #app .text-amber-700, #app .text-amber-900, #app .text-amber-950 { color: #fcd34d; }
-    #app .text-amber-900\/60 { color: #f59e0b99; }
-    #app .text-red-700, #app .text-red-600, #app .text-red-800, #app .text-red-950 { color: #fca5a5; }
-    #app .text-red-900\/60 { color: #ef444499; }
-    #app .text-blue-800, #app .text-blue-900, #app .text-blue-950 { color: #93c5fd; }
-    #app .text-blue-900\/60 { color: #60a5fa99; }
-    #app .text-orange-800, #app .text-orange-950 { color: #fdba74; }
-    #app .text-orange-900\/60 { color: #f9731699; }
-    #app .text-purple-800 { color: #d8b4fe; }
-    #app .text-indigo-800 { color: #a5b4fc; }
-    #app .text-emerald-900\/60 { color: #34d39999; }
-    #app .bg-blue-50\/60 { background-color: rgba(59, 130, 246, .1); }
-    #app .bg-amber-50\/60 { background-color: rgba(245, 158, 11, .1); }
-    /* los modales comparten piel con la app */
-    #modal-competencia .bg-white, #modal-importar .bg-white { background-color: #1e293b; }
-    #modal-competencia .text-gray-900 { color: #f1f5f9; }
-    #modal-competencia .bg-gray-50, #modal-importar .bg-gray-50 { background-color: #16233a; }
-    #modal-competencia .bg-gray-100, #modal-importar .bg-gray-100 { background-color: #243247; }
-    #modal-competencia input, #modal-importar input { background-color: #0f1b2d; color: #e2e8f0; border-color: #3b4f6e; }
-    #modal-competencia .bg-gray-900, #modal-importar .bg-gray-900 { background-color: #34d399; color: #052e22; }
+    /* barra inferior móvil con vidrio y safe-area */
+    .barra-movil { height: 64px; padding-bottom: env(safe-area-inset-bottom);
+      background: var(--bg-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border); }
 
-    /* la barra inferior móvil deja sitio al final del contenido */
-    @media (max-width: 767px) { main { padding-bottom: 5.5rem; } }
+    /* botón de peligro (Eliminar RUP) */
+    .btn-peligro { background: transparent; border: 1.5px solid var(--danger); color: var(--danger);
+      font-weight: 400; font-size: 13px; padding: 6px 14px; border-radius: 8px;
+      transition: var(--transition); cursor: pointer; }
+    .btn-peligro:hover { background: var(--danger-light); transform: scale(1.02); }
+
+    /* botón principal de la landing: vidrio con el acento */
+    .btn-vidrio-acento { padding: 14px 32px; font-weight: 500; font-size: 16px; color: var(--accent);
+      background: var(--bg-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+      border: 1.5px solid var(--accent); border-radius: var(--radius-sm); cursor: pointer;
+      transition: var(--transition); outline: none; }
+    .btn-vidrio-acento:hover { background: var(--accent); color: #ffffff; transform: scale(1.03); }
+    .btn-vidrio-acento:active { transform: scale(0.98); }
+    .btn-vidrio-acento:focus-visible { box-shadow: 0 0 0 3px var(--accent-light); }
+    .enlace-discreto { color: var(--text-secondary); text-underline-offset: 4px; transition: var(--transition); cursor: pointer; }
+    .enlace-discreto:hover { color: var(--text-primary); }
+    .campo-gate { background: var(--bg-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+      color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+    .campo-gate:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+
+    /* ── piel Apple sobre las utilidades de las plantillas existentes ──
+       Tarjetas: vidrio (translúcido + blur + borde sutil). El blur va SOLO en
+       las tarjetas de nivel superior (rounded-2xl): anidar backdrop-filter en
+       cada chip multiplicaría capas de composición sin aportar nada. */
+    #app .bg-white.rounded-2xl, #onboarding .bg-white.rounded-2xl,
+    #modal-competencia .bg-white, #modal-importar .bg-white, #modal-eliminar .bg-white,
+    details.bg-white {
+      background: var(--bg-card);
+      -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+    }
+    #app .bg-white, #onboarding .bg-white { background-color: var(--bg-card); }
+    #app .shadow-sm { box-shadow: var(--shadow-md); }
+    #app .shadow-xl, #modal-competencia .shadow-xl, #modal-importar .shadow-xl { box-shadow: var(--shadow-md); }
+    #app .bg-gray-50, #onboarding .bg-gray-50, #modal-competencia .bg-gray-50, #modal-importar .bg-gray-50 { background-color: var(--bg-inset); }
+    #app .bg-gray-100, #onboarding .bg-gray-100, #modal-competencia .bg-gray-100, #modal-importar .bg-gray-100 { background-color: var(--bg-inset-2); }
+    #app .hover\:bg-gray-50:hover, #app .hover\:bg-gray-100:hover { background-color: var(--bg-inset-2); }
+    #app .text-gray-900, #onboarding .text-gray-900, #modal-competencia .text-gray-900 { color: var(--text-primary); }
+    #app .text-gray-800, #app .text-gray-700, #onboarding .text-gray-700 { color: var(--text-primary); }
+    #app .text-gray-600, #onboarding .text-gray-600, #app .text-gray-500, #onboarding .text-gray-500,
+    #app .text-gray-400, #onboarding .text-gray-400, #app .text-gray-300 { color: var(--text-secondary); }
+    #app .border-gray-100, #app .divide-gray-100 > * + *, #app .border-gray-200,
+    #onboarding .border-gray-200, #app .border-gray-300, #onboarding .border-gray-300,
+    #modal-importar .border-gray-200 { border-color: var(--border); }
+    #app .ring-gray-900\/5, #onboarding .ring-gray-900\/5 { --tw-ring-color: var(--border); }
+    #app input:not([type=checkbox]):not([type=file]), #app select, #app textarea,
+    #onboarding input:not([type=file]), #modal-competencia input, #modal-importar input {
+      background-color: var(--campo-bg); color: var(--text-primary); border-color: var(--border); border-radius: var(--radius-sm); }
+    #app input::placeholder, #app textarea::placeholder { color: var(--text-secondary); }
+    #app input:focus, #app select:focus, #app textarea:focus {
+      border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-light); }
+    /* botón primario: las plantillas dicen bg-gray-900 y aquí es el acento */
+    #app .bg-gray-900, #modal-competencia .bg-gray-900, #modal-importar .bg-gray-900,
+    #app .file\:bg-gray-900::file-selector-button { background-color: var(--accent); color: #ffffff; }
+    #app .hover\:bg-gray-700:hover, #modal-competencia .hover\:bg-gray-700:hover,
+    #modal-importar .hover\:bg-gray-700:hover { background-color: var(--accent); filter: brightness(1.1); }
+    #app button, #modal-competencia button, #modal-importar button, #modal-eliminar button,
+    #onboarding button { transition: var(--transition); }
+    #app .text-blue-600 { color: var(--accent); }
+    /* familias semánticas → verde/ámbar/rojo/acento del sistema */
+    #app .bg-blue-50, #app .bg-blue-100, #app .bg-blue-50\/60, #app .bg-indigo-100, #app .bg-purple-100 { background-color: var(--accent-light); }
+    #app .bg-green-50, #app .bg-emerald-50, #app .bg-green-100, #app .bg-emerald-100, #app .bg-lime-100 { background-color: var(--ok-light); }
+    #app .bg-amber-50, #app .bg-amber-100, #app .bg-orange-50, #app .bg-amber-50\/60 { background-color: var(--warn-light); }
+    #app .bg-red-50, #app .bg-red-100 { background-color: var(--danger-light); }
+    #app .text-green-800, #app .text-green-700, #app .text-emerald-800, #app .text-green-950,
+    #app .text-emerald-950, #app .text-lime-800, #app .text-emerald-900, #app .text-green-900 { color: var(--ok-texto); }
+    #app .text-green-900\/60, #app .text-emerald-900\/60, #app .text-emerald-700\/70, #app .text-green-700\/70 { color: rgba(52,199,89,0.9); }
+    #app .text-amber-800, #app .text-amber-700, #app .text-amber-900, #app .text-amber-950,
+    #app .text-orange-800, #app .text-orange-950 { color: var(--text-primary); }
+    #app .text-amber-900\/60, #app .text-orange-900\/60, #app .text-amber-700\/70 { color: var(--warn); }
+    #app .text-red-700, #app .text-red-600, #app .text-red-800, #app .text-red-950 { color: var(--danger); }
+    #app .text-red-900\/60 { color: rgba(255,59,48,0.7); }
+    #app .text-blue-800, #app .text-blue-900, #app .text-blue-950, #app .text-purple-800, #app .text-indigo-800 { color: var(--accent); }
+    #app .text-blue-900\/60, #app .text-blue-700\/70 { color: rgba(0,122,255,0.7); }
+    /* filas alternas sutiles en las tablas */
+    #app tbody tr:nth-child(even) { background-color: rgba(0,0,0,0.012); }
+    @media (prefers-color-scheme: dark) { #app tbody tr:nth-child(even) { background-color: rgba(255,255,255,0.02); } }
+    /* la tabla del editor puede llevar 200-300 ítems: aislar su layout */
+    #tab-apu .overflow-x-auto { contain: layout style; }
+    /* el velo de los modales es neutro, no del tema viejo */
+    .modal-velo { background: rgba(0,0,0,0.4); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+    #modal-eliminar .text-gray-600 { color: var(--text-secondary); }
+    #modal-eliminar .border-gray-300 { border-color: var(--border); }
+    #modal-eliminar .hover\:bg-gray-100:hover { background-color: var(--bg-inset-2); }
+    #modal-eliminar .ring-gray-900\/5 { --tw-ring-color: var(--border); }
+
+    /* móvil: hoja estilo iOS para los modales y sitio para la barra inferior */
+    @media (max-width: 767px) {
+      main { padding-bottom: 5.5rem; }
+      #modal-competencia { align-items: flex-end; padding: 0; }
+      #modal-competencia > .relative { max-width: 100%; max-height: 92vh; border-radius: var(--radius-md) var(--radius-md) 0 0; }
+    }
   </style>
 </head>
 <body class="antialiased">
@@ -108,36 +208,36 @@
        clave; onboarding.js maneja todo lo que pasa dentro. El PDF se lee en el
        NAVEGADOR: al servidor solo viaja el texto extraído. -->
   <div id="onboarding" class="min-h-screen">
+    <div class="fondo-decorativo" aria-hidden="true"></div>
     <main class="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-6 py-16 text-center">
-      <div class="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-2xl text-slate-950">◔</div>
-      <h1 class="text-4xl font-semibold leading-tight tracking-tight text-slate-50 sm:text-5xl">Convertí tu RUP en contratos.</h1>
-      <p class="mt-5 max-w-xl text-lg leading-relaxed text-slate-400">
-        Subí tu RUP. Te mostramos solo las licitaciones que podés ganar, cuánto ofertar, y cuánto ganarías.
-        Como si la app hubiera sido construida exclusivamente para tu empresa.
+      <div class="mb-6 text-[80px] leading-none" aria-hidden="true">📋</div>
+      <h1 class="max-w-[600px] text-[28px] font-extralight leading-[1.15] tracking-[-0.5px] sm:text-[40px]"
+          style="color: var(--text-primary);">Convertí tu RUP en contratos.</h1>
+      <p class="mt-3 max-w-[480px] text-[15px] font-light leading-[1.5] sm:text-[17px]" style="color: var(--text-secondary);">
+        Subí tu certificado RUP de Cámara de Comercio. Te mostramos solo las licitaciones que podés ganar,
+        cuánto ofertar y cuánto ganarías.
       </p>
 
-      <button id="btn-subir-rup" type="button"
-              class="mt-10 rounded-2xl bg-emerald-500 px-10 py-4 text-lg font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-500/30">
-        SUBIR RUP (PDF)
+      <button id="btn-subir-rup" type="button" class="btn-vidrio-acento mt-8 w-full max-w-xs sm:w-auto">
+        Subir RUP (PDF)
       </button>
       <input id="rup-archivo" type="file" accept="application/pdf,.pdf" class="hidden" aria-label="Certificado RUP en PDF">
-      <p class="mt-3 text-xs text-slate-500">El PDF se lee en tu navegador; al servidor solo viaja el texto extraído para armar tu perfil.</p>
+      <p class="mt-3 text-xs" style="color: var(--text-secondary);">El PDF se lee en tu navegador; al servidor solo viaja el texto extraído para armar tu perfil.</p>
 
       <!-- progreso de la extracción -->
       <div id="rup-progreso" class="mt-8 hidden w-full max-w-md">
-        <div class="h-2 w-full overflow-hidden rounded-full bg-slate-700">
-          <div id="rup-barra" class="h-2 rounded-full bg-emerald-500 transition-all" style="width:0%"></div>
+        <div class="h-2 w-full overflow-hidden rounded-full" style="background: var(--bg-inset-2);">
+          <div id="rup-barra" class="h-2 rounded-full transition-all" style="width:0%; background: var(--accent);"></div>
         </div>
-        <p id="rup-progreso-msg" class="mt-2 text-sm text-slate-400">Preparando…</p>
+        <p id="rup-progreso-msg" class="mt-2 text-sm" style="color: var(--text-secondary);">Preparando…</p>
       </div>
 
       <!-- resultado / error -->
       <div id="rup-mensaje" class="mt-6 hidden w-full max-w-md rounded-xl px-4 py-3 text-left text-sm"></div>
-      <ul id="rup-avisos" class="mt-3 hidden w-full max-w-md space-y-1 text-left text-xs text-amber-300"></ul>
+      <ul id="rup-avisos" class="mt-3 hidden w-full max-w-md space-y-1 text-left text-xs" style="color: var(--warn);"></ul>
 
-      <div class="mt-12 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
-        <button id="btn-ir-gate" type="button"
-                class="text-slate-400 underline decoration-dotted underline-offset-4 transition hover:text-slate-100">
+      <div class="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
+        <button id="btn-ir-gate" type="button" class="enlace-discreto underline decoration-dotted">
           Acceso con clave (perfiles existentes)
         </button>
       </div>
@@ -148,48 +248,47 @@
        Nace oculto: la primera pantalla es el onboarding. Se abre desde
        «Acceso con clave» (onboarding.js) o no llega a verse si ya hay
        sesión o un perfil de RUP guardado (app.js). -->
-  <div id="gate" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950">
+  <div id="gate" class="fixed inset-0 z-50 hidden items-center justify-center" style="background: var(--bg-primary);">
     <div class="w-full max-w-sm px-8 text-center">
-      <div class="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-2xl text-slate-950">◔</div>
-      <h1 class="text-2xl font-semibold tracking-tight text-slate-50">Portafolio Estratégico</h1>
-      <p class="mt-1 text-sm text-slate-400">Sitio privado. Ingrese la clave de acceso.</p>
+      <div class="mx-auto mb-6 text-5xl" aria-hidden="true">📋</div>
+      <h1 class="text-2xl font-light tracking-tight" style="color: var(--text-primary); letter-spacing: -0.3px;">Portafolio</h1>
+      <p class="mt-1 text-sm" style="color: var(--text-secondary);">Sitio privado. Ingrese la clave de acceso.</p>
       <form id="gate-form" class="mt-6">
         <input id="gate-clave" type="password" inputmode="numeric" autocomplete="off" autofocus
-               class="w-full rounded-xl border border-slate-600 bg-slate-900 px-4 py-3 text-center text-lg tracking-widest text-slate-100 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
+               class="campo-gate w-full px-4 py-3 text-center text-lg tracking-widest outline-none"
                placeholder="••••••" aria-label="Clave de acceso">
-        <button type="submit"
-                class="mt-3 w-full rounded-xl bg-emerald-500 py-3 font-medium text-slate-950 transition hover:bg-emerald-400">
+        <button type="submit" class="btn-vidrio-acento mt-3 w-full py-3 text-sm">
           Entrar
         </button>
       </form>
-      <p id="gate-error" class="mt-4 hidden text-sm font-medium text-red-400"></p>
+      <p id="gate-error" class="mt-4 hidden text-sm font-medium" style="color: var(--danger);"></p>
     </div>
   </div>
 
   <!-- ══════════ App unificada: una página, tres pestañas ══════════ -->
   <div id="app" class="hidden">
-    <header class="sticky top-0 z-20 border-b border-slate-800 bg-slate-900/85 backdrop-blur">
-      <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-3">
+    <header class="barra-superior">
+      <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-2">
         <div class="flex items-center gap-3">
-          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-lg text-slate-950">◔</div>
           <div>
-            <h1 class="text-base font-semibold tracking-tight text-slate-50">Portafolio Estratégico</h1>
-            <p class="hidden text-[11px] text-slate-500 sm:block">SECOP II en vivo · APU · administración</p>
+            <h1 class="text-lg font-light" style="color: var(--text-primary); letter-spacing: -0.3px;">Portafolio</h1>
+            <p class="hidden text-[11px] sm:block" style="color: var(--text-secondary);">SECOP II en vivo · APU · administración</p>
           </div>
         </div>
 
         <!-- pestañas (escritorio) -->
-        <nav class="order-3 -mb-px hidden items-center gap-6 md:flex" aria-label="Secciones">
-          <button type="button" data-tab="licitaciones" class="pestana activa px-1 pb-2 pt-1 text-sm font-medium">🏠 Licitaciones</button>
-          <button type="button" data-tab="apu" class="pestana px-1 pb-2 pt-1 text-sm font-medium">📊 APU</button>
-          <button type="button" data-tab="admin" class="pestana px-1 pb-2 pt-1 text-sm font-medium">⚙️ Administración</button>
+        <nav class="order-3 hidden items-center gap-1 md:flex" aria-label="Secciones">
+          <button type="button" data-tab="licitaciones" class="pestana activa">🏠 Licitaciones</button>
+          <button type="button" data-tab="apu" class="pestana">📊 APU</button>
+          <button type="button" data-tab="admin" class="pestana">⚙️ Administración</button>
         </nav>
 
         <div class="flex items-center gap-3">
-          <span id="sello-sync" class="hidden rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-400 lg:inline-block"></span>
+          <span id="sello-sync" class="hidden rounded-full px-3 py-1 text-xs lg:inline-block"
+                style="background: var(--bg-inset-2); color: var(--text-secondary);"></span>
           <label class="flex items-center gap-2">
-            <span class="hidden text-[11px] uppercase tracking-wide text-slate-500 sm:inline">Perfil</span>
-            <select id="f-perfil" class="rounded-lg border-slate-600 bg-slate-900 py-1.5 text-sm text-slate-100 focus:border-emerald-400 focus:ring-emerald-400/20">
+            <span class="hidden text-[11px] uppercase tracking-wide sm:inline" style="color: var(--text-secondary);">Perfil</span>
+            <select id="f-perfil" class="rounded-lg py-1.5 text-sm">
               <option value="helder">Helder (persona natural)</option>
               <option value="genesis">Génesis GIC SAS (persona jurídica)</option>
               <option value="juntos">Consorcio Helder + Génesis</option>
@@ -200,11 +299,11 @@
     </header>
 
     <!-- pestañas (móvil): barra inferior estilo app nativa -->
-    <nav class="fixed inset-x-0 bottom-0 z-20 border-t border-slate-800 bg-slate-900/95 backdrop-blur md:hidden" aria-label="Secciones (móvil)">
-      <div class="mx-auto grid max-w-md grid-cols-3">
-        <button type="button" data-tab="licitaciones" class="pestana-movil activa flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium"><span class="text-lg leading-none">🏠</span>Licitaciones</button>
-        <button type="button" data-tab="apu" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium"><span class="text-lg leading-none">📊</span>APU</button>
-        <button type="button" data-tab="admin" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium"><span class="text-lg leading-none">⚙️</span>Admin</button>
+    <nav class="barra-movil fixed inset-x-0 bottom-0 z-20 md:hidden" aria-label="Secciones (móvil)">
+      <div class="mx-auto grid h-full max-w-md grid-cols-3 items-center">
+        <button type="button" data-tab="licitaciones" class="pestana-movil activa flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><span class="text-xl leading-none">🏠</span>Licitaciones</button>
+        <button type="button" data-tab="apu" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><span class="text-xl leading-none">📊</span>APU</button>
+        <button type="button" data-tab="admin" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><span class="text-xl leading-none">⚙️</span>Admin</button>
       </div>
     </nav>
 
@@ -292,30 +391,30 @@
 
       <!-- Estados -->
       <div id="estado-carga" class="mt-10 hidden text-center">
-        <div class="spin mx-auto h-8 w-8 rounded-full border-2 border-slate-600 border-t-emerald-400"></div>
-        <p id="estado-carga-msg" class="mt-3 text-sm text-slate-400">Buscando oportunidades…</p>
+        <div class="spin mx-auto h-8 w-8 rounded-full border-2" style="border-color: var(--border); border-top-color: var(--accent);"></div>
+        <p id="estado-carga-msg" class="mt-3 text-sm text-gray-500">Buscando oportunidades…</p>
       </div>
 
       <div id="estado-error" class="mt-10 hidden text-center">
-        <p id="estado-error-msg" class="mx-auto max-w-md text-sm text-slate-300"></p>
+        <p id="estado-error-msg" class="mx-auto max-w-md text-sm text-gray-600"></p>
         <button id="btn-reintentar"
-                class="mt-4 rounded-xl border border-slate-600 bg-slate-800 px-5 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-700">
+                class="mt-4 rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
           Reintentar
         </button>
       </div>
 
-      <div id="estado-vacio" class="mt-10 hidden text-center text-sm text-slate-400">
+      <div id="estado-vacio" class="mt-10 hidden text-center text-sm text-gray-500">
         No se encontraron oportunidades con estos filtros.
       </div>
 
       <!-- Resultados -->
       <section id="resultados" class="mt-8 hidden">
-        <p id="resumen-resultados" class="mb-4 text-sm text-slate-400"></p>
+        <p id="resumen-resultados" class="mb-4 text-sm text-gray-500"></p>
         <div id="lista" class="grid gap-4"></div>
         <div id="paginacion" class="mt-6 flex items-center justify-center gap-3 text-sm"></div>
       </section>
 
-      <footer class="pb-6 pt-10 text-center text-xs text-slate-600">
+      <footer class="pb-6 pt-10 text-center text-xs text-gray-400">
         Datos abiertos de SECOP II (Colombia Compra Eficiente, dataset p6dx-8zbt). El orden «más atractivas»
         pone primero las entidades donde históricamente se presenta menos gente. Ninguno reemplaza la lectura
         del pliego. Sitio privado.
@@ -324,11 +423,11 @@
 
     <!-- ════════════════════ PESTAÑA 2 · APU ════════════════════ -->
     <main id="tab-apu" class="panel-pestana mx-auto hidden max-w-7xl px-5 py-8">
-      <div id="aviso-precios" class="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-2.5 text-center text-xs text-amber-200"></div>
+      <div id="aviso-precios" class="mb-6 rounded-xl bg-amber-50 px-5 py-2.5 text-center text-xs text-amber-900 ring-1 ring-inset ring-amber-600/20"></div>
 
       <!-- ══════ Paso 1 · ¿Qué vas a construir? ══════ -->
       <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-slate-950">1</span>¿Qué vas a construir?</h2>
+        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">1</span>¿Qué vas a construir?</h2>
         <p class="mt-1 text-sm text-gray-500">
           Pegue el objeto de la licitación y pulse «Inferir ítems», o cargue directamente un Excel con sus
           ítems y cantidades. También puede leer el formulario de cantidades de un pliego en PDF, más abajo.
@@ -562,7 +661,7 @@
 
         <div id="ps-cuerpo" class="hidden">
           <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="rounded-2xl bg-green-50 p-4 ring-1 ring-inset ring-emerald-500/30">
+            <div class="rounded-2xl bg-green-50 p-4 ring-1 ring-inset ring-green-600/20">
               <p class="text-xs font-medium uppercase tracking-wide text-green-900/60">Precio óptimo</p>
               <p id="ps-precio" class="mt-1 text-2xl font-semibold tabular-nums text-green-950">—</p>
               <p id="ps-precio-nota" class="text-xs text-green-900/60"></p>
@@ -622,7 +721,7 @@
 
       <!-- ══════ Paso 2 · ¿Dónde? (y configuración) ══════ -->
       <section class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-slate-950">2</span>¿Dónde?</h2>
+        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">2</span>¿Dónde?</h2>
         <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <label class="block">
             <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Departamento</span>
@@ -706,7 +805,7 @@
       <section class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-slate-950">3</span>Ítems y cálculo</h2>
+            <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">3</span>Ítems y cálculo</h2>
             <p class="mt-1 text-sm text-gray-500">Cantidad y precio manual son editables. Pulse un ítem para ver su desglose (materiales · mano de obra · equipo · transporte).</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -852,6 +951,15 @@
         <div class="mt-6 border-t border-gray-100 pt-4">
           <h3 class="text-sm font-semibold tracking-tight">RUP actual</h3>
           <div id="rup-actual" class="mt-2 text-sm text-gray-600">—</div>
+        </div>
+
+        <!-- Zona de riesgo: separada por un divisor y 16px, como manda el sistema -->
+        <div class="mt-6 border-t border-gray-100 pt-4">
+          <div class="flex flex-wrap items-center gap-4">
+            <button id="btn-eliminar-rup" type="button" class="btn-peligro">🗑 Eliminar RUP</button>
+            <span class="text-xs text-gray-500">Eliminarás todos los filtros y datos asociados al perfil activo.</span>
+          </div>
+          <p id="eliminar-rup-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
         </div>
       </section>
 
@@ -1336,7 +1444,7 @@
   <!-- ══════════ Modal de AUDITORÍA (competencia + desglose de probabilidad) ══════════ -->
   <div id="modal-competencia" class="fixed inset-0 z-50 hidden items-center justify-center p-4"
        role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
-    <div id="modal-fondo" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
+    <div id="modal-fondo" class="modal-velo absolute inset-0"></div>
     <div class="relative flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-xl ring-1 ring-gray-900/5">
       <header class="flex items-start justify-between gap-4 border-b border-gray-100 p-5">
         <div class="min-w-0">
@@ -1358,8 +1466,25 @@
     </div>
   </div>
 
+  <!-- ══════════ Modal de confirmación · Eliminar RUP ══════════
+       El texto lo fija app.js según el TIPO de perfil: borrar un perfil subido
+       en PDF no es lo mismo que revertir el RUP cargado del dueño, y un modal
+       que prometiera borrar lo que no borra estaría mintiendo. -->
+  <div id="modal-eliminar" class="modal-velo fixed inset-0 z-50 hidden items-center justify-center p-4"
+       role="dialog" aria-modal="true" aria-labelledby="modal-eliminar-titulo">
+    <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl ring-1 ring-gray-900/5">
+      <h2 id="modal-eliminar-titulo" class="text-lg font-semibold tracking-tight">¿Eliminar este RUP?</h2>
+      <p id="modal-eliminar-texto" class="mt-2 text-sm text-gray-600"></p>
+      <div class="mt-5 flex items-center justify-end gap-3">
+        <button id="btn-eliminar-cancelar" type="button"
+                class="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">Cancelar</button>
+        <button id="btn-eliminar-confirmar" type="button" class="btn-peligro">Eliminar definitivamente</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ══════════ Modal de vista previa de la importación de Excel ══════════ -->
-  <div id="modal-importar" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-950/70 p-4">
+  <div id="modal-importar" class="modal-velo fixed inset-0 z-40 hidden items-center justify-center p-4">
     <div class="flex max-h-[90vh] w-full max-w-5xl flex-col rounded-2xl bg-white p-6 shadow-xl">
       <div class="flex items-baseline justify-between gap-3">
         <h3 class="font-semibold tracking-tight">Vista previa de la importación</h3>

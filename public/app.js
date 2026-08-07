@@ -451,14 +451,54 @@
     conservador: "Sin histórico de la entidad ni del departamento: supuesto conservador de 5 rivales",
   };
 
-  /* «Prob. estimada» es CLICABLE (ago 2026): abre el desglose paso a paso.
-     El subrayado punteado es lo que anuncia que se puede pulsar — un número que
+  /* ══════════ Probabilidad en LENGUAJE CLARO (encargo, ago 2026) ══════════
+     El porcentaje seco («23 %») exigía saber si eso es bueno o malo en este
+     mercado; la tarjeta lo traduce a una frase con semáforo. La CIFRA no se
+     pierde: vive en el modal de desglose (seis pasos con fórmulas y fuentes),
+     que se abre pulsando la frase. Los rangos son los del encargo, y `null` es
+     «Sin información suficiente» — JAMÁS un 0 %, que afirmaría «imposible»
+     sobre un proceso del que no se sabe nada (la regla de anticipo_pct = 0). */
+  function fraseProbabilidad(p) {
+    const n = Number(p);
+    if (p == null || !Number.isFinite(n)) return { icono: "⚪", frase: "Sin información suficiente" };
+    if (n > 0.40) return { icono: "🟢", frase: "Probabilidad muy alta" };
+    if (n >= 0.20) return { icono: "🟡", frase: "Buena probabilidad" };
+    if (n >= 0.10) return { icono: "🟠", frase: "Probabilidad media" };
+    return { icono: "🔴", frase: "Poco probable" };
+  }
+
+  /* UNA frase (≤12 palabras) con el factor principal, en orden de prioridad
+     del encargo. Ninguna interpola una cifra sin base: es la invariante de
+     `bandaCompetencia` aplicada al texto. */
+  function motivoProbabilidad(l) {
+    const comp = l.competencia_entidad || {};
+    const baja = l.baja_mercado || {};
+    const promedio = comp.promedio_oferentes == null ? null : Number(comp.promedio_oferentes);
+    const procesos = Number(comp.total_procesos);
+    const conComp = Number.isFinite(procesos) && procesos > 0 && promedio != null && !isNaN(promedio);
+    if (comp.nivel === "baja" && conComp && promedio <= 2) {
+      return `Poca competencia en esta entidad (~${fmtNum.format(promedio)} oferentes).`;
+    }
+    if (l._cierre_prorrogado) return "El cierre fue prorrogado, tenés más tiempo.";
+    const ajustes = (l.p_ganar_detalle || {}).ajustes || [];
+    if (ajustes.some((a) => /colisi/i.test(a.nombre || "") && a.factor !== 1)) {
+      return "Varios procesos cierran el mismo día.";
+    }
+    const mediana = baja.baja_mediana == null ? null : Number(baja.baja_mediana);
+    const conBaja = baja.nivel && baja.nivel !== "sin_dato" && mediana != null && !isNaN(mediana);
+    if (conBaja && mediana > 5) return "Esta entidad suele adjudicar con descuento.";
+    if (conBaja && mediana < 2) return "Esta entidad adjudica cerca del presupuesto.";
+    if (conComp) return `Basado en ${fmt.format(procesos)} procesos históricos de esta entidad.`;
+    return "Sin histórico de la entidad: supuesto conservador de 5 rivales.";
+  }
+
+  /* La frase es CLICABLE (ago 2026): abre el desglose paso a paso.
+     El subrayado punteado es lo que anuncia que se puede pulsar — un texto que
      esconde un modal sin ninguna marca es un modal que nadie encuentra. El
      `title` con el resumen de los ajustes SE CONSERVA: sigue siendo la
      respuesta de 1 segundo, y el modal es la de 30. */
   function bloqueProbabilidad(l) {
     const d = l.p_ganar_detalle || {};
-    const pct = Math.round((Number(l.p_ganar) || 0) * 100);
     /* `a.factor` puede venir en `null`: sin token, lib/publico redacta el factor
        del ajuste por baja de mercado (es invertible y revelaría la mediana que
        `baja_mercado` acaba de ocultar). Sin esta guarda el cliente público —que
@@ -472,9 +512,11 @@
     // sin id no hay nada que consultar: se pinta el texto de siempre, no un
     // botón que al pulsarlo tenga que disculparse
     const id = l.id_del_proceso || "";
-    const cifra = `Prob. estimada: <strong class="tabular-nums text-gray-900">${pct}%</strong>`;
+    const et = fraseProbabilidad(l.p_ganar);
+    const cifra = `<span aria-hidden="true">${et.icono}</span> <strong class="text-gray-900">${esc(et.frase)}</strong>`;
     return `
-      <div class="mt-4 flex flex-wrap items-baseline gap-x-6 gap-y-1 rounded-xl bg-gray-50 px-4 py-3">
+      <div class="mt-4 rounded-xl bg-gray-50 px-4 py-3">
+        <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1">
         ${id
     ? `<button type="button" class="detalle-probabilidad cursor-pointer text-left text-sm text-gray-600 underline decoration-dotted decoration-gray-400 underline-offset-4 transition hover:text-gray-900 hover:decoration-gray-900"
              data-id="${esc(id)}" data-objeto="${esc(l.nombre_del_procedimiento || id)}" title="${esc(titulo)}">
@@ -484,7 +526,8 @@
         <span class="text-sm text-gray-600">
           Valor esperado: <strong class="tabular-nums text-gray-900">${esc(fmtCorto(l.ve))}</strong>
         </span>
-        <span class="text-xs text-gray-400">${esc(FUENTE_P[d.fuente] ? d.fuente : "")}</span>
+        </div>
+        <p class="mt-1 text-xs text-gray-400">${esc(motivoProbabilidad(l))}</p>
       </div>`;
   }
 
@@ -750,10 +793,12 @@
     const p = d.proceso || {};
     textoParaCopiar = d.justificacion_texto || "";
     $("modal-copiar").classList.toggle("hidden", !textoParaCopiar);
+    const et = fraseProbabilidad(d.probabilidad_final);
     $("modal-cuerpo").innerHTML = `
       <div class="rounded-2xl bg-gray-50 px-5 py-4">
         <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Probabilidad de adjudicación</p>
         <p class="mt-1 text-4xl font-semibold tabular-nums tracking-tight">${fmtNum.format(d.probabilidad_final_pct)}%</p>
+        <p class="mt-1 text-sm text-gray-600"><span aria-hidden="true">${et.icono}</span> ${esc(et.frase)}</p>
         <p class="mt-1 text-xs text-gray-500">
           ${esc(p.entidad || "")}${p.departamento ? ` · ${esc(p.departamento)}` : ""}
           ${p.cuantia_cop ? ` · ${esc(fmtCorto(p.cuantia_cop))}` : ""}
@@ -1979,20 +2024,22 @@
     const actual = o.punto_actual;
     const dentro = actual && Number.isFinite(actual.descuento) && actual.descuento >= x0 && actual.descuento <= x1;
 
+    /* colores de la paleta Apple: acento #007AFF, textos #86868b — el SVG no
+       hereda las custom properties del tema, así que van literales */
     return `<svg viewBox="0 0 ${W} ${H}" class="h-44 w-full min-w-[560px]" role="img"
       aria-label="Valor esperado de la ganancia según el descuento sobre el presupuesto oficial">
-      <line x1="${mL}" y1="${cero.toFixed(1)}" x2="${W - mR}" y2="${cero.toFixed(1)}" stroke="#d1d5db" stroke-dasharray="3 3"/>
-      <polyline points="${linea}" fill="none" stroke="#2563eb" stroke-width="2"/>
+      <line x1="${mL}" y1="${cero.toFixed(1)}" x2="${W - mR}" y2="${cero.toFixed(1)}" stroke="rgba(134,134,139,0.45)" stroke-dasharray="3 3"/>
+      <polyline points="${linea}" fill="none" stroke="#007AFF" stroke-width="2"/>
       <line x1="${px(op.descuento).toFixed(1)}" y1="${mT}" x2="${px(op.descuento).toFixed(1)}" y2="${H - mB}"
-            stroke="#2563eb" stroke-width="1" stroke-dasharray="2 3"/>
-      <circle cx="${px(op.descuento).toFixed(1)}" cy="${py(op.veg).toFixed(1)}" r="4" fill="#2563eb"/>
+            stroke="#007AFF" stroke-width="1" stroke-dasharray="2 3"/>
+      <circle cx="${px(op.descuento).toFixed(1)}" cy="${py(op.veg).toFixed(1)}" r="4" fill="#007AFF"/>
       ${dentro ? `<circle cx="${px(actual.descuento).toFixed(1)}" cy="${py(actual.veg).toFixed(1)}" r="4"
-            fill="none" stroke="#111827" stroke-width="2"/>` : ""}
-      <text x="${mL}" y="${H - 10}" font-size="11" fill="#9ca3af">${esc(nf2.format(x0))} %</text>
-      <text x="${W - mR}" y="${H - 10}" font-size="11" fill="#9ca3af" text-anchor="end">${esc(nf2.format(x1))} %</text>
-      <text x="${px(op.descuento).toFixed(1)}" y="${H - 10}" font-size="11" fill="#2563eb" text-anchor="middle">óptimo ${esc(nf2.format(op.descuento))} %</text>
-      <text x="4" y="${(py(y1) + 4).toFixed(1)}" font-size="11" fill="#9ca3af">${esc(copRent(y1))}</text>
-      ${cero - py(y1) >= 14 ? `<text x="4" y="${(cero + 4).toFixed(1)}" font-size="11" fill="#9ca3af">$0</text>` : ""}
+            fill="none" stroke="#86868b" stroke-width="2"/>` : ""}
+      <text x="${mL}" y="${H - 10}" font-size="11" fill="#86868b">${esc(nf2.format(x0))} %</text>
+      <text x="${W - mR}" y="${H - 10}" font-size="11" fill="#86868b" text-anchor="end">${esc(nf2.format(x1))} %</text>
+      <text x="${px(op.descuento).toFixed(1)}" y="${H - 10}" font-size="11" fill="#007AFF" text-anchor="middle">óptimo ${esc(nf2.format(op.descuento))} %</text>
+      <text x="4" y="${(py(y1) + 4).toFixed(1)}" font-size="11" fill="#86868b">${esc(copRent(y1))}</text>
+      ${cero - py(y1) >= 14 ? `<text x="4" y="${(cero + 4).toFixed(1)}" font-size="11" fill="#86868b">$0</text>` : ""}
     </svg>`;
   }
 
@@ -2881,6 +2928,121 @@
     // auditoría — tres copias del Blob + <a> temporal era una de más
     descargarJSON({ perfiles: cuerpo.perfiles }, `rup_${new Date().toISOString().slice(0, 10)}.json`);
     mensajeRup("Archivo descargado. Edítelo y vuelva a subirlo para actualizar el RUP.", "ok");
+  });
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     ELIMINAR RUP (DELETE /api/admin/rup?perfil=…, ago 2026)
+     --------------------------------------------------------------------------
+     Un RUP equivocado dejaba la app inservible: no había cómo quitarlo. El
+     botón vive en la sección «Perfiles y RUP» y opera sobre el PERFIL ACTIVO
+     del selector de la cabecera. Dos semánticas, y el modal dice cuál aplica:
+       · perfil `rup_…` (subido en PDF): el perfil DEJA DE EXISTIR — se olvida
+         el guardado del navegador y se vuelve a la landing;
+       · perfil del dueño: su entrada del archivo cargado se elimina y el
+         perfil VUELVE a los valores del repositorio (no desaparece: quedarse
+         sin perfiles dejaría la app muda, regla de lib/perfiles).
+     La confirmación es un modal propio: un borrado con `confirm()` del
+     navegador no puede explicar qué se pierde y qué se conserva. */
+  let eliminarEnVuelo = false;
+
+  function mensajeEliminar(texto, tipo) {
+    const p = $("eliminar-rup-mensaje");
+    if (!texto) return p.classList.add("hidden");
+    p.className = "mt-3 rounded-xl px-4 py-3 text-sm " + ({
+      ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
+      error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
+      aviso: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20",
+    }[tipo] || "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20");
+    p.textContent = texto;
+  }
+
+  /* mismo contrato de visibilidad que los otros modales: clases + display en
+     línea, porque `hidden` y `flex` compiten por la misma propiedad CSS */
+  function abrirModalEliminar() {
+    const perfil = $("f-perfil").value;
+    const nombre = $("f-perfil").selectedOptions[0] ? $("f-perfil").selectedOptions[0].text : perfil;
+    $("modal-eliminar-texto").textContent = ID_RUP_RE.test(perfil)
+      ? "Perderás los filtros, los presupuestos guardados y los datos asociados a tu RUP subido. "
+        + "Esta acción no se puede deshacer: para volver a usar la aplicación tendrás que subir el PDF de nuevo."
+      : `El perfil «${nombre}» volverá a los valores del repositorio (RUP corte 31/12/2025): se pierde el `
+        + "archivo cargado y sus filtros derivados. Esta acción no se puede deshacer. Los presupuestos "
+        + "guardados y la experiencia cargada no se tocan.";
+    $("modal-eliminar").classList.remove("hidden");
+    $("modal-eliminar").classList.add("flex");
+    $("modal-eliminar").style.display = "flex";
+  }
+  function cerrarModalEliminar() {
+    $("modal-eliminar").classList.add("hidden");
+    $("modal-eliminar").classList.remove("flex");
+    $("modal-eliminar").style.display = "none";
+  }
+
+  async function eliminarRupActivo() {
+    if (eliminarEnVuelo) return;
+    eliminarEnVuelo = true;
+    const btn = $("btn-eliminar-confirmar");
+    btn.disabled = true;                       // un doble clic borraría dos veces
+    const etiqueta = btn.textContent;
+    btn.textContent = "Eliminando…";
+    const perfil = $("f-perfil").value;
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch(`/api/admin/rup?perfil=${encodeURIComponent(perfil)}`, {
+        method: "DELETE",
+        headers: { "x-historico-token": leerToken(), Accept: "application/json" },
+      });
+    } catch (e) {
+      eliminarEnVuelo = false;
+      btn.disabled = false;
+      btn.textContent = etiqueta;
+      cerrarModalEliminar();
+      return mensajeEliminar(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
+    }
+    /* el parseo va APARTE del fetch: el muro del edge responde HTML */
+    try { cuerpo = await r.json(); } catch { cuerpo = null; }
+    eliminarEnVuelo = false;
+    btn.disabled = false;
+    btn.textContent = etiqueta;
+    cerrarModalEliminar();
+
+    if (r.status === 401) {
+      return mensajeEliminar("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      return mensajeEliminar((cuerpo && cuerpo.error)
+        || (cuerpo === null
+          ? `El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`
+          : `Error del servidor (${r.status}).`), "error");
+    }
+
+    if (cuerpo.tipo === "dinamico" || cuerpo.sin_perfiles) {
+      /* el perfil dejó de existir: se olvida el guardado, se limpia la URL
+         (dejar ?perfil=rup_… provocaría un 404 de caducado al recargar) y la
+         vista vuelve a la LANDING, que es donde se sube un RUP nuevo */
+      olvidarPerfilRup();
+      try { history.replaceState(null, "", location.pathname); } catch { /* entorno raro */ }
+      $("app").classList.add("hidden");
+      const ob = document.getElementById("onboarding");
+      if (ob) ob.classList.remove("hidden");
+      try { window.scrollTo({ top: 0 }); } catch { /* sin scroll */ }
+      return;
+    }
+
+    /* perfil del dueño: sigue existiendo con el respaldo del repositorio.
+       Todo lo pintado salía del RUP que acaba de desaparecer: se recarga. */
+    mensajeEliminar(cuerpo.nota || "RUP eliminado: el perfil volvió a los valores del repositorio.", "ok");
+    await cargarRupActual();
+    ultimoResumen = null;
+    cargarDashboard({ forzar: true });
+    invalidarCoberturaPintada("RUP eliminado: vuelva a ejecutar la auditoría contra el RUP vigente.");
+    buscar();
+  }
+
+  $("btn-eliminar-rup").addEventListener("click", abrirModalEliminar);
+  $("btn-eliminar-cancelar").addEventListener("click", cerrarModalEliminar);
+  $("btn-eliminar-confirmar").addEventListener("click", eliminarRupActivo);
+  $("modal-eliminar").addEventListener("click", (e) => {
+    if (e.target === $("modal-eliminar")) cerrarModalEliminar();
   });
 
   /* ══════════════════════════════════════════════════════════════════════════
