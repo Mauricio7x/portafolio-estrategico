@@ -98,7 +98,7 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `docs/APU_INFORME_COMPLETO.md` | El **informe** completo de investigación y diseño (§1.A-§1.I): el que citan los comentarios del código. Incluye lo que NO se implementó y por qué |
 | `docs/PERFILES.md` | Resumen técnico de los tres perfiles (datos, estimaciones, limitaciones) |
 | `docs/AUDITORIA_INTEGRAL.md` | **Censo del sistema** (ago 2026): qué módulo hace qué, qué está probado, qué endpoint pide llave y por qué, qué está duplicado, qué está muerto y qué falta — con las correcciones pendientes ordenadas por impacto en las adjudicaciones |
-| `public/` | Frontend estático (Tailwind CDN, tema oscuro, gate de clave). **UNA sola página** desde ago 2026: `index.html` con tres pestañas (`#/licitaciones` · `#/apu` · `#/admin`) y `app.js` como único módulo principal. Las URLs viejas (`/admin.html`, `/apu.html`, `/pliego.html`) viven como `redirects` en `vercel.json` |
+| `public/` | Frontend estático (Tailwind CDN, **diseño Apple Glass**: claro por defecto y oscuro por `prefers-color-scheme`, custom properties en `:root`, tarjetas translúcidas con `backdrop-filter`, paleta #f5f5f7/#1d1d1f/#86868b/#007AFF/#34C759/#FF9500/#FF3B30; gate de clave). **UNA sola página** desde ago 2026: `index.html` con tres pestañas (`#/licitaciones` · `#/apu` · `#/admin`) y `app.js` como único módulo principal. Las URLs viejas (`/admin.html`, `/apu.html`, `/pliego.html`) viven como `redirects` en `vercel.json` |
 | `public/index.html` + `app.js` | La página única: landing de onboarding, gate, tablero de oportunidades, **editor de APU** (pestaña `#/apu`: inferencia, carga desde Excel/CSV, desglose por ítem plegable, badges de origen del precio, precio sugerido) y **administración** (pestaña `#/admin`: dashboard, carga de RUP —JSON o PDF—, experiencia, cobertura, catálogo APU y sincronización plegada). El token de escritura va INTEGRADO (`MiExtraccion2025`): el usuario nunca lo teclea — la seguridad real es Vercel Password Protection |
 | `public/pliego.js` | **Lector de pliegos** (sección de la pestaña APU): pdf.js en el navegador, columnas por coordenadas, progreso por página y respaldo por OCR. Sigue siendo archivo propio: sus funciones están atadas por pruebas que las extraen por archivo |
 | `public/onboarding.js` | La landing: RUP en PDF → perfil dinámico, y carga de experiencia por CSV (panel en la pestaña admin) |
@@ -479,7 +479,7 @@ Decisiones que conviene no re-aprender:
   cinco minutos.
 - Corpus vacío → `200` con `visibles: 0` y el mensaje de qué ejecutar, nunca un `500` mudo.
 
-### `GET|POST /api/admin/rup` (protegido)
+### `GET|POST|DELETE /api/admin/rup` (protegido)
 
 Carga del RUP **por archivo JSON**, desde la pestaña `#/admin`. Antes los perfiles eran datos hardcodeados
 en `lib/perfiles.js`: un código UNSPSC nuevo o un indicador del balance del año exigían tocar código
@@ -491,6 +491,18 @@ y desplegar, y el dueño no tiene terminal.
   pasa la salida del `GET` por el validador del `POST`.
 - `POST` → valida campo por campo, **acumulando todos los errores** (`400` con
   `[{campo, error, valor_recibido}]`), y guarda de forma atómica.
+- `DELETE ?perfil=…` (ago 2026) → elimina un RUP cargado. **Dos semánticas** y la respuesta declara
+  cuál aplicó (`tipo` + `redirigir`): un perfil **dinámico** (`rup_…`, subido en PDF) deja de
+  existir — se borran su clave, sus cuatro whitelists derivadas, sus borradores de APU y sus
+  cachés, y la web vuelve a la landing —; un perfil **del dueño** (helder/genesis/consorcio) pierde
+  su entrada del archivo cargado y **vuelve al respaldo del repositorio** (los perfiles del
+  repositorio no se pueden borrar: quedarse sin perfiles dejaría la app muda). Si era la última
+  entrada, caen el archivo y el sello en **un solo DEL** — el sello ausente hace que todas las
+  instancias vuelvan al respaldo. Lo que NO borra, a propósito: `config:experiencia` (configuración
+  compartida del negocio, no por perfil) y los borradores de APU de un perfil del dueño (el perfil
+  sigue existiendo). `perfil` es obligatorio y sin default — «eliminar sin decir cuál» borraría el
+  de otro. En la UI: botón «Eliminar RUP» de la pestaña `#/admin`, con modal de confirmación cuyo
+  texto depende del tipo de perfil.
 
 **El cambio surte efecto en la siguiente consulta**: el juicio corre al servir desde jul 2026, así
 que no hace falta re-sincronizar nada. `/api/oportunidades`, `/api/diagnostico` y `/api/resumen`
@@ -2143,12 +2155,27 @@ ir por una promesa rechazada— lo haría en silencio. Hay una prueba que vigila
 
 ## Frontend
 
-`public/index.html` + `public/app.js`: estático, Tailwind por CDN, estilo Apple. Gate con la clave
-`231105` (tres intentos → «Acceso denegado»). El gate del cliente es una cortesía: la protección
-seria sigue siendo **Vercel Password Protection** (servidor), activable encima sin tocar código.
-Selector de perfil, filtros, tarjetas con cuantía COP, % de anticipo, barra de puntaje, ubicación,
-estados de carga/vacío/error con reintento, y espera con cuenta regresiva durante la
-sincronización inicial.
+`public/index.html` + `public/app.js`: estático, Tailwind por CDN, **diseño Apple Glass** (ago
+2026): claro por defecto y oscuro por `prefers-color-scheme`, custom properties en `:root`
+(`--bg-primary #f5f5f7`, `--accent #007AFF`, `--text-primary #1d1d1f`…), barra superior y tarjetas
+translúcidas con `backdrop-filter: blur`, pestañas tipo *pill*, barra inferior móvil con
+`safe-area-inset` y modales a hoja estilo iOS en móvil. Las plantillas que genera el JS siguen
+usando utilidades de Tailwind: una **capa de piel** en el `<style>` las re-mapea a la paleta con
+mayor especificidad, en vez de reescribir cientos de cadenas. Gate con la clave `231105` (tres
+intentos → «Acceso denegado»). El gate del cliente es una cortesía: la protección seria sigue
+siendo **Vercel Password Protection** (servidor), activable encima sin tocar código. Selector de
+perfil, filtros, tarjetas con cuantía COP, % de anticipo, ubicación, estados de carga/vacío/error
+con reintento, y espera con cuenta regresiva durante la sincronización inicial.
+
+**La probabilidad se muestra en LENGUAJE CLARO** (ago 2026): la tarjeta ya no dice «23 %» sino la
+frase del rango — 🟢 «Probabilidad muy alta» (>40 %) · 🟡 «Buena probabilidad» (20–40 %) ·
+🟠 «Probabilidad media» (10–20 %) · 🔴 «Poco probable» (<10 %) · ⚪ «Sin información suficiente»
+(`null`: la ausencia JAMÁS se pinta como 0 %) — más **una frase con el factor principal** (poca
+competencia, prórroga, colisión de cierres, descuento típico de la entidad, o el supuesto
+conservador declarado). La cifra exacta no se pierde: la frase es clicable y abre el **modal de
+desglose** de seis pasos (`?vista=probabilidad`), donde el porcentaje viaja con su aritmética y sus
+fuentes. `fraseProbabilidad` y `motivoProbabilidad` se prueban EJECUTÁNDOLAS desde el fuente
+(paso 0.3 de la suite).
 
 **Veredicto graduado** en cada tarjeta — nunca un sí/no. Un badge dice con qué **fuerza** el
 proceso encaja en el RUP y otro **qué tipo de trabajo** es; el detalle completo (qué clase casó,

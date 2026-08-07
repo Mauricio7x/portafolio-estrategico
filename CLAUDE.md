@@ -1652,6 +1652,61 @@ Encargo del dueño: «una sola página, cero fricción». Se retiraron `admin.ht
   `if (!leerToken()) return "—"`, que con el token integrado es inalcanzable. Un código que insinúa
   que el botón puede no pintarse es documentación falsa.
 
+### Rediseño Apple Glass, eliminación de RUP y probabilidad en frases (ago 2026)
+
+Encargo: paleta Apple (claro #f5f5f7 / oscuro #000, acento #007AFF, vidrio con `backdrop-filter`),
+botón para eliminar un RUP cargado, y probabilidad legible para no-técnicos. Decisiones:
+
+- **La piel cambió de dirección, no de técnica.** El tema oscuro (#0f172a) vivía en una capa CSS
+  que re-mapeaba las utilidades CLARAS de las plantillas JS; el rediseño REEMPLAZA esa capa por la
+  paleta Apple sobre custom properties (`:root` claro + `prefers-color-scheme: dark`) y conserva la
+  técnica: las plantillas del JS siguen diciendo `bg-white`/`bg-gray-900`/`text-gray-500` y el
+  `<style>` las traduce (`bg-gray-900` ES el botón de acento). Reescribir cientos de cadenas del JS
+  habría chocado con media suite (regexes sobre clases) y divergido a la primera corrección. El
+  blur va SOLO en tarjetas de nivel superior (`.bg-white.rounded-2xl`): anidar `backdrop-filter`
+  en cada chip multiplica capas de composición sin aportar nada.
+- **La suite prohíbe que vuelva el tema viejo** (paso 1.2): #0f172a/#1e293b/#334155/#34d399/#052e22
+  y cualquier utilidad `*-slate-*` en index.html, y los hex fuera de paleta del SVG del optimizador
+  (#2563eb/#111827/#9ca3af/#d1d5db) en app.js — el SVG no hereda custom properties, así que pinta
+  #007AFF/#86868b literales.
+- **El «bug de pestañas vacías» del encargo NO existía**: los 245 ids que referencian los tres JS
+  existen todos en index.html y `activarPestana` + arranque perezoso estaban correctos. Lo que se
+  hizo fue BLINDARLO (paso 0.1): la prueba cruza TODOS los `$("id")`/`getElementById` de
+  app.js/onboarding.js/pliego.js contra los ids del HTML — la causa típica de una pestaña muerta es
+  una referencia a un nodo retirado, cuya excepción detiene el script en silencio.
+- **`DELETE /api/admin/rup?perfil=…` tiene DOS semánticas y la respuesta declara cuál aplicó**
+  (`tipo` + `redirigir`): un `rup_…` (PDF) DEJA DE EXISTIR (clave + 4 whitelists + borradores de
+  APU + cachés en UN solo DEL; la web olvida el guardado y vuelve a la landing); un perfil del
+  dueño pierde su entrada del archivo cargado y VUELVE al respaldo del repositorio — los perfiles
+  del repositorio no se pueden borrar (quedarse sin perfiles deja la app muda, regla de
+  lib/perfiles). `perfil` es obligatorio sin default (la regla de cobertura: servir/borrar el de
+  otro es la peor forma de equivocarse).
+- **Eliminar la ÚLTIMA entrada borra archivo y sello juntos**: el sello ausente hace que
+  `recargarPerfiles` restablezca el respaldo en TODAS las instancias. Con entradas restantes se
+  reescribe el archivo y el sello va AL FINAL (como en la carga) — y en la instancia que atiende el
+  DELETE hay que `restablecerPerfiles()` ANTES de re-aplicar: `aplicarConfig` es parcial a
+  propósito («quien no venga conserva lo que tenía») y sin el restablecimiento el perfil recién
+  borrado seguiría sirviéndose desde la memoria caliente. Las demás instancias calientes conservan
+  el perfil borrado hasta su próximo arranque en frío — mismo alcance que ya tiene la carga parcial,
+  dicho y asumido.
+- **Lo que el DELETE NO borra, a propósito**: `config:experiencia` es configuración COMPARTIDA del
+  negocio (una clave, no por perfil) y los borradores de APU de un perfil del dueño sobreviven
+  porque el perfil sigue existiendo. El modal de confirmación tiene DOS textos según el tipo de
+  perfil: prometer borrar lo que no se borra (o callar lo que sí) sería mentir en el peor momento.
+- **La probabilidad de la tarjeta es una FRASE, no un porcentaje** (`fraseProbabilidad`): 🟢 muy
+  alta (>40 %) · 🟡 buena (20–40 %) · 🟠 media (10–20 %) · 🔴 poco probable (<10 %) · ⚪ «Sin
+  información suficiente» (`null` — la ausencia JAMÁS es un 0 %, la regla de `anticipo_pct`). Debajo
+  va UNA frase con el factor principal (`motivoProbabilidad`, prioridad del encargo: poca
+  competencia → prórroga → colisión → baja alta → baja ≈0 → «Basado en N procesos» → supuesto
+  conservador declarado), y NINGUNA interpola una cifra sin base — es la invariante de
+  `bandaCompetencia` aplicada al texto. La cifra vive en el modal de desglose, que la frase sigue
+  abriendo (`detalle-probabilidad` no cambió de contrato). Las dos funciones se prueban
+  EJECUTÁNDOLAS extraídas del fuente (paso 0.3), incluidos los bordes: 0,40 es «buena» (el encargo
+  dice `>`), 0 medido es 🔴 (un dato), `null` es ⚪.
+- **El editor de APU y el optimizador CONSERVAN el porcentaje**: allí la cifra alimenta una decisión
+  de precio (comparar opciones a VEG) y una frase no se puede restar. El desglose del modal enseña
+  frase Y cifra: son la respuesta de 1 segundo y la de 30 en el mismo sitio.
+
 ## Datos del negocio (fuente de verdad)
 
 - Perfiles: `lib/perfiles.js` es el RESPALDO (`PERFILES_FALLBACK`, RUP corte 31/12/2025) y el punto

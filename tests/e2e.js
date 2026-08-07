@@ -9375,6 +9375,227 @@ async function main() {
       assert.ok(vercel.crons.some((c) => c.path === "/api/sync"), "falta el cron de /api/sync");
     }
 
+    /* ═══════════ h-ter. Rediseño Apple Glass · pestañas · eliminación de RUP ·
+       probabilidad en lenguaje claro (encargo, ago 2026) ═══════════
+       Sin DOM en la suite: lo ejecutable se EJECUTA (funciones extraídas del
+       fuente con el patrón de `numeroLocal`, y el DELETE contra el handler real
+       sobre el mock de Redis); el marcado se vigila como marcado — y se
+       presenta como lo que es. */
+    {
+      const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const js = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const jsSin = sinComentarios(js);
+
+      /* ---- paso 0.1 · las tres pestañas tienen contenido y NINGÚN id
+         referenciado por los JS falta en el HTML. La causa típica de una
+         pestaña «vacía» es un getElementById sobre un nodo que ya no existe
+         (páginas retiradas): la excepción detiene el script EN SILENCIO. ---- */
+      {
+        const idsHtml = new Set([...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
+        // pag-ant/pag-sig los CREA pintar() en cada búsqueda: no viven en el HTML
+        const dinamicos = new Set(["pag-ant", "pag-sig"]);
+        for (const archivo of ["app.js", "onboarding.js", "pliego.js"]) {
+          const fuente = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", archivo), "utf8"));
+          const refs = [...fuente.matchAll(/(?:\$|getElementById)\(\s*"([^"]+)"\s*\)/g)].map((m) => m[1]);
+          const rotos = [...new Set(refs)].filter((id) => !idsHtml.has(id) && !dinamicos.has(id));
+          assert.deepStrictEqual(rotos, [],
+            `${archivo} referencia ids que no existen en index.html (la pestaña moriría en silencio): ${rotos.join(", ")}`);
+        }
+        // cada panel de pestaña existe, es único y tiene contenido (children > 0)
+        for (const tab of ["tab-licitaciones", "tab-apu", "tab-admin"]) {
+          assert.strictEqual(html.split(`id="${tab}"`).length - 1, 1, `id="${tab}" debe aparecer exactamente una vez`);
+          const i0 = html.indexOf(`id="${tab}"`);
+          const cuerpoPanel = html.slice(i0, html.indexOf("</main>", i0));
+          assert.ok((cuerpoPanel.match(/<(?:section|details|div)/g) || []).length > 0,
+            `el panel #${tab} está vacío: la pestaña no tendría nada que enseñar`);
+        }
+        // el cambio de pestaña oculta los paneles inactivos y arranca cada
+        // módulo la PRIMERA vez que se abre su pestaña
+        assert.ok(/classList\.toggle\("hidden", p !== destino\)/.test(jsSin),
+          "activarPestana debe ocultar los paneles inactivos y mostrar el activo");
+        assert.ok(/arrancadas\.apu[\s\S]{0,80}arrancar\(\)/.test(jsSin)
+          && /arrancadas\.admin[\s\S]{0,80}arrancarPaneles\(\)/.test(jsSin),
+          "cada pestaña debe inicializar su módulo al activarse, no solo al cargar la página");
+        assert.ok(/addEventListener\("hashchange"/.test(jsSin), "la pestaña debe seguir el hash (#/apu recargable)");
+      }
+
+      /* ---- paso 0.3 · probabilidad en lenguaje claro, EJECUTADA ---- */
+      {
+        const extraerFn = (nombre) => {
+          const i = js.indexOf(`function ${nombre}(`);
+          assert.ok(i > 0, `no se encontró ${nombre} en app.js`);
+          return js.slice(i, js.indexOf("\n  }", i) + 4);
+        };
+        // eslint-disable-next-line no-new-func
+        const fraseProbabilidad = new Function(`${extraerFn("fraseProbabilidad")}; return fraseProbabilidad;`)();
+        const casos = [
+          [0.45, "🟢", "Probabilidad muy alta"],
+          [0.41, "🟢", "Probabilidad muy alta"],
+          [0.40, "🟡", "Buena probabilidad"],   // el encargo dice P > 0.40 para «muy alta»
+          [0.35, "🟡", "Buena probabilidad"],
+          [0.20, "🟡", "Buena probabilidad"],
+          [0.15, "🟠", "Probabilidad media"],
+          [0.10, "🟠", "Probabilidad media"],
+          [0.05, "🔴", "Poco probable"],
+          [0, "🔴", "Poco probable"],           // un 0 MEDIDO es un dato…
+          [null, "⚪", "Sin información suficiente"],   // …y la ausencia, no
+          [undefined, "⚪", "Sin información suficiente"],
+          [NaN, "⚪", "Sin información suficiente"],
+        ];
+        for (const [p, icono, frase] of casos) {
+          const r = fraseProbabilidad(p);
+          assert.strictEqual(r.frase, frase, `fraseProbabilidad(${p}) → «${r.frase}», esperaba «${frase}»`);
+          assert.strictEqual(r.icono, icono, `fraseProbabilidad(${p}) → ${r.icono}, esperaba ${icono}`);
+        }
+        // el motivo (una frase con el factor principal), también ejecutado; los
+        // formateadores del IIFE se inyectan con los mismos valores
+        // eslint-disable-next-line no-new-func
+        const motivoProbabilidad = new Function("fmtNum", "fmt",
+          `${extraerFn("motivoProbabilidad")}; return motivoProbabilidad;`)(
+          new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }), new Intl.NumberFormat("es-CO"));
+        assert.ok(/Poca competencia/.test(motivoProbabilidad({ competencia_entidad: { nivel: "baja", promedio_oferentes: 2, total_procesos: 9 } })),
+          "competencia baja con ≤2 oferentes es la señal 1");
+        assert.ok(/prorrogado/.test(motivoProbabilidad({ _cierre_prorrogado: true })), "la prórroga es la señal 2");
+        assert.ok(/mismo día/.test(motivoProbabilidad({ p_ganar_detalle: { ajustes: [{ nombre: "colision_cierres", factor: 1.15 }] } })),
+          "la colisión de cierres es la señal 3");
+        assert.ok(/con descuento/.test(motivoProbabilidad({ baja_mercado: { nivel: "alto", baja_mediana: 8, procesos_contados: 12 } })));
+        assert.ok(/cerca del presupuesto/.test(motivoProbabilidad({ baja_mercado: { nivel: "bajo", baja_mediana: 0, procesos_contados: 12 } })),
+          "una mediana de 0 % es un DATO (se adjudica por el oficial), no una ausencia");
+        assert.ok(/Basado en 12 procesos/.test(motivoProbabilidad({ competencia_entidad: { nivel: "media", promedio_oferentes: 6, total_procesos: 12 } })));
+        assert.ok(/supuesto conservador/.test(motivoProbabilidad({})),
+          "sin ningún dato, el supuesto se DECLARA en vez de inventarse un motivo");
+        // la tarjeta ya no interpola el porcentaje seco: la cifra vive en el
+        // modal de desglose, que la frase sigue abriendo
+        const iBloque = jsSin.indexOf("function bloqueProbabilidad");
+        const cuerpoBloque = jsSin.slice(iBloque, jsSin.indexOf("\n  }", iBloque));
+        assert.ok(!/\$\{pct\}%/.test(cuerpoBloque) && !/Prob\. estimada/.test(cuerpoBloque),
+          "la tarjeta debe mostrar la frase, no el porcentaje");
+        assert.ok(/fraseProbabilidad\(l\.p_ganar\)/.test(cuerpoBloque) && /motivoProbabilidad\(l\)/.test(cuerpoBloque),
+          "la tarjeta debe pintar la frase y su motivo");
+        assert.ok(/detalle-probabilidad/.test(cuerpoBloque), "la frase debe seguir abriendo el modal de desglose");
+      }
+
+      /* ---- paso 0.2 · DELETE /api/admin/rup, contra el handler real ---- */
+      {
+        const { escribirJSONComprimido } = require("../lib/almacen.js");
+        // sin token → 401; sin perfil → 400; sin RUP cargado → 404; desconocido → 400
+        assert.strictEqual((await invocar(adminRup, "/api/admin/rup?perfil=helder", {}, { metodo: "DELETE" })).status, 401);
+        assert.strictEqual((await invocar(adminRup, "/api/admin/rup", CAB_TOKEN, { metodo: "DELETE" })).status, 400);
+        {
+          const r = await invocar(adminRup, "/api/admin/rup?perfil=helder", CAB_TOKEN, { metodo: "DELETE" });
+          assert.strictEqual(r.status, 404, "sin RUP cargado no hay nada que eliminar: el respaldo no se borra");
+          assert.ok(/respaldo del repositorio/.test(r.cuerpo.error));
+        }
+        assert.strictEqual((await invocar(adminRup, "/api/admin/rup?perfil=noexiste", CAB_TOKEN, { metodo: "DELETE" })).status, 400);
+
+        /* dinámico: se crea un perfil rup_… con sus claves satélite y el DELETE
+           tiene que barrerlas TODAS y mandar a la landing */
+        const idDin = "rup_e2eborrame1";
+        await escribirJSONComprimido(redis, CLAVES.configPerfilDinamico(idDin),
+          { perfil: { nombre: "De prueba" }, _meta: { origen: "e2e" } }, { ttl: 600 });
+        for (const s of ["clases", "familias", "segmentos", "completo"]) {
+          await redis.set(CLAVES.configUnspsc(idDin, s), "[]", { ex: 600 });
+        }
+        await redis.set(CLAVES.apuPresupuesto(idDin, "b1"), JSON.stringify({ id: "b1" }), { ex: 600 });
+        assert.ok(await redis.get(CLAVES.configPerfilDinamico(idDin)), "el perfil sintético no se escribió");
+        {
+          const r = await invocar(adminRup, `/api/admin/rup?perfil=${idDin}`, CAB_TOKEN, { metodo: "DELETE" });
+          assert.strictEqual(r.status, 200, `DELETE dinámico falló: ${JSON.stringify(r.cuerpo)}`);
+          assert.strictEqual(r.cuerpo.tipo, "dinamico");
+          assert.strictEqual(r.cuerpo.redirigir, "landing", "sin perfil propio, la web tiene que volver a la landing");
+          assert.strictEqual(await redis.get(CLAVES.configPerfilDinamico(idDin)), null, "la clave del perfil sobrevivió");
+          assert.strictEqual(await redis.get(CLAVES.configUnspsc(idDin, "completo")), null, "la whitelist sobrevivió");
+          assert.deepStrictEqual(await redis.scan(CLAVES.patronApuPerfil(idDin)), [], "los borradores de APU sobrevivieron");
+          // repetirlo es 404, no un segundo borrado con cara de éxito
+          assert.strictEqual((await invocar(adminRup, `/api/admin/rup?perfil=${idDin}`, CAB_TOKEN, { metodo: "DELETE" })).status, 404);
+        }
+
+        /* fijo: cargar un RUP con los tres perfiles y eliminarlos uno a uno.
+           Cada eliminación devuelve ESE perfil al respaldo del repositorio; la
+           última borra archivo y sello, y todo vuelve a «hardcoded». */
+        {
+          const cargado = await invocarPost(adminRup, "/api/admin/rup",
+            { perfiles: perfilesMod.perfilesComoConfig() }, CAB_TOKEN);
+          assert.strictEqual(cargado.status, 200, `no se pudo cargar el RUP de prueba: ${JSON.stringify(cargado.cuerpo).slice(0, 300)}`);
+          const r1 = await invocar(adminRup, "/api/admin/rup?perfil=helder", CAB_TOKEN, { metodo: "DELETE" });
+          assert.strictEqual(r1.status, 200, `DELETE fijo falló: ${JSON.stringify(r1.cuerpo)}`);
+          assert.strictEqual(r1.cuerpo.tipo, "fijo");
+          assert.strictEqual(r1.cuerpo.redirigir, "dashboard", "los perfiles del dueño no desaparecen: vuelven al respaldo");
+          assert.deepStrictEqual([...r1.cuerpo.perfiles_restantes].sort(), ["consorcio", "genesis"]);
+          assert.strictEqual(await redis.get(CLAVES.configUnspsc("helder", "completo")), null,
+            "las whitelists derivadas del perfil eliminado tienen que borrarse");
+          const g1 = await invocar(adminRup, "/api/admin/rup", CAB_TOKEN);
+          assert.strictEqual(g1.cuerpo.fuente, "redis", "quedan perfiles cargados: la fuente sigue siendo redis");
+          assert.ok(!g1.cuerpo.perfiles.helder, "la entrada eliminada no puede seguir en el archivo");
+          const ph = await perfilesMod.getPerfil("helder", redis);
+          assert.strictEqual(ph.nombre, perfilesMod.PERFILES_FALLBACK.helder.nombre,
+            "el perfil eliminado tiene que volver al respaldo EN LA MISMA instancia caliente");
+          // …y la caché del panel quedó invalidada (sus números salían del RUP borrado)
+          assert.strictEqual((await redis.scan("resumen:*")).length, 0,
+            "eliminar un RUP debe invalidar la caché del dashboard");
+
+          await invocar(adminRup, "/api/admin/rup?perfil=genesis", CAB_TOKEN, { metodo: "DELETE" });
+          const r3 = await invocar(adminRup, "/api/admin/rup?perfil=consorcio", CAB_TOKEN, { metodo: "DELETE" });
+          assert.strictEqual(r3.status, 200);
+          assert.deepStrictEqual(r3.cuerpo.perfiles_restantes, []);
+          assert.strictEqual(await redis.get(CLAVES.configPerfilesVersion), null,
+            "sin entradas, el sello tiene que desaparecer (todas las instancias vuelven al respaldo)");
+          assert.strictEqual((await invocar(adminRup, "/api/admin/rup", CAB_TOKEN)).cuerpo.fuente, "hardcoded",
+            "sin archivo cargado, la app vuelve al respaldo del repositorio");
+          assert.strictEqual(perfilesMod.fuentePerfiles().fuente, "respaldo");
+        }
+
+        /* la UI: botón en la sección del RUP, modal de confirmación propio, y
+           la vuelta a la LANDING cuando el perfil deja de existir */
+        for (const debe of ['id="btn-eliminar-rup"', 'id="modal-eliminar"', 'id="btn-eliminar-confirmar"',
+          'id="btn-eliminar-cancelar"', 'id="modal-eliminar-texto"', "btn-peligro"]) {
+          assert.ok(html.includes(debe), `index.html sin ${debe} (falta la eliminación de RUP)`);
+        }
+        assert.ok(/method: "DELETE"/.test(jsSin), "app.js debe llamar al DELETE, no a un GET que borra");
+        {
+          const i = jsSin.indexOf("async function eliminarRupActivo");
+          assert.ok(i > 0, "no se encontró eliminarRupActivo en app.js");
+          const cuerpo = jsSin.slice(i, jsSin.indexOf("\n  }", i));
+          assert.ok(/olvidarPerfilRup\(\)/.test(cuerpo) && /classList\.remove\("hidden"\)/.test(cuerpo),
+            "al eliminar un perfil dinámico hay que olvidarlo y volver a la LANDING");
+          assert.ok(/x-historico-token/.test(cuerpo), "el DELETE viaja con el token integrado, por cabecera");
+          assert.ok(/\$\("btn-eliminar-confirmar"\)/.test(jsSin) && /btn\.disabled = true/.test(cuerpo),
+            "«Eliminar definitivamente» debe deshabilitarse durante el envío (un doble clic borraría dos veces)");
+        }
+      }
+
+      /* ---- pasos 1.1–1.4 · el sistema de diseño Apple Glass ---- */
+      {
+        // 1.1 · las custom properties del sistema existen, con su tema oscuro
+        for (const debe of ["--bg-primary: #f5f5f7", "--accent: #007AFF", "--text-primary: #1d1d1f",
+          "--transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1)", "prefers-color-scheme: dark",
+          "backdrop-filter: blur("]) {
+          assert.ok(html.includes(debe), `index.html sin «${debe}» (falta el sistema de diseño)`);
+        }
+        // 1.2 · los colores del tema oscuro anterior no pueden volver
+        for (const prohibido of ["#0f172a", "#1e293b", "#334155", "#34d399", "#052e22"]) {
+          assert.ok(!html.includes(prohibido), `index.html contiene ${prohibido}: el tema oscuro anterior volvió`);
+        }
+        assert.ok(!/(?:bg|text|border|ring|decoration|divide|shadow)-slate-/.test(html),
+          "quedan utilidades slate-* del tema anterior en index.html");
+        // …ni en el SVG del optimizador, que pinta colores literales
+        for (const prohibido of ["#2563eb", "#111827", "#9ca3af", "#d1d5db"]) {
+          assert.ok(!jsSin.includes(prohibido), `app.js pinta ${prohibido}: fuera de la paleta permitida`);
+        }
+        // 1.3 · las páginas retiradas siguen sin existir (también lo vigila h)
+        for (const viejo of ["admin.html", "apu.html", "pliego.html", "admin.js", "apu.js"]) {
+          assert.ok(!fs.existsSync(path.join(__dirname, "..", "public", viejo)), `public/${viejo} volvió`);
+        }
+        // 1.4 · el límite de 12 funciones serverless se mantiene
+        const contar = (dir) => fs.readdirSync(dir, { withFileTypes: true })
+          .reduce((n, e) => n + (e.isDirectory() ? contar(path.join(dir, e.name)) : (e.name.endsWith(".js") ? 1 : 0)), 0);
+        assert.ok(contar(path.join(__dirname, "..", "api")) <= 12, "más de 12 funciones bajo api/");
+      }
+
+      console.log("  · UI Apple Glass: pasos 0.1 (pestañas e ids), 0.2 (DELETE de RUP dinámico y fijo), "
+        + "0.3 (probabilidad en frases, ejecutada), 1.1–1.4 (paleta, retiradas y límite de funciones) verificados");
+    }
+
     /* i. la INVARIANTE que sostiene el encadenado del panel de administración:
        modo=full REINICIA y modo=auto CONTINÚA. Si el botón repitiera modo=full
        en cada tanda, la carga volvería a enero para siempre y nunca terminaría.

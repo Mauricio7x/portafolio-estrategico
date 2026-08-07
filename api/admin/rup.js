@@ -1,9 +1,22 @@
 /* ============================================================================
-   /api/admin/rup · Cargar y consultar el RUP del dueño (archivo JSON)
+   /api/admin/rup · Cargar, consultar y eliminar el RUP del dueño (archivo JSON)
    ----------------------------------------------------------------------------
-   GET  /api/admin/rup?token=…   → el RUP VIGENTE, en el mismo esquema que se
-                                   sube (descargar → editar → volver a subir).
-   POST /api/admin/rup?token=…   → valida y guarda un RUP nuevo.
+   GET    /api/admin/rup?token=…            → el RUP VIGENTE, en el mismo esquema
+                                              que se sube (descargar → editar →
+                                              volver a subir).
+   POST   /api/admin/rup?token=…            → valida y guarda un RUP nuevo.
+   DELETE /api/admin/rup?perfil=…&token=…   → elimina un RUP cargado (ago 2026):
+          · perfil `rup_…` (subido en PDF): borra su clave, sus whitelists
+            derivadas, sus borradores de APU y sus cachés. El perfil DEJA DE
+            EXISTIR: la web vuelve a la landing.
+          · perfil del dueño (helder/genesis/consorcio): quita SU entrada del
+            archivo cargado; ese perfil VUELVE al respaldo del repositorio
+            (los perfiles del repositorio no se pueden borrar: quedarse sin
+            perfiles dejaría la app muda, y esa regla es de lib/perfiles).
+          Lo que NO borra, a propósito: `config:experiencia` es configuración
+          COMPARTIDA (una sola clave para todo el negocio, no por perfil) y los
+          borradores de APU de un perfil del dueño sobreviven porque el perfil
+          sigue existiendo con los valores del repositorio.
 
    PROTEGIDO con el mismo HISTORICO_TOKEN que /api/sync/historico,
    /api/diagnostico, /api/competencia-detalle y /api/resumen (lib/auth: header
@@ -41,12 +54,16 @@ const { validarConfig, validarPerfilDinamico, derivarUnspsc } = require("../../l
 const {
   PERFILES, aplicarConfig, invalidarCachePerfiles, recargarPerfiles,
   fuentePerfiles, perfilesComoConfig, idCanonico, perfilDesdeConfig,
+  restablecerPerfiles, IDS,
 } = require("../../lib/perfiles.js");
 const { extraerRupDeTexto } = require("../../lib/rup_pdf.js");
 const { generarIdDinamico } = require("../../lib/perfil_dinamico.js");
 const { crp } = require("../../lib/capacidad.js");
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB de cuerpo (requerimiento)
+const { ID_DINAMICO_RE } = require("../../lib/perfil_dinamico.js");
+// las cuatro whitelists derivadas que escribe cada carga (fija o dinámica)
+const SUFIJOS_UNSPSC = ["clases", "familias", "segmentos", "completo"];
 /* Tope de perfiles dinámicos vivos a la vez. La acción `?origen=pdf` es
    PÚBLICA (ver abajo), así que además del TTL hace falta un freno absoluto
    para que nadie llene el tier gratuito de Upstash a base de POSTs. 300
@@ -206,6 +223,168 @@ async function cargarRupDesdePdf(req, res) {
   });
 }
 
+/* ══════════════════ DELETE /api/admin/rup?perfil=… ══════════════════
+   `perfil` es OBLIGATORIO, sin default: «eliminar el RUP» sin decir cuál
+   borraría el de otro, que es la peor forma posible de equivocarse (la misma
+   regla que el perfil de la auditoría de cobertura).
+
+   Dos casos con semántica distinta y hay que decirla:
+   · DINÁMICO (`rup_…`): el perfil deja de existir. Se borran su clave, sus
+     cuatro whitelists, sus borradores de APU y sus cachés — todo en UN solo
+     DEL (una orden REST: no puede quedar a medias entre claves).
+   · FIJO (helder/genesis/consorcio): se quita SU entrada del archivo cargado
+     y ese perfil vuelve al respaldo del repositorio. Si era la última entrada,
+     se borra el archivo Y el sello — `recargarPerfiles` ve el sello ausente y
+     restablece el respaldo en TODAS las instancias, no solo en esta. Si quedan
+     entradas, se reescribe el archivo y el sello va AL FINAL, igual que en la
+     carga. Ojo a la instancia caliente: `aplicarConfig` es parcial a propósito
+     («quien no venga conserva lo que tenía»), así que antes de re-aplicar hay
+     que RESTABLECER — si no, el perfil recién borrado seguiría sirviéndose
+     desde la memoria de esta instancia. */
+async function eliminarRup(res, redis, q) {
+  const crudo = String(q.perfil || "").toLowerCase().trim();
+  if (!crudo) {
+    return res.status(400).json({
+      ok: false,
+      error: "«perfil» es obligatorio: DELETE /api/admin/rup?perfil=rup_… (perfil subido en PDF) o ?perfil=helder|genesis|consorcio (RUP cargado del dueño).",
+    });
+  }
+
+  /* ---------- perfil dinámico (onboarding en PDF) ---------- */
+  if (ID_DINAMICO_RE.test(crudo)) {
+    let existia = null;
+    try {
+      existia = await redis.get(CLAVES.configPerfilDinamico(crudo));
+    } catch (e) {
+      return res.status(503).json({ ok: false, error: `No se pudo consultar Redis. Reintente. (${e.message})` });
+    }
+    if (existia == null) {
+      return res.status(404).json({
+        ok: false,
+        error: `El perfil «${crudo}» no existe o ya caducó: no hay nada que eliminar.`,
+        sin_perfiles: true,
+        redirigir: "landing",
+      });
+    }
+    const claves = [CLAVES.configPerfilDinamico(crudo), ...SUFIJOS_UNSPSC.map((s) => CLAVES.configUnspsc(crudo, s))];
+    // cachés por clave LITERAL (borrar una clave ausente es un no-op): así no
+    // se depende de la semántica de comodines de SCAN para un id conocido
+    const caches = [CLAVES.resumen(crudo), CLAVES.cobertura(crudo, "exp"), CLAVES.cobertura(crudo, "base")];
+    let borradores = [];
+    try {
+      borradores = await redis.scan(CLAVES.patronApuPerfil(crudo));
+      await redis.del(...claves, ...borradores, ...caches);
+    } catch (e) {
+      return res.status(503).json({ ok: false, error: `No se pudo eliminar el perfil. Reintente. (${e.message})` });
+    }
+    /* la inyección en PERFILES se auto-sanea: la siguiente petición relee la
+       clave, la encuentra ausente y retira el perfil de la instancia caliente
+       (lib/perfil_dinamico.cargarPerfilDinamico) — no hay estado que limpiar */
+    return res.status(200).json({
+      ok: true,
+      eliminado: true,
+      perfil: crudo,
+      tipo: "dinamico",
+      claves_eliminadas: claves.length + borradores.length + caches.length,
+      borradores_eliminados: borradores.length,
+      sin_perfiles: true,
+      redirigir: "landing",
+      nota: "El perfil y sus datos asociados se eliminaron. Para volver a usar la aplicación hay que subir el RUP de nuevo.",
+    });
+  }
+
+  /* ---------- perfil del dueño (archivo cargado en Redis) ---------- */
+  const id = idCanonico(crudo);
+  if (!IDS.includes(id)) {
+    return res.status(400).json({ ok: false, error: `Perfil desconocido: «${crudo}». Valen helder, genesis, consorcio o un id rup_….` });
+  }
+  let version = null, config = null;
+  try {
+    version = await redis.get(CLAVES.configPerfilesVersion);
+    if (version != null) config = await leerJSONComprimido(redis, CLAVES.configPerfiles);
+  } catch (e) {
+    return res.status(503).json({ ok: false, error: `No se pudo leer la configuración: ${e.message}` });
+  }
+  if (!config || !config.perfiles) {
+    return res.status(404).json({
+      ok: false,
+      error: "No hay ningún RUP cargado: se está sirviendo el respaldo del repositorio, que no se puede eliminar (quedarse sin perfiles dejaría la app muda).",
+      fuente: "hardcoded",
+    });
+  }
+  // el plural puede venir en el archivo como «consorcio» o como «juntos»
+  const clavesArchivo = id === "juntos" ? ["consorcio", "juntos"] : [id];
+  const presentes = clavesArchivo.filter((k) => config.perfiles[k]);
+  if (!presentes.length) {
+    return res.status(404).json({
+      ok: false,
+      error: `El RUP cargado no trae el perfil «${crudo}»: ese perfil ya se sirve desde el respaldo del repositorio.`,
+    });
+  }
+  for (const k of presentes) delete config.perfiles[k];
+  const restantes = Object.keys(config.perfiles);
+  const clavesUnspsc = restantes.length
+    ? SUFIJOS_UNSPSC.map((s) => CLAVES.configUnspsc(id, s))
+    // última entrada: barrer las whitelists de los TRES fijos (las dinámicas
+    // llevan TTL propio y no se tocan)
+    : IDS.flatMap((p) => SUFIJOS_UNSPSC.map((s) => CLAVES.configUnspsc(p, s)));
+
+  const cargado = new Date().toISOString();
+  const nuevaVersion = `${cargado}#${Math.random().toString(36).slice(2, 10)}`;
+  try {
+    if (restantes.length === 0) {
+      // un solo DEL: archivo + sello + whitelists caen juntos, y el sello
+      // ausente hace que TODAS las instancias vuelvan al respaldo
+      await redis.del(CLAVES.configPerfiles, CLAVES.configPerfilesVersion, ...clavesUnspsc);
+    } else {
+      config._meta = { ...(config._meta || {}), version: nuevaVersion, cargado, perfiles: restantes, eliminado: crudo };
+      await escribirJSONComprimido(redis, CLAVES.configPerfiles, config);
+      await redis.del(...clavesUnspsc);
+      // SELLO AL FINAL: es lo que hace recargar a las instancias calientes
+      await redis.set(CLAVES.configPerfilesVersion, nuevaVersion);
+    }
+  } catch (e) {
+    return res.status(503).json({ ok: false, error: `No se pudo eliminar. Reintente. (${e.message})` });
+  }
+
+  /* ---------- efecto inmediato en esta instancia ---------- */
+  try {
+    restablecerPerfiles();
+    if (restantes.length) aplicarConfig(config, { version: nuevaVersion, cargado });
+    invalidarCachePerfiles();
+    await recargarPerfiles(redis, { forzar: true });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: `Eliminado, pero falló la recarga de perfiles: ${e.message}` });
+  }
+
+  /* el dashboard y la auditoría se calcularon contra el RUP que acaba de
+     desaparecer: mismas cachés que invalida la carga */
+  let cacheBorrada = 0;
+  try {
+    const viejas = [...await redis.scan(CLAVES.patronResumen), ...await redis.scan(CLAVES.patronCobertura)];
+    if (viejas.length) {
+      await redis.del(...viejas);
+      cacheBorrada = viejas.length;
+    }
+  } catch { /* las dos cachés caducan solas: no valen un 500 */ }
+
+  return res.status(200).json({
+    ok: true,
+    eliminado: true,
+    perfil: crudo,
+    tipo: "fijo",
+    perfiles_restantes: restantes,
+    // los perfiles del dueño no desaparecen: vuelven al respaldo del repositorio
+    sin_perfiles: false,
+    redirigir: "dashboard",
+    siguiente_perfil: restantes[0] || id,
+    fuente: fuentePerfiles(),
+    cache_resumen_invalidada: cacheBorrada,
+    nota: `El perfil «${crudo}» volvió a los valores del repositorio (RUP corte 31/12/2025). `
+      + "Los borradores de APU y la experiencia cargada no se tocan: el perfil sigue existiendo.",
+  });
+}
+
 module.exports = async function handler(req, res) {
   const q = req.query || {};
   res.setHeader("Cache-Control", "no-store");
@@ -252,9 +431,12 @@ module.exports = async function handler(req, res) {
     });
   }
 
+  /* ══════════════════ DELETE · eliminar un RUP ══════════════════ */
+  if (metodo === "DELETE") return eliminarRup(res, redis, q);
+
   if (metodo !== "POST") {
-    res.setHeader("Allow", "GET, POST");
-    return res.status(405).json({ ok: false, error: "Método no permitido: use GET para consultar y POST para cargar." });
+    res.setHeader("Allow", "GET, POST, DELETE");
+    return res.status(405).json({ ok: false, error: "Método no permitido: GET consulta, POST carga y DELETE elimina (?perfil=…)." });
   }
 
   /* ══════════════════ POST · cargar un RUP ══════════════════ */
