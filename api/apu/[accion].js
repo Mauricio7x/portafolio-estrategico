@@ -59,6 +59,7 @@ const {
   SEMILLA, obtenerCatalogo, obtenerPreciosInsumo, obtenerFactoresRegion,
 } = require("../../lib/apu/catalogo.js");
 const { inferir } = require("../../lib/apu/inferencia.js");
+const { mapearFilasImportadas } = require("../../lib/apu/importar.js");
 const { calcularPresupuesto, normalizarCatalogo } = require("../../lib/apu/calculo.js");
 const {
   desdePresupuesto, contextoDePresupuesto, ajusteCompetitivo, precioPiso,
@@ -81,7 +82,7 @@ const MAX_PRESUPUESTOS = 100;        // tope del listado
    despachador solo las llama. Las dos son AJENAS al catálogo de precios: no leen
    Redis ni el catálogo, así que se despachan ANTES de tocarlo. */
 const ACCIONES = ["catalogo", "inferir", "calcular", "rentabilidad", "guardar", "cargar", "listar",
-  "extraer-texto", "descargar"];
+  "importar", "extraer-texto", "descargar"];
 const PUBLICAS = ["catalogo"];
 
 const AVISO = "Precios de REFERENCIA regionalizada, no cotizaciones. Verifique contra cotización real "
@@ -155,7 +156,7 @@ module.exports = async function handler(req, res) {
   }
 
   const metodo = String(req.method || "GET").toUpperCase();
-  const esPost = ["inferir", "calcular", "rentabilidad", "guardar"].includes(accion);
+  const esPost = ["inferir", "calcular", "rentabilidad", "guardar", "importar"].includes(accion);
   if (esPost && metodo !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ ok: false, error: `«${accion}» exige POST.` });
@@ -253,6 +254,38 @@ module.exports = async function handler(req, res) {
     });
 
     return res.status(200).json({ ...r, ok: true, items });
+  }
+
+  /* ══════════════════ importar (filas de un Excel → ítems mapeados) ═══════
+     El archivo se parsea en el NAVEGADOR (public/xlsx_lectura.js): aquí llegan
+     filas estructuradas {descripcion, unidad, cantidad, precio_archivo}. Este
+     paso solo MAPEA contra el catálogo de precios y resuelve la política de
+     precios (el del archivo manda y se declara); el cálculo lo dispara después
+     el editor por el MISMO camino de siempre (`calcular`) — dos rutas de
+     cálculo se desincronizan a la primera corrección que se aplique a una. */
+  if (accion === "importar") {
+    const filas = Array.isArray(datos.filas) ? datos.filas : [];
+    if (!filas.length) {
+      return res.status(400).json({ ok: false, error: "El cuerpo debe traer «filas»: [{descripcion, unidad, cantidad, precio_archivo?}]." });
+    }
+    if (filas.length > MAX_ITEMS) {
+      return res.status(400).json({ ok: false, error: `Demasiadas filas (${filas.length}). El tope es ${MAX_ITEMS}.` });
+    }
+    try {
+      const deRedis = await catalogoParaCalcular(redis);
+      const cat = deRedis || SEMILLA;
+      const r = mapearFilasImportadas(filas, cat);
+      return res.status(200).json({
+        ok: true,
+        ...r,
+        catalogo: {
+          fuente: deRedis ? "redis" : "semilla",
+          items_en_catalogo: (cat.items || []).length,
+        },
+      });
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: `No se pudo mapear: ${e.message}` });
+    }
   }
 
   /* ══════════════════ calcular ══════════════════ */

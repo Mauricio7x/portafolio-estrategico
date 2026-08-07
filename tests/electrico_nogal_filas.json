@@ -1,0 +1,440 @@
+{
+ "origen": "electrico nogal.xlsx · hoja «electrico (2)» · extraído con public/xlsx_lectura.js",
+ "avisos_lectura": [
+  "1 fila(s) traen precio 0 en el archivo: se tratan como SIN precio (un 0 no es un precio)."
+ ],
+ "filas": [
+  {
+   "codigo": "1.1",
+   "capitulo": "CAFETERÍA",
+   "descripcion": "Suministro e instalación de tomacoriente monofásica normal de 15 A 120 V en canaleta metálica. Incluye: troquel metálico para toma eléctrica, cable cobre AWG LSZH 3x12 trenzado azul, emplame autodesforre, accesorios y elementos de fijación y anclaje,\r\ntransporte, marquilla de identificación y aseo diario.",
+   "unidad": "UND",
+   "cantidad": 14,
+   "precio_archivo": 320488
+  },
+  {
+   "codigo": "1.2",
+   "capitulo": "CAFETERÍA",
+   "descripcion": "Suministro e instalación de tomacoriente monofásica de 15 A 120 V, en muro, tubo PVC 1\", tubo PVC 1/2\", caja metálica Ref. 5800,  cable cobre AWG LSZH 3x12 trenzado azul, emplame autodesforre, accesorios y elementos de fijación y anclaje, transporte,  marquilla de identificación y aseo diario.",
+   "unidad": "UND",
+   "cantidad": 15,
+   "precio_archivo": 301516
+  },
+  {
+   "codigo": "1.3",
+   "capitulo": "CAFETERÍA",
+   "descripcion": "Suministro e instalación de canaleta metalica calibre 20-22 con división, pintura electrostática de 15x5 cm, color blanca.",
+   "unidad": "ML",
+   "cantidad": 14,
+   "precio_archivo": 74596
+  },
+  {
+   "codigo": "1.4",
+   "capitulo": "CAFETERÍA",
+   "descripcion": "Suministro e instalación de cable de cobre 3x12 trenzado AWG  LSZH azul",
+   "unidad": "ML",
+   "cantidad": 57,
+   "precio_archivo": 30172
+  },
+  {
+   "codigo": "1.5",
+   "capitulo": "CAFETERÍA",
+   "descripcion": "Suministro e instalación de cable de cobre No 8  AWG  LSZH",
+   "unidad": "ML",
+   "cantidad": 20,
+   "precio_archivo": 26328
+  },
+  {
+   "codigo": "1.6",
+   "capitulo": "CAFETERÍA",
+   "descripcion": "Suministro e instalación de cable de cobre No 12 AWG LSZH",
+   "unidad": "ML",
+   "cantidad": 65,
+   "precio_archivo": 17552
+  },
+  {
+   "codigo": "1.7",
+   "capitulo": "CAFETERÍA",
+   "descripcion": "Suministro e instalación de alambre de cobre desnudo No 14 AWG",
+   "unidad": "ML",
+   "cantidad": 150,
+   "precio_archivo": 14928
+  },
+  {
+   "codigo": "1.8",
+   "capitulo": "CAFETERÍA",
+   "descripcion": "Suministro e instalación de breaker tipo industrial de 3*40 A de 1x20 A.",
+   "unidad": "UND",
+   "cantidad": 1,
+   "precio_archivo": 81852
+  },
+  {
+   "codigo": "1.9",
+   "capitulo": "CAFETERÍA",
+   "descripcion": "Suministro e instalación de breaker tipo enchufable de 1x20 A.",
+   "unidad": "UND",
+   "cantidad": 9,
+   "precio_archivo": 32908
+  },
+  {
+   "codigo": "1.10",
+   "capitulo": "CAFETERÍA",
+   "descripcion": "Suministro de tablero metálico trifásico de 18 circuitos  con espacio para totalizador.",
+   "unidad": "UND",
+   "cantidad": 1,
+   "precio_archivo": 3129564
+  },
+  {
+   "codigo": "1.11",
+   "capitulo": "CAFETERÍA",
+   "descripcion": "Desconexión, desmonte y retiro tablero existente",
+   "unidad": "GBL",
+   "cantidad": 1,
+   "precio_archivo": 1529364
+  },
+  {
+   "codigo": "1.12",
+   "capitulo": "CAFETERÍA",
+   "descripcion": "Marquillaje e identificación",
+   "unidad": "GBL",
+   "cantidad": 1,
+   "precio_archivo": 2493992
+  },
+  {
+   "codigo": "2,1,1",
+   "capitulo": "CAFETERÍA · SALIDAS ILUMINACIÓN",
+   "descripcion": "Suministro e instalación tubo EMT de 1/2\", caja octogonal, cable de cobre aislado No 12 AWG LSZH, tomacorriente monofásica, conector tipo resorte o empalme autodesforre, accesorios y elementos de fijación, transporte, alquiler andamio, armado y desarmado y aseo diario.",
+   "unidad": "UND",
+   "cantidad": 26,
+   "precio_archivo": 312864
+  },
+  {
+   "codigo": "2.2.1",
+   "capitulo": "CAFETERÍA · CONTROLES ILUMINACIÓN",
+   "descripcion": "Suministro e instalación de interruptor sencill, tubo eMT de 1/2\", caja metálica tipo radwell, cable de cobre No 12 AWG LSZH, conector tipo resorte o emplame autodesforre, accesorios y elemntos de fijación,",
+   "unidad": "UND",
+   "cantidad": 2,
+   "precio_archivo": 301516
+  },
+  {
+   "codigo": "2,2,2",
+   "capitulo": "CAFETERÍA · CONTROLES ILUMINACIÓN",
+   "descripcion": "Suministro e instalación de interruptor doble, tubo EMT de 1/2\", caja metálica tipo Radwell, cable No 12 AWG LSZH, conector tipo resorte o empalme autodesforre, accesorios y elementos de fijación,  transporte, aseo diario.",
+   "unidad": "UND",
+   "cantidad": 1,
+   "precio_archivo": 309032
+  },
+  {
+   "codigo": "2,2,2",
+   "capitulo": "CAFETERÍA · CONTROLES ILUMINACIÓN",
+   "descripcion": "Suministro e instalación de interruptor triple, tubo EMT de 1/2\", caja metálica tipo Radwell, cable No 12 AWG LSZH, conector tipo resorte o empalme autodesforre, accesorios y elementos de fijación,  transporte, aseo diario.",
+   "unidad": "UND",
+   "cantidad": 2,
+   "precio_archivo": 320460
+  },
+  {
+   "codigo": "2,3,1",
+   "capitulo": "CAFETERÍA · LUMINARIAS",
+   "descripcion": "Luminaria LED 120x30 Cm 40 W Sylvania Ref. P28399-41, marco metálico pintura electrostática color blanco, accesotios, elementos de fijación y trasporte.",
+   "unidad": "UND",
+   "cantidad": 8,
+   "precio_archivo": 153584
+  },
+  {
+   "codigo": "2,3,3",
+   "capitulo": "CAFETERÍA · LUMINARIAS",
+   "descripcion": "Luminaria LED 60x60 Cm 40 W Sylvania Ref. P27916, marco metálico pintura electrostática color blanco, accesotios, elementos de fijación y anclaje, trasporte.",
+   "unidad": "UND",
+   "cantidad": 16,
+   "precio_archivo": 131640
+  },
+  {
+   "codigo": "1.1",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Suministro e instalación de tomacoriente monofásica normal de 15 A 120 V en canaleta metálica. Incluye: troquel metálico para toma eléctrica, cable cobre AWG LSZH 3x12 trenzado azul, emplame autodesforre, accesorios y elementos de fijación y anclaje,\r\ntransporte, marquilla de identificación y aseo diario.",
+   "unidad": "UND",
+   "cantidad": 9,
+   "precio_archivo": 320488
+  },
+  {
+   "codigo": "1.2",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Suministro e instalación de canaleta metalica calibre 20-22 con división, pintura electrostática de 15x5 cm, color blanca.",
+   "unidad": "ML",
+   "cantidad": 26,
+   "precio_archivo": 74596
+  },
+  {
+   "codigo": "1.3",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Suministro e instalación de cable de cobre 3x12 trenzado AWG  LSZH azul",
+   "unidad": "ML",
+   "cantidad": 41,
+   "precio_archivo": 30172
+  },
+  {
+   "codigo": "1.4",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Suministro e instalación de cable de cobre No 12 AWG LSZH",
+   "unidad": "ML",
+   "cantidad": 273,
+   "precio_archivo": 17552
+  },
+  {
+   "codigo": "1.5",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Suministro e instalación de alambre de cobre desnudo No 14 AWG",
+   "unidad": "ML",
+   "cantidad": 157,
+   "precio_archivo": 14928
+  },
+  {
+   "codigo": "1.6",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Suministro e instalación de breaker tipo industrial de 3x40 A.",
+   "unidad": "UND",
+   "cantidad": 1,
+   "precio_archivo": 81852
+  },
+  {
+   "codigo": "1.7",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Suministro e instalación de breaker tipo enchufable de 3x20 A.",
+   "unidad": "UND",
+   "cantidad": 2,
+   "precio_archivo": 55152
+  },
+  {
+   "codigo": "1.8",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Suministro e instalación de breaker tipo enchufable de 1x20 A.",
+   "unidad": "UND",
+   "cantidad": 5,
+   "precio_archivo": 41688
+  },
+  {
+   "codigo": "1.9",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Suministro e instalación de breaker tipo riel de 3x40 A.",
+   "unidad": "UND",
+   "cantidad": 1,
+   "precio_archivo": 81852
+  },
+  {
+   "codigo": "1.10",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Suministro de tablero metálico trifásico de 18 circuitos con espacio para totalizador",
+   "unidad": "UND",
+   "cantidad": 1,
+   "precio_archivo": 3129564
+  },
+  {
+   "codigo": "1.11",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Suministro e instalación de caja de paso metálica de 30*30*20 Cm, elementos de fijación y anclaje.",
+   "unidad": "UND",
+   "cantidad": 5,
+   "precio_archivo": 88536
+  },
+  {
+   "codigo": "1.12",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Reemplazo tubería sobrepuesta PVC existente de 2\" en costado occidental por tubería EMT de 2\", incluye unionesy terminales en EMT 2\"",
+   "unidad": "ML",
+   "cantidad": 27,
+   "precio_archivo": 133824
+  },
+  {
+   "codigo": "1.13",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Instalación tubería sobrepuesta de 1 1/2\" entre caja de paso existente y caja de paso nueva, incluye uniones y terminales en EMT 1 1/2\"",
+   "unidad": "ML",
+   "cantidad": 27,
+   "precio_archivo": 114616
+  },
+  {
+   "codigo": "1.14",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Regata en muro tubería de 1 1/2\"",
+   "unidad": "ML",
+   "cantidad": 5,
+   "precio_archivo": 52956
+  },
+  {
+   "codigo": "1.15",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Regata en piso tubería de 1 1/2\"",
+   "unidad": "ML",
+   "cantidad": 13,
+   "precio_archivo": 57040
+  },
+  {
+   "codigo": "1.16",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Acometida entre Tablero principal y Tablero Eléctrico Sala de Música en cable de cobre No 6 AWG LSZH. 3 fases y neutro",
+   "unidad": "ML",
+   "cantidad": 240,
+   "precio_archivo": 47044
+  },
+  {
+   "codigo": "1.17",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Acometida entre Tablero principal y Tablero Eléctrico Sala de Música en cable de cobre No 10 AWG LSZH. Tierra",
+   "unidad": "ML",
+   "cantidad": 60,
+   "precio_archivo": 36656
+  },
+  {
+   "codigo": "1.18",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · RED FUERZA",
+   "descripcion": "Desalambrado y realambrado de acometida existente por cambio de tubería.",
+   "unidad": "GBL",
+   "cantidad": 1,
+   "precio_archivo": 2712980
+  },
+  {
+   "codigo": "2,1,1",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · SALIDAS ILUMINACIÓN",
+   "descripcion": "Suministro e instalación tubo EMT de 1/2\", caja octogonal, cable de cobre aislado No 12 AWG LSZH, tomacorriente monofásica, conector tipo resorte o empalme autodesforre, accesorios y elementos de fijación, transporte, alquiler andamio, armado y desarmado y aseo diario.",
+   "unidad": "UND",
+   "cantidad": 24,
+   "precio_archivo": 312864
+  },
+  {
+   "codigo": "2,2,2",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · CONTROLES ILUMINACIÓN",
+   "descripcion": "Suministro e instalación de interruptor triple, tubo EMT de 3/4\", caja metálica tipo Radwell, cable No 12 aWG LSZH, conector tipo resorte o empalme autodesforre, transporte, aseo diario.",
+   "unidad": "UND",
+   "cantidad": 1,
+   "precio_archivo": 320460
+  },
+  {
+   "codigo": "2,3,1",
+   "capitulo": "SALÓN 200  SALÓN DE MÚSICA · LUMINARIAS",
+   "descripcion": "PENDIENTE-POSIBLE USO DE RIEL Y LUMINARIA SYLVANIA",
+   "unidad": "UND",
+   "cantidad": 24,
+   "precio_archivo": null
+  },
+  {
+   "codigo": "1.1",
+   "capitulo": "CASETA AIRE ACONDICIONADO · RED FUERZA",
+   "descripcion": "Suministro e instalación de tomacoriente monofásica de 15 A 120 V, en muro, tubo PVC 1\", tubo PVC 1/2\", caja metálica Ref. 5800,  cable cobre AWG LSZH 3x12 trenzado azul, emplame autodesforre, accesorios y elementos de fijación y anclaje, transporte,  marquilla de identificación y aseo diario.",
+   "unidad": "UND",
+   "cantidad": 1,
+   "precio_archivo": 613836
+  },
+  {
+   "codigo": "2,1,1",
+   "capitulo": "CASETA AIRE ACONDICIONADO · SALIDAS ILUMINACIÓN",
+   "descripcion": "Suministro e instalación tubo EMT de 1/2\", caja octogonal, cable de cobre aislado No 12 AWG LSZH, tomacorriente monofásica, conector tipo resorte o empalme autodesforre, accesorios y elementos de fijación, transporte, alquiler andamio, armado y desarmado y aseo diario.",
+   "unidad": "UND",
+   "cantidad": 2,
+   "precio_archivo": 312864
+  },
+  {
+   "codigo": "2.2.1",
+   "capitulo": "CASETA AIRE ACONDICIONADO · CONTROLES ILUMINACIÓN",
+   "descripcion": "Suministro e instalación de interruptor sencill, tubo eMT de 1/2\", caja metálica tipo radwell, cable de cobre No 12 AWG LSZH, conector tipo resorte o emplame autodesforre, accesorios y elemntos de fijación,",
+   "unidad": "UND",
+   "cantidad": 3,
+   "precio_archivo": 301516
+  },
+  {
+   "codigo": "2,3,3",
+   "capitulo": "CASETA AIRE ACONDICIONADO · LUMINARIAS",
+   "descripcion": "Luminaria LED 60x60 Cm 40 W Sylvania Ref. P27916, marco metálico pintura electrostática color blanco, accesotios, elementos de fijación y trasporte.",
+   "unidad": "UND",
+   "cantidad": 1,
+   "precio_archivo": 131640
+  },
+  {
+   "codigo": "1.1",
+   "capitulo": "SALÓN 216  SALA DE INSTRUMENTOS · RED FUERZA",
+   "descripcion": "Suministro e instalación de tomacoriente monofásica normal de 15 A 120 V en canaleta metálica. Incluye: troquel metálico para toma eléctrica, cable cobre AWG LSZH 3x12 trenzado azul, emplame autodesforre, accesorios y elementos de fijación y anclaje,\r\ntransporte, marquilla de identificación y aseo diario.",
+   "unidad": "UND",
+   "cantidad": 13,
+   "precio_archivo": 320488
+  },
+  {
+   "codigo": "1.2",
+   "capitulo": "SALÓN 216  SALA DE INSTRUMENTOS · RED FUERZA",
+   "descripcion": "Suministro e instalación de canaleta metalica calibre 20-22 con división, pintura electrostática de 15x5 cm, color blanca.",
+   "unidad": "ML",
+   "cantidad": 30,
+   "precio_archivo": 74596
+  },
+  {
+   "codigo": "1.3",
+   "capitulo": "SALÓN 216  SALA DE INSTRUMENTOS · RED FUERZA",
+   "descripcion": "Suministro e instalación de cable de cobre 3x12 trenzado AWG  LSZH azul",
+   "unidad": "ML",
+   "cantidad": 63,
+   "precio_archivo": 30172
+  },
+  {
+   "codigo": "1.4",
+   "capitulo": "SALÓN 216  SALA DE INSTRUMENTOS · RED FUERZA",
+   "descripcion": "Suministro e instalación de cable de cobre No 12 AWG LSZH",
+   "unidad": "ML",
+   "cantidad": 273,
+   "precio_archivo": 17552
+  },
+  {
+   "codigo": "1.5",
+   "capitulo": "SALÓN 216  SALA DE INSTRUMENTOS · RED FUERZA",
+   "descripcion": "Suministro e instalación de alambre de cobre desnudo No 14 AWG",
+   "unidad": "ML",
+   "cantidad": 79,
+   "precio_archivo": 14928
+  },
+  {
+   "codigo": "1.6",
+   "capitulo": "SALÓN 216  SALA DE INSTRUMENTOS · RED FUERZA",
+   "descripcion": "Suministro e instalación de breaker tipo enchufable de 1x20 A.",
+   "unidad": "UND",
+   "cantidad": 3,
+   "precio_archivo": 41688
+  },
+  {
+   "codigo": "1.7",
+   "capitulo": "SALÓN 216  SALA DE INSTRUMENTOS · RED FUERZA",
+   "descripcion": "Desconexión, deslambrado  de acometida existente para cambio tablero existente.",
+   "unidad": "GBL",
+   "cantidad": 1,
+   "precio_archivo": 1929244
+  },
+  {
+   "codigo": "1.8",
+   "capitulo": "SALÓN 216  SALA DE INSTRUMENTOS · RED FUERZA",
+   "descripcion": "Alambrado, traslado y reconexión de red eléctrica existente a nuevo tablero eléctrico.",
+   "unidad": "GBL",
+   "cantidad": 1,
+   "precio_archivo": 3259128
+  },
+  {
+   "codigo": "2,1,1",
+   "capitulo": "SALÓN 216  SALA DE INSTRUMENTOS · SALIDAS ILUMINACIÓN",
+   "descripcion": "Suministro e instalación tubo EMT de 1/2\", caja octogonal, cable de cobre aislado No 12 AWG LSZH, tomacorriente monofásica, conector tipo resorte o empalme autodesforre, accesorios y elementos de fijación, transporte, alquiler andamio, armado y desarmado y aseo diario.",
+   "unidad": "UND",
+   "cantidad": 9,
+   "precio_archivo": 312864
+  },
+  {
+   "codigo": "2,2,2",
+   "capitulo": "SALÓN 216  SALA DE INSTRUMENTOS · CONTROLES ILUMINACIÓN",
+   "descripcion": "Suministro e instalación de interruptor triple, tubo EMT de 3/4\", caja metálica tipo Radwell, cable No 12 aWG LSZH, conector tipo resorte o empalme autodesforre, transporte, aseo diario.",
+   "unidad": "UND",
+   "cantidad": 1,
+   "precio_archivo": 320460
+  },
+  {
+   "codigo": "2,3,1",
+   "capitulo": "SALÓN 216  SALA DE INSTRUMENTOS · LUMINARIAS",
+   "descripcion": "Luminaria panel LED 120*30 Cm Sylvania Ref. P27916-41",
+   "unidad": "UND",
+   "cantidad": 9,
+   "precio_archivo": 153584
+  }
+ ]
+}

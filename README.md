@@ -82,7 +82,7 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `lib/semantica.js` | Los **vocabularios**: `norm`, blacklist de objetos ajenos, whitelist de obra (heredadas), verbos de obra y términos no pertinentes |
 | `data/vocabulario_unspsc.json` | Semilla curada de términos distintivos por familia UNSPSC (respaldo del derivado) |
 | `lib/almacen.js` | Esquema de claves Redis + compresión/particionado de chunks |
-| `api/apu/[accion].js` | **Editor de APU y lector de pliegos** — una sola función para nueve acciones (catálogo, inferir, calcular, **rentabilidad**, guardar, cargar, listar, extraer-texto, descargar): el plan Hobby de Vercel admite 12 funciones por despliegue |
+| `api/apu/[accion].js` | **Editor de APU y lector de pliegos** — una sola función para diez acciones (catálogo, inferir, calcular, **rentabilidad**, guardar, cargar, listar, **importar**, extraer-texto, descargar): el plan Hobby de Vercel admite 12 funciones por despliegue |
 | `lib/apu/rentabilidad.js` | Lo que el presupuesto no responde: flujo de caja mes a mes, capital expuesto, **payback**, precio piso, maldición del ganador y **VEG** |
 | `lib/apu/tipologias.js` | Las 22 tipologías cerradas y el mapa departamento→región. `regionDeDepartamento` es el punto único de paso y **jamás devuelve una región de relleno** |
 | `lib/apu/inferencia.js` | Objeto del proceso → tipología de obra e ítems: léxico con puntaje (Nivel A) + UNSPSC como **veto** (Nivel B) |
@@ -100,7 +100,10 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `docs/AUDITORIA_INTEGRAL.md` | **Censo del sistema** (ago 2026): qué módulo hace qué, qué está probado, qué endpoint pide llave y por qué, qué está duplicado, qué está muerto y qué falta — con las correcciones pendientes ordenadas por impacto en las adjudicaciones |
 | `public/` | Frontend estático (Tailwind CDN, estilo Apple, gate de clave) |
 | `public/pliego.html` + `pliego.js` | **Lector de pliegos**: pdf.js en el navegador, columnas por coordenadas, progreso por página, tabla editable y respaldo por OCR |
-| `public/apu.html` + `apu.js` | Editor de APU: tabla editable, inferencia desde el objeto, sugerencia del factor de baja desde el histórico, borradores y exportación |
+| `public/apu.html` + `apu.js` | Editor de APU: tabla editable, inferencia desde el objeto, **carga de ítems desde Excel/CSV** (con vista previa y mapeo al catálogo), sugerencia del factor de baja, borradores y exportación con formato Nogal |
+| `public/xlsx_lectura.js` | Lector .xlsx/.csv propio (ZIP + XML, DEFLATE inyectable) — la otra mitad de `public/xlsx.js`. Corre en navegador y en Node |
+| `public/apu_libro.js` | El presupuesto calculado → libro Excel con formato del **Presupuesto Nogal 4** (capítulos, fórmulas, AIU + IVA sobre utilidad, firmas, hoja APU por ítem) |
+| `lib/apu/importar.js` | Filas importadas → ítems del catálogo de precios: mapeo con plural tolerado y política de precios declarada (el del archivo manda; una sugerencia sin precio no cobra sola) |
 | `public/xlsx.js` | **Escritor `.xlsx` propio, sin dependencias** (ZIP + OOXML con estilos reales). Ver «Exportación a Excel» |
 | `public/admin.html` + `admin.js` | Panel de administración: encadena la sincronización full, **dashboard de procesos**, **carga de RUP**, **experiencia ejecutada** y **auditoría de cobertura**, todo desde el navegador y sin terminal |
 | `tests/e2e.js` | Ciclo completo con mocks de Socrata y Upstash (sin red externa) |
@@ -1297,7 +1300,7 @@ biblioteca de APU valorados, no calcula rentabilidad, no propone AIU. Entrega í
 **Dos páginas y dos catálogos, a propósito.** El lector (`/pliego.html`) usa
 `data/catalogo_apu.json`: 93 ítems **sin precios** y con sinónimos, es decir un **diccionario de
 reconocimiento** para casar el texto de un pliego. El editor (`/apu.html`) usa
-`data/apu_catalogo.json`: 17 ítems **con precios**, composición y rendimiento, es decir la
+`data/apu_catalogo.json`: 174 ítems **con precios** (17 de referencia + 157 del contrato adjudicado Nogal 2025, ver `docs/CALIBRACION_APU.md`), composición y rendimiento, es decir la
 **biblioteca de costeo**. Son preguntas distintas —«¿qué ítem es esta fila?» frente a «¿cuánto cuesta
 este ítem?»— y fusionarlas obligaría a elegir entre perder recall de reconocimiento o inventar
 precios. Lo que sí se hace es **emitir el código del catálogo de precios cuando el ítem reconocido

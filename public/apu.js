@@ -306,13 +306,24 @@
     $("btn-calcular").disabled = filas.length === 0;
     $("btn-exportar").disabled = !ultimoCalculo;
 
+    /* Una sola cadena y un solo innerHTML: con 200-300 ítems importados, armar
+       nodos uno a uno congela la pestaña. Los manejadores van DELEGADOS (abajo),
+       así que repintar entero no pierde ninguno. */
     cuerpo.innerHTML = filas.map((f, i) => {
-      const def = CATALOGO ? CATALOGO.items.find((x) => x.codigo === f.item_id) : null;
+      const def = CATALOGO && f.item_id ? CATALOGO.items.find((x) => x.codigo === f.item_id) : null;
       const rendPorDefecto = def && Number.isFinite(def.rendimiento_dia) ? def.rendimiento_dia : null;
+      const capitulo = f.capitulo
+        ? `<span class="block text-[11px] uppercase tracking-wide text-gray-400">${esc(f.capitulo)}</span>` : "";
+      const chipManual = f.precio_manual != null
+        ? `<span class="mt-0.5 inline-block rounded bg-amber-100 px-1.5 text-[11px] text-amber-900">precio ${f.origen_precio === "archivo" ? "del archivo" : "manual"}</span>` : "";
+      const sugerencia = !f.item_id && f.sugerencia
+        ? `<span class="block text-[11px] text-gray-400">Sugerencia del catálogo: ${esc(f.sugerencia)}</span>` : "";
       return `<tr data-fila="${i}">
         <td class="py-2 pr-3">
-          <span class="font-medium">${esc(f.descripcion || f.item_id)}</span>
-          <span class="block text-xs text-gray-400">${esc(f.item_id)}</span>
+          ${capitulo}
+          <span class="font-medium">${esc(f.descripcion || f.item_id || "—")}</span>
+          <span class="block text-xs text-gray-400">${esc(f.item_id || (f.codigo ? `fila ${f.codigo} del archivo` : "personalizado"))}</span>
+          ${sugerencia}${chipManual}
         </td>
         <td class="py-2 pr-3 text-gray-500">${esc(f.unidad || "—")}</td>
         <td class="py-2 pr-3 text-right">
@@ -325,6 +336,12 @@
                  value="${f.rendimiento_override == null ? "" : f.rendimiento_override}"
                  placeholder="${rendPorDefecto == null ? "—" : num(rendPorDefecto)}"
                  class="edit w-24 rounded border border-gray-200 px-2 py-1 text-right num">
+        </td>
+        <td class="py-2 pr-3 text-right">
+          <input type="number" min="0" step="any" data-campo="precio" data-fila="${i}"
+                 value="${f.precio_manual == null ? "" : f.precio_manual}"
+                 placeholder="${f.item_id ? "del catálogo" : "requerido"}"
+                 class="edit w-28 rounded border border-gray-200 px-2 py-1 text-right num">
         </td>
         <td class="py-2 pr-3 text-right num" data-celda="material-${i}">—</td>
         <td class="py-2 pr-3 text-right num" data-celda="mano_obra-${i}">—</td>
@@ -353,6 +370,18 @@
     const crudo = e.target.value.trim();
     if (campo === "cantidad") {
       filas[i].cantidad = crudo === "" ? 0 : Number(crudo);
+    } else if (campo === "precio") {
+      /* vacío O cero = SIN precio manual, jamás «precio cero»: un 0 aquí sería
+         un precio inventado (la regla de anticipo_pct = 0). Si la fila tiene
+         ítem del catálogo, quitar el precio manual vuelve al precio calculado. */
+      const n = Number(crudo);
+      filas[i].precio_manual = crudo === "" || !Number.isFinite(n) || n <= 0 ? null : n;
+      if (filas[i].precio_manual != null && filas[i].origen_precio !== "archivo") {
+        filas[i].origen_precio = "manual";
+      }
+      if (filas[i].precio_manual == null && filas[i].origen_precio === "manual") {
+        filas[i].origen_precio = null;
+      }
     } else {
       // vacío = usar el rendimiento del catálogo, no «rendimiento cero»
       filas[i].rendimiento_override = crudo === "" ? null : Number(crudo);
@@ -381,8 +410,15 @@
         body: {
           items: filas.map((f) => ({
             item_id: f.item_id,
+            codigo: f.codigo || null,
+            descripcion: f.descripcion || null,
+            unidad: f.unidad || null,
+            capitulo: f.capitulo || null,
             cantidad: f.cantidad,
             rendimiento_override: f.rendimiento_override,
+            // null = sin precio manual; el motor distingue null de 0 a propósito
+            precio_manual: f.precio_manual == null ? null : f.precio_manual,
+            origen_precio: f.origen_precio || null,
           })),
           departamento: $("departamento").value,
           config: leerConfig(),
@@ -416,24 +452,32 @@
     if (ok && $("id-proceso").value.trim()) await calcularRentabilidad({ auto: true });
   });
 
-  function celda(nombre, i) { return document.querySelector(`[data-celda="${nombre}-${i}"]`); }
-
   function pintarCalculoEnTabla(r) {
+    /* Las filas se resuelven UNA vez y las celdas se buscan DENTRO de su fila:
+       con 300 ítems, un querySelector global por celda (6 × 300 sobre el
+       documento entero) tarda lo bastante como para sentirse. */
+    const filasDom = $("tabla").querySelectorAll("tr[data-fila]");
     r.items.forEach((it, i) => {
-      const fila = document.querySelector(`tr[data-fila="${i}"]`);
-      if (fila) fila.classList.toggle("bg-red-50", !!it.incompleto);
+      const fila = filasDom[i];
+      if (!fila) return;
+      fila.classList.toggle("bg-red-50", !!it.incompleto);
+      // ámbar = suma al total con precio manual/del archivo, sin APU detrás
+      fila.classList.toggle("bg-amber-50", !it.incompleto && !!it.sin_apu);
       const campos = [
         ["material", it.costo_material_unitario], ["mano_obra", it.costo_mano_obra_unitario],
         ["equipo", it.costo_equipo_unitario], ["transporte", it.costo_transporte_unitario],
         ["unitario", it.costo_directo_unitario], ["total", it.costo_total],
       ];
       for (const [nombre, valor] of campos) {
-        const c = celda(nombre, i);
+        const c = fila.querySelector(`[data-celda="${nombre}-${i}"]`);
         if (c) c.textContent = pesos(valor);   // `null` → «—», jamás «$0»
       }
-      if (it.incompleto) {
-        const c = celda("unitario", i);
-        if (c) c.title = it.mensaje || `Sin precio: ${(it.insumos_sin_precio || []).join(", ")}`;
+      const cu = fila.querySelector(`[data-celda="unitario-${i}"]`);
+      if (cu) {
+        if (it.incompleto) cu.title = it.mensaje || "Sin precio";
+        else if (it.sin_apu && Number.isFinite(it.cd_catalogo)) {
+          cu.title = `Precio ${it.origen_precio === "archivo" ? "del archivo" : "manual"}. Referencia del catálogo: ${pesos(it.cd_catalogo)}`;
+        } else cu.title = "";
       }
     });
   }
@@ -602,13 +646,20 @@
       $("entidad").value = p.entidad || "";
       aplicarConfig(p.config);
       filas = (p.items || []).map((f) => {
-        const def = CATALOGO ? CATALOGO.items.find((x) => x.codigo === f.item_id) : null;
+        const def = CATALOGO && f.item_id ? CATALOGO.items.find((x) => x.codigo === f.item_id) : null;
         return {
-          item_id: f.item_id,
+          item_id: f.item_id || null,
+          codigo: f.codigo || null,
+          capitulo: f.capitulo || null,
           descripcion: f.descripcion || (def ? def.descripcion : f.item_id),
           unidad: f.unidad || (def ? def.unidad : null),
           cantidad: f.cantidad,
           rendimiento_override: f.rendimiento_override == null ? null : f.rendimiento_override,
+          // los borradores guardados antes de la importación no traen estos
+          // campos: `undefined` y `null` significan lo mismo aquí (sin precio manual)
+          precio_manual: f.precio_manual == null ? null : f.precio_manual,
+          origen_precio: f.origen_precio || null,
+          sugerencia: f.sugerencia || null,
         };
       });
       ultimoCalculo = null;
@@ -623,157 +674,176 @@
     }
   });
 
-  /* ─────────────────────── exportación a Excel ──────────────────────── */
+  /* ─────────────────────── exportación a Excel ────────────────────────
+     El formato lo arma `public/apu_libro.js` (formato del Presupuesto Nogal 4:
+     capítulos, fórmulas =D×E, bloque A/I/U + IVA sobre la utilidad, firmas y
+     hoja APU con el desglose por insumo). Vive fuera de este IIFE para que el
+     generador de Node use EXACTAMENTE el mismo constructor: dos copias del
+     formato divergen a la primera corrección. */
   $("btn-exportar").addEventListener("click", () => {
     if (!ultimoCalculo) { mensaje("Calcule el presupuesto antes de exportarlo.", "error"); return; }
     try {
-      const bytes = XLSXApu.construirLibro(construirHojas(ultimoCalculo));
+      const hojas = APULibro.construirLibroNogal(ultimoCalculo, {
+        titulo: $("nombre-presupuesto").value.trim() || "Presupuesto de obra",
+        objeto: $("objeto").value.trim().slice(0, 400) || null,
+        entidad: $("entidad").value.trim() || null,
+        departamento: $("departamento").value || null,
+        fecha: new Date().toISOString().slice(0, 10),
+      });
+      const bytes = XLSXApu.construirLibro(hojas);
       const nombre = ($("nombre-presupuesto").value.trim() || "presupuesto-apu")
         .replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-").toLowerCase();
       XLSXApu.descargar(bytes, `${nombre || "presupuesto-apu"}.xlsx`);
-      mensaje("Excel generado.", "ok");
+      mensaje("Excel generado (formato APU profesional: presupuesto + análisis por ítem).", "ok");
     } catch (e) {
       mensaje(`No se pudo generar el Excel: ${e.message}`, "error");
     }
   });
 
-  /* Dos hojas: el presupuesto (lo que se entrega) y el desglose insumo a
-     insumo (lo que permite defenderlo si la entidad lo pregunta). */
-  function construirHojas(r) {
-    const c = r.configuracion;
-    const s = r.resumen;
-    const hoy = new Date().toISOString().slice(0, 10);
-    const titulo = $("nombre-presupuesto").value.trim() || "Presupuesto de obra";
 
-    /* ---------- hoja 1 · presupuesto ---------- */
-    const filasHoja = [
-      [{ v: "ANÁLISIS DE PRECIOS UNITARIOS", s: "titulo" }],
-      [{ v: titulo, s: "negrita" }],
-      [{ v: `Fecha: ${hoy}   ·   Departamento: ${r.departamento || "—"}   ·   Entidad: ${$("entidad").value.trim() || "—"}`, s: "subtitulo" }],
-      [{ v: $("objeto").value.trim().slice(0, 400), s: "subtitulo" }],
-      [],
-      [
-        { v: "Ítem", s: "encabezado" }, { v: "Descripción", s: "encabezado" },
-        { v: "Unidad", s: "encabezado" }, { v: "Cantidad", s: "encabezado" },
-        { v: "Rendim./día", s: "encabezado" }, { v: "Material", s: "encabezado" },
-        { v: "Mano de obra", s: "encabezado" }, { v: "Equipo", s: "encabezado" },
-        { v: "Transporte", s: "encabezado" }, { v: "Vr. unitario", s: "encabezado" },
-        { v: "Vr. total", s: "encabezado" },
-      ],
-    ];
+  /* ════════════════════ Importación desde Excel/CSV ════════════════════
+     El archivo se lee EN EL NAVEGADOR (public/xlsx_lectura.js): al servidor
+     viajan solo las filas estructuradas, que `/api/apu/importar` mapea contra
+     el catálogo calibrado. La vista previa enseña el mapeo ANTES de tocar la
+     tabla, y una sugerencia 🟡 («revisar») solo cobra precio del catálogo si su
+     casilla queda marcada — nunca se usa automáticamente una lista a medias. */
+  let importacion = null;
 
-    for (const it of r.items) {
-      filasHoja.push([
-        { v: it.item_id, s: "texto" },
-        { v: it.descripcion || "—", s: "texto" },
-        { v: it.unidad || "—", s: "texto" },
-        { v: it.cantidad, s: "cantidad" },
-        { v: it.rendimiento_dia, s: "cantidad" },
-        { v: it.costo_material_unitario, s: "moneda" },
-        { v: it.costo_mano_obra_unitario, s: "moneda" },
-        { v: it.costo_equipo_unitario, s: "moneda" },
-        { v: it.costo_transporte_unitario, s: "moneda" },
-        { v: it.costo_directo_unitario, s: "moneda" },
-        { v: it.costo_total, s: "moneda" },
-      ]);
+  $("btn-importar").addEventListener("click", () => $("archivo-importar").click());
+
+  $("archivo-importar").addEventListener("change", async (e) => {
+    const archivo = e.target.files && e.target.files[0];
+    e.target.value = "";                    // permite volver a elegir el mismo archivo
+    if (!archivo) return;
+    const btn = $("btn-importar");
+    btn.disabled = true;
+    const antes = btn.textContent;
+    btn.textContent = "Leyendo…";
+    try {
+      const crudas = await leerArchivoImportado(archivo);
+      if (!crudas.filas.length) {
+        mensaje(`No se encontraron ítems en «${archivo.name}». ${(crudas.avisos || []).join(" ")}`, "error");
+        return;
+      }
+      const r = await api("/api/apu/importar", {
+        method: "POST",
+        body: { filas: crudas.filas, departamento: $("departamento").value },
+      });
+      if (!r) return;                       // canceló el diálogo del token
+      importacion = { ...r, avisos_lectura: crudas.avisos || [], nombre_archivo: archivo.name };
+      abrirModalImportar();
+    } catch (err) {
+      mensaje(`No se pudo importar: ${err.message}`, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = antes;
     }
+  });
 
-    filasHoja.push([]);
-    const resumenFilas = [
-      ["COSTO DIRECTO TOTAL", s.costo_directo_total, "destacado"],
-      [`Administración (A) ${c.aiu_pct} %`, s.administracion, "normal"],
-      [`Imprevistos (I) ${c.imprevistos_pct} %`, s.imprevistos, "normal"],
-      [`Utilidad (U) ${c.utilidad_pct} %`, s.utilidad, "normal"],
-      [`AIU total ${c.aiu_total_pct} % (${c.modo_aiu})`, null, "normal"],
-      ["PRECIO DE VENTA", s.precio_venta, "resumen"],
-    ];
-    if (c.aplicar_ajuste_competitivo) {
-      resumenFilas.push([`Ajuste competitivo −${c.factor_baja} %`, null, "normal"]);
-      resumenFilas.push(["PRECIO FINAL OFERTADO", s.precio_final, "destacado"]);
+  /* inflador para los .xlsx de Excel real (partes DEFLATE): el del navegador.
+     Si no existe y el archivo lo necesita, xlsx_lectura responde con el error
+     accionable («use un navegador reciente o exporte a CSV»). */
+  async function inflarNavegador(u8) {
+    const ds = new DecompressionStream("deflate-raw");
+    const respuesta = new Response(new Blob([u8]).stream().pipeThrough(ds));
+    return new Uint8Array(await respuesta.arrayBuffer());
+  }
+
+  async function leerArchivoImportado(archivo) {
+    const bytes = new Uint8Array(await archivo.arrayBuffer());
+    if (/\.csv$/i.test(archivo.name)) {
+      /* Excel-Windows guarda «CSV» en ANSI (windows-1252): si el UTF-8 produce
+         reemplazos se re-decodifica — la misma regla del CSV de experiencia */
+      let texto = new TextDecoder("utf-8").decode(bytes);
+      if (texto.includes("�")) texto = new TextDecoder("windows-1252").decode(bytes);
+      return XLSXLectura.detectarFilasApu(XLSXLectura.parsearCsv(texto));
     }
-    resumenFilas.push(["Margen sobre costo directo", s.margen_final, "resumen"]);
-    resumenFilas.push(["Financiación requerida (20 %)", s.financiacion_requerida, "normal"]);
-    resumenFilas.push(["Contribución 5 % obra pública (informativo)", s.contribucion_obra_publica, "normal"]);
-    resumenFilas.push(["IVA sobre la utilidad (informativo)", s.iva_sobre_utilidad, "normal"]);
+    const inflar = typeof DecompressionStream === "function" ? inflarNavegador : null;
+    const libro = await XLSXLectura.leerLibro(bytes, { inflar });
+    const mejor = XLSXLectura.elegirHoja(libro);
+    if (!mejor) return { filas: [], avisos: ["El libro no trae hojas."] };
+    return mejor.resultado;
+  }
 
-    for (const [etiqueta, valor, tipo] of resumenFilas) {
-      const estiloTexto = tipo === "destacado" ? "destacadoTexto" : tipo === "resumen" ? "resumenTexto" : "totalTexto";
-      const estiloValor = tipo === "destacado" ? "destacadoMoneda" : tipo === "resumen" ? "resumenMoneda" : "totalMoneda";
-      filasHoja.push([
-        { v: etiqueta, s: estiloTexto }, null, null, null, null, null, null, null, null,
-        null, { v: valor, s: estiloValor },
-      ]);
-    }
+  function abrirModalImportar() {
+    const m = importacion.resumen_mapeo;
+    $("imp-resumen").textContent = `${importacion.nombre_archivo} · ${m.total} ítems · `
+      + `${m.firmes} firmes · ${m.revisar} por revisar · ${m.personalizados} personalizados · `
+      + `${m.con_precio_archivo} con precio del archivo`;
+    $("imp-avisos").innerHTML = (importacion.avisos_lectura || [])
+      .map((a) => `<p class="rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-900">${esc(a)}</p>`).join("");
 
-    filasHoja.push([]);
-    filasHoja.push([{ v: (r.como_leerlo && r.como_leerlo.precios) || "", s: "nota" }]);
-    for (const a of r.alertas || []) filasHoja.push([{ v: a, s: "nota" }]);
-
-    const nFilas = filasHoja.length;
-    const hoja1 = {
-      nombre: "Presupuesto",
-      filas: filasHoja,
-      anchos: [16, 46, 9, 12, 12, 14, 14, 14, 13, 15, 17],
-      altos: { 0: 26 },
-      congelar: 6,
-      fusiones: ["A1:K1", "A2:K2", "A3:K3", "A4:K4",
-        ...Array.from({ length: nFilas }, (_, i) => i)
-          .filter((i) => filasHoja[i].length === 1 && filasHoja[i][0] && filasHoja[i][0].s === "nota")
-          .map((i) => `A${i + 1}:K${i + 1}`)],
+    const chip = (f) => {
+      if (f.nivel_mapeo === "firme") {
+        return `<span class="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] text-emerald-900">🟢 firme</span> `
+          + `<span class="text-xs text-gray-600">${esc(f.descripcion_catalogo || "")}</span>`;
+      }
+      if (f.nivel_mapeo === "revisar") {
+        const marcada = f.precio_archivo != null ? "checked" : "";
+        return `<label class="flex items-start gap-1.5">
+          <input type="checkbox" data-aceptar="${f.orden}" ${marcada} class="mt-0.5 h-3.5 w-3.5 rounded border-gray-300">
+          <span class="text-xs"><span class="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-900">🟡 revisar · ${Math.round((f.confianza ?? 0) * 100)} %</span>
+          ${esc(f.descripcion_catalogo || "")}</span></label>`;
+      }
+      return `<span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">⚪ personalizado</span>`
+        + (f.precio_archivo == null ? ' <span class="text-[11px] font-medium text-red-600">sin precio: escríbalo en la tabla antes de calcular</span>' : "");
     };
 
-    /* ---------- hoja 2 · desglose por insumo ---------- */
-    const det = [
-      [{ v: "DESGLOSE DE PRECIOS UNITARIOS", s: "titulo" }],
-      [{ v: `${titulo} · ${hoy}`, s: "subtitulo" }],
-      [],
-    ];
-    for (const it of r.items) {
-      if (it.incompleto && !it.detalle) {
-        det.push([{ v: `${it.item_id} — ${it.mensaje || "sin datos"}`, s: "negrita" }], []);
-        continue;
-      }
-      det.push([{ v: `${it.item_id} · ${it.descripcion} · ${it.unidad}`, s: "negrita" }]);
-      det.push([
-        { v: "Insumo", s: "encabezado" }, { v: "Descripción", s: "encabezado" },
-        { v: "Unidad", s: "encabezado" }, { v: "Cantidad", s: "encabezado" },
-        { v: "Desperd. %", s: "encabezado" }, { v: "Vr. unitario", s: "encabezado" },
-        { v: "Valor", s: "encabezado" },
-      ]);
-      for (const m of (it.detalle && it.detalle.materiales) || []) {
-        det.push([
-          { v: m.codigo, s: "texto" }, { v: m.descripcion, s: "texto" }, { v: m.unidad, s: "texto" },
-          { v: m.cantidad_con_desperdicio, s: "cantidad" }, { v: m.desperdicio_pct, s: "cantidad" },
-          { v: m.precio_unitario, s: "moneda" }, { v: m.valor, s: "moneda" },
-        ]);
-      }
-      for (const o of (it.detalle && it.detalle.cuadrilla) || []) {
-        det.push([
-          { v: o.codigo, s: "texto" }, { v: o.descripcion, s: "texto" }, { v: "hora", s: "texto" },
-          { v: o.cantidad, s: "cantidad" }, null,
-          { v: o.costo_hora, s: "moneda2" }, null,
-        ]);
-      }
-      for (const o of (it.detalle && it.detalle.equipo) || []) {
-        det.push([
-          { v: o.codigo, s: "texto" }, { v: o.descripcion, s: "texto" }, { v: "hora", s: "texto" },
-          { v: o.cantidad, s: "cantidad" }, null,
-          { v: o.costo_hora, s: "moneda2" }, null,
-        ]);
-      }
-      det.push([
-        { v: `Rendimiento ${it.rendimiento_dia}/día · prestacional ${r.ajuste_regional.prestacional} · herramienta menor ${it.detalle ? it.detalle.herramienta_menor_pct : "—"} %`, s: "nota" },
-      ]);
-      det.push([
-        { v: "Valor unitario", s: "resumenTexto" }, null, null, null, null, null,
-        { v: it.costo_directo_unitario, s: "resumenMoneda" },
-      ]);
-      det.push([]);
-    }
+    $("imp-tabla").innerHTML = importacion.filas.map((f) => `
+      <tr class="${f.precio_archivo == null && !f.item_id ? "bg-red-50" : ""}">
+        <td class="px-2 py-1.5 text-xs text-gray-500">${esc(f.codigo_archivo || "—")}</td>
+        <td class="px-2 py-1.5">${f.capitulo ? `<span class="block text-[10px] uppercase text-gray-400">${esc(f.capitulo)}</span>` : ""}${esc(f.descripcion)}</td>
+        <td class="px-2 py-1.5 text-gray-500">${esc(f.unidad || "—")}</td>
+        <td class="px-2 py-1.5 text-right num">${f.cantidad == null ? "—" : num(f.cantidad)}</td>
+        <td class="px-2 py-1.5 text-right num">${f.precio_archivo == null ? "—" : pesos(f.precio_archivo)}</td>
+        <td class="px-2 py-1.5">${chip(f)}</td>
+      </tr>`).join("");
 
-    const hoja2 = { nombre: "Desglose", filas: det, anchos: [16, 42, 10, 13, 12, 15, 16] };
-    return [hoja1, hoja2];
+    $("imp-nota").textContent = "El precio del archivo MANDA y queda declarado. Una sugerencia 🟡 sin precio solo usa el catálogo si su casilla queda marcada.";
+    $("modal-importar").classList.remove("hidden");
+    $("modal-importar").classList.add("flex");
   }
+
+  function cerrarModalImportar() {
+    $("modal-importar").classList.add("hidden");
+    $("modal-importar").classList.remove("flex");
+  }
+  $("btn-imp-cancelar").addEventListener("click", cerrarModalImportar);
+  $("modal-importar").addEventListener("click", (e) => {
+    if (e.target === $("modal-importar")) cerrarModalImportar();
+  });
+
+  $("btn-imp-aplicar").addEventListener("click", async () => {
+    if (!importacion) return;
+    const aceptadas = new Set([...$("imp-tabla").querySelectorAll("input[data-aceptar]:checked")]
+      .map((x) => Number(x.getAttribute("data-aceptar"))));
+    const nuevas = importacion.filas.map((f) => {
+      const base = f.entrada_calculo || {};
+      // en «revisar» la casilla decide si el ítem del catálogo entra (como
+      // precio cuando no hay precio del archivo; como referencia cuando sí)
+      const itemId = f.nivel_mapeo === "revisar"
+        ? (aceptadas.has(f.orden) ? f.item_id : null)
+        : base.item_id || null;
+      return {
+        item_id: itemId,
+        codigo: base.codigo || null,
+        capitulo: base.capitulo || null,
+        descripcion: base.descripcion || f.descripcion,
+        unidad: base.unidad || f.unidad,
+        cantidad: base.cantidad ?? 0,
+        rendimiento_override: null,
+        precio_manual: base.precio_manual ?? null,
+        origen_precio: base.origen_precio || null,
+        sugerencia: f.descripcion_catalogo || null,
+      };
+    });
+    filas = filas.concat(nuevas);
+    ultimoCalculo = null;
+    cerrarModalImportar();
+    pintarTabla();
+    mensaje(`${nuevas.length} ítem(s) añadidos desde «${importacion.nombre_archivo}». Calculando…`, "ok");
+    await calcularApu();
+  });
 
   /* ─────────────────────────── arranque ─────────────────────────────── */
 
