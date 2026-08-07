@@ -434,9 +434,33 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   dashboard clásico; nada → landing) y el arranque sigue AL FINAL del IIFE.
 - **Experiencia en CSV** (`public/formato_experiencia.csv`, con comentarios `#` que declaran que es
   OPCIONAL): la conversión CSV→JSON corre en el navegador y el endpoint es el de siempre
-  (`POST /api/admin/experiencia`, CON token: escribe configuración compartida). El campo `unspsc`
-  del formato es opcional y **solo se escribe cuando viene** — los contratos guardados con el
-  esquema anterior conservan su forma exacta, con prueba.
+  (`POST /api/admin/experiencia`, CON token: escribe configuración compartida — y la UI LO DICE,
+  porque prometerle al visitante que «afina sus recomendaciones» cuando escribe la configuración del
+  dueño sería mentirle). El campo `unspsc` del formato es opcional y **solo se escribe cuando
+  viene** — los contratos guardados con el esquema anterior conservan su forma exacta, con prueba.
+- **SIETE DEFECTOS QUE LA REVISIÓN ADVERSARIA ENCONTRÓ ANTES DE PRODUCCIÓN**, todos con prueba:
+  · **La fecha de corte contaminaba el indicador**: «PATRIMONIO A 31/12/2025 $850.000.000» leía 31.
+    Las fechas se TACHAN del tramo antes de buscar el número (`sinFechas`).
+  · **Un año se volvía la experiencia**: el máximo de una línea con «SMMLV» incluía «2023». La cifra
+    es la ADYACENTE a la unidad — la misma regla que la cantidad junto a la unidad en `apu_pliego`.
+    Las tablas con la unidad solo en la cabecera caen al error accionable, no a un dato inventado.
+  · **ReDoS en la detección de sección**: `(clasificaci)[^]*?(bienes)` sobre una línea hostil de MB
+    (endpoint público, cuerpo de 5 MB) era cuadrática. Ahora son `includes` lineales.
+  · **Sin tope de códigos por perfil**: un cuerpo hostil con miles de runs de 8 fabricaba perfiles
+    enormes en Redis. `MAX_CODIGOS = 2000` → error, no truncado silencioso.
+  · **Redis caído ≠ perfil caducado**: en instancia fría el fallo de lectura devolvía `null`, el
+    endpoint respondía 404 `perfil_caducado` y la web BORRABA el perfil guardado del cliente. Ahora
+    el error se propaga (502) y solo el 404 real borra — y solo si el guardado ES el que caducó.
+  · **`?perfil=rup_…` pegado en la URL saltaba el gate** dejando los perfiles del dueño en el
+    selector. `abrirApp` ya no marca `detecta-acceso` (eso lo hace el gate al validar la clave) y
+    quien entra sin gate ve el selector PODADO a su propio perfil.
+  · **La comilla de pulgadas rompía el CSV**: «Tubería de 4" en PVC» abría modo comillas a mitad de
+    celda y fusionaba filas en un contrato falso que PASABA el validador. Una comilla solo abre
+    campo al PRINCIPIO de la celda (RFC 4180). Y el CSV ANSI de Excel-Windows se re-decodifica como
+    windows-1252 si el UTF-8 produce reemplazos.
+  Además, **las dos copias de `lineasDePagina` (onboarding.js/pliego.js) quedaron ATADAS por una
+  prueba que las EJECUTA** sobre los mismos fragmentos (el patrón de `numeroLocal`), no solo por la
+  constante de versión de pdf.js.
 
 ### Experiencia ejecutada y cobertura del RUP (ago 2026)
 

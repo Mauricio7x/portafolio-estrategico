@@ -6646,6 +6646,34 @@ async function main() {
         assert.ok(rd.cuerpo.diagnostico.utilidad_derivada === true);
       }
 
+      /* 7-bis · dos contaminaciones que la revisión adversaria encontró y que
+         producían cifras equivocadas y CREÍBLES (lo peor que puede salir de
+         aquí): la fecha de corte contable pegada a la etiqueta se leía como el
+         valor del indicador, y un año en la línea de experiencia se volvía la
+         experiencia acreditada (el máximo de la línea era 2023 «SMMLV»). */
+      {
+        const { extraerRupDeTexto } = require("../lib/rup_pdf.js");
+        const t3 = [
+          "REGISTRO UNICO DE PROPONENTES",
+          "RAZON SOCIAL: PRUEBA SAS",
+          "INDICE DE LIQUIDEZ: 1,80",
+          "INDICE DE ENDEUDAMIENTO: 0,30",
+          "PATRIMONIO A 31/12/2025\t$ 850.000.000",
+          "UTILIDAD OPERACIONAL A 31/12/2025\t$ 90.000.000",
+          "CONTRATO EJECUTADO EN 2023\t900,00 SMMLV",
+          "CLASIFICACION DE BIENES Y SERVICIOS",
+          "72141000",
+          "RELLENO PARA SUPERAR EL MINIMO DE CARACTERES DEL EXTRACTOR ".repeat(5),
+        ].join("\n");
+        const r3 = extraerRupDeTexto(t3);
+        assert.strictEqual(r3.ok, true, `extracción con fechas en línea falló: ${JSON.stringify(r3).slice(0, 300)}`);
+        assert.strictEqual(r3.config.indicadores.patrimonio, 850000000,
+          "la fecha de corte «A 31/12/2025» no puede leerse como patrimonio de $31");
+        assert.strictEqual(r3.config.indicadores.utilidad_operacional, 90000000);
+        assert.strictEqual(r3.config.experiencia_smmlv, 900,
+          "el año 2023 de la línea no puede volverse la experiencia: la cifra es la ADYACENTE a «SMMLV»");
+      }
+
       /* 8 · experiencia: el campo `unspsc` OPCIONAL del formato CSV, sin romper
          la forma de los contratos ya guardados */
       {
@@ -6716,11 +6744,67 @@ async function main() {
         assert.ok(!/\.(unspsc_count|contratos_cargados|terminos_extraidos)\s*\|\|\s*0/.test(obSin),
           "un `|| 0` sobre un conteo convierte «no sé» en «cero»");
 
+        /* LAS DOS COPIAS DE lineasDePagina ESTÁN ATADAS POR ESTA PRUEBA (el
+           patrón de `numeroLocal`): son dos páginas y dos IIFE, así que la
+           duplicación es justificada — pero si divergieran, el texto que manda
+           el onboarding y el que manda el lector de pliegos partirían columnas
+           de formas distintas y nadie se enteraría. Se EJECUTAN las dos sobre
+           los mismos fragmentos y se exige el mismo resultado. */
+        {
+          const extraerFn = (fuente, nombre) => {
+            const i = fuente.indexOf(`function ${nombre}`);
+            assert.ok(i > 0, `no se encontró ${nombre} en el fuente`);
+            const fin = fuente.indexOf("\n  }", i);
+            return fuente.slice(i, fin + 4);
+          };
+          const plg = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+          const fnOb = new Function(`${extraerFn(ob, "lineasDePagina")}; return lineasDePagina;`)();
+          const fnPlg = new Function(`${extraerFn(plg, "lineasDePagina")}; return lineasDePagina;`)();
+          const frag = (str, x, y, w) => ({ str, transform: [1, 0, 0, 10, x, y], width: w, height: 10 });
+          const fragmentos = [
+            frag("ITEM", 20, 700, 30), frag("DESCRIPCION", 80, 700, 80), frag("UNIDAD", 300, 700, 40),
+            frag("1.1", 20, 680, 30), frag("SUBBASE", 80, 680, 40), frag("GRANULAR", 125, 680, 40), frag("M3", 300, 680, 20),
+            frag("linea suelta", 20, 640, 60),
+          ];
+          const salidaOb = fnOb(fragmentos);
+          assert.strictEqual(salidaOb, fnPlg(fragmentos),
+            "lineasDePagina divergió entre onboarding.js y pliego.js: las columnas se partirían distinto según la página");
+          assert.ok(salidaOb.includes("\t"), "el hueco grande en X debe producir TAB (es lo que lee el servidor)");
+
+          /* el parser de CSV del onboarding, ejecutado desde el fuente: la
+             comilla de PULGADAS a mitad de celda no puede tragarse la fila, y
+             la comilla que sí abre campo (RFC 4180) sigue funcionando */
+          const fuenteCsv = `const COLUMNAS_OBLIGATORIAS = ["objeto","valor_cop","fecha_inicio","fecha_fin","entidad"];\n`
+            + `${extraerFn(ob, "parsearCsv")}\n${extraerFn(ob, "csvAContratos")}\nreturn { parsearCsv, csvAContratos };`;
+          const { parsearCsv, csvAContratos } = new Function(fuenteCsv)();
+          const csvPulgadas = 'objeto,valor_cop,fecha_inicio,fecha_fin,entidad,unspsc\n'
+            + 'Tuberia de 4" en PVC,95000000,10/01/2024,20/02/2024,ALCALDIA,72141000\n'
+            + '"Obra A, fase 2",100000000,01/01/2024,02/02/2024,ENTIDAD,\n'
+            + '# comentario que se ignora\n';
+          const conv = csvAContratos(parsearCsv(csvPulgadas));
+          assert.ok(!conv.error, `el CSV con pulgadas no convirtió: ${conv.error}`);
+          assert.strictEqual(conv.contratos.length, 2);
+          assert.strictEqual(conv.contratos[0].objeto, 'Tuberia de 4" en PVC',
+            "la comilla a mitad de celda es texto, no apertura de campo");
+          assert.strictEqual(conv.contratos[0].valor_cop, "95000000", "la comilla de pulgadas corrió las columnas");
+          assert.strictEqual(conv.contratos[1].objeto, "Obra A, fase 2", "la comilla que abre campo (RFC 4180) dejó de funcionar");
+        }
+
         const js = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
         const jsSin = sinComentarios(js);
         assert.ok(jsSin.includes("detecta_perfil_rup"), "app.js debe leer el perfil guardado por el onboarding");
         assert.ok(jsSin.includes("perfil_caducado") && /olvidarPerfilRup\(\)/.test(jsSin),
           "un 404 de perfil caducado debe olvidar el perfil guardado, no repetirse para siempre");
+        /* entrar por `?perfil=rup_…` NO pasa el gate: abrirApp no puede marcar
+           la sesión como «con clave», y sin gate el selector queda podado al
+           perfil del RUP (los perfiles del dueño no se regalan por URL) */
+        {
+          const iAbrir = jsSin.indexOf("function abrirApp()");
+          const cuerpoAbrir = jsSin.slice(iAbrir, jsSin.indexOf("\n  }", iAbrir));
+          assert.ok(!/sessionStorage\.setItem/.test(cuerpoAbrir),
+            "abrirApp volvió a marcar la sesión: entrar por un rup_ contaría como haber pasado el gate");
+          assert.ok(/soloEste/.test(jsSin), "falta la poda del selector para quien entra sin gate");
+        }
 
         // el alias literal existe como rewrite (no como función: el plan Hobby
         // está en 12 exactas) y apunta al endpoint real CON el origen

@@ -303,8 +303,12 @@
         if (c === '"') {
           if (texto[i + 1] === '"') { celda += '"'; i++; } else enComillas = false;
         } else celda += c;
-      } else if (c === '"') enComillas = true;
-      else if (c === sep) cerrarCelda();
+      } else if (c === '"' && celda === "") {
+        /* una comilla solo ABRE si la celda empieza ahí (RFC 4180). A mitad de
+           celda es texto — «Tubería de 4" en PVC» — y tratarla como apertura se
+           tragaba separadores y fusionaba filas enteras en un contrato falso */
+        enComillas = true;
+      } else if (c === sep) cerrarCelda();
       else if (c === "\n") cerrarFila();
       else if (c !== "\r") celda += c;
     }
@@ -362,8 +366,15 @@
     if (!token) return mensajeExp("La carga de experiencia escribe configuración compartida: pegá el token de administración.", "error");
 
     let convertido = null;
-    try { convertido = csvAContratos(parsearCsv(await archivo.text())); }
-    catch (e) { return mensajeExp(`No se pudo leer el CSV: ${(e && e.message) || "error desconocido"}.`, "error"); }
+    try {
+      /* Excel-Windows guarda «CSV» en ANSI (windows-1252): decodificarlo como
+         UTF-8 mete � en cada tilde y el mojibake se guardaría sin aviso. Si la
+         decodificación UTF-8 produce reemplazos, se reintenta como 1252. */
+      const bytes = await archivo.arrayBuffer();
+      let textoCsv = new TextDecoder("utf-8").decode(bytes);
+      if (textoCsv.includes("�")) textoCsv = new TextDecoder("windows-1252").decode(bytes);
+      convertido = csvAContratos(parsearCsv(textoCsv));
+    } catch (e) { return mensajeExp(`No se pudo leer el CSV: ${(e && e.message) || "error desconocido"}.`, "error"); }
     if (convertido.error) return mensajeExp(convertido.error, "error");
 
     let r = null, cuerpo = null;
