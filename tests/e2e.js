@@ -3962,10 +3962,40 @@ async function main() {
         const nominalArlMin = Math.round((d.suma_nominal_pct - arl.pct + arl.banda.min) * 100) / 100;
         assert.ok(nominalArlMin > d.aplicado_pct,
           "si la ARL mínima ya cerrara la brecha, el texto podría afirmarlo; hoy no la cierra");
-        assert.ok(/NO es la suma de ninguna combinaci/i.test(d.como_leerlo),
+        assert.ok(/NO es la suma exacta de ninguna combinaci/i.test(d.como_leerlo),
           "el texto tiene que decir que el factor no se descompone en la ley, no insinuar que sí");
         assert.ok(!/se explica por/i.test(d.como_leerlo),
           "afirmar que las causas explican la brecha contradice la aritmética publicada al lado");
+
+        /* UNA NORMA MAL ATRIBUIDA ES PEOR QUE UNA AUSENTE: se lee como
+           verificada. Tres lo estaban y una revisión las cazó — el art. 204 de
+           la Ley 100 fijó el 12 % (8 % del empleador), no el 12,5 % con 8,5;
+           el art. 20 fijó 13,5 %, no el 16 % con 12; y la Ley 21/1982 regula el
+           SENA y el subsidio familiar, NO el ICBF. Se fijan aquí para que no
+           puedan volver a la atribución corta. */
+        {
+          const norma = (id) => d.componentes.find((c) => c.id === id).norma;
+          assert.ok(/1122\/2007/.test(norma("salud")),
+            "el 8,5 % de salud lo fija la Ley 1122/2007, no el art. 204 original de la Ley 100");
+          assert.ok(/797\/2003/.test(norma("pension")),
+            "el 12 % de pensión sale de la Ley 797/2003, no del art. 20 original de la Ley 100");
+          assert.ok(/89\/1988|27\/1974/.test(norma("icbf")) && !/21\/1982/.test(norma("icbf")),
+            "el ICBF no nace de la Ley 21/1982 (esa regula SENA y subsidio familiar)");
+          assert.ok(/21\/1982/.test(norma("sena")) && /21\/1982/.test(norma("caja")),
+            "SENA y caja de compensación sí salen de la Ley 21/1982");
+          for (const c of d.componentes) {
+            assert.ok(c.norma && c.norma.trim().length > 5, `el componente «${c.id}» no cita ninguna norma`);
+          }
+        }
+
+        /* Y el texto no puede AFIRMAR DE MÁS: «no es la suma de ninguna
+           combinación exacta» a secas es falso, porque la dotación y el auxilio
+           de transporte quedan fuera de la tabla y son costo real de nómina. La
+           afirmación tiene que estar acotada a los componentes publicados. */
+        assert.ok(/de estos \d+ componentes/.test(d.como_leerlo),
+          "la afirmación sobre la brecha tiene que acotarse a los componentes que la tabla publica");
+        assert.ok(/dotaci[oó]n|auxilio de transporte/i.test(d.como_leerlo),
+          "hay que declarar qué costos reales de nómina quedan FUERA del factor");
 
         /* NINGUNA «Resolución XXX de 2025». El encargo la sugería como ejemplo;
            no existe una resolución que fije el factor prestacional, y una
@@ -3990,6 +4020,61 @@ async function main() {
         assert.strictEqual(normativa.normativaAplicada(S, null).prestacional.aplicado_pct, null);
         assert.strictEqual(
           normativa.normativaAplicada(S, "bogota_sabana").prestacional.aplicado_pct, 55);
+      }
+
+      /* ═══ d-bis) IDA Y VUELTA: exportar y REIMPORTAR no puede mover el mapeo ═══
+         El libro que produce la app se puede volver a importar con el lector del
+         propio proyecto, y la hoja «Presupuesto» cuelga avisos al final de la
+         descripción («⛔ SIN PRECIO…», «⚠️ Precio no verificado…»). Esos avisos
+         entraban al tokenizador de `lib/apu/importar` y ENVENENABAN el mapeo:
+         medido sobre 60 ítems reales, 59 perdían confianza, 21 caían de «firme»
+         a «revisar» y **2 se mapeaban a OTRO ítem del catálogo** — o sea, a otro
+         precio. El marcador rojo ya lo hacía; el amarillo, que fuera de Bogotá
+         cubre la hoja entera, lo multiplicaba. Nada lo vigilaba. */
+      {
+        const { mapearFilasImportadas } = require("../lib/apu/importar.js");
+        const muestra = S.items.slice(0, 60);
+        const filasCon = (sufijo) => muestra.map((i, n) => ({
+          orden: n, descripcion: i.descripcion + sufijo, unidad: i.unidad, cantidad: 1,
+        }));
+        const limpio = mapearFilasImportadas(filasCon(""), S);
+        assert.ok(limpio.resumen_mapeo.firmes > 10,
+          `la muestra tiene que mapear en firme para que la prueba mida algo: ${JSON.stringify(limpio.resumen_mapeo)}`);
+
+        for (const [etiqueta, sufijo] of [
+          ["amarillo", "   ⚠️ Precio no verificado - requiere cotización"],
+          ["rojo", "   ⛔ SIN PRECIO: no suma al total"],
+          ["los dos", "   ⛔ SIN PRECIO: no suma al total   ⚠️ Precio no verificado - requiere cotización"],
+        ]) {
+          const conMarca = mapearFilasImportadas(filasCon(sufijo), S);
+          limpio.filas.forEach((fa, i) => {
+            const fb = conMarca.filas[i];
+            assert.strictEqual(fb.item_id || null, fa.item_id || null,
+              `el marcador ${etiqueta} re-mapeó «${fa.descripcion}» a otro ítem del catálogo: otro precio`);
+            assert.strictEqual(fb.nivel_mapeo, fa.nivel_mapeo,
+              `el marcador ${etiqueta} movió el nivel de mapeo de «${fa.descripcion}»`);
+            assert.ok(Math.abs((fb.confianza ?? 0) - (fa.confianza ?? 0)) < 1e-9,
+              `el marcador ${etiqueta} movió la confianza de «${fa.descripcion}»`);
+          });
+        }
+
+        /* La limpieza se ancla a DOS espacios + emoji, que es como los escribe
+           el exportador: un emoji escrito de verdad en el nombre de un ítem no
+           puede perderse. */
+        const legitima = mapearFilasImportadas(
+          [{ orden: 0, descripcion: "Señal ⚠ preventiva de obra", unidad: "und", cantidad: 1 }], S);
+        assert.strictEqual(legitima.filas[0].descripcion, "Señal ⚠ preventiva de obra",
+          "la limpieza se llevó por delante un emoji que forma parte del nombre del ítem");
+
+        /* Y el aviso SIGUE en la hoja exportada: se limpia al importar, no al
+           exportar — verlo es para lo que existe. */
+        const rr = calculoApu.calcularPresupuesto({
+          items: [{ item_id: "NOG-A2", cantidad: 3 }], departamento: "ATLANTICO", config: {},
+        });
+        const hojas = APULibro.construirLibroNogal(rr, { titulo: "T", fecha: "2026-08-07" });
+        const textos = hojas[0].filas.flatMap((f) => (f || []).map((c) => (c && c.v != null ? String(c.v) : "")));
+        assert.ok(textos.some((t) => /Precio no verificado - requiere cotizaci/.test(t)),
+          "el aviso tiene que seguir visible en la hoja: la limpieza es del importador, no del exportador");
       }
 
       /* ═══ e) EL FACTOR ESTÁ ATADO A LA CALIBRACIÓN: moverlo desvía precios ═══
