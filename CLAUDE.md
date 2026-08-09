@@ -1754,6 +1754,32 @@ desperdicio y distancia. El hueco real era otro y estaba más abajo.
   ocupan dos o más trabajadores**. El perfil «Helder» es persona natural con UN
   profesional: un panel que ofreciera «−13,5 pp» sin la condición le induciría a
   restarse algo a lo que probablemente no tiene derecho, y eso viaja al precio.
+- **UNA NORMA MAL ATRIBUIDA ES PEOR QUE UNA AUSENTE: se lee como verificada.** Una
+  refutación cazó TRES en la primera versión de este módulo, y las tres tenían la
+  misma forma —citar la norma ORIGINAL para una tarifa que fijó una reforma
+  posterior—: la Ley 100/1993 art. 204 fijó el 12 % (8 % del empleador), y el 12,5 %
+  con reparto 8,5/4 lo introdujo la **Ley 1122/2007 art. 10**; el art. 20 fijó
+  13,5 %, y el 16 % con 12/4 viene de la **Ley 797/2003 art. 7**; y la Ley 21/1982
+  regula el SENA y el subsidio familiar pero **no el ICBF**, que nace de la Ley
+  27/1974 con la tarifa del 3 % de la **Ley 89/1988**. Hay prueba que fija las tres.
+- **El «no cuadra» hay que ACOTARLO a los componentes publicados.** Decir «no es la
+  suma de ninguna combinación exacta» a secas afirma de más: **dotación (Ley
+  11/1984) y auxilio de transporte quedan FUERA** de la tabla y son costo real de
+  nómina, así que un empleador exonerado que los pague puede superar el 44,79 % sin
+  ninguna incoherencia. El texto dice ahora «de estos 10 componentes» y declara lo
+  que queda fuera; hay prueba de las dos cosas.
+- **EL MARCADOR DEL EXCEL ENVENENABA LA REIMPORTACIÓN, y nada lo vigilaba.** El libro
+  exportado se puede volver a importar con el lector del propio proyecto, y
+  `lib/apu/importar` tokeniza `descripcion` para puntuar similitud contra el
+  catálogo: con el aviso dentro («⚠️ Precio no verificado…»), medido sobre 60 ítems
+  reales, **59 perdían confianza, 21 caían de «firme» a «revisar» y 2 se mapeaban a
+  OTRO ítem del catálogo** — o sea, a otro precio. El marcador rojo preexistente ya
+  lo hacía (3/60 de nivel); el amarillo, que fuera de Bogotá cubre la hoja entera,
+  lo multiplicaba. Se limpia en el IMPORTADOR, que es el único sitio donde se
+  tokeniza, y **no en el exportador**: el aviso tiene que seguir viéndose en la hoja,
+  que es para lo que existe. La limpieza se ancla a DOS espacios + emoji (como los
+  escribe el exportador) para no llevarse por delante un emoji que forme parte del
+  nombre de un ítem. Hay prueba de ida y vuelta, y cae si se revierte el arreglo.
 - **NINGUNA «Resolución XXX de 2025».** El encargo la sugería como ejemplo de fuente;
   no existe una resolución que fije el factor prestacional, este entorno no alcanza
   las fuentes oficiales (403) y una referencia normativa inventada en la herramienta
