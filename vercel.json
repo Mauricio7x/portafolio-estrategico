@@ -17,6 +17,10 @@
       "destination": "/api/competencia-detalle?vista=probabilidad"
     },
     {
+      "source": "/api/paa",
+      "destination": "/api/competencia-detalle?vista=paa"
+    },
+    {
       "source": "/api/admin/rup-desde-pdf",
       "destination": "/api/admin/rup?origen=pdf"
     }
