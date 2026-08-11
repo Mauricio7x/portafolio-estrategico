@@ -1211,7 +1211,7 @@ memoria en una fuente de error. `✅` implementado · `🟡` parcial · `⬜` no
 | **Nicho incómodo / menos competencia > más puntaje** (truco #22, Palanca 4) | `ordenar_por=atractividad` (default) + `lib/indice_competencia.js`: tertiles sobre el promedio de oferentes por entidad. Es literalmente la tesis de la Palanca 4 en código. `topeSMMLV` es apetito estratégico, no límite del RUP | ✅ |
 | **Anticipo y flujo de caja** (truco #16) | `lib/negocio.js` pondera anticipo al 0.4 del `puntaje_ponderado` — el manual explica **por qué** pesa tanto: sin anticipo se financia al Estado. **`anticipo_pct = 0` sigue significando «sin dato»**, no «sin anticipo» | ✅ |
 | **Traslado / histórico como base de datos** (truco #17) | `licitaciones:historico:mes:*` — keyspace que **ninguna purga toca**, con adjudicatario, valor adjudicado y nº de oferentes. Es la versión estructural del consejo «guarda todo lo del traslado» | ✅ |
-| **PAA → alertar antes de que salga el proceso** (truco #9) | La app ingiere **solo `p6dx-8zbt`** (procesos ya publicados). El PAA es otro dataset y **no se lee**. Hoy la app avisa cuando el proceso ya salió: la ventaja de seis meses del manual está sin explotar | ⬜ |
+| **PAA → alertar antes de que salga el proceso** (truco #9) | `lib/paa.js` + `/api/competencia-detalle?vista=paa` (alias `/api/paa`) consultan **en vivo** el dataset `9sue-ezhx` y devuelven lo previsto para los próximos 12 meses, filtrable por entidad y por UNSPSC (jerárquico). El toggle «Ver PAA» lo pinta en **sección aparte** con badge `PAA · planeado`. Lo que NO hay: ingesta a un keyspace propio (se consulta en vivo, no se guarda) ni **tasa de acierto** — sin ella la previsión se publica declarando que no está medida | 🟡 |
 | **Pliego sastre → detección** (12 señales) | La única señal computable hoy es la **#11** (histórico de 1-2 oferentes), vía `indice_competencia`. **Y está interpretada al revés**: baja competencia se presenta como *atractiva*. Es ambigua — puede ser un nicho ganable **o** un pliego sastre. Las señales 1/3/4/5/6/7 exigen el texto del pliego, que el dataset no trae. **El tier `familia` NO es la señal #2**: indica codificación amplia, lo contrario de restrictiva | 🟡 |
 | **Precio bajo incertidumbre → banda de descuento** (truco #11) | `lib/indice_baja.js` (`indice:baja:*`, tres granularidades en cascada + segmento + modalidad): `descuento = 1 − valor_adjudicado / precio_base` por entidad, sin re-extraer nada. Ya viaja en la tarjeta (`baja_mercado`, solo con token) y ordena con `?ordenar_por=baja` | ✅ |
 | **Traslado → descargar ofertas de competidores** | El dataset no trae documentos de oferta: solo `urlproceso`. Automatizarlo exigiría raspar SECOP II (fuera de la arquitectura actual: sin dependencias, serverless, respuesta ≤4.5 MB). Alcanzable: enlazar la ficha del proceso y **listar adjudicatarios recurrentes por entidad** desde el histórico | ⬜ |
@@ -1800,6 +1800,84 @@ desperdicio y distancia. El hueco real era otro y estaba más abajo.
   primera región de la lista** cuando no encuentra la pedida: por la vía de los
   hashes ese orden es el del SCAN, o sea una región arbitraria publicada como si
   fuera la aplicada.
+
+### Plan Anual de Adquisiciones · qué va a salir antes de que salga (ago 2026)
+
+`lib/paa.js` + `/api/competencia-detalle?vista=paa` (alias `/api/paa`, rewrite) + el toggle «Ver PAA»
+de la pestaña Licitaciones. Cierra el hueco que la tabla de arriba llevaba marcado en ⬜ desde el
+principio: la app avisaba cuando el proceso YA había salido, y el PAA da hasta seis meses de ventaja.
+
+- **TRES TENSIONES ENTRE EL ENCARGO Y LO YA ESCRITO, resueltas y dichas.** El encargo pedía consulta
+  en vivo; `docs/INVESTIGACION_PLATAFORMAS_LICITACIONES.md` §9.1-E propone INGERIR a un keyspace
+  `paa:mes:*`. Se hizo la consulta en vivo porque es lo pedido y porque es lo MENOS comprometedor con
+  un dataset que no se ha podido abrir: no escribe nada, no hay que migrar nada y el día que alguien
+  verifique las columnas se cambia un solo módulo. La ingesta sigue siendo el destino natural y no se
+  descartó. El encargo pedía además mostrarlo «junto con las licitaciones activas»; §9.1-E dice
+  «**separado y rotulado**… mezclar una previsión con un proceso abierto sería la peor forma posible
+  de equivocarse». Se cumplen las dos: misma pestaña y misma pantalla, **sección propia**. Y el
+  encargo pedía «crear un endpoint `GET /api/paa`» Y «no crear archivo nuevo bajo api/»: se reconcilia
+  con el `rewrite`, como ya se hizo con `/api/probabilidad-desglose` y con
+  `/api/admin/cargar-experiencia-genesis`.
+- **NINGÚN NOMBRE DE COLUMNA ESTÁ VERIFICADO Y LA RESPUESTA LO DICE.** Este entorno recibe 403 de
+  `datos.gov.co` (comprobado otra vez para `9sue-ezhx` y para `p6dx-8zbt`), así que ni el id del
+  dataset ni una sola columna se pudieron abrir. Se aplica el precedente del proyecto para columnas no
+  verificables —lista de CANDIDATAS + censo publicado, como `lib/indice_competencia` y
+  `lib/columnas_historicas`— y `verificado: false` viaja SIEMPRE. Cuando una columna no se reconoce,
+  `censo.claves_observadas` trae la verdad literal del JSON: arreglarlo es añadir el nombre real a
+  `CANDIDATAS` y desplegar.
+- **La SONDA de 5 filas existe para no comerse un 400.** Un `$where` sobre una columna inventada da
+  400, y un 400 **no se reintenta jamás** (regla del proyecto): el endpoint quedaría muerto sin
+  síntoma. Se resuelven primero las columnas contra las claves reales y solo después se construye la
+  consulta. Con la sonda, una columna ausente simplemente no filtra.
+- **El rango de 12 meses se delega al servidor SOLO si la fecha es comparable como texto.** Sobre un
+  valor tipo «Marzo», un `>=` compararía cadenas y devolvería basura EN SILENCIO, que es peor que no
+  filtrar. La sonda decide y `censo.fecha_comparable_en_servidor` lo declara. **Precio asumido y
+  escrito en `censo.supuestos`**: con el rango delegado, una fila suelta con la fecha en otro formato
+  queda fuera sin aparecer en `descartados` — la sonda solo ve 5 filas. La alternativa es barrer el
+  PAA nacional entero en cada consulta.
+- **El `like` del servidor acota por FAMILIA (4 dígitos), no por los 5-6 primeros del código pedido.**
+  Con el recorte fino, una publicación a nivel de familia —que es un match VÁLIDO por el upward
+  matching— no llegaba siquiera al barrido: el filtro grueso del servidor estaría negando lo que
+  acepta el fino del cliente. Y la familia sale de `normalizarCodigo(...).familia`, jamás de un
+  `slice(0,4)`. Quien decide de verdad es `lib/unspsc.emparejar` con un índice de UN código: escribir
+  aquí un `startsWith` sería una SEGUNDA definición de «este código y este otro son el mismo».
+- **El punto es DECIMAL aquí, al revés que en `numeroColombiano`.** Aquel lee texto de pliegos
+  colombianos (punto = miles); esto lee el JSON de una API, donde `"1500000.00"` son $1.500.000.
+  Aplicar la regla del pliego multiplicaría la cuantía por cien. Lo que no encaje en formato máquina
+  **no se adivina**: `null` y se cuenta. Y una cuantía en **0 es SIN DATO**, la regla de
+  `anticipo_pct = 0` otra vez — el frontend pinta «Valor estimado no publicado», nunca «$0», y hay
+  prueba que prohíbe el `|| 0`.
+- **Una fila con fecha ilegible NO entra en «los próximos 12 meses»**: el endpoint promete una
+  ventana y meter dentro algo que no se pudo situar sería afirmar lo que no se sabe. Se descarta Y SE
+  CUENTA, con la invariante probada **`total + Σ descartados = barrido.filas_leidas`**.
+- **`tasa_de_acierto: null`, y en pantalla «sin medir por esta app».** El PAA se modifica, se aplaza y
+  se cancela; §9.1-E lo dice sin rodeos: «publicar la previsión sin su tasa de acierto sería vender
+  humo». Medirla exige cruzar el PAA de un año contra `licitaciones:historico:mes:*` del siguiente.
+  Hasta entonces la cifra es `null` —jamás un número inventado ni un «alta» cualitativo— y la
+  advertencia viaja en la RESPUESTA, no solo en la pantalla: cualquier consumidor del endpoint tiene
+  que recibirla.
+- **Una fila del PAA no lleva `p_ganar`, ni `puertas`, ni `rup`, ni `ve`, y hay prueba de que no
+  puede llevarlos.** No hay pliego que juzgar. Esas cifras la harían comparable con un proceso
+  abierto, y compartir el orden de `/api/oportunidades` haría exactamente lo mismo — por eso la
+  sección es propia y no un badge dentro de `#lista`.
+- **El badge «Activo · abierto» se pinta SOLO con el PAA encendido.** Un chip idéntico en las cien
+  tarjetas no distingue nada (es el defecto del chip constante de `nivel_competencia`); solo significa
+  algo cuando hay previsiones en la misma pantalla de las que separarlo. Encender el toggle **repinta
+  desde `ultimaBusqueda`** y no vuelve a pedir la lista: gastar una invocación por un badge sería
+  absurdo, y una lista que llegara distinta haría parecer que el toggle filtra algo.
+- **La vista `paa` sale ANTES de mirar Upstash.** Vive en otro dataset, no lee el corpus, no escribe y
+  no toma candados; exigirle credenciales de Redis la dejaría caída por una avería que no le incumbe
+  —y es justo la vista que sirve cuando todavía no hay nada publicado—.
+- **El transporte se REUTILIZA**: `lib/socrata.crearCliente` aceptó un `baseUrl` opcional en vez de
+  nacer un segundo cliente HTTP. Keyset, backoff con jitter, `Retry-After` y «un 400 no se reintenta»
+  ya estaban resueltos ahí, y dos clientes «equivalentes hoy» divergen a la primera corrección.
+- **«No se reconocieron las columnas» es un RESULTADO, no un error**: 200 con la lista vacía, el censo
+  y `motivo_lista_vacia`. Un 4xx haría creer que la petición estaba mal. Misma regla que «el pliego no
+  traía tablas» en el módulo APU.
+- **El mock de Socrata de la suite sirve DOS datasets por path** y entiende `like`. Sin lo primero, la
+  prueba del PAA habría recibido el corpus de SECOP II y habría pasado midiendo otra cosa; sin lo
+  segundo, `cumple` lanzaba dentro del callback del servidor —excepción no capturada que tumba el
+  proceso de pruebas entero—.
 
 ### Rediseño Apple Glass, eliminación de RUP y probabilidad en frases (ago 2026)
 

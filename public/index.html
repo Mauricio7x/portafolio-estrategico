@@ -380,6 +380,19 @@
               <span class="block text-xs text-gray-400">Al apagarlo aparecen también, atenuados, los que no pasan RUP, K o caja</span>
             </span>
           </label>
+          <label class="flex items-end gap-2 pb-2 sm:col-span-2">
+            <input id="f-ver-paa" type="checkbox"
+                   class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+            <span class="text-sm text-gray-600">
+              Ver PAA · lo previsto para los próximos 12 meses
+              <span class="block text-xs text-gray-400">Procesos PLANEADOS, todavía no publicados en SECOP II. Se muestran aparte: un plan no es un compromiso</span>
+            </span>
+          </label>
+          <label id="f-paa-entidad-wrap" class="hidden sm:col-span-2">
+            <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">PAA · filtrar por entidad (opcional)</span>
+            <input id="f-paa-entidad" type="text" placeholder="Alcaldía de Ibagué, INVÍAS…" autocomplete="off"
+                   class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+          </label>
           <div class="flex items-end">
             <button id="btn-buscar"
                     class="w-full rounded-xl bg-gray-900 px-5 py-2.5 font-medium text-white transition hover:bg-gray-700">
@@ -406,6 +419,25 @@
       <div id="estado-vacio" class="mt-10 hidden text-center text-sm text-gray-500">
         No se encontraron oportunidades con estos filtros.
       </div>
+
+      <!-- Plan Anual de Adquisiciones · SECCIÓN APARTE, nunca mezclado con lo
+           abierto: un proceso del PAA no existe todavía en SECOP II, no tiene
+           pliego que juzgar y no lleva probabilidad ni puertas. Ponerlo en la
+           misma lista ordenada lo haría parecer comparable. -->
+      <section id="paa" class="mt-8 hidden">
+        <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h2 class="font-semibold tracking-tight">📅 Plan Anual de Adquisiciones · lo que todavía no ha salido</h2>
+              <p id="paa-resumen" class="mt-1 text-sm text-gray-500">Consultando el PAA…</p>
+            </div>
+            <span class="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">PAA · planeado</span>
+          </div>
+          <p id="paa-aviso" class="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-900 ring-1 ring-inset ring-amber-600/20"></p>
+          <div id="paa-lista" class="mt-4 grid gap-3"></div>
+          <p id="paa-censo" class="mt-4 text-xs text-gray-400"></p>
+        </div>
+      </section>
 
       <!-- Resultados -->
       <section id="resultados" class="mt-8 hidden">

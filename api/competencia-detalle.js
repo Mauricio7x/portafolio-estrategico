@@ -1,13 +1,17 @@
 /* ============================================================================
-   /api/competencia-detalle · AUDITORÍA de las dos cifras que enseña la tarjeta
+   /api/competencia-detalle · Consultas de SOLO LECTURA sobre el mercado
    ----------------------------------------------------------------------------
-   DOS VISTAS, una sola función serverless:
+   TRES VISTAS, una sola función serverless:
 
      GET /api/competencia-detalle?entidad=ALCALDÍA DE PURIFICACIÓN
          ¿CUÁLES son los procesos detrás del badge de competencia?
      GET /api/competencia-detalle?vista=probabilidad&id_proceso=CO1.REQ.123
          ¿POR QUÉ ese «Prob. estimada: 23 %»? — el desglose paso a paso.
          Alias público: /api/probabilidad-desglose (rewrite de vercel.json).
+     GET /api/competencia-detalle?vista=paa[&entidad=…][&unspsc=72141000]
+         ¿QUÉ VA A SALIR? — el Plan Anual de Adquisiciones de los próximos
+         12 meses (dataset Socrata 9sue-ezhx, lib/paa).
+         Alias público: /api/paa (rewrite de vercel.json).
 
      (token por header `x-historico-token` o por `?token=`)
 
@@ -16,13 +20,21 @@
    (hay prueba que las cuenta). Un archivo más y no falla el endpoint nuevo:
    falla el despliegue entero. Es la misma restricción que plegó
    `/api/apu/catalogo` en `api/apu/[accion].js` y que impidió `/api/baja-mercado`.
-   Y encajan: las dos responden la MISMA pregunta —«de dónde sale ese número de
-   la tarjeta»— sobre el mismo corpus y con el mismo token.
 
-   La URL literal del encargo, `/api/probabilidad-desglose`, existe como
+   QUÉ COMPARTEN, dicho sin adornos. Las dos primeras responden la misma
+   pregunta —«de dónde sale ese número de la tarjeta»— sobre el mismo corpus.
+   La tercera NO: mira otro dataset, no toca Redis y habla de procesos que
+   todavía no existen. Lo que las tres tienen en común es ser CONSULTAS DE SOLO
+   LECTURA CON TOKEN que explican lo que el dueño ve en la pestaña de
+   licitaciones, y ese es el alcance del archivo desde ago 2026. Conviene
+   decirlo aquí en vez de dejar que un lector futuro deduzca que «detalle de
+   competencia» alguna vez significó esto: el nombre del archivo se quedó corto
+   y el tope de funciones es lo que impide arreglarlo.
+
+   Las URLs literales `/api/probabilidad-desglose` y `/api/paa` existen como
    `rewrite` de vercel.json, que no cuenta como función. Hay prueba de que
-   apunta aquí CON `vista=probabilidad`. El frontend llama a la CANÓNICA: si el
-   rewrite fallara, el modal tiene que seguir funcionando (misma lección que
+   apuntan aquí CON su `vista`. El frontend llama a la CANÓNICA: si el rewrite
+   fallara, el modal y el PAA tienen que seguir funcionando (misma lección que
    `/api/admin/cargar-experiencia-genesis`).
 
    La tarjeta dice «🟢 Poca competencia — promedio 3 oferentes en 12 procesos».
@@ -49,6 +61,7 @@ const { crearRedis, hayCredenciales } = require("../lib/redis.js");
 const { autorizarToken } = require("../lib/auth.js");
 const { detalleEntidad } = require("../lib/competencia_detalle.js");
 const { desgloseDeProceso } = require("../lib/probabilidad_desglose.js");
+const { consultarPaa } = require("../lib/paa.js");
 
 const DEV = !process.env.VERCEL && process.env.NODE_ENV !== "production";
 const logDev = (...a) => { if (DEV) console.log("[competencia-detalle]", ...a); };
@@ -72,13 +85,16 @@ module.exports = async function handler(req, res) {
      api/apu/[accion].js: el rewrite trae `vista` en la query, pero un handler
      que solo funciona detrás del enrutador es un handler que no se puede
      probar. */
-  const enRuta = /\/api\/probabilidad-desglose\b/.test(String(req.url || ""));
-  const vista = String(q.vista || (enRuta ? "probabilidad" : "entidad")).toLowerCase();
-  if (!["entidad", "probabilidad"].includes(vista)) {
+  const url = String(req.url || "");
+  const enRuta = /\/api\/probabilidad-desglose\b/.test(url) ? "probabilidad"
+    : /\/api\/paa\b/.test(url) ? "paa" : null;
+  const vista = String(q.vista || enRuta || "entidad").toLowerCase();
+  if (!["entidad", "probabilidad", "paa"].includes(vista)) {
     return res.status(400).json({
       ok: false,
       error: `vista «${vista}» desconocida`,
-      vistas: ["entidad (por defecto) — ?entidad=…", "probabilidad — ?id_proceso=…"],
+      vistas: ["entidad (por defecto) — ?entidad=…", "probabilidad — ?id_proceso=…",
+        "paa — [?entidad=…][&unspsc=…]"],
     });
   }
 
@@ -89,6 +105,16 @@ module.exports = async function handler(req, res) {
       ...(permiso.como_autenticar ? { como_autenticar: permiso.como_autenticar } : {}),
     });
   }
+
+  /* El PAA sale AQUÍ, antes de mirar Upstash: vive en otro dataset de Socrata y
+     no lee el corpus, no escribe y no toma candados. Exigirle credenciales de
+     Redis lo dejaría caído por una avería que no le incumbe — y es justo la
+     vista que sirve para trabajar cuando todavía no hay nada publicado. */
+  if (vista === "paa") {
+    const { estado, cuerpo } = await consultarPaa({ entidad: q.entidad, unspsc: q.unspsc, log: logDev });
+    return res.status(estado).json(cuerpo);
+  }
+
   if (!hayCredenciales()) {
     return res.status(503).json({ ok: false, error: "Faltan credenciales de Upstash Redis." });
   }

@@ -208,6 +208,18 @@
   /* ══════════ Consulta ══════════ */
   let pagina = 1, reintentosSync = 0, timerReintento = null;
   let peticionActual = 0; // descarta respuestas fuera de orden (carrera de filtros)
+  /* ¿Está encendido «Ver PAA»? Lo consulta `tarjeta()` para decidir si pinta el
+     badge «Activo». Fuera de esa vista NO se pinta, y no es un olvido: un chip
+     idéntico en las cien tarjetas no distingue nada —es el defecto del chip
+     constante que `nivel_competencia` pintaba en todas— y solo significa algo
+     cuando hay previsiones del PAA en la misma pantalla de las que separarlo. */
+  let paaEncendido = false;
+  let peticionPaa = 0;
+  /* La última respuesta de /api/oportunidades ya pintada. Encender «Ver PAA»
+     repinta las tarjetas para añadirles el badge «Activo» SIN volver a pedir la
+     lista: gastar una invocación por un badge sería absurdo, y además la lista
+     podría llegar distinta y parecería que el toggle filtra algo. */
+  let ultimaBusqueda = null;
 
   function parametros() {
     const p = new URLSearchParams({ perfil: $("f-perfil").value, pagina: String(pagina), por_pagina: "20" });
@@ -584,6 +596,8 @@
       ${bloqueProbabilidad(l)}
 
       <div class="mt-4 flex flex-wrap gap-2">
+        ${paaEncendido ? chip("Activo · abierto", "bg-green-100 text-green-800 ring-1 ring-inset ring-green-600/20",
+    "Proceso PUBLICADO en SECOP II, con pliego y fecha de cierre — a diferencia de las previsiones del PAA") : ""}
         ${chip(l.anticipo_pct > 0 ? `Anticipo ${l.anticipo_pct}%` : "Anticipo no declarado", l.anticipo_pct > 0 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-500")}
         ${chipBaja(l.baja_mercado)}
         ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
@@ -606,6 +620,7 @@
   }
 
   function pintar(cuerpo) {
+    ultimaBusqueda = cuerpo;
     mostrar("resultados");
     // el reparto por solidez del match dice de un vistazo cuántas son «RUP ✓»
     // y cuántas hay que verificar en el pliego
@@ -628,6 +643,124 @@
       <button id="pag-sig" ${cuerpo.pagina >= totalPaginas ? "disabled" : ""} class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 disabled:opacity-40">Siguiente →</button>`;
     $("pag-ant")?.addEventListener("click", () => { pagina = Math.max(1, pagina - 1); buscar(); });
     $("pag-sig")?.addEventListener("click", () => { pagina++; buscar(); });
+  }
+
+  /* ══════════ Plan Anual de Adquisiciones ══════════
+     Lo que la entidad PIENSA contratar en los próximos 12 meses. Va en su
+     propia sección y con su propio badge: estos procesos NO existen todavía en
+     SECOP II, no tienen pliego, no tienen fecha de cierre y no llevan
+     probabilidad ni puertas — no hay nada que juzgar. Mezclarlos con la lista
+     de procesos abiertos, aunque fuera con un badge distinto, los pondría en el
+     mismo orden y los haría parecer comparables. */
+  const MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  /* «2026-09-01» → «septiembre de 2026». Se formatea a mano y NO con `new
+     Date(iso)`: esa cadena se interpreta como medianoche UTC y en Colombia
+     (UTC-5) retrocede al mes anterior — el mes previsto saldría mal justo en
+     los días 1, que es cuando cae la mayoría de las fechas del PAA. */
+  function mesLegible(iso) {
+    const m = String(iso || "").match(/^(\d{4})-(\d{2})/);
+    if (!m) return null;
+    return `${MESES_ES[Number(m[2]) - 1]} de ${m[1]}`;
+  }
+
+  function tarjetaPaa(p) {
+    const mes = mesLegible(p.fecha_estimada_publicacion);
+    /* `cuantia_estimada` llega en `null` cuando el PAA no trae el valor o lo
+       trae en cero. NO se pinta un 0: eso diría «obra gratis» donde el dato es
+       «sin diligenciar» (la regla de `anticipo_pct = 0`). */
+    const valor = p.cuantia_estimada == null
+      ? `<span class="text-sm text-gray-400">Valor estimado no publicado</span>`
+      : `<span class="text-lg font-semibold tabular-nums">${fmtCOP.format(p.cuantia_estimada)}</span>`;
+    return `
+    <article class="rounded-xl bg-amber-50/60 p-4 ring-1 ring-inset ring-amber-600/20">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <h3 class="text-sm font-semibold leading-snug">${esc(p.objeto || "Objeto no informado")}</h3>
+          <p class="mt-1 text-sm text-gray-500">${esc(p.entidad || "Entidad no informada")}</p>
+        </div>
+        <div class="text-right">${valor}</div>
+      </div>
+      <div class="mt-3 flex flex-wrap gap-2">
+        ${chip("PAA · planeado", "bg-amber-100 text-amber-800 ring-1 ring-inset ring-amber-600/20",
+    "Previsión del Plan Anual de Adquisiciones: la entidad piensa contratarlo, pero aún no lo ha publicado")}
+        ${mes ? chip(`Previsto para ${mes}`, "bg-purple-100 text-purple-800",
+    p.fecha_estimada_original ? `Dato de la fuente: ${p.fecha_estimada_original}` : "") : ""}
+        ${p.modalidad ? chip(esc(p.modalidad), "bg-gray-100 text-gray-600") : chip("Modalidad no informada", "bg-gray-100 text-gray-400")}
+        ${p.unspsc ? chip(`UNSPSC ${esc(p.unspsc)}`, "bg-gray-100 text-gray-600") : ""}
+        ${p.departamento_entidad ? chip(esc(p.departamento_entidad), "bg-gray-100 text-gray-600") : ""}
+      </div>
+    </article>`;
+  }
+
+  async function buscarPaa() {
+    const seccion = $("paa");
+    if (!paaEncendido) { seccion.classList.add("hidden"); return; }
+    const peticion = ++peticionPaa;
+    seccion.classList.remove("hidden");
+    $("paa-resumen").textContent = "Consultando el Plan Anual de Adquisiciones…";
+    $("paa-lista").innerHTML = "";
+    $("paa-aviso").textContent = "";
+    $("paa-censo").textContent = "";
+
+    const qs = new URLSearchParams({ vista: "paa" });
+    const ent = $("f-paa-entidad").value.trim();
+    if (ent) qs.set("entidad", ent);
+    let r, cuerpo;
+    try {
+      /* Se llama a la URL CANÓNICA, no al alias `/api/paa`: si el rewrite
+         fallara, el PAA tiene que seguir funcionando. El token integrado viaja
+         por cabecera y nunca en la URL. */
+      r = await fetch(`/api/competencia-detalle?${qs}`, { headers: { "x-historico-token": leerToken() } });
+    } catch {
+      if (peticion !== peticionPaa) return;
+      $("paa-resumen").textContent = "No se pudo contactar el servidor para consultar el PAA.";
+      return;
+    }
+    // el parseo va aparte del fetch: el muro del edge responde HTML y `r.json()` lanza
+    try { cuerpo = await r.json(); } catch { cuerpo = null; }
+    if (peticion !== peticionPaa) return;
+
+    if (r.status === 401) {
+      $("paa-resumen").textContent = "El HISTORICO_TOKEN de este despliegue no coincide con el token "
+        + "integrado en la aplicación, así que el PAA no se puede consultar.";
+      return;
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      $("paa-resumen").textContent = (cuerpo && cuerpo.error)
+        || (cuerpo === null
+          ? `El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`
+          : `No se pudo consultar el PAA (${r.status}).`);
+      return;
+    }
+
+    const v = cuerpo.ventana || {};
+    const desde = mesLegible(v.desde), hasta = mesLegible(v.hasta);
+    $("paa-resumen").textContent = cuerpo.total
+      ? `${cuerpo.total} proceso${cuerpo.total === 1 ? "" : "s"} previsto${cuerpo.total === 1 ? "" : "s"}`
+        + (desde && hasta ? ` entre ${desde} y ${hasta}` : "")
+        + (ent ? ` · entidad «${ent}»` : "")
+        + (cuerpo.recortados_en_la_respuesta ? ` · se muestran los ${cuerpo.max_resultados} más próximos` : "")
+      : `Sin procesos previstos${ent ? ` para «${ent}»` : ""}${desde && hasta ? ` entre ${desde} y ${hasta}` : ""}.`;
+
+    /* La advertencia se pinta SIEMPRE, también con la lista llena: es la mitad
+       del significado de esta sección. La tasa de acierto no está medida y se
+       dice con esas palabras — un «alta» sin medición sería vender humo. */
+    $("paa-aviso").textContent = `${cuerpo.advertencia || ""} Tasa de acierto del PAA: ${
+      cuerpo.tasa_de_acierto == null ? "sin medir por esta app" : `${cuerpo.tasa_de_acierto} %`}.`;
+    $("paa-lista").innerHTML = cuerpo.resultados.map(tarjetaPaa).join("");
+
+    /* Pie técnico: lo que el endpoint NO pudo hacer. Se pinta solo cuando hay
+       algo que contar, pero `verificado:false` va siempre mientras nadie haya
+       abierto el dataset contra la fuente real. */
+    const censo = cuerpo.censo || {}, barrido = cuerpo.barrido || {}, desc = cuerpo.descartados || {};
+    const notas = [];
+    if (cuerpo.verificado === false) notas.push("nombres de columna sin verificar contra datos.gov.co");
+    if ((censo.sin_resolver || []).length) notas.push(`sin reconocer: ${censo.sin_resolver.join(", ")}`);
+    if (cuerpo.motivo_lista_vacia) notas.push(cuerpo.motivo_lista_vacia);
+    if (barrido.truncado) notas.push(`barrido truncado en ${barrido.filas_leidas} filas: acote con una entidad`);
+    if (desc.fecha_ilegible) notas.push(`${desc.fecha_ilegible} sin fecha legible (no se pueden situar en la ventana)`);
+    $("paa-censo").textContent = notas.length ? `Dataset ${cuerpo.dataset} · ${notas.join(" · ")}.` : "";
   }
 
   /* ══════════ Detalle de competencia (modal) ══════════
@@ -956,6 +1089,22 @@
     "f-sin-unspsc", "f-solo-viables"]) {
     $(id).addEventListener("change", () => { pagina = 1; buscar(); });
   }
+  /* «Ver PAA» NO re-consulta /api/oportunidades: son dos fuentes distintas y
+     encender la previsión no puede cambiar la lista de lo que está abierto. Lo
+     que sí hace es repintar las tarjetas activas, porque el badge «Activo»
+     aparece solo mientras hay previsiones en pantalla de las que separarlas. */
+  $("f-ver-paa").addEventListener("change", () => {
+    paaEncendido = $("f-ver-paa").checked;
+    $("f-paa-entidad-wrap").classList.toggle("hidden", !paaEncendido);
+    buscarPaa();
+    if (ultimaBusqueda) pintar(ultimaBusqueda);
+  });
+  /* Enter en el filtro de entidad del PAA re-consulta solo el PAA. Sin esto el
+     campo parecería muerto: escribir y no ver nada es peor que un error. */
+  $("f-paa-entidad").addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") { ev.preventDefault(); buscarPaa(); }
+  });
+  $("f-paa-entidad").addEventListener("change", () => buscarPaa());
 
 
   /* Llamada autenticada del editor: el token integrado viaja en cabecera en

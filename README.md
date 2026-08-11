@@ -62,7 +62,8 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `api/admin/experiencia.js` + `lib/experiencia.js` | **Contratos ya ejecutados** → vocabulario del oficio: en qué *sabe* trabajar el dueño (el RUP solo dice a qué *puede* presentarse) |
 | `api/admin/cobertura-rup.js` + `lib/cobertura_rup.js` | **Qué códigos UNSPSC le faltan al RUP**: los que el mercado adjudica para objetos como los suyos y no tiene inscritos, priorizados por similitud con su experiencia real |
 | `lib/indice_competencia.js` | Índice **entidad → oferentes promedio** sobre el histórico; tertiles baja/media/alta |
-| `api/competencia-detalle.js` + `lib/competencia_detalle.js` | **Auditoría de las dos cifras de la tarjeta**, dos vistas en una función: los procesos que sostienen el badge (incluidos, excluidos y por qué, caché de 1 h) y el **desglose de la probabilidad** (`?vista=probabilidad`) |
+| `api/competencia-detalle.js` + `lib/competencia_detalle.js` | **Consultas de solo lectura**, tres vistas en una función: los procesos que sostienen el badge de competencia (incluidos, excluidos y por qué, caché de 1 h), el **desglose de la probabilidad** (`?vista=probabilidad`) y el **PAA** (`?vista=paa`) |
+| `lib/paa.js` | **Plan Anual de Adquisiciones** (dataset `9sue-ezhx`): qué va a salir en los próximos 12 meses, filtrable por entidad y por UNSPSC jerárquico. Columnas por lista de candidatas + censo publicado — el dataset **no se pudo verificar** desde este entorno — y `tasa_de_acierto: null` mientras nadie la mida |
 | `lib/probabilidad_desglose.js` | **Por qué ese 23 %**: los seis pasos del cálculo con fórmula, datos con la fuente citada, aritmética escrita y aporte en puntos porcentuales. No recalcula nada — narra la traza de `lib/probabilidad` |
 | `lib/auth.js` | Guardián único del `HISTORICO_TOKEN` para **todos** los endpoints protegidos (doce puntos de llamada), `/api/oportunidades` incluido |
 | `lib/cuerpo.js` | Lector único del cuerpo JSON (objeto · cadena · stream) con su tope y su política de cuerpo vacío. Vivía triplicado en los tres endpoints que reciben POST |
@@ -297,12 +298,18 @@ aportar desde el navegador y la web caía a una cascada de proxies CORS muertos.
 
 ### `GET /api/competencia-detalle` (protegido)
 
-Auditoría de las **dos cifras** que enseña una tarjeta y que hasta ago 2026 no se podían discutir.
-Son **dos vistas de una sola función serverless** (`?vista=entidad`, por defecto, y
-`?vista=probabilidad`), y eso no es estética: el plan Hobby de Vercel admite **12 funciones** por
+Consultas de **solo lectura** que explican lo que el dueño ve en la pestaña de licitaciones. Son
+**tres vistas de una sola función serverless** (`?vista=entidad`, por defecto, `?vista=probabilidad`
+y `?vista=paa`), y eso no es estética: el plan Hobby de Vercel admite **12 funciones** por
 despliegue y el repositorio está exactamente en 12. Un archivo más y no falla el endpoint nuevo:
 falla el despliegue entero. Es la misma restricción que plegó `/api/apu/catalogo` en
 `api/apu/[accion].js` y que impidió `/api/baja-mercado`.
+
+Las dos primeras responden la misma pregunta —«de dónde sale ese número de la tarjeta»— sobre el
+corpus ya ingerido. La tercera **no**: mira otro dataset, no toca Redis y habla de procesos que
+todavía no existen. Conviene decirlo en vez de dejar que se deduzca que «detalle de competencia»
+alguna vez significó eso: el nombre del archivo se quedó corto y el tope de funciones es lo que
+impide arreglarlo.
 
 #### Vista `entidad` (por defecto)
 
@@ -424,6 +431,50 @@ segundo desglose.
 > cambiar la probabilidad de todo el corpus. Y el encargo lista cuatro factores cuando el código
 > aplica **seis**: faltaban los dos de baja de mercado, que son los que convierten la respuesta en
 > «P(ganar *a un precio que valga la pena*)».
+
+#### Vista `paa` — el Plan Anual de Adquisiciones (ago 2026)
+
+```
+GET /api/competencia-detalle?vista=paa[&entidad=Alcaldía de Ibagué][&unspsc=72141000]   ← canónica
+GET /api/paa[?entidad=…][&unspsc=…]                                                     ← alias (rewrite)
+```
+
+La única fuente que dice **qué va a salir antes de que salga**: objeto, valor y mes previsto de todo
+lo que una entidad piensa contratar en el año. Hasta ago 2026 la app solo ingería `p6dx-8zbt`
+—procesos **ya publicados**— y por eso avisaba cuando el proceso ya había salido. Devuelve lo
+previsto para los **próximos 12 meses** con los seis campos del encargo: `entidad`, `objeto`,
+`unspsc`, `cuantia_estimada`, `fecha_estimada_publicacion` y `modalidad`.
+
+| Parámetro | Default | Descripción |
+| --- | --- | --- |
+| `entidad` | — | Subcadena, sin distinguir mayúsculas. Acota el barrido en el servidor |
+| `unspsc` | — | Código de 2/4/6/8 dígitos. La coincidencia la decide **`lib/unspsc.emparejar`** (jerarquía), no un prefijo: un producto dentro de la clase pedida casa, y una publicación a nivel de familia también. Un código ilegible es un `400`, no una lista vacía |
+
+**Es una consulta EN VIVO: no escribe nada, no lee el corpus y no toca Redis.** Sale del despachador
+antes de mirar Upstash — exigirle credenciales la dejaría caída por una avería que no le incumbe.
+
+Tres cosas que la respuesta declara y que no son adorno:
+
+- **`verificado: false`.** Este entorno recibe `403` de `datos.gov.co`, así que ni el id `9sue-ezhx`
+  ni un solo nombre de columna se pudieron abrir contra la fuente. Se aplica el precedente del
+  proyecto para columnas no verificables —lista de **candidatas** + **censo publicado**, como
+  `lib/indice_competencia` y `lib/columnas_historicas`—. Si el censo dice `sin_resolver`, el arreglo
+  es de una línea: añadir el nombre real (está en `censo.claves_observadas`) a `CANDIDATAS` de
+  `lib/paa.js`. Ninguna consulta se rompe entre tanto, y que no se reconozcan las columnas es un
+  **`200` con la lista vacía y el diagnóstico**, nunca un `4xx`.
+- **`tasa_de_acierto: null`.** Un PAA es un **plan, no un compromiso**: se modifica, se aplaza y se
+  cancela. Medir qué porcentaje acaba publicándose exige cruzar el PAA de un año contra
+  `licitaciones:historico:mes:*` del siguiente, y hasta entonces no hay cifra que publicar. La
+  advertencia viaja **en la respuesta**, no solo en la pantalla.
+- **`descartados` y `barrido.truncado`.** Una fila con la fecha ilegible **no entra** en «los
+  próximos 12 meses» —situarla a la fuerza sería afirmar lo que no se sabe— y se cuenta; el barrido
+  tiene presupuesto y dice cuándo se cortó. Invariante probada: `total + Σ descartados =
+  barrido.filas_leidas`.
+
+En la web es el toggle **«Ver PAA»** de la pestaña Licitaciones, con su propio filtro de entidad. Lo
+previsto se pinta en **sección aparte**, con badge `PAA · planeado` frente al `Activo · abierto` de
+los procesos publicados, y **sin probabilidad, sin puertas y sin veredicto de RUP**: no hay pliego
+que juzgar, y meterlo en la misma lista ordenada lo haría parecer comparable con un proceso vivo.
 
 ### `GET /api/resumen` (protegido)
 
