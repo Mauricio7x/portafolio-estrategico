@@ -737,11 +737,21 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - **Una cantidad ilegible es `null`, JAMÁS 0** — la misma regla que `anticipo_pct = 0` y que el
   contador de oferentes, aquí con consecuencia económica directa. Hay prueba que prohíbe
   `f.cantidad || 0` en el frontend, hermana de la que ya prohibía `i.<conteo> || 0`.
-- **NINGÚN CÓDIGO `INV-` SE PUBLICA.** «Nunca inventar un código INV que no exista; si no hay
-  artículo, el ítem nace `LOC-`». El índice oficial de las Especificaciones INVÍAS 2022 (Res.
-  4561/2022) nunca se pudo abrir (403), así que la numeración y las unidades de pago están SIN
-  VERIFICAR: el artículo probable viaja en `articulo_invias_candidato` como hipótesis y
-  `codigoInviasPropuesto()` deja preparado el código que se emitiría al confirmarlo. Hay prueba.
+- **LOS CÓDIGOS `INV-` YA SE CONTRASTAN CONTRA LA NORMA (ago 2026).** La regla dura no cambió
+  —«nunca inventar un código INV que no exista; si no hay artículo, el ítem nace `LOC-`»— pero la
+  premisa que la volvía bloqueante era FALSA: el índice de las Especificaciones (Res. 4561/2022) **sí
+  se abre**, la URL había cambiado. Sus **105 artículos** están en `data/invias_articulos.json` y
+  `codigoInviasPropuesto()` ya no devuelve una hipótesis: contrasta el candidato y emite el código con
+  el artículo **tal como lo cita la norma** (`INV-630-22-…`), o `codigo: null` **con su motivo** si el
+  artículo no existe en la edición vigente. Los 13 candidatos del catálogo del lector verifican.
+- **OJO CON LO QUE `verificado: true` NO DICE:** se verificó la **NUMERACIÓN**, no la **UNIDAD DE
+  PAGO** — el índice trae capítulo, número y título y **nada más**. Por eso viaja
+  `unidad_verificada: false`, y prometer más sería repetir el mismo error con una etiqueta nueva. El
+  **título oficial viaja PEGADO** al código (R10) para que el encaje se pueda auditar sin abrir la
+  resolución: «¿mi *Excavación manual en material común* es el 600 *Excavaciones varias* o el 210
+  *Excavación de la explanación*?». **Un puntaje de confianza inventado ahí sería peor que el título
+  literal**: se leería como una medición. Los `codigo_item` del catálogo del lector siguen siendo
+  `LOC-` a propósito — son su clave interna y renombrarla rompería mapeos y borradores.
 - **El catálogo NO tiene precios**, y eso es la mitad de lo que lo hace publicable: sin base de
   precios verificada, un rendimiento o un jornal inventados serían plata, no un dato incómodo.
 - **La TIPOLOGÍA es un peso (0,10), no un filtro del catálogo.** Empezó siendo filtro y estaba mal,
