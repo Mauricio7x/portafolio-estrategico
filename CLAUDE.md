@@ -2449,6 +2449,14 @@ rotulan con palabras (**Licitaciones · Precios · Mi empresa**) y en móvil lle
   alta. **`public/apu_libro.js` queda FUERA de la prohibición**: sus marcadores viajan al Excel exportado, que
   es otro medio y otra decisión. Y las pruebas dejaron de usar los glifos como proxy de «esto está cableado»
   (se atan a los cuatro NIVELES de criticidad, no a los cuatro dibujos).
+- **LA PESTAÑA DE PRECIOS SON TRES PASOS Y NADA MÁS A LA VISTA.** Entre el paso 1 y el 2 se colaban la
+  RENTABILIDAD y el PRECIO SUGERIDO — dos bloques que no se pueden ni mirar hasta haber calculado, así que la
+  pantalla pedía entender el programa antes de poder usarlo. Hoy: **1 ¿Qué vas a construir? → 2 ¿Dónde? →
+  3 Calcular y exportar**, seguidos, y los resultados DESPUÉS. El paso 2 pide **una sola cosa**, el
+  departamento. **AIU, anticipo, deducciones y ajuste competitivo se fueron a «Ajustes»** (plegado, en gris):
+  sus valores por defecto sirven para la mayoría de los procesos y tenerlos delante obliga a decidir cuatro
+  cosas antes de ver un precio. Hay prueba del ORDEN y de que esos cinco controles no vuelvan a la vista
+  principal — sin ella, el próximo añadido los devuelve.
 - **UN ACENTO GRAVE DENTRO DE UN TEMPLATE LITERAL LO CIERRA.** Un comentario HTML con `` `ve` `` dentro de la
   plantilla de `bloqueProbabilidad` dejó de compilar `app.js` ENTERO — la pestaña se muere en silencio, que es
   justo el modo de fallo que la suite vigila. Los comentarios van FUERA de la plantilla.

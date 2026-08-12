@@ -10636,6 +10636,40 @@ async function main() {
         assert.ok(!/Portafolio Estrat/.test(htmlVisible),
           "«Portafolio Estratégico» es el nombre del repositorio: no puede asomarse a la pantalla");
 
+        /* ═══ LA PESTAÑA DE PRECIOS SON TRES PASOS, Y NADA MÁS A LA VISTA ═════
+           Antes, entre el paso 1 y el 2 se colaban la rentabilidad y el precio
+           sugerido — dos bloques que no se pueden ni mirar hasta haber
+           calculado. La pantalla pedía entender el programa antes de poder
+           usarlo, que es justo lo contrario de la filosofía del producto.
+           Los tres pasos van SEGUIDOS y los resultados DESPUÉS. */
+        {
+          const apu = html.slice(html.indexOf('<main id="tab-apu"'), html.indexOf("</main>", html.indexOf('<main id="tab-apu"')));
+          const pos = (frag) => { const i = apu.indexOf(frag); assert.ok(i > 0, `no está: ${frag}`); return i; };
+          const p1 = pos('white">1</span>¿Qué vas a construir?');
+          const p2 = pos('white">2</span>¿Dónde?');
+          const p3 = pos('white">3</span>Calcular y exportar');
+          assert.ok(p1 < p2 && p2 < p3, "los tres pasos tienen que ir en orden y seguidos");
+          for (const res of ["seccion-resumen", "seccion-rentabilidad", "seccion-precio-sugerido"]) {
+            assert.ok(pos(`id="${res}"`) > p3,
+              `«${res}» va DESPUÉS del paso 3: no se puede mirar antes de calcular`);
+          }
+          /* Y el AIU, el anticipo, las deducciones y el ajuste competitivo NO
+             están a la vista: sus valores por defecto sirven para la mayoría de
+             los procesos, y tenerlos delante obliga a decidir cuatro cosas
+             antes de poder ver un precio. */
+          const ajustes = apu.indexOf("<summary");
+          const finPaso2 = pos('id="normativa-wrap"');
+          for (const id of ["aiu", "anticipo", "deducciones", "ajuste-competitivo", "factor-baja"]) {
+            const i = pos(`id="${id}"`);
+            assert.ok(i > apu.indexOf("Ajustes <span") && i < finPaso2,
+              `«${id}» tiene que vivir dentro de «Ajustes», no en la vista principal`);
+          }
+          assert.ok(ajustes > 0);
+          // el paso 2 pide UNA cosa: el departamento
+          assert.ok(pos('id="departamento"') > p2 && pos('id="departamento"') < apu.indexOf("Ajustes <span"),
+            "el paso «¿Dónde?» tiene que ser el departamento y nada más");
+        }
+
         const idsHtml = new Set([...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
         // pag-ant/pag-sig los CREA pintar() en cada búsqueda: no viven en el HTML
         const dinamicos = new Set(["pag-ant", "pag-sig"]);
