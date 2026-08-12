@@ -82,7 +82,10 @@ const MAX_PRESUPUESTOS = 100;        // tope del listado
    rechazaba. Su lógica está en lib/apu_extraer.js y lib/apu_descargar.js; este
    despachador solo las llama. Las dos son AJENAS al catálogo de precios: no leen
    Redis ni el catálogo, así que se despachan ANTES de tocarlo. */
-const ACCIONES = ["catalogo", "inferir", "calcular", "rentabilidad", "guardar", "cargar", "listar",
+/* `cotizar` entra aquí y NO como `api/apu/cotizar.js`: el plan Hobby admite 12
+   funciones serverless y el repositorio está EXACTAMENTE en 12. Un archivo más
+   bajo `api/` no falla el endpoint nuevo — falla el sitio entero. */
+const ACCIONES = ["catalogo", "inferir", "calcular", "cotizar", "rentabilidad", "guardar", "cargar", "listar",
   "importar", "extraer-texto", "descargar"];
 const PUBLICAS = ["catalogo"];
 
@@ -157,7 +160,9 @@ module.exports = async function handler(req, res) {
   }
 
   const metodo = String(req.method || "GET").toUpperCase();
-  const esPost = ["inferir", "calcular", "rentabilidad", "guardar", "importar"].includes(accion);
+  // `cotizar` recibe la lista de ítems en el cuerpo: una lista de 300 ítems no
+  // cabe en una query, y además leería el perfil desde la URL
+  const esPost = ["inferir", "calcular", "cotizar", "rentabilidad", "guardar", "importar"].includes(accion);
   if (esPost && metodo !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ ok: false, error: `«${accion}» exige POST.` });
@@ -540,10 +545,90 @@ module.exports = async function handler(req, res) {
     } catch (e) {
       return res.status(503).json({ ok: false, error: `No se pudo guardar. Reintente. (${e.message})` });
     }
+    /* ═══ EL SISTEMA APRENDE DE LOS PRECIOS QUE VOS CORREGÍS ═════════════════
+       Cada precio tecleado a mano queda en el perfil y MANDA la próxima vez que
+       ese ítem aparezca en cualquier presupuesto (nivel 1 de la cascada, ver
+       lib/apu/precios). Es la única fuente que mejora sola con el uso, y es
+       mejor que cualquier referencia: son los precios de SU proveedor y SU
+       región.
+
+       Va DESPUÉS de guardar el borrador y en su propio try: si falla, el
+       borrador ya está a salvo y lo único que se pierde es el aprendizaje de
+       esta vez. Al revés —abortar el guardado porque no se pudo aprender—
+       perdería el trabajo del usuario por un efecto secundario.
+
+       Los precios NO llevan TTL aunque el borrador sí: un borrador es un
+       trabajo en curso y un precio de mercado es conocimiento. */
+    let aprendidos = null;
+    try {
+      aprendidos = await require("../../lib/apu/precios.js")
+        .guardarPreciosUsuario(redis, perfil, items, { region: String(datos.departamento || "") || null });
+    } catch { /* el borrador ya está guardado: el aprendizaje se reintenta solo la próxima vez */ }
+
     return res.status(200).json({
       ok: true, guardado: true, id, perfil, nombre,
       expira_en_dias: Math.round(APU_TTL_SEG / 86400),
-      nota: `El borrador caduca en ${Math.round(APU_TTL_SEG / 86400)} días. Exporte a Excel lo que quiera conservar más tiempo.`,
+      precios_aprendidos: aprendidos ? aprendidos.guardados : null,
+      nota: `El borrador caduca en ${Math.round(APU_TTL_SEG / 86400)} días. Exporte a Excel lo que quiera conservar más tiempo.`
+        + (aprendidos && aprendidos.guardados
+          ? ` Se guardaron ${aprendidos.guardados} precio(s) corregido(s) en tu perfil: la próxima vez que uses esos ítems, mandan sobre el catálogo.`
+          : ""),
+    });
+  }
+
+  /* ══════════════════ cotizar ══════════════════
+     La cascada de fuentes de precio (lib/apu/precios), ítem por ítem. Va APARTE
+     de `calcular` porque responden preguntas distintas: `calcular` arma el
+     presupuesto entero (AIU, margen, alertas) y esto contesta «¿de dónde sale
+     el precio de cada uno de estos ítems y qué tan firme es?». Fundirlas
+     obligaría a pagar la lectura de los precios del usuario en cada tecla.
+
+     La referencia de MERCADO (histórico SECOP) NO se calcula por defecto: exige
+     recorrer el corpus histórico entero y es una respuesta sobre el CONTRATO,
+     no sobre los ítems. Se pide con `?con_mercado=1`. */
+  if (accion === "cotizar") {
+    const items = Array.isArray(datos.items) ? datos.items : [];
+    if (items.length > MAX_ITEMS) {
+      return res.status(400).json({ ok: false, error: `Demasiados ítems (${items.length}). El tope es ${MAX_ITEMS}.` });
+    }
+    const precios = require("../../lib/apu/precios.js");
+    const { regionDeDepartamento } = require("../../lib/apu/tipologias.js");
+
+    let cat = null;
+    try { cat = normalizarCatalogo(await obtenerCatalogo(redis)); } catch { /* la semilla responde igual */ }
+
+    const reg = regionDeDepartamento(String(datos.departamento || ""));
+    const regionId = reg.estado === "mapeado" ? reg.region : null;
+
+    const { mapa, ilegibles, error } = await precios.leerPreciosUsuario(redis, perfil);
+    const r = precios.cotizar({ items, catalogo: cat, region: regionId, preciosUsuario: mapa });
+
+    return res.status(200).json({
+      ok: true,
+      perfil,
+      ...r,
+      ajuste_regional: {
+        estado: reg.estado, departamento: reg.departamento,
+        region_utilizada: r.region, mensaje: reg.mensaje,
+      },
+      precios_propios: {
+        /* «no se pudo consultar» ≠ «no tenés precios»: con Redis caído, un mapa
+           vacío haría que la cotización cayera al catálogo EN SILENCIO y el
+           usuario vería otro precio sin saber por qué. */
+        consultados: !error,
+        cargados: mapa ? Object.keys(mapa).length : null,
+        ilegibles,
+        mensaje: error
+          ? "No se pudieron leer tus precios guardados: esta cotización salió del catálogo de referencia."
+          : null,
+      },
+      como_leerlo: {
+        cascada: "Cada ítem se cotiza recorriendo las fuentes de la más fuerte a la más débil y quedándose "
+          + "con la primera que responde. Se publican TODAS, también las que no respondieron y por qué.",
+        total: "«total_cota_inferior» es una COTA INFERIOR: los ítems sin precio no suman, y cuánto valen "
+          + "es justamente lo que no se sabe.",
+      },
+      aviso: AVISO,
     });
   }
 
