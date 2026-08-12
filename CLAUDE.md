@@ -2375,6 +2375,46 @@ una caja negra: el contratista no sabía si era buena, ni qué la causaba, ni c�
   (la app no tiene dependencias, usa Tailwind por CDN y es clara), y situaba el «Prob. estimada» en
   `/admin.html` + `admin.js`, donde **no se muestra**: vive en `public/app.js` + `index.html`.
 
+## FILOSOFÍA DEL PRODUCTO (ago 2026) · la regla que manda sobre las demás
+
+El dueño la dictó así: **«problemas e incógnitas difíciles, simplificadas para personas normales, que no
+necesiten un curso académico ni experiencia para poder licitar»**. Traducida a criterio verificable:
+
+> **Si para entender un número hace falta leer un párrafo, el número está mal elegido.** Se muestra el HECHO
+> que hay detrás, no el modelo que lo produjo.
+
+El producto se llama **Detecta**. «Portafolio Estratégico» era el nombre del REPOSITORIO filtrándose a la
+cara del usuario. Y **los emojis salen de la interfaz**: un pictograma que dibuja el sistema operativo hace
+que una herramienta de trabajo parezca un juguete, y cambia de aspecto en cada aparato. Las pestañas se
+rotulan con palabras (**Licitaciones · Precios · Mi empresa**) y en móvil llevan SVG en línea con
+`currentColor`, que heredan el acento del tema sin una regla nueva.
+
+- **LA TARJETA NO DICE «PROBABILIDAD», Y ES UN PROBLEMA DE SEGURIDAD DEL PRODUCTO, no de redacción.** El caso
+  exacto que reportó el dueño: «por el nombre un contratista piensa que si tiene un 60 % de probabilidad de
+  ganar y se presenta con 5 empresas distintas, va a ganar». Un PORCENTAJE invita a sumar; una **frecuencia
+  natural** no: «de cada 6 procesos como este, gana 1» deja ver que se pueden perder los seis. Y la palabra
+  «probabilidad» suena a medición cuando lo único medido de la cadena es **cuánta gente compite** —el resto
+  son los SUPUESTOS CON NOMBRE que el propio código documenta, sin etiqueta contra la cual calibrarlos—.
+  La tarjeta enseña el hecho medido primero (`cuantosCompiten`, `null` sin base: nunca se interpola una cifra,
+  que es la cerradura del defecto «18.2 oferentes») y la frecuencia después (`frecuenciaNatural`, con
+  `N = 1/p` exacto, suelo de 2 para no prometer certeza, y `null` —jamás «0 de cada N»— sin dato, R1).
+  **El porcentaje SIGUE VIVO donde es una cuenta y no un mensaje**: el desglose auditable de seis pasos y el
+  editor de APU, donde multiplica al margen. `fraseProbabilidad` se conserva para el modal.
+- **EL VALOR ESPERADO ES UN PROMEDIO SOBRE INTENTOS, y hay que decirlo en la frase**: `ve` ya lleva dentro las
+  veces que NO se gana, así que «si te lo ganás, te quedan X» cometería, una línea más abajo, el mismo error
+  que las dos de arriba existen para corregir. Hay prueba que prohíbe esa redacción.
+- **LA BAJA DE MERCADO SE DICE COMO INSTRUCCIÓN DE PRECIO, no como propiedad de la entidad.** «Descuento
+  típico del 5 %» sonaba a trivia —el dueño: «¿de qué me sirve que me diga que la entidad adjudica el 95 % de
+  su presupuesto?»— y tenía razón sobre el síntoma aunque la cifra no mida eso: **no** mide si la entidad
+  ejecuta su presupuesto (eso lo obliga la norma), mide **cuánto descontó el que ganó**. La redacción vieja
+  confundía las dos. Hoy: «Para tener opción hay que ofertar cerca de 5 % por debajo del presupuesto oficial:
+  es lo que descontaron los que ganaron aquí (23 contratos ya adjudicados)». La cifra no cambia; cambia de
+  quién habla la frase, de la entidad a QUIEN VA A OFERTAR. Con mediana 0 se dice «aquí se gana sin bajar el
+  precio» en vez de «ofertá 0 % por debajo», que sería una instrucción absurda.
+- **UN ACENTO GRAVE DENTRO DE UN TEMPLATE LITERAL LO CIERRA.** Un comentario HTML con `` `ve` `` dentro de la
+  plantilla de `bloqueProbabilidad` dejó de compilar `app.js` ENTERO — la pestaña se muere en silencio, que es
+  justo el modo de fallo que la suite vigila. Los comentarios van FUERA de la plantilla.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).

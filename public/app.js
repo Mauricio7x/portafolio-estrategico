@@ -479,6 +479,54 @@
     return { icono: "🔴", frase: "Poco probable" };
   }
 
+  /* ══════════ FRECUENCIA NATURAL · «1 de cada N», no «17 %» ══════════════════
+     EL PORCENTAJE SE LEE MAL, Y ES UN PROBLEMA DE SEGURIDAD DEL PRODUCTO, no de
+     redacción. El dueño lo dijo con el caso exacto: «por el nombre un
+     contratista piensa que si tiene un 60 % de probabilidad de ganar y se
+     presenta con 5 empresas distintas, va a ganar». Un porcentaje invita a
+     sumar; una frecuencia no. «De cada 6 procesos como este, gana 1» hace
+     evidente que se pueden perder los seis, que es la verdad.
+
+     Y hay una segunda mentira en la palabra: «probabilidad» suena a medición.
+     No lo es. El motor calcula 1/(1+rivales) con ajustes que el propio código
+     documenta como SUPUESTOS CON NOMBRE, sin etiqueta contra la cual
+     calibrarlos. Lo único medido de verdad es CUÁNTA GENTE COMPITE, y eso un
+     contratista lo entiende sin que nadie se lo explique.
+
+     Por eso la tarjeta enseña el hecho medido primero y la frecuencia después,
+     y el porcentaje deja de aparecer donde alguien pueda tomarlo por una
+     promesa. La cifra NO desaparece del sistema: sigue en el desglose (para
+     quien la quiera auditar) y en el editor de APU, donde multiplica al margen
+     y es una cuenta, no un mensaje.
+
+     `N = 1/p` es exacto: sobre N procesos, los aciertos esperados son N × p, y
+     N × p = 1 ⟺ N = 1/p. Se redondea y se dice «aproximadamente». Con p = null
+     devuelve `null` —«no hay con qué estimarlo»— y JAMÁS «0 de cada N», que
+     afirmaría imposibilidad sobre un proceso del que no se sabe nada (R1). */
+  function frecuenciaNatural(p) {
+    const n = Number(p);
+    if (p == null || !Number.isFinite(n) || n <= 0) return null;
+    // el suelo de 2 evita «de cada 1 proceso gana 1», que prometería certeza
+    const deCada = Math.max(2, Math.round(1 / n));
+    return { de_cada: deCada, frase: `De cada ${deCada} procesos como este, gana 1 aproximadamente.` };
+  }
+
+  /* CUÁNTA GENTE COMPITE — el único dato medido de la cadena, y el que de
+     verdad decide. Devuelve `null` cuando no hay base: inventar un promedio
+     sería exactamente el defecto de producción que este proyecto ya pagó
+     («18.2 oferentes» sin base debajo). */
+  function cuantosCompiten(l) {
+    const comp = l.competencia_entidad || {};
+    const promedio = comp.promedio_oferentes == null ? null : Number(comp.promedio_oferentes);
+    const procesos = Number(comp.total_procesos);
+    if (promedio == null || !Number.isFinite(promedio) || !Number.isFinite(procesos) || procesos <= 0) return null;
+    const redondeado = Math.max(1, Math.round(promedio));
+    return {
+      promedio, procesos,
+      frase: `Aquí suelen competir ${redondeado} ${redondeado === 1 ? "empresa" : "empresas"}.`,
+    };
+  }
+
   /* UNA frase (≤12 palabras) con el factor principal, en orden de prioridad
      del encargo. Ninguna interpola una cifra sin base: es la invariante de
      `bandaCompetencia` aplicada al texto. */
@@ -524,22 +572,48 @@
     // sin id no hay nada que consultar: se pinta el texto de siempre, no un
     // botón que al pulsarlo tenga que disculparse
     const id = l.id_del_proceso || "";
-    const et = fraseProbabilidad(l.p_ganar);
-    const cifra = `<span aria-hidden="true">${et.icono}</span> <strong class="text-gray-900">${esc(et.frase)}</strong>`;
+
+    /* EL HECHO MEDIDO VA PRIMERO Y EN GRANDE; la frecuencia lo traduce a
+       decisión. El porcentaje NO se pinta: ver «frecuenciaNatural».
+
+       Y el VALOR ESPERADO se enuncia como lo que es: un promedio SOBRE
+       INTENTOS, que ya lleva dentro las veces que no se gana. Decir «si te lo
+       ganás, te quedan X» sería cometer, en la línea de abajo, el mismo error
+       que las dos de arriba existen para corregir.
+
+       (Los comentarios van AQUÍ y no dentro de la plantilla: un acento grave
+       dentro de un template literal lo CIERRA, y app.js dejaba de compilar
+       entero — la pestaña se moría en silencio, que es justo el modo de fallo
+       que la suite vigila.) */
+    const compiten = cuantosCompiten(l);
+    const frec = frecuenciaNatural(l.p_ganar);
+    const titular = compiten
+      ? compiten.frase
+      : "No hay histórico de competencia en esta entidad.";
+    const bajada = frec
+      ? frec.frase
+      : "Sin datos suficientes para estimar cuántas veces se gana algo así.";
+    const fuente = compiten
+      ? `Medido sobre ${fmt.format(compiten.procesos)} ${compiten.procesos === 1 ? "proceso" : "procesos"} de esta entidad.`
+      : "Se asume la competencia típica de un proceso de obra (5 empresas), que es el supuesto prudente.";
+
     return `
       <div class="mt-4 rounded-xl bg-gray-50 px-4 py-3">
-        <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1">
-        ${id
-    ? `<button type="button" class="detalle-probabilidad cursor-pointer text-left text-sm text-gray-600 underline decoration-dotted decoration-gray-400 underline-offset-4 transition hover:text-gray-900 hover:decoration-gray-900"
-             data-id="${esc(id)}" data-objeto="${esc(l.nombre_del_procedimiento || id)}" title="${esc(titulo)}">
-             ${cifra} <span aria-hidden="true" class="opacity-60">›</span>
-           </button>`
-    : `<span title="${esc(titulo)}" class="text-sm text-gray-600">${cifra}</span>`}
-        <span class="text-sm text-gray-600">
-          Valor esperado: <strong class="tabular-nums text-gray-900">${esc(fmtCorto(l.ve))}</strong>
-        </span>
-        </div>
-        <p class="mt-1 text-xs text-gray-400">${esc(motivoProbabilidad(l))}</p>
+        <p class="text-sm font-semibold text-gray-900">${esc(titular)}</p>
+        <p class="mt-0.5 text-sm text-gray-600">${esc(bajada)}</p>
+        <p class="mt-1.5 text-xs text-gray-400">
+          ${esc(fuente)}
+          ${id
+    ? `<button type="button" class="detalle-probabilidad ml-1 cursor-pointer underline decoration-dotted decoration-gray-400 underline-offset-4 transition hover:text-gray-900 hover:decoration-gray-900"
+               data-id="${esc(id)}" data-objeto="${esc(l.nombre_del_procedimiento || id)}" title="${esc(titulo)}">
+               Ver cómo se calcula</button>`
+    : ""}
+        </p>
+        <p class="mt-2 border-t border-gray-200 pt-2 text-xs text-gray-500">
+          Presentarte a procesos como este deja
+          <strong class="tabular-nums text-gray-700">${esc(fmtCorto(l.ve))}</strong>
+          por intento en promedio, contando las veces que no se gana y lo que cuesta preparar la oferta.
+        </p>
       </div>`;
   }
 
