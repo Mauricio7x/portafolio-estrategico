@@ -680,6 +680,10 @@
         ${cierreTxt ? chip(`Cierra ${cierreTxt}`, "bg-purple-100 text-purple-800") : ""}
         ${l._cierre_prorrogado ? chip("Cierre prorrogado", "bg-indigo-100 text-indigo-800", "El cierre se movió por adenda: suele indicar que no llegaron ofertas suficientes") : ""}
         ${l.modalidad_de_contratacion ? chip(esc(l.modalidad_de_contratacion), "bg-gray-100 text-gray-600") : ""}
+        ${l.tipo_precio === "unitarios" ? chip("Precios unitarios", "bg-blue-100 text-blue-800",
+    "Las cantidades del pliego son un estimativo: las mayores cantidades ordenadas deben reconocerse y pagarse") : ""}
+        ${l.tipo_precio === "global" ? chip("Precio global", "bg-amber-100 text-amber-800",
+    "El riesgo de cantidades es del contratista: no se reconocen mayores cantidades. Verifique el formulario del pliego antes de fijar el precio") : ""}
       </div>
 
       <div class="mt-4 flex items-center justify-between gap-3 text-sm">
@@ -926,6 +930,43 @@
       </table>
     </div>`;
 
+  /* ══════════ Quién gana aquí ══════════
+     El agregado de adjudicatarios del histórico de la entidad: la señal #11
+     del manual (ganador recurrente) hecha dato. La CONCENTRACIÓN solo llega
+     del servidor cuando hay base (mín. 5 procesos con ganador) y la LECTURA
+     viaja con las DOS interpretaciones — nicho ganable O pliego a la medida —
+     porque el dato no alcanza para decidir cuál de las dos es. */
+  function bloqueAdjudicatarios(a) {
+    if (!a) return "";
+    const base = Number(a.procesos_con_ganador);
+    if (!Number.isFinite(base) || base === 0) {
+      return Number(a.sin_adjudicatario) > 0
+        ? `<p class="mt-4 rounded-lg bg-gray-100 p-3 text-xs text-gray-600">El dataset no trae el nombre del
+             adjudicatario en los ${a.sin_adjudicatario} procesos adjudicados de esta entidad: no se puede decir quién gana aquí.</p>`
+        : "";
+    }
+    const filas = (a.top || []).map((g) => `
+      <tr class="border-t border-gray-100 align-top">
+        <td class="py-2 pr-3">${esc(g.nombre)}${g.nit ? `<span class="block text-xs text-gray-400">NIT ${esc(g.nit)}</span>` : ""}</td>
+        <td class="py-2 pr-3 text-right tabular-nums">${g.ganados}</td>
+        <td class="py-2 text-right tabular-nums">${g.valor_adjudicado_cop == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtCorto(g.valor_adjudicado_cop))}</td>
+      </tr>`).join("");
+    const conc = a.concentracion;
+    return `
+      <h3 class="mt-5 mb-1 text-sm font-semibold">Quién gana aquí (${base} proceso${base === 1 ? "" : "s"} con ganador identificado)</h3>
+      ${conc ? `<p class="mb-2 text-xs text-gray-600">${esc(conc.lider)} se lleva ${conc.ganados} de ${conc.base} (${conc.pct} %).</p>` : ""}
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="text-xs uppercase tracking-wide text-gray-400">
+            <tr><th class="pb-1">Adjudicatario</th><th class="pb-1 text-right">Ganados</th><th class="pb-1 text-right">Valor adjudicado</th></tr>
+          </thead>
+          <tbody>${filas}</tbody>
+        </table>
+      </div>
+      ${Number(a.sin_adjudicatario) > 0 ? `<p class="mt-2 text-xs text-gray-400">${a.sin_adjudicatario} proceso(s) adjudicados sin nombre de ganador en el dataset.</p>` : ""}
+      ${a.lectura ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800"><strong>Atención:</strong> ${esc(a.lectura)}</p>` : ""}`;
+  }
+
   function pintarDetalle(d) {
     const i = d.indice || {};
     const banda = COMPETENCIA_ENTIDAD[i.nivel] || COMPETENCIA_ENTIDAD.sin_dato;
@@ -941,6 +982,7 @@
       </p>
       ${resumen}
       ${d.mensaje ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">${esc(d.mensaje)}</p>` : ""}
+      ${bloqueAdjudicatarios(d.adjudicatarios)}
       ${tabla("Procesos incluidos", d.procesos || [], false)}
       ${tabla("Excluidos del promedio", d.excluidos || [], true,
     "Están cerrados o adjudicados, pero no cuentan para el promedio por el motivo indicado en cada uno.")}
