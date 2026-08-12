@@ -1602,6 +1602,33 @@
     ["transporte", "Transporte"],
   ];
 
+  /* ══════════ DE DÓNDE SALIÓ EL PRECIO, Y POR QUÉ NO DE OTRA PARTE ══════════
+     El badge de la fila dice la FUENTE; esto dice qué se miró ANTES y por qué no
+     respondió. «Derivado regional» a secas se lee como un defecto del programa;
+     «todavía no corregiste el precio de este ítem» es una INSTRUCCIÓN — y es
+     además la que hace que el usuario corrija precios, que es lo único que
+     mejora la aplicación con el uso.
+
+     Una sola definición para las dos ramas de `pintarInsumos`: la del ítem con
+     composición y la del que no la tiene. En la segunda es donde más falta
+     hace, porque ahí no hay ninguna otra respuesta en pantalla. */
+  function cascadaDe(casc) {
+    if (!casc || !Array.isArray(casc.pasos)) return "";
+    return `
+      <div class="mt-4 border-t border-gray-200 pt-3">
+        <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">De dónde sale este precio</p>
+        ${casc.corto_por ? `<p class="mt-1 text-[11px] text-gray-600">${esc(casc.motivo || "")}</p>` : ""}
+        <ul class="mt-1.5 space-y-0.5">
+          ${casc.pasos.map((p) => `
+            <li class="flex gap-2 text-[11px] ${p.respondio ? "font-medium text-gray-900" : "text-gray-400"}">
+              <span class="w-3 shrink-0">${p.respondio ? "\u2192" : "\u00b7"}</span>
+              <span class="w-36 shrink-0">${esc(p.etiqueta)}</span>
+              <span>${p.respondio ? "es el que se us\u00f3" : esc(p.motivo || "")}</span>
+            </li>`).join("")}
+        </ul>
+      </div>`;
+  }
+
   function pintarInsumos(i) {
     const caja = $("tabla").querySelector(`[data-celda="insumos-${i}"]`);
     if (!caja) return;
@@ -1618,6 +1645,11 @@
           : it && it.incompleto ? esc(it.mensaje || "Este ítem no tiene precio: escriba uno o asígnele un ítem del catálogo. Sin precio NO suma al total.")
             : it && it.sin_apu ? "Este ítem lleva un precio escrito a mano o traído del archivo: no tiene APU de respaldo en el catálogo."
               : "Este ítem no tiene composición en el catálogo."}</p>`;
+      /* La cascada se pinta TAMBIÉN aquí, y es donde más falta hace: estos son
+         justo los ítems sin composición —precio propio, del archivo, tecleado o
+         ninguno—, o sea aquellos en los que la pregunta «¿por qué este precio y
+         no otro?» no tiene ninguna otra respuesta en pantalla. */
+      if (it && it.cascada) caja.innerHTML += cascadaDe(it.cascada);
       caja.setAttribute("data-pintado", "1");
       return;
     }
@@ -1662,8 +1694,17 @@
     };
 
     const rubros = RUBROS_APU.map(([t]) => cuerpoRubro(t)).filter(Boolean).join("");
+    /* ══════════ DE DÓNDE SALIÓ EL PRECIO, Y POR QUÉ NO DE OTRA PARTE ══════
+       El badge de la fila dice la fuente; esto dice qué se miró ANTES y por qué
+       no respondió. «Derivado regional» a secas se lee como un defecto del
+       programa; «todavía no corregiste el precio de este ítem» es una
+       instrucción — y encima es la que hace que el usuario corrija precios, que
+       es lo único que mejora la aplicación con el uso. */
+    const cascadaHtml = it && it.cascada ? cascadaDe(it.cascada) : "";
+
     caja.innerHTML = `
       <div class="grid gap-4 xl:grid-cols-2">${rubros}</div>
+      ${cascadaHtml}
       <p class="mt-3 border-t border-gray-200 pt-2 text-right text-xs font-semibold">
         Total costo directo del ítem: <span class="num">${pesos(it.costo_directo_unitario)}</span>
         <span class="font-normal text-gray-400"> por ${esc(it.unidad || "unidad")}</span>

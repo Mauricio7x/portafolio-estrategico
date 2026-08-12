@@ -8734,6 +8734,39 @@ async function main() {
         assert.strictEqual(calcTecleado.cuerpo.items[0].costo_directo_unitario, 99999);
         assert.strictEqual(calcTecleado.cuerpo.items[0].origen_precio, "manual");
 
+        /* ═══ LA CASCADA SE VE ═══════════════════════════════════════════════
+           Existía en la respuesta de `cotizar` y NINGUNA pantalla la consumía,
+           así que el usuario veía DE DÓNDE venía el precio pero no POR QUÉ no
+           venía de una fuente mejor. «Derivado regional» a secas se lee como un
+           defecto del programa; «todavía no corregiste el precio de este ítem»
+           es una instrucción — y es la que hace que el usuario corrija precios,
+           que es lo único que mejora la aplicación con el uso. */
+        const cascItem = calcConPropio.cuerpo.items[0].cascada;
+        assert.ok(cascItem, "`calcular` tiene que publicar la cascada: es la vía que usa la web");
+        assert.deepStrictEqual(cascItem.pasos.map((p) => p.nivel),
+          ["usuario", "pliego", "mercado", "catalogo"]);
+        const respondieron = cascItem.pasos.filter((p) => p.respondio);
+        assert.strictEqual(respondieron.length, 1, "responde UNA fuente: la primera que tiene el dato");
+        assert.strictEqual(respondieron[0].nivel, "usuario");
+        // los que NO respondieron dicen por qué: un hueco mudo no explica nada
+        for (const p of cascItem.pasos.filter((x) => !x.respondio)) {
+          assert.ok(p.motivo && p.motivo.length > 10, `el nivel ${p.nivel} no dice por qué no respondió`);
+        }
+        // sin precio propio, la cascada baja al catálogo y lo dice
+        const cascCat = (await invocarPost(apu, "/api/apu/calcular", {
+          perfil: "genesis", departamento: "ANTIOQUIA", config: cfgBase,
+          items: [{ item_id: "NOG-A2", cantidad: 1 }],
+        }, CAB_TOKEN)).cuerpo.items[0].cascada;
+        assert.strictEqual(cascCat.pasos.find((p) => p.respondio).nivel, "catalogo");
+        assert.ok(/no corregiste el precio|No hay perfil/i.test(
+          cascCat.pasos.find((p) => p.nivel === "usuario").motivo),
+        "el nivel del usuario tiene que decir que falta SU precio: es lo que lo invita a corregirlo");
+        // y la web la pinta, en las DOS ramas del desglose
+        const fuenteCasc = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+        assert.ok(/function cascadaDe\(/.test(fuenteCasc), "falta el pintor de la cascada");
+        assert.strictEqual((fuenteCasc.match(/cascadaDe\(/g) || []).length, 3,
+          "la cascada se pinta en las DOS ramas de pintarInsumos (con y sin composición), más su definición");
+
         // el perfil manda: los precios de uno no se ven desde el otro
         const czOtro = await invocarPost(apu, "/api/apu/cotizar", {
           perfil: "genesis", departamento: "ANTIOQUIA", items: [{ item_id: "NOG-A2", cantidad: 4 }],
