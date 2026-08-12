@@ -770,6 +770,22 @@ con nadie en Colombia y replica el único diferenciador que el mercado global pa
 qué porcentaje del PAA del año anterior acabó publicándose — y eso **se puede medir** cruzando
 `paa:*` con el histórico. Publicar la previsión sin su tasa de acierto sería vender humo.
 
+> **ESTADO (ago 2026): implementado a MEDIAS, y la mitad que falta es la de arriba.**
+> Existe `lib/paa.js` + `/api/competencia-detalle?vista=paa` (alias `/api/paa`, rewrite) y el toggle
+> «Ver PAA» de la pestaña Licitaciones. Lo que se hizo **igual que aquí**: el dataset sigue **sin
+> verificar** (403 comprobado otra vez), así que las columnas se resuelven por lista de candidatas
+> con censo publicado, tal como se pedía; y en pantalla va **separado y rotulado**, con badge propio
+> y sin probabilidad ni puertas.
+> Lo que se hizo **distinto**, por petición explícita del dueño: es una **consulta en vivo**, no una
+> ingesta — no hay keyspace `paa:mes:*` ni `?modo=` que lo baje—. La consulta en vivo es lo menos
+> comprometedor mientras el dataset no se pueda abrir (no escribe nada, no hay que migrar nada y el
+> mapeo de columnas vive en un solo módulo), pero **la ingesta sigue siendo el destino natural** y es
+> requisito de lo que falta.
+> Lo que **no está**: la **tasa de acierto**. Viaja en `null` y la respuesta lo dice con esas
+> palabras. Medirla exige exactamente lo que este párrafo describe —cruzar el PAA de un año con
+> `licitaciones:historico:mes:*` del siguiente—, y eso necesita el keyspace propio: sin PAA guardado
+> no hay con qué cruzar. Es el siguiente paso, no un olvido.
+
 ---
 
 ---

@@ -919,10 +919,25 @@ function generarDatasetHistorico() {
 /* ════════════════ mock Socrata (SoQL mínimo) ════════════════ */
 function crearMockSocrata() {
   let dataset = [];
+  /* SEGUNDO dataset, servido por PATH: el PAA vive en `9sue-ezhx` y el de
+     siempre en `p6dx-8zbt`. El mock ignoraba la ruta, así que sin esto la
+     consulta del PAA habría recibido el corpus de SECOP II y la prueba habría
+     pasado midiendo otra cosa. */
+  let datasetPaa = [];
   let contadorPeticiones = 0;
   let inyectarFallos = true;
 
   const cumple = (fila, clausula) => {
+    /* `like` con comodines a los dos lados, con o sin `upper(...)`: es lo que
+       construye lib/paa para acotar por entidad y por código UNSPSC. Sin
+       soportarlo, `cumple` lanzaba dentro del callback del servidor —una
+       excepción no capturada que tumba el proceso de pruebas entero—, que es
+       peor que un fallo de aserción. */
+    const like = clausula.match(/^(?:upper\()?([^\s()]+)\)?\s+like\s+'%(.*)%'$/i);
+    if (like) {
+      const [, campo, aguja] = like;
+      return String(fila[campo] ?? "").toUpperCase().includes(aguja.toUpperCase());
+    }
     const m = clausula.match(/^(\S+)\s*(>=|<=|>|<)\s*'(.*)'$/);
     if (!m) throw new Error(`mock: clausula no soportada: ${clausula}`);
     const [, campo, op, valor] = m;
@@ -944,7 +959,7 @@ function crearMockSocrata() {
       }
       const u = new URL(req.url, "http://x");
       const q = Object.fromEntries(u.searchParams);
-      let filas = dataset.slice();
+      let filas = (u.pathname.includes("9sue-ezhx") ? datasetPaa : dataset).slice();
       if (q.$where) filas = filas.filter((f) => q.$where.split(" AND ").every((c) => cumple(f, c.trim())));
       if ((q.$select || "").startsWith("count(*)")) {
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -961,6 +976,7 @@ function crearMockSocrata() {
   return {
     server,
     setDataset: (d) => { dataset = d; },
+    setDatasetPaa: (d) => { datasetPaa = d; },
     getDataset: () => dataset,
     setFallos: (v) => { inyectarFallos = v; },
     peticiones: () => contadorPeticiones,
@@ -1111,6 +1127,8 @@ async function main() {
   const puertoUpstash = await escuchar(upstash.server);
 
   process.env.SECOP_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/p6dx-8zbt.json`;
+  // el PAA vive en OTRO dataset del mismo Socrata: el mock lo sirve por path
+  process.env.PAA_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/9sue-ezhx.json`;
   process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoUpstash}`;
   process.env.UPSTASH_REDIS_REST_TOKEN = "token-de-prueba";
   process.env.SECOP_PAGE = "50";       // páginas chicas → ejercita keyset multi-página
@@ -10371,6 +10389,321 @@ async function main() {
 
       console.log("  · UI Apple Glass: pasos 0.1 (pestañas e ids), 0.2 (DELETE de RUP dinámico y fijo), "
         + "0.3 (probabilidad en frases, ejecutada), 1.1–1.4 (paleta, retiradas y límite de funciones) verificados");
+    }
+
+    /* ── k · PLAN ANUAL DE ADQUISICIONES ─────────────────────────────────────
+       La única fuente que dice qué va a salir ANTES de que salga. Tres cosas se
+       vigilan aquí, y las tres son de HONESTIDAD antes que de funcionamiento:
+
+         1. que la previsión NO se mezcle con lo abierto (sección propia, badge
+            propio, y ni probabilidad ni puertas en la fila del PAA);
+         2. que ningún nombre de columna se escriba a pelo en una consulta —el
+            dataset `9sue-ezhx` NO se pudo abrir desde este entorno (403), así
+            que se resuelve por candidatas contra las claves REALES y el censo
+            publica cuál ganó y cuál falta;
+         3. que lo que no se pudo hacer se DIGA: barrido truncado, fechas
+            ilegibles y `tasa_de_acierto: null` viajan en la respuesta.
+
+       Las unidades van con el reloj INYECTADO: una prueba de ventanas calibrada
+       contra el reloj real no prueba nada y falla sola en la frontera. */
+    {
+      const paa = require("../lib/paa.js");
+
+      /* k.1 · unidades ── la ventana de 12 meses, con «ahora» inyectado */
+      {
+        // 15 de marzo de 2026, 10:00 UTC → 05:00 en Colombia, mismo día
+        const v = paa.ventanaDoceMeses(Date.UTC(2026, 2, 15, 10, 0, 0));
+        assert.strictEqual(v.desde, "2026-03-01", "la ventana arranca el día 1 del mes en curso");
+        assert.strictEqual(v.hasta, "2027-03-01", "la ventana cubre 12 meses exactos");
+        /* La hora Colombia NO es un detalle: a las 02:00 UTC del 1 de abril
+           todavía es 31 de marzo en Colombia, y la ventana tiene que ser la de
+           marzo. Con `Date.now()` a secas se adelantaría un mes entero. */
+        const vBorde = paa.ventanaDoceMeses(Date.UTC(2026, 3, 1, 2, 0, 0));
+        assert.strictEqual(vBorde.desde, "2026-03-01",
+          "a las 02:00 UTC del 1 de abril en Colombia sigue siendo marzo: la ventana no puede saltar de mes");
+      }
+
+      /* k.2 · unidades ── fechas y pesos: reconocer, nunca adivinar */
+      {
+        assert.strictEqual(paa.fechaISO("2026-09-01T00:00:00.000"), "2026-09-01");
+        assert.strictEqual(paa.fechaISO("2026-09"), "2026-09-01", "un mes sin día se sitúa en el día 1");
+        assert.strictEqual(paa.fechaISO("15/09/2026"), "2026-09-15", "DD/MM/AAAA se lee a la colombiana");
+        assert.strictEqual(paa.fechaISO("2026-13-01"), null, "un mes 13 no es una fecha");
+        for (const basura of ["Marzo", "Primer trimestre", "", null, undefined, "N/A"]) {
+          assert.strictEqual(paa.fechaISO(basura), null, `«${basura}» no es una fecha y no puede inventarse una`);
+        }
+        /* EL PUNTO ES DECIMAL AQUÍ, al revés que en `numeroColombiano`: esto lee
+           el JSON de una API, no el texto de un pliego. Con la regla del pliego
+           «1500000.00» daría 150.000.000 — cien veces más — y la cuantía
+           estimada de todo el PAA saldría inflada. */
+        assert.strictEqual(paa.pesos("1500000.00"), 1500000, "el punto separa DECIMALES en el JSON de la API");
+        assert.strictEqual(paa.pesos("1500000"), 1500000);
+        // 0 es SIN DATO, jamás «obra gratis» (la regla de anticipo_pct = 0)
+        assert.strictEqual(paa.pesos("0"), null, "una cuantía en cero es SIN DATO, no cero pesos");
+        assert.strictEqual(paa.pesos(""), null);
+        assert.strictEqual(paa.pesos(null), null);
+        // lo que no es formato máquina NO se adivina
+        assert.strictEqual(paa.pesos("1.500.000"), null, "un número con separadores de miles no se convierte a ojo");
+        assert.strictEqual(paa.pesos("Por definir"), null);
+      }
+
+      /* k.3 · unidades ── el censo de columnas: igualdad exacta tolerante a la
+         transliteración de Socrata, y nada de heurísticas */
+      {
+        const r = paa.resolverColumnas(["entidad", "descripci_n", "Valor Total Estimado", ":id"]);
+        assert.strictEqual(r.columnas.entidad, "entidad");
+        assert.strictEqual(r.columnas.objeto, "descripci_n", "«descripci_n» y «descripcion» son la misma columna");
+        assert.strictEqual(r.columnas.cuantia_estimada, "Valor Total Estimado",
+          "el censo tolera mayúsculas y espacios, pero sigue siendo igualdad exacta");
+        assert.strictEqual(r.columnas.modalidad, null, "una columna que no está NO se inventa");
+        assert.ok(r.sin_resolver.includes("modalidad"), "lo que no se reconoce se declara");
+        const vacio = paa.resolverColumnas(["columna_marciana"]);
+        assert.deepStrictEqual(vacio.columnas.entidad, null);
+        assert.ok(paa.IMPRESCINDIBLES.every((c) => vacio.sin_resolver.includes(c)));
+      }
+
+      /* k.4 · el endpoint, contra el dataset simulado */
+      const v = paa.ventanaDoceMeses();
+      /* Fechas RELATIVAS a la ventana real, no cableadas: el bloque corre con el
+         reloj del sistema y unas fechas fijas caducarían solas dentro de un año. */
+      const mas = (n, dia = "15") => {
+        const [y, m] = v.desde.split("-").map(Number);
+        const t = y * 12 + (m - 1) + n;
+        return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, "0")}-${dia}`;
+      };
+      const filaPaa = (i, extra) => ({
+        ":id": `paa-${String(i).padStart(3, "0")}`,
+        entidad: "ALCALDÍA DE IBAGUÉ", nit_entidad: "890706839",
+        descripcion: `Construcción de placa huella prevista ${i}`,
+        codigo_unspsc: "72141000", valor_total_estimado: "800000000",
+        fecha_estimada_de_inicio_de: `${mas(1)}T00:00:00.000`,
+        modalidad_de_seleccion: "Licitación pública", departamento: "Tolima",
+        estado_de_solicitud: "Aprobado", ...extra,
+      });
+
+      const DATASET_PAA = [
+        filaPaa(1),
+        filaPaa(2, { fecha_estimada_de_inicio_de: `${mas(0)}T00:00:00.000` }),
+        filaPaa(3, { fecha_estimada_de_inicio_de: `${mas(11)}T00:00:00.000` }),
+        // un producto DENTRO de la clase pedida y una publicación a nivel de FAMILIA:
+        // las dos casan por jerarquía, y la de familia solo entra si el `like` del
+        // servidor acota por familia (con 5-6 dígitos la habría dejado fuera)
+        filaPaa(4, { codigo_unspsc: "72141050" }),
+        filaPaa(5, { codigo_unspsc: "72140000" }),
+        // OTRA entidad, para el filtro por entidad
+        filaPaa(6, { entidad: "GOBERNACIÓN DEL TOLIMA", nit_entidad: "800113672" }),
+        // cuantía en formato máquina con decimales, y cuantía en cero (= sin dato)
+        filaPaa(7, { valor_total_estimado: "1500000.00" }),
+        filaPaa(8, { valor_total_estimado: "0" }),
+        // fuera de la ventana (dentro de 14 meses)
+        filaPaa(9, { fecha_estimada_de_inicio_de: `${mas(14)}T00:00:00.000` }),
+        // objeto vacío: no se puede componer una fila útil
+        filaPaa(10, { descripcion: "   " }),
+        // un código de OTRA familia: lo aparta el `like` del servidor, así que ni
+        // siquiera llega (por eso no aparece en `descartados`)
+        filaPaa(11, { codigo_unspsc: "80101600" }),
+        /* …y uno de la MISMA familia pero de otra clase: este sí atraviesa el
+           `like` y lo descarta la jerarquía en el cliente. Hacen falta los dos:
+           con solo el primero, `unspsc_no_coincide` valdría 0 siempre y nadie
+           estaría probando el filtro fino. */
+        filaPaa(12, { codigo_unspsc: "72142000" }),
+      ];
+      socrata.setDatasetPaa(DATASET_PAA);
+
+      const pedirPaa = (qs = "") => invocar(detalleComp, `/api/competencia-detalle?vista=paa${qs}`,
+        CAB_TOKEN);
+
+      // k.4a · sin token → 401, y con token equivocado también
+      {
+        const sin = await invocar(detalleComp, "/api/competencia-detalle?vista=paa");
+        assert.strictEqual(sin.status, 401, "el PAA está protegido con HISTORICO_TOKEN");
+        const malo = await invocar(detalleComp, "/api/competencia-detalle?vista=paa",
+          { "x-historico-token": "no-es" });
+        assert.strictEqual(malo.status, 401, "un token que no coincide no degrada en silencio");
+      }
+
+      // k.4b · consulta sin filtros
+      const r = await pedirPaa();
+      assert.strictEqual(r.status, 200, `el PAA debía responder 200: ${JSON.stringify(r.cuerpo).slice(0, 300)}`);
+      assert.strictEqual(r.cuerpo.dataset, "9sue-ezhx", "el dataset del PAA es 9sue-ezhx");
+      assert.strictEqual(r.cuerpo.verificado, false,
+        "mientras nadie abra datos.gov.co, la respuesta tiene que declarar que NO está verificada");
+      assert.strictEqual(r.cuerpo.tasa_de_acierto, null,
+        "la tasa de acierto del PAA no está medida: publicar una cifra sería vender humo");
+      assert.ok(/PLAN, no un compromiso/i.test(r.cuerpo.advertencia || ""),
+        "la advertencia de que un plan no es un compromiso viaja en la RESPUESTA, no solo en la pantalla");
+      assert.strictEqual(r.cuerpo.censo.columnas.objeto, "descripcion");
+      assert.deepStrictEqual(r.cuerpo.censo.sin_resolver, [], "todas las columnas exigidas se reconocieron");
+      assert.strictEqual(r.cuerpo.censo.fecha_comparable_en_servidor, true,
+        "con fechas ISO en la sonda, el rango se delega al servidor");
+
+      // los seis campos que pide el encargo, en cada fila y con su tipo
+      for (const p of r.cuerpo.resultados) {
+        for (const campo of ["entidad", "objeto", "unspsc", "cuantia_estimada",
+          "fecha_estimada_publicacion", "modalidad"]) {
+          assert.ok(campo in p, `falta «${campo}» en una fila del PAA`);
+        }
+        assert.strictEqual(p.tipo, "paa", "cada fila del PAA se marca como tal");
+        assert.strictEqual(p.planeado, true);
+        /* Una previsión NO puede llevar probabilidad, puertas ni veredicto de
+           RUP: no hay pliego que juzgar y esas cifras la harían comparable con
+           un proceso abierto, que es la peor forma posible de equivocarse. */
+        for (const prohibido of ["p_ganar", "puertas", "rup", "ve", "viable"]) {
+          assert.ok(!(prohibido in p), `una fila del PAA no puede traer «${prohibido}»`);
+        }
+        assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(p.fecha_estimada_publicacion),
+          "la fecha prevista viaja normalizada, con el literal de la fuente al lado");
+      }
+      // el orden es de calendario: un plan se lee por lo que sale antes
+      const fechas = r.cuerpo.resultados.map((p) => p.fecha_estimada_publicacion);
+      assert.deepStrictEqual(fechas, [...fechas].sort(), "el PAA se ordena por fecha prevista ascendente");
+
+      // ventana: nada fuera de los 12 meses, ni el de dentro de 14
+      assert.ok(fechas.every((f) => f >= v.desde && f < v.hasta), "una fila fuera de la ventana no puede colarse");
+      assert.ok(!r.cuerpo.resultados.some((p) => /prevista 9$/.test(p.objeto || "")),
+        "el proceso previsto para dentro de 14 meses no está en «los próximos 12 meses»");
+      // el objeto vacío no compone una fila, y se cuenta
+      assert.ok(r.cuerpo.descartados.sin_objeto >= 1, "una fila sin objeto se descarta Y SE CUENTA");
+
+      /* LA INVARIANTE: nadie desaparece sin quedar contado. Sin ella una fila se
+         perdería en silencio y el total seguiría pareciendo razonable. */
+      const sumaDesc = Object.values(r.cuerpo.descartados).reduce((a, b) => a + b, 0);
+      assert.strictEqual(r.cuerpo.total + sumaDesc, r.cuerpo.barrido.filas_leidas,
+        "total + descartados tiene que ser exactamente lo leído");
+
+      // la cuantía: decimales de máquina bien leídos y el cero como SIN DATO
+      const conDecimales = r.cuerpo.resultados.find((p) => /prevista 7$/.test(p.objeto || ""));
+      assert.strictEqual(conDecimales.cuantia_estimada, 1500000, "«1500000.00» son $1.500.000, no $150.000.000");
+      const enCero = r.cuerpo.resultados.find((p) => /prevista 8$/.test(p.objeto || ""));
+      assert.strictEqual(enCero.cuantia_estimada, null, "una cuantía en cero viaja en null, nunca en 0");
+
+      // k.4c · filtro por entidad
+      {
+        const g = await pedirPaa("&entidad=GOBERNACI");
+        assert.strictEqual(g.status, 200);
+        assert.ok(g.cuerpo.total >= 1, "el filtro por entidad debía encontrar la gobernación");
+        assert.ok(g.cuerpo.resultados.every((p) => /GOBERNACI/i.test(p.entidad || "")),
+          "el filtro por entidad no puede devolver otras entidades");
+      }
+
+      // k.4d · filtro por UNSPSC, resuelto por JERARQUÍA (no por prefijo a mano)
+      {
+        const u = await pedirPaa("&unspsc=72141000");
+        assert.strictEqual(u.status, 200);
+        const codigos = u.cuerpo.resultados.map((p) => p.unspsc);
+        assert.ok(codigos.includes("72141050"),
+          "un producto dentro de la clase inscrita casa por jerarquía");
+        assert.ok(codigos.includes("72140000"),
+          "una publicación a nivel de FAMILIA casa hacia arriba: si el `like` del servidor acotara más, se perdería");
+        assert.ok(!codigos.includes("80101600"), "un código de otra familia no puede colarse");
+        assert.ok(!codigos.includes("72142000"), "otra clase de la misma familia tampoco casa");
+        assert.ok(u.cuerpo.descartados.unspsc_no_coincide >= 1,
+          "lo que atraviesa el filtro grueso del servidor y muere en la jerarquía SE CUENTA");
+        // un código ilegible es un 400 con explicación, no una lista vacía
+        const malo = await pedirPaa("&unspsc=123");
+        assert.strictEqual(malo.status, 400, "un UNSPSC de 3 dígitos no es un código: se dice");
+      }
+
+      // k.4e · la fecha NO comparable en el servidor: se filtra en el cliente y
+      // las ilegibles se cuentan en vez de desaparecer
+      {
+        socrata.setDatasetPaa([
+          // la sonda ve las 5 de menor `:id`: con un texto entre ellas, el rango
+          // NO se delega (compararlo como cadena devolvería basura en silencio)
+          ...[1, 2, 3, 4, 5].map((i) => filaPaa(i, { fecha_estimada_de_inicio_de: "Marzo" })),
+          filaPaa(6, { fecha_estimada_de_inicio_de: `${mas(2)}T00:00:00.000` }),
+          filaPaa(7, { fecha_estimada_de_inicio_de: `${mas(20)}T00:00:00.000` }),
+        ]);
+        const t = await pedirPaa();
+        assert.strictEqual(t.status, 200);
+        assert.strictEqual(t.cuerpo.censo.fecha_comparable_en_servidor, false,
+          "con «Marzo» en la muestra, el rango NO puede delegarse a Socrata");
+        assert.strictEqual(t.cuerpo.total, 1, "solo una fila cae dentro de la ventana");
+        assert.strictEqual(t.cuerpo.descartados.fecha_ilegible, 5,
+          "las fechas que no se pudieron leer se CUENTAN: no se sitúan en la ventana a la fuerza");
+        assert.strictEqual(t.cuerpo.descartados.fuera_de_ventana, 1);
+        assert.strictEqual(t.cuerpo.total + Object.values(t.cuerpo.descartados).reduce((a, b) => a + b, 0),
+          t.cuerpo.barrido.filas_leidas, "la invariante se mantiene sin filtro de servidor");
+      }
+
+      // k.4f · columnas irreconocibles → 200 con la lista vacía y el DIAGNÓSTICO
+      // (un 4xx haría creer que la petición estaba mal; es la lección de «sin tablas»)
+      {
+        socrata.setDatasetPaa([{ ":id": "x-1", columna_marciana: "algo", otra: "1" }]);
+        const c = await pedirPaa();
+        assert.strictEqual(c.status, 200, "que no se reconozcan las columnas es un RESULTADO, no un error");
+        assert.strictEqual(c.cuerpo.total, 0);
+        assert.ok(/columna de entidad/i.test(c.cuerpo.motivo_lista_vacia || ""),
+          "hay que decir QUÉ columna no se reconoció");
+        assert.ok(c.cuerpo.censo.claves_observadas.includes("columna_marciana"),
+          "se publican las claves REALES del dataset: es lo que permite arreglarlo en una línea");
+      }
+      socrata.setDatasetPaa(DATASET_PAA); // se deja como estaba para la siguiente iteración
+
+      /* k.5 · la vista desconocida sigue muriendo antes de autorizar, y ahora
+         lista las TRES */
+      {
+        const x = await invocar(detalleComp, "/api/competencia-detalle?vista=inventada");
+        assert.strictEqual(x.status, 400);
+        assert.ok(x.cuerpo.vistas.some((s) => /^paa/.test(s)), "la vista paa se anuncia en el 400");
+      }
+
+      /* k.6 · el alias `/api/paa` es un REWRITE, no una función nueva: el plan
+         Hobby admite 12 y el repositorio está en 12 (lo cuenta el paso 1.4). */
+      {
+        const vercel = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
+        const alias = (vercel.rewrites || []).find((x) => x.source === "/api/paa");
+        assert.ok(alias, "falta el rewrite /api/paa en vercel.json");
+        assert.strictEqual(alias.destination, "/api/competencia-detalle?vista=paa",
+          "un alias que apunte a otra cosa es una URL que promete algo que no hace");
+        assert.ok(!fs.existsSync(path.join(__dirname, "..", "api", "paa.js")),
+          "api/paa.js no puede existir: sería la función 13 y rompería el despliegue entero");
+        // y el handler resuelve la vista TAMBIÉN por el path: un handler que solo
+        // funciona detrás del enrutador es un handler que no se puede probar
+        const porRuta = await invocar(detalleComp, "/api/paa", CAB_TOKEN);
+        assert.strictEqual(porRuta.status, 200, "el path /api/paa tiene que resolver la vista por sí solo");
+        assert.strictEqual(porRuta.cuerpo.vista, "paa");
+      }
+
+      /* k.7 · el frontend: sección APARTE, badges y token en cabecera */
+      {
+        const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        const js = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        for (const id of ["f-ver-paa", "f-paa-entidad", "f-paa-entidad-wrap", "paa", "paa-lista",
+          "paa-resumen", "paa-aviso", "paa-censo"]) {
+          assert.ok(html.includes(`id="${id}"`), `falta #${id} en index.html`);
+        }
+        /* El bloque del PAA es una SECCIÓN propia, fuera de #lista: si sus
+           tarjetas entraran en el mismo contenedor, compartirían el orden de
+           /api/oportunidades y parecerían comparables. */
+        assert.ok(/<section id="paa"[\s\S]*?<\/section>[\s\S]*?<section id="resultados"/.test(html),
+          "el PAA tiene que ir en su propia sección, separado de #resultados");
+        assert.ok(!/id="lista"[\s\S]{0,200}paa-lista/.test(html), "el PAA no puede pintarse dentro de #lista");
+        // los dos badges que pide el encargo
+        assert.ok(/PAA · planeado/.test(js), "falta el badge «PAA · planeado»");
+        assert.ok(/Activo · abierto/.test(js), "falta el badge «Activo · abierto»");
+        // el badge «Activo» solo se pinta cuando hay PAA en pantalla del que separarlo
+        assert.ok(/paaEncendido \? chip\("Activo · abierto"/.test(js),
+          "el badge «Activo» tiene que colgar de que el PAA esté encendido");
+        // se llama a la URL CANÓNICA, no al alias
+        assert.ok(/fetch\(`\/api\/competencia-detalle\?\$\{qs\}`/.test(js),
+          "el frontend tiene que llamar a la canónica: si el rewrite fallara, el PAA debe seguir vivo");
+        assert.ok(!/\/api\/paa\?|fetch\(["'`]\/api\/paa/.test(js), "el frontend no puede depender del alias");
+        // el token va por CABECERA, jamás en la URL (regla del token integrado)
+        assert.ok(/vista: "paa"[\s\S]{0,600}x-historico-token/.test(js),
+          "el token del PAA tiene que viajar por cabecera");
+        assert.ok(!/vista=paa[^`'"]*token=/.test(js), "el token no puede viajar en la URL");
+        /* Ni un `|| 0` sobre la cuantía estimada: convertiría «el PAA no publicó
+           el valor» en «$0», que es la confusión que este proyecto ya pagó tres
+           veces (anticipo, oferentes, cantidades del pliego). */
+        assert.ok(!/cuantia_estimada\s*\|\|\s*0/.test(js),
+          "un «|| 0» sobre la cuantía estimada convierte «no sé» en «cero»");
+        assert.ok(/cuantia_estimada == null/.test(js), "el null de la cuantía se trata explícitamente");
+      }
+
+      console.log(`  · PAA (9sue-ezhx): ${r.cuerpo.total} previstos entre ${v.desde} y ${v.hasta} · `
+        + `censo ${Object.values(r.cuerpo.censo.columnas).filter(Boolean).length}/${Object.keys(r.cuerpo.censo.columnas).length} columnas `
+        + `· jerarquía UNSPSC, ventana, fecha ilegible y columnas marcianas verificadas · sin verificar contra la fuente real`);
     }
 
     /* i. la INVARIANTE que sostiene el encadenado del panel de administración:
