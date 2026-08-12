@@ -145,10 +145,10 @@
   /* Competencia histórica de la entidad (índice sobre 2 años de adjudicaciones):
      es lo que decide el orden por defecto — primero donde menos gente compite. */
   const COMPETENCIA_ENTIDAD = {
-    baja: { emoji: "🟢", titulo: "Poca competencia", clases: "bg-green-50 text-green-800 ring-green-600/20" },
-    media: { emoji: "🟡", titulo: "Competencia media", clases: "bg-amber-50 text-amber-800 ring-amber-600/20" },
-    alta: { emoji: "🔴", titulo: "Alta competencia", clases: "bg-red-50 text-red-700 ring-red-600/20" },
-    sin_dato: { emoji: "⚪", titulo: "Sin datos históricos de esta entidad", clases: "bg-gray-50 text-gray-500 ring-gray-500/20" },
+    baja: { emoji: "●", titulo: "Poca competencia", clases: "bg-green-50 text-green-800 ring-green-600/20" },
+    media: { emoji: "●", titulo: "Competencia media", clases: "bg-amber-50 text-amber-800 ring-amber-600/20" },
+    alta: { emoji: "●", titulo: "Alta competencia", clases: "bg-red-50 text-red-700 ring-red-600/20" },
+    sin_dato: { emoji: "●", titulo: "Sin datos históricos de esta entidad", clases: "bg-gray-50 text-gray-500 ring-gray-500/20" },
   };
 
   /* Baja de mercado de la entidad (lib/indice_baja): cuánto descuenta el
@@ -437,10 +437,10 @@
 
   function badgePuerta(etiqueta, puerta) {
     const p = puerta || {};
-    if (p.sin_dato) return chip(`⚪ ${etiqueta} ?`, GRIS, p.mensaje || "Sin datos para evaluar esta puerta");
-    if (!p.pasa) return chip(`🔴 ${etiqueta} ✗`, ROJO, p.mensaje || "");
-    if (p.advertencia) return chip(`🟡 ${etiqueta} ~`, AMBAR, p.mensaje || "");
-    return chip(`🟢 ${etiqueta} ✓`, VERDE, p.mensaje || "");
+    if (p.sin_dato) return chip(`● ${etiqueta} ?`, GRIS, p.mensaje || "Sin datos para evaluar esta puerta");
+    if (!p.pasa) return chip(`● ${etiqueta} ✗`, ROJO, p.mensaje || "");
+    if (p.advertencia) return chip(`● ${etiqueta} ~`, AMBAR, p.mensaje || "");
+    return chip(`● ${etiqueta} ✓`, VERDE, p.mensaje || "");
   }
 
   function badgesPuertas(puertas) {
@@ -472,11 +472,11 @@
      sobre un proceso del que no se sabe nada (la regla de anticipo_pct = 0). */
   function fraseProbabilidad(p) {
     const n = Number(p);
-    if (p == null || !Number.isFinite(n)) return { icono: "⚪", frase: "Sin información suficiente" };
-    if (n > 0.40) return { icono: "🟢", frase: "Probabilidad muy alta" };
-    if (n >= 0.20) return { icono: "🟡", frase: "Buena probabilidad" };
-    if (n >= 0.10) return { icono: "🟠", frase: "Probabilidad media" };
-    return { icono: "🔴", frase: "Poco probable" };
+    if (p == null || !Number.isFinite(n)) return { icono: "●", frase: "Sin información suficiente" };
+    if (n > 0.40) return { icono: "●", frase: "Probabilidad muy alta" };
+    if (n >= 0.20) return { icono: "●", frase: "Buena probabilidad" };
+    if (n >= 0.10) return { icono: "●", frase: "Probabilidad media" };
+    return { icono: "●", frase: "Poco probable" };
   }
 
   /* ══════════ FRECUENCIA NATURAL · «1 de cada N», no «17 %» ══════════════════
@@ -686,7 +686,7 @@
         <span class="text-gray-400">${esc(l.estado_del_procedimiento || "")}</span>
         <span class="flex items-center gap-3">
           <button type="button" class="btn-apu rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50"
-                  data-apu-q="${esc(qApu(l))}" title="Calcular APU y rentabilidad de este proceso en la pestaña APU">📊 APU</button>
+                  data-apu-q="${esc(qApu(l))}" title="Calcular APU y rentabilidad de este proceso en la pestaña APU">APU</button>
           ${l.urlproceso ? `<a href="${esc(l.urlproceso)}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 hover:underline">Ver en SECOP II ↗</a>` : ""}
         </span>
       </div>
@@ -1397,7 +1397,7 @@
           </tr>`).join("")}
         </tbody>
       </table>
-      <p class="mt-3 rounded-lg bg-gray-100 px-3 py-2 text-[11px] text-gray-600">⚠️ ${esc(p.advertencia || "")}</p>`;
+      <p class="mt-3 rounded-lg bg-gray-100 px-3 py-2 text-[11px] text-gray-600"><strong>Atención:</strong> ${esc(p.advertencia || "")}</p>`;
   }
 
   /* ────────────────────────── inferencia ───────────────────────────── */
@@ -1440,17 +1440,17 @@
       amarillo: "bg-amber-50 text-amber-900",
       no_determinada: "bg-gray-100 text-gray-700",
     };
-    const emoji = { verde: "🟢", amarillo: "🟡", no_determinada: "⚪" };
+    const emoji = { verde: "●", amarillo: "●", no_determinada: "●" };
     caja.className = `mt-4 rounded-xl p-4 text-sm ${estilos[r.estado] || estilos.no_determinada}`;
     caja.classList.remove("hidden");
 
-    let html = `<p class="font-medium">${emoji[r.estado] || "⚪"} ${esc(r.mensaje || "")}</p>`;
+    let html = `<p class="font-medium">${emoji[r.estado] || "●"} ${esc(r.mensaje || "")}</p>`;
     if (r.tipologia) {
       html += `<p class="mt-1 text-xs opacity-80">Tipología <strong>${esc(r.tipologia.codigo)}</strong> · `
         + `${esc(r.tipologia.nombre)} · unidad dominante ${esc(r.tipologia.unidad_dominante || "—")} · `
         + `puntaje ${r.puntaje}, margen ${r.margen}</p>`;
       if (r.tipologia.sin_apu && r.tipologia.nota) {
-        html += `<p class="mt-2 rounded-lg bg-white/60 p-2 text-xs">⚠️ ${esc(r.tipologia.nota)}</p>`;
+        html += `<p class="mt-2 rounded-lg bg-white/60 p-2 text-xs"><strong>Atención:</strong> ${esc(r.tipologia.nota)}</p>`;
       }
     }
     if (r.cantidades && r.cantidades.length) {
@@ -1696,10 +1696,10 @@
     }
   });
 
-  /* Origen del precio, en un badge que no puede mentir: 🟢 solo cuando el
+  /* Origen del precio, en un badge que no puede mentir: VERDE solo cuando el
      precio sale de un contrato ADJUDICADO servido en su región de origen
-     (Bogotá); referencia o derivado por factor regional → 🟡; el precio del
-     archivo/manual se declara como tal; sin precio → 🔴 y NO suma. */
+     (Bogotá); referencia o derivado por factor regional → ÁMBAR; el precio del
+     archivo/manual se declara como tal; sin precio → ROJO y NO suma. */
   /* El badge NO decide nada: la regla vive en `APULibro.clasificarOrigen`, que
      es la MISMA que marca las filas del Excel exportado. Cuando la decisión
      vivía aquí dentro, el Excel no podía consultarla y exportaba idénticos un
@@ -1883,8 +1883,8 @@
     const reg = r.ajuste_regional;
     const f = reg.factores;
     $("regional-nota").textContent = reg.estado === "mapeado" && f
-      ? `🟢 ${reg.region_nombre} · material ×${num(f.materiales)} · mano de obra ×${num(f.mano_obra)} · equipo ×${num(f.equipo)} · transporte ×${num(f.transporte)}`
-      : `⚪ Sin región cotizada: se calculó con la región base «${esc(reg.region_utilizada || "—")}».`;
+      ? `● ${reg.region_nombre} · material ×${num(f.materiales)} · mano de obra ×${num(f.mano_obra)} · equipo ×${num(f.equipo)} · transporte ×${num(f.transporte)}`
+      : `● Sin región cotizada: se calculó con la región base «${esc(reg.region_utilizada || "—")}».`;
   }
 
   /* ══════════════ Las cinco validaciones, en pantalla ══════════════════
@@ -1928,7 +1928,7 @@
       <div class="mt-3 space-y-2">
         ${hallazgos.map((h) => `
           <div class="rounded-xl px-3 py-2 text-xs ring-1 ring-inset ${CLASES_SEVERIDAD[h.severidad] || CLASES_SEVERIDAD.aviso}">
-            <p class="font-semibold">${h.severidad === "atencion" ? "⚠️" : "•"} ${esc(h.titulo)}</p>
+            <p class="font-semibold">${h.severidad === "atencion" ? "▲" : "•"} ${esc(h.titulo)}</p>
             <p class="mt-0.5 opacity-90">${esc(h.mensaje)}</p>
           </div>`).join("")}
       </div>`;
@@ -1951,7 +1951,7 @@
          `competenciaDe` tras el defecto de «18,2 oferentes en 0 procesos». */
       const procesos = e ? (e.procesos ?? e.procesos_contados) : null;
       if (!e || e.baja_mediana == null || !Number.isFinite(procesos) || procesos < r.min_procesos) {
-        $("baja-nota").textContent = `⚪ Sin base suficiente para «${entidad}»: hacen falta ${r.min_procesos} adjudicaciones con presupuesto y valor adjudicado.`;
+        $("baja-nota").textContent = `● Sin base suficiente para «${entidad}»: hacen falta ${r.min_procesos} adjudicaciones con presupuesto y valor adjudicado.`;
         return;
       }
       $("factor-baja").value = e.baja_mediana;
@@ -2066,7 +2066,7 @@
       $("seccion-resumen").classList.add("hidden");
       $("lista-presupuestos").classList.add("hidden");
       msgApu(r.catalogo_cambiado
-        ? `Cargado «${p.nombre}». ⚠️ ${r.nota}`
+        ? `Cargado «${p.nombre}». Atención: ${r.nota}`
         : `Cargado «${p.nombre}». Pulse «Calcular APU» para ver los totales.`, r.catalogo_cambiado ? "error" : "ok");
     } catch (err) {
       msgApu(`No se pudo cargar: ${err.message}`, "error");
@@ -2106,7 +2106,7 @@
      El archivo se lee EN EL NAVEGADOR (public/xlsx_lectura.js): al servidor
      viajan solo las filas estructuradas, que `/api/apu/importar` mapea contra
      el catálogo calibrado. La vista previa enseña el mapeo ANTES de tocar la
-     tabla, y una sugerencia 🟡 («revisar») solo cobra precio del catálogo si su
+     tabla, y una sugerencia ÁMBAR («revisar») solo cobra precio del catálogo si su
      casilla queda marcada — nunca se usa automáticamente una lista a medias. */
   let importacion = null;
 
@@ -2176,14 +2176,14 @@
 
     const chip = (f) => {
       if (f.nivel_mapeo === "firme") {
-        return `<span class="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] text-emerald-900">🟢 firme</span> `
+        return `<span class="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] text-emerald-900">● firme</span> `
           + `<span class="text-xs text-gray-600">${esc(f.descripcion_catalogo || "")}</span>`;
       }
       if (f.nivel_mapeo === "revisar") {
         const marcada = f.precio_archivo != null ? "checked" : "";
         return `<label class="flex items-start gap-1.5">
           <input type="checkbox" data-aceptar="${f.orden}" ${marcada} class="mt-0.5 h-3.5 w-3.5 rounded border-gray-300">
-          <span class="text-xs"><span class="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-900">🟡 revisar · ${Math.round((f.confianza ?? 0) * 100)} %</span>
+          <span class="text-xs"><span class="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-900">● revisar · ${Math.round((f.confianza ?? 0) * 100)} %</span>
           ${esc(f.descripcion_catalogo || "")}</span></label>`;
       }
       return `<span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">⚪ personalizado</span>`
@@ -2200,7 +2200,7 @@
         <td class="px-2 py-1.5">${chip(f)}</td>
       </tr>`).join("");
 
-    $("imp-nota").textContent = "El precio del archivo MANDA y queda declarado. Una sugerencia 🟡 sin precio solo usa el catálogo si su casilla queda marcada.";
+    $("imp-nota").textContent = "El precio del archivo MANDA y queda declarado. Una sugerencia en ámbar sin precio solo usa el catálogo si su casilla queda marcada.";
     $("modal-importar").classList.remove("hidden");
     $("modal-importar").classList.add("flex");
   }
@@ -2422,7 +2422,7 @@
     if (!o || !o.aplicable) {
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
-      sin.textContent = `⚪ ${(o && o.mensaje) || "No hay con qué sugerir un precio para este proceso."}`;
+      sin.textContent = `● ${(o && o.mensaje) || "No hay con qué sugerir un precio para este proceso."}`;
       $("ps-origen").textContent = "";
       return;
     }
@@ -2820,10 +2820,10 @@
      ══════════════════════════════════════════════════════════════════════════ */
   const REFRESCO_MS = 300000;              // el mismo TTL de la caché del endpoint
   const COMPETENCIA_UI = {
-    baja: { emoji: "🟢", texto: "Poca", clases: "bg-green-50 text-green-800" },
-    media: { emoji: "🟡", texto: "Media", clases: "bg-amber-50 text-amber-800" },
-    alta: { emoji: "🔴", texto: "Alta", clases: "bg-red-50 text-red-700" },
-    sin_dato: { emoji: "⚪", texto: "Sin dato", clases: "bg-gray-50 text-gray-500" },
+    baja: { emoji: "●", texto: "Poca", clases: "bg-green-50 text-green-800" },
+    media: { emoji: "●", texto: "Media", clases: "bg-amber-50 text-amber-800" },
+    alta: { emoji: "●", texto: "Alta", clases: "bg-red-50 text-red-700" },
+    sin_dato: { emoji: "●", texto: "Sin dato", clases: "bg-gray-50 text-gray-500" },
   };
   const BARRAS = [
     ["obra_civil", "Obra civil", "bg-green-500"],
@@ -2995,9 +2995,9 @@
 
     $("d-visibles").textContent = fmt.format(total);
     $("d-obra").textContent = fmt.format(per.obra_civil || 0);
-    $("d-obra-pct").textContent = `🏗️ ${pct(per.obra_civil || 0, total)} % del total`;
+    $("d-obra-pct").textContent = `${pct(per.obra_civil || 0, total)} % del total`;
     $("d-consultoria").textContent = fmt.format(per.consultoria || 0);
-    $("d-consultoria-pct").textContent = `📐 ${pct(per.consultoria || 0, total)} % del total`;
+    $("d-consultoria-pct").textContent = `${pct(per.consultoria || 0, total)} % del total`;
     $("d-semana").textContent = fmt.format((t.por_urgencia || {}).cierra_esta_semana || 0);
 
     /* barras: divs con width en %, sin librerías */
@@ -3924,10 +3924,10 @@
      al cargar un RUP o una experiencia nuevos).
      ══════════════════════════════════════════════════════════════════════════ */
   const CRITICIDAD_UI = {
-    "CRÍTICO": { emoji: "🔴", clases: "bg-red-50 text-red-700" },
-    ALTO: { emoji: "🟠", clases: "bg-orange-50 text-orange-800" },
-    MEDIO: { emoji: "🟡", clases: "bg-amber-50 text-amber-800" },
-    BAJO: { emoji: "⚪", clases: "bg-gray-100 text-gray-600" },
+    "CRÍTICO": { emoji: "●", clases: "bg-red-50 text-red-700" },
+    ALTO: { emoji: "●", clases: "bg-orange-50 text-orange-800" },
+    MEDIO: { emoji: "●", clases: "bg-amber-50 text-amber-800" },
+    BAJO: { emoji: "●", clases: "bg-gray-100 text-gray-600" },
   };
   let coberturaCargando = false;
   let ultimaCobertura = null;

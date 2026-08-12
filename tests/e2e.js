@@ -10023,8 +10023,15 @@ async function main() {
       // sin experiencia cargada el panel dice exactamente qué hacer
       assert.ok(/No hay experiencia cargada\. Cargue sus contratos ejecutados/.test(admJs),
         "sin experiencia el panel debe enseñar el mensaje del encargo, no una caja vacía");
+      /* Los cuatro NIVELES, no los cuatro glifos. Comprobar «🔴🟠🟡⚪» ataba
+         esta prueba a la decoración: los emojis salieron de la interfaz —los
+         dibuja el sistema operativo, cambian en cada aparato y hacen que una
+         herramienta de trabajo parezca un juguete— y el semáforo lo llevan hoy
+         la clase de color del badge y un punto tipográfico. Lo que de verdad
+         hay que vigilar es que las cuatro criticidades sigan cableadas. */
       for (const debe of ["/api/admin/experiencia", "/api/admin/cobertura-rup", "usar_experiencia",
-        "descargarJSON", "🔴", "🟠", "🟡", "⚪", "ejecutarAuditoria", "cargarExperienciaActual"]) {
+        "descargarJSON", "CRÍTICO", "ALTO", "MEDIO", "BAJO", "CRITICIDAD_UI",
+        "ejecutarAuditoria", "cargarExperienciaActual"]) {
         assert.ok(admJs.includes(debe), `admin.js sin ${debe} (la experiencia o la auditoría no están cableadas)`);
       }
       /* ---- panel: PUESTA EN PRODUCCIÓN SIN TERMINAL ----
@@ -10260,6 +10267,32 @@ async function main() {
          pestaña «vacía» es un getElementById sobre un nodo que ya no existe
          (páginas retiradas): la excepción detiene el script EN SILENCIO. ---- */
       {
+        /* ═══ NI UN EMOJI EN LA INTERFAZ ══════════════════════════════════════
+           Decisión de producto del dueño: «los emojis hacen que se vea súper de
+           IA la página web, necesito algo más profesional». Y hay una razón
+           técnica además de la estética: un emoji lo DIBUJA el sistema
+           operativo — cambia de aspecto en cada aparato, mete su propia paleta
+           y no hereda el color del tema—. El semáforo lo llevan hoy la clase de
+           color del badge y un punto tipográfico (●), que sí lo hereda.
+           `apu_libro.js` queda FUERA: sus emojis viajan al Excel exportado,
+           que es otro medio y otra decisión. */
+        for (const archivo of ["index.html", "app.js", "onboarding.js"]) {
+          const fuente = fs.readFileSync(path.join(__dirname, "..", "public", archivo), "utf8");
+          const hallados = [...new Set(fuente.match(/[\u{1F300}-\u{1FAFF}]/gu) || [])];
+          assert.deepStrictEqual(hallados, [],
+            `${archivo} volvió a traer emojis (${hallados.join(" ")}): los dibuja el sistema operativo, `
+            + "cambian en cada aparato y no heredan el color del tema");
+        }
+        // y el producto se llama DETECTA, no como la carpeta del repositorio
+        assert.ok(/<title>Detecta/.test(html), "el título de la página es el nombre del producto");
+        /* Sobre el marcado VISIBLE, sin comentarios: el comentario del `<title>`
+           cita el nombre viejo a propósito, para explicar por qué se fue. Es la
+           misma trampa que ya cazó la prueba de `cotizado_pct` — una regex sobre
+           el fuente crudo confunde la explicación con el defecto. */
+        const htmlVisible = html.replace(/<!--[\s\S]*?-->/g, "");
+        assert.ok(!/Portafolio Estrat/.test(htmlVisible),
+          "«Portafolio Estratégico» es el nombre del repositorio: no puede asomarse a la pantalla");
+
         const idsHtml = new Set([...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
         // pag-ant/pag-sig los CREA pintar() en cada búsqueda: no viven en el HTML
         const dinamicos = new Set(["pag-ant", "pag-sig"]);
@@ -10307,23 +10340,26 @@ async function main() {
         // eslint-disable-next-line no-new-func
         const fraseProbabilidad = new Function(`${extraerFn("fraseProbabilidad")}; return fraseProbabilidad;`)();
         const casos = [
-          [0.45, "🟢", "Probabilidad muy alta"],
-          [0.41, "🟢", "Probabilidad muy alta"],
-          [0.40, "🟡", "Buena probabilidad"],   // el encargo dice P > 0.40 para «muy alta»
-          [0.35, "🟡", "Buena probabilidad"],
-          [0.20, "🟡", "Buena probabilidad"],
-          [0.15, "🟠", "Probabilidad media"],
-          [0.10, "🟠", "Probabilidad media"],
-          [0.05, "🔴", "Poco probable"],
-          [0, "🔴", "Poco probable"],           // un 0 MEDIDO es un dato…
-          [null, "⚪", "Sin información suficiente"],   // …y la ausencia, no
-          [undefined, "⚪", "Sin información suficiente"],
-          [NaN, "⚪", "Sin información suficiente"],
+          [0.45, "Probabilidad muy alta"],
+          [0.41, "Probabilidad muy alta"],
+          [0.40, "Buena probabilidad"],   // el encargo dice P > 0.40 para «muy alta»
+          [0.20, "Buena probabilidad"],
+          [0.19, "Probabilidad media"],
+          [0.10, "Probabilidad media"],
+          [0.09, "Poco probable"],
+          [0, "Poco probable"],           // 0 MEDIDO es un dato: es rojo, no gris
+          [null, "Sin información suficiente"],
         ];
-        for (const [p, icono, frase] of casos) {
+        /* El ICONO ya no se comprueba como emoji: los emojis salieron de la
+           interfaz y el semáforo lo llevan la clase de color y un punto
+           tipográfico, que el sistema operativo no redibuja. Lo que sigue
+           atado es la FRASE, que es lo que se lee, y que `null` nunca caiga en
+           «Poco probable» — la ausencia no es un 0 % (R1). */
+        for (const [p, frase] of casos) {
           const r = fraseProbabilidad(p);
           assert.strictEqual(r.frase, frase, `fraseProbabilidad(${p}) → «${r.frase}», esperaba «${frase}»`);
-          assert.strictEqual(r.icono, icono, `fraseProbabilidad(${p}) → ${r.icono}, esperaba ${icono}`);
+          assert.ok(r.icono && !/[\u{1F300}-\u{1FAFF}]/u.test(r.icono),
+            `fraseProbabilidad(${p}) devolvió un emoji (${r.icono}): la interfaz ya no los usa`);
         }
         // el motivo (una frase con el factor principal), también ejecutado; los
         // formateadores del IIFE se inyectan con los mismos valores
