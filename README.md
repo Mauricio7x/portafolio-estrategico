@@ -1820,7 +1820,61 @@ Un `.xlsx` es un ZIP de XML, así que el escritor cabe en un archivo y da contro
 título, encabezados, bordes, moneda, anchos, celdas combinadas y panel congelado. Método **STORE**: ZIP
 válido que abren Excel, LibreOffice y Numbers, sin depender de `CompressionStream`. Corre en navegador
 **y en Node** a propósito, para que la suite genere un libro real y **audite el ZIP entrada por
-entrada**. Salen dos hojas: **Presupuesto** y **Desglose** (insumo a insumo).
+entrada**. Salen dos hojas: **Presupuesto** y **APU** (insumo a insumo).
+
+El FORMATO lo arma `public/apu_libro.js`, aparte del escritor, y el archivo se llama
+`APU_<proyecto>_<fecha>.xlsx` (`APULibro.nombreArchivo`, punto único: escrito dentro del botón, la
+aplicación y el generador de Node producían nombres distintos).
+
+**Hoja «Presupuesto» — 7 columnas:** ÍTEM · CÓDIGO · DESCRIPCIÓN · UND. · CANT. · VALOR UNITARIO ·
+VALOR TOTAL. «Ítem» y «código» son cosas distintas y por eso no comparten columna: el ítem es la
+POSICIÓN (`1.1`, `1.2`, `2.1` — con lo que la entidad compara oferentes) y el código la IDENTIDAD en el
+catálogo (`NOG-A2`). Cada fila lleva su fórmula `=E×F` con valor cacheado; **cada capítulo cierra con su
+propio `=SUM()`** y COSTOS DIRECTOS suma la **lista de celdas de subtotal**, no el rango de ítems —
+sumar el rango con subtotales intercalados contaría cada peso dos veces y daría un presupuesto
+exactamente al doble sin que nada se viera raro. Cierra con A/I/U, **IVA sobre la utilidad (19 %)**,
+TOTAL y firmas, y al pie van la fecha, la región, el factor prestacional aplicado, la versión del
+catálogo, la leyenda de colores y todas las alertas.
+
+**Hoja «APU» — un bloque por ítem**, con cabecera propia por sección (MATERIALES · EQUIPO y
+HERRAMIENTAS · TRANSPORTES · MANO de OBRA), subtotales con `=SUM()` y espacio de **firma del ingeniero
+de costos**. Las columnas **F y G** llevan los factores que antes viajaban dentro del texto de la
+descripción —cantidad base, desperdicio %, rendimiento, distancia (km) y recargo prestacional %—,
+porque dentro de la descripción se leen pero **no se pueden ordenar ni filtrar**, que es lo primero que
+hace quien audita. `VR COSTO DIRECTO` va con el valor del motor y **sin** fórmula, a propósito: un
+`=SUM()` de los subtotales discreparía en céntimos del VALOR UNITARIO de la otra hoja, que es
+justamente la cifra que la entidad coteja (hay prueba de que las dos hojas coinciden ítem a ítem).
+
+### Trazabilidad del precio: seis estados, una sola definición
+
+`APULibro.clasificarOrigen` es el punto único —lo usan el badge de la tabla **y** el color de la fila
+del Excel—: 🟢 **Adjudicado · Nogal 4 (2025)** (contrato real *y* servido en su misma región) · 🟡
+**Cotización de proveedor** (todos los insumos con cotización real cargada) · 🟡 **Derivado regional**
+(ajustado por factor: no verificado, requiere cotización) · 📄 **Del archivo** · ⚪ **Manual** · 🔴 **Sin
+referencia** (no suma al total y sus celdas van vacías: un $0 sería un precio inventado).
+
+Dos estados que el encargo pide **no se emiten** porque no hay con qué alimentarlos, y decirlo importa
+más que tenerlos: **INVIAS** (los APU Regionalizados de Referencia no están en el repositorio y las
+fuentes oficiales dan 403) e **Histórico SECOP** (`p6dx-8zbt` publica el valor adjudicado del contrato
+entero, **no precios unitarios por ítem**). Qué archivos harían falta y cómo cargarlos está en
+`docs/APU_DIAGNOSTICO.md`.
+
+### Validaciones automáticas: cinco puertas que **no** bloquean
+
+`lib/apu/validaciones.js` corre al cerrar cada cálculo: **AIU fuera de banda** (las bandas se importan
+de `lib/apu/normativa`, no se reescriben) · **factor prestacional** fuera de las cotas de ley
+(comprobación de *encierro* entre la suma exonerada y la nominal) · **cantidades** en cero o negativas
+(dos defectos distintos, contados aparte) · **ítems sin precio** · **oferta por encima de la cuantía**
+del proceso. Ninguna impide exportar (`bloquea_exportacion: false`): una herramienta que se niega a
+exportar acaba usándose por fuera. Viajan en `validaciones` con su severidad y **además** en `alertas`,
+que es el canal que lee el exportador — así salen también en las notas al pie del Excel.
+
+Dos precisiones que hay que contar exactas: los umbrales del AIU **no** son los del encargo (A > 30 /
+I < 1 / U > 10) sino las bandas ya documentadas del manual (12–20 / 3–5 / 5–10), que son estrictamente
+más estrechas y por tanto marcan todo lo que aquéllos marcarían; y el «5 % del valor total» de los
+ítems sin precio **no es computable** —un ítem sin precio no tiene valor por definición— así que el
+umbral se aplica al **número de ítems**, se declara como tal, y el total del presupuesto se publica
+como **cota inferior**.
 
 ### Integración con el panel
 

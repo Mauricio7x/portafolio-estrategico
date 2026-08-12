@@ -1662,6 +1662,79 @@ las dos hojas «Presupuesto» y «APU» con desglose por rubro, y `/api/apu/calc
 devolvía `detalle.insumos` con nombre, unidad, cantidad, precio, rendimiento,
 desperdicio y distancia. El hueco real era otro y estaba más abajo.
 
+#### Segunda pasada (ago 2026) · trazabilidad, subtotales y las cinco validaciones
+
+Diagnóstico completo en **`docs/APU_DIAGNOSTICO.md`**, que se conserva porque distingue lo que YA estaba de
+lo que NO SE PUEDE hacer con los datos disponibles: un encargo posterior volverá a pedir ambas cosas. Esta
+vez fueron **cinco** las premisas desactualizadas — se sumaron «no hay regionalización» y «no hay flujo de
+tres pasos», que también estaban hechas.
+
+- **EL BADGE DECÍA «SIN VERIFICAR» SOBRE UN PRECIO VERIFICADO.** `precioEnRegion` ya distinguía una
+  COTIZACIÓN real (`precios_cotizados`) de una DERIVACIÓN por factor y lo publicaba en `linea.origen_precio`,
+  pero el dato **moría en el desglose**: `clasificarOrigen` solo miraba `item.fuente`, así que un ítem
+  íntegramente cotizado salía 🟡 «Derivado regional — precio no verificado». Hoy `calculo.js` publica
+  `origen_insumos` y existe el estado 🟡 **«Cotización de proveedor»**. **El corte es por VALOR, no por número
+  de líneas** (nueve insumos cotizados que pesan el 3 % no hacen «cotizado» un ítem derivado al 97 %). Son
+  **SEIS** estados, no cinco.
+- **UN 100 % REDONDEADO NO ES «TODO COTIZADO»** (defecto que cazó la revisión adversaria). La puerta se abría
+  con `cotizado_pct === 100`, pero ese porcentaje viaja **redondeado a dos decimales**: una línea derivada de
+  **$1** junto a una cotizada de **$3.350.400** da 99,99997 % y `red()` lo sube a un 100 EXACTO, así que el
+  ítem se rotulaba «Cotización de proveedor» —o sea, VERIFICADO— con parte del precio sin verificar. Y la
+  proporción no es de laboratorio: es la de un insumo incidental barato (agua, tornillería) al lado de una
+  línea cara. Hoy abre **`lineas_derivadas === 0`**, que es la cuenta exacta, y `cotizado_pct` **solo informa**.
+  Es la trampa de `numero()` como guarda de «sin dato» (`lib/probabilidad`) en otro disfraz: **una cifra
+  redondeada para MOSTRAR no puede DECIDIR**. Hay prueba que reproduce el borde con un catálogo sintético y
+  otra que prohíbe que la puerta vuelva a colgarse del porcentaje.
+- **AÑADIR SUBTOTALES POR CAPÍTULO PODÍA DUPLICAR EL PRESUPUESTO.** COSTOS DIRECTOS sumaba el RANGO entero de
+  filas de ítem; con subtotales intercalados eso cuenta cada peso DOS VECES y da un total exactamente al doble
+  sin que nada se vea raro — el defecto clásico del presupuesto armado a mano. Hoy el cierre suma la **LISTA
+  de celdas de subtotal**, con prueba de que cada referencia apunta a una fila de subtotal y no a una de ítem,
+  verificado sobre once casos borde (capítulos repetidos no contiguos, ítems sueltos mezclados con capítulos,
+  bloques enteros sin precio, lista vacía). **Los capítulos repetidos NO CONTIGUOS producen dos bloques con
+  el mismo nombre y numeración distinta**: el dinero cuadra y se deja así a propósito — fusionarlos exigiría
+  REORDENAR los ítems del usuario, y reordenar un presupuesto en silencio es peor que un rótulo raro.
+- **«ÍTEM» y «CÓDIGO» son columnas distintas** (R3): el ítem es la POSICIÓN (1.1, 1.2, 2.1 — con lo que la
+  entidad compara oferentes) y el código la IDENTIDAD en el catálogo (`NOG-A2`). Compartiendo columna, dos
+  presupuestos con los mismos ítems en distinto orden no se podían cotejar fila a fila. La hoja pasó de 6 a
+  **7 columnas**, y con ella las fórmulas: `=E×F` para el total de fila, `SUM(G…)` para los subtotales.
+- **LOS FACTORES SALIERON DEL TEXTO A COLUMNAS PROPIAS** (F y G de la hoja APU): cantidad base, desperdicio,
+  rendimiento, distancia y recargo prestacional viajaban como nota entre paréntesis dentro de la descripción,
+  donde **no se pueden ordenar ni filtrar**, que es lo primero que hace quien audita. El **recargo
+  prestacional se DERIVA de `precio_aplicado ÷ precio_region`**, no de una constante: así no puede
+  desincronizarse del valor de su propia fila. Más el espacio de **firma del ingeniero de costos** en la hoja
+  APU (la entidad la pide firmada aparte y una hoja sin firma se devuelve).
+- **`VR COSTO DIRECTO` de la hoja APU va con el valor del MOTOR y SIN fórmula, a propósito.** Un `=SUM()` de
+  los subtotales sumaría líneas a 2 decimales, mientras que el unitario es la suma de los cuatro capítulos ya
+  REDONDEADOS: la fórmula «más pura» pondría a las dos hojas a discrepar en céntimos justo en la cifra que la
+  entidad coteja. **Hay prueba de que las dos hojas dan el mismo unitario ítem a ítem.**
+- **El nombre del archivo es `APULibro.nombreArchivo`** (`APU_<proyecto>_<fecha>.xlsx`): escrito dentro del
+  manejador del botón no se podía probar y el generador de Node producía otro nombre que la aplicación.
+- **`lib/apu/validaciones.js` · las cinco puertas, y NINGUNA BLOQUEA** (R6): una herramienta que se niega a
+  exportar acaba usándose por fuera. Se publican en `validaciones` (estructuradas, con severidad `aviso` |
+  `atencion` — **`error` no existe**) y **además se vuelcan en `alertas`**, que es el canal que el exportador
+  ya lee: publicarlas solo en el campo nuevo las habría escondido en el Excel, que es donde acaban leyéndose
+  (R11). En pantalla, `pintarValidaciones` las pinta y **filtra de `alertas` las ya pintadas**, y el bloque
+  **nace oculto y desaparece cuando no hay hallazgos**: un recuadro que dice «0 problemas» se deja de mirar.
+  **Cantidad ILEGIBLE y cantidad CERO se cuentan aparte**: el 0 es una decisión y lo ilegible una AUSENCIA
+  (R1).
+- **DOS REGLAS DEL ENCARGO IMPLEMENTADAS DISTINTO, y hay que contarlo exacto.** (1) **Los umbrales del AIU no
+  se escribieron**: A > 30 / I < 1 / U > 10 ya viven, mejor documentados, en `normativa.AIU` (12–20 / 3–5 /
+  5–10, cap. 11 del manual), y las bandas del manual son **estrictamente más estrechas** que los cortes del
+  encargo en los tres casos — todo lo que aquél marcaría queda marcado, por una cifra rastreable, y hay prueba
+  de esa relación de laxitud para que nadie «complete» el encargo con una segunda tabla de umbrales (R2/R3).
+  Corolario: el AIU real del Nogal (19,17 / 1,50 / 5,33) **dispara la validación**, y por eso la severidad
+  máxima es «atención». (2) **El «5 % del valor total» NO ES COMPUTABLE**: un ítem sin precio no tiene valor
+  POR DEFINICIÓN, así que su participación en el total es justamente la cifra que no existe, y calcularla
+  exigiría inventarle un precio (R1). El umbral se aplica a la participación por **NÚMERO DE ÍTEMS**, el
+  mensaje lo dice con todas las letras, `valor_faltante` viaja en **`null` y jamás en 0**, y el total se
+  declara **cota inferior**.
+- **TRES COSAS QUE EL ENCARGO PIDE Y NO SE PUEDEN ALIMENTAR**, documentadas con lo que haría falta para
+  cerrarlas: el badge 🟢 **INVIAS** (los APU Regionalizados no están y las fuentes oficiales dan 403 — rotular
+  «INVIAS» un precio que no lo es sería el peor error posible aquí); el badge 🟠 **Histórico SECOP**
+  (`p6dx-8zbt` publica el valor ADJUDICADO del contrato entero, **no precios unitarios por ítem**: no hay de
+  dónde sacarlo); y el **costo horario de equipo desglosado** en depreciación/combustible/mantenimiento
+  (repartir la tarifa con porcentajes inventados serían tres cifras falsas donde hoy hay una verdadera).
+
 - **DEFECTO REAL ENCONTRADO POR VERIFICACIÓN, no por el encargo: las filas de
   TRANSPORTE de la hoja APU no cuadraban.** La tarifa de acarreo va en **$/m³-km** y
   `costoDirecto` calcula `precio × cantidad × distancia_km`, pero la hoja pintaba

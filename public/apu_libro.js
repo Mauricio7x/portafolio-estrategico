@@ -5,19 +5,19 @@
    convierte en bytes. Vive en su propio archivo UMD por la misma razón que el
    escritor: el navegador lo usa desde el editor y Node lo usa para generar el
    APU de prueba del repositorio — si el formato viviera dentro del IIFE de
-   apu.js habría que duplicarlo para poder probarlo, y dos copias del formato
+   app.js habría que duplicarlo para poder probarlo, y dos copias del formato
    divergen a la primera corrección.
 
    EL FORMATO ES EL DEL «PRESUPUESTO NOGAL 4» (UPN-VAD-CP-009-2025, contrato
    adjudicado que sirvió para calibrar el catálogo):
 
-     Hoja «Presupuesto»: capítulos, ítem · descripción · und · cant · valor
-       unitario · valor total (con FÓRMULA =D×E y valor cacheado), bloque de
-       cierre COSTOS DIRECTOS → Administración → Imprevistos → Utilidad →
-       IVA sobre la UTILIDAD (19 %) → COSTOS INDIRECTOS → TOTAL, y firmas.
-       El IVA sobre la utilidad no es un adorno: es como presupuesta la
-       referencia y añade ≈1 punto — dejarlo fuera descuadraría contra el
-       formulario de la entidad.
+     Hoja «Presupuesto»: capítulos con SUBTOTAL propio, ítem · código ·
+       descripción · und · cant · valor unitario · valor total (con FÓRMULA
+       =E×F y valor cacheado), bloque de cierre COSTOS DIRECTOS →
+       Administración → Imprevistos → Utilidad → IVA sobre la UTILIDAD (19 %) →
+       COSTOS INDIRECTOS → TOTAL, y firmas. El IVA sobre la utilidad no es un
+       adorno: es como presupuesta la referencia y añade ≈1 punto — dejarlo
+       fuera descuadraría contra el formulario de la entidad.
      Hoja «APU»: un bloque por ítem con MATERIALES / EQUIPO y HERRAMIENTAS /
        TRANSPORTES / MANO de OBRA, subtotales y VR COSTO DIRECTO, desde el
        MISMO desglose (`detalle.insumos`) que produjo el total — no un segundo
@@ -124,6 +124,20 @@
     };
   }
 
+  /* Sobre-recargo prestacional de una línea de mano de obra, en PUNTOS
+     PORCENTUALES sobre el jornal base. Sale de dividir el precio que de verdad
+     multiplica (`precio_aplicado`, el día CON prestaciones) por el jornal base
+     regional: no se lee de ninguna constante, así que no puede desincronizarse
+     del número que produjo el valor de la fila. `null` cuando no hay con qué
+     dividir — jamás 0, que se leería como «esta cuadrilla no paga prestaciones».  */
+  function recargoPrestacionalPct(l) {
+    const base = Number(l.precio_region);
+    const aplicado = Number(l.precio_aplicado);
+    if (!Number.isFinite(base) || base <= 0 || !Number.isFinite(aplicado)) return null;
+    const pct = (aplicado / base - 1) * 100;
+    return pct > 0.1 ? Math.round(pct * 100) / 100 : null;
+  }
+
   /* formateo local: este archivo es UMD y no puede requerir nada del IIFE */
   function fmtNum(n) {
     if (!Number.isFinite(Number(n))) return "—";
@@ -137,12 +151,28 @@
      IDÉNTICOS un precio respaldado por el contrato adjudicado y uno derivado
      por factor regional — el hueco real que había detrás del encargo.
 
-     Cinco estados, no cuatro. El encargo pide 🟢/🟡/🔴/⚪, pero «precio del
-     ARCHIVO importado» y «precio TECLEADO a mano» no se pueden colapsar: la
-     política de precios de la importación (CLAUDE.md) hace que el precio del
-     archivo MANDE y quede declarado como tal, y fundirlos perdería esa
-     trazabilidad justo donde importa —una cifra que vino de un Excel ajeno—.
-     Los dos comparten el tratamiento visual de «lo puso una persona». */
+     SEIS estados, no cuatro. El encargo pide 🟢/🟡/🔴/⚪, pero:
+       · «precio del ARCHIVO importado» y «precio TECLEADO a mano» no se pueden
+         colapsar: la política de precios de la importación (CLAUDE.md) hace que
+         el del archivo MANDE y quede declarado como tal, y fundirlos perdería
+         esa trazabilidad justo donde importa —una cifra que vino de un Excel
+         ajeno—. Los dos comparten el tratamiento visual de «lo puso una
+         persona».
+       · «COTIZACIÓN de proveedor» y «DERIVADO por factor regional» tampoco: el
+         primero es un precio que alguien verificó y el segundo uno que hay que
+         verificar. Decirles lo mismo es perder la única distinción que el
+         auditor va a preguntar.
+
+     LOS DOS ESTADOS DEL ENCARGO QUE NO EXISTEN, Y POR QUÉ:
+       · 🟢 «INVIAS 2025-2 · [Provincia]» — los APU Regionalizados de Referencia
+         del INVIAS NO están en el repositorio y este entorno recibe 403 de las
+         fuentes oficiales. Qué archivos harían falta y cómo cargarlos está en
+         `docs/APU_DIAGNOSTICO.md`. Emitir el badge sin el dato sería rotular
+         «INVIAS» un precio que no lo es: el peor error posible aquí.
+       · 🟠 «Histórico SECOP · [N] procesos» — `p6dx-8zbt` publica el valor
+         ADJUDICADO del contrato entero, no precios unitarios por ítem. No hay
+         de dónde sacar un precio unitario del histórico, así que el estado no
+         se puede alimentar con lo que hay. También documentado. */
   /* `Number(null)` y `Number("")` son 0, y 0 es finito: usar
      `Number.isFinite(Number(x))` como guarda de «sin precio» deja pasar la
      AUSENCIA disfrazada de cero. Hoy el motor siempre acompaña un
@@ -196,6 +226,40 @@
           + "servido en su misma región.",
       };
     }
+    /* ═══ COTIZACIÓN DE PROVEEDOR ═══════════════════════════════════════════
+       `precioEnRegion` decide insumo por insumo entre una COTIZACIÓN REAL
+       cargada en `precios_cotizados` y DERIVAR el precio base por el factor de
+       la región, y lo publica en `linea.origen_precio`. Ese dato existía y
+       moría en el desglose: este badge solo miraba `fuente`, así que un ítem
+       cotizado de verdad salía rotulado «Derivado regional — precio no
+       verificado» sobre un precio que SÍ estaba verificado. Trazabilidad al
+       revés, en el módulo donde la trazabilidad es el producto.
+
+       El corte es por VALOR, no por número de líneas: nueve insumos cotizados
+       que pesan el 3 % no hacen «cotizado» un ítem cuyo 97 % se derivó. Y se
+       exige que NO QUEDE NINGUNA línea derivada: con una sola, parte del precio
+       sigue sin verificar y decir «cotizado» a secas prometería de más.
+
+       LA PUERTA SE ABRE CON `lineas_derivadas === 0`, NO CON
+       `cotizado_pct === 100`. `cotizado_pct` viaja REDONDEADO a dos decimales,
+       así que una línea derivada de $1 al lado de una cotizada de $3.350.400
+       da 99,99997 % y `red()` lo sube a un 100 EXACTO: el ítem se rotulaba
+       «Cotización de proveedor» —o sea, verificado— con parte del precio sin
+       verificar. Es la misma trampa que `numero()` como guarda de «sin dato»
+       (lib/probabilidad): una cifra redondeada para MOSTRAR no sirve para
+       DECIDIR. El porcentaje se sigue publicando, pero solo informa. */
+    const org = it.origen_insumos || null;
+    if (org && org.lineas_derivadas === 0 && org.lineas_cotizadas > 0) {
+      return {
+        estado: "cotizado",
+        emoji: "🟡",
+        etiqueta: "Cotización de proveedor",
+        suma: true,
+        motivo: `Los ${org.lineas_cotizadas} insumos de este ítem llevan cotización real cargada para la región `
+          + `${reg.region_nombre || reg.region_utilizada || "base"}: el precio NO se derivó por factor. `
+          + "Verifique la vigencia de la cotización antes de presentar.",
+      };
+    }
     return {
       estado: "derivado",
       emoji: "🟡",
@@ -208,36 +272,72 @@
     };
   }
 
-  /* ─────────────────── hoja 1 · Presupuesto (formato Nogal) ────────────── */
+  /* ─────────────────── hoja 1 · Presupuesto (formato Nogal) ──────────────
+     SIETE columnas. «ÍTEM» y «CÓDIGO» son dos cosas distintas y por eso van
+     separadas: el ítem es la POSICIÓN en el presupuesto (1.1, 1.2, 2.1 — lo que
+     el pliego usa para referirse a una fila y lo que la entidad compara entre
+     oferentes) y el código es la IDENTIDAD del ítem en el catálogo (NOG-A2,
+     INV-201.1). Cuando compartían columna, dos presupuestos con los mismos
+     ítems en distinto orden no se podían cotejar fila a fila.
+
+     SUBTOTAL POR CAPÍTULO con `=SUM()` real. El bloque de COSTOS DIRECTOS ya no
+     suma el rango entero de ítems sino la LISTA de celdas de subtotal: sumar el
+     rango completo contaría cada peso dos veces en cuanto hay subtotales
+     intercalados, que es el defecto clásico de un presupuesto armado a mano. */
   function hojaPresupuesto(r, meta) {
     const c = r.configuracion;
     const s = r.resumen;
     const filas = [];
     const fusiones = [];
     const fila = (celdas) => { filas.push(celdas); return filas.length; }; // devuelve el nº de fila (base 1)
-    const fusionA_F = (n) => fusiones.push(`A${n}:F${n}`);
+    const fusionA_G = (n) => fusiones.push(`A${n}:G${n}`);
+    // el rótulo de una fila de cierre vive en la columna ancha (DESCRIPCIÓN) y
+    // se extiende hasta la del valor unitario: en la estrecha quedaría cortado
+    const rotuloAncho = (n) => fusiones.push(`C${n}:F${n}`);
 
-    fusionA_F(fila([{ v: meta.titulo || "PRESUPUESTO DE OBRA", s: "titulo" }]));
-    fusionA_F(fila([{ v: [meta.entidad, meta.departamento, meta.fecha].filter(Boolean).join("   ·   ") || " ", s: "subtitulo" }]));
-    if (meta.objeto) fusionA_F(fila([{ v: String(meta.objeto).slice(0, 400), s: "subtitulo" }]));
+    fusionA_G(fila([{ v: meta.titulo || "PRESUPUESTO DE OBRA", s: "titulo" }]));
+    fusionA_G(fila([{ v: [meta.entidad, meta.departamento, meta.fecha].filter(Boolean).join("   ·   ") || " ", s: "subtitulo" }]));
+    if (meta.objeto) fusionA_G(fila([{ v: String(meta.objeto).slice(0, 400), s: "subtitulo" }]));
     fila([]);
     const filaCabecera = fila([
-      { v: "ÍTEM", s: "encabezado" }, { v: "DESCRIPCIÓN", s: "encabezado" },
-      { v: "UND.", s: "encabezado" }, { v: "CANT.", s: "encabezado" },
-      { v: "VALOR UNITARIO", s: "encabezado" }, { v: "VALOR TOTAL", s: "encabezado" },
+      { v: "ÍTEM", s: "encabezado" }, { v: "CÓDIGO", s: "encabezado" },
+      { v: "DESCRIPCIÓN", s: "encabezado" }, { v: "UND.", s: "encabezado" },
+      { v: "CANT.", s: "encabezado" }, { v: "VALOR UNITARIO", s: "encabezado" },
+      { v: "VALOR TOTAL", s: "encabezado" },
     ]);
 
+    /* Referencias que suman el COSTO DIRECTO: una celda por capítulo cerrado y
+       un rango por cada tramo de ítems sin capítulo. Nunca las dos cosas sobre
+       los mismos pesos. */
+    const refsCostoDirecto = [];
     let capituloActual = null;
-    let primeraItem = null, ultimaItem = null;
-    let consecutivo = 0;
+    let capIdx = 0, itemIdx = 0, sueltos = 0;
+    let bloqueDesde = null, bloqueHasta = null, bloqueTotal = 0, bloqueEsCapitulo = false;
+
+    const cerrarBloque = () => {
+      if (bloqueDesde === null) return;
+      if (bloqueEsCapitulo) {
+        const n = fila([null, null,
+          { v: `Subtotal ${capituloActual}`, s: "resumenTexto" }, null, null, null,
+          { v: fin(Math.round(bloqueTotal)), t: "n", s: "resumenMoneda", f: `=SUM(G${bloqueDesde}:G${bloqueHasta})` }]);
+        rotuloAncho(n);
+        refsCostoDirecto.push(`G${n}`);
+      } else {
+        refsCostoDirecto.push(`G${bloqueDesde}:G${bloqueHasta}`);
+      }
+      bloqueDesde = null; bloqueHasta = null; bloqueTotal = 0;
+    };
+
     for (const it of r.items) {
       const cap = it.capitulo || null;
       if (cap !== capituloActual) {
+        cerrarBloque();
         capituloActual = cap;
-        if (cap) fusionA_F(fila([{ v: cap, s: "capituloTexto" }]));
+        bloqueEsCapitulo = !!cap;
+        if (cap) { capIdx++; itemIdx = 0; fusionA_G(fila([{ v: `${capIdx}. ${cap}`, s: "capituloTexto" }])); }
       }
-      consecutivo++;
-      const codigo = it.codigo || it.item_id || String(consecutivo);
+      const numeroItem = capituloActual ? `${capIdx}.${++itemIdx}` : String(++sueltos);
+      const codigo = it.codigo || it.item_id || "—";
       /* El estado sale de `clasificarOrigen`, la MISMA función que decide el
          badge de la pantalla: antes el Excel solo distinguía dos estados y un
          precio derivado por factor regional salía idéntico a uno respaldado por
@@ -254,6 +354,7 @@
         : noVerificado ? "noVerificadoCantidad" : "cantidad";
 
       const n = fila([
+        { v: numeroItem, s: estiloTexto },
         { v: codigo, s: estiloTexto },
         {
           v: (it.descripcion || "—")
@@ -274,63 +375,74 @@
         sinPrecio ? { v: " ", s: "alertaTexto" } : { v: it.costo_directo_unitario, s: estiloMoneda },
         sinPrecio
           ? { v: " ", s: "alertaTexto" }
-          : { v: fin(it.costo_total), t: "n", s: estiloMoneda, f: `=D${filas.length + 1}*E${filas.length + 1}` },
+          : { v: fin(it.costo_total), t: "n", s: estiloMoneda, f: `=E${filas.length + 1}*F${filas.length + 1}` },
       ]);
       if (!sinPrecio) {
-        if (primeraItem === null) primeraItem = n;
-        ultimaItem = n;
+        if (bloqueDesde === null) bloqueDesde = n;
+        bloqueHasta = n;
+        bloqueTotal += Number(it.costo_total) || 0;
       }
     }
+    cerrarBloque();
 
     fila([]);
     const rotulo = (texto, estilo) => ({ v: texto, s: estilo });
-    const rangoTotales = primeraItem ? `F${primeraItem}:F${ultimaItem}` : null;
+    const cierre = (texto, estiloTexto, valor, estiloMoneda, formula) => {
+      const n = fila([null, null, rotulo(texto, estiloTexto), null, null, null,
+        { v: fin(valor), t: "n", s: estiloMoneda, f: formula }]);
+      rotuloAncho(n);
+      return n;
+    };
 
-    const filaCD = fila([null, null, null, rotulo("COSTOS DIRECTOS", "resumenTexto"), null,
-      { v: fin(s.costo_directo_total), t: "n", s: "resumenMoneda", f: rangoTotales ? `=SUM(${rangoTotales})` : undefined }]);
-    const filaAdm = fila([null, null, null, rotulo(`Administración (A) — ${c.aiu_pct} %`, "totalTexto"), null,
-      { v: fin(s.administracion), t: "n", s: "totalMoneda", f: `=F${filaCD}*${c.aiu_pct / 100}` }]);
-    fila([null, null, null, rotulo(`Imprevistos (I) — ${c.imprevistos_pct} %`, "totalTexto"), null,
-      { v: fin(s.imprevistos), t: "n", s: "totalMoneda", f: `=F${filaCD}*${c.imprevistos_pct / 100}` }]);
-    const filaUti = fila([null, null, null, rotulo(`Utilidad (U) — ${c.utilidad_pct} %`, "totalTexto"), null,
-      { v: fin(s.utilidad), t: "n", s: "totalMoneda", f: `=F${filaCD}*${c.utilidad_pct / 100}` }]);
-    const filaIva = fila([null, null, null, rotulo("IVA sobre la utilidad (19 %)", "totalTexto"), null,
-      { v: fin(s.iva_sobre_utilidad), t: "n", s: "totalMoneda", f: `=F${filaUti}*0.19` }]);
-    const filaCI = fila([null, null, null, rotulo("COSTOS INDIRECTOS", "resumenTexto"), null,
-      { v: fin((s.precio_venta ?? 0) - (s.costo_directo_total ?? 0) + (s.iva_sobre_utilidad ?? 0)), t: "n",
-        s: "resumenMoneda", f: `=SUM(F${filaAdm}:F${filaIva})` }]);
-    fila([null, null, null, rotulo("TOTAL", "destacadoTexto"), null,
-      { v: fin(Math.round(((s.precio_venta ?? 0) + (s.iva_sobre_utilidad ?? 0)) || 0)), t: "n",
-        s: "destacadoMoneda", f: `=ROUND(F${filaCD}+F${filaCI},0)` }]);
+    const filaCD = cierre("COSTOS DIRECTOS", "resumenTexto", s.costo_directo_total, "resumenMoneda",
+      refsCostoDirecto.length ? `=SUM(${refsCostoDirecto.join(",")})` : undefined);
+    const filaAdm = cierre(`Administración (A) — ${c.aiu_pct} %`, "totalTexto", s.administracion, "totalMoneda",
+      `=G${filaCD}*${c.aiu_pct / 100}`);
+    cierre(`Imprevistos (I) — ${c.imprevistos_pct} %`, "totalTexto", s.imprevistos, "totalMoneda",
+      `=G${filaCD}*${c.imprevistos_pct / 100}`);
+    const filaUti = cierre(`Utilidad (U) — ${c.utilidad_pct} %`, "totalTexto", s.utilidad, "totalMoneda",
+      `=G${filaCD}*${c.utilidad_pct / 100}`);
+    const filaIva = cierre("IVA sobre la utilidad (19 %)", "totalTexto", s.iva_sobre_utilidad, "totalMoneda",
+      `=G${filaUti}*0.19`);
+    const filaCI = cierre("COSTOS INDIRECTOS", "resumenTexto",
+      (s.precio_venta ?? 0) - (s.costo_directo_total ?? 0) + (s.iva_sobre_utilidad ?? 0), "resumenMoneda",
+      `=SUM(G${filaAdm}:G${filaIva})`);
+    cierre("TOTAL", "destacadoTexto", Math.round(((s.precio_venta ?? 0) + (s.iva_sobre_utilidad ?? 0)) || 0),
+      "destacadoMoneda", `=ROUND(G${filaCD}+G${filaCI},0)`);
 
     if (c.aplicar_ajuste_competitivo) {
-      fila([null, null, null, rotulo(`Ajuste competitivo aplicado — baja del ${c.factor_baja} % sobre el precio de venta`, "totalTexto"), null,
-        { v: fin(s.precio_final), t: "n", s: "totalMoneda" }]);
-      fila([null, null, null, rotulo("PRECIO FINAL OFERTADO (sin IVA de utilidad)", "destacadoTexto"), null,
-        { v: fin(s.precio_final), t: "n", s: "destacadoMoneda" }]);
+      cierre(`Ajuste competitivo aplicado — baja del ${c.factor_baja} % sobre el precio de venta`,
+        "totalTexto", s.precio_final, "totalMoneda", undefined);
+      cierre("PRECIO FINAL OFERTADO (sin IVA de utilidad)", "destacadoTexto", s.precio_final,
+        "destacadoMoneda", undefined);
     }
 
     fila([]);
     fila([{ v: "Elaboró:", s: "negrita" }, { v: " ", s: "texto" }, null,
-      { v: "Revisó:", s: "negrita" }, { v: " ", s: "texto" }, null]);
-    fila([{ v: "Aprobó:", s: "negrita" }, { v: " ", s: "texto" }, null, null, null, null]);
+      { v: "Revisó:", s: "negrita" }, { v: " ", s: "texto" }, null, null]);
+    fila([{ v: "Aprobó:", s: "negrita" }, { v: " ", s: "texto" }, null, null, null, null, null]);
     fila([]);
 
     const notas = [];
-    /* La leyenda declara los TRES colores. Con tres estados y dos declarados,
+    /* La leyenda declara TODOS los colores. Con estados y colores en juego,
        callarse uno sería mentir justo en la fila que existe para no mentir. */
-    notas.push("Leyenda: fila SIN COLOR = precio de un contrato adjudicado (Nogal 4, 2025) servido en su misma región. "
+    notas.push("Leyenda: fila SIN COLOR = precio de un contrato adjudicado (Nogal 4, 2025) servido en su misma región, "
+      + "o insumos con cotización de proveedor cargada. "
       + "Fila AMARILLA = precio con APU pero derivado por factor regional o estimado: no está verificado y requiere cotización. "
       + "Fila ÁMBAR = precio del archivo importado o tecleado a mano, sin APU de respaldo en el catálogo (suma al total y queda declarado). "
       + "Fila ROJA = ítem sin precio: NO suma al total — un $0 sería un precio inventado.");
+    notas.push(`Fecha de generación: ${meta.fecha || "—"}. `
+      + `Región de precios: ${(r.ajuste_regional && (r.ajuste_regional.region_nombre || r.ajuste_regional.region_utilizada)) || "—"}. `
+      + `Factor prestacional aplicado sobre el jornal: ${(r.ajuste_regional && r.ajuste_regional.prestacional) || "—"}. `
+      + `Catálogo ${(r.catalogo && r.catalogo.version) || "—"}, base de precios ${(r.catalogo && r.catalogo.base_precios) || "—"}.`);
     if ((r.como_leerlo && r.como_leerlo.precios)) notas.push(r.como_leerlo.precios);
     for (const a of r.alertas || []) notas.push(a);
-    for (const nota of notas) fusionA_F(fila([{ v: nota, s: "nota" }]));
+    for (const nota of notas) fusionA_G(fila([{ v: nota, s: "nota" }]));
 
     return {
       nombre: "Presupuesto",
       filas,
-      anchos: [10, 64, 8, 11, 16, 18],
+      anchos: [9, 14, 58, 8, 11, 16, 18],
       altos: { 0: 28 },
       congelar: filaCabecera,
       fusiones,
@@ -341,31 +453,67 @@
   /* El orden y las grafías («EQUIPO y HERRAMIENTAS», «MANO de OBRA») vienen del
      Presupuesto Nogal 4: no se tocan.
 
-     CADA SECCIÓN LLEVA SU PROPIA CABECERA (ago 2026). Antes había una sola para
-     el bloque entero, con la columna C rotulada «CANT/ REND» — un rótulo que
-     significaba tres cosas distintas según la fila (cantidad de material, días
-     por unidad de obra, m³ de acarreo) y por tanto no describía ninguna. Cuesta
-     tres filas por ítem y hace que cada etiqueta sea verdadera para lo que tiene
-     debajo. Se conservan las CINCO columnas A-E de la referencia: la hoja del
+     CADA SECCIÓN LLEVA SU PROPIA CABECERA. Antes había una sola para el bloque
+     entero, con la columna C rotulada «CANT/ REND» — un rótulo que significaba
+     tres cosas distintas según la fila (cantidad de material, días por unidad de
+     obra, m³ de acarreo) y por tanto no describía ninguna. Cuesta tres filas por
+     ítem y hace que cada etiqueta sea verdadera para lo que tiene debajo.
+
+     LAS COLUMNAS A-E SON LAS CINCO DE LA REFERENCIA y no se mueven: la hoja del
      pliego cierra con `ROUND(SUM(Ea:Eb)/2)`, que solo tiene sentido si los
-     parciales y los subtotales comparten la columna E. */
+     parciales y los subtotales comparten la columna E. Las dos columnas nuevas
+     (F y G) van DETRÁS y llevan los factores que hasta ahora viajaban dentro
+     del texto de la descripción: desperdicio, rendimiento, distancia y recargo
+     prestacional. Un auditor los pedía uno por uno; ahora los puede ordenar. */
   const SECCIONES_APU = [
-    ["material", "MATERIALES:", ["DESCRIPCIÓN", "UNIDAD", "CANTIDAD", "VR UNITARIO", "VR PARCIAL"]],
-    ["equipo", "EQUIPO y HERRAMIENTAS:", ["DESCRIPCIÓN", "UNIDAD", "CANT. POR UNIDAD", "VR POR UNIDAD", "VR PARCIAL"]],
-    ["transporte", "TRANSPORTES:", ["DESCRIPCIÓN", "UNIDAD", "CANT. × DISTANCIA", "TARIFA", "VR PARCIAL"]],
+    ["material", "MATERIALES:",
+      ["DESCRIPCIÓN", "UNIDAD", "CANTIDAD", "VR UNITARIO", "VR PARCIAL", "CANT. BASE", "DESPERDICIO"]],
+    ["equipo", "EQUIPO y HERRAMIENTAS:",
+      ["DESCRIPCIÓN", "UNIDAD", "CANT. POR UNIDAD", "VR POR UNIDAD", "VR PARCIAL", "RENDIMIENTO", ""]],
+    ["transporte", "TRANSPORTES:",
+      ["DESCRIPCIÓN", "UNIDAD", "CANT. × DISTANCIA", "TARIFA", "VR PARCIAL", "DISTANCIA (km)", ""]],
     // el jornal que multiplica YA lleva las prestaciones dentro: decirlo en el
     // rótulo evita que la fila parezca cobrar de más frente al jornal conocido
-    ["mano_obra", "MANO de OBRA:", ["DESCRIPCIÓN", "UNIDAD", "CANT. POR UNIDAD", "JORNAL C/ PRESTACIONAL", "VR PARCIAL"]],
+    ["mano_obra", "MANO de OBRA:",
+      ["DESCRIPCIÓN", "UNIDAD", "CANT. POR UNIDAD", "JORNAL C/ PRESTACIONAL", "VR PARCIAL", "RENDIMIENTO", "FACTOR PRESTACIONAL"]],
   ];
+
+  /* Las dos columnas de factores, por tipo de insumo. Devuelve celdas ya
+     estiladas o `null` — y `null` significa «no aplica», nunca cero: un 0 en
+     DESPERDICIO afirmaría que ese ítem no prevé desperdicio, que es
+     precisamente lo que los 157 ítems calibrados NO dicen (su desperdicio ya
+     viene dentro de la cantidad del pliego). */
+  function columnasFactor(l) {
+    const rend = Number(l.rendimiento);
+    const celdaRend = Number.isFinite(rend) && rend > 0 ? { v: rend, s: "cantidad" } : null;
+    if (l.tipo === "material") {
+      const base = Number(l.cantidad_base);
+      const desp = Number(l.desperdicio) || 0;
+      return [
+        Number.isFinite(base) ? { v: base, s: "cantidad" } : null,
+        desp > 0 ? { v: Math.round(desp * 10000) / 100, s: "porcentaje" } : null,
+      ];
+    }
+    if (l.tipo === "transporte") {
+      const km = Number(l.distancia_km);
+      // el 1 de los fletes cerrados del Nogal NO es un dato del pliego: no se pinta
+      return [Number.isFinite(km) && km !== 1 ? { v: km, s: "cantidad" } : null, null];
+    }
+    if (l.tipo === "mano_obra") {
+      const pct = recargoPrestacionalPct(l);
+      return [celdaRend, pct == null ? null : { v: pct, s: "porcentaje" }];
+    }
+    return [celdaRend, null];
+  }
 
   function hojaApu(r, meta) {
     const filas = [];
     const fusiones = [];
     const fila = (celdas) => { filas.push(celdas); return filas.length; };
-    const fusionA_E = (n) => fusiones.push(`A${n}:E${n}`);
+    const fusionA_G = (n) => fusiones.push(`A${n}:G${n}`);
 
-    fusionA_E(fila([{ v: "ANÁLISIS DE PRECIOS UNITARIOS", s: "titulo" }]));
-    fusionA_E(fila([{ v: [meta.titulo, meta.fecha].filter(Boolean).join(" · ") || " ", s: "subtitulo" }]));
+    fusionA_G(fila([{ v: "ANÁLISIS DE PRECIOS UNITARIOS", s: "titulo" }]));
+    fusionA_G(fila([{ v: [meta.titulo, meta.fecha].filter(Boolean).join(" · ") || " ", s: "subtitulo" }]));
     fila([]);
 
     let consecutivo = 0;
@@ -374,13 +522,13 @@
       const codigo = it.codigo || it.item_id || String(consecutivo);
       const encabezadoItem = fila([
         { v: `${codigo} · ${it.descripcion || "—"}`, s: "negrita" }, null, null, null,
-        { v: `UNIDAD: ${it.unidad || "—"}`, s: "negrita" },
+        { v: `UNIDAD: ${it.unidad || "—"}`, s: "negrita" }, null, null,
       ]);
       fusiones.push(`A${encabezadoItem}:D${encabezadoItem}`);
 
       if (it.incompleto) {
         const n = fila([{ v: `⛔ SIN PRECIO — ${it.mensaje || "no se pudo costear"}`, s: "alertaTexto" }]);
-        fusionA_E(n);
+        fusionA_G(n);
         fila([]);
         continue;
       }
@@ -390,7 +538,7 @@
         const n = fila([
           { v: `${origen} — SIN APU DE RESPALDO EN EL CATÁLOGO`, s: "destacadoTexto" }, null, null,
           { v: "VR UNITARIO =", s: "destacadoTexto" },
-          { v: fin(it.costo_directo_unitario), s: "destacadoMoneda" },
+          { v: fin(it.costo_directo_unitario), s: "destacadoMoneda" }, null, null,
         ]);
         fusiones.push(`A${n}:C${n}`);
         if (Number.isFinite(it.cd_catalogo)) {
@@ -399,7 +547,7 @@
               + "El precio del archivo MANDA; la diferencia queda declarada aquí para poder discutirla.",
             s: "nota",
           }]);
-          fusionA_E(nota);
+          fusionA_G(nota);
         }
         fila([]);
         continue;
@@ -413,42 +561,79 @@
           ? it.detalle.herramienta_menor_unitario : null;
         if (!delTipo.length && hm == null) continue;
         fila([{ v: rotulo, s: "negrita" }]);
-        fila(cabecera.map((t) => ({ v: t, s: "encabezado" })));
+        fila(cabecera.map((t) => (t ? { v: t, s: "encabezado" } : null)));
         let subtotal = 0;
+        const desde = filas.length + 1;
         for (const l of delTipo) {
           /* `lineaLegible` es la MISMA función que usa el desglose en pantalla:
              la cantidad que se imprime es la que multiplica al precio, así que
              la fila cuadra siempre (incluido el acarreo, que lleva los km). */
           const v = lineaLegible(l);
+          const [f, g] = columnasFactor(l);
           fila([
             { v: v.descripcion, s: "texto" },
             { v: v.unidad, s: "texto" },
             { v: v.cantidad, s: "cantidad" },
             { v: v.precio, s: "moneda2" },
             { v: v.valor, s: "moneda2" },
+            f, g,
           ]);
           subtotal += l.valor || 0;
         }
         if (hm != null) {
           fila([
             { v: `HERRAMIENTA MENOR (${Math.round(it.detalle.herramienta_menor_pct * 100)} % de la mano de obra)`, s: "texto" },
+            /* El porcentaje va DENTRO de la descripción y NO en la columna G:
+               en la sección de EQUIPO esa columna no tiene rótulo, y una cifra
+               bajo una columna sin nombre es exactamente el «CANT/ REND» que
+               este formato ya retiró una vez. La herramienta menor tampoco
+               tiene rendimiento, así que la F también se calla. */
             { v: "%", s: "texto" }, null, null, { v: fin(hm), s: "moneda2" },
+            null, null,
           ]);
           subtotal += hm;
         }
+        const hasta = filas.length;
         fila([null, null, null, { v: "Subtotal =", s: "moneda2Negrita" },
-          { v: Math.round(subtotal * 100) / 100, s: "moneda2Negrita" }]);
+          { v: Math.round(subtotal * 100) / 100, s: "moneda2Negrita", f: `=SUM(E${desde}:E${hasta})` },
+          null, null]);
       }
 
+      /* VR COSTO DIRECTO va con el valor del MOTOR y SIN fórmula, a propósito.
+         El unitario que publica `calculo.js` es la suma de los cuatro capítulos
+         ya REDONDEADOS, así que un `=SUM()` de los subtotales de arriba daría un
+         número que puede diferir en céntimos — y entonces esta hoja
+         contradiría, en su cifra más importante, la columna VALOR UNITARIO de la
+         hoja «Presupuesto». Entre una fórmula bonita y dos hojas que dicen lo
+         mismo, gana lo segundo. Hay prueba de esa igualdad. */
       fila([null, null, null, { v: "VR COSTO DIRECTO =", s: "resumenTexto" },
-        { v: fin(it.costo_directo_unitario), s: "resumenMoneda" }]);
+        { v: fin(it.costo_directo_unitario), s: "resumenMoneda" }, null, null]);
       fila([]);
     }
+
+    /* Firma del ingeniero de costos. Va al final de la hoja de APU y no solo en
+       la del presupuesto porque son dos entregables distintos: la entidad suele
+       pedir el análisis unitario firmado aparte, y una hoja sin firma se
+       devuelve. */
+    fila([]);
+    const firma = fila([{ v: "Analizó y elaboró los APU:", s: "negrita" }, null, null,
+      { v: "Firma:", s: "negrita" }, null, null, null]);
+    fusiones.push(`A${firma}:C${firma}`);
+    fusiones.push(`D${firma}:G${firma}`);
+    const matricula = fila([{ v: "Nombre / Matrícula profesional:", s: "negrita" }, null, null,
+      { v: " ", s: "texto" }, null, null, null]);
+    fusiones.push(`A${matricula}:C${matricula}`);
+    fusiones.push(`D${matricula}:G${matricula}`);
+    fusionA_G(fila([{
+      v: "Los factores de cada línea (cantidad base, desperdicio, rendimiento, distancia y recargo prestacional) "
+        + "van en las columnas F y G para que el análisis se pueda auditar sin leer la descripción.",
+      s: "nota",
+    }]));
 
     return {
       nombre: "APU",
       filas,
-      anchos: [58, 10, 13, 16, 16],
+      anchos: [58, 10, 13, 16, 16, 14, 16],
       fusiones,
     };
   }
@@ -463,10 +648,25 @@
     return [hojaPresupuesto(r, meta), hojaApu(r, meta)];
   }
 
+  /* Nombre del archivo, en UN solo sitio: `APU_<proyecto>_<fecha>.xlsx`. Lo
+     pedía el encargo y estaba escrito dentro del manejador del botón, donde ni
+     se podía probar ni lo veía el generador del repositorio. Se sanea lo que
+     el usuario teclee —un nombre con `/` o `:` produce descargas que el sistema
+     de archivos rechaza en silencio— y se conserva el acento, que sí es válido. */
+  function nombreArchivo(titulo, fecha) {
+    const limpio = String(titulo || "").trim()
+      .replace(/[\\/:*?"<>|]+/g, " ")
+      .replace(/\s+/g, "_")
+      .slice(0, 60)
+      .replace(/^_+|_+$/g, "");
+    const dia = /^\d{4}-\d{2}-\d{2}$/.test(String(fecha || "")) ? fecha : null;
+    return ["APU", limpio || "presupuesto", dia].filter(Boolean).join("_") + ".xlsx";
+  }
+
   /* `lineaLegible` y `clasificarOrigen` se exportan a propósito: el editor
      pinta su desglose y su badge con ESTAS funciones, no con copias suyas. Dos
      definiciones de «de dónde sale este precio» divergirían a la primera
      corrección, y la divergencia sería entre lo que el dueño ve en pantalla y
      lo que entrega a la entidad. */
-  return { construirLibroNogal, lineaLegible, clasificarOrigen };
+  return { construirLibroNogal, lineaLegible, clasificarOrigen, nombreArchivo, recargoPrestacionalPct };
 });

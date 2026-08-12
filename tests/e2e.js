@@ -3665,8 +3665,14 @@ async function main() {
          valor: se busca su fila y se exige que no haya número */
       const filaSin = rejilla.find((f) => (f || []).some((c) => typeof c === "string" && c.includes("Ítem sin precio")));
       assert.ok(filaSin, "no se encontró la fila del ítem sin precio");
-      assert.ok(typeof filaSin[4] !== "number" && typeof filaSin[5] !== "number",
+      /* Columnas: A ÍTEM · B CÓDIGO · C DESCRIPCIÓN · D UND. · E CANT. ·
+         F VALOR UNITARIO · G VALOR TOTAL. Los índices son 5 y 6 desde que
+         «ÍTEM» (la posición: 1.1, 1.2) y «CÓDIGO» (la identidad: NOG-A2)
+         dejaron de compartir columna. */
+      assert.ok(typeof filaSin[5] !== "number" && typeof filaSin[6] !== "number",
         "la fila sin precio publicó dinero: un $0 sería un precio inventado (la cantidad sí puede viajar)");
+      assert.strictEqual(typeof filaSin[4], "number",
+        "la cantidad de un ítem sin precio SÍ es un dato y tiene que viajar: lo que no existe es su valor");
 
       /* las fórmulas van SIN el «=» inicial en <f> (OOXML lo lleva implícito) y
          CON valor cacheado — el defecto «==D7*E7» rompía todas las celdas */
@@ -3682,9 +3688,14 @@ async function main() {
         return partes;
       })();
       const hoja1 = xml["xl/worksheets/sheet1.xml"];
-      assert.ok(/<f>D\d+\*E\d+<\/f><v>/.test(hoja1), "las fórmulas =D×E deben viajar sin «=» y con valor cacheado");
+      assert.ok(/<f>E\d+\*F\d+<\/f><v>/.test(hoja1), "las fórmulas =Cantidad×Vr. unitario deben viajar sin «=» y con valor cacheado");
       assert.ok(!/<f>=/.test(hoja1), "un «=» dentro de <f> produce ==FÓRMULA: la celda rota en todos los lectores");
-      assert.ok(/<f>SUM\(F\d+:F\d+\)<\/f>/.test(hoja1), "falta la fórmula SUM del cierre COSTOS DIRECTOS");
+      assert.ok(/<f>SUM\(G\d+:G\d+\)<\/f>/.test(hoja1), "falta la fórmula SUM del subtotal de capítulo");
+      /* COSTOS DIRECTOS suma la LISTA de celdas de subtotal, no el rango entero
+         de ítems: con subtotales intercalados, un rango contaría cada peso dos
+         veces — el defecto clásico del presupuesto armado a mano. */
+      assert.ok(/<f>SUM\(G\d+(,G\d+(:G\d+)?)+\)<\/f>/.test(hoja1),
+        "COSTOS DIRECTOS tiene que sumar las celdas de subtotal una por una, no el rango de ítems");
       // los estilos nuevos existen y los cuatro numFmt siguen siendo cuatro
       const estilos = xml["xl/styles.xml"];
       assert.ok(estilos.includes("FFFEE2E2"), "falta el relleno rojo de alerta (fila sin precio)");
@@ -4118,9 +4129,352 @@ async function main() {
           `subir el factor a 1,60 desvía hasta ${(peor * 100).toFixed(2)} %: si superara el 5 %, la advertencia del panel se queda corta`);
       }
 
+      /* ═══ f) SUBTOTAL POR CAPÍTULO Y CIERRE QUE NO CUENTA DOS VECES ═══
+         El presupuesto ahora abre un subtotal por capítulo. El riesgo que esto
+         estrena —y por el que hay prueba— es el defecto clásico del presupuesto
+         armado a mano: dejar que COSTOS DIRECTOS sume el RANGO entero de filas,
+         que con subtotales intercalados cuenta cada peso DOS VECES y produce un
+         presupuesto exactamente al doble sin que nada se vea raro. */
+      {
+        const r = calculoApu.calcularPresupuesto({
+          items: [
+            { item_id: "NOG-A2", cantidad: 10, capitulo: "CUBIERTA" },
+            { item_id: "INV-210.1", cantidad: 20, capitulo: "CUBIERTA" },
+            { item_id: "INV-201.1", cantidad: 30, capitulo: "EXPLANACIONES" },
+          ],
+          departamento: "BOGOTA D.C.", config: {},
+        });
+        const hoja = APULibro.construirLibroNogal(r, { titulo: "T", fecha: "2026-08-11" })[0];
+        const texto = (f, i) => (f && f[i] && f[i].v != null ? String(f[i].v) : "");
+
+        const subtotales = hoja.filas.filter((f) => /^Subtotal /.test(texto(f, 2)));
+        assert.strictEqual(subtotales.length, 2, "un subtotal por capítulo, ni más ni menos");
+        const sumaSubtotales = subtotales.reduce((a, f) => a + Number(f[6].v), 0);
+        assert.strictEqual(sumaSubtotales, r.resumen.costo_directo_total,
+          "los subtotales de capítulo no suman el costo directo del motor");
+
+        const filaCD = hoja.filas.find((f) => texto(f, 2) === "COSTOS DIRECTOS");
+        assert.ok(filaCD, "falta la fila COSTOS DIRECTOS");
+        assert.strictEqual(Number(filaCD[6].v), r.resumen.costo_directo_total);
+        const refs = String(filaCD[6].f).replace(/^=SUM\(|\)$/g, "").split(",");
+        assert.strictEqual(refs.length, subtotales.length,
+          "COSTOS DIRECTOS tiene que referenciar UNA celda por subtotal: un rango contaría los ítems y los subtotales");
+        for (const ref of refs) {
+          assert.ok(/^G\d+$/.test(ref), `referencia inesperada en el cierre: ${ref}`);
+          const n = Number(ref.slice(1));
+          assert.ok(subtotales.includes(hoja.filas[n - 1]),
+            `la referencia ${ref} no apunta a una fila de subtotal: estaría sumando ítems ya contados`);
+        }
+
+        // ÍTEM y CÓDIGO son columnas distintas: la posición y la identidad
+        const primerItem = hoja.filas.find((f) => texto(f, 1) === "NOG-A2");
+        assert.ok(primerItem, "no se encontró la fila del ítem por su CÓDIGO en la columna B");
+        assert.strictEqual(texto(primerItem, 0), "1.1",
+          "la columna ÍTEM numera por capítulo (1.1, 1.2, 2.1): es lo que el pliego usa para comparar oferentes");
+      }
+
+      /* ═══ g) LAS DOS HOJAS NO PUEDEN CONTRADECIRSE ═══
+         El VR COSTO DIRECTO de la hoja «APU» y el VALOR UNITARIO de la hoja
+         «Presupuesto» son la MISMA cifra del mismo ítem. Es por lo que el
+         cierre del APU va con el valor del motor y NO con un `=SUM()` de sus
+         subtotales: los subtotales suman líneas a 2 decimales y el unitario es
+         la suma de los cuatro capítulos ya redondeados, así que una fórmula
+         «más pura» pondría a las dos hojas a discrepar en céntimos justo en la
+         cifra que la entidad coteja. */
+      {
+        const r = calculoApu.calcularPresupuesto({
+          items: [
+            { item_id: "NOG-A2", cantidad: 10, capitulo: "CUBIERTA" },
+            { item_id: "INV-210.1", cantidad: 20, capitulo: "CUBIERTA" },
+            { item_id: "INV-201.1", cantidad: 5, capitulo: "EXPLANACIONES" },
+          ],
+          departamento: "BOGOTA D.C.", config: {},
+        });
+        const [pres, apu] = APULibro.construirLibroNogal(r, { titulo: "T", fecha: "2026-08-11" });
+        const val = (f, i) => (f && f[i] && f[i].v != null ? f[i].v : null);
+
+        const unitarios = new Map();
+        for (const f of pres.filas) {
+          const cod = val(f, 1);
+          if (typeof cod === "string" && /^(NOG|INV)-/.test(cod)) unitarios.set(cod, Number(val(f, 5)));
+        }
+        assert.strictEqual(unitarios.size, 3, "no se leyeron los tres ítems de la hoja Presupuesto");
+
+        let cotejados = 0;
+        for (let i = 0; i < apu.filas.length; i++) {
+          if (val(apu.filas[i], 3) !== "VR COSTO DIRECTO =") continue;
+          // el encabezado del bloque es la primera fila hacia atrás con «CÓDIGO · descripción»
+          let j = i;
+          while (j >= 0 && !/^(NOG|INV)-\S+ · /.test(String(val(apu.filas[j], 0) || ""))) j--;
+          const cod = String(val(apu.filas[j], 0)).split(" · ")[0];
+          assert.strictEqual(Number(val(apu.filas[i], 4)), unitarios.get(cod),
+            `las dos hojas dan un unitario distinto para ${cod}: la entidad las coteja`);
+          cotejados++;
+        }
+        assert.strictEqual(cotejados, 3, "no se cotejaron los tres ítems entre las dos hojas");
+
+        /* Las columnas de FACTORES existen y llevan lo que su rótulo dice.
+           Antes viajaban dentro del texto de la descripción, donde no se pueden
+           ordenar ni filtrar — que es lo primero que hace quien audita. */
+        const plana = apu.filas.map((f) => (f || []).map((c) => (c && c.v != null ? String(c.v) : "")).join("|"));
+        for (const rotulo of ["CANT. BASE", "DESPERDICIO", "RENDIMIENTO", "FACTOR PRESTACIONAL"]) {
+          assert.ok(plana.some((l) => l.includes(rotulo)), `falta la columna «${rotulo}» de la hoja APU`);
+        }
+        // y la firma del ingeniero de costos, que la entidad pide en el análisis
+        assert.ok(plana.some((l) => /Matr[íi]cula profesional/.test(l)),
+          "la hoja APU se entrega firmada: sin espacio de firma la devuelven");
+
+        /* El recargo prestacional que se PINTA sale de dividir el precio que de
+           verdad multiplicó, no de una constante: así no puede desincronizarse
+           del valor de su propia fila. */
+        const mo = r.items[0].detalle.insumos.find((l) => l.tipo === "mano_obra");
+        assert.ok(mo, "el ítem calibrado tiene mano de obra");
+        const pct = APULibro.recargoPrestacionalPct(mo);
+        assert.ok(Math.abs(pct - (r.ajuste_regional.prestacional - 1) * 100) < 0.5,
+          `el recargo pintado (${pct} %) no es el factor prestacional de la región`);
+      }
+
+      /* ═══ h) EL ESTADO «COTIZACIÓN DE PROVEEDOR» ═══
+         `precioEnRegion` ya distinguía una cotización real de una derivación
+         por factor, y el dato moría en el desglose: el badge miraba solo
+         `fuente`, así que un ítem cotizado salía rotulado «Derivado regional —
+         precio no verificado» encima de un precio que SÍ estaba verificado.
+         Se comprueba INYECTANDO la cotización, porque la semilla no trae
+         ninguna: sin inyectarla la rama no se ejecutaría nunca y la prueba
+         estaría midiendo su propia ausencia. */
+      {
+        const clon = JSON.parse(JSON.stringify(S));
+        const item = clon.items.find((i) => i.codigo === "INV-201.1");
+        assert.ok(item && item.insumos.length, "hace falta un ítem del catálogo con insumos");
+        // se cotiza en Bogotá TODO lo que el ítem consume
+        for (const linea of item.insumos) {
+          const ins = clon.insumos.find((x) => x.id === linea.insumo_id);
+          ins.precios_cotizados = { ...(ins.precios_cotizados || {}), bogota_sabana: ins.precio_base };
+        }
+        const conCot = calculoApu.calcularPresupuesto({
+          items: [{ item_id: "INV-201.1", cantidad: 7 }],
+          departamento: "BOGOTA D.C.", config: {}, catalogo: clon,
+        });
+        const org = APULibro.clasificarOrigen(conCot.items[0], conCot);
+        assert.strictEqual(org.estado, "cotizado",
+          "un ítem con TODOS sus insumos cotizados no puede rotularse «derivado»: sería decir «sin verificar» sobre un precio verificado");
+        assert.strictEqual(org.suma, true);
+        assert.strictEqual(conCot.items[0].origen_insumos.cotizado_pct, 100);
+
+        /* Y el corte es por VALOR: basta con que UNA línea vuelva a derivarse
+           para que el ítem deje de ser «cotizado» — con parte del precio sin
+           verificar, decirlo a secas prometería de más. */
+        const parcial = JSON.parse(JSON.stringify(clon));
+        const itemP = parcial.items.find((i) => i.codigo === "INV-201.1");
+        const unoSuelto = parcial.insumos.find((x) => x.id === itemP.insumos[0].insumo_id);
+        delete unoSuelto.precios_cotizados;
+        const rp = calculoApu.calcularPresupuesto({
+          items: [{ item_id: "INV-201.1", cantidad: 7 }],
+          departamento: "BOGOTA D.C.", config: {}, catalogo: parcial,
+        });
+        assert.strictEqual(APULibro.clasificarOrigen(rp.items[0], rp).estado, "derivado",
+          "con una línea derivada el ítem NO está cotizado del todo");
+        assert.ok(rp.items[0].origen_insumos.cotizado_pct < 100);
+
+        /* ══ EL BORDE DEL REDONDEO, que una revisión adversaria cazó ══
+           `cotizado_pct` viaja REDONDEADO a dos decimales, así que una línea
+           derivada DESPRECIABLE al lado de una cotizada cara da 99,99997 % y
+           `red()` lo sube a un 100 EXACTO. Con la puerta abierta por
+           `cotizado_pct === 100`, ese ítem se rotulaba «Cotización de
+           proveedor» —verificado— con parte del precio SIN verificar. Es la
+           trampa de `numero()` como guarda de «sin dato»: una cifra redondeada
+           para MOSTRAR no puede DECIDIR. La proporción hace falta que sea
+           extrema (>20.000:1), y es justo la de un insumo incidental barato
+           —agua, tornillería— junto a una línea cotizada cara.
+           Hoy la puerta la abre `lineas_derivadas === 0`, que es exacto. */
+        const borde = JSON.parse(JSON.stringify(S));
+        borde.insumos.push(
+          { id: "zz_caro", nombre: "Insumo cotizado caro", unidad: "un", tipo: "material",
+            precio_base: 3350400, fuente: "estimado", precios_cotizados: { bogota_sabana: 3350400 } },
+          // el insumo incidental: agua, tornillería… sin cotización propia
+          { id: "zz_barato", nombre: "Insumo derivado barato", unidad: "un", tipo: "material",
+            precio_base: 1, fuente: "estimado" },
+        );
+        borde.items.push({
+          codigo: "ZZ-1", descripcion: "Borde de redondeo", unidad: "un", capitulo: "P",
+          unspsc_segmento: "72", unspsc_clases: [], herramienta_menor_pct: 0, fuente: "estimado",
+          insumos: [
+            { insumo_id: "zz_caro", cantidad_por_unidad: 1, rendimiento: null, desperdicio: 0 },
+            { insumo_id: "zz_barato", cantidad_por_unidad: 1, rendimiento: null, desperdicio: 0 },
+          ],
+        });
+        const rb = calculoApu.calcularPresupuesto({
+          items: [{ item_id: "ZZ-1", cantidad: 1 }],
+          departamento: "BOGOTA D.C.", config: {}, catalogo: borde,
+        });
+        const ob = rb.items[0].origen_insumos;
+        assert.strictEqual(ob.cotizado_pct, 100,
+          "el escenario no reproduce el borde: se necesita que el porcentaje REDONDEE a 100 exacto");
+        assert.ok(ob.lineas_derivadas > 0, "el escenario tiene que conservar una línea derivada");
+        assert.strictEqual(APULibro.clasificarOrigen(rb.items[0], rb).estado, "derivado",
+          "un 100 % REDONDEADO no es «todo cotizado»: el badge estaría llamando verificado a un precio que no lo está");
+
+        /* Y la puerta no puede volver a colgarse del porcentaje redondeado. Se
+           mira el CÓDIGO, sin comentarios: el comentario de `clasificarOrigen`
+           cita `cotizado_pct === 100` a propósito, para explicar por qué NO se
+           usa, y una regex sobre el fuente crudo lo confundiría con el defecto
+           que vigila. */
+        const codigoLibro = sinComentarios(
+          fs.readFileSync(path.join(__dirname, "..", "public", "apu_libro.js"), "utf8"));
+        assert.ok(!/cotizado_pct\s*===\s*100/.test(codigoLibro),
+          "`cotizado_pct` va redondeado para MOSTRAR: usarlo como prueba de exactitud reabre el defecto");
+        assert.ok(/org\.lineas_derivadas\s*===\s*0/.test(codigoLibro),
+          "la puerta de «cotizado» tiene que abrirse con la cuenta EXACTA de líneas derivadas");
+
+        // el badge de pantalla y el marcador del Excel salen de esta MISMA función
+        const fuenteApp = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        assert.ok(/CLASES_ORIGEN\s*=\s*\{[^}]*cotizado:/.test(fuenteApp),
+          "el estado «cotizado» no tiene color en la tabla: saldría con el color por defecto y en silencio");
+      }
+
+      /* ═══ i) NOMBRE DEL ARCHIVO: APU_<proyecto>_<fecha>.xlsx ═══ */
+      {
+        assert.strictEqual(APULibro.nombreArchivo("Nogal 4", "2026-08-11"), "APU_Nogal_4_2026-08-11.xlsx");
+        assert.strictEqual(APULibro.nombreArchivo("", "2026-08-11"), "APU_presupuesto_2026-08-11.xlsx",
+          "sin nombre de proyecto el archivo no puede quedarse sin nombre");
+        // los caracteres que el sistema de archivos rechaza se sanean, no se cuelan
+        assert.strictEqual(APULibro.nombreArchivo('a/b:c*?"<>|d', "2026-08-11"), "APU_a_b_c_d_2026-08-11.xlsx");
+        assert.ok(!/undefined|null/.test(APULibro.nombreArchivo("X", null)),
+          "sin fecha válida el nombre no puede llevar «null» dentro");
+        const fuenteApp = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        assert.ok(/APULibro\.nombreArchivo\(/.test(fuenteApp),
+          "el botón de exportar tiene que usar el nombre de apu_libro: escrito aparte, la app y el generador producirían nombres distintos");
+      }
+
+      /* ═══ j) LAS CINCO VALIDACIONES (lib/apu/validaciones) ═══
+         Ninguna bloquea. Se comprueba (1) que cada una DISPARA con su caso,
+         (2) que NO dispara sin él —una validación que siempre salta se
+         convierte en ruido y deja de leerse—, y (3) que sus números salen de
+         `normativa` y no de una segunda copia. */
+      {
+        const V = require("../lib/apu/validaciones.js");
+
+        // G.1 · las bandas son las de normativa, no una copia
+        assert.strictEqual(V.validarAiu({ aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }), null,
+          "el AIU por defecto del proyecto está dentro de banda: no puede advertir");
+        const aiuMal = V.validarAiu({ aiu_pct: 35, imprevistos_pct: 0.5, utilidad_pct: 12 });
+        assert.strictEqual(aiuMal.codigo, "aiu_fuera_de_banda");
+        assert.strictEqual(aiuMal.componentes.length, 3, "los tres componentes están fuera de banda");
+        for (const c of aiuMal.componentes) {
+          const banda = normativa.AIU[c.componente].banda;
+          assert.deepStrictEqual(c.banda, { min: banda.min, max: banda.max },
+            "la banda publicada no es la de lib/apu/normativa: hay una segunda fuente de verdad");
+        }
+        /* Los cortes del encargo (A > 30, I < 1, U > 10) son ESTRICTAMENTE más
+           laxos que estas bandas, así que todo lo que aquél marcaría queda
+           marcado. Se comprueba para que nadie «complete» el encargo añadiendo
+           una segunda tabla de umbrales. */
+        for (const [k, peor] of [["administracion", 30.01], ["utilidad", 10.01]]) {
+          assert.ok(peor > normativa.AIU[k].banda.max,
+            `el corte del encargo para ${k} tiene que ser más laxo que la banda del manual`);
+        }
+        assert.ok(1 < normativa.AIU.imprevistos.banda.min,
+          "el corte del encargo para imprevistos (< 1 %) es más laxo que la banda del manual (< 3 %)");
+
+        // G.2 · prueba de ENCIERRO, no de igualdad: 1,55 está dentro y 1,20 no
+        assert.strictEqual(V.validarPrestacional(1.55), null,
+          "el factor del catálogo cae entre la suma exonerada y la nominal: no puede advertir");
+        const bajo = V.validarPrestacional(1.20);
+        assert.strictEqual(bajo.codigo, "prestacional_fuera_de_banda");
+        assert.strictEqual(bajo.severidad, "atencion",
+          "un jornal que no paga ni las prestaciones inexonerables no es un simple aviso");
+        assert.strictEqual(V.validarPrestacional(null).codigo, "prestacional_sin_dato",
+          "sin factor no se puede afirmar que esté bien NI que esté mal");
+
+        // G.3 · cero y negativo son dos defectos distintos y se cuentan aparte
+        const cant = V.validarCantidades([
+          { descripcion: "ok", cantidad: 5 },
+          { descripcion: "vacío", cantidad: 0 },
+          { descripcion: "resta", cantidad: -3 },
+          { descripcion: "ilegible", cantidad: "abc" },
+        ]);
+        assert.deepStrictEqual(cant.map((h) => h.codigo).sort(),
+          ["cantidad_cero", "cantidad_ilegible", "cantidad_negativa"]);
+        /* Una cantidad que no es número NO se cuenta como cero: un 0 es una
+           decisión («este ítem no se ejecuta») y lo ilegible es una AUSENCIA.
+           Fundirlos diría «está en cantidad 0» sobre algo que no se pudo leer,
+           que es la ausencia disfrazada de cero (R1). */
+        assert.strictEqual(cant.find((h) => h.codigo === "cantidad_cero").total, 1,
+          "la cantidad ilegible se coló en la cubeta de los ceros");
+        assert.ok(/DESCONOCIDA/.test(cant.find((h) => h.codigo === "cantidad_ilegible").mensaje));
+        assert.strictEqual(cant.find((h) => h.codigo === "cantidad_negativa").severidad, "atencion");
+        assert.deepStrictEqual(V.validarCantidades([{ descripcion: "ok", cantidad: 5 }]), [],
+          "con las cantidades bien no puede haber hallazgo");
+
+        // G.4 · la participación es de ÍTEMS y el valor que falta es DESCONOCIDO
+        const sin = V.validarSinPrecio([
+          ...Array.from({ length: 19 }, (_, i) => ({ descripcion: `i${i}`, incompleto: false })),
+          { descripcion: "sin precio", incompleto: true },
+        ]);
+        assert.strictEqual(sin.participacion_items_pct, 5);
+        assert.strictEqual(sin.severidad, "aviso", "el 5 % es el umbral: en el corte todavía no es «atención»");
+        assert.strictEqual(sin.base_de_la_medida, "items");
+        assert.strictEqual(sin.valor_faltante, null,
+          "el valor que falta es DESCONOCIDO: un 0 ahí diría «no falta dinero», que es lo contrario (R1)");
+        assert.ok(/no es de dinero|de ÍTEMS/.test(sin.mensaje),
+          "el mensaje tiene que declarar que el porcentaje NO es de dinero: si no, se lee como si lo fuera");
+        assert.strictEqual(V.validarSinPrecio([{ incompleto: false }]), null);
+
+        // G.5 · sin cuantía NO se compara: no se inventa un techo
+        assert.strictEqual(V.validarContraCuantia(null, { precio_final: 1e9 }), null);
+        assert.strictEqual(V.validarContraCuantia(0, { precio_final: 1e9 }), null,
+          "una cuantía en 0 es «sin dato», no un techo de cero pesos");
+        assert.strictEqual(V.validarContraCuantia(1000, { precio_final: 999 }), null);
+        const excede = V.validarContraCuantia(1000, { precio_final: 1200 });
+        assert.strictEqual(excede.codigo, "excede_la_cuantia");
+        assert.strictEqual(excede.exceso_cop, 200);
+        assert.strictEqual(excede.exceso_pct, 20);
+
+        /* Integración: las cinco viajan en la respuesta del motor, NINGUNA
+           bloquea, y además se vuelcan en `alertas` —el canal que el exportador
+           ya lee—. Publicarlas solo en el campo nuevo las habría escondido en
+           el Excel, que es donde acaban leyéndose. */
+        const r = calculoApu.calcularPresupuesto({
+          items: [
+            { item_id: "NOG-A2", cantidad: 126, capitulo: "CUBIERTA" },
+            { descripcion: "Sin precio", unidad: "und", cantidad: 2, capitulo: "RED" },
+            { item_id: "INV-210.1", cantidad: 0, capitulo: "RED" },
+            { item_id: "INV-201.1", cantidad: -5, capitulo: "RED" },
+          ],
+          departamento: "BOGOTA D.C.",
+          config: { aiu_pct: 35, imprevistos_pct: 0.5, utilidad_pct: 12, cuantia_cop: 1000 },
+        });
+        const codigos = r.validaciones.hallazgos.map((h) => h.codigo).sort();
+        assert.deepStrictEqual(codigos,
+          ["aiu_fuera_de_banda", "cantidad_cero", "cantidad_negativa", "excede_la_cuantia", "items_sin_precio"],
+          "las cinco validaciones tienen que disparar con un presupuesto que las incumple todas");
+        assert.strictEqual(r.validaciones.resumen.bloquea_exportacion, false,
+          "ninguna validación puede impedir exportar: una herramienta que se niega acaba usándose por fuera");
+        for (const m of r.validaciones.mensajes) {
+          assert.ok(r.alertas.includes(m),
+            "un hallazgo que no llega a `alertas` no sale en las notas del Excel: se vería en pantalla y no en lo que se entrega");
+        }
+        // el Excel se genera IGUAL, con las advertencias dentro
+        const bytesV = XLSXApu.construirLibro(APULibro.construirLibroNogal(r, { titulo: "T", fecha: "2026-08-11" }));
+        assert.ok(bytesV.length > 0, "un presupuesto con hallazgos tiene que poder exportarse");
+
+        // y un presupuesto sano no fabrica hallazgos
+        const sano = calculoApu.calcularPresupuesto({
+          items: [{ item_id: "NOG-A2", cantidad: 126, capitulo: "CUBIERTA" }],
+          departamento: "BOGOTA D.C.", config: { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 },
+        });
+        assert.deepStrictEqual(sano.validaciones.hallazgos, [],
+          "un presupuesto correcto no puede tener hallazgos: una validación que siempre salta deja de leerse");
+
+        // el panel existe en el HTML y nace oculto (lo enciende pintarValidaciones)
+        const htmlV = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        assert.ok(/id="r-validaciones"[^>]*class="[^"]*hidden/.test(htmlV),
+          "el bloque de validaciones tiene que nacer OCULTO: un recuadro que dice «0 problemas» se deja de mirar");
+      }
+
       console.log("  · APU profesional: 1 761 filas del catálogo cuadran (cantidad × precio = valor), "
-        + "5 orígenes de precio con una sola definición, hoja APU con cabecera por sección y "
-        + "normativa encerrada entre la suma nominal y la exonerada");
+        + "6 orígenes de precio con una sola definición, subtotal por capítulo cuyo cierre no cuenta dos veces, "
+        + "las dos hojas cotejadas ítem a ítem, y las 5 validaciones disparando sin bloquear la exportación");
     }
 
     /* ---- 5 · cableado del frontend nuevo (la página única) ---- */
