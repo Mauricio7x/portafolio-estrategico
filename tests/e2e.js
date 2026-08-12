@@ -4323,8 +4323,17 @@ async function main() {
           { descripcion: "ok", cantidad: 5 },
           { descripcion: "vacío", cantidad: 0 },
           { descripcion: "resta", cantidad: -3 },
+          { descripcion: "ilegible", cantidad: "abc" },
         ]);
-        assert.deepStrictEqual(cant.map((h) => h.codigo).sort(), ["cantidad_cero", "cantidad_negativa"]);
+        assert.deepStrictEqual(cant.map((h) => h.codigo).sort(),
+          ["cantidad_cero", "cantidad_ilegible", "cantidad_negativa"]);
+        /* Una cantidad que no es número NO se cuenta como cero: un 0 es una
+           decisión («este ítem no se ejecuta») y lo ilegible es una AUSENCIA.
+           Fundirlos diría «está en cantidad 0» sobre algo que no se pudo leer,
+           que es la ausencia disfrazada de cero (R1). */
+        assert.strictEqual(cant.find((h) => h.codigo === "cantidad_cero").total, 1,
+          "la cantidad ilegible se coló en la cubeta de los ceros");
+        assert.ok(/DESCONOCIDA/.test(cant.find((h) => h.codigo === "cantidad_ilegible").mensaje));
         assert.strictEqual(cant.find((h) => h.codigo === "cantidad_negativa").severidad, "atencion");
         assert.deepStrictEqual(V.validarCantidades([{ descripcion: "ok", cantidad: 5 }]), [],
           "con las cantidades bien no puede haber hallazgo");
