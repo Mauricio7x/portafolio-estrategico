@@ -2411,6 +2411,22 @@ rotulan con palabras (**Licitaciones · Precios · Mi empresa**) y en móvil lle
   es lo que descontaron los que ganaron aquí (23 contratos ya adjudicados)». La cifra no cambia; cambia de
   quién habla la frase, de la entidad a QUIEN VA A OFERTAR. Con mediana 0 se dice «aquí se gana sin bajar el
   precio» en vez de «ofertá 0 % por debajo», que sería una instrucción absurda.
+- **LA PESTAÑA «ADMINISTRACIÓN» SE LLAMA «MI EMPRESA» Y SE PARTIÓ EN DOS.** Ponía al mismo nivel seis cosas
+  sin relación —RUP, tablero, experiencia, auditoría, catálogo de precios y sincronización—, y **cuatro de las
+  seis no son de quien va a licitar sino de quien mantiene el sistema**: mezclarlas obligaba a entender el
+  programa para poder usarlo. Arriba queda lo que describe a TU empresa (**Tu RUP · Obra que ya ejecutaste ·
+  Códigos que te faltan en el RUP**) y lo técnico vive dentro de `<details id="seccion-sistema">`, que **nace
+  cerrado**. **NINGÚN id cambió**: renombrarlos mataría `app.js` en silencio, que es el modo de fallo que la
+  prueba de ids vigila. Los rótulos en jerga se tradujeron («Auditoría de cobertura RUP» → «Códigos que te
+  faltan en el RUP»; «Dashboard» → «Tablero»).
+- **NI UN EMOJI EN LA INTERFAZ, y hay prueba que lo impide** sobre `index.html`, `app.js` y `onboarding.js`.
+  No es solo estética: **un emoji lo DIBUJA el sistema operativo** — cambia de aspecto en cada aparato, mete
+  su propia paleta y **no hereda el color del tema**. El semáforo lo llevan hoy la clase de color que el badge
+  YA tenía más un punto tipográfico **`●` (U+25CF)**, que sí la hereda. Los iconos de las pestañas móviles son
+  **SVG en línea con `currentColor`**. `⚠️` se sustituye por el rótulo «Atención:», que además se lee en voz
+  alta. **`public/apu_libro.js` queda FUERA de la prohibición**: sus marcadores viajan al Excel exportado, que
+  es otro medio y otra decisión. Y las pruebas dejaron de usar los glifos como proxy de «esto está cableado»
+  (se atan a los cuatro NIVELES de criticidad, no a los cuatro dibujos).
 - **UN ACENTO GRAVE DENTRO DE UN TEMPLATE LITERAL LO CIERRA.** Un comentario HTML con `` `ve` `` dentro de la
   plantilla de `bloqueProbabilidad` dejó de compilar `app.js` ENTERO — la pestaña se muere en silencio, que es
   justo el modo de fallo que la suite vigila. Los comentarios van FUERA de la plantilla.
