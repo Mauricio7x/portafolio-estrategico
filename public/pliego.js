@@ -39,6 +39,10 @@
   /* token integrado: la misma constante de app.js (decisión del dueño, ago
      2026 — la capa de seguridad real es Vercel Password Protection) */
   const TOKEN = "MiExtraccion2025";
+  // el mismo texto que app.js: el 401 se explica como lo que es, en lenguaje
+  // de personas primero y con el dato del administrador entre paréntesis
+  const MSG_401 = "La aplicación no pudo autenticarse con el servidor. No es un problema tuyo: es configuración "
+    + "del sitio — avisale a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).";
   const leerToken = () => TOKEN;
 
   /* pdf.js desde CDN, con la versión CLAVADA y por un motivo que no es
@@ -338,8 +342,12 @@
 
   /* ══════════ Llamadas al servidor ══════════ */
   async function pedir(ruta, cuerpo) {
+    /* `leerToken()` devuelve el token integrado, una constante: la rama
+       «sin token» era inalcanzable y sus mensajes («Guarde primero el token
+       de acceso, arriba») apuntaban a un formulario retirado — documentación
+       falsa dentro del fuente, la misma razón por la que se quitó la guarda
+       muerta de celdaApuProceso. */
     const token = leerToken();
-    if (!token) return { estado: 0, cuerpo: null, sinToken: true };
     let r = null, datos = null;
     try {
       r = await fetch(ruta, {
@@ -356,8 +364,7 @@
 
   let contrato = null;
   async function cargarContrato() {
-    const token = leerToken();
-    if (!token) return;
+    const token = leerToken(); // constante integrada: siempre presente
     try {
       const r = await fetch("/api/apu/extraer-texto", {
         headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store",
@@ -612,7 +619,6 @@
     if (url) {
       chip("Descargando el PDF…", { girando: true });
       const r = await pedir("/api/apu/descargar", { url });
-      if (r.sinToken) throw new Error("Guarde primero el token de acceso.");
       if (r.red) throw new Error(`No se pudo contactar el servidor: ${r.red}.`);
       if (r.estado !== 200 || !r.cuerpo || !r.cuerpo.ok) {
         throw new Error((r.cuerpo && r.cuerpo.error) || `El servidor respondió ${r.estado}.`);
@@ -679,9 +685,8 @@
   }
 
   function manejarRespuesta(r) {
-    if (r.sinToken) return mensaje("Guarde primero el token de acceso, arriba.", "aviso");
     if (r.red) { chip("Sin conexión", {}); return mensaje(`No se pudo contactar el servidor: ${r.red}.`, "error"); }
-    if (r.estado === 401) { chip("Token rechazado", {}); return mensaje("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error"); }
+    if (r.estado === 401) { chip("Sin acceso", {}); return mensaje(MSG_401, "error"); }
     if (!r.cuerpo || !r.cuerpo.ok) {
       chip("Error", {});
       return mensaje((r.cuerpo && r.cuerpo.error) || `El servidor respondió ${r.estado}.`, "error");
@@ -736,9 +741,8 @@
         const rt = await pedir("/api/apu/extraer-texto", {
           texto_extraido: "", imagenes_base64: paginas, solo_reconocer: true,
         });
-        if (rt.sinToken) { progreso(null); chip("Sin token", {}); return mensaje("Guarde primero el token de acceso, arriba.", "aviso"); }
         if (rt.red) { progreso(null); chip("Sin conexión", {}); return mensaje(`No se pudo contactar el servidor: ${rt.red}.`, "error"); }
-        if (rt.estado === 401) { progreso(null); chip("Token rechazado", {}); return mensaje("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error"); }
+        if (rt.estado === 401) { progreso(null); chip("Sin acceso", {}); return mensaje(MSG_401, "error"); }
         if (!rt.cuerpo || !rt.cuerpo.ok) {
           /* Una tanda que falla NO tira el documento entero: se registra y se
              sigue. 35 páginas leídas valen mucho más que un error global — y si

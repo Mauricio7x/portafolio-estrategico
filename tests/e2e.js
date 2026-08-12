@@ -10681,6 +10681,15 @@ async function main() {
         const iProd = admHtml.indexOf('id="exp-produccion"');
         assert.ok(!/\bhidden\b/.test(admHtml.slice(iProd, admHtml.indexOf(">", iProd) + 1)),
           "el bloque de puesta en producción nacería oculto y ya no existe pintarEstadoToken para enseñarlo");
+        /* Y vive DENTRO del pliegue de Sistema (lo pliega su ancestro
+           <details>, no una clase): fuera del pliegue era el residuo más
+           técnico visible de la pestaña — cuatro botones de operador con el
+           nombre de otra empresa y un script de shell delante de cualquier
+           usuario. Antes del sync-wrap, porque su paso 3 encadena allí. */
+        assert.ok(admHtml.indexOf('id="seccion-sistema"') > 0
+          && admHtml.indexOf('id="seccion-sistema"') < iProd
+          && iProd < admHtml.indexOf('id="sync-wrap"'),
+          "exp-produccion debe vivir dentro de «Sistema», antes de la sincronización que su paso 3 dispara");
         const admJsLimpio = sinComentarios(admJs);
         assert.ok(!/pintarEstadoToken/.test(admJsLimpio),
           "pintarEstadoToken volvió: con el token integrado no hay estado de token que pintar");

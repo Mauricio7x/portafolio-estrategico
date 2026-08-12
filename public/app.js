@@ -53,6 +53,13 @@
      vez de entrar en bucle de 401 — el mismo contrato que tenía un token
      caducado guardado en la pestaña. */
   const TOKEN = "MiExtraccion2025";
+  /* El 401 se explica como lo que ES —la clave interna del sitio no coincide
+     con la del despliegue—, jamás como «token inválido, escriba otro»: no
+     existe ningún formulario donde escribirlo. Pero se dice PRIMERO en
+     lenguaje de personas: el usuario no puede arreglarlo y tiene que saber
+     que no es culpa suya; el paréntesis es para quien administra. */
+  const MSG_401 = "La aplicación no pudo autenticarse con el servidor. No es un problema tuyo: es configuración "
+    + "del sitio — avisale a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).";
   let tokenRechazado = false;
   const tokenGuardado = () => (tokenRechazado ? "" : TOKEN);
   const leerToken = () => TOKEN;
@@ -820,8 +827,7 @@
     if (peticion !== peticionPaa) return;
 
     if (r.status === 401) {
-      $("paa-resumen").textContent = "El HISTORICO_TOKEN de este despliegue no coincide con el token "
-        + "integrado en la aplicación, así que el PAA no se puede consultar.";
+      $("paa-resumen").textContent = MSG_401;
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
@@ -1131,7 +1137,7 @@
       return;
     }
     if (r.status === 401) {
-      $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-red-600">El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.</p>';
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${MSG_401}</p>`;
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
@@ -1156,7 +1162,7 @@
       return;
     }
     if (r.status === 401) {
-      $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-red-600">El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.</p>';
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${MSG_401}</p>`;
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
@@ -1263,13 +1269,13 @@
     try {
       r = await fetch(ruta, cfg);
     } catch (e) {
-      throw new Error(`Sin conexión con el servidor (${e.message}).`);
+      throw new Error(`Sin conexión con el servidor: revisá tu internet e intentá de nuevo. (${e.message})`);
     }
     /* el parseo va APARTE del fetch: el muro del edge responde HTML */
     let cuerpo = null;
     try { cuerpo = await r.json(); } catch { /* respuesta no-JSON */ }
     if (r.status === 401) {
-      throw new Error("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.");
+      throw new Error(MSG_401);
     }
     if (!r.ok) {
       throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
@@ -3285,7 +3291,7 @@
     cargandoDashboard(false);
 
     if (r.status === 401) {
-      return avisoDashboard("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
+      return avisoDashboard(MSG_401, "error");
     }
     if (r.status === 503) {
       return avisoDashboard(`${esc((cuerpo && cuerpo.error) || "Servicio no disponible")}. Puede iniciar una carga en la sección de sincronización, arriba.`, "error");
@@ -3771,7 +3777,7 @@
     $("btn-rup-cargar").textContent = etiqueta;
 
     if (r.status === 401) {
-      return mensajeRup("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
+      return mensajeRup(MSG_401, "error");
     }
     if (r.status === 400 && cuerpo && cuerpo.errores) {
       mensajeRup(cuerpo.error || "El archivo no pasó la validación: no se guardó nada.", "error");
@@ -3918,7 +3924,7 @@
     cerrarModalEliminar();
 
     if (r.status === 401) {
-      return mensajeEliminar("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
+      return mensajeEliminar(MSG_401, "error");
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
       return mensajeEliminar((cuerpo && cuerpo.error)
@@ -4055,7 +4061,7 @@
     $("btn-exp-confirmar").textContent = etiqueta;
 
     if (r.status === 401) {
-      return mensajeExp("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
+      return mensajeExp(MSG_401, "error");
     }
     if (r.status === 400 && cuerpo && cuerpo.errores) {
       mensajeExp(cuerpo.error || "El JSON no pasó la validación: no se guardó nada.", "error");
@@ -4167,7 +4173,7 @@
     }
     if (r.status === 401) {
       bitacora("✘ 1/3 el despliegue rechazó el token integrado");
-      mensajeExp("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
+      mensajeExp(MSG_401, "error");
       return false;
     }
     if (r.status === 400 && cuerpo && cuerpo.errores) {
@@ -4379,7 +4385,7 @@
     cargandoCobertura(false);
 
     if (r.status === 401) {
-      avisoCobertura("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
+      avisoCobertura(MSG_401, "error");
       return false;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
@@ -4602,7 +4608,7 @@
     $("btn-apu-cargar").disabled = false;
     $("apu-spin").classList.add("hidden");
 
-    if (r.status === 401) return mensajeApu("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
+    if (r.status === 401) return mensajeApu(MSG_401, "error");
     if (!r.ok || !c || !c.ok) {
       const errores = (c && c.errores || []).slice(0, 6)
         .map((e) => `<li>· <code class="font-mono">${esc(e.campo)}</code>: ${esc(e.error)}</li>`).join("");
@@ -4652,7 +4658,7 @@
         { headers: { "x-historico-token": leerToken(), Accept: "application/json" }, cache: "no-store" });
       let c = null;
       try { c = await r.json(); } catch { c = null; }
-      if (r.status === 401) msg.textContent = "El despliegue rechazó el token integrado (HISTORICO_TOKEN no coincide).";
+      if (r.status === 401) msg.textContent = MSG_401;
       else if (!r.ok || !c || !c.ok) msg.textContent = (c && c.error) || `Error ${r.status}.`;
       else if (c.indice && c.indice.done === false) msg.textContent = "Reconstrucción a medias (presupuesto agotado): vuelva a pulsar, el avance queda guardado.";
       else msg.textContent = "Índice de competencia reconstruido.";
