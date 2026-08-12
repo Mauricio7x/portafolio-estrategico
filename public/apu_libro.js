@@ -199,18 +199,27 @@
       };
     }
     if (it.sin_apu) {
+      /* «propio» es un estado APARTE de «manual»: no es un precio tecleado al
+         vuelo en este presupuesto, sino uno que este contratista ya corrigió
+         antes y quedó guardado en su perfil. Es la fuente MÁS fuerte de la
+         cascada —viene de su proveedor y de su región— y colapsarlo con
+         «manual» escondería justo eso. */
+      const propio = it.origen_precio === "propio";
       const delArchivo = it.origen_precio === "archivo";
       return {
-        estado: delArchivo ? "archivo" : "manual",
-        emoji: delArchivo ? "📄" : "⚪",
-        etiqueta: delArchivo ? "Del archivo" : "Manual",
+        estado: propio ? "propio" : delArchivo ? "archivo" : "manual",
+        emoji: propio ? "★" : delArchivo ? "📄" : "⚪",
+        etiqueta: propio ? "Tu precio" : delArchivo ? "Del archivo" : "Manual",
         suma: true,
         motivo: (Number.isFinite(Number(it.cd_catalogo))
           ? `Sin APU de respaldo. Referencia del catálogo: $${Math.round(it.cd_catalogo).toLocaleString("es-CO")}. `
           : "Sin APU de respaldo en el catálogo. ")
-          + (delArchivo
-            ? "El precio viene del archivo importado y manda sobre el catálogo."
-            : "El precio lo escribió usted a mano."),
+          + (propio
+            ? "Es un precio que usted ya corrigió antes y quedó guardado en su perfil: manda sobre el "
+              + "catálogo porque viene de su proveedor y de su región."
+            : delArchivo
+              ? "El precio viene del archivo importado y manda sobre el catálogo."
+              : "El precio lo escribió usted a mano."),
       };
     }
     /* VERDE solo con las dos condiciones: precio de un contrato adjudicado Y
@@ -534,7 +543,8 @@
       }
 
       if (it.sin_apu) {
-        const origen = it.origen_precio === "archivo" ? "PRECIO SEGÚN ARCHIVO IMPORTADO" : "PRECIO TECLEADO A MANO";
+        const origen = it.origen_precio === "propio" ? "PRECIO PROPIO YA CORREGIDO (guardado en tu perfil)"
+          : it.origen_precio === "archivo" ? "PRECIO SEGÚN ARCHIVO IMPORTADO" : "PRECIO TECLEADO A MANO";
         const n = fila([
           { v: `${origen} — SIN APU DE RESPALDO EN EL CATÁLOGO`, s: "destacadoTexto" }, null, null,
           { v: "VR UNITARIO =", s: "destacadoTexto" },

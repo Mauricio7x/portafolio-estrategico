@@ -8698,6 +8698,42 @@ async function main() {
         assert.strictEqual(cz.cuerpo.items[0].total, 110000);
         assert.strictEqual(cz.cuerpo.precios_propios.consultados, true);
         assert.strictEqual(cz.cuerpo.precios_propios.cargados, 1);
+        /* ═══ LA PROMESA DEL PANEL TIENE QUE SER CIERTA ══════════════════════
+           Al guardar, la aplicación dice: «se guardaron N precios corregidos en
+           tu perfil: la próxima vez que uses esos ítems, mandan sobre el
+           catálogo». Durante un tiempo fue FALSO — solo `/api/apu/cotizar` los
+           consultaba y la web llama a `/api/apu/calcular`. Un mensaje que
+           anuncia un comportamiento que no ocurre es peor que no tener la
+           función: el usuario deja de corregir precios creyendo que ya
+           quedaron. Se comprueba por la vía que la web usa DE VERDAD. */
+        const calcConPropio = await invocarPost(apu, "/api/apu/calcular", {
+          perfil: "helder", departamento: "ANTIOQUIA", config: cfgBase,
+          items: [{ item_id: "NOG-A2", cantidad: 12 }],
+        }, CAB_TOKEN);
+        assert.strictEqual(calcConPropio.status, 200);
+        const itPropio = calcConPropio.cuerpo.items[0];
+        assert.strictEqual(itPropio.origen_precio, "propio",
+          "`calcular` ignoró el precio guardado: la promesa del panel sería mentira");
+        assert.strictEqual(itPropio.costo_directo_unitario, 27500);
+        /* Se marca `sin_apu`: el precio del usuario ya NO lo respalda la
+           composición del catálogo, y publicar un desglose que no suma ese
+           unitario haría que la hoja «APU» contradijera a la de «Presupuesto».
+           La referencia del catálogo viaja al lado para poder discutir la
+           diferencia. */
+        assert.strictEqual(itPropio.sin_apu, true);
+        assert.ok(Number.isFinite(itPropio.cd_catalogo), "falta la referencia del catálogo para contrastar");
+        const Libro = require("../public/apu_libro.js");
+        assert.strictEqual(Libro.clasificarOrigen(itPropio, calcConPropio.cuerpo).estado, "propio");
+        assert.strictEqual(Libro.clasificarOrigen(itPropio, calcConPropio.cuerpo).etiqueta, "Tu precio");
+
+        // el precio TECLEADO AHORA gana sobre el guardado: es la corrección más reciente
+        const calcTecleado = await invocarPost(apu, "/api/apu/calcular", {
+          perfil: "helder", departamento: "ANTIOQUIA", config: cfgBase,
+          items: [{ item_id: "NOG-A2", cantidad: 1, precio_manual: 99999 }],
+        }, CAB_TOKEN);
+        assert.strictEqual(calcTecleado.cuerpo.items[0].costo_directo_unitario, 99999);
+        assert.strictEqual(calcTecleado.cuerpo.items[0].origen_precio, "manual");
+
         // el perfil manda: los precios de uno no se ven desde el otro
         const czOtro = await invocarPost(apu, "/api/apu/cotizar", {
           perfil: "genesis", departamento: "ANTIOQUIA", items: [{ item_id: "NOG-A2", cantidad: 4 }],

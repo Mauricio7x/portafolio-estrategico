@@ -301,6 +301,13 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  /* El PERFIL se resuelve aquí, ANTES del despacho de acciones. Vivía en el
+     bloque de borradores —o sea DESPUÉS de `calcular`—, así que consultarlo
+     desde el cálculo caía en la zona muerta temporal del `const` y devolvía un
+     500 opaco. Es la lección de R4 («el arranque va AL FINAL») aplicada al
+     revés: lo que TODOS necesitan va arriba. */
+  const perfil = perfilDe(q, datos);
+
   /* ══════════════════ calcular ══════════════════ */
   if (accion === "calcular") {
     const items = Array.isArray(datos.items) ? datos.items : [];
@@ -309,7 +316,15 @@ module.exports = async function handler(req, res) {
     }
     try {
       const catalogo = await catalogoParaCalcular(redis);
+      /* Los precios que este contratista ya corrigió. Se leen AQUÍ y no dentro
+         del motor: el motor es aritmética pura y no toca la red. Si Redis falla,
+         el cálculo sale igual con el catálogo — quedarse sin precios propios en
+         SILENCIO haría que el usuario viera otro número sin saber por qué, así
+         que la respuesta lo declara en `precios_propios`. */
+      const px = await require("../../lib/apu/precios.js").leerPreciosUsuario(redis, perfil);
+
       const r = calcularPresupuesto({
+        preciosUsuario: px.mapa,
         items,
         departamento: String(datos.departamento || ""),
         config: datos.config || {},
@@ -493,8 +508,6 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  /* ───────── de aquí en adelante, borradores por perfil ───────── */
-  const perfil = perfilDe(q, datos);
   if (!perfil) {
     return res.status(400).json({ ok: false, error: "Perfil desconocido. Use helder, genesis o juntos." });
   }
