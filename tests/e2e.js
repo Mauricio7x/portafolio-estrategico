@@ -4258,6 +4258,56 @@ async function main() {
           "con una línea derivada el ítem NO está cotizado del todo");
         assert.ok(rp.items[0].origen_insumos.cotizado_pct < 100);
 
+        /* ══ EL BORDE DEL REDONDEO, que una revisión adversaria cazó ══
+           `cotizado_pct` viaja REDONDEADO a dos decimales, así que una línea
+           derivada DESPRECIABLE al lado de una cotizada cara da 99,99997 % y
+           `red()` lo sube a un 100 EXACTO. Con la puerta abierta por
+           `cotizado_pct === 100`, ese ítem se rotulaba «Cotización de
+           proveedor» —verificado— con parte del precio SIN verificar. Es la
+           trampa de `numero()` como guarda de «sin dato»: una cifra redondeada
+           para MOSTRAR no puede DECIDIR. La proporción hace falta que sea
+           extrema (>20.000:1), y es justo la de un insumo incidental barato
+           —agua, tornillería— junto a una línea cotizada cara.
+           Hoy la puerta la abre `lineas_derivadas === 0`, que es exacto. */
+        const borde = JSON.parse(JSON.stringify(S));
+        borde.insumos.push(
+          { id: "zz_caro", nombre: "Insumo cotizado caro", unidad: "un", tipo: "material",
+            precio_base: 3350400, fuente: "estimado", precios_cotizados: { bogota_sabana: 3350400 } },
+          // el insumo incidental: agua, tornillería… sin cotización propia
+          { id: "zz_barato", nombre: "Insumo derivado barato", unidad: "un", tipo: "material",
+            precio_base: 1, fuente: "estimado" },
+        );
+        borde.items.push({
+          codigo: "ZZ-1", descripcion: "Borde de redondeo", unidad: "un", capitulo: "P",
+          unspsc_segmento: "72", unspsc_clases: [], herramienta_menor_pct: 0, fuente: "estimado",
+          insumos: [
+            { insumo_id: "zz_caro", cantidad_por_unidad: 1, rendimiento: null, desperdicio: 0 },
+            { insumo_id: "zz_barato", cantidad_por_unidad: 1, rendimiento: null, desperdicio: 0 },
+          ],
+        });
+        const rb = calculoApu.calcularPresupuesto({
+          items: [{ item_id: "ZZ-1", cantidad: 1 }],
+          departamento: "BOGOTA D.C.", config: {}, catalogo: borde,
+        });
+        const ob = rb.items[0].origen_insumos;
+        assert.strictEqual(ob.cotizado_pct, 100,
+          "el escenario no reproduce el borde: se necesita que el porcentaje REDONDEE a 100 exacto");
+        assert.ok(ob.lineas_derivadas > 0, "el escenario tiene que conservar una línea derivada");
+        assert.strictEqual(APULibro.clasificarOrigen(rb.items[0], rb).estado, "derivado",
+          "un 100 % REDONDEADO no es «todo cotizado»: el badge estaría llamando verificado a un precio que no lo está");
+
+        /* Y la puerta no puede volver a colgarse del porcentaje redondeado. Se
+           mira el CÓDIGO, sin comentarios: el comentario de `clasificarOrigen`
+           cita `cotizado_pct === 100` a propósito, para explicar por qué NO se
+           usa, y una regex sobre el fuente crudo lo confundiría con el defecto
+           que vigila. */
+        const codigoLibro = sinComentarios(
+          fs.readFileSync(path.join(__dirname, "..", "public", "apu_libro.js"), "utf8"));
+        assert.ok(!/cotizado_pct\s*===\s*100/.test(codigoLibro),
+          "`cotizado_pct` va redondeado para MOSTRAR: usarlo como prueba de exactitud reabre el defecto");
+        assert.ok(/org\.lineas_derivadas\s*===\s*0/.test(codigoLibro),
+          "la puerta de «cotizado» tiene que abrirse con la cuenta EXACTA de líneas derivadas");
+
         // el badge de pantalla y el marcador del Excel salen de esta MISMA función
         const fuenteApp = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
         assert.ok(/CLASES_ORIGEN\s*=\s*\{[^}]*cotizado:/.test(fuenteApp),

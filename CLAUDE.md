@@ -837,8 +837,17 @@ lo que NO SE PUEDE hacer con los datos disponibles: un encargo posterior volver�
   pero el dato **moría en el desglose**: `clasificarOrigen` solo miraba `item.fuente`, así que un ítem
   íntegramente cotizado salía 🟡 «Derivado regional — precio no verificado». Hoy `calculo.js` publica
   `origen_insumos` y existe el estado 🟡 **«Cotización de proveedor»**. **El corte es por VALOR, no por número
-  de líneas** (nueve insumos cotizados que pesan el 3 % no hacen «cotizado» un ítem derivado al 97 %) y **exige
-  el 100 %**: con una línea derivada, parte del precio sigue sin verificar. Son **SEIS** estados, no cinco.
+  de líneas** (nueve insumos cotizados que pesan el 3 % no hacen «cotizado» un ítem derivado al 97 %). Son
+  **SEIS** estados, no cinco.
+- **UN 100 % REDONDEADO NO ES «TODO COTIZADO»** (defecto que cazó la revisión adversaria). La puerta se abría
+  con `cotizado_pct === 100`, pero ese porcentaje viaja **redondeado a dos decimales**: una línea derivada de
+  **$1** junto a una cotizada de **$3.350.400** da 99,99997 % y `red()` lo sube a un 100 EXACTO, así que el
+  ítem se rotulaba «Cotización de proveedor» —o sea, VERIFICADO— con parte del precio sin verificar. Y la
+  proporción no es de laboratorio: es la de un insumo incidental barato (agua, tornillería) al lado de una
+  línea cara. Hoy abre **`lineas_derivadas === 0`**, que es la cuenta exacta, y `cotizado_pct` **solo informa**.
+  Es la trampa de `numero()` como guarda de «sin dato» (`lib/probabilidad`) en otro disfraz: **una cifra
+  redondeada para MOSTRAR no puede DECIDIR**. Hay prueba que reproduce el borde con un catálogo sintético y
+  otra que prohíbe que la puerta vuelva a colgarse del porcentaje.
 - **AÑADIR SUBTOTALES POR CAPÍTULO PODÍA DUPLICAR EL PRESUPUESTO.** COSTOS DIRECTOS sumaba el RANGO entero de
   filas de ítem; con subtotales intercalados eso cuenta cada peso DOS VECES y da un total exactamente al doble
   sin que nada se vea raro — el defecto clásico del presupuesto armado a mano. Hoy el cierre suma la **LISTA

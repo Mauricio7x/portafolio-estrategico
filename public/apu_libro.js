@@ -237,10 +237,19 @@
 
        El corte es por VALOR, no por número de líneas: nueve insumos cotizados
        que pesan el 3 % no hacen «cotizado» un ítem cuyo 97 % se derivó. Y se
-       exige el 100 %: con una sola línea derivada parte del precio sigue sin
-       verificar, y decir «cotizado» a secas prometería de más. */
+       exige que NO QUEDE NINGUNA línea derivada: con una sola, parte del precio
+       sigue sin verificar y decir «cotizado» a secas prometería de más.
+
+       LA PUERTA SE ABRE CON `lineas_derivadas === 0`, NO CON
+       `cotizado_pct === 100`. `cotizado_pct` viaja REDONDEADO a dos decimales,
+       así que una línea derivada de $1 al lado de una cotizada de $3.350.400
+       da 99,99997 % y `red()` lo sube a un 100 EXACTO: el ítem se rotulaba
+       «Cotización de proveedor» —o sea, verificado— con parte del precio sin
+       verificar. Es la misma trampa que `numero()` como guarda de «sin dato»
+       (lib/probabilidad): una cifra redondeada para MOSTRAR no sirve para
+       DECIDIR. El porcentaje se sigue publicando, pero solo informa. */
     const org = it.origen_insumos || null;
-    if (org && org.cotizado_pct === 100 && org.lineas_cotizadas > 0) {
+    if (org && org.lineas_derivadas === 0 && org.lineas_cotizadas > 0) {
       return {
         estado: "cotizado",
         emoji: "🟡",

@@ -38,9 +38,17 @@ que un ítem con todos sus insumos cotizados salía rotulado 🟡 *«Derivado re
 Trazabilidad al revés, en el módulo donde la trazabilidad es el producto.
 
 Cerrado: `calculo.js` publica `origen_insumos` (participación **por valor**, no por número de líneas) y
-`clasificarOrigen` estrena el estado 🟡 **«Cotización de proveedor»**, que exige el **100 %** del valor
-cotizado — con una sola línea derivada, parte del precio sigue sin verificar y decir «cotizado» prometería
-de más.
+`clasificarOrigen` estrena el estado 🟡 **«Cotización de proveedor»**, que exige que **no quede ninguna línea
+derivada** — con una sola, parte del precio sigue sin verificar y decir «cotizado» prometería de más.
+
+**Y la primera versión de esa puerta tenía el defecto que venía a arreglar.** Abría con
+`cotizado_pct === 100`, pero ese porcentaje viaja **redondeado a dos decimales**: una línea derivada de **$1**
+junto a una cotizada de **$3.350.400** da 99,99997 %, que `red()` sube a un **100 exacto**. El ítem se
+rotulaba «Cotización de proveedor» —verificado— con parte del precio sin verificar, y la proporción no es de
+laboratorio: es la de un insumo incidental barato (agua, tornillería) al lado de una línea cara. Lo encontró
+una revisión adversaria. Hoy la puerta abre con **`lineas_derivadas === 0`**, que es la cuenta exacta, y
+`cotizado_pct` **solo informa**. La lección generaliza: **una cifra redondeada para MOSTRAR no puede
+DECIDIR** — es `numero()` como guarda de «sin dato» (`lib/probabilidad`) en otro disfraz.
 
 ### E · El cierre del presupuesto podía contar cada peso dos veces
 
