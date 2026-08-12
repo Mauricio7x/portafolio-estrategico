@@ -2616,9 +2616,47 @@
      departamento, la entidad y la cuantía de cada proceso, que es justo el
      trabajo que el botón existe para ahorrar. */
   let paramsProceso = null;   // los fija abrirEditorConProceso (botón APU de una tarjeta)
+
+  /* ═══ ABRIR OTRO PROCESO REINICIA EL EDITOR ═══════════════════════════════
+     Sin esto, pulsar «APU» en una segunda tarjeta ARRASTRABA las filas, el
+     resumen, la rentabilidad y el precio sugerido del proceso anterior — y
+     como `poner()` solo escribe cuando el parámetro viene, la entidad o la
+     cuantía viejas sobrevivían si el proceso nuevo no las traía. Cifras
+     viejas con aspecto de nuevas: el modo de fallo más caro de este módulo.
+
+     La llave es `id_proceso`: si viene y NO es el que está cargado, se limpia
+     lo derivado (filas, cálculo, optimizador) Y los campos que la precarga
+     gobierna — lo que el proceso nuevo no traiga debe quedar VACÍO, no
+     heredado. Si el id COINCIDE no se toca nada: la re-precarga tras cargar
+     el catálogo (mismo id) y reabrir la misma tarjeta no pueden costar el
+     trabajo hecho. El departamento y el perfil se conservan a propósito: son
+     contexto del usuario («¿dónde?», «¿quién?»), no del proceso, y la
+     precarga los sobreescribe cuando el proceso nuevo sí los trae. Los
+     borradores guardados viven en Redis y no se tocan. */
+  function reiniciarEditorParaProceso() {
+    filas = [];
+    ultimoCalculo = null;
+    ultimoOptimizador = null;
+    nitProceso = "";
+    modalidadProceso = "";
+    for (const id of ["objeto", "codigos-unspsc", "entidad", "id-proceso", "cuantia", "plazo-meses"]) {
+      if ($(id)) $(id).value = "";
+    }
+    for (const id of ["seccion-resumen", "seccion-rentabilidad", "seccion-precio-sugerido", "r-validaciones"]) {
+      if ($(id)) $(id).classList.add("hidden");
+    }
+    const inf = $("inferencia");
+    if (inf) { inf.classList.add("hidden"); inf.innerHTML = ""; }
+    pintarTabla();
+    msgApu("Se abrió otro proceso: el editor quedó limpio. Los borradores guardados no se tocan.", "info");
+  }
+
   function precargarDesdeURL() {
     let p = paramsProceso;
     if (!p) { try { p = new URLSearchParams(location.search); } catch { return false; } }
+    const idEntrante = (p.get("id_proceso") || "").trim();
+    const idCargado = $("id-proceso") ? $("id-proceso").value.trim() : "";
+    if (idEntrante && idEntrante !== idCargado) reiniciarEditorParaProceso();
     const poner = (id, clave) => {
       const v = p.get(clave);
       if (v != null && v !== "" && $(id)) $(id).value = v;
