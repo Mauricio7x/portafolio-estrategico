@@ -11574,6 +11574,18 @@ async function main() {
         console.log(`  · tasa de acierto del PAA: ${m.tasa_pct} % (${m.muestra.cumplidas}/${m.muestra.evaluadas} líneas de obra, vigencia ${ANIO_MEDIDO}) · enlace SECOP ${m.senal_enlace.pct} % · invariante Σ verificada`);
       }
 
+      /* k.6-ter · el $select de 9sue-ezhx va `*,:id`, jamás `:id,*`: su backend
+         exige el `*` AL PRINCIPIO y responde 400 («Star selections must come at
+         the start») — y un 400 no se reintenta, así que la vista entera moría
+         en 502. El mock ignora $select, de modo que SOLO esta regex lo vigila:
+         lo encontró el despliegue, no la suite. */
+      for (const archivo of ["lib/paa.js", "lib/paa_acierto.js"]) {
+        const fuente = fs.readFileSync(path.join(__dirname, "..", archivo), "utf8");
+        assert.ok(!fuente.includes('":id,*"'),
+          `${archivo}: el $select «:id,*» rompe el backend de 9sue-ezhx (400 → 502)`);
+        assert.ok(fuente.includes('"*,:id"'), `${archivo}: falta el $select «*,:id»`);
+      }
+
       /* k.7 · el frontend: sección APARTE, badges y token en cabecera */
       {
         const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
