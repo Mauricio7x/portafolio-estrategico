@@ -7982,7 +7982,81 @@ async function main() {
         assert.ok(!Object.keys(PERFILES).some((k) => k.startsWith("rup_")),
           "quedaron perfiles dinámicos inyectados en PERFILES");
       }
+      /* ═══ EL RUP DE UNA PERSONA NATURAL NO PUEDE SER RECHAZADO ═══
+         Defecto de producción reportado por el dueño: «si cargo un rup, solo me
+         deja el de genesis, en el de helder me da error». La causa no era el
+         formato —es el MISMO de la Cámara de Comercio— sino que el certificado
+         de una persona natural no imprime «Utilidad operacional» (quien no lleva
+         libros no la reporta), y el lector rechazaba el documento ENTERO por un
+         número, tirando los códigos UNSPSC, la liquidez, el endeudamiento, el
+         patrimonio y la experiencia que había leído bien.
+
+         Era R6 («no bloquear por falta de información») violada en el único
+         sitio donde bloquear expulsa a alguien para siempre: la primera
+         pantalla. La prueba fija las DOS mitades — que entra, y que pide lo que
+         falta— sobre el mismo texto con y sin esa única línea. */
+      {
+        const { extraerRupDeTexto } = require("../lib/rup_pdf.js");
+        const CERTIFICADO = [
+          "REGISTRO UNICO DE PROPONENTES",
+          "CAMARA DE COMERCIO",
+          "Nombre del proponente: HELDER GUSTAVO RODRIGUEZ SANTANA",
+          "Clasificacion de bienes y servicios",
+          "Segmento Familia Clase Producto",
+          "72 14 11 00\t72141100\tServicios de construccion",
+          "72 15 15 00\t72151500\tServicios de instalacion",
+          "INFORMACION FINANCIERA",
+          "Indice de liquidez 129,12",
+          "Nivel de endeudamiento 4,00%",
+          "Patrimonio $ 1.107.252.964",
+          "Utilidad operacional $ 198.810.000",
+          "Experiencia acreditada 6.768,87 SMMLV",
+          "Fecha de renovacion 2026-03-15",
+        ];
+        const completo = extraerRupDeTexto(CERTIFICADO.join("\n"));
+        assert.strictEqual(completo.ok, true);
+        assert.strictEqual(completo.completo, true, "el certificado con todos los datos tiene que entrar completo");
+        assert.deepStrictEqual(completo.faltan, []);
+
+        // el MISMO certificado sin la única línea que una persona natural no trae
+        const natural = extraerRupDeTexto(
+          CERTIFICADO.filter((l) => !/Utilidad operacional/.test(l)).join("\n"));
+        assert.strictEqual(natural.ok, true,
+          "un RUP de persona natural NO puede rechazarse: es el mismo formato de la Cámara con un dato menos");
+        assert.strictEqual(natural.completo, false);
+        assert.deepStrictEqual(natural.faltan.map((f) => f.campo), ["utilidad_operacional"],
+          "tiene que pedir EXACTAMENTE el dato que falta, no rechazar el documento");
+        // y lo que sí se leyó se conserva: tirarlo obligaría a teclearlo todo
+        assert.strictEqual(natural.config.indicadores.patrimonio, 1107252964);
+        assert.strictEqual(natural.config.indicadores.liquidez, 129.12);
+        assert.strictEqual(natural.config.unspsc.length, 2);
+        assert.strictEqual(natural.config.tipo, "persona_natural");
+        // el dato ausente viaja en null y JAMÁS en 0: un 0 calcularía capacidad
+        assert.strictEqual(natural.config.indicadores.utilidad_operacional, null,
+          "un 0 aquí sería una capacidad de contratación inventada (R1)");
+        // y cada faltante dice DÓNDE mirarlo: sin eso el formulario no sirve
+        for (const f of natural.faltan) {
+          assert.ok(f.etiqueta && f.donde && f.sin_el,
+            "cada dato que se pide tiene que decir cómo se llama, dónde está y qué se rompe sin él");
+        }
+
+        // sin experiencia, el tope NO puede salir en 0 (no mostraría ni un proceso)
+        const sinExp = extraerRupDeTexto(
+          CERTIFICADO.filter((l) => !/Experiencia acreditada/.test(l)).join("\n"));
+        assert.strictEqual(sinExp.config.tope_smmlv, null,
+          "`null × 2` es 0, y un tope de 0 SMMLV dejaría al usuario sin ver un solo proceso");
+
+        // el frontend cierra el circuito: reenvía el texto con `completar`
+        const fuenteOnb = sinComentarios(
+          fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8"));
+        assert.ok(/completo\s*===\s*false/.test(fuenteOnb),
+          "la web tiene que distinguir «faltan datos» de «certificado inválido»");
+        assert.ok(/completar/.test(fuenteOnb),
+          "sin reenviar `completar` el usuario se quedaría mirando un formulario que no guarda nada");
+      }
+
       console.log(`  · onboarding RUP por PDF: 4 códigos leídos, TTL puesto, perfil dinámico servido sin tocar a los fijos, errores accionables y cableado del frontend verificados`);
+      console.log(`  · RUP de PERSONA NATURAL: el mismo certificado sin «utilidad operacional» ya NO se rechaza — entra, conserva lo leído y pide solo el dato que falta`);
     }
 
     /* ════════════════════════════════════════════════════════════════════
@@ -10192,7 +10266,16 @@ async function main() {
         for (const archivo of ["app.js", "onboarding.js", "pliego.js"]) {
           const fuente = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", archivo), "utf8"));
           const refs = [...fuente.matchAll(/(?:\$|getElementById)\(\s*"([^"]+)"\s*\)/g)].map((m) => m[1]);
-          const rotos = [...new Set(refs)].filter((id) => !idsHtml.has(id) && !dinamicos.has(id));
+          /* Un id que el PROPIO archivo escribe en su marcado (`id="…"` dentro
+             de una plantilla) es un nodo que él mismo crea, no una referencia a
+             algo retirado de index.html: el formulario que pide los datos que el
+             certificado RUP no trae se pinta así. Derivarlo del fuente en vez de
+             mantener una lista a mano conserva intacto lo que esta prueba
+             vigila —una referencia a un nodo que YA NO EXISTE— y deja de
+             obligar a tocar la prueba cada vez que alguien pinta un formulario. */
+          const creados = new Set([...fuente.matchAll(/\bid="([a-zA-Z0-9_-]+)"/g)].map((m) => m[1]));
+          const rotos = [...new Set(refs)]
+            .filter((id) => !idsHtml.has(id) && !dinamicos.has(id) && !creados.has(id));
           assert.deepStrictEqual(rotos, [],
             `${archivo} referencia ids que no existen en index.html (la pestaña moriría en silencio): ${rotos.join(", ")}`);
         }
