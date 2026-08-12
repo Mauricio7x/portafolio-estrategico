@@ -408,10 +408,12 @@
     manual: ["bg-gray-100 text-gray-600 ring-gray-500/20", "Manual"],
   };
 
+  /* El punto tipográfico ● hereda el color del chip; un emoji lo dibuja el
+     sistema operativo con su propia paleta (la regla de toda la interfaz). */
   const SEMAFORO = {
-    verde: ["bg-green-100 text-green-800", "🟢 Verde · filas y total cuadran"],
-    amarillo: ["bg-amber-100 text-amber-800", "🟡 Amarillo · exige confirmación humana"],
-    rojo: ["bg-red-100 text-red-800", "🔴 Rojo · parseo poco fiable"],
+    verde: ["bg-green-100 text-green-800", "● Verde · filas y total cuadran"],
+    amarillo: ["bg-amber-100 text-amber-800", "● Amarillo · exige confirmación humana"],
+    rojo: ["bg-red-100 text-red-800", "● Rojo · lectura poco fiable: verifique contra el PDF"],
   };
 
   /* «sin dato» NUNCA se pinta como 0: cero y «no sé» son cosas distintas, y es

@@ -10883,10 +10883,26 @@ async function main() {
            y no hereda el color del tema—. El semáforo lo llevan hoy la clase de
            color del badge y un punto tipográfico (●), que sí lo hereda.
            `apu_libro.js` queda FUERA: sus emojis viajan al Excel exportado,
-           que es otro medio y otra decisión. */
-        for (const archivo of ["index.html", "app.js", "onboarding.js"]) {
+           que es otro medio y otra decisión.
+
+           El rango 1F300-1FAFF no basta: ⚪ (26AA), ➕ (2795), ✅ (2705) y
+           ⏰ (23F0) viven en bloques BMP viejos pero tienen PRESENTACIÓN EMOJI
+           por defecto — el sistema los dibuja a color igual que un 🟢. Por eso
+           el patrón añade los puntos de código de Misc Symbols/Dingbats con
+           Emoji_Presentation=Yes. Los dingbats de TEXTO (✓ ✗ ✕ ● ▸ ↓ ·) no
+           están en la lista y siguen permitidos: los pinta la fuente y heredan
+           el color. Y `pliego.js` entra en la vigilancia: su semáforo se pinta
+           en la misma pestaña que el resto. */
+        const RE_EMOJI_UI = new RegExp(
+          "[\\u{1F300}-\\u{1FAFF}\\u{231A}\\u{231B}\\u{23E9}-\\u{23FA}\\u{25FD}\\u{25FE}"
+          + "\\u{2614}\\u{2615}\\u{2648}-\\u{2653}\\u{267F}\\u{2693}\\u{26A1}\\u{26AA}\\u{26AB}"
+          + "\\u{26BD}\\u{26BE}\\u{26C4}\\u{26C5}\\u{26CE}\\u{26D4}\\u{26EA}\\u{26F2}\\u{26F3}"
+          + "\\u{26F5}\\u{26FA}\\u{26FD}\\u{2705}\\u{270A}\\u{270B}\\u{2728}\\u{274C}\\u{274E}"
+          + "\\u{2753}-\\u{2755}\\u{2757}\\u{2795}-\\u{2797}\\u{27B0}\\u{27BF}\\u{2B1B}\\u{2B1C}"
+          + "\\u{2B50}\\u{2B55}]", "gu");
+        for (const archivo of ["index.html", "app.js", "onboarding.js", "pliego.js"]) {
           const fuente = fs.readFileSync(path.join(__dirname, "..", "public", archivo), "utf8");
-          const hallados = [...new Set(fuente.match(/[\u{1F300}-\u{1FAFF}]/gu) || [])];
+          const hallados = [...new Set(fuente.match(RE_EMOJI_UI) || [])];
           assert.deepStrictEqual(hallados, [],
             `${archivo} volvió a traer emojis (${hallados.join(" ")}): los dibuja el sistema operativo, `
             + "cambian en cada aparato y no heredan el color del tema");
