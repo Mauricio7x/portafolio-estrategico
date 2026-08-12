@@ -8539,6 +8539,115 @@ async function main() {
           "el reparto por componente + sin_desglose tiene que sumar el costo directo también vía handler");
       }
 
+      /* ═══ j.7-ter · LA CASCADA DE PRECIOS Y EL APRENDIZAJE ═══════════════
+         Cinco niveles, del más fuerte al más débil, y el primero que responde
+         manda. Lo que se vigila aquí es (1) que el orden NO sea negociable,
+         (2) que un nivel que no responde DIGA por qué —un hueco silencioso se
+         confunde con «aquí no había nada»— y (3) que los precios que el
+         contratista corrige queden en su perfil y manden la próxima vez, que es
+         lo único que hace que la aplicación mejore sola con el uso. */
+      {
+        const precios = require("../lib/apu/precios.js");
+
+        /* --- el orden de la cascada, sin Redis --- */
+        const soloCatalogo = precios.cotizar({ items: [{ item_id: "NOG-A2", cantidad: 10 }] });
+        assert.strictEqual(soloCatalogo.items[0].fuente, "catalogo");
+        assert.ok(soloCatalogo.items[0].precio_unitario > 0);
+
+        const conPropio = precios.cotizar({
+          items: [{ item_id: "NOG-A2", cantidad: 10 }],
+          preciosUsuario: { "NOG-A2": { precio: 31000, guardado_el: "2026-08-12", origen: "manual" } },
+        });
+        assert.strictEqual(conPropio.items[0].fuente, "usuario",
+          "el precio del contratista manda sobre el catálogo: es de SU mercado y SU proveedor");
+        assert.strictEqual(conPropio.items[0].precio_unitario, 31000);
+        assert.strictEqual(conPropio.items[0].total, 310000, "el total es precio × cantidad");
+
+        /* Un 0 NO es un precio (R1): cotizar en cero es regalar la obra, así que
+           la cascada lo ignora y sigue bajando en vez de quedarse con él. */
+        assert.strictEqual(precios.cotizar({
+          items: [{ item_id: "NOG-A2", cantidad: 1 }], preciosUsuario: { "NOG-A2": { precio: 0 } },
+        }).items[0].fuente, "catalogo", "un precio guardado en 0 no puede ganarle al catálogo");
+
+        /* Sin dato en ninguna fuente: el ítem NO suma y lo declara. */
+        const sinNada = precios.cotizar({ items: [{ item_id: "NO-EXISTE", cantidad: 5 }] });
+        assert.strictEqual(sinNada.items[0].fuente, "sin_precio");
+        assert.strictEqual(sinNada.items[0].precio_unitario, null, "un $0 sería un precio inventado");
+        assert.strictEqual(sinNada.items[0].suma_al_total, false);
+        assert.strictEqual(sinNada.resumen.total_cota_inferior, null);
+
+        /* TODOS los niveles se publican, también los que no respondieron: sin
+           eso no se distingue «esta fuente no tenía el dato» de «ni se miró». */
+        const cascada = sinNada.items[0].cascada;
+        assert.deepStrictEqual(cascada.map((c) => c.nivel), ["usuario", "pliego", "mercado", "catalogo"]);
+        for (const paso of cascada) {
+          assert.strictEqual(paso.respondio, false);
+          assert.ok(paso.motivo && paso.motivo.length > 10, `el nivel ${paso.nivel} no dice por qué no respondió`);
+        }
+        /* El nivel de MERCADO se declara siempre inaplicable a un ítem, y esa
+           frase es la cerradura: impide que alguien «complete la cascada»
+           metiendo un promedio de CONTRATO en la columna del valor unitario.
+           `p6dx-8zbt` publica el valor del contrato entero, no precios de ítem. */
+        assert.ok(/no precios unitarios|contrato completo/i.test(
+          cascada.find((c) => c.nivel === "mercado").motivo),
+        "el nivel de mercado tiene que declarar que NO produce precios unitarios");
+
+        /* --- la referencia de mercado: sobre el CONTRATO, con mínimo --- */
+        const mk = (n, dep, fam, base) => Array.from({ length: n }, (_, i) => ({
+          departamento_entidad: dep, codigo_principal_de_categoria: `${fam}1500`,
+          valor_total_adjudicacion: String(base + i * 1e6), adjudicado: "Si",
+          estado_del_procedimiento: "Adjudicado",
+        }));
+        const corpus = [...mk(8, "ANTIOQUIA", "7214", 800e6), ...mk(3, "TOLIMA", "7214", 500e6)];
+        const refA = precios.referenciaDeMercado(corpus, { familia: "7214", departamento: "Antioquia" });
+        assert.strictEqual(refA.aplicable, true);
+        assert.strictEqual(refA.procesos_analizados, 8);
+        assert.ok(/NO es el precio unitario/i.test(refA.que_es),
+          "la referencia tiene que llevar PEGADO el rótulo de qué es: sin él se cita como precio de ítem");
+        const refT = precios.referenciaDeMercado(corpus, { familia: "7214", departamento: "Tolima" });
+        assert.strictEqual(refT.aplicable, false, `${precios.MIN_PROCESOS_MERCADO} es el mínimo`);
+        assert.strictEqual(refT.valor_mediano_contrato, null, "sin base no hay mediana: null, jamás 0");
+
+        /* --- el ciclo completo contra el handler y el Redis simulado --- */
+        const itemsConPrecio = [
+          { item_id: "NOG-A2", cantidad: 12, precio_manual: 27500, origen_precio: "manual" },
+          // sin item_id no hay a qué volver: se descarta en vez de crear basura
+          { descripcion: "fila suelta de un Excel", cantidad: 3, precio_manual: 9999, origen_precio: "archivo" },
+        ];
+        const gp = await invocarPost(apu, "/api/apu/guardar", {
+          perfil: "helder", nombre: "Con precios corregidos", departamento: "ANTIOQUIA",
+          items: itemsConPrecio, config: cfgBase, total: 1,
+        }, CAB_TOKEN);
+        assert.strictEqual(gp.status, 200);
+        assert.strictEqual(gp.cuerpo.precios_aprendidos, 1,
+          "solo se aprende el precio que casa con un ítem del catálogo");
+
+        // los precios NO llevan TTL aunque el borrador sí: un borrador es
+        // trabajo en curso y un precio de mercado es conocimiento
+        const ttlPrecios = await redis.ttl("apu:precios:helder");
+        assert.ok(ttlPrecios === -1 || ttlPrecios === undefined || ttlPrecios === null,
+          `los precios del usuario no pueden caducar (ttl=${ttlPrecios})`);
+
+        /* Y AQUÍ ESTÁ EL APRENDIZAJE: una cotización posterior —otra sesión, otro
+           presupuesto— usa el precio corregido en vez del catálogo. */
+        const cz = await invocarPost(apu, "/api/apu/cotizar", {
+          perfil: "helder", departamento: "ANTIOQUIA", items: [{ item_id: "NOG-A2", cantidad: 4 }],
+        }, CAB_TOKEN);
+        assert.strictEqual(cz.status, 200);
+        assert.strictEqual(cz.cuerpo.items[0].fuente, "usuario",
+          "el precio corregido no volvió: sin esto la aplicación no aprende nada");
+        assert.strictEqual(cz.cuerpo.items[0].precio_unitario, 27500);
+        assert.strictEqual(cz.cuerpo.items[0].total, 110000);
+        assert.strictEqual(cz.cuerpo.precios_propios.consultados, true);
+        assert.strictEqual(cz.cuerpo.precios_propios.cargados, 1);
+        // el perfil manda: los precios de uno no se ven desde el otro
+        const czOtro = await invocarPost(apu, "/api/apu/cotizar", {
+          perfil: "genesis", departamento: "ANTIOQUIA", items: [{ item_id: "NOG-A2", cantidad: 4 }],
+        }, CAB_TOKEN);
+        assert.strictEqual(czOtro.cuerpo.items[0].fuente, "catalogo",
+          "los precios son POR CONTRATISTA: verlos desde otro perfil sería filtrar su mercado");
+      }
+
       /* ---- j.8 persistencia: guardar → cargar → listar, con TTL ---- */
       {
         const cuerpoGuardar = {

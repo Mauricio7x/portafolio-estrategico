@@ -28,8 +28,13 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 
 - **Sin build, sin package.json, sin dependencias.** CommonJS puro; `fetch`/`zlib` nativos.
 - **Probar:** `node tests/e2e.js` (4 iteraciones; mocks HTTP de Socrata y Upstash + handlers
-  reales). Este entorno **no** tiene salida a `datos.gov.co` (allowlist del proxy) ni CLI de
-  Vercel: la validación contra datos reales se hace desplegando.
+  reales). No hay CLI de Vercel: el despliegue se valida desplegando.
+  ⚠️ **«Este entorno no alcanza `datos.gov.co`» ERA FALSO y costó dos fuentes.** Se repetía en tres sitios
+  del manual y por eso nadie volvía a intentarlo; en ago 2026 se comprobó que `datos.gov.co` responde **200
+  con datos reales** y que `invias.gov.co` también (la URL que se usaba daba 404 porque el sitio se
+  reorganizó, no porque bloqueara). Sigue bloqueado `contratos.gov.co` (**403**). Evidencia y URLs buenas en
+  `docs/APU_FUENTES.md`. **Un 403 anotado en la documentación es una observación CON FECHA, no una propiedad
+  del entorno: antes de dar una fuente por perdida, volver a llamarla.**
   Y `node tests/apu_bench.js`, que **mide** la tasa de acierto del parseo de tablas de pliego sobre
   un corpus sintético y publica los casos donde falla. Responde «¿cuánto acierta?», que es una cifra;
   la suite responde «¿sigue funcionando?», que es un sí/no.
@@ -304,8 +309,15 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - **Tertiles con `<=` y mínimo de 5 procesos**: empates al mismo nivel; con menos de 5 procesos la
   entidad es `sin_dato`, y en el orden `sin_dato` va ANTES que `alta` (no saber no es lo mismo que
   saber que hay 20 competidores).
-- **Columnas de adjudicación/oferentes: PENDIENTE VERIFICACIÓN** (este entorno no alcanza
-  datos.gov.co; verificado `CONNECT 403`). Por eso se leen por lista de candidatas en
+- **Columnas de adjudicación/oferentes: VERIFICADAS CONTRA DATOS REALES (ago 2026).** Estuvieron como
+  «PENDIENTE VERIFICACIÓN» porque se daba por hecho que el entorno no alcanzaba `datos.gov.co`. **Sí lo
+  alcanza**: se consultó `p6dx-8zbt` con `$where=adjudicado='Si'` (55 columnas) y las candidatas que ya
+  usaba el módulo son las correctas — `valor_total_adjudicacion`, `nombre_del_proveedor`,
+  `nit_del_proveedor_adjudicado`, `fecha_adjudicacion`, `respuestas_al_procedimiento`,
+  `proveedores_unicos_con`, `id_adjudicacion`. **Dos trampas medidas**: en la misma fila
+  `conteo_de_respuestas_a_ofertas` vale 0 mientras `respuestas_al_procedimiento` vale 3 (el ORDEN de las
+  candidatas decide), y `nit_del_proveedor_adjudicado` puede llegar como la cadena `"No Definido"`, que **no
+  es un NIT ni un `null`**. Evidencia en `docs/APU_FUENTES.md`. Se siguen leyendo por lista de candidatas en
   `lib/indice_competencia.js`. Síntoma de que falta la correcta: `indice:competencia:meta` con
   `clasificadas: 0` y `descartados.sin_oferentes` alto → añadir el nombre real y llamar
   `/api/sync/historico?reconstruir_indice=true` (no hay que re-extraer nada).
