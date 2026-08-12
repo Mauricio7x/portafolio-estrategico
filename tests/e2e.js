@@ -10950,6 +10950,64 @@ async function main() {
         assert.ok(!/Portafolio Estrat/.test(htmlVisible),
           "«Portafolio Estratégico» es el nombre del repositorio: no puede asomarse a la pantalla");
 
+        /* ═══ LA PANTALLA DE ENTRADA: DOS DECISIONES A LA VISTA ══════════════
+           Nueve controles delante obligaban a entender el programa antes de
+           usarlo, y ninguno respondía «¿a cuál me presento el lunes?» — eso lo
+           hace el orden por defecto. Quedan a la vista ordenar y el toggle de
+           obras planeadas; el resto vive PLEGADO en filtros avanzados, con
+           sus ids intactos (el cableado y media suite los referencian). */
+        {
+          const iAv = html.indexOf('id="filtros-avanzados"');
+          assert.ok(iAv > 0, "sin el <details> de filtros avanzados, los nueve controles vuelven a la vista");
+          const finAv = html.indexOf("</details>", iAv);
+          for (const id of ["f-anticipo", "f-cuantia", "f-entidad", "f-ubicacion", "f-orden",
+            "f-sin-unspsc", "f-solo-viables"]) {
+            const i = html.indexOf(`id="${id}"`);
+            assert.ok(i > iAv && i < finAv, `#${id} debe vivir plegado en filtros avanzados`);
+          }
+          for (const id of ["f-ordenar", "f-ver-paa", "btn-buscar"]) {
+            assert.ok(html.indexOf(`id="${id}"`) < iAv,
+              `#${id} es de la vista principal: ordenar y las obras planeadas son las decisiones del día a día`);
+          }
+        }
+
+        /* ═══ LA TARJETA: VEREDICTO EN PALABRAS, EVIDENCIA PLEGADA ═══════════
+           «RUP ✓ · K ✓ · Caja ~ · Competencia ?» exigía un mapa mental que el
+           contratista no tiene («K» no se explica en ninguna pantalla). La
+           línea única se EJECUTA aquí; los tres estados importan: caja cerrada
+           NO es descarte (pasa_rup_y_k/pasa_todas, la distinción de negocio
+           que el servidor publica aparte y un booleano colapsaría). */
+        {
+          const jsT = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+          const extraer = (nombre) => {
+            const i = jsT.indexOf(`function ${nombre}(`);
+            assert.ok(i > 0, `app.js sin ${nombre}`);
+            return jsT.slice(i, jsT.indexOf("\n  }", i) + 4);
+          };
+          const lineaRequisitos = new Function("esc", `${extraer("lineaRequisitos")}; return lineaRequisitos;`)(
+            (x) => String(x));
+          assert.ok(/no encaja con tu RUP/.test(lineaRequisitos({ p1_rup: { pasa: false } })));
+          assert.ok(/capacidad de contrataci/.test(lineaRequisitos({ p2_k: { pasa: false } })));
+          const caja = lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: false, mensaje: "x" } });
+          assert.ok(/financiarla está justo/.test(caja) && /amber/.test(caja),
+            "caja cerrada no es descarte: anticipo, crédito o consorcio — jamás un rojo");
+          assert.ok(/text-green-700/.test(lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } })));
+          assert.ok(/detalles por revisar/.test(lineaRequisitos({ p1_rup: { sin_dato: true } })),
+            "sin_dato deja pasar CON aviso: ni verde limpio ni rojo (no saber no es fallar)");
+
+          const iT = jsT.indexOf("function tarjeta(");
+          const cuerpoT = jsT.slice(iT, jsT.indexOf("\n  }", iT));
+          assert.ok(/lineaRequisitos\(puertas\)/.test(cuerpoT), "la tarjeta debe pintar el veredicto en una línea");
+          assert.ok(cuerpoT.indexOf("Más detalles") > 0
+            && cuerpoT.indexOf("badgesPuertas(puertas)") > cuerpoT.indexOf("Más detalles"),
+          "las cuatro puertas viven plegadas en «Más detalles»: quince chips visibles enterraban lo que decide");
+          /* El contador de cierre compara contra ahora−5h (hora Colombia
+             flotante leída como UTC): sin la resta, «cierra hoy» se diría un
+             día antes — la misma regla de `cierre_vencido` en el servidor. */
+          assert.ok(/function chipCierre/.test(jsT) && /Date\.now\(\) - 5 \* 3600 \* 1000/.test(jsT),
+            "chipCierre debe restar las 5 h de la hora Colombia antes de contar días");
+        }
+
         /* ═══ LA PESTAÑA DE PRECIOS SON TRES PASOS, Y NADA MÁS A LA VISTA ═════
            Antes, entre el paso 1 y el 2 se colaban la rentabilidad y el precio
            sugerido — dos bloques que no se pueden ni mirar hasta haber
