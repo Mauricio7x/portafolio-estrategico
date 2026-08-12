@@ -8648,6 +8648,72 @@ async function main() {
           "los precios son POR CONTRATISTA: verlos desde otro perfil sería filtrar su mercado");
       }
 
+      /* ═══ j.7-quater · EL MAPA DE PROVINCIAS DEL INVIAS ═══════════════════
+         `data/apu_invias_provincias.json` sale de un PDF del INVIAS que el
+         manual daba por inalcanzable (`403`). Lo es: la URL había cambiado.
+         Se regenera con `node tests/extraer_provincias_invias.js`, que baja el
+         PDF, decodifica las CMaps /ToUnicode y reconstruye la tabla por
+         COORDENADAS — leer «en orden» asocia provincias al departamento
+         equivocado, porque el stream agrupa las celdas de departamento aparte.
+
+         Aquí NO se vuelve a extraer (haría falta red): se vigilan las
+         invariantes del dato ya generado, que son las que harían ruido si
+         alguien lo regenera contra un PDF distinto. */
+      {
+        const inv = JSON.parse(fs.readFileSync(
+          path.join(__dirname, "..", "data", "apu_invias_provincias.json"), "utf8"));
+        assert.strictEqual(inv.provincias.length, 140, "el listado del INVIAS son 140 provincias");
+        assert.strictEqual(inv._meta.departamentos, 32, "Colombia tiene 32 departamentos");
+
+        // numeración CONTIGUA de 1 a 140: un hueco significaría una fila perdida
+        assert.deepStrictEqual(inv.provincias.map((p) => p.numero),
+          Array.from({ length: 140 }, (_, i) => i + 1), "la numeración tiene que ser contigua");
+
+        // cada departamento ocupa un tramo CONTIGUO: si no, la asignación por
+        // suma acumulada se rompió y las provincias colgarían de quien no es
+        const tramos = new Map();
+        inv.provincias.forEach((p, i) => {
+          if (!tramos.has(p.departamento)) tramos.set(p.departamento, { desde: i, hasta: i });
+          else tramos.get(p.departamento).hasta = i;
+        });
+        assert.strictEqual(tramos.size, 32);
+        for (const [dep, t] of tramos) {
+          for (let i = t.desde; i <= t.hasta; i++) {
+            assert.strictEqual(inv.provincias[i].departamento, dep,
+              `el tramo de ${dep} no es contiguo: la asignación por acumulado se rompió`);
+          }
+        }
+
+        /* CONTRASTE CONTRA UN HECHO CONOCIDO, no contra el propio archivo:
+           Antioquia tiene 9 subregiones y Boyacá 13 provincias. Si el parseo
+           corriera las columnas, esto cae. */
+        const antioquia = inv.provincias.filter((p) => p.departamento === "Antioquia");
+        assert.strictEqual(antioquia.length, 9, "Antioquia tiene 9 subregiones");
+        for (const esperada of ["Bajo Cauca", "Magdalena Medio", "Oriente", "Occidente"]) {
+          assert.ok(antioquia.some((p) => p.provincia === esperada),
+            `falta la subregión «${esperada}» de Antioquia: el parseo corrió las filas`);
+        }
+        assert.strictEqual(inv.provincias.filter((p) => p.departamento === "Boyacá").length, 13,
+          "Boyacá tiene 13 provincias");
+
+        /* LOS HUECOS SON HUECOS: 10 nombres en `null` a propósito (celdas
+           fusionadas en el PDF). Un nombre inventado en la fila equivocada es
+           peor que la ausencia (R1) — la misma regla de la experiencia. */
+        const sinNombre = inv.provincias.filter((p) => !p.provincia);
+        assert.strictEqual(sinNombre.length, 10);
+        for (const p of sinNombre) {
+          assert.strictEqual(p.provincia, null, "el hueco es null, jamás una cadena vacía o un guion");
+          assert.ok(p.departamento, "aunque falte el nombre, el departamento SÍ se conoce y viaja");
+        }
+        assert.ok(/null a propósito|peor que un hueco/i.test(inv._meta.provincias_sin_nombre || ""),
+          "la meta tiene que declarar por qué hay nombres en null");
+
+        // el archivo NO trae precios y lo dice: es el MAPA, no el catálogo
+        assert.ok(/NO trae precios/i.test(inv._meta.advertencia || ""),
+          "sin esa advertencia alguien lo tomará por un catálogo de precios del INVIAS");
+        assert.ok(/invias\.gov\.co/.test(inv._meta.descarga || ""), "falta la URL de descarga reproducible");
+      }
+
       /* ---- j.8 persistencia: guardar → cargar → listar, con TTL ---- */
       {
         const cuerpoGuardar = {

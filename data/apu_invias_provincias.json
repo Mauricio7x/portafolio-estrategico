@@ -1,0 +1,859 @@
+{
+ "_meta": {
+  "que_es": "Provincias del INVIAS por departamento, base de los APU Regionalizados de Referencia. El INVIAS cotiza por PROVINCIA (140), no por departamento (32) ni por las 5 regiones del catálogo actual.",
+  "fuente": "INVIAS · «Listado de provincias Análisis de Precios Unitarios 2021.pdf» (idFile=1019)",
+  "url": "https://www.invias.gov.co/publicaciones/4149/analisis-de-precios-unitarios-apu-regionalizados-de-referencia/",
+  "descarga": "https://www.invias.gov.co/loader.php?lServicio=Tools2&lTipo=descargas&lFuncion=descargar&idFile=1019",
+  "titulo_del_documento": "LISTADO DE PROVINCIAS POR DEPARTAMENTOS DE COLOMBIA SEGÚN EL DANE",
+  "extraido_el": "2026-08-12",
+  "como_se_extrajo": "tests/extraer_provincias_invias.js — pdf.js NO: extractor propio en Node puro que decodifica las CMaps /ToUnicode y reconstruye las filas por COORDENADAS (el orden del stream entrelaza las columnas).",
+  "verificacion": "Los 32 departamentos y las 140 provincias se autoverifican: la celda de cada departamento trae su cantidad de provincias y, cuando esa cantidad es 1, lleva PEGADO el número global de la provincia. La suma acumulada tiene que reproducir ese número — y lo hace en los 32.",
+  "provincias_sin_nombre": "10 de 140 quedan en null a propósito. Son departamentos de UNA provincia, donde la celda del número se fusionó con la del departamento en el PDF. Un nombre inventado en la fila equivocada es peor que un hueco (R1): el nombre se completa a mano o releyendo el PDF con el lector de pliegos.",
+  "departamentos": 32,
+  "provincias": 140,
+  "con_nombre": 130,
+  "advertencia": "Este archivo NO trae precios. Es el MAPA que hace falta para poder cargar los APU Regionalizados del INVIAS cuando se consigan las tablas. Ver docs/APU_FUENTES.md."
+ },
+ "provincias": [
+  {
+   "numero": 1,
+   "provincia": null,
+   "departamento": "Amazonas",
+   "departamento_n": 1
+  },
+  {
+   "numero": 2,
+   "provincia": "Bajo Cauca",
+   "departamento": "Antioquia",
+   "departamento_n": 2
+  },
+  {
+   "numero": 3,
+   "provincia": "Magdalena Medio",
+   "departamento": "Antioquia",
+   "departamento_n": 2
+  },
+  {
+   "numero": 4,
+   "provincia": "Nordeste",
+   "departamento": "Antioquia",
+   "departamento_n": 2
+  },
+  {
+   "numero": 5,
+   "provincia": "Norte",
+   "departamento": "Antioquia",
+   "departamento_n": 2
+  },
+  {
+   "numero": 6,
+   "provincia": "Occidente",
+   "departamento": "Antioquia",
+   "departamento_n": 2
+  },
+  {
+   "numero": 7,
+   "provincia": "Oriente",
+   "departamento": "Antioquia",
+   "departamento_n": 2
+  },
+  {
+   "numero": 8,
+   "provincia": "Suroeste",
+   "departamento": "Antioquia",
+   "departamento_n": 2
+  },
+  {
+   "numero": 9,
+   "provincia": "Uraba",
+   "departamento": "Antioquia",
+   "departamento_n": 2
+  },
+  {
+   "numero": 10,
+   "provincia": "Valle de Aburra",
+   "departamento": "Antioquia",
+   "departamento_n": 2
+  },
+  {
+   "numero": 11,
+   "provincia": null,
+   "departamento": "Arauca",
+   "departamento_n": 3
+  },
+  {
+   "numero": 12,
+   "provincia": "Norte",
+   "departamento": "Atlántico",
+   "departamento_n": 4
+  },
+  {
+   "numero": 13,
+   "provincia": "Sur",
+   "departamento": "Atlántico",
+   "departamento_n": 4
+  },
+  {
+   "numero": 14,
+   "provincia": "Centro Oriente",
+   "departamento": "Atlántico",
+   "departamento_n": 4
+  },
+  {
+   "numero": 15,
+   "provincia": "Occidental",
+   "departamento": "Atlántico",
+   "departamento_n": 4
+  },
+  {
+   "numero": 16,
+   "provincia": "Depresion Momposina",
+   "departamento": "Bolívar",
+   "departamento_n": 5
+  },
+  {
+   "numero": 17,
+   "provincia": "Dique Bolivarense",
+   "departamento": "Bolívar",
+   "departamento_n": 5
+  },
+  {
+   "numero": 18,
+   "provincia": "Loba",
+   "departamento": "Bolívar",
+   "departamento_n": 5
+  },
+  {
+   "numero": 19,
+   "provincia": "Magdalena Medio Bolivarense",
+   "departamento": "Bolívar",
+   "departamento_n": 5
+  },
+  {
+   "numero": 20,
+   "provincia": "Mojana Bolivarense",
+   "departamento": "Bolívar",
+   "departamento_n": 5
+  },
+  {
+   "numero": 21,
+   "provincia": "Montes de María",
+   "departamento": "Bolívar",
+   "departamento_n": 5
+  },
+  {
+   "numero": 22,
+   "provincia": "Centro",
+   "departamento": "Boyacá",
+   "departamento_n": 6
+  },
+  {
+   "numero": 23,
+   "provincia": "Gutiérrez",
+   "departamento": "Boyacá",
+   "departamento_n": 6
+  },
+  {
+   "numero": 24,
+   "provincia": "La Libertad",
+   "departamento": "Boyacá",
+   "departamento_n": 6
+  },
+  {
+   "numero": 25,
+   "provincia": "Lengupa",
+   "departamento": "Boyacá",
+   "departamento_n": 6
+  },
+  {
+   "numero": 26,
+   "provincia": "Márquez",
+   "departamento": "Boyacá",
+   "departamento_n": 6
+  },
+  {
+   "numero": 27,
+   "provincia": "Neira",
+   "departamento": "Boyacá",
+   "departamento_n": 6
+  },
+  {
+   "numero": 28,
+   "provincia": "Norte",
+   "departamento": "Boyacá",
+   "departamento_n": 6
+  },
+  {
+   "numero": 29,
+   "provincia": "Occidente",
+   "departamento": "Boyacá",
+   "departamento_n": 6
+  },
+  {
+   "numero": 30,
+   "provincia": "Oriente",
+   "departamento": "Boyacá",
+   "departamento_n": 6
+  },
+  {
+   "numero": 31,
+   "provincia": "Ricaurte",
+   "departamento": "Boyacá",
+   "departamento_n": 6
+  },
+  {
+   "numero": 32,
+   "provincia": "Sugamuxi",
+   "departamento": "Boyacá",
+   "departamento_n": 6
+  },
+  {
+   "numero": 33,
+   "provincia": "Tundama",
+   "departamento": "Boyacá",
+   "departamento_n": 6
+  },
+  {
+   "numero": 34,
+   "provincia": "Valderrama",
+   "departamento": "Boyacá",
+   "departamento_n": 6
+  },
+  {
+   "numero": 35,
+   "provincia": "Alto Occidente",
+   "departamento": "Caldas",
+   "departamento_n": 7
+  },
+  {
+   "numero": 36,
+   "provincia": "Alto Oriente",
+   "departamento": "Caldas",
+   "departamento_n": 7
+  },
+  {
+   "numero": 37,
+   "provincia": "Bajo Occidente",
+   "departamento": "Caldas",
+   "departamento_n": 7
+  },
+  {
+   "numero": 38,
+   "provincia": "Centro",
+   "departamento": "Caldas",
+   "departamento_n": 7
+  },
+  {
+   "numero": 39,
+   "provincia": "Norte",
+   "departamento": "Caldas",
+   "departamento_n": 7
+  },
+  {
+   "numero": 40,
+   "provincia": "Oriente",
+   "departamento": "Caldas",
+   "departamento_n": 7
+  },
+  {
+   "numero": 41,
+   "provincia": null,
+   "departamento": "Caquetá",
+   "departamento_n": 8
+  },
+  {
+   "numero": 42,
+   "provincia": null,
+   "departamento": "Casanare",
+   "departamento_n": 9
+  },
+  {
+   "numero": 43,
+   "provincia": "Centro",
+   "departamento": "Cauca",
+   "departamento_n": 10
+  },
+  {
+   "numero": 44,
+   "provincia": "Norte",
+   "departamento": "Cauca",
+   "departamento_n": 10
+  },
+  {
+   "numero": 45,
+   "provincia": "Occidente",
+   "departamento": "Cauca",
+   "departamento_n": 10
+  },
+  {
+   "numero": 46,
+   "provincia": "Oriente",
+   "departamento": "Cauca",
+   "departamento_n": 10
+  },
+  {
+   "numero": 47,
+   "provincia": "Sur",
+   "departamento": "Cauca",
+   "departamento_n": 10
+  },
+  {
+   "numero": 48,
+   "provincia": "Central",
+   "departamento": "Cesar",
+   "departamento_n": 11
+  },
+  {
+   "numero": 49,
+   "provincia": "Noroccidental",
+   "departamento": "Cesar",
+   "departamento_n": 11
+  },
+  {
+   "numero": 50,
+   "provincia": "Norte",
+   "departamento": "Cesar",
+   "departamento_n": 11
+  },
+  {
+   "numero": 51,
+   "provincia": "Sur",
+   "departamento": "Cesar",
+   "departamento_n": 11
+  },
+  {
+   "numero": 52,
+   "provincia": "Atrato",
+   "departamento": "Chocó",
+   "departamento_n": 12
+  },
+  {
+   "numero": 53,
+   "provincia": "Darién",
+   "departamento": "Chocó",
+   "departamento_n": 12
+  },
+  {
+   "numero": 54,
+   "provincia": "Pacífico Norte",
+   "departamento": "Chocó",
+   "departamento_n": 12
+  },
+  {
+   "numero": 55,
+   "provincia": "Pacífico Sur",
+   "departamento": "Chocó",
+   "departamento_n": 12
+  },
+  {
+   "numero": 56,
+   "provincia": "San Juan",
+   "departamento": "Chocó",
+   "departamento_n": 12
+  },
+  {
+   "numero": 57,
+   "provincia": "Alto Sinú",
+   "departamento": "Córdoba",
+   "departamento_n": 13
+  },
+  {
+   "numero": 58,
+   "provincia": "Bajo Sinú",
+   "departamento": "Córdoba",
+   "departamento_n": 13
+  },
+  {
+   "numero": 59,
+   "provincia": "Centro",
+   "departamento": "Córdoba",
+   "departamento_n": 13
+  },
+  {
+   "numero": 60,
+   "provincia": "Costanera",
+   "departamento": "Córdoba",
+   "departamento_n": 13
+  },
+  {
+   "numero": 61,
+   "provincia": "Sabanas",
+   "departamento": "Córdoba",
+   "departamento_n": 13
+  },
+  {
+   "numero": 62,
+   "provincia": "San Jorge",
+   "departamento": "Córdoba",
+   "departamento_n": 13
+  },
+  {
+   "numero": 63,
+   "provincia": "Sinú medio",
+   "departamento": "Córdoba",
+   "departamento_n": 13
+  },
+  {
+   "numero": 64,
+   "provincia": "Almeidas",
+   "departamento": "Cundinamarca",
+   "departamento_n": 14
+  },
+  {
+   "numero": 65,
+   "provincia": "Alto Magdalena",
+   "departamento": "Cundinamarca",
+   "departamento_n": 14
+  },
+  {
+   "numero": 66,
+   "provincia": "Bajo Magdalena",
+   "departamento": "Cundinamarca",
+   "departamento_n": 14
+  },
+  {
+   "numero": 67,
+   "provincia": "Gualivá",
+   "departamento": "Cundinamarca",
+   "departamento_n": 14
+  },
+  {
+   "numero": 68,
+   "provincia": "Guavio",
+   "departamento": "Cundinamarca",
+   "departamento_n": 14
+  },
+  {
+   "numero": 69,
+   "provincia": "Magdalena Centro",
+   "departamento": "Cundinamarca",
+   "departamento_n": 14
+  },
+  {
+   "numero": 70,
+   "provincia": "Medina",
+   "departamento": "Cundinamarca",
+   "departamento_n": 14
+  },
+  {
+   "numero": 71,
+   "provincia": "Oriente",
+   "departamento": "Cundinamarca",
+   "departamento_n": 14
+  },
+  {
+   "numero": 72,
+   "provincia": "Río Negro",
+   "departamento": "Cundinamarca",
+   "departamento_n": 14
+  },
+  {
+   "numero": 73,
+   "provincia": "Sabana Centro",
+   "departamento": "Cundinamarca",
+   "departamento_n": 14
+  },
+  {
+   "numero": 74,
+   "provincia": "Sabana Occidente",
+   "departamento": "Cundinamarca",
+   "departamento_n": 14
+  },
+  {
+   "numero": 75,
+   "provincia": "Soacha",
+   "departamento": "Cundinamarca",
+   "departamento_n": 14
+  },
+  {
+   "numero": 76,
+   "provincia": "Sumapaz",
+   "departamento": "Cundinamarca",
+   "departamento_n": 14
+  },
+  {
+   "numero": 77,
+   "provincia": "Tequendama",
+   "departamento": "Cundinamarca",
+   "departamento_n": 14
+  },
+  {
+   "numero": 78,
+   "provincia": "Ubaté",
+   "departamento": "Cundinamarca",
+   "departamento_n": 14
+  },
+  {
+   "numero": 79,
+   "provincia": null,
+   "departamento": "Guainía",
+   "departamento_n": 15
+  },
+  {
+   "numero": 80,
+   "provincia": null,
+   "departamento": "Guaviare",
+   "departamento_n": 16
+  },
+  {
+   "numero": 81,
+   "provincia": "Centro",
+   "departamento": "Huila",
+   "departamento_n": 17
+  },
+  {
+   "numero": 82,
+   "provincia": "Norte",
+   "departamento": "Huila",
+   "departamento_n": 17
+  },
+  {
+   "numero": 83,
+   "provincia": "Occidente",
+   "departamento": "Huila",
+   "departamento_n": 17
+  },
+  {
+   "numero": 84,
+   "provincia": "Sur",
+   "departamento": "Huila",
+   "departamento_n": 17
+  },
+  {
+   "numero": 85,
+   "provincia": "Norte",
+   "departamento": "La Guajira",
+   "departamento_n": 18
+  },
+  {
+   "numero": 86,
+   "provincia": "Sur",
+   "departamento": "La Guajira",
+   "departamento_n": 18
+  },
+  {
+   "numero": 87,
+   "provincia": "Centro",
+   "departamento": "Magdalena",
+   "departamento_n": 19
+  },
+  {
+   "numero": 88,
+   "provincia": "Norte",
+   "departamento": "Magdalena",
+   "departamento_n": 19
+  },
+  {
+   "numero": 89,
+   "provincia": "Río",
+   "departamento": "Magdalena",
+   "departamento_n": 19
+  },
+  {
+   "numero": 90,
+   "provincia": "Santa Marta",
+   "departamento": "Magdalena",
+   "departamento_n": 19
+  },
+  {
+   "numero": 91,
+   "provincia": "Sur",
+   "departamento": "Magdalena",
+   "departamento_n": 19
+  },
+  {
+   "numero": 92,
+   "provincia": "Ariari",
+   "departamento": "Meta",
+   "departamento_n": 20
+  },
+  {
+   "numero": 93,
+   "provincia": "Capital",
+   "departamento": "Meta",
+   "departamento_n": 20
+  },
+  {
+   "numero": 94,
+   "provincia": "Piedemonte",
+   "departamento": "Meta",
+   "departamento_n": 20
+  },
+  {
+   "numero": 95,
+   "provincia": "Río Meta",
+   "departamento": "Meta",
+   "departamento_n": 20
+  },
+  {
+   "numero": 96,
+   "provincia": "Centro",
+   "departamento": "Nariño",
+   "departamento_n": 21
+  },
+  {
+   "numero": 97,
+   "provincia": "Centro Occidente",
+   "departamento": "Nariño",
+   "departamento_n": 21
+  },
+  {
+   "numero": 98,
+   "provincia": "Costa",
+   "departamento": "Nariño",
+   "departamento_n": 21
+  },
+  {
+   "numero": 99,
+   "provincia": "Norte",
+   "departamento": "Nariño",
+   "departamento_n": 21
+  },
+  {
+   "numero": 100,
+   "provincia": "Sur",
+   "departamento": "Nariño",
+   "departamento_n": 21
+  },
+  {
+   "numero": 101,
+   "provincia": "Centro",
+   "departamento": "Norte de Santander",
+   "departamento_n": 22
+  },
+  {
+   "numero": 102,
+   "provincia": "Norte",
+   "departamento": "Norte de Santander",
+   "departamento_n": 22
+  },
+  {
+   "numero": 103,
+   "provincia": "Occidente",
+   "departamento": "Norte de Santander",
+   "departamento_n": 22
+  },
+  {
+   "numero": 104,
+   "provincia": "Oriental",
+   "departamento": "Norte de Santander",
+   "departamento_n": 22
+  },
+  {
+   "numero": 105,
+   "provincia": "Sur Occidente",
+   "departamento": "Norte de Santander",
+   "departamento_n": 22
+  },
+  {
+   "numero": 106,
+   "provincia": "Sur Oriente",
+   "departamento": "Norte de Santander",
+   "departamento_n": 22
+  },
+  {
+   "numero": 107,
+   "provincia": null,
+   "departamento": "Putumayo",
+   "departamento_n": 23
+  },
+  {
+   "numero": 108,
+   "provincia": "Capital",
+   "departamento": "Quindío",
+   "departamento_n": 24
+  },
+  {
+   "numero": 109,
+   "provincia": "Cordilleranos",
+   "departamento": "Quindío",
+   "departamento_n": 24
+  },
+  {
+   "numero": 110,
+   "provincia": "Fría",
+   "departamento": "Quindío",
+   "departamento_n": 24
+  },
+  {
+   "numero": 111,
+   "provincia": "Norte",
+   "departamento": "Quindío",
+   "departamento_n": 24
+  },
+  {
+   "numero": 112,
+   "provincia": "Valle",
+   "departamento": "Quindío",
+   "departamento_n": 24
+  },
+  {
+   "numero": 113,
+   "provincia": "Vertiente Oriental",
+   "departamento": "Risaralda",
+   "departamento_n": 25
+  },
+  {
+   "numero": 114,
+   "provincia": "Vertiente Occidente",
+   "departamento": "Risaralda",
+   "departamento_n": 25
+  },
+  {
+   "numero": 115,
+   "provincia": "Vertiente del Pacífico",
+   "departamento": "Risaralda",
+   "departamento_n": 25
+  },
+  {
+   "numero": 116,
+   "provincia": null,
+   "departamento": "San Andrés y",
+   "departamento_n": 26
+  },
+  {
+   "numero": 117,
+   "provincia": "Comunera",
+   "departamento": "Santander",
+   "departamento_n": 27
+  },
+  {
+   "numero": 118,
+   "provincia": "García Rovira",
+   "departamento": "Santander",
+   "departamento_n": 27
+  },
+  {
+   "numero": 119,
+   "provincia": "Guanentá",
+   "departamento": "Santander",
+   "departamento_n": 27
+  },
+  {
+   "numero": 120,
+   "provincia": "Mares",
+   "departamento": "Santander",
+   "departamento_n": 27
+  },
+  {
+   "numero": 121,
+   "provincia": "Soto",
+   "departamento": "Santander",
+   "departamento_n": 27
+  },
+  {
+   "numero": 122,
+   "provincia": "Vélez",
+   "departamento": "Santander",
+   "departamento_n": 27
+  },
+  {
+   "numero": 123,
+   "provincia": "Mojana",
+   "departamento": "Sucre",
+   "departamento_n": 28
+  },
+  {
+   "numero": 124,
+   "provincia": "Montes de María",
+   "departamento": "Sucre",
+   "departamento_n": 28
+  },
+  {
+   "numero": 125,
+   "provincia": "Morrosquillo",
+   "departamento": "Sucre",
+   "departamento_n": 28
+  },
+  {
+   "numero": 126,
+   "provincia": "Sabanas",
+   "departamento": "Sucre",
+   "departamento_n": 28
+  },
+  {
+   "numero": 127,
+   "provincia": "San Jorge",
+   "departamento": "Sucre",
+   "departamento_n": 28
+  },
+  {
+   "numero": 128,
+   "provincia": "Norte",
+   "departamento": "Tolima",
+   "departamento_n": 29
+  },
+  {
+   "numero": 129,
+   "provincia": "Oriente",
+   "departamento": "Tolima",
+   "departamento_n": 29
+  },
+  {
+   "numero": 130,
+   "provincia": "Sur",
+   "departamento": "Tolima",
+   "departamento_n": 29
+  },
+  {
+   "numero": 131,
+   "provincia": "Ibague",
+   "departamento": "Tolima",
+   "departamento_n": 29
+  },
+  {
+   "numero": 132,
+   "provincia": "Suroriente",
+   "departamento": "Tolima",
+   "departamento_n": 29
+  },
+  {
+   "numero": 133,
+   "provincia": "Nevados",
+   "departamento": "Tolima",
+   "departamento_n": 29
+  },
+  {
+   "numero": 134,
+   "provincia": "Centro",
+   "departamento": "Valle del Cauca",
+   "departamento_n": 30
+  },
+  {
+   "numero": 135,
+   "provincia": "Norte",
+   "departamento": "Valle del Cauca",
+   "departamento_n": 30
+  },
+  {
+   "numero": 136,
+   "provincia": "Occidente",
+   "departamento": "Valle del Cauca",
+   "departamento_n": 30
+  },
+  {
+   "numero": 137,
+   "provincia": "Oriente",
+   "departamento": "Valle del Cauca",
+   "departamento_n": 30
+  },
+  {
+   "numero": 138,
+   "provincia": "Sur",
+   "departamento": "Valle del Cauca",
+   "departamento_n": 30
+  },
+  {
+   "numero": 139,
+   "provincia": null,
+   "departamento": "Vaupés",
+   "departamento_n": 31
+  },
+  {
+   "numero": 140,
+   "provincia": null,
+   "departamento": "Vichada",
+   "departamento_n": 32
+  }
+ ]
+}
