@@ -168,6 +168,19 @@ estrictamente mejor que cualquier referencia nacional promediada.
 
 **Es la única fuente que mejora sola con el uso.**
 
+⚠️ **Y durante un tiempo la promesa fue FALSA, que es peor que no tenerla.** Al guardar, el panel dice «se
+guardaron N precios corregidos en tu perfil: la próxima vez que uses esos ítems, mandan sobre el catálogo».
+Pero solo `/api/apu/cotizar` los consultaba, y **la web llama a `/api/apu/calcular`** — así que no mandaban
+sobre nada. Un mensaje que anuncia un comportamiento que no ocurre hace que el usuario **deje de corregir
+precios** creyendo que ya quedaron guardados. Hoy `calcular` los consulta y hay prueba **por la vía que la web
+usa de verdad**, no por la que era cómodo probar.
+
+El ítem con precio propio se marca `sin_apu` y su badge es **«Tu precio»**, un estado aparte de «Manual»: no
+es un precio tecleado al vuelo sino uno que este contratista ya corrigió. Se marca `sin_apu` porque la
+composición del catálogo ya no respalda ese unitario, y publicar un desglose que no suma la cifra publicada
+haría que la hoja «APU» contradijera a la de «Presupuesto» — el defecto que el exportador ya corrigió una vez.
+La referencia del catálogo viaja al lado (`cd_catalogo`) para poder discutir la diferencia.
+
 ---
 
 ## FUENTES E y F · Construdata, CAMACOL, Tienda Virtual del Estado — **NO INTENTADAS EN SERIO**
