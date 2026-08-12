@@ -1,292 +1,1914 @@
 {
-  "_meta": {
-    "que_es": "Catálogo de ÍTEMS DE OBRA para el módulo APU. Lo usa lib/apu_catalogo.js como destino canónico al que se mapean los ítems extraídos de un pliego (lib/apu_mapeo.js). Cada ítem trae su unidad de medida, las tipologías de obra que lo usan y los sinónimos con los que las entidades lo escriben en sus formularios de cantidades.",
-    "que_NO_es": "NO es una base de precios ni una biblioteca de APU. No hay ni un peso aquí: no hay rendimientos, ni composición de insumos, ni jornales. Esa es la «biblioteca de APU parametrizados» de docs/APU_Y_RENTABILIDAD.md §1.D.4, que exige precios verificados y no se puede construir desde un entorno sin acceso a datos.gov.co ni a invias.gov.co.",
-    "origen": "SEMILLA CURADA A MANO a partir de la columna «Ítems característicos» del catálogo cerrado de 22 tipologías de docs/APU_Y_RENTABILIDAD.md §1.D.1, más el vocabulario real con que las entidades redactan los formularios de cantidades. NO es el resultado de un cálculo sobre el histórico.",
-    "por_que_ningun_codigo_INV": "docs/APU_Y_RENTABILIDAD.md §1.D.3 fija la regla dura: «nunca inventar un código INV que no exista; si no hay artículo, el ítem nace LOC-». El índice oficial de las Especificaciones INVÍAS 2022 (Res. 4561/2022) NUNCA se pudo abrir (HTTP 403 desde el entorno de desarrollo), así que la numeración de artículos y las unidades de pago están SIN VERIFICAR. Por eso TODOS los códigos de este archivo son «LOC-» y el artículo INVÍAS que probablemente les corresponde viaja aparte, en «articulo_invias_candidato», marcado como hipótesis. Al abrir el índice oficial se confirman los candidatos y se emiten los códigos INV- definitivos; hasta entonces publicar «INV-630-21MPA» sería publicar una clave inventada.",
-    "unidad": "Unidad CANÓNICA del ítem, del conjunto de lib/apu_pliego.UNIDADES_CANONICAS. Es la unidad con que se PAGA el ítem. Si el pliego trae otra unidad para el mismo ítem, el mapeo lo marca (unidad_discrepante) y NO convierte: convertir m2 a m3 exige un espesor que el catálogo no conoce.",
-    "sinonimos": "Términos normalizados (minúscula, sin tildes, ñ→n — se comparan con lib/semantica.norm) que aparecen en la descripción del pliego cuando se trata de ESTE ítem. Alimentan el mapeo por solapamiento de términos; no son una descripción del ítem.",
-    "formato": "items: [ { codigo_item, descripcion, unidad, tipologias[], sinonimos[], articulo_invias_candidato|null } ]. Las tipologías son los códigos del catálogo cerrado de §1.D.1 y viven en lib/apu_catalogo.TIPOLOGIAS."
+ "_meta": {
+  "que_es": "Catálogo de ÍTEMS DE OBRA para el módulo APU. Lo usa lib/apu_catalogo.js como destino canónico al que se mapean los ítems extraídos de un pliego (lib/apu_mapeo.js). Cada ítem trae su unidad de medida, las tipologías de obra que lo usan y los sinónimos con los que las entidades lo escriben en sus formularios de cantidades.",
+  "que_NO_es": "NO es una base de precios ni una biblioteca de APU. No hay ni un peso aquí: no hay rendimientos, ni composición de insumos, ni jornales. Esa es la «biblioteca de APU parametrizados» de docs/APU_Y_RENTABILIDAD.md §1.D.4, que exige precios verificados y no se puede construir desde un entorno sin acceso a datos.gov.co ni a invias.gov.co.",
+  "origen": "SEMILLA CURADA A MANO a partir de la columna «Ítems característicos» del catálogo cerrado de 22 tipologías de docs/APU_Y_RENTABILIDAD.md §1.D.1, más el vocabulario real con que las entidades redactan los formularios de cantidades. NO es el resultado de un cálculo sobre el histórico.",
+  "por_que_ningun_codigo_INV": "ACTUALIZADO (ago 2026). La regla dura sigue siendo la misma —«nunca inventar un código INV que no exista; si no hay artículo, el ítem nace LOC-»— pero la premisa que la hacía bloqueante ya no es cierta: el índice oficial de las Especificaciones INVÍAS 2022 (Res. 4561/2022) SÍ se puede abrir (la URL había cambiado; el sitio se reorganizó), y sus 105 artículos están en data/invias_articulos.json. Los `codigo_item` de ESTE archivo siguen siendo LOC- a propósito: son la clave interna del lector y renombrarla rompería los mapeos y los borradores guardados. Lo que cambió es que `lib/apu_catalogo.codigoInviasPropuesto` ya NO devuelve una hipótesis: contrasta el candidato contra el índice y emite el código con el artículo tal como lo cita la norma (INV-630-22-...), con su TÍTULO OFICIAL pegado para que el encaje se pueda auditar. OJO CON LO QUE `verificado: true` NO DICE: se verificó la NUMERACIÓN, no la UNIDAD DE PAGO — el índice trae capítulo, número y título y nada más, y por eso viaja `unidad_verificada: false`.",
+  "unidad": "Unidad CANÓNICA del ítem, del conjunto de lib/apu_pliego.UNIDADES_CANONICAS. Es la unidad con que se PAGA el ítem. Si el pliego trae otra unidad para el mismo ítem, el mapeo lo marca (unidad_discrepante) y NO convierte: convertir m2 a m3 exige un espesor que el catálogo no conoce.",
+  "sinonimos": "Términos normalizados (minúscula, sin tildes, ñ→n — se comparan con lib/semantica.norm) que aparecen en la descripción del pliego cuando se trata de ESTE ítem. Alimentan el mapeo por solapamiento de términos; no son una descripción del ítem.",
+  "formato": "items: [ { codigo_item, descripcion, unidad, tipologias[], sinonimos[], articulo_invias_candidato|null } ]. Las tipologías son los códigos del catálogo cerrado de §1.D.1 y viven en lib/apu_catalogo.TIPOLOGIAS."
+ },
+ "items": [
+  {
+   "codigo_item": "LOC-PRE-LOCALIZACION",
+   "descripcion": "Localización y replanteo",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-PH",
+    "VIA-FLEX",
+    "VIA-RIG",
+    "DRE-OBR",
+    "EST-MUR",
+    "EST-PTE",
+    "AGU-RED",
+    "ALC-RED",
+    "EDI-EDU",
+    "EDI-INST",
+    "EDI-VIS",
+    "DEP-POL",
+    "URB-PAR",
+    "AGU-PTAP",
+    "ALC-PTAR",
+    "SAN-BAS"
+   ],
+   "sinonimos": [
+    "localizacion",
+    "replanteo",
+    "topografia",
+    "comision",
+    "topografica",
+    "trazado",
+    "nivelacion"
+   ]
   },
-  "items": [
-    { "codigo_item": "LOC-PRE-LOCALIZACION", "descripcion": "Localización y replanteo", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-PH", "VIA-FLEX", "VIA-RIG", "DRE-OBR", "EST-MUR", "EST-PTE", "AGU-RED", "ALC-RED", "EDI-EDU", "EDI-INST", "EDI-VIS", "DEP-POL", "URB-PAR", "AGU-PTAP", "ALC-PTAR", "SAN-BAS"],
-      "sinonimos": ["localizacion", "replanteo", "topografia", "comision", "topografica", "trazado", "nivelacion"] },
-    { "codigo_item": "LOC-PRE-DESMONTE", "descripcion": "Desmonte y limpieza", "unidad": "m2", "articulo_invias_candidato": "200",
-      "tipologias": ["VIA-PH", "VIA-FLEX", "VIA-RIG", "VIA-MANT", "MIT-GEO", "DRA-CAU", "URB-PAR"],
-      "sinonimos": ["desmonte", "limpieza", "roceria", "descapote", "retiro", "capa", "vegetal", "tala"] },
-    { "codigo_item": "LOC-PRE-DEMOLICION", "descripcion": "Demolición de estructuras y pavimentos", "unidad": "m3", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-FLEX", "VIA-RIG", "VIA-MANT", "URB-PAR", "EDI-EDU", "EDI-INST", "AGU-RED", "ALC-RED"],
-      "sinonimos": ["demolicion", "demoler", "rotura", "ruptura", "pavimento", "existente", "estructura", "concreto"] },
-    { "codigo_item": "LOC-PRE-CAMPAMENTO", "descripcion": "Campamento e instalaciones provisionales", "unidad": "gl", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-PH", "VIA-FLEX", "VIA-RIG", "EST-PTE", "EDI-EDU", "EDI-INST", "AGU-PTAP", "ALC-PTAR"],
-      "sinonimos": ["campamento", "provisional", "provisionales", "instalaciones", "almacen", "valla", "cerramiento", "obra"] },
-    { "codigo_item": "LOC-EXC-MANUAL", "descripcion": "Excavación manual en material común", "unidad": "m3", "articulo_invias_candidato": "600",
-      "tipologias": ["VIA-PH", "DRE-OBR", "EST-MUR", "SAN-BAS", "AGU-RED", "ALC-RED", "EDI-EDU", "EDI-INST", "EDI-VIS", "URB-PAR"],
-      "sinonimos": ["excavacion", "manual", "material", "comun", "tierra", "mano"] },
-    { "codigo_item": "LOC-EXC-MECANICA", "descripcion": "Excavación mecánica en material común", "unidad": "m3", "articulo_invias_candidato": "600",
-      "tipologias": ["VIA-FLEX", "VIA-RIG", "DRE-OBR", "EST-MUR", "EST-PTE", "MIT-GEO", "DRA-CAU", "AGU-PTAP", "ALC-PTAR"],
-      "sinonimos": ["excavacion", "mecanica", "maquina", "retroexcavadora", "material", "comun", "explanacion"] },
-    { "codigo_item": "LOC-EXC-ROCA", "descripcion": "Excavación en roca", "unidad": "m3", "articulo_invias_candidato": "600",
-      "tipologias": ["VIA-FLEX", "VIA-RIG", "DRE-OBR", "EST-MUR", "EST-PTE", "MIT-GEO"],
-      "sinonimos": ["excavacion", "roca", "material", "rocoso", "voladura"] },
-    { "codigo_item": "LOC-EXC-ZANJA", "descripcion": "Excavación en zanja para tubería", "unidad": "m3", "articulo_invias_candidato": null,
-      "tipologias": ["AGU-RED", "ALC-RED", "DRE-OBR", "ELE-RED"],
-      "sinonimos": ["excavacion", "zanja", "apique", "tuberia", "conduccion", "profundidad"] },
-    { "codigo_item": "LOC-EXC-ENTIBADO", "descripcion": "Entibado de zanja", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["ALC-RED", "AGU-RED"],
-      "sinonimos": ["entibado", "entibamiento", "tablestacado", "zanja", "apuntalamiento"] },
-    { "codigo_item": "LOC-EXC-RELLENO", "descripcion": "Relleno compactado con material seleccionado", "unidad": "m3", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-PH", "VIA-FLEX", "VIA-RIG", "DRE-OBR", "EST-MUR", "AGU-RED", "ALC-RED", "EDI-EDU", "EDI-INST"],
-      "sinonimos": ["relleno", "compactado", "compactacion", "material", "seleccionado", "recebo", "lleno"] },
-    { "codigo_item": "LOC-EXC-RETIRO", "descripcion": "Retiro y disposición final de material sobrante", "unidad": "m3", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-PH", "VIA-FLEX", "VIA-RIG", "VIA-MANT", "DRE-OBR", "MIT-GEO", "DRA-CAU", "AGU-RED", "ALC-RED", "URB-PAR"],
-      "sinonimos": ["retiro", "disposicion", "final", "sobrante", "escombros", "botadero", "escombrera", "cargue", "acarreo"] },
-    { "codigo_item": "LOC-AFI-SUBBASE", "descripcion": "Subbase granular", "unidad": "m3", "articulo_invias_candidato": "320",
-      "tipologias": ["VIA-PH", "VIA-FLEX", "VIA-RIG", "URB-PAR", "DEP-POL"],
-      "sinonimos": ["subbase", "granular", "sbg", "material", "granular"] },
-    { "codigo_item": "LOC-AFI-BASE", "descripcion": "Base granular", "unidad": "m3", "articulo_invias_candidato": "330",
-      "tipologias": ["VIA-FLEX", "VIA-RIG", "URB-PAR"],
-      "sinonimos": ["base", "granular", "bg", "bga", "triturado"] },
-    { "codigo_item": "LOC-AFI-AFIRMADO", "descripcion": "Afirmado", "unidad": "m3", "articulo_invias_candidato": "311",
-      "tipologias": ["VIA-PH", "VIA-MANT"],
-      "sinonimos": ["afirmado", "recebo", "material", "afirmar", "rasante"] },
-    { "codigo_item": "LOC-AFI-CONFORMACION", "descripcion": "Conformación de la calzada existente", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-MANT"],
-      "sinonimos": ["conformacion", "conformar", "calzada", "existente", "motoniveladora", "escarificacion", "perfilado"] },
-    { "codigo_item": "LOC-ASF-IMPRIMACION", "descripcion": "Imprimación asfáltica", "unidad": "m2", "articulo_invias_candidato": "420",
-      "tipologias": ["VIA-FLEX", "VIA-MANT"],
-      "sinonimos": ["imprimacion", "riego", "liga", "asfaltica", "emulsion", "imprimante"] },
-    { "codigo_item": "LOC-ASF-MDC", "descripcion": "Mezcla densa en caliente (MDC)", "unidad": "ton", "articulo_invias_candidato": "450",
-      "tipologias": ["VIA-FLEX", "VIA-MANT"],
-      "sinonimos": ["mezcla", "densa", "caliente", "mdc", "asfaltica", "asfalto", "carpeta", "rodadura", "concreto", "asfaltico"] },
-    { "codigo_item": "LOC-ASF-PARCHEO", "descripcion": "Parcheo y bacheo de pavimento asfáltico", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-MANT"],
-      "sinonimos": ["parcheo", "bacheo", "parche", "bache", "reparacion", "localizada", "pavimento"] },
-    { "codigo_item": "LOC-CON-HUELLA", "descripcion": "Concreto de 21 MPa para huellas de placa huella", "unidad": "m3", "articulo_invias_candidato": "630",
-      "tipologias": ["VIA-PH"],
-      "sinonimos": ["concreto", "huella", "huellas", "placa", "21", "3000", "mpa", "psi", "hidraulico"] },
-    { "codigo_item": "LOC-CON-PIEDRAPEGADA", "descripcion": "Piedra pegada en franja central", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-PH"],
-      "sinonimos": ["piedra", "pegada", "rajon", "franja", "central", "berma", "empedrado"] },
-    { "codigo_item": "LOC-CON-PAVRIGIDO", "descripcion": "Pavimento en concreto hidráulico MR-40", "unidad": "m3", "articulo_invias_candidato": "500",
-      "tipologias": ["VIA-RIG", "URB-PAR", "DEP-POL"],
-      "sinonimos": ["pavimento", "rigido", "concreto", "hidraulico", "losa", "mr", "40", "placa"] },
-    { "codigo_item": "LOC-CON-ESTRUCTURAL", "descripcion": "Concreto estructural", "unidad": "m3", "articulo_invias_candidato": "630",
-      "tipologias": ["DRE-OBR", "EST-MUR", "EST-PTE", "AGU-PTAP", "ALC-PTAR", "EDI-EDU", "EDI-INST", "EDI-VIS", "DEP-POL", "SAN-BAS"],
-      "sinonimos": ["concreto", "estructural", "reforzado", "viga", "columna", "losa", "zapata", "cimentacion", "mpa", "psi"] },
-    { "codigo_item": "LOC-CON-CICLOPEO", "descripcion": "Concreto ciclópeo", "unidad": "m3", "articulo_invias_candidato": null,
-      "tipologias": ["EST-MUR", "DRE-OBR", "EDI-EDU", "EDI-INST"],
-      "sinonimos": ["concreto", "ciclopeo", "rajon", "solado", "limpieza"] },
-    { "codigo_item": "LOC-CON-SOLADO", "descripcion": "Solado de limpieza", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["DRE-OBR", "EST-MUR", "EDI-EDU", "EDI-INST", "SAN-BAS"],
-      "sinonimos": ["solado", "limpieza", "pobre", "nivelacion", "concreto"] },
-    { "codigo_item": "LOC-CON-ACERO", "descripcion": "Acero de refuerzo figurado 420 MPa", "unidad": "kg", "articulo_invias_candidato": "640",
-      "tipologias": ["VIA-PH", "VIA-RIG", "DRE-OBR", "EST-MUR", "EST-PTE", "AGU-PTAP", "ALC-PTAR", "EDI-EDU", "EDI-INST", "EDI-VIS", "DEP-POL"],
-      "sinonimos": ["acero", "refuerzo", "figurado", "420", "60", "grado", "varilla", "hierro", "fy"] },
-    { "codigo_item": "LOC-CON-MALLA", "descripcion": "Malla electrosoldada", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-RIG", "URB-PAR", "DEP-POL", "EDI-VIS"],
-      "sinonimos": ["malla", "electrosoldada", "refuerzo", "mallas"] },
-    { "codigo_item": "LOC-CON-FORMALETA", "descripcion": "Formaleta metálica (m² de contacto)", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-PH", "EST-MUR", "EST-PTE", "EDI-EDU", "EDI-INST", "DRE-OBR"],
-      "sinonimos": ["formaleta", "encofrado", "metalica", "madera", "contacto"] },
-    { "codigo_item": "LOC-CON-JUNTA", "descripcion": "Junta de dilatación y sello de juntas", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-PH", "VIA-RIG", "EST-PTE"],
-      "sinonimos": ["junta", "juntas", "dilatacion", "sello", "sellado", "corte"] },
-    { "codigo_item": "LOC-CON-CURADO", "descripcion": "Curado de concreto", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-PH", "VIA-RIG", "DEP-POL"],
-      "sinonimos": ["curado", "curador", "antisol", "membrana"] },
-    { "codigo_item": "LOC-DRE-TUBCONCRETO", "descripcion": "Tubería de concreto para alcantarilla", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["DRE-OBR", "VIA-MANT"],
-      "sinonimos": ["tuberia", "concreto", "alcantarilla", "alcantarillas", "diametro", "pulgadas", "reforzada"] },
-    { "codigo_item": "LOC-DRE-CABEZOTE", "descripcion": "Cabezote de alcantarilla en concreto", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["DRE-OBR"],
-      "sinonimos": ["cabezote", "cabezotes", "aletas", "encole", "descole", "alcantarilla"] },
-    { "codigo_item": "LOC-DRE-CUNETA", "descripcion": "Cuneta en concreto", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["DRE-OBR", "VIA-PH", "VIA-MANT", "VIA-FLEX", "VIA-RIG"],
-      "sinonimos": ["cuneta", "cunetas", "concreto", "triangular", "trapezoidal", "berma", "bermacuneta"] },
-    { "codigo_item": "LOC-DRE-LIMPCUNETA", "descripcion": "Limpieza de cunetas y obras de drenaje", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-MANT"],
-      "sinonimos": ["limpieza", "cuneta", "cunetas", "drenaje", "obras", "sedimentos"] },
-    { "codigo_item": "LOC-DRE-FILTRO", "descripcion": "Filtro francés con geotextil y material drenante", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["DRE-OBR", "EST-MUR", "MIT-GEO"],
-      "sinonimos": ["filtro", "frances", "geotextil", "drenante", "subdren", "grava"] },
-    { "codigo_item": "LOC-DRE-BOXCULVERT", "descripcion": "Box culvert en concreto reforzado", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["DRE-OBR", "DRA-CAU"],
-      "sinonimos": ["box", "culvert", "coulvert", "cajon", "concreto", "reforzado"] },
-    { "codigo_item": "LOC-DRE-SUMIDERO", "descripcion": "Sumidero con rejilla", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["DRE-OBR", "ALC-RED", "URB-PAR"],
-      "sinonimos": ["sumidero", "sumideros", "rejilla", "reja", "aguas", "lluvias"] },
-    { "codigo_item": "LOC-EST-GAVION", "descripcion": "Gavión en malla de alambre", "unidad": "m3", "articulo_invias_candidato": null,
-      "tipologias": ["EST-MUR", "MIT-GEO", "DRA-CAU"],
-      "sinonimos": ["gavion", "gaviones", "malla", "alambre", "canasta", "colchoneta"] },
-    { "codigo_item": "LOC-EST-ENROCADO", "descripcion": "Enrocado de protección", "unidad": "m3", "articulo_invias_candidato": null,
-      "tipologias": ["MIT-GEO", "DRA-CAU", "EST-MUR"],
-      "sinonimos": ["enrocado", "rajon", "proteccion", "escollera", "roca", "socavacion"] },
-    { "codigo_item": "LOC-EST-GEOMALLA", "descripcion": "Geomalla o geotextil de refuerzo", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["MIT-GEO", "VIA-FLEX", "EST-MUR"],
-      "sinonimos": ["geomalla", "geotextil", "geosintetico", "refuerzo", "separacion"] },
-    { "codigo_item": "LOC-EST-EMPRADIZACION", "descripcion": "Empradización y revegetalización", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["MIT-GEO", "URB-PAR", "DRA-CAU"],
-      "sinonimos": ["empradizacion", "revegetalizacion", "engramado", "grama", "cesped", "siembra", "tierra", "negra"] },
-    { "codigo_item": "LOC-EST-TERRACEO", "descripcion": "Terraceo y conformación de taludes", "unidad": "m3", "articulo_invias_candidato": null,
-      "tipologias": ["MIT-GEO", "DRA-CAU", "EST-MUR"],
-      "sinonimos": ["terraceo", "conformacion", "talud", "taludes", "banqueo", "estabilizacion"] },
-    { "codigo_item": "LOC-PTE-PILOTE", "descripcion": "Pilote de concreto", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["EST-PTE", "EST-MUR"],
-      "sinonimos": ["pilote", "pilotes", "pilotaje", "caisson", "preexcavado"] },
-    { "codigo_item": "LOC-PTE-VIGA", "descripcion": "Viga prefabricada de puente", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["EST-PTE"],
-      "sinonimos": ["viga", "vigas", "prefabricada", "postensada", "preesforzada", "tablero"] },
-    { "codigo_item": "LOC-PTE-BARANDA", "descripcion": "Baranda metálica de puente", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["EST-PTE", "URB-PAR"],
-      "sinonimos": ["baranda", "barandas", "pasamanos", "metalica", "tubular"] },
-    { "codigo_item": "LOC-PTE-ESTRIBO", "descripcion": "Estribo de puente en concreto", "unidad": "m3", "articulo_invias_candidato": null,
-      "tipologias": ["EST-PTE"],
-      "sinonimos": ["estribo", "estribos", "aleta", "aletas", "apoyo", "concreto"] },
-    { "codigo_item": "LOC-SEN-VERTICAL", "descripcion": "Señal vertical reglamentaria o preventiva", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-SEN", "VIA-FLEX", "VIA-RIG", "VIA-MANT"],
-      "sinonimos": ["senal", "senales", "vertical", "reglamentaria", "preventiva", "informativa", "sr", "sp", "si", "senalizacion"] },
-    { "codigo_item": "LOC-SEN-DEMARCACION", "descripcion": "Demarcación horizontal de línea", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-SEN", "VIA-FLEX", "VIA-RIG", "URB-PAR"],
-      "sinonimos": ["demarcacion", "linea", "continua", "discontinua", "pintura", "termoplastica", "horizontal"] },
-    { "codigo_item": "LOC-SEN-TACHA", "descripcion": "Tacha reflectiva", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-SEN"],
-      "sinonimos": ["tacha", "tachas", "reflectiva", "captafaros", "boton"] },
-    { "codigo_item": "LOC-SEN-DEFENSA", "descripcion": "Defensa metálica", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-SEN", "VIA-FLEX"],
-      "sinonimos": ["defensa", "metalica", "barrera", "guardavia", "flexbeam"] },
-    { "codigo_item": "LOC-RED-TUBPVC", "descripcion": "Tubería PVC para acueducto o alcantarillado", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["AGU-RED", "ALC-RED", "SAN-BAS"],
-      "sinonimos": ["tuberia", "pvc", "rde", "novafort", "union", "mecanica", "diametro", "pulgadas", "presion", "sanitaria"] },
-    { "codigo_item": "LOC-RED-TUBPEAD", "descripcion": "Tubería PEAD", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["AGU-RED", "ALC-RED"],
-      "sinonimos": ["tuberia", "pead", "polietileno", "alta", "densidad", "termofusion"] },
-    { "codigo_item": "LOC-RED-CAMAARENA", "descripcion": "Cama de arena para asiento de tubería", "unidad": "m3", "articulo_invias_candidato": null,
-      "tipologias": ["AGU-RED", "ALC-RED"],
-      "sinonimos": ["cama", "arena", "atraque", "asiento", "tuberia", "lecho"] },
-    { "codigo_item": "LOC-RED-ACCESORIOS", "descripcion": "Accesorios y válvulas de red", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["AGU-RED", "ALC-RED", "AGU-PTAP"],
-      "sinonimos": ["accesorios", "accesorio", "valvula", "valvulas", "codo", "tee", "yee", "reduccion", "union", "hidrante"] },
-    { "codigo_item": "LOC-RED-POZO", "descripcion": "Pozo de inspección", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["ALC-RED"],
-      "sinonimos": ["pozo", "pozos", "inspeccion", "camara", "manhole", "cilindro", "cono", "cargue"] },
-    { "codigo_item": "LOC-RED-DOMICILIARIA", "descripcion": "Conexión domiciliaria", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["AGU-RED", "ALC-RED"],
-      "sinonimos": ["conexion", "domiciliaria", "domiciliarias", "acometida", "caja", "medidor", "registro"] },
-    { "codigo_item": "LOC-RED-PRUEBA", "descripcion": "Prueba hidrostática o de estanqueidad", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["AGU-RED", "ALC-RED"],
-      "sinonimos": ["prueba", "pruebas", "hidrostatica", "estanqueidad", "presion", "desinfeccion"] },
-    { "codigo_item": "LOC-RED-REPOSPAV", "descripcion": "Rotura y reposición de pavimento sobre zanja", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["AGU-RED", "ALC-RED", "ELE-RED"],
-      "sinonimos": ["rotura", "reposicion", "pavimento", "anden", "zanja", "reparcheo"] },
-    { "codigo_item": "LOC-PTA-BOCATOMA", "descripcion": "Bocatoma", "unidad": "gl", "articulo_invias_candidato": null,
-      "tipologias": ["AGU-PTAP"],
-      "sinonimos": ["bocatoma", "captacion", "fondo", "lateral", "dique", "rejilla"] },
-    { "codigo_item": "LOC-PTA-DESARENADOR", "descripcion": "Desarenador", "unidad": "gl", "articulo_invias_candidato": null,
-      "tipologias": ["AGU-PTAP"],
-      "sinonimos": ["desarenador", "sedimentador", "camara", "aquietamiento"] },
-    { "codigo_item": "LOC-PTA-FILTRO", "descripcion": "Filtro de planta de tratamiento", "unidad": "gl", "articulo_invias_candidato": null,
-      "tipologias": ["AGU-PTAP", "ALC-PTAR"],
-      "sinonimos": ["filtro", "filtros", "lento", "rapido", "arena", "grava", "floculador", "fime"] },
-    { "codigo_item": "LOC-PTA-TANQUE", "descripcion": "Tanque de almacenamiento en concreto", "unidad": "m3", "articulo_invias_candidato": null,
-      "tipologias": ["AGU-PTAP", "ALC-PTAR"],
-      "sinonimos": ["tanque", "almacenamiento", "reserva", "elevado", "superficial", "concreto", "capacidad"] },
-    { "codigo_item": "LOC-PTA-CLORACION", "descripcion": "Caseta y sistema de cloración", "unidad": "gl", "articulo_invias_candidato": null,
-      "tipologias": ["AGU-PTAP"],
-      "sinonimos": ["cloracion", "caseta", "dosificacion", "desinfeccion", "hipoclorito", "cloro"] },
-    { "codigo_item": "LOC-PTR-REACTOR", "descripcion": "Reactor anaerobio UASB", "unidad": "gl", "articulo_invias_candidato": null,
-      "tipologias": ["ALC-PTAR"],
-      "sinonimos": ["reactor", "uasb", "anaerobio", "biodigestor", "lodos", "activados"] },
-    { "codigo_item": "LOC-PTR-LECHOSECADO", "descripcion": "Lecho de secado de lodos", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["ALC-PTAR"],
-      "sinonimos": ["lecho", "lechos", "secado", "lodos", "era"] },
-    { "codigo_item": "LOC-SAN-POZOSEPTICO", "descripcion": "Pozo séptico prefabricado", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["SAN-BAS"],
-      "sinonimos": ["pozo", "septico", "tanque", "prefabricado", "sistema", "individual", "trampa", "grasas"] },
-    { "codigo_item": "LOC-SAN-INFILTRACION", "descripcion": "Campo de infiltración", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["SAN-BAS"],
-      "sinonimos": ["campo", "infiltracion", "zanja", "filtrante", "pozo", "absorcion"] },
-    { "codigo_item": "LOC-SAN-APARATOS", "descripcion": "Aparatos sanitarios", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["SAN-BAS", "EDI-EDU", "EDI-INST", "EDI-VIS"],
-      "sinonimos": ["aparatos", "sanitarios", "sanitario", "lavamanos", "orinal", "ducha", "lavaplatos", "griferia"] },
-    { "codigo_item": "LOC-EDI-MAMPOSTERIA", "descripcion": "Mampostería en bloque o ladrillo", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["EDI-EDU", "EDI-INST", "EDI-VIS", "SAN-BAS", "DEP-POL"],
-      "sinonimos": ["mamposteria", "muro", "muros", "bloque", "ladrillo", "pega", "confinada"] },
-    { "codigo_item": "LOC-EDI-CUBIERTA", "descripcion": "Cubierta en teja sobre estructura", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["EDI-EDU", "EDI-INST", "EDI-VIS", "DEP-POL", "SAN-BAS"],
-      "sinonimos": ["cubierta", "teja", "tejas", "termoacustica", "fibrocemento", "canal", "bajante", "correa"] },
-    { "codigo_item": "LOC-EDI-ESTMETALICA", "descripcion": "Estructura metálica", "unidad": "kg", "articulo_invias_candidato": null,
-      "tipologias": ["DEP-POL", "EDI-EDU", "EDI-INST", "EST-PTE"],
-      "sinonimos": ["estructura", "metalica", "cercha", "cerchas", "perfil", "acero", "estructural", "columna", "viga"] },
-    { "codigo_item": "LOC-EDI-PISO", "descripcion": "Piso en cerámica o enchape", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["EDI-EDU", "EDI-INST", "EDI-VIS"],
-      "sinonimos": ["piso", "pisos", "ceramica", "enchape", "baldosa", "porcelanato", "guardaescoba", "acabado"] },
-    { "codigo_item": "LOC-EDI-PANETE", "descripcion": "Pañete y estuco", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["EDI-EDU", "EDI-INST", "EDI-VIS"],
-      "sinonimos": ["panete", "revoque", "estuco", "repello", "liso", "muro"] },
-    { "codigo_item": "LOC-EDI-PINTURA", "descripcion": "Pintura sobre muro o cielo raso", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["EDI-EDU", "EDI-INST", "EDI-VIS", "DEP-POL"],
-      "sinonimos": ["pintura", "vinilo", "esmalte", "muro", "cielo", "raso", "acabado"] },
-    { "codigo_item": "LOC-EDI-CARPINTERIA", "descripcion": "Carpintería metálica o de madera", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["EDI-EDU", "EDI-INST", "EDI-VIS"],
-      "sinonimos": ["carpinteria", "puerta", "puertas", "ventana", "ventanas", "marco", "reja", "madera", "metalica", "vidrio"] },
-    { "codigo_item": "LOC-EDI-HIDROSANITARIA", "descripcion": "Red hidrosanitaria interna", "unidad": "gl", "articulo_invias_candidato": null,
-      "tipologias": ["EDI-EDU", "EDI-INST", "EDI-VIS", "SAN-BAS"],
-      "sinonimos": ["red", "hidrosanitaria", "hidraulica", "sanitaria", "punto", "puntos", "desague", "interna"] },
-    { "codigo_item": "LOC-EDI-CONTRAPISO", "descripcion": "Placa de contrapiso en concreto", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["EDI-VIS", "EDI-EDU", "EDI-INST", "DEP-POL"],
-      "sinonimos": ["placa", "contrapiso", "concreto", "recebo", "plastico", "afinado"] },
-    { "codigo_item": "LOC-URB-ANDEN", "descripcion": "Andén en concreto", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["URB-PAR", "VIA-RIG", "EDI-EDU", "EDI-INST"],
-      "sinonimos": ["anden", "andenes", "concreto", "peatonal", "senderos", "sendero"] },
-    { "codigo_item": "LOC-URB-SARDINEL", "descripcion": "Sardinel en concreto", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["URB-PAR", "VIA-RIG", "VIA-FLEX"],
-      "sinonimos": ["sardinel", "sardineles", "bordillo", "concreto", "prefabricado", "a10", "a80"] },
-    { "codigo_item": "LOC-URB-ADOQUIN", "descripcion": "Adoquín en concreto o arcilla", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["URB-PAR"],
-      "sinonimos": ["adoquin", "adoquines", "arcilla", "concreto", "peatonal", "vehicular"] },
-    { "codigo_item": "LOC-URB-MOBILIARIO", "descripcion": "Mobiliario urbano", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["URB-PAR"],
-      "sinonimos": ["mobiliario", "urbano", "banca", "bancas", "caneca", "canecas", "bolardo", "juegos", "infantiles", "biosaludable", "gimnasio"] },
-    { "codigo_item": "LOC-DEP-GRADERIA", "descripcion": "Gradería en concreto", "unidad": "m2", "articulo_invias_candidato": null,
-      "tipologias": ["DEP-POL"],
-      "sinonimos": ["graderia", "graderias", "tribuna", "concreto", "escalonada"] },
-    { "codigo_item": "LOC-DEP-DEMARCACION", "descripcion": "Demarcación deportiva y equipamiento de cancha", "unidad": "gl", "articulo_invias_candidato": null,
-      "tipologias": ["DEP-POL"],
-      "sinonimos": ["demarcacion", "deportiva", "cancha", "arco", "arcos", "tablero", "malla", "microfutbol", "baloncesto", "voleibol"] },
-    { "codigo_item": "LOC-ELE-POSTE", "descripcion": "Poste de concreto para red eléctrica", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["ELE-RED"],
-      "sinonimos": ["poste", "postes", "concreto", "kn", "metros", "hincado"] },
-    { "codigo_item": "LOC-ELE-CONDUCTOR", "descripcion": "Conductor eléctrico", "unidad": "ml", "articulo_invias_candidato": null,
-      "tipologias": ["ELE-RED"],
-      "sinonimos": ["conductor", "cable", "acsr", "awg", "cobre", "aluminio", "aislado", "trenzado"] },
-    { "codigo_item": "LOC-ELE-LUMINARIA", "descripcion": "Luminaria LED de alumbrado público", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["ELE-RED", "URB-PAR", "DEP-POL"],
-      "sinonimos": ["luminaria", "luminarias", "led", "alumbrado", "publico", "reflector", "sodio", "brazo"] },
-    { "codigo_item": "LOC-ELE-TRANSFORMADOR", "descripcion": "Transformador de distribución", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["ELE-RED", "AGU-PTAP", "ALC-PTAR"],
-      "sinonimos": ["transformador", "kva", "distribucion", "subestacion", "monofasico", "trifasico"] },
-    { "codigo_item": "LOC-ELE-TIERRA", "descripcion": "Puesta a tierra", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["ELE-RED", "EDI-EDU", "EDI-INST"],
-      "sinonimos": ["puesta", "tierra", "aterrizaje", "varilla", "copperweld", "retie", "apantallamiento"] },
-    { "codigo_item": "LOC-DRA-DRAGADO", "descripcion": "Dragado y limpieza de cauce", "unidad": "m3", "articulo_invias_candidato": null,
-      "tipologias": ["DRA-CAU"],
-      "sinonimos": ["dragado", "limpieza", "cauce", "canal", "sedimento", "rectificacion", "descolmatacion"] },
-    { "codigo_item": "LOC-TRA-ACARREO", "descripcion": "Transporte de material y sobreacarreo", "unidad": "m3", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-PH", "VIA-FLEX", "VIA-RIG", "VIA-MANT", "DRE-OBR", "MIT-GEO", "DRA-CAU", "EST-MUR"],
-      "sinonimos": ["transporte", "acarreo", "sobreacarreo", "materiales", "kilometro", "volqueta", "distancia"] },
-    { "codigo_item": "LOC-AMB-PMA", "descripcion": "Plan de manejo ambiental y señalización de obra", "unidad": "gl", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-PH", "VIA-FLEX", "VIA-RIG", "VIA-MANT", "AGU-RED", "ALC-RED", "EDI-EDU", "EDI-INST", "URB-PAR", "MIT-GEO"],
-      "sinonimos": ["plan", "manejo", "ambiental", "pma", "senalizacion", "obra", "sst", "seguridad", "social", "trafico", "pmt"] },
-    { "codigo_item": "LOC-ENS-LABORATORIO", "descripcion": "Ensayos de laboratorio y control de calidad", "unidad": "un", "articulo_invias_candidato": null,
-      "tipologias": ["VIA-PH", "VIA-FLEX", "VIA-RIG", "EST-PTE", "EST-MUR", "EDI-EDU", "EDI-INST", "CON-EST", "AGU-RED", "ALC-RED"],
-      "sinonimos": ["ensayo", "ensayos", "laboratorio", "control", "calidad", "densidad", "cbr", "cilindro", "compresion", "granulometria", "proctor"] },
-    { "codigo_item": "LOC-CON-PERSONAL", "descripcion": "Personal profesional (consultoría e interventoría)", "unidad": "mes", "articulo_invias_candidato": null,
-      "tipologias": ["CON-EST"],
-      "sinonimos": ["personal", "profesional", "director", "residente", "ingeniero", "especialista", "inspector", "dedicacion", "interventoria", "supervision"] },
-    { "codigo_item": "LOC-CON-ESTUDIOS", "descripcion": "Estudios técnicos y diseños", "unidad": "gl", "articulo_invias_candidato": null,
-      "tipologias": ["CON-EST"],
-      "sinonimos": ["estudio", "estudios", "diseno", "disenos", "suelos", "geotecnico", "hidrologico", "estructural", "topografico", "consultoria"] }
-  ]
+  {
+   "codigo_item": "LOC-PRE-DESMONTE",
+   "descripcion": "Desmonte y limpieza",
+   "unidad": "m2",
+   "articulo_invias_candidato": "200",
+   "tipologias": [
+    "VIA-PH",
+    "VIA-FLEX",
+    "VIA-RIG",
+    "VIA-MANT",
+    "MIT-GEO",
+    "DRA-CAU",
+    "URB-PAR"
+   ],
+   "sinonimos": [
+    "desmonte",
+    "limpieza",
+    "roceria",
+    "descapote",
+    "retiro",
+    "capa",
+    "vegetal",
+    "tala"
+   ]
+  },
+  {
+   "codigo_item": "LOC-PRE-DEMOLICION",
+   "descripcion": "Demolición de estructuras y pavimentos",
+   "unidad": "m3",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-FLEX",
+    "VIA-RIG",
+    "VIA-MANT",
+    "URB-PAR",
+    "EDI-EDU",
+    "EDI-INST",
+    "AGU-RED",
+    "ALC-RED"
+   ],
+   "sinonimos": [
+    "demolicion",
+    "demoler",
+    "rotura",
+    "ruptura",
+    "pavimento",
+    "existente",
+    "estructura",
+    "concreto"
+   ]
+  },
+  {
+   "codigo_item": "LOC-PRE-CAMPAMENTO",
+   "descripcion": "Campamento e instalaciones provisionales",
+   "unidad": "gl",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-PH",
+    "VIA-FLEX",
+    "VIA-RIG",
+    "EST-PTE",
+    "EDI-EDU",
+    "EDI-INST",
+    "AGU-PTAP",
+    "ALC-PTAR"
+   ],
+   "sinonimos": [
+    "campamento",
+    "provisional",
+    "provisionales",
+    "instalaciones",
+    "almacen",
+    "valla",
+    "cerramiento",
+    "obra"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EXC-MANUAL",
+   "descripcion": "Excavación manual en material común",
+   "unidad": "m3",
+   "articulo_invias_candidato": "600",
+   "tipologias": [
+    "VIA-PH",
+    "DRE-OBR",
+    "EST-MUR",
+    "SAN-BAS",
+    "AGU-RED",
+    "ALC-RED",
+    "EDI-EDU",
+    "EDI-INST",
+    "EDI-VIS",
+    "URB-PAR"
+   ],
+   "sinonimos": [
+    "excavacion",
+    "manual",
+    "material",
+    "comun",
+    "tierra",
+    "mano"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EXC-MECANICA",
+   "descripcion": "Excavación mecánica en material común",
+   "unidad": "m3",
+   "articulo_invias_candidato": "600",
+   "tipologias": [
+    "VIA-FLEX",
+    "VIA-RIG",
+    "DRE-OBR",
+    "EST-MUR",
+    "EST-PTE",
+    "MIT-GEO",
+    "DRA-CAU",
+    "AGU-PTAP",
+    "ALC-PTAR"
+   ],
+   "sinonimos": [
+    "excavacion",
+    "mecanica",
+    "maquina",
+    "retroexcavadora",
+    "material",
+    "comun",
+    "explanacion"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EXC-ROCA",
+   "descripcion": "Excavación en roca",
+   "unidad": "m3",
+   "articulo_invias_candidato": "600",
+   "tipologias": [
+    "VIA-FLEX",
+    "VIA-RIG",
+    "DRE-OBR",
+    "EST-MUR",
+    "EST-PTE",
+    "MIT-GEO"
+   ],
+   "sinonimos": [
+    "excavacion",
+    "roca",
+    "material",
+    "rocoso",
+    "voladura"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EXC-ZANJA",
+   "descripcion": "Excavación en zanja para tubería",
+   "unidad": "m3",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "AGU-RED",
+    "ALC-RED",
+    "DRE-OBR",
+    "ELE-RED"
+   ],
+   "sinonimos": [
+    "excavacion",
+    "zanja",
+    "apique",
+    "tuberia",
+    "conduccion",
+    "profundidad"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EXC-ENTIBADO",
+   "descripcion": "Entibado de zanja",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "ALC-RED",
+    "AGU-RED"
+   ],
+   "sinonimos": [
+    "entibado",
+    "entibamiento",
+    "tablestacado",
+    "zanja",
+    "apuntalamiento"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EXC-RELLENO",
+   "descripcion": "Relleno compactado con material seleccionado",
+   "unidad": "m3",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-PH",
+    "VIA-FLEX",
+    "VIA-RIG",
+    "DRE-OBR",
+    "EST-MUR",
+    "AGU-RED",
+    "ALC-RED",
+    "EDI-EDU",
+    "EDI-INST"
+   ],
+   "sinonimos": [
+    "relleno",
+    "compactado",
+    "compactacion",
+    "material",
+    "seleccionado",
+    "recebo",
+    "lleno"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EXC-RETIRO",
+   "descripcion": "Retiro y disposición final de material sobrante",
+   "unidad": "m3",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-PH",
+    "VIA-FLEX",
+    "VIA-RIG",
+    "VIA-MANT",
+    "DRE-OBR",
+    "MIT-GEO",
+    "DRA-CAU",
+    "AGU-RED",
+    "ALC-RED",
+    "URB-PAR"
+   ],
+   "sinonimos": [
+    "retiro",
+    "disposicion",
+    "final",
+    "sobrante",
+    "escombros",
+    "botadero",
+    "escombrera",
+    "cargue",
+    "acarreo"
+   ]
+  },
+  {
+   "codigo_item": "LOC-AFI-SUBBASE",
+   "descripcion": "Subbase granular",
+   "unidad": "m3",
+   "articulo_invias_candidato": "320",
+   "tipologias": [
+    "VIA-PH",
+    "VIA-FLEX",
+    "VIA-RIG",
+    "URB-PAR",
+    "DEP-POL"
+   ],
+   "sinonimos": [
+    "subbase",
+    "granular",
+    "sbg",
+    "material",
+    "granular"
+   ]
+  },
+  {
+   "codigo_item": "LOC-AFI-BASE",
+   "descripcion": "Base granular",
+   "unidad": "m3",
+   "articulo_invias_candidato": "330",
+   "tipologias": [
+    "VIA-FLEX",
+    "VIA-RIG",
+    "URB-PAR"
+   ],
+   "sinonimos": [
+    "base",
+    "granular",
+    "bg",
+    "bga",
+    "triturado"
+   ]
+  },
+  {
+   "codigo_item": "LOC-AFI-AFIRMADO",
+   "descripcion": "Afirmado",
+   "unidad": "m3",
+   "articulo_invias_candidato": "311",
+   "tipologias": [
+    "VIA-PH",
+    "VIA-MANT"
+   ],
+   "sinonimos": [
+    "afirmado",
+    "recebo",
+    "material",
+    "afirmar",
+    "rasante"
+   ]
+  },
+  {
+   "codigo_item": "LOC-AFI-CONFORMACION",
+   "descripcion": "Conformación de la calzada existente",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-MANT"
+   ],
+   "sinonimos": [
+    "conformacion",
+    "conformar",
+    "calzada",
+    "existente",
+    "motoniveladora",
+    "escarificacion",
+    "perfilado"
+   ]
+  },
+  {
+   "codigo_item": "LOC-ASF-IMPRIMACION",
+   "descripcion": "Imprimación asfáltica",
+   "unidad": "m2",
+   "articulo_invias_candidato": "420",
+   "tipologias": [
+    "VIA-FLEX",
+    "VIA-MANT"
+   ],
+   "sinonimos": [
+    "imprimacion",
+    "riego",
+    "liga",
+    "asfaltica",
+    "emulsion",
+    "imprimante"
+   ]
+  },
+  {
+   "codigo_item": "LOC-ASF-MDC",
+   "descripcion": "Mezcla densa en caliente (MDC)",
+   "unidad": "ton",
+   "articulo_invias_candidato": "450",
+   "tipologias": [
+    "VIA-FLEX",
+    "VIA-MANT"
+   ],
+   "sinonimos": [
+    "mezcla",
+    "densa",
+    "caliente",
+    "mdc",
+    "asfaltica",
+    "asfalto",
+    "carpeta",
+    "rodadura",
+    "concreto",
+    "asfaltico"
+   ]
+  },
+  {
+   "codigo_item": "LOC-ASF-PARCHEO",
+   "descripcion": "Parcheo y bacheo de pavimento asfáltico",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-MANT"
+   ],
+   "sinonimos": [
+    "parcheo",
+    "bacheo",
+    "parche",
+    "bache",
+    "reparacion",
+    "localizada",
+    "pavimento"
+   ]
+  },
+  {
+   "codigo_item": "LOC-CON-HUELLA",
+   "descripcion": "Concreto de 21 MPa para huellas de placa huella",
+   "unidad": "m3",
+   "articulo_invias_candidato": "630",
+   "tipologias": [
+    "VIA-PH"
+   ],
+   "sinonimos": [
+    "concreto",
+    "huella",
+    "huellas",
+    "placa",
+    "21",
+    "3000",
+    "mpa",
+    "psi",
+    "hidraulico"
+   ]
+  },
+  {
+   "codigo_item": "LOC-CON-PIEDRAPEGADA",
+   "descripcion": "Piedra pegada en franja central",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-PH"
+   ],
+   "sinonimos": [
+    "piedra",
+    "pegada",
+    "rajon",
+    "franja",
+    "central",
+    "berma",
+    "empedrado"
+   ]
+  },
+  {
+   "codigo_item": "LOC-CON-PAVRIGIDO",
+   "descripcion": "Pavimento en concreto hidráulico MR-40",
+   "unidad": "m3",
+   "articulo_invias_candidato": "500",
+   "tipologias": [
+    "VIA-RIG",
+    "URB-PAR",
+    "DEP-POL"
+   ],
+   "sinonimos": [
+    "pavimento",
+    "rigido",
+    "concreto",
+    "hidraulico",
+    "losa",
+    "mr",
+    "40",
+    "placa"
+   ]
+  },
+  {
+   "codigo_item": "LOC-CON-ESTRUCTURAL",
+   "descripcion": "Concreto estructural",
+   "unidad": "m3",
+   "articulo_invias_candidato": "630",
+   "tipologias": [
+    "DRE-OBR",
+    "EST-MUR",
+    "EST-PTE",
+    "AGU-PTAP",
+    "ALC-PTAR",
+    "EDI-EDU",
+    "EDI-INST",
+    "EDI-VIS",
+    "DEP-POL",
+    "SAN-BAS"
+   ],
+   "sinonimos": [
+    "concreto",
+    "estructural",
+    "reforzado",
+    "viga",
+    "columna",
+    "losa",
+    "zapata",
+    "cimentacion",
+    "mpa",
+    "psi"
+   ]
+  },
+  {
+   "codigo_item": "LOC-CON-CICLOPEO",
+   "descripcion": "Concreto ciclópeo",
+   "unidad": "m3",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "EST-MUR",
+    "DRE-OBR",
+    "EDI-EDU",
+    "EDI-INST"
+   ],
+   "sinonimos": [
+    "concreto",
+    "ciclopeo",
+    "rajon",
+    "solado",
+    "limpieza"
+   ]
+  },
+  {
+   "codigo_item": "LOC-CON-SOLADO",
+   "descripcion": "Solado de limpieza",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "DRE-OBR",
+    "EST-MUR",
+    "EDI-EDU",
+    "EDI-INST",
+    "SAN-BAS"
+   ],
+   "sinonimos": [
+    "solado",
+    "limpieza",
+    "pobre",
+    "nivelacion",
+    "concreto"
+   ]
+  },
+  {
+   "codigo_item": "LOC-CON-ACERO",
+   "descripcion": "Acero de refuerzo figurado 420 MPa",
+   "unidad": "kg",
+   "articulo_invias_candidato": "640",
+   "tipologias": [
+    "VIA-PH",
+    "VIA-RIG",
+    "DRE-OBR",
+    "EST-MUR",
+    "EST-PTE",
+    "AGU-PTAP",
+    "ALC-PTAR",
+    "EDI-EDU",
+    "EDI-INST",
+    "EDI-VIS",
+    "DEP-POL"
+   ],
+   "sinonimos": [
+    "acero",
+    "refuerzo",
+    "figurado",
+    "420",
+    "60",
+    "grado",
+    "varilla",
+    "hierro",
+    "fy"
+   ]
+  },
+  {
+   "codigo_item": "LOC-CON-MALLA",
+   "descripcion": "Malla electrosoldada",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-RIG",
+    "URB-PAR",
+    "DEP-POL",
+    "EDI-VIS"
+   ],
+   "sinonimos": [
+    "malla",
+    "electrosoldada",
+    "refuerzo",
+    "mallas"
+   ]
+  },
+  {
+   "codigo_item": "LOC-CON-FORMALETA",
+   "descripcion": "Formaleta metálica (m² de contacto)",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-PH",
+    "EST-MUR",
+    "EST-PTE",
+    "EDI-EDU",
+    "EDI-INST",
+    "DRE-OBR"
+   ],
+   "sinonimos": [
+    "formaleta",
+    "encofrado",
+    "metalica",
+    "madera",
+    "contacto"
+   ]
+  },
+  {
+   "codigo_item": "LOC-CON-JUNTA",
+   "descripcion": "Junta de dilatación y sello de juntas",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-PH",
+    "VIA-RIG",
+    "EST-PTE"
+   ],
+   "sinonimos": [
+    "junta",
+    "juntas",
+    "dilatacion",
+    "sello",
+    "sellado",
+    "corte"
+   ]
+  },
+  {
+   "codigo_item": "LOC-CON-CURADO",
+   "descripcion": "Curado de concreto",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-PH",
+    "VIA-RIG",
+    "DEP-POL"
+   ],
+   "sinonimos": [
+    "curado",
+    "curador",
+    "antisol",
+    "membrana"
+   ]
+  },
+  {
+   "codigo_item": "LOC-DRE-TUBCONCRETO",
+   "descripcion": "Tubería de concreto para alcantarilla",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "DRE-OBR",
+    "VIA-MANT"
+   ],
+   "sinonimos": [
+    "tuberia",
+    "concreto",
+    "alcantarilla",
+    "alcantarillas",
+    "diametro",
+    "pulgadas",
+    "reforzada"
+   ]
+  },
+  {
+   "codigo_item": "LOC-DRE-CABEZOTE",
+   "descripcion": "Cabezote de alcantarilla en concreto",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "DRE-OBR"
+   ],
+   "sinonimos": [
+    "cabezote",
+    "cabezotes",
+    "aletas",
+    "encole",
+    "descole",
+    "alcantarilla"
+   ]
+  },
+  {
+   "codigo_item": "LOC-DRE-CUNETA",
+   "descripcion": "Cuneta en concreto",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "DRE-OBR",
+    "VIA-PH",
+    "VIA-MANT",
+    "VIA-FLEX",
+    "VIA-RIG"
+   ],
+   "sinonimos": [
+    "cuneta",
+    "cunetas",
+    "concreto",
+    "triangular",
+    "trapezoidal",
+    "berma",
+    "bermacuneta"
+   ]
+  },
+  {
+   "codigo_item": "LOC-DRE-LIMPCUNETA",
+   "descripcion": "Limpieza de cunetas y obras de drenaje",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-MANT"
+   ],
+   "sinonimos": [
+    "limpieza",
+    "cuneta",
+    "cunetas",
+    "drenaje",
+    "obras",
+    "sedimentos"
+   ]
+  },
+  {
+   "codigo_item": "LOC-DRE-FILTRO",
+   "descripcion": "Filtro francés con geotextil y material drenante",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "DRE-OBR",
+    "EST-MUR",
+    "MIT-GEO"
+   ],
+   "sinonimos": [
+    "filtro",
+    "frances",
+    "geotextil",
+    "drenante",
+    "subdren",
+    "grava"
+   ]
+  },
+  {
+   "codigo_item": "LOC-DRE-BOXCULVERT",
+   "descripcion": "Box culvert en concreto reforzado",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "DRE-OBR",
+    "DRA-CAU"
+   ],
+   "sinonimos": [
+    "box",
+    "culvert",
+    "coulvert",
+    "cajon",
+    "concreto",
+    "reforzado"
+   ]
+  },
+  {
+   "codigo_item": "LOC-DRE-SUMIDERO",
+   "descripcion": "Sumidero con rejilla",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "DRE-OBR",
+    "ALC-RED",
+    "URB-PAR"
+   ],
+   "sinonimos": [
+    "sumidero",
+    "sumideros",
+    "rejilla",
+    "reja",
+    "aguas",
+    "lluvias"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EST-GAVION",
+   "descripcion": "Gavión en malla de alambre",
+   "unidad": "m3",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "EST-MUR",
+    "MIT-GEO",
+    "DRA-CAU"
+   ],
+   "sinonimos": [
+    "gavion",
+    "gaviones",
+    "malla",
+    "alambre",
+    "canasta",
+    "colchoneta"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EST-ENROCADO",
+   "descripcion": "Enrocado de protección",
+   "unidad": "m3",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "MIT-GEO",
+    "DRA-CAU",
+    "EST-MUR"
+   ],
+   "sinonimos": [
+    "enrocado",
+    "rajon",
+    "proteccion",
+    "escollera",
+    "roca",
+    "socavacion"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EST-GEOMALLA",
+   "descripcion": "Geomalla o geotextil de refuerzo",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "MIT-GEO",
+    "VIA-FLEX",
+    "EST-MUR"
+   ],
+   "sinonimos": [
+    "geomalla",
+    "geotextil",
+    "geosintetico",
+    "refuerzo",
+    "separacion"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EST-EMPRADIZACION",
+   "descripcion": "Empradización y revegetalización",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "MIT-GEO",
+    "URB-PAR",
+    "DRA-CAU"
+   ],
+   "sinonimos": [
+    "empradizacion",
+    "revegetalizacion",
+    "engramado",
+    "grama",
+    "cesped",
+    "siembra",
+    "tierra",
+    "negra"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EST-TERRACEO",
+   "descripcion": "Terraceo y conformación de taludes",
+   "unidad": "m3",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "MIT-GEO",
+    "DRA-CAU",
+    "EST-MUR"
+   ],
+   "sinonimos": [
+    "terraceo",
+    "conformacion",
+    "talud",
+    "taludes",
+    "banqueo",
+    "estabilizacion"
+   ]
+  },
+  {
+   "codigo_item": "LOC-PTE-PILOTE",
+   "descripcion": "Pilote de concreto",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "EST-PTE",
+    "EST-MUR"
+   ],
+   "sinonimos": [
+    "pilote",
+    "pilotes",
+    "pilotaje",
+    "caisson",
+    "preexcavado"
+   ]
+  },
+  {
+   "codigo_item": "LOC-PTE-VIGA",
+   "descripcion": "Viga prefabricada de puente",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "EST-PTE"
+   ],
+   "sinonimos": [
+    "viga",
+    "vigas",
+    "prefabricada",
+    "postensada",
+    "preesforzada",
+    "tablero"
+   ]
+  },
+  {
+   "codigo_item": "LOC-PTE-BARANDA",
+   "descripcion": "Baranda metálica de puente",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "EST-PTE",
+    "URB-PAR"
+   ],
+   "sinonimos": [
+    "baranda",
+    "barandas",
+    "pasamanos",
+    "metalica",
+    "tubular"
+   ]
+  },
+  {
+   "codigo_item": "LOC-PTE-ESTRIBO",
+   "descripcion": "Estribo de puente en concreto",
+   "unidad": "m3",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "EST-PTE"
+   ],
+   "sinonimos": [
+    "estribo",
+    "estribos",
+    "aleta",
+    "aletas",
+    "apoyo",
+    "concreto"
+   ]
+  },
+  {
+   "codigo_item": "LOC-SEN-VERTICAL",
+   "descripcion": "Señal vertical reglamentaria o preventiva",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-SEN",
+    "VIA-FLEX",
+    "VIA-RIG",
+    "VIA-MANT"
+   ],
+   "sinonimos": [
+    "senal",
+    "senales",
+    "vertical",
+    "reglamentaria",
+    "preventiva",
+    "informativa",
+    "sr",
+    "sp",
+    "si",
+    "senalizacion"
+   ]
+  },
+  {
+   "codigo_item": "LOC-SEN-DEMARCACION",
+   "descripcion": "Demarcación horizontal de línea",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-SEN",
+    "VIA-FLEX",
+    "VIA-RIG",
+    "URB-PAR"
+   ],
+   "sinonimos": [
+    "demarcacion",
+    "linea",
+    "continua",
+    "discontinua",
+    "pintura",
+    "termoplastica",
+    "horizontal"
+   ]
+  },
+  {
+   "codigo_item": "LOC-SEN-TACHA",
+   "descripcion": "Tacha reflectiva",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-SEN"
+   ],
+   "sinonimos": [
+    "tacha",
+    "tachas",
+    "reflectiva",
+    "captafaros",
+    "boton"
+   ]
+  },
+  {
+   "codigo_item": "LOC-SEN-DEFENSA",
+   "descripcion": "Defensa metálica",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-SEN",
+    "VIA-FLEX"
+   ],
+   "sinonimos": [
+    "defensa",
+    "metalica",
+    "barrera",
+    "guardavia",
+    "flexbeam"
+   ]
+  },
+  {
+   "codigo_item": "LOC-RED-TUBPVC",
+   "descripcion": "Tubería PVC para acueducto o alcantarillado",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "AGU-RED",
+    "ALC-RED",
+    "SAN-BAS"
+   ],
+   "sinonimos": [
+    "tuberia",
+    "pvc",
+    "rde",
+    "novafort",
+    "union",
+    "mecanica",
+    "diametro",
+    "pulgadas",
+    "presion",
+    "sanitaria"
+   ]
+  },
+  {
+   "codigo_item": "LOC-RED-TUBPEAD",
+   "descripcion": "Tubería PEAD",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "AGU-RED",
+    "ALC-RED"
+   ],
+   "sinonimos": [
+    "tuberia",
+    "pead",
+    "polietileno",
+    "alta",
+    "densidad",
+    "termofusion"
+   ]
+  },
+  {
+   "codigo_item": "LOC-RED-CAMAARENA",
+   "descripcion": "Cama de arena para asiento de tubería",
+   "unidad": "m3",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "AGU-RED",
+    "ALC-RED"
+   ],
+   "sinonimos": [
+    "cama",
+    "arena",
+    "atraque",
+    "asiento",
+    "tuberia",
+    "lecho"
+   ]
+  },
+  {
+   "codigo_item": "LOC-RED-ACCESORIOS",
+   "descripcion": "Accesorios y válvulas de red",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "AGU-RED",
+    "ALC-RED",
+    "AGU-PTAP"
+   ],
+   "sinonimos": [
+    "accesorios",
+    "accesorio",
+    "valvula",
+    "valvulas",
+    "codo",
+    "tee",
+    "yee",
+    "reduccion",
+    "union",
+    "hidrante"
+   ]
+  },
+  {
+   "codigo_item": "LOC-RED-POZO",
+   "descripcion": "Pozo de inspección",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "ALC-RED"
+   ],
+   "sinonimos": [
+    "pozo",
+    "pozos",
+    "inspeccion",
+    "camara",
+    "manhole",
+    "cilindro",
+    "cono",
+    "cargue"
+   ]
+  },
+  {
+   "codigo_item": "LOC-RED-DOMICILIARIA",
+   "descripcion": "Conexión domiciliaria",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "AGU-RED",
+    "ALC-RED"
+   ],
+   "sinonimos": [
+    "conexion",
+    "domiciliaria",
+    "domiciliarias",
+    "acometida",
+    "caja",
+    "medidor",
+    "registro"
+   ]
+  },
+  {
+   "codigo_item": "LOC-RED-PRUEBA",
+   "descripcion": "Prueba hidrostática o de estanqueidad",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "AGU-RED",
+    "ALC-RED"
+   ],
+   "sinonimos": [
+    "prueba",
+    "pruebas",
+    "hidrostatica",
+    "estanqueidad",
+    "presion",
+    "desinfeccion"
+   ]
+  },
+  {
+   "codigo_item": "LOC-RED-REPOSPAV",
+   "descripcion": "Rotura y reposición de pavimento sobre zanja",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "AGU-RED",
+    "ALC-RED",
+    "ELE-RED"
+   ],
+   "sinonimos": [
+    "rotura",
+    "reposicion",
+    "pavimento",
+    "anden",
+    "zanja",
+    "reparcheo"
+   ]
+  },
+  {
+   "codigo_item": "LOC-PTA-BOCATOMA",
+   "descripcion": "Bocatoma",
+   "unidad": "gl",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "AGU-PTAP"
+   ],
+   "sinonimos": [
+    "bocatoma",
+    "captacion",
+    "fondo",
+    "lateral",
+    "dique",
+    "rejilla"
+   ]
+  },
+  {
+   "codigo_item": "LOC-PTA-DESARENADOR",
+   "descripcion": "Desarenador",
+   "unidad": "gl",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "AGU-PTAP"
+   ],
+   "sinonimos": [
+    "desarenador",
+    "sedimentador",
+    "camara",
+    "aquietamiento"
+   ]
+  },
+  {
+   "codigo_item": "LOC-PTA-FILTRO",
+   "descripcion": "Filtro de planta de tratamiento",
+   "unidad": "gl",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "AGU-PTAP",
+    "ALC-PTAR"
+   ],
+   "sinonimos": [
+    "filtro",
+    "filtros",
+    "lento",
+    "rapido",
+    "arena",
+    "grava",
+    "floculador",
+    "fime"
+   ]
+  },
+  {
+   "codigo_item": "LOC-PTA-TANQUE",
+   "descripcion": "Tanque de almacenamiento en concreto",
+   "unidad": "m3",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "AGU-PTAP",
+    "ALC-PTAR"
+   ],
+   "sinonimos": [
+    "tanque",
+    "almacenamiento",
+    "reserva",
+    "elevado",
+    "superficial",
+    "concreto",
+    "capacidad"
+   ]
+  },
+  {
+   "codigo_item": "LOC-PTA-CLORACION",
+   "descripcion": "Caseta y sistema de cloración",
+   "unidad": "gl",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "AGU-PTAP"
+   ],
+   "sinonimos": [
+    "cloracion",
+    "caseta",
+    "dosificacion",
+    "desinfeccion",
+    "hipoclorito",
+    "cloro"
+   ]
+  },
+  {
+   "codigo_item": "LOC-PTR-REACTOR",
+   "descripcion": "Reactor anaerobio UASB",
+   "unidad": "gl",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "ALC-PTAR"
+   ],
+   "sinonimos": [
+    "reactor",
+    "uasb",
+    "anaerobio",
+    "biodigestor",
+    "lodos",
+    "activados"
+   ]
+  },
+  {
+   "codigo_item": "LOC-PTR-LECHOSECADO",
+   "descripcion": "Lecho de secado de lodos",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "ALC-PTAR"
+   ],
+   "sinonimos": [
+    "lecho",
+    "lechos",
+    "secado",
+    "lodos",
+    "era"
+   ]
+  },
+  {
+   "codigo_item": "LOC-SAN-POZOSEPTICO",
+   "descripcion": "Pozo séptico prefabricado",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "SAN-BAS"
+   ],
+   "sinonimos": [
+    "pozo",
+    "septico",
+    "tanque",
+    "prefabricado",
+    "sistema",
+    "individual",
+    "trampa",
+    "grasas"
+   ]
+  },
+  {
+   "codigo_item": "LOC-SAN-INFILTRACION",
+   "descripcion": "Campo de infiltración",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "SAN-BAS"
+   ],
+   "sinonimos": [
+    "campo",
+    "infiltracion",
+    "zanja",
+    "filtrante",
+    "pozo",
+    "absorcion"
+   ]
+  },
+  {
+   "codigo_item": "LOC-SAN-APARATOS",
+   "descripcion": "Aparatos sanitarios",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "SAN-BAS",
+    "EDI-EDU",
+    "EDI-INST",
+    "EDI-VIS"
+   ],
+   "sinonimos": [
+    "aparatos",
+    "sanitarios",
+    "sanitario",
+    "lavamanos",
+    "orinal",
+    "ducha",
+    "lavaplatos",
+    "griferia"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EDI-MAMPOSTERIA",
+   "descripcion": "Mampostería en bloque o ladrillo",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "EDI-EDU",
+    "EDI-INST",
+    "EDI-VIS",
+    "SAN-BAS",
+    "DEP-POL"
+   ],
+   "sinonimos": [
+    "mamposteria",
+    "muro",
+    "muros",
+    "bloque",
+    "ladrillo",
+    "pega",
+    "confinada"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EDI-CUBIERTA",
+   "descripcion": "Cubierta en teja sobre estructura",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "EDI-EDU",
+    "EDI-INST",
+    "EDI-VIS",
+    "DEP-POL",
+    "SAN-BAS"
+   ],
+   "sinonimos": [
+    "cubierta",
+    "teja",
+    "tejas",
+    "termoacustica",
+    "fibrocemento",
+    "canal",
+    "bajante",
+    "correa"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EDI-ESTMETALICA",
+   "descripcion": "Estructura metálica",
+   "unidad": "kg",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "DEP-POL",
+    "EDI-EDU",
+    "EDI-INST",
+    "EST-PTE"
+   ],
+   "sinonimos": [
+    "estructura",
+    "metalica",
+    "cercha",
+    "cerchas",
+    "perfil",
+    "acero",
+    "estructural",
+    "columna",
+    "viga"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EDI-PISO",
+   "descripcion": "Piso en cerámica o enchape",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "EDI-EDU",
+    "EDI-INST",
+    "EDI-VIS"
+   ],
+   "sinonimos": [
+    "piso",
+    "pisos",
+    "ceramica",
+    "enchape",
+    "baldosa",
+    "porcelanato",
+    "guardaescoba",
+    "acabado"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EDI-PANETE",
+   "descripcion": "Pañete y estuco",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "EDI-EDU",
+    "EDI-INST",
+    "EDI-VIS"
+   ],
+   "sinonimos": [
+    "panete",
+    "revoque",
+    "estuco",
+    "repello",
+    "liso",
+    "muro"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EDI-PINTURA",
+   "descripcion": "Pintura sobre muro o cielo raso",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "EDI-EDU",
+    "EDI-INST",
+    "EDI-VIS",
+    "DEP-POL"
+   ],
+   "sinonimos": [
+    "pintura",
+    "vinilo",
+    "esmalte",
+    "muro",
+    "cielo",
+    "raso",
+    "acabado"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EDI-CARPINTERIA",
+   "descripcion": "Carpintería metálica o de madera",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "EDI-EDU",
+    "EDI-INST",
+    "EDI-VIS"
+   ],
+   "sinonimos": [
+    "carpinteria",
+    "puerta",
+    "puertas",
+    "ventana",
+    "ventanas",
+    "marco",
+    "reja",
+    "madera",
+    "metalica",
+    "vidrio"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EDI-HIDROSANITARIA",
+   "descripcion": "Red hidrosanitaria interna",
+   "unidad": "gl",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "EDI-EDU",
+    "EDI-INST",
+    "EDI-VIS",
+    "SAN-BAS"
+   ],
+   "sinonimos": [
+    "red",
+    "hidrosanitaria",
+    "hidraulica",
+    "sanitaria",
+    "punto",
+    "puntos",
+    "desague",
+    "interna"
+   ]
+  },
+  {
+   "codigo_item": "LOC-EDI-CONTRAPISO",
+   "descripcion": "Placa de contrapiso en concreto",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "EDI-VIS",
+    "EDI-EDU",
+    "EDI-INST",
+    "DEP-POL"
+   ],
+   "sinonimos": [
+    "placa",
+    "contrapiso",
+    "concreto",
+    "recebo",
+    "plastico",
+    "afinado"
+   ]
+  },
+  {
+   "codigo_item": "LOC-URB-ANDEN",
+   "descripcion": "Andén en concreto",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "URB-PAR",
+    "VIA-RIG",
+    "EDI-EDU",
+    "EDI-INST"
+   ],
+   "sinonimos": [
+    "anden",
+    "andenes",
+    "concreto",
+    "peatonal",
+    "senderos",
+    "sendero"
+   ]
+  },
+  {
+   "codigo_item": "LOC-URB-SARDINEL",
+   "descripcion": "Sardinel en concreto",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "URB-PAR",
+    "VIA-RIG",
+    "VIA-FLEX"
+   ],
+   "sinonimos": [
+    "sardinel",
+    "sardineles",
+    "bordillo",
+    "concreto",
+    "prefabricado",
+    "a10",
+    "a80"
+   ]
+  },
+  {
+   "codigo_item": "LOC-URB-ADOQUIN",
+   "descripcion": "Adoquín en concreto o arcilla",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "URB-PAR"
+   ],
+   "sinonimos": [
+    "adoquin",
+    "adoquines",
+    "arcilla",
+    "concreto",
+    "peatonal",
+    "vehicular"
+   ]
+  },
+  {
+   "codigo_item": "LOC-URB-MOBILIARIO",
+   "descripcion": "Mobiliario urbano",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "URB-PAR"
+   ],
+   "sinonimos": [
+    "mobiliario",
+    "urbano",
+    "banca",
+    "bancas",
+    "caneca",
+    "canecas",
+    "bolardo",
+    "juegos",
+    "infantiles",
+    "biosaludable",
+    "gimnasio"
+   ]
+  },
+  {
+   "codigo_item": "LOC-DEP-GRADERIA",
+   "descripcion": "Gradería en concreto",
+   "unidad": "m2",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "DEP-POL"
+   ],
+   "sinonimos": [
+    "graderia",
+    "graderias",
+    "tribuna",
+    "concreto",
+    "escalonada"
+   ]
+  },
+  {
+   "codigo_item": "LOC-DEP-DEMARCACION",
+   "descripcion": "Demarcación deportiva y equipamiento de cancha",
+   "unidad": "gl",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "DEP-POL"
+   ],
+   "sinonimos": [
+    "demarcacion",
+    "deportiva",
+    "cancha",
+    "arco",
+    "arcos",
+    "tablero",
+    "malla",
+    "microfutbol",
+    "baloncesto",
+    "voleibol"
+   ]
+  },
+  {
+   "codigo_item": "LOC-ELE-POSTE",
+   "descripcion": "Poste de concreto para red eléctrica",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "ELE-RED"
+   ],
+   "sinonimos": [
+    "poste",
+    "postes",
+    "concreto",
+    "kn",
+    "metros",
+    "hincado"
+   ]
+  },
+  {
+   "codigo_item": "LOC-ELE-CONDUCTOR",
+   "descripcion": "Conductor eléctrico",
+   "unidad": "ml",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "ELE-RED"
+   ],
+   "sinonimos": [
+    "conductor",
+    "cable",
+    "acsr",
+    "awg",
+    "cobre",
+    "aluminio",
+    "aislado",
+    "trenzado"
+   ]
+  },
+  {
+   "codigo_item": "LOC-ELE-LUMINARIA",
+   "descripcion": "Luminaria LED de alumbrado público",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "ELE-RED",
+    "URB-PAR",
+    "DEP-POL"
+   ],
+   "sinonimos": [
+    "luminaria",
+    "luminarias",
+    "led",
+    "alumbrado",
+    "publico",
+    "reflector",
+    "sodio",
+    "brazo"
+   ]
+  },
+  {
+   "codigo_item": "LOC-ELE-TRANSFORMADOR",
+   "descripcion": "Transformador de distribución",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "ELE-RED",
+    "AGU-PTAP",
+    "ALC-PTAR"
+   ],
+   "sinonimos": [
+    "transformador",
+    "kva",
+    "distribucion",
+    "subestacion",
+    "monofasico",
+    "trifasico"
+   ]
+  },
+  {
+   "codigo_item": "LOC-ELE-TIERRA",
+   "descripcion": "Puesta a tierra",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "ELE-RED",
+    "EDI-EDU",
+    "EDI-INST"
+   ],
+   "sinonimos": [
+    "puesta",
+    "tierra",
+    "aterrizaje",
+    "varilla",
+    "copperweld",
+    "retie",
+    "apantallamiento"
+   ]
+  },
+  {
+   "codigo_item": "LOC-DRA-DRAGADO",
+   "descripcion": "Dragado y limpieza de cauce",
+   "unidad": "m3",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "DRA-CAU"
+   ],
+   "sinonimos": [
+    "dragado",
+    "limpieza",
+    "cauce",
+    "canal",
+    "sedimento",
+    "rectificacion",
+    "descolmatacion"
+   ]
+  },
+  {
+   "codigo_item": "LOC-TRA-ACARREO",
+   "descripcion": "Transporte de material y sobreacarreo",
+   "unidad": "m3",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-PH",
+    "VIA-FLEX",
+    "VIA-RIG",
+    "VIA-MANT",
+    "DRE-OBR",
+    "MIT-GEO",
+    "DRA-CAU",
+    "EST-MUR"
+   ],
+   "sinonimos": [
+    "transporte",
+    "acarreo",
+    "sobreacarreo",
+    "materiales",
+    "kilometro",
+    "volqueta",
+    "distancia"
+   ]
+  },
+  {
+   "codigo_item": "LOC-AMB-PMA",
+   "descripcion": "Plan de manejo ambiental y señalización de obra",
+   "unidad": "gl",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-PH",
+    "VIA-FLEX",
+    "VIA-RIG",
+    "VIA-MANT",
+    "AGU-RED",
+    "ALC-RED",
+    "EDI-EDU",
+    "EDI-INST",
+    "URB-PAR",
+    "MIT-GEO"
+   ],
+   "sinonimos": [
+    "plan",
+    "manejo",
+    "ambiental",
+    "pma",
+    "senalizacion",
+    "obra",
+    "sst",
+    "seguridad",
+    "social",
+    "trafico",
+    "pmt"
+   ]
+  },
+  {
+   "codigo_item": "LOC-ENS-LABORATORIO",
+   "descripcion": "Ensayos de laboratorio y control de calidad",
+   "unidad": "un",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "VIA-PH",
+    "VIA-FLEX",
+    "VIA-RIG",
+    "EST-PTE",
+    "EST-MUR",
+    "EDI-EDU",
+    "EDI-INST",
+    "CON-EST",
+    "AGU-RED",
+    "ALC-RED"
+   ],
+   "sinonimos": [
+    "ensayo",
+    "ensayos",
+    "laboratorio",
+    "control",
+    "calidad",
+    "densidad",
+    "cbr",
+    "cilindro",
+    "compresion",
+    "granulometria",
+    "proctor"
+   ]
+  },
+  {
+   "codigo_item": "LOC-CON-PERSONAL",
+   "descripcion": "Personal profesional (consultoría e interventoría)",
+   "unidad": "mes",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "CON-EST"
+   ],
+   "sinonimos": [
+    "personal",
+    "profesional",
+    "director",
+    "residente",
+    "ingeniero",
+    "especialista",
+    "inspector",
+    "dedicacion",
+    "interventoria",
+    "supervision"
+   ]
+  },
+  {
+   "codigo_item": "LOC-CON-ESTUDIOS",
+   "descripcion": "Estudios técnicos y diseños",
+   "unidad": "gl",
+   "articulo_invias_candidato": null,
+   "tipologias": [
+    "CON-EST"
+   ],
+   "sinonimos": [
+    "estudio",
+    "estudios",
+    "diseno",
+    "disenos",
+    "suelos",
+    "geotecnico",
+    "hidrologico",
+    "estructural",
+    "topografico",
+    "consultoria"
+   ]
+  }
+ ]
 }

@@ -2862,11 +2862,42 @@ async function main() {
       const familias = new Set(Object.values(cat.TIPOLOGIAS).flatMap((t) => t.familias));
       assert.ok(!familias.has("5510") && !familias.has("7213"),
         "5510 y 7213 no están inscritas en ningún RUP: no pueden figurar en el catálogo de tipologías");
-      // el código INV que se emitiría queda PREPARADO pero marcado sin verificar
-      const conArticulo = cat.ITEMS.find((i) => i.articulo_invias_candidato);
-      const propuesto = cat.codigoInviasPropuesto(conArticulo);
-      assert.ok(/^INV-/.test(propuesto.codigo) && propuesto.verificado === false,
-        "el código INVÍAS propuesto tiene que viajar marcado como NO verificado");
+      /* ═══ EL CÓDIGO INV YA SE CONTRASTA CONTRA LA NORMA ═══════════════════
+         Esto exigía `verificado: false` sobre TODOS los ítems, y era correcto
+         mientras el índice oficial (Res. 4561/2022) se daba por inalcanzable:
+         publicar un número de artículo sin confirmarlo es publicar una clave
+         inventada. La resolución SÍ se abre —la URL había cambiado— y sus 105
+         artículos están en `data/invias_articulos.json`. */
+      {
+        const conArticulo = cat.ITEMS.filter((i) => i.articulo_invias_candidato);
+        assert.ok(conArticulo.length >= 10, "el catálogo del lector trae candidatos de artículo INVIAS");
+        for (const it of conArticulo) {
+          const p = cat.codigoInviasPropuesto(it);
+          assert.strictEqual(p.verificado, true,
+            `${it.codigo_item}: su artículo ${it.articulo_invias_candidato} no está en el índice oficial`);
+          // el artículo se cita como lo cita la norma: «630-22», no «630» a secas
+          assert.ok(/^INV-\d{3}-\d{2}-/.test(p.codigo), `código mal formado: ${p.codigo}`);
+          /* EL TÍTULO OFICIAL VIAJA PEGADO (R10): es lo que permite auditar el
+             encaje sin abrir la resolución. Sin él, «INV-600-22» es un número
+             que hay que creerse. */
+          assert.ok(p.titulo_oficial && p.capitulo, `${p.codigo} sin título oficial ni capítulo`);
+          /* Y LO QUE `verificado` NO DICE: la unidad de pago sigue SIN
+             verificar — el índice trae capítulo, número y título y nada más.
+             Prometer más sería repetir el error con una etiqueta nueva. */
+          assert.strictEqual(p.unidad_verificada, false,
+            "el índice oficial no trae unidades de pago: no se pueden dar por verificadas");
+        }
+        // dos anclas del pareo, para que un índice regenerado mal se note
+        const desmonte = cat.codigoInviasPropuesto(cat.ITEMS.find((i) => i.codigo_item === "LOC-PRE-DESMONTE"));
+        assert.strictEqual(desmonte.articulo, "200-22");
+        assert.strictEqual(desmonte.titulo_oficial, "Desmonte y limpieza");
+
+        // un artículo que NO existe en la norma no produce código, y dice por qué
+        const inventado = cat.codigoInviasPropuesto({ codigo_item: "LOC-X", articulo_invias_candidato: "999" });
+        assert.strictEqual(inventado.codigo, null);
+        assert.strictEqual(inventado.verificado, false);
+        assert.ok(/no aparece en las Especificaciones/i.test(inventado.motivo));
+      }
     }
 
     /* 13. TOKENIZACIÓN DEL MAPEO: CONSERVA LOS DÍGITOS, al revés que
