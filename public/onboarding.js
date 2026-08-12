@@ -488,7 +488,10 @@
     try { cuerpo = await r.json(); } catch {
       return mensajeExp(`El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, iniciá sesión y reintentá.`, "error");
     }
-    if (r.status === 401) return mensajeExp("El despliegue rechazó el token integrado: HISTORICO_TOKEN no coincide con el de la aplicación.", "error");
+    if (r.status === 401) {
+      return mensajeExp("La aplicación no pudo autenticarse con el servidor. No es un problema tuyo: es configuración "
+        + "del sitio — avisale a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).", "error");
+    }
     if (!r.ok || !cuerpo.ok) {
       const detalle = cuerpo && cuerpo.errores && cuerpo.errores.length
         ? ` Primer error: ${cuerpo.errores[0].campo} — ${cuerpo.errores[0].error}.` : "";
