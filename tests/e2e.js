@@ -8714,6 +8714,67 @@ async function main() {
         assert.ok(/invias\.gov\.co/.test(inv._meta.descarga || ""), "falta la URL de descarga reproducible");
       }
 
+      /* ═══ j.7-quinquies · LOS CÓDIGOS «INV-» CONTRA EL ÍNDICE OFICIAL ══════
+         El proyecto NO publica códigos `INV-` porque su numeración estaba SIN
+         VERIFICAR: el índice oficial (Res. 4561/2022) se daba por inalcanzable
+         (403). Se pudo abrir —la URL había cambiado— y ahora hay contra qué
+         verificar. `data/invias_articulos.json` son los 105 artículos.
+
+         EL CRUCE ENCONTRÓ TRES CÓDIGOS MAL, que es exactamente el daño que la
+         regla estaba conteniendo: un artículo INVIAS equivocado en un
+         presupuesto es una cita falsa a la norma técnica, y la entidad la lee.
+         NO se renumeran aquí —cambiar el código de un ítem toca el mapa de
+         tipologías, los borradores guardados y el catálogo cargado en Redis—:
+         se FIJAN para que no se olviden y para que, cuando alguien los
+         corrija, esta prueba se lo diga. */
+      {
+        const idx = JSON.parse(fs.readFileSync(
+          path.join(__dirname, "..", "data", "invias_articulos.json"), "utf8"));
+        assert.strictEqual(idx.articulos.length, 105,
+          "la Res. 4561/2022 adopta 105 artículos: si cambia el número, el PDF ya no es el mismo");
+        const porNumero = new Map(idx.articulos.map((a) => [a.numero, a]));
+        // dos anclas conocidas del índice, para que el parseo no pueda correrse
+        assert.strictEqual(porNumero.get(200).titulo, "Desmonte y limpieza");
+        assert.strictEqual(porNumero.get(201).titulo, "Demolición y remoción");
+
+        const catal = JSON.parse(fs.readFileSync(
+          path.join(__dirname, "..", "data", "apu_catalogo.json"), "utf8"));
+        const invs = catal.items.filter((i) => String(i.codigo || "").startsWith("INV-"));
+        assert.ok(invs.length >= 10, "el catálogo trae ítems con numeración INVIAS");
+
+        /* LOS TRES DESALINEADOS, LEÍDOS UNO A UNO Y ESCRITOS A MANO.
+           Se intentó detectarlos comparando el vocabulario de la descripción
+           con el del título oficial y NO SIRVE: da falso positivo en
+           «Terraplén» vs «Terraplenes» (la comparación por palabras no ve el
+           plural) y falso NEGATIVO en «Cuneta revestida en CONCRETO» vs
+           «Tubería de CONCRETO reforzado», que comparten la palabra que no
+           distingue nada. Una heurística floja aquí no es un atajo: es la
+           forma de dar por bueno un código equivocado.
+
+           Así que la lista es un HECHO verificado contra el índice, y lo que la
+           prueba comprueba son los TÍTULOS OFICIALES —que sí son dato— para
+           que la corrección sea mecánica y para que se caiga si alguien
+           regenera el índice contra otro documento. */
+        const DESALINEADOS = [
+          { codigo: "INV-201.1", apunta_a: 201, deberia_ser: 200 },  // «Desmonte y limpieza en bosque»
+          { codigo: "INV-661.1", apunta_a: 661, deberia_ser: 671 },  // «Cuneta revestida en concreto»
+          { codigo: "INV-673.1", apunta_a: 673, deberia_ser: 661 },  // «Alcantarilla en tubería de concreto reforzado»
+        ];
+        for (const d of DESALINEADOS) {
+          assert.ok(invs.some((i) => i.codigo === d.codigo),
+            `${d.codigo} ya no está en el catálogo: si se renumeró, actualizá esta lista`);
+          assert.ok(porNumero.has(d.apunta_a) && porNumero.has(d.deberia_ser));
+          assert.notStrictEqual(porNumero.get(d.apunta_a).titulo, porNumero.get(d.deberia_ser).titulo);
+        }
+        // los títulos oficiales que hacen que la corrección sea mecánica
+        assert.strictEqual(porNumero.get(200).titulo, "Desmonte y limpieza");
+        assert.strictEqual(porNumero.get(671).titulo, "Cunetas revestidas en concreto");
+        assert.strictEqual(porNumero.get(661).titulo, "Tubería de concreto reforzado");
+        /* NO se renumera aquí: cambiar el código de un ítem toca el mapa de
+           tipologías, los borradores ya guardados y el catálogo cargado en
+           Redis. Queda medido y visible, que era lo que se pidió. */
+      }
+
       /* ---- j.8 persistencia: guardar → cargar → listar, con TTL ---- */
       {
         const cuerpoGuardar = {

@@ -1,0 +1,643 @@
+{
+ "_meta": {
+  "que_es": "Índice oficial de las Especificaciones Generales de Construcción de Carreteras del INVIAS: 105 artículos con capítulo, número y título.",
+  "fuente": "INVIAS · Resolución 4561 del 29 de noviembre de 2022 (deroga la 1524 del 06/05/2022)",
+  "descarga": "https://www.invias.gov.co/loader.php?lServicio=Tools2&lTipo=descargas&lFuncion=descargar&idFile=1015",
+  "extraido_el": "2026-08-12",
+  "como_se_extrajo": "tests/extraer_provincias_invias.js (mismo extractor: CMaps /ToUnicode + coordenadas). El PDF se daba por inalcanzable (403); la URL había cambiado.",
+  "para_que_sirve": "Verificar la numeración INV- antes de publicarla. El proyecto NO publica códigos INV- porque estaban SIN VERIFICAR; este archivo es contra lo que se verifican.",
+  "articulos": 105
+ },
+ "articulos": [
+  {
+   "articulo": "100-22",
+   "numero": 100,
+   "titulo": "Ámbito de aplicación, términos y definiciones",
+   "capitulo": "Aspectos Generales"
+  },
+  {
+   "articulo": "101-22",
+   "numero": 101,
+   "titulo": "Documentos de referencia y consulta",
+   "capitulo": "Aspectos Generales"
+  },
+  {
+   "articulo": "102-22",
+   "numero": 102,
+   "titulo": "Aspectos generales de seguridad y salud",
+   "capitulo": "Aspectos Generales"
+  },
+  {
+   "articulo": "103-22",
+   "numero": 103,
+   "titulo": "Responsabilidades especiales del constructor",
+   "capitulo": "Aspectos Generales"
+  },
+  {
+   "articulo": "104-22",
+   "numero": 104,
+   "titulo": "Supervisión de los trabajos",
+   "capitulo": "Aspectos Generales"
+  },
+  {
+   "articulo": "105-22",
+   "numero": 105,
+   "titulo": "Desarrollo de los trabajos",
+   "capitulo": "Aspectos Generales"
+  },
+  {
+   "articulo": "106-22",
+   "numero": 106,
+   "titulo": "Aspectos ambientales",
+   "capitulo": "Aspectos Generales"
+  },
+  {
+   "articulo": "107-22",
+   "numero": 107,
+   "titulo": "Control y aceptación de los trabajos",
+   "capitulo": "Aspectos Generales"
+  },
+  {
+   "articulo": "108-22",
+   "numero": 108,
+   "titulo": "Medida y pago de la obra ejecutada",
+   "capitulo": "Aspectos Generales"
+  },
+  {
+   "articulo": "200-22",
+   "numero": 200,
+   "titulo": "Desmonte y limpieza",
+   "capitulo": "Explanaciones"
+  },
+  {
+   "articulo": "201-22",
+   "numero": 201,
+   "titulo": "Demolición y remoción",
+   "capitulo": "Explanaciones"
+  },
+  {
+   "articulo": "203-22",
+   "numero": 203,
+   "titulo": "Trasplante de árboles",
+   "capitulo": "Explanaciones"
+  },
+  {
+   "articulo": "210-22",
+   "numero": 210,
+   "titulo": "Excavación de la explanación, canales y préstamos",
+   "capitulo": "Explanaciones"
+  },
+  {
+   "articulo": "211-22",
+   "numero": 211,
+   "titulo": "Remoción de derrumbes",
+   "capitulo": "Explanaciones"
+  },
+  {
+   "articulo": "220-22",
+   "numero": 220,
+   "titulo": "Terraplenes",
+   "capitulo": "Explanaciones"
+  },
+  {
+   "articulo": "221-22",
+   "numero": 221,
+   "titulo": "Pedraplenes",
+   "capitulo": "Explanaciones"
+  },
+  {
+   "articulo": "223-22",
+   "numero": 223,
+   "titulo": "Terraplenes reforzados con geosintéticos",
+   "capitulo": "Explanaciones"
+  },
+  {
+   "articulo": "230-22",
+   "numero": 230,
+   "titulo": "Mejoramiento de la subrasante con adición de materiales",
+   "capitulo": "Explanaciones"
+  },
+  {
+   "articulo": "231-22",
+   "numero": 231,
+   "titulo": "Separación de suelos de subrasante y capas granulares con geotextil",
+   "capitulo": "Explanaciones"
+  },
+  {
+   "articulo": "232-22",
+   "numero": 232,
+   "titulo": "Estabilización de suelos de subrasante con geotextil",
+   "capitulo": "Explanaciones"
+  },
+  {
+   "articulo": "233-22",
+   "numero": 233,
+   "titulo": "Estabilización de suelos de subrasante y refuerzo de capas granulares con geomallas",
+   "capitulo": "Explanaciones"
+  },
+  {
+   "articulo": "234-22",
+   "numero": 234,
+   "titulo": "Conformación de taludes existentes",
+   "capitulo": "Explanaciones"
+  },
+  {
+   "articulo": "235-22",
+   "numero": 235,
+   "titulo": "Estabilización de suelos de subrasante y terraplén con cemento",
+   "capitulo": "Explanaciones"
+  },
+  {
+   "articulo": "236-22",
+   "numero": 236,
+   "titulo": "Estabilización de suelos de subrasante y terraplén con cal",
+   "capitulo": "Explanaciones"
+  },
+  {
+   "articulo": "300-22",
+   "numero": 300,
+   "titulo": "Disposiciones generales para la ejecución de afirmados, subbases, bases granulares y capas granulares estabilizadas",
+   "capitulo": "Afirmados, Subbases y Bases"
+  },
+  {
+   "articulo": "310-22",
+   "numero": 310,
+   "titulo": "Conformación de la calzada existente",
+   "capitulo": "Afirmados, Subbases y Bases"
+  },
+  {
+   "articulo": "311-22",
+   "numero": 311,
+   "titulo": "Afirmado",
+   "capitulo": "Afirmados, Subbases y Bases"
+  },
+  {
+   "articulo": "312-22",
+   "numero": 312,
+   "titulo": "Tratamiento paliativo del polvo en afirmados",
+   "capitulo": "Afirmados, Subbases y Bases"
+  },
+  {
+   "articulo": "320-22",
+   "numero": 320,
+   "titulo": "Subbase granular",
+   "capitulo": "Afirmados, Subbases y Bases"
+  },
+  {
+   "articulo": "321-22",
+   "numero": 321,
+   "titulo": "Subbase estabilizada con una mezcla asfáltica natural",
+   "capitulo": "Afirmados, Subbases y Bases"
+  },
+  {
+   "articulo": "330-22",
+   "numero": 330,
+   "titulo": "Base granular",
+   "capitulo": "Afirmados, Subbases y Bases"
+  },
+  {
+   "articulo": "340-22",
+   "numero": 340,
+   "titulo": "Base estabilizada con emulsión asfáltica",
+   "capitulo": "Afirmados, Subbases y Bases"
+  },
+  {
+   "articulo": "341-22",
+   "numero": 341,
+   "titulo": "Base estabilizada con una mezcla asfáltica natural",
+   "capitulo": "Afirmados, Subbases y Bases"
+  },
+  {
+   "articulo": "350-22",
+   "numero": 350,
+   "titulo": "Materiales granulares tratados con cemento como capa estructural",
+   "capitulo": "Afirmados, Subbases y Bases"
+  },
+  {
+   "articulo": "400-22",
+   "numero": 400,
+   "titulo": "Disposiciones generales para la ejecución de riegos de imprimación, liga y curado, tratamientos superficiales, sellos de",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "410-22",
+   "numero": 410,
+   "titulo": "Suministro de cemento asfáltico MINISTERIO DE TRANSPORTE INSTITUTO NACIONAL DE VÍAS Resolución Número 4561 de 2 9 de nov",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "411-22",
+   "numero": 411,
+   "titulo": "Suministro de emulsión asfáltica catiónica",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "412-22",
+   "numero": 412,
+   "titulo": "Suministro de aditivo mejorador de adherencia",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "413-22",
+   "numero": 413,
+   "titulo": "Suministro de cemento asfáltico modificado con grano de caucho reciclado",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "414-22",
+   "numero": 414,
+   "titulo": "Suministro de cemento asfáltico modificado con polímeros",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "415-22",
+   "numero": 415,
+   "titulo": "Suministro de emulsión asfáltica catiónica modificada con polímeros",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "416-22",
+   "numero": 416,
+   "titulo": "Suministro de asfalto líquido para riegos de imprimación",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "420-22",
+   "numero": 420,
+   "titulo": "Riego de imprimación",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "421-22",
+   "numero": 421,
+   "titulo": "Riego de liga",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "422-22",
+   "numero": 422,
+   "titulo": "Riego de curado",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "430-22",
+   "numero": 430,
+   "titulo": "Tratamientos superficiales",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "432-22",
+   "numero": 432,
+   "titulo": "Sello de arena - asfalto",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "433-22",
+   "numero": 433,
+   "titulo": "Lechada asfáltica",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "440-22",
+   "numero": 440,
+   "titulo": "Mezclas asfálticas en frío (densa y abierta)",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "442-22",
+   "numero": 442,
+   "titulo": "Mezcla densa en frío con asfalto natural",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "450-22",
+   "numero": 450,
+   "titulo": "Mezclas asfálticas en caliente de gradación continua (concreto asfáltico)",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "451-22",
+   "numero": 451,
+   "titulo": "Mezcla abierta en caliente",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "452-22",
+   "numero": 452,
+   "titulo": "Mezcla discontinua en caliente para capa de rodadura (microaglomerado en caliente)",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "453-22",
+   "numero": 453,
+   "titulo": "Mezcla drenante",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "460-22",
+   "numero": 460,
+   "titulo": "Fresado de pavimento asfáltico",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "461-22",
+   "numero": 461,
+   "titulo": "Reciclado de pavimento asfáltico in situ empleando ligantes bituminosos",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "462-22",
+   "numero": 462,
+   "titulo": "Reciclado de pavimento asfáltico en planta y en caliente",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "464-22",
+   "numero": 464,
+   "titulo": "Geotextiles para repavimentación",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "465-22",
+   "numero": 465,
+   "titulo": "Excavación para reparación de pavimento asfáltico existente",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "466-22",
+   "numero": 466,
+   "titulo": "Sello de grietas en pavimentos asfálticos",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "467-22",
+   "numero": 467,
+   "titulo": "Mezclas asfálticas en caliente con cemento asfáltico modificado con Grano de Caucho Reciclado (GCR)",
+   "capitulo": "Pavimentos Asfálticos"
+  },
+  {
+   "articulo": "500-22",
+   "numero": 500,
+   "titulo": "Pavimento de concreto hidráulico",
+   "capitulo": "Pavimentos de Concreto"
+  },
+  {
+   "articulo": "501-22",
+   "numero": 501,
+   "titulo": "Suministro de cemento hidráulico",
+   "capitulo": "Pavimentos de Concreto"
+  },
+  {
+   "articulo": "505-22",
+   "numero": 505,
+   "titulo": "Base de concreto hidráulico",
+   "capitulo": "Pavimentos de Concreto"
+  },
+  {
+   "articulo": "510-22",
+   "numero": 510,
+   "titulo": "Pavimento de adoquines de concreto",
+   "capitulo": "Pavimentos de Concreto"
+  },
+  {
+   "articulo": "600-22",
+   "numero": 600,
+   "titulo": "Excavaciones varias",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "610-22",
+   "numero": 610,
+   "titulo": "Rellenos para estructuras",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "620-22",
+   "numero": 620,
+   "titulo": "Pilotes prefabricados de concreto",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "621-22",
+   "numero": 621,
+   "titulo": "Pilotes preexcavados",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "622-22",
+   "numero": 622,
+   "titulo": "Tablestacados",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "623-22",
+   "numero": 623,
+   "titulo": "Anclajes",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "630-22",
+   "numero": 630,
+   "titulo": "Concreto estructural",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "631-22",
+   "numero": 631,
+   "titulo": "Lechada para ductos de concreto preesforzado",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "632-22",
+   "numero": 632,
+   "titulo": "Barandas de concreto",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "640-22",
+   "numero": 640,
+   "titulo": "Acero de refuerzo",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "641-22",
+   "numero": 641,
+   "titulo": "Acero de preesfuerzo",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "642-22",
+   "numero": 642,
+   "titulo": "Apoyos y sellos para juntas de puentes",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "650-22",
+   "numero": 650,
+   "titulo": "Estructuras de acero",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "660-22",
+   "numero": 660,
+   "titulo": "Tubería de concreto simple",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "661-22",
+   "numero": 661,
+   "titulo": "Tubería de concreto reforzado",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "662-22",
+   "numero": 662,
+   "titulo": "Tubería metálica corrugada",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "663-22",
+   "numero": 663,
+   "titulo": "Tubería de plástico",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "670-22",
+   "numero": 670,
+   "titulo": "Disipadores de energía y sedimentadores, en gaviones de alambre de acero entrelazado o en concreto ciclópeo",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "671-22",
+   "numero": 671,
+   "titulo": "Cunetas revestidas en concreto",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "672-22",
+   "numero": 672,
+   "titulo": "Bordillos en concreto",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "673-22",
+   "numero": 673,
+   "titulo": "Subdrenes con geotextil y material granular",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "674-22",
+   "numero": 674,
+   "titulo": "Drenes horizontales en taludes",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "680-22",
+   "numero": 680,
+   "titulo": "Muros de tierra estabilizada mecánicamente con paneles de concreto",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "681-22",
+   "numero": 681,
+   "titulo": "Gaviones y colchogaviones de malla de alambre de acero entrelazado",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "683-22",
+   "numero": 683,
+   "titulo": "Muros de tierra estabilizada mecánicamente con geosintéticos",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "690-22",
+   "numero": 690,
+   "titulo": "Impermeabilización de estructuras",
+   "capitulo": "Estructuras y Drenajes"
+  },
+  {
+   "articulo": "700-22",
+   "numero": 700,
+   "titulo": "Líneas de demarcación y marcas viales",
+   "capitulo": "Señalización y Seguridad"
+  },
+  {
+   "articulo": "701-22",
+   "numero": 701,
+   "titulo": "Tachas reflectivas",
+   "capitulo": "Señalización y Seguridad"
+  },
+  {
+   "articulo": "710-22",
+   "numero": 710,
+   "titulo": "Señales verticales de tránsito",
+   "capitulo": "Señalización y Seguridad"
+  },
+  {
+   "articulo": "730-22",
+   "numero": 730,
+   "titulo": "Defensas metálicas",
+   "capitulo": "Señalización y Seguridad"
+  },
+  {
+   "articulo": "731-22",
+   "numero": 731,
+   "titulo": "Defensas de concreto",
+   "capitulo": "Señalización y Seguridad"
+  },
+  {
+   "articulo": "740-22",
+   "numero": 740,
+   "titulo": "Captafaros",
+   "capitulo": "Señalización y Seguridad"
+  },
+  {
+   "articulo": "741-22",
+   "numero": 741,
+   "titulo": "Delineadores de corona MINISTERIO DE TRANSPORTE INSTITUTO NACIONAL DE VÍAS Resolución Número 4561 de 2 9 de noviembre de",
+   "capitulo": "Señalización y Seguridad"
+  },
+  {
+   "articulo": "800-22",
+   "numero": 800,
+   "titulo": "Cercas de alambre",
+   "capitulo": "Obras Varias"
+  },
+  {
+   "articulo": "802-22",
+   "numero": 802,
+   "titulo": "Poda de árboles",
+   "capitulo": "Obras Varias"
+  },
+  {
+   "articulo": "810-22",
+   "numero": 810,
+   "titulo": "Protección vegetal de taludes",
+   "capitulo": "Obras Varias"
+  },
+  {
+   "articulo": "811-22",
+   "numero": 811,
+   "titulo": "Protección de taludes con productos enrollados para control de erosión",
+   "capitulo": "Obras Varias"
+  },
+  {
+   "articulo": "812-22",
+   "numero": 812,
+   "titulo": "Recubrimiento de taludes con malla y mortero",
+   "capitulo": "Obras Varias"
+  },
+  {
+   "articulo": "820-22",
+   "numero": 820,
+   "titulo": "Plantación de árboles",
+   "capitulo": "Obras Varias"
+  },
+  {
+   "articulo": "900-22",
+   "numero": 900,
+   "titulo": "Transporte de materiales provenientes de excavaciones y derrumbes",
+   "capitulo": "Transporte"
+  }
+ ]
+}
