@@ -10348,8 +10348,54 @@ async function main() {
         const cuerpoBloque = jsSin.slice(iBloque, jsSin.indexOf("\n  }", iBloque));
         assert.ok(!/\$\{pct\}%/.test(cuerpoBloque) && !/Prob\. estimada/.test(cuerpoBloque),
           "la tarjeta debe mostrar la frase, no el porcentaje");
-        assert.ok(/fraseProbabilidad\(l\.p_ganar\)/.test(cuerpoBloque) && /motivoProbabilidad\(l\)/.test(cuerpoBloque),
-          "la tarjeta debe pintar la frase y su motivo");
+        /* ═══ LA TARJETA NO HABLA DE «PROBABILIDAD» ═══════════════════════════
+           Defecto de producto reportado por el dueño, con el caso exacto: «por
+           el nombre un contratista piensa que si tiene un 60 % de probabilidad
+           de ganar y se presenta con 5 empresas distintas, va a ganar». Un
+           porcentaje invita a sumar; una FRECUENCIA NATURAL no —«de cada 6
+           procesos como este, gana 1» deja ver que se pueden perder los seis—.
+           Y «probabilidad» suena a medición cuando lo único medido es cuánta
+           gente compite. La tarjeta enseña ese hecho y la frecuencia; el
+           porcentaje sigue vivo donde es una cuenta y no un mensaje (el
+           desglose auditable y el editor de APU). */
+        assert.ok(/cuantosCompiten\(l\)/.test(cuerpoBloque) && /frecuenciaNatural\(l\.p_ganar\)/.test(cuerpoBloque),
+          "la tarjeta debe pintar el hecho medido (cuántos compiten) y la frecuencia natural");
+        assert.ok(!/fraseProbabilidad|probabilidad de ganar|Prob\./i.test(cuerpoBloque),
+          "la palabra «probabilidad» no puede volver a la tarjeta: es lo que se lee como una promesa");
+
+        // ejecutadas, no comprobadas por regex
+        const frecuenciaNatural = new Function(`${extraerFn("frecuenciaNatural")}; return frecuenciaNatural;`)();
+        assert.strictEqual(frecuenciaNatural(1 / 6).de_cada, 6, "1/6 son «de cada 6, gana 1»");
+        assert.strictEqual(frecuenciaNatural(0.2).de_cada, 5);
+        assert.ok(/gana 1/.test(frecuenciaNatural(0.2).frase), "la frase tiene que decir que gana UNO");
+        // sin dato NO es «gana 0 de cada N», que afirmaría imposibilidad (R1)
+        assert.strictEqual(frecuenciaNatural(null), null);
+        assert.strictEqual(frecuenciaNatural(0), null, "un 0 medido tampoco puede producir una frecuencia infinita");
+        // suelo de 2: «de cada 1 proceso gana 1» prometería certeza
+        assert.strictEqual(frecuenciaNatural(0.95).de_cada, 2);
+
+        const cuantosCompiten = new Function("fmt", `${extraerFn("cuantosCompiten")}; return cuantosCompiten;`)(
+          new Intl.NumberFormat("es-CO"));
+        assert.strictEqual(
+          cuantosCompiten({ competencia_entidad: { promedio_oferentes: 4.6, total_procesos: 23 } }).frase,
+          "Aquí suelen competir 5 empresas.");
+        assert.ok(/1 empresa\./.test(
+          cuantosCompiten({ competencia_entidad: { promedio_oferentes: 1.2, total_procesos: 7 } }).frase),
+        "en singular no puede decir «1 empresas»");
+        /* SIN BASE NO SE INTERPOLA UNA CIFRA: es la misma invariante que cerró
+           el defecto de producción «18.2 oferentes» sin procesos detrás. */
+        assert.strictEqual(cuantosCompiten({ competencia_entidad: { promedio_oferentes: 18.2, total_procesos: 0 } }), null);
+        assert.strictEqual(cuantosCompiten({ competencia_entidad: {} }), null);
+        assert.strictEqual(cuantosCompiten({}), null);
+
+        /* El VALOR ESPERADO se enuncia como promedio SOBRE INTENTOS. Decir «si
+           te lo ganás, te quedan X» sería, en la línea de abajo, el mismo error
+           que las dos de arriba existen para corregir: `ve` ya lleva dentro las
+           veces que NO se gana. */
+        assert.ok(/contando las veces que no se gana/.test(cuerpoBloque),
+          "el valor esperado tiene que decir que promedia también las veces que se pierde");
+        assert.ok(!/[Ss]i te lo gan[áa]s/.test(cuerpoBloque),
+          "«si te lo ganás, te quedan X» lee el valor esperado como si fuera condicional a ganar");
         assert.ok(/detalle-probabilidad/.test(cuerpoBloque), "la frase debe seguir abriendo el modal de desglose");
       }
 
