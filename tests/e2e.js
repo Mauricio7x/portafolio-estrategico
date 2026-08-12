@@ -9059,6 +9059,37 @@ async function main() {
         }
         assert.ok(unoJs.includes('"231105"'), "app.js sin la clave del gate");
 
+        /* ═══ SIN LISTA DESPLEGABLE DE ÍTEMS (ago 2026) ═══════════════════════
+           El <select id="item-nuevo"> con los 174 ítems del catálogo era
+           inusable: nadie encuentra nada navegando 174 opciones. Lo sustituyen
+           TRES métodos de entrada en la misma pantalla: detectar desde la
+           descripción de la obra (checkboxes atados a la tabla), cargar un
+           Excel (con mapeo manual de columnas como respaldo) y buscar por
+           nombre con autocompletar — un INPUT, no un select. */
+        {
+          assert.ok(!unoHtml.includes('id="item-nuevo"'),
+            "el desplegable de 174 ítems no puede volver: lo sustituyen los tres métodos de entrada");
+          for (const debe of ['id="buscar-item"', 'id="buscar-lista"', 'id="buscar-nota"',
+            'id="inferir-spin"', 'id="inferir-texto"',
+            'id="mapeo-panel"', 'id="mapeo-col-desc"', 'id="mapeo-cabecera"',
+            'id="btn-mapeo-aplicar"', 'id="btn-mapeo-cancelar"']) {
+            assert.ok(unoHtml.includes(debe), `index.html sin ${debe}`);
+          }
+          assert.ok(/<input id="buscar-item"/.test(unoHtml),
+            "la búsqueda por nombre es un input con autocompletar, no un select");
+          assert.ok(/q\.length < 2/.test(unoJs),
+            "la búsqueda debe exigir al menos 2 caracteres antes de filtrar el catálogo");
+          assert.ok(/data-inf/.test(unoJs),
+            "los ítems detectados llevan checkbox (data-inf) que quita y devuelve su fila en tiempo real");
+          assert.ok(/Analizando…/.test(unoJs),
+            "mientras la detección procesa debe verse el spinner con «Analizando…»");
+          /* el mapeo manual reutiliza /api/apu/importar: un segundo parser
+             «tolerante» en el frontend sería una segunda definición de la tabla.
+             Se cuenta SIN comentarios: los comentarios también citan la ruta. */
+          assert.strictEqual((sinComentarios(unoJs).match(/\/api\/apu\/importar/g) || []).length, 2,
+            "la vía automática y el mapeo manual deben entrar por el MISMO endpoint de importación");
+        }
+
         /* EL TOKEN VA INTEGRADO (decisión del dueño, ago 2026): no existe
            ningún formulario ni modal que lo pida — Vercel Password Protection
            es la capa de seguridad real y el token solo guarda las escrituras

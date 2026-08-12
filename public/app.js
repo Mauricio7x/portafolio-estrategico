@@ -1296,11 +1296,6 @@
 
     // la normativa viaja con el catálogo: se pinta en cuanto llega
     pintarNormativa(r.normativa);
-
-    const sel = $("item-nuevo");
-    sel.innerHTML = (r.items || [])
-      .map((i) => `<option value="${esc(i.codigo)}">${esc(i.descripcion)} (${esc(i.unidad)})</option>`)
-      .join("");
   }
 
   /* ════════════════ Normativa: qué hay detrás de los factores ════════════════
@@ -1401,35 +1396,49 @@
   }
 
   /* ────────────────────────── inferencia ───────────────────────────── */
+  /* Los ítems detectados llevan el marcador local `inferido`: es lo que permite
+     MEZCLAR métodos (detectar unos, añadir otros por búsqueda o Excel) sin que
+     una nueva detección arrase lo añadido a mano, y lo que ata cada checkbox a
+     su fila de la tabla. El marcador NO viaja al servidor: `calcularApu`
+     proyecta campos explícitos. */
+  function quitarFilasInferidas() {
+    filas = filas.filter((f) => !f.inferido);
+  }
+
   $("btn-inferir").addEventListener("click", async () => {
     const objeto = $("objeto").value.trim();
     if (!objeto) {
-      pintarInferencia({ estado: "no_determinada", mensaje: "Escriba el objeto del proceso antes de inferir." });
+      pintarInferencia({ estado: "no_determinada", mensaje: "Describa la obra antes de detectar los ítems." });
       return;
     }
     const btn = $("btn-inferir");
     btn.disabled = true;
-    btn.textContent = "Infiriendo…";
+    $("inferir-spin").classList.remove("hidden");
+    $("inferir-texto").textContent = "Analizando…";
     try {
       const r = await api("/api/apu/inferir", {
         method: "POST",
         body: { objeto, codigos_unspsc: $("codigos-unspsc").value.trim() },
       });
       if (!r) return;
-      pintarInferencia(r);
       if (r.items && r.items.length) {
-        filas = r.items.map((i) => ({
-          item_id: i.codigo, descripcion: i.descripcion || i.codigo, unidad: i.unidad,
-          cantidad: 0, rendimiento_override: null,
-        }));
+        quitarFilasInferidas();
+        for (const i of r.items) {
+          filas.push({
+            item_id: i.codigo, descripcion: i.descripcion || i.codigo, unidad: i.unidad,
+            cantidad: 0, rendimiento_override: null, inferido: true,
+          });
+        }
         ultimoCalculo = null;
         pintarTabla();
       }
+      pintarInferencia(r);
     } catch (e) {
-      pintarInferencia({ estado: "no_determinada", mensaje: `No se pudo inferir: ${e.message}` });
+      pintarInferencia({ estado: "no_determinada", mensaje: `No se pudo detectar: ${e.message}` });
     } finally {
       btn.disabled = false;
-      btn.textContent = "Inferir ítems";
+      $("inferir-spin").classList.add("hidden");
+      $("inferir-texto").textContent = "Detectar ítems";
     }
   });
 
@@ -1440,11 +1449,10 @@
       amarillo: "bg-amber-50 text-amber-900",
       no_determinada: "bg-gray-100 text-gray-700",
     };
-    const emoji = { verde: "●", amarillo: "●", no_determinada: "●" };
     caja.className = `mt-4 rounded-xl p-4 text-sm ${estilos[r.estado] || estilos.no_determinada}`;
     caja.classList.remove("hidden");
 
-    let html = `<p class="font-medium">${emoji[r.estado] || "●"} ${esc(r.mensaje || "")}</p>`;
+    let html = `<p class="font-medium">● ${esc(r.mensaje || "")}</p>`;
     if (r.tipologia) {
       html += `<p class="mt-1 text-xs opacity-80">Tipología <strong>${esc(r.tipologia.codigo)}</strong> · `
         + `${esc(r.tipologia.nombre)} · unidad dominante ${esc(r.tipologia.unidad_dominante || "—")} · `
@@ -1452,6 +1460,25 @@
       if (r.tipologia.sin_apu && r.tipologia.nota) {
         html += `<p class="mt-2 rounded-lg bg-white/60 p-2 text-xs"><strong>Atención:</strong> ${esc(r.tipologia.nota)}</p>`;
       }
+    }
+    if (r.items && r.items.length) {
+      /* Checkboxes atados a la tabla EN TIEMPO REAL: desmarcar quita la fila,
+         volver a marcar la devuelve. Nacen todos marcados porque la detección
+         es una propuesta que se revisa quitando, no un formulario que rellenar. */
+      html += `<p class="mt-3 text-xs font-medium">Ítems detectados — desmarque los que no apliquen; la tabla del paso 3 se actualiza sola:</p>`
+        + `<div class="mt-2 space-y-1">`
+        + r.items.map((i) => `<label class="flex cursor-pointer items-start gap-2 text-xs">
+            <input type="checkbox" data-inf="${esc(i.codigo)}" checked class="mt-0.5 h-3.5 w-3.5 rounded border-gray-300">
+            <span><strong>${esc(i.descripcion || i.codigo)}</strong>
+              <span class="opacity-70">· ${esc(i.codigo)} · ${esc(i.unidad || "—")}</span></span>
+          </label>`).join("")
+        + `</div>`;
+    } else if (Array.isArray(r.items)) {
+      /* `items` vacío = el SERVIDOR respondió sin ítems (los avisos locales no
+         traen el campo). Sin resultado, los otros dos métodos SON la salida —
+         y ya están en la misma pantalla: solo hay que señalarlos. */
+      html += `<p class="mt-2 text-xs">No se detectó ningún ítem con esta descripción. `
+        + `Cargue un Excel con sus ítems o búsquelos por su nombre — los dos métodos están aquí debajo.</p>`;
     }
     if (r.cantidades && r.cantidades.length) {
       html += `<p class="mt-2 text-xs opacity-80">Magnitudes legibles en el objeto: `
@@ -1464,11 +1491,82 @@
     caja.innerHTML = html;
   }
 
-  /* ────────────────────────── tabla de ítems ───────────────────────── */
-  $("btn-agregar").addEventListener("click", () => {
-    if (!CATALOGO) return;
-    const codigo = $("item-nuevo").value;
-    const def = CATALOGO.items.find((i) => i.codigo === codigo);
+  /* Desmarcar un ítem detectado lo quita de la tabla; volver a marcarlo lo
+     devuelve. Delegado: el contenido de #inferencia se repinta entero. */
+  $("inferencia").addEventListener("change", (e) => {
+    const cod = e.target.getAttribute && e.target.getAttribute("data-inf");
+    if (!cod) return;
+    if (e.target.checked) {
+      if (!filas.some((f) => f.inferido && f.item_id === cod)) {
+        const def = CATALOGO ? CATALOGO.items.find((x) => x.codigo === cod) : null;
+        filas.push({
+          item_id: cod, descripcion: def ? def.descripcion : cod, unidad: def ? def.unidad : null,
+          cantidad: 0, rendimiento_override: null, inferido: true,
+        });
+      }
+    } else {
+      const i = filas.findIndex((f) => f.inferido && f.item_id === cod);
+      if (i >= 0) filas.splice(i, 1);
+    }
+    ultimoCalculo = null;
+    pintarTabla();
+  });
+
+  /* ─────────────── búsqueda con autocompletar (sin desplegable) ───────────────
+     El <select> con los 174 ítems del catálogo era inusable: nadie encuentra
+     nada navegando 174 opciones. Un input que filtra en tiempo real (mínimo 2
+     caracteres), resultados agrupados por capítulo, y elegir uno lo añade a la
+     tabla. `btn-agregar` añade el primer resultado de la búsqueda vigente. */
+  const normBusqueda = (x) => String(x || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  let resultadosBusqueda = [];
+
+  function buscarEnCatalogo(q) {
+    if (!CATALOGO || !Array.isArray(CATALOGO.items)) return [];
+    const terminos = normBusqueda(q).split(/\s+/).filter(Boolean);
+    if (!terminos.length) return [];
+    return CATALOGO.items.filter((it) => {
+      const pajar = normBusqueda(`${it.codigo} ${it.descripcion}`);
+      return terminos.every((t) => pajar.includes(t));
+    });
+  }
+
+  function pintarBusqueda() {
+    const lista = $("buscar-lista");
+    if (!resultadosBusqueda.length) {
+      lista.innerHTML = `<p class="px-3 py-2 text-xs text-gray-400">Sin resultados en el catálogo. Cargue un Excel o cree el ítem calculando con un precio manual.</p>`;
+      lista.classList.remove("hidden");
+      return;
+    }
+    let capAnterior = null;
+    lista.innerHTML = resultadosBusqueda.map((it, n) => {
+      const cap = it.capitulo || "Sin capítulo";
+      /* divisor sutil por capítulo: el primero sin borde superior */
+      const cabecera = cap !== capAnterior
+        ? `<div class="${capAnterior == null ? "" : "mt-1 border-t border-gray-100 "}px-3 pb-0.5 pt-1.5 text-[10px] font-medium uppercase tracking-wide text-gray-400">${esc(cap)}</div>`
+        : "";
+      capAnterior = cap;
+      return `${cabecera}<button type="button" data-cod="${esc(it.codigo)}" data-n="${n}"
+          class="block w-full px-3 py-1.5 text-left text-xs transition hover:bg-gray-100">
+          <span class="font-medium">${esc(it.descripcion)}</span>
+          <span class="block text-[10px] text-gray-400">${esc(it.codigo)} · ${esc(it.unidad || "—")}</span>
+        </button>`;
+    }).join("");
+    lista.classList.remove("hidden");
+  }
+
+  function ocultarBusqueda() {
+    $("buscar-lista").classList.add("hidden");
+  }
+
+  function notaBusqueda(texto, tipo) {
+    const el = $("buscar-nota");
+    el.className = `mt-2 text-xs ${tipo === "ok" ? "text-emerald-700" : "text-gray-500"}`;
+    el.textContent = texto;
+    el.classList.remove("hidden");
+  }
+
+  function agregarItemCatalogo(codigo) {
+    const def = CATALOGO ? CATALOGO.items.find((i) => i.codigo === codigo) : null;
     if (!def) return;
     filas.push({
       item_id: def.codigo, descripcion: def.descripcion, unidad: def.unidad,
@@ -1476,6 +1574,51 @@
     });
     ultimoCalculo = null;
     pintarTabla();
+    notaBusqueda(`«${def.descripcion}» añadido a la tabla del paso 3. Escríbale la cantidad allí.`, "ok");
+    $("buscar-item").value = "";
+    resultadosBusqueda = [];
+    ocultarBusqueda();
+  }
+
+  $("buscar-item").addEventListener("input", () => {
+    const q = $("buscar-item").value.trim();
+    $("buscar-nota").classList.add("hidden");
+    if (q.length < 2) { resultadosBusqueda = []; ocultarBusqueda(); return; }
+    resultadosBusqueda = buscarEnCatalogo(q);
+    pintarBusqueda();
+  });
+
+  $("buscar-item").addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { ocultarBusqueda(); return; }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (resultadosBusqueda.length) agregarItemCatalogo(resultadosBusqueda[0].codigo);
+    }
+  });
+
+  /* mousedown y no click a secas: el blur del input cerraría la lista antes de
+     que el click llegara al botón de la sugerencia */
+  $("buscar-lista").addEventListener("mousedown", (e) => e.preventDefault());
+  $("buscar-lista").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-cod]");
+    if (btn) agregarItemCatalogo(btn.getAttribute("data-cod"));
+  });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("#buscar-item") && !e.target.closest("#buscar-lista")) ocultarBusqueda();
+  });
+
+  $("btn-agregar").addEventListener("click", () => {
+    const q = $("buscar-item").value.trim();
+    if (q.length < 2) {
+      notaBusqueda("Escriba al menos 2 caracteres en el campo de búsqueda: filtra el catálogo mientras escribe.");
+      return;
+    }
+    if (!resultadosBusqueda.length) resultadosBusqueda = buscarEnCatalogo(q);
+    if (!resultadosBusqueda.length) {
+      notaBusqueda(`Sin resultados para «${q}» en el catálogo.`);
+      return;
+    }
+    agregarItemCatalogo(resultadosBusqueda[0].codigo);
   });
 
   function pintarTabla() {
@@ -1715,7 +1858,13 @@
   $("tabla").addEventListener("click", (e) => {
     const quitar = e.target.getAttribute("data-quitar");
     if (quitar !== null) {
-      filas.splice(Number(quitar), 1);
+      const [quitada] = filas.splice(Number(quitar), 1);
+      /* si la fila venía de la detección, su checkbox del paso 1 se desmarca:
+         un checkbox marcado sobre una fila que ya no existe mentiría */
+      if (quitada && quitada.inferido) {
+        const chk = $("inferencia").querySelector(`input[data-inf="${quitada.item_id}"]`);
+        if (chk) chk.checked = false;
+      }
       ultimoCalculo = null;
       pintarTabla();
       return;
@@ -2164,7 +2313,14 @@
     try {
       const crudas = await leerArchivoImportado(archivo);
       if (!crudas.filas.length) {
-        msgApu(`No se encontraron ítems en «${archivo.name}». ${(crudas.avisos || []).join(" ")}`, "error");
+        /* La detección automática no encontró la tabla. Si al menos hay una
+           rejilla legible, el usuario puede mapear las columnas a mano; el
+           error seco queda solo para archivos sin nada que mapear. */
+        if (crudas.grid && crudas.grid.length) {
+          abrirMapeo(crudas.grid, archivo.name, crudas.avisos || []);
+        } else {
+          msgApu(`No se encontraron ítems en «${archivo.name}». ${(crudas.avisos || []).join(" ")}`, "error");
+        }
         return;
       }
       const r = await api("/api/apu/importar", {
@@ -2198,13 +2354,16 @@
          reemplazos se re-decodifica — la misma regla del CSV de experiencia */
       let texto = new TextDecoder("utf-8").decode(bytes);
       if (texto.includes("�")) texto = new TextDecoder("windows-1252").decode(bytes);
-      return XLSXLectura.detectarFilasApu(XLSXLectura.parsearCsv(texto));
+      const grid = XLSXLectura.parsearCsv(texto);
+      // la rejilla cruda viaja también: es lo que permite el mapeo manual de
+      // columnas cuando la detección automática no encuentra la cabecera
+      return { ...XLSXLectura.detectarFilasApu(grid), grid };
     }
     const inflar = typeof DecompressionStream === "function" ? inflarNavegador : null;
     const libro = await XLSXLectura.leerLibro(bytes, { inflar });
     const mejor = XLSXLectura.elegirHoja(libro);
-    if (!mejor) return { filas: [], avisos: ["El libro no trae hojas."] };
-    return mejor.resultado;
+    if (!mejor) return { filas: [], avisos: ["El libro no trae hojas."], grid: null };
+    return { ...mejor.resultado, grid: mejor.hoja.filas };
   }
 
   function abrirModalImportar() {
@@ -2245,6 +2404,90 @@
     $("modal-importar").classList.remove("hidden");
     $("modal-importar").classList.add("flex");
   }
+
+  /* ══════════ Mapeo manual de columnas (respaldo del método 2) ══════════
+     Cuando `detectarFilasApu` no reconoce la cabecera, el archivo no se
+     descarta: el usuario señala qué columna es qué sobre una vista previa y la
+     importación sigue por el MISMO camino (/api/apu/importar). Un segundo
+     parser «tolerante» aquí sería una segunda definición de la tabla. */
+  let mapeoPendiente = null;
+
+  function abrirMapeo(grid, nombre, avisos) {
+    mapeoPendiente = { grid, nombre };
+    const nCols = Math.min(12, grid.slice(0, 40).reduce((a, f) => Math.max(a, (f || []).length), 1));
+    const letra = (j) => String.fromCharCode(65 + j); // A, B, C…
+    const opciones = (defecto) => `<option value="">${defecto}</option>`
+      + Array.from({ length: nCols }, (_, j) => `<option value="${j}">Columna ${letra(j)}</option>`).join("");
+    $("mapeo-col-desc").innerHTML = opciones("— elija —");
+    for (const id of ["mapeo-col-unidad", "mapeo-col-cant", "mapeo-col-precio", "mapeo-col-codigo"]) {
+      $(id).innerHTML = opciones("— no viene —");
+    }
+    $("mapeo-tabla").innerHTML = `<tr class="bg-gray-50 text-[10px] uppercase tracking-wide text-gray-400">`
+      + Array.from({ length: nCols }, (_, j) => `<th class="px-2 py-1 text-left font-medium">${letra(j)}</th>`).join("")
+      + `</tr>`
+      + grid.slice(0, 8).map((f) => `<tr>`
+        + Array.from({ length: nCols }, (_, j) => `<td class="max-w-[180px] truncate px-2 py-1">${esc(String((f || [])[j] ?? ""))}</td>`).join("")
+        + `</tr>`).join("");
+    $("mapeo-aviso").classList.add("hidden");
+    if (avisos.length) {
+      $("mapeo-aviso").textContent = avisos.join(" ");
+      $("mapeo-aviso").classList.remove("hidden");
+    }
+    $("mapeo-panel").classList.remove("hidden");
+    $("mapeo-panel").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function cerrarMapeo() {
+    mapeoPendiente = null;
+    $("mapeo-panel").classList.add("hidden");
+  }
+  $("btn-mapeo-cancelar").addEventListener("click", cerrarMapeo);
+
+  $("btn-mapeo-aplicar").addEventListener("click", async () => {
+    if (!mapeoPendiente) return;
+    const col = (id) => ($(id).value === "" ? -1 : Number($(id).value));
+    const cDesc = col("mapeo-col-desc");
+    const aviso = (t) => { $("mapeo-aviso").textContent = t; $("mapeo-aviso").classList.remove("hidden"); };
+    if (cDesc < 0) { aviso("Señale al menos la columna de la descripción."); return; }
+    const cUnidad = col("mapeo-col-unidad"), cCant = col("mapeo-col-cant");
+    const cPrecio = col("mapeo-col-precio"), cCodigo = col("mapeo-col-codigo");
+    // celda → número con la regla COLOMBIANA (punto = miles) para los textos;
+    // un valor ya numérico del xlsx pasa tal cual. Ilegible = null, JAMÁS 0.
+    const numero = (v) => (typeof v === "number" ? (Number.isFinite(v) ? v : null) : XLSXLectura.numeroLocal(v));
+    const desde = $("mapeo-cabecera").checked ? 1 : 0;
+    const filasMapeadas = [];
+    for (const f of mapeoPendiente.grid.slice(desde)) {
+      const desc = String((f || [])[cDesc] ?? "").trim();
+      if (!desc) continue;
+      const precio = cPrecio >= 0 ? numero(f[cPrecio]) : null;
+      filasMapeadas.push({
+        codigo: cCodigo >= 0 ? String(f[cCodigo] ?? "").trim() || null : null,
+        capitulo: null,
+        descripcion: desc,
+        unidad: cUnidad >= 0 ? String(f[cUnidad] ?? "").trim() || null : null,
+        cantidad: cCant >= 0 ? numero(f[cCant]) : null,
+        // un precio en 0 no es un precio: es «sin dato» (regla de anticipo_pct)
+        precio_archivo: precio != null && precio > 0 ? precio : null,
+      });
+    }
+    if (!filasMapeadas.length) { aviso("Con ese mapeo ninguna fila trae descripción: revise la columna elegida."); return; }
+    const btn = $("btn-mapeo-aplicar");
+    btn.disabled = true;
+    try {
+      const r = await api("/api/apu/importar", {
+        method: "POST",
+        body: { filas: filasMapeadas, departamento: $("departamento").value },
+      });
+      if (!r) return;
+      importacion = { ...r, avisos_lectura: [`Columnas mapeadas a mano sobre «${mapeoPendiente.nombre}».`], nombre_archivo: mapeoPendiente.nombre };
+      cerrarMapeo();
+      abrirModalImportar();
+    } catch (err) {
+      aviso(`No se pudo importar con ese mapeo: ${err.message}`);
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   function cerrarModalImportar() {
     $("modal-importar").classList.add("hidden");
