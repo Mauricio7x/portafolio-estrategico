@@ -8882,7 +8882,7 @@ async function main() {
            prueba comprueba son los TÍTULOS OFICIALES —que sí son dato— para
            que la corrección sea mecánica y para que se caiga si alguien
            regenera el índice contra otro documento. */
-        const { CODIGOS_RENUMERADOS, itemPorCodigo, SEMILLA: SEM } = require("../lib/apu/catalogo.js");
+        const { CODIGOS_RENUMERADOS, itemPorCodigo, catalogoRenumerado, SEMILLA: SEM } = require("../lib/apu/catalogo.js");
         const CORREGIDOS = [
           { viejo: "INV-201.1", nuevo: "INV-200.1", art: 200, titulo: "Desmonte y limpieza" },
           { viejo: "INV-661.1", nuevo: "INV-671.1", art: 671, titulo: "Cunetas revestidas en concreto" },
@@ -8913,6 +8913,44 @@ async function main() {
           "el código vigente manda sobre el alias");
         assert.ok(/Alcantarilla/i.test(itemPorCodigo(SEM, "INV-661.1").descripcion));
         assert.ok(/Cuneta/i.test(itemPorCodigo(SEM, "INV-671.1").descripcion));
+
+        /* ═══ EL CATÁLOGO DE REDIS PUEDE SER ANTERIOR A LA RENUMERACIÓN ══════
+           Defecto encontrado DESPLEGANDO, no aquí: la suite corre contra la
+           semilla del repositorio —que ya trae los códigos corregidos— y ese
+           estado NO existe en producción hasta que alguien recarga el catálogo.
+           Pedir `INV-200.1` contra el catálogo cargado devolvía SIN PRECIO, y
+           «desplegar nunca debe exigir reconstruir» (R11).
+
+           Se simula la época anterior renombrando al revés. La trampa: contra
+           un catálogo viejo `INV-661.1` EXISTE —era la cuneta— pero hoy ese
+           código significa alcantarilla, así que un acierto directo devolvería
+           OTRA COSA. Por eso primero se mira de qué época es el catálogo. */
+        const catViejo = JSON.parse(JSON.stringify(SEM));
+        const alReves = { "INV-200.1": "INV-201.1", "INV-671.1": "INV-661.1", "INV-661.1": "INV-673.1" };
+        for (const it of catViejo.items) if (alReves[it.codigo]) it.codigo = alReves[it.codigo];
+        assert.strictEqual(catalogoRenumerado(catViejo), false);
+        assert.strictEqual(catalogoRenumerado(SEM), true);
+        for (const [codigo, esperado] of [
+          ["INV-200.1", /Desmonte y limpieza/i],
+          ["INV-671.1", /Cuneta/i],
+          ["INV-661.1", /Alcantarilla/i],   // ← el que un acierto directo se equivocaría
+        ]) {
+          const it = itemPorCodigo(catViejo, codigo);
+          assert.ok(it, `${codigo} no resuelve contra un catálogo anterior a la renumeración`);
+          assert.ok(esperado.test(it.descripcion),
+            `${codigo} devolvió «${it.descripcion}» contra el catálogo viejo: es OTRO ítem`);
+        }
+
+        /* Y el ítem SIN PRECIO también lleva su cascada: es justo aquel en el
+           que «¿por qué no hay precio?» no tiene otra respuesta en pantalla. */
+        const sinPrecioCasc = require("../lib/apu/calculo.js").calcularPresupuesto({
+          items: [{ descripcion: "algo que no existe", unidad: "und", cantidad: 1 }],
+          departamento: "BOGOTA D.C.", config: {},
+        }).items[0];
+        assert.strictEqual(sinPrecioCasc.incompleto, true);
+        assert.ok(sinPrecioCasc.cascada && sinPrecioCasc.cascada.pasos.length === 4,
+          "al ítem sin precio se le negaba la explicación, que es el único caso que la necesita entera");
+        assert.ok(sinPrecioCasc.cascada.pasos.every((p) => !p.respondio && p.motivo));
       }
 
       /* ---- j.8 persistencia: guardar → cargar → listar, con TTL ---- */
