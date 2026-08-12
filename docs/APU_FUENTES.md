@@ -191,3 +191,35 @@ estrictamente mejor que cualquier referencia nacional promediada.
 | 3 · `mercado` | 🟡 implementado, **fuera de la cascada de ítems** | Contrasta el TOTAL. No es —ni puede ser— un precio unitario. |
 | 4 · `catalogo` | ✅ funcionando | Nogal 4 + factor regional. |
 | 5 · `sin_precio` | ✅ funcionando | No suma al total; se pide el precio. Un $0 sería inventado. |
+
+---
+
+## Los códigos `INV-` del catálogo, verificados por primera vez (ago 2026)
+
+`data/invias_articulos.json` — **105 artículos** con capítulo, número y título, extraídos de la
+**Res. 4561/2022** con el mismo extractor de `tests/extraer_provincias_invias.js`.
+
+El proyecto **no publica códigos `INV-`** porque su numeración estaba *sin verificar* y el índice oficial se
+daba por inalcanzable. Ya no lo está, y el cruce contra el catálogo **encontró tres códigos mal**:
+
+| Código en el catálogo | Descripción | Apunta al artículo | Que oficialmente es | Debería ser |
+|---|---|---|---|---|
+| `INV-201.1` | Desmonte y limpieza en bosque | 201 | Demolición y remoción | **200** — Desmonte y limpieza |
+| `INV-661.1` | Cuneta revestida en concreto | 661 | Tubería de concreto reforzado | **671** — Cunetas revestidas en concreto |
+| `INV-673.1` | Alcantarilla en tubería de concreto reforzado | 673 | Subdrenes con geotextil y material granular | **661** — Tubería de concreto reforzado |
+
+Los otros ocho numerados coinciden (210, 220, 320, 330, 450, 500, 630, 640). `INV-PH.1` (placa huella) **no
+es** un artículo INVIAS y no se cruza.
+
+**Esto es exactamente el daño que la regla contenía:** un artículo INVIAS equivocado en un presupuesto es una
+**cita falsa a la norma técnica**, y la entidad la lee.
+
+**No se renumeraron.** Cambiar el código de un ítem toca el mapa de tipologías, los borradores ya guardados y
+el catálogo cargado en Redis: es un cambio aparte y con su propia migración. Quedan **fijados en la suite**
+con el título oficial de destino, así que la corrección es mecánica y la prueba avisa en cuanto alguien toque
+la lista.
+
+**Cómo NO detectarlos:** se intentó comparar el vocabulario de la descripción con el del título oficial y no
+sirve — da falso positivo en «Terraplén» vs «Terraplenes» y falso **negativo** en «Cuneta revestida en
+CONCRETO» vs «Tubería de CONCRETO reforzado», que comparten justo la palabra que no distingue nada. Una
+heurística floja aquí no es un atajo: es la forma de dar por bueno un código equivocado.
