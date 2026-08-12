@@ -2449,6 +2449,14 @@ rotulan con palabras (**Licitaciones · Precios · Mi empresa**) y en móvil lle
   alta. **`public/apu_libro.js` queda FUERA de la prohibición**: sus marcadores viajan al Excel exportado, que
   es otro medio y otra decisión. Y las pruebas dejaron de usar los glifos como proxy de «esto está cableado»
   (se atan a los cuatro NIVELES de criticidad, no a los cuatro dibujos).
+- **EL CATÁLOGO DE REDIS PUEDE SER ANTERIOR A LA RENUMERACIÓN, y eso lo encontró DESPLEGAR, no la suite.**
+  Las pruebas corren contra la semilla del repositorio —que ya trae los códigos corregidos— y ese estado **no
+  existe en producción** hasta que alguien recarga el catálogo. En vivo, pedir `INV-200.1` devolvía SIN
+  PRECIO. `itemPorCodigo` mira ahora **de qué época es el catálogo** (`catalogoRenumerado`: ¿trae algún código
+  que solo existe DESPUÉS?) y usa el mapa directo o el inverso. **No basta con probar el código tal cual
+  primero**: contra un catálogo viejo `INV-661.1` EXISTE —era la CUNETA— pero hoy significa ALCANTARILLA, así
+  que el acierto directo devolvería otro ítem. **R11: desplegar nunca debe exigir reconstruir.** Y la lección
+  general: una suite que solo conoce el estado del repositorio no ve los estados que el DESPLIEGUE atraviesa.
 - **LA CASCADA DE PRECIOS SE VE, Y ESE ERA EL PUNTO.** Existía en la respuesta de `/api/apu/cotizar` y
   **ninguna pantalla la consumía**: el usuario veía DE DÓNDE venía el precio (el badge) pero no POR QUÉ no
   venía de una fuente mejor. «Derivado regional» a secas se lee como un defecto del programa; «todavía no
