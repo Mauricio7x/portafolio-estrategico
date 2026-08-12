@@ -4140,7 +4140,7 @@ async function main() {
           items: [
             { item_id: "NOG-A2", cantidad: 10, capitulo: "CUBIERTA" },
             { item_id: "INV-210.1", cantidad: 20, capitulo: "CUBIERTA" },
-            { item_id: "INV-201.1", cantidad: 30, capitulo: "EXPLANACIONES" },
+            { item_id: "INV-200.1", cantidad: 30, capitulo: "EXPLANACIONES" },
           ],
           departamento: "BOGOTA D.C.", config: {},
         });
@@ -4186,7 +4186,7 @@ async function main() {
           items: [
             { item_id: "NOG-A2", cantidad: 10, capitulo: "CUBIERTA" },
             { item_id: "INV-210.1", cantidad: 20, capitulo: "CUBIERTA" },
-            { item_id: "INV-201.1", cantidad: 5, capitulo: "EXPLANACIONES" },
+            { item_id: "INV-200.1", cantidad: 5, capitulo: "EXPLANACIONES" },
           ],
           departamento: "BOGOTA D.C.", config: {},
         });
@@ -4244,7 +4244,7 @@ async function main() {
          estaría midiendo su propia ausencia. */
       {
         const clon = JSON.parse(JSON.stringify(S));
-        const item = clon.items.find((i) => i.codigo === "INV-201.1");
+        const item = clon.items.find((i) => i.codigo === "INV-200.1");
         assert.ok(item && item.insumos.length, "hace falta un ítem del catálogo con insumos");
         // se cotiza en Bogotá TODO lo que el ítem consume
         for (const linea of item.insumos) {
@@ -4252,7 +4252,7 @@ async function main() {
           ins.precios_cotizados = { ...(ins.precios_cotizados || {}), bogota_sabana: ins.precio_base };
         }
         const conCot = calculoApu.calcularPresupuesto({
-          items: [{ item_id: "INV-201.1", cantidad: 7 }],
+          items: [{ item_id: "INV-200.1", cantidad: 7 }],
           departamento: "BOGOTA D.C.", config: {}, catalogo: clon,
         });
         const org = APULibro.clasificarOrigen(conCot.items[0], conCot);
@@ -4265,11 +4265,11 @@ async function main() {
            para que el ítem deje de ser «cotizado» — con parte del precio sin
            verificar, decirlo a secas prometería de más. */
         const parcial = JSON.parse(JSON.stringify(clon));
-        const itemP = parcial.items.find((i) => i.codigo === "INV-201.1");
+        const itemP = parcial.items.find((i) => i.codigo === "INV-200.1");
         const unoSuelto = parcial.insumos.find((x) => x.id === itemP.insumos[0].insumo_id);
         delete unoSuelto.precios_cotizados;
         const rp = calculoApu.calcularPresupuesto({
-          items: [{ item_id: "INV-201.1", cantidad: 7 }],
+          items: [{ item_id: "INV-200.1", cantidad: 7 }],
           departamento: "BOGOTA D.C.", config: {}, catalogo: parcial,
         });
         assert.strictEqual(APULibro.clasificarOrigen(rp.items[0], rp).estado, "derivado",
@@ -4325,6 +4325,33 @@ async function main() {
           "`cotizado_pct` va redondeado para MOSTRAR: usarlo como prueba de exactitud reabre el defecto");
         assert.ok(/org\.lineas_derivadas\s*===\s*0/.test(codigoLibro),
           "la puerta de «cotizado» tiene que abrirse con la cuenta EXACTA de líneas derivadas");
+
+        /* ═══ EL CÓDIGO AMBIGUO DE LA RENUMERACIÓN INVIAS ═══════════════════
+           `INV-661.1` era «cuneta revestida» y hoy es «alcantarilla en tubería»
+           (fue a la vez origen y destino del intercambio). Un precio guardado
+           bajo ese código significa UNA COSA U OTRA según CUÁNDO se guardó, y
+           aplicar el precio de una cuneta a una alcantarilla no se ve: sale un
+           número plausible. Se desambigua con `guardado_el`, y sin fecha NO se
+           arriesga — preferir un precio posiblemente equivocado a no tener
+           precio sería el peor canje de este módulo. */
+        {
+          const precios = require("../lib/apu/precios.js");
+          const antes = { "INV-661.1": { precio: 11111, guardado_el: "2026-01-01" } }; // cuneta
+          const despues = { "INV-661.1": { precio: 22222, guardado_el: "2026-09-01" } }; // alcantarilla
+          const sinFecha = { "INV-661.1": { precio: 99999 } };
+          const usa = (id, mapa) => {
+            const r = precios.cotizar({ items: [{ item_id: id, cantidad: 1 }], preciosUsuario: mapa }).items[0];
+            return r.fuente === "usuario" ? r.precio_unitario : null;
+          };
+          assert.strictEqual(usa("INV-671.1", antes), 11111, "la cuneta hereda el precio VIEJO del 661");
+          assert.strictEqual(usa("INV-671.1", despues), null, "el precio NUEVO del 661 es de la alcantarilla");
+          assert.strictEqual(usa("INV-661.1", antes), null, "el precio VIEJO del 661 era de la cuneta");
+          assert.strictEqual(usa("INV-661.1", despues), 22222);
+          assert.strictEqual(usa("INV-661.1", sinFecha), null, "sin fecha no se arriesga");
+          assert.strictEqual(usa("INV-671.1", sinFecha), null, "sin fecha no se arriesga");
+          // los otros dos alias NO son ambiguos (200 y 671 estaban libres)
+          assert.strictEqual(usa("INV-200.1", { "INV-201.1": { precio: 33333, guardado_el: "2026-01-01" } }), 33333);
+        }
 
         // el badge de pantalla y el marcador del Excel salen de esta MISMA función
         const fuenteApp = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
@@ -4439,7 +4466,7 @@ async function main() {
             { item_id: "NOG-A2", cantidad: 126, capitulo: "CUBIERTA" },
             { descripcion: "Sin precio", unidad: "und", cantidad: 2, capitulo: "RED" },
             { item_id: "INV-210.1", cantidad: 0, capitulo: "RED" },
-            { item_id: "INV-201.1", cantidad: -5, capitulo: "RED" },
+            { item_id: "INV-200.1", cantidad: -5, capitulo: "RED" },
           ],
           departamento: "BOGOTA D.C.",
           config: { aiu_pct: 35, imprevistos_pct: 0.5, utilidad_pct: 12, cuantia_cop: 1000 },
@@ -8755,24 +8782,37 @@ async function main() {
            prueba comprueba son los TÍTULOS OFICIALES —que sí son dato— para
            que la corrección sea mecánica y para que se caiga si alguien
            regenera el índice contra otro documento. */
-        const DESALINEADOS = [
-          { codigo: "INV-201.1", apunta_a: 201, deberia_ser: 200 },  // «Desmonte y limpieza en bosque»
-          { codigo: "INV-661.1", apunta_a: 661, deberia_ser: 671 },  // «Cuneta revestida en concreto»
-          { codigo: "INV-673.1", apunta_a: 673, deberia_ser: 661 },  // «Alcantarilla en tubería de concreto reforzado»
+        const { CODIGOS_RENUMERADOS, itemPorCodigo, SEMILLA: SEM } = require("../lib/apu/catalogo.js");
+        const CORREGIDOS = [
+          { viejo: "INV-201.1", nuevo: "INV-200.1", art: 200, titulo: "Desmonte y limpieza" },
+          { viejo: "INV-661.1", nuevo: "INV-671.1", art: 671, titulo: "Cunetas revestidas en concreto" },
+          { viejo: "INV-673.1", nuevo: "INV-661.1", art: 661, titulo: "Tubería de concreto reforzado" },
         ];
-        for (const d of DESALINEADOS) {
-          assert.ok(invs.some((i) => i.codigo === d.codigo),
-            `${d.codigo} ya no está en el catálogo: si se renumeró, actualizá esta lista`);
-          assert.ok(porNumero.has(d.apunta_a) && porNumero.has(d.deberia_ser));
-          assert.notStrictEqual(porNumero.get(d.apunta_a).titulo, porNumero.get(d.deberia_ser).titulo);
+        for (const c of CORREGIDOS) {
+          assert.strictEqual(CODIGOS_RENUMERADOS[c.viejo], c.nuevo);
+          assert.ok(invs.some((i) => i.codigo === c.nuevo), `falta el ítem renumerado ${c.nuevo}`);
+          // el código nuevo cita el artículo que de verdad le corresponde
+          assert.strictEqual(porNumero.get(c.art).titulo, c.titulo,
+            `el índice oficial ya no dice eso del artículo ${c.art}`);
         }
-        // los títulos oficiales que hacen que la corrección sea mecánica
-        assert.strictEqual(porNumero.get(200).titulo, "Desmonte y limpieza");
-        assert.strictEqual(porNumero.get(671).titulo, "Cunetas revestidas en concreto");
-        assert.strictEqual(porNumero.get(661).titulo, "Tubería de concreto reforzado");
-        /* NO se renumera aquí: cambiar el código de un ítem toca el mapa de
-           tipologías, los borradores ya guardados y el catálogo cargado en
-           Redis. Queda medido y visible, que era lo que se pidió. */
+        // y no quedó ningún ítem apuntando a los tres artículos equivocados
+        for (const malo of ["INV-201.1", "INV-673.1"]) {
+          assert.ok(!invs.some((i) => i.codigo === malo), `${malo} sigue en el catálogo`);
+        }
+        assert.strictEqual(new Set(invs.map((i) => i.codigo)).size, invs.length,
+          "la renumeración duplicó un código: INV-661.1 es a la vez origen y destino, es un INTERCAMBIO");
+
+        /* COMPATIBILIDAD (R11): los borradores y los precios propios guardan el
+           `item_id` y NADIE LOS PURGA, así que el código viejo tiene que seguir
+           resolviendo. El código VIGENTE gana sobre el alias — si no,
+           `INV-661.1` (hoy la alcantarilla) se iría al 671 y la corrección
+           habría creado un error nuevo. */
+        assert.strictEqual(itemPorCodigo(SEM, "INV-201.1").codigo, "INV-200.1");
+        assert.strictEqual(itemPorCodigo(SEM, "INV-673.1").codigo, "INV-661.1");
+        assert.strictEqual(itemPorCodigo(SEM, "INV-661.1").codigo, "INV-661.1",
+          "el código vigente manda sobre el alias");
+        assert.ok(/Alcantarilla/i.test(itemPorCodigo(SEM, "INV-661.1").descripcion));
+        assert.ok(/Cuneta/i.test(itemPorCodigo(SEM, "INV-671.1").descripcion));
       }
 
       /* ---- j.8 persistencia: guardar → cargar → listar, con TTL ---- */

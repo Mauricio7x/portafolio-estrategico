@@ -277,7 +277,7 @@
      separadas: el ítem es la POSICIÓN en el presupuesto (1.1, 1.2, 2.1 — lo que
      el pliego usa para referirse a una fila y lo que la entidad compara entre
      oferentes) y el código es la IDENTIDAD del ítem en el catálogo (NOG-A2,
-     INV-201.1). Cuando compartían columna, dos presupuestos con los mismos
+     INV-200.1). Cuando compartían columna, dos presupuestos con los mismos
      ítems en distinto orden no se podían cotejar fila a fila.
 
      SUBTOTAL POR CAPÍTULO con `=SUM()` real. El bloque de COSTOS DIRECTOS ya no

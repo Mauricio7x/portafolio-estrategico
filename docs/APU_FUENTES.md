@@ -214,10 +214,23 @@ es** un artículo INVIAS y no se cruza.
 **Esto es exactamente el daño que la regla contenía:** un artículo INVIAS equivocado en un presupuesto es una
 **cita falsa a la norma técnica**, y la entidad la lee.
 
-**No se renumeraron.** Cambiar el código de un ítem toca el mapa de tipologías, los borradores ya guardados y
-el catálogo cargado en Redis: es un cambio aparte y con su propia migración. Quedan **fijados en la suite**
-con el título oficial de destino, así que la corrección es mecánica y la prueba avisa en cuanto alguien toque
-la lista.
+**CORREGIDOS (ago 2026).** `INV-201.1 → INV-200.1`, `INV-661.1 → INV-671.1`, `INV-673.1 → INV-661.1`.
+
+⚠️ **Es un INTERCAMBIO, no tres renombres sueltos:** `INV-661.1` es a la vez origen y destino, así que
+aplicarlos en secuencia haría que el 673 pisara al 661 antes de que este llegara a ser 671. Se sustituyen en
+UNA sola pasada.
+
+**Los códigos viejos siguen resolviendo** (`CODIGOS_RENUMERADOS` + `itemPorCodigo` en `lib/apu/catalogo.js`,
+punto único usado por `calculo` y por `precios`): los borradores (`apu:presupuesto:*`) y los precios propios
+del contratista (`apu:precios:*`) guardan el `item_id` y **nadie los purga** (R11). El **código vigente gana
+sobre el alias** — si no, `INV-661.1` (hoy la alcantarilla) se iría al 671 y la corrección habría creado un
+error nuevo.
+
+**Y queda un código AMBIGUO, que es el riesgo fino de todo esto:** un precio guardado bajo `INV-661.1`
+significa **cuneta** si es anterior a la corrección y **alcantarilla** si es posterior. Aplicar el precio de
+una cuneta a una alcantarilla no se ve — sale un número plausible. Se desambigua con `guardado_el`, que ya
+viajaba en cada registro, y **sin fecha no se arriesga**: preferir un precio posiblemente equivocado a no
+tener precio sería el peor canje de este módulo. Hay prueba de los siete casos.
 
 **Cómo NO detectarlos:** se intentó comparar el vocabulario de la descripción con el del título oficial y no
 sirve — da falso positivo en «Terraplén» vs «Terraplenes» y falso **negativo** en «Cuneta revestida en
