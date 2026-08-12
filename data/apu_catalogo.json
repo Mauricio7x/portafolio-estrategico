@@ -3678,7 +3678,7 @@
  ],
  "items": [
   {
-   "codigo": "INV-201.1",
+   "codigo": "INV-200.1",
    "descripcion": "Desmonte y limpieza en bosque",
    "unidad": "m2",
    "capitulo": "Explanaciones",
@@ -4064,7 +4064,7 @@
    ]
   },
   {
-   "codigo": "INV-661.1",
+   "codigo": "INV-671.1",
    "descripcion": "Cuneta revestida en concreto de 3.000 PSI",
    "unidad": "ml",
    "capitulo": "Estructuras y drenajes",
@@ -4103,7 +4103,7 @@
    ]
   },
   {
-   "codigo": "INV-673.1",
+   "codigo": "INV-661.1",
    "descripcion": "Alcantarilla en tubería de concreto reforzado Ø36\"",
    "unidad": "ml",
    "capitulo": "Estructuras y drenajes",
