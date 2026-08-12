@@ -1225,6 +1225,23 @@ async function main() {
     console.log(`· unidad tipo de precio: ${casos.length} casos (unitarios/global/ambiguo/nada, sin adivinar)`);
   }
 
+  /* unidad: «No Definido» no es un adjudicatario. Defecto encontrado EN
+     PRODUCCIÓN al desplegar «quién gana aquí»: el literal viaja también como
+     NOMBRE (no solo como NIT) y agrupaba 57 procesos de una gobernación real
+     bajo un «ganador» falso con alerta de concentración del 54 %. */
+  {
+    const { claveAdjudicatario } = require("../lib/equivalencias.js");
+    assert.strictEqual(claveAdjudicatario({ nombre_del_proveedor: "No Definido" }).clave, null,
+      "«No Definido» como nombre es un relleno del dataset, no una identidad");
+    assert.strictEqual(claveAdjudicatario({
+      nit_del_proveedor_adjudicado: "No Definido", nombre_del_proveedor: "no definido",
+    }).clave, null, "…también con el relleno en los dos campos a la vez");
+    // y un nombre real sigue entrando por el respaldo
+    const real = claveAdjudicatario({ nombre_del_proveedor: "CONSTRUCTORA REAL SAS" });
+    assert.ok(real.clave === "n:constructora real sas" && real.porNombre === true);
+    console.log("· unidad adjudicatario: los rellenos del dataset no fabrican un ganador");
+  }
+
   /* unidad: estados canónicos — desconocido = CERRADO, sin fallback optimista */
   {
     const casos = [
