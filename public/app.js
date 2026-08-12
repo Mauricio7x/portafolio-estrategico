@@ -822,10 +822,13 @@
       : `Sin procesos previstos${ent ? ` para «${ent}»` : ""}${desde && hasta ? ` entre ${desde} y ${hasta}` : ""}.`;
 
     /* La advertencia se pinta SIEMPRE, también con la lista llena: es la mitad
-       del significado de esta sección. La tasa de acierto no está medida y se
-       dice con esas palabras — un «alta» sin medición sería vender humo. */
-    $("paa-aviso").textContent = `${cuerpo.advertencia || ""} Tasa de acierto del PAA: ${
-      cuerpo.tasa_de_acierto == null ? "sin medir por esta app" : `${cuerpo.tasa_de_acierto} %`}.`;
+       del significado de esta sección. Con la tasa MEDIDA se pinta la nota del
+       SERVIDOR entera (cifra + vigencia + muestra + «cota inferior»): la cifra
+       suelta sin su método diría más de lo que se midió. Sin medición se dice
+       con esas palabras — un «alta» sin medición sería vender humo. */
+    $("paa-aviso").textContent = cuerpo.tasa_de_acierto == null
+      ? `${cuerpo.advertencia || ""} Tasa de acierto del PAA: sin medir por esta app.`
+      : `${cuerpo.advertencia || ""} ${cuerpo.tasa_de_acierto_nota || `Tasa de acierto del PAA: ${cuerpo.tasa_de_acierto} %.`}`;
     $("paa-lista").innerHTML = cuerpo.resultados.map(tarjetaPaa).join("");
 
     /* Pie técnico: lo que el endpoint NO pudo hacer. Se pinta solo cuando hay

@@ -66,6 +66,7 @@ const { autorizarToken } = require("../lib/auth.js");
 const { detalleEntidad } = require("../lib/competencia_detalle.js");
 const { desgloseDeProceso } = require("../lib/probabilidad_desglose.js");
 const { consultarPaa } = require("../lib/paa.js");
+const { medirAciertoPaa, leerAciertoPaa } = require("../lib/paa_acierto.js");
 
 const DEV = !process.env.VERCEL && process.env.NODE_ENV !== "production";
 const logDev = (...a) => { if (DEV) console.log("[competencia-detalle]", ...a); };
@@ -110,12 +111,33 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  /* El PAA sale AQUÍ, antes de mirar Upstash: vive en otro dataset de Socrata y
-     no lee el corpus, no escribe y no toma candados. Exigirle credenciales de
-     Redis lo dejaría caído por una avería que no le incumbe — y es justo la
-     vista que sirve para trabajar cuando todavía no hay nada publicado. */
+  /* El PAA sale AQUÍ, antes del chequeo duro de Upstash: la consulta vive en
+     otro dataset de Socrata, no lee el corpus y no toma candados. Desde ago
+     2026 hay DOS matices, los dos deliberados:
+     · `?medir=1` SÍ exige Redis (cruza el PAA de una vigencia cerrada contra
+       el corpus y guarda `paa:acierto`): es la única escritura de la vista y
+       lo dice su 503.
+     · la consulta normal LEE `paa:acierto` best-effort — un Redis caído
+       devuelve null dentro de `leerAciertoPaa` y la vista sirve igual, con la
+       tasa sin medir. La garantía que importa (una avería de Redis no tumba
+       el PAA) se conserva. */
   if (vista === "paa") {
-    const { estado, cuerpo } = await consultarPaa({ entidad: q.entidad, unspsc: q.unspsc, log: logDev });
+    if (q.medir === "1") {
+      if (!hayCredenciales()) {
+        return res.status(503).json({ ok: false, error: "Medir la tasa de acierto exige credenciales de Upstash Redis (cruza el PAA contra el corpus)." });
+      }
+      let redisMedir;
+      try { redisMedir = crearRedis({}); }
+      catch (e) { return res.status(503).json({ ok: false, error: `Servicio de caché no disponible: ${e.message}` }); }
+      const anio = q.anio && String(q.anio).trim() !== "" ? Number(q.anio) : undefined;
+      const { estado, cuerpo } = await medirAciertoPaa(redisMedir, { anio, log: logDev });
+      return res.status(estado).json(cuerpo);
+    }
+    let acierto = null;
+    if (hayCredenciales()) {
+      try { acierto = await leerAciertoPaa(crearRedis({})); } catch { acierto = null; }
+    }
+    const { estado, cuerpo } = await consultarPaa({ entidad: q.entidad, unspsc: q.unspsc, log: logDev, acierto });
     return res.status(estado).json(cuerpo);
   }
 

@@ -937,6 +937,13 @@ function crearMockSocrata() {
   let inyectarFallos = true;
 
   const cumple = (fila, clausula) => {
+    /* Grupo parentizado de ORs — `(c like '%7210%' OR c like '%7211%' …)`—:
+       es lo que construye lib/paa_acierto para acotar por familias de obra.
+       El $where exterior se parte por « AND », así que el grupo llega entero
+       (no contiene « AND ») y basta con que UNA rama cumpla. */
+    if (clausula.startsWith("(") && clausula.endsWith(")") && / OR /i.test(clausula)) {
+      return clausula.slice(1, -1).split(/ OR /i).some((p) => cumple(fila, p.trim()));
+    }
     /* `like` con comodines a los dos lados, con o sin `upper(...)`: es lo que
        construye lib/paa para acotar por entidad y por código UNSPSC. Sin
        soportarlo, `cumple` lanzaba dentro del callback del servidor —una
@@ -1240,6 +1247,30 @@ async function main() {
     const real = claveAdjudicatario({ nombre_del_proveedor: "CONSTRUCTORA REAL SAS" });
     assert.ok(real.clave === "n:constructora real sas" && real.porNombre === true);
     console.log("· unidad adjudicatario: los rellenos del dataset no fabrican un ganador");
+  }
+
+  /* unidad: fechas del PAA real — el mes viene en TEXTO («Marzo») y el año en
+     otra columna (annio). Un mes sin año es ilegible, jamás una adivinanza. */
+  {
+    const { fechaPaa } = require("../lib/paa.js");
+    const casos = [
+      [["Marzo", "2025"], "2025-03-01"],
+      [["  marzo ", "2025"], "2025-03-01"],
+      [["Septiembre", "2024"], "2024-09-01"],
+      [["Setiembre", "2024"], "2024-09-01"],       // variante real de la fuente
+      [["Diciembre", "2026"], "2026-12-01"],
+      [["2026-03-15T00:00:00.000", null], "2026-03-15"], // ISO pasa directo, sin año aparte
+      [["15/03/2026", null], "2026-03-15"],
+      [["Marzo", null], null],                     // ¿marzo de cuál año? ilegible
+      [["Marzo", "25"], null],                     // un año de 2 dígitos no es un año
+      [["Trimestre 1", "2025"], null],             // basura no reconocida
+      [["", "2025"], null],
+    ];
+    for (const [[valor, anio], esperado] of casos) {
+      assert.strictEqual(fechaPaa(valor, anio), esperado,
+        `fechaPaa(${JSON.stringify(valor)}, ${JSON.stringify(anio)}) esperaba ${esperado}`);
+    }
+    console.log(`· unidad fechas del PAA: ${casos.length} casos (mes en texto + annio, ISO directo, ilegibles)`);
   }
 
   /* unidad: estados canónicos — desconocido = CERRADO, sin fallback optimista */
@@ -11326,10 +11357,16 @@ async function main() {
       const r = await pedirPaa();
       assert.strictEqual(r.status, 200, `el PAA debía responder 200: ${JSON.stringify(r.cuerpo).slice(0, 300)}`);
       assert.strictEqual(r.cuerpo.dataset, "9sue-ezhx", "el dataset del PAA es 9sue-ezhx");
-      assert.strictEqual(r.cuerpo.verificado, false,
-        "mientras nadie abra datos.gov.co, la respuesta tiene que declarar que NO está verificada");
+      /* Columnas VERIFICADAS contra la fuente real (2026-08-12): la nota de
+         «datos.gov.co responde 403» era una observación vieja, y al volver a
+         llamar la fuente las columnas de verdad eran otras. La respuesta lo
+         declara con la fecha. */
+      assert.strictEqual(r.cuerpo.verificado, true, "las columnas ya están verificadas contra la fuente real");
+      assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(r.cuerpo.verificado_el), "la verificación viaja con su fecha");
       assert.strictEqual(r.cuerpo.tasa_de_acierto, null,
-        "la tasa de acierto del PAA no está medida: publicar una cifra sería vender humo");
+        "sin medición GUARDADA la tasa sigue en null: publicar una cifra sería vender humo");
+      assert.ok(/medir=1/.test(r.cuerpo.tasa_de_acierto_nota || ""),
+        "la nota sin medición debe decir CÓMO medirla");
       assert.ok(/PLAN, no un compromiso/i.test(r.cuerpo.advertencia || ""),
         "la advertencia de que un plan no es un compromiso viaja en la RESPUESTA, no solo en la pantalla");
       assert.strictEqual(r.cuerpo.censo.columnas.objeto, "descripcion");
@@ -11465,6 +11502,78 @@ async function main() {
         assert.strictEqual(porRuta.cuerpo.vista, "paa");
       }
 
+      /* k.6-bis · TASA DE ACIERTO: el PAA de una vigencia CERRADA contra el
+         corpus. Fixture con la FORMA REAL del dataset (nombre_entidad,
+         categorias_unspsc con «;», annio, mes en texto, procesos_relacionados):
+         38 líneas → 34 evaluables (30 de una familia que la Gobernación del
+         Tolima sí publicó ese año, 4 de una de obra que NO publicó), 2 de una
+         entidad fuera del corpus, 1 sin entidad y 1 falso positivo del like
+         (87214100 CONTIENE «7214» pero su familia es 8721). */
+      {
+        const ANIO_MEDIDO = ANO - 1;
+        const filaAcierto = (i, extra) => ({
+          ":id": `zacierto-${String(i).padStart(3, "0")}`,
+          nombre_entidad: "GOBERNACIÓN DEL TOLIMA", nit_entidad: "800100002",
+          descripcion: `Línea de obra del PAA ${i}`,
+          categorias_unspsc: "72141000;80111600",
+          valor_total_esperado: "500000000",
+          fecha_esperada_de_inicio: "Marzo",
+          annio: String(ANIO_MEDIDO), modalidad: "Licitación pública",
+          // la señal secundaria: SECOP enlaza el proceso real en la mitad
+          ...(i % 2 === 0 ? { procesos_relacionados: `CO1.REQ.${i}` } : {}),
+          ...extra,
+        });
+        const filasAcierto = [];
+        for (let i = 1; i <= 30; i++) filasAcierto.push(filaAcierto(i));
+        for (let i = 31; i <= 34; i++) filasAcierto.push(filaAcierto(i, { categorias_unspsc: "95121500" }));
+        filasAcierto.push(filaAcierto(35, { nombre_entidad: "ALCALDIA DE NINGUNA PARTE", nit_entidad: "999000111" }));
+        filasAcierto.push(filaAcierto(36, { nombre_entidad: "ALCALDIA DE NINGUNA PARTE DOS", nit_entidad: "999000112" }));
+        filasAcierto.push(filaAcierto(37, { nombre_entidad: "   " }));
+        filasAcierto.push(filaAcierto(38, { categorias_unspsc: "87214100" }));
+        socrata.setDatasetPaa(filasAcierto);
+
+        const med = await invocar(detalleComp, `/api/competencia-detalle?vista=paa&medir=1&anio=${ANIO_MEDIDO}`, CAB_TOKEN);
+        assert.strictEqual(med.status, 200, `la medición falló: ${JSON.stringify(med.cuerpo).slice(0, 300)}`);
+        const m = med.cuerpo;
+        assert.strictEqual(m.medido, true);
+        assert.strictEqual(m.anio, ANIO_MEDIDO);
+        assert.strictEqual(m.muestra.filas_leidas, 38, "el barrido debía leer las 38 líneas de la vigencia");
+        assert.strictEqual(m.muestra.evaluadas, 34);
+        assert.strictEqual(m.muestra.cumplidas, 30, "las 30 líneas de la familia publicada cumplen");
+        assert.strictEqual(m.muestra.no_cumplidas, 4, "una familia de obra que la entidad NO publicó no cumple");
+        /* LA INVARIANTE: nada desaparece sin quedar contado. */
+        const sumaDesc = Object.values(m.descartadas).reduce((a, b) => a + b, 0);
+        assert.strictEqual(m.muestra.evaluadas + sumaDesc, m.muestra.filas_leidas,
+          "evaluadas + descartadas tiene que ser exactamente lo leído");
+        assert.strictEqual(m.descartadas.entidad_sin_corpus, 2,
+          "una entidad que el corpus no conoce NO entra al denominador: su «no salió» no distingue el PAA del alcance del corpus");
+        assert.strictEqual(m.descartadas.sin_entidad, 1);
+        assert.strictEqual(m.descartadas.familia_fuera_de_obra, 1,
+          "el falso positivo del like (87214100 contiene «7214») lo caza la extracción real de familias");
+        assert.strictEqual(m.tasa_pct, 88, "30 de 34 = 88 %");
+        assert.ok(/COTA INFERIOR/i.test(m.metodo), "el método declara que la cifra es una cota inferior");
+        assert.ok(m.senal_enlace && m.senal_enlace.pct === 50,
+          "la señal del enlace de SECOP se mide sobre las evaluadas (17 de 34)");
+        assert.strictEqual(m.guardado, true, "el resultado tiene que quedar guardado para la vista");
+
+        /* la vista NORMAL sirve la medición guardada, con su método al lado */
+        socrata.setDatasetPaa(DATASET_PAA);
+        const rv = await pedirPaa();
+        assert.strictEqual(rv.cuerpo.tasa_de_acierto, 88, "la vista tiene que servir la tasa medida");
+        assert.ok(/COTA INFERIOR/i.test(rv.cuerpo.tasa_de_acierto_nota),
+          "la cifra no viaja suelta: la nota lleva vigencia, muestra y el límite del método");
+        assert.ok(rv.cuerpo.acierto && rv.cuerpo.acierto.muestra.evaluadas === 34,
+          "el bloque completo de la medición viaja para quien quiera auditarla");
+
+        /* medir el año EN CURSO es un 400: un plan a 12 meses contra 8 de
+           realidad daría una tasa artificialmente baja y creíble */
+        const enCurso = await invocar(detalleComp, `/api/competencia-detalle?vista=paa&medir=1&anio=${ANO}`, CAB_TOKEN);
+        assert.strictEqual(enCurso.status, 400, "la vigencia a medir tiene que estar cerrada");
+
+        await redis.del("paa:acierto"); // las pruebas anteriores de la vista esperan «sin medir»
+        console.log(`  · tasa de acierto del PAA: ${m.tasa_pct} % (${m.muestra.cumplidas}/${m.muestra.evaluadas} líneas de obra, vigencia ${ANIO_MEDIDO}) · enlace SECOP ${m.senal_enlace.pct} % · invariante Σ verificada`);
+      }
+
       /* k.7 · el frontend: sección APARTE, badges y token en cabecera */
       {
         const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
@@ -11503,7 +11612,7 @@ async function main() {
 
       console.log(`  · PAA (9sue-ezhx): ${r.cuerpo.total} previstos entre ${v.desde} y ${v.hasta} · `
         + `censo ${Object.values(r.cuerpo.censo.columnas).filter(Boolean).length}/${Object.keys(r.cuerpo.censo.columnas).length} columnas `
-        + `· jerarquía UNSPSC, ventana, fecha ilegible y columnas marcianas verificadas · sin verificar contra la fuente real`);
+        + `· jerarquía UNSPSC, ventana, fecha ilegible y columnas marcianas verificadas · columnas verificadas contra la fuente real (2026-08-12)`);
     }
 
     /* i. la INVARIANTE que sostiene el encadenado del panel de administración:
