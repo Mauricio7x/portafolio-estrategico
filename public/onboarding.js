@@ -185,6 +185,126 @@
   }
 
   /* ══════════ Flujo principal: PDF → perfil → dashboard ══════════ */
+  /* Un solo camino de envío, usado por la primera carga y por el reintento con
+     los datos tecleados: dos rutas se desincronizan a la primera corrección. */
+  async function enviarRup(texto, nombreArchivo, completar) {
+    let r = null;
+    try {
+      r = await fetch(CANONICA, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          texto_extraido: texto,
+          nombre_archivo: nombreArchivo,
+          // se reenvía el TEXTO, no el perfil: el cliente solo puede mover las
+          // casillas que el servidor declaró faltantes (es la única escritura
+          // sin token del proyecto)
+          completar: completar || undefined,
+        }),
+      });
+    } catch (e) {
+      throw new Error(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`);
+    }
+    /* el parseo va APARTE del fetch: el muro del edge responde HTML y con
+       los dos en el mismo try se diagnosticaría como «sin conexión» */
+    let cuerpo = null;
+    try { cuerpo = await r.json(); } catch {
+      throw new Error(`El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, iniciá sesión y reintentá.`);
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      avisos((cuerpo && cuerpo.advertencias) || null);
+      throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
+    }
+    return cuerpo;
+  }
+
+  /* El formulario de los datos que el certificado no trae. Se pinta DENTRO del
+     cuadro de mensaje —no hay nodo nuevo en el HTML, así que no puede quedar
+     una referencia a un id que no existe— y en tono de «ya casi», no de error:
+     el certificado es válido y se leyó bien; solo faltan una o dos cifras que
+     ese formato no imprime. */
+  function pedirDatosFaltantes(texto, nombreArchivo, cuerpo) {
+    const faltan = cuerpo.faltan || [];
+    const leido = cuerpo.leido || {};
+    const campos = faltan.map((f, i) => `
+      <label class="mt-3 block">
+        <span class="block text-sm font-medium">${esc(f.etiqueta)}</span>
+        <span class="block text-xs opacity-70">${esc(f.donde)}</span>
+        <input id="rup-falta-${i}" data-campo="${esc(f.campo)}" type="number" step="any" min="0"
+               class="mt-1 w-full max-w-xs rounded-lg border border-gray-300 px-3 py-2 text-sm"
+               placeholder="Escribí el valor">
+      </label>`).join("");
+
+    mensaje(
+      `<strong>Leímos tu certificado.</strong> `
+      + (leido.nombre ? `${esc(leido.nombre)} · ` : "")
+      + `${esc(leido.codigos_unspsc || 0)} códigos UNSPSC reconocidos.`
+      + `<p class="mt-2">Este formato de certificado no imprime `
+      + `${faltan.length === 1 ? "un dato" : `${faltan.length} datos`}. `
+      + `Escribilo${faltan.length === 1 ? "" : "s"} una vez y queda${faltan.length === 1 ? "" : "n"} guardado`
+      + `${faltan.length === 1 ? "" : "s"} en tu perfil.</p>`
+      + `<form id="rup-completar">${campos}
+           <button type="submit" class="mt-4 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white">
+             Continuar
+           </button>
+           <span id="rup-completar-aviso" class="ml-3 text-xs"></span>
+         </form>`,
+      "aviso",
+    );
+    avisos(cuerpo.advertencias);
+
+    const form = document.getElementById("rup-completar");
+    if (!form) return;
+    form.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const aviso = document.getElementById("rup-completar-aviso");
+      const completar = {};
+      let faltaAlguno = false;
+      faltan.forEach((f, i) => {
+        const el = document.getElementById(`rup-falta-${i}`);
+        const n = el && el.value.trim() === "" ? null : Number(el.value);
+        // vacío o 0 = SIN DATO, jamás «vale cero»: un patrimonio 0 calcularía
+        // una capacidad de contratación de cero y cerraría puertas de verdad
+        if (n == null || !Number.isFinite(n) || n <= 0) { faltaAlguno = true; return; }
+        completar[f.campo] = n;
+      });
+      if (faltaAlguno) {
+        if (aviso) { aviso.textContent = "Faltan casillas por llenar (un 0 no es un dato)."; aviso.className = "ml-3 text-xs text-red-600"; }
+        return;
+      }
+      if (aviso) { aviso.textContent = "Guardando…"; aviso.className = "ml-3 text-xs opacity-70"; }
+      ocupado(true);
+      try {
+        const c2 = await enviarRup(texto, nombreArchivo, completar);
+        if (c2.completo === false) return pedirDatosFaltantes(texto, nombreArchivo, c2);
+        finalizarRup(c2);
+      } catch (e) {
+        mensaje(esc((e && e.message) || "No se pudo guardar."), "error");
+      } finally {
+        ocupado(false);
+      }
+    });
+  }
+
+  /* Cierre común: lo hace la carga directa y el reintento tras completar. */
+  function finalizarRup(cuerpo) {
+    progreso(100, "Perfil creado.");
+    const nombre = (cuerpo.resumen && cuerpo.resumen.nombre) || "";
+    guardarPerfilRup({ id: cuerpo.perfil_id, nombre });
+    const destino = cuerpo.url_dashboard || `/?perfil=${cuerpo.perfil_id}`;
+    const vig = cuerpo.vigencia || {};
+    mensaje(
+      `<strong>Listo.</strong> Se leyeron <strong>${esc(cuerpo.unspsc_count)}</strong> códigos UNSPSC de tu RUP`
+      + (nombre ? ` (${esc(nombre)})` : "")
+      + `. Capacidad de contratación estimada: <strong>${esc(fmtCOP.format(cuerpo.k))}</strong>.`
+      + (vig.fecha_renovacion ? ` Última renovación: ${esc(vig.fecha_renovacion)}.` : "")
+      + " Abriendo tu tablero…",
+      "ok",
+    );
+    avisos(cuerpo.advertencias);
+    setTimeout(() => { window.location.href = destino; }, 1800);
+  }
+
   async function procesarRup(archivo) {
     mensaje(null); avisos(null);
     ocupado(true);
@@ -214,42 +334,22 @@
       }
 
       progreso(75, "Armando tu perfil…");
-      let r = null;
-      try {
-        r = await fetch(CANONICA, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ texto_extraido: texto, nombre_archivo: archivo.name || null }),
-        });
-      } catch (e) {
-        throw new Error(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`);
-      }
-      /* el parseo va APARTE del fetch: el muro del edge responde HTML y con
-         los dos en el mismo try se diagnosticaría como «sin conexión» */
-      let cuerpo = null;
-      try { cuerpo = await r.json(); } catch {
-        throw new Error(`El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, iniciá sesión y reintentá.`);
-      }
-      if (!r.ok || !cuerpo || !cuerpo.ok) {
-        avisos((cuerpo && cuerpo.advertencias) || null);
-        throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
+      const cuerpo = await enviarRup(texto, archivo.name || null, null);
+
+      /* ═══ FALTAN DATOS ≠ CERTIFICADO INVÁLIDO ══════════════════════════════
+         El RUP de una PERSONA NATURAL sale de la Cámara con el mismo formato
+         que el de una sociedad pero sin «Utilidad operacional»: quien no lleva
+         libros no la reporta. Eso rechazaba el certificado ENTERO y echaba a la
+         persona en la primera pantalla — el peor sitio posible para un «no».
+         Ahora el servidor devuelve lo que leyó y pide SOLO lo que falta, aquí
+         se pintan esas casillas, y al enviarlas se reintenta con el MISMO
+         texto. Se teclea una vez y queda guardado en el perfil. */
+      if (cuerpo.completo === false) {
+        progreso(null);
+        return pedirDatosFaltantes(texto, archivo.name || null, cuerpo);
       }
 
-      progreso(100, "Perfil creado.");
-      const nombre = (cuerpo.resumen && cuerpo.resumen.nombre) || "";
-      guardarPerfilRup({ id: cuerpo.perfil_id, nombre });
-      const destino = cuerpo.url_dashboard || `/?perfil=${cuerpo.perfil_id}`;
-      const vig = cuerpo.vigencia || {};
-      mensaje(
-        `<strong>Listo.</strong> Se leyeron <strong>${esc(cuerpo.unspsc_count)}</strong> códigos UNSPSC de tu RUP`
-        + (nombre ? ` (${esc(nombre)})` : "")
-        + `. Capacidad de contratación estimada: <strong>${esc(fmtCOP.format(cuerpo.k))}</strong>.`
-        + (vig.fecha_renovacion ? ` Última renovación: ${esc(vig.fecha_renovacion)}.` : "")
-        + " Abriendo tu tablero…",
-        "ok",
-      );
-      avisos(cuerpo.advertencias);
-      setTimeout(() => { window.location.href = destino; }, 1800);
+      finalizarRup(cuerpo);
     } catch (e) {
       progreso(null);
       mensaje(esc((e && e.message) || "Error desconocido al leer el RUP."), "error");

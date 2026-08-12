@@ -147,6 +147,71 @@ async function cargarRupDesdePdf(req, res) {
     return res.status(400).json({ ok: false, error: extraccion.error, diagnostico: extraccion.diagnostico || null });
   }
 
+  /* ═══ EL CERTIFICADO SE ACEPTA AUNQUE LE FALTE UN NÚMERO ══════════════════
+     Un RUP de PERSONA NATURAL sale de la Cámara con el mismo formato que el de
+     una sociedad pero sin «Utilidad operacional» (quien no lleva libros no la
+     reporta). Antes eso rechazaba el certificado ENTERO y expulsaba al usuario
+     en la primera pantalla. Ahora `lib/rup_pdf` devuelve lo que leyó con
+     `completo: false` y la lista de lo que falta, y aquí se cierra el circuito:
+
+       1.ª llamada  · sin `completar` → 200 con `completo:false` + `faltan`.
+                      NO SE GUARDA NADA: un perfil a medias calcularía una
+                      capacidad de contratación con huecos, y eso decide a qué
+                      se presenta una persona.
+       2.ª llamada  · el navegador reenvía el MISMO texto y `completar` con los
+                      números que la persona tecleó. Se fusionan sobre lo
+                      extraído y sigue el camino normal.
+
+     Se reenvía el TEXTO y no el perfil parcial a propósito: si el cliente
+     mandara el perfil, podría mandar cualquier cosa —códigos UNSPSC incluidos—
+     y esta es la ÚNICA escritura sin token de todo el proyecto. Con `completar`
+     el cliente solo puede mover las casillas que el servidor declaró faltantes;
+     todo lo demás lo sigue decidiendo el extractor. */
+  const completar = (cuerpo.datos && cuerpo.datos.completar) || null;
+  if (completar && typeof completar === "object" && !Array.isArray(completar)) {
+    const permitidos = new Set(extraccion.faltan.map((f) => f.campo));
+    for (const [campo, valor] of Object.entries(completar)) {
+      if (!permitidos.has(campo)) continue;            // solo lo que el servidor pidió
+      const n = Number(valor);
+      if (!Number.isFinite(n) || n <= 0) continue;     // un 0 no es un dato (R1)
+      if (campo === "experiencia_smmlv") {
+        extraccion.config.experiencia_smmlv = n;
+        // el tope sale del mismo supuesto declarado que usa el extractor
+        if (extraccion.config.tope_smmlv == null) extraccion.config.tope_smmlv = Math.ceil(n * 2);
+      } else if (campo === "endeudamiento") {
+        // se teclea como PORCENTAJE (13 = 13 %); el esquema lo guarda como razón
+        extraccion.config.indicadores.endeudamiento = n > 1 ? Math.round((n / 100) * 10000) / 10000 : n;
+      } else {
+        extraccion.config.indicadores[campo] = campo === "liquidez" ? n : Math.round(n);
+      }
+    }
+    extraccion.faltan = extraccion.faltan.filter((f) => (
+      (f.campo === "experiencia_smmlv"
+        ? extraccion.config.experiencia_smmlv : extraccion.config.indicadores[f.campo]) == null
+    ));
+    extraccion.completo = extraccion.faltan.length === 0;
+  }
+
+  if (!extraccion.completo) {
+    return res.status(200).json({
+      ok: true,
+      completo: false,
+      faltan: extraccion.faltan,
+      /* Lo leído viaja para que la web pueda enseñar «ya tengo esto» y pedir
+         solo el resto: ver una pantalla que reconoce tu certificado es lo que
+         hace que valga la pena teclear dos números. */
+      leido: {
+        nombre: extraccion.config.nombre,
+        tipo: extraccion.config.tipo,
+        codigos_unspsc: extraccion.config.unspsc.length,
+        vigencia: extraccion.vigencia,
+      },
+      advertencias: extraccion.advertencias,
+      como_seguir: "Escribí los datos que faltan y volvé a enviar el mismo certificado junto con «completar». "
+        + "Quedan guardados en tu perfil: solo se piden una vez.",
+    });
+  }
+
   const id = generarIdDinamico();
   const v = validarPerfilDinamico(id, extraccion.config);
   if (!v.ok) {
