@@ -1,2189 +1,1178 @@
 # CLAUDE.md
 
-**Al iniciar cada sesión, lee `docs/GUIA_ANALISTA_LICITACIONES.md` para comprender el dominio del
-proyecto.** Y `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md`, que audita el manual, **corrige dos cosas
-que dice mal** y trae lo verificado en 2025-2026 (documentos tipo v.2, ley de garantías, dataset).
-Para todo lo de precios y costeo, `docs/APU_Y_RENTABILIDAD.md` (fuentes recuperadas, qué es dato y
-qué es estimación, y qué NO cubre todavía el catálogo).
-
-Memoria del proyecto para Claude Code. Si retomas el trabajo, lee primero `README.md`
-(arquitectura, endpoints, claves Redis, reglas de negocio) y vuelve aquí para el contexto.
+**Al iniciar cada sesión, lee `docs/GUIA_ANALISTA_LICITACIONES.md`** (dominio) y
+`docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` (audita el manual, **corrige dos cosas que dice mal** y trae lo
+verificado 2025-2026). Para precios y costeo, `docs/APU_Y_RENTABILIDAD.md`. Si retomas el trabajo, lee
+primero `README.md` (arquitectura, endpoints, claves Redis, reglas de negocio) y vuelve aquí.
 
 ## Qué es
 
-**Detecta**: app privada para decidir a qué licitaciones de obra civil presentarse en Colombia.
-Reescritura completa (jul 2026) sobre Vercel serverless + Upstash Redis: `api/sync.js` extrae el
-año vigente de SECOP II (`p6dx-8zbt`), enriquece y guarda solo lo compatible con los RUP;
-`api/oportunidades.js` filtra por perfil (helder/genesis/juntos) y la web estática en `public/`
-lo muestra tras un gate con clave. La versión anterior (un `index.html` monolítico de 580 KB con
-9 capas de monkey-patching) vive en la historia de git de `main` si algo hiciera falta rescatar.
+**Detecta**: app privada para decidir a qué licitaciones de obra civil presentarse en Colombia. Reescritura
+completa (jul 2026) sobre Vercel serverless + Upstash Redis: `api/sync.js` extrae el año vigente de SECOP II
+(`p6dx-8zbt`), enriquece y guarda lo compatible con los RUP; `api/oportunidades.js` filtra por perfil
+(helder/genesis/juntos) y la web estática en `public/` lo muestra tras un gate con clave. La versión anterior
+(`index.html` monolítico de 580 KB con 9 capas de monkey-patching) vive en la historia de git.
 
-Desde jul 2026 el orden por defecto es **por probabilidad de ganar**: `api/sync/historico.js`
-baja de una vez 2 años de procesos ya adjudicados a un keyspace que ninguna purga toca,
-`lib/indice_competencia.js` calcula cuántos oferentes se presentan en promedio a cada entidad y
-`/api/oportunidades?ordenar_por=atractividad` (default) pone primero las entidades donde compite
-menos gente. El «para qué» es literal: abrir la app en la mañana y ver arriba lo ganable.
+Orden por defecto: **por probabilidad de ganar**. `api/sync/historico.js` baja 2 años de procesos ya
+adjudicados a un keyspace que ninguna purga toca, `lib/indice_competencia.js` calcula cuántos oferentes
+compiten en promedio por entidad, y `?ordenar_por=atractividad` (default) pone primero las entidades donde
+compite menos gente: abrir la app en la mañana y ver arriba lo ganable.
 
 ## Flujo de trabajo
 
-- **Sin build, sin package.json, sin dependencias.** CommonJS puro; `fetch`/`zlib` nativos.
-- **Probar:** `node tests/e2e.js` (4 iteraciones; mocks HTTP de Socrata y Upstash + handlers
-  reales). Este entorno **no** tiene salida a `datos.gov.co` (allowlist del proxy) ni CLI de
-  Vercel: la validación contra datos reales se hace desplegando.
-  Y `node tests/apu_bench.js`, que **mide** la tasa de acierto del parseo de tablas de pliego sobre
-  un corpus sintético y publica los casos donde falla. Responde «¿cuánto acierta?», que es una cifra;
-  la suite responde «¿sigue funcionando?», que es un sí/no.
-- **Tras desplegar**: (1) relanzar `/api/sync?modo=full` UNA vez — la ingesta se ensanchó y hay
-  procesos que las reglas viejas nunca dejaron entrar a Redis (ver «ingesta/juicio»), y desde ago 2026
-  también los que se perdían por el estado `Activo` que faltaba en `ESTADOS_ABIERTOS`; el filtro de
-  estado corre en la INGESTA, así que sin la full esos procesos no aparecen; (2) definir
-  `HISTORICO_TOKEN` y lanzar UNA vez
-  `/api/sync/historico?desde=2024-01&hasta=2025-12` (header `x-historico-token`), o
-  `?reconstruir_todo=true` si el histórico ya estaba bajado. Sin ese paso la app funciona igual,
-  con todo en ⚪ «sin datos históricos» y sin equivalencias.
-- Sintaxis de los JS del frontend: `new Function(código)` con Node (los cubre el paso *e* del test).
-- El dashboard (`/api/resumen`) y la carga de RUP (`/api/admin/rup`) NO exigen full ni backfill:
-  viven en la capa de consulta. Cargar un RUP tampoco — el juicio corre al servir.
+- **Sin build, sin package.json, sin dependencias.** CommonJS puro; `fetch`/`zlib` nativos. Sintaxis de los
+  JS del frontend: `new Function(código)` con Node (paso *e* del test).
+- **Probar:** `node tests/e2e.js` (4 iteraciones; mocks HTTP de Socrata y Upstash + handlers reales) →
+  «¿sigue funcionando?». Y `node tests/apu_bench.js`, que **mide** el acierto del parseo de tablas de pliego
+  y publica los casos donde falla → «¿cuánto acierta?».
+- Este entorno **no** alcanza `datos.gov.co` (allowlist del proxy, `CONNECT 403`) ni tiene CLI de Vercel: la
+  validación contra datos reales se hace desplegando. También dan 403 `colombiacompra.gov.co`,
+  `relatoria.colombiacompra.gov.co`, `dev.socrata.com`, `funcionpublica.gov.co`.
+- **Tras desplegar**: (1) relanzar `/api/sync?modo=full` UNA vez — la ingesta se ensanchó y hay procesos que
+  las reglas viejas nunca dejaron entrar a Redis, incluidos los perdidos por el estado `Activo` que faltaba
+  en `ESTADOS_ABIERTOS`; el filtro de estado corre en la INGESTA. (2) Definir `HISTORICO_TOKEN` y lanzar UNA
+  vez `/api/sync/historico?desde=2024-01&hasta=2025-12` (header `x-historico-token`), o
+  `?reconstruir_todo=true` si el histórico ya estaba bajado. Sin ese paso la app funciona igual, con todo en
+  ⚪ «sin datos históricos» y sin equivalencias.
+- El dashboard (`/api/resumen`) y la carga de RUP (`/api/admin/rup`) NO exigen full ni backfill: viven en la
+  capa de consulta y el juicio corre al servir.
 
-## Decisiones que no hay que re-aprender (costaron caro)
+## Variables de entorno y límites de plataforma
+
+- **`HISTORICO_TOKEN`: sin default.** Si falta, el endpoint responde **503**; nunca inventar una llave por
+  defecto. Viaja por header en la auto-reinvocación para no quedar en los logs de acceso.
+- **`OCRSPACE_API_KEY`**: OCR de respaldo para pliegos escaneados. Se **tacha** del cuerpo de error antes de
+  reenviarlo (hay servicios que la repiten: «Bad request for apikey=…»).
+- Credenciales de Upstash Redis (REST). `/api/apu/extraer-texto` NO las necesita: no toca Redis.
+- **`FULL_HIGIENE_MS`**: periodicidad de la full de higiene mensual en modo auto.
+- **Límites**: respuesta ≤ 4,5 MB; valor Redis ≤ 1 MB (chunks deflate ≤ 500 KB antes del base64); crons Hobby
+  solo diarios (por eso la full se auto-encadena y cada visita refresca vía delta); `maxDuration` 60 s;
+  despliegue ≤ 250 MB (**distinto** del límite de invocación: se confunden siempre).
+- **TOPE DURO: 12 funciones serverless** (plan Hobby) y el repositorio está EXACTAMENTE en 12, con prueba que
+  las cuenta. Un archivo más bajo `api/` **no falla el endpoint nuevo: falla el sitio entero**. De ahí que no
+  exista `/api/baja-mercado`, que `/api/apu/catalogo` se plegara en `api/apu/[accion].js`, y que el desglose
+  de probabilidad y la carga de experiencia vivan como `?vista=` / `?origen=`. Las URLs literales de los
+  encargos son **`rewrite` de `vercel.json`**, que no cuenta como función — y **el frontend llama siempre a
+  la CANÓNICA**: si el rewrite fallara, el botón debe seguir funcionando.
+- `vercel.json` sirve todo con **`X-Frame-Options: DENY`** (nada se embebe por iframe) y `includeFiles`
+  apunta a `data/**`.
+
+## Endpoints
+
+| URL | Token | Qué hace |
+|---|---|---|
+| `/api/sync` | no (idempotente) | Ingesta full/delta/auto (`?modo=full\|auto`); `?estado=true` y `?reset=true` sí exigen token |
+| `/api/sync/historico` | **sí** | Backfill: `?desde=&hasta=`, `?reconstruir_indice=`, `?reconstruir_baja=`, `?reconstruir_todo=` |
+| `/api/oportunidades` | **opcional** | Listado por perfil; único con token opcional (ver «Redacción pública») |
+| `/api/diagnostico` | **sí** | SOLO LEE: embudo, contrafactuales, puertas, `columnas_historicas`, equivalencias |
+| `/api/resumen` | **sí** | Dashboard; caché `resumen:{perfil}` TTL 300 s |
+| `/api/competencia-detalle` | **sí** | Vista entidad y `?vista=probabilidad` (alias `/api/probabilidad-desglose`) |
+| `/api/indice-baja` | **sí** | Consulta, `?modalidad=` y `?reconstruir=true` |
+| `/api/admin/rup` | **sí**, salvo `?origen=pdf` | POST carga RUP (`?origen=pdf` es la ÚNICA escritura sin token); DELETE `?perfil=` |
+| `/api/admin/experiencia` | **sí** | POST contratos; `?origen=repositorio` carga los del repositorio |
+| `/api/admin/cobertura-rup` | **sí** | Huecos del RUP; `perfil` obligatorio sin default |
+| `/api/admin/apu/cargar-catalogo` | **sí** | Carga del catálogo de precios (`?forzar=true`) |
+| `/api/apu/[accion]` | `catalogo` no; resto **sí** | `catalogo`, `inferir`, `calcular`, `rentabilidad`, `importar`, `guardar`, `cargar`, `listar`; `accion` se lee de `req.query` **y del path como respaldo** |
+| `/api/apu/extraer-texto`, `/api/apu/descargar` | — | Lector de pliegos; no tocan Redis |
+
+**La autorización vive en `lib/auth.js`, UNA sola vez**; una copia desincronizada es un agujero. **Token por
+header O por `?token=`, y el header gana**: el dueño trabaja en un portátil institucional SIN terminal, así
+que la vía real de disparo es pegar la URL en Chrome — no quitar la vía por query «por seguridad», dejaría
+la extracción imposible de lanzar. El precio (token en logs e historial) está asumido; rotarlo al terminar el
+backfill. Un 401 **jamás** deja el candado puesto (autorizar corre antes de tomarlo).
+
+## Reglas transversales (el resto del documento las invoca por nombre)
+
+- **R1 · «0 no es sin dato».** Nunca codificar una ausencia como cero: `anticipo_pct=0` («la fuente no
+  publica anticipo»), 0 oferentes, `score` de experiencia, cantidad ilegible del pliego, probabilidad `null`,
+  precio de insumo. Un `|| 0` sobre un conteo convierte «no sé» en «cero» y lo hace creíble; hay pruebas que
+  prohíben `i.<conteo> || 0` y `f.cantidad || 0` en los frontends. **Excepciones declaradas**: en
+  `lib/indice_baja` el cero SÍ es dato (adjudicar por el presupuesto oficial es la mediana), y en el editor
+  de APU `anticipo_pct` distingue `null` de `0` porque lo teclea alguien que lo sabe.
+- **R2 · Una sola fuente de verdad: LLAMAR, no reimplementar.** Dos cálculos «equivalentes hoy» divergen a la
+  primera corrección aplicada a uno solo. Por eso `/api/resumen` llama a `filtrarProcesosVisibles`,
+  `apu/calculo` a `costoDirecto()`, `rentabilidad` toma el `resumen` de `calculo` tal cual, el `optimizador`
+  llama a `rentabilidad()` por punto, `competencia_detalle` usa el índice y `trazaP` es la única
+  implementación de la cadena de probabilidad. Corolario: **tres listas paralelas de «esto no es obra»
+  divergen igual** — las puertas del APU reutilizan `BLACKLIST_OBJETO`, `evaluarPertinencia` y
+  `esSuministroPuro`.
+- **R3 · Dos cosas distintas no pueden llevar nombres parecidos.** Costó caro tres veces: `total_procesos`
+  vs. `procesos_contados` (el frontend leía el payload ajeno y contaba 0 siempre); `cargado` (booleano) vs.
+  `cargado_el` (fecha), donde la cadena pisaba al booleano y el panel decía «cargado» sobre un Redis vacío
+  —cerradura: prueba de TIPO—; y `cantidad_por_unidad` del catálogo (1,30) vs. el campo homónimo publicado
+  (1,365, con el desperdicio dentro) → renombrado a `cantidad_base`.
+- **R4 · El arranque automático va AL FINAL del IIFE.** Junto al gate, `buscar()` revienta en la zona muerta
+  temporal de constantes declaradas más abajo y, como es `async`, el error sale por una promesa rechazada: la
+  app se queda sin resultados **EN SILENCIO**. Bug del día uno, repetido en `admin.js` y `apu.js`; el ancla
+  de la prueba es `const guardadoRup = perfilRupGuardado();` DESPUÉS de `let CATALOGO = null;` y
+  `let dashboardCargando = false;`.
+- **R5 · `require` DIFERIDO dentro de la función para romper ciclos**: `filtros → rup → filtros`,
+  `filtros → negocio → filtros`, `apu/inferencia → filtros`, cubetas de `indice_baja` ←
+  `MODALIDADES_COMPETITIVAS`, `apu/normativa` ← `apu/calculo`. `lib/unspsc.js` es HOJA del grafo (importar
+  perfiles cerraría `perfiles → unspsc → perfiles`) y `norm` vive en `lib/semantica.js` —
+  `indice_competencia` la importa de ahí, nunca de `filtros`.
+- **R6 · No bloquear por falta de información.** El falso negativo cuesta más que un 🟡 que se descarta en
+  5 s: la pertinencia deja pasar en amarillo, las puertas marcan `sin_dato` y DEJAN PASAR, la región sin
+  factor sale `sin_base` y el presupuesto se calcula igual. **INVERTIDA en el módulo APU**: ahí un ítem
+  inventado o una cantidad mal leída es plata, y el semáforo puede descartar el parseo entero.
+- **R7 · Ninguna pulsación sin respuesta visible** (un botón que no hace nada visible es peor que un error), y
+  **R8 · el parseo del JSON va APARTE del `fetch`**, porque el muro del edge (Password Protection) responde
+  HTML y `r.json()` LANZA: con las dos cosas en el mismo `try`, ese muro se diagnostica como «sin conexión»,
+  lo contrario de la verdad. Aplicado tres veces.
+- **R9 · El sello se escribe AL FINAL** (whitelists → configuración → versión; hashes → snapshot → meta), con
+  sufijo aleatorio además del ISO, y la carga es TODO O NADA, validada entera antes del primer `HSET`.
+- **R10 · Una cifra viaja SIEMPRE con su fuente** (`granularidad_utilizada`, `modalidad_utilizada`,
+  `catalogo.fuente`, `precio_origen_{region}`, `via`, la fuente de `p_ganar`), y **el veredicto de un bloque
+  no puede leer un campo que ese bloque no publica**: el censo contaba en `utiles` y publicaba
+  `con_dato_util`, así que la conclusión leía `undefined > 0` = `false` y anunciaba «ninguna candidata trae
+  datos» encima de una baja ya calculada. Hay pruebas que prohíben que el texto contradiga a sus cifras.
+- **R11 · Las claves que no se purgan obligan al LECTOR a aceptar el formato viejo.** `indice:competencia`,
+  `indice:baja` y `licitaciones:historico:mes:*` nunca se purgan, así que arreglar solo el escritor deja el
+  defecto en pantalla indefinidamente: de ahí `claveLegado` (se lee, jamás se escribe), el alias
+  `procesos`/`procesos_contados` y que `bajaDeMercado` responda exacto sin `por_modalidad`. **Desplegar nunca
+  debe exigir reconstruir.**
+- **R12 · Comprobar por regex que una función se LLAMA no prueba que su resultado se MIRE**:
+  `ejecutarAuditoria` no devolvía nada y el `return true` del paso 2 era incondicional, así que la cadena
+  escribía «✔ 2/3» sobre una auditoría que no había corrido.
+
+## Ingesta y sincronización
 
 - **Keyset por `:id`**, nunca `$offset` con orden por fecha (pierde/duplica filas en vivo).
-  `$select=":id,:updated_at,*"` y proyección en cliente: un `$select` explícito con una columna
-  inexistente da 400, y la fecha de cierre vive en columnas distintas según la modalidad.
-- **Un 400 de Socrata jamás se reintenta ni degrada el modo por fallo de red** — solo un 400 real
-  degrada keyset→offset. 429/5xx → backoff exponencial + jitter, honrando `Retry-After`.
-- **Candado con TTL siempre** (`lock:sync`, SET NX EX 300, liberación por token). El «enCurso
-  eterno» de la versión vieja venía de otro lado (full exigía secreto y nadie podía dispararla),
-  pero el TTL es la garantía de que nunca reaparezca.
-- **`_k` = `id_del_proceso` primero, `:id` de respaldo**: las re-publicaciones regeneran todos los
-  `:id` de Socrata. Dedup en lectura: gana el `:updated_at` más reciente (así el delta reemplaza
-  los cambios de estado sin reescribir meses).
-- **`last_sync` se ancla al INICIO de la corrida** (full o delta); un delta cortado por presupuesto
-  aplica lo bajado pero NO avanza el sello (si no, se perderían páginas en silencio).
-- **Timestamps**: el dataset usa hora Colombia flotante (UTC-5 fija); `:updated_at` es UTC.
-- **Anticipo**: `p6dx-8zbt` NO trae columna de anticipo. Por eso `anticipo_pct=0` significa «sin
-  dato» y el filtro `anticipo_min` no lo excluye (excluirlo = app vacía para siempre). El % solo
-  aparece si el objeto lo menciona en texto o si algún día la fuente añade el campo.
-- **`plazoMeses`**: normalizar acentos antes de comparar unidades («Días».includes("dia") era
-  false por la í — bug histórico del K).
-- **Prefiltro al sincronizar** (cascada modalidad → estado → `admisibleParaIngesta`): sin él, el
-  año son ~500 k filas y revienta el tier gratuito de Upstash y la memoria de la función de
-  consulta. Desde jul 2026 ese prefiltro NO evalúa los RUP (ver «ingesta/juicio»): solo hay que
-  relanzar la full si se toca `admisibleParaIngesta` o la blacklist, nunca por el matching.
-- **El delta CONSERVA los cerrados a propósito** (`transformar(..., {conservarCerradas:true})`):
-  un proceso guardado como abierto que pasa a Adjudicado debe entrar al chunk para que el dedup
-  por `:updated_at` lo reemplace y salga del listado. Si el delta lo filtrara, la versión abierta
-  quedaría congelada para siempre. La full sí excluye cerrados de origen.
-- **Estado desconocido = CERRADO** (`lib/filtros.js`): listas canónicas normalizadas, sin
-  fallbacks optimistas. Y OJO: «seleccionado» NO puede ir en la lista de cerrados — haría
-  prefijo con la fase «Selección», que es justo donde se reciben ofertas.
-- **Modalidad por lista blanca**: Contratación Directa (incluida «(con ofertas)») y Licitación
-  Privada fuera; Régimen Especial fuera SALVO «(con ofertas)»; desconocida → fuera.
-- **Convenios NO son licitaciones** (`es_convenio` en `lib/filtros.js`, corre ANTES que todo lo
-  demás del objeto): «AUNAR ESFUERZOS TÉCNICOS, ADMINISTRATIVOS Y FINANCIEROS…» es la fórmula del
-  convenio interadministrativo/de asociación y se colaba porque las entidades lo publican bajo
-  «Régimen Especial (con ofertas)». OJO con la precisión: «aunar esfuerzos/recursos» descarta esté
-  donde esté, pero «convenio interadministrativo» SOLO si encabeza el objeto — si no, se lleva por
-  delante la obra real que lo menciona de pasada («…en el marco del convenio 123»).
-- **UNSPSC se compara por JERARQUÍA, leyendo el NIVEL del código** (`lib/unspsc.js`): el nivel se
-  deduce de los pares «00» finales — `72000000` es un SEGMENTO, no «el producto cero». El match es
-  BIDIRECCIONAL: la clase del RUP contiene al producto publicado (tier `clase`) Y el proceso
-  publicado a nivel de familia contiene clases del RUP (tier `familia`, amplio: verificar pliego).
-  El upward matching llega hasta FAMILIA, jamás hasta segmento — subir al segmento haría casar
-  «servicios de construcción» con cualquier cosa del 72; un segmento suelto solo se rescata si el
-  objeto lo confirma. Los 393 códigos de los RUP terminan TODOS en «00» (inscripción por clase),
-  que es la premisa de todo esto y hay una prueba que la vigila.
-- **Tokenizar los códigos por RUNS de dígitos, nunca con `\d{8}`**: el `\d{8}` fabricaba códigos
-  falsos a partir de cualquier número largo del campo («1234567890» → 12345678). Solo longitudes
-  2/4/6/8; lo demás se descarta Y SE CUENTA (`distribuciones.codigos_unspsc_ilegibles`).
-- **`/api/diagnostico`** (mismo token, solo lectura) da el EMBUDO paso a paso sobre el corpus real
-  más contrafactuales (`ganancia_por_jerarquia`, `ganancia_por_equivalencias`,
-  `ganancia_por_texto`, `visibles_sin_capa_pertinencia`). Antes de tocar un filtro «porque salen
-  pocos», MIRARLO: dice exactamente en qué paso mueren los procesos y cuántos se recuperarían al
-  relajar cada regla. Cuatro invariantes probadas: los pasos suman el total, `visibles` == el
-  `total` de /api/oportunidades, el reparto por tier suma exactamente los visibles, y
-  `visibles_por_pertinencia.rojo` es SIEMPRE 0.
-- **`columnas_historicas`** (bloque del mismo `/api/diagnostico`, `lib/columnas_historicas.js`)
-  censa el corpus HISTÓRICO y responde con qué nombre EXACTO llegó cada columna de adjudicación y si
-  la baja de mercado (`1 − adjudicado/precio_base`) se puede calcular con lo ya bajado. Sustituye al
-  síntoma indirecto de siempre (`indice:competencia:meta` con `clasificadas: 0`). Tres reglas:
-  (1) las listas de candidatas se IMPORTAN de `lib/indice_competencia` —igual que `numero` y
-  `primero`—, nunca se copian: si divergieran, el diagnóstico informaría de una columna que el
-  índice no mira; (2) `con_dato` y `con_dato_util` se cuentan aparte porque un campo en cero es SIN
-  DATO, no cero pesos; (3) un 0 tiene DOS causas que el censo no distingue —la fuente no la publica,
-  o la proyección no la guarda—, y por eso se publica `claves_observadas` con la verdad literal del
-  JSON almacenado. La baja exige las dos mitades en la MISMA fila: sumar coberturas por separado da
-  un número más bonito y falso.
-- **Índice de BAJA de mercado** (`lib/indice_baja.js`, `indice:baja:*`): cuánto descuenta el ganador
-  frente al presupuesto (`1 − adjudicado/precio_base`). Es la otra mitad de la decisión de precio —el
-  de competencia dice CUÁNTOS se presentan, este A CUÁNTO se adjudica— y sale entero del histórico ya
-  bajado. Se reconstruye con `?reconstruir_baja=true` (incluido en `?reconstruir_todo=true`), sin
-  re-extraer nada. Decisiones que no hay que re-aprender:
-  · **TRES HASHES, no una clave por entidad**: `entidad_familia` → `entidad` → `departamento_familia`.
-    Con claves sueltas no habría swap atómico (RENAME solo mueve una clave) y la lectura serían N
-    comandos por petición en vez de tres. Mismo motivo que `indice:competencia`.
-  · **La cascada solo BAJA en especificidad.** Pedir `entidad` no puede acabar respondiendo con
-    `entidad_familia`: sería devolver algo más específico de lo que se preguntó. Y
-    `granularidad_utilizada` viaja SIEMPRE — una cifra sin su origen no se puede discutir.
-  · **Cortes FIJOS (5 % / 2 %), no tertiles.** «Muchos oferentes» solo significa algo comparado con el
-    mercado, pero 8 puntos de baja son 8 puntos de margen compita quien compita. Con tertiles siempre
-    habría un tercio «alto» aunque nadie descontara.
-  · **Aquí el CERO SÍ es un dato**, al revés que `anticipo_pct = 0` y que el contador de oferentes:
-    adjudicar por el presupuesto oficial es un hecho normal y en producción es la MEDIANA. Tratarlo
-    como ausencia vaciaría el índice. Lo que sí es «sin dato» es no tener las dos mitades en la MISMA
-    fila. `baja_exactamente_cero` viaja en la meta: si se dispara al 100 %, la causa no es el mercado
-    sino que `valor_total_adjudicacion` está copiando a `precio_base`.
-  · **Dos filtros de higiene salidos del censo real, no de la teoría**: adjudicado < 30 % del oficial
-    (295 casos: lotes parciales) y > 110 % (221 casos: dato malo). Una baja negativa LEVE sí se
-    conserva — no es un error.
-  · **La «baja del mercado» del panel sale de un histograma GLOBAL** escrito en la misma pasada, no de
-    promediar las medianas por entidad: eso pesaría igual a una alcaldía con 5 procesos que a una
-    gobernación con 500, y las dos cifras acabarían discrepando sin saber cuál mirar.
-  · **`ordenar_por=baja` puntúa `100 − baja` y da −1 al `sin_dato`.** Con 0 se colaría en el primer
-    puesto haciéndose pasar por «no descuenta nada»: es la confusión entre «no sé» y «cero» otra vez.
-  · La familia sale de `normalizarCodigo(...).familia`, NO de un `slice(0,4)` a mano: recortar aquí
-    sería una segunda definición de «familia».
-  · **El SEGMENTO (2 díg.) se usa para AGRUPAR, nunca para emparejar.** Subir el matching UNSPSC al
-    segmento sigue prohibido (`lib/unspsc`): casaría «servicios de construcción» con cualquier cosa
-    del 72. Pero para una estadística de precio, más muestra por celda es mejor, así que los
-    segmentos van ANIDADOS dentro de cada entidad con mínimo propio de 3 — y cada uno publica sus
-    `procesos` y su `min_procesos` para que se lea sabiendo que 3 procesos son orientativos.
-  · **La baja NO sale sin token** (`lib/publico`): `baja_mercado`, `baja_entidad` y `baja_segmento`
-    viajan en `null` sin credencial. No son finanzas del dueño —son mercado derivado de datos
-    públicos— sino la ventaja competitiva que construye la app. Se anulan los TRES, incluido el
-    objeto entero: `baja_mercado.mensaje` dice «Descuento típico del 8 %…» y dejarlo sería la misma
-    redacción de mentira que dejaba el patrimonio dentro del texto de P3. Queda el mismo canal de
-    inferencia ya documentado: `ordenar_por=baja` ordena en el servidor, así que un cliente sin token
-    puede deducir el RANGO relativo aunque no vea las cifras.
-  · **POR MODALIDAD (ago 2026), y la premisa hay que matizarla.** La mediana global es 0 % y eso
-    sugiere que nunca hay que descontar; la causa es que la mínima cuantía se adjudica una y otra vez
-    por el presupuesto oficial y arrastra la cifra. Pero **el corpus histórico YA está filtrado a
-    modalidades competitivas** (`transformar` aplica `modalidad_competitiva` ANTES de guardar): no
-    entraba Contratación Directa, se mezclaban las SEIS competitivas entre sí. La lista blanca sigue
-    haciendo un trabajo real al reagrupar porque `licitaciones:historico:mes:*` NO SE PURGA NUNCA y
-    quedan vivos registros ingeridos antes de que «Invitación Privada» y «Enajenación» pasaran a
-    excluidas — esos van a `sin_modalidad`, que se cuenta.
-    · **La modalidad REFINA DENTRO de cada nivel, no es un nivel más.** `GRANULARIDADES` es una
-      cascada ordenada con la invariante de que solo baja en especificidad; como escalón obligaría a
-      decidir si «entidad+modalidad» es más o menos específica que «entidad+familia», que no tiene
-      respuesta buena. `granularidad_utilizada` conserva su significado EXACTO y `modalidad_utilizada`
-      dice si hubo refinamiento: dos preguntas, dos campos.
-    · **Las cubetas se DERIVAN de `MODALIDADES_COMPETITIVAS`** con `require` DIFERIDO (misma técnica y
-      mismo motivo que `lib/apu/inferencia`), más UNA que no sale de ahí: «régimen especial (con
-      ofertas)», que `modalidad_competitiva` acepta por su propia rama antes de mirar la lista blanca.
-      Sin esa cubeta esos procesos perderían su baja. Hay prueba que ATA las dos funciones: todo lo que
-      la ingesta acepta tiene cubeta y nada que rechace la tiene.
-    · **Mínimo 5, el de la entidad, no el laxo del segmento (3)**: partir en cubetas hace más fácil
-      quedarse sin muestra, y aquí SÍ hay a dónde caer —la cifra mezclada—, mientras que el segmento
-      es el último recurso antes de no decir nada.
-    · **Compatibilidad, que es lo que de verdad podía romperse**: `indice:baja` no se purga nunca, así
-      que en producción sigue vivo el hash sin `por_modalidad`. Sin esa clave `bajaDeMercado` responde
-      EXACTAMENTE como antes; desplegar no exige reconstruir. Misma lección que `claveLegado`.
-    · **`sin_modalidad` + Σ procesos de las cubetas = `procesos_analizados`**, con prueba. Sin esa
-      igualdad una modalidad se perdería en silencio y las cifras seguirían pareciendo razonables,
-      solo que sobre menos procesos.
-    · **La modalidad viaja hasta `/api/apu/rentabilidad`** (resumen → URL del botón APU → editor).
-      Su `lic` es SINTÉTICO: sin ese hilo respondería con la baja MEZCLADA mientras la tarjeta de
-      `/api/oportunidades` enseña la de licitación pública — dos cifras del mismo proceso, y la mala
-      sería la del editor, que es con la que se fija el precio.
-    · **No existe `/api/baja-mercado` y no puede existir**: el plan Hobby admite 12 funciones y el
-      repositorio está exactamente en 12 (hay prueba que las cuenta). `?modalidad=` vive en
-      `/api/indice-baja`; `baja_mercado` es el CAMPO que sirve `/api/oportunidades`.
-  · **La reconstrucción manual vive en `/api/indice-baja?reconstruir=true`, NO en `/api/diagnostico`**:
-    el diagnóstico está documentado como SOLO LEE —no escribe, no toma candados, no dispara
-    sincronizaciones— y esa garantía es justo lo que permite llamarlo cuando algo va mal.
-  · **Al cerrar una full el índice se reconstruye con `await` y presupuesto corto**, no con un
-    fire-and-forget: en serverless la función se congela al responder y una promesa suelta no tiene
-    ninguna garantía de terminar. Con presupuesto corto o acaba, o deja el progreso escrito.
-- **El veredicto de un bloque no puede leer un campo que ese bloque no publica.** El censo contaba en
-  `utiles` y publicaba `con_dato_util`; la conclusión leía `grupos.*.utiles`, o sea `undefined`, y
-  `undefined > 0` es `false` en silencio: anunciaba «ninguna candidata trae datos» encima de un
-  `campo_efectivo` ya resuelto y una baja ya calculada. Es `i.total_procesos` otra vez, y la
-  cerradura es la misma: derivar el veredicto de `campo_efectivo` (fuente única de esa verdad) y una
-  prueba que prohíbe que el texto contradiga a las cifras que lo acompañan.
-- **Capa anti-suministro**: ningún código que ancle obra + verbo de compra sin verbo de obra =
-  compra disfrazada → fuera. El corte de «bienes» es TODO segmento UNSPSC < 70 (no la lista
-  30/39/43/48/56: eso dejaba servida la «compraventa de tubería PVC», segmento 40, el bloque más
-  grande del RUP de Génesis). ANCLA un código ≥ 70 **salvo** los servicios no constructivos
-  (80, 84, 85, 86, 90-94): antes bastaba cualquier ≥70 y una «ADQUISICIÓN DE MOBILIARIO» con un
-  80101600 de gerencia quedaba anclada. OJO: su `VERBO_OBRA_RE` es una lista de ACCIONES, más
-  corta que `VERBOS_DE_OBRA_FUERTES` (que trae sustantivos como «acueducto») — «SUMINISTRO DE
-  TUBERÍA PARA LA RED DE ACUEDUCTO» es una compra y debe seguir cayendo aquí. Y «Enajenación de
-  bienes con Subasta» se excluye ANTES de que la lista blanca vea «subasta».
-- **Full de higiene mensual** (modo auto, `FULL_HIGIENE_MS`): el delta no puede reflejar
-  mutaciones de modalidad/objeto de procesos ya guardados (los descarta y la versión vieja
-  quedaría congelada); la full mensual acota esa deriva. Tumbas por descartado costarían
-  demasiado Redis — decisión consciente.
-- **Consorcio: dos reglas distintas a propósito** — indicadores habilitantes ponderados 50/50
-  (D. 1082), pero K del plural = SUMA de las CRP de los integrantes (Guía CCE). No «promediar» K.
-- **NIT en null**: no consta en el repositorio; jamás inventarlo. CT de Génesis = 3 (estimado
-  conservador): confirmar con el dueño antes de subirlo.
-- **Límites Vercel/Upstash**: respuesta ≤4.5 MB; valor Redis ≤1 MB (chunks deflate ≤500 KB antes
-  del base64); crons Hobby solo diarios — por eso la full se auto-encadena y cada visita
-  refresca vía delta.
+  `$select=":id,:updated_at,*"` y proyección en cliente: un `$select` explícito con columna inexistente da
+  400, y la fecha de cierre vive en columnas distintas según la modalidad.
+- **Un 400 de Socrata jamás se reintenta ni degrada el modo por fallo de red**; solo un 400 real degrada
+  keyset→offset. 429/5xx → backoff exponencial + jitter honrando `Retry-After`.
+- **Candado con TTL siempre** (`lock:sync`, SET NX EX 300; 600 s en la cadena de la full), liberación por
+  token: garantía contra el «enCurso eterno» de la versión vieja.
+- **`_k` = `id_del_proceso` primero, `:id` de respaldo** (las re-publicaciones regeneran los `:id`); dedup en
+  lectura: gana el `:updated_at` más reciente.
+- **`last_sync` se ancla al INICIO de la corrida**: un delta cortado por presupuesto aplica lo bajado pero NO
+  avanza el sello, o se perderían páginas en silencio. **Timestamps**: hora Colombia FLOTANTE (UTC-5 fija);
+  `:updated_at` es UTC. **`plazoMeses`**: normalizar acentos antes de comparar unidades («Días».includes("dia")
+  era `false` por la í — bug histórico del K).
+- **Prefiltro al sincronizar** (modalidad → estado → `admisibleParaIngesta`): sin él el año son ~500 k filas y
+  revienta Upstash y la memoria de la función. **NO evalúa los RUP**: solo exige full si se toca
+  `admisibleParaIngesta` o la blacklist, nunca el matching.
+- **El delta conserva los cerrados a propósito** (`conservarCerradas:true`): sin ellos el dedup no reemplaza
+  la versión abierta, que quedaría congelada para siempre. La full sí los excluye de origen. La **full de
+  higiene mensual** (`FULL_HIGIENE_MS`) acota la deriva de los procesos cuya modalidad u objeto mutó; tumbas
+  por descartado costarían demasiado Redis (decisión consciente).
+- **Dos keyspaces con ciclos opuestos**: `licitaciones:activo:mes:*` (lo que sirve la app; la full de higiene
+  y la compactación lo purgan) y `licitaciones:historico:mes:*` (cerrados con adjudicación; **NADA lo purga**
+  — era esa purga la que impedía cualquier análisis). `licitaciones:mes:*` es legado y la full lo borra.
+- **Quién alimenta el histórico: el DELTA**, único que ve la transición abierto → cerrado, y **escribe primero
+  el histórico y después el reemplazo en activo** (al revés se perdería el dato histórico si falla a mitad).
+  El cerrado SIGUE entrando al activo —es lo que lo hace desaparecer por dedup— y quien lo saca físicamente es
+  la compactación o la siguiente full. `api/sync/historico.js` solo hace el backfill previo.
+- **Dos proyecciones a propósito** (`lib/proyeccion.js`): la activa NO lleva datos de adjudicación (ni se
+  exponen ni se guardan); la histórica sí. `repartirDelta` hace las dos en una pasada.
+- **`?estado=true` y `?reset=true`**: única forma de diagnosticar y destrabar sin terminal. `estado` solo
+  lee; `reset` borra candado/progreso/meta **sin tocar los chunks bajados**. Antes de resetear, MIRAR el
+  estado: candado libre + extracción sin terminar = la cadena murió (Password Protection interceptando la
+  auto-llamada es lo típico) y basta volver a llamar la URL.
+- **El panel encadena la full desde el navegador**: 1.ª tanda `modo=full` (REINICIA) y las siguientes
+  `modo=auto` (CONTINÚA), porque repetir `full` volvería a enero para siempre — hay prueba de la invariante y
+  de que **`let modo = "full"` aparece UNA sola vez**. Existe porque el fire-and-forget muere con Password
+  Protection.
 
-### Ingesta ancha / juicio fino y pertinencia (jul 2026)
+## Filtros: estado, modalidad y objeto (`lib/filtros.js`)
 
-- **El bug ESTRUCTURAL era el acoplamiento**: el matching UNSPSC corría en el prefiltro de ingesta,
-  así que cada mejora de la regla exigía una full y lo que la regla vieja descartó nunca había
-  entrado a Redis. Ahora `admisibleParaIngesta` (ancho, sin perfiles, <1 ms/proceso) decide qué se
-  GUARDA y `evaluarObjeto(l, perfil, conocimiento)` decide qué se SIRVE. Afinar el matching o
-  cargar un RUP nuevo tiene efecto INMEDIATO. Hay prueba de que el prefiltro no recibe perfil.
-- **La blacklist semántica SE QUEDA en la ingesta** aunque el juicio la repita: no es juicio por
-  perfil («ningún RUP de obra querrá un contrato de caninos») y es lo que evita pagar Redis por
-  medio SECOP. Quitarla no cambiaría ni un resultado, solo la factura.
-- **Capa de PERTINENCIA** (`evaluarPertinencia`, corre DESPUÉS del matching): los segmentos 80
-  (gerencia), 85 (salud) y 93 (sociales) están inscritos en los RUP porque ahí viven la gerencia
-  de proyectos y la interventoría — y por eso se colaban impresión/fotocopia, alimentos, internet,
-  cumpleaños y apoyo logístico con código válido. Regla: verbo de obra → pasa; término no
-  pertinente CON CERO verbos de obra → fuera; sin verbo pero con tier `clase` en segmento de obra
-  pura (72/77/81/95) → pasa; resto → pasa en AMARILLO. **Nunca bloquea por falta de información**:
-  en una app de oportunidades el falso negativo cuesta más que un amarillo que se revisa en 5 s.
-- **Tres reglas que salieron del diagnóstico REAL (ago 2026), no de la teoría**:
-  (1) `TERMINOS_BLOQUEANTES` (internet y familia) descartan AUNQUE haya verbo de obra — la regla
-  normal exige cero verbos y «SERVICIO DE INTERNET DEDICADO CON INSTALACIÓN Y CANALIZACIÓN DE
-  REDES» los traía. La lista es CORTA a propósito: un bloqueante se lleva por delante hasta la
-  obra bien escrita, por eso «fibra óptica» exige contexto de servicio.
-  (2) `esObjetoGenerico`: «CONVOCATORIA PUBLICA», «CONCURSO DE MERITOS INV-CM-001-2026» son el
-  número del proceso, no una descripción → fuera (<15 caracteres, o sin contenido tras quitar
-  palabras de trámite y códigos, y sin verbo de obra). OJO: es la única regla que descarta un
-  proceso con UNSPSC sólido, así que el diagnóstico muestra ejemplos para poder vigilarla.
-  (3) **La ruta de TEXTO exige pertinencia VERDE**: 1 077 procesos entraban por texto y el
-  vocabulario genérico de familia (institucion/educativa/sede) metía equipos y servicios. Sin
-  código del RUP, el objeto es la única evidencia; un 🟡 ahí no es evidencia de nada. Se reabre con
-  `?incluir_sin_unspsc=1` (toggle apagado por defecto), que SOLO añade esa ruta.
-- **Los verbos ambiguos van CONDICIONADOS a un ancla de infraestructura cercana**: «mantenimiento
-  de la red de alcantarillado» sí, «mantenimiento de vehículos» no. Ídem instalación/montaje y
-  consultoría/supervisión/diseño/estudios. Y los términos malos tienen excepciones por lookahead:
-  «logística DE OBRA», «transporte DE MATERIALES», «seguridad VIAL».
-- **Los vocabularios nuevos se comparan sobre texto NORMALIZADO** (`norm`: sin tildes y ñ→n), así
-  que se escriben `diseno`, `senalizacion`, `cumpleanos`. Los dos heredados (BLACKLIST_OBJETO,
-  WHITELIST_OBRA) siguen comparándose sobre el texto CRUDO con `[oó]` y flag `i`: no tocarlos,
-  cambiarles la base de comparación sería una regresión silenciosa.
-- **`norm` vive en `lib/semantica.js`** (filtros la re-exporta) y **`lib/indice_competencia.js` la
-  importa de semantica, NO de filtros**: filtros → equivalencias → indice_competencia → filtros
-  sería un ciclo de requires y dejaría `norm` sin definir en tiempo de carga.
-- **Un índice de equivalencias en CERO tiene cuatro causas distintas** y un `0` no las distingue:
-  nunca se construyó, el dataset no trae adjudicatario (la típica), nadie ganó en dos clases a la
-  vez, o ningún par alcanza los umbrales. `explicarEquivalencias()` las traduce y `/api/diagnostico`
-  las sirve en `conocimiento.equivalencias_por_que` con su siguiente paso. Antes de bajar un
-  umbral, MIRAR eso: si el problema son las columnas de adjudicatario, bajar el lift no arregla nada.
-- **Equivalencias funcionales** (`lib/equivalencias.js`): lift ≥ 3 sobre ADJUDICATARIOS (no sobre
-  procesos: una entidad con 40 procesos gemelos no puede fabricar una equivalencia), soporte ≥ 20
-  procesos en la clase inscrita y ≥ 5 adjudicatarios en la intersección. Solo se guardan pares con
-  A en la unión de los RUP. Es AYUDA A LA DECISIÓN, no habilitación jurídica — por eso el tier
-  `equivalente` es más débil que `clase` y la tarjeta lo dice.
-- **Vocabulario por familia**: `data/vocabulario_unspsc.json` es una SEMILLA CURADA A MANO, no una
-  estadística — está escrito en el propio archivo y no debe presentarse de otro modo. El derivado
-  del histórico se MEZCLA con la semilla familia a familia (una derivación flaca no puede dejar
-  sin señal a las demás). Al derivar solo se acumulan familias que algún RUP inscribe: el resto no
-  se usaría nunca.
-- **Un proceso con códigos que no casan pero con objeto inequívoco de obra se RESCATA** con el
-  tier más débil (`texto`). Es intencional: SECOP II se codifica mal a menudo. Lo que NO se
-  rescata es un objeto sin vocabulario de obra — ese muere en `fuera_unspsc`, y el diagnóstico lo
-  separa de `fuera_sin_unspsc_ni_obra`.
+- **Estado desconocido = CERRADO**, con listas canónicas normalizadas y sin fallbacks optimistas;
+  «seleccionado» NO puede ir entre los cerrados porque haría prefijo con la fase «Selección», donde se reciben
+  ofertas. **`estado_cerrado` NO es la negación de `estado_abierto`**: hay TRES estados, y un desconocido no
+  está abierto pero tampoco consta como cerrado.
+- **`Activo` faltaba en `ESTADOS_ABIERTOS` — CORREGIDO (ago 2026).** `estado` documentado: **Activo ·
+  Adjudicado · Desierto · Celebrado**; `fase`: **Planeación · Selección · Evaluación · Adjudicación ·
+  Contratación · Ejecución**. «activo» no estaba en ninguna lista y se descartaba EN SILENCIO. Seguro porque
+  **los cerrados ganan siempre** (`Activo` + fase `Adjudicación`, o `adjudicado="Si"`, sigue cerrado).
+  ⚠️ Exige relanzar la full una vez: el filtro corre en la INGESTA. **Hueco menor deliberado**: `estado` vacío
+  con solo `fase="Selección"` cuenta como cerrado, porque meter «seleccion» haría que «Seleccionado» pasara a
+  abierto por prefijo.
+- **EL RELOJ CIERRA PROCESOS** (`cierre_vencido`): «INVITACION PRIVADA EDUH-Turbo», límite 20/02/2026, seguía
+  servido como abierto seis meses después. `fecha_cierre` pasada = cerrado **diga lo que diga el estado
+  declarado**. **La hora Colombia no es un detalle**: los timestamps son FLOTANTES sin zona y `Date.parse` los
+  lee como UTC (+5 h), así que comparar contra `Date.now()` cerraría los procesos **cinco horas antes** y
+  borraría los que cierran HOY; se compara contra `ahora − 5 h` (con una columna CON zona la resta sería 5 h
+  indulgente: el error cae del lado de mostrar de más). Prueba con el «ahora» INYECTADO. **Corre TAMBIÉN en la
+  ingesta**, derivando la fecha de las columnas crudas con la misma `fechaCierre` de `lib/negocio` (R5).
+- **Modalidad por lista blanca**: Contratación Directa (incluida «(con ofertas)») y Licitación Privada fuera;
+  Régimen Especial fuera SALVO «(con ofertas)»; desconocida fuera. **«Invitación Privada» NO es competitiva**
+  (la entidad elige a quién invita): se colaba porque su objeto era obra impecable; va como subcadena para
+  cubrir sufijos. **«Enajenación de bienes con Subasta» se excluye ANTES** de que la lista blanca vea
+  «subasta».
+- **Convenios NO son licitaciones** (`es_convenio`, ANTES que todo lo demás del objeto): «AUNAR ESFUERZOS
+  TÉCNICOS, ADMINISTRATIVOS Y FINANCIEROS…» (Ley 489/1998 arts. 95-96) se colaba bajo «Régimen Especial (con
+  ofertas)». «Aunar esfuerzos/recursos» descarta esté donde esté; «convenio interadministrativo» SOLO si
+  encabeza el objeto, o se lleva por delante la obra que lo menciona de paso.
+- **`TERMINOS_ESTRUCTURACION`**: «seleccionar accionista para constituir una sociedad de economía mixta que
+  construya…» pasa la cascada con toda razón, pero se busca capital, no un constructor. Intocables: «app» con
+  frontera de palabra (sigla de Asociación Público-Privada) y «concesión **de aguas**» exceptuada.
+- **La cascada vive UNA sola vez** (`filtrarProcesosVisibles`), llamada por `/api/oportunidades` y
+  `/api/resumen` (R2). Los filtros que ELIGE quien consulta (cuantía, competencia, ubicación, tier) quedan
+  fuera: si entraran, `totales.visibles` dependería de lo marcado en pantalla.
 
-### Competencia histórica por entidad (jul 2026)
+## UNSPSC, juicio fino y pertinencia
 
-- **Dos keyspaces con ciclos de vida opuestos**: `licitaciones:activo:mes:*` (lo que sirve la app;
-  la full de higiene y la compactación lo purgan) y `licitaciones:historico:mes:*` (cerrados con
-  adjudicación; **NADA lo purga** — era justo esa purga la que impedía cualquier análisis). El
-  patrón viejo `licitaciones:mes:*` es legado y la full lo borra al terminar.
-- **Quién alimenta el histórico**: el DELTA, porque es el único que ve la transición abierto →
-  cerrado. `api/sync/historico.js` solo hace el backfill de lo anterior a la puesta en marcha
-  (manual, con token; admite cualquier rango, también el año en curso).
-- **El delta escribe primero el histórico y después el reemplazo en activo**: al revés se perdería
-  el dato histórico para siempre si falla a mitad. El registro cerrado SIGUE entrando al activo
-  (es lo que hace que el proceso desaparezca del listado por dedup de `:updated_at`); quien lo
-  saca físicamente es la compactación (ahora descarta cerrados) o la siguiente full.
-- **Dos proyecciones a propósito** (`lib/proyeccion.js`): la activa NO lleva datos de adjudicación
-  (no se exponen en `/api/oportunidades`, ni siquiera se guardan); la histórica sí. `repartirDelta`
-  hace las dos en una sola pasada.
-- **0 oferentes = SIN DATO**, no «nadie se presentó» (misma lógica que `anticipo_pct = 0`). Si se
-  contara como 0, el promedio de la entidad se iría al suelo y TODAS acabarían en «baja».
-- **Tertiles con `<=` y mínimo de 5 procesos**: empates al mismo nivel; con menos de 5 procesos la
-  entidad es `sin_dato`, y en el orden `sin_dato` va ANTES que `alta` (no saber no es lo mismo que
-  saber que hay 20 competidores).
-- **Columnas de adjudicación/oferentes: PENDIENTE VERIFICACIÓN** (este entorno no alcanza
-  datos.gov.co; verificado `CONNECT 403`). Por eso se leen por lista de candidatas en
-  `lib/indice_competencia.js`. Síntoma de que falta la correcta: `indice:competencia:meta` con
-  `clasificadas: 0` y `descartados.sin_oferentes` alto → añadir el nombre real y llamar
-  `/api/sync/historico?reconstruir_indice=true` (no hay que re-extraer nada).
-- **En `public/app.js` el arranque automático (`abrirApp()` si ya hay `detecta-acceso`) va AL FINAL
-  del IIFE**. Estaba junto al gate y, en cada visita repetida de la MISMA pestaña, `buscar()`
-  reventaba en la zona muerta temporal de `timerReintento` (declarado más abajo). Como `buscar` es
-  async, el error salía por una promesa rechazada: la app se quedaba sin resultados EN SILENCIO y
-  parecía que el frontend «no hacía nada». Bug del día uno de la reescritura; hay prueba de que el
-  orden se mantiene.
-- **Ninguna pulsación del modal puede quedarse sin respuesta visible**: el campo de token vacío
-  AVISA (antes hacía `return` a secas y el botón parecía muerto), el envío va cableado al `submit`
-  y al `click`, y `sessionStorage` se lee/escribe dentro de `try` (en modo restringido lanza).
-  La clave de sesión es `historico_token`.
-- **El badge de competencia es AUDITABLE** (`/api/competencia-detalle` + `lib/competencia_detalle.js`):
-  el modal enseña los procesos que forman el promedio y los que NO, con el motivo
-  (`sin_dato_oferentes`, `sin_adjudicacion`, `insuficientes_datos`). Regla de oro: NO es un segundo
-  cálculo — usa `esAdjudicado`/`oferentesDe` del índice, y hay una prueba que compara conteo,
-  promedio y nivel contra el hash publicado. Si divergieran, el detalle no serviría para verificar
-  nada. La caché (`indice:detalle:*`, TTL 1 h) guarda el sello del índice: reconstruirlo la
-  invalida entera. Una respuesta con chunks ilegibles NO se cachea.
-- **Índice publicado con swap atómico** (`indice:competencia:nuevo` → RENAME): nunca hay una
-  ventana sin índice. Construcción mes a mes y reanudable; el acumulador que se persiste es por
-  ENTIDAD (histograma), no por proceso — por eso cabe en un valor de Redis.
-- **La autorización vive en `lib/auth.js`, una sola vez**: siete endpoints la usan
-  (`/api/sync/historico`, `/api/diagnostico`, `/api/competencia-detalle` —sus DOS vistas, la de
-  entidad y la del desglose de probabilidad—, `/api/resumen`, `/api/admin/rup`,
-  `/api/admin/experiencia`, `/api/admin/cobertura-rup`). Una copia que se desincronice es un
-  agujero.
-- **`HISTORICO_TOKEN` sin default**: si la variable no está, el endpoint responde 503. Nunca
-  inventar una llave por defecto. El token viaja por header en la auto-reinvocación para no
-  quedar escrito en los logs de acceso de Vercel.
-- **`/admin.html` encadena la full desde el navegador**: 1.ª tanda `modo=full` (REINICIA) y todas
-  las siguientes `modo=auto` (CONTINÚA). Repetir `full` volvería a enero para siempre — hay prueba
-  de la invariante contra el handler real. Existe porque el fire-and-forget del servidor muere con
-  Password Protection y el dueño no tiene terminal.
-- **`?estado=true` y `?reset=true`** (mismo token): la única forma que tiene el dueño de
-  diagnosticar y destrabar sin terminal. `estado` solo lee (candado + TTL restante, avance,
-  corpus, índice) y `reset` borra candado/progreso/meta **sin tocar los chunks ya bajados**.
-  Antes de resetear, MIRAR el estado: si el candado está libre y la extracción sin terminar, la
-  cadena murió (Password Protection interceptando la auto-llamada es lo típico) y basta volver a
-  llamar la URL — resetear solo tira el avance a la basura. El candado NO puede atascarse para
-  siempre (TTL 600 s) y un 401 jamás lo deja puesto (autorizar corre antes de tomarlo).
-- **Token por header O por `?token=`, y el header gana si vienen los dos**: el dueño trabaja en un
-  portátil institucional SIN terminal, así que la vía real de disparo es pegar la URL en Chrome.
-  No quitar la vía por query «por seguridad»: dejaría la extracción imposible de lanzar. El precio
-  (token en logs de acceso e historial del navegador) está asumido y documentado — rotarlo al
-  terminar el backfill. El mensaje del 401 sugiere LAS DOS formas a propósito.
+- **El bug ESTRUCTURAL era el acoplamiento**: el matching corría en el prefiltro, así que cada mejora exigía
+  una full y lo descartado nunca había entrado a Redis. Hoy `admisibleParaIngesta` (ancho, sin perfiles,
+  <1 ms/proceso) decide qué se GUARDA y `evaluarObjeto(l, perfil, conocimiento)` qué se SIRVE: afinar el
+  matching o cargar un RUP tiene efecto INMEDIATO. **La blacklist semántica se queda en la ingesta** aunque el
+  juicio la repita: no es juicio por perfil y evita pagar Redis por medio SECOP.
+- **UNSPSC se compara por JERARQUÍA leyendo el NIVEL del código**: el nivel sale de los pares «00» finales —
+  `72000000` es un SEGMENTO, no «el producto cero». Match BIDIRECCIONAL: la clase del RUP contiene al producto
+  publicado (tier `clase`) y el proceso a nivel de familia contiene clases del RUP (tier `familia`, amplio:
+  verificar pliego). **El upward matching llega hasta FAMILIA, jamás a segmento** (casaría «servicios de
+  construcción» con cualquier cosa del 72); un segmento suelto solo se rescata si el objeto lo confirma. Los
+  393 códigos de los RUP terminan TODOS en «00» (inscripción por clase): premisa de todo esto.
+- **Tokenizar por RUNS de dígitos, nunca con `\d{8}`** (fabricaba códigos falsos: «1234567890» → 12345678).
+  Solo longitudes 2/4/6/8; lo demás se descarta Y SE CUENTA.
+- **Capa anti-suministro**: obra anclada + verbo de compra sin verbo de obra = compra disfrazada → fuera. El
+  corte de «bienes» es TODO segmento < 70 (no la lista 30/39/43/48/56, que dejaba servida la «compraventa de
+  tubería PVC», segmento 40, el bloque más grande del RUP de Génesis). ANCLA un código ≥ 70 **salvo**
+  servicios no constructivos (80, 84, 85, 86, 90-94): antes una «ADQUISICIÓN DE MOBILIARIO» con un 80101600
+  de gerencia quedaba anclada. Su `VERBO_OBRA_RE` es lista de ACCIONES, más corta que `VERBOS_DE_OBRA_FUERTES`
+  (con sustantivos como «acueducto»): «SUMINISTRO DE TUBERÍA PARA LA RED DE ACUEDUCTO» es compra y cae aquí.
+- **Capa de PERTINENCIA** (`evaluarPertinencia`, DESPUÉS del matching): los segmentos 80 (gerencia), 85
+  (salud) y 93 (sociales) están en los RUP por la gerencia de proyectos y la interventoría, y por eso se
+  colaban impresión, alimentos, internet, cumpleaños y apoyo logístico con código válido. Regla: verbo de obra
+  → pasa; término no pertinente con CERO verbos → fuera; sin verbo pero con tier `clase` en segmento de obra
+  pura (72/77/81/95) → pasa; resto → AMARILLO (R6).
+- **Tres reglas salidas del diagnóstico REAL**: (1) `TERMINOS_BLOQUEANTES` (internet y familia) descartan
+  AUNQUE haya verbo de obra —«SERVICIO DE INTERNET DEDICADO CON INSTALACIÓN Y CANALIZACIÓN DE REDES» los
+  traía—, con lista CORTA a propósito y «fibra óptica» exigiendo contexto de servicio; (2) `esObjetoGenerico`
+  descarta el número del proceso disfrazado de descripción («CONCURSO DE MERITOS INV-CM-001-2026»: <15
+  caracteres, o sin contenido tras quitar trámite y códigos, y sin verbo de obra), única regla que descarta un
+  proceso con UNSPSC sólido y por eso el diagnóstico muestra ejemplos; (3) **la ruta de TEXTO exige
+  pertinencia VERDE** (1 077 procesos entraban por texto y el vocabulario genérico de familia metía equipos y
+  servicios; sin código del RUP el objeto es la única evidencia y un 🟡 no es evidencia de nada), y se reabre
+  con `?incluir_sin_unspsc=1`, apagado por defecto.
+- **Verbos ambiguos CONDICIONADOS a un ancla de infraestructura cercana** («mantenimiento de la red de
+  alcantarillado» sí, «mantenimiento de vehículos» no; ídem instalación/montaje y consultoría/diseño), y
+  términos malos con excepciones por lookahead: «logística DE OBRA», «transporte DE MATERIALES», «seguridad
+  VIAL».
+- **Los vocabularios nuevos se comparan sobre texto NORMALIZADO** (`norm`: sin tildes, ñ→n): se escriben
+  `diseno`, `senalizacion`, `cumpleanos`. Los heredados (`BLACKLIST_OBJETO`, `WHITELIST_OBRA`) van sobre texto
+  CRUDO con `[oó]` y flag `i`: **no tocarlos**, cambiar su base sería regresión silenciosa.
+- **Códigos que no casan + objeto inequívoco de obra → se RESCATA** con el tier `texto`; un objeto sin
+  vocabulario de obra muere en `fuera_unspsc`, que el diagnóstico separa de `fuera_sin_unspsc_ni_obra`.
+- **Equivalencias funcionales** (`lib/equivalencias.js`): lift ≥ 3 sobre ADJUDICATARIOS (no sobre procesos:
+  una entidad con 40 procesos gemelos no puede fabricar una equivalencia), soporte ≥ 20 procesos en la clase
+  inscrita, ≥ 5 adjudicatarios en la intersección y solo pares con A en la unión de los RUP. Es AYUDA A LA
+  DECISIÓN, no habilitación jurídica: el tier `equivalente` es más débil que `clase`. **Un índice en CERO
+  tiene cuatro causas** que el `0` no distingue (nunca se construyó, el dataset no trae adjudicatario —la
+  típica—, nadie ganó en dos clases, ningún par alcanza los umbrales): `explicarEquivalencias()` las traduce,
+  y si el problema son las columnas de adjudicatario, bajar el lift no arregla nada.
+- **Vocabulario por familia**: `data/vocabulario_unspsc.json` es SEMILLA CURADA A MANO, no estadística; el
+  derivado del histórico se MEZCLA con ella familia a familia, y solo se acumulan familias inscritas.
 
-### Dashboard y RUP por archivo (ago 2026)
+## `/api/diagnostico` (solo lectura)
 
-- **`/api/resumen` NO reimplementa la cascada, la LLAMA** (`evaluarRup` + `leerChunksDedup` + el
-  mismo `anticipo_min=20` y «solo abiertas»). Hay prueba de que `totales.visibles` es EXACTAMENTE el
-  `total` de `/api/oportunidades` y el `embudo.visibles` de `/api/diagnostico`. Un panel que calcula
-  por su cuenta acaba contradiciendo a la app y entonces no se puede creer a ninguno de los dos.
-- **Cada reparto suma los visibles**, y por eso hay cubetas feas a propósito (`OTROS`,
-  `SIN_DEPARTAMENTO`, `ya_cerro`, `mas_adelante`): la alternativa es que un proceso desaparezca del
-  reparto sin que nadie lo note. `SIN_DEPARTAMENTO` no compite por un puesto del top y jamás se
-  reparte a ojo. `superan_k`/`no_superan_k` se cuentan sobre los que pasaron el juicio del OBJETO,
-  no sobre los visibles (ahí todos superan la K por construcción: el contador no diría nada).
-- **`lib/perfiles.js` sigue exportando `PERFILES` SÍNCRONO y con la misma identidad de objeto**
-  (media app lo captura al requerir): una carga de RUP REEMPLAZA sus tres propiedades, nunca el
-  objeto. Los datos del repositorio quedan congelados como `PERFILES_FALLBACK`. Si Redis no
-  responde, si la clave no existe o si el valor está corrupto, se conserva lo vigente o el respaldo
-  y NUNCA se lanza: quedarse sin perfiles deja la app muda.
-- **`lib/unspsc.js` conserva sus tres listas y sigue siendo hoja del grafo de requires.** Hacer que
-  importara los perfiles cerraría el ciclo `perfiles → unspsc → perfiles`. El RUP cargado entra por
-  `PERFILES[x].unspsc`, que es el ÚNICO punto donde el matching lee el RUP: por eso la carga tiene
-  efecto inmediato sin tocar el motor. La admisibilidad de INGESTA (`FAMILIAS_UNION`) sigue saliendo
-  de las listas del repositorio a propósito: es deliberadamente ancha y cambiarla exigiría una full.
-- **Sin TTL en la recarga**: un `GET` del sello `config:perfiles:version` en cada petición (barato)
-  y la configuración entera solo si cambió. Un TTL convertiría el «efecto inmediato» prometido en
-  «efecto dentro de N minutos», que es justo lo que el dueño no puede verificar desde el navegador.
-- **El sello se escribe AL FINAL** de la carga (whitelists → configuración → versión) y lleva
-  sufijo aleatorio además del ISO: dos cargas en el mismo milisegundo producirían el mismo sello y
-  la segunda pasaría desapercibida.
-- **`tope_smmlv` < `experiencia_smmlv` es ADVERTENCIA, no error**: el tope es apetito estratégico y
-  en el RUP REAL va por debajo (Helder 6 768 acreditados, tope 4 000). Convertirlo en error dejaría
-  el RUP del dueño imposible de cargar. Ídem el tope del plural frente al de sus integrantes.
-- **El consorcio se RE-DERIVA siempre** de sus integrantes (unión de UNSPSC, experiencia sumada, K =
-  suma de las CRP) aunque venga explícito en el archivo; una lista propia del plural se SUMA a la
-  unión, nunca la sustituye. La unión es un hecho derivado: dejar que un archivo la reduzca
-  desincronizaría al consorcio de sus miembros.
-- **Carga parcial**: subir solo Génesis conserva a Helder. Un POST rechazado no toca nada.
-- **(Hoy `admin.js` vive dentro de `public/app.js` — ver «Página única», ago 2026.) En su época, el arranque automático iba AL FINAL del IIFE** (misma lección que costó cara
-  en `app.js`): `abrirApp()` levanta el panel y la carga de RUP, cuyas funciones leen constantes
-  declaradas más abajo. Hay prueba del orden. El refresco automático del panel **no corre con la
-  pestaña oculta** (gastar invocaciones para que nadie lo mire) y se pone al día al volver a ella.
-- La caché `resumen:{perfil}` (TTL 300 s) la **borra cualquier carga de RUP**: sus números salen del
-  RUP y quedarían mintiendo cinco minutos.
+EMBUDO paso a paso sobre el corpus real más contrafactuales (`ganancia_por_jerarquia`,
+`ganancia_por_equivalencias`, `ganancia_por_texto`, `visibles_sin_capa_pertinencia`). **Antes de tocar un
+filtro «porque salen pocos», MIRARLO.** Invariantes probadas: los pasos suman el total; el reparto por tier
+suma exactamente los visibles; `visibles_por_pertinencia.rojo` es SIEMPRE 0; y **`embudo.visibles = viables +
+distribucion_puertas.fallan_p3`**, con `pasan_todas` == el `viables` de la app (la igualdad simple con el
+`total` de `/api/oportunidades` dejó de valer al encender `solo_viables`). **Las puertas van ANIDADAS en
+`embudo.puertas.*`**: corren DESPUÉS, sobre los visibles, donde un proceso puede fallar dos a la vez. **No
+escribe, no toma candados, no sincroniza** — esa garantía es lo que permite llamarlo cuando algo va mal.
 
-### Onboarding: RUP en PDF → perfil dinámico (ago 2026)
+**`columnas_historicas`** censa el corpus HISTÓRICO: con qué nombre EXACTO llegó cada columna de adjudicación
+y si la baja se puede calcular con lo bajado; sustituye al síntoma indirecto de siempre (`clasificadas: 0`).
+Las candidatas se IMPORTAN de `lib/indice_competencia` (R2); `con_dato` y `con_dato_util` se cuentan aparte
+(R1); y un 0 tiene DOS causas que el censo no distingue —la fuente no la publica o la proyección no la
+guarda—, por eso se publica `claves_observadas` con la verdad literal del JSON. **La baja exige las dos
+mitades en la MISMA fila**: sumar coberturas por separado da un número más bonito y falso.
 
-- **El PDF se lee en el NAVEGADOR, otra vez** (`public/onboarding.js`, pdf.js clavado en la MISMA
-  versión que `pliego.js` — hay prueba que compara las dos constantes). Al servidor viaja solo el
-  texto con columnas por TAB; `lib/rup_pdf.js` extrae códigos, indicadores, experiencia y vigencia,
-  y el resultado se valida con `lib/config_rup.validarPerfilDinamico` — la MISMA `validarPerfil` de
-  la carga manual, no una copia. No existe un «RUP de PDF» distinto de un «RUP de archivo».
-- **Va plegado en `POST /api/admin/rup?origen=pdf`** (12 funciones es el tope y el repositorio está
-  en 12); el alias literal `/api/admin/rup-desde-pdf` es un `rewrite` de vercel.json y la landing
-  llama a la CANÓNICA. Un GET responde 405 con `como_hacerlo` — jamás un «GET que escribe».
-- **ES LA ÚNICA ESCRITURA SIN TOKEN del repositorio, a propósito.** El onboarding es el producto:
-  pedir credencial a quien llega a subir su RUP mata la landing (la misma lógica del token opcional
-  de `/api/oportunidades`). Cerraduras, todas con prueba: ids `rup_…` generados en el SERVIDOR
-  (jamás del cliente), solo puede escribir `config:perfiles:rup_*` y `config:unspsc:rup_*` (no
-  alcanza ni los tres perfiles del dueño ni el sello `config:perfiles:version` — escribir el sello
-  haría recargar los perfiles fijos), TTL de 45 días, tope absoluto de perfiles vivos y cuerpo ≤5 MB.
-  Sin token las cifras del perfil dinámico viajan REDACTADAS por `lib/publico`, igual que las del dueño.
+## Índice de COMPETENCIA por entidad (`lib/indice_competencia.js`, `indice:competencia`)
+
+Tertiles sobre el promedio de oferentes de 2 años; alimenta `ordenar_por=atractividad`.
+
+- **0 oferentes = SIN DATO** (R1): contarlo hundiría el promedio y todas las entidades acabarían en «baja».
+- **Tertiles con `<=` y mínimo de 5 procesos**; con menos, `sin_dato`, que en el orden va ANTES que `alta`.
+- **Swap atómico** (`indice:competencia:nuevo` → RENAME): nunca hay ventana sin índice. Construcción mes a
+  mes y reanudable; el acumulador persistido es por ENTIDAD (histograma), no por proceso. **Al cerrar una full
+  se reconstruye con `await` y presupuesto corto**, no fire-and-forget: en serverless la función se congela al
+  responder y una promesa suelta no acaba.
+- **Columnas de adjudicación/oferentes: PENDIENTE VERIFICACIÓN** (no se alcanza datos.gov.co); se leen por
+  lista de candidatas, y el síntoma de que falta la correcta es `meta` con `clasificadas: 0` y
+  `descartados.sin_oferentes` alto → añadir el nombre real y llamar `?reconstruir_indice=true`.
+- **El badge es AUDITABLE** (`/api/competencia-detalle` + `lib/competencia_detalle.js`): enseña los procesos
+  que forman el promedio y los que NO, con motivo (`sin_dato_oferentes`, `sin_adjudicacion`,
+  `insuficientes_datos`), y **no es un segundo cálculo** (R2). Caché `indice:detalle:*` (TTL 1 h) con el sello
+  del índice; una respuesta con chunks ilegibles NO se cachea.
+
+**Tres defectos de producción del badge.** (1) **«en 0 procesos» era un CAMPO INEXISTENTE**: se leía
+`i.total_procesos` de un payload que lo llama `procesos_contados` (R3) y el `|| 0` disfrazaba el `undefined`.
+(2) **«⚪ Sin datos históricos» con un promedio debajo**: se exigía índice clasificado para el `nivel` pero
+solo `contados ≥ 5` para el `promedio`; hoy el `mensaje` dice por qué la banda sigue en ⚪ y con qué parámetro
+se arregla. (3) **«18.2 oferentes» sin base**: el índice publicaba el `promedio` de entidades no clasificables,
+y las cerraduras son tres —`registroPublicado` no publica cifras derivadas bajo el mínimo (ni
+`oferentes_total`, con el que se recalcularía); **`competenciaDe` es el punto único de paso** e impone la
+invariante; y el badge exige `conBase` antes de interpolar—, siendo la segunda la importante por R11.
+
+**Identidad de la entidad.** **Un NIT NO identifica a una entidad** (las regionales publican con el NIT de la
+matriz): el alias `nit:{NIT}` iba **primero** en `competenciaDe`, así que una entidad con nombre bien escrito
+y registro propio enseñaba el nivel de su hermana, en silencio. Orden actual: **clave canónica → clave legado
+→ alias**, y el escritor **no publica alias para un NIT compartido** (los cuenta en `meta.nits_ambiguos`); el
+alias sigue existiendo para que un cambio de razón social no parta el historial. **La puntuación partía una
+entidad en dos**: `claveBusqueda` (sin puntuación) agrupaba el corpus y `claveIndice` (`norm` a secas) leía el
+hash, así que dos grafías de la misma entidad se sumaban al contar y no al leer — eran **dos definiciones de
+«entidad» conviviendo**, y hoy hay una sola, `claveCanonica`, importada por el detalle. **`claveLegado` no se
+escribe jamás, solo se lee** (R11). 
+**«Ofertas del proceso»: una constante que se seguía pintando.** El contador de oferentes es **ex-post**: en
+un proceso abierto vale 0 y `nivelCompetencia(0) = "baja" = 100`, así que era constante en todo lo servido, y
+retirarlo del puntaje no bastó (la tarjeta ponía un chip VERDE en cada proceso y el desplegable tenía una
+opción que no filtraba nada y dos que vaciaban la lista). Se retira la **PRESENTACIÓN, no el campo** (quien
+responde CON BASE es `competencia_entidad`); **`?nivel_competencia=` queda INERTE, no da 400**;
+**`?ordenar_por=competencia` leía el campo de la FILA, no el de la entidad** —o sea, no ordenaba— y hoy lee
+`competencia_nivel`; y **el fixture tapaba el defecto**, porque daba `respuestas_al_procedimiento` también a
+las filas abiertas. Hoy solo la llevan las adjudicadas, y la suite MIDE cuántos valores distintos toma el
+campo en el corpus servido: **1 en 384 procesos**.
+
+## Índice de BAJA de mercado (`lib/indice_baja.js`, `indice:baja:*`)
+
+Cuánto descuenta el ganador frente al presupuesto (`1 − adjudicado/precio_base`): la otra mitad de la decisión
+de precio. Sale entero del histórico ya bajado; se reconstruye con `?reconstruir_baja=true`.
+
+- **TRES HASHES, no una clave por entidad**: `entidad_familia` → `entidad` → `departamento_familia`. Con
+  claves sueltas no habría swap atómico (RENAME mueve una sola) y la lectura serían N comandos por petición.
+- **La cascada solo BAJA en especificidad** (pedir `entidad` no puede responderse con `entidad_familia`) y
+  `granularidad_utilizada` viaja SIEMPRE (R10).
+- **Cortes FIJOS (5 % / 2 %), no tertiles**: 8 puntos de baja son 8 puntos de margen compita quien compita;
+  con tertiles siempre habría un tercio «alto» aunque nadie descontara.
+- **Aquí el CERO SÍ es un dato** (excepción declarada de R1): adjudicar por el presupuesto oficial es la
+  MEDIANA en producción, y «sin dato» es no tener las dos mitades en la MISMA fila. `baja_exactamente_cero`
+  viaja en la meta: si se dispara al 100 %, la causa no es el mercado sino que `valor_total_adjudicacion` está
+  copiando a `precio_base`.
+- **Dos filtros de higiene salidos del censo real**: adjudicado < 30 % del oficial (295 casos: lotes
+  parciales) y > 110 % (221 casos: dato malo); una baja negativa LEVE se conserva.
+- **`ordenar_por=baja` puntúa `100 − baja` y da −1 al `sin_dato`** (con 0 se colaría al primer puesto, R1), y
+  la familia sale de `normalizarCodigo(...).familia`, no de un `slice(0,4)`.
+- **El SEGMENTO (2 díg.) agrupa, nunca empareja**: subir el matching al segmento sigue prohibido, pero para
+  una estadística de precio más muestra por celda es mejor, así que van ANIDADOS dentro de cada entidad con
+  mínimo propio de 3, publicando `procesos` y `min_procesos`.
+- **La baja NO sale sin token** (`lib/publico`): los TRES campos en `null` **incluido el objeto entero**,
+  porque `baja_mercado.mensaje` dice «Descuento típico del 8 %…» y dejarlo sería la redacción de mentira que
+  dejaba el patrimonio en P3. No son finanzas del dueño —son mercado derivado de datos públicos— sino la
+  ventaja competitiva que construye la app.
+
+**Por modalidad.** La mediana global es 0 % y sugiere que nunca hay que descontar; la causa es que la mínima
+cuantía se adjudica una y otra vez por el presupuesto oficial. Matiz: **el corpus histórico YA está filtrado a
+modalidades competitivas**, así que lo que pasaba es que se mezclaban las SEIS entre sí, y la lista blanca
+sigue haciendo trabajo real porque el histórico NO SE PURGA NUNCA y quedan registros de cuando «Invitación
+Privada» y «Enajenación» aún entraban (van a `sin_modalidad`, que se cuenta). Decisiones: **la modalidad
+REFINA DENTRO de cada nivel, no es un nivel más** —como escalón obligaría a decidir si «entidad+modalidad» es
+más o menos específica que «entidad+familia»—, así que `granularidad_utilizada` conserva su significado y
+`modalidad_utilizada` dice si hubo refinamiento; **las cubetas se DERIVAN de `MODALIDADES_COMPETITIVAS`** (R5)
+más «régimen especial (con ofertas)», que `modalidad_competitiva` acepta por su propia rama y sin la cual esos
+procesos perderían su baja; **mínimo 5, el de la entidad, no el laxo del segmento (3)**; **compatibilidad**
+(R11): sin `por_modalidad`, `bajaDeMercado` responde como antes; **`sin_modalidad` + Σ cubetas =
+`procesos_analizados`**, con prueba; y **la modalidad viaja hasta `/api/apu/rentabilidad`** (su `lic` es
+SINTÉTICO), sin lo cual el editor fijaría el precio con la baja MEZCLADA mientras la tarjeta enseña la de
+licitación pública.
+
+## Dashboard (`/api/resumen`) y RUP por archivo
+
+- **NO reimplementa la cascada, la LLAMA** (R2): `evaluarRup` + `leerChunksDedup` + el mismo `anticipo_min=20`
+  y «solo abiertas», con prueba de que `totales.visibles` == el `total` de `/api/oportunidades` == el
+  `embudo.visibles` del diagnóstico. ⚠️ Con `solo_viables=true` por defecto el LISTADO sirve menos que
+  `totales.visibles` (la puerta de caja es posterior a la cascada); está en el `como_leerlo`, y quien vuelva a
+  igualarlos mentirá.
+- **Cada reparto suma los visibles**, con cubetas feas a propósito (`OTROS`, `SIN_DEPARTAMENTO`, `ya_cerro`,
+  `mas_adelante`): la alternativa es que un proceso desaparezca sin que nadie lo note.
+  `superan_k`/`no_superan_k` se cuentan sobre los que pasaron el juicio del OBJETO, no sobre los visibles.
+- **Los destacados aplican CUATRO filtros más que el listado** (cerrado explícito, «Verificar objeto», objetos
+  de estructuración, cuantía 0) y los cuentan en `destacados_descartados`: un falso positivo en el puesto 1
+  cuesta más que en la página 4. **No tocan `totales.visibles`.**
+- **La caché `resumen:{perfil}` (TTL 300 s) la borra cualquier carga de RUP**: sus números salen del RUP.
+
+### Perfiles cargables (`lib/perfiles.js`, `lib/config_rup.js`)
+
+- **`PERFILES` se exporta SÍNCRONO y con la misma identidad de objeto** (media app lo captura al requerir):
+  una carga REEMPLAZA sus tres propiedades, nunca el objeto. El repositorio queda congelado como
+  `PERFILES_FALLBACK`, y ante Redis caído, clave ausente o valor corrupto se conserva lo vigente o el respaldo
+  y **NUNCA se lanza**: quedarse sin perfiles deja la app muda.
+- **El RUP cargado entra por `PERFILES[x].unspsc`**, ÚNICO punto donde el matching lee el RUP: por eso la
+  carga tiene efecto inmediato sin tocar el motor. La admisibilidad de INGESTA (`FAMILIAS_UNION`) sigue
+  saliendo del repositorio: es deliberadamente ancha y cambiarla exigiría una full.
+- **Sin TTL en la recarga**: un `GET` del sello `config:perfiles:version` por petición y la configuración
+  entera solo si cambió, porque un TTL convertiría el «efecto inmediato» prometido en «efecto dentro de N
+  minutos», que es justo lo que el dueño no puede verificar desde el navegador. El sello se escribe AL FINAL
+  (R9).
+- **`tope_smmlv` < `experiencia_smmlv` es ADVERTENCIA, no error**: el tope es apetito estratégico y en el RUP
+  real va por debajo (Helder 6 768 acreditados, tope 4 000). **El consorcio se RE-DERIVA siempre** de sus
+  integrantes (unión de UNSPSC, experiencia sumada, K = suma de las CRP) aunque venga explícito; una lista
+  propia del plural se SUMA, nunca sustituye. **Carga parcial**: subir solo Génesis conserva a Helder, y un
+  POST rechazado no toca nada.
+- **`DELETE /api/admin/rup?perfil=…` tiene DOS semánticas y la respuesta declara cuál aplicó** (`tipo` +
+  `redirigir`): un `rup_…` DEJA DE EXISTIR (clave + 4 whitelists + borradores de APU + cachés en UN solo DEL;
+  la web olvida el guardado y vuelve a la landing); un perfil del dueño pierde su entrada del archivo y VUELVE
+  al respaldo — **los perfiles del repositorio no se pueden borrar**. `perfil` obligatorio sin default.
+  **Eliminar la ÚLTIMA entrada borra archivo y sello juntos** (el sello ausente restablece el respaldo en
+  todas las instancias); con entradas restantes hay que `restablecerPerfiles()` ANTES de re-aplicar, porque
+  `aplicarConfig` es parcial y el perfil borrado seguiría sirviéndose desde la memoria caliente (las demás
+  instancias lo conservan hasta su arranque en frío). **NO borra** `config:experiencia` (configuración
+  COMPARTIDA, una clave, no por perfil) ni los borradores de APU de un perfil del dueño; el modal tiene DOS
+  textos según el tipo.
+
+## Onboarding: RUP en PDF → perfil dinámico
+
+- **El PDF se lee en el NAVEGADOR** (`public/onboarding.js`, pdf.js clavado en la MISMA versión que
+  `pliego.js`): al servidor viaja solo el texto con columnas por TAB, `lib/rup_pdf.js` extrae códigos,
+  indicadores, experiencia y vigencia, y valida con `lib/config_rup.validarPerfilDinamico` — la MISMA
+  `validarPerfil` de la carga manual (R2). No existe un «RUP de PDF» distinto de un «RUP de archivo».
+- **Plegado en `POST /api/admin/rup?origen=pdf`** (alias por rewrite); un GET responde 405 con
+  `como_hacerlo`, jamás un «GET que escribe».
+- **ES LA ÚNICA ESCRITURA SIN TOKEN, a propósito**: pedir credencial a quien llega a subir su RUP mata la
+  landing, que es el producto. Cerraduras con prueba: ids `rup_…` generados en el SERVIDOR; solo puede
+  escribir `config:perfiles:rup_*` y `config:unspsc:rup_*` (no alcanza los perfiles del dueño ni el sello);
+  TTL 45 días; tope de perfiles vivos; cuerpo ≤ 5 MB. Sin token sus cifras viajan REDACTADAS.
 - **El perfil dinámico se INYECTA en `PERFILES`** (`lib/perfil_dinamico.js`): todo el juicio resuelve
-  `PERFILES[perfilId]` sobre el objeto vivo, así que inyectar es lo que evita cambiar firmas en media
-  app. Se relee de Redis en CADA petición (un GET pequeño; mismo criterio que el sello sin TTL) y un
-  perfil caducado responde **404 con `perfil_caducado:true`** — la web lo usa para olvidar el perfil
-  guardado; sin ese campo, todas las visitas siguientes fallarían igual y sin explicación.
-- **Códigos: runs de dígitos de EXACTAMENTE 8** (nunca `\d{8}` suelto, ni los runs de 2/4/6 que
-  acepta `lib/unspsc.extraerCodigos` para el campo de categoría — aquí serían ruido puro), más las
-  filas Segmento|Familia|Clase|Producto SOLO dentro de la sección del clasificador. Fuera de la
-  sección un run de 8 exige terminar en «00» (la premisa de inscripción por clase) Y que la línea no
-  sea de dinero/contacto — «UTILIDAD OPERACIONAL 12000000» tiene un run de 8 con segmento válido que
-  terminaría en el RUP como código. Lo descartado SE CUENTA (`codigos_ilegibles`).
-- **Lo único que se DERIVA es la utilidad operacional** (rentabilidad del patrimonio × patrimonio:
-  identidad del D. 1082, declarada en advertencias). Los dos SUPUESTOS van declarados:
-  profesionales = 1 (suelo del factor CT) y tope estratégico = 2 × mayor contrato acreditado. El NIT
-  exige el guion del dígito de verificación: partir «NIT 900123456» inventaría un DV.
-- **La landing es la primera pantalla** (`#onboarding` nace visible; el gate nace oculto pero SIGUE
-  existiendo para los perfiles del dueño). El copy en voseo es literal del encargo. `app.js` decide
-  la vista al arrancar (perfil `rup_…` en URL o localStorage → dashboard sin gate; sesión con clave →
-  dashboard clásico; nada → landing) y el arranque sigue AL FINAL del IIFE.
-- **Experiencia en CSV** (`public/formato_experiencia.csv`, con comentarios `#` que declaran que es
-  OPCIONAL): la conversión CSV→JSON corre en el navegador y el endpoint es el de siempre
-  (`POST /api/admin/experiencia`, CON token: escribe configuración compartida — y la UI LO DICE,
-  porque prometerle al visitante que «afina sus recomendaciones» cuando escribe la configuración del
-  dueño sería mentirle). El campo `unspsc` del formato es opcional y **solo se escribe cuando
-  viene** — los contratos guardados con el esquema anterior conservan su forma exacta, con prueba.
-- **SIETE DEFECTOS QUE LA REVISIÓN ADVERSARIA ENCONTRÓ ANTES DE PRODUCCIÓN**, todos con prueba:
-  · **La fecha de corte contaminaba el indicador**: «PATRIMONIO A 31/12/2025 $850.000.000» leía 31.
-    Las fechas se TACHAN del tramo antes de buscar el número (`sinFechas`).
-  · **Un año se volvía la experiencia**: el máximo de una línea con «SMMLV» incluía «2023». La cifra
-    es la ADYACENTE a la unidad — la misma regla que la cantidad junto a la unidad en `apu_pliego`.
-    Las tablas con la unidad solo en la cabecera caen al error accionable, no a un dato inventado.
-  · **ReDoS en la detección de sección**: `(clasificaci)[^]*?(bienes)` sobre una línea hostil de MB
-    (endpoint público, cuerpo de 5 MB) era cuadrática. Ahora son `includes` lineales.
-  · **Sin tope de códigos por perfil**: un cuerpo hostil con miles de runs de 8 fabricaba perfiles
-    enormes en Redis. `MAX_CODIGOS = 2000` → error, no truncado silencioso.
-  · **Redis caído ≠ perfil caducado**: en instancia fría el fallo de lectura devolvía `null`, el
-    endpoint respondía 404 `perfil_caducado` y la web BORRABA el perfil guardado del cliente. Ahora
-    el error se propaga (502) y solo el 404 real borra — y solo si el guardado ES el que caducó.
-  · **`?perfil=rup_…` pegado en la URL saltaba el gate** dejando los perfiles del dueño en el
-    selector. `abrirApp` ya no marca `detecta-acceso` (eso lo hace el gate al validar la clave) y
-    quien entra sin gate ve el selector PODADO a su propio perfil.
-  · **La comilla de pulgadas rompía el CSV**: «Tubería de 4" en PVC» abría modo comillas a mitad de
-    celda y fusionaba filas en un contrato falso que PASABA el validador. Una comilla solo abre
-    campo al PRINCIPIO de la celda (RFC 4180). Y el CSV ANSI de Excel-Windows se re-decodifica como
-    windows-1252 si el UTF-8 produce reemplazos.
-  Además, **las dos copias de `lineasDePagina` (onboarding.js/pliego.js) quedaron ATADAS por una
-  prueba que las EJECUTA** sobre los mismos fragmentos (el patrón de `numeroLocal`), no solo por la
-  constante de versión de pdf.js.
+  `PERFILES[perfilId]` sobre el objeto vivo, así que inyectar evita cambiar firmas en media app. Se relee en
+  CADA petición y un perfil caducado responde **404 con `perfil_caducado:true`**, que la web usa para olvidar
+  el guardado.
+- **Códigos: runs de EXACTAMENTE 8 dígitos** (nunca `\d{8}`, ni los runs de 2/4/6 que acepta
+  `extraerCodigos`), más las filas Segmento|Familia|Clase|Producto SOLO dentro de la sección del clasificador;
+  fuera de ella un run de 8 exige terminar en «00» Y que la línea no sea de dinero/contacto («UTILIDAD
+  OPERACIONAL 12000000» tiene un run de 8 con segmento válido). Lo descartado SE CUENTA.
+- **Lo único DERIVADO es la utilidad operacional** (rentabilidad del patrimonio × patrimonio, identidad del
+  D. 1082, declarada en advertencias); los dos SUPUESTOS van declarados (profesionales = 1, suelo del factor
+  CT; tope estratégico = 2 × mayor contrato acreditado). El NIT exige el guion del dígito de verificación:
+  partir «NIT 900123456» inventaría un DV.
+- **La landing es la primera pantalla** (`#onboarding` nace visible; el gate nace oculto pero sigue existiendo
+  para los perfiles del dueño); `app.js` decide la vista al arrancar (perfil `rup_…` en URL o localStorage →
+  dashboard sin gate; sesión con clave → dashboard clásico; nada → landing), al final del IIFE (R4).
+- **Siete defectos que la revisión adversaria encontró antes de producción, todos con prueba**: la fecha de
+  corte contaminaba el indicador (se TACHAN antes de buscar el número); un año se volvía la experiencia (la
+  cifra es la ADYACENTE a la unidad); **ReDoS** en la detección de sección (→ `includes` lineales); sin tope
+  de códigos un cuerpo hostil fabricaba perfiles enormes (`MAX_CODIGOS = 2000`); **Redis caído ≠ perfil
+  caducado** (hoy 502, y solo el 404 real borra el perfil guardado); `?perfil=rup_…` en la URL saltaba el gate;
+  y la comilla de pulgadas fusionaba filas del CSV en un contrato falso que PASABA el validador (una comilla
+  solo abre campo al PRINCIPIO de la celda, RFC 4180).
 
-### Experiencia ejecutada y cobertura del RUP (ago 2026)
+## Experiencia ejecutada y cobertura del RUP
 
-- **El RUP dice a qué PUEDE presentarse el dueño; sus contratos ejecutados dicen en qué SABE
-  trabajar.** Son dos fuentes distintas y la app solo conocía la primera. `/api/admin/experiencia`
-  guarda la lista real de contratos (`config:experiencia`) y destila de sus objetos un vocabulario
-  del oficio (`config:experiencia:terminos`); `/api/admin/cobertura-rup` lo cruza con el histórico
-  adjudicado para responder lo único que importa antes de la renovación anual: **qué códigos usa el
-  mercado para lo que este señor ya hace, y cuáles no tiene inscritos**.
-- **La auditoría NO reinventa ninguna regla: reutiliza las que ya decidían otra cosa.** La
-  pertinencia es `evaluarPertinencia` tal cual; los segmentos que pueden ser un hueco son 70–95
-  MENOS `SEGMENTOS_SERVICIOS_NO_CONSTRUCTIVOS` (si un segmento no ancla obra para la capa
-  anti-suministro, tampoco puede ser un hueco de obra); «claramente obra civil» es
-  `SEGMENTOS_OBRA_PURA`. Inventar tres listas paralelas habría creado tres definiciones de «obra»
-  que divergen a la primera corrección.
-- **Los tokens con dígitos se descartan del vocabulario** (`2024`, `cm001`): es la misma lección de
-  `esObjetoGenerico`. Si entraran, cualquier proceso que mencione un año ganaría similitud gratis.
-  Y las stopwords incluyen el TRÁMITE contractual (`prestacion`, `servicios`, `contrato`,
-  `objeto`): un término que está en todos los objetos no distingue ninguno.
-- **Sin experiencia cargada el score viaja en `null`, jamás en 0.** El método base (vocabulario de
-  obra) responde «esto es obra», que es mucho menos que «esto es TU obra», y publicar un 0 como si
-  fuera una similitud medida sería la misma clase de mentira que el `|| 0` sobre un conteo.
-- **La criticidad del encargo tenía umbrales que se solapan** («2-4 procesos **o** score ≥ 0.1» y
-  «1 proceso **o** score < 0.1» clasifican de dos formas el mismo código de 3 procesos flojos). Se
-  resolvió como CASCADA y con la lectura que el propio encargo fija en sus casos de prueba: 3
-  procesos con similitud floja son BAJO. Y **un solo proceso nunca pasa de BAJO**, por perfecta que
-  sea la similitud: un contrato no es una tendencia y lo que está en juego es un código que hay que
-  sostener un año entero en el RUP.
-- **La caché de la auditoría lleva el sello del RUP Y el de la experiencia** (`cobertura:{perfil}:
-  {exp|base}`, TTL 1 h). Cargar cualquiera de los dos la invalida sola — además de borrarla a mano
-  en los dos POST, que es lo que hace visible el efecto al instante. Una caché que solo se borra a
-  mano es una caché que algún día no se borra.
-- **PUESTA EN PRODUCCIÓN SIN TERMINAL (ago 2026), y la restricción que la definió.** El dueño no
-  tiene terminal, así que `cargar_experiencia.sh` no le sirve y los tres pasos tenían que darse con
-  clics desde `/admin.html`. Lo natural era crear `api/admin/cargar-experiencia-genesis.js` y
-  **habría roto el despliegue ENTERO**: el plan Hobby admite 12 funciones y el repositorio está
-  exactamente en 12 (misma restricción que impidió `/api/baja-mercado` y que plegó
-  `/api/apu/catalogo`). No falla el endpoint nuevo: falla el sitio.
-  · **Va plegado en `/api/admin/experiencia` como `?origen=repositorio`**, y eso REGALA lo que el
-    encargo pedía aparte («sin duplicar código»): lo único que cambia es DE DÓNDE salen los
-    contratos; desde `validarContratos` en adelante es el mismo camino, el mismo guardado y la misma
-    invalidación de caché. `origen` viaja en la respuesta para poder distinguir las dos formas.
-  · **La URL literal del encargo existe como `rewrite` de vercel.json**, que no cuenta como función.
-    Hay prueba de que apunta al endpoint real CON `origen=repositorio` — un alias que apuntara a otra
-    cosa sería una URL que promete algo que no hace. **El panel llama a la canónica**: si el rewrite
-    fallara, el botón tiene que seguir funcionando.
-  · **El archivo se lee con `require` ESTÁTICO, jamás con `fs` sobre una ruta construida.** Es como
-    el repositorio carga todos sus JSON y es lo que hace que el tracer de Vercel lo meta en el
-    bundle; con ruta dinámica el archivo no viaja al despliegue y el endpoint respondería 500 SOLO EN
-    PRODUCCIÓN, porque en local funciona. `includeFiles` apunta a `data/**` y este archivo está en la
-    raíz, así que por ahí tampoco entraría.
-  · **El origen se lee de la QUERY, no del cuerpo**: así la carga es un POST SIN CUERPO, que es lo
-    que permite dispararla con un botón —y con el alias— sin fabricar un JSON que el servidor ya
-    tiene.
-  · **Los tres pasos del panel no reimplementan ninguno.** El 2 llama a la misma `ejecutarAuditoria()`
-    del botón de cobertura con el perfil fijado en `genesis`; el 3 a `iniciarFull()`, extraído del
-    listener de «Iniciar sincronización». Hay prueba de que `let modo = "full"` aparece **una sola
-    vez**: una segunda copia es donde se rompería «1.ª tanda full, siguientes auto» —repetir `full`
-    vuelve a enero para siempre— sin que nadie lo notara.
-  · **EL ALIAS PEGADO EN CHROME ES UN GET, y por poco miente.** La rama GET retornaba ANTES de
-    mirar `origen`, así que `GET /api/admin/cargar-experiencia-genesis` respondía
-    `200 {ok:true, cargada:false, contratos_cargados:0}` — un «no hice nada» con cara de éxito, y con
-    un cero que se lee como «cargué cero contratos». Misma familia que «en 0 procesos» y que `|| 0`
-    sobre un conteo, y le tocaba justo al único usuario que existe: el dueño sin terminal, cuya vía
-    documentada es pegar la URL en el navegador. Ahora el origen se resuelve ANTES de despachar por
-    método y un GET da **405 con `Allow: POST` y con `como_hacerlo`**. NO se convirtió en un
-    «GET que escribe» —lo dispararía cualquier prefetch del navegador—, aunque `/api/sync` sí lo
-    haga: allí es una sincronización idempotente y aquí es una escritura de configuración.
-  · **(Superado por el token integrado, ago 2026: el bloque nace VISIBLE — ver «Página única».) Entonces iba OCULTO sin token** (sus tres pasos escriben en Redis) y su visibilidad colgaba de
-    `pintarEstadoToken`, que ya corre al arrancar y en cada cambio de token: un solo sitio. Y **la
-    cadena se detiene en el primer paso que falle**: auditar sobre una carga que no ocurrió daría un
-    resultado creíble y equivocado.
-  · **EL PASO 2 NO PODÍA FALLAR, y la prueba que lo vigilaba era una regex sobre el fuente.**
-    `ejecutarAuditoria` no devolvía nada —cuatro salidas de error con `return avisoCobertura(…)`, que
-    es `undefined`—, así que el `return true` del paso 2 era incondicional: la cadena escribía
-    «✔ 2/3» y lanzaba la full sobre una auditoría que no había corrido. Lo encontró una revisión
-    adversaria y **las cinco lentes coincidieron**. Ahora `ejecutarAuditoria` devuelve booleano y el
-    paso 2 lo PROPAGA. Lección de método: comprobar por regex que una función se LLAMA no prueba que
-    su resultado se MIRE.
-  · **La guarda de «auditoría EN VUELO» va ANTES de tocar el selector.** Comprobarla después —dentro
-    de `ejecutarAuditoria`, que sale por ahí— deja el selector en «genesis» y, cuando responde la
-    auditoría que estaba corriendo (OTRO perfil), `pintarCobertura` estampa SUS cifras bajo ese
-    rótulo. La cadena se detiene igual, pero la pantalla miente: es «la peor forma de equivocarse»
-    que el propio paso documenta, entrando por la puerta de atrás. Hay prueba del ORDEN.
-  · **Fijar `c-perfil.value` desde código NO dispara `change`**, que es justo quien esconde lo
-    pintado: sin invalidar a mano, la auditoría de OTRO perfil se quedaba en pantalla bajo un
-    selector que decía «Génesis». La invalidación se extrajo a `invalidarCoberturaPintada` para que
-    el listener y el paso 2 no tengan dos copias. Y el paso 2 **no persiste el perfil**: esa clave la
-    comparte el DASHBOARD, que es otra pantalla.
-  · **El parseo del JSON va APARTE del `fetch`**: el muro del edge (Vercel Password Protection)
-    responde HTML, así que `r.json()` LANZA y, con las dos cosas en el mismo `try`, ese muro se
-    diagnosticaba como «sin conexión» — lo contrario de la verdad, porque hay conexión y lo que hace
-    falta es iniciar sesión. El encadenado de la sincronización ya lo trataba bien; ahora los dos.
-  · **El flag va en la QUERY y no en el cuerpo, y hay una razón medida**: `validarContratos` lee solo
-    `datos.contratos` e IGNORA las claves extra de la raíz, así que un flag mal escrito DENTRO del
-    JSON cargaría los contratos pegados con un 200 idéntico —fuente equivocada y sin síntoma—.
-    En la query, un `?origen=repo` cae al 400 de «body vacío», que es ruidoso. Hay prueba.
-- **La auditoría es el único panel que NO se dispara solo**: recorre el histórico entero. Corre
-  cuando alguien pulsa el botón, y cargar un RUP o una experiencia oculta lo pintado con un aviso
-  (la whitelist o el vocabulario contra los que se midió acaban de cambiar).
-- **`perfil` es obligatorio, sin default.** La respuesta se lee como «lo que te falta a TI»; servir
-  la de otro perfil por omisión sería la peor forma posible de equivocarse. Hay prueba de que
-  `85121700` es hueco para Helder y no lo es para Génesis, que es lo que demuestra que la auditoría
-  depende del perfil y no solo del corpus.
-- **Los fixtures del histórico van SIN conteo de oferentes** (como los de equivalencias): así el
-  índice de competencia los cuenta como «sin dato» y los tertiles de las cuatro entidades no se
-  mueven. Y con entidad propia, para no engordar los «excluidos» de ninguna entidad que
-  `/api/competencia-detalle` ya audita con conteos exactos.
-- **Los objetos de esos fixtures no llevan descripción a propósito**: el score está calibrado al
-  tercer decimal (0,167 = un término en común de seis, entre el 0,15 que deja entrar y el 0,20 de
-  ALTO) y cualquier palabra de más los movería de casilla — la prueba pasaría o fallaría por azar.
+**El RUP dice a qué PUEDE presentarse; los contratos ejecutados, en qué SABE trabajar.**
+`/api/admin/experiencia` guarda la lista real (`config:experiencia`) y destila un vocabulario del oficio
+(`config:experiencia:terminos`); `/api/admin/cobertura-rup` lo cruza con el histórico adjudicado y responde
+**qué códigos usa el mercado para lo que este señor ya hace y cuáles no tiene inscritos**.
 
-### Dos defectos de producción y sus cerraduras (ago 2026)
+- **No reinventa ninguna regla** (R2): pertinencia = `evaluarPertinencia`; los segmentos que pueden ser un
+  hueco son 70–95 MENOS `SEGMENTOS_SERVICIOS_NO_CONSTRUCTIVOS`; «claramente obra civil» es
+  `SEGMENTOS_OBRA_PURA`.
+- **Los tokens con dígitos se descartan del vocabulario** (`2024`, `cm001`): si entraran, cualquier proceso
+  que mencione un año ganaría similitud gratis. Las stopwords incluyen el TRÁMITE contractual (`prestacion`,
+  `servicios`, `contrato`, `objeto`). **Sin experiencia cargada el score viaja en `null`, jamás en 0** (R1).
+- **Criticidad como CASCADA** (los umbrales del encargo se solapaban): 3 procesos con similitud floja son
+  BAJO, y **un solo proceso nunca pasa de BAJO** — un contrato no es una tendencia y está en juego un código
+  que hay que sostener un año en el RUP.
+- **La caché lleva el sello del RUP Y el de la experiencia** (`cobertura:{perfil}:{exp|base}`, TTL 1 h).
+- **Es el único panel que NO se dispara solo** (recorre el histórico entero), y **`perfil` es obligatorio sin
+  default**: la respuesta se lee como «lo que te falta a TI»; hay prueba de que `85121700` es hueco para
+  Helder y no para Génesis. Los fixtures del histórico van SIN conteo de oferentes y **sin descripción en los
+  objetos**, porque el score está calibrado al tercer decimal (0,167, entre el 0,15 que deja entrar y el 0,20
+  de ALTO).
 
-- **El «en 0 procesos» era un CAMPO INEXISTENTE, no un dato malo**: el detalle en línea del panel
-  (`public/admin.js`) leía `i.total_procesos` de la respuesta de `/api/competencia-detalle`, que
-  jamás ha tenido ese campo — se llama `procesos_contados`; `total_procesos` pertenece al OTRO
-  payload, el `competencia_entidad` que embebe `/api/oportunidades`. El `|| 0` disfrazaba el
-  `undefined` de cero, así que el conteo era 0 **siempre**, con cualquier entidad y cualquier dato.
-  Dos lecciones: (1) **dos payloads distintos no pueden usar nombres parecidos para cosas
-  distintas**, y (2) **un `|| 0` sobre un conteo convierte «no sé» en «cero»** y lo hace creíble —
-  hay prueba que prohíbe `i.<conteo> || 0` en los dos frontends. La cifra del promedio era real: lo
-  falso era el conteo que la acompañaba.
-- **«⚪ Sin datos históricos» con un promedio debajo**: `detalleEntidad` exigía índice clasificado
-  para el `nivel` pero solo `contados ≥ 5` para el `promedio`, así que con el índice **sin
-  reconstruir** (que es el estado normal: se construye a mano mientras el delta engorda el
-  histórico en cada visita) salían los dos juntos y sin explicación. El promedio se conserva —12
-  procesos con oferentes son base de sobra— y ahora el `mensaje` dice por qué la banda sigue en ⚪ y
-  con qué parámetro exacto se arregla. Hay prueba que borra el índice, comprueba el mensaje y lo
-  reconstruye.
-- **«18.2 oferentes» sin base**: el índice publicaba el `promedio` de entidades que NO se
-  pueden clasificar (<5 procesos → `nivel: "sin_dato"` pero `promedio: 18.2` en el hash), y bastaba
-  con que un consumidor lo pintara sin mirar el nivel. Tres cerraduras, y las tres hacen falta:
-  (1) `registroPublicado` NO publica ninguna cifra derivada por debajo del mínimo — ni promedio, ni
-  mediana, ni `oferentes_total` (con la suma se recalcula el promedio que se acaba de anular);
-  (2) **`competenciaDe` es el punto único de paso** de los tres consumidores y ahí se impone la
-  invariante: promedio solo con `procesos ≥ 5` Y nivel clasificado Y promedio presente;
-  (3) el badge (`app.js` y `/api/resumen`) exige `conBase` antes de interpolar una cifra.
-  La (2) es la importante: **`indice:competencia` no se purga NUNCA**, así que en producción sigue
-  vivo el hash escrito por la versión anterior hasta que alguien reconstruya el índice — arreglar
-  solo el escritor habría dejado el defecto en pantalla indefinidamente. El conteo sí viaja: es un
-  hecho y es lo que explica el ⚪. `procesos_contados` se publica como alias de `procesos` y el
-  lector acepta los dos nombres.
-- **La cascada vive UNA sola vez** (`lib/filtros.filtrarProcesosVisibles`) y la llaman
-  `/api/oportunidades` y `/api/resumen`. Eran dos copias idénticas —con pruebas de que los totales
-  coincidían— pero «idénticas hoy» no es garantía: divergen a la primera corrección que se aplique
-  a una sola. El `require("./rup.js")` va **diferido dentro de la función**: en tiempo de carga
-  cerraría el ciclo `filtros → rup → filtros`. Los filtros que ELIGE quien consulta (cuantía,
-  competencia, ubicación, tier) se quedan fuera de la cascada a propósito: si entraran,
-  `totales.visibles` del panel dependería de lo que el dueño tuviera marcado en la pantalla.
-- **Los destacados del panel aplican CUATRO filtros más que el listado** (cerrado explícito,
-  «Verificar objeto», objetos de estructuración y cuantía 0) y los cuentan en
-  `destacados_descartados`. Es deliberado: la lista corta es una RECOMENDACIÓN y un falso positivo
-  en el puesto 1 cuesta más que uno en la página 4. **No tocan `totales.visibles`** — el proceso
-  sigue en `/api/oportunidades`, con su tarjeta y su veredicto delante.
-- **`TERMINOS_ESTRUCTURACION`** (`lib/semantica.js`): «seleccionar accionista para constituir una
-  sociedad de economía mixta que construya…» pasa la cascada entera **con toda razón** (es
-  competitivo, tiene UNSPSC del RUP y su objeto habla de construir), pero lo que se busca es un
-  socio que ponga capital, no un constructor. Dos precisiones que no se pueden quitar: «app» va con
-  frontera de palabra (es la sigla de Asociación Público-Privada) y «concesión **de aguas**» está
-  exceptuada — es el permiso ambiental que menciona cualquier obra de acueducto.
-- **`estado_cerrado` NO es la negación de `estado_abierto`**: hay TRES estados, no dos. Un estado
-  desconocido no está abierto (no se sirve) pero tampoco consta como cerrado; confundirlos sería
-  afirmar «adjudicado» sobre un proceso del que no se sabe nada.
-- **EL RELOJ CIERRA PROCESOS** (`cierre_vencido`, ago 2026). Defecto de producción: «INVITACION
-  PRIVADA EDUH-Turbo», con fecha límite 20/02/2026, seguía servido como abierto SEIS MESES después —
-  ninguna columna de estado lo desmentía. Si `fecha_cierre` ya pasó, el proceso está cerrado **diga
-  lo que diga el estado declarado**, y eso vale tanto para `estado_abierto` como para
-  `estado_cerrado` (la fecha vencida es un HECHO, no una inferencia). Esto acota mucho —no elimina—
-  el hueco de «ningún filtro puede arreglarlo»: lo que SECOP II adjudicó sin mover el estado ni
-  publicar fecha de cierre sigue dependiendo del delta.
-- **La hora Colombia NO es un detalle en esa regla.** El dataset publica timestamps FLOTANTES sin
-  zona y `Date.parse` los lee como UTC, adelantándolos 5 h. Comparar contra `Date.now()` a secas
-  cerraría los procesos **cinco horas antes de tiempo** y borraría del listado justo los que cierran
-  HOY. Por eso se compara contra `ahora − 5 h`. Si algún día llegara una columna CON zona, la resta
-  la haría 5 h indulgente — el error cae del lado de mostrar de más, que es el correcto aquí. Hay
-  prueba con el «ahora» INYECTADO: una prueba de husos que se calibra contra el reloj real no prueba
-  nada y falla sola en la frontera.
-- **La regla corre TAMBIÉN en la ingesta**, donde la fila aún no pasó por `enriquecer` y no tiene
-  `fecha_cierre` resuelto: `cierre_vencido` deriva la fecha de las columnas crudas con la misma
-  `fechaCierre` de `lib/negocio` (require DIFERIDO dentro de la función — en tiempo de carga
-  cerraría el ciclo `filtros → negocio → filtros`).
-- **«Invitación Privada» NO es modalidad competitiva**: la entidad elige a quién invita, así que no
-  hay convocatoria abierta. Se colaba porque ninguna de sus palabras casaba con las exclusiones y su
-  objeto era obra impecable. Va como subcadena, así que cubre las variantes con sufijo.
-- **Los fixtures del e2e cierran en el FUTURO** (`CIERRE_FUTURO`), no dentro del mes de publicación:
-  con el reloj cerrando procesos, unas fechas pasadas habrían vaciado el corpus de prueba. Y hay dos
-  fixtures del defecto, separados a propósito — uno cae por modalidad y otro **solo** por el reloj—,
-  porque con el caso combinado bastaría con que una de las dos reglas funcionara.
+**Puesta en producción sin terminal.** Crear `api/admin/cargar-experiencia-genesis.js` habría roto el
+despliegue entero (tope de 12), así que va **plegado en `/api/admin/experiencia?origen=repositorio`**. **El
+archivo se lee con `require` ESTÁTICO, jamás con `fs` sobre ruta construida**: con ruta dinámica el tracer de
+Vercel no lo mete en el bundle y el endpoint respondería 500 **SOLO EN PRODUCCIÓN**. **El flag va en la QUERY,
+no en el cuerpo**, porque `validarContratos` IGNORA las claves extra de la raíz y un flag mal escrito dentro
+del JSON cargaría los contratos pegados con un 200 idéntico (fuente equivocada, sin síntoma). **EL ALIAS
+PEGADO EN CHROME ES UN GET, y por poco miente**: la rama GET retornaba ANTES de mirar `origen` y respondía
+`200 {ok:true, cargada:false, contratos_cargados:0}` —un «no hice nada» con cara de éxito (R1/R3)—, y hoy da
+**405 con `Allow: POST` y `como_hacerlo`** sin convertirse en un «GET que escribe». **Los tres pasos del panel
+no reimplementan ninguno** (R2), **la cadena se detiene en el primer fallo**, el paso 2 PROPAGA el booleano de
+`ejecutarAuditoria` (R12) y **la guarda de «auditoría EN VUELO» va ANTES de tocar el selector** —comprobarla
+después deja el selector en «genesis» y `pintarCobertura` estampa cifras de OTRO perfil bajo ese rótulo—.
+Fijar `c-perfil.value` desde código NO dispara `change`, así que se invalida vía `invalidarCoberturaPintada`.
 
-### Identidad de la entidad: dos formas de confundir a dos entidades (ago 2026)
+## Página única, token integrado y piel Apple (ago 2026)
 
-- **Un NIT NO identifica a una entidad.** Las regionales y unidades de un mismo organismo publican
-  con el NIT de la matriz, así que `nit:{NIT}` puede corresponder a varias. El alias iba **primero**
-  en el orden de búsqueda de `competenciaDe`, de modo que una entidad con su nombre bien escrito y
-  su propio registro en el índice acababa enseñando el nivel de competencia de su hermana, en
-  silencio. Ahora el orden es **clave canónica → clave legado → alias**, y el escritor **no publica
-  alias para un NIT compartido** (un alias ambiguo no es un alias: es una respuesta equivocada);
-  los cuenta en `indice:competencia:meta.nits_ambiguos`. El alias sigue existiendo para lo que se
-  creó: que un cambio de razón social no parta el historial.
-- **La puntuación partía una entidad en dos.** `lib/competencia_detalle` tenía DOS claves —
-  `claveBusqueda` (sin puntuación) para agrupar el corpus y `claveIndice` (`norm` a secas) para leer
-  el hash—, así que «… RIOS NEGRO **-** NARE» y «… RIOS NEGRO NARE» se sumaban al contar y no al
-  leer: el detalle enseñaba el promedio de 4 procesos bajo una banda calculada sobre 3. No era un
-  error de cálculo: eran **dos definiciones de «entidad» conviviendo**. Ahora hay una sola,
-  `claveCanonica` (en `lib/indice_competencia`, importada por el detalle), y el índice agrupa con
-  ella. Las dos direcciones no pueden volver a separarse porque no hay dos funciones que mantener.
-- **`claveLegado` no se escribe jamás, solo se lee**: el hash de producción está escrito con la
-  clave anterior y `indice:competencia` no se purga nunca. Sin ese segundo intento en
-  `competenciaDe` y en el detalle, desplegar dejaría **todo** en ⚪ hasta que alguien reconstruyera
-  el índice a mano. Mismo criterio que `procesos`/`procesos_contados`.
-- **Los fixtures de identidad van por debajo del mínimo de 5 procesos a propósito**: solo entran en
-  los tertiles las entidades clasificables, así que así ejercitan la identidad sin recalcular los
-  cortes (con 5, IDU dejaría de ser «alta» y media suite se caería). Y el de la puntuación es
-  **3 + 1, no 2 + 2**: con el empate, `nombreOriginal` lo decide el orden del corpus y la prueba
-  pasaría o fallaría por azar.
+Se retiraron `admin.html`, `apu.html`, `pliego.html`, `admin.js` y `apu.js`; queda `index.html` (tres
+pestañas: 🏠 `#/licitaciones` · 📊 `#/apu` · ⚙️ `#/admin`) y `public/app.js` como único módulo, ENSAMBLADO de
+los tres anteriores.
 
-### Módulo APU · lectura del formulario de cantidades de un pliego (ago 2026)
+- **El TOKEN va INTEGRADO** (`const TOKEN = "MiExtraccion2025"`, en app.js, pliego.js y onboarding.js) y el
+  usuario no ve formulario ni error de token. Hay que contarlo exacto: **ese literal no es un secreto** (está
+  en el fuente) y la seguridad REAL es Vercel Password Protection más el gate de clave; **los endpoints NO se
+  relajaron** —siguen exigiendo `HISTORICO_TOKEN`—, así que un 401 se explica como lo que es
+  («HISTORICO_TOKEN no coincide con el de la aplicación») y en la lista pública `tokenRechazado` degrada a la
+  vista sin cifras en vez de entrar en bucle. La suite PROHÍBE que vuelvan `pedirToken`, `exigirToken`,
+  `pintarEstadoToken`, `CLAVE_TOKEN` y los formularios, y que el token viaje en una URL.
+- **Un solo gate y un solo arranque, AL FINAL del IIFE** (R4); cada pestaña arranca lo suyo la PRIMERA vez que
+  se abre (`arrancadas.{apu,admin,pliego}`), así que abrir la app no dispara el panel ni el catálogo.
+- **`pliego.js` y `onboarding.js` siguen siendo archivos propios**: sus funciones (`numeroLocal`,
+  `lineasDePagina`, `parsearCsv`) están atadas por pruebas que las EXTRAEN por archivo. `pliego.js` expone
+  `window.__pliegoArrancar` y la pestaña APU lo llama una vez; su marcado vive en `index.html` con ids `pl-*`
+  donde colisionaban. - **El botón «APU» ya no abre otra página**: `abrirEditorConProceso` fija `paramsProceso` y cambia de pestaña
+  con **la MISMA cadena de parámetros** que viajaba por URL (`precargarDesdeURL` conserva `location.search`
+  para enlaces guardados). Vive dentro de una fila cuyo clic abre SECOP II, así que la guarda
+  `closest(".btn-apu")` va **ANTES** de resolver la fila.
+- **Las URLs viejas redirigen** (`vercel.json`): `/admin.html` → `/#/admin`, `/apu.html` y `/pliego.html` →
+  `/#/apu`, y hay prueba de que los cinco archivos retirados no pueden volver (uno resucitado no lo cargaría
+  nadie y quedaría desincronizado en silencio).
 
-- **La premisa del encargo era falsa y hay que dejarlo escrito**: se pidió una «Fase 4» dando por
-  hecho que las «Fases 1-3 del módulo APU» estaban en `main`. **No existía nada de APU en `main`**:
-  ni catálogo, ni página `/apu`, ni `lib/apu*.js`. Lo único que había era el documento de diseño
-  `docs/APU_Y_RENTABILIDAD.md`, y **tampoco está en `main`** — vive en la rama sin fusionar
-  `claude/apu-rentabilidad-licitaciones-vxom4c`. Se construyó además el sustrato mínimo (catálogo de
-  ítems + página) para que la extracción tuviera destino. **Y la numeración del encargo no es la del
-  documento**: el doc planifica TRES fases (1 = MVP con datos propios, 2 = fuentes externas
-  gratuitas, 3 = inversión/LLM) y el catálogo de ítems es entregable de su **Fase 2**.
-- **El PDF se lee en el NAVEGADOR, y la decisión está medida, no intuida.** `tesseract.js@7` +
-  `spa.traineddata` son **51 MB de `node_modules`** y 9 dependencias npm; cabe en el límite de 250 MB
-  de Vercel, pero rompe la regla central del proyecto y **además necesita un rasterizador nativo**
-  (`pdfjs-dist` en Node exige `canvas`, módulo compilado). El texto de un pliego de 120 páginas son
-  ~0,34 MB contra el tope de **4,5 MB** del cuerpo de una función: mandando texto sobra un factor de
-  13. Los 50 MB son del DESPLIEGUE, no de la invocación — son dos límites distintos que se confunden
-  siempre.
-- **Las columnas se conservan por COORDENADAS, no por `str` concatenado**: agrupar por Y forma la
-  fila, el hueco en X decide TAB o espacio. Si el navegador mandara el texto aplanado, el parseo
-  entero dependería de la vía de último recurso. Es la pieza de la que cuelga todo lo demás.
-- **pdf.js va CLAVADO en 3.11.174**: desde la v4 `pdfjs-dist` ya NO publica build UMD (es ESM puro,
-  incluido `legacy/build/`), así que un `@latest` dejaría de definir `window.pdfjsLib` y rompería la
-  carga **de golpe y en silencio**.
-- **`workerSrc` NO puede apuntar al CDN**: `new Worker(url)` clásico no admite otro origen, y ese es
-  el fallo intermitente típico de pdf.js. Se trae por `fetch` y se envuelve en un **blob del mismo
-  origen**. Tres niveles: blob → URL directa → sin worker (hilo principal: funciona, congela la
-  pestaña, **y se avisa**).
-- **AQUÍ EL FALSO POSITIVO CUESTA MÁS QUE EL FALSO NEGATIVO** — al revés que en el filtrado de
-  oportunidades, y es la inversión más importante de este módulo. Un 🟡 en la lista se descarta en
-  5 s; un ítem inventado o una cantidad mal leída en un presupuesto es plata. Por eso el semáforo
-  puede DESCARTAR el parseo entero y por eso nunca se usa automáticamente una lista a medias.
-- **Tolerancia de FILA en pesos, jamás en porcentaje del total**: `max(cantidad/2 + 1, $1)`, porque el
-  error por redondear el unitario al peso es `cantidad × 0,5`. Un 0,5 % en una fila de $500 M admite
-  $2,5 M y **esconde justo el dígito mal leído que la regla debía cazar**; y en una fila barata con
-  cantidad enorme se queda corto y produce falsos rojos.
-- **El AIU se LEE, no se adivina, y el barrido NUNCA produce verde.** Con un parámetro libre continuo
-  de 25 puntos (10-35 %) casi cualquier suma de costos directos encuentra un AIU que «cuadra»,
-  incluidas las tablas incompletas. Y **el IVA sobre la utilidad no es un detalle**: con `U = 10 %`
-  añade ≈1,9 pp, casi **cuatro veces** la tolerancia del 0,5 %, así que se prueban las dos variantes
-  y se registra CUÁL cuadró (es información sobre cómo presupuesta esa entidad).
-- **Cantidades sin precios unitarios = AMARILLO**, ni rojo ni verde. Es el caso «frecuente y
-  benigno»: sin aritmética no hay nada que respalde un ≥98 % de filas correctas (así que no es verde,
-  que significa «se usa automáticamente»), pero ítem + unidad + cantidad «sigue siendo la mayor parte
-  del valor» (así que no es rojo).
-- **Una cantidad ilegible es `null`, JAMÁS 0** — la misma regla que `anticipo_pct = 0` y que el
-  contador de oferentes, aquí con consecuencia económica directa. Hay prueba que prohíbe
-  `f.cantidad || 0` en el frontend, hermana de la que ya prohibía `i.<conteo> || 0`.
-- **NINGÚN CÓDIGO `INV-` SE PUBLICA.** «Nunca inventar un código INV que no exista; si no hay
-  artículo, el ítem nace `LOC-`». El índice oficial de las Especificaciones INVÍAS 2022 (Res.
-  4561/2022) nunca se pudo abrir (403), así que la numeración y las unidades de pago están SIN
-  VERIFICAR: el artículo probable viaja en `articulo_invias_candidato` como hipótesis y
-  `codigoInviasPropuesto()` deja preparado el código que se emitiría al confirmarlo. Hay prueba.
-- **El catálogo NO tiene precios**, y eso es la mitad de lo que lo hace publicable: sin base de
-  precios verificada, un rendimiento o un jornal inventados serían plata, no un dato incómodo.
-- **La TIPOLOGÍA es un peso (0,10), no un filtro del catálogo.** Empezó siendo filtro y estaba mal,
-  medido con un caso: en un proceso de placa huella la fila del cruce de drenaje («TUBERÍA PVC»)
-  caía a «personalizado» porque `LOC-RED-TUBPVC` no figura en `VIA-PH`. **Un presupuesto de obra
-  mezcla tipologías por construcción.**
-- **El tokenizador del mapeo CONSERVA los dígitos**, al revés que `experiencia.tokenizar`, que los
-  descarta a propósito. Allí «2024» es el número del proceso; aquí «21» (MPa), «420» (fy) y «21»
-  (RDE) son lo que distingue un ítem de su hermano y lo que **mueve el precio** (RDE 41→21 puede
-  duplicar el ml). Dos preguntas distintas, dos reglas distintas, y una prueba que impide
-  «unificarlas» — la misma clase de decisión que separar `TERMINOS_BLOQUEANTES` de
-  `TERMINOS_NO_PERTINENTES`.
-- **La unidad NO se convierte nunca**: pasar m² a m³ exige un espesor que el catálogo no conoce. Se
-  marca `unidad_discrepante` y se conserva **la del pliego**, que es la que se va a pagar.
-- **Sin match nace un ítem PERSONALIZADO, la fila jamás se descarta.** Si la entidad va a pagar por
-  ese ítem, tiene que estar en la lista aunque el catálogo no lo conozca. No es un fallo del mapeo.
-- **`isTable=true` de OCR.space promete texto LÍNEA A LÍNEA, no columnas.** Consecuencia: el texto de
-  OCR casi nunca activa la vía posicional —cae en la de firma de unidad o en la aplanada— y por eso
-  el OCR es un respaldo del que hay que decir que lee peor, no disimularlo con una opción de nombre
-  tranquilizador.
-- **Escaneado se detecta POR PÁGINA (<100 caracteres de media), no con un umbral global**: un escaneo
-  con cabecera vectorial devuelve unos pocos caracteres por página y pasaría el suelo absoluto. Y el
-  mensaje dice «parece escaneado», nunca «el pliego está vacío»: **ausencia de capa de texto es SIN
-  DATO**.
-- **Un 200 de OCR.space no es éxito**: el fallo viaja DENTRO del 200 (`IsErroredOnProcessing`,
-  `OCRExitCode` 1/2/3/4). Sin comprobarlo se devolvería texto vacío como si la página no tuviera nada.
-  Un 4xx NO se reintenta (gasta cuota del plan gratuito); 429/5xx sí, con backoff y `Retry-After`.
-- **`/api/apu/descargar` existe porque el navegador NO puede** bajar el PDF (mismo origen; los
-  portales no mandan CORS), y es un SSRF de manual: token · solo `https:` · sin IP literal,
-  `localhost`, rango privado ni dominio interno · **redirecciones a mano revalidando cada salto**
-  (`169.254.169.254` es el salto clásico) · tamaño controlado **mientras se lee**. Y se verifica la
-  firma **`%PDF-`**: los portales sirven HTML de sesión con `Content-Type: application/pdf`.
-- **`/api/apu/extraer-texto` NO toca Redis**: ni lee el corpus, ni escribe, ni toma candados. No
-  necesita credenciales de Upstash y no puede dejar nada a medias. Nada del módulo APU toca la
-  ingesta, la purga ni `limpiarRedis` del arnés.
-- **«Sin tablas» es un RESULTADO, no un error**: 200 con la lista vacía y el diagnóstico. Un 4xx haría
-  creer que el envío estaba mal cuando lo que pasa es que el documento no era el Formulario 1.
-- **Una línea de metadato no es prosa suelta.** La regla de «continuación de una descripción partida
-  en dos líneas» pegaba «ANTICIPO: 30%» al final del último ítem, **inventándole una descripción que
-  no está en el pliego**. Las líneas que tienen su propio lector (`leerAiu`, `leerAnticipo`) tienen su
-  propia cubeta en el diagnóstico: contarlas como «no reconocidas» también sería falso.
-- **DIEZ DEFECTOS QUE EL BANCO NO VIO Y LA REVISIÓN ADVERSARIA SÍ.** El banco daba 100 % y estaba
-  midiendo lo que su autor previó; una revisión con lentes independientes (corrección, doctrina,
-  seguridad, honestidad) encontró diez cifras equivocadas y creíbles, que es lo peor que este módulo
-  puede producir. Los diez reproducidos ejecutando código antes de tocar nada:
-  · **Una celda VACÍA descolocaba todo el mapa de columnas**: `dividirCeldas` filtraba los huecos, así
-    que con `2.1|SUBBASE|M3||95.000|35.625.000` la cantidad leía el PRECIO UNITARIO. Ahora los huecos se
-    conservan cuando el separador es TAB y hay DOS vistas de la línea: posicional (con huecos) y
-    compacta (sin ellos, para lo que razona por adyacencia).
-  · **La cantidad es la cifra ADYACENTE a la unidad**, a un lado o al otro. Dar prioridad a la derecha
-    «porque es el orden normal» leía el unitario como cantidad con el orden `CANTIDAD | UNIDAD`, que es
-    tan corriente que el propio banco lo tiene como caso.
-  · **El AIU y el IVA desglosados como partidas** entraban en la suma del documento e inflaban el costo
-    directo justo en los pliegos que mejor desglosan su AIU (`NO_ES_COSTO_DIRECTO_RE`, anclada al
-    PRINCIPIO: «ADMINISTRACION DELEGADA DE OBRA» puede ser una partida real).
-  · **La vía aplanada convertía PROSA en ítems**: «SE PAGARA POR ML 1.000 METROS…» producía el ítem «SE
-    PAGARA POR», ml, 1.000. Ahora la descripción no puede terminar en palabra de enlace y hace falta
-    numeral o dos cifras. Es la vía normal del OCR, así que es donde más apretar.
-  · **Cabecera partida en dos líneas** («VALOR|VALOR» + «UNITARIO|TOTAL»): las dos celdas mapeaban a
-    `total` y ganaba la primera, anclando `total` a la columna del unitario. Se resuelve por el orden,
-    que en un formulario es invariable.
-  · **`leerAnticipo` tomaba el primer `%` de la línea**: «EL AIU SERA DEL 25% Y EL ANTICIPO DEL 30%» →
-    anticipo 25 %. Y con los dos conceptos en una línea perdía uno. Ahora el `%` se busca junto a SU
-    palabra, sin cruzar el punto («NO SE PACTARA ANTICIPO. LA RETENCION… 5%» ya no declara un anticipo).
-  · **`\d{1,2}` convertía «100%» en 0 %** — un 0 que aquí significa «sin dato». Ahora `\d{1,3}`.
-  · **La «a» de preposición fijaba la Administración**: «IMPREVISTOS EQUIVALENTES A 3%» → A = 3 %. La
-    inicial suelta ahora exige separador o paréntesis; la palabra completa vale sola.
-  · **`375.0000` daba 3 750 000** (mil veces): un punto con 4+ dígitos detrás es un DECIMAL, no miles.
-    Con varios puntos y 4+ detrás, `null` — «no sé», no un número inventado.
-  · **Dos capítulos con el mismo numeral** (dos grupos que reinician la numeración) sumaban sus hijas
-    juntas: el acumulador se indexa por ÍNDICE, no por numeral. Y el subtotal se asigna al capítulo que
-    el TEXTO nombra, no al último empujado (con subcapítulos, el último es 1.2 cuando llega el total de 1).
-- **El VERDE exige tres cosas más que el ratio de filas.** Las filas sin cantidad legible salían del
-  denominador en vez de contar contra él, así que se llegaba a verde con la mayoría de las cantidades
-  sin leer — y el aviso «N ítem(s) SIN CANTIDAD legible» salía en la MISMA respuesta, contradiciendo a
-  la insignia. Verde exige ahora: ninguna cantidad ilegible, ≥5 filas validadas (con «1 de 1 cuadra»
-  daba 100 %) y ≥50 % de los ítems validados.
-- **«Firme» en el mapeo exige MARGEN 0,12, no 0,08, y ≥2 términos coincidentes.** El solapamiento se
-  divide por los términos del PLIEGO, así que una descripción corta y genérica alcanza 1,0 sin ser
-  específica: «CONCRETO 3000 PSI» casaba en firme con el concreto de placa huella pudiendo ser el
-  estructural o el de pavimento rígido, y lo que separaba a los tres era 0,083.
-- **Validar la CADENA del hostname no protege de nada.** El SSRF de `/api/apu/descargar` seguía abierto:
-  cualquier dominio público puede apuntar a `127.0.0.1` o a `169.254.169.254`. Ahora **se resuelve el
-  nombre y se valida la IP**, en el primer salto y en cada redirección. Y tres precisiones: `::ffff:`
-  mapeada es IPv4 disfrazada y no la veía ninguna de las dos familias de reglas; `^fc`/`^fd` sin
-  delimitador rechazaban dominios REALES (`fdn.gov.co`) como internos, así que las reglas IPv6 solo se
-  aplican a literales IPv6; y **`primeros_bytes` en el 415 era un oráculo de lectura** de servicios
-  internos. Queda la ventana TOCTOU del *rebinding*, dicha y no disimulada.
-- **La clave del OCR viajaba en los mensajes de error.** El cuerpo de error de OCR.space se le muestra
-  al usuario (es el único diagnóstico útil), pero lo escribe un tercero a partir de una petición que
-  LLEVA la `OCRSPACE_API_KEY` y hay servicios que la repiten («Bad request for apikey=…»). Se tacha
-  antes de reenviarlo. Y **la rama `{url}` de `ocrPagina` desapareció**: aceptar una URL y pasarla a
-  OCR.space era un SSRF POR DELEGACIÓN que además se saltaba el control de tamaño.
-- **Las dos implementaciones del número colombiano están ATADAS POR UNA PRUEBA.** `numeroLocal` en
-  public/apu.js duplica a `numeroColombiano` porque un `<input>` no puede requerir un módulo de Node —
-  duplicación justificada, no libre. La prueba extrae la función del fuente y compara las dos sobre la
-  misma batería; **cazó una divergencia real en cuanto se escribió** (`375.0000` corregido solo en el
-  servidor). Sin ella, el número que el dueño escribe a mano y el que el servidor leyó del PDF
-  significan cosas distintas y nadie se enteraría.
-- **La página no puede prometer que el documento NO SALE y ofrecer un botón que lo manda a un
-  tercero.** Decía «no se sube a ningún servidor» con el botón de OCR al lado, que envía las páginas
-  rasterizadas a OCR.space. La excepción se declara ahora en la propia sección, antes de pulsar.
-- **`tests/apu_bench.js` publica el LÍMITE, no solo el acierto.** 100 % de recall sobre 10 formularios
-  sintéticos no significa gran cosa cuando el corpus lo escribió quien escribió el parser: mide la
-  habilidad del autor para prever variantes. Por eso hay una tanda **adversaria sin suelos de
-  regresión**, y encontró tres defectos reales —celdas combinadas, unidad mencionada dentro de la
-  descripción, ambigüedad decimal—; **dos se corrigieron y el tercero queda publicado**. La
-  distribución real de formatos de SECOP II sigue **sin medir** (§1.G.7 la deja como vacío explícito)
-  y ninguna cifra del banco la sustituye.
-- **DOS PÁGINAS Y DOS CATÁLOGOS, y la separación es deliberada.** El lector de pliegos vive en
-  `/pliego.html` y el editor de APU en `/apu.html`; el lector usa `data/catalogo_apu.json` (93 ítems
-  **sin precios**, con sinónimos: es un DICCIONARIO DE RECONOCIMIENTO para casar el texto de un pliego)
-  y el editor usa `data/apu_catalogo.json` (17 ítems **con precios**, composición y rendimiento: es la
-  BIBLIOTECA DE COSTEO). Responden a preguntas distintas —«¿qué ítem es esta fila?» frente a «¿cuánto
-  cuesta este ítem?»— y por eso no se fusionan; lo que sí se hace es EMITIR el código del catálogo de
-  precios cuando el ítem reconocido existe allí, para que no haya dos identidades del mismo ítem.
-- **El informe de investigación y el doc de precios son DOS documentos distintos** que llegaron a
-  compartir nombre: `docs/APU_INFORME_COMPLETO.md` es el informe de 10 433 líneas (§1.A-§1.I, el que
-  citan los comentarios como «el informe») y `docs/APU_Y_RENTABILIDAD.md` es la investigación de
-  fuentes de PRECIOS que sostiene el catálogo del editor. Ninguno sustituye al otro.
+### Piel Apple Glass
 
-### Editor de APU: del objeto del proceso a un presupuesto (ago 2026)
+- **Cambió la dirección, no la técnica**: el tema oscuro (#0f172a) vivía en una capa CSS que re-mapeaba las
+  utilidades CLARAS de las plantillas JS, y el rediseño la REEMPLAZA por la paleta Apple sobre custom
+  properties (claro #f5f5f7 / oscuro #000, acento #007AFF, `:root` + `prefers-color-scheme: dark`) conservando
+  la técnica: el JS sigue diciendo `bg-white`/`bg-gray-900`/`text-gray-500` y el `<style>` las traduce, porque
+  reescribir cientos de cadenas habría chocado con media suite (regexes sobre clases). El `backdrop-filter` va
+  SOLO en tarjetas de nivel superior, la suite prohíbe que vuelva el tema viejo (#0f172a/#1e293b/#334155/
+  #34d399/#052e22 y utilidades `*-slate-*`) y el SVG del optimizador pinta #007AFF/#86868b literales porque no
+  hereda custom properties.
+- **El «bug de pestañas vacías» del encargo NO existía**; lo que se hizo fue BLINDARLO: la prueba cruza TODOS
+  los `$("id")`/`getElementById` de los tres JS contra los ids del HTML, porque la causa típica de una pestaña
+  muerta es una referencia a un nodo retirado, cuya excepción detiene el script en silencio.
+- **La probabilidad de la tarjeta es una FRASE, no un porcentaje** (`fraseProbabilidad`): 🟢 muy alta (>40 %)
+  · 🟡 buena (20–40 %) · 🟠 media (10–20 %) · 🔴 poco probable (<10 %) · ⚪ «Sin información suficiente»
+  (`null`; la ausencia jamás es 0 %, R1). Debajo, UNA frase con el factor principal (`motivoProbabilidad`:
+  poca competencia → prórroga → colisión → baja alta → baja ≈0 → «Basado en N procesos» → supuesto
+  conservador), y ninguna interpola una cifra sin base. Las dos funciones se prueban EJECUTÁNDOLAS extraídas
+  del fuente, con los bordes: 0,40 es «buena», 0 medido es 🔴 (es un dato), `null` es ⚪. **El editor de APU y
+  el optimizador CONSERVAN el porcentaje**: allí la cifra alimenta una decisión de precio.
 
-Se apoya en el **catálogo de precios en Redis** (`lib/apu/catalogo.js` + `/api/admin/apu/cargar-catalogo`)
-y añade lo que aquel no cubre: qué obra es, cuántas unidades, el AIU, la baja y el margen. Base
-documental: `docs/APU_Y_RENTABILIDAD.md`.
+## Módulo APU · lectura del formulario de cantidades de un pliego
 
-- **`lib/apu/calculo.js` NO reimplementa el costo directo: LLAMA a `costoDirecto()` del catálogo.** Ahí
-  viven ya las cuatro fórmulas del APU (mano de obra ÷ rendimiento con prestacional, materiales con
-  desperdicio, equipo ÷ rendimiento, transporte por distancia, herramienta menor como % de la MO). Un
-  segundo cálculo «equivalente hoy» diverge a la primera corrección que se aplique a uno solo — es la
-  lección de `total_procesos`/`procesos_contados`, y aquí serían pesos.
-- **`lib/apu/tipologias.js` está separado del catálogo de precios a propósito.** Aquel es PRECIO: vive
-  en Redis, lo carga un administrador y cambia con el mercado. Esto es VOCABULARIO y TRADUCCIÓN: cambia
-  con el criterio de negocio, tiene que verse en un diff y **no puede depender de que alguien haya
-  corrido la carga**. Mezclarlos habría atado el clasificador —que funciona sin Redis— al estado de una
-  clave que puede no existir.
-- **DOS CORRECCIONES A LA FÓRMULA DEL ENCARGO, las dos con prueba.** (1) `(cantidad / rendimiento) ×
-  costo_hora` ya es el TOTAL del ítem, no el unitario: sumarlo a unos materiales que sí son por unidad y
-  volver a multiplicar por `cantidad` cobra la cuadrilla `cantidad` veces (en un ítem de 500 m², 500
-  cuadrillas). El APU clásico calcula el UNITARIO y multiplica una vez; se obtiene el número que el
-  encargo pretendía y además se cumple `cantidad × unitario = total`. (2) **AIU es Administración +
-  Imprevistos + Utilidad: se SUMA, no se compone.** El `aiu_pct` del encargo es la «A». `15/5/5`
-  compuesto da 26,8 % contra 25 % aditivo, y el aditivo es el de los pliegos tipo. `modo_aiu:
-  "compuesto"` sigue disponible; el defecto no puede ser el que descuadra contra el formulario.
-- **El rendimiento DIVIDE.** Error canónico del APU, con prueba de monotonía: bajarlo encarece la mano
-  de obra sin tocar los materiales. Y el `rendimiento_override` **trabaja sobre una copia**: el catálogo
-  es compartido entre peticiones de la misma instancia caliente y mutarlo filtraría el override del
-  presupuesto de uno al de otro. Hay prueba de eso también.
-- **`regionDeDepartamento` es el punto único de paso y PROHIBIDO `|| 1`.** El catálogo cotiza por REGIÓN
-  (cinco, con ciudad cabecera) y SECOP publica DEPARTAMENTO: `data/apu_regional.json` traduce. Las cinco
-  regiones cubren **14 de los 33** departamentos; los otros 19 salen `sin_base` con su motivo escrito.
-  Asignar Vaupés a «Costa Atlántica» porque no hay nada mejor sería inventarse un dato, y un factor 1,00
-  de relleno afirma «aquí construir cuesta lo mismo que en Bogotá». El presupuesto **sale igual**, con la
-  región base y diciéndolo: no bloquear por falta de información. El desplegable marca cuáles no tienen
-  precio de referencia — sin la marca, elegir Chocó parecería tan fiable como elegir Antioquia.
-- **Sin catálogo en Redis se usa la semilla del repositorio, y se DICE** (`catalogo.fuente`). Hay prueba
-  de que las dos vías dan el MISMO costo directo: son la misma tabla por dos caminos, y si divergieran el
-  presupuesto cambiaría según quién hubiera corrido la carga.
-- **TRES PUERTAS ANTI-FALSO-POSITIVO antes de emitir un ítem (ago 2026), y las tres LLAMAN a la regla
-  que ya existía.** Faltaban, y el corpus real dio los tres casos: «SERVICIO DE INTERNET DEDICADO E
-  INTERVENTORÍA…» sugería CON-EST (el segmento 80 está en los RUP porque ahí viven la gerencia y la
-  interventoría); «ADIESTRAMIENTO DE CANINOS Y MANTENIMIENTO DE LA PLACA HUELLA…» con un 72141000 salía
-  **VERDE con 6 ítems** —un APU de placa huella entero para un contrato de caninos, y el verde es el
-  único estado que presupuesta sin pedir el pliego—; y «COMPRAVENTA DE TUBERÍA PVC» con un 4017 daba
-  AGU-RED con ítems. El orden importa y cada puerta caza un caso distinto:
-  · **`BLACKLIST_OBJETO` primero y sobre el texto CRUDO** (lleva `[oó]` y flag `i`: cambiarle la base de
-    comparación sería una regresión silenciosa). Hace falta porque la PERTINENCIA **no cubre «caninos»**.
-  · **`evaluarPertinencia(textoNorm, {codigos})`**, y **solo el ROJO rechaza**: su amarillo significa «el
-    objeto no lo dice explícitamente», y cerrar por eso sería bloquear por falta de información. Se le
-    pasa el texto NORMALIZADO — su contrato es `(textoNorm, …)`, y con texto crudo sus vocabularios no
-    casarían y la puerta quedaría abierta en silencio.
-  · **`esSuministroPuro(textoNorm, codigos)`**, que necesita los códigos por SEGMENTO: `nivelB` los
-    devuelve ya normalizados en vez de recalcularlos. Sin códigos devuelve `false` por diseño.
-  Las tres reutilizan la regla del repositorio a propósito: **tres listas paralelas de «esto no es obra»
-  divergen a la primera corrección que se aplique a una sola**, y hay prueba que prohíbe fabricarlas.
-  Los rechazos son `no_determinada`, no un cuarto estado: la invariante de que los estados suman los
-  evaluados sigue valiendo. Hay prueba por MUTACIÓN de que las tres son necesarias —desactivar
-  cualquiera resucita su caso— y otra de que no se sobrebloquea obra legítima («SUMINISTRO E
-  INSTALACIÓN DE TUBERÍA» sí es obra y sigue pasando).
-- **`lib/apu/inferencia.js` YA NO ES HOJA, y el comentario que decía lo contrario se corrigió.** Depende
-  de `filtros`, con el `require` **DIFERIDO dentro de la función**: `filtros` participa en dos ciclos que
-  resuelve con esa misma técnica (`filtros → rup → filtros`, `filtros → negocio → filtros`), así que
-  pedirlo en tiempo de carga ataría este módulo a ese nudo. Hoy la cadena de `filtros` no alcanza `apu/`
-  —hay prueba que recorre el grafo y lo comprueba—, pero el diferido lo hace cierto por construcción.
-- **El clasificador es una cascada de tres niveles y solo están los dos primeros.** Nivel A léxico
-  (ancla 3 · apoyo 1 · excluye −4, exigiendo verbo de obra de `lib/semantica`), Nivel B UNSPSC como
-  evidencia INDEPENDIENTE cuyo valor real es **vetar** (placa huella con código 4017 es una red, no una
-  vía → 🟡). El **Nivel C (LLM de desempate) NO se implementó**: el proyecto no tiene dependencias ni
-  llamadas externas, y meter una en la ruta de una petición añadiría latencia y un fallo a un cálculo hoy
-  determinista. La máquina de estados funciona sin él y cae a 🟡 o ⚪ donde el informe invocaría a C.
-- **`anclas` son los términos que el informe publica en su tabla, uno a uno.** Demoterlos a `apoyo`
-  (peso 1) fue el primer intento y dejó a TODAS las tipologías por debajo del umbral de 🟢: una placa
-  huella perfectamente escrita sacaba 5 puntos de los 8 necesarios.
-- **Los términos se comparan con frontera de palabra Y plural tolerado.** Sin el plural, media tabla no
-  dispararía nunca (SECOP dice «vías terciarias»); sin la frontera, «parque» clasificaría un
-  mantenimiento de **parque**adero como espacio público. `includes` a secas falla en el segundo caso y
-  una frontera estricta en el primero.
-- **El margen `P1−P2` es condición DURA**: dos tipologías empatadas nunca dan 🟢 aunque el puntaje
-  absoluto sea alto. El falso positivo caro es el verde, el único estado que presupuesta sin pedir el
-  pliego. Y los tres estados **suman exactamente los objetos evaluados**, con prueba.
-- **Una tipología sin ítems en el catálogo lo DICE.** 19 de las 22 tienen cobertura; VIA-SEN, ELE-RED y
-  CON-EST no. Una lista vacía es un dato, no un olvido, y el mensaje lo explica en vez de proponer ítems
-  de otra cosa. El mapa tipología→ítems es EXPLÍCITO en el JSON: derivarlo del capítulo (texto libre) o
+`public/pliego.js` + `/api/apu/extraer-texto` + `lib/apu_pliego.js` + `lib/apu_mapeo.js` + `lib/apu_ocr.js` +
+`/api/apu/descargar`. **Entrega cantidades, NO precios.** (El encargo pedía una «Fase 4» dando por hecho que
+las Fases 1-3 estaban en `main`, y **no existía nada de APU en `main`**.)
+
+- **DOS CATÁLOGOS, separación deliberada**: el lector usa `data/catalogo_apu.json` (93 ítems **sin precios**,
+  con sinónimos: DICCIONARIO DE RECONOCIMIENTO) y el editor `data/apu_catalogo.json` (**con precios**,
+  composición y rendimiento: BIBLIOTECA DE COSTEO). Responden a preguntas distintas y no se fusionan; sí se
+  EMITE el código del catálogo de precios cuando el ítem existe allí, para no tener dos identidades.
+- **AQUÍ EL FALSO POSITIVO CUESTA MÁS QUE EL FALSO NEGATIVO** (R6 invertida): el semáforo puede DESCARTAR el
+  parseo entero y nunca se usa automáticamente una lista a medias.
+- **El PDF se lee en el NAVEGADOR, y la decisión está medida**: `tesseract.js@7` + `spa.traineddata` son
+  **51 MB de node_modules** y exigen rasterizador nativo (`pdfjs-dist` en Node necesita `canvas`), mientras
+  que el texto de un pliego de 120 páginas son ~0,34 MB contra el tope de 4,5 MB: sobra un factor 13.
+- **Las columnas se conservan por COORDENADAS**: agrupar por Y forma la fila, el hueco en X decide TAB o
+  espacio; con texto aplanado todo el parseo dependería de la vía de último recurso.
+- **pdf.js CLAVADO en 3.11.174**: desde la v4 `pdfjs-dist` no publica build UMD, así que un `@latest` dejaría
+  de definir `window.pdfjsLib` y rompería la carga en silencio. **`workerSrc` NO puede apuntar al CDN**
+  (`new Worker(url)` clásico no admite otro origen: el fallo intermitente típico de pdf.js): se trae por
+  `fetch` y se envuelve en un **blob del mismo origen**. Tres niveles: blob → URL directa → sin worker
+  (funciona, congela la pestaña, **y se avisa**).
+- **Tolerancia de FILA en pesos, jamás en porcentaje**: `max(cantidad/2 + 1, $1)`, porque el error por
+  redondear el unitario al peso es `cantidad × 0,5`; un 0,5 % en una fila de $500 M admite $2,5 M y esconde el
+  dígito mal leído.
+- **El AIU se LEE, no se adivina, y el barrido NUNCA produce verde**: con un parámetro libre continuo de 25
+  puntos casi cualquier suma encuentra un AIU que «cuadra». **El IVA sobre la utilidad no es un detalle**:
+  con U = 10 % añade ≈1,9 pp, casi cuatro veces la tolerancia del 0,5 %, así que se prueban las dos variantes
+  y se registra CUÁL cuadró (dice cómo presupuesta esa entidad).
+- **Cantidades sin precios unitarios = AMARILLO** y **una cantidad ilegible es `null`, JAMÁS 0** (R1). **El
+  VERDE exige tres cosas más que el ratio de filas**: las filas sin cantidad legible salían del denominador
+  en vez de contar contra él, así que se llegaba a verde con la mayoría sin leer —y el aviso «N ítem(s) SIN
+  CANTIDAD legible» salía en la MISMA respuesta—; hoy exige ninguna cantidad ilegible, **≥5 filas validadas**
+  y **≥50 % de ítems validados**.
+- **NINGÚN CÓDIGO `INV-` SE PUBLICA**: el índice oficial de las Especificaciones INVÍAS 2022 (Res. 4561/2022)
+  nunca se pudo abrir (403), así que numeración y unidades de pago están SIN VERIFICAR; el artículo probable
+  viaja en `articulo_invias_candidato` y `codigoInviasPropuesto()` deja preparado el código que se emitiría
+  al confirmarlo. Sin artículo, el ítem nace `LOC-`.
+- **El tokenizador del mapeo CONSERVA los dígitos**, al revés que `experiencia.tokenizar`: allí «2024» es el
+  número del proceso; aquí «21» (MPa), «420» (fy) y «21» (RDE) distinguen un ítem de su hermano y **mueven el
+  precio** (RDE 41→21 puede duplicar el ml). Hay prueba que impide «unificarlas».
+- **La unidad NO se convierte nunca** (pasar m² a m³ exige un espesor que el catálogo no conoce): se marca
+  `unidad_discrepante` y se conserva **la del pliego**, que es la que se va a pagar. **Sin match nace un ítem
+  PERSONALIZADO; la fila jamás se descarta.**
+- **«Sin tablas» es un RESULTADO, no un error** (200 con lista vacía y diagnóstico), y **escaneado se detecta
+  POR PÁGINA** (<100 caracteres de media; un escaneo con cabecera vectorial pasaría un umbral global), con el
+  mensaje «parece escaneado» y nunca «el pliego está vacío» (R1).
+- **`isTable=true` de OCR.space promete texto LÍNEA A LÍNEA, no columnas**: el OCR casi nunca activa la vía
+  posicional, así que es un respaldo **del que hay que decir que lee peor**. **Un 200 de OCR.space no es
+  éxito**: el fallo viaja DENTRO del 200 (`IsErroredOnProcessing`, `OCRExitCode` 1/2/3/4); un 4xx no se
+  reintenta (gasta cuota) y 429/5xx sí. **La rama `{url}` de `ocrPagina` desapareció** (era un SSRF POR
+  DELEGACIÓN que se saltaba el control de tamaño), y **la página no puede prometer que el documento NO SALE y
+  ofrecer un botón que lo manda a un tercero**: la excepción se declara antes de pulsar.
+- **`/api/apu/descargar` existe porque el navegador NO puede** bajar el PDF (mismo origen; los portales no
+  mandan CORS), y es un SSRF de manual: token · solo `https:` · **se RESUELVE el nombre y se valida la IP**
+  (validar la cadena del hostname no protege de nada) · **redirecciones a mano revalidando cada salto** ·
+  tamaño controlado mientras se lee · firma **`%PDF-`** verificada (los portales sirven HTML de sesión con
+  `Content-Type: application/pdf`). Tres precisiones: `::ffff:` mapeada es IPv4 disfrazada que no veía ninguna
+  familia de reglas; `^fc`/`^fd` sin delimitador rechazaban dominios REALES (`fdn.gov.co`), así que las reglas
+  IPv6 solo se aplican a literales IPv6; y **`primeros_bytes` en el 415 era un oráculo de lectura**. Queda la
+  ventana TOCTOU del *rebinding*, dicha y no disimulada.
+
+**Diez defectos que el banco no vio y la revisión adversaria sí**: celda VACÍA que descolocaba el mapa de
+columnas (los huecos se conservan con TAB, con DOS vistas de la línea: posicional y compacta); **la cantidad
+es la cifra ADYACENTE a la unidad**; AIU e IVA desglosados como partidas inflaban el costo directo
+(`NO_ES_COSTO_DIRECTO_RE`, anclada al PRINCIPIO); la vía aplanada convertía PROSA en ítems; cabecera partida
+en dos líneas anclaba `total` a la columna del unitario; `leerAnticipo` tomaba el primer `%` de la línea;
+`\d{1,2}` convertía «100%» en 0 %; la «a» de preposición fijaba la Administración; `375.0000` daba 3 750 000
+(un punto con 4+ dígitos detrás es DECIMAL; con varios, `null`); y dos capítulos con el mismo numeral sumaban
+sus hijas juntas. Además, **una línea de metadato no es prosa suelta**: la regla de continuación pegaba
+«ANTICIPO: 30%» al último ítem, inventándole una descripción.
+
+**Las dos implementaciones del número colombiano están ATADAS POR UNA PRUEBA** que las EJECUTA, y cazó una
+divergencia real. **`tests/apu_bench.js` publica el LÍMITE, no solo el acierto**: 100 % de recall sobre 10
+formularios sintéticos mide la habilidad del autor para prever variantes, así que hay una tanda **adversaria
+sin suelos de regresión** que encontró tres defectos reales (celdas combinadas, unidad dentro de la
+descripción, ambigüedad decimal); **dos se corrigieron y el tercero queda publicado**, y la distribución real
+de formatos de SECOP II sigue **sin medir**. Informe en `docs/APU_INFORME_COMPLETO.md` (**no confundir con**
+`docs/APU_Y_RENTABILIDAD.md`, la investigación de PRECIOS).
+
+## Editor de APU: del objeto del proceso a un presupuesto
+
+`lib/apu/inferencia.js` (qué obra es) → `lib/apu/calculo.js` (presupuesto y AIU) sobre `lib/apu/catalogo.js`.
+
+- **`calculo.js` NO reimplementa el costo directo: LLAMA a `costoDirecto()`** (R2), donde viven las cuatro
+  fórmulas del APU (mano de obra ÷ rendimiento con prestacional, materiales con desperdicio, equipo ÷
+  rendimiento, transporte por distancia, herramienta menor como % de la MO).
+- **`lib/apu/tipologias.js` está separado del catálogo a propósito**: aquel es PRECIO (Redis, cambia con el
+  mercado); esto es VOCABULARIO (cambia con el criterio de negocio, tiene que verse en un diff y **no puede
+  depender de que alguien haya corrido la carga**).
+- **DOS CORRECCIONES A LA FÓRMULA DEL ENCARGO**: (1) `(cantidad / rendimiento) × costo_hora` ya es el TOTAL
+  del ítem, no el unitario — volver a multiplicar por `cantidad` cobra la cuadrilla `cantidad` veces (en un
+  ítem de 500 m², 500 cuadrillas); el APU clásico calcula el UNITARIO y multiplica una vez, y así se cumple
+  `cantidad × unitario = total`. (2) **AIU se SUMA, no se compone**: 15/5/5 compuesto da 26,8 % contra 25 %
+  aditivo, y el aditivo es el de los pliegos tipo (`modo_aiu:"compuesto"` sigue disponible).
+- **El rendimiento DIVIDE** (error canónico), con prueba de monotonía; el `rendimiento_override` **trabaja
+  sobre una copia**, porque el catálogo es compartido entre peticiones de la misma instancia caliente.
+- **`regionDeDepartamento` es el punto único de paso y PROHIBIDO `|| 1`**: el catálogo cotiza por REGIÓN
+  (cinco) y SECOP publica DEPARTAMENTO; cubren **14 de los 33** departamentos y los otros 19 salen `sin_base`
+  con su motivo, porque un factor 1,00 de relleno afirmaría «aquí construir cuesta lo mismo que en Bogotá».
+  El presupuesto **sale igual**, con la región base y diciéndolo (R6/R10).
+- **Sin catálogo en Redis se usa la semilla del repositorio, y se DICE** (`catalogo.fuente`), con prueba de
+  que las dos vías dan el MISMO costo directo.
+- **TRES PUERTAS ANTI-FALSO-POSITIVO antes de emitir un ítem, y las tres LLAMAN a la regla que ya existía**
+  (R2), cada una por un caso real: «SERVICIO DE INTERNET DEDICADO E INTERVENTORÍA…» sugería CON-EST;
+  «ADIESTRAMIENTO DE CANINOS Y MANTENIMIENTO DE LA PLACA HUELLA…» con un 72141000 salía **VERDE con 6
+  ítems**; «COMPRAVENTA DE TUBERÍA PVC» con un 4017 daba AGU-RED. En orden: **`BLACKLIST_OBJETO` sobre texto
+  CRUDO** (la pertinencia **no cubre «caninos»**); **`evaluarPertinencia(textoNorm, {codigos})` y solo el
+  ROJO rechaza** (su amarillo significa «el objeto no lo dice explícitamente»), con el texto NORMALIZADO
+  porque con texto crudo sus vocabularios no casarían y la puerta quedaría abierta en silencio; y
+  **`esSuministroPuro(textoNorm, codigos)`**, que necesita los códigos por SEGMENTO. Los rechazos son
+  `no_determinada`, no un cuarto estado, y hay prueba por MUTACIÓN de que las tres son necesarias.
+- **El clasificador es una cascada de tres niveles y solo están los dos primeros**: Nivel A léxico (ancla 3 ·
+  apoyo 1 · excluye −4, exigiendo verbo de obra) y Nivel B UNSPSC como evidencia INDEPENDIENTE cuyo valor real
+  es **vetar** (placa huella con código 4017 es una red → 🟡). El **Nivel C (LLM de desempate) NO se
+  implementó**: añadiría una dependencia, latencia y un fallo a un cálculo hoy determinista. **`anclas` son
+  los términos que el informe publica en su tabla** (demoterlos a `apoyo` dejó a todas las tipologías bajo el
+  umbral de 🟢), con **frontera de palabra y plural tolerado**: sin el plural media tabla no dispararía («vías
+  terciarias»); sin la frontera, «parque» clasificaría un **parque**adero.
+- **El margen `P1−P2` es condición DURA**: dos tipologías empatadas nunca dan 🟢 — el verde es el único
+  estado que presupuesta sin pedir el pliego. Los tres estados **suman exactamente los objetos evaluados**.
+- **Una tipología sin ítems lo DICE** (19 de 22 tienen cobertura; VIA-SEN, ELE-RED y CON-EST no): una lista
+  vacía es un dato, no un olvido. El mapa tipología→ítems es EXPLÍCITO en el JSON: derivarlo del capítulo o
   del UNSPSC (7215 casa con casi todo) acabaría proponiendo pañete para una alcantarilla.
-- **Decimal COLOMBIANO en la extracción de cantidades**: el punto separa miles. Invertirlo divide la obra
-  por mil. Más el lookbehind (sin él «1500 km» captura 500) y la **regla de atribución a ≤ 6 palabras**:
-  sin ella «…PLACA HUELLA VEREDA X, CONTRATO 2024-350» produce 2024 km.
-- **UNA sola función serverless para las seis acciones** (`api/apu/[accion].js`). El plan Hobby de Vercel
-  admite **12 funciones por despliegue** y el repositorio ya estaba en 12: un archivo más y **falla el
-  despliegue entero**, no el endpoint nuevo. Por eso `/api/apu/catalogo` dejó de tener archivo propio y
-  se plegó aquí — **misma URL, mismo contrato y sigue siendo PÚBLICO**. Hay prueba que cuenta los
-  archivos bajo `api/` y otra que prohíbe que el archivo suelto reaparezca. `accion` se lee de
-  `req.query` **y del path como respaldo**: la suite invoca los handlers sin enrutador, y un handler que
-  solo funciona detrás del enrutador es un handler que no se puede probar.
-- **`catalogo` es público; las otras cinco exigen token.** No es una excepción a la regla del proyecto,
-  es la regla: lo que no sale sin llave son las CIFRAS DEL PERFIL. El catálogo son precios de referencia
-  de mercado; escribirlos sí exige llave. `inferir`, `calcular`, `guardar`, `cargar` y `listar` sí la
-  piden: son la máquina de armar una oferta y los borradores de un perfil concreto.
-- **El listado NO tiene índice aparte**: SCAN + MGET sobre las propias claves. Un índice con TTL se
-  desincroniza en cuanto caduca un borrador y listaría presupuestos que ya no existen. La clave ES la
-  fuente de verdad. Un valor corrupto se CUENTA (`ilegibles`) en vez de tumbar la respuesta.
-- **`anticipo_pct` aquí distingue `null` de `0`**, al revés que el campo homónimo del corpus de SECOP. Es
-  legítimo y se declara: allí el 0 lo pone un dataset que no publica el dato; aquí lo teclea una persona
-  que sabe que el proceso no tiene anticipo. Sin dato se calcula el escenario conservador.
-- **`margen_final` es literalmente lo que pidió el encargo** (`precio_final − costo_directo_total`) y por
-  eso NO descuenta impuestos: la contribución del 5 % (Ley 418/1997), las estampillas y el ReteICA se
-  cargan en `deducciones_pct` y producen `margen_despues_deducciones`. Mientras no se carguen, una alerta
-  recuerda la contribución con su cifra en pesos — es «el olvido más caro del país».
-- **El .xlsx se escribe a mano (`public/xlsx.js`), sin SheetJS y sin `package.json`.** No es purismo, son
-  dos hechos verificados: (1) SheetJS dejó de publicar en npm tras la **0.18.5**, que es lo que
-  `npm install xlsx` instala, con dos advisories «high» y `npm audit` respondiendo literalmente **«No fix
-  available»**; (2) la edición libre **IGNORA los estilos de celda al escribir** — se comprobó fijando
-  `ws.A1.s = {font:{bold:true}, fill:{…}}` y el `styles.xml` sale con `<fonts count="1">`. Un «formato
-  profesional de APU» no es alcanzable con esa librería. El escritor propio da control total y la prueba
-  audita el ZIP entrada por entrada. Método **STORE** (sin comprimir): es ZIP válido, lo abren
-  Excel/LibreOffice/Numbers y evita depender de que el navegador traiga `CompressionStream`.
-- **(Hoy `apu.js` vive dentro de `public/app.js` — ver «Página única», ago 2026.) En su época, el arranque automático iba AL FINAL del IIFE**, tercera vez que se aplicó la misma
-  lección (`app.js`, `admin.js`): junto al gate moriría en la zona muerta temporal en la segunda visita
-  de la misma pestaña, y por una promesa rechazada, o sea EN SILENCIO. Hay prueba del orden.
-- **El editor no se embebe por iframe** (hoy es una pestaña de la misma página; entonces se enlazaba desde `/admin.html`). `vercel.json` sirve todo el sitio con
-  `X-Frame-Options: DENY`, así que el iframe que el encargo daba como alternativa quedaría en blanco en
-  producción aunque funcione en local.
-- **El bloque `j` del e2e corre ANTES de `h-bis` y limpia `apu:*` al terminar.** Necesita el estado «sin
-  catálogo cargado» para probar la degradación a la semilla, y `h-bis` necesita Redis limpio para probar
-  la carga. El orden no es casual y la limpieza tampoco.
+- **Decimal COLOMBIANO en la extracción de cantidades** (el punto separa miles; invertirlo divide la obra por
+  mil), lookbehind (sin él «1500 km» captura 500) y **atribución a ≤ 6 palabras** (sin ella «…CONTRATO
+  2024-350» produce 2024 km).
+- **UNA sola función para las acciones** (`api/apu/[accion].js`), por el tope de 12: `catalogo` es PÚBLICO y
+  el resto exige token (lo que no sale sin llave son las CIFRAS DEL PERFIL, y escribir precios sí exige
+  llave). **El listado NO tiene índice aparte** —SCAN + MGET sobre las propias claves, porque un índice con
+  TTL se desincroniza al caducar un borrador—, y un valor corrupto se CUENTA (`ilegibles`) en vez de tumbar la
+  respuesta.
+- **`margen_final` es literalmente lo que pidió el encargo** (`precio_final − costo_directo_total`) y por eso
+  NO descuenta impuestos: contribución del 5 %, estampillas y ReteICA van en `deducciones_pct` y producen
+  `margen_despues_deducciones`; mientras no se carguen, una alerta recuerda la contribución en pesos.
+- **El .xlsx se escribe a mano (`public/xlsx.js`), sin SheetJS**: dejó de publicar en npm tras la **0.18.5**
+  —lo que `npm install xlsx` instala— con dos advisories «high» y `npm audit` respondiendo **«No fix
+  available»**, y la edición libre **IGNORA los estilos de celda al escribir**. Método **STORE**: ZIP válido
+  que abren Excel/LibreOffice/Numbers sin depender de `CompressionStream`. 
+## Catálogo de precios APU (`lib/apu/catalogo.js`, `apu:*`)
+
+- **La investigación que el encargo daba por escrita NO existía**: estaba dentro de `modulo_apu.html`,
+  **borrado en el commit `d69cfe8`** (estructura INVIAS/IDU, precios base de Bogotá, índice de costo de las
+  32 capitales, ajuste ICOCIV del DANE), y se recuperó con `git show d69cfe8^:modulo_apu.html`. **Antes de
+  dar por perdida una fuente que el encargo cita, mirar la historia de git.** Cada precio declara si es
+  recuperado, derivado, estimado o **adjudicado**.
+- **Los precios regionales se DERIVAN de un precio base y cuatro factores, nunca se transcriben** (5 × 48
+  números serían 240 sitios donde desincronizarse), y el factor depende del **tipo** del insumo: en la Costa
+  el material sube (1,10) y el jornal baja (0,97). Una cotización real gana sobre la derivación
+  (`precios_cotizados`) y el hash publica `precio_origen_{region}`. **La desagregación de los cuatro factores
+  es RAZONADA, no medida**: la fuente solo trae **un** índice por ciudad, así que recomponerlos con la
+  estructura de costos de obra civil (45/30/18/7) debe caer a menos de **0,015** del índice de la ciudad
+  cabecera, con prueba región por región — sin ella el catálogo perdería el único dato duro que lo respalda.
+  `indice_ciudad_recuperado` contiene el índice de la CIUDAD cabecera, no el promedio de la región.
+- **🚩 Un error de la fuente que NO se replicó**: su plantilla de acero cobraba el acarreo como
+  `1.200 × 1,05 × 15` = **$18.900 por kilo** — la tarifa está en $/m³-km y le pasaban kilogramos. Aquí
+  `cantidad_por_unidad` de una línea de transporte va SIEMPRE en **m³ de material movido** (acero:
+  `1,05 kg ÷ 7.850 kg/m³ ≈ 0,00013 m³`), con prueba de que el acarreo no puede pasar del 1 % del APU del
+  acero.
+- **Un cero no puede ser un precio** (R1), así que la **herramienta menor no es un insumo** (es
+  `herramienta_menor_pct` del ítem) y la validación rechaza precios ≤ 0 y rendimientos ≤ 0. **Las cuadrillas
+  son la SUMA de sus jornales** y lo declaran en `componentes` (`299.000 = 95.000 + 3 × 68.000`), con
+  validación. **El AIU NO se regionaliza** (A 15 / I 5 / U 5 en las cinco): lo fija el pliego y el riesgo, no
+  la geografía; ídem el factor prestacional (1,55), que lo fija la ley.
+- **El SNAPSHOT es caché; los HASHES son la verdad**: servir desde los hashes son ~70 comandos y desde el
+  snapshot dos, pero dos fuentes de verdad es el defecto que este proyecto ya pagó caro, así que el snapshot
+  lleva **la misma `version`** que la meta y quien lo lee la compara; si no casa, o si un chunk está corrupto,
+  cae a los hashes **y lo dice** en `via`. **`cargado` es BOOLEANO y la fecha es `cargado_el`** (R3): se
+  llamaban igual y la cadena pisaba al booleano, así que el panel habría dicho «cargado» sobre un Redis vacío.
+- **Carga TODO O NADA con el sello al final** (R9), **por LOTES de 16 con `Promise.all`** (~620 claves en
+  serie rozaban el `maxDuration` de 60 s); el botón del panel fuerza la reescritura (`?forzar=true`) aunque
+  `cargarCatalogo()` sea idempotente (R7). **Lo que el catálogo NO incluye, dicho en la propia respuesta**:
+  ni AIU aplicado ni ninguno de los costos ocultos del Cap. 11.
+
+### Calibración Nogal, importación de Excel y libro APU
+
+- **Calibrado con un contrato ADJUDICADO del dueño** («Presupuesto Nogal 4», UPN-VAD-CP-009-2025, Bogotá
+  2025): 157 ítems `NOG-*` y 389 insumos con `fuente:"adjudicado"` —el cuarto origen, más fuerte que
+  recuperado/derivado/estimado—, y el motor REPRODUCE el `VR COSTO DIRECTO` del pliego con **149 exactos al
+  peso, 7 a ±$1** y **NOG-B57 +$55 clavado en prueba**. **La verdad de cada APU del pliego es el RANGO de su
+  fórmula `ROUND(SUM(Ea:Eb)/2)`**, no la proximidad de las filas, y donde el subtotal OMITE una línea se
+  reproduce SU aritmética con peso 0,5: **el precio adjudicado manda sobre la corrección «obvia»**. Las
+  cuadrillas cotizan el día CON prestaciones, así que se guarda `precio ÷ 1,55` con el literal en
+  `precio_dia_con_prestaciones` y SIN `componentes` (el pliego no publica los jornales); los fletes son
+  valores cerrados por ítem → `distancia_km = 1`. Método en `docs/CALIBRACION_APU.md`.
+- **«Cargar ítems desde Excel»**: se lee EN EL NAVEGADOR (`public/xlsx_lectura.js`, UMD) y al servidor viajan
+  solo las filas; `lib/apu/importar.js` las mapea REUTILIZANDO las primitivas de `lib/apu_mapeo` (R2), más
+  **plural tolerado a ambos lados** y unidad CANÓNICA por grafía (m≈ml, UND≈un) **sin convertir jamás**.
+  **POLÍTICA DE PRECIOS**: el del ARCHIVO manda siempre (`precio_manual`, `origen_precio:"archivo"`, catálogo
+  como referencia en `cd_catalogo`), y un mapeo «revisar» SIN precio del archivo **NO cobra el catálogo por su
+  cuenta** —una fila de 24 und a $0 salía presupuestada en $2,9 M inventados—; un precio 0 es «sin dato» (R1).
+  Los ítems con precio manual caen en `por_componente.sin_desglose`, y
+  **material+mano_obra+equipo+transporte+sin_desglose = costo directo total** tiene prueba. Un precio que
+  llegue como TEXTO se lee con `numeroColombiano` (punto = MILES): el parser ingenuo leía «74.596» como 74,596.
+- **El LECTOR parsea el ZIP por el DIRECTORIO CENTRAL** (un xlsx en streaming deja los tamaños del local
+  header en 0) y la descompresión se INYECTA (`DecompressionStream` / `zlib.inflateRawSync`); sin inflador y
+  con partes DEFLATE el error sugiere CSV, nunca una lista vacía. `numeroLocal` es la TERCERA copia de
+  `numeroColombiano` y `parsearCsv` la SEGUNDA: las pruebas las EJECUTAN sobre la misma batería.
+- **La exportación es el formato Nogal** (`public/apu_libro.js`, UMD: navegador y Node usan EL MISMO
+  constructor): capítulos a dos niveles, fórmulas `=D×E`, cierre A/I/U + **IVA 19 % sobre la utilidad** +
+  TOTAL, firmas, y hoja «APU» por ítem desde las `lineas` de `costoDirecto` (el MISMO cálculo que produjo el
+  total). Marcadores: ÁMBAR = precio sin APU de respaldo (suma y se declara), ROJO = sin precio (no suma,
+  celdas VACÍAS). **En OOXML `<f>` lleva el `=` implícito** —escribirlo produce `==D7*E7` y rompe la celda—,
+  toda fórmula viaja con su valor cacheado, los estilos nuevos van AL FINAL de `ESTILOS` y **ningún numFmt
+  nuevo**. `tests/generar_electrico_nogal.js` es DETERMINISTA; diferencias en `docs/DIFERENCIAS_APU.md`.
+
+## Rentabilidad del proceso: VEG, caja y payback (`lib/apu/rentabilidad.js`)
+
+Se sirve desde la acción `rentabilidad` de `api/apu/[accion].js`.
+
+- **EL COSTO DIRECTO NO SE RECALCULA AQUÍ** (R2): `desdePresupuesto()` toma el `resumen` de `calculo.js` tal
+  cual. Una diferencia del 3 % entre dos motores no se ve en pantalla: se ve cuando se pierde el proceso.
+- **La acción va APARTE de `calcular`**: es la única del módulo que toca la RED (índice de baja, de
+  competencia, `lib/probabilidad`); fundirlas obligaría a pagar dos lecturas de Redis en cada tecla.
+- **`P(ganar | precio)` NO es una sigmoide monótona: es una MEZCLA** de «menor valor» (25 %) y métodos
+  centrales (75 %), porque el método se sortea; ofertar más barato la compra en un escenario de cuatro y la
+  destruye en los otros tres. La sigmoide se publica aparte (`p_menor_valor`).
+- **El multiplicador de precio vale EXACTAMENTE 1 en la mediana del mercado**: sin esa normalización,
+  `/api/apu/rentabilidad` y `/api/oportunidades` publicarían dos probabilidades distintas del mismo proceso.
+- **La FORMA de esa curva usa un `n` de REFERENCIA FIJO (6), no los oferentes de la entidad**: el efecto de
+  nivel ya lo lleva `p_base` (`1/(1+rivales)`), y meterlo también en la forma lo contaba dos veces y rompía la
+  monotonía en el extremo (catorce oferentes daban MÁS probabilidad que tres). Además no hay con qué calibrar
+  esa dependencia —el corpus no trae las ofertas perdedoras—, así que fijar la forma hace la monotonía
+  demostrable.
+- **El AIU y la estructura de costos son DOS descomposiciones del mismo `V`**: el AIU es la estructura de
+  PRECIO declarada en la oferta (su «A» cubre nominalmente dirección de obra, pólizas, ensayos e impuestos) y
+  la rentabilidad usa la de COSTO, donde esas tres son líneas separadas; usar la «A» declarada como indirecto
+  Y sumar aparte garantías e impuestos cobraba la administración dos veces y dejaba en rojo presupuestos
+  sanos. Corolario: **la «I» tampoco es un costo** — es el ingreso que financia la prima de riesgo.
+- **`C_indirecto` es función del PLAZO** (factor `T/T_ref` con referencia declarada): sin él, alargar el plazo
+  sin obra adicional no movería la utilidad, y la invariante A.11 dice que no puede SUBIRLA.
+- **El payback exige haber estado EXPUESTO**: si no, un contrato con anticipo daría payback = mes 1 por el
+  propio anticipo, que es dinero de la entidad y no capital devuelto. **El precio piso decide con σ = 15 %, no
+  con 8 %**: la prima de la maldición del ganador CRECE con σ, así que el valor bajo produce un piso más bajo
+  — exactamente el error caro. **Sin `deducciones_pct` del pliego el margen es una COTA SUPERIOR**, y viaja
+  declarado: un bloque de deducciones de hasta ~10 % es mayor que el margen típico y omitirlo invierte el
+  signo.
+- **El borrador guarda su `id_proceso`, que NO puede ser su `id`**: el `id` lo propone el cliente y `ID_RE` no
+  admite puntos, mientras que `id_del_proceso` de SECOP los trae (`CO1.REQ.123`); es la única clave con la que
+  el panel enciende «APU listo». **El listado de borradores se pide APARTE de `/api/resumen`** (cacheado
+  300 s) y `procesos_con_presupuesto` viaja como lista de PERTENENCIA, no como conteo (R1). **La precarga del
+  departamento corre DESPUÉS de cargar el catálogo**, o la opción del desplegable no existe y se pierde en
+  silencio.
+
+## Optimizador de precio de oferta (`lib/apu/optimizador.js`)
+
+Va DENTRO de la acción `rentabilidad` (tope de 12 funciones; y allí ya están leídos los dos índices y la `p`);
+se pinta en el recuadro «Precio sugerido».
+
+- **NO REIMPLEMENTA NADA: llama a `rentabilidad()` una vez por punto de la rejilla** (R2); si no, la
+  divergencia sería entre el precio que la app RECOMIENDA y el margen que enseña para ese mismo precio. Dos
+  invariantes probadas: el punto en el precio VIGENTE reproduce EXACTAMENTE el bloque de rentabilidad y el
+  punto en la mediana devuelve EXACTAMENTE la `p` de `/api/oportunidades`.
+- **TRES CORRECCIONES AL ENCARGO**: (1) **el descuento se mide contra el PRESUPUESTO OFICIAL, no contra el
+  precio de venta** —la baja está DEFINIDA como `1 − adjudicado/precio_base` y en el corpus el precio de venta
+  es el **69 %** de la cuantía, así que barrer sobre ese rango pondría la curva en una zona de baja real del
+  30 %, donde la probabilidad es residual—, y la perilla viaja aparte y por punto como `descuento_apu_pct`;
+  (2) **el VEG que decide no es `P × margen bruto`** (ese margen no ha pagado la contribución del 5 %,
+  estampillas, pólizas, costo financiero ni maldición del ganador): `veg` es el MISMO del bloque de
+  rentabilidad y la fórmula del encargo se publica al lado como `veg_margen_bruto` (R3); (3) **un precio por
+  encima del presupuesto oficial no es una opción**, así que la rejilla se recorta en 0 y lo declara.
+- **LAS TRES OPCIONES SON LOS EXTREMOS DE LA MESETA DEL VEG (±5 % del máximo)**, caminando CONTIGUAMENTE desde
+  el óptimo: la curva no tiene garantía de unimodalidad, así que tomar el mínimo y el máximo de la banda
+  saltaría un valle. Si la meseta colapsa **se dice** (el óptimo es agudo) en vez de fabricar tres puntos.
+- **EL DEFECTO CONOCIDO NO MUEVE EL PRECIO RECOMENDADO, y hay que contarlo exacto**: el precio se cobra DOS
+  VECES (`docs/PROBABILIDAD_MEJORADA.md` §2.5c), pero ese factor es CONSTANTE a lo largo del barrido y
+  `argmax_d [k·f(d) − c]` no depende de `k > 0`: afecta al NIVEL del VEG, no al argmax. Hay prueba que escala
+  `p_base` y comprueba que el descuento óptimo no se mueve **y que el VEG sí**.
+- **Sin centro de mercado NO hay recomendación**: con la probabilidad plana el óptimo saldría siempre en «no
+  descuente nada», que es la ausencia de una recomendación disfrazada de consejo. `aplicable:false` con su
+  `motivo` (`sin_centro_de_mercado`, `sin_presupuesto_oficial`, `sin_costo_directo`,
+  `rango_sobre_el_presupuesto`) y `sin_punto_rentable` en **`null`, no `false`** (R1).
+- **Las deducciones ESCALAN con el precio**: `fiscal.tau_costo_valor` llega en pesos calculado sobre el precio
+  vigente pero debajo son PORCENTAJES del valor del contrato; dejarlo fijo haría que bajar la oferta no
+  ahorrara ni un peso de contribución y el barrido se inclinaría a precios bajos por una razón falsa.
+- **La rejilla manda el DESCUENTO y el punto vigente manda el PRECIO**: los puntos de la curva redondean al
+  peso (un precio con céntimos no se puede ofertar) y el punto vigente entra verbatim, porque `precio_final`
+  sale con dos decimales y redondearlo rompería la igualdad.
+-  **`id_proceso` viaja y
+  vuelve pero NO condiciona el cálculo**, y el `costo_directo_total` del cuerpo **no se acepta**: sería una
+  segunda fuente de verdad del costo y podría recomendar un precio que no corresponde a los ítems en
+  pantalla.
+- **Frontend**: el recuadro sale SOLO tras «Calcular APU», con `id_proceso`, y solo si el cálculo salió bien.
+  «Aplicar este descuento al APU» escribe `descuento_apu_pct` (jamás `descuento`), enciende el ajuste
+  competitivo y **recalcula por el mismo camino** que «Calcular APU»; si el óptimo está por encima del precio
+  de venta el botón se deshabilita **y se explica** («le sobra margen: suba la utilidad o la administración»).
+
+## APU profesional: desglose visible, origen del precio y normativa
+
+**Tres de las cinco premisas del encargo estaban desactualizadas**: `lib/apu/xlsx.js` NO existe (el exportador
+son `public/xlsx.js` + `public/apu_libro.js`), ese exportador YA generaba las hojas «Presupuesto» y «APU», y
+`/api/apu/calcular` YA devolvía `detalle.insumos`. El hueco real estaba más abajo.
+
+### Segunda pasada (ago 2026) · trazabilidad, subtotales y las cinco validaciones
+
+Diagnóstico completo en **`docs/APU_DIAGNOSTICO.md`**, que se conserva porque distingue lo que YA estaba de
+lo que NO SE PUEDE hacer con los datos disponibles: un encargo posterior volverá a pedir ambas cosas.
+
+- **EL BADGE DECÍA «SIN VERIFICAR» SOBRE UN PRECIO VERIFICADO.** `precioEnRegion` ya distinguía una
+  COTIZACIÓN real (`precios_cotizados`) de una DERIVACIÓN por factor y lo publicaba en `linea.origen_precio`,
+  pero el dato **moría en el desglose**: `clasificarOrigen` solo miraba `item.fuente`, así que un ítem
+  íntegramente cotizado salía 🟡 «Derivado regional — precio no verificado». Hoy `calculo.js` publica
+  `origen_insumos` y existe el estado 🟡 **«Cotización de proveedor»**. **El corte es por VALOR, no por número
+  de líneas** (nueve insumos cotizados que pesan el 3 % no hacen «cotizado» un ítem derivado al 97 %) y **exige
+  el 100 %**: con una línea derivada, parte del precio sigue sin verificar. Son **SEIS** estados, no cinco.
+- **AÑADIR SUBTOTALES POR CAPÍTULO PODÍA DUPLICAR EL PRESUPUESTO.** COSTOS DIRECTOS sumaba el RANGO entero de
+  filas de ítem; con subtotales intercalados eso cuenta cada peso DOS VECES y da un total exactamente al doble
+  sin que nada se vea raro — el defecto clásico del presupuesto armado a mano. Hoy el cierre suma la **LISTA
+  de celdas de subtotal**, con prueba de que cada referencia apunta a una fila de subtotal y no a una de ítem.
+- **«ÍTEM» y «CÓDIGO» son columnas distintas** (R3): el ítem es la POSICIÓN (1.1, 1.2, 2.1 — con lo que la
+  entidad compara oferentes) y el código la IDENTIDAD en el catálogo (`NOG-A2`). Compartiendo columna, dos
+  presupuestos con los mismos ítems en distinto orden no se podían cotejar fila a fila. La hoja pasó de 6 a
+  **7 columnas**, y con ella las fórmulas: `=E×F` para el total de fila, `SUM(G…)` para los subtotales.
+- **LOS FACTORES SALIERON DEL TEXTO A COLUMNAS PROPIAS** (F y G de la hoja APU): cantidad base, desperdicio,
+  rendimiento, distancia y recargo prestacional viajaban como nota entre paréntesis dentro de la descripción,
+  donde **no se pueden ordenar ni filtrar**, que es lo primero que hace quien audita. El **recargo
+  prestacional se DERIVA de `precio_aplicado ÷ precio_region`**, no de una constante: así no puede
+  desincronizarse del valor de su propia fila. Más el espacio de **firma del ingeniero de costos** en la hoja
+  APU (la entidad la pide firmada aparte y una hoja sin firma se devuelve).
+- **`VR COSTO DIRECTO` de la hoja APU va con el valor del MOTOR y SIN fórmula, a propósito.** Un `=SUM()` de
+  los subtotales sumaría líneas a 2 decimales, mientras que el unitario es la suma de los cuatro capítulos ya
+  REDONDEADOS: la fórmula «más pura» pondría a las dos hojas a discrepar en céntimos justo en la cifra que la
+  entidad coteja. **Hay prueba de que las dos hojas dan el mismo unitario ítem a ítem.**
+- **El nombre del archivo es `APULibro.nombreArchivo`** (`APU_<proyecto>_<fecha>.xlsx`): escrito dentro del
+  manejador del botón no se podía probar y el generador de Node producía otro nombre que la aplicación.
+- **`lib/apu/validaciones.js` · las cinco puertas, y NINGUNA BLOQUEA** (R6): una herramienta que se niega a
+  exportar acaba usándose por fuera. Se publican en `validaciones` (estructuradas, con severidad `aviso` |
+  `atencion` — **`error` no existe**) y **además se vuelcan en `alertas`**, que es el canal que el exportador
+  ya lee: publicarlas solo en el campo nuevo las habría escondido en el Excel, que es donde acaban leyéndose
+  (R11). En pantalla, `pintarValidaciones` las pinta y **filtra de `alertas` las ya pintadas**, y el bloque
+  **nace oculto y desaparece cuando no hay hallazgos**: un recuadro que dice «0 problemas» se deja de mirar.
+- **DOS REGLAS DEL ENCARGO IMPLEMENTADAS DISTINTO, y hay que contarlo exacto.** (1) **Los umbrales del AIU no
+  se escribieron**: A > 30 / I < 1 / U > 10 ya viven, mejor documentados, en `normativa.AIU` (12–20 / 3–5 /
+  5–10, cap. 11 del manual), y las bandas del manual son **estrictamente más estrechas** que los cortes del
+  encargo en los tres casos — todo lo que aquél marcaría queda marcado, por una cifra rastreable, y hay prueba
+  de esa relación de laxitud para que nadie «complete» el encargo con una segunda tabla de umbrales (R2/R3).
+  Corolario: el AIU real del Nogal (19,17 / 1,50 / 5,33) **dispara la validación**, y por eso la severidad
+  máxima es «atención». (2) **El «5 % del valor total» NO ES COMPUTABLE**: un ítem sin precio no tiene valor
+  POR DEFINICIÓN, así que su participación en el total es justamente la cifra que no existe, y calcularla
+  exigiría inventarle un precio (R1). El umbral se aplica a la participación por **NÚMERO DE ÍTEMS**, el
+  mensaje lo dice con todas las letras, `valor_faltante` viaja en **`null` y jamás en 0**, y el total se
+  declara **cota inferior**.
+- **TRES COSAS QUE EL ENCARGO PIDE Y NO SE PUEDEN ALIMENTAR**, documentadas con lo que haría falta para
+  cerrarlas: el badge 🟢 **INVIAS** (los APU Regionalizados no están y las fuentes oficiales dan 403 — rotular
+  «INVIAS» un precio que no lo es sería el peor error posible aquí); el badge 🟠 **Histórico SECOP**
+  (`p6dx-8zbt` publica el valor ADJUDICADO del contrato entero, **no precios unitarios por ítem**: no hay de
+  dónde sacarlo); y el **costo horario de equipo desglosado** en depreciación/combustible/mantenimiento
+  (repartir la tarifa con porcentajes inventados serían tres cifras falsas donde hoy hay una verdadera).
+
+- **DEFECTO REAL ENCONTRADO POR VERIFICACIÓN: las filas de TRANSPORTE de la hoja APU no cuadraban.** La
+  tarifa va en **$/m³-km** y `costoDirecto` calcula `precio × cantidad × distancia_km`, pero la hoja pintaba
+  cantidad y precio **sin los kilómetros**: «1,25 × $1.256» junto a un parcial de **$12.560**, un factor 8
+  invisible. Ahora se publica la cantidad EFECTIVA (m³·km) y la composición («1,25 m3 × 8 km») va escrita.
+  **Invariante nueva: `cantidad × precio = valor` en las 1 761 líneas del catálogo.** Los fletes cerrados del
+  Nogal llevan `distancia_km = 1` y NO publican distancia: ese 1 no es un dato del pliego.
+- **`cantidad_por_unidad` publicaba OTRA COSA que el campo homónimo del catálogo** (R3): con 5 % de
+  desperdicio el catálogo dice 1,30 y esto publicaba 1,365, así que quien se fiara del nombre lo cobraría dos
+  veces. Sustituido por **`cantidad_base`** (`null` donde la cantidad sale del rendimiento), que además hace
+  el desperdicio COMPROBABLE. **El desperdicio solo se escribe cuando es > 0** (28 de 1 761 líneas): en los
+  157 ítems calibrados vale 0 porque **el pliego ya lo incorpora en su cantidad**, y pintar «0,00 %»
+  afirmaría que ese presupuesto no prevé desperdicio.
+- **`lineaLegible` y `clasificarOrigen` viven en `public/apu_libro.js` (UMD) y las usan LAS DOS
+  presentaciones** (pantalla y Excel): la regla del origen vivía dentro del IIFE de `app.js`, así que el Excel
+  no podía consultarla y **exportaba idénticos un precio de contrato adjudicado y uno derivado por factor
+  regional**. `index.html` carga `apu_libro.js` ANTES que `app.js`.
+- **CINCO estados de origen, no cuatro**: «precio del ARCHIVO importado» y «precio TECLEADO a mano» no se
+  colapsan, porque la política de importación hace que el del archivo MANDE y quede declarado. El verde exige
+  DOS condiciones: `fuente="adjudicado"` **y** región `bogota_sabana` — fuera de Bogotá el mismo precio se
+  multiplica por el factor regional y deja de ser el precio real.
+
+### `lib/apu/normativa.js` — el factor prestacional explicado
+
+- **La normativa EXPLICA, el catálogo DECIDE**: el factor aplicado sale de `regiones[…].prestacional_tipico`
+  (Redis); el módulo lo RECIBE y nunca lo importa — un default lo convertiría en segunda fuente de verdad de
+  una cifra que multiplica jornales. Va en código, no en el catálogo (criterio de `lib/apu/tipologias.js`).
+- **EL 1,55 ES UN SUPUESTO, no un dato, y el rótulo «recuperado» engaña**: salió de un comentario del
+  `modulo_apu.html` borrado. **No es una perilla libre**: las cuadrillas del Nogal se guardaron como `día con
+  prestaciones ÷ 1,55` (calibración CIRCULAR: reproduciría igual con 1,40), así que moverlo no rompe la
+  reproducción pero **sí desvía los 157 ítems `NOG-*`** (≈1 % de media, 2,89 % en el peor caso) en silencio.
+- **LA SUMA NO CUADRA Y SE PUBLICA LA BRECHA**: nominal de ley 58,29 % · aplicado 55,00 % · exonerado
+  44,79 %. Una primera redacción decía que la brecha «se explica» por la exoneración y la banda de ARL, y **la
+  aritmética lo desmintió** (con ARL clase V en su mínimo legal, 4,350 %, el nominal baja a 55,68 %, aún POR
+  ENCIMA del 55 %); hoy el texto dice que el 55 % **no se descompone en ninguna combinación legal exacta** de
+  **estos 10 componentes** y cae entre las dos cotas (R10) — acotado, porque **dotación (Ley 11/1984) y
+  auxilio de transporte quedan FUERA** y son costo real de nómina. **La prueba es de ENCIERRO, no de
+  igualdad**: el factor de las cinco regiones debe caer en [suma_exonerada, suma_nominal], lo que convierte el
+  desglose en un CONTRASTE del catálogo — si alguien carga 1,70, cae.
+- **LA EXONERACIÓN NO ES AUTOMÁTICA y su condición decide un precio**: el ET art. 114-1 exonera a personas
+  jurídicas contribuyentes y a personas naturales **solo si ocupan dos o más trabajadores**, y «Helder» es
+  persona natural con UN profesional: ofrecerle «−13,5 pp» sin la condición le induciría a restarse algo a lo
+  que probablemente no tiene derecho, y eso viaja al precio.
+- **UNA NORMA MAL ATRIBUIDA ES PEOR QUE UNA AUSENTE: se lee como verificada.** Una refutación cazó TRES, todas
+  citando la norma ORIGINAL para una tarifa que fijó una reforma posterior: el 12,5 % de salud con reparto
+  8,5/4 es de la **Ley 1122/2007 art. 10** (la Ley 100/1993 art. 204 fijó el 12 %); el 16 % de pensión con
+  12/4 es de la **Ley 797/2003 art. 7** (el art. 20 fijó 13,5 %); y la Ley 21/1982 regula SENA y subsidio
+  familiar pero **no el ICBF**, que nace de la Ley 27/1974 con la tarifa del 3 % de la **Ley 89/1988**.
+  **NINGUNA «Resolución XXX de 2025»**: no existe una que fije el factor prestacional, este entorno no
+  alcanza las fuentes oficiales (403), y una referencia inventada en la herramienta con la que se fija un
+  precio es el peor error posible. Todos los componentes viajan con `verificado: false`.
+- **EL MARCADOR DEL EXCEL ENVENENABA LA REIMPORTACIÓN, y nada lo vigilaba**: `lib/apu/importar` tokeniza
+  `descripcion`, así que con el aviso dentro («⚠️ Precio no verificado…»), medido sobre 60 ítems reales, **59
+  perdían confianza, 21 caían de «firme» a «revisar» y 2 se mapeaban a OTRO ítem del catálogo** — o sea, a
+  otro precio. Se limpia en el IMPORTADOR (único sitio donde se tokeniza) y **no en el exportador**, porque el
+  aviso tiene que seguir viéndose; se ancla a DOS espacios + emoji para no llevarse un emoji del nombre.
+- **Las tarifas del 19 % y el 5 % se IMPORTAN de `lib/apu/calculo.js`** con require diferido (estaban escritas
+  dos veces), y la cita del IVA sobre la utilidad (art. 3 D. 1372/1992, hoy art. 1.3.1.7.9 D. 1625/2016) vive
+  aquí: el panel dice **las dos mitades**, porque el motor NO suma el IVA al precio final y la hoja de Excel
+  SÍ lo suma a su TOTAL. **La normativa viaja en la respuesta de `calcular` para la región QUE SE USÓ**, y
+  `normativaAplicada` ya no cae a la primera región de la lista cuando no encuentra la pedida (por la vía de
+  los hashes ese orden es el del SCAN).
+
+## Puertas, probabilidad y valor esperado (`lib/puertas.js`, `lib/probabilidad.js`)
+
+Diseño en `docs/ATRACTIVIDAD.md`; auditoría de factores en `docs/PROBABILIDAD_MEJORADA.md`.
+
+- **Una suma ponderada es COMPENSATORIA, y aquí compensar es un error de categoría**: no poder financiar una
+  obra no se compensa con cuantía alta. Por eso `puntaje_ponderado` dejó de ser criterio y lo sustituyen
+  cuatro puertas + `p_ganar` + `ve`, que NO se promedian; **el campo SIGUE viajando** (permite el A/B por URL
+  con `ordenar_por=puntaje`, y `/api/resumen` lo calcula).
+- **P1 (objeto/RUP) · P2 (K) · P3 (CAJA) · P4 (competencia).** `pasa_rup_y_k` se publica aparte de
+  `pasa_todas`: es «técnicamente viable aunque financieramente ajustado», un proceso que habría que financiar
+  con anticipo, crédito o consorcio, no uno a descartar. **P4 nunca bloquea**: informa.
+- **P3 · CAJA es la puerta que de verdad ata, y no necesitó un dato nuevo**: `patrimonio ≥ (cuantía −
+  anticipo) × 0,20`. Génesis (patrimonio $211 M) ante un proceso de $3.100 M tendría que financiar ~$620 M —
+  y lo veía con «Capacidad K ✓» en verde, porque el K del RUP mide HABILITACIÓN, no capacidad de financiar.
+  En plural el patrimonio se SUMA (el ponderado 50/50 es para indicadores habilitantes) y cada integrante
+  responde por el 100 % (Ley 80/1993 art. 7). El corpus trae un **fixture dedicado a P3** (puente de 2.500 M,
+  sin anticipo) que **cierra para Génesis y abre para Helder (1.107 M)**: depende del PERFIL, no del proceso.
+- **Regla de faltantes**: un dato ausente no vale 0 ni 1 — la puerta marca `sin_dato` y DEJA PASAR (R6). Sin
+  `precio_base`, `evaluarRup` devolvía `capacidad_ok:true` con `crpc_cop:0`: chip verde sobre la nada.
+- **`solo_viables=true` es el default y NO es lo mismo que `filtrarProcesosVisibles`** (la puerta de caja es
+  posterior a la cascada), y **«no viable» ≠ «no es de este negocio»**: `retenerNoViables` solo devuelve lo
+  que falla por una razón discutible (clase fuera del RUP, capacidad insuficiente). **`fallan_p1` y
+  `fallan_p2` son SIEMPRE 0 en el diagnóstico** porque la cascada ya descartó eso antes; la que filtra ahí es
+  **P3**, y hay prueba de las dos igualdades para que nadie «arregle» un cero correcto.
+- **La probabilidad viaja SIEMPRE con su fuente** (`entidad` → `departamento` → `conservador` = 5 rivales,
+  `P = 1/6`): enseñar el 17 % sin decir de dónde sale convierte una estimación en una promesa. Los factores
+  de ajuste son **SUPUESTOS CON NOMBRE**: no hay etiqueta contra la que calibrarlos. **La PRÓRROGA DEL CIERRE
+  es la única señal de competencia observable ANTES del cierre** y sale gratis del dedup de lectura
+  (`leerChunksDedup`, bandera `senales`).
+
+**Auditoría de los factores: dos corregidos y dos no.**
+
+- ✅ **El tertil de competencia ya no multiplica**: era el MISMO promedio dos veces (`nivel` es el tertil de
+  `promedio_oferentes`, ya dentro de `rivales`). Saltaba −32 % por MEDIO rival en el corte, daba ×1,30 según
+  el dato viniera de la entidad o del departamento, y como los tertiles son RELATIVOS la probabilidad de un
+  proceso cambiaba porque cambiaban OTRAS entidades. `competencia.nivel` **sigue viajando, filtrando y
+  ordenando**: solo dejó de multiplicar.
+- ✅ **La baja de mercado es una RAMPA continua**: ×1,10 hasta 2 % de baja, lineal hasta ×0,85 en 5 %, plana
+  después. **Suavizar no es calibrar** (1,10 y 0,85 son supuestos a mano) y **la rampa suaviza la FUNCIÓN, el
+  DATO sigue cuantizado** —la mediana se publica como cubeta ENTERA, así que se ve una ESCALERA DE CUATRO
+  PELDAÑOS y lo que baja es la altura del más alto, **del 15,0 % al 8,9 %**—; además las comparaciones pasaron
+  de ESTRICTAS a INCLUSIVAS (2 → ×1,10 y 5 → ×0,85). Tres precisiones: **los codos NO coinciden con las
+  fronteras de `nivelPorBaja`** y no hay que «arreglar» una para que case con la otra (rotular y multiplicar
+  son preguntas distintas); **`numero()` NO sirve de guarda para «sin dato»** (`Number(null)` y `Number("")`
+  son 0 y finitos, así que la ausencia salía premiada con ×1,10, R1); y **el factor se publica y se aplica
+  REDONDEADO**, para que `base × Π factores` reproduzca `p` desde la tarjeta, emitiéndose SIEMPRE que haya
+  dato —también cuando vale 1—, porque si no «no aparece» significaría a la vez «no hay dato» y «no mueve
+  nada».
+- ⚠️ **CONSECUENCIA AGUAS ABAJO que nadie pidió y que se va a ver**: `lib/apu/rentabilidad` toma esta `p` como
+  su `p_base`, y `veg = p × utilidad − c_preparación` es **el único umbral DURO sobre `p` de todo el
+  repositorio**. Retirar el tertil baja `p` un 23 % en las entidades de POCA competencia, que son justo las
+  que el editor de APU va a ver: un VEG apenas positivo pasa a negativo y `filtros_duros.veg_no_positivo`
+  empieza a decir «el valor esperado no cubre el costo de preparar la oferta» en presupuestos que ayer salían
+  verdes. **No es un defecto: antes el número estaba inflado por contar la competencia dos veces.** Medido:
+  `p_ganar` pasó de 0,2091 a 0,1777. La prueba solo exige `veg != null`, así que el SIGNO no lo vigila nadie.
+- ⬜ **Sin corregir**: el corte duro en 5 procesos (×2,60 de salto) y el defecto SEMÁNTICO de la baja
+  —penaliza a una entidad por dónde está el centro de su mercado en vez de por la distancia a la que uno puede
+  ofertar de ese centro, y como el APU consume esta `p` como `p_base`, **el precio se cobra DOS VECES**—.
+  Cerrarlo exige separar `p` de `p_sin_precio` y coordinar con `lib/apu/rentabilidad` (pasos A4/A5).
+
+### Token opcional de `/api/oportunidades` y redacción pública (`lib/publico.js`)
+
+- **Es el ÚNICO endpoint con token opcional**: los clientes entran por la web pública y exigirles credencial
+  dejaba la herramienta inservible. Lo que no puede salir sin llave son las CIFRAS del perfil (`k_cop`,
+  `crpc_cop`, `tope_cop`, `co_estimado`, `p2_k.{crp,crpc,tope}`, `p3_caja.patrimonio`), derivadas del
+  patrimonio, la utilidad operacional y la liquidez de una persona natural identificada por nombre completo:
+  sin token viajan en `null` con `finanzas_visibles:false`, y **un token PRESENTE pero inválido da 401**,
+  nunca degradación silenciosa. **Redactar campos NO basta: los MENSAJES llevaban las cifras dentro**
+  («…(CRPC $324M / K $5.799M)», «…su patrimonio es $211.340.888»), así que se sustituyen los dos y la prueba
+  **serializa la respuesta pública entera y busca las cifras reales** (crudas, con separadores y en millones).
+  Lo derivable de datos públicos se conserva: `financiacion_requerida` sale de la cuantía × 0,20.
+- **TRES canales de INFERENCIA aceptados y declarados**: (1) el booleano de cada puerta sigue viajando —sin él
+  la app no sirve— y `p3_caja.pasa` permite acotar el patrimonio por bisección; (2) `ordenar_por=baja` ordena
+  en el servidor, así que se deduce el RANGO relativo; (3) **la baja se despeja del propio `p_ganar` por
+  aritmética inversa**, y por eso se anulan también el `factor` y el `motivo` del ajuste `baja_mercado` en
+  `p_ganar_detalle.ajustes`, aunque `p_ganar`, `base` y `rivales_esperados` siguen viajando («la probabilidad
+  viaja SIEMPRE con su fuente») y con eso `p / base ÷ 1,20^prórroga ÷ 1,15^colisión` devuelve el factor. **Lo
+  que se filtra es un RANGO, no un valor** (cuatro clases: ≤2 → ×1,10 · 3 → ×1,0167 · 4 → ×0,9333 · ≥5 →
+  ×0,85), y **se acepta** porque ese competidor puede calcular la baja bajando `p6dx-8zbt`, que es público: la
+  app aporta la agregación y el corte por modalidad, no el dato bruto. **Cerrarlo costaría** anular `base` y
+  `rivales_esperados`, o sea servir una probabilidad sin decir de dónde sale: un cambio de producto, y si
+  algún día pesa más que la utilidad la salida es volver a exigir token.
+- **Los DEMÁS endpoints no se relajaron** (`/api/diagnostico`, `/api/resumen`, `/api/competencia-detalle`,
+  `/api/admin/rup`, `/api/sync/historico`). En el frontend el formulario del token **sobrevive solo** para el
+  detalle de competencia; `buscar()` no puede volver a pedirlo.
+
+### Desglose justificado de P(ganar) (`lib/probabilidad_desglose.js`)
+
+`/api/competencia-detalle?vista=probabilidad` (alias `/api/probabilidad-desglose`) abre el «Prob. estimada:
+23 %» en SEIS pasos con fórmula, datos con su fuente, aritmética escrita y aporte en puntos porcentuales.
+
+- **NO ES UN SEGUNDO CÁLCULO, y esa es toda la arquitectura del módulo** (R2): `trazaP` es la ÚNICA
+  implementación y publica la cadena SIN REDONDEAR (`p_antes`/`p_despues`); `estimarPDetalle` es su vista
+  redondeada y el desglose su vista NARRADA. Hay prueba de que `probabilidad_final` es EXACTAMENTE el
+  `p_ganar` de `/api/oportunidades` **sobre varios procesos**: con uno solo coincidiría por casualidad.
+- **La suma de los `aporte_pp` ES la cifra final** (cada aporte es la diferencia REAL que ese paso introdujo,
+  así que telescopan, y el paso 6 absorbe el residuo del redondeo), y **los SEIS pasos viajan SIEMPRE**,
+  también los que no aplican: publicar solo los que mordieron impediría distinguir «no hubo prórroga» de «no
+  se miró la prórroga».
+- **«Sin dato» ⇒ 0 pp… salvo en el paso 1**: un AJUSTE sin datos aporta 0, pero el paso 1 es la BASE y sin
+  histórico su confianza también es «Sin dato» y aun así aporta los puntos del supuesto conservador de 5
+  rivales; bajarlo a «Baja» sería peor (se lee como «poca muestra» y aquí no hay NINGUNA) y ponerlo a 0 pp
+  dejaría la probabilidad en cero, otro número inventado y el que peor decisión provoca.
+- **DOS DISCREPANCIAS ENTRE EL ENCARGO Y EL CÓDIGO, resueltas a favor del CÓDIGO**: la colisión de cierres se
+  agrupa por `entidad|YYYY-MM-DD`, o sea el MISMO DÍA (el encargo decía «≤7 días», y ensancharlo cambiaría la
+  probabilidad de todo el corpus); y el código aplica SEIS factores, no cuatro (faltaban los dos de baja de
+  mercado, que convierten la respuesta en «P(ganar A UN PRECIO QUE VALGA LA PENA)»).
+- **La vista desconocida muere ANTES de autorizar y de tocar Redis.** **`costo_preparacion` no tiene default
+  y entra en el sello de la caché**: no existe en ninguna fuente del proyecto, así que un default sería
+  inventarse la cifra con la que se decide si vale la pena presentarse; sin él el resumen enuncia el umbral en
+  MÚLTIPLOS del costo. 
 
 ## CONOCIMIENTO DE DOMINIO: CONTRATACIÓN PÚBLICA COLOMBIANA
 
-Destilado accionable del **Manual del Analista de Licitaciones** (edición 2026). El manual completo
-—21 capítulos, glosario y mandamientos— vive en `docs/GUIA_ANALISTA_LICITACIONES.md`; aquí queda
-solo lo que cambia decisiones. **Toda decisión técnica de este repositorio debe estar informada por
-este cuerpo de conocimiento**: la app no es un buscador de filas, es una herramienta para decidir a
-qué presentarse, y el criterio de «qué es una buena oportunidad» sale de aquí.
+Manual completo en `docs/GUIA_ANALISTA_LICITACIONES.md` (9 errores que descalifican, regla de las 24 horas,
+subsanación y observación quirúrgica, consorcio vs. UT, factores de desempate, traslado, verdades procesales,
+20 mandamientos). Aquí solo lo que **cambia decisiones de código**:
 
-### Los 9 errores que descalifican en SECOP II
+- **Habilitante vs. puntaje.** Los habilitantes habilitan o rechazan, **no dan puntos** (Ley 1150 art. 5 num.
+  1) y **SÍ son subsanables** hasta el traslado; los factores de puntaje ordenan a los habilitados y **NO son
+  subsanables jamás**, como tampoco la oferta económica ni la **no presentación** de la garantía de seriedad.
+  Consecuencia: **un habilitante «de más» vale cero**, así que la app no puntúa «cuánto sobra» de experiencia
+  o de K — el veredicto es pasa/no pasa, graduado por tier + pertinencia.
+- **Los 4 métodos de ponderación económica se sortean el día de la audiencia con el primer decimal de la
+  TRM** (Ley 1882/2018): se conocen las reglas del precio *después* de presentarlo, así que **tirar el precio
+  al piso es matemáticamente malo** (gana en 1 de 4) y `P(ganar|precio)` es una MEZCLA, no una sigmoide. El
+  enfoque correcto es **valor esperado** sobre la banda histórica del ganador en esa entidad (**5–12 % en
+  obra**); el precio artificialmente bajo obliga a justificación (D. 1082 art. 2.2.1.1.2.2.4).
+- **Los costos que casi nadie suma** (base de `lib/apu/rentabilidad` y de `deducciones_pct`): contribución
+  especial de obra pública **5 %** (Ley 418/1997, *el olvido más caro del país*; base sin impuestos, **aplica
+  a las adiciones**, permanente por art. 8 Ley 1738/2014) · estampillas 0,5–5 % · retención 1–11 % y ReteICA
+  0,4–1,4 % · pólizas 1–3 % · **costo financiero del capital de trabajo** (≈**5 puntos de margen**) · fiducia
+  del anticipo (Ley 1474/2011 art. 91: no es plata tuya) · ensayos 0,5–2 % (**no están en el APU**) · PMA y
+  SST 1–3 % · liquidación 0,5 %. **AIU**: A 12–20 %, I 3–5 % (**es seguro, no utilidad**), U 5–10 %.
+- **Las 12 señales de pliego sastre se detectan por el conjunto**, y solo la #11 (uno o dos oferentes en el
+  histórico) es computable hoy — **interpretada al revés**: baja competencia se presenta como *atractiva*
+  cuando es ambigua (nicho ganable **o** pliego sastre), y **eso hay que decirlo en pantalla**. Valores que
+  hacen operable la señal #3: liquidez **≥ 1.2**, endeudamiento **≤ 65 %**, cobertura de intereses **≥ 2**,
+  sobre los **últimos 3 años fiscales**. El tier `familia` NO es la señal #2: indica codificación amplia.
+- El **PAA** se publica el **31 de enero** (seis meses de ventaja) y el RUP se renueva antes del **5.º día
+  hábil de abril**. La app juega en las **etapas 1-9 del ciclo, no en las 10-14**, y **el falso negativo
+  cuesta más que el amarillo** (R6).
 
-1. **Guardar la oferta y no darle «Presentar»** — «En creación» al cierre = no existe. *El error #1
-   del país.*
-2. Cargar el archivo en la **sección equivocada** (precio en carpeta técnica = revelación anticipada).
-3. Superar el **límite de peso** por archivo sin verificar.
-4. PDF **corrupto o con contraseña**.
-5. **Certificado digital vencido**.
-6. No responder un **«mensaje» dentro de la plataforma** (los correos externos no cuentan).
-7. Dejar **campos del formulario en blanco** porque «ya está en el PDF» — *el formulario prevalece*.
-8. Oferta económica en **formato distinto al exigido**.
-9. **Empezar a cargar el día del cierre.**
+### Aplicación en el proyecto (estado verificado, ago 2026)
 
-### Habilitante vs. puntaje — la distinción más importante del oficio
+`✅` implementado · `🟡` parcial · `⬜` no existe. **El estado importa tanto como el mapeo.**
 
-| | Habilitantes | Factores de puntaje |
+| Concepto | Qué hay hoy | Estado |
 |---|---|---|
-| Qué son | Capacidad jurídica, financiera, organizacional, experiencia | Calidad, precio, industria nacional, sociales |
-| Efecto | Habilita o rechaza. **No dan puntos** (Ley 1150 art. 5 num. 1) | Ordenan a los habilitados |
-| ¿Subsanables? | **SÍ**, hasta el término de traslado | **NO. JAMÁS.** |
+| **PAA → alertar antes** | Solo se ingiere `p6dx-8zbt`; el PAA es otro dataset y **no se lee** | ⬜ |
+| Costos ocultos → rentabilidad | `lib/apu/rentabilidad.js` cubre margen, caja, VEG y payback; falta cargar de serie los 10 conceptos del Cap. 11 | 🟡 |
+| Ofertas de competidores | El dataset solo trae `urlproceso`; alcanzable: **adjudicatarios recurrentes por entidad** desde el histórico | ⬜ |
+| Pliego sastre | Solo la señal #11, y presentada al revés | 🟡 |
+| Subsanación / antecedentes del socio | No existen: la app decide a qué presentarse, y SIRI/Contraloría/RNMC son portales con captcha | ⬜ |
 
-**Regla mnemotécnica: NO subsanable = puntaje.** Tener el habilitante «de más» (30 años cuando piden
-5) da exactamente **cero** puntos. Tampoco son subsanables: la oferta económica, la **no presentación**
-de la garantía de seriedad (sí sus defectos formales), la falta de capacidad, y cualquier
-circunstancia **ocurrida después del cierre** (se reexpide un certificado; no se crea un hecho nuevo).
+### Investigación de contraste (ago 2026)
 
-### Los 4 métodos de ponderación económica y cómo se sortea
+Detalle en `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` (correcciones sobre salvedades y anticipo, versiones de
+los documentos tipo, precios unitarios vs. global, reajuste ICOCIV, inhabilidad por incumplimiento reiterado).
+Este entorno recibe 403 en las fuentes oficiales, así que varios hallazgos se apoyan en fuentes secundarias:
+**no usar una cifra de aquí en un pliego sin abrir la fuente**. Lo que cambia decisiones:
 
-1. **Media aritmética** — gana el más cercano al promedio de las hábiles.
-2. **Media aritmética alta** — promedio solo de las que están por encima de la media.
-3. **Media geométrica con presupuesto oficial** — el presupuesto entra como dato más (a veces varias
-   veces).
-4. **Menor valor** — el más barato se lleva todos los puntos.
-
-**El método NO se conoce antes: se sortea el día de la audiencia con el primer decimal de la TRM.**
-Se conocen las reglas del precio *después* de haber presentado el precio. Consecuencia: **tirar el
-precio al piso es matemáticamente malo** — gana en 1 de 4 métodos y en los otros 3 te aleja de la
-media. El enfoque correcto es **valor esperado**: banda de descuento histórica del ganador frente al
-presupuesto oficial en esa entidad (típicamente **5–12 % en obra**), ubicarse donde se gana bajo más
-métodos, y verificar que el margen sobreviva. Y ojo con el **precio artificialmente bajo**: la entidad
-debe requerir justificación (D. 1082 art. 2.2.1.1.2.2.4) y sin estructura de costos, rechaza.
-
-### Las 12 señales de pliego sastre
-
-1. **Experiencia hiperespecífica** sin razón técnica (cada adjetivo recorta el universo).
-2. **Códigos UNSPSC inusuales o excesivamente restrictivos** para el objeto.
-3. **Indicadores financieros con precisión rara** (liquidez ≥ 3.7) — los razonables son redondos.
-4. **Personal clave con certificación de una sola institución**.
-5. **Plazos mínimos legales para todo.**
-6. **Adendas técnicas a 24 horas del cierre.**
-7. **Marca o especificación de un solo fabricante** sin «o equivalente».
-8. **Ficha técnica que solo un distribuidor autorizado entrega.**
-9. **Respuestas a observaciones evasivas o copiadas** («se mantiene lo establecido»).
-10. **Apertura en fechas estratégicas** (23 dic., Semana Santa, puentes).
-11. **Uno o dos oferentes** (uno sin capacidad) en el histórico de esa entidad para ese objeto.
-12. **Desviación injustificada de los documentos tipo** (Ley 2022/2020).
-
-**Se detecta por el conjunto, no por la pieza.** Al detectarlo: (A) observar con redacción alternativa,
-(B) retirarse temprano —frecuentemente lo correcto—, (C) denunciar. Lo que **no** se hace es
-presentarse «a ver qué pasa»: un pliego sastre bien hecho no se gana por insistencia.
-
-### La estructura de una subsanación que funciona
-
-El evaluador tiene 40 ofertas y poco tiempo: **hazle el trabajo**.
-
-1. Referencia del proceso y del oferente.
-2. **Cita textual** del requerimiento, entre comillas.
-3. Respuesta directa **en una sola frase**.
-4. **Tabla de trazabilidad:** `Lo que pidió | Documento aportado | Folio | Dónde queda acreditado`.
-5. Documentos **en el mismo orden de la tabla, foliados**.
-
-☠️ Nunca «mejorar» la oferta al subsanar: eso es modificarla → rechazo + constancia en el expediente.
-**Responde exactamente lo que te preguntaron, ni una línea más.** Y **subsana proactivamente**: en
-cuanto el informe te marque «no cumple», radica sin esperar el requerimiento.
-
-### La estructura de una observación quirúrgica
-
-`Requisito del pliego (numeral + cita textual)` → `Lo aportado por el oferente (folio n.º)` →
-`Incumplimiento (el pliego exige A; el documento acredita B)` → `Consecuencia solicitada (declarar NO
-HÁBIL / descontar puntaje)` → `Soporte (copia del folio)`.
-
-Con cita textual y folio, **el comité debe motivar por escrito por qué la rechaza**. Sin ellos se
-archiva en dos líneas.
-
-**Al proyecto de pliego** (la ventana más poderosa y desaprovechada) la observación se acepta cuando
-**le resuelve un problema a la entidad, no a ti**: cita el numeral, explica el **riesgo de declaratoria
-de desierta y la restricción de pluralidad**, cita la norma (Ley 1150 art. 5, Ley 80 art. 24, Ley
-2022/2020) y **entrega la redacción alternativa lista para pegar** — el comité saturado la copia
-literal en la adenda. *No digas «déjenme entrar»; di «así se les puede caer el proceso, y aquí está
-el arreglo».*
-
-### Los costos que casi nadie suma
-
-| Concepto | Típico | Nota |
-|---|---|---|
-| **Contribución especial de obra pública** | **5 %** del contrato | Ley 418/1997. *El olvido más caro del país* |
-| **Estampillas** dptales./municipales | 0.5–5 % acumulado | Varían por entidad. **Verificar siempre** |
-| Retención en la fuente / ReteICA | 1–11 % / 0.4–1.4 % | Según concepto y municipio |
-| Pólizas y garantías | 1–3 % | Según riesgo e historial con la aseguradora |
-| **Costo financiero del capital de trabajo** | Variable **y grande** | El Estado paga tarde: 2 % mensual financiando 40 % durante 6 meses ≈ **5 puntos de margen** |
-| **Fiducia del anticipo** | — | Anticipo va a patrimonio autónomo (Ley 1474/2011 art. 91): no es plata tuya |
-| Ensayos, laboratorios, certificaciones | 0.5–2 % | **No están en el APU** |
-| PMA, señalización, SST | 1–3 % | Obligatorios y se olvidan |
-| Liquidación, actas, cierre | 0.5 % | El contrato no termina cuando termina |
-
-Sobre el **AIU**: A 12–20 %, I 3–5 % (**es seguro, no utilidad**), U 5–10 %. **Regla no negociable:
-flujo de caja mes a mes ANTES de fijar el precio.** Si el acumulado se hunde: anticipo, subir precio,
-o no presentarse.
-
-### La regla de las 24 horas
-
-**Cargar y presentar el día anterior al cierre.** SECOP II permite retirar y modificar cuantas veces
-se quiera hasta la hora exacta; presentar temprano no revela nada. **El cierre de las 3:00 p.m. es la
-hora en que más ofertas mueren en Colombia** (internet, luz, servidor congestionado). Y **pantallazo
-con reloj** mostrando el estado «Presentada»: sin evidencia, la palabra no vale nada ante el expediente.
-
-### Fuentes de inteligencia anticipada
-
-| Fuente | Qué da | Cuándo |
-|---|---|---|
-| **PAA en SECOP II** | Objeto, valor, mes previsto y modalidad de todo el año | **31 de enero** |
-| **Plan de Desarrollo** | Metas que la entidad debe cumplir → **predice el PAA del año entrante** | Cada 4 años |
-| **Presupuesto aprobado** | Plata por rubro; confirma o desmiente el PAA | Diciembre |
-| **Histórico SECOP** | Quién ganó, a qué precio, con qué descuento, con qué consorcio | Permanente |
-| **Estudios del sector** | El análisis de mercado de la propia entidad | Con el proyecto de pliego |
-| **Informes de la Contraloría** | Qué le criticaron → **predice qué requisitos endurecerá** | Anual |
-
-**El PAA da seis meses de ventaja** sobre una competencia que se entera el día del aviso y tiene 20
-días. Es un documento público que casi nadie lee.
-
-### Consorcio vs. Unión Temporal
-
-Ambos (Ley 80 art. 7): **responsabilidad solidaria total**, sin personería jurídica, con NIT fiscal, y
-**suman experiencia y capacidad**. Diferencia única: las **sanciones** — en UT según el porcentaje
-declarado; en consorcio, **a todos por igual**.
-
-☠️ **Errores mortales:** (1) documento sin firmas de todos los R.L.; (2) sin autorización de junta
-cuando el monto supera las facultades del R.L.; (3) **porcentajes que no suman 100 %**; (4) **el que
-aporta la experiencia con participación por debajo del mínimo del pliego** (a menudo 30–40 %) — el
-pliego la desconoce entera; (5) **un integrante inhabilitado contamina al consorcio completo**.
-
-**Due diligence de 20 minutos** antes de firmar: SIRI (Procuraduría), boletín de responsables fiscales
-(Contraloría), antecedentes judiciales (Policía), **RNMC**, e histórico en SECOP (incumplimientos,
-multas, caducidades). Todo público y gratis. Se reparte por **quién aporta lo que el pliego necesita**,
-no por quién pone más plata.
-
-### Factores de desempate (Ley 2069/2020, art. 35) — 13 criterios sucesivos
-
-Nacionales → MIPYME → cooperativas → **discapacidad (≥10 % de la nómina)** → mujeres cabeza de familia
-y población vulnerable → emprendimientos de mujeres → población indígena/negra/afro/raizal/palenquera/
-Rrom → jóvenes 18–28 → … → **sorteo por balotas**.
-
-Con documentos tipo los puntajes están comprimidos y **los empates son frecuentes**: acreditar todos
-los criterios que legítimamente se cumplan es *la póliza más barata del oficio*.
-
-### El traslado como inteligencia competitiva gratuita
-
-Términos: **licitación 5 días hábiles · selección abreviada y concurso de méritos 3 · mínima cuantía
-1**. Durante el traslado se hacen **tres cosas a la vez**: subsanar lo propio, revisar lo ajeno,
-observar el informe.
-
-**Todas las ofertas de todos los competidores son públicas y descargables.** Aunque se pierda el
-proceso, quedan: precio exacto y % de descuento de cada uno, su estructura de costos si hubo APU
-desagregado, **sus certificaciones de experiencia** (el mapa de qué contratos tienen y con quién), su
-composición de consorcio, sus indicadores y **qué les faltó**. En dos años eso es una base de datos de
-la competencia que ninguna consultora vende — y **el 95 % de los oferentes nunca la descarga**.
-
-### Verdades procesales que ahorran dinero
-
-- **Contra la adjudicación NO procede recurso** (Ley 1150 art. 9): es irrevocable. La vía es judicial
-  (CPACA arts. 138/141), previa conciliación, caducidad **4 meses**, y **no devuelve el contrato**:
-  indemniza, años después. *El 90 % de las veces lo racional es documentar, aprender y ganar el
-  siguiente.* **La denuncia administrativa (Procuraduría/Contraloría/SIC) mueve más que la demanda.**
-- **Sí procede reposición** contra: declaratoria de desierta (Ley 80 art. 30-11), actos sancionatorios
-  (Ley 1474 art. 86) y actos definitivos sin norma especial. **10 días hábiles** (CPACA art. 76).
-- **El rechazo de la oferta** es acto de trámite: se ataca con el definitivo. Por eso **las
-  observaciones al informe son la única oportunidad real** de corregir el rumbo.
-- **Post-adjudicación:** sin aprobación de garantías no hay acta de inicio; **el plazo corre desde el
-  acta, no desde la firma** — no movilizar antes, y **no firmarla si la entidad no entregó predio,
-  diseños, licencias o permisos** (dejar constancia escrita). Adición ≤ **50 %** del valor inicial en
-  SMMLV; la prórroga no tiene ese límite. **Firmar el acta de liquidación sin salvedades cierra la vía
-  judicial para siempre.** Documentar cada hecho **el día que ocurre**.
-- **La ética aquí es aritmética, no moral:** el analista es quien firma y queda en el expediente; la
-  sanción por colusión (C.P. art. 410A) es prisión, multa SIC de hasta 100.000 SMLMV a la empresa y
-  2.000 al individuo, e **inhabilidad de hasta 20 años** = cierre. Regla de oro del contacto:
-  **«¿me incomodaría que esto se publicara?»** Si sí, no se hace. Canal formal siempre.
-
-### Los 20 mandamientos del analista
-
-1. Cargar la oferta **el día anterior** al cierre. Siempre.
-2. Verificar que el estado diga **«Presentada»**, no «En creación».
-3. Leer **las causales de rechazo** antes que cualquier otra cosa.
-4. Separar la carpeta en **pila de puntaje** (paranoia triple) y **pila habilitante**.
-5. Descargar el **PAA en febrero** y armar el calendario del año.
-6. Renovar el **RUP** antes del quinto día hábil de abril.
-7. Observar el proyecto de pliego con **redacción alternativa lista para pegar**.
-8. Nunca prometer un **personal clave** que no está vinculado.
-9. Verificar los **antecedentes del socio** de consorcio antes de firmar.
-10. Sumar **la contribución del 5 %** y las estampillas. Siempre.
-11. Hacer el **flujo de caja mes a mes** antes de fijar el precio.
-12. Responder la subsanación con **tabla de trazabilidad** y ni una línea de más.
-13. **Descargar todas las ofertas** de los competidores en cada traslado.
-14. Acreditar **todos los factores de desempate** que legítimamente se cumplan.
-15. **No firmar el acta de inicio** si la entidad no entregó lo suyo.
-16. **Documentar cada hecho el día que ocurre**, con foto y radicado.
-17. **Nunca firmar el acta de liquidación sin salvedades.**
-18. **Canal formal siempre.** Si incomodaría que se publicara, no se hace.
-19. Hacer el **postmortem** de cada proceso, ganado o perdido.
-20. Mantener la **tasa de rechazo por forma en cero**. Es lo único que depende enteramente de ti.
-
-### APLICACIÓN EN EL PROYECTO
-
-Mapeo explícito manual → código, **con estado real verificado contra el repositorio** (ago 2026). El
-estado importa tanto como el mapeo: escribir aquí que algo «ya está» cuando no está convertiría esta
-memoria en una fuente de error. `✅` implementado · `🟡` parcial · `⬜` no existe (propuesta).
-
-| Concepto del manual | Qué hay hoy en la app | Estado |
-|---|---|---|
-| **Modalidades de selección** (Cap. 3) | `MODALIDADES_COMPETITIVAS` / `MODALIDADES_EXCLUIDAS` en `lib/filtros.js` reproducen exactamente la tabla del manual: licitación, selección abreviada, subasta, concurso de méritos, mínima cuantía, acuerdo marco dentro; **contratación directa fuera** (no hay concurso) | ✅ |
-| **Convenios no son licitaciones** | `es_convenio` (Ley 489/1998 arts. 95-96): «aunar esfuerzos» y convenio interadministrativo al encabezar el objeto | ✅ |
-| **RUP = pasaporte; UNSPSC a nivel de clase** (Cap. 5) | `lib/unspsc.js` compara por **jerarquía leyendo el nivel** del código; los 393 códigos de los RUP terminan en «00» (inscripción por clase) y hay prueba que lo vigila. `/api/admin/rup` carga el RUP con efecto inmediato | ✅ |
-| **Renovar el RUP antes del 5.º día hábil de abril** (mandamiento 6) — *con qué códigos* | `/api/admin/cobertura-rup` cruza el histórico adjudicado con la whitelist del perfil y devuelve los códigos faltantes priorizados por similitud con la experiencia REAL (`/api/admin/experiencia`). El manual dice *cuándo* renovar; esto responde *con qué* | ✅ |
-| **Capacidad residual K** (Guía CCE-EICP-GI-22) | `lib/capacidad.js`: `CRP = CO × (E+CT+CF)/100 − SCE`, `CRPC` con anticipo y plazo (D. 1082 art. 2.2.1.1.1.6.4). **K del plural = suma de las CRP**, indicadores habilitantes 50/50 — las dos reglas distintas del Cap. 10/11 | ✅ |
-| **Nicho incómodo / menos competencia > más puntaje** (truco #22, Palanca 4) | `ordenar_por=atractividad` (default) + `lib/indice_competencia.js`: tertiles sobre el promedio de oferentes por entidad. Es literalmente la tesis de la Palanca 4 en código. `topeSMMLV` es apetito estratégico, no límite del RUP | ✅ |
-| **Anticipo y flujo de caja** (truco #16) | `lib/negocio.js` pondera anticipo al 0.4 del `puntaje_ponderado` — el manual explica **por qué** pesa tanto: sin anticipo se financia al Estado. **`anticipo_pct = 0` sigue significando «sin dato»**, no «sin anticipo» | ✅ |
-| **Traslado / histórico como base de datos** (truco #17) | `licitaciones:historico:mes:*` — keyspace que **ninguna purga toca**, con adjudicatario, valor adjudicado y nº de oferentes. Es la versión estructural del consejo «guarda todo lo del traslado» | ✅ |
-| **PAA → alertar antes de que salga el proceso** (truco #9) | La app ingiere **solo `p6dx-8zbt`** (procesos ya publicados). El PAA es otro dataset y **no se lee**. Hoy la app avisa cuando el proceso ya salió: la ventaja de seis meses del manual está sin explotar | ⬜ |
-| **Pliego sastre → detección** (12 señales) | La única señal computable hoy es la **#11** (histórico de 1-2 oferentes), vía `indice_competencia`. **Y está interpretada al revés**: baja competencia se presenta como *atractiva*. Es ambigua — puede ser un nicho ganable **o** un pliego sastre. Las señales 1/3/4/5/6/7 exigen el texto del pliego, que el dataset no trae. **El tier `familia` NO es la señal #2**: indica codificación amplia, lo contrario de restrictiva | 🟡 |
-| **Precio bajo incertidumbre → banda de descuento** (truco #11) | `lib/indice_baja.js` (`indice:baja:*`, tres granularidades en cascada + segmento + modalidad): `descuento = 1 − valor_adjudicado / precio_base` por entidad, sin re-extraer nada. Ya viaja en la tarjeta (`baja_mercado`, solo con token) y ordena con `?ordenar_por=baja` | ✅ |
-| **Traslado → descargar ofertas de competidores** | El dataset no trae documentos de oferta: solo `urlproceso`. Automatizarlo exigiría raspar SECOP II (fuera de la arquitectura actual: sin dependencias, serverless, respuesta ≤4.5 MB). Alcanzable: enlazar la ficha del proceso y **listar adjudicatarios recurrentes por entidad** desde el histórico | ⬜ |
-| **Subsanación → tabla de trazabilidad automática** | No existe. La app decide **a qué presentarse**, no arma la carpeta. Sería un generador de plantilla a partir de la ficha del proceso | ⬜ |
-| **Consorcios → antecedentes del socio (SIRI/Contraloría/RNMC)** | No existe y **no es automatizable con datos abiertos**: son portales con captcha, no APIs. Lo que sí está: el consorcio `juntos` se **re-deriva siempre** de sus integrantes. La parte accionable sería una **lista de verificación** de las 5 fuentes del truco #15 | ⬜ |
-| **Formulario de cantidades del pliego → ítem + unidad + cantidad** (Cap. 11, §1.G del informe) | `/pliego.html` + `/api/apu/extraer-texto`: pdf.js en el navegador extrae el texto conservando columnas por coordenadas, `lib/apu_pliego.js` reconoce las filas por 3 vías, valida en 3 niveles y las gradúa con un semáforo de 2 ejes, `lib/apu_mapeo.js` las mapea al diccionario de reconocimiento de `data/catalogo_apu.json` y emite el código del catálogo de precios cuando el ítem existe allí. OCR.space como respaldo para escaneados. **Entrega cantidades, NO precios** | ✅ |
-| **APU · base de precios regionalizada** (Cap. 11) | `lib/apu/catalogo.js` + `data/apu_catalogo.json`: estructura oficial INVIAS/IDU (CD = MO + materiales + equipo + transporte), 48 insumos × 5 regiones, 17 ítems con composición y rendimiento, factores de ajuste regional. Se carga con `POST /api/admin/apu/cargar-catalogo` y se consulta sin token en `GET /api/apu/catalogo`. Los precios son de **referencia**, no cotizaciones, y cada uno declara su `fuente` | ✅ |
-| **Costos ocultos → calculadora de rentabilidad** | **Sigue sin existir la calculadora.** Ya está la mitad de abajo (el APU da el costo directo por ítem), pero la cuantía se sigue mostrando como si fuera ingreso y faltan los 10 conceptos del Cap. 11, empezando por la **contribución del 5 %** y las estampillas. Es la Fase 2 y ahora tiene sobre qué apoyarse | 🟡 |
-| **Precio bajo incertidumbre → a qué precio ofertar** (truco #11) | `lib/apu/optimizador.js` + el bloque `optimizador` de `/api/apu/rentabilidad` + el recuadro «Precio sugerido» del editor: barre las bajas plausibles alrededor de la mediana de la entidad y devuelve el precio que MAXIMIZA el valor esperado, con la curva y tres opciones (conservador / óptimo / agresivo). Es el consejo del manual —«valor esperado, no mínimo precio», porque el método de ponderación se sortea— convertido en una cifra que se puede aplicar con un botón | ✅ |
-
-### Investigación de contraste (ago 2026) — correcciones al manual y hallazgos verificados
-
-Detalle, fuentes y temas pendientes en `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md`. Aquí solo lo que
-cambia una decisión. **Advertencia de método:** este entorno recibe **403 en `datos.gov.co`,
-`colombiacompra.gov.co`, `relatoria.colombiacompra.gov.co`, `dev.socrata.com` y `funcionpublica.gov.co`**
-— varios hallazgos se apoyan en fuentes secundarias y están marcados en el complemento. No usar una
-cifra de aquí en un pliego sin abrir la fuente.
-
-- **DOS CORRECCIONES AL MANUAL.** (1) **Salvedades**: el manual afirma que firmar sin salvedades cierra
-  la vía judicial *siempre*. El Consejo de Estado **unificó** (Sección Tercera, 27 jul 2023) que su
-  ausencia al pactar **suspensiones, prórrogas o modificaciones NO impide** reclamar; la exigencia
-  legal opera en la **liquidación bilateral**, y ahí la salvedad debe ser **concreta y específica**
-  (una genérica no sirve). Se conserva la conducta, se corrige la razón. (2) **Anticipo**: hay **techo
-  legal del 50 %**, la fiducia **no** aplica a menor ni mínima cuantía, y **anticipo ≠ pago
-  anticipado** (el segundo entra al patrimonio del contratista desde el desembolso y no se amortiza).
-- **Las cifras retóricas del manual no son datos.** «El 40 % de los procesos se define en el
-  traslado», «el 95 % nunca descarga las ofertas», «el 90 % de las reclamaciones se pierden», «el
-  80 % de los procesos amañados»: **no tienen fuente y no se encontró ninguna**. No calibrar nada con
-  ellas.
 - **🚩 El ciclo electoral contamina `indice_competencia` y no está modelado.** Ley de garantías 2026:
-  convenios interadministrativos bloqueados desde el **8 nov 2025**, contratación directa desde el
-  **31 ene 2026**, ambos hasta el **31 may 2026** (21 jun con segunda vuelta). Durante esa ventana las
-  entidades **tuvieron que competir**, así que hay un pico de procesos y probablemente más oferentes.
-  El promedio de 2 años sobre el que ordena `ordenar_por=atractividad` **mezcla ese período con
-  períodos normales sin saberlo**, y el backfill (`?desde=2024-01`) no tiene ningún tramo «limpio».
-  Mitigación barata: exponer el reparto temporal en `/api/competencia-detalle` (el modal ya enseña qué
-  procesos cuentan). Cara y mejor: segmentar el índice por período.
-- **El estado `Activo` faltaba en `ESTADOS_ABIERTOS` — CORREGIDO (ago 2026).** La enumeración
-  documentada de `estado` de `p6dx-8zbt` es **Activo · Adjudicado · Desierto · Celebrado**, y `fase` es
-  **Planeación · Selección · Evaluación · Adjudicación · Contratación · Ejecución**. «activo» no
-  estaba en ninguna de las dos listas y, con la regla «desconocido = CERRADO», **todo proceso
-  publicado con ese literal se descartaba EN SILENCIO** — y no lo salvaba la fase, porque «Selección»
-  tampoco figura. Ya está añadido, con prueba. **Es seguro porque en `estado_abierto` los cerrados
-  ganan siempre**: `Activo` + fase `Adjudicación`, o `adjudicado="Si"`, sigue cerrado (hay caso de
-  prueba de las dos cosas), y un estado de verdad desconocido sigue contando como cerrado.
-  ⚠️ **Exige relanzar `/api/sync?modo=full` UNA vez**: el filtro de estado corre en la INGESTA
-  (`lib/proyeccion.transformar` excluye los no abiertos de origen), así que esos procesos **nunca
-  entraron a Redis** y ninguna consulta los recupera sola. Es la excepción a «afinar el juicio tiene
-  efecto inmediato»: esto no es juicio, es ingesta.
-  **Queda un hueco menor, deliberadamente sin tocar**: un proceso con `estado` vacío y solo
-  `fase="Selección"` sigue contando como cerrado. Meter «seleccion» en la lista haría que
-  «Seleccionado» pasara a abierto por prefijo — que es justo el choque que el código ya advierte. Si
-  el embudo de `/api/diagnostico` muestra volumen muriendo ahí, resolverlo exige mirar el dato real
-  primero.
-- **La CCE confirma que las entidades comparten NIT.** El equipo de analítica de la propia agencia
-  advierte que «no hay bases maestras de entidades y proveedores; las entidades pueden compartir NIT
-  entre departamentos». La corrección de identidad de ago 2026 (no publicar alias para NIT compartido;
-  orden canónica → legado → alias) **era el problema conocido del dataset**, no una precaución
-  excesiva. Misma fuente: los campos de fecha «tienen en general muchos valores nulos» — coherente con
-  la detección defensiva de `fecha_cierre`.
-- **La banda de descuento son DOS métricas, no una.** `p6dx-8zbt` da `precio_base` y
-  `valor_total_adjudicacion` → **descuento en la adjudicación** (lo que sirve para fijar precio). El
-  **valor realmente pagado**, después de adiciones, vive en **otro dataset**: `jbjy-vk9h` (Contratos
-  Electrónicos). No mezclarlas: una predice cómo se gana, la otra cómo se ejecuta. Otros IDs útiles:
-  `qmzu-gj57` (proveedores), `rpmr-utcd` (SECOP integrado). Límites de la API: **~1.000 pet./hora con
-  App Token** (~100 sin él), **200 filas por petición**, y el dataset tiene **59 campos**.
-- **Documentos tipo: tienen VERSIÓN, y cambió.** Resolución **539 de 2025** adopta la **v.2** de obra
-  pública de **infraestructura social** para avisos publicados **desde el 16 feb 2026**: amplía a
-  **Institucional y Vivienda**, rediseña las fórmulas de experiencia y actualiza los requisitos
-  financieros. Transporte va por su propia línea (**v.4**, Res. 465 de 2024). Un pliego que sigue la
-  versión vieja está **desactualizado**, que no es lo mismo que ser un pliego sastre (señal #12).
-- **Valores de referencia que hacen operable la señal #3**: liquidez **≥ 1.2**, endeudamiento
-  **≤ 65 %**, cobertura de intereses **≥ 2**; el RUP verifica sobre los **últimos 3 años fiscales**
-  (por eso un mal cierre contamina tres, no uno). Con esto, «liquidez ≥ 3.7» es *más del triple* del
-  estándar y el argumento de pluralidad se escribe con cifras.
-- **Precios unitarios vs. precio global es la variable de riesgo que el manual omite.** En global el
-  riesgo de cantidades es del contratista y **no se reconocen mayores cantidades**; en unitarios las
-  cantidades del pliego son **un estimativo** y las mayores cantidades ordenadas **deben reconocerse**.
-  Y una **mayor cantidad NO es una adición** (adición = ampliación del alcance físico), así que **el
-  tope del 50 % del art. 40 de la Ley 80 no la limita**. Alcanzable en la app: detectar «a precio
-  global» / «a precios unitarios» en el objeto y etiquetarlo en la tarjeta.
-- **Reajuste de precios (ICOCIV del DANE, sucesor del ICCP)**: en un año con **SMMLV +23 %**, un
-  contrato sin cláusula de reajuste que cruza diciembre pierde margen por construcción. La app ya
-  normaliza el plazo (`plazoMesesDe`): es el disparador natural de una alerta.
-- **Inhabilidad por incumplimiento reiterado** (no está en el manual): **5 multas**, o **2
-  declaratorias de incumplimiento**, o **2 multas + 1 incumplimiento** en el **mismo año fiscal** →
-  **3 años** de inhabilidad desde la inscripción en el RUP. Convierte «negociar una multa» en decisión
-  estratégica y da criterio cuantitativo al due diligence del socio (truco #15).
-- **Contribución del 5 %**: base = valor total **sin impuestos**; **aplica también a las adiciones**;
-  es **permanente** (art. 8 Ley 1738/2014 sobre art. 120 Ley 418/1997 mod. Ley 1106/2006) — ignorar
-  artículos que digan «vigente hasta este año».
-- **Cifras 2026 verificadas contra fuente externa**: SMMLV **$1.750.905** (coincide con el valor del
-  repositorio); umbral MiPyme **$511.708.497**. 🚩 El alza del 23 % se fijó por decreto sin acuerdo y
-  **está en litigio ante el Consejo de Estado**: una anulación movería **todos** los umbrales en SMMLV
-  de la app a la vez (`SMMLV`, `topeSMMLV`, factor E).
-- **Lo que NO se encontró, dicho explícitamente**: tasa de procesos desiertos en obra, volumen anual de
-  procesos de obra, promedio de oferentes por cuantía y tasa de adiciones **no están publicados en
-  fuentes accesibles**. Pero **la app ya tiene la mejor fuente para casi todo eso**: su propio
-  `licitaciones:historico:mes:*`, que ninguna purga toca. Calcularlas en casa, no buscarlas afuera.
+  convenios interadministrativos bloqueados desde el **8 nov 2025** y contratación directa desde el **31 ene
+  2026**, ambos hasta el **31 may 2026** (21 jun con segunda vuelta); en esa ventana las entidades **tuvieron
+  que competir**, así que el promedio de 2 años mezcla ese período con los normales sin saberlo y el backfill
+  no tiene tramo «limpio». Barato: exponer el reparto temporal en `/api/competencia-detalle`; mejor: segmentar
+  el índice por período.
+- **La banda de descuento son DOS métricas**: `p6dx-8zbt` da `precio_base` y `valor_total_adjudicacion` →
+  descuento **en la adjudicación** (para fijar precio); el **valor realmente pagado** tras adiciones vive en
+  **`jbjy-vk9h`**. No mezclarlas. Otros IDs: `qmzu-gj57` (proveedores), `rpmr-utcd` (SECOP integrado).
+  Límites: **~1.000 pet./hora con App Token** (~100 sin él), **200 filas por petición**, **59 campos**.
+- **Cifras 2026**: SMMLV **$1.750.905**; umbral MiPyme **$511.708.497**. 🚩 El alza del 23 % se fijó por
+  decreto sin acuerdo y **está en litigio ante el Consejo de Estado**: una anulación movería **todos** los
+  umbrales en SMMLV a la vez. **Lo que NO se encontró** (tasa de desiertos, volumen anual de procesos de obra,
+  promedio de oferentes por cuantía, tasa de adiciones) **no está publicado**: calcularlo en casa con
+  `licitaciones:historico:mes:*`.
 
-**Cuatro consecuencias de diseño que se derivan del manual y que no hay que re-discutir:**
+## Datos del negocio (fuente de verdad) y mapa de archivos
 
-- **La app juega en las etapas 1-9 del ciclo, no en las 10-14.** Decide a qué presentarse. Todo lo de
-  traslado, subsanación, audiencia y ejecución es contexto para *elegir mejor*, no funcionalidad
-  pendiente — salvo lo que se declare explícitamente arriba.
-- **Baja competencia es ambigua y hay que decirlo en pantalla.** El manual sostiene las dos lecturas:
-  nicho rentable (Palanca 4) **y** señal #11 de pliego sastre. Un badge que solo diga «⭐ poca
-  competencia» está afirmando una de las dos sin evidencia.
-- **Un habilitante «de más» no da puntos.** No tiene sentido puntuar en la app «cuánto sobra» de
-  experiencia o de K: para el pliego eso vale cero. Lo que importa es el **pasa/no pasa** (por eso el
-  veredicto es graduado por tier + pertinencia, no una nota).
-- **El falso negativo cuesta más que el amarillo.** Es la regla de pertinencia ya vigente, y el manual
-  la respalda por el otro lado: el recurso escaso es **el tiempo del equipo** (Palanca 3, opción B), no
-  la lista de resultados. Un 🟡 se descarta en 5 s; una oportunidad que la app nunca mostró no se
-  recupera.
-
-### Rentabilidad del proceso: VEG, caja y payback (ago 2026)
-
-El editor responde *cuánto cuesta*. `lib/apu/rentabilidad.js` + `POST /api/apu/rentabilidad`
-responden *cuánto vale la oportunidad* y *si la empresa puede ejecutarla*.
-
-- **EL COSTO DIRECTO NO SE RECALCULA AQUÍ.** `desdePresupuesto()` toma el `resumen` de
-  `lib/apu/calculo.js` tal cual y le añade la capa que aquel no cubre. Un segundo cálculo del costo
-  directo divergiría del primero a la primera corrección que se aplicara a uno solo, y una diferencia
-  del 3 % entre dos motores de APU no se ve en pantalla: se ve cuando se pierde el proceso.
-- **La acción va APARTE de `calcular`, y no dentro.** Es la única del módulo que toca la RED (índice
-  de baja, índice de competencia, `lib/probabilidad`); fundirlas obligaría a pagar dos lecturas de
-  Redis en cada tecla del editor.
-- **`P(ganar | precio)` NO es una sigmoide monótona: es una MEZCLA** de «menor valor» (25 %) y
-  métodos centrales (75 %). El método de ponderación **se sortea** en la audiencia (Ley 1882/2018),
-  así que ofertar más barato no maximiza la probabilidad de ganar: la compra en un escenario de
-  cuatro y la destruye en los otros tres. La sigmoide sigue publicándose aparte (`p_menor_valor`).
-- **El multiplicador de precio vale EXACTAMENTE 1 en la mediana del mercado.** Sin esa normalización,
-  `/api/apu/rentabilidad` y `/api/oportunidades` publicarían dos probabilidades distintas del mismo
-  proceso. Hay prueba de la igualdad.
-- **La FORMA de esa curva usa un `n` de REFERENCIA FIJO (6), no los oferentes de la entidad.** El
-  efecto de nivel ya lo lleva `p_base` (`1/(1+rivales)`). Meterlo también en la forma lo contaba dos
-  veces y rompía A.10 en el extremo: con una baja muy por encima de la mediana, el término central
-  (1/n) del DENOMINADOR se encoge con `n`, infla el multiplicador y catorce oferentes acababan dando
-  MÁS probabilidad que tres. Además no hay con qué calibrar esa dependencia —la curva se infiere, el
-  corpus no trae las ofertas perdedoras—, así que fijar la forma hace la monotonía **demostrable** en
-  vez de afortunada.
-- **El AIU y la estructura de costos son DOS descomposiciones del mismo `V`.** El AIU es la
-  estructura de PRECIO que se declara en la oferta: su «A» cubre nominalmente dirección de obra,
-  pólizas, ensayos e impuestos. La rentabilidad usa la de COSTO, donde esas tres son líneas
-  separadas. Usar la «A» declarada como si fuera el indirecto Y sumar aparte garantías e impuestos
-  cobraba la administración dos veces y dejaba en rojo presupuestos sanos. Corolario: la **«I» del
-  AIU tampoco es un costo** — es el ingreso que financia la prima de riesgo; restar las dos contaba
-  el imprevisto dos veces.
-- **`C_indirecto` es función del PLAZO** y por eso lleva el factor `T/T_ref` con una referencia
-  declarada: sin él, alargar el plazo sin obra adicional no movería la utilidad, y la invariante A.11
-  dice que no puede SUBIRLA.
-- **El payback exige haber estado EXPUESTO.** Sin esa condición, un contrato con anticipo daría
-  payback = mes 1 por el propio anticipo, que es dinero de la entidad y no capital devuelto.
-- **El precio piso decide con σ = 15 %, no con 8 %.** La prima de la maldición del ganador CRECE con
-  σ, así que usar el valor bajo sin calibrar produce un piso más bajo — exactamente el error caro.
-- **Sin `deducciones_pct` del pliego el margen es una COTA SUPERIOR**, y viaja declarado. Un bloque
-  de deducciones de hasta ~10 % del valor es mayor que el margen típico: omitirlo invierte el signo.
-- **El borrador guarda su `id_proceso`, que NO puede ser su `id`.** El `id` del borrador lo propone
-  el cliente y `ID_RE` no admite puntos, mientras que `id_del_proceso` de SECOP los trae
-  (`CO1.REQ.123`). Son dos claves distintas a propósito, y la del proceso es la única con la que el
-  panel puede encender «APU listo».
-- **El listado de borradores se pide APARTE de `/api/resumen`**, cuya respuesta se cachea 300 s: un
-  presupuesto recién guardado no puede tardar cinco minutos en encender el badge — es la misma razón
-  por la que una carga de RUP borra esa caché. Aquí no hace falta borrar nada porque no se cachea, y
-  `procesos_con_presupuesto` viaja como lista de PERTENENCIA, no como conteo, para que el frontend no
-  pueda convertir un «no sé» en un cero con un `|| 0`.
-- **El botón «APU» vive DENTRO de una fila cuyo clic abre SECOP II**, así que su clic burbujea: sin
-  la guarda `closest(".btn-apu")` al principio del manejador, pulsarlo abriría además la ficha en
-  otra pestaña. Hay prueba de que la guarda va ANTES de resolver la fila.
-- **En `public/apu.js` la precarga del departamento corre DESPUÉS de cargar el catálogo.** Antes no
-  existe la opción del desplegable que hay que seleccionar y la precarga se perdería en silencio; hay
-  prueba del orden.
-
-### Optimizador de precio de oferta (ago 2026)
-
-`lib/apu/optimizador.js` + el bloque `optimizador` de `POST /api/apu/rentabilidad` + el recuadro
-«Precio sugerido» de `/apu.html`. Cierra el circuito: el editor decía cuánto CUESTA y la
-rentabilidad cuánto DEJA ese precio; esto responde **a qué precio ofertar**, que es la decisión.
-Hasta aquí el dueño miraba la baja mediana y descontaba a ojo.
-
-- **NO REIMPLEMENTA NADA: llama a `rentabilidad()` una vez por punto de la rejilla.** Un segundo
-  cálculo del margen o de la probabilidad divergiría del primero, y la divergencia sería entre el
-  precio que la app RECOMIENDA y el margen que enseña para ese mismo precio. Dos invariantes
-  probadas lo atan: el punto evaluado en el precio VIGENTE reproduce EXACTAMENTE el bloque de
-  rentabilidad (VEG, P, margen, K_max) y el punto en la mediana del mercado devuelve EXACTAMENTE la
-  `p` de `/api/oportunidades` —el multiplicador de precio está normalizado a 1 ahí—.
-- **TRES CORRECCIONES AL ENCARGO, las tres con prueba:**
-  · **El descuento se mide contra el PRESUPUESTO OFICIAL, no contra el precio de venta.** El encargo
-    pedía barrer «mediana − 10pp … + 5pp» y, en la misma frase, `precio = precio_venta × (1 −
-    d/100)`. Las dos mitades no hablan de lo mismo: la baja de `lib/indice_baja` está DEFINIDA como
-    `1 − adjudicado/precio_base`. En el corpus el precio de venta es el **69 %** de la cuantía, así
-    que barrer la perilla sobre ese rango habría puesto toda la curva en una zona de baja real del
-    30 %, donde la probabilidad es residual. La perilla viaja aparte y **por punto**, como
-    `descuento_apu_pct`, con `precio_apu_resultante` (lo que SALDRÁ del editor, calculado con el
-    `red` importado de `lib/apu/calculo` — reescribirlo incumpliría la promesa por céntimos).
-  · **El VEG que decide no es `P × margen bruto`.** Ese margen no ha pagado la contribución del 5 %,
-    ni estampillas, ni pólizas, ni el costo financiero, ni la maldición del ganador. `veg` es el
-    MISMO del bloque de rentabilidad (`P × utilidad neta − costo de preparar`) y es el que elige; la
-    fórmula literal del encargo se publica al lado como `veg_margen_bruto` para que la diferencia se
-    vea. Dos cifras con el mismo nombre y distinto significado es `cargado`/`cargado_el` otra vez.
-  · **Un precio por encima del presupuesto oficial no es una opción**: con mediana 7 % el rango del
-    encargo arranca en −3 %, o sea un 3 % SOBRE el techo. La rejilla se recorta en 0 y lo declara
-    (`rango.recortado_en_cero`). Dejar esos puntos los ofrecería como alternativas.
-- **LAS TRES OPCIONES SON LOS EXTREMOS DE LA MESETA DEL VEG (±5 % del máximo), no un ±N pp
-  inventado.** Y se camina CONTIGUAMENTE desde el óptimo: la curva es el producto de una mezcla de
-  dos regímenes por un margen lineal y no hay garantía de que sea unimodal, así que tomar el mínimo
-  y el máximo de la banda saltaría un valle y ofrecería como «casi igual de bueno» un precio
-  separado por una zona que no lo es. Si la meseta colapsa **se dice** (el óptimo es agudo) en vez
-  de fabricar tres puntos distintos.
-- **EL DEFECTO CONOCIDO NO MUEVE EL PRECIO RECOMENDADO, y hay que contarlo exacto.** El precio se
-  cobra DOS VECES (`docs/PROBABILIDAD_MEJORADA.md` §2.5c: `lib/probabilidad` ya multiplica por un
-  factor de baja y aquí se vuelve a modular por precio sobre esa `p`). Ese factor es CONSTANTE a lo
-  largo del barrido y `argmax_d [k·f(d) − c]` no depende de `k > 0`: afecta al NIVEL del VEG, no al
-  argmax. Hay prueba que escala `p_base` y comprueba que el descuento óptimo no se mueve **y que el
-  VEG sí**. Decir «queda arreglado» sería falso; decir «invalida la recomendación», también.
-- **Sin centro de mercado NO hay recomendación.** Con la probabilidad plana el óptimo saldría
-  siempre en «no descuente nada», que no es una recomendación sino la ausencia de una disfrazada de
-  consejo. `aplicable:false` con su `motivo` (`sin_centro_de_mercado`, `sin_presupuesto_oficial`,
-  `sin_costo_directo`, `rango_sobre_el_presupuesto`) y `sin_punto_rentable` en **`null`, no
-  `false`**: no es que no haya precio rentable, es que no se miró ninguno.
-- **Las deducciones ESCALAN con el precio.** `fiscal.tau_costo_valor` llega en pesos calculado sobre
-  el precio vigente, pero debajo son PORCENTAJES del valor del contrato (contribución del 5 % +
-  estampillas). Dejarlo fijo mientras se barre haría que bajar la oferta no ahorrara ni un peso de
-  contribución y el barrido se inclinaría a precios bajos por una razón falsa. En el precio de
-  referencia el objeto viaja TAL CUAL —sin reescalar ni redondear—, que es lo que hace exacta la
-  igualdad con el bloque de rentabilidad.
-- **La rejilla manda el DESCUENTO y el punto vigente manda el PRECIO.** Los puntos de la curva
-  redondean al peso (un precio recomendado con céntimos no se puede ofertar); el punto vigente entra
-  verbatim, porque `precio_final` sale de `calcularPresupuesto` con dos decimales y redondearlo
-  bastaría para romper la igualdad. Hay prueba con un precio final CON decimales.
-- **`contextoDePresupuesto` se EXTRAJO de `desdePresupuesto`, no se copió.** El endpoint necesita la
-  misma traducción del presupuesto (AIU, fiscal, anticipo) para el optimizador; dos traducciones del
-  mismo presupuesto habrían calculado la recomendación con una estructura fiscal y el margen que se
-  enseña al lado con otra.
-- **Va DENTRO de la acción `rentabilidad`, no en una nueva**: 12 funciones es el tope del plan Hobby
-  y el repositorio está en 12 (hay prueba que las cuenta). Además allí ya están leídos el índice de
-  baja, el de competencia y la `p` del proceso. `id_proceso` viaja y vuelve pero **no condiciona el
-  cálculo**: es una etiqueta, y esconder la respuesta a quien escribió la cuantía pero no el id
-  sería negarle el dato por no haber rellenado un rótulo. El `costo_directo_total` del cuerpo **no
-  se acepta**: sería una segunda fuente de verdad del costo y podría recomendar un precio que no
-  corresponde a los ítems en pantalla.
-- **Frontend**: el recuadro sale SOLO tras «Calcular APU» cuando hay `id_proceso`, y solo si el
-  cálculo salió bien —recomendar sobre un presupuesto que falló sería creíble y equivocado—. El
-  botón «Aplicar este descuento al APU» escribe `descuento_apu_pct` (jamás `descuento`), enciende el
-  ajuste competitivo y **recalcula por el mismo camino** que el botón «Calcular APU»: rellenar el
-  campo sin recalcular dejaría el resumen enseñando el precio anterior. Hay prueba de las dos cosas.
-  Cuando el precio óptimo está por encima del precio de venta el botón se deshabilita **y se
-  explica** («le sobra margen: suba la utilidad o la administración»), que es el caso normal cuando
-  la cuantía publicada está muy por encima del APU. La curva se pinta con un SVG en línea: el
-  proyecto no tiene dependencias y una polilínea no justifica la primera.
-
-### Catálogo de precios APU (ago 2026)
-
-- **La investigación que el encargo daba por escrita NO existía.** `docs/APU_Y_RENTABILIDAD.md` no
-  estaba en `main`, ni en la historia de `docs/`, ni en ninguna rama. Lo que sí existía es
-  `modulo_apu.html`, **borrado en el commit `d69cfe8`**, y dentro llevaba toda la investigación de
-  precios del proyecto: estructura INVIAS/IDU, precios base de Bogotá, índice de costo de las 32
-  capitales y el ajuste ICOCIV del DANE. Se recuperó (`git show d69cfe8^:modulo_apu.html`), se
-  consolidó en el documento que faltaba y **cada precio declara si es recuperado, derivado o
-  estimado**. Antes de dar por perdida una fuente que el encargo cita, mirar la historia de git.
-- **Los precios regionales se DERIVAN de un precio base y cuatro factores, nunca se transcriben.**
-  Transcribir 5 × 48 números habría creado 240 sitios donde el catálogo puede desincronizarse de sus
-  propios factores. Y el factor que se aplica depende del **tipo** del insumo: en la Costa el material
-  sube (1,10) mientras el jornal baja (0,97) — con un índice único los dos irían al mismo sitio. Una
-  cotización real gana sobre la derivación (`precios_cotizados`) y el hash publica
-  `precio_origen_{region}`: una cifra sin su origen no se puede discutir, igual que
-  `granularidad_utilizada` en el índice de baja.
-- **La desagregación de los cuatro factores es RAZONADA, no medida, y por eso lleva cerradura.** La
-  fuente recuperada solo trae **un** índice por ciudad. Recomponer los cuatro factores con la
-  estructura de costos de obra civil (45/30/18/7) tiene que caer a menos de **0,015** del índice de la
-  ciudad cabecera; hay prueba región por región. Sin ella, cualquiera podría retocar un factor «a ojo»
-  y el catálogo dejaría de tener detrás el único dato duro que lo respalda.
-- **`indice_ciudad_recuperado` contiene lo que su nombre dice**: el índice de la CIUDAD cabecera, no
-  el promedio de la región. Meter ahí el promedio ponderado de las siete capitales de la Costa
-  (1,057) habría puesto un dato derivado en un campo que anuncia un dato recuperado, y el contraste
-  habría dejado de ser contra la fuente.
-- **🚩 Un error de la fuente recuperada que NO se replicó**: su plantilla de acero cobraba el acarreo
-  como `1.200 × 1,05 × 15` = **$18.900 por kilo**, más del doble que el acero — la tarifa está en
-  $/m³-km y le pasaban kilogramos. Aquí `cantidad_por_unidad` de una línea de transporte va SIEMPRE en
-  **m³ de material movido** (acero: `1,05 kg ÷ 7.850 kg/m³ ≈ 0,00013 m³`). Un APU con el 78 % en
-  acarreo haría fijar precio muy por encima del mercado y perder todo proceso donde el acero pese.
-  Hay prueba de que el acarreo no puede volver a pasar del 1 % del APU del acero.
-- **Un cero no puede ser un precio** — la regla de `anticipo_pct = 0`, entera. Un insumo a 0 no es
-  «gratis», es «no lo sé», y con él se costearía a la baja sin que nadie lo notara. Por eso la
-  **herramienta menor no es un insumo**: no tiene precio propio (es un % de la mano de obra) y vive
-  como `herramienta_menor_pct` del ítem. La validación rechaza precios ≤ 0 y rendimientos ≤ 0 (esto
-  último sería una división por cero: precio infinito, no «gratis»).
-- **Las cuadrillas son la SUMA de sus jornales** y lo declaran en `componentes`. Estaba así en la
-  fuente (`299.000 = 95.000 + 3 × 68.000`) y se valida: si alguien sube el jornal del ayudante y no la
-  cuadrilla, el catálogo diría dos cosas distintas sobre el mismo día de trabajo.
-- **El AIU NO se regionaliza.** El campo existe porque el encargo lo pide, pero lleva el mismo valor
-  en las cinco regiones (A 15 / I 5 / U 5, el default recuperado, dentro de las bandas del manual). El
-  AIU lo fija el pliego y el riesgo del contrato, no la geografía: un gradiente regional sería
-  fabricar una precisión que nadie midió. Ídem el factor prestacional (1,55): lo fija la ley.
-- **El SNAPSHOT es caché; los HASHES son la verdad.** Servir el catálogo desde los hashes son ~70
-  comandos por petición y desde el snapshot comprimido son dos, pero dos fuentes de verdad es el
-  defecto que este proyecto ya pagó caro. El snapshot lleva **la misma `version`** que la meta y quien
-  lo lee la compara: si no casa, o si un chunk está corrupto, cae a los hashes **y lo dice** en `via`.
-  Hay prueba de que las dos vías devuelven exactamente lo mismo.
-- **`cargado` es un BOOLEANO y la fecha es `cargado_el`.** Se llamaban igual, la meta se esparce sobre
-  la respuesta y la cadena pisaba al booleano en silencio: el panel habría dicho «cargado» sobre un
-  Redis vacío, porque una cadena no vacía siempre es veraz. Es exactamente
-  `total_procesos`/`procesos_contados` otra vez —dos cosas distintas con nombres que colisionan— y la
-  cerradura es una prueba de TIPO, no de valor.
-- **La consulta es PÚBLICA y no es una excepción a la regla del token.** La regla es que no salen sin
-  llave las CIFRAS DEL PERFIL (patrimonio, K, CRPC, tope), que son datos financieros de personas
-  identificadas. El catálogo son precios de mercado de referencia: no hay nada que redactar. Lo que sí
-  exige llave es ESCRIBIRLOS, y por eso la carga vive en `/api/admin/`.
-- **La carga es TODO O NADA y el sello va al final**, igual que el POST de RUP: se valida el catálogo
-  entero antes del primer `HSET`, y `apu:catalogo:meta` se escribe después de los hashes y del
-  snapshot. Un catálogo a medias daría precios que parecen buenos.
-- **El botón del panel fuerza la reescritura (`?forzar=true`) aunque la librería sea idempotente por
-  defecto.** `cargarCatalogo()` no reescribe si el sello ya está —que es lo que pide el encargo—, pero
-  una pulsación que no hace nada visible es peor que un error (la lección del modal). Consultar el
-  estado sí corre al arrancar el panel: es público y son dos comandos; CARGAR escribe ~70 claves y
-  solo corre cuando alguien pulsa.
-- **Lo que el catálogo NO incluye, dicho en la propia respuesta**: ni AIU aplicado ni **ninguno** de
-  los costos ocultos del Cap. 11 (contribución del 5 %, estampillas, retenciones, pólizas, costo
-  financiero del capital de trabajo, ensayos, PMA/SST, liquidación). El APU es costo directo; eso va
-  encima y es «el olvido más caro del país». La calculadora de rentabilidad es la Fase 2.
-
-### Calibración Nogal, importación de Excel y libro APU (ago 2026)
-
-- **El catálogo se calibró con un contrato ADJUDICADO del propio dueño**: «Presupuesto Nogal 4»
-  (UPN-VAD-CP-009-2025, Consorcio Infraestructura 1A, Bogotá 2025). 157 ítems `NOG-*` y 389 insumos
-  con `fuente: "adjudicado"` — el cuarto origen, más fuerte que recuperado/derivado/estimado. El
-  motor REPRODUCE el `VR COSTO DIRECTO` del pliego: 149 exactos al peso, 7 a ±$1, y **NOG-B57 +$55
-  clavado en prueba** (su APU traía una línea de equipo con cantidad NEGATIVA que el esquema no
-  admite; se descartó declarándolo). Método y anomalías respetadas en `docs/CALIBRACION_APU.md`.
-- **La verdad de cada APU del pliego es el RANGO de su fórmula** `ROUND(SUM(Ea:Eb)/2)`, no la
-  proximidad de las filas: con texto, «EQUIPO CASSETTE 360…» parecía cabecera de sección y el aire
-  acondicionado perdía $14,9 M. Y en C78/C79/C80 el subtotal del pliego OMITE una línea (queda a
-  medio peso en su CD): se reproduce SU aritmética con peso 0,5, listado en
-  `_meta.calibracion.lineas_a_peso_medio`. El precio adjudicado manda sobre la corrección «obvia».
-- **Las cuadrillas del Nogal cotizan el día CON prestaciones**: el catálogo guarda `precio ÷ 1,55`
-  (el motor re-aplica el prestacional regional) y conserva el literal en
-  `precio_dia_con_prestaciones`. SIN `componentes`: el pliego no publica los jornales y inventarlos
-  rompería la validación que exige que una cuadrilla sume sus partes. Los FLETES del Nogal son
-  valores cerrados por ítem → `distancia_km = 1` con la cantidad del pliego.
-- **`cargarCatalogo` escribe por LOTES de 16 con `Promise.all`**: ~620 claves en serie contra la API
-  REST de Upstash rozaban el `maxDuration` de 60 s. Claves distintas, orden irrelevante, sello al
-  final: la garantía «todo o nada visible» no cambia.
-- **«Cargar ítems desde Excel»**: el archivo se lee EN EL NAVEGADOR (`public/xlsx_lectura.js`, UMD
-  navegador+Node como xlsx.js) y al servidor viajan solo las filas; la acción `importar` de
-  `api/apu/[accion].js` (POST, token) las mapea contra el catálogo con `lib/apu/importar.js`, que
-  REUTILIZA las primitivas de `lib/apu_mapeo` (tokenización que conserva dígitos, umbrales, margen
-  0,12) — no una segunda definición de similitud. Capa propia: **plural tolerado a ambos lados**
-  (sin ella «Desmonte de Cielo Raso» no casaba con «DESMONTES DE CIELO RASOS»; el catálogo de
-  precios no tiene sinónimos curados que lo compensen) y unidad CANÓNICA por grafía (m≈ml,
-  UND≈un) sin convertir jamás.
-- **POLÍTICA DE PRECIOS DE LA IMPORTACIÓN, medida con el caso real**: el precio del ARCHIVO manda
-  siempre (`precio_manual`, `origen_precio:"archivo"`, ítem del catálogo como referencia declarada
-  en `cd_catalogo`); un mapeo «revisar» SIN precio del archivo NO cobra el catálogo por su cuenta —
-  la fila «PENDIENTE-POSIBLE USO DE RIEL…» (24 und, $0) salía presupuestada en $2,9 M inventados.
-  La sugerencia se acepta por casilla en la vista previa. Un precio 0 (del archivo o tecleado) es
-  «sin dato», jamás gratis. Los ítems con precio manual suman al total pero caen en
-  `por_componente.sin_desglose`, y **material+mano_obra+equipo+transporte+sin_desglose = costo
-  directo total** tiene prueba. Y un precio/cantidad que llegue como TEXTO a la API se lee con
-  `numeroColombiano` (punto = MILES): el parser ingenuo leía «74.596» como 74,596 pesos — mil veces
-  menos, la familia de «375.0000» — y hay prueba que lo clava.
-- **El LECTOR parsea el ZIP por el DIRECTORIO CENTRAL** (un xlsx en streaming deja los tamaños del
-  local header en 0) y la descompresión se INYECTA (`DecompressionStream` en navegador,
-  `zlib.inflateRawSync` en Node y pruebas); sin inflador y con partes DEFLATE el error sugiere CSV,
-  nunca una lista vacía. `numeroLocal` es la TERCERA copia de `numeroColombiano` y `parsearCsv` la
-  SEGUNDA de onboarding: las pruebas las EJECUTAN sobre la misma batería, no comparan strings.
-- **La exportación es el formato Nogal** (`public/apu_libro.js`, UMD: el navegador y el generador de
-  Node usan EL MISMO constructor): capítulos a dos niveles, fórmulas `=D×E` y cierre A/I/U +
-  **IVA 19 % sobre la utilidad** + TOTAL (como cierra la referencia), firmas, y hoja «APU» por ítem
-  desde `detalle.insumos` — que ahora sale de las `lineas` de `costoDirecto` (el MISMO cálculo que
-  produjo el total; el desglose anterior reconstruía a ciegas y no podía respaldar la cifra).
-  Marcadores con contrato: ÁMBAR = precio sin APU de respaldo (suma y se declara), ROJO = sin
-  precio (no suma, celdas de dinero VACÍAS).
-- **En OOXML `<f>` lleva el `=` implícito**: escribirlo produce `==D7*E7` y rompe la celda en todos
-  los lectores — pasó, y hay prueba de que ningún `<f>` empieza por `=` y de que toda fórmula viaja
-  con su valor cacheado (igual al del motor). Los estilos nuevos van AL FINAL de `ESTILOS` (el
-  orden es el contrato) y **ningún numFmt nuevo**: la prueba exige exactamente 4.
-- **`tests/generar_electrico_nogal.js` es DETERMINISTA** (misma entrada → mismos bytes: fecha ZIP
-  fija, sin relojes): regenerar `tests/electrico_nogal_apu.xlsx` solo cambia bytes si cambió el
-  catálogo, el mapeo o el formato. El snapshot `tests/electrico_nogal_filas.json` deja el flujo
-  reproducible sin el archivo original del dueño. Diferencias contra los dos Excel de referencia,
-  ítem a ítem, en `docs/DIFERENCIAS_APU.md`.
-
-### Página única y token integrado (ago 2026)
-
-Encargo del dueño: «una sola página, cero fricción». Se retiraron `admin.html`, `apu.html`,
-`pliego.html`, `admin.js` y `apu.js`; queda `index.html` (tres pestañas: 🏠 `#/licitaciones` ·
-📊 `#/apu` · ⚙️ `#/admin`, tema oscuro `#0f172a`, barra inferior en móvil) y `public/app.js` como
-único módulo principal, ENSAMBLADO de los tres anteriores. Decisiones que no hay que re-aprender:
-
-- **El TOKEN va INTEGRADO en el frontend** (`const TOKEN = "MiExtraccion2025"`, en app.js, pliego.js
-  y onboarding.js) y el usuario NO ve ningún formulario, prompt ni error de token. Es decisión
-  explícita del dueño y hay que contarla exacta: **ese literal no es un secreto** — cualquiera que
-  lea el fuente lo ve — y la capa de seguridad REAL es Vercel Password Protection (más el gate de
-  clave del cliente). **Los endpoints NO se relajaron**: siguen exigiendo `HISTORICO_TOKEN` en el
-  servidor; lo que cambió es quién lo teclea. Un 401 se explica como lo que es («HISTORICO_TOKEN no
-  coincide con el de la aplicación»), jamás como «token inválido, escriba otro». En la lista pública
-  `tokenRechazado` degrada a la vista sin cifras en vez de entrar en bucle de 401 — el mismo
-  contrato que tenía un token caducado de sesión. La suite PROHÍBE que vuelvan `pedirToken`,
-  `exigirToken`, `pintarEstadoToken`, `CLAVE_TOKEN` y los formularios (`modal-token`,
-  `seccion-token`) — y que el token viaje en una URL.
-- **Un solo gate y un solo arranque, AL FINAL del IIFE** (la lección de siempre, ahora una sola
-  vez): el ancla de la prueba es `const guardadoRup = perfilRupGuardado();` DESPUÉS de
-  `let CATALOGO = null;` (estado del editor) y de `let dashboardCargando = false;` (estado del
-  panel). Cada pestaña arranca lo suyo la PRIMERA vez que se abre (`arrancadas.{apu,admin,pliego}`):
-  abrir la app no dispara el panel ni la carga del catálogo si nadie los mira.
-- **`pliego.js` y `onboarding.js` SIGUEN siendo archivos propios**: sus funciones (`numeroLocal`,
-  `lineasDePagina`, `parsearCsv`) están atadas por pruebas que las EXTRAEN por archivo. `pliego.js`
-  ya no arranca solo: expone `window.__pliegoArrancar` y la pestaña APU lo llama una vez. Su marcado
-  vive en `index.html` (sección plegada de la pestaña APU) con ids `pl-*` donde colisionaban.
-- **Ids renombrados porque dos elementos no pueden compartir id**: el RUP en JSON del panel es
-  `rup-json-archivo`/`rup-json-mensaje` (`rup-archivo` es el PDF del onboarding); el validador del
-  JSON de experiencia es `btn-exp-validar`/`exp-json-mensaje` (`btn-exp-cargar`/`exp-mensaje` son la
-  carga por CSV, cableada por onboarding.js y movida de la landing a la pestaña admin); el progreso
-  del lector es `pl-prog-barra` (`prog-barra` es el de la sincronización).
-- **El botón «APU» de una tarjeta o fila ya no abre otra página**: es `<button class="btn-apu"
-  data-apu-q="…">` y `abrirEditorConProceso` fija `paramsProceso` y cambia de pestaña. **La MISMA
-  cadena de parámetros** que viajaba a `/apu.html` viaja ahora en memoria: `precargarDesdeURL` no
-  cambió de contrato (y conserva `location.search` de respaldo para enlaces guardados). En las
-  delegaciones el `.btn-apu` se resuelve ANTES que la fila/banda, como siempre.
-- **`exp-produccion` nace VISIBLE**: colgaba de `pintarEstadoToken` («enséñalo si hay token»), y con
-  el token integrado esa condición es verdadera por construcción. Un bloque oculto sin nadie que lo
-  desoculte es un botón que no existe. Ídem «Nuevo RUP (PDF)» del panel: al elegir archivo se
-  ENSEÑA la landing, porque el progreso y los errores se pintan allí y dejarlos en una sección
-  oculta sería un botón mudo.
-- **Las URLs viejas redirigen** (`vercel.json` → `redirects`): `/admin.html` → `/#/admin`,
-  `/apu.html` y `/pliego.html` → `/#/apu`. Y hay prueba de que los cinco archivos retirados no
-  pueden volver: uno resucitado no lo cargaría nadie y quedaría desincronizado de app.js en
-  silencio, que es peor que un 404.
-- **El ensamblado NO tocó los invariantes que la suite ya vigilaba**: `let modo = "full"` sigue
-  apareciendo UNA vez, `modo = "auto"` ≥ 2, la cadena Génesis para en el primer paso que falla, el
-  desglose de probabilidad reproduce `p_ganar`, y las constantes del encadenado
-  (`ESPERA_ENTRE_TANDAS_MS`/`ESPERA_CANDADO_MS`/`BACKOFF_MS`) viven en la cabecera compartida — se
-  perdieron en el primer corte del ensamblado y la suite no lo habría visto: fue una auditoría de
-  «declarado en el original, referenciado en el ensamblado, sin declarar» la que las cazó. Esa
-  auditoría es la herramienta para cualquier consolidación futura.
-- **La guarda muerta se quitó, no se conservó por nostalgia**: `celdaApuProceso` abría con
-  `if (!leerToken()) return "—"`, que con el token integrado es inalcanzable. Un código que insinúa
-  que el botón puede no pintarse es documentación falsa.
-
-### APU profesional: desglose visible, origen del precio y normativa (ago 2026)
-
-Encargo: mostrar el desglose real por insumo, exportar dos hojas, marcar la confianza
-del precio y publicar la normativa. **Tres de las cinco premisas estaban
-desactualizadas** y hay que dejarlo escrito: `lib/apu/xlsx.js` NO existe (el
-exportador son `public/xlsx.js` + `public/apu_libro.js`), ese exportador YA generaba
-las dos hojas «Presupuesto» y «APU» con desglose por rubro, y `/api/apu/calcular` YA
-devolvía `detalle.insumos` con nombre, unidad, cantidad, precio, rendimiento,
-desperdicio y distancia. El hueco real era otro y estaba más abajo.
-
-- **DEFECTO REAL ENCONTRADO POR VERIFICACIÓN, no por el encargo: las filas de
-  TRANSPORTE de la hoja APU no cuadraban.** La tarifa de acarreo va en **$/m³-km** y
-  `costoDirecto` calcula `precio × cantidad × distancia_km`, pero la hoja pintaba
-  cantidad y precio **sin los kilómetros**: un acarreo de 1,25 m³ a 8 km imprimía
-  «1,25 × $1.256» al lado de un parcial de **$12.560** — un factor 8 invisible.
-  Quien auditara el APU con una calculadora encontraba una fila que no cuadra, y
-  este es el módulo donde «el falso positivo cuesta más que el falso negativo».
-  Ahora se publica la cantidad EFECTIVA (m³·km) y la composición («1,25 m3 × 8 km»)
-  va escrita. **Invariante nueva con prueba: `cantidad × precio = valor` en las
-  1 761 líneas del catálogo.** Los fletes cerrados del Nogal llevan `distancia_km =
-  1` y NO publican distancia: ese 1 no es un dato que el pliego haya dado.
-- **`cantidad_por_unidad` de `detalle.insumos` publicaba OTRA COSA que el campo del
-  catálogo con ese nombre**: para un material con 5 % de desperdicio el catálogo dice
-  1,30 y esto publicaba 1,365 —la cantidad CON el desperdicio ya dentro—. Dos cosas
-  distintas con el mismo nombre es `total_procesos`/`procesos_contados` en cantidades
-  de obra: quien se fiara del nombre volvería a multiplicar por el desperdicio y lo
-  cobraría dos veces. Nadie lo consumía todavía; se sustituyó por **`cantidad_base`**
-  (la del catálogo, `null` donde la cantidad sale del rendimiento), que además hace el
-  desperdicio COMPROBABLE en pantalla: «1,3 + 5 % de desperdicio» se verifica
-  (1,3 × 1,05 = 1,365) en vez de tener que creerse la cifra.
-- **El desperdicio solo se escribe cuando es > 0** (28 de 1 761 líneas): en los 157
-  ítems calibrados del contrato adjudicado vale 0 porque **el pliego ya lo incorpora
-  en su cantidad**, así que pintar «0,00 %» ahí afirmaría que ese presupuesto no
-  prevé desperdicio — falso. Hay prueba de que un ítem NOG-\* no puede anunciarlo.
-- **`lineaLegible` y `clasificarOrigen` viven en `public/apu_libro.js` (UMD) y las
-  usan LAS DOS presentaciones**: el desglose en pantalla y la hoja del Excel. La
-  regla del origen vivía dentro del IIFE de `app.js`, así que el Excel no podía
-  consultarla y **exportaba idénticos un precio de contrato adjudicado y uno
-  derivado por factor regional** — el hueco real detrás de la tarea 3. `index.html`
-  carga `apu_libro.js` ANTES que `app.js`, así que `APULibro` está disponible.
-- **CINCO estados de origen, no cuatro.** El encargo pide 🟢/🟡/🔴/⚪, pero «precio
-  del ARCHIVO importado» y «precio TECLEADO a mano» no se pueden colapsar: la
-  política de precios de la importación hace que el del archivo MANDE y quede
-  declarado, y fundirlos perdería esa trazabilidad. Y el verde exige DOS
-  condiciones: `fuente="adjudicado"` **y** región `bogota_sabana` — fuera de Bogotá
-  el mismo precio se multiplica por el factor regional y deja de ser el precio real.
-- **NO se implementaron comentarios de celda de Excel, y la razón no es pereza.**
-  Exigen `comments1.xml` + `vmlDrawing1.vml` + un nivel de OPC que el paquete no
-  tiene (`xl/worksheets/_rels/`) + `xmlns:r` y `<legacyDrawing>` en la hoja: ~85
-  líneas y **dos modos de fallo que hacen que Excel se niegue a abrir el libro
-  ENTERO**. Además un comentario **no se imprime** (y el presupuesto se entrega
-  impreso o en PDF), no se filtra, no se copia y `public/xlsx_lectura.js` no lo lee
-  al reimportar. La advertencia va como TEXTO en la descripción + relleno amarillo
-  (`FFFFEB9C`, distinto del ámbar `FFFEF3C7` para que dos significados no compartan
-  color) + leyenda al pie. **Un archivo roto cuesta más que un globo que falta.**
-- **Cabecera POR SECCIÓN en la hoja APU**, conservando las CINCO columnas A-E de la
-  referencia (su cierre `ROUND(SUM(Ea:Eb)/2)` solo tiene sentido si parciales y
-  subtotales comparten la E). El rótulo `CANT/ REND` significaba tres cosas distintas
-  según la fila y por tanto no describía ninguna.
-- **«Costo horario» NO se puede publicar y no se publica.** El catálogo cotiza por
-  DÍA, la calibración Nogal (149/157 exactos) está construida sobre el día, y **cinco
-  insumos de equipo YA se tarifan por hora** mientras otros 46 van por día: una
-  columna «costo horario» mezclaría una tarifa horaria real con 46 tarifas diarias
-  divididas por una jornada inventada. No existe ninguna jornada en el repositorio y
-  elegir 7,33 h u 8 h mueve la mano de obra un ~9 %. Se muestra el precio por la
-  UNIDAD DEL INSUMO, que es el dato real, con la unidad al lado.
-- **El desglose se pinta AL EXPANDIR, no al construir la tabla** (`pintarInsumos`):
-  con 200-300 ítems importados, ~10 filas de insumo por ítem son miles de nodos que
-  nadie está mirando. Y `pintarCalculoEnTabla` **invalida** lo pintado en cada
-  cálculo: un desglose abierto no puede seguir enseñando los insumos del cálculo
-  anterior — cifras viejas con aspecto de nuevas.
-- **`lib/apu/normativa.js` explica, el catálogo decide.** El factor que se APLICA
-  sigue saliendo de `regiones[…].prestacional_tipico` (Redis); el módulo lo RECIBE y
-  nunca lo importa — ponerle un default lo convertiría en una segunda fuente de
-  verdad de una cifra que multiplica jornales. Va en código y no en el catálogo por
-  el mismo criterio que `lib/apu/tipologias.js`: es ley y criterio, tiene que verse
-  en un diff y no puede depender de que alguien haya corrido la carga.
-- **EL 1,55 ES UN SUPUESTO, no un dato, y el rótulo «recuperado» engaña**: se
-  recuperó de un comentario del `modulo_apu.html` borrado que decía «factor
-  prestacional típico obra pública Colombia ≈ 1.55». Recuperar un supuesto no lo
-  convierte en dato. Y **no es una perilla libre**: las nueve cuadrillas del Nogal se
-  guardaron como `día con prestaciones ÷ 1,55` (calibración CIRCULAR: reproduciría
-  igual con 1,40), así que moverlo no rompe la reproducción pero **sí desvía los 157
-  ítems NOG-\*** (≈1 % de media, 2,89 % en el peor caso) en silencio. Hay prueba que
-  lo mide.
-- **LA SUMA NO CUADRA Y SE PUBLICA LA BRECHA.** Nominal de ley 58,29 % · aplicado
-  55,00 % · exonerado 44,79 %. Una primera redacción de este módulo decía que la
-  brecha «se explica» por la exoneración y la banda de ARL; **la aritmética lo
-  desmintió**: con la ARL de clase V en su mínimo legal (4,350 %) el nominal baja a
-  55,68 %, todavía POR ENCIMA del 55 % aplicado. El texto dice ahora que el 55 % **no
-  se descompone en ninguna combinación legal exacta** y que cae entre las dos cotas,
-  que es donde debe caer un factor de referencia. Hay prueba de que el texto no puede
-  volver a afirmar lo contrario de las cifras que lo acompañan.
-- **La prueba es de ENCIERRO, no de igualdad** (no puede exigir que cuadre porque no
-  cuadra): el factor de las CINCO regiones tiene que caer en [suma_exonerada,
-  suma_nominal]. Eso convierte el desglose en un CONTRASTE del catálogo en vez de un
-  adorno — si alguien carga 1,70, la prueba cae.
-- **LA EXONERACIÓN NO ES AUTOMÁTICA y su condición decide un precio.** El ET art.
-  114-1 exonera a personas jurídicas contribuyentes y a personas naturales **solo si
-  ocupan dos o más trabajadores**. El perfil «Helder» es persona natural con UN
-  profesional: un panel que ofreciera «−13,5 pp» sin la condición le induciría a
-  restarse algo a lo que probablemente no tiene derecho, y eso viaja al precio.
-- **UNA NORMA MAL ATRIBUIDA ES PEOR QUE UNA AUSENTE: se lee como verificada.** Una
-  refutación cazó TRES en la primera versión de este módulo, y las tres tenían la
-  misma forma —citar la norma ORIGINAL para una tarifa que fijó una reforma
-  posterior—: la Ley 100/1993 art. 204 fijó el 12 % (8 % del empleador), y el 12,5 %
-  con reparto 8,5/4 lo introdujo la **Ley 1122/2007 art. 10**; el art. 20 fijó
-  13,5 %, y el 16 % con 12/4 viene de la **Ley 797/2003 art. 7**; y la Ley 21/1982
-  regula el SENA y el subsidio familiar pero **no el ICBF**, que nace de la Ley
-  27/1974 con la tarifa del 3 % de la **Ley 89/1988**. Hay prueba que fija las tres.
-- **El «no cuadra» hay que ACOTARLO a los componentes publicados.** Decir «no es la
-  suma de ninguna combinación exacta» a secas afirma de más: **dotación (Ley
-  11/1984) y auxilio de transporte quedan FUERA** de la tabla y son costo real de
-  nómina, así que un empleador exonerado que los pague puede superar el 44,79 % sin
-  ninguna incoherencia. El texto dice ahora «de estos 10 componentes» y declara lo
-  que queda fuera; hay prueba de las dos cosas.
-- **EL MARCADOR DEL EXCEL ENVENENABA LA REIMPORTACIÓN, y nada lo vigilaba.** El libro
-  exportado se puede volver a importar con el lector del propio proyecto, y
-  `lib/apu/importar` tokeniza `descripcion` para puntuar similitud contra el
-  catálogo: con el aviso dentro («⚠️ Precio no verificado…»), medido sobre 60 ítems
-  reales, **59 perdían confianza, 21 caían de «firme» a «revisar» y 2 se mapeaban a
-  OTRO ítem del catálogo** — o sea, a otro precio. El marcador rojo preexistente ya
-  lo hacía (3/60 de nivel); el amarillo, que fuera de Bogotá cubre la hoja entera,
-  lo multiplicaba. Se limpia en el IMPORTADOR, que es el único sitio donde se
-  tokeniza, y **no en el exportador**: el aviso tiene que seguir viéndose en la hoja,
-  que es para lo que existe. La limpieza se ancla a DOS espacios + emoji (como los
-  escribe el exportador) para no llevarse por delante un emoji que forme parte del
-  nombre de un ítem. Hay prueba de ida y vuelta, y cae si se revierte el arreglo.
-- **NINGUNA «Resolución XXX de 2025».** El encargo la sugería como ejemplo de fuente;
-  no existe una resolución que fije el factor prestacional, este entorno no alcanza
-  las fuentes oficiales (403) y una referencia normativa inventada en la herramienta
-  con la que se fija un precio de oferta es el peor error que este módulo podría
-  cometer. Todos los componentes viajan con `verificado: false` y hay prueba que
-  prohíbe que aparezca una resolución citada como fuente.
-- **Las tarifas del 19 % y el 5 % se IMPORTAN de `lib/apu/calculo.js`** (que es quien
-  las aplica a los pesos) con `require` diferido: estaban escritas dos veces. Y la
-  mejor cita normativa del módulo —la del IVA sobre la utilidad (art. 3 D. 1372/1992,
-  hoy art. 1.3.1.7.9 D. 1625/2016)— vivía en `como_leerlo.iva`, un campo que la
-  pestaña APU no pinta: se movió aquí. El panel dice **las dos mitades** de esa
-  verdad, porque cada media es falsa del otro artefacto: el motor NO suma el IVA al
-  precio final y la hoja de Excel SÍ lo suma a su TOTAL.
-- **La normativa viaja también en la respuesta de `calcular`, para la región QUE SE
-  USÓ.** Cableada solo al catálogo publicaba siempre la región base: hoy las cinco
-  comparten factor y no se nota, pero el día que se regionalicen el panel diría
-  «55 %» mientras el motor aplicó otro. Y `normativaAplicada` **ya no cae a la
-  primera región de la lista** cuando no encuentra la pedida: por la vía de los
-  hashes ese orden es el del SCAN, o sea una región arbitraria publicada como si
-  fuera la aplicada.
-
-### Rediseño Apple Glass, eliminación de RUP y probabilidad en frases (ago 2026)
-
-Encargo: paleta Apple (claro #f5f5f7 / oscuro #000, acento #007AFF, vidrio con `backdrop-filter`),
-botón para eliminar un RUP cargado, y probabilidad legible para no-técnicos. Decisiones:
-
-- **La piel cambió de dirección, no de técnica.** El tema oscuro (#0f172a) vivía en una capa CSS
-  que re-mapeaba las utilidades CLARAS de las plantillas JS; el rediseño REEMPLAZA esa capa por la
-  paleta Apple sobre custom properties (`:root` claro + `prefers-color-scheme: dark`) y conserva la
-  técnica: las plantillas del JS siguen diciendo `bg-white`/`bg-gray-900`/`text-gray-500` y el
-  `<style>` las traduce (`bg-gray-900` ES el botón de acento). Reescribir cientos de cadenas del JS
-  habría chocado con media suite (regexes sobre clases) y divergido a la primera corrección. El
-  blur va SOLO en tarjetas de nivel superior (`.bg-white.rounded-2xl`): anidar `backdrop-filter`
-  en cada chip multiplica capas de composición sin aportar nada.
-- **La suite prohíbe que vuelva el tema viejo** (paso 1.2): #0f172a/#1e293b/#334155/#34d399/#052e22
-  y cualquier utilidad `*-slate-*` en index.html, y los hex fuera de paleta del SVG del optimizador
-  (#2563eb/#111827/#9ca3af/#d1d5db) en app.js — el SVG no hereda custom properties, así que pinta
-  #007AFF/#86868b literales.
-- **El «bug de pestañas vacías» del encargo NO existía**: los 245 ids que referencian los tres JS
-  existen todos en index.html y `activarPestana` + arranque perezoso estaban correctos. Lo que se
-  hizo fue BLINDARLO (paso 0.1): la prueba cruza TODOS los `$("id")`/`getElementById` de
-  app.js/onboarding.js/pliego.js contra los ids del HTML — la causa típica de una pestaña muerta es
-  una referencia a un nodo retirado, cuya excepción detiene el script en silencio.
-- **`DELETE /api/admin/rup?perfil=…` tiene DOS semánticas y la respuesta declara cuál aplicó**
-  (`tipo` + `redirigir`): un `rup_…` (PDF) DEJA DE EXISTIR (clave + 4 whitelists + borradores de
-  APU + cachés en UN solo DEL; la web olvida el guardado y vuelve a la landing); un perfil del
-  dueño pierde su entrada del archivo cargado y VUELVE al respaldo del repositorio — los perfiles
-  del repositorio no se pueden borrar (quedarse sin perfiles deja la app muda, regla de
-  lib/perfiles). `perfil` es obligatorio sin default (la regla de cobertura: servir/borrar el de
-  otro es la peor forma de equivocarse).
-- **Eliminar la ÚLTIMA entrada borra archivo y sello juntos**: el sello ausente hace que
-  `recargarPerfiles` restablezca el respaldo en TODAS las instancias. Con entradas restantes se
-  reescribe el archivo y el sello va AL FINAL (como en la carga) — y en la instancia que atiende el
-  DELETE hay que `restablecerPerfiles()` ANTES de re-aplicar: `aplicarConfig` es parcial a
-  propósito («quien no venga conserva lo que tenía») y sin el restablecimiento el perfil recién
-  borrado seguiría sirviéndose desde la memoria caliente. Las demás instancias calientes conservan
-  el perfil borrado hasta su próximo arranque en frío — mismo alcance que ya tiene la carga parcial,
-  dicho y asumido.
-- **Lo que el DELETE NO borra, a propósito**: `config:experiencia` es configuración COMPARTIDA del
-  negocio (una clave, no por perfil) y los borradores de APU de un perfil del dueño sobreviven
-  porque el perfil sigue existiendo. El modal de confirmación tiene DOS textos según el tipo de
-  perfil: prometer borrar lo que no se borra (o callar lo que sí) sería mentir en el peor momento.
-- **La probabilidad de la tarjeta es una FRASE, no un porcentaje** (`fraseProbabilidad`): 🟢 muy
-  alta (>40 %) · 🟡 buena (20–40 %) · 🟠 media (10–20 %) · 🔴 poco probable (<10 %) · ⚪ «Sin
-  información suficiente» (`null` — la ausencia JAMÁS es un 0 %, la regla de `anticipo_pct`). Debajo
-  va UNA frase con el factor principal (`motivoProbabilidad`, prioridad del encargo: poca
-  competencia → prórroga → colisión → baja alta → baja ≈0 → «Basado en N procesos» → supuesto
-  conservador declarado), y NINGUNA interpola una cifra sin base — es la invariante de
-  `bandaCompetencia` aplicada al texto. La cifra vive en el modal de desglose, que la frase sigue
-  abriendo (`detalle-probabilidad` no cambió de contrato). Las dos funciones se prueban
-  EJECUTÁNDOLAS extraídas del fuente (paso 0.3), incluidos los bordes: 0,40 es «buena» (el encargo
-  dice `>`), 0 medido es 🔴 (un dato), `null` es ⚪.
-- **El editor de APU y el optimizador CONSERVAN el porcentaje**: allí la cifra alimenta una decisión
-  de precio (comparar opciones a VEG) y una frase no se puede restar. El desglose del modal enseña
-  frase Y cifra: son la respuesta de 1 segundo y la de 30 en el mismo sitio.
-
-## Datos del negocio (fuente de verdad)
-
-- Perfiles: `lib/perfiles.js` es el RESPALDO (`PERFILES_FALLBACK`, RUP corte 31/12/2025) y el punto
-  de aplicación de lo que el dueño cargue por `/api/admin/rup` (validación en `lib/config_rup.js`).
-- Experiencia REALMENTE ejecutada en `lib/experiencia.js` (`config:experiencia` + su vocabulario);
-  la auditoría de huecos del RUP, en `lib/cobertura_rup.js`. Ninguna de las dos toca la ingesta.
-  ✅ **`experiencia_genesis_106.json` YA ESTÁ en la raíz** (ago 2026). No salió de git —se buscó
-  antes de forma exhaustiva y no estaba: 25 ramas remotas, los 7 `.json` que han existido jamás y
-  los 1 041 blobs del object store incluidos los colgantes— sino del **PDF del RUP 2023 que aportó
-  el dueño**. Cómo se extrajo, qué columna alimenta cada campo y qué quedó en `null`, en
-  **`EXPERIENCIA_PENDIENTE.md`**; los tres pasos de puesta en producción, en
-  **`cargar_experiencia.sh`**. Cinco decisiones que no hay que re-litigar:
-  · **Las filas se delimitan con las REGLAS HORIZONTALES que dibuja el PDF**, no por proximidad
-    vertical entre líneas. Con el punto medio entre filas, el objeto de una fila alta se colaba en
-    la siguiente —pasó, y se vio— y un texto REAL en la fila EQUIVOCADA es peor que un hueco:
-    parece dato bueno. El texto se lee por COORDENADAS, como en `lib/apu_pliego`.
-  · **`valor_smmlv` es la columna TOTAL, no la ponderada por participación.** El PDF trae las dos.
-    Con la total, `valor_cop` y `valor_smmlv` describen LO MISMO (el contrato) y `participacion`
-    deriva la parte; con la ponderada, un campo sería el total y el otro la parte. Además la
-    ponderada falta en 10 filas y en una de ellas tampoco hay `valor_cop`: ese contrato no habría
-    pasado la validación.
-  · **54 `participacion` y 11 `modalidad` en `null` son CELDAS VACÍAS del PDF, no fallos.** En 44 de
-    esas 54 la ponderada iguala al total (o sea, 100 %), y aun así **no se dedujo**: rellenarlo
-    sería inferir, no leer. Misma regla que `anticipo_pct = 0` y que el `score` en `null`.
-  · **Las anomalías de la fuente se conservan**: la fila 97 dice `30/12/2202` (año imposible), la 19
-    termina antes de empezar, y las erratas del objeto («MOVIMEINTOS», «AGUIAS LLUVIAS») quedan
-    literales — el objeto es la evidencia. Lo único que se normalizó es el FORMATO de `25--04-2015`,
-    que es legible sin ambigüedad: cambiar el formato no es cambiar el contenido.
-  · **El control cruzado que prueba que las columnas se leyeron bien**: en toda fila con las tres
-    cifras impresas se cumple `SMMLV ponderado = SMMLV total × participación`. Si las columnas se
-    hubieran leído corridas, esa identidad no cuadraría en ninguna.
-  ⚠️ **Sigue prohibido inventar un contrato**: este vocabulario decide con qué códigos se renueva el
-  RUP. Sin el archivo la auditoría **funcionaba igual**, con el método base y `score` en `null`.
-- Índice de competencia por entidad en `lib/indice_competencia.js` (hash `indice:competencia`,
-  tertiles sobre el promedio de oferentes de 2 años); alimenta `ordenar_por=atractividad`.
-- Perfiles y finanzas reales en `lib/perfiles.js` (fuente única en código; RUP corte 31/12/2025;
-  el archivo que cargue el dueño manda sobre estos valores) — Génesis
-  es persona jurídica SAS; fórmula K única en `lib/capacidad.js`; REGLAS (estado, modalidad,
-  convenios, prefiltro de ingesta, cascada de juicio, pertinencia, anti-suministro) en
-  `lib/filtros.js`; whitelists UNSPSC + motor de matching jerárquico en `lib/unspsc.js`
-  (193/343/393, la unión se calcula); VOCABULARIOS en `lib/semantica.js`; equivalencias aprendidas
-  en `lib/equivalencias.js`; co-señal de texto en `lib/texto_unspsc.js` +
-  `data/vocabulario_unspsc.json`.
-  Resumen técnico en `docs/PERFILES.md`. SMMLV 2026 = $1.750.905.
-- Las CUATRO PUERTAS en `lib/puertas.js` y `P(ganar)`/VE en `lib/probabilidad.js`; el diseño y por
-  qué, en `docs/ATRACTIVIDAD.md`.
-  `docs/PROBABILIDAD_MEJORADA.md` audita los factores ejecutando el código y documenta cuatro
-  defectos reproducidos. **DOS YA ESTÁN CORREGIDOS y dos NO** — y la distinción es justo lo que esta
-  memoria existe para no perder:
-  · ✅ **El tertil de competencia ya no multiplica** (ago 2026). Era el MISMO promedio dos veces:
-    `nivel` es el tertil de `promedio_oferentes`, que ya está dentro de `rivales`. Saltaba −32 % por
-    MEDIO rival en el corte, daba ×1,30 de diferencia según el dato viniera de la entidad o del
-    departamento, y como los tertiles son RELATIVOS la probabilidad de un proceso cambiaba porque
-    cambiaban OTRAS entidades. `competencia.nivel` **sigue viajando, filtrando y ordenando**: lo
-    único que ya no hace es multiplicar. Hay prueba de que no puede reaparecer.
-  · ✅ **La baja de mercado es una RAMPA continua**, no dos escalones: ×1,10 hasta 2 % de baja, lineal
-    hasta ×0,85 en 5 %, plana después. **Suavizar no es calibrar**: 1,10 y 0,85 siguen siendo
-    supuestos puestos a mano. Y hay que contar bien lo que mejora, porque es fácil prometer de más:
-    · **La rampa suaviza la FUNCIÓN; el DATO sigue cuantizado.** `indice:baja` publica la mediana como
-      una cubeta ENTERA (`Math.round`), así que en producción solo existen …2, 3, 4, 5… y lo que se ve
-      es una ESCALERA DE CUATRO PELDAÑOS, no una curva. Lo que baja es la ALTURA del peldaño más alto:
-      **del 15,0 % al 8,9 %**. «Ya no hay saltos» sería falso, y hay prueba que fija ese 8,9 %.
-    · **Las comparaciones pasaron de ESTRICTAS a INCLUSIVAS y eso mueve dos valores frecuentes.** Antes
-      `>5` y `<2` dejaban las medianas de exactamente 2 y 5 en la zona neutra (×1,00); ahora 2 → ×1,10
-      y 5 → ×0,85. Lo que de verdad no se mueve un dígito es el INTERIOR de las mesetas (0, 1, 6, 7…),
-      no sus bordes. La ALCALDÍA DE PURIFICACIÓN del corpus tiene mediana exactamente 5 y su `p` cae de
-      0,325 a 0,2125 por las DOS causas a la vez.
-    · **Los codos de la rampa NO coinciden con las fronteras de `nivelPorBaja`** (`>5` → «alto»,
-      `>=2` → «medio»): una mediana de 5 se rotula «medio» y recibe el ×0,85. Deliberado: rotular y
-      multiplicar son dos preguntas distintas. No «arreglar» una para que case con la otra.
-    · **`numero()` NO sirve de guarda para «sin dato»**: `Number(null)` y `Number("")` son 0, los dos
-      finitos, así que la ausencia entraba como «baja del 0 %» y salía premiada con ×1,10. La
-      ausencia se descarta ANTES de tocar `Number`, y hay prueba con los cinco valores vacíos.
-    · **El factor se publica REDONDEADO y se aplica REDONDEADO**, para que `base × Π factores`
-      reproduzca `p` a mano desde la tarjeta; hay prueba. Y el ajuste se emite SIEMPRE que haya dato
-      —también cuando el factor sale exactamente 1— porque si no, «no aparece» significaría a la vez
-      «no hay dato» y «no mueve nada»: el «no sé» contra el «cero» otra vez.
-  · ⚠️ **CONSECUENCIA AGUAS ABAJO que nadie pidió y que se va a ver**: `lib/apu/rentabilidad` toma
-    esta `p` como su `p_base` (`api/apu/[accion].js`), y `veg = p × utilidad − c_preparación` es **el
-    único umbral DURO sobre `p` de todo el repositorio** —lo demás ordena o pinta—. Retirar el tertil
-    baja `p` un 23 % en las entidades de POCA competencia, que son justo las que el editor de APU va a
-    ver: un VEG apenas positivo pasa a negativo y `filtros_duros.veg_no_positivo` empieza a decir «el
-    valor esperado no cubre el costo de preparar la oferta» en presupuestos que ayer salían verdes.
-    **No es un defecto: es que antes el número estaba inflado por contar la competencia dos veces.**
-    Medido en la suite: la `p_ganar` del bloque de rentabilidad pasó de 0,2091 a 0,1777. Y la prueba
-    solo exige `veg != null`, así que el SIGNO no lo vigila nadie.
-  · ⬜ **Sin corregir**: el corte duro en 5 procesos (×2,60 de salto) y el defecto SEMÁNTICO de la
-    baja —penaliza a una entidad por dónde está el centro de su mercado en vez de por la distancia a
-    la que uno puede ofertar de ese centro, y como `/api/apu/[accion].js` consume esta `p` como su
-    `p_base`, el precio se cobra DOS VECES—. La rampa quitó el salto, no esto. Cerrarlo exige separar
-    `p` de `p_sin_precio` y coordinar con `lib/apu/rentabilidad` (pasos A4/A5 del plan).
-  El documento trae además los tres protocolos de calibración que el histórico ya permite correr hoy.
-- Las CUATRO PUERTAS en `lib/puertas.js` y `P(ganar)`/VE en `lib/probabilidad.js` (`trazaP` es la
-  única implementación de la cadena; `estimarPDetalle` es su vista redondeada); el desglose
-  justificado paso a paso, en `lib/probabilidad_desglose.js` + `/api/competencia-detalle?vista=
-  probabilidad`. El diseño y por qué, en `docs/ATRACTIVIDAD.md`.
-- Lector de pliegos (cantidades del pliego, **sin precios**): diccionario de reconocimiento de 93
-  ítems y 22 tipologías en `data/catalogo_apu.json` + `lib/apu_catalogo.js`; parseo y validación en
-  `lib/apu_pliego.js`; mapeo por similitud en `lib/apu_mapeo.js`; OCR de respaldo en
-  `lib/apu_ocr.js`; endpoints `api/apu/extraer-texto.js` y `api/apu/descargar.js`; frontend en
-  `public/pliego.html` + `public/pliego.js`. El informe completo —incluido todo lo que NO se
-  implementó y por qué— en `docs/APU_INFORME_COMPLETO.md`.
-- Catálogo de precios APU en `lib/apu/catalogo.js` + semilla `data/apu_catalogo.json` (48 insumos,
-  17 ítems, 5 regiones); la investigación de fuentes, en `docs/APU_Y_RENTABILIDAD.md`. No toca la
-  ingesta ni el corpus: vive en `apu:*`.
-- Del costo al precio: `lib/apu/calculo.js` (presupuesto y AIU) → `lib/apu/rentabilidad.js` (margen,
-  caja, VEG y payback de UN precio) → `lib/apu/optimizador.js` (**qué precio**: barre las bajas
-  plausibles llamando al anterior y devuelve el máximo VEG con su curva). Los tres se sirven desde
-  la acción `rentabilidad` de `api/apu/[accion].js` y se pintan en `/apu.html`.
-- `autorizacion_helder.md`: constancia de autorización de datos personales (plantilla).
-- Clave del sitio: `231105` (gate del cliente, en `public/app.js`). **No protege la API**: es una
-  cortesía del navegador. La protección de servidor es `HISTORICO_TOKEN` (`lib/auth.js`) —que desde
-  ago 2026 exige TAMBIÉN `/api/oportunidades`— y, encima, Vercel Password Protection. No debilitar
-  ninguna de las dos sin permiso del dueño.
-
-### Puertas, probabilidad y valor esperado (ago 2026)
-
-- **`/api/oportunidades` tiene el token OPCIONAL, y es el ÚNICO endpoint así** (ago 2026). Los
-  clientes entran por la web pública a ver a qué presentarse: exigirles credencial dejaba la
-  herramienta inservible para ellos. Lo que no puede salir sin llave son las CIFRAS del perfil
-  —`k_cop`, `crpc_cop`, `tope_cop`, `co_estimado`, `p2_k.{crp,crpc,tope}` y `p3_caja.patrimonio`,
-  todas derivadas del patrimonio, la utilidad operacional y la liquidez de una persona natural
-  identificada por nombre completo—. Sin token viajan en `null` y la respuesta declara
-  `finanzas_visibles:false`; con token vuelven. Un token PRESENTE pero inválido da **401**, nunca
-  degradación silenciosa: quien se molestó en mandarlo tiene que enterarse de que está mal.
-- **Redactar campos NO basta: los MENSAJES llevaban las cifras dentro.** `p2_k.mensaje` decía
-  «…(CRPC $324M / K $5.799M)» y `p3_caja.mensaje` «…su patrimonio es $211.340.888». Anular los
-  campos y dejar el texto habría sido una redacción de mentira. `lib/publico.js` sustituye los dos,
-  y la prueba **serializa la respuesta pública entera y busca las cifras reales de los perfiles**
-  (crudas, con separadores de miles y en millones): si alguna aparece, falla.
-- **Queda un canal de INFERENCIA y es deliberado.** El booleano de cada puerta sigue viajando —sin
-  él la app no sirve— y `p3_caja.pasa` es `patrimonio ≥ cuantía × 0,20`: con muchos procesos de
-  cuantías distintas se puede acotar el patrimonio por bisección. Es el límite real de publicar el
-  veredicto sin credencial, no un descuido. Si algún día pesa más que la utilidad, la salida no es
-  redactar mejor: es volver a exigir token.
-- **TERCER canal de inferencia aceptado: la BAJA DE MERCADO se despeja del propio `p_ganar` por
-  aritmética inversa.** `lib/publico` anula `baja_mercado`, `baja_entidad` y `baja_segmento`, y
-  —desde ago 2026— también el `factor` y el `motivo` del ajuste `baja_mercado` dentro de
-  `p_ganar_detalle.ajustes`, porque el número iba escrito en la frase (el defecto de `p2_k.mensaje`
-  y `p3_caja.mensaje`, repetido en un tercer sitio). Lo que NO se puede anular sin romper el
-  producto es la explicación de la cifra: `p_ganar`, `base` y `rivales_esperados` siguen viajando
-  —«la probabilidad viaja SIEMPRE con su fuente»— y los otros dos ajustes son constantes conocidas
-  que además declaran si aplicaron. Con eso,
-  `p / base ÷ 1,20^prórroga ÷ 1,15^colisión` devuelve el factor de baja.
-  · **Lo que se filtra es un RANGO, no un valor**, y hay que contarlo exacto: `lib/indice_baja`
-    publica la mediana como una cubeta ENTERA del histograma (`Math.round`) y la rampa satura fuera
-    de [2 %, 5 %], así que el canal distingue CUATRO clases —{≤2 → ×1,10 · 3 → ×1,0167 ·
-    4 → ×0,9333 · ≥5 → ×0,85}— donde antes de la rampa distinguía tres. Es el mismo canal de rango
-    ya aceptado para `ordenar_por=baja` (que ordena en el servidor), una clase más ancho: no es una
-    fuga nueva.
-  · **Por qué se acepta.** Explotarlo exige un competidor capaz de despejar la cadena de factores
-    de `lib/probabilidad` — y ese mismo competidor puede calcular la baja por su cuenta bajando
-    `p6dx-8zbt`, que es público y trae `precio_base` y `valor_total_adjudicacion`. Lo que la app
-    aporta es la agregación, la cascada de granularidad y el corte por modalidad, no el dato bruto.
-    Es la misma lógica por la que se conserva `financiacion_requerida` (cuantía × 0,20,
-    recalculable con la ficha del proceso): ocultar lo que el otro puede recomputar no protege
-    nada y sí quita producto.
-  · **Qué costaría cerrarlo**: anular también `base` y `rivales_esperados`, es decir, dejar al
-    cliente público con una probabilidad sin decirle de dónde sale. Eso es un cambio de producto,
-    no una corrección. Si algún día pesa más que la utilidad, la salida es la misma que para P2 y
-    P3: volver a exigir token, no redactar mejor.
-  · La medición —con las cifras y el porqué de cada clase— vive en `lib/publico.js`, junto al
-    código que redacta. Aquí queda registrada la decisión.
-- **Lo derivable de datos PÚBLICOS se conserva**: `financiacion_requerida` sale de la cuantía
-  publicada × 0,20. Ocultarlo no protegería nada y quitaría información que el cliente puede
-  recalcular con la ficha del proceso.
-- **Los DEMÁS endpoints no se relajaron**: `/api/diagnostico`, `/api/resumen`,
-  `/api/competencia-detalle`, `/api/admin/rup` y `/api/sync/historico` siguen exigiendo el token, y
-  hay prueba de los cuatro primeros. En el frontend el formulario del token **sobrevive solo** para
-  el detalle de competencia (acción explícita del dueño); `buscar()` no puede volver a pedirlo, y
-  hay prueba que lo prohíbe.
-- **Una suma ponderada es COMPENSATORIA, y aquí compensar es un error de categoría.** Por eso
-  `puntaje_ponderado` dejó de ser criterio de decisión: no poder financiar una obra no se compensa
-  con cuantía alta. Lo sustituyen cuatro puertas + `p_ganar` + `ve`, que NO se promedian entre sí.
-  **El campo SIGUE viajando en la respuesta** aunque la tarjeta no lo pinte: es lo que permite el
-  A/B por URL (`ordenar_por=puntaje` contra el orden nuevo) para promover el orden nuevo con
-  evidencia en vez de por decreto, y `/api/resumen` lo calcula — dos consumidores del mismo campo no
-  pueden discrepar sobre si existe. Hay prueba de que sigue presente.
-- **`pasa_rup_y_k` se publica aparte de `pasa_todas`**: es la categoría «técnicamente viable aunque
-  financieramente ajustado» (el objeto es suyo y la K alcanza, pero la caja no llega). No es un
-  proceso a descartar: es uno que habría que financiar con anticipo, crédito o consorcio. Esa
-  distinción es una decisión de negocio, no un filtro, y por eso no se colapsa en un booleano.
-- **P3 · CAJA es la puerta que de verdad ata, y no necesitó un dato nuevo**: `patrimonio ≥
-  (cuantía − anticipo) × 0,20`, con `precio_base` y `duracion`, que ya se proyectan. Génesis
-  (patrimonio $211 M) ante un proceso de $3.100 M tendría que financiar ~$620 M — y lo veía con
-  «Capacidad K ✓» en verde, porque el K del RUP mide HABILITACIÓN, no capacidad de financiar.
-  En plural el patrimonio se SUMA (el ponderado 50/50 es para indicadores habilitantes) y cada
-  integrante responde por el 100 % (Ley 80/1993 art. 7).
-- **P4 · COMPETENCIA nunca bloquea**: informa. De penalizar ya se encarga `p_ganar`.
-- **Regla de faltantes**: un dato ausente no vale 0 ni 1 — la puerta marca `sin_dato` y DEJA PASAR.
-  Cerrar por ignorancia esconde oportunidades y el usuario no puede ni enterarse. Corolario ya
-  verificado: sin `precio_base`, `evaluarRup` devolvía `capacidad_ok:true` con `crpc_cop:0` (porque
-  `factorE` da 120 «sin presupuesto no hay ratio» y `0 ≤ K`) — chip verde sobre la nada.
-- **La probabilidad viaja SIEMPRE con su fuente** (`entidad` → `departamento` → `conservador` = 5
-  rivales, `P = 1/6`). «Histórico de la entidad» no es lo mismo que «supuesto», y enseñar el 17 %
-  sin decir de dónde sale convierte una estimación en una promesa. Los cuatro factores de ajuste son
-  SUPUESTOS CON NOMBRE, no coeficientes ajustados: no hay etiqueta contra la que calibrarlos.
-- **La PRÓRROGA DEL CIERRE es la única señal de competencia observable ANTES del cierre.** El
-  contador de oferentes es ex-post: en un proceso abierto vale 0 por construcción, y como
-  `nivelCompetencia(0) = "baja" = 100`, ese componente del viejo puntaje era constante en todo lo
-  servido. La prórroga sale gratis del dedup de lectura, que ya recorre todas las versiones de cada
-  `_k` (`lib/almacen.leerChunksDedup`, bandera `senales` — bajo bandera para no tocar a
-  `/api/resumen` ni al histórico, que leen por la misma función).
-- **…Y ESA MISMA CONSTANTE SE SEGUÍA PINTANDO (corregido ago 2026).** Retirar `nivel_competencia` del
-  puntaje no bastó: la tarjeta le ponía un chip VERDE («Ofertas del proceso: baja») en cada proceso y
-  `index.html` ofrecía un desplegable de tres opciones —una no filtraba nada y las otras dos vaciaban
-  la lista—. Es el defecto de «0 oferentes = SIN DATO» y el de «18,2 oferentes sin base» por tercera
-  vez, ahora en el único sitio que el dueño mira siempre. Cuatro decisiones:
-  · **Se retira la PRESENTACIÓN, no el campo.** `nivel_competencia` sigue en la proyección y en la
-    respuesta: sacarlo del registro exigiría una full y no arregla nada. Lo que no puede seguir es
-    presentarse como una medición. Quien responde esa pregunta CON BASE es `competencia_entidad`, y
-    su badge ya está en la misma tarjeta a dos centímetros.
-  · **`?nivel_competencia=` queda INERTE, no da 400.** Un enlace guardado no puede vaciarle la lista a
-    nadie; hay prueba de que el total no se mueve con ninguno de los tres valores.
-  · **`?ordenar_por=competencia` leía el campo de la FILA, no el de la entidad** — o sea, no ordenaba
-    nada—, mientras README y CLAUDE.md llevaban desde jul 2026 afirmando que ordenaba por la entidad.
-    Ahora lee `competencia_nivel` del contexto ya calculado: el código alcanzó a su documentación.
-  · **EL FIXTURE TAPABA EL DEFECTO Y POR ESO SOBREVIVIÓ.** La suite daba
-    `respuestas_al_procedimiento` a TODAS las filas, incluidas las abiertas, así que la señal parecía
-    viva en las pruebas. Ahora solo la llevan las adjudicadas —que es lo que hace SECOP II— y el
-    histórico conserva sus conteos intactos (184 procesos, 3 entidades clasificadas, sin cambios). La
-    suite además MIDE y publica cuántos valores distintos toma el campo en el corpus servido: **1 en
-    384 procesos**. Una cifra medida vale más que una regex sobre el fuente.
-- **`solo_viables=true` es el default y NO es lo mismo que `filtrarProcesosVisibles`**: la puerta de
-  caja es posterior a la cascada, así que el listado sirve menos que `totales.visibles` del panel.
-  Está dicho en el `como_leerlo` de `/api/resumen`; si alguien vuelve a igualarlos, mentirá.
-- **«No viable» ≠ «no es de este negocio»**: `retenerNoViables` solo devuelve lo que falla por una
-  razón que el dueño puede leer y discutir (clase fuera del RUP, capacidad insuficiente). Un
-  proceso de software o un convenio no vuelven — devolverlos inundaría la lista con exactamente el
-  ruido que quitó la cascada de pertinencia.
-- **El diagnóstico también publica las puertas**, y la invariante que las ata a la app cambió de
-  forma. Antes era «`embudo.visibles` == `total` de /api/oportunidades»; con `solo_viables`
-  encendido por defecto eso solo se cumplía **por casualidad**, mientras ningún proceso fallara una
-  puerta. La relación exacta es **`embudo.visibles = viables + distribucion_puertas.fallan_p3`**, y
-  además `distribucion_puertas.pasan_todas` tiene que ser el `viables` de la app. Hay prueba de las
-  dos: si divergen, hay dos cálculos de puertas y ninguno de los dos endpoints sirve para verificar
-  al otro.
-- **Las puertas van ANIDADAS en el embudo (`embudo.puertas.*`), no sueltas.** El embudo es una
-  CASCADA con invariante probada de que los `fuera_*` más `visibles` suman el total; las puertas
-  corren DESPUÉS, sobre los visibles, y un mismo proceso puede fallar dos a la vez. Sumarlas con el
-  resto rompería la invariante y daría a entender que un proceso se pierde dos veces.
-- **`fallan_p1` y `fallan_p2` son SIEMPRE 0 en el diagnóstico, y no es un fallo**: la cascada ya
-  descartó antes lo que no es del RUP y lo que excede la capacidad, así que entre los visibles esas
-  dos puertas no pueden cerrar. La que filtra de verdad en esa posición es **P3**. Hay prueba de las
-  dos igualdades para que nadie «arregle» un cero que es correcto.
-- **El corpus de prueba trae un fixture dedicado a P3** (puente de 2.500 M, sin anticipo, obra en
-  ambos RUP): pasa objeto, K y tope, así que llega vivo hasta la caja, y ahí **cierra para Génesis
-  (211 M) y abre para Helder (1.107 M)**. Sin él, P3 solo se probaba con objetos sintéticos y la
-  suite pasaba verde sin que ningún proceso del corpus ejercitara la puerta nueva a través del
-  endpoint. Es además la prueba de que la puerta depende del PERFIL, no del proceso.
-
-### Desglose justificado de P(ganar) (ago 2026)
-
-`lib/probabilidad_desglose.js` + `/api/competencia-detalle?vista=probabilidad` (alias
-`/api/probabilidad-desglose`) abren el «Prob. estimada: 23 %» en SEIS pasos con fórmula, datos con
-la fuente citada, aritmética escrita y aporte en puntos porcentuales. La cifra sin justificar era
-una caja negra: el contratista no sabía si era buena, ni qué la causaba, ni cómo discutirla.
-
-- **NO ES UN SEGUNDO CÁLCULO, y esa es toda la arquitectura del módulo.** `lib/probabilidad.trazaP`
-  pasó a ser la ÚNICA implementación y publica la cadena multiplicativa SIN REDONDEAR (`p_antes`/
-  `p_despues` de cada ajuste); `estimarPDetalle` es su vista redondeada —contrato intacto, mismos
-  campos y mismos valores— y el desglose es su vista NARRADA. Reimplementar la cadena para poder
-  explicarla era la salida obvia y es exactamente la que este proyecto ya pagó cara
-  (`total_procesos`/`procesos_contados`, `cargado`/`cargado_el`): dos cuentas «equivalentes hoy»
-  divergen a la primera corrección aplicada a una sola, y aquí la divergencia sería entre el número
-  que enseña la tarjeta y el número que lo justifica. Hay prueba de que `probabilidad_final` es
-  EXACTAMENTE el `p_ganar` de `/api/oportunidades` para el mismo proceso, sobre varios procesos: con
-  uno solo coincidiría por casualidad, porque media lista comparte entidad y factores.
-- **La suma de los `aporte_pp` ES la cifra final, con prueba.** Cada aporte es la diferencia REAL
-  que ese paso introdujo (`p_despues − p_antes`), así que telescopan; el paso 6 —límites y
-  redondeo— absorbe además el residuo de redondear a dos decimales los cinco anteriores, que es
-  literalmente lo que ese paso hace. Una tabla de aportes que no cuadra con su total es peor que no
-  tener tabla.
-- **Los SEIS pasos viajan SIEMPRE, también los que no aplican.** Publicar solo los que mordieron
-  dejaría al lector sin distinguir «no hubo prórroga» de «no se miró la prórroga», que es justo la
-  distinción que el módulo existe para hacer.
-- **«Sin dato» ⇒ 0 pp… salvo en el paso 1, y la excepción hay que dejarla escrita** porque parece
-  una contradicción y una prueba la cazó. Un AJUSTE (pasos 2-5) sin sus datos aporta exactamente 0.
-  Pero el paso 1 es la BASE: sin histórico de la entidad ni del departamento su confianza también es
-  «Sin dato» y aun así aporta los puntos del supuesto conservador de 5 rivales. Bajarlo a «Baja»
-  sería peor —«Baja» se lee como «poca muestra» y aquí no hay NINGUNA— y ponerlo a 0 pp dejaría la
-  probabilidad en cero, que no es más honesto: es otro número inventado, y encima el que peor
-  decisión provoca (descartar la oportunidad). El supuesto viaja escrito en `datos_entrada.fuente` y
-  en el `fundamento`, y hay prueba de que los dos lo declaran.
-- **DOS DISCREPANCIAS ENTRE EL ENCARGO Y EL CÓDIGO, resueltas a favor del CÓDIGO.** (1) El encargo
-  describe la colisión de cierres como «≥2 procesos que cierran en ≤7 días»; `claveColision` agrupa
-  por `entidad|YYYY-MM-DD`, o sea el MISMO DÍA. Ensancharlo a una ventana no es documentar, es
-  cambiar la probabilidad de todo el corpus. (2) El encargo lista CUATRO factores y el código aplica
-  SEIS: faltaban los dos de baja de mercado (×0,85 / ×1,10), que son los que convierten la respuesta
-  en «P(ganar A UN PRECIO QUE VALGA LA PENA»). Omitirlos habría dejado fuera del desglose un ajuste
-  que sí mueve la cifra que se enseña.
-- **NO HAY ARCHIVO NUEVO BAJO `api/` Y NO PUEDE HABERLO**: el plan Hobby admite 12 funciones y el
-  repositorio está exactamente en 12 (hay prueba que las cuenta). Va plegado en
-  `api/competencia-detalle.js` como `?vista=probabilidad` —encaja: las dos vistas responden «de dónde
-  sale ese número de la tarjeta», sobre el mismo corpus y con el mismo token— y la URL literal del
-  encargo vive como `rewrite` de `vercel.json`, que no cuenta como función. Misma restricción que
-  plegó `/api/apu/catalogo` y que impidió `/api/baja-mercado`. **El frontend llama a la CANÓNICA**:
-  si el rewrite fallara, el modal tiene que seguir funcionando. La vista se resuelve de `req.query`
-  **y del path como respaldo** (igual que `accion` en `api/apu/[accion].js`): un handler que solo
-  funciona detrás del enrutador es un handler que no se puede probar.
-- **La vista desconocida muere ANTES de autorizar y de tocar Redis**: así no gasta ni el token ni
-  una lectura del corpus.
-- **`costo_preparacion` no tiene default y entra en el sello de la caché.** No existe en ninguna
-  fuente del proyecto, así que ponerle uno sería inventarse la cifra con la que se decide si vale la
-  pena presentarse; sin él el resumen enuncia el umbral en MÚLTIPLOS del costo, que es igual de
-  accionable y no afirma nada que no se sepa. Y va en el sello porque servir desde caché el resumen
-  calculado con OTRO costo sería recomendar sobre una cifra que nadie pidió. No mueve la
-  probabilidad —es un umbral de decisión, no una entrada del cálculo— y hay prueba.
-- **El modal es el MISMO de competencia, no uno nuevo.** El esqueleto (fondo, las tres formas de
-  cerrar, scroll, foco) es idéntico y duplicarlo habría duplicado también sus arreglos; lo que
-  cambia —rótulo, título y botón de copiar— lo fija `app.js` al abrirlo. En la delegación del clic
-  **la probabilidad se resuelve PRIMERO**: su botón vive dentro de la tarjeta y son dos vistas del
-  mismo modal, así que solo puede ganar una.
-- **El botón «Copiar justificación» nace oculto y `textoParaCopiar` se borra al ABRIR**: si no, el
-  botón de un desglose seguiría copiando el del proceso anterior. Y si el portapapeles falla por las
-  dos vías (`navigator.clipboard` no existe en contexto no seguro) **se dice**, en vez de fingir que
-  copió — la regla del modal: ninguna pulsación sin respuesta visible.
-- **El parseo del JSON va APARTE del `fetch`**, tercera vez que se aplica la misma lección: el muro
-  del edge (Password Protection) responde HTML, `r.json()` lanza, y con las dos cosas en el mismo
-  `try` ese muro se diagnostica como «sin conexión» — lo contrario de la verdad.
-- **DOS PREMISAS DEL ENCARGO NO DESCRIBÍAN ESTE REPOSITORIO** y se resolvieron por la regla de «usar
-  los patrones del proyecto», que el propio encargo fija: pedía **Bootstrap 5** y un **tema oscuro**
-  (la app no tiene dependencias, usa Tailwind por CDN y es clara), y situaba el «Prob. estimada» en
-  `/admin.html` + `admin.js`, donde **no se muestra**: vive en `public/app.js` + `index.html`.
+- **Perfiles y finanzas reales**: `lib/perfiles.js` es el RESPALDO (`PERFILES_FALLBACK`, RUP corte
+  31/12/2025) y el punto de aplicación de lo que se cargue por `/api/admin/rup` (validación en
+  `lib/config_rup.js`). Génesis es persona jurídica SAS; Helder, persona natural. Resumen en
+  `docs/PERFILES.md`. **SMMLV 2026 = $1.750.905.**
+- **Consorcio: dos reglas distintas a propósito** — indicadores habilitantes ponderados 50/50 (D. 1082),
+  pero **K del plural = SUMA de las CRP** (Guía CCE). No «promediar» K.
+- **NIT en null**: no consta en el repositorio; **jamás inventarlo**. CT de Génesis = 3 (estimado
+  conservador): confirmar con el dueño antes de subirlo.
+- **Motor**: fórmula K en `lib/capacidad.js`; REGLAS (estado, modalidad, convenios, prefiltro, cascada de
+  juicio, pertinencia, anti-suministro) en `lib/filtros.js`; whitelists UNSPSC + matching jerárquico en
+  `lib/unspsc.js` (193/343/393, la unión se calcula); VOCABULARIOS en `lib/semantica.js`; equivalencias en
+  `lib/equivalencias.js`; co-señal de texto en `lib/texto_unspsc.js` + `data/vocabulario_unspsc.json`.
+- **Experiencia REALMENTE ejecutada** en `lib/experiencia.js` (`config:experiencia` + su vocabulario);
+  auditoría de huecos en `lib/cobertura_rup.js`. Ninguna toca la ingesta.
+  ✅ **`experiencia_genesis_106.json` YA ESTÁ en la raíz**, extraído del **PDF del RUP 2023 que aportó el
+  dueño** (no salió de git: se buscó en 25 ramas, los 7 `.json` que han existido y los 1 041 blobs del object
+  store). Detalle en **`EXPERIENCIA_PENDIENTE.md`**, puesta en producción en **`cargar_experiencia.sh`**.
+  Decisiones que no hay que re-litigar: **las filas se delimitan con las REGLAS HORIZONTALES que dibuja el
+  PDF**, no por proximidad vertical, porque **un texto REAL en la fila EQUIVOCADA es peor que un hueco**;
+  **`valor_smmlv` es la columna TOTAL, no la ponderada**, para que `valor_cop` y `valor_smmlv` describan LO
+  MISMO; **54 `participacion` y 11 `modalidad` en `null` son CELDAS VACÍAS** y no se dedujeron aunque en 44 la
+  ponderada iguale al total (rellenarlo sería inferir, no leer, R1); **las anomalías de la fuente se
+  conservan** (`30/12/2202`, erratas del objeto), porque el objeto es la evidencia; y el **control cruzado**
+  `SMMLV ponderado = SMMLV total × participación` prueba que las columnas no se leyeron corridas. ⚠️ **Sigue
+  prohibido inventar un contrato**: este vocabulario decide con qué códigos se renueva el RUP.
+- **Índices**: `lib/indice_competencia.js` (`indice:competencia`), `lib/indice_baja.js` (`indice:baja:*`),
+  detalle auditable en `lib/competencia_detalle.js`, censo de columnas en `lib/columnas_historicas.js`.
+- **Decisión y probabilidad**: puertas en `lib/puertas.js`; `P(ganar)`/VE en `lib/probabilidad.js` (`trazaP`
+  única implementación; `estimarPDetalle` su vista redondeada); desglose narrado en
+  `lib/probabilidad_desglose.js`. Diseño en `docs/ATRACTIVIDAD.md`, auditoría de factores en
+  `docs/PROBABILIDAD_MEJORADA.md`.
+- **Lector de pliegos** (cantidades, sin precios): `data/catalogo_apu.json` + `lib/apu_catalogo.js`,
+  `lib/apu_pliego.js`, `lib/apu_mapeo.js`, `lib/apu_ocr.js`, `api/apu/extraer-texto.js`,
+  `api/apu/descargar.js`, `public/pliego.js`; informe en `docs/APU_INFORME_COMPLETO.md`.
+- **Costeo y precio**: `lib/apu/catalogo.js` + `data/apu_catalogo.json`; `data/apu_regional.json`
+  (departamento→región); `lib/apu/inferencia.js` + `lib/apu/tipologias.js`; `lib/apu/calculo.js`;
+  `lib/apu/rentabilidad.js`; `lib/apu/optimizador.js`; `lib/apu/importar.js`; `lib/apu/normativa.js`.
+  Frontend: `public/xlsx.js` (escritura), `public/xlsx_lectura.js` (lectura), `public/apu_libro.js` (libro
+  Nogal, UMD). Investigación en `docs/APU_Y_RENTABILIDAD.md`, calibración en `docs/CALIBRACION_APU.md`,
+  diferencias en `docs/DIFERENCIAS_APU.md`. Nada de esto toca la ingesta ni el corpus: vive en `apu:*`.
+- **Clave del sitio: `231105`** (gate del cliente, en `public/app.js`). **No protege la API**: es una
+  cortesía del navegador. La protección de servidor es `HISTORICO_TOKEN` (`lib/auth.js`) —que desde ago 2026
+  exige TAMBIÉN `/api/oportunidades`, con token opcional— y, encima, Vercel Password Protection. **No
+  debilitar ninguna de las dos sin permiso del dueño.**
 
 ## Convenciones
 
-- Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).
+- Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio).
 - Sin dependencias de pago; sin npm salvo necesidad justificada.
-- Preferir cambios pequeños y directos sobre el código actual — la era de las «capas aditivas»
-  con monkey-patch terminó con la reescritura.
+- Preferir cambios pequeños y directos sobre el código actual — la era de las «capas aditivas» con
+  monkey-patch terminó con la reescritura.

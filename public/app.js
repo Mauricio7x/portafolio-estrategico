@@ -1023,6 +1023,11 @@
       aplicar_ajuste_competitivo: $("ajuste-competitivo").checked,
       factor_baja: Number($("factor-baja").value),
       deducciones_pct: dedCrudo === "" ? null : Number(dedCrudo),
+      /* Techo del proceso, para la validación G.5. Sale del MISMO campo que
+         alimenta la rentabilidad: dos casillas para «cuánto vale el proceso»
+         acabarían con dos cifras distintas. Vacío = sin dato y entonces no se
+         compara contra nada, en vez de inventarle un techo al presupuesto. */
+      cuantia_cop: $("cuantia").value.trim() === "" ? null : Number($("cuantia").value),
     };
   }
 
@@ -1479,6 +1484,12 @@
      se traduce el estado a la paleta. */
   const CLASES_ORIGEN = {
     adjudicado: "bg-green-100 text-green-800",
+    /* «Cotización de proveedor» comparte el amarillo con «derivado» a
+       propósito: los dos significan «no es un contrato adjudicado». Lo que los
+       separa es la ETIQUETA, que es lo que el auditor lee — pintarlos de verde
+       sugeriría que el precio ya está probado en obra, y una cotización solo
+       prueba que alguien la ofreció. */
+    cotizado: "bg-amber-100 text-amber-800",
     derivado: "bg-amber-100 text-amber-800",
     archivo: "bg-amber-100 text-amber-800",
     manual: "bg-gray-100 text-gray-600",
@@ -1636,7 +1647,14 @@
     ].map(([k, v]) => `<tr><td class="py-1.5">${esc(k)}</td>`
       + `<td class="py-1.5 text-right num">${pesos(v)}</td></tr>`).join("");
 
-    $("r-alertas").innerHTML = (r.alertas || []).map((a) =>
+    pintarValidaciones(r);
+
+    /* Las alertas que YA salieron como hallazgo estructurado no se repiten
+       debajo. El motor las vuelca en `alertas` a propósito —es el canal que el
+       exportador lee— pero en pantalla, donde sí existe el bloque de
+       validaciones, verlas dos veces haría dudar de si son dos problemas. */
+    const yaPintadas = new Set(((r.validaciones && r.validaciones.mensajes) || []));
+    $("r-alertas").innerHTML = (r.alertas || []).filter((a) => !yaPintadas.has(a)).map((a) =>
       `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">${esc(a)}</p>`).join("");
 
     const reg = r.ajuste_regional;
@@ -1644,6 +1662,53 @@
     $("regional-nota").textContent = reg.estado === "mapeado" && f
       ? `🟢 ${reg.region_nombre} · material ×${num(f.materiales)} · mano de obra ×${num(f.mano_obra)} · equipo ×${num(f.equipo)} · transporte ×${num(f.transporte)}`
       : `⚪ Sin región cotizada: se calculó con la región base «${esc(reg.region_utilizada || "—")}».`;
+  }
+
+  /* ══════════════ Las cinco validaciones, en pantalla ══════════════════
+     NINGUNA BLOQUEA (lib/apu/validaciones): el botón de exportar no se toca
+     aquí. Un presupuesto con advertencias se entrega igual —quien decide es el
+     ingeniero— y una herramienta que se niega a exportar acaba usándose por
+     fuera, que es el peor final posible para el control.
+
+     Dos severidades y dos tratamientos: «atención» en rojo (cantidad negativa,
+     buena parte sin precio, oferta por encima del presupuesto oficial, jornal
+     que no paga la nómina) y «aviso» en ámbar. La cabecera dice cuántas hay de
+     cada una para que no haya que contarlas, y el bloque desaparece —no dice
+     «0 hallazgos»— cuando el presupuesto está limpio: un recuadro vacío
+     permanente se deja de mirar a la tercera vez. */
+  const CLASES_SEVERIDAD = {
+    atencion: "bg-red-50 text-red-900 ring-red-600/20",
+    aviso: "bg-amber-50 text-amber-900 ring-amber-600/20",
+  };
+
+  function pintarValidaciones(r) {
+    const caja = $("r-validaciones");
+    if (!caja) return;
+    const v = r && r.validaciones;
+    const hallazgos = (v && v.hallazgos) || [];
+    caja.classList.toggle("hidden", hallazgos.length === 0);
+    if (!hallazgos.length) { caja.innerHTML = ""; return; }
+
+    const res = v.resumen || {};
+    const cuenta = [
+      res.atencion ? `${res.atencion} de atención` : null,
+      res.aviso ? `${res.aviso} aviso(s)` : null,
+    ].filter(Boolean).join(" · ");
+
+    caja.innerHTML = `
+      <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        Validaciones del presupuesto <span class="font-normal text-gray-400">· ${esc(cuenta)}</span>
+      </h3>
+      <p class="mt-1 text-[11px] text-gray-400">
+        Ninguna impide exportar: el Excel se genera igual y las advertencias viajan en sus notas al pie.
+      </p>
+      <div class="mt-3 space-y-2">
+        ${hallazgos.map((h) => `
+          <div class="rounded-xl px-3 py-2 text-xs ring-1 ring-inset ${CLASES_SEVERIDAD[h.severidad] || CLASES_SEVERIDAD.aviso}">
+            <p class="font-semibold">${h.severidad === "atencion" ? "⚠️" : "•"} ${esc(h.titulo)}</p>
+            <p class="mt-0.5 opacity-90">${esc(h.mensaje)}</p>
+          </div>`).join("")}
+      </div>`;
   }
 
   /* ────────────── sugerencia del factor de baja (histórico) ─────────── */
@@ -1802,9 +1867,11 @@
         fecha: new Date().toISOString().slice(0, 10),
       });
       const bytes = XLSXApu.construirLibro(hojas);
-      const nombre = ($("nombre-presupuesto").value.trim() || "presupuesto-apu")
-        .replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-").toLowerCase();
-      XLSXApu.descargar(bytes, `${nombre || "presupuesto-apu"}.xlsx`);
+      /* El nombre lo decide `APULibro.nombreArchivo` —`APU_<proyecto>_<fecha>.xlsx`—
+         y no esta línea: escrito aquí no se podía probar y el generador de Node
+         producía un archivo con otro nombre que el de la aplicación. */
+      XLSXApu.descargar(bytes, APULibro.nombreArchivo(
+        $("nombre-presupuesto").value.trim(), new Date().toISOString().slice(0, 10)));
       msgApu("Excel generado (formato APU profesional: presupuesto + análisis por ítem).", "ok");
     } catch (e) {
       msgApu(`No se pudo generar el Excel: ${e.message}`, "error");
