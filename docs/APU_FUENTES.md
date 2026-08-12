@@ -103,28 +103,49 @@ La **Resolución 4561/2022** es exactamente el documento que `CLAUDE.md` da como
 (403)»*, y es la razón por la que hoy **ningún código `INV-` se publica** y el artículo probable viaja en
 `articulo_invias_candidato`. **Se puede abrir.**
 
-### El obstáculo que queda, medido
+### El obstáculo que había, RESUELTO
 
-Los tres PDF usan **fuentes con codificación CID**, así que la extracción cruda de los operadores de texto
-devuelve basura (371.685 caracteres ilegibles). **No es un bloqueo de acceso: es de decodificación.**
+Los tres PDF usan **fuentes Type0/CID**, así que la extracción cruda de los operadores de texto devuelve
+basura (se midió: 371.685 caracteres ilegibles). **No era un bloqueo de acceso sino de decodificación**, y
+está resuelto: `tests/extraer_provincias_invias.js` es un extractor en **Node puro, sin dependencias**, que
 
-**La herramienta correcta ya está en el repositorio y no hay que escribirla:** `pdf.js` corre en el navegador
-(`public/onboarding.js`, `public/pliego.js`) y resuelve el mapa de glifos, que es justo lo que falta aquí.
+1. decodifica las CMaps **`/ToUnicode`** (sin eso el texto no es ASCII y sale ilegible);
+2. lee **solo** los streams referenciados por `/Contents` de cada página — barrer todos mete los programas de
+   fuente (`FontFile2`), que son binarios y traen `TJ` por casualidad;
+3. sigue el **cursor de texto** (`Tm`/`Td`/`TD`/`T*`) y reconstruye la fila por **COORDENADA**.
 
-**Camino marcado para habilitarla** (por orden):
+El punto 3 no es un lujo: **el orden del stream no es el orden visual.** En esta tabla las celdas de
+departamento vienen agrupadas aparte de sus filas de provincia, así que leer «en orden» asocia provincias al
+**departamento equivocado**. Es la misma técnica que `lib/apu_pliego.js` ya usa con los pliegos.
 
-1. Bajar los tres PDF con el `loader.php` de arriba y **leerlos con el lector de pliegos que ya existe**
-   (pestaña Precios → «Cargar pliego (PDF)»), que devuelve el texto con columnas por coordenadas.
-2. Del `Listado de provincias` sale el mapa **provincia INVIAS → departamento**, que es la pieza que
-   `docs/APU_DIAGNOSTICO.md` §3 identificó como faltante (las territoriales **no** coinciden con las 5
-   regiones del catálogo).
-3. De la **Res. 4561/2022** sale la numeración oficial de las Especificaciones, que permitiría **empezar a
-   publicar códigos `INV-`** en vez de `articulo_invias_candidato`.
-4. Los APU regionalizados propiamente dichos (las tablas de precio por provincia) **no estaban entre los tres
-   archivos de esa página**: hay que revisar el resto de `idFile` de la publicación y las páginas hermanas
-   (`/publicaciones/4237`).
-5. Cargarlos en `data/apu_invias/<provincia>.json` con el esquema de `data/apu_catalogo.json`
+### Lo que salió: `data/apu_invias_provincias.json`
+
+**32 departamentos · 140 provincias · 130 con nombre.** Regenerable con
+`node tests/extraer_provincias_invias.js` (baja el PDF y reproduce el archivo **byte a byte**).
+
+**La asignación provincia → departamento se AUTOVERIFICA**, y por eso no es una conjetura: la celda de cada
+departamento trae su cantidad de provincias y, cuando esa cantidad es 1, lleva **pegado el número global** de
+su provincia. Si la cola se puede partir en `(c, p)` con `p == acumulado + c`, el corte es el correcto — y
+cuadra en los **32**. Contraste independiente en la suite: Antioquia tiene **9** subregiones (Bajo Cauca,
+Magdalena Medio, Oriente, Occidente…) y Boyacá **13** provincias. Si el parseo corriera las columnas, cae.
+
+**10 nombres quedan en `null` a propósito.** Son departamentos de UNA provincia, donde la celda del número se
+fusionó con la del departamento en el PDF. **Un texto real en la fila equivocada es peor que un hueco** (R1)
+— la misma regla que rige la extracción de la experiencia. El departamento sí se conoce y sí viaja.
+
+### Lo que falta para encender el badge INVIAS
+
+1. ~~El mapa provincia → departamento~~ **hecho** (`data/apu_invias_provincias.json`).
+2. De la **Res. 4561/2022** (ya descargada, `idFile=1015`) sale la numeración oficial de las Especificaciones,
+   que permitiría **publicar códigos `INV-`** en vez de `articulo_invias_candidato`. El extractor ya sirve
+   para leerla.
+3. **Las tablas de precio por provincia NO estaban entre los tres archivos de esa página.** Hay que revisar el
+   resto de `idFile` de la publicación y las páginas hermanas (`/publicaciones/4237`). **Esto es lo único que
+   bloquea hoy.**
+4. Cargarlas en `data/apu_invias/<provincia>.json` con el esquema de `data/apu_catalogo.json`
    (`insumos[]` + `items[]`), `fuente:"invias"` y `_meta.semestre`, y añadir la rama en `precioEnRegion`.
+5. Ojo con la granularidad: el INVIAS cotiza por **PROVINCIA (140)**, no por departamento (32) ni por las
+   **5 regiones** del catálogo actual. El mapa del punto 1 es justo el puente que faltaba.
 
 **Hasta que el paso 4 esté hecho, el badge INVIAS NO se emite.** Rotular «INVIAS» un precio que no lo es
 sería el peor error posible en una herramienta con la que se fija el precio de una oferta.
