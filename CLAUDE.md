@@ -2449,6 +2449,16 @@ rotulan con palabras (**Licitaciones · Precios · Mi empresa**) y en móvil lle
   alta. **`public/apu_libro.js` queda FUERA de la prohibición**: sus marcadores viajan al Excel exportado, que
   es otro medio y otra decisión. Y las pruebas dejaron de usar los glifos como proxy de «esto está cableado»
   (se atan a los cuatro NIVELES de criticidad, no a los cuatro dibujos).
+- **LA CASCADA DE PRECIOS SE VE, Y ESE ERA EL PUNTO.** Existía en la respuesta de `/api/apu/cotizar` y
+  **ninguna pantalla la consumía**: el usuario veía DE DÓNDE venía el precio (el badge) pero no POR QUÉ no
+  venía de una fuente mejor. «Derivado regional» a secas se lee como un defecto del programa; «todavía no
+  corregiste el precio de este ítem» es una INSTRUCCIÓN — y es justo la que hace que el usuario corrija
+  precios, que es **lo único que mejora la aplicación con el uso**. Hoy `calcular` publica `cascada` por ítem
+  y el desglose la pinta. **`explicarCascada` es PURA** y no vuelve a calcular: `calculo.js` ya sabe de dónde
+  salió cada precio, y pagar un segundo `costoDirecto` por ítem solo para redactar el texto sería el doble de
+  trabajo con 200 ítems. Los niveles y los motivos salen de `NIVELES`/`MOTIVOS` (R2). Se pinta en **las DOS
+  ramas** de `pintarInsumos`, y en la del ítem SIN composición es donde más falta hace: ahí no hay ninguna
+  otra respuesta en pantalla.
 - **LA PESTAÑA DE PRECIOS SON TRES PASOS Y NADA MÁS A LA VISTA.** Entre el paso 1 y el 2 se colaban la
   RENTABILIDAD y el PRECIO SUGERIDO — dos bloques que no se pueden ni mirar hasta haber calculado, así que la
   pantalla pedía entender el programa antes de poder usarlo. Hoy: **1 ¿Qué vas a construir? → 2 ¿Dónde? →
