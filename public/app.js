@@ -364,6 +364,22 @@
     return chip(`Baja típica: ${fmtNum.format(mediana)}%`, d.clases, b.mensaje);
   }
 
+  /* Cierre con CUENTA REGRESIVA: «Cierra 15 sept. 2026» obliga a calcular
+     mentalmente cuánto falta, que es justo lo que decide si vale la pena
+     empezar la carpeta. La resta usa `ahora − 5 h` (la regla del proyecto:
+     el dataset publica hora Colombia flotante que Date.parse lee como UTC,
+     adelantada 5 h — sin la resta, «cierra hoy» se diría un día antes). */
+  function chipCierre(cierre, cierreTxt) {
+    if (!cierreTxt) return "";
+    const dias = Math.ceil((cierre.getTime() - (Date.now() - 5 * 3600 * 1000)) / 86400000);
+    if (!Number.isFinite(dias) || dias < 0) return chip(`Cierra ${cierreTxt}`, "bg-purple-100 text-purple-800");
+    if (dias === 0) return chip(`Cierra HOY · ${cierreTxt}`, "bg-red-100 text-red-700", "Regla del oficio: la oferta se presenta el día ANTERIOR al cierre");
+    if (dias <= 3) return chip(`Cierra en ${dias} día${dias === 1 ? "" : "s"} · ${cierreTxt}`, "bg-red-100 text-red-700",
+      "Queda poco margen: la oferta se presenta el día anterior al cierre");
+    if (dias <= 7) return chip(`Cierra en ${dias} días · ${cierreTxt}`, "bg-amber-100 text-amber-800");
+    return chip(`Cierra en ${dias} días · ${cierreTxt}`, "bg-purple-100 text-purple-800");
+  }
+
   /* Veredicto GRADUADO del matching UNSPSC. Nunca es un sí/no: dice CON QUÉ
      FUERZA el proceso encaja en el RUP, y el detalle completo viaja en el
      title (por qué casó, con qué clase del RUP).
@@ -458,6 +474,33 @@
       badgePuerta("Caja", g.p3_caja),
       badgePuerta("Competencia", g.p4_competencia),
     ].join("");
+  }
+
+  /* ══════════ Los requisitos, en UNA línea ══════════
+     Cuatro chips «RUP ✓ · K ✓ · Caja ~ · Competencia ?» con tres símbolos
+     distintos obligaban a un mapa mental que el contratista no tiene («K» no
+     se explica en ninguna pantalla). La línea dice el VEREDICTO en palabras y
+     conserva la evidencia: los cuatro badges siguen en «Más detalles» de la
+     misma tarjeta, con sus cifras en el title.
+
+     TRES estados, no dos: «viable pero con la caja ajustada» es una decisión
+     de negocio (anticipo, crédito o consorcio), no un descarte — es la
+     distinción pasa_rup_y_k / pasa_todas que el servidor publica aparte a
+     propósito y que un booleano colapsaría. La P4 no entra en la línea:
+     nunca bloquea, y la banda de competencia de arriba ya responde eso. */
+  function lineaRequisitos(puertas) {
+    const g = puertas || {};
+    const detalle = [g.p1_rup, g.p2_k, g.p3_caja].map((p) => p && p.mensaje).filter(Boolean).join("\n");
+    const linea = (clase, texto) =>
+      `<p class="mt-3 text-sm font-medium ${clase}"${detalle ? ` title="${esc(detalle)}"` : ""}>● ${esc(texto)}</p>`;
+    if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", "Esta obra no encaja con tu RUP.");
+    if (g.p2_k && g.p2_k.pasa === false) return linea("text-red-700", "Supera tu capacidad de contratación.");
+    if (g.p3_caja && g.p3_caja.pasa === false) {
+      return linea("text-amber-700", "Podés presentarte, pero financiarla está justo: pensá en anticipo, crédito o consorcio.");
+    }
+    const conAviso = [g.p1_rup, g.p2_k, g.p3_caja].some((p) => p && (p.sin_dato || (p.pasa && p.advertencia)));
+    if (conAviso) return linea("text-amber-700", "Cumplís los requisitos, con detalles por revisar.");
+    return linea("text-green-700", "Cumplís los requisitos para presentarte.");
   }
 
   /* Probabilidad y valor esperado. La probabilidad SIEMPRE viaja con su fuente:
@@ -688,36 +731,45 @@
       </div>
 
       ${noViable ? `<p class="mt-3">${chip(`No viable${motivos ? ` — ${esc(motivos)}` : ""}`, "bg-red-100 text-red-700 ring-1 ring-inset ring-red-600/20",
-    "No pasa una de las puertas: pase el cursor por los badges para ver por qué")}</p>` : ""}
+    "No pasa una de las puertas: abra «Más detalles» para ver por qué")}</p>` : ""}
 
-      <div class="mt-4 flex flex-wrap gap-2">
-        ${badgesPuertas(puertas)}
-      </div>
+      ${lineaRequisitos(puertas)}
 
       ${bloqueProbabilidad(l)}
 
       <div class="mt-4 flex flex-wrap gap-2">
         ${paaEncendido ? chip("Activo · abierto", "bg-green-100 text-green-800 ring-1 ring-inset ring-green-600/20",
     "Proceso PUBLICADO en SECOP II, con pliego y fecha de cierre — a diferencia de las previsiones del PAA") : ""}
-        ${chip(l.anticipo_pct > 0 ? `Anticipo ${l.anticipo_pct}%` : "Anticipo no declarado", l.anticipo_pct > 0 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-500")}
-        ${chipBaja(l.baja_mercado)}
-        ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
-        ${badgesRup(rup)}
-        ${rup.co_estimado ? chip("K sobre CO estimado", "bg-gray-100 text-gray-500", "La capacidad se calcula con un ingreso operacional estimado: no sirve para acreditar") : ""}
-        ${cierreTxt ? chip(`Cierra ${cierreTxt}`, "bg-purple-100 text-purple-800") : ""}
+        ${chipCierre(cierre, cierreTxt)}
         ${l._cierre_prorrogado ? chip("Cierre prorrogado", "bg-indigo-100 text-indigo-800", "El cierre se movió por adenda: suele indicar que no llegaron ofertas suficientes") : ""}
-        ${l.modalidad_de_contratacion ? chip(esc(l.modalidad_de_contratacion), "bg-gray-100 text-gray-600") : ""}
-        ${l.tipo_precio === "unitarios" ? chip("Precios unitarios", "bg-blue-100 text-blue-800",
-    "Las cantidades del pliego son un estimativo: las mayores cantidades ordenadas deben reconocerse y pagarse") : ""}
-        ${l.tipo_precio === "global" ? chip("Precio global", "bg-amber-100 text-amber-800",
-    "El riesgo de cantidades es del contratista: no se reconocen mayores cantidades. Verifique el formulario del pliego antes de fijar el precio") : ""}
       </div>
+
+      <!-- Los chips de EVIDENCIA (puertas con sus cifras, anticipo, baja,
+           ubicación, encaje del RUP, modalidad, tipo de precio) se conservan
+           ENTEROS, plegados: quince chips visibles enterraban lo que decide.
+           La información no se pierde — deja de estorbar. -->
+      <details class="mt-3">
+        <summary class="cursor-pointer text-xs text-gray-400 transition hover:text-gray-600">Más detalles</summary>
+        <div class="mt-2 flex flex-wrap gap-2">
+          ${badgesPuertas(puertas)}
+          ${chip(l.anticipo_pct > 0 ? `Anticipo ${l.anticipo_pct}%` : "Anticipo no declarado", l.anticipo_pct > 0 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-500")}
+          ${chipBaja(l.baja_mercado)}
+          ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
+          ${badgesRup(rup)}
+          ${rup.co_estimado ? chip("K sobre CO estimado", "bg-gray-100 text-gray-500", "La capacidad se calcula con un ingreso operacional estimado: no sirve para acreditar") : ""}
+          ${l.modalidad_de_contratacion ? chip(esc(l.modalidad_de_contratacion), "bg-gray-100 text-gray-600") : ""}
+          ${l.tipo_precio === "unitarios" ? chip("Precios unitarios", "bg-blue-100 text-blue-800",
+    "Las cantidades del pliego son un estimativo: las mayores cantidades ordenadas deben reconocerse y pagarse") : ""}
+          ${l.tipo_precio === "global" ? chip("Precio global", "bg-amber-100 text-amber-800",
+    "El riesgo de cantidades es del contratista: no se reconocen mayores cantidades. Verifique el formulario del pliego antes de fijar el precio") : ""}
+        </div>
+      </details>
 
       <div class="mt-4 flex items-center justify-between gap-3 text-sm">
         <span class="text-gray-400">${esc(l.estado_del_procedimiento || "")}</span>
         <span class="flex items-center gap-3">
           <button type="button" class="btn-apu rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50"
-                  data-apu-q="${esc(qApu(l))}" title="Calcular APU y rentabilidad de este proceso en la pestaña APU">APU</button>
+                  data-apu-q="${esc(qApu(l))}" title="Calcular APU y rentabilidad de este proceso en la pestaña Precios">Calcular mi precio</button>
           ${l.urlproceso ? `<a href="${esc(l.urlproceso)}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 hover:underline">Ver en SECOP II ↗</a>` : ""}
         </span>
       </div>
