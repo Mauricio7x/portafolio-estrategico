@@ -2242,6 +2242,22 @@ desglose** de seis pasos (`?vista=probabilidad`), donde el porcentaje viaja con 
 fuentes. `fraseProbabilidad` y `motivoProbabilidad` se prueban EJECUTÁNDOLAS desde el fuente
 (paso 0.3 de la suite).
 
+> **Por qué 🔴 dice «Poco probable» y no «Baja».** En este dominio *baja* ya significa otras dos
+> cosas, y las dos son buenas: el descuento del ganador (`baja_mercado`) y pocos rivales
+> (`nivel_competencia: "baja"`). Un chip rojo «Baja» quedaría junto al chip verde «Competencia
+> baja» de la misma tarjeta con la misma palabra significando lo contrario. Por lo mismo las otras
+> frases conservan el sustantivo: «Muy alta» a secas, junto a un badge de competencia, se lee como
+> «competencia muy alta», que es justo al revés.
+
+**La vista visible no depende del CDN.** `abrirApp()` cambia de pantalla con la clase `hidden`, que
+sirve Tailwind. Si el CDN no carga —red institucional con la salida filtrada—, esa clase no existe y
+la landing se queda **encima** del tablero: la app parece rota y la consola no dice nada, porque no
+hay ningún error. Una regla propia por ID (`#onboarding.hidden, #app.hidden, #gate.hidden`) lo
+cierra; va por id y solo sobre los tres contenedores de vista para no esconder la barra de pestañas
+de escritorio, que es `hidden md:flex`. Lo cazó una verificación en navegador real (Chromium sobre
+un servidor de pruebas que sirve `public/` y responde `/api/*` con la forma real de cada handler);
+lo que encontró quedó fijado en los pasos 1.5 y 1.6 de la suite.
+
 **Veredicto graduado** en cada tarjeta — nunca un sí/no. Un badge dice con qué **fuerza** el
 proceso encaja en el RUP y otro **qué tipo de trabajo** es; el detalle completo (qué clase casó,
 con cuál del RUP y por qué) va en el `title` de cada badge:

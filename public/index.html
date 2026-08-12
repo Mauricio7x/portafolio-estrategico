@@ -127,6 +127,19 @@
       color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); }
     .campo-gate:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
 
+    /* ── red de seguridad: qué VISTA se ve no puede depender de un CDN ──
+       `abrirApp()` cambia de vista añadiendo y quitando la clase `hidden`, que
+       la sirve Tailwind desde su CDN. Si ese CDN no carga —red institucional
+       con la salida filtrada, que es justo donde trabaja el dueño—, `.hidden`
+       no existe, la landing NO se esconde y queda ENCIMA del tablero: la app
+       parece rota sin un solo error en la consola. Verificado en un navegador
+       real con el CDN bloqueado.
+       Va por ID y solo sobre los tres contenedores de vista: con especificidad
+       de id no puede perder contra ninguna utilidad, y al no ser una regla
+       global `.hidden` no toca los modales (que además fijan `style.display`)
+       ni pelea con `md:flex` de la barra de pestañas. */
+    #onboarding.hidden, #app.hidden, #gate.hidden { display: none; }
+
     /* ── piel Apple sobre las utilidades de las plantillas existentes ──
        Tarjetas: vidrio (translúcido + blur + borde sutil). El blur va SOLO en
        las tarjetas de nivel superior (rounded-2xl): anidar backdrop-filter en
@@ -211,8 +224,11 @@
     <div class="fondo-decorativo" aria-hidden="true"></div>
     <main class="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-6 py-16 text-center">
       <div class="mb-6 text-[80px] leading-none" aria-hidden="true">📋</div>
-      <h1 class="max-w-[600px] text-[28px] font-extralight leading-[1.15] tracking-[-0.5px] sm:text-[40px]"
-          style="color: var(--text-primary);">Convertí tu RUP en contratos.</h1>
+      <!-- peso 250: SF Pro Display es variable y lo interpola; las de respaldo
+           lo redondean a 200/300. Tailwind no tiene esa parada (font-extralight
+           es 200), así que va literal en el atributo. -->
+      <h1 class="max-w-[600px] text-[28px] leading-[1.15] tracking-[-0.5px] sm:text-[40px]"
+          style="color: var(--text-primary); font-weight: 250;">Convertí tu RUP en contratos.</h1>
       <p class="mt-3 max-w-[480px] text-[15px] font-light leading-[1.5] sm:text-[17px]" style="color: var(--text-secondary);">
         Subí tu certificado RUP de Cámara de Comercio. Te mostramos solo las licitaciones que podés ganar,
         cuánto ofertar y cuánto ganarías.
