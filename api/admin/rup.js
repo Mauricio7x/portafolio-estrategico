@@ -215,10 +215,29 @@ async function cargarRupDesdePdf(req, res) {
   const id = generarIdDinamico();
   const v = validarPerfilDinamico(id, extraccion.config);
   if (!v.ok) {
+    /* El único mensaje de esta ruta que seguía en jerga: «perfiles.rup_x.
+       indicadores.liquidez debe ser mayor que 0» se lo lee una persona que
+       subió un PDF, no quien escribió el esquema. Se traduce la RUTA del campo
+       a la etiqueta del certificado y se conserva el detalle técnico aparte
+       (`errores`), que es el que sirve para depurar. */
+    const ETIQUETAS = {
+      liquidez: "Índice de liquidez", endeudamiento: "Nivel de endeudamiento",
+      cobertura_intereses: "Razón de cobertura de intereses", patrimonio: "Patrimonio",
+      utilidad_operacional: "Utilidad operacional", ingreso_operacional: "Ingreso operacional",
+      experiencia_smmlv: "Experiencia acreditada (SMMLV)", tope_smmlv: "Tope estratégico (SMMLV)",
+      unspsc: "Códigos de obra del certificado", nombre: "Razón social", nit: "NIT", tipo: "Tipo de proponente",
+    };
+    const legibles = v.errores.map((e) => {
+      const hoja = String(e.campo || "").split(".").pop().replace(/\[\d+\]$/, "");
+      const etiqueta = ETIQUETAS[hoja] || hoja;
+      const visto = e.valor_recibido == null ? "" : ` (en el certificado se leyó: ${e.valor_recibido})`;
+      return `«${etiqueta}» ${e.error}${visto}.`;
+    });
     return res.status(400).json({
       ok: false,
-      error: `Los datos extraídos del certificado no pasan la validación (${v.errores.length} error${v.errores.length === 1 ? "" : "es"}): no se guardó nada. `
-        + "Revisá el PDF o cargá el RUP a mano desde /admin.html.",
+      error: `Un dato del certificado no pasa la validación y no se guardó nada: ${legibles.join(" ")} `
+        + "Corregí ese valor al completar los datos, o cargá el RUP a mano desde la pestaña «Mi empresa».",
+      errores_legibles: legibles,
       errores: v.errores,
       advertencias: [...extraccion.advertencias, ...v.advertencias],
       diagnostico: extraccion.diagnostico,

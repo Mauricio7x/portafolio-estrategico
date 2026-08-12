@@ -1,5 +1,5 @@
 /* ============================================================================
-   Portafolio Estratégico · Frontend unificado (una página, tres pestañas)
+   Detecta · Frontend unificado (una página, tres pestañas)
    ----------------------------------------------------------------------------
    ago 2026: index.html es la ÚNICA página. Este archivo consolida los tres
    módulos que antes vivían en páginas separadas — el tablero de oportunidades
@@ -470,13 +470,16 @@
      que se abre pulsando la frase. Los rangos son los del encargo, y `null` es
      «Sin información suficiente» — JAMÁS un 0 %, que afirmaría «imposible»
      sobre un proceso del que no se sabe nada (la regla de anticipo_pct = 0). */
+  /* `clase` colorea el punto tipográfico: un ● idéntico en los cinco niveles
+     no distingue nada (el defecto del chip constante, en miniatura). El color
+     lo pone una utilidad del tema — el glifo lo hereda, nunca un emoji. */
   function fraseProbabilidad(p) {
     const n = Number(p);
-    if (p == null || !Number.isFinite(n)) return { icono: "●", frase: "Sin información suficiente" };
-    if (n > 0.40) return { icono: "●", frase: "Probabilidad muy alta" };
-    if (n >= 0.20) return { icono: "●", frase: "Buena probabilidad" };
-    if (n >= 0.10) return { icono: "●", frase: "Probabilidad media" };
-    return { icono: "●", frase: "Poco probable" };
+    if (p == null || !Number.isFinite(n)) return { icono: "●", clase: "text-gray-400", frase: "Sin información suficiente" };
+    if (n > 0.40) return { icono: "●", clase: "text-green-600", frase: "Probabilidad muy alta" };
+    if (n >= 0.20) return { icono: "●", clase: "text-yellow-500", frase: "Buena probabilidad" };
+    if (n >= 0.10) return { icono: "●", clase: "text-orange-500", frase: "Probabilidad media" };
+    return { icono: "●", clase: "text-red-500", frase: "Poco probable" };
   }
 
   /* ══════════ FRECUENCIA NATURAL · «1 de cada N», no «17 %» ══════════════════
@@ -596,11 +599,20 @@
     const fuente = compiten
       ? `Medido sobre ${fmt.format(compiten.procesos)} ${compiten.procesos === 1 ? "proceso" : "procesos"} de esta entidad.`
       : "Se asume la competencia típica de un proceso de obra (5 empresas), que es el supuesto prudente.";
+    /* El FACTOR PRINCIPAL (motivoProbabilidad) se pinta solo cuando trae una
+       señal propia — poca competencia, prórroga, colisión de cierres, baja —:
+       sus dos ramas de respaldo («Basado en…», «Sin histórico…») repiten lo
+       que la línea de fuente ya dice, y dos frases iguales enseñan menos que
+       una. La función existía y nadie la llamaba: era la frase del encargo
+       que nunca llegó a la pantalla. */
+    const motivo = motivoProbabilidad(l);
+    const motivoPropio = /^(Basado en|Sin histórico)/.test(motivo) ? "" : motivo;
 
     return `
       <div class="mt-4 rounded-xl bg-gray-50 px-4 py-3">
         <p class="text-sm font-semibold text-gray-900">${esc(titular)}</p>
         <p class="mt-0.5 text-sm text-gray-600">${esc(bajada)}</p>
+        ${motivoPropio ? `<p class="mt-0.5 text-sm text-gray-600">${esc(motivoPropio)}</p>` : ""}
         <p class="mt-1.5 text-xs text-gray-400">
           ${esc(fuente)}
           ${id
@@ -636,6 +648,10 @@
     return q.toString();
   }
 
+  // el rango viaja en masculino del servidor («bajo/medio/alto» califica al
+  // RANGO); en pantalla califica a «cuantía» y se concuerda
+  const RANGO_CUANTIA = { bajo: "baja", medio: "media", alto: "alta" };
+
   function tarjeta(l) {
     const rup = l.rup || {};
     const cierre = l.fecha_cierre ? new Date(l.fecha_cierre) : null;
@@ -655,8 +671,12 @@
           ${bandaCompetencia(l.competencia_entidad, l.entidad)}
         </div>
         <div class="text-right">
-          <p class="text-lg font-semibold tabular-nums">${fmtCOP.format(l.cuantia_cop || 0)}</p>
-          <p class="text-xs uppercase tracking-wide text-gray-400">cuantía ${esc(l.cuantia_rango || "")}</p>
+          ${l.cuantia_cop
+    /* sin `|| 0`: un «$0» afirma que la obra vale cero pesos donde el dato no
+       vino (R1, la invariante de la cabecera). El PAA ya lo decía bien. */
+    ? `<p class="text-lg font-semibold tabular-nums">${fmtCOP.format(l.cuantia_cop)}</p>
+          <p class="text-xs uppercase tracking-wide text-gray-400">cuantía ${esc(RANGO_CUANTIA[l.cuantia_rango] || l.cuantia_rango || "")}</p>`
+    : '<p class="text-sm font-medium text-gray-400">Cuantía no publicada</p>'}
         </div>
       </div>
 
@@ -1050,7 +1070,7 @@
       <div class="rounded-2xl bg-gray-50 px-5 py-4">
         <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Probabilidad de adjudicación</p>
         <p class="mt-1 text-4xl font-semibold tabular-nums tracking-tight">${fmtNum.format(d.probabilidad_final_pct)}%</p>
-        <p class="mt-1 text-sm text-gray-600"><span aria-hidden="true">${et.icono}</span> ${esc(et.frase)}</p>
+        <p class="mt-1 text-sm text-gray-600"><span class="${et.clase || ""}" aria-hidden="true">${et.icono}</span> ${esc(et.frase)}</p>
         <p class="mt-1 text-xs text-gray-500">
           ${esc(p.entidad || "")}${p.departamento ? ` · ${esc(p.departamento)}` : ""}
           ${p.cuantia_cop ? ` · ${esc(fmtCorto(p.cuantia_cop))}` : ""}
@@ -1335,7 +1355,7 @@
        Antioquia, y no lo es: uno se calcula con su región y el otro con la base. */
     dep.innerHTML = '<option value="">— Sin departamento —</option>'
       + (r.departamentos || []).map((d) => {
-        const marca = conRegion.has(d) ? "" : "  ⚪ sin región cotizada";
+        const marca = conRegion.has(d) ? "" : " — sin región cotizada";
         return `<option value="${esc(d)}">${esc(d)}${esc(marca)}</option>`;
       }).join("");
 
@@ -1466,9 +1486,15 @@
         body: { objeto, codigos_unspsc: $("codigos-unspsc").value.trim() },
       });
       if (!r) return;
-      if (r.items && r.items.length) {
+      /* Las filas inferidas del intento ANTERIOR se retiran SIEMPRE que llega
+         una detección nueva: dejarlas cuando la nueva devuelve 0 ítems
+         producía filas huérfanas —sin panel para desmarcarlas— que el mensaje
+         «No se detectó ningún ítem» contradecía. En el catch NO se tocan: un
+         fallo de red no puede borrar lo que ya estaba en la tabla. */
+      const habiaInferidas = filas.some((f) => f.inferido);
+      if (habiaInferidas || (r.items && r.items.length)) {
         quitarFilasInferidas();
-        for (const i of r.items) {
+        for (const i of (r.items || [])) {
           filas.push({
             item_id: i.codigo, descripcion: i.descripcion || i.codigo, unidad: i.unidad,
             cantidad: 0, rendimiento_override: null, inferido: true,
@@ -1942,6 +1968,10 @@
      se traduce el estado a la paleta. */
   const CLASES_ORIGEN = {
     adjudicado: "bg-green-100 text-green-800",
+    /* «Tu precio» (corregido a mano y recordado) es la fuente más fuerte de la
+       cascada: sin esta clave caía al fallback ámbar y se veía igual que un
+       derivado regional — el precio del propio usuario rotulado como dudoso. */
+    propio: "bg-blue-100 text-blue-800",
     /* «Cotización de proveedor» comparte el amarillo con «derivado» a
        propósito: los dos significan «no es un contrato adjudicado». Lo que los
        separa es la ETIQUETA, que es lo que el auditor lee — pintarlos de verde
@@ -1956,8 +1986,11 @@
 
   function badgeOrigen(it, r) {
     const o = APULibro.clasificarOrigen(it, r);
+    /* `o.emoji` NO se pinta: esos marcadores son para el Excel exportado (otro
+       medio, otra decisión — apu_libro.js está fuera de la prohibición). En
+       pantalla el estado lo dicen la etiqueta y el color del chip. */
     return `<span title="${esc(o.motivo || "")}" class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium ${CLASES_ORIGEN[o.estado] || CLASES_ORIGEN.derivado}">`
-      + `${o.emoji} ${esc(o.etiqueta)}</span>`;
+      + `${esc(o.etiqueta)}</span>`;
   }
 
   /* ────────────────────────── cálculo ────────────────────────────────
@@ -2431,7 +2464,7 @@
           <span class="text-xs"><span class="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-900">● revisar · ${Math.round((f.confianza ?? 0) * 100)} %</span>
           ${esc(f.descripcion_catalogo || "")}</span></label>`;
       }
-      return `<span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">⚪ personalizado</span>`
+      return `<span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">● personalizado</span>`
         + (f.precio_archivo == null ? ' <span class="text-[11px] font-medium text-red-600">sin precio: escríbalo en la tabla antes de calcular</span>' : "");
     };
 
@@ -2698,7 +2731,8 @@
       `P(ganar) × utilidad − ${copRent(r.costo_preparacion)} de preparar la oferta`,
       r.veg != null && r.veg <= 0 ? "mal" : "bien"));
     t.push(tarjetaRent("Utilidad esperada", copRent(r.utilidad_esperada), "Antes de impuesto de renta",
-      r.utilidad_esperada <= 0 ? "mal" : null));
+      // `null <= 0` es true: sin la guarda, un «—» (sin dato) se pintaba en rojo
+      r.utilidad_esperada != null && r.utilidad_esperada <= 0 ? "mal" : null));
     t.push(tarjetaRent("Capital de trabajo máximo", copRent(r.k_max), "Decide si se PUEDE, no si vale la pena"));
     t.push(tarjetaRent("Payback",
       r.payback_meses != null ? `${r.payback_meses} ${r.payback_meses === 1 ? "mes" : "meses"}` : "no retorna",
@@ -2714,7 +2748,7 @@
         <p class="mt-1">Precio sugerido: <strong>${copRent(a.precio_sugerido)}</strong>${a.baja_propia_pct != null
           ? ` · su oferta descuenta ${pctRent(a.baja_propia_pct)}` : ""}</p>`);
     } else {
-      partes.push(`<p class="rounded-lg bg-gray-100 px-3 py-2">⚪ ${esc(a.mensaje || "Sin índice de baja para esta entidad.")}</p>`);
+      partes.push(`<p class="rounded-lg bg-gray-100 px-3 py-2">${esc(a.mensaje || "Sin índice de baja para esta entidad.")}</p>`);
     }
     if (piso.escenarios) {
       partes.push(`<p class="mt-3">Precio piso · σ 8 %: <strong>${copRent(piso.escenarios.sigma_8.precio_piso)}</strong>
@@ -2889,6 +2923,11 @@
         + "así que no es un descuento. Suba la utilidad o la administración si quiere que el APU lo refleje.";
       return;
     }
+    /* El campo que se escribe vive dentro del <details> de Ajustes, que nace
+       CERRADO: sin abrirlo, el usuario veía cambiar los totales sin ver qué se
+       tocó — una acción invisible parece magia o parece un error. */
+    const ajustes = document.getElementById("ajustes-wrap");
+    if (ajustes) ajustes.open = true;
     $("ajuste-competitivo").checked = true;
     sincronizarBaja();
     $("factor-baja").value = punto.descuento_apu_pct;
@@ -3561,7 +3600,7 @@
       + ` data-apu-q="${esc(q.toString())}" title="Calcular APU y rentabilidad de este proceso en la pestaña APU">APU</button>`
       + (listo
         ? ' <span class="rounded-lg px-2 py-0.5 text-xs font-medium bg-green-50 text-green-800"'
-          + ' title="Ya hay un presupuesto guardado para este proceso y perfil">✅ APU listo</span>'
+          + ' title="Ya hay un presupuesto guardado para este proceso y perfil">● APU listo</span>'
         : "");
   }
 
