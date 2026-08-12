@@ -682,12 +682,20 @@ function generarDatasetEquivalencias() {
    Como ninguno trae oferentes, el índice de competencia los ignora y los
    tertiles de las cuatro entidades siguen exactamente igual. */
 const ENTIDAD_CAR = "CORPORACION AUTONOMA REGIONAL DE LAS CUENCAS DE LOS RIOS NEGRO - NARE";
+const GANADOR_RECURRENTE = { nombre: "CONSTRUCCIONES RECURRENTES SAS", nit: "900770001" };
 const HIST_SIN_OFERENTES = [
   { entidad: "GOBERNACIÓN DEL TOLIMA", nit: "800100002", n: 2 },
   { entidad: ENTIDAD_CAR, nit: "800100005", n: 2 },
   // cerrado SIN ganador: ni cuenta para el promedio ni puede desaparecer sin
   // explicación — es el tercer motivo de exclusión
   { entidad: "GOBERNACIÓN DEL TOLIMA", nit: "800100002", n: 1, desierto: true },
+  /* GANADOR RECURRENTE (señal #11): 5 de 6 para el mismo NIT → concentración
+     83 % y la lectura con las DOS interpretaciones. Entidad PROPIA (no toca
+     los conteos exactos de Tolima), SIN oferentes (los tertiles no se mueven)
+     y en la clase 72151000 — fuera de la clase A de las equivalencias, como
+     los fixtures de identidad: 6 adjudicatarios más en 72141000 moverían el
+     lift del único par que debe pasar los umbrales. */
+  { entidad: "INSTITUTO DE OBRAS DEL PORVENIR", nit: "800100088", n: 6, ganador: GANADOR_RECURRENTE, codigo: "72151000" },
 ];
 const HIST_DETALLE = HIST_SIN_OFERENTES.reduce((a, e) => a + e.n, 0);
 
@@ -714,11 +722,12 @@ function generarDatasetDetalle() {
           ? `Construccion de placa huella declarada desierta ${i}`
           : `Construccion de puente vehicular sin conteo de oferentes ${i}`,
         descripci_n_del_procedimiento: "Obra civil de puente en concreto reforzado",
-        codigo_principal_de_categoria: "V1.72141000", tipo_de_contrato: "Obra",
+        codigo_principal_de_categoria: `V1.${e.codigo || "72141000"}`, tipo_de_contrato: "Obra",
         // SIN numero_de_ofertas a propósito: es el «sin dato» que hay que explicar
+        // (con `ganador`, las primeras n−1 filas las gana el MISMO y la última otro)
         ...(e.desierto ? {} : {
-          nombre_del_proveedor: `CONSTRUCTORA DET ${i} SAS`,
-          nit_del_proveedor_adjudicado: `90050${String(i).padStart(4, "0")}`,
+          nombre_del_proveedor: e.ganador && k < e.n - 1 ? e.ganador.nombre : `CONSTRUCTORA DET ${i} SAS`,
+          nit_del_proveedor_adjudicado: e.ganador && k < e.n - 1 ? e.ganador.nit : `90050${String(i).padStart(4, "0")}`,
           valor_total_adjudicacion: String(790e6 + i),
           fecha_adjudicacion: `${mes}-25T10:00:00.000`,
         }),
@@ -1189,6 +1198,31 @@ async function main() {
       assert.strictEqual(l.anticipo_pct, esperado, `anticipo de «${texto}» → ${l.anticipo_pct}, esperaba ${esperado}`);
     }
     console.log(`· unidad anticipo: ${casos.length} casos de texto correctos (negaciones y cruces de frase)`);
+  }
+
+  /* unidad: forma de pago (precios unitarios vs precio global) — detección
+     CONSERVADORA sobre el objeto. La variable de riesgo que el manual omite:
+     en global no se reconocen mayores cantidades; en unitarios sí. */
+  {
+    const { tipoPrecio } = require("../lib/negocio.js");
+    const casos = [
+      ["CONSTRUCCIÓN DE PLACA HUELLA A PRECIOS UNITARIOS FIJOS SIN FÓRMULA DE REAJUSTE", "unitarios"],
+      ["contratar por el sistema de precio unitario la obra de alcantarillado", "unitarios"],
+      ["CONTRATAR A PRECIO GLOBAL FIJO LA CONSTRUCCIÓN DEL POLIDEPORTIVO", "global"],
+      ["Obra por el sistema de precios globales, incluido el suministro", "global"],
+      // sin la fórmula explícita NO se afirma nada: null es «sin dato»
+      ["CONSTRUCCIÓN DE PAVIMENTO RÍGIDO EN LA VÍA TERCIARIA", null],
+      // «global» suelto no habla del pago (póliza de cobertura global)
+      ["OBRA CON PÓLIZA DE COBERTURA GLOBAL DE CUMPLIMIENTO", null],
+      // las DOS fórmulas a la vez (contrato mixto): tampoco se adivina
+      ["CAPÍTULO 1 A PRECIO GLOBAL Y CAPÍTULO 2 A PRECIOS UNITARIOS", null],
+      ["", null],
+      [null, null],
+    ];
+    for (const [texto, esperado] of casos) {
+      assert.strictEqual(tipoPrecio(texto), esperado, `tipoPrecio(«${texto}») esperaba ${esperado}`);
+    }
+    console.log(`· unidad tipo de precio: ${casos.length} casos (unitarios/global/ambiguo/nada, sin adivinar)`);
   }
 
   /* unidad: estados canónicos — desconocido = CERRADO, sin fallback optimista */
@@ -5378,6 +5412,18 @@ async function main() {
           }
         }
         assert.ok(conBaja > 0, "con token ninguna tarjeta trajo baja: el gating no se estaría probando");
+
+        /* la forma de pago viaja en TODAS las filas servidas — con valor o con
+           null («el objeto no lo dice»), pero el campo existe: un frontend que
+           lo lea no puede confundir «no viajó» con «sin dato». El corpus de
+           prueba no escribe las fórmulas en sus objetos (están calibrados para
+           otras pruebas), así que aquí lo esperado es null; la detección se
+           prueba en la unidad de lib/negocio. */
+        for (const l of rPriv.cuerpo.resultados) {
+          assert.ok("tipo_precio" in l, "falta tipo_precio en la fila servida");
+          assert.ok([null, "unitarios", "global"].includes(l.tipo_precio),
+            `tipo_precio fuera del catálogo cerrado: «${l.tipo_precio}»`);
+        }
       }
 
       /* escotillas de diagnóstico y rescate desde el navegador */
@@ -6478,6 +6524,52 @@ async function main() {
         assert.strictEqual(c3.indice.procesos_contados, 4, "la normalización debe tolerar el texto que escribe una persona");
       }
 
+      /* --- (b-quater) QUIÉN GANA AQUÍ: el agregado de adjudicatarios ---
+         La señal #11 del manual (ganador recurrente) hecha dato. El agregado
+         publica nombres —dato público de SECOP, endpoint con token— pero las
+         FILAS del detalle siguen con su lista blanca: sin adjudicatario. */
+      {
+        // Tolima: 10 adjudicados con ganador, todos DISTINTOS → sin alerta
+        const t = (await detalle("GOBERNACIÓN DEL TOLIMA", "&refrescar=1")).cuerpo;
+        const a = t.adjudicatarios;
+        assert.ok(a, "falta el bloque de adjudicatarios en el detalle");
+        assert.strictEqual(a.procesos_con_ganador + a.sin_adjudicatario, t.indice.total_procesos_adjudicados,
+          "ganadores identificados + sin dato tienen que sumar los adjudicados: nada desaparece en silencio");
+        assert.strictEqual(a.procesos_con_ganador, 10);
+        assert.strictEqual(a.distintos, 10, "los diez ganadores del fixture son distintos");
+        assert.strictEqual(a.lectura, null, "sin ganador recurrente no se fabrica una alerta");
+        assert.ok(a.top.length <= 5, "el top va acotado a 5");
+        assert.ok(a.top[0].valor_adjudicado_cop > 0, "la suma adjudicada del líder debe ser legible");
+        assert.ok(a.concentracion && a.concentracion.pct === 10,
+          "con base suficiente la concentración se publica aunque sea baja");
+        for (const p of [...(t.procesos || []), ...(t.excluidos || [])]) {
+          assert.ok(!("nombre_del_proveedor" in p) && !("nit_del_proveedor_adjudicado" in p),
+            "la lista blanca de las filas no cambió: el adjudicatario solo viaja AGREGADO");
+        }
+
+        // ganador recurrente: 5 de 6 → 83 % y la lectura con las DOS interpretaciones
+        const r = (await detalle("INSTITUTO DE OBRAS DEL PORVENIR", "&refrescar=1")).cuerpo;
+        const ar = r.adjudicatarios;
+        assert.strictEqual(ar.procesos_con_ganador, 6);
+        assert.strictEqual(ar.top[0].ganados, 5, "el líder ganó 5 de los 6");
+        assert.strictEqual(ar.top[0].nit, GANADOR_RECURRENTE.nit);
+        assert.strictEqual(ar.top[0].nombre, GANADOR_RECURRENTE.nombre);
+        assert.strictEqual(ar.concentracion.pct, 83);
+        assert.ok(ar.lectura, "≥50 % de concentración con base suficiente exige la lectura");
+        assert.ok(/nicho/.test(ar.lectura) && /a la medida/.test(ar.lectura),
+          "la lectura lleva LAS DOS interpretaciones (nicho ganable O pliego a la medida), no una sola");
+        assert.ok(/se[ñn]al/i.test(ar.lectura), "…y nombra la señal de alerta del manual");
+        // la última adjudicación es una fecha, no un timestamp crudo
+        assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(ar.top[0].ultima_adjudicacion));
+
+        // por debajo del mínimo NO se publica concentración: sería «100 %» sobre 2
+        const car = (await detalle(ENTIDAD_CAR, "&refrescar=1")).cuerpo;
+        assert.strictEqual(car.adjudicatarios.concentracion, null,
+          "2 procesos no dan base para un porcentaje de concentración (la regla del «18.2 oferentes»)");
+        assert.strictEqual(car.adjudicatarios.lectura, null);
+        assert.strictEqual(car.adjudicatarios.procesos_con_ganador, 2, "el conteo sí viaja: es un hecho");
+      }
+
       /* --- (b-bis) ÍNDICE DESACTUALIZADO: hay base pero no clasificación ---
          El segundo camino a la contradicción «⚪ + un promedio debajo». El
          índice solo se reconstruye A MANO mientras el delta engorda el
@@ -6575,12 +6667,25 @@ async function main() {
         assert.ok(meses.size > 1, `los procesos de IDU viven en varios meses: se encontraron ${meses.size}`);
       }
 
-      /* --- seguridad: ni adjudicatarios ni NITs salen de aquí --- */
+      /* --- seguridad: las FILAS siguen sin adjudicatario ---
+         Desde ago 2026 el detalle publica el AGREGADO de ganadores («quién
+         gana aquí», señal #11) — decisión deliberada: es dato público de
+         SECOP y el endpoint exige token. Lo que NO cambió es la lista blanca
+         de las filas: ni proceso a proceso, ni con los nombres de columna
+         crudos del dataset (quien los viera sabría que la proyección se
+         está fugando entera). */
       {
-        const crudo = JSON.stringify((await detalle("GOBERNACIÓN DEL TOLIMA", "&refrescar=1")).cuerpo);
+        const cuerpo = (await detalle("GOBERNACIÓN DEL TOLIMA", "&refrescar=1")).cuerpo;
+        const filasCrudas = JSON.stringify([...(cuerpo.procesos || []), ...(cuerpo.excluidos || [])]);
         for (const prohibido of ["nombre_del_proveedor", "nit_del_proveedor_adjudicado", "CONSTRUCTORA HIST",
           "CONSTRUCTORA DET", "valor_total_adjudicacion", "90010", "90050"]) {
-          assert.ok(!crudo.includes(prohibido), `el detalle expuso «${prohibido}»`);
+          assert.ok(!filasCrudas.includes(prohibido), `una fila del detalle expuso «${prohibido}»`);
+        }
+        // y los nombres de columna crudos tampoco aparecen en el cuerpo entero:
+        // el agregado usa su propia proyección (nombre/nit/valor_adjudicado_cop)
+        const crudo = JSON.stringify(cuerpo);
+        for (const prohibido of ["nombre_del_proveedor", "nit_del_proveedor_adjudicado", "valor_total_adjudicacion"]) {
+          assert.ok(!crudo.includes(prohibido), `el detalle expuso la columna cruda «${prohibido}»`);
         }
       }
 
@@ -10358,6 +10463,16 @@ async function main() {
         "/api/competencia-detalle", "x-historico-token", "sessionStorage", "MOTIVO_EXCLUSION"]) {
         assert.ok(js.includes(debe), `app.js sin ${debe} (el badge no abre el detalle)`);
       }
+      /* «Quién gana aquí» (ago 2026): el modal pinta el agregado de
+         adjudicatarios y la tarjeta el tipo de precio. La lectura de la
+         concentración la escribe el SERVIDOR (las dos interpretaciones viajan
+         juntas): el frontend solo la pinta, jamás la redacta por su cuenta. */
+      for (const debe of ["Quién gana aquí", "bloqueAdjudicatarios", "d.adjudicatarios",
+        "Precios unitarios", "Precio global", "tipo_precio"]) {
+        assert.ok(js.includes(debe), `app.js sin ${debe} (adjudicatarios recurrentes / tipo de precio)`);
+      }
+      assert.ok(!/nicho .*a la medida/.test(sinComentarios(js)),
+        "la lectura de concentración se redacta en el SERVIDOR: una copia en el frontend divergiría");
       /* EL TOKEN VA INTEGRADO (ago 2026): el usuario no ve ningún formulario
          ni mensaje de token. Un 401 del despliegue —HISTORICO_TOKEN distinto
          del integrado— se dice con esas palabras, no con «Token inválido». */

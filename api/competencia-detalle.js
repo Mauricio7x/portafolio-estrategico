@@ -46,9 +46,13 @@
    PROTEGIDO con el mismo HISTORICO_TOKEN que /api/diagnostico (lib/auth):
    expone contenido del corpus. SOLO LEE; lo único que escribe es su caché.
 
-   Lo que NO sale de aquí: adjudicatario y NIT del adjudicatario. Viven en el
-   corpus histórico pero la proyección de la respuesta es una lista blanca
-   (lib/competencia_detalle.proyectarProceso), igual que en /api/oportunidades.
+   Adjudicatarios (ago 2026): las FILAS siguen sin adjudicatario ni NIT — la
+   proyección es una lista blanca (lib/competencia_detalle.proyectarProceso),
+   igual que en /api/oportunidades—, pero la vista de entidad SÍ publica el
+   AGREGADO «quién gana aquí» (top de ganadores, concentración y su lectura):
+   es la señal #11 del manual hecha dato, es información pública de SECOP y
+   este endpoint exige token. Decisión deliberada, con prueba de las dos
+   mitades.
 
    Caché: `indice:detalle:{entidad}` con TTL de 1 h para la vista de entidad y
    `indice:desglose_p:{id}` con TTL de 300 s para la del desglose. El valor

@@ -101,6 +101,7 @@ const { leerIndiceBaja, leerIndiceBajaMeta, bajaDeMercado, bajaSegmentoDe } = re
 const { leerEquivalencias, leerEquivalenciasMeta } = require("../lib/equivalencias.js");
 const { vocabularioActivo } = require("../lib/texto_unspsc.js");
 const { sinAdjudicacion } = require("../lib/proyeccion.js");
+const { tipoPrecio } = require("../lib/negocio.js");
 const { evaluarPuertas } = require("../lib/puertas.js");
 const {
   estimarPDetalle, valorEsperado, promediosPorDepartamento, indiceColisionCierres, claveColision,
@@ -526,6 +527,12 @@ module.exports = async function handler(req, res) {
         p_ganar_detalle: e.p_ganar_detalle,
         ve: e.ve,
         viable: e.puertas.pasa_todas,
+        /* Forma de pago detectada en el texto del objeto (lib/negocio):
+           «unitarios» = las mayores cantidades se reconocen; «global» = el
+           riesgo de cantidades es del contratista; null = el objeto no lo
+           dice (o dice las dos) y no se adivina. Al SERVIR, no en ingesta:
+           afinar la detección tiene efecto inmediato sin relanzar la full. */
+        tipo_precio: tipoPrecio(`${l.nombre_del_procedimiento || ""} ${l.descripci_n_del_procedimiento || ""}`),
       };
       // sin token, el veredicto viaja SIN las cifras que lo sostienen: el K, el
       // CRPC y el patrimonio derivan de las finanzas de una persona natural
