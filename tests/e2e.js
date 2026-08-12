@@ -9303,6 +9303,30 @@ async function main() {
           assert.ok(cuerpoArranque.indexOf("await cargarCatalogo()") < cuerpoArranque.lastIndexOf("precargarDesdeURL()"),
             "la segunda precarga tiene que ir DESPUÉS de cargar el catálogo, o el departamento no se seleccionaría");
         }
+        /* ---- abrir OTRO proceso reinicia el editor ----
+           Pulsar «APU» en una segunda tarjeta arrastraba filas, resumen,
+           rentabilidad y precio sugerido del proceso anterior, y `poner()`
+           solo escribe cuando el parámetro viene: la entidad o la cuantía
+           viejas sobrevivían si el proceso nuevo no las traía — cifras viejas
+           con aspecto de nuevas. La guarda va por `id_proceso` para que la
+           re-precarga tras cargar el catálogo (MISMO id) no borre nada. */
+        {
+          const iR = limpio.indexOf("function reiniciarEditorParaProceso()");
+          assert.ok(iR > 0, "sin reiniciarEditorParaProceso, abrir otra tarjeta hereda el presupuesto anterior");
+          const cuerpoR = limpio.slice(iR, limpio.indexOf("\n  }", iR));
+          for (const debe of ["filas = []", "ultimoCalculo = null", "ultimoOptimizador = null",
+            "seccion-resumen", "seccion-rentabilidad", "seccion-precio-sugerido", "pintarTabla()"]) {
+            assert.ok(cuerpoR.includes(debe),
+              `reiniciarEditorParaProceso debe limpiar «${debe}»: lo que quede vivo se pinta como si fuera del proceso nuevo`);
+          }
+          const iP = limpio.indexOf("function precargarDesdeURL()");
+          const cuerpoP = limpio.slice(iP, limpio.indexOf("\n  }", iP));
+          assert.ok(/idEntrante && idEntrante !== idCargado\) reiniciarEditorParaProceso\(\)/.test(cuerpoP),
+            "la precarga debe reiniciar SOLO cuando llega un id distinto del cargado: con el mismo id (re-precarga "
+            + "tras el catálogo, reabrir la misma tarjeta) limpiar costaría el trabajo hecho");
+          assert.ok(cuerpoP.indexOf("reiniciarEditorParaProceso()") < cuerpoP.indexOf('poner("objeto"'),
+            "el reinicio tiene que correr ANTES de poner los valores nuevos, o se los llevaría por delante");
+        }
 
         /* ---- el enganche en el panel (mismo archivo, pestaña admin) ---- */
         assert.ok(/closest\("\.btn-apu"\)/.test(limpio),
