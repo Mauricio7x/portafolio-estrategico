@@ -10031,10 +10031,34 @@ async function main() {
         const contar = (dir) => fs.readdirSync(dir, { withFileTypes: true })
           .reduce((n, e) => n + (e.isDirectory() ? contar(path.join(dir, e.name)) : (e.name.endsWith(".js") ? 1 : 0)), 0);
         assert.ok(contar(path.join(__dirname, "..", "api")) <= 12, "más de 12 funciones bajo api/");
+
+        /* 1.5 · la vista visible NO puede depender del CDN de Tailwind.
+           Cazado en un navegador real con el CDN bloqueado: `abrirApp()` esconde
+           la landing añadiendo la clase `hidden`, que sirve Tailwind. Sin CDN esa
+           clase no existe, `#onboarding` NO se esconde y queda ENCIMA del
+           tablero — la app parece rota y la consola no dice nada, porque no hay
+           ningún error: es la misma familia del arranque en la zona muerta
+           temporal (fallo mudo). La regla propia va por ID sobre los tres
+           contenedores de vista; hacerla global (`.hidden{…}`) escondería la
+           barra de pestañas de escritorio, que es `hidden md:flex`. */
+        assert.ok(/#onboarding\.hidden[^{]*#app\.hidden[^{]*\{\s*display:\s*none/.test(html),
+          "index.html debe esconder las vistas con una regla propia: sin el CDN de Tailwind la landing tapa la app");
+        assert.ok(!/^\s*\.hidden\s*\{/m.test(html),
+          "una regla GLOBAL .hidden escondería la barra de pestañas (hidden md:flex): tiene que ir por id");
+
+        /* 1.6 · el título de la landing va en peso 250 (encargo). Tailwind no
+           tiene esa parada —font-extralight es 200—, así que si vuelve la
+           utilidad, el peso pedido se pierde sin que nadie lo note. */
+        const h1Landing = (html.match(/<h1[^>]*>\s*Convertí tu RUP en contratos\./) || [""])[0];
+        assert.ok(/font-weight:\s*250/.test(h1Landing),
+          "el título de la landing debe ir en peso 250 (literal: Tailwind no tiene esa parada)");
+        assert.ok(!/font-extralight/.test(h1Landing),
+          "font-extralight (200) volvió al título de la landing y pisa el peso 250 pedido");
       }
 
       console.log("  · UI Apple Glass: pasos 0.1 (pestañas e ids), 0.2 (DELETE de RUP dinámico y fijo), "
-        + "0.3 (probabilidad en frases, ejecutada), 1.1–1.4 (paleta, retiradas y límite de funciones) verificados");
+        + "0.3 (probabilidad en frases, ejecutada), 1.1–1.6 (paleta, retiradas, límite de funciones, "
+        + "vista sin CDN y peso del título) verificados");
     }
 
     /* ── k · PLAN ANUAL DE ADQUISICIONES ─────────────────────────────────────

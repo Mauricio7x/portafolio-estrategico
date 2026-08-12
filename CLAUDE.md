@@ -1934,6 +1934,49 @@ botón para eliminar un RUP cargado, y probabilidad legible para no-técnicos. D
   de precio (comparar opciones a VEG) y una frase no se puede restar. El desglose del modal enseña
   frase Y cifra: son la respuesta de 1 segundo y la de 30 en el mismo sitio.
 
+#### Verificación en NAVEGADOR REAL y el defecto que solo se ve ahí (ago 2026)
+
+El encargo se repitió dando por hechos cinco problemas; cuatro ya estaban resueltos y **la
+comprobación no fue leer el código, fue ABRIR LA PÁGINA**: Chromium conducido por CDP contra un
+servidor de pruebas que sirve `public/` y responde `/api/*` con la forma real de cada handler
+(41 comprobaciones: paleta por `getComputedStyle`, las cinco bandas del semáforo, el modal de
+desglose, el ciclo completo del DELETE, la pestaña de administración y el móvil). El arnés vive
+fuera del repositorio —`playwright-core` es una dependencia de npm y aquí no entra ninguna—, y
+por eso lo que descubrió se fijó como prueba en `tests/e2e.js`, que sí es del proyecto.
+
+- **LA VISTA VISIBLE COLGABA DEL CDN DE TAILWIND, y ese es el defecto que ninguna prueba de Node
+  podía ver.** `abrirApp()` esconde la landing añadiendo la clase `hidden`, que la sirve
+  `cdn.tailwindcss.com`. Con el CDN bloqueado —red institucional con la salida filtrada, que es
+  EXACTAMENTE donde trabaja el dueño (el mismo hecho que obliga a disparar la extracción pegando
+  URLs en Chrome)— la clase no existe, `#onboarding` no se esconde y **la landing queda encima del
+  tablero**. Se ve la app «rota» y **la consola no dice nada**, porque no hay ningún error: es la
+  familia del arranque en la zona muerta temporal, el fallo MUDO. La regla propia
+  (`#onboarding.hidden, #app.hidden, #gate.hidden`) va **por ID y solo sobre los tres contenedores
+  de vista**: con especificidad de id no puede perder contra ninguna utilidad, y al no ser global
+  no toca los modales (que además fijan `style.display`) ni pelea con el `hidden md:flex` de la
+  barra de pestañas de escritorio —una `.hidden{…}` global la habría escondido, y hay prueba que
+  lo prohíbe—. **No arregla el aspecto sin CDN, y no se pretende**: arregla QUÉ VISTA SE VE, que es
+  lo que decide si la app sirve para algo.
+- **El peso 250 del título no lo puede dar Tailwind**: su parada más fina es `font-extralight`, que
+  es **200**. Iba con esa utilidad, así que el encargo no se cumplía por 50 unidades que nadie iba a
+  mirar. Va literal en el atributo `style` y hay prueba de que la utilidad no puede volver a
+  pisarlo (SF Pro Display es variable e interpola el 250; las de respaldo lo redondean).
+- **🔴 se dice «Poco probable», NO «Baja», y es a propósito.** El encargo pide «Baja», pero en este
+  dominio *baja* ya significa otras dos cosas y las dos son BUENAS: `baja_mercado` (el descuento del
+  ganador) y `nivel_competencia: "baja"` (pocos rivales). Un chip rojo «Baja» quedaría a dos
+  centímetros del chip verde «Competencia baja» de la misma tarjeta, con la misma palabra
+  significando lo contrario. Es `total_procesos`/`procesos_contados` otra vez —dos cosas distintas
+  con nombres que colisionan—, y aquí la que se equivoca es la persona que decide a qué presentarse.
+  Por lo mismo las otras tres frases conservan el sustantivo («Probabilidad muy alta», no «Muy
+  alta»): sueltas junto a un badge de competencia, «Muy alta» se lee como «competencia muy alta»,
+  que es justo al revés.
+- **Lo que este entorno NO puede verificar, dicho en vez de disimulado**: el proxy responde **403 a
+  `cdn.tailwindcss.com`**, así que no hay ninguna captura fiel del diseño —la del arnés enseña la
+  degradación sin CDN, que es otra cosa—. Lo que sí queda medido es cada cifra del encargo leída con
+  `getComputedStyle` en un navegador de verdad (fondo, acento, radio, transición, tipografía, vidrio
+  y blur, pestañas de 32 px, oscuro `rgba(30,30,32,0.72)`, barra móvil de 64 px), que para un
+  sistema de diseño es mejor evidencia que una imagen.
+
 ## Datos del negocio (fuente de verdad)
 
 - Perfiles: `lib/perfiles.js` es el RESPALDO (`PERFILES_FALLBACK`, RUP corte 31/12/2025) y el punto
