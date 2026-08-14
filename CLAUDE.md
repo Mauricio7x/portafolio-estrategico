@@ -2520,6 +2520,28 @@ completa y límites en `docs/ACCESIBILIDAD.md`. Decisiones que no hay que re-apr
   se oscurecía por una regla que sí alcanzaba al modal y la letra no. Corregido ampliando los
   selectores de texto a los tres modales.
 
+### Las dos alarmas del calendario (ago 2026)
+
+- **La regla de las 24 horas es VISIBLE, no un tooltip** (`avisoCierre` en `public/app.js`): el
+  error #1 del país (presentar el día del cierre) vivía solo en el `title` del chip de cierre,
+  que en móvil no existe y en escritorio exige pasar el mouse. A ≤2 días del cierre la tarjeta
+  pinta una línea con la instrucción («presentá el día ANTERIOR»; el día 0, que solo cuenta el
+  estado «Presentada»). Solo a ≤2 días — un aviso encendido en cada tarjeta se deja de leer — y
+  nunca en una tarjeta no viable (urgir a presentar lo que no pasa las puertas sería un
+  contrasentido). `null` jamás produce urgencia (R1). Los días se calculan UNA vez
+  (`diasParaCierre`, con la resta de 5 h de la hora Colombia) y alimentan chip y aviso: dos
+  cuentas divergirían.
+- **La alarma de renovación del RUP** (`alertaVigenciaRup` + nodo `rup-alerta-vigencia` en «Tu
+  RUP»): el RUP se renueva antes del QUINTO DÍA HÁBIL de abril o pierde efectos un año entero —
+  la alarma individual más cara que faltaba. Tres decisiones: (1) la fecha se calcula contando
+  lunes-viernes SIN festivos, y es correcto porque los festivos (Semana Santa cae en abril a
+  menudo) solo pueden CORRER el plazo hacia ADELANTE — el error cae del lado de avisar antes;
+  por lo mismo, pasada la fecha calculada la frase manda a VERIFICAR al RUES y jamás afirma «ya
+  no hay nada que hacer». (2) Solo vive de febrero al 30 de abril: encendida todo el año se
+  deja de mirar (la lección del recuadro «0 problemas»). (3) El «ahora» se INYECTA y la prueba
+  usa fechas fijas de 2026 (quinto hábil sin festivos = 7 de abril): una prueba de calendario
+  calibrada contra el reloj real no prueba nada.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).
