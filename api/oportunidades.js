@@ -102,6 +102,7 @@ const { leerEquivalencias, leerEquivalenciasMeta } = require("../lib/equivalenci
 const { vocabularioActivo } = require("../lib/texto_unspsc.js");
 const { sinAdjudicacion } = require("../lib/proyeccion.js");
 const { tipoPrecio } = require("../lib/negocio.js");
+const { evaluarZona } = require("../lib/accesibilidad.js");
 const { evaluarPuertas } = require("../lib/puertas.js");
 const {
   estimarPDetalle, valorEsperado, promediosPorDepartamento, indiceColisionCierres, claveColision,
@@ -385,6 +386,10 @@ module.exports = async function handler(req, res) {
   const fCuantia = ["bajo", "medio", "alto"].includes(q.cuantia_rango) ? q.cuantia_rango : null;
   const fEntidad = NIVELES_ENTIDAD.includes(q.competencia_entidad) ? q.competencia_entidad : null;
   const fUbicacion = q.ubicacion_valida === undefined ? null : ["true", "1"].includes(String(q.ubicacion_valida));
+  // ?zona=facil → solo zonas de fácil acceso (cerca de la base o de un
+  // aeropuerto, sin difícil acceso ni alertas). Cualquier otro valor es inerte:
+  // un enlace guardado con un valor viejo no puede vaciarle la lista a nadie.
+  const fZonaFacil = q.zona === "facil";
   const soloAbiertas = q.incluir_cerradas !== "1";
   // ?match=clase|familia|equivalente|texto → ver solo los de esa solidez
   const fTier = ["clase", "familia", "equivalente", "texto"].includes(q.match) ? q.match : null;
@@ -445,6 +450,10 @@ module.exports = async function handler(req, res) {
       // el nivel de la entidad viaja en el contexto porque `?ordenar_por=competencia`
       // ordena por él (y no por el `nivel_competencia` de la fila, que es ex-post)
       competencia_nivel: (competencia && competencia.nivel) || "sin_dato",
+      /* accesibilidad de la zona (lib/accesibilidad): corre al SERVIR — afinar
+         la tabla tiene efecto inmediato, sin full. Alimenta la cubeta del
+         orden por defecto, el filtro `?zona=facil` y el chip de la tarjeta. */
+      zona: evaluarZona(l),
     };
     _eval.set(l, e);
     return e;
@@ -461,6 +470,11 @@ module.exports = async function handler(req, res) {
     if (fUbicacion !== null && l.ubicacion_valida !== fUbicacion) return false;
     if (fEntidad && compDe(l).nivel !== fEntidad) return false;
     if (fTier && (rupDe(l).tier || "ninguno") !== fTier) return false;
+    /* `zona=facil` retira lo lejano, lo de difícil acceso y lo de orden
+       público por verificar (puntos < 2). El «sin dato» tiene puntos 2 y se
+       QUEDA: no saber dónde es la obra no puede excluirla (R1). El filtro es
+       OPT-IN: por defecto la zona solo ordena y etiqueta, jamás esconde. */
+    if (fZonaFacil && evaluarZona(l).puntos < 2) return false;
     return true;
   };
 
@@ -486,6 +500,14 @@ module.exports = async function handler(req, res) {
     // se puede tomar va al final, siempre
     const va = ea.puertas.pasa_todas ? 1 : 0, vb = eb.puertas.pasa_todas ? 1 : 0;
     if (va !== vb) return vb - va;
+    /* En el orden POR DEFECTO, la ZONA es la segunda cubeta (encargo ago
+       2026): entre dos viables gana el que queda cerca de la base o de un
+       aeropuerto y sin alertas — el costo de LLEGAR es plata operativa que el
+       valor esperado no modela. Dentro de cada cubeta sigue decidiendo el VE.
+       Solo aplica a `atractividad`: quien pide otro orden pidió ESE orden. */
+    if (ordenarPor === "atractividad" && ea.zona.puntos !== eb.zona.puntos) {
+      return eb.zona.puntos - ea.zona.puntos;
+    }
     const d = campo(a, ea) - campo(b, eb);
     if (d) return d * dir;
     const v = (ea.ve || 0) - (eb.ve || 0); // desempate estable por valor esperado
@@ -527,6 +549,11 @@ module.exports = async function handler(req, res) {
         p_ganar_detalle: e.p_ganar_detalle,
         ve: e.ve,
         viable: e.puertas.pasa_todas,
+        /* Accesibilidad de la zona: etiqueta y mensaje ya redactados en
+           lenguaje de personas (lib/accesibilidad declara estimaciones y
+           advertencias como lo que son). Derivada de datos públicos: viaja
+           también sin token. */
+        zona: e.zona,
         /* Forma de pago detectada en el texto del objeto (lib/negocio):
            «unitarios» = las mayores cantidades se reconocen; «global» = el
            riesgo de cantidades es del contratista; null = el objeto no lo

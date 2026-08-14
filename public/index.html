@@ -160,9 +160,22 @@
     #app .bg-gray-100, #onboarding .bg-gray-100, #modal-competencia .bg-gray-100, #modal-importar .bg-gray-100 { background-color: var(--bg-inset-2); }
     #app .hover\:bg-gray-50:hover, #app .hover\:bg-gray-100:hover { background-color: var(--bg-inset-2); }
     #app .text-gray-900, #onboarding .text-gray-900, #modal-competencia .text-gray-900 { color: var(--text-primary); }
-    #app .text-gray-800, #app .text-gray-700, #onboarding .text-gray-700 { color: var(--text-primary); }
+    /* LOS MODALES VIVEN FUERA DE #app: sin estas reglas, su texto gris oscuro
+       (p. ej. el «Resumen ejecutivo» del desglose, text-gray-800) se quedaba
+       con el gris de Tailwind sobre el fondo YA oscurecido por la regla del
+       bg-white de arriba — letra invisible en modo oscuro. El fondo y la letra
+       tienen que traducirse JUNTOS o no se traduce ninguno. */
+    #app .text-gray-800, #app .text-gray-700, #onboarding .text-gray-700,
+    #modal-competencia .text-gray-800, #modal-competencia .text-gray-700,
+    #modal-importar .text-gray-800, #modal-importar .text-gray-700,
+    #modal-eliminar .text-gray-800, #modal-eliminar .text-gray-700 { color: var(--text-primary); }
     #app .text-gray-600, #onboarding .text-gray-600, #app .text-gray-500, #onboarding .text-gray-500,
-    #app .text-gray-400, #onboarding .text-gray-400, #app .text-gray-300 { color: var(--text-secondary); }
+    #app .text-gray-400, #onboarding .text-gray-400, #app .text-gray-300,
+    #modal-competencia .text-gray-600, #modal-competencia .text-gray-500, #modal-competencia .text-gray-400,
+    #modal-importar .text-gray-600, #modal-importar .text-gray-500, #modal-importar .text-gray-400,
+    #modal-eliminar .text-gray-600, #modal-eliminar .text-gray-500 { color: var(--text-secondary); }
+    #modal-competencia .border-gray-900\/10, #modal-competencia .border-gray-100,
+    #modal-competencia .divide-gray-100 > * + * { border-color: var(--border); }
     #app .border-gray-100, #app .divide-gray-100 > * + *, #app .border-gray-200,
     #onboarding .border-gray-200, #app .border-gray-300, #onboarding .border-gray-300,
     #modal-importar .border-gray-200 { border-color: var(--border); }
@@ -411,6 +424,14 @@
                 <option value="">Todas</option>
                 <option value="true">Solo mi zona</option>
                 <option value="false">Fuera de mi zona</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Acceso a la zona</span>
+              <select id="f-zona" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10"
+                      title="Cerca = a ~250 km de Bogotá o Ibagué, o con aeropuerto en la capital. Las zonas de difícil acceso o con alertas de orden público se van al final del orden aunque no filtres.">
+                <option value="">Todas (las lejanas van al final)</option>
+                <option value="facil">Solo fácil acceso — cerca o con aeropuerto, sin alertas</option>
               </select>
             </label>
             <label class="block">

@@ -5590,17 +5590,22 @@ async function main() {
       const todas = await todasLasOportunidades("perfil=juntos&ordenar_por=atractividad");
       assert.ok(todas.length > 0, "sin resultados que ordenar");
 
-      /* ORDEN NUEVO (ago 2026): primero lo que pasa las cuatro puertas y,
-         dentro de cada grupo, por VALOR ESPERADO descendente. El criterio
-         anterior —agrupar por banda de competencia y desempatar por
-         `puntaje_ponderado`— se retiró porque ese puntaje tenía su tercer
-         componente constante en todo lo servido (docs/ATRACTIVIDAD.md §0). */
-      let vistoNoViable = false, veAnterior = Infinity;
+      /* ORDEN NUEVO (ago 2026, dos capas): primero lo que pasa las cuatro
+         puertas; dentro de los viables, la CUBETA DE ZONA (lib/accesibilidad
+         — el costo de llegar es plata operativa que el VE no modela); y
+         dentro de cada cubeta, el VALOR ESPERADO descendente. El criterio de
+         agrupar por banda de competencia se retiró en su día porque su tercer
+         componente era constante en todo lo servido (docs/ATRACTIVIDAD.md §0). */
+      let vistoNoViable = false, puntosAnterior = Infinity, veAnterior = Infinity;
       for (const l of todas) {
         assert.ok(l.competencia_entidad, "falta competencia_entidad en el resultado");
         assert.ok(l.puertas && typeof l.puertas.pasa_todas === "boolean", "falta el veredicto de las puertas");
-        if (!l.puertas.pasa_todas) { vistoNoViable = true; veAnterior = Infinity; continue; }
+        assert.ok(l.zona && typeof l.zona.puntos === "number" && l.zona.etiqueta,
+          "falta la zona de accesibilidad en el resultado");
+        if (!l.puertas.pasa_todas) { vistoNoViable = true; puntosAnterior = Infinity; veAnterior = Infinity; continue; }
         assert.ok(!vistoNoViable, `un viable (${l.id_del_proceso}) apareció después de uno no viable`);
+        assert.ok(l.zona.puntos <= puntosAnterior, `cubeta de zona rota en ${l.id_del_proceso}`);
+        if (l.zona.puntos < puntosAnterior) { puntosAnterior = l.zona.puntos; veAnterior = Infinity; }
         assert.ok(l.ve <= veAnterior, `orden por valor esperado roto en ${l.id_del_proceso}`);
         veAnterior = l.ve;
       }
@@ -5630,6 +5635,64 @@ async function main() {
         "la entidad de alta competencia no puede tener más probabilidad que la de baja");
       assert.ok(conAlta[0].p_ganar_detalle.base < conBaja[0].p_ganar_detalle.base,
         "el orden entre bandas de competencia tiene que estar ya en la base, sin ayuda de ningún factor");
+
+      /* ═══ ACCESIBILIDAD DE LA ZONA (encargo ago 2026) ═══════════════════════
+         El costo de LLEGAR decide tanto como la probabilidad: viáticos,
+         transporte de equipo y días de ingeniero. lib/accesibilidad clasifica
+         por departamento en bandas ANCHAS con distancias declaradas como
+         estimaciones, y las alertas (difícil acceso, orden público) son
+         orientativas — la app dice «verificá la zona», jamás afirma que UN
+         proceso esté en zona de conflicto. */
+      {
+        const acc = require("../lib/accesibilidad.js");
+        const tabla = require("../data/accesibilidad_departamentos.json");
+        // 32 departamentos + Bogotá D.C.: si falta uno, sus procesos caerían a
+        // «sin clasificar» en silencio
+        assert.strictEqual(Object.keys(tabla).filter((k) => k !== "_meta").length, 33,
+          "la tabla debe cubrir los 32 departamentos + Bogotá D.C.");
+        for (const [k, d] of Object.entries(tabla)) {
+          if (k === "_meta") continue;
+          assert.ok(d.capital && typeof d.aeropuerto_capital === "boolean"
+            && typeof d.dificil_acceso === "boolean" && typeof d.verificar_orden_publico === "boolean",
+          `entrada incompleta en la tabla de accesibilidad: ${k}`);
+          assert.ok(d.km_bogota === null || Number.isFinite(d.km_bogota), `km_bogota ilegible en ${k}`);
+        }
+        const z = (depto) => acc.evaluarZona({ departamento_entidad: depto });
+        assert.strictEqual(z("Tolima").nivel, "cerca", "Tolima es la base de Ibagué");
+        assert.strictEqual(z("Tolima").puntos, 3);
+        assert.strictEqual(z("Distrito Capital de Bogotá").puntos, 3, "el nombre largo del dataset debe resolver");
+        assert.strictEqual(z("Antioquia").nivel, "media");
+        // lejos + aeropuerto en la capital = banda media («se llega volando»):
+        // el criterio del encargo es un O lógico (carretera O aeropuerto)
+        assert.strictEqual(z("Atlántico").nivel, "media");
+        assert.ok(/volando/.test(z("Atlántico").etiqueta));
+        // difícil acceso: el aeropuerto NO rescata (volar personas no mueve equipo)
+        assert.strictEqual(z("Amazonas").puntos, 0);
+        assert.ok(/Acceso difícil/.test(z("Amazonas").etiqueta));
+        // orden público: se AVISA con verbo de verificar, nunca se afirma
+        const arauca = z("Arauca");
+        assert.ok(arauca.verificar_orden_publico && /verific/i.test(arauca.mensaje),
+          "la alerta de orden público debe pedir verificar, no afirmar");
+        assert.ok(!/zona de conflicto\b(?!.*verific)/i.test(arauca.mensaje),
+          "el mensaje no puede afirmar conflicto como hecho del proceso");
+        // sin dato = banda MEDIA: no saber no es estar lejos (R1), pero
+        // tampoco se cuela de primero
+        assert.strictEqual(z(null).nivel, "sin_dato");
+        assert.strictEqual(z(null).puntos, 2);
+        assert.strictEqual(z("Marte").puntos, 2);
+        // toda distancia en pantalla se declara estimada
+        assert.ok(/estimado/.test(z("Antioquia").mensaje), "una cifra aproximada tiene que decirlo");
+
+        // el filtro es OPT-IN y el «sin dato» NUNCA se excluye por él
+        const facil = await todasLasOportunidades("perfil=juntos&zona=facil");
+        assert.ok(facil.length > 0, "zona=facil vació la lista sobre un corpus accesible");
+        for (const l of facil) assert.ok(l.zona.puntos >= 2, `zona=facil sirvió puntos<2: ${l.id_del_proceso}`);
+        const sinFiltro = await todasLasOportunidades("perfil=juntos");
+        assert.ok(facil.length <= sinFiltro.length, "un filtro no puede añadir resultados");
+        // valor desconocido → inerte, jamás 400 ni lista vacía
+        const inerte = await todasLasOportunidades("perfil=juntos&zona=marciana");
+        assert.strictEqual(inerte.length, sinFiltro.length, "un valor desconocido de zona debe ser inerte");
+      }
 
       // atractividad es el orden POR DEFECTO (lo que ve el dueño al abrir la app)
       const porDefecto = await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=100", CAB_TOKEN);

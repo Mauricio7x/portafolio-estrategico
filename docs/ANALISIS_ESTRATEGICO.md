@@ -312,6 +312,7 @@ Esfuerzo en sesiones de ~30 min. «Hecho hoy» = incluido en esta rama.
 | 20 | Formulario simple de experiencia (sin CSV/JSON) | 3 | §1.11 |
 | 21 | Onboarding v2: ubicación + tipo de obra + experiencia en el flujo | 4 | §1.1 |
 | 22 | Unificar selectores de perfil (`juntos` vs `consorcio`) y voseo/usted | 3 | Consistencia global |
+| 23 | Alertas de nuevas oportunidades que pasan tus filtros (correo; el cron diario ya existe) | 4-6 | El mayor ahorro operativo pendiente: hoy todo el valor exige entrar a diario (`docs/ACCESIBILIDAD.md` §5) |
 
 ### Impacto bajo → no hacer
 
