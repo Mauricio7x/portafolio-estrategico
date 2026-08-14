@@ -8853,7 +8853,7 @@ async function main() {
         /* TODOS los niveles se publican, también los que no respondieron: sin
            eso no se distingue «esta fuente no tenía el dato» de «ni se miró». */
         const cascada = sinNada.items[0].cascada;
-        assert.deepStrictEqual(cascada.map((c) => c.nivel), ["usuario", "pliego", "mercado", "retail", "catalogo"]);
+        assert.deepStrictEqual(cascada.map((c) => c.nivel), ["usuario", "pliego", "mercado", "retail", "invias", "catalogo"]);
         for (const paso of cascada) {
           assert.strictEqual(paso.respondio, false);
           assert.ok(paso.motivo && paso.motivo.length > 10, `el nivel ${paso.nivel} no dice por qué no respondió`);
@@ -8869,6 +8869,10 @@ async function main() {
            tienda cotiza insumos, no ítems de obra, y la frase lo dice. */
         assert.ok(/insumo/i.test(cascada.find((c) => c.nivel === "retail").motivo),
           "el nivel retail tiene que declarar que es un techo de INSUMO, no un precio de ítem");
+        /* Y el nivel INVIAS es la tercera cerradura de la misma familia: el
+           banco cotiza insumos por provincia, jamás ítems de obra. */
+        assert.ok(/insumo/i.test(cascada.find((c) => c.nivel === "invias").motivo),
+          "el nivel INVIAS tiene que declarar que es una referencia de INSUMO, no un precio de ítem");
 
         /* --- lib/apu/retail: el techo de tienda, trazable y sin rellenos --- */
         {
@@ -8989,6 +8993,107 @@ async function main() {
             + "null sin dato, techo fuera del costo directo y columna «Precio de tienda» cableada");
         }
 
+        /* --- lib/apu/invias: la referencia oficial por provincia (capa 3) --- */
+        {
+          const invias = require("../lib/apu/invias.js");
+          const datosInvias = require("../data/apu_invias.json");
+          const catalogoApu = require("../lib/apu/catalogo.js");
+          const calculoApu = require("../lib/apu/calculo.js");
+          const { SEMILLA } = catalogoApu;
+
+          /* Integridad del JSON capturado: toda referencia apunta a un insumo
+             REAL del catálogo, lleva su código oficial, su vigencia y su fecha,
+             y ningún precio es 0 o negativo — un cero no es un precio (R1). */
+          const idsCatalogo = new Set((SEMILLA.insumos || []).map((i) => i.id));
+          assert.ok(datosInvias.referencias.length >= 20, "la captura INVIAS perdió referencias");
+          for (const ref of datosInvias.referencias) {
+            assert.ok(idsCatalogo.has(ref.insumo_id), `referencia INVIAS huérfana: ${ref.insumo_id}`);
+            assert.ok(ref.codigo_invias && ref.nombre_oficial && ref.unidad_fuente,
+              `referencia de ${ref.insumo_id} sin código, nombre oficial o unidad`);
+            assert.ok(ref.vigencia && ref.capturado_el,
+              `referencia de ${ref.insumo_id} sin vigencia o sin fecha: el rezago viaja declarado o no viaja`);
+            assert.ok(["exacta", "aproximada"].includes(ref.correspondencia));
+            if (ref.correspondencia === "aproximada") {
+              assert.ok(ref.correspondencia_nota, `correspondencia aproximada sin nota en ${ref.insumo_id}`);
+            }
+            assert.ok(Array.isArray(ref.provincias) && ref.provincias.length > 0);
+            for (const p of ref.provincias) {
+              assert.ok(p.precio > 0 && p.departamento && p.provincia,
+                `fila sin precio positivo o sin origen en ${ref.insumo_id}`);
+            }
+          }
+          /* La corrupción de la vigencia 2025-2 de la API queda escrita en la
+             meta: quien re-capture tiene que leer POR QUÉ no se usó la última. */
+          assert.ok(datosInvias._meta.por_que_no_2025_2 && /2025-2/.test(datosInvias._meta.por_que_no_2025_2),
+            "la meta tiene que explicar por qué NO se capturó la vigencia más reciente");
+
+          /* Con departamento: la mediana de SUS provincias, reproducible a
+             mano, con el alcance dicho y la lista de provincias para auditar. */
+          const acero = invias.referenciaInvias("acero_refuerzo_60000_psi", "TOLIMA");
+          assert.ok(acero && acero.precio > 0 && acero.codigo_invias === "B0020003");
+          assert.ok(/Tolima/i.test(acero.alcance), "el alcance tiene que nombrar el departamento o su provincia");
+          assert.ok(Array.isArray(acero.provincias) && acero.provincias.length >= 1);
+          const refAcero = datosInvias.referencias.find((r) => r.insumo_id === "acero_refuerzo_60000_psi");
+          const valsTolima = refAcero.provincias
+            .filter((p) => /tolima/i.test(p.departamento)).map((p) => p.precio).sort((a, b) => a - b);
+          const m = Math.floor(valsTolima.length / 2);
+          const medTolima = valsTolima.length % 2 ? valsTolima[m]
+            : Math.round(((valsTolima[m - 1] + valsTolima[m]) / 2) * 100) / 100;
+          assert.strictEqual(acero.precio, medTolima, "la mediana departamental tiene que reproducirse a mano");
+
+          /* Bogotá D.C. no está en el banco: mediana nacional DECLARADA. */
+          const bog = invias.referenciaInvias("acero_refuerzo_60000_psi", "BOGOTA D.C.");
+          assert.ok(/nacional/.test(bog.alcance) && /Bogot/i.test(bog.alcance),
+            "en Bogotá la referencia tiene que declararse mediana nacional, no disfrazarse de local");
+          assert.strictEqual(invias.coberturaInvias("BOGOTA D.C.").cubierto, false);
+          assert.strictEqual(invias.coberturaInvias(null).cubierto, null,
+            "sin departamento la cobertura es null: no saber cuál es no es saber que no hay");
+
+          /* Sin correspondencia curada → null, y el hueco queda declarado con
+             su motivo (el premezclado no es un insumo del banco INVIAS). */
+          assert.strictEqual(invias.referenciaInvias("concreto_premezclado_3000_psi", "TOLIMA"), null);
+          assert.ok(datosInvias._meta.categorias_sin_invias.concreto_premezclado,
+            "el hueco del concreto premezclado tiene que estar declarado con motivo");
+
+          /* La normalización es multiplicación EXACTA de la misma dimensión,
+             declarada: kg → saco de 50 kg. */
+          const cemInv = invias.referenciaInvias("cemento_gris_50kg", "TOLIMA");
+          assert.strictEqual(cemInv.normalizado.precio, Math.round(cemInv.precio * 50 * 100) / 100);
+          assert.ok(cemInv.normalizado.nota, "la conversión declarada lleva su nota o no es declarada");
+
+          /* …y viaja hasta el desglose del presupuesto SIN mover un peso del
+             costo directo: la referencia acompaña, jamás cuenta. */
+          const presuInv = calculoApu.calcularPresupuesto({
+            items: [{ item_id: "INV-330.1", cantidad: 10 }], departamento: "ANTIOQUIA",
+          });
+          const itInv = presuInv.items[0];
+          const lBase = itInv.detalle.insumos.find((l) => l.insumo_id === "material_base_bg_a");
+          assert.ok(lBase.referencia_invias && lBase.referencia_invias.precio > 0
+            && lBase.referencia_invias.vigencia && lBase.referencia_invias.alcance,
+          "la línea de la base granular lleva su referencia INVIAS con vigencia y alcance");
+          const lMo = itInv.detalle.insumos.find((l) => l.tipo === "mano_obra");
+          assert.strictEqual(lMo.referencia_invias, null,
+            "la mano de obra no está en el banco de la API: null, jamás un relleno");
+          assert.ok(presuInv.invias && presuInv.invias.cubierto === true && presuInv.invias.vigencia,
+            "el presupuesto publica la cobertura INVIAS del departamento con su vigencia");
+          const defBase = catalogoApu.itemPorCodigo(SEMILLA, "INV-330.1");
+          const cdBase = catalogoApu.costoDirecto(defBase, SEMILLA, presuInv.ajuste_regional.region_utilizada);
+          const rd = (n) => Math.round(n * 100) / 100;
+          const unitBase = rd(rd(cdBase.capitulos.materiales) + rd(cdBase.capitulos.mano_obra)
+            + rd(cdBase.capitulos.equipo + cdBase.capitulos.herramienta_menor) + rd(cdBase.capitulos.transporte));
+          assert.strictEqual(itInv.costo_directo_unitario, unitBase,
+            "la referencia INVIAS no puede mover ni un peso del costo directo");
+
+          /* El frontend pinta la referencia en el desglose, con el detalle por
+             provincia en el title (auditable sin abrir nada). */
+          const appJsInvias = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+          assert.ok(/referenciaInviasHtml/.test(appJsInvias) && /referencia_invias/.test(appJsInvias),
+            "app.js sin el pintado de la referencia INVIAS en el desglose");
+
+          console.log("· unidad invias: 23 códigos curados por provincia, mediana departamental reproducible, "
+            + "Bogotá declarada nacional, 2025-2 corrupta documentada y referencia fuera del costo directo");
+        }
+
         /* --- la referencia de mercado: sobre el CONTRATO, con mínimo --- */
         const mk = (n, dep, fam, base) => Array.from({ length: n }, (_, i) => ({
           departamento_entidad: dep, codigo_principal_de_categoria: `${fam}1500`,
@@ -9083,7 +9188,7 @@ async function main() {
         const cascItem = calcConPropio.cuerpo.items[0].cascada;
         assert.ok(cascItem, "`calcular` tiene que publicar la cascada: es la vía que usa la web");
         assert.deepStrictEqual(cascItem.pasos.map((p) => p.nivel),
-          ["usuario", "pliego", "mercado", "retail", "catalogo"]);
+          ["usuario", "pliego", "mercado", "retail", "invias", "catalogo"]);
         const respondieron = cascItem.pasos.filter((p) => p.respondio);
         assert.strictEqual(respondieron.length, 1, "responde UNA fuente: la primera que tiene el dato");
         assert.strictEqual(respondieron[0].nivel, "usuario");
@@ -9287,7 +9392,7 @@ async function main() {
           departamento: "BOGOTA D.C.", config: {},
         }).items[0];
         assert.strictEqual(sinPrecioCasc.incompleto, true);
-        assert.ok(sinPrecioCasc.cascada && sinPrecioCasc.cascada.pasos.length === 5,
+        assert.ok(sinPrecioCasc.cascada && sinPrecioCasc.cascada.pasos.length === 6,
           "al ítem sin precio se le negaba la explicación, que es el único caso que la necesita entera");
         assert.ok(sinPrecioCasc.cascada.pasos.every((p) => !p.respondio && p.motivo));
       }

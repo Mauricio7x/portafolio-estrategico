@@ -1684,6 +1684,53 @@ con evidencia HTTP en `docs/INVESTIGACION_COMPETENCIA_APU.md` §8–§10.
   y «Exportar Excel»); guardar/abrir borrador es administración y vive plegado en un `<details>` —
   los ids no cambiaron (renombrarlos mataría app.js en silencio).
 
+### Referencia oficial INVIAS por insumo (ago 2026)
+
+Capa 3 del plan de cobertura nacional (`docs/INVESTIGACION_COMPETENCIA_APU.md` §7): el banco de
+insumos de los APU Regionalizados del INVIAS (API ArcGIS `hermes2.invias.gov.co`, tabla «Insumo» =
+unión de Material+Equipo+Transporte, 183.010 registros, 140 provincias × 32 departamentos, JSON sin
+token) capturado a `data/apu_invias.json` con `tests/capturar_invias.js` (herramienta MANUAL con
+red, como la retail) y servido por `lib/apu/invias.js` (hoja) → campo `referencia_invias` en
+`detalle.insumos` de `calcular`, bloque `invias` junto al `retail`, y nivel `invias` declarado en la
+cascada de `lib/apu/precios.js`. Evidencia HTTP en el §11 del mismo doc.
+
+- **LA VIGENCIA 2025-2 DE LA API ESTÁ CORRUPTA EN ORIGEN, y por eso se captura 2025-1.** Medido
+  contrastando las DOS vigencias del mismo código en las 140 provincias: acero de refuerzo a
+  $122.000/kg (37× el mercado; 2025-1 da $3.280), agua a $15.900/L (145×; 2025-1 da $110), emulsión
+  CRL-0 IDÉNTICA en las 140 provincias (p10 = p90 — huella de un cruce de columnas). Se cazó
+  MIRANDO las medianas contra el mercado, no confiando en que «lo oficial es bueno»; antes de
+  re-capturar una vigencia nueva hay que repetir esa comparación (cabecera del capturador) y hay
+  prueba de que la meta explica por qué no se usó la última. El rezago viaja DECLARADO en cada
+  referencia.
+- **23 códigos curados A MANO leyendo el censo completo de una provincia** (Ibagué 7301, 647
+  filas), jamás por similitud de texto: 7 correspondencias exactas y 16 aproximadas CON NOTA. La
+  unidad de la fuente NO se convierte salvo multiplicación exacta de la MISMA dimensión (kg → saco
+  de 50 kg, L → m³), declarada en `normalizado.nota`. Hora vs día NO se convierte (no existe una
+  jornada en el repositorio — la lección del «costo horario») y m³ vs tonelada tampoco (la densidad
+  de la MDC-19 no es un dato del catálogo). En una re-captura, un código cuya unidad cambió ABORTA
+  en vez de adaptarse.
+- **Los huecos quedan declarados con motivo** (`categorias_sin_invias`): el banco no cotiza
+  concreto premezclado (sus APU lo producen desde agregados — el mismo hueco que declara el
+  retail), ni mano de obra (los jornales viven en los Excel semestrales, no en la API), ni
+  mampostería/acabados (es un banco VIAL); la subbase solo existe «con agregado siderúrgico», que
+  es otro producto — mapearla a la SBG convencional sería el falso positivo caro.
+- **Referencia, jamás precio**: no entra en `costoDirecto` (hay prueba de que no mueve un peso) y
+  el nivel `invias` de la cascada se declara SIEMPRE con `referencia_oficial_insumo` — la tercera
+  cerradura de la familia `no_aplica_a_item`/`techo_de_insumo`.
+- **El municipio del proceso no se conoce, así que la provincia exacta tampoco**: con varias
+  provincias en el departamento se publica la MEDIANA departamental (reproducible a mano, con
+  prueba) MÁS la lista provincia a provincia (viaja en el `title` del desglose, el patrón de la
+  columna de tienda). Bogotá D.C. no está en el banco: se responde la mediana nacional DECLARADA,
+  nunca disfrazada de precio local. Cobertura: los 32 departamentos — incluidos los 8 sin retail y
+  los 19 sin factor regional del catálogo.
+- **`returnDistinctValues` da 400 en este servidor ArcGIS**: para censar se pide UNA provincia
+  (cada código aparece exactamente una vez por provincia y vigencia). El fallo de ArcGIS viaja
+  DENTRO del 200 (`j.error`), como en OCR.space. Un 400 no se reintenta; 429/5xx sí, con backoff.
+- **Contraste que valida ambas fuentes**: el acarreo oficial ($1.263,6/m³-km, mediana nacional
+  2025-1) casi calca el del catálogo Nogal ($1.256/m³-km). Y la licencia va dicha: los documentos
+  INVIAS prohíben el uso comercial sin autorización — si Detecta se comercializa con estos datos,
+  pedirla (`preciosunitarios@invias.gov.co`).
+
 ### Página única y token integrado (ago 2026)
 
 Encargo del dueño: «una sola página, cero fricción». Se retiraron `admin.html`, `apu.html`,

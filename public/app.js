@@ -1982,6 +1982,23 @@
     }).join("");
   }
 
+  /* ── Referencia oficial INVIAS del insumo (capa 3, ago 2026) ──────────────
+     El precio del banco de los APU Regionalizados para la(s) provincia(s) del
+     departamento elegido, con código, vigencia y alcance. Es la cifra citable
+     ante un interventor — y una REFERENCIA con rezago declarado, nunca parte
+     del costo. El nombre oficial y el detalle por provincia viajan en el
+     `title` para auditar sin abrir nada (el patrón de la columna de tienda). */
+  function referenciaInviasHtml(l) {
+    const r = l && l.referencia_invias;
+    if (!r || !Number.isFinite(r.precio)) return "";
+    const norm = r.normalizado ? ` <span class="text-gray-400">(&asymp; ${pesos(r.normalizado.precio)}/${esc(r.normalizado.unidad)})</span>` : "";
+    const detalle = [r.codigo_invias + " · " + r.nombre_oficial]
+      .concat((r.provincias || []).map((p) => `${p.provincia}: ${pesos(p.precio)}`))
+      .join("\n");
+    return `<span class="block text-[10px] text-emerald-900/70" title="${esc(detalle)}">Oficial INVIAS ${esc(r.vigencia)} · ${pesos(r.precio)}${norm} · ${esc(r.unidad_fuente)} · ${esc(r.alcance)}${
+      r.correspondencia === "aproximada" ? ` · <span class="text-amber-700">insumo similar: ${esc(r.correspondencia_nota || "verificar equivalencia")}</span>` : ""}</span>`;
+  }
+
   function pintarInsumos(i) {
     const caja = $("tabla").querySelector(`[data-celda="insumos-${i}"]`);
     if (!caja) return;
@@ -2011,13 +2028,13 @@
       /* `lineaLegible` produce SOLO los campos de presentación: el techo
          retail se re-adjunta desde la línea original o se perdería aquí. */
       const lineas = det.insumos.filter((l) => l.tipo === tipo)
-        .map((l) => ({ ...APULibro.lineaLegible(l), techo_retail: l.techo_retail || null }));
+        .map((l) => ({ ...APULibro.lineaLegible(l), techo_retail: l.techo_retail || null, referencia_invias: l.referencia_invias || null }));
       const hm = tipo === "equipo" && det.herramienta_menor_pct > 0 ? det.herramienta_menor_unitario : null;
       if (!lineas.length && hm == null) return "";
       const subtotal = lineas.reduce((a, l) => a + (Number(l.valor) || 0), 0) + (hm || 0);
       const filasHtml = lineas.map((l) => `
         <tr class="align-top">
-          <td class="py-1 pr-2">${esc(l.nombre)}${l.nota ? `<span class="block text-[10px] text-gray-400">${esc(l.nota)}</span>` : ""}${techoRetailHtml(l)}</td>
+          <td class="py-1 pr-2">${esc(l.nombre)}${l.nota ? `<span class="block text-[10px] text-gray-400">${esc(l.nota)}</span>` : ""}${techoRetailHtml(l)}${referenciaInviasHtml(l)}</td>
           <td class="py-1 pr-2 text-gray-500">${esc(l.unidad)}</td>
           <td class="py-1 pr-2 text-right num">${l.cantidad == null ? "—" : num(l.cantidad)}</td>
           <td class="py-1 pr-2 text-right num">${pesos(l.precio)}</td>

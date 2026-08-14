@@ -327,7 +327,39 @@ MISMO `regionId` con `sellers:[]` para 9 códigos postales de punta a punta del 
   en HC y Easy).
 - **Homecenter domina a Easy en profundidad de catálogo de obra en todas las categorías probadas.**
 
-## 11 · Lo que este informe NO afirma (sinceridad)
+## 11 · Banco INVIAS por provincia — verificado e IMPLEMENTADO 2026-08-14 (hora Colombia)
+
+La capa 3 del §7 pasó de plan a código: `tests/capturar_invias.js` (herramienta manual con red) →
+`data/apu_invias.json` (23 códigos × 140 provincias, 329 KB) → `lib/apu/invias.js` →
+`referencia_invias` en `detalle.insumos` de `calcular` + nivel `invias` declarado en la cascada.
+Evidencia de la sesión de verificación:
+
+- **Estructura real de la API** (`MapServer?f=json`, 200): capa 0 `Subregion` (polígonos) y tablas
+  1 `Insumo` (183.010 = unión), 2 `Equipo` (39.620), 3 `Material` (130.620), 4 `Transporte`
+  (12.770). Campos: `codigo`, `nombreinsumo`, `precio`, `unidad`, `nombredepartamento`,
+  `nombreprovincia`, `codigodepartamento`, `codigoprovincia`, `anio`, `periodo`, `tipoinsumo`.
+  `maxRecordCount` 2000; una provincia completa (Ibagué 7301: 647 filas en 2025-1) cabe en una
+  petición. `returnDistinctValues=true` responde **400** en este servidor; el censo se hace por
+  provincia (cada código aparece exactamente una vez por provincia y vigencia). El error de ArcGIS
+  viaja DENTRO del 200 (`{"error":{...}}`), como en OCR.space.
+- **🚩 LA VIGENCIA 2025-2 ESTÁ CORRUPTA EN ORIGEN.** Comparadas las dos vigencias del mismo código
+  sobre sus 140 provincias (medianas): acero de refuerzo B0020003 $3.280/kg (2025-1, plausible)
+  contra **$122.000/kg** (2025-2, 37× el mercado); agua B0063200 $110/L contra **$15.900/L**
+  (145×); emulsión CRL-0 B020011 $1.802/L contra $52.048/L **idéntico en las 140 provincias**
+  (p10 = p90 — huella de un cruce de columnas); MDC-19 B0014502 $738.232/m³ contra $214.200 (⅓ del
+  mercado). Por eso la captura usa **2025-1** y `_meta.por_que_no_2025_2` lo explica. Lección:
+  «oficial» no exime del contraste contra mercado — la corrupción se cazó mirando, no confiando.
+- **Contraste cruzado que valida las dos fuentes**: el transporte oficial T0010025 da mediana
+  nacional $1.263,6/m³-km, casi idéntico al acarreo del catálogo calibrado con el Nogal
+  ($1.256/m³-km). Y el cemento portland ($679/kg → $34.000/saco de 50 kg) queda a un 5 % del
+  retail Homecenter ($32.500): tres fuentes independientes que se confirman.
+- **Curaduría**: 23 correspondencias a mano (7 exactas, 16 aproximadas con nota) leyendo el censo
+  de Ibagué; huecos declarados en `categorias_sin_invias` (premezclado, mano de obra, mampostería,
+  subbase convencional, formaletas con unidad ambigua). Cobertura: los 32 departamentos del banco —
+  incluidos los 8 sin retail (§10) y los 19 sin factor regional del catálogo. Bogotá D.C. NO está
+  en el banco: se responde la mediana nacional declarada.
+
+## 12 · Lo que este informe NO afirma (sinceridad)
 
 - No se midió la calidad interna de las plataformas de pago (Construdata Presupuestar, SINCO):
   todo lo dicho sale de su material público, tiendas y reseñas escasas (n=1–3).
@@ -335,7 +367,9 @@ MISMO `regionId` con `sellers:[]` para 9 códigos postales de punta a punta del 
   URL predecible son el respaldo; el extractor de PDFs propio, el último recurso.
 - Los 403 de hoy (ICCU, SECOP RetrieveFile) son observaciones con fecha desde ESTE entorno, no
   propiedades de las fuentes.
-- Nada de lo anterior está implementado todavía: este documento es investigación; la ingesta
-  INVIAS/IDU es trabajo de implementación con sus propias decisiones (tamaño en Redis, matching de
-  insumos INVIAS↔catálogo, vigencias mezcladas) que deben resolverse con las reglas ya escritas
-  (un cero no es un precio; la fuente viaja con la cifra; sin dato se dice sin dato).
+- De las capas del §7, hoy están implementadas la 5 (retail, §10) y la **referencia por insumo de
+  la 3** (banco INVIAS, §11 — 23 insumos curados, no los 183 k). Siguen siendo investigación: los
+  APU completos de los Excel INVIAS 2026-1 (composición y rendimientos), IDU/gobernaciones (capa 4)
+  y el reajuste DANE (capa 6) — trabajo con sus propias decisiones que deben resolverse con las
+  reglas ya escritas (un cero no es un precio; la fuente viaja con la cifra; sin dato se dice sin
+  dato).
