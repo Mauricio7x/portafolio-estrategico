@@ -8853,7 +8853,7 @@ async function main() {
         /* TODOS los niveles se publican, también los que no respondieron: sin
            eso no se distingue «esta fuente no tenía el dato» de «ni se miró». */
         const cascada = sinNada.items[0].cascada;
-        assert.deepStrictEqual(cascada.map((c) => c.nivel), ["usuario", "pliego", "mercado", "catalogo"]);
+        assert.deepStrictEqual(cascada.map((c) => c.nivel), ["usuario", "pliego", "mercado", "retail", "catalogo"]);
         for (const paso of cascada) {
           assert.strictEqual(paso.respondio, false);
           assert.ok(paso.motivo && paso.motivo.length > 10, `el nivel ${paso.nivel} no dice por qué no respondió`);
@@ -8865,6 +8865,129 @@ async function main() {
         assert.ok(/no precios unitarios|contrato completo/i.test(
           cascada.find((c) => c.nivel === "mercado").motivo),
         "el nivel de mercado tiene que declarar que NO produce precios unitarios");
+        /* El nivel RETAIL es la misma cerradura para la otra categoría: una
+           tienda cotiza insumos, no ítems de obra, y la frase lo dice. */
+        assert.ok(/insumo/i.test(cascada.find((c) => c.nivel === "retail").motivo),
+          "el nivel retail tiene que declarar que es un techo de INSUMO, no un precio de ítem");
+
+        /* --- lib/apu/retail: el techo de tienda, trazable y sin rellenos --- */
+        {
+          const retail = require("../lib/apu/retail.js");
+          const datosRetail = require("../data/apu_retail.json");
+          const { SEMILLA } = require("../lib/apu/catalogo.js");
+
+          /* Integridad del JSON capturado: todo insumo_id existe en el catálogo
+             (una referencia huérfana no se pintaría nunca y nadie lo notaría) y
+             ningún precio es 0 o negativo — un cero no es un precio. */
+          const idsCatalogo = new Set((SEMILLA.insumos || []).map((i) => i.id));
+          for (const ref of datosRetail.referencias) {
+            assert.ok(idsCatalogo.has(ref.insumo_id), `referencia retail huérfana: ${ref.insumo_id}`);
+            const precios = ref.precios_por_departamento
+              ? Object.values(ref.precios_por_departamento)
+              : [ref.precio, ref.precio_sin_iva, ref.precio_con_iva].filter((v) => v != null);
+            assert.ok(precios.length, `la referencia de ${ref.insumo_id} no trae ningún precio`);
+            for (const p of precios) assert.ok(p > 0, `precio no positivo en ${ref.insumo_id}: ${p}`);
+            // trazabilidad: sin fuente + fecha la cifra no se puede discutir
+            assert.ok(ref.fuente && ref.capturado_el, `referencia de ${ref.insumo_id} sin fuente o sin fecha de captura`);
+            assert.ok(["retail_con_iva", "lista_fabricante"].includes(ref.declaracion),
+              `declaración desconocida en ${ref.insumo_id}: ${ref.declaracion}`);
+          }
+
+          /* Regionalización real: el cemento de Ibagué NO es el de Bogotá, y el
+             ámbito viaja con la cifra. */
+          const enTolima = retail.referenciasRetail("cemento_gris_50kg", "TOLIMA");
+          const hcTolima = enTolima.find((r) => r.fuente === "Homecenter");
+          assert.ok(hcTolima.precio > 0);
+          assert.ok(/capital de TOLIMA/.test(hcTolima.ambito), "el ámbito tiene que decir de qué capital es el precio");
+
+          /* Departamento SIN cobertura: cae a Bogotá DECLARADO, jamás
+             disfrazado de precio local; y la cobertura dice su motivo. */
+          const enAmazonas = retail.referenciasRetail("cemento_gris_50kg", "AMAZONAS");
+          const hcAmazonas = enAmazonas.find((r) => r.fuente === "Homecenter");
+          assert.ok(/Bogot/.test(hcAmazonas.ambito) && /sin captura/i.test(hcAmazonas.ambito),
+            "sin cobertura local el techo tiene que declararse como precio de Bogotá");
+          const cob = retail.coberturaRetail("AMAZONAS");
+          assert.strictEqual(cob.cubierto, false);
+          assert.ok(cob.motivo && cob.motivo.length > 3, "la falta de cobertura viaja con su motivo");
+          assert.strictEqual(retail.coberturaRetail(null).cubierto, null,
+            "sin departamento la cobertura es null: no saber cuál es no es saber que no hay");
+
+          /* Insumo sin referencia → null, jamás un objeto vacío ni un 0. */
+          assert.strictEqual(retail.referenciasRetail("eq_retroexcavadora_oruga", "TOLIMA"), null);
+
+          /* La normalización es una DIVISIÓN declarada de la misma dimensión:
+             el tubo de 6 m a $/ml, con la nota que la explica. */
+          const tubo = retail.referenciasRetail("nog_tubo_pvc_sanitario_4", "BOGOTA D.C.")
+            .find((r) => r.fuente === "Homecenter");
+          assert.ok(Math.abs(tubo.normalizado.precio - tubo.precio / 6) < 0.01);
+          assert.ok(tubo.normalizado.nota && tubo.normalizado.unidad === "ml");
+
+          /* Y el techo viaja hasta el desglose del presupuesto, con el bloque
+             de cobertura al lado. Se busca un ítem del catálogo que use el
+             cemento para no cablear un código concreto. */
+          const conCemento = (SEMILLA.items || []).find((it) => (it.insumos || [])
+            .some((l) => l.insumo_id === "cemento_gris_50kg"));
+          const presu = require("../lib/apu/calculo.js").calcularPresupuesto({
+            items: [{ item_id: conCemento.codigo, cantidad: 2 }], departamento: "TOLIMA",
+          });
+          assert.ok(presu.retail && presu.retail.cubierto === true && presu.retail.capturado_el,
+            "el presupuesto publica la cobertura retail del departamento con su fecha de captura");
+          const lineaCem = presu.items[0].detalle.insumos.find((l) => l.insumo_id === "cemento_gris_50kg");
+          assert.ok(Array.isArray(lineaCem.techo_retail) && lineaCem.techo_retail[0].precio > 0,
+            "la línea del cemento lleva su techo retail");
+          assert.ok(lineaCem.techo_retail.every((r) => r.fuente && r.capturado_el && r.ambito),
+            "cada techo lleva fuente, ámbito y fecha — sin eso no se puede discutir");
+          /* Y el techo NO contamina el costo: el costo directo del ítem es
+             EXACTAMENTE el de `costoDirecto` del catálogo — el retail solo
+             viaja como referencia en el desglose, jamás entra en la cuenta. */
+          const cdMotor = require("../lib/apu/catalogo.js")
+            .costoDirecto(conCemento, SEMILLA, presu.ajuste_regional.region_utilizada);
+          const capIt = cdMotor.capitulos;
+          const redondear = (n) => Math.round(n * 100) / 100;
+          const unitEsperado = redondear(redondear(capIt.materiales) + redondear(capIt.mano_obra)
+            + redondear(capIt.equipo + capIt.herramienta_menor) + redondear(capIt.transporte));
+          assert.strictEqual(presu.items[0].costo_directo_unitario, unitEsperado,
+            "el techo retail no puede mover ni un peso del costo directo");
+          /* ══ LA COLUMNA «PRECIO DE TIENDA» (encargo del dueño, ago 2026) ══
+             Al importar un Excel, cada fila que corresponda a un material con
+             captura retail lleva su precio de tienda CON LA FUENTE PEGADA. El
+             match usa las primitivas del mapeo más el nombre COMERCIAL del
+             producto («VARILLA CORRUGADA» casa con el acero de refuerzo porque
+             así se llama en Homecenter). */
+          const { mapearFilasImportadas, referenciaTiendaDe } = require("../lib/apu/importar.js");
+          const imp = mapearFilasImportadas([
+            { descripcion: "CEMENTO GRIS 50 KG", unidad: "saco", cantidad: 100 },
+            { descripcion: "VARILLA CORRUGADA 1/2\" x 6m", unidad: "und", cantidad: 800 },
+            { descripcion: "EXCAVACION MANUAL EN MATERIAL COMUN", unidad: "m3", cantidad: 50 },
+          ], SEMILLA, { departamento: "TOLIMA" });
+          const cemImp = imp.filas[0].referencia_tienda;
+          assert.ok(cemImp && cemImp.refs[0].precio > 0 && cemImp.refs[0].fuente,
+            "la fila del cemento tiene que traer precio de tienda con su fuente");
+          assert.ok(/capital de TOLIMA/.test(cemImp.refs.find((r) => r.fuente === "Homecenter").ambito),
+            "con departamento, la referencia es la de SU capital y lo dice");
+          assert.ok(imp.filas[1].referencia_tienda,
+            "«VARILLA CORRUGADA» debe casar por el nombre COMERCIAL del producto de tienda");
+          assert.strictEqual(imp.filas[2].referencia_tienda, null,
+            "la excavación no se vende en tienda: null, jamás un relleno");
+          assert.strictEqual(referenciaTiendaDe("", "und", SEMILLA, "TOLIMA"), null);
+
+          /* …y el cálculo publica la del ÍTEM (su insumo de mayor peso con
+             captura) y la de la fila manual (por descripción). La celda y la
+             columna existen en el frontend. */
+          assert.ok(presu.items[0].referencia_tienda
+            && presu.items[0].referencia_tienda.via === "insumo"
+            && presu.items[0].referencia_tienda.refs[0].capturado_el,
+            "el ítem de catálogo publica referencia_tienda desde su insumo de mayor peso");
+          const appJsTienda = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+          const idxHtmlTienda = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+          assert.ok(appJsTienda.includes('data-celda="tienda-'), "la tabla del paso 3 sin la celda del precio de tienda");
+          assert.ok(/Precio de tienda/.test(idxHtmlTienda), "index.html sin la columna «Precio de tienda»");
+          assert.ok(appJsTienda.includes('colspan="9"'),
+            "la fila de detalle tiene que cubrir las 9 columnas tras añadir la de tienda");
+
+          console.log("· unidad retail: referencias trazables por capital, caída declarada a Bogotá, "
+            + "null sin dato, techo fuera del costo directo y columna «Precio de tienda» cableada");
+        }
 
         /* --- la referencia de mercado: sobre el CONTRATO, con mínimo --- */
         const mk = (n, dep, fam, base) => Array.from({ length: n }, (_, i) => ({
@@ -8960,7 +9083,7 @@ async function main() {
         const cascItem = calcConPropio.cuerpo.items[0].cascada;
         assert.ok(cascItem, "`calcular` tiene que publicar la cascada: es la vía que usa la web");
         assert.deepStrictEqual(cascItem.pasos.map((p) => p.nivel),
-          ["usuario", "pliego", "mercado", "catalogo"]);
+          ["usuario", "pliego", "mercado", "retail", "catalogo"]);
         const respondieron = cascItem.pasos.filter((p) => p.respondio);
         assert.strictEqual(respondieron.length, 1, "responde UNA fuente: la primera que tiene el dato");
         assert.strictEqual(respondieron[0].nivel, "usuario");
@@ -9164,7 +9287,7 @@ async function main() {
           departamento: "BOGOTA D.C.", config: {},
         }).items[0];
         assert.strictEqual(sinPrecioCasc.incompleto, true);
-        assert.ok(sinPrecioCasc.cascada && sinPrecioCasc.cascada.pasos.length === 4,
+        assert.ok(sinPrecioCasc.cascada && sinPrecioCasc.cascada.pasos.length === 5,
           "al ítem sin precio se le negaba la explicación, que es el único caso que la necesita entera");
         assert.ok(sinPrecioCasc.cascada.pasos.every((p) => !p.respondio && p.motivo));
       }

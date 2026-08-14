@@ -287,7 +287,10 @@ module.exports = async function handler(req, res) {
     try {
       const deRedis = await catalogoParaCalcular(redis);
       const cat = deRedis || SEMILLA;
-      const r = mapearFilasImportadas(filas, cat);
+      /* `departamento` afina el precio de tienda de cada fila a su capital
+         (Homecenter regionaliza); sin él la referencia sale de Bogotá y lo
+         declara en su `ambito` — jamás disfrazada de precio local. */
+      const r = mapearFilasImportadas(filas, cat, { departamento: datos.departamento || null });
       return res.status(200).json({
         ok: true,
         ...r,

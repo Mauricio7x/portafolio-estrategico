@@ -1790,6 +1790,25 @@
     agregarItemCatalogo(resultadosBusqueda[0].codigo);
   });
 
+  /* ── La celda «Precio de tienda» de una fila ─────────────────────────────
+     Encargo del dueño: que al pegar el Excel se VEA el precio de Homecenter (o
+     de donde salió) con su fuente. `ref` es `referencia_tienda` del servidor
+     (de la importación o del cálculo): precio + fuente + ámbito + fecha, y el
+     producto literal en el `title` para poder auditarlo sin abrir nada. Es una
+     REFERENCIA: no entra en el costo, y sin captura la celda dice «—». */
+  function celdaTiendaHtml(ref) {
+    if (!ref || !Array.isArray(ref.refs) || !ref.refs.length) return '<span class="text-gray-300">—</span>';
+    const r = ref.refs[0];
+    const precio = r.precio_sin_iva != null && r.precio_con_iva != null
+      ? `${pesos(r.precio_con_iva)} <span class="text-[10px] text-gray-400">con IVA</span>`
+      : `${pesos(r.precio)}${r.iva === "sin_iva" ? ' <span class="text-[10px] text-gray-400">sin IVA</span>' : ""}`;
+    const norm = r.normalizado ? `<span class="text-[10px] text-gray-400"> (&asymp; ${pesos(r.normalizado.precio)}/${esc(r.normalizado.unidad)})</span>` : "";
+    const titulo = `${r.producto || ""} · ${r.unidad_fuente || ""}${r.correspondencia === "aproximada" ? ` · producto similar: ${r.correspondencia_nota || "verificar equivalencia"}` : ""}`;
+    return `<span class="block num text-sm font-medium text-blue-950" title="${esc(titulo)}">${precio}${norm}</span>
+      <span class="block text-[10px] text-gray-500" title="${esc(titulo)}">${esc(r.fuente)} · ${esc(r.ambito)} · ${esc(r.vigencia_impresa ? `lista ${r.vigencia_impresa}` : r.capturado_el || "")}${
+      ref.via === "insumo" ? ` · ${esc(ref.insumo)}` : ""}${r.correspondencia === "aproximada" ? ' · <span class="text-amber-700">similar</span>' : ""}</span>`;
+  }
+
   function pintarTabla() {
     const cuerpo = $("tabla");
     $("tabla-vacia").classList.toggle("hidden", filas.length > 0);
@@ -1829,6 +1848,7 @@
         </td>
         <td class="py-2 pr-3 text-right num font-medium" data-celda="unitario-${i}">—</td>
         <td class="py-2 pr-3 text-right num font-semibold" data-celda="total-${i}">—</td>
+        <td class="py-2 pr-3" data-celda="tienda-${i}">${celdaTiendaHtml(f.referencia_tienda)}</td>
         <td class="py-2 pr-3" data-celda="origen-${i}"></td>
         <td class="py-2 text-right">
           <button type="button" data-quitar="${i}"
@@ -1837,7 +1857,7 @@
         </td>
       </tr>
       <tr data-detalle="${i}" class="hidden bg-gray-50">
-        <td colspan="8" class="px-3 py-3">
+        <td colspan="9" class="px-3 py-3">
           <div class="grid gap-3 text-xs sm:grid-cols-5">
             <label class="block">
               <span class="text-[11px] uppercase tracking-wide text-gray-400">Rendim./día</span>
@@ -1941,6 +1961,27 @@
       </div>`;
   }
 
+  /* ── Techo retail del insumo (encargo del dueño, ago 2026) ────────────────
+     Lo que ese insumo cuesta HOY en tienda o en lista de fabricante, con
+     fuente, ámbito y fecha — el techo negociable. Es una REFERENCIA: nunca
+     entra en el costo (retail = IVA + margen de mostrador) y no se pinta nada
+     cuando no hay captura, porque la ausencia no se rellena. */
+  function techoRetailHtml(l) {
+    const refs = l && l.techo_retail;
+    if (!Array.isArray(refs) || !refs.length) return "";
+    return refs.map((r) => {
+      const precio = r.iva === "sin_iva"
+        ? `${pesos(r.precio)} <span class="text-gray-400">sin IVA</span>`
+        : (r.precio_sin_iva != null && r.precio_con_iva != null
+          ? `${pesos(r.precio_sin_iva)} <span class="text-gray-400">sin IVA</span> / ${pesos(r.precio_con_iva)} <span class="text-gray-400">con IVA</span>`
+          : pesos(r.precio));
+      const norm = r.normalizado ? ` <span class="text-gray-400">(&asymp; ${pesos(r.normalizado.precio)}/${esc(r.normalizado.unidad)})</span>` : "";
+      const cuando = r.vigencia_impresa ? `lista ${esc(r.vigencia_impresa)}` : `capturado ${esc(r.capturado_el || "")}`;
+      return `<span class="block text-[10px] text-blue-900/70">Techo ${esc(r.fuente)} · ${precio}${norm} · ${esc(r.unidad_fuente)} · ${esc(r.ambito)} · ${cuando}${
+        r.correspondencia === "aproximada" ? ` · <span class="text-amber-700">producto similar: ${esc(r.correspondencia_nota || "verificar equivalencia")}</span>` : ""}</span>`;
+    }).join("");
+  }
+
   function pintarInsumos(i) {
     const caja = $("tabla").querySelector(`[data-celda="insumos-${i}"]`);
     if (!caja) return;
@@ -1967,13 +2008,16 @@
     }
 
     const cuerpoRubro = (tipo) => {
-      const lineas = det.insumos.filter((l) => l.tipo === tipo).map((l) => APULibro.lineaLegible(l));
+      /* `lineaLegible` produce SOLO los campos de presentación: el techo
+         retail se re-adjunta desde la línea original o se perdería aquí. */
+      const lineas = det.insumos.filter((l) => l.tipo === tipo)
+        .map((l) => ({ ...APULibro.lineaLegible(l), techo_retail: l.techo_retail || null }));
       const hm = tipo === "equipo" && det.herramienta_menor_pct > 0 ? det.herramienta_menor_unitario : null;
       if (!lineas.length && hm == null) return "";
       const subtotal = lineas.reduce((a, l) => a + (Number(l.valor) || 0), 0) + (hm || 0);
       const filasHtml = lineas.map((l) => `
         <tr class="align-top">
-          <td class="py-1 pr-2">${esc(l.nombre)}${l.nota ? `<span class="block text-[10px] text-gray-400">${esc(l.nota)}</span>` : ""}</td>
+          <td class="py-1 pr-2">${esc(l.nombre)}${l.nota ? `<span class="block text-[10px] text-gray-400">${esc(l.nota)}</span>` : ""}${techoRetailHtml(l)}</td>
           <td class="py-1 pr-2 text-gray-500">${esc(l.unidad)}</td>
           <td class="py-1 pr-2 text-right num">${l.cantidad == null ? "—" : num(l.cantidad)}</td>
           <td class="py-1 pr-2 text-right num">${pesos(l.precio)}</td>
@@ -2172,6 +2216,13 @@
       }
       const org = tabla.querySelector(`[data-celda="origen-${i}"]`);
       if (org) org.innerHTML = badgeOrigen(it, r);
+
+      /* El precio de tienda que resolvió el servidor se GUARDA en la fila:
+         así sobrevive a los repintados de la tabla y a un cambio de pestaña
+         sin volver a calcular. */
+      if (filas[i]) filas[i].referencia_tienda = it.referencia_tienda || filas[i].referencia_tienda || null;
+      const tnd = tabla.querySelector(`[data-celda="tienda-${i}"]`);
+      if (tnd) tnd.innerHTML = celdaTiendaHtml(it.referencia_tienda || (filas[i] && filas[i].referencia_tienda));
 
       /* El desglose de insumos se INVALIDA con cada cálculo: si no, un ítem que
          quedó abierto seguiría enseñando los insumos del cálculo anterior —
@@ -2544,9 +2595,10 @@
 
   function abrirModalImportar() {
     const m = importacion.resumen_mapeo;
+    const conTienda = importacion.filas.filter((f) => f.referencia_tienda).length;
     $("imp-resumen").textContent = `${importacion.nombre_archivo} · ${m.total} ítems · `
       + `${m.firmes} firmes · ${m.revisar} por revisar · ${m.personalizados} personalizados · `
-      + `${m.con_precio_archivo} con precio del archivo`;
+      + `${m.con_precio_archivo} con precio del archivo · ${conTienda} con precio de tienda`;
     $("imp-avisos").innerHTML = (importacion.avisos_lectura || [])
       .map((a) => `<p class="rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-900">${esc(a)}</p>`).join("");
 
@@ -2573,6 +2625,7 @@
         <td class="px-2 py-1.5 text-gray-500">${esc(f.unidad || "—")}</td>
         <td class="px-2 py-1.5 text-right num">${f.cantidad == null ? "—" : num(f.cantidad)}</td>
         <td class="px-2 py-1.5 text-right num">${f.precio_archivo == null ? "—" : pesos(f.precio_archivo)}</td>
+        <td class="px-2 py-1.5">${celdaTiendaHtml(f.referencia_tienda)}</td>
         <td class="px-2 py-1.5">${chip(f)}</td>
       </tr>`).join("");
 
@@ -2696,6 +2749,9 @@
         precio_manual: base.precio_manual ?? null,
         origen_precio: base.origen_precio || null,
         sugerencia: f.descripcion_catalogo || null,
+        // el precio de tienda resuelto en la importación viaja a la tabla:
+        // la columna se ve NADA MÁS pegar el Excel, sin esperar al cálculo
+        referencia_tienda: f.referencia_tienda || null,
       };
     });
     filas = filas.concat(nuevas);

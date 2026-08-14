@@ -913,7 +913,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">3</span>Calcular y exportar</h2>
-            <p class="mt-1 text-sm text-gray-500">Escriba las cantidades y pulse <strong>Calcular APU</strong>. Puede corregir cualquier precio: los que corrija quedan guardados y mandan la próxima vez. Pulse un ítem para ver su desglose.</p>
+            <p class="mt-1 text-sm text-gray-500">Escriba las cantidades y pulse <strong>Calcular APU</strong>. La columna <strong>«Precio de tienda»</strong> muestra cuánto vale ese material en Homecenter o en la lista del fabricante, con su fuente y su fecha: es una referencia para negociar y <strong>no entra en el costo</strong>. Los precios que corrija quedan guardados y mandan la próxima vez. Pulse un ítem para ver su desglose.</p>
           </div>
         </div>
 
@@ -927,6 +927,7 @@
                 <th class="py-2 pr-3 text-right">Precio manual</th>
                 <th class="py-2 pr-3 text-right">Precio unitario</th>
                 <th class="py-2 pr-3 text-right">Total</th>
+                <th class="py-2 pr-3">Precio de tienda<br><span class="font-normal normal-case text-gray-300">referencia con fuente</span></th>
                 <th class="py-2 pr-3">Origen</th>
                 <th class="py-2"></th>
               </tr>
@@ -938,22 +939,32 @@
           Sin ítems. En el paso 1: describa la obra y pulse «Detectar ítems», cargue un Excel o busque un ítem por su nombre.
         </p>
 
+        <!-- ══ DOS BOTONES A LA VISTA, Y NADA MÁS ══
+             El flujo que la persona necesita es «Calcular → Exportar»; el
+             nombre del borrador y sus dos botones son administración y viven
+             plegados. Los ids NO cambian: renombrarlos mataría app.js en
+             silencio, que es el modo de fallo que la prueba de ids vigila. -->
         <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-5">
           <button id="btn-calcular" type="button"
                   class="rounded-xl bg-gray-900 px-8 py-3 text-base font-semibold text-white transition hover:bg-gray-700 disabled:opacity-40">
             Calcular APU
           </button>
-          <input id="nombre-presupuesto" type="text" placeholder="Nombre del presupuesto"
-                 class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
-          <button id="btn-guardar" type="button"
-                  class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Guardar</button>
-          <button id="btn-listar" type="button"
-                  class="rounded-lg px-3 py-2 text-sm text-gray-500 transition hover:text-gray-900">Abrir un borrador…</button>
           <button id="btn-exportar" type="button"
-                  class="rounded-xl bg-gray-900 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-700 disabled:opacity-40">
+                  class="rounded-xl bg-gray-900 px-6 py-3 text-base font-semibold text-white transition hover:bg-gray-700 disabled:opacity-40">
             Exportar Excel
           </button>
         </div>
+        <details class="mt-3 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
+          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Guardar o abrir un borrador</summary>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <input id="nombre-presupuesto" type="text" placeholder="Nombre del presupuesto"
+                   class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
+            <button id="btn-guardar" type="button"
+                    class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Guardar</button>
+            <button id="btn-listar" type="button"
+                    class="rounded-lg px-3 py-2 text-sm text-gray-500 transition hover:text-gray-900">Abrir un borrador…</button>
+          </div>
+        </details>
         <p id="accion-mensaje" class="mt-3 text-sm"></p>
         <div id="lista-presupuestos" class="mt-4 hidden"></div>
       </section>
@@ -1739,6 +1750,7 @@
               <th class="px-2 py-2">Und.</th>
               <th class="px-2 py-2 text-right">Cant.</th>
               <th class="px-2 py-2 text-right">Precio archivo</th>
+              <th class="px-2 py-2">Precio de tienda</th>
               <th class="px-2 py-2">Mapeo al catálogo</th>
             </tr>
           </thead>
