@@ -1665,6 +1665,24 @@ con evidencia HTTP en `docs/INVESTIGACION_COMPETENCIA_APU.md` §8–§10.
   vigente de cada fabricante en URL estable** (`coval.com.co/pdfs/listasprecios/ult_<marca>.pdf`) —
   Sika, Eternit, Durman (sustituto de Pavco, que sigue 403), Grival, PCP. Pintuco es imagen (solo
   OCR); Acesco no publica precios.
+- **La columna «Precio de tienda» del editor** (encargo del dueño, ago 2026): cada fila de la tabla
+  del paso 3 —y de la vista previa de importación— enseña el precio retail de su material con la
+  fuente, el ámbito y la fecha pegados; el producto LITERAL de tienda viaja en el `title` para
+  auditarlo sin abrir nada. Sigue siendo REFERENCIA: hay prueba de que no mueve un peso del costo
+  directo. Tres decisiones: (1) para un ítem del catálogo la referencia sale de su **insumo de MAYOR
+  PESO en pesos** con captura (`via: "insumo"`) — «el primero» enseñaría el agua en un ítem de
+  concreto; (2) para una fila importada o manual se casa la DESCRIPCIÓN contra los insumos con
+  captura (`via: "descripcion"`, `referenciaTiendaDe` en `lib/apu/importar.js`) usando **las mismas
+  primitivas del mapeo** (una segunda definición de «se parecen» divergiría), y el vocabulario del
+  candidato incluye el **nombre COMERCIAL del producto de tienda** — «VARILLA CORRUGADA» casa con el
+  acero de refuerzo porque así se llama en Homecenter, y sin esto la columna quedaba vacía justo en
+  las filas escritas como las escribe la gente; (3) sin captura la celda dice «—»: la ausencia no se
+  rellena (`null`, jamás un precio de otra cosa). El `departamento` viaja de la importación
+  (`opciones.departamento` en `mapearFilasImportadas`) para que la referencia sea la de SU capital, y
+  la resuelta en la importación se GUARDA en la fila: sobrevive repintados y se ve nada más pegar el
+  Excel, sin esperar al cálculo. De paso, el paso 3 quedó con DOS botones a la vista («Calcular APU»
+  y «Exportar Excel»); guardar/abrir borrador es administración y vive plegado en un `<details>` —
+  los ids no cambiaron (renombrarlos mataría app.js en silencio).
 
 ### Página única y token integrado (ago 2026)
 
