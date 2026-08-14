@@ -696,6 +696,11 @@ const HIST_SIN_OFERENTES = [
      los fixtures de identidad: 6 adjudicatarios más en 72141000 moverían el
      lift del único par que debe pasar los umbrales. */
   { entidad: "INSTITUTO DE OBRAS DEL PORVENIR", nit: "800100088", n: 6, ganador: GANADOR_RECURRENTE, codigo: "72151000" },
+  /* GANADOR SIN NIT PUBLICADO (ago 2026, visto en producción con GPS S.A.S en
+     Pereira): SECOP trae nit «No Definido» y solo el código interno
+     `codigoproveedor`. La identidad funciona, pero el rótulo NO puede decir
+     «NIT»: es otra cosa. Entidad propia y sin oferentes, como los demás. */
+  { entidad: "FONDO MIXTO DEL SUROESTE", nit: "800100099", n: 1, ganadorCodigoSecop: { nombre: "EVENTOS DEL RIO SAS", codigo: "701000123" }, codigo: "72151000" },
 ];
 const HIST_DETALLE = HIST_SIN_OFERENTES.reduce((a, e) => a + e.n, 0);
 
@@ -725,7 +730,14 @@ function generarDatasetDetalle() {
         codigo_principal_de_categoria: `V1.${e.codigo || "72141000"}`, tipo_de_contrato: "Obra",
         // SIN numero_de_ofertas a propósito: es el «sin dato» que hay que explicar
         // (con `ganador`, las primeras n−1 filas las gana el MISMO y la última otro)
-        ...(e.desierto ? {} : {
+        ...(e.desierto ? {} : e.ganadorCodigoSecop ? {
+          // el caso real de producción: NIT «No Definido» + código interno
+          nombre_del_proveedor: e.ganadorCodigoSecop.nombre,
+          nit_del_proveedor_adjudicado: "No Definido",
+          codigoproveedor: e.ganadorCodigoSecop.codigo,
+          valor_total_adjudicacion: String(790e6 + i),
+          fecha_adjudicacion: `${mes}-25T10:00:00.000`,
+        } : {
           nombre_del_proveedor: e.ganador && k < e.n - 1 ? e.ganador.nombre : `CONSTRUCTORA DET ${i} SAS`,
           nit_del_proveedor_adjudicado: e.ganador && k < e.n - 1 ? e.ganador.nit : `90050${String(i).padStart(4, "0")}`,
           valor_total_adjudicacion: String(790e6 + i),
@@ -6672,6 +6684,18 @@ async function main() {
         assert.ok(/se[ñn]al/i.test(ar.lectura), "…y nombra la señal de alerta del manual");
         // la última adjudicación es una fecha, no un timestamp crudo
         assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(ar.top[0].ultima_adjudicacion));
+        // el identificador viaja CON su tipo, y aquí es un NIT de verdad
+        assert.deepStrictEqual(ar.top[0].identificacion, { tipo: "nit", valor: GANADOR_RECURRENTE.nit });
+
+        /* GANADOR SIN NIT PUBLICADO (el caso GPS S.A.S de producción): el
+           dataset trae nit «No Definido» y solo `codigoproveedor`. El campo
+           `nit` NO puede llevar ese código — sería un NIT falso con cara de
+           dato — y el identificador viaja rotulado como lo que es. */
+        const fm = (await detalle("FONDO MIXTO DEL SUROESTE", "&refrescar=1")).cuerpo;
+        const gcs = fm.adjudicatarios.top[0];
+        assert.strictEqual(gcs.nombre, "EVENTOS DEL RIO SAS");
+        assert.strictEqual(gcs.nit, null, "un código interno de SECOP no es un NIT");
+        assert.deepStrictEqual(gcs.identificacion, { tipo: "codigo_secop", valor: "701000123" });
 
         // por debajo del mínimo NO se publica concentración: sería «100 %» sobre 2
         const car = (await detalle(ENTIDAD_CAR, "&refrescar=1")).cuerpo;
@@ -10835,7 +10859,10 @@ async function main() {
         /* la fecha del último contrato de cada ganador (encargo del dueño,
            ago 2026): el servidor la publica desde el día uno del bloque y el
            modal tiene que pintarla — un dato que viaja y no se pinta no existe */
-        "Último contrato", "ultima_adjudicacion"]) {
+        "Último contrato", "ultima_adjudicacion",
+        /* el identificador sin NIT se rotula como lo que es (código interno
+           de SECOP), jamás como NIT — el caso GPS S.A.S de producción */
+        "Cód. SECOP", "identificacion"]) {
         assert.ok(js.includes(debe), `app.js sin ${debe} (adjudicatarios recurrentes / tipo de precio)`);
       }
       /* Y la fecha NO se formatea con `new Date("YYYY-MM-DD")`: eso la lee como
