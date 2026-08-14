@@ -237,7 +237,8 @@
        en el corpus activo vale «baja» siempre. Quien responde esta pregunta con
        base es `competencia_entidad`, del histórico. Ver docs/AUDITORIA_INTEGRAL §4.1. */
     for (const [id, nombre] of [["f-cuantia", "cuantia_rango"],
-      ["f-entidad", "competencia_entidad"], ["f-ubicacion", "ubicacion_valida"]]) {
+      ["f-entidad", "competencia_entidad"], ["f-ubicacion", "ubicacion_valida"],
+      ["f-zona", "zona"]]) {
       if ($(id).value) p.set(nombre, $(id).value);
     }
     p.set("ordenar_por", $("f-ordenar").value);
@@ -362,6 +363,22 @@
         (b && b.mensaje) || "No hay procesos adjudicados suficientes para estimar el descuento");
     }
     return chip(`Baja típica: ${fmtNum.format(mediana)}%`, d.clases, b.mensaje);
+  }
+
+  /* Chip de zona (lib/accesibilidad, encargo ago 2026): la etiqueta y el
+     mensaje llegan REDACTADOS del servidor — con «estimado» y «verificá la
+     zona» donde tocan, porque las distancias son aproximadas y las alertas
+     orientativas. El color dice lo que decide: verde cerca, gris medio o sin
+     dato, ámbar lejos o por verificar, rojo acceso difícil. Sin campo `zona`
+     (respuesta vieja) no se pinta nada: jamás se inventa. */
+  function chipZona(z) {
+    if (!z || !z.etiqueta) return "";
+    const clases = z.dificil_acceso ? "bg-red-100 text-red-700"
+      : z.verificar_orden_publico ? "bg-amber-100 text-amber-800"
+        : z.nivel === "cerca" ? "bg-green-100 text-green-800"
+          : z.nivel === "lejos" ? "bg-amber-100 text-amber-800"
+            : "bg-gray-100 text-gray-600";
+    return chip(esc(z.etiqueta), clases, z.mensaje || "");
   }
 
   /* Cierre con CUENTA REGRESIVA: «Cierra 15 sept. 2026» obliga a calcular
@@ -741,6 +758,7 @@
         ${paaEncendido ? chip("Activo · abierto", "bg-green-100 text-green-800 ring-1 ring-inset ring-green-600/20",
     "Proceso PUBLICADO en SECOP II, con pliego y fecha de cierre — a diferencia de las previsiones del PAA") : ""}
         ${chipCierre(cierre, cierreTxt)}
+        ${chipZona(l.zona)}
         ${l._cierre_prorrogado ? chip("Cierre prorrogado", "bg-indigo-100 text-indigo-800", "El cierre se movió por adenda: suele indicar que no llegaron ofertas suficientes") : ""}
       </div>
 
@@ -1283,7 +1301,7 @@
   $("btn-buscar").addEventListener("click", () => { pagina = 1; reintentosSync = 0; buscar(); });
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
   for (const id of ["f-perfil", "f-cuantia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
-    "f-sin-unspsc", "f-solo-viables"]) {
+    "f-sin-unspsc", "f-solo-viables", "f-zona"]) {
     $(id).addEventListener("change", () => { pagina = 1; buscar(); });
   }
   /* «Ver PAA» NO re-consulta /api/oportunidades: son dos fuentes distintas y

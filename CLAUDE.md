@@ -2491,6 +2491,35 @@ rotulan con palabras (**Licitaciones · Precios · Mi empresa**) y en móvil lle
   plantilla de `bloqueProbabilidad` dejó de compilar `app.js` ENTERO — la pestaña se muere en silencio, que es
   justo el modo de fallo que la suite vigila. Los comentarios van FUERA de la plantilla.
 
+### Accesibilidad de la zona · el costo de LLEGAR ordena (ago 2026)
+
+`lib/accesibilidad.js` + `data/accesibilidad_departamentos.json` + campo `zona` en
+`/api/oportunidades`. Encargo del dueño: primero lo de mayor probabilidad que ADEMÁS esté a
+≤250 km de Bogotá/Ibagué o cerca de un aeropuerto, sin difícil acceso ni conflicto. Metodología
+completa y límites en `docs/ACCESIBILIDAD.md`. Decisiones que no hay que re-aprender:
+
+- **Ordena y etiqueta; solo excluye con `?zona=facil` (opt-in).** El falso negativo cuesta más
+  que el amarillo: una obra lejana puede valer la pena y la tarjeta lo dice con su chip.
+- **Granularidad DEPARTAMENTO en bandas ANCHAS** (≤250/≤550/>550 km a la capital, estimaciones
+  declaradas «estimado» en pantalla): más precisión sería fabricar exactitud. El orden de refinado
+  (medir reparto → municipalizar Tolima/Cund. → ZOMAC/PDET de la fuente oficial) está en el doc.
+- **La cubeta de zona va DENTRO de los viables y SOLO en `atractividad`**: viables → puntos de
+  zona (3 cerca · 2 media/sin_dato · 1 lejos · −1 por alerta) → VE. Quien pide otro orden pidió
+  ESE orden.
+- **`sin_dato` = banda media y el filtro NO lo excluye** (R1: no saber no es estar lejos, pero
+  tampoco se cuela de primero). Valor desconocido de `?zona=` es INERTE, jamás 400.
+- **El aeropuerto sube «lejos»→«media» salvo `dificil_acceso`**: volar personas no mueve equipo
+  de obra (Leticia tiene aeropuerto). El «≤2h30 del aeropuerto» municipal NO es computable sin
+  datos externos y no se inventa: se aproxima por la capital y se declara.
+- **Orden público: «verificá la zona», JAMÁS un veredicto.** Bandera departamental orientativa;
+  afirmar conflicto sobre UN proceso con una tabla de 33 filas sería el falso positivo más caro.
+- **Corre al SERVIR** (afinar la tabla = efecto inmediato, sin full) y es HOJA del grafo de
+  requires, con su normalizador local (no importa `norm` de semantica — la lección del ciclo).
+- **Los modales viven FUERA de `#app`** y la capa de tema tiene que traducirles fondo Y letra
+  JUNTOS: el «Resumen ejecutivo» (text-gray-800) quedó invisible en modo oscuro porque el fondo
+  se oscurecía por una regla que sí alcanzaba al modal y la letra no. Corregido ampliando los
+  selectores de texto a los tres modales.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).
