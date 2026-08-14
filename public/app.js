@@ -1066,11 +1066,23 @@
              adjudicatario en los ${a.sin_adjudicatario} procesos adjudicados de esta entidad: no se puede decir quién gana aquí.</p>`
         : "";
     }
+    /* La fecha del último contrato adjudicado de cada ganador (encargo del
+       dueño, ago 2026): dice si el recurrente sigue ACTIVO en la entidad o si
+       dejó de ganar hace un año. Se formatea el texto ISO directamente —
+       parsear con `new Date("YYYY-MM-DD")` lo leería como UTC y lo mostraría
+       un día antes en hora Colombia. Sin fecha legible: «sin dato», jamás una
+       inventada. */
+    const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+    const fmtUltima = (f) => {
+      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(f || ""));
+      return m ? `${Number(m[3])} ${MESES_CORTOS[Number(m[2]) - 1]} ${m[1]}` : null;
+    };
     const filas = (a.top || []).map((g) => `
       <tr class="border-t border-gray-100 align-top">
         <td class="py-2 pr-3">${esc(g.nombre)}${g.nit ? `<span class="block text-xs text-gray-400">NIT ${esc(g.nit)}</span>` : ""}</td>
         <td class="py-2 pr-3 text-right tabular-nums">${g.ganados}</td>
-        <td class="py-2 text-right tabular-nums">${g.valor_adjudicado_cop == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtCorto(g.valor_adjudicado_cop))}</td>
+        <td class="py-2 pr-3 text-right tabular-nums">${g.valor_adjudicado_cop == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtCorto(g.valor_adjudicado_cop))}</td>
+        <td class="py-2 text-right tabular-nums whitespace-nowrap">${fmtUltima(g.ultima_adjudicacion) == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtUltima(g.ultima_adjudicacion))}</td>
       </tr>`).join("");
     const conc = a.concentracion;
     return `
@@ -1079,7 +1091,7 @@
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm">
           <thead class="text-xs uppercase tracking-wide text-gray-400">
-            <tr><th class="pb-1">Adjudicatario</th><th class="pb-1 text-right">Ganados</th><th class="pb-1 text-right">Valor adjudicado</th></tr>
+            <tr><th class="pb-1">Adjudicatario</th><th class="pb-1 text-right">Ganados</th><th class="pb-1 text-right">Valor adjudicado</th><th class="pb-1 text-right">Último contrato</th></tr>
           </thead>
           <tbody>${filas}</tbody>
         </table>
