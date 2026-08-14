@@ -10831,9 +10831,17 @@ async function main() {
          concentración la escribe el SERVIDOR (las dos interpretaciones viajan
          juntas): el frontend solo la pinta, jamás la redacta por su cuenta. */
       for (const debe of ["Quién gana aquí", "bloqueAdjudicatarios", "d.adjudicatarios",
-        "Precios unitarios", "Precio global", "tipo_precio"]) {
+        "Precios unitarios", "Precio global", "tipo_precio",
+        /* la fecha del último contrato de cada ganador (encargo del dueño,
+           ago 2026): el servidor la publica desde el día uno del bloque y el
+           modal tiene que pintarla — un dato que viaja y no se pinta no existe */
+        "Último contrato", "ultima_adjudicacion"]) {
         assert.ok(js.includes(debe), `app.js sin ${debe} (adjudicatarios recurrentes / tipo de precio)`);
       }
+      /* Y la fecha NO se formatea con `new Date("YYYY-MM-DD")`: eso la lee como
+         UTC y la pinta un día antes en hora Colombia. Se formatea el texto. */
+      assert.ok(!/new Date\([^)]*ultima_adjudicacion/.test(js),
+        "ultima_adjudicacion no puede pasar por new Date(): se mostraría un día antes en hora Colombia");
       assert.ok(!/nicho .*a la medida/.test(sinComentarios(js)),
         "la lectura de concentración se redacta en el SERVIDOR: una copia en el frontend divergiría");
       /* EL TOKEN VA INTEGRADO (ago 2026): el usuario no ve ningún formulario
