@@ -1079,7 +1079,13 @@
     };
     const filas = (a.top || []).map((g) => `
       <tr class="border-t border-gray-100 align-top">
-        <td class="py-2 pr-3">${esc(g.nombre)}${g.nit ? `<span class="block text-xs text-gray-400">NIT ${esc(g.nit)}</span>` : ""}</td>
+        <td class="py-2 pr-3">${esc(g.nombre)}${g.nit
+    ? `<span class="block text-xs text-gray-400">NIT ${esc(g.nit)}</span>`
+    : g.identificacion
+      ? `<span class="block text-xs text-gray-400" title="${g.identificacion.tipo === "codigo_secop"
+        ? "Código interno de proveedor en SECOP: el dataset no publica el NIT de esta empresa (llega como «No Definido»)"
+        : "Documento del proveedor tal como lo publica el dataset"}">${g.identificacion.tipo === "codigo_secop" ? "Cód. SECOP" : "Doc."} ${esc(g.identificacion.valor)}</span>`
+      : ""}</td>
         <td class="py-2 pr-3 text-right tabular-nums">${g.ganados}</td>
         <td class="py-2 pr-3 text-right tabular-nums">${g.valor_adjudicado_cop == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtCorto(g.valor_adjudicado_cop))}</td>
         <td class="py-2 text-right tabular-nums whitespace-nowrap">${fmtUltima(g.ultima_adjudicacion) == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtUltima(g.ultima_adjudicacion))}</td>
