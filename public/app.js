@@ -1941,6 +1941,27 @@
       </div>`;
   }
 
+  /* ── Techo retail del insumo (encargo del dueño, ago 2026) ────────────────
+     Lo que ese insumo cuesta HOY en tienda o en lista de fabricante, con
+     fuente, ámbito y fecha — el techo negociable. Es una REFERENCIA: nunca
+     entra en el costo (retail = IVA + margen de mostrador) y no se pinta nada
+     cuando no hay captura, porque la ausencia no se rellena. */
+  function techoRetailHtml(l) {
+    const refs = l && l.techo_retail;
+    if (!Array.isArray(refs) || !refs.length) return "";
+    return refs.map((r) => {
+      const precio = r.iva === "sin_iva"
+        ? `${pesos(r.precio)} <span class="text-gray-400">sin IVA</span>`
+        : (r.precio_sin_iva != null && r.precio_con_iva != null
+          ? `${pesos(r.precio_sin_iva)} <span class="text-gray-400">sin IVA</span> / ${pesos(r.precio_con_iva)} <span class="text-gray-400">con IVA</span>`
+          : pesos(r.precio));
+      const norm = r.normalizado ? ` <span class="text-gray-400">(&asymp; ${pesos(r.normalizado.precio)}/${esc(r.normalizado.unidad)})</span>` : "";
+      const cuando = r.vigencia_impresa ? `lista ${esc(r.vigencia_impresa)}` : `capturado ${esc(r.capturado_el || "")}`;
+      return `<span class="block text-[10px] text-blue-900/70">Techo ${esc(r.fuente)} · ${precio}${norm} · ${esc(r.unidad_fuente)} · ${esc(r.ambito)} · ${cuando}${
+        r.correspondencia === "aproximada" ? ` · <span class="text-amber-700">producto similar: ${esc(r.correspondencia_nota || "verificar equivalencia")}</span>` : ""}</span>`;
+    }).join("");
+  }
+
   function pintarInsumos(i) {
     const caja = $("tabla").querySelector(`[data-celda="insumos-${i}"]`);
     if (!caja) return;
@@ -1967,13 +1988,16 @@
     }
 
     const cuerpoRubro = (tipo) => {
-      const lineas = det.insumos.filter((l) => l.tipo === tipo).map((l) => APULibro.lineaLegible(l));
+      /* `lineaLegible` produce SOLO los campos de presentación: el techo
+         retail se re-adjunta desde la línea original o se perdería aquí. */
+      const lineas = det.insumos.filter((l) => l.tipo === tipo)
+        .map((l) => ({ ...APULibro.lineaLegible(l), techo_retail: l.techo_retail || null }));
       const hm = tipo === "equipo" && det.herramienta_menor_pct > 0 ? det.herramienta_menor_unitario : null;
       if (!lineas.length && hm == null) return "";
       const subtotal = lineas.reduce((a, l) => a + (Number(l.valor) || 0), 0) + (hm || 0);
       const filasHtml = lineas.map((l) => `
         <tr class="align-top">
-          <td class="py-1 pr-2">${esc(l.nombre)}${l.nota ? `<span class="block text-[10px] text-gray-400">${esc(l.nota)}</span>` : ""}</td>
+          <td class="py-1 pr-2">${esc(l.nombre)}${l.nota ? `<span class="block text-[10px] text-gray-400">${esc(l.nota)}</span>` : ""}${techoRetailHtml(l)}</td>
           <td class="py-1 pr-2 text-gray-500">${esc(l.unidad)}</td>
           <td class="py-1 pr-2 text-right num">${l.cantidad == null ? "—" : num(l.cantidad)}</td>
           <td class="py-1 pr-2 text-right num">${pesos(l.precio)}</td>

@@ -1,3 +1,4 @@
+
 # CLAUDE.md
 
 **Al iniciar cada sesión, lee `docs/GUIA_ANALISTA_LICITACIONES.md` para comprender el dominio del
@@ -1616,6 +1617,54 @@ Hasta aquí el dueño miraba la baja mediana y descontaba a ojo.
   catálogo, el mapeo o el formato. El snapshot `tests/electrico_nogal_filas.json` deja el flujo
   reproducible sin el archivo original del dueño. Diferencias contra los dos Excel de referencia,
   ítem a ítem, en `docs/DIFERENCIAS_APU.md`.
+
+### Techo retail por insumo (ago 2026)
+
+Encargo del dueño (2026-08-13): precios de TIENDA (Homecenter, Easy, listas de fabricante) como
+referencia — «le sirven como techo negociable; él sabe cuánto negociar» —, 100 % trazables (fuente +
+ciudad + fecha de captura) y con cobertura de capitales. `data/apu_retail.json` (capturado con
+`tests/capturar_retail.js`) + `lib/apu/retail.js` + campo `techo_retail` en `detalle.insumos` de
+`calcular` + nivel `retail` declarado en la cascada de `lib/apu/precios.js`. Verificación en vivo
+con evidencia HTTP en `docs/INVESTIGACION_COMPETENCIA_APU.md` §8–§10.
+
+- **El techo es POR INSUMO y JAMÁS entra en `costoDirecto`.** Una tienda cotiza el saco de cemento y
+  el metro de cable, no el m³ de excavación: como precio de ítem sería el error de categoría del
+  nivel `mercado` («el segmento agrupa, nunca empareja») traducido a vitrina. En la cascada el nivel
+  `retail` se declara SIEMPRE con `techo_de_insumo` — la frase es la cerradura contra «completar la
+  cascada» con un precio de otra categoría. Hay prueba de que el costo directo no se mueve un peso.
+- **Homecenter regionaliza EN EL SERVIDOR y Easy NO.** La PDP con cookies `usrLocation=<dpto>;
+  comuna=<ciudad>` responde el precio de esa ciudad (cemento: $29.200 Cúcuta ↔ $37.900 Ibagué,
+  ±13 %); la API JSON `s/search/v1/soco` solo obedece `priceGroup=` e ignora las cookies — dos
+  canales, dos palancas. `ZONE_ID` NO es la palanca (la conclusión vieja era correcta en el hecho e
+  incompleta en la inferencia). Easy responde el MISMO `regionId` con `sellers:[]` para 9 códigos
+  postales de punta a punta: precio único nacional, y así se declara (`alcance: "nacional"`).
+- **LA BÚSQUEDA DE UBICACIÓN DEVUELVE BARRIOS HOMÓNIMOS PRIMERO, y costó dos precios falsos**:
+  «ARAUCA» casa con el barrio ARAUCARIA-ITAGÜÍ (Envigado) y «FLORENCIA» con un barrio de Medellín —
+  la primera captura escribió el precio de Antioquia etiquetado como Arauca. El capturador exige que
+  el `state.name` de la ubicación case con el departamento esperado; sin coincidencia → sin
+  cobertura DECLARADA, jamás el homónimo.
+- **8 departamentos sin cobertura retail, escritos en el JSON con su motivo** (Amazonas, Arauca,
+  Caquetá, Guainía, Guaviare, San Andrés, Vaupés, Vichada): ahí la referencia cae al precio de
+  Bogotá con `ambito: "Bogotá — sin captura retail en tu departamento"` — declarado, nunca
+  disfrazado de precio local. Y las categorías que el retail NO cubre quedan dichas en `_meta`:
+  áridos a granel por m³ (solo saco de 40 kg — el equivalente es un MÚLTIPLO del precio de cantera),
+  concreto premezclado en mixer y acero figurado.
+- **La unidad de la fuente NO se convierte, salvo división exacta de la MISMA dimensión** (tubo de
+  6 m → $/ml), declarada en `normalizacion.nota`. La densidad de la arena no es un dato del catálogo
+  y no se inventa; el peso nominal de la varilla (NTC 2289) sí viaja como nota declarada. Cada
+  correspondencia imperfecta va como `aproximada` con su nota (THHN ≠ TC LS-ZH, gravilla común ≠
+  triturado 3/4") — pintarlas como equivalencias exactas sería el falso positivo caro del módulo.
+- **La captura es una herramienta MANUAL con red (`tests/capturar_retail.js`), no parte de la suite
+  ni de la app**: la app jamás llama a una tienda en la ruta de una petición. Un 4xx no se
+  reintenta; un 5xx sí (Armenia y Pasto dieron 500 transitorios). El precio de la PDP se ancla al
+  nombre del producto pedido (la página trae SOLO los precios del producto principal, verificado) y
+  un precio 0 o sin confirmar NO se escribe.
+- **Listas de fabricante curadas A MANO con su vigencia IMPRESA** (Gerfor feb-2025, Eternit feb-2026
+  — la fila es la P7 N.º 8 EXACTA, no la N.º 5 «parecida»—, Procables sin fecha impresa → vigencia =
+  fecha de descarga, dicho). Hallazgo clave para el futuro: **Coval Comercial publica la lista
+  vigente de cada fabricante en URL estable** (`coval.com.co/pdfs/listasprecios/ult_<marca>.pdf`) —
+  Sika, Eternit, Durman (sustituto de Pavco, que sigue 403), Grival, PCP. Pintuco es imagen (solo
+  OCR); Acesco no publica precios.
 
 ### Página única y token integrado (ago 2026)
 
