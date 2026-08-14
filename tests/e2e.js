@@ -11067,8 +11067,49 @@ async function main() {
           /* El contador de cierre compara contra ahora−5h (hora Colombia
              flotante leída como UTC): sin la resta, «cierra hoy» se diría un
              día antes — la misma regla de `cierre_vencido` en el servidor. */
-          assert.ok(/function chipCierre/.test(jsT) && /Date\.now\(\) - 5 \* 3600 \* 1000/.test(jsT),
-            "chipCierre debe restar las 5 h de la hora Colombia antes de contar días");
+          assert.ok(/function chipCierre/.test(jsT) && /function diasParaCierre/.test(jsT)
+            && /Date\.now\(\) - 5 \* 3600 \* 1000/.test(jsT),
+          "diasParaCierre debe restar las 5 h de la hora Colombia antes de contar días");
+
+          /* ── La regla de las 24 horas es VISIBLE a ≤2 días, no un tooltip ──
+             El error #1 del país (presentar el día del cierre) vivía solo en
+             el `title` del chip, que en móvil no existe. El aviso se EJECUTA
+             con los casos frontera. */
+          const avisoCierre = new Function(`${extraer("avisoCierre")}; return avisoCierre;`)();
+          assert.strictEqual(avisoCierre(3), "", "a 3 días el aviso no aparece: encendido en cada tarjeta se deja de leer");
+          assert.strictEqual(avisoCierre(null), "", "sin fecha de cierre no hay urgencia inventada (R1)");
+          assert.strictEqual(avisoCierre(-1), "", "un cierre ya pasado no pide presentar nada");
+          assert.ok(/Atención/.test(avisoCierre(2)) && /ANTERIOR al cierre/.test(avisoCierre(2)),
+            "a 2 días el aviso enuncia la regla del día anterior");
+          assert.ok(/HOY/.test(avisoCierre(1)), "a 1 día la instrucción es presentar HOY");
+          assert.ok(/«Presentada»/.test(avisoCierre(0)),
+            "el día del cierre recuerda que solo cuenta el estado «Presentada» — guardar no basta");
+          assert.ok(/avisoCierre\(diasCierre\)/.test(cuerpoT), "la tarjeta debe pintar el aviso de cierre");
+
+          /* ── La alarma de renovación del RUP (quinto día hábil de abril) ──
+             Perderla = un año sin poder licitar. El «ahora» va INYECTADO (una
+             prueba de calendario calibrada contra el reloj real no prueba
+             nada). En 2026 el quinto día hábil sin festivos cae el 7 de
+             abril; Semana Santa solo puede CORRERLO hacia adelante, por eso
+             pasada la fecha se manda a VERIFICAR al RUES y jamás se afirma
+             «ya no hay nada que hacer». */
+          const alertaVigenciaRup = new Function(`${extraer("alertaVigenciaRup")}; return alertaVigenciaRup;`)();
+          assert.strictEqual(alertaVigenciaRup(new Date(2026, 7, 14)), null,
+            "fuera de febrero-abril la alarma no existe: encendida todo el año se deja de mirar");
+          assert.strictEqual(alertaVigenciaRup(new Date(2026, 0, 31)), null, "en enero tampoco");
+          const feb = alertaVigenciaRup(new Date(2026, 1, 10));
+          assert.ok(feb && feb.nivel === "ambar" && /quinto día hábil/.test(feb.frase)
+            && /faltan \d+ días/.test(feb.frase), "en febrero: ámbar, con la regla y la cuenta regresiva");
+          const abril = alertaVigenciaRup(new Date(2026, 3, 1));
+          assert.ok(abril && abril.nivel === "rojo" && /faltan 6 días/.test(abril.frase),
+            "el 1 de abril de 2026 faltan 6 días (el quinto hábil es el 7) y la alarma es roja");
+          const tarde = alertaVigenciaRup(new Date(2026, 3, 20));
+          assert.ok(tarde && tarde.nivel === "rojo" && /RUES/.test(tarde.frase) && /festivos/.test(tarde.frase),
+            "pasada la fecha calculada: verificar en el RUES — los festivos pueden correr el plazo");
+          assert.ok(/pintarAlertaVigencia\(\);/.test(jsT.slice(jsT.indexOf("function arrancarPaneles"))),
+            "arrancarPaneles debe pintar la alarma al abrir Mi empresa");
+          assert.ok(html.includes('id="rup-alerta-vigencia"'),
+            "el nodo de la alarma debe existir en la sección Tu RUP");
         }
 
         /* ═══ LA PESTAÑA DE PRECIOS SON TRES PASOS, Y NADA MÁS A LA VISTA ═════

@@ -299,7 +299,7 @@ Esfuerzo en sesiones de ~30 min. «Hecho hoy» = incluido en esta rama.
 | 12 | Tarjeta: de 15 chips a 3 + puertas en una línea + botón «Calcular mi precio» | 3 | §1.3 |
 | 13 | RUP: indicador legítimamente en 0 no rechaza; rótulo→valor en filas distintas | 2-3 | §1.10 |
 | 14 | Optimizador: titular con `optimizador.mensaje`, renombres, jerga fuera | 2 | §1.6 |
-| 15 | Alerta de vigencia del RUP en Mi empresa | 1 | La alarma que falta |
+| 15 | ✅ *(hecho, ago 2026)* Alerta de vigencia del RUP en Mi empresa (`alertaVigenciaRup`: quinto día hábil de abril, ventana feb-abr, «ahora» inyectado) | 1 | Junto con ella se hizo visible la regla de las 24 h en la tarjeta (`avisoCierre`, ≤2 días) — antes vivía solo en un tooltip |
 | 16 | Errores 401/red en lenguaje de personas (6 mensajes, dos frontends) | 1 | «HISTORICO_TOKEN…» |
 
 ### Impacto alto · esfuerzo alto → planificar

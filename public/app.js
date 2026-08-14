@@ -386,15 +386,34 @@
      empezar la carpeta. La resta usa `ahora − 5 h` (la regla del proyecto:
      el dataset publica hora Colombia flotante que Date.parse lee como UTC,
      adelantada 5 h — sin la resta, «cierra hoy» se diría un día antes). */
-  function chipCierre(cierre, cierreTxt) {
-    if (!cierreTxt) return "";
+  function diasParaCierre(cierre) {
+    if (!cierre || isNaN(cierre)) return null;
     const dias = Math.ceil((cierre.getTime() - (Date.now() - 5 * 3600 * 1000)) / 86400000);
-    if (!Number.isFinite(dias) || dias < 0) return chip(`Cierra ${cierreTxt}`, "bg-purple-100 text-purple-800");
+    return Number.isFinite(dias) ? dias : null;
+  }
+  function chipCierre(cierre, cierreTxt, dias) {
+    if (!cierreTxt) return "";
+    if (dias == null || dias < 0) return chip(`Cierra ${cierreTxt}`, "bg-purple-100 text-purple-800");
     if (dias === 0) return chip(`Cierra HOY · ${cierreTxt}`, "bg-red-100 text-red-700", "Regla del oficio: la oferta se presenta el día ANTERIOR al cierre");
     if (dias <= 3) return chip(`Cierra en ${dias} día${dias === 1 ? "" : "s"} · ${cierreTxt}`, "bg-red-100 text-red-700",
       "Queda poco margen: la oferta se presenta el día anterior al cierre");
     if (dias <= 7) return chip(`Cierra en ${dias} días · ${cierreTxt}`, "bg-amber-100 text-amber-800");
     return chip(`Cierra en ${dias} días · ${cierreTxt}`, "bg-purple-100 text-purple-800");
+  }
+
+  /* La regla de las 24 horas, VISIBLE cuando decide. Vivía solo en el `title`
+     del chip, que en móvil no existe y en escritorio exige pasar el mouse: el
+     error #1 del país (presentar el día del cierre) merece una línea a la
+     vista, no un secreto para quien sepa buscarlo. Solo aparece a ≤2 días —
+     un aviso encendido en cada tarjeta se deja de leer. */
+  function avisoCierre(dias) {
+    if (dias == null || dias < 0 || dias > 2) return "";
+    const frase = dias === 0
+      ? "Cierra HOY. Solo cuenta la oferta en estado «Presentada» antes de la hora exacta del cierre — guardarla no basta."
+      : dias === 1
+        ? "Cierra mañana: si vas a presentarte, cargá y presentá la oferta HOY. El día del cierre es cuando más ofertas mueren."
+        : "Si vas a presentarte, presentá la oferta a más tardar mañana: la regla del oficio es dejarla presentada el día ANTERIOR al cierre.";
+    return `<p class="mt-3 rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700">Atención: ${frase}</p>`;
   }
 
   /* Veredicto GRADUADO del matching UNSPSC. Nunca es un sí/no: dice CON QUÉ
@@ -723,6 +742,7 @@
     const rup = l.rup || {};
     const cierre = l.fecha_cierre ? new Date(l.fecha_cierre) : null;
     const cierreTxt = cierre && !isNaN(cierre) ? cierre.toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }) : null;
+    const diasCierre = diasParaCierre(cierre);
     const puertas = l.puertas || {};
     // «No viable» se ATENÚA, no se esconde (cuando el toggle lo permite): ver un
     // proceso grande caído por caja enseña más que su ausencia
@@ -757,10 +777,12 @@
       <div class="mt-4 flex flex-wrap gap-2">
         ${paaEncendido ? chip("Activo · abierto", "bg-green-100 text-green-800 ring-1 ring-inset ring-green-600/20",
     "Proceso PUBLICADO en SECOP II, con pliego y fecha de cierre — a diferencia de las previsiones del PAA") : ""}
-        ${chipCierre(cierre, cierreTxt)}
+        ${chipCierre(cierre, cierreTxt, diasCierre)}
         ${chipZona(l.zona)}
         ${l._cierre_prorrogado ? chip("Cierre prorrogado", "bg-indigo-100 text-indigo-800", "El cierre se movió por adenda: suele indicar que no llegaron ofertas suficientes") : ""}
       </div>
+
+      ${noViable ? "" : avisoCierre(diasCierre)}
 
       <!-- Los chips de EVIDENCIA (puertas con sus cifras, anticipo, baja,
            ubicación, encaje del RUP, modalidad, tipo de precio) se conservan
@@ -4739,9 +4761,56 @@
     }
   });
 
+  /* La alarma que faltaba en Mi empresa: el RUP se renueva cada año antes del
+     QUINTO DÍA HÁBIL de abril y, si no se renueva, cesa sus efectos hasta el
+     año siguiente — un año entero sin poder licitar. La fecha se calcula
+     contando lunes a viernes SIN festivos: los festivos de Semana Santa solo
+     pueden CORRER el plazo hacia adelante, así que el error cae del lado
+     seguro (avisar unos días antes de lo estrictamente necesario). Por eso,
+     pasada la fecha calculada, la frase dice «verificá en el RUES», nunca
+     «ya no hay nada que hacer». Solo vive de febrero al 30 de abril: una
+     alarma encendida todo el año se deja de mirar. El «ahora» se INYECTA
+     (la regla de las pruebas de husos y fechas del proyecto). */
+  function alertaVigenciaRup(ahora) {
+    const mes = ahora.getMonth();
+    if (mes < 1 || mes > 3) return null; // solo febrero, marzo y abril
+    let habiles = 0, d = 0, fecha = null;
+    while (habiles < 5) {
+      d += 1;
+      fecha = new Date(ahora.getFullYear(), 3, d);
+      if (fecha.getDay() !== 0 && fecha.getDay() !== 6) habiles += 1;
+    }
+    const fechaTxt = fecha.toLocaleDateString("es-CO", { day: "numeric", month: "long" });
+    if (ahora.getTime() <= fecha.getTime()) {
+      const dias = Math.ceil((fecha.getTime() - ahora.getTime()) / 86400000);
+      return {
+        nivel: dias <= 15 ? "rojo" : "ambar",
+        frase: `Atención: el RUP se renueva a más tardar el quinto día hábil de abril — este año, hacia el ${fechaTxt}`
+          + (dias > 0 ? ` (faltan ${dias} día${dias === 1 ? "" : "s"})` : " (es HOY)")
+          + ". Si no lo renovás a tiempo, pierde efectos hasta el año siguiente y no podés licitar.",
+      };
+    }
+    return {
+      nivel: "rojo",
+      frase: "Atención: el plazo para renovar el RUP (quinto día hábil de abril) ya venció o está encima. "
+        + "Si todavía no lo renovaste, hacelo HOY y verificá tu estado en el RUES: los festivos pueden "
+        + "correr el plazo unos días, pero no contés con eso.",
+    };
+  }
+  function pintarAlertaVigencia() {
+    const el = $("rup-alerta-vigencia");
+    if (!el) return;
+    const a = alertaVigenciaRup(new Date());
+    if (!a) { el.classList.add("hidden"); return; }
+    el.textContent = a.frase;
+    el.className = "mt-4 rounded-xl px-4 py-3 text-sm font-medium "
+      + (a.nivel === "rojo" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800");
+  }
+
   function arrancarPaneles() {
     $("d-perfil").value = leerPerfil();
     $("c-perfil").value = leerPerfil();
+    pintarAlertaVigencia();
     cargarDashboard();
     cargarRupActual();
     // la experiencia se consulta al arrancar (es barato y decide si el toggle
