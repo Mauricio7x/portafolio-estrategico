@@ -7065,6 +7065,48 @@ async function main() {
       for (const f of rellenos) ds.splice(ds.indexOf(f), 1);
     }
 
+    /* g-quater. REFRESCO MENSUAL DEL HISTÓRICO: la decisión, probada suelta.
+       El corpus histórico deriva cuando SECOP re-publica procesos de años
+       pasados (medido: GPS S.A.S 8 contados contra 11 reales); el disparo es
+       fire-and-forget y la suite no puede observarlo, así que lo que se
+       prueba es la DECISIÓN pura más el cableado. */
+    {
+      const { decidirRefrescoHistorico, REFRESCO_HISTORICO_MS } = require("../api/sync.js");
+      const ahora = Date.parse("2026-08-15T12:00:00Z");
+      // sin primer backfill: JAMÁS disparar — ese paso es decisión manual del dueño
+      assert.strictEqual(decidirRefrescoHistorico({ metaHist: null, progreso: null, candadoTomado: false, ahora }), null);
+      // extracción reciente: nada que hacer
+      assert.strictEqual(decidirRefrescoHistorico({
+        metaHist: { ts: new Date(ahora - 5 * 24 * 3600e3).toISOString() }, progreso: null, candadoTomado: false, ahora,
+      }), null);
+      // extracción vieja: refresco completo desde 2024 (ventana fijada por el dueño), reiniciando
+      const rf = decidirRefrescoHistorico({
+        metaHist: { ts: new Date(ahora - REFRESCO_HISTORICO_MS - 1000).toISOString() }, progreso: null, candadoTomado: false, ahora,
+      });
+      assert.ok(rf && rf.reiniciar === true && rf.desde === "2024-01" && /^\d{4}-\d{2}$/.test(rf.hasta));
+      // el mes de corte es el COLOMBIANO: a las 03:00 UTC del día 1, allá aún es el mes anterior
+      const borde = decidirRefrescoHistorico({
+        metaHist: { ts: "2026-01-01T00:00:00Z" }, progreso: null, candadoTomado: false,
+        ahora: Date.parse("2026-09-01T03:00:00Z"),
+      });
+      assert.strictEqual(borde.hasta, "2026-08", "el mes del refresco es el de hora Colombia, no el de UTC");
+      // una cadena muerta a medias se REANUDA con su propio rango, sin reiniciar por encima
+      const rean = decidirRefrescoHistorico({
+        metaHist: { ts: "2020-01-01T00:00:00Z" },
+        progreso: { tipo: "historico", terminado: false, desde: "2024-01", hasta: "2026-07" },
+        candadoTomado: false, ahora,
+      });
+      assert.deepStrictEqual({ desde: rean.desde, hasta: rean.hasta, reiniciar: rean.reiniciar, motivo: rean.motivo },
+        { desde: "2024-01", hasta: "2026-07", reiniciar: false, motivo: "reanudar_cadena_muerta" });
+      // con el candado tomado no se estorba
+      assert.strictEqual(decidirRefrescoHistorico({ metaHist: { ts: "2020-01-01T00:00:00Z" }, progreso: null, candadoTomado: true, ahora }), null);
+      // y el handler la cablea: token por header y throttle atómico, nunca meta
+      const fuenteSync = fs.readFileSync(path.join(__dirname, "..", "api", "sync.js"), "utf8");
+      assert.ok(/decidirRefrescoHistorico\(\{ metaHist/.test(fuenteSync) && /sync:kick:historico/.test(fuenteSync)
+        && /x-historico-token/.test(fuenteSync), "el disparo del refresco no está cableado en el handler");
+      console.log("· refresco mensual del histórico: primer backfill jamás automático, cadena muerta se reanuda, mes en hora Colombia");
+    }
+
     /* g-bis. /api/diagnostico: el embudo cuadra con lo que sirve la app */
     {
       assert.strictEqual((await invocar(diagnostico, "/api/diagnostico?perfil=helder")).status, 401,

@@ -74,6 +74,18 @@ const PRESUPUESTO_MAX_MS = 240000;
 const PRESUPUESTO_BAJA_MS = 8000;
 const SOLAPE_DELTA_MS = 48 * 3600e3;
 const FRESCO_MS = 5 * 60e3;            // <5 min → no-op en modo auto
+/* REFRESCO MENSUAL DEL HISTÓRICO (ago 2026). SECOP re-publica procesos de
+   años pasados regenerando sus filas (:id y :updated_at nuevos), y el delta
+   solo mira el año vigente: sin una re-pasada periódica, el corpus histórico
+   DERIVA — se midió en producción (GPS S.A.S en Pereira: 8 ganados contados
+   contra 11 reales; la entidad entera, 86 contra 183). El disparo vive aquí
+   porque /api/sync corre con cada visita: cuando el corpus activo está al
+   día y la última extracción histórica completa tiene más de un mes, se
+   patea /api/sync/historico como fire-and-forget CON el token de la app —
+   su cadena se auto-continúa e incluye la reconstrucción de índices. */
+const REFRESCO_HISTORICO_MS = 30 * 24 * 3600e3;
+const DESDE_HISTORICO = "2024-01";     // decisión del dueño (2026-08-15): gerencias de gobiernos pasados no describen la competencia de hoy
+const CLAVE_KICK_HISTORICO = "sync:kick:historico"; // throttle atómico del disparo (SET NX EX)
 const COMPACTAR_TRAS_CHUNKS = 25;
 // Full de higiene mensual: acota TODA deriva del corpus ACTIVO que el delta no
 // puede reflejar — la limitación documentada de conservarCerradas (un proceso ya
@@ -370,6 +382,24 @@ const resumen = (p) => ({
   leidasMes: p.leidasMes, esperadosMes: p.esperadosMes,
 });
 
+/* ─────────── ¿toca refrescar el histórico? (pura, con prueba) ───────────
+   Reglas: jamás disparar el PRIMER backfill (es decisión manual del dueño —
+   los pasos de despliegue lo dicen); una cadena muerta a medias se REANUDA
+   con su propio rango y SIN reiniciar (reiniciar por encima tiraría el
+   avance); y el refresco completo solo cuando la última extracción terminada
+   tiene más de REFRESCO_HISTORICO_MS. `hasta` se calcula en hora Colombia:
+   el mes del dataset es el mes colombiano, no el de UTC. */
+function decidirRefrescoHistorico({ metaHist, progreso, candadoTomado, ahora = Date.now() } = {}) {
+  if (candadoTomado) return null;
+  if (progreso && progreso.tipo === "historico" && !progreso.terminado) {
+    return { desde: progreso.desde, hasta: progreso.hasta, reiniciar: false, motivo: "reanudar_cadena_muerta" };
+  }
+  if (!metaHist || !metaHist.ts) return null;
+  if (ahora - Date.parse(metaHist.ts) < REFRESCO_HISTORICO_MS) return null;
+  const mesColombia = new Date(ahora - 5 * 3600e3).toISOString().slice(0, 7);
+  return { desde: DESDE_HISTORICO, hasta: mesColombia, reiniciar: true, motivo: "refresco_mensual" };
+}
+
 /* ============================ HANDLER ============================ */
 module.exports = async function handler(req, res) {
   const q = req.query || {};
@@ -438,6 +468,34 @@ module.exports = async function handler(req, res) {
     } catch { /* la siguiente visita o el cron continúan */ }
   }
 
+  /* REFRESCO MENSUAL DEL HISTÓRICO: solo en modo auto, con el corpus al día
+     (r.done) y con el token en el entorno — el endpoint del histórico lo
+     exige y sin él el disparo solo generaría 401 en los logs. El throttle es
+     un SET NX EX de 10 minutos: atómico, sin tocar `meta` (que fuera del
+     candado podría pisar el cursor de un ciclo de delta). La decisión es
+     `decidirRefrescoHistorico`, pura y con prueba. */
+  if (modo === "auto" && r && r.done === true && process.env.HISTORICO_TOKEN && q.chain !== "0") {
+    try {
+      const [metaHist, progresoHist, candadoHist] = await Promise.all([
+        leerJSON(redis, CLAVES.metaHistorico),
+        leerJSON(redis, CLAVES.progresoHistorico),
+        redis.get(CLAVES.lockHistorico),
+      ]);
+      const refresco = decidirRefrescoHistorico({ metaHist, progreso: progresoHist, candadoTomado: !!candadoHist });
+      if (refresco && (await redis.set(CLAVE_KICK_HISTORICO, "1", { nx: true, ex: 600 })) === "OK") {
+        const proto = req.headers["x-forwarded-proto"] || "https";
+        const host = req.headers["x-forwarded-host"] || req.headers.host;
+        const headers = { "x-historico-token": process.env.HISTORICO_TOKEN };
+        if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
+          headers["x-vercel-protection-bypass"] = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+        }
+        const qs = new URLSearchParams({ desde: refresco.desde, hasta: refresco.hasta });
+        if (refresco.reiniciar) qs.set("reiniciar", "true");
+        if (host) fetch(`${proto}://${host}/api/sync/historico?${qs}`, { headers }).catch(() => {});
+      }
+    } catch { /* el refresco es best-effort: la próxima visita reintenta */ }
+  }
+
   /* Índice de baja: se reconstruye al TERMINAR una full, sin bloquear la
      respuesta. Por qué aquí y por qué así:
        · la full reescribe el corpus activo, pero el delta que corre dentro de
@@ -461,3 +519,8 @@ module.exports = async function handler(req, res) {
 
   return res.status(200).json({ ok: true, modo, duracionMs: Date.now() - t0, comandosRedis: redis.comandos(), ...r, baja });
 };
+
+/* La decisión del refresco se exporta para probarla SUELTA: el disparo real
+   es un fire-and-forget que la suite no puede observar. */
+module.exports.decidirRefrescoHistorico = decidirRefrescoHistorico;
+module.exports.REFRESCO_HISTORICO_MS = REFRESCO_HISTORICO_MS;
