@@ -4666,10 +4666,14 @@ async function main() {
       // `apu:*`, como el RUP en `config:*`): si no se borra aquí, la iteración
       // siguiente encontraría el sello puesto y no ejercitaría la carga
       ...(await redis.scan("apu:*")),
+      // la caché del diagnóstico de entrada (24 h) referencia perfiles `rup_…`
+      // que ESTA limpieza borra: sin purgarla, la iteración siguiente serviría
+      // un resultado cacheado con un perfil que ya no existe
+      ...(await redis.scan("diagnostico:*")),
     ];
     if (claves.length) await redis.del(...claves);
     for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*", "equivalencias:*",
-      "vocabulario:*", "config:*", "resumen:*", "cobertura:*", "apu:*"]) {
+      "vocabulario:*", "config:*", "resumen:*", "cobertura:*", "apu:*", "diagnostico:*"]) {
       assert.strictEqual((await redis.scan(patron)).length, 0, `Redis no quedó limpio: ${patron}`);
     }
     // los perfiles vuelven a los datos del repositorio: una carga de RUP de la
@@ -8343,7 +8347,7 @@ async function main() {
         /* «Cargar experiencia laboral» vive desde ago 2026 en la pestaña de
            administración de la MISMA página (id="exp-panel"), no en la landing:
            la landing quedó en dos acciones (subir RUP / acceso con clave). */
-        for (const debe of ['id="onboarding"', "Convertí tu RUP en contratos.", 'id="rup-archivo"',
+        for (const debe of ['id="onboarding"', "Descubra en un minuto a cuántas licitaciones puede presentarse hoy.", 'id="rup-archivo"',
           'id="btn-subir-rup"', "/onboarding.js", "formato_experiencia.csv",
           'id="exp-panel"', 'id="btn-exp-cargar"', 'id="rup-progreso"', 'id="btn-ir-gate"']) {
           assert.ok(html.includes(debe), `index.html sin ${debe}`);
@@ -8359,7 +8363,11 @@ async function main() {
         const obSin = sinComentarios(ob);
         // llama a la CANÓNICA, no al alias del rewrite (si el rewrite fallara,
         // el botón tiene que seguir funcionando)
-        assert.ok(obSin.includes("/api/admin?op=rup&origen=pdf"), "onboarding.js debe llamar a la ruta canónica");
+        /* Desde la Fase 2 el navegador entra por la puerta de entrada
+           (/api/perfil?op=diagnostico), que crea el perfil por la MISMA vía que
+           /api/admin?op=rup&origen=pdf; ese endpoint sigue existiendo (se prueba
+           arriba) para el alias y para quien lo tenga integrado. */
+        assert.ok(obSin.includes('"/api/perfil?op=diagnostico"'), "onboarding.js debe llamar a la puerta de entrada canónica");
         assert.ok(!/fetch\(\s*["'`]\/api\/admin\/rup-desde-pdf/.test(obSin),
           "onboarding.js no puede depender del rewrite para funcionar");
         // la versión de pdf.js va CLAVADA y es LA MISMA que la de pliego.js:
@@ -8522,13 +8530,167 @@ async function main() {
         // el frontend cierra el circuito: reenvía el texto con `completar`
         const fuenteOnb = sinComentarios(
           fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8"));
-        assert.ok(/completo\s*===\s*false/.test(fuenteOnb),
-          "la web tiene que distinguir «faltan datos» de «certificado inválido»");
-        assert.ok(/completar/.test(fuenteOnb),
+        assert.ok(/siguiente\s*===\s*"completar"/.test(fuenteOnb),
+          "la web tiene que distinguir «falta un dato» de «no se pudo leer» (siguiente: completar | manual)");
+        assert.ok(/completar:/.test(fuenteOnb),
           "sin reenviar `completar` el usuario se quedaría mirando un formulario que no guarda nada");
       }
 
       console.log(`  · onboarding RUP por PDF: 4 códigos leídos, TTL puesto, perfil dinámico servido sin tocar a los fijos, errores accionables y cableado del frontend verificados`);
+
+      /* ═══════════ PUERTA DE ENTRADA DE 60 SEGUNDOS (Fase 2, ago 2026) ═══════════
+         POST /api/perfil?op=diagnostico, SIN token: tres caminos (texto del RUP,
+         OCR, tres datos) y ninguno termina en error sin salida. Invariantes:
+         · `total` es EXACTAMENTE el `total` de /api/oportunidades con el perfil
+           creado (misma cascada, mismas puertas): «hoy hay 47» y «Ver las 47»
+           no pueden decir dos cifras.
+         · El documento NO se persiste: ni el texto ni un fragmento en ninguna
+           clave. Solo el perfil derivado y el resultado (24 h, TTL puesto).
+         · Lo que falta se pide, y solo eso; un 0 no es un dato.
+         · Con la K sin dato (perfil aproximado) la puerta P2 declara y deja pasar. */
+      {
+        const routerPerfil = require("../api/perfil.js");
+        const M = require("../lib/perfil_manual.js");
+        const { crp } = require("../lib/capacidad.js");
+        const { evaluarRup } = require("../lib/rup.js");
+
+        // GET a la op es el embudo de siempre (con token) — la entrada solo existe por POST
+        assert.strictEqual((await invocar(routerPerfil, "/api/perfil?op=diagnostico")).status, 401,
+          "GET diagnostico sigue siendo el embudo (401 sin token): la puerta de entrada es POST");
+        const getEnt = await invocar(routerPerfil, "/api/perfil?op=entrada");
+        assert.strictEqual(getEnt.status, 200, "GET entrada sirve las actividades y el contrato (lectura sin efectos)");
+        assert.strictEqual(getEnt.cuerpo.analizado, false);
+        assert.ok(Array.isArray(getEnt.cuerpo.actividades) && getEnt.cuerpo.actividades.length === 12, "las doce actividades viajan en el GET");
+        assert.ok(getEnt.cuerpo.actividades.every((a) => a.id && a.etiqueta && !/\d{4}/.test(a.etiqueta)), "las etiquetas van en lenguaje llano, sin códigos");
+
+        // ── camino 1 · texto del RUP (pdf.js) → perfil, conteo y muestra ──
+        const clavesAntes = new Set(await redis.scan("*"));
+        const t1 = Date.now();
+        const d1 = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { texto: TEXTO_RUP });
+        assert.strictEqual(d1.status, 200, JSON.stringify(d1.cuerpo).slice(0, 300));
+        assert.ok(Date.now() - t1 < 10000, "el camino de texto debe responder en menos de 10 s");
+        assert.strictEqual(d1.cuerpo.origen, "texto");
+        assert.strictEqual(d1.cuerpo.confianza, "alta", `confianza: ${d1.cuerpo.confianza} (${JSON.stringify(d1.cuerpo.camposNoLeidos)})`);
+        assert.ok(/^rup_[a-z0-9]+$/.test(d1.cuerpo.perfil_id));
+        assert.ok(d1.cuerpo.perfil && d1.cuerpo.perfil.patrimonio === 850000000 && d1.cuerpo.perfil.capacidadContratacion > 0);
+        assert.ok(Array.isArray(d1.cuerpo.perfil.familias) && d1.cuerpo.perfil.familias.includes("7214"));
+        const o1 = d1.cuerpo.oportunidades;
+        assert.ok(Number.isInteger(o1.total) && o1.total > 0, `la entrada debe contar oportunidades reales: ${o1.total}`);
+        assert.ok(o1.muestra.length === Math.min(5, o1.total), "la muestra son 5 (o todas si hay menos)");
+        for (const m of o1.muestra) {
+          assert.ok(m.entidad && m.objeto && m.id, "cada licitación de la muestra trae entidad, objeto e id reales");
+          assert.ok(m.diasRestantes == null || m.diasRestantes >= 0, "la muestra solo trae procesos que NO han cerrado");
+        }
+        assert.ok(o1.valorTotal > 0 && o1.conCapacidadSuficiente <= o1.total);
+        // total ≡ listado con ese perfil (solo_viables por defecto)
+        const lst = await invocar(oportunidades, `/api/oportunidades?perfil=${d1.cuerpo.perfil_id}&por_pagina=1`);
+        assert.strictEqual(lst.status, 200, "lst: " + JSON.stringify(lst.cuerpo).slice(0, 200));
+        assert.strictEqual(o1.total, lst.cuerpo.total, `entrada dice ${o1.total} y el listado ${lst.cuerpo.total}: dos cifras del mismo perfil`);
+        // el documento NO quedó en Redis: ninguna clave nueva contiene el texto
+        const clavesDespues = (await redis.scan("*")).filter((k) => !clavesAntes.has(k));
+        assert.ok(clavesDespues.some((k) => k.startsWith("diagnostico:")), "el resultado se cachea en diagnostico:{hash}");
+        /* Lo que se persiste es el PERFIL DERIVADO (razón social, códigos, cifras)
+           y el resultado; el DOCUMENTO —sus líneas literales— no puede aparecer
+           en ninguna clave. Se buscan líneas del certificado, no la razón social
+           (que sí es un campo del perfil, como en la carga por PDF de siempre). */
+        for (const k of clavesDespues) {
+          const v = String((await redis.get(k)) || "");
+          for (const linea of ["CERTIFICADO DEL REGISTRO UNICO", "INDICE DE LIQUIDEZ", "MANTENIMIENTO VIA TERCIARIA", "SEGMENTO\tFAMILIA"]) {
+            assert.ok(!v.includes(linea), `la clave ${k} contiene una línea literal del documento («${linea}»)`);
+          }
+        }
+        const kCache = clavesDespues.find((k) => k.startsWith("diagnostico:"));
+        const ttlCache = await redis.ttl(kCache);
+        assert.ok(ttlCache > 0 && ttlCache <= 24 * 3600, `la caché del diagnóstico debe expirar en 24 h (ttl ${ttlCache})`);
+        // segunda llamada idéntica → caché
+        const d1b = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { texto: TEXTO_RUP });
+        assert.strictEqual(d1b.cuerpo.cache, true, "la segunda llamada con el mismo contenido sale de la caché");
+        assert.strictEqual(d1b.cuerpo.perfil_id, d1.cuerpo.perfil_id);
+        // si el perfil al que apunta la caché ya no existe, NO se sirve la caché: se recrea
+        {
+          const { CLAVES: CL } = require("../lib/almacen.js");
+          await redis.del(CL.configPerfilDinamico(d1.cuerpo.perfil_id));
+          const d1c = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { texto: TEXTO_RUP });
+          assert.ok(!d1c.cuerpo.cache && d1c.cuerpo.perfil_id && d1c.cuerpo.perfil_id !== d1.cuerpo.perfil_id,
+            "con el perfil borrado la caché no puede servirse: se recrea el perfil");
+        }
+
+        // ── texto sin patrimonio → se pide SOLO el patrimonio, y al completarlo sigue ──
+        const sinPat = TEXTO_RUP.split("\n").filter((l) => !/^PATRIMONIO/.test(l)).join("\n");
+        const d2 = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { texto: sinPat });
+        assert.strictEqual(d2.status, 200, "d2: " + JSON.stringify(d2.cuerpo).slice(0, 200));
+        assert.strictEqual(d2.cuerpo.siguiente, "completar");
+        assert.deepStrictEqual(d2.cuerpo.necesita.map((n) => n.campo), ["patrimonio"], "sin patrimonio se pide ESE campo y nada más");
+        const d2b = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { texto: sinPat, completar: { patrimonio: 850000000, liquidez: 0 } });
+        assert.strictEqual(d2b.status, 200, "d2b: " + JSON.stringify(d2b.cuerpo).slice(0, 200));
+        assert.ok(d2b.cuerpo.perfil_id, JSON.stringify(d2b.cuerpo).slice(0, 200));
+        assert.strictEqual(d2b.cuerpo.oportunidades.total, o1.total, "completado el patrimonio, cuenta lo mismo que el certificado completo");
+        // un texto que no es un RUP → resultado con salida (manual), nunca un 4xx
+        const d3 = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { texto: "esto no es un certificado, es una nota corta" });
+        assert.strictEqual(d3.status, 200, "d3: " + JSON.stringify(d3.cuerpo).slice(0, 200));
+        assert.strictEqual(d3.cuerpo.leido, false);
+        assert.strictEqual(d3.cuerpo.siguiente, "manual");
+        assert.deepStrictEqual(d3.cuerpo.camposNoLeidos, ["patrimonio", "mayorContrato", "actividad"]);
+
+        // ── camino 3 · tres datos → perfil aproximado (K sin dato deja pasar) ──
+        const dm = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico",
+          { manual: { patrimonio: 200000000, mayorContrato: 900000000, unidad: "COP", actividad: "vias" } });
+        assert.strictEqual(dm.status, 200, JSON.stringify(dm.cuerpo).slice(0, 300));
+        assert.strictEqual(dm.cuerpo.origen, "manual");
+        assert.strictEqual(dm.cuerpo.confianza, "media");
+        assert.strictEqual(dm.cuerpo.perfil.capacidadContratacion, null, "sin utilidad operacional la K es null, jamás 0");
+        assert.ok(dm.cuerpo.camposNoLeidos.includes("utilidad_operacional"));
+        assert.ok(dm.cuerpo.oportunidades.total > 0, `el perfil aproximado de vías tiene que ver oportunidades: ${dm.cuerpo.oportunidades.total}`);
+        const lstM = await invocar(oportunidades, `/api/oportunidades?perfil=${dm.cuerpo.perfil_id}&por_pagina=5`);
+        assert.strictEqual(lstM.cuerpo.total, dm.cuerpo.oportunidades.total, "manual: entrada ≡ listado");
+        const r0 = lstM.cuerpo.resultados[0];
+        assert.ok(r0.puertas.p2_k.sin_dato === true && r0.puertas.p2_k.pasa === true, "P2 declara «sin dato» y deja pasar con la K desconocida");
+        assert.strictEqual(r0.rup.k_sin_dato, true);
+        // el perfil manual mapea la actividad a clases de la unión de los RUP (nunca inventa códigos)
+        const clasesVias = M.clasesDe("vias");
+        assert.ok(clasesVias.length > 20 && clasesVias.every((c) => /^\d{6}00$/.test(c)));
+        assert.ok(M.clasesDe("obra_general").length > clasesVias.length);
+        // validación de los tres datos: 0 no es un dato
+        const dmMal = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { manual: { patrimonio: 0, mayorContrato: 5, actividad: "vias" } });
+        assert.strictEqual(dmMal.status, 400);
+        assert.ok(dmMal.cuerpo.campos.some((c) => c.campo === "patrimonio"));
+        // K sin dato en el motor, directamente
+        assert.strictEqual(crp({ id: "x", utilidadOp: null, ingresoOp: null, liquidez: null, expSMMLV: 100, profesionales: 1, sce: [] }, 1e9), null);
+        // el perfil del dueño sigue con K con dato
+        assert.ok(crp(require("../lib/perfiles.js").PERFILES.helder, 1e9) > 0);
+
+        // ── camino 2 · OCR: sin clave configurada → siguiente: manual, jamás error ──
+        const claveOcr = process.env.OCRSPACE_API_KEY; delete process.env.OCRSPACE_API_KEY;
+        const docr = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { imagenes_base64: [{ base64: "aGVsbG8=", mime: "image/jpeg" }] });
+        if (claveOcr) process.env.OCRSPACE_API_KEY = claveOcr;
+        assert.strictEqual(docr.status, 200, "docr: " + JSON.stringify(docr.cuerpo).slice(0, 200));
+        assert.strictEqual(docr.cuerpo.ocr_disponible, false);
+        assert.strictEqual(docr.cuerpo.siguiente, "manual");
+        // cuerpo vacío → 400 con instrucciones (eso sí es un error del cliente)
+        assert.strictEqual((await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", {})).status, 400);
+
+        // ── frontend: la landing nueva, el formulario de tres datos y la pantalla de resultado ──
+        const htmlF2 = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        for (const id of ["btn-subir-rup", "rup-archivo", "btn-manual", "manual-form", "manual-patrimonio", "manual-mayor", "manual-unidad", "manual-actividad",
+          "btn-manual-enviar", "resultado-entrada", "res-total", "res-valor", "res-sobra", "res-muestra", "btn-ver-todas", "completar-form", "completar-campo", "btn-completar-enviar"]) {
+          assert.ok(htmlF2.includes(`id="${id}"`), `index.html sin #${id} (puerta de entrada)`);
+        }
+        assert.ok(/Ley 1581 de 2012/.test(htmlF2), "la landing declara la Ley 1581 (no guardamos su documento)");
+        assert.ok(/No guardamos su documento/.test(htmlF2));
+        const obF2 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8"));
+        assert.ok(obF2.includes('"/api/perfil?op=diagnostico"'), "onboarding.js debe llamar a la puerta de entrada canónica");
+        assert.ok(/mostrarManual\(/.test(obF2), "onboarding.js debe tener el camino manual");
+        // NINGUNA ruta termina en error sin salida: cada catch del flujo del RUP cae en el formulario manual
+        assert.ok(!/mensaje\(esc\(\(e && e\.message\) \|\| "Error desconocido al leer el RUP\."\), "error"\)/.test(obF2),
+          "el catch del RUP ya no puede terminar en un mensaje de error sin salida");
+        assert.ok(/pintarResultado\(/.test(obF2), "onboarding.js debe pintar la pantalla de resultado (conteo + 5 + Ver las N)");
+        // las doce actividades del selector salen del servidor (o de la lista compartida), no de una segunda lista
+        assert.ok(!/id="manual-actividad"[\s\S]{0,400}<option value="vias"/.test(htmlF2), "las opciones de actividad las pinta el JS desde el servidor, no el HTML");
+
+        console.log(`  · puerta de entrada (Fase 2): texto → ${o1.total} oportunidades (≡ listado) · manual (vías) → ${dm.cuerpo.oportunidades.total} · `
+          + `patrimonio faltante pedido solo · OCR sin clave → manual · documento no persistido · caché 24 h`);
+      }
+
       console.log(`  · RUP de PERSONA NATURAL: el mismo certificado sin «utilidad operacional» ya NO se rechaza — entra, conserva lo leído y pide solo el dato que falta`);
     }
 
@@ -12136,7 +12298,7 @@ async function main() {
         /* 1.6 · el título de la landing va en peso 250 (encargo). Tailwind no
            tiene esa parada —font-extralight es 200—, así que si vuelve la
            utilidad, el peso pedido se pierde sin que nadie lo note. */
-        const h1Landing = (html.match(/<h1[^>]*>\s*Convertí tu RUP en contratos\./) || [""])[0];
+        const h1Landing = (html.match(/<h1[^>]*>\s*Descubra en un minuto a cuántas licitaciones puede presentarse hoy\./) || [""])[0];
         assert.ok(/font-weight:\s*250/.test(h1Landing),
           "el título de la landing debe ir en peso 250 (literal: Tailwind no tiene esa parada)");
         assert.ok(!/font-extralight/.test(h1Landing),

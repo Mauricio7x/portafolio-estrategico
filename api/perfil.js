@@ -8,7 +8,14 @@
 
 const OPS = {
   resumen: () => require("../lib/handlers/perfil/resumen.js"),         // era /api/resumen
-  diagnostico: () => require("../lib/handlers/perfil/diagnostico.js"), // era /api/diagnostico
+  diagnostico: () => require("../lib/handlers/perfil/diagnostico.js"), // era /api/diagnostico (GET, embudo)
+  /* Fase 2 · la PUERTA DE ENTRADA: `POST /api/perfil?op=diagnostico` es el
+     contrato literal del plan maestro (diagnóstico anónimo del RUP: cuenta a
+     cuántas licitaciones se puede presentar). Comparte nombre con el embudo
+     de siempre porque el plan lo fija así; se separan por MÉTODO —el embudo
+     es GET con token, la entrada es POST pública— y `entrada` queda como
+     sinónimo explícito para quien prefiera no ambigüedad. */
+  entrada: () => require("../lib/handlers/perfil/entrada.js"),
 };
 
 function opDe(req) {
@@ -27,7 +34,8 @@ module.exports = async function handler(req, res) {
       operaciones: Object.keys(OPS),
     });
   }
-  const h = OPS[op];
+  const esPost = String(req.method || "GET").toUpperCase() === "POST";
+  const h = op === "diagnostico" && esPost ? OPS.entrada : OPS[op];
   if (!h) {
     return res.status(404).json({
       ok: false,

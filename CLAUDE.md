@@ -2757,6 +2757,57 @@ vista pública «Cómo calculamos» en *Precios*. Metodología y estado de verif
   HM 5 %, EPP 3 % y el auxilio de transporte (los manuales IDU/INVIAS dan 403 aquí). La etiqueta
   viaja en la API, en pantalla y en el doc; no se «completa» a verificado sin abrir la fuente.
 
+### Fase 2 · Puerta de entrada de 60 segundos (ago 2026)
+
+`lib/handlers/perfil/entrada.js` (POST `/api/perfil?op=diagnostico`; `op=entrada` sinónimo, GET =
+actividades), `lib/perfil_manual.js` (12 actividades → familias de las TIPOLOGÍAS del APU → clases de
+la unión de los RUP), `lib/perfil_dinamico.crearPerfilDinamico` (extraída de `admin/rup.js`: una sola
+vía para crear perfiles `rup_…`), K «sin dato» en `lib/capacidad`/`lib/rup`/`lib/puertas`, y la
+landing nueva en `index.html` + `onboarding.js`. Decisiones que no hay que re-aprender:
+
+- **La op se llama `diagnostico` porque el plan maestro lo fija así, y colisiona con el embudo de
+  siempre**: se separan por MÉTODO en `api/perfil.js` (GET con token = embudo; POST público = entrada)
+  y `entrada` existe como sinónimo sin ambigüedad. El GET de `entrada` responde 200 con las
+  actividades (lectura sin efectos), no 405: es lo que pinta el selector de tres datos — una sola
+  lista, la del servidor.
+- **El servidor NO recibe el PDF binario** (no hay con qué leerlo sin dependencias): el `documento
+  base64` del contrato del plan se resuelve como `{texto}` (pdf.js en el navegador, privado y rápido)
+  o `{imagenes_base64}` (páginas rasterizadas / fotos → OCR.space). Es más privado que mandar el PDF.
+- **NINGÚN camino termina en error sin salida**: `leido:false`, OCR sin clave, validación fallida,
+  ZIP sin fotos, PDF con contraseña… todo desemboca en `siguiente:"manual"` (200, no 4xx) y el
+  navegador pinta los tres datos con el motivo en una línea. Hay prueba de que el catch del flujo del
+  RUP ya no puede terminar en un mensaje de error.
+- **Se pide SOLO lo que falta**: sin patrimonio → `necesita:[patrimonio]`; sin experiencia →
+  `necesita:[experiencia_smmlv]`; el resto de indicadores queda `null` («sin dato») y el perfil se
+  valida en modo `aproximado` (`validarPerfilDinamico(id, perfil, {aproximado:true})`: patrimonio
+  obligatorio SIEMPRE, lo demás nullable). Fuera de ese modo la validación sigue estricta: un archivo
+  del dueño con un hueco no puede pasar en silencio.
+- **K SIN DATO = null, jamás 0**: `coDe` devuelve `null` sin utilidad/ingreso operacional, `crp`
+  propaga `null` (también en plural: si a un integrante le falta, la suma no se conoce), `evaluarRup`
+  publica `k_sin_dato:true` y deja pasar, `p2K` responde `sin_dato` y dice qué falta. Antes `null ×
+  16,7 = 0` daba K = 0 y cerraba la puerta por ignorancia. `topeSMMLV null` tampoco corta.
+- **`total` ≡ `/api/oportunidades` del mismo perfil, con prueba** (misma cascada, mismas puertas,
+  mismo `cargarConocimiento`, que se EXPORTA desde `handlers/procesos/listar`). «Hoy hay 47» y «Ver las
+  47» no pueden decir dos cifras. La muestra son 5 procesos reales, abiertos, los que cierran antes.
+- **El documento no se persiste**: la prueba busca LÍNEAS LITERALES del certificado en toda clave
+  nueva de Redis (no la razón social, que sí es un campo del perfil derivado, como en la carga por PDF
+  de siempre). El perfil `rup_…` dura 45 días (es «el resultado del análisis», y es lo que hace que
+  «Ver las N» funcione en visitas posteriores); el conteo se cachea 24 h en `diagnostico:{hash}` con
+  hash del PERFIL DERIVADO, y la caché solo se sirve si el perfil al que apunta sigue existiendo
+  (EXISTS): borrarlo desde Mi empresa no puede dejar un «Ver las 47» que responda «perfil caducado».
+- **`limpiarRedis` de la suite purga `diagnostico:*`**: la caché referencia perfiles que la limpieza
+  borra; sin purgarla, la iteración 2 servía un resultado con un perfil inexistente y el listado daba
+  404 — costó una corrida.
+- **El perfil manual mapea la actividad a CLASES de la unión de los RUP** (vía las familias curadas de
+  `lib/apu/tipologias`), nunca a códigos inventados: es el único universo que el matching (exige clases)
+  y la ingesta (`FAMILIAS_UNION`) comparten. `tipo: persona_natural` es un supuesto declarado. Las
+  etiquetas van en lenguaje llano y hay prueba de que no llevan códigos.
+- **`onboarding.js` llama a `/api/perfil?op=diagnostico`**, no a `/api/admin?op=rup&origen=pdf`; ese
+  endpoint SIGUE existiendo (alias `/api/admin/rup-desde-pdf`, pruebas propias) y crea el perfil por la
+  misma función. El `submit` del formulario y el `click` del botón comparten una guarda de reentrada.
+- **`value="salarios"` en el selector de unidad, no `SMMLV`**: la prueba de jerga barre el HTML entero
+  (también los atributos); el JS traduce a la unidad que espera el servidor.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).
