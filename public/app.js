@@ -1176,17 +1176,43 @@
     </tr>`;
   }
 
+  /* La EXPLICACIÓN EN SENCILLO va primero y la escribe el SERVIDOR
+     (`explicacion_simple`): frases sin fórmulas, solo lo que movió la cifra,
+     con el punto de color diciendo si suma o resta. La tabla técnica de seis
+     pasos —la vista auditable— queda plegada en «Ver el cálculo completo». */
+  const EXPLICACION_PUNTO = {
+    base: "text-gray-400",
+    sube: "text-green-600",
+    baja: "text-red-600",
+    tope: "text-gray-400",
+    cierre: "text-blue-600",
+  };
+  function listaExplicacionSimple(d) {
+    const lineas = Array.isArray(d.explicacion_simple) ? d.explicacion_simple : [];
+    if (!lineas.length) return "";
+    return `
+      <ul class="mt-5 space-y-2.5">
+        ${lineas.map((l) => `
+          <li class="flex gap-2.5 text-sm leading-relaxed text-gray-800">
+            <span class="${EXPLICACION_PUNTO[l.tipo] || "text-gray-400"} shrink-0" aria-hidden="true">●</span>
+            <span class="${l.tipo === "cierre" ? "font-medium" : ""}">${esc(l.texto)}</span>
+          </li>`).join("")}
+      </ul>
+      ${d.de_donde_salen_los_datos ? `<p class="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-500">${esc(d.de_donde_salen_los_datos)}</p>` : ""}`;
+  }
+
   function pintarDesglose(d) {
     const pasos = d.desglose || [];
     const p = d.proceso || {};
     textoParaCopiar = d.justificacion_texto || "";
     $("modal-copiar").classList.toggle("hidden", !textoParaCopiar);
     const et = fraseProbabilidad(d.probabilidad_final);
+    const frec = frecuenciaNatural(d.probabilidad_final);
     $("modal-cuerpo").innerHTML = `
       <div class="rounded-2xl bg-gray-50 px-5 py-4">
-        <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Probabilidad de adjudicación</p>
-        <p class="mt-1 text-4xl font-semibold tabular-nums tracking-tight">${fmtNum.format(d.probabilidad_final_pct)}%</p>
-        <p class="mt-1 text-sm text-gray-600"><span class="${et.clase || ""}" aria-hidden="true">${et.icono}</span> ${esc(et.frase)}</p>
+        <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Tus opciones en este proceso</p>
+        <p class="mt-1 text-2xl font-semibold tracking-tight">${frec ? esc(frec.frase) : `${fmtNum.format(d.probabilidad_final_pct)} %`}</p>
+        <p class="mt-1 text-sm text-gray-600"><span class="${et.clase || ""}" aria-hidden="true">${et.icono}</span> ${esc(et.frase)}${frec ? ` <span class="text-gray-400">(${fmtNum.format(d.probabilidad_final_pct)} %)</span>` : ""}</p>
         <p class="mt-1 text-xs text-gray-500">
           ${esc(p.entidad || "")}${p.departamento ? ` · ${esc(p.departamento)}` : ""}
           ${p.cuantia_cop ? ` · ${esc(fmtCorto(p.cuantia_cop))}` : ""}
@@ -1194,7 +1220,11 @@
         </p>
       </div>
 
-      <div class="mt-5 overflow-x-auto">
+      ${listaExplicacionSimple(d)}
+
+      <details class="mt-5">
+      <summary class="cursor-pointer select-none text-sm font-medium text-gray-500">Ver el cálculo completo (auditable, paso a paso)</summary>
+      <div class="mt-3 overflow-x-auto">
         <table class="w-full text-left text-sm">
           <thead class="text-xs uppercase tracking-wide text-gray-400">
             <tr>
@@ -1224,7 +1254,8 @@
       </div>
 
       <p class="mt-4 text-xs text-gray-400">${esc(d.como_leerlo || "")}
-        ${d.corpus === "historico" ? " · Proceso del corpus histórico (ya cerrado)." : ""}${d.cache ? " · desde caché" : ""}</p>`;
+        ${d.corpus === "historico" ? " · Proceso del corpus histórico (ya cerrado)." : ""}${d.cache ? " · desde caché" : ""}</p>
+      </details>`;
   }
 
   async function cargarDesglose(id) {
