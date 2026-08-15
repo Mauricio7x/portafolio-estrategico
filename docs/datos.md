@@ -67,3 +67,36 @@ conteo exacto (`=== 6`) y las mismas peticiones de siempre (URLs viejas incluida
   un `null`.
 - Token de Socrata (App Token): va en variables de entorno de Vercel, jamás en el código. Si un
   token se compartió por un canal inseguro, se considera comprometido y se regenera.
+
+## 4. Pre-auditoría de la Fase 1 (2026-08-15): «el divisor de horas del catálogo» — NO EXISTE
+
+El plan de la Fase 1 (motor de costo real) manda **auditar el divisor de horas del catálogo antes
+de tocarlo**, porque la Ley 2101/2021 baja la jornada máxima a **42 h semanales desde el
+15-jul-2026** (≈ 210 h/mes, 8,4 h/día en semana de 5 días). Medido contra `data/apu_catalogo.json`
+y `lib/apu/*.js`:
+
+- **No hay ningún divisor de horas ni ninguna jornada en el repositorio.** La mano de obra se
+  cotiza **por DÍA** (15 insumos `mano_obra` en `dia`, 3 en `glb`; 174/174 ítems llevan una
+  línea de mano de obra) y el motor calcula `cantidad ÷ rendimiento` en **días por unidad de
+  obra** (`lib/apu/catalogo.js:236`). El equipo va 40 por día, **5 por hora**, y el resto por
+  unidad/global. Ni `calculo.js` ni `catalogo.js` dividen por 8, por 7,33 ni por 210: la
+  advertencia de `CLAUDE.md` («no existe ninguna jornada en el repositorio; elegir 7,33 h u 8 h
+  mueve la mano de obra ~9 %») sigue siendo cierta. **Corregir un divisor que no existe sería la
+  tercera premisa falsa del prompt maestro** (tras «regex sobre `fase`» y «perfiles duplicados»).
+- **Lo que SÍ toca la Ley 2101 es el CONTENIDO del día**: los jornales y las nueve cuadrillas
+  calibradas con el Nogal (Bogotá, 2025, régimen de 44 h) pagan un día que desde el 15-jul-2026
+  rinde 8,4 h en vez de 8,8 h. Si el jornal diario no cambia, **el costo por hora efectiva sube
+  ≈ 4,8 %** (44/42 − 1) y, a rendimiento por día constante, el catálogo **subestima la mano de
+  obra en esa proporción**. Es un factor de PARÁMETRO (aplicable sobre las 18 líneas de MO y sobre
+  las 40 de equipo cotizadas por día si el equipo se paga por jornada), no una división.
+- **La cerradura que impide colar una jornada por la puerta de atrás**: cinco equipos se tarifan
+  por hora y 40 por día en el mismo catálogo; cualquier «costo horario» exigiría inventar la
+  jornada que los une, y la prueba del módulo ya prohíbe publicarlo. Un parámetro editable
+  (`apu:parametros`, como pide la F1) tiene que declarar **horas/día y horas/semana con su fecha
+  de vigencia legal**, y el motor debe seguir SIN dividir: solo aplicar el factor declarado y
+  publicarlo en `ajuste_regional`/`normativa` para que la cifra viaje con su origen.
+- Prestacional: 1,55 en las cinco regiones (supuesto declarado, no dato — ver «normativa» en
+  `CLAUDE.md`); la Ley 2101 no lo mueve.
+
+Consecuencia para la sesión de F1: **empezar por el parámetro de jornada (vigencia + factor), no
+por buscar el divisor.**
