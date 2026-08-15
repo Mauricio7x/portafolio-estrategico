@@ -185,23 +185,26 @@
     return trozos.join("\n");
   }
 
-  /* ══════════ Flujo principal: PDF → perfil → dashboard ══════════ */
-  /* Un solo camino de envío, usado por la primera carga y por el reintento con
-     los datos tecleados: dos rutas se desincronizan a la primera corrección. */
-  async function enviarRup(texto, nombreArchivo, completar) {
+  /* ══════════ Flujo principal · PUERTA DE ENTRADA DE 60 SEGUNDOS (Fase 2) ══════════
+     Un solo destino en el servidor: POST /api/perfil?op=diagnostico (público).
+     Tres caminos, y NINGUNO termina en una pantalla de error sin salida:
+       1. PDF con capa de texto → pdf.js aquí → {texto}
+       2. PDF escaneado, foto o ZIP de fotos → rasterizar/desempaquetar aquí →
+          {imagenes_base64} → OCR en el servidor → CONFIRMAR lo leído
+       3. Cualquier fallo → tres datos a mano → {manual}
+     La respuesta trae el conteo, cinco licitaciones reales y el perfil creado;
+     «Ver las N» abre el tablero con ese perfil. El documento no se guarda. */
+  const ENTRADA = "/api/perfil?op=diagnostico";
+  const MAX_PAGINAS_OCR = 6;     // las primeras páginas traen indicadores y códigos
+  let ACTIVIDADES = null;
+
+  async function enviarEntrada(cuerpoPeticion) {
     let r = null;
     try {
-      r = await fetch(CANONICA, {
+      r = await fetch(ENTRADA, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          texto_extraido: texto,
-          nombre_archivo: nombreArchivo,
-          // se reenvía el TEXTO, no el perfil: el cliente solo puede mover las
-          // casillas que el servidor declaró faltantes (es la única escritura
-          // sin token del proyecto)
-          completar: completar || undefined,
-        }),
+        body: JSON.stringify(cuerpoPeticion),
       });
     } catch (e) {
       throw new Error(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`);
@@ -213,147 +216,279 @@
       throw new Error(`El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, iniciá sesión y reintentá.`);
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      avisos((cuerpo && cuerpo.advertencias) || null);
-      throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
+      throw new Error((cuerpo && (cuerpo.error || (cuerpo.campos && cuerpo.campos.map((c) => c.error).join(" · ")))) || `El servidor respondió ${r.status}.`);
     }
     return cuerpo;
   }
 
-  /* El formulario de los datos que el certificado no trae. Se pinta DENTRO del
-     cuadro de mensaje —no hay nodo nuevo en el HTML, así que no puede quedar
-     una referencia a un id que no existe— y en tono de «ya casi», no de error:
-     el certificado es válido y se leyó bien; solo faltan una o dos cifras que
-     ese formato no imprime. */
-  function pedirDatosFaltantes(texto, nombreArchivo, cuerpo) {
-    const faltan = cuerpo.faltan || [];
-    const leido = cuerpo.leido || {};
-    const campos = faltan.map((f, i) => `
-      <label class="mt-3 block">
-        <span class="block text-sm font-medium">${esc(f.etiqueta)}</span>
-        <span class="block text-xs opacity-70">${esc(f.donde)}</span>
-        <input id="rup-falta-${i}" data-campo="${esc(f.campo)}" type="number" step="any" min="0"
-               class="mt-1 w-full max-w-xs rounded-lg border border-gray-300 px-3 py-2 text-sm"
-               placeholder="Escribí el valor">
-      </label>`).join("");
-
-    mensaje(
-      `<strong>Leímos tu certificado.</strong> `
-      + (leido.nombre ? `${esc(leido.nombre)} · ` : "")
-      + `${esc(leido.codigos_unspsc || 0)} códigos UNSPSC reconocidos.`
-      + `<p class="mt-2">Este formato de certificado no imprime `
-      + `${faltan.length === 1 ? "un dato" : `${faltan.length} datos`}. `
-      + `Escribilo${faltan.length === 1 ? "" : "s"} una vez y queda${faltan.length === 1 ? "" : "n"} guardado`
-      + `${faltan.length === 1 ? "" : "s"} en tu perfil.</p>`
-      + `<form id="rup-completar">${campos}
-           <button type="submit" class="mt-4 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white">
-             Continuar
-           </button>
-           <span id="rup-completar-aviso" class="ml-3 text-xs"></span>
-         </form>`,
-      "aviso",
-    );
-    avisos(cuerpo.advertencias);
-
-    const form = document.getElementById("rup-completar");
-    if (!form) return;
-    form.addEventListener("submit", async (ev) => {
-      ev.preventDefault();
-      const aviso = document.getElementById("rup-completar-aviso");
-      const completar = {};
-      let faltaAlguno = false;
-      faltan.forEach((f, i) => {
-        const el = document.getElementById(`rup-falta-${i}`);
-        const n = el && el.value.trim() === "" ? null : Number(el.value);
-        // vacío o 0 = SIN DATO, jamás «vale cero»: un patrimonio 0 calcularía
-        // una capacidad de contratación de cero y cerraría puertas de verdad
-        if (n == null || !Number.isFinite(n) || n <= 0) { faltaAlguno = true; return; }
-        completar[f.campo] = n;
-      });
-      if (faltaAlguno) {
-        if (aviso) { aviso.textContent = "Faltan casillas por llenar (un 0 no es un dato)."; aviso.className = "ml-3 text-xs text-red-600"; }
-        return;
-      }
-      if (aviso) { aviso.textContent = "Guardando…"; aviso.className = "ml-3 text-xs opacity-70"; }
-      ocupado(true);
-      try {
-        const c2 = await enviarRup(texto, nombreArchivo, completar);
-        if (c2.completo === false) return pedirDatosFaltantes(texto, nombreArchivo, c2);
-        finalizarRup(c2);
-      } catch (e) {
-        mensaje(esc((e && e.message) || "No se pudo guardar."), "error");
-      } finally {
-        ocupado(false);
-      }
-    });
-  }
-
-  /* Cierre común: lo hace la carga directa y el reintento tras completar. */
-  function finalizarRup(cuerpo) {
-    progreso(100, "Perfil creado.");
-    const nombre = (cuerpo.resumen && cuerpo.resumen.nombre) || "";
-    guardarPerfilRup({ id: cuerpo.perfil_id, nombre });
-    const destino = cuerpo.url_dashboard || `/?perfil=${cuerpo.perfil_id}`;
-    const vig = cuerpo.vigencia || {};
-    mensaje(
-      `<strong>Listo.</strong> Se leyeron <strong>${esc(cuerpo.unspsc_count)}</strong> códigos UNSPSC de tu RUP`
-      + (nombre ? ` (${esc(nombre)})` : "")
-      + `. Capacidad de contratación estimada: <strong>${esc(fmtCOP.format(cuerpo.k))}</strong>.`
-      + (vig.fecha_renovacion ? ` Última renovación: ${esc(vig.fecha_renovacion)}.` : "")
-      + " Abriendo tu tablero…",
-      "ok",
-    );
-    avisos(cuerpo.advertencias);
-    setTimeout(() => { window.location.href = destino; }, 1800);
-  }
-
-  async function procesarRup(archivo) {
-    mensaje(null); avisos(null);
-    ocupado(true);
+  async function cargarActividades() {
+    if (ACTIVIDADES) return ACTIVIDADES;
     try {
-      if (!/\.pdf$/i.test(archivo.name || "") && archivo.type !== "application/pdf") {
-        throw new Error("El archivo no parece un PDF. Subí el certificado RUP tal como lo descargaste de la Cámara de Comercio.");
-      }
-      progreso(2, "Abriendo el PDF…");
-      const pdfjs = await cargarPdfJs();
-      const datos = new Uint8Array(await archivo.arrayBuffer());
-      let doc = null;
-      try {
-        doc = await pdfjs.getDocument({ data: datos, isEvalSupported: false }).promise;
-      } catch (e) {
-        const m = String((e && e.message) || e);
-        if (/password/i.test(m)) throw new Error("El PDF está protegido con contraseña: quitale la protección y volvé a subirlo.");
-        throw new Error(`El PDF no se pudo abrir: puede estar corrupto o no ser un PDF. (${m})`);
-      }
-      if (!doc.numPages) throw new Error("El PDF no tiene páginas.");
+      const r = await fetch("/api/perfil?op=entrada", { cache: "no-store" });
+      const j = await r.json();
+      if (j && Array.isArray(j.actividades) && j.actividades.length) ACTIVIDADES = j.actividades;
+    } catch { /* se pinta un selector con la opción de reintentar */ }
+    return ACTIVIDADES;
+  }
 
-      const texto = await textoDelPdf(doc);
-      const porPagina = texto.trim().length / doc.numPages;
-      if (porPagina < MIN_CARACTERES_POR_PAGINA) {
-        progreso(null);
-        throw new Error(`El PDF casi no tiene capa de texto (${Math.round(porPagina)} caracteres por página): parece un escaneo. `
-          + "Descargá el certificado RUP en PDF directamente del portal de la Cámara de Comercio (RUES) — ese siempre trae texto — y volvé a intentarlo.");
-      }
+  function ocultarTodo() {
+    for (const id of ["entrada-inicio", "completar-form", "manual-form", "resultado-entrada"]) {
+      const el = $(id); if (el) el.classList.add("hidden");
+    }
+    progreso(null);
+  }
+  function mostrarInicio() { ocultarTodo(); $("entrada-inicio").classList.remove("hidden"); }
 
-      progreso(75, "Armando tu perfil…");
-      const cuerpo = await enviarRup(texto, archivo.name || null, null);
+  /* ── camino 3 · tres datos ─────────────────────────────────────────────── */
+  async function mostrarManual(motivo) {
+    ocultarTodo();
+    mensaje(null); avisos(null);
+    const intro = $("manual-intro");
+    intro.textContent = motivo
+      ? `${motivo} Dígame tres datos y le muestro lo mismo en 30 segundos.`
+      : "Dígame tres datos y le muestro a cuántas licitaciones puede presentarse hoy.";
+    const sel = $("manual-actividad");
+    const lista = await cargarActividades();
+    sel.innerHTML = '<option value="">— Elija una —</option>'
+      + (lista || []).map((a) => `<option value="${esc(a.id)}">${esc(a.etiqueta)}</option>`).join("");
+    if (!lista) sel.innerHTML += '<option value="" disabled>No se pudo cargar la lista: revise su conexión y vuelva a abrir el formulario</option>';
+    $("manual-form").classList.remove("hidden");
+    $("manual-patrimonio").focus();
+  }
 
-      /* ═══ FALTAN DATOS ≠ CERTIFICADO INVÁLIDO ══════════════════════════════
-         El RUP de una PERSONA NATURAL sale de la Cámara con el mismo formato
-         que el de una sociedad pero sin «Utilidad operacional»: quien no lleva
-         libros no la reporta. Eso rechazaba el certificado ENTERO y echaba a la
-         persona en la primera pantalla — el peor sitio posible para un «no».
-         Ahora el servidor devuelve lo que leyó y pide SOLO lo que falta, aquí
-         se pintan esas casillas, y al enviarlas se reintenta con el MISMO
-         texto. Se teclea una vez y queda guardado en el perfil. */
-      if (cuerpo.completo === false) {
-        progreso(null);
-        return pedirDatosFaltantes(texto, archivo.name || null, cuerpo);
-      }
-
-      finalizarRup(cuerpo);
+  let enviando = false; // el submit y el click del botón no pueden mandar dos veces
+  async function enviarManual(ev) {
+    if (ev) ev.preventDefault();
+    if (enviando) return;
+    const patrimonio = Number($("manual-patrimonio").value);
+    const mayor = Number($("manual-mayor").value);
+    const actividad = $("manual-actividad").value;
+    if (!(patrimonio > 0) || !(mayor > 0) || !actividad) {
+      mensaje("Falta alguno de los tres datos (y un 0 no cuenta como dato).", "error");
+      return;
+    }
+    enviando = true; ocupado(true); mensaje(null);
+    try {
+      progreso(40, "Buscando las licitaciones abiertas para su perfil…");
+      const cuerpo = await enviarEntrada({ manual: { patrimonio, mayorContrato: mayor, unidad: $("manual-unidad").value === "salarios" ? "SMMLV" : "COP", actividad } });
+      manejarRespuesta(cuerpo, null);
     } catch (e) {
       progreso(null);
-      mensaje(esc((e && e.message) || "Error desconocido al leer el RUP."), "error");
+      mensaje(esc((e && e.message) || "No se pudo completar. Intente de nuevo."), "error");
+    } finally { enviando = false; ocupado(false); }
+  }
+
+  /* ── falta UN dato del certificado: se pide solo ese ───────────────────── */
+  let contextoCompletar = null;   // { texto, origen, completar:{…} }
+  function pedirCompletar(cuerpo, contexto) {
+    ocultarTodo();
+    const n = (cuerpo.necesita || [])[0];
+    if (!n) return mostrarManual("Nos faltó un dato y no supimos cuál.");
+    contextoCompletar = { ...contexto, campo: n.campo };
+    const d = cuerpo.leido_detalle || {};
+    $("completar-intro").innerHTML = `<strong>Leímos su certificado</strong>${d.nombre ? ` (${esc(d.nombre)})` : ""}: `
+      + `${esc(d.codigos_unspsc ?? "varios")} tipos de obra inscritos. Solo falta un dato.`;
+    $("completar-etiqueta").textContent = n.etiqueta || n.campo;
+    $("completar-campo").value = "";
+    $("completar-campo").placeholder = n.campo === "experiencia_smmlv" ? "En salarios mínimos (o pesos: lo convertimos)" : "Solo números, en pesos";
+    $("completar-form").classList.remove("hidden");
+    $("completar-campo").focus();
+  }
+  async function enviarCompletar(ev) {
+    if (ev) ev.preventDefault();
+    if (enviando) return;
+    if (!contextoCompletar) return mostrarManual();
+    let valor = Number($("completar-campo").value);
+    if (!(valor > 0)) { mensaje("Escriba el dato: un 0 o un vacío no cuentan.", "error"); return; }
+    // el contrato más grande se acepta en pesos: por encima de 100 000 no puede ser SMMLV
+    if (contextoCompletar.campo === "experiencia_smmlv" && valor > 100000) valor = valor / SMMLV_2026;
+    const completar = { ...(contextoCompletar.completar || {}), [contextoCompletar.campo]: valor };
+    enviando = true; ocupado(true); mensaje(null);
+    try {
+      progreso(60, "Buscando las licitaciones abiertas para su perfil…");
+      const cuerpo = await enviarEntrada({ texto: contextoCompletar.texto, origen: contextoCompletar.origen, completar });
+      manejarRespuesta(cuerpo, { ...contextoCompletar, completar });
+    } catch (e) {
+      progreso(null);
+      mensaje(esc((e && e.message) || "No se pudo completar. Intente de nuevo."), "error");
+    } finally { enviando = false; ocupado(false); }
+  }
+  const SMMLV_2026 = 1750905; // solo para aceptar el contrato mayor en pesos en la casilla de salarios mínimos
+
+  /* ── OCR: confirmar lo leído antes de crear nada ───────────────────────── */
+  function pedirConfirmacionOcr(cuerpo) {
+    ocultarTodo();
+    const d = cuerpo.leido_detalle || {};
+    mensaje(
+      `<p><strong>Leímos su documento con reconocimiento de imágenes</strong>, que se equivoca a veces. Revise:</p>`
+      + `<ul class="mt-2 list-disc pl-5">`
+      + `<li>${esc(d.codigos_unspsc ?? 0)} tipos de obra inscritos</li>`
+      + `<li>Patrimonio: ${d.patrimonio ? esc(fmtCOP.format(d.patrimonio)) : "no se leyó (lo pediremos)"}</li>`
+      + `<li>Contrato más grande: ${d.experiencia_smmlv ? `${esc(d.experiencia_smmlv)} salarios mínimos` : "no se leyó (lo pediremos)"}</li>`
+      + `</ul>`
+      + `<div class="mt-3 flex flex-wrap gap-2">`
+      + `<button id="btn-ocr-confirmar" type="button" class="btn-vidrio-acento">Está bien, ver mis licitaciones</button>`
+      + `<button id="btn-ocr-manual" type="button" class="enlace-discreto underline decoration-dotted text-sm">Prefiero escribir tres datos</button>`
+      + `</div>`, "ok",
+    );
+    $("btn-ocr-confirmar").addEventListener("click", async () => {
+      ocupado(true);
+      try {
+        progreso(70, "Buscando las licitaciones abiertas para su perfil…");
+        const r2 = await enviarEntrada({ texto: cuerpo.texto_ocr, origen: "ocr" });
+        manejarRespuesta(r2, { texto: cuerpo.texto_ocr, origen: "ocr" });
+      } catch (e) {
+        progreso(null);
+        mostrarManual("No se pudo continuar con lo leído.");
+      } finally { ocupado(false); }
+    });
+    $("btn-ocr-manual").addEventListener("click", () => mostrarManual());
+  }
+
+  /* ── el despacho único de las respuestas del servidor ─────────────────── */
+  function manejarRespuesta(cuerpo, contexto) {
+    if (cuerpo.perfil_id && cuerpo.oportunidades) return pintarResultado(cuerpo);
+    if (cuerpo.siguiente === "completar") return pedirCompletar(cuerpo, contexto || {});
+    if (cuerpo.siguiente === "confirmar" && cuerpo.texto_ocr) return pedirConfirmacionOcr(cuerpo);
+    // "manual", leido:false, ocr no disponible… — todo lo demás desemboca en los tres datos
+    return mostrarManual(cuerpo.mensaje || "No pudimos leer su documento automáticamente.");
+  }
+
+  /* ── pantalla 2 · resultado ─────────────────────────────────────────────── */
+  const fmtMillones = (n) => {
+    if (!Number.isFinite(n) || n <= 0) return null;
+    const m = n / 1e6;
+    return m >= 1000 ? `${(m / 1000).toLocaleString("es-CO", { maximumFractionDigits: 1 })} mil millones` : `${Math.round(m).toLocaleString("es-CO")} millones`;
+  };
+  function pintarResultado(cuerpo) {
+    ocultarTodo();
+    mensaje(null);
+    const o = cuerpo.oportunidades;
+    const n = o.total;
+    guardarPerfilRup({ id: cuerpo.perfil_id, nombre: (cuerpo.perfil && cuerpo.perfil.nombre) || "" });
+
+    $("res-total").textContent = n === 0
+      ? "Hoy no hay licitaciones abiertas que encajen con este perfil."
+      : `Hoy hay ${n.toLocaleString("es-CO")} licitación${n === 1 ? "" : "es"} abierta${n === 1 ? "" : "s"} a la${n === 1 ? "" : "s"} que usted puede presentarse.`;
+    const suma = fmtMillones(o.valorTotal);
+    $("res-valor").textContent = n > 0 && suma ? `Suman $${suma}.` : (n > 0 ? "Varias no publican presupuesto." : "");
+    $("res-sobra").textContent = n > 0
+      ? (o.conCapacidadSuficiente > 0
+        ? `En ${o.conCapacidadSuficiente} de ellas su capacidad alcanza de sobra.`
+        : "En ninguna le sobra capacidad: conviene mirar cada una con su presupuesto y su anticipo.")
+      : (o.corpus_vacio ? "Todavía no hay licitaciones cargadas en el sistema." : "Cuando tenga su RUP a mano, súbalo: con los códigos reales la lista puede cambiar.");
+
+    const ul = $("res-muestra");
+    ul.innerHTML = (o.muestra || []).map((m) => `
+      <li class="rounded-xl px-4 py-3 text-sm" style="background: var(--bg-inset); color: var(--text-primary);">
+        <p class="font-medium">${esc(m.entidad || "Entidad sin nombre")}</p>
+        <p class="mt-0.5 text-xs" style="color: var(--text-secondary);">${esc(m.objeto || "")}</p>
+        <p class="mt-1 text-xs" style="color: var(--text-secondary);">
+          ${m.valor ? esc(fmtCOP.format(m.valor)) : "Presupuesto no publicado"}
+          ${m.diasRestantes == null ? "" : ` · cierra ${m.diasRestantes === 0 ? "hoy" : m.diasRestantes === 1 ? "mañana" : `en ${m.diasRestantes} días`}`}
+        </p>
+      </li>`).join("");
+
+    const btn = $("btn-ver-todas");
+    btn.textContent = n > 0 ? `Ver las ${n.toLocaleString("es-CO")}` : "Entrar de todos modos";
+    btn.onclick = () => { window.location.href = cuerpo.url_dashboard || `/?perfil=${cuerpo.perfil_id}`; };
+
+    const origen = { texto: "leído de su RUP", ocr: "leído con reconocimiento de imágenes (confírmelo)", manual: "perfil aproximado con tres datos" }[cuerpo.origen] || cuerpo.origen;
+    $("res-nota").textContent = `Perfil ${origen}. Su documento no se guardó: solo el perfil derivado, que caduca solo en 45 días.`
+      + (cuerpo.camposNoLeidos && cuerpo.camposNoLeidos.length && cuerpo.origen !== "manual" ? " Falta algún indicador financiero: la capacidad de contratación queda «sin dato» hasta que lo cargue en Mi empresa." : "");
+    avisos(null);
+    $("resultado-entrada").classList.remove("hidden");
+    progreso(null);
+  }
+
+  /* ── camino 1 y 2 · el archivo ──────────────────────────────────────────── */
+  async function rasterizarPaginas(doc, max) {
+    const salida = [];
+    const tope = Math.min(doc.numPages, max);
+    for (let n = 1; n <= tope; n++) {
+      progreso(20 + Math.round((n - 1) / tope * 40), `Preparando página ${n} de ${tope} para reconocerla…`);
+      const pagina = await doc.getPage(n);
+      const vista = pagina.getViewport({ scale: 1.6 });
+      const lienzo = document.createElement("canvas");
+      lienzo.width = Math.round(vista.width); lienzo.height = Math.round(vista.height);
+      await pagina.render({ canvasContext: lienzo.getContext("2d"), viewport: vista }).promise;
+      const url = lienzo.toDataURL("image/jpeg", 0.8);
+      salida.push({ base64: url.split(",")[1], mime: "image/jpeg" });
+    }
+    return salida;
+  }
+  const aBase64 = (u8) => {
+    let s = ""; const paso = 0x8000;
+    for (let i = 0; i < u8.length; i += paso) s += String.fromCharCode.apply(null, u8.subarray(i, i + paso));
+    return btoa(s);
+  };
+  async function imagenesDeZip(archivo) {
+    if (!window.XLSXLectura || !window.XLSXLectura.leerZip) throw new Error("no hay lector ZIP");
+    const zip = window.XLSXLectura.leerZip(new Uint8Array(await archivo.arrayBuffer()));
+    const inflar = typeof DecompressionStream === "function"
+      ? async (crudo) => new Uint8Array(await new Response(new Blob([crudo]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer())
+      : null;
+    const fotos = zip.entradas.filter((e) => /\.(jpe?g|png)$/i.test(e.nombre)).slice(0, MAX_PAGINAS_OCR);
+    const salida = [];
+    for (const e of fotos) {
+      const bytes = await zip.extraer(e.nombre, inflar);
+      salida.push({ base64: aBase64(bytes), mime: /png$/i.test(e.nombre) ? "image/png" : "image/jpeg" });
+    }
+    return salida;
+  }
+
+  async function procesarArchivo(archivo) {
+    mensaje(null); avisos(null);
+    ocupado(true);
+    let contexto = null;
+    try {
+      const nombre = archivo.name || "";
+      const esPdf = /\.pdf$/i.test(nombre) || archivo.type === "application/pdf";
+      const esImagen = /\.(jpe?g|png)$/i.test(nombre) || /^image\/(jpeg|png)$/.test(archivo.type);
+      const esZip = /\.zip$/i.test(nombre) || /zip/.test(archivo.type);
+      let imagenes = null;
+
+      if (esPdf) {
+        progreso(2, "Abriendo el PDF…");
+        const pdfjs = await cargarPdfJs();
+        const datos = new Uint8Array(await archivo.arrayBuffer());
+        let doc = null;
+        try {
+          doc = await pdfjs.getDocument({ data: datos, isEvalSupported: false }).promise;
+        } catch (e) {
+          const m = String((e && e.message) || e);
+          throw new Error(/password/i.test(m) ? "El PDF está protegido con contraseña." : "El PDF no se pudo abrir.");
+        }
+        if (!doc.numPages) throw new Error("El PDF no tiene páginas.");
+        const texto = await textoDelPdf(doc);
+        const porPagina = texto.trim().length / doc.numPages;
+        if (porPagina >= MIN_CARACTERES_POR_PAGINA) {
+          progreso(75, "Buscando las licitaciones abiertas para su perfil…");
+          contexto = { texto, origen: "texto" };
+          const cuerpo = await enviarEntrada({ texto });
+          return manejarRespuesta(cuerpo, contexto);
+        }
+        // escaneado: rasterizar y mandar a reconocer (camino 2)
+        imagenes = await rasterizarPaginas(doc, MAX_PAGINAS_OCR);
+      } else if (esImagen) {
+        progreso(20, "Preparando la imagen…");
+        imagenes = [{ base64: aBase64(new Uint8Array(await archivo.arrayBuffer())), mime: /png/i.test(archivo.type || nombre) ? "image/png" : "image/jpeg" }];
+      } else if (esZip) {
+        progreso(20, "Abriendo el ZIP…");
+        imagenes = await imagenesDeZip(archivo);
+        if (!imagenes.length) throw new Error("El ZIP no trae imágenes JPG o PNG.");
+      } else {
+        throw new Error("El archivo no es un PDF, una imagen ni un ZIP.");
+      }
+
+      progreso(65, "Reconociendo el documento (puede tardar un poco)…");
+      const cuerpo = await enviarEntrada({ imagenes_base64: imagenes });
+      return manejarRespuesta(cuerpo, { origen: "ocr" });
+    } catch (e) {
+      /* NUNCA una pantalla de error sin salida: lo que haya pasado desemboca en
+         los tres datos, con el motivo en una línea. */
+      progreso(null);
+      return mostrarManual(`No pudimos leer su documento automáticamente (${(e && e.message) || "error desconocido"}).`);
     } finally {
       ocupado(false);
       $("rup-archivo").value = ""; // volver a elegir el mismo archivo debe re-disparar `change`
@@ -363,8 +498,13 @@
   $("btn-subir-rup").addEventListener("click", () => $("rup-archivo").click());
   $("rup-archivo").addEventListener("change", () => {
     const archivo = $("rup-archivo").files && $("rup-archivo").files[0];
-    if (archivo) procesarRup(archivo);
+    if (archivo) procesarArchivo(archivo);
   });
+  $("btn-manual").addEventListener("click", () => mostrarManual());
+  $("manual-form").addEventListener("submit", enviarManual);
+  $("btn-manual-enviar").addEventListener("click", enviarManual);
+  $("completar-form").addEventListener("submit", enviarCompletar);
+  $("btn-completar-enviar").addEventListener("click", enviarCompletar);
 
   /* ══════════ Acceso con clave (perfiles existentes) ══════════ */
   $("btn-ir-gate").addEventListener("click", () => {

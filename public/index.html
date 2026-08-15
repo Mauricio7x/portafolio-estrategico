@@ -247,17 +247,28 @@
            lo redondean a 200/300. Tailwind no tiene esa parada (font-extralight
            es 200), así que va literal en el atributo. -->
       <h1 class="max-w-[600px] text-[28px] leading-[1.15] tracking-[-0.5px] sm:text-[40px]"
-          style="color: var(--text-primary); font-weight: 250;">Convertí tu RUP en contratos.</h1>
+          style="color: var(--text-primary); font-weight: 250;">Descubra en un minuto a cuántas licitaciones puede presentarse hoy.</h1>
       <p class="mt-3 max-w-[480px] text-[15px] font-light leading-[1.5] sm:text-[17px]" style="color: var(--text-secondary);">
-        Subí tu certificado RUP de Cámara de Comercio. Te mostramos solo las licitaciones que podés ganar,
-        cuánto ofertar y cuánto ganarías.
+        Suba su RUP y le decimos a cuáles puede presentarse, cuánto le costaría ejecutarlas y a qué precio ofertar.
       </p>
 
-      <button id="btn-subir-rup" type="button" class="btn-vidrio-acento mt-8 w-full max-w-xs sm:w-auto">
-        Subir RUP (PDF)
-      </button>
-      <input id="rup-archivo" type="file" accept="application/pdf,.pdf" class="hidden" aria-label="Certificado RUP en PDF">
-      <p class="mt-3 text-xs" style="color: var(--text-secondary);">El PDF se lee en tu navegador; al servidor solo viaja el texto extraído para armar tu perfil.</p>
+      <!-- ══════ Pantalla 1 · Puerta de entrada (Fase 2) ══════
+           Cascada: PDF con texto (pdf.js aquí mismo) → escaneo/fotos/ZIP (OCR en
+           el servidor, con confirmación) → tres datos a mano. NINGÚN camino
+           termina en un error sin salida: onboarding.js manda al formulario
+           manual en cada fallo. -->
+      <div id="entrada-inicio">
+        <button id="btn-subir-rup" type="button" class="btn-vidrio-acento mt-8 w-full max-w-xs sm:w-auto">
+          Suba su RUP
+        </button>
+        <input id="rup-archivo" type="file" accept="application/pdf,.pdf,image/jpeg,image/png,.jpg,.jpeg,.png,application/zip,.zip" class="hidden"
+               aria-label="Certificado RUP en PDF, imagen o ZIP">
+        <p class="mt-3 text-xs" style="color: var(--text-secondary);">No creamos cuenta. No guardamos su documento. Ley 1581 de 2012.</p>
+        <p class="mt-1 text-xs" style="color: var(--text-secondary);">El PDF se lee en su navegador; al servidor solo viaja el texto extraído para armar su perfil.</p>
+        <button id="btn-manual" type="button" class="enlace-discreto mt-4 text-sm underline decoration-dotted">
+          Prefiero escribir tres datos
+        </button>
+      </div>
 
       <!-- progreso de la extracción -->
       <div id="rup-progreso" class="mt-8 hidden w-full max-w-md">
@@ -267,9 +278,62 @@
         <p id="rup-progreso-msg" class="mt-2 text-sm" style="color: var(--text-secondary);">Preparando…</p>
       </div>
 
-      <!-- resultado / error -->
+      <!-- resultado / aviso -->
       <div id="rup-mensaje" class="mt-6 hidden w-full max-w-md rounded-xl px-4 py-3 text-left text-sm"></div>
       <ul id="rup-avisos" class="mt-3 hidden w-full max-w-md space-y-1 text-left text-xs" style="color: var(--warn);"></ul>
+
+      <!-- Falta UN dato del certificado leído: se pide solo ese, jamás el
+           formulario entero otra vez. -->
+      <form id="completar-form" class="mt-6 hidden w-full max-w-md text-left">
+        <p id="completar-intro" class="text-sm" style="color: var(--text-primary);"></p>
+        <label class="mt-3 block">
+          <span id="completar-etiqueta" class="text-xs font-medium uppercase tracking-wide" style="color: var(--text-secondary);"></span>
+          <input id="completar-campo" type="number" min="1" step="1" inputmode="numeric"
+                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num" placeholder="Solo números">
+        </label>
+        <button id="btn-completar-enviar" type="submit" class="btn-vidrio-acento mt-4 w-full">Ver mis licitaciones</button>
+      </form>
+
+      <!-- Tres datos: el camino que existe para que NADIE quede bloqueado. -->
+      <form id="manual-form" class="mt-6 hidden w-full max-w-md text-left">
+        <p id="manual-intro" class="text-sm" style="color: var(--text-primary);">
+          Dígame tres datos y le muestro lo mismo en 30 segundos.
+        </p>
+        <label class="mt-4 block">
+          <span class="text-xs font-medium uppercase tracking-wide" style="color: var(--text-secondary);">¿Cuánto es el patrimonio de su empresa? (pesos)</span>
+          <input id="manual-patrimonio" type="number" min="1" step="1" inputmode="numeric" required
+                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num" placeholder="Por ejemplo 350000000">
+        </label>
+        <label class="mt-3 block">
+          <span class="text-xs font-medium uppercase tracking-wide" style="color: var(--text-secondary);">¿Cuál es el contrato más grande que ha hecho?</span>
+          <div class="mt-1 flex gap-2">
+            <input id="manual-mayor" type="number" min="1" step="any" inputmode="numeric" required
+                   class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num" placeholder="Por ejemplo 900000000">
+            <select id="manual-unidad" class="shrink-0 rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm">
+              <option value="COP">en pesos</option>
+              <option value="salarios">en salarios mínimos</option>
+            </select>
+          </div>
+        </label>
+        <label class="mt-3 block">
+          <span class="text-xs font-medium uppercase tracking-wide" style="color: var(--text-secondary);">¿A qué se dedica principalmente?</span>
+          <select id="manual-actividad" required class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+            <option value="">— Elija una —</option>
+          </select>
+        </label>
+        <button id="btn-manual-enviar" type="submit" class="btn-vidrio-acento mt-4 w-full">Ver mis licitaciones</button>
+        <p class="mt-2 text-xs" style="color: var(--text-secondary);">Con esto armamos un perfil aproximado. Cuando tenga su RUP a mano, súbalo y afinamos la lista.</p>
+      </form>
+
+      <!-- ══════ Pantalla 2 · Resultado ══════ -->
+      <div id="resultado-entrada" class="mt-8 hidden w-full max-w-md text-left">
+        <p id="res-total" class="text-[22px] leading-snug" style="color: var(--text-primary); font-weight: 300;"></p>
+        <p id="res-valor" class="mt-1 text-sm" style="color: var(--text-secondary);"></p>
+        <p id="res-sobra" class="mt-1 text-sm" style="color: var(--text-secondary);"></p>
+        <ul id="res-muestra" class="mt-5 space-y-2"></ul>
+        <button id="btn-ver-todas" type="button" class="btn-vidrio-acento mt-6 w-full"></button>
+        <p id="res-nota" class="mt-3 text-xs" style="color: var(--text-secondary);"></p>
+      </div>
 
       <div class="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
         <button id="btn-ir-gate" type="button" class="enlace-discreto underline decoration-dotted">

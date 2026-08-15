@@ -61,6 +61,15 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
   los rewrites son solo compatibilidad para URL guardadas y documentación, y hay prueba de que
   nada interno depende de ellos. El plan Hobby admite 12 funciones: con 6 quedan 6 huecos de reserva, y **lo nuevo se pliega
   como `op` en su router, jamás como archivo propio** (la suite fija el conteo en `=== 6`).
+- **Puerta de entrada de 60 segundos (Fase 2, ago 2026)**: `POST /api/perfil?op=diagnostico` (público,
+  sin cuenta ni token; `op=entrada` es sinónimo y su GET sirve las 12 actividades). Cascada sin salida
+  muerta: RUP en PDF con texto (pdf.js en el navegador → `{texto}`) → escaneo, foto o ZIP de fotos
+  (`{imagenes_base64}` → OCR.space → confirmar lo leído) → tres datos (`{manual}`: patrimonio, contrato
+  más grande, actividad → perfil APROXIMADO, `lib/perfil_manual.js`). Crea el perfil `rup_…` por la
+  misma vía que la carga por PDF (`lib/perfil_dinamico.crearPerfilDinamico`) y cuenta con la MISMA
+  cascada y puertas del listado (`total` ≡ `/api/oportunidades`), con 5 licitaciones reales y «Ver las
+  N». El documento no se persiste; el resultado se cachea 24 h en `diagnostico:{hash}`. La K sin utilidad
+  operacional queda «sin dato» y la puerta P2 deja pasar declarándolo (`lib/capacidad`, `lib/puertas`).
 - **Motor de costo real (Fase 1, ago 2026)**: `lib/parametros.js` (jornada, salario mínimo, prestaciones,
   ARL, TPNL/MVP, herramienta menor, EPP, IVA sobre utilidad; versionados en `apu:parametros` y
   `apu:parametros:v:{vigencia}`; editables en *Mi empresa → Sistema*) + `lib/costos.js` (única
