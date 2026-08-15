@@ -110,6 +110,12 @@
       // fila parece cobrar de más respecto del jornal que el dueño conoce
       if (factor > 1.001) notas.push(`jornal × ${fmtNum(factor)} prestacional`);
     }
+    /* Fase 1: cuando el motor aplicó el factor de jornada (Ley 2101), la
+       cantidad de días ya no es 1 ÷ rendimiento sino factor ÷ rendimiento. Se
+       escribe para que quien rehaga la fila con calculadora encuentre el número. */
+    if (l.tipo === "mano_obra" && Number.isFinite(Number(l.factor_jornada)) && Math.abs(Number(l.factor_jornada) - 1) > 1e-6) {
+      notas.push(`días × ${Number(l.factor_jornada).toFixed(3).replace(".", ",")} por jornada de 42 h`);
+    }
 
     return {
       nombre,
@@ -569,7 +575,14 @@
         const esEquipo = tipo === "equipo";
         const hm = esEquipo && it.detalle && it.detalle.herramienta_menor_pct > 0
           ? it.detalle.herramienta_menor_unitario : null;
-        if (!delTipo.length && hm == null) continue;
+        /* Los elementos de protección personal (Fase 1: % de la mano de obra
+           desde apu:parametros) van en la sección de EQUIPO junto a la
+           herramienta menor, que es donde el motor los suma (`calculo.js`): si
+           no se imprimieran, VR COSTO DIRECTO incluiría un valor que ninguna
+           fila de la hoja explica — la fila «que no cuadra» otra vez. */
+        const epp = esEquipo && it.detalle && it.detalle.epp_pct > 0
+          ? it.detalle.epp_unitario : null;
+        if (!delTipo.length && hm == null && epp == null) continue;
         fila([{ v: rotulo, s: "negrita" }]);
         fila(cabecera.map((t) => (t ? { v: t, s: "encabezado" } : null)));
         let subtotal = 0;
@@ -602,6 +615,14 @@
             null, null,
           ]);
           subtotal += hm;
+        }
+        if (epp != null) {
+          fila([
+            { v: `ELEMENTOS DE PROTECCIÓN PERSONAL (${Math.round(it.detalle.epp_pct * 1000) / 10} % de la mano de obra)`, s: "texto" },
+            { v: "%", s: "texto" }, null, null, { v: fin(epp), s: "moneda2" },
+            null, null,
+          ]);
+          subtotal += epp;
         }
         const hasta = filas.length;
         fila([null, null, null, { v: "Subtotal =", s: "moneda2Negrita" },

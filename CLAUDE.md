@@ -2707,6 +2707,56 @@ completa y límites en `docs/ACCESIBILIDAD.md`. Decisiones que no hay que re-apr
   require estático —el que hace que el tracer de Vercel lo empaquete— cambió de profundidad. Si
   alguien mueve un handler, los requires de la RAÍZ (no solo los de `lib/`) cambian con él.
 
+### Fase 1 · Motor de costo real (ago 2026)
+
+Plan maestro Detecta v3, Fase 1. `lib/parametros.js` (DEFAULTS del encargo, VERIFICACIÓN por
+parámetro, `apu:parametros` + `apu:parametros:v:{vigencia}`), `lib/costos.js` (re-export de
+`public/costos.js`, UMD: **una sola implementación** para servidor y navegador), acción
+`parametros` en `/api/apu` (GET pública · POST con token), formulario en *Mi empresa → Sistema* y
+vista pública «Cómo calculamos» en *Precios*. Metodología y estado de verificación:
+`docs/metodologia.md`. Decisiones que no hay que re-aprender:
+
+- **EL «DIVISOR DE HORAS DEL CATÁLOGO» NO EXISTE — tercera premisa falsa del plan maestro.** Se
+  despejó en tres APU (`docs/metodologia.md` §1): `subtotal_MO ÷ días = jornal × 1,55` exacto. La MO
+  se cotiza POR DÍA y el motor calcula días por unidad; ni `calculo.js` ni `catalogo.js` dividen por
+  8, 7,33 ni 210. La Ley 2101 entra como **`factor_jornada` = horas de calibración ÷ horas
+  vigentes (44/42)** sobre la CANTIDAD (días) de las líneas de MO —no sobre el jornal, que es el
+  dato calibrado—; cada línea publica el factor y `cantidad × precio = valor` sigue cuadrando. NO se
+  aplica al equipo (alquiler por día calendario; extenderlo sería asumir): pendiente medible.
+- **Sin `parametros` el motor calcula EXACTAMENTE como antes** (`costoDirecto(item, cat, region,
+  opciones)`, opciones neutras por defecto): así se prueba la calibración Nogal. El HANDLER de
+  `calcular` y `cotizar` los carga SIEMPRE (`parametrosParaMotor`: Redis → DEFAULTS declarados en
+  `parametros_costo.fuente`). `calcularPresupuesto` sin parámetros publica `parametros_costo: null`
+  —no «factor 1»—: la distinción «no sé» / «cero» otra vez. Y **cotizar y calcular reciben las
+  mismas opciones**: dos unitarios distintos del mismo ítem es el defecto que este proyecto pagó.
+- **44 h de calibración es un SUPUESTO declarado**: el contrato Nogal es de 2025 y el catálogo no
+  guarda su fecha (46 h si es anterior al 15-jul-2025). Se cambia en el formulario, sin código.
+- **Impacto medido y publicado por la suite** (j.13): MO +4,76 % en los 174 ítems, costo directo
+  medio +2,37 % (+1,03 % ponderado; la MO pesa 13 % del CD en Bogotá), EPP 3 % de la MO. Al alza,
+  como preveía el encargo, y menor que «4,8 % del costo» porque el 4,8 % es sobre la MO.
+- **Los recargos del modelo (58,29 % nominal / 44,79 % exonerado) son los de
+  `lib/apu/normativa.js`** y hay prueba que los ata: dos tablas de nómina no pueden discrepar. La
+  exoneración (E.T. 114-1) descuenta salud + SENA + ICBF JUNTOS y solo bajo 10 SMMLV; una persona
+  natural con un solo empleado NO está cobijada, y la casilla lo dice.
+- **Administración: dos metodologías, UNA función** (`costos.administracion`). Por tiempo (IDU) la
+  A % se DERIVA (admin ÷ CD) y resumen/Excel/PDF leen `aiu_pct` como siempre; hay prueba de que
+  ambas dan el mismo precio de venta. **El predeterminado sigue siendo el porcentaje**, no «tiempo»
+  como sugiere el encargo: exige gastos fijos que el usuario puede no tener, y un default que
+  produce nada es peor que un 15 % declarado. Sin datos cae al % Y AVISA.
+- **Un parámetro ausente LANZA, no se rellena** (`costos.js`), y `validar` exige el objeto
+  completo: inventar un porcentaje de nómina es inventar un precio. Ninguna tasa vive en el
+  frontend (prueba: `0.08333|0.0696|0.225` prohibidos en app.js); las tarifas ARL viajan del
+  servidor. La versión se escribe ANTES que la vigente: nunca una vigente sin su versión.
+- **La hoja APU del Excel imprime el EPP** junto a la herramienta menor (sección EQUIPO, donde el
+  motor lo suma) y la línea de MO escribe «días × 1,048 por jornada de 42 h»: sin eso VR COSTO
+  DIRECTO incluiría un valor que ninguna fila explica — la fila «que no cuadra».
+- **AIU de subcontratista: NO se añadió la casilla** porque ningún ítem lleva hoy ese dato; una
+  casilla sin dato detrás es el botón mudo. Pendiente con la importación.
+- **Estado de verificación honesto**: verificados prestaciones, exoneración, ARL, jornada, IVA-U y
+  SMMLV; «referencia sectorial, pendiente de contraste» el divisor 210, TPNL 22,5 %, MVP 14,72 %,
+  HM 5 %, EPP 3 % y el auxilio de transporte (los manuales IDU/INVIAS dan 403 aquí). La etiqueta
+  viaja en la API, en pantalla y en el doc; no se «completa» a verificado sin abrir la fuente.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).

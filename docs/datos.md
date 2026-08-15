@@ -99,4 +99,6 @@ y `lib/apu/*.js`:
   `CLAUDE.md`); la Ley 2101 no lo mueve.
 
 Consecuencia para la sesión de F1: **empezar por el parámetro de jornada (vigencia + factor), no
-por buscar el divisor.**
+por buscar el divisor.** Hecho en la Fase 1 (2026-08-15): `lib/parametros.js` + `lib/costos.js` +
+`apu:parametros`; el despeje con cifras, las fórmulas, el impacto medido y el estado de verificación
+de cada parámetro están en **`docs/metodologia.md`**.

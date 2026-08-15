@@ -9672,7 +9672,12 @@ async function main() {
            Son la misma tabla por dos caminos; si divergieran, el presupuesto
            cambiaría según quién hubiera corrido la carga y ninguna de las dos
            cifras serviría para decidir nada. */
-        const desdeSemilla = calculo.calcularPresupuesto({ items: itemsPrueba, departamento: "ANTIOQUIA", config: cfgBase });
+        // con los MISMOS parámetros normativos que aplicó el handler (Fase 1): la
+        // comparación es tabla contra tabla, no «con jornada» contra «sin jornada»
+        const desdeSemilla = calculo.calcularPresupuesto({ items: itemsPrueba, departamento: "ANTIOQUIA", config: cfgBase,
+          parametros: desdeRedis.cuerpo.parametros_costo });
+        assert.ok(desdeRedis.cuerpo.parametros_costo && desdeRedis.cuerpo.parametros_costo.factor_jornada > 1,
+          "el handler tiene que aplicar el factor de jornada de apu:parametros (defaults: 44/42)");
         assert.strictEqual(desdeRedis.cuerpo.resumen.costo_directo_total, desdeSemilla.resumen.costo_directo_total,
           "el catálogo de Redis y la semilla del repositorio dan precios distintos: son la misma tabla por dos caminos");
 
@@ -10037,6 +10042,180 @@ async function main() {
             assert.ok(vercelCfg.rewrites.some((r) => r.source === "/api/sync/historico"), "el rewrite de /api/sync/historico (URL del dueño) tiene que seguir");
           }
         }
+      }
+
+
+      /* ═══════════ j.13 · MOTOR DE COSTO REAL (Fase 1, ago 2026) ═══════════
+         Lo que se prueba y por qué:
+         · lib/costos.js es la ÚNICA implementación (misma identidad de objeto
+           que public/costos.js: no hay copia que pueda divergir).
+         · La exoneración del art. 114-1 activa e inactiva da los dos recargos
+           que ya publica lib/apu/normativa (44,79 % / 58,29 %): dos tablas de
+           porcentajes de nómina no pueden discrepar.
+         · Las DOS metodologías de administración coinciden cuando describen el
+           mismo gasto.
+         · El catálogo NO tiene divisor de horas: sin parámetros el costo directo
+           es EXACTO al de siempre (calibración Nogal), y con ellos la mano de obra
+           sube 44/42 y el EPP se suma — medido sobre los 174 ítems y publicado.
+         · La acción `parametros` (GET pública / POST con token, versionada) y
+           el frontend (ids, script, guardas). */
+      {
+        const P = require("../lib/parametros.js");
+        const C = require("../lib/costos.js");
+        assert.strictEqual(C, require("../public/costos.js"), "lib/costos.js tiene que RE-EXPORTAR public/costos.js, no copiarlo");
+        assert.ok(P.validar(P.DEFAULTS).ok, "los DEFAULTS de apu:parametros deben validar");
+        for (const id of Object.keys(P.DEFAULTS)) {
+          if (id === "vigencia") continue;
+          assert.ok(P.VERIFICACION[id], `el parámetro «${id}» tiene que declarar su estado de verificación`);
+          assert.ok(["verificado", "referencia", "supuesto"].includes(P.VERIFICACION[id].estado));
+        }
+
+        // exoneración ON/OFF ≡ los recargos que ya publica lib/apu/normativa
+        const normativa = require("../lib/apu/normativa.js");
+        const sumaNorm = (filtro) => normativa.COMPONENTES_PRESTACIONAL.filter(filtro).reduce((a, c) => a + c.pct, 0);
+        const smmlv = P.DEFAULTS.smmlv;
+        const recOn = C.recargoPrestacional(P.DEFAULTS, smmlv);
+        const recOff = C.recargoPrestacional({ ...P.DEFAULTS, exoneracionParafiscales: false }, smmlv);
+        assert.ok(recOn.exonerado && !recOff.exonerado);
+        assert.ok(Math.abs(recOff.fraccion * 100 - sumaNorm(() => true)) < 0.02,
+          `recargo nominal ${recOff.fraccion} ≠ normativa ${sumaNorm(() => true)} %`);
+        assert.ok(Math.abs(recOn.fraccion * 100 - sumaNorm((c) => !c.exonerable)) < 0.02,
+          `recargo exonerado ${recOn.fraccion} ≠ normativa ${sumaNorm((c) => !c.exonerable)} %`);
+        // con salario ≥ 10 SMMLV la exoneración NO aplica aunque esté activa
+        assert.ok(!C.recargoPrestacional(P.DEFAULTS, 10 * smmlv).exonerado, "≥ 10 SMMLV no se exonera");
+        // fórmula del costo-hora, rehecha a mano
+        const ch = C.costoHora(P.DEFAULTS, smmlv);
+        const esperado = (smmlv + P.DEFAULTS.auxilioTransporte) * (1 + recOn.fraccion) * (1 + P.DEFAULTS.tpnl + P.DEFAULTS.mvp) / P.DEFAULTS.divisorAPU;
+        assert.ok(Math.abs(ch.costo_hora - esperado) < 0.01, "costo_hora ≠ costo_mensual_total × (1+TPNL+MVP) / divisor");
+        assert.strictEqual(C.costoHora(P.DEFAULTS, 3 * smmlv).auxilio, 0, "sobre 2 SMMLV no hay auxilio de transporte");
+        assert.throws(() => C.costoHora({ ...P.DEFAULTS, tpnl: undefined }, smmlv), /tpnl/, "un parámetro ausente lanza: no se rellena");
+        assert.ok(C.explicarCostoHora(P.DEFAULTS, smmlv).pasos.length === 5, "la explicación trae los cinco pasos");
+
+        // las dos metodologías de administración COINCIDEN si describen el mismo gasto
+        const gastos = 12_000_000, horas = 2_100, cd = 500_000_000;
+        const porTiempo = C.administracion({ metodo: "tiempo", gastosFijosMensuales: gastos, horasProyecto: horas, costosDirectos: cd }, P.DEFAULTS);
+        const porPct = C.administracion({ metodo: "porcentaje", costosDirectos: cd, porcentaje: porTiempo.porcentaje }, P.DEFAULTS);
+        assert.ok(Math.abs(porTiempo.valor - porPct.valor) < 0.01, `administración por tiempo ${porTiempo.valor} ≠ por porcentaje ${porPct.valor}`);
+        assert.strictEqual(porTiempo.costo_hora_admin, Math.round((gastos / P.DEFAULTS.jornadaLegalMes) * 100) / 100);
+        assert.strictEqual(C.ivaSobreUtilidad(1000, P.DEFAULTS), 190, "el IVA es 19 % SOLO sobre la utilidad");
+        assert.strictEqual(C.herramientaMenor(1000, P.DEFAULTS), 50);
+        assert.strictEqual(C.epp(1000, P.DEFAULTS), 30);
+
+        // ── el motor: sin parámetros, EXACTO al de siempre; con ellos, MO × 44/42 + EPP ──
+        const S = catalogoLib.SEMILLA;
+        const motor = P.paraMotor(P.DEFAULTS);
+        assert.ok(Math.abs(motor.factor_jornada - 44 / 42) < 1e-6, "factor de jornada = horas calibración / horas vigentes");
+        let n = 0, sumaRel = 0, cdSin = 0, cdCon = 0, moSin = 0, moCon = 0;
+        for (const it of S.items) {
+          const a = catalogoLib.costoDirecto(it, S, "bogota_sabana");
+          const a2 = catalogoLib.costoDirecto(it, S, "bogota_sabana", {});
+          const b = catalogoLib.costoDirecto(it, S, "bogota_sabana", motor);
+          assert.strictEqual(a.total, a2.total, `${it.codigo}: opciones vacías tienen que ser neutras`);
+          if (a.total <= 0) continue;
+          n++;
+          // MO × factor exacto; materiales, equipo y transporte intactos
+          assert.ok(Math.abs(b.capitulos.mano_obra - a.capitulos.mano_obra * motor.factor_jornada) <= 1,
+            `${it.codigo}: la mano de obra debe multiplicarse por el factor de jornada`);
+          for (const k of ["materiales", "equipo", "transporte"]) {
+            assert.strictEqual(b.capitulos[k], a.capitulos[k], `${it.codigo}: ${k} no puede moverse con la jornada`);
+          }
+          assert.ok(Math.abs(b.capitulos.epp - b.capitulos.mano_obra * motor.epp_pct) <= 1, `${it.codigo}: EPP = MO × %`);
+          assert.strictEqual(a.capitulos.epp, 0, `${it.codigo}: sin parámetros no hay EPP`);
+          // cada línea de MO publica su factor y sigue cuadrando a mano
+          for (const l of b.lineas) {
+            if (l.tipo === "mano_obra") {
+              assert.ok(Math.abs(l.factor_jornada - motor.factor_jornada) < 1e-6, `${it.codigo}: la línea de MO debe publicar el factor`);
+              assert.ok(Math.abs(l.cantidad * l.precio_aplicado - l.valor) <= 1, `${it.codigo}/${l.insumo_id}: cantidad × precio ≠ valor con el factor`); // 1 peso: la misma tolerancia de la prueba de las 1 761 líneas
+            } else assert.strictEqual(l.factor_jornada, null, `${it.codigo}/${l.insumo_id}: solo la MO lleva factor`);
+          }
+          sumaRel += b.total / a.total - 1; cdSin += a.total; cdCon += b.total;
+          moSin += a.capitulos.mano_obra; moCon += b.capitulos.mano_obra;
+        }
+        assert.strictEqual(n, S.items.length, "todos los ítems del catálogo cuestan > 0");
+        const deltaMO = (moCon / moSin - 1) * 100, deltaMedio = (sumaRel / n) * 100, deltaPond = (cdCon / cdSin - 1) * 100;
+        assert.ok(deltaMO > 4.7 && deltaMO < 4.8, `la MO del catálogo debe subir ≈ 4,76 % (44/42): ${deltaMO}`);
+        assert.ok(deltaMedio > 0 && deltaMedio < 5, `el costo directo medio sube, y menos que la MO (peso de la MO): ${deltaMedio}`);
+        console.log(`  · motor de costo real: sin divisor de horas (MO por día) · factor de jornada ${motor.factor_jornada} · `
+          + `sobre ${n} ítems la MO sube ${deltaMO.toFixed(2)} %, el costo directo medio ${deltaMedio.toFixed(2)} % `
+          + `(${deltaPond.toFixed(2)} % ponderado; la MO pesa ${(moSin / cdSin * 100).toFixed(1)} % del CD en Bogotá) · EPP ${motor.epp_pct * 100} % de la MO`);
+
+        // calcularPresupuesto: sin `parametros` no publica el bloque (no afirma «factor 1»); con ellos, sí
+        const sinPar = calculo.calcularPresupuesto({ items: [{ item_id: "NOG-A2", cantidad: 10 }], departamento: "BOGOTA D.C." });
+        assert.strictEqual(sinPar.parametros_costo, null, "sin parámetros el bloque viaja en null, no en «factor 1»");
+        const conPar = calculo.calcularPresupuesto({ items: [{ item_id: "NOG-A2", cantidad: 10 }], departamento: "BOGOTA D.C.", parametros: { ...motor, fuente: "defaults" } });
+        assert.ok(conPar.parametros_costo && conPar.parametros_costo.factor_jornada > 1 && /Ley 2101/.test(conPar.parametros_costo.mensaje));
+        assert.ok(conPar.items[0].detalle.epp_unitario > 0 && conPar.items[0].detalle.factor_jornada > 1);
+        assert.ok(conPar.resumen.costo_directo_total > sinPar.resumen.costo_directo_total, "con parámetros el presupuesto sube");
+        // los cuatro componentes siguen sumando el costo directo (el EPP va con la herramienta menor)
+        const pc = conPar.resumen.por_componente;
+        assert.ok(Math.abs(pc.material + pc.mano_obra + pc.equipo + pc.transporte + pc.sin_desglose - conPar.resumen.costo_directo_total) < 0.05,
+          "material + MO + equipo + transporte + sin_desglose ≠ costo directo con EPP");
+
+        // administración por TIEMPO dentro del presupuesto ≡ % equivalente (resumen, Excel y PDF leen `aiu_pct`)
+        {
+          const itemsAdm = [{ item_id: "NOG-A2", cantidad: 1000 }];
+          const porT = calculo.calcularPresupuesto({ items: itemsAdm, departamento: "BOGOTA D.C.", parametros: { ...motor, fuente: "defaults" },
+            config: { metodo_administracion: "tiempo", gastos_fijos_mensuales: 3_000_000, horas_proyecto: 8 * 210 } });
+          assert.strictEqual(porT.configuracion.metodo_administracion, "tiempo");
+          assert.strictEqual(porT.configuracion.administracion.valor, 24_000_000, "8 meses × $3 M = $24 M de administración");
+          const porP = calculo.calcularPresupuesto({ items: itemsAdm, departamento: "BOGOTA D.C.", parametros: { ...motor, fuente: "defaults" },
+            config: { aiu_pct: porT.configuracion.aiu_pct } });
+          assert.strictEqual(porT.resumen.precio_venta, porP.resumen.precio_venta, "las dos metodologías de administración deben dar el mismo precio de venta");
+          const sinDatos = calculo.calcularPresupuesto({ items: itemsAdm, departamento: "BOGOTA D.C.", parametros: { ...motor, fuente: "defaults" },
+            config: { metodo_administracion: "tiempo" } });
+          assert.strictEqual(sinDatos.configuracion.metodo_administracion, "porcentaje", "sin gastos fijos cae al % y lo avisa");
+          assert.ok(sinDatos.alertas.some((x) => /Administración por tiempo/.test(x)));
+        }
+
+        // ── la acción `parametros`: GET pública, POST con token, versionada ──
+        const g0 = await invocar(apu, "/api/apu/parametros");
+        assert.strictEqual(g0.status, 200, "GET parametros es público");
+        assert.strictEqual(g0.cuerpo.fuente, "defaults", "sin nada guardado sirve los defaults y LO DICE");
+        assert.ok(g0.cuerpo.verificacion && g0.cuerpo.motor && g0.cuerpo.ejemplo && g0.cuerpo.ejemplo.con_exoneracion.costo_hora > 0);
+        assert.strictEqual((await invocarPost(apu, "/api/apu/parametros", { parametros: P.DEFAULTS })).status, 401, "guardar sin token es 401");
+        const malo = await invocarPost(apu, "/api/apu/parametros", { parametros: { ...P.DEFAULTS, tpnl: 5 } }, CAB_TOKEN);
+        assert.strictEqual(malo.status, 400, "un parámetro fuera de rango es 400");
+        assert.ok(malo.cuerpo.errores.some((e) => /tpnl/.test(e)));
+        const nuevos = { ...P.DEFAULTS, vigencia: "2026-08-15", horasSemanaCalibracion: 46, exoneracionParafiscales: false };
+        const g1 = await invocarPost(apu, "/api/apu/parametros", { parametros: nuevos }, CAB_TOKEN);
+        assert.strictEqual(g1.status, 200, JSON.stringify(g1.cuerpo).slice(0, 200));
+        assert.strictEqual(g1.cuerpo.version, "apu:parametros:v:2026-08-15");
+        assert.ok(await redis.get("apu:parametros:v:2026-08-15"), "cada guardado deja su versión por fecha de vigencia");
+        const g2 = await invocar(apu, "/api/apu/parametros?historial=1");
+        assert.strictEqual(g2.cuerpo.fuente, "redis");
+        assert.ok(Math.abs(g2.cuerpo.motor.factor_jornada - 46 / 42) < 1e-6, "el motor deriva el factor de lo GUARDADO");
+        assert.ok(Array.isArray(g2.cuerpo.historial) && g2.cuerpo.historial.some((v) => v.vigencia === "2026-08-15"));
+        // y `calcular` los aplica de inmediato (sin caché) y lo declara
+        const calcPar = await invocarPost(apu, "/api/apu/calcular", { items: [{ item_id: "NOG-A2", cantidad: 1 }], departamento: "BOGOTA D.C." }, CAB_TOKEN);
+        assert.strictEqual(calcPar.status, 200);
+        assert.strictEqual(calcPar.cuerpo.parametros_costo.fuente, "redis");
+        assert.ok(Math.abs(calcPar.cuerpo.parametros_costo.factor_jornada - 46 / 42) < 1e-6, "calcular usa los parámetros guardados");
+        // cotizar y calcular no pueden dar dos unitarios distintos del mismo ítem
+        const cot = await invocarPost(apu, "/api/apu/cotizar", { items: [{ item_id: "NOG-A2", cantidad: 1 }], departamento: "BOGOTA D.C." }, CAB_TOKEN);
+        assert.strictEqual(cot.status, 200);
+        assert.strictEqual(cot.cuerpo.items[0].precio_unitario ?? cot.cuerpo.items[0].precio, calcPar.cuerpo.items[0].costo_directo_unitario,
+          "cotizar y calcular deben dar el MISMO unitario con los mismos parámetros");
+        await redis.del("apu:parametros", "apu:parametros:v:2026-08-15");
+        assert.strictEqual((await invocar(apu, "/api/apu/parametros")).cuerpo.fuente, "defaults");
+        assert.strictEqual((await invocar(apu, "/api/apu/parametros", {}, { metodo: "DELETE" })).status, 405);
+
+        // ── frontend: script cargado, vista pública, formulario y guardas ──
+        const html1 = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        assert.ok(/<script src="\/costos\.js"><\/script>/.test(html1), "index.html debe cargar public/costos.js");
+        assert.ok(html1.indexOf('src="/costos.js"') < html1.indexOf('src="/app.js"'), "costos.js debe cargar ANTES que app.js");
+        for (const id of ["metodologia", "seccion-parametros", "btn-par-guardar", "par-vigencia", "par-smmlv", "par-divisor", "metodo-admin", "gastos-fijos", "horas-proyecto",
+          "par-horas-vigente", "par-horas-calibracion", "par-exoneracion", "par-arl-clase", "par-tpnl", "par-mvp", "par-hm", "par-epp", "par-iva",
+          "par-prestaciones", "par-historial", "r-jornada"]) {
+          assert.ok(html1.includes(`id="${id}"`), `index.html sin #${id}`);
+        }
+        const appJs1 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+        assert.ok(appJs1.includes('fetch("/api/apu?op=parametros"') && appJs1.includes("window.Costos"), "app.js debe leer los parámetros y usar el módulo compartido");
+        assert.ok(!/op=parametros[^`"']*token=/.test(appJs1), "el token no viaja en la URL de parámetros");
+        assert.ok(/pintarMetodologia\(/.test(appJs1) && /pintarParametrosForm\(/.test(appJs1));
+        // ninguna tasa de nómina escrita en el frontend: los porcentajes salen del servidor
+        assert.ok(!/0\.08333|0\.0696|0\.225\b/.test(appJs1), "las tasas de nómina no pueden vivir en app.js");
+        // y ninguna jerga: la interfaz no dice SMMLV
+        assert.ok(!/SMMLV/.test(html1.replace(/<!--[\s\S]*?-->/g, "")), "el HTML visible no puede decir SMMLV");
       }
 
       console.log(`  · APU: ${tipologias.meta().tipologias_n} tipologías · ${catalogoLib.SEMILLA.items.length} ítems · `

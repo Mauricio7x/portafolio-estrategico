@@ -1514,6 +1514,7 @@
 
   /* ─────────────────────────── estado ──────────────────────────────── */
   let CATALOGO = null;      // respuesta de /api/apu/catalogo
+  let PARAMETROS = null;    // respuesta de /api/apu?op=parametros (Fase 1: jornada, prestaciones, EPP)
   let filas = [];           // [{item_id, descripcion, unidad, cantidad, rendimiento_override}]
   let ultimoCalculo = null; // respuesta de /api/apu/calcular
   let idActual = null;      // id del presupuesto cargado/guardado
@@ -1538,6 +1539,10 @@
       aplicar_ajuste_competitivo: $("ajuste-competitivo").checked,
       factor_baja: Number($("factor-baja").value),
       deducciones_pct: dedCrudo === "" ? null : Number(dedCrudo),
+      // administración por tiempo (IDU): solo si el usuario la eligió y dio los dos datos
+      metodo_administracion: $("metodo-admin") ? $("metodo-admin").value : "porcentaje",
+      gastos_fijos_mensuales: $("gastos-fijos") && $("gastos-fijos").value.trim() !== "" ? Number($("gastos-fijos").value) : null,
+      horas_proyecto: $("horas-proyecto") && $("horas-proyecto").value.trim() !== "" ? Number($("horas-proyecto").value) : null,
       /* Techo del proceso, para la validación G.5. Sale del MISMO campo que
          alimenta la rentabilidad: dos casillas para «cuánto vale el proceso»
          acabarían con dos cifras distintas. Vacío = sin dato y entonces no se
@@ -1588,6 +1593,106 @@
 
     // la normativa viaja con el catálogo: se pinta en cuanto llega
     pintarNormativa(r.normativa);
+    // y los parámetros de costo (jornada, prestaciones, EPP) se piden aparte:
+    // son públicos, se editan en Mi empresa y tienen efecto inmediato
+    cargarParametros();
+  }
+
+  /* ════════════════ Cómo calculamos: los parámetros del costo real ═══════════
+     Vista PÚBLICA de la metodología (Fase 1). Todo sale de /api/apu?op=parametros
+     —valores, estado de verificación y lo que el motor deriva—, y el EJEMPLO
+     (costo por hora de un trabajador con salario mínimo) se rehace AQUÍ con
+     `Costos` (public/costos.js), el MISMO módulo que usa el servidor: si las
+     dos cuentas discreparan, la pantalla lo enseñaría. Ninguna tasa está escrita
+     en este archivo. */
+  async function cargarParametros() {
+    const caja = $("metodologia");
+    let r = null;
+    try {
+      const resp = await fetch("/api/apu?op=parametros", { cache: "no-store" });
+      r = await resp.json();
+    } catch { r = null; }
+    if (!r || !r.ok) {
+      if (caja) caja.innerHTML = '<p class="text-xs text-gray-400">No se pudieron leer los parámetros de costo. Se calcula con los valores de arranque.</p>';
+      return;
+    }
+    PARAMETROS = r;
+    pintarMetodologia(r);
+  }
+
+  const ETIQUETA_PARAMETRO = {
+    smmlv: "Salario mínimo mensual", auxilioTransporte: "Auxilio de transporte", divisorAPU: "Horas pagadas al mes",
+    jornadaLegalMes: "Jornada legal al mes (horas)", horasSemanaVigente: "Horas por semana (vigente)",
+    horasSemanaCalibracion: "Horas por semana al calibrar el catálogo", diasLaboradosSemana: "Días trabajados por semana",
+    prestaciones: "Prestaciones y aportes", exoneracionParafiscales: "Exoneración de aportes (art. 114-1)",
+    arl: "Riesgos laborales", tpnl: "Tiempo pagado no trabajado", mvp: "Mayor valor prestacional",
+    herramientaMenor: "Herramienta menor (sobre mano de obra)", epp: "Protección personal (sobre mano de obra)",
+    ivaSobreUtilidad: "IVA sobre la utilidad",
+  };
+  const ESTADO_VERIFICACION = {
+    verificado: { texto: "Verificado con la norma", clases: "bg-green-50 text-green-800 ring-green-600/20" },
+    referencia: { texto: "Referencia sectorial, pendiente de contraste", clases: "bg-amber-50 text-amber-800 ring-amber-600/20" },
+    supuesto: { texto: "Supuesto declarado", clases: "bg-gray-100 text-gray-600 ring-gray-500/20" },
+  };
+  function valorParametroLegible(id, p) {
+    const v = p[id];
+    if (id === "prestaciones") return Object.entries(v || {}).map(([k, f]) => `${k} ${num(f * 100)} %`).join(" · ");
+    if (id === "arl") return `clase ${v.clase} · ${num((v.tarifas || {})[v.clase] * 100)} %`;
+    if (typeof v === "boolean") return v ? "Sí" : "No";
+    if (["tpnl", "mvp", "herramientaMenor", "epp", "ivaSobreUtilidad"].includes(id)) return `${num(v * 100)} %`;
+    if (["smmlv", "auxilioTransporte"].includes(id)) return pesos(v);
+    return String(v);
+  }
+  function pintarMetodologia(r) {
+    const caja = $("metodologia");
+    if (!caja) return;
+    const p = r.parametros || {};
+    const ver = r.verificacion || {};
+    const motor = r.motor || {};
+    const filas = Object.keys(ETIQUETA_PARAMETRO).filter((id) => id in p).map((id) => {
+      const e = ESTADO_VERIFICACION[(ver[id] || {}).estado] || ESTADO_VERIFICACION.supuesto;
+      return `<tr class="align-top">
+        <td class="py-1 pr-2">${esc(ETIQUETA_PARAMETRO[id])}</td>
+        <td class="py-1 pr-2 text-right num font-medium whitespace-nowrap">${esc(valorParametroLegible(id, p))}</td>
+        <td class="py-1 pr-2"><span class="inline-flex rounded-full px-2 py-0.5 text-[10px] ring-1 ring-inset ${e.clases}">${e.texto}</span></td>
+        <td class="py-1 text-xs text-gray-500">${esc((ver[id] || {}).fuente || "")}</td>
+      </tr>`;
+    }).join("");
+
+    /* El ejemplo se calcula en el navegador con el módulo compartido; si el
+       módulo no cargó, se enseña el del servidor y se dice. */
+    let ejemploHtml = "";
+    try {
+      const C = window.Costos;
+      const con = C.explicarCostoHora({ ...p, exoneracionParafiscales: true }, p.smmlv);
+      const sin = C.explicarCostoHora({ ...p, exoneracionParafiscales: false }, p.smmlv);
+      const hd = C.horasDia(p);
+      ejemploHtml = `
+        <p class="mt-4 font-medium">Ejemplo: cuánto cuesta una hora de un trabajador con salario mínimo</p>
+        <ol class="mt-1 list-decimal space-y-0.5 pl-5 text-xs text-gray-600">${con.pasos.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>
+        <p class="mt-2 text-xs text-gray-600">Sin la exoneración del art. 114-1 sube a <b>${pesos(sin.costo_hora)}</b> por hora.
+          Con ${num(hd)} horas por día, el día cuesta <b>${pesos(con.costo_dia || con.costo_hora * hd)}</b> (${pesos(sin.costo_hora * hd)} sin exoneración).</p>`;
+    } catch (e) {
+      const ej = r.ejemplo && r.ejemplo.con_exoneracion;
+      ejemploHtml = ej ? `<p class="mt-4 text-xs text-gray-500">Ejemplo (calculado en el servidor): ${pesos(ej.costo_hora)} por hora para un salario mínimo.</p>` : "";
+    }
+
+    caja.innerHTML = `
+      <p class="text-xs text-gray-500">${r.fuente === "redis" ? "Parámetros guardados por la empresa" : "Valores de arranque (todavía no se ha guardado ninguno)"}${r.guardado_el ? ` · ${esc(String(r.guardado_el).slice(0, 10))}` : ""}. Se editan en Mi empresa → Sistema.</p>
+      <div class="mt-3 rounded-xl bg-white p-3 ring-1 ring-gray-900/5">
+        <p class="font-medium">Cómo entra la jornada en el costo</p>
+        <p class="mt-1 text-xs text-gray-600">La mano de obra del catálogo se cotiza por día con jornales de un contrato adjudicado (Bogotá, 2025, jornada de ${esc(motor.horas_semana_calibracion)} h).
+          Desde el ${esc(motor.vigencia || "15-jul-2026")} rige la jornada de ${esc(motor.horas_semana_vigente)} h (Ley 2101 de 2021): el mismo día pagado rinde menos horas, así que los días de mano de obra por unidad
+          se multiplican por <b>${num(motor.factor_jornada)}</b> (${num((motor.factor_jornada - 1) * 100)} % más). El jornal no cambia. La protección personal se suma como el ${num((motor.epp_pct || 0) * 100)} % de la mano de obra.</p>
+      </div>
+      <div class="mt-3 overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead><tr class="text-gray-500"><th class="py-1 pr-2">Parámetro</th><th class="py-1 pr-2 text-right">Valor</th><th class="py-1 pr-2">Estado</th><th class="py-1">De dónde sale</th></tr></thead>
+          <tbody>${filas}</tbody>
+        </table>
+      </div>
+      ${ejemploHtml}
+      <p class="mt-3 text-[11px] text-gray-400">Fórmulas completas y estado de verificación en docs/metodologia.md. Los valores de tiempo pagado no trabajado y su mayor valor prestacional vienen de metodologías públicas del sector (IDU e INVIAS) por fuentes secundarias: son referencia mientras no se contrasten con el manual original.</p>`;
   }
 
   /* ════════════════ Normativa: qué hay detrás de los factores ════════════════
@@ -2389,8 +2494,19 @@
     const s = r.resumen;
 
     $("r-directo").textContent = pesos(s.costo_directo_total);
+    /* Con qué jornada se costeó la mano de obra (Fase 1). Sin el bloque —cálculo
+       sin parámetros— no se afirma nada: no se pinta «sin ajuste», que sería
+       decir que se miró y no hacía falta. */
+    const pj = $("r-jornada");
+    if (pj) {
+      const pc = r.parametros_costo;
+      pj.textContent = pc && pc.mensaje ? pc.mensaje : "";
+      pj.classList.toggle("hidden", !(pc && pc.mensaje));
+    }
     $("r-venta").textContent = pesos(s.precio_venta);
-    $("r-aiu").textContent = `AIU ${num(r.configuracion.aiu_total_pct)} % (${r.configuracion.modo_aiu})`;
+    $("r-aiu").textContent = `AIU ${num(r.configuracion.aiu_total_pct)} % (${r.configuracion.modo_aiu})`
+      + (r.configuracion.metodo_administracion === "tiempo" && r.configuracion.administracion
+        ? ` · administración por tiempo: ${pesos(r.configuracion.administracion.valor)} = A ${num(r.configuracion.aiu_pct)} %` : "");
     $("r-final").textContent = pesos(s.precio_final);
     $("r-baja").textContent = r.configuracion.aplicar_ajuste_competitivo
       ? `Baja aplicada: ${num(r.configuracion.factor_baja)} %`
@@ -5009,6 +5125,127 @@
       + (a.nivel === "rojo" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800");
   }
 
+  /* ════════════ Parámetros de costo (Mi empresa → Sistema) ════════════
+     Formulario sobre /api/apu?op=parametros: GET (público) rellena; POST (token
+     integrado por cabecera) guarda el objeto COMPLETO —el servidor valida y no
+     rellena huecos por su cuenta— y deja una versión por fecha de vigencia. Al
+     guardar se refresca también la vista «Cómo calculamos» de la pestaña
+     Precios: efecto inmediato, sin caché. */
+  const CAMPOS_PRESTACION = {
+    cesantias: "Cesantías", interesesCesantias: "Intereses a las cesantías", prima: "Prima de servicios",
+    vacaciones: "Vacaciones", salud: "Salud (empleador)", pension: "Pensión (empleador)",
+    cajaCompensacion: "Caja de compensación", sena: "SENA", icbf: "ICBF",
+  };
+  function msgPar(texto, tipo) {
+    const el = $("par-mensaje");
+    if (!el) return;
+    el.textContent = texto;
+    el.className = "mt-4 rounded-xl px-4 py-3 text-sm "
+      + (tipo === "error" ? "bg-red-50 text-red-700 ring-1 ring-red-600/20"
+        : tipo === "ok" ? "bg-green-50 text-green-800 ring-1 ring-green-600/20"
+          : "bg-gray-50 text-gray-700 ring-1 ring-gray-900/5");
+    el.classList.remove("hidden");
+  }
+  function pintarParametrosForm(r) {
+    const p = r.parametros || {};
+    const pct = (f) => Math.round(f * 10000) / 100;
+    $("par-vigencia").value = p.vigencia || "";
+    $("par-smmlv").value = p.smmlv ?? "";
+    $("par-auxilio").value = p.auxilioTransporte ?? "";
+    $("par-divisor").value = p.divisorAPU ?? "";
+    $("par-horas-vigente").value = p.horasSemanaVigente ?? "";
+    $("par-horas-calibracion").value = p.horasSemanaCalibracion ?? "";
+    $("par-dias-semana").value = p.diasLaboradosSemana ?? "";
+    $("par-arl-clase").value = (p.arl && p.arl.clase) || "V";
+    $("par-exoneracion").checked = !!p.exoneracionParafiscales;
+    $("par-tpnl").value = pct(p.tpnl || 0);
+    $("par-mvp").value = pct(p.mvp || 0);
+    $("par-hm").value = pct(p.herramientaMenor || 0);
+    $("par-epp").value = pct(p.epp || 0);
+    $("par-iva").value = pct(p.ivaSobreUtilidad || 0);
+    $("par-prestaciones").innerHTML = Object.keys(CAMPOS_PRESTACION).map((id) => `
+      <label class="block">
+        <span class="text-xs text-gray-500">${esc(CAMPOS_PRESTACION[id])}</span>
+        <input id="par-prest-${id}" type="number" min="0" max="99" step="0.001" value="${pct((p.prestaciones || {})[id] || 0)}"
+               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+      </label>`).join("");
+    $("par-fuente").textContent = r.fuente === "redis"
+      ? `Guardados por la empresa${r.guardado_el ? ` el ${String(r.guardado_el).slice(0, 10)}` : ""}.`
+      : "Todavía se usan los valores de arranque: no se ha guardado ninguno.";
+    const h = $("par-historial");
+    if (h) {
+      const vs = r.historial || [];
+      h.innerHTML = vs.length
+        ? vs.map((v) => `<div>Vigente desde ${esc(v.vigencia)}${v.guardado_el ? ` · guardado el ${esc(String(v.guardado_el).slice(0, 10))}` : ""}${v.resumen ? ` · salario mínimo ${pesos(v.resumen.smmlv)} · ${esc(v.resumen.horasSemanaVigente)} h/semana · riesgo ${esc(v.resumen.arl)}` : " · ilegible"}</div>`).join("")
+        : "Ninguna versión guardada todavía.";
+    }
+  }
+  function leerParametrosForm() {
+    const frac = (id) => Number($(id).value) / 100;
+    const prestaciones = {};
+    for (const id of Object.keys(CAMPOS_PRESTACION)) prestaciones[id] = Number($(`par-prest-${id}`).value) / 100;
+    const base = (PARAMETROS && PARAMETROS.parametros) || {};
+    return {
+      vigencia: $("par-vigencia").value,
+      smmlv: Number($("par-smmlv").value),
+      auxilioTransporte: Number($("par-auxilio").value),
+      divisorAPU: Number($("par-divisor").value),
+      jornadaLegalMes: Number($("par-divisor").value),
+      horasSemanaVigente: Number($("par-horas-vigente").value),
+      horasSemanaCalibracion: Number($("par-horas-calibracion").value),
+      diasLaboradosSemana: Number($("par-dias-semana").value),
+      prestaciones,
+      exoneracionParafiscales: $("par-exoneracion").checked,
+      // las tarifas por clase son de ley y no se editan aquí: viajan las que
+      // sirvió el servidor (ninguna tasa vive en este archivo)
+      arl: { clase: $("par-arl-clase").value, tarifas: (base.arl && base.arl.tarifas) || null },
+      tpnl: frac("par-tpnl"), mvp: frac("par-mvp"),
+      herramientaMenor: frac("par-hm"), epp: frac("par-epp"), ivaSobreUtilidad: frac("par-iva"),
+    };
+  }
+  async function cargarParametrosAdmin() {
+    if (!$("par-vigencia")) return;
+    let r = null;
+    try {
+      const resp = await fetch("/api/apu?op=parametros&historial=1", { cache: "no-store" });
+      r = await resp.json();
+    } catch { r = null; }
+    if (!r || !r.ok) { msgPar("No se pudieron leer los parámetros de costo.", "error"); return; }
+    PARAMETROS = r;
+    pintarParametrosForm(r);
+  }
+  async function guardarParametros() {
+    if (!PARAMETROS || !PARAMETROS.parametros) { msgPar("Los parámetros todavía no cargaron: espere un momento e intente de nuevo.", "error"); return; }
+    const btn = $("btn-par-guardar");
+    btn.disabled = true; $("par-spin").classList.remove("hidden");
+    let r = null, resp = null;
+    try {
+      resp = await fetch("/api/apu?op=parametros", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-historico-token": leerToken() },
+        body: JSON.stringify({ parametros: leerParametrosForm() }),
+      });
+    } catch (e) {
+      msgPar(`Sin conexión con el servidor: ${e.message}`, "error");
+      btn.disabled = false; $("par-spin").classList.add("hidden");
+      return;
+    }
+    try { r = await resp.json(); } catch { r = null; }
+    btn.disabled = false; $("par-spin").classList.add("hidden");
+    if (!r) { msgPar(`El servidor respondió ${resp.status} sin JSON (¿inicio de sesión de Vercel?).`, "error"); return; }
+    if (!r.ok) {
+      msgPar(r.errores ? `No se guardó: ${r.errores.join(" · ")}` : (r.error || "No se guardó."), "error");
+      return;
+    }
+    PARAMETROS = r;
+    msgPar(`Parámetros guardados (vigentes desde ${r.parametros.vigencia}). Los próximos cálculos ya los usan.`, "ok");
+    pintarMetodologia(r);
+    cargarParametrosAdmin();
+  }
+  document.addEventListener("click", (e) => {
+    if (e.target && e.target.closest && e.target.closest("#btn-par-guardar")) guardarParametros();
+  });
+
   function arrancarPaneles() {
     $("d-perfil").value = leerPerfil();
     $("c-perfil").value = leerPerfil();
@@ -5022,6 +5259,8 @@
     // consultar el catálogo APU es público y son dos comandos; CARGARLO escribe
     // ~70 claves y solo corre cuando alguien pulsa el botón
     cargarEstadoApu();
+    // los parámetros de costo son públicos en lectura y son un GET pequeño
+    cargarParametrosAdmin();
   }
 
   /* ══════════ Arranque ══════════ */
