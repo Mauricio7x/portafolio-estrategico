@@ -10145,6 +10145,11 @@ async function main() {
         const conPar = calculo.calcularPresupuesto({ items: [{ item_id: "NOG-A2", cantidad: 10 }], departamento: "BOGOTA D.C.", parametros: { ...motor, fuente: "defaults" } });
         assert.ok(conPar.parametros_costo && conPar.parametros_costo.factor_jornada > 1 && /Ley 2101/.test(conPar.parametros_costo.mensaje));
         assert.ok(conPar.items[0].detalle.epp_unitario > 0 && conPar.items[0].detalle.factor_jornada > 1);
+        // el factor viaja hasta detalle.insumos: es lo que leen el desglose en pantalla y la hoja APU del Excel
+        assert.ok(conPar.items[0].detalle.insumos.filter((l) => l.tipo === "mano_obra").every((l) => Math.abs(l.factor_jornada - motor.factor_jornada) < 1e-6),
+          "detalle.insumos debe publicar el factor de jornada de cada línea de MO");
+        assert.ok(/días × 1,048 por jornada de 42 h/.test(require("../public/apu_libro.js").lineaLegible(conPar.items[0].detalle.insumos.find((l) => l.tipo === "mano_obra")).descripcion),
+          "la línea de MO del Excel/desglose debe escribir el factor de jornada");
         assert.ok(conPar.resumen.costo_directo_total > sinPar.resumen.costo_directo_total, "con parámetros el presupuesto sube");
         // los cuatro componentes siguen sumando el costo directo (el EPP va con la herramienta menor)
         const pc = conPar.resumen.por_componente;
