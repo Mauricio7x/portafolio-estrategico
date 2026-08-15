@@ -249,17 +249,42 @@ async function extraerFull(redis, socrata, { presupuestoMs, reiniciar }) {
 }
 
 /* ============================ DELTA ============================ */
+/* EL DELTA ES REANUDABLE (ago 2026), y la causa fue un defecto de producción:
+   SECOP re-publicó EN MASA el dataset (>1 M de filas con `:updated_at` nuevo
+   en un día) y el delta —que aplica lo bajado pero no avanza el sello si lo
+   corta el presupuesto (regla correcta: si no, se perderían páginas)— volvía a
+   EMPEZAR DE CERO en cada invocación porque su cursor era local. Resultado: un
+   bucle infinito re-leyendo las mismas primeras páginas, el candado siempre
+   ocupado y el dueño viendo «ya hay una sincronización corriendo» para
+   siempre. La salida es la MISMA técnica de la full: el ciclo persiste su
+   cursor (`meta.delta_ciclo`) y el sello avanza SOLO al completarlo, anclado
+   al INICIO de la primera invocación del ciclo — la invariante no cambió, lo
+   que cambió es que el ciclo ahora puede terminar.
+
+   El ciclo guarda su VENTANA congelada (`desdeUTC`, `inicioAno`) y se valida
+   contra la que tocaría hoy: si una full corrió en medio (mueve `last_sync`) o
+   cambió el año, el ciclo guardado queda obsoleto y se descarta solo — un
+   cursor de otra ventana leería páginas de otra consulta. */
 async function extraerDelta(redis, socrata, { presupuestoMs }) {
   const t0 = Date.now();
   const meta = (await leerJSON(redis, CLAVES.meta)) || {};
   if (!meta.last_full) return extraerFull(redis, socrata, { presupuestoMs, reiniciar: false });
 
-  const desdeUTC = new Date(Date.parse(meta.last_sync || meta.last_full) - SOLAPE_DELTA_MS).toISOString();
+  const desdeEsperado = new Date(Date.parse(meta.last_sync || meta.last_full) - SOLAPE_DELTA_MS).toISOString();
   const inicioAno = `${anoVigente()}-01-01T00:00:00.000`;
+  let ciclo = meta.delta_ciclo;
+  if (!ciclo || ciclo.desdeUTC !== desdeEsperado || ciclo.inicioAno !== inicioAno) {
+    ciclo = {
+      iniciado: new Date(t0).toISOString(), // el ancla del sello, congelada
+      desdeUTC: desdeEsperado, inicioAno,
+      cursor: {}, keyset: true, leidas: 0, invocaciones: 0,
+    };
+  }
+  const desdeUTC = ciclo.desdeUTC;
 
   const nuevos = [];
-  const cursor = {};
-  let keyset = true, fin = false, completo = true;
+  const cursor = { ...ciclo.cursor };
+  let keyset = ciclo.keyset !== false, fin = false, completo = true;
   while (!fin) {
     if (Date.now() - t0 > presupuestoMs) { completo = false; break; }
     let filas;
@@ -313,13 +338,28 @@ async function extraerDelta(redis, socrata, { presupuestoMs }) {
     if (sig - (man.base || 0) > COMPACTAR_TRAS_CHUNKS) await compactarMes(redis, mes);
   }
 
-  // el sello avanza SOLO si el delta fue completo, y se ancla al INICIO de
-  // esta corrida: un delta cortado no pierde páginas en silencio
-  if (completo) meta.last_sync = new Date(t0).toISOString();
+  // el sello avanza SOLO si el CICLO quedó completo, y se ancla al INICIO de
+  // la primera invocación del ciclo: un delta cortado no pierde páginas en
+  // silencio — pero ahora deja su cursor guardado y la siguiente invocación
+  // CONTINÚA en vez de volver a empezar (el bucle infinito de ago 2026).
+  if (completo) {
+    meta.last_sync = ciclo.iniciado;
+    delete meta.delta_ciclo;
+  } else {
+    meta.delta_ciclo = {
+      ...ciclo, cursor, keyset,
+      leidas: (ciclo.leidas || 0) + nuevos.length,
+      invocaciones: (ciclo.invocaciones || 0) + 1,
+    };
+  }
   meta.ultimo_delta = {
     ts: new Date().toISOString(), filas: nuevos.length, guardadas: activo.length,
     meses: porMes.size, historicas: historico.length, meses_historico: mesesHistorico,
     parcial: !completo,
+    // cuántas lleva el ciclo en total: es lo que permite ver AVANCE donde
+    // antes solo se veía «parcial» repetido
+    ciclo_leidas: (ciclo.leidas || 0) + nuevos.length,
+    ciclo_invocaciones: (ciclo.invocaciones || 0) + 1,
   };
   await escribirJSON(redis, CLAVES.meta, meta);
   return { done: completo, delta: meta.ultimo_delta };
