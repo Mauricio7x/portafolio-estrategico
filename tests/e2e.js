@@ -6737,6 +6737,41 @@ async function main() {
           "2 procesos no dan base para un porcentaje de concentración (la regla del «18.2 oferentes»)");
         assert.strictEqual(car.adjudicatarios.lectura, null);
         assert.strictEqual(car.adjudicatarios.procesos_con_ganador, 2, "el conteo sí viaja: es un hecho");
+
+        /* --- PERFIL DEL COMPETIDOR (vista adjudicatario): dónde más gana ---
+           La «base de datos de la competencia» del manual (truco #17): clic
+           en un ganador del «Quién gana aquí» → sus entidades, conteos,
+           valores y último contrato, con la MISMA identidad del agregado. */
+        const claveRec = ar.top[0].clave;
+        assert.strictEqual(claveRec, `nit:${GANADOR_RECURRENTE.nit}`, "el top tiene que publicar la clave del perfil");
+        const perfilR = (await invocar(detalleComp,
+          `/api/competencia-detalle?vista=adjudicatario&adjudicatario=${encodeURIComponent(claveRec)}&refrescar=1`, TOKEN)).cuerpo;
+        assert.strictEqual(perfilR.ok, true);
+        assert.strictEqual(perfilR.encontrado, true);
+        assert.strictEqual(perfilR.total_ganados, 5, "el recurrente ganó 5 en el corpus");
+        assert.strictEqual(perfilR.entidades.length, 1);
+        assert.strictEqual(perfilR.entidades[0].entidad, "INSTITUTO DE OBRAS DEL PORVENIR");
+        assert.deepStrictEqual(perfilR.identificacion, { tipo: "nit", valor: GANADOR_RECURRENTE.nit });
+        assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(perfilR.entidades[0].ultima_adjudicacion));
+        assert.ok(/cota inferior/i.test(perfilR.que_es), "el alcance del corpus tiene que viajar declarado");
+        // el ganador identificado solo por código interno también tiene perfil, con su tipo
+        const perfilCS = (await invocar(detalleComp,
+          "/api/competencia-detalle?vista=adjudicatario&adjudicatario=nit%3A701000123&refrescar=1", TOKEN)).cuerpo;
+        assert.strictEqual(perfilCS.total_ganados, 1);
+        assert.deepStrictEqual(perfilCS.identificacion, { tipo: "codigo_secop", valor: "701000123" });
+        // clave que no ganó nada: encontrado false, jamás un error
+        const nadie = (await invocar(detalleComp,
+          "/api/competencia-detalle?vista=adjudicatario&adjudicatario=nit%3A999999999&refrescar=1", TOKEN)).cuerpo;
+        assert.strictEqual(nadie.ok, true);
+        assert.strictEqual(nadie.encontrado, false);
+        // sin clave → 400 accionable · sin token → 401
+        assert.strictEqual((await invocar(detalleComp, "/api/competencia-detalle?vista=adjudicatario", TOKEN)).status, 400);
+        assert.strictEqual((await invocar(detalleComp, "/api/competencia-detalle?vista=adjudicatario&adjudicatario=nit%3A1")).status, 401);
+        // y el frontend cablea el clic desde la tabla del modal
+        const jsAdj = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        for (const debe of ["data-adjudicatario", "cargarAdjudicatario", "vista=adjudicatario", "Dónde gana este competidor"]) {
+          assert.ok(jsAdj.includes(debe), `app.js sin ${debe} (perfil del competidor)`);
+        }
       }
 
       /* --- (b-bis) ÍNDICE DESACTUALIZADO: hay base pero no clasificación ---
