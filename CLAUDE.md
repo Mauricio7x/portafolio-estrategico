@@ -2684,12 +2684,17 @@ completa y límites en `docs/ACCESIBILIDAD.md`. Decisiones que no hay que re-apr
   verificado en producción por `/api/paa?medir=1`), que es lo que hace que `?op=` conviva con los
   parámetros de siempre. **El cron sigue en `/api/sync`** (pasa por el rewrite): apuntarlo a una
   URL con query habría arriesgado la validación del deploy sin ganancia.
-- **El frontend NO se migró en esta fase, a propósito**: `public/*.js` sigue llamando las URL
-  clásicas, que es justo lo que los rewrites garantizan. Migrar el frontend a
-  `/api/procesos?op=…` y solo entonces retirar los rewrites de compatibilidad es el paso
-  siguiente del plan (las URLs de los alias del dueño —pegadas en Chrome— deben sobrevivir
-  siempre). Las auto-invocaciones del servidor (sync auto-encadenada, historico) también usan
-  las URL viejas vía rewrite, deliberadamente sin tocar.
+- **El frontend y las auto-invocaciones del servidor YA llaman a las rutas canónicas**
+  (`/api/{router}?op=…`, PR posterior al #76, ago 2026): `public/*.js` no llama a ninguna URL
+  legada (prueba j.12-ter, que mira código sin comentarios: `fetch`/`api`/`pedir`), y la sync
+  auto-encadenada y el historico se re-invocan por `/api/procesos?op=…`. **Los rewrites de
+  compatibilidad SE CONSERVAN, y no es una deuda**: son la capa que sostiene las URL que el dueño
+  tiene pegadas en Chrome (`/api/sync?modo=full`, `/api/sync/historico?…`, `/api/paa?medir=1`…),
+  la documentación entera y el cron de `/api/sync`; cuestan 18 entradas de un límite de 1 024 y
+  retirarlas rompería enlaces sin ganar nada. Lo que la prueba garantiza es que nada INTERNO
+  depende de ellos: si un rewrite fallara, la app y la cadena de sincronización siguen. Las guardas
+  de «el token no viaja en la URL» se re-apuntaron a los patrones canónicos (`/api/apu?op=…`,
+  `/api/admin?op=…`): dejarlas sobre las URL viejas las habría vuelto vacuas en silencio.
 - **Dos premisas del encargo eran FALSAS y quedaron medidas en `docs/datos.md`**: el filtrado ya
   leía `estado_del_procedimiento` primero (con `fase` de respaldo y listas canónicas — no hubo
   ningún cambio de filtro, así que el conteo antes/después es idéntico por construcción), y los

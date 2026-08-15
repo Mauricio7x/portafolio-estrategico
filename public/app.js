@@ -267,7 +267,7 @@
     let r, cuerpo;
     try {
       const token = tokenGuardado();
-      r = await fetch(`/api/oportunidades?${parametros()}`,
+      r = await fetch(`/api/procesos?op=listar&${parametros()}`,
         token ? { headers: { "x-historico-token": token } } : undefined);
     } catch {
       if (peticion !== peticionActual) return; // llegó tarde: ya hay otra búsqueda
@@ -314,7 +314,7 @@
     reintentosSync = 0;
     // refresco en segundo plano: con datos de >5 min el backend corre un
     // delta barato; si están frescos responde alDia sin tocar Socrata
-    fetch("/api/sync?modo=auto").catch(() => {});
+    fetch("/api/procesos?op=sync&modo=auto").catch(() => {});
     if (cuerpo.sincronizado) {
       const s = $("sello-sync");
       s.textContent = `Datos: ${new Date(cuerpo.sincronizado).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}`;
@@ -331,7 +331,7 @@
     if (reintentosSync > MAX_REINTENTOS_SYNC) {
       return mostrar("estado-error", "La sincronización con SECOP II está tardando más de lo normal. Intente de nuevo en unos minutos.");
     }
-    fetch("/api/sync?modo=auto").catch(() => {});
+    fetch("/api/procesos?op=sync&modo=auto").catch(() => {});
     let restante = REINTENTO_SYNC_SEG;
     const tic = () => {
       mostrar("estado-carga",
@@ -905,10 +905,11 @@
     if (ent) qs.set("entidad", ent);
     let r, cuerpo;
     try {
-      /* Se llama a la URL CANÓNICA, no al alias `/api/paa`: si el rewrite
+      /* Se llama a la URL CANÓNICA del router (/api/inteligencia), no al alias
+         `/api/paa` ni a la histórica /api/competencia-detalle: si el rewrite
          fallara, el PAA tiene que seguir funcionando. El token integrado viaja
          por cabecera y nunca en la URL. */
-      r = await fetch(`/api/competencia-detalle?${qs}`, { headers: { "x-historico-token": leerToken() } });
+      r = await fetch(`/api/inteligencia?${qs}`, { headers: { "x-historico-token": leerToken() } });
     } catch {
       if (peticion !== peticionPaa) return;
       $("paa-resumen").textContent = "No se pudo contactar el servidor para consultar el PAA.";
@@ -1144,9 +1145,10 @@
      se reutiliza su formulario tal cual: es otra acción explícita del dueño
      sobre el corpus, no algo que un cliente se encuentre al entrar.
 
-     Se llama a la ruta CANÓNICA (/api/competencia-detalle?vista=probabilidad) y
-     no al alias /api/probabilidad-desglose: el alias es un rewrite de
-     vercel.json y, si fallara, el modal tiene que seguir funcionando. */
+     Se llama a la ruta CANÓNICA del router (/api/inteligencia?op=probabilidad) y
+     no al alias /api/probabilidad-desglose ni a la URL histórica
+     /api/competencia-detalle: los dos son rewrites de vercel.json y, si
+     fallaran, el modal tiene que seguir funcionando. */
   const CONFIANZA = {
     Alta: "bg-green-100 text-green-800",
     Media: "bg-amber-100 text-amber-800",
@@ -1266,7 +1268,7 @@
     $("modal-cuerpo").innerHTML = cargando("Reconstruyendo el cálculo…");
     let r, cuerpo;
     try {
-      r = await fetch(`/api/competencia-detalle?vista=probabilidad&id_proceso=${encodeURIComponent(id)}`,
+      r = await fetch(`/api/inteligencia?op=probabilidad&id_proceso=${encodeURIComponent(id)}`,
         { headers: { "x-historico-token": token } });
     } catch {
       $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-red-600">No se pudo contactar el servidor. Intente de nuevo.</p>';
@@ -1298,7 +1300,7 @@
     $("modal-cuerpo").innerHTML = '<p class="py-8 text-center text-gray-400">Consultando el histórico…</p>';
     let r, cuerpo;
     try {
-      r = await fetch(`/api/competencia-detalle?entidad=${encodeURIComponent(entidad)}`,
+      r = await fetch(`/api/inteligencia?op=entidad&entidad=${encodeURIComponent(entidad)}`,
         { headers: { "x-historico-token": token } });
       cuerpo = await r.json();
     } catch {
@@ -1362,7 +1364,7 @@
     const token = leerToken();
     let r;
     try {
-      r = await fetch(`/api/competencia-detalle?vista=adjudicatario&adjudicatario=${encodeURIComponent(clave)}`,
+      r = await fetch(`/api/inteligencia?op=competidor&adjudicatario=${encodeURIComponent(clave)}`,
         { headers: { "x-historico-token": token } });
     } catch {
       $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-red-600">No se pudo contactar el servidor. Intente de nuevo.</p>';
@@ -1566,7 +1568,7 @@
 
   /* ────────────────────────── catálogo ─────────────────────────────── */
   async function cargarCatalogo() {
-    const r = await api("/api/apu/catalogo");
+    const r = await api("/api/apu?op=catalogo");
     if (!r) return;
     CATALOGO = r;
 
@@ -1706,7 +1708,7 @@
     $("inferir-spin").classList.remove("hidden");
     $("inferir-texto").textContent = "Analizando…";
     try {
-      const r = await api("/api/apu/inferir", {
+      const r = await api("/api/apu?op=inferir", {
         method: "POST",
         body: { objeto, codigos_unspsc: $("codigos-unspsc").value.trim() },
       });
@@ -2288,7 +2290,7 @@
     btn.disabled = true;
     btn.textContent = "Calculando…";
     try {
-      const r = await api("/api/apu/calcular", {
+      const r = await api("/api/apu?op=calcular", {
         method: "POST",
         body: {
           items: filas.map((f) => ({
@@ -2504,7 +2506,7 @@
     }
     $("baja-nota").textContent = "Consultando el índice de baja…";
     try {
-      const r = await api(`/api/indice-baja?entidad=${encodeURIComponent(entidad)}`);
+      const r = await api(`/api/procesos?op=baja&entidad=${encodeURIComponent(entidad)}`);
       if (!r) { $("baja-nota").textContent = "Consulta cancelada."; return; }
       const e = (r.entidades && r.entidades[0]) || null;
       /* Se exige BASE antes de interpolar una cifra: mediana presente y
@@ -2529,7 +2531,7 @@
     const btn = $("btn-guardar");
     btn.disabled = true;
     try {
-      const r = await api("/api/apu/guardar", {
+      const r = await api("/api/apu?op=guardar", {
         method: "POST",
         body: {
           id: idActual || undefined,
@@ -2559,7 +2561,7 @@
   $("btn-listar").addEventListener("click", async () => {
     const caja = $("lista-presupuestos");
     try {
-      const r = await api(`/api/apu/listar?perfil=${encodeURIComponent($("perfil").value)}`);
+      const r = await api(`/api/apu?op=listar&perfil=${encodeURIComponent($("perfil").value)}`);
       if (!r) return;
       caja.classList.remove("hidden");
       if (!r.presupuestos.length) {
@@ -2590,7 +2592,7 @@
     const id = e.target.getAttribute("data-cargar");
     if (!id) return;
     try {
-      const r = await api(`/api/apu/cargar?id=${encodeURIComponent(id)}&perfil=${encodeURIComponent($("perfil").value)}`);
+      const r = await api(`/api/apu?op=cargar&id=${encodeURIComponent(id)}&perfil=${encodeURIComponent($("perfil").value)}`);
       if (!r) return;
       const p = r.presupuesto;
       idActual = p.id;
@@ -2694,7 +2696,7 @@
         }
         return;
       }
-      const r = await api("/api/apu/importar", {
+      const r = await api("/api/apu?op=importar", {
         method: "POST",
         body: { filas: crudas.filas, departamento: $("departamento").value },
       });
@@ -2847,7 +2849,7 @@
     const btn = $("btn-mapeo-aplicar");
     btn.disabled = true;
     try {
-      const r = await api("/api/apu/importar", {
+      const r = await api("/api/apu?op=importar", {
         method: "POST",
         body: { filas: filasMapeadas, departamento: $("departamento").value },
       });
@@ -3027,7 +3029,7 @@
         id_proceso: $("id-proceso").value.trim() || null,
         perfil: $("perfil").value,
       };
-      const c = await api("/api/apu/rentabilidad", { method: "POST", body: cuerpo });
+      const c = await api("/api/apu?op=rentabilidad", { method: "POST", body: cuerpo });
       if (!c) return; // el usuario canceló el diálogo del token
       pintarRentabilidad(c);
       pintarPrecioSugerido(c.optimizador);
@@ -3378,7 +3380,7 @@
       if (!activo) return null;
       let r = null, cuerpo = null, fallo = null;
       try {
-        r = await fetch(`/api/sync?modo=${modo}&presupuesto=${presupuesto}`, { headers: { Accept: "application/json" } });
+        r = await fetch(`/api/procesos?op=sync&modo=${modo}&presupuesto=${presupuesto}`, { headers: { Accept: "application/json" } });
         try { cuerpo = await r.json(); } catch { cuerpo = null; } // el muro del edge devuelve HTML
       } catch (e) {
         fallo = e && e.message ? e.message : "sin conexión";
@@ -3573,7 +3575,7 @@
       // cache_bust solo cambia la URL (el servidor lo ignora): impide que el
       // navegador reutilice su propia respuesta al pulsar «Actualizar ahora»
       const bust = forzar ? `&cache_bust=${Date.now()}` : "";
-      r = await fetch(`/api/resumen?perfil=${encodeURIComponent(perfil)}${bust}`,
+      r = await fetch(`/api/perfil?op=resumen&perfil=${encodeURIComponent(perfil)}${bust}`,
         { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
       cuerpo = await r.json();
     } catch (e) {
@@ -3666,7 +3668,7 @@
     btn.disabled = true;
     decir("Reconstruyendo sobre el histórico ya descargado…", "bg-gray-50 text-gray-600");
     try {
-      const r = await fetch("/api/indice-baja?reconstruir=true",
+      const r = await fetch("/api/procesos?op=baja&reconstruir=true",
         { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
       const c = await r.json().catch(() => ({}));
       if (!r.ok || !c.ok) {
@@ -3829,7 +3831,7 @@
     const celda = tr.firstElementChild;
     let r = null, cuerpo = null;
     try {
-      r = await fetch(`/api/competencia-detalle?entidad=${encodeURIComponent(entidad)}`,
+      r = await fetch(`/api/inteligencia?op=entidad&entidad=${encodeURIComponent(entidad)}`,
         { headers: { "x-historico-token": leerToken() } });
       cuerpo = await r.json();
     } catch {
@@ -3907,7 +3909,7 @@
     const token = leerToken();
     if (!token) return;
     try {
-      const r = await fetch(`/api/apu/listar?perfil=${encodeURIComponent(perfil)}`, {
+      const r = await fetch(`/api/apu?op=listar&perfil=${encodeURIComponent(perfil)}`, {
         headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store",
       });
       if (!r.ok) return; // el panel no puede caerse porque el listado de APU falle
@@ -4054,7 +4056,7 @@
     erroresRup(null);
     let r = null, cuerpo = null;
     try {
-      r = await fetch("/api/admin/rup", {
+      r = await fetch("/api/admin?op=rup", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-historico-token": token },
         body: JSON.stringify(rupPendiente),
@@ -4101,7 +4103,7 @@
     const token = leerToken();
     let r = null, cuerpo = null;
     try {
-      r = await fetch("/api/admin/rup", { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+      r = await fetch("/api/admin?op=rup", { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
       cuerpo = await r.json();
     } catch {
       caja.textContent = "No se pudo consultar el RUP vigente.";
@@ -4127,7 +4129,7 @@
     const token = leerToken();
     let cuerpo = null;
     try {
-      const r = await fetch("/api/admin/rup", { headers: { "x-historico-token": token }, cache: "no-store" });
+      const r = await fetch("/api/admin?op=rup", { headers: { "x-historico-token": token }, cache: "no-store" });
       cuerpo = await r.json();
       if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `HTTP ${r.status}`);
     } catch (e) {
@@ -4197,7 +4199,7 @@
     const perfil = $("f-perfil").value;
     let r = null, cuerpo = null;
     try {
-      r = await fetch(`/api/admin/rup?perfil=${encodeURIComponent(perfil)}`, {
+      r = await fetch(`/api/admin?op=rup&perfil=${encodeURIComponent(perfil)}`, {
         method: "DELETE",
         headers: { "x-historico-token": leerToken(), Accept: "application/json" },
       });
@@ -4338,7 +4340,7 @@
     erroresExp(null);
     let r = null, cuerpo = null;
     try {
-      r = await fetch("/api/admin/experiencia", {
+      r = await fetch("/api/admin?op=experiencia", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-historico-token": token },
         body: JSON.stringify(expPendiente),
@@ -4382,7 +4384,7 @@
     const token = leerToken();
     let r = null, cuerpo = null;
     try {
-      r = await fetch("/api/admin/experiencia", { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
+      r = await fetch("/api/admin?op=experiencia", { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
       cuerpo = await r.json();
     } catch {
       caja.textContent = "No se pudo consultar la experiencia cargada.";
@@ -4441,7 +4443,7 @@
     erroresExp(null);
     let r = null, cuerpo = null;
     try {
-      r = await fetch("/api/admin/experiencia?origen=repositorio", {
+      r = await fetch("/api/admin?op=experiencia&origen=repositorio", {
         method: "POST",
         headers: { "x-historico-token": token, Accept: "application/json" },
       });
@@ -4596,7 +4598,7 @@
     const token = leerToken();
     let cuerpo = null;
     try {
-      const r = await fetch("/api/admin/experiencia", { headers: { "x-historico-token": token }, cache: "no-store" });
+      const r = await fetch("/api/admin?op=experiencia", { headers: { "x-historico-token": token }, cache: "no-store" });
       cuerpo = await r.json();
       if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `HTTP ${r.status}`);
     } catch (e) {
@@ -4666,7 +4668,7 @@
     cargandoCobertura(true);
     let r = null, cuerpo = null;
     try {
-      r = await fetch(`/api/admin/cobertura-rup?perfil=${encodeURIComponent(perfil)}&usar_experiencia=${usar}`,
+      r = await fetch(`/api/admin?op=cobertura&perfil=${encodeURIComponent(perfil)}&usar_experiencia=${usar}`,
         { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
       cuerpo = await r.json();
     } catch (e) {
@@ -4858,7 +4860,7 @@
   async function cargarEstadoApu() {
     let r = null;
     try {
-      r = await fetch("/api/apu/catalogo", { headers: { Accept: "application/json" }, cache: "no-store" });
+      r = await fetch("/api/apu?op=catalogo", { headers: { Accept: "application/json" }, cache: "no-store" });
     } catch {
       return mensajeApu("No se pudo consultar el catálogo APU (sin red).", "error");
     }
@@ -4884,7 +4886,7 @@
 
     let r = null;
     try {
-      r = await fetch("/api/admin/apu/cargar-catalogo?forzar=true", {
+      r = await fetch("/api/admin?op=cargar-catalogo&forzar=true", {
         method: "POST",
         headers: { "x-historico-token": token, Accept: "application/json" },
       });
@@ -4946,7 +4948,7 @@
     btn.disabled = true;
     msg.textContent = "Reconstruyendo sobre el histórico ya descargado…";
     try {
-      const r = await fetch("/api/sync/historico?reconstruir_indice=true",
+      const r = await fetch("/api/procesos?op=historico&reconstruir_indice=true",
         { headers: { "x-historico-token": leerToken(), Accept: "application/json" }, cache: "no-store" });
       let c = null;
       try { c = await r.json(); } catch { c = null; }

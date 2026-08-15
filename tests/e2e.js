@@ -4637,7 +4637,7 @@ async function main() {
         assert.ok(html.includes(debe), `index.html sin ${debe}`);
       }
       const js = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
-      assert.ok(js.includes("/api/apu/importar"), "app.js no llama a la acción de importación");
+      assert.ok(js.includes("/api/apu?op=importar"), "app.js no llama a la acción de importación");
       assert.ok(js.includes("DecompressionStream"), "app.js debe inflar los .xlsx DEFLATE del Excel real");
       assert.ok(!js.includes("FormData"), "el ARCHIVO no viaja al servidor: solo las filas parseadas");
       const fuenteLect = fs.readFileSync(path.join(__dirname, "..", "public", "xlsx_lectura.js"), "utf8");
@@ -6432,12 +6432,12 @@ async function main() {
         /* LLAMA A LA CANÓNICA, no al alias: el alias es un rewrite y, si
            fallara, el modal tiene que seguir funcionando. Misma lección que
            /api/admin/cargar-experiencia-genesis. */
-        assert.ok(jsSinComentarios.includes("/api/competencia-detalle?vista=probabilidad&id_proceso="),
+        assert.ok(jsSinComentarios.includes("/api/inteligencia?op=probabilidad&id_proceso="),
           "el modal tiene que llamar a la ruta canónica, no al alias del rewrite");
         assert.ok(!/fetch\(\s*[`"']\/api\/probabilidad-desglose/.test(jsSinComentarios),
           "el frontend no puede depender del rewrite para funcionar");
         // el token viaja por cabecera, NUNCA en la URL (historial y logs de acceso)
-        assert.ok(!/vista=probabilidad[^`"']*token=/.test(jsSinComentarios),
+        assert.ok(!/op=probabilidad[^`"']*token=/.test(jsSinComentarios),
           "el token no puede viajar en la URL del desglose");
         /* Y la misma prohibición que ya vigila los conteos: un `|| 0` sobre un
            aporte convertiría «no sé» en «cero» y lo haría creíble. */
@@ -6769,7 +6769,7 @@ async function main() {
         assert.strictEqual((await invocar(detalleComp, "/api/competencia-detalle?vista=adjudicatario&adjudicatario=nit%3A1")).status, 401);
         // y el frontend cablea el clic desde la tabla del modal
         const jsAdj = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
-        for (const debe of ["data-adjudicatario", "cargarAdjudicatario", "vista=adjudicatario", "Dónde gana este competidor"]) {
+        for (const debe of ["data-adjudicatario", "cargarAdjudicatario", "op=competidor&adjudicatario=", "Dónde gana este competidor"]) {
           assert.ok(jsAdj.includes(debe), `app.js sin ${debe} (perfil del competidor)`);
         }
       }
@@ -8359,7 +8359,7 @@ async function main() {
         const obSin = sinComentarios(ob);
         // llama a la CANÓNICA, no al alias del rewrite (si el rewrite fallara,
         // el botón tiene que seguir funcionando)
-        assert.ok(obSin.includes("/api/admin/rup?origen=pdf"), "onboarding.js debe llamar a la ruta canónica");
+        assert.ok(obSin.includes("/api/admin?op=rup&origen=pdf"), "onboarding.js debe llamar a la ruta canónica");
         assert.ok(!/fetch\(\s*["'`]\/api\/admin\/rup-desde-pdf/.test(obSin),
           "onboarding.js no puede depender del rewrite para funcionar");
         // la versión de pdf.js va CLAVADA y es LA MISMA que la de pliego.js:
@@ -9729,7 +9729,7 @@ async function main() {
           /* el mapeo manual reutiliza /api/apu/importar: un segundo parser
              «tolerante» en el frontend sería una segunda definición de la tabla.
              Se cuenta SIN comentarios: los comentarios también citan la ruta. */
-          assert.strictEqual((sinComentarios(unoJs).match(/\/api\/apu\/importar/g) || []).length, 2,
+          assert.strictEqual((sinComentarios(unoJs).match(/\/api\/apu\?op=importar/g) || []).length, 2,
             "la vía automática y el mapeo manual deben entrar por el MISMO endpoint de importación");
         }
 
@@ -9756,7 +9756,7 @@ async function main() {
         }
 
         // el token va por CABECERA, jamás en la URL (logs de acceso e historial)
-        assert.ok(!/\/api\/apu\/[a-z]+\?[^`"']*token=/.test(unoJs),
+        assert.ok(!/\/api\/apu\?op=[a-z]+[^`"']*token=/.test(unoJs),
           "el token de /api/apu no puede viajar en la URL");
         assert.ok(unoJs.includes('"x-historico-token"'), "app.js debe mandar el token por cabecera");
 
@@ -9777,7 +9777,7 @@ async function main() {
           "el editor debe precargarse de paramsProceso con la querystring de respaldo");
         assert.ok(/function abrirEditorConProceso\(/.test(limpio),
           "sin abrirEditorConProceso el botón APU de una fila no tiene a dónde llevar");
-        assert.ok(limpio.includes("/api/apu/rentabilidad"), "app.js no llama a la acción de rentabilidad");
+        assert.ok(limpio.includes("/api/apu?op=rentabilidad"), "app.js no llama a la acción de rentabilidad");
         for (const debe of ["id-proceso", "btn-rentabilidad", "seccion-rentabilidad"]) {
           assert.ok(unoHtml.includes(`id="${debe}"`), `index.html sin #${debe}`);
         }
@@ -9824,7 +9824,7 @@ async function main() {
         assert.ok(limpio.indexOf('e.target.closest(".btn-apu")', limpio.indexOf('$("d-destacados")')) <
           limpio.indexOf('const fila = e.target.closest(".fila-proceso")'),
           "la guarda del botón APU tiene que ir ANTES de resolver la fila");
-        assert.ok(limpio.includes("/api/apu/listar?perfil="),
+        assert.ok(limpio.includes("/api/apu?op=listar&perfil="),
           "el listado de borradores se consulta aparte de /api/resumen, que se cachea 300 s");
         assert.ok(limpio.indexOf("await cargarApuListos(perfil)") < limpio.indexOf("pintarDashboard(cuerpo,"),
           "el listado tiene que cargarse ANTES de pintar, o el badge saldría una pintada tarde");
@@ -9998,6 +9998,44 @@ async function main() {
           const vistaMala = await invocar(rInteligencia, "/api/inteligencia?op=marciana", CAB_TOKEN);
           assert.strictEqual(vistaMala.status, 400, "una vista inventada conserva su 400 con la lista de vistas");
           assert.ok(Array.isArray(vistaMala.cuerpo.vistas), "el 400 de inteligencia debe enseñar las vistas");
+
+          /* ---- j.12-ter · EL FRONTEND Y LAS AUTO-INVOCACIONES YA NO DEPENDEN
+             DE LOS REWRITES (paso siguiente de la Fase 0, ago 2026) ----
+             Las URL viejas (/api/oportunidades, /api/sync, /api/apu/:accion,
+             /api/admin/*, …) siguen respondiendo por los `rewrites` de
+             vercel.json: son la capa de COMPATIBILIDAD para las URL que el
+             dueño tiene pegadas en Chrome, para la documentación y para el
+             cron. Pero nada INTERNO puede colgar de ellas: si un rewrite
+             fallara o se retirara, la app y la cadena de sincronización tienen
+             que seguir funcionando. Se miran las llamadas de CÓDIGO (fetch /
+             api / pedir), no los comentarios, que citan la historia. */
+          {
+            const LEGADO = /(?:fetch|api|pedir)\(\s*[`"']\/api\/(?:oportunidades|sync|indice-baja|competencia-detalle|resumen|diagnostico|paa|probabilidad-desglose|apu\/|admin\/)/;
+            for (const archivo of ["app.js", "pliego.js", "onboarding.js"]) {
+              const limpioFront = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", archivo), "utf8"));
+              const m = limpioFront.match(LEGADO);
+              assert.ok(!m, `public/${archivo} llama a una URL legada (${m && m[0]}): el frontend usa las rutas canónicas /api/{router}?op=…`);
+            }
+            // y llama a los seis routers de verdad (no es que haya dejado de llamar a la API)
+            const appLimpio = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+            for (const canonica of ["/api/procesos?op=listar", "/api/procesos?op=sync", "/api/inteligencia?", "/api/perfil?op=resumen",
+              "/api/admin?op=rup", "/api/apu?op=calcular"]) {
+              assert.ok(appLimpio.includes(canonica), `app.js debería llamar a ${canonica}`);
+            }
+            const pliegoLimpio = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8"));
+            assert.ok(pliegoLimpio.includes("/api/pliego?op=extraer-texto") && pliegoLimpio.includes("/api/pliego?op=descargar"),
+              "pliego.js debe llamar al router de pliego");
+            // las auto-invocaciones del servidor (sync auto-encadenada, historico) tampoco pasan por rewrite
+            for (const h of ["sync.js", "historico.js", "listar.js"]) {
+              const src = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", h), "utf8"));
+              assert.ok(!/\/api\/sync[/?`]/.test(src),
+                `lib/handlers/procesos/${h} se auto-invoca por una URL legada; debe usar /api/procesos?op=…`);
+            }
+            // el cron SÍ sigue en /api/sync (por rewrite): apuntarlo a una URL con query no aporta nada y arriesga el deploy
+            const vercelCfg = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
+            assert.ok(vercelCfg.rewrites.some((r) => r.source === "/api/sync"), "el rewrite de /api/sync (cron y URL del dueño) tiene que seguir");
+            assert.ok(vercelCfg.rewrites.some((r) => r.source === "/api/sync/historico"), "el rewrite de /api/sync/historico (URL del dueño) tiene que seguir");
+          }
         }
       }
 
@@ -11135,7 +11173,7 @@ async function main() {
       assert.ok(/"modal-fondo"\)\.addEventListener\("click", cerrarModal\)/.test(js), "no se cierra al hacer clic fuera");
       assert.ok(/e\.key === "Escape"/.test(js), "no se cierra con ESC");
       // el token NUNCA puede viajar en la URL del frontend
-      assert.ok(!/competencia-detalle\?[^`"']*token=/.test(js),
+      assert.ok(!/\/api\/inteligencia\?[^`"']*token=/.test(js),
         "el token del detalle no puede ir en la URL: va por cabecera");
       // los delegados escuchan en el contenedor: las tarjetas se repintan
       assert.ok(/\$\("lista"\)\.addEventListener\("click"/.test(js), "el clic del badge debe ir por delegación");
@@ -11178,7 +11216,7 @@ async function main() {
       assert.ok(/\$\("btn-rup-cargar"\)\.disabled = true/.test(admJs),
         "«Confirmar carga» debe deshabilitarse durante el envío (si no, un doble clic carga dos veces)");
       // el token NUNCA viaja en la URL desde el navegador
-      assert.ok(!/\/api\/(resumen|admin\/rup)\?[^`"']*token=/.test(admJs),
+      assert.ok(!/\/api\/(perfil\?op=resumen|admin\?op=rup)[^`"']*token=/.test(admJs),
         "el token no puede ir en la URL del panel: va por cabecera");
       // el perfil recordado se lee protegido (en modo restringido lanza)
       assert.ok(/try \{ return sessionStorage\.getItem\(CLAVE_PERFIL\)/.test(admJs),
@@ -11255,13 +11293,13 @@ async function main() {
            `ejecutarAuditoria` del botón de cobertura y el mismo `iniciarFull`
            del encadenado. Una segunda copia de la full es donde se rompería la
            invariante «1.ª tanda full, siguientes auto» sin que nadie lo notara. */
-        assert.ok(admJsLimpio.includes("/api/admin/experiencia?origen=repositorio"),
+        assert.ok(admJsLimpio.includes("/api/admin?op=experiencia&origen=repositorio"),
           "el botón debe llamar al endpoint existente con ?origen=repositorio, no a una ruta nueva");
         /* Y POR POST: un GET a esa URL es un 405 (y antes era un 200 que no
            cargaba nada). Sin esta aserción, cambiar el método sobrevivía la
            suite entera. */
         {
-          const i = admJsLimpio.indexOf("/api/admin/experiencia?origen=repositorio");
+          const i = admJsLimpio.indexOf("/api/admin?op=experiencia&origen=repositorio");
           assert.ok(/method:\s*"POST"/.test(admJsLimpio.slice(i, i + 200)),
             "la carga desde el repositorio tiene que ir por POST: un GET no escribe nada");
         }
@@ -11350,7 +11388,7 @@ async function main() {
       assert.ok(/\$\("btn-exp-confirmar"\)\.disabled = true/.test(admJs),
         "«Confirmar carga» de la experiencia debe deshabilitarse durante el envío");
       // el token tampoco viaja en la URL de los endpoints nuevos
-      assert.ok(!/\/api\/admin\/(experiencia|cobertura-rup)\?[^`"']*token=/.test(admJs),
+      assert.ok(!/\/api\/admin\?op=(experiencia|cobertura)[^`"']*token=/.test(admJs),
         "el token de la experiencia y de la auditoría va por cabecera, nunca en la URL");
       // la auditoría NO se dispara sola: recorre el histórico entero
       {
@@ -11380,7 +11418,7 @@ async function main() {
       assert.ok(/\$\("btn-apu-cargar"\)\.disabled = true/.test(admJs),
         "«Cargar catálogo APU» debe deshabilitarse durante el envío");
       // el token va por cabecera, nunca en la URL
-      assert.ok(!/\/api\/admin\/apu\/cargar-catalogo\?[^`"']*token=/.test(admJs),
+      assert.ok(!/\/api\/admin\?op=cargar-catalogo[^`"']*token=/.test(admJs),
         "el token de la carga del catálogo va por cabecera, nunca en la URL");
       /* CONSULTAR el catálogo es público y son dos comandos → sí se dispara al
          arrancar. CARGARLO escribe ~70 claves → jamás solo. */
@@ -12311,7 +12349,7 @@ async function main() {
         assert.ok(/paaEncendido \? chip\("Activo · abierto"/.test(js),
           "el badge «Activo» tiene que colgar de que el PAA esté encendido");
         // se llama a la URL CANÓNICA, no al alias
-        assert.ok(/fetch\(`\/api\/competencia-detalle\?\$\{qs\}`/.test(js),
+        assert.ok(/fetch\(`\/api\/inteligencia\?\$\{qs\}`/.test(js),
           "el frontend tiene que llamar a la canónica: si el rewrite fallara, el PAA debe seguir vivo");
         assert.ok(!/\/api\/paa\?|fetch\(["'`]\/api\/paa/.test(js), "el frontend no puede depender del alias");
         // el token va por CABECERA, jamás en la URL (regla del token integrado)

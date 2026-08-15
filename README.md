@@ -56,7 +56,10 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
   clásicas siguen respondiendo igual** (`/api/sync`, `/api/oportunidades`, `/api/resumen`,
   `/api/diagnostico`, `/api/indice-baja`, `/api/competencia-detalle`, `/api/admin/*`,
   `/api/apu/*`) vía `rewrites` de `vercel.json`; el cron diario sigue llamando `/api/sync`.
-  El plan Hobby admite 12 funciones: con 6 quedan 6 huecos de reserva, y **lo nuevo se pliega
+  **El frontend (`public/*.js`) y las auto-invocaciones del servidor ya llaman a las rutas
+  canónicas** (`/api/procesos?op=listar`, `/api/inteligencia?op=entidad`, `/api/apu?op=calcular`…):
+  los rewrites son solo compatibilidad para URL guardadas y documentación, y hay prueba de que
+  nada interno depende de ellos. El plan Hobby admite 12 funciones: con 6 quedan 6 huecos de reserva, y **lo nuevo se pliega
   como `op` en su router, jamás como archivo propio** (la suite fija el conteo en `=== 6`).
 - **Upstash Redis** vía API REST con `fetch` nativo (`lib/redis.js`) — sin SDK.
 - **Cero dependencias**: `fetch`, `zlib` (deflate nivel 6) y la API REST de Upstash.

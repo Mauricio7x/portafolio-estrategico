@@ -366,7 +366,7 @@
   async function cargarContrato() {
     const token = leerToken(); // constante integrada: siempre presente
     try {
-      const r = await fetch("/api/apu/extraer-texto", {
+      const r = await fetch("/api/pliego?op=extraer-texto", {
         headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store",
       });
       if (!r.ok) return;
@@ -618,7 +618,7 @@
     }
     if (url) {
       chip("Descargando el PDF…", { girando: true });
-      const r = await pedir("/api/apu/descargar", { url });
+      const r = await pedir("/api/pliego?op=descargar", { url });
       if (r.red) throw new Error(`No se pudo contactar el servidor: ${r.red}.`);
       if (r.estado !== 200 || !r.cuerpo || !r.cuerpo.ok) {
         throw new Error((r.cuerpo && r.cuerpo.error) || `El servidor respondió ${r.estado}.`);
@@ -675,7 +675,7 @@
 
   async function enviarTexto(texto) {
     const ctx = contexto();
-    const r = await pedir("/api/apu/extraer-texto", {
+    const r = await pedir("/api/pliego?op=extraer-texto", {
       texto_extraido: texto,
       objeto_proceso: ctx.objeto_proceso,
       unspsc: ctx.unspsc,
@@ -738,7 +738,7 @@
 
         chip(`Reconociendo páginas ${desde}-${hasta} de ${total} (tanda ${tanda + 1}/${tandas})…`, { girando: true });
         progreso(hasta, total, `Reconociendo páginas ${desde}-${hasta} de ${total}…`);
-        const rt = await pedir("/api/apu/extraer-texto", {
+        const rt = await pedir("/api/pliego?op=extraer-texto", {
           texto_extraido: "", imagenes_base64: paginas, solo_reconocer: true,
         });
         if (rt.red) { progreso(null); chip("Sin conexión", {}); return mensaje(`No se pudo contactar el servidor: ${rt.red}.`, "error"); }
@@ -770,7 +770,7 @@
       chip("Analizando la tabla reconocida…", { girando: true });
       progreso(total, total, "Analizando la tabla…");
       const ctx = contexto();
-      const r = await pedir("/api/apu/extraer-texto", {
+      const r = await pedir("/api/pliego?op=extraer-texto", {
         texto_extraido: trozos.join("\n"),
         objeto_proceso: ctx.objeto_proceso,
         unspsc: ctx.unspsc,

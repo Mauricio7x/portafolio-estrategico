@@ -10,8 +10,11 @@
    Las URL viejas (`/api/sync`, `/api/oportunidades`, …) siguen respondiendo
    igual: `vercel.json` las reescribe a `?op=…` y la query del visitante se
    FUSIONA con la del destino (comportamiento ya verificado en producción por
-   los alias `/api/paa?medir=1` y compañía). El frontend no cambió en esta
-   fase; migrarlo a las rutas canónicas nuevas es el paso siguiente.
+   los alias `/api/paa?medir=1` y compañía). Desde ago 2026 el frontend y las
+   auto-invocaciones del servidor llaman a las rutas canónicas
+   (`/api/{router}?op=…`, prueba j.12-ter): los rewrites quedan como capa de
+   COMPATIBILIDAD para las URL que el dueño tiene pegadas en Chrome, la
+   documentación y el cron — nada interno depende de ellos.
 
    `op` se lee de la query Y del path como respaldo (`/api/procesos/sync`),
    igual que `accion` en el editor de APU: un handler que solo funciona
