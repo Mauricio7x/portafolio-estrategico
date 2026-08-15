@@ -6334,6 +6334,40 @@ async function main() {
       assert.ok(d.justificacion_texto.includes(d.resumen_ejecutivo),
         "el texto para copiar tiene que llevar dentro el mismo resumen que se pinta: dos textos distintos serían dos verdades");
 
+      /* 6-bis · LA EXPLICACIÓN EN SENCILLO (encargo del dueño, ago 2026):
+         la misma cadena contada en frases que cualquiera entiende, escrita en
+         el SERVIDOR y derivada de los mismos pasos — sin fórmulas, con la
+         fuente de los datos dicha, y cerrando en frecuencia natural. */
+      {
+        const exp = d.explicacion_simple;
+        assert.ok(Array.isArray(exp) && exp.length >= 2, "falta la explicación en sencillo");
+        assert.strictEqual(exp[0].tipo, "base", "la primera línea es el punto de partida");
+        assert.strictEqual(exp[exp.length - 1].tipo, "cierre");
+        assert.ok(/de cada \d+ procesos/i.test(exp[exp.length - 1].texto),
+          "el cierre habla en frecuencia natural («de cada N, se gana 1»), no solo en porcentaje");
+        for (const linea of exp) {
+          assert.ok(["base", "sube", "baja", "tope", "cierre"].includes(linea.tipo));
+          for (const formula of [/P_base/, /min\(/, /1 \/ \(/, /×/, /\bpp\b/]) {
+            assert.ok(!formula.test(linea.texto),
+              `la explicación sencilla no puede llevar fórmulas: «${linea.texto}»`);
+          }
+        }
+        assert.ok(/SECOP/.test(d.de_donde_salen_los_datos || ""),
+          "la explicación tiene que decir de dónde salen los datos (SECOP II)");
+        // sin ningún histórico, la base DECLARA el supuesto en la misma frase
+        const { desglosarProbabilidad: desglosarSuelto } = require("../lib/probabilidad_desglose.js");
+        const peladoExp = desglosarSuelto({ entidad: "ENTIDAD QUE NO EXISTE" }, null, null, {}).explicacion_simple;
+        assert.ok(/supuesto/i.test(peladoExp[0].texto) && /no hay historial/i.test(peladoExp[0].texto),
+          "sin historial, la primera frase tiene que declarar que es un supuesto y no una medición");
+        // y el frontend la pinta ANTES de la tabla, que queda plegada
+        const jsDesglose = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        for (const debe of ["explicacion_simple", "listaExplicacionSimple", "Ver el cálculo completo", "de_donde_salen_los_datos"]) {
+          assert.ok(jsDesglose.includes(debe), `app.js sin ${debe} (la explicación sencilla del desglose)`);
+        }
+        assert.ok(/<details class="mt-5">\s*<summary[^>]*>Ver el cálculo completo/.test(jsDesglose),
+          "la tabla técnica tiene que quedar plegada detrás de «Ver el cálculo completo»");
+      }
+
       /* 7 · caché de 300 s, y su sello. El costo de preparación entra en el
          sello a propósito: servir desde caché el resumen calculado con OTRO
          costo sería recomendar sobre una cifra que nadie pidió. */
