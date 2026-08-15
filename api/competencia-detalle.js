@@ -63,7 +63,7 @@
 
 const { crearRedis, hayCredenciales } = require("../lib/redis.js");
 const { autorizarToken } = require("../lib/auth.js");
-const { detalleEntidad } = require("../lib/competencia_detalle.js");
+const { detalleEntidad, detalleAdjudicatario } = require("../lib/competencia_detalle.js");
 const { desgloseDeProceso } = require("../lib/probabilidad_desglose.js");
 const { consultarPaa } = require("../lib/paa.js");
 const { medirAciertoPaa, leerAciertoPaa } = require("../lib/paa_acierto.js");
@@ -94,12 +94,12 @@ module.exports = async function handler(req, res) {
   const enRuta = /\/api\/probabilidad-desglose\b/.test(url) ? "probabilidad"
     : /\/api\/paa\b/.test(url) ? "paa" : null;
   const vista = String(q.vista || enRuta || "entidad").toLowerCase();
-  if (!["entidad", "probabilidad", "paa"].includes(vista)) {
+  if (!["entidad", "probabilidad", "paa", "adjudicatario"].includes(vista)) {
     return res.status(400).json({
       ok: false,
       error: `vista «${vista}» desconocida`,
       vistas: ["entidad (por defecto) — ?entidad=…", "probabilidad — ?id_proceso=…",
-        "paa — [?entidad=…][&unspsc=…]"],
+        "paa — [?entidad=…][&unspsc=…]", "adjudicatario — ?adjudicatario=<clave del top>"],
     });
   }
 
@@ -156,7 +156,9 @@ module.exports = async function handler(req, res) {
       ? await desgloseDeProceso(redis, q.id_proceso, {
         usarCache, costoPreparacion: costoPreparacion(q), log: logDev,
       })
-      : await detalleEntidad(redis, q.entidad, { usarCache, log: logDev });
+      : vista === "adjudicatario"
+        ? await detalleAdjudicatario(redis, q.adjudicatario, { usarCache, log: logDev })
+        : await detalleEntidad(redis, q.entidad, { usarCache, log: logDev });
     return res.status(estado).json(
       estado === 200 ? { ...cuerpo, duracionMs: Date.now() - t0, comandosRedis: redis.comandos() } : cuerpo,
     );

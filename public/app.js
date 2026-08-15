@@ -1057,6 +1057,18 @@
      del servidor cuando hay base (mín. 5 procesos con ganador) y la LECTURA
      viaja con las DOS interpretaciones — nicho ganable O pliego a la medida —
      porque el dato no alcanza para decidir cuál de las dos es. */
+  /* La fecha del último contrato adjudicado (encargo del dueño, ago 2026):
+     dice si un ganador sigue ACTIVO o dejó de ganar hace un año. Se formatea
+     el texto ISO directamente — parsear con `new Date("YYYY-MM-DD")` lo
+     leería como UTC y lo mostraría un día antes en hora Colombia. Sin fecha
+     legible: «sin dato», jamás una inventada. Compartida entre «Quién gana
+     aquí» y el perfil del competidor: dos copias divergirían. */
+  const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const fmtUltima = (f) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(f || ""));
+    return m ? `${Number(m[3])} ${MESES_CORTOS[Number(m[2]) - 1]} ${m[1]}` : null;
+  };
+
   function bloqueAdjudicatarios(a) {
     if (!a) return "";
     const base = Number(a.procesos_con_ganador);
@@ -1066,19 +1078,10 @@
              adjudicatario en los ${a.sin_adjudicatario} procesos adjudicados de esta entidad: no se puede decir quién gana aquí.</p>`
         : "";
     }
-    /* La fecha del último contrato adjudicado de cada ganador (encargo del
-       dueño, ago 2026): dice si el recurrente sigue ACTIVO en la entidad o si
-       dejó de ganar hace un año. Se formatea el texto ISO directamente —
-       parsear con `new Date("YYYY-MM-DD")` lo leería como UTC y lo mostraría
-       un día antes en hora Colombia. Sin fecha legible: «sin dato», jamás una
-       inventada. */
-    const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-    const fmtUltima = (f) => {
-      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(f || ""));
-      return m ? `${Number(m[3])} ${MESES_CORTOS[Number(m[2]) - 1]} ${m[1]}` : null;
-    };
+    /* Cada fila abre el PERFIL DEL COMPETIDOR (dónde más gana): la clave la
+       publica el servidor y es la misma identidad del agregado. */
     const filas = (a.top || []).map((g) => `
-      <tr class="border-t border-gray-100 align-top">
+      <tr class="border-t border-gray-100 align-top ${g.clave ? "cursor-pointer transition hover:bg-gray-50" : ""}"${g.clave ? ` data-adjudicatario="${esc(g.clave)}" data-nombre="${esc(g.nombre)}" title="Ver en qué otras entidades gana"` : ""}>
         <td class="py-2 pr-3">${esc(g.nombre)}${g.nit
     ? `<span class="block text-xs text-gray-400">NIT ${esc(g.nit)}</span>`
     : g.identificacion
@@ -1312,6 +1315,81 @@
     }
     pintarDetalle(cuerpo);
   }
+
+  /* ══════════ Perfil del competidor (vista adjudicatario) ══════════
+     Desde la tabla «Quién gana aquí»: clic en un ganador → dónde más gana,
+     cuántas veces, por cuánto y cuándo fue su último contrato. La «base de
+     datos de la competencia» del manual, a un clic. */
+  function pintarAdjudicatario(d) {
+    if (!d.encontrado) {
+      $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-gray-500">No hay adjudicaciones de este proveedor en el corpus (desde 2024).</p>';
+      return;
+    }
+    const ident = d.identificacion
+      ? (d.identificacion.tipo === "nit" ? `NIT ${d.identificacion.valor}`
+        : d.identificacion.tipo === "codigo_secop" ? `Cód. SECOP ${d.identificacion.valor}`
+          : `Doc. ${d.identificacion.valor}`)
+      : "";
+    const filas = (d.entidades || []).map((e) => `
+      <tr class="border-t border-gray-100 align-top">
+        <td class="py-2 pr-3">${esc(e.entidad)}</td>
+        <td class="py-2 pr-3 text-right tabular-nums">${e.ganados}</td>
+        <td class="py-2 pr-3 text-right tabular-nums">${e.valor_adjudicado_cop == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtCorto(e.valor_adjudicado_cop))}</td>
+        <td class="py-2 text-right tabular-nums whitespace-nowrap">${fmtUltima(e.ultima_adjudicacion) == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtUltima(e.ultima_adjudicacion))}</td>
+      </tr>`).join("");
+    const nEnt = (d.entidades || []).length;
+    $("modal-cuerpo").innerHTML = `
+      <div class="rounded-2xl bg-gray-50 px-5 py-4">
+        <p class="text-lg font-semibold">${esc(d.nombre)}</p>
+        ${ident ? `<p class="text-xs text-gray-500">${esc(ident)}</p>` : ""}
+        <p class="mt-1 text-sm text-gray-600">${d.total_ganados} contrato${d.total_ganados === 1 ? "" : "s"} en ${nEnt} entidad${nEnt === 1 ? "" : "es"}
+          · ${d.valor_adjudicado_cop == null ? "valor sin dato" : esc(fmtCorto(d.valor_adjudicado_cop))}
+          · último: ${fmtUltima(d.ultima_adjudicacion) || "sin fecha"}</p>
+      </div>
+      <div class="mt-4 overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="text-xs uppercase tracking-wide text-gray-400">
+            <tr><th class="pb-1">Entidad</th><th class="pb-1 text-right">Ganados</th><th class="pb-1 text-right">Valor adjudicado</th><th class="pb-1 text-right">Último contrato</th></tr>
+          </thead>
+          <tbody>${filas}</tbody>
+        </table>
+      </div>
+      <p class="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-500">${esc(d.que_es || "")}</p>`;
+  }
+
+  async function cargarAdjudicatario(clave, nombre) {
+    abrirModal(nombre || "Competidor", "Dónde gana este competidor", "Buscando sus adjudicaciones…");
+    const token = leerToken();
+    let r;
+    try {
+      r = await fetch(`/api/competencia-detalle?vista=adjudicatario&adjudicatario=${encodeURIComponent(clave)}`,
+        { headers: { "x-historico-token": token } });
+    } catch {
+      $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-red-600">No se pudo contactar el servidor. Intente de nuevo.</p>';
+      return;
+    }
+    /* el parseo va APARTE del fetch: el muro del edge responde HTML y con las
+       dos cosas en el mismo try se diagnosticaría como «sin conexión» */
+    let cuerpo = null;
+    try { cuerpo = await r.json(); } catch { /* HTML del muro */ }
+    if (r.status === 401) {
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${MSG_401}</p>`;
+      return;
+    }
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`)}</p>`;
+      return;
+    }
+    pintarAdjudicatario(cuerpo);
+  }
+
+  /* delegación en el CUERPO del modal: la tabla «Quién gana aquí» se repinta
+     con cada detalle, así que el listener vive en el contenedor */
+  $("modal-cuerpo").addEventListener("click", (e) => {
+    const fila = e.target.closest("[data-adjudicatario]");
+    if (!fila) return;
+    cargarAdjudicatario(fila.getAttribute("data-adjudicatario"), fila.getAttribute("data-nombre"));
+  });
 
   // delegación: las tarjetas se repintan en cada búsqueda, así que el listener
   // vive en el contenedor y no en cada badge
