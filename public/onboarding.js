@@ -24,9 +24,10 @@
 "use strict";
 
 (() => {
-  /* la CANÓNICA, no el alias /api/admin/rup-desde-pdf: el alias es un rewrite
-     de vercel.json y, si fallara, el botón tiene que seguir funcionando */
-  const CANONICA = "/api/admin/rup?origen=pdf";
+  /* la CANÓNICA del router (/api/admin?op=rup), no el alias
+     /api/admin/rup-desde-pdf ni la histórica /api/admin/rup: los dos son
+     rewrites de vercel.json y, si fallaran, el botón tiene que seguir funcionando */
+  const CANONICA = "/api/admin?op=rup&origen=pdf";
   const CLAVE_PERFIL_RUP = "detecta_perfil_rup";
   // token integrado (decisión del dueño, ago 2026): la carga de experiencia
   // escribe configuración compartida y el servidor sigue exigiéndolo
@@ -477,7 +478,7 @@
 
     let r = null, cuerpo = null;
     try {
-      r = await fetch("/api/admin/experiencia", {
+      r = await fetch("/api/admin?op=experiencia", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-historico-token": token },
         body: JSON.stringify({ contratos: convertido.contratos }),
