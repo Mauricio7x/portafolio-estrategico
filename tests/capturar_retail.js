@@ -120,10 +120,9 @@ const CANASTA_CAPITAL = [
     correspondencia: "aproximada",
     correspondencia_nota: "La tienda vende THHN; el catálogo cotiza TC LS-ZH (baja emisión de humos), que es otro aislamiento y otro precio.",
   },
-];
-
-/* ── Canasta Homecenter SOLO BOGOTÁ (vía la misma página, sin cookies). ── */
-const CANASTA_BOGOTA = [
+  /* ── Ascendidos de Bogotá a POR CAPITAL (encargo del dueño, ago 2026:
+        el APU se apoya en los precios de tienda — más cobertura, misma
+        curaduría). Los cinco venían capturándose sin cookies. ── */
   {
     insumo_id: "ladrillo_tolete_comun", producto_id: "63168", token: "Ladrillo Com",
     producto: "Ladrillo común recocido 20×10×6 cm", unidad_fuente: "und", correspondencia: "exacta",
@@ -153,7 +152,34 @@ const CANASTA_BOGOTA = [
     correspondencia: "exacta",
     normalizacion: { divisor: 10, unidad: "kg", nota: "el empaque declara 10 kg APROX: la división hereda ese margen" },
   },
+  /* ── Nuevos (ago 2026), curados a mano contra la búsqueda de la tienda. ── */
+  {
+    insumo_id: "estuco_plastico", producto_id: "202824", token: "Estuco Pl",
+    producto: "Estuco Plástico Interior/Exterior 1 Galón Topex", unidad_fuente: "gal",
+    correspondencia: "exacta",
+  },
+  {
+    /* el tubo suelto (sku 65876) existe pero NO se vende en línea (la PDP no
+       publica precio): se captura el Propack de 6, que es el MISMO RDE 9 */
+    insumo_id: "tuberia_pvc_presion_1_2", producto_id: "85867", token: "Tubo 1/2X3M 6Und",
+    producto: "Tubo PVC presión 1/2\" × 3 m RDE 9 (500 PSI) · Propack 6 unidades", unidad_fuente: "propack 6 tubos × 3 m (18 ml)",
+    correspondencia: "exacta",
+    correspondencia_nota: "Mismo RDE 9 del catálogo (500 PSI); el precio de tienda es por paquete de 6.",
+    normalizacion: { divisor: 18, unidad: "ml", nota: "6 tubos × 3 m = 18 ml: dividir es exacto" },
+  },
+  {
+    insumo_id: "madera_formaleta", producto_id: "274734", token: "Formaleta Pino 15 Usos",
+    producto: "Formaleta de pino 15 usos, 18 mm, 1,22×2,44 m", unidad_fuente: "tablero 1,22×2,44 m (2,98 m²)",
+    correspondencia: "aproximada",
+    correspondencia_nota: "Tablero contrachapado de formaleta; el catálogo cotiza madera ordinaria — otro material para el mismo uso, y el tablero rinde varios usos.",
+    normalizacion: { divisor: 2.9768, unidad: "m2", nota: "el tablero mide 1,22 × 2,44 m = 2,9768 m²: dividir es exacto" },
+  },
 ];
+
+/* ── Canasta Homecenter SOLO BOGOTÁ: VACÍA desde ago 2026 — los cinco que
+      vivían aquí subieron a la canasta por capital. El mecanismo se conserva
+      para el próximo producto que se quiera capturar rápido sin cookies. ── */
+const CANASTA_BOGOTA = [];
 
 /* ── Easy (precio único NACIONAL — verificado: no regionaliza). ── */
 const CANASTA_EASY = [
