@@ -6967,6 +6967,70 @@ async function main() {
         "la full de higiene debía dejar fuera del activo el proceso ya adjudicado");
     }
 
+    /* g-ter. DELTA REANUDABLE: la re-publicación masiva de SECOP (ago 2026).
+       El defecto de producción: SECOP regeneró el :updated_at de >1 M de filas
+       en un día; el delta no cabía en su presupuesto, se cortaba SIN guardar
+       cursor y la siguiente invocación volvía a la primera página — bucle
+       infinito, candado siempre ocupado, sello congelado, y el dueño viendo
+       «ya hay una sincronización corriendo» para siempre. La prueba reproduce
+       la re-publicación en masa y exige que el ciclo TERMINE en un número
+       acotado de invocaciones, con el sello anclado al INICIO del ciclo. */
+    {
+      const { leerJSON: leerJsonMeta, CLAVES: CL } = require("../lib/almacen.js");
+      const ds = socrata.getDataset();
+      const ahora = new Date().toISOString();
+      for (const f of ds) f[":updated_at"] = ahora; // SECOP re-publica TODO
+      /* Relleno que se LEE pero no se guarda (modalidad excluida): engorda la
+         ventana del delta como en producción sin ensuciar el corpus. */
+      const rellenos = [];
+      for (let k = 0; k < 1500; k++) {
+        const fila = {
+          ":id": `masa-${n}-${k}`, ":updated_at": ahora,
+          id_del_proceso: `CO1.MASA.${n}.${k}`,
+          fecha_de_publicacion_del: `${MESES[0]}-10T08:00:00.000`,
+          entidad: "ENTIDAD DE RELLENO", modalidad_de_contratacion: "Contratación directa",
+          estado_del_procedimiento: "Publicado", nombre_del_procedimiento: `relleno ${k}`,
+        };
+        rellenos.push(fila); ds.push(fila);
+      }
+
+      const r1 = await invocar(sync, "/api/sync?modo=delta&presupuesto=1&chain=0");
+      assert.strictEqual(r1.cuerpo.ok, true, `delta masivo falló: ${JSON.stringify(r1.cuerpo).slice(0, 200)}`);
+      assert.strictEqual(r1.cuerpo.done, false, "con presupuesto ínfimo y ventana masiva el ciclo tenía que quedar parcial");
+      let meta = await leerJsonMeta(redis, CL.meta);
+      assert.ok(meta.delta_ciclo && meta.delta_ciclo.iniciado,
+        "el ciclo parcial tiene que dejar su cursor persistido en meta.delta_ciclo");
+      const ancla = meta.delta_ciclo.iniciado;
+      const selloCongelado = meta.last_sync;
+      assert.notStrictEqual(selloCongelado, ancla, "el sello no puede avanzar con el ciclo a medias");
+
+      let vueltas = 1, done = false;
+      while (!done && vueltas < 200) {
+        const r = await invocar(sync, "/api/sync?modo=delta&presupuesto=25&chain=0");
+        done = r.cuerpo.done === true;
+        vueltas++;
+      }
+      assert.ok(done, `el ciclo no terminó en ${vueltas} invocaciones: el cursor no está avanzando (el bucle infinito de ago 2026)`);
+      meta = await leerJsonMeta(redis, CL.meta);
+      assert.strictEqual(meta.last_sync, ancla,
+        "el sello tiene que anclarse al INICIO del ciclo (primera invocación), no al final");
+      assert.ok(!meta.delta_ciclo, "el ciclo completo tiene que limpiar su cursor");
+      assert.ok(meta.ultimo_delta && meta.ultimo_delta.parcial === false);
+
+      /* La re-publicación no duplica lo SERVIDO: los chunks son append-only a
+         propósito y es el dedup por _k de la lectura quien colapsa versiones —
+         por eso se afirma sobre la lista servida, no sobre el almacenamiento. */
+      const idsServidos = (await todasLasOportunidades("perfil=helder")).map((l) => l.id_del_proceso);
+      assert.strictEqual(new Set(idsServidos).size, idsServidos.length,
+        "la re-publicación masiva duplicó procesos en la lista servida");
+      // …y el relleno excluido jamás entró
+      assert.ok(!(await leerActivo()).some((r) => String(r.id_del_proceso || "").startsWith("CO1.MASA.")),
+        "una fila de contratación directa entró al corpus por el delta masivo");
+
+      // limpiar el relleno para no pagar sus páginas en los bloques siguientes
+      for (const f of rellenos) ds.splice(ds.indexOf(f), 1);
+    }
+
     /* g-bis. /api/diagnostico: el embudo cuadra con lo que sirve la app */
     {
       assert.strictEqual((await invocar(diagnostico, "/api/diagnostico?perfil=helder")).status, 401,
