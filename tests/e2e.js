@@ -11144,6 +11144,208 @@ async function main() {
         + "perilla del APU ida y vuelta");
     }
 
+    /* ═══════════ j-quater. PANEL PISO / TECHO (Fase 3 del plan maestro) ═══════════
+       La única pregunta que importa —«¿me presento o no, y a cuánto?»— como
+       capa PURA sobre lo que la acción `rentabilidad` ya reúne. Cuatro cosas se
+       vigilan aquí y ninguna es decorativa: (1) la regla sagrada del encargo —
+       techo SOLO con n ≥ 5, «Sin referencia» si no—; (2) que el techo sea
+       EXACTAMENTE el mismo número que ya publica `ajuste_competitivo` (una
+       segunda fórmula del techo divergiría de la primera); (3) que el piso se
+       reproduzca a mano desde el resumen del presupuesto; (4) que un conteo de
+       oferentes desconocido jamás se pinte como 0. Más el generador de la
+       justificación de precio, EJECUTADO, no leído. */
+    {
+      const { pisoTecho, MIN_PROCESOS_TECHO } = require("../lib/apu/piso_techo.js");
+      const apuPT = require("../lib/handlers/apu/editor.js");
+      const tipPT = require("../lib/apu/tipologias.js");
+      const Justificacion = require("../public/justificacion.js");
+
+      /* ---- unidad: los estados del veredicto, uno a uno ---- */
+      const aiu = { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" };
+      const bajaCon = (mediana, n, g = "entidad") => ({ nivel: "medio", baja_mediana: mediana, procesos_contados: n, granularidad_utilizada: g, modalidad_utilizada: null });
+      const compCon = (prom, n) => ({ nivel: "media", promedio_oferentes: prom, total_procesos: n });
+
+      const ok = pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 360e6, aiu, baja: bajaCon(5, 14), competencia: compCon(4.2, 9), precio_actual: 480e6 });
+      assert.strictEqual(ok.aplicable, true);
+      assert.strictEqual(ok.estado, "presentarse");
+      // piso = CD × (1 + A + I + U_min) ÷ (1 − 5 % de contribución), redondeado al peso
+      assert.strictEqual(ok.cifras.costo_total, Math.round(360e6 * 1.25));
+      assert.strictEqual(ok.cifras.piso_rentable, Math.round(Math.round(360e6 * 1.25) / 0.95));
+      assert.strictEqual(ok.cifras.techo_competitivo, Math.round(520e6 * 0.95));
+      assert.strictEqual(ok.cifras.umbral_temerario, Math.round(520e6 * 0.80));
+      assert.ok(/^Preséntese entre \$[\d.]+ y \$[\d.]+\.$/.test(ok.veredicto), `veredicto en frase completa: ${ok.veredicto}`);
+      assert.strictEqual(ok.cifras.oferentes_promedio, 4.2);
+      assert.strictEqual(ok.precio_actual_estado, "en_rango");
+      // el precio de un APU con U = 5 % cubre el AIU pero no la contribución del 5 %: se dice POR QUÉ y cuánto falta
+      const cd5 = pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 360e6, aiu, baja: bajaCon(5, 14), precio_actual: Math.round(360e6 * 1.25) });
+      assert.strictEqual(cd5.precio_actual_estado, "bajo_el_piso_por_deducciones");
+      assert.ok(/contribución del 5 %/.test(cd5.frase_precio_actual) && /le faltan \$/.test(cd5.frase_precio_actual), cd5.frase_precio_actual);
+      assert.strictEqual(pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 360e6, aiu, baja: bajaCon(5, 14), precio_actual: 300e6 }).precio_actual_estado, "bajo_el_piso");
+      assert.ok(ok.cifras.piso_es_cota_inferior, "sin deducciones cargadas el piso es COTA INFERIOR y tiene que decirlo");
+      assert.ok(ok.supuestos.some((t) => /utilidad mínima aceptable no se declaró/.test(t)), "la U mínima supuesta se declara");
+
+      const no = pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 395e6, aiu, baja: bajaCon(8.2, 14) });
+      assert.strictEqual(no.estado, "no_presentarse");
+      assert.ok(no.cifras.techo_competitivo < no.cifras.piso_rentable, "no_presentarse exige techo < piso");
+      assert.ok(/^No se presente\./.test(no.veredicto));
+      // el número de oferentes DESCONOCIDO es null, jamás 0, y la frase dice «sin referencia»
+      assert.strictEqual(no.cifras.oferentes_promedio, null);
+      assert.ok(/[Ss]in referencia/.test(no.frases.oferentes));
+      assert.ok(!/\b0 oferentes/.test(no.frases.oferentes));
+
+      /* LA REGLA SAGRADA: n = 3 con mediana ARMADA A MANO no produce techo, y
+         n = 4 tampoco; n = 5 sí. El panel exige el mínimo por su cuenta aunque
+         quien lo alimente se lo salte. */
+      for (const n of [1, 3, MIN_PROCESOS_TECHO - 1]) {
+        const sr = pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 360e6, aiu, baja: bajaCon(8, n) });
+        assert.strictEqual(sr.estado, "sin_referencia", `con ${n} procesos no puede haber techo`);
+        assert.strictEqual(sr.cifras.techo_competitivo, null);
+        assert.ok(/No tenemos historial suficiente/.test(sr.veredicto));
+        assert.ok(sr.frases.techo == null);
+      }
+      assert.strictEqual(pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 395e6, aiu, baja: bajaCon(8, MIN_PROCESOS_TECHO) }).estado, "no_presentarse", "con exactamente 5 procesos el techo SÍ se calcula");
+      // ni con la forma exacta de `sin_dato` del índice
+      const sd = pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 360e6, aiu, baja: { nivel: "sin_dato", baja_mediana: null, procesos_contados: 3, granularidad_utilizada: null } });
+      assert.strictEqual(sd.estado, "sin_referencia");
+      assert.ok(/solo hay 3 procesos/.test(sd.frases.baja), "dice cuántos hay y cuántos hacen falta");
+
+      const sup = pisoTecho({ presupuesto_oficial: 400e6, costo_directo: 360e6, aiu, baja: bajaCon(5, 14) });
+      assert.strictEqual(sup.estado, "no_presentarse_supera_presupuesto");
+      const sinPo = pisoTecho({ presupuesto_oficial: null, costo_directo: 360e6, aiu });
+      assert.strictEqual(sinPo.aplicable, false);
+      assert.strictEqual(sinPo.motivo, "sin_presupuesto_oficial");
+      assert.strictEqual(pisoTecho({ presupuesto_oficial: 5e8, costo_directo: 0, aiu }).motivo, "sin_costo");
+      // umbral temerario: se avisa solo cuando el piso queda por debajo del 80 %
+      const tem = pisoTecho({ presupuesto_oficial: 520e6, costo_directo: 300e6, aiu, baja: bajaCon(2, 20), utilidad_minima_pct: 3, deducciones_pct: 1.5 });
+      assert.strictEqual(tem.estado, "presentarse");
+      assert.ok(/justifique el precio/.test(tem.detalle || ""), "piso bajo el 80 %: avisa que pueden pedir justificación");
+      assert.strictEqual(tem.cifras.utilidad_minima_declarada, true);
+      assert.strictEqual(tem.cifras.piso_es_cota_inferior, false);
+      assert.strictEqual(tem.cifras.tau_pct, 6.5);
+      assert.ok(!/justifique/.test(ok.detalle || ""), "con el piso sobre el 80 % no se avisa de temeridad");
+      // ninguna frase del panel es un porcentaje suelto
+      for (const f of Object.values(ok.frases).filter(Boolean)) assert.ok(!/^[\d.,]+ ?%$/.test(f.trim()), `porcentaje suelto: ${f}`);
+
+      /* ---- handler: el bloque viaja en /api/apu?op=rentabilidad y CUADRA ---- */
+      const ITEMS_PT = tipPT.itemsDeTipologia("VIA-PH").map((c) => ({
+        item_id: c, cantidad: c === "INV-PH.1" ? 2700 : (c === "INV-640.1" ? 18000 : 600),
+      }));
+      const cuerpoPT = (extra) => ({
+        items: ITEMS_PT, departamento: "Antioquia", config: { aiu_pct: 28, imprevistos_pct: 5, utilidad_pct: 7 },
+        entidad: "GOBERNACIÓN DEL TOLIMA", entidad_nit: "800100002", unspsc: "V1.72141000",
+        plazo_meses: 8, perfil: "helder", id_proceso: "CO1.APU.JERICO", ...extra,
+      });
+      const rp = await invocar(apuPT, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: cuerpoPT({ cuantia: 1500000000 }) });
+      assert.strictEqual(rp.status, 200);
+      const cp = rp.cuerpo;
+      const pt = cp.piso_techo;
+      assert.ok(pt && pt.aplicable, `piso_techo debía aplicar: ${JSON.stringify(pt).slice(0, 200)}`);
+      // el techo es EL MISMO número que ya publicaba el ajuste competitivo
+      assert.ok(cp.ajuste_competitivo.aplicable, "el caso necesita baja con base");
+      assert.strictEqual(pt.cifras.techo_competitivo, cp.ajuste_competitivo.precio_sugerido,
+        "dos fórmulas del techo (piso_techo y ajuste_competitivo) no pueden dar dos números");
+      assert.strictEqual(pt.cifras.baja_procesos, cp.baja_mercado.procesos_contados);
+      assert.ok(pt.cifras.baja_procesos >= MIN_PROCESOS_TECHO);
+      // el piso se reproduce a mano desde el resumen del MISMO presupuesto
+      const rs = cp.presupuesto.resumen, cf = cp.presupuesto.configuracion;
+      const costoTotalEsperado = Math.round(rs.costo_directo_total * (1 + (cf.aiu_pct + cf.imprevistos_pct + cf.utilidad_pct) / 100));
+      assert.strictEqual(pt.cifras.costo_total, costoTotalEsperado);
+      assert.strictEqual(pt.cifras.piso_rentable, Math.round(costoTotalEsperado / 0.95));
+      assert.strictEqual(pt.cifras.presupuesto_oficial, 1500000000);
+      assert.strictEqual(pt.cifras.precio_actual, rs.precio_final);
+      assert.ok(["presentarse", "no_presentarse", "no_presentarse_supera_presupuesto"].includes(pt.estado));
+      // la utilidad mínima del usuario mueve el piso y queda declarada
+      const rp2 = await invocar(apuPT, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST",
+        body: cuerpoPT({ cuantia: 1500000000, config: { aiu_pct: 28, imprevistos_pct: 5, utilidad_pct: 7, utilidad_minima_pct: 3 } }) });
+      const pt2 = rp2.cuerpo.piso_techo;
+      assert.strictEqual(pt2.cifras.utilidad_minima_declarada, true);
+      assert.strictEqual(pt2.cifras.utilidad_minima_pct, 3);
+      assert.ok(pt2.cifras.piso_rentable < pt.cifras.piso_rentable, "menos utilidad mínima → piso más bajo");
+      // «No se presente»: una cuantía que cubre el piso pero cuyo techo (menos la
+      // baja mediana de la entidad) cae justo por debajo de él
+      const mediana = cp.baja_mercado.baja_mediana;
+      assert.ok(mediana > 1, "el caso necesita una mediana de baja > 1 %");
+      const cuantiaAjustada = Math.round((pt.cifras.piso_rentable / (1 - mediana / 100)) * 0.99);
+      const rp3 = await invocar(apuPT, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: cuerpoPT({ cuantia: cuantiaAjustada }) });
+      const pt3 = rp3.cuerpo.piso_techo;
+      assert.strictEqual(pt3.estado, "no_presentarse", `esperaba no_presentarse: ${pt3.veredicto}`);
+      assert.ok(pt3.cifras.techo_competitivo < pt3.cifras.piso_rentable && pt3.cifras.piso_rentable <= cuantiaAjustada);
+      // y con la cuantía por debajo del piso, el motivo es OTRO y se dice
+      const rp3b = await invocar(apuPT, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: cuerpoPT({ cuantia: Math.round(rs.costo_directo_total * 1.20) }) });
+      assert.strictEqual(rp3b.cuerpo.piso_techo.estado, "no_presentarse_supera_presupuesto");
+      // entidad SIN histórico → sin techo, «Sin referencia», y aun así el piso
+      const rp4 = await invocar(apuPT, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST",
+        body: cuerpoPT({ cuantia: 1500000000, entidad: "ALCALDÍA QUE NO EXISTE EN NINGÚN ÍNDICE", entidad_nit: "" }) });
+      const pt4 = rp4.cuerpo.piso_techo;
+      assert.strictEqual(pt4.estado, "sin_referencia", `esperaba sin_referencia: ${pt4.veredicto}`);
+      assert.strictEqual(pt4.cifras.techo_competitivo, null);
+      assert.strictEqual(pt4.cifras.baja_esperada_pct, null);
+      assert.strictEqual(pt4.cifras.oferentes_promedio, null);
+      assert.ok(pt4.cifras.piso_rentable > 0);
+      // sin cuantía: aplicable:false con motivo, nunca un panel con ceros
+      const rp5 = await invocar(apuPT, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: cuerpoPT({}) });
+      assert.strictEqual(rp5.cuerpo.piso_techo.aplicable, false);
+      assert.strictEqual(rp5.cuerpo.piso_techo.motivo, "sin_presupuesto_oficial");
+      assert.ok(rp5.cuerpo.como_leerlo.piso_techo, "como_leerlo explica el bloque nuevo");
+
+      /* ---- justificación de precio: generada desde el MISMO presupuesto ---- */
+      const doc = Justificacion.generar({
+        calculo: cp.presupuesto, piso_techo: pt,
+        contexto: { entidad: "GOBERNACIÓN DEL TOLIMA", id_proceso: "CO1.APU.JERICO", objeto: "MEJORAMIENTO DE VÍA TERCIARIA",
+          modalidad: "Licitación pública", oferente: "Helder", presupuesto_oficial: 1500000000, fecha: "2026-08-15" },
+      });
+      assert.strictEqual(doc.nombre, "Justificacion_precio_CO1.APU.JERICO_2026-08-15.html");
+      assert.strictEqual(doc.resumen.costo_directo, rs.costo_directo_total);
+      assert.strictEqual(doc.resumen.precio, rs.precio_final);
+      assert.strictEqual(doc.resumen.piso, pt.cifras.piso_rentable);
+      assert.strictEqual(doc.resumen.techo, pt.cifras.techo_competitivo);
+      assert.strictEqual(doc.resumen.items, ITEMS_PT.length);
+      const cop = Justificacion.cop;
+      for (const debe of [cop(rs.costo_directo_total), cop(rs.precio_final), cop(1500000000), cop(pt.cifras.piso_rentable),
+        "2.2.1.1.2.2.4", "CO1.APU.JERICO", "GOBERNACIÓN DEL TOLIMA", "Análisis de precios unitarios"]) {
+        assert.ok(doc.html.includes(debe), `la justificación no dice «${debe}»`);
+      }
+      assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(doc.html), "sin emojis en el documento");
+      // sin panel aplicable el documento lo dice en vez de inventar el mercado
+      assert.ok(/Sin presupuesto oficial asociado/.test(Justificacion.generar({ calculo: cp.presupuesto, piso_techo: rp5.cuerpo.piso_techo, contexto: {} }).html));
+
+      /* ---- frontend: sección, ids, orden y cableado ---- */
+      const htmlPT = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const jsPT = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      for (const id of ["seccion-piso-techo", "pt-sin-datos", "pt-cuerpo", "pt-presupuesto", "pt-costo", "pt-baja", "pt-oferentes",
+        "pt-piso", "pt-techo", "pt-veredicto", "pt-punto", "pt-frase", "pt-detalle", "pt-precio-actual", "pt-fuentes",
+        "btn-justificacion", "utilidad-minima"]) {
+        assert.ok(htmlPT.includes(`id="${id}"`), `index.html sin #${id}`);
+      }
+      assert.ok(htmlPT.includes('<script src="/justificacion.js">'), "index.html tiene que cargar justificacion.js");
+      {
+        const apuTab = htmlPT.slice(htmlPT.indexOf('<main id="tab-apu"'));
+        const p3 = apuTab.indexOf('white">3</span>Calcular y exportar');
+        const iPT = apuTab.indexOf('id="seccion-piso-techo"');
+        const iRes = apuTab.indexOf('id="seccion-resumen"');
+        assert.ok(p3 > 0 && iPT > p3 && iPT < iRes, "el panel va DESPUÉS del paso 3 y ANTES del resumen: es la decisión, lo demás es el detalle");
+      }
+      assert.ok(/function pintarPisoTecho\(/.test(jsPT), "app.js sin pintarPisoTecho");
+      {
+        const i = jsPT.indexOf("async function calcularRentabilidad(");
+        const cuerpo = jsPT.slice(i, jsPT.indexOf("\n  }", i));
+        assert.ok(cuerpo.indexOf("pintarPisoTecho(c)") > 0 && cuerpo.indexOf("pintarPisoTecho(c)") < cuerpo.indexOf("pintarRentabilidad(c)"),
+          "el panel se pinta con la rentabilidad, y ANTES");
+        const iR = jsPT.indexOf("function reiniciarEditorParaProceso()");
+        assert.ok(jsPT.slice(iR, jsPT.indexOf("\n  }", iR)).includes("seccion-piso-techo"), "abrir otro proceso tiene que esconder el panel anterior");
+      }
+      assert.ok(/utilidad_minima_pct:/.test(jsPT), "leerConfig debe mandar la utilidad mínima");
+      assert.ok(/window\.Justificacion\.generar\(/.test(jsPT), "el botón usa el generador compartido, no texto propio");
+      // el conteo de oferentes jamás se convierte en 0 con un `|| 0`
+      assert.ok(!/oferentes_promedio\s*\|\|\s*0/.test(jsPT) && !/oferentes_procesos\s*\|\|\s*0/.test(jsPT), "un `|| 0` sobre oferentes convierte «no sé» en «cero»");
+      // el frontend no formatea porcentajes sueltos como veredicto: usa la frase del servidor
+      assert.ok(/\$\("pt-frase"\)\.textContent = pt\.veredicto/.test(jsPT), "la frase del veredicto es la del servidor");
+
+      console.log(`  · panel piso/techo: piso ${Math.round(pt.cifras.piso_rentable / 1e6)} M · techo ${Math.round(pt.cifras.techo_competitivo / 1e6)} M `
+        + `(${pt.cifras.baja_procesos} procesos, ${pt.cifras.baja_granularidad}) → «${pt.estado}» · n<5 ⇒ sin referencia · `
+        + `techo ≡ ajuste competitivo · justificación de ${doc.resumen.items} ítems generada`);
+    }
+
     /* h. la raíz sirve el frontend (Vercel: /public es el output estático) */
     {
       const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");

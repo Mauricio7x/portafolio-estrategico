@@ -78,6 +78,18 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
   el 15-jul-2026) entra como **factor de jornada** (44/42) sobre los días de mano de obra por unidad, y
   el EPP como % de la mano de obra. `GET /api/apu?op=parametros` (público) · `POST` (token). Impacto
   medido: MO +4,76 %, costo directo medio +2,37 %. Metodología pública: `docs/metodologia.md`.
+- **Panel Piso / Techo (Fase 3, ago 2026)** — «¿me presento, y a cuánto?»: `lib/apu/piso_techo.js`,
+  bloque `piso_techo` de `POST /api/apu?op=rentabilidad`, pintado PRIMERO entre los resultados de
+  *Precios*. Piso = costo directo × (1 + A + I + U mínima) ÷ (1 − contribución 5 % − deducciones
+  cargadas); techo = presupuesto oficial × (1 − baja mediana) **solo con n ≥ 5** en la cascada
+  entidad+familia → entidad → departamento+familia (sin base: «Sin referencia» y NO hay techo);
+  umbral de precio artificialmente bajo = 80 % del presupuesto (referencia declarada). Veredicto en
+  frase completa («Preséntese entre X y Y», «No se presente…», «Su precio mínimo es X. No tenemos
+  historial suficiente…»), nº de oferentes jamás 0 cuando no se conoce, y botón «Descargar mi
+  justificación de precio» (`public/justificacion.js`: documento con el APU detrás, D. 1082 art.
+  2.2.1.1.2.2.4). Fuentes verificadas para la fase en `docs/datos.md` §5: `hgi6-6wh3` (0 filas para
+  procesos abiertos; en adjudicados == p6dx) y `jbjy-vk9h` (valor del contrato == adjudicado en p6dx;
+  aporta ejecución, no baja).
 - **Upstash Redis** vía API REST con `fetch` nativo (`lib/redis.js`) — sin SDK.
 - **Cero dependencias**: `fetch`, `zlib` (deflate nivel 6) y la API REST de Upstash.
 
@@ -1713,7 +1725,7 @@ la baja de mercado y el margen. Base documental: `docs/APU_Y_RENTABILIDAD.md`.
 | `/api/apu/catalogo` | GET | **no** | Ítems, insumos y regiones; `?insumo=`, `?region=`, `?bloque=` |
 | `/api/apu/inferir` | POST | sí | `{objeto, codigos_unspsc}` → tipología, estado 🟢/🟡/⚪, ítems y magnitudes |
 | `/api/apu/calcular` | POST | sí | `{items, departamento, config}` → desglose + resumen + alertas |
-| `/api/apu/rentabilidad` | POST | sí | Margen, caja, VEG, payback, precio piso **y el optimizador de precio** |
+| `/api/apu/rentabilidad` | POST | sí | Margen, caja, VEG, payback, precio piso, **el optimizador de precio y el bloque `piso_techo`** (Fase 3) |
 | `/api/apu/guardar` | POST | sí | Borrador a `apu:presupuesto:{perfil}:{id}`, **TTL 30 días** |
 | `/api/apu/cargar` | GET | sí | `?id=…&perfil=…` |
 | `/api/apu/listar` | GET | sí | Borradores del perfil (SCAN + MGET, sin índice aparte) |

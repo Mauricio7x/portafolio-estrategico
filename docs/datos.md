@@ -47,8 +47,8 @@ conteo exacto (`=== 6`) y las mismas peticiones de siempre (URLs viejas incluida
 |---|---|---|---|
 | SECOP II — Procesos | `p6dx-8zbt` (datos.gov.co) | Licitaciones activas + histórico adjudicado | **En uso.** Columnas de adjudicación/oferentes verificadas contra datos reales (2026-08); evidencia en `docs/APU_FUENTES.md`. 59 campos; keyset por `:id`. |
 | SECOP II — PAA | `9sue-ezhx` | Planeación anticipada (12 meses) | **En uso.** Columnas verificadas contra la fuente real 2026-08-12 (`nombre_entidad`, `categorias_unspsc`, `valor_total_esperado`, mes en texto + `annio`). Tasa de acierto medida: 88 % (cota inferior, vigencia 2025). |
-| SECOP II — Contratos Electrónicos | `jbjy-vk9h` | Valor realmente pagado tras adiciones (≠ baja de adjudicación) | **Por integrar (Fase 3).** No mezclar con `p6dx-8zbt`: una predice cómo se gana, la otra cómo se ejecuta. |
-| Proponentes por Proceso | `hgi6-6wh3` | Nº real de oferentes y contra quién se compite | **Por verificar antes de comprometer arquitectura (Fase 3).** Esquema y frescura SIN verificar a fecha 2026-08-15. Si no sirve: «Sin referencia», nunca cero. |
+| SECOP II — Contratos Electrónicos | `jbjy-vk9h` | Ejecución del contrato: valor pagado, facturado, días adicionados, estado | **VERIFICADO 2026-08-15 (§5.2), NO integrado a propósito**: su `valor_del_contrato` es idéntico al `valor_total_adjudicacion` de `p6dx-8zbt` en 8/8 procesos cruzados, así que para la BAJA no aporta nada nuevo; lo que aporta (adiciones, pagos) es la fase de ejecución, fuera del alcance de la F3. Unión: `proceso_de_compra` = `id_del_portafolio` de p6dx. |
+| Proponentes por Proceso | `hgi6-6wh3` | Quiénes se presentaron (lista de proponentes por proceso) | **VERIFICADO 2026-08-15 (§5.1).** 2,28 M filas, hasta 2026-08-14. Unión: `id_procedimiento` = `id_del_proceso` (`_k`). **0 filas para procesos ABIERTOS**: los proponentes solo aparecen tras la apertura de ofertas → el nº de oferentes de un proceso abierto es «Sin referencia» por construcción. En adjudicados su conteo == `respuestas_al_procedimiento` de p6dx (8/8): aporta NOMBRES, no un conteo distinto. |
 | Proveedores Registrados | `qmzu-gj57` | Sugerencia de socios de consorcio | Futuro. |
 | GDELT DOC 2.0 + Google News RSS | API directa | Riesgo de orden público por municipio | Parcial: la app etiqueta ZONA por departamento (`lib/accesibilidad.js`, bandas declaradas «estimado»). El «motor por municipio» que el encargo da por hecho NO existe como tal. |
 | INVIAS APU Regionalizados | API ArcGIS `hermes2.invias.gov.co` | Referencia oficial de insumos | **En uso** (`data/apu_invias.json`, vigencia 2025-1; la 2025-2 está corrupta EN ORIGEN — medido, no re-descubrir). Licencia: uso comercial exige autorización. |
@@ -102,3 +102,64 @@ Consecuencia para la sesión de F1: **empezar por el parámetro de jornada (vige
 por buscar el divisor.** Hecho en la Fase 1 (2026-08-15): `lib/parametros.js` + `lib/costos.js` +
 `apu:parametros`; el despeje con cifras, las fórmulas, el impacto medido y el estado de verificación
 de cada parámetro están en **`docs/metodologia.md`**.
+
+
+## 5. Verificación de las dos fuentes de la Fase 3 contra producción (2026-08-15)
+
+Regla del proyecto aplicada: **volver a llamar a la fuente antes de darla por perdida**. Las dos
+respondieron **200** desde este entorno (`https://www.datos.gov.co/api/views/{id}.json` y
+`/resource/{id}.json`); el 403 anotado en versiones anteriores era una observación con fecha.
+
+### 5.1 `hgi6-6wh3` — Proponentes por Proceso SECOP II
+
+- **Esquema (9 columnas):** `id_procedimiento` (text, `CO1.REQ.…`), `fecha_publicaci_n`
+  (calendar_date), `nombre_procedimiento`, `nit_entidad` (number), `codigo_entidad` (number),
+  `entidad_compradora`, `proveedor`, `nit_proveedor` (text — **puede llegar como `"No Definido"`**,
+  el mismo literal-trampa que `nit_del_proveedor_adjudicado` en p6dx), `codigo_proveedor`.
+- **Volumen y frescura:** 2 281 832 filas; `fecha_publicaci_n` de 2015-02-14 a 2026-08-14;
+  `rowsUpdatedAt` 2026-08-15 08:14 UTC.
+- **Clave de unión con el corpus:** `id_procedimiento` == `id_del_proceso` de `p6dx-8zbt` (es el
+  `_k` que ya guarda Redis). Una fila por proponente: el nº de oferentes = filas por id.
+- **Medición decisiva:** para 3 procesos ABIERTOS del listado real (`CO1.REQ.10809019`,
+  `CO1.REQ.10762419`, `CO1.REQ.10589391`, cierre 19–24 ago 2026) → **0 filas**. Para 8 procesos
+  ADJUDICADOS recientes (jun–ago 2026, obra, > $200 M) el conteo de hgi6 coincidió **8/8** con
+  `respuestas_al_procedimiento` **y** con `proveedores_unicos_con` de p6dx (1, 5, 3, 1, 1, 6, 5, 1).
+- **Consecuencia de arquitectura:** el nº de oferentes de un proceso abierto NO EXISTE en ninguna
+  fuente pública hasta la apertura; el panel Piso/Techo lo dice («Sin referencia») y enseña en su
+  lugar CUÁNTOS SUELEN presentarse a esa entidad (histórico, n ≥ 5, que ya calcula
+  `lib/indice_competencia`). Lo que hgi6 aporta y p6dx no es la LISTA DE NOMBRES (contra quién se
+  compite) — un consumo en vivo por `nit_entidad`/`id_procedimiento` queda como tarea pendiente,
+  fuera del alcance de la F3.
+
+### 5.2 `jbjy-vk9h` — SECOP II Contratos Electrónicos
+
+- **Esquema (76 columnas), las relevantes:** `proceso_de_compra` (`CO1.BDOS.…`), `id_contrato`
+  (`CO1.PCCNTR.…`), `referencia_del_contrato`, `estado_contrato` (En ejecución · Modificado ·
+  Aprobado · Cancelado · En aprobación…), `modalidad_de_contratacion`, `tipo_de_contrato` («Obra»),
+  `valor_del_contrato`, `valor_pagado`, `valor_facturado`, `valor_pendiente_de_pago`,
+  `dias_adicionados`, `fecha_de_firma`, `fecha_de_inicio_del_contrato`, `fecha_de_fin_del_contrato`,
+  `codigo_de_categoria_principal` (`V1.72141000`), `nombre_entidad`, `nit_entidad`, `departamento`,
+  `proveedor_adjudicado`, `documento_proveedor`, `urlproceso`. **No trae presupuesto oficial.**
+- **Volumen (obra):** 52 186 contratos, firmas de 2016-09-23 a 2026-08-14.
+- **Clave de unión con el corpus:** `proceso_de_compra` == **`id_del_portafolio`** de `p6dx-8zbt`
+  (columna que el corpus HOY NO PROYECTA: integrar jbjy exigiría añadirla a `lib/proyeccion` y una
+  full). Varias filas por proceso cuando hay varios contratos (p. ej. `CO1.REQ.10693674`).
+- **Medición decisiva:** en los mismos 8 procesos adjudicados, `valor_del_contrato` de jbjy ==
+  `valor_total_adjudicacion` de p6dx **8/8** (al centavo: 178 228 778 511 · 33 597 500 863,77 ·
+  554 640 044,55 …), con `valor_pagado = 0` en todos (contratos recién firmados).
+- **Consecuencia de arquitectura:** la «baja verdadera» que el plan maestro pedía sacar de jbjy
+  **es la que ya calcula `lib/indice_baja` desde p6dx** (`1 − valor_total_adjudicacion /
+  precio_base`); integrar jbjy para eso duplicaría el índice con otro nombre. Lo que jbjy sí añade
+  —adiciones en días, valor pagado vs. contratado, estado de ejecución— es la métrica de «cómo se
+  ejecuta» (Cap. 11 del manual: el Estado paga tarde), útil para el flujo de caja y para el due
+  diligence de entidades, no para el techo. Queda como pendiente declarado.
+
+### 5.3 Qué usa entonces el panel Piso/Techo (Fase 3)
+
+| Dato | Fuente real | Regla |
+|---|---|---|
+| Presupuesto oficial | `p6dx-8zbt` `precio_base` (ya en el corpus) | Sin él no hay panel (`aplicable:false`, motivo). |
+| Costo del usuario | Motor APU (`lib/apu/calculo` + parámetros de F1) | Costo directo × (1 + A + I + U mínima) ÷ (1 − contribución 5 % − deducciones cargadas). |
+| Baja histórica | `lib/indice_baja` (p6dx, adjudicados) | Cascada entidad+familia → entidad → departamento+familia, **solo con n ≥ 5**; si no, «Sin referencia» y NO hay techo. El índice por segmento (mínimo 3) NO se usa. |
+| Nº de oferentes | `lib/indice_competencia` (p6dx) | Promedio por entidad con n ≥ 5; del proceso abierto no existe (hgi6 = 0 filas) → «Sin referencia», jamás 0. |
+| Umbral temerario | Regla de referencia: 80 % del presupuesto | La media − σ de las ofertas del proceso no se conoce antes del cierre (hgi6 no trae precios). Declarado como referencia, no como norma. |
