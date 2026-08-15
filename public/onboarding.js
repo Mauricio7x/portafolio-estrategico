@@ -369,7 +369,9 @@
 
     $("res-total").textContent = n === 0
       ? "Hoy no hay licitaciones abiertas que encajen con este perfil."
-      : `Hoy hay ${n.toLocaleString("es-CO")} licitación${n === 1 ? "" : "es"} abierta${n === 1 ? "" : "s"} a la${n === 1 ? "" : "s"} que usted puede presentarse.`;
+      : (n === 1
+        ? "Hoy hay 1 licitación abierta a la que usted puede presentarse."
+        : `Hoy hay ${n.toLocaleString("es-CO")} licitaciones abiertas a las que usted puede presentarse.`);
     const suma = fmtMillones(o.valorTotal);
     $("res-valor").textContent = n > 0 && suma ? `Suman $${suma}.` : (n > 0 ? "Varias no publican presupuesto." : "");
     $("res-sobra").textContent = n > 0
@@ -393,8 +395,8 @@
     btn.textContent = n > 0 ? `Ver las ${n.toLocaleString("es-CO")}` : "Entrar de todos modos";
     btn.onclick = () => { window.location.href = cuerpo.url_dashboard || `/?perfil=${cuerpo.perfil_id}`; };
 
-    const origen = { texto: "leído de su RUP", ocr: "leído con reconocimiento de imágenes (confírmelo)", manual: "perfil aproximado con tres datos" }[cuerpo.origen] || cuerpo.origen;
-    $("res-nota").textContent = `Perfil ${origen}. Su documento no se guardó: solo el perfil derivado, que caduca solo en 45 días.`
+    const origen = { texto: "Perfil leído de su RUP", ocr: "Perfil leído con reconocimiento de imágenes (confírmelo)", manual: "Perfil aproximado con tres datos" }[cuerpo.origen] || `Perfil ${cuerpo.origen}`;
+    $("res-nota").textContent = `${origen}. Su documento no se guardó: solo el perfil derivado, que caduca solo en 45 días.`
       + (cuerpo.camposNoLeidos && cuerpo.camposNoLeidos.length && cuerpo.origen !== "manual" ? " Falta algún indicador financiero: la capacidad de contratación queda «sin dato» hasta que lo cargue en Mi empresa." : "");
     avisos(null);
     $("resultado-entrada").classList.remove("hidden");
