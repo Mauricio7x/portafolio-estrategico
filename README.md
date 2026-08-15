@@ -61,6 +61,14 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
   los rewrites son solo compatibilidad para URL guardadas y documentación, y hay prueba de que
   nada interno depende de ellos. El plan Hobby admite 12 funciones: con 6 quedan 6 huecos de reserva, y **lo nuevo se pliega
   como `op` en su router, jamás como archivo propio** (la suite fija el conteo en `=== 6`).
+- **Motor de costo real (Fase 1, ago 2026)**: `lib/parametros.js` (jornada, salario mínimo, prestaciones,
+  ARL, TPNL/MVP, herramienta menor, EPP, IVA sobre utilidad; versionados en `apu:parametros` y
+  `apu:parametros:v:{vigencia}`; editables en *Mi empresa → Sistema*) + `lib/costos.js` (única
+  implementación de las fórmulas, re-export de `public/costos.js` que también carga el navegador).
+  El catálogo cotiza la mano de obra POR DÍA y no tiene divisor de horas; la Ley 2101/2021 (42 h desde
+  el 15-jul-2026) entra como **factor de jornada** (44/42) sobre los días de mano de obra por unidad, y
+  el EPP como % de la mano de obra. `GET /api/apu?op=parametros` (público) · `POST` (token). Impacto
+  medido: MO +4,76 %, costo directo medio +2,37 %. Metodología pública: `docs/metodologia.md`.
 - **Upstash Redis** vía API REST con `fetch` nativo (`lib/redis.js`) — sin SDK.
 - **Cero dependencias**: `fetch`, `zlib` (deflate nivel 6) y la API REST de Upstash.
 
