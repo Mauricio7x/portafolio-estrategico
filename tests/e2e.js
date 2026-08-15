@@ -1164,14 +1164,14 @@ async function main() {
   process.env.HISTORICO_TOKEN = "token-historico-de-prueba";
 
   // requerir DESPUÉS de fijar el entorno (PAGE/backoff se leen al cargar)
-  const sync = require("../api/sync.js");
-  const historico = require("../api/sync/historico.js");
-  const diagnostico = require("../api/diagnostico.js");
-  const detalleComp = require("../api/competencia-detalle.js");
-  const indiceBajaApi = require("../api/indice-baja.js");
-  const oportunidades = require("../api/oportunidades.js");
-  const resumen = require("../api/resumen.js");
-  const adminRup = require("../api/admin/rup.js");
+  const sync = require("../lib/handlers/procesos/sync.js");
+  const historico = require("../lib/handlers/procesos/historico.js");
+  const diagnostico = require("../lib/handlers/perfil/diagnostico.js");
+  const detalleComp = require("../lib/handlers/inteligencia/detalle.js");
+  const indiceBajaApi = require("../lib/handlers/procesos/baja.js");
+  const oportunidades = require("../lib/handlers/procesos/listar.js");
+  const resumen = require("../lib/handlers/perfil/resumen.js");
+  const adminRup = require("../lib/handlers/admin/rup.js");
   const { crearRedis } = require("../lib/redis.js");
   const { empaquetar, descomprimir, CHUNK_MAX_COMPRIMIDO, CLAVES } = require("../lib/almacen.js");
   const indiceComp = require("../lib/indice_competencia.js");
@@ -6401,9 +6401,9 @@ async function main() {
         const vc = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
         const alias = (vc.rewrites || []).find((x) => x.source === "/api/probabilidad-desglose");
         assert.ok(alias, "vercel.json no declara el alias /api/probabilidad-desglose");
-        assert.strictEqual(alias.destination, "/api/competencia-detalle?vista=probabilidad",
+        assert.strictEqual(alias.destination, "/api/inteligencia?vista=probabilidad",
           "el alias tiene que apuntar al endpoint real CON la vista: un alias que apunta a otra cosa promete algo que no hace");
-        assert.ok(fs.existsSync(path.join(__dirname, "..", "api", "competencia-detalle.js")),
+        assert.ok(fs.existsSync(path.join(__dirname, "..", "api", "inteligencia.js")),
           "el alias apunta a un archivo que no existe");
         // el mismo handler, invocado por el path del alias y SIN `vista` en la query
         const porPath = await invocar(detalleComp,
@@ -7106,7 +7106,7 @@ async function main() {
        fire-and-forget y la suite no puede observarlo, así que lo que se
        prueba es la DECISIÓN pura más el cableado. */
     {
-      const { decidirRefrescoHistorico, REFRESCO_HISTORICO_MS } = require("../api/sync.js");
+      const { decidirRefrescoHistorico, REFRESCO_HISTORICO_MS } = require("../lib/handlers/procesos/sync.js");
       const ahora = Date.parse("2026-08-15T12:00:00Z");
       // sin primer backfill: JAMÁS disparar — ese paso es decisión manual del dueño
       assert.strictEqual(decidirRefrescoHistorico({ metaHist: null, progreso: null, candadoTomado: false, ahora }), null);
@@ -7136,7 +7136,7 @@ async function main() {
       // con el candado tomado no se estorba
       assert.strictEqual(decidirRefrescoHistorico({ metaHist: { ts: "2020-01-01T00:00:00Z" }, progreso: null, candadoTomado: true, ahora }), null);
       // y el handler la cablea: token por header y throttle atómico, nunca meta
-      const fuenteSync = fs.readFileSync(path.join(__dirname, "..", "api", "sync.js"), "utf8");
+      const fuenteSync = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", "sync.js"), "utf8");
       assert.ok(/decidirRefrescoHistorico\(\{ metaHist/.test(fuenteSync) && /sync:kick:historico/.test(fuenteSync)
         && /x-historico-token/.test(fuenteSync), "el disparo del refresco no está cableado en el handler");
       console.log("· refresco mensual del histórico: primer backfill jamás automático, cadena muerta se reanuda, mes en hora Colombia");
@@ -7737,8 +7737,8 @@ async function main() {
        El corpus está diseñado para que cada casilla de la clasificación tenga un
        caso y ninguno pase por casualidad (ver COBERTURA_BLOQUES). */
     {
-      const experiencia = require("../api/admin/experiencia.js");
-      const coberturaApi = require("../api/admin/cobertura-rup.js");
+      const experiencia = require("../lib/handlers/admin/experiencia.js");
+      const coberturaApi = require("../lib/handlers/admin/cobertura.js");
       const libExp = require("../lib/experiencia.js");
 
       /* 8. sin token → 401 en los dos endpoints, en GET y en POST */
@@ -8440,8 +8440,8 @@ async function main() {
         // está en 12 exactas) y apunta al endpoint real CON el origen
         const vercel = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
         const rw = (vercel.rewrites || []).find((x) => x.source === "/api/admin/rup-desde-pdf");
-        assert.ok(rw && rw.destination === "/api/admin/rup?origen=pdf",
-          "el alias /api/admin/rup-desde-pdf debe apuntar a /api/admin/rup?origen=pdf");
+        assert.ok(rw && rw.destination === "/api/admin?op=rup&origen=pdf",
+          "el alias /api/admin/rup-desde-pdf debe apuntar a /api/admin?op=rup&origen=pdf");
       }
 
       /* 11 · limpieza: los perfiles dinámicos no contaminan lo que sigue */
@@ -8555,7 +8555,7 @@ async function main() {
            parecida ni recibe factor 1,00.
        ════════════════════════════════════════════════════════════════════ */
     {
-      const apu = require("../api/apu/[accion].js");
+      const apu = require("../lib/handlers/apu/editor.js");
       const calculo = require("../lib/apu/calculo.js");
       const inferencia = require("../lib/apu/inferencia.js");
       const tipologias = require("../lib/apu/tipologias.js");
@@ -9648,7 +9648,7 @@ async function main() {
          pegado a la semilla del repositorio. Al terminar se borra todo `apu:*`
          para que el bloque h-bis empiece con Redis limpio, como espera. */
       {
-        const apuCargarCat = require("../api/admin/apu/cargar-catalogo.js");
+        const apuCargarCat = require("../lib/handlers/admin/cargar_catalogo.js");
         const carga = await invocar(apuCargarCat, "/api/admin/apu/cargar-catalogo", CAB_TOKEN, { metodo: "POST" });
         assert.strictEqual(carga.status, 200, "no se pudo cargar el catálogo de precios");
 
@@ -9913,21 +9913,23 @@ async function main() {
       /* ---- j.12 el despliegue: presupuesto de funciones de Vercel ---- */
       {
         const vc = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
-        assert.ok(vc.functions["api/apu/[accion].js"], "vercel.json no declara la función del APU");
-        assert.strictEqual(vc.functions["api/apu/[accion].js"].includeFiles, "data/**",
+        assert.ok(vc.functions["api/apu.js"], "vercel.json no declara la función del APU");
+        assert.strictEqual(vc.functions["api/apu.js"].includeFiles, "data/**",
           "sin data/** el catálogo de APU no llega al despliegue");
 
         /* EL LÍMITE DE HOBBY SON 12 FUNCIONES POR DESPLIEGUE, y se cuenta por
            ARCHIVOS bajo api/, no por entradas de vercel.json. Es un fallo de
            DESPLIEGUE COMPLETO, no del endpoint nuevo, así que conviene que
-           salte aquí y no en producción. Por eso `/api/apu/catalogo` se plegó
-           en la ruta dinámica en vez de conservar su archivo propio. */
+           salte aquí y no en producción. Desde la Fase 0 (consolidación) la
+           superficie son EXACTAMENTE 6 routers por dominio: un endpoint nuevo
+           se pliega como `op` en el router que le toque, jamás como archivo
+           propio — así quedan 6 huecos de reserva bajo el límite de 12. */
         const contar = (dir) => fs.readdirSync(dir, { withFileTypes: true })
           .reduce((n, e) => n + (e.isDirectory() ? contar(path.join(dir, e.name))
             : (e.name.endsWith(".js") ? 1 : 0)), 0);
         const nFunciones = contar(path.join(__dirname, "..", "api"));
-        assert.ok(nFunciones <= 12,
-          `${nFunciones} funciones bajo api/: el plan Hobby de Vercel admite 12 por despliegue y lo rechazaría entero`);
+        assert.strictEqual(nFunciones, 6,
+          `${nFunciones} funciones bajo api/: la consolidación dejó exactamente 6 routers (procesos, inteligencia, perfil, admin, apu, pliego); lo nuevo se pliega como op, no como archivo`);
         assert.ok(!fs.existsSync(path.join(__dirname, "..", "api", "apu", "catalogo.js")),
           "api/apu/catalogo.js volvió a existir: con él se pasa del límite de 12 funciones");
 
@@ -9940,10 +9942,63 @@ async function main() {
           "api/admin/cargar-experiencia-genesis.js como archivo propio son 13 funciones: Vercel rechaza el despliegue ENTERO");
         const rw = (vc.rewrites || []).find((x) => x.source === "/api/admin/cargar-experiencia-genesis");
         assert.ok(rw, "falta el rewrite que expone /api/admin/cargar-experiencia-genesis");
-        assert.ok(/^\/api\/admin\/experiencia\?/.test(rw.destination),
+        assert.ok(/^\/api\/admin\?op=experiencia/.test(rw.destination),
           `el rewrite tiene que apuntar al endpoint real, no a ${rw.destination}`);
         assert.ok(/origen=repositorio/.test(rw.destination),
           "sin origen=repositorio el alias cargaría el cuerpo de la petición, que en un POST sin cuerpo es un 400");
+
+        /* ---- j.12-bis · LOS SEIS ROUTERS (Fase 0, consolidación) ----
+           Los routers no llevan lógica: leen `op` (o `accion`/`vista`) y
+           delegan en lib/handlers/. Lo que se prueba aquí es exactamente eso:
+           que despachan, que una op desconocida responde el contrato de error
+           con la lista (nunca un 500 mudo), y que la AUTORIZACIÓN de cada
+           handler atraviesa el router intacta — un router que la relajara
+           sería el agujero de seguridad de toda la consolidación. */
+        {
+          const rProcesos = require("../api/procesos.js");
+          const rInteligencia = require("../api/inteligencia.js");
+          const rPerfil = require("../api/perfil.js");
+          const rAdmin = require("../api/admin.js");
+          const rApu = require("../api/apu.js");
+          const rPliego = require("../api/pliego.js");
+
+          // sin op → 400 con la lista; op desconocida → 404 con la lista
+          for (const [r, base] of [[rProcesos, "procesos"], [rPerfil, "perfil"], [rAdmin, "admin"], [rPliego, "pliego"]]) {
+            const sin = await invocar(r, `/api/${base}`);
+            assert.strictEqual(sin.status, 400, `/api/${base} sin op debía ser 400`);
+            assert.ok(Array.isArray(sin.cuerpo.operaciones) && sin.cuerpo.operaciones.length > 0,
+              `el 400 de /api/${base} debe enseñar las operaciones disponibles`);
+            const mala = await invocar(r, `/api/${base}?op=inventada`);
+            assert.strictEqual(mala.status, 404, `/api/${base}?op=inventada debía ser 404`);
+            assert.ok(Array.isArray(mala.cuerpo.operaciones), `el 404 de /api/${base} debe enseñar las operaciones`);
+          }
+
+          // la autorización del handler atraviesa el router intacta
+          assert.strictEqual((await invocar(rPerfil, "/api/perfil?op=resumen")).status, 401,
+            "el resumen sin token tiene que seguir siendo 401 a través del router");
+          assert.strictEqual((await invocar(rAdmin, "/api/admin?op=cargar-catalogo", {}, { metodo: "POST" })).status, 401,
+            "cargar el catálogo sin token tiene que seguir siendo 401 a través del router");
+          assert.strictEqual((await invocar(rPliego, "/api/pliego?op=extraer-texto")).status, 401,
+            "el lector de pliegos sin token tiene que seguir siendo 401 a través del router");
+
+          // router ≡ handler: el catálogo APU responde LO MISMO por las dos vías
+          const editorApu = require("../lib/handlers/apu/editor.js");
+          const viaRouter = await invocar(rApu, "/api/apu?op=catalogo");
+          const viaHandler = await invocar(editorApu, "/api/apu/catalogo");
+          assert.strictEqual(viaRouter.status, viaHandler.status,
+            "el router de APU no puede responder distinto que el handler para la misma acción");
+          assert.strictEqual(viaRouter.cuerpo.cargado, viaHandler.cuerpo.cargado,
+            "el estado del catálogo tiene que ser el mismo por las dos vías");
+
+          // inteligencia: `op` es sinónimo de `vista`, y `competidor` (glosario)
+          // traduce a `adjudicatario` (nombre interno) — jamás «vista desconocida»
+          const comp = await invocar(rInteligencia, "/api/inteligencia?op=competidor", CAB_TOKEN);
+          assert.ok(!(comp.status === 400 && Array.isArray(comp.cuerpo.vistas)),
+            `op=competidor tiene que traducirse a la vista adjudicatario, no caer en «vista desconocida»: ${JSON.stringify(comp.cuerpo).slice(0, 120)}`);
+          const vistaMala = await invocar(rInteligencia, "/api/inteligencia?op=marciana", CAB_TOKEN);
+          assert.strictEqual(vistaMala.status, 400, "una vista inventada conserva su 400 con la lista de vistas");
+          assert.ok(Array.isArray(vistaMala.cuerpo.vistas), "el 400 de inteligencia debe enseñar las vistas");
+        }
       }
 
       console.log(`  · APU: ${tipologias.meta().tipologias_n} tipologías · ${catalogoLib.SEMILLA.items.length} ítems · `
@@ -9963,14 +10018,14 @@ async function main() {
        dos fuentes de verdad que discrepan es el defecto que este proyecto ya
        pagó caro con `total_procesos`/`procesos_contados`. */
     {
-      const apuCargar = require("../api/admin/apu/cargar-catalogo.js");
+      const apuCargar = require("../lib/handlers/admin/cargar_catalogo.js");
       /* `/api/apu/catalogo` lo sirve ahora la ruta DINÁMICA junto con las otras
          cinco acciones del editor. El archivo suelto desapareció por el límite
          de 12 funciones del plan Hobby —12 archivos bajo api/ más el del editor
          eran 13 y el despliegue falla entero—, pero la URL, el contrato y el
          hecho de que sea PÚBLICA se conservan intactos, que es justo lo que
          siguen comprobando estas aserciones. */
-      const apuPublico = require("../api/apu/[accion].js");
+      const apuPublico = require("../lib/handlers/apu/editor.js");
       const apuLib = require("../lib/apu/catalogo.js");
       const S = apuLib.SEMILLA;
       const REGIONES = S.regiones.map((r) => r.id);
@@ -10209,7 +10264,7 @@ async function main() {
        sintético — con una que no lo tuviera, el ajuste competitivo saldría
        `sin_dato` y la prueba no comprobaría nada del índice. */
     {
-      const apuR = require("../api/apu/[accion].js");
+      const apuR = require("../lib/handlers/apu/editor.js");
       const rent = require("../lib/apu/rentabilidad.js");
       const tipR = require("../lib/apu/tipologias.js");
 
@@ -10396,7 +10451,7 @@ async function main() {
          (3) UNA RECOMENDACIÓN FABRICADA — sin centro de mercado no puede salir
              un «óptimo»: sin dato NO es «baja del 0 %». */
     {
-      const apuO = require("../api/apu/[accion].js");
+      const apuO = require("../lib/handlers/apu/editor.js");
       const opti = require("../lib/apu/optimizador.js");
       const tipO = require("../lib/apu/tipologias.js");
       const { calcularPresupuesto } = require("../lib/apu/calculo.js");
@@ -10882,13 +10937,13 @@ async function main() {
          alguien las vuelve a sacar a `api/`, esta prueba lo dice antes de que lo
          diga Vercel. */
       {
-        const despachador = fs.readFileSync(path.join(__dirname, "..", "api", "apu", "[accion].js"), "utf8");
+        const despachador = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "apu", "editor.js"), "utf8");
         for (const accion of ["extraer-texto", "descargar"]) {
           assert.ok(despachador.includes(`"${accion}"`),
-            `api/apu/[accion].js no registra la acción «${accion}»`);
+            `lib/handlers/apu/editor.js no registra la acción «${accion}»`);
         }
-        assert.ok(/require\("\.\.\/\.\.\/lib\/apu_extraer\.js"\)/.test(despachador)
-          && /require\("\.\.\/\.\.\/lib\/apu_descargar\.js"\)/.test(despachador),
+        assert.ok(/require\("\.\.\/\.\.\/apu_extraer\.js"\)/.test(despachador)
+          && /require\("\.\.\/\.\.\/apu_descargar\.js"\)/.test(despachador),
           "el despachador debe delegar en lib/apu_extraer y lib/apu_descargar");
         assert.ok(!fs.existsSync(path.join(__dirname, "..", "api", "apu", "extraer-texto.js")),
           "extraer-texto volvió a ser una función propia: son 13 y el plan Hobby admite 12");
@@ -12140,7 +12195,7 @@ async function main() {
         const vercel = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
         const alias = (vercel.rewrites || []).find((x) => x.source === "/api/paa");
         assert.ok(alias, "falta el rewrite /api/paa en vercel.json");
-        assert.strictEqual(alias.destination, "/api/competencia-detalle?vista=paa",
+        assert.strictEqual(alias.destination, "/api/inteligencia?vista=paa",
           "un alias que apunte a otra cosa es una URL que promete algo que no hace");
         assert.ok(!fs.existsSync(path.join(__dirname, "..", "api", "paa.js")),
           "api/paa.js no puede existir: sería la función 13 y rompería el despliegue entero");

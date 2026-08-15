@@ -47,22 +47,31 @@ corre **al servir la consulta**. Antes el matching vivía en la ingesta, así qu
 regla o cada RUP nuevo exigía volver a bajar el año entero, y lo que la regla vieja descartó nunca
 había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene efecto inmediato**.
 
-- **Vercel serverless** (Node 18+, CommonJS, funciones planas en `/api`). Sin framework, sin
-  `package.json`, sin build: `public/` se sirve estático en la raíz y `/api/*.js` son funciones.
+- **Vercel serverless** (Node 18+, CommonJS). Sin framework, sin `package.json`, sin build:
+  `public/` se sirve estático en la raíz y `/api/*.js` son funciones.
+- **Seis routers por dominio** (ago 2026, Fase 0): `api/` contiene exactamente
+  `procesos.js` · `inteligencia.js` · `perfil.js` · `admin.js` · `apu.js` · `pliego.js`, que
+  despachan por `?op=` (o `accion`/`vista`) a los handlers de `lib/handlers/{dominio}/` — los
+  mismos archivos que antes eran funciones sueltas, movidos sin reescribirlos. **Todas las URL
+  clásicas siguen respondiendo igual** (`/api/sync`, `/api/oportunidades`, `/api/resumen`,
+  `/api/diagnostico`, `/api/indice-baja`, `/api/competencia-detalle`, `/api/admin/*`,
+  `/api/apu/*`) vía `rewrites` de `vercel.json`; el cron diario sigue llamando `/api/sync`.
+  El plan Hobby admite 12 funciones: con 6 quedan 6 huecos de reserva, y **lo nuevo se pliega
+  como `op` en su router, jamás como archivo propio** (la suite fija el conteo en `=== 6`).
 - **Upstash Redis** vía API REST con `fetch` nativo (`lib/redis.js`) — sin SDK.
 - **Cero dependencias**: `fetch`, `zlib` (deflate nivel 6) y la API REST de Upstash.
 
 | Archivo | Qué hace |
 | --- | --- |
-| `api/sync.js` | Sincronización full/delta/auto, reanudable, con candado TTL y auto-reinvocación |
-| `api/sync/historico.js` | **Backfill histórico** (protegido por token): 2 años a `licitaciones:historico:*` + construcción de los tres derivados (índice, equivalencias, vocabulario) |
-| `api/oportunidades.js` | Consulta: **todo el juicio fino** por perfil, competencia por entidad, orden, paginación, memoria caliente |
-| `api/resumen.js` | **Dashboard**: los mismos visibles de la app, agregados (tipo, urgencia, entidades, departamentos, capacidad K) con caché de 5 min |
-| `api/admin/rup.js` + `lib/config_rup.js` | **Carga del RUP por archivo JSON**: validación campo por campo y publicación atómica, con efecto inmediato |
-| `api/admin/experiencia.js` + `lib/experiencia.js` | **Contratos ya ejecutados** → vocabulario del oficio: en qué *sabe* trabajar el dueño (el RUP solo dice a qué *puede* presentarse) |
-| `api/admin/cobertura-rup.js` + `lib/cobertura_rup.js` | **Qué códigos UNSPSC le faltan al RUP**: los que el mercado adjudica para objetos como los suyos y no tiene inscritos, priorizados por similitud con su experiencia real |
+| `lib/handlers/procesos/sync.js` | Sincronización full/delta/auto, reanudable, con candado TTL y auto-reinvocación |
+| `lib/handlers/procesos/historico.js` | **Backfill histórico** (protegido por token): 2 años a `licitaciones:historico:*` + construcción de los tres derivados (índice, equivalencias, vocabulario) |
+| `lib/handlers/procesos/listar.js` | Consulta: **todo el juicio fino** por perfil, competencia por entidad, orden, paginación, memoria caliente |
+| `lib/handlers/perfil/resumen.js` | **Dashboard**: los mismos visibles de la app, agregados (tipo, urgencia, entidades, departamentos, capacidad K) con caché de 5 min |
+| `lib/handlers/admin/rup.js` + `lib/config_rup.js` | **Carga del RUP por archivo JSON**: validación campo por campo y publicación atómica, con efecto inmediato |
+| `lib/handlers/admin/experiencia.js` + `lib/experiencia.js` | **Contratos ya ejecutados** → vocabulario del oficio: en qué *sabe* trabajar el dueño (el RUP solo dice a qué *puede* presentarse) |
+| `lib/handlers/admin/cobertura.js` + `lib/cobertura_rup.js` | **Qué códigos UNSPSC le faltan al RUP**: los que el mercado adjudica para objetos como los suyos y no tiene inscritos, priorizados por similitud con su experiencia real |
 | `lib/indice_competencia.js` | Índice **entidad → oferentes promedio** sobre el histórico; tertiles baja/media/alta |
-| `api/competencia-detalle.js` + `lib/competencia_detalle.js` | **Consultas de solo lectura**, tres vistas en una función: los procesos que sostienen el badge de competencia (incluidos, excluidos y por qué, caché de 1 h), el **desglose de la probabilidad** (`?vista=probabilidad`) y el **PAA** (`?vista=paa`) |
+| `lib/handlers/inteligencia/detalle.js` + `lib/competencia_detalle.js` | **Consultas de solo lectura**, tres vistas en una función: los procesos que sostienen el badge de competencia (incluidos, excluidos y por qué, caché de 1 h), el **desglose de la probabilidad** (`?vista=probabilidad`) y el **PAA** (`?vista=paa`) |
 | `lib/paa.js` | **Plan Anual de Adquisiciones** (dataset `9sue-ezhx`): qué va a salir en los próximos 12 meses, filtrable por entidad y por UNSPSC jerárquico. Columnas por lista de candidatas + censo publicado — el dataset **no se pudo verificar** desde este entorno — y `tasa_de_acierto: null` mientras nadie la mida |
 | `lib/probabilidad_desglose.js` | **Por qué ese 23 %**: los seis pasos del cálculo con fórmula, datos con la fuente citada, aritmética escrita y aporte en puntos porcentuales. No recalcula nada — narra la traza de `lib/probabilidad` |
 | `lib/auth.js` | Guardián único del `HISTORICO_TOKEN` para **todos** los endpoints protegidos (doce puntos de llamada), `/api/oportunidades` incluido |
@@ -83,7 +92,7 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `lib/semantica.js` | Los **vocabularios**: `norm`, blacklist de objetos ajenos, whitelist de obra (heredadas), verbos de obra y términos no pertinentes |
 | `data/vocabulario_unspsc.json` | Semilla curada de términos distintivos por familia UNSPSC (respaldo del derivado) |
 | `lib/almacen.js` | Esquema de claves Redis + compresión/particionado de chunks |
-| `api/apu/[accion].js` | **Editor de APU y lector de pliegos** — una sola función para diez acciones (catálogo, inferir, calcular, **rentabilidad**, guardar, cargar, listar, **importar**, extraer-texto, descargar): el plan Hobby de Vercel admite 12 funciones por despliegue |
+| `lib/handlers/apu/editor.js` | **Editor de APU y lector de pliegos** — una sola función para diez acciones (catálogo, inferir, calcular, **rentabilidad**, guardar, cargar, listar, **importar**, extraer-texto, descargar): el plan Hobby de Vercel admite 12 funciones por despliegue |
 | `lib/apu/rentabilidad.js` | Lo que el presupuesto no responde: flujo de caja mes a mes, capital expuesto, **payback**, precio piso, maldición del ganador y **VEG** |
 | `lib/apu/tipologias.js` | Las 22 tipologías cerradas y el mapa departamento→región. `regionDeDepartamento` es el punto único de paso y **jamás devuelve una región de relleno** |
 | `lib/apu/inferencia.js` | Objeto del proceso → tipología de obra e ítems: léxico con puntaje (Nivel A) + UNSPSC como **veto** (Nivel B) |
@@ -94,7 +103,7 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `lib/apu_mapeo.js` | Descripción del pliego → ítem del catálogo, por 4 señales ponderadas (términos, Levenshtein, unidad, tipología) |
 | `lib/apu_catalogo.js` + `data/catalogo_apu.json` | **Diccionario de reconocimiento**: 93 ítems SIN precios, con sinónimos. No confundir con `data/apu_catalogo.json`, que es la biblioteca de costeo |
 | `lib/apu_ocr.js` | Respaldo por OCR (OCR.space) para pliegos escaneados. Una petición por página |
-| `lib/apu_extraer.js` + `lib/apu_descargar.js` | La lógica de las acciones `extraer-texto` y `descargar` de `api/apu/[accion].js`. Están en `lib/` porque el plan Hobby de Vercel admite 12 funciones y con dos ficheros más eran 14 |
+| `lib/apu_extraer.js` + `lib/apu_descargar.js` | La lógica de las acciones `extraer-texto` y `descargar` de `lib/handlers/apu/editor.js`. Están en `lib/` porque el plan Hobby de Vercel admite 12 funciones y con dos ficheros más eran 14 |
 | `docs/APU_Y_RENTABILIDAD.md` | La investigación que sostiene el CATÁLOGO DE PRECIOS: fuentes, factor prestacional, AIU, ICOCIV y regionalización |
 | `docs/APU_INFORME_COMPLETO.md` | El **informe** completo de investigación y diseño (§1.A-§1.I): el que citan los comentarios del código. Incluye lo que NO se implementó y por qué |
 | `docs/PERFILES.md` | Resumen técnico de los tres perfiles (datos, estimaciones, limitaciones) |
@@ -303,7 +312,7 @@ Consultas de **solo lectura** que explican lo que el dueño ve en la pestaña de
 y `?vista=paa`), y eso no es estética: el plan Hobby de Vercel admite **12 funciones** por
 despliegue y el repositorio está exactamente en 12. Un archivo más y no falla el endpoint nuevo:
 falla el despliegue entero. Es la misma restricción que plegó `/api/apu/catalogo` en
-`api/apu/[accion].js` y que impidió `/api/baja-mercado`.
+`lib/handlers/apu/editor.js` y que impidió `/api/baja-mercado`.
 
 Las dos primeras responden la misma pregunta —«de dónde sale ese número de la tarjeta»— sobre el
 corpus ya ingerido. La tercera **no**: mira otro dataset, no toca Redis y habla de procesos que
@@ -1371,7 +1380,7 @@ este ítem?»— y fusionarlas obligaría a elegir entre perder recall de recono
 precios. Lo que sí se hace es **emitir el código del catálogo de precios cuando el ítem reconocido
 existe allí**, para que no haya dos identidades del mismo ítem.
 
-**Los dos endpoints son ACCIONES de `api/apu/[accion].js`, no ficheros propios**, y por una razón
+**Los dos endpoints son ACCIONES de `lib/handlers/apu/editor.js`, no ficheros propios**, y por una razón
 dura: el plan Hobby de Vercel admite **12 funciones por despliegue** y con dos ficheros más eran 14 —
 el despliegue entero se rechazaba. Su lógica vive en `lib/apu_extraer.js` y `lib/apu_descargar.js`;
 el despachador solo las llama, y las despacha *antes* de tocar Redis porque ninguna lo necesita.
@@ -1420,7 +1429,7 @@ de otro origen**, así que apuntar `workerSrc` al CDN es el fallo intermitente t
 trae por `fetch` y se envuelve en un `Blob` local. Tres niveles: blob → URL directa → sin worker (en
 el hilo principal: funciona y congela la pestaña, y **se avisa**).
 
-### `GET|POST /api/apu/extraer-texto` (protegido · acción de `api/apu/[accion].js`)
+### `GET|POST /api/apu/extraer-texto` (protegido · acción de `lib/handlers/apu/editor.js`)
 
 `GET` devuelve el contrato, los umbrales, el catálogo vigente y si el OCR está configurado.
 `POST` recibe `{ texto_extraido, objeto_proceso, unspsc, precio_base, imagenes_base64 }` y devuelve
@@ -1539,7 +1548,7 @@ duplicar el ml). Son dos preguntas distintas, y hay una prueba que impide «unif
 **La unidad no se convierte NUNCA.** Pasar m² a m³ exige un espesor que el catálogo no conoce. Cuando
 difieren se marca `unidad_discrepante` y se conserva **la del pliego**, que es la que se va a pagar.
 
-### `POST /api/apu/descargar` (protegido · acción de `api/apu/[accion].js`)
+### `POST /api/apu/descargar` (protegido · acción de `lib/handlers/apu/editor.js`)
 
 Baja el PDF de una URL porque **el navegador no puede** (política de mismo origen; los portales de
 contratación no mandan `Access-Control-Allow-Origin`). Devuelve el PDF en base64 para que pdf.js lo
@@ -1698,7 +1707,7 @@ con dos archivos propios eran 14.
 **El catálogo es público y eso es la regla, no una excepción**: lo que no sale sin llave son las cifras
 del *perfil*. Escribir el catálogo sí exige llave (`/api/admin/apu/cargar-catalogo`).
 
-**Van en UNA sola función** (`api/apu/[accion].js`, ruta dinámica). El plan Hobby de Vercel admite **12
+**Van en UNA sola función** (`lib/handlers/apu/editor.js`, ruta dinámica). El plan Hobby de Vercel admite **12
 Serverless Functions por despliegue** y el repositorio ya estaba en 12: un archivo más y falla el
 despliegue **entero**. Por eso `/api/apu/catalogo` dejó de tener archivo propio y se plegó ahí —misma
 URL, mismo contrato, sigue siendo público—. Hay una prueba que cuenta los archivos bajo `api/` y otra
