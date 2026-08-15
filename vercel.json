@@ -8,36 +8,44 @@
     { "source": "/pliego.html", "destination": "/#/apu", "permanent": false }
   ],
   "rewrites": [
+    { "source": "/api/apu/extraer-texto", "destination": "/api/pliego?op=extraer-texto" },
+    { "source": "/api/apu/descargar", "destination": "/api/pliego?op=descargar" },
+    { "source": "/api/apu/:accion", "destination": "/api/apu?accion=:accion" },
+    { "source": "/api/sync/historico", "destination": "/api/procesos?op=historico" },
+    { "source": "/api/sync", "destination": "/api/procesos?op=sync" },
+    { "source": "/api/oportunidades", "destination": "/api/procesos?op=listar" },
+    { "source": "/api/indice-baja", "destination": "/api/procesos?op=baja" },
+    { "source": "/api/competencia-detalle", "destination": "/api/inteligencia" },
+    { "source": "/api/diagnostico", "destination": "/api/perfil?op=diagnostico" },
+    { "source": "/api/resumen", "destination": "/api/perfil?op=resumen" },
+    { "source": "/api/admin/rup", "destination": "/api/admin?op=rup" },
+    { "source": "/api/admin/experiencia", "destination": "/api/admin?op=experiencia" },
+    { "source": "/api/admin/cobertura-rup", "destination": "/api/admin?op=cobertura" },
+    { "source": "/api/admin/apu/cargar-catalogo", "destination": "/api/admin?op=cargar-catalogo" },
     {
       "source": "/api/admin/cargar-experiencia-genesis",
-      "destination": "/api/admin/experiencia?origen=repositorio"
+      "destination": "/api/admin?op=experiencia&origen=repositorio"
     },
     {
       "source": "/api/probabilidad-desglose",
-      "destination": "/api/competencia-detalle?vista=probabilidad"
+      "destination": "/api/inteligencia?vista=probabilidad"
     },
     {
       "source": "/api/paa",
-      "destination": "/api/competencia-detalle?vista=paa"
+      "destination": "/api/inteligencia?vista=paa"
     },
     {
       "source": "/api/admin/rup-desde-pdf",
-      "destination": "/api/admin/rup?origen=pdf"
+      "destination": "/api/admin?op=rup&origen=pdf"
     }
   ],
   "functions": {
-    "api/sync.js": { "maxDuration": 300, "includeFiles": "data/**" },
-    "api/sync/historico.js": { "maxDuration": 300, "includeFiles": "data/**" },
-    "api/diagnostico.js": { "maxDuration": 60, "includeFiles": "data/**" },
-    "api/oportunidades.js": { "maxDuration": 60, "includeFiles": "data/**" },
-    "api/resumen.js": { "maxDuration": 60, "includeFiles": "data/**" },
-    "api/admin/rup.js": { "maxDuration": 60, "includeFiles": "data/**" },
-    "api/admin/experiencia.js": { "maxDuration": 60, "includeFiles": "data/**" },
-    "api/admin/cobertura-rup.js": { "maxDuration": 60, "includeFiles": "data/**" },
-    "api/competencia-detalle.js": { "maxDuration": 60, "includeFiles": "data/**" },
-    "api/indice-baja.js": { "maxDuration": 300, "includeFiles": "data/**" },
-    "api/apu/[accion].js": { "maxDuration": 60, "includeFiles": "data/**" },
-    "api/admin/apu/cargar-catalogo.js": { "maxDuration": 60, "includeFiles": "data/**" }
+    "api/procesos.js": { "maxDuration": 300, "includeFiles": "data/**" },
+    "api/inteligencia.js": { "maxDuration": 60, "includeFiles": "data/**" },
+    "api/perfil.js": { "maxDuration": 60, "includeFiles": "data/**" },
+    "api/admin.js": { "maxDuration": 60, "includeFiles": "data/**" },
+    "api/apu.js": { "maxDuration": 60, "includeFiles": "data/**" },
+    "api/pliego.js": { "maxDuration": 60, "includeFiles": "data/**" }
   },
   "headers": [
     {

@@ -2656,6 +2656,52 @@ completa y límites en `docs/ACCESIBILIDAD.md`. Decisiones que no hay que re-apr
   usa fechas fijas de 2026 (quinto hábil sin festivos = 7 de abril): una prueba de calendario
   calibrada contra el reloj real no prueba nada.
 
+### Consolidación a 6 routers por dominio (ago 2026 · Fase 0 del plan Detecta v3)
+
+- **`api/` contiene EXACTAMENTE 6 archivos** — `procesos.js` (sync · historico · listar · baja),
+  `inteligencia.js` (las vistas del antiguo competencia-detalle: entidad · adjudicatario/competidor ·
+  probabilidad · paa), `perfil.js` (resumen · diagnostico), `admin.js` (rup · experiencia ·
+  cobertura · cargar-catalogo), `apu.js` (el editor entero) y `pliego.js` (extraer-texto ·
+  descargar) — y la suite fija el conteo en `=== 6`. La regla operativa nueva: **un endpoint nuevo
+  se pliega como `op` en el router de su dominio, jamás como archivo propio.** Quedan 6 huecos de
+  reserva bajo el límite de 12 del plan Hobby; la época de «no se puede crear /api/X porque estamos
+  en 12» terminó, pero el patrón de plegar sigue siendo el default.
+- **Los routers NO llevan lógica ni autorización.** Leen `op` de la query (y del path como
+  respaldo: un handler que solo funciona detrás del enrutador no se puede probar) y delegan con
+  `require` DIFERIDO en `lib/handlers/{dominio}/` — los MISMOS archivos que eran funciones,
+  movidos con `git mv` sin reescribirlos (solo cambió la profundidad de sus requires:
+  `../lib/x` → `../../x`). Un router que autorizara por su cuenta sería una segunda copia de
+  `lib/auth` que se desincroniza; la única escritura sin token (RUP por PDF) conserva sus
+  cerraduras porque están en el handler, no en la ruta. Hay prueba (j.12-bis) de que el 401 de
+  resumen, cargar-catalogo y extraer-texto ATRAVIESA el router.
+- **Todas las URL viejas siguen respondiendo igual** vía `rewrites` de `vercel.json`
+  (`/api/sync`, `/api/sync/historico`, `/api/oportunidades`, `/api/indice-baja`,
+  `/api/competencia-detalle`, `/api/diagnostico`, `/api/resumen`, `/api/admin/*`,
+  `/api/apu/:accion`). Dos detalles que no hay que re-aprender: (1) **los rewrites de Vercel NO
+  se encadenan**, por eso los alias históricos (`/api/paa`, `/api/probabilidad-desglose`,
+  `/api/admin/rup-desde-pdf`, `/api/admin/cargar-experiencia-genesis`) se re-apuntaron DIRECTO a
+  los routers nuevos; (2) la query del visitante se FUSIONA con la del destino (comportamiento ya
+  verificado en producción por `/api/paa?medir=1`), que es lo que hace que `?op=` conviva con los
+  parámetros de siempre. **El cron sigue en `/api/sync`** (pasa por el rewrite): apuntarlo a una
+  URL con query habría arriesgado la validación del deploy sin ganancia.
+- **El frontend NO se migró en esta fase, a propósito**: `public/*.js` sigue llamando las URL
+  clásicas, que es justo lo que los rewrites garantizan. Migrar el frontend a
+  `/api/procesos?op=…` y solo entonces retirar los rewrites de compatibilidad es el paso
+  siguiente del plan (las URLs de los alias del dueño —pegadas en Chrome— deben sobrevivir
+  siempre). Las auto-invocaciones del servidor (sync auto-encadenada, historico) también usan
+  las URL viejas vía rewrite, deliberadamente sin tocar.
+- **Dos premisas del encargo eran FALSAS y quedaron medidas en `docs/datos.md`**: el filtrado ya
+  leía `estado_del_procedimiento` primero (con `fase` de respaldo y listas canónicas — no hubo
+  ningún cambio de filtro, así que el conteo antes/después es idéntico por construcción), y los
+  perfiles/UNSPSC ya tenían una sola fuente cada uno (`lib/perfiles.js` IMPORTA las whitelists de
+  `lib/unspsc.js`; fusionarlas crearía el ciclo `perfiles → unspsc → perfiles` que este proyecto
+  evita a propósito). La lección de método sigue siendo la de siempre: **auditar antes de tocar —
+  las premisas de un encargo se verifican contra el código real, no se ejecutan por obediencia.**
+- **`lib/handlers/admin/experiencia.js` requiere el JSON de la raíz con TRES niveles**
+  (`../../../experiencia_genesis_106.json`): al moverse el handler un nivel más adentro, el
+  require estático —el que hace que el tracer de Vercel lo empaquete— cambió de profundidad. Si
+  alguien mueve un handler, los requires de la RAÍZ (no solo los de `lib/`) cambian con él.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).
