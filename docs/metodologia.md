@@ -147,6 +147,33 @@ La cifra se recalcula y se imprime en cada corrida de la suite (`· motor de cos
 - **AIU de subcontratista**: pendiente (§6). No se añadió la casilla porque hoy ningún ítem lleva
   el AIU del subcontratista como dato: una casilla sin dato detrás es un control que no hace nada.
 
+## 4 bis. Panel Piso / Techo — ¿me presento, y a cuánto? (Fase 3, 2026-08-15)
+
+`lib/apu/piso_techo.js`, servido dentro de `POST /api/apu?op=rentabilidad` como bloque `piso_techo`
+y pintado primero entre los resultados de la pestaña *Precios*. Es una capa pura sobre lo que ya
+existe (no recalcula el costo ni la cascada de baja).
+
+| Cifra | Fórmula | Fuente | Regla de honestidad |
+|---|---|---|---|
+| Costo total | `CD × (1 + A + I + U_min)` (aditivo; compuesto si así está el AIU) | Su APU (`lib/apu/calculo`) | `U_min` la declara el usuario en *Ajustes → Utilidad mínima aceptable*; sin declararla se usa la U del AIU **y se dice**. |
+| Piso rentable («precio mínimo para no perder plata») | `costo_total ÷ (1 − τ)`, `τ` = contribución de obra pública 5 % + deducciones de acta cargadas | Ley 418/1997 art. 120 (permanente por Ley 1738/2014); deducciones del usuario | Sin deducciones cargadas el piso es **cota inferior** y viaja `piso_es_cota_inferior:true`. |
+| Techo competitivo («precio al que probablemente se gana») | `presupuesto_oficial × (1 − baja_mediana)` | `lib/indice_baja` (p6dx adjudicados): entidad+familia → entidad → departamento+familia | **Solo con n ≥ 5** en el nivel usado. Con menos: «Sin referencia» y NO hay techo. El índice por segmento (mín. 3) no se usa. |
+| Umbral de precio artificialmente bajo | `presupuesto_oficial × 0,80` | Regla de referencia (la media − σ de las ofertas no se conoce antes del cierre); riesgo: D. 1082/2015 art. 2.2.1.1.2.2.4 | Se avisa solo cuando el piso queda por debajo. Declarado como referencia, no como norma. |
+| Cuántos suelen presentarse | promedio de oferentes por entidad | `lib/indice_competencia` (p6dx), n ≥ 5 | Del proceso abierto no existe (hgi6 = 0 filas hasta la apertura): «Sin referencia», jamás 0. |
+
+Veredicto (frase completa, nunca un porcentaje suelto): `piso > presupuesto` → «No se presente…
+se rechaza» · sin techo → «Su precio mínimo es X. No tenemos historial suficiente…» · `techo <
+piso` → «No se presente. El precio que necesita para ganar está por debajo del precio que necesita
+para no perder plata.» · si no → «Preséntese entre piso y techo» (+ aviso de justificación si piso
+< umbral). Además dice dónde queda el precio ACTUAL del editor respecto al rango — incluido el caso
+normal del APU con U = 5 %, que cubre el AIU pero no la contribución del 5 %: se dice cuánto falta.
+
+**Justificación de precio** (`public/justificacion.js`, botón «Descargar mi justificación de
+precio»): documento HTML imprimible con el marco (D. 1082 art. 2.2.1.1.2.2.4), el valor y su
+estructura, el reparto del costo directo, cómo se fijó el precio (piso, techo, mercado) y la tabla
+de APU ítem a ítem con el origen de cada precio; se genera desde el MISMO presupuesto y el MISMO
+panel que se ven en pantalla, nunca desde texto genérico.
+
 ## 5. Estado de verificación — resumen honesto
 
 - **Verificados contra la norma**: prestaciones (CST, Ley 50/1990, Ley 100/1993 con sus reformas,
@@ -168,7 +195,15 @@ La cifra se recalcula y se imprime en cada corrida de la suite (`· motor de cos
 3. Decidir con evidencia si el factor de jornada se aplica al equipo alquilado por día.
 4. AIU de subcontratista: añadir el dato por ítem en la importación y la casilla que lo suma o
    excluye.
-5. Contrastar los jornales del catálogo con el costo normativo por hora (§2): un oficial del
+5. (Fase 3) Umbral de precio artificialmente bajo por MODALIDAD: el dueño advierte que «hay
+   modalidades de selección que te descalifican si te bajas cierto %». No se encontró una tabla
+   verificable de porcentajes por modalidad (los Documentos Tipo rechazan por EXCEDER el
+   presupuesto y remiten la oferta baja al art. 2.2.1.1.2.2.4); el panel usa el 80 % de referencia
+   y lo declara. Con la tabla verificada, `TEMERARIO_PCT` pasa a depender de la modalidad.
+6. (Fase 3) `hgi6-6wh3` en vivo para «contra quién compite» (nombres de proponentes por entidad),
+   y `jbjy-vk9h` para «cómo se ejecuta» (adiciones, pagos) — verificados, no integrados
+   (`docs/datos.md` §5).
+7. Contrastar los jornales del catálogo con el costo normativo por hora (§2): un oficial del
    catálogo cuesta $154.171/día con prestaciones; un trabajador de salario mínimo cuesta $132.457
    por día de 7 h según §2 (con exoneración). El contraste sirve para detectar jornales por debajo
    del piso legal cuando el catálogo se recalibre.

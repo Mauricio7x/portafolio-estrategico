@@ -1519,6 +1519,7 @@
   let ultimoCalculo = null; // respuesta de /api/apu/calcular
   let idActual = null;      // id del presupuesto cargado/guardado
   let ultimoOptimizador = null; // bloque `optimizador` de /api/apu/rentabilidad
+  let ultimaRentabilidad = null; // respuesta ENTERA de /api/apu?op=rentabilidad (presupuesto + piso_techo): alimenta la justificación
   /* Guarda de reentrada: «Calcular APU» dispara la rentabilidad sola cuando hay
      proceso asociado, y aplicar un descuento vuelve a calcular el APU. Sin esto
      dos pulsaciones seguidas dejarían dos peticiones en vuelo pintando la misma
@@ -1548,6 +1549,11 @@
          acabarían con dos cifras distintas. Vacío = sin dato y entonces no se
          compara contra nada, en vez de inventarle un techo al presupuesto. */
       cuantia_cop: $("cuantia").value.trim() === "" ? null : Number($("cuantia").value),
+      /* Utilidad MÍNIMA aceptable (Fase 3): con ella se calcula el precio piso
+         del panel «¿Me presento?». Vacío = sin declarar → el servidor usa la U
+         del AIU y lo dice; NO se rellena aquí con la U para que el panel pueda
+         distinguir «declarada» de «supuesta». */
+      utilidad_minima_pct: $("utilidad-minima") && $("utilidad-minima").value.trim() !== "" ? Number($("utilidad-minima").value) : null,
     };
   }
 
@@ -3058,9 +3064,10 @@
     for (const id of ["objeto", "codigos-unspsc", "entidad", "id-proceso", "cuantia", "plazo-meses"]) {
       if ($(id)) $(id).value = "";
     }
-    for (const id of ["seccion-resumen", "seccion-rentabilidad", "seccion-precio-sugerido", "r-validaciones"]) {
+    for (const id of ["seccion-resumen", "seccion-rentabilidad", "seccion-precio-sugerido", "seccion-piso-techo", "r-validaciones"]) {
       if ($(id)) $(id).classList.add("hidden");
     }
+    ultimaRentabilidad = null;
     const inf = $("inferencia");
     if (inf) { inf.classList.add("hidden"); inf.innerHTML = ""; }
     pintarTabla();
@@ -3147,6 +3154,8 @@
       };
       const c = await api("/api/apu?op=rentabilidad", { method: "POST", body: cuerpo });
       if (!c) return; // el usuario canceló el diálogo del token
+      ultimaRentabilidad = c;
+      pintarPisoTecho(c);
       pintarRentabilidad(c);
       pintarPrecioSugerido(c.optimizador);
       msgApu(auto ? "Rentabilidad y precio sugerido actualizados." : "Rentabilidad actualizada.", "ok");
@@ -3162,6 +3171,128 @@
       btn.disabled = false;
       btn.textContent = antes;
     }
+  }
+
+  /* ════════════════════ Panel Piso / Techo (Fase 3) ════════════════════
+     La respuesta de una frase a «¿me presento o no, y a cuánto?». Se pinta
+     ANTES que la rentabilidad y el precio sugerido porque es la decisión; los
+     otros dos son el detalle. Regla de la interfaz: punto de color + frase
+     completa, nunca un porcentaje suelto; cada cifra con su origen debajo;
+     «Sin referencia» cuando no hay 5 procesos — jamás un techo inventado ni
+     un «0 oferentes». */
+  const TONO_VEREDICTO = {
+    presentarse: { punto: "bg-green-500", caja: "bg-green-50 ring-green-600/20 text-green-950" },
+    no_presentarse: { punto: "bg-red-500", caja: "bg-red-50 ring-red-600/20 text-red-950" },
+    no_presentarse_supera_presupuesto: { punto: "bg-red-500", caja: "bg-red-50 ring-red-600/20 text-red-950" },
+    sin_referencia: { punto: "bg-gray-400", caja: "bg-gray-100 ring-gray-900/10 text-gray-900" },
+  };
+  function pintarPisoTecho(c) {
+    const pt = c && c.piso_techo;
+    const sec = $("seccion-piso-techo");
+    if (!sec) return;
+    sec.classList.remove("hidden");
+    const sin = $("pt-sin-datos");
+    const cuerpo = $("pt-cuerpo");
+    if (!pt || !pt.aplicable) {
+      cuerpo.classList.add("hidden");
+      sin.classList.remove("hidden");
+      sin.textContent = pt && pt.veredicto ? pt.veredicto : "No se pudo armar el panel: falta el presupuesto oficial del proceso o el costo.";
+      $("pt-origen").textContent = "";
+      return;
+    }
+    sin.classList.add("hidden");
+    cuerpo.classList.remove("hidden");
+    const cf = pt.cifras;
+    $("pt-origen").textContent = cf.modalidad ? cf.modalidad : "";
+    $("pt-presupuesto").textContent = copRent(cf.presupuesto_oficial);
+    $("pt-costo").textContent = copRent(cf.costo_total);
+    $("pt-costo-nota").textContent = `Su APU · con A, I y utilidad mínima del ${pctRent(cf.utilidad_minima_pct)}`;
+    if (cf.baja_esperada_pct != null) {
+      /* Con mediana 0 no se dice «0 %» (se lee como «no hay dato»): se dice el
+         HECHO, que aquí se adjudica por el presupuesto oficial. */
+      $("pt-baja").textContent = cf.baja_esperada_pct === 0 ? "No baja el precio" : pctRent(cf.baja_esperada_pct);
+      $("pt-baja-nota").textContent = `${cf.baja_procesos} procesos adjudicados${cf.baja_esperada_pct === 0 ? ": se adjudica por el presupuesto oficial" : ""}${cf.baja_modalidad ? " · " + cf.baja_modalidad : ""}`;
+    } else {
+      $("pt-baja").textContent = "Sin referencia";
+      $("pt-baja-nota").textContent = cf.baja_procesos_vistos_sin_base > 0
+        ? `Solo ${cf.baja_procesos_vistos_sin_base} comparables; hacen falta ${pt.minimo_procesos}`
+        : "No hay procesos anteriores comparables";
+    }
+    // el conteo de oferentes NUNCA se pinta como 0: `null` es «sin referencia»
+    if (cf.oferentes_promedio != null) {
+      $("pt-oferentes").textContent = `${nf2.format(cf.oferentes_promedio)} por proceso`;
+      $("pt-oferentes-nota").textContent = `Promedio de ${cf.oferentes_procesos} procesos de esta entidad`;
+    } else {
+      $("pt-oferentes").textContent = "Sin referencia";
+      $("pt-oferentes-nota").textContent = "Menos de 5 procesos con oferentes contados";
+    }
+    $("pt-piso").textContent = copRent(cf.piso_rentable);
+    $("pt-piso-nota").textContent = cf.piso_es_cota_inferior
+      ? "Cota inferior: cargue las deducciones de acta en Ajustes"
+      : "Incluye contribución del 5 % y deducciones de acta";
+    if (cf.techo_competitivo != null) {
+      $("pt-techo").textContent = copRent(cf.techo_competitivo);
+      $("pt-techo-nota").textContent = cf.baja_esperada_pct === 0
+        ? "El presupuesto oficial: aquí se gana sin bajar el precio"
+        : `Presupuesto oficial menos lo que suele bajar aquí (${pctRent(cf.baja_esperada_pct)})`;
+    } else {
+      $("pt-techo").textContent = "Sin referencia";
+      $("pt-techo-nota").textContent = "No hay historial suficiente para estimarlo";
+    }
+    const tono = TONO_VEREDICTO[pt.estado] || TONO_VEREDICTO.sin_referencia;
+    const caja = $("pt-veredicto");
+    caja.className = `mt-5 rounded-2xl p-5 ring-1 ring-inset ${tono.caja}`;
+    $("pt-punto").className = `mt-1 inline-block h-3 w-3 shrink-0 rounded-full ${tono.punto}`;
+    $("pt-frase").textContent = pt.veredicto || "";
+    $("pt-detalle").textContent = pt.detalle || "";
+    $("pt-detalle").classList.toggle("hidden", !pt.detalle);
+    $("pt-precio-actual").textContent = pt.frase_precio_actual || "";
+    $("pt-precio-actual").classList.toggle("hidden", !pt.frase_precio_actual);
+    const fuentes = [];
+    for (const [k, v] of Object.entries(pt.fuentes || {})) {
+      fuentes.push(`<li><span class="font-medium">${esc(k.replace(/_/g, " "))}:</span> ${esc(v)}</li>`);
+    }
+    for (const sup of pt.supuestos || []) fuentes.push(`<li>Supuesto: ${esc(sup)}</li>`);
+    $("pt-fuentes").innerHTML = fuentes.join("");
+    $("btn-justificacion").disabled = false;
+  }
+
+  /* «Descargar mi justificación de precio»: el documento que sustenta la
+     oferta cuando la entidad pide explicar un precio bajo, generado desde el
+     MISMO presupuesto y el MISMO panel que se están viendo (la respuesta
+     entera de rentabilidad), nunca desde texto genérico. El generador vive en
+     public/justificacion.js (UMD) para que la suite lo ejecute. */
+  function descargarJustificacion() {
+    if (!ultimaRentabilidad || !window.Justificacion) {
+      msgApu("Calcule primero el APU con el proceso asociado para poder generar la justificación.", "error");
+      return;
+    }
+    const sel = $("perfil");
+    const oferente = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].textContent.trim() : "";
+    const doc = window.Justificacion.generar({
+      calculo: ultimaRentabilidad.presupuesto,
+      piso_techo: ultimaRentabilidad.piso_techo,
+      contexto: {
+        entidad: $("entidad").value.trim(),
+        id_proceso: $("id-proceso").value.trim(),
+        objeto: $("objeto").value.trim(),
+        departamento: $("departamento").value,
+        modalidad: modalidadProceso,
+        oferente,
+        presupuesto_oficial: Number($("cuantia").value) || null,
+        fecha: new Date().toISOString().slice(0, 10),
+      },
+    });
+    const blob = new Blob([doc.html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = doc.nombre;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    msgApu(`Justificación descargada (${doc.nombre}). Ábrala en el navegador e imprímala a PDF para adjuntarla.`, "ok");
   }
 
   function pintarRentabilidad(c) {
@@ -3409,6 +3540,7 @@
     // envuelto en una flecha a propósito: pasarla directa le entregaría el
     // MouseEvent como opciones y `{auto}` se leería de un objeto que no lo es
     $("btn-rentabilidad").addEventListener("click", () => calcularRentabilidad());
+    if ($("btn-justificacion")) $("btn-justificacion").addEventListener("click", descargarJustificacion);
     sincronizarBaja();
     pintarTabla();
     try {

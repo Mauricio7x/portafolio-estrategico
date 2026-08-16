@@ -2808,6 +2808,57 @@ landing nueva en `index.html` + `onboarding.js`. Decisiones que no hay que re-ap
 - **`value="salarios"` en el selector de unidad, no `SMMLV`**: la prueba de jerga barre el HTML entero
   (también los atributos); el JS traduce a la unidad que espera el servidor.
 
+### Fase 3 · Panel Piso / Techo (ago 2026)
+
+`lib/apu/piso_techo.js` (capa PURA), bloque `piso_techo` en `POST /api/apu?op=rentabilidad`,
+sección `#seccion-piso-techo` (primera entre los resultados de *Precios*), campo «Utilidad mínima
+aceptable» en Ajustes y `public/justificacion.js` (UMD). Decisiones que no hay que re-aprender:
+
+- **LAS DOS FUENTES DEL ENCARGO SE VERIFICARON Y NINGUNA SE INTEGRÓ, con medición** (`docs/datos.md`
+  §5). `hgi6-6wh3` responde **0 filas para procesos ABIERTOS** (los proponentes aparecen tras la
+  apertura) y en adjudicados su conteo == `respuestas_al_procedimiento` de p6dx (8/8): aporta
+  NOMBRES, no un conteo. `jbjy-vk9h` publica `valor_del_contrato` == `valor_total_adjudicacion` de
+  p6dx (8/8, al centavo): la «baja verdadera» que pedía el plan **es la que ya calcula
+  `lib/indice_baja`**; jbjy añade EJECUCIÓN (pagos, adiciones), otra pregunta. Se une por
+  `proceso_de_compra` = `id_del_portafolio` de p6dx, columna que el corpus NO proyecta hoy. **El 403
+  a datos.gov.co era una observación vieja**: las dos respondieron 200.
+- **El techo es UNA fórmula, no dos**: `piso_techo.cifras.techo_competitivo` ≡
+  `ajuste_competitivo.precio_sugerido` (misma mediana, mismo redondeo), con prueba. La cascada de
+  baja se LLAMA (`bajaDeMercado`, mínimo 5) y el panel vuelve a exigir n ≥ 5 por su cuenta
+  (`bajaUtilizable`) por si alguien lo alimenta a mano; **el índice por SEGMENTO (mínimo 3) no se usa
+  aquí jamás**. Sin base → «Sin referencia» y `techo_competitivo: null`: un techo sobre 3 procesos
+  es peor que ninguno porque el usuario lo va a creer.
+- **El piso lleva la contribución del 5 % (y las deducciones cargadas) como DIVISOR**, no solo el AIU:
+  «no perder plata» perdiéndola en cada acta sería la mentira más cara del panel. Sin deducciones
+  cargadas el piso es COTA INFERIOR y viaja `piso_es_cota_inferior`. Consecuencia medida en el caso
+  real: el precio del APU con U = 5 % queda por debajo del piso SOLO por la contribución — y el
+  estado `bajo_el_piso_por_deducciones` lo dice con la cifra que falta, en vez de un genérico
+  «perdería plata».
+- **La utilidad mínima la declara el usuario** (`config.utilidad_minima_pct`, campo en Ajustes que
+  viaja `null` cuando está vacío); sin declararla se usa la U del AIU y se publica en `supuestos`.
+  El frontend NO la rellena con la U: el panel tiene que distinguir «declarada» de «supuesta».
+- **El umbral de precio artificialmente bajo (80 %) es de REFERENCIA y se declara**: la «media de las
+  ofertas − σ» del encargo no se conoce antes del cierre (hgi6 no trae precios). Los porcentajes de
+  descalificación por MODALIDAD que el dueño advierte NO se encontraron en fuente verificable y no
+  se inventaron: pendiente en `docs/metodologia.md` §6.
+- **Con mediana 0 el panel no dice «0 %»** (se lee como sin dato): dice «No baja el precio · se
+  adjudica por el presupuesto oficial», y el techo se rotula «aquí se gana sin bajar el precio».
+- **`hgi6-6wh3` trae `nit_proveedor = "No Definido"`**, el mismo literal-trampa que
+  `nit_del_proveedor_adjudicado` en p6dx: si algún día se integra, no es un NIT ni un `null`.
+- **La justificación se genera desde la respuesta ENTERA de rentabilidad guardada en memoria**
+  (`ultimaRentabilidad`: presupuesto + `piso_techo`), no desde `ultimoCalculo`: así el documento dice
+  las mismas cifras que el panel que se está viendo. Es un `.html` imprimible (Blob + `<a download>`),
+  y `Justificacion.generar` publica `resumen` para que la prueba compare sus cifras con el resumen
+  del presupuesto. `nombreArchivo` es determinista (la fecha entra como dato).
+- **El panel se pinta ANTES que la rentabilidad** en `calcularRentabilidad` y `reiniciarEditorParaProceso`
+  lo esconde: un veredicto del proceso anterior bajo la cabecera del nuevo es «cifras viejas con
+  aspecto de nuevas», el modo de fallo más caro del módulo. Se dispara con la misma condición de
+  siempre (`id-proceso` presente), fijada por la prueba del optimizador.
+- **La verificación fue en NAVEGADOR REAL antes de desplegar**: servidor local que sirve `public/` y
+  reenvía `/api/*` a producción, inyectando `piso_techo` calculado con el módulo local sobre la
+  respuesta real de rentabilidad; Chromium recorrió tarjeta → «Calcular mi precio» → ítems → «Calcular
+  APU» → panel → descarga. Así se cazaron los dos refinamientos de arriba (mediana 0 y contribución).
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).

@@ -918,6 +918,12 @@
                      class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
             </label>
             <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Utilidad mínima aceptable %</span>
+              <input id="utilidad-minima" type="number" min="0" max="100" step="0.5" placeholder="= la U"
+                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+              <span class="mt-1 block text-xs text-gray-400">Con esta utilidad se calcula su precio mínimo. Vacío = la U de arriba.</span>
+            </label>
+            <label class="block">
               <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Anticipo %</span>
               <input id="anticipo" type="number" min="0" max="50" step="1" placeholder="sin dato"
                      class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
@@ -1060,6 +1066,81 @@
       </section>
 
       <!-- ══════ Resultados · solo aparecen tras calcular ══════ -->
+      <!-- PANEL PISO / TECHO (Fase 3): la respuesta de una frase a «¿me presento
+           o no, y a cuánto?». Va PRIMERO entre los resultados porque es la
+           decisión; el resumen, la rentabilidad y el precio sugerido son el
+           detalle que la sostiene. Nace oculto: se pinta con la rentabilidad. -->
+<section id="seccion-piso-techo" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 class="font-semibold tracking-tight">¿Me presento, y a cuánto?</h2>
+          <span id="pt-origen" class="text-xs text-gray-400"></span>
+        </div>
+
+        <div id="pt-sin-datos" class="mt-4 hidden rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700"></div>
+
+        <div id="pt-cuerpo" class="hidden">
+          <!-- Máximo tres cifras por bloque, cada una con su origen debajo. -->
+          <dl class="mt-4 divide-y divide-gray-100 text-sm">
+            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
+              <dt class="text-gray-600">Lo que la entidad tiene presupuestado</dt>
+              <dd class="text-right"><span id="pt-presupuesto" class="text-base font-semibold tabular-nums">—</span>
+                <span class="block text-xs text-gray-400">SECOP II</span></dd>
+            </div>
+            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
+              <dt class="text-gray-600">Lo que a usted le cuesta hacerlo</dt>
+              <dd class="text-right"><span id="pt-costo" class="text-base font-semibold tabular-nums">—</span>
+                <span id="pt-costo-nota" class="block text-xs text-gray-400"></span></dd>
+            </div>
+            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
+              <dt class="text-gray-600">Lo que suele bajar esta entidad</dt>
+              <dd class="text-right"><span id="pt-baja" class="text-base font-semibold tabular-nums">—</span>
+                <span id="pt-baja-nota" class="block text-xs text-gray-400"></span></dd>
+            </div>
+            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
+              <dt class="text-gray-600">Cuántos suelen presentarse aquí</dt>
+              <dd class="text-right"><span id="pt-oferentes" class="text-base font-semibold tabular-nums">—</span>
+                <span id="pt-oferentes-nota" class="block text-xs text-gray-400"></span></dd>
+            </div>
+          </dl>
+
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Su precio mínimo para no perder plata</p>
+              <p id="pt-piso" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p id="pt-piso-nota" class="text-xs text-gray-500"></p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">El precio al que probablemente se gana</p>
+              <p id="pt-techo" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p id="pt-techo-nota" class="text-xs text-gray-500"></p>
+            </div>
+          </div>
+
+          <!-- El veredicto: punto de color + frase completa. Nunca un porcentaje suelto. -->
+          <div id="pt-veredicto" class="mt-5 rounded-2xl p-5 ring-1 ring-inset">
+            <p class="flex items-start gap-3 text-base font-semibold">
+              <span id="pt-punto" class="mt-1 inline-block h-3 w-3 shrink-0 rounded-full" aria-hidden="true"></span>
+              <span id="pt-frase"></span>
+            </p>
+            <p id="pt-detalle" class="mt-2 pl-6 text-sm text-gray-700"></p>
+            <p id="pt-precio-actual" class="mt-2 pl-6 text-sm text-gray-600"></p>
+          </div>
+
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button id="btn-justificacion" type="button"
+                    class="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">
+              Descargar mi justificación de precio
+            </button>
+            <span class="text-xs text-gray-500">Si la entidad le pide sustentar el precio, este documento lleva su APU detrás.</span>
+          </div>
+
+          <details class="mt-4 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
+            <summary class="cursor-pointer text-xs text-gray-500 hover:text-gray-700">De dónde sale cada cifra y qué se supuso</summary>
+            <ul id="pt-fuentes" class="mt-2 space-y-1 text-xs text-gray-600"></ul>
+          </details>
+        </div>
+      </section>
+
 <section id="seccion-resumen" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">Resumen del presupuesto</h2>
         <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -1970,6 +2051,7 @@
   <script src="/xlsx_lectura.js"></script>
   <script src="/apu_libro.js"></script>
   <script src="/costos.js"></script>
+  <script src="/justificacion.js"></script>
   <script src="/pliego.js"></script>
   <script src="/app.js"></script>
 </body>
