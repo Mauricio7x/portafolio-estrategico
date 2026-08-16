@@ -1726,7 +1726,25 @@ red, como la retail) y servido por `lib/apu/invias.js` (hoja) → campo `referen
 `detalle.insumos` de `calcular`, bloque `invias` junto al `retail`, y nivel `invias` declarado en la
 cascada de `lib/apu/precios.js`. Evidencia HTTP en el §11 del mismo doc.
 
-- **LA VIGENCIA 2025-2 DE LA API ESTÁ CORRUPTA EN ORIGEN, y por eso se captura 2025-1.** Medido
+- **RE-CAPTURADO A 2026-1 EL 16-AGO-2026, DESDE EL EXCEL OFICIAL, no desde la API.** El INVIAS
+  publica cada vigencia PRIMERO en un libro de todo el país
+  (`hermes2.invias.gov.co/APUs/Provincias/Territorio_APU_{año}_{sem}.xlsx`, 16 MB, hojas «INSUMO
+  MATERIALES» / «INSUMO_EQUIPO» / «INSUMO_TRANSPORTE» con una columna por provincia) y la API va por
+  detrás (ese día: API hasta 2025-2, Excel ya en 2026-1). `tests/capturar_invias.js --xlsx <libro>
+  --vigencia 2026-1` lo lee con `public/xlsx_lectura.js` (el lector del proyecto, 1,2 s) y produce el
+  MISMO JSON: mismas correspondencias, misma cerradura de unidad, nombres de departamento/provincia
+  CANONIZADOS a los de la API (el Excel escribe «ARCHIPIÉLAGO DE SAN ANDRÉS…» y «Vertiente
+  Occidental»; `lib/apu/invias` agrupa por «San Andrés» y «Vertiente Occidente»). Un código que la
+  vigencia nueva ya no trae NO se adapta por similitud: en 2026-1 el INVIAS renumeró los transportes
+  y T0010025 desapareció; su SUCESOR T0100034 («transporte de materiales excavación / préstamo») se
+  declaró A MANO leyendo los 45 transportes del libro (`sucesores` en la correspondencia). **La
+  comparación de medianas contra la vigencia anterior se imprime Y SE GUARDA**
+  (`_meta.contraste_vigencia_anterior`, cocientes 0,74–1,40 en los 23 códigos, 140/140 provincias) y
+  la suite prohíbe commitear un cociente fuera de [0,5; 2]: es la mirada que cazó lo de 2025-2,
+  convertida en cerradura. Sanidad contra el catálogo: acero $4.585/kg (catálogo Bogotá $4.397),
+  arena $81.325/m³ ($81.666), triturado $100.356 ($96.324). Nada de la app cambió: `lib/apu/invias`
+  lee el JSON tal cual y la vigencia viaja declarada en cada referencia.
+- **LA VIGENCIA 2025-2 DE LA API ESTÁ CORRUPTA EN ORIGEN, y por eso se capturó 2025-1 (ago 2026).** Medido
   contrastando las DOS vigencias del mismo código en las 140 provincias: acero de refuerzo a
   $122.000/kg (37× el mercado; 2025-1 da $3.280), agua a $15.900/L (145×; 2025-1 da $110), emulsión
   CRL-0 IDÉNTICA en las 140 provincias (p10 = p90 — huella de un cruce de columnas). Se cazó
@@ -2969,7 +2987,8 @@ vista pública «Cómo calculamos» en *Precios*. Metodología y estado de verif
   metodología B» que citaba el encargo no existe con ese nombre en el portal del IDU. **El método del
   factor de jornada es literalmente el del IDU** («incremento del 2,174 % en los rendimientos» de los
   APU con jornales al pasar de 47 a 46 h). Hallazgo lateral: INVIAS ya publica los APU 2026-1 en xlsx
-  (`Territorio_APU_2026_1.xlsx`) pero la API ArcGIS de `data/apu_invias.json` sigue en 2025-2.
+  (`Territorio_APU_2026_1.xlsx`) y la API ArcGIS sigue en 2025-2 — `data/apu_invias.json` se re-capturó
+  a 2026-1 desde ese Excel el mismo día (ver «Referencia oficial INVIAS por insumo»).
 
 ### Fase 2 · Puerta de entrada de 60 segundos (ago 2026)
 
