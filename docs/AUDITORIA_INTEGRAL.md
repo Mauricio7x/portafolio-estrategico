@@ -1,4 +1,4 @@
-# Auditoría integral · Detecta
+# Auditoría integral · Detekta
 
 **Fecha:** agosto 2026 · **Alcance:** `lib/`, `api/`, `public/`, `data/`, `tests/`, `docs/`, `vercel.json`
 **Base:** `main` @ `7966683` + la rama de esta auditoría · **Suites en verde al cerrar:** `tests/e2e.js` 4/4 y `tests/apu_bench.js`

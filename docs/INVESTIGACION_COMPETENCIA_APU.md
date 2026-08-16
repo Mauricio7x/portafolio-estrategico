@@ -35,12 +35,12 @@ Ecosistema de Legis S.A. (48 años): portal + módulo Presupuestar + planes «In
 - **Licitaciones:** `construdata.com/licitaciones` existe detrás de login; en el snapshot 2016 era
   un agregador de avisos por categoría/municipio/valor. Nada de competencia, histórico de
   adjudicaciones, probabilidad ni precios adjudicados.
-- **Licencia:** base de pago y con licencia. **Incorporar su tarifario a Detecta queda fuera de
+- **Licencia:** base de pago y con licencia. **Incorporar su tarifario a Detekta queda fuera de
   alcance por decisión** (problema legal, no técnico) — ya estaba dicho en `docs/APU_FUENTES.md`.
 
 **Dónde se le gana:** cobertura (4 ciudades contra 140 provincias de INVIAS), naturaleza del dato
 (lista de proveedor contra adjudicado real + oficial de referencia), y la cadena completa
-(ellos no conectan el precio con la licitación; Detecta arranca en la licitación).
+(ellos no conectan el precio con la licitación; Detekta arranca en la licitación).
 
 ## 2 · ERP regionales — SINCO, DataObra, AddControl, ComparaSoftware
 
@@ -77,7 +77,7 @@ Todos asumen que el usuario ya decidió a qué presentarse y ya tiene sus precio
 
 **Lección estructural:** España tiene ecosistema porque tiene formato estándar; **Colombia tiene
 los DATOS públicos (INVIAS, IDU, gobernaciones) pero cada uno vive en su Excel/PDF con su propia
-estructura.** Ese hueco de normalización es exactamente lo que Detecta puede cerrar — y al cerrarlo
+estructura.** Ese hueco de normalización es exactamente lo que Detekta puede cerrar — y al cerrarlo
 queda con algo que ni Presto tiene aquí: los bancos oficiales colombianos, leídos y unificados.
 
 ## 4 · Fuentes de datos reales verificadas EN VIVO (2026-08-13 hora Colombia)
@@ -104,7 +104,7 @@ hay fuente académica gratuita utilizable; CAMACOL publica análisis, no listas.
 
 **⚠️ Licencia INVIAS:** su página declara que los documentos son propiedad de INVÍAS y que el uso
 comercial sin autorización está prohibido. Para el uso actual (app privada del dueño, precios de
-referencia citando la fuente) el riesgo es bajo; **si Detecta se comercializa con esos datos, hay
+referencia citando la fuente) el riesgo es bajo; **si Detekta se comercializa con esos datos, hay
 que pedir autorización** (`preciosunitarios@invias.gov.co`). Es la única fuente de la lista con esa
 cláusula; Boyacá/Valle son CC BY-SA (reutilizables citando) y DANE es información oficial de uso
 público.
@@ -127,7 +127,7 @@ precio óptimo** en una sola herramienta. Lo que falta es la mitad de datos, y y
    16,5 MB): es la respuesta al problema exacto del encargo — la pelea con el interventor por
    temas eléctricos se zanja citando el APU oficial de referencia de la provincia, no un número
    nuestro. Contra esto, los rendimientos «teóricos» de Construdata (30 % de la obra real según
-   UPB) pierden: los de Detecta salen de un contrato adjudicado (Nogal) + el oficial regionalizado.
+   UPB) pierden: los de Detekta salen de un contrato adjudicado (Nogal) + el oficial regionalizado.
 3. **IDU SIIPVIALES para Bogotá** (Excel semestral): cierra el único hueco de INVIAS. Bonus: su
    directorio de proveedores de cotizaciones da una trazabilidad («cotizado a X el fecha Y») que
    ni Construdata publica.
@@ -141,7 +141,7 @@ precio óptimo** en una sola herramienta. Lo que falta es la mitad de datos, y y
    reales adjudicados. Es la versión artesanal y honesta del benchmarking de Procore: aprender de
    datos propios y del mercado real, no de listas de proveedor.
 7. **Contar la ventaja en la interfaz**: donde Construdata dice «precio de lista de proveedor,
-   4 ciudades», Detecta puede decir «precio oficial de referencia de TU provincia (INVIAS 2026-1)
+   4 ciudades», Detekta puede decir «precio oficial de referencia de TU provincia (INVIAS 2026-1)
    + lo que de verdad descontó el que ganó aquí (histórico SECOP)». La cascada visible ya existe
    (`explicarCascada`); las fuentes nuevas entran por ahí sin inventar UI.
 
@@ -169,7 +169,7 @@ mes a mes exige un equipo humano dedicado que este proyecto no tiene. Fingir que
    no puede vender lo gratis como suyo; nosotros sí podemos integrarlo citando la fuente.
 2. **Crowdsourcing con estructura** (nuestro «nivel 1» ya lo hace): cada usuario que corrige un
    precio alimenta SU perfil hoy. La evolución natural es el **agregado anónimo entre usuarios**
-   («el precio mediano que los usuarios de Detecta pagaron por este insumo en Antioquia, n=7») —
+   («el precio mediano que los usuarios de Detekta pagaron por este insumo en Antioquia, n=7») —
    el modelo Waze aplicado a precios. Es EXACTAMENTE el foso de Procore (benchmarking entre
    clientes) y crece solo con el uso. Regla dura: publicar solo con n mínimo y con el n visible;
    con n=1 no hay mediana, hay una anécdota.

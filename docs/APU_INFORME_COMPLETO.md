@@ -233,7 +233,7 @@ Es la única base de precios de obra **pública, gratuita, nacional y regionaliz
   filtrables. [VERIFICADO el descriptor de filtrado; [CONOCIDO] que el contenedor sea `.xlsx`]
 - Carácter **estrictamente referencial**: no sustituye el trabajo técnico del consultor, que debe
   sustentar precios y rendimientos según las condiciones del proyecto. Jurídicamente relevante para
-  Detecta: un APU generado desde esta base es una **estimación de tanteo**, no un presupuesto
+  Detekta: un APU generado desde esta base es una **estimación de tanteo**, no un presupuesto
   oficial. [VERIFICADO]
 - El 22 de marzo de 2026 INVIAS abrió una **solicitud de información pública** para el «Estudio para
   la Actualización de la Base de Datos de Insumos para Análisis de Precios Unitarios y Actividades
@@ -246,7 +246,7 @@ Es la única base de precios de obra **pública, gratuita, nacional y regionaliz
 
 Es la canasta de la que se derivan los APU: precios de materiales, mano de obra, equipo y transporte
 por provincia. En la comunicación institucional aparece integrada al mismo paquete de publicación
-semestral. La distinción operativa para Detecta: **la canasta de insumos es la tabla normalizable;
+semestral. La distinción operativa para Detekta: **la canasta de insumos es la tabla normalizable;
 el APU es la vista compuesta**. [VERIFICADO que existe y que INVIAS la actualiza; [NO HALLADO] un
 archivo separado con URL propia estable]
 
@@ -451,7 +451,7 @@ minuta antes de cotizar.**
    `loader.php?...&idFile=NNNN`, con identificador opaco que cambia en cada publicación [CONOCIDO].
    No hay endpoint estable que se pueda «cronear».
 2. **140 archivos (o 140 hojas)**, uno por provincia. La normalización es un ETL de una vez por
-   semestre, no un fetch en caliente. Encaja con el patrón de Detecta: bajarlo una vez, normalizar,
+   semestre, no un fetch en caliente. Encaja con el patrón de Detekta: bajarlo una vez, normalizar,
    guardarlo en Redis o en `data/` como JSON.
 3. **Sin identificador estable garantizado entre vigencias** [INCIERTO]. Si el catálogo de ítems
    cambia entre 2025-2 y 2026-1, la comparación semestre a semestre exige *fuzzy matching* por
@@ -506,13 +506,13 @@ asfálticos y de concreto, estructuras y drenajes, señalización y seguridad vi
 | Redes eléctricas, alumbrado, telecomunicaciones | Operadores y pliegos; no se halló base pública nacional [NO HALLADO] | Mala |
 | Precios departamentales fuera de Bogotá | Valle del Cauca (decreto anual), Boyacá (Socrata, desactualizado) | Muy desigual |
 
-**La fuente adicional que Detecta ya tiene en casa.** Aquí hay que ser preciso con qué es cada
+**La fuente adicional que Detekta ya tiene en casa.** Aquí hay que ser preciso con qué es cada
 número:
 
 `p6dx-8zbt` trae **`precio_base`, que es el PRESUPUESTO OFICIAL de la entidad, no el precio
 adjudicado**. Filtrar por `estado_del_procedimiento='Adjudicado'` **no** lo convierte en precio
 revelado: sigue siendo el techo del pliego. Para **precio revelado** hay que leer el **valor de
-adjudicación del keyspace histórico** (`licitaciones:historico:mes:*`, que en Detecta ya guarda la
+adjudicación del keyspace histórico** (`licitaciones:historico:mes:*`, que en Detekta ya guarda la
 proyección histórica con datos de adjudicación) y calcular:
 
 ```
@@ -554,7 +554,7 @@ Advertencias de uso de esa consulta, todas con precedente en el proyecto:
   modalidad**, así que no hay una única respuesta.
 - El filtro **UNSPSC + modalidad no es opcional**: sin él el promedio mezcla obra, consultoría y
   suministro y no significa nada. `72%` es el segmento de construcción; ajustar al filtro de obra que
-  ya usa Detecta (`lib/unspsc.js`) si se quiere consistencia con el resto de la app.
+  ya usa Detekta (`lib/unspsc.js`) si se quiere consistencia con el resto de la app.
 - Un promedio por departamento **no es un $/km**: es un tamaño medio de contrato. El $/km exige la
   cantidad de obra, que no está en el dataset.
 
@@ -596,7 +596,7 @@ Es la confusión que más dinero cuesta y conviene dejarla escrita:
    *Siguiente paso:* comparar el catálogo 2025-1 contra 2025-2 y medir cuántos códigos sobreviven.
 5. **AEROCIVIL, CORMAGDALENA y FONTUR quedan sin resolver** [NO HALLADO — se buscó y no apareció
    base de APU publicada; no se concluye que no exista]. *Siguiente paso:* buscar en SECOP II
-   documentos tipo «formulario de presupuesto» de esas entidades — el corpus de Detecta ya identifica
+   documentos tipo «formulario de presupuesto» de esas entidades — el corpus de Detekta ya identifica
    sus procesos por entidad.
 6. **AIU de referencia.** Ninguna entidad publica un **CATÁLOGO general** de AIU de referencia
    [NO HALLADO], **pero el AIU sí consta desagregado en el presupuesto oficial de cada proceso
@@ -604,7 +604,7 @@ Es la confusión que más dinero cuesta y conviene dejarla escrita:
    administrativo**, y los **Documentos Tipo fijan la estructura del presupuesto oficial** en la que
    el AIU aparece desagregado. *Siguiente paso:* extraer el AIU del formulario de presupuesto oficial
    de N procesos de obra **adjudicados**, segmentado por **tipo de obra y cuantía** — el corpus de
-   Detecta ya identifica los procesos, falta bajar el documento de cada uno — y reportar **mediana y
+   Detekta ya identifica los procesos, falta bajar el documento de cada uno — y reportar **mediana y
    rango, nunca un valor único**.
 7. **Versión vigente de los Documentos Tipo de obra pública de infraestructura de transporte y lista
    exacta de fórmulas de ponderación sorteables** [PENDIENTE DE VERIFICAR]. *Siguiente paso:* abrir
@@ -650,12 +650,12 @@ publican el mismo tipo de precio y no es el que decide la rentabilidad**:
 | Concepto | Qué es | Dónde vive | Para qué sirve |
 |---|---|---|---|
 | **Presupuesto oficial** | Techo que fija la entidad antes de abrir el proceso | Anexos del proceso, APU de Proyectos Tipo, Formulario de Presupuesto Oficial de los Documentos Tipo, presupuestos de FINDETER, APU de INVÍAS | Estimar el techo y armar la propuesta |
-| **Precio de adjudicación** | Lo que realmente se contrató, y por tanto **la baja** respecto del techo | Histórico de adjudicaciones de SECOP II (`licitaciones:historico:*` en Detecta) | Estimar el margen esperado y decidir a qué presentarse |
+| **Precio de adjudicación** | Lo que realmente se contrató, y por tanto **la baja** respecto del techo | Histórico de adjudicaciones de SECOP II (`licitaciones:historico:*` en Detekta) | Estimar el margen esperado y decidir a qué presentarse |
 | **Costo real de ejecución** | Insumo × rendimiento propio + desperdicio + AIU | Contabilidad de obra propia | Saber si el contrato deja plata |
 
 **Todos los precios de las fuentes de esta sección son presupuesto oficial, no precio de
 adjudicación.** La rentabilidad se define por la baja frente a ese techo, dato que **no está en
-ninguna de estas fuentes** y sí en el histórico de adjudicaciones que Detecta ya ingiere. Un APU de
+ninguna de estas fuentes** y sí en el histórico de adjudicaciones que Detekta ya ingiere. Un APU de
 proyecto tipo sirve para estimar el techo; nunca para estimar el margen. Confundir margen con baja
 es el error que esta sección debe evitar producir.
 
@@ -703,7 +703,7 @@ publica precios, publica **presupuestos y APU reales por proyecto**, dentro de P
 - La nomenclatura codifica el fideicomiso mandante (ADR, Mindeporte, etc.), que es a su vez el
   sector: agua y saneamiento, edificación educativa, escenarios deportivos.
 - FINDETER usa **SECOP II de forma únicamente publicitaria** y recibe ofertas por correo
-  `[FRAGMENTO; confirmar en el TdR concreto]`. Consecuencia para Detecta: sus procesos aparecen en
+  `[FRAGMENTO; confirmar en el TdR concreto]`. Consecuencia para Detekta: sus procesos aparecen en
   el corpus como *Régimen Especial*, con reglas de participación que no son las de la Ley 80.
 - Repositorio institucional (`bibliotecadigital.findeter.metabiblioteca.com`), DSpace 7 —URL de
   descarga observada `/server/api/core/bitstreams/{uuid}/content`, patrón de la REST API de DSpace
@@ -716,7 +716,7 @@ publica precios, publica **presupuestos y APU reales por proyecto**, dentro de P
 **RAS.** Resolución 0330 de 2017 adopta el Reglamento Técnico del Sector de Agua Potable y
 Saneamiento Básico y deroga las Res. 1096/2000, 424/2001, 668/2003, 1459/2005, 1447/2005 y
 2320/2009; modificada por la **Resolución 799 de 2021** (vigente desde el 21/12/2021) y adicionada
-por la Resolución 548 de 2022 `[FRAGMENTO]`. Para Detecta el RAS **no es fuente de precios**: es un
+por la Resolución 548 de 2022 `[FRAGMENTO]`. Para Detekta el RAS **no es fuente de precios**: es un
 **diccionario normalizado de ítems y especificaciones** (diámetros mínimos, materiales admisibles,
 pruebas, distancias) que sirve para enriquecer el vocabulario de obra de `lib/semantica.js` con
 terminología que SECOP II usa literalmente en los objetos. Ese es su uso real aquí.
@@ -803,7 +803,7 @@ el ítem en obra dispersa.
 del 29 de noviembre de 2022** `[FRAGMENTO]`, más las Normas de Ensayo de Materiales. Aportan **la
 nomenclatura de ítems de vías del país** (artículos 100 a 700: generalidades, explanaciones,
 subbases y bases, pavimentos asfálticos, estructuras y drenajes, señalización y seguridad vial).
-Para Detecta es el vocabulario canónico de obra vial: alimenta `lib/semantica.js` con los términos
+Para Detekta es el vocabulario canónico de obra vial: alimenta `lib/semantica.js` con los términos
 exactos que las entidades copian en los objetos contractuales.
 
 **Calculadora de Costos de Proyectos Tipo de Infraestructura de Transporte (UPIT + INVÍAS)**,
@@ -843,7 +843,7 @@ por la Superintendencia Financiera `[FRAGMENTO]`. **No publica precios de refere
 Manual de Contratación y el **Manual de Supervisión e Interventoría M-GG-02 v03**
 (`enterritorio.gov.co/web/sites/default/files/2024-10/documentos/M-GG-02_V03.pdf`) `[FRAGMENTO]`, y
 sus procesos —con presupuesto oficial y APU como anexos— van a **SECOP II**, o sea que ya entran
-por el pipeline actual de Detecta.
+por el pipeline actual de Detekta.
 
 ### Colombia Compra Eficiente (ANCP-CCE)
 
@@ -984,7 +984,7 @@ rendimientos—, eliminado junto con todo el SICE por el **art. 222 del Decreto 
 Lo que sí existe es **referencia sectorial y regional**: en el orden nacional está dispersa por
 sector (**INVÍAS** en vías —con diferencia la mejor—, **MVCT/RAS** en agua y saneamiento, **DNP**
 en proyectos tipo), y fuera de él está descentralizada (gobernaciones, IDU y demás entidades
-territoriales). Para Detecta, la señal más barata y más real sigue siendo el corpus de SECOP II que
+territoriales). Para Detekta, la señal más barata y más real sigue siendo el corpus de SECOP II que
 ya se ingiere; y la señal de **rentabilidad** —la baja de adjudicación— solo está en el keyspace
 histórico, no en ninguna de estas fuentes.
 
@@ -1076,7 +1076,7 @@ presupuesto:
 | **Geográfica** | Para qué territorio están calibrados los precios (flete, altitud, mano de obra local). | Presupuestar el Chocó con precios de Bogotá. Error de magnitud, corregible con un factor. |
 | **De canasta (ítems)** | Qué actividades constructivas trae el listado. | Presupuestar un colegio con una base de carreteras. Error **estructural**: el ítem sencillamente no existe en la fuente, y lo que se pone en su lugar es una invención. |
 
-Consecuencia directa para Detecta, y es el punto que decide todo lo demás:
+Consecuencia directa para Detekta, y es el punto que decide todo lo demás:
 
 - **INVIAS** es la entidad de la red vial. Su canasta es explanaciones, subbases y bases, pavimentos,
   drenaje, estructuras y señalización [VERIFICADO — `invias.gov.co/index.php/informacion-institucional/hechos-de-transparencia/analisis-de-precio-unitarios`,
@@ -1118,7 +1118,7 @@ dos lecturas posibles por separado en vez de asumir una.
 
 **Patrón que se repite y que importa más que la lista concreta:** donde existe, la lista territorial
 se publica como **acto administrativo (decreto/resolución) + anexo PDF**, y en dos de los cinco casos
-**también como dataset Socrata en `datos.gov.co`**. Ese segundo canal es relevante para Detecta
+**también como dataset Socrata en `datos.gov.co`**. Ese segundo canal es relevante para Detekta
 porque el proyecto ya habla Socrata: leer `e839-6uct` o `ae7u-y7m2` no exige código nuevo, solo otro
 dominio y otro `_k`.
 
@@ -1146,7 +1146,7 @@ repositorio consultable.
 
 ### 3. Empresas de servicios públicos
 
-#### Advertencia previa (antes de esperar procesos de ESP dentro de Detecta)
+#### Advertencia previa (antes de esperar procesos de ESP dentro de Detekta)
 
 Por **Ley 142 de 1994, arts. 31 y 32**, las ESP contratan bajo **derecho privado con manual propio**:
 el art. 31 excluye sus contratos del Estatuto General de Contratación de la Administración Pública
@@ -1173,7 +1173,7 @@ es otra cosa:
    `lib/filtros.js` **descarta salvo "(con ofertas)"** — decisión correcta y documentada en
    `CLAUDE.md`.
 
-**Conclusión operativa:** la obra de ESP llega al corpus de Detecta **de forma parcial y por la vía
+**Conclusión operativa:** la obra de ESP llega al corpus de Detekta **de forma parcial y por la vía
 equivocada** (publicidad sin flujo de ofertas), y en su mayoría no sobrevive al filtro de modalidad.
 Quien quiera esa obra debe **registrarse en el portal de proveedores de cada empresa**; no se puede
 esperar verla en la app. Cuánto se pierde exactamente es medible y no se ha medido — la consulta
@@ -1189,7 +1189,7 @@ está en "Vacíos y siguiente paso".
 | **Aguas de Cartagena (Acuacar)** | Normas de acueducto y alcantarillado, edición **2005**, citadas como referencia por terceros | Citada en documentación de Emcali/Cali; portal propio no verificado | [INCIERTO] |
 | **Triple A (Barranquilla)** | **[NO ENCONTRADO]** ni normas ni precios en esta sesión | — | [NO ENCONTRADO] |
 
-**Valor real para Detecta:** las normas de EAAB/EPM/Emcali **no dan precio, dan alcance**. Sirven
+**Valor real para Detekta:** las normas de EAAB/EPM/Emcali **no dan precio, dan alcance**. Sirven
 para estimar *cantidad de obra por metro de red* (tipo de zanja, entibado, material de relleno,
 rotura y reposición de pavimento), que es justo la parte del APU donde más se pierde plata. Es una
 fuente de **rendimientos y especificación**, no de precios unitarios.
@@ -1303,7 +1303,7 @@ Tres consecuencias operativas:
   Y cuando los precios son fijos, el AIU se pacta invariable [VERIFICADO en sentido general —
   conceptos de Colombia Compra sobre APU/AIU y pliegos con cláusula "precios fijos, sin fórmula de
   ajuste"; el porcentaje concreto depende de cada pliego].
-- **Detecta la puede usar sin implementar APU todavía**: basta señalar en la tarjeta "esta entidad
+- **Detekta la puede usar sin implementar APU todavía**: basta señalar en la tarjeta "esta entidad
   publica lista de precios fijos — el margen no se negocia, se calcula", con enlace a la lista.
 
 #### Regla de decisión
@@ -1459,7 +1459,7 @@ Construdata es una unidad de Legis S.A. Es el estándar de facto para APU en Col
 | Vía de automatización | **Descarga manual.** Producto por usuario, tras login, sin API identificada | — |
 
 **Juicio de consultor:** Construdata es la mejor base APU comercial del país y a la vez una mala
-candidata técnica para Detecta: licencia por usuario nombrado, cobertura declarada de cuatro
+candidata técnica para Detekta: licencia por usuario nombrado, cobertura declarada de cuatro
 ciudades y ninguna vía programática identificada. Sobre la cobertura, el argumento correcto **se
 calcula con el propio corpus, no se supone**: el reparto por departamento de `/api/resumen` (que
 por diseño suma exactamente los visibles) dice cuántos de los procesos visibles del perfil
@@ -1641,9 +1641,9 @@ combustible cambia la cifra por completo [CONOCIDO].
 | **INVÍAS — APU Regionalizados de Referencia** | APU de referencia para **140 provincias** (excepto Bogotá D.C.), con precios de insumos, **prestaciones sociales**, y **rendimientos de mano de obra y equipo** por región; el componente «EQUIPO» lista la maquinaria sugerida por actividad (carácter indicativo, no obligatorio) | Público, descarga manual | [EXTRACTO DE BUSCADOR] `invias.gov.co/publicaciones/4149/analisis-de-precios-unitarios-apu-regionalizados-de-referencia/` |
 | **IDU — SIIP Viales, portafolio económico** | Sistema de precios unitarios de referencia con **visor de precios vigente**, costos estimativos por perfil vial POT e información histórica. Vigencia reportada: **29-may-2026**; incluye actualización de **tarifas de mano de obra y consultoría** por los Decretos 1469/1470 de 2025 y reconocimientos por la reducción de jornada de 46 a 44 h | Público | [EXTRACTO DE BUSCADOR] `idu.gov.co/page/siipviales/economico/portafolio` |
 | IDRD (Bogotá) | Precios unitarios de referencia para juegos y dotaciones (nicho, útil en parques) | Público | [EXTRACTO DE BUSCADOR] `idrd.gov.co/construcciones/precios-unitarios-juegos-y-dotaciones-de-referencia` |
-| **Datos Abiertos — «Lista oficial de precios unitarios fijos de Obra Pública y de consultoría – Departamento de Boyacá»** | Dataset Socrata `ae7u-y7m2` con precios unitarios fijos de una gobernación | `datos.gov.co` — **bloqueado en este entorno** | [PENDIENTE DE VERIFICAR EN PRODUCCIÓN]. Consulta: `https://www.datos.gov.co/resource/ae7u-y7m2.json?$limit=1000`. Y para descubrir gemelos de otros departamentos: `https://api.us.socrata.com/api/catalog/v1?domains=datos.gov.co&q=precios%20unitarios&limit=50`. **Es la única vía identificada para tener precios unitarios oficiales por API**, y Detecta ya habla Socrata |
+| **Datos Abiertos — «Lista oficial de precios unitarios fijos de Obra Pública y de consultoría – Departamento de Boyacá»** | Dataset Socrata `ae7u-y7m2` con precios unitarios fijos de una gobernación | `datos.gov.co` — **bloqueado en este entorno** | [PENDIENTE DE VERIFICAR EN PRODUCCIÓN]. Consulta: `https://www.datos.gov.co/resource/ae7u-y7m2.json?$limit=1000`. Y para descubrir gemelos de otros departamentos: `https://api.us.socrata.com/api/catalog/v1?domains=datos.gov.co&q=precios%20unitarios&limit=50`. **Es la única vía identificada para tener precios unitarios oficiales por API**, y Detekta ya habla Socrata |
 | Alquiladores comerciales (Retri, TuMaquinaYa, Alquima, MAQBIM, Transmáquina) | Tarifas por hora/día/mes de retroexcavadora, volqueta, excavadora; cobertura de las principales ciudades y 14 departamentos | Web + cotizador; **precio no siempre público** | [EXTRACTO DE BUSCADOR] — el listado de Transmáquina que circula es de **2020**: no usar |
-| Pliegos de licitaciones anteriores | Los anexos de APU de procesos publicados traen «Tarifa/Hora» y rendimiento por equipo, con nombre y capacidad | Público, por proceso | [EXTRACTO DE BUSCADOR] (ejemplo: anexo de análisis unitarios de Transcaribe). Se cruza con el corpus que Detecta ya descarga |
+| Pliegos de licitaciones anteriores | Los anexos de APU de procesos publicados traen «Tarifa/Hora» y rendimiento por equipo, con nombre y capacidad | Público, por proceso | [EXTRACTO DE BUSCADOR] (ejemplo: anexo de análisis unitarios de Transcaribe). Se cruza con el corpus que Detekta ya descarga |
 
 **Recomendación operativa:** para el costo horario, la base es el **APU regionalizado de INVÍAS de
 la provincia del proceso**, y **tres cotizaciones vigentes de alquiladores** como contraste. Las
@@ -1699,7 +1699,7 @@ nada, y que lo prohíba no crea por sí solo un delito. En Colombia lo que aplic
 | **Ley 23 de 1982** y **Decisión Andina 351 de 1993** — derecho de autor | Las compilaciones y bases de datos con selección o disposición original están protegidas. Reproducir una base de precios ajena y redistribuirla es infracción, aunque los datos sueltos no sean protegibles | [CONOCIDO] |
 | **Términos de uso** del sitio | Son un contrato de adhesión: se incumplen aunque no haya delito, con consecuencias civiles y bloqueo de cuenta | [CONOCIDO] |
 
-Regla práctica para Detecta: **datos de entidades públicas y normas** (INVÍAS, IDU, DANE, CREG,
+Regla práctica para Detekta: **datos de entidades públicas y normas** (INVÍAS, IDU, DANE, CREG,
 Datos Abiertos) son terreno limpio. **Bancos de precios comerciales** exigen leer el aviso legal
 antes de escribir una línea de código.
 
@@ -1748,7 +1748,7 @@ territoriales.
 
 ---
 
-### 8. Ranking: mejor relación valor/esfuerzo para Detecta
+### 8. Ranking: mejor relación valor/esfuerzo para Detekta
 
 1. **APU públicos de entidades: INVÍAS regionalizado + IDU SIIP Viales.** Son APU colombianos,
    vigentes, con mano de obra, equipo y rendimientos, y con desagregación regional que ninguna
@@ -1802,7 +1802,7 @@ como precio.
 
 ## 1.A.5 — SECOP como fuente implícita de precios (la mina de datos propia)
 
-Detecta ya paga el costo de extraer SECOP II y de mantener dos corpus (activo e histórico). La
+Detekta ya paga el costo de extraer SECOP II y de mantener dos corpus (activo e histórico). La
 pregunta de esta sección no es "¿de dónde saco precios?" sino "¿cuánta señal de precio hay ya
 dentro de lo que la app almacena, y qué falta para convertirla en un APU de referencia?". La
 respuesta corta: mucha señal de **precio total** y de **descuento de mercado**, casi ninguna de
@@ -1897,7 +1897,7 @@ sus causas*. `/api/diagnostico` y `descartados.*` las separan; mirarlos antes de
 | TVEC · Consolidado | `rgxm-mmea` | 1 orden de compra | valor de la orden | No | [VERIFICADO] |
 
 **Anticipo vs. pago anticipado — no son lo mismo y aquí importa mucho.** `CLAUDE.md` ya documenta
-que en Detecta `anticipo_pct = 0` significa "sin dato" porque `p6dx-8zbt` no trae la columna, y esta
+que en Detekta `anticipo_pct = 0` significa "sin dato" porque `p6dx-8zbt` no trae la columna, y esta
 sección se ofrece como la vía para llenar ese hueco. Hay que hacerlo bien:
 
 - `valor_de_pago_adelantado` + `habilita_pago_adelantado` de `jbjy-vk9h` son **PAGO ANTICIPADO**
@@ -1966,7 +1966,7 @@ frontera jurídica, y debe recalibrarse mirando el **percentil 99 de la distribu
 en el histórico antes de fijarlo. Si el p99 real es 0,38, cortar en 0,45 no filtra nada; si es 0,62,
 cortar en 0,45 está borrando bajas reales y sesgando `B_c` hacia arriba.
 
-Uso: convierte el `precio_base` publicado —que Detecta ya muestra— en una **expectativa de precio
+Uso: convierte el `precio_base` publicado —que Detekta ya muestra— en una **expectativa de precio
 de cierre**: `precio_esperado ≈ precio_base × (1 − B_c)`. Y con la K de `lib/capacidad.js`, en un
 chequeo más honesto: la capacidad se consume contra el valor que realmente se firma.
 
@@ -1997,7 +1997,7 @@ Dos advertencias sobre esta consulta:
 - **`ASC` = mayor baja primero**, porque el ratio es `(1 − b)`. El nombre del alias sugiere lo
   contrario si se lee rápido; por eso se renombró.
 - Usa `avg` **solo como sonda de tamaño y orden de magnitud**. Socrata no tiene `median()`. La
-  mediana y el IQR se calculan en Detecta sobre el corpus histórico ya almacenado, que es justamente
+  mediana y el IQR se calculan en Detekta sobre el corpus histórico ya almacenado, que es justamente
   la ventaja de tenerlo en Redis. No publicar el `avg` de esta consulta como si fuera `B_c`.
 
 #### 3.2 Precio unitario implícito — posible, pero minoritario
@@ -2129,7 +2129,7 @@ llave exacta no se comprobó desde este entorno.
   abierta de `datos.gov.co` (Socrata). No se ha verificado en esta sesión el nombre de ningún
   endpoint de descarga del portal ni ninguna técnica de evasión del captcha; no se afirma nada al
   respecto.
-- Consecuencia para Detecta: **descartado en la arquitectura actual**. Vercel serverless (10–60 s
+- Consecuencia para Detekta: **descartado en la arquitectura actual**. Vercel serverless (10–60 s
   por invocación, sin binarios de navegador) no puede sostener un flujo con navegador, y un scraper
   con captcha es frágil y jurídicamente incómodo para una app privada del dueño. El APU de
   referencia de la entidad, cuando existe, se descarga **a mano** desde el enlace que la tarjeta ya
@@ -2371,7 +2371,7 @@ apertura por grupo es la que permite ponderar (ver formula abajo).
 
 El boletin del mes M sale a **fin del mes M+1**: ICOCIV de feb-2026 se publico el 31/03/2026 y el de
 mar-2026 el 30/04/2026; ICOCED de dic-2025 salio el 30/01/2026 [VERIFICADO]. **Consecuencia para
-Detecta: el indice mas fresco disponible siempre tiene entre 30 y 60 dias de rezago.** Un pipeline
+Detekta: el indice mas fresco disponible siempre tiene entre 30 y 60 dias de rezago.** Un pipeline
 que asuma "indice del mes en curso" fallara silenciosamente todos los meses.
 
 ---
@@ -2413,7 +2413,7 @@ que asuma "indice del mes en curso" fallara silenciosamente todos los meses.
 | BanRep | Portal Suameca: catalogo, graficador y descarga multiple de series | Existe; no consta API REST publica documentada | [VERIFICADO] |
 | XM / SIMEM | API sin credenciales, librerias en Python y Excel-VBA (repo `EquipoAnaliticaXM/API_XM`) | Existe | [VERIFICADO] |
 
-**Implicacion arquitectonica para Detecta:** la TRM se puede ingerir con el **mismo transporte que
+**Implicacion arquitectonica para Detekta:** la TRM se puede ingerir con el **mismo transporte que
 ya existe** — paginacion keyset por `:id`, backoff, sin reintentar 400. No hay que escribir un
 cliente nuevo. El procedimiento es de **dos pasos**, y el primero no es opcional:
 
@@ -2911,7 +2911,7 @@ Se crean por ley, que fija destinación y tarifa máxima, y **la tarifa concreta
 
 #### Método propuesto para convertir esto en dato duro (es barato y no depende de nada bloqueado)
 
-1. Tomar **10–15 procesos de obra por departamento** del corpus histórico que ya tiene Detecta.
+1. Tomar **10–15 procesos de obra por departamento** del corpus histórico que ya tiene Detekta.
 2. Abrir el pliego o la minuta de cada uno en SECOP II y extraer la **cláusula de deducciones**: cada concepto y su porcentaje.
 3. Tabular `departamento | municipio | concepto | % | fuente (número de proceso)` y calcular el **% total de deducciones** por departamento y por municipio.
 4. Publicar dos cifras por territorio: **mediana** y **rango observado**. El rango importa tanto como la mediana: si dentro de un departamento hay municipios con 6% y con 11%, la mediana sola engaña.
@@ -2963,7 +2963,7 @@ Recomendación: **precalcular la matriz una vez** (municipio → distancia por c
 | «DIVIPOLA – Códigos municipios **geolocalizados**» (trae coordenadas) — dataset Socrata `vafm-j2df` | `[VERIFICADO-BÚSQUEDA]` que existe; **`[PENDIENTE PRODUCCIÓN]`** leerlo: vive en datos.gov.co, bloqueado en este entorno. Se consume con el mismo cliente Socrata que ya usa `lib/socrata.js` |
 | IGAC: SHP, KML, GeoJSON, WMS/WFS; portal «Colombia en Mapas» | `[VERIFICADO-BÚSQUEDA]` https://geoportal.igac.gov.co/contenido/datos-abiertos ; https://www.colombiaenmapas.gov.co/ |
 
-Enganche con Detecta: la proyección ya guarda `departamento_entidad` y `ciudad_entidad` (`lib/proyeccion.js`). Ambos son texto libre de SECOP, así que el paso obligatorio es **normalizar a código DIVIPOLA de 5 dígitos** con la misma disciplina de `claveCanonica` que ya se aplicó a la identidad de entidad — y con el mismo riesgo conocido: **la entidad que publica no siempre está en el municipio donde se ejecuta la obra**.
+Enganche con Detekta: la proyección ya guarda `departamento_entidad` y `ciudad_entidad` (`lib/proyeccion.js`). Ambos son texto libre de SECOP, así que el paso obligatorio es **normalizar a código DIVIPOLA de 5 dígitos** con la misma disciplina de `claveCanonica` que ya se aplicó a la identidad de entidad — y con el mismo riesgo conocido: **la entidad que publica no siempre está en el municipio donde se ejecuta la obra**.
 
 Esquema mínimo de las dos tablas estáticas que hay que crear en el repo:
 
@@ -3047,7 +3047,7 @@ Notas sobre la sintaxis, porque dos de ellas devuelven 400 si se escriben mal:
 
 ## 1.B.2 — Diseno de la matriz de ajuste regional
 
-Documento de **diseño**, no de hallazgos. Propone la estructura del factor regional que Detecta
+Documento de **diseño**, no de hallazgos. Propone la estructura del factor regional que Detekta
 usaría para pasar de un precio de referencia nacional a un precio esperable en el municipio donde
 se ejecuta la obra. Todos los coeficientes numéricos son **PRELIMINARES A CALIBRAR**: valen como
 punto de partida y como formato de la tabla, no como dato.
@@ -3104,7 +3104,7 @@ huella, estructuras de contención y puentes. Los APU del INVIAS **no contienen*
 cubierta, carpintería metálica, acabados, redes hidrosanitarias internas ni equipos de bombeo, así
 que para edificación (aula escolar, CDI, polideportivo cubierto) y para acueducto/alcantarillado
 no viales **la "referencia nacional = 1,00" simplemente no existe en la fuente citada**. Para esa
-mitad de la cartera de Detecta hace falta una segunda fuente; candidatas en la tabla de fuentes y
+mitad de la cartera de Detekta hace falta una segunda fuente; candidatas en la tabla de fuentes y
 en el Vacío 7.
 
 #### 2.2 Partición coherente entre pesos y precios base
@@ -3515,7 +3515,7 @@ estimación de sobrecosto. Ocultarlo sería castigar al dueño por un hueco de d
 7. **No hay referencia de precios para edificación ni para acueducto/alcantarillado no vial.** Los
    APU del INVIAS son de obra vial: para aula escolar, CDI, polideportivo, redes hidrosanitarias o
    equipos de bombeo no existe la «referencia nacional = 1,00» que la §2 supone, y hoy eso es **media
-   cartera de Detecta**. *Siguiente paso:* (a) evaluar el dataset `ae7u-y7m2` de Boyacá y buscar sus
+   cartera de Detekta**. *Siguiente paso:* (a) evaluar el dataset `ae7u-y7m2` de Boyacá y buscar sus
    equivalentes en otras gobernaciones y en entidades sectoriales, midiendo cuántos departamentos
    quedan cubiertos; (b) si la cobertura es pobre, construir la referencia con el propio
    `precio_base` de SECOP II sobre canastas homogéneas de edificación, aceptando que entonces la
@@ -3557,7 +3557,7 @@ es un instrumento de la industria que el ordenamiento vuelve exigible por dos v�
 deber de planeación de la **entidad**, que la obliga a estimar y justificar el presupuesto oficial, y (b)
 el **pliego de condiciones**, que al ser ley del proceso puede exigir el formato, y en obra pública lo
 exige casi siempre. Quien afirme "el APU es obligatorio porque lo dice la Ley 80" está citando mal: la
-Ley 80 no menciona el APU. La consecuencia práctica para Detecta es directa —el formato del APU no se
+Ley 80 no menciona el APU. La consecuencia práctica para Detekta es directa —el formato del APU no se
 deduce de la ley, se lee del pliego de cada proceso.
 
 | Norma | Contenido relevante | Relación con el APU | Origen |
@@ -3593,7 +3593,7 @@ menor cuantía, mínima cuantía, infraestructura social e interventoría.
 | Matriz 1 – Experiencia, Matriz de riesgos, Anexo técnico | Habilitación y asignación de riesgos; el riesgo asignado alimenta el % de imprevistos | [SECUNDARIA] |
 | Tope de utilidad | **No hay tope legal general de AIU ni de utilidad.** Lo fija el pliego cuando quiere | [SECUNDARIA] |
 
-Para Detecta esto significa: el entregable de la app debe poder exportar un **Formulario 1** (lista de
+Para Detekta esto significa: el entregable de la app debe poder exportar un **Formulario 1** (lista de
 ítems con precio unitario) y un **APU por ítem** con los cuatro bloques (materiales, mano de obra, equipo
 y herramienta, transporte) más el AIU al pie.
 
@@ -3634,7 +3634,7 @@ de obra suele pesar 20–35 % del directo [SUPUESTO — proporción de uso corri
 un error del 30 % en rendimiento mueve el APU entre 9 y 15 %. En obra civil los materiales pesan
 típicamente entre el 40 % y el 70 % del costo directo (concreto, acero, tubería, agregados)
 [SUPUESTO], así que descuidar la cotización de materiales por concentrarse en el rendimiento es
-exactamente al revés de donde está el dinero. Si Detecta va a estimar, **ambas** variables deben ir con
+exactamente al revés de donde está el dinero. Si Detekta va a estimar, **ambas** variables deben ir con
 banda (p10–p90), no con valor puntual.
 
 **Equipo y herramienta** — `tarifa horaria × horas/unidad`, o `tarifa día / rendimiento`. Partida
@@ -3692,7 +3692,7 @@ llevan: súmese aparte** o inclúyase el auxilio en el jornal base.
 el empleador tenga "menos de 2 SMMLV". Aplica sobre los trabajadores que devenguen **menos de 10 SMMLV**,
 para (a) sociedades y personas jurídicas contribuyentes declarantes de renta y (b) **personas naturales
 empleadoras, siempre que empleen dos (2) o más trabajadores** [SECUNDARIA]. Esto es material para los
-perfiles de Detecta: **Génesis SAS está exonerada**; **Helder, persona natural, solo si tiene 2 o más
+perfiles de Detekta: **Génesis SAS está exonerada**; **Helder, persona natural, solo si tiene 2 o más
 empleados** — con un solo trabajador paga salud, SENA e ICBF completos y su costo de mano de obra es
 ~13,5 puntos más alto que el de la SAS con el mismo jornal.
 
@@ -3831,7 +3831,7 @@ financiero de no disponer libremente del dinero son costos **reales** del contra
 Administración. Y el anticipo **no mejora la utilidad**: mejora la caja, y solo si se amortiza al mismo
 ritmo al que se gasta.
 
-Nota para Detecta: el campo `anticipo_pct` del corpus vale `0` cuando **no hay dato**, no cuando el
+Nota para Detekta: el campo `anticipo_pct` del corpus vale `0` cuando **no hay dato**, no cuando el
 proceso no tiene anticipo, y además el dataset no distingue anticipo de pago anticipado. Cualquier
 cálculo de caja que se construya sobre ese campo debe declararlo.
 
@@ -3889,7 +3889,7 @@ Tres consecuencias operativas:
    prestacional y cotizaciones de material es la única prueba que evita el rechazo. Un APU sólido no
    suma puntos; evita perderlos todos.
 
-Para Detecta: cualquier funcionalidad que sugiera "un % de descuento óptimo" está mal planteada mientras
+Para Detekta: cualquier funcionalidad que sugiera "un % de descuento óptimo" está mal planteada mientras
 no modele el sorteo. Lo que sí es útil y se puede construir con el corpus histórico es la **distribución
 de descuento frente al presupuesto oficial por entidad y tipo de obra**, que es un insumo para estimar
 dónde caerá la media — no una recomendación de cuánto bajar.
@@ -3950,7 +3950,7 @@ en el análisis del sector y en precios de mercado documentados.
 4. **Contribución especial de obra pública (5 %, Ley 418 de 1997)** [PENDIENTE]: verificar la ley de
    prórroga vigente en 2026 antes de incluirla en una plantilla de costos, y si la interventoría queda
    dentro o fuera del hecho generador.
-5. **Tarifas de ICA y estampillas son municipales/departamentales**: no hay tabla nacional. Si Detecta
+5. **Tarifas de ICA y estampillas son municipales/departamentales**: no hay tabla nacional. Si Detekta
    quiere estimar la carga por proceso, necesita una tabla por municipio construida a mano a partir de los
    acuerdos municipales; hasta entonces debe usar un rango declarado como estimación, distinguiendo si
    aplica o no la contribución del 5 % (8 %–11 % vs. 3 %–6 %) y si la entidad es del orden nacional (única
@@ -5015,7 +5015,7 @@ cosas, por lo que digan los T&C. La linea practica:
 MinTransporte, gobernaciones, MinMinas) sobre retail — ademas de mas seguras juridicamente, son mas
 estables de parsear; (2) para retail, ritmo bajo (1 req cada 2-5 s, ventana nocturna), `User-Agent` honesto
 e identificable con correo de contacto, respeto de `robots.txt`, cache local y `If-Modified-Since`; (3) no
-revender ni republicar el dato crudo — dentro de Detecta el precio se usa como **insumo de un calculo
+revender ni republicar el dato crudo — dentro de Detekta el precio se usa como **insumo de un calculo
 propio**, que es una posicion muy distinta a redistribuir la base ajena; (4) para **Construdata, lo correcto
 es suscribirse**: es una base construida con inversion editorial, su valor esta justamente en la seleccion y
 disposicion, y usarla comercialmente sin licencia es indefendible tanto contractual como reputacionalmente
@@ -5111,7 +5111,7 @@ articulos en un escrito hay que abrir el texto vigente en el gestor normativo de
 **(b) Formula de reajuste del pliego.** Al descargar un proceso hay que **verificar si el pliego trae
 formula de reajuste de precios y con que indice** (tipicamente ICOCIV para obra civil, ICOCED para
 edificacion, o IPC). De eso depende que el envejecimiento por indice del apartado 6 sea un **argumento
-contractual** —el mismo indice que pacto el contrato— o solo una estimacion interna de Detecta. No es el
+contractual** —el mismo indice que pacto el contrato— o solo una estimacion interna de Detekta. No es el
 mismo valor probatorio. [CONOCIDO — practica corriente; la formula concreta se lee en cada pliego, no se
 presume.]
 
@@ -6085,7 +6085,7 @@ Para un perfil como el de Helder o Génesis, la caducidad no es una multa: es el
 añádase algo que ocurre **antes** de cualquier inhabilidad formal: un siniestro deja al proponente
 **sin cupo asegurador**, lo que lo saca del mercado igual.
 
-**Encaje con la doctrina que el repo ya tiene escrita.** Detecta ya declaró, para las equivalencias
+**Encaje con la doctrina que el repo ya tiene escrita.** Detekta ya declaró, para las equivalencias
 funcionales, que son «**una AYUDA a la decisión, no una habilitación jurídica: quien decide si el
 RUP alcanza es el pliego**» (`lib/equivalencias.js:10` y `README.md:671-672`)
 [VERIFICADO-REPO]. **El APU automático debe llevar exactamente la misma etiqueta, con la misma
@@ -6402,7 +6402,7 @@ Consejo de Estado) [VERIFICADO]. El mismo valor está en `lib/perfiles.js` del r
 *[CONOCIDO] en todo el cuadro.*
 
 Alquilar traslada el riesgo de disponibilidad pero paga el margen del arrendador (15–30 % sobre su
-costo). Para los perfiles de Detecta —una persona natural y una SAS pequeña— la regla práctica es:
+costo). Para los perfiles de Detekta —una persona natural y una SAS pequeña— la regla práctica es:
 **equipo propio solo si la utilización proyectada supera ~60 % del año**; por debajo, alquilar sale
 más barato que financiar un activo ocioso. [CONOCIDO]
 
@@ -6495,7 +6495,7 @@ Decreto 1082 de 2015 y en el Manual de Garantías de Colombia Compra Eficiente.*
 aseguradora normalmente exige **contragarantías**: pagaré en blanco con carta de instrucciones,
 garantía real, codeudor o pignoración de CDT. El resultado es que **la póliza —no la capacidad
 técnica ni la K— es el cuello de botella real**: se gana el proceso y no se puede firmar.
-Consecuencias para el modelo de Detecta:
+Consecuencias para el modelo de Detekta:
 
 1. El **cupo de afianzamiento disponible** es una restricción que se agota con cada contrato en
    ejecución, igual que el SCE agota la K en `lib/capacidad.js`.
@@ -6537,7 +6537,7 @@ análisis.
 - **Destino** (no es un descuento adicional, es a dónde va el mismo 5 %): FONSECON si la entidad
   contratante es del **orden nacional**, FONSET si es **departamental o municipal**. [CONOCIDO]
 
-**Para Detecta: el 5 % es un costo cierto y siempre entra al modelo.** No hay escenario «con» y
+**Para Detekta: el 5 % es un costo cierto y siempre entra al modelo.** No hay escenario «con» y
 «sin».
 
 #### 4.2 Efecto neto: dos líneas, no una
@@ -6583,7 +6583,7 @@ contrato** «el pago anticipado y la entrega de anticipos». Ahí termina el par
 | Retención en la fuente | No se practica al entregarlo (no hay ingreso causado) | Se practica al momento del pago [CONOCIDO] |
 | Tope | 50 % conjunto — par. art. 40 Ley 80/1993 [VERIFICADO] | ídem, el tope es conjunto |
 
-**Para Detecta son dos variables distintas.** La excepción de menor y mínima cuantía del art. 91
+**Para Detekta son dos variables distintas.** La excepción de menor y mínima cuantía del art. 91
 es exactamente el rango donde operan Helder y Génesis: en esos contratos el anticipo llega sin
 fiducia, lo que ahorra la comisión fiduciaria pero traslada íntegro el riesgo de manejo al
 contratista. Y el pago anticipado **no consume estructura fiduciaria ni genera amortización**,
@@ -6597,7 +6597,7 @@ nómina y los proveedores no esperan: **el contratista es el banco de la entidad
 de cobro)** pesa tanto como el margen: un 8 % de U cobrado a 120 días rinde menos que un 5 %
 cobrado a 30. [CONOCIDO]
 
-> **Nota para el modelo de Detecta.** `CLAUDE.md` documenta que el dataset `p6dx-8zbt` **no trae
+> **Nota para el modelo de Detekta.** `CLAUDE.md` documenta que el dataset `p6dx-8zbt` **no trae
 > columna de anticipo** y que `anticipo_pct = 0` significa **«sin dato»**, no «sin anticipo».
 > Cualquier fórmula de rentabilidad que multiplique por `anticipo_pct` estará asumiendo el peor
 > caso en la inmensa mayoría de los procesos. Hay que **decirlo en la tarjeta**, no esconderlo en
@@ -6689,7 +6689,7 @@ geométrica con presupuesto oficial, y menor valor. [CONOCIDO — se confirma en
 cada proceso]
 
 Implicación directa: **si el método sorteado es una media, la oferta más barata puede quedar tan
-lejos del promedio que pierda puntos**. El modelo de Detecta **no debe asumir «gana el más
+lejos del promedio que pierda puntos**. El modelo de Detekta **no debe asumir «gana el más
 barato»**; debe tratar el método como una variable desconocida al momento de ofertar y
 recomendar una baja que sobreviva a los cuatro métodos, no que optimice uno.
 
@@ -6732,7 +6732,7 @@ ejecución. La conclusión correcta **no es presupuestarlo**: pagarlo es un deli
 deducibilidad y la trazabilidad contable, y no elimina el riesgo —lo renueva. **Hay zonas donde la
 respuesta correcta es no presentarse**, y esa decisión se toma antes de armar el APU.
 
-Implicación para Detecta: justifica un **filtro geográfico de exclusión por municipio** alimentado
+Implicación para Detekta: justifica un **filtro geográfico de exclusión por municipio** alimentado
 por el criterio del dueño (el dataset no trae el dato). Es un `no_ir` duro, no un descuento en la
 utilidad, y jamás un «margen ajustado por riesgo».
 
@@ -6928,7 +6928,7 @@ Cada campo lleva su `*_vigencia`. Un campo sin dato es `null`, **nunca 0** — �
 lección ya pagada en este proyecto con `anticipo_pct` y con «0 oferentes = sin dato»: un cero en un
 índice de riesgo se lee como «municipio seguro» y es la falsedad más cara posible aquí.
 
-**El obstáculo real de integración, y no es menor.** El corpus de Detecta **no guarda código
+**El obstáculo real de integración, y no es menor.** El corpus de Detekta **no guarda código
 DIVIPOLA**. `lib/proyeccion.js` proyecta `departamento_entidad` y `ciudad_entidad` como texto libre,
 y `api/resumen.js` ya normaliza a mayúsculas para agrupar por municipio. Hay tres consecuencias:
 
@@ -7142,7 +7142,7 @@ que los tertiles del índice de competencia, que usan `<=`):
 | Rojo | `0,60 < R_geo <= 0,80` | +15 % a +28 % | +30 % a +60 % | Zona de conflicto activo o sin vía |
 | Negro | `R_geo > 0,80` | **no se cotiza** | **no se cotiza** | Ver regla de veto |
 
-**Cómo calibrar de verdad, con los datos que Detecta ya tiene.** El corpus histórico
+**Cómo calibrar de verdad, con los datos que Detekta ya tiene.** El corpus histórico
 (`licitaciones:historico:mes:*`, que nada purga) permite un estudio observacional propio, sin comprar
 nada. El orden de los indicadores importa, porque el más obvio es el menos informativo:
 
@@ -7227,7 +7227,7 @@ Por eso la propuesta es **veto, no prima**:
 | `sin_conexion_terrestre` **y** perfil sin experiencia fluvial/aérea previa | **Descartar** | La logística fluvial es un negocio distinto; no se improvisa |
 | `0,60 < R_geo <= 0,80` | **Mostrar en rojo con veredicto explícito**, nunca en los destacados | Decisión del dueño, con la advertencia delante |
 
-Esto es coherente con lo que Detecta ya hace en dos lugares: los destacados del panel aplican
+Esto es coherente con lo que Detekta ya hace en dos lugares: los destacados del panel aplican
 **cuatro filtros más** que el listado porque un falso positivo en el puesto 1 cuesta más que uno en
 la página 4, y la capa de pertinencia **nunca bloquea por falta de información**. El veto geográfico
 es la excepción justificada a ese segundo principio, y hay que decir por qué: en pertinencia, el
@@ -8848,7 +8848,7 @@ antecedentes en los Conpes 3107 y 3133 de 2001 para infraestructura con particip
 `[CONOCIDO]`. Colombia Compra Eficiente publica un manual de identificación y cobertura del riesgo
 con una matriz tipo `[CONOCIDO]`.
 
-Regla de negocio para Detecta:
+Regla de negocio para Detekta:
 
 > **Un riesgo tipificado y asignado al contratista cierra la reclamación DENTRO de la magnitud
 > estimada en la matriz.** No la cierra si (a) el riesgo **no era cuantificable** al momento de
@@ -9035,7 +9035,7 @@ desborda.
 | Riesgo tipificado pero **sin magnitud estimada**, o evento que **excede** lo estimado | Se trata como **imprevisión** (0,02 – 0,08) | Reabre por álea extraordinaria (§5) |
 | Álea normal e imprevistos cubiertos por la I | **0,00** | No es reclamable |
 
-**Valor por defecto del modelo: `ρ = 0`.** Es decir, **Detecta debe asumir que el sobrecosto no se
+**Valor por defecto del modelo: `ρ = 0`.** Es decir, **Detekta debe asumir que el sobrecosto no se
 recupera**. Cuatro razones: (1) la decisión que el modelo apoya es *presentarse o no*, y una decisión
 que solo es rentable si además se gana un pleito no es rentable; (2) `ρ > 0` premia justamente las
 obras peor estructuradas, que es lo contrario de lo que se quiere; (3) los valores de arriba son
@@ -9069,7 +9069,7 @@ Esta sección tiene dos mitades y conviene no confundirlas. La primera (§1) es 
 colombiana que existe hoy, publicada y citable**: precios unitarios oficiales, el índice de costos
 de obra civil del DANE, el registro legal de obras inconclusas y las reglas de puntuación económica
 que deciden quién gana. La segunda (§2 en adelante) es un **plan de análisis** sobre el corpus
-propio de Detecta: todavía no son resultados, son las preguntas, los mínimos muestrales y los
+propio de Detekta: todavía no son resultados, son las preguntas, los mínimos muestrales y los
 sesgos que hay que respetar para que los resultados signifiquen algo cuando se produzcan.
 
 ### Nota previa sobre el estado de verificación
@@ -9083,7 +9083,7 @@ son reproducibles ahora mismo desde esta máquina**. Por eso cada fuente lleva e
 | Etiqueta | Significa |
 | --- | --- |
 | **[VERIFICADO]** | Se abrió la URL indicada y se confirmó que existe y dice lo que aquí se afirma. La URL va escrita para que el lector la vuelva a abrir |
-| **[VERIFICADO-CÓDIGO]** | Leído directamente en el repositorio de Detecta, con archivo y línea |
+| **[VERIFICADO-CÓDIGO]** | Leído directamente en el repositorio de Detekta, con archivo y línea |
 | **[CONOCIDO]** | Sólido por conocimiento del dominio, pero **no** comprobado contra su fuente en esta elaboración. Se indica cómo comprobarlo |
 | **[INCIERTO]** | Se cree que existe y no se pudo confirmar. Se indica exactamente qué buscar |
 
@@ -9511,7 +9511,7 @@ su APU y su costo real, y la desviación de cantidades no reconocidas—. **Usar
 como colchón de un APU sería un error de categoría.** Lo que se transfiere de Flyvbjerg es el
 **MÉTODO** (la visión externa), no los números.
 
-El método tiene tres pasos y **el corpus de Detecta permite los tres**:
+El método tiene tres pasos y **el corpus de Detekta permite los tres**:
 
 1. **Definir la clase de referencia**: proyectos comparables. Aquí no es «obra civil» a secas, sino la
    celda `familia UNSPSC × rango de cuantía × región × método de ponderación` (y, cuando haya n
@@ -9948,7 +9948,7 @@ Escritas como afirmaciones verificables, al estilo de las que ya vigila el repo:
 
 | # | Invariante | Por que importa |
 |---|---|---|
-| I1 | Si `anticipo_pct` sube y todo lo demas es igual, `CEM` **no puede subir** y `CRPC` **no puede subir** | Detecta signo invertido en la mecanica de amortizacion |
+| I1 | Si `anticipo_pct` sube y todo lo demas es igual, `CEM` **no puede subir** y `CRPC` **no puede subir** | Caza un signo invertido en la mecanica de amortizacion |
 | I2 | Si el numero esperado de oferentes sube, `P(ganar)` **no puede subir** | Monotonia del indice de competencia |
 | I3 | `CD_total` == materiales + mano de obra (con factor prestacional) + equipo y herramienta menor + transporte; tolerancia ≤ 1 COP. **Los indirectos NO entran en `CD`** | Meterlos en `CD` duplicaria la administracion — una vez dentro del `CD` y otra dentro del AIU — e inflaria el precio ofertado |
 | I3b | `Precio_oferta` == `CD × (1 + A + I + U)`, y `A` **no puede aparecer tambien dentro de ningun APU** | Cierra la puerta a la doble contabilizacion que I3 abria |

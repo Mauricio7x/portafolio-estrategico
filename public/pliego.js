@@ -1,5 +1,5 @@
 /* ============================================================================
-   Detecta · APU — lectura del formulario de cantidades de un pliego
+   Detekta · APU — lectura del formulario de cantidades de un pliego
    ----------------------------------------------------------------------------
    EL PDF SE LEE AQUÍ, EN EL NAVEGADOR. `pdfjs-dist` en Node pesa decenas de MB y
    hay que sacarlo del request path; el OCR «no cabe en el mismo proceso»

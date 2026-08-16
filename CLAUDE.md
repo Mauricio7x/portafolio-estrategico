@@ -12,7 +12,7 @@ Memoria del proyecto para Claude Code. Si retomas el trabajo, lee primero `READM
 
 ## Qué es
 
-**Detecta**: app privada para decidir a qué licitaciones de obra civil presentarse en Colombia.
+**Detekta**: app privada para decidir a qué licitaciones de obra civil presentarse en Colombia.
 Reescritura completa (jul 2026) sobre Vercel serverless + Upstash Redis: `api/sync.js` extrae el
 año vigente de SECOP II (`p6dx-8zbt`), enriquece y guarda solo lo compatible con los RUP;
 `api/oportunidades.js` filtra por perfil (helder/genesis/juntos) y la web estática en `public/`
@@ -1728,7 +1728,7 @@ cascada de `lib/apu/precios.js`. Evidencia HTTP en el §11 del mismo doc.
   DENTRO del 200 (`j.error`), como en OCR.space. Un 400 no se reintenta; 429/5xx sí, con backoff.
 - **Contraste que valida ambas fuentes**: el acarreo oficial ($1.263,6/m³-km, mediana nacional
   2025-1) casi calca el del catálogo Nogal ($1.256/m³-km). Y la licencia va dicha: los documentos
-  INVIAS prohíben el uso comercial sin autorización — si Detecta se comercializa con estos datos,
+  INVIAS prohíben el uso comercial sin autorización — si Detekta se comercializa con estos datos,
   pedirla (`preciosunitarios@invias.gov.co`).
 
 ### Página única y token integrado (ago 2026)
@@ -2531,8 +2531,8 @@ necesiten un curso académico ni experiencia para poder licitar»**. Traducida a
 > **Si para entender un número hace falta leer un párrafo, el número está mal elegido.** Se muestra el HECHO
 > que hay detrás, no el modelo que lo produjo.
 
-El producto se llama **Detecta**. «Portafolio Estratégico» era el nombre del REPOSITORIO filtrándose a la
-cara del usuario. Y **los emojis salen de la interfaz**: un pictograma que dibuja el sistema operativo hace
+El producto se llama **Detekta** (con k desde ago 2026 —Fase 7 del plan v4—; ver esa sección). «Portafolio
+Estratégico» era el nombre del REPOSITORIO filtrándose a la cara del usuario. Y **los emojis salen de la interfaz**: un pictograma que dibuja el sistema operativo hace
 que una herramienta de trabajo parezca un juguete, y cambia de aspecto en cada aparato. Las pestañas se
 rotulan con palabras (**Licitaciones · Precios · Mi empresa**) y en móvil llevan SVG en línea con
 `currentColor`, que heredan el acento del tema sin una regla nueva.
@@ -2656,7 +2656,7 @@ completa y límites en `docs/ACCESIBILIDAD.md`. Decisiones que no hay que re-apr
   usa fechas fijas de 2026 (quinto hábil sin festivos = 7 de abril): una prueba de calendario
   calibrada contra el reloj real no prueba nada.
 
-### Consolidación a 6 routers por dominio (ago 2026 · Fase 0 del plan Detecta v3)
+### Consolidación a 6 routers por dominio (ago 2026 · Fase 0 del plan Detekta v3)
 
 - **`api/` contiene EXACTAMENTE 6 archivos** — `procesos.js` (sync · historico · listar · baja),
   `inteligencia.js` (las vistas del antiguo competencia-detalle: entidad · adjudicatario/competidor ·
@@ -2709,7 +2709,7 @@ completa y límites en `docs/ACCESIBILIDAD.md`. Decisiones que no hay que re-apr
 
 ### Fase 1 · Motor de costo real (ago 2026)
 
-Plan maestro Detecta v3, Fase 1. `lib/parametros.js` (DEFAULTS del encargo, VERIFICACIÓN por
+Plan maestro Detekta v3, Fase 1. `lib/parametros.js` (DEFAULTS del encargo, VERIFICACIÓN por
 parámetro, `apu:parametros` + `apu:parametros:v:{vigencia}`), `lib/costos.js` (re-export de
 `public/costos.js`, UMD: **una sola implementación** para servidor y navegador), acción
 `parametros` en `/api/apu` (GET pública · POST con token), formulario en *Mi empresa → Sistema* y
@@ -2858,6 +2858,39 @@ aceptable» en Ajustes y `public/justificacion.js` (UMD). Decisiones que no hay 
   reenvía `/api/*` a producción, inyectando `piso_techo` calculado con el módulo local sobre la
   respuesta real de rentabilidad; Chromium recorrió tarjeta → «Calcular mi precio» → ítems → «Calcular
   APU» → panel → descarga. Así se cazaron los dos refinamientos de arriba (mediana 0 y contribución).
+
+### Fase 7 · Marca: Detekta, con k (ago 2026 · plan maestro v4)
+
+`public/glosario.js` (UMD) + `lib/glosario.js` (re-export, el patrón de `costos.js`) + `docs/marca.md`.
+Decisiones que no hay que re-aprender:
+
+- **UNA fuente de verdad del nombre: `MARCA.nombre`.** Ninguna cadena visible lo escribe a mano: los
+  encabezados de landing, gate y barra son nodos `[data-marca="nombre"]` que nacen VACÍOS y
+  `Glosario.estampar(document)` rellena al cargar; el Excel (`docProps`) y la justificación de precio
+  reciben `MARCA` del glosario (Node por `require`, navegador por `window.Glosario` — por eso
+  `glosario.js` se carga PRIMERO en `index.html`, y `xlsx.js`/`justificacion.js` LANZAN si falta en vez
+  de firmar con un nombre vacío); el `User-Agent` de `lib/apu_descargar.js` también.
+- **La ÚNICA excepción declarada son `<title>` y las `<meta>`** de `index.html`: el navegador y los
+  rastreadores las leen antes de que corra ningún script. La suite exige que sean EXACTAMENTE
+  `Glosario.titulo()` y `Glosario.descripcion()` — un literal atado por prueba no es «escrito a mano».
+- **Lo que NO cambia y no puede cambiar**: repositorio, URL de producción (`MARCA.dominio` se cambia
+  solo el día que se compre un dominio: pasos sin terminal en `docs/marca.md` §4), claves de Redis,
+  variables de entorno, archivos/funciones/endpoints y las **claves de almacenamiento del navegador**
+  (`sessionStorage["detecta-acceso"]`, `localStorage["detecta_perfil_rup"]`): renombrarlas cerraría la
+  sesión de todos y les borraría el perfil guardado. Van en minúscula y hay prueba de que siguen ahí.
+- **El criterio de aceptación es una búsqueda de texto y la suite lo ejecuta tal cual**: recorre el
+  repositorio entero (`.js/.json/.md/.html/.css/.csv/…`) y falla si la grafía vieja aparece en un solo
+  archivo; la palabra se construye por concatenación para que la prueba no se cace a sí misma. Una
+  aparición como VERBO («detecta un signo invertido» en `docs/APU_INFORME_COMPLETO.md`) se reescribió
+  para que el criterio fuera literalmente cierto, no «cierto salvo una».
+- **El glosario (§8 del plan) vive en el mismo archivo** (`TERMINOS`, `VERBOS`, `sinReferencia()`):
+  las pantallas nuevas (fases 8-10) leen de ahí; traducir las existentes es la Fase 6 (transversal) y
+  NO se hizo aquí — «Detectar ítems»/«Detectados» que quedan en `app.js` son verbos, no marca.
+- **Dos premisas del plan v4 auditadas como FALSAS antes de tocar nada**: la utilidad operacional de
+  Helder YA era $198.810.000 en `lib/perfiles.js` (desde el commit `cbfbeb6`; el $188.232.004 solo
+  existía en el prompt), y el consorcio NO «hereda de Génesis sin ponderar»: `derivarJuntos` pondera
+  50/50 (`ponderar`), suma experiencia y une UNSPSC. Lo que sí falta —participación editable, TRUNCAR
+  indicadores a dos decimales como hacen las cámaras, «cuántas puertas más se abren»— es la Fase 10.
 
 ## Convenciones
 
