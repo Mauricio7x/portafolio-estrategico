@@ -2287,8 +2287,9 @@ por eso lo que descubrió se fijó como prueba en `tests/e2e.js`, que sí es del
   · ✅ **Corregidos el 16-ago-2026 (A2-A6)**: el corte duro en 5 procesos (encogimiento) y el
     defecto SEMÁNTICO de la baja (factor de precio + `p_sin_precio` para el editor). Ver la sección
     «Probabilidad: encogimiento, factor de precio y banda» más abajo. La rampa YA NO EXISTE.
-  · ⬜ Sigue pendiente A7 (medir la colisión de cierres sobre el histórico) y B2 (segmentar por
-    período: el acumulador ya guarda `por_anio` y el detalle lo enseña, pero el estimador no segmenta).
+  · ✅ A7 también (16-ago-2026): la colisión se mide y el factor sale de la medición (1,06 en
+    producción). ⬜ Sigue pendiente B2 (segmentar por período: el acumulador ya guarda `por_anio` y
+    el detalle lo enseña, pero el estimador no segmenta).
   El documento trae además los tres protocolos de calibración que el histórico ya permite correr hoy.
 - Las CUATRO PUERTAS en `lib/puertas.js` y `P(ganar)`/VE en `lib/probabilidad.js` (`trazaP` es la
   única implementación de la cadena; `estimarPDetalle` es su vista redondeada); el desglose
@@ -2523,6 +2524,23 @@ Decisiones que no hay que re-aprender:
   `/api/inteligencia?op=entidad` responde `reparto_por_anio` (n siempre; promedio del año solo con ≥ 5
   procesos EN ESE AÑO) y `encogimiento`; el modal lo pinta. Es lo que permite VER si el promedio de dos
   años mezcla la ventana de la ley de garantías 2026 — segmentar el estimador sigue pendiente.
+- **A7 (16-ago-2026): LA COLISIÓN DE CIERRES SE MIDE, y el factor SALE de la medición.** El
+  acumulador guarda por entidad `dias[día] = [n, suma]` con la MISMA `fechaCierre` de `lib/negocio`
+  (require diferido: negocio → filtros → equivalencias → indice_competencia cerraría un ciclo);
+  `medirColision` publica en `indice:competencia:meta.colision` el estadístico del §9.3 —
+  estratificado por entidad, colisión = procesos cuyo día de cierre tiene ≥2 de la misma entidad,
+  control = el resto, pooled— con `cociente_pooled` (promedios) y `multiplicador_implicito` (sobre
+  1/(1+r), que es lo que multiplica `p`). **El índice MIDE y no opina**: la comparación con el factor
+  vigente vive en `lib/probabilidad.leerColision`/`factorColisionDe` (dueño de la constante); un
+  `require("./probabilidad.js")` en el índice —aunque diferido— hace que la cadena
+  `filtros → equivalencias → indice_competencia` alcance `apu/`, y hay prueba que lo prohíbe.
+  `factorColisionDe` aplica el multiplicador medido con ≥ 30 entidades, acotado a [0,8; 1,5]; sin
+  medición cae al 1,15 declarado y el desglose dice `origen`. **Medido en producción: 1 465
+  entidades, 28 747 procesos en colisión vs 65 501 de control, cociente de promedios 0,99,
+  multiplicador implícito 1,06, mediana por entidad 1,07** — el ×1,15 era un supuesto y no estaba
+  respaldado; hoy se aplica 1,06. La prueba a mano del fixture agrupa por `claveCanonica` (la
+  entidad «con guion» y «sin guion» son UNA para el índice y sus procesos i=0 cierran el mismo día).
+  Y `leerColision` cazó otra vez `Number(null) = 0`: la ausencia se descarta antes de convertir.
 - **`b_max` NO sale todavía del APU del proceso automáticamente** ni `b̂_mkt` se encoge hacia `b_ref`
   de la modalidad (§3.3 del doc): entra declarada por `?baja_max=`. Enlazar
   `precioPiso().baja_maxima_admisible_pct` del borrador guardado al listado es el siguiente paso.

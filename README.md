@@ -399,11 +399,13 @@ entidades, también las de 1-4 procesos; `encogido:true` y `peso_datos` en la re
 histórico de la entidad** (hash anterior, ≥5 procesos) → **promedio de su departamento** → **supuesto
 conservador de 5** (`P = 1/6`), y tres ajustes declarados: **cierre prorrogado ×1,20** · **precio**
 (`mult(min(baja_max, baja_mediana))` con la MISMA curva del editor de APU; **factor 1 sin
-`?baja_max=`**: el centro del mercado ya no penaliza ni premia) · **colisión de cierres ×1,15**. La
+`?baja_max=`**: el centro del mercado ya no penaliza ni premia) · **colisión de cierres** (factor MEDIDO
+en el histórico y publicado en `indice:competencia:meta.colision`; en producción 1,06 sobre 1 465
+entidades; el 1,15 original queda como respaldo declarado sin medición). La
 fuente viaja siempre en `p_ganar_detalle.fuente`: «histórico de la entidad» no es lo mismo que
 «supuesto», y enseñar el 17 % sin decir de dónde sale convierte una estimación en una promesa. Los
-factores de prórroga y colisión son **supuestos con nombre**, no coeficientes ajustados: no hay
-etiqueta contra la que calibrarlos. `ve = p_ganar × cuantía`. `p_sin_precio` (la cadena sin el factor
+factor de prórroga es un **supuesto con nombre**, no un coeficiente ajustado: no hay etiqueta contra
+la que calibrarlo. `ve = p_ganar × cuantía`. `p_sin_precio` (la cadena sin el factor
 de precio) es lo que el editor de APU consume como `p_base`, para que el precio se cobre UNA vez.
 `p_lo`/`p_hi` es la **banda del 90 %** (r̂ ± 1,645·σ de la posterior; `null` sin índice reconstruido) y
 `?ordenar_por=ve_conservador` ordena por `cuantía × p_lo` (opción).
@@ -2053,7 +2055,7 @@ licitaciones:historico:mes:{YYYY-MM}:chunk:{i} mismo formato de chunk
 CONOCIMIENTO DERIVADO DEL HISTÓRICO — se reconstruye sin re-extraer nada; ninguna purga lo toca
 indice:competencia                             HASH entidad → {procesos, promedio, mediana, nivel}
                                                (+ alias «nit:{NIT}» → {ref: entidad})
-indice:competencia:meta                        JSON {construido, cortes, por_nivel, descartados, encogimiento {mu_global, tau2, m, sigma2_dentro, entidad_no_distingue}, …}
+indice:competencia:meta                        JSON {construido, cortes, por_nivel, descartados, encogimiento {mu_global, tau2, m, sigma2_dentro, entidad_no_distingue}, colision {entidades_con_ambos_grupos, cociente_pooled, multiplicador_implicito, …}, …}
 indice:competencia:progreso                    JSON comprimido, acumulador reanudable del índice
 indice:baja:entidad                            HASH entidad → {baja_mediana, baja_promedio, p25, p75,
                                                nivel, oferentes_promedio, segmentos:{SS:{…}}}
