@@ -36,10 +36,15 @@
 "use strict";
 
 (function (raiz, fabrica) {
-  const api = fabrica();
-  if (typeof module === "object" && module.exports) module.exports = api;
+  /* La marca (docProps creator/Application) sale de glosario.js: en Node se
+     requiere; en el navegador index.html lo carga ANTES que este archivo. */
+  const enNode = typeof module === "object" && module.exports;
+  const glosario = enNode ? require("./glosario.js") : raiz.Glosario;
+  if (!glosario) throw new Error("xlsx.js: falta glosario.js (debe cargarse antes)");
+  const api = fabrica(glosario.MARCA);
+  if (enNode) module.exports = api;
   else raiz.XLSXApu = api;
-})(typeof self !== "undefined" ? self : this, function () {
+})(typeof self !== "undefined" ? self : this, function (MARCA) {
 
   const codificar = (s) => new TextEncoder().encode(s);
 
@@ -356,12 +361,12 @@
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
       + '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" '
       + 'xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Análisis de Precios Unitarios</dc:title>'
-      + "<dc:creator>Detecta</dc:creator></cp:coreProperties>");
+      + "<dc:creator>" + MARCA.nombre + "</dc:creator></cp:coreProperties>");
 
     anadir("docProps/app.xml",
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
       + '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">'
-      + "<Application>Detecta</Application></Properties>");
+      + "<Application>" + MARCA.nombre + "</Application></Properties>");
 
     anadir("xl/workbook.xml",
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'

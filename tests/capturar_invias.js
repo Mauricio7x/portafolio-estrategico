@@ -28,7 +28,7 @@
 
    ⚠️ LICENCIA INVIAS: los documentos del INVIAS declaran prohibido el uso
    comercial sin autorización. Para el uso actual (app privada, referencia
-   citando la fuente) el riesgo es bajo; si Detecta se comercializa con estos
+   citando la fuente) el riesgo es bajo; si Detekta se comercializa con estos
    datos hay que pedir autorización (preciosunitarios@invias.gov.co).
 
    LA CURADURÍA ES A MANO, código por código (la lección del retail: jamás
@@ -265,7 +265,7 @@ async function capturarCodigo(c) {
       por_que_no_2025_2: "La vigencia 2025-2 de la API está corrupta en origen (medido 2026-08-14): acero de refuerzo a $122.000/kg (37× el mercado; 2025-1 da $3.280), agua a $15.900/L (145×), emulsión CRL-0 idéntica en las 140 provincias. Antes de re-capturar con una vigencia nueva, repetir la comparación entre vigencias — ver cabecera de tests/capturar_invias.js.",
       capturado_el: hoyColombia(),
       zona_horaria: "hora Colombia (UTC-5)",
-      licencia: "Los documentos del INVIAS prohíben el uso comercial sin autorización. Uso actual: referencia privada citando la fuente. Si Detecta se comercializa con estos datos, pedir autorización a preciosunitarios@invias.gov.co.",
+      licencia: "Los documentos del INVIAS prohíben el uso comercial sin autorización. Uso actual: referencia privada citando la fuente. Si Detekta se comercializa con estos datos, pedir autorización a preciosunitarios@invias.gov.co.",
       advertencia: "Referencia oficial con rezago declarado (la vigencia viaja en cada registro). La unidad de la fuente NO se convierte salvo multiplicación exacta de la misma dimensión, declarada en normalizacion.nota. INVIAS no cotiza Bogotá D.C.: allí se responde la mediana nacional, declarada.",
       categorias_sin_invias: CATEGORIAS_SIN_INVIAS,
       departamentos: [...new Set(referencias.flatMap((r) => r.provincias.map((p) => p.departamento)))].length,

@@ -1,5 +1,5 @@
 /* ============================================================================
-   Detecta · Onboarding — subir el RUP en PDF y salir con un perfil andando
+   Detekta · Onboarding — subir el RUP en PDF y salir con un perfil andando
    ----------------------------------------------------------------------------
    EL PDF SE LEE AQUÍ, EN EL NAVEGADOR — la misma decisión medida de
    public/pliego.js: pdf.js extrae el texto conservando las columnas por

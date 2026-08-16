@@ -4,7 +4,7 @@
    al proponente que la sustente (Decreto 1082 de 2015, art. 2.2.1.1.2.2.4; Guía
    de Colombia Compra Eficiente para el manejo de ofertas artificialmente bajas)
    y la RECHAZA si la explicación no llega o no demuestra que el precio se puede
-   sostener. La ventaja estructural de Detecta es que el usuario ya tiene el APU
+   sostener. La ventaja estructural del producto es que el usuario ya tiene el APU
    detrás del precio: este módulo lo convierte en un documento imprimible.
 
    Es UMD (navegador + Node) para que la suite lo EJECUTE: un generador que solo
@@ -13,9 +13,14 @@
    presupuesto calculado (`calcular`/`rentabilidad`) y del bloque `piso_techo`.
    Lo que no está —deducciones sin cargar, precios de referencia— se declara. */
 (function (raiz, fabrica) {
-  if (typeof module === "object" && module.exports) module.exports = fabrica();
-  else raiz.Justificacion = fabrica();
-})(typeof self !== "undefined" ? self : this, function () {
+  /* El nombre del producto que firma el documento sale de glosario.js: en
+     Node se requiere; en el navegador index.html lo carga ANTES que este. */
+  const enNode = typeof module === "object" && module.exports;
+  const glosario = enNode ? require("./glosario.js") : raiz.Glosario;
+  if (!glosario) throw new Error("justificacion.js: falta glosario.js (debe cargarse antes)");
+  if (enNode) module.exports = fabrica(glosario.MARCA);
+  else raiz.Justificacion = fabrica(glosario.MARCA);
+})(typeof self !== "undefined" ? self : this, function (MARCA) {
   "use strict";
 
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -43,7 +48,7 @@
     return `${ent.replace(/\B(?=(\d{3})+(?!\d))/g, ".")},${dec}`.replace(/,00$/, "");
   }
   const ORIGEN = {
-    catalogo: "Catálogo de Detecta (APU calibrado con contrato adjudicado)",
+    catalogo: `Catálogo de ${MARCA.nombre} (APU calibrado con contrato adjudicado)`,
     archivo: "Precio del archivo importado por el oferente",
     manual: "Precio tecleado por el oferente",
     usuario: "Precio propio del oferente",
@@ -109,7 +114,7 @@
       : `<p>Sin presupuesto oficial asociado no se comparó la oferta contra el mercado.</p>`;
 
     const supuestos = [
-      "Los precios de los insumos provienen del catálogo de Detecta, calibrado con un contrato ADJUDICADO de obra en Bogotá (2025), regionalizado por factores declarados y contrastado con referencias oficiales (INVIAS) y de tienda. Fuera de Bogotá los precios son factores derivados, no cotizaciones.",
+      `Los precios de los insumos provienen del catálogo de ${MARCA.nombre}, calibrado con un contrato ADJUDICADO de obra en Bogotá (2025), regionalizado por factores declarados y contrastado con referencias oficiales (INVIAS) y de tienda. Fuera de Bogotá los precios son factores derivados, no cotizaciones.`,
       calc.parametros_costo && calc.parametros_costo.mensaje ? calc.parametros_costo.mensaje : null,
       cfg.deducciones_pct == null
         ? "Las deducciones de acta (estampillas, ReteICA) no están cargadas; la contribución especial de obra pública del 5 % (Ley 418 de 1997) sí se tuvo en cuenta en el precio mínimo."
@@ -172,7 +177,7 @@ ${filas || "<tr><td colspan=8>Sin ítems</td></tr>"}
 <ul>${supuestos}</ul>
 
 <div class="firma"><div>Representante legal / proponente</div><div>Ingeniero de costos</div></div>
-<p class="nota" style="margin-top:24px">Documento generado con Detecta a partir del análisis de precios unitarios del oferente. Verifique cada precio contra cotización real antes de presentar.</p>
+<p class="nota" style="margin-top:24px">Documento generado con ${esc(MARCA.nombre)} a partir del análisis de precios unitarios del oferente. Verifique cada precio contra cotización real antes de presentar.</p>
 </body></html>`;
 
     return {

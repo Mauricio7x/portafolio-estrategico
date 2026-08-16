@@ -1,5 +1,5 @@
 /* ============================================================================
-   Detecta · Frontend unificado (una página, tres pestañas)
+   Detekta · Frontend unificado (una página, tres pestañas)
    ----------------------------------------------------------------------------
    ago 2026: index.html es la ÚNICA página. Este archivo consolida los tres
    módulos que antes vivían en páginas separadas — el tablero de oportunidades

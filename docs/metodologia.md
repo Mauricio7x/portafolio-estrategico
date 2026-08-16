@@ -1,4 +1,4 @@
-# Metodología de cálculo del costo real (Fase 1 · Detecta v3)
+# Metodología de cálculo del costo real (Fase 1 · Detekta v3)
 
 Documento público y auditable. Cada fórmula, porcentaje y norma que usa el editor de APU para
 costear la mano de obra y los costos indirectos, con el **estado de verificación** de cada

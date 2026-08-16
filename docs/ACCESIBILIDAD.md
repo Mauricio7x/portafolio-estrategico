@@ -70,9 +70,9 @@ la base.
 
 La misma lógica del encargo aplicada a cada etapa del ciclo (los portales comerciales del sector —
 alertas de licitaciones por correo, tableros de vigilancia de mercado— compiten exactamente en
-esto: menos horas de analista por oportunidad). Estado en Detecta:
+esto: menos horas de analista por oportunidad). Estado en Detekta:
 
-| Etapa | Costo operativo típico | Qué lo ahorra en Detecta | Estado |
+| Etapa | Costo operativo típico | Qué lo ahorra en Detekta | Estado |
 |---|---|---|---|
 | Encontrar | Horas barriendo SECOP II | Orden por defecto: viable → zona → valor esperado; PAA aparte | ✅ (este PR cierra la zona) |
 | Filtrar | Leer 50 fichas | Veredicto en una línea + frecuencia natural + cuenta regresiva | ✅ |

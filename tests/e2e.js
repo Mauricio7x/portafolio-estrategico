@@ -11302,7 +11302,8 @@ async function main() {
       assert.strictEqual(doc.resumen.items, ITEMS_PT.length);
       const cop = Justificacion.cop;
       for (const debe of [cop(rs.costo_directo_total), cop(rs.precio_final), cop(1500000000), cop(pt.cifras.piso_rentable),
-        "2.2.1.1.2.2.4", "CO1.APU.JERICO", "GOBERNACIÓN DEL TOLIMA", "Análisis de precios unitarios"]) {
+        "2.2.1.1.2.2.4", "CO1.APU.JERICO", "GOBERNACIÓN DEL TOLIMA", "Análisis de precios unitarios",
+        `Documento generado con ${require("../lib/glosario.js").MARCA.nombre}`, `Catálogo de ${require("../lib/glosario.js").MARCA.nombre}`]) {
         assert.ok(doc.html.includes(debe), `la justificación no dice «${debe}»`);
       }
       assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(doc.html), "sin emojis en el documento");
@@ -12034,6 +12035,130 @@ async function main() {
       assert.ok(vercel.crons.some((c) => c.path === "/api/sync"), "falta el cron de /api/sync");
     }
 
+    /* ═══════════ j-quinquies. MARCA · DETEKTA (Fase 7 del plan maestro v4) ═══════════
+       El producto pasó a llamarse Detekta (con k) y el nombre tiene UNA fuente
+       de verdad: public/glosario.js (UMD), que lib/glosario.js re-exporta. Lo
+       que se vigila: (1) identidad de objeto entre las dos rutas; (2) que la
+       grafía vieja no exista en ningún texto del repositorio —la búsqueda de
+       texto es literalmente el criterio de aceptación—; (3) que el marcado no
+       escriba el nombre a mano: los nodos [data-marca] nacen VACÍOS y el script
+       los rellena, y el <title>/<meta> —la única excepción, porque se leen
+       antes de que corra ningún script— son EXACTAMENTE lo que produce el
+       glosario; (4) que el Excel y la justificación firmen con la marca leída
+       del glosario; (5) que lo que NO debía cambiar no cambió: las claves de
+       almacenamiento del navegador siguen siendo las de siempre (renombrarlas
+       cerraría la sesión de todos y les borraría el perfil guardado). La
+       grafía vieja se construye por concatenación para que esta prueba no se
+       cace a sí misma. */
+    {
+      const Glosario = require("../lib/glosario.js");
+      const GlosarioPub = require("../public/glosario.js");
+      assert.strictEqual(Glosario, GlosarioPub, "lib/glosario.js tiene que RE-EXPORTAR public/glosario.js, no copiarlo");
+      const { MARCA } = Glosario;
+      assert.strictEqual(MARCA.nombre, "Detekta");
+      assert.ok(MARCA.nombreLargo.startsWith(MARCA.nombre + " —"), "el nombre largo empieza por el nombre");
+      assert.strictEqual(MARCA.dominio, "portafolio-estrategico.vercel.app", "la URL de producción NO cambia con la marca");
+      assert.ok(Object.isFrozen(MARCA), "MARCA es de solo lectura: nadie la reescribe en caliente");
+      assert.strictEqual(Glosario.titulo(), `${MARCA.nombre} · ${MARCA.lema}`);
+      assert.ok(Glosario.descripcion().startsWith(MARCA.nombreLargo));
+      // glosario: cada término trae su forma interna y su traducción (o la nota de por qué no se muestra)
+      for (const [clave, t] of Object.entries(Glosario.TERMINOS)) {
+        assert.ok(t.interno, `término «${clave}» sin forma interna`);
+        assert.ok(typeof t.visible === "string" || t.nota, `término «${clave}» sin traducción ni nota`);
+      }
+      assert.strictEqual(Glosario.traducir("manifestacion_interes"), "Avisar que le interesa");
+      assert.strictEqual(Glosario.traducir("dias_habiles"), "Días de oficina (sin fines de semana ni festivos)");
+      assert.throws(() => Glosario.traducir("no_existe"), /desconocido/, "un término desconocido lanza: no se inventa una traducción");
+      assert.strictEqual(Glosario.sinReferencia(), "Sin referencia");
+      assert.ok(/^Sin referencia — /.test(Glosario.sinReferencia("no hay procesos anteriores")));
+
+      /* ---- (2) la grafía vieja no existe en ningún texto del repositorio ---- */
+      const GRAFIA_VIEJA = new RegExp("\\bDetec" + "ta\\b");
+      const raiz = path.join(__dirname, "..");
+      const OMITIR = new Set(["node_modules", ".git", "ecc-tool", ".vercel"]);
+      const conGrafiaVieja = [];
+      const recorrer = (dir) => {
+        for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+          if (OMITIR.has(ent.name)) continue;
+          const ruta = path.join(dir, ent.name);
+          if (ent.isDirectory()) { recorrer(ruta); continue; }
+          if (!/\.(js|json|md|html|css|csv|txt|sh|yml|yaml)$/i.test(ent.name)) continue;
+          if (GRAFIA_VIEJA.test(fs.readFileSync(ruta, "utf8"))) conGrafiaVieja.push(path.relative(raiz, ruta));
+        }
+      };
+      recorrer(raiz);
+      assert.deepStrictEqual(conGrafiaVieja, [],
+        "la marca vieja volvió a aparecer en: " + conGrafiaVieja.join(", ") + " — el producto se llama " + MARCA.nombre);
+
+      /* ---- (3) el marcado no escribe el nombre a mano ---- */
+      const htmlM = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const titulo = htmlM.match(/<title>([^<]*)<\/title>/);
+      assert.ok(titulo && titulo[1] === Glosario.titulo(), "el <title> tiene que ser EXACTAMENTE Glosario.titulo()");
+      const meta = (sel) => { const m = htmlM.match(new RegExp(`<meta ${sel} content="([^"]*)">`)); return m && m[1]; };
+      assert.strictEqual(meta('name="description"'), Glosario.descripcion(), "meta description ≡ Glosario.descripcion()");
+      assert.strictEqual(meta('name="application-name"'), MARCA.nombre);
+      assert.strictEqual(meta('property="og:site_name"'), MARCA.nombre);
+      assert.strictEqual(meta('property="og:title"'), Glosario.titulo());
+      const nodosMarca = [...htmlM.matchAll(/data-marca="([^"]+)"[^>]*>([^<]*)</g)];
+      assert.ok(nodosMarca.length >= 3, "landing, gate y barra superior llevan la marca por [data-marca]");
+      for (const [, campo, texto] of nodosMarca) {
+        assert.ok(typeof MARCA[campo] === "string", `data-marca="${campo}" no es un campo de MARCA`);
+        assert.strictEqual(texto.trim(), "", `el nodo data-marca="${campo}" nace VACÍO: lo rellena glosario.js, no la mano`);
+      }
+      // fuera del <title>/<meta>, la marca no aparece escrita en el marcado visible
+      const cuerpoVisible = sinComentarios(htmlM).replace(/<title>[^<]*<\/title>/, "").replace(/<meta [^>]*>/g, "");
+      assert.ok(!cuerpoVisible.includes(MARCA.nombre),
+        "el nombre del producto aparece escrito a mano en index.html: tiene que salir de [data-marca] + glosario.js");
+      // el script va PRIMERO: xlsx.js, justificacion.js y app.js leen la marca de él
+      const posScript = (src) => htmlM.indexOf(`<script src="/${src}">`);
+      assert.ok(posScript("glosario.js") > 0, "index.html tiene que cargar glosario.js");
+      for (const dep of ["xlsx.js", "justificacion.js", "onboarding.js", "app.js"]) {
+        assert.ok(posScript("glosario.js") < posScript(dep), `glosario.js debe cargarse ANTES que ${dep}`);
+      }
+      // y ninguno de los módulos del navegador escribe la marca a mano
+      for (const archivo of ["app.js", "onboarding.js", "pliego.js", "xlsx.js", "justificacion.js", "apu_libro.js"]) {
+        const fuente = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", archivo), "utf8"));
+        assert.ok(!fuente.includes(`"${MARCA.nombre}`) && !fuente.includes(`'${MARCA.nombre}`) && !fuente.includes(`\`${MARCA.nombre}`),
+          `${archivo} escribe el nombre del producto a mano: tiene que leer MARCA.nombre`);
+      }
+
+      /* ---- estampar(), EJECUTADA contra un DOM mínimo: rellena e idempotente ---- */
+      const nodo = (campo) => { const n = { texto: "", attrs: { "data-marca": campo } }; n.getAttribute = (k) => n.attrs[k]; Object.defineProperty(n, "textContent", { get: () => n.texto, set: (v) => { n.texto = v; } }); return n; };
+      const nodos = [nodo("nombre"), nodo("nombre"), nodo("lema"), nodo("inexistente")];
+      const docFalso = { title: "", querySelectorAll: (sel) => (sel === "[data-marca]" ? nodos : []) };
+      assert.strictEqual(Glosario.estampar(docFalso), 3, "estampa los tres nodos con campo válido y omite el desconocido");
+      assert.strictEqual(nodos[0].textContent, MARCA.nombre);
+      assert.strictEqual(nodos[2].textContent, MARCA.lema);
+      assert.strictEqual(nodos[3].textContent, "", "un data-marca que no es campo de MARCA se deja como está");
+      assert.strictEqual(docFalso.title, Glosario.titulo());
+      assert.strictEqual(Glosario.estampar(docFalso), 3, "idempotente");
+      assert.strictEqual(Glosario.estampar(null), 0, "sin documento no hace nada y no lanza");
+
+      /* ---- (4) el Excel firma con la marca leída del glosario ---- */
+      const XLSXApu = require("../public/xlsx.js");
+      const XLSXLectura = require("../public/xlsx_lectura.js");
+      const zlib = require("zlib");
+      const bytesM = XLSXApu.construirLibro([{ nombre: "H", filas: [["a", 1]] }]);
+      const zM = XLSXLectura.leerZip(new Uint8Array(bytesM));
+      const core = Buffer.from(await zM.extraer("docProps/core.xml", async (u8) => zlib.inflateRawSync(Buffer.from(u8)))).toString("utf8");
+      const app = Buffer.from(await zM.extraer("docProps/app.xml", async (u8) => zlib.inflateRawSync(Buffer.from(u8)))).toString("utf8");
+      assert.ok(core.includes(`<dc:creator>${MARCA.nombre}</dc:creator>`), "docProps/core.xml firma con MARCA.nombre");
+      assert.ok(app.includes(`<Application>${MARCA.nombre}</Application>`), "docProps/app.xml firma con MARCA.nombre");
+
+      /* ---- (5) lo que NO cambia con la marca ---- */
+      const appM = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      assert.ok(/sessionStorage\.setItem\("detecta-acceso"/.test(appM), "la clave de sesión del gate NO se renombra: cerraría la sesión de todos");
+      assert.ok(/CLAVE_PERFIL_RUP = "detecta_perfil_rup"/.test(appM), "la clave del perfil guardado NO se renombra: borraría el perfil de todos");
+      const descargar = fs.readFileSync(path.join(__dirname, "..", "lib", "apu_descargar.js"), "utf8");
+      assert.ok(/require\("\.\/glosario\.js"\)/.test(descargar) && /\$\{MARCA\.nombre\}\/1\.0/.test(descargar),
+        "el User-Agent del descargador lee la marca del glosario");
+      assert.ok(fs.existsSync(path.join(__dirname, "..", "docs", "marca.md")), "docs/marca.md documenta el cambio de marca y el dominio futuro");
+      const marcaDoc = fs.readFileSync(path.join(__dirname, "..", "docs", "marca.md"), "utf8");
+      assert.ok(/Settings.*Domains/.test(marcaDoc) && /MARCA\.dominio/.test(marcaDoc), "docs/marca.md explica cómo conectar un dominio propio");
+      console.log(`  · Marca: el producto se llama ${MARCA.nombre} — una fuente de verdad, ${nodosMarca.length} nodos [data-marca], `
+        + "0 archivos con la grafía vieja, Excel y justificación firman desde el glosario, claves de almacenamiento intactas");
+    }
+
     /* ═══════════ h-ter. Rediseño Apple Glass · pestañas · eliminación de RUP ·
        probabilidad en lenguaje claro (encargo, ago 2026) ═══════════
        Sin DOM en la suite: lo ejecutable se EJECUTA (funciones extraídas del
@@ -12082,8 +12207,8 @@ async function main() {
             `${archivo} volvió a traer emojis (${hallados.join(" ")}): los dibuja el sistema operativo, `
             + "cambian en cada aparato y no heredan el color del tema");
         }
-        // y el producto se llama DETECTA, no como la carpeta del repositorio
-        assert.ok(/<title>Detecta/.test(html), "el título de la página es el nombre del producto");
+        // y el producto se llama como dice el glosario (MARCA.nombre), no como la carpeta del repositorio
+        assert.ok(html.includes(`<title>${require("../lib/glosario.js").titulo()}</title>`), "el título de la página es el nombre del producto");
         /* Sobre el marcado VISIBLE, sin comentarios: el comentario del `<title>`
            cita el nombre viejo a propósito, para explicar por qué se fue. Es la
            misma trampa que ya cazó la prueba de `cotizado_pct` — una regex sobre

@@ -1,4 +1,10 @@
-# Detecta · Oportunidades de licitación SECOP II
+# Detekta · Oportunidades de licitación SECOP II
+
+> **Marca (ago 2026):** el producto se llama **Detekta**, con k. El nombre tiene UNA fuente de
+> verdad, `public/glosario.js` (`MARCA.nombre`; `lib/glosario.js` lo re-exporta), y ninguna
+> cadena visible lo escribe a mano. Repositorio, URL de producción, claves de Redis, variables de
+> entorno, endpoints y claves del navegador (`detecta-acceso`, `detecta_perfil_rup`) **no cambian**:
+> inventario, verificación y cómo conectar un dominio propio en [`docs/marca.md`](docs/marca.md).
 
 Aplicación privada para decidir **a qué licitaciones de obra civil presentarse** en Colombia.
 Extrae en vivo el dataset abierto de SECOP II (`p6dx-8zbt`, Colombia Compra Eficiente), enriquece

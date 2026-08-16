@@ -1,4 +1,4 @@
-# Análisis estratégico de Detecta · agosto 2026
+# Análisis estratégico de Detekta · agosto 2026
 
 Diagnóstico integral de producto contra la filosofía definitiva del dueño: **«problemas e
 incógnitas difíciles, simplificadas para personas normales, que no necesiten un curso académico
@@ -245,9 +245,9 @@ ya vigente (punto tipográfico ● + clase de color del tema, o texto llano) y l
 para que no puedan volver. `apu_libro.js` sigue fuera a propósito: sus marcadores viajan al
 Excel exportado, otro medio y otra decisión documentada.
 
-### D. «Portafolio → Detecta» — YA ESTABA HECHO; quedaba un residuo
+### D. «Portafolio → Detekta» — YA ESTABA HECHO; quedaba un residuo
 
-La marca visible es consistentemente «Detecta» (`<title>`, landing, gate, barra) y hay prueba.
+La marca visible es consistentemente «Detekta» (`<title>`, landing, gate, barra) y hay prueba.
 Quedaban dos menciones en comentarios de código: la cabecera de `app.js` (corregida hoy) y el
 comentario del `<title>` que cita el nombre viejo **a propósito** para explicar por qué se fue
 (se conserva). El repositorio se sigue llamando `portafolio-estrategico`: renombrarlo es

@@ -3,7 +3,7 @@
 **Contratación Pública Colombiana y SECOP II — Curso completo de formación**
 Programa de Formación Profesional | Nivel Analista | Edición 2026
 
-> Este archivo es la **base de conocimiento de dominio** del proyecto *Detecta*.
+> Este archivo es la **base de conocimiento de dominio** del proyecto *Detekta*.
 > Es autosuficiente: se puede leer de principio a fin sin ningún otro documento.
 > Las decisiones técnicas del repositorio deben estar informadas por él — el resumen
 > accionable y el mapeo a funcionalidades viven en `CLAUDE.md`, sección
