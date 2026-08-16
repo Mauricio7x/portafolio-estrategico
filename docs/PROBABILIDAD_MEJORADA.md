@@ -38,9 +38,10 @@
 >    todas. Estimarla con las de 1-4 procesos fue el primer intento y la suite lo cazó: el ruido
 >    muestral de muchas entidades pequeñas (s²/n con n = 2) superaba la varianza entre entidades y
 >    `τ̂²` salía ≤ 0 aunque las grandes difirieran de sobra (3, 8 y 18 oferentes).
-> 3. **El prior es el GLOBAL del índice (μ), no el departamento** (B7 sigue pendiente): `r̂` se calcula al
->    construir el índice y ahí no está el promedio departamental, que se deriva al servir sobre el corpus
->    ACTIVO. El departamento sigue siendo el respaldo para entidades ausentes del índice.
+> 3. ~~El prior es el global~~ **B7 hecho el 16-ago-2026**: el prior de cada entidad es el promedio de su
+>    departamento encogido hacia el nacional (`estimarPriorDepartamental`, momentos entre departamentos con
+>    ≥ 30 procesos), publicado por entidad como `prior`/`prior_origen`. Medido antes de hacerlo: los
+>    departamentos difieren (Bogotá 8,9 · Boyacá 2,3 · Arauca 1,5 · Caldas 11,4).
 > 4. ~~`b̂_mkt` no se encoge~~ **Cerrado el 16-ago-2026**: `lib/indice_baja.encogerBaja` encoge la
 >    mediana de la celda hacia la referencia de su modalidad (o la global) con `m_b` estimado al
 >    construir el índice (`meta.encogimiento`, momentos sobre los grupos por entidad con base), SOLO
@@ -704,7 +705,7 @@ sumando los visibles.
 | **B4** | **Backtest temporal completo** (§9.1) como diagnóstico recurrente | nada — solo el script | Es lo único que convierte «la fórmula parece mejor» en «la fórmula acierta más». Debe correr en cada cambio de `m`, `μ` o de las candidatas de columna | ninguna |
 | **B5** | **Verificar las columnas de oferentes** contra la fuente | acceso a `datos.gov.co` (403 en este entorno) [DOC] | Si la columna efectiva es el derivado `oferentes` y no una columna de la fuente, todo el edificio descansa sobre una lectura no verificada. Ya lo avisa `columnas_historicas` | 1 consulta desde una red con salida |
 | **B6** | **Etiqueta propia**: registro de decisiones y resultados del dueño | endpoint POST autenticado + disciplina de uso | Es la **única** forma de calibrar `P` como probabilidad. Con 50 registros hay tasa de victoria con banda; con 20, ya se puede contrastar el `N*` | años, y empieza el día que se cree |
-| **B7** | **Encoger también el prior por departamento** (L6) | nada — el mismo estimador un nivel arriba | Solo importa si `w` medio resulta bajo en producción | ninguna |
+| **B7** ✅ | **Encoger también el prior por departamento** (L6) — hecho (16-ago-2026) | nada — el mismo estimador un nivel arriba | Medido: los departamentos difieren (desv. 2,3 sobre media 4) y el prior importa en el 13 % de las filas | ninguna |
 
 ---
 

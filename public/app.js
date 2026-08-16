@@ -882,9 +882,10 @@
     if (precio && precio.factor != null && precio.factor < 1) return "Aquí suelen bajar más de lo que vos podés bajar.";
     const d = l.p_ganar_detalle || {};
     if (d.encogido && d.peso_datos != null && d.peso_datos < 0.5) {
+      const apoyo = /^departamento:/.test(d.prior_origen || "") ? "el promedio de su departamento" : "el promedio general";
       return conComp
-        ? `Pocos procesos de esta entidad (${fmt.format(procesos)}): la cifra se apoya en el promedio general.`
-        : "Pocos procesos de esta entidad: la cifra se apoya en el promedio general.";
+        ? `Pocos procesos de esta entidad (${fmt.format(procesos)}): la cifra se apoya en ${apoyo}.`
+        : `Pocos procesos de esta entidad: la cifra se apoya en ${apoyo}.`;
     }
     if (conComp) return `Basado en ${fmt.format(procesos)} procesos históricos de esta entidad.`;
     if (d.encogido && Number.isFinite(procesos) && procesos > 0) return `Basado en ${fmt.format(procesos)} procesos históricos de esta entidad.`;
@@ -1393,7 +1394,7 @@
     /* Y cuánto pesan los datos propios en los rivales que usa la probabilidad
        (encogimiento): con pocos procesos manda el promedio general. */
     const enc = i.encogimiento && i.encogimiento.rivales_estimados != null
-      ? `<p class="text-xs text-gray-500">Rivales esperados para la probabilidad: ${fmtNum.format(i.encogimiento.rivales_estimados)}${i.encogimiento.peso_datos != null ? ` (los datos propios pesan ${Math.round(i.encogimiento.peso_datos * 100)} %; el resto lo pone el promedio general)` : ""}</p>`
+      ? `<p class="text-xs text-gray-500">Rivales esperados para la probabilidad: ${fmtNum.format(i.encogimiento.rivales_estimados)}${i.encogimiento.peso_datos != null ? ` (los datos propios pesan ${Math.round(i.encogimiento.peso_datos * 100)} %; el resto lo pone ${/^departamento:/.test(i.encogimiento.prior_origen || "") ? `el promedio de su departamento` : "el promedio general"}${i.encogimiento.prior != null ? `, ${fmtNum.format(i.encogimiento.prior)}` : ""})` : ""}</p>`
       : "";
     $("modal-cuerpo").innerHTML = `
       <p class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${banda.clases}">

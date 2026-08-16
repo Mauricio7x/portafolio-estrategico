@@ -6135,9 +6135,9 @@ async function main() {
         assert.strictEqual(rivalesEncogidos({ nivel: "alta", promedio_oferentes: 18, total_procesos: 40 }), null);
         assert.strictEqual(rivalesEncogidos({ rivales_estimados: null }), null, "null NO es 0 rivales");
         assert.strictEqual(rivalesEncogidos({ rivales_estimados: "" }), null);
-        assert.deepStrictEqual(rivalesEncogidos({ rivales_estimados: 2.5, peso_datos: 0.8, rivales_desv: 0.4 }), { rivales: 2.5, peso_datos: 0.8, desv: 0.4 });
-        assert.deepStrictEqual(rivalesEncogidos({ rivales_estimados: 2.5 }), { rivales: 2.5, peso_datos: null, desv: null },
-          "peso y desviación ausentes son null, no 0 (Number(null) es 0)");
+        assert.deepStrictEqual(rivalesEncogidos({ rivales_estimados: 2.5, peso_datos: 0.8, rivales_desv: 0.4 }), { rivales: 2.5, peso_datos: 0.8, desv: 0.4, prior: null, prior_origen: null });
+        assert.deepStrictEqual(rivalesEncogidos({ rivales_estimados: 2.5 }), { rivales: 2.5, peso_datos: null, desv: null, prior: null, prior_origen: null },
+          "peso, desviación y prior ausentes son null, no 0 (Number(null) es 0)");
         /* Y el LECTOR DEL HASH no puede usar el `numero()` tolerante del dataset
            sobre estos campos: leía «0.963» como 963 (punto = miles) y el peso
            salía null → 0 en la respuesta. Se fija con el registro tal como lo
@@ -6164,6 +6164,39 @@ async function main() {
         const dEncPro = estimarPDetalle({ _cierre_prorrogado: true }, { competencia: { nivel: "sin_dato", promedio_oferentes: null, total_procesos: 2, rivales_estimados: 2.5, peso_datos: 0.6, rivales_desv: 0.9 } });
         assert.ok(Math.abs(dEncPro.p_lo / dEnc.p_lo - FACTOR_CIERRE_PRORROGADO) < 1e-3, "la banda tiene que llevar los mismos ajustes que p");
         assert.ok(Z_BANDA > 1.6 && Z_BANDA < 1.7);
+        /* 7 · B7 · EL PRIOR ES EL DEL DEPARTAMENTO, encogido hacia el nacional
+           («el mismo estimador un nivel arriba»); sin departamento o sin base
+           departamental, el nacional. Con < 3 departamentos con base (como en
+           este corpus: todo Tolima) no se estima y todo es «global». */
+        {
+          const E = [];
+          for (let i = 0; i < 12; i++) E.push({ procesos: 40, oferentes_total: 360, suma2: 40 * 81 + 800, depto: "BOGOTA" });
+          for (let i = 0; i < 8; i++) E.push({ procesos: 20, oferentes_total: 40, suma2: 20 * 4 + 40, depto: "BOYACA" });
+          for (let i = 0; i < 6; i++) E.push({ procesos: 30, oferentes_total: 120, suma2: 30 * 16 + 240, depto: "TOLIMA" });
+          const chica = { procesos: 3, oferentes_total: 6, suma2: 14, depto: "BOYACA" };
+          const sinDep = { procesos: 3, oferentes_total: 6, suma2: 14, depto: null };
+          const encD = indiceComp.estimarEncogimiento(E.concat([chica, sinDep]));
+          assert.ok(encD.departamentos && encD.departamentos.con_base === 3 && encD.departamentos.m > 0, `prior departamental: ${JSON.stringify(encD.departamentos)}`);
+          const pB = encD.departamentos.priors.BOYACA, pBog = encD.departamentos.priors.BOGOTA;
+          assert.ok(pB.prior < encD.mu_global && pBog.prior > encD.mu_global, "cada departamento se encoge hacia el nacional pero conserva su lado");
+          assert.ok(pB.peso > 0 && pB.peso < 1);
+          const eB = indiceComp.encogerEntidad(chica, encD), eG = indiceComp.encogerEntidad(sinDep, encD);
+          assert.strictEqual(eB.prior_origen, "departamento:BOYACA");
+          assert.strictEqual(eB.prior, pB.prior);
+          assert.strictEqual(eG.prior_origen, "global");
+          assert.strictEqual(eG.prior, encD.mu_global);
+          assert.ok(eB.rivales_estimados < eG.rivales_estimados, "la misma entidad chica vale menos rivales en Boyacá (2) que sin departamento (nacional 6,5)");
+          // < 3 departamentos con base: nada que estimar, prior nacional para todos
+          const encUno = indiceComp.estimarEncogimiento(E.filter((e) => e.depto === "BOGOTA").concat([chica]));
+          assert.strictEqual(encUno.departamentos.m, null);
+          assert.strictEqual(indiceComp.encogerEntidad(chica, encUno).prior_origen, "global");
+          // el lector y la cadena publican el prior
+          const leidoP = indiceComp.competenciaDe({ x: { procesos: 3, promedio: null, nivel: "sin_dato", rivales_estimados: 2.01, peso_datos: 0.676, rivales_desv: 0.67, prior: 2.03, prior_origen: "departamento:BOYACA" } }, { entidad: "x" });
+          assert.strictEqual(leidoP.prior, 2.03); assert.strictEqual(leidoP.prior_origen, "departamento:BOYACA");
+          const dP = estimarPDetalle({}, { competencia: leidoP });
+          assert.strictEqual(dP.prior, 2.03); assert.strictEqual(dP.prior_origen, "departamento:BOYACA");
+          assert.strictEqual(estimarPDetalle({}, { competencia: { nivel: "sin_dato", promedio_oferentes: null, total_procesos: 2, rivales_estimados: 2.5 } }).prior, null, "sin prior publicado, null (no 0)");
+        }
         console.log(`· probabilidad A2-A6: μ=${enc.mu_global} m=${enc.m} · continuidad en 5 procesos ${p4}→${p5} (antes ${pViejo4}→${p5}) · precio neutro sin b_max, curva única con rentabilidad · banda n=4 ${ancho(dN4).toFixed(3)} vs n=40 ${ancho(dN40).toFixed(3)}`);
       }
 
