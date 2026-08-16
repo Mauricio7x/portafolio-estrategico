@@ -1545,7 +1545,8 @@
     $("modal-cuerpo").innerHTML = cargando("Reconstruyendo el cálculo…");
     let r, cuerpo;
     try {
-      r = await fetch(`/api/inteligencia?op=probabilidad&id_proceso=${encodeURIComponent(id)}`,
+      // el perfil viaja: la baja máxima del proceso sale de SUS borradores de APU (A4)
+      r = await fetch(`/api/inteligencia?op=probabilidad&id_proceso=${encodeURIComponent(id)}&perfil=${encodeURIComponent($("f-perfil").value || "")}`,
         { headers: { "x-historico-token": token } });
     } catch {
       $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-red-600">No se pudo contactar el servidor. Intente de nuevo.</p>';

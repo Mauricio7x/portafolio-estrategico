@@ -246,7 +246,7 @@ nada, ni siquiera qué perfiles existen.
 | `incluir_cerradas` | — | `1` para incluir procesos en estado terminal |
 | `solo_viables` | **`true`** | Oculta lo que no pasa las puertas P1-P3. Con `false` aparecen al final, marcados |
 | `ordenar_por` | **`atractividad`** | `atractividad` · `ve` · `ve_conservador` (cuantía × cota inferior de la banda de probabilidad; sin banda cae al VE) · `p_ganar` · `anticipo` · `cuantia` · `competencia` (nivel de la **entidad**) · `puntaje` (legado) |
-| `baja_max` | — | Baja máxima en % que el dueño soporta sin perder plata (**solo con token**; sin credencial es inerte y `baja_max_ignorada` lo dice). Con ella el ajuste `precio` de `p_ganar` deja de ser neutro. Ilegible ⇒ inerte, nunca 400 |
+| `baja_max` | — | Baja máxima en % que el dueño soporta sin perder plata (**solo con token**; sin credencial es inerte y `baja_max_ignorada` lo dice). Con ella el ajuste `precio` de `p_ganar` deja de ser neutro. Ilegible ⇒ inerte, nunca 400. **Si el proceso tiene un borrador de APU guardado con costo, la baja máxima sale de él** (`1 − piso_rentable/presupuesto_oficial`) y manda sobre esta; cada fila publica `baja_maxima {valor, origen: apu·declarada·null, borrador}` |
 | `orden` | `desc` | `asc` · `desc` |
 | `pagina` / `por_pagina` | 1 / 20 | `por_pagina` máx 100 |
 

@@ -41,11 +41,13 @@
 > 3. **El prior es el GLOBAL del índice (μ), no el departamento** (B7 sigue pendiente): `r̂` se calcula al
 >    construir el índice y ahí no está el promedio departamental, que se deriva al servir sobre el corpus
 >    ACTIVO. El departamento sigue siendo el respaldo para entidades ausentes del índice.
-> 4. **`b̂_mkt` no se encoge hacia `b_ref` de la modalidad** (§3.3): sin `b_max` el factor es 1 y el
->    encogimiento no cambiaría nada; con `b_max` se usa la mediana de la celda tal como la publica
->    `bajaDeMercado` (mínimo 5, ya refinada por modalidad) y su IQR como dispersión. Y **`b_max` no
->    sale todavía del APU del proceso automáticamente**: entra declarada por `?baja_max=`; enlazar
->    `precioPiso().baja_maxima_admisible_pct` de un borrador guardado al listado es el siguiente paso.
+> 4. ~~`b̂_mkt` no se encoge~~ **Cerrado el 16-ago-2026**: `lib/indice_baja.encogerBaja` encoge la
+>    mediana de la celda hacia la referencia de su modalidad (o la global) con `m_b` estimado al
+>    construir el índice (`meta.encogimiento`, momentos sobre los grupos por entidad con base), SOLO
+>    para el factor de precio — la tarjeta y el piso/techo siguen con la medida. Y **`b_max` ya sale
+>    del APU del proceso** (`lib/baja_maxima.js`: `1 − piso_rentable/PO` del borrador guardado, la
+>    misma `pisoTecho` del panel; manda sobre `?baja_max=`; el desglose recibe `perfil` para
+>    reproducir la misma `p`).
 > 5. **El tope `min(b_max, mediana)` es deliberado y ASIMÉTRICO respecto del editor** (lo señaló la
 >    revisión adversaria): `b_max` es hasta dónde el dueño PUEDE bajar, no lo que va a ofertar; la
 >    tarjeta asume que, si puede, ofertará en el centro (jugada dominante en 3 de 4 métodos) y no
