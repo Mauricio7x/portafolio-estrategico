@@ -295,26 +295,31 @@
   const RE_PRECIO = /VALOR\s*UNIT|VR\s*UNIT|PRECIO\s*UNIT|^UNITARIO$/;
   const RE_TOTAL = /VALOR\s*TOTAL|VR\s*TOTAL|^TOTAL$/;
   const RE_DESC = /^DESCRIPCION|^ACTIVIDAD|^ITEM\b.*DESCRIP|^CONCEPTO$|^DETALLE$/;
+  // columnas OPCIONALES de subcontrato: «SUBCONTRATADO» (Sí/X/1) y «AIU SUB» (%)
+  const RE_SUB = /^SUBCONTRAT/;
+  const RE_AIU_SUB = /AIU.*SUB|SUB.*AIU/;
 
   function buscarCabecera(grid) {
     for (let i = 0; i < Math.min(grid.length, 60); i++) {
       const fila = grid[i] || [];
-      let cUnidad = -1, cCantidad = -1, cPrecio = -1, cTotal = -1, cDesc = -1;
+      let cUnidad = -1, cCantidad = -1, cPrecio = -1, cTotal = -1, cDesc = -1, cSub = -1, cAiuSub = -1;
       fila.forEach((celda, j) => {
         const t = normCab(celda);
         if (!t) return;
         if (cUnidad < 0 && RE_UNIDAD.test(t)) cUnidad = j;
         if (cCantidad < 0 && RE_CANTIDAD.test(t)) cCantidad = j;
+        if (cAiuSub < 0 && RE_AIU_SUB.test(t)) { cAiuSub = j; return; } // «AIU SUB» no es ni precio ni «subcontratado»
         if (cPrecio < 0 && RE_PRECIO.test(t)) cPrecio = j;
         if (cTotal < 0 && RE_TOTAL.test(t)) cTotal = j;
         if (cDesc < 0 && RE_DESC.test(t)) cDesc = j;
+        if (cSub < 0 && RE_SUB.test(t)) cSub = j;
       });
       if (cUnidad >= 0 && cCantidad >= 0) {
         // sin columna rotulada de descripción, es la inmediatamente a la
         // izquierda de la unidad (el layout universal del formulario)
         if (cDesc < 0) cDesc = Math.max(0, cUnidad - 1);
         const cCodigo = cDesc > 0 ? 0 : -1;
-        return { fila: i, codigo: cCodigo, descripcion: cDesc, unidad: cUnidad, cantidad: cCantidad, precio: cPrecio, total: cTotal };
+        return { fila: i, codigo: cCodigo, descripcion: cDesc, unidad: cUnidad, cantidad: cCantidad, precio: cPrecio, total: cTotal, subcontratado: cSub, aiu_sub: cAiuSub };
       }
     }
     return null;
@@ -393,6 +398,12 @@
          anticipo_pct = 0). La fila viaja sin precio y el que calcula decide. */
       const precioUtil = precio != null && precio > 0 ? precio : null;
       if (precio === 0) precioCero++;
+      // subcontrato (columnas opcionales): «Sí»/«X»/«1»/«true» marca; el % del
+      // AIU del sub va aparte y solo tiene sentido si la fila está marcada
+      const subTxt = cab.subcontratado >= 0 ? normCab(f[cab.subcontratado]) : "";
+      const subcontratado = cab.subcontratado >= 0 ? /^(SI|S|X|1|TRUE|SUB|SUBCONTRATADO)$/.test(subTxt) : false;
+      const aiuSubCrudo = cab.aiu_sub >= 0 ? numeroDeCelda(f[cab.aiu_sub]) : null;
+      const aiuSub = subcontratado && aiuSubCrudo != null && aiuSubCrudo >= 0 ? aiuSubCrudo : null;
 
       filas.push({
         codigo: codigo || null,
@@ -401,6 +412,7 @@
         unidad: unidad || null,
         cantidad,                                       // null si ilegible: NUNCA 0
         precio_archivo: precioUtil,
+        ...(subcontratado ? { subcontratado: true, aiu_subcontratista_pct: aiuSub } : {}),
       });
     }
 

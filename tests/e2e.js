@@ -3803,6 +3803,43 @@ async function main() {
         items: [{ descripcion: "Ítem con cero", unidad: "und", cantidad: 5, precio_manual: 0 }],
       });
       assert.strictEqual(cero.items[0].incompleto, true, "precio_manual = 0 es «sin dato», no «gratis»");
+
+      /* ---- SUBCONTRATOS (Fase 1, pendiente 4) ----
+         Un ítem subcontratado entra al costo directo por el precio del sub (con
+         SU AIU dentro). La casilla `aiu_sobre_subcontratado` decide si el AIU
+         propio se aplica también sobre eso (default) o solo sobre lo propio;
+         el AIU ajeno incluido se publica solo si se declaró el %; sin % es null
+         (no 0) y se cuenta. */
+      {
+        const itemsSub = [
+          { descripcion: "Excavación", unidad: "m3", cantidad: 10, precio_manual: 1000 },
+          { descripcion: "Pintura (sub)", unidad: "m2", cantidad: 10, precio_manual: 2000, subcontratado: true, aiu_subcontratista_pct: 20 },
+          { descripcion: "Cielo raso (sub)", unidad: "m2", cantidad: 1, precio_manual: 5000, subcontratado: true },
+        ];
+        const cfgS = { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 };
+        const con = calculoApu.calcularPresupuesto({ items: itemsSub, config: cfgS });
+        const sin = calculoApu.calcularPresupuesto({ items: itemsSub, config: { ...cfgS, aiu_sobre_subcontratado: false } });
+        assert.strictEqual(con.resumen.costo_directo_total, 35000);
+        assert.strictEqual(con.resumen.costo_directo_subcontratado, 25000);
+        assert.strictEqual(con.resumen.costo_directo_propio, 10000);
+        assert.strictEqual(con.resumen.items_subcontratados, 2);
+        assert.strictEqual(con.resumen.subcontratados_sin_aiu_declarado, 1);
+        assert.strictEqual(con.resumen.aiu_subcontratista_incluido, Math.round(20000 * 20 / 120 * 100) / 100, "AIU ajeno incluido = costo × pct/(100+pct), solo de los que declararon %");
+        assert.strictEqual(con.configuracion.aiu_sobre_subcontratado, true, "default: mi AIU también sobre lo subcontratado");
+        assert.strictEqual(con.resumen.precio_venta, Math.round(35000 * 1.25 * 100) / 100, "con la casilla, el precio de venta es el de siempre (base = CD total)");
+        assert.strictEqual(sin.resumen.base_aiu, 10000);
+        assert.strictEqual(sin.resumen.precio_venta, 10000 * 1.25 + 25000, "sin la casilla, lo subcontratado va al precio A COSTO");
+        assert.strictEqual(sin.resumen.administracion, 1500, "la administración se calcula sobre la base propia");
+        assert.ok(con.alertas.some((a) => /2 ítem\(s\) subcontratado\(s\)/.test(a) && /1 sin el AIU del subcontratista/.test(a)), "la alerta cuenta los subcontratados y los que no declaran su AIU");
+        assert.strictEqual(con.items[1].aiu_subcontratista_incluido, Math.round(20000 * 20 / 120 * 100) / 100);
+        assert.strictEqual(con.items[2].aiu_subcontratista_incluido, null, "sin % declarado, null — no 0");
+        assert.strictEqual(con.items[0].subcontratado, false);
+        // sin subcontratos nada cambia: mismos números que antes de la casilla
+        const antes = calculoApu.calcularPresupuesto({ items: itemsSub.slice(0, 1), config: cfgS });
+        assert.strictEqual(antes.resumen.precio_venta, 12500);
+        assert.strictEqual(antes.resumen.items_subcontratados, 0);
+        assert.ok(!antes.alertas.some((a) => /subcontratad/.test(a)));
+      }
     }
 
     /* ---- 3 · lector: round-trip real, DEFLATE inyectado y copias atadas ---- */
@@ -3825,6 +3862,33 @@ async function main() {
       assert.strictEqual(det.filas.length, 2);
       assert.strictEqual(det.filas[1].cantidad, null, "una cantidad ilegible es null, JAMÁS 0");
       assert.strictEqual(det.filas[1].capitulo, "CAPITULO B");
+      /* SUBCONTRATO (Fase 1, pendiente 4): dos columnas OPCIONALES en el
+         Excel — «SUBCONTRATADO» (Sí/X/1) y «AIU SUB» (%). Sin marca, la fila
+         no lleva el campo; el % solo vale con la marca; y «AIU SUB» no puede
+         confundirse con la columna de precio. */
+      {
+        const grid = [
+          ["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VALOR UNITARIO", "SUBCONTRATADO", "AIU SUB %"],
+          ["1.1", "Excavación manual", "m3", 10, 25000, "", ""],
+          ["1.2", "Pintura epóxica", "m2", 100, 32000, "Sí", 18],
+          ["1.3", "Cielo raso", "m2", 50, 40000, "X", ""],
+          ["1.4", "Cerámica", "m2", 20, 60000, "No", 12],
+        ];
+        const d2 = XLSXLectura.detectarFilasApu(grid);
+        assert.strictEqual(d2.filas.length, 4);
+        assert.strictEqual(d2.cabecera.subcontratado, 5); assert.strictEqual(d2.cabecera.aiu_sub, 6); assert.strictEqual(d2.cabecera.precio, 4, "«AIU SUB» no puede tomarse por la columna de precio");
+        assert.strictEqual(d2.filas[0].subcontratado, undefined, "sin marca la fila no lleva el campo");
+        assert.deepStrictEqual([d2.filas[1].subcontratado, d2.filas[1].aiu_subcontratista_pct], [true, 18]);
+        assert.deepStrictEqual([d2.filas[2].subcontratado, d2.filas[2].aiu_subcontratista_pct], [true, null], "marcado sin %: null, no 0");
+        assert.strictEqual(d2.filas[3].subcontratado, undefined, "«No» con un % suelto: no está subcontratado y el % no viaja");
+        assert.strictEqual(d2.filas[1].precio_archivo, 32000);
+        // el importador lo pasa a `entrada_calculo` tal cual
+        const { mapearFilasImportadas } = require("../lib/apu/importar.js");
+        const catSem = require("../lib/apu/catalogo.js").SEMILLA;
+        const imp = mapearFilasImportadas(d2.filas, catSem);
+        assert.deepStrictEqual([imp.filas[1].entrada_calculo.subcontratado, imp.filas[1].entrada_calculo.aiu_subcontratista_pct], [true, 18]);
+        assert.strictEqual(imp.filas[0].entrada_calculo.subcontratado, false);
+      }
 
       /* la vía DEFLATE: un ZIP artesanal con método 8 y el inflador inyectado.
          Los tamaños salen del directorio central a propósito (un xlsx escrito
@@ -10690,6 +10754,28 @@ async function main() {
           moSin += a.capitulos.mano_obra; moCon += b.capitulos.mano_obra;
         }
         assert.strictEqual(n, S.items.length, "todos los ítems del catálogo cuestan > 0");
+        /* POR QUÉ EL EQUIPO NO LLEVA FACTOR DE JORNADA — decidido con evidencia
+           (16-ago-2026, pendiente 3 de la Fase 1). Aplicarlo supondría que el
+           equipo se cobra por día de PRESENCIA de la cuadrilla. El catálogo dice
+           otra cosa: en la semilla la maquinaria va por HORA con rendimiento
+           propio de la máquina, y en los 157 ítems Nogal las líneas de equipo
+           por día NO siguen al rendimiento de la cuadrilla (son costos por
+           unidad, no días de presencia). Se fija la medición: si algún día el
+           catálogo cambiara y el equipo pasara a seguir a la cuadrilla, esta
+           prueba lo diría y la decisión habría que retomarla. */
+        {
+          const porId = new Map(S.insumos.map((i) => [i.id, i]));
+          let lineasEqDia = 0, siguenCuadrilla = 0;
+          for (const it of S.items) {
+            const mo = (it.insumos || []).filter((l) => porId.get(l.insumo_id) && porId.get(l.insumo_id).tipo === "mano_obra" && l.rendimiento);
+            const eq = (it.insumos || []).filter((l) => porId.get(l.insumo_id) && porId.get(l.insumo_id).tipo === "equipo" && l.rendimiento && /^d[ií]a$/i.test(porId.get(l.insumo_id).unidad));
+            if (!mo.length) continue;
+            for (const e of eq) { lineasEqDia++; if (mo.some((m) => Math.abs(m.rendimiento / e.rendimiento - 1) < 0.02)) siguenCuadrilla++; }
+          }
+          assert.ok(lineasEqDia > 100, `hacen falta líneas de equipo por día para medir: ${lineasEqDia}`);
+          assert.ok(siguenCuadrilla / lineasEqDia < 0.05,
+            `el equipo por día SIGUE a la cuadrilla en ${siguenCuadrilla}/${lineasEqDia} líneas: la decisión de no aplicarle el factor de jornada hay que retomarla`);
+        }
         const deltaMO = (moCon / moSin - 1) * 100, deltaMedio = (sumaRel / n) * 100, deltaPond = (cdCon / cdSin - 1) * 100;
         assert.ok(deltaMO > 4.7 && deltaMO < 4.8, `la MO del catálogo debe subir ≈ 4,76 % (44/42): ${deltaMO}`);
         assert.ok(deltaMedio > 0 && deltaMedio < 5, `el costo directo medio sube, y menos que la MO (peso de la MO): ${deltaMedio}`);
