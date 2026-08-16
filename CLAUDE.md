@@ -2955,10 +2955,21 @@ vista pública «Cómo calculamos» en *Precios*. Metodología y estado de verif
   semilla la maquinaria va por HORA con rendimiento propio, y en Nogal solo 2 de 452 líneas de equipo
   por día siguen al rendimiento de la cuadrilla (son costos por unidad, no días de presencia). Hay
   prueba que fija esa medición (< 5 % siguen a la cuadrilla): si el catálogo cambiara, se retoma.
-- **Estado de verificación honesto**: verificados prestaciones, exoneración, ARL, jornada, IVA-U y
-  SMMLV; «referencia sectorial, pendiente de contraste» el divisor 210, TPNL 22,5 %, MVP 14,72 %,
-  HM 5 %, EPP 3 % y el auxilio de transporte (los manuales IDU/INVIAS dan 403 aquí). La etiqueta
-  viaja en la API, en pantalla y en el doc; no se «completa» a verificado sin abrir la fuente.
+- **Estado de verificación honesto — CONTRASTADO CON LAS FUENTES PRIMARIAS el 16-ago-2026** (el 403
+  a IDU/INVIAS era otra observación con fecha; `docs/metodologia.md` §7 tiene lo leído, cita por cita):
+  verificados prestaciones (además contrastadas con la tabla 3 de la guía IDU GU-DP-017: 45,10 % /
+  58,90 %, a 0,3–0,6 pp de las nuestras — la dotación), exoneración, ARL, jornada, IVA-U, SMMLV (ojo:
+  el D. 1469/2025 está SUSPENDIDO por el Consejo de Estado y rige el D. 159/2026 transitorio con el
+  mismo valor), **auxilio de transporte** (D. 1470/2025 art. 1), **divisor 210** (IDU: hora = mes ÷ 30
+  días ÷ h/día, con h/día = h semana ÷ 6 → 210 con 42 h; INVIAS 2026-1 igual) y **herramienta menor
+  5 %** (INVIAS APU 2026-1, línea HERMENINV = 0,05 en todos los APU). **TPNL, MVP y EPP NO ESTÁN en
+  ninguna de las dos fuentes** — el IDU calcula la hora sin ese recargo y el INVIAS aplica un factor
+  global de 2,04 al obrero sin desglosar — y quedan como «referencia, SIN fuente oficial»: solo mueven
+  el ejemplo público de costo-hora, nunca el jornal calibrado del catálogo. El «Manual IDU 2.2.2
+  metodología B» que citaba el encargo no existe con ese nombre en el portal del IDU. **El método del
+  factor de jornada es literalmente el del IDU** («incremento del 2,174 % en los rendimientos» de los
+  APU con jornales al pasar de 47 a 46 h). Hallazgo lateral: INVIAS ya publica los APU 2026-1 en xlsx
+  (`Territorio_APU_2026_1.xlsx`) pero la API ArcGIS de `data/apu_invias.json` sigue en 2025-2.
 
 ### Fase 2 · Puerta de entrada de 60 segundos (ago 2026)
 

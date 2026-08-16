@@ -10691,6 +10691,22 @@ async function main() {
           assert.ok(P.VERIFICACION[id], `el parámetro «${id}» tiene que declarar su estado de verificación`);
           assert.ok(["verificado", "referencia", "supuesto"].includes(P.VERIFICACION[id].estado));
         }
+        /* Contraste con las fuentes primarias del 16-ago-2026 (docs/metodologia.md §7):
+           · el divisor de 210 h es el del IDU y el INVIAS: 30 días × (horas semana ÷ 6)
+             — con 42 h son 7 h/día. Si alguien cambia la jornada vigente y no el
+             divisor, la etiqueta «verificado» dejaría de ser cierta.
+           · auxilio (D. 1470/2025), divisor y herramienta menor (INVIAS 2026-1) están
+             VERIFICADOS con la fuente primaria; TPNL, MVP y EPP NO aparecen en ninguna
+             de las dos y NO pueden «completarse» a verificado sin fuente. */
+        assert.strictEqual(P.DEFAULTS.divisorAPU, 30 * P.DEFAULTS.horasSemanaVigente / 6,
+          "divisorAPU tiene que ser 30 días × (horas semana ÷ 6): es la derivación IDU/INVIAS que lo hace «verificado»");
+        for (const id of ["auxilioTransporte", "divisorAPU", "herramientaMenor"])
+          assert.strictEqual(P.VERIFICACION[id].estado, "verificado", `${id} se contrastó con la fuente primaria el 16-ago-2026`);
+        for (const id of ["tpnl", "mvp", "epp"]) {
+          assert.strictEqual(P.VERIFICACION[id].estado, "referencia", `${id} NO está en el IDU ni en el INVIAS: no puede pasar a verificado sin fuente`);
+          assert.ok(/16-ago-2026/.test(P.VERIFICACION[id].fuente), `${id}: la fuente debe declarar el contraste del 16-ago-2026 y su resultado`);
+        }
+        assert.ok(/159 de 2026/.test(P.VERIFICACION.smmlv.fuente), "el SMMLV rige por el D. 159/2026 (transitorio): la fuente tiene que decirlo");
 
         // exoneración ON/OFF ≡ los recargos que ya publica lib/apu/normativa
         const normativa = require("../lib/apu/normativa.js");

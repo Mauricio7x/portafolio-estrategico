@@ -7,7 +7,7 @@ Parámetros de costo*) y se sirven en `GET /api/apu?op=parametros`; la pestaña 
 en «Cómo calculamos» y rehace el ejemplo en el navegador con `public/costos.js`, el **mismo
 módulo** que usa el servidor (`lib/costos.js` lo re-exporta; no hay copia).
 
-**Última auditoría: 2026-08-15.**
+**Última auditoría: 2026-08-15. Contraste con las fuentes primarias del IDU y del INVIAS: 2026-08-16 (§7).**
 
 ---
 
@@ -42,9 +42,9 @@ Parámetros de arranque (`lib/parametros.js` → `DEFAULTS`; todos editables):
 | Parámetro | Valor | Norma / origen | Estado |
 |---|---|---|---|
 | Vigencia | 2026-07-15 | Ley 2101/2021 art. 2 (42 h desde esa fecha) | verificado |
-| Salario mínimo mensual | $1.750.905 | Decreto de salario mínimo 2026 (en litigio ante el Consejo de Estado) | verificado |
-| Auxilio de transporte | $249.095 (aplica si salario ≤ 2 SMMLV) | tomado del encargo | **referencia, pendiente de contraste** |
-| Horas pagadas al mes (`divisorAPU`) | 210 | Manual IDU 2.2.2 vía fuentes secundarias | **referencia, pendiente de contraste** |
+| Salario mínimo mensual | $1.750.905 | Decreto 1469/2025, **suspendido provisionalmente** por el Consejo de Estado (auto 12-feb-2026, ratificado 14-abr-2026); rige **transitoriamente** por el Decreto 159 de 2026 hasta la sentencia | verificado |
+| Auxilio de transporte | $249.095 (aplica si salario ≤ 2 SMMLV) | Decreto 1470 de 2025 art. 1 (texto leído) | verificado |
+| Horas pagadas al mes (`divisorAPU`) | 210 | IDU BPR: hora = jornal ÷ (h/sem ÷ 6), jornal = mes ÷ 30 → 30 × 7 h; INVIAS APU 2026-1: 42 h → 7 h/día (§7) | verificado |
 | Jornada legal al mes | 210 h | Ley 2101/2021 | verificado |
 | Horas por semana vigente | 42 | Ley 2101/2021 | verificado |
 | Horas por semana al calibrar el catálogo | 44 | contrato Nogal, 2025 (§3) | **supuesto declarado** |
@@ -59,10 +59,10 @@ Parámetros de arranque (`lib/parametros.js` → `DEFAULTS`; todos editables):
 | ICBF | 3,000 % | Ley 27/1974; tarifa Ley 89/1988 | verificado · exonerable |
 | Exoneración de aportes | activa | E.T. art. 114-1: salud + SENA + ICBF, salarios < 10 SMMLV; personas jurídicas y naturales con ≥ 2 trabajadores | verificado |
 | Riesgos laborales (ARL) | clase V · 6,960 % (I 0,522 · II 1,044 · III 2,436 · IV 4,350 · V 6,960) | D.-L. 1295/1994 art. 27; D. 768/2022; clase por centro de trabajo D. 1072/2015 art. 2.2.4.3.5 | verificado |
-| Tiempo pagado no laborado (TPNL) | 22,5 % | IDU 26,67 % − vacaciones 4,17 % (ya contadas) | **referencia, pendiente de contraste** |
-| Mayor valor prestacional (MVP) | 14,72 % | 17,45 % × (22,5 / 26,67) | **referencia, pendiente de contraste** |
-| Herramienta menor | 5 % de la mano de obra | Manual INVIAS cap. 8 | **referencia, pendiente de contraste** |
-| Elementos de protección personal | 3 % de la mano de obra | práctica sectorial | **referencia, pendiente de contraste** |
+| Tiempo pagado no laborado (TPNL) | 22,5 % | 26,67 % − vacaciones 4,17 % (ya contadas), de fuentes secundarias; **no aparece en el IDU ni en el INVIAS** (§7) | **referencia, sin fuente oficial** |
+| Mayor valor prestacional (MVP) | 14,72 % | 17,45 % × (22,5 / 26,67), de fuentes secundarias; **no aparece en el IDU ni en el INVIAS** (§7) | **referencia, sin fuente oficial** |
+| Herramienta menor | 5 % de la mano de obra | INVIAS APU Regionalizados 2026-1: línea «HERRAMIENTA MENOR (% MANO DE OBRA)» = 0,05 en todos los APU | verificado |
+| Elementos de protección personal | 3 % de la mano de obra | práctica sectorial; el IDU la cotiza como insumos con precio y el INVIAS la absorbe en su factor global — ninguno publica un % (§7) | **referencia, sin fuente oficial** |
 | IVA sobre la utilidad | 19 % **solo sobre la U** | art. 3 D. 1372/1992, hoy art. 1.3.1.7.9 D. 1625/2016 | verificado |
 
 **Fórmula** (`lib/costos.js · costoHora`):
@@ -183,20 +183,29 @@ panel que se ven en pantalla, nunca desde texto genérico.
 
 ## 5. Estado de verificación — resumen honesto
 
-- **Verificados contra la norma**: prestaciones (CST, Ley 50/1990, Ley 100/1993 con sus reformas,
-  Ley 21/1982, Ley 27/1974 + Ley 89/1988), exoneración (E.T. 114-1), ARL (D.-L. 1295/1994, D.
-  768/2022, D. 1072/2015), jornada (Ley 2101/2021), IVA sobre la utilidad, salario mínimo.
-- **Referencia sectorial, pendiente de contraste con el manual original**: divisor de 210 horas
-  pagadas, TPNL 22,5 %, MVP 14,72 %, herramienta menor 5 %, EPP 3 %, auxilio de transporte
-  $249.095. Este entorno no alcanza el Manual IDU 2.2.2 ni el Manual INVIAS cap. 8 (403 en las
-  fuentes oficiales, ver `docs/APU_FUENTES.md`); no se presentan como verificados.
+- **Verificados contra la norma o la fuente primaria**: prestaciones (CST, Ley 50/1990, Ley
+  100/1993 con sus reformas, Ley 21/1982, Ley 27/1974 + Ley 89/1988; contrastadas además con la
+  tabla 3 de la guía IDU GU-DP-017 v3, §7), exoneración (E.T. 114-1), ARL (D.-L. 1295/1994, D.
+  768/2022, D. 1072/2015), jornada (Ley 2101/2021), IVA sobre la utilidad, salario mínimo (D.
+  159/2026, transitorio), **auxilio de transporte** (D. 1470/2025 art. 1), **divisor de 210 horas**
+  (IDU BPR e INVIAS APU 2026-1) y **herramienta menor 5 %** (INVIAS APU 2026-1).
+- **Referencia sectorial, SIN fuente oficial** (contrastado el 16-ago-2026 contra el IDU y el INVIAS y
+  no encontrado en ninguno): TPNL 22,5 %, MVP 14,72 % y EPP 3 %. El IDU publica su costo-hora sin
+  TPNL/MVP; el INVIAS usa un factor global de 2,04 sobre el salario del obrero que no desglosa. Los
+  tres solo mueven el **ejemplo público** de costo-hora («Cómo calculamos») y la casilla de EPP; **no
+  mueven el jornal del catálogo**, que es el dato calibrado. Son editables en *Parámetros de costo* y
+  siguen etiquetados como referencia: no se «completan» a verificado sin fuente.
 - **Supuestos declarados**: 44 h como jornada de calibración del catálogo; 6 días trabajados por
   semana (solo para el ejemplo hora ↔ día; el motor no lo usa).
 
 ## 6. Pendiente
 
-1. Contrastar TPNL/MVP/divisor con el Manual IDU 2.2.2 y el Manual INVIAS cap. 8 (adjuntar el PDF
-   al repositorio o su cita textual) y cambiar el estado a «verificado».
+1. ~~Contrastar TPNL/MVP/divisor con el Manual IDU 2.2.2 y el Manual INVIAS cap. 8.~~ **Hecho el
+   16-ago-2026 (§7)**: divisor, herramienta menor y auxilio pasaron a «verificado» con la fuente
+   primaria; TPNL/MVP/EPP **no están en ninguna de las dos fuentes** y quedan como «referencia, sin
+   fuente oficial». Lo que sigue pendiente aquí es de criterio del dueño, no de fuente: si el
+   ejemplo público debe llevar TPNL+MVP (+37 %), solo TPNL (+22,5 %, que reproduce el jornal INVIAS
+   2026-1 al ±1 %) o nada (método IDU). Se cambia en *Parámetros de costo*, sin código.
 2. Confirmar la fecha del contrato Nogal (UPN-VAD-CP-009-2025): si es anterior al 15-jul-2025 la
    jornada de calibración es 46 h (factor 1,095) — se cambia en *Parámetros de costo*, sin código.
 3. ~~Decidir con evidencia si el factor de jornada se aplica al equipo alquilado por día.~~ **Decidido
@@ -218,3 +227,34 @@ panel que se ven en pantalla, nunca desde texto genérico.
    catálogo cuesta $154.171/día con prestaciones; un trabajador de salario mínimo cuesta $132.457
    por día de 7 h según §2 (con exoneración). El contraste sirve para detectar jornales por debajo
    del piso legal cuando el catálogo se recalibre.
+
+## 7. Contraste con las fuentes primarias del IDU y del INVIAS (2026-08-16)
+
+El «403 en las fuentes oficiales» que sostenía el §5 era una observación con fecha, no una propiedad
+del entorno: el 16-ago-2026 `idu.gov.co` e `invias.gov.co` respondieron 200 y se leyeron los documentos
+de verdad. Qué se abrió, qué dice cada uno y qué cambia:
+
+| Fuente (primaria) | Qué se leyó | Qué fija |
+|---|---|---|
+| **Decreto 1470 de 2025** (29-dic-2025), texto completo | Art. 1: «Fijar a partir del primero (1°) de enero de dos mil veintiséis (2026), el auxilio de transporte a que tienen derecho los servidores públicos y los trabajadores particulares que devengan hasta dos (2) veces el Salario Mínimo Legal Mensual Vigente, en la suma de DOSCIENTOS CUARENTA Y NUEVE MIL NOVENTA Y CINCO PESOS ($249.095)»; art. 2 deroga el D. 1573/2024 | Auxilio → **verificado** |
+| **Decreto 159 de 2026** (19-feb-2026) + auto del Consejo de Estado (12-feb-2026, ratificado 14-abr-2026) | El D. 1469/2025 quedó suspendido provisionalmente; el D. 159/2026 fija **transitoriamente** el mismo $1.750.905 hasta la sentencia | SMMLV: valor igual, **base legal corregida** (ya no «en litigio» a secas) |
+| **IDU · Visor de la Base de Precios de Referencia 2024-I Fase II** (`idu.gov.co/Archivos_Portal/2024/…/-1A-Visor-de-Precios-Unitarios-de-Referencia-2024-I-Fase-II _23-12-2024.xlsx`), hoja «Presentación» y grupo «SUELDOS Y JORNALES» | «46 horas semanales/6 días laborables = 7.6666 horas laborables diarias» para las tarifas por hora, y «un incremento del 2,174 % en los rendimientos de 1950 APU» con jornales (= 47/46: la Ley 2101 entra como FACTOR sobre los rendimientos de la mano de obra, no sobre el jornal). Con sus tarifas: ayudante MES con factor $2.147.411, JORNAL $71.580 (= mes ÷ 30) y HORA $9.337 (= jornal ÷ 7,667) | **Divisor**: hora = mes ÷ (30 × h/día) → 230 h con 46 h, 220 con 44, **210 con 42** → verificado. **Método del factor de jornada** de este repositorio: es el del IDU |
+| **IDU · GU-DP-017 v3 (2024)** «Elaboración de presupuestos para contratos de consultoría, construcción, conservación y apoyo a la gestión», tabla 3 | Prestaciones sociales + seguridad social + parafiscales: **56,70 %** (≤ 2 SMMLV, incluye subsidio de transporte y dotación), **45,10 %** (2–10 SMMLV, exonerado), **58,90 %** (> 10 SMMLV, sin exoneración) | Nuestros 44,79 % / 58,29 % **quedan a 0,3–0,6 pp**: la diferencia es la dotación, que aquí queda fuera y se declara. La estructura de exoneración por tramos coincide |
+| **INVIAS · APU Regionalizados de Referencia 2026-1** (`hermes2.invias.gov.co/APUs/Provincias/Territorio_APU_2026_1.xlsx`, todo el país), hojas «HOJA DE CALCULOS», «MANO DE OBRA» y cualquier APU (p. ej. 600.1.1) | «HORAS LABORALES: 48 → 8 · 46 → 7,67 · 44 → 7,33 · 42 → 7» h/día; jornal = salario ÷ 30; en cada APU la línea **HERMENINV «HERRAMIENTA MENOR (% MANO DE OBRA)» = 0,05**; el obrero (SMMLV) lleva un **factor prestacional global de 2,04** sobre el salario (2,046 Amazonas, 2,040 Tolima), el oficial 1,93, el ingeniero 1,79 — sin desglose. Consideración 12 de la publicación: los APU «han sido ajustados considerando el impacto» de la Ley 2101 «especialmente en lo relacionado con el costo horario de la mano de obra y los rendimientos» | **Herramienta menor 5 % → verificado**. Divisor 30 × 7 = 210 confirmado por segunda fuente. La API ArcGIS que alimenta `data/apu_invias.json` **todavía no publica 2026-1** (solo hasta 2025-2, corrupta): la re-captura, cuando llegue, va con la comprobación de medianas de siempre |
+
+**Lo que NO se encontró en ninguna de las dos fuentes**: el TPNL (26,67 % ni 22,5 %), el MVP (17,45 % ni
+14,72 %) ni un % de EPP. Son cifras de metodologías de fuentes secundarias que se atribuían al «Manual
+IDU 2.2.2 / metodología B»; ese manual no existe con ese nombre en el portal del IDU y la BPR del IDU calcula
+la hora **sin** ese recargo. La comparación numérica, con salario mínimo 2026 y exoneración:
+
+| Método | Costo por hora del ayudante/obrero |
+|---|---|
+| Este modelo con TPNL + MVP (como está en DEFAULTS) | $18.922 |
+| Este modelo con TPNL solo (MVP = 0) | $16.892 |
+| INVIAS 2026-1, obrero Tolima: 1.750.905 ÷ 30 × 2,0398 ÷ 7 h | $17.007 |
+| Método IDU (mes con factor ÷ 210, sin TPNL/MVP) | $13.789 |
+
+El TPNL solo reproduce el jornal INVIAS al ±1 %; con el MVP encima el ejemplo queda ~11 % por encima del
+INVIAS. **No se cambia el DEFAULT desde el código**: es una decisión del dueño (editable en *Parámetros
+de costo*) y no mueve ningún precio — el jornal del catálogo es el dato calibrado y `costoHora` solo
+alimenta el ejemplo público. Lo que sí cambia es la etiqueta: «referencia, **sin fuente oficial**».
