@@ -32,6 +32,8 @@ const OPS = {
   listar: () => require("../lib/handlers/procesos/listar.js"),       // era /api/oportunidades
   baja: () => require("../lib/handlers/procesos/baja.js"),           // era /api/indice-baja
   entidades: () => require("../lib/handlers/procesos/entidades.js"), // [v4] Fase 8 · buscador de entidades
+  portada: () => require("../lib/handlers/procesos/portada.js"),     // [v4] Fase 9 · el pulso del mercado (público)
+  manifestacion: () => require("../lib/handlers/procesos/manifestacion.js"), // [v4] Fase 9 · avisar que le interesa
 };
 
 function opDe(req) {

@@ -272,6 +272,20 @@ responde el catálogo real de entidades con procesos abiertos: `[{nit, nombre, p
 valorAbierto}]`, máximo 10. Nota: el plan v4 llamaba `orden=` al criterio; aquí `orden` ya era la
 dirección (`asc|desc`), así que el criterio sigue en `ordenar_por`.
 
+**Fase 9 (ago 2026) — la portada y la manifestación de interés.** `GET /api/procesos?op=portada`
+(público) LEE el agregado precalculado `portada:resumen` que la sincronización escribe al terminar
+cada corrida con datos: `{generado, fuente, procesosAbiertos, valorTotal, entidadesActivas,
+cierranEstaSemana{n, valor, muestra[3]}, topEntidades[{nit, nombre, abiertos, valor, baja|null,
+nBaja}], porDepartamento[{cod, nombre, n, valor}], manifestacion{abiertos, proximos|null, norma},
+edadHoras, desactualizada}`; si la clave no existe responde `disponible:false` con el motivo, jamás
+calcula al vuelo; `?reconstruir=1` CON token la recalcula. `baja` solo con n ≥ 5 a nivel entidad;
+`proximos` sale del PAA y es `null` si no respondió. `GET /api/procesos?op=manifestacion&estado=
+abierto|proximo` (público): las abreviadas de menor cuantía cuyo plazo para avisar —apertura + 3 días
+hábiles, D. 1082/2015 art. 2.2.1.2.1.2.20— no venció, con `vence`, `diasHabilesRestantes` recalculado
+con la fecha de HOY en Colombia y `origenFecha:"calculada"` SIEMPRE (el dataset no trae esa fecha:
+docs/datos.md §7). `lib/habiles.js` calcula los festivos (Ley 51/1983 + Pascua). La portada se
+pinta en la landing (`public/portada.js`) y cada cifra enlaza a la lista filtrada de la Fase 8.
+
 Respuesta: `{ ok, total, viables, no_viables, solo_viables, resultados, pagina, por_pagina, perfil,
 sincronizado, ordenado_por, por_match, indice_competencia, conocimiento }`. `por_match` reparte el
 total por solidez del match (cuántas son «RUP ✓» y cuántas hay que verificar). Cada resultado trae
