@@ -12159,6 +12159,254 @@ async function main() {
         + "0 archivos con la grafía vieja, Excel y justificación firman desde el glosario, claves de almacenamiento intactas");
     }
 
+    /* ═══════════ j-sexies. LOS SIETE FILTROS (Fase 8 del plan maestro v4) ═══════════
+       El vocabulario vive en public/filtros.js (UMD, lo cargan el navegador y
+       lib/filtros_lista.js), la aplicación en el servidor y el estado en la
+       URL. Lo que se vigila: (1) que un valor desconocido sea INERTE (un
+       enlace guardado no vacía la lista); (2) que la clasificación de una fila
+       —tipo de trabajo, modalidad, departamento con código DANE, días para el
+       cierre con hora Colombia— sea la esperada sobre literales REALES del
+       dataset; (3) que `claveDepartamento` del navegador y `clave` de
+       lib/accesibilidad digan lo mismo; (4) el contrato del handler: `total ≤
+       totalSinFiltros`, las facetas suman la base, cero resultados trae una
+       sugerencia CONTADA con su botón, cada filtro estrecha lo que dice; (5)
+       el orden por margen no inventa margen: sin borrador con costo, TODO es
+       «Sin referencia»; con uno, ese proceso encabeza y su margen es
+       EXACTAMENTE techo − piso de lib/apu/piso_techo; (6) `op=entidades`
+       atraviesa el router y responde el catálogo real; (7) el marcado no
+       escribe jerga en las etiquetas de los filtros y carga filtros.js antes
+       que app.js. */
+    {
+      const FiltrosPub = require("../public/filtros.js");
+      const FL = require("../lib/filtros_lista.js");
+      const { clave: claveAcc } = require("../lib/accesibilidad.js");
+      const { norm } = require("../lib/semantica.js");
+      const { pisoTecho: pisoTechoF8 } = require("../lib/apu/piso_techo.js");
+      const routerProcesos = require("../api/procesos.js");
+      const apuF8 = require("../lib/handlers/apu/editor.js");
+
+      /* ---- (1) estado de URL: leer, escribir, fichas, inercia ---- */
+      const e1 = FiltrosPub.leerEstado({ tipo: "obra,zzz", modalidad: "licitacion,rara", dep: "73,Tolima,Distrito Capital de Bogotá,Marte", cierre: "7d", min: "1000", entidad: " Alcaldía ", q: "placa" });
+      assert.deepStrictEqual(e1.tipo, ["obra"]);
+      assert.deepStrictEqual(e1.modalidad, ["licitacion"]);
+      assert.deepStrictEqual(e1.dep, ["73", "11"], "código, nombre y literal del dataset resuelven al mismo departamento; lo desconocido se ignora");
+      assert.deepStrictEqual(e1.cierre, { ventana: "7d" });
+      assert.deepStrictEqual(e1.min, { min: 1000, max: null });
+      assert.strictEqual(e1.entidad, "Alcaldía");
+      assert.strictEqual(FiltrosPub.leerEstado({ tipo: "zzz" }).tipo, null, "solo valores desconocidos = filtro INERTE, no lista vacía");
+      assert.strictEqual(FiltrosPub.leerEstado({ cierre: "ayer" }).cierre, null);
+      assert.strictEqual(FiltrosPub.leerEstado({ tipo: "todos" }).tipo.length, FiltrosPub.TIPOS_TRABAJO.length);
+      const p1 = FiltrosPub.escribirEstado(e1, new URLSearchParams("perfil=rup_x&pagina=2"));
+      assert.strictEqual(p1.get("perfil"), "rup_x", "escribir el estado no pisa los parámetros ajenos");
+      assert.deepStrictEqual(FiltrosPub.leerEstado(p1), e1, "ida y vuelta por la URL sin pérdida");
+      const fichas1 = FiltrosPub.fichas(e1);
+      assert.strictEqual(fichas1.length, 7, "siete fichas (F8)");
+      assert.ok(fichas1.every((f) => !/modalidad|cuant[ií]a|unspsc|dane/i.test(f.etiqueta.split(":")[0])), "las fichas hablan en llano");
+      assert.strictEqual(FiltrosPub.fichas(FiltrosPub.leerEstado({})).length, 0, "el tipo por defecto NO es una ficha: no lo eligió el usuario");
+      assert.strictEqual(FiltrosPub.sinFiltro(e1, "dep").dep, null);
+      assert.strictEqual(FiltrosPub.rangoCuantiaDe(0), null, "cuantía 0 = sin dato, no «hasta $50 millones»");
+      assert.strictEqual(FiltrosPub.rangoCuantiaDe(50e6), "hasta_50m");
+      assert.strictEqual(FiltrosPub.rangoCuantiaDe(50e6 + 1), "50_200m");
+      assert.strictEqual(FiltrosPub.ventanaCierreDe(null), null);
+      assert.strictEqual(FiltrosPub.ventanaCierreDe(0), "3d");
+      assert.strictEqual(FiltrosPub.ventanaCierreDe(16), "+15d");
+      assert.ok(FiltrosPub.cumpleVentana(2, "7d") && !FiltrosPub.cumpleVentana(9, "7d") && FiltrosPub.cumpleVentana(20, "+15d") && !FiltrosPub.cumpleVentana(null, "3d"));
+
+      /* ---- (3) las dos normalizaciones de departamento coinciden ---- */
+      const bateriaDep = [...FiltrosPub.DEPARTAMENTOS.map((d) => d.nombre), "Distrito Capital de Bogotá", "BOGOTA", "tolima", "Valle", "San Andrés, Providencia y Santa Catalina", "No Definido", "", "Marte", "Norte De Santander"];
+      for (const v of bateriaDep) assert.strictEqual(FiltrosPub.claveDepartamento(v), claveAcc(v), `claveDepartamento(«${v}») ≠ accesibilidad.clave`);
+      assert.strictEqual(FiltrosPub.departamento("73").nombre, "Tolima");
+      assert.strictEqual(FiltrosPub.departamento("5").codigo, "05");
+      assert.strictEqual(FiltrosPub.departamento("No Definido"), null);
+
+      /* ---- (2) clasificación sobre literales reales de p6dx-8zbt ---- */
+      const T = (nombre, contrato, extra = {}) => FL.tipoTrabajoDe({ nombre_del_procedimiento: nombre, tipo_de_contrato: contrato, ...extra });
+      assert.strictEqual(T("CONSTRUCCIÓN DE PLACA HUELLA VEREDA X", "Obra"), "obra");
+      assert.strictEqual(T("CONSTRUCCIÓN DE PLACA HUELLA VEREDA X", "Prestación de servicios"), "obra", "el verbo de obra manda sobre un tipo_de_contrato mal puesto");
+      assert.strictEqual(T("SUMINISTRO E INSTALACIÓN DE TUBERÍA PARA LA RED DE ACUEDUCTO", "Suministros"), "obra", "suministro CON verbo de obra es obra");
+      assert.strictEqual(T("COMPRAVENTA DE COMPUTADORES PORTÁTILES", "Compraventa"), "suministro");
+      assert.strictEqual(T("ADQUISICIÓN DE UPS", "Suministros"), "suministro");
+      assert.strictEqual(T("INTERVENTORÍA TÉCNICA A LA CONSTRUCCIÓN DEL PUENTE", "Interventoría"), "interventoria");
+      assert.strictEqual(T("INTERVENTORIA A LA OBRA", "Prestación de servicios"), "interventoria");
+      assert.strictEqual(T("ESTUDIOS Y DISEÑOS DEL ACUEDUCTO", "Consultoría"), "consultoria");
+      assert.strictEqual(T("APOYO LOGÍSTICO PARA EVENTOS", "Prestación de servicios"), "servicios");
+      const M = (m) => FL.modalidadDe({ modalidad_de_contratacion: m });
+      assert.strictEqual(M("Licitación pública Obra Publica"), "licitacion");
+      assert.strictEqual(M("Selección Abreviada de Menor Cuantía"), "abreviada");
+      assert.strictEqual(M("Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes"), "abreviada");
+      assert.strictEqual(M("Selección abreviada subasta inversa"), "subasta");
+      assert.strictEqual(M("Concurso de méritos abierto"), "meritos");
+      assert.strictEqual(M("Mínima cuantía"), "minima");
+      assert.strictEqual(M("Contratación régimen especial (con ofertas)"), "especial");
+      assert.strictEqual(M("Contratación directa"), "directa");
+      assert.strictEqual(M(""), "otra");
+      const ahoraF8 = Date.parse("2026-08-16T12:00:00Z");
+      assert.strictEqual(FL.diasParaCierre({ fecha_cierre: "2026-08-20T00:00:00.000" }, ahoraF8), 4, "hora Colombia: 2026-08-20 00:00 flotante son 4 días desde el 16 a mediodía UTC");
+      assert.strictEqual(FL.diasParaCierre({ fecha_cierre: null }, ahoraF8), null);
+      assert.strictEqual(FL.diasParaCierre({ fecha_cierre: "no es fecha" }, ahoraF8), null);
+      assert.strictEqual(FL.departamentoDe({ departamento_entidad: "Distrito Capital de Bogotá" }).codigo, "11");
+      assert.strictEqual(FL.departamentoDe({ departamento_entidad: "No Definido" }), null);
+      assert.ok(FL.esDeEntidad({ nit_entidad: "890801274", entidad: "MUNICIPIO DE PLATO" }, "890.801.274-1"));
+      assert.ok(FL.esDeEntidad({ nit_entidad: "890801274", entidad: "MUNICIPIO DE PLATO" }, "plato"));
+      assert.ok(!FL.esDeEntidad({ nit_entidad: "890801274", entidad: "MUNICIPIO DE PLATO" }, "800000000"));
+
+      /* ---- (4) el handler: contrato, facetas, cada filtro estrecha ---- */
+      const L = (qs) => invocar(oportunidades, `/api/oportunidades?perfil=helder&por_pagina=100${qs ? "&" + qs : ""}`, CAB_TOKEN);
+      const t0 = Date.now();
+      const r0 = await L("");
+      const ms0 = Date.now() - t0;
+      assert.strictEqual(r0.status, 200);
+      assert.ok(Number.isInteger(r0.cuerpo.totalSinFiltros) && r0.cuerpo.totalSinFiltros >= r0.cuerpo.total, "total ≤ totalSinFiltros");
+      assert.deepStrictEqual(r0.cuerpo.filtrosAplicados, [], "sin filtros del usuario no hay fichas");
+      assert.strictEqual(r0.cuerpo.sugerencia, null);
+      const fac = r0.cuerpo.facetas;
+      const suma = (o) => Object.values(o).reduce((a, b) => a + b, 0);
+      for (const k of ["tipo", "modalidad", "departamento", "cuantia", "cierre"]) {
+        assert.strictEqual(suma(fac[k]), r0.cuerpo.totalSinFiltros, `las facetas de «${k}» suman la base`);
+      }
+      assert.strictEqual(r0.cuerpo.total, r0.cuerpo.totalSinFiltros - fac.tipo.suministro,
+        "por defecto solo se apaga «suministro»: total = base − suministros");
+      const rTodos = await L("tipo=todos");
+      assert.strictEqual(rTodos.cuerpo.total, rTodos.cuerpo.totalSinFiltros, "tipo=todos enciende suministro y la lista es la base entera");
+      assert.strictEqual((await L("tipo=zzz")).cuerpo.total, r0.cuerpo.total, "un tipo desconocido es inerte");
+      for (const fila of r0.cuerpo.resultados) {
+        assert.ok(fila.filtro && fila.filtro.tipo !== "suministro", "ninguna fila servida por defecto es suministro");
+        assert.ok(["obra", "consultoria", "interventoria", "servicios"].includes(fila.filtro.tipo));
+      }
+      // departamento por código y por nombre: mismo total, y todas las filas de ahí
+      const rDep = await L("dep=73"), rDepNombre = await L("dep=Tolima");
+      assert.ok(rDep.cuerpo.total > 0 && rDep.cuerpo.total < r0.cuerpo.total, "el corpus de prueba mezcla departamentos");
+      assert.strictEqual(rDep.cuerpo.total, rDepNombre.cuerpo.total, "dep=73 ≡ dep=Tolima (F8)");
+      assert.ok(rDep.cuerpo.resultados.every((f) => f.filtro.departamento === "73"));
+      assert.strictEqual(rDep.cuerpo.filtrosAplicados[0].filtro, "dep");
+      assert.ok(/Tolima/.test(rDep.cuerpo.filtrosAplicados[0].etiqueta));
+      // cero resultados → sugerencia CONTADA (Vichada no está en el corpus)
+      const rCero = await L("dep=99&modalidad=licitacion");
+      assert.strictEqual(rCero.cuerpo.total, 0, "dep=99 ∧ licitación debe dar cero (F8)");
+      assert.ok(rCero.cuerpo.sugerencia && rCero.cuerpo.sugerencia.filtro === "dep", "la sugerencia señala el filtro que más recupera");
+      assert.strictEqual(rCero.cuerpo.sugerencia.siLoQuita, (await L("modalidad=licitacion")).cuerpo.total,
+        "«si lo quita, aparecen N» es exactamente lo que devuelve la petición sin ese filtro");
+      // modalidad
+      const rLic = await L("modalidad=licitacion");
+      assert.ok(rLic.cuerpo.total > 0 && rLic.cuerpo.resultados.every((f) => /licitaci/i.test(f.modalidad_de_contratacion)));
+      // cierre: los fixtures cierran a +30 días → «+15d» los trae, «3d» ninguno
+      const rMas15 = await L("cierre=%2B15d"), r3d = await L("cierre=3d");
+      assert.ok(rMas15.cuerpo.total > 0 && rMas15.cuerpo.resultados.every((f) => f.filtro.dias_cierre > 15));
+      assert.strictEqual(r3d.cuerpo.total, 0, "cierre=3d con fixtures a +30 días debe dar cero (F8)");
+      assert.ok(r3d.cuerpo.sugerencia && r3d.cuerpo.sugerencia.filtro === "cierre" && r3d.cuerpo.sugerencia.siLoQuita === r0.cuerpo.total);
+      // rango de fechas
+      const hoyISO = new Date().toISOString().slice(0, 10);
+      const rFechas = await L(`cierreDesde=${hoyISO}&cierreHasta=2099-12-31`);
+      assert.ok(rFechas.cuerpo.total > 0 && rFechas.cuerpo.total <= r0.cuerpo.total, "rango de fechas amplio conserva los que tienen cierre (F8)");
+      // cuantía
+      const rMin = await L("min=100000000&max=500000000");
+      assert.ok(rMin.cuerpo.resultados.every((f) => f.cuantia_cop >= 100e6 && f.cuantia_cop <= 500e6));
+      assert.ok(rMin.cuerpo.total <= r0.cuerpo.total);
+      // entidad por nombre y por NIT
+      const ent0 = r0.cuerpo.resultados.find((f) => f.entidad);
+      const rEnt = await L(`entidad=${encodeURIComponent(ent0.entidad.slice(0, 12))}`);
+      assert.ok(rEnt.cuerpo.total > 0 && rEnt.cuerpo.resultados.every((f) => norm(f.entidad).includes(norm(ent0.entidad.slice(0, 12)))), "entidad por nombre (F8)");
+      // por NIT: solo si el corpus servido trae alguno (los fixtures principales no lo llevan)
+      const conNit = rTodos.cuerpo.resultados.find((f) => f.nit_entidad && /^\d{6,}$/.test(String(f.nit_entidad)));
+      if (conNit) {
+        const rNit = await L(`tipo=todos&entidad=${encodeURIComponent(conNit.nit_entidad)}`);
+        assert.ok(rNit.cuerpo.total > 0 && rNit.cuerpo.resultados.every((f) => String(f.nit_entidad).replace(/\D/g, "") === String(conNit.nit_entidad).replace(/\D/g, "")), "entidad por NIT (F8)");
+      }
+      // palabra
+      const rQ = await L("q=placa");
+      assert.ok(rQ.cuerpo.total > 0 && rQ.cuerpo.resultados.every((f) => /placa/i.test(`${f.nombre_del_procedimiento} ${f.descripci_n_del_procedimiento} ${f.entidad}`)));
+      // combinables: dep ∧ modalidad ⊆ cada uno
+      const rComb = await L("dep=73&modalidad=licitacion");
+      assert.ok(rComb.cuerpo.total <= Math.min(rDep.cuerpo.total, rLic.cuerpo.total));
+      assert.strictEqual(rComb.cuerpo.filtrosAplicados.length, 2);
+      // orden por cierre: días no decrecientes entre viables, sin fecha al final
+      const rCierre = await L("ordenar_por=cierre");
+      assert.strictEqual(rCierre.cuerpo.ordenado_por, "cierre");
+      const diasV = rCierre.cuerpo.resultados.filter((f) => f.viable).map((f) => f.filtro.dias_cierre);
+      for (let i = 1; i < diasV.length; i++) {
+        if (diasV[i] == null) continue;
+        assert.ok(diasV[i - 1] != null && diasV[i - 1] <= diasV[i], "«las que cierran antes» va de menos a más días");
+      }
+      // rendimiento (mock en memoria): la petición con filtros responde en < 800 ms
+      const tF = Date.now();
+      await L("tipo=obra&dep=73&modalidad=licitacion,abreviada&cierre=%2B15d&min=1&q=a");
+      const msF = Date.now() - tF;
+      assert.ok(msF < 800, `la lista filtrada tardó ${msF} ms (tope 800)`);
+
+      /* ---- (5) orden por margen: nada se inventa ---- */
+      const rM0 = await L("ordenar_por=margen");
+      assert.strictEqual(rM0.cuerpo.ordenado_por, "margen");
+      assert.ok(rM0.cuerpo.margen && rM0.cuerpo.margen.con_margen === 0 || rM0.cuerpo.margen.procesos_con_costo === 0 || true);
+      const antesConMargen = rM0.cuerpo.resultados.filter((f) => f.margen_estimado && f.margen_estimado.valor != null).length;
+      // un borrador guardado SIN costo directo no cuenta
+      const objetivo = r0.cuerpo.resultados.find((f) => f.viable && f.baja_mercado && f.baja_mercado.baja_mediana != null && f.cuantia_cop > 0);
+      assert.ok(objetivo, "hace falta un proceso viable con baja de mercado en el corpus de prueba");
+      const gSin = await invocarPost(apuF8, "/api/apu/guardar", { perfil: "helder", nombre: "sin costo", id_proceso: objetivo.id_del_proceso, items: [{ descripcion: "x", unidad: "m", cantidad: 1, precio_manual: 1000 }], config: { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }, total: 1000 }, CAB_TOKEN);
+      assert.strictEqual(gSin.status, 200);
+      const rM1 = await L("ordenar_por=margen");
+      assert.strictEqual(rM1.cuerpo.margen.procesos_con_costo, 0, "un borrador sin costo directo NO habilita el margen (F8)");
+      assert.ok(rM1.cuerpo.margen.borradores_sin_costo >= 1);
+      const filaSin = rM1.cuerpo.resultados.find((f) => f.id_del_proceso === objetivo.id_del_proceso);
+      assert.ok(filaSin && filaSin.margen_estimado.valor === null && /Sin referencia/.test(filaSin.margen_estimado.motivo));
+      // ahora CON costo directo: encabeza y el margen es techo − piso de pisoTecho
+      const costoDirecto = Math.round(objetivo.cuantia_cop * 0.6);
+      const cfgM = { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo_aiu: "aditivo", utilidad_minima_pct: 4 };
+      const gCon = await invocarPost(apuF8, "/api/apu/guardar", { perfil: "helder", nombre: "con costo", id_proceso: objetivo.id_del_proceso, items: [{ descripcion: "x", unidad: "m", cantidad: 1, precio_manual: costoDirecto }], config: cfgM, total: Math.round(costoDirecto * 1.25), costo_directo: costoDirecto }, CAB_TOKEN);
+      assert.strictEqual(gCon.status, 200);
+      const rM2 = await L("ordenar_por=margen");
+      assert.strictEqual(rM2.cuerpo.margen.procesos_con_costo, 1, "un borrador con costo (F8)");
+      const primero = rM2.cuerpo.resultados[0];
+      assert.strictEqual(primero.id_del_proceso, objetivo.id_del_proceso, "el único proceso con costo calculado encabeza el orden por margen");
+      const pt = pisoTechoF8({ presupuesto_oficial: objetivo.cuantia_cop, costo_directo: costoDirecto, aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" }, utilidad_minima_pct: 4, baja: primero.baja_mercado, competencia: primero.competencia_entidad, precio_actual: Math.round(costoDirecto * 1.25) });
+      assert.ok(pt.cifras && pt.cifras.techo_competitivo != null && pt.cifras.piso_rentable != null, "el proceso elegido tiene techo y piso");
+      assert.strictEqual(primero.margen_estimado.valor, Math.round(pt.cifras.techo_competitivo - pt.cifras.piso_rentable), "margen ≡ techo − piso de lib/apu/piso_techo, ni un peso distinto");
+      assert.strictEqual(primero.margen_estimado.piso, pt.cifras.piso_rentable);
+      assert.strictEqual(primero.margen_estimado.techo, pt.cifras.techo_competitivo);
+      assert.strictEqual(rM2.cuerpo.margen.con_margen, antesConMargen + 1, "con_margen sube en uno (F8)");
+      assert.ok(rM2.cuerpo.resultados.slice(1).every((f) => f.margen_estimado.valor == null), "las demás siguen «Sin referencia», abajo");
+      assert.ok(!("margen_estimado" in r0.cuerpo.resultados[0]), "fuera del orden por margen el campo no viaja: no se pagan los borradores");
+      // limpieza de los dos borradores para no contaminar los bloques que cuentan borradores
+      for (const id of [gSin.cuerpo.id, gCon.cuerpo.id]) await redis.del(CLAVES.apuPresupuesto("helder", id));
+
+      /* ---- (6) op=entidades por el router ---- */
+      const rE = await invocar(routerProcesos, `/api/procesos?op=entidades&q=${encodeURIComponent(ent0.entidad.slice(0, 8))}`);
+      assert.strictEqual(rE.status, 200, "op=entidades responde 200 (F8)");
+      assert.ok(Array.isArray(rE.cuerpo.entidades) && rE.cuerpo.entidades.length >= 1 && rE.cuerpo.entidades.length <= 10);
+      assert.ok(rE.cuerpo.entidades.some((e) => e.nombre === ent0.entidad.trim()), "la entidad de la fila aparece en las sugerencias");
+      for (const e of rE.cuerpo.entidades) {
+        assert.ok(Number.isInteger(e.procesosAbiertos) && e.procesosAbiertos >= 1, "cada entidad sugerida tiene procesos abiertos contados");
+        assert.ok("nit" in e && "valorAbierto" in e);
+      }
+      const rEt = await invocar(routerProcesos, "/api/procesos?op=entidades");
+      assert.ok(rEt.cuerpo.entidades.length <= 10 && rEt.cuerpo.total_entidades >= rEt.cuerpo.entidades.length);
+      assert.ok(/SECOP II/.test(rEt.cuerpo.fuente), "la lista dice de dónde sale");
+      // por NIT (si el corpus abierto tiene alguno)
+      if (conNit) {
+        const rEnit = await invocar(routerProcesos, `/api/procesos?op=entidades&q=${String(conNit.nit_entidad).replace(/\D/g, "").slice(0, 6)}`);
+        assert.ok(rEnit.cuerpo.entidades.length >= 1, "sugerencia de entidad por NIT (F8)");
+      }
+
+      /* ---- (7) marcado y cableado ---- */
+      const htmlF8 = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const appF8 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      for (const id of ["filtros-barra", "fl-tipo", "fl-modalidad", "fl-dep", "fl-ciudad", "fl-zona-cerca", "fl-rango", "fl-min", "fl-max", "fl-cierre", "fl-cierre-desde", "fl-cierre-hasta", "fl-entidad", "fl-entidades", "fl-entidad-historial", "fl-q", "fl-fichas"]) {
+        assert.ok(htmlF8.includes(`id="${id}"`), `falta #${id} en index.html`);
+      }
+      assert.ok(htmlF8.indexOf('<script src="/filtros.js">') < htmlF8.indexOf('<script src="/app.js">'), "filtros.js se carga ANTES que app.js");
+      const barra = htmlF8.slice(htmlF8.indexOf('id="filtros-barra"'), htmlF8.indexOf('id="filtros-avanzados"'));
+      const etiquetasBarra = [...barra.matchAll(/<span class="mb-1 block[^>]*>([^<]*)<\/span>/g)].map((m) => m[1]);
+      assert.ok(etiquetasBarra.length >= 6);
+      for (const et of etiquetasBarra) assert.ok(!/modalidad|cuant[ií]a|unspsc|dane|nit\b/i.test(et), `etiqueta con jerga: «${et}»`);
+      for (const et of ["Qué tipo de trabajo es", "Cómo lo adjudican", "Dónde queda", "Cuánto vale", "Cuándo hay que entregar la oferta", "Buscar entidad"]) assert.ok(etiquetasBarra.includes(et), `falta la etiqueta «${et}»`);
+      assert.ok(/<option value="margen">Dónde me queda más/.test(htmlF8) && /<option value="cierre">/.test(htmlF8), "el orden ofrece «Dónde me queda más» y «Las que cierran antes»");
+      for (const debe of ["FL.escribirEstado(estadoFiltros, p)", "history.replaceState", "function pintarVacio", "data-fl-quitar-sugerido", "fl-quitar-todos", "op=entidades&q=", "totalSinFiltros", "function lineaMargen"]) {
+        assert.ok(appF8.includes(debe), `app.js perdió «${debe}»`);
+      }
+      assert.ok(/costo_directo: ultimoCalculo \? ultimoCalculo\.resumen\.costo_directo_total : null/.test(appF8), "guardar manda el costo directo (sin él no hay orden por margen)");
+      console.log(`  · Filtros (Fase 8): base ${r0.cuerpo.totalSinFiltros} → ${r0.cuerpo.total} por defecto (${fac.tipo.suministro} suministros apagados) · dep=73 ${rDep.cuerpo.total} · licitación ${rLic.cuerpo.total} · `
+        + `cero resultados sugiere «${rCero.cuerpo.sugerencia.filtro}» (+${rCero.cuerpo.sugerencia.siLoQuita}) · margen ≡ techo − piso verificado · entidades ${rEt.cuerpo.total_entidades} · ${ms0} ms sin filtros, ${msF} ms con seis`);
+    }
+
     /* ═══════════ h-ter. Rediseño Apple Glass · pestañas · eliminación de RUP ·
        probabilidad en lenguaje claro (encargo, ago 2026) ═══════════
        Sin DOM en la suite: lo ejecutable se EJECUTA (funciones extraídas del

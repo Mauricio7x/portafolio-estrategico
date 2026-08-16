@@ -163,3 +163,54 @@ respondieron **200** desde este entorno (`https://www.datos.gov.co/api/views/{id
 | Baja histórica | `lib/indice_baja` (p6dx, adjudicados) | Cascada entidad+familia → entidad → departamento+familia, **solo con n ≥ 5**; si no, «Sin referencia» y NO hay techo. El índice por segmento (mínimo 3) NO se usa. |
 | Nº de oferentes | `lib/indice_competencia` (p6dx) | Promedio por entidad con n ≥ 5; del proceso abierto no existe (hgi6 = 0 filas) → «Sin referencia», jamás 0. |
 | Umbral temerario | Regla de referencia: 80 % del presupuesto | La media − σ de las ofertas del proceso no se conoce antes del cierre (hgi6 no trae precios). Declarado como referencia, no como norma. |
+
+## 6. Censo de columnas de `p6dx-8zbt` para los filtros (Fase 8 · 2026-08-16)
+
+Consulta REAL desde este entorno (`https://www.datos.gov.co/resource/p6dx-8zbt.json`, HTTP 200),
+dos muestras: **A)** 3 000 filas publicadas en los últimos 45 días (todas las modalidades) y
+**B)** 4 000 filas de los últimos 90 días **restringidas a las modalidades competitivas** que la
+app ingiere (licitación, selección abreviada, subasta, concurso de méritos, mínima cuantía,
+régimen especial con ofertas). Guion: `censo_p6dx.js` / `censo_comp.js` de la sesión (fetch +
+conteo de no vacíos). «Cobertura» = % de filas con la columna no vacía.
+
+| Concepto del filtro | Columna REAL | Cobertura A | Cobertura B | Candidatas del plan v4 que **NO EXISTEN** |
+|---|---|---|---|---|
+| Objeto | `nombre_del_procedimiento`, `descripci_n_del_procedimiento` | 100 % | 100 % | `descripcion_del_proceso` |
+| Cuánto vale | `precio_base` | 100 % | 100 % | `cuant_a_del_proceso` |
+| En qué va | `estado_del_procedimiento` (100 %), `fase` (98,7 %), `estado_de_apertura_del_proceso` (100 %), `estado_resumen` (100 %) | | | — |
+| Lo que sabe hacer (UNSPSC) | `codigo_principal_de_categoria` | 100 % | 100 % | `c_digo_principal_de_categoria`, `codigo_de_categoria_principal` |
+| Cómo lo adjudican | `modalidad_de_contratacion` | 100 % | 100 % | `modalidad_de_contrataci_n`, `tipo_de_proceso` |
+| Entidad | `entidad` | 100 % | 100 % | `nombre_de_la_entidad`, `nombre_entidad` |
+| NIT de la entidad | `nit_entidad` | 100 % | 100 % | `nit_de_la_entidad` |
+| Dónde queda (departamento) | `departamento_entidad` — **es un NOMBRE, no un código DANE**; 7,6 % vale «No Definido» | 100 % | 100 % | `departamento`, `departamento_de_la_entidad` |
+| Dónde queda (ciudad) | `ciudad_entidad` — también con «No Definido» | 100 % | 100 % | `ciudad` |
+| Cuándo hay que entregar la oferta | `fecha_de_recepcion_de` (nombre TRUNCADO por Socrata) y `fecha_de_apertura_de_respuesta` | **8,0 % / 6,0 %** | **100 % / 100 %** | `fecha_de_recepcion_de_respuestas`, `fecha_de_presentacion_de_ofertas` |
+| Publicación | `fecha_de_publicacion_del`, `fecha_de_ultima_publicaci` | 100 % | 100 % | `fecha_de_publicacion_del_proceso` (`fecha_de_publicacion` existe pero 0,4 %) |
+| Qué tipo de trabajo es | `tipo_de_contrato` (Obra · Interventoría · Consultoría · Suministros · Compraventa · Prestación de servicios · …) | 100 % | 100 % | — |
+| Manifestación de interés (Fase 9) | `fase = «Manifestación de interés (Menor Cuantía)»` (333 de 1 593 abiertos en B), `proveedores_que_manifestaron` | | 99,8 % / 100 % | — |
+
+**Lecturas que cambian decisiones:**
+
+- La baja cobertura de la fecha de cierre en la muestra A es un ARTEFACTO de la mezcla: la
+  contratación directa y el régimen especial sin ofertas (92 % de A) no tienen recepción de ofertas.
+  En lo que la app ingiere (B) la fecha viene el **100 %** de las veces, y por eso el filtro «Cuándo
+  hay que entregar la oferta» se apoya en ella sin esconder nada. `lib/negocio.fechaCierre` ya la
+  resolvía por candidatas + red de seguridad `fecha*recep*`; no hubo que tocarla.
+- `departamento_entidad` es texto («Distrito Capital de Bogotá», «Tolima», «No Definido»). El filtro
+  acepta **código DANE o nombre** (`?dep=73` ≡ `?dep=Tolima`), traduce con la tabla de
+  `public/filtros.js` (misma normalización que `lib/accesibilidad.clave`, con prueba) y trata «No
+  Definido» como `sin_dato`: no entra en ningún departamento y se cuenta aparte en las facetas.
+- `tipo_de_contrato` es la señal primaria del filtro «Qué tipo de trabajo es», corregida por el
+  objeto: un «Suministros» con verbo de obra («suministro e instalación de tubería») es OBRA, y una
+  «Prestación de servicios» que dice «construcción de placa huella» también.
+- Los literales de `modalidad_de_contratacion` varían («Selección Abreviada de Menor Cuantía»,
+  «Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes», «Licitación pública Obra Publica»):
+  se casan por raíz normalizada, y lo que no casa va a «otra» y se cuenta.
+- **Línea base medida en producción antes de encender los filtros** (corpus real, 2026-08-16):
+  Helder 831 visibles → obra 496 · interventoría 121 · servicios 105 · consultoría 53 ·
+  **suministro 56 (6,7 %)**; Génesis 723 → suministro 41 (5,7 %). Los «suministros» son compras de
+  verdad (computadores, UPS, morrales, equipos biomédicos), así que el defecto «suministro apagado»
+  del plan se aplica: esconde < 10 % y se enciende con un clic. En cambio **preajustar la zona a
+  Bogotá/Ibagué habría escondido el 41 %** (Helder: cerca 488 · media 320 · lejos 10) — supera con
+  mucho el 10 % del protocolo, así que la zona NO se preajusta: queda como un clic opt-in («Solo
+  cerca de mi zona», que es el `?zona=facil` de siempre).

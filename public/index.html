@@ -435,9 +435,12 @@
             <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Ordenar por</span>
             <select id="f-ordenar" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
               <option value="atractividad">Las mejores para vos (recomendado)</option>
+              <option value="margen">Dónde me queda más (solo las que ya costeaste)</option>
+              <option value="cierre">Las que cierran antes</option>
               <option value="ve">Las que más plata dejan</option>
               <option value="p_ganar">Las más ganables</option>
               <option value="cuantia">Las más grandes</option>
+              <option value="competencia">Las menos peleadas</option>
               <option value="anticipo">Mayor anticipo</option>
             </select>
           </label>
@@ -460,6 +463,70 @@
             <input id="f-paa-entidad" type="text" placeholder="Alcaldía de Ibagué, INVÍAS…" autocomplete="off"
                    class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
           </label>
+        </div>
+
+        <!-- ══ Fase 8 · LOS SIETE FILTROS, en lenguaje llano ══
+             El vocabulario (opciones, etiquetas, rangos, departamentos) vive
+             en public/filtros.js y lo pinta app.js: aquí solo están los
+             contenedores. Ningún nombre técnico (modalidad, cuantía, UNSPSC,
+             código DANE) se escribe en pantalla. El estado vive en la URL
+             (?tipo=…&modalidad=…&dep=…) y sobrevive a la recarga; las fichas
+             de abajo se quitan con una X y hay «Quitar todos». -->
+        <div id="filtros-barra" class="mt-4">
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Qué tipo de trabajo es</span>
+              <div id="fl-tipo" class="flex flex-wrap gap-1.5"></div>
+            </div>
+            <div>
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cómo lo adjudican</span>
+              <div id="fl-modalidad" class="flex flex-wrap gap-1.5"></div>
+            </div>
+            <div>
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dónde queda</span>
+              <div class="flex flex-wrap items-center gap-2">
+                <select id="fl-dep" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                  <option value="">Cualquier departamento</option>
+                </select>
+                <input id="fl-ciudad" type="text" placeholder="Ciudad o municipio" autocomplete="off"
+                       class="w-40 rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+              </div>
+              <label class="mt-1.5 flex items-center gap-2 text-xs text-gray-600">
+                <input id="fl-zona-cerca" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+                Solo cerca de mi zona (Bogotá / Ibagué). Apagado, ves también fuera de tu zona.
+              </label>
+            </div>
+            <div>
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuánto vale</span>
+              <select id="fl-rango" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="">Cualquier valor</option>
+              </select>
+              <div id="fl-rango-libre" class="mt-1.5 hidden gap-2">
+                <input id="fl-min" type="number" min="0" step="1000000" placeholder="Desde $" class="w-1/2 rounded-lg border-gray-300 text-sm">
+                <input id="fl-max" type="number" min="0" step="1000000" placeholder="Hasta $" class="w-1/2 rounded-lg border-gray-300 text-sm">
+              </div>
+            </div>
+            <div>
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuándo hay que entregar la oferta</span>
+              <select id="fl-cierre" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="">Cualquier fecha (solo procesos abiertos)</option>
+              </select>
+              <div id="fl-cierre-fechas" class="mt-1.5 hidden gap-2">
+                <input id="fl-cierre-desde" type="date" class="w-1/2 rounded-lg border-gray-300 text-sm">
+                <input id="fl-cierre-hasta" type="date" class="w-1/2 rounded-lg border-gray-300 text-sm">
+              </div>
+            </div>
+            <div>
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Buscar entidad</span>
+              <input id="fl-entidad" type="text" list="fl-entidades" placeholder="Alcaldía de…, Gobernación de…, INVÍAS" autocomplete="off"
+                     class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+              <datalist id="fl-entidades"></datalist>
+              <button id="fl-entidad-historial" type="button" class="mt-1.5 hidden text-xs font-medium text-blue-600 hover:underline">Ver el historial de esta entidad ›</button>
+              <input id="fl-q" type="text" placeholder="Buscar por palabra (placa huella, acueducto…)" autocomplete="off"
+                     class="mt-1.5 w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+            </div>
+          </div>
+          <div id="fl-fichas" class="mt-3 flex flex-wrap items-center gap-2 text-xs"></div>
         </div>
 
         <details id="filtros-avanzados" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
@@ -2060,6 +2127,7 @@
 
   <!-- glosario.js PRIMERO: xlsx.js, justificacion.js y app.js leen la marca de él. -->
   <script src="/glosario.js"></script>
+  <script src="/filtros.js"></script>
   <script src="/onboarding.js"></script>
   <script src="/xlsx.js"></script>
   <script src="/xlsx_lectura.js"></script>
