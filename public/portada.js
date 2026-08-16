@@ -51,7 +51,7 @@
 
   /* ── plantillas ── */
   function htmlHero(p) {
-    const cifra = (v, r) => `<div><p class="text-[30px] font-semibold tracking-tight sm:text-[40px]" style="color: var(--text-primary); letter-spacing: -1px;">${esc(v)}</p><p class="text-xs uppercase tracking-wide" style="color: var(--text-secondary);">${esc(r)}</p></div>`;
+    const cifra = (v, r) => `<div><p class="text-[24px] font-semibold tracking-tight sm:text-[40px]" style="color: var(--text-primary); letter-spacing: -1px;">${esc(v)}</p><p class="text-xs uppercase tracking-wide" style="color: var(--text-secondary);">${esc(r)}</p></div>`;
     return `
       <p class="text-[22px] leading-tight sm:text-[28px]" style="color: var(--text-primary); font-weight: 300;">Hoy hay dinero público esperando contratista.</p>
       <div class="mt-5 grid grid-cols-3 gap-3">
