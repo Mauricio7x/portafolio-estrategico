@@ -6448,7 +6448,7 @@ async function main() {
         assert.ok(/de cada \d+ procesos/i.test(exp[exp.length - 1].texto),
           "el cierre habla en frecuencia natural («de cada N, se gana 1»), no solo en porcentaje");
         for (const linea of exp) {
-          assert.ok(["base", "sube", "baja", "tope", "cierre"].includes(linea.tipo));
+          assert.ok(["base", "sube", "baja", "neutro", "tope", "cierre"].includes(linea.tipo));
           for (const formula of [/P_base/, /min\(/, /1 \/ \(/, /×/, /\bpp\b/]) {
             assert.ok(!formula.test(linea.texto),
               `la explicación sencilla no puede llevar fórmulas: «${linea.texto}»`);
@@ -6458,6 +6458,16 @@ async function main() {
           "la explicación tiene que decir de dónde salen los datos (SECOP II)");
         // sin ningún histórico, la base DECLARA el supuesto en la misma frase
         const { desglosarProbabilidad: desglosarSuelto } = require("../lib/probabilidad_desglose.js");
+        /* Y con POCOS datos propios (peso < 0,8) la base no puede decir «se han
+           presentado en promedio X empresas»: la cifra ya lleva el promedio
+           general dentro, y hay que decirlo con el peso. */
+        {
+          const { claveCanonica: claveC } = require("../lib/indice_competencia.js");
+          const idxPoca = { [claveC("ENTIDAD POCA")]: { nombre: "ENTIDAD POCA", nit: null, procesos: 2, procesos_contados: 2, promedio: null, mediana: null, nivel: "sin_dato", rivales_estimados: 3.6, peso_datos: 0.23, rivales_desv: 0.9 } };
+          const eP = desglosarSuelto({ entidad: "ENTIDAD POCA" }, idxPoca, null, { meta_competencia: { encogimiento: { mu_global: 4.18 } } }).explicacion_simple;
+          assert.ok(/pesa 23 %/.test(eP[0].texto) && /promedio general/.test(eP[0].texto) && !/en promedio, /.test(eP[0].texto),
+            `con pocos datos propios la frase tiene que declarar el peso y el promedio general: «${eP[0].texto}»`);
+        }
         const peladoExp = desglosarSuelto({ entidad: "ENTIDAD QUE NO EXISTE" }, null, null, {}).explicacion_simple;
         assert.ok(/supuesto/i.test(peladoExp[0].texto) && /no hay historial/i.test(peladoExp[0].texto),
           "sin historial, la primera frase tiene que declarar que es un supuesto y no una medición");

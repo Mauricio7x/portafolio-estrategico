@@ -2529,6 +2529,19 @@ Decisiones que no hay que re-aprender:
 - **Tras desplegar:** nada se rompe sin reconstruir (compatibilidad probada con el hash viejo), pero
   el encogimiento y la banda solo se encienden con
   `/api/procesos?op=historico&reconstruir_indice=true` (token). La retirada de la rampa es inmediata.
+- **MEDIDO EN PRODUCCIÓN el 16-ago-2026, índice reconstruido:** `encogimiento = {mu_global 4,18,
+  tau2 9,51, sigma2_dentro 62,5, m 6,57, 2 062 entidades con base}`. La sobredispersión dentro de
+  entidad es ENORME (varianza 62 sobre media 4): con la fórmula literal del doc (`μ/τ̂²`) el prior
+  valdría 0,44 procesos y una entidad de 1 proceso pesaría 70 %; con lo medido vale 6,6 (n = 5 pesa
+  43 %, n = 40 pesa 86 %). Impacto sobre el listado: `p` media **0,254 → 0,227 (−10,6 %) en Helder
+  y 0,266 → 0,237 (−10,9 %) en Génesis** — supera el 10 % del protocolo y por eso queda dicho aquí:
+  los mayores movimientos son entidades de 1-5 procesos con promedios de 1 oferente que antes se
+  tomaban al pie de la letra (p = 0,50) y ahora se encogen hacia el mercado (0,26); el orden por VE se
+  conserva (Spearman 0,995/0,994; top-20 19/20 y 18/20); la banda tiene mediana 3 pp y p90 9 pp.
+  Consecuencia aguas abajo, ya prevista arriba: `veg` del editor de APU baja con `p_base` — es el
+  número honesto, no una regresión. La explicación simple del desglose dice, con peso < 0,8, que la
+  cifra mezcla el historial de la entidad con el promedio general (no «se han presentado en promedio
+  X»): un estimador no se presenta como una medición.
 
 ### Desglose justificado de P(ganar) (ago 2026)
 
