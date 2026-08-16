@@ -598,10 +598,10 @@
     const conBase = nivel !== "sin_dato" && mediana != null && !isNaN(mediana) && procesos > 0;
     const d = conBase ? (BAJA_MERCADO[nivel] || BAJA_MERCADO.sin_dato) : BAJA_MERCADO.sin_dato;
     if (!conBase) {
-      return chip("Baja típica: sin datos", d.clases,
+      return chip(`${window.Glosario.corto("baja_mercado")}: sin datos`, d.clases,
         (b && b.mensaje) || "No hay procesos adjudicados suficientes para estimar el descuento");
     }
-    return chip(`Baja típica: ${fmtNum.format(mediana)}%`, d.clases, b.mensaje);
+    return chip(`${window.Glosario.corto("baja_mercado")} ${fmtNum.format(mediana)} %`, d.clases, b.mensaje);
   }
 
   /* Chip de zona (lib/accesibilidad, encargo ago 2026): la etiqueta y el
@@ -663,11 +663,11 @@
        equivalente clase afín según el histórico de adjudicaciones
        texto       sin código utilizable; lo confirma el objeto */
   const MATCH_UNSPSC = {
-    clase: { texto: "RUP ✓", clases: "bg-green-100 text-green-800" },
-    familia: { texto: "RUP ~ (familia)", clases: "bg-lime-100 text-lime-800" },
-    equivalente: { texto: "RUP ≈ (clase afín)", clases: "bg-amber-100 text-amber-800" },
+    clase: { texto: "Encaja con su registro ✓", clases: "bg-green-100 text-green-800" },
+    familia: { texto: "Encaja por familia ~ (verifique el pliego)", clases: "bg-lime-100 text-lime-800" },
+    equivalente: { texto: "Encaja por afinidad ≈ (verifique el pliego)", clases: "bg-amber-100 text-amber-800" },
     texto: { texto: "Objeto sugiere obra", clases: "bg-amber-100 text-amber-800" },
-    ninguno: { texto: "RUP ✗", clases: "bg-red-100 text-red-700" },
+    ninguno: { texto: "No encaja con su registro ✗", clases: "bg-red-100 text-red-700" },
   };
   /* Pertinencia del objeto: ¿es obra/consultoría o un servicio que se coló por
      tener un UNSPSC inscrito? Los rojos no deberían llegar nunca a la lista
@@ -735,7 +735,7 @@
 
   function badgePuerta(etiqueta, puerta) {
     const p = puerta || {};
-    if (p.sin_dato) return chip(`● ${etiqueta} ?`, GRIS, p.mensaje || "Sin datos para evaluar esta puerta");
+    if (p.sin_dato) return chip(`● ${etiqueta} ?`, GRIS, p.mensaje || "Sin datos para evaluar este requisito");
     if (!p.pasa) return chip(`● ${etiqueta} ✗`, ROJO, p.mensaje || "");
     if (p.advertencia) return chip(`● ${etiqueta} ~`, AMBAR, p.mensaje || "");
     return chip(`● ${etiqueta} ✓`, VERDE, p.mensaje || "");
@@ -744,8 +744,8 @@
   function badgesPuertas(puertas) {
     const g = puertas || {};
     return [
-      badgePuerta("RUP", g.p1_rup),
-      badgePuerta("K", g.p2_k),
+      badgePuerta(window.Glosario.corto("rup"), g.p1_rup),
+      badgePuerta(window.Glosario.corto("capacidad_contratacion"), g.p2_k),
       badgePuerta("Caja", g.p3_caja),
       badgePuerta("Competencia", g.p4_competencia),
     ].join("");
@@ -1007,7 +1007,7 @@
       </div>
 
       ${noViable ? `<p class="mt-3">${chip(`No viable${motivos ? ` — ${esc(motivos)}` : ""}`, "bg-red-100 text-red-700 ring-1 ring-inset ring-red-600/20",
-    "No pasa una de las puertas: abra «Más detalles» para ver por qué")}</p>` : ""}
+    "No cumple uno de sus requisitos: abra «Más detalles» para ver cuál")}</p>` : ""}
 
       ${lineaRequisitos(puertas)}
 
@@ -1037,7 +1037,7 @@
           ${chipBaja(l.baja_mercado)}
           ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
           ${badgesRup(rup)}
-          ${rup.co_estimado ? chip("K sobre CO estimado", "bg-gray-100 text-gray-500", "La capacidad se calcula con un ingreso operacional estimado: no sirve para acreditar") : ""}
+          ${rup.co_estimado ? chip("Capacidad calculada con ingreso estimado", "bg-gray-100 text-gray-500", "Cuánto puede facturar se calcula con un ingreso operacional estimado (no está en su registro): sirve para orientar, no para acreditar") : ""}
           ${l.modalidad_de_contratacion ? chip(esc(l.modalidad_de_contratacion), "bg-gray-100 text-gray-600") : ""}
           ${l.tipo_precio === "unitarios" ? chip("Precios unitarios", "bg-blue-100 text-blue-800",
     "Las cantidades del pliego son un estimativo: las mayores cantidades ordenadas deben reconocerse y pagarse") : ""}
@@ -1050,7 +1050,7 @@
         <span class="text-gray-400">${esc(l.estado_del_procedimiento || "")}</span>
         <span class="flex items-center gap-3">
           <button type="button" class="btn-apu rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50"
-                  data-apu-q="${esc(qApu(l))}" title="Calcular APU y rentabilidad de este proceso en la pestaña Precios">Calcular mi precio</button>
+                  data-apu-q="${esc(qApu(l))}" title="Calcular cuánto me cuesta y qué me deja este proceso, en la pestaña Precios">Calcular mi precio</button>
           ${l.urlproceso ? `<a href="${esc(l.urlproceso)}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 hover:underline">Ver en SECOP II ↗</a>` : ""}
         </span>
       </div>
@@ -1074,10 +1074,10 @@
       + (cuerpo.ordenado_por === "margen" && cuerpo.margen
         ? ` · ordenadas por lo que te queda: ${cuerpo.margen.con_margen} con costo calculado${cuerpo.margen.borradores_sin_costo ? `, ${cuerpo.margen.borradores_sin_costo} borrador${cuerpo.margen.borradores_sin_costo === 1 ? "" : "es"} sin costo (volvé a calcular y guardar)` : ""}; las demás sin referencia, abajo`
         : "")
-      + (cuerpo.viables !== undefined ? ` · ${cuerpo.viables} pasan las cuatro puertas` : "")
+      + (cuerpo.viables !== undefined ? ` · ${cuerpo.viables} cumplen sus requisitos` : "")
       + (cuerpo.no_viables ? `, ${cuerpo.no_viables} no viable${cuerpo.no_viables === 1 ? "" : "s"}` : "")
-      + (m.clase !== undefined ? ` · ${m.clase} con RUP ✓${porVerificar ? `, ${porVerificar} por verificar` : ""}` : "")
-      + (cuerpo.incluye_sin_unspsc ? " · incluye procesos sin código UNSPSC" : "");
+      + (m.clase !== undefined ? ` · ${m.clase} encajan con su registro de proponente${porVerificar ? `, ${porVerificar} por verificar en el pliego` : ""}` : "")
+      + (cuerpo.incluye_sin_unspsc ? " · incluye procesos sin código de clasificación" : "");
     $("lista").innerHTML = cuerpo.resultados.map(tarjeta).join("");
 
     const totalPaginas = Math.max(1, Math.ceil(cuerpo.total / cuerpo.por_pagina));
@@ -1133,7 +1133,7 @@
         ${mes ? chip(`Previsto para ${mes}`, "bg-purple-100 text-purple-800",
     p.fecha_estimada_original ? `Dato de la fuente: ${p.fecha_estimada_original}` : "") : ""}
         ${p.modalidad ? chip(esc(p.modalidad), "bg-gray-100 text-gray-600") : chip("Modalidad no informada", "bg-gray-100 text-gray-400")}
-        ${p.unspsc ? chip(`UNSPSC ${esc(p.unspsc)}`, "bg-gray-100 text-gray-600") : ""}
+        ${p.unspsc ? chip(`Código ${esc(p.unspsc)}`, "bg-gray-100 text-gray-600", "Código de clasificación del trabajo (el que trae el plan)") : ""}
         ${p.departamento_entidad ? chip(esc(p.departamento_entidad), "bg-gray-100 text-gray-600") : ""}
       </div>
     </article>`;
@@ -2144,7 +2144,7 @@
         + " — verifíquelas contra el formulario de cantidades del pliego.</p>";
     }
     if (r.unspsc && r.unspsc.presente) {
-      html += `<p class="mt-1 text-xs opacity-70">Familias UNSPSC leídas: ${r.unspsc.familias.map(esc).join(", ")}</p>`;
+      html += `<p class="mt-1 text-xs opacity-70">Familias de trabajo leídas: ${r.unspsc.familias.map(esc).join(", ")}</p>`;
     }
     caja.innerHTML = html;
   }
@@ -2500,7 +2500,7 @@
          `sin_apu: true`, así que preguntando primero por `sin_apu` se le decía
          «lleva un precio escrito a mano» a un ítem que no tiene precio ninguno. */
       caja.innerHTML = `<p class="text-[11px] text-gray-400">${
-        !ultimoCalculo ? "Pulse «Calcular APU» para ver el desglose de este ítem."
+        !ultimoCalculo ? "Pulse «Calcular cuánto me cuesta» para ver el desglose de este ítem."
           : it && it.incompleto ? esc(it.mensaje || "Este ítem no tiene precio: escriba uno o asígnele un ítem del catálogo. Sin precio NO suma al total.")
             : it && it.sin_apu ? "Este ítem lleva un precio escrito a mano o traído del archivo: no tiene APU de respaldo en el catálogo."
               : "Este ítem no tiene composición en el catálogo."}</p>`;
@@ -2683,7 +2683,7 @@
       return false;
     } finally {
       btn.disabled = filas.length === 0;
-      btn.textContent = "Calcular APU";
+      btn.textContent = window.Glosario.VERBOS.generar_apu;
       $("btn-exportar").disabled = !ultimoCalculo;
     }
   }
@@ -2923,7 +2923,7 @@
     const caja = $("revision-oferta");
     caja.classList.remove("hidden");
     if (!filas.length) { caja.innerHTML = `<p class="text-sm text-gray-600">No hay ítems en el paso 3: no hay oferta que revisar.</p>`; return; }
-    if (!ultimoCalculo) { caja.innerHTML = `<p class="text-sm text-gray-600">Primero pulse «Calcular APU»: la revisión necesita el precio de cada ítem y el total.</p>`; return; }
+    if (!ultimoCalculo) { caja.innerHTML = `<p class="text-sm text-gray-600">Primero pulse «Calcular cuánto me cuesta»: la revisión necesita el precio de cada ítem y el total.</p>`; return; }
     caja.innerHTML = `<p class="text-sm text-gray-500">Revisando…</p>`;
     const formulario = window.__pliegoUltimo && Array.isArray(window.__pliegoUltimo.items) && window.__pliegoUltimo.items.length ? { items: window.__pliegoUltimo.items } : null;
     const tope = $("rev-tope-aiu").value.trim(), secopTotal = $("rev-secop-total").value.trim();
@@ -3060,7 +3060,7 @@
       $("lista-presupuestos").classList.add("hidden");
       msgApu(r.catalogo_cambiado
         ? `Cargado «${p.nombre}». Atención: ${r.nota}`
-        : `Cargado «${p.nombre}». Pulse «Calcular APU» para ver los totales.`, r.catalogo_cambiado ? "error" : "ok");
+        : `Cargado «${p.nombre}». Pulse «Calcular cuánto me cuesta» para ver los totales.`, r.catalogo_cambiado ? "error" : "ok");
     } catch (err) {
       msgApu(`No se pudo cargar: ${err.message}`, "error");
     }
@@ -4491,7 +4491,7 @@
     if (p.modalidad) q.set("modalidad", p.modalidad);
     q.set("perfil", $("d-perfil").value);
     return `<button type="button" class="btn-apu rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50"`
-      + ` data-apu-q="${esc(q.toString())}" title="Calcular APU y rentabilidad de este proceso en la pestaña APU">APU</button>`
+      + ` data-apu-q="${esc(q.toString())}" title="Calcular cuánto me cuesta y qué me deja este proceso, en la pestaña Precios">Mi precio</button>`
       + (listo
         ? ' <span class="rounded-lg px-2 py-0.5 text-xs font-medium bg-green-50 text-green-800"'
           + ' title="Ya hay un presupuesto guardado para este proceso y perfil">● APU listo</span>'
@@ -4562,8 +4562,8 @@
       // el servidor — lib/capacidad.js es la única implementación que decide.
       const co = ind.ingreso_operacional || (ind.utilidad_operacional || 0) * 16.7;
       const kAprox = Math.round(co * 2 / 100);
-      return `<li><span class="font-medium">${esc(p.nombre || clave)}</span>: ${n} códigos UNSPSC · `
-        + `${p.profesionales || 0} profesional(es) · tope ${fmt.format(p.tope_smmlv || 0)} SMMLV · `
+      return `<li><span class="font-medium">${esc(p.nombre || clave)}</span>: ${n} tipos de trabajo inscritos · `
+        + `${p.profesionales || 0} profesional(es) · tope ${fmt.format(p.tope_smmlv || 0)} salarios mínimos · `
         + `K aprox. ${fmtCOP.format(kAprox)}</li>`;
     }).join("");
   }
@@ -4670,7 +4670,7 @@
       return;
     }
     const resumen = Object.entries(cuerpo.resumen || {})
-      .map(([k, v]) => `<li><span class="font-medium">${esc(v.nombre || k)}</span>: ${v.codigos} códigos UNSPSC · ${v.clases} clases · ${v.familias} familias · tope ${fmt.format(v.tope_smmlv || 0)} SMMLV</li>`)
+      .map(([k, v]) => `<li><span class="font-medium">${esc(v.nombre || k)}</span>: ${v.clases} tipos de trabajo inscritos (${v.familias} familias) · tope ${fmt.format(v.tope_smmlv || 0)} salarios mínimos</li>`)
       .join("");
     caja.innerHTML =
       `<p>Fuente: <span class="font-medium">${cuerpo.fuente === "redis" ? "archivo cargado (Redis)" : "valores por defecto del repositorio"}</span>`

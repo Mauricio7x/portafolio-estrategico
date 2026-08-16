@@ -10003,7 +10003,7 @@ async function main() {
           "el listado de borradores se consulta aparte de /api/resumen, que se cachea 300 s");
         assert.ok(limpio.indexOf("await cargarApuListos(perfil)") < limpio.indexOf("pintarDashboard(cuerpo,"),
           "el listado tiene que cargarse ANTES de pintar, o el badge saldría una pintada tarde");
-        assert.ok(unoHtml.includes("<th class=\"py-1\">APU</th>"), "index.html sin la columna APU");
+        assert.ok(unoHtml.includes("<th class=\"py-1\">Mi precio</th>"), "index.html sin la columna del precio (antes «APU»; Fase 6 la tradujo)");
         assert.ok(limpio.includes('colspan="7"'),
           "el estado vacío de la tabla tiene que cubrir las 7 columnas, no 6");
 
@@ -11659,7 +11659,7 @@ async function main() {
         "esa promesa es falsa mientras exista el botón de OCR: las páginas salen a OCR.space");
       /* veredicto GRADUADO en la tarjeta: un badge por la solidez del match y
          otro por el tipo de objeto. Sin esto el dueño no puede decidir. */
-      for (const debe of ["badgesRup", "MATCH_UNSPSC", "RUP ✓", "RUP ~ (familia)", "RUP ≈ (clase afín)",
+      for (const debe of ["badgesRup", "MATCH_UNSPSC", "Encaja con su registro ✓", "Encaja por familia ~", "Encaja por afinidad ≈",
         "Objeto sugiere obra", "PERTINENCIA", "por_match"]) {
         assert.ok(js.includes(debe), `app.js sin ${debe} (la tarjeta no muestra el veredicto graduado)`);
       }
@@ -12893,6 +12893,76 @@ async function main() {
       const appF5 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
       assert.ok(/function bloqueAdendas/.test(appF5) && /bloqueAdendas\(l\.adendas\)/.test(appF5), "la tarjeta pinta «la entidad cambió las reglas»");
       console.log(`  · Vigía de adendas (Fase 5): dedup con _cambios (${fila._cambios.length}) → «${ad.resumen}» · texto: «${cambiosH[0].mensaje}» · versiones ${idx.versiones.length}/${D.MAX_VERSIONES} · cronograma con avisos T-7/T-3/T-1 y .ics`);
+    }
+
+    /* ═══════════ j-undecies. TRADUCCIÓN DE LENGUAJE (Fase 6 del plan v3, transversal) ═══════════
+       El glosario es la fuente de las traducciones y la interfaz no enseña la
+       jerga: se vigila el texto VISIBLE de index.html (sin comentarios ni
+       scripts, con placeholders y titles) y las cadenas de los módulos del
+       navegador contra la lista de términos internos del glosario más los
+       atajos que se colaban («cuatro puertas», «K ✓», «Baja típica», «RUP ✓»,
+       «códigos UNSPSC», «tope … SMMLV»). Regla documentada: RUP, AIU y APU se
+       conservan SOLO como nombre propio del documento/concepto que el pliego
+       mismo usa («Suba su RUP», «el AIU del pliego»); como etiqueta de un dato
+       o botón se traducen. Los rótulos que salen del glosario lo hacen por
+       `data-glosario` (HTML) o `Glosario.corto()/VERBOS` (JS). */
+    {
+      const Glo = require("../lib/glosario.js");
+      assert.strictEqual(Glo.corto("rup"), "Registro de proponente");
+      assert.strictEqual(Glo.corto("baja_mercado"), "Suelen bajar");
+      assert.strictEqual(Glo.corto("adenda"), Glo.traducir("adenda"), "sin forma corta, corto() devuelve la visible");
+      assert.throws(() => Glo.corto("zzz"), /desconocido/);
+      // estampar rellena data-glosario (visible y corto)
+      const nodoG = (clave, corto) => { const n = { texto: "", attrs: { "data-glosario": clave, ...(corto ? { "data-glosario-corto": "" } : {}) } }; n.getAttribute = (k) => n.attrs[k]; n.hasAttribute = (k) => k in n.attrs; Object.defineProperty(n, "textContent", { get: () => n.texto, set: (v) => { n.texto = v; } }); return n; };
+      const nodosG = [nodoG("baja_mercado", false), nodoG("rup", true), nodoG("inexistente", false)];
+      const docG = { title: "", querySelectorAll: (sel) => (sel === "[data-glosario]" ? nodosG : []) };
+      assert.strictEqual(Glo.estampar(docG), 2);
+      assert.strictEqual(nodosG[0].textContent, "Cuánto suelen bajar el precio");
+      assert.strictEqual(nodosG[1].textContent, "Registro de proponente");
+      assert.strictEqual(nodosG[2].textContent, "");
+
+      const html6 = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const visibleHtml = (() => {
+        const s = html6.replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "");
+        const out = [];
+        for (const m of s.matchAll(/(?:placeholder|title|aria-label|alt)="([^"]*)"/g)) out.push(m[1]);
+        out.push(...s.replace(/<[^>]+>/g, "\n").split("\n").map((t) => t.trim()).filter(Boolean));
+        return out.join("\n");
+      })();
+      assert.ok(html6.includes('data-glosario="baja_mercado"'), "el rótulo del tablero sale del glosario, no escrito a mano");
+      const JERGA_HTML = [
+        [/\bUNSPSC\b/, "UNSPSC"], [/\bCRPC?\b/, "CRP/CRPC"], [/capacidad residual|K residual/i, "capacidad residual"], [/\btertil/i, "tertil"],
+        [/baja de mercado/i, "baja de mercado"], [/[ií]ndice de (?:baja|competencia)/i, "índice de baja/competencia"], [/habilitante/i, "habilitante"],
+        [/subsanable/i, "subsanable"], [/causal\s+O\b/i, "causal O"], [/\bSMMLV\b/, "SMMLV"], [/estado del procedimiento/i, "estado del procedimiento"],
+        [/\bpertinencia\b/i, "pertinencia"], [/\btier\b/i, "tier"], [/\bN\/A\b/, "N/A"], [/perfiles RUP/, "perfiles RUP"], [/Reconstruir índice/, "Reconstruir índice"],
+        [/Modo AIU/i, "Modo AIU"], [/Calcular APU|Exportar Excel/, "Calcular APU / Exportar Excel"], [/Códigos UNSPSC/i, "Códigos UNSPSC"], [/\bK\s*✓/, "K ✓"],
+      ];
+      for (const [re, nombre] of JERGA_HTML) {
+        const m = visibleHtml.match(re);
+        assert.ok(!m, `index.html enseña jerga «${nombre}»: …${visibleHtml.slice(Math.max(0, (m && m.index) - 60), (m && m.index) + 60).replace(/\n/g, " ")}…`);
+      }
+      const JERGA_JS = [
+        // SMMLV entre comillas es el VALOR de la unidad que viaja a la API (onboarding), no texto; `.habilitantes` es una propiedad
+        [/(?<![A-Z_])UNSPSC(?![A-Z_])/, "UNSPSC (texto)"], [/(?<!["'])\bSMMLV\b(?!["'_])/, "SMMLV"], [/cuatro puertas/, "cuatro puertas"], [/K sobre CO/, "K sobre CO"], [/Baja típica/, "Baja típica"],
+        [/\btertil/i, "tertil"], [/capacidad residual/i, "capacidad residual"], [/(?<![.\w])habilitante/i, "habilitante"], [/subsanable/i, "subsanable"], [/causal\s+O\b/i, "causal O"],
+        [/RUP ✓|RUP ✗|RUP ~|RUP ≈/, "RUP ✓/✗/~/≈"], [/\bK ✓/, "K ✓"], [/badgePuerta\("(?:RUP|K)"/, "badgePuerta con sigla"], [/\bN\/A\b/, "N/A"], [/evaluar esta puerta/, "puerta"],
+        [/con RUP ✓/, "con RUP ✓"], [/códigos UNSPSC|Familias UNSPSC/, "códigos/Familias UNSPSC"], [/\bCRPC?\b(?!_)/, "CRP/CRPC"], [/"Calcular APU"|«Calcular APU»/, "Calcular APU"],
+      ];
+      for (const archivo of ["app.js", "onboarding.js", "pliego.js", "portada.js", "filtros.js"]) {
+        const fuente = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", archivo), "utf8"));
+        for (const [re, nombre] of JERGA_JS) {
+          const m = fuente.match(re);
+          assert.ok(!m, `${archivo} enseña jerga «${nombre}»: …${fuente.slice(Math.max(0, (m && m.index) - 70), (m && m.index) + 70).replace(/\n/g, " ")}…`);
+        }
+      }
+      const app6 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      assert.ok(/window\.Glosario\.corto\("rup"\)/.test(app6) && /window\.Glosario\.corto\("capacidad_contratacion"\)/.test(app6) && /window\.Glosario\.corto\("baja_mercado"\)/.test(app6), "las etiquetas de la tarjeta salen del glosario");
+      assert.ok(/window\.Glosario\.VERBOS\.generar_apu/.test(app6), "el botón principal de Precios dice el verbo del glosario");
+      assert.ok(/Encaja con su registro ✓/.test(app6) && /No encaja con su registro ✗/.test(app6), "el encaje del registro se dice en llano");
+      assert.ok(/cumplen sus requisitos/.test(app6) && /encajan con su registro de proponente/.test(app6), "el resumen del listado no habla de «puertas» ni de «RUP ✓»");
+      assert.ok(/Calcular cuánto me cuesta/.test(visibleHtml) && /Descargar mi presupuesto/.test(visibleHtml), "botones en la voz del usuario (§7.2)");
+      assert.ok(/Tu registro de proponente/.test(visibleHtml) && /Recalcular cuánto suelen bajar el precio/.test(visibleHtml) && /Tipo de obra/.test(visibleHtml), "Mi empresa traducido");
+      console.log("  · Traducción (Fase 6): index.html y los 5 módulos del navegador sin jerga del glosario (UNSPSC, CRP, SMMLV, habilitante, subsanable, causal O, tertil, puertas, «RUP ✓/K ✓», Baja típica) · rótulos por data-glosario y Glosario.corto()/VERBOS");
     }
 
     /* ═══════════ h-ter. Rediseño Apple Glass · pestañas · eliminación de RUP ·

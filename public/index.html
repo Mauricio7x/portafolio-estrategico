@@ -707,7 +707,7 @@
               <span id="inferir-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
               <span id="inferir-texto">Detectar ítems</span>
             </button>
-            <input id="codigos-unspsc" type="text" placeholder="Códigos UNSPSC (opcional): 72141100"
+            <input id="codigos-unspsc" type="text" placeholder="Códigos del pliego (opcional): 72141100"
                    class="min-w-[240px] flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 sm:max-w-xs">
           </div>
         </div>
@@ -851,7 +851,7 @@
                        class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
               </label>
               <label class="block">
-                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Códigos UNSPSC (opcional)</span>
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Códigos de lo que sabe hacer, si el pliego los trae (opcional)</span>
                 <input id="pliego-unspsc" type="text" spellcheck="false" placeholder="72141000, 72152000"
                        class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
               </label>
@@ -1040,7 +1040,7 @@
                      class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
             </label>
             <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Modo AIU</span>
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Cómo se suman administración, imprevistos y ganancia</span>
               <select id="modo-aiu" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
                 <option value="aditivo">Aditivo (1 + A + I + U)</option>
                 <option value="compuesto">Compuesto (multiplicativo)</option>
@@ -1100,7 +1100,7 @@
                   class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
             Calcular rentabilidad
           </button>
-          <span class="text-xs text-gray-500">Consulta el índice de baja y el de competencia de esta entidad.</span>
+          <span class="text-xs text-gray-500">Consulta cuánto suelen bajar el precio y qué tan peleada está esta entidad.</span>
         </div>
       </section>
 
@@ -1108,7 +1108,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">3</span>Calcular y exportar</h2>
-            <p class="mt-1 text-sm text-gray-500">Escriba las cantidades y pulse <strong>Calcular APU</strong>. La columna <strong>«Precio de tienda»</strong> muestra cuánto vale ese material en Homecenter o en la lista del fabricante, con su fuente y su fecha: es una referencia para negociar y <strong>no entra en el costo</strong>. Los precios que corrija quedan guardados y mandan la próxima vez. Pulse un ítem para ver su desglose.</p>
+            <p class="mt-1 text-sm text-gray-500">Escriba las cantidades y pulse <strong>Calcular cuánto me cuesta</strong>. La columna <strong>«Precio de tienda»</strong> muestra cuánto vale ese material en Homecenter o en la lista del fabricante, con su fuente y su fecha: es una referencia para negociar y <strong>no entra en el costo</strong>. Los precios que corrija quedan guardados y mandan la próxima vez. Pulse un ítem para ver su desglose.</p>
           </div>
         </div>
 
@@ -1142,11 +1142,11 @@
         <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-5">
           <button id="btn-calcular" type="button"
                   class="rounded-xl bg-gray-900 px-8 py-3 text-base font-semibold text-white transition hover:bg-gray-700 disabled:opacity-40">
-            Calcular APU
+            Calcular cuánto me cuesta
           </button>
           <button id="btn-exportar" type="button"
                   class="rounded-xl bg-gray-900 px-6 py-3 text-base font-semibold text-white transition hover:bg-gray-700 disabled:opacity-40">
-            Exportar Excel
+            Descargar mi presupuesto (Excel)
           </button>
         </div>
         <details class="mt-3 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
@@ -1418,9 +1418,9 @@
 <section id="seccion-rup" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 class="font-semibold tracking-tight">Tu RUP</h2>
+            <h2 class="font-semibold tracking-tight">Tu registro de proponente</h2>
             <p class="mt-1 max-w-2xl text-sm text-gray-500">
-              Los perfiles RUP determinan qué licitaciones son visibles. Suba un RUP nuevo en PDF (crea un
+              Su registro de proponente decide qué licitaciones puede ver. Suba el certificado RUP nuevo en PDF (crea un
               perfil propio) o cargue el archivo JSON de los perfiles del dueño. El cambio surte efecto en la
               siguiente consulta: no hace falta volver a sincronizar.
             </p>
@@ -1441,7 +1441,7 @@
                  class="block max-w-sm text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
           <button id="btn-rup-descargar" type="button"
                   class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
-            Descargar RUP actual (JSON)
+            Descargar el perfil actual (JSON)
           </button>
         </div>
 
@@ -1465,14 +1465,14 @@
         <ul id="rup-errores" class="mt-3 hidden space-y-1 rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></ul>
 
         <div class="mt-6 border-t border-gray-100 pt-4">
-          <h3 class="text-sm font-semibold tracking-tight">RUP actual</h3>
+          <h3 class="text-sm font-semibold tracking-tight">Perfil actual</h3>
           <div id="rup-actual" class="mt-2 text-sm text-gray-600">—</div>
         </div>
 
         <!-- Zona de riesgo: separada por un divisor y 16px, como manda el sistema -->
         <div class="mt-6 border-t border-gray-100 pt-4">
           <div class="flex flex-wrap items-center gap-4">
-            <button id="btn-eliminar-rup" type="button" class="btn-peligro">Eliminar RUP</button>
+            <button id="btn-eliminar-rup" type="button" class="btn-peligro">Eliminar este perfil</button>
             <span class="text-xs text-gray-500">Eliminarás todos los filtros y datos asociados al perfil activo.</span>
           </div>
           <p id="eliminar-rup-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
@@ -1580,10 +1580,10 @@
 <section id="seccion-cobertura" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 class="font-semibold tracking-tight">Códigos que te faltan en el RUP</h2>
+            <h2 class="font-semibold tracking-tight">Códigos que te faltan en tu registro de proponente</h2>
             <p class="mt-1 max-w-2xl text-sm text-gray-500">
-              Con qué códigos UNSPSC adjudica el mercado las obras que usted ejecuta, y cuáles no están
-              inscritos en su RUP. El RUP se renueva una vez al año: esta lista es la que hay que mirar antes.
+              Con qué códigos adjudica el mercado las obras que usted ejecuta, y cuáles no están
+              inscritos en su registro de proponente. El registro se renueva una vez al año: esta lista es la que hay que mirar antes.
             </p>
           </div>
           <div class="flex flex-wrap items-end gap-3">
@@ -1746,7 +1746,7 @@
           <!-- índices: baja de mercado + competencia (reconstrucción colapsada) -->
           <div id="d-baja-box" class="mt-6 hidden rounded-2xl border border-gray-200 p-5">
             <div class="flex flex-wrap items-baseline justify-between gap-2">
-              <h3 class="text-sm font-semibold tracking-tight">Baja de mercado</h3>
+              <h3 class="text-sm font-semibold tracking-tight" data-glosario="baja_mercado"></h3>
               <p id="d-baja-actualizado" class="text-xs text-gray-500"></p>
             </div>
             <p id="d-baja-msg" class="mt-2 hidden rounded-lg px-3 py-2 text-xs"></p>
@@ -1771,11 +1771,11 @@
               <div class="mt-3 flex flex-wrap items-center gap-3">
                 <button id="d-baja-reconstruir" type="button"
                   class="rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-50">
-                  Reconstruir índice de baja
+                  Recalcular cuánto suelen bajar el precio
                 </button>
                 <button id="d-comp-reconstruir" type="button"
                   class="rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-50">
-                  Reconstruir índice de competencia
+                  Recalcular qué tan peleadas están
                 </button>
                 <span id="d-comp-msg" class="text-xs text-gray-500"></span>
               </div>
@@ -1819,7 +1819,7 @@
             <div class="mt-2 overflow-x-auto">
               <table class="w-full text-sm">
                 <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
-                  <tr><th class="py-1 pr-2">Objeto</th><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2 text-right">Cuantía</th><th class="py-1 pr-2">Cierre</th><th class="py-1 pr-2">Competencia</th><th class="py-1 pr-2">Pertinencia</th><th class="py-1">APU</th></tr>
+                  <tr><th class="py-1 pr-2">Objeto</th><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2 text-right">Cuantía</th><th class="py-1 pr-2">Cierre</th><th class="py-1 pr-2">Competencia</th><th class="py-1 pr-2">Tipo de obra</th><th class="py-1">Mi precio</th></tr>
                 </thead>
                 <tbody id="d-destacados" class="divide-y divide-gray-100"></tbody>
               </table>

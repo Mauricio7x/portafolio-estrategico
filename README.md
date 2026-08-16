@@ -1,5 +1,10 @@
 # Detekta · Oportunidades de licitación SECOP II
 
+> **Lenguaje (ago 2026, Fase 6 del plan v3):** ningún término interno del glosario (UNSPSC, K/CRP,
+> SMMLV, habilitante, subsanable, «causal O», tertil, «puertas»…) llega a la pantalla; los rótulos
+> salen de `public/glosario.js` (`data-glosario`, `Glosario.corto()`, `Glosario.VERBOS`) y hay prueba
+> que vigila el texto visible. RUP/AIU/APU se conservan solo como nombre del documento que el pliego usa.
+>
 > **Marca (ago 2026):** el producto se llama **Detekta**, con k. El nombre tiene UNA fuente de
 > verdad, `public/glosario.js` (`MARCA.nombre`; `lib/glosario.js` lo re-exporta), y ninguna
 > cadena visible lo escribe a mano. Repositorio, URL de producción, claves de Redis, variables de

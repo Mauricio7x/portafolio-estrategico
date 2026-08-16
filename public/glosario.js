@@ -51,18 +51,18 @@
      traducción de las pantallas existentes es la Fase 6 (transversal); las
      fases 8-10 nacen leyendo de aquí. */
   const TERMINOS = Object.freeze({
-    rup: { interno: "RUP", visible: "Su registro de proponente" },
-    unspsc: { interno: "UNSPSC / clases", visible: "Lo que usted sabe hacer" },
-    capacidad_contratacion: { interno: "Capacidad de contratación (K)", visible: "Cuánto puede facturar sin pasarse" },
+    rup: { interno: "RUP", visible: "Su registro de proponente", corto: "Registro de proponente" },
+    unspsc: { interno: "UNSPSC / clases", visible: "Lo que usted sabe hacer", corto: "Tipos de trabajo" },
+    capacidad_contratacion: { interno: "Capacidad de contratación (K)", visible: "Cuánto puede facturar sin pasarse", corto: "Capacidad de facturar" },
     capacidad_residual: { interno: "Capacidad residual", visible: "Cuánto le queda disponible con sus contratos actuales" },
-    baja_mercado: { interno: "Índice de baja de mercado", visible: "Cuánto suelen bajar el precio" },
-    indice_competencia: { interno: "Índice de competencia", visible: "Qué tan peleada está" },
+    baja_mercado: { interno: "Índice de baja de mercado", visible: "Cuánto suelen bajar el precio", corto: "Suelen bajar" },
+    indice_competencia: { interno: "Índice de competencia", visible: "Qué tan peleada está", corto: "Competencia" },
     oferta_artificialmente_baja: { interno: "Oferta artificialmente baja", visible: "Precio tan bajo que le van a pedir explicaciones" },
     requisito_habilitante: { interno: "Requisito habilitante", visible: "Lo que le exigen para poder participar" },
     subsanable: { interno: "Subsanable", visible: "Se puede corregir después" },
     insubsanable: { interno: "Insubsanable", visible: "Si falla, queda por fuera de inmediato" },
     causal_o: { interno: "Causal O", visible: "Motivo de rechazo automático" },
-    aiu: { interno: "AIU", visible: "Su administración, imprevistos y ganancia" },
+    aiu: { interno: "AIU", visible: "Su administración, imprevistos y ganancia", corto: "Administración, imprevistos y ganancia" },
     apu: { interno: "APU", visible: "Cuánto le cuesta cada actividad" },
     smmlv: { interno: "SMMLV", visible: null, nota: "Convertir a pesos; la sigla no se muestra" },
     adenda: { interno: "Adenda", visible: "Cambio en las reglas del proceso" },
@@ -101,6 +101,12 @@
     if (!t) throw new Error(`glosario: término desconocido «${clave}»`);
     return t.visible;
   }
+  /* Forma CORTA para chips y cabeceras (cuando existe); si no, la visible. */
+  function corto(clave) {
+    const t = TERMINOS[clave];
+    if (!t) throw new Error(`glosario: término desconocido «${clave}»`);
+    return t.corto || t.visible;
+  }
 
   /* Estampa la marca en el documento: cada nodo con `data-marca="nombre"` (o
      `nombreLargo`, `lema`) recibe el texto; el <title> se reafirma. Idempotente:
@@ -116,9 +122,21 @@
       if (el.textContent !== valor) el.textContent = valor;
       n++;
     }
+    /* Fase 6 · los rótulos del glosario en el marcado estático: un nodo con
+       data-glosario="clave" recibe la forma visible (o la corta con
+       data-glosario-corto). Así el HTML no escribe la traducción a mano. */
+    for (const el of doc.querySelectorAll("[data-glosario]")) {
+      const clave = el.getAttribute("data-glosario");
+      const t = TERMINOS[clave];
+      if (!t) continue;
+      const valor = el.hasAttribute("data-glosario-corto") ? (t.corto || t.visible) : t.visible;
+      if (typeof valor !== "string") continue;
+      if (el.textContent !== valor) el.textContent = valor;
+      n++;
+    }
     if ("title" in doc && doc.title !== titulo()) doc.title = titulo();
     return n;
   }
 
-  return { MARCA, TERMINOS, VERBOS, SIN_REFERENCIA, sinReferencia, traducir, titulo, descripcion, estampar };
+  return { MARCA, TERMINOS, VERBOS, SIN_REFERENCIA, sinReferencia, traducir, corto, titulo, descripcion, estampar };
 });
