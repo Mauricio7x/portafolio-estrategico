@@ -303,6 +303,26 @@ si exigen un porcentaje mínimo al integrante que aporta la experiencia»). Ning
 entra ni sale (art. 410A). En «Mi empresa» el bloque «Crear consorcio» aparece solo con dos o más
 perfiles individuales cargados.
 
+**Fases 4 y 5 del plan v3 (ago 2026) — guardián del Formulario 1 y vigía de adendas.**
+`POST /api/pliego?op=formulario1 {oferta:{items,aiu,total}, formulario:{items}, presupuesto_oficial,
+tope_aiu_pct?, secop?:{total,items}, id_proceso?, perfil?}` (token) devuelve un semáforo con frases
+(`listo` · `precaucion` · `revisar`) y las **siete validaciones** con su fundamento: total >
+presupuesto (rechazo, insubsanable) · ítems añadidos/suprimidos/modificados frente al Formulario 1
+(rechazo — «motivo de rechazo automático», Documento Base 1.15 y Concepto C-549/2022) · SECOP II ≠
+anexo (rechazo) · AIU sin discriminar o sobre el tope (rechazo, Documento Base 4.1) · precio bajo el
+umbral de baja temeraria (alerta + justificación desde el APU, D. 1082 art. 2.2.1.1.2.2.4) · error
+aritmético e · ajuste de redondeo (informativos, Ley 1882/2018). Lo que no se cargó (SECOP II, tope,
+Formulario 1) queda `sin_referencia`, jamás «cumple». Se guarda en `formulario1:{proceso}:{perfil}`.
+En Precios → «Revisar antes de subir». `POST /api/pliego?op=diff {id_proceso, texto, perfil?}` (token)
+guarda cada versión del texto del pliego (`pliego:{proceso}:v:{n}`, máx. 5), y si el hash cambió, el
+diff por párrafos (`pliego:{proceso}:diff:{n}`) y los **habilitantes numéricos** (capital de trabajo,
+patrimonio, liquidez, endeudamiento, cobertura, experiencia, plazo) reevaluados contra el perfil:
+«Capital de trabajo exigido: subió de $650.000.000 a $800.000.000. Usted ya no cumple». Además el
+listado publica `adendas` por fila cuando el DATASET reescribió el proceso (cierre, presupuesto, plazo,
+objeto, modalidad; `_cambios` del dedup) con «le afecta / no le afecta» reevaluado por perfil.
+`GET|POST /api/pliego?op=cronograma&id_proceso=…[&formato=ics]` (público): hitos del dataset y del
+texto del pliego con avisos a T-7, T-3 y T-1 y exportación a calendario (.ics con alarmas).
+
 Respuesta: `{ ok, total, viables, no_viables, solo_viables, resultados, pagina, por_pagina, perfil,
 sincronizado, ordenado_por, por_match, indice_competencia, conocimiento }`. `por_match` reparte el
 total por solidez del match (cuántas son «RUP ✓» y cuántas hay que verificar). Cada resultado trae

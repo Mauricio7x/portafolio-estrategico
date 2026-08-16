@@ -4676,6 +4676,8 @@ async function main() {
       // pasar por «cache:true» lo que la prueba espera recién contado
       ...(await redis.scan("portada:*")), ...(await redis.scan("manifestacion:*")),
       ...(await redis.scan("calendario:*")), ...(await redis.scan("consorcio:*")),
+      // Fase 4/5: versiones y diffs de pliegos, revisiones del Formulario 1
+      ...(await redis.scan("pliego:*")), ...(await redis.scan("formulario1:*")),
     ];
     if (claves.length) await redis.del(...claves);
     for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*", "equivalencias:*",
@@ -12701,6 +12703,196 @@ async function main() {
       assert.ok(/minimumFractionDigits: 2, maximumFractionDigits: 2/.test(appC), "los indicadores se pintan con dos decimales fijos (el servidor ya truncó)");
       assert.ok(!/precio/i.test(appC.slice(appC.indexOf("Fase 10 · CONSORCIO"), appC.indexOf("function arrancarPaneles"))) || true);
       console.log(`  · Consorcio (Fase 10): 60/40 → liquidez ${sim.cuerpo.indicadores.liquidez} · endeudamiento ${sim.cuerpo.indicadores.endeudamiento} (truncados) · ${sim.cuerpo.clasesUnspsc} clases (unión, no ${sim.cuerpo.clasesSumadas}) · 141 contratos · abre ${sim.cuerpo.procesosAdicionales} más (${sim.cuerpo.procesosConsorcio} vs ${sim.cuerpo.procesosMejorIntegrante}) · guardado, servido por el listado y borrado`);
+    }
+
+    /* ═══════════ j-nonies. GUARDIÁN DEL FORMULARIO 1 (Fase 4 del plan v3) ═══════════
+       Las SIETE validaciones con caso cada una; la comparación de ítems detecta
+       adición, supresión y modificación de descripción, unidad y cantidad; cada
+       rechazo cita su norma; ninguna frase dice «causal O»; el handler exige
+       token y guarda el resultado; el marcado y el cableado están. */
+    {
+      const F1 = require("../lib/formulario1.js");
+      const routerPliego = require("../api/pliego.js");
+      const form = { items: [
+        { numeral: "1.1", descripcion_original: "EXCAVACION MANUAL EN MATERIAL COMUN", unidad: "M3", cantidad: 100 },
+        { numeral: "1.2", descripcion_original: "CONCRETO 3000 PSI PARA PLACA", unidad: "M3", cantidad: 20 },
+        { numeral: "1.3", descripcion_original: "ACERO DE REFUERZO 420 MPA", unidad: "KG", cantidad: 500 },
+      ] };
+      const ofertaOk = { items: [
+        { numeral: "1.1", descripcion: "Excavación manual en material común", unidad: "m3", cantidad: 100, precio_unitario: 50000, total: 5000000 },
+        { numeral: "1.2", descripcion: "Concreto 3000 psi para placa", unidad: "m³", cantidad: 20, precio_unitario: 600000, total: 12000000 },
+        { numeral: "1.3", descripcion: "Acero de refuerzo 420 MPa", unidad: "kg", cantidad: 500, precio_unitario: 6000, total: 3000000 },
+      ], aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }, total: 20000000 };
+      const nivelDe = (r, id) => r.veredictos.find((v) => v.id === id).nivel;
+      // caso limpio: listo
+      const limpio = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 21000000, tope_aiu_pct: 30, secop: { total: 20000000 } });
+      assert.strictEqual(limpio.semaforo, "listo", JSON.stringify(limpio.veredictos.map((v) => [v.id, v.nivel])));
+      assert.strictEqual(limpio.frase, "Su oferta está lista para presentar.");
+      assert.strictEqual(nivelDe(limpio, "items"), "ok", "«m3», «M3» y «m³» son la misma unidad; mayúsculas y tildes no son cambios");
+      // 1 · total > presupuesto → rechazo, con la cifra del exceso
+      const r1 = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 19000000, tope_aiu_pct: 30 });
+      assert.strictEqual(nivelDe(r1, "presupuesto"), "rechazo"); assert.strictEqual(r1.semaforo, "revisar");
+      assert.ok(/supera el presupuesto de la entidad \(\$19\.000\.000\) por \$1\.000\.000/.test(r1.veredictos[0].mensaje) && /motivo de rechazo automático/.test(r1.veredictos[0].mensaje));
+      // 2 · adición, supresión y modificación (descripción, unidad, cantidad)
+      const ofertaMal = { ...ofertaOk, items: [
+        { numeral: "1.1", descripcion: "Excavación MECÁNICA en material común", unidad: "m3", cantidad: 100, precio_unitario: 50000, total: 5000000 }, // descripción
+        { numeral: "1.2", descripcion: "Concreto 3000 psi para placa", unidad: "m2", cantidad: 25, precio_unitario: 600000, total: 15000000 },       // unidad y cantidad
+        { numeral: "1.4", descripcion: "Formaleta", unidad: "m2", cantidad: 10, precio_unitario: 30000, total: 300000 },                              // adición (y 1.3 suprimido)
+      ] };
+      const cmp = F1.compararItems(ofertaMal.items, form.items);
+      assert.strictEqual(cmp.adiciones.length, 1); assert.strictEqual(cmp.adiciones[0].numeral, "1.4");
+      assert.strictEqual(cmp.supresiones.length, 1); assert.strictEqual(cmp.supresiones[0].numeral, "1.3");
+      assert.strictEqual(cmp.modificaciones.length, 2);
+      assert.deepStrictEqual(cmp.modificaciones.map((m) => m.cambios.map((c) => c.campo)), [["descripcion"], ["unidad", "cantidad"]], "detecta descripción, unidad y cantidad");
+      const r2 = F1.validarFormulario1({ oferta: ofertaMal, formulario: form, presupuesto_oficial: 30000000, tope_aiu_pct: 30 });
+      assert.strictEqual(nivelDe(r2, "items"), "rechazo");
+      assert.ok(/1\.15/.test(r2.veredictos.find((v) => v.id === "items").fundamento) && /C-549/.test(r2.veredictos.find((v) => v.id === "items").fundamento), "cita el numeral 1.15 y el concepto C-549");
+      // sin formulario: pendiente, no rechazo ni «cumple»
+      assert.strictEqual(nivelDe(F1.validarFormulario1({ oferta: ofertaOk, presupuesto_oficial: 30000000 }), "items"), "sin_referencia");
+      // 3 · SECOP II ≠ anexo
+      const r3 = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000, tope_aiu_pct: 30, secop: { total: 20000001 } });
+      assert.strictEqual(nivelDe(r3, "secop"), "rechazo"); assert.ok(/no es el del anexo/.test(r3.veredictos.find((v) => v.id === "secop").mensaje));
+      const r3b = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000, tope_aiu_pct: 30, secop: { items: [{ numeral: "1.1", precio_unitario: 50001 }] } });
+      assert.strictEqual(nivelDe(r3b, "secop"), "rechazo");
+      assert.strictEqual(nivelDe(F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000 }), "secop"), "sin_referencia", "sin lo escrito en SECOP II no se afirma nada");
+      // 4 · AIU: sin discriminar → rechazo; sobre el tope → rechazo; sin tope → pendiente
+      assert.strictEqual(nivelDe(F1.validarFormulario1({ oferta: { ...ofertaOk, aiu: { administracion_pct: 25 } }, formulario: form, presupuesto_oficial: 30000000 }), "aiu"), "rechazo");
+      const r4 = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000, tope_aiu_pct: 22 });
+      assert.strictEqual(nivelDe(r4, "aiu"), "rechazo"); assert.ok(/suma 25 %/.test(r4.veredictos.find((v) => v.id === "aiu").mensaje) && /4\.1/.test(r4.veredictos.find((v) => v.id === "aiu").fundamento));
+      assert.strictEqual(nivelDe(F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000 }), "aiu"), "sin_referencia");
+      // 5 · baja temeraria → alerta + justificación (más del 20 % de descuento = por debajo del 80 %)
+      const r5 = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000, tope_aiu_pct: 30 });
+      assert.strictEqual(nivelDe(r5, "temeraria"), "alerta"); assert.strictEqual(r5.semaforo, "precaucion"); assert.strictEqual(r5.genera_justificacion, true);
+      assert.ok(/33,3 % por debajo/.test(r5.veredictos.find((v) => v.id === "temeraria").mensaje) && /2\.2\.1\.1\.2\.2\.4/.test(r5.veredictos.find((v) => v.id === "temeraria").fundamento));
+      assert.strictEqual(nivelDe(limpio, "temeraria"), "ok");
+      // 6 · error aritmético → informativo (no rechaza)
+      const r6 = F1.validarFormulario1({ oferta: { ...ofertaOk, items: [{ ...ofertaOk.items[0], total: 5500000 }, ofertaOk.items[1], ofertaOk.items[2]], total: 20500000 }, formulario: form, presupuesto_oficial: 21000000, tope_aiu_pct: 30 });
+      assert.strictEqual(nivelDe(r6, "aritmetico"), "informativo"); assert.ok(r6.semaforo !== "revisar" || r6.rechazos > 0);
+      assert.ok(/Ley 1882/.test(r6.veredictos.find((v) => v.id === "aritmetico").fundamento));
+      // 7 · redondeo → informativo (dentro de la tolerancia de fila)
+      const r7 = F1.validarFormulario1({ oferta: { ...ofertaOk, items: [{ ...ofertaOk.items[0], total: 5000001 }, ofertaOk.items[1], ofertaOk.items[2]] }, formulario: form, presupuesto_oficial: 21000000, tope_aiu_pct: 30 });
+      assert.strictEqual(nivelDe(r7, "redondeo"), "informativo"); assert.strictEqual(nivelDe(r7, "aritmetico"), "ok");
+      // sin jerga en ninguna frase ni fundamento
+      for (const r of [limpio, r1, r2, r3, r4, r5, r6, r7]) for (const v of r.veredictos) assert.ok(!/causal\s+o\b/i.test(`${v.titulo} ${v.mensaje} ${v.fundamento}`), "«causal O» no se muestra: se dice «motivo de rechazo automático»");
+      // handler por el router: token, POST, guardado y GET
+      assert.strictEqual((await invocarPost(routerPliego, "/api/pliego?op=formulario1", { oferta: ofertaOk })).status, 401);
+      const h1 = await invocarPost(routerPliego, "/api/pliego?op=formulario1", { oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000, tope_aiu_pct: 30, id_proceso: "CO1.F1.PRUEBA", perfil: "helder" }, CAB_TOKEN);
+      assert.strictEqual(h1.status, 200); assert.strictEqual(h1.cuerpo.semaforo, "precaucion"); assert.strictEqual(h1.cuerpo.guardado, true);
+      const g1 = await invocar(routerPliego, "/api/pliego?op=formulario1&id_proceso=CO1.F1.PRUEBA&perfil=helder", CAB_TOKEN);
+      assert.strictEqual(g1.cuerpo.analizado, true); assert.strictEqual(g1.cuerpo.resultado.semaforo, "precaucion");
+      // frontend
+      const htmlF4 = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      for (const id of ["seccion-revision", "rev-tope-aiu", "rev-secop-total", "btn-revisar-oferta", "revision-oferta"]) assert.ok(htmlF4.includes(`id="${id}"`), `falta #${id}`);
+      const appF4 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      assert.ok(/op=formulario1/.test(appF4) && /function ofertaParaRevision/.test(appF4) && /window\.__pliegoUltimo/.test(appF4), "el guardián está cableado y compara con el Formulario 1 del lector");
+      assert.ok(!/causal\s+o\b/i.test(appF4), "app.js no dice «causal O»");
+      const pliegoF4 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8"));
+      assert.ok(/window\.__pliegoUltimo = /.test(pliegoF4), "el lector expone los ítems leídos");
+      console.log(`  · Guardián del Formulario 1 (Fase 4): 7 validaciones con caso · adición/supresión/modificación (descripción, unidad, cantidad) · «${limpio.frase}» · rechazos citan 1.15/C-549, 4.1, 2.2.1.1.2.2.4 y Ley 1882 · sin «causal O»`);
+    }
+
+    /* ═══════════ j-decies. VIGÍA DE ADENDAS Y CRONOGRAMA (Fase 5 del plan v3) ═══════════
+       (1) El dedup deriva `_cambios` entre la primera y la última versión de un
+       proceso; `evaluarAdendas` los traduce con «le afecta / no le afecta»
+       reevaluando las puertas. (2) El diff del TEXTO detecta cambios en los
+       valores numéricos de los habilitantes y los reevalúa contra el perfil
+       («subió de $650 M a $800 M. Usted ya no cumple»); versiones y retención.
+       (3) El cronograma genera avisos a T-7, T-3 y T-1 y un .ics con alarmas. */
+    {
+      const A = require("../lib/adendas.js");
+      const D = require("../lib/diff.js");
+      const Cr = require("../lib/cronograma.js");
+      const routerPliego = require("../api/pliego.js");
+      const { leerChunksDedup, empaquetar } = require("../lib/almacen.js");
+      /* ---- (1) versiones en el dedup → _cambios → adendas ---- */
+      const base = { _k: "CO1.ADD.1", id_del_proceso: "CO1.ADD.1", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA VEREDA X", descripci_n_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA", codigo_principal_de_categoria: "V1.72141000", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Publicado", fase: "Presentación de ofertas", duracion: "5", unidad_de_duracion: "Meses", anticipo_pct: 0 };
+      const v1 = { ...base, ":updated_at": "2026-08-01T10:00:00.000Z", precio_base: "600000000", cuantia_cop: 600000000, fecha_cierre: "2026-09-15T17:00:00.000" };
+      const v2 = { ...base, ":updated_at": "2026-08-10T10:00:00.000Z", precio_base: "3000000000", cuantia_cop: 3000000000, fecha_cierre: "2026-09-10T17:00:00.000", duracion: "6" };
+      await redis.set("prueba:adendas:chunk:1", empaquetar([v1])[0]);
+      await redis.set("prueba:adendas:chunk:2", empaquetar([v2])[0]);
+      const dedup = await leerChunksDedup(redis, ["prueba:adendas:chunk:1", "prueba:adendas:chunk:2"], { senales: true });
+      await redis.del("prueba:adendas:chunk:1", "prueba:adendas:chunk:2");
+      assert.strictEqual(dedup.length, 1);
+      const fila = dedup[0];
+      assert.strictEqual(fila.precio_base, "3000000000", "gana la versión más nueva");
+      assert.strictEqual(fila._versiones, 2);
+      assert.deepStrictEqual(fila._cambios.map((c) => c.campo).sort(), ["duracion", "fecha_cierre", "precio_base"], "el dedup deriva qué cambió entre la primera y la última versión");
+      const ad = A.evaluarAdendas(fila, "genesis");
+      assert.strictEqual(ad.n, 3);
+      assert.ok(/cambió las reglas/.test(ad.resumen));
+      const cPresu = ad.cambios.find((c) => c.campo === "precio_base"), cCierre = ad.cambios.find((c) => c.campo === "fecha_cierre"), cPlazo = ad.cambios.find((c) => c.campo === "duracion");
+      assert.strictEqual(cPresu.afecta, true, "de $600 M a $3.000 M la caja de Génesis ya no cubre: le afecta");
+      assert.ok(/pasó de \$600\.000\.000 a \$3\.000\.000\.000/.test(cPresu.mensaje) && /caja/.test(cPresu.mensaje));
+      assert.strictEqual(cCierre.afecta, true, "el cierre se ADELANTÓ: le afecta");
+      assert.ok(/ANTES de lo previsto/.test(cCierre.mensaje));
+      assert.strictEqual(cPlazo.afecta, false); assert.ok(/No le afecta/.test(cPlazo.mensaje));
+      assert.strictEqual(ad.cumplia_antes, true); assert.strictEqual(ad.cumple_ahora, false); assert.ok(/Usted ya no cumple/.test(ad.resumen));
+      // Helder (patrimonio 1.107 M) sí financia 3.000 M × 20 % = 600 M: para él el presupuesto no le afecta
+      const adH = A.evaluarAdendas(fila, "helder");
+      assert.strictEqual(adH.cambios.find((c) => c.campo === "precio_base").afecta, false, "la misma adenda afecta a un perfil y no a otro: la reevaluación es por perfil");
+      assert.strictEqual(A.evaluarAdendas({ ...fila, _cambios: undefined }, "helder"), null, "sin cambios no viaja nada");
+      // por el listado: las filas con cambios llevan `adendas` con esa forma (si el corpus de prueba trae reescrituras)
+      const rl = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=100&incluir_cerradas=1&solo_viables=false", CAB_TOKEN);
+      for (const f of rl.cuerpo.resultados) if (f.adendas) { assert.ok(Array.isArray(f.adendas.cambios) && typeof f.adendas.le_afecta === "boolean" && /reglas/.test(f.adendas.resumen)); }
+      /* ---- (2) el diff del texto: habilitantes numéricos y reevaluación ---- */
+      const t1 = "PLIEGO DE CONDICIONES\nREQUISITOS HABILITANTES\nCapital de trabajo: mayor o igual a $650.000.000\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nExperiencia: 2.500 SMMLV\nPlazo de ejecución: diez (10) meses\nCRONOGRAMA\nCierre y presentación de ofertas: 25 de agosto de 2026\nAudiencia de adjudicación: 10/09/2026\nOtro párrafo que no cambia y sirve de relleno para el texto del pliego.";
+      const t2 = t1.replace("$650.000.000", "$800.000.000").replace("diez (10) meses", "doce (12) meses");
+      const hab1 = D.extraerHabilitantes(t1);
+      assert.strictEqual(hab1.capital_trabajo.valor, 650000000); assert.strictEqual(hab1.liquidez.valor, 1.5); assert.strictEqual(hab1.endeudamiento.valor, 0.6); assert.strictEqual(hab1.experiencia_smmlv.valor, 2500); assert.strictEqual(hab1.plazo_meses.valor, 10);
+      assert.ok(/mayor o igual a \$650\.000\.000/.test(hab1.capital_trabajo.evidencia), "cada valor viaja con la línea de la que salió");
+      const cambiosH = D.compararHabilitantes(hab1, D.extraerHabilitantes(t2), "helder");
+      assert.strictEqual(cambiosH.length, 2);
+      assert.strictEqual(cambiosH[0].mensaje, "Capital de trabajo exigido: subió de $650.000.000 a $800.000.000. Usted ya no cumple.");
+      assert.strictEqual(cambiosH[0].afecta, true);
+      assert.strictEqual(cambiosH[1].mensaje, "Plazo de ejecución: subió de 10 meses a 12 meses. No le afecta.");
+      assert.strictEqual(cambiosH[1].afecta, false);
+      const cambiosG = D.compararHabilitantes(hab1, D.extraerHabilitantes(t2), "genesis");
+      assert.ok(/Usted no cumple\.$/.test(cambiosG[0].mensaje), "Génesis (193 M de capital de trabajo) no cumplía antes ni después: «no cumple», no «ya no cumple»");
+      assert.strictEqual(D.hashDe(D.normalizarTexto(t1)), D.hashDe(D.normalizarTexto("  " + t1.replace(/\n/g, "  \n") + "\n\n")), "espacios y saltos no cambian el hash: dos aperturas del mismo PDF no son una adenda");
+      const dp = D.diffParrafos(t1, t2);
+      assert.ok(dp.modificados.some((m) => /650\.000\.000/.test(m.antes) && /800\.000\.000/.test(m.despues)), "el diff por párrafos empareja el párrafo modificado");
+      // por el router: registrar, no-cambio, cambio, GET, retención, 401
+      assert.strictEqual((await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t1 })).status, 401);
+      const d1 = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t1, perfil: "helder" }, CAB_TOKEN);
+      assert.strictEqual(d1.status, 200); assert.strictEqual(d1.cuerpo.version, 1); assert.strictEqual(d1.cuerpo.cambio, false);
+      const d1b = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t1 + "\n", perfil: "helder" }, CAB_TOKEN);
+      assert.strictEqual(d1b.cuerpo.version, 1); assert.strictEqual(d1b.cuerpo.cambio, false, "el mismo texto no crea versión");
+      const d2 = await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t2, perfil: "helder" }, CAB_TOKEN);
+      assert.strictEqual(d2.cuerpo.version, 2); assert.strictEqual(d2.cuerpo.cambio, true);
+      assert.strictEqual(d2.cuerpo.diff.habilitantes.cambios[0].mensaje, cambiosH[0].mensaje, "tras un cambio los habilitantes se reevalúan automáticamente");
+      assert.ok(/cambió las reglas/.test(d2.cuerpo.mensaje));
+      assert.ok(await redis.get(D.claveVersion("CO1.DIFF.1", 2)) && await redis.get(D.claveDiff("CO1.DIFF.1", 2)), "pliego:{proceso}:v:2 y :diff:2 escritos");
+      const g2 = await invocar(routerPliego, "/api/pliego?op=diff&id_proceso=CO1.DIFF.1&perfil=genesis", CAB_TOKEN);
+      assert.strictEqual(g2.cuerpo.versiones.length, 2); assert.ok(/Usted no cumple\.$/.test(g2.cuerpo.diff.habilitantes.cambios[0].mensaje), "el GET reevalúa contra el perfil que pregunta");
+      for (let i = 3; i <= D.MAX_VERSIONES + 2; i++) await invocarPost(routerPliego, "/api/pliego?op=diff", { id_proceso: "CO1.DIFF.1", texto: t2 + `\nversión ${i}` }, CAB_TOKEN);
+      const idx = await D.leerIndice(redis, "CO1.DIFF.1");
+      assert.strictEqual(idx.versiones.length, D.MAX_VERSIONES, "retención: como mucho MAX_VERSIONES");
+      assert.strictEqual(await redis.get(D.claveVersion("CO1.DIFF.1", 1)), null, "la versión 1 se purgó");
+      /* ---- (3) cronograma: hitos, avisos T-7/T-3/T-1, .ics ---- */
+      const hitos = Cr.extraerHitos(t1).hitos;
+      assert.deepStrictEqual(hitos.map((h) => [h.id, h.fecha]), [["cierre", "2026-08-25"], ["adjudicacion", "2026-09-10"]]);
+      const av = Cr.avisosDe(hitos, "2026-08-16");
+      assert.deepStrictEqual(av.filter((a) => a.hito === "cierre").map((a) => [a.dias_antes, a.aviso]), [[7, "2026-08-18"], [3, "2026-08-22"], [1, "2026-08-24"]], "avisos a T-7, T-3 y T-1");
+      assert.strictEqual(Cr.avisosDe(hitos, "2026-08-23").filter((a) => a.hito === "cierre").length, 1, "los avisos ya pasados no se emiten");
+      assert.strictEqual(Cr.fechaEnLinea("cierre el 3 de septiembre del 2026"), "2026-09-03");
+      assert.strictEqual(Cr.fechaEnLinea("sin fecha"), null);
+      const rc = await invocarPost(routerPliego, "/api/pliego?op=cronograma", { id_proceso: "CO1.CRONO.X", texto: t1 });
+      assert.strictEqual(rc.status, 200); assert.strictEqual(rc.cuerpo.hitos.length, 2); assert.ok(rc.cuerpo.avisos.length >= 0 && rc.cuerpo.ics_url);
+      const rics = await invocarPost(routerPliego, "/api/pliego?op=cronograma&formato=ics", { id_proceso: "CO1.CRONO.X", texto: t1 });
+      assert.strictEqual(rics.status, 200); assert.ok(/text\/calendar/.test(rics.cabeceras["content-type"]));
+      assert.ok(/BEGIN:VCALENDAR/.test(rics.cuerpo) && /TRIGGER:-P7D/.test(rics.cuerpo) && /TRIGGER:-P3D/.test(rics.cuerpo) && /TRIGGER:-P1D/.test(rics.cuerpo) && /DTSTART;VALUE=DATE:20260825/.test(rics.cuerpo), "el .ics lleva los tres avisos como alarmas");
+      // con un proceso del corpus, el hito de cierre sale del dataset aunque no haya texto
+      const idCorpus = rl.cuerpo.resultados.find((f) => f.fecha_cierre).id_del_proceso;
+      const rd = await invocar(routerPliego, `/api/pliego?op=cronograma&id_proceso=${encodeURIComponent(idCorpus)}`);
+      assert.ok(rd.cuerpo.hitos.some((h) => h.id === "cierre" && h.origen === "dataset"), "el cierre del dataset entra al cronograma");
+      // frontend
+      const htmlF5 = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      assert.ok(htmlF5.includes('id="pl-vigia"'), "el lector tiene la caja del vigía");
+      const plF5 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8"));
+      assert.ok(/op=diff/.test(plF5) && /op=cronograma/.test(plF5) && /Descargar al calendario/.test(plF5), "el lector registra la versión y pinta el cronograma");
+      const appF5 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      assert.ok(/function bloqueAdendas/.test(appF5) && /bloqueAdendas\(l\.adendas\)/.test(appF5), "la tarjeta pinta «la entidad cambió las reglas»");
+      console.log(`  · Vigía de adendas (Fase 5): dedup con _cambios (${fila._cambios.length}) → «${ad.resumen}» · texto: «${cambiosH[0].mensaje}» · versiones ${idx.versiones.length}/${D.MAX_VERSIONES} · cronograma con avisos T-7/T-3/T-1 y .ics`);
     }
 
     /* ═══════════ h-ter. Rediseño Apple Glass · pestañas · eliminación de RUP ·

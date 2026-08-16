@@ -438,6 +438,15 @@
   /* Margen estimado en la tarjeta (solo con el orden «Dónde me queda más»):
      techo − piso, con las dos cifras; sin costo calculado, la frase de «Sin
      referencia» y nada de números. */
+  /* Fase 5 · vigía de adendas (dataset): «la entidad cambió las reglas» con
+     ● lo que le afecta y ○ lo que no. Sin cambios no se pinta nada. */
+  function bloqueAdendas(a) {
+    if (!a || !a.n) return "";
+    return `<div class="mt-3 rounded-lg px-3 py-2 text-xs ring-1 ring-inset ${a.le_afecta ? "bg-amber-50 text-amber-900 ring-amber-600/20" : "bg-gray-50 text-gray-700 ring-gray-900/5"}">
+      <p class="font-medium">${esc(a.resumen)}</p>
+      <ul class="mt-1 space-y-0.5">${a.cambios.map((c) => `<li><span aria-hidden="true">${c.afecta ? "●" : "○"}</span> ${esc(c.mensaje)}</li>`).join("")}</ul>
+    </div>`;
+  }
   function lineaMargen(m) {
     if (!m) return "";
     if (m.valor == null) return `<p class="mt-3 text-xs text-gray-500">${esc(m.motivo || "Sin referencia")}</p>`;
@@ -1014,6 +1023,7 @@
 
       ${noViable ? "" : avisoCierre(diasCierre)}
       ${lineaMargen(l.margen_estimado)}
+      ${bloqueAdendas(l.adendas)}
 
       <!-- Los chips de EVIDENCIA (puertas con sus cifras, anticipo, baja,
            ubicación, encaje del RUP, modalidad, tipo de precio) se conservan
@@ -2885,6 +2895,62 @@
       $("baja-nota").textContent = `No se pudo consultar: ${err.message}`;
     }
   });
+
+  /* ══════════ Fase 4 (plan v3) · GUARDIÁN DEL FORMULARIO 1 ══════════
+     «Revisar antes de subir»: manda la oferta del paso 3 (ítems con precio
+     unitario de venta y total, AIU, total), el Formulario 1 leído en el
+     lector (window.__pliegoUltimo), el presupuesto oficial y —si se
+     escribieron— el tope de AIU y el total tecleado en SECOP II. Pinta un
+     SEMÁFORO con frases; los rechazos dicen «motivo de rechazo automático»,
+     nunca «causal O». La justificación de precio sale del APU propio
+     (mismo botón de siempre). */
+  function ofertaParaRevision() {
+    const r = ultimoCalculo && ultimoCalculo.resumen ? ultimoCalculo.resumen : null;
+    const cd = r ? Number(r.costo_directo_total) : 0;
+    const factor = r && cd > 0 && Number(r.precio_final) > 0 ? Number(r.precio_final) / cd : 1;
+    const items = filas.map((f, i) => {
+      const it = ultimoCalculo && ultimoCalculo.items ? ultimoCalculo.items[i] : null;
+      const unitarioCD = it && Number.isFinite(Number(it.costo_directo_unitario)) ? Number(it.costo_directo_unitario) : null;
+      const pu = unitarioCD == null ? null : Math.round(unitarioCD * factor);
+      const cant = Number(f.cantidad);
+      return { numeral: f.numeral || f.item || null, descripcion: f.descripcion, unidad: f.unidad, cantidad: Number.isFinite(cant) ? cant : null,
+        precio_unitario: pu, total: pu == null || !Number.isFinite(cant) ? null : Math.round(pu * cant) };
+    });
+    const cfg = leerConfig();
+    return { items, aiu: { administracion_pct: cfg.aiu_pct, imprevistos_pct: cfg.imprevistos_pct, utilidad_pct: cfg.utilidad_pct }, total: r ? Number(r.precio_final) : null };
+  }
+  async function revisarOferta() {
+    const caja = $("revision-oferta");
+    caja.classList.remove("hidden");
+    if (!filas.length) { caja.innerHTML = `<p class="text-sm text-gray-600">No hay ítems en el paso 3: no hay oferta que revisar.</p>`; return; }
+    if (!ultimoCalculo) { caja.innerHTML = `<p class="text-sm text-gray-600">Primero pulse «Calcular APU»: la revisión necesita el precio de cada ítem y el total.</p>`; return; }
+    caja.innerHTML = `<p class="text-sm text-gray-500">Revisando…</p>`;
+    const formulario = window.__pliegoUltimo && Array.isArray(window.__pliegoUltimo.items) && window.__pliegoUltimo.items.length ? { items: window.__pliegoUltimo.items } : null;
+    const tope = $("rev-tope-aiu").value.trim(), secopTotal = $("rev-secop-total").value.trim();
+    let r;
+    try {
+      r = await api("/api/pliego?op=formulario1", { method: "POST", body: {
+        oferta: ofertaParaRevision(), formulario, presupuesto_oficial: Number($("cuantia").value) || null,
+        tope_aiu_pct: tope === "" ? null : Number(tope), secop: secopTotal === "" ? null : { total: Number(secopTotal) },
+        id_proceso: $("id-proceso").value.trim() || null, perfil: $("perfil").value || null,
+      } });
+    } catch (e) { caja.innerHTML = `<p class="text-sm text-red-700">${esc(e.message)}</p>`; return; }
+    const color = { listo: "text-emerald-700", revisar: "text-red-700", precaucion: "text-amber-700" }[r.semaforo] || "text-gray-700";
+    const punto = { listo: "bg-emerald-500", revisar: "bg-red-500", precaucion: "bg-amber-500" }[r.semaforo] || "bg-gray-400";
+    const orden = { rechazo: 0, alerta: 1, informativo: 2, sin_referencia: 3, ok: 4 };
+    const vs = [...(r.veredictos || [])].sort((a, b) => orden[a.nivel] - orden[b.nivel]);
+    caja.innerHTML = `
+      <p class="flex items-center gap-2 text-base font-medium ${color}"><span class="inline-block h-3 w-3 rounded-full ${punto}" aria-hidden="true"></span>${esc(r.frase)}</p>
+      <ul class="mt-3 space-y-2 text-sm">${vs.map((v) => `<li class="rounded-lg px-3 py-2 ${v.nivel === "rechazo" ? "bg-red-50 text-red-800" : v.nivel === "alerta" ? "bg-amber-50 text-amber-900" : v.nivel === "informativo" ? "bg-blue-50 text-blue-900" : v.nivel === "sin_referencia" ? "bg-gray-50 text-gray-600" : "text-gray-600"}">
+        <span class="font-medium">${esc(v.titulo)}${v.nivel === "sin_referencia" ? " · pendiente" : ""}:</span> ${esc(v.mensaje)}
+        ${v.nivel !== "ok" ? `<span class="block text-xs opacity-80" title="${esc(v.fundamento)}">Fundamento: ${esc(v.fundamento.slice(0, 140))}${v.fundamento.length > 140 ? "…" : ""}</span>` : ""}
+        ${v.id === "temeraria" && v.nivel === "alerta" ? `<button type="button" id="rev-btn-justificacion" class="mt-2 rounded-lg border border-amber-700/30 bg-white px-3 py-1 text-xs font-medium hover:bg-amber-100">Descargar mi justificación</button>` : ""}
+      </li>`).join("")}</ul>
+      <p class="mt-2 text-xs text-gray-500">${r.rechazos} motivo${r.rechazos === 1 ? "" : "s"} de rechazo automático · ${r.alertas} alerta${r.alertas === 1 ? "" : "s"} · ${r.informativos} para arreglar sin riesgo · ${(r.pendientes || []).length} sin referencia.${r.guardado ? " Revisión guardada para este proceso." : ""}</p>`;
+    const bj = $("rev-btn-justificacion");
+    if (bj) bj.addEventListener("click", () => { const b = $("btn-justificacion"); if (b && !b.disabled) b.click(); else msgApu("Para generar la justificación calcule primero la rentabilidad del proceso (sección de arriba).", "info"); });
+  }
+  $("btn-revisar-oferta").addEventListener("click", revisarOferta);
 
   /* ──────────────────────── guardar / cargar ───────────────────────── */
   $("btn-guardar").addEventListener("click", async () => {
