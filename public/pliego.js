@@ -714,7 +714,7 @@
         if (c.cambio) {
           html += cambios.length
             ? `<ul class="mt-2 space-y-1">${cambios.map((x) => `<li><span aria-hidden="true">${x.afecta ? "●" : "○"}</span> ${esc(x.mensaje)}</li>`).join("")}</ul>`
-            : `<p class="mt-1 text-gray-600">Cambió el texto pero ningún requisito habilitante numérico que la app sepa leer${c.diff && c.diff.parrafos ? ` (${c.diff.parrafos.modificados.length} párrafos modificados, ${c.diff.parrafos.anadidos.length} nuevos, ${c.diff.parrafos.quitados.length} retirados)` : ""}. Léalo: puede haber cambiado algo que no es una cifra.</p>`;
+            : `<p class="mt-1 text-gray-600">Cambió el texto, pero ninguno de los requisitos con cifra que la app sabe leer (capital de trabajo, patrimonio, liquidez, endeudamiento, experiencia, plazo)${c.diff && c.diff.parrafos ? ` (${c.diff.parrafos.modificados.length} párrafos modificados, ${c.diff.parrafos.anadidos.length} nuevos, ${c.diff.parrafos.quitados.length} retirados)` : ""}. Léalo: puede haber cambiado algo que no es una cifra.</p>`;
         }
         html += `<p class="mt-1 text-xs text-gray-500">Versión ${c.version} de este pliego guardada${c.recortado ? " (texto recortado)" : ""}. La comparación de requisitos es una lectura automática del texto: confírmela contra el pliego.</p>`;
       }

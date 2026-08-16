@@ -3089,6 +3089,37 @@ Decisiones que no hay que re-aprender:
   .ics lleva VALARM −P7D/−P3D/−P1D y eventos de todo el día (un plazo no tiene hora en el dataset).
 - **`limpiarRedis` de la suite purga `pliego:*` y `formulario1:*`** (misma lección que consorcio:*).
 
+### Fase 6 · Traducción de lenguaje (ago 2026 · plan v3, transversal — cierre)
+
+- **Se midió sobre la página RENDERIZADA en producción** (Chromium: landing, Licitaciones con tarjetas y
+  «Más detalles» abiertos, Precios, Mi empresa) antes de tocar nada: la jerga que quedaba estaba en la
+  tarjeta («● RUP ✓ ● K ✓», «K sobre CO estimado», «pasan las cuatro puertas», «Baja típica»), en Mi
+  empresa («N códigos UNSPSC · tope 4.000 SMMLV», «perfiles RUP», «Baja de mercado», «Reconstruir índice
+  de…», «Pertinencia») y en Precios («Calcular APU», «Exportar Excel», «Códigos UNSPSC», «Modo AIU»). Un
+  extractor de literales sobre app.js NO sirve para medir esto (las plantillas anidadas lo confunden).
+- **Regla que se fijó y se vigila con prueba (j-undecies)**: los términos INTERNOS del glosario (UNSPSC,
+  CRP/CRPC, capacidad residual, tertil, baja de mercado, índice de …, habilitante, subsanable, causal O,
+  SMMLV, estado del procedimiento, pertinencia, tier, «puertas», «K ✓», «RUP ✓», «Baja típica») no
+  aparecen en el texto visible de index.html ni en los módulos del navegador. **RUP, AIU y APU se
+  conservan SOLO como nombre propio del documento/concepto que el pliego mismo usa** («Suba su RUP», «el
+  AIU del pliego», «Cómo calculamos… AIU»); como etiqueta de un dato o botón se traducen (glosario:
+  «registro de proponente», «administración, imprevistos y ganancia», «Calcular cuánto me cuesta»).
+- **Los rótulos salen del glosario**: en HTML por `data-glosario="clave"` (+ `data-glosario-corto`) que
+  `Glosario.estampar` rellena; en JS por `Glosario.corto()` (forma corta para chips: «Registro de
+  proponente», «Capacidad de facturar», «Suelen bajar») y `Glosario.VERBOS` (el botón principal de Precios
+  dice `VERBOS.generar_apu`). Se añadió `corto` a los términos que lo necesitan.
+- **Traducciones concretas**: chips de la tarjeta «Registro de proponente ✓ · Capacidad de facturar ✓ · Caja
+  ✓ · Competencia ✓»; «Encaja con su registro ✓ / por familia ~ / por afinidad ≈ / No encaja ✗»;
+  «Suelen bajar 5 %»; resumen «775 cumplen sus requisitos · 562 encajan con su registro de proponente,
+  213 por verificar en el pliego»; Mi empresa «Tu registro de proponente», «193 tipos de trabajo
+  inscritos · tope 4.000 salarios mínimos», «Recalcular cuánto suelen bajar el precio», columna «Tipo de
+  obra» / «Mi precio»; Precios «Calcular cuánto me cuesta», «Descargar mi presupuesto (Excel)», «Códigos
+  de lo que sabe hacer», «Cómo se suman administración, imprevistos y ganancia».
+- **`SMMLV` entre comillas es un VALOR de la API** (unidad que manda el onboarding), no texto; y
+  `.habilitantes` es una propiedad: el detector los excluye a propósito. «salarios mínimos» es la forma
+  visible (el glosario dice «convertir a pesos»; donde el payload no trae pesos se dice la unidad en
+  palabras, nunca la sigla).
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).
