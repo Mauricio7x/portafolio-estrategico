@@ -942,6 +942,33 @@ function generarDatasetHistorico() {
   return filas;
 }
 
+/* ---- PROPONENTES (hgi6-6wh3) sobre los procesos del histórico ----
+   Una fila por proponente y proceso, como el dataset real. Cubre los procesos
+   del IDU (los ids `CO1.HIST.n` que genera generarDatasetHistorico para esa
+   entidad) y deja a propósito UNO sin proponentes: `procesos_con_proponentes`
+   tiene que contar los que TIENEN filas, no los consultados. Un proponente
+   llega con `nit_proveedor: "No Definido"` —el literal-trampa real— y otro con
+   el mismo NIT y dos grafías del nombre: se agrupan por NIT. */
+const PROPONENTES_IDU = { recurrente: "CONSORCIO VIAS DEL NORTE", nitRecurrente: "901000001", sinNit: "INGENIERIA SIN NIT SAS" };
+function generarDatasetProponentes(historico) {
+  const idsIdu = historico.filter((f) => f.entidad === "IDU").map((f) => f.id_del_proceso);
+  const filas = [];
+  idsIdu.forEach((id, i) => {
+    if (i === idsIdu.length - 1) return; // el último proceso: sin proponentes
+    const fecha = `${ANOS_HIST[i % 2]}-0${(i % 9) + 1}-10T00:00:00.000`;
+    // el recurrente se presenta a TODOS (con dos grafías, mismo NIT)
+    filas.push({ id_procedimiento: id, fecha_publicaci_n: fecha, entidad_compradora: "IDU", nit_entidad: "800100003",
+      proveedor: i % 2 ? PROPONENTES_IDU.recurrente : PROPONENTES_IDU.recurrente + " S.A.S", nit_proveedor: PROPONENTES_IDU.nitRecurrente });
+    // uno sin NIT en la mitad de los procesos
+    if (i % 2 === 0) filas.push({ id_procedimiento: id, fecha_publicaci_n: fecha, entidad_compradora: "IDU", nit_entidad: "800100003",
+      proveedor: PROPONENTES_IDU.sinNit, nit_proveedor: "No Definido" });
+    // y uno distinto por proceso
+    filas.push({ id_procedimiento: id, fecha_publicaci_n: fecha, entidad_compradora: "IDU", nit_entidad: "800100003",
+      proveedor: `OFERENTE OCASIONAL ${i} LTDA`, nit_proveedor: `90200000${i}` });
+  });
+  return { filas, procesosConProponentes: Math.max(0, idsIdu.length - 1), procesosIdu: idsIdu.length };
+}
+
 /* Lo que la medición de colisión (A7) tiene que dar sobre el fixture de arriba,
    calculado A MANO desde ENTIDADES_HIST(_IDENTIDAD): por entidad, colisión =
    ofertas con i % 3 === 0 SI son ≥ 2; control = el resto. Pooled. */
@@ -976,8 +1003,46 @@ function crearMockSocrata() {
      consulta del PAA habría recibido el corpus de SECOP II y la prueba habría
      pasado midiendo otra cosa. */
   let datasetPaa = [];
+  /* TERCER dataset, también por PATH: `hgi6-6wh3` (proponentes por proceso).
+     lib/proponentes consulta AGRUPADO (`$group`, `count(*)`, `max(...)`,
+     `count(distinct …)`) y filtra con `id_procedimiento in ('a','b')`: el
+     mock lo resuelve aparte, con lo justo para que la consulta real —la misma
+     URL que se manda a Socrata— se pueda ejercitar sin red. */
+  let datasetProponentes = [];
   let contadorPeticiones = 0;
   let inyectarFallos = true;
+
+  const responderProponentes = (q, res) => {
+    let filas = datasetProponentes.slice();
+    const mIn = /^\s*(\S+)\s+in\s*\((.*)\)\s*$/i.exec(String(q.$where || ""));
+    if (q.$where && !mIn) { res.writeHead(400); return res.end(JSON.stringify({ error: true, message: `mock hgi6: where no soportado: ${q.$where}` })); }
+    if (mIn) {
+      const ids = new Set(mIn[2].split(",").map((x) => x.trim().replace(/^'|'$/g, "").replace(/''/g, "'")));
+      filas = filas.filter((f) => ids.has(String(f[mIn[1]])));
+    }
+    const sel = String(q.$select || "");
+    res.writeHead(200, { "Content-Type": "application/json" });
+    if (/^count\(distinct (\S+)\)/i.test(sel)) {
+      const campo = /^count\(distinct (\S+)\)/i.exec(sel)[1];
+      return res.end(JSON.stringify([{ procesos: String(new Set(filas.map((f) => f[campo])).size) }]));
+    }
+    if (q.$group) {
+      const claves = q.$group.split(",").map((x) => x.trim());
+      const grupos = new Map();
+      for (const f of filas) {
+        const k = claves.map((c) => String(f[c] ?? "")).join("\u0001");
+        const g = grupos.get(k) || { ...Object.fromEntries(claves.map((c) => [c, f[c]])), veces: 0, ultima: null };
+        g.veces++;
+        const u = String(f.fecha_publicaci_n || "");
+        if (!g.ultima || u > g.ultima) g.ultima = u;
+        grupos.set(k, g);
+      }
+      const salida = [...grupos.values()].sort((a, b) => b.veces - a.veces || String(a.proveedor).localeCompare(String(b.proveedor)))
+        .map((g) => ({ ...g, veces: String(g.veces) }));
+      return res.end(JSON.stringify(salida.slice(0, parseInt(q.$limit, 10) || 1000)));
+    }
+    return res.end(JSON.stringify(filas.slice(0, parseInt(q.$limit, 10) || 1000)));
+  };
 
   const cumple = (fila, clausula) => {
     /* Grupo parentizado de ORs — `(c like '%7210%' OR c like '%7211%' …)`—:
@@ -1018,6 +1083,7 @@ function crearMockSocrata() {
       }
       const u = new URL(req.url, "http://x");
       const q = Object.fromEntries(u.searchParams);
+      if (u.pathname.includes("hgi6-6wh3")) return responderProponentes(q, res);
       let filas = (u.pathname.includes("9sue-ezhx") ? datasetPaa : dataset).slice();
       if (q.$where) filas = filas.filter((f) => q.$where.split(" AND ").every((c) => cumple(f, c.trim())));
       if ((q.$select || "").startsWith("count(*)")) {
@@ -1036,6 +1102,7 @@ function crearMockSocrata() {
     server,
     setDataset: (d) => { dataset = d; },
     setDatasetPaa: (d) => { datasetPaa = d; },
+    setDatasetProponentes: (d) => { datasetProponentes = d; },
     getDataset: () => dataset,
     setFallos: (v) => { inyectarFallos = v; },
     peticiones: () => contadorPeticiones,
@@ -1188,6 +1255,7 @@ async function main() {
   process.env.SECOP_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/p6dx-8zbt.json`;
   // el PAA vive en OTRO dataset del mismo Socrata: el mock lo sirve por path
   process.env.PAA_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/9sue-ezhx.json`;
+  process.env.PROPONENTES_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/hgi6-6wh3.json`;
   process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoUpstash}`;
   process.env.UPSTASH_REDIS_REST_TOKEN = "token-de-prueba";
   process.env.SECOP_PAGE = "50";       // páginas chicas → ejercita keyset multi-página
@@ -4915,6 +4983,7 @@ async function main() {
     // ver el vigente (consulta mes a mes del año en curso)
     socrata.setDataset([...generarDataset(), ...generarDatasetHistorico(), ...generarDatasetEquivalencias(),
       ...generarDatasetDetalle(), ...generarDatasetCobertura(), ...generarDatasetModalidad()]);
+    socrata.setDatasetProponentes(generarDatasetProponentes(generarDatasetHistorico()).filas);
     socrata.setFallos(true);
 
     /* a. limpiar Redis */
@@ -7268,6 +7337,58 @@ async function main() {
         const tras = (await detalle("IDU", "&refrescar=1")).cuerpo;
         assert.strictEqual(tras.indice.nivel, "alta", "tras reconstruir, la entidad vuelve a estar clasificada");
         assert.strictEqual(tras.mensaje, null, "clasificada y con base: no hay nada que explicar");
+      }
+
+      /* --- (b-ter) CONTRA QUIÉN SE HA COMPETIDO AQUÍ (hgi6-6wh3 en vivo) ---
+         El corpus dice quién GANÓ; hgi6 dice quiénes SE PRESENTARON. El bloque
+         `proponentes` de la vista de entidad se consulta por los ids de proceso
+         de la entidad que ya están en el corpus (nunca por NIT ni por nombre),
+         agrupa por proveedor, trata «No Definido» como SIN NIT (jamás como un
+         NIT ni como null a secas) y cuenta los procesos CON proponentes, no
+         los consultados. Y es best-effort: sin el dataset, el detalle sale
+         igual y el bloque dice por qué. */
+      {
+        const esperado = generarDatasetProponentes(generarDatasetHistorico());
+        const c = (await detalle("IDU", "&refrescar=1")).cuerpo;
+        const pr = c.proponentes;
+        assert.ok(pr && pr.ok === true, `la vista de entidad debe traer proponentes (hgi6): ${JSON.stringify(pr).slice(0, 200)}`);
+        assert.strictEqual(pr.fuente, "hgi6-6wh3");
+        assert.strictEqual(pr.procesos_consultados, esperado.procesosIdu, "se consultan TODOS los procesos del IDU del corpus (12)");
+        assert.strictEqual(pr.procesos_con_proponentes, esperado.procesosConProponentes,
+          "los procesos con proponentes son los que TIENEN filas en hgi6, no los consultados");
+        assert.ok(pr.top.length >= 3 && pr.top.length <= 8, "el top se acota");
+        assert.strictEqual(pr.top[0].nombre.replace(/ S\.A\.S$/, ""), PROPONENTES_IDU.recurrente,
+          "el que más veces se presenta va primero — y sus DOS grafías se suman porque comparten NIT");
+        assert.strictEqual(pr.top[0].nit, PROPONENTES_IDU.nitRecurrente);
+        assert.strictEqual(pr.top[0].veces, esperado.procesosConProponentes, "el recurrente se presentó a todos los procesos con proponentes");
+        assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(pr.top[0].ultima_vez), "la última vez viaja como fecha ISO corta");
+        const sinNit = pr.top.find((t) => t.nombre === PROPONENTES_IDU.sinNit);
+        assert.ok(sinNit, "el proponente sin NIT también cuenta");
+        assert.strictEqual(sinNit.nit, null, "«No Definido» NO es un NIT: viaja null…");
+        assert.strictEqual(sinNit.identificacion.tipo, "sin_nit", "…y la identificación dice por qué");
+        assert.ok(pr.top.every((t, i, arr) => i === 0 || arr[i - 1].veces >= t.veces), "ordenados de más a menos veces");
+        assert.ok(pr.lectura && /abierto/i.test(pr.lectura), "la lectura advierte que el proceso abierto no tiene proponentes en ninguna fuente");
+        // best-effort: sin el dataset, el detalle sale igual y el bloque lo dice
+        const antesUrl = process.env.PROPONENTES_BASE_URL;
+        process.env.PROPONENTES_BASE_URL = "http://127.0.0.1:9/resource/hgi6-6wh3.json"; // puerto muerto
+        process.env.PROPONENTES_TIEMPO_MS = "1500";
+        try {
+          const caido = (await detalle("IDU", "&refrescar=1")).cuerpo;
+          assert.strictEqual(caido.encontrada, true, "con hgi6 caído el detalle de la entidad sigue saliendo");
+          assert.strictEqual(caido.indice.procesos_contados, 12);
+          assert.strictEqual(caido.proponentes.ok, false, "el bloque declara el fallo…");
+          assert.ok(/hgi6/.test(caido.proponentes.motivo), "…y nombra el dataset que no respondió");
+          assert.deepStrictEqual(caido.proponentes.top, [], "sin dato no hay top inventado");
+        } finally {
+          process.env.PROPONENTES_BASE_URL = antesUrl;
+          delete process.env.PROPONENTES_TIEMPO_MS;
+        }
+        // el frontend lo pinta y no lo confunde con «quién gana»
+        const jsProp = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        for (const debe of ["bloqueProponentes", "d.proponentes", "se presentan aquí", "ultima_vez"]) {
+          assert.ok(jsProp.includes(debe), `app.js sin ${debe} (bloque de proponentes del modal)`);
+        }
+        console.log(`  · proponentes (hgi6): ${pr.proponentes_distintos} distintos en ${pr.procesos_con_proponentes}/${pr.procesos_consultados} procesos del IDU · recurrente ${pr.top[0].veces}× · sin NIT declarado · caído ⇒ ok:false con motivo`);
       }
 
       /* --- (c) entidad inexistente: respuesta explícita, no un vacío mudo --- */
