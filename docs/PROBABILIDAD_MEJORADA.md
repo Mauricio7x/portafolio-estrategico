@@ -65,6 +65,12 @@
 >
 > **En la suite (corpus sintético):** μ = 4,42, m = 0,54; una entidad con 4 procesos y promedio 2 pasa
 > de p = 0,167 (respaldo) a 0,304, contra 0,309 con 5 procesos — el salto ×2,60 quedó en 1,5 %.
+>
+> **En producción (16-ago-2026, índice reconstruido):** μ = 4,18 · τ̂² = 9,51 · σ̂²_dentro = 62,5 ·
+> **m = 6,57** (2 062 entidades con base, 104 702 procesos). Con `μ/τ̂²` literal m sería 0,44 — la
+> desviación 1 no fue cosmética. Impacto sobre el listado real: `p` media 0,254 → 0,227 (Helder) y
+> 0,266 → 0,237 (Génesis), Spearman del orden por VE 0,995/0,994, banda mediana 3 pp (p90 9 pp). Los
+> mayores cambios son entidades de 1-5 procesos con promedio 1 que antes daban p = 0,50 y ahora 0,26.
 
 ---
 
