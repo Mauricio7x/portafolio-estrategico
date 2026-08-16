@@ -12407,6 +12407,160 @@ async function main() {
         + `cero resultados sugiere «${rCero.cuerpo.sugerencia.filtro}» (+${rCero.cuerpo.sugerencia.siLoQuita}) · margen ≡ techo − piso verificado · entidades ${rEt.cuerpo.total_entidades} · ${ms0} ms sin filtros, ${msF} ms con seis`);
     }
 
+    /* ═══════════ j-septies. PORTADA + MANIFESTACIÓN DE INTERÉS + DÍAS HÁBILES (Fase 9 del plan v4) ═══════════
+       (1) lib/habiles: la Pascua, el calendario 2026 ENTERO, el festivo
+       TRASLADADO (6 ene 2026 es martes → 12 ene) y la SEMANA SANTA completa
+       (2-3 abr 2026), con fechas FIJAS: una prueba de calendario calibrada
+       contra el reloj real no prueba nada. (2) lib/portada.agregar sobre filas
+       sintéticas: sumas que cuadran, «suele bajar» solo con base, la lista de
+       manifestación con la fecha SIEMPRE calculada y marcada, la variante «sin
+       manifestación» fuera. (3) los handlers por el router: la portada solo LEE
+       (`disponible:false` antes de calcular), reconstruir exige token, la sync
+       la escribe al terminar, manifestación recalcula los días con HOY.
+       (4) el frontend: sección, ids, orden de scripts, formateadores y
+       plantillas EJECUTADAS (Sin referencia, fecha calculada, enlaces a listas
+       filtradas). (5) el plazo legal citado está anotado en docs/datos.md. */
+    {
+      const H = require("../lib/habiles.js");
+      const Portada = require("../lib/portada.js");
+      const PortadaPub = require("../public/portada.js");
+      const routerP = require("../api/procesos.js");
+
+      /* ---- (1) calendario ---- */
+      assert.strictEqual(H.pascua(2024), "2024-03-31");
+      assert.strictEqual(H.pascua(2025), "2025-04-20");
+      assert.strictEqual(H.pascua(2026), "2026-04-05");
+      const f26 = H.festivos(2026);
+      assert.deepStrictEqual([...f26.keys()], [
+        "2026-01-01", "2026-01-12", "2026-03-23", "2026-04-02", "2026-04-03", "2026-05-01", "2026-05-18", "2026-06-08", "2026-06-15",
+        "2026-06-29", "2026-07-20", "2026-08-07", "2026-08-17", "2026-10-12", "2026-11-02", "2026-11-16", "2026-12-08", "2026-12-25",
+      ], "los 18 festivos de 2026, con los trasladados al lunes y los de Pascua");
+      assert.strictEqual(f26.get("2026-01-12"), "Reyes Magos", "el 6 de enero de 2026 (martes) se traslada al lunes 12 — Ley 51/1983");
+      assert.ok(!f26.has("2026-01-06"), "el 6 de enero NO es festivo en 2026: se movió");
+      assert.strictEqual(f26.get("2026-04-02"), "Jueves Santo");
+      assert.strictEqual(f26.get("2026-04-03"), "Viernes Santo");
+      assert.ok(H.esHabil("2026-04-01") && !H.esHabil("2026-04-02") && !H.esHabil("2026-04-03") && !H.esHabil("2026-04-04") && !H.esHabil("2026-04-05") && H.esHabil("2026-04-06"),
+        "Semana Santa 2026: miércoles hábil, jueves y viernes santos no, fin de semana no, lunes de Pascua sí");
+      assert.strictEqual(H.sumarHabiles("2026-03-31", 3), "2026-04-07", "3 hábiles desde el martes santo saltan jueves, viernes y fin de semana");
+      assert.strictEqual(H.sumarHabiles("2026-08-14", 3), "2026-08-20", "el lunes 17 de agosto de 2026 es festivo (Asunción trasladada): 3 hábiles desde el viernes 14 caen el jueves 20");
+      assert.strictEqual(H.habilesEntre("2026-08-14", "2026-08-20"), 3);
+      assert.strictEqual(H.habilesEntre("2026-08-20", "2026-08-14"), 0);
+      assert.strictEqual(H.esHabil("2026-08-15"), false, "sábado");
+      assert.strictEqual(H.hoyColombia(Date.parse("2026-08-16T03:00:00Z")), "2026-08-15", "a las 03:00 UTC todavía es 15 en Colombia");
+      assert.strictEqual(H.fechaLegible("2026-08-18"), "martes 18 de agosto");
+      assert.throws(() => H.festivos(1900), /fuera de rango/);
+      const cacheF = await H.festivosConCache(redis, 2026);
+      assert.strictEqual(cacheF.length, 18);
+      assert.ok(JSON.parse(await redis.get("calendario:festivos:2026")).festivos.length === 18, "calendario:festivos:2026 escrito");
+
+      /* ---- (2) agregados sobre filas sintéticas ---- */
+      const AHORA = Date.parse("2026-08-13T15:00:00Z"); // jueves 13 de agosto de 2026, 10:00 Colombia
+      const fila = (o) => ({ estado_del_procedimiento: "Publicado", fase: "Presentación de ofertas", fecha_cierre: "2026-09-10T17:00:00.000", cuantia_cop: 100e6,
+        modalidad_de_contratacion: "Licitación pública", entidad: "ENTIDAD A", nit_entidad: "800000001", departamento_entidad: "Tolima", id_del_proceso: "CO1.P.1", nombre_del_procedimiento: "OBRA", urlproceso: "https://secop/1", ...o });
+      const filasP = [
+        fila({}),
+        fila({ id_del_proceso: "CO1.P.2", entidad: "ENTIDAD B", nit_entidad: "800000002", departamento_entidad: "Distrito Capital de Bogotá", cuantia_cop: 900e6, fecha_cierre: "2026-08-15T17:00:00.000" }), // cierra en 2 días
+        fila({ id_del_proceso: "CO1.P.3", cuantia_cop: 50e6, fecha_cierre: "2026-08-13T23:00:00.000" }),                          // cierra hoy
+        fila({ id_del_proceso: "CO1.P.4", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: "2026-08-12T00:00:00.000", cuantia_cop: 300e6 }), // abierta ayer: quedan hábiles
+        fila({ id_del_proceso: "CO1.P.5", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: "2026-08-03T00:00:00.000" }), // hace 10 días: vencido el plazo
+        fila({ id_del_proceso: "CO1.P.6", modalidad_de_contratacion: "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes", fecha_de_publicacion_del: "2026-08-12T00:00:00.000" }), // sin manifestación
+        fila({ id_del_proceso: "CO1.P.7", estado_del_procedimiento: "Adjudicado" }),                                               // cerrado: fuera
+        fila({ id_del_proceso: "CO1.P.8", departamento_entidad: "No Definido", cuantia_cop: 0 }),                                   // sin depto, sin cuantía
+      ];
+      const ag = Portada.agregar(filasP, { indiceBaja: null, ahora: AHORA, paa: { total: 23, muestra: [] } });
+      assert.strictEqual(ag.procesosAbiertos, 7, "7 abiertas (la adjudicada no)");
+      assert.strictEqual(ag.valorTotal, 100e6 + 900e6 + 50e6 + 300e6 + 100e6 + 100e6 + 0);
+      assert.strictEqual(ag.entidadesActivas, 2);
+      assert.strictEqual(ag.porDepartamento.reduce((a, d) => a + d.n, 0), ag.procesosAbiertos, "los departamentos suman los abiertos, «sin_dato» incluido");
+      assert.ok(ag.porDepartamento.some((d) => d.cod === "sin_dato" && d.n === 1), "«No Definido» es sin_dato, no se reparte a ojo");
+      assert.strictEqual(ag.porDepartamento[0].cod, "11", "Bogotá va primera por dinero en juego");
+      assert.strictEqual(ag.cierranEstaSemana.n, 2, "cierran esta semana: la de hoy y la de 2 días");
+      assert.strictEqual(ag.cierranEstaSemana.muestra[0].dias, 1, "la que cierra hoy a las 23:00 tiene 1 día por delante (misma cuenta que el chip de la tarjeta)");
+      assert.strictEqual(ag.cierranEstaSemana.muestra[1].dias, 3);
+      assert.strictEqual(ag.topEntidades[0].nombre, "ENTIDAD B");
+      assert.strictEqual(ag.topEntidades[0].baja, null, "sin índice de baja no hay «suele bajar»: null, jamás 0");
+      assert.strictEqual(ag.manifestacion.abiertos, 1, "solo la abreviada abierta ayer sigue en plazo; la de hace 10 días y la «sin manifestación» no");
+      assert.strictEqual(ag.manifestacion.proximos, 23);
+      const m1 = ag._manifestacion[0];
+      assert.strictEqual(m1.proceso, "CO1.P.4");
+      assert.strictEqual(m1.origenFecha, "calculada", "la fecha límite SIEMPRE se declara calculada");
+      assert.strictEqual(m1.venceISO, "2026-08-18", "apertura 12 (mié) + 3 hábiles = jueves 13, viernes 14, martes 18 (el lunes 17 es festivo)");
+      assert.strictEqual(m1.diasHabilesRestantes, 3, "desde el jueves 13: hoy, el viernes 14 y el martes 18");
+      assert.ok(/Confirme en el cronograma/.test(m1.notaFecha));
+      assert.strictEqual(m1.valor, 300e6);
+      assert.ok(Portada.exigeManifestacion({ modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía" }));
+      assert.ok(!Portada.exigeManifestacion({ modalidad_de_contratacion: "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes" }));
+      assert.ok(!Portada.exigeManifestacion({ modalidad_de_contratacion: "Licitación pública" }));
+      // sin PAA: proximos null, no cero
+      assert.strictEqual(Portada.agregar(filasP, { ahora: AHORA }).manifestacion.proximos, null);
+
+      /* ---- (3) handlers por el router ---- */
+      await redis.del(Portada.CLAVE_PORTADA, Portada.CLAVE_MANIFESTACION, Portada.CLAVE_ENTIDADES);
+      const p0 = await invocar(routerP, "/api/procesos?op=portada");
+      assert.strictEqual(p0.status, 200);
+      assert.strictEqual(p0.cuerpo.disponible, false, "sin agregado la portada lo DICE en vez de calcular");
+      assert.strictEqual((await invocar(routerP, "/api/procesos?op=portada&reconstruir=1")).status, 401, "reconstruir exige token");
+      const p1 = await invocar(routerP, "/api/procesos?op=portada&reconstruir=1", CAB_TOKEN);
+      assert.strictEqual(p1.status, 200);
+      assert.strictEqual(p1.cuerpo.disponible, true);
+      assert.ok(Number.isInteger(p1.cuerpo.procesosAbiertos) && p1.cuerpo.procesosAbiertos > 0);
+      assert.ok(p1.cuerpo.generado && /SECOP II/.test(p1.cuerpo.fuente), "fuente y fecha viajan");
+      assert.strictEqual(p1.cuerpo.desactualizada, false);
+      assert.strictEqual(p1.cuerpo.porDepartamento.reduce((a, d) => a + d.n, 0), p1.cuerpo.procesosAbiertos);
+      assert.ok(p1.cuerpo.topEntidades.length >= 1 && p1.cuerpo.topEntidades.length <= Portada.TOP_ENTIDADES);
+      for (const e of p1.cuerpo.topEntidades) {
+        assert.ok(e.baja == null || (e.nBaja >= Portada.BAJA_MIN_PROCESOS), "«suele bajar» solo con n ≥ 5");
+      }
+      assert.ok(p1.cuerpo.topEntidades.some((e) => e.baja != null), "el corpus de prueba tiene entidades con base de baja (índice construido)");
+      assert.ok(/2\.2\.1\.2\.1\.2\.20/.test(p1.cuerpo.manifestacion.norma), "la norma citada viaja");
+      // sin reconstruir se lee lo guardado
+      const p2 = await invocar(routerP, "/api/procesos?op=portada");
+      assert.strictEqual(p2.cuerpo.generado, p1.cuerpo.generado, "op=portada solo LEE");
+      const m0 = await invocar(routerP, "/api/procesos?op=manifestacion&estado=abierto");
+      assert.strictEqual(m0.status, 200);
+      assert.strictEqual(m0.cuerpo.disponible, true);
+      for (const f of m0.cuerpo.resultados) {
+        assert.strictEqual(f.origenFecha, "calculada");
+        assert.ok(f.diasHabilesRestantes >= 1, "lo que se sirve como abierto tiene al menos hoy para avisar");
+        assert.ok(f.venceISO >= m0.cuerpo.hoy);
+      }
+      const mp = await invocar(routerP, "/api/procesos?op=manifestacion&estado=proximo");
+      assert.strictEqual(mp.status, 200);
+      assert.ok("disponible" in mp.cuerpo && Array.isArray(mp.cuerpo.resultados));
+      // la SYNC la escribe al terminar una corrida con datos
+      await redis.del(Portada.CLAVE_PORTADA);
+      const rdP = await invocar(sync, "/api/sync?modo=delta&presupuesto=20000&chain=0");
+      assert.strictEqual(rdP.status, 200);
+      assert.ok(rdP.cuerpo.portada && rdP.cuerpo.portada.generado, "la sincronización reconstruye la portada al terminar");
+      assert.strictEqual((await invocar(routerP, "/api/procesos?op=portada")).cuerpo.disponible, true);
+
+      /* ---- (4) frontend ---- */
+      const htmlP = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      for (const id of ["portada", "pt-hero", "pt-cierran", "pt-manifestacion", "pt-entidades", "pt-departamentos", "pt-fuente"]) assert.ok(htmlP.includes(`id="${id}"`), `falta #${id}`);
+      assert.ok(/<section id="portada" class="hidden/.test(htmlP), "la portada nace OCULTA: vacía y honesta hasta que hay agregado");
+      assert.ok(htmlP.indexOf('<script src="/portada.js">') < htmlP.indexOf('<script src="/app.js">'));
+      const appP = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      assert.ok(/window\.Portada\.arrancar\(\)/.test(appP), "app.js arranca la portada cuando la landing es la vista");
+      const onbP = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8"));
+      assert.ok(/searchParams\.set\(k, v\)/.test(onbP), "el filtro de la URL viaja al tablero al terminar el diagnóstico");
+      assert.strictEqual(PortadaPub.pesosCortos(4.7e12), "$4,7 billones");
+      assert.strictEqual(PortadaPub.pesosCortos(312e9), "$312.000 millones");
+      assert.strictEqual(PortadaPub.pesosCortos(52.4e6), "$52,4 millones");
+      assert.strictEqual(PortadaPub.pesosCortos(0), null, "cero es sin dato");
+      assert.ok(/ayer/.test(PortadaPub.textoActualizado(new Date(Date.now() - 26 * 3600e3).toISOString())));
+      assert.ok(/hoy/.test(PortadaPub.textoActualizado(new Date().toISOString())));
+      const hEnt = PortadaPub.htmlEntidades({ topEntidades: [{ nit: "1", nombre: "E", abiertos: 2, valor: 1e9, baja: null, nBaja: 2 }, { nit: "2", nombre: "F", abiertos: 1, valor: 5e8, baja: 7.4, nBaja: 9 }], bajaMinimoProcesos: 5 });
+      assert.ok(hEnt.includes("Sin referencia") && hEnt.includes("7,4 %") && hEnt.includes('href="/?entidad=1#/licitaciones"'), "sin base «Sin referencia», con base la cifra, y cada fila enlaza a su lista");
+      const hMan = PortadaPub.htmlManifestacion({ manifestacion: { proximos: null, plazoHabiles: 3, sorteoDesde: 10 } }, { resultados: [{ entidad: "X", objeto: "Y", valor: 1e8, diasHabilesRestantes: 2, venceLegible: "martes 18 de agosto", origenFecha: "calculada", notaFecha: "n" }] });
+      assert.ok(/Fecha calculada/.test(hMan) && /Le quedan 2 días de oficina/.test(hMan) && /Sin referencia/.test(hMan), "cuenta regresiva SIEMPRE marcada como calculada; PAA sin respuesta = Sin referencia");
+      const hDep = PortadaPub.htmlDepartamentos({ porDepartamento: [{ cod: "73", nombre: "Tolima", n: 3, valor: 1e9 }, { cod: "sin_dato", nombre: "Sin departamento", n: 1, valor: 0 }] });
+      assert.ok(hDep.includes('href="/?dep=73#/licitaciones"') && !hDep.includes("Sin departamento</span>"), "las barras enlazan a la lista; sin_dato no compite por una barra");
+      assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(hEnt + hMan + hDep + PortadaPub.htmlHero({ procesosAbiertos: 1, valorTotal: 1, entidadesActivas: 1, generado: new Date().toISOString() })), "sin emojis");
+      const datosMd = fs.readFileSync(path.join(__dirname, "..", "docs", "datos.md"), "utf8");
+      assert.ok(/2\.2\.1\.2\.1\.2\.20/.test(datosMd) && /C-537/.test(datosMd), "el plazo legal está contrastado y anotado en docs/datos.md");
+      console.log(`  · Portada (Fase 9): ${p1.cuerpo.procesosAbiertos} abiertos · ${p1.cuerpo.entidadesActivas} entidades · cierran esta semana ${p1.cuerpo.cierranEstaSemana.n} · manifestación abierta ${m0.cuerpo.total} · calendario 2026 (18 festivos, Reyes trasladado, Semana Santa) verificado · fecha límite siempre «calculada»`);
+    }
+
     /* ═══════════ h-ter. Rediseño Apple Glass · pestañas · eliminación de RUP ·
        probabilidad en lenguaje claro (encargo, ago 2026) ═══════════
        Sin DOM en la suite: lo ejecutable se EJECUTA (funciones extraídas del

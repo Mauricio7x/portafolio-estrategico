@@ -4726,6 +4726,7 @@
       $("app").classList.add("hidden");
       const ob = document.getElementById("onboarding");
       if (ob) ob.classList.remove("hidden");
+      if (window.Portada) window.Portada.arrancar();
       try { window.scrollTo({ top: 0 }); } catch { /* sin scroll */ }
       return;
     }
@@ -5672,6 +5673,10 @@
     abrirApp();
   } else if (sesionConClave) {
     abrirApp();
+  } else if (window.Portada) {
+    // sin perfil y sin sesión: se queda la landing, que nace visible en el
+    // HTML, y sobre ella la PORTADA (Fase 9): el pulso del mercado antes de
+    // pedirle nada a nadie
+    window.Portada.arrancar();
   }
-  // sin perfil y sin sesión: se queda la landing, que nace visible en el HTML
 })();

@@ -393,7 +393,21 @@
 
     const btn = $("btn-ver-todas");
     btn.textContent = n > 0 ? `Ver las ${n.toLocaleString("es-CO")}` : "Entrar de todos modos";
-    btn.onclick = () => { window.location.href = cuerpo.url_dashboard || `/?perfil=${cuerpo.perfil_id}`; };
+    btn.onclick = () => {
+      /* Si llegó desde la portada con un filtro en la URL («Ver los 47»,
+         una entidad, un departamento), el filtro VIAJA al tablero: la lista
+         se abre ya filtrada. Sin filtro, igual que siempre. */
+      let destino = cuerpo.url_dashboard || `/?perfil=${cuerpo.perfil_id}`;
+      try {
+        const u = new URL(destino, window.location.origin);
+        for (const [k, v] of new URLSearchParams(window.location.search)) {
+          if (k !== "perfil" && !u.searchParams.has(k)) u.searchParams.set(k, v);
+        }
+        if (!u.hash) u.hash = "#/licitaciones";
+        destino = u.pathname + u.search + u.hash;
+      } catch { /* URL rara: se va sin filtro */ }
+      window.location.href = destino;
+    };
 
     const origen = { texto: "Perfil leído de su RUP", ocr: "Perfil leído con reconocimiento de imágenes (confírmelo)", manual: "Perfil aproximado con tres datos" }[cuerpo.origen] || `Perfil ${cuerpo.origen}`;
     $("res-nota").textContent = `${origen}. Su documento no se guardó: solo el perfil derivado, que caduca solo en 45 días.`

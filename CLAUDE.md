@@ -2952,6 +2952,52 @@ re-aprender:
   NOMBRES PROPIOS de las modalidades (opciones), no jerga de campo. El «buscador de texto libre
   existente» que el plan daba por hecho no existía: se añadió `q` (Buscar por palabra).
 
+### Fase 9 · La portada, la manifestación de interés y los días hábiles (ago 2026 · plan v4)
+
+`lib/habiles.js` · `lib/portada.js` · `lib/handlers/procesos/{portada,manifestacion}.js` (`op=portada`,
+`op=manifestacion`, públicos) · gancho al cierre de la sync · `public/portada.js` + sección `#portada` en
+la landing. Norma y censo en `docs/datos.md` §7. Decisiones que no hay que re-aprender:
+
+- **La portada se PRECALCULA al terminar la sync (después del índice de baja, con `await` y su propio
+  try) y la petición del usuario SOLO LEE.** Sin clave: `disponible:false` y el motivo — la sección del
+  frontend nace OCULTA y solo se enseña con datos («portada vacía y honesta antes que bonita y falsa»).
+  `?reconstruir=1` con token para el dueño (tras desplegar, la primera portada la escribe la primera
+  sync con datos; `alDia` no la toca).
+- **EL DATASET NO DICE CUÁNDO VENCE LA MANIFESTACIÓN, y se midió antes de escribir la copia**: `fase =
+  «Manifestación de interés (Menor Cuantía)»` es el rótulo del TIPO de proceso (1 929/2 000 en
+  «Evaluación»), `proveedores_que_manifestaron` = 0 en toda la muestra y `fecha_de_recepcion_de` es el
+  cierre de OFERTAS (6–14 días tras la publicación). Por eso la fecha límite es SIEMPRE calculada
+  (apertura + 3 días hábiles) y viaja como `origenFecha:"calculada"` con «confirme en el cronograma»:
+  ninguna cuenta regresiva sobre una fecha deducida sin decirlo. La apertura = `fecha_de_publicacion_del`
+  es un supuesto DECLARADO. La variante «Sin Manifestacion Interes» existe y se excluye.
+- **El plazo (3 hábiles) y el sorteo (> 10) se contrastaron contra la transcripción literal del art.
+  2.2.1.2.1.2.20 en el concepto CCE C-537/2025** (los portales oficiales no respondían); la cita viaja en
+  la API (`norma`) y en pantalla. No se publicó un plazo de memoria.
+- **`lib/habiles.js` es aritmética pura sobre YYYY-MM-DD** (un plazo en días hábiles no tiene hora):
+  Pascua por Meeus/Jones/Butcher, 6 festivos fijos, 7 trasladables al lunes (Ley 51/1983), 5 de Pascua
+  (Jueves/Viernes Santo fijos; Ascensión, Corpus, Sagrado Corazón al lunes). La prueba fija el calendario
+  2026 ENTERO (18 festivos), el 6 de enero trasladado al 12 y la Semana Santa; el «hoy» se inyecta
+  (`hoyColombia(ms)`, UTC−5). Los días que quedan cuentan HOY si es hábil y no venció, y se RECALCULAN al
+  servir (`op=manifestacion`), no al construir: «le quedan 2 días» tiene que ser verdad al leerlo.
+- **`agregar` recibe `ahora` y lo pasa a `estado_abierto(l, ahora)`**: la primera versión llamaba
+  `estado_abierto(l)` (reloj real) más `cierre_vencido(l, ahora)`, y la prueba con fecha fija se cayó
+  porque el reloj real ya había pasado las fechas sintéticas. Toda función que aplique una fecha tiene
+  que aceptar el «ahora» inyectado hasta el fondo.
+- **«Suele bajar» SOLO a nivel ENTIDAD con n ≥ 5** (`granularidad_utilizada === "entidad"`): la caída a
+  departamento_familia se descarta a propósito — el rótulo de la columna es de la entidad. Sin base
+  `baja:null` y el frontend dice «Sin referencia», jamás 0 %. `proximos` (PAA) es `null` si el PAA no
+  respondió al construir, no 0.
+- **Cada visual de la portada ENLAZA a la lista filtrada de la Fase 8** (`/?cierre=7d`, `/?entidad=NIT`,
+  `/?dep=73`) y `sin_dato` no compite por una barra. Un visitante sin perfil aterriza otra vez en la
+  landing con el filtro en la URL: `onboarding.js` lo conserva al abrir el tablero tras el diagnóstico
+  («Ver las N» viaja con `?cierre=7d`), así la lista se abre ya filtrada.
+- **La subida del RUP no desaparece**: la portada va ENCIMA en la misma landing y su botón principal
+  («Ver a cuáles puedo presentarme») lleva a la puerta de entrada de la Fase 2. `pesosCortos` habla
+  colombiano: `$4,7 billones` (10¹²), `$312.000 millones`.
+- **Lo que este entorno NO pudo verificar**: `proximos` en producción depende de que el PAA responda al
+  construir la portada dentro de 6 s; el número real de manifestaciones abiertas depende del supuesto
+  publicación = apertura. Ambas cosas están dichas en la respuesta y en pantalla.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).

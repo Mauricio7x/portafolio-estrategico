@@ -214,3 +214,39 @@ conteo de no vacíos). «Cobertura» = % de filas con la columna no vacía.
   Bogotá/Ibagué habría escondido el 41 %** (Helder: cerca 488 · media 320 · lejos 10) — supera con
   mucho el 10 % del protocolo, así que la zona NO se preajusta: queda como un clic opt-in («Solo
   cerca de mi zona», que es el `?zona=facil` de siempre).
+
+## 7. Manifestación de interés: la norma y lo que el dataset SÍ y NO dice (Fase 9 · 2026-08-16)
+
+**Norma vigente, contrastada.** Decreto 1082 de 2015, art. 2.2.1.2.1.2.20 («Procedimiento para la
+selección abreviada de menor cuantía»), transcrito literalmente en la nota al pie 7 del **concepto
+C-537 de 2025 de Colombia Compra Eficiente** (PDF público, leído desde este entorno; los portales
+oficiales de normativa —suin-juriscol, funcionpublica— no respondieron): «1. En un término no mayor a
+**tres (3) días hábiles** contados a partir de la fecha de apertura del Proceso de Contratación los
+interesados deben manifestar su intención de participar, a través del mecanismo establecido para el
+efecto en los pliegos de condiciones. 2. Si la Entidad Estatal recibe **más de diez (10)**
+manifestaciones de interés puede continuar el proceso o hacer un **sorteo** para seleccionar máximo
+diez (10) interesados… La Entidad Estatal debe establecer en los pliegos de condiciones si hay lugar a
+sorteo y la forma en la cual lo hará. 3. Si hay lugar a sorteo, el plazo para la presentación de las
+ofertas empezará a correr el día hábil siguiente a la fecha en la cual la Entidad Estatal informe a
+los interesados el resultado del sorteo. 4. La Entidad Estatal debe publicar el informe de evaluación
+de ofertas durante tres (3) días hábiles». La copia de la portada y `lib/portada.js` usan
+exactamente ese plazo (3 hábiles) y ese umbral de sorteo (10).
+
+**Censo real de `p6dx-8zbt`** (2 000 filas con `fase like 'Manifestaci%'` publicadas desde mayo de
+2026, guion `censo_manif.js` de la sesión):
+
+| Hallazgo | Consecuencia |
+|---|---|
+| `fase = «Manifestación de interés (Menor Cuantía)»` es el **rótulo del tipo de proceso** (SECOP II lo pega incluso al título); 1 929 de las 2 000 están en `estado_del_procedimiento = Evaluación` | NO sirve para saber si el plazo de manifestación está corriendo |
+| `proveedores_que_manifestaron` = 0 en las 2 000 filas | NO sirve para «cuántos ya avisaron» ni para prever el sorteo |
+| `fecha_de_recepcion_de` cae 6–14 días calendario después de la publicación (moda 7–8) | Es el cierre de **OFERTAS**, no el de manifestación (que sería ≤ 3 hábiles ≈ 3–5 calendario) |
+| Ninguna columna trae la fecha límite de manifestación | El peldaño 1 de la cascada del plan (cronograma parseado, Fase 5) no existe todavía y el 2 (campo del dataset) no aplica |
+
+**Decisión:** la fecha límite para avisar se CALCULA (peldaño 3 del plan): apertura + 3 días hábiles
+con `lib/habiles.js` (festivos Ley 51/1983 + Pascua), tomando como apertura `fecha_de_publicacion_del`
+(supuesto declarado en la respuesta y en pantalla), y viaja **siempre** con `origenFecha:
+"calculada"` y la frase «Fecha calculada a partir de la apertura. Confirme en el cronograma». La
+lista «abierto ahora» son las abreviadas de menor cuantía (excluida la variante «Sin Manifestacion
+Interes», que existe en el dataset) cuyo plazo calculado no venció; los días de oficina que quedan se
+recalculan con la fecha de HOY en Colombia al servir. «Próximos a abrir» sale del PAA (`9sue-ezhx`)
+al construir la portada; si no responde, `proximos:null` → «Sin referencia», jamás 0.
