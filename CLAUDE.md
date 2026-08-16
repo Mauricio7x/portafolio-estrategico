@@ -2477,9 +2477,15 @@ Decisiones que no hay que re-aprender:
   entidades y τ̂² salía ≤ 0 aunque las grandes difirieran de sobra (3, 8 y 18). Con `τ̂² ≤ 0` de
   verdad, todo se encoge a μ y `entidad_no_distingue:true` lo declara — «la dimensión entidad no
   existe» es un resultado, no un fallo.
-- **El prior es μ GLOBAL del índice, no el departamento (B7 pendiente):** `r̂` se calcula al
-  CONSTRUIR el índice y el promedio departamental se deriva al SERVIR sobre el corpus activo. El
-  departamento sigue siendo el respaldo para entidades ausentes del índice.
+- **El prior es el del DEPARTAMENTO, encogido a su vez hacia el nacional (B7, 16-ago-2026).** Se
+  midió antes: los departamentos difieren de verdad (Bogotá 8,9 oferentes por proceso, Boyacá 2,3,
+  Arauca 1,5, Caldas 11,4; desviación 2,3 sobre media 4) y el prior importa en el 13 % de las filas
+  (peso < 0,8). El acumulador guarda el departamento de la entidad; `estimarPriorDepartamental` aplica
+  «el mismo estimador un nivel arriba» (μ̂_d = w_d·μ_d + (1−w_d)·μ, m_d por momentos ENTRE
+  departamentos con ≥ 30 procesos; con < 3 departamentos con base o τ_d² ≤ 0, todo es nacional y se
+  declara) y cada entidad publica `prior` y `prior_origen` (`departamento:X` | `global`). La
+  respuesta, el desglose («el resto lo pone el promedio de su departamento») y el modal lo dicen.
+  El respaldo departamental calculado al SERVIR sigue existiendo para entidades ausentes del índice.
 - **DOS LECTORES DE NÚMEROS, Y NO SON INTERCAMBIABLES.** El `numero()` del índice es el lector
   TOLERANTE del dataset (punto = miles): leía `peso_datos: 0.963` como **963** y el peso salía null.
   Los campos que escribe el propio módulo como JSON se leen con `Number` ESTRICTO (`maquina`), y la
