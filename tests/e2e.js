@@ -6050,6 +6050,15 @@ async function main() {
         assert.strictEqual(encIg.entidad_no_distingue, true, `con medias idénticas τ̂² no puede ser > 0: ${JSON.stringify(encIg)}`);
         assert.strictEqual(indiceComp.encogerEntidad(iguales[0], encIg).rivales_estimados, encIg.mu_global);
         assert.strictEqual(indiceComp.encogerEntidad(iguales[0], encIg).peso_datos, 0);
+        // …y SIN banda: una desviación 0 daría «Banda del 90 %: 25 %–25 %», certeza absoluta justo
+        // donde menos información individualizada hay (hallazgo de la revisión adversaria)
+        assert.strictEqual(indiceComp.encogerEntidad(iguales[0], encIg).rivales_desv, null, "con τ̂² ≤ 0 la desviación tiene que ser null, no 0");
+        const dSinBanda = estimarPDetalle({}, { competencia: { nivel: "baja", promedio_oferentes: 3, total_procesos: 10, ...indiceComp.encogerEntidad(iguales[0], encIg) } });
+        assert.strictEqual(dSinBanda.p_lo, null, "con τ̂² ≤ 0 no puede publicarse una banda de ancho cero");
+        // y el tope min(b_max, mediana) del listado es DELIBERADO: b_max sobre la mediana da factor 1
+        // (la tarjeta no conoce la oferta), mientras el editor evalúa la baja REAL sin tope con la misma curva
+        assert.strictEqual(factorPrecio({ nivel: "medio", baja_mediana: 5, baja_p25: 3, baja_p75: 7 }, 15).factor, 1);
+        assert.ok(multiplicadorPrecio({ baja_ofertada_pct: 15, baja_mediana_pct: 5, baja_p25: 3, baja_p75: 7 }).multiplicador > 1);
         // 4 · con menos de MIN_ENTIDADES_ESTIMACION entidades CON BASE (≥5) no se estima nada: null y el lector no cambia
         //     — y las pequeñas ruidosas NO anulan la señal de las grandes (fue el primer defecto del estimador)
         const ruidosas = Array.from({ length: 40 }, (_, i) => { const a = (i * 7) % 20, b = (i * 13) % 20; return { procesos: 2, oferentes_total: a + b, suma2: a * a + b * b }; });

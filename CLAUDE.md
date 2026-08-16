@@ -2506,7 +2506,12 @@ Decisiones que no hay que re-aprender:
 - **LA BANDA (A6) es la misma cadena evaluada en r̂ ± 1,645·σ**, no un multiplicador: `p_lo`/`p_hi`
   en `estimarPDetalle`, `banda_90` en el desglose y en el tooltip de la tarjeta; sin `rivales_desv`
   vale `null` (jamás ±0). Se estrecha con n (prueba: n = 4 vs n = 40). `ordenar_por=ve_conservador`
-  ordena por `cuantía × p_lo` — **opción, no default** — y cae al VE de siempre sin banda.
+  ordena por `cuantía × p_lo` — **opción, no default** — y cae al VE de siempre sin banda. Con
+  `τ̂² ≤ 0` NO hay banda (`rivales_desv: null`, no 0: una banda de ancho cero sería certeza absoluta
+  donde menos información hay — lo cazó la revisión adversaria). Y **el tope `min(b_max, mediana)`
+  es DELIBERADO y asimétrico respecto del editor**: `b_max` es hasta dónde PUEDE bajar, no lo que va
+  a ofertar; la tarjeta asume que ofertará en el centro si puede y no premia una baja especulativa;
+  el editor conoce la baja REAL y `pGanarPorPrecio` la evalúa sin tope con la misma curva.
 - **El desglose narrado cambió el paso 4** («Ajuste por precio: hasta dónde puede bajar frente al
   centro del mercado»; fórmula con `min(baja_maxima_del_dueño, baja_mediana_entidad)` y la curva de
   rentabilidad citada) y el paso 1 explica el encogimiento (peso de los datos propios, μ, banda).

@@ -46,6 +46,13 @@
 >    `bajaDeMercado` (mínimo 5, ya refinada por modalidad) y su IQR como dispersión. Y **`b_max` no
 >    sale todavía del APU del proceso automáticamente**: entra declarada por `?baja_max=`; enlazar
 >    `precioPiso().baja_maxima_admisible_pct` de un borrador guardado al listado es el siguiente paso.
+> 5. **El tope `min(b_max, mediana)` es deliberado y ASIMÉTRICO respecto del editor** (lo señaló la
+>    revisión adversaria): `b_max` es hasta dónde el dueño PUEDE bajar, no lo que va a ofertar; la
+>    tarjeta asume que, si puede, ofertará en el centro (jugada dominante en 3 de 4 métodos) y no
+>    premia una baja más agresiva que nadie decidió. El editor de APU conoce la baja REAL ofertada y
+>    la evalúa sin tope, en las dos direcciones, con la MISMA curva. Y con `τ̂² ≤ 0` NO hay banda
+>    (`rivales_desv: null`): una banda de ancho cero sería certeza absoluta justo donde menos
+>    información individualizada hay.
 >
 > **Compatibilidad, verificada con prueba:** un hash de `indice:competencia` anterior a A2 (sin
 > `rivales_estimados`) hace que `competenciaDe` y `trazaP` respondan **exactamente como antes** —
