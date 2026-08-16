@@ -13,6 +13,9 @@ const OPS = {
   "extraer-texto": () => require("../lib/apu_extraer.js"),
   parsear: () => require("../lib/apu_extraer.js"),
   descargar: () => require("../lib/apu_descargar.js"),
+  formulario1: () => require("../lib/handlers/pliego/formulario1.js"), // [v3-F4] guardián del Formulario 1
+  diff: () => require("../lib/handlers/pliego/diff.js"),               // [v3-F5] vigía de adendas (texto del pliego)
+  cronograma: () => require("../lib/handlers/pliego/cronograma.js"),   // [v3-F5] hitos y avisos T-7/T-3/T-1 (+ .ics)
 };
 
 function opDe(req) {

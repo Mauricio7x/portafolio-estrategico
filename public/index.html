@@ -938,6 +938,8 @@
             <datalist id="catalogo-items"></datalist>
 
             <p id="r-nota" class="mt-4 text-xs text-gray-400"></p>
+            <!-- Fase 5 (plan v3) · Vigía de adendas y cronograma del pliego leído -->
+            <div id="pl-vigia" class="mt-4 hidden rounded-xl bg-gray-50 p-4 text-sm ring-1 ring-inset ring-gray-900/5"></div>
 
             <details class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
               <summary class="cursor-pointer text-sm font-medium">Diagnóstico del parseo</summary>
@@ -1167,6 +1169,25 @@
            o no, y a cuánto?». Va PRIMERO entre los resultados porque es la
            decisión; el resumen, la rentabilidad y el precio sugerido son el
            detalle que la sostiene. Nace oculto: se pinta con la rentabilidad. -->
+<!-- ══════ Fase 4 (plan v3) · Guardián del Formulario 1: «Revisar antes de subir» ══════
+     Siete validaciones (total vs presupuesto, ítems del Formulario 1, lo escrito en
+     SECOP II, AIU discriminado y bajo el tope, precio artificialmente bajo,
+     aritmética, redondeo) con semáforo y frases, sin jerga. Compara la oferta del
+     paso 3 con el Formulario 1 leído en el lector de pliegos (más abajo). -->
+<section id="seccion-revision" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+  <h2 class="font-semibold tracking-tight">Revisar antes de subir</h2>
+  <p class="mt-1 max-w-2xl text-sm text-gray-500">Los errores de formato no se corrigen después: cuestan el proceso. Esta revisión compara su oferta con el presupuesto oficial y con el Formulario 1 del pliego, y le dice qué es motivo de rechazo automático y qué solo conviene arreglar.</p>
+  <div class="mt-3 grid gap-3 sm:grid-cols-3">
+    <label class="block text-sm"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Tope de AIU del pliego (%)</span>
+      <input id="rev-tope-aiu" type="number" min="0" max="100" step="0.01" placeholder="Numeral 4.1 del pliego" class="w-full rounded-lg border-gray-300 text-sm"></label>
+    <label class="block text-sm"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Total que escribió en SECOP II ($)</span>
+      <input id="rev-secop-total" type="number" min="0" step="1" placeholder="Opcional" class="w-full rounded-lg border-gray-300 text-sm"></label>
+    <div class="flex items-end"><button id="btn-revisar-oferta" type="button" class="w-full rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">Revisar antes de subir</button></div>
+  </div>
+  <p id="rev-nota" class="mt-2 text-xs text-gray-500">Se compara con el Formulario 1 leído en el lector de pliegos; si no ha leído el pliego, esa comparación queda pendiente y se dice.</p>
+  <div id="revision-oferta" class="mt-4 hidden"></div>
+</section>
+
 <section id="seccion-piso-techo" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div class="flex flex-wrap items-baseline justify-between gap-3">
           <h2 class="font-semibold tracking-tight">¿Me presento, y a cuánto?</h2>

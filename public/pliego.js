@@ -549,6 +549,9 @@
   function pintarResultado(cuerpo) {
     ultimaRespuesta = cuerpo;
     filas = (cuerpo.items || []).map(nuevaFila);
+    // Fase 4 · el guardián del Formulario 1 (pestaña Precios) compara la oferta
+    // con ESTOS ítems: se exponen tal cual salieron del lector
+    try { window.__pliegoUltimo = { items: filas.map((f) => ({ numeral: f.numeral, descripcion: f.descripcion_original, unidad: f.unidad, cantidad: f.cantidad, unitario_oficial: f.unitario_oficial, total_oficial: f.total_oficial })), leido_el: new Date().toISOString(), id_proceso: idProcesoActual() }; } catch { /* sin ventana */ }
     $("seccion-resultado").classList.remove("hidden");
 
     const [claseSem, textoSem] = SEMAFORO[(cuerpo.confianza && cuerpo.confianza.color) || "amarillo"] || SEMAFORO.amarillo;
@@ -682,6 +685,53 @@
       precio_base: ctx.precio_base,
     });
     manejarRespuesta(r);
+    /* Fase 5 · vigía de adendas + cronograma: con el texto ya en la mano se
+       registra la versión del pliego (si el editor tiene un proceso abierto)
+       y se pintan «la entidad cambió las reglas» y el cronograma. Nunca
+       bloquea la extracción: falla en silencio hacia un aviso. */
+    vigilarPliego(texto).catch(() => {});
+  }
+
+  /* El id del proceso lo tiene el editor de APU (campo id-proceso) cuando se
+     llegó desde una tarjeta; sin él, el vigía no puede guardar versiones y lo
+     dice. El perfil es el del selector del tablero. */
+  function idProcesoActual() { const el = document.getElementById("id-proceso"); return el ? el.value.trim() : ""; }
+  function perfilActual() { const el = document.getElementById("f-perfil"); return el ? el.value : ""; }
+  async function vigilarPliego(texto) {
+    const caja = document.getElementById("pl-vigia");
+    if (!caja) return;
+    const id = idProcesoActual();
+    let html = "";
+    if (!id) {
+      html += `<p class="text-gray-600">Para vigilar las adendas de este pliego abra el proceso desde su tarjeta («Calcular mi precio»): así el lector sabe de qué proceso es el pliego y guarda cada versión.</p>`;
+    } else {
+      const r = await pedir("/api/pliego?op=diff", { id_proceso: id, texto, perfil: perfilActual(), origen: "lector" });
+      const c = r.cuerpo || {};
+      if (!c.ok) html += `<p class="text-gray-600">No se pudo guardar la versión del pliego: ${esc(c.error || `respuesta ${r.estado}`)}.</p>`;
+      else {
+        html += `<p class="font-medium" style="color: var(--text-primary);">${esc(c.mensaje || "")}</p>`;
+        const cambios = (c.diff && c.diff.habilitantes && c.diff.habilitantes.cambios) || [];
+        if (c.cambio) {
+          html += cambios.length
+            ? `<ul class="mt-2 space-y-1">${cambios.map((x) => `<li><span aria-hidden="true">${x.afecta ? "●" : "○"}</span> ${esc(x.mensaje)}</li>`).join("")}</ul>`
+            : `<p class="mt-1 text-gray-600">Cambió el texto pero ningún requisito habilitante numérico que la app sepa leer${c.diff && c.diff.parrafos ? ` (${c.diff.parrafos.modificados.length} párrafos modificados, ${c.diff.parrafos.anadidos.length} nuevos, ${c.diff.parrafos.quitados.length} retirados)` : ""}. Léalo: puede haber cambiado algo que no es una cifra.</p>`;
+        }
+        html += `<p class="mt-1 text-xs text-gray-500">Versión ${c.version} de este pliego guardada${c.recortado ? " (texto recortado)" : ""}. La comparación de requisitos es una lectura automática del texto: confírmela contra el pliego.</p>`;
+      }
+    }
+    // cronograma (dataset + texto): siempre, con o sin id
+    const rc = await pedir("/api/pliego?op=cronograma", { id_proceso: id || undefined, texto });
+    const cc = rc.cuerpo || {};
+    if (cc.ok && Array.isArray(cc.hitos) && cc.hitos.length) {
+      html += `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">Cronograma</p>
+        <ul class="mt-1 space-y-0.5">${cc.hitos.map((h) => `<li>${esc(h.fecha.split("-").reverse().join("/"))} — ${esc(h.etiqueta)} <span class="text-xs text-gray-400">(${h.origen === "pliego" ? "pliego" : "SECOP II"})</span></li>`).join("")}</ul>`;
+      if (cc.avisos && cc.avisos.length) html += `<p class="mt-2 text-xs text-gray-500">Avisos a 7, 3 y 1 día: ${cc.avisos.slice(0, 3).map((a) => esc(a.aviso.split("-").reverse().join("/") + " · " + a.mensaje)).join(" · ")}${cc.avisos.length > 3 ? ` · y ${cc.avisos.length - 3} más` : ""}.</p>`;
+      if (cc.ics_url) html += `<a class="mt-2 inline-block text-sm font-medium underline" style="color: var(--accent);" href="${esc(cc.ics_url)}">Descargar al calendario (.ics)</a>`;
+    } else if (cc.ok) {
+      html += `<p class="mt-3 text-xs text-gray-500">No se leyó ninguna fecha de cronograma en el pliego${cc.fuentes && cc.fuentes.lineas_hito_sin_fecha ? ` (${cc.fuentes.lineas_hito_sin_fecha} líneas de hito sin fecha legible)` : ""}.</p>`;
+    }
+    caja.innerHTML = html;
+    caja.classList.remove("hidden");
   }
 
   function manejarRespuesta(r) {

@@ -3047,6 +3047,48 @@ Decisiones que no hay que re-aprender:
   el RUP corte 31/12/2025 (plan v4 Anexo B, cifras que cuadran: 198,81 M ÷ 300 k = 662,70). El plural fijo
   los deriva (cobertura ponderada truncada, contratos sumados = 141).
 
+### Fases 4 y 5 del plan v3 · Guardián del Formulario 1 y vigía de adendas (ago 2026)
+
+`lib/formulario1.js` + `lib/handlers/pliego/formulario1.js` (`op=formulario1`) · `lib/diff.js` +
+`lib/handlers/pliego/diff.js` (`op=diff`) · `lib/cronograma.js` + `lib/handlers/pliego/cronograma.js`
+(`op=cronograma`, `.ics`) · `lib/adendas.js` + `_cambios` en `leerChunksDedup` + `adendas` por fila del
+listado · «Revisar antes de subir» en Precios · `#pl-vigia` en el lector · bloque en la tarjeta.
+Decisiones que no hay que re-aprender:
+
+- **El plan v3 se recuperó de una transcripción anterior** (el v4 solo nombraba las fases): siete
+  validaciones con fundamento, comparación de ítems (adición/supresión/modificación), semáforo con
+  frases, «causal O» = «motivo de rechazo automático»; vigía con hash+diff por párrafo, reevaluación de
+  habilitantes, «le afecta / no le afecta», cronograma con avisos T-7/T-3/T-1 exportable.
+- **Lo que no se cargó queda `sin_referencia`, jamás «cumple»**: SECOP II (lo que el usuario escribió en
+  la plataforma no lo ve nadie más que él), el tope de AIU (numeral 4.1 del pliego) y el Formulario 1
+  (hay que leer el pliego con el lector). El semáforo no cambia de color por un pendiente; se lista.
+- **La comparación de ítems canoniza la unidad con `lib/apu_pliego.unidadCanonica`** («M3», «m3», «m³»
+  son la misma) y compara descripción normalizada y cantidad a 1e-6: mayúsculas y tildes no son una
+  modificación. Casa por numeral y, si el numeral no está, por descripción.
+- **Aritmético vs redondeo se separan con `toleranciaFila` de apu_pliego** (la del redondeo al peso):
+  dentro, redondeo; fuera, error aritmético. Ninguno rechaza (Ley 1882/2018).
+- **`TEMERARIO_PCT` de piso_techo es la BAJA (20 = por debajo del 80 %)**: la primera versión lo leyó
+  como fracción del presupuesto y avisaba «no cae bajo el 20 %» a una oferta al 98 % — se cazó en la
+  primera prueba. Es la misma unidad en los dos módulos a propósito.
+- **El texto del pliego lo extrae el navegador (pdf.js)**: el vigía del TEXTO solo se dispara cuando
+  alguien abre el pliego con un proceso en el editor (`id-proceso`); sin id, lo dice. El vigía del
+  DATASET (`lib/adendas`) corre solo: `leerChunksDedup` con `senales` conserva la foto más vieja y la más
+  nueva (5 campos) y deriva `_cambios`; el listado publica `adendas` reevaluando P1/P2/P3 con la fila
+  «como era antes» (`filaAntes`) frente a la vigente — la MISMA `evaluarRup`/`evaluarPuertas`, y por eso
+  la misma adenda afecta a Génesis y no a Helder (prueba).
+- **Extraer un habilitante de un pliego es heurístico** (regex por línea; dinero por `numeroColombiano`,
+  ratios «mayor o igual», endeudamiento en % → fracción, SMMLV, «(10) meses»): cada valor viaja con la
+  línea de la que salió (`evidencia`) y lo que no casa queda fuera — no se inventa un requisito. La
+  reevaluación distingue «ya no cumple» (cumplía antes) de «no cumple» (nunca cumplió) y «no le afecta».
+  `capitalTrabajo` entró a los perfiles desde el balance del RUP (activo − pasivo corriente).
+- **El hash se calcula sobre el texto NORMALIZADO** (espacios, saltos): dos aperturas del mismo PDF no
+  son una adenda. Máximo 5 versiones por proceso; el texto guardado se recorta a 400 KB y se dice.
+- **Cronograma**: hitos por regex con ORDEN («observaciones al proyecto» antes que «proyecto de pliego»,
+  «traslado del informe» antes que «informe de evaluación»); una línea de hito sin fecha legible se
+  cuenta, no se inventa; el pliego manda sobre el dataset para el mismo hito; avisos solo futuros; el
+  .ics lleva VALARM −P7D/−P3D/−P1D y eventos de todo el día (un plazo no tiene hora en el dataset).
+- **`limpiarRedis` de la suite purga `pliego:*` y `formulario1:*`** (misma lección que consorcio:*).
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).
