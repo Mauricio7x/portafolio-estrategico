@@ -4670,6 +4670,12 @@ async function main() {
       // que ESTA limpieza borra: sin purgarla, la iteración siguiente serviría
       // un resultado cacheado con un perfil que ya no existe
       ...(await redis.scan("diagnostico:*")),
+      // Fase 9/10: la portada precalculada, la ventana de manifestación, el
+      // calendario y la caché de simulación de consorcio (1 h) tampoco viven
+      // bajo el corpus; una simulación cacheada de la iteración anterior haría
+      // pasar por «cache:true» lo que la prueba espera recién contado
+      ...(await redis.scan("portada:*")), ...(await redis.scan("manifestacion:*")),
+      ...(await redis.scan("calendario:*")), ...(await redis.scan("consorcio:*")),
     ];
     if (claves.length) await redis.del(...claves);
     for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*", "equivalencias:*",
