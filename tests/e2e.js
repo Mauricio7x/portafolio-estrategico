@@ -1244,7 +1244,21 @@ async function main() {
     const cli403 = crearCliente({ appToken: "", fetchImpl: async () => ({ ok: false, status: 403, headers: { get: () => null }, text: async () => "" }), dormir: async () => {} });
     await assert.rejects(() => cli403.pedir({ "$limit": "1" }, "bloqueo"), /agotados/);
     assert.strictEqual(cli403.appTokenRechazado(), false);
-    console.log("· unidad socrata: token inválido → 403 con token, 200 sin él, se descarta y se cuenta; 403 sin token sigue siendo bloqueo");
+    /* Y EL `*` VA PRIMERO en el $select del keyset: el 16-ago-2026 Socrata empezó
+       a rechazar `:id,:updated_at,*` con 400 «Star selections must come at the
+       start of the select-list» y producción degradó a $offset (donde se
+       quedó sin sincronizar). Se fija el orden con la URL real que arma el
+       cliente. */
+    const urls = [];
+    const cliUrl = crearCliente({ appToken: "", fetchImpl: async (url) => { urls.push(url); return { ok: true, status: 200, json: async () => [] }; }, dormir: async () => {} });
+    await cliUrl.paginaMes("2026-01", {}, { pagina: 5, keyset: true });
+    await cliUrl.paginaDelta("2026-08-15T00:00:00.000Z", 2026, {}, { pagina: 5, keyset: true });
+    for (const u of urls) {
+      const sel = decodeURIComponent(new URL(u).searchParams.get("$select") || "");
+      assert.ok(sel.startsWith("*"), `el $select del keyset tiene que empezar por «*» (Socrata lo exige desde ago 2026): «${sel}»`);
+      assert.ok(/:id/.test(sel) && /:updated_at/.test(sel), "el keyset sigue necesitando :id y :updated_at");
+    }
+    console.log("· unidad socrata: token inválido → 403 con token, 200 sin él, se descarta y se cuenta; 403 sin token sigue siendo bloqueo; $select del keyset con * primero");
   }
 
   /* unidad: el empaquetador respeta los 500 KB comprimidos y no pierde filas */
