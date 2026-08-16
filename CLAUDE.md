@@ -1305,6 +1305,19 @@ cifra de aquí en un pliego sin abrir la fuente.
   «Seleccionado» pasara a abierto por prefijo — que es justo el choque que el código ya advierte. Si
   el embudo de `/api/diagnostico` muestra volumen muriendo ahí, resolverlo exige mirar el dato real
   primero.
+- **«NO DEFINIDO» NO ES UN ADJUDICATARIO — TAMBIÉN EN LA PUERTA DEL ÍNDICE (16-ago-2026).** La
+  trampa del literal estaba resuelta en `claveAdjudicatario` (equivalencias) pero `esAdjudicado`
+  seguía tomando `nombre_del_proveedor: "No Definido"` por un ganador: **79 k procesos desde 2024**
+  con `adjudicado=No` y respuestas entraban al índice de competencia como adjudicados (40 k en
+  Evaluación, 13,6 k Seleccionados, 16,8 k Cancelados, 8,3 k Abiertos/Publicados — entre ellos una
+  «lista multiusos» de la ERU abierta hasta 2027 con 34 respuestas, la «anomalía 2027»). Cerraduras:
+  `RELLENOS_SIN_VALOR` se descartan ANTES de mirar si hay valor, y el índice cuenta por una regla
+  EXPLÍCITA de **conteo final** (`cuentaParaCompetencia`: adjudicado, o estado Evaluación /
+  Seleccionado, o fase posterior al cierre) — Evaluación y Seleccionado ya cerraron ofertas y su
+  conteo vale (antes entraban por la trampa, no por regla); Cancelado y Abierto/Publicado no. El
+  detalle de competencia usa el MISMO predicado (regla de oro: no es un segundo cálculo); la vista del
+  adjudicatario sigue con `esAdjudicado` (quién GANÓ). `descartados.sin_adjudicacion` conserva el
+  nombre: significa «sin conteo final».
 - **La CCE confirma que las entidades comparten NIT.** El equipo de analítica de la propia agencia
   advierte que «no hay bases maestras de entidades y proveedores; las entidades pueden compartir NIT
   entre departamentos». La corrección de identidad de ago 2026 (no publicar alias para NIT compartido;

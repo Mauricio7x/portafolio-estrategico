@@ -2535,6 +2535,24 @@ async function main() {
     assert.strictEqual(pub.procesos, 3, "el CONTEO sí se publica: es un hecho y explica el ⚪");
     assert.strictEqual(pub.procesos_contados, 3, "alias para quien lea el campo por su nombre largo");
     console.log(`· unidad badge sin base: ${casos.length} registros corruptos o viejos neutralizados sin reconstruir el índice`);
+
+    /* «NO DEFINIDO» NO ES UN ADJUDICATARIO (ago 2026, defecto real de producción):
+       una «lista multiusos» abierta hasta 2027 con 34 respuestas entraba al
+       índice como adjudicada porque `nombre_del_proveedor` era la cadena «No
+       Definido». Y el índice cuenta con una regla EXPLÍCITA de conteo FINAL:
+       adjudicado, o Evaluación/Seleccionado, o fase posterior al cierre; los
+       Publicado/Abierto/Cancelado con respuestas, no. */
+    {
+      const relleno = { adjudicado: "No", nombre_del_proveedor: "No Definido", nit_del_proveedor_adjudicado: "No Definido", valor_total_adjudicacion: "0" };
+      assert.strictEqual(indiceComp.esAdjudicado({ ...relleno, estado_del_procedimiento: "Publicado" }), false, "«No Definido» no puede contar como adjudicatario");
+      assert.strictEqual(indiceComp.esAdjudicado({ ...relleno, nombre_del_proveedor: "CONSTRUCTORA X SAS" }), true, "un nombre real sí");
+      assert.strictEqual(indiceComp.esAdjudicado({ ...relleno, estado_del_procedimiento: "Adjudicado" }), true, "el estado adjudicado sigue valiendo");
+      assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Publicado", fase: "Presentación de oferta", respuestas_al_procedimiento: "34" }), false, "abierto con respuestas: el conteo no es final");
+      assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Evaluación" }), true, "en evaluación las ofertas ya cerraron: cuenta");
+      assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Seleccionado" }), true);
+      assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Cancelado" }), false, "cancelado: no se sabe si cerró la recepción");
+      assert.strictEqual(indiceComp.cuentaParaCompetencia({ ...relleno, estado_del_procedimiento: "Publicado", fase: "Adjudicación" }), true, "la fase posterior al cierre también vale");
+    }
   }
 
   /* unidad: IDENTIDAD DE LA ENTIDAD — el nombre exacto manda sobre el alias
