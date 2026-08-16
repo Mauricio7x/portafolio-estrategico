@@ -1370,6 +1370,36 @@
       </div>`;
   }
 
+  /* ══════════ Cómo ejecuta sus contratos ══════════
+     Prórrogas, suspensiones y pagos de los contratos de obra ya firmados de la
+     entidad (dataset de contratos electrónicos de SECOP II, en vivo). Es el
+     flujo de caja del Cap. 11 —el Estado paga tarde—, no el precio. Un pago en
+     0 en el dataset es «no lo registra», no «no ha pagado»: el bloque lo dice. */
+  function bloqueEjecucion(e) {
+    if (!e) return "";
+    if (!e.ok) {
+      return `<p class="mt-4 rounded-lg bg-gray-100 p-3 text-xs text-gray-600">Cómo ejecuta sus contratos: no se pudo consultar el
+        dataset de contratos de SECOP II en este momento${e.motivo ? ` (${esc(e.motivo)})` : ""}.</p>`;
+    }
+    if (!e.contratos) {
+      return `<p class="mt-4 rounded-lg bg-gray-100 p-3 text-xs text-gray-600">Cómo ejecuta sus contratos: ${esc(e.motivo || "sin contratos de obra de esta entidad en los últimos dos años")}.</p>`;
+    }
+    const pr = e.prorrogas || {}, su = e.suspendidos || {}, pg = e.pagos || {};
+    const dato = (v, suf = "") => (v == null ? '<span class="text-gray-400">sin dato</span>' : `${esc(String(v))}${suf}`);
+    return `
+      <div class="mt-4">
+        <p class="font-medium">Cómo ejecuta sus contratos</p>
+        <p class="text-xs text-gray-500">${e.contratos} contratos de obra firmados desde ${esc(e.ventana && e.ventana.desde || "")}${e.valor_contratado_cop != null ? ` · ${esc(fmtCorto(e.valor_contratado_cop))} contratados` : ""}. Lo que pasó DESPUÉS de adjudicar: pesa en el flujo de caja, no en el precio.</p>
+        <dl class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
+          <div><dt class="text-xs text-gray-500">Con prórroga</dt><dd class="tabular-nums">${dato(pr.pct, " %")}${pr.contratos ? ` <span class="text-xs text-gray-400">(${pr.contratos})</span>` : ""}</dd></div>
+          <div><dt class="text-xs text-gray-500">Días de prórroga (mediana)</dt><dd class="tabular-nums">${dato(pr.mediana_dias)}</dd></div>
+          <div><dt class="text-xs text-gray-500">Suspendidos</dt><dd class="tabular-nums">${dato(su.contratos)}</dd></div>
+          <div><dt class="text-xs text-gray-500">Pagado en los terminados</dt><dd class="tabular-nums">${pg.registra ? dato(pg.pct_pagado_de_terminados, " %") : '<span class="text-gray-400" title="La entidad no registra pagos en SECOP II: un 0 en el dataset no significa que no haya pagado">no registra pagos</span>'}</dd></div>
+        </dl>
+        ${e.otros_nombres_con_este_nit && e.otros_nombres_con_este_nit.length ? `<p class="mt-2 text-xs text-gray-400">El mismo NIT firma también como ${esc(e.otros_nombres_con_este_nit.join(" · "))}: esos contratos no se cuentan aquí.</p>` : ""}
+      </div>`;
+  }
+
   function bloqueAdjudicatarios(a) {
     if (!a) return "";
     const base = Number(a.procesos_con_ganador);
@@ -1440,6 +1470,7 @@
       ${d.mensaje ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">${esc(d.mensaje)}</p>` : ""}
       ${bloqueAdjudicatarios(d.adjudicatarios)}
       ${bloqueProponentes(d.proponentes)}
+      ${bloqueEjecucion(d.ejecucion)}
       ${tabla("Procesos incluidos", d.procesos || [], false)}
       ${tabla("Excluidos del promedio", d.excluidos || [], true,
     "Están cerrados o adjudicados, pero no cuentan para el promedio por el motivo indicado en cada uno.")}

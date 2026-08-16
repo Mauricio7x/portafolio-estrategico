@@ -221,8 +221,9 @@ panel que se ven en pantalla, nunca desde texto genérico.
    presupuesto y remiten la oferta baja al art. 2.2.1.1.2.2.4); el panel usa el 80 % de referencia
    y lo declara. Con la tabla verificada, `TEMERARIO_PCT` pasa a depender de la modalidad.
 6. (Fase 3) ~~`hgi6-6wh3` en vivo para «contra quién compite»~~ **Hecho el 16-ago-2026**: bloque
-   `proponentes` en la vista de entidad («Quiénes se presentan aquí», docs/datos.md §5.1). Sigue
-   pendiente `jbjy-vk9h` para «cómo se ejecuta» (adiciones, pagos) — verificado, no integrado
+   `proponentes` en la vista de entidad («Quiénes se presentan aquí», docs/datos.md §5.1). ~~`jbjy-vk9h`
+   para «cómo se ejecuta»~~ **Hecho el 16-ago-2026**: bloque `ejecucion` («Cómo ejecuta sus contratos»,
+   docs/datos.md §5.2) — prórrogas, suspensiones y pagos SOLO cuando la entidad los registra.
    (`docs/datos.md` §5).
 7. Contrastar los jornales del catálogo con el costo normativo por hora (§2): un oficial del
    catálogo cuesta $154.171/día con prestaciones; un trabajador de salario mínimo cuesta $132.457
