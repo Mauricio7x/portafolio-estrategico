@@ -244,6 +244,34 @@ nada, ni siquiera qué perfiles existen.
 | `orden` | `desc` | `asc` · `desc` |
 | `pagina` / `por_pagina` | 1 / 20 | `por_pagina` máx 100 |
 
+**Los siete filtros de la Fase 8 (ago 2026)** — se aplican en el servidor DESPUÉS de la cascada y de
+las puertas (son lo que elige quien consulta, no parte del juicio); un valor desconocido es INERTE
+(un enlace guardado nunca vacía la lista); el vocabulario vive en `public/filtros.js` y la aplicación
+en `lib/filtros_lista.js`; cobertura de cada columna medida contra `p6dx-8zbt` en `docs/datos.md` §6:
+
+| Parámetro | Lo que ve el usuario | Valores |
+| --- | --- | --- |
+| `tipo` | Qué tipo de trabajo es | `obra` · `consultoria` · `interventoria` · `suministro` · `servicios` (coma para varios; `todos`). **Ausente = los cuatro sin suministro** (§8.6 del plan; esconde ~6 % medido) |
+| `modalidad` | Cómo lo adjudican | `licitacion` · `abreviada` · `subasta` · `meritos` · `minima` · `directa` · `especial` (coma) |
+| `dep` | Dónde queda | código DANE **o** nombre (`73` ≡ `Tolima`; coma). «No Definido» es `sin_dato` y no entra en ninguno |
+| `ciudad` | Dónde queda | subcadena normalizada de `ciudad_entidad` |
+| `min` / `max` | Cuánto vale | pesos; cuantía 0 = sin dato y no entra en ningún rango |
+| `cierre` | Cuándo hay que entregar la oferta | `3d` · `7d` · `15d` · `+15d` (acumulativas salvo la última), o `cierreDesde`/`cierreHasta` (`YYYY-MM-DD`). Siempre sobre procesos abiertos |
+| `entidad` | Buscar entidad | NIT (con o sin DV) o subcadena del nombre |
+| `q` | Buscar por palabra | subcadena normalizada sobre objeto y entidad |
+| `ordenar_por=cierre` | Las que cierran antes | menos días primero; sin fecha al final |
+| `ordenar_por=margen` | Dónde me queda más | `techo − piso` (Fase 3) SOLO para procesos con un borrador de APU guardado con `costo_directo`; los demás «Sin referencia», al final. **Nunca se asume margen cero** |
+
+Salida añadida: `totalSinFiltros` (la base antes de los filtros del usuario), `filtrosAplicados`
+(fichas legibles `[{filtro, etiqueta}]`), `sugerencia` (`{filtro, siLoQuita}` SOLO con cero
+resultados: qué filtro quitar y cuántos aparecerían, contados), `facetas` (conteos por opción sobre
+la base), cada fila trae `filtro {tipo, modalidad, departamento, rango, dias_cierre, ventana}` y,
+con `ordenar_por=margen`, `margen_estimado {valor, piso, techo, motivo}` más `margen {procesos_con_costo,
+borradores, borradores_sin_costo, con_margen}`. `GET /api/procesos?op=entidades&q=alcald` (público)
+responde el catálogo real de entidades con procesos abiertos: `[{nit, nombre, procesosAbiertos,
+valorAbierto}]`, máximo 10. Nota: el plan v4 llamaba `orden=` al criterio; aquí `orden` ya era la
+dirección (`asc|desc`), así que el criterio sigue en `ordenar_por`.
+
 Respuesta: `{ ok, total, viables, no_viables, solo_viables, resultados, pagina, por_pagina, perfil,
 sincronizado, ordenado_por, por_match, indice_competencia, conocimiento }`. `por_match` reparte el
 total por solidez del match (cuántas son «RUP ✓» y cuántas hay que verificar). Cada resultado trae

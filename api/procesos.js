@@ -31,6 +31,7 @@ const OPS = {
   historico: () => require("../lib/handlers/procesos/historico.js"), // era /api/sync/historico
   listar: () => require("../lib/handlers/procesos/listar.js"),       // era /api/oportunidades
   baja: () => require("../lib/handlers/procesos/baja.js"),           // era /api/indice-baja
+  entidades: () => require("../lib/handlers/procesos/entidades.js"), // [v4] Fase 8 · buscador de entidades
 };
 
 function opDe(req) {

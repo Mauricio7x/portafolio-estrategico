@@ -228,8 +228,236 @@
      podría llegar distinta y parecería que el toggle filtra algo. */
   let ultimaBusqueda = null;
 
+  /* ══════════ Fase 8 · LOS SIETE FILTROS ══════════
+     El vocabulario vive en public/filtros.js (`window.Filtros`, el mismo
+     archivo que aplica el servidor). Aquí: el estado (leído de la URL al
+     arrancar y escrito en la URL en cada cambio, para que un enlace guardado
+     conserve el filtro), los controles, las fichas removibles, el contador
+     «23 de 312» y el callejón sin salida con salida («si quita el de zona,
+     aparecen 11»). El estado se manda al servidor con `parametros()`: los
+     filtros se aplican ALLÍ, no en el navegador sobre un volcado. */
+  const FL = window.Filtros;
+  let estadoFiltros = leerFiltrosDeURL();
+  let ultimasFacetas = null;
+  function leerFiltrosDeURL() {
+    try { return FL.leerEstado(new URLSearchParams(location.search)); } catch { return FL.leerEstado({}); }
+  }
+  function escribirFiltrosEnURL() {
+    try {
+      const p = new URLSearchParams(location.search);
+      FL.escribirEstado(estadoFiltros, p);
+      const ord = $("f-ordenar").value;
+      if (ord && ord !== "atractividad") p.set("ordenar_por", ord); else p.delete("ordenar_por");
+      const qs = p.toString();
+      history.replaceState(null, "", `${location.pathname}${qs ? "?" + qs : ""}${location.hash}`);
+    } catch { /* entorno raro: la URL no se actualiza, la búsqueda sí */ }
+  }
+  /* Cambio de estado desde cualquier control: se escribe en la URL, se
+     repintan fichas y controles y se busca de nuevo desde la página 1. */
+  function cambiarFiltros(nuevo) {
+    estadoFiltros = nuevo;
+    escribirFiltrosEnURL();
+    pintarControlesFiltros();
+    pagina = 1;
+    buscar();
+  }
+  const tiposActivos = () => estadoFiltros.tipo || [...FL.TIPOS_POR_DEFECTO];
+  function conteo(faceta, id) {
+    const f = ultimasFacetas && ultimasFacetas[faceta];
+    return f && f[id] != null ? ` (${f[id]})` : "";
+  }
+  function chipToggle(activo, texto, titulo, attrs) {
+    return `<button type="button" ${attrs} title="${esc(titulo || "")}"
+      class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition ${activo
+    ? "bg-gray-900 text-white ring-gray-900" : "bg-white text-gray-600 ring-gray-300 hover:bg-gray-50"}">${esc(texto)}</button>`;
+  }
+  function pintarControlesFiltros() {
+    const e = estadoFiltros;
+    // 1 · tipo de trabajo (chips que se encienden y apagan)
+    const tipos = tiposActivos();
+    $("fl-tipo").innerHTML = FL.TIPOS_TRABAJO.map((t) =>
+      chipToggle(tipos.includes(t.id), t.etiqueta + conteo("tipo", t.id), t.ayuda, `data-fl-tipo="${t.id}"`)).join("");
+    // 2 · modalidad (chips; ninguno encendido = todas)
+    $("fl-modalidad").innerHTML = FL.MODALIDADES.map((m) =>
+      chipToggle(!!(e.modalidad && e.modalidad.includes(m.id)), m.etiqueta + conteo("modalidad", m.id), m.ayuda, `data-fl-modalidad="${m.id}"`)).join("");
+    // 3 · departamento (select que AÑADE; lo elegido se ve en las fichas)
+    const dep = $("fl-dep");
+    if (dep.options.length <= 1) {
+      for (const d of FL.DEPARTAMENTOS) {
+        const o = document.createElement("option"); o.value = d.codigo; o.textContent = d.nombre; dep.appendChild(o);
+      }
+    }
+    for (const o of dep.options) if (o.value) o.textContent = (FL.DEPARTAMENTOS.find((d) => d.codigo === o.value) || {}).nombre + conteo("departamento", o.value);
+    dep.value = "";
+    if (document.activeElement !== $("fl-ciudad")) $("fl-ciudad").value = e.ciudad || "";
+    $("fl-zona-cerca").checked = $("f-zona").value === "facil";
+    // 4 · cuantía
+    const rango = $("fl-rango");
+    if (rango.options.length <= 1) {
+      for (const r of FL.RANGOS_CUANTIA) { const o = document.createElement("option"); o.value = r.id; o.textContent = r.etiqueta; rango.appendChild(o); }
+      const libre = document.createElement("option"); libre.value = "libre"; libre.textContent = "Elegir el rango"; rango.appendChild(libre);
+    }
+    for (const o of rango.options) if (o.value && o.value !== "libre") o.textContent = FL.etiquetaDe(FL.RANGOS_CUANTIA, o.value) + conteo("cuantia", o.value);
+    const rangoId = e.min ? (FL.RANGOS_CUANTIA.find((r) => r.min === (e.min.min ?? 0) && (r.max ?? null) === (e.min.max ?? null)) || { id: "libre" }).id : "";
+    rango.value = rangoId;
+    $("fl-rango-libre").classList.toggle("hidden", rangoId !== "libre");
+    $("fl-rango-libre").classList.toggle("flex", rangoId === "libre");
+    if (rangoId === "libre") { $("fl-min").value = e.min.min ?? ""; $("fl-max").value = e.min.max ?? ""; }
+    // 5 · cierre
+    const cierre = $("fl-cierre");
+    if (cierre.options.length <= 1) {
+      for (const v of FL.VENTANAS_CIERRE) { const o = document.createElement("option"); o.value = v.id; o.textContent = v.etiqueta; cierre.appendChild(o); }
+      const fechas = document.createElement("option"); fechas.value = "fechas"; fechas.textContent = "Elegir fechas"; cierre.appendChild(fechas);
+    }
+    for (const o of cierre.options) if (o.value && o.value !== "fechas") o.textContent = FL.etiquetaDe(FL.VENTANAS_CIERRE, o.value) + conteo("cierre", o.value);
+    const cierreId = e.cierre ? (e.cierre.ventana || "fechas") : "";
+    cierre.value = cierreId;
+    $("fl-cierre-fechas").classList.toggle("hidden", cierreId !== "fechas");
+    $("fl-cierre-fechas").classList.toggle("flex", cierreId === "fechas");
+    if (cierreId === "fechas") { $("fl-cierre-desde").value = e.cierre.desde || ""; $("fl-cierre-hasta").value = e.cierre.hasta || ""; }
+    // 7 · entidad y palabra
+    if (document.activeElement !== $("fl-entidad")) $("fl-entidad").value = e.entidad || "";
+    $("fl-entidad-historial").classList.toggle("hidden", !e.entidad);
+    if (document.activeElement !== $("fl-q")) $("fl-q").value = e.q || "";
+    // fichas removibles + «Quitar todos»
+    const fichas = FL.fichas(e);
+    $("fl-fichas").innerHTML = fichas.length
+      ? fichas.map((f) => `<span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-gray-700 ring-1 ring-inset ring-gray-900/10">${esc(f.etiqueta)}
+          <button type="button" data-fl-quitar="${f.filtro}" class="ml-0.5 rounded-full px-1 leading-none text-gray-500 hover:bg-gray-200 hover:text-gray-900" title="Quitar este filtro" aria-label="Quitar ${esc(f.etiqueta)}">×</button></span>`).join("")
+        + `<button type="button" id="fl-quitar-todos" class="ml-1 font-medium text-blue-600 hover:underline">Quitar todos</button>`
+      : `<span class="text-gray-400">Sin filtros: se muestran todas las que pasan sus requisitos (suministro apagado — encendelo arriba si lo querés ver).</span>`;
+  }
+  /* Delegación de clics de la barra: chips de tipo y modalidad, X de las
+     fichas y «Quitar todos». */
+  $("filtros-barra").addEventListener("click", (ev) => {
+    const t = ev.target.closest("[data-fl-tipo]");
+    if (t) {
+      const id = t.getAttribute("data-fl-tipo");
+      const activos = new Set(tiposActivos());
+      if (activos.has(id)) activos.delete(id); else activos.add(id);
+      if (!activos.size) return; // ningún tipo = nada que ver: no se permite
+      const lista = FL.TIPOS_TRABAJO.map((x) => x.id).filter((x) => activos.has(x));
+      const esDefecto = lista.length === FL.TIPOS_POR_DEFECTO.length && FL.TIPOS_POR_DEFECTO.every((x) => activos.has(x));
+      return cambiarFiltros({ ...estadoFiltros, tipo: esDefecto ? null : lista });
+    }
+    const m = ev.target.closest("[data-fl-modalidad]");
+    if (m) {
+      const id = m.getAttribute("data-fl-modalidad");
+      const activos = new Set(estadoFiltros.modalidad || []);
+      if (activos.has(id)) activos.delete(id); else activos.add(id);
+      return cambiarFiltros({ ...estadoFiltros, modalidad: activos.size ? [...activos] : null });
+    }
+    const x = ev.target.closest("[data-fl-quitar]");
+    if (x) return cambiarFiltros(FL.sinFiltro(estadoFiltros, x.getAttribute("data-fl-quitar")));
+    if (ev.target.closest("#fl-quitar-todos")) return cambiarFiltros(FL.leerEstado({}));
+    if (ev.target.closest("#fl-entidad-historial") && estadoFiltros.entidad) {
+      abrirModal(estadoFiltros.entidad, "Historial de la entidad");
+      cargarDetalle(estadoFiltros.entidad);
+    }
+  });
+  $("fl-dep").addEventListener("change", () => {
+    const v = $("fl-dep").value;
+    if (!v) return;
+    const dep = new Set(estadoFiltros.dep || []); dep.add(v);
+    cambiarFiltros({ ...estadoFiltros, dep: [...dep] });
+  });
+  $("fl-ciudad").addEventListener("change", () => cambiarFiltros({ ...estadoFiltros, ciudad: $("fl-ciudad").value.trim() || null }));
+  $("fl-zona-cerca").addEventListener("change", () => {
+    // es el filtro `?zona=facil` de siempre (opt-in): un clic lo enciende y
+    // otro devuelve todo — «Ver también fuera de mi zona»
+    $("f-zona").value = $("fl-zona-cerca").checked ? "facil" : "";
+    pagina = 1; buscar();
+  });
+  $("fl-rango").addEventListener("change", () => {
+    const v = $("fl-rango").value;
+    if (v === "libre") { $("fl-rango-libre").classList.remove("hidden"); $("fl-rango-libre").classList.add("flex"); $("fl-min").focus(); return; }
+    const r = FL.RANGOS_CUANTIA.find((x) => x.id === v);
+    cambiarFiltros({ ...estadoFiltros, min: r ? { min: r.min, max: r.max } : null });
+  });
+  for (const id of ["fl-min", "fl-max"]) {
+    $(id).addEventListener("change", () => {
+      const min = $("fl-min").value === "" ? null : Number($("fl-min").value);
+      const max = $("fl-max").value === "" ? null : Number($("fl-max").value);
+      cambiarFiltros({ ...estadoFiltros, min: min == null && max == null ? null : { min, max } });
+    });
+  }
+  $("fl-cierre").addEventListener("change", () => {
+    const v = $("fl-cierre").value;
+    if (v === "fechas") { $("fl-cierre-fechas").classList.remove("hidden"); $("fl-cierre-fechas").classList.add("flex"); $("fl-cierre-desde").focus(); return; }
+    cambiarFiltros({ ...estadoFiltros, cierre: v ? { ventana: v } : null });
+  });
+  for (const id of ["fl-cierre-desde", "fl-cierre-hasta"]) {
+    $(id).addEventListener("change", () => {
+      const desde = $("fl-cierre-desde").value || null, hasta = $("fl-cierre-hasta").value || null;
+      cambiarFiltros({ ...estadoFiltros, cierre: desde || hasta ? { desde, hasta } : null });
+    });
+  }
+  $("fl-entidad").addEventListener("change", () => cambiarFiltros({ ...estadoFiltros, entidad: $("fl-entidad").value.trim() || null }));
+  $("fl-q").addEventListener("change", () => cambiarFiltros({ ...estadoFiltros, q: $("fl-q").value.trim() || null }));
+  /* Sugerencias de entidad mientras se escribe: el catálogo REAL de entidades
+     con procesos abiertos (/api/procesos?op=entidades), con espera de 250 ms
+     para no pedir en cada tecla. */
+  let timerEntidades = null, peticionEntidades = 0;
+  $("fl-entidad").addEventListener("input", () => {
+    clearTimeout(timerEntidades);
+    const texto = $("fl-entidad").value.trim();
+    if (texto.length < 3) return;
+    timerEntidades = setTimeout(async () => {
+      const mia = ++peticionEntidades;
+      let cuerpo = null;
+      try { const r = await fetch(`/api/procesos?op=entidades&q=${encodeURIComponent(texto)}`); cuerpo = await r.json(); } catch { return; }
+      if (mia !== peticionEntidades || !cuerpo || !cuerpo.ok) return;
+      $("fl-entidades").innerHTML = (cuerpo.entidades || []).map((e) =>
+        `<option value="${esc(e.nombre)}">${e.procesosAbiertos} proceso${e.procesosAbiertos === 1 ? "" : "s"} abierto${e.procesosAbiertos === 1 ? "" : "s"}${e.valorAbierto ? " · " + fmtCOP.format(e.valorAbierto) : ""}</option>`).join("");
+    }, 250);
+  });
+  /* Cero resultados CON filtros: nunca un callejón sin salida. El servidor ya
+     contó qué filtro recupera más y cuántos; aquí solo se pinta con el botón. */
+  function pintarVacio(cuerpo) {
+    const fichas = FL.fichas(estadoFiltros);
+    const n = fichas.length;
+    let html = "";
+    if (!n) html = "No se encontraron oportunidades. Probá con «Buscar oportunidades» más tarde: la lista se actualiza sola con cada sincronización.";
+    else {
+      const s = cuerpo && cuerpo.sugerencia;
+      const nombre = s ? (fichas.find((f) => f.filtro === s.filtro) || {}).etiqueta || s.filtro : null;
+      html = `Ningún proceso cumple ${n === 1 ? "el filtro" : `los ${n} filtros`}.`
+        + (s ? ` Si quita <strong>${esc(nombre.split(":")[0].toLowerCase())}</strong>, aparece${s.siLoQuita === 1 ? "" : "n"} <strong>${s.siLoQuita}</strong>.
+            <button type="button" data-fl-quitar-sugerido="${esc(s.filtro)}" class="ml-2 rounded-lg border border-gray-300 bg-white px-3 py-1 text-xs font-medium hover:bg-gray-50">Quitar ese filtro</button>`
+          : " Ninguno de los filtros, quitado por separado, recupera procesos: probá «Quitar todos».")
+        + ` <button type="button" id="fl-vacio-quitar-todos" class="ml-1 text-xs font-medium text-blue-600 hover:underline">Quitar todos</button>`;
+    }
+    $("estado-vacio").innerHTML = html;
+    mostrar("estado-vacio");
+  }
+  $("estado-vacio").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-fl-quitar-sugerido]");
+    if (b) return cambiarFiltros(FL.sinFiltro(estadoFiltros, b.getAttribute("data-fl-quitar-sugerido")));
+    if (ev.target.closest("#fl-vacio-quitar-todos")) cambiarFiltros(FL.leerEstado({}));
+  });
+  /* Margen estimado en la tarjeta (solo con el orden «Dónde me queda más»):
+     techo − piso, con las dos cifras; sin costo calculado, la frase de «Sin
+     referencia» y nada de números. */
+  function lineaMargen(m) {
+    if (!m) return "";
+    if (m.valor == null) return `<p class="mt-3 text-xs text-gray-500">${esc(m.motivo || "Sin referencia")}</p>`;
+    const signo = m.valor >= 0 ? "text-green-800 bg-green-50 ring-green-600/20" : "text-red-700 bg-red-50 ring-red-600/20";
+    return `<p class="mt-3 rounded-lg px-3 py-2 text-xs ring-1 ring-inset ${signo}">Te quedan aprox. <strong>${fmtCOP.format(m.valor)}</strong> entre tu piso rentable (${fmtCOP.format(m.piso)}) y el techo al que suele adjudicar esta entidad (${fmtCOP.format(m.techo)}).${m.valor < 0 ? " El techo está POR DEBAJO de tu piso: aquí no da." : ""}</p>`;
+  }
+
+  /* Al cargar: el orden pedido en la URL (`?ordenar_por=margen`) y los
+     controles pintados desde el estado leído — así un enlace guardado se ve
+     igual que cuando se guardó, antes incluso de la primera respuesta. */
+  try {
+    const ord = new URLSearchParams(location.search).get("ordenar_por");
+    if (ord && [...$("f-ordenar").options].some((o) => o.value === ord)) $("f-ordenar").value = ord;
+  } catch { /* sin URL legible */ }
+  pintarControlesFiltros();
+
   function parametros() {
     const p = new URLSearchParams({ perfil: $("f-perfil").value, pagina: String(pagina), por_pagina: "20" });
+    // Fase 8: los siete filtros viajan al servidor (se aplican allí)
+    FL.escribirEstado(estadoFiltros, p);
     const ant = $("f-anticipo").value;
     if (ant !== "") p.set("anticipo_min", ant);
     /* NO se envía `nivel_competencia` (ago 2026): ese campo sale de columnas
@@ -320,7 +548,9 @@
       s.textContent = `Datos: ${new Date(cuerpo.sincronizado).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}`;
       s.classList.remove("hidden");
     }
-    if (!cuerpo.total) return mostrar("estado-vacio");
+    ultimasFacetas = cuerpo.facetas || ultimasFacetas;
+    pintarControlesFiltros();
+    if (!cuerpo.total) return pintarVacio(cuerpo);
     pintar(cuerpo);
   }
 
@@ -783,6 +1013,7 @@
       </div>
 
       ${noViable ? "" : avisoCierre(diasCierre)}
+      ${lineaMargen(l.margen_estimado)}
 
       <!-- Los chips de EVIDENCIA (puertas con sus cifras, anticipo, baja,
            ubicación, encaje del RUP, modalidad, tipo de precio) se conservan
@@ -823,8 +1054,16 @@
     // y cuántas hay que verificar en el pliego
     const m = cuerpo.por_match || {};
     const porVerificar = (m.familia || 0) + (m.equivalente || 0) + (m.texto || 0);
+    /* Contador siempre visible (Fase 8): «23 de 312 licitaciones» — el usuario
+       tiene que ver cuánto está escondiendo con sus filtros. */
+    const base = cuerpo.totalSinFiltros != null ? cuerpo.totalSinFiltros : cuerpo.total;
+    const conFiltros = base !== cuerpo.total || FL.fichas(estadoFiltros).length > 0;
     $("resumen-resultados").textContent =
-      `${cuerpo.total} oportunidad${cuerpo.total === 1 ? "" : "es"} para el perfil «${$("f-perfil").selectedOptions[0].text}»`
+      (conFiltros ? `${cuerpo.total} de ${base} licitaciones` : `${cuerpo.total} oportunidad${cuerpo.total === 1 ? "" : "es"}`)
+      + ` para el perfil «${$("f-perfil").selectedOptions[0].text}»`
+      + (cuerpo.ordenado_por === "margen" && cuerpo.margen
+        ? ` · ordenadas por lo que te queda: ${cuerpo.margen.con_margen} con costo calculado${cuerpo.margen.borradores_sin_costo ? `, ${cuerpo.margen.borradores_sin_costo} borrador${cuerpo.margen.borradores_sin_costo === 1 ? "" : "es"} sin costo (volvé a calcular y guardar)` : ""}; las demás sin referencia, abajo`
+        : "")
       + (cuerpo.viables !== undefined ? ` · ${cuerpo.viables} pasan las cuatro puertas` : "")
       + (cuerpo.no_viables ? `, ${cuerpo.no_viables} no viable${cuerpo.no_viables === 1 ? "" : "s"}` : "")
       + (m.clase !== undefined ? ` · ${m.clase} con RUP ✓${porVerificar ? `, ${porVerificar} por verificar` : ""}` : "")
@@ -1453,7 +1692,7 @@
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
   for (const id of ["f-perfil", "f-cuantia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
     "f-sin-unspsc", "f-solo-viables", "f-zona"]) {
-    $(id).addEventListener("change", () => { pagina = 1; buscar(); });
+    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } buscar(); });
   }
   /* «Ver PAA» NO re-consulta /api/oportunidades: son dos fuentes distintas y
      encender la previsión no puede cambiar la lista de lo que está abierto. Lo
@@ -2668,6 +2907,9 @@
           items: filas,
           config: leerConfig(),
           total: ultimoCalculo ? ultimoCalculo.resumen.precio_final : null,
+          // el costo directo viaja para que la lista pueda ordenar por
+          // «Dónde me queda más» sin recalcular (Fase 8)
+          costo_directo: ultimoCalculo ? ultimoCalculo.resumen.costo_directo_total : null,
         },
       });
       if (!r) return;

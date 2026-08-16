@@ -2892,6 +2892,66 @@ Decisiones que no hay que re-aprender:
   50/50 (`ponderar`), suma experiencia y une UNSPSC. Lo que sí falta —participación editable, TRUNCAR
   indicadores a dos decimales como hacen las cámaras, «cuántas puertas más se abren»— es la Fase 10.
 
+### Fase 8 · Los siete filtros (ago 2026 · plan maestro v4)
+
+`public/filtros.js` (UMD: vocabulario, rangos, ventanas, departamentos con código DANE, estado de
+URL) + `lib/filtros_lista.js` (clasificación de la fila y aplicación en el servidor) + parámetros
+nuevos de `/api/procesos?op=listar` + `op=entidades` + la barra `#filtros-barra` de la pestaña
+Licitaciones. Censo de columnas y línea base en `docs/datos.md` §6. Decisiones que no hay que
+re-aprender:
+
+- **`lib/filtros.js` es la CASCADA de juicio y no se tocó; lo nuevo se llama `filtros_lista`.** Los
+  filtros del usuario corren DESPUÉS de la cascada, las puertas y los filtros de siempre: `totalSinFiltros`
+  es esa base y `total` lo que queda. Meterlos en la cascada haría que `totales.visibles` del panel
+  dependiera de lo que el dueño tuviera marcado (la regla ya escrita arriba).
+- **Antes de encender nada se MIDIÓ en producción** (protocolo §9.6 del plan): apagar «suministro» por
+  defecto esconde 6,7 % (Helder) / 5,7 % (Génesis) y son compras de verdad → se aplica; preajustar la
+  zona a Bogotá/Ibagué habría escondido el **41 %** → NO se preajusta, queda como clic opt-in («Solo cerca
+  de mi zona» = el `?zona=facil` de siempre). Un plan que dice «preajustado» no manda sobre una medición.
+- **Un valor desconocido es INERTE** (`tipo=zzz`, `cierre=ayer`, `dep=Marte`): se ignora, jamás vacía la
+  lista ni da 400 — un enlace guardado tiene que seguir valiendo (la regla de `?zona=`). Con solo valores
+  desconocidos en `tipo` el filtro vale `null`, no `[]` (que excluiría todo): costó una prueba.
+- **La cobertura se verificó contra la fuente real, no contra el plan**: 6 de las 11 «candidatas» del
+  plan v4 NO EXISTEN en `p6dx-8zbt` (`cuant_a_del_proceso`, `nombre_de_la_entidad`, `departamento`,
+  `ciudad`, `fecha_de_recepcion_de_respuestas`, `fecha_de_presentacion_de_ofertas`…); las reales son
+  `entidad`, `nit_entidad`, `departamento_entidad` (NOMBRE, no código; 7,6 % «No Definido»),
+  `ciudad_entidad`, `modalidad_de_contratacion`, `tipo_de_contrato` (100 %) y la fecha de cierre viene
+  TRUNCADA (`fecha_de_recepcion_de`) — 8 % en el dataset entero pero **100 % en las modalidades
+  competitivas** que la app ingiere. Un filtro sobre una columna vacía esconde licitaciones buenas.
+- **`departamento_entidad` es texto** → `?dep=` acepta código DANE o nombre y traduce con la tabla de
+  `public/filtros.js`, cuya `claveDepartamento` es la MISMA regla que `lib/accesibilidad.clave` (prueba
+  sobre la misma batería; el navegador no puede requerir aquel módulo). «No Definido» es `sin_dato`: no
+  entra en ningún departamento y se cuenta aparte en las facetas.
+- **El tipo de trabajo NO inventa una tercera lista de «esto es obra»**: `tipo_de_contrato` es la señal
+  primaria, corregida por `hayVerboDeObra` (semantica) y la pertinencia ya calculada por la cascada
+  (`rup.pertinencia.tipo`). «Suministro» CON verbo de obra es obra; «Prestación de servicios» con
+  «construcción de placa huella» es obra; interventoría se separa de consultoría porque el plan las
+  separa. La modalidad se casa por RAÍZ normalizada (los literales de SECOP II varían) y lo que no casa
+  va a «otra» y se cuenta.
+- **Cero resultados nunca es un callejón sin salida**: el servidor prueba QUITAR cada filtro activo por
+  separado y publica `sugerencia {filtro, siLoQuita}` con la cifra CONTADA (hay prueba de que coincide
+  con la petición sin ese filtro); el navegador pinta la frase con el botón. Si ninguno recupera nada,
+  `null` — no se inventa una salida.
+- **`ordenar_por=margen` no inventa margen** (regla dura §8.3): solo los procesos con un borrador de APU
+  guardado CON `costo_directo_guardado` (el frontend lo manda desde ago 2026; un borrador viejo cuenta en
+  `borradores_sin_costo` y hay que recalcular y guardar) entran al orden, con `techo − piso` calculado
+  por la MISMA `pisoTecho` del panel (prueba de igualdad al peso); los demás «Sin referencia», al final;
+  el campo `margen_estimado` solo viaja con ese orden (no se pagan los borradores en el listado normal).
+  `orden=` del plan choca con el `orden=asc|desc` existente: el criterio sigue en `ordenar_por`.
+- **`op=entidades` es PÚBLICO** (nombres de entidades y conteos de procesos abiertos son datos públicos;
+  la regla del token es «las cifras del perfil») y reutiliza `cargarCorpus` del listado (misma
+  memoización): no es una segunda lectura del corpus.
+- **El estado vive en `location.search`** (`?tipo=…&modalidad=…&dep=…&cierre=…&ordenar_por=…`), se
+  escribe con `history.replaceState` conservando el hash y los parámetros ajenos (`perfil=rup_…`), y se
+  lee al arrancar ANTES de la primera búsqueda; las fichas removibles y «Quitar todos» salen de
+  `Filtros.fichas`, y el tipo por defecto NO es una ficha (no lo eligió el usuario). Verificado en
+  Chromium con API simulada además de la suite.
+- **Ningún nombre técnico en pantalla**: las etiquetas son «Qué tipo de trabajo es · Cómo lo adjudican ·
+  Dónde queda · Cuánto vale · Cuándo hay que entregar la oferta · Buscar entidad», y hay prueba que
+  prohíbe modalidad/cuantía/UNSPSC/DANE/NIT en ellas. «Mínima cuantía» y «Licitación pública» son los
+  NOMBRES PROPIOS de las modalidades (opciones), no jerga de campo. El «buscador de texto libre
+  existente» que el plan daba por hecho no existía: se añadió `q` (Buscar por palabra).
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).

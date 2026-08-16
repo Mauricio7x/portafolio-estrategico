@@ -1,0 +1,271 @@
+/* public/filtros.js · Vocabulario y estado de los SIETE filtros (Fase 8 · Detekta v4)
+   ─────────────────────────────────────────────────────────────────────────────
+   ÚNICA fuente de verdad de lo que un filtro SIGNIFICA: las opciones de cada
+   uno, su etiqueta en lenguaje llano (la que ve el usuario), los rangos de
+   cuantía, las ventanas de cierre y la tabla de departamentos con su código
+   DANE. `lib/filtros_lista.js` lo RE-USA en el servidor para aplicar los
+   filtros al corpus; el navegador lo carga como <script> para pintar los
+   controles y para leer/escribir el estado en la URL. No hay una copia
+   «espejo» que pueda divergir (el patrón de costos.js y glosario.js): si un
+   rango cambia, cambia para el que filtra y para el que pinta a la vez.
+
+   Regla de la fase: el nombre TÉCNICO de un filtro (modalidad, cuantía,
+   UNSPSC, código DANE) NO aparece en pantalla. Aquí cada opción trae
+   `etiqueta` (lo que se ve) e `id` (lo que viaja en la URL, corto y estable).
+
+   Este archivo NO clasifica filas ni toca el corpus: eso exige `norm`, los
+   verbos de obra y la pertinencia, que viven en el servidor
+   (lib/filtros_lista.js). Aquí solo hay vocabulario y aritmética de URL. */
+(function (raiz, fabrica) {
+  const api = fabrica();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else raiz.Filtros = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  /* ─── 1 · Qué tipo de trabajo es ─────────────────────────────────────── */
+  const TIPOS_TRABAJO = Object.freeze([
+    { id: "obra", etiqueta: "Obra", ayuda: "Construcción, mantenimiento, mejoramiento, adecuación" },
+    { id: "consultoria", etiqueta: "Consultoría", ayuda: "Estudios y diseños, asesoría técnica" },
+    { id: "interventoria", etiqueta: "Interventoría", ayuda: "Vigilar la obra de otro" },
+    { id: "suministro", etiqueta: "Suministro", ayuda: "Compra de materiales o equipos, sin obra. Apagado por defecto: un contratista de obra rara vez lo quiere" },
+    { id: "servicios", etiqueta: "Servicios", ayuda: "Prestación de servicios y lo demás" },
+  ]);
+  /* Suministro viene APAGADO por defecto (plan v4 §8.6). Con el filtro ausente
+     en la URL se aplican estos cuatro; `tipo=todos` los enciende todos. */
+  const TIPOS_POR_DEFECTO = Object.freeze(["obra", "consultoria", "interventoria", "servicios"]);
+
+  /* ─── 2 · Cómo lo adjudican ──────────────────────────────────────────── */
+  const MODALIDADES = Object.freeze([
+    { id: "licitacion", etiqueta: "Licitación pública", ayuda: "La más grande y abierta: cualquiera se presenta" },
+    { id: "abreviada", etiqueta: "Proceso pequeño (hay que avisar antes de presentarse)", ayuda: "Selección abreviada de menor cuantía: primero se avisa que interesa, después se oferta" },
+    { id: "subasta", etiqueta: "Subasta inversa", ayuda: "Gana el precio más bajo en una puja" },
+    { id: "meritos", etiqueta: "Concurso de méritos", ayuda: "Para consultoría e interventoría: pesa la experiencia, no el precio" },
+    { id: "minima", etiqueta: "Mínima cuantía", ayuda: "Procesos pequeños y rápidos, gana el menor precio" },
+    { id: "directa", etiqueta: "Contratación directa", ayuda: "La entidad elige sin concurso: no aparece aquí porque no hay a qué presentarse" },
+    { id: "especial", etiqueta: "Régimen especial (con ofertas)", ayuda: "Entidades con reglas propias que sí reciben ofertas" },
+  ]);
+
+  /* ─── 3 · Dónde queda: departamentos con código DANE (DIVIPOLA) ──────── */
+  const DEPARTAMENTOS = Object.freeze([
+    { codigo: "05", nombre: "Antioquia", clave: "ANTIOQUIA" },
+    { codigo: "08", nombre: "Atlántico", clave: "ATLANTICO" },
+    { codigo: "11", nombre: "Bogotá D.C.", clave: "BOGOTA D.C." },
+    { codigo: "13", nombre: "Bolívar", clave: "BOLIVAR" },
+    { codigo: "15", nombre: "Boyacá", clave: "BOYACA" },
+    { codigo: "17", nombre: "Caldas", clave: "CALDAS" },
+    { codigo: "18", nombre: "Caquetá", clave: "CAQUETA" },
+    { codigo: "19", nombre: "Cauca", clave: "CAUCA" },
+    { codigo: "20", nombre: "Cesar", clave: "CESAR" },
+    { codigo: "23", nombre: "Córdoba", clave: "CORDOBA" },
+    { codigo: "25", nombre: "Cundinamarca", clave: "CUNDINAMARCA" },
+    { codigo: "27", nombre: "Chocó", clave: "CHOCO" },
+    { codigo: "41", nombre: "Huila", clave: "HUILA" },
+    { codigo: "44", nombre: "La Guajira", clave: "LA GUAJIRA" },
+    { codigo: "47", nombre: "Magdalena", clave: "MAGDALENA" },
+    { codigo: "50", nombre: "Meta", clave: "META" },
+    { codigo: "52", nombre: "Nariño", clave: "NARINO" },
+    { codigo: "54", nombre: "Norte de Santander", clave: "NORTE DE SANTANDER" },
+    { codigo: "63", nombre: "Quindío", clave: "QUINDIO" },
+    { codigo: "66", nombre: "Risaralda", clave: "RISARALDA" },
+    { codigo: "68", nombre: "Santander", clave: "SANTANDER" },
+    { codigo: "70", nombre: "Sucre", clave: "SUCRE" },
+    { codigo: "73", nombre: "Tolima", clave: "TOLIMA" },
+    { codigo: "76", nombre: "Valle del Cauca", clave: "VALLE DEL CAUCA" },
+    { codigo: "81", nombre: "Arauca", clave: "ARAUCA" },
+    { codigo: "85", nombre: "Casanare", clave: "CASANARE" },
+    { codigo: "86", nombre: "Putumayo", clave: "PUTUMAYO" },
+    { codigo: "88", nombre: "San Andrés y Providencia", clave: "SAN ANDRES PROVIDENCIA Y SANTA CATALINA" },
+    { codigo: "91", nombre: "Amazonas", clave: "AMAZONAS" },
+    { codigo: "94", nombre: "Guainía", clave: "GUAINIA" },
+    { codigo: "95", nombre: "Guaviare", clave: "GUAVIARE" },
+    { codigo: "97", nombre: "Vaupés", clave: "VAUPES" },
+    { codigo: "99", nombre: "Vichada", clave: "VICHADA" },
+  ]);
+  const DEPTO_POR_CODIGO = new Map(DEPARTAMENTOS.map((d) => [d.codigo, d]));
+  const DEPTO_POR_CLAVE = new Map(DEPARTAMENTOS.map((d) => [d.clave, d]));
+
+  /* Normaliza lo que escriba el usuario o publique el dataset («Distrito
+     Capital de Bogotá», «tolima», «Valle») a la CLAVE de la tabla. Es la misma
+     regla que lib/accesibilidad.clave, escrita aquí porque el navegador no
+     puede requerir aquel módulo — hay prueba que las ata sobre la misma
+     batería. */
+  function claveDepartamento(texto) {
+    const n = String(texto || "")
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .toUpperCase().replace(/[.,]/g, " ").replace(/\s+/g, " ").trim();
+    if (!n) return null;
+    if (n.includes("BOGOTA")) return "BOGOTA D.C.";
+    if (n.includes("SAN ANDRES")) return "SAN ANDRES PROVIDENCIA Y SANTA CATALINA";
+    if (n === "VALLE") return "VALLE DEL CAUCA";
+    return DEPTO_POR_CLAVE.has(n) ? n : null;
+  }
+  /* Acepta código DANE («73») o nombre («Tolima», «TOLIMA»); devuelve el
+     departamento de la tabla o null. */
+  function departamento(valor) {
+    const v = String(valor || "").trim();
+    if (!v) return null;
+    if (/^\d{1,2}$/.test(v)) return DEPTO_POR_CODIGO.get(v.padStart(2, "0")) || null;
+    const clave = claveDepartamento(v);
+    return clave ? DEPTO_POR_CLAVE.get(clave) : null;
+  }
+
+  /* ─── 4 · Cuánto vale ────────────────────────────────────────────────── */
+  const RANGOS_CUANTIA = Object.freeze([
+    { id: "hasta_50m", etiqueta: "Hasta $50 millones", min: 0, max: 50e6 },
+    { id: "50_200m", etiqueta: "De $50 a $200 millones", min: 50e6, max: 200e6 },
+    { id: "200_1000m", etiqueta: "De $200 a $1.000 millones", min: 200e6, max: 1000e6 },
+    { id: "mas_1000m", etiqueta: "Más de $1.000 millones", min: 1000e6, max: null },
+  ]);
+  function rangoCuantiaDe(pesos) {
+    const v = Number(pesos);
+    if (!Number.isFinite(v) || v <= 0) return null; // 0 = sin dato, no «gratis»
+    for (const r of RANGOS_CUANTIA) if (v > r.min - 1e-9 && (r.max == null || v <= r.max)) return r.id;
+    return null;
+  }
+
+  /* ─── 5 · Cuándo hay que entregar la oferta ──────────────────────────── */
+  const VENTANAS_CIERRE = Object.freeze([
+    { id: "3d", etiqueta: "Cierra en 3 días o menos", dias: 3 },
+    { id: "7d", etiqueta: "Cierra esta semana", dias: 7 },
+    { id: "15d", etiqueta: "Cierra en 15 días o menos", dias: 15 },
+    { id: "+15d", etiqueta: "Cierra en más de 15 días", dias: null },
+  ]);
+  const VENTANA_POR_ID = new Map(VENTANAS_CIERRE.map((v) => [v.id, v]));
+  /* La ventana de un proceso a partir de los DÍAS que le quedan (número o
+     null cuando no hay fecha). Sin fecha → null: no se inventa una ventana. */
+  function ventanaCierreDe(dias) {
+    if (dias == null || !Number.isFinite(dias)) return null;
+    if (dias < 0) return "vencido";
+    if (dias <= 3) return "3d";
+    if (dias <= 7) return "7d";
+    if (dias <= 15) return "15d";
+    return "+15d";
+  }
+  /* ¿Un proceso con `dias` para cerrar entra en la ventana pedida? Las
+     ventanas son ACUMULATIVAS («esta semana» incluye «en 3 días»), salvo la
+     última, que es el resto. */
+  function cumpleVentana(dias, id) {
+    const v = VENTANA_POR_ID.get(id);
+    if (!v || dias == null || !Number.isFinite(dias) || dias < 0) return false;
+    return v.dias == null ? dias > 15 : dias <= v.dias;
+  }
+
+  /* ─── 6 · Dónde me queda más (orden) y 7 · Buscar entidad ────────────── */
+  const ORDENES = Object.freeze([
+    { id: "atractividad", etiqueta: "Las mejores para vos (recomendado)" },
+    { id: "margen", etiqueta: "Dónde me queda más (solo las que ya costeaste)" },
+    { id: "cierre", etiqueta: "Las que cierran antes" },
+    { id: "cuantia", etiqueta: "Las más grandes" },
+    { id: "ve", etiqueta: "Las que más plata dejan" },
+    { id: "p_ganar", etiqueta: "Las más ganables" },
+    { id: "competencia", etiqueta: "Las menos peleadas" },
+    { id: "anticipo", etiqueta: "Mayor anticipo" },
+  ]);
+
+  /* ─── Estado del filtro en la URL ────────────────────────────────────────
+     Los nombres de los parámetros son cortos y estables (son un contrato: un
+     enlace guardado tiene que seguir valiendo). Un valor desconocido se IGNORA,
+     jamás vacía la lista ni da error (la regla de `?zona=`). */
+  const PARAMS = Object.freeze(["tipo", "modalidad", "dep", "ciudad", "min", "max", "cierre", "cierreDesde", "cierreHasta", "entidad", "q", "ordenar_por"]);
+  const lista = (v) => String(v || "").split(",").map((s) => s.trim()).filter(Boolean);
+  const idsDe = (arr) => new Set(arr.map((x) => x.id));
+  const TIPO_IDS = idsDe(TIPOS_TRABAJO), MODALIDAD_IDS = idsDe(MODALIDADES), CIERRE_IDS = idsDe(VENTANAS_CIERRE);
+  const numero = (v) => { const n = Number(String(v ?? "").replace(/[^\d.-]/g, "")); return Number.isFinite(n) && n >= 0 && String(v ?? "").trim() !== "" ? n : null; };
+  const fechaISO = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || "")) ? String(v) : null);
+
+  /* De la query (objeto plano o URLSearchParams) al estado NORMALIZADO. Cada
+     campo ausente vale null = «sin filtro». */
+  function leerEstado(q) {
+    const get = (k) => (q && typeof q.get === "function" ? q.get(k) : (q ? q[k] : null));
+    const tipoCrudo = lista(get("tipo"));
+    const tipo = tipoCrudo.length === 0 ? null : tipoCrudo.includes("todos") ? [...TIPO_IDS] : tipoCrudo.filter((t) => TIPO_IDS.has(t));
+    const modalidad = lista(get("modalidad")).filter((m) => MODALIDAD_IDS.has(m));
+    const dep = lista(get("dep")).map(departamento).filter(Boolean).map((d) => d.codigo);
+    const ciudad = String(get("ciudad") || "").trim() || null;
+    const min = numero(get("min")), max = numero(get("max"));
+    const cierre = CIERRE_IDS.has(String(get("cierre") || "")) ? String(get("cierre")) : null;
+    const cierreDesde = fechaISO(get("cierreDesde")), cierreHasta = fechaISO(get("cierreHasta"));
+    const entidad = String(get("entidad") || "").trim() || null;
+    const texto = String(get("q") || "").trim() || null;
+    return {
+      // solo valores desconocidos («tipo=zzz») = filtro inerte, no lista vacía
+      tipo: tipo && tipo.length ? [...new Set(tipo)] : null,
+      modalidad: modalidad.length ? [...new Set(modalidad)] : null,
+      dep: dep.length ? [...new Set(dep)] : null,
+      ciudad,
+      min: min != null || max != null ? { min, max } : null,
+      cierre: cierre ? { ventana: cierre } : (cierreDesde || cierreHasta ? { desde: cierreDesde, hasta: cierreHasta } : null),
+      entidad,
+      q: texto,
+    };
+  }
+
+  /* Del estado a los parámetros de URL (solo los activos). */
+  function escribirEstado(estado, params) {
+    const p = params || new URLSearchParams();
+    for (const k of PARAMS) if (k !== "ordenar_por") p.delete(k);
+    if (!estado) return p;
+    if (estado.tipo) p.set("tipo", estado.tipo.length === TIPO_IDS.size ? "todos" : estado.tipo.join(","));
+    if (estado.modalidad && estado.modalidad.length) p.set("modalidad", estado.modalidad.join(","));
+    if (estado.dep && estado.dep.length) p.set("dep", estado.dep.join(","));
+    if (estado.ciudad) p.set("ciudad", estado.ciudad);
+    if (estado.min) { if (estado.min.min != null) p.set("min", String(estado.min.min)); if (estado.min.max != null) p.set("max", String(estado.min.max)); }
+    if (estado.cierre) {
+      if (estado.cierre.ventana) p.set("cierre", estado.cierre.ventana);
+      if (estado.cierre.desde) p.set("cierreDesde", estado.cierre.desde);
+      if (estado.cierre.hasta) p.set("cierreHasta", estado.cierre.hasta);
+    }
+    if (estado.entidad) p.set("entidad", estado.entidad);
+    if (estado.q) p.set("q", estado.q);
+    return p;
+  }
+
+  const cop = (n) => (n == null ? "" : "$" + Math.round(n).toLocaleString("es-CO"));
+  const etiquetaDe = (arr, id) => { const x = arr.find((o) => o.id === id); return x ? x.etiqueta : id; };
+
+  /* Fichas legibles de los filtros ACTIVOS: [{filtro, etiqueta}] — la ficha
+     dice «Qué tipo de trabajo es: Obra, Consultoría», nunca «tipo=obra». El
+     tipo por defecto (los cuatro sin suministro) NO es una ficha: no lo eligió
+     el usuario. */
+  function fichas(estado) {
+    const out = [];
+    if (!estado) return out;
+    if (estado.tipo) {
+      const esDefecto = estado.tipo.length === TIPOS_POR_DEFECTO.length && TIPOS_POR_DEFECTO.every((t) => estado.tipo.includes(t));
+      if (!esDefecto) out.push({ filtro: "tipo", etiqueta: "Qué tipo de trabajo es: " + (estado.tipo.length === TIPO_IDS.size ? "todos (incluye suministro)" : estado.tipo.map((t) => etiquetaDe(TIPOS_TRABAJO, t)).join(", ")) });
+    }
+    if (estado.modalidad) out.push({ filtro: "modalidad", etiqueta: "Cómo lo adjudican: " + estado.modalidad.map((m) => etiquetaDe(MODALIDADES, m)).join(", ") });
+    if (estado.dep) out.push({ filtro: "dep", etiqueta: "Dónde queda: " + estado.dep.map((c) => (DEPTO_POR_CODIGO.get(c) || { nombre: c }).nombre).join(", ") });
+    if (estado.ciudad) out.push({ filtro: "ciudad", etiqueta: "Ciudad: " + estado.ciudad });
+    if (estado.min) {
+      const { min, max } = estado.min;
+      out.push({ filtro: "min", etiqueta: "Cuánto vale: " + (min != null && max != null ? `de ${cop(min)} a ${cop(max)}` : min != null ? `desde ${cop(min)}` : `hasta ${cop(max)}`) });
+    }
+    if (estado.cierre) {
+      out.push({ filtro: "cierre", etiqueta: "Cuándo hay que entregar la oferta: " + (estado.cierre.ventana ? etiquetaDe(VENTANAS_CIERRE, estado.cierre.ventana).toLowerCase() : `${estado.cierre.desde ? "desde " + estado.cierre.desde : ""} ${estado.cierre.hasta ? "hasta " + estado.cierre.hasta : ""}`.trim()) });
+    }
+    if (estado.entidad) out.push({ filtro: "entidad", etiqueta: "Entidad: " + estado.entidad });
+    if (estado.q) out.push({ filtro: "q", etiqueta: "Palabra: " + estado.q });
+    return out;
+  }
+
+  /* Quita UN filtro del estado (devuelve un estado nuevo). `min` y `cierre`
+     se quitan enteros: quitar solo la mitad de un rango no es lo que nadie
+     quiere. */
+  function sinFiltro(estado, filtro) {
+    const e = { ...(estado || {}) };
+    if (filtro === "tipo") e.tipo = null;
+    else if (filtro === "min" || filtro === "max") e.min = null;
+    else if (filtro === "cierre" || filtro === "cierreDesde" || filtro === "cierreHasta") e.cierre = null;
+    else e[filtro] = null;
+    return e;
+  }
+  const hayFiltros = (estado) => fichas(estado).length > 0;
+
+  return {
+    TIPOS_TRABAJO, TIPOS_POR_DEFECTO, MODALIDADES, DEPARTAMENTOS, RANGOS_CUANTIA, VENTANAS_CIERRE, ORDENES, PARAMS,
+    claveDepartamento, departamento, rangoCuantiaDe, ventanaCierreDe, cumpleVentana,
+    leerEstado, escribirEstado, fichas, sinFiltro, hayFiltros, etiquetaDe, cop,
+  };
+});
