@@ -623,6 +623,23 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   empresas; los que más se presentan son consultoras (interventoría) — hgi6 no distingue tipo de
   contrato y el universo lo acotan los ids del corpus (obra compatible con los RUP).
 
+### Cómo ejecuta sus contratos: jbjy-vk9h en vivo (ago 2026)
+
+`lib/ejecucion.js` + bloque `ejecucion` en la vista de entidad + «Cómo ejecuta sus contratos» en el modal.
+Cierra el último pendiente de la Fase 3. Mismo patrón que proponentes (best-effort, 6 s, nunca lanza,
+caché del detalle `v5`); las dos consultas externas corren en PARALELO.
+- **`valor_pagado = 0` es SIN DATO** — medido: 845 de 1 752 entidades registran algún pago; en
+  «terminado» solo el 64 %. Los pagos se afirman SOLO cuando la entidad registra alguno, y entonces
+  sobre los terminados/cerrados CON pago (`pct_pagado_de_terminados` con su base). El IDU no registra
+  ninguno en 64 contratos: «no registra pagos», jamás «no ha pagado».
+- **Se filtra por NIT + NOMBRE canónico**: el NIT lo comparten regionales; lo firmado bajo otro
+  nombre se declara (`otros_nombres_con_este_nit`) y NO se suma — hay prueba con una regional
+  homónima que, si se colara, cambiaría de signo la mediana y los pagos.
+- **No hay adición de VALOR en el dataset** (`valor_del_contrato` es el vigente, sin el original):
+  se publican prórrogas en DÍAS (`dias_adicionados`, poblado), suspendidos y el reparto de estados;
+  la adición de valor no se inventa.
+- La baja «verdadera» NO sale de aquí: es la de `lib/indice_baja` (p6dx), verificada 8/8 igual.
+
 ### Dos defectos de producción y sus cerraduras (ago 2026)
 
 - **El «en 0 procesos» era un CAMPO INEXISTENTE, no un dato malo**: el detalle en línea del panel

@@ -157,7 +157,17 @@ respondieron **200** desde este entorno (`https://www.datos.gov.co/api/views/{id
   precio_base`); integrar jbjy para eso duplicaría el índice con otro nombre. Lo que jbjy sí añade
   —adiciones en días, valor pagado vs. contratado, estado de ejecución— es la métrica de «cómo se
   ejecuta» (Cap. 11 del manual: el Estado paga tarde), útil para el flujo de caja y para el due
-  diligence de entidades, no para el techo. Queda como pendiente declarado.
+  diligence de entidades, no para el techo. **Integrado el 16-ago-2026 (`lib/ejecucion.js`)**: la
+  vista de entidad publica `ejecucion` — consulta en vivo por `nit_entidad` + `tipo_de_contrato='Obra'`
+  en la ventana de 24 meses, FILTRADA por el nombre canónico de la entidad (los NIT se comparten: los
+  contratos firmados bajo otro nombre se declaran en `otros_nombres_con_este_nit` y no se suman);
+  prórrogas (`dias_adicionados` > 0: n, %, mediana), suspendidos, reparto de `estado_contrato`, valor
+  contratado; **pagos SOLO si la entidad registra alguno**. Medido antes de integrar (obra firmada
+  desde 2024): solo 845 de 1 752 entidades registran algún pago y en «terminado» solo el 64 % lo trae →
+  `valor_pagado = 0` es SIN DATO (la regla de `anticipo_pct = 0`); `dias_adicionados` sí está poblado
+  (75 % de los «Modificado»). No hay adición de VALOR en el dataset (`valor_del_contrato` es el vigente):
+  no se inventa. Medido con el IDU: 64 contratos, 30 procesos, 22 % con prórroga (mediana 81,5 días,
+  máx. 456), 0 suspendidos, sin pagos registrados. El modal lo pinta como «Cómo ejecuta sus contratos».
 
 ### 5.3 Qué usa entonces el panel Piso/Techo (Fase 3)
 

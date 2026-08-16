@@ -969,6 +969,23 @@ function generarDatasetProponentes(historico) {
   return { filas, procesosConProponentes: Math.max(0, idsIdu.length - 1), procesosIdu: idsIdu.length };
 }
 
+/* ---- CONTRATOS ELECTRÓNICOS (jbjy-vk9h) del IDU: cómo ejecuta ----
+   Seis contratos de obra del NIT del IDU en la ventana: dos con prórroga (30 y
+   90 días → mediana 60), uno suspendido, todos con valor_pagado 0 (la entidad
+   NO registra pagos: «sin dato», jamás «no ha pagado»), y UNO firmado por OTRA
+   entidad que comparte el NIT («IDU REGIONAL NORTE»): no se le atribuye. La
+   fecha de firma va relativa al año vigente para caer siempre en la ventana. */
+const CONTRATOS_IDU = [
+  { id_contrato: "CO1.PCCNTR.1", proceso_de_compra: "CO1.BDOS.1", nombre_entidad: "IDU", nit_entidad: "800100003", tipo_de_contrato: "Obra", estado_contrato: "En ejecución", valor_del_contrato: "1000000000", valor_pagado: "0", dias_adicionados: "0", fecha_de_firma: `${ANO}-02-01T00:00:00.000` },
+  { id_contrato: "CO1.PCCNTR.2", proceso_de_compra: "CO1.BDOS.2", nombre_entidad: "IDU", nit_entidad: "800100003", tipo_de_contrato: "Obra", estado_contrato: "Modificado", valor_del_contrato: "2000000000", valor_pagado: "0", dias_adicionados: "30", fecha_de_firma: `${ANO}-03-01T00:00:00.000` },
+  { id_contrato: "CO1.PCCNTR.3", proceso_de_compra: "CO1.BDOS.3", nombre_entidad: "IDU", nit_entidad: "800100003", tipo_de_contrato: "Obra", estado_contrato: "Modificado", valor_del_contrato: "3000000000", valor_pagado: "0", dias_adicionados: "90", fecha_de_firma: `${ANO}-04-01T00:00:00.000` },
+  { id_contrato: "CO1.PCCNTR.4", proceso_de_compra: "CO1.BDOS.4", nombre_entidad: "IDU", nit_entidad: "800100003", tipo_de_contrato: "Obra", estado_contrato: "Suspendido", valor_del_contrato: "500000000", valor_pagado: "0", dias_adicionados: "0", fecha_de_firma: `${ANO}-05-01T00:00:00.000` },
+  { id_contrato: "CO1.PCCNTR.5", proceso_de_compra: "CO1.BDOS.5", nombre_entidad: "IDU", nit_entidad: "800100003", tipo_de_contrato: "Obra", estado_contrato: "terminado", valor_del_contrato: "800000000", valor_pagado: "0", dias_adicionados: "0", fecha_de_firma: `${ANO}-01-15T00:00:00.000` },
+  { id_contrato: "CO1.PCCNTR.6", proceso_de_compra: "CO1.BDOS.6", nombre_entidad: "IDU REGIONAL NORTE", nit_entidad: "800100003", tipo_de_contrato: "Obra", estado_contrato: "En ejecución", valor_del_contrato: "9000000000", valor_pagado: "9000000000", dias_adicionados: "400", fecha_de_firma: `${ANO}-06-01T00:00:00.000` },
+  // uno de consultoría del mismo NIT: el filtro tipo_de_contrato='Obra' lo deja fuera en el servidor
+  { id_contrato: "CO1.PCCNTR.7", proceso_de_compra: "CO1.BDOS.7", nombre_entidad: "IDU", nit_entidad: "800100003", tipo_de_contrato: "Consultoría", estado_contrato: "En ejecución", valor_del_contrato: "100000000", valor_pagado: "0", dias_adicionados: "0", fecha_de_firma: `${ANO}-06-01T00:00:00.000` },
+];
+
 /* Lo que la medición de colisión (A7) tiene que dar sobre el fixture de arriba,
    calculado A MANO desde ENTIDADES_HIST(_IDENTIDAD): por entidad, colisión =
    ofertas con i % 3 === 0 SI son ≥ 2; control = el resto. Pooled. */
@@ -1009,6 +1026,10 @@ function crearMockSocrata() {
      mock lo resuelve aparte, con lo justo para que la consulta real —la misma
      URL que se manda a Socrata— se pueda ejercitar sin red. */
   let datasetProponentes = [];
+  /* CUARTO dataset por PATH: `jbjy-vk9h` (contratos electrónicos), que
+     lib/ejecucion consulta con igualdades y `>=` sobre fecha_de_firma: cae en
+     la rama genérica del mock. */
+  let datasetContratos = [];
   let contadorPeticiones = 0;
   let inyectarFallos = true;
 
@@ -1062,10 +1083,11 @@ function crearMockSocrata() {
       const [, campo, aguja] = like;
       return String(fila[campo] ?? "").toUpperCase().includes(aguja.toUpperCase());
     }
-    const m = clausula.match(/^(\S+)\s*(>=|<=|>|<)\s*'(.*)'$/);
+    const m = clausula.match(/^(\S+)\s*(>=|<=|>|<|=)\s*'(.*)'$/);
     if (!m) throw new Error(`mock: clausula no soportada: ${clausula}`);
     const [, campo, op, valor] = m;
     const v = String(fila[campo] ?? "");
+    if (op === "=") return v === valor; // lib/ejecucion: nit_entidad='…' AND tipo_de_contrato='Obra'
     if (op === ">=") return v >= valor;
     if (op === "<=") return v <= valor;
     if (op === ">") return v > valor;
@@ -1084,7 +1106,7 @@ function crearMockSocrata() {
       const u = new URL(req.url, "http://x");
       const q = Object.fromEntries(u.searchParams);
       if (u.pathname.includes("hgi6-6wh3")) return responderProponentes(q, res);
-      let filas = (u.pathname.includes("9sue-ezhx") ? datasetPaa : dataset).slice();
+      let filas = (u.pathname.includes("9sue-ezhx") ? datasetPaa : u.pathname.includes("jbjy-vk9h") ? datasetContratos : dataset).slice();
       if (q.$where) filas = filas.filter((f) => q.$where.split(" AND ").every((c) => cumple(f, c.trim())));
       if ((q.$select || "").startsWith("count(*)")) {
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -1103,6 +1125,7 @@ function crearMockSocrata() {
     setDataset: (d) => { dataset = d; },
     setDatasetPaa: (d) => { datasetPaa = d; },
     setDatasetProponentes: (d) => { datasetProponentes = d; },
+    setDatasetContratos: (d) => { datasetContratos = d; },
     getDataset: () => dataset,
     setFallos: (v) => { inyectarFallos = v; },
     peticiones: () => contadorPeticiones,
@@ -1256,6 +1279,7 @@ async function main() {
   // el PAA vive en OTRO dataset del mismo Socrata: el mock lo sirve por path
   process.env.PAA_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/9sue-ezhx.json`;
   process.env.PROPONENTES_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/hgi6-6wh3.json`;
+  process.env.EJECUCION_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/jbjy-vk9h.json`;
   process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoUpstash}`;
   process.env.UPSTASH_REDIS_REST_TOKEN = "token-de-prueba";
   process.env.SECOP_PAGE = "50";       // páginas chicas → ejercita keyset multi-página
@@ -4984,6 +5008,7 @@ async function main() {
     socrata.setDataset([...generarDataset(), ...generarDatasetHistorico(), ...generarDatasetEquivalencias(),
       ...generarDatasetDetalle(), ...generarDatasetCobertura(), ...generarDatasetModalidad()]);
     socrata.setDatasetProponentes(generarDatasetProponentes(generarDatasetHistorico()).filas);
+    socrata.setDatasetContratos(CONTRATOS_IDU);
     socrata.setFallos(true);
 
     /* a. limpiar Redis */
@@ -7388,6 +7413,58 @@ async function main() {
         for (const debe of ["bloqueProponentes", "d.proponentes", "se presentan aquí", "ultima_vez"]) {
           assert.ok(jsProp.includes(debe), `app.js sin ${debe} (bloque de proponentes del modal)`);
         }
+
+        /* --- CÓMO EJECUTA SUS CONTRATOS (jbjy-vk9h en vivo) ---
+           Prórrogas, suspensiones y pagos de los contratos de obra ya firmados.
+           Se consulta por el NIT más frecuente de la entidad en el corpus y se
+           filtra por su NOMBRE canónico: el contrato de «IDU REGIONAL NORTE»
+           (mismo NIT, con pago y 400 días de prórroga) NO se le atribuye —si se
+           colara, la mediana y los pagos cambiarían de signo—. El pago en 0 es
+           SIN DATO, jamás «no ha pagado». */
+        const ej = c.ejecucion;
+        assert.ok(ej && ej.ok === true, `la vista de entidad debe traer ejecucion (jbjy): ${JSON.stringify(ej).slice(0, 200)}`);
+        assert.strictEqual(ej.fuente, "jbjy-vk9h");
+        assert.strictEqual(ej.nit_consultado, "800100003", "el NIT sale del corpus de la entidad");
+        assert.strictEqual(ej.contratos, 5, "5 contratos de obra del IDU (ni el de la regional homónima ni el de consultoría)");
+        assert.deepStrictEqual(ej.otros_nombres_con_este_nit, ["IDU REGIONAL NORTE"], "el otro nombre del NIT se declara, no se suma");
+        assert.strictEqual(ej.prorrogas.contratos, 2);
+        assert.strictEqual(ej.prorrogas.pct, 40);
+        assert.strictEqual(ej.prorrogas.mediana_dias, 60, "mediana de 30 y 90; los 400 de la regional no entran");
+        assert.strictEqual(ej.suspendidos.contratos, 1);
+        assert.strictEqual(ej.estados["Modificado"], 2);
+        assert.strictEqual(ej.pagos.registra, false, "todos los pagos en 0 ⇒ la entidad NO registra pagos: sin dato");
+        assert.ok(/sin dato/i.test(ej.pagos.nota) && /no significa/i.test(ej.pagos.nota), "la nota tiene que decir que el 0 no es «no ha pagado»");
+        assert.ok(ej.frase && /5 contratos/.test(ej.frase) && /40 %/.test(ej.frase) && /60 días/.test(ej.frase) && /sin dato/.test(ej.frase),
+          `la frase resume las cifras: «${ej.frase}»`);
+        assert.strictEqual(ej.valor_contratado_cop, 7300000000);
+        // pura: el agregado con pagos registrados publica el % pagado de los terminados con base
+        const { agregarEjecucion } = require("../lib/ejecucion.js");
+        const conPagos = agregarEjecucion([
+          { estado_contrato: "terminado", valor_del_contrato: "100", valor_pagado: "80", dias_adicionados: "0" },
+          { estado_contrato: "terminado", valor_del_contrato: "100", valor_pagado: "0", dias_adicionados: "0" }, // sin pago registrado: no entra en la base
+          { estado_contrato: "En ejecución", valor_del_contrato: "100", valor_pagado: "10", dias_adicionados: "0" },
+        ]);
+        assert.strictEqual(conPagos.pagos.registra, true);
+        assert.strictEqual(conPagos.pagos.terminados_con_pago, 1);
+        assert.strictEqual(conPagos.pagos.pct_pagado_de_terminados, 80, "solo los terminados CON pago registrado forman la base");
+        // caído: el detalle sale igual y el bloque lo dice
+        const antesEj = process.env.EJECUCION_BASE_URL;
+        process.env.EJECUCION_BASE_URL = "http://127.0.0.1:9/resource/jbjy-vk9h.json";
+        process.env.EJECUCION_TIEMPO_MS = "1500";
+        try {
+          const caido = (await detalle("IDU", "&refrescar=1")).cuerpo;
+          assert.strictEqual(caido.encontrada, true);
+          assert.strictEqual(caido.ejecucion.ok, false);
+          assert.ok(/jbjy/.test(caido.ejecucion.motivo));
+          assert.strictEqual(caido.ejecucion.contratos, null, "sin dato no hay conteo inventado");
+        } finally {
+          process.env.EJECUCION_BASE_URL = antesEj;
+          delete process.env.EJECUCION_TIEMPO_MS;
+        }
+        for (const debe of ["bloqueEjecucion", "d.ejecucion", "Cómo ejecuta sus contratos"]) {
+          assert.ok(jsProp.includes(debe), `app.js sin ${debe} (bloque de ejecución del modal)`);
+        }
+        console.log(`  · ejecución (jbjy): ${ej.contratos} contratos · prórroga ${ej.prorrogas.pct} % (mediana ${ej.prorrogas.mediana_dias} d) · ${ej.suspendidos.contratos} suspendido · pagos sin dato · regional homónima excluida · caído ⇒ ok:false`);
         console.log(`  · proponentes (hgi6): ${pr.proponentes_distintos} distintos en ${pr.procesos_con_proponentes}/${pr.procesos_consultados} procesos del IDU · recurrente ${pr.top[0].veces}× · sin NIT declarado · caído ⇒ ok:false con motivo`);
       }
 
