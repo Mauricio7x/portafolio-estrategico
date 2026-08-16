@@ -9847,6 +9847,22 @@ async function main() {
              meta: quien re-capture tiene que leer POR QUÉ no se usó la última. */
           assert.ok(datosInvias._meta.por_que_no_2025_2 && /2025-2/.test(datosInvias._meta.por_que_no_2025_2),
             "la meta tiene que explicar por qué NO se capturó la vigencia más reciente");
+          /* La re-captura (2026-1, 16-ago-2026, desde el libro Excel oficial) lleva
+             GUARDADA la comparación de medianas contra la vigencia anterior: es
+             la mirada que cazó la corrupción de 2025-2 (37×, 145×). Un cociente
+             fuera de [0,5; 2] entre vigencias consecutivas no es mercado — es un
+             dato roto, y no puede commitearse en silencio. */
+          const ctr = datosInvias._meta.contraste_vigencia_anterior;
+          assert.ok(ctr && Array.isArray(ctr.por_insumo) && ctr.por_insumo.length === datosInvias.referencias.length,
+            "la meta tiene que traer el contraste de medianas contra la vigencia anterior, insumo por insumo");
+          for (const f of ctr.por_insumo) {
+            if (f.cociente == null) continue;
+            assert.ok(f.cociente >= 0.5 && f.cociente <= 2, `${f.insumo_id}: la mediana ${f.mediana_nueva} es ×${f.cociente} la de ${f.vigencia_anterior} — huella de dato corrupto, no de mercado`);
+          }
+          assert.ok(datosInvias.referencias.every((r) => r.vigencia === datosInvias._meta.vigencia),
+            "cada referencia lleva la vigencia de la meta: dos vigencias en un mismo archivo serían dos capturas mezcladas");
+          assert.ok(datosInvias.referencias.every((r) => r.provincias.length === datosInvias._meta.provincias_esperadas),
+            "cada referencia cubre las 140 provincias del banco");
 
           /* Con departamento: la mediana de SUS provincias, reproducible a
              mano, con el alcance dicho y la lista de provincias para auditar. */

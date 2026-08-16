@@ -26,6 +26,24 @@
    referencia. Antes de re-capturar con una vigencia nueva, repetir esta
    comparación: si la nueva vigencia vuelve a dar aberraciones, no se usa.
 
+   MODO XLSX (16-ago-2026): el INVIAS publica cada vigencia nueva PRIMERO en
+   Excel (hermes2.invias.gov.co/APUs/Provincias/Territorio_APU_{año}_{sem}.xlsx,
+   todo el país en un libro; hojas «INSUMO MATERIALES», «INSUMO_EQUIPO» e
+   «INSUMO_TRANSPORTE» con una columna por provincia) y la API ArcGIS va por
+   detrás (el 16-ago-2026 la API llegaba a 2025-2 y el Excel ya traía 2026-1).
+     node tests/capturar_invias.js --xlsx Territorio_APU_2026_1.xlsx --vigencia 2026-1
+   lee el libro con el lector del propio proyecto (public/xlsx_lectura.js) y
+   produce EL MISMO JSON que la vía API: mismas correspondencias, mismas
+   cerraduras (unidad esperada o se aborta, precio ≤ 0 se descarta y se cuenta)
+   y la comparación de medianas contra la captura anterior IMPRESA Y GUARDADA
+   en `_meta.contraste_vigencia_anterior`, que es lo que cazó la corrupción de
+   2025-2. Los nombres de departamento y provincia se CANONIZAN a los de la
+   captura anterior (los de la API): el Excel escribe «ARCHIPIÉLAGO DE SAN
+   ANDRÉS, PROVIDENCIA Y SANTA CATALINA» donde la API dice «San Andrés», y
+   lib/apu/invias agrupa por ese nombre. Un código que la vigencia nueva ya no
+   trae NO se adapta por similitud: se declara un SUCESOR curado a mano
+   (`sucesores`) o el código se aborta.
+
    ⚠️ LICENCIA INVIAS: los documentos del INVIAS declaran prohibido el uso
    comercial sin autorización. Para el uso actual (app privada, referencia
    citando la fuente) el riesgo es bajo; si Detekta se comercializa con estos
@@ -45,8 +63,22 @@ const fs = require("fs");
 const path = require("path");
 
 const BASE = "https://hermes2.invias.gov.co/server/rest/services/apu/APU/MapServer/1/query";
-const VIGENCIA = { anio: 2025, periodo: 1 }; // ver cabecera: 2025-2 está corrupta
 const PROVINCIAS_ESPERADAS = 140;
+
+/* --xlsx <ruta> --vigencia AAAA-S  → modo Excel; sin argumentos → API 2025-1
+   (ver cabecera: 2025-2 de la API está corrupta y 2026-1 solo está en Excel). */
+const ARGS = (() => {
+  const a = process.argv.slice(2);
+  const leer = (k) => { const i = a.indexOf(k); return i >= 0 ? a[i + 1] : null; };
+  return { xlsx: leer("--xlsx"), vigencia: leer("--vigencia") };
+})();
+const VIGENCIA = (() => {
+  if (!ARGS.vigencia) return { anio: 2025, periodo: 1 };
+  const m = /^(\d{4})-([12])$/.exec(ARGS.vigencia);
+  if (!m) throw new Error("--vigencia debe ser AAAA-1 o AAAA-2");
+  return { anio: Number(m[1]), periodo: Number(m[2]) };
+})();
+const ETIQUETA_VIGENCIA = `${VIGENCIA.anio}-${VIGENCIA.periodo}`;
 
 /* ───────────────────────── correspondencias curadas ────────────────────────
    insumo_id = id del insumo BASE de data/apu_catalogo.json. `codigo` es el
@@ -154,8 +186,22 @@ const CORRESPONDENCIAS = [
     insumo_id: "tr_acarreo_material", codigo: "T0010025", unidad: "m3-km",
     correspondencia: "aproximada",
     nota: "«Transporte de material de excavación», el genérico del banco: sus transportes de material van de ~$1.481 a ~$1.640 por m³-km (2025-1).",
+    /* En 2026-1 el INVIAS renumeró los transportes: T0010025 desaparece y el
+       genérico pasa a ser T0100034 «transporte de materiales excavación /
+       prestamo» (m³-km). Curado leyendo el listado completo de transportes de
+       2026-1 (45 códigos), no por similitud. */
+    sucesores: {
+      "2026-1": { codigo: "T0100034", nota: "«Transporte de materiales excavación / préstamo», el genérico del banco en 2026-1 (sucesor del T0010025 «Transporte de material de excavación» de 2025-1)." },
+    },
   },
 ];
+
+/* El código que vale para la vigencia que se captura: el curado, o su sucesor
+   declarado. Sin sucesor y sin el código en la fuente, el código se aborta. */
+function codigoPara(c) {
+  const suc = c.sucesores && c.sucesores[ETIQUETA_VIGENCIA];
+  return suc ? { codigo: suc.codigo, nota: suc.nota || c.nota } : { codigo: c.codigo, nota: c.nota };
+}
 
 /* Lo que NO tiene correspondencia honesta, con su motivo. Se escribe en el
    JSON: un hueco declarado no es un olvido (la regla de categorias_sin_retail). */
@@ -198,22 +244,23 @@ const medianaDe = (valores) => {
 const hoyColombia = () => new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 10);
 
 async function capturarCodigo(c) {
+  const { codigo, nota } = codigoPara(c);
   const j = await consultar({
-    where: `codigo='${c.codigo}' AND anio=${VIGENCIA.anio} AND periodo=${VIGENCIA.periodo}`,
+    where: `codigo='${codigo}' AND anio=${VIGENCIA.anio} AND periodo=${VIGENCIA.periodo}`,
     outFields: "precio,nombredepartamento,nombreprovincia,nombreinsumo,unidad",
     resultRecordCount: "2000",
   });
   const filas = (j.features || []).map((f) => f.attributes);
-  if (!filas.length) throw new Error(`${c.codigo}: la fuente no devolvió filas`);
+  if (!filas.length) throw new Error(`${codigo}: la fuente no devolvió filas`);
 
   /* La unidad del contrato curado: si la fuente cambió de unidad, publicar el
      precio con la vieja sería un dato falso — se aborta el código, no se adapta. */
   const unidades = [...new Set(filas.map((f) => String(f.unidad || "").trim()))];
   if (unidades.length !== 1 || unidades[0].toLowerCase() !== c.unidad.toLowerCase()) {
-    throw new Error(`${c.codigo}: unidad de la fuente ${JSON.stringify(unidades)} ≠ esperada «${c.unidad}»`);
+    throw new Error(`${codigo}: unidad de la fuente ${JSON.stringify(unidades)} ≠ esperada «${c.unidad}»`);
   }
   const nombres = [...new Set(filas.map((f) => f.nombreinsumo))];
-  if (nombres.length !== 1) throw new Error(`${c.codigo}: ${nombres.length} nombres distintos para el mismo código`);
+  if (nombres.length !== 1) throw new Error(`${codigo}: ${nombres.length} nombres distintos para el mismo código`);
 
   /* Un precio ≤ 0 no es un precio (R1): se descarta Y SE CUENTA. */
   const provincias = [];
@@ -227,42 +274,182 @@ async function capturarCodigo(c) {
       precio: Math.round(p * 100) / 100,
     });
   }
-  if (!provincias.length) throw new Error(`${c.codigo}: todas las filas venían sin precio`);
+  if (!provincias.length) throw new Error(`${codigo}: todas las filas venían sin precio`);
 
+  return armarReferencia(c, { codigo, nota, nombre: nombres[0], unidad: unidades[0], provincias, descartadas });
+}
+
+/* La forma del registro publicado es UNA, venga de la API o del Excel. */
+function armarReferencia(c, r) {
   return {
     insumo_id: c.insumo_id,
-    codigo_invias: c.codigo,
-    nombre_oficial: nombres[0],
-    unidad_fuente: unidades[0],
+    codigo_invias: r.codigo,
+    nombre_oficial: r.nombre,
+    unidad_fuente: r.unidad,
     correspondencia: c.correspondencia,
-    correspondencia_nota: c.nota || null,
+    correspondencia_nota: r.nota || null,
     normalizacion: c.normalizacion || null,
-    vigencia: `${VIGENCIA.anio}-${VIGENCIA.periodo}`,
+    vigencia: ETIQUETA_VIGENCIA,
     capturado_el: hoyColombia(),
-    mediana_nacional: medianaDe(provincias.map((p) => p.precio)),
-    provincias_descartadas: descartadas,
-    provincias,
+    mediana_nacional: medianaDe(r.provincias.map((p) => p.precio)),
+    provincias_descartadas: r.descartadas,
+    provincias: r.provincias,
+  };
+}
+
+/* ───────────────────────────── modo Excel ──────────────────────────────────
+   Territorio_APU_{año}_{sem}.xlsx: «INSUMO MATERIALES» e «INSUMO_EQUIPO» traen
+   código (A), nombre (B) y una columna por provincia desde C, con el
+   DEPARTAMENTO en la fila 1, la PROVINCIA en la fila 2 y «DeptoProvincia» en
+   la fila 4; sus unidades viven en las hojas-listado «MATERIALES» y «EQUIPO»
+   (código en C, unidad en D). «INSUMO_TRANSPORTE» trae código (A), unidad (B),
+   nombre (C) y las provincias desde D con la misma cabecera. */
+async function leerLibroXlsx(ruta) {
+  const zlib = require("zlib");
+  const X = require("../public/xlsx_lectura.js");
+  const bytes = new Uint8Array(fs.readFileSync(ruta));
+  return X.leerLibro(bytes, { inflar: async (b) => new Uint8Array(zlib.inflateRawSync(Buffer.from(b))) });
+}
+
+const claveNombre = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z]/g, "");
+
+/* Nombres canónicos de departamento y provincia: los de la captura ANTERIOR
+   (la API), que son los que lib/apu/invias agrupa; el Excel escribe otros. */
+function canonizadorDeProvincias() {
+  const pares = new Map();
+  try {
+    const previo = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "apu_invias.json"), "utf8"));
+    for (const r of previo.referencias || []) for (const p of r.provincias || []) {
+      pares.set(claveNombre(p.departamento + p.provincia), { departamento: p.departamento, provincia: p.provincia });
+    }
+  } catch (e) { /* sin captura previa: se usan los nombres del Excel y se avisa */ }
+  const ALIAS = {
+    /* Excel 2026-1 → API 2025-1, curados a mano */
+    [claveNombre("ARCHIPIÉLAGO DE SAN ANDRÉS, PROVIDENCIA Y SANTA CATALINASAN ANDRES- PROVIDENCIA")]: { departamento: "San Andrés", provincia: "Archipiélago De San Andrés" },
+    [claveNombre("SanAndrésyProvidenciaSan Andrés y Providencia")]: { departamento: "San Andrés", provincia: "Archipiélago De San Andrés" },
+    [claveNombre("RisaraldaVertiente Occidental")]: { departamento: "Risaralda", provincia: "Vertiente Occidente" },
+  };
+  const sinCanon = new Set();
+  return {
+    canon(depto, prov, clave4) {
+      const k1 = claveNombre(String(depto) + String(prov)), k4 = claveNombre(clave4);
+      const c = pares.get(k1) || pares.get(k4) || ALIAS[k1] || ALIAS[k4];
+      if (c) return c;
+      sinCanon.add(`${depto} | ${prov}`);
+      return { departamento: String(depto || "").trim(), provincia: String(prov || "").trim() };
+    },
+    sinCanon,
+  };
+}
+
+function capturarDesdeXlsx(libro) {
+  const hoja = (n) => {
+    const h = libro.hojas.find((x) => x.nombre.trim() === n.trim());
+    if (!h) throw new Error(`el libro no trae la hoja «${n}»`);
+    return h.filas;
+  };
+  const unidades = new Map();
+  for (const n of ["MATERIALES", "EQUIPO", "TRANSPORTE"]) {
+    for (const f of hoja(n)) if (f[2] && /^[BCT]\d/.test(String(f[2]))) unidades.set(String(f[2]).trim(), String(f[3] || "").trim());
+  }
+  const canon = canonizadorDeProvincias();
+  const fuentes = [
+    { hoja: "INSUMO MATERIALES", desde: 2, iCodigo: 0, iNombre: 1, iUnidad: null },
+    { hoja: "INSUMO_EQUIPO", desde: 2, iCodigo: 0, iNombre: 1, iUnidad: null },
+    { hoja: "INSUMO_TRANSPORTE", desde: 3, iCodigo: 0, iNombre: 2, iUnidad: 1 },
+  ];
+  const buscar = (codigo) => {
+    for (const fu of fuentes) {
+      const filas = hoja(fu.hoja);
+      const cab = [filas[0], filas[1], filas[3]];
+      for (const f of filas) {
+        if (String(f[fu.iCodigo] || "").trim() !== codigo) continue;
+        const provincias = []; let descartadas = 0;
+        for (let c = fu.desde; c < f.length; c++) {
+          if (cab[0][c] == null && cab[1][c] == null) continue; // columna sin provincia
+          const p = Number(f[c]);
+          if (!Number.isFinite(p) || p <= 0) { descartadas++; continue; }
+          const nom = canon.canon(cab[0][c], cab[1][c], cab[2][c]);
+          provincias.push({ departamento: nom.departamento, provincia: nom.provincia, precio: Math.round(p * 100) / 100 });
+        }
+        return {
+          nombre: String(f[fu.iNombre] || "").trim(),
+          unidad: fu.iUnidad != null ? String(f[fu.iUnidad] || "").trim() : (unidades.get(codigo) || ""),
+          provincias, descartadas,
+        };
+      }
+    }
+    return null;
+  };
+  const referencias = [];
+  for (const c of CORRESPONDENCIAS) {
+    const { codigo, nota } = codigoPara(c);
+    const r = buscar(codigo);
+    if (!r) throw new Error(`${codigo} (${c.insumo_id}): no está en el libro ${ETIQUETA_VIGENCIA} — declarar un sucesor curado o abortar`);
+    if (r.unidad.toLowerCase() !== c.unidad.toLowerCase()) {
+      throw new Error(`${codigo}: unidad de la fuente «${r.unidad}» ≠ esperada «${c.unidad}»`);
+    }
+    if (!r.provincias.length) throw new Error(`${codigo}: todas las columnas venían sin precio`);
+    referencias.push(armarReferencia(c, { codigo, nota, nombre: r.nombre, unidad: r.unidad, provincias: r.provincias, descartadas: r.descartadas }));
+  }
+  return { referencias, sinCanon: [...canon.sinCanon] };
+}
+
+/* Medianas de la captura anterior, por insumo: la comparación entre vigencias
+   que cazó la corrupción de 2025-2, ahora impresa y GUARDADA en la meta. */
+function contrasteConAnterior(referencias) {
+  let previo;
+  try { previo = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "apu_invias.json"), "utf8")); } catch (e) { return null; }
+  const antes = new Map((previo.referencias || []).map((r) => [r.insumo_id, r]));
+  const filas = referencias.map((r) => {
+    const a = antes.get(r.insumo_id);
+    const cociente = a && a.mediana_nacional > 0 ? Math.round((r.mediana_nacional / a.mediana_nacional) * 100) / 100 : null;
+    return { insumo_id: r.insumo_id, vigencia_anterior: a ? a.vigencia : null, mediana_anterior: a ? a.mediana_nacional : null,
+      mediana_nueva: r.mediana_nacional, cociente };
+  });
+  const cocientes = filas.map((f) => f.cociente).filter((x) => x != null);
+  return {
+    vigencia_anterior: previo._meta && previo._meta.vigencia || null,
+    lectura: "cociente = mediana nueva ÷ mediana anterior; un cociente de 30× o 1/30 es la huella de la corrupción de 2025-2, no un movimiento de mercado",
+    cociente_min: cocientes.length ? Math.min(...cocientes) : null,
+    cociente_max: cocientes.length ? Math.max(...cocientes) : null,
+    por_insumo: filas,
   };
 }
 
 (async () => {
-  console.log(`Capturando ${CORRESPONDENCIAS.length} códigos INVIAS · vigencia ${VIGENCIA.anio}-${VIGENCIA.periodo}\n`);
-  const referencias = [];
-  for (const c of CORRESPONDENCIAS) {
-    const ref = await capturarCodigo(c);
-    referencias.push(ref);
-    const aviso = ref.provincias.length === PROVINCIAS_ESPERADAS ? "" : `  ⚠ ${ref.provincias.length}/${PROVINCIAS_ESPERADAS} provincias`;
-    console.log(`  ${ref.codigo_invias} ${ref.insumo_id}: mediana $${ref.mediana_nacional} / ${ref.unidad_fuente} · ${ref.provincias.length} provincias${aviso}`);
+  const modo = ARGS.xlsx ? `Excel ${path.basename(ARGS.xlsx)}` : "API ArcGIS";
+  console.log(`Capturando ${CORRESPONDENCIAS.length} códigos INVIAS · vigencia ${ETIQUETA_VIGENCIA} · ${modo}\n`);
+  /* El contraste se calcula ANTES de escribir: compara contra el archivo que
+     está a punto de sustituirse. */
+  let referencias = [], sinCanon = [];
+  if (ARGS.xlsx) {
+    ({ referencias, sinCanon } = capturarDesdeXlsx(await leerLibroXlsx(ARGS.xlsx)));
+  } else {
+    for (const c of CORRESPONDENCIAS) referencias.push(await capturarCodigo(c));
   }
+  const contraste = contrasteConAnterior(referencias);
+  for (const ref of referencias) {
+    const aviso = ref.provincias.length === PROVINCIAS_ESPERADAS ? "" : `  ⚠ ${ref.provincias.length}/${PROVINCIAS_ESPERADAS} provincias`;
+    const c = contraste && contraste.por_insumo.find((f) => f.insumo_id === ref.insumo_id);
+    const vs = c && c.cociente != null ? ` · ×${c.cociente} vs ${c.vigencia_anterior}` : "";
+    console.log(`  ${ref.codigo_invias} ${ref.insumo_id}: mediana $${ref.mediana_nacional} / ${ref.unidad_fuente} · ${ref.provincias.length} provincias${vs}${aviso}`);
+  }
+  if (sinCanon.length) console.log(`\n⚠ provincias del Excel sin nombre canónico (se publican como vienen): ${sinCanon.join(" · ")}`);
 
   const salida = {
     _meta: {
       que_es: "Precio oficial de REFERENCIA de cada insumo por provincia, del banco de insumos de los APU Regionalizados del INVIAS. Es una referencia para contrastar y negociar — jamás entra en el costo directo ni sustituye una cotización.",
-      generado_por: "tests/capturar_invias.js (herramienta manual con red; la app nunca llama al INVIAS)",
-      fuente: "INVIAS · API ArcGIS de los APU Regionalizados de Referencia, tabla «Insumo»",
-      url: "https://hermes2.invias.gov.co/server/rest/services/apu/APU/MapServer/1",
-      vigencia: `${VIGENCIA.anio}-${VIGENCIA.periodo}`,
-      por_que_no_2025_2: "La vigencia 2025-2 de la API está corrupta en origen (medido 2026-08-14): acero de refuerzo a $122.000/kg (37× el mercado; 2025-1 da $3.280), agua a $15.900/L (145×), emulsión CRL-0 idéntica en las 140 provincias. Antes de re-capturar con una vigencia nueva, repetir la comparación entre vigencias — ver cabecera de tests/capturar_invias.js.",
+      generado_por: `tests/capturar_invias.js (herramienta manual con red; la app nunca llama al INVIAS) · modo ${ARGS.xlsx ? "Excel" : "API"}`,
+      fuente: ARGS.xlsx
+        ? "INVIAS · APU Regionalizados de Referencia, libro Excel de todo el país (hojas INSUMO MATERIALES / INSUMO_EQUIPO / INSUMO_TRANSPORTE)"
+        : "INVIAS · API ArcGIS de los APU Regionalizados de Referencia, tabla «Insumo»",
+      url: ARGS.xlsx
+        ? `https://hermes2.invias.gov.co/APUs/Provincias/Territorio_APU_${VIGENCIA.anio}_${VIGENCIA.periodo}.xlsx`
+        : "https://hermes2.invias.gov.co/server/rest/services/apu/APU/MapServer/1",
+      vigencia: ETIQUETA_VIGENCIA,
+      por_que_no_2025_2: "La vigencia 2025-2 de la API está corrupta en origen (medido 2026-08-14): acero de refuerzo a $122.000/kg (37× el mercado; 2025-1 da $3.280), agua a $15.900/L (145×), emulsión CRL-0 idéntica en las 140 provincias. Por eso la 2025-1 se capturó de la API y la 2026-1 (16-ago-2026) del libro Excel oficial, que la API todavía no publicaba; en cada re-captura la comparación entre vigencias se imprime y queda en contraste_vigencia_anterior.",
+      contraste_vigencia_anterior: contraste,
       capturado_el: hoyColombia(),
       zona_horaria: "hora Colombia (UTC-5)",
       licencia: "Los documentos del INVIAS prohíben el uso comercial sin autorización. Uso actual: referencia privada citando la fuente. Si Detekta se comercializa con estos datos, pedir autorización a preciosunitarios@invias.gov.co.",

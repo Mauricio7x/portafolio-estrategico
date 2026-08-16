@@ -347,8 +347,19 @@ Evidencia de la sesión de verificación:
   contra **$122.000/kg** (2025-2, 37× el mercado); agua B0063200 $110/L contra **$15.900/L**
   (145×); emulsión CRL-0 B020011 $1.802/L contra $52.048/L **idéntico en las 140 provincias**
   (p10 = p90 — huella de un cruce de columnas); MDC-19 B0014502 $738.232/m³ contra $214.200 (⅓ del
-  mercado). Por eso la captura usa **2025-1** y `_meta.por_que_no_2025_2` lo explica. Lección:
+  mercado). Por eso la captura de ago 2026 usó **2025-1** y `_meta.por_que_no_2025_2` lo explica. Lección:
   «oficial» no exime del contraste contra mercado — la corrupción se cazó mirando, no confiando.
+- **Re-captura a 2026-1 (16-ago-2026) desde el Excel oficial.** El INVIAS publica cada vigencia primero
+  en `hermes2.invias.gov.co/APUs/Provincias/Territorio_APU_{año}_{sem}.xlsx` (todo el país; los
+  archivos por provincia siguen `{año}_{sem}/APU_{cod}_{DPTO}__{PROV}_{año}_{sem}.xlsx`) y la API va por
+  detrás. `tests/capturar_invias.js --xlsx … --vigencia 2026-1` lee el libro con el lector del proyecto y
+  produce el mismo JSON. Medianas 2026-1 vs 2025-1 en los 23 códigos: cocientes **0,74–1,40**
+  (acero $4.585/kg ×1,40; cemento $750/kg ×1,10; agua $122/L ×1,11; MDC-19 $899.547/m³ ×1,22;
+  alambre $6.965/kg ×0,74; retroexcavadora $203.917/h ×0,81) — sin ninguna huella de la corrupción de
+  2025-2 (37×, 145×). El INVIAS renumeró los transportes: T0010025 → **T0100034** «transporte de
+  materiales excavación / préstamo» ($1.492/m³-km, mediana nacional 2026-1), declarado como sucesor
+  curado. La comparación queda guardada en `_meta.contraste_vigencia_anterior` y la suite prohíbe un
+  cociente fuera de [0,5; 2].
 - **Contraste cruzado que valida las dos fuentes**: el transporte oficial T0010025 da mediana
   nacional $1.263,6/m³-km, casi idéntico al acarreo del catálogo calibrado con el Nogal
   ($1.256/m³-km). Y el cemento portland ($679/kg → $34.000/saco de 50 kg) queda a un 5 % del
