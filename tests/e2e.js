@@ -6225,10 +6225,32 @@ async function main() {
         assert.strictEqual(p1._versiones, 2, "no se contaron las versiones vistas");
         assert.strictEqual(p1._cierre_prorrogado, true, "no se detectó la prórroga del cierre");
         assert.strictEqual(p2._cierre_prorrogado, false, "una adenda que NO mueve el cierre no es una prórroga");
+        assert.strictEqual(p1._cierre_inicial, "2026-07-20", "el cierre más temprano visto tiene que viajar (B3)");
         // sin la bandera, el dedup se comporta exactamente como antes
         const sinSenales = await leerChunksDedup(falso, ["a", "b"]);
-        assert.ok(sinSenales.every((f) => f._versiones === undefined && f._cierre_prorrogado === undefined),
+        assert.ok(sinSenales.every((f) => f._versiones === undefined && f._cierre_prorrogado === undefined && f._cierre_inicial === undefined),
           "las señales no pueden aparecer sin pedirlas: /api/resumen y el histórico leen por aquí");
+
+        /* B3 · EL DELTA ESTAMPA LA PRÓRROGA AL HISTÓRICO. Cuando un proceso se
+           cierra, se comparan las versiones ya guardadas de su mes con la fila
+           nueva: prorrogado si alguna cerraba antes que la vigente. Sin
+           versiones guardadas, sin señal (no se inventa). */
+        const { senalesDeCierre } = require("../lib/handlers/procesos/sync.js");
+        const CL = require("../lib/almacen.js").CLAVES;
+        const falsoMes = {
+          scan: async (patron) => (patron === CL.patronChunksMes("2026-07") ? ["a", "b"] : []),
+          mget: async () => [comprimir([v1, q1]), comprimir([v2, q2])],
+        };
+        const cierraP1 = { _k: "P-1", fecha_de_publicacion_del: "2026-07-03T08:00:00.000", fecha_cierre: "2026-08-05" }; // ya prorrogado entre las guardadas
+        const cierraP2 = { _k: "P-2", fecha_de_publicacion_del: "2026-07-03T08:00:00.000", fecha_cierre: "2026-07-28" }; // se prorroga AL cerrar (guardadas 07-20 → nueva 07-28)
+        const cierraP3 = { _k: "P-3", fecha_de_publicacion_del: "2026-07-03T08:00:00.000", fecha_cierre: "2026-07-28" }; // sin versiones guardadas
+        const cierraQ2 = { _k: "P-2", fecha_de_publicacion_del: "2026-07-03T08:00:00.000", fecha_cierre: "2026-07-20" }; // misma fecha: no prorrogado
+        const sen = await senalesDeCierre(falsoMes, [cierraP1, cierraP2, cierraP3]);
+        assert.deepStrictEqual(sen.get("P-1"), { prorrogado: true, versiones: 3, cierre_inicial: "2026-07-20" });
+        assert.deepStrictEqual(sen.get("P-2"), { prorrogado: true, versiones: 3, cierre_inicial: "2026-07-20" }, "prorrogado al cerrar: la fila nueva cierra después que las guardadas");
+        assert.strictEqual(sen.get("P-3"), undefined, "sin versiones guardadas no hay señal");
+        assert.strictEqual((await senalesDeCierre(falsoMes, [cierraQ2])).get("P-2").prorrogado, false, "misma fecha de cierre: no es prórroga");
+        assert.strictEqual((await senalesDeCierre({ scan: async () => [], mget: async () => [] }, [cierraP1])).size, 0);
       }
 
       /* 4 · valor esperado = P(ganar) × cuantía */
@@ -6865,6 +6887,7 @@ async function main() {
            menos —como en este corpus sintético, 5 entidades— o sin medición, el
            respaldo declarado. `Number(null)` no puede colarse como 0. */
         const { factorColisionDe, estimarPDetalle: ePD, COLISION_MIN_ENTIDADES, COLISION_FACTOR_MAX } = require("../lib/probabilidad.js");
+        const ePDx = ePD;
         assert.strictEqual(factorColisionDe(meta.colision).origen, "supuesto", "5 entidades no bastan para creerse la medición");
         assert.strictEqual(factorColisionDe(meta.colision).factor, F_COL);
         assert.strictEqual(factorColisionDe(null).origen, "supuesto");
@@ -6873,6 +6896,26 @@ async function main() {
         assert.deepStrictEqual([medida.origen, medida.factor], ["medido", 1.06]);
         assert.strictEqual(factorColisionDe({ multiplicador_implicito: 9, entidades_con_ambos_grupos: 100 }).factor, COLISION_FACTOR_MAX, "un artefacto se acota");
         assert.strictEqual(factorColisionDe({ multiplicador_implicito: 1.06, entidades_con_ambos_grupos: COLISION_MIN_ENTIDADES - 1 }).origen, "supuesto");
+        /* B3 · la PRÓRROGA se mide con la misma forma; hoy sin señal acumulada
+           (el fixture del histórico no la trae) ⇒ «sin medición» y el 1,20
+           supuesto; con base medida, el factor cambia solo y declara su origen. */
+        assert.ok(meta.prorroga && meta.prorroga.entidades_con_ambos_grupos === 0 && meta.prorroga.multiplicador_implicito === null,
+          `sin señal de prórroga en el histórico la medición tiene que estar vacía: ${JSON.stringify(meta.prorroga)}`);
+        assert.ok(meta.prorroga.sin_senal > 0, "los procesos sin señal se cuentan");
+        const { factorProrrogaDe: fPr, FACTOR_CIERRE_PRORROGADO: F_PRO } = require("../lib/probabilidad.js");
+        assert.deepStrictEqual([fPr(meta.prorroga).origen, fPr(meta.prorroga).factor], ["supuesto", F_PRO]);
+        assert.deepStrictEqual([fPr({ multiplicador_implicito: 1.11, entidades_con_ambos_grupos: 200 }).origen, fPr({ multiplicador_implicito: 1.11, entidades_con_ambos_grupos: 200 }).factor], ["medido", 1.11]);
+        const mPr = indiceComp.medirProrroga([
+          { prorroga: { prorrogados: [4, 4], no_prorrogados: [6, 18] } },   // 1 vs 3
+          { prorroga: { prorrogados: [2, 6], no_prorrogados: [4, 12] } },   // 3 vs 3
+          { prorroga: { prorrogados: [3, 6], no_prorrogados: [0, 0] } },    // sin control
+        ]);
+        assert.strictEqual(mPr.entidades_con_ambos_grupos, 2);
+        assert.strictEqual(mPr.cociente_pooled, Math.round(((4 * 3) + (2 * 3)) / (4 + 6) * 100) / 100);
+        const dProM = ePDx({ _cierre_prorrogado: true }, { competencia: { nivel: "media", promedio_oferentes: 3, total_procesos: 10 }, prorroga_medida: { multiplicador_implicito: 1.11, entidades_con_ambos_grupos: 200 } });
+        assert.strictEqual(dProM.ajustes.find((x) => x.nombre === "cierre_prorrogado").factor, 1.11);
+        assert.ok(/MEDIDO/.test(dProM.ajustes.find((x) => x.nombre === "cierre_prorrogado").motivo));
+        assert.ok(/supuesto/.test(ePDx({ _cierre_prorrogado: true }, { competencia: { nivel: "media", promedio_oferentes: 3, total_procesos: 10 } }).ajustes[0].motivo));
         // en la cadena: con medición aplica la medida y el ajuste declara su origen; sin ella, el respaldo
         const comp3b = { nivel: "media", promedio_oferentes: 3, total_procesos: 10 };
         const conMed = ePD({}, { competencia: comp3b, colision_cierres: 3, colision_medida: { multiplicador_implicito: 1.06, entidades_con_ambos_grupos: 1465 } });

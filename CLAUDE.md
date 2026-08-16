@@ -2562,6 +2562,20 @@ Decisiones que no hay que re-aprender:
   de paso: un proceso adjudicado con cierre en 2027 (34 oferentes) — `por_anio` lo enseña, no lo
   esconde. La sección «Investigación de contraste» de arriba decía «probablemente más oferentes»:
   ya está medido y es al revés.
+- **B3 SEMBRADO (16-ago-2026): la prórroga del cierre ya se PERSISTE y se medirá sola.** La señal
+  nacía en la lectura del corpus ACTIVO (todas las versiones del proceso viven bajo su mes de
+  publicación) y moría con la full; el histórico guarda una sola versión, así que el ×1,20 no se
+  podía calibrar. Ahora el delta, al cerrar un proceso, lee SOLO los chunks del mes de publicación
+  de los que cierran (`senalesDeCierre` en `handlers/procesos/sync.js`, con `leerChunksDedup
+  {senales:true}` que además publica `_cierre_inicial`) y estampa en el registro histórico
+  `cierre_prorrogado` (true/false), `versiones_vistas` y `fecha_cierre_inicial`; sin versiones
+  guardadas no hay señal (no se inventa) y `senales_cierre_estampadas` viaja en la respuesta del
+  delta. El índice acumula prorrogados/no prorrogados por entidad y publica `meta.prorroga` (misma
+  forma que la colisión); `lib/probabilidad.factorProrrogaDe` aplica el multiplicador medido con
+  ≥ 30 entidades y hasta entonces el 1,20 declarado, con `origen` en el ajuste y en el paso 3 del
+  desglose. **Los procesos del backfill no traen la señal** (una sola versión): la base se acumula
+  desde el 16-ago-2026 y `sin_senal` lo cuenta. Nada que hacer: el día que haya base, el factor
+  cambia solo y lo dice.
 - **`b_max` SALE DEL APU DEL PROCESO (16-ago-2026 · `lib/baja_maxima.js`)**: con token, el listado lee
   los borradores del perfil (SCAN + MGET, la misma lectura que ya hacía `ordenar_por=margen`, ahora
   UNA vez y memoizada por fila) y para cada proceso con borrador CON costo calcula
