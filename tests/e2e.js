@@ -1962,14 +1962,22 @@ async function main() {
     assert.strictEqual(bCero.nivel, "bajo", "adjudicar por el presupuesto es «baja baja», no «sin dato»");
     assert.strictEqual(bCero.baja_mediana, 0);
 
-    /* 7-quinquies. el ajuste de probabilidad usa la baja y NO la inventa */
+    /* 7-quinquies. el ajuste de probabilidad usa la baja y NO la inventa —
+       y desde A4 (ago 2026) el CENTRO del mercado NO mueve `p` por sí solo:
+       lo que la mueve es hasta dónde puede bajar el dueño frente a ese centro.
+       Sin baja máxima declarada, la entidad agresiva y la que adjudica por el
+       oficial dan la MISMA probabilidad (el ajuste viaja, neutro); con una baja
+       máxima por debajo del centro agresivo, cae. */
     const probabilidad = require("../lib/probabilidad.js");
     const ctx = { competencia: { nivel: "media", promedio_oferentes: 4, total_procesos: 30 } };
     const pNeutro = probabilidad.estimarPDetalle({}, ctx).p;
-    const pAlta = probabilidad.estimarPDetalle({}, { ...ctx, baja: bAgresiva }).p;
+    const dAlta = probabilidad.estimarPDetalle({}, { ...ctx, baja: bAgresiva });
     const pBaja = probabilidad.estimarPDetalle({}, { ...ctx, baja: bCero }).p;
-    assert.ok(pAlta < pNeutro, "una entidad que descuenta mucho debe bajar P(ganar a buen precio)");
-    assert.ok(pBaja > pNeutro, "una entidad que adjudica cerca del oficial debe subirla");
+    assert.strictEqual(dAlta.p, pNeutro, "sin baja máxima declarada, el centro del mercado no puede penalizar (A4)");
+    assert.strictEqual(pBaja, pNeutro, "adjudicar cerca del oficial ya no premia la probabilidad: es margen, no probabilidad (A4)");
+    assert.ok(dAlta.ajustes.some((a) => a.nombre === "precio" && a.factor === 1), "con centro de mercado el ajuste de precio viaja, neutro");
+    const pAltaConTope = probabilidad.estimarPDetalle({}, { ...ctx, baja: bAgresiva, baja_maxima_pct: 1 }).p;
+    assert.ok(pAltaConTope < pNeutro, "si el dueño solo puede bajar 1 % y la entidad descuenta mucho, P(ganar) tiene que caer");
     assert.strictEqual(probabilidad.estimarPDetalle({}, { ...ctx, baja: bModerada }).p, pNeutro,
       "una baja «sin_dato» no puede mover la probabilidad");
 
@@ -5441,20 +5449,34 @@ async function main() {
            CONTINUA, invertible: de un ×1,0583 se despeja una mediana de 2,5 %
            exacta. Redactar `baja_mercado` y dejar esto es la misma redacción de
            mentira que ya se corrigió dos veces (p2_k y p3_caja). */
+        /* Desde A4 (ago 2026) el ajuste se llama `precio` y su motivo lleva la
+           mediana de la entidad («aquí el que gana descuenta ~8 %»): se redacta
+           igual que se redactaba el de baja. */
         for (const l of rPub.cuerpo.resultados) {
           for (const a of (l.p_ganar_detalle && l.p_ganar_detalle.ajustes) || []) {
-            if (a.nombre !== "baja_mercado") continue;
+            if (a.nombre !== "baja_mercado" && a.nombre !== "precio") continue;
             assert.strictEqual(a.factor, null,
-              `el factor de baja salió sin token (${a.factor}): es invertible y revela la mediana exacta`);
-            assert.ok(!/\d/.test(a.motivo), `el motivo del ajuste de baja lleva una cifra: «${a.motivo}»`);
+              `el factor de precio salió sin token (${a.factor})`);
+            assert.ok(!/\d/.test(a.motivo), `el motivo del ajuste de precio lleva una cifra: «${a.motivo}»`);
           }
         }
         // el ajuste NO se borra: que exista es un hecho, y esconderlo sería otra
         // forma de mentir. Lo que se tapa es la cifra.
         const conAjusteBaja = rPub.cuerpo.resultados
-          .filter((l) => ((l.p_ganar_detalle || {}).ajustes || []).some((a) => a.nombre === "baja_mercado"));
+          .filter((l) => ((l.p_ganar_detalle || {}).ajustes || []).some((a) => a.nombre === "precio"));
         assert.ok(conAjusteBaja.length > 0,
-          "el ajuste por baja desapareció del desglose público: tapar la cifra no es borrar el ajuste");
+          "el ajuste por precio desapareció del desglose público: tapar la cifra no es borrar el ajuste");
+        /* Y `?baja_max=` SIN token es INERTE: si moviera `p`, un cliente público
+           bisecaría la mediana que se acaba de tapar mirando dónde empieza a
+           caer la probabilidad. */
+        {
+          const rPubBmax = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=10&baja_max=0");
+          assert.strictEqual(rPubBmax.status, 200);
+          assert.strictEqual(rPubBmax.cuerpo.baja_max_aplicada, null, "sin token baja_max no puede aplicarse");
+          assert.ok(rPubBmax.cuerpo.baja_max_ignorada, "sin token la respuesta tiene que decir que ignoró baja_max");
+          assert.deepStrictEqual(rPubBmax.cuerpo.resultados.map((l) => l.p_ganar), rPub.cuerpo.resultados.map((l) => l.p_ganar),
+            "baja_max sin token movió la probabilidad: canal de inferencia de la mediana abierto");
+        }
 
         /* Y con token el mismo ajuste SÍ trae su factor: si no, la redacción
            pública estaría rompiendo el desglose para todo el mundo. */
@@ -5462,9 +5484,25 @@ async function main() {
           const rTok = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=10", CAB_TOKEN);
           const conFactor = rTok.cuerpo.resultados
             .flatMap((l) => ((l.p_ganar_detalle || {}).ajustes || []))
-            .filter((a) => a.nombre === "baja_mercado");
+            .filter((a) => a.nombre === "precio");
           assert.ok(conFactor.length > 0 && conFactor.every((a) => typeof a.factor === "number"),
-            "con token el ajuste de baja tiene que traer su factor numérico");
+            "con token el ajuste de precio tiene que traer su factor numérico");
+          /* Con token y `?baja_max=0` (el dueño no puede bajar nada) las
+             entidades que descuentan tienen que perder probabilidad, y las
+             cifras siguen cuadrando: `base × Π factores = p`. */
+          const rBmax = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=25&baja_max=0", CAB_TOKEN);
+          assert.strictEqual(rBmax.cuerpo.baja_max_aplicada, 0);
+          const porId = new Map(rTok.cuerpo.resultados.map((l) => [l.id_del_proceso, l]));
+          let cayeron = 0;
+          for (const l of rBmax.cuerpo.resultados) {
+            const antes = porId.get(l.id_del_proceso);
+            if (!antes) continue;
+            const pr = (l.p_ganar_detalle.ajustes || []).find((a) => a.nombre === "precio");
+            if (pr && pr.factor < 1) { cayeron++; assert.ok(l.p_ganar < antes.p_ganar, "un factor de precio < 1 tiene que bajar p"); }
+            assert.strictEqual(l.p_ganar_detalle.p_sin_precio, antes.p_ganar_detalle.p_sin_precio,
+              "p_sin_precio no puede depender de baja_max");
+          }
+          assert.ok(cayeron > 0, "con baja_max=0 alguna entidad que descuenta tenía que perder probabilidad");
         }
 
         /* con token vuelven, y baja_entidad coincide con la mediana del objeto */
@@ -5642,10 +5680,26 @@ async function main() {
       assert.strictEqual(conBaja[0].competencia_entidad.promedio_oferentes, 3);
       assert.strictEqual(conBaja[0].p_ganar_detalle.fuente, "entidad",
         "con histórico de la entidad, la probabilidad no puede salir de un supuesto");
-      // 1/(1+3) = 0,25, y ese 0,25 es TODO el efecto de la competencia: el
-      // tertil ya no multiplica encima (era el mismo promedio dos veces)
-      assert.ok(Math.abs(conBaja[0].p_ganar_detalle.base - 0.25) < 1e-6,
-        `P base con promedio 3 debería ser 0,25 y fue ${conBaja[0].p_ganar_detalle.base}`);
+      /* La base es 1/(1+rivales_esperados) y ese es TODO el efecto de la
+         competencia: el tertil ya no multiplica encima (era el mismo promedio
+         dos veces). Desde A3 los rivales esperados NO son el promedio a secas:
+         son el promedio ENCOGIDO hacia el global del índice (w·3 + (1−w)·μ),
+         así que la base ya no vale 0,25 exacto — vale 1/(1+r̂), con r̂ entre el
+         promedio de la entidad y μ, y la respuesta lo declara (`encogido`). */
+      const dB = conBaja[0].p_ganar_detalle;
+      assert.strictEqual(dB.encogido, true, "con el índice reconstruido la probabilidad tiene que salir del estimador encogido");
+      assert.ok(Math.abs(dB.base - Math.round(1e4 / (1 + dB.rivales_esperados)) / 1e4) < 1.5e-4,
+        `la base (${dB.base}) no es 1/(1+rivales_esperados=${dB.rivales_esperados})`);
+      assert.ok(dB.peso_datos > 0 && dB.peso_datos < 1, `peso_datos tiene que estar en (0,1): ${dB.peso_datos}`);
+      // el encogimiento MUEVE hacia μ pero no puede llevarse la entidad al otro lado del promedio global
+      {
+        const metaComp = await redis.get("indice:competencia:meta").then((v) => (typeof v === "string" ? JSON.parse(v) : v));
+        const mu = metaComp && metaComp.encogimiento ? metaComp.encogimiento.mu_global : null;
+        assert.ok(mu != null, "la meta del índice tiene que publicar μ del encogimiento");
+        const lo = Math.min(3, mu), hi = Math.max(3, mu);
+        assert.ok(dB.rivales_esperados >= lo - 0.02 && dB.rivales_esperados <= hi + 0.02,
+          `rivales_esperados (${dB.rivales_esperados}) tiene que caer entre el promedio de la entidad (3) y μ (${mu})`);
+      }
       for (const l of todas) {
         assert.ok(!(l.p_ganar_detalle.ajustes || []).some((a) => /^competencia_/.test(a.nombre)),
           `reapareció el ajuste por tertil de competencia en ${l.id_del_proceso}`);
@@ -5783,9 +5837,10 @@ async function main() {
        aunque su cuantía sea alta y su K alcance. */
     {
       const { evaluarPuertas } = require("../lib/puertas.js");
-      const { estimarPDetalle, valorEsperado, PROMEDIO_CONSERVADOR, factorBaja,
-        FACTOR_CIERRE_PRORROGADO, FACTOR_COLISION_CIERRES,
-        FACTOR_BAJA_ALTA, FACTOR_BAJA_BAJA, BAJA_ALTA_DESDE, BAJA_BAJA_HASTA } = require("../lib/probabilidad.js");
+      const { estimarPDetalle, valorEsperado, PROMEDIO_CONSERVADOR, factorPrecio, rivalesEncogidos,
+        FACTOR_CIERRE_PRORROGADO, FACTOR_COLISION_CIERRES, Z_BANDA } = require("../lib/probabilidad.js");
+      const { multiplicadorPrecio } = require("../lib/apu/rentabilidad.js");
+      const indiceComp = require("../lib/indice_competencia.js");
       const { PERFILES } = require("../lib/perfiles.js");
 
       /* 1 · un proceso que pasa las cuatro puertas */
@@ -5872,153 +5927,180 @@ async function main() {
       assert.strictEqual(estimarPDetalle({}, { competencia: comp3, colision_cierres: 1 }).p, 0.25,
         "un proceso solo no colisiona consigo mismo");
 
-      /* ══════ LA BAJA DE MERCADO ES UNA RAMPA, NO UN ESCALÓN (ago 2026) ══════
-         El defecto: dos entidades con 4,9 % y 5,1 % de baja son la MISMA entidad
-         medida dos veces —el índice publica con resolución de 1 punto porcentual—
-         y recibían un 15 % de diferencia de probabilidad. Se comprueba la función
-         AISLADA porque continuidad y monotonía son propiedades suyas: mirarlas a
-         través de `estimarPDetalle` las mezclaría con el clamp y los otros dos
-         factores. */
+      /* ══════ EL PRECIO NO PENALIZA EL CENTRO DEL MERCADO (ago 2026 · A4/A5) ══════
+         Lo que se retiró: la rampa ×1,10 → ×0,85 sobre la mediana de la
+         entidad, que castigaba a la entidad por dónde está el centro de su
+         mercado y cobraba el precio dos veces con el editor de APU. Lo que
+         entra: f_precio = mult(min(b_max, mediana)) con la MISMA curva de
+         lib/apu/rentabilidad — neutro sin b_max declarada. */
       {
-        // los EXTREMOS no se movieron: fuera de la banda, idéntico a antes
-        assert.strictEqual(factorBaja(0), FACTOR_BAJA_BAJA, "adjudicar por el oficial sigue siendo ×1,10");
-        assert.strictEqual(factorBaja(BAJA_BAJA_HASTA), FACTOR_BAJA_BAJA);
-        assert.strictEqual(factorBaja(BAJA_ALTA_DESDE), FACTOR_BAJA_ALTA);
-        assert.strictEqual(factorBaja(8), FACTOR_BAJA_ALTA, "descontar 8 % sigue siendo ×0,85");
-        assert.strictEqual(factorBaja(70), FACTOR_BAJA_ALTA);
-        assert.strictEqual(factorBaja(-10), FACTOR_BAJA_BAJA, "una baja negativa leve es un dato, no un error");
+        const bajaDe = (m, extra = {}) => ({ nivel: "medio", baja_mediana: m, procesos_contados: 30, ...extra });
 
-        /* SIN DATO ≠ 0 %. `numero()` no vale de guarda: `Number(null)` y
-           `Number("")` son 0, los dos finitos, así que una ausencia entraría
-           como «baja del 0 %» y saldría premiada con ×1,10 — «no sé» convertido
-           en «adjudica por el presupuesto oficial». */
-        for (const v of [null, undefined, "", "abc", NaN]) {
-          assert.strictEqual(factorBaja(v), null, `factorBaja(${JSON.stringify(v)}) tiene que ser null, no un factor`);
+        // 1 · sin baja máxima declarada, el centro del mercado NO mueve p — con 0, 3, 8 o 20 % de mediana
+        for (const m of [0, 2, 3.2, 5, 8, 20]) {
+          const d = estimarPDetalle({}, { competencia: comp3, baja: bajaDe(m) });
+          assert.strictEqual(d.p, 0.25, `mediana ${m} % sin b_max: p tiene que ser exactamente la base, fue ${d.p}`);
+          const a = d.ajustes.find((x) => x.nombre === "precio");
+          assert.ok(a && a.factor === 1, `con centro de mercado el ajuste de precio viaja SIEMPRE, neutro (mediana ${m})`);
+          assert.ok(!d.ajustes.some((x) => x.nombre === "baja_mercado"), "la rampa de baja de mercado no puede reaparecer");
         }
-        /* Y la guarda tiene que estar VIVA en el camino real, no solo cuando se
-           llama a `factorBaja` a pelo: si quien llama hace `numero()` antes, el
-           null llega convertido en 0 y la guarda queda en código muerto. Este
-           registro EXISTE — `indice:baja` no se purga nunca y un hash de una
-           versión anterior puede traer nivel clasificado con mediana ausente. */
-        const nivelSinMediana = estimarPDetalle({}, {
-          competencia: comp3, baja: { nivel: "medio", baja_mediana: null, procesos_contados: 40 },
-        });
-        assert.deepStrictEqual(nivelSinMediana.ajustes, [],
-          "nivel clasificado con mediana ausente: el 0 de `numero(null)` se coló como «baja del 0 %»");
-        assert.strictEqual(nivelSinMediana.p, 0.25, "una mediana ausente no puede mover la probabilidad");
-
-        // CONTINUIDAD: ningún par de bajas contiguas puede saltar
-        let saltoMax = 0, dondeMax = null;
-        for (let b = -5; b <= 20; b += 0.01) {
-          const d = Math.abs(factorBaja(b + 0.01) - factorBaja(b));
-          if (d > saltoMax) { saltoMax = d; dondeMax = b; }
+        // 2 · b_max ≥ mediana ⇒ factor 1 EXACTO (puede jugar en el centro)
+        assert.strictEqual(factorPrecio(bajaDe(8), 8).factor, 1, "b_max igual a la mediana: factor 1 exacto");
+        assert.strictEqual(factorPrecio(bajaDe(8), 12).factor, 1, "b_max por encima de la mediana: factor 1 exacto");
+        assert.strictEqual(factorPrecio(bajaDe(8), null).origen_b_max, "neutra");
+        assert.strictEqual(factorPrecio(bajaDe(8), 8).origen_b_max, "declarada");
+        // 3 · b_max < mediana ⇒ el factor es EXACTAMENTE la curva de rentabilidad (una sola teoría del precio)
+        for (const [m, bmax] of [[8, 3], [8, 0], [12, 6], [5, 4.9]]) {
+          const f = factorPrecio(bajaDe(m), bmax).factor;
+          const esperado = Math.round(multiplicadorPrecio({ baja_ofertada_pct: bmax, baja_mediana_pct: m }).multiplicador * 1e4) / 1e4;
+          assert.strictEqual(f, esperado, `mediana ${m}, b_max ${bmax}: el factor (${f}) no es la curva de rentabilidad (${esperado})`);
+          assert.ok(f < 1, `ofertar por encima del centro tiene que costar probabilidad (mediana ${m}, b_max ${bmax})`);
         }
-        assert.ok(saltoMax < 0.002, `la rampa salta ${saltoMax.toFixed(4)} en baja=${dondeMax}: no es continua`);
-
-        // MONOTONÍA: más descuento exigido nunca puede subir la probabilidad
-        let prev = Infinity;
-        for (let b = -10; b <= 70; b += 0.05) {
-          const f = factorBaja(b);
-          assert.ok(f <= prev + 1e-12, `la rampa sube en baja=${b}: ${prev} → ${f}`);
+        // y con la dispersión del índice (p25/p75) la curva la usa: mercado apretado ⇒ salirse cuesta más
+        const apretado = factorPrecio(bajaDe(8, { baja_p25: 7, baja_p75: 9 }), 4).factor;
+        const disperso = factorPrecio(bajaDe(8, { baja_p25: 3, baja_p75: 13 }), 4).factor;
+        assert.ok(apretado < disperso, `apartarse 4 pp del centro tiene que costar más en un mercado apretado (${apretado}) que en uno disperso (${disperso})`);
+        // 4 · MONOTONÍA en b_max: cuanto menos puede bajar el dueño, menos probabilidad
+        let prev = -1;
+        for (let b = 0; b <= 12; b += 0.25) {
+          const f = factorPrecio(bajaDe(8), b).factor;
+          assert.ok(f >= prev - 1e-12, `el factor de precio baja al SUBIR b_max (${b}): ${prev} → ${f}`);
           prev = f;
         }
-
-        // el punto medio interpola de verdad (ni escalón ni plano)
-        assert.ok(factorBaja(3.5) < factorBaja(2.5) && factorBaja(2.5) < FACTOR_BAJA_BAJA,
-          "la banda intermedia tiene que interpolar, no quedarse plana");
-
-        /* Y lo que cierra el defecto, en la escala de la FUNCIÓN: cruzar el corte
-           viejo del 5 % ya no puede costar un 15 %. */
-        const conBajaDe = (m) => estimarPDetalle({}, {
-          competencia: comp3, baja: { nivel: "medio", baja_mediana: m, procesos_contados: 30 },
-        }).p;
-        const salto5 = 1 - conBajaDe(5.1) / conBajaDe(4.9);
-        assert.ok(salto5 < 0.02, `cruzar el 5 % todavía cuesta ${(salto5 * 100).toFixed(1)} % de probabilidad`);
-        const salto2 = Math.abs(1 - conBajaDe(2.1) / conBajaDe(1.9));
-        assert.ok(salto2 < 0.02, `cruzar el 2 % todavía cuesta ${(salto2 * 100).toFixed(1)} % de probabilidad`);
-
-        /* ── PERO 4,9 Y 5,1 NO EXISTEN EN PRODUCCIÓN, y medir solo ahí sería
-           medirse a uno mismo. `lib/indice_baja` publica la mediana como una
-           cubeta ENTERA del histograma (`Math.round`), así que el dominio real
-           es {…, 2, 3, 4, 5, …} y lo que el dueño ve es una ESCALERA DE CUATRO
-           PELDAÑOS, no una curva. Lo que mejora es la ALTURA del peldaño más
-           alto, y eso es lo que hay que fijar: si alguien vuelve a los
-           escalones, este número se dispara al 15 %. */
-        let peorSalto = 0, dondePeor = null;
-        for (let m = -10; m < 70; m++) {
-          const d = Math.abs(1 - factorBaja(m + 1) / factorBaja(m));
-          if (d > peorSalto) { peorSalto = d; dondePeor = `${m}→${m + 1}`; }
+        // 5 · SIN DATO ≠ 0 %: la ausencia no puede entrar como «baja del 0 %»
+        for (const v of [null, undefined, "", "abc", NaN]) {
+          assert.strictEqual(factorPrecio(bajaDe(v), 3), null, `factorPrecio con mediana ${JSON.stringify(v)} tiene que ser null`);
         }
-        assert.ok(peorSalto < 0.09,
-          `entre medianas enteras contiguas el salto llega al ${(peorSalto * 100).toFixed(1)} % en ${dondePeor}`);
-
-        /* LAS COMPARACIONES PASARON DE ESTRICTAS A INCLUSIVAS, y eso mueve dos
-           valores FRECUENTES. Antes `> 5` y `< 2` dejaban las medianas de
-           exactamente 2 y 5 en la zona neutra (×1,00). Se fijan aquí para que
-           nadie «restaure» el `>` sin enterarse de que cambia el corpus real:
-           la ALCALDÍA DE PURIFICACIÓN tiene mediana exactamente 5. */
-        assert.strictEqual(factorBaja(BAJA_BAJA_HASTA), FACTOR_BAJA_BAJA,
-          "una mediana de exactamente 2 tiene que recibir el factor de la meseta baja, no el neutro");
-        assert.strictEqual(factorBaja(BAJA_ALTA_DESDE), FACTOR_BAJA_ALTA,
-          "una mediana de exactamente 5 tiene que recibir el factor de la meseta alta, no el neutro");
-
-        /* EL DESGLOSE TIENE QUE CUADRAR CON SU PROPIO RESULTADO: el factor que
-           se publica es el mismo (redondeado) que se aplicó, así que
-           `base × Π factores` reproduce `p` a mano desde la tarjeta. Publicar un
-           factor y multiplicar por otro sería una explicación que no explica. */
-        for (const m of [0, 3, 3.2, 4, 8]) {
-          const d = estimarPDetalle({ _cierre_prorrogado: true }, {
-            competencia: comp3, colision_cierres: 3,
-            baja: { nivel: "medio", baja_mediana: m, procesos_contados: 30 },
-          });
-          const producto = d.ajustes.reduce((acc, a) => acc * a.factor, d.base);
-          assert.ok(Math.abs(producto - d.p) <= 5e-5 + 1e-12,
-            `el desglose no cuadra con baja=${m} %: ${d.base} × ${d.ajustes.map((a) => a.factor).join(" × ")} = ${producto} pero p=${d.p}`);
-          assert.strictEqual(d.ajustes.filter((a) => a.nombre === "baja_mercado").length, 1,
-            "la baja tiene que emitir UN ajuste y solo uno");
+        const nivelSinMediana = estimarPDetalle({}, { competencia: comp3, baja: { nivel: "medio", baja_mediana: null, procesos_contados: 40 }, baja_maxima_pct: 3 });
+        assert.deepStrictEqual(nivelSinMediana.ajustes, [], "nivel clasificado con mediana ausente: no hay centro y no puede haber ajuste");
+        assert.strictEqual(nivelSinMediana.p, 0.25);
+        const sinBaja = estimarPDetalle({}, { competencia: comp3, baja: { nivel: "sin_dato", baja_mediana: null, procesos_contados: 3 }, baja_maxima_pct: 3 });
+        assert.deepStrictEqual(sinBaja.ajustes, [], "una baja «sin_dato» no puede emitir ningún ajuste");
+        // y una b_max ilegible es como no declararla
+        for (const v of ["", null, "abc", NaN]) {
+          assert.strictEqual(estimarPDetalle({}, { competencia: comp3, baja: bajaDe(8), baja_maxima_pct: v }).p, 0.25,
+            `b_max ${JSON.stringify(v)} tiene que ser neutra`);
         }
-        /* Y no solo en cinco casos escogidos: barrido amplio. El error TIENE que
-           quedar en media unidad del último decimal publicado (5e-5), que es el
-           suelo teórico —el redondeo final de `p`—. Si alguien vuelve a redondear
-           la base AL PUBLICARLA en vez de al calcularla, esto sube a 1,2e-4 y la
-           tarjeta enseña una cuenta que no da su propio resultado. */
+
+        // 6 · p Y p_sin_precio: la segunda es la cadena SIN el factor de precio (lo que consume el editor)
+        const conTope = estimarPDetalle({ _cierre_prorrogado: true }, { competencia: comp3, colision_cierres: 3, baja: bajaDe(8), baja_maxima_pct: 3 });
+        const sinTope = estimarPDetalle({ _cierre_prorrogado: true }, { competencia: comp3, colision_cierres: 3, baja: bajaDe(8) });
+        assert.strictEqual(conTope.p_sin_precio, sinTope.p, "p_sin_precio tiene que ser la cadena entera sin el factor de precio");
+        assert.ok(conTope.p < conTope.p_sin_precio, "con b_max bajo el centro, p < p_sin_precio");
+        assert.strictEqual(sinTope.p, sinTope.p_sin_precio, "sin b_max, p == p_sin_precio (el factor es 1)");
+        assert.strictEqual(estimarPDetalle({}, { competencia: comp3 }).p_sin_precio, 0.25, "sin baja, p_sin_precio es la base");
+
+        /* 7 · EL DESGLOSE TIENE QUE CUADRAR CON SU PROPIO RESULTADO: el factor
+           que se publica es el mismo (redondeado) que se aplicó, así que
+           `base × Π factores` reproduce `p` a mano desde la tarjeta. Barrido
+           amplio: el error queda en media unidad del último decimal (5e-5). */
         {
           let peor = 0, caso = null;
           for (let r = 0.5; r <= 25; r += 0.13) {
-            for (const m of [null, 0, 1, 2, 3, 4, 5, 8, 12]) {
-              for (const pro of [false, true]) {
-                for (const col of [0, 3]) {
+            for (const m of [null, 0, 3, 5, 8, 12]) {
+              for (const bmax of [null, 0, 2, 5, 9]) {
+                for (const pro of [false, true]) {
                   const d = estimarPDetalle({ _cierre_prorrogado: pro }, {
                     competencia: { nivel: "media", promedio_oferentes: r, total_procesos: 40 },
-                    baja: m == null ? null : { nivel: "medio", baja_mediana: m, procesos_contados: 40 },
-                    colision_cierres: col,
+                    baja: m == null ? null : bajaDe(m), baja_maxima_pct: bmax, colision_cierres: pro ? 3 : 0,
                   });
-                  // el clamp rompe la identidad A PROPÓSITO: ahí `p` ya no es el producto
-                  if (d.p >= 0.95 || d.p <= 0.01) continue;
+                  if (d.p >= 0.95 || d.p <= 0.01) continue; // el clamp rompe la identidad a propósito
                   const err = Math.abs(d.ajustes.reduce((acc, a) => acc * a.factor, d.base) - d.p);
                   if (err > peor) { peor = err; caso = { base: d.base, factores: d.ajustes.map((a) => a.factor), p: d.p }; }
+                  assert.strictEqual(d.ajustes.filter((a) => a.nombre === "precio").length, m == null ? 0 : 1,
+                    "el precio tiene que emitir UN ajuste con centro y NINGUNO sin él");
                 }
               }
             }
           }
-          assert.ok(peor <= 5e-5 + 1e-12,
-            `el desglose se desvía ${peor.toExponential(2)} de su propio resultado: ${JSON.stringify(caso)}`);
+          assert.ok(peor <= 5e-5 + 1e-12, `el desglose se desvía ${peor.toExponential(2)} de su propio resultado: ${JSON.stringify(caso)}`);
         }
-        /* Con dato, el ajuste viaja SIEMPRE —también cuando el factor sale
-           exactamente 1—; sin dato, jamás. Así la ausencia del ajuste solo puede
-           significar «no hay baja histórica», y no se puede volver a confundir
-           «no sé» con «no mueve nada». */
-        const enUno = estimarPDetalle({}, {
-          competencia: comp3, baja: { nivel: "medio", baja_mediana: 3.2, procesos_contados: 30 },
-        });
-        assert.strictEqual(enUno.p, 0.25, "en el cruce de la rampa el factor es 1 y p no se mueve");
-        assert.ok(enUno.ajustes.some((a) => a.nombre === "baja_mercado" && a.factor === 1),
-          "con dato, el ajuste tiene que viajar aunque su factor sea 1");
-        const sinBaja = estimarPDetalle({}, {
-          competencia: comp3, baja: { nivel: "sin_dato", baja_mediana: null, procesos_contados: 3 },
-        });
-        assert.deepStrictEqual(sinBaja.ajustes, [], "una baja «sin_dato» no puede emitir ningún ajuste");
-        assert.strictEqual(sinBaja.p, 0.25, "una baja «sin_dato» no puede mover la probabilidad");
+      }
+
+      /* ══════ ENCOGIMIENTO: SE ACABÓ EL ACANTILADO DE LOS 5 PROCESOS (ago 2026 · A2/A3) ══════
+         Antes: entidad con 4 procesos y promedio 2 → respaldo (5 rivales, p=0,167);
+         con 5 procesos → 2 rivales, p=0,433. ×2,60 por UN proceso más. */
+      {
+        // 1 · el ESTIMADOR aislado: μ ponderado por proceso, m finito con heterogeneidad real, w monótona en n
+        const ents = [
+          { procesos: 40, oferentes_total: 80, suma2: 200 },   // r̄=2
+          { procesos: 30, oferentes_total: 240, suma2: 2100 }, // r̄=8
+          { procesos: 20, oferentes_total: 100, suma2: 560 },  // r̄=5
+          { procesos: 4, oferentes_total: 8, suma2: 18 },      // r̄=2
+          { procesos: 5, oferentes_total: 10, suma2: 22 },     // r̄=2
+        ];
+        const enc = indiceComp.estimarEncogimiento(ents);
+        assert.ok(enc && enc.m > 0 && Number.isFinite(enc.m), `con entidades heterogéneas m tiene que ser finito y positivo: ${JSON.stringify(enc)}`);
+        assert.strictEqual(enc.entidad_no_distingue, false);
+        assert.strictEqual(enc.mu_global, Math.round((80 + 240 + 100 + 8 + 10) / 99 * 100) / 100, "μ es el promedio POR PROCESO, no la media de las medias");
+        const w4 = indiceComp.encogerEntidad(ents[3], enc), w5 = indiceComp.encogerEntidad(ents[4], enc), w40 = indiceComp.encogerEntidad(ents[0], enc);
+        assert.ok(w4.peso_datos < w5.peso_datos && w5.peso_datos < w40.peso_datos, "w tiene que crecer con n");
+        assert.ok(w4.rivales_desv > w5.rivales_desv && w5.rivales_desv > w40.rivales_desv, "la desviación tiene que decrecer con n");
+        // 2 · CONTINUIDAD en el cruce de 5: mismo promedio, 4 y 5 procesos difieren < 10 %
+        const p4 = estimarPDetalle({}, { competencia: { nivel: "sin_dato", promedio_oferentes: null, total_procesos: 4, ...w4 } }).p;
+        const p5 = estimarPDetalle({}, { competencia: { nivel: "baja", promedio_oferentes: 2, total_procesos: 5, ...w5 } }).p;
+        assert.ok(Math.abs(1 - p4 / p5) < 0.10, `el acantilado sigue: 4 procesos → ${p4}, 5 procesos → ${p5}`);
+        // y frente al comportamiento VIEJO (respaldo a 5 rivales) el salto era ×2,6: aquí se fija que ya no
+        const pViejo4 = estimarPDetalle({}, { competencia: { nivel: "sin_dato", promedio_oferentes: null, total_procesos: 4 } }).p;
+        assert.strictEqual(pViejo4, Math.round(1e4 / (1 + PROMEDIO_CONSERVADOR)) / 1e4, "sin campos de encogimiento (hash viejo) el respaldo sigue siendo el conservador");
+        assert.ok(p4 > pViejo4 * 1.5, "una entidad de 4 procesos con promedio 2 tiene que valer MUCHO más que el supuesto de 5 rivales");
+        // 3 · con τ̂² ≤ 0 (entidades indistinguibles) todo se encoge a μ y se declara
+        const iguales = [1, 2, 3, 4].map(() => ({ procesos: 10, oferentes_total: 30, suma2: 110 })); // r̄=3, s²≈2,2, sin varianza entre (n ≥ 5: cuentan)
+        const encIg = indiceComp.estimarEncogimiento(iguales);
+        assert.strictEqual(encIg.entidad_no_distingue, true, `con medias idénticas τ̂² no puede ser > 0: ${JSON.stringify(encIg)}`);
+        assert.strictEqual(indiceComp.encogerEntidad(iguales[0], encIg).rivales_estimados, encIg.mu_global);
+        assert.strictEqual(indiceComp.encogerEntidad(iguales[0], encIg).peso_datos, 0);
+        // …y SIN banda: una desviación 0 daría «Banda del 90 %: 25 %–25 %», certeza absoluta justo
+        // donde menos información individualizada hay (hallazgo de la revisión adversaria)
+        assert.strictEqual(indiceComp.encogerEntidad(iguales[0], encIg).rivales_desv, null, "con τ̂² ≤ 0 la desviación tiene que ser null, no 0");
+        const dSinBanda = estimarPDetalle({}, { competencia: { nivel: "baja", promedio_oferentes: 3, total_procesos: 10, ...indiceComp.encogerEntidad(iguales[0], encIg) } });
+        assert.strictEqual(dSinBanda.p_lo, null, "con τ̂² ≤ 0 no puede publicarse una banda de ancho cero");
+        // y el tope min(b_max, mediana) del listado es DELIBERADO: b_max sobre la mediana da factor 1
+        // (la tarjeta no conoce la oferta), mientras el editor evalúa la baja REAL sin tope con la misma curva
+        assert.strictEqual(factorPrecio({ nivel: "medio", baja_mediana: 5, baja_p25: 3, baja_p75: 7 }, 15).factor, 1);
+        assert.ok(multiplicadorPrecio({ baja_ofertada_pct: 15, baja_mediana_pct: 5, baja_p25: 3, baja_p75: 7 }).multiplicador > 1);
+        // 4 · con menos de MIN_ENTIDADES_ESTIMACION entidades CON BASE (≥5) no se estima nada: null y el lector no cambia
+        //     — y las pequeñas ruidosas NO anulan la señal de las grandes (fue el primer defecto del estimador)
+        const ruidosas = Array.from({ length: 40 }, (_, i) => { const a = (i * 7) % 20, b = (i * 13) % 20; return { procesos: 2, oferentes_total: a + b, suma2: a * a + b * b }; });
+        const encRuido = indiceComp.estimarEncogimiento(ents.concat(ruidosas));
+        assert.strictEqual(encRuido.entidad_no_distingue, false, `40 entidades de 2 procesos ruidosos anularon la heterogeneidad de las grandes: ${JSON.stringify(encRuido)}`);
+        const pocas = indiceComp.estimarEncogimiento([{ procesos: 10, oferentes_total: 30, suma2: 110 }, { procesos: 4, oferentes_total: 8, suma2: 18 }, { procesos: 3, oferentes_total: 8, suma2: 24 }]);
+        assert.strictEqual(pocas.m, null);
+        assert.strictEqual(indiceComp.encogerEntidad({ procesos: 10, oferentes_total: 30 }, pocas), null);
+        // 5 · el LECTOR: hash viejo (sin campos) ⇒ misma respuesta de siempre; hash nuevo ⇒ campos que pasan
+        assert.strictEqual(rivalesEncogidos({ nivel: "alta", promedio_oferentes: 18, total_procesos: 40 }), null);
+        assert.strictEqual(rivalesEncogidos({ rivales_estimados: null }), null, "null NO es 0 rivales");
+        assert.strictEqual(rivalesEncogidos({ rivales_estimados: "" }), null);
+        assert.deepStrictEqual(rivalesEncogidos({ rivales_estimados: 2.5, peso_datos: 0.8, rivales_desv: 0.4 }), { rivales: 2.5, peso_datos: 0.8, desv: 0.4 });
+        assert.deepStrictEqual(rivalesEncogidos({ rivales_estimados: 2.5 }), { rivales: 2.5, peso_datos: null, desv: null },
+          "peso y desviación ausentes son null, no 0 (Number(null) es 0)");
+        /* Y el LECTOR DEL HASH no puede usar el `numero()` tolerante del dataset
+           sobre estos campos: leía «0.963» como 963 (punto = miles) y el peso
+           salía null → 0 en la respuesta. Se fija con el registro tal como lo
+           escribe el índice. */
+        const leido = indiceComp.competenciaDe({ x: { procesos: 5, promedio: 3, mediana: 3, nivel: "baja", rivales_estimados: 3.3, peso_datos: 0.963, rivales_desv: 0.82 } }, { entidad: "x" });
+        assert.strictEqual(leido.peso_datos, 0.963, `el lector del hash estropeó peso_datos: ${leido.peso_datos}`);
+        assert.strictEqual(leido.rivales_desv, 0.82);
+        assert.strictEqual(leido.rivales_estimados, 3.3);
+        const dEnc = estimarPDetalle({}, { competencia: { nivel: "sin_dato", promedio_oferentes: null, total_procesos: 2, rivales_estimados: 2.5, peso_datos: 0.6, rivales_desv: 0.9 } });
+        assert.strictEqual(dEnc.fuente, "entidad");
+        assert.strictEqual(dEnc.encogido, true);
+        assert.strictEqual(dEnc.rivales_esperados, 2.5);
+        assert.strictEqual(dEnc.peso_datos, 0.6);
+        // 6 · LA BANDA: p_lo ≤ p ≤ p_hi, más estrecha con más datos, null sin desviación
+        assert.ok(dEnc.p_lo != null && dEnc.p_hi != null && dEnc.p_lo <= dEnc.p && dEnc.p <= dEnc.p_hi, `banda incoherente: ${JSON.stringify(dEnc)}`);
+        const ancho = (d) => d.p_hi - d.p_lo;
+        const dN4 = estimarPDetalle({}, { competencia: { nivel: "sin_dato", promedio_oferentes: null, total_procesos: 4, ...w4 } });
+        const dN40 = estimarPDetalle({}, { competencia: { nivel: "baja", promedio_oferentes: 2, total_procesos: 40, ...w40 } });
+        assert.ok(ancho(dN4) > ancho(dN40), `la banda tiene que estrecharse con la muestra: n=4 ${ancho(dN4)} vs n=40 ${ancho(dN40)}`);
+        assert.strictEqual(estimarPDetalle({}, { competencia: { nivel: "sin_dato", promedio_oferentes: null, total_procesos: 2, rivales_estimados: 2.5 } }).p_lo, null,
+          "sin desviación publicada no hay banda: null, jamás ±0");
+        assert.strictEqual(estimarPDetalle({}, { competencia: comp3 }).p_lo, null, "un hash viejo no tiene banda");
+        // los factores de la cadena mueven la banda entera (la banda es de la misma cadena, no de la base)
+        const dEncPro = estimarPDetalle({ _cierre_prorrogado: true }, { competencia: { nivel: "sin_dato", promedio_oferentes: null, total_procesos: 2, rivales_estimados: 2.5, peso_datos: 0.6, rivales_desv: 0.9 } });
+        assert.ok(Math.abs(dEncPro.p_lo / dEnc.p_lo - FACTOR_CIERRE_PRORROGADO) < 1e-3, "la banda tiene que llevar los mismos ajustes que p");
+        assert.ok(Z_BANDA > 1.6 && Z_BANDA < 1.7);
+        console.log(`· probabilidad A2-A6: μ=${enc.mu_global} m=${enc.m} · continuidad en 5 procesos ${p4}→${p5} (antes ${pViejo4}→${p5}) · precio neutro sin b_max, curva única con rentabilidad · banda n=4 ${ancho(dN4).toFixed(3)} vs n=40 ${ancho(dN40).toFixed(3)}`);
       }
 
       // ninguna combinación puede salirse de [0,1] ni devolver algo no finito
@@ -6190,7 +6272,7 @@ async function main() {
         "Probabilidad base por competencia histórica",
         "Nivel de competencia de la entidad (informativo: NO multiplica)",
         "Ajuste por prórroga del cierre",
-        "Ajuste por baja de mercado de la entidad",
+        "Ajuste por precio: hasta dónde puede bajar frente al centro del mercado",
         "Ajuste por colisión de cierres",
         "Límite final y redondeo",
       ];
@@ -6210,12 +6292,20 @@ async function main() {
       assert.ok(/DOS VECES/.test(paso2.fundamento),
         "el paso del tertil tiene que explicar POR QUÉ no multiplica, no solo callarse");
 
-      /* Y el paso 4 emite UN solo ajuste continuo, no los dos escalones. */
+      /* Y el paso 4 es el factor de PRECIO (A4): declara la fórmula con la
+         baja máxima del dueño y la curva de rentabilidad, y sin b_max declarada
+         es neutro y lo dice. La rampa de baja no puede reaparecer. */
       const paso4 = d.desglose[3];
-      assert.ok(/interpolaci[óo]n lineal/.test(paso4.formula),
-        `el paso de la baja no declara la interpolación: «${paso4.formula}»`);
-      assert.ok(!/baja_alta|baja_baja/.test(JSON.stringify(d.desglose)),
-        "reaparecieron los nombres de los dos escalones de la baja en el desglose");
+      assert.ok(/min\(baja_maxima_del_dueño, baja_mediana_entidad\)/.test(paso4.formula),
+        `el paso de precio no declara la fórmula: «${paso4.formula}»`);
+      assert.ok(/rentabilidad/.test(paso4.formula), "el paso de precio tiene que citar que la curva es la de lib/apu/rentabilidad");
+      assert.ok(!/baja_alta|baja_baja|interpolaci[óo]n lineal/.test(JSON.stringify(d.desglose)),
+        "reaparecieron los escalones o la rampa de la baja en el desglose");
+      if (paso4.datos_entrada.baja_mediana_pct != null) {
+        assert.strictEqual(paso4.datos_entrada.factor_aplicado, 1, "sin baja máxima declarada el factor de precio tiene que ser 1");
+        assert.strictEqual(paso4.datos_entrada.origen_baja_maxima, "neutra");
+        assert.strictEqual(paso4.confianza, "Sin dato", "un factor neutro por falta de b_max no puede presentarse con confianza");
+      }
 
       /* LA CADENA TIENE QUE CUADRAR DE ARRIBA ABAJO: cada paso parte de donde
          terminó el anterior. Es lo único que hace del desglose una explicación
@@ -6604,6 +6694,21 @@ async function main() {
         const publicado = JSON.parse(hashIdx[filtros.norm(e.entidad)]);
         assert.strictEqual(c.indice.procesos_contados, publicado.procesos,
           `${e.entidad}: el detalle cuenta ${c.indice.procesos_contados} y el índice ${publicado.procesos}`);
+        /* A2/B2 (ago 2026): el detalle espeja el ENCOGIMIENTO publicado y el
+           REPARTO POR AÑO. El reparto suma los contados (invariante), el
+           promedio del año solo sale con ≥5 procesos en ESE año, y el conteo por
+           año coincide con el `por_anio` del hash (misma regla de año). */
+        assert.ok(c.indice.encogimiento && c.indice.encogimiento.rivales_estimados === publicado.rivales_estimados,
+          `${e.entidad}: el detalle no espeja rivales_estimados del hash`);
+        assert.strictEqual(c.indice.encogimiento.peso_datos, publicado.peso_datos);
+        const rep = c.indice.reparto_por_anio;
+        assert.ok(rep && Object.keys(rep).length > 0, `${e.entidad}: falta el reparto por año`);
+        assert.strictEqual(Object.values(rep).reduce((a, x) => a + x.procesos, 0), c.indice.procesos_contados,
+          `${e.entidad}: el reparto por año no suma los procesos contados`);
+        for (const [anio, x] of Object.entries(rep)) {
+          assert.strictEqual(x.procesos, publicado.por_anio[anio].n, `${e.entidad} ${anio}: el detalle y el hash discrepan en el conteo del año`);
+          if (x.procesos < 5) assert.strictEqual(x.promedio_oferentes, null, `${e.entidad} ${anio}: promedio de un año con <5 procesos`);
+        }
         if (e.ofertas.length >= 5) {
           assert.strictEqual(c.indice.promedio_oferentes, publicado.promedio,
             `${e.entidad}: el promedio del detalle no reproduce el del badge`);
@@ -11440,7 +11545,12 @@ async function main() {
           assert.ok(texto.includes(a.nombre), "el ajuste tiene que seguir nombrándose aunque se le tape el factor");
         }
         // y con token el factor SÍ se pinta: la guarda no puede tragarse el dato
-        assert.ok(/×0\.85/.test(pintado(detalle.ajustes.find((a) => a.nombre === "baja_mercado"))),
+        // (el ajuste se llama `precio` desde A4; con b_max=3 sobre mediana 8 el factor es < 1)
+        const conTope = estimarPDetalle({}, {
+          competencia: { nivel: "media", promedio_oferentes: 3, total_procesos: 40 },
+          baja: { nivel: "medio", baja_mediana: 8, procesos_contados: 40 }, baja_maxima_pct: 3,
+        });
+        assert.ok(/×0\.\d+/.test(pintado(conTope.ajustes.find((a) => a.nombre === "precio"))),
           "con el factor presente, el tooltip tiene que pintarlo");
       }
       /* …y el detalle de competencia usa el TOKEN INTEGRADO (ago 2026): el
@@ -13235,9 +13345,18 @@ async function main() {
         assert.ok(/prorrogado/.test(motivoProbabilidad({ _cierre_prorrogado: true })), "la prórroga es la señal 2");
         assert.ok(/mismo día/.test(motivoProbabilidad({ p_ganar_detalle: { ajustes: [{ nombre: "colision_cierres", factor: 1.15 }] } })),
           "la colisión de cierres es la señal 3");
-        assert.ok(/con descuento/.test(motivoProbabilidad({ baja_mercado: { nivel: "alto", baja_mediana: 8, procesos_contados: 12 } })));
-        assert.ok(/cerca del presupuesto/.test(motivoProbabilidad({ baja_mercado: { nivel: "bajo", baja_mediana: 0, procesos_contados: 12 } })),
-          "una mediana de 0 % es un DATO (se adjudica por el oficial), no una ausencia");
+        /* Desde A4 la baja de la entidad NO es el «factor principal» de la
+           probabilidad: no la mueve. Solo se nombra el PRECIO cuando de verdad
+           restó (el dueño declaró hasta dónde puede bajar y es menos que el
+           centro), y el encogimiento cuando los datos propios pesan poco. */
+        assert.ok(!/descuento|cerca del presupuesto/.test(motivoProbabilidad({ baja_mercado: { nivel: "alto", baja_mediana: 8, procesos_contados: 12 } })),
+          "la baja de la entidad ya no puede presentarse como el factor de la probabilidad");
+        assert.ok(/pod[eé]s bajar/.test(motivoProbabilidad({ p_ganar_detalle: { ajustes: [{ nombre: "precio", factor: 0.6 }] } })),
+          "un factor de precio < 1 es el motivo");
+        assert.ok(!/pod[eé]s bajar/.test(motivoProbabilidad({ p_ganar_detalle: { ajustes: [{ nombre: "precio", factor: 1 }] } })),
+          "un factor de precio neutro no es un motivo");
+        assert.ok(/promedio general/.test(motivoProbabilidad({ p_ganar_detalle: { encogido: true, peso_datos: 0.3 }, competencia_entidad: { nivel: "sin_dato", promedio_oferentes: null, total_procesos: 2 } })),
+          "con pocos datos propios la frase tiene que decir que se apoya en el promedio general");
         assert.ok(/Basado en 12 procesos/.test(motivoProbabilidad({ competencia_entidad: { nivel: "media", promedio_oferentes: 6, total_procesos: 12 } })));
         assert.ok(/supuesto conservador/.test(motivoProbabilidad({})),
           "sin ningún dato, el supuesto se DECLARA en vez de inventarse un motivo");
@@ -13908,4 +14027,4 @@ async function main() {
   upstash.server.close();
 }
 
-main().catch((e) => { console.error("\n✘ FALLO:", e.message); process.exit(1); });
+main().catch((e) => { console.error("\n✘ FALLO:", e.message); if (process.env.E2E_STACK) console.error(e.stack); process.exit(1); });

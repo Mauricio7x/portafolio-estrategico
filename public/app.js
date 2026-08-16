@@ -872,11 +872,22 @@
     if (ajustes.some((a) => /colisi/i.test(a.nombre || "") && a.factor !== 1)) {
       return "Varios procesos cierran el mismo día.";
     }
-    const mediana = baja.baja_mediana == null ? null : Number(baja.baja_mediana);
-    const conBaja = baja.nivel && baja.nivel !== "sin_dato" && mediana != null && !isNaN(mediana);
-    if (conBaja && mediana > 5) return "Esta entidad suele adjudicar con descuento.";
-    if (conBaja && mediana < 2) return "Esta entidad adjudica cerca del presupuesto.";
+    /* La BAJA de la entidad ya NO mueve la probabilidad por sí sola (A4, ago
+       2026): lo que la mueve es hasta dónde puede bajar el dueño frente a ese
+       centro, y solo cuando lo declaró. El chip «Suelen bajar N %» sigue en la
+       tarjeta como instrucción de precio; aquí solo se nombra cuando de verdad
+       restó. `baja` se conserva para el caso público (sin cifra). */
+    void baja;
+    const precio = ajustes.find((a) => a.nombre === "precio");
+    if (precio && precio.factor != null && precio.factor < 1) return "Aquí suelen bajar más de lo que vos podés bajar.";
+    const d = l.p_ganar_detalle || {};
+    if (d.encogido && d.peso_datos != null && d.peso_datos < 0.5) {
+      return conComp
+        ? `Pocos procesos de esta entidad (${fmt.format(procesos)}): la cifra se apoya en el promedio general.`
+        : "Pocos procesos de esta entidad: la cifra se apoya en el promedio general.";
+    }
     if (conComp) return `Basado en ${fmt.format(procesos)} procesos históricos de esta entidad.`;
+    if (d.encogido && Number.isFinite(procesos) && procesos > 0) return `Basado en ${fmt.format(procesos)} procesos históricos de esta entidad.`;
     return "Sin histórico de la entidad: supuesto conservador de 5 rivales.";
   }
 
@@ -895,7 +906,10 @@
        forma de mentir. Lo que falta es la cifra, y el motivo ya lo explica. */
     const ajustes = (d.ajustes || [])
       .map((a) => `${a.nombre}${a.factor == null ? "" : ` ×${a.factor}`}: ${a.motivo}`).join("\n");
-    const titulo = [FUENTE_P[d.fuente] || "", d.rivales_esperados != null ? `Rivales esperados: ${d.rivales_esperados}` : "", ajustes,
+    // la BANDA (A6): con pocos datos la cifra se puede mover mucho, y se dice
+    const banda = d.p_lo != null && d.p_hi != null
+      ? `Banda del 90 %: ${Math.round(d.p_lo * 100)} %–${Math.round(d.p_hi * 100)} %` : "";
+    const titulo = [FUENTE_P[d.fuente] || "", d.rivales_esperados != null ? `Rivales esperados: ${d.rivales_esperados}` : "", banda, ajustes,
       "Pulse para ver el desglose completo del cálculo"].filter(Boolean).join("\n");
     // sin id no hay nada que consultar: se pinta el texto de siempre, no un
     // botón que al pulsarlo tenga que disculparse
@@ -1368,11 +1382,24 @@
       ? `<p class="mt-1 text-gray-600">Promedio ${fmtNum.format(i.promedio_oferentes)} oferentes · ${i.procesos_contados} proceso${i.procesos_contados === 1 ? "" : "s"}</p>
          <p class="text-xs text-gray-500">Mediana ${i.mediana_oferentes ?? "?"} · Mín ${i.min_oferentes ?? "?"} · Máx ${i.max_oferentes ?? "?"}</p>`
       : "";
+    /* Reparto POR AÑO (ago 2026): el promedio de dos años puede mezclar un
+       período atípico (la ley de garantías 2026 obligó a competir entre nov-2025
+       y may-2026). Se enseña el conteo de cada año siempre y el promedio solo
+       cuando ese año tiene base (el servidor ya lo anula por debajo de 5). */
+    const rep = i.reparto_por_anio && typeof i.reparto_por_anio === "object" ? Object.entries(i.reparto_por_anio) : [];
+    const porAnio = rep.length
+      ? `<p class="mt-1 text-xs text-gray-500">Por año: ${rep.map(([a, x]) => `${esc(a)} · ${x.procesos} proceso${x.procesos === 1 ? "" : "s"}${x.promedio_oferentes != null ? ` (promedio ${fmtNum.format(x.promedio_oferentes)})` : ""}`).join(" · ")}</p>`
+      : "";
+    /* Y cuánto pesan los datos propios en los rivales que usa la probabilidad
+       (encogimiento): con pocos procesos manda el promedio general. */
+    const enc = i.encogimiento && i.encogimiento.rivales_estimados != null
+      ? `<p class="text-xs text-gray-500">Rivales esperados para la probabilidad: ${fmtNum.format(i.encogimiento.rivales_estimados)}${i.encogimiento.peso_datos != null ? ` (los datos propios pesan ${Math.round(i.encogimiento.peso_datos * 100)} %; el resto lo pone el promedio general)` : ""}</p>`
+      : "";
     $("modal-cuerpo").innerHTML = `
       <p class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${banda.clases}">
         <span aria-hidden="true">${banda.emoji}</span>${esc(banda.titulo)}
       </p>
-      ${resumen}
+      ${resumen}${porAnio}${enc}
       ${d.mensaje ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">${esc(d.mensaje)}</p>` : ""}
       ${bloqueAdjudicatarios(d.adjudicatarios)}
       ${tabla("Procesos incluidos", d.procesos || [], false)}
@@ -1467,6 +1494,7 @@
         <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Tus opciones en este proceso</p>
         <p class="mt-1 text-2xl font-semibold tracking-tight">${frec ? esc(frec.frase) : `${fmtNum.format(d.probabilidad_final_pct)} %`}</p>
         <p class="mt-1 text-sm text-gray-600"><span class="${et.clase || ""}" aria-hidden="true">${et.icono}</span> ${esc(et.frase)}${frec ? ` <span class="text-gray-400">(${fmtNum.format(d.probabilidad_final_pct)} %)</span>` : ""}</p>
+        ${d.banda_90 && d.banda_90.desde != null ? `<p class="mt-1 text-xs text-gray-500">Con la muestra que hay, la cifra puede moverse entre ${fmtNum.format(d.banda_90.desde * 100)} % y ${fmtNum.format(d.banda_90.hasta * 100)} %${d.peso_datos_entidad != null ? ` · los datos propios de la entidad pesan ${Math.round(d.peso_datos_entidad * 100)} %` : ""}.</p>` : ""}
         <p class="mt-1 text-xs text-gray-500">
           ${esc(p.entidad || "")}${p.departamento ? ` · ${esc(p.departamento)}` : ""}
           ${p.cuantia_cop ? ` · ${esc(fmtCorto(p.cuantia_cop))}` : ""}

@@ -13,21 +13,58 @@
 > Este entorno **no alcanza Redis de producción ni `datos.gov.co`** (allowlist del proxy). Ninguna
 > cifra de aquí es una medición del corpus real, y las que provienen de simulación lo dicen.
 
-> ## ESTADO DE IMPLEMENTACIÓN (ago 2026)
+> ## ESTADO DE IMPLEMENTACIÓN (ago 2026 · actualizado el 16-ago)
 >
-> El documento se escribió como propuesta y **dos pasos ya están en el código**. Se marca aquí
+> El documento se escribió como propuesta y **la Fase A está en el código salvo A7**. Se marca aquí
 > arriba porque un plan que no dice qué parte ya se hizo se lee mal en las dos direcciones.
 >
 > | | Paso | Estado |
 > |---|---|---|
-> | **A1** | Retirar el ajuste por tertil de competencia | ✅ **hecho** |
-> | **A1b** | Suavizar la baja a una rampa continua (mitad barata de A4) | ✅ **hecho** |
-> | A2, A3 | Publicar `μ`/`τ̂²`/`m` y encoger los rivales | ⬜ pendiente — el corte duro en 5 procesos **sigue vivo** |
-> | A4, A5 | `f_precio` y separar `p` de `p_sin_precio` | ⬜ pendiente — **el castigo al centro y la doble cuenta de precio siguen vivos** |
-> | A6, A7 | Banda de credibilidad · medir la colisión | ⬜ pendiente |
+> | **A1** | Retirar el ajuste por tertil de competencia | ✅ hecho |
+> | **A1b** | Suavizar la baja a una rampa continua (mitad barata de A4) | ✅ hecho, y **superado por A4** (la rampa ya no existe) |
+> | **A2** ✅ | Publicar `μ`/`τ̂²`/`m` en la meta y `rivales_estimados`/`peso_datos`/`rivales_desv` por entidad | ✅ **hecho** (`lib/indice_competencia`: `estimarEncogimiento`, `encogerEntidad`; meta `encogimiento`; también `por_anio` por entidad, la mitad barata de B2) |
+> | **A3** ✅ | Encogimiento: `trazaP` usa `rivales_estimados` | ✅ **hecho** — el acantilado de los 5 procesos se acabó; `fuente:"entidad"` + `encogido:true` + `peso_datos` |
+> | **A4** ✅ | Sustituir `f_baja` por `f_precio = mult(min(b_max, b_mkt))` con la curva de rentabilidad | ✅ **hecho** — `factorPrecio` llama a `lib/apu/rentabilidad.multiplicadorPrecio` (curva extraída de `pGanarPorPrecio`; una sola). **Sin `b_max` declarada el factor es 1** (neutro): el centro del mercado ya no penaliza ni premia. `b_max` entra por `?baja_max=` en el listado (solo con token) |
+> | **A5** ✅ | Separar `p` de `p_sin_precio`; el editor consume la segunda | ✅ **hecho** — `estimarPDetalle.p_sin_precio`; `lib/handlers/apu/editor.js` pasa `p_sin_precio` como `p_base` a `desdePresupuesto` y al optimizador |
+> | **A6** ✅ | Banda `p_lo`/`p_hi` + `ordenar_por=ve_conservador` como opción | ✅ **hecho** — banda del 90 % (±1,645·σ de la posterior) en `estimarPDetalle`, en el desglose (`banda_90`) y en el tooltip; `ve_conservador` ordena por `cuantía × p_lo` (opción, no default) |
+> | A7 | Medir `f_colisión` sobre el histórico (§9.3) | ⬜ pendiente |
+> | B2 | Antigüedad por celda | 🟡 el acumulador ya guarda `por_anio` {año: {n, suma}} y el detalle de competencia (`/api/inteligencia?op=entidad`) publica `reparto_por_anio`; **todavía no segmenta** el estimador |
 >
-> Lo que NO hay que malinterpretar: **suavizar la baja no la calibra**, y la rampa **no** arregla el
-> defecto semántico de §2.5c — solo le quitó el salto.
+> **Cuatro desviaciones respecto de la propuesta, deliberadas y medidas:**
+> 1. **`m = max(μ, σ̂²_dentro)/τ̂²`, no `μ/τ̂²`.** El doc asume Poisson (varianza dentro = media); los
+>    conteos reales de oferentes están sobredispersos y asumir menos ruido del observado sobrepesa el
+>    dato propio de una entidad de dos procesos. Se toma el mayor: nunca menos ruido del que hay.
+> 2. **La heterogeneidad se estima sobre las entidades con base (n ≥ 5)** y el encogimiento se aplica a
+>    todas. Estimarla con las de 1-4 procesos fue el primer intento y la suite lo cazó: el ruido
+>    muestral de muchas entidades pequeñas (s²/n con n = 2) superaba la varianza entre entidades y
+>    `τ̂²` salía ≤ 0 aunque las grandes difirieran de sobra (3, 8 y 18 oferentes).
+> 3. **El prior es el GLOBAL del índice (μ), no el departamento** (B7 sigue pendiente): `r̂` se calcula al
+>    construir el índice y ahí no está el promedio departamental, que se deriva al servir sobre el corpus
+>    ACTIVO. El departamento sigue siendo el respaldo para entidades ausentes del índice.
+> 4. **`b̂_mkt` no se encoge hacia `b_ref` de la modalidad** (§3.3): sin `b_max` el factor es 1 y el
+>    encogimiento no cambiaría nada; con `b_max` se usa la mediana de la celda tal como la publica
+>    `bajaDeMercado` (mínimo 5, ya refinada por modalidad) y su IQR como dispersión. Y **`b_max` no
+>    sale todavía del APU del proceso automáticamente**: entra declarada por `?baja_max=`; enlazar
+>    `precioPiso().baja_maxima_admisible_pct` de un borrador guardado al listado es el siguiente paso.
+> 5. **El tope `min(b_max, mediana)` es deliberado y ASIMÉTRICO respecto del editor** (lo señaló la
+>    revisión adversaria): `b_max` es hasta dónde el dueño PUEDE bajar, no lo que va a ofertar; la
+>    tarjeta asume que, si puede, ofertará en el centro (jugada dominante en 3 de 4 métodos) y no
+>    premia una baja más agresiva que nadie decidió. El editor de APU conoce la baja REAL ofertada y
+>    la evalúa sin tope, en las dos direcciones, con la MISMA curva. Y con `τ̂² ≤ 0` NO hay banda
+>    (`rivales_desv: null`): una banda de ancho cero sería certeza absoluta justo donde menos
+>    información individualizada hay.
+>
+> **Compatibilidad, verificada con prueba:** un hash de `indice:competencia` anterior a A2 (sin
+> `rivales_estimados`) hace que `competenciaDe` y `trazaP` respondan **exactamente como antes** —
+> desplegar no exige reconstruir; reconstruir enciende el encogimiento y la banda
+> (`/api/procesos?op=historico&reconstruir_indice=true`). Lo que SÍ cambia al desplegar, sin
+> reconstruir, es la retirada de la rampa: medido sobre el listado real del 16-ago-2026 (775 filas de
+> Helder, 682 de Génesis), `p` media pasa de 0,254 a 0,240 (−5,5 %: el ×1,10 alcanzaba al 69 % de las
+> filas y el ×0,85 al 16 %), el orden por VE se conserva (Spearman 0,998 / 0,997; top-20 20/20 y 17/20)
+> y ningún proceso se mueve más de 0,066 en `p`.
+>
+> **En la suite (corpus sintético):** μ = 4,42, m = 0,54; una entidad con 4 procesos y promedio 2 pasa
+> de p = 0,167 (respaldo) a 0,304, contra 0,309 con 5 procesos — el salto ×2,60 quedó en 1,5 %.
 
 ---
 
