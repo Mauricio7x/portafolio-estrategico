@@ -6816,6 +6816,21 @@ async function main() {
         const sinMed = ePD({}, { competencia: comp3b, colision_cierres: 3 });
         assert.strictEqual(sinMed.p, Math.round(0.25 * F_COL * 1e4) / 1e4);
         assert.ok(/supuesto/.test(sinMed.ajustes.find((x) => x.nombre === "colision_cierres").motivo));
+        /* B2 (medición previa): la meta publica oferentes por AÑO y dentro/fuera
+           de la ventana de la ley de garantías 2026, estratificado por entidad.
+           Es medición, no corrección; se comprueba que cuadra con el conteo. */
+        assert.ok(meta.periodos && meta.periodos.por_anio, "la meta tiene que publicar el reparto por período");
+        assert.strictEqual(Object.values(meta.periodos.por_anio).reduce((a, x) => a + x.procesos, 0), meta.procesos_contados - meta.colision.sin_dia_cierre,
+          "el reparto por año tiene que sumar los procesos con día de cierre");
+        assert.ok(meta.periodos.ventana_garantias_2026 && meta.periodos.ventana_garantias_2026.desde === "2025-11-08");
+        const mp = indiceComp.medirPeriodos([
+          { dias: { "2025-12-10": [3, 18], "2026-02-10": [2, 12], "2025-03-01": [2, 8], "2024-06-02": [2, 8] } }, // dentro 6, fuera 4
+          { dias: { "2025-01-10": [2, 10] } },                                                                    // solo fuera: no compara
+        ]);
+        assert.strictEqual(mp.ventana_garantias_2026.entidades_con_ambos_lados, 1);
+        assert.strictEqual(mp.ventana_garantias_2026.cociente_pooled, 1.5);
+        assert.strictEqual(mp.por_anio["2025"].procesos, 7);
+        assert.strictEqual(indiceComp.medirPeriodos([{ dias: { "2025-01-10": [2, 10] } }]).ventana_garantias_2026.cociente_pooled, null, "sin entidades con los dos lados no hay cociente");
         // el estadístico aislado, sobre un caso donde el efecto existe de verdad y otro donde no
         const mc = indiceComp.medirColision([
           { dias: { "2025-01-10": [3, 6], "2025-02-10": [3, 6], "2025-03-01": [1, 4], "2025-03-02": [1, 4] } }, // colisión 2, control 4
