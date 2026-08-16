@@ -144,8 +144,15 @@ La cifra se recalcula y se imprime en cada corrida de la suite (`· motor de cos
     nada es peor que uno que produce un 15 % declarado.
 - **IVA**: 19 % **únicamente sobre la utilidad**. El motor no lo suma al precio final; la hoja de
   Excel sí lo suma a su TOTAL, como cierra la referencia — las dos mitades van dichas.
-- **AIU de subcontratista**: pendiente (§6). No se añadió la casilla porque hoy ningún ítem lleva
-  el AIU del subcontratista como dato: una casilla sin dato detrás es un control que no hace nada.
+- **AIU de subcontratista** (16-ago-2026): un ítem se marca **subcontratado** (casilla por fila en
+  el paso 3, o columna «SUBCONTRATADO» del Excel) con el **AIU que el subcontratista lleva dentro de su
+  precio** (%, opcional; columna «AIU SUB»). Entra al costo directo por el precio del sub; la casilla
+  de Ajustes «Aplicar mi administración, imprevistos y ganancia también a lo subcontratado» (default
+  SÍ: el principal administra, responde y financia) decide si el AIU propio se aplica también sobre
+  eso o si va al precio a costo. El resumen publica `costo_directo_subcontratado`, `costo_directo_propio`,
+  `base_aiu` y `aiu_subcontratista_incluido` (= costo × pct/(100+pct), solo con % declarado; sin % es
+  `null` y se cuenta en `subcontratados_sin_aiu_declarado`). Es información y decisión, no un descuento
+  automático: el AIU ajeno NO se resta solo.
 
 ## 4 bis. Panel Piso / Techo — ¿me presento, y a cuánto? (Fase 3, 2026-08-15)
 
@@ -192,9 +199,13 @@ panel que se ven en pantalla, nunca desde texto genérico.
    al repositorio o su cita textual) y cambiar el estado a «verificado».
 2. Confirmar la fecha del contrato Nogal (UPN-VAD-CP-009-2025): si es anterior al 15-jul-2025 la
    jornada de calibración es 46 h (factor 1,095) — se cambia en *Parámetros de costo*, sin código.
-3. Decidir con evidencia si el factor de jornada se aplica al equipo alquilado por día.
-4. AIU de subcontratista: añadir el dato por ítem en la importación y la casilla que lo suma o
-   excluye.
+3. ~~Decidir con evidencia si el factor de jornada se aplica al equipo alquilado por día.~~ **Decidido
+   el 16-ago-2026 con dato: NO.** En la semilla la maquinaria va por HORA con rendimiento propio de la
+   máquina (independiente de la jornada) y en los 157 ítems Nogal solo 2 de 452 líneas de equipo por día
+   coinciden con el rendimiento de la cuadrilla (son costos por unidad, no días de presencia): aplicarles
+   44/42 multiplicaría una amortización que no depende de las horas del obrero. La medición quedó como
+   prueba en la suite: si el catálogo cambiara y el equipo siguiera a la cuadrilla, la decisión se retoma.
+4. ~~AIU de subcontratista~~ **Hecho el 16-ago-2026** (ver §3, «AIU de subcontratista»).
 5. (Fase 3) Umbral de precio artificialmente bajo por MODALIDAD: el dueño advierte que «hay
    modalidades de selección que te descalifican si te bajas cierto %». No se encontró una tabla
    verificable de porcentajes por modalidad (los Documentos Tipo rechazan por EXCEDER el

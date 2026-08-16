@@ -2942,8 +2942,19 @@ vista pública «Cómo calculamos» en *Precios*. Metodología y estado de verif
 - **La hoja APU del Excel imprime el EPP** junto a la herramienta menor (sección EQUIPO, donde el
   motor lo suma) y la línea de MO escribe «días × 1,048 por jornada de 42 h»: sin eso VR COSTO
   DIRECTO incluiría un valor que ninguna fila explica — la fila «que no cuadra».
-- **AIU de subcontratista: NO se añadió la casilla** porque ningún ítem lleva hoy ese dato; una
-  casilla sin dato detrás es el botón mudo. Pendiente con la importación.
+- **AIU de subcontratista (16-ago-2026): HECHO, con el dato por ítem.** `subcontratado` +
+  `aiu_subcontratista_pct` por ítem (casilla por fila en el paso 3; columnas opcionales
+  «SUBCONTRATADO»/«AIU SUB» del Excel — «AIU SUB» se detecta ANTES que precio para no tomarse por la
+  columna de precio; el importador lo pasa en `entrada_calculo`; el borrador lo guarda y lo carga).
+  `config.aiu_sobre_subcontratado` (default true) decide si el AIU propio se aplica también sobre lo
+  subcontratado o si va al precio A COSTO (`precio_venta = base_aiu × factor + (CD − base_aiu)`); el
+  resumen publica `costo_directo_subcontratado/propio`, `base_aiu`, `aiu_subcontratista_incluido`
+  (null sin %, jamás 0) y `subcontratados_sin_aiu_declarado`; la alerta lo cuenta. Sin subcontratos
+  los números son EXACTAMENTE los de antes (prueba).
+- **El factor de jornada NO se aplica al equipo — decidido con evidencia (16-ago-2026):** en la
+  semilla la maquinaria va por HORA con rendimiento propio, y en Nogal solo 2 de 452 líneas de equipo
+  por día siguen al rendimiento de la cuadrilla (son costos por unidad, no días de presencia). Hay
+  prueba que fija esa medición (< 5 % siguen a la cuadrilla): si el catálogo cambiara, se retoma.
 - **Estado de verificación honesto**: verificados prestaciones, exoneración, ARL, jornada, IVA-U y
   SMMLV; «referencia sectorial, pendiente de contraste» el divisor 210, TPNL 22,5 %, MVP 14,72 %,
   HM 5 %, EPP 3 % y el auxilio de transporte (los manuales IDU/INVIAS dan 403 aquí). La etiqueta

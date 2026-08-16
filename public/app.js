@@ -2788,6 +2788,19 @@
       pj.textContent = pc && pc.mensaje ? pc.mensaje : "";
       pj.classList.toggle("hidden", !(pc && pc.mensaje));
     }
+    /* Subcontratos: cuánto del costo directo es de terceros, si el AIU propio
+       se les aplica y cuánto AIU ajeno va dentro (solo si se declaró el %). */
+    const ps = $("r-subcontratado");
+    if (ps) {
+      const n = Number(s.items_subcontratados) || 0;
+      if (n > 0) {
+        ps.textContent = `Subcontratado: ${pesos(s.costo_directo_subcontratado)} en ${n} ítem${n === 1 ? "" : "s"}`
+          + (r.configuracion.aiu_sobre_subcontratado ? " (con mi AIU encima)" : " (a costo, sin mi AIU)")
+          + (s.aiu_subcontratista_incluido != null ? ` · AIU del subcontratista incluido: ${pesos(s.aiu_subcontratista_incluido)}` : "")
+          + (s.subcontratados_sin_aiu_declarado ? ` · ${s.subcontratados_sin_aiu_declarado} sin el AIU del sub declarado` : "");
+      }
+      ps.classList.toggle("hidden", !(n > 0));
+    }
     $("r-venta").textContent = pesos(s.precio_venta);
     $("r-aiu").textContent = `AIU ${num(r.configuracion.aiu_total_pct)} % (${r.configuracion.modo_aiu})`
       + (r.configuracion.metodo_administracion === "tiempo" && r.configuracion.administracion
@@ -3081,6 +3094,8 @@
           // campos: `undefined` y `null` significan lo mismo aquí (sin precio manual)
           precio_manual: precioManual != null && precioManual > 0 ? precioManual : null,
           origen_precio: f.origen_precio === "archivo" || f.origen_precio === "manual" ? f.origen_precio : null,
+          subcontratado: f.subcontratado === true,
+          aiu_subcontratista_pct: f.subcontratado === true ? numONull(f.aiu_subcontratista_pct) : null,
           sugerencia: f.sugerencia == null ? null : String(f.sugerencia).slice(0, 200),
         };
       });
@@ -3354,6 +3369,8 @@
         rendimiento_override: null,
         precio_manual: base.precio_manual ?? null,
         origen_precio: base.origen_precio || null,
+        subcontratado: base.subcontratado === true,
+        aiu_subcontratista_pct: base.subcontratado === true && base.aiu_subcontratista_pct != null ? base.aiu_subcontratista_pct : null,
         sugerencia: f.descripcion_catalogo || null,
         // el precio de tienda resuelto en la importación viaja a la tabla:
         // la columna se ve NADA MÁS pegar el Excel, sin esperar al cálculo
