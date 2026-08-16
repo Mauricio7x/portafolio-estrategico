@@ -1317,7 +1317,10 @@ cifra de aquí en un pliego sin abrir la fuente.
   conteo vale (antes entraban por la trampa, no por regla); Cancelado y Abierto/Publicado no. El
   detalle de competencia usa el MISMO predicado (regla de oro: no es un segundo cálculo); la vista del
   adjudicatario sigue con `esAdjudicado` (quién GANÓ). `descartados.sin_adjudicacion` conserva el
-  nombre: significa «sin conteo final».
+  nombre: significa «sin conteo final». **Medido al reconstruir (16-ago-2026):** procesos contados
+  104 702 → 92 919 (−11 %; 20 246 «sin conteo final» que antes entraban), entidades 3 490 → 3 405,
+  μ 4,18 → 4,32, m 6,57 → 6,76, colisión 1,06 → 1,07; el «2027» desapareció de `por_anio`. Las
+  cifras de μ/m citadas más arriba en esta memoria son las de antes de esta corrección.
 - **La CCE confirma que las entidades comparten NIT.** El equipo de analítica de la propia agencia
   advierte que «no hay bases maestras de entidades y proveedores; las entidades pueden compartir NIT
   entre departamentos». La corrección de identidad de ago 2026 (no publicar alias para NIT compartido;
