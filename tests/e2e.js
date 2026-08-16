@@ -1220,6 +1220,33 @@ async function main() {
   const CAB_TOKEN = { "x-historico-token": process.env.HISTORICO_TOKEN };
   const redis = crearRedis({});
 
+  /* unidad: un SOCRATA_APP_TOKEN inválido no puede parar la sincronización
+     (ago 2026: producción estuvo 14 h con 403 «Invalid app_token specified»
+     porque el valor pegado en Vercel no era el correcto). Ante 403 CON token se
+     reintenta una vez sin él; si responde, el token se descarta y se cuenta.
+     Un 403 SIN token sigue siendo un 403 de verdad. */
+  {
+    const { crearCliente } = require("../lib/socrata.js");
+    const llamadas = [];
+    const fetchFalso = async (url, { headers }) => {
+      llamadas.push(!!headers["X-App-Token"]);
+      if (headers["X-App-Token"]) return { ok: false, status: 403, headers: { get: () => null }, text: async () => "Invalid app_token specified" };
+      return { ok: true, status: 200, json: async () => [{ n: "1" }] };
+    };
+    const cli = crearCliente({ appToken: "MALO", fetchImpl: fetchFalso, dormir: async () => {} });
+    const r = await cli.pedir({ "$limit": "1" }, "prueba");
+    assert.deepStrictEqual(r, [{ n: "1" }], "con el token rechazado la petición tiene que responder igual, sin él");
+    assert.strictEqual(cli.appTokenRechazado(), true);
+    assert.deepStrictEqual(llamadas, [true, false], "403 con token → una llamada sin token");
+    await cli.pedir({ "$limit": "1" }, "prueba2");
+    assert.deepStrictEqual(llamadas.slice(2), [false], "descartado el token, las siguientes van sin él desde el principio");
+    // 403 SIN token: bloqueo real, se agota como antes
+    const cli403 = crearCliente({ appToken: "", fetchImpl: async () => ({ ok: false, status: 403, headers: { get: () => null }, text: async () => "" }), dormir: async () => {} });
+    await assert.rejects(() => cli403.pedir({ "$limit": "1" }, "bloqueo"), /agotados/);
+    assert.strictEqual(cli403.appTokenRechazado(), false);
+    console.log("· unidad socrata: token inválido → 403 con token, 200 sin él, se descarta y se cuenta; 403 sin token sigue siendo bloqueo");
+  }
+
   /* unidad: el empaquetador respeta los 500 KB comprimidos y no pierde filas */
   {
     const grandes = Array.from({ length: 9000 }, (_, i) => ({ _k: `k${i}`, blob: crypto.randomBytes(120).toString("hex") }));
