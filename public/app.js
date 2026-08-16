@@ -1916,7 +1916,7 @@
   };
   const ESTADO_VERIFICACION = {
     verificado: { texto: "Verificado con la norma", clases: "bg-green-50 text-green-800 ring-green-600/20" },
-    referencia: { texto: "Referencia sectorial, pendiente de contraste", clases: "bg-amber-50 text-amber-800 ring-amber-600/20" },
+    referencia: { texto: "Referencia sectorial, sin fuente oficial", clases: "bg-amber-50 text-amber-800 ring-amber-600/20" },
     supuesto: { texto: "Supuesto declarado", clases: "bg-gray-100 text-gray-600 ring-gray-500/20" },
   };
   function valorParametroLegible(id, p) {

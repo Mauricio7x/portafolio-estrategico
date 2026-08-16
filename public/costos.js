@@ -17,9 +17,11 @@
      (`explicarCostoHora`), para que un evaluador pueda rehacerlo a mano.
 
    Metodología de referencia (ver docs/metodologia.md, con el estado de
-   verificación de cada parámetro): Manual IDU 2.2.2 (metodología B) e INVIAS
-   cap. 8, recopilados de fuentes secundarias — «referencia sectorial,
-   pendiente de contraste» mientras no se cotejen con el manual original. */
+   verificación de cada parámetro): Base de Precios de Referencia del IDU y
+   APU Regionalizados del INVIAS. Contrastados el 16-ago-2026 (§7 del doc):
+   el divisor de 210 h y la herramienta menor del 5 % están en las fuentes
+   primarias; TPNL y MVP NO aparecen en ninguna de las dos y siguen como
+   «referencia sectorial» — solo mueven el ejemplo público de costo-hora. */
 (function (raiz, fabrica) {
   if (typeof module === "object" && module.exports) module.exports = fabrica();
   else raiz.Costos = fabrica();
