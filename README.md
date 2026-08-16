@@ -245,7 +245,8 @@ nada, ni siquiera qué perfiles existen.
 | `incluir_sin_unspsc` | — | `1` para reabrir la ruta de texto sin pertinencia verde (toggle de la UI) |
 | `incluir_cerradas` | — | `1` para incluir procesos en estado terminal |
 | `solo_viables` | **`true`** | Oculta lo que no pasa las puertas P1-P3. Con `false` aparecen al final, marcados |
-| `ordenar_por` | **`atractividad`** | `atractividad` · `ve` · `p_ganar` · `anticipo` · `cuantia` · `competencia` (nivel de la **entidad**) · `puntaje` (legado) |
+| `ordenar_por` | **`atractividad`** | `atractividad` · `ve` · `ve_conservador` (cuantía × cota inferior de la banda de probabilidad; sin banda cae al VE) · `p_ganar` · `anticipo` · `cuantia` · `competencia` (nivel de la **entidad**) · `puntaje` (legado) |
+| `baja_max` | — | Baja máxima en % que el dueño soporta sin perder plata (**solo con token**; sin credencial es inerte y `baja_max_ignorada` lo dice). Con ella el ajuste `precio` de `p_ganar` deja de ser neutro. Ilegible ⇒ inerte, nunca 400 |
 | `orden` | `desc` | `asc` · `desc` |
 | `pagina` / `por_pagina` | 1 / 20 | `por_pagina` máx 100 |
 
@@ -357,16 +358,18 @@ financiar la obra no se compensa con cuantía alta. El razonamiento completo est
   "p4_competencia": { "pasa": true, "nivel": "baja", "promedio_oferentes": 3, "mensaje": "…" },
   "pasa_todas": false, "no_viable_por": ["Caja"]
 },
-"p_ganar": 0.2125, "ve": 72250000, "viable": false,
+"p_ganar": 0.1077, "ve": 36618000, "viable": false,
 "p_ganar_detalle": {
   "base": 0.25, "rivales_esperados": 3, "fuente": "entidad",
-  "ajustes": [ { "nombre": "baja_mercado", "factor": 0.85,
-                 "motivo": "la entidad adjudica ~8 % por debajo del presupuesto: ganar exige descontar" } ]
+  "ajustes": [ { "nombre": "precio", "factor": 0.4309,
+                 "motivo": "solo puede bajar hasta 3 % sin perder plata y aquí el que gana descuenta ~8 %: ofertar por encima del centro cuesta probabilidad" } ],
+  "p_sin_precio": 0.25, "encogido": true, "peso_datos": 0.86, "p_lo": 0.0919, "p_hi": 0.2175
 }
 ```
 
-El ejemplo **cuadra a mano y tiene que seguir cuadrando**: `base × Π factores = p_ganar`
-(`0,25 × 0,85 = 0,2125`) y `ve = p_ganar × cuantía` (`0,2125 × $340 M`). El factor que se publica es
+(El ejemplo lleva `?baja_max=3`; **sin `baja_max` el ajuste `precio` viaja con factor 1** y
+`p_ganar = 0,25`.) El ejemplo **cuadra a mano y tiene que seguir cuadrando**: `base × Π factores =
+p_ganar` (`0,25 × 0,4309 = 0,1077`) y `ve = p_ganar × cuantía` (`0,1077 × $340 M`). El factor que se publica es
 el mismo que se aplicó, y la base también se redondea **antes** de multiplicar, no al publicarla:
 así la única diferencia posible es media unidad del último decimal (el redondeo final de `p`), y hay
 prueba que barre el espacio de parámetros para fijarlo. Publicar una cifra y multiplicar por otra
@@ -389,14 +392,30 @@ cifra: es inteligencia de precio (ver «Lo que no sale sin token»).
 - **Regla de faltantes**: un dato ausente no vale 0 ni 1. La puerta marca `sin_dato` y **deja
   pasar** — cerrar por ignorancia esconde oportunidades reales y el usuario no puede ni enterarse.
 
-`p_ganar ≈ 1 / (1 + rivales esperados)`, con los rivales tomados en cascada del **histórico de la
-entidad** → **promedio de su departamento** → **supuesto conservador de 5** (`P = 1/6`), y tres
-ajustes declarados: **cierre prorrogado ×1,20** · **colisión de cierres ×1,15** · **baja de mercado**,
-una rampa continua de ×1,10 (la entidad adjudica por el presupuesto oficial) a ×0,85 (descuenta
-≥5 %). La fuente viaja siempre en `p_ganar_detalle.fuente`: «histórico de la entidad»
-no es lo mismo que «supuesto», y enseñar el 17 % sin decir de dónde sale convierte una estimación en
-una promesa. Los factores son **supuestos con nombre**, no coeficientes ajustados: no hay etiqueta
-contra la que calibrarlos, y suavizar la baja **no la calibra**. `ve = p_ganar × cuantía`.
+`p_ganar ≈ 1 / (1 + rivales esperados)`, con los rivales tomados en cascada: **`rivales_estimados`
+de la entidad** (índice reconstruido desde el 16-ago-2026: `r̂ = w·promedio_entidad + (1−w)·μ`, con
+`w = n/(n+m)` — encogimiento gamma-Poisson hacia el promedio global del índice, para TODAS las
+entidades, también las de 1-4 procesos; `encogido:true` y `peso_datos` en la respuesta) → **promedio
+histórico de la entidad** (hash anterior, ≥5 procesos) → **promedio de su departamento** → **supuesto
+conservador de 5** (`P = 1/6`), y tres ajustes declarados: **cierre prorrogado ×1,20** · **precio**
+(`mult(min(baja_max, baja_mediana))` con la MISMA curva del editor de APU; **factor 1 sin
+`?baja_max=`**: el centro del mercado ya no penaliza ni premia) · **colisión de cierres ×1,15**. La
+fuente viaja siempre en `p_ganar_detalle.fuente`: «histórico de la entidad» no es lo mismo que
+«supuesto», y enseñar el 17 % sin decir de dónde sale convierte una estimación en una promesa. Los
+factores de prórroga y colisión son **supuestos con nombre**, no coeficientes ajustados: no hay
+etiqueta contra la que calibrarlos. `ve = p_ganar × cuantía`. `p_sin_precio` (la cadena sin el factor
+de precio) es lo que el editor de APU consume como `p_base`, para que el precio se cobre UNA vez.
+`p_lo`/`p_hi` es la **banda del 90 %** (r̂ ± 1,645·σ de la posterior; `null` sin índice reconstruido) y
+`?ordenar_por=ve_conservador` ordena por `cuantía × p_lo` (opción).
+
+La **rampa de baja de mercado** (×1,10 hasta 2 % … ×0,85 desde 5 %) se retiró el 16-ago-2026:
+penalizaba a la entidad por dónde está el CENTRO de su mercado —dos entidades con la misma
+competencia, cada oferente en su centro, daban probabilidades distintas— y cobraba el precio dos
+veces con el editor de APU. Medido sobre el listado real de ese día: `p` media 0,254 → 0,240, orden
+por VE con Spearman 0,998. El chip «Suelen bajar N %» sigue en la tarjeta como instrucción de precio.
+Y el **corte duro en 5 procesos** como estimador (×2,60 de salto por UN proceso más) se acabó con el
+encogimiento: en la suite, 4 procesos con promedio 2 pasan de p = 0,167 a 0,304 frente a 0,309 con
+5. Detalle en `docs/PROBABILIDAD_MEJORADA.md` (ESTADO) y en `CLAUDE.md`.
 
 El **ajuste por tertil de competencia** (×1,30 «baja» / ×0,70 «alta») se retiró en ago 2026: `nivel`
 es el tertil del **mismo promedio** que ya está dentro de `rivales`, así que multiplicaba por la
@@ -454,9 +473,12 @@ procesos que lo sostienen son de obra civil o de cualquier otra cosa.
 | `refrescar` | — | `1` para saltarse la caché de lectura (igual la deja al día) |
 
 Mismo `HISTORICO_TOKEN` que el resto (header `x-historico-token` o `?token=`). Devuelve tres
-bloques: `indice` (nivel, promedio, mediana, mín/máx, contados vs adjudicados), `procesos` (los que
-forman el promedio, **de menos a más oferentes**: lo relevante para decidir) y `excluidos` (los que
-NO cuentan, cada uno con su `motivo_exclusion`).
+bloques: `indice` (nivel, promedio, mediana, mín/máx, contados vs adjudicados; desde ago 2026 también
+`encogimiento` {rivales_estimados, peso_datos, rivales_desv} tal como lo publicó el índice y
+`reparto_por_anio` {año: {procesos, promedio_oferentes}} — el promedio del año solo con ≥5 procesos
+en ESE año; sirve para ver si el promedio de dos años mezcla la ventana de la ley de garantías 2026),
+`procesos` (los que forman el promedio, **de menos a más oferentes**: lo relevante para decidir) y
+`excluidos` (los que NO cuentan, cada uno con su `motivo_exclusion`).
 
 **Nada se descarta en silencio** — esa era justamente la queja del ⚪ sin explicación:
 
@@ -2031,7 +2053,7 @@ licitaciones:historico:mes:{YYYY-MM}:chunk:{i} mismo formato de chunk
 CONOCIMIENTO DERIVADO DEL HISTÓRICO — se reconstruye sin re-extraer nada; ninguna purga lo toca
 indice:competencia                             HASH entidad → {procesos, promedio, mediana, nivel}
                                                (+ alias «nit:{NIT}» → {ref: entidad})
-indice:competencia:meta                        JSON {construido, cortes, por_nivel, descartados, …}
+indice:competencia:meta                        JSON {construido, cortes, por_nivel, descartados, encogimiento {mu_global, tau2, m, sigma2_dentro, entidad_no_distingue}, …}
 indice:competencia:progreso                    JSON comprimido, acumulador reanudable del índice
 indice:baja:entidad                            HASH entidad → {baja_mediana, baja_promedio, p25, p75,
                                                nivel, oferentes_promedio, segmentos:{SS:{…}}}

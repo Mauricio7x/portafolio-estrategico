@@ -2284,11 +2284,11 @@ por eso lo que descubrió se fijó como prueba en `tests/e2e.js`, que sí es del
     **No es un defecto: es que antes el número estaba inflado por contar la competencia dos veces.**
     Medido en la suite: la `p_ganar` del bloque de rentabilidad pasó de 0,2091 a 0,1777. Y la prueba
     solo exige `veg != null`, así que el SIGNO no lo vigila nadie.
-  · ⬜ **Sin corregir**: el corte duro en 5 procesos (×2,60 de salto) y el defecto SEMÁNTICO de la
-    baja —penaliza a una entidad por dónde está el centro de su mercado en vez de por la distancia a
-    la que uno puede ofertar de ese centro, y como `/api/apu/[accion].js` consume esta `p` como su
-    `p_base`, el precio se cobra DOS VECES—. La rampa quitó el salto, no esto. Cerrarlo exige separar
-    `p` de `p_sin_precio` y coordinar con `lib/apu/rentabilidad` (pasos A4/A5 del plan).
+  · ✅ **Corregidos el 16-ago-2026 (A2-A6)**: el corte duro en 5 procesos (encogimiento) y el
+    defecto SEMÁNTICO de la baja (factor de precio + `p_sin_precio` para el editor). Ver la sección
+    «Probabilidad: encogimiento, factor de precio y banda» más abajo. La rampa YA NO EXISTE.
+  · ⬜ Sigue pendiente A7 (medir la colisión de cierres sobre el histórico) y B2 (segmentar por
+    período: el acumulador ya guarda `por_anio` y el detalle lo enseña, pero el estimador no segmenta).
   El documento trae además los tres protocolos de calibración que el histórico ya permite correr hoy.
 - Las CUATRO PUERTAS en `lib/puertas.js` y `P(ganar)`/VE en `lib/probabilidad.js` (`trazaP` es la
   única implementación de la cadena; `estimarPDetalle` es su vista redondeada); el desglose
@@ -2448,6 +2448,82 @@ por eso lo que descubrió se fijó como prueba en `tests/e2e.js`, que sí es del
   (211 M) y abre para Helder (1.107 M)**. Sin él, P3 solo se probaba con objetos sintéticos y la
   suite pasaba verde sin que ningún proceso del corpus ejercitara la puerta nueva a través del
   endpoint. Es además la prueba de que la puerta depende del PERFIL, no del proceso.
+
+### Probabilidad: encogimiento, factor de precio y banda (16-ago-2026 · A2-A6 del plan)
+
+`docs/PROBABILIDAD_MEJORADA.md` §8 Fase A, menos A7. Toca `lib/indice_competencia.js` (escritor y
+lector), `lib/probabilidad.js`, `lib/apu/rentabilidad.js` (curva extraída), `lib/handlers/apu/editor.js`,
+`lib/probabilidad_desglose.js`, `lib/publico.js`, `lib/competencia_detalle.js` y el listado.
+Decisiones que no hay que re-aprender:
+
+- **SE ACABÓ EL ACANTILADO DE LOS 5 PROCESOS.** El índice publica por entidad `rivales_estimados`
+  (`r̂ = w·r̄_e + (1−w)·μ`, media posterior gamma-Poisson), `peso_datos` (`w = n/(n+m)`) y
+  `rivales_desv` (√Var de la posterior), y en la meta el bloque `encogimiento` (`mu_global`, `tau2`,
+  `m`, `sigma2_dentro`, `entidad_no_distingue`). `trazaP` usa `rivales_estimados` cuando el registro
+  lo trae (`fuente:"entidad"`, `encogido:true`); si no, la cascada de siempre. **`promedio`,
+  `mediana` y `oferentes_total` SIGUEN en null bajo el mínimo y el badge sigue en ⚪**: «¿cuál es el
+  promedio medido?» y «¿cuántos rivales espero?» son dos preguntas y dos objetos — mezclarlos
+  resucitaría «18,2 oferentes sin base». En la suite, 4 procesos con promedio 2 pasan de p = 0,167
+  (respaldo) a 0,304 frente a 0,309 con 5 procesos: el ×2,60 quedó en 1,5 %.
+- **`m = max(μ, σ̂²_dentro)/τ̂²`, estimado SOLO sobre las entidades con base (n ≥ 5).** Dos
+  desviaciones del doc, las dos medidas: (1) el doc pone `μ/τ̂²` (Poisson); los conteos reales están
+  sobredispersos y asumir menos ruido del observado sobrepesaría el dato propio de una entidad de
+  dos procesos; (2) estimar τ̂² con las entidades de 1-4 procesos fue el primer intento y **la suite
+  lo cazó**: el ruido muestral de muchas pequeñas (s²/n con n = 2) superaba la varianza entre
+  entidades y τ̂² salía ≤ 0 aunque las grandes difirieran de sobra (3, 8 y 18). Con `τ̂² ≤ 0` de
+  verdad, todo se encoge a μ y `entidad_no_distingue:true` lo declara — «la dimensión entidad no
+  existe» es un resultado, no un fallo.
+- **El prior es μ GLOBAL del índice, no el departamento (B7 pendiente):** `r̂` se calcula al
+  CONSTRUIR el índice y el promedio departamental se deriva al SERVIR sobre el corpus activo. El
+  departamento sigue siendo el respaldo para entidades ausentes del índice.
+- **DOS LECTORES DE NÚMEROS, Y NO SON INTERCAMBIABLES.** El `numero()` del índice es el lector
+  TOLERANTE del dataset (punto = miles): leía `peso_datos: 0.963` como **963** y el peso salía null.
+  Los campos que escribe el propio módulo como JSON se leen con `Number` ESTRICTO (`maquina`), y la
+  ausencia se descarta ANTES (`Number(null)` es 0 y colaba un peso «0» donde había ausencia — la
+  misma trampa de la rampa, en otro sitio). Hay prueba con el registro tal como lo escribe el índice.
+- **LA RAMPA DE BAJA NO EXISTE: hay un FACTOR DE PRECIO** `f = mult(min(b_max, b_mkt))`, con `mult`
+  la MISMA curva del editor (`lib/apu/rentabilidad.multiplicadorPrecio`, extraída de
+  `pGanarPorPrecio` para que haya UNA sola teoría de cómo el precio mueve la probabilidad — está
+  PROHIBIDO reimplementarla en `lib/probabilidad`, y hay prueba de igualdad numérica). `b_mkt` es la
+  mediana de `bajaDeMercado` (mín. 5, refinada por modalidad; su IQR es la dispersión) y `b_max` la
+  baja máxima que el dueño soporta. **Sin `b_max` declarada el factor es EXACTAMENTE 1** y viaja
+  (`origen_b_max:"neutra"`): el centro del mercado ya no penaliza ni premia — penalizar por no saber
+  hasta dónde puede bajar sería inventar. El ×1,10 se fue SIN sustituto (adjudicar cerca del oficial
+  es margen, no probabilidad). Impacto medido en producción sin reconstruir nada: `p` media 0,254 →
+  0,240 (el ×1,10 alcanzaba al 69 % de las filas), Spearman del orden por VE 0,998, ningún proceso se
+  mueve más de 0,066. El chip «Suelen bajar N %» SIGUE en la tarjeta como instrucción de precio.
+- **`?baja_max=` SOLO CON TOKEN.** Sin credencial el parámetro es INERTE y `baja_max_ignorada` lo
+  dice: si moviera `p`, un cliente público bisecaría en veinte peticiones la mediana que
+  `lib/publico` acaba de tapar mirando dónde empieza a caer la probabilidad. Ilegible/negativo ⇒
+  inerte, nunca 400. Y `lib/publico` redacta el ajuste `precio` igual que redactaba `baja_mercado`
+  (su motivo lleva la mediana Y la `b_max`); `baja_mercado` se conserva en la lista de nombres por
+  si un consumidor guardó una respuesta vieja.
+- **`p` Y `p_sin_precio` SON DOS CIFRAS, y el editor de APU consume la SEGUNDA (A5).** `p_sin_precio`
+  = base × prórroga × colisión (con los mismos límites). `lib/handlers/apu/editor.js` la pasa como
+  `p_base` a `desdePresupuesto` y al optimizador, donde `pGanarPorPrecio` aplica el precio UNA vez con
+  la baja que el dueño de verdad va a ofertar. Hay prueba de que `p_sin_precio` no depende de
+  `baja_max` y de que con `baja_max=0` alguna entidad que descuenta pierde probabilidad.
+- **LA BANDA (A6) es la misma cadena evaluada en r̂ ± 1,645·σ**, no un multiplicador: `p_lo`/`p_hi`
+  en `estimarPDetalle`, `banda_90` en el desglose y en el tooltip de la tarjeta; sin `rivales_desv`
+  vale `null` (jamás ±0). Se estrecha con n (prueba: n = 4 vs n = 40). `ordenar_por=ve_conservador`
+  ordena por `cuantía × p_lo` — **opción, no default** — y cae al VE de siempre sin banda.
+- **El desglose narrado cambió el paso 4** («Ajuste por precio: hasta dónde puede bajar frente al
+  centro del mercado»; fórmula con `min(baja_maxima_del_dueño, baja_mediana_entidad)` y la curva de
+  rentabilidad citada) y el paso 1 explica el encogimiento (peso de los datos propios, μ, banda).
+  `ORDEN_CADENA`/`GRUPO_DE` usan `precio`. La frase de la tarjeta (`motivoProbabilidad`) ya no dice
+  «suele adjudicar con descuento» como factor de la probabilidad —no la mueve—; nombra el precio solo
+  cuando restó y el «promedio general» cuando `peso_datos < 0,5`.
+- **B2 a medias, a propósito:** el acumulador guarda `por_anio` {año: {n, suma}} (año de adjudicación
+  → publicación → «sin_fecha», `anioDe`, misma regla en el detalle), el registro lo publica y
+  `/api/inteligencia?op=entidad` responde `reparto_por_anio` (n siempre; promedio del año solo con ≥ 5
+  procesos EN ESE AÑO) y `encogimiento`; el modal lo pinta. Es lo que permite VER si el promedio de dos
+  años mezcla la ventana de la ley de garantías 2026 — segmentar el estimador sigue pendiente.
+- **`b_max` NO sale todavía del APU del proceso automáticamente** ni `b̂_mkt` se encoge hacia `b_ref`
+  de la modalidad (§3.3 del doc): entra declarada por `?baja_max=`. Enlazar
+  `precioPiso().baja_maxima_admisible_pct` del borrador guardado al listado es el siguiente paso.
+- **Tras desplegar:** nada se rompe sin reconstruir (compatibilidad probada con el hash viejo), pero
+  el encogimiento y la banda solo se encienden con
+  `/api/procesos?op=historico&reconstruir_indice=true` (token). La retirada de la rampa es inmediata.
 
 ### Desglose justificado de P(ganar) (ago 2026)
 
