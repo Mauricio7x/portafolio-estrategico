@@ -54,8 +54,13 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 ## Decisiones que no hay que re-aprender (costaron caro)
 
 - **Keyset por `:id`**, nunca `$offset` con orden por fecha (pierde/duplica filas en vivo).
-  `$select=":id,:updated_at,*"` y proyección en cliente: un `$select` explícito con una columna
+  `$select="*,:id,:updated_at"` y proyección en cliente: un `$select` explícito con una columna
   inexistente da 400, y la fecha de cierre vive en columnas distintas según la modalidad.
+  **EL `*` VA PRIMERO (16-ago-2026):** Socrata empezó a rechazar `:id,:updated_at,*` con 400
+  «Star selections must come at the start of the select-list» — el orden que valió meses—; el
+  cliente degradó a `$offset` como está diseñado y en producción esa vía acabó en 403 «agotados 5
+  intentos», con el delta parado ~14 h. Se cazó porque el sync respondía `ok:false` y se leyó el
+  cuerpo del 400 desde aquí. Hay prueba que fija el orden con la URL real que arma el cliente.
 - **Un 400 de Socrata jamás se reintenta ni degrada el modo por fallo de red** — solo un 400 real
   degrada keyset→offset. 429/5xx → backoff exponencial + jitter, honrando `Retry-After`.
 - **UN `SOCRATA_APP_TOKEN` INVÁLIDO NO PUEDE PARAR LA SINCRONIZACIÓN (16-ago-2026).** Socrata responde
