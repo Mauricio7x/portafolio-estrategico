@@ -1264,7 +1264,10 @@ cifra de aquí en un pliego sin abrir la fuente.
   traslado», «el 95 % nunca descarga las ofertas», «el 90 % de las reclamaciones se pierden», «el
   80 % de los procesos amañados»: **no tienen fuente y no se encontró ninguna**. No calibrar nada con
   ellas.
-- **🚩 El ciclo electoral contamina `indice_competencia` y no está modelado.** Ley de garantías 2026:
+- **El ciclo electoral: MEDIDO el 16-ago-2026 (B2), y es al revés de lo que se suponía aquí.** Dentro
+  de la ventana se presentaron MENOS oferentes por proceso (cociente 0,95, mediana 0,88 por entidad,
+  2 170 entidades): más procesos diluyen a los oferentes. Sesgo agregado ~1 %: no se segmenta. La
+  meta del índice (`periodos`) lo publica y se re-mide en cada reconstrucción. Lo que sigue: · Ley de garantías 2026:
   convenios interadministrativos bloqueados desde el **8 nov 2025**, contratación directa desde el
   **31 ene 2026**, ambos hasta el **31 may 2026** (21 jun con segunda vuelta). Durante esa ventana las
   entidades **tuvieron que competir**, así que hay un pico de procesos y probablemente más oferentes.
@@ -2288,8 +2291,8 @@ por eso lo que descubrió se fijó como prueba en `tests/e2e.js`, que sí es del
     defecto SEMÁNTICO de la baja (factor de precio + `p_sin_precio` para el editor). Ver la sección
     «Probabilidad: encogimiento, factor de precio y banda» más abajo. La rampa YA NO EXISTE.
   · ✅ A7 también (16-ago-2026): la colisión se mide y el factor sale de la medición (1,06 en
-    producción). ⬜ Sigue pendiente B2 (segmentar por período: el acumulador ya guarda `por_anio` y
-    el detalle lo enseña, pero el estimador no segmenta).
+    producción). ✅ B2 medido y cerrado sin segmentar: la ventana de garantías DILUYE oferentes
+    (0,95), sesgo agregado ~1 % — no justifica segmentar (ver la sección de probabilidad).
   El documento trae además los tres protocolos de calibración que el histórico ya permite correr hoy.
 - Las CUATRO PUERTAS en `lib/puertas.js` y `P(ganar)`/VE en `lib/probabilidad.js` (`trazaP` es la
   única implementación de la cadena; `estimarPDetalle` es su vista redondeada); el desglose
@@ -2541,6 +2544,18 @@ Decisiones que no hay que re-aprender:
   respaldado; hoy se aplica 1,06. La prueba a mano del fixture agrupa por `claveCanonica` (la
   entidad «con guion» y «sin guion» son UNA para el índice y sus procesos i=0 cierran el mismo día).
   Y `leerColision` cazó otra vez `Number(null) = 0`: la ausencia se descarta antes de convertir.
+- **B2 MEDIDO Y CERRADO SIN SEGMENTAR (16-ago-2026), y la premisa era la mitad de la verdad.** El
+  índice publica en su meta `periodos` (oferentes por año y dentro/fuera de la ventana de la ley de
+  garantías 2026, 8-nov-2025 → 31-may-2026, estratificado por entidad con los dos lados). En
+  producción: por año 4,35 (2024) · 4,08 (2025) · 4,11 (2026), estable; en la ventana **MENOS**
+  oferentes por proceso, no más — cociente pooled 0,95, mediana por entidad 0,88, sobre 2 170
+  entidades (3,74 vs 3,93 esperados). Hubo más procesos, y eso DILUYÓ a los oferentes; el promedio
+  de dos años mezcla un −5 % sobre ~23 % de los procesos: ~1 % de sesgo agregado. **Segmentar el
+  estimador no está justificado con esa magnitud** y no se hace; la medición queda publicada y se
+  vuelve a mirar en cada reconstrucción (`lectura` dinámica según el signo). Anomalía del dato vista
+  de paso: un proceso adjudicado con cierre en 2027 (34 oferentes) — `por_anio` lo enseña, no lo
+  esconde. La sección «Investigación de contraste» de arriba decía «probablemente más oferentes»:
+  ya está medido y es al revés.
 - **`b_max` NO sale todavía del APU del proceso automáticamente** ni `b̂_mkt` se encoge hacia `b_ref`
   de la modalidad (§3.3 del doc): entra declarada por `?baja_max=`. Enlazar
   `precioPiso().baja_maxima_admisible_pct` del borrador guardado al listado es el siguiente paso.
