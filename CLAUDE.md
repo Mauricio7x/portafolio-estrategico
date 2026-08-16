@@ -599,6 +599,30 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   tercer decimal (0,167 = un término en común de seis, entre el 0,15 que deja entrar y el 0,20 de
   ALTO) y cualquier palabra de más los movería de casilla — la prueba pasaría o fallaría por azar.
 
+### Contra quién se ha competido: proponentes en vivo (hgi6-6wh3, ago 2026)
+
+`lib/proponentes.js` + bloque `proponentes` en la vista de entidad de `/api/inteligencia?op=entidad` +
+«Quiénes se presentan aquí» en el modal. Cierra el pendiente de la Fase 3 «hgi6 en vivo».
+- **El corpus dice quién GANÓ; hgi6 dice quiénes SE PRESENTARON.** Son dos preguntas y dos bloques
+  (`adjudicatarios` / `proponentes`), y la lectura lo dice: es contra quién se HA competido — un
+  proceso ABIERTO no tiene proponentes en ninguna fuente pública hasta la apertura (medido en
+  docs/datos.md §5.1: 0 filas para abiertos).
+- **Se consulta por `id_procedimiento in (…)` con los ids de la entidad que YA están en el corpus**
+  (los más recientes, tope 300), NUNCA por `nit_entidad` (los NIT se comparten entre regionales — la
+  lección de identidad) ni por nombre (varía en puntuación). Consulta AGRUPADA en el servidor de
+  Socrata (`$group`, `count(*)`, `max`, `count(distinct)`): una entidad grande son miles de filas.
+- **«No Definido» NO es un NIT ni un null a secas**: viaja `nit:null` + `identificacion.tipo:
+  "sin_nit"` con su nota; dos grafías del mismo proveedor se suman por NIT.
+- **Best-effort con TIEMPO ACOTADO (6 s)**: la vista de entidad no puede colgarse de un tercero;
+  fallo o tiempo agotado → `ok:false` con motivo, `top: []`, y el detalle sale igual (hay prueba
+  con el dataset caído). La caché del detalle subió a `v4` porque el cuerpo cambió de forma. El
+  transporte es `lib/socrata.crearCliente({baseUrl})`, como el PAA — nada de un segundo cliente HTTP.
+- **El mock de la suite sirve un TERCER dataset por path** (`hgi6-6wh3`) con `in (…)`, `$group` y
+  `count(distinct …)`; sin eso la consulta real no se podría ejercitar sin red.
+- Medido en producción con el IDU antes de desplegar: 249 procesos, 123 con proponentes, 497
+  empresas; los que más se presentan son consultoras (interventoría) — hgi6 no distingue tipo de
+  contrato y el universo lo acotan los ids del corpus (obra compatible con los RUP).
+
 ### Dos defectos de producción y sus cerraduras (ago 2026)
 
 - **El «en 0 procesos» era un CAMPO INEXISTENTE, no un dato malo**: el detalle en línea del panel

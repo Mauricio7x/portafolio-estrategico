@@ -128,8 +128,13 @@ respondieron **200** desde este entorno (`https://www.datos.gov.co/api/views/{id
   fuente pública hasta la apertura; el panel Piso/Techo lo dice («Sin referencia») y enseña en su
   lugar CUÁNTOS SUELEN presentarse a esa entidad (histórico, n ≥ 5, que ya calcula
   `lib/indice_competencia`). Lo que hgi6 aporta y p6dx no es la LISTA DE NOMBRES (contra quién se
-  compite) — un consumo en vivo por `nit_entidad`/`id_procedimiento` queda como tarea pendiente,
-  fuera del alcance de la F3.
+  compite). **Integrado el 16-ago-2026 (`lib/proponentes.js`)**: la vista de entidad de
+  `/api/inteligencia?op=entidad` publica `proponentes` — consulta AGRUPADA en vivo a hgi6 por los
+  `id_procedimiento` de los procesos de la entidad que ya están en el corpus (nunca por NIT: los NIT
+  se comparten entre regionales), top de quienes más se presentan con NIT (o «sin NIT» cuando llega
+  «No Definido»), veces y última vez; best-effort con tiempo acotado (fallo → `ok:false` con motivo,
+  el detalle sale igual). Medido en producción con el IDU: 249 procesos consultados, 123 con
+  proponentes, 497 empresas distintas; el modal lo pinta como «Quiénes se presentan aquí».
 
 ### 5.2 `jbjy-vk9h` — SECOP II Contratos Electrónicos
 

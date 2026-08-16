@@ -1334,6 +1334,42 @@
     return m ? `${Number(m[3])} ${MESES_CORTOS[Number(m[2]) - 1]} ${m[1]}` : null;
   };
 
+  /* ══════════ Quiénes se presentan aquí ══════════
+     El corpus dice quién GANA; el dataset de proponentes (hgi6-6wh3) dice
+     quiénes SE PRESENTAN, ganen o no — contra quién se ha competido en esta
+     entidad. Llega best-effort: si el dataset no respondió, el bloque lo dice
+     en una línea y no inventa una lista. «No Definido» no es un NIT: se
+     enseña «sin NIT», nunca un número. */
+  function bloqueProponentes(p) {
+    if (!p) return "";
+    if (!p.ok) {
+      return `<p class="mt-4 rounded-lg bg-gray-100 p-3 text-xs text-gray-600">Quiénes se presentan aquí: no se pudo consultar el
+        dataset de proponentes de SECOP II en este momento${p.motivo ? ` (${esc(p.motivo)})` : ""}. Vuelva a abrir el detalle más tarde.</p>`;
+    }
+    const base = Number(p.procesos_con_proponentes);
+    if (!Number.isFinite(base) || base === 0 || !(p.top || []).length) {
+      return `<p class="mt-4 rounded-lg bg-gray-100 p-3 text-xs text-gray-600">SECOP II todavía no publica los proponentes de los
+        ${p.procesos_consultados} procesos de esta entidad que están en el corpus.</p>`;
+    }
+    const filas = p.top.map((t) => `
+      <tr class="border-t border-gray-100 align-top">
+        <td class="py-2 pr-3">${esc(t.nombre)}${t.nit
+    ? `<span class="block text-xs text-gray-400">NIT ${esc(t.nit)}</span>`
+    : `<span class="block text-xs text-gray-400" title="El dataset publica «No Definido» en vez del NIT de esta empresa">sin NIT</span>`}</td>
+        <td class="py-2 pr-3 text-right tabular-nums">${t.veces}</td>
+        <td class="py-2 text-right tabular-nums whitespace-nowrap">${fmtUltima(t.ultima_vez) == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtUltima(t.ultima_vez))}</td>
+      </tr>`).join("");
+    return `
+      <div class="mt-4">
+        <p class="font-medium">Quiénes se presentan aquí</p>
+        <p class="text-xs text-gray-500">Se presentaron a ${base} de los ${p.procesos_consultados} procesos de esta entidad que están en el corpus (obra ya cerrada);
+          ${p.proponentes_distintos} empresas distintas. Es contra quién se ha competido: un proceso abierto no tiene proponentes publicados hasta la apertura de ofertas.</p>
+        <div class="mt-2 overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-left text-xs text-gray-500"><th class="pb-1 pr-3 font-medium">Empresa</th><th class="pb-1 pr-3 text-right font-medium">Veces</th><th class="pb-1 text-right font-medium">Última vez</th></tr></thead>
+          <tbody>${filas}</tbody></table></div>
+      </div>`;
+  }
+
   function bloqueAdjudicatarios(a) {
     if (!a) return "";
     const base = Number(a.procesos_con_ganador);
@@ -1403,6 +1439,7 @@
       ${resumen}${porAnio}${enc}
       ${d.mensaje ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">${esc(d.mensaje)}</p>` : ""}
       ${bloqueAdjudicatarios(d.adjudicatarios)}
+      ${bloqueProponentes(d.proponentes)}
       ${tabla("Procesos incluidos", d.procesos || [], false)}
       ${tabla("Excluidos del promedio", d.excluidos || [], true,
     "Están cerrados o adjudicados, pero no cuentan para el promedio por el motivo indicado en cada uno.")}
