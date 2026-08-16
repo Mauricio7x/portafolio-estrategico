@@ -2556,9 +2556,25 @@ Decisiones que no hay que re-aprender:
   de paso: un proceso adjudicado con cierre en 2027 (34 oferentes) — `por_anio` lo enseña, no lo
   esconde. La sección «Investigación de contraste» de arriba decía «probablemente más oferentes»:
   ya está medido y es al revés.
-- **`b_max` NO sale todavía del APU del proceso automáticamente** ni `b̂_mkt` se encoge hacia `b_ref`
-  de la modalidad (§3.3 del doc): entra declarada por `?baja_max=`. Enlazar
-  `precioPiso().baja_maxima_admisible_pct` del borrador guardado al listado es el siguiente paso.
+- **`b_max` SALE DEL APU DEL PROCESO (16-ago-2026 · `lib/baja_maxima.js`)**: con token, el listado lee
+  los borradores del perfil (SCAN + MGET, la misma lectura que ya hacía `ordenar_por=margen`, ahora
+  UNA vez y memoizada por fila) y para cada proceso con borrador CON costo calcula
+  `b_max = 1 − piso_rentable/presupuesto_oficial` con la MISMA `pisoTecho` del panel (el piso ya
+  lleva la contribución del 5 % y las deducciones). El APU MANDA sobre `?baja_max=`; el origen viaja
+  (`baja_maxima {valor, origen: apu|declarada|null, borrador}` por fila y en el ajuste). **La vista
+  `probabilidad` del desglose recibe `perfil` (el frontend lo manda) y `baja_max`, y los mete en el
+  sello de su caché**: sin el perfil no vería los borradores y explicaría una `p` que la lista no
+  calculó — hay prueba de igualdad. Sin token la baja máxima es costo del dueño y viaja null
+  (defensa en profundidad en `lib/publico`). Una sola definición de «b_max = 1 − piso/PO»
+  (`bajaMaximaDesdePisoTecho`), compartida por listado y desglose.
+- **La mediana de la celda se ENCOGE hacia su modalidad SOLO para el factor de precio (§3.3)**:
+  `lib/indice_baja.encogerBaja(baja, meta)` con `w = n/(n+m_b)` y `m_b = σ̂²_dentro/τ̂²` estimado al
+  construir el índice sobre los grupos por ENTIDAD con base, con la media y la varianza EXACTAS del
+  histograma (`meta.encogimiento`); la referencia es la cubeta de la modalidad utilizada o la
+  global. **La tarjeta («Suelen bajar N %») y el piso/techo siguen con la mediana MEDIDA**: dos
+  preguntas, dos cifras, y el ajuste publica `baja_mediana_celda`, `peso_datos_baja` y
+  `referencia_baja` (el motivo dice «su celda: 12 %, ajustada hacia el mercado de la modalidad»
+  cuando difieren). Sin `encogimiento` en la meta (hash viejo) la baja pasa tal cual con peso 1.
 - **Tras desplegar:** nada se rompe sin reconstruir (compatibilidad probada con el hash viejo), pero
   el encogimiento y la banda solo se encienden con
   `/api/procesos?op=historico&reconstruir_indice=true` (token). La retirada de la rampa es inmediata.

@@ -2012,6 +2012,39 @@ async function main() {
     assert.strictEqual(probabilidad.estimarPDetalle({}, { ...ctx, baja: bModerada }).p, pNeutro,
       "una baja «sin_dato» no puede mover la probabilidad");
 
+    /* 7-sexies. §3.3: la mediana de la celda se ENCOGE hacia la referencia de
+       su modalidad SOLO para el factor de precio (`encogerBaja`); la tarjeta y
+       el piso/techo siguen con la medida. m_b sale del propio índice; sin meta
+       con encogimiento la baja pasa tal cual (peso 1). */
+    {
+      const grupos = { a: { n: 40, suma: 320, hist: { 6: 10, 7: 10, 8: 10, 10: 10 } }, b: { n: 30, suma: 60, hist: { 1: 10, 2: 10, 3: 10 } },
+        c: { n: 20, suma: 100, hist: { 4: 10, 6: 10 } }, d: { n: 3, suma: 30, hist: { 10: 3 } } };
+      const encB = indiceBaja.estimarEncogimientoBaja(grupos);
+      assert.ok(encB.m > 0 && encB.entidad_no_distingue === false && encB.entidades_estimacion === 3, `estimador de la baja: ${JSON.stringify(encB)}`);
+      const metaB = { encogimiento: encB, baja_mediana_global: 3, baja_p25_global: 0, baja_p75_global: 7,
+        por_modalidad: { "licitacion publica": { baja_mediana: 8, baja_p25: 5, baja_p75: 11 } } };
+      const celda = { nivel: "alto", baja_mediana: 12, baja_p25: 9, baja_p75: 14, procesos_contados: 6, modalidad_utilizada: "licitacion publica" };
+      const e6 = indiceBaja.encogerBaja(celda, metaB);
+      assert.ok(e6.baja_mediana < 12 && e6.baja_mediana > 8, `6 procesos: la mediana tiene que moverse hacia la modalidad (8) sin llegar: ${e6.baja_mediana}`);
+      assert.strictEqual(e6.baja_mediana_celda, 12, "la mediana medida de la celda sigue viajando");
+      assert.strictEqual(e6.referencia, "modalidad:licitacion publica");
+      assert.ok(e6.peso_datos > 0 && e6.peso_datos < 1);
+      const e200 = indiceBaja.encogerBaja({ ...celda, procesos_contados: 200 }, metaB);
+      assert.ok(Math.abs(e200.baja_mediana - 12) < Math.abs(e6.baja_mediana - 12), "con 200 procesos se encoge menos que con 6");
+      assert.strictEqual(indiceBaja.encogerBaja({ ...celda, modalidad_utilizada: null }, metaB).referencia, "global", "sin cubeta de modalidad la referencia es la global");
+      const sinMeta = indiceBaja.encogerBaja(celda, {});
+      assert.strictEqual(sinMeta.baja_mediana, 12); assert.strictEqual(sinMeta.peso_datos, 1); assert.strictEqual(sinMeta.referencia, null);
+      assert.strictEqual(indiceBaja.encogerBaja(bModerada, metaB), bModerada, "una baja sin dato pasa intacta");
+      // y el factor de precio usa la ENCOGIDA cuando se la pasan, con la celda declarada en el ajuste
+      const dEnc = probabilidad.estimarPDetalle({}, { ...ctx, baja: celda, baja_para_precio: e6, baja_maxima_pct: 5 });
+      const dCel = probabilidad.estimarPDetalle({}, { ...ctx, baja: celda, baja_maxima_pct: 5 });
+      assert.ok(dEnc.p > dCel.p, "con la mediana encogida hacia abajo, ofertar 5 % cuesta menos probabilidad que contra la celda cruda");
+      assert.ok(/su celda: 12 %/.test(dEnc.ajustes.find((a) => a.nombre === "precio").motivo), "el motivo tiene que decir la mediana de la celda cuando se encogió");
+      // la meta del índice construido en la suite publica el encogimiento
+      const metaViva = await indiceBaja.leerIndiceBajaMeta(todoCero);
+      assert.ok(metaViva && metaViva.encogimiento && "m" in metaViva.encogimiento, "la meta del índice de baja tiene que publicar `encogimiento`");
+    }
+
     /* ══════════════ 8. BAJA POR MODALIDAD (ago 2026) ══════════════
        EL DEFECTO, reproducido: una entidad que hace las dos cosas. Ocho mínimas
        cuantías adjudicadas por el presupuesto oficial (0 %) y seis licitaciones
@@ -12598,6 +12631,38 @@ async function main() {
       assert.strictEqual(rM2.cuerpo.margen.con_margen, antesConMargen + 1, "con_margen sube en uno (F8)");
       assert.ok(rM2.cuerpo.resultados.slice(1).every((f) => f.margen_estimado.valor == null), "las demás siguen «Sin referencia», abajo");
       assert.ok(!("margen_estimado" in r0.cuerpo.resultados[0]), "fuera del orden por margen el campo no viaja: no se pagan los borradores");
+      /* ---- (5-bis) A4: la baja MÁXIMA del proceso sale del APU guardado ----
+         b_max = 1 − piso_rentable/presupuesto_oficial (lib/baja_maxima), con
+         el MISMO piso del margen; manda sobre `?baja_max=`; el desglose con el
+         mismo perfil reproduce la p del listado; sin token no viaja. */
+      {
+        const bmaxEsperada = Math.max(0, Math.round((1 - pt.cifras.piso_rentable / objetivo.cuantia_cop) * 10000) / 100);
+        const rA = await L("");
+        const filaA = rA.cuerpo.resultados.find((f) => f.id_del_proceso === objetivo.id_del_proceso);
+        assert.ok(filaA && filaA.baja_maxima, "cada fila publica su baja_maxima");
+        assert.strictEqual(filaA.baja_maxima.origen, "apu", "con borrador con costo la baja máxima sale del APU");
+        assert.strictEqual(filaA.baja_maxima.valor, bmaxEsperada, `b_max (${filaA.baja_maxima.valor}) ≠ 1 − piso/PO (${bmaxEsperada})`);
+        assert.strictEqual(filaA.baja_maxima.borrador, gCon.cuerpo.id);
+        const ajP = (filaA.p_ganar_detalle.ajustes || []).find((a) => a.nombre === "precio");
+        if (ajP) assert.ok(/presupuesto guardado/.test(ajP.motivo), `el motivo tiene que decir que la b_max viene del APU: «${ajP.motivo}»`);
+        // el APU manda sobre la declarada
+        const rD = await L("baja_max=1");
+        const filaD = rD.cuerpo.resultados.find((f) => f.id_del_proceso === objetivo.id_del_proceso);
+        assert.strictEqual(filaD.baja_maxima.origen, "apu");
+        assert.strictEqual(filaD.baja_maxima.valor, bmaxEsperada);
+        const otraD = rD.cuerpo.resultados.find((f) => f.id_del_proceso !== objetivo.id_del_proceso && f.baja_mercado && f.baja_mercado.baja_mediana != null);
+        assert.ok(otraD && otraD.baja_maxima.origen === "declarada" && otraD.baja_maxima.valor === 1, "sin borrador manda la declarada");
+        // el desglose CON el perfil reproduce exactamente la p de la tarjeta
+        const rDes = await invocar(detalleComp, `/api/competencia-detalle?vista=probabilidad&refrescar=1&perfil=helder&id_proceso=${encodeURIComponent(objetivo.id_del_proceso)}`, CAB_TOKEN);
+        assert.strictEqual(rDes.status, 200);
+        assert.strictEqual(rDes.cuerpo.probabilidad_final, filaA.p_ganar, "el desglose con perfil tiene que reproducir la p del listado (b_max del APU incluida)");
+        assert.strictEqual(rDes.cuerpo.baja_maxima.origen, "apu");
+        assert.strictEqual(rDes.cuerpo.baja_maxima.valor, bmaxEsperada);
+        // sin token: ni b_max ni borrador
+        const rPubA = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=100");
+        assert.ok(rPubA.cuerpo.resultados.every((f) => f.baja_maxima && f.baja_maxima.valor === null && f.baja_maxima.origen === null && f.baja_maxima.borrador === null),
+          "sin token la baja máxima (costo del dueño) no puede viajar");
+      }
       // limpieza de los dos borradores para no contaminar los bloques que cuentan borradores
       for (const id of [gSin.cuerpo.id, gCon.cuerpo.id]) await redis.del(CLAVES.apuPresupuesto("helder", id));
 
