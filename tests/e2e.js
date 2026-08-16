@@ -930,11 +930,42 @@ function generarDatasetHistorico() {
         nit_del_proveedor_adjudicado: `90010${String(n).padStart(4, "0")}`,
         valor_total_adjudicacion: String(190e6 + n),
         fecha_adjudicacion: `${mes}-25T10:00:00.000`,
+        /* Día de CIERRE (A7): cada tercer proceso de la entidad cierra el MISMO
+           día (grupo colisión del §9.3) y el resto en días distintos (control).
+           La columna es la real de p6dx (`fecha_de_recepcion_de`), que la
+           proyección histórica conserva por regex. */
+        fecha_de_recepcion_de: i % 3 === 0 ? `${ANOS_HIST[0]}-11-30T15:00:00.000` : `${mes}-15T15:00:00.000`,
         urlproceso: { url: `https://community.secop.gov.co/hist/${n}` },
       });
     }
   }
   return filas;
+}
+
+/* Lo que la medición de colisión (A7) tiene que dar sobre el fixture de arriba,
+   calculado A MANO desde ENTIDADES_HIST(_IDENTIDAD): por entidad, colisión =
+   ofertas con i % 3 === 0 SI son ≥ 2; control = el resto. Pooled. */
+function colisionEsperadaDelFixture() {
+  let col = 0, ctrl = 0, sumCol = 0, esperado = 0, ents = 0;
+  /* Se agrupa por la MISMA clave canónica del índice: la entidad «con guion» y
+     «sin guion» del fixture de identidad son UNA entidad para el índice (fue el
+     defecto de ago 2026), y sus dos procesos «i = 0» cierran el mismo día. */
+  const { claveCanonica } = require("../lib/indice_competencia.js");
+  const porClave = new Map();
+  for (const e of [...ENTIDADES_HIST, ...ENTIDADES_HIST_IDENTIDAD]) {
+    const k = claveCanonica(e.entidad);
+    const g = porClave.get(k) || { c: [], r: [] };
+    e.ofertas.forEach((o, i) => (i % 3 === 0 ? g.c : g.r).push(o));
+    porClave.set(k, g);
+  }
+  for (const { c, r } of porClave.values()) {
+    if (c.length < 2 || !r.length) continue;
+    ents++;
+    col += c.length; ctrl += r.length;
+    const sc = c.reduce((a, b) => a + b, 0), mr = r.reduce((a, b) => a + b, 0) / r.length;
+    sumCol += sc; esperado += c.length * mr;
+  }
+  return { entidades: ents, procesos_colision: col, procesos_control: ctrl, cociente: Math.round((esperado / sumCol) * 100) / 100 };
 }
 
 /* ════════════════ mock Socrata (SoQL mínimo) ════════════════ */
@@ -6738,6 +6769,43 @@ async function main() {
             assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(p.fecha_adjudicacion), "fecha de adjudicación normalizada");
           }
         }
+      }
+      /* ── A7 · LA COLISIÓN DE CIERRES SE MIDE, no se supone (ago 2026) ──
+         La meta del índice publica el estadístico del §9.3 estratificado por
+         entidad; aquí se compara con el cálculo A MANO sobre el fixture. El
+         factor NO se toca solo: la meta dice cuánto vale lo medido frente al
+         vigente y una persona decide. */
+      {
+        const meta = JSON.parse(await redis.get("indice:competencia:meta"));
+        const esp = colisionEsperadaDelFixture();
+        assert.ok(meta.colision, "la meta del índice tiene que publicar la medición de la colisión");
+        assert.strictEqual(meta.colision.sin_dia_cierre, 0, "todos los procesos del fixture traen fecha de cierre");
+        assert.strictEqual(meta.colision.entidades_con_ambos_grupos, esp.entidades, `entidades con los dos grupos: ${meta.colision.entidades_con_ambos_grupos} vs ${esp.entidades} a mano`);
+        assert.strictEqual(meta.colision.procesos_colision, esp.procesos_colision, "procesos en colisión no cuadran con el fixture");
+        assert.strictEqual(meta.colision.procesos_control, esp.procesos_control, "procesos de control no cuadran con el fixture");
+        assert.strictEqual(meta.colision.cociente_pooled, esp.cociente, `el cociente pooled (${meta.colision.cociente_pooled}) no reproduce el cálculo a mano (${esp.cociente})`);
+        assert.ok(typeof meta.colision.multiplicador_implicito === "number" && meta.colision.multiplicador_implicito > 0);
+        // la LECTURA frente al factor vigente la pone lib/probabilidad (dueño de la constante), no el índice
+        const { leerColision, FACTOR_COLISION_CIERRES: F_COL } = require("../lib/probabilidad.js");
+        const lect = leerColision(meta.colision);
+        assert.strictEqual(lect.factor_vigente, F_COL);
+        assert.ok(/colisi|efecto|mismo día/.test(lect.lectura), "la lectura tiene que decir qué significa la cifra");
+        assert.ok(!/require\("\.\/probabilidad\.js"\)/.test(require("fs").readFileSync(require("path").join(__dirname, "..", "lib", "indice_competencia.js"), "utf8")),
+          "el índice no puede importar lib/probabilidad (la cadena filtros → equivalencias → indice_competencia alcanzaría apu/)");
+        assert.strictEqual(leerColision(null).factor_vigente, F_COL);
+        assert.ok(/sin medición/.test(leerColision({ multiplicador_implicito: null }).lectura));
+        // el estadístico aislado, sobre un caso donde el efecto existe de verdad y otro donde no
+        const mc = indiceComp.medirColision([
+          { dias: { "2025-01-10": [3, 6], "2025-02-10": [3, 6], "2025-03-01": [1, 4], "2025-03-02": [1, 4] } }, // colisión 2, control 4
+          { dias: { "2025-01-10": [2, 10], "2025-05-05": [1, 5] } },                                             // sin efecto
+          { dias: { "2025-01-10": [4, 8] } },                                                                    // sin control: fuera
+        ]);
+        assert.strictEqual(mc.entidades_con_ambos_grupos, 2, "una entidad sin grupo de control no puede entrar en la medición");
+        assert.strictEqual(mc.cociente_pooled, Math.round(((6 * 4) + (2 * 5)) / (12 + 10) * 100) / 100);
+        assert.strictEqual(indiceComp.medirColision([{ dias: { "2025-01-10": [4, 8] } }]).cociente_pooled, null, "sin entidades medibles la cifra es null, no 1");
+        assert.strictEqual(indiceComp.diaCierreDe({ fecha_de_recepcion_de: "2025-03-14T15:00:00.000" }), "2025-03-14");
+        assert.strictEqual(indiceComp.diaCierreDe({}), null);
+        console.log(`· colisión de cierres MEDIDA (A7): ${meta.colision.entidades_con_ambos_grupos} entidades · ${meta.colision.procesos_colision} en colisión vs ${meta.colision.procesos_control} control · cociente ${meta.colision.cociente_pooled} · multiplicador implícito ${meta.colision.multiplicador_implicito} (vigente ${lect.factor_vigente})`);
       }
 
       /* --- (a) 8 con oferentes + 2 sin dato → 8 en la tabla, 2 en excluidos --- */
