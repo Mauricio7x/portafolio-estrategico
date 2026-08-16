@@ -58,6 +58,14 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   inexistente da 400, y la fecha de cierre vive en columnas distintas según la modalidad.
 - **Un 400 de Socrata jamás se reintenta ni degrada el modo por fallo de red** — solo un 400 real
   degrada keyset→offset. 429/5xx → backoff exponencial + jitter, honrando `Retry-After`.
+- **UN `SOCRATA_APP_TOKEN` INVÁLIDO NO PUEDE PARAR LA SINCRONIZACIÓN (16-ago-2026).** Socrata responde
+  **403 «Invalid app_token specified»** a cualquier token que no reconozca, y producción estuvo 14 h
+  sin sincronizar (delta tras delta «agotados 5 intentos (HTTP 403)») porque el valor pegado en
+  Vercel no era el correcto. `lib/socrata.crearCliente`: ante 403 CON token reintenta UNA vez sin él;
+  si responde, descarta el token para el resto de la instancia y el sync publica `app_token_rechazado`
+  con la instrucción. Un 403 SIN token sigue siendo un bloqueo real. Lección: una variable de
+  entorno opcional que puede estar MAL no puede ser un punto único de fallo; el diagnóstico es leer la
+  respuesta del sync, no adivinar.
 - **Candado con TTL siempre** (`lock:sync`, SET NX EX 300, liberación por token). El «enCurso
   eterno» de la versión vieja venía de otro lado (full exigía secreto y nadie podía dispararla),
   pero el TTL es la garantía de que nunca reaparezca.
