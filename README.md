@@ -286,6 +286,23 @@ con la fecha de HOY en Colombia y `origenFecha:"calculada"` SIEMPRE (el dataset 
 docs/datos.md §7). `lib/habiles.js` calcula los festivos (Ley 51/1983 + Pascua). La portada se
 pinta en la landing (`public/portada.js`) y cada cifra enlaza a la lista filtrada de la Fase 8.
 
+**Fase 10 (ago 2026) — consorcio a la medida.** `POST /api/perfil?op=consorcio {nombre, integrantes:
+[{perfilId, participacion}]}` (token) valida que la suma sea EXACTAMENTE 100 %, guarda en
+`config:consorcios` y devuelve un id `cons_…` que `/api/procesos?op=listar&perfil=cons_…` sirve
+como cualquier perfil (derivado de sus integrantes vivos en cada petición; `GET` lista, `DELETE
+&id=` borra). `POST ?op=consorcio-simular {integrantes, proceso?}` (token; caché 1 h en
+`consorcio:sim:{hash}`) devuelve `indicadores {liquidez, endeudamiento, cobertura, patrimonio}`
+ponderados por participación (Guía CCE-EICP-GI-22) y **truncados a dos decimales, no redondeados**
+(las cámaras truncan), `capacidadContratacion` (= SUMA de las CRP de los integrantes, Guía CCE de
+capacidad residual — declarado en `advertencias`, no el recálculo ponderado que sugería el plan),
+`clasesUnspsc` (UNIÓN: Helder ∪ Génesis = 393, no 536), `contratos` (suma: 141),
+`procesosAdicionales` (viables del consorcio − las del mejor integrante solo, con la MISMA cuenta
+que la puerta de entrada), `cumple:null` (el dataset no publica los requisitos del pliego; lo que la
+app sí verifica viaja como `puertas_app` cuando se pasa `proceso`) y las advertencias («verifique
+si exigen un porcentaje mínimo al integrante que aporta la experiencia»). Ningún precio de oferta
+entra ni sale (art. 410A). En «Mi empresa» el bloque «Crear consorcio» aparece solo con dos o más
+perfiles individuales cargados.
+
 Respuesta: `{ ok, total, viables, no_viables, solo_viables, resultados, pagina, por_pagina, perfil,
 sincronizado, ordenado_por, por_match, indice_competencia, conocimiento }`. `por_match` reparte el
 total por solidez del match (cuántas son «RUP ✓» y cuántas hay que verificar). Cada resultado trae

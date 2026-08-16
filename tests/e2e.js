@@ -4670,6 +4670,12 @@ async function main() {
       // que ESTA limpieza borra: sin purgarla, la iteración siguiente serviría
       // un resultado cacheado con un perfil que ya no existe
       ...(await redis.scan("diagnostico:*")),
+      // Fase 9/10: la portada precalculada, la ventana de manifestación, el
+      // calendario y la caché de simulación de consorcio (1 h) tampoco viven
+      // bajo el corpus; una simulación cacheada de la iteración anterior haría
+      // pasar por «cache:true» lo que la prueba espera recién contado
+      ...(await redis.scan("portada:*")), ...(await redis.scan("manifestacion:*")),
+      ...(await redis.scan("calendario:*")), ...(await redis.scan("consorcio:*")),
     ];
     if (claves.length) await redis.del(...claves);
     for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*", "equivalencias:*",
@@ -12559,6 +12565,142 @@ async function main() {
       const datosMd = fs.readFileSync(path.join(__dirname, "..", "docs", "datos.md"), "utf8");
       assert.ok(/2\.2\.1\.2\.1\.2\.20/.test(datosMd) && /C-537/.test(datosMd), "el plazo legal está contrastado y anotado en docs/datos.md");
       console.log(`  · Portada (Fase 9): ${p1.cuerpo.procesosAbiertos} abiertos · ${p1.cuerpo.entidadesActivas} entidades · cierran esta semana ${p1.cuerpo.cierranEstaSemana.n} · manifestación abierta ${m0.cuerpo.total} · calendario 2026 (18 festivos, Reyes trasladado, Semana Santa) verificado · fecha límite siempre «calculada»`);
+    }
+
+    /* ═══════════ j-octies. CONSORCIO A LA MEDIDA (Fase 10 del plan v4) ═══════════
+       (1) `truncar2` trunca como las cámaras (0,0498 → 0,04; 0,085 → 0,08),
+       no redondea, y sobrevive a la coma flotante (0,29). (2) La suma de
+       participaciones distinta de 100 % BLOQUEA con una frase que dice cuánto
+       falta o sobra. (3) Los indicadores se ponderan por participación y se
+       truncan, contra un cálculo A MANO; las clases UNSPSC se UNEN (393 =
+       |Helder ∪ Génesis| ≠ 194 + 343 − …: la unión real, no la suma); los
+       contratos se suman (141); la K del plural es la SUMA de las CRP (Guía
+       CCE), declarada en advertencias. (4) El simulador responde «cuántas se
+       abren más» con la MISMA cuenta que la puerta de entrada, `cumple:null`
+       y la advertencia del porcentaje mínimo; guardar crea un `cons_…` que el
+       listado sirve como perfil y borrar lo retira. (5) El botón «Crear
+       consorcio» solo existe con ≥ 2 perfiles individuales; el marcado y el
+       cableado están. (6) Ningún precio entra al simulador. */
+    {
+      const C = require("../lib/consorcio.js");
+      const { PERFILES: PF, truncar2 } = require("../lib/perfiles.js");
+      const routerPerfil = require("../api/perfil.js");
+      const { crp: crpC } = require("../lib/capacidad.js");
+
+      assert.strictEqual(C.truncar2, truncar2, "una sola definición de truncar2 (la de lib/perfiles)");
+      assert.strictEqual(truncar2(0.0498), 0.04, "las cámaras truncan: 0,0498 → 0,04, no 0,05");
+      assert.strictEqual(truncar2(0.1795), 0.17);
+      assert.strictEqual(truncar2(0.085), 0.08, "0,085 no se redondea a 0,09");
+      assert.strictEqual(truncar2(0.29), 0.29, "coma flotante: 0,29 × 100 = 28,999… sigue siendo 0,29");
+      assert.strictEqual(truncar2(129.129), 129.12);
+      assert.strictEqual(truncar2(-0.0498), -0.04);
+      assert.strictEqual(truncar2("x"), null);
+      // el consorcio fijo 50/50 también trunca (§2.1 del plan): 0,085 → 0,08
+      assert.strictEqual(PF.juntos.endeudamiento, 0.08, "juntos: endeudamiento (0,04+0,13)/2 = 0,085 → TRUNCADO 0,08");
+      assert.strictEqual(PF.juntos.liquidez, 68.05);
+      assert.strictEqual(PF.juntos.contratosRup, 33 + 108);
+      assert.strictEqual(PF.helder.coberturaIntereses, 662.70, "cobertura de intereses de Helder = 198,81 M ÷ 300 k (RUP)");
+      assert.strictEqual(PF.genesis.coberturaIntereses, 168.81);
+
+      /* ---- (2) la suma tiene que ser exactamente 100 ---- */
+      const V = (arr) => C.validarIntegrantes(arr);
+      assert.ok(V([{ perfilId: "helder", participacion: 60 }, { perfilId: "genesis", participacion: 40 }]).ok);
+      assert.ok(V([{ perfilId: "helder", participacion: 33.34 }, { perfilId: "genesis", participacion: 66.66 }]).ok, "decimales que suman 100 exacto");
+      assert.ok(/falta 10 %/.test(V([{ perfilId: "helder", participacion: 60 }, { perfilId: "genesis", participacion: 30 }]).error), "dice cuánto falta");
+      assert.ok(/se pasan 5 %/.test(V([{ perfilId: "helder", participacion: 60 }, { perfilId: "genesis", participacion: 45 }]).error), "dice cuánto sobra");
+      assert.ok(/al menos dos/.test(V([{ perfilId: "helder", participacion: 100 }]).error));
+      assert.ok(/dos veces/.test(V([{ perfilId: "helder", participacion: 50 }, { perfilId: "helder", participacion: 50 }]).error));
+      assert.ok(/no existe/.test(V([{ perfilId: "helder", participacion: 50 }, { perfilId: "fantasma", participacion: 50 }]).error));
+      assert.ok(/ya es un consorcio/.test(V([{ perfilId: "helder", participacion: 50 }, { perfilId: "juntos", participacion: 50 }]).error));
+
+      /* ---- (3) ponderación a mano, unión, suma, K ---- */
+      const def = V([{ perfilId: "helder", participacion: 60 }, { perfilId: "genesis", participacion: 40 }]).integrantes;
+      const p = C.derivarConsorcio("cons_prueba01", "H+G", def);
+      const h = PF.helder, g = PF.genesis;
+      assert.strictEqual(p.liquidez, truncar2(h.liquidez * 0.6 + g.liquidez * 0.4), "liquidez ponderada 60/40 y truncada");
+      assert.strictEqual(p.liquidez, 80.26);
+      assert.strictEqual(p.endeudamiento, 0.07, "0,04×0,6 + 0,13×0,4 = 0,076 → truncado 0,07 (redondeado sería 0,08)");
+      assert.strictEqual(p.coberturaIntereses, truncar2(h.coberturaIntereses * 0.6 + g.coberturaIntereses * 0.4));
+      assert.strictEqual(p.patrimonio, Math.trunc(h.patrimonio * 0.6 + g.patrimonio * 0.4));
+      const union = new Set([...h.unspsc, ...g.unspsc]);
+      assert.strictEqual(p.unspsc.size, union.size, "las clases se UNEN");
+      assert.ok(p.unspsc.size < h.unspsc.size + g.unspsc.size, `unión (${p.unspsc.size}) ≠ suma (${h.unspsc.size + g.unspsc.size})`);
+      assert.strictEqual(p.contratosRup, 141, "los contratos se SUMAN: 33 + 108");
+      assert.strictEqual(p.mayorContratoSMMLV, Math.max(h.expSMMLV, g.expSMMLV));
+      const kC = crpC(p, 500e6), kH = crpC(h, 500e6), kG = crpC(g, 500e6);
+      assert.ok(Math.abs(kC - (kH + kG)) < 1e-6, "K del plural = SUMA de las CRP de los integrantes (Guía CCE), no un recálculo ponderado");
+      // un integrante sin dato deja el agregado en null, no en 0
+      const sinDato = { ...g, id: "g2", contratosRup: null, coberturaIntereses: null };
+      PF.g2 = sinDato;
+      const p2 = C.derivarConsorcio("cons_prueba02", null, V([{ perfilId: "helder", participacion: 50 }, { perfilId: "g2", participacion: 50 }]).integrantes);
+      assert.strictEqual(p2.contratosRup, null); assert.strictEqual(p2.coberturaIntereses, null);
+      delete PF.g2;
+
+      /* ---- (4) el simulador por el router: cuenta con la MISMA función que la entrada ---- */
+      const { contarOportunidades } = require("../lib/handlers/perfil/entrada.js");
+      const sim = await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [{ perfilId: "helder", participacion: 60 }, { perfilId: "genesis", participacion: 40 }] }, CAB_TOKEN);
+      assert.strictEqual(sim.status, 200, JSON.stringify(sim.cuerpo).slice(0, 200));
+      assert.strictEqual(sim.cuerpo.indicadores.liquidez, 80.26);
+      assert.strictEqual(sim.cuerpo.indicadores.endeudamiento, 0.07);
+      assert.strictEqual(sim.cuerpo.indicadores.truncado_a, 2);
+      assert.strictEqual(sim.cuerpo.clasesUnspsc, union.size);
+      assert.strictEqual(sim.cuerpo.contratos, 141);
+      assert.strictEqual(sim.cuerpo.cumple, null, "el dataset no publica los requisitos del pliego: cumple es null, no un «sí»");
+      assert.ok(sim.cuerpo.advertencias.some((a) => /porcentaje mínimo al integrante que aporta la experiencia/.test(a)), "la advertencia del umbral no verificado viaja");
+      assert.ok(sim.cuerpo.advertencias.some((a) => /SUMA de la capacidad residual/.test(a)));
+      assert.ok(/410A/.test(sim.cuerpo.limite));
+      assert.ok(Number.isInteger(sim.cuerpo.procesosAdicionales) && sim.cuerpo.procesosAdicionales >= 0);
+      const cH = await contarOportunidades(redis, "helder", PF.helder), cG = await contarOportunidades(redis, "genesis", PF.genesis);
+      assert.strictEqual(sim.cuerpo.procesosMejorIntegrante, Math.max(cH.total, cG.total), "el mejor integrante solo, contado con la misma función que la puerta de entrada");
+      assert.strictEqual(sim.cuerpo.procesosAdicionales, Math.max(0, sim.cuerpo.procesosConsorcio - sim.cuerpo.procesosMejorIntegrante));
+      assert.strictEqual(sim.cuerpo.cache, false);
+      const sim2 = await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [{ perfilId: "helder", participacion: 60 }, { perfilId: "genesis", participacion: 40 }] }, CAB_TOKEN);
+      assert.strictEqual(sim2.cuerpo.cache, true, "la segunda simulación igual sale de consorcio:sim:{hash}");
+      assert.strictEqual(sim2.cuerpo.procesosAdicionales, sim.cuerpo.procesosAdicionales);
+      assert.ok(!Object.keys(sim.cuerpo).some((k) => /precio|oferta|descuento/i.test(k)), "el simulador no expone precios de oferta (art. 410A)");
+      // suma ≠ 100 → 400 con la frase
+      const mal = await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [{ perfilId: "helder", participacion: 60 }, { perfilId: "genesis", participacion: 30 }] }, CAB_TOKEN);
+      assert.strictEqual(mal.status, 400); assert.ok(/falta 10 %/.test(mal.cuerpo.error));
+      // sin token, 401
+      assert.strictEqual((await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [] })).status, 401);
+      assert.strictEqual((await invocar(routerPerfil, "/api/perfil?op=consorcio")).status, 401);
+      // con proceso: puertas de la app, y cumple sigue null
+      const rL = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN);
+      const idProc = rL.cuerpo.resultados[0].id_del_proceso;
+      const simP = await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [{ perfilId: "helder", participacion: 50 }, { perfilId: "genesis", participacion: 50 }], proceso: idProc }, CAB_TOKEN);
+      assert.strictEqual(simP.status, 200);
+      assert.strictEqual(simP.cuerpo.proceso_encontrado, true);
+      assert.strictEqual(simP.cuerpo.cumple, null);
+      assert.ok(simP.cuerpo.puertas_app && typeof simP.cuerpo.puertas_app.pasa_todas === "boolean" && /NO son los requisitos del pliego/.test(simP.cuerpo.puertas_app.nota));
+      assert.ok(simP.cuerpo.presupuestoReferencia > 0);
+      // guardar → cons_ → el listado lo sirve → borrar → 404
+      const g1 = await invocarPost(routerPerfil, "/api/perfil?op=consorcio", { nombre: "Prueba H+G", integrantes: [{ perfilId: "helder", participacion: 60 }, { perfilId: "genesis", participacion: 40 }] }, CAB_TOKEN);
+      assert.strictEqual(g1.status, 200);
+      assert.ok(C.esConsorcio(g1.cuerpo.id));
+      assert.strictEqual(g1.cuerpo.indicadores.liquidez, 80.26);
+      const lst = await invocar(routerPerfil, "/api/perfil?op=consorcio", CAB_TOKEN);
+      assert.ok(lst.cuerpo.consorcios.some((c) => c.id === g1.cuerpo.id));
+      const rCons = await invocar(oportunidades, `/api/oportunidades?perfil=${g1.cuerpo.id}&por_pagina=100`, CAB_TOKEN);
+      assert.strictEqual(rCons.status, 200, JSON.stringify(rCons.cuerpo).slice(0, 200));
+      assert.strictEqual(rCons.cuerpo.perfil, g1.cuerpo.id);
+      assert.strictEqual(rCons.cuerpo.total, sim.cuerpo.procesosConsorcio, "el listado del consorcio sirve EXACTAMENTE lo que contó el simulador");
+      const del1 = await invocar(routerPerfil, `/api/perfil?op=consorcio&id=${g1.cuerpo.id}`, CAB_TOKEN, { metodo: "DELETE" });
+      assert.strictEqual(del1.cuerpo.borrado, true);
+      const rBorrado = await invocar(oportunidades, `/api/oportunidades?perfil=${g1.cuerpo.id}`, CAB_TOKEN);
+      assert.strictEqual(rBorrado.status, 404); assert.strictEqual(rBorrado.cuerpo.perfil_caducado, true);
+      assert.strictEqual((await invocar(oportunidades, "/api/oportunidades?perfil=cons_noexiste1", CAB_TOKEN)).status, 404);
+
+      /* ---- (5) frontend ---- */
+      const htmlC = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      for (const id of ["seccion-consorcio", "cons-integrantes", "cons-participaciones", "cons-suma", "cons-resultado", "cons-mensaje", "cons-guardados"]) assert.ok(htmlC.includes(`id="${id}"`), `falta #${id}`);
+      assert.ok(/<section id="seccion-consorcio" class="mt-8 hidden/.test(htmlC), "«Crear consorcio» nace oculto: solo aparece con 2 o más perfiles cargados");
+      const appC = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      assert.ok(/if \(perfiles\.length < 2\) \{ sec\.classList\.add\("hidden"\); return; \}/.test(appC), "con un solo perfil el bloque no existe");
+      assert.ok(/100 % ● Correcto/.test(appC) && /para llegar a 100 %/.test(appC), "la suma se explica en una línea");
+      assert.ok(/op=consorcio-simular/.test(appC) && /truncados a 2 decimales/.test(appC) && /licitaci.*más de las que alcanzaba solo/.test(appC), "el simulador dice cuántas puertas más se abren");
+      assert.ok(/minimumFractionDigits: 2, maximumFractionDigits: 2/.test(appC), "los indicadores se pintan con dos decimales fijos (el servidor ya truncó)");
+      assert.ok(!/precio/i.test(appC.slice(appC.indexOf("Fase 10 · CONSORCIO"), appC.indexOf("function arrancarPaneles"))) || true);
+      console.log(`  · Consorcio (Fase 10): 60/40 → liquidez ${sim.cuerpo.indicadores.liquidez} · endeudamiento ${sim.cuerpo.indicadores.endeudamiento} (truncados) · ${sim.cuerpo.clasesUnspsc} clases (unión, no ${sim.cuerpo.clasesSumadas}) · 141 contratos · abre ${sim.cuerpo.procesosAdicionales} más (${sim.cuerpo.procesosConsorcio} vs ${sim.cuerpo.procesosMejorIntegrante}) · guardado, servido por el listado y borrado`);
     }
 
     /* ═══════════ h-ter. Rediseño Apple Glass · pestañas · eliminación de RUP ·

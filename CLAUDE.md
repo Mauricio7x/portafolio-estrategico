@@ -2998,6 +2998,55 @@ la landing. Norma y censo en `docs/datos.md` §7. Decisiones que no hay que re-a
   construir la portada dentro de 6 s; el número real de manifestaciones abiertas depende del supuesto
   publicación = apertura. Ambas cosas están dichas en la respuesta y en pantalla.
 
+### Fase 10 · Consorcio a la medida (ago 2026 · plan v4)
+
+`lib/consorcio.js` · `lib/handlers/perfil/consorcio.js` (`op=consorcio` GET/POST/DELETE ·
+`op=consorcio-simular` POST, ambos con token) · `perfil=cons_…` en el listado · bloque «Crear
+consorcio» en Mi empresa · `truncar2` y `coberturaIntereses`/`contratosRup` en `lib/perfiles.js`.
+Decisiones que no hay que re-aprender:
+
+- **La premisa del plan («hoy el consorcio hereda de Génesis sin ponderar») era FALSA**: `derivarJuntos`
+  pondera 50/50 desde siempre. Lo que faltaba era la participación EDITABLE, el truncado, la cobertura
+  de intereses y los contratos acreditados como datos del perfil, y «cuántas puertas más se abren».
+- **TRUNCAR, no redondear, y UNA sola definición**: `truncar2` vive en `lib/perfiles.js` (la usan
+  `derivarJuntos` y `lib/consorcio`); las cámaras truncan (0,0498 → 0,04) y el evaluador lee el
+  certificado. Consecuencia visible: el consorcio fijo pasó de endeudamiento 0,085 a **0,08**. Con
+  colchón de coma flotante (0,29 × 100 = 28,999… sigue siendo 0,29). Un `Math.round` aquí puede
+  enseñar como cumplido lo que el evaluador ve incumplido.
+- **La K del plural sigue siendo la SUMA de las CRP** (Guía CCE de capacidad residual; regla de
+  `lib/capacidad` que costó caro), NO «se recalcula con los indicadores ponderados» como decía el plan
+  v4 §10.2. Se declara en `advertencias` (ADVERTENCIA_K) para que nadie «complete» el plan por
+  obediencia. La caja (P3) también suma patrimonios: el objeto conserva `integrantes`, que es lo que
+  leen capacidad.js y puertas.js. `indicadores.patrimonio` (ponderado, lo que lee el evaluador) y
+  `patrimonio_sumado` (lo que financia) son DOS cifras con dos nombres.
+- **La suma de participaciones es EXACTAMENTE 100 o no hay consorcio**, y la frase dice cuánto falta o
+  sobra. Un integrante repetido, inexistente, caducado o que ya sea consorcio (`juntos`, `cons_…`) es
+  400. Un dato ausente en un integrante deja el agregado en `null` (contratos, cobertura), jamás 0.
+- **UNIÓN, no suma**: |Helder ∪ Génesis| = 393 (los RUP del repositorio; el plan decía 394) y hay prueba
+  de que ≠ 194 + 343. `clasesSumadas` viaja al lado para que la diferencia se vea.
+- **«Cuántas licitaciones más se abren» usa `contarOportunidades` de la puerta de entrada** con un perfil
+  TEMPORAL inyectado en `PERFILES` bajo un id único por llamada (`sim_…`, retirado en `finally`): dos
+  cuentas divergirían, y el listado del consorcio guardado sirve EXACTAMENTE lo que el simulador contó
+  (prueba). Caché 1 h en `consorcio:sim:{hash}` (hash de integrantes + proceso + hora).
+- **`cumple` es `null` siempre**: `p6dx-8zbt` no publica los requisitos del pliego. Lo que la app sí
+  verifica (RUP, K, caja) viaja como `puertas_app` con la nota «NO son los requisitos del pliego», y la
+  advertencia literal del plan («verifique si exigen un porcentaje mínimo al integrante que aporta la
+  experiencia») viaja SIEMPRE: ese umbral no está contrastado con los Documentos Tipo.
+- **Art. 410A como arquitectura**: el simulador no recibe, calcula ni compara precios de oferta; hay prueba
+  de que ninguna clave de la respuesta se llama precio/oferta/descuento. Compara CAPACIDAD.
+- **Los consorcios se guardan en `config:consorcios` (un JSON) y se DERIVAN en cada petición** de los
+  integrantes vivos (`cargarConsorcio` inyecta en PERFILES): un RUP nuevo de Génesis cambia el consorcio
+  al instante; un integrante `rup_…` caducado hace desaparecer el consorcio (404 `perfil_caducado`).
+- **Frontend**: el bloque nace oculto y solo aparece con ≥ 2 perfiles individuales en el selector (menos
+  `juntos` y `cons_`); con dos integrantes mover un deslizador completa al otro; la simulación se pide
+  con 500 ms de espera; «Ver las N» guarda, añade el `cons_…` al selector, cambia a Licitaciones y busca;
+  `?perfil=cons_…` por URL sigue la regla del RUP subido (sin gate, selector podado). Los indicadores se
+  pintan con DOS decimales fijos porque el servidor ya truncó — un `toLocaleString` que redondee de más
+  desharía el truncado.
+- **`coberturaIntereses` (662,70 / 168,81) y `contratosRup` (33 / 108)** entraron a `lib/perfiles.js` desde
+  el RUP corte 31/12/2025 (plan v4 Anexo B, cifras que cuadran: 198,81 M ÷ 300 k = 662,70). El plural fijo
+  los deriva (cobertura ponderada truncada, contratos sumados = 141).
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).

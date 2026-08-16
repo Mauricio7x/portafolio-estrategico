@@ -5621,7 +5621,148 @@
     if (e.target && e.target.closest && e.target.closest("#btn-par-guardar")) guardarParametros();
   });
 
+  /* ══════════ Fase 10 · CONSORCIO A LA MEDIDA ══════════
+     Aparece SOLO con dos o más perfiles individuales cargados (los del
+     selector menos «juntos», que ya es un consorcio). El usuario elige
+     quiénes van y qué parte pone cada uno (deslizador + número); la suma
+     tiene que dar EXACTAMENTE 100 o no hay simulación, y se dice en una
+     línea. La simulación pide al servidor (con token: son cifras del perfil)
+     los indicadores ponderados YA TRUNCADOS, la capacidad, la unión de lo que
+     saben hacer y —lo que justifica todo esto— cuántas licitaciones más se
+     abren frente al mejor de los dos solo. «Ver las N» guarda el consorcio y
+     abre la lista con ese perfil. Aquí no entra ningún precio (art. 410A). */
+  const cons = { integrantes: [], part: {}, timer: null, ultimo: null };
+  function perfilesIndividuales() {
+    return [...$("f-perfil").options].filter((o) => o.value && o.value !== "juntos" && !/^cons_/.test(o.value))
+      .map((o) => ({ id: o.value, nombre: o.textContent.replace(/^Mi RUP · /, "") }));
+  }
+  function pintarConsorcio() {
+    const perfiles = perfilesIndividuales();
+    const sec = $("seccion-consorcio");
+    if (perfiles.length < 2) { sec.classList.add("hidden"); return; }
+    sec.classList.remove("hidden");
+    $("cons-integrantes").innerHTML = perfiles.map((p) => `<label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" data-cons-perfil="${esc(p.id)}" ${cons.integrantes.includes(p.id) ? "checked" : ""} class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">${esc(p.nombre)}</label>`).join("");
+    const elegidos = perfiles.filter((p) => cons.integrantes.includes(p.id));
+    $("cons-participaciones").innerHTML = elegidos.length < 2
+      ? `<p class="text-sm text-gray-500">Marcá al menos dos integrantes.</p>`
+      : elegidos.map((p) => `<div class="grid grid-cols-[1fr_auto] items-center gap-3">
+          <label class="text-sm text-gray-700">${esc(p.nombre)}
+            <input type="range" min="1" max="99" step="1" value="${cons.part[p.id] ?? Math.floor(100 / elegidos.length)}" data-cons-rango="${esc(p.id)}" class="mt-1 w-full">
+          </label>
+          <span class="flex items-center gap-1 text-sm"><input type="number" min="0.01" max="100" step="0.01" value="${cons.part[p.id] ?? Math.floor(100 / elegidos.length)}" data-cons-num="${esc(p.id)}" class="w-20 rounded-lg border-gray-300 text-sm">%</span>
+        </div>`).join("");
+    pintarSumaConsorcio();
+  }
+  function participacionesActuales() {
+    return cons.integrantes.map((id) => ({ perfilId: id, participacion: Number(cons.part[id] ?? 0) }));
+  }
+  function pintarSumaConsorcio() {
+    const el = $("cons-suma");
+    if (cons.integrantes.length < 2) { el.textContent = ""; return; }
+    const suma = Math.round(participacionesActuales().reduce((a, x) => a + x.participacion, 0) * 100) / 100;
+    if (Math.abs(suma - 100) < 1e-9) { el.className = "mt-2 text-sm text-emerald-700"; el.textContent = "100 % ● Correcto"; }
+    else { el.className = "mt-2 text-sm text-red-700"; el.textContent = `${suma.toLocaleString("es-CO")} % — ${suma < 100 ? `falta ${(Math.round((100 - suma) * 100) / 100).toLocaleString("es-CO")} %` : `sobra ${(Math.round((suma - 100) * 100) / 100).toLocaleString("es-CO")} %`} para llegar a 100 %`; }
+    return suma;
+  }
+  const dec2 = (v) => (v == null ? "Sin referencia" : Number(v).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  async function simularConsorcio() {
+    if (cons.integrantes.length < 2) { $("cons-resultado").classList.add("hidden"); return; }
+    const suma = participacionesActuales().reduce((a, x) => a + x.participacion, 0);
+    if (Math.abs(suma - 100) > 1e-9) { $("cons-resultado").classList.add("hidden"); return; }
+    const caja = $("cons-resultado");
+    caja.classList.remove("hidden");
+    caja.innerHTML = `<p class="text-sm text-gray-500">Calculando cuántas licitaciones se abren…</p>`;
+    let r;
+    try { r = await api("/api/perfil?op=consorcio-simular", { method: "POST", body: { integrantes: participacionesActuales() } }); }
+    catch (e) { caja.innerHTML = `<p class="text-sm text-red-700">${esc(e.message)}</p>`; return; }
+    cons.ultimo = r;
+    const ind = r.indicadores || {};
+    const solo = r.capacidadMejorIntegrante;
+    caja.innerHTML = `
+      <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Juntos quedan así</p>
+      <dl class="mt-2 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+        <dt class="text-gray-500">Puede facturar hasta</dt><dd class="font-medium">${r.capacidadContratacion == null ? "Sin referencia — falta la utilidad operacional de un integrante" : fmtCOP.format(r.capacidadContratacion)}${solo != null ? ` <span class="font-normal text-gray-500">(solo: ${fmtCOP.format(solo)})</span>` : ""}</dd>
+        <dt class="text-gray-500">Sabe hacer</dt><dd class="font-medium">${r.clasesUnspsc} tipos de trabajo <span class="font-normal text-gray-500">(unión real, no la suma de ${r.clasesSumadas})</span></dd>
+        <dt class="text-gray-500">Contratos acreditados</dt><dd class="font-medium">${r.contratos == null ? "Sin referencia" : r.contratos}</dd>
+        <dt class="text-gray-500">Liquidez · endeudamiento · cobertura</dt><dd class="font-medium">${dec2(ind.liquidez)} · ${dec2(ind.endeudamiento)} · ${dec2(ind.cobertura)} <span class="font-normal text-gray-500">(ponderados por participación, truncados a 2 decimales)</span></dd>
+        <dt class="text-gray-500">Patrimonio ponderado</dt><dd class="font-medium">${ind.patrimonio == null ? "Sin referencia" : fmtCOP.format(ind.patrimonio)}</dd>
+      </dl>
+      <p class="mt-4 text-base font-medium">${r.corpus_vacio ? "Todavía no hay licitaciones sincronizadas para contar."
+    : r.procesosAdicionales > 0 ? `Con esto se abren ${r.procesosAdicionales} licitación${r.procesosAdicionales === 1 ? "" : "es"} más de las que alcanzaba solo (${r.procesosConsorcio} frente a ${r.procesosMejorIntegrante}).`
+      : `Juntos alcanzan ${r.procesosConsorcio} licitaciones: las mismas que el mejor integrante solo (${r.procesosMejorIntegrante}). El consorcio no abre puertas nuevas hoy.`}</p>
+      <div class="mt-3 flex flex-wrap items-center gap-3">
+        <button id="cons-btn-ver" type="button" class="rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">${r.procesosConsorcio ? `Ver las ${r.procesosConsorcio}` : "Guardar consorcio"}</button>
+        <span class="text-xs text-gray-500">Guarda el consorcio y abre la lista con ese perfil.</span>
+      </div>
+      <ul class="mt-3 space-y-1 text-xs text-gray-500">${(r.advertencias || []).map((a) => `<li>Atención: ${esc(a)}</li>`).join("")}<li>${esc(r.limite || "")}</li></ul>`;
+  }
+  function programarSimulacion() { clearTimeout(cons.timer); cons.timer = setTimeout(simularConsorcio, 500); }
+  $("seccion-consorcio").addEventListener("change", (ev) => {
+    const cb = ev.target.closest("[data-cons-perfil]");
+    if (cb) {
+      const id = cb.getAttribute("data-cons-perfil");
+      cons.integrantes = cb.checked ? [...new Set([...cons.integrantes, id])] : cons.integrantes.filter((x) => x !== id);
+      // reparto por defecto en partes iguales (con enteros que sumen 100)
+      const n = cons.integrantes.length;
+      if (n >= 2) { const base = Math.floor(100 / n); cons.integrantes.forEach((x, i) => { cons.part[x] = i === 0 ? 100 - base * (n - 1) : base; }); }
+      pintarConsorcio(); programarSimulacion();
+    }
+  });
+  $("seccion-consorcio").addEventListener("input", (ev) => {
+    const r = ev.target.closest("[data-cons-rango]"), num = ev.target.closest("[data-cons-num]");
+    if (!r && !num) return;
+    const id = (r || num).getAttribute(r ? "data-cons-rango" : "data-cons-num");
+    const v = Number((r || num).value);
+    if (!Number.isFinite(v)) return;
+    cons.part[id] = v;
+    // con DOS integrantes el otro se completa solo (mover uno mueve al otro);
+    // con más, el usuario reparte y la suma le dice cuánto falta
+    if (cons.integrantes.length === 2) { const otro = cons.integrantes.find((x) => x !== id); cons.part[otro] = Math.round((100 - v) * 100) / 100; }
+    for (const x of cons.integrantes) {
+      const rr = $("seccion-consorcio").querySelector(`[data-cons-rango="${x}"]`), nn = $("seccion-consorcio").querySelector(`[data-cons-num="${x}"]`);
+      if (rr && rr !== ev.target) rr.value = cons.part[x]; if (nn && nn !== ev.target) nn.value = cons.part[x];
+    }
+    pintarSumaConsorcio(); programarSimulacion();
+  });
+  $("seccion-consorcio").addEventListener("click", async (ev) => {
+    if (ev.target.closest("#cons-btn-ver")) {
+      const btn = ev.target.closest("#cons-btn-ver"); btn.disabled = true;
+      try {
+        const g = await api("/api/perfil?op=consorcio", { method: "POST", body: { integrantes: participacionesActuales() } });
+        const sel = $("f-perfil");
+        if (![...sel.options].some((o) => o.value === g.id)) { const o = document.createElement("option"); o.value = g.id; o.textContent = `Consorcio · ${g.nombre}`; sel.appendChild(o); }
+        sel.value = g.id;
+        try { localStorage.setItem("detekta_consorcio", JSON.stringify({ id: g.id, nombre: g.nombre })); } catch { /* sin almacenamiento */ }
+        pintarConsorciosGuardados();
+        activarPestana("licitaciones");
+        pagina = 1; buscar();
+      } catch (e) { const m = $("cons-mensaje"); m.className = "mt-3 rounded-xl px-4 py-3 text-sm bg-red-50 text-red-700"; m.textContent = e.message; m.classList.remove("hidden"); }
+      finally { btn.disabled = false; }
+      return;
+    }
+    const del = ev.target.closest("[data-cons-borrar]");
+    if (del) {
+      const id = del.getAttribute("data-cons-borrar");
+      try { await api(`/api/perfil?op=consorcio&id=${encodeURIComponent(id)}`, { method: "DELETE" }); } catch { /* se repinta igual */ }
+      const sel = $("f-perfil"); for (const o of [...sel.options]) if (o.value === id) o.remove();
+      pintarConsorciosGuardados();
+    }
+  });
+  async function pintarConsorciosGuardados() {
+    let r = null;
+    try { r = await api("/api/perfil?op=consorcio"); } catch { r = null; }
+    const lista = (r && r.consorcios) || [];
+    $("cons-guardados").innerHTML = lista.length ? `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">Consorcios guardados</p><ul class="mt-1 space-y-1">${lista.map((c) => `<li class="flex flex-wrap items-center gap-2"><span>${esc(c.nombre || c.id)} — ${c.integrantes.map((i) => `${esc(i.perfilId)} ${i.participacion} %`).join(" · ")}</span>
+      <a class="text-blue-600 hover:underline" href="/?perfil=${esc(c.id)}#/licitaciones">Ver su lista</a>
+      <button type="button" data-cons-borrar="${esc(c.id)}" class="text-red-600 hover:underline">Borrar</button></li>`).join("")}</ul>` : "";
+    const sel = $("f-perfil");
+    for (const c of lista) if (![...sel.options].some((o) => o.value === c.id)) { const o = document.createElement("option"); o.value = c.id; o.textContent = `Consorcio · ${c.nombre || c.id}`; sel.appendChild(o); }
+  }
+
   function arrancarPaneles() {
+    pintarConsorcio();
+    pintarConsorciosGuardados();
     $("d-perfil").value = leerPerfil();
     $("c-perfil").value = leerPerfil();
     pintarAlertaVigencia();
@@ -5670,6 +5811,16 @@
     // sin gate pasado, el selector queda SOLO con el perfil del RUP: entrar
     // por URL no puede regalar los perfiles del dueño
     activarPerfilRup(perfilRup, { soloEste: !sesionConClave });
+    abrirApp();
+  } else if (/^cons_[a-z0-9]{6,24}$/.test(perfilUrl)) {
+    /* Fase 10 · un consorcio a la medida por URL («Ver su lista»): misma regla
+       que el RUP subido — sin gate, el selector queda SOLO con él. */
+    let nombreCons = "";
+    try { const g = JSON.parse(localStorage.getItem("detekta_consorcio") || "null"); if (g && g.id === perfilUrl) nombreCons = g.nombre || ""; } catch { /* sin almacenamiento */ }
+    const sel = $("f-perfil");
+    if (![...sel.options].some((o) => o.value === perfilUrl)) { const o = document.createElement("option"); o.value = perfilUrl; o.textContent = `Consorcio · ${nombreCons || perfilUrl}`; sel.appendChild(o); }
+    if (!sesionConClave) for (const o of [...sel.options]) { if (o.value !== perfilUrl) o.remove(); }
+    sel.value = perfilUrl;
     abrirApp();
   } else if (sesionConClave) {
     abrirApp();

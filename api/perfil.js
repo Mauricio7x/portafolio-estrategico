@@ -16,6 +16,9 @@ const OPS = {
      es GET con token, la entrada es POST pública— y `entrada` queda como
      sinónimo explícito para quien prefiera no ambigüedad. */
   entrada: () => require("../lib/handlers/perfil/entrada.js"),
+  // [v4] Fase 10 · consorcio a la medida (crear/listar/borrar) y su simulador
+  consorcio: () => require("../lib/handlers/perfil/consorcio.js"),
+  "consorcio-simular": () => (req, res) => require("../lib/handlers/perfil/consorcio.js")(req, res, { op: "consorcio-simular" }),
 };
 
 function opDe(req) {
