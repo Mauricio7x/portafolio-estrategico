@@ -6794,6 +6794,28 @@ async function main() {
           "el índice no puede importar lib/probabilidad (la cadena filtros → equivalencias → indice_competencia alcanzaría apu/)");
         assert.strictEqual(leerColision(null).factor_vigente, F_COL);
         assert.ok(/sin medición/.test(leerColision({ multiplicador_implicito: null }).lectura));
+        /* Y EL FACTOR QUE SE APLICA SALE DE LA MEDICIÓN (A7): con ≥30 entidades
+           medidas el multiplicador implícito (acotado) sustituye al 1,15; con
+           menos —como en este corpus sintético, 5 entidades— o sin medición, el
+           respaldo declarado. `Number(null)` no puede colarse como 0. */
+        const { factorColisionDe, estimarPDetalle: ePD, COLISION_MIN_ENTIDADES, COLISION_FACTOR_MAX } = require("../lib/probabilidad.js");
+        assert.strictEqual(factorColisionDe(meta.colision).origen, "supuesto", "5 entidades no bastan para creerse la medición");
+        assert.strictEqual(factorColisionDe(meta.colision).factor, F_COL);
+        assert.strictEqual(factorColisionDe(null).origen, "supuesto");
+        assert.strictEqual(factorColisionDe({ multiplicador_implicito: null, entidades_con_ambos_grupos: 500 }).origen, "supuesto", "sin multiplicador no hay medición (null no es 0)");
+        const medida = factorColisionDe({ multiplicador_implicito: 1.06, entidades_con_ambos_grupos: 1465 });
+        assert.deepStrictEqual([medida.origen, medida.factor], ["medido", 1.06]);
+        assert.strictEqual(factorColisionDe({ multiplicador_implicito: 9, entidades_con_ambos_grupos: 100 }).factor, COLISION_FACTOR_MAX, "un artefacto se acota");
+        assert.strictEqual(factorColisionDe({ multiplicador_implicito: 1.06, entidades_con_ambos_grupos: COLISION_MIN_ENTIDADES - 1 }).origen, "supuesto");
+        // en la cadena: con medición aplica la medida y el ajuste declara su origen; sin ella, el respaldo
+        const comp3b = { nivel: "media", promedio_oferentes: 3, total_procesos: 10 };
+        const conMed = ePD({}, { competencia: comp3b, colision_cierres: 3, colision_medida: { multiplicador_implicito: 1.06, entidades_con_ambos_grupos: 1465 } });
+        assert.strictEqual(conMed.p, Math.round(0.25 * 1.06 * 1e4) / 1e4);
+        assert.strictEqual(conMed.ajustes.find((x) => x.nombre === "colision_cierres").factor, 1.06);
+        assert.ok(/MEDIDO/.test(conMed.ajustes.find((x) => x.nombre === "colision_cierres").motivo));
+        const sinMed = ePD({}, { competencia: comp3b, colision_cierres: 3 });
+        assert.strictEqual(sinMed.p, Math.round(0.25 * F_COL * 1e4) / 1e4);
+        assert.ok(/supuesto/.test(sinMed.ajustes.find((x) => x.nombre === "colision_cierres").motivo));
         // el estadístico aislado, sobre un caso donde el efecto existe de verdad y otro donde no
         const mc = indiceComp.medirColision([
           { dias: { "2025-01-10": [3, 6], "2025-02-10": [3, 6], "2025-03-01": [1, 4], "2025-03-02": [1, 4] } }, // colisión 2, control 4
