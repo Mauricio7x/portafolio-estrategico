@@ -513,9 +513,9 @@
 
         <!-- pestañas (escritorio) -->
         <nav class="order-3 hidden items-center gap-1 md:flex" aria-label="Secciones">
-          <button type="button" data-tab="licitaciones" class="pestana activa">Licitaciones</button>
+          <button type="button" data-tab="admin" class="pestana activa">Mi empresa</button>
+          <button type="button" data-tab="licitaciones" class="pestana">Licitaciones</button>
           <button type="button" data-tab="apu" class="pestana">Precios</button>
-          <button type="button" data-tab="admin" class="pestana">Mi empresa</button>
         </nav>
 
         <div class="flex min-w-0 items-center gap-3">
@@ -536,16 +536,35 @@
     <!-- pestañas (móvil): barra inferior estilo app nativa -->
     <nav class="barra-movil fixed inset-x-0 bottom-0 z-20 md:hidden" aria-label="Secciones (móvil)">
       <div class="mx-auto grid h-full max-w-md grid-cols-3 items-center">
-        <button type="button" data-tab="licitaciones" class="pestana-movil activa flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>Licitaciones</button>
+        <button type="button" data-tab="admin" class="pestana-movil activa flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 14a1.6 1.6 0 0 0 .33 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.6 1.6 0 0 0 15 18.4a1.6 1.6 0 0 0-1 1.47V20a2 2 0 1 1-4 0v-.05A1.6 1.6 0 0 0 9 18.4a1.6 1.6 0 0 0-1.77.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 4.73 14a1.6 1.6 0 0 0-1.47-1H3a2 2 0 1 1 0-4h.05A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.33-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.6 1.6 0 0 0 9 4.73 1.6 1.6 0 0 0 10 3.26V3a2 2 0 1 1 4 0v.05A1.6 1.6 0 0 0 15 4.6a1.6 1.6 0 0 0 1.77-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.6 1.6 0 0 0 19.4 9v.05a1.6 1.6 0 0 0 1.47 1H21a2 2 0 1 1 0 4h-.05a1.6 1.6 0 0 0-1.47 1Z"/></svg>Mi empresa</button>
+        <button type="button" data-tab="licitaciones" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>Licitaciones</button>
         <button type="button" data-tab="apu" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><rect x="5" y="12" width="3.5" height="6" rx=".6"/><rect x="10.25" y="7" width="3.5" height="11" rx=".6"/><rect x="15.5" y="9.5" width="3.5" height="8.5" rx=".6"/></svg>Precios</button>
-        <button type="button" data-tab="admin" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 14a1.6 1.6 0 0 0 .33 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.6 1.6 0 0 0 15 18.4a1.6 1.6 0 0 0-1 1.47V20a2 2 0 1 1-4 0v-.05A1.6 1.6 0 0 0 9 18.4a1.6 1.6 0 0 0-1.77.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 4.73 14a1.6 1.6 0 0 0-1.47-1H3a2 2 0 1 1 0-4h.05A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.33-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.6 1.6 0 0 0 9 4.73 1.6 1.6 0 0 0 10 3.26V3a2 2 0 1 1 4 0v.05A1.6 1.6 0 0 0 15 4.6a1.6 1.6 0 0 0 1.77-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.6 1.6 0 0 0 19.4 9v.05a1.6 1.6 0 0 0 1.47 1H21a2 2 0 1 1 0 4h-.05a1.6 1.6 0 0 0-1.47 1Z"/></svg>Mi empresa</button>
       </div>
     </nav>
 
-    <!-- ════════════════════ PESTAÑA 1 · Licitaciones ════════════════════ -->
-    <main id="tab-licitaciones" class="panel-pestana mx-auto max-w-5xl px-5 py-8">
+    <!-- ════════════════════ PESTAÑA 1 · Mi empresa (principal) ════════════════════ -->
+    <main id="tab-admin" class="panel-pestana mx-auto max-w-6xl px-5 py-8">
+
+      <!-- ══════ Perfiles y RUP ══════ -->
+            <!-- ══════════════ MI EMPRESA · lo único que un contratista toca ══════════════
+           Antes esta pestaña se llamaba «Administración» y ponía al mismo nivel seis
+           cosas sin relación entre sí: el RUP, un tablero de procesos, la experiencia,
+           una auditoría, la carga del catálogo de precios y la sincronización con
+           SECOP II. Cuatro de las seis no son de quien va a licitar, sino de quien
+           mantiene el sistema — y mezclarlas obliga a entender el programa para poder
+           usarlo. Arriba queda lo que describe a TU empresa; lo técnico vive plegado
+           en «Sistema». Ningún id cambia: renombrarlos mataría app.js en silencio. -->
+      <!-- ══════ MI EMPRESA ES LA PESTAÑA PRINCIPAL (encargo del dueño, ago 2026) ══════
+           Lo primero que se ve al entrar son LAS CIFRAS DE ESTA EMPRESA: cuántas
+           licitaciones puede presentarse hoy, cuánto dinero, cuántas cierran esta
+           semana, dónde y quién (el pulso, que antes abría la pestaña Licitaciones
+           y ahora vive aquí; cada cifra lleva a la lista filtrada, en la pestaña
+           Licitaciones). Debajo, en cifras, su registro de proponente; y lo que
+           hay que TOCAR (subir un RUP, cargar experiencia) va plegado: la pestaña
+           motiva a licitar, no exige entender el programa. -->
+      <h1 class="sr-only">Mi empresa</h1>
       <!-- ══════ EL PULSO PERSONALIZADO (ago 2026) ══════
-           Lo primero que se ve al entrar: las cifras DE ESTE PERFIL —cuántas
+           Lo primero que se ve al entrar (vive en Mi empresa, la pestaña principal): las cifras DE ESTE PERFIL —cuántas
            licitaciones puede presentarse hoy, cuánto dinero, cuántas cierran
            esta semana, dónde están y quién las publica—, cada una enlazando a
            la lista filtrada. Nace OCULTO y lo llena public/pulso.js con
@@ -576,994 +595,12 @@
         </section>
         <p id="pt-vacio" class="mt-3 text-sm" style="color: var(--text-secondary);">Cargando el mercado…</p>
       </details>
-      <!-- ══════ LA BARRA DE HERRAMIENTAS (ago 2026) ══════
-           Una sola fila, estilo Apple: buscar · ordenar · «Filtros» (abre una
-           HOJA con todo lo demás) · Buscar. Antes había DOS zonas de filtros a
-           la vista —una rejilla de nueve controles y una segunda barra con
-           chips y selects— y el dueño la describió como «un desastre». Todos
-           los ids se conservan (app.js y media suite los cablean; un nodo
-           movido conserva sus listeners): solo cambió DÓNDE viven. Lo activo
-           se ve como fichas bajo la barra; el detalle vive en #panel-filtros. -->
-      <section class="barra-herramientas rounded-2xl bg-white p-3 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-center gap-2">
-          <label class="campo-buscar flex min-w-[220px] flex-1 items-center gap-2 rounded-xl px-3">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="color: var(--text-secondary);"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-            <input id="fl-q" type="text" placeholder="Buscar por palabra o entidad" autocomplete="off"
-                   class="w-full border-0 bg-transparent py-2 text-sm focus:outline-none focus:ring-0">
-          </label>
-          <select id="f-ordenar" class="control-select rounded-xl text-sm" aria-label="Ordenar por">
-            <option value="atractividad">Las mejores para vos</option>
-            <option value="margen">Dónde me queda más</option>
-            <option value="cierre">Las que cierran antes</option>
-            <option value="ve">Las que más plata dejan</option>
-            <option value="p_ganar">Las más ganables</option>
-            <option value="cuantia">Las más grandes</option>
-            <option value="competencia">Las menos peleadas</option>
-            <option value="anticipo">Mayor anticipo</option>
-          </select>
-          <button id="btn-filtros" type="button" class="control-boton inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm" aria-haspopup="dialog" aria-controls="panel-filtros" aria-expanded="false">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>
-            Filtros<span id="btn-filtros-n" class="hidden rounded-full px-1.5 text-[11px] font-semibold" style="background: var(--accent); color: #fff;"></span>
-          </button>
-          <button id="btn-buscar" class="rounded-xl bg-gray-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-700">Buscar</button>
-        </div>
-        <div id="fl-fichas" class="mt-2 flex flex-wrap items-center gap-2 text-xs"></div>
-      </section>
 
-      <!-- ══════ LA HOJA DE FILTROS ══════
-           Un panel modal (hoja lateral en escritorio, desde abajo en móvil)
-           con los siete filtros de la Fase 8 y, plegados, los avanzados. Nace
-           oculto; lo abre #btn-filtros y lo cierran «Listo», el velo o Esc.
-           `filtros-barra` y `filtros-avanzados` conservan sus ids: la suite
-           mira ahí las seis etiquetas en lenguaje llano y qué va plegado. -->
-      <div id="panel-filtros" class="hidden" role="dialog" aria-modal="true" aria-labelledby="panel-filtros-titulo">
-        <div id="panel-filtros-velo" class="panel-filtros-velo"></div>
-        <div class="panel-filtros-hoja">
-          <div class="flex items-center justify-between gap-3">
-            <h2 id="panel-filtros-titulo" class="text-[17px] font-semibold" style="color: var(--text-primary);">Filtros</h2>
-            <div class="flex items-center gap-3 text-sm">
-              <button id="panel-filtros-limpiar" type="button" class="enlace-discreto">Quitar todos</button>
-              <button id="panel-filtros-listo" type="button" class="rounded-xl bg-gray-900 px-4 py-1.5 font-medium text-white">Listo</button>
-            </div>
-          </div>
-
-          <div id="filtros-barra" class="mt-4 space-y-5">
-            <div>
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Qué tipo de trabajo es</span>
-              <div id="fl-tipo" class="flex flex-wrap gap-1.5"></div>
-            </div>
-            <div>
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cómo lo adjudican</span>
-              <div id="fl-modalidad" class="flex flex-wrap gap-1.5"></div>
-            </div>
-            <div>
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dónde queda</span>
-              <div class="flex flex-wrap items-center gap-2">
-                <select id="fl-dep" class="control-select rounded-xl text-sm">
-                  <option value="">Cualquier departamento</option>
-                </select>
-                <input id="fl-ciudad" type="text" placeholder="Ciudad o municipio" autocomplete="off"
-                       class="control-campo w-44 rounded-xl text-sm">
-              </div>
-              <label class="mt-2 flex items-center gap-2 text-xs" style="color: var(--text-secondary);">
-                <input id="fl-zona-cerca" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
-                Solo cerca de mi zona (Bogotá / Ibagué)
-              </label>
-            </div>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <div>
-                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuánto vale</span>
-                <select id="fl-rango" class="control-select w-full rounded-xl text-sm">
-                  <option value="">Cualquier valor</option>
-                </select>
-                <div id="fl-rango-libre" class="mt-1.5 hidden gap-2">
-                  <input id="fl-min" type="number" min="0" step="1000000" placeholder="Desde $" class="control-campo w-1/2 rounded-xl text-sm">
-                  <input id="fl-max" type="number" min="0" step="1000000" placeholder="Hasta $" class="control-campo w-1/2 rounded-xl text-sm">
-                </div>
-              </div>
-              <div>
-                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuándo hay que entregar la oferta</span>
-                <select id="fl-cierre" class="control-select w-full rounded-xl text-sm">
-                  <option value="">Cualquier fecha</option>
-                </select>
-                <div id="fl-cierre-fechas" class="mt-1.5 hidden gap-2">
-                  <input id="fl-cierre-desde" type="date" class="control-campo w-1/2 rounded-xl text-sm">
-                  <input id="fl-cierre-hasta" type="date" class="control-campo w-1/2 rounded-xl text-sm">
-                </div>
-              </div>
-            </div>
-            <div>
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Buscar entidad</span>
-              <input id="fl-entidad" type="text" list="fl-entidades" placeholder="Alcaldía de…, Gobernación de…, INVÍAS" autocomplete="off"
-                     class="control-campo w-full rounded-xl text-sm">
-              <datalist id="fl-entidades"></datalist>
-              <button id="fl-entidad-historial" type="button" class="mt-1.5 hidden text-xs font-medium hover:underline" style="color: var(--accent);">Ver el historial de esta entidad ›</button>
-            </div>
-            <label class="flex items-center gap-2 text-sm" style="color: var(--text-primary);">
-              <input id="f-ver-paa" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
-              Ver también las obras que van a salir (planes anuales, aparte)
-            </label>
-            <label id="f-paa-entidad-wrap" class="hidden block">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Obras planeadas · filtrar por entidad</span>
-              <input id="f-paa-entidad" type="text" placeholder="Alcaldía de Ibagué, INVÍAS…" autocomplete="off" class="control-campo w-full rounded-xl text-sm">
-            </label>
-          </div>
-
-          <details id="filtros-avanzados" class="mt-5 rounded-xl p-4" style="background: var(--bg-inset);">
-            <summary class="cursor-pointer text-sm" style="color: var(--text-secondary);">Avanzados <span class="text-xs">— anticipo, tamaño, competencia, ubicación</span></summary>
-            <div class="mt-4 grid gap-4 sm:grid-cols-2">
-              <label class="block">
-                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Anticipo mínimo (%)</span>
-                <input id="f-anticipo" type="number" min="0" max="100" step="5" value="20" list="anticipos"
-                       title="0 = sin filtro. Los procesos que no declaran anticipo (la mayoría) pasan siempre."
-                       class="control-campo w-full rounded-xl text-sm">
-                <datalist id="anticipos"><option value="0"></option><option value="10"></option><option value="20"></option><option value="30"></option></datalist>
-              </label>
-              <label class="block">
-                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Tamaño de la obra</span>
-                <select id="f-cuantia" class="control-select w-full rounded-xl text-sm">
-                  <option value="">Todas</option>
-                  <option value="bajo">Chicas (&lt; $100 M)</option>
-                  <option value="medio">Medianas ($100–500 M)</option>
-                  <option value="alto">Grandes (&gt; $500 M)</option>
-                </select>
-              </label>
-              <label class="block">
-                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuánta gente compite ahí</span>
-                <select id="f-entidad" class="control-select w-full rounded-xl text-sm">
-                  <option value="">Todas</option>
-                  <option value="baja">Poca competencia</option>
-                  <option value="media">Competencia media</option>
-                  <option value="alta">Alta competencia</option>
-                  <option value="sin_dato">Sin datos históricos</option>
-                </select>
-              </label>
-              <label class="block">
-                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Ubicación</span>
-                <select id="f-ubicacion" class="control-select w-full rounded-xl text-sm">
-                  <option value="">Todas</option>
-                  <option value="true">Solo mi zona</option>
-                  <option value="false">Fuera de mi zona</option>
-                </select>
-              </label>
-              <label class="block">
-                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Acceso a la zona</span>
-                <select id="f-zona" class="control-select w-full rounded-xl text-sm"
-                        title="Cerca = a ~250 km de Bogotá o Ibagué, o con aeropuerto en la capital. Las zonas de difícil acceso o con alertas de orden público se van al final del orden aunque no filtres.">
-                  <option value="">Todas (las lejanas van al final)</option>
-                  <option value="facil">Solo fácil acceso</option>
-                </select>
-              </label>
-              <label class="block">
-                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dirección del orden</span>
-                <select id="f-orden" class="control-select w-full rounded-xl text-sm">
-                  <option value="desc">De mayor a menor</option>
-                  <option value="asc">De menor a mayor</option>
-                </select>
-              </label>
-              <label class="flex items-center gap-2 text-sm sm:col-span-2" style="color: var(--text-primary);">
-                <input id="f-sin-unspsc" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
-                Incluir procesos mal clasificados por la entidad
-              </label>
-              <label class="flex items-center gap-2 text-sm sm:col-span-2" style="color: var(--text-primary);">
-                <input id="f-solo-viables" type="checkbox" checked class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
-                Solo las que cumplís los requisitos
-              </label>
-            </div>
-          </details>
-        </div>
-      </div>
-
-      <!-- Estados -->
-      <div id="estado-carga" class="mt-10 hidden text-center">
-        <div class="spin mx-auto h-8 w-8 rounded-full border-2" style="border-color: var(--border); border-top-color: var(--accent);"></div>
-        <p id="estado-carga-msg" class="mt-3 text-sm text-gray-500">Buscando oportunidades…</p>
-      </div>
-
-      <div id="estado-error" class="mt-10 hidden text-center">
-        <p id="estado-error-msg" class="mx-auto max-w-md text-sm text-gray-600"></p>
-        <button id="btn-reintentar"
-                class="mt-4 rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
-          Reintentar
-        </button>
-      </div>
-
-      <div id="estado-vacio" class="mt-10 hidden text-center text-sm text-gray-500">
-        No se encontraron oportunidades con estos filtros.
-      </div>
-
-      <!-- Plan Anual de Adquisiciones · SECCIÓN APARTE, nunca mezclado con lo
-           abierto: un proceso del PAA no existe todavía en SECOP II, no tiene
-           pliego que juzgar y no lleva probabilidad ni puertas. Ponerlo en la
-           misma lista ordenada lo haría parecer comparable. -->
-      <section id="paa" class="mt-8 hidden">
-        <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div class="min-w-0">
-              <h2 class="font-semibold tracking-tight">Plan Anual de Adquisiciones · lo que todavía no ha salido</h2>
-              <p id="paa-resumen" class="mt-1 text-sm text-gray-500">Consultando el PAA…</p>
-            </div>
-            <span class="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">PAA · planeado</span>
-          </div>
-          <p id="paa-aviso" class="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-900 ring-1 ring-inset ring-amber-600/20"></p>
-          <div id="paa-lista" class="mt-4 grid gap-3"></div>
-          <p id="paa-censo" class="mt-4 text-xs text-gray-400"></p>
-        </div>
-      </section>
-
-      <!-- Resultados -->
-      <section id="resultados" class="mt-8 hidden">
-        <p id="resumen-resultados" class="mb-4 text-sm text-gray-500"></p>
-        <div id="lista" class="grid gap-4"></div>
-        <div id="paginacion" class="mt-6 flex items-center justify-center gap-3 text-sm"></div>
-      </section>
-
-      <footer class="pb-6 pt-10 text-center text-xs text-gray-400">
-        Datos abiertos de SECOP II (Colombia Compra Eficiente). El orden recomendado pone primero
-        lo que es viable para tu empresa y donde históricamente compite menos gente. Nada reemplaza
-        la lectura del pliego. Sitio privado.
-      </footer>
-    </main>
-
-    <!-- ════════════════════ PESTAÑA 2 · APU ════════════════════ -->
-    <main id="tab-apu" class="panel-pestana mx-auto hidden max-w-7xl px-5 py-8">
-      <div id="aviso-precios" class="mb-6 rounded-xl bg-amber-50 px-5 py-2.5 text-center text-xs text-amber-900 ring-1 ring-inset ring-amber-600/20"></div>
-
-      <!-- ══════ Paso 1 · ¿Qué vas a construir? ══════ -->
-            <!-- ══════════════ TRES PASOS, Y NADA MÁS A LA VISTA ══════════════
-           Los tres pasos van SEGUIDOS y los resultados DESPUÉS. Antes, entre el
-           paso 1 y el 2 se colaban la rentabilidad y el precio sugerido —dos
-           bloques que no se pueden ni mirar hasta haber calculado—, así que la
-           pantalla pedía entender el programa antes de poder usarlo.
-           El AIU, el anticipo, las deducciones y el ajuste competitivo se fueron
-           a «Ajustes»: sus valores por defecto sirven para la mayoría de los
-           procesos, y tenerlos delante obliga a decidir cuatro cosas antes de
-           poder ver un precio. -->
-<section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">1</span>¿Qué vas a construir?</h2>
-        <p class="mt-1 text-sm text-gray-500">
-          Describa la obra y el sistema encuentra los ítems por usted. No hay ningún catálogo que
-          navegar: si prefiere, cargue un Excel con sus ítems o busque uno por su nombre, aquí debajo.
-        </p>
-
-        <!-- ══ Método principal: describir la obra y detectar ══
-             Es el más automático y por eso el más prominente: textarea grande y
-             botón de acento. Los otros dos métodos viven a la vista en la misma
-             pantalla (sin pestañas ni menús anidados) pero en tarjetas menores. -->
-        <div class="mt-4">
-          <textarea id="objeto" rows="3" placeholder="Ej: Construcción de placa huella de 2.5 km en el municipio de Jericó, Antioquia"
-                    class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"></textarea>
-          <div class="mt-3 flex flex-wrap items-center gap-3">
-            <button id="btn-inferir" type="button"
-                    class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-              <span id="inferir-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
-              <span id="inferir-texto">Detectar ítems</span>
-            </button>
-            <input id="codigos-unspsc" type="text" placeholder="Códigos del pliego (opcional): 72141100"
-                   class="min-w-[240px] flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 sm:max-w-xs">
-          </div>
-        </div>
-        <div id="inferencia" class="mt-4 hidden rounded-xl p-4 text-sm"></div>
-
-        <!-- ══ Métodos alternativos: Excel y búsqueda por nombre ══ -->
-        <div class="mt-5 grid gap-4 lg:grid-cols-2">
-          <div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-            <h3 class="text-sm font-medium">Cargar Excel con ítems</h3>
-            <p class="mt-1 text-xs text-gray-500">
-              Al menos <strong>Descripción · Unidad · Cantidad</strong> (Ítem y Valor Unitario son opcionales).
-              El archivo se lee EN SU NAVEGADOR; al servidor solo viajan las filas. Verá una vista previa antes
-              de añadir nada, y un precio que venga en el archivo <strong>manda</strong> y queda declarado.
-            </p>
-            <button id="btn-importar" type="button"
-                    class="mt-3 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
-              Elegir archivo (.xlsx, .xls o .csv)
-            </button>
-            <input id="archivo-importar" type="file" accept=".xlsx,.xls,.csv" class="hidden">
-          </div>
-          <div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-            <h3 class="text-sm font-medium">Buscar ítem por nombre</h3>
-            <p class="mt-1 text-xs text-gray-500">
-              Escriba al menos 2 letras: filtra el catálogo en tiempo real, agrupado por capítulo.
-              Al elegir uno, entra directo a la tabla del paso 3.
-            </p>
-            <div class="mt-3 flex items-start gap-2">
-              <div class="relative flex-1">
-                <input id="buscar-item" type="text" autocomplete="off" spellcheck="false"
-                       placeholder="Ej: excavación, concreto, tubería…"
-                       class="w-full rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
-                <div id="buscar-lista"
-                     class="absolute inset-x-0 top-full z-30 mt-1 hidden max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl"></div>
-              </div>
-              <button id="btn-agregar" type="button"
-                      class="shrink-0 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
-                Añadir
-              </button>
-            </div>
-            <p id="buscar-nota" class="mt-2 hidden text-xs"></p>
-          </div>
-        </div>
-
-        <!-- ══ Mapeo manual de columnas: SOLO cuando la detección automática del
-             Excel no encuentra la cabecera. Panel en línea (no otro modal): el
-             usuario señala qué columna es qué y la importación sigue por el
-             MISMO camino de siempre (/api/apu/importar). ══ -->
-        <div id="mapeo-panel" class="mt-4 hidden rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <h3 class="text-sm font-medium text-amber-900">No se reconocieron las columnas del archivo</h3>
-          <p class="mt-1 text-xs text-amber-900/80">
-            Señale qué columna trae cada dato y pulse «Aplicar el mapeo». Solo la descripción es obligatoria;
-            una cantidad ilegible viaja vacía, nunca como 0.
-          </p>
-          <div class="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            <label class="block text-xs">
-              <span class="font-medium uppercase tracking-wide text-amber-900/70">Descripción</span>
-              <select id="mapeo-col-desc" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
-            </label>
-            <label class="block text-xs">
-              <span class="font-medium uppercase tracking-wide text-amber-900/70">Unidad</span>
-              <select id="mapeo-col-unidad" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
-            </label>
-            <label class="block text-xs">
-              <span class="font-medium uppercase tracking-wide text-amber-900/70">Cantidad</span>
-              <select id="mapeo-col-cant" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
-            </label>
-            <label class="block text-xs">
-              <span class="font-medium uppercase tracking-wide text-amber-900/70">Valor unitario</span>
-              <select id="mapeo-col-precio" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
-            </label>
-            <label class="block text-xs">
-              <span class="font-medium uppercase tracking-wide text-amber-900/70">Ítem / código</span>
-              <select id="mapeo-col-codigo" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
-            </label>
-          </div>
-          <label class="mt-3 flex items-center gap-2 text-xs text-amber-900">
-            <input id="mapeo-cabecera" type="checkbox" checked class="h-3.5 w-3.5 rounded border-amber-300">
-            La primera fila es la cabecera (no es un ítem)
-          </label>
-          <div class="mt-3 overflow-x-auto rounded-lg border border-amber-200 bg-white">
-            <table class="w-full text-xs">
-              <tbody id="mapeo-tabla" class="divide-y divide-gray-100"></tbody>
-            </table>
-          </div>
-          <p id="mapeo-aviso" class="mt-2 hidden text-xs font-medium text-red-700"></p>
-          <div class="mt-3 flex flex-wrap justify-end gap-2">
-            <button id="btn-mapeo-cancelar" type="button"
-                    class="rounded-lg border border-amber-300 px-4 py-2 text-sm font-medium transition hover:bg-amber-100">Cancelar</button>
-            <button id="btn-mapeo-aplicar" type="button"
-                    class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">Aplicar el mapeo</button>
-          </div>
-        </div>
-
-        <!-- ══════ Lector de pliegos (PDF), plegado ══════ -->
-        <details id="seccion-pliego-wrap" class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-          <summary class="cursor-pointer text-sm font-medium">Cargar pliego (PDF) — extraer el formulario de cantidades</summary>
-
-          <div id="seccion-pliego" class="mt-4">
-            <p id="aviso-limitaciones" class="max-w-3xl rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20">
-              <strong>Atención: la extracción automática puede tener errores. Verifique siempre los datos contra el pliego
-              original antes de usar el APU.</strong> El semáforo mide coherencia aritmética, no fidelidad; una
-              cantidad ilegible sale como «sin dato», nunca 0; las adendas modifican cantidades; la unidad del pliego
-              se conserva y no se convierte.
-            </p>
-            <p class="mt-3 max-w-3xl text-sm text-gray-500">
-              Suba el <strong>formulario de cantidades</strong> (Formulario 1 · presupuesto oficial). El PDF se lee
-              <strong>en su navegador</strong>: al servidor solo viaja el texto extraído, no el archivo.
-            </p>
-            <p class="mt-2 max-w-3xl rounded-xl bg-gray-100 px-4 py-3 text-xs text-gray-600">
-              <strong>Excepción, y conviene saberla antes de pulsar:</strong> si el PDF resulta ser un escaneo sin texto y
-              usa «Reintentar con OCR», las páginas <strong>sí salen</strong> — se convierten en imágenes y se envían a
-              <strong>OCR.space</strong>, un servicio externo, para que las lea. No lo haga con un documento que no pueda
-              salir de su equipo.
-            </p>
-
-            <div class="mt-5 grid gap-5 lg:grid-cols-2">
-              <div>
-                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Archivo PDF</span>
-                <input id="pliego-archivo" type="file" accept=".pdf,application/pdf"
-                       class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
-                <p class="mt-1 text-[11px] text-gray-400">También sirve un archivo de texto (.txt) con la tabla ya copiada.</p>
-              </div>
-              <div>
-                <label class="block">
-                  <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">…o URL del PDF</span>
-                  <input id="pliego-url" type="url" spellcheck="false" placeholder="https://…/formulario1.pdf"
-                         class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
-                </label>
-                <p class="mt-1 text-[11px] text-gray-400">
-                  El PDF se baja por el servidor (el navegador no puede: CORS). Muchos portales exigen sesión
-                  para los adjuntos: si falla, baje el archivo a mano y súbalo.
-                </p>
-              </div>
-            </div>
-
-            <div class="mt-5 grid gap-4 sm:grid-cols-3">
-              <label class="block sm:col-span-2">
-                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Objeto del proceso (opcional)</span>
-                <input id="pliego-objeto" type="text" spellcheck="false"
-                       placeholder="CONSTRUCCION DE PLACA HUELLA EN LA VIA TERCIARIA…"
-                       class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
-              </label>
-              <label class="block">
-                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Códigos de lo que sabe hacer, si el pliego los trae (opcional)</span>
-                <input id="pliego-unspsc" type="text" spellcheck="false" placeholder="72141000, 72152000"
-                       class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
-              </label>
-            </div>
-
-            <label class="mt-4 block max-w-xs">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Presupuesto oficial (COP, opcional)</span>
-              <input id="pliego-precio" type="text" inputmode="numeric" spellcheck="false" placeholder="262.124.860"
-                     class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
-              <span class="mt-1 block text-[11px] text-gray-400">Ancla externa: valida la suma del documento contra el techo de la entidad.</span>
-            </label>
-
-            <div class="mt-5 flex flex-wrap items-center gap-3">
-              <button id="btn-extraer" type="button"
-                      class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-                Cargar pliego (PDF)
-              </button>
-              <button id="btn-ocr" type="button" disabled
-                      class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
-                Reintentar con OCR
-              </button>
-              <button id="btn-limpiar" type="button"
-                      class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
-                Limpiar
-              </button>
-              <span id="pl-chip-estado" class="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-                <span id="pl-chip-icono" aria-hidden="true">•</span><span id="pl-chip-texto">Sin pliego cargado</span>
-              </span>
-            </div>
-
-            <div id="pl-prog-caja" class="mt-4 hidden">
-              <div class="h-2 w-full overflow-hidden rounded-full bg-gray-100">
-                <div id="pl-prog-barra" class="barra h-2 w-0 rounded-full bg-gray-900"></div>
-              </div>
-              <p id="pl-prog-texto" class="mt-1 text-xs text-gray-500"></p>
-            </div>
-
-            <p id="pliego-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
-            <ul id="pliego-avisos" class="mt-3 hidden space-y-1 rounded-xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20"></ul>
-          </div>
-
-          <!-- resultado del pliego -->
-          <section id="seccion-resultado" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h3 class="font-semibold tracking-tight">Ítems extraídos del pliego</h3>
-                <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                  Todo es editable: corrija lo que el parser leyó mal. Los cambios viven solo en esta pestaña hasta que exporte.
-                </p>
-              </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <span id="r-semaforo" class="rounded-full px-3 py-1 text-xs font-semibold"></span>
-                <button id="pl-btn-exportar" type="button"
-                        class="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
-                  Exportar JSON
-                </button>
-                <button id="pl-btn-agregar" type="button"
-                        class="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
-                  + Añadir fila
-                </button>
-              </div>
-            </div>
-
-            <div id="r-tarjetas" class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"></div>
-
-            <div class="mt-5 overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
-                  <tr>
-                    <th class="py-1 pr-2">N.º</th>
-                    <th class="py-1 pr-2">Descripción del pliego</th>
-                    <th class="py-1 pr-2">Ítem del catálogo</th>
-                    <th class="py-1 pr-2">Unidad</th>
-                    <th class="py-1 pr-2 text-right">Cantidad</th>
-                    <th class="py-1 pr-2 text-right">Vr. unitario</th>
-                    <th class="py-1 pr-2 text-right">Vr. total</th>
-                    <th class="py-1">Mapeo</th>
-                    <th class="py-1"></th>
-                  </tr>
-                </thead>
-                <tbody id="r-items" class="divide-y divide-gray-100"></tbody>
-              </table>
-            </div>
-            <datalist id="catalogo-items"></datalist>
-
-            <p id="r-nota" class="mt-4 text-xs text-gray-400"></p>
-            <!-- Fase 5 (plan v3) · Vigía de adendas y cronograma del pliego leído -->
-            <div id="pl-vigia" class="mt-4 hidden rounded-xl bg-gray-50 p-4 text-sm ring-1 ring-inset ring-gray-900/5"></div>
-
-            <details class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-              <summary class="cursor-pointer text-sm font-medium">Diagnóstico del parseo</summary>
-              <div id="r-diagnostico" class="mt-3 space-y-2 text-xs text-gray-600"></div>
-            </details>
-          </section>
-        </details>
-      </section>
-
-<section class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">2</span>¿Dónde?</h2>
-        <p class="mt-1 text-sm text-gray-500">El departamento donde se ejecuta la obra. De él salen los precios regionales.</p>
-        <div class="mt-4 max-w-sm">
-          <label class="block">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Departamento</span>
-            <select id="departamento" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"></select>
-            <span id="regional-nota" class="mt-1 block text-xs text-gray-400">Los factores de precio los trae el catálogo, por región.</span>
-          </label>
-          
-          
-          
-        </div>
-
-        <details id="ajustes-wrap" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Ajustes <span class="text-xs">— AIU, anticipo, deducciones y ajuste competitivo. Los valores por defecto sirven para la mayoría de los procesos.</span></summary>
-          <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-<label class="block">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Administración (A) %</span>
-            <input id="aiu" type="number" min="0" max="100" step="0.5" value="15"
-                   class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-            <span class="mt-1 block text-xs text-gray-400">Típico 8–20 %</span>
-          </label>
-<label class="flex items-center gap-2 pt-5 text-sm">
-            <input id="ajuste-competitivo" type="checkbox" class="h-4 w-4 rounded border-gray-300">
-            <span class="font-medium">Ajuste competitivo</span>
-          </label>
-<label class="block">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Factor de baja %</span>
-            <div class="mt-1 flex gap-2">
-              <input id="factor-baja" type="number" min="0" max="60" step="0.1" value="0" disabled
-                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num disabled:bg-gray-100">
-              <button id="btn-sugerir-baja" type="button" disabled
-                      class="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-40">
-                Sugerir
-              </button>
-            </div>
-            <span id="baja-nota" class="mt-1 block text-xs text-gray-400">Banda típica en obra: 5–12 %.</span>
-          </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Cómo calcular la administración</span>
-              <select id="metodo-admin" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
-                <option value="porcentaje">Porcentaje del costo directo (licitación pública)</option>
-                <option value="tiempo">Por tiempo: gastos fijos al mes × duración</option>
-              </select>
-              <span class="mt-1 block text-xs text-gray-400">Con «por tiempo», la A % se calcula sola con los dos datos de abajo.</span>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Gastos fijos al mes ($)</span>
-              <input id="gastos-fijos" type="number" min="0" step="1000" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-              <span class="mt-1 block text-xs text-gray-400">Oficina, personal administrativo, pólizas: lo que se paga aunque no haya obra.</span>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Horas del proyecto</span>
-              <input id="horas-proyecto" type="number" min="0" step="1" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-              <span class="mt-1 block text-xs text-gray-400">Meses de plazo × horas de la jornada legal al mes.</span>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Imprevistos (I) %</span>
-              <input id="imprevistos" type="number" min="0" max="100" step="0.5" value="5"
-                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Utilidad (U) %</span>
-              <input id="utilidad" type="number" min="0" max="100" step="0.5" value="5"
-                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Utilidad mínima aceptable %</span>
-              <input id="utilidad-minima" type="number" min="0" max="100" step="0.5" placeholder="= la U"
-                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-              <span class="mt-1 block text-xs text-gray-400">Con esta utilidad se calcula su precio mínimo. Vacío = la U de arriba.</span>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Anticipo %</span>
-              <input id="anticipo" type="number" min="0" max="50" step="1" placeholder="sin dato"
-                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-              <span class="mt-1 block text-xs text-gray-400">Vacío = sin dato · techo legal 50 %</span>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Deducciones de acta %</span>
-              <input id="deducciones" type="number" min="0" max="30" step="0.1" placeholder="sin cargar"
-                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-              <span class="mt-1 block text-xs text-gray-400">Contribución 5 % + estampillas + ReteICA</span>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Entidad (para la baja)</span>
-              <input id="entidad" type="text" placeholder="Nombre de la entidad"
-                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
-            </label>
-            <label class="flex items-start gap-2 rounded-lg border border-gray-200 px-3 py-2">
-              <input id="aiu-sobre-sub" type="checkbox" checked class="mt-0.5">
-              <span class="text-sm">
-                <span class="block font-medium">Aplicar mi administración, imprevistos y ganancia también a lo subcontratado</span>
-                <span class="block text-xs text-gray-500">Un ítem marcado como subcontratado entra por el precio del subcontratista (que ya trae el suyo). Con la casilla apagada, ese ítem va al precio a costo, sin recargo propio.</span>
-              </span>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Cómo se suman administración, imprevistos y ganancia</span>
-              <select id="modo-aiu" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
-                <option value="aditivo">Aditivo (1 + A + I + U)</option>
-                <option value="compuesto">Compuesto (multiplicativo)</option>
-              </select>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Perfil del borrador</span>
-              <select id="perfil" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
-                <option value="helder">Helder</option>
-                <option value="genesis">Génesis</option>
-                <option value="juntos">Consorcio</option>
-              </select>
-            </label>
-          </div>
-        </details>
-
-        <!-- ══════ Normativa: qué hay detrás de los factores ══════
-             Plegado a propósito: es una referencia que se consulta, no algo que
-             haya que decidir en cada presupuesto. Lo pinta `pintarNormativa`
-             desde el bloque `normativa` de la respuesta del servidor — ninguna
-             tasa está escrita en el HTML, para que no haya dos fuentes. -->
-        <details id="normativa-wrap" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-          <summary class="cursor-pointer text-sm font-medium">Cómo calculamos · jornada, prestaciones, AIU, IVA y deducciones</summary>
-          <!-- Metodología PÚBLICA del costo (Fase 1): parámetros vigentes con su
-               estado de verificación y un ejemplo rehecho en el navegador con
-               public/costos.js — el MISMO módulo que usa el servidor. Nada de esto
-               está escrito en el HTML: lo pinta `pintarMetodologia` desde
-               /api/apu?op=parametros. -->
-          <div id="metodologia" class="mt-4 text-sm">
-            <p class="text-xs text-gray-400">Cargando los parámetros de costo…</p>
-          </div>
-          <div id="normativa" class="mt-6 text-sm">
-            <p class="text-xs text-gray-400">Cargando el catálogo…</p>
-          </div>
-        </details>
-      </section>
-
-<section id="seccion-proceso" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight">Proceso de SECOP II</h2>
-        <div class="mt-4 grid gap-4 sm:grid-cols-3">
-          <label class="block">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Id del proceso</span>
-            <input id="id-proceso" type="text" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
-          </label>
-          <label class="block">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Presupuesto oficial (COP)</span>
-            <input id="cuantia" type="number" min="0" step="1000" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-            <span class="mt-1 block text-xs text-gray-400">Es el techo: la baja se mide contra él.</span>
-          </label>
-          <label class="block">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Plazo (meses)</span>
-            <input id="plazo-meses" type="number" min="1" max="60" step="1" value="8" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-          </label>
-        </div>
-        <div class="mt-4 flex flex-wrap items-center gap-3">
-          <button id="btn-rentabilidad" type="button"
-                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-            Calcular rentabilidad
-          </button>
-          <span class="text-xs text-gray-500">Consulta cuánto suelen bajar el precio y qué tan peleada está esta entidad.</span>
-        </div>
-      </section>
-
-<section class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">3</span>Calcular y exportar</h2>
-            <p class="mt-1 text-sm text-gray-500">Escriba las cantidades y pulse <strong>Calcular cuánto me cuesta</strong>. La columna <strong>«Precio de tienda»</strong> muestra cuánto vale ese material en Homecenter o en la lista del fabricante, con su fuente y su fecha: es una referencia para negociar y <strong>no entra en el costo</strong>. Los precios que corrija quedan guardados y mandan la próxima vez. Pulse un ítem para ver su desglose.</p>
-          </div>
-        </div>
-
-        <div class="mt-4 overflow-x-auto">
-          <table class="w-full min-w-[900px] text-sm">
-            <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
-              <tr>
-                <th class="py-2 pr-3">Ítem</th>
-                <th class="py-2 pr-3">Unidad</th>
-                <th class="py-2 pr-3 text-right">Cantidad</th>
-                <th class="py-2 pr-3 text-right">Precio manual</th>
-                <th class="py-2 pr-3 text-right">Precio unitario</th>
-                <th class="py-2 pr-3 text-right">Total</th>
-                <th class="py-2 pr-3">Precio de tienda<br><span class="font-normal normal-case text-gray-300">referencia con fuente</span></th>
-                <th class="py-2 pr-3">Origen</th>
-                <th class="py-2"></th>
-              </tr>
-            </thead>
-            <tbody id="tabla" class="divide-y divide-gray-100"></tbody>
-          </table>
-        </div>
-        <p id="tabla-vacia" class="mt-6 text-center text-sm text-gray-400">
-          Sin ítems. En el paso 1: describa la obra y pulse «Detectar ítems», cargue un Excel o busque un ítem por su nombre.
-        </p>
-
-        <!-- ══ DOS BOTONES A LA VISTA, Y NADA MÁS ══
-             El flujo que la persona necesita es «Calcular → Exportar»; el
-             nombre del borrador y sus dos botones son administración y viven
-             plegados. Los ids NO cambian: renombrarlos mataría app.js en
-             silencio, que es el modo de fallo que la prueba de ids vigila. -->
-        <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-5">
-          <button id="btn-calcular" type="button"
-                  class="rounded-xl bg-gray-900 px-8 py-3 text-base font-semibold text-white transition hover:bg-gray-700 disabled:opacity-40">
-            Calcular cuánto me cuesta
-          </button>
-          <button id="btn-exportar" type="button"
-                  class="rounded-xl bg-gray-900 px-6 py-3 text-base font-semibold text-white transition hover:bg-gray-700 disabled:opacity-40">
-            Descargar mi presupuesto (Excel)
-          </button>
-        </div>
-        <details class="mt-3 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
-          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Guardar o abrir un borrador</summary>
-          <div class="mt-3 flex flex-wrap items-center gap-3">
-            <input id="nombre-presupuesto" type="text" placeholder="Nombre del presupuesto"
-                   class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
-            <button id="btn-guardar" type="button"
-                    class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Guardar</button>
-            <button id="btn-listar" type="button"
-                    class="rounded-lg px-3 py-2 text-sm text-gray-500 transition hover:text-gray-900">Abrir un borrador…</button>
-          </div>
-        </details>
-        <p id="accion-mensaje" class="mt-3 text-sm"></p>
-        <div id="lista-presupuestos" class="mt-4 hidden"></div>
-      </section>
-
-      <!-- ══════ Resultados · solo aparecen tras calcular ══════ -->
-      <!-- PANEL PISO / TECHO (Fase 3): la respuesta de una frase a «¿me presento
-           o no, y a cuánto?». Va PRIMERO entre los resultados porque es la
-           decisión; el resumen, la rentabilidad y el precio sugerido son el
-           detalle que la sostiene. Nace oculto: se pinta con la rentabilidad. -->
-<!-- ══════ Fase 4 (plan v3) · Guardián del Formulario 1: «Revisar antes de subir» ══════
-     Siete validaciones (total vs presupuesto, ítems del Formulario 1, lo escrito en
-     SECOP II, AIU discriminado y bajo el tope, precio artificialmente bajo,
-     aritmética, redondeo) con semáforo y frases, sin jerga. Compara la oferta del
-     paso 3 con el Formulario 1 leído en el lector de pliegos (más abajo). -->
-<section id="seccion-revision" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-  <h2 class="font-semibold tracking-tight">Revisar antes de subir</h2>
-  <p class="mt-1 max-w-2xl text-sm text-gray-500">Los errores de formato no se corrigen después: cuestan el proceso. Esta revisión compara su oferta con el presupuesto oficial y con el Formulario 1 del pliego, y le dice qué es motivo de rechazo automático y qué solo conviene arreglar.</p>
-  <div class="mt-3 grid gap-3 sm:grid-cols-3">
-    <label class="block text-sm"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Tope de AIU del pliego (%)</span>
-      <input id="rev-tope-aiu" type="number" min="0" max="100" step="0.01" placeholder="Numeral 4.1 del pliego" class="w-full rounded-lg border-gray-300 text-sm"></label>
-    <label class="block text-sm"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Total que escribió en SECOP II ($)</span>
-      <input id="rev-secop-total" type="number" min="0" step="1" placeholder="Opcional" class="w-full rounded-lg border-gray-300 text-sm"></label>
-    <div class="flex items-end"><button id="btn-revisar-oferta" type="button" class="w-full rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">Revisar antes de subir</button></div>
-  </div>
-  <p id="rev-nota" class="mt-2 text-xs text-gray-500">Se compara con el Formulario 1 leído en el lector de pliegos; si no ha leído el pliego, esa comparación queda pendiente y se dice.</p>
-  <div id="revision-oferta" class="mt-4 hidden"></div>
-</section>
-
-<section id="seccion-piso-techo" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 class="font-semibold tracking-tight">¿Me presento, y a cuánto?</h2>
-          <span id="pt-origen" class="text-xs text-gray-400"></span>
-        </div>
-
-        <div id="pt-sin-datos" class="mt-4 hidden rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700"></div>
-
-        <div id="pt-cuerpo" class="hidden">
-          <!-- Máximo tres cifras por bloque, cada una con su origen debajo. -->
-          <dl class="mt-4 divide-y divide-gray-100 text-sm">
-            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
-              <dt class="text-gray-600">Lo que la entidad tiene presupuestado</dt>
-              <dd class="text-right"><span id="pt-presupuesto" class="text-base font-semibold tabular-nums">—</span>
-                <span class="block text-xs text-gray-400">SECOP II</span></dd>
-            </div>
-            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
-              <dt class="text-gray-600">Lo que a usted le cuesta hacerlo</dt>
-              <dd class="text-right"><span id="pt-costo" class="text-base font-semibold tabular-nums">—</span>
-                <span id="pt-costo-nota" class="block text-xs text-gray-400"></span></dd>
-            </div>
-            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
-              <dt class="text-gray-600">Lo que suele bajar esta entidad</dt>
-              <dd class="text-right"><span id="pt-baja" class="text-base font-semibold tabular-nums">—</span>
-                <span id="pt-baja-nota" class="block text-xs text-gray-400"></span></dd>
-            </div>
-            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
-              <dt class="text-gray-600">Cuántos suelen presentarse aquí</dt>
-              <dd class="text-right"><span id="pt-oferentes" class="text-base font-semibold tabular-nums">—</span>
-                <span id="pt-oferentes-nota" class="block text-xs text-gray-400"></span></dd>
-            </div>
-          </dl>
-
-          <div class="mt-4 grid gap-4 sm:grid-cols-2">
-            <div class="rounded-2xl bg-gray-100 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Su precio mínimo para no perder plata</p>
-              <p id="pt-piso" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
-              <p id="pt-piso-nota" class="text-xs text-gray-500"></p>
-            </div>
-            <div class="rounded-2xl bg-gray-100 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">El precio al que probablemente se gana</p>
-              <p id="pt-techo" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
-              <p id="pt-techo-nota" class="text-xs text-gray-500"></p>
-            </div>
-          </div>
-
-          <!-- El veredicto: punto de color + frase completa. Nunca un porcentaje suelto. -->
-          <div id="pt-veredicto" class="mt-5 rounded-2xl p-5 ring-1 ring-inset">
-            <p class="flex items-start gap-3 text-base font-semibold">
-              <span id="pt-punto" class="mt-1 inline-block h-3 w-3 shrink-0 rounded-full" aria-hidden="true"></span>
-              <span id="pt-frase"></span>
-            </p>
-            <p id="pt-detalle" class="mt-2 pl-6 text-sm text-gray-700"></p>
-            <p id="pt-precio-actual" class="mt-2 pl-6 text-sm text-gray-600"></p>
-          </div>
-
-          <div class="mt-4 flex flex-wrap items-center gap-3">
-            <button id="btn-justificacion" type="button"
-                    class="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">
-              Descargar mi justificación de precio
-            </button>
-            <span class="text-xs text-gray-500">Si la entidad le pide sustentar el precio, este documento lleva su APU detrás.</span>
-          </div>
-
-          <details class="mt-4 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
-            <summary class="cursor-pointer text-xs text-gray-500 hover:text-gray-700">De dónde sale cada cifra y qué se supuso</summary>
-            <ul id="pt-fuentes" class="mt-2 space-y-1 text-xs text-gray-600"></ul>
-          </details>
-        </div>
-      </section>
-
-<section id="seccion-resumen" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight">Resumen del presupuesto</h2>
-        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div class="rounded-2xl bg-gray-100 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Costo directo</p>
-            <p id="r-directo" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
-            <p id="r-jornada" class="mt-1 hidden text-xs text-gray-500"></p>
-            <p id="r-subcontratado" class="mt-1 hidden text-xs text-gray-500"></p>
-          </div>
-          <div class="rounded-2xl bg-gray-100 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Precio de venta</p>
-            <p id="r-venta" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
-            <p id="r-aiu" class="text-xs text-gray-500"></p>
-          </div>
-          <div class="rounded-2xl bg-blue-50 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-blue-900/60">Precio final</p>
-            <p id="r-final" class="mt-1 text-2xl font-semibold tabular-nums text-blue-950">—</p>
-            <p id="r-baja" class="text-xs text-blue-900/60"></p>
-          </div>
-          <div id="r-margen-caja" class="rounded-2xl bg-emerald-50 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-emerald-900/60">Margen</p>
-            <p id="r-margen" class="mt-1 text-2xl font-semibold tabular-nums text-emerald-950">—</p>
-            <p id="r-margen-pct" class="text-xs text-emerald-900/60"></p>
-          </div>
-        </div>
-
-        <div class="mt-5 grid gap-4 lg:grid-cols-2">
-          <div>
-            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500">Reparto del costo directo</h3>
-            <table class="mt-2 w-full text-sm">
-              <tbody id="r-componentes" class="divide-y divide-gray-100"></tbody>
-            </table>
-          </div>
-          <div>
-            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500">Del costo directo al precio</h3>
-            <table class="mt-2 w-full text-sm">
-              <tbody id="r-aiu-detalle" class="divide-y divide-gray-100"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Las cinco validaciones automáticas (lib/apu/validaciones). Nace
-             OCULTO y solo aparece si hay hallazgos: un recuadro que dice
-             «0 problemas» en cada cálculo se deja de mirar a la tercera vez, y
-             entonces tampoco se ve el día que sí dice algo. -->
-        <div id="r-validaciones" class="mt-5 hidden"></div>
-
-        <div id="r-alertas" class="mt-5 space-y-2"></div>
-      </section>
-
-<section id="seccion-rentabilidad" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight">Rentabilidad estimada</h2>
-        <p class="mt-1 max-w-3xl text-sm text-gray-500">
-          El indicador de decisión es el <strong>VEG</strong>, no el margen: es el único que descuenta el
-          costo de preparar una oferta, que se paga se gane o no.
-        </p>
-        <div id="rentabilidad" class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
-        <div id="rentabilidad-precio" class="mt-5 text-sm"></div>
-        <div id="rentabilidad-avisos" class="mt-4 space-y-2"></div>
-      </section>
-
-<section id="seccion-precio-sugerido" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-baseline justify-between gap-3">
-          <div>
-            <h2 class="font-semibold tracking-tight">Precio sugerido</h2>
-            <p class="mt-1 max-w-3xl text-sm text-gray-500">
-              El precio que <strong>maximiza el valor esperado</strong>. Bajar más allá del óptimo compra
-              probabilidad en uno solo de los cuatro métodos de ponderación —que se sortean en la audiencia—
-              y regala margen en los cuatro.
-            </p>
-          </div>
-          <span id="ps-origen" class="text-xs text-gray-400"></span>
-        </div>
-
-        <div id="ps-sin-datos" class="mt-4 hidden rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700"></div>
-
-        <div id="ps-cuerpo" class="hidden">
-          <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="rounded-2xl bg-green-50 p-4 ring-1 ring-inset ring-green-600/20">
-              <p class="text-xs font-medium uppercase tracking-wide text-green-900/60">Precio óptimo</p>
-              <p id="ps-precio" class="mt-1 text-2xl font-semibold tabular-nums text-green-950">—</p>
-              <p id="ps-precio-nota" class="text-xs text-green-900/60"></p>
-            </div>
-            <div class="rounded-2xl bg-gray-100 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Descuento sugerido</p>
-              <p id="ps-descuento" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
-              <p class="text-xs text-gray-500">Sobre el presupuesto oficial</p>
-            </div>
-            <div class="rounded-2xl bg-gray-100 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">VEG esperado</p>
-              <p id="ps-veg" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
-              <p id="ps-veg-nota" class="text-xs text-gray-500"></p>
-            </div>
-            <div class="rounded-2xl bg-gray-100 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Probabilidad a ese precio</p>
-              <p id="ps-prob" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
-              <p id="ps-prob-nota" class="text-xs text-gray-500"></p>
-            </div>
-          </div>
-
-          <div class="mt-5 flex flex-wrap items-center gap-3">
-            <button id="btn-aplicar-descuento" type="button"
-                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-              Aplicar este descuento al APU
-            </button>
-            <span id="ps-aplicar-nota" class="text-xs text-gray-500"></span>
-          </div>
-
-          <!-- Las tres opciones: Conservador | Óptimo | Agresivo (la óptima en verde) -->
-          <div class="mt-6 overflow-x-auto">
-            <table class="w-full min-w-[720px] text-sm">
-              <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
-                <tr>
-                  <th class="py-2 pr-3">Opción</th>
-                  <th class="py-2 pr-3 text-right">Descuento</th>
-                  <th class="py-2 pr-3 text-right">Precio</th>
-                  <th class="py-2 pr-3 text-right">Probabilidad</th>
-                  <th class="py-2 pr-3 text-right">Margen</th>
-                  <th class="py-2 pr-3 text-right">VEG</th>
-                  <th class="py-2"></th>
-                </tr>
-              </thead>
-              <tbody id="ps-opciones" class="divide-y divide-gray-100"></tbody>
-            </table>
-          </div>
-          <p id="ps-meseta" class="mt-2 text-xs text-gray-500"></p>
-
-          <div class="mt-6">
-            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500">Valor esperado según el descuento</h3>
-            <div id="ps-curva" class="mt-2 overflow-x-auto"></div>
-          </div>
-
-          <div id="ps-alertas" class="mt-4 space-y-2"></div>
-        </div>
-      </section>
-
-    </main>
-
-    <!-- ════════════════════ PESTAÑA 3 · Administración ════════════════════ -->
-    <main id="tab-admin" class="panel-pestana mx-auto hidden max-w-6xl px-5 py-8">
-
-      <!-- ══════ Perfiles y RUP ══════ -->
-            <!-- ══════════════ MI EMPRESA · lo único que un contratista toca ══════════════
-           Antes esta pestaña se llamaba «Administración» y ponía al mismo nivel seis
-           cosas sin relación entre sí: el RUP, un tablero de procesos, la experiencia,
-           una auditoría, la carga del catálogo de precios y la sincronización con
-           SECOP II. Cuatro de las seis no son de quien va a licitar, sino de quien
-           mantiene el sistema — y mezclarlas obliga a entender el programa para poder
-           usarlo. Arriba queda lo que describe a TU empresa; lo técnico vive plegado
-           en «Sistema». Ningún id cambia: renombrarlos mataría app.js en silencio. -->
-      <header class="mb-6">
-        <h1 class="text-xl font-semibold tracking-tight">Mi empresa</h1>
-        <p class="mt-1 text-sm text-gray-500">Lo que el sistema sabe de vos: tu registro de proponente, la obra que ya
-          ejecutaste y los códigos que te convendría inscribir. De aquí sale a qué procesos podés
-          presentarte.</p>
-      </header>
-
-<section id="seccion-rup" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+<section id="seccion-rup" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 class="font-semibold tracking-tight">Tu registro de proponente</h2>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500">
-              Su registro de proponente decide qué licitaciones puede ver. Suba el certificado RUP nuevo en PDF (crea un
-              perfil propio) o cargue el archivo JSON de los perfiles del dueño. El cambio surte efecto en la
-              siguiente consulta: no hace falta volver a sincronizar.
-            </p>
+            <p class="mt-1 text-sm text-gray-500">Decide a qué licitaciones podés presentarte.</p>
           </div>
           <button id="btn-nuevo-rup" type="button"
                   class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">
@@ -1571,11 +608,22 @@
           </button>
         </div>
 
+        <!-- EL REGISTRO EN CIFRAS: lo pinta public/pulso.js con el bloque
+             `empresa` de /api/perfil?op=pulso (tipos de trabajo, experiencia
+             acreditada, contratos, tope; patrimonio y capacidad solo con
+             token). Nace oculto; sin datos no se pinta nada. -->
+        <div id="rup-cifras" class="mt-4 hidden"></div>
+
         <!-- Alarma de renovación (quinto día hábil de abril): la pinta
              pintarAlertaVigencia() al arrancar la pestaña; fuera de la
              ventana febrero-abril permanece oculta -->
         <p id="rup-alerta-vigencia" class="mt-4 hidden rounded-xl px-4 py-3 text-sm font-medium"></p>
 
+        <!-- Lo que hay que TOCAR va plegado: subir/descargar el archivo del
+             registro, ver el perfil vigente, eliminarlo. Ningún id cambia. -->
+        <details id="rup-gestion" class="mt-4">
+          <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">Actualizar, descargar o eliminar el registro</summary>
+        <p class="mt-3 max-w-2xl text-sm text-gray-500">Subí el certificado RUP en PDF (crea un perfil propio) o cargá el archivo JSON de los perfiles. El cambio surte efecto en la siguiente consulta.</p>
         <div class="mt-4 flex flex-wrap items-center gap-3">
           <input id="rup-json-archivo" type="file" accept=".json,application/json"
                  class="block max-w-sm text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
@@ -1617,15 +665,17 @@
           </div>
           <p id="eliminar-rup-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
         </div>
+        </details>
       </section>
 
       <!-- ══════ Fase 10 · Consorcio a la medida ══════
            Nace OCULTO: app.js lo enseña solo cuando hay DOS o más perfiles
            individuales cargados (Helder, Génesis, RUP subidos). Compara
            CAPACIDAD, nunca precios (art. 410A del Código Penal). -->
-      <section id="seccion-consorcio" class="mt-8 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+      <div class="mt-8 grid gap-6 lg:grid-cols-2 lg:items-start">
+      <section id="seccion-consorcio" class="hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">Crear consorcio</h2>
-        <p class="mt-1 max-w-2xl text-sm text-gray-500">Para presentarse en compañía a lo que solo no alcanza. Elegí quiénes van juntos y qué parte pone cada uno; los indicadores se ponderan por esa parte, tal como los lee el evaluador (truncados a dos decimales, sin redondear).</p>
+        <p class="mt-1 text-sm text-gray-500">Para presentarse en compañía a lo que solo no alcanza. Los indicadores se ponderan por la parte de cada uno, como los lee el evaluador.</p>
         <p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">¿Quiénes van juntos?</p>
         <div id="cons-integrantes" class="mt-2 space-y-2"></div>
         <p class="mt-4 text-xs font-medium uppercase tracking-wide text-gray-500">¿Qué parte pone cada uno?</p>
@@ -1641,9 +691,9 @@
            consorcio. Dos las consulta la app sola (datos abiertos: SIRI y
            SECOP); las otras tres se abren desde acá con el enlace. Nace
            VISIBLE (el socio suele ser una empresa externa, no un perfil). -->
-      <section id="seccion-socio" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+      <section id="seccion-socio" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">Verificá a tu socio antes de firmar</h2>
-        <p class="mt-1 max-w-2xl text-sm text-gray-500">Un integrante inhabilitado contamina al consorcio completo. Escribí el NIT o la cédula de con quién vas a ir: la app revisa sola dos de las cinco fuentes públicas (sanciones de la Procuraduría y el historial en SECOP) y te deja el enlace de las otras tres. Tarda menos de un minuto y no cuesta nada.</p>
+        <p class="mt-1 text-sm text-gray-500">Un integrante inhabilitado contamina al consorcio completo. La app revisa sola sanciones (Procuraduría) e historial en SECOP; las otras tres fuentes, con enlace.</p>
         <div class="mt-4 grid gap-2 sm:max-w-xl sm:grid-cols-[1fr_auto]">
           <input id="socio-id" type="text" inputmode="numeric" autocomplete="off" placeholder="NIT o cédula del socio (ej. 900123456)"
                  aria-label="NIT o cédula del socio"
@@ -1659,14 +709,18 @@
         <p id="socio-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
         <div id="socio-resultado" class="mt-4 hidden"></div>
       </section>
+      </div>
 
       <!-- ══════ Experiencia ejecutada ══════ -->
 <section id="seccion-experiencia" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">Obra que ya ejecutaste</h2>
-        <p class="mt-1 max-w-2xl text-sm text-gray-500">
-          Sus contratos ya ejecutados: los objetos en los que usted <em>sabe</em> trabajar. Sirven para
-          priorizar la auditoría de cobertura. Cargue un CSV con el formato estándar, o pegue un JSON.
-        </p>
+        <p class="mt-1 text-sm text-gray-500">Tus contratos ejecutados: en qué <em>sabés</em> trabajar. Priorizan los códigos que te faltan.</p>
+
+        <!-- Lo que hay HOY va arriba y a la vista; la carga, plegada -->
+        <div id="exp-actual" class="mt-3 text-sm text-gray-600">—</div>
+
+        <details id="exp-gestion" class="mt-4">
+          <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">Cargar o actualizar la experiencia</summary>
 
         <!-- carga por CSV (formato estándar) — la cablea onboarding.js -->
         <div id="exp-panel" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
@@ -1733,11 +787,7 @@
 
         <p id="exp-json-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
         <ul id="exp-errores" class="mt-3 hidden space-y-1 rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></ul>
-
-        <div class="mt-6 border-t border-gray-100 pt-4">
-          <h3 class="text-sm font-semibold tracking-tight">Experiencia actual</h3>
-          <div id="exp-actual" class="mt-2 text-sm text-gray-600">—</div>
-        </div>
+        </details>
       </section>
 
       <!-- ══════ Códigos que te faltan en el RUP ══════ -->
@@ -1745,10 +795,7 @@
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 class="font-semibold tracking-tight">Códigos que te faltan en tu registro de proponente</h2>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500">
-              Con qué códigos adjudica el mercado las obras que usted ejecuta, y cuáles no están
-              inscritos en su registro de proponente. El registro se renueva una vez al año: esta lista es la que hay que mirar antes.
-            </p>
+            <p class="mt-1 text-sm text-gray-500">Con qué códigos adjudica el mercado lo que vos hacés, y cuáles no tenés inscritos. Se mira antes de renovar el registro (abril).</p>
           </div>
           <div class="flex flex-wrap items-end gap-3">
             <label class="block">
@@ -2263,6 +1310,956 @@
         </section>
       </details>
       </details>
+
+    </main>
+
+    <!-- ════════════════════ PESTAÑA 2 · Licitaciones ════════════════════ -->
+    <main id="tab-licitaciones" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
+      <!-- ══════ LA BARRA DE HERRAMIENTAS (ago 2026) ══════
+           Una sola fila, estilo Apple: buscar · ordenar · «Filtros» (abre una
+           HOJA con todo lo demás) · Buscar. Antes había DOS zonas de filtros a
+           la vista —una rejilla de nueve controles y una segunda barra con
+           chips y selects— y el dueño la describió como «un desastre». Todos
+           los ids se conservan (app.js y media suite los cablean; un nodo
+           movido conserva sus listeners): solo cambió DÓNDE viven. Lo activo
+           se ve como fichas bajo la barra; el detalle vive en #panel-filtros. -->
+      <section class="barra-herramientas rounded-2xl bg-white p-3 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-center gap-2">
+          <label class="campo-buscar flex min-w-[220px] flex-1 items-center gap-2 rounded-xl px-3">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="color: var(--text-secondary);"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+            <input id="fl-q" type="text" placeholder="Buscar por palabra o entidad" autocomplete="off"
+                   class="w-full border-0 bg-transparent py-2 text-sm focus:outline-none focus:ring-0">
+          </label>
+          <select id="f-ordenar" class="control-select rounded-xl text-sm" aria-label="Ordenar por">
+            <option value="atractividad">Las mejores para vos</option>
+            <option value="margen">Dónde me queda más</option>
+            <option value="cierre">Las que cierran antes</option>
+            <option value="ve">Las que más plata dejan</option>
+            <option value="p_ganar">Las más ganables</option>
+            <option value="cuantia">Las más grandes</option>
+            <option value="competencia">Las menos peleadas</option>
+            <option value="anticipo">Mayor anticipo</option>
+          </select>
+          <button id="btn-filtros" type="button" class="control-boton inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm" aria-haspopup="dialog" aria-controls="panel-filtros" aria-expanded="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>
+            Filtros<span id="btn-filtros-n" class="hidden rounded-full px-1.5 text-[11px] font-semibold" style="background: var(--accent); color: #fff;"></span>
+          </button>
+          <button id="btn-buscar" class="rounded-xl bg-gray-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-700">Buscar</button>
+        </div>
+        <div id="fl-fichas" class="mt-2 flex flex-wrap items-center gap-2 text-xs"></div>
+      </section>
+
+      <!-- ══════ LA HOJA DE FILTROS ══════
+           Un panel modal (hoja lateral en escritorio, desde abajo en móvil)
+           con los siete filtros de la Fase 8 y, plegados, los avanzados. Nace
+           oculto; lo abre #btn-filtros y lo cierran «Listo», el velo o Esc.
+           `filtros-barra` y `filtros-avanzados` conservan sus ids: la suite
+           mira ahí las seis etiquetas en lenguaje llano y qué va plegado. -->
+      <div id="panel-filtros" class="hidden" role="dialog" aria-modal="true" aria-labelledby="panel-filtros-titulo">
+        <div id="panel-filtros-velo" class="panel-filtros-velo"></div>
+        <div class="panel-filtros-hoja">
+          <div class="flex items-center justify-between gap-3">
+            <h2 id="panel-filtros-titulo" class="text-[17px] font-semibold" style="color: var(--text-primary);">Filtros</h2>
+            <div class="flex items-center gap-3 text-sm">
+              <button id="panel-filtros-limpiar" type="button" class="enlace-discreto">Quitar todos</button>
+              <button id="panel-filtros-listo" type="button" class="rounded-xl bg-gray-900 px-4 py-1.5 font-medium text-white">Listo</button>
+            </div>
+          </div>
+
+          <div id="filtros-barra" class="mt-4 space-y-5">
+            <div>
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Qué tipo de trabajo es</span>
+              <div id="fl-tipo" class="flex flex-wrap gap-1.5"></div>
+            </div>
+            <div>
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cómo lo adjudican</span>
+              <div id="fl-modalidad" class="flex flex-wrap gap-1.5"></div>
+            </div>
+            <div>
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dónde queda</span>
+              <div class="flex flex-wrap items-center gap-2">
+                <select id="fl-dep" class="control-select rounded-xl text-sm">
+                  <option value="">Cualquier departamento</option>
+                </select>
+                <input id="fl-ciudad" type="text" placeholder="Ciudad o municipio" autocomplete="off"
+                       class="control-campo w-44 rounded-xl text-sm">
+              </div>
+              <label class="mt-2 flex items-center gap-2 text-xs" style="color: var(--text-secondary);">
+                <input id="fl-zona-cerca" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+                Solo cerca de mi zona (Bogotá / Ibagué)
+              </label>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuánto vale</span>
+                <select id="fl-rango" class="control-select w-full rounded-xl text-sm">
+                  <option value="">Cualquier valor</option>
+                </select>
+                <div id="fl-rango-libre" class="mt-1.5 hidden gap-2">
+                  <input id="fl-min" type="number" min="0" step="1000000" placeholder="Desde $" class="control-campo w-1/2 rounded-xl text-sm">
+                  <input id="fl-max" type="number" min="0" step="1000000" placeholder="Hasta $" class="control-campo w-1/2 rounded-xl text-sm">
+                </div>
+              </div>
+              <div>
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuándo hay que entregar la oferta</span>
+                <select id="fl-cierre" class="control-select w-full rounded-xl text-sm">
+                  <option value="">Cualquier fecha</option>
+                </select>
+                <div id="fl-cierre-fechas" class="mt-1.5 hidden gap-2">
+                  <input id="fl-cierre-desde" type="date" class="control-campo w-1/2 rounded-xl text-sm">
+                  <input id="fl-cierre-hasta" type="date" class="control-campo w-1/2 rounded-xl text-sm">
+                </div>
+              </div>
+            </div>
+            <div>
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Buscar entidad</span>
+              <input id="fl-entidad" type="text" list="fl-entidades" placeholder="Alcaldía de…, Gobernación de…, INVÍAS" autocomplete="off"
+                     class="control-campo w-full rounded-xl text-sm">
+              <datalist id="fl-entidades"></datalist>
+              <button id="fl-entidad-historial" type="button" class="mt-1.5 hidden text-xs font-medium hover:underline" style="color: var(--accent);">Ver el historial de esta entidad ›</button>
+            </div>
+            <label class="flex items-center gap-2 text-sm" style="color: var(--text-primary);">
+              <input id="f-ver-paa" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+              Ver también las obras que van a salir (planes anuales, aparte)
+            </label>
+            <label id="f-paa-entidad-wrap" class="hidden block">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Obras planeadas · filtrar por entidad</span>
+              <input id="f-paa-entidad" type="text" placeholder="Alcaldía de Ibagué, INVÍAS…" autocomplete="off" class="control-campo w-full rounded-xl text-sm">
+            </label>
+          </div>
+
+          <details id="filtros-avanzados" class="mt-5 rounded-xl p-4" style="background: var(--bg-inset);">
+            <summary class="cursor-pointer text-sm" style="color: var(--text-secondary);">Avanzados <span class="text-xs">— anticipo, tamaño, competencia, ubicación</span></summary>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Anticipo mínimo (%)</span>
+                <input id="f-anticipo" type="number" min="0" max="100" step="5" value="20" list="anticipos"
+                       title="0 = sin filtro. Los procesos que no declaran anticipo (la mayoría) pasan siempre."
+                       class="control-campo w-full rounded-xl text-sm">
+                <datalist id="anticipos"><option value="0"></option><option value="10"></option><option value="20"></option><option value="30"></option></datalist>
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Tamaño de la obra</span>
+                <select id="f-cuantia" class="control-select w-full rounded-xl text-sm">
+                  <option value="">Todas</option>
+                  <option value="bajo">Chicas (&lt; $100 M)</option>
+                  <option value="medio">Medianas ($100–500 M)</option>
+                  <option value="alto">Grandes (&gt; $500 M)</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuánta gente compite ahí</span>
+                <select id="f-entidad" class="control-select w-full rounded-xl text-sm">
+                  <option value="">Todas</option>
+                  <option value="baja">Poca competencia</option>
+                  <option value="media">Competencia media</option>
+                  <option value="alta">Alta competencia</option>
+                  <option value="sin_dato">Sin datos históricos</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Ubicación</span>
+                <select id="f-ubicacion" class="control-select w-full rounded-xl text-sm">
+                  <option value="">Todas</option>
+                  <option value="true">Solo mi zona</option>
+                  <option value="false">Fuera de mi zona</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Acceso a la zona</span>
+                <select id="f-zona" class="control-select w-full rounded-xl text-sm"
+                        title="Cerca = a ~250 km de Bogotá o Ibagué, o con aeropuerto en la capital. Las zonas de difícil acceso o con alertas de orden público se van al final del orden aunque no filtres.">
+                  <option value="">Todas (las lejanas van al final)</option>
+                  <option value="facil">Solo fácil acceso</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dirección del orden</span>
+                <select id="f-orden" class="control-select w-full rounded-xl text-sm">
+                  <option value="desc">De mayor a menor</option>
+                  <option value="asc">De menor a mayor</option>
+                </select>
+              </label>
+              <label class="flex items-center gap-2 text-sm sm:col-span-2" style="color: var(--text-primary);">
+                <input id="f-sin-unspsc" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+                Incluir procesos mal clasificados por la entidad
+              </label>
+              <label class="flex items-center gap-2 text-sm sm:col-span-2" style="color: var(--text-primary);">
+                <input id="f-solo-viables" type="checkbox" checked class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+                Solo las que cumplís los requisitos
+              </label>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <!-- Estados -->
+      <div id="estado-carga" class="mt-10 hidden text-center">
+        <div class="spin mx-auto h-8 w-8 rounded-full border-2" style="border-color: var(--border); border-top-color: var(--accent);"></div>
+        <p id="estado-carga-msg" class="mt-3 text-sm text-gray-500">Buscando oportunidades…</p>
+      </div>
+
+      <div id="estado-error" class="mt-10 hidden text-center">
+        <p id="estado-error-msg" class="mx-auto max-w-md text-sm text-gray-600"></p>
+        <button id="btn-reintentar"
+                class="mt-4 rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
+          Reintentar
+        </button>
+      </div>
+
+      <div id="estado-vacio" class="mt-10 hidden text-center text-sm text-gray-500">
+        No se encontraron oportunidades con estos filtros.
+      </div>
+
+      <!-- Plan Anual de Adquisiciones · SECCIÓN APARTE, nunca mezclado con lo
+           abierto: un proceso del PAA no existe todavía en SECOP II, no tiene
+           pliego que juzgar y no lleva probabilidad ni puertas. Ponerlo en la
+           misma lista ordenada lo haría parecer comparable. -->
+      <section id="paa" class="mt-8 hidden">
+        <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h2 class="font-semibold tracking-tight">Plan Anual de Adquisiciones · lo que todavía no ha salido</h2>
+              <p id="paa-resumen" class="mt-1 text-sm text-gray-500">Consultando el PAA…</p>
+            </div>
+            <span class="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">PAA · planeado</span>
+          </div>
+          <p id="paa-aviso" class="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-900 ring-1 ring-inset ring-amber-600/20"></p>
+          <div id="paa-lista" class="mt-4 grid gap-3"></div>
+          <p id="paa-censo" class="mt-4 text-xs text-gray-400"></p>
+        </div>
+      </section>
+
+      <!-- Resultados -->
+      <section id="resultados" class="mt-8 hidden">
+        <p id="resumen-resultados" class="mb-4 text-sm text-gray-500"></p>
+        <div id="lista" class="grid gap-4"></div>
+        <div id="paginacion" class="mt-6 flex items-center justify-center gap-3 text-sm"></div>
+      </section>
+
+      <footer class="pb-6 pt-10 text-center text-xs text-gray-400">
+        Datos abiertos de SECOP II (Colombia Compra Eficiente). El orden recomendado pone primero
+        lo que es viable para tu empresa y donde históricamente compite menos gente. Nada reemplaza
+        la lectura del pliego. Sitio privado.
+      </footer>
+    </main>
+
+    <!-- ════════════════════ PESTAÑA 2 · APU ════════════════════ -->
+    <main id="tab-apu" class="panel-pestana mx-auto hidden max-w-7xl px-5 py-8">
+      <div id="aviso-precios" class="mb-6 rounded-xl bg-amber-50 px-5 py-2.5 text-center text-xs text-amber-900 ring-1 ring-inset ring-amber-600/20"></div>
+
+      <!-- ══════ Paso 1 · ¿Qué vas a construir? ══════ -->
+            <!-- ══════════════ TRES PASOS, Y NADA MÁS A LA VISTA ══════════════
+           Los tres pasos van SEGUIDOS y los resultados DESPUÉS. Antes, entre el
+           paso 1 y el 2 se colaban la rentabilidad y el precio sugerido —dos
+           bloques que no se pueden ni mirar hasta haber calculado—, así que la
+           pantalla pedía entender el programa antes de poder usarlo.
+           El AIU, el anticipo, las deducciones y el ajuste competitivo se fueron
+           a «Ajustes»: sus valores por defecto sirven para la mayoría de los
+           procesos, y tenerlos delante obliga a decidir cuatro cosas antes de
+           poder ver un precio. -->
+<section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">1</span>¿Qué vas a construir?</h2>
+        <p class="mt-1 text-sm text-gray-500">Describí la obra y el sistema detecta los ítems. O cargá tu Excel, o buscá un ítem por nombre.</p>
+
+        <!-- ══ Método principal: describir la obra y detectar ══
+             Es el más automático y por eso el más prominente: textarea grande y
+             botón de acento. Los otros dos métodos viven a la vista en la misma
+             pantalla (sin pestañas ni menús anidados) pero en tarjetas menores. -->
+        <div class="mt-4">
+          <textarea id="objeto" rows="3" placeholder="Ej: Construcción de placa huella de 2.5 km en el municipio de Jericó, Antioquia"
+                    class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"></textarea>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <button id="btn-inferir" type="button"
+                    class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              <span id="inferir-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
+              <span id="inferir-texto">Detectar ítems</span>
+            </button>
+            <input id="codigos-unspsc" type="text" placeholder="Códigos del pliego (opcional): 72141100"
+                   class="min-w-[240px] flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 sm:max-w-xs">
+          </div>
+        </div>
+        <div id="inferencia" class="mt-4 hidden rounded-xl p-4 text-sm"></div>
+
+        <!-- ══ Métodos alternativos: Excel y búsqueda por nombre ══ -->
+        <div class="mt-5 grid gap-4 lg:grid-cols-2">
+          <div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+            <h3 class="text-sm font-medium">Cargar Excel con ítems</h3>
+            <p class="mt-1 text-xs text-gray-500">Columnas <strong>Descripción · Unidad · Cantidad</strong> (Ítem y Valor unitario, opcionales). Se lee en tu navegador y ves una vista previa antes de añadir nada; un precio del archivo <strong>manda</strong>.</p>
+            <button id="btn-importar" type="button"
+                    class="mt-3 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
+              Elegir archivo (.xlsx, .xls o .csv)
+            </button>
+            <input id="archivo-importar" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+          </div>
+          <div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+            <h3 class="text-sm font-medium">Buscar ítem por nombre</h3>
+            <p class="mt-1 text-xs text-gray-500">Catálogo propio y los 526 APU de referencia del INVIAS. Al elegir uno, entra a la tabla del paso 3.</p>
+            <div class="mt-3 flex items-start gap-2">
+              <div class="relative flex-1">
+                <input id="buscar-item" type="text" autocomplete="off" spellcheck="false"
+                       placeholder="Ej: excavación, concreto, tubería…"
+                       class="w-full rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+                <div id="buscar-lista"
+                     class="absolute inset-x-0 top-full z-30 mt-1 hidden max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl"></div>
+              </div>
+              <button id="btn-agregar" type="button"
+                      class="shrink-0 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
+                Añadir
+              </button>
+            </div>
+            <p id="buscar-nota" class="mt-2 hidden text-xs"></p>
+          </div>
+        </div>
+
+        <!-- ══ Mapeo manual de columnas: SOLO cuando la detección automática del
+             Excel no encuentra la cabecera. Panel en línea (no otro modal): el
+             usuario señala qué columna es qué y la importación sigue por el
+             MISMO camino de siempre (/api/apu/importar). ══ -->
+        <div id="mapeo-panel" class="mt-4 hidden rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <h3 class="text-sm font-medium text-amber-900">No se reconocieron las columnas del archivo</h3>
+          <p class="mt-1 text-xs text-amber-900/80">
+            Señale qué columna trae cada dato y pulse «Aplicar el mapeo». Solo la descripción es obligatoria;
+            una cantidad ilegible viaja vacía, nunca como 0.
+          </p>
+          <div class="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <label class="block text-xs">
+              <span class="font-medium uppercase tracking-wide text-amber-900/70">Descripción</span>
+              <select id="mapeo-col-desc" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
+            </label>
+            <label class="block text-xs">
+              <span class="font-medium uppercase tracking-wide text-amber-900/70">Unidad</span>
+              <select id="mapeo-col-unidad" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
+            </label>
+            <label class="block text-xs">
+              <span class="font-medium uppercase tracking-wide text-amber-900/70">Cantidad</span>
+              <select id="mapeo-col-cant" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
+            </label>
+            <label class="block text-xs">
+              <span class="font-medium uppercase tracking-wide text-amber-900/70">Valor unitario</span>
+              <select id="mapeo-col-precio" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
+            </label>
+            <label class="block text-xs">
+              <span class="font-medium uppercase tracking-wide text-amber-900/70">Ítem / código</span>
+              <select id="mapeo-col-codigo" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
+            </label>
+          </div>
+          <label class="mt-3 flex items-center gap-2 text-xs text-amber-900">
+            <input id="mapeo-cabecera" type="checkbox" checked class="h-3.5 w-3.5 rounded border-amber-300">
+            La primera fila es la cabecera (no es un ítem)
+          </label>
+          <div class="mt-3 overflow-x-auto rounded-lg border border-amber-200 bg-white">
+            <table class="w-full text-xs">
+              <tbody id="mapeo-tabla" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <p id="mapeo-aviso" class="mt-2 hidden text-xs font-medium text-red-700"></p>
+          <div class="mt-3 flex flex-wrap justify-end gap-2">
+            <button id="btn-mapeo-cancelar" type="button"
+                    class="rounded-lg border border-amber-300 px-4 py-2 text-sm font-medium transition hover:bg-amber-100">Cancelar</button>
+            <button id="btn-mapeo-aplicar" type="button"
+                    class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">Aplicar el mapeo</button>
+          </div>
+        </div>
+
+        <!-- ══════ Lector de pliegos (PDF), plegado ══════ -->
+        <details id="seccion-pliego-wrap" class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+          <summary class="cursor-pointer text-sm font-medium">Cargar pliego (PDF) — extraer el formulario de cantidades</summary>
+
+          <div id="seccion-pliego" class="mt-4">
+            <p id="aviso-limitaciones" class="max-w-3xl rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20">
+              <strong>Atención: la extracción automática puede tener errores. Verifique siempre los datos contra el pliego
+              original antes de usar el APU.</strong> El semáforo mide coherencia aritmética, no fidelidad; una
+              cantidad ilegible sale como «sin dato», nunca 0; las adendas modifican cantidades; la unidad del pliego
+              se conserva y no se convierte.
+            </p>
+            <p class="mt-3 max-w-3xl text-sm text-gray-500">
+              Suba el <strong>formulario de cantidades</strong> (Formulario 1 · presupuesto oficial). El PDF se lee
+              <strong>en su navegador</strong>: al servidor solo viaja el texto extraído, no el archivo.
+            </p>
+            <p class="mt-2 max-w-3xl rounded-xl bg-gray-100 px-4 py-3 text-xs text-gray-600">
+              <strong>Excepción, y conviene saberla antes de pulsar:</strong> si el PDF resulta ser un escaneo sin texto y
+              usa «Reintentar con OCR», las páginas <strong>sí salen</strong> — se convierten en imágenes y se envían a
+              <strong>OCR.space</strong>, un servicio externo, para que las lea. No lo haga con un documento que no pueda
+              salir de su equipo.
+            </p>
+
+            <div class="mt-5 grid gap-5 lg:grid-cols-2">
+              <div>
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Archivo PDF</span>
+                <input id="pliego-archivo" type="file" accept=".pdf,application/pdf"
+                       class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
+                <p class="mt-1 text-[11px] text-gray-400">También sirve un archivo de texto (.txt) con la tabla ya copiada.</p>
+              </div>
+              <div>
+                <label class="block">
+                  <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">…o URL del PDF</span>
+                  <input id="pliego-url" type="url" spellcheck="false" placeholder="https://…/formulario1.pdf"
+                         class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+                </label>
+                <p class="mt-1 text-[11px] text-gray-400">
+                  El PDF se baja por el servidor (el navegador no puede: CORS). Muchos portales exigen sesión
+                  para los adjuntos: si falla, baje el archivo a mano y súbalo.
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-5 grid gap-4 sm:grid-cols-3">
+              <label class="block sm:col-span-2">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Objeto del proceso (opcional)</span>
+                <input id="pliego-objeto" type="text" spellcheck="false"
+                       placeholder="CONSTRUCCION DE PLACA HUELLA EN LA VIA TERCIARIA…"
+                       class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Códigos de lo que sabe hacer, si el pliego los trae (opcional)</span>
+                <input id="pliego-unspsc" type="text" spellcheck="false" placeholder="72141000, 72152000"
+                       class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+              </label>
+            </div>
+
+            <label class="mt-4 block max-w-xs">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Presupuesto oficial (COP, opcional)</span>
+              <input id="pliego-precio" type="text" inputmode="numeric" spellcheck="false" placeholder="262.124.860"
+                     class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+              <span class="mt-1 block text-[11px] text-gray-400">Ancla externa: valida la suma del documento contra el techo de la entidad.</span>
+            </label>
+
+            <div class="mt-5 flex flex-wrap items-center gap-3">
+              <button id="btn-extraer" type="button"
+                      class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+                Cargar pliego (PDF)
+              </button>
+              <button id="btn-ocr" type="button" disabled
+                      class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+                Reintentar con OCR
+              </button>
+              <button id="btn-limpiar" type="button"
+                      class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+                Limpiar
+              </button>
+              <span id="pl-chip-estado" class="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                <span id="pl-chip-icono" aria-hidden="true">•</span><span id="pl-chip-texto">Sin pliego cargado</span>
+              </span>
+            </div>
+
+            <div id="pl-prog-caja" class="mt-4 hidden">
+              <div class="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                <div id="pl-prog-barra" class="barra h-2 w-0 rounded-full bg-gray-900"></div>
+              </div>
+              <p id="pl-prog-texto" class="mt-1 text-xs text-gray-500"></p>
+            </div>
+
+            <p id="pliego-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+            <ul id="pliego-avisos" class="mt-3 hidden space-y-1 rounded-xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20"></ul>
+          </div>
+
+          <!-- resultado del pliego -->
+          <section id="seccion-resultado" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 class="font-semibold tracking-tight">Ítems extraídos del pliego</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                  Todo es editable: corrija lo que el parser leyó mal. Los cambios viven solo en esta pestaña hasta que exporte.
+                </p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <span id="r-semaforo" class="rounded-full px-3 py-1 text-xs font-semibold"></span>
+                <button id="pl-btn-exportar" type="button"
+                        class="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
+                  Exportar JSON
+                </button>
+                <button id="pl-btn-agregar" type="button"
+                        class="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
+                  + Añadir fila
+                </button>
+              </div>
+            </div>
+
+            <div id="r-tarjetas" class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"></div>
+
+            <div class="mt-5 overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                  <tr>
+                    <th class="py-1 pr-2">N.º</th>
+                    <th class="py-1 pr-2">Descripción del pliego</th>
+                    <th class="py-1 pr-2">Ítem del catálogo</th>
+                    <th class="py-1 pr-2">Unidad</th>
+                    <th class="py-1 pr-2 text-right">Cantidad</th>
+                    <th class="py-1 pr-2 text-right">Vr. unitario</th>
+                    <th class="py-1 pr-2 text-right">Vr. total</th>
+                    <th class="py-1">Mapeo</th>
+                    <th class="py-1"></th>
+                  </tr>
+                </thead>
+                <tbody id="r-items" class="divide-y divide-gray-100"></tbody>
+              </table>
+            </div>
+            <datalist id="catalogo-items"></datalist>
+
+            <p id="r-nota" class="mt-4 text-xs text-gray-400"></p>
+            <!-- Fase 5 (plan v3) · Vigía de adendas y cronograma del pliego leído -->
+            <div id="pl-vigia" class="mt-4 hidden rounded-xl bg-gray-50 p-4 text-sm ring-1 ring-inset ring-gray-900/5"></div>
+
+            <details class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+              <summary class="cursor-pointer text-sm font-medium">Diagnóstico del parseo</summary>
+              <div id="r-diagnostico" class="mt-3 space-y-2 text-xs text-gray-600"></div>
+            </details>
+          </section>
+        </details>
+      </section>
+
+<section class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">2</span>¿Dónde?</h2>
+        <p class="mt-1 text-sm text-gray-500">El departamento donde se ejecuta la obra: de él salen los precios.</p>
+        <div class="mt-4 max-w-sm">
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Departamento</span>
+            <select id="departamento" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"></select>
+            <span id="regional-nota" class="mt-1 block text-xs text-gray-400">Los factores de precio los trae el catálogo, por región.</span>
+          </label>
+          
+          
+          
+        </div>
+
+        <details id="ajustes-wrap" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Ajustes <span class="text-xs">— AIU, anticipo, deducciones y ajuste competitivo (los valores por defecto sirven casi siempre)</span></summary>
+          <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+<label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Administración (A) %</span>
+            <input id="aiu" type="number" min="0" max="100" step="0.5" value="15"
+                   class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+            <span class="mt-1 block text-xs text-gray-400">Típico 8–20 %</span>
+          </label>
+<label class="flex items-center gap-2 pt-5 text-sm">
+            <input id="ajuste-competitivo" type="checkbox" class="h-4 w-4 rounded border-gray-300">
+            <span class="font-medium">Ajuste competitivo</span>
+          </label>
+<label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Factor de baja %</span>
+            <div class="mt-1 flex gap-2">
+              <input id="factor-baja" type="number" min="0" max="60" step="0.1" value="0" disabled
+                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num disabled:bg-gray-100">
+              <button id="btn-sugerir-baja" type="button" disabled
+                      class="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-40">
+                Sugerir
+              </button>
+            </div>
+            <span id="baja-nota" class="mt-1 block text-xs text-gray-400">Banda típica en obra: 5–12 %.</span>
+          </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Cómo calcular la administración</span>
+              <select id="metodo-admin" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+                <option value="porcentaje">Porcentaje del costo directo (licitación pública)</option>
+                <option value="tiempo">Por tiempo: gastos fijos al mes × duración</option>
+              </select>
+              <span class="mt-1 block text-xs text-gray-400">Con «por tiempo», la A % se calcula sola con los dos datos de abajo.</span>
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Gastos fijos al mes ($)</span>
+              <input id="gastos-fijos" type="number" min="0" step="1000" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+              <span class="mt-1 block text-xs text-gray-400">Oficina, personal administrativo, pólizas: lo que se paga aunque no haya obra.</span>
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Horas del proyecto</span>
+              <input id="horas-proyecto" type="number" min="0" step="1" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+              <span class="mt-1 block text-xs text-gray-400">Meses de plazo × horas de la jornada legal al mes.</span>
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Imprevistos (I) %</span>
+              <input id="imprevistos" type="number" min="0" max="100" step="0.5" value="5"
+                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Utilidad (U) %</span>
+              <input id="utilidad" type="number" min="0" max="100" step="0.5" value="5"
+                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Utilidad mínima aceptable %</span>
+              <input id="utilidad-minima" type="number" min="0" max="100" step="0.5" placeholder="= la U"
+                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+              <span class="mt-1 block text-xs text-gray-400">Con esta utilidad se calcula su precio mínimo. Vacío = la U de arriba.</span>
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Anticipo %</span>
+              <input id="anticipo" type="number" min="0" max="50" step="1" placeholder="sin dato"
+                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+              <span class="mt-1 block text-xs text-gray-400">Vacío = sin dato · techo legal 50 %</span>
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Deducciones de acta %</span>
+              <input id="deducciones" type="number" min="0" max="30" step="0.1" placeholder="sin cargar"
+                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+              <span class="mt-1 block text-xs text-gray-400">Contribución 5 % + estampillas + ReteICA</span>
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Entidad (para la baja)</span>
+              <input id="entidad" type="text" placeholder="Nombre de la entidad"
+                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+            </label>
+            <label class="flex items-start gap-2 rounded-lg border border-gray-200 px-3 py-2">
+              <input id="aiu-sobre-sub" type="checkbox" checked class="mt-0.5">
+              <span class="text-sm">
+                <span class="block font-medium">Aplicar mi administración, imprevistos y ganancia también a lo subcontratado</span>
+                <span class="block text-xs text-gray-500">Un ítem marcado como subcontratado entra por el precio del subcontratista (que ya trae el suyo). Con la casilla apagada, ese ítem va al precio a costo, sin recargo propio.</span>
+              </span>
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Cómo se suman administración, imprevistos y ganancia</span>
+              <select id="modo-aiu" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+                <option value="aditivo">Aditivo (1 + A + I + U)</option>
+                <option value="compuesto">Compuesto (multiplicativo)</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Perfil del borrador</span>
+              <select id="perfil" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+                <option value="helder">Helder</option>
+                <option value="genesis">Génesis</option>
+                <option value="juntos">Consorcio</option>
+              </select>
+            </label>
+          </div>
+        </details>
+
+        <!-- ══════ Normativa: qué hay detrás de los factores ══════
+             Plegado a propósito: es una referencia que se consulta, no algo que
+             haya que decidir en cada presupuesto. Lo pinta `pintarNormativa`
+             desde el bloque `normativa` de la respuesta del servidor — ninguna
+             tasa está escrita en el HTML, para que no haya dos fuentes. -->
+        <details id="normativa-wrap" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+          <summary class="cursor-pointer text-sm font-medium">Cómo calculamos · jornada, prestaciones, AIU, IVA y deducciones</summary>
+          <!-- Metodología PÚBLICA del costo (Fase 1): parámetros vigentes con su
+               estado de verificación y un ejemplo rehecho en el navegador con
+               public/costos.js — el MISMO módulo que usa el servidor. Nada de esto
+               está escrito en el HTML: lo pinta `pintarMetodologia` desde
+               /api/apu?op=parametros. -->
+          <div id="metodologia" class="mt-4 text-sm">
+            <p class="text-xs text-gray-400">Cargando los parámetros de costo…</p>
+          </div>
+          <div id="normativa" class="mt-6 text-sm">
+            <p class="text-xs text-gray-400">Cargando el catálogo…</p>
+          </div>
+        </details>
+      </section>
+
+<section id="seccion-proceso" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Proceso de SECOP II</h2>
+        <div class="mt-4 grid gap-4 sm:grid-cols-3">
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Id del proceso</span>
+            <input id="id-proceso" type="text" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Presupuesto oficial (COP)</span>
+            <input id="cuantia" type="number" min="0" step="1000" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+            <span class="mt-1 block text-xs text-gray-400">Es el techo: la baja se mide contra él.</span>
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Plazo (meses)</span>
+            <input id="plazo-meses" type="number" min="1" max="60" step="1" value="8" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+          </label>
+        </div>
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <button id="btn-rentabilidad" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Calcular rentabilidad
+          </button>
+          <span class="text-xs text-gray-500">Consulta cuánto suelen bajar el precio y qué tan peleada está esta entidad.</span>
+        </div>
+      </section>
+
+<section class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">3</span>Calcular y exportar</h2>
+            <p class="mt-1 text-sm text-gray-500">Escribí las cantidades y pulsá <strong>Calcular cuánto me cuesta</strong>. Pulsá un ítem para ver su desglose; un precio que corrijas queda guardado y manda la próxima vez.</p>
+          </div>
+        </div>
+
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full min-w-[900px] text-sm">
+            <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
+              <tr>
+                <th class="py-2 pr-3">Ítem</th>
+                <th class="py-2 pr-3">Unidad</th>
+                <th class="py-2 pr-3 text-right">Cantidad</th>
+                <th class="py-2 pr-3 text-right">Precio manual</th>
+                <th class="py-2 pr-3 text-right">Precio unitario</th>
+                <th class="py-2 pr-3 text-right">Total</th>
+                <th class="py-2 pr-3" title="Cuánto vale ese material en Homecenter o en la lista del fabricante, con fuente y fecha: referencia para negociar, NO entra en el costo">Precio de tienda<br><span class="font-normal normal-case text-gray-300">referencia, no entra en el costo</span></th>
+                <th class="py-2 pr-3">Origen</th>
+                <th class="py-2"></th>
+              </tr>
+            </thead>
+            <tbody id="tabla" class="divide-y divide-gray-100"></tbody>
+          </table>
+        </div>
+        <p id="tabla-vacia" class="mt-6 text-center text-sm text-gray-400">Sin ítems todavía: vienen del paso 1.</p>
+
+        <!-- ══ DOS BOTONES A LA VISTA, Y NADA MÁS ══
+             El flujo que la persona necesita es «Calcular → Exportar»; el
+             nombre del borrador y sus dos botones son administración y viven
+             plegados. Los ids NO cambian: renombrarlos mataría app.js en
+             silencio, que es el modo de fallo que la prueba de ids vigila. -->
+        <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-5">
+          <button id="btn-calcular" type="button"
+                  class="rounded-xl bg-gray-900 px-8 py-3 text-base font-semibold text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Calcular cuánto me cuesta
+          </button>
+          <button id="btn-exportar" type="button"
+                  class="rounded-xl bg-gray-900 px-6 py-3 text-base font-semibold text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Descargar mi presupuesto (Excel)
+          </button>
+        </div>
+        <details class="mt-3 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
+          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Guardar o abrir un borrador</summary>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <input id="nombre-presupuesto" type="text" placeholder="Nombre del presupuesto"
+                   class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
+            <button id="btn-guardar" type="button"
+                    class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Guardar</button>
+            <button id="btn-listar" type="button"
+                    class="rounded-lg px-3 py-2 text-sm text-gray-500 transition hover:text-gray-900">Abrir un borrador…</button>
+          </div>
+        </details>
+        <p id="accion-mensaje" class="mt-3 text-sm"></p>
+        <div id="lista-presupuestos" class="mt-4 hidden"></div>
+      </section>
+
+      <!-- ══════ Resultados · solo aparecen tras calcular ══════ -->
+      <!-- PANEL PISO / TECHO (Fase 3): la respuesta de una frase a «¿me presento
+           o no, y a cuánto?». Va PRIMERO entre los resultados porque es la
+           decisión; el resumen, la rentabilidad y el precio sugerido son el
+           detalle que la sostiene. Nace oculto: se pinta con la rentabilidad. -->
+<!-- ══════ Fase 4 (plan v3) · Guardián del Formulario 1: «Revisar antes de subir» ══════
+     Siete validaciones (total vs presupuesto, ítems del Formulario 1, lo escrito en
+     SECOP II, AIU discriminado y bajo el tope, precio artificialmente bajo,
+     aritmética, redondeo) con semáforo y frases, sin jerga. Compara la oferta del
+     paso 3 con el Formulario 1 leído en el lector de pliegos (más abajo). -->
+<section id="seccion-revision" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+  <h2 class="font-semibold tracking-tight">Revisar antes de subir</h2>
+  <p class="mt-1 max-w-2xl text-sm text-gray-500">Compara tu oferta con el presupuesto oficial y con el Formulario 1 del pliego: qué es motivo de rechazo automático y qué solo conviene arreglar.</p>
+  <div class="mt-3 grid gap-3 sm:grid-cols-3">
+    <label class="block text-sm"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Tope de AIU del pliego (%)</span>
+      <input id="rev-tope-aiu" type="number" min="0" max="100" step="0.01" placeholder="Numeral 4.1 del pliego" class="w-full rounded-lg border-gray-300 text-sm"></label>
+    <label class="block text-sm"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Total que escribió en SECOP II ($)</span>
+      <input id="rev-secop-total" type="number" min="0" step="1" placeholder="Opcional" class="w-full rounded-lg border-gray-300 text-sm"></label>
+    <div class="flex items-end"><button id="btn-revisar-oferta" type="button" class="w-full rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">Revisar antes de subir</button></div>
+  </div>
+  <p id="rev-nota" class="mt-2 text-xs text-gray-500">Sin pliego leído (paso 1), la comparación con el Formulario 1 queda pendiente y se dice.</p>
+  <div id="revision-oferta" class="mt-4 hidden"></div>
+</section>
+
+<section id="seccion-piso-techo" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 class="font-semibold tracking-tight">¿Me presento, y a cuánto?</h2>
+          <span id="pt-origen" class="text-xs text-gray-400"></span>
+        </div>
+
+        <div id="pt-sin-datos" class="mt-4 hidden rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700"></div>
+
+        <div id="pt-cuerpo" class="hidden">
+          <!-- Máximo tres cifras por bloque, cada una con su origen debajo. -->
+          <dl class="mt-4 divide-y divide-gray-100 text-sm">
+            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
+              <dt class="text-gray-600">Lo que la entidad tiene presupuestado</dt>
+              <dd class="text-right"><span id="pt-presupuesto" class="text-base font-semibold tabular-nums">—</span>
+                <span class="block text-xs text-gray-400">SECOP II</span></dd>
+            </div>
+            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
+              <dt class="text-gray-600">Lo que a usted le cuesta hacerlo</dt>
+              <dd class="text-right"><span id="pt-costo" class="text-base font-semibold tabular-nums">—</span>
+                <span id="pt-costo-nota" class="block text-xs text-gray-400"></span></dd>
+            </div>
+            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
+              <dt class="text-gray-600">Lo que suele bajar esta entidad</dt>
+              <dd class="text-right"><span id="pt-baja" class="text-base font-semibold tabular-nums">—</span>
+                <span id="pt-baja-nota" class="block text-xs text-gray-400"></span></dd>
+            </div>
+            <div class="flex flex-wrap items-baseline justify-between gap-2 py-2">
+              <dt class="text-gray-600">Cuántos suelen presentarse aquí</dt>
+              <dd class="text-right"><span id="pt-oferentes" class="text-base font-semibold tabular-nums">—</span>
+                <span id="pt-oferentes-nota" class="block text-xs text-gray-400"></span></dd>
+            </div>
+          </dl>
+
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Su precio mínimo para no perder plata</p>
+              <p id="pt-piso" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p id="pt-piso-nota" class="text-xs text-gray-500"></p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">El precio al que probablemente se gana</p>
+              <p id="pt-techo" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p id="pt-techo-nota" class="text-xs text-gray-500"></p>
+            </div>
+          </div>
+
+          <!-- El veredicto: punto de color + frase completa. Nunca un porcentaje suelto. -->
+          <div id="pt-veredicto" class="mt-5 rounded-2xl p-5 ring-1 ring-inset">
+            <p class="flex items-start gap-3 text-base font-semibold">
+              <span id="pt-punto" class="mt-1 inline-block h-3 w-3 shrink-0 rounded-full" aria-hidden="true"></span>
+              <span id="pt-frase"></span>
+            </p>
+            <p id="pt-detalle" class="mt-2 pl-6 text-sm text-gray-700"></p>
+            <p id="pt-precio-actual" class="mt-2 pl-6 text-sm text-gray-600"></p>
+          </div>
+
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button id="btn-justificacion" type="button"
+                    class="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">
+              Descargar mi justificación de precio
+            </button>
+            <span class="text-xs text-gray-500">Si la entidad le pide sustentar el precio, este documento lleva su APU detrás.</span>
+          </div>
+
+          <details class="mt-4 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
+            <summary class="cursor-pointer text-xs text-gray-500 hover:text-gray-700">De dónde sale cada cifra y qué se supuso</summary>
+            <ul id="pt-fuentes" class="mt-2 space-y-1 text-xs text-gray-600"></ul>
+          </details>
+        </div>
+      </section>
+
+<section id="seccion-resumen" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Resumen del presupuesto</h2>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="rounded-2xl bg-gray-100 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Costo directo</p>
+            <p id="r-directo" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+            <p id="r-jornada" class="mt-1 hidden text-xs text-gray-500"></p>
+            <p id="r-subcontratado" class="mt-1 hidden text-xs text-gray-500"></p>
+          </div>
+          <div class="rounded-2xl bg-gray-100 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Precio de venta</p>
+            <p id="r-venta" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+            <p id="r-aiu" class="text-xs text-gray-500"></p>
+          </div>
+          <div class="rounded-2xl bg-blue-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-blue-900/60">Precio final</p>
+            <p id="r-final" class="mt-1 text-2xl font-semibold tabular-nums text-blue-950">—</p>
+            <p id="r-baja" class="text-xs text-blue-900/60"></p>
+          </div>
+          <div id="r-margen-caja" class="rounded-2xl bg-emerald-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-emerald-900/60">Margen</p>
+            <p id="r-margen" class="mt-1 text-2xl font-semibold tabular-nums text-emerald-950">—</p>
+            <p id="r-margen-pct" class="text-xs text-emerald-900/60"></p>
+          </div>
+        </div>
+
+        <div class="mt-5 grid gap-4 lg:grid-cols-2">
+          <div>
+            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500">Reparto del costo directo</h3>
+            <table class="mt-2 w-full text-sm">
+              <tbody id="r-componentes" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <div>
+            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500">Del costo directo al precio</h3>
+            <table class="mt-2 w-full text-sm">
+              <tbody id="r-aiu-detalle" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Las cinco validaciones automáticas (lib/apu/validaciones). Nace
+             OCULTO y solo aparece si hay hallazgos: un recuadro que dice
+             «0 problemas» en cada cálculo se deja de mirar a la tercera vez, y
+             entonces tampoco se ve el día que sí dice algo. -->
+        <div id="r-validaciones" class="mt-5 hidden"></div>
+
+        <div id="r-alertas" class="mt-5 space-y-2"></div>
+      </section>
+
+<section id="seccion-rentabilidad" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Rentabilidad estimada</h2>
+        <p class="mt-1 max-w-3xl text-sm text-gray-500">
+          El indicador de decisión es el <strong>VEG</strong>, no el margen: es el único que descuenta el
+          costo de preparar una oferta, que se paga se gane o no.
+        </p>
+        <div id="rentabilidad" class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
+        <div id="rentabilidad-precio" class="mt-5 text-sm"></div>
+        <div id="rentabilidad-avisos" class="mt-4 space-y-2"></div>
+      </section>
+
+<section id="seccion-precio-sugerido" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-baseline justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Precio sugerido</h2>
+            <p class="mt-1 max-w-3xl text-sm text-gray-500">
+              El precio que <strong>maximiza el valor esperado</strong>. Bajar más allá del óptimo compra
+              probabilidad en uno solo de los cuatro métodos de ponderación —que se sortean en la audiencia—
+              y regala margen en los cuatro.
+            </p>
+          </div>
+          <span id="ps-origen" class="text-xs text-gray-400"></span>
+        </div>
+
+        <div id="ps-sin-datos" class="mt-4 hidden rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700"></div>
+
+        <div id="ps-cuerpo" class="hidden">
+          <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-2xl bg-green-50 p-4 ring-1 ring-inset ring-green-600/20">
+              <p class="text-xs font-medium uppercase tracking-wide text-green-900/60">Precio óptimo</p>
+              <p id="ps-precio" class="mt-1 text-2xl font-semibold tabular-nums text-green-950">—</p>
+              <p id="ps-precio-nota" class="text-xs text-green-900/60"></p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Descuento sugerido</p>
+              <p id="ps-descuento" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p class="text-xs text-gray-500">Sobre el presupuesto oficial</p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">VEG esperado</p>
+              <p id="ps-veg" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p id="ps-veg-nota" class="text-xs text-gray-500"></p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Probabilidad a ese precio</p>
+              <p id="ps-prob" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
+              <p id="ps-prob-nota" class="text-xs text-gray-500"></p>
+            </div>
+          </div>
+
+          <div class="mt-5 flex flex-wrap items-center gap-3">
+            <button id="btn-aplicar-descuento" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              Aplicar este descuento al APU
+            </button>
+            <span id="ps-aplicar-nota" class="text-xs text-gray-500"></span>
+          </div>
+
+          <!-- Las tres opciones: Conservador | Óptimo | Agresivo (la óptima en verde) -->
+          <div class="mt-6 overflow-x-auto">
+            <table class="w-full min-w-[720px] text-sm">
+              <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
+                <tr>
+                  <th class="py-2 pr-3">Opción</th>
+                  <th class="py-2 pr-3 text-right">Descuento</th>
+                  <th class="py-2 pr-3 text-right">Precio</th>
+                  <th class="py-2 pr-3 text-right">Probabilidad</th>
+                  <th class="py-2 pr-3 text-right">Margen</th>
+                  <th class="py-2 pr-3 text-right">VEG</th>
+                  <th class="py-2"></th>
+                </tr>
+              </thead>
+              <tbody id="ps-opciones" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <p id="ps-meseta" class="mt-2 text-xs text-gray-500"></p>
+
+          <div class="mt-6">
+            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500">Valor esperado según el descuento</h3>
+            <div id="ps-curva" class="mt-2 overflow-x-auto"></div>
+          </div>
+
+          <div id="ps-alertas" class="mt-4 space-y-2"></div>
+        </div>
+      </section>
 
     </main>
   </div>

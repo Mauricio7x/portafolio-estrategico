@@ -1848,6 +1848,41 @@ cascada de `lib/apu/precios.js`. Evidencia HTTP en el §11 del mismo doc.
   INVIAS prohíben el uso comercial sin autorización — si Detekta se comercializa con estos datos,
   pedirla (`preciosunitarios@invias.gov.co`).
 
+### Mi empresa es la pestaña PRINCIPAL y Precios sin prosa (encargo del dueño, ago 2026)
+
+«Vamos a reformar la pestaña de Mi empresa: ahora esa va a ser la principal; en esa van a aparecer los datos
+más impactantes, que mayor ganas le den de licitar; aplicá el mismo criterio a Precios». Medido antes de tocar
+(Chromium, producción): Mi empresa 2 356 px / 460 palabras (sin pulso); Precios 545 palabras a primera vista.
+Decisiones que no hay que re-aprender:
+- **Orden de pestañas: Mi empresa · Licitaciones · Precios**, en escritorio y en la barra móvil, y `#tab-admin` es
+  el PRIMER `<main>` (nace visible; Licitaciones y Precios, `hidden`). Sin hash se abre Mi empresa; **una URL
+  con filtros de la Fase 8 (`?cierre=7d`, `?dep=73`) es un enlace A LA LISTA y abre Licitaciones aunque no
+  traiga hash** (la puerta de entrada y la portada los generan así). `#/empresa` y `#/mi-empresa` son alias
+  de `#/admin` (`ALIAS_PESTANA`): los ids no cambian —renombrarlos mataría app.js—, la URL sí puede leerse.
+- **El PULSO se movió a Mi empresa** (nodos movidos, ids intactos: `#pulso`, `#mercado-completo` con la portada
+  plegada) y **cada cifra LLEVA a la lista**: `aplicarFiltroDelPulso` aplica el filtro y cambia a Licitaciones,
+  que ahora empieza por la barra de herramientas. Lo que hay que VER va arriba y a la vista; lo que hay que
+  TOCAR va plegado: `#rup-gestion` (subir/descargar/eliminar el registro) y `#exp-gestion` (cargar la
+  experiencia) nacen cerrados; `#exp-actual` (lo cargado) sube ENCIMA del pliegue; Consorcio y Socio comparten
+  fila. Las cifras de Mi empresa bajaron de 460 a ~220 palabras (fuera del pulso) sin perder ningún control.
+- **«Tu registro de proponente» EN CIFRAS**: `/api/perfil?op=pulso` publica ahora `empresa` (tipos de trabajo,
+  familias, experiencia acreditada en salarios mínimos, contratos acreditados, tope; **patrimonio y capacidad
+  de contratación SOLO con token válido o para un perfil `rup_…`** —la regla del token: son cifras del
+  perfil; un `cons_…` mezcla perfiles del dueño y exige token—). **Se calcula FUERA de la caché
+  `pulso:{perfil}`**: la caché es por perfil, no por credencial, y un cuerpo cacheado con las finanzas se
+  serviría al siguiente sin token (hay prueba de las tres lecturas: sin token → null; con token → cifra;
+  otra vez sin token, servida de la caché que escribió la petición con token → null). Token presente e
+  inválido → 401 (no degradación silenciosa); `pulso.js` manda el token integrado y, si recibe 401,
+  REINTENTA sin él: el pulso no puede quedarse mudo por una credencial mal puesta. `Pulso.htmlEmpresa` pinta
+  «—» sin dato, jamás 0, en `#rup-cifras`.
+- **Precios**: mismo criterio, sin cambiar la estructura de tres pasos ni un solo id: los párrafos de los
+  pasos 1 y 3 y de «Revisar antes de subir» quedaron en una línea (la explicación del «precio de tienda» pasó
+  al `title` de la columna), la búsqueda dice que también ofrece los 526 APU INVIAS. 545 → ~430 palabras
+  medidas; las 170 del paso 2 son las OPCIONES del `<select>` de departamento (innerText las cuenta), no prosa.
+- **`arrancarPaneles` NO se difirió** aunque Mi empresa sea ahora la primera pantalla: la suite exige que
+  consulte el estado del catálogo APU y la experiencia al arrancar, y el tablero es una lectura cacheada
+  (300 s). Si algún día pesa, lo que se difiere es lo de dentro de «Sistema», al `toggle` del `<details>`.
+
 ### Los 526 APU de referencia del INVIAS como base de precios de ÍTEMS (ago 2026)
 
 Encargo del dueño (17-ago-2026): «no sabemos los precios de los ítems… el APU básicamente no sirve».
