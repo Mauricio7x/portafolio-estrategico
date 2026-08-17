@@ -1996,6 +1996,15 @@
     const r = await api("/api/apu?op=catalogo");
     if (!r) return;
     CATALOGO = r;
+    /* Los 526 APU de referencia del INVIAS llegan APARTE (`items_invias`) y
+       aquí se JUNTAN a los del catálogo: el buscador, la tabla y los borradores
+       resuelven ítems por `CATALOGO.items.find(...)`, y un ítem INVIAS tiene
+       que resolverse por el mismo camino. Van DESPUÉS de los del catálogo (el
+       orden del buscador los enseña detrás). `items_invias` se conserva para
+       poder distinguirlos. */
+    if (Array.isArray(r.items_invias) && r.items_invias.length) {
+      CATALOGO.items = (Array.isArray(r.items) ? r.items : []).concat(r.items_invias);
+    }
 
     $("aviso-precios").textContent = r.aviso
       || "Precios de referencia regionalizada, no cotizaciones: verifique contra cotización real antes de ofertar.";
@@ -2356,7 +2365,7 @@
   function pintarBusqueda() {
     const lista = $("buscar-lista");
     if (!resultadosBusqueda.length) {
-      lista.innerHTML = `<p class="px-3 py-2 text-xs text-gray-400">Sin resultados en el catálogo. Cargue un Excel o cree el ítem calculando con un precio manual.</p>`;
+      lista.innerHTML = `<p class="px-3 py-2 text-xs text-gray-400">Sin resultados en el catálogo ni en los APU de referencia del INVIAS. Cargue un Excel o cree el ítem calculando con un precio manual.</p>`;
       lista.classList.remove("hidden");
       return;
     }
@@ -2370,8 +2379,8 @@
       capAnterior = cap;
       return `${cabecera}<button type="button" data-cod="${esc(it.codigo)}" data-n="${n}"
           class="block w-full px-3 py-1.5 text-left text-xs transition hover:bg-gray-100">
-          <span class="font-medium">${esc(it.descripcion)}</span>
-          <span class="block text-[10px] text-gray-400">${esc(it.codigo)} · ${esc(it.unidad || "—")}</span>
+          <span class="font-medium">${esc(it.es_invias ? String(it.descripcion).split("(")[0].trim() : it.descripcion)}</span>
+          <span class="block text-[10px] text-gray-400">${it.es_invias ? `Ítem de pago INVIAS ${esc(it.item_de_pago)} · referencia oficial` : esc(it.codigo)} · ${esc(it.unidad || "—")}</span>
         </button>`;
     }).join("");
     lista.classList.remove("hidden");
@@ -2497,7 +2506,7 @@
         <td class="py-2 pr-3 text-right">
           <input type="number" min="0" step="any" data-campo="precio" data-fila="${i}"
                  value="${f.precio_manual == null ? "" : f.precio_manual}"
-                 placeholder="${f.item_id ? "del catálogo" : "requerido"}"
+                 placeholder="${f.item_id ? (/^INVIAS:/.test(f.item_id) ? "ref. INVIAS" : "del catálogo") : "requerido"}"
                  class="edit w-28 rounded border border-gray-200 px-2 py-1 text-right num">
         </td>
         <td class="py-2 pr-3 text-right num font-medium" data-celda="unitario-${i}">—</td>
@@ -2729,7 +2738,15 @@
        es lo único que mejora la aplicación con el uso. */
     const cascadaHtml = it && it.cascada ? cascadaDe(it.cascada) : "";
 
+    const ra = it && it.referencia_invias_apu;
+    const notaInvias = ra
+      ? `<p class="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-[11px] text-sky-900">APU de referencia oficial INVIAS ${esc(ra.vigencia)} · ítem de pago ${esc(ra.item_de_pago)}${ra.articulo ? ` (${esc(ra.articulo)})` : ""}. `
+        + `Costo directo de la provincia ${esc(ra.provincia_representativa.provincia)} (${esc(ra.provincia_representativa.departamento)}), la de precio mediano entre las ${ra.provincias_usadas} `
+        + `${ra.nivel === "nacional" ? "del país (su departamento no tiene libro INVIAS)" : "de su departamento"}. `
+        + `Las cantidades y rendimientos son los oficiales; los precios de las líneas son los de ${esc(ra.provincia_referencia_composicion || "la provincia de referencia")} llevados al nivel de esa provincia. Es una referencia, no una cotización.</p>`
+      : "";
     caja.innerHTML = `
+      ${notaInvias}
       <div class="grid gap-4 xl:grid-cols-2">${rubros}</div>
       ${cascadaHtml}
       <p class="mt-3 border-t border-gray-200 pt-2 text-right text-xs font-semibold">
@@ -2791,6 +2808,10 @@
        sugeriría que el precio ya está probado en obra, y una cotización solo
        prueba que alguien la ofreció. */
     cotizado: "bg-amber-100 text-amber-800",
+    /* APU de referencia oficial del INVIAS: no es un contrato adjudicado (no
+       va en verde) ni un precio sin respaldo (no va en ámbar): es una
+       referencia oficial con vigencia declarada, y su chip lo dice. */
+    invias: "bg-sky-100 text-sky-800",
     derivado: "bg-amber-100 text-amber-800",
     archivo: "bg-amber-100 text-amber-800",
     manual: "bg-gray-100 text-gray-600",
@@ -3362,21 +3383,34 @@
       ? ` · la suma de los ítems cuadra con «${cu.etiqueta_total}» del archivo (${pesos(cu.total_declarado)})` : "";
     $("imp-resumen").textContent = `${importacion.nombre_archivo} · ${m.total} ítems · `
       + `${m.firmes} firmes · ${m.revisar} por revisar · ${m.personalizados} personalizados · `
-      + `${m.con_precio_archivo} con precio del archivo · ${conTienda} con precio de tienda${textoCuadre}`;
+      + `${m.con_precio_archivo} con precio del archivo · ${conTienda} con precio de tienda`
+      + (m.mapeados_invias ? ` · ${m.mapeados_invias} con APU de referencia INVIAS` : "") + textoCuadre;
     $("imp-avisos").innerHTML = (importacion.avisos_lectura || [])
       .map((a) => `<p class="rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-900">${esc(a)}</p>`).join("");
 
+    /* De qué banco salió el candidato: el catálogo (contrato Nogal / semilla)
+       o los APU de referencia del INVIAS. Se dice en el chip porque el precio
+       que va a salir es de naturaleza distinta (contrato adjudicado frente a
+       referencia oficial) y porque el INVIAS trae VARIANTES de la misma
+       cabecera (gradación, método): se tomó la primera y se enseñan las otras. */
+    const origenMapeo = (f) => {
+      if (!f.item_id) return "";
+      const banco = f.fuente_mapeo === "invias" ? "APU de referencia INVIAS" : "catálogo";
+      const desc = f.fuente_mapeo === "invias" ? String(f.descripcion_catalogo || "").split("(")[0].trim() : (f.descripcion_catalogo || "");
+      const variantes = (f.variantes || []).length
+        ? ` <span class="text-[10px] text-gray-400" title="${esc((f.variantes || []).map((v) => `${v.codigo}: ${v.descripcion}`).join("\n"))}">(+${f.variantes.length} variante${f.variantes.length === 1 ? "" : "s"} INVIAS de la misma cabecera; se tomó la primera)</span>` : "";
+      return `<span class="text-xs text-gray-600">${esc(desc)}</span> <span class="text-[10px] text-gray-400">· ${banco}</span>${variantes}`;
+    };
     const chip = (f) => {
       if (f.nivel_mapeo === "firme") {
-        return `<span class="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] text-emerald-900">● firme</span> `
-          + `<span class="text-xs text-gray-600">${esc(f.descripcion_catalogo || "")}</span>`;
+        return `<span class="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] text-emerald-900">● firme</span> ${origenMapeo(f)}`;
       }
       if (f.nivel_mapeo === "revisar") {
         const marcada = f.precio_archivo != null ? "checked" : "";
         return `<label class="flex items-start gap-1.5">
           <input type="checkbox" data-aceptar="${f.orden}" ${marcada} class="mt-0.5 h-3.5 w-3.5 rounded border-gray-300">
           <span class="text-xs"><span class="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-900">● revisar · ${Math.round((f.confianza ?? 0) * 100)} %</span>
-          ${esc(f.descripcion_catalogo || "")}</span></label>`;
+          ${origenMapeo(f)}</span></label>`;
       }
       return `<span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">● personalizado</span>`
         + (f.precio_archivo == null ? ' <span class="text-[11px] font-medium text-red-600">sin precio: escríbalo en la tabla antes de calcular</span>' : "");

@@ -10174,7 +10174,7 @@ async function main() {
         /* TODOS los niveles se publican, también los que no respondieron: sin
            eso no se distingue «esta fuente no tenía el dato» de «ni se miró». */
         const cascada = sinNada.items[0].cascada;
-        assert.deepStrictEqual(cascada.map((c) => c.nivel), ["usuario", "pliego", "mercado", "retail", "invias", "catalogo"]);
+        assert.deepStrictEqual(cascada.map((c) => c.nivel), ["usuario", "pliego", "mercado", "retail", "invias", "catalogo", "invias_apu"]);
         for (const paso of cascada) {
           assert.strictEqual(paso.respondio, false);
           assert.ok(paso.motivo && paso.motivo.length > 10, `el nivel ${paso.nivel} no dice por qué no respondió`);
@@ -10431,6 +10431,219 @@ async function main() {
             + "Bogotá declarada nacional, 2025-2 corrupta documentada y referencia fuera del costo directo");
         }
 
+        /* --- lib/apu/invias_items: los 526 APU de REFERENCIA del INVIAS como
+           ítems costeables (ago 2026). Encargo del dueño: «no sabemos los
+           precios de los ítems… básicamente no sirve»: el catálogo (174 ítems)
+           no alcanza a un presupuesto de obra vial. Regla de oro: es una
+           REFERENCIA OFICIAL con vigencia y provincia declaradas, con la MISMA
+           forma que un ítem del catálogo (los cuatro componentes suman el
+           unitario y las líneas suman los componentes), y el precio propio o del
+           archivo manda sobre ella. --- */
+        {
+          const II = require("../lib/apu/invias_items.js");
+          const datosII = require("../data/apu_invias_items.json");
+          const calcII = require("../lib/apu/calculo.js");
+          const impII = require("../lib/apu/importar.js");
+          const LibroII = require("../public/apu_libro.js");
+          const XlsxII = require("../public/xlsx.js");
+          const LectII = require("../public/xlsx_lectura.js");
+          const zlibII = require("zlib");
+
+          const meta = II.meta();
+          assert.strictEqual(meta.items, 526, "el banco trae los 526 ítems de pago del INVIAS");
+          assert.strictEqual(meta.vigencia, "2026-1");
+          assert.ok(meta.provincias >= 135 && datosII._meta.provincias_fallidas.length === 6,
+            "135 provincias capturadas y 6 sin libro publicado, DECLARADAS con motivo (Bogotá entre ellas)");
+          assert.ok(/comercial/i.test(meta.licencia || ""), "la licencia del INVIAS viaja en la meta");
+
+          /* 1 · el APU del departamento CUADRA en todo el banco: componentes
+             suman el unitario (±2 pesos de redondeo) y las líneas escaladas
+             suman cada componente. Es la garantía de «la fila que cuadra» de la
+             hoja de APU, y se comprueba sobre 526 ítems × 33 departamentos. */
+          const deps = [...new Set(datosII.provincias.map((p) => p.departamento))].concat(["BOGOTA D.C."]);
+          let combos = 0, descuadres = 0, nacionales = 0;
+          for (const it of II.comoItemsDeCatalogo()) {
+            for (const d of deps) {
+              const a = II.apuParaDepartamento(it.codigo, d);
+              if (!a) continue;
+              combos++;
+              if (a.nivel === "nacional") nacionales++;
+              const cap = a.capitulos;
+              const u = Math.round(cap.materiales) + Math.round(cap.mano_obra) + Math.round(cap.equipo + cap.herramienta_menor) + Math.round(cap.transporte);
+              if (Math.abs(u - a.precio) > 2) descuadres++;
+              const sl = { equipo: 0, material: 0, transporte: 0, mano_obra: 0 };
+              for (const l of a.lineas) sl[l.tipo] += l.valor;
+              const dd = Math.max(Math.abs(sl.equipo - cap.equipo), Math.abs(sl.material - cap.materiales),
+                Math.abs(sl.transporte - cap.transporte), Math.abs(sl.mano_obra - cap.mano_obra));
+              if (dd > 1.5) descuadres++;
+              // el precio es el de una provincia REAL (la de precio mediano), no un promedio inventado
+              assert.ok(a.provincias.some((p) => p.provincia === a.provincia_representativa.provincia && p.precio === a.provincia_representativa.precio),
+                `${it.codigo}/${d}: la provincia representativa tiene que ser una de las que sostienen la referencia`);
+            }
+          }
+          assert.ok(combos > 17000, `combos ítem×departamento evaluados: ${combos}`);
+          assert.strictEqual(descuadres, 0, `APU INVIAS que no cuadran (componentes vs unitario o líneas vs componentes): ${descuadres}`);
+          assert.ok(nacionales >= 520, "Bogotá (sin libro INVIAS) cae a la mediana NACIONAL y lo declara, ítem a ítem");
+          const bog = II.apuParaDepartamento("INVIAS:200,1,1", "BOGOTA D.C.");
+          assert.strictEqual(bog.nivel, "nacional");
+          assert.strictEqual(bog.provincias_usadas, 135);
+          const tol = II.apuParaDepartamento("INVIAS:200,1,1", "Tolima");
+          assert.strictEqual(tol.nivel, "departamento");
+          assert.strictEqual(tol.provincia_representativa.departamento, "TOLIMA");
+          assert.strictEqual(II.apuParaDepartamento("INVIAS:no-existe", "TOLIMA"), null, "un código que no está en el banco es null, no un precio");
+          assert.strictEqual(II.apuParaDepartamento("NOG-A2", "TOLIMA"), null, "un ítem del catálogo no es un ítem INVIAS");
+          // la unidad se canoniza como en el catálogo («u» → «und», «m³» → «m3»)
+          assert.strictEqual(II.unidadCanonicaInvias("m³"), "m3");
+          assert.strictEqual(II.unidadCanonicaInvias("u"), "und");
+
+          /* 2 · el MOTOR: un ítem INVIAS sale con la forma de uno del catálogo,
+             origen «invias», trazabilidad pegada, y suma al reparto por
+             componente (no a `sin_desglose`); el precio manual MANDA y deja la
+             referencia en `cd_catalogo`; el override de rendimiento NO se aplica
+             y se dice; y el catálogo sigue exactamente igual. */
+          const r = calcII.calcularPresupuesto({
+            items: [
+              { item_id: "INVIAS:210,2,2", cantidad: 10 },
+              { item_id: "INVIAS:210,2,2", cantidad: 10, precio_manual: 20000 },
+              { item_id: "INVIAS:210,2,2", cantidad: 1, rendimiento_override: 50 },
+              { item_id: "NOG-A2", cantidad: 1 },
+            ],
+            departamento: "BOYACA",
+          });
+          const [inv, invManual, invOverride, nog] = r.items;
+          assert.strictEqual(inv.origen_precio, "invias");
+          assert.strictEqual(inv.sin_apu, false, "un APU INVIAS tiene composición: no es «sin APU»");
+          assert.strictEqual(inv.incompleto, false);
+          assert.ok(Math.abs(inv.costo_directo_unitario - II.apuParaDepartamento("INVIAS:210,2,2", "BOYACA").precio) <= 2,
+            "el unitario es el costo directo oficial de la provincia representativa (±$2 de redondeo de componentes)");
+          assert.strictEqual(inv.costo_material_unitario + inv.costo_mano_obra_unitario + inv.costo_equipo_unitario + inv.costo_transporte_unitario, inv.costo_directo_unitario);
+          assert.strictEqual(inv.costo_total, inv.costo_directo_unitario * 10);
+          assert.ok(inv.referencia_invias_apu && inv.referencia_invias_apu.vigencia === "2026-1" && inv.referencia_invias_apu.provincia_representativa,
+            "la trazabilidad (vigencia, provincia representativa) viaja con el ítem");
+          assert.ok(Array.isArray(inv.detalle.insumos) && inv.detalle.insumos.length >= 4, "el desglose trae las líneas de la composición");
+          assert.ok(inv.detalle.insumos.every((l) => l.origen_precio === "invias" && Number.isFinite(l.valor)));
+          const cadena = inv.cascada.pasos.map((p) => `${p.nivel}:${p.respondio}`);
+          assert.ok(cadena.includes("invias_apu:true") && cadena.includes("catalogo:false"), `la cascada dice que respondió el APU INVIAS: ${cadena.join(" ")}`);
+          assert.strictEqual(invManual.origen_precio, "manual");
+          assert.strictEqual(invManual.costo_directo_unitario, 20000, "el precio manual manda");
+          assert.strictEqual(invManual.cd_catalogo, inv.costo_directo_unitario, "…y la referencia INVIAS queda declarada como cd_catalogo para que la diferencia se vea");
+          assert.ok(invOverride.aviso && /rendimiento propio/.test(invOverride.aviso), "el override se declara, no se ignora en silencio");
+          assert.strictEqual(invOverride.costo_directo_unitario, inv.costo_directo_unitario, "…y no cambia el unitario");
+          assert.strictEqual(nog.origen_precio, "catalogo");
+          assert.ok(nog.cascada.pasos.some((p) => p.nivel === "invias_apu" && p.respondio === false && /no es un ítem de pago/i.test(p.motivo)),
+            "para un ítem del catálogo la cascada declara por qué el nivel INVIAS no respondió");
+          const pc = r.resumen.por_componente;
+          assert.strictEqual(pc.material + pc.mano_obra + pc.equipo + pc.transporte + pc.sin_desglose, r.resumen.costo_directo_total,
+            "material + MO + equipo + transporte + sin_desglose = costo directo total, con ítems INVIAS dentro");
+          assert.strictEqual(pc.sin_desglose, 20000 * 10, "solo el manual va a sin_desglose: el INVIAS reparte por componente");
+          assert.ok(r.alertas.some((a) => /APU de referencia oficial del INVIAS 2026-1/.test(a)), "las alertas declaran la referencia INVIAS");
+          assert.ok(r.alertas.some((a) => /rendimiento propio que NO se aplicó/.test(a)));
+          // sin ítems INVIAS, nada cambia: el mismo cálculo de siempre (calibración Nogal intacta)
+          const soloNog = calcII.calcularPresupuesto({ items: [{ item_id: "NOG-A2", cantidad: 1 }], departamento: "BOGOTA D.C." });
+          assert.ok(Math.abs(soloNog.items[0].costo_directo_unitario - 24463) <= 1, "NOG-A2 sigue en $24.463 (±$1 de suma de componentes redondeados)");
+          assert.ok(!soloNog.alertas.some((a) => /INVIAS/.test(a)));
+
+          /* 3 · `cotizar` responde por el MISMO camino (R2): el precio del nivel
+             `invias_apu` es EXACTAMENTE el unitario de `calcular`, y sin
+             departamento cae a la mediana nacional y lo dice. */
+          const preciosII = require("../lib/apu/precios.js");
+          const cot = preciosII.cotizar({ items: [{ item_id: "INVIAS:210,2,2", cantidad: 10 }], departamento: "BOYACA" });
+          assert.strictEqual(cot.items[0].fuente, "invias_apu");
+          assert.strictEqual(cot.items[0].precio_unitario, inv.costo_directo_unitario, "cotizar y calcular no pueden dar dos unitarios distintos");
+          const cotNac = preciosII.cotizar({ items: [{ item_id: "INVIAS:210,2,2", cantidad: 10 }] });
+          assert.strictEqual(cotNac.items[0].detalle.nivel, "nacional");
+          assert.ok(/mediana nacional/.test(cotNac.items[0].detalle.nota || ""));
+          assert.ok(preciosII.NIVELES.some((n) => n.id === "invias_apu" && /referencia/i.test(n.porque)), "el nivel existe y se declara referencia");
+
+          /* 4 · el BADGE y el EXCEL: estado «invias» (ni verde ni ámbar), con la
+             vigencia y la provincia en la etiqueta; la hoja «Presupuesto» marca
+             la fila y la hoja «APU» dice de qué provincia es el costo directo y
+             cuadra al peso; y el libro se REIMPORTA sin que el marcador
+             envenene el mapeo. */
+          const org = LibroII.clasificarOrigen(inv, r);
+          assert.strictEqual(org.estado, "invias");
+          assert.strictEqual(org.suma, true);
+          assert.ok(/^INVIAS 2026-1 · /.test(org.etiqueta), `la etiqueta lleva vigencia y provincia: ${org.etiqueta}`);
+          assert.ok(/referencia, no una cotización/.test(org.motivo));
+          const hojas = LibroII.construirLibroNogal(r, { titulo: "INVIAS", fecha: "2026-08-17" });
+          const presuTxt = JSON.stringify(hojas[0].filas);
+          assert.ok(/🔵 INVIAS 2026-1/.test(presuTxt), "la hoja Presupuesto marca la fila INVIAS con el patrón que el importador limpia");
+          const apuTxt = JSON.stringify(hojas[1].filas);
+          assert.ok(/APU DE REFERENCIA OFICIAL INVIAS 2026-1 · ítem de pago 210,2,2/.test(apuTxt), "la hoja APU dice de dónde sale el costo directo");
+          // VR COSTO DIRECTO de la hoja APU == unitario del motor, y las secciones suman ese unitario (±$1)
+          const filasApu = hojas[1].filas;
+          const idxCab = filasApu.findIndex((f) => f && f[0] && /^INVIAS:210,2,2 · /.test(String(f[0].v)));
+          let subtotales = 0, vr = null;
+          for (let k = idxCab + 1; k < filasApu.length; k++) {
+            const f = filasApu[k];
+            if (f && f[3] && f[3].v === "Subtotal =") subtotales += Number(f[4].v);
+            if (f && f[3] && f[3].v === "VR COSTO DIRECTO =") { vr = Number(f[4].v); break; }
+          }
+          assert.strictEqual(vr, inv.costo_directo_unitario, "VR COSTO DIRECTO de la hoja APU = unitario del motor");
+          assert.ok(Math.abs(subtotales - vr) <= 2, `las secciones de la hoja APU suman el unitario: ${subtotales} vs ${vr}`);
+          const buf = XlsxII.construirLibro(hojas, {});
+          const leido = await LectII.leerLibro(buf, { inflar: (u8) => zlibII.inflateRawSync(Buffer.from(u8)) });
+          const eleg = LectII.elegirHoja(leido);
+          assert.strictEqual(eleg.hoja.nombre, "Presupuesto", "gana la hoja que cuadra con su total");
+          const det = eleg.resultado;
+          const re = impII.mapearFilasImportadas(det.filas, require("../lib/apu/catalogo.js").SEMILLA);
+          const filaInv = re.filas.find((f) => /EXCAVACIÓN EN MATERIAL COMÚN/.test(f.descripcion));
+          assert.ok(filaInv && filaInv.item_id === "INVIAS:210,2,2" && filaInv.nivel_mapeo === "firme",
+            `la fila INVIAS reimportada vuelve a mapear firme al mismo ítem (${filaInv && filaInv.nivel_mapeo} → ${filaInv && filaInv.item_id})`);
+          assert.ok(!/🔵/.test(JSON.stringify(re.filas.map((f) => f.coincidencias))), "el marcador no entra al tokenizador");
+          // `Number(null)` no puede escribir «días × 0,000»: una línea sin factor de jornada no lleva la nota
+          const legibleMo = LibroII.lineaLegible({ tipo: "mano_obra", nombre: "x", unidad: "jornal", precio_region: 100, precio_aplicado: 155, cantidad: 1, valor: 155, factor_jornada: null, rendimiento: 1 });
+          assert.ok(!/días ×/.test(legibleMo.descripcion), `sin factor de jornada no hay nota de jornada: ${legibleMo.descripcion}`);
+
+          /* 5 · el IMPORTADOR: las filas de un formulario vial mapean a los APU
+             INVIAS (junto al catálogo), las variantes de la misma cabecera no
+             degradan a «revisar» y se publican, un empate a puntaje lo gana el
+             catálogo, y el rendimiento del mapeo sin INVIAS es EXACTAMENTE el de
+             antes (`sinInvias`). */
+          const filasVial = [
+            { descripcion: "Excavación en material común de la explanación y canales", unidad: "m3", cantidad: 500 },
+            { descripcion: "Subbase granular clase C", unidad: "m3", cantidad: 200 },
+            { descripcion: "Mezcla densa en caliente tipo MDC-19", unidad: "m3", cantidad: 100 },
+            { descripcion: "Riego de imprimación con emulsión asfáltica", unidad: "m2", cantidad: 3000 },
+            { descripcion: "Pisos en alfagres", unidad: "m2", cantidad: 75 },
+            { descripcion: "Obra de arte conmemorativa en bronce", unidad: "und", cantidad: 1 },
+          ];
+          const mv = impII.mapearFilasImportadas(filasVial, require("../lib/apu/catalogo.js").SEMILLA);
+          assert.deepStrictEqual(mv.filas.slice(0, 4).map((f) => [f.nivel_mapeo, f.fuente_mapeo]),
+            [["firme", "invias"], ["firme", "invias"], ["firme", "invias"], ["firme", "invias"]],
+            `las cuatro filas viales mapean firme al INVIAS: ${JSON.stringify(mv.filas.map((f) => [f.nivel_mapeo, f.fuente_mapeo, f.item_id]))}`);
+          assert.strictEqual(mv.filas[0].item_id, "INVIAS:210,2,2");
+          assert.strictEqual(mv.filas[1].item_id, "INVIAS:320,3,1");
+          assert.deepStrictEqual(mv.filas[1].variantes.map((v) => v.codigo), ["INVIAS:320,3,2"], "la variante de la misma cabecera se PUBLICA (SBG-50 / SBG-38)");
+          assert.deepStrictEqual([mv.filas[4].nivel_mapeo, mv.filas[4].item_id], ["firme", "NOG-B2"], "el catálogo sigue mapeando lo suyo");
+          assert.strictEqual(mv.filas[5].nivel_mapeo, "personalizado");
+          assert.strictEqual(mv.resumen_mapeo.mapeados_invias, 4);
+          assert.strictEqual(mv.filas[0].entrada_calculo.item_id, "INVIAS:210,2,2", "un mapeo firme sin precio del archivo entra al cálculo con el APU INVIAS");
+          const sinInv = impII.mapearFilasImportadas(filasVial, require("../lib/apu/catalogo.js").SEMILLA, { sinInvias: true });
+          assert.ok(sinInv.filas.every((f) => f.fuente_mapeo !== "invias"));
+          assert.strictEqual(sinInv.resumen_mapeo.mapeados_invias, 0);
+          // el catálogo (Nogal/semilla) NO se coló ni cambió: la unidad canónica compuesta del INVIAS ya no cae en «ml»
+          assert.strictEqual(impII.unidadCanonica("m3-km"), "m3-km");
+          assert.strictEqual(impII.unidadCanonica("M3 - Km"), "m3-km");
+          assert.notStrictEqual(impII.unidadCanonica("m3-km"), impII.unidadCanonica("ml"));
+
+          /* 6 · el catálogo que sirve la API trae los ítems INVIAS APARTE
+             (`items_invias`), con la forma del catálogo, y app.js los junta. */
+          const comoCat = II.comoItemsDeCatalogo();
+          assert.strictEqual(comoCat.length, 526);
+          assert.ok(comoCat.every((i) => /^INVIAS:/.test(i.codigo) && i.es_invias === true && i.descripcion && i.unidad));
+          const appJsII = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+          assert.ok(/items_invias/.test(appJsII) && /concat\(r\.items_invias\)/.test(appJsII), "app.js junta items_invias al catálogo para buscar y añadir");
+          assert.ok(/CLASES_ORIGEN[\s\S]*invias:/.test(appJsII), "el badge tiene clase para el estado invias");
+          const editorII = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "apu", "editor.js"), "utf8");
+          assert.ok(/items_invias: InviasItems\.comoItemsDeCatalogo\(\)/.test(editorII), "la acción catalogo publica items_invias");
+          assert.ok(/departamento: String\(datos\.departamento \|\| ""\) \|\| null,/.test(editorII), "cotizar pasa el departamento al nivel INVIAS");
+          const busq = II.buscar("subbase granular clase c");
+          assert.ok(busq.length && busq[0].codigo === "INVIAS:320,3,1", `buscar por nombre: ${busq[0] && busq[0].codigo}`);
+
+          console.log(`· unidad APU INVIAS ítems: 526 ítems × 33 departamentos = ${combos} APU que cuadran al peso · motor/cotizar/badge/Excel/importador con origen «invias» declarado · ida y vuelta por Excel sin envenenar el mapeo`);
+        }
+
         /* --- la referencia de mercado: sobre el CONTRATO, con mínimo --- */
         const mk = (n, dep, fam, base) => Array.from({ length: n }, (_, i) => ({
           departamento_entidad: dep, codigo_principal_de_categoria: `${fam}1500`,
@@ -10525,7 +10738,7 @@ async function main() {
         const cascItem = calcConPropio.cuerpo.items[0].cascada;
         assert.ok(cascItem, "`calcular` tiene que publicar la cascada: es la vía que usa la web");
         assert.deepStrictEqual(cascItem.pasos.map((p) => p.nivel),
-          ["usuario", "pliego", "mercado", "retail", "invias", "catalogo"]);
+          ["usuario", "pliego", "mercado", "retail", "invias", "catalogo", "invias_apu"]);
         const respondieron = cascItem.pasos.filter((p) => p.respondio);
         assert.strictEqual(respondieron.length, 1, "responde UNA fuente: la primera que tiene el dato");
         assert.strictEqual(respondieron[0].nivel, "usuario");
@@ -10729,7 +10942,7 @@ async function main() {
           departamento: "BOGOTA D.C.", config: {},
         }).items[0];
         assert.strictEqual(sinPrecioCasc.incompleto, true);
-        assert.ok(sinPrecioCasc.cascada && sinPrecioCasc.cascada.pasos.length === 6,
+        assert.ok(sinPrecioCasc.cascada && sinPrecioCasc.cascada.pasos.length === 7,
           "al ítem sin precio se le negaba la explicación, que es el único caso que la necesita entera");
         assert.ok(sinPrecioCasc.cascada.pasos.every((p) => !p.respondio && p.motivo));
       }

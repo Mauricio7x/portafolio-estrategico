@@ -1848,6 +1848,61 @@ cascada de `lib/apu/precios.js`. Evidencia HTTP en el §11 del mismo doc.
   INVIAS prohíben el uso comercial sin autorización — si Detekta se comercializa con estos datos,
   pedirla (`preciosunitarios@invias.gov.co`).
 
+### Los 526 APU de referencia del INVIAS como base de precios de ÍTEMS (ago 2026)
+
+Encargo del dueño (17-ago-2026): «no sabemos los precios de los ítems… el APU básicamente no sirve».
+Importar otro Excel SÍ funcionaba; lo que fallaba es que casi ningún ítem real tenía precio (el catálogo
+son 174 ítems, 157 de un contrato de edificación). `tests/capturar_invias_apu.js` (herramienta MANUAL con
+red, como las otras dos capturas) bajó los libros por provincia del INVIAS 2026-1
+(`hermes2.invias.gov.co/APUs/Provincias/2026_1/APU_{cod}_{DPTO}__{PROV}_2026_1.xlsx`; 135/141 provincias,
+Bogotá y 5 más sin libro publicado, DECLARADAS) a `data/apu_invias_items.json` (2,9 MB: 526 ítems de pago
+× costo directo y 4 componentes por provincia + la composición de Ibagué); `lib/apu/invias_items.js` los
+sirve y `calcular`, `cotizar`, el importador de Excel, el buscador del editor y el libro exportado los usan.
+Decisiones que no hay que re-aprender:
+- **Es una REFERENCIA OFICIAL, no una cotización, y viaja con vigencia, provincia y número de provincias**
+  (`origen_precio: "invias"`, `referencia_invias_apu`, nivel `invias_apu` de la cascada de `lib/apu/precios`,
+  estado `invias` del badge/Excel: ni verde —no es contrato adjudicado— ni ámbar —tiene respaldo—). El
+  precio propio, el del archivo o el tecleado MANDAN sobre ella (la política de precios de siempre) y la
+  referencia queda en `cd_catalogo` para que la diferencia se vea.
+- **El precio del departamento es el de UNA provincia real, la de precio mediano** (con número par, la
+  inferior de las dos centrales), NO la mediana de cada componente por separado: la suma de medianas no
+  es la mediana de las sumas (hasta 5,7 % medido) y un unitario que no es la suma de sus componentes es «la
+  fila que no cuadra». Sin libro para el departamento (Bogotá) → la mediana NACIONAL, dicha en cada ítem.
+- **Las líneas de la composición (Ibagué) se LLEVAN al nivel de la provincia representativa con un factor
+  por componente**, publicado en cada línea («precio de IBAGUE × 1,02 al nivel de NORTE»): es lo que hace el
+  INVIAS (mismas cantidades y rendimientos, precios por provincia) y lo que hace que la hoja de APU cuadre al
+  peso. Un componente que la composición de referencia no desglosa (41 celdas de 71 010) va como línea de
+  AJUSTE con nombre, jamás repartido en silencio. **Prueba: 526 ítems × 33 departamentos = 17 884 APU
+  cuadran** (componentes → unitario ±$2; líneas → componentes ±$1,5).
+- **El APU oficial se toma TAL CUAL**: sin factor de jornada ni EPP del motor (la vigencia 2026-1 ya está en la
+  jornada vigente; el 2,04 del INVIAS no desglosa dotación) y sin `rendimiento_override` (si viene, se AVISA
+  en el ítem y en las alertas; quien difiera escribe el precio). Los ítems INVIAS reparten por componente
+  (no van a `sin_desglose`) y `material + MO + equipo + transporte + sin_desglose = total` sigue con prueba.
+- **UN solo unitario para calcular y cotizar**: `unitarioMotor` (suma de componentes redondeados) vive en
+  `invias_items` y lo leen los dos; dos redondeos «equivalentes» dieron 16 537 frente a 16 536 en la primera
+  pasada. Va DESPUÉS de `catalogo` en la cascada porque son espacios de códigos distintos (`INVIAS:200,1,1`
+  frente a `NOG-`/`INV-`/`LOC-`): para un ítem dado solo responde uno.
+- **El importador compara contra catálogo + INVIAS con las MISMAS primitivas**, y tres precisiones medidas:
+  (1) la similitud de EDICIÓN de un ítem INVIAS se mide contra su CABECERA (antes del paréntesis) y las
+  coincidencias contra el texto entero — con el paréntesis largo, «SUB-BASE GRANULAR PARA BACHEO CLASE A»
+  ganaba a «SUB-BASE GRANULAR CLASE A»; (2) el **margen sobre el segundo se mide contra el mejor de OTRA
+  FAMILIA** (cabecera INVIAS; artículo para los `INV-*` estimados del catálogo): el banco trae 194 ítems que
+  solo difieren en el paréntesis (SBG-50/SBG-38) y todo lo vial caía a «revisar»; las variantes se
+  PUBLICAN (`variantes`) y se toma la primera por código, dicho en la vista previa; (3) a puntaje igual gana
+  catálogo (contrato/derivación) > INVIAS > estimación del catálogo. `sinInvias` deja medir el mapeo de antes.
+  Unidades compuestas del INVIAS (`m3-km`, `kg-km`) tienen entrada propia en `UNIDAD_EQUIV`: caían en «ml».
+- **El libro exportado marca la fila con `  🔵 INVIAS 2026-1 · PROVINCIA`** —el MISMO anclaje (dos espacios +
+  emoji) que el importador limpia (`MARCADOR_EXPORTADO_RE`)— y la hoja APU dice de qué provincia es el costo
+  directo. Hay prueba de ida y vuelta: exportar → reimportar → la fila vuelve a mapear firme al mismo ítem.
+- **De paso, un defecto de producción en `lineaLegible`**: `Number(null)` es 0 y finito, así que toda línea de
+  mano de obra SIN factor de jornada (`factor_jornada: null`, que es lo que publica el motor con factor 1 —el
+  dueño guardó 42 h—) escribía «días × 0,000 por jornada de 42 h» en pantalla y en el Excel. Guarda de
+  ausencia y prueba.
+- **La API sirve los ítems INVIAS APARTE** (`items_invias` + `invias_apu` en `/api/apu?op=catalogo`, +245 KB) y
+  `app.js` los junta a `CATALOGO.items` para buscar/añadir/resolver borradores; `cotizar` recibe
+  `departamento` (el INVIAS se resuelve por departamento, no por región del catálogo). Licencia: los
+  documentos del INVIAS prohíben el uso comercial sin autorización — está en `_meta` y en `meta()`.
+
 ### Página única y token integrado (ago 2026)
 
 Encargo del dueño: «una sola página, cero fricción». Se retiraron `admin.html`, `apu.html`,

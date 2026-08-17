@@ -113,9 +113,17 @@
     /* Fase 1: cuando el motor aplicó el factor de jornada (Ley 2101), la
        cantidad de días ya no es 1 ÷ rendimiento sino factor ÷ rendimiento. Se
        escribe para que quien rehaga la fila con calculadora encuentre el número. */
-    if (l.tipo === "mano_obra" && Number.isFinite(Number(l.factor_jornada)) && Math.abs(Number(l.factor_jornada) - 1) > 1e-6) {
+    /* `Number(null)` es 0 —y 0 es finito—: sin la guarda de ausencia, una línea
+       SIN factor de jornada escribía «días × 0,000 por jornada de 42 h». Es la
+       trampa documentada en lib/probabilidad («numero() no sirve de guarda»),
+       cazada aquí al pasar por primera vez líneas con `factor_jornada: null`. */
+    if (l.tipo === "mano_obra" && l.factor_jornada != null && Number.isFinite(Number(l.factor_jornada)) && Math.abs(Number(l.factor_jornada) - 1) > 1e-6) {
       notas.push(`días × ${Number(l.factor_jornada).toFixed(3).replace(".", ",")} por jornada de 42 h`);
     }
+    /* La nota que trae la propia línea (hoy solo los APU de referencia INVIAS:
+       «precio de IBAGUE × 1,02 al nivel de NORTE»): quien rehaga la fila tiene
+       que poder encontrar el factor, y el motor lo escribe ahí. */
+    if (typeof l.nota === "string" && l.nota.trim()) notas.push(l.nota.trim());
 
     return {
       nombre,
@@ -169,12 +177,17 @@
          verificar. Decirles lo mismo es perder la única distinción que el
          auditor va a preguntar.
 
-     LOS DOS ESTADOS DEL ENCARGO QUE NO EXISTEN, Y POR QUÉ:
-       · 🟢 «INVIAS 2025-2 · [Provincia]» — los APU Regionalizados de Referencia
-         del INVIAS NO están en el repositorio y este entorno recibe 403 de las
-         fuentes oficiales. Qué archivos harían falta y cómo cargarlos está en
-         `docs/APU_DIAGNOSTICO.md`. Emitir el badge sin el dato sería rotular
-         «INVIAS» un precio que no lo es: el peor error posible aquí.
+     EL ESTADO «INVIAS» EXISTE DESDE AGO 2026: los 526 APU de Referencia
+     Regionalizados del INVIAS (vigencia 2026-1) están en
+     `data/apu_invias_items.json` y `calculo.js` los costea con el costo directo
+     oficial de la provincia representativa del departamento
+     (`origen_precio: "invias"` + `referencia_invias_apu`). El badge dice la
+     vigencia y la provincia, y NO es verde: es una referencia oficial, no un
+     contrato adjudicado — y tampoco ámbar, porque tiene respaldo. Antes de eso
+     el estado se declaraba inexistente a propósito (rotular «INVIAS» un precio
+     que no lo era habría sido el peor error posible aquí).
+
+     EL ESTADO DEL ENCARGO QUE SIGUE SIN EXISTIR, Y POR QUÉ:
        · 🟠 «Histórico SECOP · [N] procesos» — `p6dx-8zbt` publica el valor
          ADJUDICADO del contrato entero, no precios unitarios por ítem. No hay
          de dónde sacar un precio unitario del histórico, así que el estado no
@@ -226,6 +239,25 @@
             : delArchivo
               ? "El precio viene del archivo importado y manda sobre el catálogo."
               : "El precio lo escribió usted a mano."),
+      };
+    }
+    /* APU de REFERENCIA OFICIAL del INVIAS: costo directo publicado por el
+       INVIAS para ese ítem de pago en la provincia representativa del
+       departamento (la de precio mediano). Con respaldo (composición oficial),
+       con vigencia y provincia declaradas, y NO cotizado por nadie para esta
+       obra: por eso no es verde ni ámbar. */
+    if (it.origen_precio === "invias") {
+      const ra = it.referencia_invias_apu || {};
+      const prov = ra.provincia_representativa ? ra.provincia_representativa.provincia : null;
+      return {
+        estado: "invias",
+        emoji: "🔵",
+        etiqueta: `INVIAS ${ra.vigencia || ""}${prov ? ` · ${prov}` : ""}`.trim(),
+        suma: true,
+        motivo: `APU de referencia oficial del INVIAS (vigencia ${ra.vigencia || "—"}, ítem de pago ${ra.item_de_pago || "—"}): `
+          + `costo directo de la provincia ${prov || "—"}${ra.provincia_representativa ? ` (${ra.provincia_representativa.departamento})` : ""}, `
+          + `la de precio mediano entre las ${ra.provincias_usadas || "—"} ${ra.nivel === "nacional" ? "del país — su departamento no tiene libro INVIAS —" : "de su departamento"}. `
+          + "Es una referencia, no una cotización: verifique antes de presentar.",
       };
     }
     /* VERDE solo con las dos condiciones: precio de un contrato adjudicado Y
@@ -381,7 +413,13 @@
                un nivel de OPC nuevo, con dos modos de fallo que hacen que Excel
                se niegue a abrir el libro ENTERO. Un archivo roto cuesta más que
                un globo que falta. */
-            + (noVerificado ? "   ⚠️ Precio no verificado - requiere cotización" : ""),
+            + (noVerificado ? "   ⚠️ Precio no verificado - requiere cotización" : "")
+            /* El APU de referencia INVIAS se marca en la descripción con el
+               MISMO patrón (dos espacios + emoji) que los otros avisos, que es
+               lo que el importador del proyecto sabe limpiar al reimportar
+               (`MARCADOR_EXPORTADO_RE`): un marcador con otro anclaje
+               envenenaría el mapeo de vuelta, medido con los otros dos. */
+            + (org.estado === "invias" ? `   🔵 ${org.etiqueta} (APU de referencia oficial)` : ""),
           s: estiloTexto,
         },
         { v: it.unidad || "—", s: estiloTexto },
@@ -442,7 +480,7 @@
     /* La leyenda declara TODOS los colores. Con estados y colores en juego,
        callarse uno sería mentir justo en la fila que existe para no mentir. */
     notas.push("Leyenda: fila SIN COLOR = precio de un contrato adjudicado (Nogal 4, 2025) servido en su misma región, "
-      + "o insumos con cotización de proveedor cargada. "
+      + "insumos con cotización de proveedor cargada, o APU de referencia oficial del INVIAS (marcado 🔵 en la descripción, con su vigencia y provincia). "
       + "Fila AMARILLA = precio con APU pero derivado por factor regional o estimado: no está verificado y requiere cotización. "
       + "Fila ÁMBAR = precio del archivo importado o tecleado a mano, sin APU de respaldo en el catálogo (suma al total y queda declarado). "
       + "Fila ROJA = ítem sin precio: NO suma al total — un $0 sería un precio inventado.");
@@ -569,6 +607,21 @@
         continue;
       }
 
+      /* APU de referencia INVIAS: la hoja dice de qué provincia es el costo
+         directo y que las líneas van llevadas desde la provincia de referencia
+         de la composición — sin eso, quien audite verá precios de Ibagué
+         multiplicados por un factor sin nombre. */
+      if (it.origen_precio === "invias" && it.referencia_invias_apu) {
+        const ra = it.referencia_invias_apu;
+        const prov = ra.provincia_representativa ? `${ra.provincia_representativa.provincia} (${ra.provincia_representativa.departamento})` : "—";
+        const nota = fila([{
+          v: `APU DE REFERENCIA OFICIAL INVIAS ${ra.vigencia || ""} · ítem de pago ${ra.item_de_pago || "—"}${ra.articulo ? ` · ${ra.articulo}` : ""}. `
+            + `Costo directo de la provincia ${prov}, la de precio mediano entre las ${ra.provincias_usadas || "—"} ${ra.nivel === "nacional" ? "del país (el departamento no tiene libro INVIAS)" : "del departamento"}. `
+            + `Cantidades y rendimientos oficiales; precios de las líneas de ${ra.provincia_referencia_composicion || "la provincia de referencia"} llevados al nivel de esa provincia (factor por línea en la nota). Referencia, no cotización.`,
+          s: "nota",
+        }]);
+        fusionA_G(nota);
+      }
       const insumos = (it.detalle && it.detalle.insumos) || [];
       for (const [tipo, rotulo, cabecera] of SECCIONES_APU) {
         const delTipo = insumos.filter((l) => l.tipo === tipo);
