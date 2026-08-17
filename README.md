@@ -587,6 +587,28 @@ segundo desglose.
 > aplica **seis**: faltaban los dos de baja de mercado, que son los que convierten la respuesta en
 > «P(ganar *a un precio que valga la pena*)».
 
+#### Vista `socio` — verificá a tu socio antes de firmar (ago 2026)
+
+```
+GET /api/inteligencia?op=socio&id=<NIT o cédula>[&representante=<cédula>]   ← canónica (token)
+GET /api/competencia-detalle?vista=socio&id=…                                ← equivalente
+```
+
+La *due diligence de 20 minutos* del manual (truco #15) sobre datos abiertos. Para un NIT o una
+cédula consulta **en paralelo, best-effort y con 6 s por fuente**: SIRI de la Procuraduría
+(`iaeu-rcn6`, sanciones certificables; solo personas naturales, por eso una persona jurídica se
+consulta a través del **representante legal** que publica SECOP II y de la cédula que se declare),
+Multas y Sanciones SECOP I (`4n4q-k399`, con la regla del **art. 90 Ley 1474/2011** —5 multas, o
+2 incumplimientos, o 2 multas + 1 incumplimiento en la misma vigencia fiscal → 3 años— aplicada
+sobre lo visible y declarada como *posible*, vigente solo si la vigencia está a ≤ 3 años),
+contratos electrónicos SECOP II (`jbjy-vk9h` por `documento_proveedor`: estados —cancelado,
+cedido, suspendido—, prórrogas y pagos con el MISMO agregador de `lib/ejecucion`) y adjudicaciones
+en `p6dx-8zbt` agrupadas por año. Responde `semaforo` (rojo · ámbar · sin_hallazgos — **nunca
+«limpio»**: son datasets, no certificados), `fuentes`, y `checklist` con las **cinco** fuentes del
+manual (las tres sin dataset —Contraloría, Policía, RNMC— con enlace verificado y qué mirar). Un
+`id` ilegible es 400; una fuente caída → `ok:false` con motivo y las demás salen. No toca Redis.
+Se pinta en *Mi empresa → Verificá a tu socio antes de firmar*.
+
 #### Vista `paa` — el Plan Anual de Adquisiciones (ago 2026)
 
 ```

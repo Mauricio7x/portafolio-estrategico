@@ -5941,9 +5941,83 @@
     for (const c of lista) if (![...sel.options].some((o) => o.value === c.id)) { const o = document.createElement("option"); o.value = c.id; o.textContent = `Consorcio · ${c.nombre || c.id}`; sel.appendChild(o); }
   }
 
+  /* ---- Verificá a tu socio (vista `socio` de /api/inteligencia) ----
+     La due diligence de 20 minutos del manual. La respuesta ya viene con el
+     semáforo, los hallazgos, las cuatro fuentes automáticas y el checklist de
+     las cinco: acá solo se pinta. Nunca se escribe «limpio»: la app consulta
+     datasets abiertos, no certificados, y el texto del servidor lo dice. */
+  let socioEnVuelo = false;
+  async function verificarSocio() {
+    if (socioEnVuelo) return;
+    const id = $("socio-id").value.trim();
+    const rl = $("socio-representante").value.trim();
+    const msg = $("socio-mensaje"), out = $("socio-resultado");
+    const aviso = (texto, clase) => { msg.className = `mt-3 rounded-xl px-4 py-3 text-sm ${clase}`; msg.textContent = texto; msg.classList.remove("hidden"); };
+    if (!id.replace(/\D/g, "")) { aviso("Escribí el NIT o la cédula del socio para poder verificarlo.", "bg-amber-50 text-amber-800"); return; }
+    socioEnVuelo = true;
+    $("btn-socio-verificar").disabled = true;
+    aviso("Consultando la Procuraduría y SECOP…", "bg-gray-50 text-gray-600");
+    out.classList.add("hidden");
+    try {
+      const qs = `op=socio&id=${encodeURIComponent(id)}${rl ? `&representante=${encodeURIComponent(rl)}` : ""}`;
+      const r = await api(`/api/inteligencia?${qs}`);
+      msg.classList.add("hidden");
+      out.innerHTML = pintarSocio(r);
+      out.classList.remove("hidden");
+    } catch (e) {
+      aviso(e.message, "bg-red-50 text-red-700");
+    } finally {
+      socioEnVuelo = false;
+      $("btn-socio-verificar").disabled = false;
+    }
+  }
+  function pintarSocio(r) {
+    const sem = r.semaforo || {};
+    const clr = sem.nivel === "rojo" ? "bg-red-50 text-red-800 ring-red-200"
+      : sem.nivel === "ambar" ? "bg-amber-50 text-amber-800 ring-amber-200" : "bg-emerald-50 text-emerald-800 ring-emerald-200";
+    const punto = sem.nivel === "rojo" ? "text-red-500" : sem.nivel === "ambar" ? "text-amber-500" : "text-emerald-500";
+    const idn = r.identificacion || {};
+    const f = r.fuentes || {};
+    const fecha = (s) => (s ? String(s).slice(0, 10) : "—");
+    const filaFuente = (titulo, ok, motivo, cuerpo) => `<div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+      <p class="text-xs font-medium uppercase tracking-wide text-gray-500">${titulo}</p>
+      ${ok ? cuerpo : `<p class="mt-1 text-sm text-gray-500">${esc(motivo || "no respondió")}</p>`}</div>`;
+    const siri = f.siri || {};
+    const mu = f.multas_secop1 || {};
+    const co = f.contratos_secop2 || {};
+    const ad = f.adjudicaciones_secop2 || {};
+    const listaSiri = (siri.coincidencias || []).map((c) => `<li>${esc(c.sancion || "sanción")} · ${esc(c.nombre || c.identificacion)} (${esc(c.calidad || "—")}) · ${esc(c.fecha_efectos || "sin fecha")}${c.entidad ? ` · ${esc(c.entidad)}` : ""}</li>`).join("");
+    const listaMultas = (mu.lista || []).slice(0, 8).map((m) => `<li>${fecha(m.firmeza)} · ${esc(m.entidad || "—")}${m.valor_cop ? ` · ${pesos(m.valor_cop)}` : " · sin valor"}${m.url ? ` · <a class="text-blue-600 hover:underline" target="_blank" rel="noopener" href="${esc(m.url)}">ver</a>` : ""}</li>`).join("");
+    const ir = mu.inhabilidad_reiterada || {};
+    const estados = co.estados ? Object.entries(co.estados).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${esc(k)} ${v}`).join(" · ") : "";
+    const rl = idn.representante_legal;
+    const estadoTxt = { hallazgos: "con hallazgos", sin_hallazgos: "sin hallazgos en el dataset", pendiente_manual: "abrila y consultá", no_consultada: "no respondió" };
+    const estadoClr = { hallazgos: "text-red-700", sin_hallazgos: "text-emerald-700", pendiente_manual: "text-gray-700", no_consultada: "text-amber-700" };
+    return `
+      <div class="rounded-xl p-4 ring-1 ring-inset ${clr}">
+        <p class="text-sm font-semibold"><span class="${punto}">●</span> ${esc(sem.texto || "")}</p>
+        ${(sem.hallazgos || []).length ? `<ul class="mt-2 list-disc pl-5 text-sm">${sem.hallazgos.map((h) => `<li>${esc(h.texto)}</li>`).join("")}</ul>` : ""}
+        <p class="mt-2 text-xs opacity-80">${esc(sem.advertencia || "")}</p>
+      </div>
+      <p class="mt-3 text-sm text-gray-600">${idn.tipo === "cedula" ? "Cédula" : "NIT"} <strong>${esc(idn.valor || "")}</strong>${idn.nombre_en_secop ? ` · <strong>${esc(idn.nombre_en_secop)}</strong> (nombre según SECOP)` : " · sin nombre en SECOP"}${rl ? ` · representante legal según SECOP II: ${esc(rl.nombre || rl.identificacion)} (${esc(rl.identificacion)})` : ""} · consultado ${fecha(r.consultado_el)}</p>
+      <div class="mt-3 grid gap-3 sm:grid-cols-2">
+        ${filaFuente("Sanciones de la Procuraduría (SIRI)", siri.ok, siri.motivo, `<p class="mt-1 text-sm">${siri.n ? `<strong>${siri.n}</strong> sanción(es) sobre ${esc((siri.consultados || []).join(", "))}` : `Sin coincidencias para ${esc((siri.consultados || []).join(", ") || "—")}`}</p>${listaSiri ? `<ul class="mt-1 list-disc pl-5 text-xs text-gray-700">${listaSiri}</ul>` : ""}<p class="mt-2 text-xs text-gray-500">${esc(siri.nota || "")}</p>`)}
+        ${filaFuente("Multas y sanciones (SECOP I)", mu.ok, mu.motivo, `<p class="mt-1 text-sm">${mu.multas ? `<strong>${mu.multas}</strong> multa(s)${mu.valor_total_cop ? ` · ${pesos(mu.valor_total_cop)} en total` : ""}` : "Sin multas registradas"}</p>${ir.lectura ? `<p class="mt-1 text-xs ${ir.senal === "posible_inhabilidad" ? "text-red-700" : ir.senal ? "text-amber-700" : "text-gray-600"}">${esc(ir.lectura)}</p>` : ""}${listaMultas ? `<ul class="mt-1 list-disc pl-5 text-xs text-gray-700">${listaMultas}</ul>` : ""}<p class="mt-2 text-xs text-gray-500">${esc(mu.nota || "")}</p>`)}
+        ${filaFuente("Contratos firmados en SECOP II", co.ok, co.motivo, `<p class="mt-1 text-sm">${co.contratos ? `<strong>${co.contratos}</strong> contrato(s) con ${co.entidades_distintas} entidad(es) · ${fecha(co.primera_firma)} → ${fecha(co.ultima_firma)}` : "Sin contratos electrónicos"}</p>${co.contratos ? `<p class="mt-1 text-xs text-gray-700">${co.cancelados.contratos ? `<span class="text-amber-700">${co.cancelados.contratos} cancelado(s)</span> · ` : ""}${co.suspendidos.contratos ? `<span class="text-amber-700">${co.suspendidos.contratos} suspendido(s)</span> · ` : ""}${co.cedidos.contratos ? `<span class="text-amber-700">${co.cedidos.contratos} cedido(s)</span> · ` : ""}${co.prorrogas.contratos ? `${co.prorrogas.contratos} con prórroga (mediana ${co.prorrogas.mediana_dias} días)` : "ninguno con prórroga"}${co.pagos && co.pagos.registra && co.pagos.pct_pagado_de_terminados != null ? ` · ${co.pagos.pct_pagado_de_terminados} % pagado en los terminados con pago registrado` : ""}</p><p class="mt-1 text-xs text-gray-500">${esc(estados)}</p>` : ""}<p class="mt-2 text-xs text-gray-500">${esc(co.nota || "")}</p>`)}
+        ${filaFuente("Procesos que ha ganado (SECOP II)", ad.ok, ad.motivo, `<p class="mt-1 text-sm">${ad.adjudicaciones ? `<strong>${ad.adjudicaciones}</strong> adjudicación(es)${ad.valor_total_cop ? ` · ${pesos(ad.valor_total_cop)}` : ""} · última ${fecha(ad.ultima_adjudicacion)}` : "Sin adjudicaciones registradas"}</p>${(ad.por_anio || []).length ? `<p class="mt-1 text-xs text-gray-700">${ad.por_anio.map((a) => `${esc(a.anio)}: ${a.procesos}`).join(" · ")}</p>` : ""}`)}
+      </div>
+      <p class="mt-4 text-xs font-medium uppercase tracking-wide text-gray-500">Las cinco fuentes antes de firmar</p>
+      <ol class="mt-2 space-y-2 text-sm">
+        ${(r.checklist || []).map((c, i) => `<li class="rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5"><span class="font-medium">${i + 1}. ${esc(c.nombre)}</span> — <span class="${estadoClr[c.estado] || "text-gray-700"}">${esc(estadoTxt[c.estado] || c.estado)}</span>${c.resumen ? ` · ${esc(c.resumen)}` : ""}<br><span class="text-xs text-gray-600">${esc(c.que_mirar)}</span> <a class="text-xs text-blue-600 hover:underline" target="_blank" rel="noopener" href="${esc(c.url)}">${c.automatica ? "Ver la fuente" : "Abrir el portal"} ↗</a></li>`).join("")}
+      </ol>
+      <p class="mt-3 text-xs text-gray-500">${esc((r.normas && r.normas.solidaridad && r.normas.solidaridad.regla) || "")}</p>`;
+  }
+
   function arrancarPaneles() {
     pintarConsorcio();
     pintarConsorciosGuardados();
+    $("btn-socio-verificar").addEventListener("click", verificarSocio);
+    for (const id of ["socio-id", "socio-representante"]) $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); verificarSocio(); } });
     $("d-perfil").value = leerPerfil();
     $("c-perfil").value = leerPerfil();
     pintarAlertaVigencia();

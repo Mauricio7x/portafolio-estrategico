@@ -1504,6 +1504,30 @@
         <div id="cons-guardados" class="mt-4 text-sm"></div>
       </section>
 
+      <!-- ══════ Verificá a tu socio (due diligence de 20 minutos) ══════
+           Truco #15 del manual: cinco fuentes públicas antes de firmar un
+           consorcio. Dos las consulta la app sola (datos abiertos: SIRI y
+           SECOP); las otras tres se abren desde acá con el enlace. Nace
+           VISIBLE (el socio suele ser una empresa externa, no un perfil). -->
+      <section id="seccion-socio" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Verificá a tu socio antes de firmar</h2>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">Un integrante inhabilitado contamina al consorcio completo. Escribí el NIT o la cédula de con quién vas a ir: la app revisa sola dos de las cinco fuentes públicas (sanciones de la Procuraduría y el historial en SECOP) y te deja el enlace de las otras tres. Tarda menos de un minuto y no cuesta nada.</p>
+        <div class="mt-4 grid gap-2 sm:max-w-xl sm:grid-cols-[1fr_auto]">
+          <input id="socio-id" type="text" inputmode="numeric" autocomplete="off" placeholder="NIT o cédula del socio (ej. 900123456)"
+                 aria-label="NIT o cédula del socio"
+                 class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+          <button id="btn-socio-verificar" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Verificar
+          </button>
+          <input id="socio-representante" type="text" inputmode="numeric" autocomplete="off" placeholder="Cédula del representante legal (opcional)"
+                 aria-label="Cédula del representante legal del socio (opcional)"
+                 class="rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 sm:col-span-2">
+        </div>
+        <p id="socio-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <div id="socio-resultado" class="mt-4 hidden"></div>
+      </section>
+
       <!-- ══════ Experiencia ejecutada ══════ -->
 <section id="seccion-experiencia" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">Obra que ya ejecutaste</h2>

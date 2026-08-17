@@ -623,6 +623,32 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   empresas; los que más se presentan son consultoras (interventoría) — hgi6 no distingue tipo de
   contrato y el universo lo acotan los ids del corpus (obra compatible con los RUP).
 
+### Verificá a tu socio antes de firmar (ago 2026)
+
+`lib/socio.js` + vista `socio` de `/api/inteligencia` (token; sale ANTES del chequeo de Upstash como el PAA:
+no lee el corpus ni escribe) + sección «Verificá a tu socio antes de firmar» en Mi empresa. Cierra el ⬜
+«antecedentes del socio» del manual. Decisiones que no hay que re-aprender:
+- **«No es automatizable con datos abiertos» era una observación vieja, no una propiedad**: `iaeu-rcn6`
+  (SIRI, Procuraduría, actualizado a diario) y `4n4q-k399` (Multas y Sanciones SECOP I) responden 200 en
+  datos.gov.co. Antes de dar por manual una fuente, buscarla en el catálogo (`/api/catalog/v1?q=`).
+- **SIRI rellena `numero_identificacion` con ESPACIOS a la derecha** («7534386        ») y las multas pegan
+  a veces el DV al documento («8340014074» = 834001407-4): se consulta con `starts_with` y se confirma en el
+  cliente (igualdad recortada; igual o igual+1 dígito). Hay prueba con la trampa del prefijo (790000012 no
+  es 79000001). El dataset trae filas de «Z ENTIDAD DE PRUEBA»: se descartan y se cuentan.
+- **Una persona jurídica NO está en SIRI**: se consulta al representante legal que publica `jbjy`
+  (`identificaci_n_representante_legal`, solo si es una cédula distinta del NIT — el dataset repite a veces
+  el NIT en ese campo) y a la cédula que declare quien consulta. Una persona natural se consulta a sí misma.
+- **El semáforo NUNCA dice «limpio»**: «sin hallazgos en las fuentes abiertas» + tres del checklist a mano;
+  los certificados (Procuraduría/Contraloría/Policía) se piden igual. Rojo = SIRI con sanción o posible
+  inhabilidad del art. 90 **vigente** (≥ 5 multas en una vigencia a ≤ 3 años); una concentración vieja es
+  ámbar «histórica». La regla se declara sobre lo VISIBLE (solo multas SECOP I; no distingue declaratorias).
+- **Reutiliza `agregarEjecucion` de `lib/ejecucion`** para los contratos del proveedor: una segunda cuenta
+  de prórrogas/pagos divergiría. Las URL de las tres fuentes manuales se verificaron con 200 el 17-ago-2026
+  (`contraloria.gov.co/es/web/guest/control-fiscal/…/certificado-de-antecedentes-fiscales`; la ruta
+  `/web/guest/persona-natural` da 403).
+- El mock de la suite sirve `iaeu-rcn6` y `4n4q-k399` por path, entiende `starts_with(...)` y agrega
+  `$group` (count/count distinct/sum/max/min/date_trunc_y) en la rama genérica.
+
 ### Cómo ejecuta sus contratos: jbjy-vk9h en vivo (ago 2026)
 
 `lib/ejecucion.js` + bloque `ejecucion` en la vista de entidad + «Cómo ejecuta sus contratos» en el modal.
@@ -1293,7 +1319,7 @@ memoria en una fuente de error. `✅` implementado · `🟡` parcial · `⬜` no
 | **Precio bajo incertidumbre → banda de descuento** (truco #11) | `lib/indice_baja.js` (`indice:baja:*`, tres granularidades en cascada + segmento + modalidad): `descuento = 1 − valor_adjudicado / precio_base` por entidad, sin re-extraer nada. Ya viaja en la tarjeta (`baja_mercado`, solo con token) y ordena con `?ordenar_por=baja` | ✅ |
 | **Traslado → descargar ofertas de competidores** | El dataset no trae documentos de oferta: solo `urlproceso`. Automatizarlo exigiría raspar SECOP II (fuera de la arquitectura actual: sin dependencias, serverless, respuesta ≤4.5 MB). Alcanzable: enlazar la ficha del proceso y **listar adjudicatarios recurrentes por entidad** desde el histórico | ⬜ |
 | **Subsanación → tabla de trazabilidad automática** | No existe. La app decide **a qué presentarse**, no arma la carpeta. Sería un generador de plantilla a partir de la ficha del proceso | ⬜ |
-| **Consorcios → antecedentes del socio (SIRI/Contraloría/RNMC)** | No existe y **no es automatizable con datos abiertos**: son portales con captcha, no APIs. Lo que sí está: el consorcio `juntos` se **re-deriva siempre** de sus integrantes. La parte accionable sería una **lista de verificación** de las 5 fuentes del truco #15 | ⬜ |
+| **Consorcios → antecedentes del socio (SIRI/Contraloría/RNMC)** | `lib/socio.js` + `/api/inteligencia?op=socio&id=…` + «Verificá a tu socio antes de firmar» en Mi empresa. **La premisa «no automatizable con datos abiertos» era falsa a medias (medido 17-ago-2026)**: SIRI está en datos.gov.co (`iaeu-rcn6`, diario) y las multas de SECOP I también (`4n4q-k399`); con `jbjy-vk9h` (contratos + representante legal) y `p6dx` (adjudicaciones) se automatizan 2 de las 5 fuentes; las otras 3 (Contraloría, Policía, RNMC: portales con captcha) van como checklist con enlace verificado. Semáforo que **nunca dice «limpio»** y regla del art. 90 Ley 1474 (inhabilidad reiterada) sobre lo visible | ✅ |
 | **Formulario de cantidades del pliego → ítem + unidad + cantidad** (Cap. 11, §1.G del informe) | `/pliego.html` + `/api/apu/extraer-texto`: pdf.js en el navegador extrae el texto conservando columnas por coordenadas, `lib/apu_pliego.js` reconoce las filas por 3 vías, valida en 3 niveles y las gradúa con un semáforo de 2 ejes, `lib/apu_mapeo.js` las mapea al diccionario de reconocimiento de `data/catalogo_apu.json` y emite el código del catálogo de precios cuando el ítem existe allí. OCR.space como respaldo para escaneados. **Entrega cantidades, NO precios** | ✅ |
 | **APU · base de precios regionalizada** (Cap. 11) | `lib/apu/catalogo.js` + `data/apu_catalogo.json`: estructura oficial INVIAS/IDU (CD = MO + materiales + equipo + transporte), 48 insumos × 5 regiones, 17 ítems con composición y rendimiento, factores de ajuste regional. Se carga con `POST /api/admin/apu/cargar-catalogo` y se consulta sin token en `GET /api/apu/catalogo`. Los precios son de **referencia**, no cotizaciones, y cada uno declara su `fuente` | ✅ |
 | **Costos ocultos → calculadora de rentabilidad** | **Sigue sin existir la calculadora.** Ya está la mitad de abajo (el APU da el costo directo por ítem), pero la cuantía se sigue mostrando como si fuera ingreso y faltan los 10 conceptos del Cap. 11, empezando por la **contribución del 5 %** y las estampillas. Es la Fase 2 y ahora tiene sobre qué apoyarse | 🟡 |

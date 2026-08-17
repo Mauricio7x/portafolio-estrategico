@@ -986,6 +986,37 @@ const CONTRATOS_IDU = [
   { id_contrato: "CO1.PCCNTR.7", proceso_de_compra: "CO1.BDOS.7", nombre_entidad: "IDU", nit_entidad: "800100003", tipo_de_contrato: "Consultoría", estado_contrato: "En ejecución", valor_del_contrato: "100000000", valor_pagado: "0", dias_adicionados: "0", fecha_de_firma: `${ANO}-06-01T00:00:00.000` },
 ];
 
+/* ---- VERIFICÁ A TU SOCIO (lib/socio · vista `socio`) ----
+   El socio es el NIT 902000000 (gana dos procesos en el fixture de
+   equivalencias, o sea dos adjudicaciones en «p6dx»). En jbjy tiene TRES
+   contratos —uno Cancelado— y publica a su representante legal (cédula
+   79000001). En SIRI esa cédula tiene una sanción; hay además una fila con la
+   cédula 790000012 (mismo PREFIJO: la trampa del `starts_with`) que NO debe
+   contar, y el campo lleva los espacios de relleno con los que llega de
+   verdad. En multas SECOP I: 5 en la vigencia pasada (una con el DV pegado:
+   «9020000001» = 902000000-1) → regla del art. 90 POSIBLEMENTE vigente; 1 más
+   tres años atrás; y una fila de «Z ENTIDAD DE PRUEBA» que se descarta. */
+const SOCIO_NIT = "902000000";
+const SOCIO_RL = "79000001";
+const CONTRATOS_SOCIO = [
+  { id_contrato: "CO1.PCCNTR.S1", proceso_de_compra: "CO1.BDOS.S1", nombre_entidad: "ALCALDÍA DE PRUEBA", nit_entidad: "800999001", documento_proveedor: SOCIO_NIT, proveedor_adjudicado: "CONSTRUCTORA EQV 902000000 SAS", tipo_de_contrato: "Obra", estado_contrato: "Cancelado", valor_del_contrato: "100000000", valor_pagado: "0", dias_adicionados: "0", fecha_de_firma: `${ANO}-02-01T00:00:00.000`, nombre_representante_legal: "PEDRO PÉREZ", identificaci_n_representante_legal: SOCIO_RL, es_pyme: "Si" },
+  { id_contrato: "CO1.PCCNTR.S2", proceso_de_compra: "CO1.BDOS.S2", nombre_entidad: "ALCALDÍA DE PRUEBA", nit_entidad: "800999001", documento_proveedor: SOCIO_NIT, proveedor_adjudicado: "CONSTRUCTORA EQV 902000000 SAS", tipo_de_contrato: "Obra", estado_contrato: "En ejecución", valor_del_contrato: "300000000", valor_pagado: "0", dias_adicionados: "45", fecha_de_firma: `${ANO}-03-01T00:00:00.000`, nombre_representante_legal: "PEDRO PÉREZ", identificaci_n_representante_legal: SOCIO_RL, es_pyme: "Si" },
+  // el dataset repite a veces el NIT de la empresa como «representante»: no es una cédula
+  { id_contrato: "CO1.PCCNTR.S3", proceso_de_compra: "CO1.BDOS.S3", nombre_entidad: "GOBERNACIÓN DE PRUEBA", nit_entidad: "800999002", documento_proveedor: SOCIO_NIT, proveedor_adjudicado: "CONSTRUCTORA EQV 902000000 SAS", tipo_de_contrato: "Consultoría", estado_contrato: "terminado", valor_del_contrato: "50000000", valor_pagado: "50000000", dias_adicionados: "0", fecha_de_firma: `${ANO - 1}-06-01T00:00:00.000`, nombre_representante_legal: "CONSTRUCTORA EQV 902000000 SAS", identificaci_n_representante_legal: SOCIO_NIT, es_pyme: "Si" },
+];
+const SIRI_FIXTURE = [
+  { numero_siri: "100000001", tipo_inhabilidad: "DISCIPLINARIO", calidad_persona: "PARTICULAR QUE EJERCE FUNCIÓN PÚBLICA", numero_identificacion: `${SOCIO_RL}        `, primer_nombre: "PEDRO", segundo_nombre: "", primer_apellido: "PÉREZ", segundo_apellido: "", sanciones: "INHABILIDAD GENERAL", duracion_anos: "3", duracion_mes: "", duracion_dias: "", fecha_efectos_juridicos: `15/03/${ANO - 1}`, autoridad: "PROCURADURÍA REGIONAL", entidad_sancionado: "ALCALDÍA DE PRUEBA" },
+  { numero_siri: "100000002", tipo_inhabilidad: "DISCIPLINARIO", calidad_persona: "SERVIDOR PÚBLICO", numero_identificacion: `${SOCIO_RL}2       `, primer_nombre: "OTRA", segundo_nombre: "", primer_apellido: "PERSONA", segundo_apellido: "", sanciones: "DESTITUCION", duracion_anos: "", duracion_mes: "", duracion_dias: "", fecha_efectos_juridicos: `01/01/${ANO}`, autoridad: "X", entidad_sancionado: "Y" },
+];
+const MULTAS_FIXTURE = [
+  ...[1, 2, 3, 4].map((i) => ({ nombre_entidad: "ALCALDÍA DE PRUEBA", nit_entidad: "800999001", numero_de_resolucion: `R-${i}`, documento_contratista: SOCIO_NIT, nombre_contratista: "CONSTRUCTORA EQV 902000000 SAS", numero_de_contrato: `C-${i}`, valor_sancion: "1000000", fecha_de_publicacion: `${ANO - 1}-0${i}-01T00:00:00.000`, fecha_de_firmeza: `${ANO - 1}-0${i}-15T00:00:00.000`, ruta_de_proceso: `https://www.contratos.gov.co/x/${i}` })),
+  { nombre_entidad: "GOBERNACIÓN DE PRUEBA", nit_entidad: "800999002", numero_de_resolucion: "R-5", documento_contratista: `${SOCIO_NIT}1`, nombre_contratista: "CONSTRUCTORA EQV 902000000 SAS", numero_de_contrato: "C-5", valor_sancion: "0", fecha_de_publicacion: `${ANO - 1}-05-01T00:00:00.000`, fecha_de_firmeza: `${ANO - 1}-05-20T00:00:00.000`, ruta_de_proceso: "https://www.contratos.gov.co/x/5" },
+  { nombre_entidad: "GOBERNACIÓN DE PRUEBA", nit_entidad: "800999002", numero_de_resolucion: "R-6", documento_contratista: SOCIO_NIT, nombre_contratista: "CONSTRUCTORA EQV 902000000 SAS", numero_de_contrato: "C-6", valor_sancion: "2000000", fecha_de_publicacion: `${ANO - 3}-05-01T00:00:00.000`, fecha_de_firmeza: `${ANO - 3}-05-20T00:00:00.000`, ruta_de_proceso: "https://www.contratos.gov.co/x/6" },
+  { nombre_entidad: "Z ENTIDAD DE PRUEBA", nit_entidad: "No Definido", numero_de_resolucion: "1", documento_contratista: SOCIO_NIT, nombre_contratista: "PRUEBA", numero_de_contrato: "1", valor_sancion: "1", fecha_de_publicacion: `${ANO}-07-03T00:00:00.000`, fecha_de_firmeza: `${ANO}-07-10T00:00:00.000`, ruta_de_proceso: "" },
+  // otro contratista con el mismo PREFIJO de documento y dos dígitos más: no es el socio
+  { nombre_entidad: "ALCALDÍA DE PRUEBA", nit_entidad: "800999001", numero_de_resolucion: "R-7", documento_contratista: `${SOCIO_NIT}77`, nombre_contratista: "OTRO", numero_de_contrato: "C-7", valor_sancion: "1", fecha_de_publicacion: `${ANO}-01-03T00:00:00.000`, fecha_de_firmeza: `${ANO}-01-10T00:00:00.000`, ruta_de_proceso: "" },
+];
+
 /* Lo que la medición de colisión (A7) tiene que dar sobre el fixture de arriba,
    calculado A MANO desde ENTIDADES_HIST(_IDENTIDAD): por entidad, colisión =
    ofertas con i % 3 === 0 SI son ≥ 2; control = el resto. Pooled. */
@@ -1030,6 +1061,10 @@ function crearMockSocrata() {
      lib/ejecucion consulta con igualdades y `>=` sobre fecha_de_firma: cae en
      la rama genérica del mock. */
   let datasetContratos = [];
+  /* QUINTO y SEXTO por PATH: `iaeu-rcn6` (SIRI) y `4n4q-k399` (multas SECOP I),
+     que lib/socio consulta con `starts_with(campo,'…')`: rama genérica. */
+  let datasetSiri = [];
+  let datasetMultas = [];
   let contadorPeticiones = 0;
   let inyectarFallos = true;
 
@@ -1083,6 +1118,11 @@ function crearMockSocrata() {
       const [, campo, aguja] = like;
       return String(fila[campo] ?? "").toUpperCase().includes(aguja.toUpperCase());
     }
+    /* `starts_with(campo,'x')` — lib/socio: SIRI rellena la identificación
+       con espacios y las multas pegan a veces el DV, así que se busca por
+       prefijo y se confirma en el cliente. */
+    const sw = clausula.match(/^starts_with\((\S+?),\s*'(.*)'\)$/i);
+    if (sw) return String(fila[sw[1]] ?? "").startsWith(sw[2]);
     const m = clausula.match(/^(\S+)\s*(>=|<=|>|<|=)\s*'(.*)'$/);
     if (!m) throw new Error(`mock: clausula no soportada: ${clausula}`);
     const [, campo, op, valor] = m;
@@ -1106,11 +1146,49 @@ function crearMockSocrata() {
       const u = new URL(req.url, "http://x");
       const q = Object.fromEntries(u.searchParams);
       if (u.pathname.includes("hgi6-6wh3")) return responderProponentes(q, res);
-      let filas = (u.pathname.includes("9sue-ezhx") ? datasetPaa : u.pathname.includes("jbjy-vk9h") ? datasetContratos : dataset).slice();
+      let filas = (u.pathname.includes("9sue-ezhx") ? datasetPaa : u.pathname.includes("jbjy-vk9h") ? datasetContratos
+        : u.pathname.includes("iaeu-rcn6") ? datasetSiri : u.pathname.includes("4n4q-k399") ? datasetMultas : dataset).slice();
       if (q.$where) filas = filas.filter((f) => q.$where.split(" AND ").every((c) => cumple(f, c.trim())));
       if ((q.$select || "").startsWith("count(*)")) {
         res.writeHead(200, { "Content-Type": "application/json" });
         return res.end(JSON.stringify([{ n: String(filas.length) }]));
+      }
+      /* `$group` genérico (lib/socio: adjudicaciones por año en p6dx). Soporta
+         `expr as alias` con count(*), count(distinct f), sum(f), max(f),
+         min(f) y date_trunc_y(f); agrupa por los alias/campos de $group. */
+      if (q.$group) {
+        const items = String(q.$select || "").split(",").map((x) => x.trim()).filter(Boolean).map((it) => {
+          const mm = /^(.*?)\s+as\s+(\S+)$/i.exec(it);
+          return { expr: mm ? mm[1].trim() : it, alias: mm ? mm[2] : it };
+        });
+        const claves = q.$group.split(",").map((x) => x.trim());
+        const valorDe = (f, expr) => {
+          const dt = /^date_trunc_y\((\S+)\)$/i.exec(expr);
+          if (dt) { const v = String(f[dt[1]] ?? ""); return v ? `${v.slice(0, 4)}-01-01T00:00:00.000` : ""; }
+          return String(f[expr] ?? "");
+        };
+        const exprDeAlias = Object.fromEntries(items.map((i) => [i.alias, i.expr]));
+        const grupos = new Map();
+        for (const f of filas) {
+          const k = claves.map((c) => valorDe(f, exprDeAlias[c] || c)).join("\u0001");
+          if (!grupos.has(k)) grupos.set(k, []);
+          grupos.get(k).push(f);
+        }
+        const salida = [...grupos.values()].map((gf) => {
+          const o = {};
+          for (const { expr, alias } of items) {
+            let mm;
+            if (expr === "count(*)") o[alias] = String(gf.length);
+            else if ((mm = /^count\(distinct (\S+)\)$/i.exec(expr))) o[alias] = String(new Set(gf.map((f) => f[mm[1]])).size);
+            else if ((mm = /^sum\((\S+)\)$/i.exec(expr))) o[alias] = String(gf.reduce((a, f) => a + (Number(f[mm[1]]) || 0), 0));
+            else if ((mm = /^max\((\S+)\)$/i.exec(expr))) o[alias] = gf.map((f) => String(f[mm[1]] ?? "")).sort().pop();
+            else if ((mm = /^min\((\S+)\)$/i.exec(expr))) o[alias] = gf.map((f) => String(f[mm[1]] ?? "")).sort()[0];
+            else o[alias] = valorDe(gf[0], expr);
+          }
+          return o;
+        });
+        res.writeHead(200, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify(salida.slice(0, parseInt(q.$limit, 10) || 1000)));
       }
       filas.sort((a, b) => (a[":id"] < b[":id"] ? -1 : 1));
       const offset = parseInt(q.$offset, 10) || 0;
@@ -1126,6 +1204,8 @@ function crearMockSocrata() {
     setDatasetPaa: (d) => { datasetPaa = d; },
     setDatasetProponentes: (d) => { datasetProponentes = d; },
     setDatasetContratos: (d) => { datasetContratos = d; },
+    setDatasetSiri: (d) => { datasetSiri = d; },
+    setDatasetMultas: (d) => { datasetMultas = d; },
     getDataset: () => dataset,
     setFallos: (v) => { inyectarFallos = v; },
     peticiones: () => contadorPeticiones,
@@ -1280,6 +1360,8 @@ async function main() {
   process.env.PAA_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/9sue-ezhx.json`;
   process.env.PROPONENTES_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/hgi6-6wh3.json`;
   process.env.EJECUCION_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/jbjy-vk9h.json`;
+  process.env.SIRI_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/iaeu-rcn6.json`;
+  process.env.MULTAS_BASE_URL = `http://127.0.0.1:${puertoSocrata}/resource/4n4q-k399.json`;
   process.env.UPSTASH_REDIS_REST_URL = `http://127.0.0.1:${puertoUpstash}`;
   process.env.UPSTASH_REDIS_REST_TOKEN = "token-de-prueba";
   process.env.SECOP_PAGE = "50";       // páginas chicas → ejercita keyset multi-página
@@ -5008,7 +5090,9 @@ async function main() {
     socrata.setDataset([...generarDataset(), ...generarDatasetHistorico(), ...generarDatasetEquivalencias(),
       ...generarDatasetDetalle(), ...generarDatasetCobertura(), ...generarDatasetModalidad()]);
     socrata.setDatasetProponentes(generarDatasetProponentes(generarDatasetHistorico()).filas);
-    socrata.setDatasetContratos(CONTRATOS_IDU);
+    socrata.setDatasetContratos([...CONTRATOS_IDU, ...CONTRATOS_SOCIO]);
+    socrata.setDatasetSiri(SIRI_FIXTURE);
+    socrata.setDatasetMultas(MULTAS_FIXTURE);
     socrata.setFallos(true);
 
     /* a. limpiar Redis */
@@ -7466,6 +7550,146 @@ async function main() {
         }
         console.log(`  · ejecución (jbjy): ${ej.contratos} contratos · prórroga ${ej.prorrogas.pct} % (mediana ${ej.prorrogas.mediana_dias} d) · ${ej.suspendidos.contratos} suspendido · pagos sin dato · regional homónima excluida · caído ⇒ ok:false`);
         console.log(`  · proponentes (hgi6): ${pr.proponentes_distintos} distintos en ${pr.procesos_con_proponentes}/${pr.procesos_consultados} procesos del IDU · recurrente ${pr.top[0].veces}× · sin NIT declarado · caído ⇒ ok:false con motivo`);
+      }
+
+      /* --- VERIFICÁ A TU SOCIO (vista `socio` · lib/socio) ---
+         La due diligence de 20 minutos del truco #15 sobre datos abiertos:
+         SIRI (iaeu-rcn6), multas SECOP I (4n4q-k399), contratos SECOP II
+         (jbjy) y adjudicaciones (p6dx). Dos de cinco fuentes automáticas; las
+         otras tres viajan como checklist con enlace. NUNCA dice «limpio». */
+      {
+        const socio = async (extra, headers = TOKEN) => invocar(detalleComp, `/api/competencia-detalle?vista=socio${extra}`, headers);
+        assert.strictEqual((await socio(`&id=${SOCIO_NIT}`, {})).status, 401, "la vista socio exige token");
+        const malo = await socio("&id=12");
+        assert.strictEqual(malo.status, 400, "una identificación ilegible es 400, no un dataset caído");
+        assert.ok(/no parece/.test(malo.cuerpo.error));
+
+        const r = await socio(`&id=${SOCIO_NIT}-1`); // con DV pegado con guion: se recorta
+        assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 300));
+        const c = r.cuerpo;
+        assert.strictEqual(c.identificacion.valor, SOCIO_NIT);
+        assert.strictEqual(c.identificacion.tipo, "nit");
+        assert.strictEqual(c.identificacion.dv, "1");
+        assert.strictEqual(c.identificacion.nombre_en_secop, "CONSTRUCTORA EQV 902000000 SAS", "el nombre sale de SECOP II, no lo teclea nadie");
+        // representante legal: sale de jbjy (cédula distinta del NIT); el NIT repetido en ese campo NO cuenta
+        assert.ok(c.identificacion.representante_legal && c.identificacion.representante_legal.identificacion === SOCIO_RL, JSON.stringify(c.identificacion));
+        assert.strictEqual(c.identificacion.representante_legal.contratos, 2);
+        assert.deepStrictEqual(c.identificacion.cedulas_consultadas_en_siri, [SOCIO_RL], "una persona jurídica no está en SIRI: se consulta a su representante");
+        // SIRI: la cédula con espacios de relleno casa; la del mismo prefijo (790000012) NO
+        const siri = c.fuentes.siri;
+        assert.strictEqual(siri.ok, true); assert.strictEqual(siri.fuente, "iaeu-rcn6");
+        assert.strictEqual(siri.n, 1, `la trampa del prefijo: ${JSON.stringify(siri.coincidencias)}`);
+        assert.strictEqual(siri.coincidencias[0].sancion, "INHABILIDAD GENERAL");
+        assert.strictEqual(siri.coincidencias[0].identificacion, SOCIO_RL);
+        assert.ok(/no sustituye/i.test(siri.nota), "el dataset no es el certificado, y lo dice");
+        // multas SECOP I: 6 del socio (5 en la vigencia pasada, una con DV pegado), 1 de prueba descartada, 1 de otro prefijo fuera
+        const mu = c.fuentes.multas_secop1;
+        assert.strictEqual(mu.ok, true); assert.strictEqual(mu.fuente, "4n4q-k399");
+        assert.strictEqual(mu.multas, 6, JSON.stringify(mu.por_anio));
+        assert.strictEqual(mu.filas_prueba_descartadas, 1);
+        assert.strictEqual(mu.por_anio[String(ANO - 1)], 5);
+        assert.strictEqual(mu.por_anio[String(ANO - 3)], 1);
+        assert.strictEqual(mu.multas_con_valor, 5, "la multa en 0 es «sin valor», no cero pesos");
+        assert.strictEqual(mu.valor_total_cop, 6000000);
+        assert.strictEqual(mu.inhabilidad_reiterada.max_multas_en_una_vigencia, 5);
+        assert.strictEqual(mu.inhabilidad_reiterada.vigencia, ANO - 1);
+        assert.strictEqual(mu.inhabilidad_reiterada.senal, "posible_inhabilidad");
+        assert.strictEqual(mu.inhabilidad_reiterada.podria_estar_vigente, true);
+        assert.ok(/1474/.test(mu.inhabilidad_reiterada.norma) && /RUP/.test(mu.inhabilidad_reiterada.lectura), "la regla cita la norma y manda al RUP, no dicta veredicto");
+        // contratos SECOP II: 3, uno cancelado, prórroga de 45 días, pago SOLO en el terminado
+        const co = c.fuentes.contratos_secop2;
+        assert.strictEqual(co.ok, true); assert.strictEqual(co.fuente, "jbjy-vk9h");
+        assert.strictEqual(co.contratos, 3);
+        assert.strictEqual(co.cancelados.contratos, 1);
+        assert.strictEqual(co.prorrogas.contratos, 1); assert.strictEqual(co.prorrogas.mediana_dias, 45);
+        assert.strictEqual(co.entidades_distintas, 2);
+        assert.deepStrictEqual(co.por_tipo, { Obra: 2, "Consultoría": 1 });
+        assert.strictEqual(co.es_pyme, true);
+        assert.strictEqual(co.pagos.registra, true, "el terminado sí registra pago");
+        // adjudicaciones p6dx agrupadas por año: las dos del fixture de equivalencias
+        const ad = c.fuentes.adjudicaciones_secop2;
+        assert.strictEqual(ad.ok, true); assert.strictEqual(ad.fuente, "p6dx-8zbt");
+        assert.strictEqual(ad.adjudicaciones, 2, JSON.stringify(ad));
+        assert.strictEqual(ad.por_anio.reduce((a, x) => a + x.procesos, 0), 2);
+        assert.ok(ad.valor_total_cop > 0);
+        // semáforo: rojo (SIRI + posible inhabilidad vigente), y ámbar por el cancelado
+        assert.strictEqual(c.semaforo.nivel, "rojo");
+        assert.ok(c.semaforo.hallazgos.some((h) => h.fuente === "siri" && h.nivel === "rojo"));
+        assert.ok(c.semaforo.hallazgos.some((h) => h.fuente === "multas" && h.nivel === "rojo" && /vigente/.test(h.texto)));
+        assert.ok(c.semaforo.hallazgos.some((h) => h.fuente === "contratos" && /cancelado/.test(h.texto)));
+        assert.ok(/no es «limpio»/.test(c.semaforo.advertencia));
+        // checklist: las CINCO fuentes del truco #15; tres manuales con enlace https y qué mirar
+        assert.strictEqual(c.checklist.length, 5);
+        const manuales = c.checklist.filter((f) => !f.automatica);
+        assert.strictEqual(manuales.length, 3);
+        assert.deepStrictEqual(manuales.map((f) => f.clave).sort(), ["contraloria", "policia", "rnmc"]);
+        for (const f of c.checklist) { assert.ok(/^https:\/\//.test(f.url), f.clave); assert.ok(f.que_mirar.length > 30); }
+        assert.strictEqual(c.checklist.find((f) => f.clave === "siri").estado, "hallazgos");
+        assert.strictEqual(c.checklist.find((f) => f.clave === "secop").estado, "hallazgos");
+        assert.ok(manuales.every((f) => f.estado === "pendiente_manual"));
+        assert.ok(c.normas.solidaridad && /art\. 7/.test(c.normas.solidaridad.norma));
+
+        // persona natural: su cédula ES su NIT y se consulta a sí misma en SIRI
+        const pn = (await socio(`&id=${SOCIO_RL}`)).cuerpo;
+        assert.strictEqual(pn.identificacion.tipo, "cedula");
+        assert.deepStrictEqual(pn.identificacion.cedulas_consultadas_en_siri, [SOCIO_RL]);
+        assert.strictEqual(pn.fuentes.siri.n, 1);
+        assert.strictEqual(pn.fuentes.contratos_secop2.contratos, 0);
+        assert.strictEqual(pn.fuentes.multas_secop1.multas, 0);
+        // representante declarado por quien consulta se suma a la lista de cédulas
+        const conRl = (await socio(`&id=${SOCIO_NIT}&representante=${SOCIO_RL}2`)).cuerpo;
+        assert.deepStrictEqual(conRl.identificacion.cedulas_consultadas_en_siri.sort(), [SOCIO_RL, `${SOCIO_RL}2`].sort());
+        assert.strictEqual(conRl.fuentes.siri.n, 2, "ahora sí entra la sanción de la otra cédula, porque se pidió");
+
+        // una inhabilidad VIEJA (más de 3 años) es ámbar «histórica», no rojo — puro
+        const { agregarMultas, semaforo } = require("../lib/socio.js");
+        const viejas = agregarMultas([1, 2, 3, 4, 5].map((i) => ({ documento_contratista: "1", valor_sancion: "1", fecha_de_firmeza: `${ANO - 6}-0${i}-01T00:00:00.000` })));
+        assert.strictEqual(viejas.inhabilidad_reiterada.senal, "posible_inhabilidad");
+        assert.strictEqual(viejas.inhabilidad_reiterada.podria_estar_vigente, false);
+        const semViejo = semaforo({ siri: { ok: true, n: 0 }, multas: { ok: true, ...viejas }, contratos: { ok: true, contratos: 0 } });
+        assert.strictEqual(semViejo.nivel, "ambar");
+        assert.ok(/vencida/.test(semViejo.hallazgos[0].texto));
+        // dos multas en una vigencia: «verificar incumplimientos» (2 multas + 1 incumplimiento inhabilita)
+        const dos = agregarMultas([1, 2].map((i) => ({ valor_sancion: "1", fecha_de_firmeza: `${ANO}-0${i}-01T00:00:00.000` })));
+        assert.strictEqual(dos.inhabilidad_reiterada.senal, "verificar_incumplimientos");
+        // sin multas, sin SIRI, sin contratos: «sin hallazgos», jamás «limpio»
+        const sinNada = semaforo({ siri: { ok: true, n: 0 }, multas: { ok: true, multas: 0, inhabilidad_reiterada: {} }, contratos: { ok: true, contratos: 0 } });
+        assert.strictEqual(sinNada.nivel, "sin_hallazgos");
+        assert.ok(!/limpio\b(?! »)/.test(sinNada.texto.replace("no es «limpio»", "")), sinNada.texto);
+        assert.ok(/a mano/.test(sinNada.texto));
+
+        // una fuente caída: las demás salen, el semáforo lo dice y nada lanza
+        const antesSiri = process.env.SIRI_BASE_URL;
+        process.env.SIRI_BASE_URL = "http://127.0.0.1:9/resource/iaeu-rcn6.json";
+        process.env.SOCIO_TIEMPO_MS = "1500";
+        try {
+          const caido = (await socio(`&id=${SOCIO_NIT}`)).cuerpo;
+          assert.strictEqual(caido.ok, true);
+          assert.strictEqual(caido.fuentes.siri.ok, false);
+          assert.ok(/iaeu-rcn6/.test(caido.fuentes.siri.motivo));
+          assert.strictEqual(caido.fuentes.multas_secop1.ok, true, "las demás fuentes salen igual");
+          assert.deepStrictEqual(caido.semaforo.fuentes_caidas, ["iaeu-rcn6"]);
+          assert.strictEqual(caido.checklist.find((f) => f.clave === "siri").estado, "no_consultada");
+        } finally {
+          process.env.SIRI_BASE_URL = antesSiri;
+          delete process.env.SOCIO_TIEMPO_MS;
+        }
+        // el router acepta ?op=socio (misma vista) y la lista de vistas del 400 la nombra
+        const rInt = require("../api/inteligencia.js");
+        const porOp = await invocar(rInt, `/api/inteligencia?op=socio&id=${SOCIO_NIT}`, TOKEN);
+        assert.strictEqual(porOp.status, 200);
+        assert.strictEqual(porOp.cuerpo.fuentes.multas_secop1.multas, 6);
+        const vistas = (await invocar(rInt, "/api/inteligencia?op=marciana", TOKEN)).cuerpo.vistas;
+        assert.ok(vistas.some((v) => /^socio/.test(v)));
+        // frontend: el bloque «Verificá a tu socio» en Mi empresa
+        const jsSocio = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const htmlSocio = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        for (const debe of ["socio-id", "verificarSocio", "op=socio&id=", "socio-resultado"]) {
+          assert.ok(jsSocio.includes(debe), `app.js sin ${debe} (bloque de verificación del socio)`);
+        }
+        assert.ok(htmlSocio.includes('id="socio-id"') && htmlSocio.includes('id="socio-resultado"') && htmlSocio.includes('id="btn-socio-verificar"'),
+          "index.html sin el bloque «Verificá a tu socio» en Mi empresa");
+        console.log(`  · socio (SIRI+multas+jbjy+p6dx): semáforo ${c.semaforo.nivel} · ${siri.n} sanción SIRI del representante · ${mu.multas} multas (${mu.inhabilidad_reiterada.max_multas_en_una_vigencia} en ${mu.inhabilidad_reiterada.vigencia} ⇒ posible inhabilidad vigente) · ${co.contratos} contratos (${co.cancelados.contratos} cancelado) · ${ad.adjudicaciones} adjudicaciones · 5 fuentes en checklist · caído ⇒ ok:false por fuente`);
       }
 
       /* --- (c) entidad inexistente: respuesta explícita, no un vacío mudo --- */
