@@ -4068,6 +4068,80 @@ async function main() {
         assert.strictEqual(imp.filas[0].entrada_calculo.subcontratado, false);
       }
 
+      /* CUADRE DE CONTROL (ago 2026): el archivo declara su total («COSTO
+         DIRECTO», o un «TOTAL» ANTES del AIU) y el lector compara la suma de
+         los ítems leídos contra él. Un subtotal contado como ítem o un
+         capítulo saltado inflan/encogen el presupuesto EN SILENCIO; esta es la
+         única señal barata. NUNCA bloquea: es un aviso. Y de paso quedó fijo
+         un defecto latente: «COSTO DIRECTO» y «SUBTOTAL CAPÍTULO 1» con su
+         cifra caían en la rama del TÍTULO DE CAPÍTULO (sin unidad, sin
+         cantidad) y nacía un capítulo de la nada. */
+      {
+        const grid = [
+          ["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"],
+          ["1", "PRELIMINARES"],
+          ["1.1", "Localización y replanteo", "m2", 100, 1000, 100000],
+          ["SUBTOTAL CAPITULO 1", "", "", "", "", 100000],
+          ["2", "MOVIMIENTO DE TIERRAS"],
+          ["2.1", "Excavación manual", "m3", 10, 20000, 200000],
+          ["", "COSTO DIRECTO", "", "", "", 300000],
+          ["", "AIU 25%", "", "", "", 75000],
+          ["", "TOTAL", "", "", "", 375000],
+        ];
+        const ok = XLSXLectura.detectarFilasApu(grid);
+        assert.strictEqual(ok.filas.length, 2, "ni el subtotal ni el costo directo ni el total son ítems");
+        assert.deepStrictEqual(ok.filas.map((f) => f.capitulo), ["PRELIMINARES", "MOVIMIENTO DE TIERRAS"], "«SUBTOTAL CAPITULO 1» con cifra NO es un capítulo");
+        assert.deepStrictEqual([ok.cuadre.estado, ok.cuadre.etiqueta_total, ok.cuadre.total_declarado, ok.cuadre.suma_items, ok.cuadre.filas_sumadas], ["cuadra", "COSTO DIRECTO", 300000, 300000, 2]);
+        assert.ok(!ok.avisos.some((a) => /Cuadre de control/.test(a)), "cuando cuadra no hay aviso ámbar");
+        const mal = grid.map((f) => f.slice()); mal[6][5] = 310000;
+        const r2 = XLSXLectura.detectarFilasApu(mal);
+        assert.strictEqual(r2.cuadre.estado, "no_cuadra");
+        assert.strictEqual(r2.cuadre.desviacion, 10000);
+        assert.ok(r2.avisos.some((a) => /Cuadre de control: los 2 ítems leídos suman \$300\.000 y el archivo declara «COSTO DIRECTO» \$310\.000/.test(a)), `el aviso dice las dos cifras: ${r2.avisos.join(" | ")}`);
+        assert.strictEqual(r2.filas.length, 2, "no cuadrar NO bloquea: las filas viajan igual");
+        // un «TOTAL» seco ANTES del AIU es la suma de ítems; DESPUÉS del AIU es el precio con AIU y no sirve
+        const soloTotal = grid.slice(0, 6).concat([["", "TOTAL", "", "", "", 300000]]);
+        assert.deepStrictEqual([XLSXLectura.detectarFilasApu(soloTotal).cuadre.estado, XLSXLectura.detectarFilasApu(soloTotal).cuadre.etiqueta_total], ["cuadra", "TOTAL"]);
+        const totalConAiu = [["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VALOR UNITARIO"], ["1.1", "Localización", "m2", 100, 1000], ["", "AIU 25%", "", "", 25000], ["", "TOTAL", "", "", 125000]];
+        assert.strictEqual(XLSXLectura.detectarFilasApu(totalConAiu).cuadre.estado, "sin_referencia", "un TOTAL después del AIU no es la suma de ítems: no se compara contra él");
+        // sin total declarado no hay referencia; con ítems sin valor no se compara (comparar sería mentir)
+        assert.strictEqual(XLSXLectura.detectarFilasApu(grid.slice(0, 6)).cuadre.estado, "sin_referencia");
+        const sinValor = [["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VALOR UNITARIO"], ["1.1", "Localización", "m2", 100, 1000], ["1.2", "Excavación", "m3", null, 5000], ["", "COSTO DIRECTO", "", "", 100000]];
+        const r5 = XLSXLectura.detectarFilasApu(sinValor);
+        assert.strictEqual(r5.cuadre.estado, "no_comparable"); assert.strictEqual(r5.cuadre.filas_sin_valor, 1);
+        assert.ok(r5.avisos.some((a) => /no traen valor total legible/.test(a)));
+        // un capítulo que EMPIEZA por «TOTAL…» sin cifra sigue siendo capítulo; una partida con unidad que empieza por «Administración» sigue siendo ítem
+        const cap = [["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VALOR UNITARIO"], ["", "TOTALIZADORES Y MEDIDA"], ["1.1", "Medidor", "un", 1, 1000]];
+        assert.strictEqual(XLSXLectura.detectarFilasApu(cap).filas[0].capitulo, "TOTALIZADORES Y MEDIDA");
+        const partida = [["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VALOR UNITARIO"], ["1.1", "Administración delegada de obra", "mes", 3, 5000000], ["", "COSTO DIRECTO", "", "", 15000000]];
+        const r7 = XLSXLectura.detectarFilasApu(partida);
+        assert.strictEqual(r7.filas.length, 1); assert.strictEqual(r7.cuadre.estado, "cuadra");
+        const { mapearFilasImportadas: mfi } = require("../lib/apu/importar.js");
+        const catSem2 = require("../lib/apu/catalogo.js").SEMILLA;
+        const imp2 = mfi(ok.filas, catSem2);
+        assert.strictEqual(imp2.filas.length, 2, "el campo total_archivo de la fila no estorba al importador");
+        /* El libro que EXPORTA la app se reimporta: la hoja «Presupuesto» cuadra
+           al peso contra su propio «COSTOS DIRECTOS», y por eso GANA a la hoja
+           «APU» (que trae los insumos de cada ítem, muchas más filas y ninguna
+           es un ítem). Con «más filas gana» a secas, la app se leía a sí misma
+           por la hoja equivocada. */
+        const calcRT = require("../lib/apu/calculo.js");
+        const APULibroRT = require("../public/apu_libro.js");
+        const presuRT = calcRT.calcularPresupuesto({ items: [{ item_id: "NOG-A2", cantidad: 10, capitulo: "CUBIERTA" }, { item_id: "INV-210.1", cantidad: 20, capitulo: "CUBIERTA" }, { item_id: "INV-200.1", cantidad: 30, capitulo: "EXPLANACIONES" }], departamento: "BOGOTA D.C.", config: {} });
+        const libroRT = await XLSXLectura.leerLibro(XLSXApu.construirLibro(APULibroRT.construirLibroNogal(presuRT, { titulo: "T", fecha: "2026-08-07" })), { inflar: (u8) => zlib.inflateRawSync(Buffer.from(u8)) });
+        assert.deepStrictEqual(libroRT.hojas.map((h) => h.nombre), ["Presupuesto", "APU"]);
+        const hojaApu = XLSXLectura.detectarFilasApu(libroRT.hojas[1].filas);
+        const elegida = XLSXLectura.elegirHoja(libroRT);
+        assert.ok(hojaApu.filas.length > 3, `la hoja APU tiene más filas reconocibles (${hojaApu.filas.length}) que ítems tiene el presupuesto (3): sin el cuadre ganaría`);
+        assert.strictEqual(elegida.hoja.nombre, "Presupuesto", "gana la hoja que cuadra con su total, no la que tiene más filas");
+        assert.strictEqual(elegida.resultado.filas.length, 3);
+        assert.deepStrictEqual([elegida.resultado.cuadre.estado, elegida.resultado.cuadre.etiqueta_total, elegida.resultado.cuadre.total_declarado], ["cuadra", "COSTOS DIRECTOS", presuRT.resumen.costo_directo_total], "el libro exportado se reimporta y cuadra AL PESO contra su propio COSTOS DIRECTOS");
+        assert.deepStrictEqual(elegida.resultado.filas.map((f) => f.capitulo), ["1. CUBIERTA", "1. CUBIERTA", "2. EXPLANACIONES"], "los SUBTOTAL por capítulo del libro exportado no nacen como capítulos");
+        const appImp = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+        assert.ok(/cuadre: crudas\.cuadre \|\| null/.test(appImp) && /cu\.estado === "cuadra"/.test(appImp), "la vista previa de importación enseña el cuadre cuando cuadra (y el aviso ámbar viaja en avisos_lectura cuando no)");
+        console.log(`  · Cuadre de control de la importación: «${ok.cuadre.etiqueta_total}» ${ok.cuadre.total_declarado} vs Σ ítems ${ok.cuadre.suma_items} → ${ok.cuadre.estado}; desviado → ${r2.cuadre.estado} (${r2.cuadre.desviacion_pct.toFixed(2)} %); TOTAL tras AIU ignorado; SUBTOTAL ya no es capítulo`);
+      }
+
       /* la vía DEFLATE: un ZIP artesanal con método 8 y el inflador inyectado.
          Los tamaños salen del directorio central a propósito (un xlsx escrito
          en streaming deja el local header en 0). */

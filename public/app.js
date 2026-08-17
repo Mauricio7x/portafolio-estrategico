@@ -3244,7 +3244,7 @@
         body: { filas: crudas.filas, departamento: $("departamento").value },
       });
       if (!r) return;                       // canceló el diálogo del token
-      importacion = { ...r, avisos_lectura: crudas.avisos || [], nombre_archivo: archivo.name };
+      importacion = { ...r, avisos_lectura: crudas.avisos || [], cuadre: crudas.cuadre || null, nombre_archivo: archivo.name };
       abrirModalImportar();
     } catch (err) {
       msgApu(`No se pudo importar: ${err.message}`, "error");
@@ -3285,9 +3285,17 @@
   function abrirModalImportar() {
     const m = importacion.resumen_mapeo;
     const conTienda = importacion.filas.filter((f) => f.referencia_tienda).length;
+    /* Cuadre de control (xlsx_lectura): si el archivo declara su total y los
+       ítems leídos lo reproducen, se dice — es la señal de que la lectura no
+       se dejó ni sobró nada. Si NO cuadra o no se puede comparar, el aviso
+       ámbar ya viene en `avisos_lectura`; sin total declarado no se dice nada
+       (no hay contra qué comparar y un «cuadra» sin referencia mentiría). */
+    const cu = importacion.cuadre;
+    const textoCuadre = cu && cu.estado === "cuadra"
+      ? ` · la suma de los ítems cuadra con «${cu.etiqueta_total}» del archivo (${pesos(cu.total_declarado)})` : "";
     $("imp-resumen").textContent = `${importacion.nombre_archivo} · ${m.total} ítems · `
       + `${m.firmes} firmes · ${m.revisar} por revisar · ${m.personalizados} personalizados · `
-      + `${m.con_precio_archivo} con precio del archivo · ${conTienda} con precio de tienda`;
+      + `${m.con_precio_archivo} con precio del archivo · ${conTienda} con precio de tienda${textoCuadre}`;
     $("imp-avisos").innerHTML = (importacion.avisos_lectura || [])
       .map((a) => `<p class="rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-900">${esc(a)}</p>`).join("");
 
