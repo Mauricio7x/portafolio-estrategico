@@ -368,6 +368,27 @@
       if (textoPrevia && restoVacio) capMayor = textoPrevia;
     }
     let sinCantidad = 0, precioCero = 0;
+    /* CUADRE DE CONTROL: el archivo suele declarar su propio total («COSTO
+       DIRECTO», «TOTAL COSTOS DIRECTOS», o un «TOTAL» ANTES de las filas de
+       AIU). Se captura para compararlo con la suma de los ítems leídos: un
+       subtotal contado como ítem, un capítulo saltado o una cantidad mal
+       leída inflan o encogen el presupuesto EN SILENCIO, y la comparación es
+       la única señal barata de que la lectura se dejó algo. Reglas:
+       · «COSTO(S) DIRECTO(S)» manda (es la suma de ítems por definición);
+       · un «TOTAL» a secas solo vale si NO ha aparecido antes una fila de
+         AIU/IVA (después de ellas, «TOTAL» es el precio con AIU, no la suma);
+       · «SUBTOTAL» es de capítulo y NO es el total del archivo;
+       · el valor sale de la columna VR TOTAL si existe; si no, de la última
+         celda numérica de la fila. Sin valor legible → no hay referencia. */
+    let totalDeclarado = null, vistoAiu = false;
+    const RE_COSTO_DIRECTO = /^(TOTAL\s+|SUBTOTAL\s+)?COSTOS?\s+DIRECTOS?\b/;
+    const RE_TOTAL_SECO = /^TOTAL(\s+GENERAL|\s+PRESUPUESTO)?$/;
+    const RE_AIU_FILA = /^(A\s?I\s?U|ADMINISTRACION|IMPREVISTOS|UTILIDAD|IVA)\b/;
+    const valorTotalDeFila = (f) => {
+      if (cab.total >= 0) { const v = numeroDeCelda(f[cab.total]); if (v != null && v > 0) return v; }
+      for (let j = f.length - 1; j >= 0; j--) { const v = numeroDeCelda(f[j]); if (v != null && v > 0) return v; }
+      return null;
+    };
     for (let i = cab.fila + 1; i < grid.length; i++) {
       const f = grid[i] || [];
       if (esFilaDeCabecera(f, cab)) {
@@ -381,8 +402,33 @@
       const unidad = String(f[cab.unidad] ?? "").trim();
       const cantidad = numeroDeCelda(f[cab.cantidad]);
       const precio = cab.precio >= 0 ? numeroDeCelda(f[cab.precio]) : null;
+      const totalFila = cab.total >= 0 ? numeroDeCelda(f[cab.total]) : null;
       const codigo = cab.codigo >= 0 ? String(f[cab.codigo] ?? "").trim() : "";
 
+      /* Una fila de TOTAL («COSTO DIRECTO 300.000», «SUBTOTAL CAPÍTULO 1 …»,
+         «AIU 25 % …») va SIN unidad, igual que un título de capítulo, y antes
+         caía en la rama del título: «COSTO DIRECTO» se volvía capítulo de la
+         nada. Se distingue por lo único que las separa: la fila de total trae
+         un NÚMERO fuera de las columnas de código/descripción; el título, solo
+         texto. El rótulo puede venir en la columna de descripción o en la de
+         código («SUBTOTAL CAPITULO 1 | | | | | 100.000»). */
+      const RE_TOTALES = /^(COSTOS?\s|TOTAL\b|SUBTOTAL\b|ADMINISTRACION\b|IMPREVISTOS\b|UTILIDAD\b|IVA\b|A\s?I\s?U\b|PRECIO\s+FINAL\b)/;
+      const rotulo = desc || codigo;
+      const tieneNumero = f.some((c, j) => j !== cab.codigo && j !== cab.descripcion && (numeroDeCelda(c) || 0) > 0);
+      const esFilaTotal = !!rotulo && !unidad && RE_TOTALES.test(normCab(rotulo)) && (tieneNumero || cantidad != null);
+      if (esFilaTotal) {
+        const d = normCab(rotulo);
+        if (RE_AIU_FILA.test(d)) vistoAiu = true;
+        const esCostoDirecto = RE_COSTO_DIRECTO.test(d);
+        if (esCostoDirecto || (RE_TOTAL_SECO.test(d) && !vistoAiu)) {
+          const v = valorTotalDeFila(f);
+          // el «COSTO DIRECTO» explícito reemplaza a un «TOTAL» seco leído antes; nunca al revés
+          if (v != null && (totalDeclarado == null || (esCostoDirecto && !totalDeclarado.explicito))) {
+            totalDeclarado = { valor: v, etiqueta: rotulo, fila: i, explicito: esCostoDirecto };
+          }
+        }
+        continue;
+      }
       // fila de sección/capítulo: texto sin unidad ni cantidad. El título
       // suelto en la primera columna («SALÓN 216…») es el nivel MAYOR y
       // reinicia el menor; la descripción sin unidad es el nivel MENOR
@@ -390,8 +436,8 @@
       if (soloTitulo) { capMayor = codigo; capMenor = null; continue; }
       if (desc && !unidad && cantidad == null) { capMenor = desc; continue; }
       if (!desc) continue;
-      // filas de totales del final («COSTOS DIRECTOS», «TOTAL»…) no son ítems
-      if (/^(COSTOS?\s|TOTAL|SUBTOTAL|ADMINISTRACION|IMPREVISTOS|UTILIDAD|IVA)/.test(normCab(desc)) && !unidad) continue;
+      // filas de totales sin número («COSTOS DIRECTOS», «TOTAL»… con la celda vacía) no son ítems
+      if (RE_TOTALES.test(normCab(desc)) && !unidad) continue;
 
       if (cantidad == null) sinCantidad++;
       /* un precio en 0 NO es un precio: es «sin dato» (la regla de
@@ -412,6 +458,8 @@
         unidad: unidad || null,
         cantidad,                                       // null si ilegible: NUNCA 0
         precio_archivo: precioUtil,
+        // VR TOTAL del archivo, solo para el cuadre de control (0 = sin dato)
+        ...(totalFila != null && totalFila > 0 ? { total_archivo: totalFila } : {}),
         ...(subcontratado ? { subcontratado: true, aiu_subcontratista_pct: aiuSub } : {}),
       });
     }
@@ -419,18 +467,59 @@
     if (!filas.length) avisos.push("Se encontró la cabecera pero ninguna fila de ítem debajo.");
     if (sinCantidad) avisos.push(`${sinCantidad} fila(s) sin cantidad legible: viajan con cantidad vacía, nunca con 0.`);
     if (precioCero) avisos.push(`${precioCero} fila(s) traen precio 0 en el archivo: se tratan como SIN precio (un 0 no es un precio).`);
-    return { filas, avisos, cabecera: cab };
+    const cuadre = cuadreDeControl(filas, totalDeclarado);
+    if (cuadre.estado === "no_cuadra") {
+      avisos.push(`Cuadre de control: los ${cuadre.filas_sumadas} ítems leídos suman ${pesos(cuadre.suma_items)} y el archivo declara «${totalDeclarado.etiqueta}» ${pesos(cuadre.total_declarado)} (diferencia ${pesos(cuadre.desviacion)}, ${cuadre.desviacion_pct.toFixed(2)} %). Revise si falta un capítulo, sobra una fila o una cantidad se leyó mal antes de calcular nada.`);
+    } else if (cuadre.estado === "no_comparable") {
+      avisos.push(`Cuadre de control: el archivo declara «${totalDeclarado.etiqueta}» ${pesos(cuadre.total_declarado)} pero ${cuadre.filas_sin_valor} de ${filas.length} ítems no traen valor total legible: la suma no se puede comparar.`);
+    }
+    return { filas, avisos, cabecera: cab, cuadre };
+  }
+
+  const pesos = (n) => "$" + Math.round(n).toLocaleString("es-CO");
+  /* Compara la suma de los ítems leídos con el total que declara el archivo.
+     Suma la columna VR TOTAL cuando la fila la trae; si no, cantidad × precio.
+     Estados: «cuadra» (dentro del 0,5 %, la misma tolerancia de documento de
+     lib/apu_pliego), «no_cuadra», «no_comparable» (hay total declarado pero
+     ítems sin valor: comparar sería mentir) y «sin_referencia» (el archivo no
+     declara total). NUNCA bloquea: es un aviso, y una tabla que no cuadra
+     puede importarse igual — lo que no puede es importarse sin decirlo. */
+  const TOL_CUADRE_REL = 0.005;
+  function cuadreDeControl(filas, totalDeclarado) {
+    let suma = 0, sumadas = 0, sinValor = 0;
+    for (const f of filas) {
+      let v = f.total_archivo != null ? f.total_archivo : null;
+      if (v == null && f.cantidad != null && f.precio_archivo != null) v = f.cantidad * f.precio_archivo;
+      if (v == null) { sinValor++; continue; }
+      suma += v; sumadas++;
+    }
+    const base = { suma_items: sumadas ? suma : null, filas_sumadas: sumadas, filas_sin_valor: sinValor,
+      total_declarado: totalDeclarado ? totalDeclarado.valor : null, etiqueta_total: totalDeclarado ? totalDeclarado.etiqueta : null,
+      tolerancia_rel: TOL_CUADRE_REL };
+    if (!totalDeclarado) return { ...base, estado: "sin_referencia", desviacion: null, desviacion_pct: null };
+    if (sinValor > 0 || !sumadas) return { ...base, estado: "no_comparable", desviacion: null, desviacion_pct: null };
+    const desviacion = Math.abs(suma - totalDeclarado.valor);
+    const pct = totalDeclarado.valor > 0 ? (desviacion / totalDeclarado.valor) * 100 : null;
+    return { ...base, estado: pct != null && pct / 100 <= TOL_CUADRE_REL ? "cuadra" : "no_cuadra", desviacion, desviacion_pct: pct };
   }
 
   /* la hoja con MÁS filas de ítem reconocibles gana; devolver la primera a
      ciegas fallaría con libros que traen una carátula antes del formulario */
+  /* La hoja con MÁS filas de ítem reconocibles gana… salvo que otra CUADRE
+     con su propio total declarado: el libro que exporta la app (y cualquier
+     presupuesto profesional) trae la hoja «Presupuesto» (N ítems + COSTOS
+     DIRECTOS) y una hoja «APU» con los insumos de cada ítem, que tiene MUCHAS
+     más filas y ninguna es un ítem del presupuesto. Con «más filas gana», la
+     app se reimportaba a sí misma leyendo la hoja equivocada. Una hoja cuya
+     suma reproduce el total que declara es la tabla del presupuesto. */
   function elegirHoja(libro) {
     let mejor = null;
+    const puntaje = (r) => [(r.cuadre && r.cuadre.estado === "cuadra") ? 1 : 0, r.filas.length];
     for (const h of libro.hojas || []) {
       const r = detectarFilasApu(h.filas);
-      if (!mejor || r.filas.length > mejor.resultado.filas.length) {
-        mejor = { hoja: h, resultado: r };
-      }
+      if (!mejor) { mejor = { hoja: h, resultado: r }; continue; }
+      const [a1, a2] = puntaje(r), [b1, b2] = puntaje(mejor.resultado);
+      if (a1 > b1 || (a1 === b1 && a2 > b2)) mejor = { hoja: h, resultado: r };
     }
     return mejor;
   }

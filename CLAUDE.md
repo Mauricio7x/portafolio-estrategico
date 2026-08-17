@@ -3419,6 +3419,26 @@ vigía, hitos del cronograma e ítems del Formulario 1; y `prefers-reduced-trans
   tarjeta blanca sobre fondo negro. Verificado en Chromium real emulando cada media feature por CDP y
   leyendo `getComputedStyle` (blur `none`, fondo sólido, `animation: none`, bordes marcados).
 
+### Cuadre de control en la importación de Excel (ago 2026)
+
+Tercer punto del mismo contraste. `detectarFilasApu` (`public/xlsx_lectura.js`) captura el total que el
+archivo DECLARA y lo compara con la suma de los ítems leídos; publica `cuadre` (`cuadra` ·
+`no_cuadra` · `no_comparable` · `sin_referencia`) y un aviso ámbar con las dos cifras cuando no cuadra.
+- **Qué total vale**: «COSTO(S) DIRECTO(S)» manda (es la suma de ítems por definición); un «TOTAL» a
+  secas SOLO si no ha aparecido antes una fila de AIU/IVA (después, es el precio con AIU); «SUBTOTAL»
+  es de capítulo. Sin total declarado no se dice nada; con ítems sin valor no se compara (comparar
+  sería mentir). Tolerancia 0,5 %, la de documento de `lib/apu_pliego`. **NUNCA bloquea.**
+- **Defecto latente que salió al probarlo**: una fila de total («COSTO DIRECTO 300.000», «SUBTOTAL
+  CAPÍTULO 1 … 100.000») va sin unidad, igual que un título de capítulo, y caía ANTES en la rama del
+  título — «COSTO DIRECTO» nacía como capítulo. Se distinguen por lo único que las separa: la fila de
+  total trae un NÚMERO fuera de código/descripción; el título, solo texto («TOTALIZADORES Y MEDIDA»
+  sin cifra sigue siendo capítulo, y «Administración delegada de obra · mes · 3» sigue siendo ítem).
+- **`elegirHoja` prefiere la hoja que CUADRA con su total** antes que la de más filas: el libro que
+  exporta la propia app trae «Presupuesto» (N ítems + COSTOS DIRECTOS) y «APU» (los insumos, muchas
+  más filas y ninguna es un ítem); con «más filas gana» la app se reimportaba a sí misma por la hoja
+  equivocada. Hay prueba de ida y vuelta real: exportar → leer → cuadra AL PESO contra su propio
+  «COSTOS DIRECTOS» y los subtotales por capítulo no nacen como capítulos.
+
 ### Fase 6 · Traducción de lenguaje (ago 2026 · plan v3, transversal — cierre)
 
 - **Se midió sobre la página RENDERIZADA en producción** (Chromium: landing, Licitaciones con tarjetas y
