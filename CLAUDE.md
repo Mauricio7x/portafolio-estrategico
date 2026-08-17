@@ -3389,6 +3389,36 @@ Decisiones que no hay que re-aprender:
   .ics lleva VALARM −P7D/−P3D/−P1D y eventos de todo el día (un plazo no tiene hora en el dataset).
 - **`limpiarRedis` de la suite purga `pliego:*` y `formulario1:*`** (misma lección que consorcio:*).
 
+### La página viaja con el texto del pliego · y las tres preferencias del sistema (ago 2026)
+
+Salió de contrastar un informe externo con el repositorio: de sus propuestas, estas dos eran las
+únicas baratas y NO hechas. `lib/paginas.js` (hoja) + `pagina` en filas, capítulos, habilitantes del
+vigía, hitos del cronograma e ítems del Formulario 1; y `prefers-reduced-transparency` /
+`prefers-reduced-motion` / `prefers-contrast: more` en `index.html`.
+- **El marcador es `\f<n>` en línea propia (form feed + número), NUNCA «PÁGINA n»**: los pliegos traen
+  pies «PÁGINA 3 DE 20» que `RUIDO_RE` ya descarta y cuyo número impreso NO es el índice del PDF. Lo
+  emite `textoDelPdf` en `public/pliego.js` para CADA página (también sin texto, para que la
+  numeración no corra) y `lib/apu_ocr.ocrPaginas` con el índice DENTRO del lote, que el navegador
+  re-basa (`rebasarMarcadores`) al número real. Las dos definiciones (navegador/servidor) están atadas
+  por una prueba que las EJECUTA (el patrón de `numeroLocal`).
+- **`\s` incluye al propio `\f`**: el marcador hay que leerlo ANTES de recortar espacios, y
+  `String.prototype.trim` se lo lleva por delante — por eso `normalizarConPaginas` recorta a mano y el
+  bucle de `parsearPliego` mira `lineaCruda`. Costó ver el marcador contado como «línea vacía».
+- **El hash del vigía de adendas NO ve los marcadores** (`normalizarTexto` = `quitarMarcadores` +
+  la normalización de siempre): la misma descarga abierta antes y después de desplegar da el MISMO
+  hash, así que ninguna versión ya guardada en producción sale como «adenda». Lo que se GUARDA
+  (`texto_normalizado`) sí los conserva, para citar «pág. N» al reevaluar; las versiones viejas
+  responden `pagina: null` — la ausencia no se rellena (R1), jamás 0 ni 1.
+- **Sin marcadores todo sigue igual**: hay prueba de que el parseo con y sin marcadores da las mismas
+  cifras y de que el reparto del diagnóstico sigue sumando `lineas_leidas` (cubeta
+  `marcadores_pagina`). El contrato de `texto_ocr` cambió: cada página reconocida va precedida de
+  su marcador, y la prueba lo fija.
+- **Las preferencias van por CLASE/ID como el resto de la piel, no globales**, y ninguna toca
+  `.hidden` (la vista visible no puede depender de una preferencia). Reducir transparencia y aumentar
+  contraste tienen variante OSCURA propia: sin ella, «reducir transparencia» en modo oscuro daría
+  tarjeta blanca sobre fondo negro. Verificado en Chromium real emulando cada media feature por CDP y
+  leyendo `getComputedStyle` (blur `none`, fondo sólido, `animation: none`, bordes marcados).
+
 ### Fase 6 · Traducción de lenguaje (ago 2026 · plan v3, transversal — cierre)
 
 - **Se midió sobre la página RENDERIZADA en producción** (Chromium: landing, Licitaciones con tarjetas y

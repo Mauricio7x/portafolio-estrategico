@@ -295,6 +295,16 @@
     return doc;
   }
 
+  /* MARCADOR DE PÁGINA: cada página va precedida de una línea `\f<n>` (form
+     feed + número; el mismo formato que entiende lib/paginas en el servidor:
+     hay prueba que ejecuta las dos definiciones). Así la fila de la tabla, el
+     requisito del vigía y el hito del cronograma pueden citar «pág. 14». Se
+     emite TAMBIÉN para una página sin texto, para que la numeración no corra. */
+  const marcadorPagina = (n) => "\f" + n;
+  const rebasarMarcadores = (texto, primera) => String(texto || "").split(/\r\n|\r|\n/)
+    .map((l) => { const m = /^[ \t]*\f(\d+)[ \t]*$/.exec(l); return m ? marcadorPagina(primera + Number(m[1]) - 1) : l; })
+    .join("\n");
+
   async function textoDelPdf(doc) {
     const trozos = [];
     for (let n = 1; n <= doc.numPages; n++) {
@@ -304,6 +314,7 @@
       const pagina = await doc.getPage(n);
       const contenido = await pagina.getTextContent();
       const lineas = lineasDePagina(contenido.items);
+      trozos.push(marcadorPagina(n));
       if (lineas) trozos.push(lineas);
     }
     progreso(doc.numPages, doc.numPages, `${doc.numPages} página(s) leídas.`);
@@ -390,6 +401,7 @@
   function nuevaFila(base = {}) {
     return {
       numeral: base.numeral == null ? "" : String(base.numeral),
+      pagina: base.pagina == null ? null : Number(base.pagina),   // página del PDF; null si no se sabe
       descripcion_original: base.descripcion_original == null ? "" : String(base.descripcion_original),
       item_id: base.item_id == null ? "" : String(base.item_id),
       unidad: base.unidad == null ? "" : String(base.unidad),
@@ -438,7 +450,7 @@
       const sinCantidad = f.cantidad == null
         ? '<span class="text-xs text-amber-700">sin dato</span>' : "";
       return `<tr data-i="${i}" class="align-top">
-        <td class="py-1.5 pr-2 text-xs text-gray-400">${esc(f.numeral || "")}</td>
+        <td class="py-1.5 pr-2 text-xs text-gray-400">${esc(f.numeral || "")}${f.pagina != null ? `<br><span class="text-[10px]" title="Página del PDF de la que salió esta fila">pág. ${f.pagina}</span>` : ""}</td>
         <td class="py-1.5 pr-2"><input data-campo="descripcion_original" value="${esc(f.descripcion_original)}"
              class="celda-edit w-full min-w-[16rem] rounded-lg border border-transparent px-2 py-1 text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none"></td>
         <td class="py-1.5 pr-2"><input data-campo="item_id" list="catalogo-items" value="${esc(f.item_id)}"
@@ -551,7 +563,7 @@
     filas = (cuerpo.items || []).map(nuevaFila);
     // Fase 4 · el guardián del Formulario 1 (pestaña Precios) compara la oferta
     // con ESTOS ítems: se exponen tal cual salieron del lector
-    try { window.__pliegoUltimo = { items: filas.map((f) => ({ numeral: f.numeral, descripcion: f.descripcion_original, unidad: f.unidad, cantidad: f.cantidad, unitario_oficial: f.unitario_oficial, total_oficial: f.total_oficial })), leido_el: new Date().toISOString(), id_proceso: idProcesoActual() }; } catch { /* sin ventana */ }
+    try { window.__pliegoUltimo = { items: filas.map((f) => ({ numeral: f.numeral, pagina: f.pagina, descripcion: f.descripcion_original, unidad: f.unidad, cantidad: f.cantidad, unitario_oficial: f.unitario_oficial, total_oficial: f.total_oficial })), leido_el: new Date().toISOString(), id_proceso: idProcesoActual() }; } catch { /* sin ventana */ }
     $("seccion-resultado").classList.remove("hidden");
 
     const [claseSem, textoSem] = SEMAFORO[(cuerpo.confianza && cuerpo.confianza.color) || "amarillo"] || SEMAFORO.amarillo;
@@ -713,7 +725,7 @@
         const cambios = (c.diff && c.diff.habilitantes && c.diff.habilitantes.cambios) || [];
         if (c.cambio) {
           html += cambios.length
-            ? `<ul class="mt-2 space-y-1">${cambios.map((x) => `<li><span aria-hidden="true">${x.afecta ? "●" : "○"}</span> ${esc(x.mensaje)}</li>`).join("")}</ul>`
+            ? `<ul class="mt-2 space-y-1">${cambios.map((x) => `<li><span aria-hidden="true">${x.afecta ? "●" : "○"}</span> ${esc(x.mensaje)}${x.pagina != null ? ` <span class="text-xs text-gray-500">(pág. ${x.pagina})</span>` : ""}</li>`).join("")}</ul>`
             : `<p class="mt-1 text-gray-600">Cambió el texto, pero ninguno de los requisitos con cifra que la app sabe leer (capital de trabajo, patrimonio, liquidez, endeudamiento, experiencia, plazo)${c.diff && c.diff.parrafos ? ` (${c.diff.parrafos.modificados.length} párrafos modificados, ${c.diff.parrafos.anadidos.length} nuevos, ${c.diff.parrafos.quitados.length} retirados)` : ""}. Léalo: puede haber cambiado algo que no es una cifra.</p>`;
         }
         html += `<p class="mt-1 text-xs text-gray-500">Versión ${c.version} de este pliego guardada${c.recortado ? " (texto recortado)" : ""}. La comparación de requisitos es una lectura automática del texto: confírmela contra el pliego.</p>`;
@@ -724,7 +736,7 @@
     const cc = rc.cuerpo || {};
     if (cc.ok && Array.isArray(cc.hitos) && cc.hitos.length) {
       html += `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">Cronograma</p>
-        <ul class="mt-1 space-y-0.5">${cc.hitos.map((h) => `<li>${esc(h.fecha.split("-").reverse().join("/"))} — ${esc(h.etiqueta)} <span class="text-xs text-gray-400">(${h.origen === "pliego" ? "pliego" : "SECOP II"})</span></li>`).join("")}</ul>`;
+        <ul class="mt-1 space-y-0.5">${cc.hitos.map((h) => `<li>${esc(h.fecha.split("-").reverse().join("/"))} — ${esc(h.etiqueta)} <span class="text-xs text-gray-400">(${h.origen === "pliego" ? `pliego${h.pagina != null ? `, pág. ${h.pagina}` : ""}` : "SECOP II"})</span></li>`).join("")}</ul>`;
       if (cc.avisos && cc.avisos.length) html += `<p class="mt-2 text-xs text-gray-500">Avisos a 7, 3 y 1 día: ${cc.avisos.slice(0, 3).map((a) => esc(a.aviso.split("-").reverse().join("/") + " · " + a.mensaje)).join(" · ")}${cc.avisos.length > 3 ? ` · y ${cc.avisos.length - 3} más` : ""}.</p>`;
       if (cc.ics_url) html += `<a class="mt-2 inline-block text-sm font-medium underline" style="color: var(--accent);" href="${esc(cc.ics_url)}">Descargar al calendario (.ics)</a>`;
     } else if (cc.ok) {
@@ -801,7 +813,9 @@
           fallos.push(`páginas ${desde}-${hasta}: ${(rt.cuerpo && rt.cuerpo.error) || `error ${rt.estado}`}`);
           continue;
         }
-        if (rt.cuerpo.texto_ocr) trozos.push(rt.cuerpo.texto_ocr);
+        // el servidor marca las páginas con su índice DENTRO del lote (\f1, \f2…):
+        // aquí se re-basan al número real de página del PDF
+        if (rt.cuerpo.texto_ocr) trozos.push(rebasarMarcadores(rt.cuerpo.texto_ocr, desde));
         for (const f of (rt.cuerpo.ocr && rt.cuerpo.ocr.fallos) || []) {
           fallos.push(`página ${desde + (f.pagina - 1)}: ${f.error}`);
         }
