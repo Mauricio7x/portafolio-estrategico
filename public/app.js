@@ -1070,12 +1070,12 @@
 
     return `
     <article class="tarjeta rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5${noViable ? " opacity-50" : ""}">
-      <div class="flex flex-wrap items-start justify-between gap-3">
+      <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-3">
         <div class="min-w-0 flex-1">
           <h3 class="titulo-tarjeta font-semibold leading-snug tracking-tight" title="${esc(l.nombre_del_procedimiento || "")}">${esc(l.nombre_del_procedimiento || l.id_del_proceso || "Proceso sin nombre")}</h3>
           <p class="mt-1 text-sm text-gray-500">${esc(l.entidad || "Entidad no informada")}${l.departamento_entidad && !/no definido/i.test(l.departamento_entidad) ? ` · ${esc(l.departamento_entidad)}` : ""}</p>
         </div>
-        <div class="text-right">
+        <div class="sm:text-right">
           ${l.cuantia_cop
     /* sin `|| 0`: un «$0» afirma que la obra vale cero pesos donde el dato no
        vino (R1, la invariante de la cabecera). El PAA ya lo decía bien. */
