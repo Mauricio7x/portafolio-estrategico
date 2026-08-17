@@ -3445,6 +3445,15 @@ la zona de controles tenía DOS filas de filtros (167 + 227 palabras). Decisione
 - **Recortes de texto en la tarjeta** conservando lo que la suite y la filosofía exigen: el VE sigue
   diciendo «contando las veces que no se gana» (prueba) pero en media línea; el aviso de cierre a 2 días
   ya no repite «si vas a presentarte».
+- **La TARJETA pasó de párrafos a una FRANJA DE TRES CIFRAS** (`bloqueProbabilidad`: «~2 empresas suelen
+  competir · en 65 procesos» / «1 de 3 se gana, aproximadamente» / «$1.344M deja por intento, en promedio ·
+  contando las veces que no se gana y el costo de ofertar»), con la frase completa de siempre en el `title`
+  de cada celda y «—» con motivo cuando no hay dato (jamás 0). La banda de competencia bajó a la fila de
+  chips junto al cierre y la zona; el título se recorta a dos líneas (`.titulo-tarjeta`, objeto completo en
+  `title`); entidad y departamento en una línea. Lo que la suite exige sigue: `lineaRequisitos`,
+  `cuantosCompiten`, `frecuenciaNatural`, «contando las veces que no se gana», sin la palabra
+  «probabilidad», «Más detalles» con las puertas plegadas. Medido: la primera tarjeta bajó de ~200 a 135
+  palabras y la página de 10 851 a 9 268 px con las mismas 20 tarjetas.
 - **Chromium cazó dos desbordes móviles** que ninguna prueba de Node ve: el SVG dentro de un grid item sin
   `min-w-0` ensanchaba la página 26 px, y el selector de perfil del encabezado 4 px. Regla: los ítems de
   grid que contienen SVG llevan `min-w-0 overflow-hidden`; medir `scrollWidth > clientWidth` a 390 px.
