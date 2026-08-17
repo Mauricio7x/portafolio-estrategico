@@ -3603,8 +3603,12 @@ async function main() {
           }, CAB_TOKEN);
           assert.strictEqual(tanda.status, 200);
           assert.strictEqual(tanda.cuerpo.solo_reconocer, true);
-          assert.strictEqual(tanda.cuerpo.texto_ocr, "1.1 CONCRETO ESTRUCTURAL M3 96,20",
-            "el texto reconocido tiene que volver, o el cliente no puede encadenar tandas");
+          /* Cada página reconocida va PRECEDIDA de su marcador `\f<i>` (índice
+             dentro del lote; lib/paginas): el navegador lo re-basa al número real
+             de página del PDF, y así la fila que salga de un pliego escaneado
+             también sabe en qué página está. */
+          assert.strictEqual(tanda.cuerpo.texto_ocr, "\f1\n1.1 CONCRETO ESTRUCTURAL M3 96,20",
+            "el texto reconocido tiene que volver, con el marcador de página delante, o el cliente no puede encadenar tandas ni citar la página");
           assert.strictEqual(tanda.cuerpo.items, undefined, "con `solo_reconocer` NO se parsea");
           assert.ok(/puede tener errores/i.test(tanda.cuerpo.advertencia),
             "la advertencia viaja también en la respuesta de solo reconocer");
@@ -13858,6 +13862,141 @@ async function main() {
       const appF5 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
       assert.ok(/function bloqueAdendas/.test(appF5) && /bloqueAdendas\(l\.adendas\)/.test(appF5), "la tarjeta pinta «la entidad cambió las reglas»");
       console.log(`  · Vigía de adendas (Fase 5): dedup con _cambios (${fila._cambios.length}) → «${ad.resumen}» · texto: «${cambiosH[0].mensaje}» · versiones ${idx.versiones.length}/${D.MAX_VERSIONES} · cronograma con avisos T-7/T-3/T-1 y .ics`);
+    }
+
+    /* ═══════════ j-decies-bis. LA PÁGINA VIAJA CON EL TEXTO DEL PLIEGO (ago 2026) ═══════════
+       El navegador intercala un marcador `\f<n>` entre página y página; el
+       servidor lo entiende UNA vez (lib/paginas) y cada consumidor publica
+       `pagina`: la fila de la tabla de cantidades, el requisito habilitante
+       del vigía, el hito del cronograma y el ítem del Formulario 1. Cuatro
+       cosas se vigilan: (1) las DOS definiciones del marcador —la del
+       navegador y la del servidor— se EJECUTAN sobre los mismos casos (el
+       patrón de numeroLocal), no se comparan como cadenas; (2) el hash del
+       vigía NO ve los marcadores: la misma descarga abierta antes y después
+       de este cambio da el MISMO hash (una versión guardada en producción no
+       puede salir como «adenda»); (3) sin marcadores la página es `null`,
+       jamás 0 ni 1 (R1); (4) el reparto del diagnóstico del parseo SIGUE
+       sumando `lineas_leidas` con la cubeta nueva. */
+    {
+      const P = require("../lib/paginas.js");
+      const D2 = require("../lib/diff.js");
+      const Cr2 = require("../lib/cronograma.js");
+      const F1b = require("../lib/formulario1.js");
+      const { parsearPliego } = require("../lib/apu_pliego.js");
+      const { mapearTabla } = require("../lib/apu_mapeo.js");
+      const routerPl = require("../api/pliego.js");
+      // (1) el marcador del navegador y el del servidor son la MISMA definición, ejecutada
+      const plSrc = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+      const mMarc = plSrc.match(/const marcadorPagina = (\(n\) => [^;]+);/);
+      const mReb = plSrc.match(/const rebasarMarcadores = (\(texto, primera\) => [\s\S]*?\.join\("\\n"\));/);
+      assert.ok(mMarc && mReb, "pliego.js debe definir marcadorPagina y rebasarMarcadores (la página del PDF viaja con el texto)");
+      const marcadorCliente = new Function(`const marcadorPagina = ${mMarc[1]}; return marcadorPagina;`)();
+      const rebasarCliente = new Function(`const marcadorPagina = ${mMarc[1]}; const rebasarMarcadores = ${mReb[1]}; return rebasarMarcadores;`)();
+      for (const n of [1, 7, 120]) {
+        assert.strictEqual(marcadorCliente(n), P.marcador(n), `marcador de página distinto entre navegador y servidor para ${n}`);
+        assert.strictEqual(P.numeroDeMarcador(marcadorCliente(n)), n, "el servidor tiene que leer el marcador que escribe el navegador");
+      }
+      assert.strictEqual(P.numeroDeMarcador("PÁGINA 3 DE 20"), undefined, "un pie de página impreso NO es un marcador");
+      assert.strictEqual(P.numeroDeMarcador("\f"), null, "\\f a secas = «página siguiente»");
+      assert.strictEqual(P.numeroDeMarcador(" \f12 "), 12);
+      const lote = `${P.marcador(1)}\nlinea a\n${P.marcador(2)}\nlinea b`;
+      assert.strictEqual(rebasarCliente(lote, 11), P.rebasarMarcadores(lote, 11), "el re-basado del OCR es el mismo en el navegador y en el servidor");
+      assert.deepStrictEqual(P.lineasConPagina(P.rebasarMarcadores(lote, 11)).map((l) => [l.linea, l.pagina]), [["linea a", 11], ["linea b", 12]]);
+      assert.deepStrictEqual(P.lineasConPagina("x\n\f\ny\n\f\nz").map((l) => l.pagina), [null, 1, 2], "sin marcador → null; \\f sin número cuenta desde 1");
+      assert.strictEqual(P.quitarMarcadores("a\n\f3\nb"), "a\nb");
+      assert.ok(/require\("\.\/paginas\.js"\)/.test(fs.readFileSync(path.join(__dirname, "..", "lib", "paginas.js"), "utf8")) === false, "lib/paginas es HOJA: no requiere nada del proyecto");
+      assert.ok(!/require\(/.test(fs.readFileSync(path.join(__dirname, "..", "lib", "paginas.js"), "utf8")), "lib/paginas no puede requerir módulos (sería un ciclo en potencia)");
+      // el navegador emite el marcador por página (también sin texto) y re-basa el OCR
+      const plSin = sinComentarios(plSrc);
+      assert.ok(/trozos\.push\(marcadorPagina\(n\)\);/.test(plSin), "textoDelPdf debe emitir el marcador de CADA página");
+      assert.ok(/rebasarMarcadores\(rt\.cuerpo\.texto_ocr, desde\)/.test(plSin), "el OCR por tandas re-basa los marcadores al número real de página");
+      // (4) el parseo: la fila sabe su página; el reparto sigue sumando; sin marcadores → null
+      const tabla = [P.marcador(3), "ITEM\tDESCRIPCION\tUND\tCANT\tVR UNITARIO\tVR TOTAL", "1\tPRELIMINARES",
+        "1.1\tLOCALIZACION Y REPLANTEO\tM2\t100\t1.000\t100.000", P.marcador(4), "1.2\tEXCAVACION MANUAL\tM3\t10\t20.000\t200.000",
+        "\f", "1.3\tRELLENO COMPACTADO\tM3\t5\t30.000\t150.000"].join("\n");
+      const pp = parsearPliego(tabla);
+      assert.deepStrictEqual(pp.items.map((i) => [i.numeral, i.pagina]), [["1.1", 3], ["1.2", 4], ["1.3", 5]], "cada fila lleva la página del PDF de la que salió");
+      assert.strictEqual(pp.capitulos[0].pagina, 3, "el capítulo también");
+      assert.strictEqual(pp.diagnostico.descartadas.marcadores_pagina, 3);
+      const sumaPP = Object.values(pp.diagnostico.descartadas).reduce((a, b) => a + b, 0) + pp.items.length + pp.capitulos.length;
+      assert.strictEqual(sumaPP, pp.diagnostico.lineas_leidas, "los marcadores tienen cubeta propia y el reparto sigue sumando las líneas leídas");
+      const ppSin = parsearPliego(P.quitarMarcadores(tabla));
+      assert.deepStrictEqual(ppSin.items.map((i) => i.pagina), [null, null, null], "sin marcadores la página es null, jamás 0 ni 1");
+      assert.deepStrictEqual(ppSin.items.map((i) => [i.numeral, i.cantidad, i.total_oficial]), pp.items.map((i) => [i.numeral, i.cantidad, i.total_oficial]), "los marcadores no cambian ni una cifra del parseo");
+      assert.deepStrictEqual(mapearTabla(pp.items).items.map((i) => i.pagina), [3, 4, 5], "el mapeo publica la página");
+      const rx = await invocarPost(routerPl, "/api/pliego?op=extraer-texto", { texto_extraido: tabla }, CAB_TOKEN);
+      assert.strictEqual(rx.status, 200); assert.deepStrictEqual(rx.cuerpo.items.map((i) => i.pagina), [3, 4, 5], "la página llega hasta la respuesta del endpoint");
+      // (2) el vigía: hash idéntico con y sin marcadores; la evidencia cita la página; el texto guardado la conserva
+      const tSin = "PLIEGO DE CONDICIONES\nREQUISITOS HABILITANTES\nCapital de trabajo: mayor o igual a $650.000.000\n\nÍndice de liquidez mayor o igual a 1,5\nPlazo de ejecución: diez (10) meses\nCRONOGRAMA\nCierre y presentación de ofertas: 25 de agosto de 2026\nAudiencia de adjudicación: 10/09/2026";
+      const tCon = [P.marcador(1), "PLIEGO DE CONDICIONES", P.marcador(2), "REQUISITOS HABILITANTES", "Capital de trabajo: mayor o igual a $650.000.000", "", P.marcador(3), "Índice de liquidez mayor o igual a 1,5", "Plazo de ejecución: diez (10) meses", P.marcador(9), "CRONOGRAMA", "Cierre y presentación de ofertas: 25 de agosto de 2026", "Audiencia de adjudicación: 10/09/2026"].join("\n");
+      assert.strictEqual(D2.hashDe(D2.normalizarTexto(tCon)), D2.hashDe(D2.normalizarTexto(tSin)), "el hash del vigía NO ve los marcadores: la misma descarga da el mismo hash antes y después de este cambio");
+      assert.deepStrictEqual(D2.parrafosDe(tCon), D2.parrafosDe(tSin), "los párrafos del diff tampoco los ven");
+      const habCon = D2.extraerHabilitantes(tCon), habSin = D2.extraerHabilitantes(tSin);
+      assert.strictEqual(habCon.capital_trabajo.pagina, 2); assert.strictEqual(habCon.liquidez.pagina, 3); assert.strictEqual(habCon.plazo_meses.pagina, 3);
+      assert.strictEqual(habSin.capital_trabajo.pagina, null, "sin marcadores la evidencia no inventa página");
+      assert.strictEqual(habCon.capital_trabajo.valor, habSin.capital_trabajo.valor);
+      const tCon2 = tCon.replace("$650.000.000", "$800.000.000");
+      const cmp = D2.compararHabilitantes(habCon, D2.extraerHabilitantes(tCon2), "helder");
+      assert.strictEqual(cmp[0].pagina, 2, "el cambio cita la página de la versión nueva");
+      assert.ok(/pág\. \$\{x\.pagina\}/.test(plSin), "el vigía del lector pinta la página junto al cambio");
+      // por el router: la versión guardada conserva los marcadores (para citar al reevaluar) y el hash es el de siempre
+      const dv1 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", texto: tSin, perfil: "helder" }, CAB_TOKEN);
+      const dv2 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", texto: tCon, perfil: "helder" }, CAB_TOKEN);
+      assert.strictEqual(dv1.cuerpo.version, 1); assert.strictEqual(dv2.cuerpo.version, 1); assert.strictEqual(dv2.cuerpo.cambio, false, "guardar sin marcadores y volver a abrir CON marcadores no es una adenda");
+      assert.strictEqual(dv2.cuerpo.hash, dv1.cuerpo.hash);
+      const dv3 = await invocarPost(routerPl, "/api/pliego?op=diff", { id_proceso: "CO1.PAG.1", texto: tCon2, perfil: "helder" }, CAB_TOKEN);
+      assert.strictEqual(dv3.cuerpo.version, 2); assert.strictEqual(dv3.cuerpo.diff.habilitantes.cambios[0].pagina, 2);
+      const guardada = await D2.leerVersion(redis, "CO1.PAG.1", 2);
+      assert.strictEqual(P.contarMarcadores(guardada.texto_normalizado), 4, "el texto guardado conserva los marcadores para poder citar la página al reevaluar");
+      assert.strictEqual(D2.extraerHabilitantes(guardada.texto_normalizado).capital_trabajo.pagina, 2);
+      // (3) cronograma: el hito cita su página; el .ics también; sin marcadores, null
+      const hCon = Cr2.extraerHitos(tCon).hitos;
+      assert.deepStrictEqual(hCon.map((h) => [h.id, h.pagina]), [["cierre", 9], ["adjudicacion", 9]]);
+      assert.strictEqual(Cr2.extraerHitos(tSin).hitos[0].pagina, null);
+      assert.ok(/cronograma del pliego \(pág\. 9\)/.test(Cr2.ics(hCon, { proceso: "CO1.PAG.1" })), "el .ics cita la página del cronograma");
+      assert.ok(/pliego\$\{h\.pagina != null \? `, pág\. \$\{h\.pagina\}` : ""\}/.test(plSin), "el lector pinta la página del hito");
+      // Formulario 1: una supresión o modificación se cita con la página del pliego
+      const f1r = F1b.validarFormulario1({ oferta: { items: [{ numeral: "1.1", descripcion: "LOCALIZACION Y REPLANTEO", unidad: "M2", cantidad: 90 }], aiu: { a: 15, i: 5, u: 5 }, total: 1 }, formulario: { items: rx.cuerpo.items }, presupuesto_oficial: 450000 });
+      assert.strictEqual(f1r.comparacion.modificaciones[0].pagina, 3);
+      assert.deepStrictEqual(f1r.comparacion.supresiones.map((s) => s.pagina), [4, 5]);
+      const vItems = f1r.veredictos.find((v) => v.id === "items");
+      assert.ok(vItems && /1\.1 \(pág\. 3\)/.test(vItems.mensaje) && /1\.2 \(pág\. 4\)/.test(vItems.mensaje), `el mensaje del Formulario 1 cita la página: ${vItems && vItems.mensaje}`);
+      assert.ok(/pagina: f\.pagina/.test(plSin), "los ítems que el lector expone al guardián llevan la página");
+      assert.ok(/pág\. \$\{f\.pagina\}/.test(plSin), "la tabla del lector enseña la página de cada fila");
+      console.log(`  · La página viaja con el texto: marcador \\f<n> (misma definición ejecutada en navegador y servidor) · filas ${pp.items.map((i) => i.pagina).join("/")} · hash del vigía sin cambios con/sin marcadores · habilitante «${habCon.capital_trabajo.etiqueta}» pág. ${habCon.capital_trabajo.pagina} · hito pág. ${hCon[0].pagina} · Formulario 1 cita la página`);
+    }
+
+    /* ═══════════ j-decies-ter. PREFERENCIAS DEL SISTEMA: transparencia, movimiento y contraste ═══════════
+       El perfil de uso es un celular en obra, a veces bajo el sol. La piel de
+       vidrio (backdrop-filter) y las transiciones tienen que ceder ante lo que
+       la persona configuró en su aparato: sin la consulta, «reducir
+       transparencia» no hacía nada en esta app. Se vigila que las TRES
+       consultas existan y que hagan lo que dicen (quitar el blur, parar la
+       animación, subir el contraste), no solo que aparezcan escritas. */
+    {
+      const htmlPref = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const bloque = (nombre) => {
+        const i = htmlPref.indexOf(`@media (${nombre})`);
+        assert.ok(i >= 0, `index.html no consulta «${nombre}»`);
+        // el bloque termina en la primera llave de cierre a nivel de la media query
+        let prof = 0, j = htmlPref.indexOf("{", i);
+        for (; j < htmlPref.length; j++) { if (htmlPref[j] === "{") prof++; else if (htmlPref[j] === "}") { prof--; if (prof === 0) break; } }
+        return htmlPref.slice(i, j + 1);
+      };
+      const rt = bloque("prefers-reduced-transparency: reduce");
+      assert.ok(/backdrop-filter:\s*none/.test(rt), "con «reducir transparencia» el vidrio pierde el blur");
+      assert.ok(/\.barra-superior/.test(rt) && /\.barra-movil/.test(rt) && /#app \.bg-white\.rounded-2xl/.test(rt), "…en la barra, la barra móvil y las tarjetas de vidrio");
+      assert.ok(/--bg-card:\s*#[0-9a-fA-F]{6}/.test(rt), "…y el fondo de tarjeta pasa a un color SÓLIDO");
+      const rm = bloque("prefers-reduced-motion: reduce");
+      assert.ok(/--transition:\s*0s/.test(rm) && /\.panel-pestana\s*\{\s*animation:\s*none/.test(rm), "con «reducir movimiento» no hay transición ni animación de entrada de pestaña");
+      assert.ok(/\.spin\s*\{\s*animation:\s*none/.test(rm), "…ni el spinner gira");
+      assert.ok(/\.tarjeta:hover[^{]*\{\s*transform:\s*none/.test(rm), "…ni la tarjeta hace zoom al pasar el mouse");
+      const rc = bloque("prefers-contrast: more");
+      assert.ok(/backdrop-filter:\s*none/.test(rc) && /--text-secondary:\s*#/.test(rc) && /--border:/.test(rc), "con «aumentar contraste» no hay vidrio, el gris secundario sube y los bordes se marcan");
+      assert.ok(/prefers-color-scheme: dark/.test(rt) && /prefers-color-scheme: dark/.test(rc), "las dos consultas de fondo sólido tienen su variante OSCURA (sin ella, blanco sobre negro al reducir transparencia en modo oscuro)");
+      // los datos siguen sobre fondo sólido de alto contraste con independencia de la preferencia
+      assert.ok(!/\.hidden\s*\{/.test(rt + rm + rc), "ninguna de las tres consultas puede tocar `.hidden` (la vista visible no puede depender de una preferencia)");
+      console.log("  · Preferencias del sistema: prefers-reduced-transparency (sin blur, fondo sólido claro/oscuro), prefers-reduced-motion (sin transición, animación ni zoom) y prefers-contrast: more (bordes y gris secundario) verificadas sobre index.html");
     }
 
     /* ═══════════ j-undecies. TRADUCCIÓN DE LENGUAJE (Fase 6 del plan v3, transversal) ═══════════
