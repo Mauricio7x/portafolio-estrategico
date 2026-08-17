@@ -143,6 +143,26 @@
 
   /* ── arranque ── */
   let perfilPintado = null;
+  /* ═══ LA EMPRESA EN CIFRAS (Mi empresa como pestaña principal, ago 2026) ═══
+     El registro de proponente en números, bajo el pulso: tipos de trabajo,
+     familias, experiencia acreditada, contratos, tope; patrimonio y capacidad
+     solo cuando el servidor las mandó (token válido o perfil propio). «—» con
+     motivo cuando falta el dato: jamás un 0 (R1). */
+  const cifra = (v, rotulo, titulo = "") => `<div class="min-w-0"${titulo ? ` title="${esc(titulo)}"` : ""}><p class="text-[22px] font-semibold tracking-tight sm:text-[26px]" style="color: var(--text-primary); letter-spacing: -0.5px;">${esc(v)}</p><p class="text-[11px] uppercase tracking-wide" style="color: var(--text-secondary);">${esc(rotulo)}</p></div>`;
+  function htmlEmpresa(e) {
+    if (!e) return "";
+    const partes = [];
+    if (Number.isFinite(e.tipos_de_trabajo)) partes.push(cifra(num(e.tipos_de_trabajo), e.tipos_de_trabajo === 1 ? "tipo de trabajo inscrito" : "tipos de trabajo inscritos", Number.isFinite(e.familias) ? `${num(e.familias)} familias` : ""));
+    partes.push(e.experiencia_smmlv != null ? cifra(num(e.experiencia_smmlv), "salarios mínimos de experiencia acreditada", "Mayor contrato acreditado en el registro") : cifra("—", "experiencia acreditada", "Sin dato en el registro"));
+    partes.push(e.contratos_acreditados != null ? cifra(num(e.contratos_acreditados), e.contratos_acreditados === 1 ? "contrato acreditado" : "contratos acreditados") : cifra("—", "contratos acreditados", "Sin dato en el registro"));
+    if (e.finanzas_visibles) {
+      partes.push(e.patrimonio != null ? cifra(pesosCortos(e.patrimonio) || "—", "de patrimonio", "Patrimonio del registro") : cifra("—", "de patrimonio", "Sin dato"));
+      partes.push(e.capacidad_contratacion != null ? cifra(pesosCortos(e.capacidad_contratacion) || "—", "capacidad de contratación", "Capacidad residual estimada con el registro") : cifra("—", "capacidad de contratación", "Falta la utilidad o el ingreso operacional"));
+    }
+    if (e.tope_smmlv != null) partes.push(cifra(num(e.tope_smmlv), "salarios mínimos de tope", "Hasta dónde le interesa presentarse (apetito, no límite del registro)"));
+    return `<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">${partes.join("")}</div>`;
+  }
+
   async function arrancar(perfil, opciones = {}) {
     const d = opciones.doc || (typeof document !== "undefined" ? document : null);
     if (!d) return false;
@@ -150,8 +170,18 @@
     if (!raiz || !perfil) return false;
     if (perfilPintado === perfil && !opciones.forzar) return true;
     let p = null;
-    try { const r = await fetch(`/api/perfil?op=pulso&perfil=${encodeURIComponent(perfil)}`); p = await r.json(); } catch { p = null; }
+    /* con token viajan también las cifras del perfil (patrimonio, capacidad);
+       si el servidor lo rechaza (401), se reintenta SIN token: el pulso no
+       puede quedarse mudo por una credencial mal puesta */
+    const url = `/api/perfil?op=pulso&perfil=${encodeURIComponent(perfil)}`;
+    try {
+      let r = await fetch(url, opciones.headers ? { headers: opciones.headers } : undefined);
+      if (r.status === 401 && opciones.headers) r = await fetch(url);
+      p = await r.json();
+    } catch { p = null; }
     if (!p || !p.ok) { raiz.classList.add("hidden"); perfilPintado = null; return false; }   // vacía y honesta
+    const rc = d.getElementById("rup-cifras");
+    if (rc) { rc.innerHTML = htmlEmpresa(p.empresa); rc.classList.toggle("hidden", !rc.innerHTML); }
     d.getElementById("pu-hero").innerHTML = htmlHero(p, opciones.nombre || "");
     d.getElementById("pu-departamentos").innerHTML = htmlDepartamentos(p);
     d.getElementById("pu-entidades").innerHTML = htmlEntidades(p);
@@ -168,5 +198,5 @@
   }
   const olvidar = () => { perfilPintado = null; };
 
-  return { arrancar, olvidar, pesosCortos, htmlHero, htmlDepartamentos, htmlEntidades, htmlCierre, htmlCuantia, svgBarras, htmlNota };
+  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlCierre, htmlCuantia, svgBarras, htmlNota };
 });

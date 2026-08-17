@@ -13890,7 +13890,8 @@ async function main() {
       // (2) la landing: puerta primero, casi sin texto
       const htmlL = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
       const iOnb = htmlL.indexOf('id="onboarding"'), iGate = htmlL.indexOf('id="gate"'), iTab = htmlL.indexOf('id="tab-licitaciones"'), iPortada = htmlL.indexOf('<section id="portada"');
-      assert.ok(iOnb >= 0 && iGate > iOnb && iTab > iGate && iPortada > iTab, "la portada del mercado ya NO vive en la landing: está dentro de la pestaña Licitaciones");
+      const iTabAdmin = htmlL.indexOf('id="tab-admin"');
+      assert.ok(iOnb >= 0 && iGate > iOnb && iTabAdmin > iGate && iPortada > iTabAdmin && iPortada < iTab, "la portada del mercado ya NO vive en la landing: está dentro de Mi empresa (la pestaña principal), plegada");
       const landing = htmlL.slice(iOnb, iGate);
       for (const id of ["btn-subir-rup", "btn-manual", "btn-ir-gate", "pulso-global", "entrada-inicio", "res-cifras"]) assert.ok(landing.includes(`id="${id}"`), `la landing debe tener #${id}`);
       const inicio = landing.slice(landing.indexOf('id="entrada-inicio"'), landing.indexOf('<!-- progreso de la extracción -->'));
@@ -13900,12 +13901,27 @@ async function main() {
       const palabras = textoVisible.trim().split(" ").length;
       assert.ok(palabras < 260, `la landing tiene ${palabras} palabras (formularios plegados incluidos): el tope es 260 — era una página de 870`);
       assert.ok(/<div id="pulso-global" class="hidden/.test(landing), "el teaser nace oculto: solo aparece si el agregado existe");
-      // (3) el tablero: pulso arriba, mercado plegado
-      const tab = htmlL.slice(iTab);
-      for (const id of ["pulso", "pu-hero", "pu-departamentos", "pu-entidades", "pu-nota", "mercado-completo", "pt-vacio"]) assert.ok(tab.includes(`id="${id}"`), `falta #${id} en la pestaña Licitaciones`);
+      /* (3) MI EMPRESA ES LA PESTAÑA PRINCIPAL (ago 2026): el pulso vive arriba de
+         Mi empresa (primer <main>, sin `hidden`), con el mercado plegado debajo;
+         Licitaciones (segundo <main>, `hidden`) empieza por la barra de
+         herramientas y la lista. Las pestañas van en ese orden y la activa es
+         Mi empresa. */
+      const tab = htmlL.slice(iTabAdmin, iTab);
+      assert.ok(iTabAdmin < iTab && iTab < htmlL.indexOf('id="tab-apu"'), "orden de los paneles: Mi empresa → Licitaciones → Precios");
+      assert.ok(/<main id="tab-admin" class="panel-pestana mx-auto max-w-6xl/.test(htmlL) && /<main id="tab-licitaciones" class="panel-pestana mx-auto hidden/.test(htmlL), "Mi empresa nace visible; Licitaciones, oculta");
+      for (const id of ["pulso", "pu-hero", "pu-departamentos", "pu-entidades", "pu-nota", "mercado-completo", "pt-vacio", "rup-cifras", "seccion-rup"]) assert.ok(tab.includes(`id="${id}"`), `falta #${id} en la pestaña Mi empresa`);
       assert.ok(/<section id="pulso" class="hidden/.test(tab), "el pulso nace OCULTO (vacío y honesto hasta que hay datos)");
-      assert.ok(tab.indexOf('id="pulso"') < tab.indexOf('id="mercado-completo"') && tab.indexOf('id="mercado-completo"') < tab.indexOf('id="f-ordenar"'), "orden: pulso → mercado plegado → controles → lista");
+      assert.ok(tab.indexOf('id="pulso"') < tab.indexOf('id="mercado-completo"') && tab.indexOf('id="mercado-completo"') < tab.indexOf('id="seccion-rup"'), "orden en Mi empresa: pulso → mercado plegado → registro en cifras");
       assert.ok(/<details id="mercado-completo"(?![^>]*\bopen\b)/.test(tab), "el mercado completo nace PLEGADO");
+      const lic = htmlL.slice(iTab, htmlL.indexOf('id="tab-apu"'));
+      assert.ok(!lic.includes('id="pulso"') && lic.indexOf('id="f-ordenar"') > 0, "Licitaciones ya no lleva el pulso: empieza por la barra de herramientas");
+      const nav = htmlL.slice(htmlL.indexOf('aria-label="Secciones"'), htmlL.indexOf("</nav>"));
+      assert.ok(nav.indexOf('data-tab="admin"') < nav.indexOf('data-tab="licitaciones"') && nav.indexOf('data-tab="licitaciones"') < nav.indexOf('data-tab="apu"') && /data-tab="admin" class="pestana activa"/.test(nav), "pestañas: Mi empresa (activa) · Licitaciones · Precios");
+      // lo que hay que TOCAR en Mi empresa va plegado; lo que hay que VER, a la vista
+      for (const id of ["rup-gestion", "exp-gestion"]) assert.ok(new RegExp(`<details id="${id}"(?![^>]*\\bopen\\b)`).test(tab), `#${id} nace plegado`);
+      assert.ok(tab.indexOf('id="exp-actual"') < tab.indexOf('id="exp-gestion"'), "la experiencia cargada se ve ANTES del pliegue de carga");
+      const palabrasEmpresa = tab.replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().split(" ").length;
+      assert.ok(palabrasEmpresa < 1400, `Mi empresa (con Sistema plegado incluido) tiene ${palabrasEmpresa} palabras en el HTML`);
       assert.ok(htmlL.indexOf('<script src="/pulso.js">') < htmlL.indexOf('<script src="/app.js">'), "pulso.js se carga antes que app.js");
       const appL = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
       assert.ok(/function refrescarPulso\(\)/.test(appL) && /refrescarPulso\(\);\s*\n\s*\}/.test(appL.slice(appL.indexOf("function abrirApp"), appL.indexOf("function abrirApp") + 900)), "abrirApp refresca el pulso");
@@ -13913,6 +13929,37 @@ async function main() {
       assert.ok(/window\.Portada\.teaser\(\)/.test(appL), "la landing arranca el TEASER, no la portada entera");
       assert.ok(/mercadoCompleto\.open && window\.Portada\) window\.Portada\.arrancar\(\)/.test(appL), "la portada entera se pide al ABRIR el pliegue, no antes");
       assert.ok(/aplicarFiltroDelPulso/.test(appL) && /cambiarFiltros\(window\.Filtros\.leerEstado\(params\)\)/.test(appL), "las cifras del pulso filtran la lista EN LA MISMA PÁGINA con el mismo leerEstado de la URL");
+      // el pulso vive en Mi empresa: la cifra LLEVA a la lista (cambia de pestaña) y sin hash se abre Mi empresa
+      const fnPulso = appL.slice(appL.indexOf("function aplicarFiltroDelPulso"), appL.indexOf("function aplicarFiltroDelPulso") + 900);
+      assert.ok(/activarPestana\("licitaciones"\)/.test(fnPulso), "aplicarFiltroDelPulso cambia a la pestaña Licitaciones");
+      const fnAbrir = appL.slice(appL.indexOf("function abrirApp"), appL.indexOf("function abrirApp") + 1200);
+      assert.ok(/activarPestana\(hash \|\| \(conFiltros \? "licitaciones" : "admin"\)/.test(fnAbrir), "sin hash se abre Mi empresa; con filtros en la URL, la lista");
+      assert.ok(/const destino = PESTANAS\.includes\(pedido\) \? pedido : "admin"/.test(appL) && /empresa: "admin"/.test(appL), "la pestaña por defecto es Mi empresa y #/empresa es su alias");
+      // el bloque `empresa` del pulso: sin token no viajan patrimonio ni capacidad; con token sí; token inválido → 401
+      {
+        const sinT = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=helder&refrescar=1");
+        assert.strictEqual(sinT.status, 200);
+        assert.ok(sinT.cuerpo.empresa && sinT.cuerpo.empresa.tipos_de_trabajo === 193 && sinT.cuerpo.empresa.experiencia_smmlv > 0 && sinT.cuerpo.empresa.contratos_acreditados === 33, `empresa en cifras: ${JSON.stringify(sinT.cuerpo.empresa)}`);
+        assert.strictEqual(sinT.cuerpo.empresa.finanzas_visibles, false);
+        assert.strictEqual(sinT.cuerpo.empresa.patrimonio, null, "sin token el patrimonio no viaja");
+        assert.strictEqual(sinT.cuerpo.empresa.capacidad_contratacion, null);
+        const conT = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=helder", { "x-historico-token": process.env.HISTORICO_TOKEN });
+        assert.strictEqual(conT.status, 200);
+        assert.strictEqual(conT.cuerpo.cache, true, "la segunda lectura sale de la caché…");
+        assert.strictEqual(conT.cuerpo.empresa.finanzas_visibles, true);
+        assert.strictEqual(conT.cuerpo.empresa.patrimonio, 1107252964, "…y aun así el patrimonio viaja con token: `empresa` no se cachea");
+        assert.ok(conT.cuerpo.empresa.capacidad_contratacion > 0);
+        const cacheSin = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=helder");
+        assert.strictEqual(cacheSin.cuerpo.empresa.patrimonio, null, "la caché escrita por la petición con token no filtra el patrimonio a la siguiente sin token");
+        const mal = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=helder", { "x-historico-token": "mal" });
+        assert.strictEqual(mal.status, 401, "token presente e inválido → 401, no degradación silenciosa");
+        // pulso.js pinta «—» sin dato y no inventa un 0
+        const P = require("../public/pulso.js");
+        const h = P.htmlEmpresa({ tipos_de_trabajo: 5, familias: 2, experiencia_smmlv: null, contratos_acreditados: null, tope_smmlv: null, finanzas_visibles: false });
+        assert.ok(/>5</.test(h) && (h.match(/>—</g) || []).length === 2 && !/patrimonio/.test(h), "sin finanzas no se pintan; sin dato, «—»");
+        const h2 = P.htmlEmpresa({ tipos_de_trabajo: 5, familias: 2, experiencia_smmlv: 100, contratos_acreditados: 3, tope_smmlv: 4000, finanzas_visibles: true, patrimonio: 1107252964, capacidad_contratacion: 5e9 });
+        assert.ok(/1\.107 millones/.test(h2) && /5\.000 millones/.test(h2) && /4\.000/.test(h2), `con finanzas: ${h2.slice(0, 200)}`);
+      }
       const onbL = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8"));
       assert.ok(/\$\("res-cifras"\)/.test(onbL) && /cierranEstaSemana/.test(onbL), "la pantalla de resultado pinta las cifras (cuántas · cuánto · cierran esta semana)");
       // (4) plantillas
@@ -14091,7 +14138,7 @@ async function main() {
       /* ---- (5) frontend ---- */
       const htmlC = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
       for (const id of ["seccion-consorcio", "cons-integrantes", "cons-participaciones", "cons-suma", "cons-resultado", "cons-mensaje", "cons-guardados"]) assert.ok(htmlC.includes(`id="${id}"`), `falta #${id}`);
-      assert.ok(/<section id="seccion-consorcio" class="mt-8 hidden/.test(htmlC), "«Crear consorcio» nace oculto: solo aparece con 2 o más perfiles cargados");
+      assert.ok(/<section id="seccion-consorcio" class="hidden/.test(htmlC), "«Crear consorcio» nace oculto: solo aparece con 2 o más perfiles cargados");
       const appC = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
       assert.ok(/if \(perfiles\.length < 2\) \{ sec\.classList\.add\("hidden"\); return; \}/.test(appC), "con un solo perfil el bloque no existe");
       assert.ok(/100 % ● Correcto/.test(appC) && /para llegar a 100 %/.test(appC), "la suma se explica en una línea");

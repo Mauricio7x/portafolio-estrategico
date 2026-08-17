@@ -76,8 +76,15 @@
     if (gate) gate.remove();
     $("app").classList.remove("hidden");
     let hash = "";
-    try { hash = (location.hash.match(/^#\/([a-z]+)/) || [])[1] || ""; } catch { hash = ""; }
-    activarPestana(hash || "licitaciones", { empujarHash: false });
+    try { hash = (location.hash.match(/^#\/([a-z-]+)/) || [])[1] || ""; } catch { hash = ""; }
+    /* Sin hash se abre MI EMPRESA (la pestaña principal desde ago 2026): las
+       cifras de esta empresa antes que la lista. Un enlace con filtros de la
+       Fase 8 (`?cierre=7d`, `?dep=73`) es un enlace A LA LISTA y abre
+       Licitaciones aunque no traiga hash — la puerta de entrada y la portada
+       los generan así. */
+    let conFiltros = false;
+    try { conFiltros = [...new URLSearchParams(location.search).keys()].some((k) => k !== "perfil"); } catch { conFiltros = false; }
+    activarPestana(hash || (conFiltros ? "licitaciones" : "admin"), { empujarHash: false });
     buscar();
     refrescarPulso();
   }
@@ -94,7 +101,9 @@
     const sel = $("f-perfil");
     const perfil = sel ? sel.value : "";
     const nombre = sel && sel.selectedOptions[0] ? sel.selectedOptions[0].text.replace(/^Consorcio · /, "") : "";
-    window.Pulso.arrancar(perfil, { nombre }).catch(() => {});
+    // con el token viajan las cifras del perfil (patrimonio, capacidad) para «Tu registro»
+    const t = tokenGuardado();
+    window.Pulso.arrancar(perfil, { nombre, headers: t ? { "x-historico-token": t } : null }).catch(() => {});
   }
   document.getElementById("pulso").addEventListener("click", (ev) => {
     const el = ev.target.closest("[data-filtro]");
@@ -116,6 +125,8 @@
        enlace pegado en Chrome significan exactamente lo mismo */
     const params = new URLSearchParams(String(filtro || "") === "todo" ? "" : String(filtro || ""));
     cambiarFiltros(window.Filtros.leerEstado(params));
+    // el pulso vive en Mi empresa y la lista en Licitaciones: la cifra LLEVA a la lista
+    activarPestana("licitaciones");
     const lista = $("lista");
     if (lista && lista.scrollIntoView) lista.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -152,9 +163,13 @@
      PRIMERA vez que se abre: abrir la app no dispara el panel de admin ni la
      carga del catálogo de APU si nadie los mira. */
   const PESTANAS = ["licitaciones", "apu", "admin"];
+  /* Alias legibles en la URL: la pestaña principal se llama «Mi empresa» y su
+     panel sigue siendo #tab-admin (renombrar ids mataría media suite). */
+  const ALIAS_PESTANA = { empresa: "admin", "mi-empresa": "admin", precios: "apu" };
   const arrancadas = { apu: false, admin: false, pliego: false };
   function activarPestana(nombre, { empujarHash = true } = {}) {
-    const destino = PESTANAS.includes(nombre) ? nombre : "licitaciones";
+    const pedido = ALIAS_PESTANA[nombre] || nombre;
+    const destino = PESTANAS.includes(pedido) ? pedido : "admin";
     for (const p of PESTANAS) {
       const seccion = $(`tab-${p}`);
       if (seccion) seccion.classList.toggle("hidden", p !== destino);
@@ -177,7 +192,7 @@
   });
   window.addEventListener("hashchange", () => {
     let hash = "";
-    try { hash = (location.hash.match(/^#\/([a-z]+)/) || [])[1] || ""; } catch { hash = ""; }
+    try { hash = (location.hash.match(/^#\/([a-z-]+)/) || [])[1] || ""; } catch { hash = ""; }
     if (hash) activarPestana(hash, { empujarHash: false });
   });
 
