@@ -1142,8 +1142,10 @@
     const porVerificar = (m.familia || 0) + (m.equivalente || 0) + (m.texto || 0);
     /* Contador siempre visible (Fase 8): «23 de 312 licitaciones» — el usuario
        tiene que ver cuánto está escondiendo con sus filtros. */
-    const base = cuerpo.totalSinFiltros != null ? cuerpo.totalSinFiltros : cuerpo.total;
-    const conFiltros = base !== cuerpo.total || FL.fichas(estadoFiltros).length > 0;
+    /* la base es la lista POR DEFECTO (la misma N del pulso), no la anterior al
+       filtro por defecto: «126 de 771», no «126 de 827» */
+    const base = cuerpo.totalPorDefecto != null ? cuerpo.totalPorDefecto : (cuerpo.totalSinFiltros != null ? cuerpo.totalSinFiltros : cuerpo.total);
+    const conFiltros = FL.fichas(estadoFiltros).length > 0;
     $("resumen-resultados").textContent =
       (conFiltros ? `${cuerpo.total} de ${base} licitaciones` : `${cuerpo.total} oportunidad${cuerpo.total === 1 ? "" : "es"}`)
       + ` para el perfil «${$("f-perfil").selectedOptions[0].text}»`
