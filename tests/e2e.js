@@ -13645,6 +13645,23 @@ async function main() {
       assert.strictEqual((await invocar(routerPerfil, "/api/perfil?op=pulso")).status, 400);
       const puCad = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=rup_noexiste0001");
       assert.strictEqual(puCad.status, 404); assert.strictEqual(puCad.cuerpo.perfil_caducado, true, "un rup_ inexistente responde caducado (la web olvida el guardado)");
+      /* LOS FILTROS POR DEFECTO DEL LISTADO también cuentan aquí (17-ago-2026,
+         destapado en producción: pulso 827 vs lista 771). El listado apaga
+         «suministro» por defecto; si el conteo de la entrada/pulso no lo
+         aplicara, «Hoy hay N» y «Ver las N» dirían una N que la lista no
+         enseña. Con filas sintéticas: un suministro puro sale, un «suministro
+         e instalación» (obra) y una obra se quedan. El corpus de la suite no
+         trae suministros viables, así que la igualdad de arriba no lo vigila. */
+      {
+        const { filtrarPorDefecto } = require("../lib/handlers/perfil/entrada.js");
+        const filas = [
+          { l: { _k: "obra", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA VEREDA X", tipo_de_contrato: "Obra", precio_base: "100" } },
+          { l: { _k: "sum", nombre_del_procedimiento: "SUMINISTRO DE MATERIALES PARA LA VIA", tipo_de_contrato: "Suministro", precio_base: "100" } },
+          { l: { _k: "sumobra", nombre_del_procedimiento: "SUMINISTRO E INSTALACION DE TUBERIA PARA ACUEDUCTO", tipo_de_contrato: "Suministro", precio_base: "100" } },
+        ];
+        assert.deepStrictEqual(filtrarPorDefecto(filas, { veredictos: new Map() }).map((x) => x.l._k), ["obra", "sumobra"], "el conteo de la entrada/pulso aplica el MISMO filtro por defecto que el listado (suministro apagado; suministro e instalación es obra)");
+        assert.strictEqual(typeof pu.cuerpo.ocultosPorFiltroDefecto, "number", "lo que el filtro por defecto deja fuera se publica");
+      }
       // el rup_ recién creado por la puerta de entrada también tiene pulso, y su total es el de su listado
       const ent = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { manual: { patrimonio: 900000000, mayorContrato: 3000000000, unidad: "COP", actividad: "vias" } });
       if (ent.status === 200 && ent.cuerpo.perfil_id) {

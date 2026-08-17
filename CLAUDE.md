@@ -3464,6 +3464,16 @@ subida del RUP. Ahora mide un viewport (900 px) y 81 palabras. Decisiones:
   la primera vez que alguien lo abre — `Portada.arrancar` en el `toggle`). Las cifras del pulso **filtran
   la lista EN LA MISMA PÁGINA** (`data-filtro` → `cambiarFiltros`), no recargan. `refrescarPulso` corre en
   `abrirApp` y al cambiar `f-perfil`. Sin datos, `#pulso` sigue oculto; `null` jamás se pinta como 0.
+- **PRODUCCIÓN DESTAPÓ UNA BRECHA QUE LA SUITE NO PODÍA VER: pulso 827 vs lista 771.** El listado
+  aplica desde la Fase 8 el filtro por defecto (`suministro` apagado) y `contarOportunidades` —la puerta
+  de entrada, el simulador de consorcio y ahora el pulso— no lo sabía: «Hoy hay N» / «Ver las N» decían
+  una N que la lista no enseñaba (defecto latente desde la Fase 8, que llegó después de la Fase 2). Ahora
+  `filtrarPorDefecto` aplica el MISMO `FiltrosLista.cumple` con el estado vacío y los mismos veredictos, y
+  publica `ocultosPorFiltroDefecto`. El corpus de la suite no trae suministros viables, así que la
+  igualdad total == listado pasaba por casualidad; la prueba nueva usa filas sintéticas (suministro puro
+  fuera; «suministro e instalación» dentro). Lección: **una igualdad probada sobre un corpus que no
+  ejercita la diferencia no prueba nada** — la verificación en producción con el `total` real es
+  obligatoria tras cada merge.
 - **`Portada.htmlHero(p, {conBoton})`**: dentro del tablero el botón «Ver a cuáles puedo presentarme»
   sobra (ya entró); el contrato por defecto se conserva.
 - **La pantalla de resultado de la entrada va en CIFRAS** (`#res-cifras`: cuántas · cuánto · cierran esta
