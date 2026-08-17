@@ -3,7 +3,8 @@
    Envuelve al antiguo /api/competencia-detalle, que ya era multi-vista:
    `entidad` (los procesos que sostienen el badge de competencia),
    `adjudicatario` (el perfil del competidor), `probabilidad` (el desglose
-   justificado de P(ganar)) y `paa` (lo que va a salir antes de que salga).
+   justificado de P(ganar)), `paa` (lo que va a salir antes de que salga) y
+   `socio` (la due diligence de 20 minutos antes de firmar un consorcio).
    Todas responden la misma pregunta —«¿de dónde sale ese dato de la
    tarjeta?»— y por eso viven juntas.
 
@@ -19,6 +20,7 @@ const VISTA_POR_OP = {
   adjudicatario: "adjudicatario",
   probabilidad: "probabilidad",
   paa: "paa",
+  socio: "socio",
 };
 
 module.exports = async function handler(req, res) {
