@@ -2017,8 +2017,8 @@
        que resolverse por el mismo camino. Van DESPUÉS de los del catálogo (el
        orden del buscador los enseña detrás). `items_invias` se conserva para
        poder distinguirlos. */
-    if (Array.isArray(r.items_invias) && r.items_invias.length) {
-      CATALOGO.items = (Array.isArray(r.items) ? r.items : []).concat(r.items_invias);
+    if ((Array.isArray(r.items_invias) && r.items_invias.length) || (Array.isArray(r.items_idu) && r.items_idu.length)) {
+      CATALOGO.items = (Array.isArray(r.items) ? r.items : []).concat(r.items_invias || [], r.items_idu || []);
     }
 
     $("aviso-precios").textContent = r.aviso
@@ -2380,7 +2380,7 @@
   function pintarBusqueda() {
     const lista = $("buscar-lista");
     if (!resultadosBusqueda.length) {
-      lista.innerHTML = `<p class="px-3 py-2 text-xs text-gray-400">Sin resultados en el catálogo ni en los APU de referencia del INVIAS. Cargue un Excel o cree el ítem calculando con un precio manual.</p>`;
+      lista.innerHTML = `<p class="px-3 py-2 text-xs text-gray-400">Sin resultados en el catálogo ni en los APU de referencia del INVIAS o del IDU. Cargue un Excel o cree el ítem calculando con un precio manual.</p>`;
       lista.classList.remove("hidden");
       return;
     }
@@ -2395,7 +2395,7 @@
       return `${cabecera}<button type="button" data-cod="${esc(it.codigo)}" data-n="${n}"
           class="block w-full px-3 py-1.5 text-left text-xs transition hover:bg-gray-100">
           <span class="font-medium">${esc(it.es_invias ? String(it.descripcion).split("(")[0].trim() : it.descripcion)}</span>
-          <span class="block text-[10px] text-gray-400">${it.es_invias ? `Ítem de pago INVIAS ${esc(it.item_de_pago)} · referencia oficial` : esc(it.codigo)} · ${esc(it.unidad || "—")}</span>
+          <span class="block text-[10px] text-gray-400">${it.es_invias ? `Ítem de pago INVIAS ${esc(it.item_de_pago)} · referencia oficial` : it.es_idu ? `APU IDU ${esc(it.codigo_idu)} · precio de referencia Bogotá` : esc(it.codigo)} · ${esc(it.unidad || "—")}</span>
         </button>`;
     }).join("");
     lista.classList.remove("hidden");
@@ -2521,7 +2521,7 @@
         <td class="py-2 pr-3 text-right">
           <input type="number" min="0" step="any" data-campo="precio" data-fila="${i}"
                  value="${f.precio_manual == null ? "" : f.precio_manual}"
-                 placeholder="${f.item_id ? (/^INVIAS:/.test(f.item_id) ? "ref. INVIAS" : "del catálogo") : "requerido"}"
+                 placeholder="${f.item_id ? (/^INVIAS:/.test(f.item_id) ? "ref. INVIAS" : /^IDU:/.test(f.item_id) ? "ref. IDU" : "del catálogo") : "requerido"}"
                  class="edit w-28 rounded border border-gray-200 px-2 py-1 text-right num">
         </td>
         <td class="py-2 pr-3 text-right num font-medium" data-celda="unitario-${i}">—</td>
@@ -2691,6 +2691,7 @@
       caja.innerHTML = `<p class="text-[11px] text-gray-400">${
         !ultimoCalculo ? "Pulse «Calcular cuánto me cuesta» para ver el desglose de este ítem."
           : it && it.incompleto ? esc(it.mensaje || "Este ítem no tiene precio: escriba uno o asígnele un ítem del catálogo. Sin precio NO suma al total.")
+            : it && it.origen_precio === "idu" ? `Precio de referencia oficial del IDU ${esc((it.referencia_idu_apu || {}).vigencia || "")} para Bogotá (APU ${esc((it.referencia_idu_apu || {}).codigo_idu || "")}, publicado ${esc((it.referencia_idu_apu || {}).publicado || "")}): el visor del IDU no publica su composición.${(it.referencia_idu_apu || {}).ajuste_regional === "ninguno" ? " La obra no está en Bogotá y el precio va SIN ajuste regional." : ""} Es una referencia, no una cotización.`
             : it && it.sin_apu ? "Este ítem lleva un precio escrito a mano o traído del archivo: no tiene APU de respaldo en el catálogo."
               : "Este ítem no tiene composición en el catálogo."}</p>`;
       /* La cascada se pinta TAMBIÉN aquí, y es donde más falta hace: estos son
@@ -2827,6 +2828,7 @@
        va en verde) ni un precio sin respaldo (no va en ámbar): es una
        referencia oficial con vigencia declarada, y su chip lo dice. */
     invias: "bg-sky-100 text-sky-800",
+    idu: "bg-sky-100 text-sky-800",
     derivado: "bg-amber-100 text-amber-800",
     archivo: "bg-amber-100 text-amber-800",
     manual: "bg-gray-100 text-gray-600",
@@ -2911,7 +2913,8 @@
       if (!fila) return;
       fila.classList.toggle("bg-red-50", !!it.incompleto);
       // ámbar = suma al total con precio manual/del archivo, sin APU detrás
-      fila.classList.toggle("bg-amber-50", !it.incompleto && !!it.sin_apu);
+      // el precio de referencia IDU también va sin composición, pero es oficial: no se pinta como manual
+      fila.classList.toggle("bg-amber-50", !it.incompleto && !!it.sin_apu && it.origen_precio !== "idu");
       const campos = [
         ["material", it.costo_material_unitario], ["mano_obra", it.costo_mano_obra_unitario],
         ["equipo", it.costo_equipo_unitario], ["transporte", it.costo_transporte_unitario],
@@ -3399,7 +3402,7 @@
     $("imp-resumen").textContent = `${importacion.nombre_archivo} · ${m.total} ítems · `
       + `${m.firmes} firmes · ${m.revisar} por revisar · ${m.personalizados} personalizados · `
       + `${m.con_precio_archivo} con precio del archivo · ${conTienda} con precio de tienda`
-      + (m.mapeados_invias ? ` · ${m.mapeados_invias} con APU de referencia INVIAS` : "") + textoCuadre;
+      + (m.mapeados_invias ? ` · ${m.mapeados_invias} con APU de referencia INVIAS` : "") + (m.mapeados_idu ? ` · ${m.mapeados_idu} con precio de referencia IDU` : "") + textoCuadre;
     $("imp-avisos").innerHTML = (importacion.avisos_lectura || [])
       .map((a) => `<p class="rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-900">${esc(a)}</p>`).join("");
 
@@ -3410,7 +3413,7 @@
        cabecera (gradación, método): se tomó la primera y se enseñan las otras. */
     const origenMapeo = (f) => {
       if (!f.item_id) return "";
-      const banco = f.fuente_mapeo === "invias" ? "APU de referencia INVIAS" : "catálogo";
+      const banco = f.fuente_mapeo === "invias" ? "APU de referencia INVIAS" : f.fuente_mapeo === "idu" ? "precio de referencia IDU (Bogotá)" : "catálogo";
       const desc = f.fuente_mapeo === "invias" ? String(f.descripcion_catalogo || "").split("(")[0].trim() : (f.descripcion_catalogo || "");
       const variantes = (f.variantes || []).length
         ? ` <span class="text-[10px] text-gray-400" title="${esc((f.variantes || []).map((v) => `${v.codigo}: ${v.descripcion}`).join("\n"))}">(+${f.variantes.length} variante${f.variantes.length === 1 ? "" : "s"} INVIAS de la misma cabecera; se tomó la primera)</span>` : "";

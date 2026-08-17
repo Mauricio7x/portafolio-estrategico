@@ -10174,7 +10174,7 @@ async function main() {
         /* TODOS los niveles se publican, también los que no respondieron: sin
            eso no se distingue «esta fuente no tenía el dato» de «ni se miró». */
         const cascada = sinNada.items[0].cascada;
-        assert.deepStrictEqual(cascada.map((c) => c.nivel), ["usuario", "pliego", "mercado", "retail", "invias", "catalogo", "invias_apu"]);
+        assert.deepStrictEqual(cascada.map((c) => c.nivel), ["usuario", "pliego", "mercado", "retail", "invias", "catalogo", "invias_apu", "idu_apu"]);
         for (const paso of cascada) {
           assert.strictEqual(paso.respondio, false);
           assert.ok(paso.motivo && paso.motivo.length > 10, `el nivel ${paso.nivel} no dice por qué no respondió`);
@@ -10606,7 +10606,7 @@ async function main() {
             { descripcion: "Mezcla densa en caliente tipo MDC-19", unidad: "m3", cantidad: 100 },
             { descripcion: "Riego de imprimación con emulsión asfáltica", unidad: "m2", cantidad: 3000 },
             { descripcion: "Pisos en alfagres", unidad: "m2", cantidad: 75 },
-            { descripcion: "Obra de arte conmemorativa en bronce", unidad: "und", cantidad: 1 },
+            { descripcion: "Escultura conmemorativa", unidad: "und", cantidad: 1 },
           ];
           const mv = impII.mapearFilasImportadas(filasVial, require("../lib/apu/catalogo.js").SEMILLA);
           assert.deepStrictEqual(mv.filas.slice(0, 4).map((f) => [f.nivel_mapeo, f.fuente_mapeo]),
@@ -10633,7 +10633,7 @@ async function main() {
           assert.strictEqual(comoCat.length, 526);
           assert.ok(comoCat.every((i) => /^INVIAS:/.test(i.codigo) && i.es_invias === true && i.descripcion && i.unidad));
           const appJsII = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
-          assert.ok(/items_invias/.test(appJsII) && /concat\(r\.items_invias\)/.test(appJsII), "app.js junta items_invias al catálogo para buscar y añadir");
+          assert.ok(/items_invias/.test(appJsII) && /concat\(r\.items_invias \|\| \[\], r\.items_idu \|\| \[\]\)/.test(appJsII), "app.js junta items_invias (y items_idu) al catálogo para buscar y añadir");
           assert.ok(/CLASES_ORIGEN[\s\S]*invias:/.test(appJsII), "el badge tiene clase para el estado invias");
           const editorII = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "apu", "editor.js"), "utf8");
           assert.ok(/items_invias: InviasItems\.comoItemsDeCatalogo\(\)/.test(editorII), "la acción catalogo publica items_invias");
@@ -10642,6 +10642,84 @@ async function main() {
           assert.ok(busq.length && busq[0].codigo === "INVIAS:320,3,1", `buscar por nombre: ${busq[0] && busq[0].codigo}`);
 
           console.log(`· unidad APU INVIAS ítems: 526 ítems × 33 departamentos = ${combos} APU que cuadran al peso · motor/cotizar/badge/Excel/importador con origen «invias» declarado · ida y vuelta por Excel sin envenenar el mapeo`);
+        }
+
+        /* --- lib/apu/idu_items: los 3 172 precios de referencia del IDU (Bogotá,
+           2026-I) como segundo banco oficial (ago 2026). SOLO precio, SOLO
+           Bogotá: sale sin composición (`sin_apu`, a `sin_desglose`), fuera de
+           Bogotá se declara, y en el importador comparte familia con el INVIAS
+           (el mismo ítem en dos bancos no es una duda) y gana el banco LOCAL. --- */
+        {
+          const ID = require("../lib/apu/idu_items.js");
+          const datosID = require("../data/apu_idu_items.json");
+          const calcID = require("../lib/apu/calculo.js");
+          const impID = require("../lib/apu/importar.js");
+          const LibroID = require("../public/apu_libro.js");
+          const meta = ID.meta();
+          assert.ok(meta.items >= 3000 && meta.vigencia === "2026-I" && meta.publicado === "2026-07-29", `meta IDU: ${JSON.stringify(meta)}`);
+          assert.ok(datosID.items.every((it) => it.precio > 0 && it.descripcion && it.codigo), "ningún ítem IDU sin precio, descripción o código (un 0 sería un precio inventado)");
+          assert.ok(!datosID.items.some((it) => /proyecto espec/i.test(it.capitulo || "")), "los APU de proyecto específico NO entran (el visor dice que solo valen para su proyecto)");
+          const enBog = ID.precioReferencia("IDU:3027", "BOGOTA D.C.");
+          const enTol = ID.precioReferencia("IDU:3027", "TOLIMA");
+          assert.ok(enBog.precio > 0 && enBog.precio === enTol.precio, "el precio IDU es el de Bogotá en todas partes: no se regionaliza");
+          assert.strictEqual(enBog.ajuste_regional, "bogota"); assert.strictEqual(enTol.ajuste_regional, "ninguno");
+          assert.ok(/sin ajuste/.test(enTol.nota_regional || ""), "fuera de Bogotá se DECLARA");
+          assert.strictEqual(ID.precioReferencia("IDU:no", "TOLIMA"), null); assert.strictEqual(ID.precioReferencia("INVIAS:200,1,1", "TOLIMA"), null);
+          // motor: sin composición → sin_apu, sin_desglose; manual manda; alerta propia
+          const r = calcID.calcularPresupuesto({ items: [{ item_id: "IDU:3027", cantidad: 10 }, { item_id: "IDU:3027", cantidad: 1, precio_manual: 50000 }, { item_id: "INVIAS:210,2,2", cantidad: 1 }], departamento: "TOLIMA" });
+          const [idu, iduMan, inv] = r.items;
+          assert.strictEqual(idu.origen_precio, "idu"); assert.strictEqual(idu.sin_apu, true); assert.strictEqual(idu.incompleto, false);
+          assert.strictEqual(idu.costo_directo_unitario, enTol.precio); assert.strictEqual(idu.costo_total, enTol.precio * 10);
+          assert.ok(idu.referencia_idu_apu && idu.referencia_idu_apu.vigencia === "2026-I" && idu.referencia_idu_apu.ajuste_regional === "ninguno");
+          assert.ok(idu.aviso && /sin ajuste/.test(idu.aviso), "fuera de Bogotá el ítem avisa");
+          assert.ok(idu.cascada.pasos.map((p) => `${p.nivel}:${p.respondio}`).includes("idu_apu:true"));
+          assert.strictEqual(iduMan.origen_precio, "manual"); assert.strictEqual(iduMan.cd_catalogo, enTol.precio, "el precio manual manda y la referencia IDU queda como cd_catalogo");
+          const pc = r.resumen.por_componente;
+          assert.strictEqual(pc.sin_desglose, enTol.precio * 10 + 50000, "el IDU (solo precio) va a sin_desglose, como el manual");
+          assert.strictEqual(pc.material + pc.mano_obra + pc.equipo + pc.transporte + pc.sin_desglose, r.resumen.costo_directo_total);
+          assert.ok(r.alertas.some((a) => /precio de referencia del IDU 2026-I/.test(a) && /SIN ajuste regional/.test(a)), `alerta IDU: ${r.alertas.join(" | ")}`);
+          assert.ok(!r.alertas.some((a) => /2 ítem\(s\) llevan precio del archivo/.test(a)), "el IDU no se cuenta como precio tecleado a mano");
+          const enBogota = calcID.calcularPresupuesto({ items: [{ item_id: "IDU:3027", cantidad: 1 }], departamento: "BOGOTA D.C." });
+          assert.strictEqual(enBogota.items[0].aviso, null, "en Bogotá no hay aviso de ajuste");
+          assert.ok(inv.origen_precio === "invias" && inv.cascada.pasos.some((p) => p.nivel === "idu_apu" && !p.respondio && /IDU/.test(p.motivo)));
+          // cotizar por el mismo camino
+          const cot = require("../lib/apu/precios.js").cotizar({ items: [{ item_id: "IDU:3027", cantidad: 10 }], departamento: "TOLIMA" });
+          assert.strictEqual(cot.items[0].fuente, "idu_apu"); assert.strictEqual(cot.items[0].precio_unitario, enTol.precio);
+          // badge y Excel
+          const org = LibroID.clasificarOrigen(idu, r);
+          assert.strictEqual(org.estado, "idu"); assert.ok(/^IDU 2026-I · Bogotá/.test(org.etiqueta)); assert.ok(/SIN ajuste/.test(org.motivo));
+          const hojas = LibroID.construirLibroNogal(r, { titulo: "IDU", fecha: "2026-08-17" });
+          assert.ok(/🔵 IDU 2026-I/.test(JSON.stringify(hojas[0].filas)) && /PRECIO DE REFERENCIA IDU 2026-I/.test(JSON.stringify(hojas[1].filas)));
+          // el importador: el mismo ítem en dos bancos gana el LOCAL; «clase C» se distingue de «clase B»; poda sin cambiar decisiones
+          const filas = [
+            { descripcion: "Subbase granular clase C", unidad: "m3", cantidad: 300 },
+            { descripcion: "Sardinel tipo A10 suministro e instalación", unidad: "ml", cantidad: 200 },
+            { descripcion: "PENDIENTE-POSIBLE USO DE RIEL Y LUMINARIA SYLVANIA", unidad: "UND", cantidad: 24 },
+            { descripcion: "Pisos en alfagres", unidad: "m2", cantidad: 75 },
+          ];
+          const tol = impID.mapearFilasImportadas(filas, require("../lib/apu/catalogo.js").SEMILLA, { departamento: "TOLIMA" });
+          const bog = impID.mapearFilasImportadas(filas, require("../lib/apu/catalogo.js").SEMILLA, { departamento: "BOGOTA D.C." });
+          assert.deepStrictEqual([tol.filas[0].nivel_mapeo, tol.filas[0].fuente_mapeo, tol.filas[0].item_id], ["firme", "invias", "INVIAS:320,3,1"], "fuera de Bogotá gana el INVIAS (regionalizado)");
+          assert.deepStrictEqual([bog.filas[0].nivel_mapeo, bog.filas[0].fuente_mapeo], ["firme", "idu"], `en Bogotá gana el IDU: ${JSON.stringify(bog.filas[0].item_id)}`);
+          assert.ok(/CLASE C/.test(bog.filas[0].descripcion_catalogo), "«clase C» ya no se confunde con «clase B» (token clasec)");
+          assert.deepStrictEqual([tol.filas[1].nivel_mapeo, tol.filas[1].fuente_mapeo], ["firme", "idu"]);
+          assert.ok(tol.filas[1].variantes.length >= 1, "las variantes IDU de la misma cabecera se publican");
+          assert.strictEqual(tol.filas[2].nivel_mapeo, "revisar", "PENDIENTE sigue en revisar: la cobertura total exige que TODOS los términos casen");
+          assert.deepStrictEqual([tol.filas[3].nivel_mapeo, tol.filas[3].item_id], ["firme", "NOG-B2"]);
+          assert.strictEqual(tol.resumen_mapeo.mapeados_idu, 1);
+          const { terminosItem: tk } = require("../lib/apu_mapeo.js");
+          assert.deepStrictEqual(tk("Subbase granular clase C"), ["subbase", "granular", "clasec"]);
+          assert.deepStrictEqual(tk("Sardinel tipo A10"), ["sardinel", "a10"], "«tipo A10» no se funde: la letra sola es la única que se pierde");
+          // rendimiento con los tres bancos: 300 filas en menos de 15 s (antes de la poda: 29 s)
+          const grande = []; for (let i = 0; i < 300; i++) grande.push(filas[i % filas.length]);
+          const t0 = Date.now(); impID.mapearFilasImportadas(grande, require("../lib/apu/catalogo.js").SEMILLA); const ms = Date.now() - t0;
+          assert.ok(ms < 15000, `300 filas contra catálogo + INVIAS + IDU tardaron ${ms} ms`);
+          // API y frontend
+          const editorID = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "apu", "editor.js"), "utf8");
+          assert.ok(/items_idu: require\("\.\.\/\.\.\/apu\/idu_items\.js"\)\.comoItemsDeCatalogo\(\)/.test(editorID));
+          const appID = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+          assert.ok(/r\.items_idu \|\| \[\]/.test(appID) && /idu: "bg-sky-100/.test(appID) && /origen_precio !== "idu"/.test(appID), "app.js junta items_idu, tiene clase de badge y no pinta el IDU como manual");
+          console.log(`· unidad IDU ítems: ${meta.items} APU (Bogotá ${meta.vigencia}) como precio de referencia sin composición · fuera de Bogotá declarado · el mismo ítem en INVIAS e IDU no es una duda y gana el banco local · «clase C» distinguible · 300 filas en ${ms} ms`);
         }
 
         /* --- la referencia de mercado: sobre el CONTRATO, con mínimo --- */
@@ -10738,7 +10816,7 @@ async function main() {
         const cascItem = calcConPropio.cuerpo.items[0].cascada;
         assert.ok(cascItem, "`calcular` tiene que publicar la cascada: es la vía que usa la web");
         assert.deepStrictEqual(cascItem.pasos.map((p) => p.nivel),
-          ["usuario", "pliego", "mercado", "retail", "invias", "catalogo", "invias_apu"]);
+          ["usuario", "pliego", "mercado", "retail", "invias", "catalogo", "invias_apu", "idu_apu"]);
         const respondieron = cascItem.pasos.filter((p) => p.respondio);
         assert.strictEqual(respondieron.length, 1, "responde UNA fuente: la primera que tiene el dato");
         assert.strictEqual(respondieron[0].nivel, "usuario");
@@ -10942,7 +11020,7 @@ async function main() {
           departamento: "BOGOTA D.C.", config: {},
         }).items[0];
         assert.strictEqual(sinPrecioCasc.incompleto, true);
-        assert.ok(sinPrecioCasc.cascada && sinPrecioCasc.cascada.pasos.length === 7,
+        assert.ok(sinPrecioCasc.cascada && sinPrecioCasc.cascada.pasos.length === 8,
           "al ítem sin precio se le negaba la explicación, que es el único caso que la necesita entera");
         assert.ok(sinPrecioCasc.cascada.pasos.every((p) => !p.respondio && p.motivo));
       }
