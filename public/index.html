@@ -178,6 +178,15 @@
         border-radius: var(--radius-md) var(--radius-md) 0 0; padding-bottom: calc(32px + env(safe-area-inset-bottom)); animation-name: hojaSube; }
       @keyframes hojaSube { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
     }
+    /* el título de la tarjeta se recorta a dos líneas (el objeto completo va en el title y en «Ver en SECOP II») */
+    .titulo-tarjeta { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    /* la franja de TRES CIFRAS de la tarjeta (compiten · se gana 1 de N · deja por intento) */
+    .metricas .metrica { padding: 10px 14px; min-width: 0; }
+    .metricas .metrica + .metrica { border-left: 1px solid var(--border); }
+    .metrica-valor { font-size: 20px; font-weight: 600; letter-spacing: -0.4px; line-height: 1.1; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+    .metrica-rotulo { margin-top: 2px; font-size: 11px; line-height: 1.25; color: var(--text-secondary); }
+    .metrica-nota { margin-top: 2px; font-size: 10.5px; line-height: 1.25; color: var(--text-secondary); opacity: .85; }
+    @media (max-width: 640px) { .metrica-valor { font-size: 17px; } .metricas .metrica { padding: 8px 10px; } .metrica-nota { display: none; } }
     /* el pulso global de la landing: tres cifras, cero prosa */
     #pulso-global .cifra { text-align: center; }
     #pulso-global .cifra b { display: block; font-size: 24px; font-weight: 600; letter-spacing: -0.5px; white-space: nowrap; color: var(--text-primary); }

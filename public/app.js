@@ -774,11 +774,11 @@
     const conBase = procesos > 0 && nivel !== "sin_dato" && promedio != null && !isNaN(promedio);
     const d = conBase ? (COMPETENCIA_ENTIDAD[nivel] || COMPETENCIA_ENTIDAD.sin_dato) : COMPETENCIA_ENTIDAD.sin_dato;
     const texto = conBase
-      ? `${d.titulo} — promedio ${fmtNum.format(promedio)} oferentes en ${procesos} proceso${procesos === 1 ? "" : "s"}`
+      ? `${d.titulo} · ${fmtNum.format(promedio)} en ${procesos}`
       : d.titulo;
     return `<button type="button" data-entidad="${esc(entidad || "")}"
         title="${conBase ? "Ver los procesos que sostienen este promedio" : "Ver qué hay en el histórico de esta entidad"}"
-        class="banda-competencia mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition hover:underline ${d.clases}">
+        class="banda-competencia inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition hover:underline ${d.clases}">
         <span aria-hidden="true">${d.emoji}</span>${esc(texto)}
         <span aria-hidden="true" class="opacity-60">›</span>
       </button>`;
@@ -992,42 +992,46 @@
        que la suite vigila.) */
     const compiten = cuantosCompiten(l);
     const frec = frecuenciaNatural(l.p_ganar);
-    const titular = compiten
-      ? compiten.frase
-      : "No hay histórico de competencia en esta entidad.";
-    const bajada = frec
-      ? frec.frase
-      : "Sin datos suficientes para estimar cuántas veces se gana algo así.";
-    const fuente = compiten
-      ? `Medido sobre ${fmt.format(compiten.procesos)} ${compiten.procesos === 1 ? "proceso" : "procesos"} de esta entidad.`
-      : "Se asume la competencia típica de un proceso de obra (5 empresas), que es el supuesto prudente.";
     /* El FACTOR PRINCIPAL (motivoProbabilidad) se pinta solo cuando trae una
        señal propia — poca competencia, prórroga, colisión de cierres, baja —:
        sus dos ramas de respaldo («Basado en…», «Sin histórico…») repiten lo
-       que la línea de fuente ya dice, y dos frases iguales enseñan menos que
-       una. La función existía y nadie la llamaba: era la frase del encargo
-       que nunca llegó a la pantalla. */
+       que la fuente ya dice, y dos frases iguales enseñan menos que una. */
     const motivo = motivoProbabilidad(l);
     const motivoPropio = /^(Basado en|Sin histórico)/.test(motivo) ? "" : motivo;
+    const fuente = compiten
+      ? `Medido sobre ${fmt.format(compiten.procesos)} ${compiten.procesos === 1 ? "proceso" : "procesos"} de esta entidad.`
+      : "Se asume la competencia típica de un proceso de obra (5 empresas), que es el supuesto prudente.";
 
+    /* TRES CIFRAS EN UNA FRANJA, no tres párrafos (encargo del dueño, ago 2026:
+       «demasiado texto»): cuántas compiten · de cada cuántos se gana uno ·
+       cuánto deja por intento. Cada celda lleva su frase completa en el
+       `title` (la que antes se leía) y la ausencia se pinta como «—» con su
+       motivo, jamás como 0. El texto que quedaba explicando el valor esperado
+       sigue ahí —«contando las veces que no se gana»— porque sin él la cifra se
+       lee como ganancia condicional a ganar; ahora cabe en la nota. */
+    const celda = (valor, rotulo, nota, titulo, extraCls = "") => `
+        <div class="metrica ${extraCls}" title="${esc(titulo || "")}">
+          <p class="metrica-valor">${valor}</p>
+          <p class="metrica-rotulo">${esc(rotulo)}</p>
+          ${nota ? `<p class="metrica-nota">${nota}</p>` : ""}
+        </div>`;
+    const cCompiten = compiten
+      ? celda(`~${fmtNum.format(Math.max(1, Math.round(compiten.promedio)))}`, compiten.promedio >= 1.5 ? "empresas suelen competir" : "empresa suele competir", `en ${fmt.format(compiten.procesos)} procesos`, `${compiten.frase} ${fuente}`)
+      : celda("—", "sin histórico de competencia", "supuesto: 5 rivales", fuente);
+    const cGana = frec
+      ? celda(`1 de ${frec.de_cada}`, "se gana, aproximadamente", motivoPropio ? esc(motivoPropio) : "", `${frec.frase}${motivoPropio ? " " + motivoPropio : ""}`)
+      : celda("—", "sin datos para estimar", "", "Sin datos suficientes para estimar cuántas veces se gana algo así.");
+    const cDeja = l.ve != null
+      ? celda(esc(fmtCorto(l.ve)), "deja por intento, en promedio", "contando las veces que no se gana y el costo de ofertar", "Promedio sobre intentos: ya descuenta las veces que no se gana y lo que cuesta preparar la oferta.")
+      : celda("—", "sin valor esperado", "", "Sin cuantía publicada no hay valor esperado.");
     return `
-      <div class="mt-4 rounded-xl bg-gray-50 px-4 py-3">
-        <p class="text-sm font-semibold text-gray-900">${esc(titular)}</p>
-        <p class="mt-0.5 text-sm text-gray-600">${esc(bajada)}</p>
-        ${motivoPropio ? `<p class="mt-0.5 text-sm text-gray-600">${esc(motivoPropio)}</p>` : ""}
-        <p class="mt-1.5 text-xs text-gray-400">
-          ${esc(fuente)}
-          ${id
-    ? `<button type="button" class="detalle-probabilidad ml-1 cursor-pointer underline decoration-dotted decoration-gray-400 underline-offset-4 transition hover:text-gray-900 hover:decoration-gray-900"
-               data-id="${esc(id)}" data-objeto="${esc(l.nombre_del_procedimiento || id)}" title="${esc(titulo)}">
-               Ver cómo se calcula</button>`
-    : ""}
-        </p>
-        <p class="mt-2 border-t border-gray-200 pt-2 text-xs text-gray-500">
-          Deja <strong class="tabular-nums text-gray-700">${esc(fmtCorto(l.ve))}</strong> por intento, en promedio
-          <span title="Es un promedio sobre intentos: ya descuenta las veces que no se gana y lo que cuesta preparar la oferta.">(contando las veces que no se gana y el costo de ofertar)</span>.
-        </p>
-      </div>`;
+      <div class="metricas mt-4 grid grid-cols-3 rounded-xl" style="background: var(--bg-inset);">
+        ${cCompiten}${cGana}${cDeja}
+      </div>
+      ${id
+    ? `<p class="mt-1.5 text-right text-xs"><button type="button" class="detalle-probabilidad cursor-pointer underline decoration-dotted decoration-gray-400 underline-offset-4 transition hover:text-gray-900" style="color: var(--text-secondary);"
+               data-id="${esc(id)}" data-objeto="${esc(l.nombre_del_procedimiento || id)}" title="${esc(titulo)}">Ver cómo se calcula</button></p>`
+    : ""}`;
   }
 
   /* La querystring que antes viajaba a /apu.html: mismos nombres de parámetro
@@ -1068,9 +1072,8 @@
     <article class="tarjeta rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5${noViable ? " opacity-50" : ""}">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
-          <h3 class="font-semibold leading-snug tracking-tight">${esc(l.nombre_del_procedimiento || l.id_del_proceso || "Proceso sin nombre")}</h3>
-          <p class="mt-1 text-sm text-gray-500">${esc(l.entidad || "Entidad no informada")}</p>
-          ${bandaCompetencia(l.competencia_entidad, l.entidad)}
+          <h3 class="titulo-tarjeta font-semibold leading-snug tracking-tight" title="${esc(l.nombre_del_procedimiento || "")}">${esc(l.nombre_del_procedimiento || l.id_del_proceso || "Proceso sin nombre")}</h3>
+          <p class="mt-1 text-sm text-gray-500">${esc(l.entidad || "Entidad no informada")}${l.departamento_entidad && !/no definido/i.test(l.departamento_entidad) ? ` · ${esc(l.departamento_entidad)}` : ""}</p>
         </div>
         <div class="text-right">
           ${l.cuantia_cop
@@ -1089,10 +1092,11 @@
 
       ${bloqueProbabilidad(l)}
 
-      <div class="mt-4 flex flex-wrap gap-2">
+      <div class="mt-3 flex flex-wrap items-center gap-2">
         ${paaEncendido ? chip("Activo · abierto", "bg-green-100 text-green-800 ring-1 ring-inset ring-green-600/20",
     "Proceso PUBLICADO en SECOP II, con pliego y fecha de cierre — a diferencia de las previsiones del PAA") : ""}
         ${chipCierre(cierre, cierreTxt, diasCierre)}
+        ${bandaCompetencia(l.competencia_entidad, l.entidad)}
         ${chipZona(l.zona)}
         ${l._cierre_prorrogado ? chip("Cierre prorrogado", "bg-indigo-100 text-indigo-800", "El cierre se movió por adenda: suele indicar que no llegaron ofertas suficientes") : ""}
       </div>

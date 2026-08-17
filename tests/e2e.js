@@ -12506,7 +12506,7 @@ async function main() {
           "bandaCompetencia debe decidir con `conBase` si hay base para enseñar un promedio");
         assert.ok(/procesos > 0/.test(cuerpo) && /nivel !== "sin_dato"/.test(cuerpo) && /promedio != null/.test(cuerpo),
           "`conBase` debe exigir procesos > 0, nivel clasificado y promedio presente");
-        assert.ok(/conBase\s*\n?\s*\?\s*`\$\{d\.titulo\} — promedio/.test(cuerpo),
+        assert.ok(/conBase\s*\n?\s*\?\s*`\$\{d\.titulo\} · \$\{fmtNum\.format\(promedio\)\} en \$\{procesos\}`/.test(cuerpo),
           "el promedio solo puede interpolarse en la rama `conBase`");
         // sin base, el texto es el título de sin_dato: ninguna cifra
         assert.ok(/:\s*d\.titulo;/.test(cuerpo), "sin base, el badge debe quedarse en el título, sin números");
