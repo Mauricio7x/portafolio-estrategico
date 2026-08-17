@@ -50,7 +50,11 @@
   const enlaceLista = (params) => `/?${params}#/licitaciones`;
 
   /* ── plantillas ── */
-  function htmlHero(p) {
+  /* `conBoton`: el botón «Ver a cuáles puedo presentarme» solo tiene sentido
+     cuando la portada se ve ANTES de entrar (landing). Desde ago 2026 la
+     portada vive DENTRO del tablero, plegada bajo el pulso personalizado, y
+     ahí ese botón sobraría; queda como opción para conservar el contrato. */
+  function htmlHero(p, { conBoton = true } = {}) {
     const cifra = (v, r) => `<div><p class="text-[24px] font-semibold tracking-tight sm:text-[40px]" style="color: var(--text-primary); letter-spacing: -1px;">${esc(v)}</p><p class="text-xs uppercase tracking-wide" style="color: var(--text-secondary);">${esc(r)}</p></div>`;
     return `
       <p class="text-[22px] leading-tight sm:text-[28px]" style="color: var(--text-primary); font-weight: 300;">Hoy hay dinero público esperando contratista.</p>
@@ -60,8 +64,15 @@
         ${cifra(num(p.entidadesActivas), "entidades")}
       </div>
       <p class="mt-3 text-xs" style="color: var(--text-secondary);">${esc(textoActualizado(p.generado))}${p.desactualizada ? " — el dato tiene más de un día; la próxima sincronización lo renueva." : ""}</p>
-      <button id="pt-btn-cuales" type="button" class="btn-vidrio-acento mt-5 w-full sm:w-auto">Ver a cuáles puedo presentarme</button>
-      <p class="mt-2 text-xs" style="color: var(--text-secondary);">Para eso hace falta su RUP o tres datos de su empresa: toma menos de un minuto y no guardamos el documento.</p>`;
+      ${conBoton ? `<button id="pt-btn-cuales" type="button" class="btn-vidrio-acento mt-5 w-full sm:w-auto">Ver a cuáles puedo presentarme</button>
+      <p class="mt-2 text-xs" style="color: var(--text-secondary);">Para eso hace falta su RUP o tres datos de su empresa: toma menos de un minuto y no guardamos el documento.</p>` : ""}`;
+  }
+  /* El TEASER de la landing (ago 2026): tres cifras del mercado entero y cero
+     prosa, para que quien llega vea de entrada que hay datos detrás. Es lo
+     ÚNICO «de fuera» que se enseña antes de elegir cómo entrar. */
+  function htmlTeaser(p) {
+    const cifra = (v, r) => `<div class="cifra"><b>${esc(v)}</b><span>${esc(r)}</span></div>`;
+    return `${cifra(num(p.procesosAbiertos), "licitaciones abiertas hoy")}${cifra(pesosCortos(p.valorTotal) || "Sin referencia", "en juego")}${cifra(num(p.entidadesActivas), "entidades contratando")}`;
   }
   function htmlCierran(p) {
     const c = p.cierranEstaSemana || { n: 0, valor: 0, muestra: [] };
@@ -132,6 +143,29 @@
   }
 
   /* ── arranque ── */
+  /* una sola petición del agregado por página, compartida por el teaser de la
+     landing y la portada del tablero */
+  let promesaAgregado = null;
+  function agregado() {
+    if (!promesaAgregado) {
+      promesaAgregado = fetch("/api/procesos?op=portada").then((r) => r.json()).catch(() => null)
+        .then((p) => { if (!p || !p.ok || !p.disponible) { promesaAgregado = null; return null; } return p; });
+    }
+    return promesaAgregado;
+  }
+  let teaserPintado = false;
+  async function teaser(doc) {
+    const d = doc || (typeof document !== "undefined" ? document : null);
+    const caja = d && d.getElementById("pulso-global");
+    if (!caja || teaserPintado) return false;
+    const p = await agregado();
+    if (!p) return false;                       // sin agregado, la franja sigue oculta
+    caja.innerHTML = htmlTeaser(p);
+    caja.title = textoActualizado(p.generado);
+    caja.classList.remove("hidden");
+    teaserPintado = true;
+    return true;
+  }
   let arrancada = false;
   async function arrancar(doc) {
     const d = doc || (typeof document !== "undefined" ? document : null);
@@ -140,10 +174,13 @@
     if (!raizPortada) return false;
     arrancada = true;
     let p = null, m = null;
-    try { const r = await fetch("/api/procesos?op=portada"); p = await r.json(); } catch { p = null; }
-    if (!p || !p.ok || !p.disponible) { arrancada = false; return false; } // vacía y honesta: la sección sigue oculta
+    p = await agregado();
+    const vacio = d.getElementById("pt-vacio");
+    if (!p) { arrancada = false; if (vacio) vacio.textContent = "Todavía no hay un agregado del mercado calculado (lo escribe la primera sincronización con datos)."; return false; } // vacía y honesta: la sección sigue oculta
     try { const r = await fetch("/api/procesos?op=manifestacion&estado=abierto"); m = await r.json(); } catch { m = null; }
-    d.getElementById("pt-hero").innerHTML = htmlHero(p);
+    // dentro del tablero el botón «Ver a cuáles puedo presentarme» sobra: ya entró
+    d.getElementById("pt-hero").innerHTML = htmlHero(p, { conBoton: !!d.getElementById("entrada-inicio") && !d.getElementById("pulso") });
+    if (vacio) vacio.classList.add("hidden");
     d.getElementById("pt-cierran").innerHTML = htmlCierran(p);
     d.getElementById("pt-manifestacion").innerHTML = htmlManifestacion(p, m && m.ok ? m : null);
     d.getElementById("pt-entidades").innerHTML = htmlEntidades(p);
@@ -159,5 +196,5 @@
     return true;
   }
 
-  return { arrancar, pesosCortos, textoActualizado, htmlHero, htmlCierran, htmlManifestacion, htmlEntidades, htmlDepartamentos, enlaceLista };
+  return { arrancar, teaser, pesosCortos, textoActualizado, htmlHero, htmlTeaser, htmlCierran, htmlManifestacion, htmlEntidades, htmlDepartamentos, enlaceLista };
 });

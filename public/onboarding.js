@@ -367,18 +367,29 @@
     const n = o.total;
     guardarPerfilRup({ id: cuerpo.perfil_id, nombre: (cuerpo.perfil && cuerpo.perfil.nombre) || "" });
 
+    /* EN CIFRAS, no en frases (encargo del dueño, ago 2026): tres números
+       grandes —cuántas, cuánto dinero, cuántas cierran esta semana— y debajo
+       las que cierran antes. `agregados` viene del mismo conteo (contarOportunidades);
+       si faltara (respuesta vieja en caché) solo se pintan las dos primeras. */
+    const ag = o.agregados || null;
+    const cifra = (v, r) => `<div><p class="text-[28px] font-semibold tracking-tight sm:text-[36px]" style="color: var(--text-primary); letter-spacing: -1px;">${esc(v)}</p><p class="text-[11px] uppercase tracking-wide" style="color: var(--text-secondary);">${esc(r)}</p></div>`;
+    const nombre = (cuerpo.perfil && cuerpo.perfil.nombre) || "";
     $("res-total").textContent = n === 0
-      ? "Hoy no hay licitaciones abiertas que encajen con este perfil."
-      : (n === 1
-        ? "Hoy hay 1 licitación abierta a la que usted puede presentarse."
-        : `Hoy hay ${n.toLocaleString("es-CO")} licitaciones abiertas a las que usted puede presentarse.`);
-    const suma = fmtMillones(o.valorTotal);
-    $("res-valor").textContent = n > 0 && suma ? `Suman $${suma}.` : (n > 0 ? "Varias no publican presupuesto." : "");
+      ? `${nombre ? `Para ${nombre}, hoy` : "Hoy"} no hay licitaciones abiertas que encajen con este perfil.`
+      : `${nombre ? `Para ${nombre}, hoy` : "Para su empresa, hoy"}:`;
+    const cifras = $("res-cifras");
+    if (cifras) {
+      cifras.innerHTML = n === 0 ? "" : [
+        cifra(n.toLocaleString("es-CO"), n === 1 ? "licitación a la que puede presentarse" : "licitaciones a las que puede presentarse"),
+        cifra(o.valorTotal ? `$${fmtMillones(o.valorTotal)}` : "Sin referencia", "en juego"),
+        ag && ag.cierranEstaSemana ? cifra(ag.cierranEstaSemana.n.toLocaleString("es-CO"), ag.cierranEstaSemana.n === 1 ? "cierra esta semana" : "cierran esta semana") : "",
+      ].join("");
+      cifras.classList.toggle("hidden", n === 0);
+    }
+    $("res-valor").textContent = n > 0 && !o.valorTotal ? "Varias no publican presupuesto." : "";
     $("res-sobra").textContent = n > 0
-      ? (o.conCapacidadSuficiente > 0
-        ? `En ${o.conCapacidadSuficiente} de ellas su capacidad alcanza de sobra.`
-        : "En ninguna le sobra capacidad: conviene mirar cada una con su presupuesto y su anticipo.")
-      : (o.corpus_vacio ? "Todavía no hay licitaciones cargadas en el sistema." : "Cuando tenga su RUP a mano, súbalo: con los códigos reales la lista puede cambiar.");
+      ? (o.conCapacidadSuficiente > 0 ? `En ${o.conCapacidadSuficiente} le sobra capacidad.` : "")
+      : (o.corpus_vacio ? "Todavía no hay licitaciones cargadas en el sistema." : "Con el RUP a mano la lista puede cambiar.");
 
     const ul = $("res-muestra");
     ul.innerHTML = (o.muestra || []).map((m) => `
@@ -410,8 +421,8 @@
     };
 
     const origen = { texto: "Perfil leído de su RUP", ocr: "Perfil leído con reconocimiento de imágenes (confírmelo)", manual: "Perfil aproximado con tres datos" }[cuerpo.origen] || `Perfil ${cuerpo.origen}`;
-    $("res-nota").textContent = `${origen}. Su documento no se guardó: solo el perfil derivado, que caduca solo en 45 días.`
-      + (cuerpo.camposNoLeidos && cuerpo.camposNoLeidos.length && cuerpo.origen !== "manual" ? " Falta algún indicador financiero: la capacidad de contratación queda «sin dato» hasta que lo cargue en Mi empresa." : "");
+    $("res-nota").textContent = `${origen}. El documento no se guardó; el perfil caduca en 45 días.`
+      + (cuerpo.camposNoLeidos && cuerpo.camposNoLeidos.length && cuerpo.origen !== "manual" ? " Falta algún indicador financiero: la capacidad queda «sin dato» hasta que lo cargue en Mi empresa." : "");
     avisos(null);
     $("resultado-entrada").classList.remove("hidden");
     progreso(null);

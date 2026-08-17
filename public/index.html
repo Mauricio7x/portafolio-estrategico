@@ -141,6 +141,20 @@
     .campo-gate { background: var(--bg-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
       color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); }
     .campo-gate:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+    /* las tres PUERTAS de entrada: tarjetas de vidrio del mismo alto; la del
+       RUP lleva además el acento (btn-vidrio-acento) */
+    .puerta-entrada { display: block; width: 100%; text-align: left; padding: 16px 18px; border-radius: var(--radius-md); font-size: 14px; line-height: 1.35; font-weight: 400;
+      background: var(--bg-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+      border: 1px solid var(--border); box-shadow: var(--shadow-sm); cursor: pointer; transition: var(--transition); }
+    .puerta-entrada:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .puerta-entrada:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-light); }
+    .btn-vidrio-acento.puerta-entrada { font-size: inherit; padding: 16px 18px; }
+    .btn-vidrio-acento.puerta-entrada:hover span { color: #ffffff !important; }
+    /* el pulso global de la landing: tres cifras, cero prosa */
+    #pulso-global .cifra { text-align: center; }
+    #pulso-global .cifra b { display: block; font-size: 24px; font-weight: 600; letter-spacing: -0.5px; white-space: nowrap; color: var(--text-primary); }
+    #pulso-global .cifra span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); }
+    @media (max-width: 640px) { #pulso-global { gap: 12px; } #pulso-global .cifra { flex: 1 1 0; min-width: 0; } #pulso-global .cifra b { font-size: 17px; white-space: normal; } #pulso-global .cifra span { font-size: 10px; } }
 
     /* ── red de seguridad: qué VISTA se ve no puede depender de un CDN ──
        `abrirApp()` cambia de vista añadiendo y quitando la clase `hidden`, que
@@ -266,7 +280,7 @@
       #rup-barra { transition: none !important; }
       .panel-pestana { animation: none; }
       .spin { animation: none; }
-      .tarjeta:hover, .btn-peligro:hover, .btn-vidrio-acento:hover, .btn-vidrio-acento:active { transform: none; }
+      .tarjeta:hover, .btn-peligro:hover, .btn-vidrio-acento:hover, .btn-vidrio-acento:active, .puerta-entrada:hover { transform: none; }
     }
     @media (prefers-contrast: more) {
       :root { --bg-card: #ffffff; --barra-bg: #ffffff; --campo-bg: #ffffff;
@@ -305,48 +319,45 @@
            trabajo parezca un juguete. -->
       <p class="mb-6 text-[34px] font-semibold tracking-tight" style="color: var(--text-primary); letter-spacing: -0.8px;" data-marca="nombre"></p>
 
-      <!-- ══════ Fase 9 · LA PORTADA: el pulso del mercado ══════
-           Nace OCULTA y la enseña public/portada.js SOLO cuando el agregado
-           precalculado existe (portada vacía y honesta antes que bonita y
-           falsa). Cada bloque trae su fuente y su hora; cada cifra grande
-           enlaza a la lista filtrada de la Fase 8. La subida del RUP no
-           desaparece: sigue debajo y es la acción principal de la portada. -->
-      <section id="portada" class="hidden mb-10 w-full text-left">
-        <div id="pt-hero" class="rounded-2xl p-6 sm:p-8" style="background: var(--bg-card); box-shadow: var(--shadow-sm);"></div>
-        <div class="mt-4 grid gap-4 sm:grid-cols-2">
-          <div id="pt-cierran" class="rounded-2xl p-5" style="background: var(--bg-card);"></div>
-          <div id="pt-manifestacion" class="rounded-2xl p-5" style="background: var(--bg-card);"></div>
-        </div>
-        <div id="pt-entidades" class="mt-4 rounded-2xl p-5" style="background: var(--bg-card);"></div>
-        <div id="pt-departamentos" class="mt-4 rounded-2xl p-5" style="background: var(--bg-card);"></div>
-        <p id="pt-fuente" class="mt-3 text-[11px]" style="color: var(--text-secondary);"></p>
-      </section>
-
+      <!-- ══════ Pantalla 1 · LA PUERTA DE ENTRADA (ago 2026) ══════
+           Encargo del dueño: lo primero es ELEGIR CÓMO ENTRAR; las cifras
+           salen DESPUÉS, personalizadas al RUP (el pulso del tablero, #pulso).
+           Aquí, lo mínimo: un titular, tres puertas y una línea de privacidad.
+           El único dato «de fuera» es #pulso-global: tres números del mercado
+           entero, sin prosa, para que el ingeniero vea de entrada que hay
+           millones de datos detrás. Nace oculto y lo llena portada.js SOLO si
+           el agregado existe. Cascada de la entrada: PDF con texto (pdf.js
+           aquí mismo) → escaneo/fotos/ZIP (OCR en el servidor) → tres datos a
+           mano. NINGÚN camino termina en un error sin salida. -->
       <!-- peso 250: SF Pro Display es variable y lo interpola; las de respaldo
            lo redondean a 200/300. Tailwind no tiene esa parada (font-extralight
            es 200), así que va literal en el atributo. -->
       <h1 class="max-w-[600px] text-[28px] leading-[1.15] tracking-[-0.5px] sm:text-[40px]"
           style="color: var(--text-primary); font-weight: 250;">Descubra en un minuto a cuántas licitaciones puede presentarse hoy.</h1>
       <p class="mt-3 max-w-[480px] text-[15px] font-light leading-[1.5] sm:text-[17px]" style="color: var(--text-secondary);">
-        Suba su RUP y le decimos a cuáles puede presentarse, cuánto le costaría ejecutarlas y a qué precio ofertar.
+        Elija cómo entrar. Todo lo que verá después está calculado para su empresa.
       </p>
 
-      <!-- ══════ Pantalla 1 · Puerta de entrada (Fase 2) ══════
-           Cascada: PDF con texto (pdf.js aquí mismo) → escaneo/fotos/ZIP (OCR en
-           el servidor, con confirmación) → tres datos a mano. NINGÚN camino
-           termina en un error sin salida: onboarding.js manda al formulario
-           manual en cada fallo. -->
-      <div id="entrada-inicio">
-        <button id="btn-subir-rup" type="button" class="btn-vidrio-acento mt-8 w-full max-w-xs sm:w-auto">
-          Suba su RUP
-        </button>
+      <div id="pulso-global" class="hidden mt-8 flex w-full max-w-lg items-stretch justify-center gap-6 sm:gap-10" aria-label="El mercado hoy"></div>
+
+      <div id="entrada-inicio" class="mt-8 w-full max-w-2xl">
+        <div class="grid gap-3 sm:grid-cols-3">
+          <button id="btn-subir-rup" type="button" class="btn-vidrio-acento puerta-entrada">
+            <span class="block text-[17px] font-medium">Subir mi RUP</span>
+            <span class="mt-1 block text-xs font-normal" style="color: var(--text-secondary);">PDF, foto o escaneo · 60 segundos</span>
+          </button>
+          <button id="btn-manual" type="button" class="puerta-entrada">
+            <span class="block text-[17px] font-medium" style="color: var(--text-primary);">Escribir tres datos</span>
+            <span class="mt-1 block text-xs" style="color: var(--text-secondary);">Patrimonio, contrato mayor y oficio</span>
+          </button>
+          <button id="btn-ir-gate" type="button" class="puerta-entrada">
+            <span class="block text-[17px] font-medium" style="color: var(--text-primary);">Entrar con clave</span>
+            <span class="mt-1 block text-xs" style="color: var(--text-secondary);">Perfiles ya configurados</span>
+          </button>
+        </div>
         <input id="rup-archivo" type="file" accept="application/pdf,.pdf,image/jpeg,image/png,.jpg,.jpeg,.png,application/zip,.zip" class="hidden"
                aria-label="Certificado RUP en PDF, imagen o ZIP">
-        <p class="mt-3 text-xs" style="color: var(--text-secondary);">No creamos cuenta. No guardamos su documento. Ley 1581 de 2012.</p>
-        <p class="mt-1 text-xs" style="color: var(--text-secondary);">El PDF se lee en su navegador; al servidor solo viaja el texto extraído para armar su perfil.</p>
-        <button id="btn-manual" type="button" class="enlace-discreto mt-4 text-sm underline decoration-dotted">
-          Prefiero escribir tres datos
-        </button>
+        <p class="mt-4 text-xs" style="color: var(--text-secondary);">No creamos cuenta. No guardamos su documento: se lee en su navegador y solo viaja el texto extraído (Ley 1581 de 2012).</p>
       </div>
 
       <!-- progreso de la extracción -->
@@ -376,7 +387,7 @@
       <!-- Tres datos: el camino que existe para que NADIE quede bloqueado. -->
       <form id="manual-form" class="mt-6 hidden w-full max-w-md text-left">
         <p id="manual-intro" class="text-sm" style="color: var(--text-primary);">
-          Dígame tres datos y le muestro lo mismo en 30 segundos.
+          Tres datos y le muestro sus licitaciones.
         </p>
         <label class="mt-4 block">
           <span class="text-xs font-medium uppercase tracking-wide" style="color: var(--text-secondary);">¿Cuánto es el patrimonio de su empresa? (pesos)</span>
@@ -401,24 +412,24 @@
           </select>
         </label>
         <button id="btn-manual-enviar" type="submit" class="btn-vidrio-acento mt-4 w-full">Ver mis licitaciones</button>
-        <p class="mt-2 text-xs" style="color: var(--text-secondary);">Con esto armamos un perfil aproximado. Cuando tenga su RUP a mano, súbalo y afinamos la lista.</p>
+        <p class="mt-2 text-xs" style="color: var(--text-secondary);">Perfil aproximado. Con el RUP a mano, la lista se afina.</p>
       </form>
 
       <!-- ══════ Pantalla 2 · Resultado ══════ -->
-      <div id="resultado-entrada" class="mt-8 hidden w-full max-w-md text-left">
+      <!-- ══════ Pantalla 2 · Resultado, EN CIFRAS ══════
+           Tres números grandes (cuántas · cuánto dinero · cuántas cierran esta
+           semana) en vez de tres frases; debajo, las que cierran antes y el
+           botón. Los ids se conservan: onboarding.js y la suite los cablean. -->
+      <div id="resultado-entrada" class="mt-8 hidden w-full max-w-lg text-left">
         <p id="res-total" class="text-[22px] leading-snug" style="color: var(--text-primary); font-weight: 300;"></p>
-        <p id="res-valor" class="mt-1 text-sm" style="color: var(--text-secondary);"></p>
+        <div id="res-cifras" class="mt-4 grid grid-cols-3 gap-3"></div>
+        <p id="res-valor" class="mt-2 text-sm" style="color: var(--text-secondary);"></p>
         <p id="res-sobra" class="mt-1 text-sm" style="color: var(--text-secondary);"></p>
         <ul id="res-muestra" class="mt-5 space-y-2"></ul>
         <button id="btn-ver-todas" type="button" class="btn-vidrio-acento mt-6 w-full"></button>
         <p id="res-nota" class="mt-3 text-xs" style="color: var(--text-secondary);"></p>
       </div>
 
-      <div class="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
-        <button id="btn-ir-gate" type="button" class="enlace-discreto underline decoration-dotted">
-          Acceso con clave (perfiles existentes)
-        </button>
-      </div>
     </main>
   </div>
 
@@ -490,6 +501,36 @@
 
     <!-- ════════════════════ PESTAÑA 1 · Licitaciones ════════════════════ -->
     <main id="tab-licitaciones" class="panel-pestana mx-auto max-w-5xl px-5 py-8">
+      <!-- ══════ EL PULSO PERSONALIZADO (ago 2026) ══════
+           Lo primero que se ve al entrar: las cifras DE ESTE PERFIL —cuántas
+           licitaciones puede presentarse hoy, cuánto dinero, cuántas cierran
+           esta semana, dónde están y quién las publica—, cada una enlazando a
+           la lista filtrada. Nace OCULTO y lo llena public/pulso.js con
+           /api/perfil?op=pulso&perfil=…; sin datos, ni una cifra inventada.
+           Debajo, plegado, el MERCADO ENTERO (la portada de la Fase 9, que
+           antes salía en la landing ANTES de elegir cómo entrar). -->
+      <section id="pulso" class="hidden mb-6">
+        <div id="pu-hero" class="rounded-2xl p-6 sm:p-8" style="background: var(--bg-card); box-shadow: var(--shadow-sm);"></div>
+        <div class="mt-4 grid gap-4 md:grid-cols-2">
+          <div id="pu-departamentos" class="rounded-2xl p-5" style="background: var(--bg-card);"></div>
+          <div id="pu-entidades" class="rounded-2xl p-5" style="background: var(--bg-card);"></div>
+        </div>
+        <p id="pu-nota" class="mt-2 text-[11px]" style="color: var(--text-secondary);"></p>
+      </section>
+      <details id="mercado-completo" class="mb-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
+        <summary class="cursor-pointer text-sm font-medium" style="color: var(--text-primary);">El mercado completo hoy — todo lo que hay abierto en el SECOP II, para cualquier empresa</summary>
+        <section id="portada" class="hidden mt-4 w-full text-left">
+          <div id="pt-hero" class="rounded-2xl p-6 sm:p-8" style="background: var(--bg-inset); box-shadow: var(--shadow-sm);"></div>
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div id="pt-cierran" class="rounded-2xl p-5" style="background: var(--bg-inset);"></div>
+            <div id="pt-manifestacion" class="rounded-2xl p-5" style="background: var(--bg-inset);"></div>
+          </div>
+          <div id="pt-entidades" class="mt-4 rounded-2xl p-5" style="background: var(--bg-inset);"></div>
+          <div id="pt-departamentos" class="mt-4 rounded-2xl p-5" style="background: var(--bg-inset);"></div>
+          <p id="pt-fuente" class="mt-3 text-[11px]" style="color: var(--text-secondary);"></p>
+        </section>
+        <p id="pt-vacio" class="mt-3 text-sm" style="color: var(--text-secondary);">Cargando el mercado…</p>
+      </details>
       <!-- Controles · DOS a la vista y el resto plegado (filosofía del
            producto): el orden por defecto ya hace el trabajo — poner nueve
            controles delante obligaba a entender el programa antes de poder
@@ -2266,6 +2307,7 @@
   <script src="/glosario.js"></script>
   <script src="/filtros.js"></script>
   <script src="/portada.js"></script>
+  <script src="/pulso.js"></script>
   <script src="/onboarding.js"></script>
   <script src="/xlsx.js"></script>
   <script src="/xlsx_lectura.js"></script>

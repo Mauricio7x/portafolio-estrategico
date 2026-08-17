@@ -79,7 +79,51 @@
     try { hash = (location.hash.match(/^#\/([a-z]+)/) || [])[1] || ""; } catch { hash = ""; }
     activarPestana(hash || "licitaciones", { empujarHash: false });
     buscar();
+    refrescarPulso();
   }
+  /* ══════════ El PULSO personalizado (ago 2026) ══════════
+     Nada más entrar, arriba de la lista: las cifras DE ESTE PERFIL (cuántas,
+     cuánto dinero, cuántas cierran esta semana, dónde, quién). Lo pinta
+     public/pulso.js con /api/perfil?op=pulso; aquí solo se decide CUÁNDO
+     (al abrir la app y al cambiar de perfil) y se cablean sus enlaces para
+     que filtren la lista EN LA MISMA PÁGINA en vez de recargarla. El mercado
+     entero (la portada de la Fase 9) queda plegado debajo y se pide la
+     primera vez que alguien lo abre: nadie paga por lo que no mira. */
+  function refrescarPulso() {
+    if (!window.Pulso) return;
+    const sel = $("f-perfil");
+    const perfil = sel ? sel.value : "";
+    const nombre = sel && sel.selectedOptions[0] ? sel.selectedOptions[0].text.replace(/^Consorcio · /, "") : "";
+    window.Pulso.arrancar(perfil, { nombre }).catch(() => {});
+  }
+  document.getElementById("pulso").addEventListener("click", (ev) => {
+    const el = ev.target.closest("[data-filtro]");
+    if (!el) return;
+    ev.preventDefault();
+    aplicarFiltroDelPulso(el.getAttribute("data-filtro"));
+  });
+  document.getElementById("pulso").addEventListener("keydown", (ev) => {
+    if (ev.key !== "Enter" && ev.key !== " ") return;
+    const el = ev.target.closest("[data-filtro]");
+    if (!el) return;
+    ev.preventDefault();
+    aplicarFiltroDelPulso(el.getAttribute("data-filtro"));
+  });
+  function aplicarFiltroDelPulso(filtro) {
+    const base = window.Filtros.leerEstado({});
+    const [k, ...resto] = String(filtro || "").split("=");
+    const v = resto.join("=");
+    if (k === "cierre") base.cierre = { ventana: v || "7d" };
+    else if (k === "dep") base.dep = window.Filtros.leerEstado({ dep: v }).dep;
+    else if (k === "entidad") base.entidad = v || null;
+    cambiarFiltros(base);
+    const lista = $("lista");
+    if (lista && lista.scrollIntoView) lista.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  const mercadoCompleto = document.getElementById("mercado-completo");
+  if (mercadoCompleto) mercadoCompleto.addEventListener("toggle", () => {
+    if (mercadoCompleto.open && window.Portada) window.Portada.arrancar();
+  });
   function bloquear() {
     $("gate").innerHTML =
       '<div class="text-center"><p class="text-2xl font-semibold">Acceso denegado</p>' +
@@ -1800,7 +1844,7 @@
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
   for (const id of ["f-perfil", "f-cuantia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
     "f-sin-unspsc", "f-solo-viables", "f-zona"]) {
-    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } buscar(); });
+    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } buscar(); if (id === "f-perfil") refrescarPulso(); });
   }
   /* «Ver PAA» NO re-consulta /api/oportunidades: son dos fuentes distintas y
      encender la previsión no puede cambiar la lista de lo que está abierto. Lo
@@ -4915,7 +4959,8 @@
       $("app").classList.add("hidden");
       const ob = document.getElementById("onboarding");
       if (ob) ob.classList.remove("hidden");
-      if (window.Portada) window.Portada.arrancar();
+      if (window.Portada) window.Portada.teaser();
+      if (window.Pulso) window.Pulso.olvidar();
       try { window.scrollTo({ top: 0 }); } catch { /* sin scroll */ }
       return;
     }
@@ -6088,9 +6133,11 @@
   } else if (sesionConClave) {
     abrirApp();
   } else if (window.Portada) {
-    // sin perfil y sin sesión: se queda la landing, que nace visible en el
-    // HTML, y sobre ella la PORTADA (Fase 9): el pulso del mercado antes de
-    // pedirle nada a nadie
-    window.Portada.arrancar();
+    /* sin perfil y sin sesión: se queda la landing, que nace visible en el
+       HTML. Sobre ella solo el TEASER (tres cifras del mercado, sin prosa):
+       la portada entera vive ahora DENTRO del tablero, plegada bajo el pulso
+       personalizado — el dueño pidió que los datos salieran DESPUÉS de elegir
+       cómo entrar, personalizados al RUP. */
+    window.Portada.teaser();
   }
 })();
