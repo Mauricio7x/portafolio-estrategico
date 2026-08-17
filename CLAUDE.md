@@ -1848,6 +1848,53 @@ cascada de `lib/apu/precios.js`. Evidencia HTTP en el §11 del mismo doc.
   INVIAS prohíben el uso comercial sin autorización — si Detekta se comercializa con estos datos,
   pedirla (`preciosunitarios@invias.gov.co`).
 
+### Segundo banco oficial de ítems: los precios de referencia del IDU (Bogotá, ago 2026)
+
+Investigación previa (17-ago-2026), para no repetirla: buscando una base de precios de EDIFICACIÓN vigente y
+alcanzable desde aquí, lo que hay es (a) **IDU · Visor de Precios Unitarios de Referencia 2026-I Fase I
+(29-jul-2026)**, xlsx público en `idu.gov.co/page/siipviales/economico/portafolio`, 3 172 APU valorados de
+infraestructura vial y espacio público de Bogotá + 2 740 insumos — se integró; (b) en `datos.gov.co` (Socrata,
+mismo cliente): Boyacá `ae7u-y7m2` (1 255 ítems con capítulo EDIFICACIONES, **2022**, Res. 092/2022) y Valle
+`e839-6uct` (3 579, **2019**) — VIEJOS: usarlos tal cual entendería el costo un 30-40 % por debajo (el falso
+positivo caro del módulo) y traerlos a 2026 exige un índice oficial (IPC/ICOCIV DANE) que no se fijó de
+memoria; quedan como candidatos con esa condición; (c) BLOQUEADOS desde aquí (403): ICCU/Cundinamarca 2025
+(`iccu.gov.co/wcm/connect/ICCU/…/LISTA+DE+PRECIOS+ICCU+2025.pdf`), Cali (`cali.gov.co/documentos/1045/
+precios-unitarios/`), Antioquia (sin buscador), FFIE (no publica precios). **La edificación pura (mampostería,
+pañetes, cubiertas, acabados) sigue con los 157 del Nogal**: el camino más corto es que el dueño baje la lista
+ICCU 2025 o la de Antioquia desde su navegador y la entregue. Decisiones que no hay que re-aprender:
+- **`IDU:` es SOLO PRECIO y SOLO BOGOTÁ.** El visor publica el valor del APU sin composición ni componentes,
+  así que el ítem sale como precio SIN desglose (`sin_apu: true`, va a `sin_desglose`, cuatro componentes en
+  `null`) con `origen_precio: "idu"` y `referencia_idu_apu` (vigencia, publicado, APU, capítulo,
+  `ajuste_regional: bogota|ninguno`). Fuera de Bogotá el precio es el mismo y se DECLARA (aviso en el ítem y en
+  las alertas): sin componentes no hay a qué aplicar los factores del catálogo y un factor único sería inventado.
+  Los insumos del visor «como regla general tienen en cuenta el IVA» (texto del visor); los APU son costo directo.
+  Se EXCLUYEN las hojas de proyecto específico (el visor dice que solo valen para su proyecto) y los valores
+  estimativos de conservación. `tests/capturar_idu_apu.js` (manual, con red) → `data/apu_idu_items.json`.
+- **El badge «IDU 2026-I · Bogotá» no es verde ni ámbar** (estado `idu`, misma clase que `invias`): oficial y con
+  vigencia, sin composición y sin ajuste. Va ANTES de la rama `sin_apu` genérica en `clasificarOrigen` (comparte
+  la forma —sin desglose— y no el significado); la fila no se pinta ámbar; el Excel marca `  🔵 IDU 2026-I ·
+  Bogotá (precio de referencia oficial, sin composición)` y la hoja APU escribe «PRECIO DE REFERENCIA IDU… — SIN
+  COMPOSICIÓN PUBLICADA». Nivel `idu_apu` en la cascada, después de `invias_apu`.
+- **En el importador, el mismo ítem en dos bancos NO es una duda entre dos ítems**: INVIAS e IDU comparten la
+  clave de familia por cabecera (`oficial:<cabecera>`), así «SUBBASE GRANULAR CLASE C» de los dos no cae a
+  «revisar» por margen; **cuál gana lo decide el departamento** (`rango`: en Bogotá IDU > INVIAS; fuera, INVIAS
+  regionalizado > IDU sin ajuste; siempre catálogo > oficiales > estimado). Las variantes IDU de la misma
+  cabecera se publican como las del INVIAS.
+- **`tokenizarItem` funde «clase X»/«tipo X» (UN carácter) en un token** (`clasec`): «clase» y «tipo» son
+  stopwords y la letra sola no llegaba al mínimo, así que SUBBASE CLASE A/B/C eran el MISMO conjunto de tokens
+  (tres candidatos a 0,90 con margen 0). «TIPO A10» no se funde: ya sobrevive solo. `apu_bench` sigue en verde.
+- **«Firme» por COBERTURA TOTAL además de por margen**: si TODOS los términos de la fila (≥ 3) están en el
+  candidato, la unidad coincide y el puntaje es ≥ 0,85, es firme aunque el margen sea < 0,12 — el segundo de
+  otra familia solo puede ser un pariente que PIERDE justo el término que la fila trae («clase C» 0,90 contra
+  «clase B» 0,795 = margen 0,105). Sigue exigiendo ≥ 3 términos: «Subbase granular» a secas queda en revisar,
+  y «PENDIENTE… LUMINARIA» también.
+- **PODA de candidatos: solo se puntúa (Levenshtein) a los que comparten ≥ 1 término con la fila.** Sin ella,
+  300 filas × 3 900 candidatos tardaban 29 s (el tope de la función son 60). No cambia ninguna decisión: un
+  candidato sin términos en común no puede aceptarse (0,22 × edición + 0,13 × unidad ≤ 0,35 solo con edición 1,
+  que implica los mismos términos) ni mover el margen de un firme (mejor ≥ 0,60 contra un tope de 0,35).
+- **Costo visible**: la respuesta de `/api/apu?op=catalogo` crece ~1 MB (`items_idu`, se comprime en tránsito);
+  se carga UNA vez al abrir Precios. Si pesa, lo que se recorta son campos (`subcapitulo`), no ítems.
+
 ### Mi empresa es la pestaña PRINCIPAL y Precios sin prosa (encargo del dueño, ago 2026)
 
 «Vamos a reformar la pestaña de Mi empresa: ahora esa va a ser la principal; en esa van a aparecer los datos

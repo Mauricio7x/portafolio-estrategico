@@ -217,6 +217,23 @@
           || "No hay precio en el catálogo ni escrito a mano. NO suma al total: un $0 sería un precio inventado.",
       };
     }
+    /* PRECIO DE REFERENCIA IDU (Bogotá, ago 2026): oficial y con vigencia, pero
+       SIN composición y sin ajuste regional. Va ANTES de la rama `sin_apu`
+       genérica (que es la de los precios que puso una persona) porque comparte
+       la forma —sin desglose— y no el significado. */
+    if (it.origen_precio === "idu") {
+      const ri = it.referencia_idu_apu || {};
+      return {
+        estado: "idu",
+        emoji: "🔵",
+        etiqueta: `IDU ${ri.vigencia || ""} · ${ri.ciudad || "Bogotá"}`.trim(),
+        suma: true,
+        motivo: `Precio de referencia oficial del IDU (vigencia ${ri.vigencia || "—"}, publicado ${ri.publicado || "—"}, APU ${ri.codigo_idu || "—"}): `
+          + `costo directo de referencia en ${ri.ciudad || "Bogotá"}, sin composición publicada`
+          + (ri.ajuste_regional === "ninguno" ? " y SIN ajuste a su departamento (la obra no está en Bogotá)" : "")
+          + ". Es una referencia, no una cotización: verifique antes de presentar.",
+      };
+    }
     if (it.sin_apu) {
       /* «propio» es un estado APARTE de «manual»: no es un precio tecleado al
          vuelo en este presupuesto, sino uno que este contratista ya corrigió
@@ -419,7 +436,8 @@
                lo que el importador del proyecto sabe limpiar al reimportar
                (`MARCADOR_EXPORTADO_RE`): un marcador con otro anclaje
                envenenaría el mapeo de vuelta, medido con los otros dos. */
-            + (org.estado === "invias" ? `   🔵 ${org.etiqueta} (APU de referencia oficial)` : ""),
+            + (org.estado === "invias" ? `   🔵 ${org.etiqueta} (APU de referencia oficial)` : "")
+            + (org.estado === "idu" ? `   🔵 ${org.etiqueta} (precio de referencia oficial, sin composición)` : ""),
           s: estiloTexto,
         },
         { v: it.unidad || "—", s: estiloTexto },
@@ -480,7 +498,7 @@
     /* La leyenda declara TODOS los colores. Con estados y colores en juego,
        callarse uno sería mentir justo en la fila que existe para no mentir. */
     notas.push("Leyenda: fila SIN COLOR = precio de un contrato adjudicado (Nogal 4, 2025) servido en su misma región, "
-      + "insumos con cotización de proveedor cargada, o APU de referencia oficial del INVIAS (marcado 🔵 en la descripción, con su vigencia y provincia). "
+      + "insumos con cotización de proveedor cargada, APU de referencia oficial del INVIAS o precio de referencia del IDU (marcados 🔵 en la descripción, con su vigencia). "
       + "Fila AMARILLA = precio con APU pero derivado por factor regional o estimado: no está verificado y requiere cotización. "
       + "Fila ÁMBAR = precio del archivo importado o tecleado a mano, sin APU de respaldo en el catálogo (suma al total y queda declarado). "
       + "Fila ROJA = ítem sin precio: NO suma al total — un $0 sería un precio inventado.");
@@ -587,10 +605,12 @@
       }
 
       if (it.sin_apu) {
-        const origen = it.origen_precio === "propio" ? "PRECIO PROPIO YA CORREGIDO (guardado en tu perfil)"
+        const ri = it.origen_precio === "idu" ? (it.referencia_idu_apu || {}) : null;
+        const origen = ri ? `PRECIO DE REFERENCIA IDU ${ri.vigencia || ""} (${ri.ciudad || "Bogotá"}, APU ${ri.codigo_idu || "—"}, publicado ${ri.publicado || "—"})`
+          : it.origen_precio === "propio" ? "PRECIO PROPIO YA CORREGIDO (guardado en tu perfil)"
           : it.origen_precio === "archivo" ? "PRECIO SEGÚN ARCHIVO IMPORTADO" : "PRECIO TECLEADO A MANO";
         const n = fila([
-          { v: `${origen} — SIN APU DE RESPALDO EN EL CATÁLOGO`, s: "destacadoTexto" }, null, null,
+          { v: ri ? `${origen} — SIN COMPOSICIÓN PUBLICADA${ri.ajuste_regional === "ninguno" ? "; SIN AJUSTE REGIONAL" : ""}` : `${origen} — SIN APU DE RESPALDO EN EL CATÁLOGO`, s: ri ? "texto" : "destacadoTexto" }, null, null,
           { v: "VR UNITARIO =", s: "destacadoTexto" },
           { v: fin(it.costo_directo_unitario), s: "destacadoMoneda" }, null, null,
         ]);
