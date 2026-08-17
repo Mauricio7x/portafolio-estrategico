@@ -85,6 +85,57 @@
       ${p.entidadesDistintas > filas.length ? `<p class="mt-2 text-[11px]" style="color: var(--text-secondary);">y ${num(p.entidadesDistintas - filas.length)} entidades más.</p>` : ""}`;
   }
 
+  /* ── gráfico de barras (SVG en línea, sin dependencias) ──
+     Cuatro o cinco cubetas con conteo encima y rótulo debajo; cada barra es
+     un enlace a la lista filtrada por ESA cubeta (las cubetas son las mismas
+     de los filtros: public/filtros.js). El color viene de las custom
+     properties del tema (style="fill: var(--accent)"), así que respeta el
+     modo oscuro y «aumentar contraste» sin una regla más. Sin datos (todas
+     las cubetas en 0) no se dibuja: una gráfica de ceros no informa nada. */
+  function svgBarras(cubetas, { ancho = 320, alto = 150, filtroDe = () => null } = {}) {
+    const n = cubetas.length;
+    if (!n) return "";
+    const max = Math.max(...cubetas.map((c) => c.n || 0));
+    if (!max) return "";
+    const margen = { arriba: 22, abajo: 26, lados: 8 };
+    const anchoUtil = ancho - margen.lados * 2;
+    const paso = anchoUtil / n;
+    const anchoBarra = Math.min(48, paso * 0.62);
+    const altoUtil = alto - margen.arriba - margen.abajo;
+    const barras = cubetas.map((c, i) => {
+      const h = Math.max(c.n ? 3 : 0, Math.round(altoUtil * (c.n || 0) / max));
+      const x = margen.lados + paso * i + (paso - anchoBarra) / 2;
+      const y = margen.arriba + altoUtil - h;
+      const cx = margen.lados + paso * i + paso / 2;
+      const filtro = filtroDe(c);
+      const abre = filtro ? `<a href="?${esc(filtro)}#/licitaciones" data-filtro="${esc(filtro)}" role="link" tabindex="0" title="${esc(c.titulo || c.etiqueta)}: ${num(c.n)} · ${esc(pesosCortos(c.valor) || "sin valor publicado")}. Ver la lista.">` : "<g>";
+      const cierra = filtro ? "</a>" : "</g>";
+      const rotulo = String(c.corto || c.etiqueta || "");
+      return `${abre}
+        <rect x="${x.toFixed(1)}" y="${margen.arriba}" width="${anchoBarra.toFixed(1)}" height="${altoUtil}" rx="6" style="fill: transparent;"></rect>
+        <rect x="${x.toFixed(1)}" y="${y}" width="${anchoBarra.toFixed(1)}" height="${h}" rx="6" style="fill: var(--accent); opacity: ${c.n ? 0.9 : 0.25};"></rect>
+        <text x="${cx.toFixed(1)}" y="${y - 6}" text-anchor="middle" font-size="12" font-weight="600" style="fill: var(--text-primary);">${num(c.n)}</text>
+        <text x="${cx.toFixed(1)}" y="${alto - 12}" text-anchor="middle" font-size="10" style="fill: var(--text-secondary);">${esc(rotulo)}</text>
+      ${cierra}`;
+    }).join("");
+    const linea = `<line x1="${margen.lados}" y1="${margen.arriba + altoUtil + 0.5}" x2="${ancho - margen.lados}" y2="${margen.arriba + altoUtil + 0.5}" style="stroke: var(--border); stroke-width: 1;"></line>`;
+    return `<svg viewBox="0 0 ${ancho} ${alto}" role="img" aria-label="Distribución" style="display:block; width:100%; height:auto; max-height: ${alto + 40}px; font-family: inherit;">${linea}${barras}</svg>`;
+  }
+  const ROTULO_CIERRE = { "3d": "≤ 3 días", "7d": "esta semana", "15d": "≤ 15 días", "+15d": "+ 15 días" };
+  const ROTULO_CUANTIA = { hasta_50m: "≤ $50 M", "50_200m": "$50–200 M", "200_1000m": "$200–1.000 M", mas_1000m: "> $1.000 M" };
+  function htmlCierre(p) {
+    const cubetas = (p.porCierre || []).map((c) => ({ ...c, corto: ROTULO_CIERRE[c.id] || c.etiqueta, titulo: c.etiqueta }));
+    const svg = svgBarras(cubetas, { filtroDe: (c) => `cierre=${c.id}` });
+    if (!svg) return "";
+    return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Cuándo hay que entregar la oferta</h2>${svg}${p.cierreSinFecha ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(p.cierreSinFecha)} sin fecha de cierre publicada.</p>` : ""}`;
+  }
+  function htmlCuantia(p) {
+    const cubetas = (p.porCuantia || []).map((c) => ({ ...c, corto: ROTULO_CUANTIA[c.id] || c.etiqueta, titulo: c.etiqueta }));
+    const svg = svgBarras(cubetas, { filtroDe: (c) => `min=${c.min || 0}${c.max != null ? `&max=${c.max}` : ""}` });
+    if (!svg) return "";
+    return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Cuánto valen</h2>${svg}${p.cuantiaSinDato ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(p.cuantiaSinDato)} sin presupuesto publicado.</p>` : ""}`;
+  }
+
   function htmlNota(p) {
     const cuando = p.generado ? new Date(p.generado).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: "America/Bogota" }) : "";
     return `Calculado para su perfil sobre el SECOP II${cuando ? ` a las ${cuando.replace(/\.$/, "")}` : ""}. Cada cifra lleva a su lista.`;
@@ -104,8 +155,11 @@
     d.getElementById("pu-hero").innerHTML = htmlHero(p, opciones.nombre || "");
     d.getElementById("pu-departamentos").innerHTML = htmlDepartamentos(p);
     d.getElementById("pu-entidades").innerHTML = htmlEntidades(p);
+    const cierre = d.getElementById("pu-cierre"), cuantia = d.getElementById("pu-cuantia");
+    if (cierre) { cierre.innerHTML = htmlCierre(p); cierre.classList.toggle("hidden", !cierre.innerHTML); }
+    if (cuantia) { cuantia.innerHTML = htmlCuantia(p); cuantia.classList.toggle("hidden", !cuantia.innerHTML); }
     d.getElementById("pu-nota").textContent = htmlNota(p);
-    // sin departamentos ni entidades (perfil sin licitaciones) las dos cajas se esconden
+    // sin departamentos ni entidades (perfil sin licitaciones) las cajas se esconden
     d.getElementById("pu-departamentos").classList.toggle("hidden", !(p.porDepartamento || []).length);
     d.getElementById("pu-entidades").classList.toggle("hidden", !(p.topEntidades || []).length);
     raiz.classList.remove("hidden");
@@ -114,5 +168,5 @@
   }
   const olvidar = () => { perfilPintado = null; };
 
-  return { arrancar, olvidar, pesosCortos, htmlHero, htmlDepartamentos, htmlEntidades, htmlNota };
+  return { arrancar, olvidar, pesosCortos, htmlHero, htmlDepartamentos, htmlEntidades, htmlCierre, htmlCuantia, svgBarras, htmlNota };
 });

@@ -143,13 +143,41 @@
     .campo-gate:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
     /* las tres PUERTAS de entrada: tarjetas de vidrio del mismo alto; la del
        RUP lleva además el acento (btn-vidrio-acento) */
-    .puerta-entrada { display: block; width: 100%; text-align: left; padding: 16px 18px; border-radius: var(--radius-md); font-size: 14px; line-height: 1.35; font-weight: 400;
+    .puerta-entrada { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; width: 100%; text-align: left; padding: 16px 18px; border-radius: var(--radius-md); font-size: 14px; line-height: 1.35; font-weight: 400;
       background: var(--bg-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
       border: 1px solid var(--border); box-shadow: var(--shadow-sm); cursor: pointer; transition: var(--transition); }
     .puerta-entrada:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
     .puerta-entrada:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-light); }
     .btn-vidrio-acento.puerta-entrada { font-size: inherit; padding: 16px 18px; }
     .btn-vidrio-acento.puerta-entrada:hover span { color: #ffffff !important; }
+    /* ── la barra de herramientas y la hoja de filtros (ago 2026) ──
+       Controles al estilo del sistema: fondo hundido, sin borde, radio 10,
+       36 px de alto; el énfasis lo pone el acento, no un contorno. */
+    .campo-buscar { background: var(--bg-inset); min-height: 36px; }
+    .campo-buscar:focus-within { box-shadow: 0 0 0 3px var(--accent-light); }
+    .campo-buscar input { color: var(--text-primary); }
+    .campo-buscar input::placeholder { color: var(--text-secondary); }
+    .control-select, .control-campo, .control-boton { background: var(--bg-inset); border: 0; color: var(--text-primary);
+      min-height: 36px; padding: 0 12px; font-size: 14px; }
+    .control-select { padding-right: 32px; -webkit-appearance: none; appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2386868b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+      background-repeat: no-repeat; background-position: right 10px center; }
+    .control-select:focus, .control-campo:focus { outline: none; box-shadow: 0 0 0 3px var(--accent-light); }
+    .control-boton { cursor: pointer; transition: var(--transition); }
+    .control-boton:hover { background: var(--bg-inset-2); }
+    .control-boton[aria-expanded="true"] { background: var(--accent-light); color: var(--accent); }
+    #panel-filtros.hidden { display: none; }
+    #panel-filtros { position: fixed; inset: 0; z-index: 70; }
+    .panel-filtros-velo { position: absolute; inset: 0; background: rgba(0,0,0,0.28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+    .panel-filtros-hoja { position: absolute; top: 0; right: 0; bottom: 0; width: min(440px, 100vw); overflow-y: auto; padding: 20px 22px 32px;
+      background: var(--bg-card); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+      border-left: 1px solid var(--border); box-shadow: -12px 0 40px rgba(0,0,0,0.12); animation: hojaEntra .28s cubic-bezier(0.4, 0, 0.2, 1); }
+    @keyframes hojaEntra { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+    @media (max-width: 767px) {
+      .panel-filtros-hoja { top: auto; left: 0; right: 0; width: auto; max-height: 90vh; border-left: 0; border-top: 1px solid var(--border);
+        border-radius: var(--radius-md) var(--radius-md) 0 0; padding-bottom: calc(32px + env(safe-area-inset-bottom)); animation-name: hojaSube; }
+      @keyframes hojaSube { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+    }
     /* el pulso global de la landing: tres cifras, cero prosa */
     #pulso-global .cifra { text-align: center; }
     #pulso-global .cifra b { display: block; font-size: 24px; font-weight: 600; letter-spacing: -0.5px; white-space: nowrap; color: var(--text-primary); }
@@ -279,6 +307,7 @@
       #app .transition, #onboarding .transition, #modal-competencia .transition, #modal-importar .transition, #modal-eliminar .transition,
       #rup-barra { transition: none !important; }
       .panel-pestana { animation: none; }
+      .panel-filtros-hoja { animation: none; }
       .spin { animation: none; }
       .tarjeta:hover, .btn-peligro:hover, .btn-vidrio-acento:hover, .btn-vidrio-acento:active, .puerta-entrada:hover { transform: none; }
     }
@@ -332,10 +361,15 @@
       <!-- peso 250: SF Pro Display es variable y lo interpola; las de respaldo
            lo redondean a 200/300. Tailwind no tiene esa parada (font-extralight
            es 200), así que va literal en el atributo. -->
-      <h1 class="max-w-[600px] text-[28px] leading-[1.15] tracking-[-0.5px] sm:text-[40px]"
-          style="color: var(--text-primary); font-weight: 250;">Descubra en un minuto a cuántas licitaciones puede presentarse hoy.</h1>
+      <!-- EL TITULAR MOTIVA, no explica (encargo del dueño, ago 2026): frases
+           que animan a licitar —la obra pública es de todos, la plata se queda
+           en el territorio, licitar no es privilegio de los grandes— que
+           onboarding.js rota cada pocos segundos (FRASES_PORTADA; la primera
+           va escrita aquí para que se vea aunque el JS no cargue). -->
+      <h1 id="frase-portada" class="max-w-[640px] min-h-[2.4em] text-[28px] leading-[1.15] tracking-[-0.5px] sm:text-[40px]" aria-live="polite"
+          style="color: var(--text-primary); font-weight: 250; transition: opacity .45s ease;">La obra pública es de todos. También de la empresa que la construye.</h1>
       <p class="mt-3 max-w-[480px] text-[15px] font-light leading-[1.5] sm:text-[17px]" style="color: var(--text-secondary);">
-        Elija cómo entrar. Todo lo que verá después está calculado para su empresa.
+        Descubra en un minuto a cuántas licitaciones puede presentarse hoy. Elija cómo entrar.
       </p>
 
       <div id="pulso-global" class="hidden mt-8 flex w-full max-w-lg items-stretch justify-center gap-6 sm:gap-10" aria-label="El mercado hoy"></div>
@@ -475,12 +509,12 @@
           <button type="button" data-tab="admin" class="pestana">Mi empresa</button>
         </nav>
 
-        <div class="flex items-center gap-3">
+        <div class="flex min-w-0 items-center gap-3">
           <span id="sello-sync" class="hidden rounded-full px-3 py-1 text-xs lg:inline-block"
                 style="background: var(--bg-inset-2); color: var(--text-secondary);"></span>
-          <label class="flex items-center gap-2">
+          <label class="flex min-w-0 items-center gap-2">
             <span class="hidden text-[11px] uppercase tracking-wide sm:inline" style="color: var(--text-secondary);">Perfil</span>
-            <select id="f-perfil" class="rounded-lg py-1.5 text-sm">
+            <select id="f-perfil" class="control-select min-w-0 max-w-full rounded-xl text-sm">
               <option value="helder">Helder (persona natural)</option>
               <option value="genesis">Génesis GIC SAS (persona jurídica)</option>
               <option value="juntos">Consorcio Helder + Génesis</option>
@@ -512,13 +546,15 @@
       <section id="pulso" class="hidden mb-6">
         <div id="pu-hero" class="rounded-2xl p-6 sm:p-8" style="background: var(--bg-card); box-shadow: var(--shadow-sm);"></div>
         <div class="mt-4 grid gap-4 md:grid-cols-2">
-          <div id="pu-departamentos" class="rounded-2xl p-5" style="background: var(--bg-card);"></div>
-          <div id="pu-entidades" class="rounded-2xl p-5" style="background: var(--bg-card);"></div>
+          <div id="pu-cierre" class="min-w-0 overflow-hidden rounded-2xl p-5" style="background: var(--bg-card);"></div>
+          <div id="pu-cuantia" class="min-w-0 overflow-hidden rounded-2xl p-5" style="background: var(--bg-card);"></div>
+          <div id="pu-departamentos" class="min-w-0 overflow-hidden rounded-2xl p-5" style="background: var(--bg-card);"></div>
+          <div id="pu-entidades" class="min-w-0 overflow-hidden rounded-2xl p-5" style="background: var(--bg-card);"></div>
         </div>
         <p id="pu-nota" class="mt-2 text-[11px]" style="color: var(--text-secondary);"></p>
       </section>
       <details id="mercado-completo" class="mb-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
-        <summary class="cursor-pointer text-sm font-medium" style="color: var(--text-primary);">El mercado completo hoy — todo lo que hay abierto en el SECOP II, para cualquier empresa</summary>
+        <summary class="cursor-pointer text-sm font-medium" style="color: var(--text-primary);">El mercado completo hoy (todas las empresas)</summary>
         <section id="portada" class="hidden mt-4 w-full text-left">
           <div id="pt-hero" class="rounded-2xl p-6 sm:p-8" style="background: var(--bg-inset); box-shadow: var(--shadow-sm);"></div>
           <div class="mt-4 grid gap-4 sm:grid-cols-2">
@@ -531,57 +567,58 @@
         </section>
         <p id="pt-vacio" class="mt-3 text-sm" style="color: var(--text-secondary);">Cargando el mercado…</p>
       </details>
-      <!-- Controles · DOS a la vista y el resto plegado (filosofía del
-           producto): el orden por defecto ya hace el trabajo — poner nueve
-           controles delante obligaba a entender el programa antes de poder
-           usarlo. NINGÚN id cambió: el cableado de app.js y media suite los
-           referencian, y los controles plegados siguen en el DOM con sus
-           listeners (un <details> no desconecta nada). -->
-      <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <label class="block">
-            <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Ordenar por</span>
-            <select id="f-ordenar" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-              <option value="atractividad">Las mejores para vos (recomendado)</option>
-              <option value="margen">Dónde me queda más (solo las que ya costeaste)</option>
-              <option value="cierre">Las que cierran antes</option>
-              <option value="ve">Las que más plata dejan</option>
-              <option value="p_ganar">Las más ganables</option>
-              <option value="cuantia">Las más grandes</option>
-              <option value="competencia">Las menos peleadas</option>
-              <option value="anticipo">Mayor anticipo</option>
-            </select>
+      <!-- ══════ LA BARRA DE HERRAMIENTAS (ago 2026) ══════
+           Una sola fila, estilo Apple: buscar · ordenar · «Filtros» (abre una
+           HOJA con todo lo demás) · Buscar. Antes había DOS zonas de filtros a
+           la vista —una rejilla de nueve controles y una segunda barra con
+           chips y selects— y el dueño la describió como «un desastre». Todos
+           los ids se conservan (app.js y media suite los cablean; un nodo
+           movido conserva sus listeners): solo cambió DÓNDE viven. Lo activo
+           se ve como fichas bajo la barra; el detalle vive en #panel-filtros. -->
+      <section class="barra-herramientas rounded-2xl bg-white p-3 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-center gap-2">
+          <label class="campo-buscar flex min-w-[220px] flex-1 items-center gap-2 rounded-xl px-3">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="color: var(--text-secondary);"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+            <input id="fl-q" type="text" placeholder="Buscar por palabra o entidad" autocomplete="off"
+                   class="w-full border-0 bg-transparent py-2 text-sm focus:outline-none focus:ring-0">
           </label>
-          <label class="flex items-end gap-2 pb-2">
-            <input id="f-ver-paa" type="checkbox"
-                   class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
-            <span class="text-sm text-gray-600">
-              Obras que van a salir
-              <span class="block text-xs text-gray-400">Lo que las entidades planean publicar en los próximos 12 meses. Se muestra aparte: un plan no es un compromiso</span>
-            </span>
-          </label>
-          <div class="flex items-end">
-            <button id="btn-buscar"
-                    class="w-full rounded-xl bg-gray-900 px-5 py-2.5 font-medium text-white transition hover:bg-gray-700">
-              Buscar oportunidades
-            </button>
-          </div>
-          <label id="f-paa-entidad-wrap" class="hidden sm:col-span-2">
-            <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Obras planeadas · filtrar por entidad (opcional)</span>
-            <input id="f-paa-entidad" type="text" placeholder="Alcaldía de Ibagué, INVÍAS…" autocomplete="off"
-                   class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-          </label>
+          <select id="f-ordenar" class="control-select rounded-xl text-sm" aria-label="Ordenar por">
+            <option value="atractividad">Las mejores para vos</option>
+            <option value="margen">Dónde me queda más</option>
+            <option value="cierre">Las que cierran antes</option>
+            <option value="ve">Las que más plata dejan</option>
+            <option value="p_ganar">Las más ganables</option>
+            <option value="cuantia">Las más grandes</option>
+            <option value="competencia">Las menos peleadas</option>
+            <option value="anticipo">Mayor anticipo</option>
+          </select>
+          <button id="btn-filtros" type="button" class="control-boton inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm" aria-haspopup="dialog" aria-controls="panel-filtros" aria-expanded="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>
+            Filtros<span id="btn-filtros-n" class="hidden rounded-full px-1.5 text-[11px] font-semibold" style="background: var(--accent); color: #fff;"></span>
+          </button>
+          <button id="btn-buscar" class="rounded-xl bg-gray-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-700">Buscar</button>
         </div>
+        <div id="fl-fichas" class="mt-2 flex flex-wrap items-center gap-2 text-xs"></div>
+      </section>
 
-        <!-- ══ Fase 8 · LOS SIETE FILTROS, en lenguaje llano ══
-             El vocabulario (opciones, etiquetas, rangos, departamentos) vive
-             en public/filtros.js y lo pinta app.js: aquí solo están los
-             contenedores. Ningún nombre técnico (modalidad, cuantía, UNSPSC,
-             código DANE) se escribe en pantalla. El estado vive en la URL
-             (?tipo=…&modalidad=…&dep=…) y sobrevive a la recarga; las fichas
-             de abajo se quitan con una X y hay «Quitar todos». -->
-        <div id="filtros-barra" class="mt-4">
-          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <!-- ══════ LA HOJA DE FILTROS ══════
+           Un panel modal (hoja lateral en escritorio, desde abajo en móvil)
+           con los siete filtros de la Fase 8 y, plegados, los avanzados. Nace
+           oculto; lo abre #btn-filtros y lo cierran «Listo», el velo o Esc.
+           `filtros-barra` y `filtros-avanzados` conservan sus ids: la suite
+           mira ahí las seis etiquetas en lenguaje llano y qué va plegado. -->
+      <div id="panel-filtros" class="hidden" role="dialog" aria-modal="true" aria-labelledby="panel-filtros-titulo">
+        <div id="panel-filtros-velo" class="panel-filtros-velo"></div>
+        <div class="panel-filtros-hoja">
+          <div class="flex items-center justify-between gap-3">
+            <h2 id="panel-filtros-titulo" class="text-[17px] font-semibold" style="color: var(--text-primary);">Filtros</h2>
+            <div class="flex items-center gap-3 text-sm">
+              <button id="panel-filtros-limpiar" type="button" class="enlace-discreto">Quitar todos</button>
+              <button id="panel-filtros-listo" type="button" class="rounded-xl bg-gray-900 px-4 py-1.5 font-medium text-white">Listo</button>
+            </div>
+          </div>
+
+          <div id="filtros-barra" class="mt-4 space-y-5">
             <div>
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Qué tipo de trabajo es</span>
               <div id="fl-tipo" class="flex flex-wrap gap-1.5"></div>
@@ -593,124 +630,120 @@
             <div>
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dónde queda</span>
               <div class="flex flex-wrap items-center gap-2">
-                <select id="fl-dep" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <select id="fl-dep" class="control-select rounded-xl text-sm">
                   <option value="">Cualquier departamento</option>
                 </select>
                 <input id="fl-ciudad" type="text" placeholder="Ciudad o municipio" autocomplete="off"
-                       class="w-40 rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                       class="control-campo w-44 rounded-xl text-sm">
               </div>
-              <label class="mt-1.5 flex items-center gap-2 text-xs text-gray-600">
+              <label class="mt-2 flex items-center gap-2 text-xs" style="color: var(--text-secondary);">
                 <input id="fl-zona-cerca" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
-                Solo cerca de mi zona (Bogotá / Ibagué). Apagado, ves también fuera de tu zona.
+                Solo cerca de mi zona (Bogotá / Ibagué)
               </label>
             </div>
-            <div>
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuánto vale</span>
-              <select id="fl-rango" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-                <option value="">Cualquier valor</option>
-              </select>
-              <div id="fl-rango-libre" class="mt-1.5 hidden gap-2">
-                <input id="fl-min" type="number" min="0" step="1000000" placeholder="Desde $" class="w-1/2 rounded-lg border-gray-300 text-sm">
-                <input id="fl-max" type="number" min="0" step="1000000" placeholder="Hasta $" class="w-1/2 rounded-lg border-gray-300 text-sm">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuánto vale</span>
+                <select id="fl-rango" class="control-select w-full rounded-xl text-sm">
+                  <option value="">Cualquier valor</option>
+                </select>
+                <div id="fl-rango-libre" class="mt-1.5 hidden gap-2">
+                  <input id="fl-min" type="number" min="0" step="1000000" placeholder="Desde $" class="control-campo w-1/2 rounded-xl text-sm">
+                  <input id="fl-max" type="number" min="0" step="1000000" placeholder="Hasta $" class="control-campo w-1/2 rounded-xl text-sm">
+                </div>
               </div>
-            </div>
-            <div>
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuándo hay que entregar la oferta</span>
-              <select id="fl-cierre" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-                <option value="">Cualquier fecha (solo procesos abiertos)</option>
-              </select>
-              <div id="fl-cierre-fechas" class="mt-1.5 hidden gap-2">
-                <input id="fl-cierre-desde" type="date" class="w-1/2 rounded-lg border-gray-300 text-sm">
-                <input id="fl-cierre-hasta" type="date" class="w-1/2 rounded-lg border-gray-300 text-sm">
+              <div>
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuándo hay que entregar la oferta</span>
+                <select id="fl-cierre" class="control-select w-full rounded-xl text-sm">
+                  <option value="">Cualquier fecha</option>
+                </select>
+                <div id="fl-cierre-fechas" class="mt-1.5 hidden gap-2">
+                  <input id="fl-cierre-desde" type="date" class="control-campo w-1/2 rounded-xl text-sm">
+                  <input id="fl-cierre-hasta" type="date" class="control-campo w-1/2 rounded-xl text-sm">
+                </div>
               </div>
             </div>
             <div>
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Buscar entidad</span>
               <input id="fl-entidad" type="text" list="fl-entidades" placeholder="Alcaldía de…, Gobernación de…, INVÍAS" autocomplete="off"
-                     class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                     class="control-campo w-full rounded-xl text-sm">
               <datalist id="fl-entidades"></datalist>
-              <button id="fl-entidad-historial" type="button" class="mt-1.5 hidden text-xs font-medium text-blue-600 hover:underline">Ver el historial de esta entidad ›</button>
-              <input id="fl-q" type="text" placeholder="Buscar por palabra (placa huella, acueducto…)" autocomplete="off"
-                     class="mt-1.5 w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+              <button id="fl-entidad-historial" type="button" class="mt-1.5 hidden text-xs font-medium hover:underline" style="color: var(--accent);">Ver el historial de esta entidad ›</button>
             </div>
+            <label class="flex items-center gap-2 text-sm" style="color: var(--text-primary);">
+              <input id="f-ver-paa" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+              Ver también las obras que van a salir (planes anuales, aparte)
+            </label>
+            <label id="f-paa-entidad-wrap" class="hidden block">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Obras planeadas · filtrar por entidad</span>
+              <input id="f-paa-entidad" type="text" placeholder="Alcaldía de Ibagué, INVÍAS…" autocomplete="off" class="control-campo w-full rounded-xl text-sm">
+            </label>
           </div>
-          <div id="fl-fichas" class="mt-3 flex flex-wrap items-center gap-2 text-xs"></div>
-        </div>
 
-        <details id="filtros-avanzados" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Filtros avanzados
-            <span class="text-xs">— anticipo, tamaño, competencia y ubicación. Sin tocar nada, se muestran las mejores primero.</span>
-          </summary>
-          <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <label class="block">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Que paguen por adelantado al menos (%)</span>
-              <input id="f-anticipo" type="number" min="0" max="100" step="5" value="20" list="anticipos"
-                     title="0 = sin filtro. Los procesos que no declaran anticipo (la mayoría) pasan siempre."
-                     class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-              <datalist id="anticipos"><option value="0"></option><option value="10"></option><option value="20"></option><option value="30"></option></datalist>
-              <span class="mt-1 block text-[11px] text-gray-400">0 = sin filtro · los que no declaran anticipo nunca se excluyen</span>
-            </label>
-            <label class="block">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Tamaño de la obra</span>
-              <select id="f-cuantia" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-                <option value="">Todas</option>
-                <option value="bajo">Chicas (&lt; $100 M)</option>
-                <option value="medio">Medianas ($100–500 M)</option>
-                <option value="alto">Grandes (&gt; $500 M)</option>
-              </select>
-            </label>
-            <label class="block">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuánta gente compite ahí</span>
-              <select id="f-entidad" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-                <option value="">Todas</option>
-                <option value="baja">Poca competencia</option>
-                <option value="media">Competencia media</option>
-                <option value="alta">Alta competencia</option>
-                <option value="sin_dato">Sin datos históricos</option>
-              </select>
-            </label>
-            <label class="block">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Ubicación</span>
-              <select id="f-ubicacion" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-                <option value="">Todas</option>
-                <option value="true">Solo mi zona</option>
-                <option value="false">Fuera de mi zona</option>
-              </select>
-            </label>
-            <label class="block">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Acceso a la zona</span>
-              <select id="f-zona" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10"
-                      title="Cerca = a ~250 km de Bogotá o Ibagué, o con aeropuerto en la capital. Las zonas de difícil acceso o con alertas de orden público se van al final del orden aunque no filtres.">
-                <option value="">Todas (las lejanas van al final)</option>
-                <option value="facil">Solo fácil acceso — cerca o con aeropuerto, sin alertas</option>
-              </select>
-            </label>
-            <label class="block">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dirección del orden</span>
-              <select id="f-orden" class="w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-                <option value="desc">De mayor a menor</option>
-                <option value="asc">De menor a mayor</option>
-              </select>
-            </label>
-            <label class="flex items-end gap-2 pb-2 sm:col-span-2">
-              <input id="f-sin-unspsc" type="checkbox"
-                     class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
-              <span class="text-sm text-gray-600">
+          <details id="filtros-avanzados" class="mt-5 rounded-xl p-4" style="background: var(--bg-inset);">
+            <summary class="cursor-pointer text-sm" style="color: var(--text-secondary);">Avanzados <span class="text-xs">— anticipo, tamaño, competencia, ubicación</span></summary>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Anticipo mínimo (%)</span>
+                <input id="f-anticipo" type="number" min="0" max="100" step="5" value="20" list="anticipos"
+                       title="0 = sin filtro. Los procesos que no declaran anticipo (la mayoría) pasan siempre."
+                       class="control-campo w-full rounded-xl text-sm">
+                <datalist id="anticipos"><option value="0"></option><option value="10"></option><option value="20"></option><option value="30"></option></datalist>
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Tamaño de la obra</span>
+                <select id="f-cuantia" class="control-select w-full rounded-xl text-sm">
+                  <option value="">Todas</option>
+                  <option value="bajo">Chicas (&lt; $100 M)</option>
+                  <option value="medio">Medianas ($100–500 M)</option>
+                  <option value="alto">Grandes (&gt; $500 M)</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuánta gente compite ahí</span>
+                <select id="f-entidad" class="control-select w-full rounded-xl text-sm">
+                  <option value="">Todas</option>
+                  <option value="baja">Poca competencia</option>
+                  <option value="media">Competencia media</option>
+                  <option value="alta">Alta competencia</option>
+                  <option value="sin_dato">Sin datos históricos</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Ubicación</span>
+                <select id="f-ubicacion" class="control-select w-full rounded-xl text-sm">
+                  <option value="">Todas</option>
+                  <option value="true">Solo mi zona</option>
+                  <option value="false">Fuera de mi zona</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Acceso a la zona</span>
+                <select id="f-zona" class="control-select w-full rounded-xl text-sm"
+                        title="Cerca = a ~250 km de Bogotá o Ibagué, o con aeropuerto en la capital. Las zonas de difícil acceso o con alertas de orden público se van al final del orden aunque no filtres.">
+                  <option value="">Todas (las lejanas van al final)</option>
+                  <option value="facil">Solo fácil acceso</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dirección del orden</span>
+                <select id="f-orden" class="control-select w-full rounded-xl text-sm">
+                  <option value="desc">De mayor a menor</option>
+                  <option value="asc">De menor a mayor</option>
+                </select>
+              </label>
+              <label class="flex items-center gap-2 text-sm sm:col-span-2" style="color: var(--text-primary);">
+                <input id="f-sin-unspsc" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
                 Incluir procesos mal clasificados por la entidad
-                <span class="block text-xs text-gray-400">Publicados sin código utilizable y sin descripción clara de obra: más resultados, más ruido</span>
-              </span>
-            </label>
-            <label class="flex items-end gap-2 pb-2 sm:col-span-2">
-              <input id="f-solo-viables" type="checkbox" checked
-                     class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
-              <span class="text-sm text-gray-600">
+              </label>
+              <label class="flex items-center gap-2 text-sm sm:col-span-2" style="color: var(--text-primary);">
+                <input id="f-solo-viables" type="checkbox" checked class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
                 Solo las que cumplís los requisitos
-                <span class="block text-xs text-gray-400">Al apagarlo aparecen también, atenuadas, las que no encajan con tu registro de proponente o no podrías financiar</span>
-              </span>
-            </label>
-          </div>
-        </details>
-      </section>
+              </label>
+            </div>
+          </details>
+        </div>
+      </div>
 
       <!-- Estados -->
       <div id="estado-carga" class="mt-10 hidden text-center">
