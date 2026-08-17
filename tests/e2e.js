@@ -13661,6 +13661,9 @@ async function main() {
         ];
         assert.deepStrictEqual(filtrarPorDefecto(filas, { veredictos: new Map() }).map((x) => x.l._k), ["obra", "sumobra"], "el conteo de la entrada/pulso aplica el MISMO filtro por defecto que el listado (suministro apagado; suministro e instalación es obra)");
         assert.strictEqual(typeof pu.cuerpo.ocultosPorFiltroDefecto, "number", "lo que el filtro por defecto deja fuera se publica");
+        // y el listado publica la MISMA base por defecto, que es la que pinta «N de M»
+        assert.strictEqual(lh.cuerpo.totalPorDefecto, pu.cuerpo.total, "totalPorDefecto del listado == total del pulso");
+        assert.ok(/cuerpo\.totalPorDefecto != null \? cuerpo\.totalPorDefecto/.test(sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"))), "«N de M» usa la base por defecto, la misma N del pulso");
       }
       // el rup_ recién creado por la puerta de entrada también tiene pulso, y su total es el de su listado
       const ent = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { manual: { patrimonio: 900000000, mayorContrato: 3000000000, unidad: "COP", actividad: "vias" } });
