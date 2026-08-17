@@ -40,6 +40,36 @@
 
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  /* ── EL TITULAR QUE MOTIVA (ago 2026) ──
+     La primera pantalla no explica el programa: anima a licitar. Frases sobre
+     lo público como bien común, la plata que se queda en el territorio y el
+     derecho de la empresa pequeña a competir. La primera va también en el HTML
+     (se ve sin JS); las demás rotan cada 7 s con un fundido, y la rotación se
+     detiene en cuanto la landing deja de verse (nadie paga por lo que no mira).
+     Sin emojis (regla del proyecto) y sin jerga: son frases, no cifras. */
+  const FRASES_PORTADA = [
+    "La obra pública es de todos. También de la empresa que la construye.",
+    "Cada contrato que gana una empresa local es plata que se queda en el territorio.",
+    "El Estado contrata billones cada año. Le toca a quien trabaja, no solo a quien ya tiene.",
+    "Licitar no es privilegio de los grandes: es un derecho de quien sabe construir.",
+    "Los datos son públicos. Que sirvan a quien pone la mano de obra.",
+    "Hoy hay una licitación esperando a una empresa como la suya.",
+  ];
+  function rotarFrasePortada() {
+    const h = document.getElementById("frase-portada");
+    if (!h || FRASES_PORTADA.length < 2) return;
+    let i = 0;
+    const paso = () => {
+      const landing = document.getElementById("onboarding");
+      if (!landing || landing.classList.contains("hidden") || document.hidden) return; // se retoma en el próximo tic
+      i = (i + 1) % FRASES_PORTADA.length;
+      h.style.opacity = "0";
+      setTimeout(() => { h.textContent = FRASES_PORTADA[i]; h.style.opacity = "1"; }, 450);
+    };
+    setInterval(paso, 7000);
+  }
+  rotarFrasePortada();
   const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
   function guardarPerfilRup(p) {

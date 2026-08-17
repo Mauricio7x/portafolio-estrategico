@@ -13696,7 +13696,7 @@ async function main() {
       assert.ok(/if \(id === "f-perfil"\) refrescarPulso\(\)/.test(appL), "cambiar de perfil refresca el pulso");
       assert.ok(/window\.Portada\.teaser\(\)/.test(appL), "la landing arranca el TEASER, no la portada entera");
       assert.ok(/mercadoCompleto\.open && window\.Portada\) window\.Portada\.arrancar\(\)/.test(appL), "la portada entera se pide al ABRIR el pliegue, no antes");
-      assert.ok(/aplicarFiltroDelPulso/.test(appL) && /cambiarFiltros\(base\)/.test(appL), "las cifras del pulso filtran la lista EN LA MISMA PÁGINA");
+      assert.ok(/aplicarFiltroDelPulso/.test(appL) && /cambiarFiltros\(window\.Filtros\.leerEstado\(params\)\)/.test(appL), "las cifras del pulso filtran la lista EN LA MISMA PÁGINA con el mismo leerEstado de la URL");
       const onbL = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8"));
       assert.ok(/\$\("res-cifras"\)/.test(onbL) && /cierranEstaSemana/.test(onbL), "la pantalla de resultado pinta las cifras (cuántas · cuánto · cierran esta semana)");
       // (4) plantillas
@@ -13715,6 +13715,37 @@ async function main() {
       const teaser = PortadaPub2.htmlTeaser({ procesosAbiertos: 1306, valorTotal: 13.9e12, entidadesActivas: 573 });
       assert.ok(/1\.306/.test(teaser) && /\$13,9 billones/.test(teaser) && /573/.test(teaser) && (teaser.match(/<div class="cifra">/g) || []).length === 3, "el teaser son tres cifras");
       assert.ok(!/pt-btn-cuales/.test(PortadaPub2.htmlHero({ procesosAbiertos: 1, valorTotal: 1, entidadesActivas: 1, generado: new Date().toISOString() }, { conBoton: false })), "dentro del tablero el hero de la portada va sin el botón de entrada");
+      /* (5) SEGUNDA PASADA (17-ago-2026, «se ve horrible… una segunda barra que
+         despliega más filtros, peor aún»): UNA barra de herramientas (buscar ·
+         ordenar · Filtros · Buscar) y una HOJA modal con todo lo demás; el
+         pulso trae dos GRÁFICOS (cuándo cierran, cuánto valen) cuyas barras son
+         los filtros del listado; el titular de la landing motiva y rota. */
+      {
+        const iBarra = htmlL.indexOf('class="barra-herramientas'), iPanel = htmlL.indexOf('id="panel-filtros"'), iFB = htmlL.indexOf('id="filtros-barra"');
+        assert.ok(iBarra > 0 && iPanel > iBarra && iFB > iPanel, "orden: barra de herramientas → hoja de filtros (que contiene filtros-barra)");
+        const barraHtml = htmlL.slice(iBarra, iPanel);
+        for (const id of ["fl-q", "f-ordenar", "btn-filtros", "btn-filtros-n", "btn-buscar", "fl-fichas"]) assert.ok(barraHtml.includes(`id="${id}"`), `la barra de herramientas debe tener #${id}`);
+        assert.ok(!/id="fl-tipo"|id="fl-modalidad"|id="fl-dep"|id="f-ver-paa"/.test(barraHtml), "los filtros detallados NO viven en la barra: viven en la hoja");
+        assert.ok(/<div id="panel-filtros" class="hidden" role="dialog"/.test(htmlL), "la hoja de filtros nace oculta y es un diálogo");
+        for (const id of ["panel-filtros-velo", "panel-filtros-listo", "panel-filtros-limpiar"]) assert.ok(htmlL.includes(`id="${id}"`), `falta #${id}`);
+        assert.ok(/function abrirPanelFiltros\(abrir\)/.test(appL) && /ev\.key === "Escape"/.test(appL) && /aria-expanded/.test(appL), "app.js abre/cierra la hoja (botón, Listo, velo, Esc) y marca aria-expanded");
+        assert.ok(/nBadge\.textContent = String\(fichas\.length\)/.test(appL), "el botón Filtros lleva el número de filtros activos");
+        assert.ok(!/Sin filtros: se muestran todas/.test(appL), "la frase «Sin filtros: se muestran todas…» se fue: sin filtros no hay nada que decir");
+        for (const id of ["pu-cierre", "pu-cuantia"]) assert.ok(tab.includes(`id="${id}"`), `falta el gráfico #${id}`);
+        const pCh = { porCierre: [{ id: "3d", etiqueta: "Cierra en 3 días o menos", n: 9, valor: 3e10 }, { id: "7d", etiqueta: "Cierra esta semana", n: 14, valor: 6.4e10 }, { id: "15d", etiqueta: "x", n: 61, valor: 2e11 }, { id: "+15d", etiqueta: "y", n: 290, valor: 1.5e12 }], cierreSinFecha: 18,
+          porCuantia: [{ id: "hasta_50m", etiqueta: "Hasta $50 millones", min: 0, max: 5e7, n: 120, valor: 3e9 }, { id: "50_200m", etiqueta: "b", min: 5e7, max: 2e8, n: 130, valor: 1e10 }, { id: "200_1000m", etiqueta: "c", min: 2e8, max: 1e9, n: 98, valor: 4e10 }, { id: "mas_1000m", etiqueta: "d", min: 1e9, max: null, n: 44, valor: 1.8e12 }], cuantiaSinDato: 0 };
+        const gC = PulsoPub.htmlCierre(pCh), gQ = PulsoPub.htmlCuantia(pCh);
+        assert.ok(/<svg /.test(gC) && /data-filtro="cierre=3d"/.test(gC) && /data-filtro="cierre=7d"/.test(gC) && /data-filtro="cierre=\+15d"/.test(gC), "cada barra del gráfico de cierre ES un filtro del listado");
+        assert.ok(/data-filtro="min=0&amp;max=50000000"/.test(gQ) && /data-filtro="min=1000000000"/.test(gQ), "cada barra del gráfico de cuantía ES un filtro (min/max)");
+        assert.ok(/18 sin fecha de cierre publicada/.test(gC), "lo que no cae en ninguna barra se dice, no se reparte");
+        assert.strictEqual(PulsoPub.htmlCierre({ porCierre: pCh.porCierre.map((c) => ({ ...c, n: 0 })) }), "", "una gráfica de ceros no se dibuja");
+        assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(gC + gQ), "sin emojis en los gráficos");
+        // el endpoint publica las distribuciones y suman con lo que no cae en cubeta
+        assert.ok(Array.isArray(pu.cuerpo.porCierre) && pu.cuerpo.porCierre.length === 4 && Array.isArray(pu.cuerpo.porCuantia) && pu.cuerpo.porCuantia.length === 4);
+        assert.strictEqual(pu.cuerpo.porCierre.reduce((a, c) => a + c.n, 0) + pu.cuerpo.cierreSinFecha, pu.cuerpo.total, "cierre: las cubetas + sin fecha suman el total");
+        assert.strictEqual(pu.cuerpo.porCuantia.reduce((a, c) => a + c.n, 0) + pu.cuerpo.cuantiaSinDato, pu.cuerpo.total, "cuantía: las cubetas + sin dato suman el total");
+        assert.deepStrictEqual(pu.cuerpo.porCierre.map((c) => c.id), ["3d", "7d", "15d", "+15d"], "las cubetas de cierre son las VENTANAS del filtro");
+      }
       console.log(`  · Puerta primero, cifras después: pulso helder = ${pu.cuerpo.total} (= listado) · cierran esta semana ${pu.cuerpo.cierranEstaSemana.n} · ${pu.cuerpo.porDepartamento.length} dptos · ${pu.cuerpo.topEntidades.length} entidades · landing ${palabras} palabras · mercado plegado`);
     }
 
@@ -14724,11 +14755,27 @@ async function main() {
         /* 1.6 · el título de la landing va en peso 250 (encargo). Tailwind no
            tiene esa parada —font-extralight es 200—, así que si vuelve la
            utilidad, el peso pedido se pierde sin que nadie lo note. */
-        const h1Landing = (html.match(/<h1[^>]*>\s*Descubra en un minuto a cuántas licitaciones puede presentarse hoy\./) || [""])[0];
+        /* El titular MOTIVA (ago 2026): frases rotatorias sobre lo público como
+           bien común; la primera va escrita en el HTML (se ve sin JS) y todas
+           viven en onboarding.js. El peso 250 se conserva. */
+        const h1Landing = (html.match(/<h1 id="frase-portada"[^>]*>[^<]*<\/h1>/) || [""])[0];
+        assert.ok(h1Landing, "la landing debe tener el titular #frase-portada");
         assert.ok(/font-weight:\s*250/.test(h1Landing),
           "el título de la landing debe ir en peso 250 (literal: Tailwind no tiene esa parada)");
         assert.ok(!/font-extralight/.test(h1Landing),
           "font-extralight (200) volvió al título de la landing y pisa el peso 250 pedido");
+        const onbFr = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
+        const mFr = onbFr.match(/const FRASES_PORTADA = \[([\s\S]*?)\];/);
+        assert.ok(mFr, "onboarding.js debe declarar FRASES_PORTADA");
+        const frases = new Function(`return [${mFr[1]}];`)();
+        assert.ok(frases.length >= 5, "al menos cinco frases para que la rotación no canse");
+        assert.ok(h1Landing.includes(frases[0]), "la primera frase va escrita en el HTML (se ve aunque el JS no cargue)");
+        for (const f of frases) {
+          assert.ok(f.length <= 110 && !/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(f), `frase demasiado larga o con emoji: ${f}`);
+          assert.ok(!/UNSPSC|RUP|SMMLV|cuant[ií]a|modalidad/i.test(f), `la frase no puede llevar jerga: ${f}`);
+        }
+        assert.ok(/rotarFrasePortada\(\)/.test(onbFr) && /setInterval\(paso, 7000\)/.test(onbFr), "las frases rotan cada 7 s");
+        assert.ok(/classList\.contains\("hidden"\) \|\| document\.hidden\) return/.test(onbFr), "la rotación se detiene cuando la landing no se ve");
       }
 
       console.log("  · UI Apple Glass: pasos 0.1 (pestañas e ids), 0.2 (DELETE de RUP dinámico y fijo), "

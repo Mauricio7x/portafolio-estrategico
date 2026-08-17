@@ -3419,6 +3419,36 @@ vigía, hitos del cronograma e ítems del Formulario 1; y `prefers-reduced-trans
   tarjeta blanca sobre fondo negro. Verificado en Chromium real emulando cada media feature por CDP y
   leyendo `getComputedStyle` (blur `none`, fondo sólido, `animation: none`, bordes marcados).
 
+### Segunda pasada: acabado Apple, gráficos y titular que motiva (17-ago-2026)
+
+El dueño calificó la primera pasada de «falta de respeto»: demasiado texto después de entrar, los filtros
+«un desastre» con una segunda barra «peor aún», y la exigencia de una web que «se vea cara, de estatus,
+con horas de producción real detrás». Medido antes de tocar: el tablero medía 10 851 px y 3 085 palabras;
+la zona de controles tenía DOS filas de filtros (167 + 227 palabras). Decisiones:
+- **UNA barra de herramientas** (`.barra-herramientas`: buscar · ordenar · «Filtros» con badge · Buscar) y
+  **una HOJA modal** (`#panel-filtros`, `role="dialog"`: lateral en escritorio, desde abajo en móvil, vidrio;
+  se cierra con «Listo», el velo o Esc; «Quitar todos» dentro) con los siete filtros de la Fase 8 y, plegados,
+  los avanzados. **Ningún id cambió**: los nodos se MOVIERON (un nodo movido conserva sus listeners y la
+  suite mira `filtros-barra`/`filtros-avanzados` por id). Los controles van al estilo del sistema
+  (`.control-select`/`.control-campo`: fondo hundido, sin borde, 36 px, foco con halo del acento). Sin
+  filtros no se dice nada («Sin filtros: se muestran todas…» se fue).
+- **Los datos se GRAFICAN**: el pulso publica `porCierre` y `porCuantia` con las MISMAS cubetas de los
+  filtros (`Filtros.VENTANAS_CIERRE` / `RANGOS_CUANTIA`) y `pulso.js` las dibuja como barras SVG en línea
+  (`svgBarras`, color por custom properties → respeta oscuro/contraste) donde **cada barra ES un filtro**
+  (`data-filtro="cierre=7d"`, `min=…&max=…`) que la MISMA `leerEstado` de la URL aplica en la página. Lo que
+  no cae en cubeta se dice («18 sin fecha de cierre publicada»), no se reparte; una gráfica de ceros no
+  se dibuja. Otra partición «más bonita» daría barras que no llevan a ninguna lista.
+- **El titular de la landing MOTIVA, no explica** (`#frase-portada`, `FRASES_PORTADA` en onboarding.js):
+  frases sobre lo público como bien común y el derecho de la empresa pequeña a competir, rotando cada 7 s
+  con fundido; la primera va en el HTML (se ve sin JS); la rotación se detiene si la landing no se ve. Sin
+  emojis ni jerga (prueba). Peso 250 conservado.
+- **Recortes de texto en la tarjeta** conservando lo que la suite y la filosofía exigen: el VE sigue
+  diciendo «contando las veces que no se gana» (prueba) pero en media línea; el aviso de cierre a 2 días
+  ya no repite «si vas a presentarte».
+- **Chromium cazó dos desbordes móviles** que ninguna prueba de Node ve: el SVG dentro de un grid item sin
+  `min-w-0` ensanchaba la página 26 px, y el selector de perfil del encabezado 4 px. Regla: los ítems de
+  grid que contienen SVG llevan `min-w-0 overflow-hidden`; medir `scrollWidth > clientWidth` a 390 px.
+
 ### Cuadre de control en la importación de Excel (ago 2026)
 
 Tercer punto del mismo contraste. `detectarFilasApu` (`public/xlsx_lectura.js`) captura el total que el

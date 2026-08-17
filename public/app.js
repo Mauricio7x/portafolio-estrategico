@@ -110,13 +110,12 @@
     aplicarFiltroDelPulso(el.getAttribute("data-filtro"));
   });
   function aplicarFiltroDelPulso(filtro) {
-    const base = window.Filtros.leerEstado({});
-    const [k, ...resto] = String(filtro || "").split("=");
-    const v = resto.join("=");
-    if (k === "cierre") base.cierre = { ventana: v || "7d" };
-    else if (k === "dep") base.dep = window.Filtros.leerEstado({ dep: v }).dep;
-    else if (k === "entidad") base.entidad = v || null;
-    cambiarFiltros(base);
+    /* el atributo es una QUERY de la Fase 8 («cierre=7d», «dep=TOLIMA»,
+       «min=0&max=50000000», «entidad=899999081»; «todo» = sin filtros): la
+       lee el MISMO `leerEstado` que lee la URL, así una barra del gráfico y un
+       enlace pegado en Chrome significan exactamente lo mismo */
+    const params = new URLSearchParams(String(filtro || "") === "todo" ? "" : String(filtro || ""));
+    cambiarFiltros(window.Filtros.leerEstado(params));
     const lista = $("lista");
     if (lista && lista.scrollIntoView) lista.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -368,9 +367,28 @@
     $("fl-fichas").innerHTML = fichas.length
       ? fichas.map((f) => `<span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-gray-700 ring-1 ring-inset ring-gray-900/10">${esc(f.etiqueta)}
           <button type="button" data-fl-quitar="${f.filtro}" class="ml-0.5 rounded-full px-1 leading-none text-gray-500 hover:bg-gray-200 hover:text-gray-900" title="Quitar este filtro" aria-label="Quitar ${esc(f.etiqueta)}">×</button></span>`).join("")
-        + `<button type="button" id="fl-quitar-todos" class="ml-1 font-medium text-blue-600 hover:underline">Quitar todos</button>`
-      : `<span class="text-gray-400">Sin filtros: se muestran todas las que pasan sus requisitos (suministro apagado — encendelo arriba si lo querés ver).</span>`;
+        + `<button type="button" id="fl-quitar-todos" class="ml-1 font-medium hover:underline" style="color: var(--accent);">Quitar todos</button>`
+      : "";
+    /* el botón «Filtros» de la barra lleva el número de filtros activos: la hoja
+       está cerrada casi siempre y sin la cifra no se sabría que hay algo puesto */
+    const nBadge = $("btn-filtros-n");
+    if (nBadge) { nBadge.textContent = String(fichas.length); nBadge.classList.toggle("hidden", !fichas.length); }
   }
+  /* ── la HOJA de filtros: abrir/cerrar (botón, «Listo», velo, Esc) ── */
+  function abrirPanelFiltros(abrir) {
+    const panel = $("panel-filtros"), btn = $("btn-filtros");
+    if (!panel || !btn) return;
+    panel.classList.toggle("hidden", !abrir);
+    btn.setAttribute("aria-expanded", abrir ? "true" : "false");
+    document.body.style.overflow = abrir ? "hidden" : "";
+    if (abrir) { const primero = panel.querySelector("button, select, input"); if (primero && primero.focus) primero.focus(); }
+    else if (btn.focus) btn.focus();
+  }
+  $("btn-filtros").addEventListener("click", () => abrirPanelFiltros($("panel-filtros").classList.contains("hidden")));
+  $("panel-filtros-listo").addEventListener("click", () => abrirPanelFiltros(false));
+  $("panel-filtros-velo").addEventListener("click", () => abrirPanelFiltros(false));
+  $("panel-filtros-limpiar").addEventListener("click", () => cambiarFiltros(FL.leerEstado({})));
+  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !$("panel-filtros").classList.contains("hidden")) abrirPanelFiltros(false); });
   /* Delegación de clics de la barra: chips de tipo y modalidad, X de las
      fichas y «Quitar todos». */
   $("filtros-barra").addEventListener("click", (ev) => {
@@ -692,10 +710,10 @@
   function avisoCierre(dias) {
     if (dias == null || dias < 0 || dias > 2) return "";
     const frase = dias === 0
-      ? "Cierra HOY. Solo cuenta la oferta en estado «Presentada» antes de la hora exacta del cierre — guardarla no basta."
+      ? "Cierra HOY: solo cuenta la oferta en estado «Presentada» antes de la hora exacta — guardarla no basta."
       : dias === 1
-        ? "Cierra mañana: si vas a presentarte, cargá y presentá la oferta HOY. El día del cierre es cuando más ofertas mueren."
-        : "Si vas a presentarte, presentá la oferta a más tardar mañana: la regla del oficio es dejarla presentada el día ANTERIOR al cierre.";
+        ? "Cierra mañana: presentá la oferta HOY. El día del cierre es cuando más ofertas mueren."
+        : "Presentá la oferta a más tardar mañana: la regla del oficio es dejarla presentada el día ANTERIOR al cierre.";
     return `<p class="mt-3 rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700">Atención: ${frase}</p>`;
   }
 
@@ -1006,9 +1024,8 @@
     : ""}
         </p>
         <p class="mt-2 border-t border-gray-200 pt-2 text-xs text-gray-500">
-          Presentarte a procesos como este deja
-          <strong class="tabular-nums text-gray-700">${esc(fmtCorto(l.ve))}</strong>
-          por intento en promedio, contando las veces que no se gana y lo que cuesta preparar la oferta.
+          Deja <strong class="tabular-nums text-gray-700">${esc(fmtCorto(l.ve))}</strong> por intento, en promedio
+          <span title="Es un promedio sobre intentos: ya descuenta las veces que no se gana y lo que cuesta preparar la oferta.">(contando las veces que no se gana y el costo de ofertar)</span>.
         </p>
       </div>`;
   }
