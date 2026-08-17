@@ -16,6 +16,11 @@ const OPS = {
      es GET con token, la entrada es POST pública— y `entrada` queda como
      sinónimo explícito para quien prefiera no ambigüedad. */
   entrada: () => require("../lib/handlers/perfil/entrada.js"),
+  /* El PULSO personalizado (ago 2026): las cifras del perfil nada más entrar
+     — cuántas, cuánto dinero, cuáles cierran esta semana, dónde y quién.
+     Público como la entrada (conteos de procesos públicos, sin cifras del
+     perfil); GET ?perfil=… */
+  pulso: () => require("../lib/handlers/perfil/pulso.js"),
   // [v4] Fase 10 · consorcio a la medida (crear/listar/borrar) y su simulador
   consorcio: () => require("../lib/handlers/perfil/consorcio.js"),
   "consorcio-simular": () => (req, res) => require("../lib/handlers/perfil/consorcio.js")(req, res, { op: "consorcio-simular" }),

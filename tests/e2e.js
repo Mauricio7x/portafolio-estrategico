@@ -13612,6 +13612,95 @@ async function main() {
       console.log(`  · Portada (Fase 9): ${p1.cuerpo.procesosAbiertos} abiertos · ${p1.cuerpo.entidadesActivas} entidades · cierran esta semana ${p1.cuerpo.cierranEstaSemana.n} · manifestación abierta ${m0.cuerpo.total} · calendario 2026 (18 festivos, Reyes trasladado, Semana Santa) verificado · fecha límite siempre «calculada»`);
     }
 
+    /* ═══════════ j-septies-bis. LA PUERTA PRIMERO, LAS CIFRAS DESPUÉS Y PERSONALIZADAS (ago 2026) ═══════════
+       Encargo del dueño: la portada del mercado entero salía en la landing
+       ANTES de elegir cómo entrar, con demasiado texto; los datos tienen que
+       salir DESPUÉS, personalizados al RUP. Se vigila: (1) `op=pulso` cuenta
+       EXACTAMENTE lo que el listado (misma cascada, mismas puertas), publica
+       los agregados que suman, cachea y responde 404 «caducado» a un rup_
+       inexistente; (2) la landing es una puerta de entrada (tres puertas, un
+       teaser de tres cifras y una línea de privacidad; la portada ya NO vive
+       en #onboarding); (3) el tablero abre con #pulso arriba y el mercado
+       entero PLEGADO; (4) las plantillas del pulso: sin emojis, cifras que
+       enlazan a la lista, `null` jamás como 0. */
+    {
+      const routerPerfil = require("../api/perfil.js");
+      const PulsoPub = require("../public/pulso.js");
+      const PortadaPub2 = require("../public/portada.js");
+      // (1) el endpoint
+      const pu = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=helder&refrescar=1");
+      assert.strictEqual(pu.status, 200, `pulso: ${JSON.stringify(pu.cuerpo).slice(0, 200)}`);
+      const lh = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1");
+      assert.strictEqual(pu.cuerpo.total, lh.cuerpo.total, "el pulso cuenta EXACTAMENTE lo que el listado sin filtros (misma cascada, mismas puertas)");
+      assert.ok(pu.cuerpo.total > 0, "el corpus de prueba tiene viables para Helder");
+      assert.ok(pu.cuerpo.cierranEstaSemana && pu.cuerpo.cierranEstaSemana.n <= pu.cuerpo.total);
+      const sumDep = pu.cuerpo.porDepartamento.reduce((a, d) => a + d.n, 0);
+      assert.ok(sumDep + pu.cuerpo.sinDepartamento <= pu.cuerpo.total && sumDep > 0, "los departamentos del top no pueden sumar más que el total");
+      assert.ok(pu.cuerpo.topEntidades.length > 0 && pu.cuerpo.topEntidades.every((e) => e.nombre && e.n >= 1 && (e.valor == null || e.valor >= 0)));
+      assert.ok(pu.cuerpo.porDepartamento.every((d, i, arr) => i === 0 || arr[i - 1].n >= d.n), "el reparto por departamento va de más a menos");
+      for (const k of ["patrimonio", "k_cop", "crpc", "utilidad"]) assert.ok(!(k in pu.cuerpo), `el pulso es público: no puede publicar «${k}»`);
+      const pu2 = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=helder");
+      assert.strictEqual(pu2.cuerpo.cache, true, "la segunda lectura sale de caché");
+      assert.strictEqual(pu2.cuerpo.total, pu.cuerpo.total);
+      assert.strictEqual((await invocar(routerPerfil, "/api/perfil?op=pulso")).status, 400);
+      const puCad = await invocar(routerPerfil, "/api/perfil?op=pulso&perfil=rup_noexiste0001");
+      assert.strictEqual(puCad.status, 404); assert.strictEqual(puCad.cuerpo.perfil_caducado, true, "un rup_ inexistente responde caducado (la web olvida el guardado)");
+      // el rup_ recién creado por la puerta de entrada también tiene pulso, y su total es el de su listado
+      const ent = await invocarPost(routerPerfil, "/api/perfil?op=diagnostico", { manual: { patrimonio: 900000000, mayorContrato: 3000000000, unidad: "COP", actividad: "vias" } });
+      if (ent.status === 200 && ent.cuerpo.perfil_id) {
+        assert.ok(ent.cuerpo.oportunidades.agregados && typeof ent.cuerpo.oportunidades.agregados.total === "number", "la puerta de entrada devuelve los agregados (la pantalla de resultado los pinta en cifras)");
+        assert.strictEqual(ent.cuerpo.oportunidades.agregados.total, ent.cuerpo.oportunidades.total, "los agregados cuentan sobre los MISMOS viables");
+        const puR = await invocar(routerPerfil, `/api/perfil?op=pulso&perfil=${ent.cuerpo.perfil_id}`);
+        const liR = await invocar(oportunidades, `/api/oportunidades?perfil=${ent.cuerpo.perfil_id}&por_pagina=1`);
+        assert.strictEqual(puR.status, 200); assert.strictEqual(puR.cuerpo.total, liR.cuerpo.total, "para un perfil manual, pulso y listado cuentan lo mismo");
+      }
+      // (2) la landing: puerta primero, casi sin texto
+      const htmlL = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const iOnb = htmlL.indexOf('id="onboarding"'), iGate = htmlL.indexOf('id="gate"'), iTab = htmlL.indexOf('id="tab-licitaciones"'), iPortada = htmlL.indexOf('<section id="portada"');
+      assert.ok(iOnb >= 0 && iGate > iOnb && iTab > iGate && iPortada > iTab, "la portada del mercado ya NO vive en la landing: está dentro de la pestaña Licitaciones");
+      const landing = htmlL.slice(iOnb, iGate);
+      for (const id of ["btn-subir-rup", "btn-manual", "btn-ir-gate", "pulso-global", "entrada-inicio", "res-cifras"]) assert.ok(landing.includes(`id="${id}"`), `la landing debe tener #${id}`);
+      const inicio = landing.slice(landing.indexOf('id="entrada-inicio"'), landing.indexOf('<!-- progreso de la extracción -->'));
+      assert.ok((inicio.match(/class="[^"]*puerta-entrada/g) || []).length === 3, "tres PUERTAS de entrada (RUP · tres datos · clave), en la primera pantalla");
+      assert.ok(!/Para eso hace falta su RUP/.test(landing) && !/Acceso con clave \(perfiles existentes\)/.test(landing), "la prosa vieja de la landing se fue");
+      const textoVisible = landing.replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+      const palabras = textoVisible.trim().split(" ").length;
+      assert.ok(palabras < 260, `la landing tiene ${palabras} palabras (formularios plegados incluidos): el tope es 260 — era una página de 870`);
+      assert.ok(/<div id="pulso-global" class="hidden/.test(landing), "el teaser nace oculto: solo aparece si el agregado existe");
+      // (3) el tablero: pulso arriba, mercado plegado
+      const tab = htmlL.slice(iTab);
+      for (const id of ["pulso", "pu-hero", "pu-departamentos", "pu-entidades", "pu-nota", "mercado-completo", "pt-vacio"]) assert.ok(tab.includes(`id="${id}"`), `falta #${id} en la pestaña Licitaciones`);
+      assert.ok(/<section id="pulso" class="hidden/.test(tab), "el pulso nace OCULTO (vacío y honesto hasta que hay datos)");
+      assert.ok(tab.indexOf('id="pulso"') < tab.indexOf('id="mercado-completo"') && tab.indexOf('id="mercado-completo"') < tab.indexOf('id="f-ordenar"'), "orden: pulso → mercado plegado → controles → lista");
+      assert.ok(/<details id="mercado-completo"(?![^>]*\bopen\b)/.test(tab), "el mercado completo nace PLEGADO");
+      assert.ok(htmlL.indexOf('<script src="/pulso.js">') < htmlL.indexOf('<script src="/app.js">'), "pulso.js se carga antes que app.js");
+      const appL = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      assert.ok(/function refrescarPulso\(\)/.test(appL) && /refrescarPulso\(\);\s*\n\s*\}/.test(appL.slice(appL.indexOf("function abrirApp"), appL.indexOf("function abrirApp") + 900)), "abrirApp refresca el pulso");
+      assert.ok(/if \(id === "f-perfil"\) refrescarPulso\(\)/.test(appL), "cambiar de perfil refresca el pulso");
+      assert.ok(/window\.Portada\.teaser\(\)/.test(appL), "la landing arranca el TEASER, no la portada entera");
+      assert.ok(/mercadoCompleto\.open && window\.Portada\) window\.Portada\.arrancar\(\)/.test(appL), "la portada entera se pide al ABRIR el pliegue, no antes");
+      assert.ok(/aplicarFiltroDelPulso/.test(appL) && /cambiarFiltros\(base\)/.test(appL), "las cifras del pulso filtran la lista EN LA MISMA PÁGINA");
+      const onbL = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8"));
+      assert.ok(/\$\("res-cifras"\)/.test(onbL) && /cierranEstaSemana/.test(onbL), "la pantalla de resultado pinta las cifras (cuántas · cuánto · cierran esta semana)");
+      // (4) plantillas
+      const p0 = { total: 47, valorTotal: 312e9, visibles: 60, cierranEstaSemana: { n: 6, valor: 4.2e10 }, porDepartamento: [{ nombre: "TOLIMA", n: 20, valor: 1e11 }, { nombre: "CUNDINAMARCA", n: 12, valor: 5e10 }], departamentosDistintos: 9, sinDepartamento: 1, topEntidades: [{ nombre: "ALCALDÍA DE IBAGUÉ", nit: "800113389", n: 5, valor: 3e10 }], entidadesDistintas: 30, generado: new Date().toISOString() };
+      const hero = PulsoPub.htmlHero(p0, "Constructora X");
+      assert.ok(/Para Constructora X, hoy/.test(hero) && /47/.test(hero) && /\$312\.000 millones/.test(hero) && /cierran esta semana/.test(hero), "hero: nombre, cuántas, cuánto, cierran");
+      assert.ok(/data-filtro="cierre=7d"/.test(hero) && /data-filtro="todo"/.test(hero), "las cifras enlazan a la lista");
+      const dep = PulsoPub.htmlDepartamentos(p0), entH = PulsoPub.htmlEntidades(p0);
+      assert.ok(/data-filtro="dep=TOLIMA"/.test(dep) && /y 7 departamentos más/.test(dep) && /width:100%/.test(dep) && /width:60%/.test(dep), "barras por conteo, enlace por departamento y «y N más»");
+      assert.ok(/data-filtro="entidad=800113389"/.test(entH) && /y 29 entidades más/.test(entH), "las entidades enlazan por NIT y dicen cuántas más hay");
+      const cero = PulsoPub.htmlHero({ total: 0, visibles: 12, corpus_vacio: false }, "");
+      assert.ok(/ninguna licitación abierta encaja/.test(cero) && /Hay 12 de su tipo de obra/.test(cero) && !/data-filtro/.test(cero), "con cero viables no hay cifras que enlazar y se dice por qué");
+      assert.strictEqual(PulsoPub.htmlHero({ total: 3, valorTotal: null, cierranEstaSemana: { n: 0, valor: null } }, "").includes("Sin referencia"), true, "sin cuantías publicadas el dinero es «Sin referencia», no $0");
+      for (const v of [4.7e12, 312e9, 52.4e6, 850000, 0, null]) assert.strictEqual(PulsoPub.pesosCortos(v), PortadaPub2.pesosCortos(v), `pesosCortos difiere entre pulso y portada para ${v}`);
+      assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(hero + dep + entH + cero + PortadaPub2.htmlTeaser({ procesosAbiertos: 1306, valorTotal: 13.9e12, entidadesActivas: 573 })), "sin emojis");
+      const teaser = PortadaPub2.htmlTeaser({ procesosAbiertos: 1306, valorTotal: 13.9e12, entidadesActivas: 573 });
+      assert.ok(/1\.306/.test(teaser) && /\$13,9 billones/.test(teaser) && /573/.test(teaser) && (teaser.match(/<div class="cifra">/g) || []).length === 3, "el teaser son tres cifras");
+      assert.ok(!/pt-btn-cuales/.test(PortadaPub2.htmlHero({ procesosAbiertos: 1, valorTotal: 1, entidadesActivas: 1, generado: new Date().toISOString() }, { conBoton: false })), "dentro del tablero el hero de la portada va sin el botón de entrada");
+      console.log(`  · Puerta primero, cifras después: pulso helder = ${pu.cuerpo.total} (= listado) · cierran esta semana ${pu.cuerpo.cierranEstaSemana.n} · ${pu.cuerpo.porDepartamento.length} dptos · ${pu.cuerpo.topEntidades.length} entidades · landing ${palabras} palabras · mercado plegado`);
+    }
+
     /* ═══════════ j-octies. CONSORCIO A LA MEDIDA (Fase 10 del plan v4) ═══════════
        (1) `truncar2` trunca como las cámaras (0,0498 → 0,04; 0,085 → 0,08),
        no redondea, y sobrevive a la coma flotante (0,29). (2) La suma de

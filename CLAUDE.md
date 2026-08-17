@@ -3439,6 +3439,40 @@ archivo DECLARA y lo compara con la suma de los ítems leídos; publica `cuadre`
   equivocada. Hay prueba de ida y vuelta real: exportar → leer → cuadra AL PESO contra su propio
   «COSTOS DIRECTOS» y los subtotales por capítulo no nacen como capítulos.
 
+### La puerta primero, las cifras después y personalizadas (ago 2026)
+
+Encargo del dueño (17-ago-2026): «la interfaz que está por fuera debe salir DESPUÉS de que la persona
+elija cómo quiere ingresar, para que los datos estén personalizados al RUP; y tienen demasiado texto —
+somos una página con millones de datos, este es el momento para sacarlos a flote». Medido antes de tocar:
+la landing de producción medía 4 205 px y 871 palabras, con la portada del mercado ENTERO encima de la
+subida del RUP. Ahora mide un viewport (900 px) y 81 palabras. Decisiones:
+- **La landing es una PUERTA DE ENTRADA**: titular, tres puertas (`Subir mi RUP` · `Escribir tres datos` ·
+  `Entrar con clave`, mismos ids de siempre — `btn-subir-rup`/`btn-manual`/`btn-ir-gate`—) y UNA línea de
+  privacidad (con la promesa literal «No guardamos su documento», que la suite guarda). Lo único «de fuera»
+  es `#pulso-global`: **tres cifras del mercado sin prosa** (`Portada.teaser`), como gancho de que hay datos
+  detrás. Nace oculto y solo aparece si el agregado existe.
+- **`/api/perfil?op=pulso&perfil=…`** (`lib/handlers/perfil/pulso.js`, público como la entrada) es el
+  pulso PERSONALIZADO: cuántas puede presentarse, cuánto dinero, cuántas cierran esta semana, dónde
+  (departamentos) y quién (entidades). **NO reimplementa el conteo**: llama a `contarOportunidades` de la
+  puerta de entrada (misma cascada, mismas puertas) y hay prueba de que `total` == el `total` del listado
+  sin filtros, para el dueño y para un perfil manual recién creado. `agregarPulso` vive en `entrada.js` y
+  sus agregados viajan TAMBIÉN en la respuesta de la entrada (la pantalla de resultado los pinta en cifras).
+  Caché `pulso:{perfil}` 10 min, borrada con la carga/borrado de RUP junto a `resumen:*`. Sin cifras del
+  perfil (patrimonio, K…): solo conteos y sumas de procesos públicos.
+- **El tablero abre con `#pulso` ARRIBA** (`public/pulso.js`, UMD probable en Node) y **el mercado entero
+  PLEGADO** debajo (`<details id="mercado-completo">`, con la `#portada` de la Fase 9 dentro, que se pide
+  la primera vez que alguien lo abre — `Portada.arrancar` en el `toggle`). Las cifras del pulso **filtran
+  la lista EN LA MISMA PÁGINA** (`data-filtro` → `cambiarFiltros`), no recargan. `refrescarPulso` corre en
+  `abrirApp` y al cambiar `f-perfil`. Sin datos, `#pulso` sigue oculto; `null` jamás se pinta como 0.
+- **`Portada.htmlHero(p, {conBoton})`**: dentro del tablero el botón «Ver a cuáles puedo presentarme»
+  sobra (ya entró); el contrato por defecto se conserva.
+- **La pantalla de resultado de la entrada va en CIFRAS** (`#res-cifras`: cuántas · cuánto · cierran esta
+  semana), no en tres frases; los ids viejos siguen (la suite los cablea).
+- **Verificado en Chromium** (escritorio y móvil, con `/api/*` reenviado a producción y `op=pulso`
+  simulado con la forma real): landing en un viewport sin desbordar en 390 px, clave → tablero con el
+  pulso, clic en un departamento → `?dep=11` y ficha «Dónde queda: Bogotá D.C.» sin recargar, mercado
+  plegado que se abre y pinta la portada sin el botón de entrada. Cero errores de consola.
+
 ### Fase 6 · Traducción de lenguaje (ago 2026 · plan v3, transversal — cierre)
 
 - **Se midió sobre la página RENDERIZADA en producción** (Chromium: landing, Licitaciones con tarjetas y
