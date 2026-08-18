@@ -114,6 +114,13 @@
     .pestana.activa { color: var(--text-primary); background: var(--accent-light); font-weight: 500; }
     .pestana-movil { color: var(--text-secondary); transition: color .15s ease; }
     .pestana-movil.activa { color: var(--accent); }
+    /* la insignia de «Mis procesos»: cuántas cosas piden atención (cambios sin
+       ver + alertas urgentes); nace oculta y solo aparece con cifra > 0 */
+    .insignia-pestana { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px;
+      padding: 0 5px; margin-left: 6px; border-radius: 9px; font-size: 11px; font-weight: 600; line-height: 1;
+      background: #ff3b30; color: #fff; }
+    .pestana-movil { position: relative; }
+    .pestana-movil .insignia-pestana { position: absolute; top: 4px; left: calc(50% + 6px); margin: 0; }
     .panel-pestana { animation: entra .28s cubic-bezier(0.4, 0, 0.2, 1); }
     @keyframes entra { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
@@ -515,6 +522,7 @@
         <nav class="order-3 hidden items-center gap-1 md:flex" aria-label="Secciones">
           <button type="button" data-tab="admin" class="pestana activa">Mi empresa</button>
           <button type="button" data-tab="licitaciones" class="pestana">Licitaciones</button>
+          <button type="button" data-tab="seguimiento" class="pestana">Mis procesos<span id="seg-insignia" class="insignia-pestana hidden" aria-label="Cosas que piden atención"></span></button>
           <button type="button" data-tab="apu" class="pestana">Precios</button>
         </nav>
 
@@ -535,9 +543,10 @@
 
     <!-- pestañas (móvil): barra inferior estilo app nativa -->
     <nav class="barra-movil fixed inset-x-0 bottom-0 z-20 md:hidden" aria-label="Secciones (móvil)">
-      <div class="mx-auto grid h-full max-w-md grid-cols-3 items-center">
+      <div class="mx-auto grid h-full max-w-md grid-cols-4 items-center">
         <button type="button" data-tab="admin" class="pestana-movil activa flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 14a1.6 1.6 0 0 0 .33 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.6 1.6 0 0 0 15 18.4a1.6 1.6 0 0 0-1 1.47V20a2 2 0 1 1-4 0v-.05A1.6 1.6 0 0 0 9 18.4a1.6 1.6 0 0 0-1.77.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 4.73 14a1.6 1.6 0 0 0-1.47-1H3a2 2 0 1 1 0-4h.05A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.33-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.6 1.6 0 0 0 9 4.73 1.6 1.6 0 0 0 10 3.26V3a2 2 0 1 1 4 0v.05A1.6 1.6 0 0 0 15 4.6a1.6 1.6 0 0 0 1.77-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.6 1.6 0 0 0 19.4 9v.05a1.6 1.6 0 0 0 1.47 1H21a2 2 0 1 1 0 4h-.05a1.6 1.6 0 0 0-1.47 1Z"/></svg>Mi empresa</button>
         <button type="button" data-tab="licitaciones" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>Licitaciones</button>
+        <button type="button" data-tab="seguimiento" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12l2 2 4-4"/><path d="M9 17h6"/></svg>Mis procesos<span id="seg-insignia-movil" class="insignia-pestana hidden" aria-hidden="true"></span></button>
         <button type="button" data-tab="apu" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><rect x="5" y="12" width="3.5" height="6" rx=".6"/><rect x="10.25" y="7" width="3.5" height="11" rx=".6"/><rect x="15.5" y="9.5" width="3.5" height="8.5" rx=".6"/></svg>Precios</button>
       </div>
     </nav>
@@ -672,25 +681,6 @@
            Nace OCULTO: app.js lo enseña solo cuando hay DOS o más perfiles
            individuales cargados (Helder, Génesis, RUP subidos). Compara
            CAPACIDAD, nunca precios (art. 410A del Código Penal). -->
-      <!-- ══════ MIS PROCESOS (ago 2026): guardar, seguir y estudiar a la competencia ══════
-           Encargo del dueño: guardar procesos (interesa / me presenté), ver el
-           cronograma con avisos a 7/3/1 días, y cuando cierra, quiénes se
-           presentaron y qué dicen las fuentes abiertas de cada uno. Los datos
-           salen de /api/perfil?op=seguimiento; nace oculto y aparece con el
-           primer proceso guardado (o con el resumen si ya hay). -->
-      <section id="seccion-seguimiento" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 class="font-semibold tracking-tight">Mis procesos</h2>
-            <p class="mt-1 text-sm text-gray-500">Los que guardó desde la lista: cuándo cierran, qué aviso viene y, cuando cierran, quiénes se presentaron.</p>
-          </div>
-          <div id="seg-resumen" class="flex flex-wrap gap-2 text-xs"></div>
-        </div>
-        <p id="seg-vacio" class="mt-4 text-sm text-gray-500">Todavía no ha guardado ningún proceso. En la lista de licitaciones, cada tarjeta tiene el botón «Guardar».</p>
-        <div id="seg-lista" class="mt-4 space-y-3"></div>
-        <p id="seg-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
-      </section>
-
       <div class="mt-8 grid gap-6 lg:grid-cols-2 lg:items-start">
       <section id="seccion-consorcio" class="hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">Crear consorcio</h2>
@@ -1332,6 +1322,50 @@
 
     </main>
 
+    <!-- ════════════════════ PESTAÑA · Mis procesos (18-ago-2026) ════════════════════
+         Pestaña PROPIA porque el volumen de procesos que le interesan al usuario
+         puede ser grande. Es una lista de vigilancia con etapa por proceso, un
+         CENTRO DE ALERTAS arriba (lo que pide atención en los próximos 7 días:
+         manifestación de interés que vence, cambios de cronograma, cierres,
+         avisos a 7/3/1 días) y filtros por etapa. Los ids de la sección original
+         (seccion-seguimiento, seg-*) se conservan: la suite los mira. -->
+    <main id="tab-seguimiento" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 class="text-2xl font-semibold tracking-tight">Mis procesos</h2>
+          <p class="mt-1 text-sm text-gray-500">Los que guardó desde la lista: en qué etapa va cada uno, qué viene en el cronograma y qué cambió desde la última vez que lo miró.</p>
+        </div>
+        <div id="seg-resumen" class="flex flex-wrap gap-2 text-xs"></div>
+      </div>
+
+      <!-- centro de alertas: nace oculto; aparece con la primera alerta -->
+      <section id="seg-alertas" class="mt-6 hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="font-semibold tracking-tight">Piden atención</h3>
+          <p id="seg-alertas-n" class="text-xs text-gray-500"></p>
+        </div>
+        <ul id="seg-alertas-lista" class="mt-3 space-y-2 text-sm"></ul>
+      </section>
+
+      <!-- ══════ MIS PROCESOS (ago 2026): guardar, seguir y estudiar a la competencia ══════
+           Encargo del dueño: guardar procesos (interesa / me presenté), ver el
+           cronograma con avisos a 7/3/1 días, y cuando cierra, quiénes se
+           presentaron y qué dicen las fuentes abiertas de cada uno. Los datos
+           salen de /api/perfil?op=seguimiento; nace oculto y aparece con el
+           primer proceso guardado (o con el resumen si ya hay). -->
+      <section id="seccion-seguimiento" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h3 class="font-semibold tracking-tight">Lista de seguimiento</h3>
+          <!-- filtros por etapa (chips); «Todos» por defecto -->
+          <div id="seg-filtros" class="flex flex-wrap gap-1.5 text-xs"></div>
+        </div>
+        <p id="seg-vacio" class="mt-4 text-sm text-gray-500">Todavía no ha guardado ningún proceso. En la lista de licitaciones, cada tarjeta tiene el botón «Guardar»; desde aquí verá su cronograma, los cambios y, cuando cierre, quiénes se presentaron.</p>
+        <div id="seg-lista" class="mt-4 space-y-3"></div>
+        <p id="seg-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
+      </section>
+
+    </main>
+
     <!-- ════════════════════ PESTAÑA 2 · Licitaciones ════════════════════ -->
     <main id="tab-licitaciones" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
       <!-- ══════ LA BARRA DE HERRAMIENTAS (ago 2026) ══════
@@ -1349,7 +1383,7 @@
             <input id="fl-q" type="text" placeholder="Buscar por palabra o entidad" autocomplete="off"
                    class="w-full border-0 bg-transparent py-2 text-sm focus:outline-none focus:ring-0">
           </label>
-          <select id="f-ordenar" class="control-select rounded-xl text-sm" aria-label="Ordenar por">
+          <select id="f-ordenar" class="control-select max-w-full rounded-xl text-sm" aria-label="Ordenar por">
             <option value="atractividad">Las mejores para usted</option>
             <option value="margen">Dónde me queda más (solo las que ya costeó)</option>
             <option value="cierre">Las que cierran antes</option>
@@ -1369,6 +1403,16 @@
         <!-- El CONCEPTO del orden elegido (18-ago-2026): qué hace ese orden y qué no
              promete. Lo pinta app.js desde Filtros.conceptoDe al cambiar #f-ordenar. -->
         <p id="orden-concepto" class="mt-2 text-xs" style="color: var(--text-secondary);"></p>
+        <!-- MANIFESTACIÓN DE INTERÉS (18-ago-2026): en la selección abreviada de menor
+             cuantía hay que manifestar interés en 3 días hábiles desde la apertura o
+             no se puede ofertar. El servidor cuenta cuántas siguen abiertas y cuántas
+             vencen hoy o mañana (facetas.manifestacion); app.js lo pinta aquí y el
+             botón aplica el filtro `manif=abierta`. Nace oculto: sin datos no se
+             enseña nada. -->
+        <div id="aviso-manifestacion" class="mt-2 hidden items-center justify-between gap-3 rounded-xl px-3 py-2 text-xs ring-1 ring-inset bg-amber-50 text-amber-900 ring-amber-600/20" role="status">
+          <span id="aviso-manifestacion-texto"></span>
+          <button type="button" id="aviso-manifestacion-ver" class="shrink-0 rounded-lg bg-white/70 px-2.5 py-1 font-medium ring-1 ring-inset ring-amber-600/30 hover:bg-white">Ver solo estas</button>
+        </div>
       </section>
 
       <!-- ══════ LA HOJA DE FILTROS ══════
@@ -1438,6 +1482,15 @@
                   <input id="fl-cierre-hasta" type="date" class="control-campo w-1/2 rounded-xl text-sm">
                 </div>
               </div>
+            </div>
+            <div>
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Manifestación de interés</span>
+              <label class="flex items-start gap-2 text-sm">
+                <input id="fl-manif" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+                <span>Solo procesos de menor cuantía en los que <strong>todavía puedo manifestar interés</strong>
+                  <span id="fl-manif-n" class="text-gray-500"></span>
+                  <span class="block text-xs text-gray-500">Plazo de 3 días hábiles desde la apertura (calculado; confírmelo en el cronograma del SECOP II).</span></span>
+              </label>
             </div>
             <div>
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Buscar entidad</span>

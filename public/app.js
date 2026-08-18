@@ -176,11 +176,12 @@
      barra inferior (data-tab compartido). Cada pestaña arranca lo suyo la
      PRIMERA vez que se abre: abrir la app no dispara el panel de admin ni la
      carga del catálogo de APU si nadie los mira. */
-  const PESTANAS = ["licitaciones", "apu", "admin"];
+  const PESTANAS = ["licitaciones", "seguimiento", "apu", "admin"];
   /* Alias legibles en la URL: la pestaña principal se llama «Mi empresa» y su
-     panel sigue siendo #tab-admin (renombrar ids mataría media suite). */
-  const ALIAS_PESTANA = { empresa: "admin", "mi-empresa": "admin", precios: "apu" };
-  const arrancadas = { apu: false, admin: false, pliego: false };
+     panel sigue siendo #tab-admin (renombrar ids mataría media suite);
+     «Mis procesos» es #tab-seguimiento (#/mis-procesos). */
+  const ALIAS_PESTANA = { empresa: "admin", "mi-empresa": "admin", precios: "apu", "mis-procesos": "seguimiento", procesos: "seguimiento" };
+  const arrancadas = { apu: false, admin: false, pliego: false, seguimiento: false };
   function activarPestana(nombre, { empujarHash = true } = {}) {
     const pedido = ALIAS_PESTANA[nombre] || nombre;
     const destino = PESTANAS.includes(pedido) ? pedido : "admin";
@@ -198,6 +199,9 @@
       window.__pliegoArrancar();
     }
     if (destino === "admin" && !arrancadas.admin) { arrancadas.admin = true; arrancarPaneles(); }
+    /* Mis procesos: se pide FRESCO cada vez que se abre la pestaña (los cambios
+       y las alertas dependen del corpus vivo y son baratos: un GET) */
+    if (destino === "seguimiento") { arrancadas.seguimiento = true; cargarSeguimiento({ forzar: true }); }
     try { window.scrollTo({ top: 0 }); } catch { /* sin scroll */ }
   }
   document.addEventListener("click", (e) => {
@@ -404,6 +408,13 @@
     $("fl-cierre-fechas").classList.toggle("hidden", cierreId !== "fechas");
     $("fl-cierre-fechas").classList.toggle("flex", cierreId === "fechas");
     if (cierreId === "fechas") { $("fl-cierre-desde").value = e.cierre.desde || ""; $("fl-cierre-hasta").value = e.cierre.hasta || ""; }
+    // 6 · manifestación de interés (casilla) + el aviso bajo la barra
+    const fm = ultimasFacetas && ultimasFacetas.manifestacion;
+    if ($("fl-manif")) {
+      $("fl-manif").checked = e.manif === "abierta";
+      $("fl-manif-n").textContent = fm ? `(${fm.abiertas})` : "";
+    }
+    pintarAvisoManifestacion(fm);
     // 7 · entidad y palabra
     if (document.activeElement !== $("fl-entidad")) $("fl-entidad").value = e.entidad || "";
     $("fl-entidad-historial").classList.toggle("hidden", !e.entidad);
@@ -420,6 +431,26 @@
     const nBadge = $("btn-filtros-n");
     if (nBadge) { nBadge.textContent = String(fichas.length); nBadge.classList.toggle("hidden", !fichas.length); }
   }
+  /* El aviso de manifestación de interés bajo la barra: cuántos procesos de
+     menor cuantía siguen con el plazo abierto y cuántos vencen hoy o mañana
+     hábil. Solo se enseña con datos (facetas del servidor); con el filtro ya
+     puesto dice que se están viendo. */
+  function pintarAvisoManifestacion(fm) {
+    const caja = $("aviso-manifestacion");
+    if (!caja) return;
+    if (!fm || !fm.abiertas) { caja.classList.add("hidden"); caja.classList.remove("flex"); return; }
+    const t = $("aviso-manifestacion-texto"), b = $("aviso-manifestacion-ver");
+    const puesto = estadoFiltros.manif === "abierta";
+    t.textContent = `Manifestación de interés: ${fm.abiertas} proceso${fm.abiertas === 1 ? "" : "s"} de menor cuantía con el plazo abierto`
+      + (fm.urgentes ? ` — ${fm.urgentes} vence${fm.urgentes === 1 ? "" : "n"} hoy o mañana hábil` : "")
+      + (puesto ? " (se muestran solo estos)." : ". Sin manifestar interés en SECOP II no se puede ofertar.");
+    b.textContent = puesto ? "Ver todos" : "Ver solo estos";
+    caja.classList.remove("hidden"); caja.classList.add("flex");
+  }
+  $("aviso-manifestacion-ver").addEventListener("click", () => {
+    cambiarFiltros({ ...estadoFiltros, manif: estadoFiltros.manif === "abierta" ? null : "abierta" });
+  });
+  $("fl-manif").addEventListener("change", () => cambiarFiltros({ ...estadoFiltros, manif: $("fl-manif").checked ? "abierta" : null }));
   /* ── la HOJA de filtros: abrir/cerrar (botón, «Listo», velo, Esc) ── */
   function abrirPanelFiltros(abrir) {
     const panel = $("panel-filtros"), btn = $("btn-filtros");
@@ -767,6 +798,33 @@
         ? "Cierra mañana: presente la oferta HOY. El día del cierre es cuando más ofertas mueren."
         : "Presente la oferta a más tardar mañana: la regla del oficio es dejarla presentada el día ANTERIOR al cierre.";
     return `<p class="mt-3 rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700">Atención: ${frase}</p>`;
+  }
+
+  /* MANIFESTACIÓN DE INTERÉS (menor cuantía, 18-ago-2026): en esta modalidad
+     no basta con ofertar — primero hay que manifestar interés dentro de los
+     3 días hábiles siguientes a la apertura, o el proceso se pierde antes de
+     empezar. El servidor calcula la fecha (apertura + 3 hábiles, D. 1082/2015
+     art. 2.2.1.2.1.2.20) y la declara CALCULADA; aquí se pinta un chip y, si
+     vence hoy o mañana, una línea a la vista (como la regla de las 24 horas). */
+  function chipManifestacion(m) {
+    if (!m || !m.aplica) return "";
+    const nota = m.nota || "";
+    if (m.vencida === true) return chip(`Manifestación de interés · plazo vencido ${esc(m.vence_legible || "")}`, "bg-gray-100 text-gray-600", nota);
+    if (m.vencida === false) {
+      const q = m.quedan_habiles, d = m.dias_calendario;
+      const cuando = d === 0 ? "vence HOY" : d === 1 ? "vence mañana" : `${q} día${q === 1 ? "" : "s"} hábil${q === 1 ? "" : "es"}`;
+      return chip(`Manifestar interés · ${cuando} · hasta ${esc(m.vence_legible || "")}`, q != null && q <= 2 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800", nota);
+    }
+    return chip("Manifestación de interés · fecha por confirmar en SECOP II", "bg-amber-100 text-amber-800", nota);
+  }
+  function avisoManifestacion(m) {
+    if (!m || !m.aplica || m.vencida !== false || m.quedan_habiles == null || m.quedan_habiles > 2) return "";
+    const frase = m.dias_calendario === 0
+      ? `El plazo para manifestar interés vence HOY (${esc(m.vence_legible || "")}). Sin la manifestación en SECOP II no podrá presentar oferta a este proceso.`
+      : m.dias_calendario === 1
+        ? `El plazo para manifestar interés vence mañana (${esc(m.vence_legible || "")}): hágalo hoy en SECOP II. Sin la manifestación no podrá ofertar.`
+        : `Quedan ${m.quedan_habiles} días hábiles para manifestar interés (hasta ${esc(m.vence_legible || "")}). Sin la manifestación en SECOP II no podrá ofertar.`;
+    return `<p class="mt-3 rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700" title="${esc(m.nota || "")}">Atención: ${frase} <span class="font-normal">Fecha calculada desde la apertura; confírmela en el cronograma.</span></p>`;
   }
 
   /* Veredicto GRADUADO del matching UNSPSC. Nunca es un sí/no: dice CON QUÉ
@@ -1153,12 +1211,14 @@
         ${paaEncendido ? chip("Activo · abierto", "bg-green-100 text-green-800 ring-1 ring-inset ring-green-600/20",
     "Proceso PUBLICADO en SECOP II, con pliego y fecha de cierre — a diferencia de las previsiones del PAA") : ""}
         ${chipCierre(cierre, cierreTxt, diasCierre)}
+        ${chipManifestacion(l.manifestacion)}
         ${bandaCompetencia(l.competencia_entidad, l.entidad)}
         ${chipZona(l.zona)}
         ${l._cierre_prorrogado ? chip("Cierre prorrogado", "bg-indigo-100 text-indigo-800", "El cierre se movió por adenda: suele indicar que no llegaron ofertas suficientes") : ""}
       </div>
 
       ${noViable ? "" : avisoCierre(diasCierre)}
+      ${noViable ? "" : avisoManifestacion(l.manifestacion)}
       ${lineaMargen(l.margen_estimado)}
       ${bloqueAdendas(l.adendas)}
 
@@ -1927,7 +1987,7 @@
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
   for (const id of ["f-perfil", "f-cuantia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
     "f-sin-unspsc", "f-solo-viables", "f-zona"]) {
-    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") pintarConceptoOrden(); buscar(); if (id === "f-perfil") { refrescarPulso(); guardados.clear(); seguimientoCargadoPara = null; if (arrancadas.admin) cargarSeguimiento({ forzar: true }); } });
+    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") pintarConceptoOrden(); buscar(); if (id === "f-perfil") { refrescarPulso(); guardados.clear(); seguimientoCargadoPara = null; cargarSeguimiento({ forzar: true }); } });
   }
   /* «Ver PAA» NO re-consulta /api/oportunidades: son dos fuentes distintas y
      encender la previsión no puede cambiar la lista de lo que está abierto. Lo
@@ -2015,7 +2075,7 @@
       const l = filaDeLista(id);
       if (btn && l) btn.outerHTML = botonGuardar(l);
       seguimientoCargadoPara = null;
-      if (arrancadas.admin) cargarSeguimiento({ forzar: true });
+      cargarSeguimiento({ forzar: true });
     } catch (e) {
       if (btn) { btn.disabled = false; btn.textContent = "No se pudo"; btn.title = e.message; }
     }
@@ -2040,37 +2100,92 @@
     m.textContent = texto; m.classList.remove("hidden");
   }
   const fechaCorta = (f) => { if (!f) return "—"; const d = new Date(String(f).slice(0, 10) + "T12:00:00"); return Number.isFinite(d.getTime()) ? d.toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }) : String(f).slice(0, 10); };
+  /* ── Mis procesos: la pestaña ──
+     Arriba, el CENTRO DE ALERTAS (lo que pide atención en 7 días); debajo, la
+     lista con etapa por proceso, filtrable por etapa. La insignia de la
+     pestaña lleva `resumen.atencion` (cambios sin ver + urgentes). Lo pintado
+     sale ENTERO de la respuesta del servidor: aquí no se calcula ni un día. */
+  let ultimoSeguimiento = null;
+  let segFiltroEstado = "todos";
+  function pintarInsigniaSeguimiento(n) {
+    for (const id of ["seg-insignia", "seg-insignia-movil"]) {
+      const el = $(id); if (!el) continue;
+      el.textContent = n > 99 ? "99+" : String(n || 0);
+      el.classList.toggle("hidden", !n);
+    }
+  }
+  function pintarAlertasSeguimiento(r) {
+    const sec = $("seg-alertas"), ul = $("seg-alertas-lista"), n = $("seg-alertas-n");
+    if (!sec) return;
+    const as = (r.alertas || []).filter((a) => segFiltroEstado === "todos" || (r.procesos.find((p) => p.id === a.id) || {}).estado === segFiltroEstado);
+    sec.classList.toggle("hidden", !as.length);
+    if (!as.length) return;
+    n.textContent = `${as.length} en los próximos 7 días`;
+    const clr = { alta: "bg-red-100 text-red-700", media: "bg-amber-100 text-amber-900", baja: "bg-gray-100 text-gray-700" };
+    const tipo = { cambio: "Cambió", manifestacion: "Manifestar interés", cierre: "Cierre", aviso: "Aviso" };
+    ul.innerHTML = as.map((a) => `<li class="flex flex-wrap items-start gap-2 rounded-xl px-3 py-2 ring-1 ring-inset ring-gray-900/5" style="background: var(--bg-inset);">
+        <span class="mt-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${clr[a.urgencia] || clr.baja}">${esc(tipo[a.tipo] || a.tipo)}</span>
+        <span class="min-w-0 flex-1"><button type="button" data-seg-ir="${esc(a.id)}" class="titulo-tarjeta font-medium hover:underline text-left" title="${esc(a.proceso)}">${esc(a.proceso)}</button><br><span class="text-xs text-gray-600">${esc(a.mensaje)}</span></span>
+        ${a.tipo === "cambio" ? `<button type="button" data-seg-enterado="${esc(a.id)}" class="rounded-lg border border-gray-300 bg-white px-2 py-0.5 text-[11px] font-medium hover:bg-gray-50" title="Dar por visto: el próximo aviso será solo si vuelve a cambiar">Enterado</button>` : ""}
+      </li>`).join("");
+  }
   function pintarSeguimiento(r) {
-    const lista = $("seg-lista"), vacio = $("seg-vacio"), res = $("seg-resumen");
+    ultimoSeguimiento = r;
+    const lista = $("seg-lista"), vacio = $("seg-vacio"), res = $("seg-resumen"), filtros = $("seg-filtros");
     if (!lista) return;
-    const ps = r.procesos || [];
-    vacio.classList.toggle("hidden", ps.length > 0);
-    res.innerHTML = ps.length ? [
-      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${ps.length} guardado${ps.length === 1 ? "" : "s"}</span>`,
-      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${r.resumen.abiertos} abierto${r.resumen.abiertos === 1 ? "" : "s"}</span>`,
-      r.resumen.presentados ? `<span class="rounded-full px-2.5 py-1 text-white" style="background: var(--accent);">${r.resumen.presentados} presentado${r.resumen.presentados === 1 ? "" : "s"}</span>` : "",
-      r.resumen.avisos_proximos ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${r.resumen.avisos_proximos} aviso${r.resumen.avisos_proximos === 1 ? "" : "s"} esta semana</span>` : "",
+    const todos = r.procesos || [];
+    pintarInsigniaSeguimiento(r.resumen ? r.resumen.atencion : 0);
+    vacio.classList.toggle("hidden", todos.length > 0);
+    const rs = r.resumen || {};
+    res.innerHTML = todos.length ? [
+      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${todos.length} guardado${todos.length === 1 ? "" : "s"}</span>`,
+      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${rs.abiertos} abierto${rs.abiertos === 1 ? "" : "s"}</span>`,
+      rs.presentados ? `<span class="rounded-full px-2.5 py-1 text-white" style="background: var(--accent);">${rs.presentados} presentado${rs.presentados === 1 ? "" : "s"}</span>` : "",
+      rs.cambios_pendientes ? `<span class="rounded-full bg-red-100 px-2.5 py-1 text-red-700">${rs.cambios_pendientes} cambio${rs.cambios_pendientes === 1 ? "" : "s"} sin ver</span>` : "",
+      rs.manifestaciones_abiertas ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${rs.manifestaciones_abiertas} con manifestación de interés abierta</span>` : "",
+      rs.avisos_proximos ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${rs.avisos_proximos} aviso${rs.avisos_proximos === 1 ? "" : "s"} esta semana</span>` : "",
     ].filter(Boolean).join("") : "";
+    // filtros por etapa
+    if (filtros) {
+      const orden = ["todos", ...(r.orden_estados || Object.keys(r.estados || {}))];
+      const cuenta = (e) => (e === "todos" ? todos.length : todos.filter((p) => p.estado === e).length);
+      filtros.innerHTML = todos.length ? orden.filter((e) => e === "todos" || cuenta(e)).map((e) =>
+        chipToggle(segFiltroEstado === e, `${e === "todos" ? "Todos" : (r.estados[e] || e)} (${cuenta(e)})`, "", `data-seg-filtro="${e}"`)).join("") : "";
+    }
+    pintarAlertasSeguimiento(r);
+    const ps = segFiltroEstado === "todos" ? todos : todos.filter((p) => p.estado === segFiltroEstado);
     lista.innerHTML = ps.map((p) => {
       const pr = p.proceso || {};
       const dias = p.dias_para_cierre;
       const cierre = p.cerrado === true ? `<span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">Cerró ${esc(fechaCorta(pr.fecha_cierre))}</span>`
         : dias == null ? `<span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">Sin fecha de cierre publicada</span>`
           : `<span class="rounded-full px-2 py-0.5 text-[11px] ${dias <= 3 ? "bg-red-100 text-red-700" : dias <= 7 ? "bg-amber-100 text-amber-900" : "bg-emerald-50 text-emerald-800"}">${dias === 0 ? "Cierra HOY" : dias === 1 ? "Cierra mañana" : `Cierra en ${dias} días`} · ${esc(fechaCorta(pr.fecha_cierre))}</span>`;
+      const m = p.manifestacion;
+      const manif = m && m.aplica ? (m.vencida === false
+        ? `<span class="rounded-full px-2 py-0.5 text-[11px] ${m.quedan_habiles != null && m.quedan_habiles <= 2 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-900"}" title="${esc(m.nota || "")}">Manifestar interés hasta ${esc(m.vence_legible || "")}${m.dias_calendario === 0 ? " · HOY" : m.dias_calendario === 1 ? " · mañana" : ` · ${m.quedan_habiles} días hábiles`}</span>`
+        : m.vencida === true ? `<span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600" title="${esc(m.nota || "")}">Manifestación de interés: plazo vencido ${esc(m.vence_legible || "")}</span>`
+          : `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-900">Manifestación de interés: fecha por confirmar</span>`) : "";
       const aviso = p.proximo_aviso ? `<p class="mt-1 text-xs text-amber-900">Próximo aviso: ${esc(p.proximo_aviso.mensaje)}</p>` : "";
-      const hitos = (p.hitos || []).map((h) => `<span class="rounded bg-gray-50 px-1.5 py-0.5 text-[11px] text-gray-600" title="${esc(h.evidencia || "")}">${esc(h.etiqueta.split(":")[0])}: ${esc(fechaCorta(h.fecha))}</span>`).join(" ");
+      const cambios = (p.cambios || []).length ? `<div class="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-800 ring-1 ring-inset ring-red-600/10">
+          <p class="font-medium">Cambió desde la última vez que lo vio${p.visto_el ? ` (${esc(fechaCorta(p.visto_el))})` : ""}:</p>
+          <ul class="mt-1 space-y-0.5">${p.cambios.map((c) => `<li>${esc(c.mensaje)}</li>`).join("")}</ul>
+          <button type="button" data-seg-enterado="${esc(p.id)}" class="mt-1.5 rounded-lg border border-red-200 bg-white px-2 py-0.5 text-[11px] font-medium hover:bg-red-50">Enterado</button>
+        </div>` : "";
+      const hitos = (p.hitos || []).map((h) => `<span class="rounded bg-gray-50 px-1.5 py-0.5 text-[11px] text-gray-600" title="${esc(h.evidencia || "")}">${esc(h.etiqueta.split(":")[0])}${h.origen === "calculado" ? " (calc.)" : ""}: ${esc(fechaCorta(h.fecha))}</span>`).join(" ");
+      const estados = r.orden_estados || Object.keys(r.estados || {});
       return `<article class="rounded-xl border border-gray-100 p-4" data-seg-id="${esc(p.id)}">
         <div class="flex flex-wrap items-start justify-between gap-2">
           <div class="min-w-0">
             <p class="font-medium leading-snug">${pr.url ? `<a href="${esc(pr.url)}" target="_blank" rel="noopener noreferrer" class="hover:underline">${esc(pr.nombre || p.id)}</a>` : esc(pr.nombre || p.id)}</p>
             <p class="text-xs text-gray-500">${esc(pr.entidad || "—")}${pr.departamento ? ` · ${esc(pr.departamento)}` : ""}${pr.presupuesto_cop ? ` · ${esc(fmtCorto(pr.presupuesto_cop))}` : ""}${p.estado_secop ? ` · ${esc(p.estado_secop)}` : ""}${p.adjudicado ? " · adjudicado" : ""}</p>
           </div>
-          <select data-seg-estado="${esc(p.id)}" class="control-select rounded-lg text-xs" title="Estado en su seguimiento">
-            ${["interesa", "presentado", "descartado"].map((e) => `<option value="${e}" ${p.estado === e ? "selected" : ""}>${esc(r.estados[e] || e)}</option>`).join("")}
+          <select data-seg-estado="${esc(p.id)}" class="control-select rounded-lg text-xs" title="Etapa en su seguimiento">
+            ${estados.map((e) => `<option value="${e}" ${p.estado === e ? "selected" : ""}>${esc(r.estados[e] || e)}</option>`).join("")}
           </select>
         </div>
-        <div class="mt-2 flex flex-wrap items-center gap-2">${cierre}${hitos}</div>
+        <div class="mt-2 flex flex-wrap items-center gap-2">${cierre}${manif}${hitos}</div>
         ${aviso}
+        ${cambios}
         <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
           <button type="button" data-seg-ics="${esc(p.id)}" class="rounded-lg border border-gray-300 px-2.5 py-1 font-medium transition hover:bg-gray-50" title="Descargar el cronograma con alarmas a 7, 3 y 1 días (formato de calendario)">Calendario (.ics)</button>
           ${p.proponentes_disponibles ? `<button type="button" data-seg-detalle="${esc(p.id)}" class="rounded-lg px-2.5 py-1 font-medium text-white transition" style="background: var(--accent);">Quiénes se presentaron</button>` : `<span class="text-gray-400" title="Los proponentes solo aparecen en la fuente pública tras la apertura de ofertas">Los proponentes se conocen cuando cierra</span>`}
@@ -2079,6 +2194,7 @@
         <div data-seg-caja="${esc(p.id)}" class="mt-3 hidden"></div>
       </article>`;
     }).join("");
+    if (!ps.length && todos.length) lista.innerHTML = `<p class="text-sm text-gray-500">Ningún proceso en esa etapa.</p>`;
   }
   function pintarDetalleCompetencia(caja, d) {
     if (!d || !d.ok) { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">${esc((d && d.motivo) || "No se pudo consultar.")}</p>`; return; }
@@ -2101,7 +2217,7 @@
         <tbody class="divide-y divide-gray-100">${filas}</tbody></table></div>
       <p class="mt-2 text-[11px] text-gray-400">«Contratos vigentes» es el valor que ese competidor ya tiene comprometido, no la capacidad que le queda: calcularla exige su registro de proponente, que no es público. Las ganadas se cruzan por NIT de la entidad, que a veces se comparte entre regionales.</p>`;
   }
-  const secSeg = document.getElementById("seccion-seguimiento");
+  const secSeg = document.getElementById("tab-seguimiento") || document.getElementById("seccion-seguimiento");
   if (secSeg) {
     secSeg.addEventListener("change", async (ev) => {
       const sel = ev.target.closest("[data-seg-estado]");
@@ -2111,6 +2227,17 @@
       catch (e) { mensajeSeg(e.message, "error"); }
     });
     secSeg.addEventListener("click", async (ev) => {
+      const fe = ev.target.closest("[data-seg-filtro]");
+      if (fe) { segFiltroEstado = fe.getAttribute("data-seg-filtro"); if (ultimoSeguimiento) pintarSeguimiento(ultimoSeguimiento); return; }
+      const ir = ev.target.closest("[data-seg-ir]");
+      if (ir) { const art = secSeg.querySelector(`[data-seg-id="${CSS.escape(ir.getAttribute("data-seg-ir"))}"]`); if (art) { art.scrollIntoView({ behavior: "smooth", block: "center" }); art.classList.add("ring-2", "ring-blue-300"); setTimeout(() => art.classList.remove("ring-2", "ring-blue-300"), 1600); } return; }
+      const en = ev.target.closest("[data-seg-enterado]");
+      if (en) {
+        const id = en.getAttribute("data-seg-enterado"); en.disabled = true;
+        try { await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, enterado: true } }); await cargarSeguimiento({ forzar: true }); }
+        catch (e) { en.disabled = false; mensajeSeg(e.message, "error"); }
+        return;
+      }
       const q = ev.target.closest("[data-seg-quitar]");
       if (q) { await alternarGuardado(q.getAttribute("data-seg-quitar"), null); return; }
       const ics = ev.target.closest("[data-seg-ics]");
@@ -2138,9 +2265,10 @@
       }
       const ver = ev.target.closest("[data-seg-verificar]");
       if (ver) {
-        // reutiliza «Verifique a su socio»: mismo flujo, mismo NIT
+        // reutiliza «Verifique a su socio»: mismo flujo, mismo NIT — vive en Mi empresa
         $("socio-id").value = ver.getAttribute("data-seg-verificar");
         $("socio-representante").value = "";
+        activarPestana("admin");
         $("seccion-socio").scrollIntoView({ behavior: "smooth", block: "start" });
         verificarSocio();
       }
@@ -6356,7 +6484,6 @@
   }
 
   function arrancarPaneles() {
-    cargarSeguimiento({ forzar: true });
     pintarConsorcio();
     pintarConsorciosGuardados();
     $("btn-socio-verificar").addEventListener("click", verificarSocio);
