@@ -442,7 +442,7 @@
     const t = $("aviso-manifestacion-texto"), b = $("aviso-manifestacion-ver");
     const puesto = estadoFiltros.manif === "abierta";
     t.textContent = `Manifestación de interés: ${fm.abiertas} proceso${fm.abiertas === 1 ? "" : "s"} de menor cuantía con el plazo abierto`
-      + (fm.urgentes ? ` — ${fm.urgentes} vence${fm.urgentes === 1 ? "" : "n"} hoy o mañana hábil` : "")
+      + (fm.urgentes ? ` — ${fm.urgentes} vence${fm.urgentes === 1 ? "" : "n"} en los próximos 2 días hábiles` : "")
       + (puesto ? " (se muestran solo estos)." : ". Sin manifestar interés en SECOP II no se puede ofertar.");
     b.textContent = puesto ? "Ver todos" : "Ver solo estos";
     caja.classList.remove("hidden"); caja.classList.add("flex");
