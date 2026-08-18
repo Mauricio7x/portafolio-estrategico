@@ -15344,7 +15344,7 @@ async function main() {
            lentas y en registro formal (nada de «vos»). ≥ 250 únicas, ≤ 110
            caracteres, sin emojis ni jerga, sin voseo ni tuteo; 15 s. */
         const Frases = require("../public/frases.js");
-        assert.ok(Frases.FRASES.length >= 250, `frases curadas: ${Frases.FRASES.length}`);
+        assert.ok(Frases.FRASES.length >= 1000, `frases curadas: ${Frases.FRASES.length}`);
         assert.strictEqual(new Set(Frases.FRASES).size, Frases.FRASES.length, "ninguna frase repetida");
         assert.strictEqual(Frases.INTERVALO_MS, 15000);
         for (const f of Frases.FRASES) {
