@@ -87,6 +87,8 @@
     activarPestana(hash || (conFiltros ? "licitaciones" : "admin"), { empujarHash: false });
     buscar();
     refrescarPulso();
+    // los procesos guardados: un GET pequeño; pinta «Guardado ✓» en la lista y la sección de Mi empresa
+    cargarSeguimiento();
   }
   /* ══════════ El PULSO personalizado (ago 2026) ══════════
      Nada más entrar, arriba de la lista: las cifras DE ESTE PERFIL (cuántas,
@@ -1184,6 +1186,7 @@
       <div class="mt-4 flex items-center justify-between gap-3 text-sm">
         <span class="text-gray-400">${esc(l.estado_del_procedimiento || "")}</span>
         <span class="flex items-center gap-3">
+          ${botonGuardar(l)}
           <button type="button" class="btn-apu rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50"
                   data-apu-q="${esc(qApu(l))}" title="Calcular cuánto me cuesta y qué me deja este proceso, en la pestaña Precios">Calcular mi precio</button>
           ${l.urlproceso ? `<a href="${esc(l.urlproceso)}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 hover:underline">Ver en SECOP II ↗</a>` : ""}
@@ -1880,6 +1883,8 @@
       abrirEditorConProceso(new URLSearchParams(apuBtn.getAttribute("data-apu-q") || ""));
       return;
     }
+    const gBtn = e.target.closest(".btn-guardar");
+    if (gBtn) { alternarGuardado(gBtn.getAttribute("data-id"), gBtn); return; }
     const b = e.target.closest(".banda-competencia");
     if (!b) return;
     const entidad = b.getAttribute("data-entidad");
@@ -1922,7 +1927,7 @@
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
   for (const id of ["f-perfil", "f-cuantia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
     "f-sin-unspsc", "f-solo-viables", "f-zona"]) {
-    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") pintarConceptoOrden(); buscar(); if (id === "f-perfil") refrescarPulso(); });
+    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") pintarConceptoOrden(); buscar(); if (id === "f-perfil") { refrescarPulso(); guardados.clear(); seguimientoCargadoPara = null; if (arrancadas.admin) cargarSeguimiento({ forzar: true }); } });
   }
   /* «Ver PAA» NO re-consulta /api/oportunidades: son dos fuentes distintas y
      encender la previsión no puede cambiar la lista de lo que está abierto. Lo
@@ -1971,6 +1976,173 @@
       throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
     }
     return cuerpo;
+  }
+
+  /* ══════════════════ MIS PROCESOS (seguimiento, ago 2026) ══════════════════
+     Guardar desde la tarjeta, seguir en Mi empresa (estado, días para el
+     cierre, avisos, .ics) y, cuando cierra, quiénes se presentaron con la
+     ficha de cada uno. Todo sale de /api/perfil?op=seguimiento; la ficha del
+     competidor NO se inventa: lo que la fuente no trae viaja null y se pinta «—». */
+  const guardados = new Map();   // id → estado, del perfil activo
+  let seguimientoCargadoPara = null;
+  function botonGuardar(l) {
+    const id = l.id_del_proceso || "";
+    if (!id) return "";
+    const est = guardados.get(id);
+    return est
+      ? `<button type="button" class="btn-guardar rounded-lg px-3 py-1 text-xs font-semibold text-white transition" style="background: var(--accent);" data-id="${esc(id)}" title="Guardado en Mis procesos (${esc(est === "presentado" ? "me presenté" : est === "descartado" ? "descartado" : "me interesa")}). Pulse para quitarlo.">Guardado ✓</button>`
+      : `<button type="button" class="btn-guardar rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50" data-id="${esc(id)}" title="Guardar en Mis procesos para seguirle el cronograma y, cuando cierre, ver quiénes se presentaron">Guardar</button>`;
+  }
+  function filaDeLista(id) {
+    const arr = (ultimaBusqueda && (ultimaBusqueda.resultados || ultimaBusqueda.oportunidades)) || [];
+    return arr.find((x) => x.id_del_proceso === id) || null;
+  }
+  async function alternarGuardado(id, btn) {
+    if (!id) return;
+    const perfil = $("f-perfil").value;
+    if (btn) btn.disabled = true;
+    try {
+      if (guardados.has(id)) {
+        await api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent(perfil)}&id=${encodeURIComponent(id)}`, { method: "DELETE" });
+        guardados.delete(id);
+      } else {
+        const l = filaDeLista(id);
+        const r = await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil, id, estado: "interesa", foto: l || null } });
+        guardados.set(id, (r && r.guardado && r.guardado.estado) || "interesa");
+      }
+      // repintar el botón de ESA tarjeta y la sección de Mi empresa (si ya arrancó)
+      const l = filaDeLista(id);
+      if (btn && l) btn.outerHTML = botonGuardar(l);
+      if (arrancadas.admin) cargarSeguimiento({ forzar: true });
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = "No se pudo"; btn.title = e.message; }
+    }
+  }
+  async function cargarSeguimiento({ forzar = false } = {}) {
+    const perfil = $("f-perfil").value;
+    if (!forzar && seguimientoCargadoPara === perfil) return;
+    let r = null;
+    try { r = await api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent(perfil)}`); } catch (e) { mensajeSeg(e.message, "error"); return; }
+    if (!r || !r.ok) return;
+    seguimientoCargadoPara = perfil;
+    guardados.clear();
+    for (const p of r.procesos) guardados.set(p.id, p.estado);
+    pintarSeguimiento(r);
+    // los botones «Guardar» de la lista tienen que reflejar lo guardado
+    document.querySelectorAll("#lista .btn-guardar").forEach((b) => { const l = filaDeLista(b.getAttribute("data-id")); if (l) b.outerHTML = botonGuardar(l); });
+  }
+  function mensajeSeg(texto, tipo) {
+    const m = $("seg-mensaje"); if (!m) return;
+    if (!texto) return m.classList.add("hidden");
+    m.className = `mt-3 rounded-xl px-4 py-3 text-sm ${tipo === "error" ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-800"}`;
+    m.textContent = texto; m.classList.remove("hidden");
+  }
+  const fechaCorta = (f) => { if (!f) return "—"; const d = new Date(String(f).slice(0, 10) + "T12:00:00"); return Number.isFinite(d.getTime()) ? d.toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }) : String(f).slice(0, 10); };
+  function pintarSeguimiento(r) {
+    const lista = $("seg-lista"), vacio = $("seg-vacio"), res = $("seg-resumen");
+    if (!lista) return;
+    const ps = r.procesos || [];
+    vacio.classList.toggle("hidden", ps.length > 0);
+    res.innerHTML = ps.length ? [
+      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${ps.length} guardado${ps.length === 1 ? "" : "s"}</span>`,
+      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${r.resumen.abiertos} abierto${r.resumen.abiertos === 1 ? "" : "s"}</span>`,
+      r.resumen.presentados ? `<span class="rounded-full px-2.5 py-1 text-white" style="background: var(--accent);">${r.resumen.presentados} presentado${r.resumen.presentados === 1 ? "" : "s"}</span>` : "",
+      r.resumen.avisos_proximos ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${r.resumen.avisos_proximos} aviso${r.resumen.avisos_proximos === 1 ? "" : "s"} esta semana</span>` : "",
+    ].filter(Boolean).join("") : "";
+    lista.innerHTML = ps.map((p) => {
+      const pr = p.proceso || {};
+      const dias = p.dias_para_cierre;
+      const cierre = p.cerrado === true ? `<span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">Cerró ${esc(fechaCorta(pr.fecha_cierre))}</span>`
+        : dias == null ? `<span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">Sin fecha de cierre publicada</span>`
+          : `<span class="rounded-full px-2 py-0.5 text-[11px] ${dias <= 3 ? "bg-red-100 text-red-700" : dias <= 7 ? "bg-amber-100 text-amber-900" : "bg-emerald-50 text-emerald-800"}">${dias === 0 ? "Cierra HOY" : dias === 1 ? "Cierra mañana" : `Cierra en ${dias} días`} · ${esc(fechaCorta(pr.fecha_cierre))}</span>`;
+      const aviso = p.proximo_aviso ? `<p class="mt-1 text-xs text-amber-900">Próximo aviso: ${esc(p.proximo_aviso.mensaje)}</p>` : "";
+      const hitos = (p.hitos || []).map((h) => `<span class="rounded bg-gray-50 px-1.5 py-0.5 text-[11px] text-gray-600" title="${esc(h.evidencia || "")}">${esc(h.etiqueta.split(":")[0])}: ${esc(fechaCorta(h.fecha))}</span>`).join(" ");
+      return `<article class="rounded-xl border border-gray-100 p-4" data-seg-id="${esc(p.id)}">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div class="min-w-0">
+            <p class="font-medium leading-snug">${pr.url ? `<a href="${esc(pr.url)}" target="_blank" rel="noopener noreferrer" class="hover:underline">${esc(pr.nombre || p.id)}</a>` : esc(pr.nombre || p.id)}</p>
+            <p class="text-xs text-gray-500">${esc(pr.entidad || "—")}${pr.departamento ? ` · ${esc(pr.departamento)}` : ""}${pr.presupuesto_cop ? ` · ${esc(fmtCorto(pr.presupuesto_cop))}` : ""}${p.estado_secop ? ` · ${esc(p.estado_secop)}` : ""}${p.adjudicado ? " · adjudicado" : ""}</p>
+          </div>
+          <select data-seg-estado="${esc(p.id)}" class="control-select rounded-lg text-xs" title="Estado en su seguimiento">
+            ${["interesa", "presentado", "descartado"].map((e) => `<option value="${e}" ${p.estado === e ? "selected" : ""}>${esc(r.estados[e] || e)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="mt-2 flex flex-wrap items-center gap-2">${cierre}${hitos}</div>
+        ${aviso}
+        <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          <button type="button" data-seg-ics="${esc(p.id)}" class="rounded-lg border border-gray-300 px-2.5 py-1 font-medium transition hover:bg-gray-50" title="Descargar el cronograma con alarmas a 7, 3 y 1 días (formato de calendario)">Calendario (.ics)</button>
+          ${p.proponentes_disponibles ? `<button type="button" data-seg-detalle="${esc(p.id)}" class="rounded-lg px-2.5 py-1 font-medium text-white transition" style="background: var(--accent);">Quiénes se presentaron</button>` : `<span class="text-gray-400" title="Los proponentes solo aparecen en la fuente pública tras la apertura de ofertas">Los proponentes se conocen cuando cierra</span>`}
+          <button type="button" data-seg-quitar="${esc(p.id)}" class="ml-auto text-gray-400 hover:text-red-600">Quitar</button>
+        </div>
+        <div data-seg-caja="${esc(p.id)}" class="mt-3 hidden"></div>
+      </article>`;
+    }).join("");
+  }
+  function pintarDetalleCompetencia(caja, d) {
+    if (!d || !d.ok) { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">${esc((d && d.motivo) || "No se pudo consultar.")}</p>`; return; }
+    if (!d.proponentes.length) { caja.innerHTML = `<p class="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">${esc(d.motivo || "Sin proponentes publicados.")}</p>`; return; }
+    const filas = d.proponentes.map((c) => {
+      const e = c.ante_esta_entidad || {}, v = c.contratos_vigentes;
+      const firmas = v && v.firmas && v.firmas.length ? v.firmas.map((f) => `${esc(fechaCorta(f.fecha_firma))} · ${f.valor_cop != null ? esc(fmtCorto(f.valor_cop)) : "—"}${f.entidad ? ` · ${esc(f.entidad)}` : ""}`).join("<br>") : "";
+      return `<tr class="align-top">
+        <td class="py-2 pr-3"><span class="font-medium">${esc(c.nombre)}</span><br><span class="text-[11px] text-gray-500">${c.nit ? `NIT ${esc(c.nit)}` : "sin NIT publicado"}</span></td>
+        <td class="py-2 pr-3 text-right num" title="Fuente: SECOP II, proponentes por proceso, por código de la entidad">${e.veces_presentado != null ? e.veces_presentado : "—"}${e.ultima_vez ? `<br><span class="text-[11px] text-gray-500">última ${esc(fechaCorta(e.ultima_vez))}</span>` : ""}</td>
+        <td class="py-2 pr-3 text-right num" title="Fuente: SECOP II, procesos adjudicados, por NIT de la entidad">${e.veces_ganado != null ? e.veces_ganado : "—"}${e.ultimo_adjudicado ? `<br><span class="text-[11px] text-gray-500">último ${esc(fechaCorta(e.ultimo_adjudicado))}</span>` : ""}</td>
+        <td class="py-2 pr-3 text-right num" title="Fuente: SECOP II, contratos electrónicos vigentes · es el valor que ya tiene comprometido, no la capacidad que le queda (eso exige su registro de proponente)">${v ? `${v.contratos}${v.valor_cop != null ? `<br><span class="text-[11px] text-gray-500">${esc(fmtCorto(v.valor_cop))}</span>` : ""}` : "—"}${firmas ? `<details class="mt-1 text-left"><summary class="cursor-pointer text-[11px] text-gray-500">firmas</summary><p class="text-[11px] text-gray-600">${firmas}</p></details>` : ""}</td>
+        <td class="py-2 text-right">${c.nit ? `<button type="button" data-seg-verificar="${esc(c.nit)}" class="rounded-lg border border-gray-300 px-2 py-0.5 text-[11px] font-medium hover:bg-gray-50" title="Sanciones (Procuraduría) y multas de SECOP I, por NIT">Verificar</button>` : ""}</td>
+      </tr>`;
+    }).join("");
+    caja.innerHTML = `
+      <p class="text-xs text-gray-500">${esc(d.proponentes_totales)} proponente${d.proponentes_totales === 1 ? "" : "s"} en ${esc((d.entidad && d.entidad.nombre) || "la entidad")}${d.cache ? " · consultado hace menos de una hora" : ""}. ${esc(d.lectura || "")}</p>
+      <div class="mt-2 overflow-x-auto"><table class="w-full text-xs">
+        <thead class="text-left text-[10px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-3">Proponente</th><th class="pb-1 pr-3 text-right">Veces ante esta entidad</th><th class="pb-1 pr-3 text-right">Ganadas · último</th><th class="pb-1 pr-3 text-right">Contratos vigentes</th><th class="pb-1"></th></tr></thead>
+        <tbody class="divide-y divide-gray-100">${filas}</tbody></table></div>
+      <p class="mt-2 text-[11px] text-gray-400">«Contratos vigentes» es el valor que ese competidor ya tiene comprometido, no la capacidad que le queda: calcularla exige su registro de proponente, que no es público. Las ganadas se cruzan por NIT de la entidad, que a veces se comparte entre regionales.</p>`;
+  }
+  const secSeg = document.getElementById("seccion-seguimiento");
+  if (secSeg) {
+    secSeg.addEventListener("change", async (ev) => {
+      const sel = ev.target.closest("[data-seg-estado]");
+      if (!sel) return;
+      const id = sel.getAttribute("data-seg-estado");
+      try { await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, estado: sel.value } }); guardados.set(id, sel.value); mensajeSeg("Estado actualizado.", "ok"); setTimeout(() => mensajeSeg(""), 2000); cargarSeguimiento({ forzar: true }); }
+      catch (e) { mensajeSeg(e.message, "error"); }
+    });
+    secSeg.addEventListener("click", async (ev) => {
+      const q = ev.target.closest("[data-seg-quitar]");
+      if (q) { await alternarGuardado(q.getAttribute("data-seg-quitar"), null); return; }
+      const ics = ev.target.closest("[data-seg-ics]");
+      if (ics) {
+        const id = ics.getAttribute("data-seg-ics");
+        try {
+          const r = await fetch(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent($("f-perfil").value)}&ics=${encodeURIComponent(id)}`, { headers: { "x-historico-token": leerToken() } });
+          if (!r.ok) throw new Error(`El servidor respondió ${r.status}.`);
+          const blob = await r.blob(); const url = URL.createObjectURL(blob);
+          const a = document.createElement("a"); a.href = url; a.download = `detekta_${id.replace(/[^A-Za-z0-9._-]/g, "_")}.ics`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+        } catch (e) { mensajeSeg(e.message, "error"); }
+        return;
+      }
+      const det = ev.target.closest("[data-seg-detalle]");
+      if (det) {
+        const id = det.getAttribute("data-seg-detalle");
+        const caja = secSeg.querySelector(`[data-seg-caja="${CSS.escape(id)}"]`);
+        if (!caja) return;
+        caja.classList.remove("hidden"); caja.innerHTML = `<p class="text-xs text-gray-500">Consultando quiénes se presentaron y sus contratos…</p>`;
+        det.disabled = true;
+        try { const d = await api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent($("f-perfil").value)}&detalle=${encodeURIComponent(id)}`); pintarDetalleCompetencia(caja, d); }
+        catch (e) { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">${esc(e.message)}</p>`; }
+        det.disabled = false;
+        return;
+      }
+      const ver = ev.target.closest("[data-seg-verificar]");
+      if (ver) {
+        // reutiliza «Verifique a su socio»: mismo flujo, mismo NIT
+        $("socio-id").value = ver.getAttribute("data-seg-verificar");
+        $("socio-representante").value = "";
+        $("seccion-socio").scrollIntoView({ behavior: "smooth", block: "start" });
+        verificarSocio();
+      }
+    });
   }
 
   /* ══════════════════════ EDITOR DE APU (pestaña 2) ══════════════════════ */
@@ -6182,6 +6354,7 @@
   }
 
   function arrancarPaneles() {
+    cargarSeguimiento();
     pintarConsorcio();
     pintarConsorciosGuardados();
     $("btn-socio-verificar").addEventListener("click", verificarSocio);

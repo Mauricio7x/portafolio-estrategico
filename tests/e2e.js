@@ -957,13 +957,13 @@ function generarDatasetProponentes(historico) {
     if (i === idsIdu.length - 1) return; // el último proceso: sin proponentes
     const fecha = `${ANOS_HIST[i % 2]}-0${(i % 9) + 1}-10T00:00:00.000`;
     // el recurrente se presenta a TODOS (con dos grafías, mismo NIT)
-    filas.push({ id_procedimiento: id, fecha_publicaci_n: fecha, entidad_compradora: "IDU", nit_entidad: "800100003",
+    filas.push({ id_procedimiento: id, fecha_publicaci_n: fecha, entidad_compradora: "IDU", nit_entidad: "800100003", codigo_entidad: "700100003",
       proveedor: i % 2 ? PROPONENTES_IDU.recurrente : PROPONENTES_IDU.recurrente + " S.A.S", nit_proveedor: PROPONENTES_IDU.nitRecurrente });
     // uno sin NIT en la mitad de los procesos
-    if (i % 2 === 0) filas.push({ id_procedimiento: id, fecha_publicaci_n: fecha, entidad_compradora: "IDU", nit_entidad: "800100003",
+    if (i % 2 === 0) filas.push({ id_procedimiento: id, fecha_publicaci_n: fecha, entidad_compradora: "IDU", nit_entidad: "800100003", codigo_entidad: "700100003",
       proveedor: PROPONENTES_IDU.sinNit, nit_proveedor: "No Definido" });
     // y uno distinto por proceso
-    filas.push({ id_procedimiento: id, fecha_publicaci_n: fecha, entidad_compradora: "IDU", nit_entidad: "800100003",
+    filas.push({ id_procedimiento: id, fecha_publicaci_n: fecha, entidad_compradora: "IDU", nit_entidad: "800100003", codigo_entidad: "700100003",
       proveedor: `OFERENTE OCASIONAL ${i} LTDA`, nit_proveedor: `90200000${i}` });
   });
   return { filas, procesosConProponentes: Math.max(0, idsIdu.length - 1), procesosIdu: idsIdu.length };
@@ -998,6 +998,14 @@ const CONTRATOS_IDU = [
    tres años atrás; y una fila de «Z ENTIDAD DE PRUEBA» que se descarta. */
 const SOCIO_NIT = "902000000";
 const SOCIO_RL = "79000001";
+/* Contratos VIGENTES del proponente recurrente del IDU (jbjy): lo que el módulo
+   de seguimiento cruza para «cuántos contratos tiene vigentes, cuándo firmó y
+   por qué valor». Uno en ejecución, uno modificado y uno terminado (no cuenta). */
+const CONTRATOS_RECURRENTE = [
+  { id_contrato: "CO1.PCCNTR.R1", proceso_de_compra: "CO1.BDOS.R1", nombre_entidad: "ALCALDÍA DE PRUEBA", nit_entidad: "800999001", documento_proveedor: PROPONENTES_IDU.nitRecurrente, proveedor_adjudicado: PROPONENTES_IDU.recurrente, tipo_de_contrato: "Obra", estado_contrato: "En ejecución", valor_del_contrato: "900000000", valor_pagado: "0", dias_adicionados: "0", fecha_de_firma: `${ANO}-04-01T00:00:00.000`, fecha_de_fin_del_contrato: `${ANO + 1}-04-01T00:00:00.000`, es_pyme: "No" },
+  { id_contrato: "CO1.PCCNTR.R2", proceso_de_compra: "CO1.BDOS.R2", nombre_entidad: "GOBERNACIÓN DE PRUEBA", nit_entidad: "800999002", documento_proveedor: PROPONENTES_IDU.nitRecurrente, proveedor_adjudicado: PROPONENTES_IDU.recurrente, tipo_de_contrato: "Obra", estado_contrato: "Modificado", valor_del_contrato: "400000000", valor_pagado: "0", dias_adicionados: "30", fecha_de_firma: `${ANO}-01-15T00:00:00.000`, fecha_de_fin_del_contrato: `${ANO}-12-15T00:00:00.000`, es_pyme: "No" },
+  { id_contrato: "CO1.PCCNTR.R3", proceso_de_compra: "CO1.BDOS.R3", nombre_entidad: "ALCALDÍA DE PRUEBA", nit_entidad: "800999001", documento_proveedor: PROPONENTES_IDU.nitRecurrente, proveedor_adjudicado: PROPONENTES_IDU.recurrente, tipo_de_contrato: "Obra", estado_contrato: "terminado", valor_del_contrato: "200000000", valor_pagado: "200000000", dias_adicionados: "0", fecha_de_firma: `${ANO - 1}-02-01T00:00:00.000`, fecha_de_fin_del_contrato: `${ANO - 1}-12-01T00:00:00.000`, es_pyme: "No" },
+];
 const CONTRATOS_SOCIO = [
   { id_contrato: "CO1.PCCNTR.S1", proceso_de_compra: "CO1.BDOS.S1", nombre_entidad: "ALCALDÍA DE PRUEBA", nit_entidad: "800999001", documento_proveedor: SOCIO_NIT, proveedor_adjudicado: "CONSTRUCTORA EQV 902000000 SAS", tipo_de_contrato: "Obra", estado_contrato: "Cancelado", valor_del_contrato: "100000000", valor_pagado: "0", dias_adicionados: "0", fecha_de_firma: `${ANO}-02-01T00:00:00.000`, nombre_representante_legal: "PEDRO PÉREZ", identificaci_n_representante_legal: SOCIO_RL, es_pyme: "Si" },
   { id_contrato: "CO1.PCCNTR.S2", proceso_de_compra: "CO1.BDOS.S2", nombre_entidad: "ALCALDÍA DE PRUEBA", nit_entidad: "800999001", documento_proveedor: SOCIO_NIT, proveedor_adjudicado: "CONSTRUCTORA EQV 902000000 SAS", tipo_de_contrato: "Obra", estado_contrato: "En ejecución", valor_del_contrato: "300000000", valor_pagado: "0", dias_adicionados: "45", fecha_de_firma: `${ANO}-03-01T00:00:00.000`, nombre_representante_legal: "PEDRO PÉREZ", identificaci_n_representante_legal: SOCIO_RL, es_pyme: "Si" },
@@ -1123,6 +1131,13 @@ function crearMockSocrata() {
        prefijo y se confirma en el cliente. */
     const sw = clausula.match(/^starts_with\((\S+?),\s*'(.*)'\)$/i);
     if (sw) return String(fila[sw[1]] ?? "").startsWith(sw[2]);
+    /* `campo in ('a','b')` genérico — lib/handlers/perfil/seguimiento cruza
+       proponentes con hgi6/p6dx/jbjy por listas de NIT y estados. */
+    const enLista = clausula.match(/^(\S+)\s+in\s*\((.*)\)$/i);
+    if (enLista) {
+      const vals = new Set(enLista[2].split(",").map((x) => x.trim().replace(/^'|'$/g, "").replace(/''/g, "'")));
+      return vals.has(String(fila[enLista[1]] ?? ""));
+    }
     const m = clausula.match(/^(\S+)\s*(>=|<=|>|<|=)\s*'(.*)'$/);
     if (!m) throw new Error(`mock: clausula no soportada: ${clausula}`);
     const [, campo, op, valor] = m;
@@ -1145,9 +1160,11 @@ function crearMockSocrata() {
       }
       const u = new URL(req.url, "http://x");
       const q = Object.fromEntries(u.searchParams);
-      if (u.pathname.includes("hgi6-6wh3")) return responderProponentes(q, res);
+      // hgi6 con `where` = un solo `in (...)` va por la rama de proponentes; cualquier otro where, por la genérica
+      if (u.pathname.includes("hgi6-6wh3") && (!q.$where || /^\s*\S+\s+in\s*\(.*\)\s*$/i.test(q.$where))) return responderProponentes(q, res);
       let filas = (u.pathname.includes("9sue-ezhx") ? datasetPaa : u.pathname.includes("jbjy-vk9h") ? datasetContratos
-        : u.pathname.includes("iaeu-rcn6") ? datasetSiri : u.pathname.includes("4n4q-k399") ? datasetMultas : dataset).slice();
+        : u.pathname.includes("hgi6-6wh3") ? datasetProponentes
+          : u.pathname.includes("iaeu-rcn6") ? datasetSiri : u.pathname.includes("4n4q-k399") ? datasetMultas : dataset).slice();
       if (q.$where) filas = filas.filter((f) => q.$where.split(" AND ").every((c) => cumple(f, c.trim())));
       if ((q.$select || "").startsWith("count(*)")) {
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -5125,6 +5142,8 @@ async function main() {
       ...(await redis.scan("calendario:*")), ...(await redis.scan("consorcio:*")),
       // Fase 4/5: versiones y diffs de pliegos, revisiones del Formulario 1
       ...(await redis.scan("pliego:*")), ...(await redis.scan("formulario1:*")),
+      // Mis procesos (18-ago-2026): guardados por perfil y caché del detalle de competencia (1 h)
+      ...(await redis.scan("seguimiento:*")), ...(await redis.scan("pulso:*")),
     ];
     if (claves.length) await redis.del(...claves);
     for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*", "equivalencias:*",
@@ -5168,7 +5187,7 @@ async function main() {
     socrata.setDataset([...generarDataset(), ...generarDatasetHistorico(), ...generarDatasetEquivalencias(),
       ...generarDatasetDetalle(), ...generarDatasetCobertura(), ...generarDatasetModalidad()]);
     socrata.setDatasetProponentes(generarDatasetProponentes(generarDatasetHistorico()).filas);
-    socrata.setDatasetContratos([...CONTRATOS_IDU, ...CONTRATOS_SOCIO]);
+    socrata.setDatasetContratos([...CONTRATOS_IDU, ...CONTRATOS_SOCIO, ...CONTRATOS_RECURRENTE]);
     socrata.setDatasetSiri(SIRI_FIXTURE);
     socrata.setDatasetMultas(MULTAS_FIXTURE);
     socrata.setFallos(true);
@@ -7768,6 +7787,73 @@ async function main() {
         assert.ok(htmlSocio.includes('id="socio-id"') && htmlSocio.includes('id="socio-resultado"') && htmlSocio.includes('id="btn-socio-verificar"'),
           "index.html sin el bloque «Verificá a tu socio» en Mi empresa");
         console.log(`  · socio (SIRI+multas+jbjy+p6dx): semáforo ${c.semaforo.nivel} · ${siri.n} sanción SIRI del representante · ${mu.multas} multas (${mu.inhabilidad_reiterada.max_multas_en_una_vigencia} en ${mu.inhabilidad_reiterada.vigencia} ⇒ posible inhabilidad vigente) · ${co.contratos} contratos (${co.cancelados.contratos} cancelado) · ${ad.adjudicaciones} adjudicaciones · 5 fuentes en checklist · caído ⇒ ok:false por fuente`);
+      }
+
+      /* --- MIS PROCESOS (seguimiento, 18-ago-2026): guardar, seguir, estudiar
+         a los proponentes. Token; almacenamiento por perfil; enriquecido con la
+         fila VIVA del corpus; hitos/avisos de lib/cronograma; .ics; y el
+         detalle de competencia cruzando hgi6 (veces ante la entidad por
+         codigo_entidad), p6dx (ganadas por NIT de entidad) y jbjy (vigentes). --- */
+      {
+        const routerPerfilSeg = require("../api/perfil.js");
+        const seg = (qs, opts = {}) => invocar(routerPerfilSeg, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
+        assert.strictEqual((await invocar(routerPerfilSeg, "/api/perfil?op=seguimiento&perfil=helder")).status, 401, "el seguimiento exige token");
+        // un proceso ABIERTO del corpus activo (el listado lo sirve): se guarda con la foto de la tarjeta
+        const li = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200", CAB_TOKEN);
+        const fila = li.cuerpo.resultados.find((f) => f.fecha_cierre);
+        assert.ok(fila, `hace falta un proceso del listado CON fecha de cierre (${li.cuerpo.resultados.length} servidos)`);
+        assert.ok(fila && fila.id_del_proceso, "hace falta un proceso del listado para guardarlo");
+        const g1 = await seg("", { metodo: "POST", body: { perfil: "helder", id: fila.id_del_proceso, estado: "interesa", foto: fila } });
+        assert.strictEqual(g1.status, 200); assert.strictEqual(g1.cuerpo.guardado.estado, "interesa"); assert.strictEqual(g1.cuerpo.guardado.foto.nombre, fila.nombre_del_procedimiento);
+        // y un proceso HISTÓRICO del IDU (con proponentes en hgi6): no está en el activo → foto del cliente
+        const idIdu = generarDatasetHistorico().filter((f) => f.entidad === "IDU")[0].id_del_proceso;
+        const g2 = await seg("", { metodo: "POST", body: { perfil: "helder", id: idIdu, estado: "presentado", foto: { nombre: "OBRA IDU CERRADA", entidad: "IDU", nit_entidad: "800100003", fecha_cierre: `${ANO - 1}-06-01T00:00:00.000`, fecha_de_publicacion_del: `${ANO - 1}-05-01T00:00:00.000`, precio_base: "500000000" } } });
+        assert.strictEqual(g2.status, 200); assert.strictEqual(g2.cuerpo.total, 2);
+        assert.strictEqual((await seg("", { metodo: "POST", body: { perfil: "helder", id: "x" } })).status, 400, "id inválido → 400");
+        const lista = (await seg("&perfil=helder")).cuerpo;
+        assert.strictEqual(lista.ok, true); assert.strictEqual(lista.procesos.length, 2);
+        const abierto = lista.procesos.find((p) => p.id === fila.id_del_proceso), cerrado = lista.procesos.find((p) => p.id === idIdu);
+        assert.strictEqual(abierto.en_corpus, true, "el proceso del listado se enriquece con la fila VIVA");
+        assert.ok(abierto.dias_para_cierre > 0 && abierto.cerrado === false, `abierto: ${abierto.dias_para_cierre} días · ${JSON.stringify(abierto.proceso)} · fila.fecha_cierre=${fila.fecha_cierre}`);
+        assert.ok(abierto.hitos.some((h) => h.id === "cierre") && abierto.hitos.some((h) => h.id === "publicacion"), "hitos del dataset (lib/cronograma)");
+        assert.ok(abierto.avisos.every((a) => [7, 3, 1].includes(a.dias_antes)), "avisos a 7/3/1 días");
+        assert.strictEqual(abierto.proponentes_disponibles, false, "abierto: los proponentes no existen todavía");
+        assert.strictEqual(cerrado.en_corpus, false); assert.strictEqual(cerrado.cerrado, true); assert.strictEqual(cerrado.proponentes_disponibles, true);
+        assert.strictEqual(cerrado.estado_etiqueta, "Me presenté");
+        assert.strictEqual(lista.procesos[0].id, fila.id_del_proceso, "los abiertos que cierran antes van primero");
+        assert.strictEqual(lista.resumen.presentados, 1);
+        // .ics del abierto: un VEVENT por hito, con VALARM
+        const ics = await seg(`&perfil=helder&ics=${encodeURIComponent(fila.id_del_proceso)}`);
+        assert.strictEqual(ics.status, 200); assert.ok(/BEGIN:VCALENDAR/.test(ics.cuerpo) && /BEGIN:VALARM/.test(ics.cuerpo) && /Cierre/.test(ics.cuerpo), "el .ics trae los hitos con alarmas");
+        // detalle de competencia del cerrado (hgi6 → ficha por proponente)
+        const det = (await seg(`&perfil=helder&detalle=${encodeURIComponent(idIdu)}&refrescar=1`)).cuerpo;
+        assert.strictEqual(det.ok, true, JSON.stringify(det).slice(0, 300));
+        assert.ok(det.proponentes.length >= 2, `proponentes del proceso: ${det.proponentes.length}`);
+        const rec = det.proponentes.find((p) => p.nit === PROPONENTES_IDU.nitRecurrente);
+        assert.ok(rec, "el recurrente está");
+        assert.ok(rec.ante_esta_entidad.veces_presentado >= 2, `veces ante la entidad (hgi6 por codigo_entidad): ${rec.ante_esta_entidad.veces_presentado}`);
+        assert.strictEqual(rec.contratos_vigentes.contratos, 2, "vigentes: En ejecución + Modificado (el terminado no cuenta)");
+        assert.strictEqual(rec.contratos_vigentes.valor_cop, 1300000000);
+        assert.strictEqual(rec.contratos_vigentes.firmas.length, 2); assert.ok(rec.contratos_vigentes.firmas[0].fecha_firma && rec.contratos_vigentes.firmas[0].valor_cop);
+        assert.ok(/no es su capacidad residual|NO es su capacidad|cota/i.test(rec.contratos_vigentes.lectura), "lo que se publica es valor comprometido, no la K");
+        assert.strictEqual(rec.verificar_inhabilidad.op, "socio");
+        const sinNit = det.proponentes.find((p) => p.identificacion.tipo === "sin_nit");
+        assert.ok(sinNit && sinNit.contratos_vigentes === null && sinNit.ante_esta_entidad.veces_presentado === null, "sin NIT no se cruza nada y viaja null, no 0");
+        const det2 = (await seg(`&perfil=helder&detalle=${encodeURIComponent(idIdu)}`)).cuerpo;
+        assert.strictEqual(det2.cache, true, "el detalle se cachea 1 h");
+        // estado y borrado
+        const g3 = await seg("", { metodo: "POST", body: { perfil: "helder", id: fila.id_del_proceso, estado: "descartado" } });
+        assert.strictEqual(g3.cuerpo.guardado.estado, "descartado"); assert.strictEqual(g3.cuerpo.guardado.foto.nombre, fila.nombre_del_procedimiento, "actualizar el estado conserva la foto");
+        const del = await seg(`&perfil=helder&id=${encodeURIComponent(idIdu)}`, { metodo: "DELETE" });
+        assert.strictEqual(del.cuerpo.quitado, true); assert.strictEqual(del.cuerpo.total, 1);
+        assert.strictEqual((await seg("&perfil=genesis")).cuerpo.procesos.length, 0, "el seguimiento es por PERFIL");
+        // frontend cableado
+        const htmlSeg = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        const appSeg = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        for (const id of ["seccion-seguimiento", "seg-lista", "seg-vacio", "seg-resumen", "seg-mensaje"]) assert.ok(htmlSeg.includes(`id="${id}"`), `falta #${id}`);
+        assert.ok(/class="btn-guardar/.test(appSeg) && /function alternarGuardado/.test(appSeg) && /op=seguimiento/.test(appSeg) && /data-seg-detalle/.test(appSeg) && /data-seg-ics/.test(appSeg) && /data-seg-verificar/.test(appSeg), "la tarjeta guarda y Mi empresa sigue, descarga el .ics, consulta el detalle y verifica el NIT");
+        assert.ok(!/op=seguimiento[^`"']*token=/.test(appSeg), "el token no viaja en la URL: el .ics se baja con cabecera y Blob");
+        console.log(`  · seguimiento: guardar/estado/quitar por perfil · fila viva (${abierto.dias_para_cierre} días al cierre, ${abierto.avisos.length} avisos) · .ics con alarmas · detalle: ${det.proponentes.length} proponentes, recurrente ${rec.ante_esta_entidad.veces_presentado} veces ante la entidad y ${rec.contratos_vigentes.contratos} vigentes por $${rec.contratos_vigentes.valor_cop}`);
       }
 
       /* --- (c) entidad inexistente: respuesta explícita, no un vacío mudo --- */
@@ -14022,8 +14108,8 @@ async function main() {
       assert.ok(palabrasEmpresa < 1400, `Mi empresa (con Sistema plegado incluido) tiene ${palabrasEmpresa} palabras en el HTML`);
       assert.ok(htmlL.indexOf('<script src="/pulso.js">') < htmlL.indexOf('<script src="/app.js">'), "pulso.js se carga antes que app.js");
       const appL = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
-      assert.ok(/function refrescarPulso\(\)/.test(appL) && /refrescarPulso\(\);\s*\n\s*\}/.test(appL.slice(appL.indexOf("function abrirApp"), appL.indexOf("function abrirApp") + 900)), "abrirApp refresca el pulso");
-      assert.ok(/if \(id === "f-perfil"\) refrescarPulso\(\)/.test(appL), "cambiar de perfil refresca el pulso");
+      assert.ok(/function refrescarPulso\(\)/.test(appL) && /refrescarPulso\(\);/.test(appL.slice(appL.indexOf("function abrirApp"), appL.indexOf("function abrirApp") + 1400)), "abrirApp refresca el pulso");
+      assert.ok(/if \(id === "f-perfil"\) \{ refrescarPulso\(\);/.test(appL), "cambiar de perfil refresca el pulso");
       assert.ok(/window\.Portada\.teaser\(\)/.test(appL), "la landing arranca el TEASER, no la portada entera");
       assert.ok(/mercadoCompleto\.open && window\.Portada\) window\.Portada\.arrancar\(\)/.test(appL), "la portada entera se pide al ABRIR el pliegue, no antes");
       assert.ok(/aplicarFiltroDelPulso/.test(appL) && /cambiarFiltros\(window\.Filtros\.leerEstado\(params\)\)/.test(appL), "las cifras del pulso filtran la lista EN LA MISMA PÁGINA con el mismo leerEstado de la URL");

@@ -1848,6 +1848,31 @@ cascada de `lib/apu/precios.js`. Evidencia HTTP en el §11 del mismo doc.
   INVIAS prohíben el uso comercial sin autorización — si Detekta se comercializa con estos datos,
   pedirla (`preciosunitarios@invias.gov.co`).
 
+### Mis procesos · guardar, seguir y estudiar a la competencia (18-ago-2026)
+
+`lib/seguimiento.js` (capa pura) + `lib/handlers/perfil/seguimiento.js` (`/api/perfil?op=seguimiento`, token) +
+botón «Guardar» en la tarjeta + sección `#seccion-seguimiento` en Mi empresa. Encargo del dueño: guardar procesos
+(interesa / me presenté / descartado), seguir el cronograma de SECOP con avisos, y cuando cierra, de cada proponente:
+cuántas veces se ha presentado a la entidad y cuántas ha ganado (último adjudicado), cuántos contratos vigentes tiene
+(cuándo firmó y por qué valor), y si está inhabilitado. Decisiones que no hay que re-aprender:
+- **Se guarda una FOTO MÍNIMA y se enriquece VIVO en cada consulta** (`seguimiento:{perfil}` = un JSON, ≤ 200; la fila
+  se busca en `cargarCorpus` del listado): estado SECOP, adjudicado, días al cierre (hora Colombia), hitos y avisos.
+  Un proceso que ya no está en el activo conserva la foto y lo dice (`en_corpus:false`). La fila CRUDA no trae
+  `fecha_cierre` resuelto: se deriva con la MISMA `fechaCierre` de lib/negocio (require diferido).
+- **Los hitos y avisos SON los de lib/cronograma** (`hitosDeFila`, `avisosDe`, `ics`), más la APERTURA de ofertas cuando
+  el dataset la trae; el .ics se baja con cabecera y Blob (el token no viaja en la URL).
+- **La ficha del competidor publica lo que las fuentes dicen, con su fuente, y lo que no está viaja null**: veces ante
+  la entidad por hgi6 **por `codigo_entidad`** (a diferencia del NIT no se comparte entre regionales); ganadas y último
+  adjudicado por p6dx por `nit_entidad` (se advierte que puede sumar hermanas); contratos VIGENTES por jbjy
+  (`estado_contrato in ('En ejecución','Modificado','Suspendido','Prorrogado')` — los valores reales del dataset) con
+  cuántos, valor y las 5 firmas más recientes. **Eso NO es la K residual del competidor**: la K exige sus indicadores
+  del RUP, que no son públicos; se rotula «valor comprometido», jamás capacidad. La inhabilidad la resuelve el flujo
+  «Verifique a su socio» que ya existía (botón «Verificar» con el NIT). «No Definido» no es un NIT. Todo con tiempo
+  acotado (6 s), best-effort, caché 1 h (`seguimiento:detalle:v1:{id}`, `refrescar=1` la salta).
+- **El mock Socrata de la suite aprendió `campo in ('a','b')` genérico** y sirve hgi6 por la rama genérica cuando el
+  `where` no es un `in` simple; el fixture hgi6 lleva `codigo_entidad` y hay contratos vigentes del recurrente en jbjy.
+  `limpiarRedis` purga `seguimiento:*` y `pulso:*`. La prueba de jerga prohíbe «capacidad residual» en app.js.
+
 ### Segunda ronda de correcciones del dueño (18-ago-2026): tipos de trabajo, lenguaje, frases, conceptos de orden
 
 - **«Suministro de porciones de comida» bajo el filtro de obra: la causa era sistemática.** Se bajaron 726 procesos

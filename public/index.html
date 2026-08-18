@@ -672,6 +672,25 @@
            Nace OCULTO: app.js lo enseña solo cuando hay DOS o más perfiles
            individuales cargados (Helder, Génesis, RUP subidos). Compara
            CAPACIDAD, nunca precios (art. 410A del Código Penal). -->
+      <!-- ══════ MIS PROCESOS (ago 2026): guardar, seguir y estudiar a la competencia ══════
+           Encargo del dueño: guardar procesos (interesa / me presenté), ver el
+           cronograma con avisos a 7/3/1 días, y cuando cierra, quiénes se
+           presentaron y qué dicen las fuentes abiertas de cada uno. Los datos
+           salen de /api/perfil?op=seguimiento; nace oculto y aparece con el
+           primer proceso guardado (o con el resumen si ya hay). -->
+      <section id="seccion-seguimiento" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Mis procesos</h2>
+            <p class="mt-1 text-sm text-gray-500">Los que guardó desde la lista: cuándo cierran, qué aviso viene y, cuando cierran, quiénes se presentaron.</p>
+          </div>
+          <div id="seg-resumen" class="flex flex-wrap gap-2 text-xs"></div>
+        </div>
+        <p id="seg-vacio" class="mt-4 text-sm text-gray-500">Todavía no ha guardado ningún proceso. En la lista de licitaciones, cada tarjeta tiene el botón «Guardar».</p>
+        <div id="seg-lista" class="mt-4 space-y-3"></div>
+        <p id="seg-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
+      </section>
+
       <div class="mt-8 grid gap-6 lg:grid-cols-2 lg:items-start">
       <section id="seccion-consorcio" class="hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">Crear consorcio</h2>

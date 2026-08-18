@@ -24,6 +24,8 @@ const OPS = {
   // [v4] Fase 10 · consorcio a la medida (crear/listar/borrar) y su simulador
   consorcio: () => require("../lib/handlers/perfil/consorcio.js"),
   "consorcio-simular": () => (req, res) => require("../lib/handlers/perfil/consorcio.js")(req, res, { op: "consorcio-simular" }),
+  // MIS PROCESOS (ago 2026): guardar, seguir (hitos y avisos) y estudiar a los proponentes; token
+  seguimiento: () => require("../lib/handlers/perfil/seguimiento.js"),
 };
 
 function opDe(req) {
