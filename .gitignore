@@ -1,3 +1,7 @@
 ecc-tool/
 *.swp
 *.swo
+
+# fuentes de precios aportadas por el dueño (no se versionan)
+entrada/*
+!entrada/LEEME.md
