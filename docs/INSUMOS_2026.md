@@ -351,6 +351,28 @@ tres los cazó un control cruzado, no una lectura del código:
    se fusionaban ítems distintos. Con la clave capítulo+numeral las discrepancias bajaron de 230 a
    59, y esas 59 **se descartan** en vez de fusionarse: ahí no se sabe cuál de los dos ítems es.
 
+### Verificado en navegador real
+
+Además de la suite (4/4), se abrió la página en Chromium contra un arnés que sirve `public/` y
+responde `/api/*` con los módulos reales — la práctica que este proyecto ya fijó, porque hay fallos
+que solo se ven ahí:
+
+| Comprobación | Resultado |
+|---|---|
+| Los cinco bancos llegan al catálogo | 174 · 526 · 440 · 3 172 · 1 042 · 1 234 |
+| Presupuesto con los tres nuevos | epc 11 931 · ffie 16 859 · iccu 3 234 038 |
+| EPC trae desglose, los otros no | 5 insumos · 0 insumos |
+| El FFIE avisa que es un TOPE | sí |
+| Badges | «EPC 2026-02 · ALMEIDAS» · «FFIE 2026 · tope · CUNDINAMARCA» · «ICCU 2026 · Cundinamarca» |
+| El buscador ofrece los ítems nuevos | sí — «LOCALIZACIÓN Y REPLANTEO REDES EPC:1.1.1 · ML» |
+| Errores de consola | ninguno |
+| Importador con 300 filas × 5 bancos | 1,6 s (el tope de la prueba es 15 s) |
+
+Dos falsos positivos del arnés que conviene no volver a perseguir: `clasificarOrigen` necesita el
+presupuesto REAL como segundo argumento (con `{}` responde `sin_referencia`, que parece un fallo del
+badge y no lo es), y `CATALOGO` vive dentro del IIFE de `app.js`, así que no es `window.CATALOGO` —
+el buscador se comprueba por el DOM.
+
 ### Lo que se decidió NO hacer, y por qué
 
 - **Las 11 cartillas provinciales de EPC quedan fuera** (solo entró Ubaté, la única con numeral en

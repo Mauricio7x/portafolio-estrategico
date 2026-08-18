@@ -2092,6 +2092,16 @@ manual (`tests/capturar_{epc,ffie,iccu}_apu.js`), su JSON en `data/` y su módul
   provincia, departamento o mediana nacional) en cada respuesta.
 - **`tests/pdf_texto.js` es la herramienta que hizo posibles ICCU y las cartillas**: extractor de
   texto POSICIONAL en Node puro, con ToUnicode resuelto por página y por recurso.
+- **VERIFICADO EN NAVEGADOR REAL antes de dar por bueno** (Chromium por CDP contra un arnés que sirve
+  `public/` y responde `/api/*` con los módulos reales): los cinco bancos llegan al catálogo
+  (174 · 526 · 440 · 3 172 · 1 042 · 1 234), el presupuesto con los tres nuevos da
+  epc 11 931 / ffie 16 859 / iccu 3 234 038, EPC trae sus 5 insumos y el FFIE ninguno, el aviso de
+  TOPE sale, los badges se resuelven («EPC 2026-02 · ALMEIDAS», «FFIE 2026 · tope · CUNDINAMARCA»,
+  «ICCU 2026 · Cundinamarca»), el buscador ofrece los ítems nuevos y **la consola queda limpia**.
+  El importador tarda **1,6 s** con 300 filas contra los cinco bancos (tope de la prueba: 15 s).
+  Dos falsos positivos del arnés que conviene no volver a perseguir: `clasificarOrigen` necesita el
+  presupuesto REAL como segundo argumento (con `{}` responde `sin_referencia`), y `CATALOGO` vive
+  dentro del IIFE de app.js, así que no es `window.CATALOGO` — el buscador se comprueba por el DOM.
 
 ### Los insumos de precios 2026 que aportó el dueño · el censo (18-ago-2026)
 
