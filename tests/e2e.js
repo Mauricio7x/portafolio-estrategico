@@ -10796,7 +10796,7 @@ async function main() {
         assert.ok(Number.isFinite(itPropio.cd_catalogo), "falta la referencia del catálogo para contrastar");
         const Libro = require("../public/apu_libro.js");
         assert.strictEqual(Libro.clasificarOrigen(itPropio, calcConPropio.cuerpo).estado, "propio");
-        assert.strictEqual(Libro.clasificarOrigen(itPropio, calcConPropio.cuerpo).etiqueta, "Tu precio");
+        assert.strictEqual(Libro.clasificarOrigen(itPropio, calcConPropio.cuerpo).etiqueta, "Su precio");
 
         // el precio TECLEADO AHORA gana sobre el guardado: es la corrección más reciente
         const calcTecleado = await invocarPost(apu, "/api/apu/calcular", {
@@ -10830,7 +10830,7 @@ async function main() {
           items: [{ item_id: "NOG-A2", cantidad: 1 }],
         }, CAB_TOKEN)).cuerpo.items[0].cascada;
         assert.strictEqual(cascCat.pasos.find((p) => p.respondio).nivel, "catalogo");
-        assert.ok(/no corregiste el precio|No hay perfil/i.test(
+        assert.ok(/no ha corregido el precio|No hay perfil/i.test(
           cascCat.pasos.find((p) => p.nivel === "usuario").motivo),
         "el nivel del usuario tiene que decir que falta SU precio: es lo que lo invita a corregirlo");
         // y la web la pinta, en las DOS ramas del desglose
@@ -13540,6 +13540,26 @@ async function main() {
       assert.strictEqual(T("INTERVENTORIA A LA OBRA", "Prestación de servicios"), "interventoria");
       assert.strictEqual(T("ESTUDIOS Y DISEÑOS DEL ACUEDUCTO", "Consultoría"), "consultoria");
       assert.strictEqual(T("APOYO LOGÍSTICO PARA EVENTOS", "Prestación de servicios"), "servicios");
+      /* 18-ago-2026: el dueño vio «SUMINISTRO DE PORCIONES PERSONALES DE COMIDA» bajo
+         «obra». Medido sobre 726 procesos servidos: bajo «obra» caían compras con el
+         verbo de obra DETRÁS de «para», mantenimiento de EQUIPOS y alquiler de
+         maquinaria (104 de 726). Y «servicios» pasa a venir APAGADO por defecto. */
+      assert.strictEqual(T("SUMINISTRO DE PORCIONES PERSONALES DE COMIDA", "Suministros"), "suministro");
+      assert.strictEqual(T("SUMINISTRO DE PORCIONES PERSONALES DE COMIDA PARA EL MANTENIMIENTO DE LA VÍA", "Prestación de servicios"), "servicios", "comida no es obra por más «mantenimiento de la vía» que traiga");
+      assert.strictEqual(T("SUMINISTRO DE MATERIAL GRANULAR Y PÉTREO PARA EL MANTENIMIENTO DE VÍAS TERCIARIAS", "Compraventa"), "suministro", "el verbo de obra detrás de «para» es lo que hará la entidad con lo comprado");
+      assert.strictEqual(T("SUMINISTRO DE TUBERÍA DE CONCRETO REFORZADO PARA LA CONSTRUCCIÓN DE OBRAS DE DRENAJE", "Suministros"), "suministro");
+      assert.strictEqual(T("SUMINISTRO DE MATERIALES DE FERRETERÍA Y CONSTRUCCIÓN CON DESTINO A LA EJECUCIÓN DE PROYECTOS", "Suministros"), "suministro", "«materiales de construcción» no es un verbo");
+      assert.strictEqual(T("SELECCIÓN ABREVIADA POR SUBASTA INVERSA", "Suministros", { descripci_n_del_procedimiento: "DIRSA-ALM01 CONTRATAR EL SUMINISTRO DE MATERIALES, HERRAMIENTAS A MONTO AGOTABLE, PARA EL MANTENIMIENTO DE LAS SEDES" }), "suministro", "la cabeza se mira en la DESCRIPCIÓN aunque el nombre sea la modalidad");
+      assert.strictEqual(T("SUMINISTRO E INSTALACIÓN DE PARQUES INFANTILES", "Compraventa"), "obra", "suministro E INSTALACIÓN sigue siendo obra");
+      assert.strictEqual(T("MANTENIMIENTO PREVENTIVO Y CORRECTIVO DE LOS ASCENSORES DE LA ESCUELA SUPERIOR DE GUERRA", "Prestación de servicios"), "servicios", "equipos en una escuela no son obra por la escuela");
+      assert.strictEqual(T("SERVICIO DE MANTENIMIENTO PREVENTIVO Y CORRECTIVO DE AIRES ACONDICIONADOS", "Prestación de servicios"), "servicios");
+      assert.strictEqual(T("RECARGA Y MANTENIMIENTO DE EXTINTORES", "Prestación de servicios"), "servicios");
+      assert.strictEqual(T("CONTRATAR LA RENOVACIÓN DEL LICENCIAMIENTO DE LA INFRAESTRUCTURA DE SEGURIDAD", "Compraventa"), "suministro");
+      assert.strictEqual(T("PRESTACIÓN DE SERVICIOS DE ALQUILER DE MAQUINARIA AMARILLA PARA EL MANTENIMIENTO DE VÍAS", "Prestación de servicios"), "servicios", "alquiler de maquinaria es un servicio, tenga el verbo que tenga");
+      assert.strictEqual(T("MANTENIMIENTO DE LA MALLA VIAL URBANA", "Prestación de servicios"), "obra", "obra civil inequívoca sigue siendo obra");
+      assert.strictEqual(T("SERVICIO DE ENCARGO FIDUCIARIO PARA EL PROYECTO CONSTRUCCIÓN DEL HOSPITAL", "Otro"), "servicios");
+      assert.strictEqual(T("SUMINISTRO DE MATERIAL GRANULAR PARA EL MANTENIMIENTO DE VÍAS", "Obra"), "obra", "tipo_de_contrato «Obra» manda: la entidad lo declaró obra");
+      assert.deepStrictEqual([...FiltrosPub.TIPOS_POR_DEFECTO], ["obra", "consultoria", "interventoria"], "suministro Y servicios vienen apagados por defecto");
       const M = (m) => FL.modalidadDe({ modalidad_de_contratacion: m });
       assert.strictEqual(M("Licitación pública Obra Publica"), "licitacion");
       assert.strictEqual(M("Selección Abreviada de Menor Cuantía"), "abreviada");
@@ -14617,7 +14637,7 @@ async function main() {
       assert.ok(/Encaja con su registro ✓/.test(app6) && /No encaja con su registro ✗/.test(app6), "el encaje del registro se dice en llano");
       assert.ok(/cumplen sus requisitos/.test(app6) && /encajan con su registro de proponente/.test(app6), "el resumen del listado no habla de «puertas» ni de «RUP ✓»");
       assert.ok(/Calcular cuánto me cuesta/.test(visibleHtml) && /Descargar mi presupuesto/.test(visibleHtml), "botones en la voz del usuario (§7.2)");
-      assert.ok(/Tu registro de proponente/.test(visibleHtml) && /Recalcular cuánto suelen bajar el precio/.test(visibleHtml) && /Tipo de obra/.test(visibleHtml), "Mi empresa traducido");
+      assert.ok(/Su registro de proponente/.test(visibleHtml) && /Recalcular cuánto suelen bajar el precio/.test(visibleHtml) && /Tipo de obra/.test(visibleHtml), "Mi empresa traducido");
       console.log("  · Traducción (Fase 6): index.html y los 5 módulos del navegador sin jerga del glosario (UNSPSC, CRP, SMMLV, habilitante, subsanable, causal O, tertil, puertas, «RUP ✓/K ✓», Baja típica) · rótulos por data-glosario y Glosario.corto()/VERBOS");
     }
 
@@ -14715,7 +14735,7 @@ async function main() {
           };
           const lineaRequisitos = new Function("esc", `${extraer("lineaRequisitos")}; return lineaRequisitos;`)(
             (x) => String(x));
-          assert.ok(/no encaja con tu RUP/.test(lineaRequisitos({ p1_rup: { pasa: false } })));
+          assert.ok(/no encaja con su RUP/.test(lineaRequisitos({ p1_rup: { pasa: false } })));
           assert.ok(/capacidad de contrataci/.test(lineaRequisitos({ p2_k: { pasa: false } })));
           const caja = lineaRequisitos({ p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: false, mensaje: "x" } });
           assert.ok(/financiarla está justo/.test(caja) && /amber/.test(caja),
@@ -14897,7 +14917,7 @@ async function main() {
            centro), y el encogimiento cuando los datos propios pesan poco. */
         assert.ok(!/descuento|cerca del presupuesto/.test(motivoProbabilidad({ baja_mercado: { nivel: "alto", baja_mediana: 8, procesos_contados: 12 } })),
           "la baja de la entidad ya no puede presentarse como el factor de la probabilidad");
-        assert.ok(/pod[eé]s bajar/.test(motivoProbabilidad({ p_ganar_detalle: { ajustes: [{ nombre: "precio", factor: 0.6 }] } })),
+        assert.ok(/puede bajar/.test(motivoProbabilidad({ p_ganar_detalle: { ajustes: [{ nombre: "precio", factor: 0.6 }] } })),
           "un factor de precio < 1 es el motivo");
         assert.ok(!/pod[eé]s bajar/.test(motivoProbabilidad({ p_ganar_detalle: { ajustes: [{ nombre: "precio", factor: 1 }] } })),
           "un factor de precio neutro no es un motivo");
@@ -15115,7 +15135,20 @@ async function main() {
           assert.ok(f.length <= 110 && !/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(f), `frase demasiado larga o con emoji: ${f}`);
           assert.ok(!/UNSPSC|RUP|SMMLV|cuant[ií]a|modalidad/i.test(f), `la frase no puede llevar jerga: ${f}`);
         }
-        assert.ok(/rotarFrasePortada\(\)/.test(onbFr) && /setInterval\(paso, 7000\)/.test(onbFr), "las frases rotan cada 7 s");
+        assert.ok(/rotarFrasePortada\(\)/.test(onbFr) && /setInterval\(paso, cada\)/.test(onbFr), "las frases rotan al intervalo de public/frases.js");
+        /* public/frases.js (18-ago-2026): el dueño pidió muchas más frases, más
+           lentas y en registro formal (nada de «vos»). ≥ 250 únicas, ≤ 110
+           caracteres, sin emojis ni jerga, sin voseo ni tuteo; 15 s. */
+        const Frases = require("../public/frases.js");
+        assert.ok(Frases.FRASES.length >= 250, `frases curadas: ${Frases.FRASES.length}`);
+        assert.strictEqual(new Set(Frases.FRASES).size, Frases.FRASES.length, "ninguna frase repetida");
+        assert.strictEqual(Frases.INTERVALO_MS, 15000);
+        for (const f of Frases.FRASES) {
+          assert.ok(f.length <= 110 && !/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(f), `frase demasiado larga o con emoji: ${f}`);
+          assert.ok(!/UNSPSC|RUP|SMMLV|cuant[ií]a|modalidad|\bAPU\b|SECOP/i.test(f), `la frase no puede llevar jerga: ${f}`);
+          assert.ok(!/\b(vos|podés|tenés|hacés|sabés|querés|tu|tus|te|tuyo|tuya)\b/i.test(f), `registro formal (usted), sin voseo ni tuteo: ${f}`);
+        }
+        assert.ok(html.indexOf('<script src="/frases.js">') < html.indexOf('<script src="/onboarding.js">'), "frases.js se carga antes que onboarding.js");
         assert.ok(/classList\.contains\("hidden"\) \|\| document\.hidden\) return/.test(onbFr), "la rotación se detiene cuando la landing no se ve");
       }
 

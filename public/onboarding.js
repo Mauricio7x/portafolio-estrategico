@@ -48,6 +48,10 @@
      (se ve sin JS); las demás rotan cada 7 s con un fundido, y la rotación se
      detiene en cuanto la landing deja de verse (nadie paga por lo que no mira).
      Sin emojis (regla del proyecto) y sin jerga: son frases, no cifras. */
+  /* Las frases viven en public/frases.js (255 curadas, registro formal): esta
+     lista corta es el RESPALDO si aquel no cargó, y su primera frase es la que
+     va escrita en el HTML. Rotación cada 15 s (antes 7: «no duren tan poquito»),
+     empezando en una frase al azar para que cada visita abra distinta. */
   const FRASES_PORTADA = [
     "La obra pública es de todos. También de la empresa que la construye.",
     "Cada contrato que gana una empresa local es plata que se queda en el territorio.",
@@ -58,16 +62,18 @@
   ];
   function rotarFrasePortada() {
     const h = document.getElementById("frase-portada");
-    if (!h || FRASES_PORTADA.length < 2) return;
-    let i = 0;
+    const F = (window.Frases && Array.isArray(window.Frases.FRASES) && window.Frases.FRASES.length >= FRASES_PORTADA.length) ? window.Frases.FRASES : FRASES_PORTADA;
+    const cada = (window.Frases && window.Frases.INTERVALO_MS) || 15000;
+    if (!h || F.length < 2) return;
+    let i = Math.floor(Math.random() * F.length);
     const paso = () => {
       const landing = document.getElementById("onboarding");
       if (!landing || landing.classList.contains("hidden") || document.hidden) return; // se retoma en el próximo tic
-      i = (i + 1) % FRASES_PORTADA.length;
+      i = (i + 1) % F.length;
       h.style.opacity = "0";
-      setTimeout(() => { h.textContent = FRASES_PORTADA[i]; h.style.opacity = "1"; }, 450);
+      setTimeout(() => { h.textContent = F[i]; h.style.opacity = "1"; }, 450);
     };
-    setInterval(paso, 7000);
+    setInterval(paso, cada);
   }
   rotarFrasePortada();
   const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
@@ -142,7 +148,7 @@
         }
         resolve(window.pdfjsLib);
       };
-      s.onerror = () => reject(new Error("No se pudo cargar pdf.js desde el CDN: sin él el PDF no se puede leer en el navegador. Revisá tu conexión y reintentá."));
+      s.onerror = () => reject(new Error("No se pudo cargar pdf.js desde el CDN: sin él el PDF no se puede leer en el navegador. Revise su conexión y reintente."));
       document.head.appendChild(s);
     }).then(async (lib) => {
       const modo = await fijarWorker(lib);
@@ -243,7 +249,7 @@
        los dos en el mismo try se diagnosticaría como «sin conexión» */
     let cuerpo = null;
     try { cuerpo = await r.json(); } catch {
-      throw new Error(`El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, iniciá sesión y reintentá.`);
+      throw new Error(`El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`);
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
       throw new Error((cuerpo && (cuerpo.error || (cuerpo.campos && cuerpo.campos.map((c) => c.error).join(" · ")))) || `El servidor respondió ${r.status}.`);
@@ -621,7 +627,7 @@
     const cabecera = filas[0].map((c) => String(c || "").trim().toLowerCase());
     for (const col of COLUMNAS_OBLIGATORIAS) {
       if (!cabecera.includes(col)) {
-        return { error: `Falta la columna «${col}» en la cabecera del CSV. Descargá el formato de ejemplo y respetá los nombres de las columnas.` };
+        return { error: `Falta la columna «${col}» en la cabecera del CSV. Descargue el formato de ejemplo y respetá los nombres de las columnas.` };
       }
     }
     const idx = {};
@@ -658,7 +664,7 @@
   $("btn-exp-cargar").addEventListener("click", async () => {
     mensajeExp(null);
     const archivo = $("exp-archivo").files && $("exp-archivo").files[0];
-    if (!archivo) return mensajeExp("Elegí primero el archivo CSV (podés partir del formato de ejemplo).", "error");
+    if (!archivo) return mensajeExp("Elija primero el archivo CSV (puede partir del formato de ejemplo).", "error");
     const token = TOKEN;
 
     let convertido = null;
@@ -684,10 +690,10 @@
       return mensajeExp(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
     }
     try { cuerpo = await r.json(); } catch {
-      return mensajeExp(`El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, iniciá sesión y reintentá.`, "error");
+      return mensajeExp(`El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`, "error");
     }
     if (r.status === 401) {
-      return mensajeExp("La aplicación no pudo autenticarse con el servidor. No es un problema tuyo: es configuración "
+      return mensajeExp("La aplicación no pudo autenticarse con el servidor. No es un problema suyo: es configuración "
         + "del sitio — avisale a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).", "error");
     }
     if (!r.ok || !cuerpo.ok) {

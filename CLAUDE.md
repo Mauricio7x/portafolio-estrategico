@@ -1848,6 +1848,50 @@ cascada de `lib/apu/precios.js`. Evidencia HTTP en el §11 del mismo doc.
   INVIAS prohíben el uso comercial sin autorización — si Detekta se comercializa con estos datos,
   pedirla (`preciosunitarios@invias.gov.co`).
 
+### Segunda ronda de correcciones del dueño (18-ago-2026): tipos de trabajo, lenguaje, frases, conceptos de orden
+
+- **«Suministro de porciones de comida» bajo el filtro de obra: la causa era sistemática.** Se bajaron 726 procesos
+  servidos (helder + genesis): bajo «obra» caían (a) COMPRAS con el verbo de obra DETRÁS de «para» («SUMINISTRO DE
+  MATERIAL GRANULAR PARA EL MANTENIMIENTO DE VÍAS»: el verbo dice qué hará la entidad con lo comprado), (b)
+  MANTENIMIENTO DE EQUIPOS (ascensores, aires, extintores, vehículos, UPS, licenciamiento) donde «mantenimiento» era
+  el único verbo de obra, y (c) ALQUILER de maquinaria — 104 de 726. `lib/filtros_lista.tipoTrabajoDe` los reclasifica
+  (`esCompraPorLaCabeza` sobre la cabeza antes de «para/con destino/destinado/en apoyo», mirando la DESCRIPCIÓN y el
+  NOMBRE por separado porque el nombre suele ser la modalidad; `esServicioDeEquipos` = EQUIPOS_RE sin
+  OBRA_CIVIL_FUERTE_RE — que **no lleva sustantivos de LUGAR** («escuela», «sede», «hospital»): «ascensores de la
+  ESCUELA» no es obra por la escuela; `ALQUILER_RE`; y `SERVICIO_NO_OBRA_RE` corta y literal — comida, logística,
+  fiducia, licencias, análisis de laboratorio). **`servicios` pasa a venir APAGADO por defecto** como `suministro`
+  (`TIPOS_POR_DEFECTO` = obra · consultoría · interventoría). Nada de esto toca la cascada de juicio: reclasifica lo que
+  quien consulta VE bajo cada tipo. Contrato «Obra» declarado por la entidad sigue mandando.
+- **El «error de animación al elegir departamento» era el selector de la hoja de filtros volviendo a vacío** nada
+  más elegir (es un control que AÑADE) con la ficha apareciendo detrás del velo: se elegía y «no pasaba nada». Ahora
+  los departamentos elegidos se ven como chips con × DENTRO de la hoja (`#fl-dep-elegidos`) y el selector dice «Añadir
+  departamento…». Y desde el pulso, si hubo cambio de pestaña, ya no se hace `scrollIntoView` suave encima de la
+  animación de entrada del panel (se pisaban): basta el `scrollTo(0)` de `activarPestana`.
+- **Consorcios: «Consorcio N» por defecto** (siguiente al mayor guardado; borrar no renumera) en vez del nombre
+  derivado ilegible; `etiquetaConsorcio` en app.js evita «Consorcio · Consorcio 1». La composición sigue en `rol`.
+- **REGISTRO FORMAL (usted), Bogotá.** El dueño: «el lenguaje debe ser profesional, como es eso de "para vos"». Barrido
+  de ~95 cadenas visibles (index.html, app.js, onboarding.js, pliego.js, filtros.js, apu_libro.js, lib/apu/precios,
+  lib/rup_pdf, lib/handlers/admin/rup, lib/perfil_manual, lib/probabilidad_desglose, lib/accesibilidad, listar, pulso):
+  voseo y tuteo → usted («Su registro de proponente», «Suba el certificado», «Verifique a su socio», «Las mejores para
+  usted», «Su precio»). La suite prohíbe voseo/tuteo en las frases de la portada y varias aserciones cambiaron de
+  literal. Cuidado con `/verific/`: «verifique» NO lo contiene («conviene verificar…»).
+- **`public/frases.js`: 255 frases curadas** (registro formal, ≤ 110 caracteres, sin emojis ni jerga, sin
+  voseo/tuteo, ninguna repetida) sobre lo público como bien común, el derecho a competir, el oficio, el territorio, la
+  información y el papel de la herramienta; **rotación cada 15 s** (antes 7: «no duren tan poquito») empezando en una
+  al azar. `onboarding.js` conserva las 6 originales como RESPALDO (la primera va en el HTML). El dueño pidió «unas
+  1000»: son 255 escritas una a una — se prefirió calidad; ampliar es añadir al arreglo.
+- **Cada ORDEN dice su concepto** (`ORDENES[].concepto` en `public/filtros.js`, `Filtros.conceptoDe`, `#orden-concepto`
+  bajo la barra y `title` en las opciones): qué hace ese orden y qué NO promete. Y **`ve` se llama por lo que es**:
+  «Mayor contrato esperado» / «de contrato esperado por intento» = presupuesto oficial × opción de ganar
+  (`lib/probabilidad.valorEsperado`), promedio por intento que cuenta las veces que no se gana, **NO utilidad**. La
+  nota anterior decía que «descontaba el costo de ofertar», y el cálculo NO lo hace: era una promesa sin respaldo.
+- **«Las interventorías son las que más dejan» — investigado con los datos reales (18-ago-2026):** NO es lo que
+  muestra el orden por contrato esperado hoy (mediana obra $82 M vs interventoría $41 M; el top-10 por VE es obra;
+  p mediana obra 0,20 vs interventoría 0,18; rivales medianos 4,2 vs 4,7). Lo que sí ocurre: en «Las más ganables»
+  aparecen interventorías/consultorías de municipios pequeños con ~1,2 rivales (Tauramena), y en el consorcio dos
+  interventorías de $6 137 M entran al top-10 por VE por TAMAÑO. La lectura «deja» venía del rótulo, no del dato: por
+  eso el rótulo cambió. Los datos por tipo se pueden reproducir bajando el listado y agrupando por `filtro.tipo`.
+
 ### Segundo banco oficial de ítems: los precios de referencia del IDU (Bogotá, ago 2026)
 
 Investigación previa (17-ago-2026), para no repetirla: buscando una base de precios de EDIFICACIÓN vigente y

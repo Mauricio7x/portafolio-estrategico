@@ -41,7 +41,7 @@
   const TOKEN = "MiExtraccion2025";
   // el mismo texto que app.js: el 401 se explica como lo que es, en lenguaje
   // de personas primero y con el dato del administrador entre paréntesis
-  const MSG_401 = "La aplicación no pudo autenticarse con el servidor. No es un problema tuyo: es configuración "
+  const MSG_401 = "La aplicación no pudo autenticarse con el servidor. No es un problema suyo: es configuración "
     + "del sitio — avisale a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).";
   const leerToken = () => TOKEN;
 

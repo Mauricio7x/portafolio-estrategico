@@ -58,7 +58,7 @@
      existe ningún formulario donde escribirlo. Pero se dice PRIMERO en
      lenguaje de personas: el usuario no puede arreglarlo y tiene que saber
      que no es culpa suya; el paréntesis es para quien administra. */
-  const MSG_401 = "La aplicación no pudo autenticarse con el servidor. No es un problema tuyo: es configuración "
+  const MSG_401 = "La aplicación no pudo autenticarse con el servidor. No es un problema suyo: es configuración "
     + "del sitio — avisale a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).";
   let tokenRechazado = false;
   const tokenGuardado = () => (tokenRechazado ? "" : TOKEN);
@@ -96,6 +96,13 @@
      que filtren la lista EN LA MISMA PÁGINA en vez de recargarla. El mercado
      entero (la portada de la Fase 9) queda plegado debajo y se pide la
      primera vez que alguien lo abre: nadie paga por lo que no mira. */
+  /* «Consorcio 1» se enseña tal cual; un nombre propio va con el prefijo. Sin
+     nombre, el id (recortado): jamás «Consorcio · Consorcio 1». */
+  function etiquetaConsorcio(nombre, id) {
+    const n = String(nombre || "").trim();
+    if (/^consorcio\b/i.test(n)) return n;
+    return `Consorcio · ${n || String(id || "").slice(0, 12)}`;
+  }
   function refrescarPulso() {
     if (!window.Pulso) return;
     const sel = $("f-perfil");
@@ -125,8 +132,13 @@
        enlace pegado en Chrome significan exactamente lo mismo */
     const params = new URLSearchParams(String(filtro || "") === "todo" ? "" : String(filtro || ""));
     cambiarFiltros(window.Filtros.leerEstado(params));
-    // el pulso vive en Mi empresa y la lista en Licitaciones: la cifra LLEVA a la lista
+    /* el pulso vive en Mi empresa y la lista en Licitaciones: la cifra LLEVA a la
+       lista. Si hubo cambio de pestaña, basta el `scrollTo(0)` de activarPestana:
+       la lista empieza bajo la barra; un scrollIntoView SUAVE encima de la
+       animación de entrada del panel se pisaba con él y se veía como un salto. */
+    const cambia = !!$("tab-licitaciones").classList.contains("hidden");
     activarPestana("licitaciones");
+    if (cambia) return;
     const lista = $("lista");
     if (lista && lista.scrollIntoView) lista.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -329,6 +341,14 @@
       class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition ${activo
     ? "bg-gray-900 text-white ring-gray-900" : "bg-white text-gray-600 ring-gray-300 hover:bg-gray-50"}">${esc(texto)}</button>`;
   }
+  /* El concepto del orden elegido, bajo la barra: qué hace y qué no promete.
+     Las opciones del select llevan el mismo texto como `title`. */
+  function pintarConceptoOrden() {
+    const sel = $("f-ordenar"), p = $("orden-concepto");
+    if (!sel || !p) return;
+    for (const o of sel.options) { const c = FL.conceptoDe(o.value); if (c) o.title = c; }
+    p.textContent = FL.conceptoDe(sel.value) || "";
+  }
   function pintarControlesFiltros() {
     const e = estadoFiltros;
     // 1 · tipo de trabajo (chips que se encienden y apagan)
@@ -347,6 +367,15 @@
     }
     for (const o of dep.options) if (o.value) o.textContent = (FL.DEPARTAMENTOS.find((d) => d.codigo === o.value) || {}).nombre + conteo("departamento", o.value);
     dep.value = "";
+    // los departamentos elegidos, como chips con × DENTRO de la hoja (el select es un control que AÑADE)
+    const elegidos = $("fl-dep-elegidos");
+    if (elegidos) {
+      elegidos.innerHTML = (e.dep || []).map((c) => {
+        const d = FL.DEPARTAMENTOS.find((x) => x.codigo === c);
+        return `<span class="inline-flex items-center gap-1 rounded-full bg-gray-900 px-2.5 py-1 text-xs font-medium text-white">${esc(d ? d.nombre : c)}
+          <button type="button" data-fl-quitar-dep="${esc(c)}" class="ml-0.5 rounded-full px-1 leading-none text-white/80 hover:bg-white/20 hover:text-white" title="Quitar este departamento" aria-label="Quitar ${esc(d ? d.nombre : c)}">×</button></span>`;
+      }).join("");
+    }
     if (document.activeElement !== $("fl-ciudad")) $("fl-ciudad").value = e.ciudad || "";
     $("fl-zona-cerca").checked = $("f-zona").value === "facil";
     // 4 · cuantía
@@ -424,6 +453,11 @@
       if (activos.has(id)) activos.delete(id); else activos.add(id);
       return cambiarFiltros({ ...estadoFiltros, modalidad: activos.size ? [...activos] : null });
     }
+    const xd = ev.target.closest("[data-fl-quitar-dep]");
+    if (xd) {
+      const resto = (estadoFiltros.dep || []).filter((c) => c !== xd.getAttribute("data-fl-quitar-dep"));
+      return cambiarFiltros({ ...estadoFiltros, dep: resto.length ? resto : null });
+    }
     const x = ev.target.closest("[data-fl-quitar]");
     if (x) return cambiarFiltros(FL.sinFiltro(estadoFiltros, x.getAttribute("data-fl-quitar")));
     if (ev.target.closest("#fl-quitar-todos")) return cambiarFiltros(FL.leerEstado({}));
@@ -494,14 +528,14 @@
     const fichas = FL.fichas(estadoFiltros);
     const n = fichas.length;
     let html = "";
-    if (!n) html = "No se encontraron oportunidades. Probá con «Buscar oportunidades» más tarde: la lista se actualiza sola con cada sincronización.";
+    if (!n) html = "No se encontraron oportunidades. Pruebe con «Buscar oportunidades» más tarde: la lista se actualiza sola con cada sincronización.";
     else {
       const s = cuerpo && cuerpo.sugerencia;
       const nombre = s ? (fichas.find((f) => f.filtro === s.filtro) || {}).etiqueta || s.filtro : null;
       html = `Ningún proceso cumple ${n === 1 ? "el filtro" : `los ${n} filtros`}.`
         + (s ? ` Si quita <strong>${esc(nombre.split(":")[0].toLowerCase())}</strong>, aparece${s.siLoQuita === 1 ? "" : "n"} <strong>${s.siLoQuita}</strong>.
             <button type="button" data-fl-quitar-sugerido="${esc(s.filtro)}" class="ml-2 rounded-lg border border-gray-300 bg-white px-3 py-1 text-xs font-medium hover:bg-gray-50">Quitar ese filtro</button>`
-          : " Ninguno de los filtros, quitado por separado, recupera procesos: probá «Quitar todos».")
+          : " Ninguno de los filtros, quitado por separado, recupera procesos: pruebe «Quitar todos».")
         + ` <button type="button" id="fl-vacio-quitar-todos" class="ml-1 text-xs font-medium text-blue-600 hover:underline">Quitar todos</button>`;
     }
     $("estado-vacio").innerHTML = html;
@@ -528,7 +562,7 @@
     if (!m) return "";
     if (m.valor == null) return `<p class="mt-3 text-xs text-gray-500">${esc(m.motivo || "Sin referencia")}</p>`;
     const signo = m.valor >= 0 ? "text-green-800 bg-green-50 ring-green-600/20" : "text-red-700 bg-red-50 ring-red-600/20";
-    return `<p class="mt-3 rounded-lg px-3 py-2 text-xs ring-1 ring-inset ${signo}">Te quedan aprox. <strong>${fmtCOP.format(m.valor)}</strong> entre tu piso rentable (${fmtCOP.format(m.piso)}) y el techo al que suele adjudicar esta entidad (${fmtCOP.format(m.techo)}).${m.valor < 0 ? " El techo está POR DEBAJO de tu piso: aquí no da." : ""}</p>`;
+    return `<p class="mt-3 rounded-lg px-3 py-2 text-xs ring-1 ring-inset ${signo}">Le quedan aprox. <strong>${fmtCOP.format(m.valor)}</strong> entre su piso rentable (${fmtCOP.format(m.piso)}) y el techo al que suele adjudicar esta entidad (${fmtCOP.format(m.techo)}).${m.valor < 0 ? " El techo está POR DEBAJO de su piso: aquí no da." : ""}</p>`;
   }
 
   /* Al cargar: el orden pedido en la URL (`?ordenar_por=margen`) y los
@@ -539,6 +573,7 @@
     if (ord && [...$("f-ordenar").options].some((o) => o.value === ord)) $("f-ordenar").value = ord;
   } catch { /* sin URL legible */ }
   pintarControlesFiltros();
+  pintarConceptoOrden();
 
   function parametros() {
     const p = new URLSearchParams({ perfil: $("f-perfil").value, pagina: String(pagina), por_pagina: "20" });
@@ -727,8 +762,8 @@
     const frase = dias === 0
       ? "Cierra HOY: solo cuenta la oferta en estado «Presentada» antes de la hora exacta — guardarla no basta."
       : dias === 1
-        ? "Cierra mañana: presentá la oferta HOY. El día del cierre es cuando más ofertas mueren."
-        : "Presentá la oferta a más tardar mañana: la regla del oficio es dejarla presentada el día ANTERIOR al cierre.";
+        ? "Cierra mañana: presente la oferta HOY. El día del cierre es cuando más ofertas mueren."
+        : "Presente la oferta a más tardar mañana: la regla del oficio es dejarla presentada el día ANTERIOR al cierre.";
     return `<p class="mt-3 rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700">Atención: ${frase}</p>`;
   }
 
@@ -845,8 +880,8 @@
     const detalle = [g.p1_rup, g.p2_k, g.p3_caja].map((p) => p && p.mensaje).filter(Boolean).join("\n");
     const linea = (clase, texto) =>
       `<p class="mt-3 text-sm font-medium ${clase}"${detalle ? ` title="${esc(detalle)}"` : ""}>● ${esc(texto)}</p>`;
-    if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", "Esta obra no encaja con tu RUP.");
-    if (g.p2_k && g.p2_k.pasa === false) return linea("text-red-700", "Supera tu capacidad de contratación.");
+    if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", "Esta obra no encaja con su RUP.");
+    if (g.p2_k && g.p2_k.pasa === false) return linea("text-red-700", "Supera su capacidad de contratación.");
     if (g.p3_caja && g.p3_caja.pasa === false) {
       return linea("text-amber-700", "Podés presentarte, pero financiarla está justo: pensá en anticipo, crédito o consorcio.");
     }
@@ -944,7 +979,7 @@
     if (comp.nivel === "baja" && conComp && promedio <= 2) {
       return `Poca competencia en esta entidad (~${fmtNum.format(promedio)} oferentes).`;
     }
-    if (l._cierre_prorrogado) return "El cierre fue prorrogado, tenés más tiempo.";
+    if (l._cierre_prorrogado) return "El cierre fue prorrogado: hay más tiempo.";
     const ajustes = (l.p_ganar_detalle || {}).ajustes || [];
     if (ajustes.some((a) => /colisi/i.test(a.nombre || "") && a.factor !== 1)) {
       return "Varios procesos cierran el mismo día.";
@@ -956,7 +991,7 @@
        restó. `baja` se conserva para el caso público (sin cifra). */
     void baja;
     const precio = ajustes.find((a) => a.nombre === "precio");
-    if (precio && precio.factor != null && precio.factor < 1) return "Aquí suelen bajar más de lo que vos podés bajar.";
+    if (precio && precio.factor != null && precio.factor < 1) return "Aquí suelen bajar más de lo que usted puede bajar.";
     const d = l.p_ganar_detalle || {};
     if (d.encogido && d.peso_datos != null && d.peso_datos < 0.5) {
       const apoyo = /^departamento:/.test(d.prior_origen || "") ? "el promedio de su departamento" : "el promedio general";
@@ -1036,9 +1071,14 @@
     const cGana = frec
       ? celda(`1 de ${frec.de_cada}`, "se gana, aproximadamente", motivoPropio ? esc(motivoPropio) : "", `${frec.frase}${motivoPropio ? " " + motivoPropio : ""}`)
       : celda("—", "sin datos para estimar", "", "Sin datos suficientes para estimar cuántas veces se gana algo así.");
+    /* «contrato esperado», NO «deja»: `ve` es presupuesto oficial × opción de
+       ganar (lib/probabilidad.valorEsperado), un promedio por intento que
+       cuenta las veces que no se gana. No es utilidad —eso lo calcula el APU— y
+       la nota anterior decía además que descontaba «el costo de ofertar», que
+       el cálculo NO hace: era una promesa sin respaldo (18-ago-2026). */
     const cDeja = l.ve != null
-      ? celda(esc(fmtCorto(l.ve)), "deja por intento, en promedio", "contando las veces que no se gana y el costo de ofertar", "Promedio sobre intentos: ya descuenta las veces que no se gana y lo que cuesta preparar la oferta.")
-      : celda("—", "sin valor esperado", "", "Sin cuantía publicada no hay valor esperado.");
+      ? celda(esc(fmtCorto(l.ve)), "de contrato esperado por intento", "presupuesto × opción de ganar, contando las veces que no se gana · no es utilidad", "Presupuesto oficial multiplicado por la opción estimada de ganar: promedio por intento, contando las veces que no se gana. NO es utilidad ni descuenta el costo de preparar la oferta: la utilidad la calcula el análisis de precios en Precios.")
+      : celda("—", "sin contrato esperado", "", "Sin presupuesto oficial publicado no hay contrato esperado que calcular.");
     return `
       <div class="metricas mt-4 grid grid-cols-3 rounded-xl" style="background: var(--bg-inset);">
         ${cCompiten}${cGana}${cDeja}
@@ -1169,7 +1209,7 @@
       (conFiltros ? `${cuerpo.total} de ${base} licitaciones` : `${cuerpo.total} oportunidad${cuerpo.total === 1 ? "" : "es"}`)
       + ` para el perfil «${$("f-perfil").selectedOptions[0].text}»`
       + (cuerpo.ordenado_por === "margen" && cuerpo.margen
-        ? ` · ordenadas por lo que te queda: ${cuerpo.margen.con_margen} con costo calculado${cuerpo.margen.borradores_sin_costo ? `, ${cuerpo.margen.borradores_sin_costo} borrador${cuerpo.margen.borradores_sin_costo === 1 ? "" : "es"} sin costo (volvé a calcular y guardar)` : ""}; las demás sin referencia, abajo`
+        ? ` · ordenadas por lo que le queda: ${cuerpo.margen.con_margen} con costo calculado${cuerpo.margen.borradores_sin_costo ? `, ${cuerpo.margen.borradores_sin_costo} borrador${cuerpo.margen.borradores_sin_costo === 1 ? "" : "es"} sin costo (volvé a calcular y guardar)` : ""}; las demás sin referencia, abajo`
         : "")
       + (cuerpo.viables !== undefined ? ` · ${cuerpo.viables} cumplen sus requisitos` : "")
       + (cuerpo.no_viables ? `, ${cuerpo.no_viables} no viable${cuerpo.no_viables === 1 ? "" : "s"}` : "")
@@ -1642,7 +1682,7 @@
     const frec = frecuenciaNatural(d.probabilidad_final);
     $("modal-cuerpo").innerHTML = `
       <div class="rounded-2xl bg-gray-50 px-5 py-4">
-        <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Tus opciones en este proceso</p>
+        <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Sus opciones en este proceso</p>
         <p class="mt-1 text-2xl font-semibold tracking-tight">${frec ? esc(frec.frase) : `${fmtNum.format(d.probabilidad_final_pct)} %`}</p>
         <p class="mt-1 text-sm text-gray-600"><span class="${et.clase || ""}" aria-hidden="true">${et.icono}</span> ${esc(et.frase)}${frec ? ` <span class="text-gray-400">(${fmtNum.format(d.probabilidad_final_pct)} %)</span>` : ""}</p>
         ${d.banda_90 && d.banda_90.desde != null ? `<p class="mt-1 text-xs text-gray-500">Con la muestra que hay, la cifra puede moverse entre ${fmtNum.format(d.banda_90.desde * 100)} % y ${fmtNum.format(d.banda_90.hasta * 100)} %${d.peso_datos_entidad != null ? ` · los datos propios de la entidad pesan ${Math.round(d.peso_datos_entidad * 100)} %` : ""}.</p>` : ""}
@@ -1882,7 +1922,7 @@
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
   for (const id of ["f-perfil", "f-cuantia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
     "f-sin-unspsc", "f-solo-viables", "f-zona"]) {
-    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } buscar(); if (id === "f-perfil") refrescarPulso(); });
+    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") pintarConceptoOrden(); buscar(); if (id === "f-perfil") refrescarPulso(); });
   }
   /* «Ver PAA» NO re-consulta /api/oportunidades: son dos fuentes distintas y
      encender la previsión no puede cambiar la lista de lo que está abierto. Lo
@@ -1919,7 +1959,7 @@
     try {
       r = await fetch(ruta, cfg);
     } catch (e) {
-      throw new Error(`Sin conexión con el servidor: revisá tu internet e intentá de nuevo. (${e.message})`);
+      throw new Error(`Sin conexión con el servidor: revise su conexión e intente de nuevo. (${e.message})`);
     }
     /* el parseo va APARTE del fetch: el muro del edge responde HTML */
     let cuerpo = null;
@@ -4972,7 +5012,7 @@
     const perfil = $("f-perfil").value;
     const nombre = $("f-perfil").selectedOptions[0] ? $("f-perfil").selectedOptions[0].text : perfil;
     $("modal-eliminar-texto").textContent = ID_RUP_RE.test(perfil)
-      ? "Perderás los filtros, los presupuestos guardados y los datos asociados a tu RUP subido. "
+      ? "Perderá los filtros, los presupuestos guardados y los datos asociados a su RUP subido. "
         + "Esta acción no se puede deshacer: para volver a usar la aplicación tendrás que subir el PDF de nuevo."
       : `El perfil «${nombre}» volverá a los valores del repositorio (RUP corte 31/12/2025): se pierde el `
         + "archivo cargado y sus filtros derivados. Esta acción no se puede deshacer. Los presupuestos "
@@ -5789,13 +5829,13 @@
         nivel: dias <= 15 ? "rojo" : "ambar",
         frase: `Atención: el RUP se renueva a más tardar el quinto día hábil de abril — este año, hacia el ${fechaTxt}`
           + (dias > 0 ? ` (faltan ${dias} día${dias === 1 ? "" : "s"})` : " (es HOY)")
-          + ". Si no lo renovás a tiempo, pierde efectos hasta el año siguiente y no podés licitar.",
+          + ". Si no lo renueva a tiempo, pierde efectos hasta el año siguiente y no puede licitar.",
       };
     }
     return {
       nivel: "rojo",
       frase: "Atención: el plazo para renovar el RUP (quinto día hábil de abril) ya venció o está encima. "
-        + "Si todavía no lo renovaste, hacelo HOY y verificá tu estado en el RUES: los festivos pueden "
+        + "Si todavía no lo renovó, hágalo HOY y verifique su estado en el RUES: los festivos pueden "
         + "correr el plazo unos días, pero no contés con eso.",
     };
   }
@@ -5954,7 +5994,7 @@
       <input type="checkbox" data-cons-perfil="${esc(p.id)}" ${cons.integrantes.includes(p.id) ? "checked" : ""} class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">${esc(p.nombre)}</label>`).join("");
     const elegidos = perfiles.filter((p) => cons.integrantes.includes(p.id));
     $("cons-participaciones").innerHTML = elegidos.length < 2
-      ? `<p class="text-sm text-gray-500">Marcá al menos dos integrantes.</p>`
+      ? `<p class="text-sm text-gray-500">Marque al menos dos integrantes.</p>`
       : elegidos.map((p) => `<div class="grid grid-cols-[1fr_auto] items-center gap-3">
           <label class="text-sm text-gray-700">${esc(p.nombre)}
             <input type="range" min="1" max="99" step="1" value="${cons.part[p.id] ?? Math.floor(100 / elegidos.length)}" data-cons-rango="${esc(p.id)}" class="mt-1 w-full">
@@ -6040,7 +6080,7 @@
       try {
         const g = await api("/api/perfil?op=consorcio", { method: "POST", body: { integrantes: participacionesActuales() } });
         const sel = $("f-perfil");
-        if (![...sel.options].some((o) => o.value === g.id)) { const o = document.createElement("option"); o.value = g.id; o.textContent = `Consorcio · ${g.nombre}`; sel.appendChild(o); }
+        if (![...sel.options].some((o) => o.value === g.id)) { const o = document.createElement("option"); o.value = g.id; o.textContent = etiquetaConsorcio(g.nombre, g.id); sel.appendChild(o); }
         sel.value = g.id;
         try { localStorage.setItem("detekta_consorcio", JSON.stringify({ id: g.id, nombre: g.nombre })); } catch { /* sin almacenamiento */ }
         pintarConsorciosGuardados();
@@ -6066,7 +6106,7 @@
       <a class="text-blue-600 hover:underline" href="/?perfil=${esc(c.id)}#/licitaciones">Ver su lista</a>
       <button type="button" data-cons-borrar="${esc(c.id)}" class="text-red-600 hover:underline">Borrar</button></li>`).join("")}</ul>` : "";
     const sel = $("f-perfil");
-    for (const c of lista) if (![...sel.options].some((o) => o.value === c.id)) { const o = document.createElement("option"); o.value = c.id; o.textContent = `Consorcio · ${c.nombre || c.id}`; sel.appendChild(o); }
+    for (const c of lista) if (![...sel.options].some((o) => o.value === c.id)) { const o = document.createElement("option"); o.value = c.id; o.textContent = etiquetaConsorcio(c.nombre, c.id); sel.appendChild(o); }
   }
 
   /* ---- Verificá a tu socio (vista `socio` de /api/inteligencia) ----
@@ -6081,7 +6121,7 @@
     const rl = $("socio-representante").value.trim();
     const msg = $("socio-mensaje"), out = $("socio-resultado");
     const aviso = (texto, clase) => { msg.className = `mt-3 rounded-xl px-4 py-3 text-sm ${clase}`; msg.textContent = texto; msg.classList.remove("hidden"); };
-    if (!id.replace(/\D/g, "")) { aviso("Escribí el NIT o la cédula del socio para poder verificarlo.", "bg-amber-50 text-amber-800"); return; }
+    if (!id.replace(/\D/g, "")) { aviso("Escriba el NIT o la cédula del socio para poder verificarlo.", "bg-amber-50 text-amber-800"); return; }
     socioEnVuelo = true;
     $("btn-socio-verificar").disabled = true;
     aviso("Consultando la Procuraduría y SECOP…", "bg-gray-50 text-gray-600");
@@ -6201,7 +6241,7 @@
     let nombreCons = "";
     try { const g = JSON.parse(localStorage.getItem("detekta_consorcio") || "null"); if (g && g.id === perfilUrl) nombreCons = g.nombre || ""; } catch { /* sin almacenamiento */ }
     const sel = $("f-perfil");
-    if (![...sel.options].some((o) => o.value === perfilUrl)) { const o = document.createElement("option"); o.value = perfilUrl; o.textContent = `Consorcio · ${nombreCons || perfilUrl}`; sel.appendChild(o); }
+    if (![...sel.options].some((o) => o.value === perfilUrl)) { const o = document.createElement("option"); o.value = perfilUrl; o.textContent = etiquetaConsorcio(nombreCons, perfilUrl); sel.appendChild(o); }
     if (!sesionConClave) for (const o of [...sel.options]) { if (o.value !== perfilUrl) o.remove(); }
     sel.value = perfilUrl;
     abrirApp();
