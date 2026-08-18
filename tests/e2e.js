@@ -7837,6 +7837,9 @@ async function main() {
         assert.strictEqual(rec.contratos_vigentes.firmas.length, 2); assert.ok(rec.contratos_vigentes.firmas[0].fecha_firma && rec.contratos_vigentes.firmas[0].valor_cop);
         assert.ok(/no es su capacidad residual|NO es su capacidad|cota/i.test(rec.contratos_vigentes.lectura), "lo que se publica es valor comprometido, no la K");
         assert.strictEqual(rec.verificar_inhabilidad.op, "socio");
+        const ocasional = det.proponentes.find((p) => p.nit && p.nit !== PROPONENTES_IDU.nitRecurrente);
+        assert.ok(ocasional && ocasional.ante_esta_entidad.veces_ganado === 0 && ocasional.ante_esta_entidad.veces_presentado >= 1,
+          `con NIT y fuente que respondió, «no ganó» es 0, no null: ${JSON.stringify(ocasional && ocasional.ante_esta_entidad)}`);
         const sinNit = det.proponentes.find((p) => p.identificacion.tipo === "sin_nit");
         assert.ok(sinNit && sinNit.contratos_vigentes === null && sinNit.ante_esta_entidad.veces_presentado === null, "sin NIT no se cruza nada y viaja null, no 0");
         const det2 = (await seg(`&perfil=helder&detalle=${encodeURIComponent(idIdu)}`)).cuerpo;
