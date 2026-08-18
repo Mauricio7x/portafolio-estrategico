@@ -2010,9 +2010,11 @@
         const r = await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil, id, estado: "interesa", foto: l || null } });
         guardados.set(id, (r && r.guardado && r.guardado.estado) || "interesa");
       }
-      // repintar el botón de ESA tarjeta y la sección de Mi empresa (si ya arrancó)
+      // repintar el botón de ESA tarjeta y la sección de Mi empresa (si ya arrancó;
+      // si no, se invalida lo cargado para que la próxima apertura vuelva a pedir)
       const l = filaDeLista(id);
       if (btn && l) btn.outerHTML = botonGuardar(l);
+      seguimientoCargadoPara = null;
       if (arrancadas.admin) cargarSeguimiento({ forzar: true });
     } catch (e) {
       if (btn) { btn.disabled = false; btn.textContent = "No se pudo"; btn.title = e.message; }
@@ -6354,7 +6356,7 @@
   }
 
   function arrancarPaneles() {
-    cargarSeguimiento();
+    cargarSeguimiento({ forzar: true });
     pintarConsorcio();
     pintarConsorciosGuardados();
     $("btn-socio-verificar").addEventListener("click", verificarSocio);
