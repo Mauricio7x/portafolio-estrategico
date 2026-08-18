@@ -2045,12 +2045,60 @@ Decisiones que no hay que re-aprender:
   consulte el estado del catálogo APU y la experiencia al arrancar, y el tablero es una lectura cacheada
   (300 s). Si algún día pesa, lo que se difiere es lo de dentro de «Sistema», al `toggle` del `<details>`.
 
-### Los insumos de precios 2026 que aportó el dueño · CENSADOS, no integrados (18-ago-2026)
+### Tres bancos oficiales más: EPC, FFIE e ICCU (18-ago-2026)
+
+Integrados tras el censo de `docs/INSUMOS_2026.md` (§7 tiene la tabla y el detalle). Con ellos la
+cascada de precios pasa a **cinco bancos**: `usuario → pliego → mercado → retail → invias → catálogo
+→ invias_apu → epc_apu → idu_apu → ffie_apu → iccu_apu → sin_precio`. Cada uno con su capturador
+manual (`tests/capturar_{epc,ffie,iccu}_apu.js`), su JSON en `data/` y su módulo HOJA en `lib/apu/`.
+
+- **EPC (440 ítems, Cundinamarca) es el único de los tres CON COMPOSICIÓN**, como el INVIAS: reparte
+  por componente en vez de caer a `sin_desglose`. **Su aritmética se MIDIÓ, no se supuso**: cada línea
+  declara si su factor multiplica o divide comparando las dos hipótesis contra el VALOR TOTAL que
+  imprime el archivo — 1 200 multiplican, 1 118 dividen, 144 son indiferentes (factor 1) y **ninguna
+  quedó sin explicar**. Una línea sin `operacion` no se costea. Un factor que DIVIDE se publica como
+  `cantidad = 1/factor` para conservar la invariante `cantidad × precio = valor`.
+- **LA IDENTIDAD DE UNA HOJA DE EXCEL ES SU NOMBRE, no el numeral que trae dentro.** La hoja
+  «7.15.13» de EPC declara «7.15.3» —copiaron la hoja sin actualizar la celda— y son dos ítems
+  distintos con la misma descripción: indexando por el numeral interno, la composición de uno pisaba
+  la del otro y un ítem salía con **$5,5 M en vez de $3,9 M**. Lo caza un control cruzado (el total
+  del APU contra el precio que el catálogo publica para ESE numeral), no una lectura del código.
+- **FFIE (1 042 ítems × los 33 departamentos) es el único banco con COBERTURA NACIONAL** —incluidos
+  los 8 sin retail y los 19 sin factor regional— y es de EDIFICACIÓN. **Es un precio TOPE, no de
+  mercado**: el contrato adjudicado del propio dueño está POR ENCIMA (pañete Nogal $40 150 contra
+  $30 607 en Bogotá). Por eso va DETRÁS de los demás bancos en la cascada y dice «tope» en el badge,
+  en el Excel y en el aviso del ítem. Leerlo como cotización es el error de categoría del retail.
+- **UNA CLAVE VACÍA NUNCA ES UNA CLAVE.** El FFIE escribe varios departamentos pegados
+  («VALLEDELCAUCA») y `Filtros.departamento` devuelve null para ellos; la primera versión los indexaba
+  con esa clave vacía, que se sobrescribía entre sí, y **pedir el código 76 (Valle del Cauca) devolvía
+  el precio de NORTE DE SANTANDER**. Es la familia del `|| 0`. Se resuelve con el código DANE de los
+  33 DECLARADO A MANO en el capturador, que **aborta** si una vigencia futura renombra una columna.
+- **ICCU (1 234 ítems, 58 municipios) es la fuente más granular del proyecto** y **su numeración
+  REINICIA en cada capítulo**: «1,9» es DEMOLICIÓN ESCALERAS en preliminares y COLLAR DE DERIVACIÓN en
+  acueducto. La clave es CAPÍTULO + NUMERAL (con el numeral solo, las discrepancias entre provincias
+  eran 230; con la clave correcta, 59) y **esas 59 se DESCARTAN**: ahí no se sabe cuál de los dos
+  ítems es. Es el defecto de «dos capítulos con el mismo numeral» del lector de pliegos, otra vez.
+- **Las 11 cartillas provinciales de EPC quedan fuera y las dos alternativas se descartaron
+  MIDIENDO**: descifrar la sustitución de letras pierde información (no es biyectiva — `Y` viene de
+  `C` y de `Y`; aplicada a Alto Magdalena casa el 33 %) y alinear por orden es peor, porque las
+  cartillas omiten ítems distintos del libro. Solo entró Ubaté, la única con numeral en sus filas.
+- **LOS CINCO BANCOS CABEN EN UNA RESPUESTA: 2,23 MB de los 4,5 MB de Vercel**, y hay prueba que lo
+  mide y que además prohíbe que un banco cuele precios en `comoItemsDeCatalogo`. Un sexto banco
+  acercaría la respuesta al límite y ese fallo **solo se ve en producción**; lo que se recorta
+  entonces son CAMPOS, no ítems.
+- **Los tres son REFERENCIA, no cotización**: el precio propio, el del archivo o el tecleado mandan
+  sobre ellos y quedan en `cd_catalogo` para que la diferencia se vea. Y los tres declaran su ámbito
+  —fuera de su departamento el precio viaja igual y se DICE—, con el nivel usado (municipio,
+  provincia, departamento o mediana nacional) en cada respuesta.
+- **`tests/pdf_texto.js` es la herramienta que hizo posibles ICCU y las cartillas**: extractor de
+  texto POSICIONAL en Node puro, con ToUnicode resuelto por página y por recurso.
+
+### Los insumos de precios 2026 que aportó el dueño · el censo (18-ago-2026)
 
 Censo, contrastes y orden de integración en **`docs/INSUMOS_2026.md`**. Los 22 archivos de
 `docs/insumos_2026_pendiente/` se habían acopiado «para análisis posterior» en cinco commits y
-**nadie los había abierto**. Nada está integrado todavía; lo que sigue es lo que no hay que
-re-aprender cuando se integre.
+**nadie los había abierto**. Tres ya se integraron (sección de arriba); lo que sigue es el censo y
+lo que no hay que re-aprender de los que NO se integraron.
 
 - **TRES PREMISAS DE ESTA MEMORIA ERAN FALSAS y las desmiente un archivo que ya estaba en el
   repositorio.** «FFIE (no publica precios)» → publica **1 051 ítems de edificación × 33

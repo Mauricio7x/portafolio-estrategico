@@ -234,6 +234,38 @@
           + ". Es una referencia, no una cotización: verifique antes de presentar.",
       };
     }
+    /* Precio de referencia del ICCU: oficial, de Cundinamarca y con el NIVEL
+       usado declarado (municipio / provincia / mediana del departamento). */
+    if (it.origen_precio === "iccu") {
+      const rc = it.referencia_iccu_apu || {};
+      const donde = rc.municipio || rc.provincia || "Cundinamarca";
+      return {
+        estado: "iccu",
+        emoji: "🔵",
+        etiqueta: `ICCU ${rc.vigencia || ""} · ${donde}`.trim(),
+        suma: true,
+        motivo: `Precio de referencia del ICCU (Gobernación de Cundinamarca, vigencia ${rc.vigencia || "—"}, ítem ${rc.numeral_iccu || "—"}): `
+          + `nivel ${rc.nivel || "—"}${rc.nivel === "departamento" ? " (mediana de las 15 provincias)" : ""}.`
+          + (rc.ajuste_regional === "ninguno" ? " La obra no está en Cundinamarca y el precio va SIN ajuste regional." : "")
+          + " Es una referencia, no una cotización.",
+      };
+    }
+    /* Precio TOPE del FFIE: oficial y regionalizado, pero es un TECHO, no un
+       precio de mercado — el contrato adjudicado del dueño está por encima. Se
+       marca como los otros bancos oficiales y el motivo lo dice con todas las
+       letras, que es lo que impide leerlo como cotización. */
+    if (it.origen_precio === "ffie") {
+      const rf = it.referencia_ffie_apu || {};
+      return {
+        estado: "ffie",
+        emoji: "🔵",
+        etiqueta: `FFIE ${rf.vigencia || ""} · tope${rf.departamento_usado ? ` · ${rf.departamento_usado}` : ""}`.trim(),
+        suma: true,
+        motivo: `Precio TOPE del FFIE (vigencia ${rf.vigencia || "—"}, ítem ${rf.numeral_ffie || "—"}`
+          + `${rf.departamento_usado ? `, ${rf.departamento_usado}` : ""}): es el techo que reconoce la entidad, NO un precio de mercado — `
+          + "un contrato real puede estar por encima. Referencia, no cotización.",
+      };
+    }
     if (it.sin_apu) {
       /* «propio» es un estado APARTE de «manual»: no es un precio tecleado al
          vuelo en este presupuesto, sino uno que este contratista ya corrigió
@@ -275,6 +307,22 @@
           + `costo directo de la provincia ${prov || "—"}${ra.provincia_representativa ? ` (${ra.provincia_representativa.departamento})` : ""}, `
           + `la de precio mediano entre las ${ra.provincias_usadas || "—"} ${ra.nivel === "nacional" ? "del país — su departamento no tiene libro INVIAS —" : "de su departamento"}. `
           + "Es una referencia, no una cotización: verifique antes de presentar.",
+      };
+    }
+    /* APU de REFERENCIA OFICIAL de EPC (Cundinamarca): como el del INVIAS,
+       con composición publicada y vigencia declarada, y no cotizado para esta
+       obra — ni verde ni ámbar. Fuera de Cundinamarca va sin ajuste y lo dice. */
+    if (it.origen_precio === "epc") {
+      const re = it.referencia_epc_apu || {};
+      return {
+        estado: "epc",
+        emoji: "🔵",
+        etiqueta: `EPC ${re.vigencia || ""}${re.provincia ? ` · ${re.provincia}` : ""}`.trim(),
+        suma: true,
+        motivo: `APU de referencia oficial de Empresas Públicas de Cundinamarca (vigencia ${re.vigencia || "—"}, actividad ${re.numeral || "—"}): `
+          + `costo directo con composición de la provincia ${re.provincia || "—"}.`
+          + (re.ajuste_regional === "ninguno" ? " La obra no está en Cundinamarca y el precio va SIN ajuste regional." : "")
+          + " Es una referencia, no una cotización: verifique antes de presentar.",
       };
     }
     /* VERDE solo con las dos condiciones: precio de un contrato adjudicado Y
@@ -437,7 +485,10 @@
                (`MARCADOR_EXPORTADO_RE`): un marcador con otro anclaje
                envenenaría el mapeo de vuelta, medido con los otros dos. */
             + (org.estado === "invias" ? `   🔵 ${org.etiqueta} (APU de referencia oficial)` : "")
-            + (org.estado === "idu" ? `   🔵 ${org.etiqueta} (precio de referencia oficial, sin composición)` : ""),
+            + (org.estado === "epc" ? `   🔵 ${org.etiqueta} (APU de referencia oficial)` : "")
+            + (org.estado === "idu" ? `   🔵 ${org.etiqueta} (precio de referencia oficial, sin composición)` : "")
+            + (org.estado === "ffie" ? `   🔵 ${org.etiqueta} (precio TOPE de referencia, sin composición)` : "")
+            + (org.estado === "iccu" ? `   🔵 ${org.etiqueta} (precio de referencia oficial, sin composición)` : ""),
           s: estiloTexto,
         },
         { v: it.unidad || "—", s: estiloTexto },
@@ -605,8 +656,10 @@
       }
 
       if (it.sin_apu) {
+        const rf = it.origen_precio === "ffie" ? (it.referencia_ffie_apu || {}) : null;
         const ri = it.origen_precio === "idu" ? (it.referencia_idu_apu || {}) : null;
         const origen = ri ? `PRECIO DE REFERENCIA IDU ${ri.vigencia || ""} (${ri.ciudad || "Bogotá"}, APU ${ri.codigo_idu || "—"}, publicado ${ri.publicado || "—"})`
+          : rf ? `PRECIO TOPE FFIE ${rf.vigencia || ""}${rf.departamento_usado ? ` (${rf.departamento_usado})` : ""} — TECHO RECONOCIDO POR LA ENTIDAD, NO PRECIO DE MERCADO; SIN COMPOSICIÓN`
           : it.origen_precio === "propio" ? "PRECIO PROPIO YA CORREGIDO (guardado en su perfil)"
           : it.origen_precio === "archivo" ? "PRECIO SEGÚN ARCHIVO IMPORTADO" : "PRECIO TECLEADO A MANO";
         const n = fila([

@@ -4,9 +4,14 @@ Análisis de los 22 archivos que el dueño aportó y que quedaron guardados «pa
 en `docs/insumos_2026_pendiente/` (commits `8cb79fe`, `61d3c4c`, `5e2c3a6`, `9a26236`, `1a83491`).
 Ninguno estaba leído todavía: los commits solo los acopiaron.
 
-**Nada de esto está integrado aún.** Este documento dice qué es cada archivo, qué mide, qué se
-contrastó contra las fuentes que la app YA usa, y en qué orden conviene integrarlos. La integración
-es la decisión del dueño, no de este análisis.
+> **Estado (ago 2026): tres de los cinco ya están integrados.** El censo y los contrastes de este
+> documento se hicieron primero; después, y por decisión del dueño, se integraron **EPC, FFIE e
+> ICCU** como bancos oficiales de ítems. Lo que cada uno aporta y cómo se resolvió está en §7.
+> Siguen SIN integrar el factor prestacional (§4) y los insumos del FFIE (§2.5), y siguen
+> descartados Boyacá y el APU 2023 por vigencia (§2.6).
+
+Este documento dice qué es cada archivo, qué mide, qué se contrastó contra las fuentes que la app YA
+usa, y en qué orden convenía integrarlos.
 
 Herramienta usada para los PDF: `tests/pdf_texto.js` (manual, Node puro, sin dependencias — la app
 sigue leyendo pliegos con pdf.js en el navegador).
@@ -299,7 +304,69 @@ esa condición, como ya estaban.
    `tests/capturar_invias.js`. La vigencia corrupta del INVIAS se cazó mirando medianas, no
    confiando en que «lo oficial es bueno».
 
-### Licencia
+---
+
+## 7. La integración, y los tres defectos que encontró
+
+Se integraron ①, ② y ③ siguiendo el patrón de los dos bancos que ya existían (INVIAS e IDU): un
+capturador manual → un JSON en `data/` → un módulo hoja en `lib/apu/` → nivel propio en la cascada
+de precios → mapeo en el importador → badge en pantalla y en el Excel.
+
+| Banco | Ítems | Cobertura | Composición | Nivel |
+|---|---|---|---|---|
+| **EPC** | 440 | Cundinamarca (prov. Almeidas) | **sí, completa** | `epc_apu` |
+| **FFIE** | 1 042 | **los 33 departamentos** | no (precio TOPE) | `ffie_apu` |
+| **ICCU** | 1 234 | Cundinamarca, **58 municipios** | no | `iccu_apu` |
+
+La cascada quedó: `usuario → pliego → mercado → retail → invias → catálogo → invias_apu → epc_apu →
+idu_apu → ffie_apu → iccu_apu → sin_precio`. El FFIE va detrás de los demás **a propósito**: es un
+techo reconocido por una entidad, no un precio de mercado, así que cualquier otra fuente que
+responda es mejor.
+
+**Los cinco bancos caben en una respuesta: 2,23 MB de los 4,5 MB que admite Vercel.** Hay una prueba
+que lo mide y que prohíbe además que un banco cuele precios en el catálogo servido. Un sexto banco
+acercaría la respuesta al límite, y ese fallo solo se vería en producción; lo que se recorta
+entonces son CAMPOS, no ítems.
+
+### Tres defectos que la integración destapó, todos del mismo tipo
+
+Los tres son la misma familia —**un dato real en la fila equivocada, que parece dato bueno**— y los
+tres los cazó un control cruzado, no una lectura del código:
+
+1. **EPC · una hoja mal numerada.** La hoja «7.15.13» declara internamente «7.15.3» (copiaron la hoja
+   sin actualizar la celda) y son dos ítems distintos con la misma descripción. Indexando por el
+   numeral interno, la composición de uno pisaba la del otro y un ítem salía con un precio que no era
+   el suyo: **$5,5 M contra $3,9 M**. La identidad de una hoja es su NOMBRE, y el control que lo caza
+   es comparar el total de cada APU contra el precio que el catálogo publica para ese numeral.
+
+2. **FFIE · el código 76 devolvía el precio de Norte de Santander.** El FFIE escribe varios
+   departamentos pegados («VALLEDELCAUCA») y `Filtros.departamento` no los reconoce; la primera
+   versión los indexaba con la clave que devolvía esa función, que para ellos era **vacía**, y las
+   entradas vacías se sobrescribían entre sí. Una clave vacía nunca es una clave — es la familia del
+   `|| 0`. Se resolvió declarando el código DANE de los 33 a mano en el capturador, que **aborta** si
+   una vigencia futura renombra una columna.
+
+3. **ICCU · la numeración reinicia en cada capítulo.** «1,9» es *DEMOLICIÓN ESCALERAS EN CONCRETO* en
+   preliminares y *COLLAR DE DERIVACIÓN PVC* en acueducto: uniendo las provincias por numeral a secas
+   se fusionaban ítems distintos. Con la clave capítulo+numeral las discrepancias bajaron de 230 a
+   59, y esas 59 **se descartan** en vez de fusionarse: ahí no se sabe cuál de los dos ítems es.
+
+### Lo que se decidió NO hacer, y por qué
+
+- **Las 11 cartillas provinciales de EPC quedan fuera** (solo entró Ubaté, la única con numeral en
+  sus filas). Se intentaron las dos vías alternativas y las dos se descartaron midiendo: descifrar la
+  sustitución de letras **pierde información** (no es biyectiva: `Y` viene de `C` y de `Y`; aplicada a
+  Alto Magdalena casa el 33 %), y alinear por orden es peor, porque las cartillas omiten ítems
+  distintos del libro y un desfase de una fila asigna el precio de un ítem a otro. Lo que se pierde
+  está acotado: entre provincias los precios de EPC difieren ~1-2 % y muchos son idénticos.
+- **El precio por MUNICIPIO del ICCU se sirve solo cuando la fila publica un precio por cada
+  municipio de su provincia**; si no, cae a la mediana provincial o departamental y **dice a cuál**.
+  El motor conoce el departamento de la obra, no el municipio, así que en la práctica responde la
+  mediana — el municipio queda disponible en el módulo para quien lo sepa.
+
+---
+
+## 8. Licencia
 
 Ninguno de estos documentos declara licencia de uso comercial. El INVIAS ya obligó a dejarlo escrito
 en `_meta`; **FFIE, ICCU y EPC hay que revisarlos igual antes de comercializar Detekta con sus

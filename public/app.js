@@ -2359,8 +2359,13 @@
        que resolverse por el mismo camino. Van DESPUÉS de los del catálogo (el
        orden del buscador los enseña detrás). `items_invias` se conserva para
        poder distinguirlos. */
-    if ((Array.isArray(r.items_invias) && r.items_invias.length) || (Array.isArray(r.items_idu) && r.items_idu.length)) {
-      CATALOGO.items = (Array.isArray(r.items) ? r.items : []).concat(r.items_invias || [], r.items_idu || []);
+    if ((Array.isArray(r.items_invias) && r.items_invias.length)
+      || (Array.isArray(r.items_epc) && r.items_epc.length)
+      || (Array.isArray(r.items_idu) && r.items_idu.length)
+      || (Array.isArray(r.items_ffie) && r.items_ffie.length)
+      || (Array.isArray(r.items_iccu) && r.items_iccu.length)) {
+      CATALOGO.items = (Array.isArray(r.items) ? r.items : [])
+        .concat(r.items_invias || [], r.items_epc || [], r.items_idu || [], r.items_ffie || [], r.items_iccu || []);
     }
 
     $("aviso-precios").textContent = r.aviso
@@ -3103,8 +3108,16 @@
         + `${ra.nivel === "nacional" ? "del país (su departamento no tiene libro INVIAS)" : "de su departamento"}. `
         + `Las cantidades y rendimientos son los oficiales; los precios de las líneas son los de ${esc(ra.provincia_referencia_composicion || "la provincia de referencia")} llevados al nivel de esa provincia. Es una referencia, no una cotización.</p>`
       : "";
+
+    const re = it && it.referencia_epc_apu;
+    const notaEpc = re
+      ? `<p class="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-[11px] text-sky-900">APU de referencia oficial de Empresas Públicas de Cundinamarca ${esc(re.vigencia || "")} · actividad ${esc(re.numeral || "")}. `
+        + `Costo directo con composición de la provincia ${esc(re.provincia || "—")}. `
+        + `${re.ajuste_regional === "ninguno" ? "La obra no está en Cundinamarca y el precio va SIN ajuste regional. " : ""}`
+        + "Es una referencia, no una cotización.</p>"
+      : "";
     caja.innerHTML = `
-      ${notaInvias}
+      ${notaInvias}${notaEpc}
       <div class="grid gap-4 xl:grid-cols-2">${rubros}</div>
       ${cascadaHtml}
       <p class="mt-3 border-t border-gray-200 pt-2 text-right text-xs font-semibold">
@@ -3170,7 +3183,10 @@
        va en verde) ni un precio sin respaldo (no va en ámbar): es una
        referencia oficial con vigencia declarada, y su chip lo dice. */
     invias: "bg-sky-100 text-sky-800",
+    epc: "bg-sky-100 text-sky-800",
     idu: "bg-sky-100 text-sky-800",
+    ffie: "bg-sky-100 text-sky-800",
+    iccu: "bg-sky-100 text-sky-800",
     derivado: "bg-amber-100 text-amber-800",
     archivo: "bg-amber-100 text-amber-800",
     manual: "bg-gray-100 text-gray-600",
@@ -3256,7 +3272,7 @@
       fila.classList.toggle("bg-red-50", !!it.incompleto);
       // ámbar = suma al total con precio manual/del archivo, sin APU detrás
       // el precio de referencia IDU también va sin composición, pero es oficial: no se pinta como manual
-      fila.classList.toggle("bg-amber-50", !it.incompleto && !!it.sin_apu && it.origen_precio !== "idu");
+      fila.classList.toggle("bg-amber-50", !it.incompleto && !!it.sin_apu && it.origen_precio !== "idu" && it.origen_precio !== "ffie" && it.origen_precio !== "iccu");
       const campos = [
         ["material", it.costo_material_unitario], ["mano_obra", it.costo_mano_obra_unitario],
         ["equipo", it.costo_equipo_unitario], ["transporte", it.costo_transporte_unitario],

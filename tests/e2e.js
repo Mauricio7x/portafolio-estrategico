@@ -10378,7 +10378,7 @@ async function main() {
         /* TODOS los niveles se publican, también los que no respondieron: sin
            eso no se distingue «esta fuente no tenía el dato» de «ni se miró». */
         const cascada = sinNada.items[0].cascada;
-        assert.deepStrictEqual(cascada.map((c) => c.nivel), ["usuario", "pliego", "mercado", "retail", "invias", "catalogo", "invias_apu", "idu_apu"]);
+        assert.deepStrictEqual(cascada.map((c) => c.nivel), ["usuario", "pliego", "mercado", "retail", "invias", "catalogo", "invias_apu", "epc_apu", "idu_apu", "ffie_apu", "iccu_apu"]);
         for (const paso of cascada) {
           assert.strictEqual(paso.respondio, false);
           assert.ok(paso.motivo && paso.motivo.length > 10, `el nivel ${paso.nivel} no dice por qué no respondió`);
@@ -10837,7 +10837,7 @@ async function main() {
           assert.strictEqual(comoCat.length, 526);
           assert.ok(comoCat.every((i) => /^INVIAS:/.test(i.codigo) && i.es_invias === true && i.descripcion && i.unidad));
           const appJsII = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
-          assert.ok(/items_invias/.test(appJsII) && /concat\(r\.items_invias \|\| \[\], r\.items_idu \|\| \[\]\)/.test(appJsII), "app.js junta items_invias (y items_idu) al catálogo para buscar y añadir");
+          assert.ok(/items_invias/.test(appJsII) && /concat\(r\.items_invias \|\| \[\], r\.items_epc \|\| \[\], r\.items_idu \|\| \[\], r\.items_ffie \|\| \[\], r\.items_iccu \|\| \[\]\)/.test(appJsII), "app.js junta los CINCO bancos oficiales al catálogo para buscar y añadir");
           assert.ok(/CLASES_ORIGEN[\s\S]*invias:/.test(appJsII), "el badge tiene clase para el estado invias");
           const editorII = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "apu", "editor.js"), "utf8");
           assert.ok(/items_invias: InviasItems\.comoItemsDeCatalogo\(\)/.test(editorII), "la acción catalogo publica items_invias");
@@ -10924,6 +10924,243 @@ async function main() {
           const appID = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
           assert.ok(/r\.items_idu \|\| \[\]/.test(appID) && /idu: "bg-sky-100/.test(appID) && /origen_precio !== "idu"/.test(appID), "app.js junta items_idu, tiene clase de badge y no pinta el IDU como manual");
           console.log(`· unidad IDU ítems: ${meta.items} APU (Bogotá ${meta.vigencia}) como precio de referencia sin composición · fuera de Bogotá declarado · el mismo ítem en INVIAS e IDU no es una duda y gana el banco local · «clase C» distinguible · 300 filas en ${ms} ms`);
+        }
+
+        /* --- lib/apu/epc_items: los 440 APU de Empresas Públicas de
+           Cundinamarca como TERCER banco oficial (ago 2026). A diferencia del
+           IDU trae COMPOSICIÓN, así que reparte por componente en vez de caer a
+           `sin_desglose`; es de Cundinamarca y fuera de allí se declara. La
+           aritmética de sus líneas está MEDIDA (multiplica/divide), no supuesta. --- */
+        {
+          const EP = require("../lib/apu/epc_items.js");
+          const datosEP = require("../data/apu_epc_items.json");
+          const calcEP = require("../lib/apu/calculo.js");
+          const impEP = require("../lib/apu/importar.js");
+          const LibroEP = require("../public/apu_libro.js");
+          const metaEP = EP.meta();
+          assert.ok(metaEP.items >= 400 && metaEP.vigencia === "2026-02", `meta EPC: ${JSON.stringify(metaEP)}`);
+          assert.strictEqual(metaEP.aritmetica_medida.sin_cuadrar, 0, "ninguna línea del banco EPC quedó sin explicar: cada factor multiplica o divide, MEDIDO contra el valor total del propio archivo");
+
+          /* LA IDENTIDAD DE UNA HOJA ES SU NOMBRE, no el numeral que trae dentro.
+             La hoja «7.15.13» declara «7.15.3» (copiaron la hoja sin actualizar la
+             celda) y son dos ítems distintos con la misma descripción: indexando
+             por el numeral interno, la composición de una pisaba la de la otra y
+             un ítem salía con un precio que no era el suyo ($5,5 M contra $3,9 M).
+             El control cruzado contra el precio del catálogo es lo que lo caza. */
+          assert.strictEqual(metaEP.apus_con_total_distinto_del_catalogo, 0, "el total de cada APU es el precio que el catálogo de EPC publica para ESE numeral");
+          assert.ok(metaEP.hojas_con_numeral_interno_erroneo.some((d) => d.hoja === "7.15.13"), "la hoja mal numerada queda declarada, no corregida en silencio");
+          const a3 = EP.apuParaDepartamento("EPC:7.15.3"), a13 = EP.apuParaDepartamento("EPC:7.15.13");
+          assert.ok(a3.precio !== a13.precio && a3.precio > 0 && a13.precio > 0, "los dos ítems homónimos conservan cada uno SU precio");
+
+          /* invariantes sobre los 440: los capítulos suman el precio y cada línea
+             cumple `cantidad × precio = valor` (la del catálogo, aquí también). */
+          let capMal = 0, lineaMal = 0;
+          for (const it of datosEP.items) {
+            const a = EP.apuParaDepartamento(`EPC:${it.numeral}`);
+            if (!a) continue;
+            const c = a.capitulos;
+            if (Math.abs(c.mano_obra + c.materiales + c.equipo + c.transporte + c.herramienta_menor - a.precio) > 2) capMal++;
+            for (const l of a.lineas) if (l.cantidad != null && Math.abs(l.cantidad * l.precio_aplicado - l.valor) > 1) lineaMal++;
+          }
+          assert.strictEqual(capMal, 0, "los cuatro capítulos + herramienta menor suman el precio en los 440 APU");
+          assert.strictEqual(lineaMal, 0, "cantidad × precio = valor en todas las líneas (un factor que DIVIDE se publica como cantidad = 1/factor)");
+
+          // fuera de Cundinamarca: mismo precio y DECLARADO
+          const enCun = EP.apuParaDepartamento("EPC:1.1.1", "Cundinamarca");
+          const enTol = EP.apuParaDepartamento("EPC:1.1.1", "Tolima");
+          assert.strictEqual(enCun.precio, enTol.precio, "el precio de EPC no se regionaliza fuera de Cundinamarca");
+          assert.strictEqual(enCun.ajuste_regional, "cundinamarca"); assert.strictEqual(enTol.ajuste_regional, "ninguno");
+          assert.ok(/sin ajuste/i.test(enTol.nota_regional || ""), "fuera de Cundinamarca se DECLARA");
+          assert.strictEqual(EP.apuParaDepartamento("EPC:no.existe"), null);
+          assert.strictEqual(EP.apuParaDepartamento("INVIAS:200,1,1"), null, "un código de otro banco no lo responde EPC");
+
+          // motor: CON composición → reparte por componente, no a sin_desglose
+          const rEP = calcEP.calcularPresupuesto({
+            items: [{ item_id: "EPC:1.1.1", cantidad: 250 }, { item_id: "EPC:1.1.1", cantidad: 1, precio_manual: 50000 }],
+            departamento: "Tolima",
+          });
+          const [epc, epcMan] = rEP.items;
+          assert.strictEqual(epc.origen_precio, "epc"); assert.strictEqual(epc.sin_apu, false); assert.strictEqual(epc.incompleto, false);
+          assert.strictEqual(epc.costo_directo_unitario, enTol.precio);
+          assert.ok(epc.detalle.insumos.length >= 4, "el desglose por insumo viaja: es lo que lo distingue del IDU");
+          assert.ok(epc.aviso && /sin ajuste/i.test(epc.aviso), "fuera de Cundinamarca el ítem avisa");
+          assert.ok(epc.cascada.pasos.map((p) => `${p.nivel}:${p.respondio}`).includes("epc_apu:true"));
+          assert.strictEqual(epcMan.origen_precio, "manual");
+          assert.strictEqual(epcMan.cd_catalogo, EP.unitarioMotor(enTol), "el precio manual manda y la referencia EPC queda como cd_catalogo");
+          const pcEP = rEP.resumen.por_componente;
+          assert.strictEqual(pcEP.sin_desglose, 50000, "solo el manual va a sin_desglose: el EPC reparte por componente");
+          assert.strictEqual(pcEP.material + pcEP.mano_obra + pcEP.equipo + pcEP.transporte + pcEP.sin_desglose, rEP.resumen.costo_directo_total);
+
+          // cotizar por el MISMO camino que calcular (R2: un solo unitario)
+          const cotEP = require("../lib/apu/precios.js").cotizar({ items: [{ item_id: "EPC:1.1.1", cantidad: 250 }], departamento: "Tolima" });
+          assert.strictEqual(cotEP.items[0].fuente, "epc_apu");
+          assert.strictEqual(cotEP.items[0].precio_unitario, epc.costo_directo_unitario, "cotizar y calcular dan el MISMO unitario");
+
+          // badge y Excel
+          const orgEP = LibroEP.clasificarOrigen(epc, rEP);
+          assert.strictEqual(orgEP.estado, "epc"); assert.ok(/^EPC 2026-02/.test(orgEP.etiqueta));
+          assert.ok(/SIN ajuste regional/.test(orgEP.motivo), "el Excel declara que fuera de Cundinamarca no hay ajuste");
+          const hojasEP = LibroEP.construirLibroNogal(rEP, { titulo: "EPC", fecha: "2026-08-18" });
+          assert.ok(/🔵 EPC 2026-02/.test(JSON.stringify(hojasEP[0].filas)), "el marcador va con el MISMO anclaje que el importador sabe limpiar");
+
+          // importador: mapea a EPC y en Cundinamarca gana el banco LOCAL
+          const filasEP = [{ descripcion: "LOCALIZACION Y REPLANTEO REDES", unidad: "ML", cantidad: 250 }];
+          const mapCun = impEP.mapearFilasImportadas(filasEP, require("../lib/apu/catalogo.js").SEMILLA, { departamento: "Cundinamarca" });
+          assert.strictEqual(mapCun.filas[0].item_id, "EPC:1.1.1", `mapeo EPC: ${JSON.stringify(mapCun.filas[0].item_id)}`);
+
+          // API y frontend
+          const editorEP = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "apu", "editor.js"), "utf8");
+          assert.ok(/items_epc: require\("\.\.\/\.\.\/apu\/epc_items\.js"\)\.comoItemsDeCatalogo\(\)/.test(editorEP), "el editor sirve los ítems de EPC");
+          const appEP = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+          assert.ok(/r\.items_epc \|\| \[\]/.test(appEP) && /epc: "bg-sky-100/.test(appEP), "app.js junta items_epc y tiene su clase de badge");
+          console.log(`· unidad APU EPC ítems: ${metaEP.items} actividades (${metaEP.items_con_composicion} con composición, vigencia ${metaEP.vigencia}) · capítulos suman el precio y cantidad × precio = valor en todas las líneas · aritmética medida (${metaEP.aritmetica_medida.multiplica} multiplican, ${metaEP.aritmetica_medida.divide} dividen, 0 sin explicar) · hoja mal numerada declarada · fuera de Cundinamarca sin ajuste y dicho`);
+        }
+
+        /* --- lib/apu/ffie_items: el precio TOPE de edificación del FFIE como
+           CUARTO banco (ago 2026) y el único con cobertura de los 33
+           departamentos. Es un TECHO, no un precio de mercado: va último en la
+           cascada, lo dice en cada sitio donde se enseña, y su resolución de
+           departamento es por CÓDIGO DANE declarado, jamás adivinada. --- */
+        {
+          const FF = require("../lib/apu/ffie_items.js");
+          const Filtros = require("../public/filtros.js");
+          const calcFF = require("../lib/apu/calculo.js");
+          const LibroFF = require("../public/apu_libro.js");
+          const metaFF = FF.meta();
+          assert.ok(metaFF.items >= 1000 && metaFF.departamentos === 33 && metaFF.vigencia === "2026", `meta FFIE: ${JSON.stringify(metaFF)}`);
+          assert.strictEqual(metaFF.departamentos_con_todos_los_precios, 33, "los 33 departamentos traen precio en todos los ítems");
+          assert.strictEqual(metaFF.items_sin_ningun_precio, 0, "ningún ítem entra con precios en cero (un 0 no es un precio)");
+
+          /* EL DEFECTO QUE ESTO VIGILA: el FFIE escribe «VALLEDELCAUCA» pegado y
+             `Filtros.departamento` no lo reconoce. La primera versión adivinaba y
+             pedir el código 76 (Valle del Cauca) devolvía el precio de NORTE DE
+             SANTANDER —la clave vacía de los que no resolvían se sobrescribía
+             entre sí—. Se resuelve por código DANE DECLARADO en el capturador. */
+          for (const d of metaFF.departamentos_cobertura) {
+            const canon = Filtros.departamento(String(d.codigo_dane));
+            assert.strictEqual(FF.literalDepartamento(d.codigo_dane), d.departamento, `código DANE ${d.codigo_dane} → ${d.departamento}`);
+            assert.strictEqual(FF.literalDepartamento(d.departamento), d.departamento, `literal ${d.departamento}`);
+            if (canon) assert.strictEqual(FF.literalDepartamento(canon.nombre), d.departamento, `nombre canónico ${canon.nombre} → ${d.departamento}`);
+          }
+          const valle = FF.precioReferencia("FFIE:1.1.1", "76");
+          const norte = FF.precioReferencia("FFIE:1.1.1", "54");
+          assert.strictEqual(valle.departamento_usado, "VALLEDELCAUCA");
+          assert.strictEqual(norte.departamento_usado, "NORTEDESANTANDER");
+          assert.notStrictEqual(valle.precio, norte.precio, "cada departamento trae SU precio, no el del vecino");
+
+          // sin departamento: mediana nacional DECLARADA, nunca un departamento por omisión
+          const sinDep = FF.precioReferencia("FFIE:1.1.1");
+          assert.strictEqual(sinDep.nivel, "nacional"); assert.ok(/MEDIANA nacional/.test(sinDep.nota));
+          assert.strictEqual(FF.precioReferencia("FFIE:no.existe"), null);
+          assert.strictEqual(FF.precioReferencia("IDU:3027"), null, "un código de otro banco no lo responde el FFIE");
+
+          // motor: sin composición → sin_desglose, y el aviso de TOPE va SIEMPRE
+          const rFF = calcFF.calcularPresupuesto({ items: [{ item_id: "FFIE:1.1.1", cantidad: 500 }] , departamento: "Boyacá" });
+          const ffie = rFF.items[0];
+          assert.strictEqual(ffie.origen_precio, "ffie"); assert.strictEqual(ffie.sin_apu, true); assert.strictEqual(ffie.incompleto, false);
+          assert.strictEqual(ffie.costo_directo_unitario, FF.precioReferencia("FFIE:1.1.1", "Boyacá").precio);
+          assert.ok(/TOPE/.test(ffie.aviso || ""), "el ítem avisa SIEMPRE que es un tope, no solo fuera de su región");
+          assert.ok(ffie.cascada.pasos.map((p) => `${p.nivel}:${p.respondio}`).includes("ffie_apu:true"));
+          const pcFF = rFF.resumen.por_componente;
+          assert.strictEqual(pcFF.material + pcFF.mano_obra + pcFF.equipo + pcFF.transporte + pcFF.sin_desglose, rFF.resumen.costo_directo_total);
+
+          // cotizar da el MISMO unitario que calcular
+          const cotFF = require("../lib/apu/precios.js").cotizar({ items: [{ item_id: "FFIE:1.1.1", cantidad: 1 }], departamento: "Boyacá" });
+          assert.strictEqual(cotFF.items[0].fuente, "ffie_apu");
+          assert.strictEqual(cotFF.items[0].precio_unitario, ffie.costo_directo_unitario);
+
+          // badge y Excel: el «tope» tiene que verse, y la fila NO se pinta ámbar
+          const orgFF = LibroFF.clasificarOrigen(ffie, rFF);
+          assert.strictEqual(orgFF.estado, "ffie", "va ANTES de la rama genérica de sin_apu: comparte la forma y no el significado");
+          assert.ok(/tope/i.test(orgFF.etiqueta) && /NO un precio de mercado/.test(orgFF.motivo));
+          const hojasFF = LibroFF.construirLibroNogal(rFF, { titulo: "FFIE", fecha: "2026-08-18" });
+          assert.ok(/🔵 FFIE 2026 · tope/.test(JSON.stringify(hojasFF[0].filas)));
+          assert.ok(/PRECIO TOPE FFIE/.test(JSON.stringify(hojasFF[1].filas)), "la hoja APU declara que es un techo");
+          const appFF = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+          assert.ok(/r\.items_ffie \|\| \[\]/.test(appFF) && /ffie: "bg-sky-100/.test(appFF));
+          assert.ok(/origen_precio !== "ffie"/.test(appFF), "la fila del FFIE no se pinta ámbar: tiene respaldo oficial");
+          console.log(`· unidad FFIE ítems: ${metaFF.items} ítems de edificación × ${metaFF.departamentos} departamentos (los únicos con cobertura nacional) · TOPE declarado en badge, Excel y aviso · departamento por código DANE declarado (76→VALLEDELCAUCA, no el vecino)`);
+        }
+
+        /* --- lib/apu/iccu_items: la lista del ICCU (Cundinamarca) como QUINTO
+           banco y el más granular (58 municipios). El numeral NO identifica un
+           ítem —la numeración reinicia en cada capítulo—, así que la clave es
+           capítulo+numeral y lo que aun así discrepa entre provincias se
+           DESCARTA en vez de fusionarse. --- */
+        {
+          const IC = require("../lib/apu/iccu_items.js");
+          const calcIC = require("../lib/apu/calculo.js");
+          const LibroIC = require("../public/apu_libro.js");
+          const metaIC = IC.meta();
+          assert.ok(metaIC.items >= 1000 && metaIC.provincias === 15 && metaIC.municipios === 58 && metaIC.vigencia === "2026", `meta ICCU: ${JSON.stringify(metaIC)}`);
+          assert.strictEqual(metaIC.items_descartados_sin_descripcion, 0);
+          assert.ok(metaIC.items_descartados_por_descripcion_discrepante > 0,
+            "los ítems cuya descripción discrepa entre provincias se DESCARTAN: publicar uno con el precio del otro es el defecto que la clave capítulo+numeral existe para evitar");
+
+          /* EL DEFECTO QUE ESTO VIGILA: «1,9» es DEMOLICIÓN ESCALERAS en
+             PRELIMINARES y COLLAR DE DERIVACIÓN en acueducto. Con el numeral a
+             secas como clave, los dos ítems se fusionaban y cada uno acababa con
+             el precio del otro. La clave lleva el capítulo. */
+          const claves = IC.comoItemsDeCatalogo().map((i) => i.codigo);
+          assert.ok(claves.every((c) => /^ICCU:.+\|\d+,\d+$/.test(c)), "la clave de un ítem del ICCU es capítulo + numeral");
+          const numerales = new Set(claves.map((c) => c.split("|")[1]));
+          assert.ok(claves.length > numerales.size, "hay numerales repetidos en capítulos distintos: por eso el numeral solo no sirve de clave");
+
+          const uno = claves[0];
+          const conDep = IC.precioReferencia(uno, { departamento: "Cundinamarca" });
+          assert.strictEqual(conDep.nivel, "departamento");
+          assert.ok(/MEDIANA/.test(conDep.nota), "sin municipio se declara de dónde salió la cifra");
+          const fuera = IC.precioReferencia(uno, { departamento: "Tolima" });
+          assert.strictEqual(fuera.ajuste_regional, "ninguno");
+          assert.ok(/sin ajuste/i.test(fuera.nota_regional || ""));
+          assert.strictEqual(IC.precioReferencia("IDU:3027"), null, "un código de otro banco no lo responde el ICCU");
+
+          const rIC = calcIC.calcularPresupuesto({ items: [{ item_id: uno, cantidad: 2 }], departamento: "Cundinamarca" });
+          const iccu = rIC.items[0];
+          assert.strictEqual(iccu.origen_precio, "iccu"); assert.strictEqual(iccu.sin_apu, true); assert.strictEqual(iccu.incompleto, false);
+          assert.strictEqual(iccu.costo_directo_unitario, conDep.precio);
+          assert.ok(iccu.cascada.pasos.map((p) => `${p.nivel}:${p.respondio}`).includes("iccu_apu:true"));
+          const pcIC = rIC.resumen.por_componente;
+          assert.strictEqual(pcIC.material + pcIC.mano_obra + pcIC.equipo + pcIC.transporte + pcIC.sin_desglose, rIC.resumen.costo_directo_total);
+          const cotIC = require("../lib/apu/precios.js").cotizar({ items: [{ item_id: uno, cantidad: 1 }], departamento: "Cundinamarca" });
+          assert.strictEqual(cotIC.items[0].fuente, "iccu_apu");
+          assert.strictEqual(cotIC.items[0].precio_unitario, iccu.costo_directo_unitario, "cotizar y calcular dan el MISMO unitario");
+          const orgIC = LibroIC.clasificarOrigen(iccu, rIC);
+          assert.strictEqual(orgIC.estado, "iccu"); assert.ok(/^ICCU 2026/.test(orgIC.etiqueta));
+          const appIC = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+          assert.ok(/r\.items_iccu \|\| \[\]/.test(appIC) && /iccu: "bg-sky-100/.test(appIC));
+          console.log(`· unidad ICCU ítems: ${metaIC.items} ítems × ${metaIC.provincias} provincias / ${metaIC.municipios} municipios (la fuente más granular) · clave capítulo+numeral (la numeración reinicia) · ${metaIC.items_descartados_por_descripcion_discrepante} descartados por descripción discrepante · nivel usado declarado`);
+        }
+
+        /* --- LOS CINCO BANCOS CABEN EN UNA RESPUESTA: el editor sirve el
+           catálogo entero de una vez y Vercel corta en 4,5 MB. Con cinco bancos
+           la respuesta ronda los 2,2 MB; un sexto banco (o meter los precios en
+           `comoItemsDeCatalogo`) la acercaría al límite, y ese fallo solo se ve
+           EN PRODUCCIÓN. Lo que se recorta entonces son CAMPOS, no ítems. --- */
+        {
+          const bancos = {
+            invias: require("../lib/apu/invias_items.js"),
+            epc: require("../lib/apu/epc_items.js"),
+            idu: require("../lib/apu/idu_items.js"),
+            ffie: require("../lib/apu/ffie_items.js"),
+            iccu: require("../lib/apu/iccu_items.js"),
+          };
+          const catBase = require("../data/apu_catalogo.json");
+          let bytes = Buffer.byteLength(JSON.stringify({ items: catBase.items, insumos: catBase.insumos, regiones: catBase.regiones }));
+          const detalle = [];
+          for (const [nombre, mod] of Object.entries(bancos)) {
+            const items = mod.comoItemsDeCatalogo();
+            assert.ok(items.length > 0, `${nombre} sirve ítems`);
+            /* ningún banco puede colar precios en el catálogo servido: son
+               megas de más en cada apertura de la pestaña Precios */
+            assert.ok(!items.some((i) => i.precio != null || i.precios != null || i.precios_por_provincia != null),
+              `${nombre}: comoItemsDeCatalogo NO lleva precios (el precio lo resuelve el motor por departamento)`);
+            bytes += Buffer.byteLength(JSON.stringify(items)) + Buffer.byteLength(JSON.stringify(mod.meta()));
+            detalle.push(`${nombre} ${items.length}`);
+          }
+          const mb = bytes / 1048576;
+          assert.ok(mb < 3.5, `la respuesta del catálogo pesa ${mb.toFixed(2)} MB y el tope de Vercel es 4,5 MB: recorte CAMPOS, no ítems`);
+          console.log(`· los cinco bancos oficiales en una respuesta: ${detalle.join(" · ")} → ${mb.toFixed(2)} MB (tope Vercel 4,5)`);
         }
 
         /* --- la referencia de mercado: sobre el CONTRATO, con mínimo --- */
@@ -11020,7 +11257,7 @@ async function main() {
         const cascItem = calcConPropio.cuerpo.items[0].cascada;
         assert.ok(cascItem, "`calcular` tiene que publicar la cascada: es la vía que usa la web");
         assert.deepStrictEqual(cascItem.pasos.map((p) => p.nivel),
-          ["usuario", "pliego", "mercado", "retail", "invias", "catalogo", "invias_apu", "idu_apu"]);
+          ["usuario", "pliego", "mercado", "retail", "invias", "catalogo", "invias_apu", "epc_apu", "idu_apu", "ffie_apu", "iccu_apu"]);
         const respondieron = cascItem.pasos.filter((p) => p.respondio);
         assert.strictEqual(respondieron.length, 1, "responde UNA fuente: la primera que tiene el dato");
         assert.strictEqual(respondieron[0].nivel, "usuario");
@@ -11224,8 +11461,8 @@ async function main() {
           departamento: "BOGOTA D.C.", config: {},
         }).items[0];
         assert.strictEqual(sinPrecioCasc.incompleto, true);
-        assert.ok(sinPrecioCasc.cascada && sinPrecioCasc.cascada.pasos.length === 8,
-          "al ítem sin precio se le negaba la explicación, que es el único caso que la necesita entera");
+        assert.ok(sinPrecioCasc.cascada && sinPrecioCasc.cascada.pasos.length === 11,
+          "al ítem sin precio se le negaba la explicación, que es el único caso que la necesita entera (11 pasos: los 6 de siempre + los CINCO bancos oficiales)");
         assert.ok(sinPrecioCasc.cascada.pasos.every((p) => !p.respondio && p.motivo));
       }
 
