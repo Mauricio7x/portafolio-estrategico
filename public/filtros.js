@@ -29,11 +29,14 @@
     { id: "consultoria", etiqueta: "Consultoría", ayuda: "Estudios y diseños, asesoría técnica" },
     { id: "interventoria", etiqueta: "Interventoría", ayuda: "Vigilar la obra de otro" },
     { id: "suministro", etiqueta: "Suministro", ayuda: "Compra de materiales o equipos, sin obra. Apagado por defecto: un contratista de obra rara vez lo quiere" },
-    { id: "servicios", etiqueta: "Servicios", ayuda: "Prestación de servicios y lo demás" },
+    { id: "servicios", etiqueta: "Servicios", ayuda: "Mantenimiento de equipos, alquiler de maquinaria y otros servicios que no son obra civil. Apagado por defecto" },
   ]);
-  /* Suministro viene APAGADO por defecto (plan v4 §8.6). Con el filtro ausente
-     en la URL se aplican estos cuatro; `tipo=todos` los enciende todos. */
-  const TIPOS_POR_DEFECTO = Object.freeze(["obra", "consultoria", "interventoria", "servicios"]);
+  /* Suministro y Servicios vienen APAGADOS por defecto (plan v4 §8.6, y el
+     18-ago-2026: bajo «servicios» viven el mantenimiento de ascensores, aires y
+     extintores, el alquiler de maquinaria y la logística — lo que el dueño vio
+     colarse). Con el filtro ausente en la URL se aplican estos tres;
+     `tipo=todos` los enciende todos. */
+  const TIPOS_POR_DEFECTO = Object.freeze(["obra", "consultoria", "interventoria"]);
 
   /* ─── 2 · Cómo lo adjudican ──────────────────────────────────────────── */
   const MODALIDADES = Object.freeze([
@@ -152,16 +155,30 @@
   }
 
   /* ─── 6 · Dónde me queda más (orden) y 7 · Buscar entidad ────────────── */
+  /* CADA ORDEN DICE SU CRITERIO (encargo del dueño, 18-ago-2026: «dar un
+     concepto de por qué los procesos que muestras con esos filtros los muestras,
+     de por qué decimos que este es el mejor para el usuario»). `concepto` se
+     pinta bajo la barra al elegir el orden y viaja como `title` de la opción.
+     Se escribe lo que el orden HACE y lo que NO promete. */
   const ORDENES = Object.freeze([
-    { id: "atractividad", etiqueta: "Las mejores para vos (recomendado)" },
-    { id: "margen", etiqueta: "Dónde me queda más (solo las que ya costeaste)" },
-    { id: "cierre", etiqueta: "Las que cierran antes" },
-    { id: "cuantia", etiqueta: "Las más grandes" },
-    { id: "ve", etiqueta: "Las que más plata dejan" },
-    { id: "p_ganar", etiqueta: "Las más ganables" },
-    { id: "competencia", etiqueta: "Las menos peleadas" },
-    { id: "anticipo", etiqueta: "Mayor anticipo" },
+    { id: "atractividad", etiqueta: "Las mejores para usted (recomendado)",
+      concepto: "Primero las que pasan sus cuatro requisitos (registro de proponente, capacidad de contratación, caja y competencia); entre esas, las más cercanas a su zona; y dentro de cada zona, las de mayor contrato esperado (presupuesto oficial × opción estimada de ganar). Es un orden para mirar primero lo que más probablemente vale su tiempo, no una promesa de adjudicación." },
+    { id: "margen", etiqueta: "Dónde me queda más (solo las que ya costeó)",
+      concepto: "Solo las que ya costeó en Precios: ordena por lo que le queda entre su piso rentable (costo directo + AIU + contribución) y el techo al que suele adjudicar la entidad. Las demás van al final, sin cifra: no se inventa un margen." },
+    { id: "cierre", etiqueta: "Las que cierran antes",
+      concepto: "Las que cierran antes, primero. Regla del oficio: la oferta se presenta el día ANTERIOR al cierre." },
+    { id: "cuantia", etiqueta: "Las más grandes",
+      concepto: "Presupuesto oficial de mayor a menor. Solo el tamaño; no dice nada de la opción de ganar ni de lo que deja." },
+    { id: "ve", etiqueta: "Mayor contrato esperado",
+      concepto: "Presupuesto oficial multiplicado por la opción estimada de ganar: es un promedio por intento —cuenta las veces que no se gana— y NO es utilidad. La utilidad la calcula el análisis de precios en Precios; aquí solo se ordena por tamaño × opción." },
+    { id: "p_ganar", etiqueta: "Las más ganables",
+      concepto: "Las que más opción estimada de ganar tienen: sale de cuánta gente compite en esa entidad (histórico de dos años de adjudicaciones), ajustada por prórroga del cierre, por cierres simultáneos y por precio. Sin histórico se asume la competencia típica (5 rivales) y se dice." },
+    { id: "competencia", etiqueta: "Las menos peleadas",
+      concepto: "Primero las entidades donde históricamente se presentan menos oferentes por proceso (promedio de dos años de adjudicaciones; sin base, al final). Ojo: poca competencia también puede ser señal de un pliego hecho a la medida — revise el pliego." },
+    { id: "anticipo", etiqueta: "Mayor anticipo",
+      concepto: "Mayor porcentaje de anticipo publicado, primero. Un 0 % casi siempre es «sin dato», no «sin anticipo»: la fuente no publica esa columna." },
   ]);
+  const conceptoDe = (id) => { const o = ORDENES.find((x) => x.id === id); return o ? o.concepto : ""; };
 
   /* ─── Estado del filtro en la URL ────────────────────────────────────────
      Los nombres de los parámetros son cortos y estables (son un contrato: un
@@ -264,7 +281,7 @@
   const hayFiltros = (estado) => fichas(estado).length > 0;
 
   return {
-    TIPOS_TRABAJO, TIPOS_POR_DEFECTO, MODALIDADES, DEPARTAMENTOS, RANGOS_CUANTIA, VENTANAS_CIERRE, ORDENES, PARAMS,
+    TIPOS_TRABAJO, TIPOS_POR_DEFECTO, MODALIDADES, DEPARTAMENTOS, RANGOS_CUANTIA, VENTANAS_CIERRE, ORDENES, conceptoDe, PARAMS,
     claveDepartamento, departamento, rangoCuantiaDe, ventanaCierreDe, cumpleVentana,
     leerEstado, escribirEstado, fichas, sinFiltro, hayFiltros, etiquetaDe, cop,
   };

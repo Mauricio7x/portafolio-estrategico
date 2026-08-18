@@ -245,7 +245,7 @@
       return {
         estado: propio ? "propio" : delArchivo ? "archivo" : "manual",
         emoji: propio ? "★" : delArchivo ? "📄" : "⚪",
-        etiqueta: propio ? "Tu precio" : delArchivo ? "Del archivo" : "Manual",
+        etiqueta: propio ? "Su precio" : delArchivo ? "Del archivo" : "Manual",
         suma: true,
         motivo: (Number.isFinite(Number(it.cd_catalogo))
           ? `Sin APU de respaldo. Referencia del catálogo: $${Math.round(it.cd_catalogo).toLocaleString("es-CO")}. `
@@ -607,7 +607,7 @@
       if (it.sin_apu) {
         const ri = it.origen_precio === "idu" ? (it.referencia_idu_apu || {}) : null;
         const origen = ri ? `PRECIO DE REFERENCIA IDU ${ri.vigencia || ""} (${ri.ciudad || "Bogotá"}, APU ${ri.codigo_idu || "—"}, publicado ${ri.publicado || "—"})`
-          : it.origen_precio === "propio" ? "PRECIO PROPIO YA CORREGIDO (guardado en tu perfil)"
+          : it.origen_precio === "propio" ? "PRECIO PROPIO YA CORREGIDO (guardado en su perfil)"
           : it.origen_precio === "archivo" ? "PRECIO SEGÚN ARCHIVO IMPORTADO" : "PRECIO TECLEADO A MANO";
         const n = fila([
           { v: ri ? `${origen} — SIN COMPOSICIÓN PUBLICADA${ri.ajuste_regional === "ninguno" ? "; SIN AJUSTE REGIONAL" : ""}` : `${origen} — SIN APU DE RESPALDO EN EL CATÁLOGO`, s: ri ? "texto" : "destacadoTexto" }, null, null,

@@ -552,7 +552,7 @@
            una auditoría, la carga del catálogo de precios y la sincronización con
            SECOP II. Cuatro de las seis no son de quien va a licitar, sino de quien
            mantiene el sistema — y mezclarlas obliga a entender el programa para poder
-           usarlo. Arriba queda lo que describe a TU empresa; lo técnico vive plegado
+           usarlo. Arriba queda lo que describe a SU empresa; lo técnico vive plegado
            en «Sistema». Ningún id cambia: renombrarlos mataría app.js en silencio. -->
       <!-- ══════ MI EMPRESA ES LA PESTAÑA PRINCIPAL (encargo del dueño, ago 2026) ══════
            Lo primero que se ve al entrar son LAS CIFRAS DE ESTA EMPRESA: cuántas
@@ -599,8 +599,8 @@
 <section id="seccion-rup" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 class="font-semibold tracking-tight">Tu registro de proponente</h2>
-            <p class="mt-1 text-sm text-gray-500">Decide a qué licitaciones podés presentarte.</p>
+            <h2 class="font-semibold tracking-tight">Su registro de proponente</h2>
+            <p class="mt-1 text-sm text-gray-500">Decide a qué licitaciones puede presentarse.</p>
           </div>
           <button id="btn-nuevo-rup" type="button"
                   class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">
@@ -623,7 +623,7 @@
              registro, ver el perfil vigente, eliminarlo. Ningún id cambia. -->
         <details id="rup-gestion" class="mt-4">
           <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">Actualizar, descargar o eliminar el registro</summary>
-        <p class="mt-3 max-w-2xl text-sm text-gray-500">Subí el certificado RUP en PDF (crea un perfil propio) o cargá el archivo JSON de los perfiles. El cambio surte efecto en la siguiente consulta.</p>
+        <p class="mt-3 max-w-2xl text-sm text-gray-500">Suba el certificado RUP en PDF (crea un perfil propio) o cargue el archivo JSON de los perfiles. El cambio surte efecto en la siguiente consulta.</p>
         <div class="mt-4 flex flex-wrap items-center gap-3">
           <input id="rup-json-archivo" type="file" accept=".json,application/json"
                  class="block max-w-sm text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
@@ -686,13 +686,13 @@
         <div id="cons-guardados" class="mt-4 text-sm"></div>
       </section>
 
-      <!-- ══════ Verificá a tu socio (due diligence de 20 minutos) ══════
+      <!-- ══════ Verifique a su socio (due diligence de 20 minutos) ══════
            Truco #15 del manual: cinco fuentes públicas antes de firmar un
            consorcio. Dos las consulta la app sola (datos abiertos: SIRI y
            SECOP); las otras tres se abren desde acá con el enlace. Nace
            VISIBLE (el socio suele ser una empresa externa, no un perfil). -->
       <section id="seccion-socio" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight">Verificá a tu socio antes de firmar</h2>
+        <h2 class="font-semibold tracking-tight">Verifique a su socio antes de firmar</h2>
         <p class="mt-1 text-sm text-gray-500">Un integrante inhabilitado contamina al consorcio completo. La app revisa sola sanciones (Procuraduría) e historial en SECOP; las otras tres fuentes, con enlace.</p>
         <div class="mt-4 grid gap-2 sm:max-w-xl sm:grid-cols-[1fr_auto]">
           <input id="socio-id" type="text" inputmode="numeric" autocomplete="off" placeholder="NIT o cédula del socio (ej. 900123456)"
@@ -714,7 +714,7 @@
       <!-- ══════ Experiencia ejecutada ══════ -->
 <section id="seccion-experiencia" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">Obra que ya ejecutaste</h2>
-        <p class="mt-1 text-sm text-gray-500">Tus contratos ejecutados: en qué <em>sabés</em> trabajar. Priorizan los códigos que te faltan.</p>
+        <p class="mt-1 text-sm text-gray-500">Sus contratos ejecutados: en qué <em>sabe</em> trabajar. Priorizan los códigos que le faltan.</p>
 
         <!-- Lo que hay HOY va arriba y a la vista; la carga, plegada -->
         <div id="exp-actual" class="mt-3 text-sm text-gray-600">—</div>
@@ -790,12 +790,12 @@
         </details>
       </section>
 
-      <!-- ══════ Códigos que te faltan en el RUP ══════ -->
+      <!-- ══════ Códigos que le faltan en el RUP ══════ -->
 <section id="seccion-cobertura" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 class="font-semibold tracking-tight">Códigos que te faltan en tu registro de proponente</h2>
-            <p class="mt-1 text-sm text-gray-500">Con qué códigos adjudica el mercado lo que vos hacés, y cuáles no tenés inscritos. Se mira antes de renovar el registro (abril).</p>
+            <h2 class="font-semibold tracking-tight">Códigos que le faltan en su registro de proponente</h2>
+            <p class="mt-1 text-sm text-gray-500">Con qué códigos adjudica el mercado lo que usted hace, y cuáles no tiene inscritos. Se mira antes de renovar el registro (abril).</p>
           </div>
           <div class="flex flex-wrap items-end gap-3">
             <label class="block">
@@ -1331,10 +1331,10 @@
                    class="w-full border-0 bg-transparent py-2 text-sm focus:outline-none focus:ring-0">
           </label>
           <select id="f-ordenar" class="control-select rounded-xl text-sm" aria-label="Ordenar por">
-            <option value="atractividad">Las mejores para vos</option>
-            <option value="margen">Dónde me queda más</option>
+            <option value="atractividad">Las mejores para usted</option>
+            <option value="margen">Dónde me queda más (solo las que ya costeó)</option>
             <option value="cierre">Las que cierran antes</option>
-            <option value="ve">Las que más plata dejan</option>
+            <option value="ve">Mayor contrato esperado</option>
             <option value="p_ganar">Las más ganables</option>
             <option value="cuantia">Las más grandes</option>
             <option value="competencia">Las menos peleadas</option>
@@ -1347,6 +1347,9 @@
           <button id="btn-buscar" class="rounded-xl bg-gray-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-700">Buscar</button>
         </div>
         <div id="fl-fichas" class="mt-2 flex flex-wrap items-center gap-2 text-xs"></div>
+        <!-- El CONCEPTO del orden elegido (18-ago-2026): qué hace ese orden y qué no
+             promete. Lo pinta app.js desde Filtros.conceptoDe al cambiar #f-ordenar. -->
+        <p id="orden-concepto" class="mt-2 text-xs" style="color: var(--text-secondary);"></p>
       </section>
 
       <!-- ══════ LA HOJA DE FILTROS ══════
@@ -1379,11 +1382,17 @@
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dónde queda</span>
               <div class="flex flex-wrap items-center gap-2">
                 <select id="fl-dep" class="control-select rounded-xl text-sm">
-                  <option value="">Cualquier departamento</option>
+                  <option value="">Añadir departamento…</option>
                 </select>
                 <input id="fl-ciudad" type="text" placeholder="Ciudad o municipio" autocomplete="off"
                        class="control-campo w-44 rounded-xl text-sm">
               </div>
+              <!-- Los departamentos ELEGIDOS se ven AQUÍ, dentro de la hoja. Antes el
+                   selector volvía a «Cualquier departamento» nada más elegir (es un
+                   control que AÑADE) y la ficha aparecía detrás del velo, bajo la
+                   barra: se veía como un fallo de animación — se elegía y «no pasaba
+                   nada» — cuando el filtro sí se había aplicado (18-ago-2026). -->
+              <div id="fl-dep-elegidos" class="mt-2 flex flex-wrap gap-1.5"></div>
               <label class="mt-2 flex items-center gap-2 text-xs" style="color: var(--text-secondary);">
                 <input id="fl-zona-cerca" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
                 Solo cerca de mi zona (Bogotá / Ibagué)
@@ -1539,7 +1548,7 @@
 
       <footer class="pb-6 pt-10 text-center text-xs text-gray-400">
         Datos abiertos de SECOP II (Colombia Compra Eficiente). El orden recomendado pone primero
-        lo que es viable para tu empresa y donde históricamente compite menos gente. Nada reemplaza
+        lo que es viable para su empresa y donde históricamente compite menos gente. Nada reemplaza
         la lectura del pliego. Sitio privado.
       </footer>
     </main>
@@ -1560,7 +1569,7 @@
            poder ver un precio. -->
 <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">1</span>¿Qué vas a construir?</h2>
-        <p class="mt-1 text-sm text-gray-500">Describí la obra y el sistema detecta los ítems. O cargá tu Excel, o buscá un ítem por nombre.</p>
+        <p class="mt-1 text-sm text-gray-500">Describa la obra y el sistema detecta los ítems. O cargue su Excel, o busque un ítem por nombre.</p>
 
         <!-- ══ Método principal: describir la obra y detectar ══
              Es el más automático y por eso el más prominente: textarea grande y
@@ -1585,7 +1594,7 @@
         <div class="mt-5 grid gap-4 lg:grid-cols-2">
           <div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
             <h3 class="text-sm font-medium">Cargar Excel con ítems</h3>
-            <p class="mt-1 text-xs text-gray-500">Columnas <strong>Descripción · Unidad · Cantidad</strong> (Ítem y Valor unitario, opcionales). Se lee en tu navegador y ves una vista previa antes de añadir nada; un precio del archivo <strong>manda</strong>.</p>
+            <p class="mt-1 text-xs text-gray-500">Columnas <strong>Descripción · Unidad · Cantidad</strong> (Ítem y Valor unitario, opcionales). Se lee en su navegador y verá una vista previa antes de añadir nada; un precio del archivo <strong>manda</strong>.</p>
             <button id="btn-importar" type="button"
                     class="mt-3 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
               Elegir archivo (.xlsx, .xls o .csv)
@@ -1976,7 +1985,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">3</span>Calcular y exportar</h2>
-            <p class="mt-1 text-sm text-gray-500">Escribí las cantidades y pulsá <strong>Calcular cuánto me cuesta</strong>. Pulsá un ítem para ver su desglose; un precio que corrijas queda guardado y manda la próxima vez.</p>
+            <p class="mt-1 text-sm text-gray-500">Escriba las cantidades y pulse <strong>Calcular cuánto me cuesta</strong>. Pulse un ítem para ver su desglose; un precio que corrija queda guardado y manda la próxima vez.</p>
           </div>
         </div>
 
@@ -2042,7 +2051,7 @@
      paso 3 con el Formulario 1 leído en el lector de pliegos (más abajo). -->
 <section id="seccion-revision" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
   <h2 class="font-semibold tracking-tight">Revisar antes de subir</h2>
-  <p class="mt-1 max-w-2xl text-sm text-gray-500">Compara tu oferta con el presupuesto oficial y con el Formulario 1 del pliego: qué es motivo de rechazo automático y qué solo conviene arreglar.</p>
+  <p class="mt-1 max-w-2xl text-sm text-gray-500">Compara su oferta con el presupuesto oficial y con el Formulario 1 del pliego: qué es motivo de rechazo automático y qué solo conviene arreglar.</p>
   <div class="mt-3 grid gap-3 sm:grid-cols-3">
     <label class="block text-sm"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Tope de AIU del pliego (%)</span>
       <input id="rev-tope-aiu" type="number" min="0" max="100" step="0.01" placeholder="Numeral 4.1 del pliego" class="w-full rounded-lg border-gray-300 text-sm"></label>
@@ -2347,6 +2356,7 @@
   <script src="/filtros.js"></script>
   <script src="/portada.js"></script>
   <script src="/pulso.js"></script>
+  <script src="/frases.js"></script>
   <script src="/onboarding.js"></script>
   <script src="/xlsx.js"></script>
   <script src="/xlsx_lectura.js"></script>
