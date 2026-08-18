@@ -2045,6 +2045,58 @@ Decisiones que no hay que re-aprender:
   consulte el estado del catálogo APU y la experiencia al arrancar, y el tablero es una lectura cacheada
   (300 s). Si algún día pesa, lo que se difiere es lo de dentro de «Sistema», al `toggle` del `<details>`.
 
+### Los insumos de precios 2026 que aportó el dueño · CENSADOS, no integrados (18-ago-2026)
+
+Censo, contrastes y orden de integración en **`docs/INSUMOS_2026.md`**. Los 22 archivos de
+`docs/insumos_2026_pendiente/` se habían acopiado «para análisis posterior» en cinco commits y
+**nadie los había abierto**. Nada está integrado todavía; lo que sigue es lo que no hay que
+re-aprender cuando se integre.
+
+- **TRES PREMISAS DE ESTA MEMORIA ERAN FALSAS y las desmiente un archivo que ya estaba en el
+  repositorio.** «FFIE (no publica precios)» → publica **1 051 ítems de edificación × 33
+  departamentos**, vigencia 2026. «ICCU/Cundinamarca 2025 bloqueado (403)» → está la lista **2026**
+  entera, 15 provincias y **58 municipios**. «La edificación pura sigue con los 157 del Nogal» → hay
+  tres bancos de edificación 2026. Es la lección de `datos.gov.co` otra vez, agravada: aquí ni
+  siquiera había que volver a llamar a la fuente, solo abrir el archivo.
+- **El de mayor valor es el de EPC** (`APUsEPC2026_Feb.xlsx`, 454 hojas): 440 APU **con composición
+  completa** de agua y saneamiento, y **su aritmética YA es la del motor** — verificado ítem a ítem
+  (MO y equipo ÷ rendimiento, material × cantidad, herramienta menor como % de la MO, total al peso).
+  No hay que inventar ninguna fórmula para consumirlo.
+- **Las doce cartillas provinciales se unen al Excel de EPC POR NUMERAL, y casan 346/346 (100 %).**
+  Hace falta porque su texto viene con letras sustituidas (`LOCALIZACIÓN` → `LOYALIZAYIÓN`): el
+  **ToUnicode de esos PDF está mal EN ORIGEN**, no es defecto del extractor — se implementó la
+  resolución correcta por página y por recurso (`/F1` NO es una identidad global: apunta a objetos
+  distintos según la página) y el texto no cambió. Las **cifras y los municipios salen correctos**,
+  así que la descripción se toma del Excel y el precio del PDF.
+- **ICCU y FFIE SE VALIDAN MUTUAMENTE** (misma vigencia, mismo departamento, entidades
+  independientes): pañete ×1,00, mampostería ×1,01, concreto ×0,92. Dos fuentes que no se copian y
+  dan el mismo número es la mejor evidencia disponible de que ambas están vivas.
+- **El CSV de Boyacá SIGUE SIENDO EL DE 2022**: la fecha del nombre es la de DESCARGA, las 1 255
+  filas son exactamente las del dataset ya fichado, y contra el FFIE 2026 del mismo departamento sale
+  ×0,88 · ×0,78 · ×0,60 · ×0,42. Subestimaría el costo, que es el error caro de este módulo. No se
+  integra sin vigencia nueva; el APU 2023, igual.
+- **El FFIE es un precio TOPE, no de mercado**, y el contrato adjudicado del Nogal está POR ENCIMA
+  (pañete $40 150 contra $30 607 en Bogotá). Si se integra va con nivel propio y declarado, como
+  `techo_de_insumo` en el retail: leerlo como cotización sería el mismo error de categoría.
+- **Hay por fin fuente 2026 con desglose para el factor prestacional… y NO es «el 1,55 corregido».**
+  El archivo de cuadrillas da **2,19** (rango 2,09-2,31), pero incluye dotación, bioseguridad y FIC
+  —que `lib/apu/normativa` deja fuera a propósito— y está calculado sobre **días reales trabajados
+  (295 de 365)**, que por sí solos son ×1,24. Comparar las dos cifras de frente sería confundir dos
+  magnitudes; la conversión NO se hizo aquí porque sería la derivación a ojo que este módulo prohíbe.
+  Coinciden en cambio SMMLV 2026 ($1 750 905 ✓) y auxilio de transporte ($8 303,17/día).
+- **El contraste de precios se hizo por PALABRAS CLAVE y eso está declarado**: los ratios extremos
+  (excavación ×0,36) son ruido de emparejamiento —mezcla «demolición de pañete» con «pañete»—, no
+  evidencia de precio. Una integración de verdad casa con `lib/apu_mapeo`; una segunda definición de
+  «se parecen» divergiría.
+- **`tests/pdf_texto.js`** es el extractor de texto POSICIONAL de PDF en Node puro (sin
+  dependencias, herramienta MANUAL como los `capturar_*.js`; la app sigue leyendo pliegos con pdf.js
+  en el navegador). Conserva columnas por coordenada X y resuelve ToUnicode por página. Dos defectos
+  que costaron encontrar y que la cabecera documenta: los corchetes de `[…] TJ` son **delimitadores**
+  —tratarlos como operador vaciaba el búfer y el texto salía vacío— y las regex del tokenizador van
+  **sticky**, porque `s.slice(i)` por token sobre un content stream de 65 KB es cuadrático.
+- **`Visor_BPR_2026I_FaseI_29072026.xlsx` ya está integrado** (es la fuente de
+  `data/apu_idu_items.json`): está en la carpeta por duplicado y no hay nada que hacer con él.
+
 ### Los 526 APU de referencia del INVIAS como base de precios de ÍTEMS (ago 2026)
 
 Encargo del dueño (17-ago-2026): «no sabemos los precios de los ítems… el APU básicamente no sirve».
