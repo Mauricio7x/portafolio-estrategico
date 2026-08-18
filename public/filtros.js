@@ -184,7 +184,12 @@
      Los nombres de los parámetros son cortos y estables (son un contrato: un
      enlace guardado tiene que seguir valiendo). Un valor desconocido se IGNORA,
      jamás vacía la lista ni da error (la regla de `?zona=`). */
-  const PARAMS = Object.freeze(["tipo", "modalidad", "dep", "ciudad", "min", "max", "cierre", "cierreDesde", "cierreHasta", "entidad", "q", "ordenar_por"]);
+  const PARAMS = Object.freeze(["tipo", "modalidad", "dep", "ciudad", "min", "max", "cierre", "cierreDesde", "cierreHasta", "entidad", "q", "manif", "ordenar_por"]);
+  /* Manifestación de interés (menor cuantía): `manif=abierta` deja SOLO los
+     procesos en los que todavía se puede manifestar interés (plazo de 3 días
+     hábiles desde la apertura, calculado); `manif=todas`, los de menor cuantía
+     con manifestación, vencida o no. Cualquier otro valor es INERTE. */
+  const MANIF_IDS = new Set(["abierta", "todas"]);
   const lista = (v) => String(v || "").split(",").map((s) => s.trim()).filter(Boolean);
   const idsDe = (arr) => new Set(arr.map((x) => x.id));
   const TIPO_IDS = idsDe(TIPOS_TRABAJO), MODALIDAD_IDS = idsDe(MODALIDADES), CIERRE_IDS = idsDe(VENTANAS_CIERRE);
@@ -205,6 +210,7 @@
     const cierreDesde = fechaISO(get("cierreDesde")), cierreHasta = fechaISO(get("cierreHasta"));
     const entidad = String(get("entidad") || "").trim() || null;
     const texto = String(get("q") || "").trim() || null;
+    const manif = MANIF_IDS.has(String(get("manif") || "")) ? String(get("manif")) : null;
     return {
       // solo valores desconocidos («tipo=zzz») = filtro inerte, no lista vacía
       tipo: tipo && tipo.length ? [...new Set(tipo)] : null,
@@ -215,6 +221,7 @@
       cierre: cierre ? { ventana: cierre } : (cierreDesde || cierreHasta ? { desde: cierreDesde, hasta: cierreHasta } : null),
       entidad,
       q: texto,
+      manif,
     };
   }
 
@@ -235,6 +242,7 @@
     }
     if (estado.entidad) p.set("entidad", estado.entidad);
     if (estado.q) p.set("q", estado.q);
+    if (estado.manif) p.set("manif", estado.manif);
     return p;
   }
 
@@ -264,6 +272,7 @@
     }
     if (estado.entidad) out.push({ filtro: "entidad", etiqueta: "Entidad: " + estado.entidad });
     if (estado.q) out.push({ filtro: "q", etiqueta: "Palabra: " + estado.q });
+    if (estado.manif) out.push({ filtro: "manif", etiqueta: estado.manif === "abierta" ? "Manifestación de interés: todavía se puede manifestar" : "Manifestación de interés: procesos de menor cuantía" });
     return out;
   }
 

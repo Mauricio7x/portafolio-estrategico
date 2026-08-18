@@ -1873,6 +1873,52 @@ cuántas veces se ha presentado a la entidad y cuántas ha ganado (último adjud
   `where` no es un `in` simple; el fixture hgi6 lleva `codigo_entidad` y hay contratos vigentes del recurrente en jbjy.
   `limpiarRedis` purga `seguimiento:*` y `pulso:*`. La prueba de jerga prohíbe «capacidad residual» en app.js.
 
+### Mis procesos como pestaña, centro de alertas y manifestación de interés (18-ago-2026)
+
+Encargo del dueño: (a) aviso de la **manifestación de interés** en la selección abreviada de menor cuantía — «super
+importante, el ing tiene el interés en este espacio en específico» — tanto en la lista como en el seguimiento; (b)
+«Mis procesos» como **pestaña aparte** (el volumen puede ser grande); (c) avisar **cambios de cronograma** y cuando
+cualquier evento del cronograma de un guardado se acerca; (d) inspirarse en rastreadores bien hechos. Decisiones:
+- **La regla de la manifestación es UNA y vive en una HOJA: `lib/manifestacion.js`** (`exigeManifestacion`, `aperturaDe`,
+  `filaManifestacion`, `manifestacionDeFila`, `PLAZO_MANIFESTACION_HABILES`, `NORMA`). Estaba en `lib/portada` (Fase 9)
+  y ahora la importan también `lib/filtros_lista` (clasifica cada fila del listado) y `lib/seguimiento`; `portada`
+  **requiere** a `filtros_lista`, así que un require de vuelta habría cerrado un ciclo — de ahí la extracción, sin
+  cambiar la regla ni la norma. `portada` la re-exporta (prueba de identidad de función). La fecha límite sigue siendo
+  CALCULADA (apertura = publicación, supuesto declarado; + 3 hábiles, D. 1082/2015 art. 2.2.1.2.1.2.20) y viaja SIEMPRE
+  con su nota «confírmela en el cronograma»; sin apertura legible `aplica:true` pero `vence:null` y `vencida:null` — no
+  se afirma ni abierta ni vencida.
+- **En la lista**: `manifestacion` por fila (`clasificar(l).manifestacion`), chip en la tarjeta («Manifestar interés ·
+  vence HOY/mañana hábil/N días hábiles · hasta jueves 20 de agosto»; vencido en gris), línea roja «Atención» a ≤2 días
+  hábiles (la hermana de la regla de las 24 horas), aviso ámbar bajo la barra con la cifra de `facetas.manifestacion`
+  (`total · abiertas · urgentes · vencidas · sin_fecha`) y botón «Ver solo estos», casilla en la hoja de filtros
+  (`#fl-manif`) y parámetro `manif=abierta|todas` (`public/filtros.js` PARAMS/leerEstado/escribirEstado/fichas;
+  `lib/filtros_lista.cumple`). Un valor desconocido es INERTE (la regla de `?zona=`). `abierta` exige `vencida === false`:
+  la sin fecha entra en «todas» y no en «abierta».
+- **La pestaña `#tab-seguimiento`** (nav de escritorio y barra móvil, que pasa a 4 columnas; `PESTANAS` = licitaciones ·
+  seguimiento · apu · admin; alias `#/mis-procesos`): `#seccion-seguimiento` y todos los `seg-*` se MOVIERON dentro con
+  sus ids (la suite los mira). Se pide FRESCO cada vez que se abre (un GET). Arriba el **centro de alertas**
+  (`#seg-alertas`, `alertasDe` en lib/seguimiento: cambio · manifestación ≤2 hábiles · cierre hoy/mañana · avisos T-7/3/1
+  de cualquier hito, ordenado por urgencia y fecha, solo 7 días, y sin los procesos ganados/perdidos/descartados), la
+  **insignia** de la pestaña con `resumen.atencion` (cambios sin ver + alertas de urgencia alta; oculta en 0), filtros
+  por **etapa** (chips) y la lista. Los estados pasaron a ser un RECORRIDO: interesa · preparando · presentado · ganado ·
+  perdido · descartado (`orden_estados`); un valor desconocido sigue cayendo a «interesa». «Verificar» un NIT desde aquí
+  cambia a Mi empresa antes de hacer scroll (la sección del socio vive allí).
+- **Cambios de cronograma = foto VIVA del corpus vs lo último que el usuario dio por visto.** `CAMPOS_VIGILADOS`
+  (cierre, apertura, presupuesto, modalidad, estado SECOP); `cambiosDe(vista, viva)` — un null en cualquiera de los dos
+  lados NO es cambio (R1); `visto` se escribe con **`POST {id, enterado:true}`** y lo toma el SERVIDOR del corpus
+  (`fotoViva`), no del cliente; al guardar por primera vez la referencia toma el `estado_secop` vivo para que un cambio
+  de estado desde ese día se detecte. Los guardados de producción anteriores no traen `estado_secop` en la foto: ese
+  campo solo empieza a vigilarse tras el primer «Enterado». La foto ORIGINAL no se toca (es «cómo era el día que lo
+  guardé»); «Enterado» no cambia el estado.
+- **El hito «manifestacion» entra al cronograma** (`hitosDe(l, hoy)`, origen `calculado`, evidencia = la nota) y por tanto al
+  .ics y a los avisos T-7/3/1; `enriquecer` publica `manifestacion` compacta por guardado, y el resumen
+  `manifestaciones_abiertas/urgentes`, `cambios_pendientes`, `por_estado`, `atencion`.
+- **La prueba no toca los fixtures del corpus** (una fila viable más por mes movería totales de media suite): clasifica
+  filas sintéticas con `crearClasificador`, cruza el listado real con `manif=todas` (el corpus ya trae «Selección
+  abreviada menor cuantía» del día 10 de cada mes, todas vencidas) y, en Mis procesos, calcula una apertura cuya
+  fecha límite es HOY (retrocediendo hasta que `sumarHabiles(apertura, 3) === hoy`) — un fixture con fecha fija
+  caducaría.
+
 ### Segunda ronda de correcciones del dueño (18-ago-2026): tipos de trabajo, lenguaje, frases, conceptos de orden
 
 - **«Suministro de porciones de comida» bajo el filtro de obra: la causa era sistemática.** Se bajaron 726 procesos

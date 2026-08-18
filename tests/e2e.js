@@ -7859,6 +7859,121 @@ async function main() {
         console.log(`  · seguimiento: guardar/estado/quitar por perfil · fila viva (${abierto.dias_para_cierre} días al cierre, ${abierto.avisos.length} avisos) · .ics con alarmas · detalle: ${det.proponentes.length} proponentes, recurrente ${rec.ante_esta_entidad.veces_presentado} veces ante la entidad y ${rec.contratos_vigentes.contratos} vigentes por $${rec.contratos_vigentes.valor_cop}`);
       }
 
+      /* --- MANIFESTACIÓN DE INTERÉS en la lista y en Mis procesos + la pestaña
+         propia + cambios de cronograma + centro de alertas (18-ago-2026). --- */
+      {
+        const H = require("../lib/habiles.js");
+        const M = require("../lib/manifestacion.js");
+        const FLs = require("../lib/filtros_lista.js");
+        const FLp = require("../public/filtros.js");
+        const Sg = require("../lib/seguimiento.js");
+        const hoy = H.hoyColombia(Date.now());
+        // (1) la regla es UNA (hoja): portada la re-exporta y filtros_lista/seguimiento la importan
+        const Portada2 = require("../lib/portada.js");
+        assert.strictEqual(Portada2.filaManifestacion, M.filaManifestacion, "portada re-exporta la función de lib/manifestacion, no una copia");
+        assert.strictEqual(Portada2.PLAZO_MANIFESTACION_HABILES, 3);
+        // (2) el clasificador de la lista publica `manifestacion` con la fecha CALCULADA y los hábiles que quedan
+        const clas = FLs.crearClasificador({ ahora: Date.now() });
+        const menor = { id_del_proceso: "CO1.MC.1", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: `${hoy}T08:00:00.000` };
+        const cM = clas(menor);
+        assert.ok(cM.manifestacion && cM.manifestacion.aplica && cM.manifestacion.calculada, "menor cuantía → manifestación calculada");
+        assert.strictEqual(cM.manifestacion.vence, H.sumarHabiles(hoy, 3), "vence = apertura + 3 hábiles");
+        assert.strictEqual(cM.manifestacion.vencida, false);
+        assert.ok(cM.manifestacion.quedan_habiles >= 3, `quedan ≥ 3 hábiles: ${cM.manifestacion.quedan_habiles}`);
+        assert.strictEqual(clas({ id_del_proceso: "CO1.LP.1", modalidad_de_contratacion: "Licitación pública", fecha_de_publicacion_del: `${hoy}T08:00:00.000` }).manifestacion, null, "licitación pública: no aplica → null");
+        assert.strictEqual(clas({ id_del_proceso: "CO1.MC.2", modalidad_de_contratacion: "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes", fecha_de_publicacion_del: `${hoy}T08:00:00.000` }).manifestacion, null, "«sin manifestación» no aplica");
+        const vencida = clas({ id_del_proceso: "CO1.MC.3", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: "2026-01-05T08:00:00.000" }).manifestacion;
+        assert.strictEqual(vencida.vencida, true); assert.strictEqual(vencida.quedan_habiles, 0);
+        const sinFecha = clas({ id_del_proceso: "CO1.MC.4", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía" }).manifestacion;
+        assert.ok(sinFecha.aplica && sinFecha.vence === null && sinFecha.vencida === null, "sin apertura legible: aplica, pero no se afirma fecha ni vencimiento");
+        // (3) el filtro `manif`: abierta / todas / inerte
+        const filas = [menor, { id_del_proceso: "CO1.LP.1", modalidad_de_contratacion: "Licitación pública" }, { id_del_proceso: "CO1.MC.3", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: "2026-01-05T08:00:00.000" }, { id_del_proceso: "CO1.MC.4", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía" }];
+        const clas2 = FLs.crearClasificador({ ahora: Date.now() });
+        const todosTipos = { tipo: FLp.TIPOS_TRABAJO.map((t) => t.id) };
+        assert.deepStrictEqual(FLs.aplicar(filas, { ...todosTipos, manif: "abierta" }, clas2).map((l) => l.id_del_proceso), ["CO1.MC.1"], "abierta: solo la que todavía se puede manifestar (la sin fecha no se afirma abierta)");
+        assert.deepStrictEqual(FLs.aplicar(filas, { ...todosTipos, manif: "todas" }, clas2).map((l) => l.id_del_proceso), ["CO1.MC.1", "CO1.MC.3", "CO1.MC.4"], "todas: las de menor cuantía con manifestación");
+        assert.strictEqual(FLp.leerEstado({ manif: "zzz" }).manif, null, "valor desconocido = inerte");
+        assert.strictEqual(FLs.aplicar(filas, { ...FLp.leerEstado({ manif: "zzz" }), ...todosTipos }, clas2).length, 4);
+        assert.strictEqual(FLp.escribirEstado(FLp.leerEstado({ manif: "abierta" })).get("manif"), "abierta");
+        assert.ok(FLp.fichas(FLp.leerEstado({ manif: "abierta" })).some((f) => f.filtro === "manif" && /manifest/i.test(f.etiqueta)));
+        const fac = FLs.facetas(filas, clas2).manifestacion;
+        assert.deepStrictEqual(fac, { total: 3, abiertas: 1, urgentes: 0, vencidas: 1, sin_fecha: 1 }, JSON.stringify(fac));
+        // (4) el listado real publica el campo por fila y las facetas; el filtro por URL funciona
+        const liM = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200&tipo=todos&manif=todas", CAB_TOKEN)).cuerpo;
+        assert.ok(liM.total > 0, "el corpus trae procesos de menor cuantía");
+        assert.ok(liM.resultados.every((f) => f.manifestacion && f.manifestacion.aplica), "con manif=todas todos los servidos son de menor cuantía con manifestación");
+        assert.ok(liM.facetas.manifestacion && liM.facetas.manifestacion.total >= liM.total, "facetas.manifestacion viaja");
+        const liN = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200&tipo=todos&manif=marciana", CAB_TOKEN)).cuerpo;
+        const liT = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200&tipo=todos", CAB_TOKEN)).cuerpo;
+        assert.strictEqual(liN.total, liT.total, "un valor desconocido de manif no vacía la lista");
+        assert.ok(liT.total > liM.total && liT.resultados.every((f) => "manifestacion" in f) && liT.resultados.some((f) => f.manifestacion === null), "sin filtro el campo viaja en toda fila (null donde no aplica) y la lista es más ancha que la de menor cuantía");
+        // (5) Mis procesos: hito «manifestacion» calculado, cambio de cronograma, «Enterado», alertas y resumen
+        const routerPerfilSeg2 = require("../api/perfil.js");
+        const seg2 = (qs, opts = {}) => invocar(routerPerfilSeg2, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
+        // apertura tal que el plazo vence el PRÓXIMO HÁBIL ≥ hoy (si hoy es hábil, hoy): un plazo no
+        // puede vencer en festivo, así que si la suite corre un domingo o un festivo se apunta al lunes
+        let objetivo = hoy; while (!H.esHabil(objetivo)) objetivo = H.sumarDias(objetivo, 1);
+        let apertura = H.sumarDias(objetivo, -3);
+        for (let k = 0; k < 10 && H.sumarHabiles(apertura, 3) !== objetivo; k++) apertura = H.sumarDias(apertura, -1);
+        assert.strictEqual(H.sumarHabiles(apertura, 3), objetivo, `hay una apertura cuyo plazo vence el ${objetivo}`);
+        const idMC = "CO1.MC.PRUEBA.1";
+        const gM = await seg2("", { metodo: "POST", body: { perfil: "helder", id: idMC, estado: "preparando", foto: { nombre: "MEJORAMIENTO DE VÍA (menor cuantía)", entidad: "ALCALDÍA DE PRUEBA", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: `${apertura}T08:00:00.000`, fecha_cierre: CIERRE_FUTURO, precio_base: "150000000" } } });
+        assert.strictEqual(gM.status, 200); assert.strictEqual(gM.cuerpo.guardado.estado, "preparando", "los estados nuevos existen");
+        const l2 = (await seg2("&perfil=helder")).cuerpo;
+        const pM = l2.procesos.find((p) => p.id === idMC);
+        assert.ok(pM.manifestacion && pM.manifestacion.vencida === false && pM.manifestacion.quedan_habiles === 1 && pM.manifestacion.vence === objetivo, `manifestación vence el próximo hábil: ${JSON.stringify(pM.manifestacion)}`);
+        assert.strictEqual(pM.manifestacion.dias_calendario, Math.round((Date.parse(objetivo) - Date.parse(hoy)) / 86400000), "dias_calendario = días hasta el vencimiento (0 = hoy)");
+        const hM = pM.hitos.find((h) => h.id === "manifestacion");
+        assert.ok(hM && hM.origen === "calculado" && hM.fecha === objetivo, "hito de manifestación CALCULADO en el cronograma");
+        assert.ok(l2.alertas.some((a) => a.tipo === "manifestacion" && a.id === idMC && a.urgencia === "alta"), "el centro de alertas avisa de la manifestación que vence hoy");
+        assert.strictEqual(l2.resumen.manifestaciones_abiertas, 1); assert.strictEqual(l2.resumen.manifestaciones_urgentes, 1);
+        assert.deepStrictEqual(l2.orden_estados, ["interesa", "preparando", "presentado", "ganado", "perdido", "descartado"]);
+        assert.strictEqual(l2.resumen.por_estado.preparando, 1);
+        // .ics del guardado lleva el hito calculado
+        const icsM = await seg2(`&perfil=helder&ics=${encodeURIComponent(idMC)}`);
+        assert.ok(/Manifestar inter/.test(icsM.cuerpo) && /CALCULADA/.test(icsM.cuerpo), "el .ics trae la manifestación de interés y dice que la fecha es calculada");
+        // cambio de cronograma: el proceso del listado, guardado antes con foto vieja → el corpus vivo difiere en el cierre
+        const yaGuardados = new Set(l2.procesos.map((p) => p.id));
+        const filaV = liT.resultados.find((f) => f.fecha_cierre && !yaGuardados.has(f.id_del_proceso));
+        const cierreViejo = `${H.sumarDias(String(filaV.fecha_cierre).slice(0, 10), -5)}T10:00:00`;
+        const gC = await seg2("", { metodo: "POST", body: { perfil: "helder", id: filaV.id_del_proceso, estado: "interesa", foto: { ...filaV, fecha_cierre: cierreViejo } } });
+        assert.strictEqual(gC.status, 200);
+        assert.strictEqual(gC.cuerpo.guardado.foto.fecha_cierre, cierreViejo, "la foto del cliente se conserva (con estado_secop del corpus añadido)");
+        assert.ok(gC.cuerpo.guardado.foto.estado_secop, "al guardar por primera vez la referencia toma el estado de SECOP II del corpus");
+        const l3 = (await seg2("&perfil=helder")).cuerpo;
+        const pC = l3.procesos.find((p) => p.id === filaV.id_del_proceso);
+        assert.ok(pC.cambios.some((c) => c.campo === "fecha_cierre" && /antes .* ahora/.test(c.mensaje)), `cambio de cierre detectado: ${JSON.stringify(pC.cambios)}`);
+        assert.strictEqual(pC.cambios_pendientes, pC.cambios.length);
+        assert.ok(l3.alertas.some((a) => a.tipo === "cambio" && a.id === filaV.id_del_proceso), "el centro de alertas lista el cambio");
+        assert.ok(l3.resumen.cambios_pendientes >= 1 && l3.resumen.atencion >= 2, `atención = cambios + urgentes: ${JSON.stringify(l3.resumen)}`);
+        // «Enterado» → la referencia pasa a ser la fila viva y el cambio desaparece; sin tocar el estado ni la foto original
+        const en = await seg2("", { metodo: "POST", body: { perfil: "helder", id: filaV.id_del_proceso, enterado: true } });
+        assert.strictEqual(en.status, 200); assert.strictEqual(en.cuerpo.enterado, true); assert.strictEqual(en.cuerpo.en_corpus, true);
+        const l4 = (await seg2("&perfil=helder")).cuerpo;
+        const pC2 = l4.procesos.find((p) => p.id === filaV.id_del_proceso);
+        assert.deepStrictEqual(pC2.cambios, [], "tras «Enterado» no hay cambios pendientes");
+        assert.strictEqual(pC2.estado, "interesa"); assert.ok(pC2.visto_el);
+        assert.strictEqual((await seg2("", { metodo: "POST", body: { perfil: "helder", id: "CO1.NO.EXISTE", enterado: true } })).status, 404, "enterado de algo no guardado → 404");
+        // limpieza
+        for (const id of [idMC, filaV.id_del_proceso]) await seg2(`&perfil=helder&id=${encodeURIComponent(id)}`, { metodo: "DELETE" });
+        // (6) frontend: pestaña propia, insignia, centro de alertas, filtros por etapa, «Enterado»; aviso y filtro en la lista
+        const htmlP = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        const appP = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        for (const id of ["tab-seguimiento", "seg-alertas", "seg-alertas-lista", "seg-filtros", "seg-insignia", "seg-insignia-movil", "aviso-manifestacion", "aviso-manifestacion-ver", "fl-manif", "fl-manif-n"]) assert.ok(htmlP.includes(`id="${id}"`), `falta #${id}`);
+        assert.ok((htmlP.match(/data-tab="seguimiento"/g) || []).length === 2, "botón «Mis procesos» en la barra de escritorio y en la móvil");
+        assert.ok(/grid-cols-4/.test(htmlP.split('aria-label="Secciones (móvil)"')[1].split("</nav>")[0]), "la barra móvil pasa a 4 columnas");
+        {
+          const iTab = htmlP.indexOf('id="tab-seguimiento"'), iSec = htmlP.indexOf('id="seccion-seguimiento"'), iFin = htmlP.indexOf("</main>", iTab);
+          assert.ok(iTab > 0 && iSec > iTab && iSec < iFin && iSec < htmlP.indexOf('id="tab-licitaciones"'), "la sección de seguimiento vive DENTRO de su pestaña");
+        }
+        assert.ok(/PESTANAS = \["licitaciones", "seguimiento", "apu", "admin"\]/.test(appP) && /"mis-procesos": "seguimiento"/.test(appP), "la pestaña existe en app.js con su alias");
+        assert.ok(/data-seg-enterado/.test(appP) && /enterado: true/.test(appP) && /data-seg-filtro/.test(appP) && /pintarInsigniaSeguimiento/.test(appP) && /pintarAlertasSeguimiento/.test(appP), "Enterado, filtros por etapa, insignia y centro de alertas cableados");
+        assert.ok(/function chipManifestacion/.test(appP) && /function avisoManifestacion/.test(appP) && /chipManifestacion\(l\.manifestacion\)/.test(appP) && /avisoManifestacion\(l\.manifestacion\)/.test(appP), "la tarjeta pinta el chip y el aviso de manifestación");
+        assert.ok(/pintarAvisoManifestacion/.test(appP) && /manif: \$\("fl-manif"\)\.checked \? "abierta" : null/.test(appP), "el aviso bajo la barra y la casilla de la hoja aplican manif=abierta");
+        assert.ok(!/manif.*\|\| 0/.test(appP), "ningún «|| 0» sobre la manifestación");
+        console.log(`  · manifestación de interés + Mis procesos: vence ${cM.manifestacion.vence} (${cM.manifestacion.quedan_habiles} hábiles) · filtro manif abierta/todas/inerte · listado ${liM.total} de menor cuantía · hito calculado en el cronograma · cambio de cierre detectado y «Enterado» lo cierra · ${l3.alertas.length} alertas · pestaña propia con insignia`);
+      }
+
       /* --- (c) entidad inexistente: respuesta explícita, no un vacío mudo --- */
       {
         const r = await detalle("ALCALDIA DE UN MUNICIPIO QUE NO EXISTE");

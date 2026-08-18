@@ -309,6 +309,21 @@ si exigen un porcentaje mínimo al integrante que aporta la experiencia»). Ning
 entra ni sale (art. 410A). En «Mi empresa» el bloque «Crear consorcio» aparece solo con dos o más
 perfiles individuales cargados.
 
+**Mis procesos (18-ago-2026) — pestaña propia, alertas y manifestación de interés.**
+`/api/perfil?op=seguimiento` (token; `seguimiento:{perfil}`, ≤ 200): `GET &perfil=` devuelve los guardados
+enriquecidos con la fila VIVA (`estado`, `hitos` —incluida la **manifestación de interés** calculada en
+selección abreviada de menor cuantía: apertura + 3 hábiles, D. 1082/2015 art. 2.2.1.2.1.2.20, origen
+`calculado`—, `avisos` T-7/3/1, `manifestacion {vence, quedan_habiles, dias_calendario, vencida}`,
+`cambios` frente a lo último que el usuario dio por visto), `alertas` (centro de alertas de 7 días:
+`cambio · manifestacion · cierre · aviso`, un aviso por hito, con `urgencia`), `resumen {por_estado,
+cambios_pendientes, manifestaciones_abiertas/urgentes, atencion}` y `orden_estados` (interesa ·
+preparando · presentado · ganado · perdido · descartado). `POST {perfil, id, estado?, notas?, foto?}`
+guarda; `POST {perfil, id, enterado:true}` da por vistos los cambios (la referencia pasa a ser la foto
+viva del corpus, tomada por el servidor); `DELETE &id=` quita; `&ics=<id>` y `&detalle=<id>` como antes.
+En la lista, cada fila lleva `manifestacion` (null si la modalidad no la exige), `facetas.manifestacion`
+cuenta `total · abiertas · urgentes · vencidas · sin_fecha`, y `?manif=abierta|todas` filtra (otro valor
+es inerte). La regla vive en `lib/manifestacion.js` (hoja) y la re-exporta `lib/portada.js`.
+
 **Fases 4 y 5 del plan v3 (ago 2026) — guardián del Formulario 1 y vigía de adendas.**
 `POST /api/pliego?op=formulario1 {oferta:{items,aiu,total}, formulario:{items}, presupuesto_oficial,
 tope_aiu_pct?, secop?:{total,items}, id_proceso?, perfil?}` (token) devuelve un semáforo con frases
