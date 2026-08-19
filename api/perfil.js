@@ -31,7 +31,7 @@ const OPS = {
 function opDe(req) {
   const q = req.query || {};
   if (q.op) return String(q.op).toLowerCase();
-  const m = String(req.url || "").match(/\/api\/perfil\/([a-z-]+)/i);
+  const m = String(req.url || "").match(/\/api\/perfil\/([a-z0-9-]+)/i);
   return m ? m[1].toLowerCase() : "";
 }
 
@@ -45,7 +45,12 @@ module.exports = async function handler(req, res) {
     });
   }
   const esPost = String(req.method || "GET").toUpperCase() === "POST";
-  const h = op === "diagnostico" && esPost ? OPS.entrada : OPS[op];
+  // `hasOwnProperty`: `?op=constructor` y `?op=__proto__` resolvían por el
+  // prototipo (`Object` es truthy) y reventaban la función con un 500 sin cuerpo
+  // en vez del 404 de operación desconocida.
+  const h = op === "diagnostico" && esPost
+    ? OPS.entrada
+    : (Object.prototype.hasOwnProperty.call(OPS, op) ? OPS[op] : null);
   if (!h) {
     return res.status(404).json({
       ok: false,

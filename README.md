@@ -266,14 +266,15 @@ en `lib/filtros_lista.js`; cobertura de cada columna medida contra `p6dx-8zbt` e
 | `entidad` | Buscar entidad | NIT (con o sin DV) o subcadena del nombre |
 | `q` | Buscar por palabra | subcadena normalizada sobre objeto y entidad |
 | `ordenar_por=cierre` | Las que cierran antes | menos días primero; sin fecha al final |
-| `ordenar_por=margen` | Dónde me queda más | `techo − piso` (Fase 3) SOLO para procesos con un borrador de APU guardado con `costo_directo`; los demás «Sin referencia», al final. **Nunca se asume margen cero** |
+| `ordenar_por=margen` | Dónde me queda más | `techo − piso` (Fase 3) SOLO para procesos con un borrador de APU guardado con `costo_directo`; los demás «Sin referencia», al final. **Nunca se asume margen cero**. **SOLO CON TOKEN** (ago 2026): su `piso` sale del costo directo del dueño y de su `techo` se despeja la mediana de baja que `lib/publico` tapa, así que sin credencial el orden es INERTE y `margen_ignorado` lo dice |
 
 Salida añadida: `totalSinFiltros` (la base antes de los filtros del usuario), `filtrosAplicados`
 (fichas legibles `[{filtro, etiqueta}]`), `sugerencia` (`{filtro, siLoQuita}` SOLO con cero
 resultados: qué filtro quitar y cuántos aparecerían, contados), `facetas` (conteos por opción sobre
 la base), cada fila trae `filtro {tipo, modalidad, departamento, rango, dias_cierre, ventana}` y,
-con `ordenar_por=margen`, `margen_estimado {valor, piso, techo, motivo}` más `margen {procesos_con_costo,
-borradores, borradores_sin_costo, con_margen}`. `GET /api/procesos?op=entidades&q=alcald` (público)
+con `ordenar_por=margen` **y token**, `margen_estimado {valor, piso, techo, motivo}` más
+`margen {procesos_con_costo, borradores, borradores_sin_costo, con_margen}` (sin credencial no viaja
+ninguno de los dos: `sinFinanzas` anula el campo y los borradores ni se leen). `GET /api/procesos?op=entidades&q=alcald` (público)
 responde el catálogo real de entidades con procesos abiertos: `[{nit, nombre, procesosAbiertos,
 valorAbierto}]`, máximo 10. Nota: el plan v4 llamaba `orden=` al criterio; aquí `orden` ya era la
 dirección (`asc|desc`), así que el criterio sigue en `ordenar_por`.
@@ -2571,6 +2572,19 @@ filtrada y ordenada → consorcio → **backfill histórico protegido + índice 
 **orden por atractividad** → delta con reemplazo de estado **y traslado al histórico** → HTML/JS
 del frontend. En producción, la validación equivale a desplegar y abrir la web (la primera carga se
 autoalimenta).
+
+El bloque **«unidad AUDITORÍA INTEGRAL»** (ago 2026) añade 26 cerraduras: una por cada defecto que
+la auditoría de agosto reprodujo ejecutando código —fuga de cifras del APU sin token, presupuesto
+único para calcular y para decidir el precio, `precio_manual` con un solo lector, el origen del
+precio a través del hash de Redis, «conectividad»/«mano de obra», `Number(null)` en tres sitios, el
+año imposible que tumbaba el listado, la celda vacía separada por espacios, el precio 0 de un banco
+oficial, las unidades compuestas, cantidad ilegible ≠ cantidad cero, Σ ingresos = valor del
+contrato, la hoja del Excel al reimportar, `javascript:` en un enlace de SECOP, los filtros
+numéricos inertes, el lector de cuerpos, las ops del prototipo, `por_anio` sin sumas crudas, la
+identidad de entidad en la colisión, el techo ausente, el ROIC NaN, la cobertura retail, el
+calendario, el ciclo del RUP, los días al cierre y los cinco bancos en la vista previa—. Están
+escritas sobre la REGLA, no sobre el síntoma: lo que prueban es que la clase de defecto no puede
+volver.
 
 Lo que cubre específicamente la parte de **matching UNSPSC y pertinencia**:
 

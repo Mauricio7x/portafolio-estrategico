@@ -39,7 +39,7 @@ const OPS = {
 function opDe(req) {
   const q = req.query || {};
   if (q.op) return String(q.op).toLowerCase();
-  const m = String(req.url || "").match(/\/api\/procesos\/([a-z-]+)/i);
+  const m = String(req.url || "").match(/\/api\/procesos\/([a-z0-9-]+)/i);
   return m ? m[1].toLowerCase() : "";
 }
 
@@ -52,7 +52,9 @@ module.exports = async function handler(req, res) {
       operaciones: Object.keys(OPS),
     });
   }
-  const h = OPS[op];
+  // `hasOwnProperty`: `?op=constructor` resolvía por el prototipo y tumbaba la
+  // función con un 500 en vez de responder 404.
+  const h = Object.prototype.hasOwnProperty.call(OPS, op) ? OPS[op] : null;
   if (!h) {
     return res.status(404).json({
       ok: false,

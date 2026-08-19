@@ -16056,6 +16056,390 @@ async function main() {
     };
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     unidad · AUDITORÍA INTEGRAL (ago 2026): las cerraduras de lo corregido
+     --------------------------------------------------------------------------
+     Cada aserción de aquí abajo corresponde a un defecto REPRODUCIDO durante la
+     auditoría. No están para probar que el código funciona —eso lo hacen los
+     bloques de arriba— sino para que ninguno de estos vuelva a entrar: son la
+     forma de la regla, no el síntoma concreto.
+     ══════════════════════════════════════════════════════════════════════════ */
+  {
+    const RAIZ = path.join(__dirname, "..");
+    const zlib = require("zlib");
+    const calculoApu = require("../lib/apu/calculo.js");
+    const catalogoApu = require("../lib/apu/catalogo.js");
+    const apuPliego = require("../lib/apu_pliego.js");
+    const filtrosLista = require("../lib/filtros_lista.js");
+    const parametros = require("../lib/parametros.js");
+    const probabilidad = require("../lib/probabilidad.js");
+    const portada = require("../public/portada.js");
+    const Filtros = require("../public/filtros.js");
+    const xlsxLectura = require("../public/xlsx_lectura.js");
+    const xlsxEscritura = require("../public/xlsx.js");
+    const apuLibro = require("../public/apu_libro.js");
+    const rentabilidadApu = require("../lib/apu/rentabilidad.js");
+    const pisoTechoApu = require("../lib/apu/piso_techo.js");
+    const cronograma = require("../lib/cronograma.js");
+    const perfiles = require("../lib/perfiles.js");
+
+    // ── 1 · sin token no sale ninguna cifra derivada del APU del dueño ────────
+    // `ordenar_por=margen` cargaba los borradores sin credencial y servía
+    // `margen_estimado {piso, techo}`: del techo se despeja EXACTA la mediana de
+    // baja que `lib/publico` acaba de tapar, y el piso sale del costo directo.
+    {
+      const publico = require("../lib/publico.js");
+      const fila = {
+        cuantia_cop: 520000000, baja_entidad: 5, baja_mercado: { baja_mediana: 5 },
+        margen_estimado: { valor: 20000000, piso: 474000000, techo: 494000000, borrador: "b1" },
+        baja_maxima: { valor: 8, origen: "apu", borrador: "b1" },
+      };
+      const pub = publico.sinFinanzas(fila);
+      assert.strictEqual(pub.margen_estimado, null, "sin token no puede salir el margen: su techo despeja la baja tapada");
+      assert.strictEqual(pub.baja_entidad, null);
+      assert.strictEqual(pub.baja_maxima.valor, null);
+      const listar = fs.readFileSync(path.join(RAIZ, "lib/handlers/procesos/listar.js"), "utf8");
+      assert.ok(/if \(filas && conFinanzas\)/.test(listar),
+        "los borradores solo se leen con credencial (el conjunto revela en qué procesos trabaja el dueño)");
+      assert.ok(/margenIgnorado/.test(listar), "sin token el orden por margen es inerte y lo declara");
+    }
+
+    // ── 2 · el MISMO presupuesto para calcular y para decidir el precio ───────
+    // `rentabilidad` calculaba sin precios propios ni parámetros y con filas
+    // recortadas: el panel Piso/Techo decidía sobre otro costo directo.
+    {
+      const editor = fs.readFileSync(path.join(RAIZ, "lib/handlers/apu/editor.js"), "utf8");
+      assert.ok(/async function presupuestoDe\(/.test(editor), "un solo constructor del presupuesto");
+      assert.strictEqual((editor.match(/await presupuestoDe\(redis, datos, perfil\)/g) || []).length, 2,
+        "las dos acciones (calcular y rentabilidad) lo usan");
+      assert.ok(!/calcularPresupuesto\(\{\s*items, departamento/.test(editor),
+        "no puede volver la llamada con la entrada recortada");
+      const app = fs.readFileSync(path.join(RAIZ, "public/app.js"), "utf8");
+      assert.ok(/const itemsParaElMotor = \(\) =>/.test(app), "una sola proyección de fila en el frontend");
+      assert.strictEqual((app.match(/items: itemsParaElMotor\(\)/g) || []).length, 2,
+        "«Calcular APU» y la rentabilidad mandan exactamente las mismas filas");
+    }
+
+    // ── 3 · un campo, un lector: `precio_manual` ─────────────────────────────
+    // calcular lo leía en colombiano («74.596» → 74 596) y el aprendizaje con
+    // Number estricto (74,596): el perfil aprendía un precio mil veces menor.
+    {
+      const precios = require("../lib/apu/precios.js");
+      for (const crudo of ["74.596", "1.500.000", "27500", 27500]) {
+        const it = { item_id: "NOG-A2", cantidad: 1, precio_manual: crudo };
+        const calc = calculoApu.calcularPresupuesto({ items: [it] }).items[0].costo_directo_unitario;
+        const g = precios.normalizarPreciosParaGuardar([it], {});
+        assert.strictEqual(g.nuevos["NOG-A2"].precio, calc,
+          `«${crudo}»: el precio que se calcula y el que se aprende tienen que ser el mismo`);
+      }
+      const ileg = precios.normalizarPreciosParaGuardar([{ item_id: "NOG-A2", precio_manual: "abc" }], {});
+      assert.strictEqual(ileg.descartados, 1, "un precio escrito que no se pudo leer se CUENTA, no se pierde en silencio");
+    }
+
+    // ── 4 · el origen del precio sobrevive al ciclo del hash de Redis ─────────
+    // `normalizarCatalogo` metía todos los precios en `precios_cotizados`, así
+    // que en producción TODO precio derivado se rotulaba «Cotización de
+    // proveedor»: verificado sobre no verificado, el falso positivo caro.
+    {
+      const semilla = require("../data/apu_catalogo.json");
+      const insumo = semilla.insumos.find((i) => !i.precios_cotizados);
+      const hash = {
+        id: insumo.id, nombre: insumo.nombre, unidad: insumo.unidad, tipo: insumo.tipo,
+        fuente: insumo.fuente, precio_base: String(insumo.precio_base),
+      };
+      for (const r of semilla.regiones) {
+        hash[`precio_${r.id}`] = String(catalogoApu.precioEnRegion(insumo, r).precio);
+        hash[`precio_origen_${r.id}`] = "derivado";
+      }
+      const leido = {
+        insumo: hash.id, nombre: hash.nombre, unidad: hash.unidad, tipo: hash.tipo, fuente: hash.fuente,
+        precio_base: Number(hash.precio_base),
+        precios: Object.fromEntries(semilla.regiones.map((r) => [r.id, Number(hash[`precio_${r.id}`])])),
+        precio_origen: Object.fromEntries(semilla.regiones.map((r) => [r.id, "derivado"])),
+      };
+      const norm = calculoApu.normalizarCatalogo({
+        meta: {}, items: semilla.items.slice(0, 1),
+        regiones: semilla.regiones.map((r) => ({ ...r, region: r.id, id: undefined })),
+        insumos: [leido],
+      });
+      const region = norm.regiones.find((r) => r.id === "medellin_antioquia");
+      const viaRedis = catalogoApu.precioEnRegion(norm.insumos[0], region);
+      const viaSemilla = catalogoApu.precioEnRegion(insumo, semilla.regiones.find((r) => r.id === "medellin_antioquia"));
+      assert.strictEqual(viaRedis.precio, viaSemilla.precio, "el precio no cambia por el camino");
+      assert.strictEqual(viaRedis.origen, "derivado", "…y el ORIGEN tampoco: un derivado no puede rotularse cotizado");
+      assert.strictEqual(viaSemilla.origen, "derivado");
+    }
+
+    // ── 5 · «conectividad» y «mano de obra»: dos palabras que decidían mal ────
+    {
+      const vial = {
+        nombre_del_procedimiento: "Licitación pública", modalidad_de_contratacion: "Licitación pública",
+        descripci_n_del_procedimiento: "MEJORAMIENTO DE VIAS TERCIARIAS PARA LA CONECTIVIDAD RURAL DEL MUNICIPIO",
+        codigo_principal_de_categoria: "72141000",
+      };
+      assert.strictEqual(filtros.admisibleParaIngesta(vial), true,
+        "obra vial con «conectividad rural» tiene que ENTRAR: la descartaba la ingesta, invisible al diagnóstico");
+      const telecom = { ...vial, descripci_n_del_procedimiento: "PRESTACION DEL SERVICIO DE CONECTIVIDAD A INTERNET PARA LAS SEDES" };
+      assert.strictEqual(filtros.admisibleParaIngesta(telecom), false, "…y la de telecomunicaciones sigue fuera");
+      const aseo = filtros.evaluarPertinencia(
+        filtros.norm("SUMINISTRO DE MANO DE OBRA NO CALIFICADA PARA ASEO Y ORNATO DEL MUNICIPIO"), { codigos: ["80111600"] });
+      assert.strictEqual(aseo.nivel, "rojo", "«mano de obra» no es un verbo de obra: el aseo salía VERDE «Obra civil»");
+      const obra = filtros.evaluarPertinencia(
+        filtros.norm("CONTRATAR MANO DE OBRA PARA LA OBRA DE LA ESCUELA RURAL"), { codigos: ["72141000"] });
+      assert.strictEqual(obra.nivel, "verde", "…y la obra de verdad sigue pasando");
+    }
+
+    // ── 6 · la ausencia se descarta ANTES de convertir (Number(null) === 0) ───
+    {
+      const listar = fs.readFileSync(path.join(RAIZ, "lib/handlers/procesos/listar.js"), "utf8");
+      assert.ok(!/Number\.isFinite\(Number\(cif\.techo_competitivo\)\)/.test(listar),
+        "un techo null entraba como 0 y la tarjeta decía «el techo está por debajo de su piso: aquí no da»");
+      const costos = require("../public/costos.js");
+      for (const vacio of [null, undefined, "", [], false]) {
+        assert.throws(() => costos.costoHora({ ...parametros.DEFAULTS, prestaciones: { ...parametros.DEFAULTS.prestaciones, cesantias: vacio } }, 3000000),
+          "un parámetro de nómina en blanco no puede valer 0 %");
+      }
+      for (const vacio of [null, "", []]) {
+        assert.strictEqual(parametros.validar({ ...parametros.DEFAULTS, prestaciones: { ...parametros.DEFAULTS.prestaciones, cesantias: vacio } }).ok,
+          false, "…y el validador tampoco puede aceptarlo");
+      }
+    }
+
+    // ── 7 · un año imposible no puede tumbar la pantalla principal ────────────
+    // `lib/habiles.festivos` LANZA fuera de [1984, 2200] y la fecha llegaba
+    // hasta ahí por cada fila de menor cuantía: una sola fila mala = 500.
+    {
+      const clasificar = filtrosLista.crearClasificador({ ahora: Date.parse("2026-08-19T12:00:00Z") });
+      for (const f of ["2202-12-30T00:00:00.000", "1970-01-01T00:00:00.000", "1983-12-31T00:00:00.000"]) {
+        const r = clasificar({ modalidad_de_contratacion: "Selección abreviada menor cuantía", fecha_de_publicacion_del: f });
+        assert.ok(r && (!r.manifestacion || r.manifestacion.vence == null),
+          `${f}: sin fecha situable se responde «desconocida», no una excepción`);
+      }
+      const bueno = clasificar({ modalidad_de_contratacion: "Selección abreviada menor cuantía", fecha_de_publicacion_del: "2026-08-14T00:00:00.000" });
+      assert.strictEqual(bueno.manifestacion.vence, "2026-08-20", "y una fecha normal sigue calculándose");
+    }
+
+    // ── 8 · una celda vacía con ESPACIOS no puede leer el precio como cantidad ─
+    {
+      const filas = ["ITEM   DESCRIPCION            UNIDAD   CANTIDAD   VR UNITARIO   VR TOTAL",
+        "1.1    SUBBASE GRANULAR       M3                  95.000        35.625.000"];
+      for (let i = 2; i <= 7; i++) filas.push(`1.${i}    CONCRETO CLASE D       M3       10,00      1.000.000     10.000.000`);
+      filas.push("ADMINISTRACION: 15%   IMPREVISTOS: 5%   UTILIDAD: 5%");
+      const r = apuPliego.parsearPliego(filas.join("\n"), { precio_base: 75000000 });
+      assert.strictEqual(r.items[0].cantidad, null, "la cantidad es ILEGIBLE, jamás el número de la columna de al lado");
+      assert.notStrictEqual(r.confianza.color, "verde", "y con una cantidad ilegible no se llega a verde (verde = se usa automáticamente)");
+    }
+
+    // ── 9 · ningún banco oficial puede devolver un precio de 0 ────────────────
+    {
+      const inviasItems = require("../lib/apu/invias_items.js");
+      const cero = inviasItems.precioParaDepartamento("650,5", "ANTIOQUIA");
+      assert.ok(!cero || cero.precio == null || cero.precio > 0,
+        "el 0 del INVIAS significa «esta provincia no lo cotiza», no «gratis»");
+      const p = calculoApu.calcularPresupuesto({ items: [{ item_id: "INVIAS:650,5", cantidad: 1000 }], departamento: "ANTIOQUIA" });
+      assert.ok(p.items[0].costo_directo_unitario > 0 || p.items[0].incompleto,
+        "…y si nadie lo cotiza, el ítem sale INCOMPLETO, no costeado en cero");
+    }
+
+    // ── 10 · unidades compuestas: m²/mes no es metro lineal ───────────────────
+    {
+      const imp = require("../lib/apu/importar.js");
+      assert.notStrictEqual(imp.unidadCanonica("m2/mes"), imp.unidadCanonica("ML"),
+        "la señal de unidad (0,13 > margen de firme) no puede darse entre dimensiones distintas");
+      assert.strictEqual(imp.unidadCanonica("saco 50 kg"), "saco", "…y una especificación tras el número sigue colapsando");
+      assert.strictEqual(imp.unidadCanonica("m3-km"), "m3-km");
+    }
+
+    // ── 11 · cantidad ILEGIBLE ≠ cantidad CERO ───────────────────────────────
+    {
+      const ileg = calculoApu.calcularPresupuesto({ items: [{ item_id: "NOG-A2", cantidad: "SEGUN PLANOS" }] });
+      const cero = calculoApu.calcularPresupuesto({ items: [{ item_id: "NOG-A2", cantidad: 0 }] });
+      const cod = (r) => (r.validaciones.hallazgos || []).map((h) => h.codigo);
+      assert.ok(cod(ileg).includes("cantidad_ilegible"), "«SEGÚN PLANOS» es una AUSENCIA (atención)");
+      assert.ok(cod(cero).includes("cantidad_cero"), "y un 0 escrito es una DECISIÓN (aviso)");
+    }
+
+    // ── 12 · el flujo de caja cobra TODO lo que factura ──────────────────────
+    // con DSO mayor que la cola de liquidación, las últimas actas caían fuera
+    // del horizonte y su dinero no entraba en ningún mes.
+    {
+      const base = { valor_contrato: 1e9, costo_total: 8e8, plazo_meses: 8, anticipo_pct: 0, retenciones_pct: 0, retegarantia_pct: 5, cola_liquidacion_meses: 3 };
+      for (const dso of [30, 60, 150, 195, 240]) {
+        const f = rentabilidadApu.flujoCaja({ ...base, dso_dias: dso });
+        const ingresado = f.meses.reduce((a, m) => a + m.ingreso, 0);
+        assert.ok(Math.abs(ingresado - 1e9) < 1, `dso ${dso}: Σ ingresos tiene que ser el valor del contrato`);
+      }
+      const conAnticipo = rentabilidadApu.flujoCaja({ ...base, anticipo_pct: 50, dso_dias: 60 });
+      assert.strictEqual(conAnticipo.payback_estado, "sin_exposicion", "el anticipo no produce payback: es dinero de la entidad");
+    }
+
+    // ── 13 · reimportar el propio Excel elige la hoja del PRESUPUESTO ────────
+    {
+      const items = [{ item_id: "INV-200.1", cantidad: 100 }, { item_id: "INV-210.1", cantidad: 200 },
+        { item_id: "INV-320.1", cantidad: 120 },
+        { descripcion: "PENDIENTE - POSIBLE USO DE RIEL DIN", unidad: "und", cantidad: 24 }];
+      const calc = calculoApu.calcularPresupuesto({ items, departamento: "BOGOTA D.C.", config: { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }, catalogo: null });
+      const bytes = xlsxEscritura.construirLibro(apuLibro.construirLibroNogal(calc, { titulo: "P" }));
+      const libro = await xlsxLectura.leerLibro(bytes, { inflar: async (u) => zlib.inflateRawSync(Buffer.from(u)) });
+      assert.strictEqual(xlsxLectura.elegirHoja(libro).hoja.nombre, "Presupuesto",
+        "con un ítem sin precio el presupuesto no CUADRA, pero sigue siendo la hoja de ítems (la de APU no declara total)");
+    }
+
+    // ── 14 · enlaces de terceros: solo http/https ────────────────────────────
+    {
+      const p = { cierranEstaSemana: { n: 1, valor: 1e8, muestra: [{ entidad: "E", objeto: "O", valor: 1e8, dias: 2, enlaceSecop: "javascript:alert(document.domain)" }] } };
+      assert.ok(!/javascript:/i.test(portada.htmlCierran(p)),
+        "`urlproceso` lo escribe quien publica en SECOP II: un javascript: sería XSS de un clic");
+      const ok = { cierranEstaSemana: { n: 1, valor: 1e8, muestra: [{ entidad: "E", objeto: "O", valor: 1e8, dias: 2, enlaceSecop: "https://community.secop.gov.co/x" }] } };
+      assert.ok(/community\.secop\.gov\.co/.test(portada.htmlCierran(ok)), "…y un enlace legítimo se sigue pintando");
+      const app = fs.readFileSync(path.join(RAIZ, "public/app.js"), "utf8");
+      assert.ok(/const urlSegura = /.test(app) && /urlSegura\(l\.urlproceso\)/.test(app), "la tarjeta usa la misma guarda");
+    }
+
+    // ── 15 · un parámetro de filtro ilegible es INERTE, nunca vacía la lista ──
+    {
+      for (const q of ["max=abc", "min=abc", "max=$500 millones"]) {
+        assert.strictEqual(Filtros.leerEstado(new URLSearchParams(q)).min, null,
+          `«${q}» tiene que ignorarse: con Number("")=0 la lista salía VACÍA con la ficha «hasta $0»`);
+      }
+      assert.deepStrictEqual(Filtros.leerEstado(new URLSearchParams("max=500000000")).min, { min: null, max: 500000000 });
+      assert.deepStrictEqual(Filtros.leerEstado(new URLSearchParams("min=1.000.000")).min, { min: 1000000, max: null });
+    }
+
+    // ── 16 · el lector de cuerpos: bytes, multibyte y «nunca lanza» ──────────
+    {
+      const { leerCuerpo } = require("../lib/cuerpo.js");
+      const grande = await leerCuerpo({ body: { notas: "x".repeat(200 * 1024) } }, { maxBytes: 64 * 1024 });
+      assert.strictEqual(grande.status, 413, "el tope también rige en la rama pre-parseada, que es la normal en producción");
+      const json = JSON.stringify({ texto: "construcción de vía · M³" });
+      const buf = Buffer.from(json, "utf8");
+      const corte = buf.indexOf(Buffer.from("ó", "utf8")) + 1;
+      const req = new (require("events").EventEmitter)();
+      const prom = leerCuerpo(req, { maxBytes: 1024 * 1024 });
+      setTimeout(() => { req.emit("data", buf.subarray(0, corte)); req.emit("data", buf.subarray(corte)); req.emit("end"); }, 1);
+      const leido = await prom;
+      assert.strictEqual(leido.datos.texto, "construcción de vía · M³",
+        "un carácter partido entre dos trozos no puede convertirse en U+FFFD (en el pliego, «M³» pasaba a «m»)");
+      const req2 = new (require("events").EventEmitter)();
+      const prom2 = leerCuerpo(req2, { maxBytes: 1024 });
+      setTimeout(() => { req2.emit("data", Buffer.from("{\"a\":1")); req2.emit("error", new Error("aborted")); }, 1);
+      const roto = await prom2;
+      assert.strictEqual(roto.ok, false, "un cliente que aborta da un status controlado: el contrato dice «nunca lanza»");
+      const extraer = fs.readFileSync(path.join(RAIZ, "lib/apu_extraer.js"), "utf8");
+      assert.ok(/require\("\.\/cuerpo\.js"\)/.test(extraer) && !/async function leerCuerpo/.test(extraer),
+        "y no puede volver la copia privada del lector");
+    }
+
+    // ── 17 · una op del prototipo responde 404, no un 500 sin cuerpo ─────────
+    {
+      for (const f of ["admin", "perfil", "pliego", "procesos"]) {
+        const src = fs.readFileSync(path.join(RAIZ, `api/${f}.js`), "utf8");
+        assert.ok(/hasOwnProperty\.call\(OPS, op\)/.test(src), `api/${f}.js: «?op=constructor» resolvía por el prototipo`);
+        assert.ok(new RegExp(`\\/api\\\\/${f}\\\\/\\(\\[a-z0-9-\\]\\+\\)`).test(src),
+          `api/${f}.js: el respaldo por path tiene que aceptar dígitos (formulario1)`);
+      }
+    }
+
+    // ── 18 · el índice no republica lo que su propia cerradura anula ─────────
+    {
+      const bajo = indiceComp.registroPublicado({ nombre: "X", nit: "1", procesos: 3, suma: 55, por_anio: { 2024: { n: 2, suma: 40 }, 2025: { n: 1, suma: 15 } } });
+      assert.strictEqual(bajo.promedio, null);
+      assert.ok(!JSON.stringify(bajo).includes("suma"), "con las sumas por año el promedio anulado se recalcula con una división");
+      assert.strictEqual(bajo.por_anio["2024"].promedio, null, "bajo el mínimo tampoco hay promedio por año");
+    }
+
+    // ── 19 · una sola identidad de entidad en la señal de colisión ───────────
+    {
+      const mismoNit = [
+        { entidad: "SENA REGIONAL TOLIMA", nit_entidad: "899999034", fecha_cierre: "2026-09-01T00:00:00" },
+        { entidad: "SENA REGIONAL NARIÑO", nit_entidad: "899999034", fecha_cierre: "2026-09-01T00:00:00" },
+      ];
+      const idx = probabilidad.indiceColisionCierres(mismoNit);
+      for (const n of idx.values()) {
+        assert.strictEqual(n, 1, "dos regionales que comparten NIT no colisionan entre sí: la medición agrupa por nombre canónico");
+      }
+    }
+
+    // ── 20 · sin techo no se afirma que el precio «está en rango» ────────────
+    {
+      const sinBase = pisoTechoApu.pisoTecho({
+        presupuesto_oficial: 700e6, costo_directo: 400e6,
+        aiu: { administracion_pct: 20, imprevistos_pct: 4, utilidad_pct: 6, modo: "aditivo" },
+        deducciones_pct: null, baja: { nivel: "sin_dato", procesos_contados: 3 }, precio_actual: 600e6,
+      });
+      assert.strictEqual(sinBase.cifras.techo_competitivo, null);
+      assert.notStrictEqual(sinBase.precio_actual_estado, "en_rango",
+        "«dentro del rango recomendado» junto a «no hay historial suficiente» es el texto contradiciendo a las cifras");
+    }
+
+    // ── 21 · el ROIC nunca sale NaN disfrazado de «sin dato» ─────────────────
+    {
+      const r = rentabilidadApu.rentabilidad({
+        precio_oferta: 400e6, costo_directo: 500e6, presupuesto_oficial: 700e6, plazo_meses: 8,
+        anticipo_pct: 50, anticipo_es_dato: true, p_base: 0.2,
+        fiscal: { tau_costo_valor: 20e6, tau_costo_pct: 5, retefuente_obra_pct: 2, margen_es_cota_superior: false },
+        baja: { nivel: "medio", baja_mediana: 7, procesos_contados: 20, granularidad_utilizada: "entidad", mensaje: "m" },
+        competencia: { nivel: "media", promedio_oferentes: 4 },
+      });
+      assert.ok(!Number.isNaN(r.roic_anual), "Math.pow(negativo, fraccionario) es NaN y JSON lo serializa como null = «sin dato»");
+      assert.strictEqual(r.roic_estado, "perdida_supera_el_capital", "…y el motivo se declara en vez de explicar un ROIC que no viene");
+    }
+
+    // ── 22 · la cobertura retail dice lo mismo que el precio que sirve ───────
+    {
+      const retail = require("../lib/apu/retail.js");
+      for (const dep of ["CUNDINAMARCA", "TOLIMA", "AMAZONAS"]) {
+        const cob = retail.coberturaRetail(dep);
+        const ref = (retail.referenciasRetail("cemento_gris_50kg", dep) || [])[0];
+        if (!ref) continue;
+        const esLocal = /capital de/.test(ref.ambito);
+        assert.strictEqual(cob.cubierto, esLocal,
+          `${dep}: «cubierto» y el ámbito del precio no pueden contradecirse`);
+      }
+    }
+
+    // ── 23 · el calendario no inventa fechas ni rompe el .ics ────────────────
+    {
+      assert.strictEqual(cronograma.fechaEnLinea("cierre 31/02/2026"), null, "el 31 de febrero no existe");
+      assert.strictEqual(cronograma.fechaEnLinea("cierre 29/02/2024"), "2024-02-29", "…y el bisiesto sí");
+      const src = fs.readFileSync(path.join(RAIZ, "lib/cronograma.js"), "utf8");
+      assert.ok(/replace\(\/;\/g, "\\\\;"\)/.test(src), "«\\;» en JS es solo «;»: el punto y coma quedaba crudo en el .ics (RFC 5545)");
+    }
+
+    // ── 24 · el ciclo del RUP no pierde datos por el camino ──────────────────
+    {
+      const antes = { cap: perfiles.PERFILES.helder.capitalTrabajo, con: perfiles.PERFILES.helder.contratosRup };
+      const cfg = perfiles.perfilesComoConfig();
+      assert.strictEqual(configRup.validarConfig({ perfiles: cfg }).ok, true, "lo que la app sirve tiene que poder volver a subirse");
+      perfiles.aplicarConfig({ perfiles: cfg });
+      assert.deepStrictEqual({ cap: perfiles.PERFILES.helder.capitalTrabajo, con: perfiles.PERFILES.helder.contratosRup }, antes,
+        "descargar → subir no puede vaciar el capital de trabajo ni los contratos acreditados");
+      perfiles.restablecerPerfiles();
+    }
+
+    // ── 25 · los días al cierre se cuentan en un solo sitio ──────────────────
+    {
+      const entrada = fs.readFileSync(path.join(RAIZ, "lib/handlers/perfil/entrada.js"), "utf8");
+      assert.ok(!/Math\.floor\([^)]*86400000/.test(entrada),
+        "el pulso contaba con floor y todo lo demás con ceil: «7 cierran esta semana» abría una lista de 5");
+      assert.ok(/FiltrosLista\.diasParaCierre/.test(entrada), "usa la cuenta compartida");
+    }
+
+    // ── 26 · los cinco bancos se nombran en la vista previa del importador ───
+    {
+      const imp = fs.readFileSync(path.join(RAIZ, "lib/apu/importar.js"), "utf8");
+      assert.ok(/const bancoDe = /.test(imp) && /es_ffie \? "ffie"/.test(imp),
+        "EPC, FFIE e ICCU se rotulaban «catálogo», que es el contrato adjudicado del dueño");
+      const app = fs.readFileSync(path.join(RAIZ, "public/app.js"), "utf8");
+      assert.ok(/precio TOPE del FFIE/.test(app), "el FFIE dice «tope» donde se acepta el mapeo, no solo después");
+    }
+
+    console.log("· unidad AUDITORÍA INTEGRAL: 26 cerraduras de los defectos reproducidos "
+      + "(fuga sin token, presupuesto único, precio_manual, origen del precio, conectividad/mano de obra, "
+      + "Number(null), año imposible, celda vacía, precio 0, unidades, cantidad ilegible, caja, hoja del Excel, "
+      + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos)");
+  }
+
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
      las 4 iteraciones corren contra los mocks locales con los handlers reales. */
   console.log(`Mock Socrata en :${puertoSocrata} · mock Upstash en :${puertoUpstash} · ${MESES.length} meses × 120 filas`);

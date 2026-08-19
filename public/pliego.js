@@ -42,7 +42,7 @@
   // el mismo texto que app.js: el 401 se explica como lo que es, en lenguaje
   // de personas primero y con el dato del administrador entre paréntesis
   const MSG_401 = "La aplicación no pudo autenticarse con el servidor. No es un problema suyo: es configuración "
-    + "del sitio — avisale a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).";
+    + "del sitio — avise a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).";
   const leerToken = () => TOKEN;
 
   /* pdf.js desde CDN, con la versión CLAVADA y por un motivo que no es

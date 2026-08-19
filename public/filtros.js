@@ -193,7 +193,19 @@
   const lista = (v) => String(v || "").split(",").map((s) => s.trim()).filter(Boolean);
   const idsDe = (arr) => new Set(arr.map((x) => x.id));
   const TIPO_IDS = idsDe(TIPOS_TRABAJO), MODALIDAD_IDS = idsDe(MODALIDADES), CIERRE_IDS = idsDe(VENTANAS_CIERRE);
-  const numero = (v) => { const n = Number(String(v ?? "").replace(/[^\d.-]/g, "")); return Number.isFinite(n) && n >= 0 && String(v ?? "").trim() !== "" ? n : null; };
+  /* UN VALOR ILEGIBLE ES INERTE, también aquí (ago 2026). Limpiar los caracteres
+     ajenos y convertir después dejaba `?max=abc` en `Number("")` = 0: finito,
+     ≥ 0 y con la cadena original no vacía, así que pasaba la guarda y la lista
+     salía VACÍA con la ficha «Cuánto vale: hasta $0» — justo lo que el contrato
+     de este módulo prohíbe («un valor desconocido se IGNORA, jamás vacía la
+     lista»). Ahora la cadena tiene que SER un número (admite separadores de
+     miles y decimales) para valer; si no, null = sin filtro. */
+  const numero = (v) => {
+    const s = String(v ?? "").trim();
+    if (!/^\d{1,3}(\.\d{3})*(,\d+)?$|^\d+([.,]\d+)?$/.test(s)) return null;
+    const n = Number(s.replace(/\./g, "").replace(",", "."));
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  };
   const fechaISO = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || "")) ? String(v) : null);
 
   /* De la query (objeto plano o URLSearchParams) al estado NORMALIZADO. Cada

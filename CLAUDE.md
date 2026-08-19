@@ -3915,6 +3915,106 @@ subida del RUP. Ahora mide un viewport (900 px) y 81 palabras. Decisiones:
   visible (el glosario dice «convertir a pesos»; donde el payload no trae pesos se dice la unidad en
   palabras, nunca la sigla).
 
+### Auditoría integral (19-ago-2026): 30 defectos reproducidos y corregidos
+
+Barrido completo del sistema por subsistemas, cada hallazgo **reproducido ejecutando código** antes
+de tocar nada y **fijado con una prueba** después (bloque «unidad AUDITORÍA INTEGRAL» de
+`tests/e2e.js`, 26 cerraduras). Lo que sigue son las lecciones, no la lista: la lista está en el
+commit y en las pruebas.
+
+- **LA MISMA CUENTA, DOS ENTRADAS DISTINTAS: el defecto más caro de la auditoría.** La acción
+  `rentabilidad` recalculaba el presupuesto **sin `preciosUsuario`, sin `parametros` y con filas
+  recortadas** (`{item_id, cantidad}`), así que el panel Piso/Techo y el optimizador decidían sobre
+  un costo directo que NO era el de la pantalla. Medido con un presupuesto mixto (3 ítems del
+  catálogo + 3 filas importadas con precio del archivo): **$201.092.650 en «Calcular APU» contra
+  $32.712.650 en el panel**, y el veredicto pasaba de «No se presente» a «Preséntese entre $43M y
+  $260M». Hoy `presupuestoDe()` es el ÚNICO constructor y `itemsParaElMotor()` la única proyección
+  de fila. Es `total_procesos`/`procesos_contados` otra vez, en pesos y en la única pantalla donde
+  se fija un precio de oferta. De paso: la marca de **subcontratado** del Excel importado tampoco
+  llegaba al motor.
+- **UNA FUGA SIN TOKEN QUE NINGÚN CAMPO REDACTADO TAPABA.** `?ordenar_por=margen` cargaba los
+  borradores de APU del dueño SIN credencial y servía `margen_estimado {piso, techo}`: del techo se
+  despeja EXACTA la mediana de baja que `lib/publico` acaba de anular (`techo = cuantía × (1 −
+  mediana)`, y la cuantía es pública), y el piso sale de su costo directo. Ahora sin token los
+  borradores no se leen siquiera —el CONJUNTO ya revela en qué procesos trabaja—, el orden es
+  INERTE con `margen_ignorado` (el patrón de `?baja_max=`) y `sinFinanzas` anula el campo como
+  cinturón. Lección: **redactar campos no basta si otro campo permite despejarlos**.
+- **`Number(null) === 0` apareció TRES veces más**, y las tres convertían un «no sé» en una
+  afirmación: el techo de mercado sin base entraba como **$0** y la tarjeta decía «el techo está por
+  debajo de su piso: aquí no da»; un campo de nómina en blanco se guardaba como **0 %** (con las
+  cesantías vacías el recargo cae de 44,79 % a 36,46 % y la hora de mano de obra un 5,76 %); y
+  `?max=abc` producía `max = 0` y **vaciaba la lista** con la ficha «hasta $0». La regla ya estaba
+  escrita en el repositorio: **la ausencia se descarta ANTES de convertir**.
+- **UN AÑO IMPOSIBLE TUMBABA LA PANTALLA PRINCIPAL.** `lib/habiles.festivos` LANZA fuera de
+  [1984, 2200] y esa fecha llegaba hasta ahí desde `filaManifestacion`, que el clasificador corre
+  por CADA fila del listado: una sola fila de menor cuantía con `1970-01-01` (timestamp nulo) o
+  `2202` —anomalía que esta misma memoria ya documentaba en otra fuente— devolvía **500 a todos los
+  perfiles**. `aperturaDe` valida ahora el AÑO además del formato y responde «sin fecha legible»,
+  que es lo que el módulo ya sabía decir.
+- **EL BADGE DE CONFIANZA DEL PRECIO ESTABA INVERTIDO EN PRODUCCIÓN.** `normalizarCatalogo` metía
+  TODOS los precios del hash en `precios_cotizados`, así que con el catálogo cargado —el estado
+  normal— cada precio derivado por factor regional se rotulaba «🟡 Cotización de proveedor» y
+  `lineas_derivadas` valía 0 siempre. Verificado sobre no verificado: el falso positivo caro de este
+  módulo, y **al revés** del defecto que ya se había corregido («decía SIN VERIFICAR sobre un precio
+  verificado»). El hash SÍ guardaba `precio_origen_{region}`; lo que faltaba era conservarlo.
+- **DOS PALABRAS DECIDÍAN MAL SOBRE MILES DE PROCESOS.** «conectividad» iba SUELTA en la blacklist
+  de INGESTA, y «mejoramiento de vías terciarias para la CONECTIVIDAD RURAL» es fraseo de plantilla
+  del corazón del negocio: esos procesos no entraban a Redis y **el embudo del diagnóstico no podía
+  verlos** (el falso negativo en su forma más cara: silenciosa e inauditable). Ahora exige contexto
+  de telecomunicación, como ya hacía «fibra óptica». Y «obras?» suelto en los verbos fuertes hacía
+  que «SUMINISTRO DE MANO DE OBRA NO CALIFICADA PARA ASEO Y ORNATO» saliera **VERDE «Obra civil»**
+  —el estado más confiado— porque el término «aseo» solo descarta con CERO verbos de obra.
+- **UN CERO NO ES UN PRECIO, tampoco en un banco oficial.** Los ítems INVIAS `650,5`/`650,9`
+  (transporte marítimo o fluvial) traen 0 en las 117 provincias sin acceso fluvial —ahí el 0 de la
+  fuente significa «no aplica»— y se servían con `precio: 0`, `incompleto: false` y sin una sola
+  alerta: una partida real presupuestada en cero. Además `cotizar` ya lo rechazaba, así que las dos
+  vías del mismo ítem discrepaban. Dos auditores independientes lo encontraron por caminos
+  distintos.
+- **EL LECTOR DE CUERPOS: cuatro defectos en 40 líneas que atraviesan todos los POST.** `buf += c`
+  decodificaba cada trozo por separado, así que un carácter partido en la frontera salía como dos
+  U+FFFD —corrupción SILENCIOSA, y en el lector de pliegos **«M³» pasaba a «m»**, metro lineal donde
+  el pliego paga metro cúbico—; el tope `maxBytes` NO se aplicaba en la rama pre-parseada, que es la
+  normal en producción (3 MB pasaban por un endpoint con tope de 64 KB); un cliente que aborta
+  rompía el contrato «nunca lanza» con un 500 opaco; y `apu_extraer.js` conservaba una COPIA privada
+  del lector cuyo comentario afirmaba ser «el mismo» que el consolidado.
+- **EL FLUJO DE CAJA PERDÍA DINERO CON PLAZOS DE PAGO LARGOS.** El horizonte iba hasta `T + L`, pero
+  el acta del mes k se cobra en `k + dso`: con el DSO de 150 días que usa la propia suite se perdían
+  **$95 M de $1 000 M**, y con el P85 del informe (195 días) **$475 M** — inflando `k_max` y dejando
+  el payback en «no retorna» sobre contratos sanos. La invariante que faltaba y ahora se prueba:
+  **Σ ingresos = valor del contrato, para cualquier DSO**.
+- **REIMPORTAR EL PROPIO EXCEL LEÍA LA HOJA EQUIVOCADA.** El desempate de `elegirHoja` solo miraba
+  «cuadra»; basta con que UN ítem no traiga valor legible —estado normal y declarado— para que la
+  hoja «Presupuesto» salga `no_comparable` y gane «más filas», que es siempre la hoja «APU» (una
+  fila por INSUMO). Se importaban insumos como si fueran ítems. La señal que de verdad separa las
+  dos hojas es **declarar un total**, que una hoja de insumos no trae nunca.
+- **`esc()` NO VALIDA EL ESQUEMA DE UNA URL.** `urlproceso` lo escribe quien publica en SECOP II, y
+  un `javascript:…` ahí era un XSS de un clic en el origen de la app —donde viven la sesión y el
+  perfil guardado— pintado en la portada pública. `urlSegura()` (solo http/https) en los cuatro
+  puntos donde se enlaza a terceros; sin esquema válido no se pinta el enlace.
+- **DOS IDENTIDADES DE «ENTIDAD» EN LA MISMA SEÑAL.** `claveColision` agrupaba por NIT mientras la
+  medición del factor (`medirColision`) estratifica por `claveCanonica`: dos regionales que comparten
+  NIT —el dataset lo hace y la CCE lo advierte— cerrando el mismo día recibían el multiplicador de
+  colisión sin colisión real. Es la lección de identidad ya pagada, sin aplicar en un sitio.
+- **EL ÍNDICE REPUBLICABA LO QUE SU PROPIA CERRADURA ANULA.** `por_anio` viajaba con `{n, suma}`
+  crudas también bajo el mínimo: 55/3 = **18,3 oferentes «sin base»**, exactamente la cifra que
+  `registroPublicado` acaba de poner en null. Es «18.2 oferentes» otra vez, por la puerta de al lado.
+- **EL MURO DE LA CONTRASEÑA SE DIAGNOSTICABA COMO «SIN CONEXIÓN» EN 13 SITIOS.** La regla («el
+  parseo del JSON va APARTE del fetch») estaba escrita y se cumplía en 5 de 18 sitios; en los otros,
+  `r.json()` lanzaba sobre el HTML del muro, el catch se llevaba el control y la comprobación del 401
+  **no se alcanzaba nunca**. `leerJson()` no lanza y devuelve el motivo real. Corolario de método:
+  **una regla escrita en la memoria no es una cerradura; la cerradura es la prueba**.
+- **Lo que la auditoría encontró SANO y conviene no volver a auditar a ciegas**: XSS en `app.js`
+  (1 440 interpolaciones revisadas, `esc()` correcto en texto y en atributo), el cruce de los 350
+  ids del frontend contra el HTML, el grafo de requires (130 nodos, 0 rotos, 0 huérfanos, 4 ciclos
+  todos resueltos con require diferido), los 18 rewrites de `vercel.json` (todos resuelven), la
+  inyección SoQL (`escSoQL` aplicada en los tres constructores), el peso de las respuestas (catálogo
+  2,23 MB de 4,5), el determinismo del `.xlsx`, y los invariantes de los cinco bancos de precios.
+- **MÉTODO, para la próxima.** Trece revisores en paralelo, uno por subsistema, con la instrucción
+  de **verificar cada premisa contra el código antes de reportar** (este repositorio documenta tanto
+  que el ruido es el riesgo real) y de **ejecutar una reproducción** por hallazgo. Los que llegaron
+  con `node -e` reproducible acertaron; los que llegaron con lectura, no siempre. Dos defectos los
+  encontraron dos agentes por caminos distintos, lo que subió su prioridad con razón.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).

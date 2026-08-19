@@ -143,6 +143,7 @@
 
   /* ── arranque ── */
   let perfilPintado = null;
+  let peticion = 0;   // secuencia para descartar respuestas que llegan tarde
   /* ═══ LA EMPRESA EN CIFRAS (Mi empresa como pestaña principal, ago 2026) ═══
      El registro de proponente en números, bajo el pulso: tipos de trabajo,
      familias, experiencia acreditada, contratos, tope; patrimonio y capacidad
@@ -174,11 +175,20 @@
        si el servidor lo rechaza (401), se reintenta SIN token: el pulso no
        puede quedarse mudo por una credencial mal puesta */
     const url = `/api/perfil?op=pulso&perfil=${encodeURIComponent(perfil)}`;
+    /* GUARDA DE CARRERA (ago 2026). No había ninguna, y el selector de perfil
+       llama aquí en cada `change`: con dos cambios rápidos ganaba la respuesta
+       que llegara la última, así que el bloque podía quedar diciendo «Para
+       Génesis, hoy» —con SU patrimonio y SU capacidad— bajo un selector que
+       decía «Juntos», y `perfilPintado` se quedaba anclado al perfil
+       equivocado. Es la lección de la guarda de «auditoría EN VUELO»: la
+       comprobación va ANTES de tocar un solo nodo. */
+    const mio = ++peticion;
     try {
       let r = await fetch(url, opciones.headers ? { headers: opciones.headers } : undefined);
       if (r.status === 401 && opciones.headers) r = await fetch(url);
       p = await r.json();
     } catch { p = null; }
+    if (mio !== peticion) return false;                                        // llegó tarde: no pinta
     if (!p || !p.ok) { raiz.classList.add("hidden"); perfilPintado = null; return false; }   // vacía y honesta
     const rc = d.getElementById("rup-cifras");
     if (rc) { rc.innerHTML = htmlEmpresa(p.empresa); rc.classList.toggle("hidden", !rc.innerHTML); }

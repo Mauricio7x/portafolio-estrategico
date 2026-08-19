@@ -627,7 +627,7 @@
     const cabecera = filas[0].map((c) => String(c || "").trim().toLowerCase());
     for (const col of COLUMNAS_OBLIGATORIAS) {
       if (!cabecera.includes(col)) {
-        return { error: `Falta la columna «${col}» en la cabecera del CSV. Descargue el formato de ejemplo y respetá los nombres de las columnas.` };
+        return { error: `Falta la columna «${col}» en la cabecera del CSV. Descargue el formato de ejemplo y respete los nombres de las columnas.` };
       }
     }
     const idx = {};
@@ -694,7 +694,7 @@
     }
     if (r.status === 401) {
       return mensajeExp("La aplicación no pudo autenticarse con el servidor. No es un problema suyo: es configuración "
-        + "del sitio — avisale a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).", "error");
+        + "del sitio — avise a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).", "error");
     }
     if (!r.ok || !cuerpo.ok) {
       const detalle = cuerpo && cuerpo.errores && cuerpo.errores.length

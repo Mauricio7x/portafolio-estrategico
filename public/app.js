@@ -36,6 +36,32 @@
 
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  /* Solo http/https. `esc()` impide salir del atributo pero NO valida el
+     ESQUEMA, y `urlproceso` y las URL de las fuentes externas las escribe un
+     tercero: un `javascript:…` ahí sería un XSS de un clic en el origen de la
+     aplicación, donde viven la sesión y el perfil guardado. Sin esquema válido
+     no se pinta el enlace: la ausencia no se rellena. (La misma función vive en
+     public/portada.js, que es un módulo independiente; hay prueba que ejecuta
+     las dos sobre la misma batería.) */
+  const urlSegura = (u) => (/^https?:\/\//i.test(String(u ?? "").trim()) ? String(u).trim() : null);
+  /* EL MURO DEL EDGE NO ES «SIN CONEXIÓN» (ago 2026). Vercel Password
+     Protection responde HTML, así que `r.json()` LANZA; con el parseo dentro
+     del MISMO try del fetch, el catch se llevaba el control, la comprobación
+     del 401 no se alcanzaba nunca y trece sitios decían «no se pudo contactar
+     el servidor» — lo contrario de la verdad: hay conexión y lo que falta es
+     iniciar sesión. Esta función NUNCA lanza: devuelve el JSON o un cuerpo con
+     el motivo REAL, y el flujo de error de cada sitio lo pinta tal cual.
+     (La regla ya estaba escrita en el proyecto y se cumplía en 5 de 18 sitios.) */
+  const leerJson = async (r) => {
+    try { return await r.json(); } catch {
+      return {
+        ok: false,
+        error: r.status === 401 || r.status === 403
+          ? "El sitio pidió iniciar sesión (protección por contraseña). Inicie sesión y reintente."
+          : `El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`,
+      };
+    }
+  };
   const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
   const fmtNum = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
   const fmt = new Intl.NumberFormat("es-CO");
@@ -59,7 +85,7 @@
      lenguaje de personas: el usuario no puede arreglarlo y tiene que saber
      que no es culpa suya; el paréntesis es para quien administra. */
   const MSG_401 = "La aplicación no pudo autenticarse con el servidor. No es un problema suyo: es configuración "
-    + "del sitio — avisale a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).";
+    + "del sitio — avise a quien lo administra (HISTORICO_TOKEN no coincide con el token integrado).";
   let tokenRechazado = false;
   const tokenGuardado = () => (tokenRechazado ? "" : TOKEN);
   const leerToken = () => TOKEN;
@@ -943,11 +969,11 @@
     if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", "Esta obra no encaja con su RUP.");
     if (g.p2_k && g.p2_k.pasa === false) return linea("text-red-700", "Supera su capacidad de contratación.");
     if (g.p3_caja && g.p3_caja.pasa === false) {
-      return linea("text-amber-700", "Podés presentarte, pero financiarla está justo: pensá en anticipo, crédito o consorcio.");
+      return linea("text-amber-700", "Puede presentarse, pero financiarla está justo: considere anticipo, crédito o consorcio.");
     }
     const conAviso = [g.p1_rup, g.p2_k, g.p3_caja].some((p) => p && (p.sin_dato || (p.pasa && p.advertencia)));
-    if (conAviso) return linea("text-amber-700", "Cumplís los requisitos, con detalles por revisar.");
-    return linea("text-green-700", "Cumplís los requisitos para presentarte.");
+    if (conAviso) return linea("text-amber-700", "Cumple los requisitos, con detalles por revisar.");
+    return linea("text-green-700", "Cumple los requisitos para presentarse.");
   }
 
   /* Probabilidad y valor esperado. La probabilidad SIEMPRE viaja con su fuente:
@@ -1249,7 +1275,7 @@
           ${botonGuardar(l)}
           <button type="button" class="btn-apu rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50"
                   data-apu-q="${esc(qApu(l))}" title="Calcular cuánto me cuesta y qué me deja este proceso, en la pestaña Precios">Calcular mi precio</button>
-          ${l.urlproceso ? `<a href="${esc(l.urlproceso)}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 hover:underline">Ver en SECOP II ↗</a>` : ""}
+          ${urlSegura(l.urlproceso) ? `<a href="${esc(urlSegura(l.urlproceso))}" target="_blank" rel="noopener noreferrer" class="font-medium text-blue-600 hover:underline">Ver en SECOP II ↗</a>` : ""}
         </span>
       </div>
     </article>`;
@@ -1272,7 +1298,7 @@
       (conFiltros ? `${cuerpo.total} de ${base} licitaciones` : `${cuerpo.total} oportunidad${cuerpo.total === 1 ? "" : "es"}`)
       + ` para el perfil «${$("f-perfil").selectedOptions[0].text}»`
       + (cuerpo.ordenado_por === "margen" && cuerpo.margen
-        ? ` · ordenadas por lo que le queda: ${cuerpo.margen.con_margen} con costo calculado${cuerpo.margen.borradores_sin_costo ? `, ${cuerpo.margen.borradores_sin_costo} borrador${cuerpo.margen.borradores_sin_costo === 1 ? "" : "es"} sin costo (volvé a calcular y guardar)` : ""}; las demás sin referencia, abajo`
+        ? ` · ordenadas por lo que le queda: ${cuerpo.margen.con_margen} con costo calculado${cuerpo.margen.borradores_sin_costo ? `, ${cuerpo.margen.borradores_sin_costo} borrador${cuerpo.margen.borradores_sin_costo === 1 ? "" : "es"} sin costo (vuelva a calcular y guardar)` : ""}; las demás sin referencia, abajo`
         : "")
       + (cuerpo.viables !== undefined ? ` · ${cuerpo.viables} cumplen sus requisitos` : "")
       + (cuerpo.no_viables ? `, ${cuerpo.no_viables} no viable${cuerpo.no_viables === 1 ? "" : "s"}` : "")
@@ -1834,7 +1860,7 @@
     try {
       r = await fetch(`/api/inteligencia?op=entidad&entidad=${encodeURIComponent(entidad)}`,
         { headers: { "x-historico-token": token } });
-      cuerpo = await r.json();
+      cuerpo = await leerJson(r);
     } catch {
       $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-red-600">No se pudo contactar el servidor. Intente de nuevo.</p>';
       return;
@@ -2180,7 +2206,7 @@
       return `<article class="rounded-xl border border-gray-100 p-4" data-seg-id="${esc(p.id)}">
         <div class="flex flex-wrap items-start justify-between gap-2">
           <div class="min-w-0">
-            <p class="font-medium leading-snug">${pr.url ? `<a href="${esc(pr.url)}" target="_blank" rel="noopener noreferrer" class="hover:underline">${esc(pr.nombre || p.id)}</a>` : esc(pr.nombre || p.id)}</p>
+            <p class="font-medium leading-snug">${urlSegura(pr.url) ? `<a href="${esc(urlSegura(pr.url))}" target="_blank" rel="noopener noreferrer" class="hover:underline">${esc(pr.nombre || p.id)}</a>` : esc(pr.nombre || p.id)}</p>
             <p class="text-xs text-gray-500">${esc(pr.entidad || "—")}${pr.departamento ? ` · ${esc(pr.departamento)}` : ""}${pr.presupuesto_cop ? ` · ${esc(fmtCorto(pr.presupuesto_cop))}` : ""}${p.estado_secop ? ` · ${esc(p.estado_secop)}` : ""}${p.adjudicado ? " · adjudicado" : ""}</p>
           </div>
           <select data-seg-estado="${esc(p.id)}" class="control-select rounded-lg text-xs" title="Etapa en su seguimiento">
@@ -3210,6 +3236,30 @@
      Extraído del listener para que «Aplicar este descuento al APU» pueda
      recalcular por el MISMO camino. Dos rutas de cálculo se desincronizan a la
      primera corrección que se aplique a una sola. */
+
+  /* LA MISMA FILA PARA LAS DOS ACCIONES (ago 2026). `rentabilidad` mandaba solo
+     `{item_id, cantidad, rendimiento_override}`, así que las filas importadas
+     de Excel y los ítems personalizados —los que llevan su precio en
+     `precio_manual`— valían CERO en el panel Piso/Techo y en el optimizador.
+     Medido: un presupuesto mixto pasaba de $201.092.650 en pantalla a
+     $32.712.650 en el panel, y el veredicto de «No se presente» a «Preséntese
+     entre $43M y $260M». La proyección vive en un solo sitio para que no puedan
+     volver a divergir. */
+  const itemsParaElMotor = () => filas.map((f) => ({
+    item_id: f.item_id,
+    codigo: f.codigo || null,
+    descripcion: f.descripcion || null,
+    unidad: f.unidad || null,
+    capitulo: f.capitulo || null,
+    cantidad: f.cantidad,
+    rendimiento_override: f.rendimiento_override,
+    // null = sin precio manual; el motor distingue null de 0 a propósito
+    precio_manual: f.precio_manual == null ? null : f.precio_manual,
+    origen_precio: f.origen_precio || null,
+    subcontratado: f.subcontratado || false,
+    aiu_subcontratista_pct: f.aiu_subcontratista_pct == null ? null : f.aiu_subcontratista_pct,
+  }));
+
   async function calcularApu() {
     const btn = $("btn-calcular");
     btn.disabled = true;
@@ -3218,18 +3268,7 @@
       const r = await api("/api/apu?op=calcular", {
         method: "POST",
         body: {
-          items: filas.map((f) => ({
-            item_id: f.item_id,
-            codigo: f.codigo || null,
-            descripcion: f.descripcion || null,
-            unidad: f.unidad || null,
-            capitulo: f.capitulo || null,
-            cantidad: f.cantidad,
-            rendimiento_override: f.rendimiento_override,
-            // null = sin precio manual; el motor distingue null de 0 a propósito
-            precio_manual: f.precio_manual == null ? null : f.precio_manual,
-            origen_precio: f.origen_precio || null,
-          })),
+          items: itemsParaElMotor(),
           departamento: $("departamento").value,
           config: leerConfig(),
         },
@@ -3764,7 +3803,11 @@
     $("imp-resumen").textContent = `${importacion.nombre_archivo} · ${m.total} ítems · `
       + `${m.firmes} firmes · ${m.revisar} por revisar · ${m.personalizados} personalizados · `
       + `${m.con_precio_archivo} con precio del archivo · ${conTienda} con precio de tienda`
-      + (m.mapeados_invias ? ` · ${m.mapeados_invias} con APU de referencia INVIAS` : "") + (m.mapeados_idu ? ` · ${m.mapeados_idu} con precio de referencia IDU` : "") + textoCuadre;
+      + (m.mapeados_invias ? ` · ${m.mapeados_invias} con APU de referencia INVIAS` : "")
+      + (m.mapeados_idu ? ` · ${m.mapeados_idu} con precio de referencia IDU` : "")
+      + (m.mapeados_epc ? ` · ${m.mapeados_epc} con precio de referencia EPC` : "")
+      + (m.mapeados_ffie ? ` · ${m.mapeados_ffie} con precio TOPE del FFIE` : "")
+      + (m.mapeados_iccu ? ` · ${m.mapeados_iccu} con precio de referencia ICCU` : "") + textoCuadre;
     $("imp-avisos").innerHTML = (importacion.avisos_lectura || [])
       .map((a) => `<p class="rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-900">${esc(a)}</p>`).join("");
 
@@ -3775,10 +3818,22 @@
        cabecera (gradación, método): se tomó la primera y se enseñan las otras. */
     const origenMapeo = (f) => {
       if (!f.item_id) return "";
-      const banco = f.fuente_mapeo === "invias" ? "APU de referencia INVIAS" : f.fuente_mapeo === "idu" ? "precio de referencia IDU (Bogotá)" : "catálogo";
+      /* LOS CINCO BANCOS SE NOMBRAN, y el del FFIE dice «tope». Los tres
+         añadidos después de INVIAS e IDU se rotulaban «catálogo», que aquí
+         significa el contrato adjudicado del dueño: en la pantalla donde se
+         ACEPTA el mapeo, un tope del FFIE o un precio de Cundinamarca sin
+         ajuste no pueden presentarse como un precio propio verificado. */
+      const BANCOS = {
+        invias: "APU de referencia INVIAS",
+        idu: "precio de referencia IDU (Bogotá)",
+        epc: "precio de referencia EPC (Cundinamarca)",
+        ffie: "precio TOPE del FFIE",
+        iccu: "precio de referencia ICCU (Cundinamarca)",
+      };
+      const banco = BANCOS[f.fuente_mapeo] || "catálogo";
       const desc = f.fuente_mapeo === "invias" ? String(f.descripcion_catalogo || "").split("(")[0].trim() : (f.descripcion_catalogo || "");
       const variantes = (f.variantes || []).length
-        ? ` <span class="text-[10px] text-gray-400" title="${esc((f.variantes || []).map((v) => `${v.codigo}: ${v.descripcion}`).join("\n"))}">(+${f.variantes.length} variante${f.variantes.length === 1 ? "" : "s"} INVIAS de la misma cabecera; se tomó la primera)</span>` : "";
+        ? ` <span class="text-[10px] text-gray-400" title="${esc((f.variantes || []).map((v) => `${v.codigo}: ${v.descripcion}`).join("\n"))}">(+${f.variantes.length} variante${f.variantes.length === 1 ? "" : "s"} de la misma cabecera; se tomó la primera)</span>` : "";
       return `<span class="text-xs text-gray-600">${esc(desc)}</span> <span class="text-[10px] text-gray-400">· ${banco}</span>${variantes}`;
     };
     const chip = (f) => {
@@ -4049,7 +4104,9 @@
     btn.textContent = "Calculando…";
     try {
       const cuerpo = {
-        items: filas.map((f) => ({ item_id: f.item_id, cantidad: f.cantidad, rendimiento_override: f.rendimiento_override })),
+        // LA MISMA proyección que «Calcular APU» (ver `itemsParaElMotor`): con
+        // filas recortadas, el panel decidía sobre otro costo directo
+        items: itemsParaElMotor(),
         departamento: $("departamento").value,
         config: leerConfig(),
         entidad: $("entidad").value.trim(),
@@ -4737,7 +4794,7 @@
       const bust = forzar ? `&cache_bust=${Date.now()}` : "";
       r = await fetch(`/api/perfil?op=resumen&perfil=${encodeURIComponent(perfil)}${bust}`,
         { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
-      cuerpo = await r.json();
+      cuerpo = await leerJson(r);
     } catch (e) {
       cargandoDashboard(false);
       return avisoDashboard(`No se pudo contactar el servidor: ${esc((e && e.message) || "sin conexión")}.`, "error");
@@ -4790,7 +4847,7 @@
       ? `p25 ${fmt1.format(b.baja_p25_global)} % · p75 ${fmt1.format(b.baja_p75_global)} %`
       : "";
     $("d-baja-meta").textContent =
-      `${fmt.format(b.entidades_clasificadas)} entidades con ≥ ${b.min_procesos} procesos · ${fmt.format(b.procesos_analizados || 0)} adjudicaciones analizadas`;
+      `${fmt.format(b.entidades_clasificadas)} entidades con ≥ ${b.min_procesos} procesos · ${b.procesos_analizados != null ? fmt.format(b.procesos_analizados) : "—"} adjudicaciones analizadas`;
     const linea = (r) => {
       const li = document.createElement("li");
       li.className = "flex items-baseline justify-between gap-2";
@@ -4840,8 +4897,8 @@
           + "el avance queda guardado.", "bg-amber-50 text-amber-800");
       } else {
         const m = c.reconstruido || {};
-        decir(`Listo: ${fmt.format(m.procesos_analizados || 0)} adjudicaciones · `
-          + `${fmt.format(m.entidades_clasificadas || 0)} entidades clasificadas.`, "bg-green-50 text-green-800");
+        decir(`Listo: ${m.procesos_analizados != null ? fmt.format(m.procesos_analizados) : "—"} adjudicaciones · `
+          + `${m.entidades_clasificadas != null ? fmt.format(m.entidades_clasificadas) : "—"} entidades clasificadas.`, "bg-green-50 text-green-800");
         cargarDashboard({ forzar: true });   // los números del panel acaban de cambiar
       }
     } catch (e) {
@@ -4993,7 +5050,7 @@
     try {
       r = await fetch(`/api/inteligencia?op=entidad&entidad=${encodeURIComponent(entidad)}`,
         { headers: { "x-historico-token": leerToken() } });
-      cuerpo = await r.json();
+      cuerpo = await leerJson(r);
     } catch {
       celda.textContent = "No se pudo contactar el servidor.";
       return;
@@ -5221,7 +5278,7 @@
         headers: { "Content-Type": "application/json", "x-historico-token": token },
         body: JSON.stringify(rupPendiente),
       });
-      cuerpo = await r.json();
+      cuerpo = await leerJson(r);
     } catch (e) {
       $("btn-rup-cargar").disabled = false;
       $("btn-rup-cargar").textContent = etiqueta;
@@ -5264,7 +5321,7 @@
     let r = null, cuerpo = null;
     try {
       r = await fetch("/api/admin?op=rup", { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
-      cuerpo = await r.json();
+      cuerpo = await leerJson(r);
     } catch {
       caja.textContent = "No se pudo consultar el RUP vigente.";
       return;
@@ -5290,7 +5347,7 @@
     let cuerpo = null;
     try {
       const r = await fetch("/api/admin?op=rup", { headers: { "x-historico-token": token }, cache: "no-store" });
-      cuerpo = await r.json();
+      cuerpo = await leerJson(r);
       if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `HTTP ${r.status}`);
     } catch (e) {
       return mensajeRup(`No se pudo descargar el RUP: ${(e && e.message) || "sin conexión"}.`, "error");
@@ -5507,7 +5564,7 @@
         headers: { "Content-Type": "application/json", "x-historico-token": token },
         body: JSON.stringify(expPendiente),
       });
-      cuerpo = await r.json();
+      cuerpo = await leerJson(r);
     } catch (e) {
       $("btn-exp-confirmar").disabled = false;
       $("btn-exp-confirmar").textContent = etiqueta;
@@ -5547,7 +5604,7 @@
     let r = null, cuerpo = null;
     try {
       r = await fetch("/api/admin?op=experiencia", { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
-      cuerpo = await r.json();
+      cuerpo = await leerJson(r);
     } catch {
       caja.textContent = "No se pudo consultar la experiencia cargada.";
       return;
@@ -5761,7 +5818,7 @@
     let cuerpo = null;
     try {
       const r = await fetch("/api/admin?op=experiencia", { headers: { "x-historico-token": token }, cache: "no-store" });
-      cuerpo = await r.json();
+      cuerpo = await leerJson(r);
       if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `HTTP ${r.status}`);
     } catch (e) {
       return mensajeExp(`No se pudo descargar la experiencia: ${(e && e.message) || "sin conexión"}.`, "error");
@@ -5832,7 +5889,7 @@
     try {
       r = await fetch(`/api/admin?op=cobertura&perfil=${encodeURIComponent(perfil)}&usar_experiencia=${usar}`,
         { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
-      cuerpo = await r.json();
+      cuerpo = await leerJson(r);
     } catch (e) {
       cargandoCobertura(false);
       avisoCobertura(`No se pudo contactar el servidor: ${esc((e && e.message) || "sin conexión")}.`, "error");
@@ -6477,11 +6534,11 @@
     const co = f.contratos_secop2 || {};
     const ad = f.adjudicaciones_secop2 || {};
     const listaSiri = (siri.coincidencias || []).map((c) => `<li>${esc(c.sancion || "sanción")} · ${esc(c.nombre || c.identificacion)} (${esc(c.calidad || "—")}) · ${esc(c.fecha_efectos || "sin fecha")}${c.entidad ? ` · ${esc(c.entidad)}` : ""}</li>`).join("");
-    const listaMultas = (mu.lista || []).slice(0, 8).map((m) => `<li>${fecha(m.firmeza)} · ${esc(m.entidad || "—")}${m.valor_cop ? ` · ${pesos(m.valor_cop)}` : " · sin valor"}${m.url ? ` · <a class="text-blue-600 hover:underline" target="_blank" rel="noopener" href="${esc(m.url)}">ver</a>` : ""}</li>`).join("");
+    const listaMultas = (mu.lista || []).slice(0, 8).map((m) => `<li>${fecha(m.firmeza)} · ${esc(m.entidad || "—")}${m.valor_cop ? ` · ${pesos(m.valor_cop)}` : " · sin valor"}${urlSegura(m.url) ? ` · <a class="text-blue-600 hover:underline" target="_blank" rel="noopener" href="${esc(urlSegura(m.url))}">ver</a>` : ""}</li>`).join("");
     const ir = mu.inhabilidad_reiterada || {};
     const estados = co.estados ? Object.entries(co.estados).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${esc(k)} ${v}`).join(" · ") : "";
     const rl = idn.representante_legal;
-    const estadoTxt = { hallazgos: "con hallazgos", sin_hallazgos: "sin hallazgos en el dataset", pendiente_manual: "abrila y consultá", no_consultada: "no respondió" };
+    const estadoTxt = { hallazgos: "con hallazgos", sin_hallazgos: "sin hallazgos en el dataset", pendiente_manual: "ábrala y consulte", no_consultada: "no respondió" };
     const estadoClr = { hallazgos: "text-red-700", sin_hallazgos: "text-emerald-700", pendiente_manual: "text-gray-700", no_consultada: "text-amber-700" };
     return `
       <div class="rounded-xl p-4 ring-1 ring-inset ${clr}">

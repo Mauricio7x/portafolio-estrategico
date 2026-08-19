@@ -22,7 +22,7 @@ const OPS = {
 function opDe(req) {
   const q = req.query || {};
   if (q.op) return String(q.op).toLowerCase();
-  const m = String(req.url || "").match(/\/api\/admin\/([a-z-]+)/i);
+  const m = String(req.url || "").match(/\/api\/admin\/([a-z0-9-]+)/i);
   return m ? m[1].toLowerCase() : "";
 }
 
@@ -35,7 +35,10 @@ module.exports = async function handler(req, res) {
       operaciones: Object.keys(OPS),
     });
   }
-  const h = OPS[op];
+  // `hasOwnProperty`, no `OPS[op]`: `?op=constructor` resuelve por el PROTOTIPO
+  // (`Object`, que es truthy), la guarda de abajo no dispara y la llamada revienta
+  // con un 500 sin cuerpo en vez del 404 de operación desconocida.
+  const h = Object.prototype.hasOwnProperty.call(OPS, op) ? OPS[op] : null;
   if (!h) {
     return res.status(404).json({
       ok: false,

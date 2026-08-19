@@ -25,6 +25,12 @@
 
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const num = (n, d = 0) => Number(n || 0).toLocaleString("es-CO", { maximumFractionDigits: d });
+  /* Solo http/https. `esc()` impide salir del atributo pero NO valida el
+     ESQUEMA, y estas URL las escribe quien publica en SECOP II (`urlproceso`) o
+     la fuente externa: un `javascript:…` ahí sería un XSS de un clic en el
+     origen de la aplicación, donde viven la sesión y el perfil guardado. Sin
+     esquema válido no se pinta el enlace: la ausencia no se rellena. */
+  const urlSegura = (u) => (/^https?:\/\//i.test(String(u ?? "").trim()) ? String(u).trim() : null);
   /* $4,7 billones · $312.000 millones · $52 millones · $850.000. Un billón
      colombiano son 10¹². */
   function pesosCortos(n) {
@@ -84,7 +90,7 @@
         ${(c.muestra || []).map((m) => `<li class="rounded-xl px-4 py-3" style="background: var(--bg-inset);">
           <p class="text-xs uppercase tracking-wide" style="color: var(--text-secondary);">${esc(m.entidad || "Entidad no informada")}</p>
           <p class="mt-0.5 text-sm" style="color: var(--text-primary);">${esc(m.objeto || "")}</p>
-          <p class="mt-1 text-xs" style="color: var(--text-secondary);">${m.valor ? esc(pesosCortos(m.valor)) : "Valor no publicado"} · ${m.dias === 0 ? "cierra hoy" : m.dias === 1 ? "cierra mañana" : `cierra en ${m.dias} días`}${m.enlaceSecop ? ` · <a class="underline" href="${esc(m.enlaceSecop)}" target="_blank" rel="noopener noreferrer">Ver en SECOP II</a>` : ""}</p>
+          <p class="mt-1 text-xs" style="color: var(--text-secondary);">${m.valor ? esc(pesosCortos(m.valor)) : "Valor no publicado"} · ${m.dias === 0 ? "cierra hoy" : m.dias === 1 ? "cierra mañana" : `cierra en ${m.dias} días`}${urlSegura(m.enlaceSecop) ? ` · <a class="underline" href="${esc(urlSegura(m.enlaceSecop))}" target="_blank" rel="noopener noreferrer">Ver en SECOP II</a>` : ""}</p>
         </li>`).join("")}
       </ul>
       <a class="mt-3 inline-block text-sm font-medium underline" style="color: var(--accent);" href="${enlaceLista("cierre=7d")}">Ver ${c.n === 1 ? "el proceso" : `los ${num(c.n)}`} →</a>`;
@@ -99,7 +105,7 @@
         <p class="text-xs uppercase tracking-wide" style="color: var(--text-secondary);"><span aria-hidden="true">●</span> ${esc(f.entidad || "Entidad no informada")}</p>
         <p class="mt-0.5 text-sm" style="color: var(--text-primary);">${esc(f.objeto || "")}</p>
         <p class="mt-1 text-sm font-medium" style="color: var(--text-primary);">${f.valor ? esc(pesosCortos(f.valor)) + " · " : ""}${esc(quedan)}.</p>
-        <p class="text-xs" style="color: var(--text-secondary);">Si no avisa, no puede presentarse aunque cumpla todo.${f.venceLegible ? ` Vence el ${esc(f.venceLegible)}.` : ""} <span title="${esc(f.notaFecha || "")}">Fecha calculada a partir de la apertura: confirme en el cronograma.</span>${f.enlaceSecop ? ` <a class="underline" href="${esc(f.enlaceSecop)}" target="_blank" rel="noopener noreferrer">Ver proceso</a>` : ""}</p>
+        <p class="text-xs" style="color: var(--text-secondary);">Si no avisa, no puede presentarse aunque cumpla todo.${f.venceLegible ? ` Vence el ${esc(f.venceLegible)}.` : ""} <span title="${esc(f.notaFecha || "")}">Fecha calculada a partir de la apertura: confirme en el cronograma.</span>${urlSegura(f.enlaceSecop) ? ` <a class="underline" href="${esc(urlSegura(f.enlaceSecop))}" target="_blank" rel="noopener noreferrer">Ver proceso</a>` : ""}</p>
       </li>`;
     }).join("");
     return `
@@ -135,7 +141,7 @@
     return `
       <h2 class="text-base font-semibold" style="color: var(--text-primary);">Dónde hay más movimiento</h2>
       <ul class="mt-2 space-y-1.5">${deps.map((d) => `<li>
-        <a class="block" href="${enlaceLista("dep=" + d.cod)}" title="${esc(d.nombre)}: ${num(d.n)} procesos abiertos, ${esc(pesosCortos(d.valor) || "sin valor publicado")}. Ver la lista.">
+        <a class="block" href="${enlaceLista("dep=" + encodeURIComponent(d.cod))}" title="${esc(d.nombre)}: ${num(d.n)} procesos abiertos, ${esc(pesosCortos(d.valor) || "sin valor publicado")}. Ver la lista.">
           <span class="flex justify-between text-xs" style="color: var(--text-primary);"><span>${esc(d.nombre)}</span><span style="color: var(--text-secondary);">${num(d.n)} · ${esc(pesosCortos(d.valor) || "—")}</span></span>
           <span class="mt-0.5 block h-1.5 rounded-full" style="background: var(--bg-inset-2);"><span class="block h-1.5 rounded-full" style="width:${Math.max(2, Math.round(100 * (d.valor || 0) / max))}%; background: var(--accent);"></span></span>
         </a></li>`).join("")}</ul>

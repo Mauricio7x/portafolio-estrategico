@@ -514,12 +514,27 @@
      suma reproduce el total que declara es la tabla del presupuesto. */
   function elegirHoja(libro) {
     let mejor = null;
-    const puntaje = (r) => [(r.cuadre && r.cuadre.estado === "cuadra") ? 1 : 0, r.filas.length];
+    /* …Y EL DESEMPATE NO PUEDE COLGAR SOLO DE «cuadra» (ago 2026). Basta con
+       que UN ítem del presupuesto no traiga valor legible —estado normal y
+       declarado: «con ítems sin valor no se compara, comparar sería mentir»—
+       para que la hoja «Presupuesto» salga `no_comparable` y el desempate caiga
+       otra vez en «más filas gana», que es exactamente como la hoja «APU» (una
+       fila por INSUMO) volvía a ganar. La señal que de verdad separa las dos
+       hojas es DECLARAR UN TOTAL: un presupuesto lo trae («COSTOS DIRECTOS»),
+       una hoja de insumos no lo trae nunca. Se puntúa en tres escalones:
+       cuadra > declara un total > número de filas. */
+    const puntaje = (r) => [
+      (r.cuadre && r.cuadre.estado === "cuadra") ? 1 : 0,
+      (r.cuadre && r.cuadre.total_declarado != null) ? 1 : 0,
+      r.filas.length,
+    ];
     for (const h of libro.hojas || []) {
       const r = detectarFilasApu(h.filas);
       if (!mejor) { mejor = { hoja: h, resultado: r }; continue; }
-      const [a1, a2] = puntaje(r), [b1, b2] = puntaje(mejor.resultado);
-      if (a1 > b1 || (a1 === b1 && a2 > b2)) mejor = { hoja: h, resultado: r };
+      const a = puntaje(r), b = puntaje(mejor.resultado);
+      if (a[0] > b[0] || (a[0] === b[0] && (a[1] > b[1] || (a[1] === b[1] && a[2] > b[2])))) {
+        mejor = { hoja: h, resultado: r };
+      }
     }
     return mejor;
   }
