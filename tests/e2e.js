@@ -15561,6 +15561,37 @@ async function main() {
         assert.ok(!/^\s*\.hidden\s*\{/m.test(html),
           "una regla GLOBAL .hidden escondería la barra de pestañas (hidden md:flex): tiene que ir por id");
 
+        /* 1.5-bis · …Y LOS TRES CONTENEDORES DE VISTA NO ERAN TODO. Vuelto a
+           medir en Chromium con el CDN bloqueado (ago 2026): la regla de arriba
+           salvaba la landing, pero los CUATRO paneles de pestaña salían
+           apilados a la vez (Mi empresa + Mis procesos + Licitaciones +
+           Precios, los cuatro `display:block`) y `modal-competencia` encima de
+           todo, otra vez con CERO errores en consola. El comentario original
+           daba por hecho que los modales «ya fijan style.display»: lo fijan al
+           abrirlos o cerrarlos, no al CARGAR. Todo lo que nace oculto SOLO por
+           la clase tiene que estar cubierto por la regla propia. */
+        {
+          const ocultosPorClase = [...html.matchAll(/<(?:div|main|section|aside)\b[^>]*>/g)]
+            .map((m) => m[0])
+            .filter((t) => /\bclass="[^"]*\bhidden\b/.test(t))
+            .filter((t) => /\b(?:fixed|inset-0|panel-pestana|z-\d+)\b/.test(t) || /role="dialog"/.test(t))
+            .map((t) => (t.match(/id="([^"]+)"/) || [])[1])
+            .filter(Boolean);
+          const regla = (html.match(/#onboarding\.hidden[\s\S]*?\{\s*display:\s*none[^}]*\}/) || [""])[0];
+          const cubierto = (id) => {
+            if (regla.includes(`#${id}.hidden`)) return true;
+            const etiqueta = (html.match(new RegExp(`<[^>]*id="${id}"[^>]*>`)) || [""])[0];
+            if (/role="dialog"/.test(etiqueta) && regla.includes('[role="dialog"].hidden')) return true;
+            if (/\bmodal-velo\b/.test(etiqueta) && regla.includes(".modal-velo.hidden")) return true;
+            if (/\bpanel-pestana\b/.test(etiqueta) && regla.includes(".panel-pestana.hidden")) return true;
+            return false;
+          };
+          const huerfanos = ocultosPorClase.filter((id) => !cubierto(id));
+          assert.deepStrictEqual(huerfanos, [],
+            `sin el CDN de Tailwind estos contenedores se verían todos a la vez: ${huerfanos.join(", ")}`);
+          assert.ok(ocultosPorClase.length >= 6, "el censo de contenedores ocultos por clase se quedó corto: revísalo");
+        }
+
         /* 1.6 · el título de la landing va en peso 250 (encargo). Tailwind no
            tiene esa parada —font-extralight es 200—, así que si vuelve la
            utilidad, el peso pedido se pierde sin que nadie lo note. */

@@ -4029,6 +4029,94 @@ commit y en las pruebas.
   con `node -e` reproducible acertaron; los que llegaron con lectura, no siempre. Dos defectos los
   encontraron dos agentes por caminos distintos, lo que subió su prioridad con razón.
 
+#### La revisión adversaria DEL PROPIO ARREGLO, y lo que encontró
+
+Una segunda pasada, con la única instrucción de **atacar el diff de la auditoría**, encontró ocho
+defectos más. La lección de método es la que vale: **una corrección no está hecha hasta que alguien
+intenta romperla**, y la mitad de lo que encontró son cerraduras que no cerraban.
+
+- **`\\s` DENTRO DE UN LITERAL DE REGEX NO ES UN ESPACIO.** La guarda «mano de obra» se aplicó en
+  dos sitios con el MISMO texto: en `lib/semantica.js` se concatena a un string que va a
+  `new RegExp` (`\\s` → `\s`: funciona) y en `lib/filtros.js` se pegó dentro de un literal `/…/`,
+  donde `\\s` significa «una barra invertida y una o más eses» — el lookbehind no puede casar jamás.
+  La corrección quedó **INERTE** y `esSuministroPuro` seguía dejando pasar «suministro de mano de
+  obra no calificada». La prueba no lo vio porque ejercitaba `admisibleParaIngesta` y
+  `evaluarPertinencia` y **nunca llamaba a la tercera función que usa la regla**. Regla:
+  copiar un fragmento de regex entre un string y un literal exige reescapar, y una guarda que se
+  aplica en N sitios se prueba en los N.
+- **UNA GUARDA DEMASIADO ANCHA CUESTA MÁS QUE EL DEFECTO QUE CIERRA.** «Si la fila trae menos celdas
+  que las que declaró la cabecera, las cifras posicionales son ilegibles» cerraba el hueco en medio…
+  y anulaba las cantidades del caso que este módulo documenta como **frecuente y benigno** (la
+  entidad deja los precios en blanco para que los ponga el oferente), que produce el mismo síntoma.
+  Contar celdas no distingue «huecos al final» de «hueco en medio»; la FORMA sí: **un precio
+  unitario con su total en blanco es la huella de la celda que se comió el separador**. El
+  entregable del lector volvió, y el defecto sigue cazado.
+- **UN FILTRO INERTE ES ACEPTABLE; UNO CON OTRO VALOR, NO.** `numero()` de `public/filtros.js`
+  aceptaba el decimal con punto y luego borraba todos los puntos como separadores de miles:
+  `?max=1000000.00` filtraba hasta **$100 millones**, con la ficha mostrando la cifra equivocada.
+  Se leen las tres formas por separado (agrupación colombiana, decimal con coma, decimal con punto)
+  y `1.000` sigue siendo mil.
+- **UN TOTAL QUE LAS PROPIAS FILAS DESMIENTEN ES EVIDENCIA EN CONTRA.** El desempate de `elegirHoja`
+  premiaba *declarar* un total, así que una hoja lateral de dos filas con un «COSTO DIRECTO» que no
+  cuadra le ganaba a la hoja de presupuesto de doscientos ítems.
+- **UNA VALIDACIÓN DE ENTRADA TIENE QUE CUBRIR SU PROPIA ARITMÉTICA.** El año de la apertura se
+  acotó a [1984, 2200] —el rango de `lib/habiles`— pero después se le suman tres días hábiles, así
+  que el 30 de diciembre de 2200 seguía lanzando y tumbando el listado entero. El rango se IMPORTA
+  ahora de `lib/habiles`, que es quien lanza (había dos copias), y el techo de la apertura reserva
+  el último año.
+- **DOS DEFINICIONES DE LA MISMA REGLA, otra vez.** «Conectividad» vivía como constante y como copia
+  inline dentro de `BLACKLIST_OBJETO`, y ya habían divergido (a la copia le faltaba `red lan`). El
+  literal se convirtió a `String.raw` + la constante, verificando que el `source` resultante es
+  idéntico salvo el fragmento unificado. A las dos les faltaba además `digital`: «CONECTIVIDAD
+  DIGITAL DE LAS INSTITUCIONES EDUCATIVAS» salía **verde**.
+- **UNA CERRADURA QUE PASA CONTRA EL CÓDIGO QUE DICE BLOQUEAR.** La aserción de «los días al cierre
+  se cuentan en un solo sitio» miraba el fuente con dos regex: la negativa no cruzaba los paréntesis
+  interiores de `Math.floor((t - (ahora - OFFSET)) / 86400000)` y la positiva ya casaba antes. Se
+  sustituyó por la igualdad que importa —la cifra que titula el pulso tiene que ser la que abre el
+  filtro `?cierre=7d`—, y con `floor` da 5 contra 4. **La prueba por MUTACIÓN es lo único que
+  distingue una cerradura de un adorno**: de las 26, 25 fallaban contra el árbol anterior y esa
+  pasaba.
+- **CAMBIAR UN MENSAJE FALSO POR OTRO NO ES ARREGLARLO.** El 401 tiene DOS causas —la API dice que
+  `HISTORICO_TOKEN` no coincide; el EDGE (Password Protection) dice que hay que iniciar sesión— y
+  se distinguen por el CUERPO (el edge responde HTML). Cinco de diez sitios miraban `r.status === 401`
+  antes de mirar el cuerpo y enseñaban el mensaje del token sobre el muro del edge. Lo decide ahora
+  una sola función (`msg401`), con el `sinJson` que marca `leerJson`.
+- **Dos comentarios que afirmaban de más, corregidos con la medición**: la poda del importador SÍ
+  puede cambiar una decisión (una fila de tres términos con dos marcas —«CANALETA SYLVANIA
+  LEGRAND»— pierde su sugerencia; sin error de dinero, porque nunca fue `mapeo_automatico`), y el
+  comentario de `urlSegura` prometía «hay prueba que ejecuta las dos copias» cuando la prueba solo
+  miraba el fuente — ahora existe, con 16 casos. Cifra corregida de paso: **533** descripciones del
+  IDU pasan de 200 caracteres, no 673.
+- **Una guarda de tamaño que falla ABIERTA no es una guarda**: `lib/cuerpo.js` dejaba `bytes = 0`
+  cuando `JSON.stringify` lanzaba (referencia circular), así que ese cuerpo se aceptaba. Y su 413
+  anunciaba «máximo 0 MB» en los dos endpoints con tope de 64 KB — un límite de tamaño **sin el
+  tamaño**, porque `0` es falsy y los llamadores ni lo reenviaban.
+
+#### El navegador vio lo que ninguna prueba de Node podía ver (otra vez)
+
+La regla del proyecto es que tras tocar el frontend hay que **ABRIR LA PÁGINA**. Se hizo con
+Chromium real contra un arnés que sirve `public/` y responde `/api/*` con la forma real de cada
+handler (sin red, sin Redis) — `playwright-core` es una dependencia de npm y aquí no entra ninguna,
+así que el arnés inyecta un recolector de errores y un marcador de estado en el DOM y se lee con
+`--dump-dom`.
+
+- **LA RED DE SEGURIDAD DEL CDN CUBRÍA TRES CONTENEDORES Y HACÍAN FALTA NUEVE.** `.hidden` la sirve
+  el CDN de Tailwind, que la red institucional del dueño bloquea. La regla propia salvaba la
+  landing, pero medido en el navegador: **los CUATRO paneles de pestaña salían apilados a la vez**
+  (Mi empresa + Mis procesos + Licitaciones + Precios, los cuatro `display:block`) y
+  `modal-competencia` encima de todo — con **CERO errores en consola**, el fallo mudo de siempre.
+  Cambiar de pestaña no hacía nada visible. El comentario original daba por hecho que los modales
+  «ya fijan `style.display`»: lo fijan al ABRIRLOS o cerrarlos, **no al cargar**. La regla cubre
+  ahora `.panel-pestana`, `[role="dialog"]`, `.modal-velo` y los dos paneles sueltos, y sigue sin
+  ser global (`.hidden{}` escondería la barra de pestañas de escritorio, que es `hidden md:flex` —
+  verificado en el navegador que sigue visible). La cerradura no enumera ids: **censa el HTML** y
+  exige que todo contenedor que nazca oculto SOLO por la clase esté cubierto, así que el próximo
+  modal que alguien añada la dispara solo.
+- **Coste medido de la memoización de `claveCanonica`**: pasar la colisión de cierres del NIT a la
+  clave canónica costaba 15 ms → 269 ms sobre 20 000 filas (se llama dos veces por fila). Con el
+  Map: 73 ms en frío y 6 ms en caliente, resultado idéntico. El tope de 20 000 entradas existe
+  porque la instancia serverless vive entre peticiones.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).
