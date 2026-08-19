@@ -16519,6 +16519,60 @@ async function main() {
       assert.ok(/precio TOPE del FFIE/.test(app), "el FFIE dice «tope» donde se acepta el mapeo, no solo después");
     }
 
+    // ── 26-bis · NO puede haber una segunda copia del lector de cuerpos ─────
+    /* `lib/cuerpo.js` nació de consolidar TRES copias que habían divergido en
+       silencio, y la consolidación se dejó una CUARTA en `lib/apu_descargar.js`
+       con los tres defectos enteros, reproducidos: `buf += c` partía los
+       caracteres multibyte (una URL con `ñ` llegaba con U+FFFD y la descarga
+       iba contra una dirección que nadie envió), `slice(0, 8192)` TRUNCABA en
+       silencio (9 KB → JSON roto → `{}` → «URL inválida», el diagnóstico
+       contrario al real) y un JSON malformado era indistinguible de un cuerpo
+       vacío. La cerradura mira el SÍNTOMA que las delata —una acumulación de
+       trozos en una cadena— en vez de enumerar archivos, para que también cace
+       la copia que alguien escriba mañana en otro módulo. */
+    {
+      const dir = path.join(RAIZ, "lib");
+      const archivos = [];
+      (function recorrer(d) {
+        for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+          const abs = path.join(d, e.name);
+          if (e.isDirectory()) recorrer(abs);
+          else if (e.name.endsWith(".js")) archivos.push(abs);
+        }
+      })(dir);
+      const culpables = archivos.filter((f) => {
+        if (f.endsWith(`${path.sep}cuerpo.js`)) return false;          // el consolidado
+        const src = fs.readFileSync(f, "utf8");
+        if (!/req\.on\(\s*["']data["']/.test(src)) return false;       // no lee cuerpos
+        return true;
+      }).map((f) => path.relative(RAIZ, f));
+      assert.deepStrictEqual(culpables, [],
+        `estos módulos leen el cuerpo por su cuenta en vez de usar lib/cuerpo.js: ${culpables.join(", ")}`);
+
+      // …y el consolidado sigue siendo correcto en los cuatro casos que motivaron cada defecto
+      const { Readable } = require("stream");
+      const { leerCuerpo } = require("../lib/cuerpo.js");
+      const arroyo = (texto, partirEn) => {
+        const b = Buffer.from(texto, "utf8");
+        const r = Readable.from(partirEn ? [b.subarray(0, partirEn), b.subarray(partirEn)] : [b]);
+        r.body = undefined;
+        return r;
+      };
+      const conEne = JSON.stringify({ url: "https://ejemplo.gov.co/pliego-ñ-ó.pdf" });
+      const corte = Buffer.from(conEne, "utf8").indexOf(Buffer.from("ñ", "utf8")) + 1;
+      const partido = await leerCuerpo(arroyo(conEne, corte), { maxBytes: 8 * 1024, que: "url" });
+      assert.strictEqual(partido.ok && partido.datos.url, "https://ejemplo.gov.co/pliego-ñ-ó.pdf",
+        "un carácter multibyte partido entre dos trozos no puede salir como U+FFFD");
+      const gordo = await leerCuerpo(arroyo(JSON.stringify({ url: "https://a.co/x.pdf", y: "z".repeat(9000) })), { maxBytes: 8 * 1024, que: "url" });
+      assert.strictEqual(gordo.status, 413, "un cuerpo que se pasa del tope es 413, no un JSON truncado");
+      assert.ok(/8 KB/.test(gordo.error), "el 413 tiene que decir el tope en una unidad legible, no «0 MB»");
+      const roto = await leerCuerpo(arroyo('{"url": "https://a.co/x.pdf"'), { maxBytes: 8 * 1024, que: "url" });
+      assert.strictEqual(roto.status, 400, "un JSON malformado no puede confundirse con un cuerpo vacío");
+      assert.ok(/no es JSON/.test(roto.error), "…y lo tiene que decir");
+      const vacio = await leerCuerpo(arroyo(""), { maxBytes: 8 * 1024, que: "url" });
+      assert.ok(vacio.status === 400 && /«url»/.test(vacio.error), "un cuerpo vacío nombra la clave que falta");
+    }
+
     // ── 27 · el modo $offset conserva el sello del dedup ────────────────────
     // sin `:updated_at` una fila bajada en modo degradado NUNCA puede reemplazar
     // a la guardada: un proceso adjudicado se seguía sirviendo como abierto.

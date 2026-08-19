@@ -4092,6 +4092,17 @@ intenta romperla**, y la mitad de lo que encontró son cerraduras que no cerraba
   anunciaba «máximo 0 MB» en los dos endpoints con tope de 64 KB — un límite de tamaño **sin el
   tamaño**, porque `0` es falsy y los llamadores ni lo reenviaban.
 
+- **LA CONSOLIDACIÓN SE DEJÓ UNA CUARTA COPIA DEL LECTOR DE CUERPOS.** `lib/cuerpo.js` nació de
+  fundir TRES copias que habían divergido en silencio, y `lib/apu_descargar.js` conservaba la suya
+  con los tres defectos ENTEROS, los tres reproducidos: `buf += c` partía los caracteres multibyte
+  (una URL con `ñ` —las hay en los portales colombianos— llegaba con dos U+FFFD y la descarga iba
+  contra una dirección que nadie envió), `buf.slice(0, 8192)` TRUNCABA en silencio (9 KB → JSON roto
+  → `{}` → «URL inválida», que es el diagnóstico contrario al real: el cuerpo era demasiado grande,
+  no la URL inválida) y un JSON malformado devolvía `{}`, indistinguible de un cuerpo vacío. La
+  cerradura no enumera archivos: **busca el síntoma** —acumular trozos de `req.on("data")` fuera de
+  `lib/cuerpo.js`— para cazar también la copia que alguien escriba mañana en otro módulo. Probada
+  por mutación: contra el árbol anterior señala `lib/apu_descargar.js` por su nombre.
+
 #### El navegador vio lo que ninguna prueba de Node podía ver (otra vez)
 
 La regla del proyecto es que tras tocar el frontend hay que **ABRIR LA PÁGINA**. Se hizo con
