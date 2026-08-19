@@ -2088,7 +2088,11 @@
     if (!r || !r.ok) return;
     seguimientoCargadoPara = perfil;
     guardados.clear();
-    for (const p of r.procesos) guardados.set(p.id, p.estado);
+    /* `r.procesos` se RECORRE, así que un `ok:true` sin esa lista lanzaba y la
+       pestaña entera moría EN SILENCIO — el modo de fallo que este proyecto
+       persigue desde el arranque en la zona muerta temporal. Comprobar `ok` no
+       basta: hay que comprobar lo que se va a iterar. */
+    for (const p of Array.isArray(r.procesos) ? r.procesos : []) guardados.set(p.id, p.estado);
     pintarSeguimiento(r);
     // los botones «Guardar» de la lista tienen que reflejar lo guardado
     document.querySelectorAll("#lista .btn-guardar").forEach((b) => { const l = filaDeLista(b.getAttribute("data-id")); if (l) b.outerHTML = botonGuardar(l); });

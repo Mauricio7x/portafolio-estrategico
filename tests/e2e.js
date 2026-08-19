@@ -7856,6 +7856,13 @@ async function main() {
         for (const id of ["seccion-seguimiento", "seg-lista", "seg-vacio", "seg-resumen", "seg-mensaje"]) assert.ok(htmlSeg.includes(`id="${id}"`), `falta #${id}`);
         assert.ok(/class="btn-guardar/.test(appSeg) && /function alternarGuardado/.test(appSeg) && /op=seguimiento/.test(appSeg) && /data-seg-detalle/.test(appSeg) && /data-seg-ics/.test(appSeg) && /data-seg-verificar/.test(appSeg), "la tarjeta guarda y Mi empresa sigue, descarga el .ics, consulta el detalle y verifica el NIT");
         assert.ok(!/op=seguimiento[^`"']*token=/.test(appSeg), "el token no viaja en la URL: el .ics se baja con cabecera y Blob");
+        /* `cargarSeguimiento` RECORRE `r.procesos`, así que comprobar `ok` no
+           basta: un `ok:true` sin esa lista lanzaba y mataba la pestaña EN
+           SILENCIO. Lo cazó abrir la app en un navegador real contra un arnés
+           que respondía `{ok:true}` a secas — la suite de Node no podía verlo.
+           `pintarSeguimiento` ya se defendía con `r.procesos || []`. */
+        assert.ok(/for \(const p of Array\.isArray\(r\.procesos\) \? r\.procesos : \[\]\)/.test(appSeg),
+          "cargarSeguimiento comprueba lo que va a ITERAR, no solo `ok`: un ok:true sin `procesos` mataba la pestaña en silencio");
         console.log(`  · seguimiento: guardar/estado/quitar por perfil · fila viva (${abierto.dias_para_cierre} días al cierre, ${abierto.avisos.length} avisos) · .ics con alarmas · detalle: ${det.proponentes.length} proponentes, recurrente ${rec.ante_esta_entidad.veces_presentado} veces ante la entidad y ${rec.contratos_vigentes.contratos} vigentes por $${rec.contratos_vigentes.valor_cop}`);
       }
 
