@@ -4081,6 +4081,15 @@ intenta romperla**, y la mitad de lo que encontró son cerraduras que no cerraba
   se distinguen por el CUERPO (el edge responde HTML). Cinco de diez sitios miraban `r.status === 401`
   antes de mirar el cuerpo y enseñaban el mensaje del token sobre el muro del edge. Lo decide ahora
   una sola función (`msg401`), con el `sinJson` que marca `leerJson`.
+  · **Y CONVERTIR CINCO SITIOS TAMPOCO BASTABA**: los otros seis leían el cuerpo con un `try/catch`
+    mudo (`catch { cuerpo = null; }`), que TIRA el marcador `sinJson` y hace que `msg401` caiga otra
+    vez al mensaje del token. Hoy **`MSG_401` tiene un solo consumidor** —`msg401`— y hay prueba que
+    prohíbe nombrarlo desde cualquier otro sitio; contra el árbol anterior nombra las siete líneas.
+  · **Una guarda contra una función que nunca devuelve falsy es una rama muerta.** Al convertir la
+    cadena de la experiencia a `leerJson`, su `if (!cuerpo && (401|403))` —el que daba el mensaje del
+    edge— dejó de poder dispararse, porque `leerJson` SIEMPRE devuelve un objeto: el muro volvía a
+    diagnosticarse como token equivocado. La señal correcta es `cuerpo.sinJson`. Convertir un lector
+    obliga a revisar las guardas que dependían de su valor de fallo.
 - **Dos comentarios que afirmaban de más, corregidos con la medición**: la poda del importador SÍ
   puede cambiar una decisión (una fila de tres términos con dos marcas —«CANALETA SYLVANIA
   LEGRAND»— pierde su sugerencia; sin error de dinero, porque nunca fue `mapeo_automatico`), y el

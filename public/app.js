@@ -698,7 +698,7 @@
        muro del edge (Vercel Password Protection) responde HTML, así que
        `r.json()` lanza — y con las dos cosas en el mismo try ese muro se
        diagnosticaba como «sin conexión», lo contrario de la verdad. */
-    try { cuerpo = await r.json(); } catch { cuerpo = null; }
+    cuerpo = await leerJson(r);
     if (peticion !== peticionActual) return; // respuesta obsoleta: descartar
 
     if (r.status === 503 && cuerpo && cuerpo.sincronizando) return esperarSincronizacion();
@@ -1401,11 +1401,11 @@
       return;
     }
     // el parseo va aparte del fetch: el muro del edge responde HTML y `r.json()` lanza
-    try { cuerpo = await r.json(); } catch { cuerpo = null; }
+    cuerpo = await leerJson(r);
     if (peticion !== peticionPaa) return;
 
     if (r.status === 401) {
-      $("paa-resumen").textContent = MSG_401;
+      $("paa-resumen").textContent = msg401(cuerpo);
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
@@ -1939,9 +1939,12 @@
       return;
     }
     /* el parseo va APARTE del fetch: el muro del edge responde HTML y con las
-       dos cosas en el mismo try se diagnosticaría como «sin conexión» */
-    let cuerpo = null;
-    try { cuerpo = await r.json(); } catch { /* HTML del muro */ }
+       dos cosas en el mismo try se diagnosticaría como «sin conexión». Y va por
+       `leerJson`, no por un `try/catch` propio: con el catch mudo, `cuerpo`
+       quedaba en `null` y `msg401(null)` caía al mensaje del TOKEN sobre el
+       muro del edge — el mismo diagnóstico equivocado que se acaba de quitar de
+       los otros cinco sitios. `leerJson` marca `sinJson` y msg401 lo distingue. */
+    const cuerpo = await leerJson(r);
     if (r.status === 401) {
       $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${msg401(cuerpo)}</p>`;
       return;
@@ -2063,10 +2066,9 @@
       throw new Error(`Sin conexión con el servidor: revise su conexión e intente de nuevo. (${e.message})`);
     }
     /* el parseo va APARTE del fetch: el muro del edge responde HTML */
-    let cuerpo = null;
-    try { cuerpo = await r.json(); } catch { /* respuesta no-JSON */ }
+    const cuerpo = await leerJson(r);
     if (r.status === 401) {
-      throw new Error(MSG_401);
+      throw new Error(msg401(cuerpo));
     }
     if (!r.ok) {
       throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
@@ -4608,7 +4610,7 @@
       let r = null, cuerpo = null, fallo = null;
       try {
         r = await fetch(`/api/procesos?op=sync&modo=${modo}&presupuesto=${presupuesto}`, { headers: { Accept: "application/json" } });
-        try { cuerpo = await r.json(); } catch { cuerpo = null; } // el muro del edge devuelve HTML
+        cuerpo = await leerJson(r); // el muro del edge devuelve HTML
       } catch (e) {
         fallo = e && e.message ? e.message : "sin conexión";
       }
@@ -4897,9 +4899,9 @@
     try {
       const r = await fetch("/api/procesos?op=baja&reconstruir=true",
         { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
-      const c = await r.json().catch(() => ({}));
+      const c = await leerJson(r);
       if (!r.ok || !c.ok) {
-        decir(c.error || `Error ${r.status}`, "bg-red-50 text-red-700");
+        decir(r.status === 401 ? msg401(c) : (c.error || `Error ${r.status}`), "bg-red-50 text-red-700");
       } else if (c.reconstruido && c.reconstruido.enCurso) {
         decir("Ya hay una reconstrucción en curso: espere a que termine.", "bg-amber-50 text-amber-800");
       } else if (c.reconstruido && c.reconstruido.done === false) {
@@ -5438,14 +5440,14 @@
       return mensajeEliminar(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
     }
     /* el parseo va APARTE del fetch: el muro del edge responde HTML */
-    try { cuerpo = await r.json(); } catch { cuerpo = null; }
+    cuerpo = await leerJson(r);
     eliminarEnVuelo = false;
     btn.disabled = false;
     btn.textContent = etiqueta;
     cerrarModalEliminar();
 
     if (r.status === 401) {
-      return mensajeEliminar(MSG_401, "error");
+      return mensajeEliminar(msg401(cuerpo), "error");
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
       return mensajeEliminar((cuerpo && cuerpo.error)
@@ -5687,8 +5689,12 @@
        conexión» — y la respuesta es justo la contraria: hay conexión y hay que
        iniciar sesión. Es el mismo tratamiento que ya da el encadenado de la
        sincronización unas líneas más arriba. */
-    try { cuerpo = await r.json(); } catch { cuerpo = null; }
-    if (!cuerpo && (r.status === 401 || r.status === 403)) {
+    cuerpo = await leerJson(r);
+    /* `leerJson` NUNCA devuelve algo falsy —siempre da un objeto—, así que el
+       guardián de antes (`!cuerpo`) quedó muerto al convertir este sitio y el
+       muro del edge caía al mensaje del token. La señal correcta es `sinJson`,
+       que es justo lo que marca cuando el cuerpo no era JSON. */
+    if (cuerpo.sinJson && (r.status === 401 || r.status === 403)) {
       bitacora(`✘ 1/3 el despliegue rechazó la petición (${r.status})`);
       mensajeExp("El despliegue rechazó la petición (401/403). Si tiene Password Protection activa, "
         + "inicie sesión en Vercel en esta misma pestaña y reintente.", "error");
@@ -5696,7 +5702,7 @@
     }
     if (r.status === 401) {
       bitacora("✘ 1/3 el despliegue rechazó el token integrado");
-      mensajeExp(MSG_401, "error");
+      mensajeExp(msg401(cuerpo), "error");
       return false;
     }
     if (r.status === 400 && cuerpo && cuerpo.errores) {
@@ -5908,7 +5914,7 @@
     cargandoCobertura(false);
 
     if (r.status === 401) {
-      avisoCobertura(MSG_401, "error");
+      avisoCobertura(msg401(cuerpo), "error");
       return false;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
@@ -6093,8 +6099,7 @@
     } catch {
       return mensajeApu("No se pudo consultar el catálogo APU (sin red).", "error");
     }
-    let c = null;
-    try { c = await r.json(); } catch { c = null; }
+    const c = await leerJson(r);
     if (!r.ok || !c || !c.ok) {
       $("apu-detalle").classList.add("hidden");
       return mensajeApu((c && c.error ? esc(c.error) : "El catálogo APU no está cargado.")
@@ -6125,13 +6130,12 @@
       $("apu-spin").classList.add("hidden");
       return mensajeApu("No se pudo contactar con el servidor. Reintente.", "error");
     }
-    let c = null;
-    try { c = await r.json(); } catch { c = null; }
+    const c = await leerJson(r);
     apuCargando = false;
     $("btn-apu-cargar").disabled = false;
     $("apu-spin").classList.add("hidden");
 
-    if (r.status === 401) return mensajeApu(MSG_401, "error");
+    if (r.status === 401) return mensajeApu(msg401(c), "error");
     if (!r.ok || !c || !c.ok) {
       const errores = (c && c.errores || []).slice(0, 6)
         .map((e) => `<li>· <code class="font-mono">${esc(e.campo)}</code>: ${esc(e.error)}</li>`).join("");
@@ -6179,9 +6183,8 @@
     try {
       const r = await fetch("/api/procesos?op=historico&reconstruir_indice=true",
         { headers: { "x-historico-token": leerToken(), Accept: "application/json" }, cache: "no-store" });
-      let c = null;
-      try { c = await r.json(); } catch { c = null; }
-      if (r.status === 401) msg.textContent = MSG_401;
+      const c = await leerJson(r);
+      if (r.status === 401) msg.textContent = msg401(c);
       else if (!r.ok || !c || !c.ok) msg.textContent = (c && c.error) || `Error ${r.status}.`;
       else if (c.indice && c.indice.done === false) msg.textContent = "Reconstrucción a medias (presupuesto agotado): vuelva a pulsar, el avance queda guardado.";
       else msg.textContent = "Índice de competencia reconstruido.";

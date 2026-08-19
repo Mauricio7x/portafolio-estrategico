@@ -16519,6 +16519,40 @@ async function main() {
       assert.ok(/precio TOPE del FFIE/.test(app), "el FFIE dice «tope» donde se acepta el mapeo, no solo después");
     }
 
+    // ── 25-bis · el 401 se diagnostica en UN solo sitio ─────────────────────
+    /* El 401 tiene DOS causas: la API dice que `HISTORICO_TOKEN` no coincide con
+       el token integrado, y el EDGE (Vercel Password Protection) dice que hay
+       que iniciar sesión — y responde HTML. Confundirlas manda al usuario a
+       arreglar lo que no está roto. La primera corrección convirtió cinco
+       sitios y dejó otros seis leyendo el cuerpo con un `try/catch` mudo, que
+       TIRA el marcador `sinJson` y hace que `msg401` caiga al mensaje del
+       token sobre el muro del edge: se cambió un mensaje falso por otro. Ahora
+       `MSG_401` tiene UN solo consumidor —`msg401`— y nadie más lo nombra. */
+    {
+      const app = fs.readFileSync(path.join(RAIZ, "public/app.js"), "utf8");
+      const usos = app.split("\n")
+        .map((l, i) => ({ l, n: i + 1 }))
+        .filter(({ l }) => /\bMSG_401\b/.test(l) && !/^\s*\*|^\s*\/\*/.test(l));
+      const fuera = usos.filter(({ l }) => !/const MSG_401 =/.test(l) && !/const msg401 =/.test(l));
+      assert.deepStrictEqual(fuera.map((u) => u.n), [],
+        `MSG_401 solo puede leerse desde msg401(): estas líneas lo usan crudo y no distinguen el muro del edge: ${fuera.map((u) => u.n).join(", ")}`);
+
+      /* Y ningún sitio puede volver a tirar el marcador con un catch mudo. */
+      assert.ok(!/catch \{ cuerpo = null; \}/.test(app) && !/catch \{ c = null; \}/.test(app),
+        "un `catch` que deja el cuerpo en null pierde `sinJson`: el muro del edge se diagnostica como token equivocado");
+
+      /* `leerJson` NUNCA devuelve algo falsy, así que un `!cuerpo` como guarda
+         del muro es una rama MUERTA — pasó, y el edge caía al mensaje del token. */
+      assert.ok(!/!cuerpo && \(r\.status === 401/.test(app),
+        "`leerJson` siempre devuelve un objeto: la guarda del muro tiene que ser `cuerpo.sinJson`, no `!cuerpo`");
+
+      /* La función decide por el CUERPO, no por el status. */
+      const leerJsonSrc = (app.match(/const leerJson = async \(r\) => \{[\s\S]*?\n  \};/) || [""])[0];
+      assert.ok(/sinJson: true/.test(leerJsonSrc), "leerJson tiene que marcar `sinJson` cuando el cuerpo no era JSON");
+      const msg401Src = (app.match(/const msg401 = [^;]+;/) || [""])[0];
+      assert.ok(/sinJson/.test(msg401Src), "msg401 tiene que decidir por `sinJson`, no por el status");
+    }
+
     // ── 26-bis · NO puede haber una segunda copia del lector de cuerpos ─────
     /* `lib/cuerpo.js` nació de consolidar TRES copias que habían divergido en
        silencio, y la consolidación se dejó una CUARTA en `lib/apu_descargar.js`
