@@ -16478,10 +16478,37 @@ async function main() {
         "el borrado por rango dejaba vivos los chunks de una corrida muerta, y la app lee por SCAN: los servía como procesos fantasma");
     }
 
-    console.log("· unidad AUDITORÍA INTEGRAL: 29 cerraduras de los defectos reproducidos "
+    // ── 30 · el salto de página corta la continuación de descripción ────────
+    // el encabezado de la página siguiente se pegaba al último ítem de la
+    // anterior y el mapeo caía en otro ítem del catálogo, o sea en otro precio.
+    {
+      const cab = "ITEM\tDESCRIPCION\tUNIDAD\tCANTIDAD\tVR UNITARIO\tVR TOTAL";
+      const fila = "1.1\tSUB BASE GRANULAR\tM3\t100,00\t50.000\t5.000.000";
+      const otra = "1.2\tCONCRETO CLASE D\tM3\t50,00\t400.000\t20.000.000";
+      const conSalto = apuPliego.parsearPliego([cab, fila, "\f2", "FORMULARIO 1 PRESUPUESTO OFICIAL CONSTRUCCION DE PAVIMENTO", otra].join("\n"), {});
+      assert.strictEqual(conSalto.items[0].descripcion_original, "SUB BASE GRANULAR",
+        "un encabezado de página no puede acabar dentro de la descripción del ítem anterior");
+      const mismaPagina = apuPliego.parsearPliego([cab, fila, "CLASE C SEGUN ESPECIFICACION", otra].join("\n"), {});
+      assert.strictEqual(mismaPagina.items[0].descripcion_original, "SUB BASE GRANULAR CLASE C SEGUN ESPECIFICACION",
+        "…y una descripción partida DENTRO de la misma página sigue uniéndose");
+    }
+
+    // ── 31 · lo que no se pudo leer del pliego no es una modificación ────────
+    {
+      const f1 = require("../lib/formulario1.js");
+      const c = f1.compararItems(
+        [{ numeral: "1.1", descripcion: "SUBBASE GRANULAR", unidad: "m3", cantidad: 375, precio_unitario: 1000, total: 375000 }],
+        [{ numeral: "1.1", descripcion: "SUBBASE GRANULAR", unidad: "m3", cantidad: null }],
+      );
+      assert.strictEqual(c.modificaciones.length, 0,
+        "una cantidad ilegible del pliego se denunciaba como «distinta a la del pliego» y era motivo de rechazo");
+      assert.strictEqual(c.sin_leer_del_pliego.length, 1, "…va a su propia lista, que manda a confirmar contra el PDF");
+    }
+
+    console.log("· unidad AUDITORÍA INTEGRAL: 31 cerraduras de los defectos reproducidos "
       + "(fuga sin token, presupuesto único, precio_manual, origen del precio, conectividad/mano de obra, "
       + "Number(null), año imposible, celda vacía, precio 0, unidades, cantidad ilegible, caja, hoja del Excel, "
-      + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos, sello del offset, backfill, huérfanos)");
+      + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos, sello del offset, backfill, huérfanos, salto de página, Formulario 1)");
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
