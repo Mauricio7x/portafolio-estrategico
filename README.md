@@ -2531,12 +2531,17 @@ más competencia. Debajo, los **excluidos del promedio** con el motivo de cada u
 caso que más confundía: por qué una entidad aparece en ⚪. Se cierra con el botón, con `ESC` o
 haciendo clic fuera.
 
-El detalle sale de un endpoint protegido, así que la primera vez el modal muestra un campo y el
-botón **«Guardar y ver detalle»**: se pega el token, se guarda en `sessionStorage` bajo
-`historico_token` (solo esa pestaña) y la consulta sale sola. Las siguientes veces va directo a los
-datos. **Viaja por cabecera, nunca en la URL**: una URL con el token quedaría en el historial del
-navegador y en los logs de acceso. Si el servidor responde `401`, el modal dice **«Token inválido»**,
-borra el guardado y deja escribir otro.
+El detalle sale de un endpoint protegido, pero **desde el token integrado (ago 2026) el usuario no
+ve ningún formulario**: el token viaja por cabecera —nunca en la URL, que quedaría en el historial
+del navegador y en los logs de acceso— y el modal va directo a los datos. La suite PROHÍBE que
+vuelvan el campo y sus funciones (`modal-token`, `pedirToken`, `CLAVE_TOKEN`).
+
+Si el servidor responde `401`, el mensaje distingue **las dos causas**, porque no son la misma
+avería y confundirlas manda al usuario a arreglar lo que no está roto: un `401` de la API significa
+que `HISTORICO_TOKEN` no coincide con el token integrado (configuración del despliegue), y uno del
+**edge** —Vercel Password Protection— significa que hay que iniciar sesión. Se distinguen por el
+cuerpo: el edge responde HTML, así que `r.json()` lanza. Lo decide una sola función (`msg401`);
+nunca se dice «token inválido, escriba otro», que era lo que pedía el formulario que ya no existe.
 
 Regla de la interfaz: **ninguna pulsación se queda sin respuesta visible**. Pulsar con el campo
 vacío avisa en vez de no hacer nada, el envío está cableado al `submit` del formulario *y* al clic

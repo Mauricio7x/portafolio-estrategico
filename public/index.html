@@ -2401,10 +2401,14 @@
   </div>
 
   <!-- ══════════ Modal de vista previa de la importación de Excel ══════════ -->
-  <div id="modal-importar" class="modal-velo fixed inset-0 z-40 hidden items-center justify-center p-4">
+  <!-- `role="dialog"` como los otros dos modales: sin él un lector de pantalla
+       no anuncia que se abrió un diálogo y el usuario sigue navegando la página
+       de detrás, que es la que el velo tapa. -->
+  <div id="modal-importar" class="modal-velo fixed inset-0 z-40 hidden items-center justify-center p-4"
+       role="dialog" aria-modal="true" aria-labelledby="modal-importar-titulo">
     <div class="flex max-h-[90vh] w-full max-w-5xl flex-col rounded-2xl bg-white p-6 shadow-xl">
       <div class="flex items-baseline justify-between gap-3">
-        <h3 class="font-semibold tracking-tight">Vista previa de la importación</h3>
+        <h3 id="modal-importar-titulo" class="font-semibold tracking-tight">Vista previa de la importación</h3>
         <span id="imp-resumen" class="text-xs text-gray-500"></span>
       </div>
       <div id="imp-avisos" class="mt-3 space-y-1"></div>
