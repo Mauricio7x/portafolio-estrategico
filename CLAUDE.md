@@ -4003,6 +4003,20 @@ commit y en las pruebas.
   `r.json()` lanzaba sobre el HTML del muro, el catch se llevaba el control y la comprobación del 401
   **no se alcanzaba nunca**. `leerJson()` no lanza y devuelve el motivo real. Corolario de método:
   **una regla escrita en la memoria no es una cerradura; la cerradura es la prueba**.
+- **TRES DEFECTOS DE INGESTA, todos sobre el corpus que se sirve.** (1) Al degradar a `$offset` el
+  `$select` se quedaba en `"*"`, **sin `:updated_at`**: el dedup de lectura no deja que una fila sin
+  sello reemplace a una guardada, así que un proceso que pasó a Adjudicado durante una ventana
+  degradada se seguía sirviendo como ABIERTO hasta la full de higiene —y producción atravesó 14 h en
+  ese modo en ago 2026—. Ahora el offset pide `*,:updated_at` y, si ESE select da 400, cae al mínimo
+  UNA vez y lo declara (`offsetSinSello`), que es el patrón del app_token rechazado. (2) El **delta y
+  el backfill del histórico escribían en el MISMO índice de chunk**: uno lee `man.sig` y el otro fija
+  su base al abrir el mes sin actualizar el manifest hasta el flip, con candados distintos y
+  concurrencia rutinaria por diseño. El delta pisaba lo que el backfill acababa de escribir y esos
+  registros desaparecían del keyspace «que ninguna purga toca» hasta el siguiente refresco. Como el
+  backfill está RE-BAJANDO ese mes de la fuente, sus datos mandan: el delta lo difiere y lo cuenta.
+  (3) El cierre de mes podaba **por el rango que recuerda el manifest**, así que los chunks de una
+  corrida MUERTA quedaban fuera de ese rango y sobrevivían — y la app lee el corpus por **SCAN**, o
+  sea que los servía como procesos que ya no existen en la fuente. Ahora se poda por SCAN del mes.
 - **Lo que la auditoría encontró SANO y conviene no volver a auditar a ciegas**: XSS en `app.js`
   (1 440 interpolaciones revisadas, `esc()` correcto en texto y en atributo), el cruce de los 350
   ids del frontend contra el HTML, el grafo de requires (130 nodos, 0 rotos, 0 huérfanos, 4 ciclos

@@ -16434,10 +16434,54 @@ async function main() {
       assert.ok(/precio TOPE del FFIE/.test(app), "el FFIE dice «tope» donde se acepta el mapeo, no solo después");
     }
 
-    console.log("· unidad AUDITORÍA INTEGRAL: 26 cerraduras de los defectos reproducidos "
+    // ── 27 · el modo $offset conserva el sello del dedup ────────────────────
+    // sin `:updated_at` una fila bajada en modo degradado NUNCA puede reemplazar
+    // a la guardada: un proceso adjudicado se seguía sirviendo como abierto.
+    {
+      const { crearCliente } = require("../lib/socrata.js");
+      const urls = [];
+      const cli = crearCliente({ fetchImpl: async (u) => { urls.push(u); return { ok: true, status: 200, json: async () => [] }; }, dormir: async () => {} });
+      await cli.paginaMes("2026-01", { offset: 0 }, { pagina: 10, keyset: false });
+      assert.ok(/%3Aupdated_at/.test(urls[0]) || /:updated_at/.test(decodeURIComponent(urls[0])),
+        "en $offset el $select tiene que seguir pidiendo :updated_at");
+      assert.strictEqual(cli.offsetSinSello(), false);
+      // …y si ESE select da 400, se cae al mínimo UNA vez y sigue sirviendo
+      let llamadas = 0;
+      const cli2 = crearCliente({
+        fetchImpl: async (u) => {
+          llamadas++;
+          if (decodeURIComponent(u).includes(":updated_at")) {
+            return { ok: false, status: 400, headers: { get: () => null }, text: async () => "metadata columns not allowed" };
+          }
+          return { ok: true, status: 200, json: async () => [{ a: 1 }] };
+        },
+        dormir: async () => {},
+      });
+      const filas = await cli2.paginaMes("2026-01", { offset: 0 }, { pagina: 10, keyset: false });
+      assert.strictEqual(filas.length, 1, "el respaldo sigue existiendo: un 400 por metacampos no puede parar la ingesta");
+      assert.strictEqual(llamadas, 2, "y se degrada en UNA sola llamada extra, sin reintentar el 400");
+      assert.strictEqual(cli2.offsetSinSello(), true, "…declarándolo");
+    }
+
+    // ── 28 · el delta no pisa el mes que el backfill está re-bajando ─────────
+    {
+      const sync = fs.readFileSync(path.join(RAIZ, "lib/handlers/procesos/sync.js"), "utf8");
+      assert.ok(/async function mesesEnBackfill\(/.test(sync) && /ocupados\.has\(mes\)/.test(sync),
+        "los dos escritores del histórico compartían índice de chunk: el delta pisaba lo que el backfill acababa de escribir");
+      assert.ok(/historicas_diferidas_por_backfill/.test(sync), "y lo diferido se cuenta, nunca en silencio");
+    }
+
+    // ── 29 · al cerrar el mes se poda lo que los lectores VEN ────────────────
+    {
+      const sync = fs.readFileSync(path.join(RAIZ, "lib/handlers/procesos/sync.js"), "utf8");
+      assert.ok(/patronChunksMes\(mes\)/.test(sync),
+        "el borrado por rango dejaba vivos los chunks de una corrida muerta, y la app lee por SCAN: los servía como procesos fantasma");
+    }
+
+    console.log("· unidad AUDITORÍA INTEGRAL: 29 cerraduras de los defectos reproducidos "
       + "(fuga sin token, presupuesto único, precio_manual, origen del precio, conectividad/mano de obra, "
       + "Number(null), año imposible, celda vacía, precio 0, unidades, cantidad ilegible, caja, hoja del Excel, "
-      + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos)");
+      + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos, sello del offset, backfill, huérfanos)");
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
