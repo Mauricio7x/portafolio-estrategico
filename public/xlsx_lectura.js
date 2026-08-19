@@ -43,8 +43,8 @@
   function numeroLocal(bruto) {
     const t = String(bruto == null ? "" : bruto).trim();
     if (!t) return null;
-    if (!/^[\s$.,\-+0-9]+$/.test(t)) return null;
-    let cuerpo = t.replace(/[\s$+]/g, "");
+    if (!/^[\s$€.,\-+0-9]+$/.test(t)) return null;   // el € va porque lo lleva la copia del servidor: las tres tienen que aceptar lo mismo
+    let cuerpo = t.replace(/[\s$€+]/g, "");
     let signo = 1;
     if (cuerpo.startsWith("-")) { signo = -1; cuerpo = cuerpo.slice(1); }
     if (cuerpo.includes("-") || !/\d/.test(cuerpo)) return null;

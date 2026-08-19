@@ -69,7 +69,7 @@
         ${cifra(pesosCortos(p.valorTotal) || "Sin referencia", "en juego")}
         ${cifra(num(p.entidadesActivas), "entidades")}
       </div>
-      <p class="mt-3 text-xs" style="color: var(--text-secondary);">${esc(textoActualizado(p.generado))}${p.desactualizada ? " — el dato tiene más de un día; la próxima sincronización lo renueva." : ""}</p>
+      <p class="mt-3 text-xs" style="color: var(--text-secondary);">${esc(textoActualizado(p.generado))}${p.desactualizada ? " — el dato tiene más de un día; la próxima sincronización lo renueva." : ""}${p.procesosSinCuantia ? ` · el dinero en juego cuenta los que publican presupuesto: ${num(p.procesosSinCuantia)} no lo publican` : ""}</p>
       ${conBoton ? `<button id="pt-btn-cuales" type="button" class="btn-vidrio-acento mt-5 w-full sm:w-auto">Ver a cuáles puedo presentarme</button>
       <p class="mt-2 text-xs" style="color: var(--text-secondary);">Para eso hace falta su RUP o tres datos de su empresa: toma menos de un minuto y no guardamos el documento.</p>` : ""}`;
   }
