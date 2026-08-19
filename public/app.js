@@ -41,8 +41,9 @@
      tercero: un `javascript:…` ahí sería un XSS de un clic en el origen de la
      aplicación, donde viven la sesión y el perfil guardado. Sin esquema válido
      no se pinta el enlace: la ausencia no se rellena. (La misma función vive en
-     public/portada.js, que es un módulo independiente; hay prueba que ejecuta
-     las dos sobre la misma batería.) */
+     public/portada.js, que es un módulo independiente; la prueba las EXTRAE del
+     fuente y ejecuta las dos sobre la misma batería de 16 casos, como las de
+     `numeroLocal` y `parsearCsv` — comparar los textos no serviría.) */
   const urlSegura = (u) => (/^https?:\/\//i.test(String(u ?? "").trim()) ? String(u).trim() : null);
   /* EL MURO DEL EDGE NO ES «SIN CONEXIÓN» (ago 2026). Vercel Password
      Protection responde HTML, así que `r.json()` LANZA; con el parseo dentro
@@ -55,13 +56,22 @@
   const leerJson = async (r) => {
     try { return await r.json(); } catch {
       return {
-        ok: false,
+        ok: false, sinJson: true,
         error: r.status === 401 || r.status === 403
           ? "El sitio pidió iniciar sesión (protección por contraseña). Inicie sesión y reintente."
           : `El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`,
       };
     }
   };
+  /* UN 401 TIENE DOS CAUSAS Y SE DISTINGUEN POR EL CUERPO (ago 2026). El de la
+     API significa que `HISTORICO_TOKEN` no coincide con el token integrado; el
+     del EDGE (Vercel Password Protection) significa que hay que iniciar sesión,
+     y responde HTML. Los sitios que miraban `r.status === 401` antes de mirar
+     el cuerpo enseñaban el mensaje del token sobre el muro del edge: un
+     diagnóstico tan falso como el «sin conexión» que se acaba de quitar, solo
+     que distinto. `sinJson` lo marca `leerJson` y esta función es el único
+     punto donde se decide cuál de los dos mensajes toca. */
+  const msg401 = (cuerpo) => (cuerpo && cuerpo.sinJson ? cuerpo.error : MSG_401);
   const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
   const fmtNum = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
   const fmt = new Intl.NumberFormat("es-CO");
@@ -1841,7 +1851,7 @@
       return;
     }
     if (r.status === 401) {
-      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${MSG_401}</p>`;
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${msg401(cuerpo)}</p>`;
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
@@ -1866,7 +1876,7 @@
       return;
     }
     if (r.status === 401) {
-      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${MSG_401}</p>`;
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${msg401(cuerpo)}</p>`;
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
@@ -1933,7 +1943,7 @@
     let cuerpo = null;
     try { cuerpo = await r.json(); } catch { /* HTML del muro */ }
     if (r.status === 401) {
-      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${MSG_401}</p>`;
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${msg401(cuerpo)}</p>`;
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
@@ -4802,7 +4812,7 @@
     cargandoDashboard(false);
 
     if (r.status === 401) {
-      return avisoDashboard(MSG_401, "error");
+      return avisoDashboard(msg401(cuerpo), "error");
     }
     if (r.status === 503) {
       return avisoDashboard(`${esc((cuerpo && cuerpo.error) || "Servicio no disponible")}. Puede iniciar una carga en la sección de sincronización, arriba.`, "error");
@@ -5288,7 +5298,7 @@
     $("btn-rup-cargar").textContent = etiqueta;
 
     if (r.status === 401) {
-      return mensajeRup(MSG_401, "error");
+      return mensajeRup(msg401(cuerpo), "error");
     }
     if (r.status === 400 && cuerpo && cuerpo.errores) {
       mensajeRup(cuerpo.error || "El archivo no pasó la validación: no se guardó nada.", "error");
@@ -5574,7 +5584,7 @@
     $("btn-exp-confirmar").textContent = etiqueta;
 
     if (r.status === 401) {
-      return mensajeExp(MSG_401, "error");
+      return mensajeExp(msg401(cuerpo), "error");
     }
     if (r.status === 400 && cuerpo && cuerpo.errores) {
       mensajeExp(cuerpo.error || "El JSON no pasó la validación: no se guardó nada.", "error");

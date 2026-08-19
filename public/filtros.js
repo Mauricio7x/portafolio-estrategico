@@ -199,12 +199,23 @@
      salía VACÍA con la ficha «Cuánto vale: hasta $0» — justo lo que el contrato
      de este módulo prohíbe («un valor desconocido se IGNORA, jamás vacía la
      lista»). Ahora la cadena tiene que SER un número (admite separadores de
-     miles y decimales) para valer; si no, null = sin filtro. */
+     miles y decimales) para valer; si no, null = sin filtro.
+     EL PUNTO SE LEE POR SU FORMA, NO SIEMPRE COMO MILES (ago 2026). La primera
+     versión aceptaba `1000000.00` y luego borraba TODOS los puntos, así que
+     `?max=1000000.00` filtraba hasta $100 000 000 — cien veces el tope pedido,
+     en silencio y con la ficha diciendo la cifra equivocada. Un valor inerte es
+     aceptable (lo dice el contrato); un filtro con OTRO valor, no. Se separan
+     las tres formas: agrupación colombiana (`1.000.000,50`), decimal con coma
+     (`1000000,50`) y decimal con punto (`1000000.50`). `1.000` sigue siendo mil
+     —lo captura la agrupación—, que es la lectura colombiana y la que escribe la
+     propia app. */
   const numero = (v) => {
     const s = String(v ?? "").trim();
-    if (!/^\d{1,3}(\.\d{3})*(,\d+)?$|^\d+([.,]\d+)?$/.test(s)) return null;
-    const n = Number(s.replace(/\./g, "").replace(",", "."));
-    return Number.isFinite(n) && n >= 0 ? n : null;
+    let n = null;
+    if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) n = Number(s.replace(/\./g, "").replace(",", "."));
+    else if (/^\d+(,\d+)?$/.test(s)) n = Number(s.replace(",", "."));
+    else if (/^\d+(\.\d+)?$/.test(s)) n = Number(s);
+    return n != null && Number.isFinite(n) && n >= 0 ? n : null;
   };
   const fechaISO = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || "")) ? String(v) : null);
 

@@ -522,10 +522,18 @@
        fila por INSUMO) volvía a ganar. La señal que de verdad separa las dos
        hojas es DECLARAR UN TOTAL: un presupuesto lo trae («COSTOS DIRECTOS»),
        una hoja de insumos no lo trae nunca. Se puntúa en tres escalones:
-       cuadra > declara un total > número de filas. */
+       cuadra > declara un total que sus filas no desmienten > número de filas.
+       EL SEGUNDO ESCALÓN EXIGE QUE EL TOTAL NO ESTÉ DESMENTIDO (ago 2026):
+       premiar el mero hecho de declarar un total dejaba que una hoja lateral de
+       dos filas con un «COSTO DIRECTO» que NO cuadra le ganara a la hoja de
+       presupuesto de doscientos ítems que no declara ninguno (gran total en
+       celda combinada, que es corriente). Un total que sus propias filas
+       contradicen es evidencia EN CONTRA de que esa hoja sea el presupuesto, no
+       a favor; `no_cuadra` puntúa igual que no declarar nada y decide el número
+       de filas. */
     const puntaje = (r) => [
       (r.cuadre && r.cuadre.estado === "cuadra") ? 1 : 0,
-      (r.cuadre && r.cuadre.total_declarado != null) ? 1 : 0,
+      (r.cuadre && r.cuadre.total_declarado != null && r.cuadre.estado !== "no_cuadra") ? 1 : 0,
       r.filas.length,
     ];
     for (const h of libro.hojas || []) {

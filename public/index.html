@@ -209,9 +209,22 @@
        real con el CDN bloqueado.
        Va por ID y solo sobre los tres contenedores de vista: con especificidad
        de id no puede perder contra ninguna utilidad, y al no ser una regla
-       global `.hidden` no toca los modales (que además fijan `style.display`)
-       ni pelea con `md:flex` de la barra de pestañas. */
-    #onboarding.hidden, #app.hidden, #gate.hidden { display: none; }
+       global `.hidden` no pelea con `md:flex` de la barra de pestañas.
+       …Y LOS TRES CONTENEDORES DE VISTA NO ERAN TODO (ago 2026). La primera
+       versión de esta red se quedó ahí porque dio por hecho que los modales «ya
+       fijan style.display»: lo fijan al ABRIRLOS o cerrarlos, pero al CARGAR la
+       página no tienen estilo en línea y su único «oculto» es la clase. Medido
+       en Chromium con el CDN bloqueado: los cuatro paneles de pestaña salían
+       apilados (Mi empresa + Mis procesos + Licitaciones + Precios, todos
+       `display:block` a la vez) y `modal-competencia` encima de todo, con CERO
+       errores en la consola. Mismo fallo mudo y misma cura, extendida a lo que
+       de verdad decide qué se ve: los paneles de pestaña, los diálogos y los
+       velos de modal. Sigue sin ser global — `panel-pestana`, `role="dialog"` y
+       `modal-velo` son contenedores estructurales, nunca una utilidad de
+       maquetación. */
+    #onboarding.hidden, #app.hidden, #gate.hidden,
+    .panel-pestana.hidden, [role="dialog"].hidden, .modal-velo.hidden,
+    #mapeo-panel.hidden { display: none; }
 
     /* ── piel Apple sobre las utilidades de las plantillas existentes ──
        Tarjetas: vidrio (translúcido + blur + borde sutil). El blur va SOLO en

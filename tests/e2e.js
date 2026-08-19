@@ -16071,6 +16071,7 @@ async function main() {
     const catalogoApu = require("../lib/apu/catalogo.js");
     const apuPliego = require("../lib/apu_pliego.js");
     const filtrosLista = require("../lib/filtros_lista.js");
+    const entradaMod = require("../lib/handlers/perfil/entrada.js");
     const parametros = require("../lib/parametros.js");
     const probabilidad = require("../lib/probabilidad.js");
     const portada = require("../public/portada.js");
@@ -16292,8 +16293,36 @@ async function main() {
         "`urlproceso` lo escribe quien publica en SECOP II: un javascript: sería XSS de un clic");
       const ok = { cierranEstaSemana: { n: 1, valor: 1e8, muestra: [{ entidad: "E", objeto: "O", valor: 1e8, dias: 2, enlaceSecop: "https://community.secop.gov.co/x" }] } };
       assert.ok(/community\.secop\.gov\.co/.test(portada.htmlCierran(ok)), "…y un enlace legítimo se sigue pintando");
+      /* LAS DOS COPIAS SE EJECUTAN, no se comparan por regex (ago 2026). El
+         comentario de `public/app.js` prometía «hay prueba que ejecuta las dos
+         sobre la misma batería» y esa prueba NO existía: aquí solo se miraba el
+         texto del archivo, que es justo lo que este repositorio ya aprendió que
+         no prueba nada. `urlSegura` vive duplicada en app.js y portada.js
+         porque son dos módulos de navegador independientes —la misma
+         duplicación justificada que `numeroLocal` o `parsearCsv`—, y el patrón
+         del proyecto para esas es EXTRAER la función del fuente y correr las
+         dos contra la misma batería. Si divergen, una pantalla pinta como
+         enlace lo que la otra rechaza. */
+      const extraer = (archivo) => {
+        const src = fs.readFileSync(path.join(RAIZ, archivo), "utf8");
+        const m = src.match(/const urlSegura = ([^;]+);/);
+        assert.ok(m, `${archivo} debe declarar urlSegura`);
+        return eval(`(${m[1]})`);   // eslint-disable-line no-eval
+      };
+      const copias = { app: extraer("public/app.js"), portada: extraer("public/portada.js") };
+      const bateria = [
+        "javascript:alert(1)", " javascript:alert(1)", "JavaScript:alert(1)", "data:text/html,<script>",
+        "vbscript:msgbox", "file:///etc/passwd", "//evil.tld/x", "/ruta/relativa", "",
+        null, undefined, 0, "https://community.secop.gov.co/x", " https://a.co/b ", "HTTPS://A.CO/B", "http://a.co",
+      ];
+      for (const u of bateria) {
+        const a = copias.app(u), b = copias.portada(u);
+        assert.strictEqual(a, b, `urlSegura divergió entre app.js y portada.js con ${JSON.stringify(u)}`);
+        assert.ok(a === null || /^https?:\/\//i.test(a), `urlSegura dejó pasar ${JSON.stringify(u)}`);
+      }
+      assert.strictEqual(copias.app("https://community.secop.gov.co/x"), "https://community.secop.gov.co/x");
       const app = fs.readFileSync(path.join(RAIZ, "public/app.js"), "utf8");
-      assert.ok(/const urlSegura = /.test(app) && /urlSegura\(l\.urlproceso\)/.test(app), "la tarjeta usa la misma guarda");
+      assert.ok(/urlSegura\(l\.urlproceso\)/.test(app), "la tarjeta usa la misma guarda");
     }
 
     // ── 15 · un parámetro de filtro ilegible es INERTE, nunca vacía la lista ──
@@ -16418,11 +16447,36 @@ async function main() {
     }
 
     // ── 25 · los días al cierre se cuentan en un solo sitio ──────────────────
+    /* POR COMPORTAMIENTO, NO POR REGEX SOBRE EL FUENTE. La primera versión de
+       esta cerradura miraba el texto del archivo y NO TENÍA DIENTES: su regex
+       negativa (`Math\.floor\([^)]*86400000`) no podía casar con la línea
+       defectuosa —`[^)]*` no cruza los paréntesis interiores de
+       `Math.floor((t - (ahora - OFFSET)) / 86400000)`— y la positiva ya casaba
+       antes, porque `FiltrosLista.diasParaCierre` aparecía en otra llamada del
+       mismo archivo. O sea: pasaba contra el código exacto que decía bloquear.
+       Es la lección que este repositorio ya tiene escrita («comprobar por regex
+       que una función se LLAMA no prueba que su resultado se MIRE»), y la cura
+       es medir la igualdad que de verdad importa: la cifra que titula el pulso
+       («N cierran esta semana») tiene que ser EXACTAMENTE la que abre el filtro
+       `?cierre=7d` de la lista. Con floor de un lado y ceil del otro, la fila
+       que cierra dentro de 7 días justos cae en un lado y no en el otro. */
     {
-      const entrada = fs.readFileSync(path.join(RAIZ, "lib/handlers/perfil/entrada.js"), "utf8");
-      assert.ok(!/Math\.floor\([^)]*86400000/.test(entrada),
-        "el pulso contaba con floor y todo lo demás con ceil: «7 cierran esta semana» abría una lista de 5");
-      assert.ok(/FiltrosLista\.diasParaCierre/.test(entrada), "usa la cuenta compartida");
+      const ahora25 = Date.parse("2026-08-16T12:00:00Z");
+      const enDias = (d) => new Date(ahora25 + d * 86400000 + 5 * 3600000).toISOString().slice(0, 19);
+      const filas25 = [0, 1, 3, 5, 7, 8, 15, 40].map((d, i) => ({
+        id_del_proceso: `P${i}`, fecha_cierre: enDias(d), precio_base: 1e6,
+        entidad: "ENTIDAD X", departamento_entidad: "TOLIMA", cuantia_cop: 1e6,
+        tipo_de_contrato: "Obra",
+        nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL EDEN",
+      }));
+      const pulso25 = entradaMod.agregarPulso(filas25, ahora25);
+      const clasif25 = filtrosLista.crearClasificador({ ahora: ahora25 });
+      const estado25 = Filtros.leerEstado({ cierre: "7d" });
+      const enLista25 = filas25.filter((l) => filtrosLista.cumple(l, clasif25(l), estado25)).length;
+      assert.strictEqual(pulso25.cierranEstaSemana.n, enLista25,
+        "el pulso contaba con floor y todo lo demás con ceil: «N cierran esta semana» abría una lista con menos");
+      const barra7d = pulso25.porCierre.filter((c) => c.id === "3d" || c.id === "7d").reduce((a, c) => a + c.n, 0);
+      assert.strictEqual(barra7d, enLista25, "las barras del pulso son las cubetas del filtro: cada barra ES una lista");
     }
 
     // ── 26 · los cinco bancos se nombran en la vista previa del importador ───
