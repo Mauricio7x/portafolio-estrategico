@@ -834,19 +834,30 @@
   }
   function avisoManifestacion(m) {
     if (!m || !m.aplica) return "";
-    let frase = "";
+    /* el TECHO viene del servidor (`plazo_maximo_habiles`): cablearlo aquí sería
+       una segunda copia de la constante de lib/manifestacion */
+    const tope = m.plazo_maximo_habiles || 3;
+    let frase = "", rojo = true;
     if (m.estado === "por_confirmar") {
-      frase = `el plazo para avisar que le interesa puede estar cerrando hoy o haber cerrado ya. La ley da un MÁXIMO de 3 días de oficina desde la apertura (${esc(m.apertura || "")}) y la entidad pudo poner menos en el pliego. Entre a SECOP II, mire el cronograma y avise antes de seguir: sin eso no podrá presentar oferta.`;
+      frase = `el plazo para avisar que le interesa puede estar cerrando hoy o haber cerrado ya. La ley da un MÁXIMO de ${tope} días de oficina desde la apertura (${esc(m.apertura || "")}) y la entidad pudo poner menos en el pliego. Entre a SECOP II, mire el cronograma y avise antes de seguir: sin eso no podrá presentar oferta.`;
     } else if (m.estado === "abierta" && m.confirmada && m.dias_calendario != null && m.dias_calendario <= 1) {
       frase = m.dias_calendario === 0
         ? `el plazo para avisar que le interesa vence HOY (${esc(m.fecha_limite_legible || "")}). Sin eso no podrá presentar oferta a este proceso.`
         : `el plazo para avisar que le interesa vence mañana (${esc(m.fecha_limite_legible || "")}): hágalo hoy en SECOP II. Sin eso no podrá ofertar.`;
     } else if (m.estado === "abierta" && !m.confirmada) {
       frase = `en este proceso hay que avisar que le interesa antes de poder ofertar, y el plazo puede cerrar tan pronto como el ${esc(m.puede_cerrar_desde_legible || "")}. Hágalo hoy: la entidad fija el plazo en el pliego y suele ser más corto que el máximo de ley.`;
+    } else if (m.estado === "sin_fecha") {
+      /* NO SE PUEDE SITUAR EL PLAZO Y AUN ASÍ HAY QUE AVISARLO. Callarse aquí
+         sería perder el proceso por un dato que falta, que es peor que un
+         amarillo. Va en ÁMBAR y no en rojo: el rojo significa «actúe hoy» y
+         aquí lo honesto es «verifíquelo», sin fingir una urgencia medida. */
+      rojo = false;
+      frase = `este proceso exige avisar que le interesa antes de poder ofertar y no se pudo situar el plazo con los datos publicados. Búsquelo en el cronograma del proceso en SECOP II antes de contar con él.`;
     } else return "";
     const pie = m.confirmada ? "Fecha tomada del cronograma del pliego."
       : "La ley fija un máximo, no un plazo: la fecha exacta está en el cronograma del proceso.";
-    return `<p class="mt-3 rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700" title="${esc(m.nota || "")}">Atención: ${frase} <span class="font-normal">${pie}</span></p>`;
+    const piel = rojo ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-900";
+    return `<p class="mt-3 rounded-lg ${piel} px-3 py-2 text-sm font-medium" title="${esc(m.nota || "")}">Atención: ${frase} <span class="font-normal">${pie}</span></p>`;
   }
 
   /* Veredicto GRADUADO del matching UNSPSC. Nunca es un sí/no: dice CON QUÉ
@@ -957,19 +968,36 @@
      distinción pasa_rup_y_k / pasa_todas que el servidor publica aparte a
      propósito y que un booleano colapsaría. La P4 no entra en la línea:
      nunca bloquea, y la banda de competencia de arriba ya responde eso. */
-  function lineaRequisitos(puertas) {
+  /* El veredicto de las cuatro puertas, en una línea. Dos cosas que costaron:
+     · REGISTRO FORMAL (usted). El barrido de ago-2026 se saltó esta función y
+       era la línea más visible de la aplicación: cada tarjeta decía «Cumplís
+       los requisitos para presentarte». La prueba de registro solo miraba las
+       frases de la portada; ahora mira también las de la tarjeta.
+     · COHERENCIA CON EL PLAZO DE MANIFESTACIÓN. En la selección abreviada de
+       menor cuantía, cumplir los requisitos NO basta si el plazo para avisar
+       que le interesa ya venció: no se puede presentar. Decir «cumple los
+       requisitos para presentarse» encima de un chip gris que dice «plazo
+       vencido» son dos afirmaciones incompatibles en la misma tarjeta — el
+       mismo defecto que costó el proceso de Motavita. NO se oculta el proceso
+       (puede haber avisado a tiempo y la app no lo sabe: el falso negativo
+       cuesta más), pero la línea lo dice y baja a ámbar. */
+  function lineaRequisitos(puertas, manif) {
     const g = puertas || {};
     const detalle = [g.p1_rup, g.p2_k, g.p3_caja].map((p) => p && p.mensaje).filter(Boolean).join("\n");
     const linea = (clase, texto) =>
       `<p class="mt-3 text-sm font-medium ${clase}"${detalle ? ` title="${esc(detalle)}"` : ""}>● ${esc(texto)}</p>`;
     if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", "Esta obra no encaja con su RUP.");
     if (g.p2_k && g.p2_k.pasa === false) return linea("text-red-700", "Supera su capacidad de contratación.");
+    const plazoIdo = !!(manif && manif.aplica && manif.estado === "vencida");
     if (g.p3_caja && g.p3_caja.pasa === false) {
-      return linea("text-amber-700", "Podés presentarte, pero financiarla está justo: pensá en anticipo, crédito o consorcio.");
+      return linea("text-amber-700", plazoIdo
+        ? "Financiarla está justo — y además el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo."
+        : "Puede presentarse, pero financiarla está justo: considere anticipo, crédito o consorcio.");
     }
+    if (plazoIdo) return linea("text-amber-700", "Cumple los requisitos, pero el plazo para avisar que le interesa ya venció: solo puede presentarse si avisó a tiempo.");
     const conAviso = [g.p1_rup, g.p2_k, g.p3_caja].some((p) => p && (p.sin_dato || (p.pasa && p.advertencia)));
-    if (conAviso) return linea("text-amber-700", "Cumplís los requisitos, con detalles por revisar.");
-    return linea("text-green-700", "Cumplís los requisitos para presentarte.");
+    if (conAviso) return linea("text-amber-700", "Cumple los requisitos, con detalles por revisar.");
+    return linea("text-green-700", "Cumple los requisitos para presentarse.");
   }
 
   /* Probabilidad y valor esperado. La probabilidad SIEMPRE viaja con su fuente:
@@ -1225,7 +1253,7 @@
       ${noViable ? `<p class="mt-3">${chip(`No viable${motivos ? ` — ${esc(motivos)}` : ""}`, "bg-red-100 text-red-700 ring-1 ring-inset ring-red-600/20",
     "No cumple uno de sus requisitos: abra «Más detalles» para ver cuál")}</p>` : ""}
 
-      ${lineaRequisitos(puertas)}
+      ${lineaRequisitos(puertas, l.manifestacion)}
 
       ${bloqueProbabilidad(l)}
 

@@ -276,10 +276,20 @@ hábil siguiente al informe), el techo se recorta a `cierre_de_ofertas − 1 há
 imposible se declara en vez de afirmarse. Detalle y cerraduras en `CLAUDE.md`, sección «EL PLAZO DE
 MANIFESTACIÓN NO ES DE TRES DÍAS: TRES ES EL TECHO».
 
-**Decisión original (la parte que se conserva):** la ventana se CALCULA (peldaño 3 del plan): apertura ± días hábiles
-con `lib/habiles.js` (festivos Ley 51/1983 + Pascua), tomando como apertura `fecha_de_publicacion_del`
-(supuesto declarado en la respuesta y en pantalla), y viaja **siempre** con `origenFecha:
-"calculada"` y la frase «Fecha calculada a partir de la apertura. Confirme en el cronograma». La
+**Decisión original (la parte que se conserva):** los dos extremos de la ventana se CALCULAN
+(peldaño 3 del plan) con `lib/habiles.js` (festivos Ley 51/1983 + Pascua) —apertura + 1 hábil y
+apertura + 3 hábiles—, tomando como apertura `fecha_de_publicacion_del` (supuesto declarado en la
+respuesta y en pantalla), y viajan **siempre** con `origenFecha: "ventana_calculada"` y la frase
+«La ley fija un máximo, no un plazo: confírmelo en el cronograma».
+
+**Y el peldaño 1 YA ESTÁ CABLEADO (20-ago-2026):** `lib/cronograma` extrae del texto del pliego el
+hito `manifestacion` —la fecha límite REAL, la que fija la entidad—, `/api/pliego?op=cronograma` la
+persiste al leerla (`manifestacion:cronograma`, un campo por proceso, con poda) y el listado y Mis
+procesos la consumen con **un solo comando**. Con ella el estado pasa a `confirmada` y la tarjeta
+vuelve a contar hacia atrás. Sin pliego leído, nada cambia. La fecha del pliego se acepta **solo si
+cae entre el día siguiente a la apertura y el techo legal**: fuera de ese rango se descarta con su
+motivo, porque un pliego puede rotular «manifestación de interés» la línea de PUBLICACIÓN y eso
+produciría una fecha confiada y falsa — el mismo defecto con otra etiqueta. La
 lista «abierto ahora» son las abreviadas de menor cuantía (excluida la variante «Sin Manifestacion
 Interes», que existe en el dataset) cuyo plazo calculado no venció; los días de oficina que quedan se
 recalculan con la fecha de HOY en Colombia al servir. «Próximos a abrir» sale del PAA (`9sue-ezhx`)

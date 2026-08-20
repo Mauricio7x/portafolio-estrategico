@@ -1995,12 +1995,72 @@ HOY. Decisiones que no hay que re-aprender:
   ventana (14 ago + 1/3 hábiles = 18/20 ago, con el festivo del 17) sí está verificada contra
   `lib/habiles`.
 
-**Lo que queda pendiente y por qué no se hizo aquí:** el dataset no publica la fecha límite de
-manifestación (medido, `docs/datos.md` §7), así que la única vía para AFIRMARLA es leer el
-cronograma del pliego. Ese cableado existe ya en la regla y en Mis procesos; falta que el listado
-consulte de oficio el pliego guardado (`pliego:{proceso}:v:{n}`) para los procesos con manifestación
-abierta. Es la mejora de fondo: convertiría el «verifique HOY» en «vence el martes 18», que es lo que
-el contratista de verdad necesita.
+**EL PELDAÑO 1 YA ESTÁ CABLEADO (misma sesión).** El dataset no publica la fecha límite (medido,
+`docs/datos.md` §7), así que la única vía para AFIRMARLA es el pliego. `lib/cronograma` ya extraía el
+hito; ahora `/api/pliego?op=cronograma` lo **persiste** al leerlo y el listado y Mis procesos lo
+consumen. Con el pliego leído, la tarjeta pasa de «verifique HOY si sigue abierto» a «vence mañana,
+martes 18». Decisiones:
+- **Se PRECALCULA al leer el pliego y la petición del usuario solo LEE** (el criterio de la portada):
+  releer hasta 400 KB de texto por proceso en cada listado es inviable. Un campo por proceso en
+  `manifestacion:cronograma`, **un `HGETALL`** para todo el listado, y solo si el corpus trae alguna
+  de menor cuantía. Sin pliego leído no cambia absolutamente nada.
+- **`lib/manifestacion` sigue siendo HOJA**: el cliente de Redis se INYECTA, no se importa (el patrón
+  de `lib/almacen`). Nada purga esa clave, así que la poda va dentro, con cota dura (2 000 campos,
+  120 días) — se mira el tamaño con un comando barato y solo se reescribe cuando de verdad crece.
+- **EL CAMINO «CONFIRMADO» NECESITA SU PROPIA CERRADURA o repite el defecto con otra etiqueta.** Los
+  hitos se extraen por REGEX de línea y un pliego puede rotular «manifestación de interés» la línea
+  de PUBLICACIÓN (SECOP II escribe «publicación del pliego definitivo **y demostración de interés**»).
+  La fecha del pliego solo se acepta si cae **entre el día siguiente a la apertura y el techo legal**;
+  fuera de ahí se descarta, viaja en `fecha_cronograma_descartada` y el motivo se escribe en la nota
+  —**auditable, nunca usada**—. Hay prueba de que una descartada jamás se pinta como fecha límite.
+- Best-effort: `guardarFechaCronograma` no lanza. Mejora otra pantalla; no puede tumbar la lectura
+  del cronograma que se pidió.
+
+**CINCO DEFECTOS MÍOS QUE ENCONTRÓ LA AUDITORÍA DE LA PROPIA CORRECCIÓN.** Se dejan escritos porque
+cuatro son de familias que este repositorio ya conoce:
+- **Escribí la prueba vacua que este mismo defecto enseña a no escribir.** La guarda del frontend
+  recorría las apariciones de «vence HOY/mañana» y comprobaba que la cadena `m.confirmada` estuviera
+  **en algún sitio del bloque** — se cumple sola. Sustituida por una **prueba de propiedad EJECUTADA**:
+  168 casos (14 días × 4 hipótesis de cronograma × 3 filas) que exigen «`vence hoy/mañana` ⟹
+  `confirmada === true`», que `vencida` no empuje a un trámite imposible y que `sin_fecha` avise en
+  ámbar. La prueba **declara los cuatro estados que tiene que ejercitar** y falla si alguno no sale.
+- **Una segunda prueba vacua, esta preexistente**: el bucle que validaba `op=manifestacion` recorría
+  un array VACÍO con el corpus de prueba, así que no ejecutaba ni una línea. **Escondía un 500**: el
+  handler importaba `sigueValiendoLaPena` de `lib/portada`, que no lo re-exportaba → `is not a
+  function` en la primera petición con la ventana llena. La ventana se siembra ahora a propósito y
+  hay prueba POR MUTACIÓN de que quitar el export tumba la suite. Lección: **un bucle de aserciones
+  sobre una lista que puede estar vacía es una prueba que puede no existir**; si el caso importa, hay
+  que sembrarlo.
+- **Un `${3}` cableado a mano** en el mensaje de las alertas y otro en el frontend, duplicando
+  `PLAZO_MANIFESTACION_HABILES`. El techo viaja ahora en `plazo_maximo_habiles` y ninguna pantalla lo
+  escribe.
+- **`hoy` sin guarda**: con `undefined`, `hoy > hasta` y `hoy < desde` son las dos falsas y la máquina
+  respondía `por_confirmar` **en silencio**. Se cae al día de Colombia.
+- **`sin_fecha` no producía ningún aviso**: un proceso que exige el trámite y cuyo plazo no se pudo
+  situar pasaba callado. Ahora avisa **en ÁMBAR** — el rojo significa «actúe hoy» y aquí lo honesto
+  es «verifíquelo», sin fingir una urgencia medida.
+
+**DOS DEFECTOS AJENOS QUE SALIERON POR EL CAMINO, los dos visibles en la captura del ingeniero:**
+- **EL VEREDICTO SE CONTRADECÍA CON EL PLAZO.** «Cumple los requisitos para presentarse» encima de un
+  chip gris que dice «plazo vencido» son dos afirmaciones incompatibles: sin la manifestación **no se
+  puede presentar**. Medido: en el corpus de prueba, **64 de 64** procesos de menor cuantía servidos
+  tienen la ventana cerrada, y en producción pasa lo mismo por construcción (el trámite dura 3 días
+  hábiles y el proceso sigue listado semanas). El proceso **NO se oculta** —pudo haber avisado a
+  tiempo y la app no lo sabe: el falso negativo cuesta más— pero `lineaRequisitos` recibe ahora la
+  manifestación, baja a ámbar y dice «solo puede presentarse si avisó a tiempo». `?manif=abierta` ya
+  era el filtro para verlos separados.
+- **EL BARRIDO A REGISTRO FORMAL DE AGO-2026 SE SALTÓ LA LÍNEA MÁS VISIBLE DE LA APP.** Cada tarjeta
+  decía «Cumpl**ís** los requisitos para presentar**te**» y «Pod**és** presentarte… pens**á** en
+  anticipo» — voseo, justo lo que el dueño había mandado quitar, y sale en la captura que envió. La
+  prueba de registro solo miraba **las frases de la portada**; ahora ejecuta las siete ramas de
+  `lineaRequisitos` y barre el fuente de los seis módulos del navegador. **«su RUP» se conserva**: es
+  el nombre propio del documento, el uso que la regla de la Fase 6 mantiene a propósito — se cambió
+  por error y una prueba ya fijada lo devolvió.
+
+**El aviso rojo vive exactamente 4 días de oficina** (del día de la apertura al techo legal) y luego
+se apaga en gris: la ventana de ruido está acotada y medida. Y la faceta
+`facetas.manifestacion {total, abiertas, urgentes, vencidas, sin_fecha}` se imprime en cada corrida de
+la suite, así que el alcance deja de ser una impresión.
 
 ### Segunda ronda de correcciones del dueño (18-ago-2026): tipos de trabajo, lenguaje, frases, conceptos de orden
 
