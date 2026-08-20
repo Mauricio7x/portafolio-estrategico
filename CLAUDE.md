@@ -3247,6 +3247,85 @@ rotulan con palabras (**Licitaciones · Precios · Mi empresa**) y en móvil lle
   plantilla de `bloqueProbabilidad` dejó de compilar `app.js` ENTERO — la pestaña se muere en silencio, que es
   justo el modo de fallo que la suite vigila. Los comentarios van FUERA de la plantilla.
 
+### La tercera cifra de la tarjeta es LA PLATA QUE QUEDA (`lib/ganancia`, ago 2026)
+
+Encargo del dueño, con sus palabras: «el valor que me das al lado del valor total, que el cliente
+asume que es lo que le queda de ganancia… no se entiende nada». La celda decía **«$1.183M · de
+contrato esperado por intento · presupuesto × opción de ganar, contando las veces que no se gana ·
+no es utilidad»**: correcto, con su aclaración al lado, y aun así leído al revés — y leído al revés
+justo al lado de la cuantía, que es con lo que se confundía. Un número que se lee al contrario de lo
+que dice hace más daño que uno que falta. Ahora la celda ES lo que el usuario creía estar leyendo.
+
+- **NO ES UN SEGUNDO CÁLCULO: sale de `lib/apu/piso_techo`**, que es quien define en este
+  repositorio qué es «no perder plata». `ganancia = V × (1 − τ) − CD × (1 + (A+I)/100)`, que es
+  idénticamente `(V − piso_sin_utilidad) × (1 − τ)`. Reimplementarla habría creado una segunda
+  definición de punto de equilibrio y la divergencia se vería en el peor sitio: la tarjeta diciendo
+  que deja y el panel de Precios que no. Hay prueba de la identidad, de que en `V = piso_rentable` la
+  ganancia vale exactamente `CD × U_min/100`, y de que el signo coincide con el veredicto del panel.
+- **`costo_sin_ganancia`, JAMÁS `costo_total`.** El `costo_total` de `pisoTecho` lleva la utilidad
+  mínima dentro. Dos cifras parecidas con nombres parecidos es `total_procesos`/`procesos_contados`,
+  y aquí serían pesos. Por lo mismo `piso_techo` publica ahora `costo_sin_utilidad` **redondeado una
+  sola vez**: deducirlo de `piso_sin_utilidad` (ya redondeado y ya dividido por 1 − τ) encadena dos
+  redondeos y puede mover el resultado un peso justo en el borde del SIGNO, que es lo que decide.
+  Invariante probada: `V = valor + descuentos + costo_sin_ganancia` — la resta que se enseña cuadra.
+- **DOS NIVELES Y NINGÚN INVENTO.** `base: "apu"` = el costo directo del borrador de ESE proceso
+  (medido, y viaja el `borrador` para poder auditarlo). `base: "estructura_de_precio"` = el costo se
+  cierra por la IDENTIDAD con la que se arma cualquier oferta de obra —precio = CD × (1 + A + I + U)—,
+  que es un supuesto sobre CÓMO construye el precio, no una estimación de sus costos, y viaja escrito
+  en `supuestos`. El AIU sale del borrador del proceso; si no, del último que guardó
+  (`config_reciente`, que `cargarCostosPorProceso` devuelve gratis: los borradores ya están leídos);
+  si no, el de referencia 15/5/5 **y se declara**. Sin presupuesto oficial, `null` con motivo.
+- **LA CONTRIBUCIÓN DEL 5 % NO SE LE COBRA A TODO, Y ESO MUEVE EL SIGNO.** El art. 120 de la Ley
+  418/1997 grava los contratos de **OBRA PÚBLICA**; una interventoría o una consultoría son contratos
+  de consultoría (Ley 80/1993 art. 32 num. 2) y no la causan. Cobrárselas restaba ~5 puntos de un
+  margen típico de 4 y pintaba en rojo contratos que dejan plata. La regla vive UNA vez
+  (`aplicaContribucion`) y el editor la **importa** — hay prueba de que no reaparece una segunda
+  lista de «esto no es obra». Un tipo desconocido SÍ la causa: ante la duda, no prometer.
+- **CON LA ESTRUCTURA DE REFERENCIA (A 15 · I 5 · U 5) LA CIFRA SALE NEGATIVA EN OBRA, Y ES LA
+  LECCIÓN, NO UN DEFECTO.** −1 % del contrato: la ganancia declarada del 5 % no cubre la contribución
+  del 5 %. Es literalmente «el olvido más caro del país» del manual, hecho visible en cada tarjeta. Y
+  no se deja como un susto: la respuesta despeja `utilidad_minima_para_no_perder_pct` (6,32 % con
+  A 15 · I 5) y la frase lo dice. **El despeje NO es el mismo en los dos modos de AIU**: en compuesto,
+  A e I se cancelan. Solo tiene sentido en el nivel `estructura_de_precio` — con el costo MEDIDO, el
+  precio al que la entidad adjudica no se mueve porque el usuario declare otra ganancia, y ahí lo
+  accionable es el piso del panel.
+- **…Y SI SU ADMINISTRACIÓN YA LLEVA LOS IMPUESTOS DENTRO, se cobrarían dos veces.** El desglose de
+  AIU que se radica suele traer una línea de «impuestos, tasas y contribuciones» dentro de la «A». El
+  error vale **5 puntos del contrato: más que la ganancia entera**, así que no se adivina ni se
+  promedia — lo declara el usuario con la casilla «Mi administración ya incluye los impuestos del
+  contrato» (Ajustes de *Precios*, `config.contribucion_en_administracion`, que viaja en el borrador
+  y de ahí lo lee la tarjeta). El defecto es `false`: la doctrina que Piso/Techo ya aplica en
+  producción. De paso se corrigió el pie de «Deducciones de acta %», que decía «Contribución 5 % +
+  estampillas + ReteICA» e invitaba a escribir el 5 % que `pisoTecho` ya suma aparte.
+- **SIEMPRE AL PRECIO DE MERCADO, TAMBIÉN CUANDO SALE EN ROJO.** Si el costo del usuario deja su
+  precio mínimo por encima del techo, la cifra es negativa — que es el veredicto «no se presente» del
+  panel adelantado a la tarjeta. Enseñar la utilidad que dejaría a SU precio sería una cifra en verde
+  sobre un proceso que casi con seguridad no gana: aquí el falso positivo es el caro.
+- **SIN CREDENCIAL VIAJA `null`, y por DOS motivos independientes**: sale del costo y de la
+  estructura de precio del dueño, y lleva dentro el precio de mercado —la misma mediana de baja que
+  `lib/publico` acaba de tapar—. Se anula el objeto ENTERO: `frase` dice «Si gana este contrato a
+  $950.000.000…» y dejarla sería la redacción de mentira de `p2_k.mensaje` por cuarta vez.
+- **ES SIEMPRE UNA COTA SUPERIOR Y SE ENUMERA POR QUÉ** (`cota_superior_por`): no descuenta el costo
+  de financiar la obra mientras la entidad paga (~5 puntos según el manual), ni los ensayos, ni el
+  PMA, ni la liquidación, y sin `deducciones_pct` tampoco las estampillas. «Cota superior» a secas es
+  una etiqueta; con los motivos es la lista de lo que el usuario puede cargar para cerrarla. El
+  número con caja, payback y maldición del ganador sigue siendo `lib/apu/rentabilidad`, que exige un
+  presupuesto de verdad y por eso vive en Precios.
+- **`copFirmado` es la tercera lección de `Number(null) === 0`**, y la cazó su propia prueba:
+  `fmtCorto` responde «No definida» al 0 y `$-9500000` a un negativo porque nació para CUANTÍAS,
+  donde no hay signo y el 0 es una ausencia. La ganancia tiene las dos cosas: signo, y un 0 que es el
+  punto de equilibrio MEDIDO. La ausencia se descarta ANTES de tocar `Number`.
+- **`ordenar_por=ganancia` («Lo que más deja») ordena por la ganancia PONDERADA** por la opción de
+  ganar: un contrato enorme que se gana una vez de cada veinte deja menos, por intento, que uno
+  mediano que se gana una de cada tres. Sin cifra va al final, jamás con un cero. Y `margen` se
+  renombró a **«Más recorrido de precio»**: `techo − piso` es distancia entre dos PRECIOS, no plata
+  que queda, y llamarlos igual («Dónde me queda más») era la misma confusión en el selector.
+- **UNA ASIMETRÍA CONSCIENTE con `b_max`**: `lib/baja_maxima` sigue cobrando la contribución siempre,
+  sin mirar el tipo ni la casilla. No es doctrina: ese piso alimenta `p_ganar`, cuya cadena está
+  medida en producción y probada contra el desglose de `/api/inteligencia`, y moverla aquí cambiaría
+  la probabilidad de todo el corpus por un encargo que era sobre otra cifra. Queda apuntado como
+  pendiente separado; afecta solo a interventorías y consultorías CON presupuesto guardado.
+
 ### Accesibilidad de la zona · el costo de LLEGAR ordena (ago 2026)
 
 `lib/accesibilidad.js` + `data/accesibilidad_departamentos.json` + campo `zona` en

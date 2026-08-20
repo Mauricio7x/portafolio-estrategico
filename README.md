@@ -271,7 +271,7 @@ nada, ni siquiera qué perfiles existen.
 | `incluir_sin_unspsc` | — | `1` para reabrir la ruta de texto sin pertinencia verde (toggle de la UI) |
 | `incluir_cerradas` | — | `1` para incluir procesos en estado terminal |
 | `solo_viables` | **`true`** | Oculta lo que no pasa las puertas P1-P3. Con `false` aparecen al final, marcados |
-| `ordenar_por` | **`atractividad`** | `atractividad` · `ve` · `ve_conservador` (cuantía × cota inferior de la banda de probabilidad; sin banda cae al VE) · `p_ganar` · `anticipo` · `cuantia` · `competencia` (nivel de la **entidad**) · `puntaje` (legado) |
+| `ordenar_por` | **`atractividad`** | `atractividad` · `ganancia` (lo que deja el contrato × la opción de ganar) · `ve` · `ve_conservador` (cuantía × cota inferior de la banda de probabilidad; sin banda cae al VE) · `p_ganar` · `anticipo` · `cuantia` · `competencia` (nivel de la **entidad**) · `margen` · `cierre` · `puntaje` (legado) |
 | `baja_max` | — | Baja máxima en % que el dueño soporta sin perder plata (**solo con token**; sin credencial es inerte y `baja_max_ignorada` lo dice). Con ella el ajuste `precio` de `p_ganar` deja de ser neutro. Ilegible ⇒ inerte, nunca 400. **Si el proceso tiene un borrador de APU guardado con costo, la baja máxima sale de él** (`1 − piso_rentable/presupuesto_oficial`) y manda sobre esta; cada fila publica `baja_maxima {valor, origen: apu·declarada·null, borrador}` |
 | `orden` | `desc` | `asc` · `desc` |
 | `pagina` / `por_pagina` | 1 / 20 | `por_pagina` máx 100 |
@@ -292,7 +292,8 @@ en `lib/filtros_lista.js`; cobertura de cada columna medida contra `p6dx-8zbt` e
 | `entidad` | Buscar entidad | NIT (con o sin DV) o subcadena del nombre |
 | `q` | Buscar por palabra | subcadena normalizada sobre objeto y entidad |
 | `ordenar_por=cierre` | Las que cierran antes | menos días primero; sin fecha al final |
-| `ordenar_por=margen` | Dónde me queda más | `techo − piso` (Fase 3) SOLO para procesos con un borrador de APU guardado con `costo_directo`; los demás «Sin referencia», al final. **Nunca se asume margen cero**. **SOLO CON TOKEN** (ago 2026): su `piso` sale del costo directo del dueño y de su `techo` se despeja la mediana de baja que `lib/publico` tapa, así que sin credencial el orden es INERTE y `margen_ignorado` lo dice |
+| `ordenar_por=ganancia` | Lo que más deja | Ganancia del contrato (`lib/ganancia`) × opción de ganar. Sin presupuesto oficial, al final: **jamás un cero**. **SOLO CON TOKEN**: sale del costo y de la estructura de precio del dueño |
+| `ordenar_por=margen` | Más recorrido de precio | `techo − piso` (Fase 3) SOLO para procesos con un borrador de APU guardado con `costo_directo`; los demás «Sin referencia», al final. Es RECORRIDO DE PRECIO, no la plata que deja. **Nunca se asume margen cero**. **SOLO CON TOKEN** (ago 2026): su `piso` sale del costo directo del dueño y de su `techo` se despeja la mediana de baja que `lib/publico` tapa, así que sin credencial el orden es INERTE y `margen_ignorado` lo dice |
 
 Salida añadida: `totalSinFiltros` (la base antes de los filtros del usuario), `filtrosAplicados`
 (fichas legibles `[{filtro, etiqueta}]`), `sugerencia` (`{filtro, siLoQuita}` SOLO con cero
@@ -304,6 +305,37 @@ ninguno de los dos: `sinFinanzas` anula el campo y los borradores ni se leen). `
 responde el catálogo real de entidades con procesos abiertos: `[{nit, nombre, procesosAbiertos,
 valorAbierto}]`, máximo 10. Nota: el plan v4 llamaba `orden=` al criterio; aquí `orden` ya era la
 dirección (`asc|desc`), así que el criterio sigue en `ordenar_por`.
+
+**Lo que deja el contrato (`ganancia`, ago 2026)** — `lib/ganancia.js`. Cada fila del listado trae
+`ganancia`, la tercera cifra de la tarjeta. Sustituye al valor esperado en esa celda porque el valor
+esperado se leía al revés: el dueño reportó que «el cliente asume que es lo que le queda de
+ganancia», y no lo era. `ve` sigue viajando, ordenando y explicándose como lo que es.
+
+```
+ganancia = V × (1 − τ) − CD × (1 + (A + I)/100)          ⟺   (V − piso_sin_utilidad) × (1 − τ)
+```
+
+| Pieza | De dónde sale |
+| --- | --- |
+| `V` (`precio_esperado`) | `presupuesto_oficial × (1 − baja_mediana)` con **n ≥ 5** (`lib/indice_baja`, el MISMO techo del panel Piso/Techo). Sin base, el presupuesto oficial, declarado en `supuestos` |
+| `CD` (`costo_directo`) | **`base: "apu"`** → el `costo_directo_guardado` del borrador de ESE proceso (medido). **`base: "estructura_de_precio"`** → cerrado por la identidad de la oferta, `V / (1 + (A+I+U)/100)`, declarado |
+| `A`, `I`, `U` | La configuración del borrador del proceso; si no, la del último borrador guardado (`config_reciente`); si no, la de referencia 15/5/5 **y se declara** |
+| `τ` (`tau_pct`) | Contribución de obra pública 5 % (Ley 418/1997 art. 120) **solo en contratos de OBRA** + `deducciones_pct` cargadas. Una interventoría o una consultoría es contrato de consultoría y **no la causa** |
+
+Campos: `valor` · `por_intento` (× `p_ganar`; `null` sin probabilidad, jamás 0) · `base` ·
+`precio_esperado` / `origen_precio` · `costo_directo` · `costo_sin_ganancia` (NO `costo_total`: ese
+nombre ya es el de `pisoTecho` **con** la utilidad dentro) · `descuentos` · `tau_pct` ·
+`contribucion_aplica` · `aiu {…, origen}` · `utilidad_minima_para_no_perder_pct` (solo en el nivel
+`estructura_de_precio`) · `es_cota_superior` + `cota_superior_por` · `supuestos` · `frase` ·
+`fuentes`. **Invariante probada:** `V = valor + descuentos + costo_sin_ganancia` (la resta que se
+enseña cuadra al peso) y en `V = piso_rentable` la ganancia vale exactamente `CD × U_min/100`.
+**Sin credencial viaja `null`**: sale del costo y de la estructura de precio del dueño y lleva dentro
+la mediana de baja que `lib/publico` acaba de tapar. Con la estructura de referencia (A 15 · I 5 ·
+U 5) y la contribución aparte la cifra sale **negativa** en obra: es la lección del manual («el
+olvido más caro del país») y la respuesta dice con cuánta ganancia declarada dejaría de perderse.
+La casilla **«Mi administración ya incluye los impuestos del contrato»** (Ajustes de *Precios*,
+`config.contribucion_en_administracion`) la desactiva cuando el desglose de AIU del usuario ya la
+lleva dentro — son 5 puntos del contrato, más que la ganancia entera, así que no se adivina.
 
 **Fase 9 (ago 2026) — la portada y la manifestación de interés.** `GET /api/procesos?op=portada`
 (público) LEE el agregado precalculado `portada:resumen` que la sincronización escribe al terminar

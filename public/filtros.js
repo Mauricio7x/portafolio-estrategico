@@ -163,8 +163,10 @@
   const ORDENES = Object.freeze([
     { id: "atractividad", etiqueta: "Las mejores para usted (recomendado)",
       concepto: "Primero las que pasan sus cuatro requisitos (registro de proponente, capacidad de contratación, caja y competencia); entre esas, las más cercanas a su zona; y dentro de cada zona, las de mayor contrato esperado (presupuesto oficial × opción estimada de ganar). Es un orden para mirar primero lo que más probablemente vale su tiempo, no una promesa de adjudicación." },
-    { id: "margen", etiqueta: "Dónde me queda más (solo las que ya costeó)",
-      concepto: "Solo las que ya costeó en Precios: ordena por lo que le queda entre su piso rentable (costo directo + AIU + contribución) y el techo al que suele adjudicar la entidad. Las demás van al final, sin cifra: no se inventa un margen." },
+    { id: "ganancia", etiqueta: "Lo que más deja",
+      concepto: "Lo que le queda del contrato si lo gana —precio al que suele adjudicar la entidad, menos su costo, su administración e imprevistos, y menos la contribución del 5 % de obra pública y las deducciones que haya cargado—, multiplicado por su opción de ganar, que es lo que hace comparable un contrato grande y difícil con uno mediano y ganable. Con el costo que usted ya calculó en Precios la cifra es suya; si todavía no lo calculó, se supone que arma la oferta con su estructura de precio actual y se dice. Sin presupuesto oficial publicado no hay cifra: se va al final, nunca en cero." },
+    { id: "margen", etiqueta: "Más recorrido de precio (solo las que ya costeó)",
+      concepto: "Solo las que ya costeó en Precios: ordena por el RECORRIDO que le queda al precio entre su piso rentable (costo directo + administración, imprevistos y ganancia mínima + contribución) y el precio al que suele adjudicar la entidad. Es margen de maniobra para ofertar, NO la plata que deja el contrato: para eso está «Lo que más deja». Las demás van al final, sin cifra." },
     { id: "cierre", etiqueta: "Las que cierran antes",
       concepto: "Las que cierran antes, primero. Regla del oficio: la oferta se presenta el día ANTERIOR al cierre." },
     { id: "cuantia", etiqueta: "Las más grandes",
