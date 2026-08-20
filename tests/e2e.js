@@ -7796,6 +7796,16 @@ async function main() {
         assert.strictEqual(pn.fuentes.siri.n, 1);
         assert.strictEqual(pn.fuentes.contratos_secop2.contratos, 0);
         assert.strictEqual(pn.fuentes.multas_secop1.multas, 0);
+        /* PERSONA JURÍDICA SIN CÉDULA DEL REPRESENTANTE: «falta la cédula», no
+           «no respondió». No consultar por falta de un dato no es que la fuente
+           falle, y culparla escondería que el hueco lo cierra quien consulta. */
+        const sinRl = (await socio("&id=900999999")).cuerpo;
+        assert.strictEqual(sinRl.fuentes.siri.ok, false);
+        assert.deepStrictEqual(sinRl.identificacion.cedulas_consultadas_en_siri, []);
+        const fSiri = sinRl.checklist.find((f) => f.clave === "siri");
+        assert.strictEqual(fSiri.estado, "falta_cedula", "sin cédula que consultar el estado lo dice");
+        assert.ok(/escríbala/.test(fSiri.resumen), "…y dice cómo darla, en registro formal (usted)");
+        assert.deepStrictEqual(sinRl.semaforo.fuentes_caidas, [], "no consultar por falta de dato no es una fuente caída");
         // representante declarado por quien consulta se suma a la lista de cédulas
         const conRl = (await socio(`&id=${SOCIO_NIT}&representante=${SOCIO_RL}2`)).cuerpo;
         assert.deepStrictEqual(conRl.identificacion.cedulas_consultadas_en_siri.sort(), [SOCIO_RL, `${SOCIO_RL}2`].sort());

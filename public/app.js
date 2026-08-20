@@ -7097,8 +7097,8 @@
     const ir = mu.inhabilidad_reiterada || {};
     const estados = co.estados ? Object.entries(co.estados).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${esc(k)} ${v}`).join(" · ") : "";
     const rl = idn.representante_legal;
-    const estadoTxt = { hallazgos: "con hallazgos", sin_hallazgos: "sin hallazgos en el dataset", pendiente_manual: "ábrala y consulte", no_consultada: "no respondió" };
-    const estadoClr = { hallazgos: "text-red-700", sin_hallazgos: "text-emerald-700", pendiente_manual: "text-gray-700", no_consultada: "text-amber-700" };
+    const estadoTxt = { hallazgos: "con hallazgos", sin_hallazgos: "sin hallazgos en el dataset", pendiente_manual: "ábrala y consulte", no_consultada: "no respondió", falta_cedula: "falta la cédula del representante" };
+    const estadoClr = { hallazgos: "text-red-700", sin_hallazgos: "text-emerald-700", pendiente_manual: "text-gray-700", no_consultada: "text-amber-700", falta_cedula: "text-amber-700" };
     return `
       <div class="rounded-xl p-4 ring-1 ring-inset ${clr}">
         <p class="text-sm font-semibold"><span class="${punto}">●</span> ${esc(sem.texto || "")}</p>
