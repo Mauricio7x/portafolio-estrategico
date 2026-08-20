@@ -322,20 +322,32 @@ pasa a negativo y `filtros_duros.veg_no_positivo` empieza a decir «el valor esp
 costo de preparar la oferta» en presupuestos que deberían salir verdes.
 
 Medido en la suite tras retirar el tertil: `p_ganar` del bloque de rentabilidad pasó de 0,2091 a
-0,1777. **No se corrige aquí** porque exige separar `p` de `p_sin_precio` y coordinar dos módulos
-(pasos A4/A5 del plan del documento). Es un cambio de modelo, no una corrección.
+0,1777. **No se corrigió aquí** porque exigía separar `p` de `p_sin_precio` y coordinar dos módulos
+(pasos A4/A5 del plan del documento). Era un cambio de modelo, no una corrección.
 
-Lo que sí cabe hacer ya, y es barato: **una prueba que vigile el signo del VEG** (§3.5.3).
+> **✔ CERRADO (ago 2026).** A5 se implementó: `lib/probabilidad` publica `p_sin_precio` (base ×
+> prórroga × colisión, sin el factor de precio) y `lib/handlers/apu/editor` la pasa como `p_base` a
+> `desdePresupuesto` y al optimizador, donde `pGanarPorPrecio` aplica el precio UNA vez con la baja
+> que el dueño va a ofertar de verdad. El precio ya no se cobra dos veces.
+> Y el signo del VEG **ya está vigilado** (§3.5.3): un presupuesto sano da positivo, `veg_positivo` y
+> `filtros_duros` no pueden discrepar del número, la identidad `round(p × utilidad − cPrep)`,
+> monotonía en `p_base` y en el costo de preparar, y sin `p` el VEG es `null` y jamás 0.
 
-### 4.3 · 🟠 El PAA no se lee — la ventaja de seis meses sigue sin explotar
+### 4.3 · ✔ RESUELTO (ago 2026) · El PAA ya se lee
 
-La app ingiere **solo `p6dx-8zbt`** (procesos ya publicados). El Plan Anual de Adquisiciones se
-publica el **31 de enero** con objeto, valor, mes previsto y modalidad de todo el año; el manual lo
-señala como *la* fuente de inteligencia anticipada y «casi nadie la lee». Hoy la app avisa cuando el
-proceso **ya salió** y la competencia tiene los mismos 20 días.
+Cuando se escribió esta sección la app ingería **solo `p6dx-8zbt`** (procesos ya publicados) y el
+Plan Anual de Adquisiciones —la fuente que da hasta seis meses de ventaja— no se tocaba.
 
-Es **la brecha de mayor impacto sobre el objetivo** (más adjudicaciones), y no es una corrección: es
-un dataset nuevo, un keyspace nuevo y una pantalla nueva. Decisión del dueño.
+> **Ya no es cierto.** `lib/paa.js` + `/api/inteligencia?op=paa` (alias `/api/paa`) consultan **en
+> vivo** el dataset `9sue-ezhx` con las columnas verificadas contra la fuente real (2026-08-12) y
+> devuelven lo previsto para los próximos 12 meses, filtrable por entidad y por UNSPSC jerárquico. El
+> toggle «Ver PAA» lo pinta en **sección aparte** con badge `PAA · planeado` —mezclar una previsión
+> con un proceso abierto sería la peor forma de equivocarse— y la **tasa de acierto se MIDE**
+> (`lib/paa_acierto`, `?medir=1`, vigencia cerrada contra el corpus, declarada como cota inferior).
+> Lo que sigue sin hacerse, y es deliberado: no hay ingesta a un keyspace propio; se consulta en vivo.
+
+Antes de dar por pendiente cualquier otra línea de esta sección, **verifíquela contra el código**:
+este documento describe el estado de una sesión concreta y el repositorio se ha movido desde entonces.
 
 ### 4.4 · 🟡 `inferir` y `calcular` piden token y quizá no deberían
 
@@ -430,6 +442,13 @@ superados. Ninguna corrección cambió un número de negocio: se comprobó que l
 ## 7 · Lo que esta auditoría NO pudo comprobar
 
 Dicho explícitamente, porque un censo que calla sus vacíos es peor que ninguno:
+
+> **Actualización (ago 2026):** los puntos 1, 2 y 4 de abajo se cerraron después. `datos.gov.co`
+> SÍ responde desde este entorno —el 403 era una observación con fecha, no una propiedad— y las
+> columnas de adjudicación se verificaron contra la fuente real; y el frontend se verificó en
+> **Chromium real** contra un arnés que sirve `public/` y responde `/api/*` con la forma de cada
+> handler, que es lo que destapó que sin el CDN de Tailwind los cuatro paneles de pestaña salían
+> apilados. Los puntos 3 y 5 siguen vigentes.
 
 1. **Nada contra datos reales.** El entorno no alcanza `datos.gov.co` (`CONNECT 403`). Todo lo
    verificado corre sobre mocks. Las columnas de adjudicación siguen sin confirmar.
