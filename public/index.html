@@ -1290,14 +1290,16 @@
         </div>
 
         <!-- ══════ Sincronización con SECOP II ══════ -->
-<details id="sync-wrap" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+<details id="sync-wrap" open class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <summary class="cursor-pointer font-semibold tracking-tight">Sincronización con SECOP II (avanzado)</summary>
         <section id="seccion-sync" class="mt-4">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <p class="max-w-xl text-sm text-gray-500">
-              La carga completa avanza en tandas: cada invocación trabaja hasta agotar su presupuesto de
-              tiempo, guarda el cursor y termina. Este botón encadena las tandas solo, hasta que la carga
-              concluya. Puede cerrar la pestaña y volver: el avance queda guardado.
+              La sincronización avanza en tandas: cada invocación trabaja hasta agotar su presupuesto de
+              tiempo, guarda el cursor y termina. Estos botones encadenan las tandas solos hasta terminar.
+              <strong>Ponerse al día</strong> continúa donde quedó — es el de todos los días.
+              <strong>Carga completa</strong> reinicia la ingesta desde enero: solo tras cambiar una regla
+              de ingesta. Puede cerrar la pestaña y volver: el avance queda guardado.
             </p>
             <label class="block shrink-0">
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Duración por tanda</span>
@@ -1310,9 +1312,13 @@
           </div>
 
           <div class="mt-5 flex flex-wrap items-center gap-3">
-            <button id="btn-iniciar"
+            <button id="btn-al-dia"
                     class="rounded-xl bg-gray-900 px-5 py-2.5 font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-              Iniciar sincronización full automática
+              Ponerse al día ahora
+            </button>
+            <button id="btn-iniciar"
+                    class="rounded-xl border border-gray-300 px-5 py-2.5 font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              Carga completa (reinicia desde enero)
             </button>
             <button id="btn-detener" disabled
                     class="rounded-xl border border-gray-300 px-5 py-2.5 font-medium transition hover:bg-gray-100 disabled:opacity-40">
@@ -1334,8 +1340,8 @@
             </div>
             <dl class="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
               <div><dt class="text-xs uppercase tracking-wide text-gray-400">Tandas</dt><dd id="m-tandas" class="mt-0.5 font-semibold tabular-nums">0</dd></div>
-              <div><dt class="text-xs uppercase tracking-wide text-gray-400">Mes</dt><dd id="m-mes" class="mt-0.5 font-semibold tabular-nums">—</dd></div>
-              <div><dt class="text-xs uppercase tracking-wide text-gray-400">Filas del mes</dt><dd id="m-filas" class="mt-0.5 font-semibold tabular-nums">—</dd></div>
+              <div><dt id="dt-mes" class="text-xs uppercase tracking-wide text-gray-400">Mes</dt><dd id="m-mes" class="mt-0.5 font-semibold tabular-nums">—</dd></div>
+              <div><dt id="dt-filas" class="text-xs uppercase tracking-wide text-gray-400">Filas del mes</dt><dd id="m-filas" class="mt-0.5 font-semibold tabular-nums">—</dd></div>
               <div><dt class="text-xs uppercase tracking-wide text-gray-400">Guardadas</dt><dd id="m-total" class="mt-0.5 font-semibold tabular-nums">—</dd></div>
             </dl>
           </div>

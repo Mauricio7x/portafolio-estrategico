@@ -13779,7 +13779,7 @@ async function main() {
          cien aserciones que siguen midiendo lo mismo. */
       const admHtml = html;
       for (const debe of ['id="tab-admin"', 'data-tab="admin"',
-        'id="btn-iniciar"', 'id="btn-detener"', 'id="prog-barra"', 'id="m-tandas"', 'id="chip-texto"']) {
+        'id="btn-iniciar"', 'id="btn-al-dia"', 'id="btn-detener"', 'id="prog-barra"', 'id="m-tandas"', 'id="chip-texto"']) {
         assert.ok(admHtml.includes(debe), `index.html sin ${debe}`);
       }
       const admJs = js;
@@ -14194,6 +14194,32 @@ async function main() {
           "hay más de un arranque de la full: la invariante «1.ª full, siguientes auto» tendría dos copias");
         assert.strictEqual((admJsLimpio.match(/let modo = "full"/g) || []).length, 1,
           "el bucle de encadenado tiene que arrancar en `full` una sola vez");
+        /* «Ponerse al día» (ago 2026): cerrar desde el navegador el atraso de un
+           delta partido en tandas, sin pegar URLs. Lo que NO puede pasar es que
+           ese botón acabe disparando una full — volvería a enero y releería el
+           año entero en vez de continuar el ciclo, que es justo lo contrario de
+           lo que promete su rótulo. Por eso arranca el MISMO bucle con
+           `continuar` (un segundo bucle con sus reintentos, su candado y su
+           botón de detener divergiría del primero) y por eso el bucle entra en
+           auto al recibirlo. */
+        assert.ok(/function iniciarAlDia\(/.test(admJsLimpio),
+          "el arranque del «ponerse al día» necesita nombre propio, como iniciarFull");
+        {
+          const i = admJsLimpio.indexOf("function iniciarAlDia(");
+          const cuerpo = admJsLimpio.slice(i, admJsLimpio.indexOf("\n  }", i));
+          assert.ok(/encadenar\(true\)/.test(cuerpo),
+            "«ponerse al día» tiene que REUTILIZAR el bucle del encadenado, no copiarlo");
+          assert.ok(!/"full"/.test(cuerpo) && !/iniciarFull\(/.test(cuerpo),
+            "«ponerse al día» jamás puede arrancar una full: volvería a enero");
+        }
+        assert.ok(/async function encadenar\(continuar\)[\s\S]{0,400}if \(continuar\) modo = "auto";/.test(admJsLimpio),
+          "el bucle debe entrar en auto cuando se le pide continuar");
+        assert.strictEqual((admJsLimpio.match(/\$\("btn-al-dia"\)\.addEventListener/g) || []).length, 1,
+          "un solo cableado del botón de ponerse al día");
+        /* El cuerpo de un delta no trae `total` ni `leidas`: sin esta guarda, el
+           final anunciaba «0 procesos guardados» justo tras guardar miles. */
+        assert.ok(/function cifra\(n\) \{ return Number\.isFinite\(n\)/.test(admJsLimpio),
+          "un conteo ausente se dice «—», jamás 0");
         assert.ok(/sincronizacionFull[\s\S]{0,400}iniciarFull\(\)/.test(admJsLimpio),
           "el paso 3 debe REUTILIZAR iniciarFull, no repetir su cuerpo");
         assert.ok(/auditarCoberturaGenesis[\s\S]{0,900}ejecutarAuditoria\(\)/.test(admJsLimpio),
@@ -14972,9 +14998,11 @@ async function main() {
          cae en «ayer» si la hora local pasa de las 02:00: entre medianoche y esa
          hora son DOS días atrás, y la prueba fallaba sola en esa franja — un
          flake que aparece de noche y desaparece de día.
-         Las DOS ramas de la fusión encontraron el mismo defecto y probaron cosas
-         distintas: se conservan las dos baterías porque juntas cubren las cuatro
-         salidas (hoy · ayer · fecha completa · la frontera de medianoche). */
+         TRES ramas distintas lo encontraron por separado y probaron cosas
+         distintas — señal de que el flake era real y frecuente, no una rareza—.
+         Se conservan las baterías que aportan cobertura: juntas cubren las cuatro
+         salidas (hoy · ayer · fecha completa · la frontera de medianoche); la
+         tercera resultó subconjunto de estas dos y no añadía ningún caso. */
       const ahoraPortada = Date.parse("2026-08-20T18:00:00Z");   // 13:00 en Colombia
       assert.ok(/ayer/.test(PortadaPub.textoActualizado(new Date(ahoraPortada - 26 * 3600e3).toISOString(), ahoraPortada)),
         "26 h antes de las 13:00 es AYER");
