@@ -1318,7 +1318,7 @@ memoria en una fuente de error. `✅` implementado · `🟡` parcial · `⬜` no
 | **Anticipo y flujo de caja** (truco #16) | `lib/negocio.js` pondera anticipo al 0.4 del `puntaje_ponderado` — el manual explica **por qué** pesa tanto: sin anticipo se financia al Estado. **`anticipo_pct = 0` sigue significando «sin dato»**, no «sin anticipo» | ✅ |
 | **Traslado / histórico como base de datos** (truco #17) | `licitaciones:historico:mes:*` — keyspace que **ninguna purga toca**, con adjudicatario, valor adjudicado y nº de oferentes. Es la versión estructural del consejo «guarda todo lo del traslado» | ✅ |
 | **PAA → alertar antes de que salga el proceso** (truco #9) | `lib/paa.js` + `/api/competencia-detalle?vista=paa` (alias `/api/paa`) consultan **en vivo** el dataset `9sue-ezhx` (columnas verificadas 2026-08-12) y devuelven lo previsto para los próximos 12 meses, filtrable por entidad y por UNSPSC (jerárquico). El toggle «Ver PAA» lo pinta en **sección aparte** con badge `PAA · planeado`. La **tasa de acierto se mide** con `lib/paa_acierto` (`?medir=1`, vigencia cerrada contra el corpus, cota inferior declarada) y viaja con su método. Lo que NO hay: ingesta a un keyspace propio (se consulta en vivo, no se guarda) | ✅ |
-| **Pliego sastre → detección** (12 señales) | La única señal computable hoy es la **#11** (histórico de 1-2 oferentes), vía `indice_competencia`. **Y está interpretada al revés**: baja competencia se presenta como *atractiva*. Es ambigua — puede ser un nicho ganable **o** un pliego sastre. Las señales 1/3/4/5/6/7 exigen el texto del pliego, que el dataset no trae. **El tier `familia` NO es la señal #2**: indica codificación amplia, lo contrario de restrictiva | 🟡 |
+| **Pliego sastre → detección** (12 señales) | La única señal computable hoy es la **#11** (histórico de 1-2 oferentes), vía `indice_competencia`. **Ya no se interpreta a medias** (ago 2026): bajo 2 oferentes de media la tarjeta dice las DOS lecturas —nicho ganable **o** pliego a la medida— porque el dato no distingue cuál es; se avisa solo bajo ese umbral para no volverse papel tapiz (1 de 12 tarjetas lo dispara). El color NO se toca: pasarlo a ámbar afirmaría la lectura mala con la misma falta de evidencia. Las señales 1/3/4/5/6/7 exigen el texto del pliego, que el dataset no trae. **El tier `familia` NO es la señal #2**: indica codificación amplia, lo contrario de restrictiva | 🟡 |
 | **Precio bajo incertidumbre → banda de descuento** (truco #11) | `lib/indice_baja.js` (`indice:baja:*`, tres granularidades en cascada + segmento + modalidad): `descuento = 1 − valor_adjudicado / precio_base` por entidad, sin re-extraer nada. Ya viaja en la tarjeta (`baja_mercado`, solo con token) y ordena con `?ordenar_por=baja` | ✅ |
 | **Traslado → descargar ofertas de competidores** | El dataset no trae documentos de oferta: solo `urlproceso`. Automatizarlo exigiría raspar SECOP II (fuera de la arquitectura actual: sin dependencias, serverless, respuesta ≤4.5 MB). Alcanzable: enlazar la ficha del proceso y **listar adjudicatarios recurrentes por entidad** desde el histórico | ⬜ |
 | **Subsanación → tabla de trazabilidad automática** | No existe. La app decide **a qué presentarse**, no arma la carpeta. Sería un generador de plantilla a partir de la ficha del proceso | ⬜ |
@@ -4268,6 +4268,30 @@ del proceso**, que además es vinculante.
   `handlers/pliego/cronograma` y compartido): dos formas de «conseguir el texto» divergen a la
   primera corrección — la lección que ya costó el lector de cuerpos cuadruplicado.
 - **Se pliega como `op` del router de pliego**, no como función nueva: `api/` sigue en 6 de 12.
+
+### Lo APARCADO por decisión del dueño (20-ago-2026)
+
+No son deuda ni olvido: son decisiones tomadas. Anotarlas evita que la próxima sesión las retome
+como pendientes y gaste trabajo en algo que ya se decidió no hacer ahora.
+
+- **Medir el lector de pliegos contra formatos REALES de SECOP II** (§5 fila 11). El banco da 100 %
+  sobre un corpus SINTÉTICO escrito por el autor del parser: mide previsión, no cobertura, y la tasa
+  real sigue **sin medir**. Hace falta un corpus de 15-20 pliegos reales que el dueño tendría que
+  aportar. **APARCADO: «cuando necesite arreglarlo te diré».** Lo que NO cambia: la cifra del banco
+  no se puede presentar como cobertura del universo real, y `docs/APU_INFORME_COMPLETO.md` §1.G.7
+  sigue declarando ese vacío.
+- **Enlazar las deducciones leídas del pliego a la pantalla de Precios** (aplicar el porcentaje con
+  un clic). El lector ya existe y responde con la cifra, la evidencia y la página
+  (`/api/pliego?op=deducciones`); lo que falta es el recuadro y el botón. **APARCADO igual.**
+  Mientras tanto el margen sigue viajando como COTA SUPERIOR en los presupuestos que no carguen
+  `deducciones_pct` a mano, y eso ya está declarado en la respuesta — no es un fallo silencioso.
+
+**El barrido de cierre (20-ago-2026) no encontró nada más pendiente en el código**, y conviene decir
+qué se miró para no repetirlo a ciegas: cero marcadores `TODO`/`FIXME` reales (todos los aciertos son
+la palabra española «todo»), 130 módulos con **0 requires rotos y 0 huérfanos**, las 24 `op` de los
+seis routers cargan, los 18 rewrites y 3 redirects de `vercel.json` resuelven, y los ids que el
+frontend busca existen —los seis que parecían faltar los CREA el propio JS con sus plantillas, que es
+un falso positivo conocido de ese censo y conviene recordarlo—.
 
 ## Convenciones
 

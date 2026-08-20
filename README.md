@@ -11,6 +11,32 @@
 > entorno, endpoints y claves del navegador (`detecta-acceso`, `detecta_perfil_rup`) **no cambian**:
 > inventario, verificación y cómo conectar un dominio propio en [`docs/marca.md`](docs/marca.md).
 
+> **Estado (20-ago-2026) · auditoría integral cerrada.** Barrido completo del sistema: **43 defectos
+> reproducidos ejecutando código y corregidos**, cada uno con su prueba. Suite **4/4**, `apu_bench`
+> sobre sus suelos, frontend verificado en **Chromium real**. Lo que cambió de fondo:
+> · **`api/` está en 6 de 12 funciones** tras la consolidación a routers por dominio. La restricción
+>   que moldeó media arquitectura («12 de 12, cero margen») **ya no ata**: quedan 6 huecos. Plegar un
+>   endpoint nuevo como `op` de su router sigue siendo el default por COHESIÓN, no por presupuesto.
+> · **La hoja de ruta estaba obsoleta en 8 de sus 12 filas** y se reescribió contra el código
+>   (`docs/AUDITORIA_INTEGRAL.md` §5). Antes de dar una fila por pendiente, verifíquela.
+> · ⚠️ **Al desplegar hay que lanzar `/api/sync?modo=full` UNA vez**: la lista negra de la INGESTA
+>   cambió y los procesos de «conectividad rural» —el corazón del negocio— nunca entraron a Redis.
+>
+> **Lo que queda abierto, y de qué depende cada cosa:**
+>
+> | Qué | Estado | De qué depende |
+> | --- | --- | --- |
+> | Deducciones reales (estampillas, ReteICA) | Se **leen del pliego** (`/api/pliego?op=deducciones`), con evidencia y página | Falta enlazarlo a la pantalla de Precios para aplicarlo con un clic — **aparcado a petición del dueño** |
+> | Medir el lector de pliegos contra formatos REALES de SECOP II | **Aparcado a petición del dueño** | Un corpus de 15-20 pliegos reales que hoy no existe |
+> | Descargar las ofertas del traslado | No existe | El dataset no trae documentos: exigiría raspar SECOP II |
+> | Tabla de trazabilidad de subsanaciones | No existe | Fuera del alcance: la app decide a qué presentarse, no arma la carpeta |
+> | Pliego sastre | Solo la señal #11 es computable, y ya declara sus dos lecturas | Las demás señales exigen el texto del pliego |
+>
+> **Un residuo declarado y NO corregido**, dicho para que nadie lo dé por cerrado: en el lector de
+> pliegos, una fila con la cantidad comida y sin unitario ni total es indistinguible de una fila
+> benigna con los precios en blanco —cuatro celdas las dos— y lo único que las separa es la magnitud
+> del número, que sería una heurística inventada. Se elige la lectura benigna, que es la corriente.
+
 Aplicación privada para decidir **a qué licitaciones de obra civil presentarse** en Colombia.
 Extrae en vivo el dataset abierto de SECOP II (`p6dx-8zbt`, Colombia Compra Eficiente), enriquece
 cada proceso con reglas de negocio, lo filtra contra los **RUP y la capacidad financiera reales**
