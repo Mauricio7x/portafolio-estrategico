@@ -595,7 +595,12 @@
     if (!m) return "";
     if (m.valor == null) return `<p class="mt-3 text-xs text-gray-500">${esc(m.motivo || "Sin referencia")}</p>`;
     const signo = m.valor >= 0 ? "text-green-800 bg-green-50 ring-green-600/20" : "text-red-700 bg-red-50 ring-red-600/20";
-    return `<p class="mt-3 rounded-lg px-3 py-2 text-xs ring-1 ring-inset ${signo}">Le quedan aprox. <strong>${fmtCOP.format(m.valor)}</strong> entre su piso rentable (${fmtCOP.format(m.piso)}) y el techo al que suele adjudicar esta entidad (${fmtCOP.format(m.techo)}).${m.valor < 0 ? " El techo está POR DEBAJO de su piso: aquí no da." : ""}</p>`;
+    /* «Recorrido», no «le quedan»: esta cifra es la distancia entre dos PRECIOS
+       (su mínimo y el del mercado), o sea margen de maniobra para ofertar. La
+       plata que deja el contrato es otra —la de la franja de arriba, que ya
+       descontó la contribución y las deducciones— y llamarlas igual es la
+       confusión que el encargo del dueño vino a corregir. */
+    return `<p class="mt-3 rounded-lg px-3 py-2 text-xs ring-1 ring-inset ${signo}">Puede mover el precio <strong>${fmtCOP.format(m.valor)}</strong> entre su precio mínimo (${fmtCOP.format(m.piso)}) y el precio al que suele adjudicar esta entidad (${fmtCOP.format(m.techo)}). No es lo que deja el contrato: eso es la cifra de arriba.${m.valor < 0 ? " El precio de mercado está POR DEBAJO de su mínimo: aquí no da." : ""}</p>`;
   }
 
   /* Al cargar: el orden pedido en la URL (`?ordenar_por=margen`) y los
@@ -1069,6 +1074,54 @@
      esconde un modal sin ninguna marca es un modal que nadie encuentra. El
      `title` con el resumen de los ajustes SE CONSERVA: sigue siendo la
      respuesta de 1 segundo, y el modal es la de 30. */
+  /* La tercera celda de la franja: LO QUE DEJA EL CONTRATO. Recibe `celda` para
+     no duplicar la plantilla — es la misma franja y tiene que verse igual. */
+  function bloqueGanancia(l, celda) {
+    const g = l.ganancia;
+    /* Con `ve` pero sin ganancia (sin credencial, o sin presupuesto oficial) se
+       enseña el contrato esperado de siempre, diciendo que es un promedio por
+       intento: quitarle la cifra a quien entra sin llave dejaría la franja coja
+       por una razón que no es suya. */
+    if (!g || g.valor == null) {
+      const motivo = g && g.frase ? g.frase : "";
+      return l.ve != null
+        ? celda(esc(fmtCorto(l.ve)), "de contrato esperado por intento",
+          "presupuesto × opción de ganar, contando las veces que no se gana · no es lo que queda",
+          `Presupuesto oficial multiplicado por la opción estimada de ganar: un promedio por intento, contando las veces que no se gana. NO es la plata que queda.${motivo ? ` ${motivo}` : ""}`)
+        : celda("—", "sin cifra de lo que deja", "",
+          motivo || "Sin presupuesto oficial publicado no hay con qué calcular lo que deja este contrato.");
+    }
+    const perdida = g.valor < 0;
+    const rotulo = perdida
+      ? "de pérdida si gana el contrato"
+      : g.valor === 0 ? "queda: ni gana ni pierde" : "le quedan si gana el contrato";
+    /* La NOTA dice DE DÓNDE sale la cifra en cinco palabras: con su costo real o
+       con su estructura de precio. Sin eso, «$38M» y «$38M» se leen igual
+       viniendo de dos sitios que no valen lo mismo. */
+    const nota = g.base === "apu"
+      ? "con el costo que usted calculó"
+      : perdida && g.utilidad_minima_para_no_perder_pct
+        ? `su ganancia del ${nf2.format(g.aiu.utilidad_pct)} % no cubre lo que le descuentan`
+        : "con su estructura de precio actual";
+    const lineas = [
+      g.frase,
+      /* Sin `|| 0` sobre el conteo ni sobre la mediana: en esta rama los dos
+         están garantizados (hay techo ⟹ hay baja con base), pero un `|| 0`
+         escrito «por si acaso» es exactamente cómo se coló «en 0 procesos» en
+         producción. Si faltaran, la frase se queda corta en vez de mentir. */
+      `Precio de referencia: ${pesos(g.precio_esperado)}${g.origen_precio === "mercado"
+        ? ` — al que suele adjudicar esta entidad${g.baja_procesos != null ? ` (${fmt.format(g.baja_procesos)} contratos${g.baja_aplicada_pct != null ? `, ${nf2.format(g.baja_aplicada_pct)} % por debajo del presupuesto` : ""})` : ""}.`
+        : " — el presupuesto oficial: no hay historial suficiente de esta entidad para saber cuánto se suele bajar."}`,
+      `Obra, administración e imprevistos: ${pesos(g.costo_sin_ganancia)}${g.base === "apu" ? " (con el costo que usted calculó en Precios)." : "."}`,
+      g.tau_pct > 0 ? `Le descuentan de las actas: ${pesos(g.descuentos)} (${nf2.format(g.tau_pct)} %).` : null,
+      l.ve != null ? `Contrato esperado por intento: ${fmtCorto(l.ve)} — presupuesto × opción de ganar, contando las veces que no se gana.` : null,
+      g.por_intento != null ? `Ganancia media por intento: ${copFirmado(g.por_intento)}.` : null,
+      ...(g.supuestos || []),
+      `Es una cota superior: ${(g.cota_superior_por || []).join("; ")}.`,
+    ].filter(Boolean);
+    return celda(esc(copFirmado(g.valor)), rotulo, esc(nota), lineas.join("\n"), perdida ? "perdida" : "");
+  }
+
   function bloqueProbabilidad(l) {
     const d = l.p_ganar_detalle || {};
     /* `a.factor` puede venir en `null`: sin token, lib/publico redacta el factor
@@ -1131,14 +1184,27 @@
     const cGana = frec
       ? celda(`1 de ${frec.de_cada}`, "se gana, aproximadamente", motivoPropio ? esc(motivoPropio) : "", `${frec.frase}${motivoPropio ? " " + motivoPropio : ""}`)
       : celda("—", "sin datos para estimar", "", "Sin datos suficientes para estimar cuántas veces se gana algo así.");
-    /* «contrato esperado», NO «deja»: `ve` es presupuesto oficial × opción de
-       ganar (lib/probabilidad.valorEsperado), un promedio por intento que
-       cuenta las veces que no se gana. No es utilidad —eso lo calcula el APU— y
-       la nota anterior decía además que descontaba «el costo de ofertar», que
-       el cálculo NO hace: era una promesa sin respaldo (18-ago-2026). */
-    const cDeja = l.ve != null
-      ? celda(esc(fmtCorto(l.ve)), "de contrato esperado por intento", "presupuesto × opción de ganar, contando las veces que no se gana · no es utilidad", "Presupuesto oficial multiplicado por la opción estimada de ganar: promedio por intento, contando las veces que no se gana. NO es utilidad ni descuenta el costo de preparar la oferta: la utilidad la calcula el análisis de precios en Precios.")
-      : celda("—", "sin contrato esperado", "", "Sin presupuesto oficial publicado no hay contrato esperado que calcular.");
+    /* LA TERCERA CIFRA ES LA PLATA QUE QUEDA (ago 2026, encargo del dueño).
+       Antes decía «$1.183M de contrato esperado por intento», que era el
+       presupuesto oficial × la opción de ganar. Correcto y leído al revés: el
+       dueño reportó que «el cliente asume que es lo que le queda de ganancia».
+       Un número que se lee al contrario de lo que dice hace más daño que uno
+       que falta, y este iba justo al lado de la cuantía, que es con lo que se
+       confundía.
+
+       Ahora la celda ES lo que el usuario creía estar leyendo: lo que le queda
+       si gana el contrato (`lib/ganancia`, que lo calcula con la MISMA cuenta
+       del panel Piso/Techo de Precios — la tarjeta y el editor no pueden decir
+       dos cifras del mismo proceso). El valor esperado NO desaparece: sigue en
+       `l.ve`, ordena la lista y se enuncia en el título como lo que es, un
+       promedio por intento que cuenta las veces que no se gana.
+
+       Tres estados y ninguno inventa nada: con plata a favor, en rojo cuando el
+       contrato deja pérdida —con lo que habría que corregir, no un susto suelto—
+       y «—» con su motivo cuando no hay con qué calcularlo. `l.ganancia` viaja
+       en `null` sin credencial (sale de su costo y de su estructura de precio),
+       y ahí también se dice. */
+    const cDeja = bloqueGanancia(l, celda);
     return `
       <div class="metricas mt-4 grid grid-cols-3 rounded-xl" style="background: var(--bg-inset);">
         ${cCompiten}${cGana}${cDeja}
@@ -1164,6 +1230,7 @@
     if (l.id_del_proceso != null) q.set("id_proceso", String(l.id_del_proceso));
     if (l.plazo_meses != null) q.set("plazo", String(l.plazo_meses));
     if (l.modalidad_de_contratacion) q.set("modalidad", l.modalidad_de_contratacion);
+    if (l.filtro && l.filtro.tipo) q.set("tipo", l.filtro.tipo);
     q.set("perfil", $("f-perfil").value);
     return q.toString();
   }
@@ -1435,6 +1502,26 @@
     if (n >= 1e6) return `$${Math.round(n / 1e6)}M`;
     if (n >= 1e3) return `$${Math.round(n / 1e3)}K`;
     return `$${n}`;
+  }
+  /* El MISMO recorte de `fmtCorto`, pero con SIGNO y con el cero como dato.
+     `fmtCorto` responde «No definida» al 0 y `$-9500000` a un negativo, porque
+     nació para cuantías, donde no hay signo y el 0 es una ausencia. La ganancia
+     tiene las dos cosas: puede ser negativa (el contrato deja pérdida) y un 0
+     medido es el punto de equilibrio, un HECHO, no un «no sé». Confundirlos
+     sería la confusión entre «no sé» y «cero» que este proyecto ya pagó. */
+  function copFirmado(n) {
+    /* La AUSENCIA se descarta ANTES de tocar `Number`: `Number(null)` y
+       `Number("")` valen 0 y son finitos, así que sin esta guarda un «no sé»
+       saldría pintado como «$0», o sea como un punto de equilibrio medido. Es
+       la misma trampa que `numero()` en lib/probabilidad. */
+    if (n == null || n === "") return "—";
+    const v = Number(n);
+    if (!Number.isFinite(v)) return "—";
+    const a = Math.abs(v), signo = v < 0 ? "−" : "";
+    if (a >= 1e9) return `${signo}$${fmtNum.format(Math.round(a / 1e6))}M`;
+    if (a >= 1e6) return `${signo}$${Math.round(a / 1e6)}M`;
+    if (a >= 1e3) return `${signo}$${Math.round(a / 1e3)}K`;
+    return `${signo}$${Math.round(a)}`;
   }
   const recorta = (s, n = 80) => (String(s || "").length > n ? `${String(s).slice(0, n)}…` : String(s || ""));
 
@@ -2315,6 +2402,13 @@
       aplicar_ajuste_competitivo: $("ajuste-competitivo").checked,
       factor_baja: Number($("factor-baja").value),
       deducciones_pct: dedCrudo === "" ? null : Number(dedCrudo),
+      /* ¿La administración declarada YA lleva dentro la contribución del 5 % y
+         las estampillas? Cambia el signo de lo que deja el contrato —son 5
+         puntos del valor, más que la ganancia entera—, así que no se adivina ni
+         se promedia: lo declara el usuario. Sin marcar (el defecto) se
+         descuentan aparte, que es lo que hace el panel «¿Me presento?» desde
+         que existe. Viaja en el borrador y de ahí lo lee la tarjeta. */
+      contribucion_en_administracion: !!($("contribucion-en-admin") && $("contribucion-en-admin").checked),
       // administración por tiempo (IDU): solo si el usuario la eligió y dio los dos datos
       metodo_administracion: $("metodo-admin") ? $("metodo-admin").value : "porcentaje",
       gastos_fijos_mensuales: $("gastos-fijos") && $("gastos-fijos").value.trim() !== "" ? Number($("gastos-fijos").value) : null,
@@ -2338,6 +2432,7 @@
     if (c.aiu_pct != null) $("aiu").value = c.aiu_pct;
     if (c.utilidad_pct != null) $("utilidad").value = c.utilidad_pct;
     if (c.imprevistos_pct != null) $("imprevistos").value = c.imprevistos_pct;
+    if ($("contribucion-en-admin")) $("contribucion-en-admin").checked = !!c.contribucion_en_administracion;
     $("anticipo").value = c.anticipo_pct == null ? "" : c.anticipo_pct;
     $("ajuste-competitivo").checked = !!c.aplicar_ajuste_competitivo;
     if (c.factor_baja != null) $("factor-baja").value = c.factor_baja;
@@ -4002,6 +4097,7 @@
     poner("id-proceso", "id_proceso");
     poner("cuantia", "cuantia");
     modalidadProceso = p.get("modalidad") || "";
+    tipoProceso = p.get("tipo") || "";
     poner("plazo-meses", "plazo");
     const perfil = p.get("perfil");
     if (perfil && $("perfil") && [...$("perfil").options].some((o) => o.value === perfil)) $("perfil").value = perfil;
@@ -4021,6 +4117,7 @@
   const norml = (x) => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
   let nitProceso = "";
   let modalidadProceso = "";
+  let tipoProceso = "";
 
   /* `Number.isFinite` y no `== null`: un NaN colado desde el servidor se
      pintaría como «NaN %», que es peor que un «—» porque parece una cifra. */
@@ -4057,6 +4154,11 @@
         // sin esto la rentabilidad usaría la baja MEZCLADA de la entidad y
         // discreparía de la tarjeta del panel para el mismo proceso
         modalidad: modalidadProceso,
+        /* El TIPO DE TRABAJO viaja por el mismo motivo que la modalidad: la
+           contribución del 5 % es de los contratos de obra pública, no de una
+           interventoría, y sin este dato el piso del editor la cobraría donde
+           la tarjeta no — dos cifras del mismo proceso. */
+        tipo_trabajo: tipoProceso,
         unspsc: $("codigos-unspsc").value.trim(),
         cuantia: Number($("cuantia").value) || null,
         plazo_meses: Number($("plazo-meses").value) || 12,

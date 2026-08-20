@@ -7112,6 +7112,14 @@ async function main() {
         // lo derivable de datos PÚBLICOS se conserva: no protege nada ocultarlo
         assert.ok(Number.isFinite(l.puertas.p3_caja.financiacion_requerida),
           "financiacion_requerida sale de la cuantía publicada: no hay por qué ocultarla");
+        /* LO QUE DEJA EL CONTRATO tampoco sale sin credencial, y por DOS
+           motivos: sale del costo y de la estructura de precio del dueño, y
+           lleva dentro el precio de mercado —o sea la misma mediana de baja que
+           `baja_mercado` acaba de tapar—. Se anula el objeto ENTERO: `frase`
+           dice «Si gana este contrato a $950.000.000…» y dejarla sería la
+           redacción de mentira de `p2_k.mensaje` por cuarta vez. */
+        assert.ok("ganancia" in l, "la clave tiene que existir: un `undefined` se lee como cero");
+        assert.strictEqual(l.ganancia, null, "la ganancia del contrato no puede salir sin credencial");
       }
 
       /* 3 · LA INVARIANTE FUERTE: ninguna cifra real del perfil puede aparecer
@@ -7146,6 +7154,49 @@ async function main() {
         assert.ok(Number.isFinite(l.rup.k_cop) && l.rup.k_cop > 0, `con token por ${via} el K tiene que viajar`);
         assert.ok(Number.isFinite(l.puertas.p3_caja.patrimonio) && l.puertas.p3_caja.patrimonio > 0,
           `con token por ${via} el patrimonio tiene que viajar`);
+        /* …Y LA GANANCIA DEL CONTRATO, que es la tercera cifra de la tarjeta.
+           Se reproduce A MANO desde los propios campos de la fila: si el
+           servidor publicara una cifra que no es su propia fórmula, la tarjeta
+           enseñaría plata inventada. */
+        const gn = l.ganancia;
+        assert.ok(gn && typeof gn === "object", `con token por ${via} la ganancia tiene que viajar`);
+        if (gn.valor != null) {
+          const aiu = gn.aiu;
+          assert.strictEqual(gn.costo_sin_ganancia,
+            Math.round(gn.costo_directo * (1 + (aiu.administracion_pct + aiu.imprevistos_pct) / 100)),
+            "el costo servido no es costo directo × (1 + administración + imprevistos)");
+          assert.strictEqual(gn.valor, gn.precio_esperado - gn.descuentos - gn.costo_sin_ganancia,
+            "la ganancia servida no es su propia fórmula");
+          assert.ok(["apu", "estructura_de_precio"].includes(gn.base), "la ganancia tiene que decir de qué nivel sale");
+          assert.ok(["mercado", "presupuesto_oficial"].includes(gn.origen_precio), "el precio de referencia tiene que decir de dónde sale");
+          assert.strictEqual(gn.es_cota_superior, true, "sin las estampillas y sin el costo financiero, la cifra es una cota superior y se dice");
+          assert.ok(gn.frase && gn.frase.length > 20, "la cifra viaja con su frase");
+          if (l.p_ganar) assert.strictEqual(gn.por_intento, Math.round(gn.valor * l.p_ganar));
+        } else {
+          assert.strictEqual(gn.por_intento, null, "sin cifra no hay media por intento, y jamás un 0");
+          assert.ok(gn.motivo, "una ganancia sin cifra tiene que decir por qué");
+        }
+      }
+
+      /* 4-bis · «Lo que más deja»: ordena por la ganancia PONDERADA por la
+         opción de ganar, descendente, y lo que no tiene cifra va AL FINAL —
+         nunca con un cero que se leería como «no deja nada». */
+      {
+        const ro = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=100&ordenar_por=ganancia", CAB_TOKEN);
+        assert.strictEqual(ro.status, 200);
+        assert.strictEqual(ro.cuerpo.ordenado_por, "ganancia");
+        const clave = (l) => (l.ganancia && l.ganancia.valor != null
+          ? (l.ganancia.por_intento != null ? l.ganancia.por_intento : l.ganancia.valor) : null);
+        const claves = ro.cuerpo.resultados.map(clave);
+        const conCifra = claves.filter((v) => v != null);
+        for (let i = 1; i < conCifra.length; i++) {
+          assert.ok(conCifra[i] <= conCifra[i - 1], "«Lo que más deja» tiene que ordenar de mayor a menor");
+        }
+        const primerNulo = claves.indexOf(null);
+        if (primerNulo >= 0) {
+          assert.ok(claves.slice(primerNulo).every((v) => v == null), "los procesos sin cifra van todos al final, juntos");
+        }
+        assert.ok(ro.cuerpo.total > 0);
       }
 
       /* 5 · un token PRESENTE pero inválido es un ERROR, no un modo público:
@@ -13035,6 +13086,26 @@ async function main() {
       assert.strictEqual(pt4.cifras.baja_esperada_pct, null);
       assert.strictEqual(pt4.cifras.oferentes_promedio, null);
       assert.ok(pt4.cifras.piso_rentable > 0);
+      /* LA MISMA REGLA DE LA CONTRIBUCIÓN QUE LA TARJETA (ago 2026). El piso del
+         editor y la ganancia del listado hablan del mismo proceso: si el editor
+         cobrara el 5 % en una interventoría y la tarjeta no, serían dos cifras
+         del mismo hecho. Sin `tipo_trabajo` se degrada a cobrarla, que es el
+         comportamiento anterior — de ahí que `pt` de arriba no cambie. */
+      {
+        const rInt = await invocar(apuPT, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST",
+          body: cuerpoPT({ cuantia: 1500000000, tipo_trabajo: "interventoria" }) });
+        const ptInt = rInt.cuerpo.piso_techo;
+        assert.strictEqual(ptInt.cifras.tau_pct, 0, "a una interventoría no se le descuenta la contribución de obra pública");
+        assert.ok(ptInt.cifras.piso_rentable < pt.cifras.piso_rentable, "sin la contribución el precio mínimo BAJA");
+        assert.strictEqual(ptInt.cifras.piso_rentable, ptInt.cifras.costo_total, "sin descuentos, el piso es el costo total");
+        const rFlag = await invocar(apuPT, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST",
+          body: cuerpoPT({ cuantia: 1500000000, config: { aiu_pct: 28, imprevistos_pct: 5, utilidad_pct: 7, contribucion_en_administracion: true } }) });
+        assert.strictEqual(rFlag.cuerpo.piso_techo.cifras.tau_pct, 0,
+          "si el usuario declara que su administración ya lleva los impuestos, no se descuentan dos veces");
+        // …y sin declarar nada, el comportamiento de siempre
+        assert.strictEqual(pt.cifras.tau_pct, 5);
+      }
+
       // sin cuantía: aplicable:false con motivo, nunca un panel con ceros
       const rp5 = await invocar(apuPT, "/api/apu/rentabilidad", CAB_TOKEN, { metodo: "POST", body: cuerpoPT({}) });
       assert.strictEqual(rp5.cuerpo.piso_techo.aplicable, false);
@@ -13098,6 +13169,265 @@ async function main() {
       console.log(`  · panel piso/techo: piso ${Math.round(pt.cifras.piso_rentable / 1e6)} M · techo ${Math.round(pt.cifras.techo_competitivo / 1e6)} M `
         + `(${pt.cifras.baja_procesos} procesos, ${pt.cifras.baja_granularidad}) → «${pt.estado}» · n<5 ⇒ sin referencia · `
         + `techo ≡ ajuste competitivo · justificación de ${doc.resumen.items} ítems generada`);
+    }
+
+    /* ═══════ g-bis. LO QUE DEJA EL CONTRATO (lib/ganancia, ago 2026) ═══════
+       Encargo del dueño con sus palabras: la tercera cifra de la tarjeta «el
+       cliente asume que es lo que le queda de ganancia», y no lo era —era
+       presupuesto × opción de ganar—. Ahora lo es. Aquí se fija la aritmética
+       ENTERA, porque una cifra de plata mal calculada en la pantalla con la que
+       se decide a qué presentarse es el error más caro que esta app puede
+       cometer, y porque el número tiene SIGNO: un error de 5 puntos le cambia
+       la recomendación al usuario. */
+    {
+      const G = require("../lib/ganancia.js");
+      const { pisoTecho } = require("../lib/apu/piso_techo.js");
+      const PO = 1000e6;
+      const bajaBase = { nivel: "medio", baja_mediana: 5, procesos_contados: 23, granularidad_utilizada: "entidad" };
+      const compBase = { nivel: "media", promedio_oferentes: 4.2, total_procesos: 23 };
+      const g = (extra = {}) => G.gananciaDeProceso({
+        presupuesto_oficial: PO, tipo_trabajo: "obra", baja: bajaBase, competencia: compBase, ...extra,
+      });
+
+      /* A · LA IDENTIDAD. `ganancia = V×(1−τ) − CD×(1+(A+I)/100)`. Se comprueba
+         a mano, con el costo MEDIDO y con el cerrado por la estructura: si el
+         módulo se desviara de su propia fórmula, todo lo demás daría igual. */
+      for (const [A, I, U, CD] of [[15, 5, 5, null], [17, 4, 6, 612345678], [20, 5, 8, null], [19.17, 1.5, 5.33, 700e6]]) {
+        const r = g({ aiu: { administracion_pct: A, imprevistos_pct: I, utilidad_pct: U, modo: "aditivo" },
+          aiu_origen: "suyo", costo_directo: CD });
+        const V = r.precio_esperado;
+        const cd = CD == null ? V / (1 + (A + I + U) / 100) : CD;
+        assert.strictEqual(r.costo_sin_ganancia, Math.round(cd * (1 + (A + I) / 100)),
+          `el costo sin ganancia no es CD × (1 + A + I) con A${A}/I${I}/U${U}`);
+        assert.strictEqual(r.descuentos, Math.round(V * r.tau_pct / 100));
+        assert.strictEqual(r.valor, V - r.descuentos - r.costo_sin_ganancia,
+          `la ganancia no es su propia fórmula con A${A}/I${I}/U${U}`);
+        /* LA RESTA QUE SE ENSEÑA CUADRA AL PESO. No es cosmética: la tarjeta
+           pinta las tres cifras juntas en el detalle y quien las sume tiene que
+           llegar al mismo número. Un peso de descuadre es «la fila que no
+           cuadra» del módulo de APU, en la pantalla de decidir. */
+        assert.strictEqual(V, r.valor + r.descuentos + r.costo_sin_ganancia);
+        assert.strictEqual(r.costo_directo, Math.round(cd));
+        assert.strictEqual(r.base, CD == null ? "estructura_de_precio" : "apu");
+        // el nombre NO puede colisionar con el `costo_total` de pisoTecho, que lleva la utilidad dentro
+        assert.ok(!("costo_total" in r), "«costo_total» ya significa otra cosa en piso_techo: dos nombres parecidos para dos cifras distintas");
+      }
+
+      /* B · NO ES UN SEGUNDO CÁLCULO: sale de `piso_techo`, que es quien define
+         en este repositorio qué es «no perder plata». `ganancia = (V − piso sin
+         utilidad) × (1 − τ)`, y el signo coincide con el veredicto del panel.
+         Dos definiciones de punto de equilibrio pondrían a la tarjeta y a
+         Precios a decir cosas distintas del mismo proceso. */
+      {
+        const CD = 760e6;
+        const r = g({ costo_directo: CD, aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" }, aiu_origen: "suyo" });
+        const pt = pisoTecho({ presupuesto_oficial: PO, costo_directo: CD, contribucion_pct: 5, deducciones_pct: null,
+          aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" }, baja: bajaBase, competencia: compBase });
+        assert.strictEqual(r.precio_esperado, pt.cifras.techo_competitivo, "el precio de referencia es el MISMO techo del panel");
+        assert.strictEqual(r.costo_sin_ganancia, pt.cifras.costo_sin_utilidad,
+          "el costo tiene que ser el que publica el panel, no uno recalculado aquí");
+        assert.strictEqual(r.tau_pct, pt.cifras.tau_pct);
+        assert.strictEqual(r.valor > 0, r.precio_esperado > pt.cifras.piso_sin_utilidad,
+          "la ganancia es positiva exactamente cuando el precio pasa el punto de equilibrio del panel");
+      }
+
+      /* C · EN EL PISO RENTABLE LA GANANCIA VALE `CD × U/100`. Es la definición
+         de piso rentable leída al derecho, y el control cruzado de que las dos
+         cuentas son la misma. ±2 pesos por los dos redondeos. */
+      {
+        const CD = 500e6, A = 15, I = 5, U = 5;
+        const pt = pisoTecho({ presupuesto_oficial: 9e12, costo_directo: CD, contribucion_pct: 5, deducciones_pct: null,
+          aiu: { administracion_pct: A, imprevistos_pct: I, utilidad_pct: U, modo: "aditivo" }, baja: null });
+        const r = G.gananciaDeProceso({ presupuesto_oficial: pt.cifras.piso_rentable, tipo_trabajo: "obra", baja: null,
+          costo_directo: CD, aiu: { administracion_pct: A, imprevistos_pct: I, utilidad_pct: U, modo: "aditivo" }, aiu_origen: "suyo" });
+        assert.ok(Math.abs(r.valor - CD * U / 100) <= 2,
+          `en el piso rentable la ganancia tiene que ser la utilidad mínima: ${r.valor} vs ${CD * U / 100}`);
+      }
+
+      /* C-bis · «NO SE PRESENTE», ADELANTADO A LA TARJETA. Si el costo del
+         usuario deja su precio mínimo por encima del precio al que la entidad
+         suele adjudicar, la ganancia sale NEGATIVA — y es exactamente el
+         veredicto del panel Piso/Techo, sin abrir Precios. Enseñar en verde la
+         utilidad que dejaría a SU precio sería una cifra buena sobre un proceso
+         que casi con seguridad no gana: aquí el falso positivo es el caro. */
+      {
+        const A = 15, I = 5, U = 5;
+        const aiu = { administracion_pct: A, imprevistos_pct: I, utilidad_pct: U, modo: "aditivo" };
+        /* Un costo directo que deja el precio mínimo POR ENCIMA del techo
+           (PO × 0,95 = 950 M) pero todavía por debajo del presupuesto oficial:
+           con 900 M el piso se pasa del presupuesto y el veredicto sería OTRO
+           («no_presentarse_supera_presupuesto»), que no es el caso que se
+           quiere fijar aquí. Con 758 M el piso queda en 997 M. */
+        const CD = 758e6;
+        const pt = pisoTecho({ presupuesto_oficial: PO, costo_directo: CD, aiu, deducciones_pct: null,
+          contribucion_pct: 5, baja: bajaBase, competencia: compBase });
+        assert.strictEqual(pt.estado, "no_presentarse", `el caso necesita el veredicto no_presentarse: ${pt.estado}`);
+        const r = g({ costo_directo: CD, aiu, aiu_origen: "suyo" });
+        assert.ok(r.valor < 0, "si el piso está por encima del techo, la tarjeta tiene que decirlo en rojo");
+        assert.ok(/pérdida/.test(r.frase) && /no cabe en el precio/.test(r.frase),
+          "la frase tiene que decir POR QUÉ pierde, no solo que pierde");
+      }
+
+      /* D · LA CONTRIBUCIÓN DEL 5 % ES DE LOS CONTRATOS DE OBRA PÚBLICA.
+         Art. 120 de la Ley 418/1997 (mod. Ley 1106/2006 art. 6, permanente por
+         Ley 1738/2014): grava los contratos de OBRA. Una interventoría es
+         consultoría (Ley 80/1993 art. 32 num. 2) y no la causa; cobrársela le
+         restaría ~5 puntos a un margen típico de 4 y pintaría en rojo, en la
+         tarjeta, contratos que dejan plata. Y la diferencia es EXACTAMENTE el
+         5 % del precio: si no lo fuera, se estaría colando en otro sitio. */
+      {
+        const obra = g({ tipo_trabajo: "obra" });
+        for (const t of ["interventoria", "consultoria"]) {
+          const r = g({ tipo_trabajo: t });
+          assert.strictEqual(r.contribucion_aplica, false, `${t} no causa la contribución de obra pública`);
+          assert.strictEqual(r.tau_pct, 0);
+          assert.strictEqual(r.valor - obra.valor, Math.round(obra.precio_esperado * 5 / 100),
+            `la diferencia con obra tiene que ser exactamente el 5 % del precio (${t})`);
+          assert.ok(r.supuestos.some((x) => /Ley 418/.test(x)), "la excepción se declara con su norma");
+        }
+        // ante un tipo que no se reconoce, se cobra: el error cae del lado de no prometer
+        for (const t of ["obra", "suministro", "servicios", "otra", null, undefined, "", "ZZZ"]) {
+          assert.strictEqual(g({ tipo_trabajo: t }).contribucion_aplica, true, `«${t}» tiene que causar la contribución`);
+        }
+        assert.strictEqual(G.aplicaContribucion("INTERVENTORIA"), false, "la regla no puede depender de las mayúsculas");
+      }
+
+      /* E · EL INTERRUPTOR. Si el usuario declara que su administración ya lleva
+         los impuestos dentro, descontarlos otra vez los cobra dos veces — y el
+         error vale 5 puntos del contrato, más que la ganancia entera. No se
+         adivina ni se promedia: lo declara él, y el defecto es el prudente. */
+      {
+        const conFlag = g({ contribucion_en_administracion: true });
+        assert.strictEqual(conFlag.tau_pct, 0);
+        assert.strictEqual(conFlag.valor, g({ tipo_trabajo: "interventoria" }).valor,
+          "declarar que la administración ya los incluye tiene que dar lo mismo que no causarlos");
+        assert.ok(conFlag.supuestos.some((x) => /ya incluye/.test(x)), "el interruptor se declara");
+        assert.strictEqual(g().tau_pct, 5, "sin declararlo, la contribución se descuenta aparte");
+      }
+
+      /* F · R1 · SIN PRESUPUESTO OFICIAL NO HAY CIFRA, Y NO ES CERO. Un 0
+         afirmaría que el contrato no deja nada; la ausencia dice que no se
+         sabe. Es la regla de `anticipo_pct = 0` de todo el repositorio. */
+      for (const po of [null, 0, undefined, "", "abc"]) {
+        const r = g({ presupuesto_oficial: po });
+        assert.strictEqual(r.valor, null, `con presupuesto «${po}» la ganancia tiene que ser null, jamás 0`);
+        assert.strictEqual(r.por_intento, null);
+        assert.strictEqual(r.motivo, "sin_presupuesto_oficial");
+        assert.ok(/no publica presupuesto oficial/.test(r.frase), "la ausencia viaja con su motivo escrito");
+      }
+
+      /* G · DE DÓNDE SALE EL COSTO, DICHO SIEMPRE. Con el APU del proceso es
+         SUYO; sin él se cierra por la identidad de construcción de la oferta, y
+         eso es un SUPUESTO que viaja escrito — nunca se le atribuye al usuario
+         un costo que no calculó. Ídem la estructura de precio. */
+      {
+        const conApu = g({ costo_directo: 700e6, borrador: "b7", aiu_origen: "suyo",
+          aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" } });
+        assert.strictEqual(conApu.base, "apu");
+        assert.strictEqual(conApu.borrador, "b7", "hay que poder auditar de qué presupuesto salió");
+        assert.ok(!conApu.supuestos.some((x) => /[Tt]odavía no ha costeado/.test(x)));
+        assert.strictEqual(conApu.utilidad_minima_para_no_perder_pct, null,
+          "con el costo medido, subir la ganancia declarada no mueve el precio al que la entidad adjudica");
+        const sinApu = g();
+        assert.strictEqual(sinApu.base, "estructura_de_precio");
+        assert.strictEqual(sinApu.borrador, null);
+        assert.ok(sinApu.supuestos.some((x) => /[Tt]odavía no ha costeado/.test(x)), "el supuesto del costo se declara");
+        assert.ok(sinApu.supuestos.some((x) => /no están declarados/.test(x)), "usar la estructura de referencia se declara");
+        assert.ok(!g({ aiu_origen: "suyo" }).supuestos.some((x) => /no están declarados/.test(x)),
+          "con la estructura del usuario no se declara un supuesto que no se hizo");
+        assert.strictEqual(sinApu.aiu.origen, "defecto");
+        assert.deepStrictEqual(
+          [sinApu.aiu.administracion_pct, sinApu.aiu.imprevistos_pct, sinApu.aiu.utilidad_pct],
+          [G.AIU_DEFECTO.administracion_pct, G.AIU_DEFECTO.imprevistos_pct, G.AIU_DEFECTO.utilidad_pct]);
+      }
+
+      /* G-bis · LA CONFIGURACIÓN LLEGA SIN VALIDAR. El borrador guarda
+         `datos.config` VERBATIM, así que un valor absurdo llega hasta aquí. Con
+         A e I negativos el factor daría 0 y el costo directo saldría infinito. */
+      {
+        const r = g({ aiu: { administracion_pct: -50, imprevistos_pct: -50, utilidad_pct: 900, modo: "aditivo" }, aiu_origen: "suyo" });
+        assert.ok(Number.isFinite(r.valor) && Number.isFinite(r.costo_directo), "una configuración absurda no puede producir un infinito");
+        assert.deepStrictEqual([r.aiu.administracion_pct, r.aiu.imprevistos_pct, r.aiu.utilidad_pct], [0, 0, 100]);
+      }
+
+      /* H · LA GANANCIA MÍNIMA QUE EVITA LA PÉRDIDA, DESPEJADA Y COMPROBADA.
+         Con la estructura de referencia (A 15 · I 5 · U 5) y la contribución
+         aparte, el contrato deja pérdida: es la lección central del manual («el
+         olvido más caro del país») y por eso la cifra sale en rojo con la
+         instrucción, no con un susto. Justo en el umbral la ganancia es 0; un
+         punto por encima, positiva. */
+      {
+        const base = g();
+        assert.ok(base.valor < 0, "con A 15 · I 5 · U 5 y la contribución aparte, el contrato deja pérdida");
+        const u = base.utilidad_minima_para_no_perder_pct;
+        assert.ok(u > 5 && u < 10, `el umbral tiene que caer en la banda del manual (U 5-10 %): ${u}`);
+        const enUmbral = g({ aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: u, modo: "aditivo" }, aiu_origen: "suyo" });
+        assert.ok(Math.abs(enUmbral.valor) <= Math.round(enUmbral.precio_esperado * 0.0002),
+          `en el umbral la ganancia tiene que ser ~0: ${enUmbral.valor}`);
+        assert.ok(g({ aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: u + 1, modo: "aditivo" }, aiu_origen: "suyo" }).valor > 0);
+        assert.ok(/Necesitaría declarar al menos/.test(base.frase), "en rojo se dice QUÉ HACER, no solo que pierde");
+        // en modo compuesto A e I se cancelan en el despeje: es otra fórmula, no la misma con otros números
+        assert.strictEqual(G.utilidadMinimaParaNoPerder(15, 5, 5, "compuesto"), G.utilidadMinimaParaNoPerder(40, 9, 5, "compuesto"));
+        assert.notStrictEqual(G.utilidadMinimaParaNoPerder(15, 5, 5, "aditivo"), G.utilidadMinimaParaNoPerder(40, 9, 5, "aditivo"));
+        assert.strictEqual(G.utilidadMinimaParaNoPerder(15, 5, 0), 0, "sin descuentos no hay nada que despejar");
+      }
+
+      /* I · EL PRECIO DE REFERENCIA. Con baja CON BASE (n ≥ 5) es el techo de
+         mercado; sin base es el presupuesto oficial Y SE DICE — la mediana
+         global medida del corpus es 0 %, así que es el supuesto neutro, no un
+         optimismo. Una baja de 3 procesos NO sirve: `bajaDeMercado` la da por
+         `sin_dato` y aquí se vuelve a exigir. */
+      {
+        assert.strictEqual(g().origen_precio, "mercado");
+        assert.strictEqual(g().precio_esperado, Math.round(PO * 0.95));
+        assert.strictEqual(g().baja_procesos, 23);
+        for (const b of [null, { nivel: "sin_dato" }, { nivel: "medio", baja_mediana: 5, procesos_contados: 3, granularidad_utilizada: "entidad" }]) {
+          const r = g({ baja: b });
+          assert.strictEqual(r.origen_precio, "presupuesto_oficial", "sin baja con base, el precio es el presupuesto oficial");
+          assert.strictEqual(r.precio_esperado, PO);
+          assert.strictEqual(r.baja_aplicada_pct, null, "sin base no se interpola una baja");
+          assert.ok(r.supuestos.some((x) => /historial suficiente/.test(x)));
+        }
+      }
+
+      /* J · POR INTENTO = ganancia × opción de ganar. Es lo que hace comparable
+         un contrato grande y difícil con uno mediano y ganable, y lo que ordena
+         «Lo que más deja». Sin probabilidad viaja null, jamás 0. */
+      {
+        const r = g({ p_ganar: 0.25 });
+        assert.strictEqual(r.por_intento, Math.round(r.valor * 0.25));
+        for (const p of [null, 0, undefined, "x"]) assert.strictEqual(g({ p_ganar: p }).por_intento, null, `p=${p} no puede dar un 0`);
+      }
+
+      /* K · SIEMPRE COTA SUPERIOR, Y CON LOS MOTIVOS ENUMERADOS. «Cota superior»
+         a secas es una etiqueta; con los motivos es la lista de lo que el
+         usuario puede cargar para cerrarla. */
+      {
+        const r = g();
+        assert.strictEqual(r.es_cota_superior, true);
+        assert.ok(r.cota_superior_por.length >= 2);
+        assert.ok(r.cota_superior_por.some((x) => /estampillas/.test(x)));
+        assert.ok(r.cota_superior_por.some((x) => /financiar la obra/.test(x)));
+        assert.ok(!g({ deducciones_pct: 3 }).cota_superior_por.some((x) => /estampillas/.test(x)),
+          "cargadas las estampillas, ese motivo desaparece");
+        assert.strictEqual(g({ deducciones_pct: 3 }).tau_pct, 8, "las deducciones cargadas se SUMAN a la contribución");
+      }
+
+      /* L · UNA SOLA REGLA DE LA CONTRIBUCIÓN EN TODO EL REPOSITORIO. El editor
+         la IMPORTA de aquí; una segunda lista de «esto no es obra» divergiría a
+         la primera corrección, y las dos cifras (piso del editor y ganancia de
+         la tarjeta) hablan del mismo proceso. */
+      {
+        const fuenteEd = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "apu", "editor.js"), "utf8");
+        assert.ok(/require\("\.\.\/\.\.\/ganancia\.js"\)/.test(fuenteEd) && /aplicaContribucion/.test(fuenteEd),
+          "el editor tiene que importar la regla, no reescribirla");
+        assert.ok(!/interventoria/i.test(sinComentarios(fuenteEd)),
+          "una segunda lista de tipos exentos en el editor sería una segunda definición de «obra»");
+      }
+
+      console.log(`  · lo que deja el contrato (lib/ganancia): identidad y punto de equilibrio verificados · `
+        + `obra ${Math.round(g().valor / 1e6)} M vs interventoría ${Math.round(g({ tipo_trabajo: "interventoria" }).valor / 1e6)} M `
+        + `(la contribución del 5 % es de obra pública) · umbral de ganancia que evita la pérdida: ${g().utilidad_minima_para_no_perder_pct} %`);
     }
 
     /* h. la raíz sirve el frontend (Vercel: /public es el output estático) */
@@ -14208,7 +14538,27 @@ async function main() {
       assert.ok(etiquetasBarra.length >= 6);
       for (const et of etiquetasBarra) assert.ok(!/modalidad|cuant[ií]a|unspsc|dane|nit\b/i.test(et), `etiqueta con jerga: «${et}»`);
       for (const et of ["Qué tipo de trabajo es", "Cómo lo adjudican", "Dónde queda", "Cuánto vale", "Cuándo hay que entregar la oferta", "Buscar entidad"]) assert.ok(etiquetasBarra.includes(et), `falta la etiqueta «${et}»`);
-      assert.ok(/<option value="margen">Dónde me queda más/.test(htmlF8) && /<option value="cierre">/.test(htmlF8), "el orden ofrece «Dónde me queda más» y «Las que cierran antes»");
+      /* «Lo que más deja» (ganancia) y «Más recorrido de precio» (margen) son
+         DOS órdenes distintos y por eso se llaman distinto desde ago 2026: el
+         primero ordena por la plata que queda, el segundo por el recorrido que
+         le queda al precio entre el piso y el techo. Se llamaban los dos «Dónde
+         me queda más», que es la clase de colisión de nombres que este
+         repositorio ya pagó con `total_procesos`/`procesos_contados`. */
+      assert.ok(/<option value="ganancia">Lo que más deja/.test(htmlF8), "el orden ofrece «Lo que más deja»");
+      assert.ok(/<option value="margen">Más recorrido de precio/.test(htmlF8), "«margen» es recorrido de PRECIO, no la plata que queda");
+      assert.ok(/<option value="cierre">/.test(htmlF8), "el orden ofrece «Las que cierran antes»");
+      {
+        const FLo = require("../public/filtros.js");
+        const ids = FLo.ORDENES.map((o) => o.id);
+        assert.ok(ids.includes("ganancia") && ids.includes("margen"));
+        assert.ok(/multiplicado por su opción de ganar/.test(FLo.conceptoDe("ganancia")),
+          "el concepto tiene que decir que la cifra del orden va ponderada por la opción de ganar");
+        assert.ok(/NO la plata que deja/.test(FLo.conceptoDe("margen")),
+          "el concepto de «margen» tiene que decir explícitamente que no es la ganancia");
+        for (const o of FLo.ORDENES) {
+          assert.ok(htmlF8.includes(`<option value="${o.id}">`), `el selector no ofrece el orden «${o.id}» que Filtros declara`);
+        }
+      }
       for (const debe of ["FL.escribirEstado(estadoFiltros, p)", "history.replaceState", "function pintarVacio", "data-fl-quitar-sugerido", "fl-quitar-todos", "op=entidades&q=", "totalSinFiltros", "function lineaMargen"]) {
         assert.ok(appF8.includes(debe), `app.js perdió «${debe}»`);
       }
@@ -15420,15 +15770,55 @@ async function main() {
         assert.strictEqual(cuantosCompiten({ competencia_entidad: {} }), null);
         assert.strictEqual(cuantosCompiten({}), null);
 
-        /* El VALOR ESPERADO se enuncia como promedio SOBRE INTENTOS. Decir «si
-           te lo ganás, te quedan X» sería, en la línea de abajo, el mismo error
-           que las dos de arriba existen para corregir: `ve` ya lleva dentro las
-           veces que NO se gana. */
-        assert.ok(/contando las veces que no se gana/.test(cuerpoBloque),
-          "el valor esperado tiene que decir que promedia también las veces que se pierde");
-        assert.ok(!/[Ss]i te lo gan[áa]s/.test(cuerpoBloque),
-          "«si te lo ganás, te quedan X» lee el valor esperado como si fuera condicional a ganar");
         assert.ok(/detalle-probabilidad/.test(cuerpoBloque), "la frase debe seguir abriendo el modal de desglose");
+
+        /* ═══ LA TERCERA CIFRA ES LA PLATA QUE QUEDA (ago 2026) ══════════════
+           Defecto de producto reportado por el dueño con sus palabras: «el
+           cliente asume que es lo que le queda de ganancia». La celda decía
+           «$1.183M de contrato esperado por intento» —presupuesto × opción de
+           ganar— y se leía como utilidad, justo al lado de la cuantía. Ahora la
+           celda ES lo que le queda (`lib/ganancia`), y el valor esperado sigue
+           enunciándose como lo que es: un promedio por intento que cuenta las
+           veces que NO se gana. Esa frase NO desapareció: se mudó con la cifra
+           que describe, y aquí se vigila donde vive. */
+        const iG = jsSin.indexOf("function bloqueGanancia");
+        assert.ok(iG > 0, "la tercera celda de la tarjeta tiene que salir de bloqueGanancia");
+        const cuerpoGanancia = jsSin.slice(iG, jsSin.indexOf("\n  }", iG));
+        assert.ok(/bloqueGanancia\(l, celda\)/.test(cuerpoBloque),
+          "la franja tiene que pintar la ganancia con la MISMA plantilla de celda: dos plantillas se despeinan por separado");
+        assert.ok(/contando las veces que no se gana/.test(cuerpoGanancia),
+          "el valor esperado tiene que seguir diciendo que promedia también las veces que se pierde");
+        for (const cuerpo of [cuerpoBloque, cuerpoGanancia]) {
+          assert.ok(!/[Ss]i te lo gan[áa]s/.test(cuerpo),
+            "«si te lo ganás, te quedan X» sobre el VALOR ESPERADO lee un promedio por intento como si fuera condicional a ganar");
+        }
+        /* «le quedan si gana» SÍ es correcto —y necesario— sobre la GANANCIA:
+           esa cifra sí es condicional a ganar. Lo que no puede pasar es que la
+           celda pinte `l.ve` con ese rótulo. */
+        assert.ok(/si gana el contrato/.test(cuerpoGanancia), "la celda tiene que decir que la cifra es si gana el contrato");
+        assert.ok(/copFirmado\(g\.valor\)/.test(cuerpoGanancia),
+          "lo que se pinta es la ganancia, no el valor esperado disfrazado");
+        /* R1 · la ausencia jamás se convierte en cero: es la prueba hermana de
+           la que prohíbe `i.<conteo> || 0` en los dos frontends. */
+        assert.ok(!/\bg\.[a-z_]+\s*\|\|\s*0|ganancia\.[a-z_]+\s*\|\|\s*0/.test(cuerpoGanancia),
+          "un «|| 0» sobre cualquier cifra de la ganancia convertiría «no sé» en «cero» — así se coló «en 0 procesos» en producción");
+        assert.ok(/g\.valor == null/.test(cuerpoGanancia), "sin cifra hay que decirlo, no pintar un 0");
+        assert.ok(/perdida/.test(cuerpoGanancia), "una ganancia negativa tiene que verse como pérdida");
+
+        /* `copFirmado` EJECUTADO: `fmtCorto` responde «No definida» al 0 y
+           «$-9500000» a un negativo porque nació para cuantías. La ganancia
+           tiene signo y su 0 es el punto de equilibrio, que es un HECHO. */
+        const copFirmado = new Function("fmtNum", `${extraerFn("copFirmado")}; return copFirmado;`)(
+          new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }));
+        assert.strictEqual(copFirmado(0), "$0", "un punto de equilibrio medido es un dato, no una ausencia");
+        assert.strictEqual(copFirmado(-9500000), "−$10M", "una pérdida se pinta con signo");
+        assert.strictEqual(copFirmado(38000000), "$38M");
+        assert.strictEqual(copFirmado(null), "—", "sin dato no es cero");
+        assert.strictEqual(copFirmado(NaN), "—");
+        const fmtCortoFn = new Function("fmtNum", `${extraerFn("fmtCorto")}; return fmtCorto;`)(
+          new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }));
+        assert.strictEqual(fmtCortoFn(0), "No definida",
+          "fmtCorto conserva su contrato de CUANTÍA: por eso la ganancia necesitaba el suyo");
       }
 
       /* ---- paso 0.2 · DELETE /api/admin/rup, contra el handler real ---- */

@@ -193,6 +193,10 @@
     .metrica-valor { font-size: 20px; font-weight: 600; letter-spacing: -0.4px; line-height: 1.1; color: var(--text-primary); font-variant-numeric: tabular-nums; }
     .metrica-rotulo { margin-top: 2px; font-size: 11px; line-height: 1.25; color: var(--text-secondary); }
     .metrica-nota { margin-top: 2px; font-size: 10.5px; line-height: 1.25; color: var(--text-secondary); opacity: .85; }
+    /* La ganancia en NEGATIVO se pinta en rojo, con el token de la paleta (no un
+       hex suelto: en modo oscuro el rojo cambia). Es la única cifra de la franja
+       que puede tener signo, y el signo es lo primero que hay que ver. */
+    .metrica.perdida .metrica-valor, .metrica.perdida .metrica-rotulo { color: var(--danger); }
     @media (max-width: 640px) { .metrica-valor { font-size: 17px; } .metricas .metrica { padding: 8px 10px; } .metrica-nota { display: none; } }
     /* el pulso global de la landing: tres cifras, cero prosa */
     #pulso-global .cifra { text-align: center; }
@@ -1385,7 +1389,8 @@
           </label>
           <select id="f-ordenar" class="control-select max-w-full rounded-xl text-sm" aria-label="Ordenar por">
             <option value="atractividad">Las mejores para usted</option>
-            <option value="margen">Dónde me queda más (solo las que ya costeó)</option>
+            <option value="ganancia">Lo que más deja</option>
+            <option value="margen">Más recorrido de precio (solo las que ya costeó)</option>
             <option value="cierre">Las que cierran antes</option>
             <option value="ve">Mayor contrato esperado</option>
             <option value="p_ganar">Las más ganables</option>
@@ -1974,7 +1979,14 @@
               <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Deducciones de acta %</span>
               <input id="deducciones" type="number" min="0" max="30" step="0.1" placeholder="sin cargar"
                      class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-              <span class="mt-1 block text-xs text-gray-400">Contribución 5 % + estampillas + ReteICA</span>
+              <span class="mt-1 block text-xs text-gray-400">Estampillas y ReteICA del pliego. La contribución del 5 % ya se descuenta aparte: no la escriba aquí o se cobraría dos veces.</span>
+            </label>
+            <label class="flex items-start gap-2 rounded-lg border border-gray-200 px-3 py-2 sm:col-span-2">
+              <input id="contribucion-en-admin" type="checkbox" class="mt-0.5">
+              <span class="text-sm">
+                <span class="block font-medium">Mi administración ya incluye los impuestos del contrato</span>
+                <span class="block text-xs text-gray-500">Márquela si dentro de su porcentaje de administración ya presupuestó la contribución del 5 % de obra pública y las estampillas. Si la deja sin marcar, se descuentan aparte, que es lo prudente. La diferencia son 5 puntos del valor del contrato: más que la ganancia entera, así que decida esto mirando su propio desglose.</span>
+              </span>
             </label>
             <label class="block">
               <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Entidad (para la baja)</span>
