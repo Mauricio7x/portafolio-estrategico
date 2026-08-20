@@ -7942,30 +7942,73 @@ async function main() {
         const Portada2 = require("../lib/portada.js");
         assert.strictEqual(Portada2.filaManifestacion, M.filaManifestacion, "portada re-exporta la función de lib/manifestacion, no una copia");
         assert.strictEqual(Portada2.PLAZO_MANIFESTACION_HABILES, 3);
-        // (2) el clasificador de la lista publica `manifestacion` con la fecha CALCULADA y los hábiles que quedan
+        // (2) el clasificador publica la VENTANA (dos extremos) y el estado de tres valores
         const clas = FLs.crearClasificador({ ahora: Date.now() });
         const menor = { id_del_proceso: "CO1.MC.1", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: `${hoy}T08:00:00.000` };
         const cM = clas(menor);
-        assert.ok(cM.manifestacion && cM.manifestacion.aplica && cM.manifestacion.calculada, "menor cuantía → manifestación calculada");
-        assert.strictEqual(cM.manifestacion.vence, H.sumarHabiles(hoy, 3), "vence = apertura + 3 hábiles");
-        assert.strictEqual(cM.manifestacion.vencida, false);
-        assert.ok(cM.manifestacion.quedan_habiles >= 3, `quedan ≥ 3 hábiles: ${cM.manifestacion.quedan_habiles}`);
+        assert.ok(cM.manifestacion && cM.manifestacion.aplica, "menor cuantía → manifestación");
+        assert.strictEqual(cM.manifestacion.estado, "abierta", "publicado hoy: con certeza sigue abierta");
+        assert.strictEqual(cM.manifestacion.puede_cerrar_desde, H.sumarHabiles(hoy, 1), "puede cerrar desde el PRIMER hábil: la entidad fija el plazo, la ley solo el techo");
+        assert.strictEqual(cM.manifestacion.vence_a_mas_tardar, H.sumarHabiles(hoy, 3), "a más tardar = apertura + 3 hábiles (techo legal)");
+        assert.strictEqual(cM.manifestacion.confirmada, false);
+        assert.strictEqual(cM.manifestacion.quedan_habiles, null, "SIN fecha del cronograma NO hay cuenta atrás: un contador es una afirmación");
+        assert.strictEqual(cM.manifestacion.dias_calendario, null);
         assert.strictEqual(clas({ id_del_proceso: "CO1.LP.1", modalidad_de_contratacion: "Licitación pública", fecha_de_publicacion_del: `${hoy}T08:00:00.000` }).manifestacion, null, "licitación pública: no aplica → null");
         assert.strictEqual(clas({ id_del_proceso: "CO1.MC.2", modalidad_de_contratacion: "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes", fecha_de_publicacion_del: `${hoy}T08:00:00.000` }).manifestacion, null, "«sin manifestación» no aplica");
         const vencida = clas({ id_del_proceso: "CO1.MC.3", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: "2026-01-05T08:00:00.000" }).manifestacion;
-        assert.strictEqual(vencida.vencida, true); assert.strictEqual(vencida.quedan_habiles, 0);
+        assert.strictEqual(vencida.estado, "vencida"); assert.strictEqual(vencida.quedan_habiles, null);
         const sinFecha = clas({ id_del_proceso: "CO1.MC.4", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía" }).manifestacion;
-        assert.ok(sinFecha.aplica && sinFecha.vence === null && sinFecha.vencida === null, "sin apertura legible: aplica, pero no se afirma fecha ni vencimiento");
+        assert.ok(sinFecha.aplica && sinFecha.estado === "sin_fecha" && sinFecha.vence_a_mas_tardar === null, "sin apertura legible: aplica, pero no se afirma ninguna fecha");
+
+        /* (2-bis) ══ REGRESIÓN DEL DEFECTO DE PRODUCCIÓN DEL 19-AGO-2026 ══
+           MM-SA-MC-008-2026 (MUNICIPIO DE MOTAVITA): apertura viernes 14 de
+           agosto, cierre de ofertas el 21. La app enseñó en rojo «El plazo para
+           manifestar interés vence mañana (jueves 20 de agosto)» cuando en
+           SECOP II ese plazo YA HABÍA CERRADO —estado ClosedForReplies, sorteo
+           realizado, última manifestación el martes 18 a las 11:24—: la entidad
+           fijó UN día hábil y la app aplicó el TECHO de tres como si fuera el
+           plazo. Estas seis aserciones son el «jamás puede volver a pasar». */
+        const MOTAVITA = { id_del_proceso: "MM-SA-MC-008-2026", entidad: "MUNICIPIO DE MOTAVITA",
+          nombre_del_procedimiento: "OPTIMIZACION PLANTA DE TRATAMIENTO DE AGUA POTABLE Y AMPLIACION DE REDES ACUEDUCTO SOTE PANELAS",
+          modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía",
+          fecha_de_publicacion_del: "2026-08-14T15:11:36.000", fecha_cierre: "2026-08-21T15:00:00.000" };
+        const mot = M.manifestacionDeFila(MOTAVITA, "2026-08-19");
+        assert.strictEqual(mot.estado, "por_confirmar", "el 19 la ventana estaba corriendo: NO se puede afirmar que siga abierta");
+        assert.strictEqual(mot.accion, "verifique_ya");
+        assert.strictEqual(mot.quedan_habiles, null, "NUNCA una cuenta atrás sin la fecha del cronograma");
+        assert.strictEqual(mot.dias_calendario, null, "sin dias_calendario no se puede decir «vence mañana»");
+        assert.strictEqual(mot.puede_cerrar_desde, "2026-08-18", "el plazo podía cerrar desde el martes 18 — y cerró ese día");
+        assert.ok(!("vencida" in mot) && !("vence" in mot) && !("vence_legible" in mot),
+          "los tres campos que afirmaban el vencimiento no pueden volver: su `false` significaba «sigue abierta»");
+        assert.ok(/M[ÁA]XIMO/.test(mot.nota) && /entidad puede haber puesto menos|entidad pudo poner menos/.test(mot.nota),
+          `la nota dice que 3 días es un techo, no un plazo: ${mot.nota}`);
+        // …y con la fecha REAL del cronograma del pliego, la respuesta correcta es «venció»
+        const motReal = M.manifestacionDeFila(MOTAVITA, "2026-08-19", { fechaCronograma: "2026-08-18" });
+        assert.strictEqual(motReal.estado, "vencida", "con el cronograma leído (18 de agosto) el plazo consta VENCIDO el 19");
+        assert.strictEqual(motReal.origen, "cronograma");
+        // el día de la apertura sí se puede afirmar abierta; el primer hábil ya no
+        assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-14").estado, "abierta");
+        assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-18").estado, "por_confirmar", "el primer hábil el plazo YA puede cerrar");
+        assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-21").estado, "vencida");
+        /* coherencia con el dato PUBLICADO: si el cierre de ofertas no deja
+           sitio al trámite (num. 3: las ofertas empiezan el día hábil siguiente
+           al informe del sorteo), la apertura usada no es la buena → no se
+           afirma nada. Un calculado que contradice a un publicado pierde. */
+        const apretado = M.manifestacionDeFila({ ...MOTAVITA, fecha_cierre: "2026-08-17T15:00:00.000" }, "2026-08-15");
+        assert.strictEqual(apretado.estado, "sin_fecha");
+        assert.strictEqual(apretado.motivo_sin_fecha, "cierre_de_ofertas_no_deja_sitio");
+        // una sola derivación del estado: la del handler es la MISMA función
+        assert.strictEqual(require("../lib/portada.js").estadoDeVentana, M.estadoDeVentana, "portada re-exporta estadoDeVentana, no una copia");
         // (3) el filtro `manif`: abierta / todas / inerte
         const filas = [menor, { id_del_proceso: "CO1.LP.1", modalidad_de_contratacion: "Licitación pública" }, { id_del_proceso: "CO1.MC.3", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: "2026-01-05T08:00:00.000" }, { id_del_proceso: "CO1.MC.4", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía" }];
         const clas2 = FLs.crearClasificador({ ahora: Date.now() });
         const todosTipos = { tipo: FLp.TIPOS_TRABAJO.map((t) => t.id) };
-        assert.deepStrictEqual(FLs.aplicar(filas, { ...todosTipos, manif: "abierta" }, clas2).map((l) => l.id_del_proceso), ["CO1.MC.1"], "abierta: solo la que todavía se puede manifestar (la sin fecha no se afirma abierta)");
+        assert.deepStrictEqual(FLs.aplicar(filas, { ...todosTipos, manif: "abierta" }, clas2).map((l) => l.id_del_proceso), ["CO1.MC.1"], "abierta: solo donde todavía vale la pena avisar (la sin fecha no se afirma abierta)");
         assert.deepStrictEqual(FLs.aplicar(filas, { ...todosTipos, manif: "todas" }, clas2).map((l) => l.id_del_proceso), ["CO1.MC.1", "CO1.MC.3", "CO1.MC.4"], "todas: las de menor cuantía con manifestación");
         assert.strictEqual(FLp.leerEstado({ manif: "zzz" }).manif, null, "valor desconocido = inerte");
         assert.strictEqual(FLs.aplicar(filas, { ...FLp.leerEstado({ manif: "zzz" }), ...todosTipos }, clas2).length, 4);
         assert.strictEqual(FLp.escribirEstado(FLp.leerEstado({ manif: "abierta" })).get("manif"), "abierta");
-        assert.ok(FLp.fichas(FLp.leerEstado({ manif: "abierta" })).some((f) => f.filtro === "manif" && /manifest/i.test(f.etiqueta)));
+        assert.ok(FLp.fichas(FLp.leerEstado({ manif: "abierta" })).some((f) => f.filtro === "manif" && /le interesa/i.test(f.etiqueta)));
         const fac = FLs.facetas(filas, clas2).manifestacion;
         assert.deepStrictEqual(fac, { total: 3, abiertas: 1, urgentes: 0, vencidas: 1, sin_fecha: 1 }, JSON.stringify(fac));
         // (4) el listado real publica el campo por fila y las facetas; el filtro por URL funciona
@@ -7991,17 +8034,26 @@ async function main() {
         assert.strictEqual(gM.status, 200); assert.strictEqual(gM.cuerpo.guardado.estado, "preparando", "los estados nuevos existen");
         const l2 = (await seg2("&perfil=helder")).cuerpo;
         const pM = l2.procesos.find((p) => p.id === idMC);
-        assert.ok(pM.manifestacion && pM.manifestacion.vencida === false && pM.manifestacion.quedan_habiles === 1 && pM.manifestacion.vence === objetivo, `manifestación vence el próximo hábil: ${JSON.stringify(pM.manifestacion)}`);
-        assert.strictEqual(pM.manifestacion.dias_calendario, Math.round((Date.parse(objetivo) - Date.parse(hoy)) / 86400000), "dias_calendario = días hasta el vencimiento (0 = hoy)");
+        assert.ok(pM.manifestacion && pM.manifestacion.estado === "por_confirmar" && pM.manifestacion.vence_a_mas_tardar === objetivo,
+          `la ventana está corriendo y el techo es el próximo hábil: ${JSON.stringify(pM.manifestacion)}`);
+        assert.strictEqual(pM.manifestacion.quedan_habiles, null, "sin cronograma leído, Mis procesos tampoco cuenta hacia atrás");
+        assert.strictEqual(pM.manifestacion.dias_calendario, null);
         const hM = pM.hitos.find((h) => h.id === "manifestacion");
-        assert.ok(hM && hM.origen === "calculado" && hM.fecha === objetivo, "hito de manifestación CALCULADO en el cronograma");
-        assert.ok(l2.alertas.some((a) => a.tipo === "manifestacion" && a.id === idMC && a.urgencia === "alta"), "el centro de alertas avisa de la manifestación que vence hoy");
+        /* EL RECORDATORIO SE ANCLA AL PRIMER DÍA EN QUE EL PLAZO PUEDE CERRAR,
+           no al techo legal: en un calendario el error tiene que caer del lado
+           de avisar ANTES, porque la entidad fija un plazo más corto que el
+           máximo de ley (Motavita puso uno de tres). */
+        assert.ok(hM && hM.origen === "calculado" && hM.fecha === pM.manifestacion.puede_cerrar_desde && hM.fecha <= objetivo,
+          `el hito va al primer día en que puede cerrar (${JSON.stringify(hM)})`);
+        assert.ok(l2.alertas.some((a) => a.tipo === "manifestacion" && a.id === idMC && a.urgencia === "alta"), "el centro de alertas avisa de la manifestación cuya ventana está corriendo");
+        assert.ok(!l2.alertas.some((a) => a.tipo === "manifestacion" && /vence mañana|vence HOY/.test(a.mensaje) && !(pM.manifestacion.confirmada)),
+          "sin fecha del cronograma NINGUNA alerta puede decir «vence hoy/mañana»");
         assert.strictEqual(l2.resumen.manifestaciones_abiertas, 1); assert.strictEqual(l2.resumen.manifestaciones_urgentes, 1);
         assert.deepStrictEqual(l2.orden_estados, ["interesa", "preparando", "presentado", "ganado", "perdido", "descartado"]);
         assert.strictEqual(l2.resumen.por_estado.preparando, 1);
         // .ics del guardado lleva el hito calculado
         const icsM = await seg2(`&perfil=helder&ics=${encodeURIComponent(idMC)}`);
-        assert.ok(/Manifestar inter/.test(icsM.cuerpo) && /CALCULADA/.test(icsM.cuerpo), "el .ics trae la manifestación de interés y dice que la fecha es calculada");
+        assert.ok(/Avisar que le interesa/.test(icsM.cuerpo) && /CALCULADA/.test(icsM.cuerpo), "el .ics trae el aviso de interés y dice que la fecha es calculada, no publicada");
         // cambio de cronograma: el proceso del listado, guardado antes con foto vieja → el corpus vivo difiere en el cierre
         const yaGuardados = new Set(l2.procesos.map((p) => p.id));
         const filaV = liT.resultados.find((f) => f.fecha_cierre && !yaGuardados.has(f.id_del_proceso));
@@ -8041,7 +8093,26 @@ async function main() {
         assert.ok(/function chipManifestacion/.test(appP) && /function avisoManifestacion/.test(appP) && /chipManifestacion\(l\.manifestacion\)/.test(appP) && /avisoManifestacion\(l\.manifestacion\)/.test(appP), "la tarjeta pinta el chip y el aviso de manifestación");
         assert.ok(/pintarAvisoManifestacion/.test(appP) && /manif: \$\("fl-manif"\)\.checked \? "abierta" : null/.test(appP), "el aviso bajo la barra y la casilla de la hoja aplican manif=abierta");
         assert.ok(!/manif.*\|\| 0/.test(appP), "ningún «|| 0» sobre la manifestación");
-        console.log(`  · manifestación de interés + Mis procesos: vence ${cM.manifestacion.vence} (${cM.manifestacion.quedan_habiles} hábiles) · filtro manif abierta/todas/inerte · listado ${liM.total} de menor cuantía · hito calculado en el cronograma · cambio de cierre detectado y «Enterado» lo cierra · ${l3.alertas.length} alertas · pestaña propia con insignia`);
+        /* ══ LAS DOS CERRADURAS DEL FRONTEND (defecto del 19-ago-2026) ══
+           (a) el campo `vencida` de la manifestación no puede volver a ningún
+               módulo del navegador: su `false` se leía como «sigue abierta», que
+               es justo la afirmación que la app no puede hacer;
+           (b) NINGUNA frase de cuenta atrás («vence hoy/mañana») puede pintarse
+               sin `confirmada`, que solo se pone con la fecha del cronograma del
+               pliego. Se comprueba que cada aparición de esas frases en el
+               bloque de la manifestación cuelga de `m.confirmada`. */
+        for (const [arch, txt] of [["app.js", appP], ["portada.js", fs.readFileSync(path.join(__dirname, "..", "public", "portada.js"), "utf8")]]) {
+          assert.ok(!/\bm\.vencida\b|\bmanifestacion\.vencida\b|\bf\.vencida\b/.test(txt), `${arch}: el campo «vencida» de la manifestación no puede volver`);
+          assert.ok(!/\bm\.vence_legible\b|\bf\.venceISO\b/.test(txt), `${arch}: la fecha de vencimiento calculada no puede volver a pintarse`);
+        }
+        /* La invariante de la cuenta atrás NO se comprueba con una regex sobre el
+           fuente: eso demostraría que la cadena «m.confirmada» aparece en algún
+           sitio del bloque, no que GUARDE cada frase — el mismo error que este
+           módulo existe para cerrar. Se comprueba EJECUTANDO el pintado sobre
+           todo el espacio de estados, más abajo (paso «lo que el ingeniero ve»). */
+        assert.ok(/m\.estado === "por_confirmar"/.test(appP) && /verifique HOY/.test(appP),
+          "el estado «por_confirmar» manda a verificar en SECOP II en vez de afirmar un vencimiento");
+        console.log(`  · avisar que le interesa + Mis procesos: ventana ${cM.manifestacion.puede_cerrar_desde}..${cM.manifestacion.vence_a_mas_tardar} (${cM.manifestacion.estado}) · regresión Motavita clavada · filtro manif abierta/todas/inerte · listado ${liM.total} de menor cuantía (${JSON.stringify(liM.facetas.manifestacion)}) · hito calculado en el cronograma · cambio de cierre detectado y «Enterado» lo cierra · ${l3.alertas.length} alertas · pestaña propia con insignia`);
       }
 
       /* --- (c) entidad inexistente: respuesta explícita, no un vacío mudo --- */
@@ -14802,10 +14873,13 @@ async function main() {
       assert.strictEqual(ag.manifestacion.proximos, 23);
       const m1 = ag._manifestacion[0];
       assert.strictEqual(m1.proceso, "CO1.P.4");
-      assert.strictEqual(m1.origenFecha, "calculada", "la fecha límite SIEMPRE se declara calculada");
-      assert.strictEqual(m1.venceISO, "2026-08-18", "apertura 12 (mié) + 3 hábiles = jueves 13, viernes 14, martes 18 (el lunes 17 es festivo)");
-      assert.strictEqual(m1.diasHabilesRestantes, 3, "desde el jueves 13: hoy, el viernes 14 y el martes 18");
-      assert.ok(/Confirme en el cronograma/.test(m1.notaFecha));
+      assert.strictEqual(m1.origenFecha, "ventana_calculada", "sin cronograma del pliego lo que se publica es la VENTANA, no una fecha límite");
+      assert.strictEqual(m1.puedeCerrarDesdeISO, "2026-08-13", "puede cerrar desde el PRIMER hábil (jueves 13): la entidad fija el plazo, la ley solo el techo");
+      assert.strictEqual(m1.venceMaximoISO, "2026-08-18", "a más tardar: apertura 12 (mié) + 3 hábiles = jueves 13, viernes 14, martes 18 (el lunes 17 es festivo)");
+      assert.strictEqual(m1.estado, "por_confirmar", "el jueves 13 la ventana ya está corriendo: no se puede afirmar que siga abierta");
+      assert.strictEqual(m1.diasHabilesRestantes, null, "NO hay cuenta atrás sin la fecha del cronograma");
+      assert.strictEqual(m1.habilesHastaElTecho, 3, "los hábiles hasta el techo son una cota para ORDENAR, no un vencimiento");
+      assert.ok(/Confírmelo en el cronograma/.test(m1.nota) && /M[ÁA]XIMO/.test(m1.nota), m1.nota);
       assert.strictEqual(m1.valor, 300e6);
       assert.ok(Portada.exigeManifestacion({ modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía" }));
       assert.ok(!Portada.exigeManifestacion({ modalidad_de_contratacion: "Seleccion Abreviada Menor Cuantia Sin Manifestacion Interes" }));
@@ -14838,10 +14912,37 @@ async function main() {
       const m0 = await invocar(routerP, "/api/procesos?op=manifestacion&estado=abierto");
       assert.strictEqual(m0.status, 200);
       assert.strictEqual(m0.cuerpo.disponible, true);
-      for (const f of m0.cuerpo.resultados) {
-        assert.strictEqual(f.origenFecha, "calculada");
-        assert.ok(f.diasHabilesRestantes >= 1, "lo que se sirve como abierto tiene al menos hoy para avisar");
-        assert.ok(f.venceISO >= m0.cuerpo.hoy);
+      /* ══ LA VENTANA SE LLENA A PROPÓSITO ══
+         Con el corpus de prueba esta lista sale VACÍA (sus menor cuantía se
+         publicaron hace meses), así que el bucle no ejecutaba ni una línea y
+         pasaba en vacuo: un fallo dentro del refresco del handler no lo veía
+         nadie hasta producción. Se siembra la ventana con una fila REAL,
+         construida por la misma `filaManifestacion`, y se comprueba el
+         refresco de verdad. */
+      {
+        const hoyM = m0.cuerpo.hoy;
+        const apM = H.sumarHabiles(hoyM, -1);                       // ventana corriendo hoy
+        const filaSem = Portada.filaManifestacion({ id_del_proceso: "CO1.MANIF.VENTANA", entidad: "ENTIDAD M",
+          nombre_del_procedimiento: "MEJORAMIENTO DE VÍA", cuantia_cop: 400e6,
+          modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía",
+          fecha_de_publicacion_del: `${apM}T09:00:00.000`, fecha_cierre: `${H.sumarDias(apM, 20)}T15:00:00.000` }, hoyM);
+        const filaVieja = Portada.filaManifestacion({ id_del_proceso: "CO1.MANIF.CADUCA",
+          modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía",
+          fecha_de_publicacion_del: "2026-01-05T09:00:00.000" }, hoyM);
+        await redis.set(Portada.CLAVE_MANIFESTACION, JSON.stringify({ generado: hoyM, hoy: hoyM, abiertos: [filaSem, filaVieja], proximos: 7 }));
+        const m1 = await invocar(routerP, "/api/procesos?op=manifestacion&estado=abierto");
+        assert.strictEqual(m1.status, 200, `el refresco de la ventana no puede reventar: ${JSON.stringify(m1.cuerpo).slice(0, 300)}`);
+        assert.strictEqual(m1.cuerpo.total, 1, "lo que venció desde que se escribió la ventana se retira al servir");
+        const f = m1.cuerpo.resultados[0];
+        assert.strictEqual(f.proceso, "CO1.MANIF.VENTANA");
+        assert.strictEqual(f.origenFecha, "ventana_calculada", "sin cronograma del pliego se sirve la VENTANA, no una fecha límite");
+        assert.strictEqual(f.estado, "por_confirmar", "la ventana está corriendo: no se afirma que siga abierta");
+        assert.strictEqual(f.diasHabilesRestantes, null, "NINGUNA cuenta atrás sin la fecha del pliego");
+        assert.ok(f.habilesHastaElTecho >= 1, "…pero sí una cota para ordenar por urgencia");
+        assert.ok(f.venceMaximoISO >= m1.cuerpo.hoy && f.puedeCerrarDesdeISO <= f.venceMaximoISO, "la ventana está bien formada");
+        assert.strictEqual(m1.cuerpo.plazoMinimoHabiles, 1);
+        assert.ok(/M[ÁA]XIMO/.test(m1.cuerpo.como_leerlo.abierto), "la cabecera dice que 3 días es un techo, no un plazo");
+        await redis.del(Portada.CLAVE_MANIFESTACION);
       }
       const mp = await invocar(routerP, "/api/procesos?op=manifestacion&estado=proximo");
       assert.strictEqual(mp.status, 200);
@@ -14866,13 +14967,14 @@ async function main() {
       assert.strictEqual(PortadaPub.pesosCortos(312e9), "$312.000 millones");
       assert.strictEqual(PortadaPub.pesosCortos(52.4e6), "$52,4 millones");
       assert.strictEqual(PortadaPub.pesosCortos(0), null, "cero es sin dato");
-      /* EL RELOJ SE INYECTA, no se toma el real (ago 2026). `textoActualizado` ya
-         admite `ahora` y la prueba no lo usaba: «hace 26 h» solo cae en AYER si
-         la hora local pasa de las 02:00, así que entre medianoche y las dos de la
-         mañana en Colombia caía dos días atrás y la suite fallaba SOLA, sin que
-         nadie hubiera tocado nada. Es el antipatrón que este repositorio ya tiene
-         escrito («una prueba de husos calibrada contra el reloj real no prueba
-         nada y falla sola en la frontera») y que aquí se estaba pagando. */
+      /* EL «AHORA» SE INYECTA, no se toma del reloj (misma lección que las pruebas
+         de husos y de días hábiles). Con `Date.now()` real, «hace 26 horas» solo
+         cae en «ayer» si la hora local pasa de las 02:00: entre medianoche y esa
+         hora son DOS días atrás, y la prueba fallaba sola en esa franja — un
+         flake que aparece de noche y desaparece de día.
+         Las DOS ramas de la fusión encontraron el mismo defecto y probaron cosas
+         distintas: se conservan las dos baterías porque juntas cubren las cuatro
+         salidas (hoy · ayer · fecha completa · la frontera de medianoche). */
       const ahoraPortada = Date.parse("2026-08-20T18:00:00Z");   // 13:00 en Colombia
       assert.ok(/ayer/.test(PortadaPub.textoActualizado(new Date(ahoraPortada - 26 * 3600e3).toISOString(), ahoraPortada)),
         "26 h antes de las 13:00 es AYER");
@@ -14883,10 +14985,23 @@ async function main() {
       const medianoche = Date.parse("2026-08-20T05:30:00Z");     // 00:30 en Colombia
       assert.ok(!/ayer|hoy/.test(PortadaPub.textoActualizado(new Date(medianoche - 26 * 3600e3).toISOString(), medianoche)),
         "a las 00:30, «hace 26 h» son dos días atrás: ni hoy ni ayer");
+      const AHORA_TXT = Date.parse("2026-08-13T17:00:00.000Z");   // 12:00 en Bogotá
+      assert.ok(/ayer/.test(PortadaPub.textoActualizado(new Date(AHORA_TXT - 26 * 3600e3).toISOString(), AHORA_TXT)));
+      assert.ok(/hoy/.test(PortadaPub.textoActualizado(new Date(AHORA_TXT).toISOString(), AHORA_TXT)));
+      assert.ok(/11 de agosto/.test(PortadaPub.textoActualizado(new Date(AHORA_TXT - 48 * 3600e3).toISOString(), AHORA_TXT)), "más atrás: fecha completa");
       const hEnt = PortadaPub.htmlEntidades({ topEntidades: [{ nit: "1", nombre: "E", abiertos: 2, valor: 1e9, baja: null, nBaja: 2 }, { nit: "2", nombre: "F", abiertos: 1, valor: 5e8, baja: 7.4, nBaja: 9 }], bajaMinimoProcesos: 5 });
       assert.ok(hEnt.includes("Sin referencia") && hEnt.includes("7,4 %") && hEnt.includes('href="/?entidad=1#/licitaciones"'), "sin base «Sin referencia», con base la cifra, y cada fila enlaza a su lista");
-      const hMan = PortadaPub.htmlManifestacion({ manifestacion: { proximos: null, plazoHabiles: 3, sorteoDesde: 10 } }, { resultados: [{ entidad: "X", objeto: "Y", valor: 1e8, diasHabilesRestantes: 2, venceLegible: "martes 18 de agosto", origenFecha: "calculada", notaFecha: "n" }] });
-      assert.ok(/Fecha calculada/.test(hMan) && /Le quedan 2 días de oficina/.test(hMan) && /Sin referencia/.test(hMan), "cuenta regresiva SIEMPRE marcada como calculada; PAA sin respuesta = Sin referencia");
+      const hMan = PortadaPub.htmlManifestacion({ manifestacion: { proximos: null, plazoHabiles: 3, sorteoDesde: 10 } }, { resultados: [{ entidad: "X", objeto: "Y", valor: 1e8, estado: "por_confirmar", diasHabilesRestantes: null, habilesHastaElTecho: 2, puedeCerrarDesdeLegible: "jueves 13 de agosto", venceMaximoLegible: "martes 18 de agosto", origenFecha: "ventana_calculada", nota: "n" }] });
+      /* SIN fecha del cronograma la portada NO cuenta hacia atrás: dice que la
+         ventana está corriendo y manda a verificar. Es el defecto del
+         19-ago-2026 («vence mañana» sobre un plazo cerrado dos días antes). */
+      assert.ok(/puede estar cerrando hoy o haber cerrado/.test(hMan), "ventana corriendo → verificar, no «le quedan N días»");
+      assert.ok(/La ley fija un máximo, no un plazo/.test(hMan), "se declara que 3 días es un techo, no el plazo");
+      assert.ok(!/Le quedan? \d+ días? de oficina/.test(hMan), "NINGUNA cuenta atrás sin fecha del cronograma");
+      assert.ok(/Sin referencia/.test(hMan), "PAA sin respuesta = Sin referencia");
+      // …y CON la fecha del cronograma del pliego sí se cuenta, y se dice de dónde sale
+      const hManC = PortadaPub.htmlManifestacion({ manifestacion: { proximos: null, plazoHabiles: 3, sorteoDesde: 10 } }, { resultados: [{ entidad: "X", objeto: "Y", valor: 1e8, estado: "abierta", diasHabilesRestantes: 2, habilesHastaElTecho: 2, fechaLimiteISO: "2026-08-18", fechaLimiteLegible: "martes 18 de agosto", origenFecha: "cronograma", nota: "n" }] });
+      assert.ok(/Le quedan 2 días de oficina/.test(hManC) && /cronograma del pliego/.test(hManC), "con fecha del pliego sí hay cuenta atrás, y se declara su origen");
       const hDep = PortadaPub.htmlDepartamentos({ porDepartamento: [{ cod: "73", nombre: "Tolima", n: 3, valor: 1e9 }, { cod: "sin_dato", nombre: "Sin departamento", n: 1, valor: 0 }] });
       assert.ok(hDep.includes('href="/?dep=73#/licitaciones"') && !hDep.includes("Sin departamento</span>"), "las barras enlazan a la lista; sin_dato no compite por una barra");
       assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(hEnt + hMan + hDep + PortadaPub.htmlHero({ procesosAbiertos: 1, valorTotal: 1, entidadesActivas: 1, generado: new Date().toISOString() })), "sin emojis");
@@ -15398,6 +15513,55 @@ async function main() {
       const idCorpus = rl.cuerpo.resultados.find((f) => f.fecha_cierre).id_del_proceso;
       const rd = await invocar(routerPliego, `/api/pliego?op=cronograma&id_proceso=${encodeURIComponent(idCorpus)}`);
       assert.ok(rd.cuerpo.hitos.some((h) => h.id === "cierre" && h.origen === "dataset"), "el cierre del dataset entra al cronograma");
+      /* ---- (3-bis) EL PELDAÑO 1 DE LA MANIFESTACIÓN, EXTREMO A EXTREMO ----
+         El pliego es la ÚNICA fuente de la fecha límite REAL para avisar que le
+         interesa (el dataset no la publica — docs/datos.md §7). Al leer el
+         cronograma se PERSISTE, y el listado y Mis procesos la consumen con un
+         solo comando: la tarjeta pasa de «verifique HOY si sigue abierto» a
+         decir el día exacto. Sin pliego leído, todo sigue igual que antes. */
+      {
+        const Mn = require("../lib/manifestacion.js");
+        const idMan = "CO1.MANIF.PLIEGO.1";
+        const textoManif = ["CRONOGRAMA DEL PROCESO",
+          "Publicación del pliego de condiciones definitivo: 14 de agosto de 2026",
+          "Fecha límite para manifestar interés: 18 de agosto de 2026",
+          "Cierre: presentación de las ofertas: 25 de agosto de 2026"].join("\n");
+        const hitosMan = Cr.extraerHitos(textoManif).hitos;
+        assert.ok(hitosMan.some((h) => h.id === "manifestacion" && h.fecha === "2026-08-18"),
+          `el lector de pliegos saca el hito de manifestación: ${JSON.stringify(hitosMan)}`);
+        // el handler lo persiste al leer el cronograma
+        assert.strictEqual(await redis.hget(Mn.CLAVE_CRONOGRAMA, idMan), null, "antes de leer el pliego no hay nada guardado");
+        const rMan = await invocarPost(routerPliego, "/api/pliego?op=cronograma", { id_proceso: idMan, texto: textoManif });
+        assert.strictEqual(rMan.status, 200);
+        assert.strictEqual(rMan.cuerpo.manifestacion_fecha_guardada, "2026-08-18", "leer el pliego guarda la fecha límite real");
+        const mapa = await Mn.leerFechasCronograma(redis);
+        assert.strictEqual(mapa[idMan], "2026-08-18", "…y se lee con un solo comando");
+        // el clasificador del listado la usa: la ventana deja paso al día exacto
+        const filaMan = { id_del_proceso: idMan, modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía",
+          fecha_de_publicacion_del: "2026-08-14T15:00:00.000", fecha_cierre: "2026-08-25T15:00:00.000" };
+        const FLm = require("../lib/filtros_lista.js");
+        const sinPliego = FLm.crearClasificador({ ahora: Date.parse("2026-08-17T17:00:00Z") })(filaMan).manifestacion;
+        const conPliego = FLm.crearClasificador({ ahora: Date.parse("2026-08-17T17:00:00Z"), fechasCronograma: mapa })(filaMan).manifestacion;
+        assert.strictEqual(sinPliego.confirmada, false); assert.strictEqual(sinPliego.quedan_habiles, null);
+        assert.strictEqual(conPliego.confirmada, true, "con el pliego leído la fecha se puede AFIRMAR");
+        assert.strictEqual(conPliego.fecha_limite, "2026-08-18");
+        assert.strictEqual(conPliego.origen, "cronograma");
+        assert.strictEqual(conPliego.dias_calendario, 1, "…y por fin hay cuenta atrás: vence mañana");
+        // un valor corrupto NO puede tumbar el listado: se ignora y se cae a la ventana
+        await redis.hset(Mn.CLAVE_CRONOGRAMA, { "CO1.MANIF.CORRUPTO": "{no es json" });
+        const mapa2 = await Mn.leerFechasCronograma(redis);
+        assert.ok(!("CO1.MANIF.CORRUPTO" in mapa2) && mapa2[idMan] === "2026-08-18", "un valor corrupto se ignora, el resto se sirve");
+        // la poda existe y está acotada: nada purga esta clave
+        assert.ok(Mn.MAX_FECHAS_CRONOGRAMA > 0 && Mn.MAX_FECHAS_CRONOGRAMA <= 5000, "el hash tiene cota dura");
+        const podado = await Mn.guardarFechaCronograma(redis, "CO1.MANIF.VIEJO", "2026-08-18", { hoy: "2026-08-17" });
+        assert.strictEqual(podado.guardada, true);
+        // sin redis no lanza: es una mejora de otra pantalla, no puede tumbar nada
+        assert.deepStrictEqual(await Mn.guardarFechaCronograma(null, idMan, "2026-08-18"), { guardada: false, podadas: 0 });
+        assert.deepStrictEqual(await Mn.leerFechasCronograma(null), {});
+        await redis.del(Mn.CLAVE_CRONOGRAMA);
+        console.log("  · peldaño 1: leer el pliego guarda la fecha límite real y la tarjeta pasa de «verifique HOY» a «vence mañana, martes 18»");
+      }
+
       // frontend
       const htmlF5 = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
       assert.ok(htmlF5.includes('id="pl-vigia"'), "el lector tiene la caja del vigía");
@@ -15736,7 +15900,11 @@ async function main() {
 
           const iT = jsT.indexOf("function tarjeta(");
           const cuerpoT = jsT.slice(iT, jsT.indexOf("\n  }", iT));
-          assert.ok(/lineaRequisitos\(puertas\)/.test(cuerpoT), "la tarjeta debe pintar el veredicto en una línea");
+          /* El veredicto RECIBE la manifestación: sin ella diría «cumple los
+             requisitos para presentarse» sobre un proceso cuyo plazo para
+             avisar que le interesa ya venció (defecto del 19-ago-2026). */
+          assert.ok(/lineaRequisitos\(puertas, l\.manifestacion\)/.test(cuerpoT),
+            "la tarjeta pinta el veredicto en una línea, y le pasa la manifestación para que no se contradiga con el chip del plazo");
           assert.ok(cuerpoT.indexOf("Más detalles") > 0
             && cuerpoT.indexOf("badgesPuertas(puertas)") > cuerpoT.indexOf("Más detalles"),
           "las cuatro puertas viven plegadas en «Más detalles»: quince chips visibles enterraban lo que decide");
@@ -15857,6 +16025,140 @@ async function main() {
           && /arrancadas\.admin[\s\S]{0,80}arrancarPaneles\(\)/.test(jsSin),
           "cada pestaña debe inicializar su módulo al activarse, no solo al cargar la página");
         assert.ok(/addEventListener\("hashchange"/.test(jsSin), "la pestaña debe seguir el hash (#/apu recargable)");
+      }
+
+      /* ══ LO QUE EL INGENIERO VE, EJECUTADO (defecto del 19-ago-2026) ══
+         Las guardas por regex prueban que una función se LLAMA; no prueban lo
+         que PINTA. El aviso rojo que costó el proceso de Motavita era una
+         cadena, así que aquí se EXTRAEN del fuente `chipManifestacion` y
+         `avisoManifestacion` y se ejecutan con el objeto REAL que el servidor
+         manda para ese proceso — el mismo patrón de `fraseProbabilidad`. */
+      {
+        const extraerFn = (nombre) => {
+          const i = js.indexOf(`function ${nombre}(`);
+          assert.ok(i > 0, `no se encontró ${nombre} en app.js`);
+          return js.slice(i, js.indexOf("\n  }", i) + 4);
+        };
+        const cabecera = 'const esc=(x)=>String(x==null?"":x); const chip=(t,c,ti)=>`[${t}]`;';
+        // eslint-disable-next-line no-new-func
+        const pinta = new Function(`${cabecera} ${extraerFn("chipManifestacion")} ${extraerFn("avisoManifestacion")};
+          return (m) => ({ chip: chipManifestacion(m), aviso: avisoManifestacion(m) });`)();
+        const Mf = require("../lib/manifestacion.js");
+        const MOT = { id_del_proceso: "MM-SA-MC-008-2026", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía",
+          fecha_de_publicacion_del: "2026-08-14T15:11:36.000", fecha_cierre: "2026-08-21T15:00:00.000" };
+
+        // el 19 de agosto, que es el día en que la app mintió
+        const v19 = pinta(Mf.manifestacionDeFila(MOT, "2026-08-19"));
+        assert.ok(!/vence mañana|vence HOY|hasta jueves 20 de agosto/.test(v19.chip + v19.aviso),
+          `NUNCA MÁS: la tarjeta no puede afirmar un vencimiento calculado → ${v19.chip} ${v19.aviso}`);
+        assert.ok(/verifique HOY si sigue abierto/i.test(v19.chip), v19.chip);
+        assert.ok(/puede estar cerrando hoy o haber cerrado ya/.test(v19.aviso) && /M[ÁA]XIMO de 3 días de oficina/.test(v19.aviso),
+          `el aviso manda a verificar y dice que 3 días es un techo → ${v19.aviso}`);
+        assert.ok(/no podrá presentar oferta/.test(v19.aviso), "sigue diciendo lo que está en juego: sin avisar no se puede ofertar");
+
+        // el día de la apertura sí se puede empujar a avisar, sin inventar fecha
+        const v14 = pinta(Mf.manifestacionDeFila(MOT, "2026-08-14"));
+        assert.ok(/puede cerrar el martes 18 de agosto/.test(v14.chip) && !/vence/.test(v14.chip), v14.chip);
+        assert.ok(/Hágalo hoy/.test(v14.aviso), "con la ventana entera por delante, la instrucción sigue siendo avisar hoy");
+
+        // con la fecha REAL del cronograma sí se afirma —y la verdad era «venció»
+        const vReal = pinta(Mf.manifestacionDeFila(MOT, "2026-08-19", { fechaCronograma: "2026-08-18" }));
+        assert.ok(/plazo vencido el martes 18 de agosto/.test(vReal.chip) && vReal.aviso === "",
+          `con cronograma leído: vencido y sin aviso que empuje a un trámite imposible → ${vReal.chip}`);
+        const vHoy = pinta(Mf.manifestacionDeFila(MOT, "2026-08-18", { fechaCronograma: "2026-08-18" }));
+        assert.ok(/vence HOY/.test(vHoy.chip) && /vence HOY/.test(vHoy.aviso) && /cronograma del pliego/.test(vHoy.aviso),
+          `con cronograma leído SÍ hay cuenta atrás, y declara su origen → ${vHoy.chip}`);
+
+        // y una vencida por el techo no puede empujar a nada
+        assert.strictEqual(pinta(Mf.manifestacionDeFila(MOT, "2026-08-25")).aviso, "", "plazo vencido: ningún aviso rojo");
+
+        /* ══ INVARIANTE, BARRIDA SOBRE TODO EL ESPACIO DE ESTADOS ══
+           Sobre 14 días × 4 hipótesis de cronograma (ninguna, la real, una
+           anterior a la apertura y una posterior al techo — las dos últimas se
+           descartan por rango) se exige, EJECUTANDO el pintado:
+             (1) «vence HOY/mañana» ⟹ m.confirmada === true;
+             (2) ninguna fecha descartada del pliego puede aparecer en pantalla;
+             (3) `vencida` nunca empuja a un trámite imposible;
+             (4) `sin_fecha` avisa, y en ámbar (rojo significa «actúe hoy»).
+           Los cuatro estados tienen que salir en el barrido: si alguno no se
+           ejercita, la prueba no vale y lo dice. */
+        const vistos = new Set();
+        let casos = 0;
+        for (let d = 12; d <= 25; d++) {
+          const dia = `2026-08-${String(d).padStart(2, "0")}`;
+          for (const cron of [null, "2026-08-18", "2026-08-13", "2026-09-30"]) {
+            for (const fila of [MOT, { ...MOT, fecha_cierre: "2026-08-17T15:00:00.000" }, { ...MOT, fecha_de_publicacion_del: null }]) {
+              const m = Mf.manifestacionDeFila(fila, dia, { fechaCronograma: cron });
+              const r = pinta(m); const todo = r.chip + " " + r.aviso;
+              vistos.add(m.estado); casos++;
+              if (/vence (?:HOY|mañana)/.test(todo)) {
+                assert.strictEqual(m.confirmada, true, `(1) «vence hoy/mañana» sin fecha del cronograma el ${dia} (cron=${cron}): ${todo}`);
+              }
+              if (m.fecha_cronograma_descartada) {
+                /* La fecha descartada SÍ puede aparecer en el `title`, dentro de
+                   la frase que explica por qué se descartó: ese es el rastro de
+                   auditoría y quitarlo dejaría el descarte invisible. Lo que no
+                   puede es pintarse COMO FECHA LÍMITE, así que se comprueba
+                   sobre el texto visible, con el title retirado. */
+                const visible = todo.replace(/title="[^"]*"/g, "");
+                const legibleMal = require("../lib/habiles.js").fechaLegible(m.fecha_cronograma_descartada);
+                assert.ok(!visible.includes(legibleMal) && !visible.includes(m.fecha_cronograma_descartada),
+                  `(2) una fecha del pliego DESCARTADA por rango no puede pintarse como fecha límite: ${visible}`);
+                assert.ok(/Se descarta: no se usa como fecha límite/.test(m.nota) && m.nota.includes(m.fecha_cronograma_descartada),
+                  "(2-bis) …pero el descarte tiene que quedar AUDITABLE en la nota, con la fecha que se leyó");
+                assert.strictEqual(m.confirmada, false, "(2-ter) una fecha descartada jamás cuenta como confirmada");
+              }
+              if (m.estado === "vencida") assert.strictEqual(r.aviso, "", `(3) vencida no puede empujar a avisar: ${todo}`);
+              if (m.estado === "sin_fecha") {
+                assert.ok(/no se pudo situar el plazo/.test(r.aviso), `(4) sin_fecha tiene que AVISAR, no callarse: ${todo}`);
+                assert.ok(!/bg-red/.test(r.aviso) && /bg-amber/.test(r.aviso), `(4) sin_fecha va en ámbar, no en rojo: ${r.aviso}`);
+              }
+            }
+          }
+        }
+        /* ══ COHERENCIA DEL VEREDICTO CON EL PLAZO ══
+           «Cumple los requisitos para presentarse» encima de un chip que dice
+           «plazo vencido» son dos afirmaciones incompatibles en la misma
+           tarjeta — el defecto de Motavita otra vez. El proceso NO se oculta
+           (puede haber avisado a tiempo), pero la línea lo dice. */
+        const lineaReq = new Function(`const esc=(x)=>String(x==null?"":x); ${extraerFn("lineaRequisitos")}; return lineaRequisitos;`)();
+        const soloTexto = (h) => h.replace(/<[^>]+>/g, "").trim();
+        const puertasOk = { p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } };
+        const verde = lineaReq(puertasOk, null);
+        assert.ok(/text-green/.test(verde) && /Cumple los requisitos para presentarse/.test(soloTexto(verde)));
+        const conPlazoIdo = lineaReq(puertasOk, { aplica: true, estado: "vencida" });
+        assert.ok(!/text-green/.test(conPlazoIdo), "con el plazo vencido el veredicto NO puede seguir en verde");
+        assert.ok(/ya venció/.test(soloTexto(conPlazoIdo)) && /si avisó a tiempo/.test(soloTexto(conPlazoIdo)),
+          `la línea tiene que decir que el plazo pasó, sin negar que pudo haber avisado: ${soloTexto(conPlazoIdo)}`);
+        // el que no encaja con el registro sigue en rojo: la manifestación no lo cambia
+        assert.ok(/text-red/.test(lineaReq({ p1_rup: { pasa: false } }, { aplica: true, estado: "vencida" })));
+        // y un plazo que sigue vivo no ensucia el veredicto (de eso ya avisa el chip)
+        assert.ok(/text-green/.test(lineaReq(puertasOk, { aplica: true, estado: "por_confirmar" })));
+
+        /* ══ REGISTRO FORMAL (usted) EN LA TARJETA ══
+           El barrido de ago-2026 dejó fuera `lineaRequisitos` —«Cumplís los
+           requisitos para presentarte»— porque la prueba de registro solo
+           miraba las frases de la portada. Aquí se ejecutan las SEIS ramas y se
+           barre además el fuente de los módulos del navegador. */
+        for (const caso of [[puertasOk, null], [puertasOk, { aplica: true, estado: "vencida" }],
+          [{ ...puertasOk, p3_caja: { pasa: false } }, null], [{ ...puertasOk, p3_caja: { pasa: false } }, { aplica: true, estado: "vencida" }],
+          [{ p1_rup: { pasa: false } }, null], [{ p2_k: { pasa: false } }, null],
+          [{ ...puertasOk, p1_rup: { pasa: true, sin_dato: true } }, null]]) {
+          const t = soloTexto(lineaReq(caso[0], caso[1]));
+          assert.ok(!/\b(Pod[ée]s|Cumpl[íi]s|Ten[ée]s|Quer[ée]s|Deb[ée]s|present[aá]rte|presentarte|pens[aá]|verific[aá]|revis[aá]|hac[ée]|pon[ée]|fijate)\b/.test(t),
+            `registro formal (usted) en la tarjeta, sin voseo: «${t}»`);
+        }
+        const VOSEO_RE = /\b(Pod[ée]s|Cumpl[íi]s|Ten[ée]s|Quer[ée]s|Deb[ée]s|Sab[ée]s|presentarte|pensá|verificá|revisá|hacé|poné|fijate|and[aá]|dale)\b/;
+        for (const arch of ["app.js", "portada.js", "pulso.js", "onboarding.js", "filtros.js", "pliego.js"]) {
+          const txt = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", arch), "utf8"));
+          const m = txt.match(VOSEO_RE);
+          assert.ok(!m, `${arch}: registro formal (usted) — voseo encontrado: «${m && m[0]}»`);
+        }
+
+        assert.deepStrictEqual([...vistos].sort(), ["abierta", "por_confirmar", "sin_fecha", "vencida"],
+          `el barrido tiene que ejercitar los CUATRO estados, no tres: ${[...vistos]}`);
+        assert.strictEqual(casos, 14 * 4 * 3);
+        console.log(`  · avisar que le interesa, PINTADO: el 19-ago la tarjeta dice «verifique HOY si sigue abierto» · invariante «vence hoy/mañana ⟹ fecha del pliego» barrida sobre ${casos} casos y los 4 estados`);
       }
 
       /* ---- paso 0.3 · probabilidad en lenguaje claro, EJECUTADA ---- */
@@ -16881,13 +17183,23 @@ async function main() {
     // hasta ahí por cada fila de menor cuantía: una sola fila mala = 500.
     {
       const clasificar = filtrosLista.crearClasificador({ ahora: Date.parse("2026-08-19T12:00:00Z") });
+      /* La ventana sustituyó al punto único `vence` (dos extremos, jamás un
+         punto), así que la guarda se comprueba sobre los DOS y sobre el estado.
+         Con `vence == null` a secas la prueba pasaba con `undefined` —es decir,
+         pasaba aunque el campo hubiera dejado de existir—, que es la prueba
+         vacua que este repositorio tiene escrito que no hay que escribir. */
       for (const f of ["2202-12-30T00:00:00.000", "1970-01-01T00:00:00.000", "1983-12-31T00:00:00.000"]) {
         const r = clasificar({ modalidad_de_contratacion: "Selección abreviada menor cuantía", fecha_de_publicacion_del: f });
-        assert.ok(r && (!r.manifestacion || r.manifestacion.vence == null),
-          `${f}: sin fecha situable se responde «desconocida», no una excepción`);
+        assert.ok(r && r.manifestacion && r.manifestacion.aplica === true, `${f}: la fila se sigue clasificando`);
+        assert.strictEqual(r.manifestacion.apertura, null, `${f}: un año fuera de la tabla de hábiles no es una apertura`);
+        assert.strictEqual(r.manifestacion.puede_cerrar_desde, null, `${f}: sin apertura no hay extremo inferior`);
+        assert.strictEqual(r.manifestacion.vence_a_mas_tardar, null, `${f}: ni techo`);
+        assert.strictEqual(r.manifestacion.estado, "sin_fecha", `${f}: se responde «sin_fecha», no una excepción`);
       }
       const bueno = clasificar({ modalidad_de_contratacion: "Selección abreviada menor cuantía", fecha_de_publicacion_del: "2026-08-14T00:00:00.000" });
-      assert.strictEqual(bueno.manifestacion.vence, "2026-08-20", "y una fecha normal sigue calculándose");
+      assert.strictEqual(bueno.manifestacion.apertura, "2026-08-14", "y una fecha normal sigue calculándose");
+      assert.strictEqual(bueno.manifestacion.puede_cerrar_desde, "2026-08-18", "extremo inferior: apertura + 1 hábil (el 17 es festivo trasladado)");
+      assert.strictEqual(bueno.manifestacion.vence_a_mas_tardar, "2026-08-20", "techo legal: apertura + 3 hábiles, D. 1082 art. 2.2.1.2.1.2.20");
     }
 
     // ── 8 · una celda vacía con ESPACIOS no puede leer el precio como cantidad ─

@@ -1886,10 +1886,12 @@ cualquier evento del cronograma de un guardado se acerca; (d) inspirarse en rast
   `filaManifestacion`, `manifestacionDeFila`, `PLAZO_MANIFESTACION_HABILES`, `NORMA`). Estaba en `lib/portada` (Fase 9)
   y ahora la importan también `lib/filtros_lista` (clasifica cada fila del listado) y `lib/seguimiento`; `portada`
   **requiere** a `filtros_lista`, así que un require de vuelta habría cerrado un ciclo — de ahí la extracción, sin
-  cambiar la regla ni la norma. `portada` la re-exporta (prueba de identidad de función). La fecha límite sigue siendo
-  CALCULADA (apertura = publicación, supuesto declarado; + 3 hábiles, D. 1082/2015 art. 2.2.1.2.1.2.20) y viaja SIEMPRE
-  con su nota «confírmela en el cronograma»; sin apertura legible `aplica:true` pero `vence:null` y `vencida:null` — no
-  se afirma ni abierta ni vencida.
+  cambiar la regla ni la norma. `portada` la re-exporta (prueba de identidad de función).
+  ⚠️ **SUPERADO (20-ago-2026)**: esta Fase 9 publicaba UNA fecha calculada (apertura + 3 hábiles) y el booleano
+  `vencida`. Los dos desaparecieron: el 3 del D. 1082/2015 art. 2.2.1.2.1.2.20 es un **TECHO**, no el plazo, y
+  tomarlo por el plazo produjo un defecto de producción. Hoy se publica una VENTANA de dos extremos
+  (`puede_cerrar_desde` / `vence_a_mas_tardar`) y un estado de cuatro valores — ver «La manifestación de interés:
+  una VENTANA, no una fecha» más abajo. Se deja escrito lo que había porque la corrección no se entiende sin ello.
 - **En la lista**: `manifestacion` por fila (`clasificar(l).manifestacion`), chip en la tarjeta («Manifestar interés ·
   vence HOY/mañana hábil/N días hábiles · hasta jueves 20 de agosto»; vencido en gris), línea roja «Atención» a ≤2 días
   hábiles (la hermana de la regla de las 24 horas), aviso ámbar bajo la barra con la cifra de `facetas.manifestacion`
@@ -1921,6 +1923,149 @@ cualquier evento del cronograma de un guardado se acerca; (d) inspirarse en rast
   abreviada menor cuantía» del día 10 de cada mes, todas vencidas) y, en Mis procesos, calcula una apertura cuya
   fecha límite es HOY (retrocediendo hasta que `sumarHabiles(apertura, 3) === hoy`) — un fixture con fecha fija
   caducaría.
+
+### ⚠️ EL PLAZO DE MANIFESTACIÓN NO ES DE TRES DÍAS: TRES ES EL TECHO (20-ago-2026)
+
+**Defecto de producción reportado por el ingeniero.** La app enseñó, en rojo y en imperativo, «El
+plazo para manifestar interés vence mañana (jueves 20 de agosto): hágalo hoy en SECOP II» sobre
+**MM-SA-MC-008-2026** (MUNICIPIO DE MOTAVITA, Boyacá). En SECOP II ese plazo **ya había cerrado**:
+estado `ClosedForReplies`, lista de interesados publicada con «¿Sorteo realizado? **Sí**» y la última
+manifestación del **martes 18 a las 11:24 AM**.
+
+- **CAUSA RAÍZ: se aplicaba un TECHO LEGAL como si fuera un plazo.** `PLAZO_MANIFESTACION_HABILES =
+  3` se sumaba a la apertura y el resultado se presentaba como la fecha de vencimiento. El D.
+  1082/2015 art. 2.2.1.2.1.2.20 num. 1 dice «en un término **NO MAYOR a** tres (3) días hábiles» —lo
+  transcribe el propio `docs/datos.md` §7— y quien fija el plazo concreto es **la entidad, en el
+  pliego**. Motavita fijó **UNO**: apertura viernes 14 → cierre el martes 18 (primer hábil; el 15 fue
+  sábado y el 17 el festivo de la Asunción trasladado). La app tomó el extremo superior del rango y
+  lo publicó como el único valor, **dos días hábiles tarde**.
+- **Es «una inferencia presentada como una medición» otra vez, en el sitio más caro que existe**: un
+  aviso rojo, en imperativo, sobre el único trámite sin el cual no se puede ofertar. Un contratista
+  que se fía pierde el proceso creyendo que llegaba a tiempo. No hay ningún otro sitio de la app
+  donde equivocarse cueste más.
+- **LA CONTRADICCIÓN ESTABA EN LA MISMA TARJETA Y NADIE LA MIRABA**: «Cierra en 2 días · 21 de
+  agosto» (dato PUBLICADO) a dos centímetros de «Manifestar interés · vence mañana · 20 de agosto»
+  (dato CALCULADO). Por el num. 3 del mismo artículo, si hay sorteo el plazo de ofertas **empieza** el
+  día hábil siguiente al informe del sorteo: entre el 20 y el 21 no cabe ni el sorteo, ni el informe,
+  ni el plazo de ofertas. **Un calculado que contradice a un publicado pierde siempre.**
+
+**La regla, después: una VENTANA con dos extremos, no una fecha.** `lib/manifestacion.js` publica
+`puede_cerrar_desde` (apertura + **1** hábil) y `vence_a_mas_tardar` (apertura + 3 hábiles), y el
+`estado` tiene **tres** valores: `abierta` (hoy < el primer hábil: con certeza sigue abierta) ·
+`por_confirmar` (la ventana está corriendo: puede seguir abierta o haber cerrado) · `vencida` ·
+`sin_fecha`. **`por_confirmar` es el estado de MÁXIMA urgencia, no el de menor**: manda a SECOP II
+HOY. Decisiones que no hay que re-aprender:
+
+- **`vencida` COMO BOOLEANO NO EXISTE, y hay prueba de que no puede volver** (ni en el servidor ni en
+  los módulos del navegador). Su `false` se leía como «sigue abierta», que es exactamente la
+  afirmación que la app no puede hacer. Es el `sin_dato` contra el `0` del proyecto, en booleano: la
+  ausencia de vencimiento **conocido** se estaba sirviendo como vencimiento **futuro**.
+- **NO HAY CUENTA ATRÁS SIN FECHA CONFIRMADA.** `quedan_habiles` y `dias_calendario` viajan en `null`
+  salvo que la fecha venga del **cronograma del pliego** (`origen: "cronograma"`, `confirmada: true`).
+  Un contador es una afirmación. `habiles_hasta_el_techo` existe **solo para ORDENAR** por urgencia y
+  se llama así para que nadie lo pinte como una cuenta atrás.
+- **COHERENCIA CON EL CIERRE DE OFERTAS PUBLICADO** (num. 3): el techo se recorta a
+  `cierre_ofertas − 1 hábil`; si con eso la ventana queda al revés, la apertura que se está usando no
+  puede ser la buena → `sin_fecha` con `motivo_sin_fecha: "cierre_de_ofertas_no_deja_sitio"`, y se
+  dice. No se afirma nada sobre una ventana imposible.
+- **EL PELDAÑO 1 DE LA CASCADA YA ESTABA CONSTRUIDO Y DESCONECTADO.** `lib/cronograma.js` reconoce
+  desde la Fase 5 el hito `manifestacion` («Fecha límite para manifestar interés») leyendo el pliego
+  — la fecha REAL, la que fija la entidad — y nunca se cableó a la regla. Ahora
+  `manifestacionDeFila(l, hoy, { fechaCronograma })` la acepta, manda sobre la ventana y es **la
+  única con la que se cuenta hacia atrás**. Con ella, la respuesta correcta para Motavita el 19 es
+  «venció el 18», y hay prueba.
+- **EL RECORDATORIO DEL CALENDARIO SE ANCLA AL PRIMER DÍA EN QUE EL PLAZO PUEDE CERRAR**, no al techo
+  legal: en un `.ics` el error tiene que caer del lado de avisar **antes**. Es la misma doctrina que
+  la regla de las 24 horas.
+- **`estadoDeVentana` es la ÚNICA derivación del estado** y la comparten `filaManifestacion` y el
+  handler que refresca la ventana precalculada con la fecha del día. Dos derivaciones del mismo
+  estado divergirían — la lección de `total_procesos`/`procesos_contados`.
+- **`?manif=abierta` incluye `por_confirmar` a propósito**: excluirlo escondería justo las urgentes,
+  que es lo contrario de lo que pide quien marca la casilla. En las facetas, `urgentes ⊂ abiertas`.
+- **LA PRUEBA QUE DE VERDAD CIERRA ESTO EJECUTA LO QUE SE PINTA.** Las guardas por regex demuestran
+  que una función se LLAMA, no lo que ESCRIBE — y el daño lo hizo una cadena. `chipManifestacion` y
+  `avisoManifestacion` se EXTRAEN del fuente de `app.js` y se ejecutan con el objeto real del proceso
+  de Motavita en cuatro fechas; la aserción central prohíbe literalmente que aparezca «vence mañana»
+  sin `confirmada`. Es el patrón de `fraseProbabilidad`, aplicado donde más falta hacía. Lección de
+  método, hermana de la del paso 2 de Génesis: **comprobar por regex que una función se llama no
+  prueba que lo que dice sea verdad.**
+- **De paso, un flake latente en la suite**: la prueba de `textoActualizado` daba por hecho que «hace
+  26 horas» siempre cae en «ayer», y entre medianoche y las 02:00 de Colombia son **dos** días atrás.
+  Fallaba sola en esa franja y pasaba el resto del día. El «ahora» se inyecta, como en las pruebas de
+  husos y de días hábiles.
+- **Lo que este entorno NO pudo verificar, dicho en vez de disimulado**: el proxy de la sesión bloquea
+  `datos.gov.co` («Host not in allowlist»), así que la fila real de Motavita no se pudo consultar. El
+  diagnóstico se apoya en las capturas de SECOP II del ingeniero, en el censo de columnas ya medido
+  en `docs/datos.md` §7 y en la reproducción del defecto ejecutando los módulos. La aritmética de la
+  ventana (14 ago + 1/3 hábiles = 18/20 ago, con el festivo del 17) sí está verificada contra
+  `lib/habiles`.
+
+**EL PELDAÑO 1 YA ESTÁ CABLEADO (misma sesión).** El dataset no publica la fecha límite (medido,
+`docs/datos.md` §7), así que la única vía para AFIRMARLA es el pliego. `lib/cronograma` ya extraía el
+hito; ahora `/api/pliego?op=cronograma` lo **persiste** al leerlo y el listado y Mis procesos lo
+consumen. Con el pliego leído, la tarjeta pasa de «verifique HOY si sigue abierto» a «vence mañana,
+martes 18». Decisiones:
+- **Se PRECALCULA al leer el pliego y la petición del usuario solo LEE** (el criterio de la portada):
+  releer hasta 400 KB de texto por proceso en cada listado es inviable. Un campo por proceso en
+  `manifestacion:cronograma`, **un `HGETALL`** para todo el listado, y solo si el corpus trae alguna
+  de menor cuantía. Sin pliego leído no cambia absolutamente nada.
+- **`lib/manifestacion` sigue siendo HOJA**: el cliente de Redis se INYECTA, no se importa (el patrón
+  de `lib/almacen`). Nada purga esa clave, así que la poda va dentro, con cota dura (2 000 campos,
+  120 días) — se mira el tamaño con un comando barato y solo se reescribe cuando de verdad crece.
+- **EL CAMINO «CONFIRMADO» NECESITA SU PROPIA CERRADURA o repite el defecto con otra etiqueta.** Los
+  hitos se extraen por REGEX de línea y un pliego puede rotular «manifestación de interés» la línea
+  de PUBLICACIÓN (SECOP II escribe «publicación del pliego definitivo **y demostración de interés**»).
+  La fecha del pliego solo se acepta si cae **entre el día siguiente a la apertura y el techo legal**;
+  fuera de ahí se descarta, viaja en `fecha_cronograma_descartada` y el motivo se escribe en la nota
+  —**auditable, nunca usada**—. Hay prueba de que una descartada jamás se pinta como fecha límite.
+- Best-effort: `guardarFechaCronograma` no lanza. Mejora otra pantalla; no puede tumbar la lectura
+  del cronograma que se pidió.
+
+**CINCO DEFECTOS MÍOS QUE ENCONTRÓ LA AUDITORÍA DE LA PROPIA CORRECCIÓN.** Se dejan escritos porque
+cuatro son de familias que este repositorio ya conoce:
+- **Escribí la prueba vacua que este mismo defecto enseña a no escribir.** La guarda del frontend
+  recorría las apariciones de «vence HOY/mañana» y comprobaba que la cadena `m.confirmada` estuviera
+  **en algún sitio del bloque** — se cumple sola. Sustituida por una **prueba de propiedad EJECUTADA**:
+  168 casos (14 días × 4 hipótesis de cronograma × 3 filas) que exigen «`vence hoy/mañana` ⟹
+  `confirmada === true`», que `vencida` no empuje a un trámite imposible y que `sin_fecha` avise en
+  ámbar. La prueba **declara los cuatro estados que tiene que ejercitar** y falla si alguno no sale.
+- **Una segunda prueba vacua, esta preexistente**: el bucle que validaba `op=manifestacion` recorría
+  un array VACÍO con el corpus de prueba, así que no ejecutaba ni una línea. **Escondía un 500**: el
+  handler importaba `sigueValiendoLaPena` de `lib/portada`, que no lo re-exportaba → `is not a
+  function` en la primera petición con la ventana llena. La ventana se siembra ahora a propósito y
+  hay prueba POR MUTACIÓN de que quitar el export tumba la suite. Lección: **un bucle de aserciones
+  sobre una lista que puede estar vacía es una prueba que puede no existir**; si el caso importa, hay
+  que sembrarlo.
+- **Un `${3}` cableado a mano** en el mensaje de las alertas y otro en el frontend, duplicando
+  `PLAZO_MANIFESTACION_HABILES`. El techo viaja ahora en `plazo_maximo_habiles` y ninguna pantalla lo
+  escribe.
+- **`hoy` sin guarda**: con `undefined`, `hoy > hasta` y `hoy < desde` son las dos falsas y la máquina
+  respondía `por_confirmar` **en silencio**. Se cae al día de Colombia.
+- **`sin_fecha` no producía ningún aviso**: un proceso que exige el trámite y cuyo plazo no se pudo
+  situar pasaba callado. Ahora avisa **en ÁMBAR** — el rojo significa «actúe hoy» y aquí lo honesto
+  es «verifíquelo», sin fingir una urgencia medida.
+
+**DOS DEFECTOS AJENOS QUE SALIERON POR EL CAMINO, los dos visibles en la captura del ingeniero:**
+- **EL VEREDICTO SE CONTRADECÍA CON EL PLAZO.** «Cumple los requisitos para presentarse» encima de un
+  chip gris que dice «plazo vencido» son dos afirmaciones incompatibles: sin la manifestación **no se
+  puede presentar**. Medido: en el corpus de prueba, **64 de 64** procesos de menor cuantía servidos
+  tienen la ventana cerrada, y en producción pasa lo mismo por construcción (el trámite dura 3 días
+  hábiles y el proceso sigue listado semanas). El proceso **NO se oculta** —pudo haber avisado a
+  tiempo y la app no lo sabe: el falso negativo cuesta más— pero `lineaRequisitos` recibe ahora la
+  manifestación, baja a ámbar y dice «solo puede presentarse si avisó a tiempo». `?manif=abierta` ya
+  era el filtro para verlos separados.
+- **EL BARRIDO A REGISTRO FORMAL DE AGO-2026 SE SALTÓ LA LÍNEA MÁS VISIBLE DE LA APP.** Cada tarjeta
+  decía «Cumpl**ís** los requisitos para presentar**te**» y «Pod**és** presentarte… pens**á** en
+  anticipo» — voseo, justo lo que el dueño había mandado quitar, y sale en la captura que envió. La
+  prueba de registro solo miraba **las frases de la portada**; ahora ejecuta las siete ramas de
+  `lineaRequisitos` y barre el fuente de los seis módulos del navegador. **«su RUP» se conserva**: es
+  el nombre propio del documento, el uso que la regla de la Fase 6 mantiene a propósito — se cambió
+  por error y una prueba ya fijada lo devolvió.
+
+**El aviso rojo vive exactamente 4 días de oficina** (del día de la apertura al techo legal) y luego
+se apaga en gris: la ventana de ruido está acotada y medida. Y la faceta
+`facetas.manifestacion {total, abiertas, urgentes, vencidas, sin_fecha}` se imprime en cada corrida de
+la suite, así que el alcance deja de ser una impresión.
 
 ### Segunda ronda de correcciones del dueño (18-ago-2026): tipos de trabajo, lenguaje, frases, conceptos de orden
 
