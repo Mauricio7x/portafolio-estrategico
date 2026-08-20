@@ -14370,8 +14370,23 @@ async function main() {
       assert.strictEqual(PortadaPub.pesosCortos(312e9), "$312.000 millones");
       assert.strictEqual(PortadaPub.pesosCortos(52.4e6), "$52,4 millones");
       assert.strictEqual(PortadaPub.pesosCortos(0), null, "cero es sin dato");
-      assert.ok(/ayer/.test(PortadaPub.textoActualizado(new Date(Date.now() - 26 * 3600e3).toISOString())));
-      assert.ok(/hoy/.test(PortadaPub.textoActualizado(new Date().toISOString())));
+      /* EL RELOJ SE INYECTA, no se toma el real (ago 2026). `textoActualizado` ya
+         admite `ahora` y la prueba no lo usaba: «hace 26 h» solo cae en AYER si
+         la hora local pasa de las 02:00, así que entre medianoche y las dos de la
+         mañana en Colombia caía dos días atrás y la suite fallaba SOLA, sin que
+         nadie hubiera tocado nada. Es el antipatrón que este repositorio ya tiene
+         escrito («una prueba de husos calibrada contra el reloj real no prueba
+         nada y falla sola en la frontera») y que aquí se estaba pagando. */
+      const ahoraPortada = Date.parse("2026-08-20T18:00:00Z");   // 13:00 en Colombia
+      assert.ok(/ayer/.test(PortadaPub.textoActualizado(new Date(ahoraPortada - 26 * 3600e3).toISOString(), ahoraPortada)),
+        "26 h antes de las 13:00 es AYER");
+      assert.ok(/hoy/.test(PortadaPub.textoActualizado(new Date(ahoraPortada - 3600e3).toISOString(), ahoraPortada)),
+        "una hora antes es HOY");
+      /* …y la frontera que lo delataba: a las 00:30 de Colombia, 26 h atrás son
+         DOS días, no uno, y entonces toca la fecha completa. */
+      const medianoche = Date.parse("2026-08-20T05:30:00Z");     // 00:30 en Colombia
+      assert.ok(!/ayer|hoy/.test(PortadaPub.textoActualizado(new Date(medianoche - 26 * 3600e3).toISOString(), medianoche)),
+        "a las 00:30, «hace 26 h» son dos días atrás: ni hoy ni ayer");
       const hEnt = PortadaPub.htmlEntidades({ topEntidades: [{ nit: "1", nombre: "E", abiertos: 2, valor: 1e9, baja: null, nBaja: 2 }, { nit: "2", nombre: "F", abiertos: 1, valor: 5e8, baja: 7.4, nBaja: 9 }], bajaMinimoProcesos: 5 });
       assert.ok(hEnt.includes("Sin referencia") && hEnt.includes("7,4 %") && hEnt.includes('href="/?entidad=1#/licitaciones"'), "sin base «Sin referencia», con base la cifra, y cada fila enlaza a su lista");
       const hMan = PortadaPub.htmlManifestacion({ manifestacion: { proximos: null, plazoHabiles: 3, sorteoDesde: 10 } }, { resultados: [{ entidad: "X", objeto: "Y", valor: 1e8, diasHabilesRestantes: 2, venceLegible: "martes 18 de agosto", origenFecha: "calculada", notaFecha: "n" }] });
@@ -16718,6 +16733,84 @@ async function main() {
       }
       assert.ok(/preciosunitarios@invias/.test(porId.get("invias").licencia || ""),
         "la licencia del INVIAS (prohíbe uso comercial sin autorización) viaja con su fuente");
+    }
+
+    // ── 26-sexies · las deducciones se LEEN del pliego, no se inventan ──────
+    /* El margen viaja como COTA SUPERIOR mientras `deducciones_pct` esté vacío, y
+       ese bloque puede rondar el 10 % del valor: más que el margen típico de
+       obra, o sea que puede invertir el signo de la decisión. No hay tabla
+       nacional de estampillas (las fija cada ordenanza y cambian por municipio) y
+       el dueño no la tiene, así que el dato sale de donde SIEMPRE está y además
+       es vinculante: la cláusula del pliego. Cada concepto viaja con su evidencia
+       y su página para poder auditarlo sin reabrir el PDF. */
+    {
+      const { leerDeducciones } = require("../lib/deducciones.js");
+      const P = require("../lib/paginas.js");
+      const pliego = [
+        P.marcador(11),
+        "a) Contribucion especial de obra publica del 5% sobre el valor bruto.",
+        "b) Retencion en la fuente del 2,5% y estampilla Pro-Cultura del 1%.",
+        "c) ReteICA del 0,7% conforme al acuerdo municipal 012 de 2023.",
+        P.marcador(12),
+        "d) Estampilla Pro-Anciano: 2% del valor del contrato.",
+        "e) Retencion de garantia del 5% que se amortiza al liquidar.",
+        "El plazo de ejecucion sera de 8 meses y el anticipo del 30%.",
+      ].join("\n");
+      const r = leerDeducciones(pliego);
+      const porId = (id) => r.conceptos.filter((c) => c.id === id);
+
+      /* UNA LÍNEA PUEDE TRAER DOS CONCEPTOS: la b) declara la retención Y la
+         estampilla, y cortar en el primero perdía el segundo en silencio. */
+      assert.strictEqual(porId("retefuente").length, 1, "la retención en la fuente de la línea b)");
+      assert.strictEqual(porId("retefuente")[0].pct, 2.5);
+      assert.ok(porId("estampilla").some((c) => c.pct === 1), "la estampilla de la MISMA línea b) no se puede perder");
+
+      /* …Y UN MISMO PORCENTAJE NO PUEDE CONTARSE DOS VECES: «estampilla
+         Pro-Cultura del 1 %» casa con dos conceptos y sumaba 1 % dos veces. Un
+         descuento inflado da un margen falso, que es lo que esto evita. */
+      const sumaConceptos = r.conceptos.reduce((a, c) => a + c.pct, 0);
+      assert.strictEqual(Math.round(sumaConceptos * 100) / 100, r.total_pct);
+      /* 5 (contribución) + 2,5 (retefuente) + 1 (estampilla Pro-Cultura) + 0,7
+         (ReteICA) + 2 (estampilla Pro-Anciano) + 5 (retegarantía) = 16,2. Si el
+         Pro-Cultura se contara además como «tasa pro-…», saldría 17,2. */
+      assert.strictEqual(r.total_pct, 16.2, `doble conteo: ${JSON.stringify(r.conceptos.map((c) => [c.id, c.pct]))}`);
+
+      /* Lo que el motor YA aplica no puede sumarse a `deducciones_pct`: la
+         contribución del 5 % y la retegarantía se cobrarían dos veces (y la
+         segunda, además, se devuelve al liquidar). */
+      assert.ok(porId("contribucion_obra")[0].ya_en_el_motor, "la contribución ya la aplica el motor");
+      assert.ok(porId("retegarantia")[0].ya_en_el_motor, "la retegarantía ya la modela el motor y además se devuelve");
+      assert.strictEqual(r.total_aplicable_pct, 6.2, "a teclear = leído − lo que el motor ya aplica");
+
+      /* Cada concepto se puede auditar sin reabrir el PDF. */
+      for (const c of r.conceptos) {
+        assert.ok(c.evidencia && c.evidencia.length > 10, `«${c.id}» tiene que traer la línea de la que salió`);
+        assert.ok(Number.isInteger(c.pagina), `«${c.id}» tiene que traer su página`);
+      }
+      assert.strictEqual(porId("estampilla").find((c) => c.pct === 2).pagina, 12, "la estampilla de la pág. 12");
+
+      /* NADA SE INVENTA: sin cláusula, `null` y jamás 0 — un 0 diría «no le
+         descuentan nada», que es una afirmación, no una ausencia. */
+      const vacio = leerDeducciones("OBJETO: placa huella.\nPlazo 8 meses.\nAnticipo 30%.\nAIU 25%.");
+      assert.strictEqual(vacio.conceptos.length, 0, "ni el anticipo ni el AIU son deducciones");
+      assert.strictEqual(vacio.total_pct, null, "sin deducciones leídas la cifra es null, nunca 0");
+      assert.strictEqual(vacio.total_aplicable_pct, null);
+      /* Un concepto SIN porcentaje se cuenta, no se rellena. */
+      const sinPct = leerDeducciones("Se aplicaran las estampillas departamentales vigentes.");
+      assert.strictEqual(sinPct.conceptos.length, 0);
+      assert.strictEqual(sinPct.lineas_sin_porcentaje, 1, "la línea reconocida sin cifra se CUENTA");
+      /* La cifra es SIEMPRE cota inferior: el pliego puede callar una estampilla. */
+      assert.strictEqual(r.incompleto, true, "leer del pliego da una cota inferior y hay que decirlo");
+
+      /* El texto del pliego se consigue en UN solo sitio, compartido con el
+         cronograma: dos formas de obtenerlo divergirían. */
+      const cron = fs.readFileSync(path.join(RAIZ, "lib/handlers/pliego/cronograma.js"), "utf8");
+      const ded = fs.readFileSync(path.join(RAIZ, "lib/handlers/pliego/deducciones.js"), "utf8");
+      assert.ok(/module\.exports\.textoGuardado = textoGuardado;/.test(cron), "el lector del texto se exporta");
+      assert.ok(/textoGuardado/.test(ded) && !/leerIndice/.test(ded),
+        "deducciones NO puede tener su propia copia de «conseguir el texto del pliego»");
+      assert.strictEqual((fs.readdirSync(path.join(RAIZ, "api")).filter((f) => f.endsWith(".js"))).length, 6,
+        "las deducciones se pliegan como `op` del router de pliego, jamás como función nueva");
     }
 
     // ── 26-ter · el SIGNO del VEG está vigilado ─────────────────────────────

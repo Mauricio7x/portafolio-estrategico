@@ -4229,6 +4229,46 @@ sigue son las decisiones, no la lista.
     sin autorización) viaja con su fuente.
   · De paso, `invias_items.meta()` expone ya su `url_patron`: la tenía en el JSON y no la publicaba.
 
+### Las deducciones se LEEN del pliego (ago 2026 · punto 6 de la hoja de ruta)
+
+`lib/deducciones.js` (hoja) + `/api/pliego?op=deducciones`. El margen de todo presupuesto viaja
+declarado como COTA SUPERIOR mientras `deducciones_pct` esté vacío, y ese bloque puede rondar el 10 %
+del valor —más que el margen típico de obra—, así que su ausencia puede INVERTIR el signo de la
+decisión. **No hay tabla nacional que copiar** (las estampillas las fija cada ordenanza departamental
+o acuerdo municipal), este entorno no alcanza los portales (403 de política de red) y el dueño
+confirmó que no tiene el dato. Queda la fuente que la doctrina ya exigía: **la cláusula del pliego
+del proceso**, que además es vinculante.
+
+- **Mismo patrón que `lib/cronograma`**: regex por LÍNEA sobre el texto ya extraído, y cada concepto
+  viaja con su EVIDENCIA (la línea literal) y su PÁGINA, para auditarlo sin reabrir el PDF.
+- **UNA LÍNEA PUEDE TRAER DOS CONCEPTOS.** «la retención en la fuente del 2,5 % y la estampilla
+  Pro-Cultura del 1 %» es una línea y son dos datos: la primera versión cortaba en el primero
+  (`break`) y perdía el segundo en silencio. Cada concepto busca su porcentaje desde SU posición, así
+  que no se roban la cifra — la lección de `leerAnticipo`, que declaraba un anticipo del 25 %
+  leyendo el AIU.
+- **…Y UN MISMO PORCENTAJE NO PUEDE CONTARSE DOS VECES.** «estampilla Pro-Cultura del 1 %» casa con
+  `estampilla` Y con `tasa_prodeporte` —son la misma cosa dicha de dos maneras— y el 1 % se sumaba
+  dos veces: un descuento inflado da un margen falso, que es justo lo que este módulo existe para
+  evitar. Se marca la POSICIÓN reclamada dentro de la línea, así que la guarda vale para cualquier
+  solape futuro entre conceptos y no solo para ese par; gana el primero de `CONCEPTOS`, que es el más
+  específico (el orden importa).
+- **LO QUE EL MOTOR YA APLICA NO SE SUMA**: la contribución del 5 % y la retención de garantía viajan
+  con `ya_en_el_motor: true` y quedan fuera de `total_aplicable_pct`. Sumarlas las cobraría dos
+  veces, y la retegarantía además **se devuelve al liquidar**: tratarla como deducción perdida sería
+  una segunda mentira. Por eso hay DOS cifras con dos nombres —`total_pct` (lo que dice el pliego) y
+  `total_aplicable_pct` (lo que hay que teclear)— y la respuesta explica cuál va en el campo.
+- **Nada se inventa**: sin cláusula reconocible, `null` y jamás 0 —un 0 diría «no le descuentan
+  nada», que es una afirmación, no una ausencia— y un concepto SIN porcentaje se CUENTA
+  (`lineas_sin_porcentaje`) en vez de rellenarse. Un porcentaje > 30 se descarta: no es un descuento
+  de ley, es otra cifra de la línea (un plazo, un anticipo).
+- **La cifra es SIEMPRE una COTA INFERIOR** (`incompleto: true`): se lee lo que ESE documento
+  declara, y un pliego puede callar una estampilla que igual van a descontar. Decir lo contrario
+  sería vender como completo un dato que no lo es.
+- **El texto del pliego se consigue en UN solo sitio** (`textoGuardado`, extraído de
+  `handlers/pliego/cronograma` y compartido): dos formas de «conseguir el texto» divergen a la
+  primera corrección — la lección que ya costó el lector de cuerpos cuadruplicado.
+- **Se pliega como `op` del router de pliego**, no como función nueva: `api/` sigue en 6 de 12.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).

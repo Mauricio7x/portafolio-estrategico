@@ -16,6 +16,7 @@ const OPS = {
   formulario1: () => require("../lib/handlers/pliego/formulario1.js"), // [v3-F4] guardián del Formulario 1
   diff: () => require("../lib/handlers/pliego/diff.js"),               // [v3-F5] vigía de adendas (texto del pliego)
   cronograma: () => require("../lib/handlers/pliego/cronograma.js"),   // [v3-F5] hitos y avisos T-7/T-3/T-1 (+ .ics)
+  deducciones: () => require("../lib/handlers/pliego/deducciones.js"), // qué le descuentan de cada pago, leído de la cláusula del pliego
 };
 
 function opDe(req) {
