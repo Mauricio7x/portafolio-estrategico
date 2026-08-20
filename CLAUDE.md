@@ -4196,6 +4196,39 @@ sigue son las decisiones, no la lista.
   oferente, nunca al revés. Si algún día hay que cerrarlo, la señal está en el DOCUMENTO (cuántas
   celdas traen las demás filas), no en la fila. Queda declarado en el código.
 
+### Puntos 7 y 10 de la hoja de ruta (ago 2026)
+
+- **LA SEÑAL #11 ES AMBIGUA Y CALLARLO ERA AFIRMAR.** La tarjeta pintaba «Poca competencia» en VERDE
+  y nada más. El verde es correcto —el orden por defecto ES la Palanca 4— pero el MISMO hecho
+  sostiene la lectura contraria del manual: la señal #11 de pliego sastre es «uno o dos oferentes en
+  el histórico de esa entidad», y un pliego escrito para alguien produce exactamente la cifra que la
+  app premia. `avisoCompetencia` dice las DOS. Tres decisiones:
+  · **No se toca el color.** Pasarlo a ámbar afirmaría la lectura mala con la misma falta de
+    evidencia con la que hoy se afirma la buena, y además contradiría el orden por defecto.
+  · **Se avisa SOLO bajo 2 oferentes de media** (`UMBRAL_SENAL_11`), el umbral LITERAL de la señal,
+    no en toda la banda «baja»: en un listado ordenado por atractividad la mayoría de las tarjetas de
+    arriba son de competencia baja, y un aviso en casi todas se deja de leer — es la lección del chip
+    constante que hubo que retirar. Medido en navegador: **1 de 12 tarjetas** lo dispara.
+  · **Sin base no se afirma nada** (`conBase`), y no aparece en tarjetas no viables: urgir a revisar
+    un pliego al que no se puede presentar es un contrasentido.
+- **`inferir` y `calcular` SON PÚBLICAS, y lo que NO se abrió importa más que lo que sí.** Decisión
+  del dueño, con su condición: «no hay problema siempre y cuando se especifique que son precios de
+  referencia y su fuente, que son páginas web».
+  · **El riesgo real no era el catálogo: eran los precios que el dueño YA CORRIGIÓ.** `calcular` leía
+    `leerPreciosUsuario(redis, perfil)` y el `perfil` VIAJA EN LA PETICIÓN, así que con la acción
+    abierta cualquiera pediría `perfil=helder` y se llevaría sus correcciones dentro del costo. Eso no
+    es «información del APU»: es su trabajo acumulado, lo único que mejora la aplicación con el uso.
+    `presupuestoDe(..., {conCredencial})` no los lee sin token y la respuesta lo DECLARA
+    (`precios_propios_aplicados`): quien vea otro número tiene que poder saber por qué.
+  · **Token OPCIONAL con la regla de `/api/oportunidades`**: ausente → modo público; presente y
+    válido → además los precios propios; presente e INVÁLIDO → **401, jamás degradación silenciosa**.
+  · **`lib/apu/fuentes.js` arma la procedencia desde el `meta()` de cada banco**, nunca transcribiendo
+    las URL: una segunda lista se desincroniza al re-capturar una vigencia y acabaría citando un
+    documento que no es el que se usó para calcular. Un banco sin URL publicada viaja con `null` — no
+    se inventa un enlace, que sería peor que no darlo. La licencia del INVIAS (prohíbe uso comercial
+    sin autorización) viaja con su fuente.
+  · De paso, `invias_items.meta()` expone ya su `url_patron`: la tenía en el JSON y no la publicaba.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).

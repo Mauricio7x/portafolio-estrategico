@@ -9894,13 +9894,26 @@ async function main() {
       const tipologias = require("../lib/apu/tipologias.js");
       const catalogoLib = require("../lib/apu/catalogo.js");
 
-      /* ---- j.1 autorización: `catalogo` PÚBLICO, las otras cinco con token ---- */
-      for (const [ruta, metodo] of [["inferir", "POST"], ["calcular", "POST"],
-        ["guardar", "POST"], ["cargar", "GET"], ["listar", "GET"]]) {
+      /* ---- j.1 autorización: `catalogo`, `inferir` y `calcular` PÚBLICAS ----
+         `inferir` y `calcular` se abrieron por decisión del dueño (ago 2026):
+         ninguna lee las finanzas del perfil ni el histórico, y las dos se
+         alimentan del catálogo, que ya era público. Exigir credencial dejaba la
+         parte más útil de Precios tras un muro para quien acaba de subir su RUP.
+         Las que ESCRIBEN o leen borradores de un perfil siguen cerradas. */
+      for (const [ruta, metodo] of [["guardar", "POST"], ["cargar", "GET"], ["listar", "GET"]]) {
         const sinTok = await invocar(apu, `/api/apu/${ruta}`, {}, { metodo, body: {} });
         assert.strictEqual(sinTok.status, 401, `/api/apu/${ruta} sirvió sin token`);
         const malTok = await invocar(apu, `/api/apu/${ruta}`, { "x-historico-token": "no" }, { metodo, body: {} });
         assert.strictEqual(malTok.status, 401, `/api/apu/${ruta} aceptó un token inválido`);
+      }
+      for (const ruta of ["inferir", "calcular"]) {
+        const sinTok = await invocar(apu, `/api/apu/${ruta}`, {}, { metodo: "POST", body: {} });
+        assert.notStrictEqual(sinTok.status, 401, `/api/apu/${ruta} tiene que servir SIN token`);
+        /* …pero un token PRESENTE e INVÁLIDO sigue siendo 401: quien se molestó
+           en mandarlo tiene que enterarse de que está mal, jamás degradación
+           silenciosa (la misma regla que /api/oportunidades). */
+        const malTok = await invocar(apu, `/api/apu/${ruta}`, { "x-historico-token": "no" }, { metodo: "POST", body: {} });
+        assert.strictEqual(malTok.status, 401, `/api/apu/${ruta} degradó en silencio con un token inválido`);
       }
       /* El catálogo NO exige token, y eso es la regla del proyecto, no una
          excepción: lo que no sale sin llave son las cifras del PERFIL. Aquí son
@@ -16160,8 +16173,11 @@ async function main() {
     {
       const editor = fs.readFileSync(path.join(RAIZ, "lib/handlers/apu/editor.js"), "utf8");
       assert.ok(/async function presupuestoDe\(/.test(editor), "un solo constructor del presupuesto");
-      assert.strictEqual((editor.match(/await presupuestoDe\(redis, datos, perfil\)/g) || []).length, 2,
-        "las dos acciones (calcular y rentabilidad) lo usan");
+      /* Las dos acciones lo usan Y las dos pasan la credencial: una llamada sin
+         `conCredencial` leería los precios corregidos del dueño en la acción
+         que ahora es PÚBLICA, y el `perfil` viaja en la petición. */
+      assert.strictEqual((editor.match(/await presupuestoDe\(redis, datos, perfil, \{ conCredencial \}\)/g) || []).length, 2,
+        "las dos acciones (calcular y rentabilidad) lo usan, y las dos pasan la credencial");
       assert.ok(!/calcularPresupuesto\(\{\s*items, departamento/.test(editor),
         "no puede volver la llamada con la entrada recortada");
       const app = fs.readFileSync(path.join(RAIZ, "public/app.js"), "utf8");
@@ -16656,6 +16672,52 @@ async function main() {
         assert.ok(!desc.includes(fuera), `«${fuera}» no es costo directo y no puede entrar en la suma del documento`);
       }
       assert.strictEqual(r.diagnostico.descartadas.no_costo_directo, 6, "las seis líneas de AIU/impuestos se cuentan, no desaparecen en silencio");
+    }
+
+    // ── 26-quinquies · abrir `calcular` NO puede regalar los precios propios ─
+    /* `inferir` y `calcular` se abrieron sin credencial por decisión del dueño,
+       con una condición suya: que se diga que son precios DE REFERENCIA y de qué
+       página salen. Pero `calcular` leía `leerPreciosUsuario(redis, perfil)` y el
+       `perfil` VIAJA EN LA PETICIÓN: sin guarda, cualquiera pediría
+       `perfil=helder` y se llevaría, dentro del costo, las correcciones de precio
+       que el dueño ha ido acumulando. Eso no es «información del APU»: es su
+       trabajo, y es lo único que mejora la aplicación con el uso.
+       Sin token el cálculo sale igual —con el catálogo, que es público— y la
+       respuesta lo DECLARA en `precios_propios_aplicados`: quien vea otro número
+       tiene que poder saber por qué. */
+    {
+      const editorSrc = fs.readFileSync(path.join(RAIZ, "lib/handlers/apu/editor.js"), "utf8");
+      assert.ok(/const PUBLICAS = \["catalogo", "inferir", "calcular"\]/.test(editorSrc),
+        "`inferir` y `calcular` son públicas por decisión del dueño");
+      /* la guarda: los precios propios SOLO se leen con credencial */
+      assert.ok(/conCredencial\s*\?\s*await require\("\.\.\/\.\.\/apu\/precios\.js"\)\.leerPreciosUsuario/.test(editorSrc),
+        "sin credencial NO se pueden leer los precios corregidos del dueño: el perfil viaja en la petición");
+      assert.ok(/precios_propios_aplicados: conCredencial/.test(editorSrc),
+        "la respuesta tiene que declarar si se aplicaron los precios propios");
+      assert.ok(!/await presupuestoDe\(redis, datos, perfil\)/.test(editorSrc),
+        "toda llamada a presupuestoDe tiene que pasar la credencial: una sin ella filtra los precios propios");
+
+      /* y la condición del dueño: precios de REFERENCIA, con su fuente y su URL */
+      const { fuentes } = require("../lib/apu/fuentes.js");
+      const f = fuentes();
+      assert.strictEqual(f.son_de_referencia, true);
+      assert.ok(/REFERENCIA/.test(f.aviso) && /no cotizaciones/i.test(f.aviso),
+        "el aviso tiene que decir que son precios de referencia, no cotizaciones");
+      assert.strictEqual(f.bancos_ilegibles, 0, "todos los bancos tienen que poder declarar su procedencia");
+      const porId = new Map(f.bancos.map((b) => [b.id, b]));
+      for (const id of ["catalogo", "invias", "idu", "epc", "ffie", "iccu"]) {
+        assert.ok(porId.has(id), `falta la fuente del banco «${id}»`);
+      }
+      for (const id of ["invias", "idu"]) {
+        assert.ok(/^https:\/\//.test(porId.get(id).url || ""), `el banco «${id}» publica URL y tiene que citarla`);
+        assert.ok(porId.get(id).vigencia, `el banco «${id}» tiene que declarar su vigencia`);
+      }
+      /* un banco sin URL publicada viaja con null: no se inventa un enlace */
+      for (const b of f.bancos) {
+        assert.ok(b.url === null || /^https:\/\//.test(b.url), `«${b.id}» trae una URL que no es una URL`);
+      }
+      assert.ok(/preciosunitarios@invias/.test(porId.get("invias").licencia || ""),
+        "la licencia del INVIAS (prohíbe uso comercial sin autorización) viaja con su fuente");
     }
 
     // ── 26-ter · el SIGNO del VEG está vigilado ─────────────────────────────

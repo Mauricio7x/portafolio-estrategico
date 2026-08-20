@@ -826,6 +826,36 @@
      error #1 del país (presentar el día del cierre) merece una línea a la
      vista, no un secreto para quien sepa buscarlo. Solo aparece a ≤2 días —
      un aviso encendido en cada tarjeta se deja de leer. */
+  /* LA SEÑAL #11 DEL MANUAL ES AMBIGUA, Y CALLARLO ES AFIRMAR (ago 2026).
+     «Poca competencia» se pinta en VERDE, y con razón: el orden por defecto de
+     la app (`atractividad`) es literalmente la Palanca 4 —donde compite menos
+     gente se gana más—. Pero el MISMO hecho sostiene la lectura contraria del
+     manual: la señal #11 de pliego sastre es «uno o dos oferentes en el
+     histórico de esa entidad». Un pliego escrito para alguien ahuyenta a los
+     demás y produce exactamente la cifra que la app premia. El dato no alcanza
+     para decidir cuál de las dos es, así que se dicen las DOS. El modal «Quién
+     gana aquí» ya lo hacía, pero eso exige un clic y lo que decide la mañana es
+     el vistazo.
+     NO se toca el color: cambiarlo a ámbar afirmaría la lectura mala con la
+     misma falta de evidencia con la que hoy se afirma la buena.
+     Y se avisa SOLO por debajo de 2 oferentes de media —el umbral LITERAL de la
+     señal #11—, no en toda la banda «baja»: en un listado ordenado por
+     atractividad la mayoría de las tarjetas de arriba son de competencia baja, y
+     un aviso encendido en casi todas se deja de leer. Es la lección del chip
+     constante que hubo que retirar. */
+  const UMBRAL_SENAL_11 = 2;
+  function avisoCompetencia(c) {
+    if (!c) return "";
+    const procesos = Number(c.total_procesos) || 0;
+    const promedio = c.promedio_oferentes != null ? Number(c.promedio_oferentes) : null;
+    const conBase = procesos > 0 && c.nivel !== "sin_dato" && promedio != null && !isNaN(promedio);
+    if (!conBase || promedio >= UMBRAL_SENAL_11) return "";
+    return `<p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20">`
+      + `Atención: aquí se presentan ${esc(fmtNum.format(promedio))} oferentes en promedio. Puede ser un nicho suyo `
+      + `—que es por lo que la aplicación se lo muestra primero— o un pliego escrito a la medida de otro. `
+      + `El dato no distingue las dos: revise requisitos y plazos antes de invertir tiempo en la oferta.</p>`;
+  }
+
   function avisoCierre(dias) {
     if (dias == null || dias < 0 || dias > 2) return "";
     const frase = dias === 0
@@ -1253,6 +1283,7 @@
         ${l._cierre_prorrogado ? chip("Cierre prorrogado", "bg-indigo-100 text-indigo-800", "El cierre se movió por adenda: suele indicar que no llegaron ofertas suficientes") : ""}
       </div>
 
+      ${noViable ? "" : avisoCompetencia(l.competencia_entidad)}
       ${noViable ? "" : avisoCierre(diasCierre)}
       ${noViable ? "" : avisoManifestacion(l.manifestacion)}
       ${lineaMargen(l.margen_estimado)}
