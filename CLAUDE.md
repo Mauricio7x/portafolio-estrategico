@@ -205,8 +205,10 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
       Su `lic` es SINTÉTICO: sin ese hilo respondería con la baja MEZCLADA mientras la tarjeta de
       `/api/oportunidades` enseña la de licitación pública — dos cifras del mismo proceso, y la mala
       sería la del editor, que es con la que se fija el precio.
-    · **No existe `/api/baja-mercado` y no puede existir**: el plan Hobby admite 12 funciones y el
-      repositorio está exactamente en 12 (hay prueba que las cuenta). `?modalidad=` vive en
+    · **No existe `/api/baja-mercado`**: cuando se decidió, el plan Hobby admitía 12 funciones y el
+      repositorio estaba exactamente en 12, así que crear una habría roto el despliegue entero.
+      ⚠️ Esa restricción YA NO ATA (ver «Consolidación a 6 routers»): hoy `api/` está en 6 de 12. El
+      endpoint sigue sin existir por COHESIÓN, no por presupuesto — plegar sigue siendo el default. `?modalidad=` vive en
       `/api/indice-baja`; `baja_mercado` es el CAMPO que sirve `/api/oportunidades`.
   · **La reconstrucción manual vive en `/api/indice-baja?reconstruir=true`, NO en `/api/diagnostico`**:
     el diagnóstico está documentado como SOLO LEE —no escribe, no toma candados, no dispara
@@ -429,8 +431,8 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   texto con columnas por TAB; `lib/rup_pdf.js` extrae códigos, indicadores, experiencia y vigencia,
   y el resultado se valida con `lib/config_rup.validarPerfilDinamico` — la MISMA `validarPerfil` de
   la carga manual, no una copia. No existe un «RUP de PDF» distinto de un «RUP de archivo».
-- **Va plegado en `POST /api/admin/rup?origen=pdf`** (12 funciones es el tope y el repositorio está
-  en 12); el alias literal `/api/admin/rup-desde-pdf` es un `rewrite` de vercel.json y la landing
+- **Va plegado en `POST /api/admin/rup?origen=pdf`** (entonces el repositorio estaba en 12 de 12
+  funciones; hoy en 6, pero plegar sigue siendo el default); el alias literal `/api/admin/rup-desde-pdf` es un `rewrite` de vercel.json y la landing
   llama a la CANÓNICA. Un GET responde 405 con `como_hacerlo` — jamás un «GET que escribe».
 - **ES LA ÚNICA ESCRITURA SIN TOKEN del repositorio, a propósito.** El onboarding es el producto:
   pedir credencial a quien llega a subir su RUP mata la landing (la misma lógica del token opcional
@@ -522,9 +524,10 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - **PUESTA EN PRODUCCIÓN SIN TERMINAL (ago 2026), y la restricción que la definió.** El dueño no
   tiene terminal, así que `cargar_experiencia.sh` no le sirve y los tres pasos tenían que darse con
   clics desde `/admin.html`. Lo natural era crear `api/admin/cargar-experiencia-genesis.js` y
-  **habría roto el despliegue ENTERO**: el plan Hobby admite 12 funciones y el repositorio está
-  exactamente en 12 (misma restricción que impidió `/api/baja-mercado` y que plegó
-  `/api/apu/catalogo`). No falla el endpoint nuevo: falla el sitio.
+  **habría roto el despliegue ENTERO**: el plan Hobby admite 12 funciones y el repositorio estaba
+  entonces exactamente en 12 (misma restricción que impidió `/api/baja-mercado` y que plegó
+  `/api/apu/catalogo`). No falla el endpoint nuevo: falla el sitio. Hoy `api/` está en 6 de 12 y esa
+  restricción no ata, pero la lección de que un archivo de más tumba el SITIO sigue valiendo.
   · **Va plegado en `/api/admin/experiencia` como `?origen=repositorio`**, y eso REGALA lo que el
     encargo pedía aparte («sin duplicar código»): lo único que cambia es DE DÓNDE salen los
     contratos; desde `validarContratos` en adelante es el mismo camino, el mismo guardado y la misma
@@ -623,10 +626,10 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   empresas; los que más se presentan son consultoras (interventoría) — hgi6 no distingue tipo de
   contrato y el universo lo acotan los ids del corpus (obra compatible con los RUP).
 
-### Verificá a tu socio antes de firmar (ago 2026)
+### Verifique a su socio antes de firmar (ago 2026)
 
 `lib/socio.js` + vista `socio` de `/api/inteligencia` (token; sale ANTES del chequeo de Upstash como el PAA:
-no lee el corpus ni escribe) + sección «Verificá a tu socio antes de firmar» en Mi empresa. Cierra el ⬜
+no lee el corpus ni escribe) + sección «Verifique a su socio antes de firmar» en Mi empresa. Cierra el ⬜
 «antecedentes del socio» del manual. Decisiones que no hay que re-aprender:
 - **«No es automatizable con datos abiertos» era una observación vieja, no una propiedad**: `iaeu-rcn6`
   (SIRI, Procuraduría, actualizado a diario) y `4n4q-k399` (Multas y Sanciones SECOP I) responden 200 en
@@ -1319,10 +1322,10 @@ memoria en una fuente de error. `✅` implementado · `🟡` parcial · `⬜` no
 | **Precio bajo incertidumbre → banda de descuento** (truco #11) | `lib/indice_baja.js` (`indice:baja:*`, tres granularidades en cascada + segmento + modalidad): `descuento = 1 − valor_adjudicado / precio_base` por entidad, sin re-extraer nada. Ya viaja en la tarjeta (`baja_mercado`, solo con token) y ordena con `?ordenar_por=baja` | ✅ |
 | **Traslado → descargar ofertas de competidores** | El dataset no trae documentos de oferta: solo `urlproceso`. Automatizarlo exigiría raspar SECOP II (fuera de la arquitectura actual: sin dependencias, serverless, respuesta ≤4.5 MB). Alcanzable: enlazar la ficha del proceso y **listar adjudicatarios recurrentes por entidad** desde el histórico | ⬜ |
 | **Subsanación → tabla de trazabilidad automática** | No existe. La app decide **a qué presentarse**, no arma la carpeta. Sería un generador de plantilla a partir de la ficha del proceso | ⬜ |
-| **Consorcios → antecedentes del socio (SIRI/Contraloría/RNMC)** | `lib/socio.js` + `/api/inteligencia?op=socio&id=…` + «Verificá a tu socio antes de firmar» en Mi empresa. **La premisa «no automatizable con datos abiertos» era falsa a medias (medido 17-ago-2026)**: SIRI está en datos.gov.co (`iaeu-rcn6`, diario) y las multas de SECOP I también (`4n4q-k399`); con `jbjy-vk9h` (contratos + representante legal) y `p6dx` (adjudicaciones) se automatizan 2 de las 5 fuentes; las otras 3 (Contraloría, Policía, RNMC: portales con captcha) van como checklist con enlace verificado. Semáforo que **nunca dice «limpio»** y regla del art. 90 Ley 1474 (inhabilidad reiterada) sobre lo visible | ✅ |
+| **Consorcios → antecedentes del socio (SIRI/Contraloría/RNMC)** | `lib/socio.js` + `/api/inteligencia?op=socio&id=…` + «Verifique a su socio antes de firmar» en Mi empresa. **La premisa «no automatizable con datos abiertos» era falsa a medias (medido 17-ago-2026)**: SIRI está en datos.gov.co (`iaeu-rcn6`, diario) y las multas de SECOP I también (`4n4q-k399`); con `jbjy-vk9h` (contratos + representante legal) y `p6dx` (adjudicaciones) se automatizan 2 de las 5 fuentes; las otras 3 (Contraloría, Policía, RNMC: portales con captcha) van como checklist con enlace verificado. Semáforo que **nunca dice «limpio»** y regla del art. 90 Ley 1474 (inhabilidad reiterada) sobre lo visible | ✅ |
 | **Formulario de cantidades del pliego → ítem + unidad + cantidad** (Cap. 11, §1.G del informe) | `/pliego.html` + `/api/apu/extraer-texto`: pdf.js en el navegador extrae el texto conservando columnas por coordenadas, `lib/apu_pliego.js` reconoce las filas por 3 vías, valida en 3 niveles y las gradúa con un semáforo de 2 ejes, `lib/apu_mapeo.js` las mapea al diccionario de reconocimiento de `data/catalogo_apu.json` y emite el código del catálogo de precios cuando el ítem existe allí. OCR.space como respaldo para escaneados. **Entrega cantidades, NO precios** | ✅ |
 | **APU · base de precios regionalizada** (Cap. 11) | `lib/apu/catalogo.js` + `data/apu_catalogo.json`: estructura oficial INVIAS/IDU (CD = MO + materiales + equipo + transporte), 48 insumos × 5 regiones, 17 ítems con composición y rendimiento, factores de ajuste regional. Se carga con `POST /api/admin/apu/cargar-catalogo` y se consulta sin token en `GET /api/apu/catalogo`. Los precios son de **referencia**, no cotizaciones, y cada uno declara su `fuente` | ✅ |
-| **Costos ocultos → calculadora de rentabilidad** | **Sigue sin existir la calculadora.** Ya está la mitad de abajo (el APU da el costo directo por ítem), pero la cuantía se sigue mostrando como si fuera ingreso y faltan los 10 conceptos del Cap. 11, empezando por la **contribución del 5 %** y las estampillas. Es la Fase 2 y ahora tiene sobre qué apoyarse | 🟡 |
+| **Costos ocultos → calculadora de rentabilidad** | `lib/apu/rentabilidad.js` + el bloque `piso_techo`: el motor descuenta contribución del 5 %, estampillas y retenciones (`deducciones_pct`), garantías, costo financiero del capital de trabajo, anticipo, prima de riesgo y maldición del ganador, y publica `costos` desglosado. **Lo que falta NO es la calculadora: es el DATO.** `deducciones_pct` lo teclea el usuario y por defecto va `null`, así que el margen viaja declarado como COTA SUPERIOR (`margen_es_cota_superior`) en todo presupuesto que no lo cargue — y ese bloque puede ser ~10 % del valor, mayor que el margen típico de obra. Falta una tabla de estampillas y ReteICA por entidad/municipio, que no se puede inventar: sale del pliego o del dueño | 🟡 |
 | **Precio bajo incertidumbre → a qué precio ofertar** (truco #11) | `lib/apu/optimizador.js` + el bloque `optimizador` de `/api/apu/rentabilidad` + el recuadro «Precio sugerido» del editor: barre las bajas plausibles alrededor de la mediana de la entidad y devuelve el precio que MAXIMIZA el valor esperado, con la curva y tres opciones (conservador / óptimo / agresivo). Es el consejo del manual —«valor esperado, no mínimo precio», porque el método de ponderación se sortea— convertido en una cifra que se puede aplicar con un botón | ✅ |
 
 ### Investigación de contraste (ago 2026) — correcciones al manual y hallazgos verificados
@@ -1569,8 +1572,8 @@ Hasta aquí el dueño miraba la baja mediana y descontaba a ojo.
   misma traducción del presupuesto (AIU, fiscal, anticipo) para el optimizador; dos traducciones del
   mismo presupuesto habrían calculado la recomendación con una estructura fiscal y el margen que se
   enseña al lado con otra.
-- **Va DENTRO de la acción `rentabilidad`, no en una nueva**: 12 funciones es el tope del plan Hobby
-  y el repositorio está en 12 (hay prueba que las cuenta). Además allí ya están leídos el índice de
+- **Va DENTRO de la acción `rentabilidad`, no en una nueva**: entonces el repositorio estaba en 12
+  de 12 funciones (hoy en 6; plegar sigue siendo el default). Además allí ya están leídos el índice de
   baja, el de competencia y la `p` del proceso. `id_proceso` viaja y vuelve pero **no condiciona el
   cálculo**: es una etiqueta, y esconder la respuesta a quien escribió la cuantía pero no el id
   sería negarle el dato por no haber rellenado un rótulo. El `costo_directo_total` del cuerpo **no
@@ -3128,8 +3131,8 @@ una caja negra: el contratista no sabía si era buena, ni qué la causaba, ni c�
   SEIS: faltaban los dos de baja de mercado (×0,85 / ×1,10), que son los que convierten la respuesta
   en «P(ganar A UN PRECIO QUE VALGA LA PENA»). Omitirlos habría dejado fuera del desglose un ajuste
   que sí mueve la cifra que se enseña.
-- **NO HAY ARCHIVO NUEVO BAJO `api/` Y NO PUEDE HABERLO**: el plan Hobby admite 12 funciones y el
-  repositorio está exactamente en 12 (hay prueba que las cuenta). Va plegado en
+- **NO SE CREÓ UN ARCHIVO NUEVO BAJO `api/`, y entonces no podía haberlo**: el plan Hobby admite 12
+  funciones y el repositorio estaba exactamente en 12 (hoy en 6). Va plegado en
   `api/competencia-detalle.js` como `?vista=probabilidad` —encaja: las dos vistas responden «de dónde
   sale ese número de la tarjeta», sobre el mismo corpus y con el mismo token— y la URL literal del
   encargo vive como `rewrite` de `vercel.json`, que no cuenta como función. Misma restricción que

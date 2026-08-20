@@ -19,7 +19,7 @@ tocó —porque altera lógica de negocio o exige una decisión del dueño— es
 | --- | --- |
 | Tamaño | **30 744 líneas** de JS · 0 dependencias · 0 `package.json` · 0 build |
 | Reparto | `lib/` 12 682 (38 módulos) · `api/` 4 111 (12 archivos) · `public/` 4 889 · `tests/` 9 062 |
-| Funciones serverless | **12 de 12** del plan Hobby de Vercel. **Sin margen: el presupuesto está agotado** |
+| Funciones serverless | **6 de 12** del plan Hobby tras consolidar a routers por dominio (ago 2026). Quedan 6 huecos; plegar sigue siendo el default, ya no una obligación |
 | Endpoints públicos | 2 (`/api/oportunidades` sin finanzas, `/api/apu/catalogo`) |
 | Endpoints con token | 10 archivos exigen · 1 lo tiene opcional · 1 no pide · 8 de las 9 acciones del despachador APU |
 | Cobertura de pruebas | los 12 endpoints y los 38 módulos de `lib/` se ejercitan; 3 (`auth`, `semantica`, `socrata`) solo indirectamente |
@@ -215,7 +215,7 @@ Las siete eliminadas: `experiencia.borrarExperiencia`, `filtros.esSegmentoDeBien
 
 | Límite | Valor | Margen real |
 | --- | --- | --- |
-| **Funciones serverless (Hobby)** | **12 de 12** | **CERO.** Un archivo más bajo `api/` y falla el despliegue entero, no el endpoint nuevo. Ya obligó a plegar `/api/apu/catalogo`, `extraer-texto`, `descargar`, el desglose de probabilidad y `cargar-experiencia-genesis`, y a **no crear** `/api/baja-mercado` |
+| **Funciones serverless (Hobby)** | **6 de 12** (era 12/12 hasta la consolidación) | **6 huecos.** Un archivo más ya NO tumba el despliegue; lo que sigue valiendo es que si algún día se llega a 12, no el endpoint nuevo. Ya obligó a plegar `/api/apu/catalogo`, `extraer-texto`, `descargar`, el desglose de probabilidad y `cargar-experiencia-genesis`, y a **no crear** `/api/baja-mercado` |
 | Respuesta de una función | 4,5 MB | Holgado: el texto de un pliego de 120 páginas son ~0,34 MB |
 | Valor de Redis (Upstash) | 1 MB | Respetado: chunks deflate ≤ 500 KB antes del base64 |
 | Crons (Hobby) | solo diarios | Por eso la full se auto-encadena y cada visita refresca vía delta |
@@ -397,27 +397,38 @@ decisión de producto: qué decir en la tarjeta cuando el promedio es 1-2 oferen
 
 ## 5 · Priorización por impacto en *maximizar adjudicaciones rentables*
 
-Ordenado por **cuánto mueve la aguja del objetivo**, no por dificultad. El coste es una estimación de
-esfuerzo, no un compromiso.
+> **REVISADA CONTRA EL CÓDIGO (ago 2026).** La versión anterior de esta tabla quedó obsoleta: **ocho
+> de sus doce filas** estaban hechas o superadas y seguían leyéndose como pendientes, que es la peor
+> forma de fallar de una hoja de ruta — manda a rehacer trabajo. Cada estado de abajo se verificó
+> ejecutando o leyendo el código, no de memoria. **Antes de tomar cualquier fila como pendiente,
+> vuelva a comprobarla**: este documento describe el estado de una fecha.
 
-| # | Acción | Impacto | Coste | Quién decide |
+**El presupuesto de funciones YA NO ATA.** Era «12 de 12, cero margen» y condicionaba media
+arquitectura; tras la consolidación a routers por dominio, `api/` está en **6 de 12**. Quedan seis
+huecos. Plegar un endpoint nuevo como `op` de su router sigue siendo el default —por cohesión— pero
+ya no es una obligación del despliegue.
+
+Ordenado por **cuánto mueve la aguja del objetivo**, no por dificultad.
+
+| # | Acción | Estado | Impacto | Quién decide |
 | ---: | --- | --- | --- | --- |
-| **1** | **Relanzar en producción `?modo=full` una vez y el backfill histórico** con `HISTORICO_TOKEN` | **Máximo, y es operación, no código.** Sin el backfill, todo el orden por defecto (`atractividad`) sale en ⚪ y la app ordena por un supuesto conservador. Sin la full, los procesos con estado `Activo` **nunca entraron a Redis** | 2 clics en `/admin.html` | — (hacerlo ya) |
-| ~~2~~ | ~~Quitar el chip y el filtro «Ofertas del proceso»~~ (§4.1) | **HECHO** (ago 2026): retirada una afirmación falsa del 100 % de las tarjetas, y de paso corregido `?ordenar_por=competencia`, que leía el mismo campo muerto | — | — |
-| **3** | **Leer el PAA** (§4.3) | **El mayor del catálogo**: seis meses de ventaja frente a una competencia que se entera el día del aviso | Alto (dataset + keyspace + pantalla) | **Dueño** |
-| **4** | **Separar `p` de `p_sin_precio`** y dejar de cobrar el precio dos veces (§4.2) | Alto: corrige el único umbral duro del sistema, que hoy declara inviables procesos que no lo son | Medio-alto (2 módulos) | **Dueño** |
-| **5** | **Prueba del signo del VEG** | Medio: hoy nadie vigila la cifra que decide si vale la pena presentarse | ~20 líneas | — (hacerlo ya) |
-| **6** | **Cargar `deducciones_pct` reales** (contribución 5 % + estampillas de las entidades habituales) | Medio-alto: sin ellas el margen es una cota superior, y el bloque puede llegar al ~10 % del valor — mayor que el margen típico | Bajo, pero exige el dato del dueño | **Dueño** |
-| **7** | **Decir en la tarjeta que baja competencia es ambigua** (§4.6) | Medio: evita preparar ofertas para pliegos sastre | Bajo | **Dueño** |
-| **8** | **Segmentar el índice por período electoral** (§4.5) | Medio: hoy el orden por defecto mezcla una ventana anómala | Medio | **Dueño** |
-| **9** | **Verificar las columnas de adjudicación contra el dataset real** (§3.4) | Medio: si la candidata correcta no está, el índice entero queda en `sin_dato` y nadie lo sabría salvo por la meta | Bajo — pero **solo se puede desplegando** | — |
-| **10** | **Abrir `inferir`/`calcular`** (§4.4) | Bajo para adjudicaciones, alto para usabilidad del editor | Trivial (mover 2 cadenas) | **Dueño** |
-| **11** | **Medir el parser de pliegos contra formatos reales de SECOP II** (§3.5.1) | Bajo hoy, alto el día que el APU se use para fijar precio en serio | Alto (hay que conseguir el corpus) | — |
-| **12** | Suavizar el corte duro en 5 procesos (§4.7) | Bajo: afecta al orden, no al veredicto | Bajo | **Dueño** |
+| **1** | **Relanzar `?modo=full` una vez tras desplegar** | **VIVO y obligatorio** | La rama de auditoría cambió la lista negra de la INGESTA («conectividad» pasó a exigir contexto de telecomunicación), así que los procesos tipo «vías terciarias para la conectividad rural» —el corazón del negocio— **nunca entraron a Redis** y ninguna consulta los recupera sola | — (hacerlo al desplegar) |
+| 2 | ~~Quitar el chip y el filtro «Ofertas del proceso»~~ | ✔ HECHO | Retirada una afirmación falsa del 100 % de las tarjetas | — |
+| 3 | ~~Leer el PAA~~ | ✔ HECHO | `lib/paa.js` + `op=paa` consultan `9sue-ezhx` en vivo con columnas verificadas contra la fuente real; la tasa de acierto se MIDE. Sin ingesta a keyspace propio, deliberadamente | — |
+| 4 | ~~Separar `p` de `p_sin_precio`~~ | ✔ HECHO | A5 implementado: el editor consume `p_sin_precio` y el precio se aplica UNA vez | — |
+| 5 | ~~Prueba del signo del VEG~~ | ✔ HECHO | Sin congelar la cifra: sano ⇒ positivo, banderas coherentes con el número, identidad, monotonía, y `null` jamás 0 | — |
+| **6** | **Cargar `deducciones_pct` reales** (estampillas y ReteICA por entidad/municipio) | **VIVO — el mayor hueco de producto** | El motor YA descuenta contribución, estampillas, retenciones, garantías y costo financiero; lo que falta es el DATO. Sin él `deducciones_pct` va `null` y el margen viaja como **cota superior** en todo presupuesto — y ese bloque puede ser ~10 % del valor, mayor que el margen típico de obra: puede invertir el signo de la decisión | **Dueño** (sale del pliego, no se inventa) |
+| **7** | **Decir en la TARJETA que baja competencia es ambigua** | **VIVO a medias** | El modal «Quién gana aquí» ya viaja con las dos lecturas (nicho ganable O pliego a la medida), pero eso exige un clic: el badge de la tarjeta sigue pintando «Poca competencia» en VERDE sin matiz, y es lo que se lee de un vistazo | **Dueño** |
+| 8 | ~~Segmentar el índice por período electoral~~ | ✔ MEDIDO Y CERRADO | B2: dentro de la ventana de garantías se presentaron MENOS oferentes (cociente 0,95), sesgo agregado ~1 %. No justifica segmentar; la medición se publica en la meta y se re-mira en cada reconstrucción | — |
+| 9 | ~~Verificar las columnas de adjudicación~~ | ✔ HECHO | Verificadas contra `p6dx-8zbt` real; dos trampas medidas (el ORDEN de las candidatas y el literal «No Definido») | — |
+| **10** | **Abrir `inferir`/`calcular` sin token** | **VIVO — hoy es una decisión, ya no una inercia** | Ninguna lee finanzas del perfil ni el histórico, y ambas se alimentan del catálogo, que es público. Bajo para adjudicaciones, alto para usabilidad del editor | **Dueño** |
+| **11** | **Medir el lector de pliegos contra formatos REALES de SECOP II** | **VIVO** | El banco da 100 % sobre un corpus **sintético escrito por el autor del parser**: mide previsión, no cobertura. Es lo que decide si el APU sirve para fijar precio en serio | — (hace falta el corpus) |
+| 12 | ~~Suavizar el corte duro en 5 procesos~~ | ✔ SUPERADO | Lo reemplazó el encogimiento gamma-Poisson (A2): ya no hay acantilado, y la banda del 90 % viaja con la cifra | — |
 
-**El presupuesto de funciones condiciona los puntos 3 y 10.** Están en 12 de 12: cualquier cosa que
-«necesite un endpoint nuevo» tiene que plegarse en uno existente (como ya hicieron el desglose de
-probabilidad, el catálogo APU y la carga de experiencia) o el despliegue entero se rechaza.
+**Resumen: quedan cinco vivos.** El 1 es operación y va primero porque su resultado condiciona
+cualquier medición posterior. El 6 es el mayor hueco de producto y **está bloqueado por un dato del
+dueño**, no por código. El 7 es barato. El 10 es una decisión de negocio. El 11 necesita un corpus
+que hoy no existe.
 
 ---
 
