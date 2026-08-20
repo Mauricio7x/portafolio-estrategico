@@ -4497,6 +4497,10 @@
   /* Porcentaje global: meses completos + fracción del mes en curso. */
   function pintarProgreso(p) {
     if (!p) return;
+    // simétrico de `pintarAlDia`: cada modo repone SUS rótulos, así una full
+    // después de un delta no hereda «Filas revisadas» sobre cifras del mes
+    $("dt-mes").textContent = "Mes";
+    $("dt-filas").textContent = "Filas del mes";
     const deMeses = p.deMeses || 1;
     const dentroDelMes = p.esperadosMes > 0 ? Math.min(p.leidasMes / p.esperadosMes, 1) : 0;
     const pct = Math.max(0, Math.min(100, ((p.mesIdx || 0) + dentroDelMes) / deMeses * 100));
@@ -4508,6 +4512,25 @@
       ? `${fmt.format(p.leidasMes || 0)} / ${fmt.format(p.esperadosMes)}`
       : fmt.format(p.leidasMes || 0);
   }
+  /* Un conteo ausente se dice «—», jamás 0: es la regla del proyecto y aquí
+     decide si el dueño cree que una tanda no guardó nada. */
+  function cifra(n) { return Number.isFinite(n) ? fmt.format(n) : "—"; }
+
+  /* El delta NO conoce su total (barre por `:updated_at`, no por meses con
+     `count(*)` esperado), así que no hay porcentaje que pintar: inventarlo
+     sería una barra sin base. Se enseña lo que sí viene medido y los rótulos
+     cambian con el modo — «Filas del mes» no describe un ciclo de delta. */
+  function pintarAlDia(d) {
+    if (!d) return;
+    $("prog-pct").textContent = "—";
+    $("prog-mes").textContent = "Poniéndose al día";
+    $("dt-mes").textContent = "Estado";
+    $("dt-filas").textContent = "Filas revisadas";
+    $("m-mes").textContent = d.parcial ? "Falta otra tanda" : "Al día";
+    $("m-filas").textContent = cifra(d.ciclo_leidas);
+    $("m-total").textContent = cifra(d.guardadas);
+  }
+
   function completar(cuerpo) {
     $("prog-barra").style.width = "100%";
     $("prog-pct").textContent = "100 %";
@@ -4572,9 +4595,16 @@
   }
 
   /* ══════════ Bucle principal ══════════ */
-  async function encadenar() {
+  async function encadenar(continuar) {
     // 1.ª tanda: full (reinicia). Siguientes: auto (continúa) — ver cabecera.
     let modo = "full";
+    /* «Ponerse al día» REUTILIZA este mismo bucle y entra directo en auto. Dos
+       motivos, y los dos costaron caro en este repositorio: (1) la full vuelve
+       a enero, así que para cerrar el atraso de un delta partido en tandas
+       sería releer el año entero; (2) un segundo bucle «equivalente hoy»
+       —con sus reintentos, su candado y su botón de detener— diverge del
+       primero a la primera corrección que se aplique a uno solo. */
+    if (continuar) modo = "auto";
     while (activo) {
       estado(tandas === 0 ? "Ejecutando…" : `Ejecutando… (tanda ${tandas + 1})`, { girando: true });
       const cuerpo = await llamarConReintentos(modo);
@@ -4595,21 +4625,37 @@
 
       if (cuerpo.done === true) {
         completar(cuerpo);
+        /* El cuerpo de un delta NO trae `total` ni `leidas`: son campos de la
+           full. Reusar aquí su redacción anunciaría «0 procesos guardados»
+           justo cuando acaba de guardar miles — un `|| 0` sobre un conteo
+           convirtiendo un «no aplica» en un cero creíble. */
+        const d = cuerpo.delta;
+        if (d) { $("prog-mes").textContent = "Al día"; $("dt-mes").textContent = "Estado"; }
         bitacora(cuerpo.alDia
           ? "✔ los datos ya estaban al día"
-          : `✔ carga completa · ${fmt.format(cuerpo.total || 0)} guardadas de ${fmt.format(cuerpo.leidas || 0)} leídas`);
+          : d
+            ? `✔ al día · ${cifra(d.ciclo_leidas)} filas revisadas en ${cifra(d.ciclo_invocaciones)} invocación(es)`
+            : `✔ carga completa · ${fmt.format(cuerpo.total || 0)} guardadas de ${fmt.format(cuerpo.leidas || 0)} leídas`);
         estado("Completado");
         mensaje(cuerpo.alDia
           ? "Sincronización completada: los datos ya estaban al día."
-          : `Sincronización completada en ${tandas} tanda${tandas === 1 ? "" : "s"}. ${fmt.format(cuerpo.total || 0)} procesos guardados.`, "ok");
+          : d
+            ? `Ya está al día: ${cifra(d.ciclo_leidas)} filas revisadas y las novedades guardadas, en ${tandas} tanda${tandas === 1 ? "" : "s"}. La lista de licitaciones ya refleja lo último de SECOP II.`
+            : `Sincronización completada en ${tandas} tanda${tandas === 1 ? "" : "s"}. ${fmt.format(cuerpo.total || 0)} procesos guardados.`, "ok");
         activo = false;
         botones(false);
         return;
       }
 
-      pintarProgreso(cuerpo.progreso);
-      const p = cuerpo.progreso || {};
-      bitacora(`tanda ${tandas} · ${p.mes || "?"} (${(p.mesIdx || 0) + 1}/${p.deMeses || "?"}) · ${fmt.format(p.leidasMes || 0)} filas · ${Math.round((cuerpo.duracionMs || 0) / 1000)} s`);
+      if (cuerpo.delta) {
+        pintarAlDia(cuerpo.delta);
+        const d = cuerpo.delta;
+        bitacora(`tanda ${tandas} · ${cifra(d.ciclo_leidas)} revisadas · ${cifra(d.guardadas)} guardadas · ${cifra(d.historicas)} al histórico · ${Math.round((cuerpo.duracionMs || 0) / 1000)} s`);
+      } else {
+        pintarProgreso(cuerpo.progreso);
+        const p = cuerpo.progreso || {};
+        bitacora(`tanda ${tandas} · ${p.mes || "?"} (${(p.mesIdx || 0) + 1}/${p.deMeses || "?"}) · ${fmt.format(p.leidasMes || 0)} filas · ${Math.round((cuerpo.duracionMs || 0) / 1000)} s`);
+      }
       modo = "auto"; // a partir de aquí SIEMPRE continuar, nunca reiniciar
       if (!(await esperar(ESPERA_ENTRE_TANDAS_MS, "Siguiente tanda"))) break;
     }
@@ -4618,6 +4664,7 @@
 
   function botones(corriendo) {
     $("btn-iniciar").disabled = corriendo;
+    $("btn-al-dia").disabled = corriendo;
     $("btn-detener").disabled = !corriendo;
     $("f-presupuesto").disabled = corriendo;
   }
@@ -4655,6 +4702,27 @@
     encadenar();
     return true;
   }
+  /* Hermano de `iniciarFull` y con la MISMA forma a propósito: nombre propio
+     (para poder reutilizarse y probarse), guarda de reentrada y `false` si no
+     hizo nada. Lo único que cambia es que arranca el bucle en `auto`: continúa
+     el ciclo de delta que quedó a medias en vez de volver a enero. Es lo que
+     el dueño necesita a diario; la full es la excepción anual. */
+  function iniciarAlDia() {
+    if (activo) return false;
+    activo = true;
+    tandas = 0;
+    $("m-tandas").textContent = "0";
+    $("m-total").textContent = "—";
+    $("prog-barra").style.width = "0%";
+    $("prog-pct").textContent = "—";
+    $("prog-mes").textContent = "Poniéndose al día";
+    mensaje(null);
+    bitacora("▶ poniéndose al día (continúa, no reinicia)");
+    botones(true);
+    encadenar(true);
+    return true;
+  }
+  $("btn-al-dia").addEventListener("click", iniciarAlDia);
   $("btn-iniciar").addEventListener("click", iniciarFull);
   $("btn-detener").addEventListener("click", () => detener("usuario"));
 
