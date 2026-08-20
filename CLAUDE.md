@@ -4137,6 +4137,62 @@ así que el arnés inyecta un recolector de errores y un marcador de estado en e
   Map: 73 ms en frío y 6 ms en caliente, resultado idéntico. El tope de 20 000 entradas existe
   porque la instancia serverless vive entre peticiones.
 
+### Los pendientes declarados, cerrados (ago 2026)
+
+La auditoría integral dejó cinco hallazgos **sin corregir y dichos**. Se cerraron después, y lo que
+sigue son las decisiones, no la lista.
+
+- **UN TOPE QUE CIERRA LA PUERTA DE ENTRADA NO ES UN FRENO, ES UNA CAÍDA.** Con los 300 perfiles
+  dinámicos vivos, `crearPerfilDinamico` respondía 503 y la landing —que ES el producto— dejaba de
+  aceptar RUP nuevos hasta 45 días; y como la escritura es PÚBLICA, cualquiera podía dejarla así a
+  propósito. Ahora **DESALOJA el más viejo** (el de menor TTL restante: todos nacen con el mismo, así
+  que el que menos le queda es el que antes se creó) en vez de rechazar. Es la opción menos
+  destructiva y la única cuyo efecto YA estaba contemplado: un perfil que desaparece responde 404
+  `perfil_caducado` y la web sabe olvidarlo y volver a la landing. Un visitante nuevo que no puede
+  entrar no tiene ninguna salida; uno viejo vuelve a subir su PDF. Si Redis no deja leer los TTL no
+  se adivina a quién desalojar: se conserva el 503, que es la respuesta honesta.
+  · **La lista de claves de un perfil dinámico vive UNA vez** (`clavesDePerfilDinamico`): estaba
+    escrita a mano dentro del DELETE y el desalojo necesita exactamente la misma — dos listas
+    divergen a la primera clave que alguien añada, y la que se quedara corta dejaría basura huérfana
+    con el perfil ya borrado. De paso quitó un doble conteo latente en `claves_eliminadas`.
+- **`plazo_meses` NO ERA «SIN COTA»: ERA UN 500 DE 15 SEGUNDOS.** Lo teclea una persona y entraba sin
+  límite en un bucle mes a mes: con 10 000 000 la función gastaba **15 s** —un cuarto del
+  `maxDuration`— y reventaba la pila. Se acota a **600 meses (50 años)** y se DECLARA
+  (`plazo_recortado` + advertencia): por encima de eso no hay contrato de obra, solo un dato mal
+  escrito, y recortar en silencio sería cambiarle la cifra al usuario sin decírselo. 15 s → 1 ms.
+- **EL DESFASE DE PÁGINAS DEL OCR ERA UNA CITA FALSA.** El navegador DESCARTA las páginas que no
+  puede rasterizar, así que un lote 21-30 con la 21 descartada manda 9 imágenes; el servidor las
+  marca `\f1..\f9` y el re-basado aritmético («primera + índice − 1») citaba **todo el lote una
+  página por debajo**. Una cita de página equivocada es peor que no citarla: manda a buscar la
+  cantidad donde no está. `rebasarMarcadores(texto, primera)` pasó a ser
+  **`renumerarMarcadores(texto, numerosReales)`** en las dos copias (navegador y servidor, atadas por
+  la prueba que las EJECUTA): la lista la escribe el mismo bucle que decide qué imagen se envía, así
+  que no se puede desincronizar. Un índice fuera de la lista se deja TAL CUAL — inventarle un número
+  sería el defecto que esto corrige. El índice de los FALLOS se traduce por la misma lista.
+- **EL SIGNO DEL VEG YA ESTÁ VIGILADO.** `veg = p × utilidad − costo_de_preparar` es el ÚNICO umbral
+  DURO sobre `p` del repositorio y su signo decide si el editor dice «preséntese» o «no cubre el
+  costo de preparar la oferta»; ninguna prueba lo miraba (solo `veg != null`), así que un cambio de
+  modelo podía voltearlo en silencio sobre presupuestos sanos — que es lo que estuvo a punto de pasar
+  al retirar el tertil. **No se congela la cifra** (ataría el modelo): se fijan las relaciones que
+  siempre valen — un presupuesto sano da VEG positivo, `veg_positivo` y `filtros_duros` no pueden
+  discrepar del número, la identidad `round(p × utilidad − cPrep)`, monotonía en `p_base` y en el
+  costo de preparar, y **sin `p` el VEG es `null`, jamás 0** (un 0 se leería como «no vale la pena»,
+  que es una afirmación, no una ausencia).
+- **«ADMINISTRACIÓN DELEGADA DE OBRA» SE DESCARTABA, y su comentario prometía lo contrario.**
+  `NO_ES_COSTO_DIRECTO_RE` anclaba al PRINCIPIO «a propósito, para que una partida real sobreviva»,
+  pero esa descripción EMPIEZA por la palabra: el `^` no la protegía. La administración delegada es
+  una modalidad real y, si el pliego la paga como partida, perderla ABARATA el presupuesto — el error
+  caro de este módulo. El discriminante no es la POSICIÓN sino lo que SIGUE a la palabra: la «A» del
+  AIU va sola o con su porcentaje, la partida real la califica («delegada», «de obra»); y con un `%`
+  en la línea manda el AIU aunque venga calificada. Se prueba por el PARSER, no por la regex: lo que
+  importa es qué filas acaban sumando.
+- **Lo que NO se cierra, y por qué**: una fila con la cantidad comida y SIN unitario ni total tiene
+  exactamente la misma forma que una benigna con su cantidad y los precios en blanco —cuatro celdas
+  las dos—, y lo único que las separa es la MAGNITUD del número, que sería una heurística inventada.
+  Se elige la lectura benigna a propósito: la entidad publica las cantidades y deja los precios al
+  oferente, nunca al revés. Si algún día hay que cerrarlo, la señal está en el DOCUMENTO (cuántas
+  celdas traen las demás filas), no en la fila. Queda declarado en el código.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).

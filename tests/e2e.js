@@ -14908,10 +14908,10 @@ async function main() {
       // (1) el marcador del navegador y el del servidor son la MISMA definición, ejecutada
       const plSrc = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
       const mMarc = plSrc.match(/const marcadorPagina = (\(n\) => [^;]+);/);
-      const mReb = plSrc.match(/const rebasarMarcadores = (\(texto, primera\) => [\s\S]*?\.join\("\\n"\));/);
-      assert.ok(mMarc && mReb, "pliego.js debe definir marcadorPagina y rebasarMarcadores (la página del PDF viaja con el texto)");
+      const mReb = plSrc.match(/const renumerarMarcadores = (\(texto, numeros\) => \{[\s\S]*?\n  \});/);
+      assert.ok(mMarc && mReb, "pliego.js debe definir marcadorPagina y renumerarMarcadores (la página del PDF viaja con el texto)");
       const marcadorCliente = new Function(`const marcadorPagina = ${mMarc[1]}; return marcadorPagina;`)();
-      const rebasarCliente = new Function(`const marcadorPagina = ${mMarc[1]}; const rebasarMarcadores = ${mReb[1]}; return rebasarMarcadores;`)();
+      const renumerarCliente = new Function(`const marcadorPagina = ${mMarc[1]}; const renumerarMarcadores = ${mReb[1]}; return renumerarMarcadores;`)();
       for (const n of [1, 7, 120]) {
         assert.strictEqual(marcadorCliente(n), P.marcador(n), `marcador de página distinto entre navegador y servidor para ${n}`);
         assert.strictEqual(P.numeroDeMarcador(marcadorCliente(n)), n, "el servidor tiene que leer el marcador que escribe el navegador");
@@ -14920,8 +14920,21 @@ async function main() {
       assert.strictEqual(P.numeroDeMarcador("\f"), null, "\\f a secas = «página siguiente»");
       assert.strictEqual(P.numeroDeMarcador(" \f12 "), 12);
       const lote = `${P.marcador(1)}\nlinea a\n${P.marcador(2)}\nlinea b`;
-      assert.strictEqual(rebasarCliente(lote, 11), P.rebasarMarcadores(lote, 11), "el re-basado del OCR es el mismo en el navegador y en el servidor");
-      assert.deepStrictEqual(P.lineasConPagina(P.rebasarMarcadores(lote, 11)).map((l) => [l.linea, l.pagina]), [["linea a", 11], ["linea b", 12]]);
+      /* LA RENUMERACIÓN RECIBE LOS NÚMEROS REALES, no la primera página. El
+         bucle del navegador DESCARTA las páginas que no puede rasterizar, así
+         que un lote 21-30 con la 21 descartada manda 9 imágenes: el atajo
+         aritmético («primera + índice − 1») citaba TODO el lote una página por
+         debajo, y una cita de página equivocada manda a buscar la cantidad
+         donde no está. Las dos copias se EJECUTAN sobre la misma batería. */
+      for (const nums of [[11, 12], [12, 13], [7, 30], []]) {
+        assert.strictEqual(renumerarCliente(lote, nums), P.renumerarMarcadores(lote, nums),
+          `la renumeración del OCR difiere entre navegador y servidor con ${JSON.stringify(nums)}`);
+      }
+      assert.deepStrictEqual(P.lineasConPagina(P.renumerarMarcadores(lote, [11, 12])).map((l) => [l.linea, l.pagina]), [["linea a", 11], ["linea b", 12]]);
+      assert.deepStrictEqual(P.lineasConPagina(P.renumerarMarcadores(lote, [12, 13])).map((l) => [l.linea, l.pagina]), [["linea a", 12], ["linea b", 13]],
+        "con una página descartada al principio del lote, las siguientes NO pueden citar el número de antes");
+      // un índice sin número real se deja tal cual: inventarlo sería el defecto que esto corrige
+      assert.deepStrictEqual(P.lineasConPagina(P.renumerarMarcadores(lote, [12])).map((l) => l.pagina), [12, 2]);
       assert.deepStrictEqual(P.lineasConPagina("x\n\f\ny\n\f\nz").map((l) => l.pagina), [null, 1, 2], "sin marcador → null; \\f sin número cuenta desde 1");
       assert.strictEqual(P.quitarMarcadores("a\n\f3\nb"), "a\nb");
       assert.ok(/require\("\.\/paginas\.js"\)/.test(fs.readFileSync(path.join(__dirname, "..", "lib", "paginas.js"), "utf8")) === false, "lib/paginas es HOJA: no requiere nada del proyecto");
@@ -14929,7 +14942,12 @@ async function main() {
       // el navegador emite el marcador por página (también sin texto) y re-basa el OCR
       const plSin = sinComentarios(plSrc);
       assert.ok(/trozos\.push\(marcadorPagina\(n\)\);/.test(plSin), "textoDelPdf debe emitir el marcador de CADA página");
-      assert.ok(/rebasarMarcadores\(rt\.cuerpo\.texto_ocr, desde\)/.test(plSin), "el OCR por tandas re-basa los marcadores al número real de página");
+      assert.ok(/renumerarMarcadores\(rt\.cuerpo\.texto_ocr, numerosReales\)/.test(plSin),
+        "el OCR por tandas renumera con la LISTA de páginas realmente enviadas, no sumando a `desde`");
+      assert.ok(/numerosReales\.push\(n\)/.test(plSin),
+        "el bucle tiene que registrar el número real de cada imagen que sí se envía");
+      assert.ok(!/desde \+ \(f\.pagina - 1\)/.test(plSin),
+        "el índice del fallo también se traduce por la lista: sumar a `desde` ignora las páginas descartadas");
       // (4) el parseo: la fila sabe su página; el reparto sigue sumando; sin marcadores → null
       const tabla = [P.marcador(3), "ITEM\tDESCRIPCION\tUND\tCANT\tVR UNITARIO\tVR TOTAL", "1\tPRELIMINARES",
         "1.1\tLOCALIZACION Y REPLANTEO\tM2\t100\t1.000\t100.000", P.marcador(4), "1.2\tEXCAVACION MANUAL\tM3\t10\t20.000\t200.000",
@@ -16605,6 +16623,92 @@ async function main() {
       assert.ok(/no es JSON/.test(roto.error), "…y lo tiene que decir");
       const vacio = await leerCuerpo(arroyo(""), { maxBytes: 8 * 1024, que: "url" });
       assert.ok(vacio.status === 400 && /«url»/.test(vacio.error), "un cuerpo vacío nombra la clave que falta");
+    }
+
+    // ── 26-quater · «administración delegada» es obra, no la A del AIU ──────
+    /* `NO_ES_COSTO_DIRECTO_RE` descarta el AIU desglosado como partida para que
+       no infle el costo directo, y su comentario prometía que el anclaje al
+       PRINCIPIO salvaba «ADMINISTRACION DELEGADA DE OBRA» por ser una partida
+       real. Era falso: esa descripción EMPIEZA por la palabra, así que el `^` no
+       la protegía y la fila se descartaba en silencio — y perder una partida que
+       el pliego paga ABARATA el presupuesto, que es el error caro aquí. El
+       discriminante no es la posición sino lo que SIGUE: la «A» del AIU va sola
+       o con su porcentaje; la partida real la califica. Se prueba por el parser,
+       no por la regex: lo que importa es qué filas acaban sumando. */
+    {
+      const cab = "ITEM\tDESCRIPCION\tUNIDAD\tCANTIDAD\tVR UNITARIO\tVR TOTAL";
+      const filas = [
+        ["1.1", "EXCAVACION MANUAL EN MATERIAL COMUN", "M3", "100", "20.000", "2.000.000"],
+        ["1.2", "ADMINISTRACION DELEGADA DE OBRA", "MES", "6", "5.000.000", "30.000.000"],
+        ["2.1", "ADMINISTRACION", "GLB", "1", "15.000.000", "15.000.000"],
+        ["2.2", "ADMINISTRACION DE OBRA 15%", "GLB", "1", "15.000.000", "15.000.000"],
+        ["2.3", "IMPREVISTOS", "GLB", "1", "3.000.000", "3.000.000"],
+        ["2.4", "UTILIDAD", "GLB", "1", "5.000.000", "5.000.000"],
+        ["2.5", "IVA SOBRE LA UTILIDAD", "GLB", "1", "950.000", "950.000"],
+        ["2.6", "CONTRIBUCION ESPECIAL 5%", "GLB", "1", "2.500.000", "2.500.000"],
+      ];
+      const r = apuPliego.parsearPliego([cab, ...filas.map((f) => f.join("\t"))].join("\n"));
+      const desc = r.items.map((i) => i.descripcion_original);
+      assert.ok(desc.includes("ADMINISTRACION DELEGADA DE OBRA"),
+        "«administración delegada de obra» es una partida real que el pliego paga: descartarla abarata el presupuesto");
+      assert.ok(desc.includes("EXCAVACION MANUAL EN MATERIAL COMUN"), "un ítem normal no puede caer con la regla");
+      for (const fuera of ["ADMINISTRACION", "ADMINISTRACION DE OBRA 15%", "IMPREVISTOS", "UTILIDAD", "IVA SOBRE LA UTILIDAD", "CONTRIBUCION ESPECIAL 5%"]) {
+        assert.ok(!desc.includes(fuera), `«${fuera}» no es costo directo y no puede entrar en la suma del documento`);
+      }
+      assert.strictEqual(r.diagnostico.descartadas.no_costo_directo, 6, "las seis líneas de AIU/impuestos se cuentan, no desaparecen en silencio");
+    }
+
+    // ── 26-ter · el SIGNO del VEG está vigilado ─────────────────────────────
+    /* `veg = p × utilidad − costo_de_preparar` es el ÚNICO umbral DURO sobre `p`
+       de todo el repositorio: lo demás ordena o pinta. Su SIGNO decide si el
+       editor dice «preséntese» o «el valor esperado no cubre el costo de
+       preparar la oferta», y hasta ahora ninguna prueba lo miraba —solo se
+       exigía `veg != null`—, así que un cambio de modelo podía voltearlo en
+       silencio sobre presupuestos sanos. Es justo lo que estuvo a punto de
+       pasar al retirar el tertil de competencia, que bajó `p` un 23 % en las
+       entidades de POCA competencia, que son las que el editor más ve
+       (docs/AUDITORIA_INTEGRAL.md §3.5.3 lo dejó pedido).
+       No se congela la cifra —eso ataría el modelo—: se fijan las relaciones
+       que tienen que valer siempre. */
+    {
+      const rent = rentabilidadApu.rentabilidad;
+      const sano = {
+        precio_oferta: 1000e6, costo_directo: 700e6, presupuesto_oficial: 1100e6, plazo_meses: 8,
+        aiu: { a_pct: 15, i_pct: 5, u_pct: 5 }, anticipo_pct: 30, anticipo_es_dato: true,
+        p_base: 0.25, costo_preparacion: 3e6,
+      };
+      const r = rent(sano);
+
+      // (1) un presupuesto SANO no puede acabar en «no se presente»
+      assert.ok(r.veg > 0,
+        `un presupuesto con ${r.margen_neto_pct} % de margen neto y $3 M de costo de preparar tiene que dar VEG positivo; dio ${r.veg}`);
+      assert.ok(r.margen_neto_pct > 5, "el escenario de referencia dejó de ser sano: revísalo antes de tocar el umbral");
+
+      // (2) la bandera y el filtro duro NO pueden discrepar del número
+      for (const c of [0, 3e6, 60e6, 300e6]) {
+        const x = rent({ ...sano, costo_preparacion: c });
+        assert.strictEqual(x.veg_positivo, x.veg > 0, `veg_positivo discrepa del signo con costo_preparacion ${c}`);
+        assert.strictEqual(x.filtros_duros.veg_no_positivo, !(x.veg > 0), `el filtro duro discrepa del signo con costo_preparacion ${c}`);
+      }
+
+      // (3) la identidad que lo define
+      assert.strictEqual(r.veg, Math.round(r.p_ganar * r.utilidad_esperada - 3e6),
+        "veg tiene que ser exactamente p × utilidad − costo de preparar");
+
+      // (4) monotonía: más probabilidad nunca puede dar MENOS valor esperado,
+      //     y preparar más caro nunca puede dar MÁS
+      const porP = [0.05, 0.15, 0.25, 0.4].map((v) => rent({ ...sano, p_base: v }).veg);
+      for (let i = 1; i < porP.length; i++) assert.ok(porP[i] >= porP[i - 1], `el VEG bajó al subir p_base (${porP})`);
+      const porC = [0, 3e6, 60e6, 300e6].map((v) => rent({ ...sano, costo_preparacion: v }).veg);
+      for (let i = 1; i < porC.length; i++) assert.ok(porC[i] < porC[i - 1], `el VEG no bajó al encarecer la preparación (${porC})`);
+
+      // (5) sin probabilidad NO hay veg: null, jamás 0 (un 0 se leería como
+      //     «no vale la pena», que es una afirmación, no una ausencia)
+      const sinP = rent({ ...sano, p_base: null });
+      assert.strictEqual(sinP.veg, null, "sin p no se puede calcular el VEG: null, nunca 0");
+      assert.strictEqual(sinP.veg_positivo, null);
+      assert.strictEqual(sinP.filtros_duros.veg_no_positivo, null,
+        "sin VEG el filtro duro no puede afirmar que el valor esperado no alcanza");
     }
 
     // ── 27 · el modo $offset conserva el sello del dedup ────────────────────

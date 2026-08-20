@@ -301,9 +301,26 @@
      requisito del vigía y el hito del cronograma pueden citar «pág. 14». Se
      emite TAMBIÉN para una página sin texto, para que la numeración no corra. */
   const marcadorPagina = (n) => "\f" + n;
-  const rebasarMarcadores = (texto, primera) => String(texto || "").split(/\r\n|\r|\n/)
-    .map((l) => { const m = /^[ \t]*\f(\d+)[ \t]*$/.exec(l); return m ? marcadorPagina(primera + Number(m[1]) - 1) : l; })
-    .join("\n");
+  /* Renumera los marcadores relativos del OCR (`\f1`, `\f2`…) a los números
+     REALES de página. Recibe la LISTA en el mismo orden en que se enviaron las
+     imágenes, no la primera página: el bucle DESCARTA las que no se pueden
+     rasterizar, así que un lote 21-30 con la 21 descartada manda 9 imágenes y
+     el atajo aritmético citaba todo el lote una página por debajo. Un índice
+     fuera de la lista se deja tal cual: inventarle un número sería el defecto
+     que esto corrige. (La misma definición vive en lib/paginas.js y hay prueba
+     que EJECUTA las dos sobre la misma batería.) */
+  const renumerarMarcadores = (texto, numeros) => {
+    const nums = Array.isArray(numeros) ? numeros : [];
+    if (!nums.length) return String(texto || "");
+    return String(texto || "").split(/\r\n|\r|\n/)
+      .map((l) => {
+        const m = /^[ \t]*\f(\d+)[ \t]*$/.exec(l);
+        if (!m) return l;
+        const real = nums[Number(m[1]) - 1];
+        return Number.isFinite(Number(real)) ? marcadorPagina(Number(real)) : l;
+      })
+      .join("\n");
+  };
 
   async function textoDelPdf(doc) {
     const trozos = [];
@@ -788,12 +805,13 @@
         const desde = tanda * MAX_PAGINAS_OCR + 1;
         const hasta = Math.min(desde + MAX_PAGINAS_OCR - 1, total);
         const paginas = [];
+        const numerosReales = [];   // el nº de página REAL de cada imagen enviada
         for (let n = desde; n <= hasta; n++) {
           chip(`Rasterizando página ${n} de ${total}…`, { girando: true });
           progreso(n - 1, total, `Preparando página ${n} de ${total} para OCR…`);
           await new Promise((r) => setTimeout(r, 0));
           const img = await rasterizarPagina(docPdf, n);
-          if (img) paginas.push(img);
+          if (img) { paginas.push(img); numerosReales.push(n); }
           else nolegibles.push(n);
         }
         if (!paginas.length) continue;
@@ -815,9 +833,12 @@
         }
         // el servidor marca las páginas con su índice DENTRO del lote (\f1, \f2…):
         // aquí se re-basan al número real de página del PDF
-        if (rt.cuerpo.texto_ocr) trozos.push(rebasarMarcadores(rt.cuerpo.texto_ocr, desde));
+        if (rt.cuerpo.texto_ocr) trozos.push(renumerarMarcadores(rt.cuerpo.texto_ocr, numerosReales));
         for (const f of (rt.cuerpo.ocr && rt.cuerpo.ocr.fallos) || []) {
-          fallos.push(`página ${desde + (f.pagina - 1)}: ${f.error}`);
+          // el índice del fallo también es DENTRO del lote enviado: se traduce
+          // por la misma lista, nunca sumando a `desde` (que ignora los descartes)
+          const real = numerosReales[Number(f.pagina) - 1];
+          fallos.push(`página ${real != null ? real : `? (índice ${f.pagina} del lote ${desde}-${hasta})`}: ${f.error}`);
         }
       }
 
