@@ -5939,6 +5939,18 @@ async function main() {
           assert.deepStrictEqual(rPubBmax.cuerpo.resultados.map((l) => l.p_ganar), rPub.cuerpo.resultados.map((l) => l.p_ganar),
             "baja_max sin token movió la probabilidad: canal de inferencia de la mediana abierto");
         }
+        /* Y LA ESTRUCTURA DE PRECIO DECLARADA, igual: son las cifras del
+           negocio del dueño y además mueven la ganancia, que sin credencial
+           `lib/publico` anula entera. Ilegible o fuera de rango ⇒ inerte. */
+        {
+          const rPubAiu = await invocar(oportunidades,
+            "/api/oportunidades?perfil=helder&por_pagina=10&administracion_pct=40&utilidad_pct=25&contribucion_en_administracion=1");
+          assert.strictEqual(rPubAiu.status, 200, "un parámetro que no aplica no puede dar 400: un enlace guardado tiene que seguir valiendo");
+          assert.ok(rPubAiu.cuerpo.resultados.every((l) => l.ganancia == null),
+            "sin credencial la ganancia viaja anulada, así que la estructura declarada no puede tener efecto observable");
+          const rMarciano = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=10&administracion_pct=marte&utilidad_pct=-9");
+          assert.strictEqual(rMarciano.status, 200, "un valor ilegible es INERTE, nunca un 400");
+        }
 
         /* Y con token el mismo ajuste SÍ trae su factor: si no, la redacción
            pública estaría rompiendo el desglose para todo el mundo. */
@@ -13276,9 +13288,18 @@ async function main() {
           contribucion_pct: 5, baja: bajaBase, competencia: compBase });
         assert.strictEqual(pt.estado, "no_presentarse", `el caso necesita el veredicto no_presentarse: ${pt.estado}`);
         const r = g({ costo_directo: CD, aiu, aiu_origen: "suyo" });
-        assert.ok(r.valor < 0, "si el piso está por encima del techo, la tarjeta tiene que decirlo en rojo");
-        assert.ok(/pérdida/.test(r.frase) && /no cabe en el precio/.test(r.frase),
-          "la frase tiene que decir POR QUÉ pierde, no solo que pierde");
+        assert.ok(r.valor < 0, "si el piso está por encima del techo, el peor caso tiene que salir en rojo");
+        /* CORREGIDO (ago 2026): la primera versión exigía la palabra «pérdida»,
+           y eso la obligaba a AFIRMAR una pérdida que no se sostiene. Con el
+           imprevisto sin gastar este mismo caso deja plata, así que el
+           veredicto honesto es «depende» — pero la INSTRUCCIÓN del panel
+           Piso/Techo («lo que costeó no cabe en ese precio») no puede
+           perderse al suavizar el veredicto. Se exigen las dos cosas. */
+        assert.strictEqual(r.veredicto, "depende",
+          "con el imprevisto sin gastar este caso deja plata: afirmar la pérdida sería overclaim");
+        assert.ok(r.peor < 0 && r.mejor > 0, "el rango tiene que cruzar el cero para que el veredicto sea «depende»");
+        assert.ok(/no cabe en ese precio/.test(r.frase),
+          "la frase tiene que conservar la instrucción del panel: lo costeado no cabe en el precio de mercado");
       }
 
       /* D · LA CONTRIBUCIÓN DEL 5 % ES DE LOS CONTRATOS DE OBRA PÚBLICA.
@@ -13400,6 +13421,131 @@ async function main() {
           assert.strictEqual(r.precio_esperado, PO);
           assert.strictEqual(r.baja_aplicada_pct, null, "sin base no se interpola una baja");
           assert.ok(r.supuestos.some((x) => /historial suficiente/.test(x)));
+        }
+      }
+
+      /* ══════════════════════════════════════════════════════════════════
+         J-BIS · LAS TRES CORRECCIONES DE «−$32 M DE PÉRDIDA» (ago 2026)
+         ------------------------------------------------------------------
+         El dueño reportó desde producción una tarjeta de $3.216.328.994 que
+         decía «−$32M · de pérdida si gana el contrato», en rojo. La cifra se
+         reprodujo al peso y NO era un error de aritmética: era un error de
+         MODELO, y de los tres que se encontraron cualquiera bastaba para
+         voltear el signo.
+
+         1) El imprevisto se restaba como COSTO CIERTO. `lib/apu/rentabilidad`
+            —el otro motor del repositorio— dice lo contrario con todas las
+            letras: «La "I" del AIU no es un costo: es el INGRESO que financia
+            la prima de riesgo». Son $128,6 M en ese proceso: cuatro veces la
+            cifra que titulaba la tarjeta.
+         2) La contribución del 5 % se descontaba APARTE de una administración
+            que, según el propio CLAUDE.md, «cubre nominalmente dirección de
+            obra, pólizas, ensayos e impuestos» — y ese doble cobro está
+            documentado allí como lo que «dejaba en rojo presupuestos sanos».
+         3) Con las dos anteriores, la cifra sin APU era EXACTAMENTE −1 % de la
+            cuantía para todo proceso de obra: una constante con aspecto de
+            medición, al lado de la cuantía de la que salía.
+
+         Se corrige sin inventar nada: los dos extremos se publican con su
+         nombre y una pérdida solo se AFIRMA si se sostiene en los dos.
+         ══════════════════════════════════════════════════════════════════ */
+      {
+        const GU = require("../public/ganancia.js");
+        assert.strictEqual(require("../lib/ganancia.js").gananciaDeProceso ? true : false, true);
+        /* La aritmética vive UNA vez: el navegador recalcula en el detalle con
+           el MISMO archivo que el servidor usa para servir la tarjeta. */
+        assert.strictEqual(typeof GU.desglose, "function", "public/ganancia.js es el módulo UMD que comparten los dos");
+        assert.strictEqual(G.utilidadMinimaParaNoPerder, GU.utilidadMinimaParaNoPerder,
+          "el despeje del punto de equilibrio tiene que ser la MISMA función, no una copia");
+        /* Y el costo implícito también: si el navegador lo derivara por su
+           cuenta, el detalle y el servidor darían dos costos para el mismo
+           proceso en cuanto uno de los dos se corrigiera. */
+        assert.strictEqual(typeof GU.costoDirectoImplicito, "function");
+        {
+          const r0 = G.gananciaDeProceso({ presupuesto_oficial: 3216328994, tipo_trabajo: "obra" });
+          assert.strictEqual(r0.costo_directo, Math.round(GU.costoDirectoImplicito(3216328994, 15, 5, 5, "aditivo")),
+            "el costo implícito del servidor tiene que ser el del módulo que usa el navegador");
+        }
+
+        /* A · LA CIFRA DE PRODUCCIÓN, REPRODUCIDA AL PESO. Ancla de regresión:
+           si alguien cambia la cuenta, esta cifra se mueve y hay que decirlo. */
+        const POreal = 3216328994;
+        const real = G.gananciaDeProceso({ presupuesto_oficial: POreal, tipo_trabajo: "obra" });
+        assert.strictEqual(real.valor, -32163290, "el peor caso sigue siendo el número que vio el dueño");
+        assert.strictEqual(real.desglose.obra + real.desglose.administracion + real.desglose.imprevistos,
+          real.costo_sin_ganancia, "la cascada que se le enseña al usuario tiene que cerrar AL PESO");
+        assert.strictEqual(real.desglose.precio - real.desglose.descuentos - real.costo_sin_ganancia, real.valor);
+
+        /* B · ERA UNA CONSTANTE, Y ESO ES LO QUE LA HACÍA FALSA. Sin APU la
+           cuenta se reduce a «utilidad declarada − contribución», así que el
+           margen es el MISMO para cualquier cuantía. Se deja medido para que
+           nadie vuelva a presentar esa constante como una medición del proceso. */
+        const margenes = [50e6, 500e6, POreal, 20e9]
+          .map((po) => G.gananciaDeProceso({ presupuesto_oficial: po, tipo_trabajo: "obra" }).margen_pct);
+        assert.deepStrictEqual(margenes, [-1, -1, -1, -1],
+          "sin APU la cifra es −1 % de la cuantía SIEMPRE: por eso no puede afirmarse como una medición del proceso");
+        assert.strictEqual(real.valor, real.utilidad_declarada - real.descuentos,
+          "sin APU la cuenta ES «ganancia declarada − contribución»: si deja de serlo, cambió el modelo");
+
+        /* C · UNA PÉRDIDA SOLO SE AFIRMA SI SE SOSTIENE EN LOS DOS EXTREMOS.
+           Es la corrección central. Sobre el proceso real el rango va de
+           −$32 M a +$257 M: afirmar el extremo malo, en rojo, en la pantalla
+           que decide si se presenta, es la peor forma posible de equivocarse. */
+        assert.strictEqual(real.veredicto, "depende");
+        assert.ok(real.peor < 0 && real.mejor > 0, "el rango cruza el cero");
+        assert.strictEqual(real.mejor - real.peor, real.desglose.imprevistos + real.alivio_contribucion,
+          "la distancia entre los dos extremos es exactamente lo que todavía no se sabe");
+        assert.ok(!/de pérdida|deja una pérdida/.test(real.frase),
+          "con el rango cruzando el cero la frase NO puede afirmar una pérdida");
+        assert.ok(/puede dejarle hasta/.test(real.frase) && /o costarle/.test(real.frase),
+          "se dicen los dos extremos, que es la única respuesta verdadera");
+        /* …y la INSTRUCCIÓN no se pierde al suavizar el veredicto: la lección
+           del manual («el olvido más caro del país») sigue en la frase. */
+        assert.ok(/Necesitaría declarar al menos/.test(real.frase));
+
+        /* D · EL IMPREVISTO ES UNA PROVISIÓN, NO UN GASTO SEGURO. Subirlo no
+           puede empeorar el mejor caso por sí solo: lo que hace es ensanchar
+           la distancia entre los dos extremos. */
+        const conI = (I) => G.gananciaDeProceso({ presupuesto_oficial: POreal, tipo_trabajo: "obra",
+          aiu: { administracion_pct: 15, imprevistos_pct: I, utilidad_pct: 5, modo: "aditivo" }, aiu_origen: "suyo" });
+        assert.ok(conI(10).desglose.imprevistos > conI(5).desglose.imprevistos);
+        assert.ok(conI(10).mejor - conI(10).peor > conI(5).mejor - conI(5).peor,
+          "más reserva para imprevistos = más incertidumbre, no menos ganancia sin más");
+
+        /* E · «DIJO QUE NO» NO ES LO MISMO QUE «NUNCA SE LO PREGUNTAMOS».
+           Son 5 puntos del contrato —más que la ganancia entera— y mientras no
+           conste, el veredicto no puede afirmar. Es «sin dato vs cero»
+           aplicado a un booleano. */
+        const nunca = G.gananciaDeProceso({ presupuesto_oficial: POreal, tipo_trabajo: "obra" });
+        const dijoNo = G.gananciaDeProceso({ presupuesto_oficial: POreal, tipo_trabajo: "obra", contribucion_declarada: true });
+        const dijoSi = G.gananciaDeProceso({ presupuesto_oficial: POreal, tipo_trabajo: "obra", contribucion_en_administracion: true });
+        assert.strictEqual(nunca.valor, dijoNo.valor, "responder que no NO puede cambiar la cifra: solo lo que se puede afirmar de ella");
+        assert.ok(nunca.mejor > dijoNo.mejor, "sin declarar, el mejor caso incluye la lectura en que su administración ya paga los impuestos");
+        assert.strictEqual(dijoSi.veredicto, "deja", "si su administración ya paga los impuestos, el contrato deja plata");
+        assert.strictEqual(dijoSi.valor, dijoSi.utilidad_declarada, "y lo que deja es exactamente su ganancia declarada");
+
+        /* F · UNA INTERVENTORÍA NO CAUSA LA CONTRIBUCIÓN, y por tanto no tiene
+           ninguna pregunta pendiente que pueda mover el signo. */
+        const inter = G.gananciaDeProceso({ presupuesto_oficial: POreal, tipo_trabajo: "interventoria" });
+        assert.strictEqual(inter.contribucion_declarada, true);
+        assert.strictEqual(inter.veredicto, "deja");
+
+        /* G · «PIERDE» SIGUE EXISTIENDO, y tiene que poder afirmarse cuando de
+           verdad se sostiene: un costo medido tan alto que ni sin gastar la
+           reserva ni con la administración cubriendo impuestos deja plata. */
+        const caro = G.gananciaDeProceso({ presupuesto_oficial: POreal, tipo_trabajo: "obra",
+          costo_directo: POreal, borrador: "b-caro", aiu_origen: "suyo",
+          aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" } });
+        assert.strictEqual(caro.veredicto, "pierde");
+        assert.ok(caro.mejor < 0, "«pierde» exige que ni el mejor extremo deje plata");
+        assert.ok(/aun en el mejor de los casos/.test(caro.frase),
+          "cuando se afirma la pérdida hay que decir que se comprobó el extremo bueno");
+
+        /* H · LAS RAMAS SIN CIFRA TRAEN LOS CAMPOS NUEVOS: un consumidor que
+           lea `veredicto` no puede recibir `undefined` según la rama. */
+        const sinPO = G.gananciaDeProceso({ presupuesto_oficial: null, tipo_trabajo: "obra" });
+        for (const k of ["veredicto", "peor", "mejor", "desglose", "sin_gastar_imprevisto", "alivio_contribucion"]) {
+          assert.ok(k in sinPO && sinPO[k] === null, `${k} tiene que viajar en null, no faltar`);
         }
       }
 
@@ -15842,8 +15988,16 @@ async function main() {
            esa cifra sí es condicional a ganar. Lo que no puede pasar es que la
            celda pinte `l.ve` con ese rótulo. */
         assert.ok(/si gana el contrato/.test(cuerpoGanancia), "la celda tiene que decir que la cifra es si gana el contrato");
-        assert.ok(/copFirmado\(g\.valor\)/.test(cuerpoGanancia),
-          "lo que se pinta es la ganancia, no el valor esperado disfrazado");
+        /* CORREGIDO (ago 2026): ya no se pinta SIEMPRE `g.valor`. Con el
+           veredicto de tres estados la celda pinta el extremo que corresponde
+           —el peor cuando ya deja, el mejor cuando pierde igual, y LOS DOS
+           cuando el rango cruza el cero—. Lo que sigue prohibido es lo de
+           antes: pintar `l.ve` con el rótulo de la ganancia. */
+        assert.ok(/copFirmado\(g\.peor\)/.test(cuerpoGanancia) && /copFirmado\(g\.mejor\)/.test(cuerpoGanancia)
+          && /copFirmado\(cifra\)/.test(cuerpoGanancia),
+          "lo que se pinta son los extremos de la ganancia, no el valor esperado disfrazado");
+        assert.ok(!/copFirmado\(l\.ve\)|fmtCorto\(l\.ve\)[\s\S]{0,200}le quedan/.test(cuerpoGanancia),
+          "el valor esperado no puede pintarse con el rótulo de la ganancia");
         /* R1 · la ausencia jamás se convierte en cero: es la prueba hermana de
            la que prohíbe `i.<conteo> || 0` en los dos frontends. */
         assert.ok(!/\bg\.[a-z_]+\s*\|\|\s*0|ganancia\.[a-z_]+\s*\|\|\s*0/.test(cuerpoGanancia),
@@ -15865,6 +16019,52 @@ async function main() {
           new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }));
         assert.strictEqual(fmtCortoFn(0), "No definida",
           "fmtCorto conserva su contrato de CUANTÍA: por eso la ganancia necesitaba el suyo");
+
+        /* ═══ LA CIFRA ES PULSABLE Y ABRE SU PROPIA CUENTA (ago 2026) ════════
+           Encargo del dueño: «que pueda dar clic encima de ese número y ver
+           cómo se calculó, simplificado, que lo entienda sin importar su
+           profesión o edad». Tres cerraduras, y la segunda es la que importa. */
+        assert.ok(/detalle-ganancia/.test(cuerpoGanancia) && /cifra-pulsable/.test(cuerpoGanancia),
+          "la CIFRA tiene que ser el botón: en móvil no hay puntero y un `title` no explica nada");
+        assert.ok(/\.cifra-pulsable\s*\{/.test(html), "la clase pulsable necesita su estilo o no se ve que se puede pulsar");
+        assert.ok(/\.metrica\.rango\s+\.metrica-valor/.test(html),
+          "un rango («−$32M a $257M») no cabe a 20 px en un tercio de tarjeta: tiene que encogerse en vez de desbordar");
+        /* EL DETALLE NO REIMPLEMENTA LA CUENTA: recalcula con el MISMO módulo
+           UMD que usa el servidor. Una segunda aritmética en el navegador
+           enseñaría un número distinto del que ordena la lista — el defecto del
+           presupuesto calculado dos veces, otra vez. */
+        const iDet = jsSin.indexOf("function pintarDetalleGanancia");
+        assert.ok(iDet > 0, "el detalle de la ganancia tiene que existir");
+        const cuerpoDet = jsSin.slice(iDet, jsSin.indexOf("\n  function abrirDetalleGanancia", iDet));
+        assert.ok(/window\.Ganancia\.desglose\(/.test(cuerpoDet),
+          "el detalle recalcula con public/ganancia.js, no con una copia de la fórmula");
+        /* DEFECTO QUE SOLO VIO EL NAVEGADOR (ago 2026): sin APU el costo directo
+           se CIERRA por la identidad precio = costo × (1 + A + I + U), así que
+           subir la ganancia declarada BAJA el costo implícito. El detalle
+           congelaba el `costo_directo` que vino en la tarjeta, de modo que mover
+           la ganancia no cambiaba nada en el modal mientras el servidor SÍ la
+           cambiaba: el detalle prometía una cifra que la lista no confirmaba al
+           aplicarla. Se cazó abriendo la página, no con una prueba de Node —y
+           por eso queda fijado aquí, que sí lo es. */
+        assert.ok(/costoDirectoImplicito\(/.test(cuerpoDet),
+          "sin APU el detalle tiene que REHACER el costo implícito, no congelarlo");
+        assert.ok(/g\.base === "apu" \? g\.costo_directo/.test(cuerpoDet),
+          "con APU el costo está MEDIDO y no se puede recalcular");
+        assert.ok(!/\*\s*\(1\s*\+\s*\(/.test(cuerpoDet) && !/costo_directo\s*\*\s*\(/.test(cuerpoDet),
+          "ni un solo factor de AIU escrito a mano en el navegador: eso sería la segunda definición");
+        assert.ok(!/\bg\.[a-z_]+\s*\|\|\s*0/.test(cuerpoDet),
+          "un «|| 0» sobre una cifra de la ganancia convertiría «no sé» en «cero»");
+        assert.ok(/<script src="\/ganancia\.js">/.test(html), "index.html tiene que cargar el módulo UMD");
+        assert.ok(html.indexOf('<script src="/ganancia.js">') < html.indexOf('<script src="/app.js">'),
+          "el módulo va ANTES de app.js o `window.Ganancia` no existe cuando el detalle lo necesita");
+        /* La delegación resuelve la ganancia ANTES que la fila y que la banda:
+           la cifra vive DENTRO de la franja de métricas, y un `closest` más
+           laxo se quedaría el clic. Misma regla que protege al botón «APU». */
+        const iDel = jsSin.indexOf('$("lista").addEventListener("click"');
+        const cuerpoDel = jsSin.slice(iDel, iDel + 2600);
+        assert.ok(cuerpoDel.indexOf(".detalle-ganancia") < cuerpoDel.indexOf(".detalle-probabilidad"),
+          "«lo que deja» se resuelve primero: su botón es la propia cifra dentro de la franja");
+        assert.ok(cuerpoDel.indexOf(".detalle-ganancia") < cuerpoDel.indexOf(".banda-competencia"));
       }
 
       /* ---- paso 0.2 · DELETE /api/admin/rup, contra el handler real ---- */

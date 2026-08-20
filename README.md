@@ -273,6 +273,8 @@ nada, ni siquiera qué perfiles existen.
 | `solo_viables` | **`true`** | Oculta lo que no pasa las puertas P1-P3. Con `false` aparecen al final, marcados |
 | `ordenar_por` | **`atractividad`** | `atractividad` · `ganancia` (lo que deja el contrato × la opción de ganar) · `ve` · `ve_conservador` (cuantía × cota inferior de la banda de probabilidad; sin banda cae al VE) · `p_ganar` · `anticipo` · `cuantia` · `competencia` (nivel de la **entidad**) · `margen` · `cierre` · `puntaje` (legado) |
 | `baja_max` | — | Baja máxima en % que el dueño soporta sin perder plata (**solo con token**; sin credencial es inerte y `baja_max_ignorada` lo dice). Con ella el ajuste `precio` de `p_ganar` deja de ser neutro. Ilegible ⇒ inerte, nunca 400. **Si el proceso tiene un borrador de APU guardado con costo, la baja máxima sale de él** (`1 − piso_rentable/presupuesto_oficial`) y manda sobre esta; cada fila publica `baja_maxima {valor, origen: apu·declarada·null, borrador}` |
+| `administracion_pct` · `imprevistos_pct` · `utilidad_pct` | — | **Su estructura de precio**, declarada desde el detalle de «lo que deja este contrato». Cambia la cifra de la tercera celda y el orden `ganancia`. **Solo con token** (son las cifras de su negocio); fuera de [0, 100] o ilegible ⇒ INERTE, nunca 400. Lo declarado MANDA sobre el borrador de APU |
+| `contribucion_en_administracion` | — | `1`/`0`: si su administración ya incluye los impuestos del contrato, la contribución del 5 % **no se descuenta otra vez**. **Que el parámetro venga es la declaración**: sin él la cifra no puede AFIRMAR una pérdida que desaparece bajo la otra lectura, y el veredicto sale `depende`. Solo con token |
 | `orden` | `desc` | `asc` · `desc` |
 | `pagina` / `por_pagina` | 1 / 20 | `por_pagina` máx 100 |
 
@@ -292,7 +294,7 @@ en `lib/filtros_lista.js`; cobertura de cada columna medida contra `p6dx-8zbt` e
 | `entidad` | Buscar entidad | NIT (con o sin DV) o subcadena del nombre |
 | `q` | Buscar por palabra | subcadena normalizada sobre objeto y entidad |
 | `ordenar_por=cierre` | Las que cierran antes | menos días primero; sin fecha al final |
-| `ordenar_por=ganancia` | Lo que más deja | Ganancia del contrato (`lib/ganancia`) × opción de ganar. Sin presupuesto oficial, al final: **jamás un cero**. **SOLO CON TOKEN**: sale del costo y de la estructura de precio del dueño |
+| `ordenar_por=ganancia` | Lo que más deja | Ganancia del contrato (`lib/ganancia`) × opción de ganar. Sin presupuesto oficial, al final: **jamás un cero**. Ordena por el PEOR de los dos extremos (la cuenta prudente). **SOLO CON TOKEN**: sale del costo y de la estructura de precio del dueño |
 | `ordenar_por=margen` | Más recorrido de precio | `techo − piso` (Fase 3) SOLO para procesos con un borrador de APU guardado con `costo_directo`; los demás «Sin referencia», al final. Es RECORRIDO DE PRECIO, no la plata que deja. **Nunca se asume margen cero**. **SOLO CON TOKEN** (ago 2026): su `piso` sale del costo directo del dueño y de su `techo` se despeja la mediana de baja que `lib/publico` tapa, así que sin credencial el orden es INERTE y `margen_ignorado` lo dice |
 
 Salida añadida: `totalSinFiltros` (la base antes de los filtros del usuario), `filtrosAplicados`

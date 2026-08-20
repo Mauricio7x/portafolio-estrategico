@@ -4219,6 +4219,69 @@ así que el arnés inyecta un recolector de errores y un marcador de estado en e
   Map: 73 ms en frío y 6 ms en caliente, resultado idéntico. El tope de 20 000 entradas existe
   porque la instancia serverless vive entre peticiones.
 
+### «−$32 M de pérdida»: la tercera cifra de la tarjeta, auditada y corregida (20-ago-2026)
+
+El dueño reportó desde producción una tarjeta de **$3.216.328.994** (PTAR Alpujarra, CORTOLIMA) que decía
+**«−$32M · de pérdida si gana el contrato»**, en rojo, y preguntó si el dato era real. Se reprodujo al peso
+ejecutando `lib/ganancia`: `−32.163.290`. **No era un error de aritmética: era un error de MODELO**, y de
+los tres encontrados cualquiera bastaba para voltear el signo.
+
+- **LA CIFRA ERA UNA CONSTANTE CON ASPECTO DE MEDICIÓN.** Sin APU, la fórmula
+  `V(1−τ) − CD(1+(A+I)/100)` con `CD = V/(1+(A+I+U)/100)` se reduce ALGEBRAICAMENTE a
+  **`utilidad declarada − contribución`**, o sea `−1 % × cuantía` para TODO proceso de obra: medido,
+  50 M → −0,5 M · 500 M → −5 M · 3.216 M → −32 M · 20.000 M → −200 M, margen −1 % en los cuatro. Un
+  número que no depende del proceso, pintado en rojo a dos centímetros de la cuantía de la que sale.
+  Es «18,2 oferentes sin base» y el chip constante de `nivel_competencia` por tercera vez, ahora
+  AFIRMANDO una pérdida.
+- **EL SIGNO LO DECIDÍA UN SUPUESTO QUE NADIE HABÍA DECLARADO.** El umbral está en **U = 6,32 %** y el
+  defecto era **U = 5 %**, el SUELO de la banda del manual (U 5-10). Medido sobre el proceso real:
+  U=4 → −57 M · U=5 → −32 M · U=6,32 → 0 · U=8 → +40 M · U=10 → +87 M. Un punto de una perilla que el
+  usuario nunca tocó decide si el ingeniero se presenta o no.
+- **LA ADMINISTRACIÓN SE COBRABA DOS VECES, y este repositorio ya lo tenía escrito.** `CLAUDE.md` dice
+  del otro motor: «su "A" cubre nominalmente dirección de obra, pólizas, ensayos e impuestos» y «usar la
+  "A" declarada como si fuera el indirecto Y sumar aparte garantías e impuestos cobraba la
+  administración dos veces y **dejaba en rojo presupuestos sanos**». Es exactamente lo que hacía, con el
+  interruptor `contribucion_en_administracion` en `false` por defecto.
+- **EL IMPREVISTO SE RESTABA COMO COSTO CIERTO, contra la doctrina explícita del repositorio.**
+  `lib/apu/rentabilidad` dice con todas las letras: «La "I" del AIU **no es un costo**: es el INGRESO que
+  financia la prima de riesgo. Restar las dos sería contar el imprevisto dos veces». Son **$128,6 M** en
+  ese proceso —**cuatro veces** la cifra que titulaba la tarjeta— y con el costo MEDIDO de un APU el signo
+  cambia solo con esa línea (I=0 → +96 M · I=5 → −32 M · I=10 → −161 M). Dos motores del mismo
+  repositorio respondiendo la misma pregunta con doctrinas opuestas.
+
+**LA CORRECCIÓN NO INVENTA NADA: PUBLICA LOS DOS EXTREMOS Y SOLO AFIRMA LO QUE SE SOSTIENE EN LOS DOS.**
+- **`public/ganancia.js` (UMD) es la ÚNICA aritmética**, y `lib/ganancia` la usa (el patrón de
+  `costos.js`/`glosario.js`). Hacía falta porque el detalle interactivo RECALCULA en el navegador: una
+  segunda fórmula allí enseñaría un número distinto del que ORDENA la lista — el defecto del presupuesto
+  calculado dos veces, otra vez. La prueba compara la identidad de función, no el texto.
+- **`veredicto` tiene TRES estados, no dos**: `deja` (ya deja plata en el PEOR caso), `pierde` (no deja ni
+  en el MEJOR) y `depende` (el rango cruza el cero). El proceso del dueño es **`depende`: de −$32 M a
+  +$257 M**. Afirmar el extremo malo de un rango que cruza el cero, en rojo, en la única pantalla que
+  decide si se presenta, es la peor forma posible de equivocarse en este módulo.
+- **`mejor − peor` es EXACTAMENTE lo que todavía no se sabe** (la reserva de imprevistos + la contribución
+  cuya lectura no consta), con prueba. Cuánto se consume de un imprevisto no lo sabe nadie por adelantado:
+  inventar un porcentaje de consumo habría sido la tercera cifra falsa.
+- **«Dijo que no» ≠ «nunca se lo preguntamos»** (`contribucion_declarada`): son 5 puntos del contrato,
+  más que la ganancia entera. Responder que no NO cambia la cifra —cambia lo que se puede AFIRMAR de
+  ella—, y hay prueba de esa distinción. Es «sin dato vs cero» aplicado a un booleano.
+- **La INSTRUCCIÓN no se pierde al suavizar el veredicto**: en `depende` sigue viajando «necesitaría
+  declarar al menos 6,3 %» (la lección del manual, «el olvido más caro del país») y, con APU, la
+  advertencia del panel Piso/Techo («lo que usted costeó no cabe en ese precio si gasta la reserva»). Una
+  prueba que exigía la palabra «pérdida» se corrigió: obligaba a afirmar lo que no se sostiene.
+- **La CIFRA ES EL BOTÓN** que abre su propia cuenta (`.detalle-ganancia`), y no un enlace aparte: en
+  móvil no hay puntero, y ahí `.metrica-nota` está OCULTA por CSS — por eso la salvedad vive en el RÓTULO
+  y nunca en la nota. El detalle enseña la cascada línea por línea con barras a escala, en castellano
+  llano («le pagan», «hacer la obra le cuesta», «le descuentan de cada acta»), los dos escenarios con su
+  nombre, la fuente de cada número y lo que la cuenta NO alcanza a descontar. **La cascada cierra AL
+  PESO** porque administración e imprevistos se DERIVAN restando totales ya redondeados una sola vez.
+- **Lo que el usuario ajusta en el detalle viaja al SERVIDOR** (`?administracion_pct=`, `?imprevistos_pct=`,
+  `?utilidad_pct=`, `?contribucion_en_administracion=`), con la doctrina de `?baja_max=`: solo con
+  credencial y **inerte** si es ilegible, jamás un 400. Aplicarlo solo en el navegador habría dejado la
+  lista ORDENADA por unos números y PINTADA con otros.
+- **Procedencia**: el defecto llegó de la rama `claude/ecc-mental-framework-jhupip` (commit `f7ca950`,
+  una sesión paralela del mismo día). Se fusionó a esta rama antes de corregir para que exista **una sola
+  versión** de la cifra; sin eso habría dos `lib/ganancia.js` divergiendo desde el primer día.
+
 ### Los pendientes declarados, cerrados (ago 2026)
 
 La auditoría integral dejó cinco hallazgos **sin corregir y dichos**. Se cerraron después, y lo que

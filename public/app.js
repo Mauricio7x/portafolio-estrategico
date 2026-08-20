@@ -674,6 +674,19 @@
     // el proceso es ruido (software, equipos, servicios de salud…). Encenderlo
     // los devuelve, siempre marcados como «Objeto sugiere obra».
     if ($("f-sin-unspsc").checked) p.set("incluir_sin_unspsc", "1");
+    /* La estructura de precio que el usuario declaró en el detalle de «lo que
+       deja este contrato» viaja al SERVIDOR, no se aplica en el navegador: así
+       la cifra de la tarjeta y el orden «Lo que más deja» salen de la misma
+       cuenta. Aplicarla solo aquí habría dejado la lista ordenada por unos
+       números y pintada con otros. */
+    const est = estructuraGuardada();
+    if (est) {
+      for (const [k, nombre] of [["administracion_pct", "administracion_pct"],
+        ["imprevistos_pct", "imprevistos_pct"], ["utilidad_pct", "utilidad_pct"]]) {
+        if (Number.isFinite(Number(est[k]))) p.set(nombre, String(est[k]));
+      }
+      if (est.declarada) p.set("contribucion_en_administracion", est.contribucion_en_administracion ? "1" : "0");
+    }
     return p;
   }
 
@@ -1157,35 +1170,56 @@
         : celda("—", "sin cifra de lo que deja", "",
           motivo || "Sin presupuesto oficial publicado no hay con qué calcular lo que deja este contrato.");
     }
-    const perdida = g.valor < 0;
-    const rotulo = perdida
-      ? "de pérdida si gana el contrato"
-      : g.valor === 0 ? "queda: ni gana ni pierde" : "le quedan si gana el contrato";
-    /* La NOTA dice DE DÓNDE sale la cifra en cinco palabras: con su costo real o
-       con su estructura de precio. Sin eso, «$38M» y «$38M» se leen igual
-       viniendo de dos sitios que no valen lo mismo. */
+
+    /* TRES VEREDICTOS, NO DOS — y esta es la corrección que costó la cifra.
+       La versión anterior pintaba «−$32M · de pérdida si gana el contrato» en
+       rojo, y esa pérdida NO se sostenía: aparecía solo si (a) se gastaba
+       entera la reserva para imprevistos —que `lib/apu/rentabilidad` dice
+       expresamente que NO es un costo cierto— y (b) la administración del
+       usuario no cubría los impuestos del contrato, que es una pregunta que
+       nadie le había hecho. En el mismo proceso el rango real iba de −$32M a
+       +$257M. Afirmar el extremo malo de un rango que cruza el cero, en rojo y
+       en la única pantalla que decide si se presenta, es la peor forma posible
+       de equivocarse en este módulo.
+       · `deja`    → ya deja plata en el PEOR de los casos: se enseña esa.
+       · `pierde`  → pierde aun en el MEJOR: se enseña la menos mala.
+       · `depende` → el rango cruza el cero: se enseñan LOS DOS extremos. */
+    const v = g.veredicto;
+    const cifra = v === "pierde" ? g.mejor : (v === "deja" ? g.peor : g.valor);
+    const valorTxt = v === "depende"
+      ? `${esc(copFirmado(g.peor))} a ${esc(copFirmado(g.mejor))}`
+      : esc(copFirmado(cifra));
+    const rotulo = v === "deja"
+      ? "le quedan si gana el contrato"
+      : v === "pierde" ? "de pérdida aun en el mejor caso" : "puede costarle o dejarle";
+    /* La NOTA dice DE DÓNDE sale la cifra en cinco palabras. OJO: en móvil está
+       oculta por CSS (`.metrica-nota{display:none}`), así que NUNCA puede
+       llevar la salvedad que sostiene el número — por eso la salvedad vive en
+       el RÓTULO y el detalle se abre pulsando la propia cifra. */
     const nota = g.base === "apu"
       ? "con el costo que usted calculó"
-      : perdida && g.utilidad_minima_para_no_perder_pct
-        ? `su ganancia del ${nf2.format(g.aiu.utilidad_pct)} % no cubre lo que le descuentan`
-        : "con su estructura de precio actual";
+      : v === "depende" ? "faltan dos datos suyos" : "con su estructura de precio";
     const lineas = [
       g.frase,
-      /* Sin `|| 0` sobre el conteo ni sobre la mediana: en esta rama los dos
-         están garantizados (hay techo ⟹ hay baja con base), pero un `|| 0`
-         escrito «por si acaso» es exactamente cómo se coló «en 0 procesos» en
-         producción. Si faltaran, la frase se queda corta en vez de mentir. */
       `Precio de referencia: ${pesos(g.precio_esperado)}${g.origen_precio === "mercado"
         ? ` — al que suele adjudicar esta entidad${g.baja_procesos != null ? ` (${fmt.format(g.baja_procesos)} contratos${g.baja_aplicada_pct != null ? `, ${nf2.format(g.baja_aplicada_pct)} % por debajo del presupuesto` : ""})` : ""}.`
         : " — el presupuesto oficial: no hay historial suficiente de esta entidad para saber cuánto se suele bajar."}`,
       `Obra, administración e imprevistos: ${pesos(g.costo_sin_ganancia)}${g.base === "apu" ? " (con el costo que usted calculó en Precios)." : "."}`,
       g.tau_pct > 0 ? `Le descuentan de las actas: ${pesos(g.descuentos)} (${nf2.format(g.tau_pct)} %).` : null,
-      l.ve != null ? `Contrato esperado por intento: ${fmtCorto(l.ve)} — presupuesto × opción de ganar, contando las veces que no se gana.` : null,
       g.por_intento != null ? `Ganancia media por intento: ${copFirmado(g.por_intento)}.` : null,
       ...(g.supuestos || []),
       `Es una cota superior: ${(g.cota_superior_por || []).join("; ")}.`,
+      "Pulse la cifra para ver la cuenta completa.",
     ].filter(Boolean);
-    return celda(esc(copFirmado(g.valor)), rotulo, esc(nota), lineas.join("\n"), perdida ? "perdida" : "");
+    /* La cifra ES el botón: un detalle que se esconde tras un enlace aparte no
+       lo encuentra nadie, y en móvil no hay `title` que valga (no hay puntero).
+       El rojo se reserva para `pierde`: pintar de rojo un rango que cruza el
+       cero volvería a afirmar lo que el veredicto acaba de dejar en duda. */
+    const boton = `<button type="button" class="detalle-ganancia cifra-pulsable" data-id="${esc(l.id_del_proceso || "")}"
+        data-objeto="${esc(l.nombre_del_procedimiento || l.id_del_proceso || "")}"
+        aria-label="Ver cómo se calcula lo que deja este contrato">${valorTxt}</button>`;
+    return celda(boton, rotulo, esc(nota), lineas.join("\n"),
+      (v === "pierde" ? "perdida" : "") + (v === "depende" ? " rango" : ""));
   }
 
   function bloqueProbabilidad(l) {
@@ -1628,6 +1662,249 @@
     $modal().classList.add("flex");
     $modal().style.display = "flex";
     document.addEventListener("keydown", alPulsarTecla);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     DETALLE DE «CUÁNTA PLATA DEJA ESTE CONTRATO»
+     ----------------------------------------------------------------------
+     Encargo del dueño: «que pueda dar clic encima de ese número y ver cómo se
+     calculó, todo de manera simplificada, que lo pueda entender sin importar
+     su profesión o edad». De ahí las tres decisiones de este bloque:
+
+     1) NO REIMPLEMENTA LA CUENTA. Recalcula con `Ganancia.desglose`, que es el
+        MISMO archivo que usa el servidor (`public/ganancia.js`, UMD, el patrón
+        de `costos.js`). Una segunda aritmética en el navegador enseñaría un
+        número distinto del que ordena la lista, y sería el defecto del
+        presupuesto calculado dos veces otra vez.
+     2) NO PIDE NADA A LA RED. Todo lo que hace falta ya viajó en la tarjeta.
+     3) HABLA EN PESOS Y EN CASTELLANO LLANO: «le pagan», «hacer la obra le
+        cuesta», «le descuentan de cada acta». Ni AIU, ni τ, ni cota superior.
+     ══════════════════════════════════════════════════════════════════════ */
+  const gPesos = (n) => (n == null || !Number.isFinite(Number(n))
+    ? "—"
+    : `${Number(n) < 0 ? "−" : ""}$${fmtNum.format(Math.abs(Math.round(Number(n))))}`);
+
+  function filaCascada(rotulo, valor, explicacion, ancho, color) {
+    return `<div class="cascada-fila">
+        <div><p class="font-medium">${esc(rotulo)}</p><p class="text-xs" style="color: var(--text-secondary);">${esc(explicacion)}</p></div>
+        <p class="tabular-nums font-semibold whitespace-nowrap">${esc(gPesos(valor))}</p>
+        <div class="cascada-barra"><span style="width:${Math.max(1, Math.min(100, ancho))}%; background:${color};"></span></div>
+      </div>`;
+  }
+
+  /* La estructura de precio que el usuario haya declarado en este detalle. Vive
+     en el navegador y viaja al servidor como parámetros de la búsqueda (el
+     patrón de `?baja_max=`), así que NO hay una segunda fuente de verdad: la
+     lista se recalcula entera con lo que el usuario acaba de responder. */
+  /* La clave va LITERAL dentro de cada función y no como `const` del IIFE:
+     `parametros()` está declarada mucho más arriba y la llama la primera
+     búsqueda, así que una constante declarada aquí abajo la dejaría en la zona
+     muerta temporal si algún día el arranque dejara de ir al final del IIFE —
+     el fallo MUDO que este repositorio ya pagó tres veces (app.js, admin.js,
+     apu.js). Un literal repetido dos veces no puede tener ese problema. */
+  function estructuraGuardada() {
+    try {
+      const v = JSON.parse(localStorage.getItem("detecta_estructura_precio") || "null");
+      return v && typeof v === "object" ? v : null;
+    } catch (_) { return null; }
+  }
+  function guardarEstructura(v) {
+    try { localStorage.setItem("detecta_estructura_precio", JSON.stringify(v)); } catch (_) { /* modo restringido */ }
+  }
+
+  let gananciaEnDetalle = null;   // { l, g, ajustes } del proceso abierto
+
+  function pintarDetalleGanancia() {
+    const st = gananciaEnDetalle;
+    if (!st) return;
+    const g = st.g, a = st.ajustes;
+    const tauPct = g.tau_pct != null ? Number(g.tau_pct) : 0;
+    const contribPct = g.contribucion_pct != null ? Number(g.contribucion_pct) : 0;
+    /* MISMA función que el servidor. `costo_directo` y `precio` vienen ya
+       resueltos en la tarjeta: aquí solo se mueve la estructura de precio. */
+    /* SIN APU EL COSTO DIRECTO SE REHACE, no se congela: en esa vía el costo se
+       cierra por la identidad precio = costo × (1 + A + I + U), así que subir
+       la ganancia declarada BAJA el costo implícito. Congelar el `costo_directo`
+       que vino en la tarjeta hacía que mover la ganancia no cambiara nada en el
+       modal mientras el servidor sí lo cambiaba: el detalle habría prometido
+       una cifra que la lista no confirmaba al aplicarla. Lo cazó abrir la
+       página en un navegador real. Con APU el costo está MEDIDO y no se toca. */
+    const cdVigente = g.base === "apu" ? g.costo_directo : window.Ganancia.costoDirectoImplicito(
+      g.precio_esperado, a.administracion_pct, a.imprevistos_pct, a.utilidad_pct, (g.aiu && g.aiu.modo) || "aditivo");
+    const d = window.Ganancia.desglose({
+      precio: g.precio_esperado,
+      costo_directo: cdVigente,
+      administracion_pct: a.administracion_pct,
+      imprevistos_pct: a.imprevistos_pct,
+      utilidad_pct: a.utilidad_pct,
+      modo: (g.aiu && g.aiu.modo) || "aditivo",
+      /* Si declara que su administración ya paga los impuestos, la contribución
+         no se descuenta OTRA VEZ: se le resta a τ, no se pone τ en cero (las
+         estampillas del pliego, si están cargadas, siguen saliendo del acta). */
+      /* Sin `|| 0` sobre las cifras: la ausencia se descarta explícitamente,
+         que es la regla de todo el repositorio. Aquí las dos vienen siempre
+         (`g.valor != null` lo garantiza), pero un `|| 0` escrito «por si
+         acaso» es exactamente cómo se coló «en 0 procesos» en producción. */
+      descuentos_pct: a.contribucion_en_administracion
+        ? Math.max(0, tauPct - contribPct)
+        : tauPct,
+      contribucion_pct: a.contribucion_en_administracion ? 0 : contribPct,
+      contribucion_declarada: a.declarada,
+    });
+    if (!d) return;
+
+    /* Lo que está EN JUEGO en la casilla, que no es lo mismo que lo que se está
+       descontando: con la casilla marcada `d.contribucion` vale 0 —correcto, no
+       se cobra— y la etiqueta tiene que seguir diciendo de cuánto se habla. Se
+       calcula explícitamente en vez de con un `||` sobre una cifra: ese `||`
+       convierte un cero LEGÍTIMO en «no sé», que es la misma confusión de
+       siempre por el otro lado. */
+    const contribEnJuego = d.contribucion > 0 ? d.contribucion : Math.round(d.precio * contribPct / 100);
+    const tope = Math.max(d.precio, 1);
+    const barra = (n) => Math.round((Math.abs(n) / tope) * 100);
+    const VERDE = "var(--ok, #34c759)", ROJO = "var(--danger)", GRIS = "var(--text-secondary)";
+
+    const veredictoTxt = d.veredicto === "deja"
+      ? `<p class="text-lg font-semibold" style="color: ${VERDE};">Le quedan ${esc(gPesos(d.valor))}</p>
+         <p class="text-sm" style="color: var(--text-secondary);">Y hasta ${esc(gPesos(d.mejor))} si no gasta la reserva para imprevistos.</p>`
+      : d.veredicto === "pierde"
+        ? `<p class="text-lg font-semibold" style="color: ${ROJO};">Pierde ${esc(gPesos(-d.mejor))}, aun en el mejor de los casos</p>
+           <p class="text-sm" style="color: var(--text-secondary);">Con este precio y este costo, no hay escenario en que este contrato deje plata.</p>`
+        : `<p class="text-lg font-semibold">Entre ${esc(gPesos(d.peor))} y ${esc(gPesos(d.mejor))}</p>
+           <p class="text-sm" style="color: var(--text-secondary);">Puede dejarle plata o costarle: depende de las dos cosas de abajo. Nadie lo sabe todavía, y por eso no le decimos un número solo.</p>`;
+
+    const cascada = [
+      filaCascada("Le pagan por la obra", d.precio,
+        g.origen_precio === "mercado"
+          ? "El precio al que esta entidad suele adjudicar (su presupuesto, menos lo que descontó quien ganó)."
+          : "El presupuesto oficial publicado. No hay historial suficiente de esta entidad para saber cuánto se suele bajar.",
+        100, GRIS),
+      d.contribucion > 0 ? filaCascada("Le descuentan de cada acta", -d.contribucion,
+        `Contribución de obra pública: ${nf2.format(d.contribucion_pct)} % de todo lo que le paguen. Es de ley y no se negocia.`,
+        barra(d.contribucion), ROJO) : "",
+      d.otras_deducciones > 0 ? filaCascada("Estampillas y retenciones", -d.otras_deducciones,
+        "Las que usted cargó del pliego.", barra(d.otras_deducciones), ROJO) : "",
+      filaCascada("Hacer la obra le cuesta", -d.obra,
+        g.base === "apu"
+          ? "El costo que usted mismo calculó para este proceso en Precios: materiales, mano de obra, equipo y transporte."
+          : "Todavía no ha costeado este proceso. Se calcula al revés: del precio, quitando su administración, sus imprevistos y su ganancia.",
+        barra(d.obra), ROJO),
+      filaCascada("Manejar la obra le cuesta", -d.administracion,
+        `Su administración: ${nf2.format(d.aiu.administracion_pct)} % — director, residente, oficina, pólizas.`,
+        barra(d.administracion), ROJO),
+      filaCascada("Reserva para imprevistos", -d.imprevistos,
+        `${nf2.format(d.aiu.imprevistos_pct)} %. Es un seguro, no un gasto seguro: si la obra sale bien, esta plata se queda con usted.`,
+        barra(d.imprevistos), "var(--warn, #ff9f0a)"),
+      filaCascada("Le queda", d.valor,
+        "Si gasta la reserva entera. Es la cuenta más prudente de las dos.",
+        barra(d.valor), d.valor >= 0 ? VERDE : ROJO),
+    ].filter(Boolean).join("");
+
+    const pendientes = [];
+    if (d.imprevistos > 0) {
+      pendientes.push(`<li><b>¿Va a gastar la reserva para imprevistos?</b> Son ${esc(gPesos(d.imprevistos))}. Si la obra sale limpia, se queda con ellos y le quedan ${esc(gPesos(d.sin_gastar_imprevisto))}. Nadie puede saberlo antes de empezar.</li>`);
+    }
+    if (!a.contribucion_en_administracion && d.contribucion > 0 && !a.declarada) {
+      pendientes.push(`<li><b>¿Su administración ya paga los impuestos del contrato?</b> Muchas empresas meten esa línea dentro de la administración. Si es su caso, esos ${esc(gPesos(d.contribucion))} ya están contados y no se descuentan otra vez. Respóndalo abajo: cambia el resultado.</li>`);
+    }
+
+    $("modal-cuerpo").innerHTML = `
+      <div class="space-y-4">
+        <div class="rounded-xl p-4" style="background: var(--bg-inset);">${veredictoTxt}</div>
+
+        <div>
+          <h3 class="mb-1 text-sm font-semibold">La cuenta, línea por línea</h3>
+          <p class="mb-2 text-xs" style="color: var(--text-secondary);">Las barras están a escala: se ve cuánto pesa cada cosa dentro del contrato.</p>
+          ${cascada}
+        </div>
+
+        ${pendientes.length ? `<div>
+          <h3 class="mb-1 text-sm font-semibold">Lo que todavía no se sabe</h3>
+          <ul class="ml-4 list-disc space-y-1 text-sm" style="color: var(--text-secondary);">${pendientes.join("")}</ul>
+        </div>` : ""}
+
+        <div class="rounded-xl p-4" style="background: var(--bg-inset);">
+          <h3 class="mb-2 text-sm font-semibold">Ajuste la cuenta a su empresa</h3>
+          <p class="mb-3 text-xs" style="color: var(--text-secondary);">Cambie estos números y la cuenta de arriba se rehace al instante. Son los suyos, no los de nadie más.</p>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="text-xs">Administración
+              <input id="gan-a" type="number" min="0" max="100" step="0.5" value="${esc(String(a.administracion_pct))}" class="control-campo mt-1 w-full" inputmode="decimal"> </label>
+            <label class="text-xs">Imprevistos
+              <input id="gan-i" type="number" min="0" max="100" step="0.5" value="${esc(String(a.imprevistos_pct))}" class="control-campo mt-1 w-full" inputmode="decimal"></label>
+            <label class="text-xs">Ganancia
+              <input id="gan-u" type="number" min="0" max="100" step="0.5" value="${esc(String(a.utilidad_pct))}" class="control-campo mt-1 w-full" inputmode="decimal"></label>
+          </div>
+          <label class="mt-3 flex items-start gap-2 text-sm">
+            <input id="gan-contrib" type="checkbox" class="mt-0.5"${a.contribucion_en_administracion ? " checked" : ""}>
+            <span>Mi administración <b>ya incluye</b> los impuestos del contrato (${esc(gPesos(contribEnJuego))})</span>
+          </label>
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <button id="gan-aplicar" type="button" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white">Usar estos datos en toda la lista</button>
+            <span id="gan-aviso" class="text-xs" style="color: var(--text-secondary);"></span>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="mb-1 text-sm font-semibold">De dónde sale cada número</h3>
+          <ul class="ml-4 list-disc space-y-1 text-xs" style="color: var(--text-secondary);">
+            <li><b>El precio:</b> ${esc((g.fuentes && g.fuentes.precio) || "")}</li>
+            <li><b>El costo:</b> ${esc((g.fuentes && g.fuentes.costo) || "")}</li>
+            <li><b>Los descuentos:</b> ${esc((g.fuentes && g.fuentes.descuentos) || "")}</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="mb-1 text-sm font-semibold">Lo que esta cuenta NO alcanza a descontar</h3>
+          <p class="text-xs" style="color: var(--text-secondary);">${esc((g.cota_superior_por || []).join("; "))}. Por eso lo que le quede de verdad puede ser menos, nunca más.</p>
+        </div>
+      </div>`;
+
+    const leer = (id, porDefecto) => {
+      const n = Number(String(($(id) || {}).value || "").replace(",", "."));
+      return Number.isFinite(n) && n >= 0 && n <= 100 ? n : porDefecto;
+    };
+    const alCambiar = () => {
+      st.ajustes = {
+        administracion_pct: leer("gan-a", a.administracion_pct),
+        imprevistos_pct: leer("gan-i", a.imprevistos_pct),
+        utilidad_pct: leer("gan-u", a.utilidad_pct),
+        contribucion_en_administracion: !!$("gan-contrib").checked,
+        /* Tocar cualquiera de los controles YA es una respuesta: a partir de
+           aquí la cuenta deja de estar «sin declarar» y el veredicto puede
+           afirmar. Sin esto, responder que no seguiría dando «depende». */
+        declarada: true,
+      };
+      pintarDetalleGanancia();
+    };
+    ["gan-a", "gan-i", "gan-u"].forEach((id) => { const n = $(id); if (n) n.addEventListener("change", alCambiar); });
+    const chk = $("gan-contrib"); if (chk) chk.addEventListener("change", alCambiar);
+    const btn = $("gan-aplicar");
+    if (btn) btn.addEventListener("click", () => {
+      guardarEstructura(st.ajustes);
+      /* Ninguna pulsación sin respuesta visible (la lección del modal del
+         token): se avisa, se cierra y se vuelve a buscar con los datos nuevos
+         para que TODA la lista quede recalculada por el servidor con la misma
+         cuenta — no solo esta tarjeta. */
+      $("gan-aviso").textContent = "Guardado. Recalculando la lista…";
+      setTimeout(() => { cerrarModal(); buscar(); }, 350);
+    });
+  }
+
+  function abrirDetalleGanancia(l) {
+    const g = l && l.ganancia;
+    if (!g || g.valor == null) return;
+    const guardada = estructuraGuardada();
+    gananciaEnDetalle = {
+      l, g,
+      ajustes: {
+        administracion_pct: (g.aiu && g.aiu.administracion_pct) != null ? g.aiu.administracion_pct : 15,
+        imprevistos_pct: (g.aiu && g.aiu.imprevistos_pct) != null ? g.aiu.imprevistos_pct : 5,
+        utilidad_pct: (g.aiu && g.aiu.utilidad_pct) != null ? g.aiu.utilidad_pct : 5,
+        contribucion_en_administracion: !!(guardada && guardada.contribucion_en_administracion),
+        declarada: !!(guardada && guardada.declarada) || !!g.contribucion_declarada,
+      },
+    };
+    pintarDetalleGanancia();
   }
 
   function filaProceso(p, conMotivo) {
@@ -2088,6 +2365,20 @@
     /* La probabilidad va PRIMERO: su botón vive dentro de la tarjeta y, si se
        resolviera después, un `closest` más laxo podría quedárselo antes. Son
        dos vistas del mismo modal y solo puede ganar una. */
+    /* «Lo que deja» va ANTES que nada: es la CIFRA la que abre su cuenta (no un
+       enlace aparte), así que el clic cae dentro de la franja de métricas y
+       cualquier `closest` más laxo se lo quedaría. Es la misma regla de orden
+       que ya protege al botón «APU» dentro de una fila que abre SECOP II. */
+    const gan = e.target.closest(".detalle-ganancia");
+    if (gan) {
+      const idg = gan.getAttribute("data-id");
+      const arr = (ultimaBusqueda && (ultimaBusqueda.resultados || ultimaBusqueda.oportunidades)) || [];
+      const fila = arr.find((x) => String(x.id_del_proceso) === String(idg));
+      if (!fila) return;
+      abrirModal(gan.getAttribute("data-objeto") || idg, "Lo que deja este contrato", "Rehaciendo la cuenta…");
+      abrirDetalleGanancia(fila);
+      return;
+    }
     const prob = e.target.closest(".detalle-probabilidad");
     if (prob) {
       const id = prob.getAttribute("data-id");

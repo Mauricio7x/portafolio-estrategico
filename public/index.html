@@ -197,6 +197,25 @@
        hex suelto: en modo oscuro el rojo cambia). Es la única cifra de la franja
        que puede tener signo, y el signo es lo primero que hay que ver. */
     .metrica.perdida .metrica-valor, .metrica.perdida .metrica-rotulo { color: var(--danger); }
+    /* La cifra de «lo que deja» ES el botón que abre su cuenta: en móvil no hay
+       puntero, así que un `title` no la explica y un enlace aparte no lo
+       encuentra nadie. Hereda el tamaño y el color de `.metrica-valor` para que
+       siga leyéndose como una cifra y no como un control. */
+    .cifra-pulsable { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
+      text-align: left; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 4px;
+      text-decoration-color: var(--text-secondary); }
+    .cifra-pulsable:hover { text-decoration-style: solid; }
+    /* Un rango («−$32M a $257M») no cabe a 20 px en un tercio de tarjeta. Se
+       encoge en vez de desbordar: la alternativa es que se salga de la caja en
+       móvil, que es donde el dueño lo lee. */
+    .metrica.rango .metrica-valor { font-size: 15px; letter-spacing: -0.2px; }
+    @media (max-width: 640px) { .metrica.rango .metrica-valor { font-size: 13px; } }
+    /* La cascada del detalle: una barra proporcional por línea para que la resta
+       se VEA, no solo se lea. */
+    .cascada-fila { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: baseline; padding: 7px 0; }
+    .cascada-fila + .cascada-fila { border-top: 1px solid var(--border); }
+    .cascada-barra { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--bg-inset); overflow: hidden; }
+    .cascada-barra > span { display: block; height: 100%; border-radius: 3px; }
     @media (max-width: 640px) { .metrica-valor { font-size: 17px; } .metricas .metrica { padding: 8px 10px; } .metrica-nota { display: none; } }
     /* el pulso global de la landing: tres cifras, cero prosa */
     #pulso-global .cifra { text-align: center; }
@@ -2463,6 +2482,7 @@
   <script src="/xlsx_lectura.js"></script>
   <script src="/apu_libro.js"></script>
   <script src="/costos.js"></script>
+  <script src="/ganancia.js"></script>
   <script src="/justificacion.js"></script>
   <script src="/pliego.js"></script>
   <script src="/app.js"></script>
