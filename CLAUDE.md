@@ -41,8 +41,13 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   la suite responde «¿sigue funcionando?», que es un sí/no.
 - **Tras desplegar**: (1) relanzar `/api/sync?modo=full` UNA vez — la ingesta se ensanchó y hay
   procesos que las reglas viejas nunca dejaron entrar a Redis (ver «ingesta/juicio»), y desde ago 2026
-  también los que se perdían por el estado `Activo` que faltaba en `ESTADOS_ABIERTOS`; el filtro de
-  estado corre en la INGESTA, así que sin la full esos procesos no aparecen; (2) definir
+  también los que se perdían por el estado `Activo` que faltaba en `ESTADOS_ABIERTOS`, **y desde el
+  20-ago-2026 los que mataba una `fase` REZAGADA vetando a `estado_del_procedimiento`** (ver «Una
+  `fase` rezagada mataba convocatorias publicadas»); el filtro de
+  estado corre en la INGESTA, así que sin la full esos procesos no aparecen. Esa full es además la
+  que ESCRIBE por primera vez `licitaciones:censo_ingesta`: hasta entonces `/api/perfil?op=
+  diagnostico` publica `censo_ingesta: null` (que NO es un cero) y la caja «¿Por qué no está este
+  proceso?» solo puede responder sobre el corpus; (2) definir
   `HISTORICO_TOKEN` y lanzar UNA vez
   `/api/sync/historico?desde=2024-01&hasta=2025-12` (header `x-historico-token`), o
   `?reconstruir_todo=true` si el histórico ya estaba bajado. Sin ese paso la app funciona igual,
@@ -4610,6 +4615,117 @@ del proceso**, que además es vinculante.
   `handlers/pliego/cronograma` y compartido): dos formas de «conseguir el texto» divergen a la
   primera corrección — la lección que ya costó el lector de cuerpos cuadruplicado.
 - **Se pliega como `op` del router de pliego**, no como función nueva: `api/` sigue en 6 de 12.
+
+### ⚠️ UNA `fase` REZAGADA MATABA CONVOCATORIAS PUBLICADAS, Y NO DEJABA RASTRO (20-ago-2026)
+
+**Defecto de producción reportado por el ingeniero.** La **UNIVERSIDAD PEDAGÓGICA NACIONAL** tenía
+cuatro convocatorias en SECOP II (UPN-VAD-CP-**008/009/011/012**-2026, tres abiertas y una adjudicada,
+entre $1.219 M y $1.467 M cada una) y la app enseñaba **una**. Lo grave no fue el proceso perdido: fue
+que **no había forma de averiguar dónde había muerto**.
+
+- **CAUSA RAÍZ: `fase` VETABA a la columna autoritativa.** `estado_abierto` recorría
+  `estado_del_procedimiento` y `fase` **en pie de igualdad** con la regla «cerrado gana siempre», así
+  que un valor rezagado en `fase` (Evaluación · Adjudicación · Ejecución) descartaba un proceso cuyo
+  `estado_del_procedimiento` decía **«Publicado»**. Y `estado_del_procedimiento` está poblada al
+  **100 %** frente al **98,7 %** de `fase` (`docs/datos.md` §6): la autoritativa perdía contra la
+  supletoria.
+- **QUE `fase` VA REZAGADA LO PRUEBA LA PROPIA CAPTURA DEL INGENIERO**: UPN-VAD-CP-008-2026 figura
+  como **«Proceso adjudicado y celebrado»** con **Fase actual «Presentación de oferta»**. Si retrasa
+  en un sentido retrasa en el otro — una convocatoria republicada conserva la fase del intento
+  anterior mientras su estado dice «Publicado».
+- **EL DAÑO ERA DEL PEOR TIPO POSIBLE: SILENCIOSO E INAUDITABLE.** El filtro de estado corre en la
+  **INGESTA** (`lib/proyeccion.transformar`), así que esos procesos **nunca entraban a Redis**; y el
+  embudo de `/api/diagnostico` censa **el corpus ya guardado**, así que tampoco aparecían en
+  `fuera_unspsc`, ni en `fuera_sin_unspsc_ni_obra`, ni en ninguna otra cubeta. **Desaparecían sin
+  dejar rastro en ningún sitio del sistema.**
+- **CLAUDE.md YA DECLARABA LA REGLA CORRECTA Y EL CÓDIGO NO LA CUMPLÍA.** La sección «Consolidación a
+  6 routers» dice que «el filtrado ya leía `estado_del_procedimiento` primero (con `fase` de
+  respaldo)». Nunca fue verdad. Es la lección de método más cara de esta sesión: **una premisa escrita
+  en la memoria no es una cerradura; la cerradura es la prueba** — y la prueba que existía fijaba
+  justamente el comportamiento defectuoso (`{Activo, fase: Adjudicación} → false`).
+
+**La regla, después.** Precedencia explícita en `estado_abierto` y en `estado_cerrado` (las dos, o
+podrían afirmar cosas incompatibles sobre la misma fila):
+
+1. `adjudicado = "Si"` — señal dura, gana siempre.
+2. El **reloj** (`cierre_vencido`) — un hecho, no una inferencia.
+3. `estado_del_procedimiento` — **AUTORITATIVA**. Si dice abierto, se acabó: `fase` ya no veta.
+4. `fase` — **solo** si la anterior no dice nada reconocible.
+
+- **El error cae del lado correcto, y hay que contarlo exacto**: un proceso ya adjudicado con un
+  «Publicado» rezagado lo cierran igual las **dos señales duras** (`adjudicado="Si"` y el reloj), que
+  son precisamente las que cazan el UPN-008 de la captura. En cambio una convocatoria de $1.348 M que
+  la app nunca enseñó no se recupera. Es la doctrina del proyecto: **el falso negativo cuesta más que
+  el amarillo**.
+- **`{Activo, fase: Adjudicación} → true` ahora, y era `false` a propósito.** El cambio de doctrina va
+  con su caso de prueba reescrito y con los contra-casos que demuestran que las dos señales duras
+  siguen cerrando. No se «arregló un cero que era correcto»: se cambió una decisión, con motivo.
+- **«Proceso adjudicado y celebrado» no casaba con nada.** `coincide` compara por PREFIJO en los dos
+  sentidos y SECOP II antepone «Proceso » a sus literales: ese estado caía en «desconocido», que para
+  `estado_abierto` daba el resultado correcto **por accidente** y para `estado_cerrado` —quien AFIRMA
+  el cierre— daba `false` sobre un proceso adjudicado. Se recorta el prefijo (`nucleoEstado`) antes de
+  comparar. **No se pasó a coincidencia por SUBCADENA**: se tragaría «no adjudicado».
+
+**EL PUNTO CIEGO, CERRADO: `lib/censo_ingesta.js`.** La pregunta del dueño —«¿está pasando con más
+procesos?»— no tenía respuesta posible porque los `continue` de la cascada de ingesta no dejaban
+huella. Ahora cada fila descartada se registra con su MOTIVO y unos pocos ejemplos legibles, se
+persiste en `licitaciones:censo_ingesta` y viaja en la respuesta del sync y en `/api/perfil?op=
+diagnostico`. Decisiones que no hay que re-aprender:
+
+- **NO reimplementa ninguna regla.** El motivo lo NOMBRA quien ya decidió (`lib/proyeccion`) y las
+  sub-causas se resuelven llamando a las MISMAS funciones (`es_convenio` de filtros con require
+  diferido; `BLACKLIST_OBJETO` de semantica y `codigosDeLicitacion` de unspsc, que son HOJAS). Un
+  censo que explica una decisión distinta de la tomada es peor que ninguno.
+- **La invariante es `leidas = aceptadas + descartadas`, con prueba.** Es lo único que detecta un
+  `continue` nuevo sin registrar — o sea, la reaparición del punto ciego. `reclasificar()` existe para
+  el descarte POSTERIOR a la cascada (`mes_fuera_de_ventana`) sin romperla.
+- **Un motivo en CERO se publica igual.** Que un motivo «no aparezca» y que «no descarte nada» son
+  cosas distintas y la primera se lee como la segunda: es el «sin dato vs cero» del proyecto aplicado
+  a un contador.
+- **`guardadas` del delta MENTÍA.** El bucle de `porMes` descarta con un `continue` toda fila cuya
+  fecha de publicación no caiga en el año vigente, y la respuesta publicaba `guardadas: activo.length`
+  — contando como guardado lo que nunca se escribió. Hoy `guardadas` es lo que de verdad se escribió y
+  `aceptadas_por_la_cascada` viaja aparte.
+- **Es diagnóstico, no dato del negocio**: `guardarCenso` es best-effort y jamás frena una
+  sincronización.
+
+**`lib/rastreo.js` + `?buscar=` + la caja de *Sistema*: la pregunta que el dueño no podía hacer.**
+`GET /api/perfil?op=diagnostico&buscar=<referencia|entidad|NIT>` (token, como el resto del
+diagnóstico) responde con UNO de cuatro sitios: `servido` · `en_corpus` (guardado pero apartado, con
+el motivo del juicio) · `descartado_en_ingesta` (con el motivo del censo) · `no_consta`.
+
+- **No reimplementa el juicio**: el handler le INYECTA la MISMA `filtrarProcesosVisibles` que sirve
+  `/api/oportunidades` y `/api/resumen`, y el motivo sale del `motivo` que publica `evaluarRup` o del
+  `mensaje` de la puerta que falla — jamás de una redacción propia.
+  · **Y el primer intento cometió el defecto del repositorio en el propio arreglo**: comprobaba
+    `rup.objeto_ok`, un campo que `evaluarRup` **no publica** (se llama `ok`, y el veredicto del
+    objeto no viaja con ese nombre), así que `!undefined` era `true` y **todo** proceso salía
+    «apartado por el juicio» — incluidos los que la app estaba enseñando. Es `i.total_procesos` otra
+    vez, en la herramienta que existe para diagnosticar. **Lo cazó la prueba de INTEGRACIÓN, no la
+    unitaria**: la unitaria inyectaba un `evaluar` de mentira y por eso pasaba en verde. Lección:
+    cuando una función recibe una dependencia inyectada, la prueba unitaria comprueba el
+    CABLEADO — quien comprueba el CONTRATO es la que usa la dependencia real.
+- **`no_consta` NUNCA afirma que el proceso no exista en SECOP II** — nadie ha mirado SECOP II desde
+  aquí: afirma que la app no lo tiene, y da el siguiente paso. Distinguir «lo sé» de «no lo sé» otra
+  vez, en el sitio donde la tentación de afirmar es máxima.
+- **El censo guarda EJEMPLOS con tope, no el universo**, y la respuesta lo dice: lo que no está entre
+  ellos no se puede afirmar.
+- **Se miran LOS DOS censos, el de la full y el del delta.** Un proceso que tiró la carga completa no
+  tiene por qué estar en el censo del último delta, y quedarse con uno solo respondería «no consta»
+  sobre un descarte que sí consta — el peor error posible en la herramienta que existe para
+  diagnosticar ausencias. El `origen` viaja en cada resultado.
+- **La caja vive en *Mi empresa → Sistema* («¿Por qué no está este proceso?»)** porque **el dueño no
+  tiene terminal**: la misma razón por la que `/admin.html` encadenaba la full desde el navegador. Un
+  diagnóstico que solo se puede leer con `curl` no existe para el único usuario que hay.
+
+**Lo que este entorno NO pudo verificar, dicho en vez de disimulado.** La política de red de esta
+sesión bloquea `datos.gov.co` (403 del proxy, `Host not in allowlist`) y también el despliegue, así
+que **no se pudo consultar la fila real de las cuatro convocatorias de la UPN**: no consta cuál de los
+cuatro mecanismos posibles mató a cada una. Lo que sí está **reproducido ejecutando los módulos
+reales** es que una `fase` rezagada tira de la ingesta una fila publicada, abierta, de obra y de
+$1.348 M sin dejar rastro; y que el rezago de `fase` en esa entidad está probado por la captura. La
+confirmación definitiva es de una línea y ahora se puede pedir desde el navegador: relanzar
+`/api/procesos?op=sync&modo=full` una vez y escribir `UPN-VAD-CP-011-2026` en la caja de *Sistema*.
 
 ### Lo APARCADO por decisión del dueño (20-ago-2026)
 

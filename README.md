@@ -1879,6 +1879,24 @@ https://<tu-app>.vercel.app/api/diagnostico?token=<TOKEN>&perfil=helder&muestra=
 
 Devuelve, sobre el corpus activo:
 
+- **`censo_ingesta`** — **lo que el embudo NO puede ver**. El embudo de abajo censa el corpus *ya
+  guardado*, así que un proceso al que la cascada de **ingesta** tiró antes de escribirlo no figura
+  en ninguna de sus cubetas: no está en `fuera_unspsc`, ni en `fuera_sin_unspsc_ni_obra`, ni en
+  ningún sitio. Ese punto ciego costó tres convocatorias de la UNIVERSIDAD PEDAGÓGICA NACIONAL el
+  20-ago-2026 (ver CLAUDE.md, «Una `fase` rezagada…»). El censo (`lib/censo_ingesta`) cuenta cada
+  descarte de ingesta por motivo —`modalidad_no_competitiva`, `estado_no_abierto`, `cierre_vencido`,
+  `convenio`, `blacklist_objeto`, `unspsc_fuera_de_la_union`, `sin_unspsc_ni_obra`,
+  `mes_fuera_de_ventana`— con ejemplos legibles, y publica `cuadra`: la invariante
+  `leidas = aceptadas + descartadas`, que es lo único capaz de detectar un descarte nuevo sin
+  registrar. Un motivo en **0 se publica igual**: «no aparece» y «no descarta nada» son cosas
+  distintas. `null` = todavía no ha corrido ninguna sincronización desde que existe el censo.
+- **`?buscar=<referencia|entidad|NIT>`** — la pregunta concreta: *«¿por qué no está este proceso?»*.
+  Responde con **uno de cuatro sitios**: `servido` (la app lo enseña), `en_corpus` (guardado pero
+  apartado por el juicio, **con el motivo que dio el juicio real**, no un segundo cálculo),
+  `descartado_en_ingesta` (con el motivo del censo) o `no_consta`. **`no_consta` no afirma que el
+  proceso no exista en SECOP II** —desde aquí nadie ha mirado SECOP II—: afirma que la app no lo
+  tiene, y da el siguiente paso. La misma consulta tiene caja propia en *Mi empresa → Sistema*
+  («¿Por qué no está este proceso?»), porque el dueño no tiene terminal.
 - **`embudo`** — bajas de cada paso **en el orden real de la consulta**: `fuera_modalidad`,
   `fuera_estado`, `fuera_convenio`, `fuera_blacklist`, `fuera_unspsc`,
   `fuera_sin_unspsc_ni_obra`, **`fuera_objeto_generico`**, **`fuera_no_pertinente`**,
@@ -2141,6 +2159,10 @@ Dos keyspaces con ciclos de vida **opuestos**: el activo se purga, el histórico
 ```
 licitaciones:meta                              JSON {last_full, last_sync, total, leidas, porMes, …}
 licitaciones:progreso                          JSON cursor reanudable de la carga completa
+licitaciones:censo_ingesta                     JSON {full:{ts,censo}, delta:{ts,censo}} — cuántos procesos
+                                               tiró la cascada de INGESTA y por qué motivo, con ejemplos.
+                                               Es lo único que ve el tramo que el embudo NO puede ver
+                                               (el embudo censa el corpus ya guardado)
 
 ACTIVO — lo que sirve la app (año vigente, procesos abiertos). SE PURGA.
 licitaciones:activo:mes:{YYYY-MM}:manifest     JSON {base, sig, count}  (sig = próximo índice libre)

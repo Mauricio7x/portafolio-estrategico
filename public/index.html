@@ -1289,6 +1289,42 @@
           </p>
         </div>
 
+        <!-- ══════ ¿Por qué no está este proceso? ══════
+             Nace del defecto del 20-ago-2026 (UNIVERSIDAD PEDAGÓGICA NACIONAL:
+             cuatro convocatorias publicadas, una en la app). El dueño no tiene
+             terminal, así que la única forma de que pueda auditar una ausencia
+             es esta caja. Llama a /api/perfil?op=diagnostico&buscar=… -->
+        <details id="rastreo-wrap" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <summary class="cursor-pointer font-semibold tracking-tight">¿Por qué no está este proceso?</summary>
+        <section id="seccion-rastreo" class="mt-4">
+          <p class="max-w-2xl text-sm text-gray-500">
+            Si vio una convocatoria en SECOP II y no la encuentra aquí, escriba su referencia
+            (o el nombre de la entidad, o su NIT) y le decimos exactamente dónde está: si la app la enseña,
+            si está guardada pero apartada, si la descartó al leerla —y por qué regla— o si todavía no la ha leído.
+          </p>
+          <div class="mt-4 flex flex-wrap items-end gap-3">
+            <label class="block grow">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Referencia, entidad o NIT</span>
+              <input id="ra-consulta" type="text" placeholder="UPN-VAD-CP-011-2026"
+                     class="control-campo w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+            </label>
+            <label class="block shrink-0">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
+              <select id="ra-perfil" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="helder">Helder</option>
+                <option value="genesis">Génesis</option>
+                <option value="consorcio">Consorcio</option>
+              </select>
+            </label>
+            <button id="btn-rastrear" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              Buscarlo
+            </button>
+          </div>
+          <div id="ra-resultado" class="mt-5 hidden text-sm"></div>
+        </section>
+        </details>
+
         <!-- ══════ Sincronización con SECOP II ══════ -->
 <details id="sync-wrap" open class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <summary class="cursor-pointer font-semibold tracking-tight">Sincronización con SECOP II (avanzado)</summary>

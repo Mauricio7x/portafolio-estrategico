@@ -5273,6 +5273,73 @@
   $("btn-iniciar").addEventListener("click", iniciarFull);
   $("btn-detener").addEventListener("click", () => detener("usuario"));
 
+  /* ══════════ ¿Por qué no está este proceso? ══════════
+     El dueño vio cuatro convocatorias de la UNIVERSIDAD PEDAGÓGICA NACIONAL en
+     SECOP II y una sola aquí (20-ago-2026), y no había ninguna forma de
+     averiguar dónde habían muerto las otras: el embudo del diagnóstico censa el
+     corpus YA GUARDADO, así que lo descartado en la ingesta no figuraba en
+     ningún sitio. Esta caja consulta `?buscar=` y traduce las cuatro respuestas
+     posibles. NO reimplementa nada: el servidor decide y aquí solo se pinta.
+     `no_consta` se dice como lo que es —la app no lo ha leído—, jamás como «ese
+     proceso no existe»: nadie ha mirado SECOP II desde aquí. */
+  const DONDE = {
+    servido: ["✓", "text-emerald-700", "La aplicación lo está enseñando"],
+    en_corpus: ["●", "text-amber-700", "Guardado, pero apartado por el juicio"],
+    descartado_en_ingesta: ["●", "text-red-700", "Se descartó al leerlo de SECOP II"],
+  };
+  const MOTIVO_LEGIBLE = {
+    modalidad_no_competitiva: "su modalidad no es de convocatoria abierta (no se compite)",
+    estado_no_abierto: "el estado publicado no dice que esté abierto",
+    cierre_vencido: "su fecha límite ya pasó",
+    convenio: "el objeto es un convenio, no una licitación",
+    blacklist_objeto: "el objeto está fuera de lo que hace su empresa",
+    unspsc_fuera_de_la_union: "sus códigos de actividad no caen en las familias de obra",
+    sin_unspsc_ni_obra: "no trae códigos y el objeto no habla de obra",
+    mes_fuera_de_ventana: "su fecha de publicación cae fuera del año que la aplicación guarda",
+  };
+  async function rastrearProceso() {
+    const consulta = String($("ra-consulta").value || "").trim();
+    const caja = $("ra-resultado");
+    caja.classList.remove("hidden");
+    if (consulta.length < 3) { caja.innerHTML = '<p class="text-amber-700">Escriba al menos 3 caracteres.</p>'; return; }
+    caja.innerHTML = '<p class="text-gray-500">Buscándolo…</p>';
+    let r, cuerpo;
+    try {
+      r = await fetch(`/api/perfil?op=diagnostico&perfil=${encodeURIComponent($("ra-perfil").value)}&buscar=${encodeURIComponent(consulta)}`,
+        { headers: { "x-historico-token": TOKEN } });
+    } catch {
+      caja.innerHTML = '<p class="text-red-700">No se pudo contactar el servidor.</p>'; return;
+    }
+    cuerpo = await leerJson(r);
+    if (r.status === 401 || r.status === 403) { caja.innerHTML = `<p class="text-red-700">${esc(msg401(cuerpo))}</p>`; return; }
+    if (!r.ok || !cuerpo.ok) { caja.innerHTML = `<p class="text-red-700">${esc(cuerpo.error || "No se pudo consultar.")}</p>`; return; }
+
+    if (!cuerpo.encontrados) {
+      caja.innerHTML = `<div class="rounded-xl bg-gray-50 p-4">
+        <p class="font-medium">No consta en la aplicación</p>
+        <p class="mt-1 text-gray-600">${esc(cuerpo.explicacion || "")}</p>
+        <p class="mt-2 text-gray-600"><strong>Qué hacer:</strong> ${esc(cuerpo.siguiente_paso || "")}</p>
+      </div>`;
+      return;
+    }
+    caja.innerHTML = cuerpo.resultados.map((x) => {
+      const [punto, clase, titulo] = DONDE[x.donde] || ["●", "text-gray-700", x.donde];
+      const porque = x.donde === "descartado_en_ingesta"
+        ? (MOTIVO_LEGIBLE[x.motivo] || x.motivo)
+        : (x.explicacion || "");
+      return `<div class="mb-3 rounded-xl bg-gray-50 p-4">
+        <p class="font-medium ${clase}">${punto} ${esc(titulo)}</p>
+        <p class="mt-1 font-medium">${esc(x.referencia || x.id_proceso || "")}</p>
+        <p class="text-gray-600">${esc(x.entidad || "")}</p>
+        ${x.objeto ? `<p class="mt-1 text-gray-600">${esc(x.objeto)}</p>` : ""}
+        ${porque ? `<p class="mt-2 text-gray-700"><strong>Por qué:</strong> ${esc(porque)}</p>` : ""}
+        ${x.estado || x.fase ? `<p class="mt-1 text-xs text-gray-500">Estado publicado: ${esc(x.estado || "—")} · Fase: ${esc(x.fase || "—")}</p>` : ""}
+      </div>`;
+    }).join("");
+  }
+  $("btn-rastrear").addEventListener("click", rastrearProceso);
+  $("ra-consulta").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); rastrearProceso(); } });
+
   // cerrar la pestaña a mitad no rompe nada, pero conviene avisarlo
   window.addEventListener("beforeunload", (e) => {
     if (!activo) return;

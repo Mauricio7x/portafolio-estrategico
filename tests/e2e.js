@@ -1560,9 +1560,30 @@ async function main() {
       // silencio por caer en "desconocido = cerrado" (ver lib/filtros).
       [{ estado_del_procedimiento: "Activo" }, true],
       [{ estado_del_procedimiento: "Activo", fase: "Selección" }, true],
-      // ...pero el cierre sigue ganando: añadirlo NO puede resucitar un cerrado
-      [{ estado_del_procedimiento: "Activo", fase: "Adjudicación" }, false],
+      /* ⚠️ UNA `fase` REZAGADA YA NO PUEDE MATAR UN PROCESO PUBLICADO
+         (20-ago-2026). Estas dos líneas esperaban `false` y eran el defecto:
+         `fase` VETABA a `estado_del_procedimiento`, que es la columna
+         autoritativa (100 % poblada, docs/datos.md §6) frente al 98,7 % de
+         `fase`. Y que `fase` va REZAGADA está probado en la captura del
+         ingeniero: UPN-VAD-CP-008-2026 figura como «Proceso adjudicado y
+         celebrado» con Fase actual «Presentación de oferta». Si retrasa en un
+         sentido retrasa en el otro, y como el filtro de estado corre en la
+         INGESTA, esos procesos no llegaban a Redis ni aparecían en el embudo:
+         desaparecían sin rastro. Lo que cierra un proceso de verdad son las
+         DOS señales duras —`adjudicado="Si"` y el reloj—, y siguen cerrando
+         (las dos líneas de abajo). Ver lib/filtros.estado_abierto. */
+      [{ estado_del_procedimiento: "Activo", fase: "Adjudicación" }, true],
+      [{ estado_del_procedimiento: "Publicado", fase: "Evaluación" }, true],
       [{ estado_del_procedimiento: "Activo", adjudicado: "Si" }, false],
+      [{ estado_del_procedimiento: "Activo", fase: "Adjudicación", adjudicado: "Si" }, false],
+      [{ estado_del_procedimiento: "Publicado", fase: "Adjudicación", fecha_cierre: "2020-02-20T17:00:00.000" }, false],
+      // la fase SÍ habla cuando la columna autoritativa no dice nada reconocible
+      [{ estado_del_procedimiento: "Estado rarísimo nuevo", fase: "Adjudicación" }, false],
+      [{ estado_del_procedimiento: "Estado rarísimo nuevo", fase: "Presentación de oferta" }, true],
+      [{ fase: "Presentación de oferta" }, true],
+      // literales con el prefijo «Proceso » que SECOP II usa en su interfaz
+      [{ estado_del_procedimiento: "Proceso publicado" }, true],
+      [{ estado_del_procedimiento: "Proceso adjudicado y celebrado" }, false],
       /* ...y NO puede arrastrar al literal que significa lo contrario. La
          coincidencia es por prefijo en ambos sentidos, así que un vecino como
          «Inactivo» es justo lo que una lista de estados puede tragarse sin que
@@ -1576,7 +1597,6 @@ async function main() {
       [{ estado_del_procedimiento: "Evaluación de ofertas" }, false],
       [{ estado_del_procedimiento: "Declarado desierto" }, false],
       [{ estado_del_procedimiento: "Publicado", adjudicado: "Si" }, false], // señal dura gana
-      [{ estado_del_procedimiento: "Publicado", fase: "Ejecución" }, false], // cerrado gana
       [{ estado_del_procedimiento: "Estado rarísimo nuevo" }, false],  // desconocido = cerrado
       [{}, false],                                                     // sin dato = cerrado
     ];
@@ -1585,6 +1605,163 @@ async function main() {
         `estado_abierto(${JSON.stringify(lic)}) esperaba ${esperado}`);
     }
     console.log(`· unidad estados: ${casos.length} clasificaciones correctas (desconocido = cerrado)`);
+
+    /* ═══ LA CONVOCATORIA QUE SECOP II PUBLICA Y LA APP NO ENSEÑABA ═══════════
+       Defecto de producción del 20-ago-2026: la UNIVERSIDAD PEDAGÓGICA NACIONAL
+       tenía cuatro convocatorias publicadas y la app enseñaba una. La prueba NO
+       es una regex sobre el fuente —eso demuestra que una función se llama, no
+       lo que decide—: ejecuta la CASCADA DE INGESTA REAL sobre la fila tal y
+       como la publica el dataset y exige que entre al corpus.
+
+       Y por MUTACIÓN: con la regla vieja («cerrado gana siempre», `fase` en pie
+       de igualdad con la columna autoritativa) los tres procesos abiertos
+       desaparecían. El caso es exactamente el de la captura del ingeniero, con
+       su rezago de `fase` incluido. */
+    {
+      const { transformar } = require("../lib/proyeccion.js");
+      const filaUpn = (ref, objeto, fase) => ({
+        ":id": `upn-${ref}`, ":updated_at": "2026-08-19T03:33:00.000Z",
+        id_del_proceso: `CO1.REQ.UPN${ref}`, referencia_del_proceso: `UPN-VAD-CP-${ref}-2026`,
+        nombre_del_procedimiento: `UPN-VAD-CP-${ref}-2026`, descripci_n_del_procedimiento: objeto,
+        entidad: "UNIVERSIDAD PEDAGOGICA NACIONAL", nit_entidad: "899999124",
+        departamento_entidad: "Distrito Capital de Bogotá",
+        modalidad_de_contratacion: "Contratación régimen especial (con ofertas)",
+        // la columna AUTORITATIVA dice que está publicado…
+        estado_del_procedimiento: "Publicado", adjudicado: "No",
+        // …y `fase` va REZAGADA. Que va rezagada está probado en la propia
+        // captura: UPN-VAD-CP-008-2026 está «adjudicado y celebrado» con Fase
+        // actual «Presentación de oferta».
+        fase,
+        fecha_de_publicacion_del: "2026-08-18T22:33:00.000",
+        fecha_de_recepcion_de: "2100-08-28T11:00:00.000", // futura: el reloj no puede cerrarla
+        precio_base: "1348958930.99", duracion: "4", unidad_de_duracion: "Meses",
+        codigo_principal_de_categoria: "V1.72101500", tipo_de_contrato: "Obra",
+      });
+      const abiertas = [
+        filaUpn("011", "Realizar las adecuaciones de infraestructura física en los diferentes ambientes de aprendizaje de la UPN", "Evaluación"),
+        filaUpn("012", "Realizar las adecuaciones de infraestructura física de la piscina ubicada en las instalaciones de la Calle 72 de la UPN", "Adjudicación"),
+        filaUpn("009", "Realizar la fase II de las adecuaciones de las cubiertas del IPN", "Presentación de oferta"),
+      ];
+      assert.strictEqual(transformar(abiertas).length, 3,
+        "una `fase` rezagada NO puede tirar de la ingesta una convocatoria que el estado declara Publicado");
+
+      // …y las DOS señales duras siguen cerrando: el error no cayó del otro lado
+      const adjudicada = { ...filaUpn("008", "Realizar la intervención ambiental, manejo fitosanitario y control", "Presentación de oferta"), adjudicado: "Si" };
+      assert.strictEqual(transformar([adjudicada]).length, 0, "`adjudicado=Si` sigue cerrando");
+      const vencida = { ...filaUpn("007", "Realizar las adecuaciones de la cubierta", "Presentación de oferta"), fecha_de_recepcion_de: "2026-02-20T17:00:00.000" };
+      assert.strictEqual(transformar([vencida]).length, 0, "el reloj sigue cerrando");
+
+      // el literal que SECOP II enseña en su propia interfaz
+      assert.strictEqual(filtros.estado_cerrado({ estado_del_procedimiento: "Proceso adjudicado y celebrado" }), true,
+        "«Proceso adjudicado y celebrado» tiene que constar como CERRADO, no como estado desconocido");
+      console.log("· unidad UPN (fase rezagada): 3 convocatorias publicadas entran a la ingesta; adjudicado=Si y el reloj siguen cerrando");
+    }
+
+    /* ═══ EL PUNTO CIEGO: los descartes de la ingesta ahora se CUENTAN ════════
+       El embudo de /api/diagnostico censa el corpus YA GUARDADO, así que un
+       proceso que la cascada de ingesta tiró no aparecía en ninguna cubeta de
+       ningún sitio. `lib/censo_ingesta` lo hace contable. La invariante que de
+       verdad cierra esto es que NADA se pierda entre las cubetas: si alguien
+       añade un `continue` sin registrar, `cuadra` se cae. */
+    {
+      const { crearCenso, MOTIVOS } = require("../lib/censo_ingesta.js");
+      const { transformar, repartirDelta } = require("../lib/proyeccion.js");
+      const base = {
+        ":id": "c1", ":updated_at": "2026-08-19T00:00:00.000Z", id_del_proceso: "CO1.REQ.C1",
+        entidad: "MUNICIPIO DE PRUEBA", estado_del_procedimiento: "Publicado",
+        fecha_de_publicacion_del: "2026-08-10T10:00:00.000", fecha_de_recepcion_de: "2100-09-10T10:00:00.000",
+        precio_base: "500000000", tipo_de_contrato: "Obra",
+      };
+      const lote = [
+        // uno por motivo de la cascada, más uno que pasa
+        { ...base, modalidad_de_contratacion: "Contratación directa", descripci_n_del_procedimiento: "Construcción de placa huella" },
+        { ...base, modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Adjudicado", descripci_n_del_procedimiento: "Construcción de placa huella" },
+        { ...base, modalidad_de_contratacion: "Licitación pública", fecha_de_recepcion_de: "2026-02-01T10:00:00.000", descripci_n_del_procedimiento: "Construcción de placa huella" },
+        { ...base, modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "AUNAR ESFUERZOS TÉCNICOS, ADMINISTRATIVOS Y FINANCIEROS para la obra" },
+        { ...base, modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "ADIESTRAMIENTO DE CANINOS" },
+        // 1010 (animales vivos) está FUERA de las familias de ingesta: trae código y
+        // ninguno cae en la unión — que es justo lo que distingue este motivo del siguiente
+        { ...base, modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "Compra de mobiliario escolar", codigo_principal_de_categoria: "V1.10101500" },
+        { ...base, modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "Servicio de mensajería urbana" },
+        { ...base, modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "Construcción de placa huella en la vereda El Alto", codigo_principal_de_categoria: "V1.72141000" },
+      ];
+      const censo = crearCenso();
+      const guardados = transformar(lote, { censo });
+      const r = censo.resumen();
+      assert.strictEqual(r.leidas, lote.length, "el censo tiene que ver todas las filas leídas");
+      assert.strictEqual(r.aceptadas, guardados.length, "`aceptadas` es exactamente lo que la cascada devolvió");
+      assert.ok(r.cuadra, `el censo no cuadra: ${r.leidas} ≠ ${r.aceptadas} + ${r.descartadas} — hay un descarte sin registrar`);
+      for (const m of ["modalidad_no_competitiva", "estado_no_abierto", "cierre_vencido", "convenio", "blacklist_objeto", "unspsc_fuera_de_la_union", "sin_unspsc_ni_obra"]) {
+        assert.strictEqual(r.por_motivo[m], 1, `el motivo «${m}» debía disparar exactamente una vez (${r.por_motivo[m]})`);
+      }
+      // un motivo en CERO se publica igual: «no aparece» y «no descarta nada»
+      // son cosas distintas y la primera se lee como la segunda
+      for (const m of MOTIVOS) assert.ok(typeof r.por_motivo[m] === "number", `el motivo «${m}» tiene que publicarse aunque valga 0`);
+      assert.strictEqual(r.por_motivo.mes_fuera_de_ventana, 0);
+      // los ejemplos permiten RECONOCER el proceso, y llevan tope
+      assert.ok(r.ejemplos.convenio[0].entidad === "MUNICIPIO DE PRUEBA" && r.ejemplos.convenio[0].objeto);
+      // el delta conserva los cerrados a propósito: allí no hay cubeta de estado
+      const censoD = crearCenso();
+      const rep = repartirDelta(lote, { censo: censoD });
+      const rd = censoD.resumen();
+      assert.ok(rd.cuadra, "el censo del delta tampoco puede perder filas entre cubetas");
+      assert.strictEqual(rd.aceptadas, rep.activo.length);
+      assert.strictEqual(rd.por_motivo.estado_no_abierto + rd.por_motivo.cierre_vencido, 0,
+        "el delta CONSERVA los cerrados (dedup por :updated_at): no puede haber descartes por estado");
+      /* FUSIONAR NO PUEDE CONTAR DOS VECES. El censo es acumulativo de la
+         INVOCACIÓN: guardarlo con `acumular` en cada mes cerrado sumaba dos
+         veces lo del mes anterior (C1, luego C1+C2 → 2·C1+C2). Lo cazó la
+         revisión del propio arreglo, y esta es su cerradura: la fusión suma, y
+         por eso solo puede llamarse UNA vez por invocación (en sus dos
+         salidas). Hay una prueba del fuente justo debajo. */
+      const { fusionar } = require("../lib/censo_ingesta.js");
+      const f = fusionar({ leidas: 10, aceptadas: 6, por_motivo: { convenio: 4 }, ejemplos: {} },
+        { leidas: 5, aceptadas: 3, por_motivo: { convenio: 2 }, ejemplos: {} });
+      assert.strictEqual(f.leidas, 15);
+      assert.strictEqual(f.por_motivo.convenio, 6);
+      assert.ok(f.cuadra === false || f.aceptadas + f.descartadas === f.leidas);
+      assert.deepStrictEqual(fusionar(null, { leidas: 1, aceptadas: 1, por_motivo: {}, ejemplos: {} }).leidas, 1);
+      {
+        const fuente = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", "sync.js"), "utf8");
+        const enFull = (fuente.match(/guardarCenso\(redis, "full"/g) || []).length;
+        assert.strictEqual(enFull, 2,
+          "la full persiste su censo EXACTAMENTE en sus dos salidas (presupuesto agotado y fin): "
+          + "un punto más y el acumulado cuenta dos veces lo ya censado en esa invocación");
+        assert.ok(/acumular: !fullNueva/.test(fuente) && /acumular: \(ciclo\.invocaciones \|\| 0\) > 0/.test(fuente),
+          "una carga NUEVA reemplaza el censo; solo las continuaciones acumulan");
+      }
+      console.log(`· unidad censo de ingesta: ${r.descartadas} descartes clasificados en ${Object.values(r.por_motivo).filter(Boolean).length} motivos, la suma cuadra y el delta conserva los cerrados`);
+    }
+
+    /* ═══ «¿POR QUÉ NO ESTÁ ESTE PROCESO?» (lib/rastreo) ══════════════════════
+       La pregunta que el dueño no podía hacer. Cuatro respuestas posibles y
+       ninguna de ellas afirma más de lo que se sabe: `no_consta` NO dice que el
+       proceso no exista en SECOP II, dice que la app no lo tiene. */
+    {
+      const { rastrear } = require("../lib/rastreo.js");
+      const fila = {
+        _k: "k1", referencia_del_proceso: "UPN-VAD-CP-011-2026", entidad: "UNIVERSIDAD PEDAGOGICA NACIONAL",
+        descripci_n_del_procedimiento: "Adecuaciones de infraestructura física", nit_entidad: "899999124",
+      };
+      const servido = rastrear("upn-vad-cp-011", { filas: [fila], evaluar: () => ({ visible: true }) });
+      assert.strictEqual(servido.resultados[0].donde, "servido");
+      const apartado = rastrear("899999124", { filas: [fila], evaluar: () => ({ visible: false, rup: { motivo: "clase fuera del RUP" } }) });
+      assert.strictEqual(apartado.resultados[0].donde, "en_corpus");
+      assert.strictEqual(apartado.resultados[0].explicacion, "clase fuera del RUP");
+      const tirado = rastrear("UPN-VAD-CP-012", {
+        filas: [],
+        censo: { por_motivo: { estado_no_abierto: 4 }, ejemplos: { estado_no_abierto: [{ referencia: "UPN-VAD-CP-012-2026", entidad: "UNIVERSIDAD PEDAGOGICA NACIONAL", objeto: "Piscina" }] } },
+      });
+      assert.strictEqual(tirado.resultados[0].donde, "descartado_en_ingesta");
+      assert.strictEqual(tirado.resultados[0].motivo, "estado_no_abierto");
+      const nada = rastrear("proceso-que-no-existe", { filas: [], censo: null });
+      assert.strictEqual(nada.donde, "no_consta");
+      assert.ok(!/no existe en SECOP/i.test(nada.explicacion.replace(/NO quiere decir que no exista en SECOP II/i, "")),
+        "`no_consta` no puede afirmar que el proceso no exista: la app no ha mirado SECOP II");
+      assert.ok(nada.siguiente_paso, "una respuesta vacía sin siguiente paso es un callejón sin salida");
+      assert.strictEqual(rastrear("ab", {}).ok, false, "una consulta de 2 caracteres devolvería medio corpus");
+      console.log("· unidad rastreo: servido · en_corpus con su motivo · descartado_en_ingesta con el del censo · no_consta sin afirmar de más");
+    }
 
     /* EL RELOJ CIERRA PROCESOS (ago 2026, defecto de producción).
        «INVITACION PRIVADA EDUH-Turbo» cerraba el 20/02/2026 y seguía servido
@@ -8716,6 +8893,40 @@ async function main() {
       const rDia = await invocar(diagnostico, "/api/diagnostico?perfil=helder&muestra=1", CAB_TOKEN);
       assert.strictEqual(c.totales.visibles, rDia.cuerpo.embudo.visibles,
         "el panel y el diagnóstico no cuentan lo mismo");
+
+      /* ═══ EL CENSO DE INGESTA VIAJA, Y `?buscar=` RESPONDE ═════════════════
+         Defecto del 20-ago-2026: un proceso descartado en la ingesta no
+         figuraba en ninguna cubeta de ningún endpoint, así que «¿por qué no
+         está?» no tenía respuesta. Se comprueba de punta a punta, con el
+         handler REAL y el corpus REAL de la suite. */
+      {
+        assert.ok(rDia.cuerpo.censo_ingesta, "el diagnóstico debe publicar el censo de la ingesta");
+        const cIng = (rDia.cuerpo.censo_ingesta.full || {}).censo || (rDia.cuerpo.censo_ingesta.delta || {}).censo;
+        assert.ok(cIng && cIng.cuadra,
+          `el censo publicado no cuadra: ${cIng && cIng.leidas} ≠ ${cIng && cIng.aceptadas} + ${cIng && cIng.descartadas}`);
+        assert.ok(cIng.descartadas > 0, "la full de la suite descarta procesos: el censo tiene que verlos");
+
+        // un proceso que la app SÍ sirve: la respuesta lo dice sin rodeos
+        const alguno = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN)).cuerpo.resultados[0];
+        const clave = alguno.id_del_proceso || alguno.id || alguno.referencia_del_proceso || alguno.nombre_del_procedimiento;
+        assert.ok(clave, `la ficha del listado no trae con qué buscarla: ${Object.keys(alguno).join(",")}`);
+        const rb = await invocar(diagnostico,
+          `/api/diagnostico?perfil=helder&buscar=${encodeURIComponent(clave)}`, CAB_TOKEN);
+        assert.strictEqual(rb.status, 200);
+        assert.ok(rb.cuerpo.encontrados >= 1, "un proceso que la app sirve tiene que encontrarse");
+        // la búsqueda es por texto y puede casar varios: basta con que ESE conste como servido
+        assert.ok(rb.cuerpo.resultados.some((x) => x.donde === "servido"),
+          `un proceso que /api/oportunidades acaba de servir no puede constar como no servido: ${JSON.stringify(rb.cuerpo.resultados.map((x) => [x.referencia, x.donde]))}`);
+
+        // …y uno que no existe NO se declara inexistente: se dice que la app no lo tiene
+        const rn = await invocar(diagnostico, "/api/diagnostico?perfil=helder&buscar=ZZZ-NO-EXISTE-9999", CAB_TOKEN);
+        assert.strictEqual(rn.cuerpo.donde, "no_consta");
+        assert.ok(rn.cuerpo.siguiente_paso, "una ausencia sin siguiente paso es un callejón sin salida");
+        // sigue exigiendo credencial: es una vista del diagnóstico
+        assert.strictEqual((await invocar(diagnostico, "/api/diagnostico?perfil=helder&buscar=lo-que-sea")).status, 401,
+          "`?buscar=` no puede saltarse el token del diagnóstico");
+        console.log("  · censo de ingesta publicado y `?buscar=` responde: servido / no_consta, con token");
+      }
 
       // 2-4. los repartos describen EXACTAMENTE el conjunto visible
       const suma = (o) => Object.values(o).reduce((a, b) => a + b, 0);
