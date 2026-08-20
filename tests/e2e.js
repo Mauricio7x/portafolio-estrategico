@@ -17370,7 +17370,59 @@ async function main() {
          segunda, además, se devuelve al liquidar). */
       assert.ok(porId("contribucion_obra")[0].ya_en_el_motor, "la contribución ya la aplica el motor");
       assert.ok(porId("retegarantia")[0].ya_en_el_motor, "la retegarantía ya la modela el motor y además se devuelve");
-      assert.strictEqual(r.total_aplicable_pct, 6.2, "a teclear = leído − lo que el motor ya aplica");
+
+      /* ═══ LO QUE SE PIERDE Y LO QUE VUELVE SON DOS COSAS (ago 2026) ═══════
+         Un booleano `ya_en_el_motor` mezclaba dos razones distintas para no
+         sumar un concepto y dejaba en la cubeta de PÉRDIDA REAL la retención en
+         la fuente, que es un ANTICIPO del impuesto de RENTA —el que grava la
+         ganancia, no lo facturado— y se cruza en la declaración del año.
+         Restarla del margen de la obra cobra la renta dos veces. Esta aserción
+         valía 6,2 con el defecto: ahora vale 3,7, y la diferencia (2,5 pp) es
+         exactamente la retefuente que se había colado. */
+      assert.strictEqual(r.total_aplicable_pct, 3.7,
+        "a teclear = solo la PÉRDIDA REAL que el motor no aplica ya (estampillas 1 + 2 y ReteICA 0,7)");
+      assert.strictEqual(r.total_caja_pct, 7.5,
+        "lo recuperable viaja APARTE con su nombre: retefuente 2,5 + retegarantía 5");
+      assert.strictEqual(porId("retefuente")[0].naturaleza, "caja",
+        "la retención en la fuente es un anticipo de renta: aprieta la caja, no el margen");
+      assert.strictEqual(porId("reteica")[0].naturaleza, "costo",
+        "el ReteICA SÍ es pérdida: el ICA se debe igual sobre lo facturado en ese municipio");
+      assert.strictEqual(porId("estampilla")[0].naturaleza, "costo");
+      /* La suma de las dos cubetas tiene que reproducir lo leído menos lo que el
+         motor ya aplica: si no, un concepto se perdió por el camino en silencio. */
+      /* Solo los COSTOS que el motor ya aplica: los de caja que además modela
+         (la retegarantía) ya están dentro de `total_caja_pct`, y sumarlos aquí
+         los contaría dos veces — lo cazó esta misma invariante al escribirla. */
+      const yaMotor = r.conceptos.filter((c) => c.ya_en_el_motor && c.base === "valor" && c.naturaleza !== "caja")
+        .reduce((a, c) => a + c.pct, 0);
+      assert.strictEqual(Math.round((r.total_aplicable_pct + r.total_caja_pct + yaMotor) * 100) / 100, r.total_pct,
+        "pérdida + caja + lo del motor tiene que ser el total leído: ninguna cubeta puede tragarse un concepto");
+      /* Cada concepto explica su naturaleza en castellano: sin eso, «caja» es
+         una etiqueta que el contratista no puede discutir. */
+      for (const c of r.conceptos) {
+        assert.ok(c.nota_naturaleza && c.nota_naturaleza.length > 20, `«${c.id}» tiene que explicar por qué es ${c.naturaleza}`);
+        assert.ok(c.base === "valor" || c.base === "impuesto");
+      }
+
+      /* ═══ NO SE SUMAN PORCENTAJES DE BASES DISTINTAS ═════════════════════
+         La retención de IVA es un % DEL IMPUESTO, y en construcción el IVA se
+         causa solo sobre la utilidad (art. 3 D. 1372/1992). Sumar su 15 % junto
+         a un 2 % del contrato da un «17 %» que no significa nada: se publica el
+         concepto y se deja fuera de todo total, contándolo para que su ausencia
+         no parezca un olvido. */
+      {
+        const conIva = leerDeducciones([
+          "Retencion en la fuente del 2% sobre cada pago.",
+          "Retencion de IVA del 15% sobre el impuesto facturado.",
+        ].join("\n"));
+        assert.strictEqual(conIva.conceptos.length, 2, "los dos se LEEN");
+        assert.strictEqual(conIva.conceptos.find((c) => c.id === "reteiva").base, "impuesto");
+        assert.strictEqual(conIva.conceptos_en_otra_base, 1, "el que no comparte base se CUENTA");
+        assert.strictEqual(conIva.total_pct, 2, "el total solo suma lo que va sobre el valor del contrato");
+        assert.strictEqual(conIva.total_caja_pct, 2, "el 15 % del IVA no puede colarse en la caja del contrato");
+        assert.strictEqual(conIva.total_aplicable_pct, 0,
+          "ninguna de las dos es pérdida real: un 0 MEDIDO aquí es un dato, no una ausencia");
+      }
 
       /* Cada concepto se puede auditar sin reabrir el PDF. */
       for (const c of r.conceptos) {

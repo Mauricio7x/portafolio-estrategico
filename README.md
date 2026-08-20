@@ -26,7 +26,7 @@
 >
 > | Qué | Estado | De qué depende |
 > | --- | --- | --- |
-> | Deducciones reales (estampillas, ReteICA) | Se **leen del pliego** (`/api/pliego?op=deducciones`), con evidencia y página | Falta enlazarlo a la pantalla de Precios para aplicarlo con un clic — **aparcado a petición del dueño** |
+> | Deducciones reales (estampillas, ReteICA) | Se **leen del pliego** (`/api/pliego?op=deducciones`), con evidencia y página, **separando lo que se pierde de lo que vuelve** (la retefuente es anticipo de renta y la retegarantía se devuelve: ninguna se resta del margen) | Falta enlazarlo a la pantalla de Precios para aplicarlo con un clic — **aparcado a petición del dueño** |
 > | Medir el lector de pliegos contra formatos REALES de SECOP II | **Aparcado a petición del dueño** | Un corpus de 15-20 pliegos reales que hoy no existe |
 > | Descargar las ofertas del traslado | No existe | El dataset no trae documentos: exigiría raspar SECOP II |
 > | Tabla de trazabilidad de subsanaciones | No existe | Fuera del alcance: la app decide a qué presentarse, no arma la carpeta |
@@ -322,7 +322,7 @@ ganancia = V × (1 − τ) − CD × (1 + (A + I)/100)          ⟺   (V − pis
 | `V` (`precio_esperado`) | `presupuesto_oficial × (1 − baja_mediana)` con **n ≥ 5** (`lib/indice_baja`, el MISMO techo del panel Piso/Techo). Sin base, el presupuesto oficial, declarado en `supuestos` |
 | `CD` (`costo_directo`) | **`base: "apu"`** → el `costo_directo_guardado` del borrador de ESE proceso (medido). **`base: "estructura_de_precio"`** → cerrado por la identidad de la oferta, `V / (1 + (A+I+U)/100)`, declarado |
 | `A`, `I`, `U` | La configuración del borrador del proceso; si no, la del último borrador guardado (`config_reciente`); si no, la de referencia 15/5/5 **y se declara** |
-| `τ` (`tau_pct`) | Contribución de obra pública 5 % (Ley 418/1997 art. 120) **solo en contratos de OBRA** + `deducciones_pct` cargadas. Una interventoría o una consultoría es contrato de consultoría y **no la causa** |
+| `τ` (`tau_pct`) | Contribución de obra pública 5 % (Ley 418/1997 art. 120) **solo en contratos de OBRA** + `deducciones_pct` cargadas. Una interventoría o una consultoría es contrato de consultoría y **no la causa** . `deducciones_pct` lleva **solo PÉRDIDA REAL**: el lector del pliego publica `total_aplicable_pct` (lo que se teclea) y `total_caja_pct` aparte (retefuente y retegarantía, que se recuperan), y no suma porcentajes de bases distintas |
 
 Campos: `valor` · `por_intento` (× `p_ganar`; `null` sin probabilidad, jamás 0) · `base` ·
 `precio_esperado` / `origen_precio` · `costo_directo` · `costo_sin_ganancia` (NO `costo_total`: ese

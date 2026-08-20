@@ -4282,6 +4282,61 @@ los tres encontrados cualquiera bastaba para voltear el signo.
   una sesión paralela del mismo día). Se fusionó a esta rama antes de corregir para que exista **una sola
   versión** de la cifra; sin eso habría dos `lib/ganancia.js` divergiendo desde el primer día.
 
+### Lo que se pierde y lo que vuelve: retenciones mal clasificadas (20-ago-2026)
+
+Salió de contrastar una investigación externa sobre utilidad real en obra pública contra el código. De
+sus tesis, **una era un defecto real y verificable** y el resto o ya estaba implementado, o no es
+implementable con lo que hay, o está mal en el propio informe (ver abajo).
+
+- **LA RETENCIÓN EN LA FUENTE NO ES UNA PÉRDIDA, Y SE ESTABA RESTANDO DEL MARGEN.** `lib/deducciones`
+  clasificaba con un solo booleano, `ya_en_el_motor`, que MEZCLA dos razones distintas para no sumar un
+  concepto —«el motor ya lo aplica» (contribución) y «vuelve, no es pérdida» (retegarantía)— y dejaba en
+  la cubeta de pérdida real la **retefuente** y la **ReteIVA**. La retefuente es un ANTICIPO del impuesto
+  de RENTA, que grava la utilidad y no lo facturado: se cruza en la declaración del año, y restarla del
+  margen de la obra cobra la renta dos veces. Medido sobre una cláusula realista de un contrato de
+  $3.216 M: `total_aplicable_pct` pasaba de **18,97 % a 1,97 %**, o sea **$547 M** que se restaban del
+  margen y no se pierden. Ahora `naturaleza` («costo» | «caja») es el eje y `ya_en_el_motor` queda como
+  nota ortogonal; `total_caja_pct` viaja aparte para poder enseñarlo sin restarlo.
+  · **El ReteICA SÍ es pérdida y por otra razón**: el ICA se debe igual sobre lo facturado en ese
+    municipio, así que la retención es el cobro anticipado de un impuesto que no vuelve. Se declara la
+    aproximación (tarifa de retención ≈ tarifa de ICA).
+- **NO SE SUMAN PORCENTAJES DE BASES DISTINTAS.** La ReteIVA es un % **del impuesto**, y en construcción
+  el IVA se causa solo sobre la utilidad (art. 3 D. 1372/1992): sumar su 15 % junto a un 2 % del
+  contrato daba un «17 %» que no significa nada. Cada concepto declara `base` («valor» | «impuesto»),
+  los totales suman solo `valor`, y los de otra base se CUENTAN (`conceptos_en_otra_base`) para que su
+  ausencia del total no parezca un olvido. Es la lección de `total_procesos`/`procesos_contados` aplicada
+  a las unidades.
+- **La invariante cazó un error propio al escribirla**: `pérdida + caja + (costo ya en el motor) = total
+  leído`. El primer intento sumaba TODO lo `ya_en_el_motor` y contaba la retegarantía dos veces (es caja
+  Y la modela el motor). Una cubeta que se traga un concepto no se ve en ninguna cifra: por eso la
+  invariante existe.
+
+**TRES TESIS DEL INFORME QUE NO SE IMPLEMENTARON, con el motivo exacto:**
+- **Estampilla Pro-Universidad Nacional (Ley 1697/2013, 0,5/1/2 % por cuantía).** Sería un dato DURO —la
+  app ya conoce la cuantía y el SMMLV— pero aplica solo a entidades del **orden nacional**, y el corpus
+  no proyecta ninguna columna de orden/nivel. Se intentó llamar a la fuente (la regla de la casa: un 403
+  con fecha no es una propiedad del entorno) y **hoy `www.datos.gov.co` responde 403 desde aquí**. Poner
+  un 2 % sobre una columna supuesta es exactamente el error que este trabajo corrige. Para cerrarlo:
+  verificar que `p6dx-8zbt` publique el orden de la entidad, proyectarlo, y solo entonces aplicar la
+  tarifa por tramo de cuantía.
+- **Concesiones no causan la contribución del 5 %.** Cierto, pero `lib/filtros_lista` no clasifica
+  concesiones y fabricar esa clasificación para esto sería inventar un tipo de trabajo.
+- **Márgenes sectoriales (8,24 % macrosector, obras civiles entre −19,4 % y 9,7 %).** No alimentan
+  ningún cálculo y el propio informe declara que la cifra de obras civiles es académica, no oficial. Una
+  cifra sin fuente verificable no entra a una herramienta con la que se fija un precio.
+
+**DOS ERRORES DEL INFORME, medidos:**
+- **Su aritmética del umbral mezcla las dos bases en el párrafo donde advierte de no mezclarlas.** Dice
+  «U = 5 % **del valor**» y lo compara con un 7 % del valor para concluir que el umbral ronda el 6-7 %,
+  y afirma que coincide «exactamente» con el 6,32 % que calcula el motor. No coinciden: **6,32 %
+  corresponde a τ = 5 %** (solo contribución); con el τ = 7 % que el informe usa, el umbral es **9,03 %
+  del costo directo** (comprobado ejecutando `utilidadMinimaParaNoPerder`). Llegó a un número parecido
+  por una compensación de errores, no por el razonamiento.
+- **La doctrina de las salvedades que cita está superada.** Afirma que firmar un otrosí sin salvedades
+  convalida las reclamaciones previas; el Consejo de Estado **unificó en 2023** (Sección Tercera, 27 jul)
+  que su ausencia al pactar suspensiones, prórrogas o modificaciones **NO impide** reclamar, y que la
+  exigencia opera en la liquidación bilateral. Ya estaba corregido en esta memoria desde ago 2026.
+
 ### Los pendientes declarados, cerrados (ago 2026)
 
 La auditoría integral dejó cinco hallazgos **sin corregir y dichos**. Se cerraron después, y lo que
