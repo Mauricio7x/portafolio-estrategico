@@ -431,19 +431,20 @@
     const nBadge = $("btn-filtros-n");
     if (nBadge) { nBadge.textContent = String(fichas.length); nBadge.classList.toggle("hidden", !fichas.length); }
   }
-  /* El aviso de manifestación de interés bajo la barra: cuántos procesos de
-     menor cuantía siguen con el plazo abierto y cuántos vencen hoy o mañana
-     hábil. Solo se enseña con datos (facetas del servidor); con el filtro ya
-     puesto dice que se están viendo. */
+  /* El aviso bajo la barra: en cuántos procesos pequeños todavía se puede
+     avisar que le interesa y en cuántos el plazo puede estar cerrando hoy
+     (`urgentes` ⊂ `abiertas`, del servidor). Nunca dice «vencen mañana»: la
+     fecha exacta la fija el pliego, no la ley. Solo se enseña con datos; con el
+     filtro ya puesto dice que se están viendo. */
   function pintarAvisoManifestacion(fm) {
     const caja = $("aviso-manifestacion");
     if (!caja) return;
     if (!fm || !fm.abiertas) { caja.classList.add("hidden"); caja.classList.remove("flex"); return; }
     const t = $("aviso-manifestacion-texto"), b = $("aviso-manifestacion-ver");
     const puesto = estadoFiltros.manif === "abierta";
-    t.textContent = `Manifestación de interés: ${fm.abiertas} proceso${fm.abiertas === 1 ? "" : "s"} de menor cuantía con el plazo abierto`
-      + (fm.urgentes ? ` — ${fm.urgentes} vence${fm.urgentes === 1 ? "" : "n"} en los próximos 2 días hábiles` : "")
-      + (puesto ? " (se muestran solo estos)." : ". Sin manifestar interés en SECOP II no se puede ofertar.");
+    t.textContent = `Avisar que le interesa: ${fm.abiertas} proceso${fm.abiertas === 1 ? "" : "s"} pequeño${fm.abiertas === 1 ? "" : "s"} en los que todavía puede avisar`
+      + (fm.urgentes ? ` — en ${fm.urgentes} el plazo puede estar cerrando hoy: verifíquelo en SECOP II` : "")
+      + (puesto ? " (se muestran solo estos)." : ". Sin avisar que le interesa no se puede presentar oferta.");
     b.textContent = puesto ? "Ver todos" : "Ver solo estos";
     caja.classList.remove("hidden"); caja.classList.add("flex");
   }
@@ -800,31 +801,52 @@
     return `<p class="mt-3 rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700">Atención: ${frase}</p>`;
   }
 
-  /* MANIFESTACIÓN DE INTERÉS (menor cuantía, 18-ago-2026): en esta modalidad
-     no basta con ofertar — primero hay que manifestar interés dentro de los
-     3 días hábiles siguientes a la apertura, o el proceso se pierde antes de
-     empezar. El servidor calcula la fecha (apertura + 3 hábiles, D. 1082/2015
-     art. 2.2.1.2.1.2.20) y la declara CALCULADA; aquí se pinta un chip y, si
-     vence hoy o mañana, una línea a la vista (como la regla de las 24 horas). */
+  /* AVISAR QUE LE INTERESA (menor cuantía) · CORREGIDO EL 20-AGO-2026.
+     En esta modalidad no basta con ofertar: primero hay que avisar que le
+     interesa, o el proceso se pierde antes de empezar.
+
+     Lo que se enseñaba antes —«vence mañana, jueves 20»— era FALSO y costó un
+     proceso: la ley fija un MÁXIMO de 3 días hábiles desde la apertura, no un
+     plazo, y la entidad pone el suyo en el pliego (Motavita puso UNO). El
+     servidor ya no manda una fecha de vencimiento: manda la VENTANA en la que
+     el plazo puede cerrar y un estado de tres valores. Aquí solo se pinta lo
+     que ese estado permite afirmar, y la cuenta atrás («vence mañana») EXIGE
+     `confirmada`, que solo se pone con la fecha del cronograma del pliego. */
   function chipManifestacion(m) {
     if (!m || !m.aplica) return "";
     const nota = m.nota || "";
-    if (m.vencida === true) return chip(`Manifestación de interés · plazo vencido ${esc(m.vence_legible || "")}`, "bg-gray-100 text-gray-600", nota);
-    if (m.vencida === false) {
-      const q = m.quedan_habiles, d = m.dias_calendario;
-      const cuando = d === 0 ? "vence HOY" : d === 1 ? "vence mañana" : `${q} día${q === 1 ? "" : "s"} hábil${q === 1 ? "" : "es"}`;
-      return chip(`Manifestar interés · ${cuando} · hasta ${esc(m.vence_legible || "")}`, q != null && q <= 2 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800", nota);
+    const R = "bg-red-100 text-red-700", A = "bg-amber-100 text-amber-800", G = "bg-gray-100 text-gray-600";
+    if (m.estado === "vencida") {
+      return chip(`Avisar que le interesa · plazo vencido${m.confirmada ? ` el ${esc(m.fecha_limite_legible || "")}` : ""}`, G, nota);
     }
-    return chip("Manifestación de interés · fecha por confirmar en SECOP II", "bg-amber-100 text-amber-800", nota);
+    if (m.estado === "sin_fecha") return chip("Avisar que le interesa · fecha por confirmar en SECOP II", A, nota);
+    if (m.estado === "por_confirmar") {
+      // la ventana está corriendo: puede seguir abierto o haber cerrado ya
+      return chip("Avisar que le interesa · verifique HOY si sigue abierto", R, nota);
+    }
+    // `abierta`: con certeza sigue abierta
+    if (m.confirmada) {
+      const d = m.dias_calendario, q = m.quedan_habiles;
+      const cuando = d === 0 ? "vence HOY" : d === 1 ? "vence mañana" : `${q} día${q === 1 ? "" : "s"} de oficina`;
+      return chip(`Avisar que le interesa · ${cuando} · hasta ${esc(m.fecha_limite_legible || "")}`, q != null && q <= 2 ? R : A, nota);
+    }
+    return chip(`Avisar que le interesa · el plazo puede cerrar el ${esc(m.puede_cerrar_desde_legible || "")}`, A, nota);
   }
   function avisoManifestacion(m) {
-    if (!m || !m.aplica || m.vencida !== false || m.quedan_habiles == null || m.quedan_habiles > 2) return "";
-    const frase = m.dias_calendario === 0
-      ? `El plazo para manifestar interés vence HOY (${esc(m.vence_legible || "")}). Sin la manifestación en SECOP II no podrá presentar oferta a este proceso.`
-      : m.dias_calendario === 1
-        ? `El plazo para manifestar interés vence mañana (${esc(m.vence_legible || "")}): hágalo hoy en SECOP II. Sin la manifestación no podrá ofertar.`
-        : `Quedan ${m.quedan_habiles} días hábiles para manifestar interés (hasta ${esc(m.vence_legible || "")}). Sin la manifestación en SECOP II no podrá ofertar.`;
-    return `<p class="mt-3 rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700" title="${esc(m.nota || "")}">Atención: ${frase} <span class="font-normal">Fecha calculada desde la apertura; confírmela en el cronograma.</span></p>`;
+    if (!m || !m.aplica) return "";
+    let frase = "";
+    if (m.estado === "por_confirmar") {
+      frase = `el plazo para avisar que le interesa puede estar cerrando hoy o haber cerrado ya. La ley da un MÁXIMO de 3 días de oficina desde la apertura (${esc(m.apertura || "")}) y la entidad pudo poner menos en el pliego. Entre a SECOP II, mire el cronograma y avise antes de seguir: sin eso no podrá presentar oferta.`;
+    } else if (m.estado === "abierta" && m.confirmada && m.dias_calendario != null && m.dias_calendario <= 1) {
+      frase = m.dias_calendario === 0
+        ? `el plazo para avisar que le interesa vence HOY (${esc(m.fecha_limite_legible || "")}). Sin eso no podrá presentar oferta a este proceso.`
+        : `el plazo para avisar que le interesa vence mañana (${esc(m.fecha_limite_legible || "")}): hágalo hoy en SECOP II. Sin eso no podrá ofertar.`;
+    } else if (m.estado === "abierta" && !m.confirmada) {
+      frase = `en este proceso hay que avisar que le interesa antes de poder ofertar, y el plazo puede cerrar tan pronto como el ${esc(m.puede_cerrar_desde_legible || "")}. Hágalo hoy: la entidad fija el plazo en el pliego y suele ser más corto que el máximo de ley.`;
+    } else return "";
+    const pie = m.confirmada ? "Fecha tomada del cronograma del pliego."
+      : "La ley fija un máximo, no un plazo: la fecha exacta está en el cronograma del proceso.";
+    return `<p class="mt-3 rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700" title="${esc(m.nota || "")}">Atención: ${frase} <span class="font-normal">${pie}</span></p>`;
   }
 
   /* Veredicto GRADUADO del matching UNSPSC. Nunca es un sí/no: dice CON QUÉ
@@ -2146,7 +2168,7 @@
       `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${rs.abiertos} abierto${rs.abiertos === 1 ? "" : "s"}</span>`,
       rs.presentados ? `<span class="rounded-full px-2.5 py-1 text-white" style="background: var(--accent);">${rs.presentados} presentado${rs.presentados === 1 ? "" : "s"}</span>` : "",
       rs.cambios_pendientes ? `<span class="rounded-full bg-red-100 px-2.5 py-1 text-red-700">${rs.cambios_pendientes} cambio${rs.cambios_pendientes === 1 ? "" : "s"} sin ver</span>` : "",
-      rs.manifestaciones_abiertas ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${rs.manifestaciones_abiertas} con manifestación de interés abierta</span>` : "",
+      rs.manifestaciones_abiertas ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${rs.manifestaciones_abiertas} en los que todavía puede avisar que le interesa</span>` : "",
       rs.avisos_proximos ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${rs.avisos_proximos} aviso${rs.avisos_proximos === 1 ? "" : "s"} esta semana</span>` : "",
     ].filter(Boolean).join("") : "";
     // filtros por etapa
@@ -2165,10 +2187,14 @@
         : dias == null ? `<span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">Sin fecha de cierre publicada</span>`
           : `<span class="rounded-full px-2 py-0.5 text-[11px] ${dias <= 3 ? "bg-red-100 text-red-700" : dias <= 7 ? "bg-amber-100 text-amber-900" : "bg-emerald-50 text-emerald-800"}">${dias === 0 ? "Cierra HOY" : dias === 1 ? "Cierra mañana" : `Cierra en ${dias} días`} · ${esc(fechaCorta(pr.fecha_cierre))}</span>`;
       const m = p.manifestacion;
-      const manif = m && m.aplica ? (m.vencida === false
-        ? `<span class="rounded-full px-2 py-0.5 text-[11px] ${m.quedan_habiles != null && m.quedan_habiles <= 2 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-900"}" title="${esc(m.nota || "")}">Manifestar interés hasta ${esc(m.vence_legible || "")}${m.dias_calendario === 0 ? " · HOY" : m.dias_calendario === 1 ? " · mañana" : ` · ${m.quedan_habiles} días hábiles`}</span>`
-        : m.vencida === true ? `<span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600" title="${esc(m.nota || "")}">Manifestación de interés: plazo vencido ${esc(m.vence_legible || "")}</span>`
-          : `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-900">Manifestación de interés: fecha por confirmar</span>`) : "";
+      /* mismo criterio que la tarjeta: sin fecha del cronograma no hay cuenta
+         atrás, porque la ley fija un máximo y la entidad pone el suyo */
+      const manif = !(m && m.aplica) ? ""
+        : m.estado === "vencida" ? `<span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600" title="${esc(m.nota || "")}">Avisar que le interesa: plazo vencido</span>`
+          : m.estado === "sin_fecha" ? `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-900" title="${esc(m.nota || "")}">Avisar que le interesa: fecha por confirmar</span>`
+            : m.estado === "por_confirmar" ? `<span class="rounded-full bg-red-100 px-2 py-0.5 text-[11px] text-red-700" title="${esc(m.nota || "")}">Avisar que le interesa: verifique HOY en SECOP II</span>`
+              : m.confirmada ? `<span class="rounded-full px-2 py-0.5 text-[11px] ${m.quedan_habiles != null && m.quedan_habiles <= 2 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-900"}" title="${esc(m.nota || "")}">Avisar que le interesa hasta ${esc(m.fecha_limite_legible || "")}${m.dias_calendario === 0 ? " · HOY" : m.dias_calendario === 1 ? " · mañana" : ` · ${m.quedan_habiles} días de oficina`}</span>`
+                : `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-900" title="${esc(m.nota || "")}">Avisar que le interesa: puede cerrar el ${esc(m.puede_cerrar_desde_legible || "")}</span>`;
       const aviso = p.proximo_aviso ? `<p class="mt-1 text-xs text-amber-900">Próximo aviso: ${esc(p.proximo_aviso.mensaje)}</p>` : "";
       const cambios = (p.cambios || []).length ? `<div class="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-800 ring-1 ring-inset ring-red-600/10">
           <p class="font-medium">Cambió desde la última vez que lo vio${p.visto_el ? ` (${esc(fechaCorta(p.visto_el))})` : ""}:</p>

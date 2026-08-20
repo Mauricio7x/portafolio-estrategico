@@ -1919,6 +1919,89 @@ cualquier evento del cronograma de un guardado se acerca; (d) inspirarse en rast
   fecha límite es HOY (retrocediendo hasta que `sumarHabiles(apertura, 3) === hoy`) — un fixture con fecha fija
   caducaría.
 
+### ⚠️ EL PLAZO DE MANIFESTACIÓN NO ES DE TRES DÍAS: TRES ES EL TECHO (20-ago-2026)
+
+**Defecto de producción reportado por el ingeniero.** La app enseñó, en rojo y en imperativo, «El
+plazo para manifestar interés vence mañana (jueves 20 de agosto): hágalo hoy en SECOP II» sobre
+**MM-SA-MC-008-2026** (MUNICIPIO DE MOTAVITA, Boyacá). En SECOP II ese plazo **ya había cerrado**:
+estado `ClosedForReplies`, lista de interesados publicada con «¿Sorteo realizado? **Sí**» y la última
+manifestación del **martes 18 a las 11:24 AM**.
+
+- **CAUSA RAÍZ: se aplicaba un TECHO LEGAL como si fuera un plazo.** `PLAZO_MANIFESTACION_HABILES =
+  3` se sumaba a la apertura y el resultado se presentaba como la fecha de vencimiento. El D.
+  1082/2015 art. 2.2.1.2.1.2.20 num. 1 dice «en un término **NO MAYOR a** tres (3) días hábiles» —lo
+  transcribe el propio `docs/datos.md` §7— y quien fija el plazo concreto es **la entidad, en el
+  pliego**. Motavita fijó **UNO**: apertura viernes 14 → cierre el martes 18 (primer hábil; el 15 fue
+  sábado y el 17 el festivo de la Asunción trasladado). La app tomó el extremo superior del rango y
+  lo publicó como el único valor, **dos días hábiles tarde**.
+- **Es «una inferencia presentada como una medición» otra vez, en el sitio más caro que existe**: un
+  aviso rojo, en imperativo, sobre el único trámite sin el cual no se puede ofertar. Un contratista
+  que se fía pierde el proceso creyendo que llegaba a tiempo. No hay ningún otro sitio de la app
+  donde equivocarse cueste más.
+- **LA CONTRADICCIÓN ESTABA EN LA MISMA TARJETA Y NADIE LA MIRABA**: «Cierra en 2 días · 21 de
+  agosto» (dato PUBLICADO) a dos centímetros de «Manifestar interés · vence mañana · 20 de agosto»
+  (dato CALCULADO). Por el num. 3 del mismo artículo, si hay sorteo el plazo de ofertas **empieza** el
+  día hábil siguiente al informe del sorteo: entre el 20 y el 21 no cabe ni el sorteo, ni el informe,
+  ni el plazo de ofertas. **Un calculado que contradice a un publicado pierde siempre.**
+
+**La regla, después: una VENTANA con dos extremos, no una fecha.** `lib/manifestacion.js` publica
+`puede_cerrar_desde` (apertura + **1** hábil) y `vence_a_mas_tardar` (apertura + 3 hábiles), y el
+`estado` tiene **tres** valores: `abierta` (hoy < el primer hábil: con certeza sigue abierta) ·
+`por_confirmar` (la ventana está corriendo: puede seguir abierta o haber cerrado) · `vencida` ·
+`sin_fecha`. **`por_confirmar` es el estado de MÁXIMA urgencia, no el de menor**: manda a SECOP II
+HOY. Decisiones que no hay que re-aprender:
+
+- **`vencida` COMO BOOLEANO NO EXISTE, y hay prueba de que no puede volver** (ni en el servidor ni en
+  los módulos del navegador). Su `false` se leía como «sigue abierta», que es exactamente la
+  afirmación que la app no puede hacer. Es el `sin_dato` contra el `0` del proyecto, en booleano: la
+  ausencia de vencimiento **conocido** se estaba sirviendo como vencimiento **futuro**.
+- **NO HAY CUENTA ATRÁS SIN FECHA CONFIRMADA.** `quedan_habiles` y `dias_calendario` viajan en `null`
+  salvo que la fecha venga del **cronograma del pliego** (`origen: "cronograma"`, `confirmada: true`).
+  Un contador es una afirmación. `habiles_hasta_el_techo` existe **solo para ORDENAR** por urgencia y
+  se llama así para que nadie lo pinte como una cuenta atrás.
+- **COHERENCIA CON EL CIERRE DE OFERTAS PUBLICADO** (num. 3): el techo se recorta a
+  `cierre_ofertas − 1 hábil`; si con eso la ventana queda al revés, la apertura que se está usando no
+  puede ser la buena → `sin_fecha` con `motivo_sin_fecha: "cierre_de_ofertas_no_deja_sitio"`, y se
+  dice. No se afirma nada sobre una ventana imposible.
+- **EL PELDAÑO 1 DE LA CASCADA YA ESTABA CONSTRUIDO Y DESCONECTADO.** `lib/cronograma.js` reconoce
+  desde la Fase 5 el hito `manifestacion` («Fecha límite para manifestar interés») leyendo el pliego
+  — la fecha REAL, la que fija la entidad — y nunca se cableó a la regla. Ahora
+  `manifestacionDeFila(l, hoy, { fechaCronograma })` la acepta, manda sobre la ventana y es **la
+  única con la que se cuenta hacia atrás**. Con ella, la respuesta correcta para Motavita el 19 es
+  «venció el 18», y hay prueba.
+- **EL RECORDATORIO DEL CALENDARIO SE ANCLA AL PRIMER DÍA EN QUE EL PLAZO PUEDE CERRAR**, no al techo
+  legal: en un `.ics` el error tiene que caer del lado de avisar **antes**. Es la misma doctrina que
+  la regla de las 24 horas.
+- **`estadoDeVentana` es la ÚNICA derivación del estado** y la comparten `filaManifestacion` y el
+  handler que refresca la ventana precalculada con la fecha del día. Dos derivaciones del mismo
+  estado divergirían — la lección de `total_procesos`/`procesos_contados`.
+- **`?manif=abierta` incluye `por_confirmar` a propósito**: excluirlo escondería justo las urgentes,
+  que es lo contrario de lo que pide quien marca la casilla. En las facetas, `urgentes ⊂ abiertas`.
+- **LA PRUEBA QUE DE VERDAD CIERRA ESTO EJECUTA LO QUE SE PINTA.** Las guardas por regex demuestran
+  que una función se LLAMA, no lo que ESCRIBE — y el daño lo hizo una cadena. `chipManifestacion` y
+  `avisoManifestacion` se EXTRAEN del fuente de `app.js` y se ejecutan con el objeto real del proceso
+  de Motavita en cuatro fechas; la aserción central prohíbe literalmente que aparezca «vence mañana»
+  sin `confirmada`. Es el patrón de `fraseProbabilidad`, aplicado donde más falta hacía. Lección de
+  método, hermana de la del paso 2 de Génesis: **comprobar por regex que una función se llama no
+  prueba que lo que dice sea verdad.**
+- **De paso, un flake latente en la suite**: la prueba de `textoActualizado` daba por hecho que «hace
+  26 horas» siempre cae en «ayer», y entre medianoche y las 02:00 de Colombia son **dos** días atrás.
+  Fallaba sola en esa franja y pasaba el resto del día. El «ahora» se inyecta, como en las pruebas de
+  husos y de días hábiles.
+- **Lo que este entorno NO pudo verificar, dicho en vez de disimulado**: el proxy de la sesión bloquea
+  `datos.gov.co` («Host not in allowlist»), así que la fila real de Motavita no se pudo consultar. El
+  diagnóstico se apoya en las capturas de SECOP II del ingeniero, en el censo de columnas ya medido
+  en `docs/datos.md` §7 y en la reproducción del defecto ejecutando los módulos. La aritmética de la
+  ventana (14 ago + 1/3 hábiles = 18/20 ago, con el festivo del 17) sí está verificada contra
+  `lib/habiles`.
+
+**Lo que queda pendiente y por qué no se hizo aquí:** el dataset no publica la fecha límite de
+manifestación (medido, `docs/datos.md` §7), así que la única vía para AFIRMARLA es leer el
+cronograma del pliego. Ese cableado existe ya en la regla y en Mis procesos; falta que el listado
+consulte de oficio el pliego guardado (`pliego:{proceso}:v:{n}`) para los procesos con manifestación
+abierta. Es la mejora de fondo: convertiría el «verifique HOY» en «vence el martes 18», que es lo que
+el contratista de verdad necesita.
+
 ### Segunda ronda de correcciones del dueño (18-ago-2026): tipos de trabajo, lenguaje, frases, conceptos de orden
 
 - **«Suministro de porciones de comida» bajo el filtro de obra: la causa era sistemática.** Se bajaron 726 procesos

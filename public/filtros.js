@@ -185,9 +185,11 @@
      enlace guardado tiene que seguir valiendo). Un valor desconocido se IGNORA,
      jamás vacía la lista ni da error (la regla de `?zona=`). */
   const PARAMS = Object.freeze(["tipo", "modalidad", "dep", "ciudad", "min", "max", "cierre", "cierreDesde", "cierreHasta", "entidad", "q", "manif", "ordenar_por"]);
-  /* Manifestación de interés (menor cuantía): `manif=abierta` deja SOLO los
-     procesos en los que todavía se puede manifestar interés (plazo de 3 días
-     hábiles desde la apertura, calculado); `manif=todas`, los de menor cuantía
+  /* Avisar que le interesa (menor cuantía): `manif=abierta` deja los procesos
+     en los que TODAVÍA VALE LA PENA avisar — los que con certeza siguen
+     abiertos y los que están dentro de la ventana en que el plazo puede cerrar
+     (la ley fija un máximo de 3 días hábiles desde la apertura, no un plazo:
+     la entidad pone el suyo en el pliego). `manif=todas`, los de menor cuantía
      con manifestación, vencida o no. Cualquier otro valor es INERTE. */
   const MANIF_IDS = new Set(["abierta", "todas"]);
   const lista = (v) => String(v || "").split(",").map((s) => s.trim()).filter(Boolean);
@@ -272,7 +274,7 @@
     }
     if (estado.entidad) out.push({ filtro: "entidad", etiqueta: "Entidad: " + estado.entidad });
     if (estado.q) out.push({ filtro: "q", etiqueta: "Palabra: " + estado.q });
-    if (estado.manif) out.push({ filtro: "manif", etiqueta: estado.manif === "abierta" ? "Manifestación de interés: todavía se puede manifestar" : "Manifestación de interés: procesos de menor cuantía" });
+    if (estado.manif) out.push({ filtro: "manif", etiqueta: estado.manif === "abierta" ? "Avisar que le interesa: todavía puede" : "Avisar que le interesa: procesos pequeños" });
     return out;
   }
 

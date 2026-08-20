@@ -93,18 +93,29 @@
     const abiertos = (m && m.resultados) || [];
     const prox = p.manifestacion && p.manifestacion.proximos;
     const filas = abiertos.slice(0, 5).map((f) => {
+      /* La ley fija un MÁXIMO de días de oficina, no un plazo: la entidad pone
+         el suyo en el pliego. Sin la fecha del cronograma no hay cuenta atrás
+         (defecto del 19-ago-2026: la app dijo «vence mañana» sobre un plazo
+         cerrado dos días antes). Ver la cabecera de lib/manifestacion. */
       const d = f.diasHabilesRestantes;
-      const quedan = d == null ? "Plazo no calculable" : d === 0 ? "Vence hoy: avise HOY" : `Le queda${d === 1 ? "" : "n"} ${d} día${d === 1 ? "" : "s"} de oficina para avisar que le interesa`;
+      const quedan = f.estado === "por_confirmar"
+        ? "El plazo puede estar cerrando hoy o haber cerrado: verifíquelo en SECOP II"
+        : f.fechaLimiteISO && d != null
+          ? (d === 0 ? "Vence hoy: avise HOY" : `Le queda${d === 1 ? "" : "n"} ${d} día${d === 1 ? "" : "s"} de oficina para avisar que le interesa`)
+          : f.puedeCerrarDesdeLegible
+            ? `El plazo puede cerrar el ${f.puedeCerrarDesdeLegible}: avise hoy`
+            : "Plazo no calculable: consulte el cronograma en SECOP II";
       return `<li class="rounded-xl px-4 py-3" style="background: var(--bg-inset);">
         <p class="text-xs uppercase tracking-wide" style="color: var(--text-secondary);"><span aria-hidden="true">●</span> ${esc(f.entidad || "Entidad no informada")}</p>
         <p class="mt-0.5 text-sm" style="color: var(--text-primary);">${esc(f.objeto || "")}</p>
         <p class="mt-1 text-sm font-medium" style="color: var(--text-primary);">${f.valor ? esc(pesosCortos(f.valor)) + " · " : ""}${esc(quedan)}.</p>
-        <p class="text-xs" style="color: var(--text-secondary);">Si no avisa, no puede presentarse aunque cumpla todo.${f.venceLegible ? ` Vence el ${esc(f.venceLegible)}.` : ""} <span title="${esc(f.notaFecha || "")}">Fecha calculada a partir de la apertura: confirme en el cronograma.</span>${f.enlaceSecop ? ` <a class="underline" href="${esc(f.enlaceSecop)}" target="_blank" rel="noopener noreferrer">Ver proceso</a>` : ""}</p>
+        <p class="text-xs" style="color: var(--text-secondary);">Si no avisa, no puede presentarse aunque cumpla todo.${f.fechaLimiteLegible ? ` Vence el ${esc(f.fechaLimiteLegible)} (cronograma del pliego).`
+          : f.puedeCerrarDesdeLegible ? ` El plazo puede cerrar entre el ${esc(f.puedeCerrarDesdeLegible)} y el ${esc(f.venceMaximoLegible || "")}.` : ""} <span title="${esc(f.nota || "")}">${f.fechaLimiteLegible ? "Fecha tomada del cronograma del pliego." : "La ley fija un máximo, no un plazo: la fecha exacta está en el cronograma del proceso."}</span>${f.enlaceSecop ? ` <a class="underline" href="${esc(f.enlaceSecop)}" target="_blank" rel="noopener noreferrer">Ver proceso</a>` : ""}</p>
       </li>`;
     }).join("");
     return `
       <h2 class="text-base font-semibold" style="color: var(--text-primary);">Todavía puede avisar que le interesa</h2>
-      <p class="mt-1 text-sm" style="color: var(--text-secondary);">En los procesos pequeños (selección abreviada de menor cuantía) primero hay que avisar que le interesa, en un plazo de ${p.manifestacion ? p.manifestacion.plazoHabiles : 3} días de oficina desde la apertura. Si avisan más de ${p.manifestacion ? p.manifestacion.sorteoDesde : 10}, la entidad puede sortear.</p>
+      <p class="mt-1 text-sm" style="color: var(--text-secondary);">En los procesos pequeños (selección abreviada de menor cuantía) primero hay que avisar que le interesa. El plazo lo fija la entidad en el pliego y por ley no puede pasar de ${p.manifestacion ? p.manifestacion.plazoHabiles : 3} días de oficina desde la apertura, así que suele ser más corto: avise el mismo día. Si avisan más de ${p.manifestacion ? p.manifestacion.sorteoDesde : 10}, la entidad puede sortear.</p>
       <p class="mt-3 text-xs font-medium uppercase tracking-wide" style="color: var(--text-secondary);">Abierto ahora${abiertos.length ? ` · ${abiertos.length}` : ""}</p>
       ${abiertos.length ? `<ul class="mt-2 space-y-2">${filas}</ul>${abiertos.length > 5 ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">y ${abiertos.length - 5} más.</p>` : ""}` : `<p class="mt-1 text-sm" style="color: var(--text-secondary);">Ninguno con el plazo corriendo hoy.</p>`}
       <p class="mt-4 text-xs font-medium uppercase tracking-wide" style="color: var(--text-secondary);">Próximos a abrir</p>
