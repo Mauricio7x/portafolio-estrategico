@@ -4773,9 +4773,15 @@ remotas y todo el trabajo va desde ahora directo a `main`. Decisiones que no hay
   reescritura de jul 2026 (`lib/engine.js`, `sw.js`, y un `package.json` que contradice la regla
   central del proyecto). Un archivo que reaparece por una fusión no lo carga nadie y queda
   desincronizado en silencio — que es peor que un 404, la misma lección de las URLs retiradas.
-- **El borrado es REVERSIBLE y está escrito**: `docs/RAMAS_RETIRADAS.md` guarda las 95 ramas con su
-  SHA y el comando para resucitar cualquiera (`git push origin <sha>:refs/heads/<rama>`). Borrar sin
-  dejar el manifiesto habría hecho irrecuperable un trabajo que nadie volvería a encontrar.
+- **EL BORRADO DE LAS RAMAS NO SE PUDO EJECUTAR DESDE AQUÍ, y se reporta en vez de darse por hecho.**
+  El relé de git de este entorno permite empujar commits pero **deniega el borrado de referencias**:
+  `git push origin --delete <rama>` responde **403** mientras `git push origin main` funciona, y el
+  proxy no lo registra como fallo suyo (`recentRelayFailures: []`); el servidor MCP de GitHub tampoco
+  expone borrado de ramas. La regla del entorno es que un 403 de política **no se reintenta ni se
+  rodea**. Las 95 ramas siguen en GitHub: son ruido, no trabajo pendiente, y se borran con clics desde
+  la página *branches* del repositorio. `docs/RAMAS_RETIRADAS.md` guarda el censo con el SHA de cada
+  una y el comando para resucitarla (`git push origin <sha>:refs/heads/<rama>`), así que el día que se
+  borren no se pierde nada.
 - **Las dos PR abiertas se cerraron sin fusionar** (#21 «Motor de inferencia de ítems APU» de ago 5 y
   #3 «legal compliance audit» de jul 29): su contenido ya está en `main` por otra vía —se comprobó
   archivo a archivo— y fusionarlas habría devuelto los archivos retirados. Una PR abierta sobre

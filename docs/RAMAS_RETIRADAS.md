@@ -1,9 +1,23 @@
-# Ramas retiradas al unificar en `main` (21-ago-2026)
+# Ramas superadas al unificar en `main` (21-ago-2026)
 
-Encargo del dueño: **«Unifica todas las ramas y solo maneja en `main`»**. Este documento existe para
-que el borrado sea **reversible** y para que nadie vuelva a auditar las 95 ramas desde cero.
+Encargo del dueño: **«Unifica todas las ramas y solo maneja en `main`»**. Este documento es el censo
+de las 95 ramas remotas: qué se comprobó de cada una, por qué ninguna queda pendiente de fusionar, y
+cómo borrarlas —o resucitar cualquiera— sin volver a auditarlas desde cero.
 
-## Qué se comprobó antes de borrar, y cómo
+> ⚠️ **EL BORRADO NO SE PUDO EJECUTAR DESDE AQUÍ, y hay que decirlo en vez de darlo por hecho.**
+> El relé de git de este entorno **permite empujar commits pero deniega el borrado de referencias**:
+> `git push origin --delete <rama>` responde `HTTP 403` mientras `git push origin main` funciona con
+> normalidad, y el proxy no registra el fallo como suyo (`recentRelayFailures: []`). El servidor MCP
+> de GitHub tampoco expone ninguna herramienta de borrado de ramas. La instrucción del entorno es
+> explícita: un 403 de política **no se reintenta ni se rodea**, se reporta.
+>
+> **Las 95 ramas siguen existiendo en GitHub.** No son trabajo pendiente —su contenido está auditado
+> y absorbido, ver abajo— sino ruido. Cómo borrarlas con clics, sin terminal:
+> <https://github.com/Mauricio7x/portafolio-estrategico/branches> → pestaña **All** → papelera 🗑 a la
+> derecha de cada rama. GitHub ofrece **Restore** durante un tiempo en esa misma página, y este
+> documento guarda además el SHA de cada una por si el botón ya no estuviera.
+
+## Qué se comprobó antes de dar las ramas por superadas, y cómo
 
 **La topología engaña: `main` se construyó con fusiones aplastadas (squash).** Por eso casi todas las
 ramas aparecían como «96 ahead / 116 behind» aunque su contenido ya estuviera dentro. La comprobación
@@ -13,7 +27,7 @@ buscando lo que la rama AÑADE y `main` no tiene).
 Resultado del barrido sobre las 95 ramas:
 
 - **Una sola rama aportaba contenido que `main` no tenía**: `claude/tokens-vercel-github-setup-k40570`
-  → `docs/CONFIGURACION_TOKENS.md`. Está rescatado en `main` en este mismo commit, junto con la
+  → `docs/CONFIGURACION_TOKENS.md`. **Ya está en `main`** (commit `fa0825a`), junto con la
   corrección del paso 1 del `README.md` que esa guía dejaba pendiente por no tener permiso de
   escritura entonces.
 - **Todo lo demás que las ramas «añadían» son archivos RETIRADOS DE `main` A PROPÓSITO**, y volver a
@@ -31,10 +45,19 @@ Resultado del barrido sobre las 95 ramas:
     de jul 2026 (el `index.html` monolítico de 580 KB). `package.json` en particular contradice la
     regla central del proyecto: sin dependencias, sin build.
 
+## Las dos PR abiertas, cerradas sin fusionar
+
+- **#21** «Motor de inferencia de ítems APU» (5-ago): `lib/apu/inferencia.js`, `lib/apu/catalogo.js`
+  y `docs/APU_Y_RENTABILIDAD.md` ya están en `main`; lo único que añadiría son archivos retirados.
+- **#3** «legal compliance audit» (29-jul): apunta a la arquitectura anterior a la reescritura.
+
+Una PR abierta sobre trabajo ya integrado no es un pendiente: es ruido que la próxima sesión audita
+otra vez. Las dos llevan un comentario que explica por qué se cerraron.
+
 ## Cómo resucitar una rama
 
-Las ramas se borran del remoto, pero su commit sigue existiendo mientras GitHub no lo recoja. Para
-devolver cualquiera:
+Si algún día se borran, su commit sigue existiendo mientras GitHub no lo recoja. Para devolver
+cualquiera:
 
 ```bash
 git push origin <sha>:refs/heads/<nombre-de-la-rama>
