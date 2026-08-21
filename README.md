@@ -1265,8 +1265,12 @@ También va incluido en `?reconstruir_todo=true`. Ninguna de las dos vías re-ex
 
 Una sola vez, después de desplegar:
 
-1. Definir `HISTORICO_TOKEN` (una cadena larga y aleatoria) en las variables de entorno del
-   proyecto en Vercel y volver a desplegar.
+1. Definir `HISTORICO_TOKEN` en las variables de entorno del proyecto en Vercel y volver a
+   desplegar. Su valor tiene que ser EXACTAMENTE `MiExtraccion2025`, que es el token integrado
+   en el frontend desde ago 2026 (`public/app.js`, `onboarding.js`, `pliego.js`): con cualquier
+   otro valor la aplicación se sirve a medias y **sin error visible**. No es un secreto —está en
+   el fuente— y la protección real es Vercel Password Protection. Para cambiarlo hay que tocar
+   los CUATRO sitios a la vez. Guía completa sin terminal: `docs/CONFIGURACION_TOKENS.md`.
 2. Lanzarla. **Con terminal** (preferido: el token va por header y no queda en los logs de acceso):
 
    ```bash

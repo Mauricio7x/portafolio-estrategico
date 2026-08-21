@@ -4751,6 +4751,36 @@ seis routers cargan, los 18 rewrites y 3 redirects de `vercel.json` resuelven, y
 frontend busca existen —los seis que parecían faltar los CREA el propio JS con sus plantillas, que es
 un falso positivo conocido de ese censo y conviene recordarlo—.
 
+### Una sola rama: `main` (21-ago-2026)
+
+Encargo del dueño: **«Unifica todas las ramas y solo maneja en `main`»**. Se retiraron las 95 ramas
+remotas y todo el trabajo va desde ahora directo a `main`. Decisiones que no hay que re-aprender:
+
+- **LA TOPOLOGÍA DE GIT ENGAÑABA, Y POR ESO LA AUDITORÍA NO FUE CONTAR COMMITS.** `main` se
+  construyó con fusiones APLASTADAS (squash), así que casi todas las ramas figuraban como «96 ahead
+  / 116 behind» aunque su contenido estuviera dentro hacía semanas. Fiarse del contador habría
+  significado o bien re-fusionar 95 ramas ya absorbidas, o bien borrarlas sin mirar. Lo que decide es
+  **comparar ARCHIVOS** (`git diff --name-status origin/main..<rama>`, mirando lo que la rama AÑADE).
+- **Solo UNA rama aportaba algo**: `claude/tokens-vercel-github-setup-k40570` →
+  `docs/CONFIGURACION_TOKENS.md`, la guía de variables de entorno para el dueño sin terminal. Se
+  rescató, y con ella la corrección del paso 1 del `README.md` que la propia guía dejaba pendiente
+  («una cadena larga y aleatoria» era la trampa número uno: con el token integrado en el frontend, el
+  valor de `HISTORICO_TOKEN` tiene que ser EXACTAMENTE `MiExtraccion2025` o la app se sirve a medias
+  **sin error visible**). Las dos fuentes dicen ya lo mismo y la guía lo declara.
+- **LO QUE LAS DEMÁS RAMAS «AÑADÍAN» ERAN ARCHIVOS RETIRADOS A PROPÓSITO**, y devolverlos habría sido
+  una regresión disfrazada de rescate: los `api/*.js` sueltos (plegados en los 6 routers), los cinco
+  archivos de «Página única» (que la suite PROHÍBE que vuelvan) y la arquitectura anterior a la
+  reescritura de jul 2026 (`lib/engine.js`, `sw.js`, y un `package.json` que contradice la regla
+  central del proyecto). Un archivo que reaparece por una fusión no lo carga nadie y queda
+  desincronizado en silencio — que es peor que un 404, la misma lección de las URLs retiradas.
+- **El borrado es REVERSIBLE y está escrito**: `docs/RAMAS_RETIRADAS.md` guarda las 95 ramas con su
+  SHA y el comando para resucitar cualquiera (`git push origin <sha>:refs/heads/<rama>`). Borrar sin
+  dejar el manifiesto habría hecho irrecuperable un trabajo que nadie volvería a encontrar.
+- **Las dos PR abiertas se cerraron sin fusionar** (#21 «Motor de inferencia de ítems APU» de ago 5 y
+  #3 «legal compliance audit» de jul 29): su contenido ya está en `main` por otra vía —se comprobó
+  archivo a archivo— y fusionarlas habría devuelto los archivos retirados. Una PR abierta sobre
+  trabajo ya integrado no es un pendiente: es ruido que la próxima sesión audita otra vez.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).
