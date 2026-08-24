@@ -4745,6 +4745,18 @@ con una fila UPN de $1.348 M, publicada, abierta y de obra: con «Régimen Espec
 Especial (con ofertas)» o con cualquier modalidad de la lista blanca, entra. Es decir: **relanzar la
 full puede no bastar**, y eso hay que saberlo antes de concluir que el arreglo de la `fase` cerró el
 caso.
+- **EL CENSO YA REPARTE POR LITERAL DE MODALIDAD (`por_modalidad`), que es lo que convierte esa
+  hipótesis en una cifra.** `modalidad_no_competitiva` es la cubeta que más volumen tira y MEZCLA dos
+  cosas que no son la misma: la contratación directa (descarte correcto, la inmensa mayoría) y el
+  régimen especial sin ofertas, que es donde publican universidades estatales, ESE y empresas de
+  servicios públicos. Con el agregado y cinco ejemplos, **un falso negativo de mil procesos es
+  indistinguible de cero**. El censo no decide nada nuevo: cuenta por el literal que ya venía
+  descartando. Cota dura de 40 literales —esto viaja a Redis y se publica— y lo que no cabe se CUENTA
+  en `(otras)`; una modalidad ausente va a `(sin modalidad)`, jamás a la clave vacía (la lección del
+  FFIE). Invariante hermana con prueba: **Σ `por_modalidad` = `por_motivo.modalidad_no_competitiva`**,
+  también después de fusionar las invocaciones de una misma full. Un censo ya guardado en producción
+  no trae el campo: los atajos de `fusionar` lo NORMALIZAN a `{}` — un consumidor no puede recibir
+  `undefined` según la rama por la que salga la fusión, y ese borde lo cazó la propia prueba.
 - **ES UNA HIPÓTESIS REPRODUCIDA, NO UNA MEDICIÓN**: no consta con qué literal publica la UPN, porque
   esta sesión tampoco alcanza la fuente. Lo que sí está medido es que ese literal DECIDE.
 - **NO SE TOCA LA LISTA BLANCA A CIEGAS.** Ensancharla para admitir «Régimen Especial» a secas metería

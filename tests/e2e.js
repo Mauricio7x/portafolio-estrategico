@@ -1730,6 +1730,107 @@ async function main() {
         assert.ok(/acumular: !fullNueva/.test(fuente) && /acumular: \(ciclo\.invocaciones \|\| 0\) > 0/.test(fuente),
           "una carga NUEVA reemplaza el censo; solo las continuaciones acumulan");
       }
+      /* ══════ EL LITERAL DE LA MODALIDAD, o el agregado no decide nada (ago 2026) ══════
+         `modalidad_no_competitiva` es la cubeta que más volumen tira, y mezcla
+         dos cosas que NO son la misma: la contratación directa —descarte
+         correcto y la inmensa mayoría— y el «Régimen Especial» sin ofertas,
+         donde publican las universidades estatales, las ESE y las empresas de
+         servicios públicos. Con un conteo agregado y cinco ejemplos, un
+         falso negativo de mil procesos es indistinguible de cero.
+
+         Reproducido con la UPN (universidad estatal, Ley 30/1992 art. 93):
+         una convocatoria de obra de $1.348 M publicada como «Régimen Especial»
+         guarda 0 filas y la carga completa NO la recupera. Saber si eso pasa
+         una vez o mil veces es lo que decide si hay que tocar la lista blanca
+         —y ensancharla a ciegas metería todo lo que no tiene concurso abierto,
+         que es para lo que esa regla existe—.
+
+         El censo NO decide nada nuevo: cuenta por el literal que ya venía
+         descartando. */
+      {
+        const { crearCenso: crearCensoM, fusionar: fusionarM, MAX_MODALIDADES } = require("../lib/censo_ingesta.js");
+        const filaCon = (modalidad) => ({
+          id_del_proceso: `X-${modalidad}`, entidad: "ENTIDAD",
+          modalidad_de_contratacion: modalidad,
+          estado_del_procedimiento: "Publicado", fase: "Presentación de oferta",
+          descripci_n_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA",
+        });
+
+        const c = crearCensoM();
+        const reparto = [
+          ["Contratación directa", 7],
+          ["Régimen Especial", 3],
+          ["Invitación Privada", 1],
+          ["", 2],                       // sin modalidad: una clave vacía NUNCA es una clave
+        ];
+        for (const [m, n] of reparto) {
+          for (let i = 0; i < n; i++) { c.leida(); c.registrar("modalidad_no_competitiva", filaCon(m)); }
+        }
+        const r = c.resumen();
+
+        // 1 · el reparto existe y separa lo que el agregado mezclaba
+        assert.strictEqual(r.por_motivo.modalidad_no_competitiva, 13);
+        assert.strictEqual(r.por_modalidad["Contratación directa"], 7);
+        assert.strictEqual(r.por_modalidad["Régimen Especial"], 3,
+          "sin este número, un falso negativo de mil procesos es indistinguible de cero");
+        assert.strictEqual(r.por_modalidad["Invitación Privada"], 1);
+
+        // 2 · UNA CLAVE VACÍA NUNCA ES UNA CLAVE (la lección del FFIE: se sobreescriben entre sí)
+        assert.ok(!Object.prototype.hasOwnProperty.call(r.por_modalidad, ""),
+          "una modalidad ausente no puede indexarse con la cadena vacía");
+        assert.strictEqual(r.por_modalidad["(sin modalidad)"], 2);
+
+        /* 3 · INVARIANTE: Σ por_modalidad = el conteo del motivo. Es lo único que
+           detecta que un literal se perdió por el camino — y las cifras seguirían
+           pareciendo razonables, solo que sobre menos procesos. */
+        const suma = Object.values(r.por_modalidad).reduce((a, b) => a + b, 0);
+        assert.strictEqual(suma, r.por_motivo.modalidad_no_competitiva,
+          `Σ por_modalidad (${suma}) ≠ modalidad_no_competitiva (${r.por_motivo.modalidad_no_competitiva}): se perdió un literal`);
+
+        /* 4 · COTA DURA: el censo viaja a Redis y se publica en el diagnóstico.
+           Un dataset con basura en esa columna no puede fabricar un objeto
+           enorme; lo que sobra se cuenta en una cubeta, no se tira en silencio. */
+        const c2 = crearCensoM();
+        const distintas = MAX_MODALIDADES + 40;
+        for (let i = 0; i < distintas; i++) { c2.leida(); c2.registrar("modalidad_no_competitiva", filaCon(`Modalidad ${i}`)); }
+        const r2 = c2.resumen();
+        assert.ok(Object.keys(r2.por_modalidad).length <= MAX_MODALIDADES + 1,
+          `el reparto no puede crecer sin cota: ${Object.keys(r2.por_modalidad).length} literales`);
+        assert.strictEqual(Object.values(r2.por_modalidad).reduce((a, b) => a + b, 0), distintas,
+          "lo que no cabe en el reparto se CUENTA en «(otras)», no se pierde");
+        assert.ok(r2.por_modalidad["(otras)"] > 0, "el desbordamiento tiene que ser visible");
+
+        // 5 · FUSIONAR suma los repartos (la full corre en varias invocaciones)
+        const f = fusionarM(
+          { leidas: 5, aceptadas: 0, por_motivo: { modalidad_no_competitiva: 5 }, ejemplos: {}, por_modalidad: { "Régimen Especial": 2, "Contratación directa": 3 } },
+          { leidas: 4, aceptadas: 0, por_motivo: { modalidad_no_competitiva: 4 }, ejemplos: {}, por_modalidad: { "Régimen Especial": 1, "Invitación Privada": 3 } });
+        assert.strictEqual(f.por_modalidad["Régimen Especial"], 3, "las invocaciones de una misma full tienen que sumarse");
+        assert.strictEqual(f.por_modalidad["Contratación directa"], 3);
+        assert.strictEqual(Object.values(f.por_modalidad).reduce((a, b) => a + b, 0), f.por_motivo.modalidad_no_competitiva,
+          "la fusión tiene que conservar la invariante Σ por_modalidad = conteo del motivo");
+
+        // 6 · COMPATIBILIDAD: un censo YA GUARDADO en producción no trae el campo
+        const viejo = fusionarM({ leidas: 3, aceptadas: 1, por_motivo: { modalidad_no_competitiva: 2 }, ejemplos: {} }, null);
+        assert.deepStrictEqual(viejo.por_modalidad, {}, "un censo anterior al campo no puede romper la fusión");
+
+        // 7 · el caso real, de punta a punta por la cascada de verdad
+        const cUpn = crearCensoM();
+        transformar([{
+          id_del_proceso: "UPN-VAD-CP-011-2026", referencia_del_proceso: "UPN-VAD-CP-011-2026",
+          entidad: "UNIVERSIDAD PEDAGOGICA NACIONAL", modalidad_de_contratacion: "Régimen Especial",
+          estado_del_procedimiento: "Publicado", fase: "Presentación de oferta",
+          descripci_n_del_procedimiento: "REALIZAR LAS OBRAS DE ADECUACION DE LA SEDE VALMARIA",
+          precio_base: "1348000000", codigo_principal_de_categoria: "72101500",
+          fecha_de_publicacion_del: "2026-08-05T09:00:00.000", fecha_de_recepcion_de: CIERRE_FUTURO, adjudicado: "No",
+        }], { censo: cUpn });
+        const rUpn = cUpn.resumen();
+        assert.strictEqual(rUpn.aceptadas, 0, "«Régimen Especial» sin ofertas no entra a Redis: la carga completa tampoco la recupera");
+        assert.strictEqual(rUpn.por_modalidad["Régimen Especial"], 1,
+          "el censo tiene que nombrar el literal exacto: es el dato que decide si se toca la lista blanca");
+        console.log(`  · el literal de la modalidad: reparto de ${r.por_motivo.modalidad_no_competitiva} descartes `
+          + `(directa ${r.por_modalidad["Contratación directa"]} · régimen especial ${r.por_modalidad["Régimen Especial"]} · `
+          + `sin modalidad ${r.por_modalidad["(sin modalidad)"]}) · cota ${MAX_MODALIDADES} literales + «(otras)»`);
+      }
       console.log(`· unidad censo de ingesta: ${r.descartadas} descartes clasificados en ${Object.values(r.por_motivo).filter(Boolean).length} motivos, la suma cuadra y el delta conserva los cerrados`);
     }
 
