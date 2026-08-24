@@ -4774,6 +4774,26 @@ caso.
   módulo. **Una dependencia inyectada con la forma equivocada no prueba nada** — se comprueba contra
   el llamador real (`handlers/perfil/diagnostico.js`), que la construye bien.
 
+**MEDIDO EN PRODUCCIÓN (24-ago-2026), y cierra el caso.** Tras relanzar la carga completa, el dueño
+consultó las cuatro convocatorias: **tres aparecen y la que falta es `UPN-VAD-CP-008-2026`, que es
+justamente la ADJUDICADA** de las cuatro (la propia captura del ingeniero la muestra como «Proceso
+adjudicado y celebrado»). Es decir: el arreglo de la `fase` rezagada recuperó las tres abiertas, y la
+cuarta no sale porque está cerrada — el comportamiento correcto. **El régimen especial NO era el
+mecanismo aquí**, y lo demuestra el propio dato: la UPN publica con un literal que pasa la lista
+blanca.
+
+**El primer `por_modalidad` real, y desmiente la hipótesis por volumen:**
+`Contratación directa` 501 811 · **`Contratación régimen especial` 510 585** · `Contratación Directa
+(con ofertas)` 4 354 · `Solicitud de información a los Proveedores` 21 856 · `Enajenación…` 182 ·
+`No Definido` 88. El literal real es **«Contratación régimen especial»**, no «Régimen Especial», y es
+la cubeta MÁS grande — más que la contratación directa. Pero el corpus servido trae 79 procesos de
+**«Contratación régimen especial (con ofertas)»**: cuando hay convocatoria, SECOP II lo etiqueta, y la
+regla los deja entrar. Los 510 585 son mayoritariamente prestación de servicios profesionales de
+universidades, ESE y empresas de servicios públicos —el ejemplo del censo es un «PRESTAR SERVICIOS
+PROFESIONALES EN GEOLOGIA» de la UNAL—, o sea contratación directa de esas entidades. **La lista
+blanca se queda como está**: la sospecha estaba bien planteada y el dato la resuelve en contra. Sin
+`por_modalidad` no se habría podido decidir en ningún sentido.
+
 **Lo que este entorno NO pudo verificar, dicho en vez de disimulado.** La política de red de esta
 sesión bloquea `datos.gov.co` (403 del proxy, `Host not in allowlist`) y también el despliegue, así
 que **no se pudo consultar la fila real de las cuatro convocatorias de la UPN**: no consta cuál de los
@@ -4849,3 +4869,33 @@ remotas y todo el trabajo va desde ahora directo a `main`. Decisiones que no hay
 - Sin dependencias de pago; sin npm salvo necesidad justificada.
 - Preferir cambios pequeños y directos sobre el código actual — la era de las «capas aditivas»
   con monkey-patch terminó con la reescritura.
+
+### UN BORRADOR NO ADMITE OFERTAS, Y LA TARJETA DECÍA QUE SÍ (24-ago-2026)
+
+Salió del primer `censo_ingesta` de producción, mirando lo que NO se estaba buscando: de los **1 138
+procesos servidos**, `estado_del_procedimiento` vale «Publicado» en 1 133 y **«Borrador» en 5**.
+
+- **CAUSA: un acierto por accidente, no por decisión.** `filtros.coincide` compara por prefijo **en
+  los dos sentidos** (`v.startsWith(e) || e.startsWith(v)`) y `ESTADOS_ABIERTOS` trae «borrador de
+  pliegos», así que `"borrador de pliegos".startsWith("borrador")` deja pasar el literal suelto.
+  Nadie decidió admitir «Borrador»: se coló por la forma del comparador.
+- **A un borrador NO SE LE PUEDE PRESENTAR OFERTA** —sea el proyecto de pliego, que sigue en
+  observaciones, o un proceso que aún no se publicó— y la tarjeta le pintaba cierre, probabilidad y
+  «Cumple los requisitos para presentarse». Es el falso positivo caro: el recurso escaso es **el
+  tiempo del equipo** (Palanca 3), no la lista de resultados.
+- **NO SE EXCLUYE, y es deliberado.** Si es el proyecto de pliego, es la ventana que el manual llama
+  la más poderosa y desaprovechada (mandamiento 7: observar con la redacción alternativa lista para
+  pegar); esconderla sería el falso negativo que cuesta más. Se DICE lo que es: «Todavía no admite
+  ofertas: está en borrador. Es el momento de observar el pliego, no de preparar la oferta», en
+  ÁMBAR — el proceso no se descarta, se sitúa.
+- **La distinción NO exige resolver la ambigüedad de qué significa «Borrador» en el dataset** (esta
+  sesión no alcanza la fuente): en las dos lecturas posibles, «todavía no admite ofertas» es cierto.
+  Actuar bien sin saberlo todo es distinto de adivinar.
+- **Solo el literal EXACTO responde `false`.** Un estado ausente, vacío o desconocido devuelve `true`:
+  no saber no autoriza a afirmar que no admite ofertas — «sin dato ≠ cero» en booleano. Y «Borrador
+  de pliegos» es un estado publicado de la lista canónica: otra cosa, con prueba de que no se contagia.
+- **`admite_ofertas` va PRIMERO en `lineaRequisitos`**, antes que las puertas: da igual que cumpla los
+  requisitos si hoy no se le puede presentar nada.
+- **La cerradura EJECUTA `lineaRequisitos`**, no comprueba por regex que se llame. De paso se reforzó
+  la guarda preexistente de la tarjeta —que exigía la llamada literal `(puertas, l.manifestacion)` y
+  se rompía con cualquier argumento nuevo— en vez de debilitarla para que pasara el cambio.

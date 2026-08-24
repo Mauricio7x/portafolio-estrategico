@@ -1834,6 +1834,65 @@ async function main() {
       console.log(`· unidad censo de ingesta: ${r.descartadas} descartes clasificados en ${Object.values(r.por_motivo).filter(Boolean).length} motivos, la suma cuadra y el delta conserva los cerrados`);
     }
 
+
+      /* ══════ UN BORRADOR NO ADMITE OFERTAS, Y LA APP DECÍA QUE SÍ (ago 2026) ══════
+         Medido en el diagnóstico de PRODUCCIÓN: de 1.138 procesos servidos,
+         `estado_del_procedimiento` vale «Publicado» en 1.133 y **«Borrador» en
+         5**. Entran porque `coincide` compara por prefijo EN LOS DOS SENTIDOS y
+         `ESTADOS_ABIERTOS` trae «borrador de pliegos»: `"borrador de
+         pliegos".startsWith("borrador")` es true, así que el literal suelto casa
+         por accidente, no por decisión.
+
+         A un borrador NO SE PUEDE PRESENTAR OFERTA —sea el proyecto de pliego
+         (todavía en observaciones) o un proceso sin publicar—, y la tarjeta le
+         pintaba cierre, probabilidad y «cumple los requisitos para
+         presentarse». Es el falso positivo caro: el recurso escaso es el tiempo
+         del equipo (Palanca 3), no la lista de resultados.
+
+         NO SE EXCLUYE, y eso es deliberado: si es el proyecto de pliego, es la
+         ventana MÁS valiosa del manual (mandamiento 7: observar con redacción
+         alternativa lista para pegar) y esconderla sería el falso negativo que
+         cuesta más. Se DICE lo que es. La distinción no depende de resolver la
+         ambigüedad: en las dos lecturas «todavía no admite ofertas» es cierto. */
+      {
+        const FLb = require("../lib/filtros_lista.js");
+        const clasificarB = FLb.crearClasificador({});
+        const fila = (estado) => ({
+          id_del_proceso: `B-${estado}`, cuantia_cop: 500e6,
+          modalidad_de_contratacion: "Licitación pública",
+          estado_del_procedimiento: estado, fase: estado === "Borrador" ? null : "Presentación de oferta",
+          descripcion_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL RETIRO",
+          fecha_de_recepcion_de: CIERRE_FUTURO,
+        });
+
+        // 1 · el literal suelto se reconoce, y el estado normal NO se contagia
+        assert.strictEqual(clasificarB(fila("Borrador")).admite_ofertas, false,
+          "un proceso en «Borrador» no admite ofertas: la tarjeta no puede decir que se presente");
+        assert.strictEqual(clasificarB(fila("Publicado")).admite_ofertas, true);
+        assert.strictEqual(clasificarB(fila("Activo")).admite_ofertas, true);
+
+        /* 2 · «Borrador de pliegos» es OTRA COSA y sigue siendo un proceso que
+           admite ofertas: es un estado de la lista canónica, no el literal suelto. */
+        assert.strictEqual(clasificarB(fila("Borrador de pliegos")).admite_ofertas, true,
+          "«Borrador de pliegos» es un estado publicado de la lista canónica, no el borrador sin publicar");
+
+        // 3 · SIGUE ENTRANDO AL CORPUS: no se excluye, se declara
+        const Fb = require("../lib/filtros.js");
+        assert.strictEqual(Fb.estado_abierto(fila("Borrador")), true,
+          "el borrador NO se esconde: si es el proyecto de pliego, es la ventana del mandamiento 7");
+
+        // 4 · un estado ausente o raro no puede afirmar que NO admite ofertas
+        for (const v of [undefined, null, "", "  ", "Vaya usted a saber"]) {
+          assert.notStrictEqual(clasificarB({ ...fila("Publicado"), estado_del_procedimiento: v }).admite_ofertas, false,
+            `un estado ${JSON.stringify(v)} no puede AFIRMAR que el proceso no admite ofertas`);
+        }
+
+        /* 5 · que la tarjeta lo DIGA se prueba EJECUTANDO `lineaRequisitos`
+           con el caso real (bloque de la tarjeta, más abajo): comprobar por
+           regex que una función se llama no prueba lo que escribe. */
+        console.log("  · borrador: «Borrador» no admite ofertas y se dice; «Borrador de pliegos» y «Publicado» sí; "
+          + "no se excluye del corpus (proyecto de pliego = ventana del mandamiento 7)");
+      }
     /* ═══ «¿POR QUÉ NO ESTÁ ESTE PROCESO?» (lib/rastreo) ══════════════════════
        La pregunta que el dueño no podía hacer. Cuatro respuestas posibles y
        ninguna de ellas afirma más de lo que se sabe: `no_consta` NO dice que el
@@ -16351,13 +16410,34 @@ async function main() {
           assert.ok(/detalles por revisar/.test(lineaRequisitos({ p1_rup: { sin_dato: true } })),
             "sin_dato deja pasar CON aviso: ni verde limpio ni rojo (no saber no es fallar)");
 
+          /* BORRADOR: no admite ofertas, y eso manda sobre el veredicto — da
+             igual que cumpla los requisitos si hoy no se le puede presentar
+             nada. Ámbar, no rojo: el proceso no se descarta, se sitúa. */
+          const sano = { p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: true } };
+          const borrador = lineaRequisitos(sano, null, false);
+          assert.ok(/no admite ofertas/.test(borrador) && /amber/.test(borrador),
+            "un proceso en borrador tiene que decir que todavía no admite ofertas, en ámbar");
+          assert.ok(!/Cumple los requisitos para presentarse/.test(borrador),
+            "no puede invitar a presentarse a un proceso que no admite ofertas");
+          assert.ok(/observar el pliego/.test(borrador),
+            "y dice qué SÍ se puede hacer: observar el pliego (mandamiento 7), no preparar la oferta");
+          // el resto no se contagia: sin el dato, el veredicto es el de siempre
+          assert.ok(/text-green-700/.test(lineaRequisitos(sano, null, true)));
+          assert.ok(/text-green-700/.test(lineaRequisitos(sano, null, undefined)),
+            "sin el dato no se puede AFIRMAR que no admite ofertas");
+
           const iT = jsT.indexOf("function tarjeta(");
           const cuerpoT = jsT.slice(iT, jsT.indexOf("\n  }", iT));
           /* El veredicto RECIBE la manifestación: sin ella diría «cumple los
              requisitos para presentarse» sobre un proceso cuyo plazo para
              avisar que le interesa ya venció (defecto del 19-ago-2026). */
-          assert.ok(/lineaRequisitos\(puertas, l\.manifestacion\)/.test(cuerpoT),
+          assert.ok(/lineaRequisitos\(puertas, l\.manifestacion\b/.test(cuerpoT),
             "la tarjeta pinta el veredicto en una línea, y le pasa la manifestación para que no se contradiga con el chip del plazo");
+          /* Y le pasa si ADMITE OFERTAS: sin eso diría «cumple los requisitos
+             para presentarse» sobre un proceso en borrador, al que hoy no se le
+             puede presentar nada (5 de 1.138 en producción). */
+          assert.ok(/lineaRequisitos\(puertas, l\.manifestacion, l\.filtro && l\.filtro\.admite_ofertas\)/.test(cuerpoT),
+            "el veredicto tiene que recibir `admite_ofertas`: un borrador no admite ofertas");
           assert.ok(cuerpoT.indexOf("Más detalles") > 0
             && cuerpoT.indexOf("badgesPuertas(puertas)") > cuerpoT.indexOf("Más detalles"),
           "las cuatro puertas viven plegadas en «Más detalles»: quince chips visibles enterraban lo que decide");

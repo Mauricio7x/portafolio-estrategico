@@ -1065,11 +1065,20 @@
        mismo defecto que costó el proceso de Motavita. NO se oculta el proceso
        (puede haber avisado a tiempo y la app no lo sabe: el falso negativo
        cuesta más), pero la línea lo dice y baja a ámbar. */
-  function lineaRequisitos(puertas, manif) {
+  function lineaRequisitos(puertas, manif, admiteOfertas) {
     const g = puertas || {};
     const detalle = [g.p1_rup, g.p2_k, g.p3_caja].map((p) => p && p.mensaje).filter(Boolean).join("\n");
     const linea = (clase, texto) =>
       `<p class="mt-3 text-sm font-medium ${clase}"${detalle ? ` title="${esc(detalle)}"` : ""}>● ${esc(texto)}</p>`;
+    /* TODAVÍA NO ADMITE OFERTAS, y va lo PRIMERO: da igual que cumpla o no los
+       requisitos si hoy no se le puede presentar nada. Solo con el literal
+       «Borrador»; un estado ausente o desconocido nunca lo dispara. No se
+       esconde el proceso: si es el proyecto de pliego, es la ventana para
+       observar, que el manual llama la más desaprovechada del oficio. */
+    if (admiteOfertas === false) {
+      return linea("text-amber-700",
+        "Todavía no admite ofertas: está en borrador. Es el momento de observar el pliego, no de preparar la oferta.");
+    }
     if (g.p1_rup && g.p1_rup.pasa === false) return linea("text-red-700", "Esta obra no encaja con su RUP.");
     if (g.p2_k && g.p2_k.pasa === false) return linea("text-red-700", "Supera su capacidad de contratación.");
     const plazoIdo = !!(manif && manif.aplica && manif.estado === "vencida");
@@ -1420,7 +1429,7 @@
       ${noViable ? `<p class="mt-3">${chip(`No viable${motivos ? ` — ${esc(motivos)}` : ""}`, "bg-red-100 text-red-700 ring-1 ring-inset ring-red-600/20",
     "No cumple uno de sus requisitos: abra «Más detalles» para ver cuál")}</p>` : ""}
 
-      ${lineaRequisitos(puertas, l.manifestacion)}
+      ${lineaRequisitos(puertas, l.manifestacion, l.filtro && l.filtro.admite_ofertas)}
 
       ${bloqueProbabilidad(l)}
 
