@@ -6668,6 +6668,109 @@ async function main() {
         }
       }
 
+      /* ══════ b_max NO PUEDE COBRAR LA CONTRIBUCIÓN A QUIEN NO LA CAUSA (ago 2026) ══════
+         La contribución especial del 5 % (Ley 418/1997 art. 120) grava los
+         contratos de OBRA PÚBLICA. Una interventoría o una consultoría son
+         contratos de consultoría (Ley 80/1993 art. 32 num. 2) y NO la causan —
+         la regla ya vivía en `lib/ganancia.aplicaContribucion` y el editor de
+         APU ya decidía con ella (`handlers/apu/editor.js`), pero
+         `lib/baja_maxima` la cobraba SIEMPRE.
+
+         Medido con una interventoría de $1.000 M y costo directo $700 M
+         (A 15 · I 5 · U 5): el piso salía $921.052.632 en vez de $875.000.000
+         —$46 M de piso inflado— y b_max 7,89 % en vez de 12,5 %. Donde la
+         entidad descuenta fuerte (mediana 12 %) eso hunde el factor de precio
+         a 0,6144 y la app enseña la interventoría un 62,8 % MENOS probable de
+         lo que es. Y contradecía al editor: dos cifras del mismo proceso, y la
+         mala era la que ordena la lista.
+
+         La resolución vive DENTRO de `baja_maxima` a propósito: el desglose
+         (`probabilidad_desglose`) no tiene el tipo de trabajo a mano, así que
+         un parámetro del llamador habría divergido del listado — y hay prueba
+         de que los dos reproducen la misma `p`. */
+      {
+        const { bajaMaximaDe, pisoTechoDeBorrador } = require("../lib/baja_maxima.js");
+        const { pisoTecho: pisoTechoBmax } = require("../lib/apu/piso_techo.js");
+        const { aplicaContribucion, CONTRIBUCION_PCT } = require("../lib/ganancia.js");
+        const { tipoTrabajoDe } = require("../lib/filtros_lista.js");
+
+        const PO = 1_000_000_000, CD = 700_000_000;
+        const cfgBase = { aiu_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo_aiu: "aditivo" };
+        const costosCon = (cfg) => ({ porProceso: new Map([["P1", {
+          id: "b1", guardado: "2026-08-20T10:00:00Z", costo_directo: CD, config: cfg, total_guardado: null,
+        }]]) });
+        const filaCon = (extra) => ({ id_del_proceso: "P1", cuantia_cop: PO, ...extra });
+
+        // el piso que corresponde a cada τ, con la MISMA función pura del panel
+        const pisoCon = (contribucion_pct) => pisoTechoBmax({
+          presupuesto_oficial: PO, costo_directo: CD,
+          aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" },
+          utilidad_minima_pct: null, deducciones_pct: null, contribucion_pct,
+          baja: null, competencia: null, precio_actual: null, modalidad: null,
+        }).cifras.piso_rentable;
+        const bmaxDe = (piso) => Math.max(0, Math.round((1 - piso / PO) * 10000) / 100);
+
+        const INTERV = filaCon({
+          descripcion_del_procedimiento: "INTERVENTORIA TECNICA, ADMINISTRATIVA Y FINANCIERA A LA CONSTRUCCION DE PLACA HUELLA",
+          tipo_de_contrato: "Interventoría",
+        });
+        const OBRA = filaCon({
+          descripcion_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL RETIRO",
+          tipo_de_contrato: "Obra",
+        });
+
+        // 1 · el corpus de prueba clasifica lo que decimos que clasifica (si no, la prueba no prueba nada)
+        assert.strictEqual(tipoTrabajoDe(INTERV), "interventoria", "el fixture tiene que ser una interventoría");
+        assert.strictEqual(tipoTrabajoDe(OBRA), "obra", "el fixture tiene que ser obra");
+        assert.strictEqual(aplicaContribucion("interventoria"), false);
+        assert.strictEqual(aplicaContribucion("obra"), true);
+
+        // 2 · LA INTERVENTORÍA NO PAGA LA CONTRIBUCIÓN EN SU PISO (el defecto)
+        const bI = bajaMaximaDe(INTERV, costosCon(cfgBase));
+        assert.strictEqual(bI.origen, "apu", "el borrador tiene costo: b_max tiene que salir del APU");
+        assert.strictEqual(bI.valor, bmaxDe(pisoCon(0)),
+          `b_max de una interventoría tiene que salir de un piso SIN contribución: fue ${bI.valor} %, tenía que ser ${bmaxDe(pisoCon(0))} %`);
+        assert.notStrictEqual(bI.valor, bmaxDe(pisoCon(CONTRIBUCION_PCT)),
+          "b_max de una interventoría no puede coincidir con el piso que SÍ cobra la contribución");
+
+        // 3 · NO-REGRESIÓN: la OBRA la sigue pagando, al peso
+        const bO = bajaMaximaDe(OBRA, costosCon(cfgBase));
+        assert.strictEqual(bO.valor, bmaxDe(pisoCon(CONTRIBUCION_PCT)),
+          `una obra sí causa la contribución: b_max fue ${bO.valor} %, tenía que ser ${bmaxDe(pisoCon(CONTRIBUCION_PCT))} %`);
+        assert.ok(bO.valor < bI.valor, "la obra, que sí paga el 5 %, tiene que soportar MENOS baja que la interventoría");
+
+        // 4 · LA CASILLA DEL USUARIO manda también aquí: si su administración ya
+        //     lleva los impuestos dentro, cobrarlos otra vez los cobra dos veces
+        const bOcasilla = bajaMaximaDe(OBRA, costosCon({ ...cfgBase, contribucion_en_administracion: true }));
+        assert.strictEqual(bOcasilla.valor, bmaxDe(pisoCon(0)),
+          "con «mi administración ya incluye los impuestos», el piso de una obra no puede volver a cobrar el 5 %");
+
+        // 5 · ANTE LA DUDA, NO PROMETER: un tipo que no se reconoce SÍ la causa
+        const RARO = filaCon({ descripcion_del_procedimiento: "OBJETO SIN VOCABULARIO RECONOCIBLE 2026", tipo_de_contrato: "" });
+        assert.strictEqual(bajaMaximaDe(RARO, costosCon(cfgBase)).valor, bmaxDe(pisoCon(CONTRIBUCION_PCT)),
+          "un tipo de trabajo desconocido tiene que seguir causando la contribución");
+
+        // 6 · UNA SOLA DEFINICIÓN: baja_maxima no puede fabricar su propia lista
+        //     de «esto no es obra» — tiene que llamar a lib/ganancia
+        const fuenteBmax = fs.readFileSync(path.join(__dirname, "..", "lib", "baja_maxima.js"), "utf8");
+        assert.ok(/aplicaContribucion/.test(fuenteBmax),
+          "baja_maxima tiene que LLAMAR a lib/ganancia.aplicaContribucion, no reimplementar la regla");
+        assert.ok(!/interventoria|consultoria/i.test(fuenteBmax.replace(/\/\*[\s\S]*?\*\//g, "")),
+          "baja_maxima no puede traer su propia lista de tipos sin contribución (una segunda lista diverge)");
+
+        // 7 · EL EFECTO QUE SE VE: con la entidad descontando 12 %, la interventoría
+        //     deja de estar penalizada por un impuesto que no paga
+        const bajaFuerte = { nivel: "medio", baja_mediana: 12, baja_p25: 9, baja_p75: 15, procesos_contados: 20 };
+        const fInterv = factorPrecio(bajaFuerte, bI.valor, "apu");
+        const fObra = factorPrecio(bajaFuerte, bO.valor, "apu");
+        assert.strictEqual(fInterv.factor, 1,
+          `con b_max ${bI.valor} % ≥ mediana 12 %, la interventoría no puede perder probabilidad por precio (factor ${fInterv.factor})`);
+        assert.ok(fObra.factor < 1, "la obra, con menos margen de baja, sí paga el factor de precio");
+        console.log(`  · b_max y la contribución del 5 %: interventoría ${bI.valor} % (piso $${pisoCon(0).toLocaleString("es-CO")}) `
+          + `vs obra ${bO.valor} % (piso $${pisoCon(CONTRIBUCION_PCT).toLocaleString("es-CO")}) · `
+          + `factor de precio con mediana 12 %: ${fInterv.factor} vs ${fObra.factor}`);
+      }
+
       /* ══════ ENCOGIMIENTO: SE ACABÓ EL ACANTILADO DE LOS 5 PROCESOS (ago 2026 · A2/A3) ══════
          Antes: entidad con 4 procesos y promedio 2 → respaldo (5 rivales, p=0,167);
          con 5 procesos → 2 rivales, p=0,433. ×2,60 por UN proceso más. */

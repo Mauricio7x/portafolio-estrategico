@@ -3470,11 +3470,29 @@ que dice hace más daño que uno que falta. Ahora la celda ES lo que el usuario 
   mediano que se gana una de cada tres. Sin cifra va al final, jamás con un cero. Y `margen` se
   renombró a **«Más recorrido de precio»**: `techo − piso` es distancia entre dos PRECIOS, no plata
   que queda, y llamarlos igual («Dónde me queda más») era la misma confusión en el selector.
-- **UNA ASIMETRÍA CONSCIENTE con `b_max`**: `lib/baja_maxima` sigue cobrando la contribución siempre,
-  sin mirar el tipo ni la casilla. No es doctrina: ese piso alimenta `p_ganar`, cuya cadena está
-  medida en producción y probada contra el desglose de `/api/inteligencia`, y moverla aquí cambiaría
-  la probabilidad de todo el corpus por un encargo que era sobre otra cifra. Queda apuntado como
-  pendiente separado; afecta solo a interventorías y consultorías CON presupuesto guardado.
+- **LA ASIMETRÍA DE `b_max` YA ESTÁ CERRADA (ago 2026), y era un defecto, no doctrina.**
+  `lib/baja_maxima` cobraba la contribución del 5 % SIEMPRE, sin mirar el tipo de trabajo ni la
+  casilla, mientras el editor de APU ya decidía con `lib/ganancia.aplicaContribucion`
+  (`handlers/apu/editor.js`): **dos cifras del mismo proceso, y la mala era la que ORDENA la lista**.
+  Medido con una interventoría de $1.000 M y costo directo $700 M (A 15 · I 5 · U 5): piso
+  **$921.052.632 en vez de $875.000.000** —$46 M inflados— y **b_max 7,89 % en vez de 12,5 %**. Con
+  una entidad que descuenta el 12 %, el factor de precio se hundía a **0,6144**: la app enseñaba esa
+  interventoría **un 62,8 % menos probable de lo que es**. Decisiones:
+  · **La contribución se resuelve DENTRO de `baja_maxima` (`contribucionPctDe`), no por parámetro del
+    llamador.** El desglose (`lib/probabilidad_desglose`) no tiene el tipo de trabajo a mano, así que
+    un parámetro se le habría olvidado y habría divergido del listado — y hay prueba de que los dos
+    reproducen la misma `p`. Resolverlo dentro lo hace consistente POR CONSTRUCCIÓN.
+  · **Llama a la regla que ya existía**, y hay prueba que PROHÍBE que este módulo fabrique su propia
+    lista de «esto no es obra»: tres listas paralelas divergen a la primera corrección.
+  · **La casilla del usuario manda también aquí.** `leerConfig()` de `public/app.js` ya documentaba
+    que `contribucion_en_administracion` «viaja en el borrador y de ahí lo lee la tarjeta»: el
+    contrato estaba prometido en el frontend y era `baja_maxima` quien no lo honraba.
+  · **Un tipo de trabajo desconocido SIGUE causándola** (ante la duda, no prometer), y las filas
+    hostiles no pueden tumbar el listado: `tipoTrabajoDe` no lanza con descripción nula, numérica,
+    de 200 KB ni con cuantía ilegible — verificado, porque es el defecto de `lib/habiles.festivos`.
+  · El temor que lo dejó aparcado era que «moviera la probabilidad de todo el corpus». **No la
+    mueve**: solo cambia procesos de consultoría CON borrador guardado y costo directo. Las 4
+    iteraciones de la suite pasan sin tocar ninguna otra cifra.
 
 ### Accesibilidad de la zona · el costo de LLEGAR ordena (ago 2026)
 
