@@ -17071,7 +17071,20 @@ async function main() {
            que describe, y aquí se vigila donde vive. */
         const iG = jsSin.indexOf("function bloqueGanancia");
         assert.ok(iG > 0, "la tercera celda de la tarjeta tiene que salir de bloqueGanancia");
-        const cuerpoGanancia = jsSin.slice(iG, jsSin.indexOf("\n  }", iG));
+        /* ⚠️ EXTRACCIÓN POR CONTEO DE LLAVES. Cortar por «\n  }» dejaba fuera las
+           llaves de cierre —MEDIDO: 3 462 de 3 466 caracteres, cuatro de menos—,
+           que es poco para las aserciones por regex de abajo (seguían cubriendo
+           la función entera) y suficiente para que `new Function` no pueda
+           parsearla. Por eso el trozo servía para LEER la función y no para
+           EJECUTARLA, y el defecto solo apareció al ejecutarla. */
+        const cuerpoGanancia = (() => {
+          let prof = 0, dentro = false;
+          for (let k = jsSin.indexOf("{", iG); k < jsSin.length; k++) {
+            if (jsSin[k] === "{") { prof++; dentro = true; }
+            else if (jsSin[k] === "}") { prof--; if (dentro && prof === 0) return jsSin.slice(iG, k + 1); }
+          }
+          throw new Error("bloqueGanancia sin cierre: la extracción no puede quedarse a medias");
+        })();
         assert.ok(/bloqueGanancia\(l, celda\)/.test(cuerpoBloque),
           "la franja tiene que pintar la ganancia con la MISMA plantilla de celda: dos plantillas se despeinan por separado");
         /* ⚠️ LA FRASE SE MUDÓ CON LA CIFRA (24-ago-2026), y el invariante se
@@ -17117,6 +17130,69 @@ async function main() {
            el detalle, que ya existe y ya cuadra al peso. */
         assert.ok(/copFirmado\(cifra\)/.test(cuerpoGanancia),
           "lo que se pinta es la ganancia, no el valor esperado disfrazado");
+        /* ⚠️ LA CELDA SE EJECUTA, NO SE LEE (24-ago-2026). Las guardas por regex
+           de arriba no habrían visto NINGUNO de los dos defectos que esta
+           prueba caza, y los dos estaban en la propia corrección:
+           (a) el rótulo se decidía por el VEREDICTO y no por el SIGNO, así que
+               un presupuesto costeado con veredicto `depende` —peor caso
+               negativo, que es el caso normal cuando la reserva de imprevistos
+               decide— salía «−$10.000.000 · le quedan como mínimo si gana»: la
+               lectura invertida que esta celda existe para corregir;
+           (b) `rotulo` se declaraba ANTES que `cifra`, o sea en la zona muerta
+               temporal: `ReferenceError` dentro del renderizado, la lista
+               entera rota, y en producción.
+           Es el patrón de `fraseProbabilidad` y el de la manifestación:
+           comprobar por regex que una función se llama no prueba lo que dice. */
+        {
+          /* Los formateadores REALES de app.js no se pueden requerir (viven en un
+             IIFE), así que se reproducen aquí con el mismo contrato. Lo que la
+             prueba verifica es la LÓGICA de la celda —qué cifra y qué rótulo—,
+             no el formato, que ya tiene su propia prueba (`copFirmado`). */
+          const fmtE2E = new Intl.NumberFormat("es-CO");
+          const nf2E2E = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 });
+          const pesosE2E = (n) => (n == null ? "—" : "$" + fmtE2E.format(Math.round(n)));
+          const fmtCortoE2E = (n) => (n == null ? "—" : "$" + Math.round(n / 1e6) + "M");
+          const copFirmadoE2E = (n) => {
+            if (n === null || n === undefined || n === "") return "—";
+            const v = Number(n);
+            if (!Number.isFinite(v)) return "—";
+            return (v < 0 ? "-$" : "$") + fmtE2E.format(Math.abs(Math.round(v)));
+          };
+          const qApuStub = () => "q=1";
+          const celdaStub = (valor, rotulo, nota) => ({
+            valor: String(valor).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+            rotulo: String(rotulo || ""), nota: String(nota || ""),
+          });
+          const bloque = new Function("esc", "fmt", "nf2", "pesos", "fmtCorto", "copFirmado", "qApu",
+            `${cuerpoGanancia}; return bloqueGanancia;`)(
+            (x) => String(x == null ? "" : x), fmtE2E, nf2E2E, pesosE2E, fmtCortoE2E, copFirmadoE2E, qApuStub);
+          const G = (o) => Object.assign({ precio_esperado: 1e9, costo_sin_ganancia: 9e8, frase: "f", cota_superior_por: ["x"] }, o);
+          const ramas = [
+            ["deja", { id_del_proceso: "P1", ganancia: G({ valor: 9e7, peor: 9e7, mejor: 1.3e8, veredicto: "deja", base: "apu", borrador: "b" }) }],
+            ["pierde", { id_del_proceso: "P2", ganancia: G({ valor: -7e7, peor: -7e7, mejor: -2e7, veredicto: "pierde", base: "apu", borrador: "b" }) }],
+            ["depende", { id_del_proceso: "P3", ganancia: G({ valor: -1e7, peor: -1e7, mejor: 5e7, veredicto: "depende", base: "apu", borrador: "b" }) }],
+            ["sin_apu", { id_del_proceso: "P4", ganancia: G({ valor: -1e7, peor: -1e7, mejor: 8e7, veredicto: "depende", base: "estructura_de_precio" }) }],
+            ["sin_cifra_con_ve", { id_del_proceso: "P5", ganancia: { valor: null, frase: "sin presupuesto" }, ve: 4.2e8 }],
+            ["sin_cifra", { id_del_proceso: "P6", ganancia: null, ve: null }],
+          ];
+          const vistas = new Map();
+          for (const [nombre, fila] of ramas) {
+            const c = bloque(fila, celdaStub);      // EJECUTA: una TDZ o un typo revientan aquí
+            vistas.set(nombre, c);
+            /* LA INVARIANTE CENTRAL: una cifra NEGATIVA jamás bajo un rótulo que
+               promete plata. Es el defecto que originó todo este cambio. */
+            if (/^-/.test(c.valor)) {
+              assert.ok(!/le quedan/.test(c.rotulo),
+                `«${c.valor}» bajo «${c.rotulo}»: un número negativo no puede llevar un rótulo que promete plata (rama ${nombre})`);
+            }
+            assert.ok(c.rotulo, `la rama ${nombre} tiene que traer rótulo`);
+          }
+          assert.ok(/^\$/.test(vistas.get("deja").valor) && /le quedan/.test(vistas.get("deja").rotulo), "con costo medido y ganancia positiva se dice lo que queda");
+          assert.strictEqual(vistas.get("sin_apu").valor, "Calcular", "sin costo medido la celda PIDE el costo en vez de fingir una medición");
+          assert.strictEqual(vistas.get("sin_cifra").valor, "—", "sin nada que calcular, «—» y su motivo: jamás un 0");
+          assert.ok(!/M\b/.test(vistas.get("sin_cifra_con_ve").valor),
+            "sin ganancia NO se resucita el valor esperado: es la cifra que el dueño reportó como leída al revés");
+        }
         assert.ok(/g\.base !== "apu"/.test(cuerpoGanancia),
           "la celda tiene que partirse por si el costo está MEDIDO: sin él la cifra es la cuantía por una constante");
         assert.ok(!/a \$\{esc\(copFirmado\(g\.mejor\)\)\}|puede costarle o dejarle/.test(cuerpoGanancia),
@@ -18857,6 +18933,20 @@ async function main() {
         const rc = R.rastrear("ADJ-1", { filas: [cerrado], evaluar: evaluarReal });
         assert.ok(/cerrado, adjudicado/.test(rc.resultados[0].explicacion),
           `un proceso adjudicado tiene que decir que ya no admite ofertas, no «no pasa el juicio»: ${rc.resultados[0].explicacion}`);
+        /* ⚠️ `fuera_estado` DISPARA POR DOS CAUSAS Y SOLO UNA ES «YA CERRÓ».
+           La cascada exige `proceso_abierto && estado_abierto(l)`: el primero es
+           un SELLO de la sincronización, el segundo se re-clasifica al servir.
+           Si falla el sello pero el estado VIGENTE dice abierto, decir «ya no
+           admite ofertas» es FALSO y manda al usuario lejos de un proceso que
+           todavía puede ganar — que es exactamente el rezago de la `fase` con
+           las convocatorias de la UPN. La herramienta que existe para
+           diagnosticar ausencias no puede fallar justo en ese caso. */
+        const sellado = { ...cerrado, id_del_proceso: "SELLADO-1", proceso_abierto: false, estado_del_procedimiento: "Publicado", fecha_cierre: "2027-01-01T00:00:00.000" };
+        const rs = R.rastrear("SELLADO-1", { filas: [sellado], evaluar: evaluarReal });
+        assert.ok(/SIGUE ABIERTO/.test(rs.resultados[0].explicacion),
+          `sellado cerrado con estado vivo abierto: no se puede afirmar que ya cerró — ${rs.resultados[0].explicacion}`);
+        assert.ok(!/ya no admite ofertas/.test(rs.resultados[0].explicacion),
+          "…y menos aún con el mensaje del cierre real");
       }
       /* `no_consta` ENUMERA las causas, no afirma una. Decía «la app no lo ha
          leído todavía», y eso es falso para el caso más corriente: un proceso

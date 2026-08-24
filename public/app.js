@@ -1296,8 +1296,22 @@
        el que se puede afirmar sin condiciones. El mejor caso y la cascada
        completa viven en el detalle, a un clic. */
     const v = g.veredicto;
-    const rotulo = v === "pierde" ? "de pérdida aun en el mejor caso" : "le quedan como mínimo si gana";
+    /* ⚠️ EL RÓTULO SIGUE AL SIGNO DE LA CIFRA QUE SE PINTA, NO AL VEREDICTO
+       (24-ago-2026). Se decidía por `v`, así que un presupuesto ya costeado con
+       veredicto `depende` —peor caso negativo, mejor caso positivo: el caso
+       normal cuando la reserva de imprevistos decide— salía como
+       «−$10.000.000 · le quedan como mínimo si gana»: un número negativo bajo
+       un rótulo que promete plata. Es exactamente la lectura invertida que esta
+       celda existe para corregir, cometida dentro de la propia corrección. Lo
+       cazó EJECUTAR la función con sus seis ramas, no leerla. */
     const cifra = v === "pierde" ? g.mejor : g.peor;
+    /* `cifra` va ARRIBA a propósito: el rótulo la lee, y declararlo antes lo
+       dejaba en la zona muerta temporal —`ReferenceError` dentro del renderizado
+       de la tarjeta, o sea la lista entera rota—. La suite no lo habría visto:
+       sus pruebas de esta celda miran el fuente con regex, no la ejecutan. */
+    const rotulo = v === "pierde"
+      ? "de pérdida aun en el mejor caso"
+      : (Number(cifra) < 0 ? "podría perder, en el peor caso" : "le quedan como mínimo si gana");
     const lineas = [
       g.frase,
       `Precio de referencia: ${pesos(g.precio_esperado)}${g.origen_precio === "mercado"
