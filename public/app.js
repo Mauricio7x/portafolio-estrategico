@@ -1226,69 +1226,96 @@
      no duplicar la plantilla — es la misma franja y tiene que verse igual. */
   function bloqueGanancia(l, celda) {
     const g = l.ganancia;
-    /* Con `ve` pero sin ganancia (sin credencial, o sin presupuesto oficial) se
-       enseña el contrato esperado de siempre, diciendo que es un promedio por
-       intento: quitarle la cifra a quien entra sin llave dejaría la franja coja
-       por una razón que no es suya. */
+    /* Sin cifra de ganancia NO se resucita el valor esperado: era exactamente
+       la cifra que el dueño reportó como leída al revés («el cliente asume que
+       es lo que le queda de ganancia»), y devolverla por la puerta del
+       respaldo convertiría este arreglo en la regresión que vino a corregir.
+       `ve` sigue vivo: ordena la lista y tiene su propio orden con su nombre
+       («Mayor contrato esperado»). Aquí se dice qué falta. */
     if (!g || g.valor == null) {
       const motivo = g && g.frase ? g.frase : "";
-      return l.ve != null
-        ? celda(esc(fmtCorto(l.ve)), "de contrato esperado por intento",
-          "presupuesto × opción de ganar, contando las veces que no se gana · no es lo que queda",
-          `Presupuesto oficial multiplicado por la opción estimada de ganar: un promedio por intento, contando las veces que no se gana. NO es la plata que queda.${motivo ? ` ${motivo}` : ""}`)
-        : celda("—", "sin cifra de lo que deja", "",
-          motivo || "Sin presupuesto oficial publicado no hay con qué calcular lo que deja este contrato.");
+      return celda("—", "sin cifra de lo que deja", "",
+        motivo || "Sin presupuesto oficial publicado no hay con qué calcular lo que deja este contrato.");
     }
 
-    /* TRES VEREDICTOS, NO DOS — y esta es la corrección que costó la cifra.
-       La versión anterior pintaba «−$32M · de pérdida si gana el contrato» en
-       rojo, y esa pérdida NO se sostenía: aparecía solo si (a) se gastaba
-       entera la reserva para imprevistos —que `lib/apu/rentabilidad` dice
-       expresamente que NO es un costo cierto— y (b) la administración del
-       usuario no cubría los impuestos del contrato, que es una pregunta que
-       nadie le había hecho. En el mismo proceso el rango real iba de −$32M a
-       +$257M. Afirmar el extremo malo de un rango que cruza el cero, en rojo y
-       en la única pantalla que decide si se presenta, es la peor forma posible
-       de equivocarse en este módulo.
-       · `deja`    → ya deja plata en el PEOR de los casos: se enseña esa.
-       · `pierde`  → pierde aun en el MEJOR: se enseña la menos mala.
-       · `depende` → el rango cruza el cero: se enseñan LOS DOS extremos. */
+    /* ⚠️ SIN COSTO MEDIDO NO HAY CIFRA DE GANANCIA, Y ESA ES LA CORRECCIÓN
+       (24-ago-2026, reportada por el ingeniero: «no me gusta nada el valor
+       aproximado de ganancia»).
+
+       Lo que se pintaba era un rango —«−$32M a $257M · puede costarle o
+       dejarle»— y el problema no era la redacción: era que el número no
+       contenía ni un dato del proceso. Sin APU costeado, `lib/ganancia` cierra
+       el costo por la identidad del precio (CD = V / (1 + (A+I+U)/100)), así
+       que la cuenta se reduce algebraicamente a `V × k`, con
+       `k = U/(1+A+I+U) − τ`: una CONSTANTE que sale de la estructura que
+       tecleó el propio usuario y del tipo de trabajo. Medido: con la
+       estructura de referencia el rango es EXACTAMENTE −1,00 % a +8,00 % del
+       precio en todos los procesos —$50 M, $500 M, $3.216 M, $20.000 M—, con
+       correlación −1,0000 entre el extremo malo y la cuantía. Era la cuantía
+       reescalada, pintada al lado de la cuantía.
+
+       Es el defecto del chip constante de `nivel_competencia` y el de «18,2
+       oferentes sin base», en la tercera celda: una cifra idéntica en todas
+       las tarjetas no distingue ninguna. Y el veredicto tampoco era del
+       proceso: `depende` salía en toda obra con la estructura de referencia
+       —el 74 % de la lista— porque la ganancia declarada del 5 % no cubre la
+       contribución del 5 %.
+
+       Con costo MEDIDO la misma cuenta sí informa: sobre la misma cuantía y
+       costos directos de $2.000 M a $2.800 M el margen recorre +16,45 % →
+       −14,97 % y el veredicto pasa de `deja` a `pierde`. Por eso la celda se
+       parte por `base` y no por veredicto:
+       · `apu` → UNA cifra, la del peor caso, que con costo medido es un suelo
+         real y no un extremo retórico. El rango entero sigue en el detalle,
+         que ya existe, ya cuadra al peso y se abre pulsando la propia cifra.
+       · `estructura_de_precio` → la celda deja de fingir una medición y pide
+         lo único que la convierte en una: el costo. Es además lo único que
+         mejora la aplicación con el uso. */
+    if (g.base !== "apu") {
+      /* El hecho MEDIDO que sí es de este proceso viaja en el título: a qué
+         precio suele adjudicar esta entidad y sobre cuántos contratos. La
+         celda es el botón que abre el editor ya precargado con el proceso —el
+         mismo camino del botón «APU», con la misma cadena de parámetros—, así
+         que la acción está a un clic de la pregunta. */
+      const refPrecio = g.origen_precio === "mercado"
+        ? `Aquí se suele adjudicar a ${pesos(g.precio_esperado)}${g.baja_aplicada_pct != null ? ` (${nf2.format(g.baja_aplicada_pct)} % por debajo del presupuesto` : ""}${g.baja_procesos != null ? `, medido en ${fmt.format(g.baja_procesos)} contratos)` : g.baja_aplicada_pct != null ? ")" : ""}.`
+        : `Sin historial suficiente de esta entidad para saber a qué precio suele adjudicar: la referencia es el presupuesto oficial (${pesos(g.precio_esperado)}).`;
+      const titulo = [
+        "Para saber cuánta plata deja este contrato hace falta su costo, y todavía no lo ha calculado.",
+        refPrecio,
+        "Sin el costo, la cuenta se cerraría con su propia estructura de precio y el resultado sería la cuantía multiplicada por una constante: el mismo porcentaje en todas las licitaciones. No es un dato de este proceso, así que no se enseña.",
+        "Pulse para calcular el costo de este proceso en Precios.",
+      ].join("\n");
+      const boton = `<button type="button" class="btn-apu cifra-pulsable" data-apu-q="${esc(qApu(l))}"
+        aria-label="Calcular en Precios cuánto cuesta este proceso">Calcular</button>`;
+      return celda(boton, "cuánto deja: falta su costo", "se calcula en Precios", titulo);
+    }
+
+    /* CON COSTO MEDIDO: una sola cifra. El peor caso es el suelo —la reserva
+       de imprevistos gastada entera y la contribución descontada— y por eso es
+       el que se puede afirmar sin condiciones. El mejor caso y la cascada
+       completa viven en el detalle, a un clic. */
     const v = g.veredicto;
-    const cifra = v === "pierde" ? g.mejor : (v === "deja" ? g.peor : g.valor);
-    const valorTxt = v === "depende"
-      ? `${esc(copFirmado(g.peor))} a ${esc(copFirmado(g.mejor))}`
-      : esc(copFirmado(cifra));
-    const rotulo = v === "deja"
-      ? "le quedan si gana el contrato"
-      : v === "pierde" ? "de pérdida aun en el mejor caso" : "puede costarle o dejarle";
-    /* La NOTA dice DE DÓNDE sale la cifra en cinco palabras. OJO: en móvil está
-       oculta por CSS (`.metrica-nota{display:none}`), así que NUNCA puede
-       llevar la salvedad que sostiene el número — por eso la salvedad vive en
-       el RÓTULO y el detalle se abre pulsando la propia cifra. */
-    const nota = g.base === "apu"
-      ? "con el costo que usted calculó"
-      : v === "depende" ? "faltan dos datos suyos" : "con su estructura de precio";
+    const rotulo = v === "pierde" ? "de pérdida aun en el mejor caso" : "le quedan como mínimo si gana";
+    const cifra = v === "pierde" ? g.mejor : g.peor;
     const lineas = [
       g.frase,
       `Precio de referencia: ${pesos(g.precio_esperado)}${g.origen_precio === "mercado"
         ? ` — al que suele adjudicar esta entidad${g.baja_procesos != null ? ` (${fmt.format(g.baja_procesos)} contratos${g.baja_aplicada_pct != null ? `, ${nf2.format(g.baja_aplicada_pct)} % por debajo del presupuesto` : ""})` : ""}.`
         : " — el presupuesto oficial: no hay historial suficiente de esta entidad para saber cuánto se suele bajar."}`,
-      `Obra, administración e imprevistos: ${pesos(g.costo_sin_ganancia)}${g.base === "apu" ? " (con el costo que usted calculó en Precios)." : "."}`,
+      `Obra, administración e imprevistos: ${pesos(g.costo_sin_ganancia)} (con el costo que usted calculó en Precios).`,
+      g.mejor != null && g.mejor !== g.peor ? `Si no gasta la reserva para imprevistos: ${copFirmado(g.mejor)}.` : null,
       g.tau_pct > 0 ? `Le descuentan de las actas: ${pesos(g.descuentos)} (${nf2.format(g.tau_pct)} %).` : null,
       g.por_intento != null ? `Ganancia media por intento: ${copFirmado(g.por_intento)}.` : null,
       ...(g.supuestos || []),
       `Es una cota superior: ${(g.cota_superior_por || []).join("; ")}.`,
       "Pulse la cifra para ver la cuenta completa.",
     ].filter(Boolean);
-    /* La cifra ES el botón: un detalle que se esconde tras un enlace aparte no
-       lo encuentra nadie, y en móvil no hay `title` que valga (no hay puntero).
-       El rojo se reserva para `pierde`: pintar de rojo un rango que cruza el
-       cero volvería a afirmar lo que el veredicto acaba de dejar en duda. */
     const boton = `<button type="button" class="detalle-ganancia cifra-pulsable" data-id="${esc(l.id_del_proceso || "")}"
         data-objeto="${esc(l.nombre_del_procedimiento || l.id_del_proceso || "")}"
-        aria-label="Ver cómo se calcula lo que deja este contrato">${valorTxt}</button>`;
-    return celda(boton, rotulo, esc(nota), lineas.join("\n"),
-      (v === "pierde" ? "perdida" : "") + (v === "depende" ? " rango" : ""));
+        aria-label="Ver cómo se calcula lo que deja este contrato">${esc(copFirmado(cifra))}</button>`;
+    return celda(boton, rotulo, "con el costo que usted calculó", lineas.join("\n"),
+      v === "pierde" ? "perdida" : "");
   }
 
   function bloqueProbabilidad(l) {

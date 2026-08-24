@@ -7758,12 +7758,23 @@ async function main() {
 
       /* 4-bis · «Lo que más deja»: ordena por la ganancia PONDERADA por la
          opción de ganar, descendente, y lo que no tiene cifra va AL FINAL —
-         nunca con un cero que se leería como «no deja nada». */
+         nunca con un cero que se leería como «no deja nada».
+
+         ⚠️ SOLO ENTRAN LAS QUE YA COSTEÓ (24-ago-2026). Esta prueba leía
+         `valor != null`, que era el contrato ANTERIOR, y con él pasaba en
+         verde sobre un orden INVERTIDO: sin APU costeado la ganancia se
+         reduce a `cuantía × k` con `k = U/(1+A+I+U) − τ`, negativa para OBRA
+         con la estructura de referencia (la ganancia declarada del 5 % no
+         cubre la contribución del 5 %), así que ordenar por ella ponía toda
+         interventoría por encima de toda obra y, dentro de la obra, el
+         contrato de $12.000 M el ÚLTIMO y el de $120 M el PRIMERO. Quien pide
+         «lo que más deja» recibía lo que menos deja. La clave sigue ahora la
+         doctrina que `margen` ya aplicaba encima: solo con costo MEDIDO. */
       {
         const ro = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=100&ordenar_por=ganancia", CAB_TOKEN);
         assert.strictEqual(ro.status, 200);
         assert.strictEqual(ro.cuerpo.ordenado_por, "ganancia");
-        const clave = (l) => (l.ganancia && l.ganancia.valor != null
+        const clave = (l) => (l.ganancia && l.ganancia.valor != null && l.ganancia.base === "apu"
           ? (l.ganancia.por_intento != null ? l.ganancia.por_intento : l.ganancia.valor) : null);
         const claves = ro.cuerpo.resultados.map(clave);
         const conCifra = claves.filter((v) => v != null);
@@ -7775,6 +7786,26 @@ async function main() {
           assert.ok(claves.slice(primerNulo).every((v) => v == null), "los procesos sin cifra van todos al final, juntos");
         }
         assert.ok(ro.cuerpo.total > 0);
+        /* LA CERRADURA DEL DEFECTO: ninguna cifra SIN costo medido puede entrar
+           al orden. Se comprueba ejecutando la clave real sobre un caso que la
+           invertía —obra grande contra interventoría pequeña—, porque una
+           aserción sobre el corpus (donde puede no haber borradores) sería la
+           prueba vacua que este repositorio tiene escrito que no hay que
+           escribir. Contra el árbol anterior, la interventoría de $120 M
+           quedaba por delante de la obra de $12.000 M. */
+        {
+          const Gz = require("../lib/ganancia.js");
+          const mk = (tipo, po) => Gz.gananciaDeProceso({ presupuesto_oficial: po, tipo_trabajo: tipo, baja: null, competencia: null,
+            costo_directo: null, borrador: null, aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" },
+            aiu_origen: null, deducciones_pct: null, contribucion_en_administracion: false, contribucion_declarada: false, p_ganar: 0.25 });
+          const obraGrande = mk("obra", 12000e6), intervChica = mk("interventoria", 120e6);
+          assert.ok(obraGrande.valor != null && obraGrande.base === "estructura_de_precio", "sin borrador el costo se cierra por la estructura de precio");
+          assert.ok(obraGrande.valor < 0 && intervChica.valor > 0,
+            "la constante es NEGATIVA para obra y positiva para consultoría: por eso ordenar por ella invertía la lista");
+          const claveOrden = (g) => (!g || g.valor == null || g.base !== "apu") ? -1e18 : (g.por_intento != null ? g.por_intento : g.valor);
+          assert.strictEqual(claveOrden(obraGrande), -1e18, "sin costo medido NO hay cifra que ordenar");
+          assert.strictEqual(claveOrden(intervChica), -1e18, "…tampoco para consultoría: la regla no depende del tipo");
+        }
       }
 
       /* 5 · un token PRESENTE pero inválido es un ERROR, no un modo público:
@@ -8634,23 +8665,24 @@ async function main() {
            sitio al trámite (num. 3: las ofertas empiezan el día hábil siguiente
            al informe del sorteo), la apertura usada no es la buena → no se
            afirma nada. Un calculado que contradice a un publicado pierde. */
-        /* La guarda SE ESTRECHÓ al quitar el suelo inventado (24-ago-2026), y es
-           correcto: con el suelo en 1 día hábil, un cierre de ofertas apretado
-           dejaba la ventana AL REVÉS y se declaraba incoherente; con el suelo en
-           la apertura misma, una ventana de un solo día es perfectamente posible
-           —abre y cierra el viernes 14, se sortea, las ofertas cierran el lunes—
-           así que ya no hay contradicción que denunciar. Se conserva el caso con
-           su nueva lectura Y el caso que SÍ sigue siendo imposible, para que la
-           guarda no se quede sin ejercitar (un `continue` sin prueba es el punto
-           ciego que este repositorio ya pagó). */
+        /* ⚠️ LA INCOHERENCIA TIENE SU PROPIO UMBRAL, SEPARADO DEL SUELO DE LA
+           VENTANA (24-ago-2026). Al bajar el suelo a 0 esta guarda dejó de
+           disparar aquí —`hasta < desde` ya no se cumplía— y el módulo pasaba
+           de decir «no se puede situar el plazo» a AFIRMAR «vencida». Un
+           calculado que contradice a un publicado tiene que CALLARSE, no
+           convertirse en una afirmación nueva. Lo cazó la revisión adversaria
+           de la propia corrección. La condición vive ahora en
+           `minimoParaQueQuepa` y el comportamiento vuelve a ser el correcto. */
         const apretado = M.manifestacionDeFila({ ...MOTAVITA, fecha_cierre: "2026-08-17T15:00:00.000" }, "2026-08-15");
-        assert.strictEqual(apretado.estado, "vencida", "ventana de un solo día (viernes 14): el 15 ya pasó — coherente, no imposible");
-        assert.strictEqual(apretado.puede_cerrar_desde, "2026-08-14");
-        assert.strictEqual(apretado.vence_a_mas_tardar, "2026-08-14", "el cierre de ofertas recorta el techo hasta dejar un solo día");
-        // lo que SIGUE siendo imposible: que las ofertas cierren el día de la apertura o antes
+        assert.strictEqual(apretado.estado, "sin_fecha");
+        assert.strictEqual(apretado.motivo_sin_fecha, "cierre_de_ofertas_no_deja_sitio");
+        // y sigue disparando cuando las ofertas cierran el día de la apertura o antes
         const imposible = M.manifestacionDeFila({ ...MOTAVITA, fecha_cierre: "2026-08-14T15:00:00.000" }, "2026-08-15");
         assert.strictEqual(imposible.estado, "sin_fecha");
         assert.strictEqual(imposible.motivo_sin_fecha, "cierre_de_ofertas_no_deja_sitio");
+        // …y NO dispara cuando el trámite sí cabe: el 21 deja sitio de sobra
+        assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-15").motivo_sin_fecha, null,
+          "con sitio suficiente la ventana se sitúa: la guarda no puede volverse indiscriminada");
         // una sola derivación del estado: la del handler es la MISMA función
         assert.strictEqual(require("../lib/portada.js").estadoDeVentana, M.estadoDeVentana, "portada re-exporta estadoDeVentana, no una copia");
         // (3) el filtro `manif`: abierta / todas / inerte
@@ -17042,8 +17074,24 @@ async function main() {
         const cuerpoGanancia = jsSin.slice(iG, jsSin.indexOf("\n  }", iG));
         assert.ok(/bloqueGanancia\(l, celda\)/.test(cuerpoBloque),
           "la franja tiene que pintar la ganancia con la MISMA plantilla de celda: dos plantillas se despeinan por separado");
-        assert.ok(/contando las veces que no se gana/.test(cuerpoGanancia),
-          "el valor esperado tiene que seguir diciendo que promedia también las veces que se pierde");
+        /* ⚠️ LA FRASE SE MUDÓ CON LA CIFRA (24-ago-2026), y el invariante se
+           REFUERZA en vez de relajarse. `bloqueGanancia` tenía un respaldo que,
+           cuando no había cifra de ganancia, volvía a pintar el VALOR ESPERADO
+           —«$1.183M de contrato esperado por intento»—, que es EXACTAMENTE la
+           cifra que el dueño reportó como leída al revés. Ese respaldo se
+           disparaba en toda tarjeta sin credencial o sin presupuesto oficial,
+           así que la cifra retirada seguía apareciendo por la puerta de atrás.
+           Hoy la celda dice qué falta y el VE vive donde se llama por su nombre:
+           el orden «Mayor contrato esperado». La guarda sigue a la cifra. */
+        assert.ok(!/contrato esperado por intento/.test(cuerpoGanancia),
+          "la celda de la ganancia NO puede resucitar el valor esperado: es la cifra que el dueño reportó como leída al revés");
+        {
+          const conceptoVe = require("../public/filtros.js").conceptoDe("ve");
+          assert.ok(/veces que no se gana/.test(conceptoVe),
+            "el valor esperado tiene que seguir diciendo que promedia también las veces que se pierde, allí donde se enuncia");
+          assert.ok(/NO es utilidad/.test(conceptoVe),
+            "…y que no es utilidad: es la confusión que originó todo este cambio");
+        }
         for (const cuerpo of [cuerpoBloque, cuerpoGanancia]) {
           assert.ok(!/[Ss]i te lo gan[áa]s/.test(cuerpo),
             "«si te lo ganás, te quedan X» sobre el VALOR ESPERADO lee un promedio por intento como si fuera condicional a ganar");
@@ -17051,15 +17099,28 @@ async function main() {
         /* «le quedan si gana» SÍ es correcto —y necesario— sobre la GANANCIA:
            esa cifra sí es condicional a ganar. Lo que no puede pasar es que la
            celda pinte `l.ve` con ese rótulo. */
-        assert.ok(/si gana el contrato/.test(cuerpoGanancia), "la celda tiene que decir que la cifra es si gana el contrato");
-        /* CORREGIDO (ago 2026): ya no se pinta SIEMPRE `g.valor`. Con el
-           veredicto de tres estados la celda pinta el extremo que corresponde
-           —el peor cuando ya deja, el mejor cuando pierde igual, y LOS DOS
-           cuando el rango cruza el cero—. Lo que sigue prohibido es lo de
-           antes: pintar `l.ve` con el rótulo de la ganancia. */
-        assert.ok(/copFirmado\(g\.peor\)/.test(cuerpoGanancia) && /copFirmado\(g\.mejor\)/.test(cuerpoGanancia)
-          && /copFirmado\(cifra\)/.test(cuerpoGanancia),
-          "lo que se pinta son los extremos de la ganancia, no el valor esperado disfrazado");
+        assert.ok(/si gana/.test(cuerpoGanancia), "la celda tiene que decir que la cifra es condicional a ganar el contrato");
+        /* ⚠️ UNA SOLA CIFRA, NO UN RANGO (24-ago-2026). La versión anterior
+           pintaba los DOS extremos cuando el rango cruzaba el cero —«−$32M a
+           $257M · puede costarle o dejarle»—, y el ingeniero reportó que no
+           le servía. Medido, tenía razón por una razón más dura que el gusto:
+           SIN costo medido ese rango es EXACTAMENTE −1,00 % a +8,00 % del
+           precio en todos los procesos (correlación −1,0000 con la cuantía),
+           porque `lib/ganancia` cierra el costo por la identidad del precio y
+           la cuenta se reduce a `cuantía × k`, con `k` sacada de la estructura
+           que tecleó el propio usuario. Era la cuantía reescalada, pintada al
+           lado de la cuantía: el defecto del chip constante de
+           `nivel_competencia`, en la tercera celda.
+           Hoy la celda se parte por `base`: con costo MEDIDO una sola cifra
+           —el peor caso, que ahí sí es un suelo real— y sin él la celda pide
+           el costo en vez de fingir una medición. El rango completo sigue en
+           el detalle, que ya existe y ya cuadra al peso. */
+        assert.ok(/copFirmado\(cifra\)/.test(cuerpoGanancia),
+          "lo que se pinta es la ganancia, no el valor esperado disfrazado");
+        assert.ok(/g\.base !== "apu"/.test(cuerpoGanancia),
+          "la celda tiene que partirse por si el costo está MEDIDO: sin él la cifra es la cuantía por una constante");
+        assert.ok(!/a \$\{esc\(copFirmado\(g\.mejor\)\)\}|puede costarle o dejarle/.test(cuerpoGanancia),
+          "no se pinta un rango que cruza el cero como si midiera este proceso");
         assert.ok(!/copFirmado\(l\.ve\)|fmtCorto\(l\.ve\)[\s\S]{0,200}le quedan/.test(cuerpoGanancia),
           "el valor esperado no puede pintarse con el rótulo de la ganancia");
         /* R1 · la ausencia jamás se convierte en cero: es la prueba hermana de
