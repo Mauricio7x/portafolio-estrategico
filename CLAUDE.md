@@ -5092,3 +5092,75 @@ provincias del INVIAS).
   `repartirDelta`). La primera reproducción de esta sesión leyó `r.historico` y acertó por un
   *fallback*; la segunda leyó lo mismo y concluyó «0 registros», que era falso. Antes de declarar un
   defecto a partir de una lectura, comprobar la FORMA que devuelve la función.
+
+### Auditoría del módulo APU: las dos mitades no están conectadas (24-ago-2026)
+
+Consultoría completa en **`docs/AUDITORIA_MODULO_APU.txt`** (encargo del dueño: que el módulo sirva
+para crear el APU de un contrato de SECOP cargándolo, y para comparar el precio del pliego con el
+que sugiere la app). Se deja el resumen aquí para que nadie la repita desde cero. Todo MEDIDO
+ejecutando código; la suite quedó en verde 4/4 y el banco con sus suelos superados.
+
+- **EL MÓDULO APU SON DOS MÓDULOS Y NO HAY CABLE ENTRE ELLOS.** El lector de pliegos
+  (`lib/apu_mapeo` → `data/catalogo_apu.json`) mapea contra **93 ítems SIN precio**; el importador
+  (`lib/apu/importar` → catálogo + 5 bancos) contra **6 588 CON precio**: **70,8×**. La misma fila
+  «SUB-BASE GRANULAR CLASE C» da `LOC-AFI-BASE` («Base granular», 0,524, revisar) por el lector y
+  `INVIAS:320,6,1` (0,85, firme, con precio) por el importador — o sea que el camino que el encargo
+  pide recibe la peor herramienta **y se equivoca de ítem** (base ≠ subbase).
+- **`window.__pliegoUltimo` ya publica los ítems con `unitario_oficial`** (public/pliego.js:583) y su
+  ÚNICO consumidor es el guardián del Formulario 1. El lector exporta **`.json`** y el importador
+  acepta **`.xlsx/.xls/.csv`**: el archivo que produce el lector **no lo relee ningún módulo**. Cero
+  ocurrencias de un puente lector→editor en todo el frontend. **El puente cuesta poco**: la acción
+  `importar` ya acepta `filas:[{descripcion,unidad,cantidad,precio_archivo}]`, que es EXACTAMENTE la
+  forma de `__pliegoUltimo.items` — verificado ejecutando la cadena completa.
+- **LA CASCADA YA RESERVA EL SITIO Y ESTÁ VACÍO**: `lib/apu/precios` publica por ítem el nivel
+  `{nivel:"pliego", etiqueta:"Pliego adjudicado", respondio:false, motivo:"Fuente no disponible…"}`,
+  el segundo escalón, solo por debajo del precio propio. Llenarlo con el `unitario_oficial` que el
+  lector ya extrae es la comparación que pide el encargo, sin inventar estructura nueva.
+- **UN ÍTEM A 2,7× EL UNITARIO OFICIAL PASA EN VERDE.** `lib/formulario1` compara descripción, unidad
+  y cantidad, y el TOTAL contra el presupuesto oficial; **el precio unitario no se compara con nada**.
+  Reproducido: unitario oficial $95.000 ofertado a $260.000 → semáforo **«listo»** y ninguna de las
+  dos cifras aparece en la respuesta. Importa por las DOS direcciones: por encima puede ser causal de
+  exclusión si el pliego fija unitarios máximos; por debajo es donde se pierde plata con las mayores
+  cantidades (contrato a precios unitarios).
+- **SOLO EL 17,2 % DE LOS ÍTEMS CON PRECIO PUEDE PRODUCIR UNA HOJA DE APU** (1 134 de 6 588):
+  catálogo 174/174, INVIAS 520/526, EPC 440/440, y **IDU 0/3 172, FFIE 0/1 042, ICCU 0/1 234** (solo
+  precio total). Un pliego exige el APU DESGLOSADO: con el 82,8 % restante se presupuesta pero **no se
+  radica el anexo**. No inventar composiciones para taparlo — es el falso positivo caro del módulo.
+- **UN MAPEO «FIRME» PUEDE DUPLICAR EL PRECIO Y NADA LO VIGILA**: «CONCRETO CLASE D 3000 PSI» casa
+  **firme** (0,856) con «630.4 CONCRETOS CLASE D … **(vigas en puentes)**» del ICCU a **$1.183.877/m³**
+  (9 variantes, se toma la primera). El tratamiento de «cabecera antes del paréntesis» que ya existe
+  para INVIAS no se aplica al ICCU, donde el paréntesis cambia el **destino de la obra**, no la
+  gradación.
+- **LA VÍA AUTOMÁTICA NO CLASIFICA 4 DE 6 OBJETOS DE OBRA BIEN ESCRITOS.** «CONSTRUCCIÓN DE PAVIMENTO
+  RÍGIDO» saca **3 puntos con umbral amarillo 6**, siendo VIA-RIG candidata ÚNICA (margen máximo): el
+  diseño exige ACUMULAR anclas y los objetos de SECOP son cortos; el UNSPSC no desempata (7214 declara
+  13 tipologías compatibles). **No bajar los umbrales a ciegas** — el verde es el único estado que
+  presupuesta sin pedir el pliego. La corrección real es de PANTALLA: hoy el paso 1 de Precios es
+  «¿Qué va a construir?» (adivinar) y el lector vive **plegado dentro de ese paso**
+  (`index.html:1826`), o sea que la fuente más fiable está escondida y la menos fiable en primer plano.
+- **CALIDAD DE DATOS · ICCU: 149 de 1 234 (12,1 %) con la unidad ROTA** por corrimiento de columnas
+  (unidades que contienen precios «1.222.065 1.225.019…», descripciones enteras, o «CONSTRUCCIÓNML»).
+  Los demás bancos están sanos: IDU 163/3 172 y FFIE/INVIAS/EPC <1,5 %, y ahí son unidades legítimas
+  raras («jornal», «tf-m», «ML/MES»), no defectos.
+- **COBERTURA REAL DEL MAPEO GRANDE: 50 % firme · 50 % revisar · 0 % sin candidato** sobre 28
+  descripciones típicas de un formulario de cantidades. La segunda mitad es buena noticia: **los 6 588
+  cubren el vocabulario del oficio**; lo que falta no es catálogo, es afinar el corte firme/revisar.
+- **COMPETENCIA**: **PresuCosto** (Colombia) declara hacer justo el encargo —lee el pliego con IA
+  (Gemini), extrae ítems y cantidades, los mapea a los APU del usuario y **compara el presupuesto
+  oficial contra el APU ítem a ítem**—; **LicitIA** compite en gestión (kanban, calculadora AIU, API);
+  **OneEstimate** en medición sobre planos. La ventaja de Detekta no puede ser la idea: es la
+  **TRAZABILIDAD** (5 bancos oficiales con fuente, vigencia y ámbito + calibración contra un contrato
+  adjudicado real, 149/157 al peso) y la cadena de decisión (probabilidad, baja, piso/techo, VEG), que
+  ningún competidor de costeo tiene. ⚠️ El proxy de la sesión **bloquea presucosto.com y hubservice.io**
+  (EGRESS_BLOCKED): sus funcionalidades salen de resultados de búsqueda, **no verificadas de primera
+  mano** — abrirlas desde un navegador normal antes de decidir nada comercial.
+- **EL LLM SON DOS DECISIONES, NO UNA.** *Calcular* con LLM sigue siendo NO (el costo debe ser
+  determinista y auditable; la decisión del «Nivel C» no se toca). *Leer el pliego* con LLM es una
+  decisión ABIERTA —es donde el competidor lo usa y donde Detekta es más débil—, y si algún día se
+  toma: fuera de la ruta de la petición, como SUGERENCIA que el usuario confirma, y con el sistema
+  funcionando entero sin él. **Recomendación: decidirlo DESPUÉS de cerrar el cable y la comparación**,
+  con la cifra de cuánto queda en «revisar» encima de la mesa.
+- **Lección de método, cometida en esta misma auditoría**: reporté «0 firmes de 5» por el camino del
+  lector leyendo mal el nombre del campo (`codigo_item` en vez de `item_id`); el número real es **2**.
+  Es la lección de `transformar` otra vez, en el informe que la cita. Queda corregida en el documento
+  y anotada allí a propósito: **comprobar la FORMA que devuelve la función antes de declarar nada**.
