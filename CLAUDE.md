@@ -4736,6 +4736,32 @@ el motivo del juicio) · `descartado_en_ingesta` (con el motivo del censo) · `n
   tiene terminal**: la misma razón por la que `/admin.html` encadenaba la full desde el navegador. Un
   diagnóstico que solo se puede leer con `curl` no existe para el único usuario que hay.
 
+**UN QUINTO MECANISMO QUE LA LISTA DE ARRIBA NO CONTEMPLABA: EL RÉGIMEN ESPECIAL (24-ago-2026).**
+La UPN es una **universidad estatal**, y esas contratan por **régimen especial** (Ley 30/1992 art. 93);
+su «CP» es *Convocatoria Pública*, no una modalidad de la Ley 80. Y `modalidad_competitiva` deja fuera
+«Régimen Especial» **salvo** que el literal diga «(con ofertas)». Reproducido ejecutando la cascada real
+con una fila UPN de $1.348 M, publicada, abierta y de obra: con «Régimen Especial» a secas
+`transformar` guarda **0 filas** — no entra a Redis, y **la full tampoco la recupera**; con «Régimen
+Especial (con ofertas)» o con cualquier modalidad de la lista blanca, entra. Es decir: **relanzar la
+full puede no bastar**, y eso hay que saberlo antes de concluir que el arreglo de la `fase` cerró el
+caso.
+- **ES UNA HIPÓTESIS REPRODUCIDA, NO UNA MEDICIÓN**: no consta con qué literal publica la UPN, porque
+  esta sesión tampoco alcanza la fuente. Lo que sí está medido es que ese literal DECIDE.
+- **NO SE TOCA LA LISTA BLANCA A CIEGAS.** Ensancharla para admitir «Régimen Especial» a secas metería
+  todo lo que no tiene concurso abierto, que es justo lo que esa regla existe para dejar fuera. La
+  decisión depende del literal exacto, y el literal lo da el censo.
+- **LA CAJA YA SABE RESPONDERLO**, verificado de punta a punta: con esa fila, `?buscar=UPN-VAD-CP-011-2026`
+  devuelve `donde: "descartado_en_ingesta"`, `motivo: "modalidad_no_competitiva"` y la modalidad literal
+  en el ejemplo. Así que el paso pendiente no solo confirma: **discrimina entre los dos mecanismos**.
+- Y el arreglo de la `fase` **sí funciona**: la misma fila con `estado_del_procedimiento: "Publicado"` y
+  `fase: "Adjudicación"` (o `Activo`/`Adjudicación`, la combinación de la captura) da hoy `abierto: true`,
+  donde antes moría.
+- Lección de método que costó un falso positivo aquí mismo: `rastrear` recibe `censos` como **array**
+  `[{origen, censo}]`; pasándole un objeto responde `no_consta` sobre un descarte que sí consta. La
+  primera reproducción de esta sesión lo hizo mal y estuvo a punto de reportarse como defecto del
+  módulo. **Una dependencia inyectada con la forma equivocada no prueba nada** — se comprueba contra
+  el llamador real (`handlers/perfil/diagnostico.js`), que la construye bien.
+
 **Lo que este entorno NO pudo verificar, dicho en vez de disimulado.** La política de red de esta
 sesión bloquea `datos.gov.co` (403 del proxy, `Host not in allowlist`) y también el despliegue, así
 que **no se pudo consultar la fila real de las cuatro convocatorias de la UPN**: no consta cuál de los
