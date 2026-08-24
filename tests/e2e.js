@@ -18778,6 +18778,21 @@ async function main() {
       const cuerpoBotones = appIng.slice(appIng.indexOf("function botones(corriendo)"), appIng.indexOf("function botones(corriendo)") + 900);
       assert.ok(/btn-actualizar-datos/.test(cuerpoBotones), "el botón único se habilita/deshabilita desde botones(), no en cinco sitios");
 
+      /* (4-bis) NINGUNA SUPERFICIE TRANSLÚCIDA SIN BLUR. Siete recuadros del
+         pulso fijaban `var(--bg-card)` —que es `rgba(255,255,255,0.72)`— en un
+         `style` en línea y, al no llevar la clase `bg-white`, ninguna regla les
+         daba `backdrop-filter`: se veía a través de ellos sin nada que
+         difuminara el fondo, que es justo lo que el vidrio existe para evitar.
+         Dos de los siete se añadieron en esta misma sesión, así que el defecto
+         estaba CRECIENDO. La cerradura no enumera ids: busca el SÍNTOMA, para
+         cazar también el recuadro que alguien escriba mañana. */
+      {
+        const conToken = [...sinComHtml.matchAll(/<[a-z]+[^>]*\bid="([^"]+)"[^>]*style="[^"]*--bg-card[^"]*"[^>]*>/g)].map((m) => m[1]);
+        assert.deepStrictEqual(conToken, [],
+          `superficies que fijan --bg-card a mano y se quedan SIN blur: ${conToken.join(", ")}. `
+          + "Usa las clases del sistema (bg-white rounded-2xl), que además heredan las tres preferencias de accesibilidad.");
+      }
+
       /* (5) EL NOMBRE DEL CONSORCIO VIAJA. El servidor lo aceptaba desde la
          Fase 10 y el frontend nunca lo mandaba, así que todos se llamaban
          «Consorcio N». Vacío sigue cayendo a ese defecto. */
@@ -18811,6 +18826,50 @@ async function main() {
       /* La modalidad se resuelve con la regla que YA existe. Una segunda tabla
          de literales de SECOP II sería la tercera definición de «esta
          modalidad» y divergirían a la primera corrección. */
+      /* ⚠️ `encontrados` SON LAS COINCIDENCIAS REALES, NO EL TAMAÑO DE PÁGINA.
+         Con 120 filas que casaban respondía «20» —el tope de la página— y quien
+         busca no podía saber si eran 20 o 300. Es la familia de
+         `total_procesos`/`procesos_contados`, cometida en la herramienta que
+         existe para diagnosticar. */
+      {
+        const muchas = Array.from({ length: 120 }, (_, i) => ({ id_del_proceso: "P" + i, entidad: "MUNICIPIO DE PURIFICACION", modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "OBRA " + i }));
+        const rr = R.rastrear("purificacion", { filas: muchas });
+        assert.strictEqual(rr.encontrados, 120, "«encontrados» son las coincidencias reales, no el tamaño de página");
+        assert.ok(rr.devueltos < rr.encontrados && rr.truncado === true, "…y se dice cuántas se enseñan y que hay más");
+        const pocas = R.rastrear("purificacion", { filas: muchas.slice(0, 3) });
+        assert.strictEqual(pocas.encontrados, 3);
+        assert.strictEqual(pocas.truncado, false, "sin recorte no se anuncia recorte");
+      }
+      /* EL MOTIVO REAL DE AUSENCIA, no el genérico. Un proceso ya adjudicado
+         sale por la cascada de ESTADO —`evaluarRup` no publica motivo para
+         eso— y se respondía «no pasa el juicio para este perfil», que además es
+         falso: el objeto sí es suyo. La cubeta la publica
+         `filtrarProcesosVisibles` y se estaba tirando. */
+      {
+        const Ff = require("../lib/filtros.js");
+        const cerrado = { id_del_proceso: "ADJ-1", entidad: "MUNICIPIO X", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Adjudicado", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA", codigo_principal_de_categoria: "72141000", precio_base: 5e8, fecha_de_publicacion_del: "2026-01-05T08:00:00.000" };
+        const evaluarReal = (l) => {
+          const { visibles, veredictos, descartes } = Ff.filtrarProcesosVisibles([l], "helder", {});
+          const rup = veredictos.get(l);
+          if (!visibles.length) return { rup, puertas: null, visible: false, descarte: Object.keys(descartes || {}).find((k) => descartes[k] > 0) || null };
+          return { rup, puertas: null, visible: true };
+        };
+        const rc = R.rastrear("ADJ-1", { filas: [cerrado], evaluar: evaluarReal });
+        assert.ok(/cerrado, adjudicado/.test(rc.resultados[0].explicacion),
+          `un proceso adjudicado tiene que decir que ya no admite ofertas, no «no pasa el juicio»: ${rc.resultados[0].explicacion}`);
+      }
+      /* `no_consta` ENUMERA las causas, no afirma una. Decía «la app no lo ha
+         leído todavía», y eso es falso para el caso más corriente: un proceso
+         adjudicado sale del corpus ACTIVO y sigue en el histórico, que ninguna
+         purga toca. Afirmar «no lo ha leído» sobre algo que sí leyó es el error
+         que esta herramienta existe para no cometer. */
+      {
+        const nc = R.rastrear("zzzzzzz", { filas: [] });
+        assert.strictEqual(nc.donde, "no_consta");
+        assert.ok(!/quiere decir que la app no lo ha le[ií]do todav[ií]a/.test(nc.explicacion),
+          "«no consta» no puede AFIRMAR que no se ha leído: puede estar en el histórico");
+        assert.ok(/hist[óo]rico/.test(nc.explicacion), "…y tiene que nombrar esa posibilidad");
+      }
       const fuenteRastreo = fs.readFileSync(path.join(__dirname, "..", "lib", "rastreo.js"), "utf8");
       assert.ok(/require\("\.\/filtros_lista\.js"\)\.modalidadDe/.test(fuenteRastreo),
         "la modalidad se resuelve con FiltrosLista.modalidadDe, no con una segunda lista de literales");

@@ -4950,6 +4950,41 @@ remotas y todo el trabajo va desde ahora directo a `main`. Decisiones que no hay
   forma de equivocarse en la herramienta que existe para diagnosticar ausencias. La respuesta
   DECLARA `buscado_en` y `modalidad_pedida` — un «no consta» sin ámbito no se puede interpretar.
 
+- **TRES DEFECTOS DE HONESTIDAD EN EL RASTREO, los tres reproducidos.** Salieron de la auditoría del
+  frente, después de implementar los filtros:
+  · **`encontrados` ERA EL TAMAÑO DE PÁGINA, NO LAS COINCIDENCIAS.** Con 120 filas que casaban
+    respondía «encontrados: 20» —el tope de `MAX_RESULTADOS`— y quien buscaba no podía saber si eran
+    20 o 300. Es `total_procesos`/`procesos_contados` cometido en la herramienta que existe para
+    DIAGNOSTICAR, y es la causa directa de que el ingeniero pidiera filtros. Hoy `encontrados` cuenta
+    ANTES de recortar, `devueltos` dice cuántos se enseñan y `truncado` avisa de que hay más.
+  · **EL MOTIVO MÁS FRECUENTE DE AUSENCIA SE RESPONDÍA CON EL GENÉRICO.** Un proceso ya adjudicado
+    sale por la cascada de ESTADO, no por el juicio del objeto: `evaluarRup` no publica `motivo` para
+    eso y la respuesta acababa en «no pasa el juicio para este perfil», que además es FALSO —el
+    objeto sí es suyo—. `filtrarProcesosVisibles` ya publica en qué cubeta murió (`descartes`) y se
+    estaba tirando. `MOTIVO_DE_CUBETA` traduce las 13 cubetas a lenguaje llano; la traducción vive en
+    `lib/rastreo` porque son nombres internos que ninguna pantalla puede enseñar.
+  · **`no_consta` AFIRMABA «la app no lo ha leído todavía»**, y eso es falso para el caso más
+    corriente: un proceso adjudicado sale del corpus ACTIVO —el único que mira esta búsqueda— y sigue
+    en `licitaciones:historico:mes:*`, que ninguna purga toca. Ahora se ENUMERAN las tres causas sin
+    afirmar ninguna. Afirmar «no lo he leído» sobre algo que sí se leyó es exactamente el error que
+    esta herramienta existe para no cometer.
+- **TRANSLÚCIDO SIN BLUR ERA LO PEOR DE LOS DOS MUNDOS, y el defecto estaba CRECIENDO.** Siete
+  recuadros del pulso fijaban `var(--bg-card)` (`rgba(255,255,255,0.72)`) en un `style` en línea y,
+  al no llevar la clase `bg-white`, ninguna regla les daba `backdrop-filter`: se veía a través de
+  ellos sin nada que difuminara el fondo, que es justo lo que el vidrio existe para evitar —mientras
+  las otras 31 tarjetas sí reciben `--bg-card` + `blur(20px)` por la capa de traducción—. **Dos de
+  los siete se añadieron en esta misma sesión.** Se pasan a las clases del sistema, con las que
+  heredan el blur, el borde y las tres preferencias de accesibilidad sin una regla nueva. La
+  cerradura no enumera ids: busca el SÍNTOMA (`style` con `--bg-card`), para cazar el recuadro que
+  alguien escriba mañana. **La premisa que traía el informe estaba invertida**: las «tarjetas planas
+  de Tailwind» SÍ reciben vidrio; los que lo fijaban a mano eran los únicos sin blur.
+  ⚠️ **Lo que NO se pudo verificar y por eso NO se tocó**: el informe citaba el HIG de Apple («Don't
+  use Liquid Glass in the content layer») para proponer retirar el vidrio de las 41 superficies de
+  contenido. `developer.apple.com/design/human-interface-guidelines/materials` responde **200 pero
+  sirve la página vacía** —el texto lo pinta JavaScript— y `/liquid-glass` da **404**, así que la
+  cita **no se pudo comprobar contra la fuente primaria desde este entorno**. No se reestructura el
+  sistema visual entero sobre una cita sin verificar; queda anotado para quien pueda abrirla en un
+  navegador normal.
 - **DOS LECCIONES DE MÉTODO DE ESTA SESIÓN:**
   · **UN HALLAZGO CONFIRMADO CON EL MISMO MÉTODO DEFECTUOSO NO ESTÁ CONFIRMADO.** Se reportó que
     `#tab-admin` dejaba un `<details>` sin cerrar (22 aperturas / 21 cierres) y lo «confirmé» con mi

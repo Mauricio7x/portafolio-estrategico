@@ -623,7 +623,19 @@
            Debajo, plegado, el MERCADO ENTERO (la portada de la Fase 9, que
            antes salía en la landing ANTES de elegir cómo entrar). -->
       <section id="pulso" class="hidden mb-6">
-        <div id="pu-hero" class="rounded-2xl p-6 sm:p-8" style="background: var(--bg-card); box-shadow: var(--shadow-sm);"></div>
+        <!-- ⚠️ TRANSLÚCIDO SIN BLUR ERA LO PEOR DE LOS DOS MUNDOS (24-ago-2026).
+             Estos siete recuadros fijaban `var(--bg-card)` —que es
+             `rgba(255,255,255,0.72)`— en un `style` en línea, y como no llevan
+             la clase `bg-white` NINGUNA regla les daba `backdrop-filter`: se
+             veía a través de ellos sin nada que difuminara el fondo, justo lo
+             que el vidrio existe para evitar. Las otras 31 tarjetas de la app sí
+             reciben `--bg-card` + `blur(20px)` por la capa de traducción.
+             Se pasan a las MISMAS clases que el resto: con ellas heredan el
+             blur, el borde y las tres preferencias del sistema (reducir
+             transparencia, reducir movimiento, más contraste) sin una regla
+             nueva. Un estilo en línea propio es una segunda definición de
+             «tarjeta de vidrio» que se despeina por su cuenta. -->
+        <div id="pu-hero" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 sm:p-8"></div>
         <!-- LO URGENTE VA ANTES QUE LOS REPARTOS: en la selección abreviada de
              menor cuantía no se puede ofertar sin avisar antes, y el plazo lo
              fija la entidad —a veces son horas—. Nace oculto y solo aparece si
@@ -634,12 +646,12 @@
              de grid sin él ensancha la página 26 px en móvil, y eso no lo ve
              ninguna prueba de Node. -->
         <div class="mt-4 grid gap-4 md:grid-cols-2">
-          <div id="pu-cierre" class="min-w-0 overflow-hidden rounded-2xl p-5" style="background: var(--bg-card);"></div>
-          <div id="pu-cuantia" class="min-w-0 overflow-hidden rounded-2xl p-5" style="background: var(--bg-card);"></div>
-          <div id="pu-tipo" class="min-w-0 overflow-hidden hidden rounded-2xl p-5" style="background: var(--bg-card);"></div>
-          <div id="pu-modalidad" class="min-w-0 overflow-hidden hidden rounded-2xl p-5" style="background: var(--bg-card);"></div>
-          <div id="pu-departamentos" class="min-w-0 overflow-hidden rounded-2xl p-5" style="background: var(--bg-card);"></div>
-          <div id="pu-entidades" class="min-w-0 overflow-hidden rounded-2xl p-5" style="background: var(--bg-card);"></div>
+          <div id="pu-cierre" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
+          <div id="pu-cuantia" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
+          <div id="pu-tipo" class="min-w-0 overflow-hidden hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
+          <div id="pu-modalidad" class="min-w-0 overflow-hidden hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
+          <div id="pu-departamentos" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
+          <div id="pu-entidades" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
         </div>
         <p id="pu-nota" class="mt-2 text-[11px]" style="color: var(--text-secondary);"></p>
       </section>
