@@ -60,7 +60,7 @@ ejecutado. Un argumento sin ancla en el repositorio es una opinión, y aquí las
 | Secreto | **No hay secreto.** `const TOKEN = "MiExtraccion2025"` está integrado en `public/app.js`, `public/onboarding.js` y `public/pliego.js`, a la vista de cualquiera. La protección real es Vercel Password Protection + un gate de clave en el cliente |
 | Cuentas de usuario | **No existen.** Ni registro, ni sesión, ni contraseña por usuario, ni recuperación |
 | Pagos / facturación | **No existe nada.** Cero código de pasarela, suscripción o facturación |
-| Ramas | Una sola: `main` (decisión del dueño, 21-ago-2026) |
+| Ramas | **Una sola: `main`.** Decisión del dueño (21-ago-2026, reafirmada al encargar esta consultoría): todo se trabaja, se commitea y se fusiona en `main`. No hay ramas de trabajo, ni PR de larga vida, ni gitflow |
 | Pruebas | `tests/e2e.js` (18 447 líneas, 4 iteraciones, mocks HTTP de Socrata y del REST de Upstash, ejercitando los handlers reales) y `tests/apu_bench.js` |
 | Entorno de pruebas | **No hay staging.** «No hay CLI de Vercel: el despliegue se valida desplegando» |
 | Observabilidad | **No hay** logging estructurado, métricas, alertas ni seguimiento de errores |
@@ -538,6 +538,14 @@ Mínimos que el protocolo debe contener:
    qué quedó fuera y qué haría falta para cerrarlo.
 10. **No implementes.** Si una tarea te parece trivial, igual va al plan: el dueño decide qué se
     ejecuta y en qué orden.
+11. **Todo va a `main`, siempre.** Es orden expresa del dueño. Cada documento de esta consultoría se
+    commitea y se fusiona en `main` en cuanto está terminado; si el entorno te abre una rama de
+    trabajo, la fusionas a `main` y la retiras al cerrar. **No propongas ni abras ramas de larga
+    vida, ni un flujo con ramas de desarrollo o de versión, ni siquiera para el trabajo del plan
+    SaaS**: el dueño mantiene un solo hilo a propósito, y en agosto de 2026 ya pagó el precio de
+    tener 95 ramas cuyo contenido estaba dentro de `main` hacía semanas (`docs/RAMAS_RETIRADAS.md`).
+    Si el plan necesita aislar algo antes de exponerlo al usuario, la respuesta es un **interruptor
+    de funcionalidad** dentro de `main`, no una rama.
 
 ---
 
@@ -556,7 +564,8 @@ cuánto tiempo semanal puede dedicar a operar el producto.
 
 - Devolver los `api/*.js` sueltos, `admin.html`, `apu.html`, `pliego.html`, `admin.js`, `apu.js`.
 - Reintroducir un `package.json` sin una decisión explícita, argumentada y aceptada por el dueño.
-- Abrir ramas de trabajo paralelas: **una sola rama, `main`** (decisión del dueño, 21-ago-2026).
+- Abrir ramas de trabajo paralelas o dejar trabajo sin fusionar: **una sola rama, `main`**, y todo
+  termina ahí. Una rama que sobrevive a su tarea es trabajo invisible que alguien vuelve a auditar.
 - Crear un archivo nuevo bajo `api/`: un endpoint nuevo se pliega como `op` del router de su dominio.
 - Reescribir una regla que ya vive en un módulo. Se llama; no se copia. Dos definiciones de lo mismo
   divergen a la primera corrección aplicada a una sola.
