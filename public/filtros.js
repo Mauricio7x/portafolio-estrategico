@@ -41,7 +41,14 @@
   /* ─── 2 · Cómo lo adjudican ──────────────────────────────────────────── */
   const MODALIDADES = Object.freeze([
     { id: "licitacion", etiqueta: "Licitación pública", ayuda: "La más grande y abierta: cualquiera se presenta" },
-    { id: "abreviada", etiqueta: "Proceso pequeño (hay que avisar antes de presentarse)", ayuda: "Selección abreviada de menor cuantía: primero se avisa que interesa, después se oferta" },
+    /* EL NOMBRE PROPIO DE LA MODALIDAD, Y NO UN APODO (encargo del ingeniero,
+       24-ago-2026). Decía «Proceso pequeño», que además de no ser su nombre
+       chocaba con «Mínima cuantía» —la de aquí abajo, que SÍ es la pequeña— y
+       escondía lo único que hay que saber: que aquí no se oferta sin avisar
+       antes, y que el plazo para avisar puede ser de horas. La regla de la
+       Fase 6 lo permite: los nombres propios de las modalidades no son jerga
+       de campo (la prueba de jerga solo barre las ETIQUETAS de los campos). */
+    { id: "abreviada", etiqueta: "Selección abreviada de menor cuantía · Manifestación de interés", ayuda: "Primero hay que avisar que le interesa y después se oferta. El plazo para avisar lo fija la entidad y puede ser de solo unas horas: la ley solo pone el techo de 3 días hábiles." },
     { id: "subasta", etiqueta: "Subasta inversa", ayuda: "Gana el precio más bajo en una puja" },
     { id: "meritos", etiqueta: "Concurso de méritos", ayuda: "Para consultoría e interventoría: pesa la experiencia, no el precio" },
     { id: "minima", etiqueta: "Mínima cuantía", ayuda: "Procesos pequeños y rápidos, gana el menor precio" },

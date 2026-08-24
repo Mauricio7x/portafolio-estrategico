@@ -905,6 +905,14 @@
     }
     if (m.estado === "sin_fecha") return chip("Avisar que le interesa · fecha por confirmar en SECOP II", A, nota);
     if (m.estado === "por_confirmar") {
+      /* CON FECHA DEL PLIEGO, EL DÍA SÍ ESTÁ CONFIRMADO — lo que no consta es la
+         HORA (el cronograma publica el día, nunca la hora, y una ventana de 4 u
+         8 horas cierra a media jornada). Decir solo «verifique» tiraría un dato
+         duro que el usuario ya tiene; decir solo «vence HOY» se lee como «tiene
+         hasta medianoche». Se dicen las dos mitades. */
+      if (m.confirmada) {
+        return chip(`Avisar que le interesa · vence HOY (${esc(m.fecha_limite_legible || "")}) · puede haber cerrado ya`, R, nota);
+      }
       // la ventana está corriendo: puede seguir abierto o haber cerrado ya
       return chip("Avisar que le interesa · verifique HOY si sigue abierto", R, nota);
     }
@@ -922,8 +930,10 @@
        una segunda copia de la constante de lib/manifestacion */
     const tope = m.plazo_maximo_habiles || 3;
     let frase = "", rojo = true;
-    if (m.estado === "por_confirmar") {
-      frase = `el plazo para avisar que le interesa puede estar cerrando hoy o haber cerrado ya. La ley da un MÁXIMO de ${tope} días de oficina desde la apertura (${esc(m.apertura || "")}) y la entidad pudo poner menos en el pliego. Entre a SECOP II, mire el cronograma y avise antes de seguir: sin eso no podrá presentar oferta.`;
+    if (m.estado === "por_confirmar" && m.confirmada) {
+      frase = `el plazo para avisar que le interesa vence HOY (${esc(m.fecha_limite_legible || "")}), según el cronograma del pliego. El cronograma da el día, no la hora, así que puede haber cerrado ya: entre a SECOP II ahora. Sin eso no podrá presentar oferta a este proceso.`;
+    } else if (m.estado === "por_confirmar") {
+      frase = `el plazo para avisar que le interesa puede estar cerrando hoy o haber cerrado ya. La ley da un MÁXIMO de ${tope} días de oficina desde la apertura (${esc(m.apertura || "")}) y la entidad pudo poner menos en el pliego —a veces son solo unas horas—. Entre a SECOP II, mire el cronograma y avise antes de seguir: sin eso no podrá presentar oferta.`;
     } else if (m.estado === "abierta" && m.confirmada && m.dias_calendario != null && m.dias_calendario <= 1) {
       frase = m.dias_calendario === 0
         ? `el plazo para avisar que le interesa vence HOY (${esc(m.fecha_limite_legible || "")}). Sin eso no podrá presentar oferta a este proceso.`

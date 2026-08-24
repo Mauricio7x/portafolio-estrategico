@@ -8523,8 +8523,21 @@ async function main() {
         const menor = { id_del_proceso: "CO1.MC.1", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: `${hoy}T08:00:00.000` };
         const cM = clas(menor);
         assert.ok(cM.manifestacion && cM.manifestacion.aplica, "menor cuantía → manifestación");
-        assert.strictEqual(cM.manifestacion.estado, "abierta", "publicado hoy: con certeza sigue abierta");
-        assert.strictEqual(cM.manifestacion.puede_cerrar_desde, H.sumarHabiles(hoy, 1), "puede cerrar desde el PRIMER hábil: la entidad fija el plazo, la ley solo el techo");
+        /* ⚠️ CAMBIO DE DOCTRINA (24-ago-2026) · ESTAS DOS ASERCIONES FIJABAN EL
+           DEFECTO. Decían «publicado hoy: con certeza sigue abierta» y «puede
+           cerrar desde el PRIMER hábil», que es un SUELO que la norma no fija:
+           el D. 1082 art. 2.2.1.2.1.2.20 num. 1 dice «no mayor a tres días
+           hábiles» y nada más. El ingeniero lo reportó desde el campo — «a
+           veces solo abren 4 horas, 8 horas» — y una entidad que abre a las
+           8:00 y cierra a las 16:00 del mismo día dejaba la app afirmando que
+           el plazo seguía abierto. Es Motavita en espejo: allí sobraba el
+           techo, aquí sobraba el suelo. Hoy la ventana empieza el día de la
+           apertura y ese día cae en `por_confirmar`, que es el de MÁXIMA
+           urgencia. Es la lección de la `fase` rezagada: la prueba que
+           existía fijaba justamente el comportamiento defectuoso. */
+        assert.strictEqual(cM.manifestacion.estado, "por_confirmar", "publicado hoy: el plazo YA puede estar corriendo (la entidad pudo abrir una ventana de horas)");
+        assert.strictEqual(cM.manifestacion.accion, "verifique_ya", "y por eso la acción es ir a SECOP II ahora, no «avise hoy»");
+        assert.strictEqual(cM.manifestacion.puede_cerrar_desde, hoy, "puede cerrar desde el DÍA DE LA APERTURA: la norma solo pone techo, no suelo");
         assert.strictEqual(cM.manifestacion.vence_a_mas_tardar, H.sumarHabiles(hoy, 3), "a más tardar = apertura + 3 hábiles (techo legal)");
         assert.strictEqual(cM.manifestacion.confirmada, false);
         assert.strictEqual(cM.manifestacion.quedan_habiles, null, "SIN fecha del cronograma NO hay cuenta atrás: un contador es una afirmación");
@@ -8553,26 +8566,91 @@ async function main() {
         assert.strictEqual(mot.accion, "verifique_ya");
         assert.strictEqual(mot.quedan_habiles, null, "NUNCA una cuenta atrás sin la fecha del cronograma");
         assert.strictEqual(mot.dias_calendario, null, "sin dias_calendario no se puede decir «vence mañana»");
-        assert.strictEqual(mot.puede_cerrar_desde, "2026-08-18", "el plazo podía cerrar desde el martes 18 — y cerró ese día");
+        assert.strictEqual(mot.puede_cerrar_desde, "2026-08-14", "podía cerrar desde el DÍA DE LA APERTURA (viernes 14): la norma no fija mínimo. Cerró el martes 18, dentro de la ventana");
         assert.ok(!("vencida" in mot) && !("vence" in mot) && !("vence_legible" in mot),
           "los tres campos que afirmaban el vencimiento no pueden volver: su `false` significaba «sigue abierta»");
         assert.ok(/M[ÁA]XIMO/.test(mot.nota) && /entidad puede haber puesto menos|entidad pudo poner menos/.test(mot.nota),
           `la nota dice que 3 días es un techo, no un plazo: ${mot.nota}`);
+
+        /* (2-ter) ══ EL SUELO INVENTADO · REGRESIÓN DEL 24-AGO-2026 ══
+           Reportado por el ingeniero desde el campo: «como la manifestación de
+           interés son tan cortos los plazos, a veces solo abren 4 horas, 8
+           horas». La norma (transcrita en `NORMA`, contrastada contra el
+           concepto CCE C-537/2025) dice «en un término NO MAYOR a tres (3)
+           días hábiles»: fija TECHO y ningún SUELO. Con
+           `PLAZO_MINIMO_HABILES = 1` la app respondía `abierta` —que este
+           módulo define como «con certeza sigue abierta»— el día mismo de la
+           apertura, y escribía «el plazo puede cerrar en cualquier momento
+           entre [mañana] y [el techo]». Falso para una ventana de 8 horas.
+
+           Estas aserciones EJECUTAN la máquina de estados en las cuatro
+           fronteras. Contra el árbol anterior, la primera falla: es lo que
+           separa una cerradura de un adorno. */
+        {
+          const APERTURA = "2026-08-24";                       // lunes hábil
+          const conApertura = (f) => ({ id_del_proceso: "CO1.MC.HORAS", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: `${f}T08:00:00.000` });
+          const elDia = M.manifestacionDeFila(conApertura(APERTURA), APERTURA);
+          assert.strictEqual(elDia.estado, "por_confirmar",
+            "EL DÍA DE LA APERTURA NO SE CERTIFICA ABIERTO: la entidad pudo fijar una ventana de horas");
+          assert.strictEqual(elDia.puede_cerrar_desde, APERTURA,
+            "la ventana empieza el día de la apertura, no al día hábil siguiente");
+          assert.ok(!/entre el martes 25|entre el 2026-08-25/.test(elDia.nota),
+            `la nota no puede prometer que el plazo llega hasta mañana: ${elDia.nota}`);
+          assert.ok(/unas horas/.test(elDia.nota),
+            `la nota tiene que decir que el plazo puede ser de horas: ${elDia.nota}`);
+
+          // ANTES de la apertura sí se certifica: ahí no hay nada que dudar
+          const antes = M.manifestacionDeFila(conApertura("2026-08-26"), APERTURA);
+          assert.strictEqual(antes.estado, "abierta", "una apertura futura sí se puede certificar abierta");
+
+          /* LA FECHA DEL PLIEGO QUE CIERRA EL MISMO DÍA DE LA APERTURA ES
+             VÁLIDA, y con `<=` se descartaba justo esa —la única afirmable—
+             para caer a la ventana calculada: el suelo inventado colándose
+             por la puerta de atrás. */
+          const mismoDia = M.manifestacionDeFila(conApertura(APERTURA), APERTURA, { fechaCronograma: APERTURA });
+          assert.strictEqual(mismoDia.fecha_cronograma_descartada, null,
+            "una ventana de horas que cierra el día de la apertura es legítima: no se descarta");
+          assert.strictEqual(mismoDia.confirmada, true, "y se toma como la fecha límite del pliego");
+          assert.strictEqual(mismoDia.estado, "por_confirmar",
+            "el DÍA del vencimiento tampoco se certifica abierto: el cronograma da el día, nunca la hora");
+          // y una fecha ANTERIOR a la apertura sigue siendo imposible
+          const antesDeAbrir = M.manifestacionDeFila(conApertura(APERTURA), APERTURA, { fechaCronograma: "2026-08-21" });
+          assert.strictEqual(antesDeAbrir.fecha_cronograma_descartada, "2026-08-21", "una fecha anterior a la apertura sí se descarta");
+          assert.strictEqual(M.PLAZO_MINIMO_HABILES, 0, "la norma no fija plazo mínimo: el suelo es la apertura misma");
+        }
         // …y con la fecha REAL del cronograma del pliego, la respuesta correcta es «venció»
         const motReal = M.manifestacionDeFila(MOTAVITA, "2026-08-19", { fechaCronograma: "2026-08-18" });
         assert.strictEqual(motReal.estado, "vencida", "con el cronograma leído (18 de agosto) el plazo consta VENCIDO el 19");
         assert.strictEqual(motReal.origen, "cronograma");
-        // el día de la apertura sí se puede afirmar abierta; el primer hábil ya no
-        assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-14").estado, "abierta");
+        /* NI SIQUIERA EL DÍA DE LA APERTURA se puede afirmar abierta (corregido
+           el 24-ago-2026): esta aserción decía «abierta» y fijaba el suelo
+           inventado. Motavita abrió el viernes 14 a las 15:11 — una ventana de
+           horas la habría cerrado esa misma tarde. */
+        assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-14").estado, "por_confirmar", "el día de la apertura el plazo YA puede cerrar: la entidad pudo fijar horas");
+        assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-13").estado, "abierta", "la víspera sí: ahí el plazo no ha empezado");
         assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-18").estado, "por_confirmar", "el primer hábil el plazo YA puede cerrar");
         assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-21").estado, "vencida");
         /* coherencia con el dato PUBLICADO: si el cierre de ofertas no deja
            sitio al trámite (num. 3: las ofertas empiezan el día hábil siguiente
            al informe del sorteo), la apertura usada no es la buena → no se
            afirma nada. Un calculado que contradice a un publicado pierde. */
+        /* La guarda SE ESTRECHÓ al quitar el suelo inventado (24-ago-2026), y es
+           correcto: con el suelo en 1 día hábil, un cierre de ofertas apretado
+           dejaba la ventana AL REVÉS y se declaraba incoherente; con el suelo en
+           la apertura misma, una ventana de un solo día es perfectamente posible
+           —abre y cierra el viernes 14, se sortea, las ofertas cierran el lunes—
+           así que ya no hay contradicción que denunciar. Se conserva el caso con
+           su nueva lectura Y el caso que SÍ sigue siendo imposible, para que la
+           guarda no se quede sin ejercitar (un `continue` sin prueba es el punto
+           ciego que este repositorio ya pagó). */
         const apretado = M.manifestacionDeFila({ ...MOTAVITA, fecha_cierre: "2026-08-17T15:00:00.000" }, "2026-08-15");
-        assert.strictEqual(apretado.estado, "sin_fecha");
-        assert.strictEqual(apretado.motivo_sin_fecha, "cierre_de_ofertas_no_deja_sitio");
+        assert.strictEqual(apretado.estado, "vencida", "ventana de un solo día (viernes 14): el 15 ya pasó — coherente, no imposible");
+        assert.strictEqual(apretado.puede_cerrar_desde, "2026-08-14");
+        assert.strictEqual(apretado.vence_a_mas_tardar, "2026-08-14", "el cierre de ofertas recorta el techo hasta dejar un solo día");
+        // lo que SIGUE siendo imposible: que las ofertas cierren el día de la apertura o antes
+        const imposible = M.manifestacionDeFila({ ...MOTAVITA, fecha_cierre: "2026-08-14T15:00:00.000" }, "2026-08-15");
+        assert.strictEqual(imposible.estado, "sin_fecha");
+        assert.strictEqual(imposible.motivo_sin_fecha, "cierre_de_ofertas_no_deja_sitio");
         // una sola derivación del estado: la del handler es la MISMA función
         assert.strictEqual(require("../lib/portada.js").estadoDeVentana, M.estadoDeVentana, "portada re-exporta estadoDeVentana, no una copia");
         // (3) el filtro `manif`: abierta / todas / inerte
@@ -8586,7 +8664,14 @@ async function main() {
         assert.strictEqual(FLp.escribirEstado(FLp.leerEstado({ manif: "abierta" })).get("manif"), "abierta");
         assert.ok(FLp.fichas(FLp.leerEstado({ manif: "abierta" })).some((f) => f.filtro === "manif" && /le interesa/i.test(f.etiqueta)));
         const fac = FLs.facetas(filas, clas2).manifestacion;
-        assert.deepStrictEqual(fac, { total: 3, abiertas: 1, urgentes: 0, vencidas: 1, sin_fecha: 1 }, JSON.stringify(fac));
+        /* `urgentes: 1` desde el 24-ago-2026, y es el efecto BUSCADO: el proceso
+           publicado HOY pasó de `abierta` a `por_confirmar` al quitar el suelo
+           inventado, y `por_confirmar` es justamente el estado urgente. Antes,
+           un proceso abierto hoy —cuyo plazo puede ser de 4 horas— no contaba
+           como urgente en ninguna faceta. La invariante del proyecto se sigue
+           cumpliendo y se comprueba aparte: urgentes ⊂ abiertas. */
+        assert.deepStrictEqual(fac, { total: 3, abiertas: 1, urgentes: 1, vencidas: 1, sin_fecha: 1 }, JSON.stringify(fac));
+        assert.ok(fac.urgentes <= fac.abiertas, "urgentes ⊂ abiertas: una urgente sigue siendo una abierta");
         // (4) el listado real publica el campo por fila y las facetas; el filtro por URL funciona
         const liM = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200&tipo=todos&manif=todas", CAB_TOKEN)).cuerpo;
         assert.ok(liM.total > 0, "el corpus trae procesos de menor cuantía");
@@ -15510,7 +15595,7 @@ async function main() {
       const m1 = ag._manifestacion[0];
       assert.strictEqual(m1.proceso, "CO1.P.4");
       assert.strictEqual(m1.origenFecha, "ventana_calculada", "sin cronograma del pliego lo que se publica es la VENTANA, no una fecha límite");
-      assert.strictEqual(m1.puedeCerrarDesdeISO, "2026-08-13", "puede cerrar desde el PRIMER hábil (jueves 13): la entidad fija el plazo, la ley solo el techo");
+      assert.strictEqual(m1.puedeCerrarDesdeISO, "2026-08-12", "puede cerrar desde el DÍA DE LA APERTURA (miércoles 12): la norma solo pone techo");
       assert.strictEqual(m1.venceMaximoISO, "2026-08-18", "a más tardar: apertura 12 (mié) + 3 hábiles = jueves 13, viernes 14, martes 18 (el lunes 17 es festivo)");
       assert.strictEqual(m1.estado, "por_confirmar", "el jueves 13 la ventana ya está corriendo: no se puede afirmar que siga abierta");
       assert.strictEqual(m1.diasHabilesRestantes, null, "NO hay cuenta atrás sin la fecha del cronograma");
@@ -15576,7 +15661,7 @@ async function main() {
         assert.strictEqual(f.diasHabilesRestantes, null, "NINGUNA cuenta atrás sin la fecha del pliego");
         assert.ok(f.habilesHastaElTecho >= 1, "…pero sí una cota para ordenar por urgencia");
         assert.ok(f.venceMaximoISO >= m1.cuerpo.hoy && f.puedeCerrarDesdeISO <= f.venceMaximoISO, "la ventana está bien formada");
-        assert.strictEqual(m1.cuerpo.plazoMinimoHabiles, 1);
+        assert.strictEqual(m1.cuerpo.plazoMinimoHabiles, 0, "la norma solo pone techo: el plazo puede cerrar el día mismo de la apertura (ventanas de horas)");
         assert.ok(/M[ÁA]XIMO/.test(m1.cuerpo.como_leerlo.abierto), "la cabecera dice que 3 días es un techo, no un plazo");
         await redis.del(Portada.CLAVE_MANIFESTACION);
       }
@@ -16715,18 +16800,36 @@ async function main() {
           `el aviso manda a verificar y dice que 3 días es un techo → ${v19.aviso}`);
         assert.ok(/no podrá presentar oferta/.test(v19.aviso), "sigue diciendo lo que está en juego: sin avisar no se puede ofertar");
 
-        // el día de la apertura sí se puede empujar a avisar, sin inventar fecha
+        /* ⚠️ EL DÍA DE LA APERTURA CAMBIÓ DE LADO (24-ago-2026). Esta aserción
+           exigía «puede cerrar el martes 18 de agosto» el 14, que es el día en
+           que Motavita abrió a las 15:11: prometía tres días de margen sobre
+           una ventana que la entidad pudo cerrar esa misma tarde. El ingeniero
+           reportó ventanas de 4 y 8 horas. Hoy el chip manda a verificar. */
         const v14 = pinta(Mf.manifestacionDeFila(MOT, "2026-08-14"));
-        assert.ok(/puede cerrar el martes 18 de agosto/.test(v14.chip) && !/vence/.test(v14.chip), v14.chip);
-        assert.ok(/Hágalo hoy/.test(v14.aviso), "con la ventana entera por delante, la instrucción sigue siendo avisar hoy");
+        assert.ok(/verifique HOY si sigue abierto/i.test(v14.chip) && !/vence/.test(v14.chip),
+          `el día de la apertura el plazo YA puede estar cerrando: no se promete margen → ${v14.chip}`);
+        assert.ok(!/puede cerrar el martes 18/.test(v14.chip),
+          "no se puede prometer que el plazo llega hasta el techo legal");
+        // LA VÍSPERA sí se puede empujar a avisar, sin inventar fecha: ahí no ha empezado
+        const v13 = pinta(Mf.manifestacionDeFila(MOT, "2026-08-13"));
+        assert.ok(/puede cerrar el viernes 14 de agosto/.test(v13.chip) && !/vence/.test(v13.chip), v13.chip);
+        assert.ok(/Hágalo hoy/.test(v13.aviso), "con la ventana entera por delante, la instrucción sigue siendo avisar hoy");
 
         // con la fecha REAL del cronograma sí se afirma —y la verdad era «venció»
         const vReal = pinta(Mf.manifestacionDeFila(MOT, "2026-08-19", { fechaCronograma: "2026-08-18" }));
         assert.ok(/plazo vencido el martes 18 de agosto/.test(vReal.chip) && vReal.aviso === "",
           `con cronograma leído: vencido y sin aviso que empuje a un trámite imposible → ${vReal.chip}`);
+        /* EL DÍA DEL VENCIMIENTO, CON LA FECHA DEL PLIEGO: se dicen las DOS
+           mitades. El día está confirmado («vence HOY») y la hora no («puede
+           haber cerrado ya») — el cronograma publica el día, nunca la hora, y
+           una ventana de horas cierra a media jornada. Decir solo lo primero se
+           lee como «tiene hasta medianoche»; decir solo lo segundo tira un dato
+           duro que el usuario ya tiene. */
         const vHoy = pinta(Mf.manifestacionDeFila(MOT, "2026-08-18", { fechaCronograma: "2026-08-18" }));
         assert.ok(/vence HOY/.test(vHoy.chip) && /vence HOY/.test(vHoy.aviso) && /cronograma del pliego/.test(vHoy.aviso),
-          `con cronograma leído SÍ hay cuenta atrás, y declara su origen → ${vHoy.chip}`);
+          `con cronograma leído SÍ se afirma el día, y declara su origen → ${vHoy.chip}`);
+        assert.ok(/puede haber cerrado ya/.test(vHoy.chip) && /no la hora/.test(vHoy.aviso),
+          `…y no se promete que siga abierto: el cronograma da el día, no la hora → ${vHoy.chip}`);
 
         // y una vencida por el techo no puede empujar a nada
         assert.strictEqual(pinta(Mf.manifestacionDeFila(MOT, "2026-08-25")).aviso, "", "plazo vencido: ningún aviso rojo");
@@ -17857,7 +17960,7 @@ async function main() {
       }
       const bueno = clasificar({ modalidad_de_contratacion: "Selección abreviada menor cuantía", fecha_de_publicacion_del: "2026-08-14T00:00:00.000" });
       assert.strictEqual(bueno.manifestacion.apertura, "2026-08-14", "y una fecha normal sigue calculándose");
-      assert.strictEqual(bueno.manifestacion.puede_cerrar_desde, "2026-08-18", "extremo inferior: apertura + 1 hábil (el 17 es festivo trasladado)");
+      assert.strictEqual(bueno.manifestacion.puede_cerrar_desde, "2026-08-14", "extremo inferior: la APERTURA misma — la norma no fija plazo mínimo");
       assert.strictEqual(bueno.manifestacion.vence_a_mas_tardar, "2026-08-20", "techo legal: apertura + 3 hábiles, D. 1082 art. 2.2.1.2.1.2.20");
     }
 
