@@ -4935,6 +4935,45 @@ provincias del INVIAS).
   diferido: este módulo no puede depender de `apu/` en tiempo de carga). Copiar el 4,0 en el índice
   sería una segunda fuente de verdad de una cifra que multiplica probabilidades, y hay prueba que
   prohíbe escribirlo a mano.
-- **Lo que este entorno no pudo medir**: la distribución real sobre las 2 766 entidades del índice de
-  producción. La suite solo ejercita una celda. La cifra llega con la próxima reconstrucción
-  (`/api/procesos?op=historico&reconstruir_baja=true`).
+- **MEDIDO EN PRODUCCIÓN EL MISMO DÍA, y EXONERA al 4,0.** Índice reconstruido sobre 46 015 procesos:
+  `celdas 1 555 · iqr_cero 404 (26 %) · medibles 1 151 · IQR p25 5 / mediana 12 / p75 21 ·
+  sigma_mediana 8,9 pp · por_debajo_del_defecto 336 (29,2 % de las medibles)`. La invariante cuadra
+  (404 + 1 151 = 1 555). **Mi estimación con los 13 ejemplos —24,5 pp— estaba inflada 2,8×**, porque
+  eran los EXTREMOS que publica la meta y no una muestra: la mediana real es 8,9. Y sobre todo, el
+  razonamiento estaba AL REVÉS: el defecto solo se aplica donde el IQR es 0, o sea donde el 50 %
+  central cabe en UNA cubeta de 1 pp (σ real ≲ 0,74), así que **4 pp es unas cinco veces MÁS ANCHO
+  que la realidad de las celdas donde se usa** — conservador, que es la dirección correcta. Además
+  el 29,2 % del mercado medible es más predecible que el defecto, así que no es un valor absurdo.
+  **La constante se queda, ahora con fundamento medido en vez de sin fuente.** La sospecha estaba
+  bien planteada y el dato la resuelve en contra, como pasó con el régimen especial.
+- **LA CIFRA VIAJA CON SU ORIGEN** (`origen_sigma` en `multiplicadorPrecio`, `dispersion_origen` en el
+  ajuste de precio): `medida` cuando sale del IQR de la celda, `supuesta` cuando cae al defecto. Sin
+  eso, un σ supuesto de 4 pp y uno medido de 4 pp son el mismo número en pantalla — y son dos cosas
+  distintas, en el 26 % de las celdas. Es la doctrina de `granularidad_utilizada` y `origen_b_max`.
+  Los dos campos viajan también en la rama temprana (sin curva) como `null`: un consumidor no puede
+  recibir `undefined` según por dónde salga la función.
+
+### DOS DE LAS CUATRO GRANULARIDADES DE LA BAJA ESTÁN VACÍAS EN PRODUCCIÓN (24-ago-2026)
+
+`por_granularidad` del índice reconstruido: **`entidad_familia` 0 grupos** y **`departamento_familia`
+0 grupos**, frente a `entidad` 2 766 y `departamento` 34. El nivel MÁS específico de la cascada
+—«INVIAS baja 8 % en obra vial y 2 % en consultoría», que es su razón de ser— no existe.
+
+- **NO es un defecto de código, y se separó ejecutando.** La suite puebla las CUATRO granularidades
+  con el mismo fixture, `normalizarCodigo` resuelve la familia de los códigos reales del corpus, y
+  `transformar` conserva `codigo_principal_de_categoria` en el registro histórico. El pipeline de hoy
+  es correcto.
+- **Es un defecto de DATOS ya guardados.** Los niveles por familia solo nacen `if (fam)`, así que 0
+  grupos sobre 46 015 procesos significa que **ninguno trae código UNSPSC legible**. Y
+  `licitaciones:historico:mes:*` **no se purga NUNCA**: sigue vivo lo que escribieron versiones
+  anteriores de la proyección. Corolario incómodo: **reconstruir el índice NO lo arregla** —hay que
+  re-extraer el rango con `/api/procesos?op=historico&desde=…&hasta=…`—, y hasta entonces la baja de
+  cada entidad mezcla todo lo que esa entidad contrata.
+- **Un 0 con dos causas posibles no es un diagnóstico**: se añadió `sin_familia_legible` (y
+  `sin_segmento_legible`) a la meta. Si iguala a `procesos_analizados`, la causa es el corpus y no el
+  mercado. Es el mismo movimiento que `por_modalidad` con el régimen especial y que
+  `baja_exactamente_cero` con el cruce de columnas: **convertir un cero mudo en una cifra que se
+  explica sola.** Hay prueba de que con código legible el nivel se puebla y el contador vale 0.
+- **Lo que este entorno no pudo verificar**: que la causa sea exactamente la proyección vieja. Es la
+  explicación compatible con todo lo medido, pero la fuente no se alcanza desde aquí (403). La
+  próxima reconstrucción publica `sin_familia_legible` y lo confirma o lo desmiente sola.

@@ -2515,6 +2515,45 @@ async function main() {
           assert.strictEqual(caso(p25, p75).sigma, R.DISPERSION_DEFECTO,
             `IQR (${p25}, ${p75}) no es utilizable: tiene que caer al defecto declarado`);
         }
+
+        /* 5 · LA CIFRA VIAJA CON SU ORIGEN. Medido en producción: 404 de 1 555
+           celdas (26 %) no tienen dispersión medible y usan el supuesto. Sin
+           este campo, un σ supuesto de 4 pp y uno medido de 4 pp son el mismo
+           número en pantalla — y son dos cosas distintas. Es la doctrina de
+           `granularidad_utilizada` y `origen_b_max`. */
+        assert.strictEqual(conDefecto.origen_sigma, "supuesta");
+        assert.strictEqual(conObservada.origen_sigma, "medida");
+        for (const [p25, p75] of [[42, 22], [null, 30], ["a", "b"]]) {
+          assert.strictEqual(caso(p25, p75).origen_sigma, "supuesta",
+            "un IQR no utilizable produce una sigma SUPUESTA, y tiene que decirlo");
+        }
+        {
+          const { factorPrecio: fp } = require("../lib/probabilidad.js");
+          const celda = (p25, p75) => ({ nivel: "alto", baja_mediana: 35, baja_p25: p25, baja_p75: p75, procesos_contados: 57 });
+          assert.strictEqual(fp(celda(35, 35), 20, "apu").dispersion_origen, "supuesta",
+            "el ajuste de precio tiene que declarar si su dispersión es supuesta");
+          assert.strictEqual(fp(celda(22, 42), 20, "apu").dispersion_origen, "medida");
+          assert.strictEqual(fp(celda(22, 42), 99, "apu").dispersion_origen, null,
+            "sin curva (b_max por encima del centro) no se inventa un origen");
+        }
+
+        /* 6 · POR QUÉ PUEDE ESTAR VACÍA UNA GRANULARIDAD POR FAMILIA. En
+           producción `entidad_familia` y `departamento_familia` salieron con
+           CERO grupos sobre 46 015 procesos, mientras la suite los puebla: el
+           corpus histórico no se purga nunca y conserva lo que escribieron
+           versiones anteriores de la proyección. Un 0 con dos causas posibles
+           no es un diagnóstico; el contador las separa. */
+        {
+          assert.ok(Object.prototype.hasOwnProperty.call(meta, "sin_familia_legible"),
+            "la meta tiene que decir cuántos procesos analizados no traen familia legible");
+          assert.ok(meta.sin_familia_legible >= 0 && meta.sin_familia_legible <= meta.procesos_analizados,
+            "el contador de familia ilegible no puede superar a los analizados");
+          // el fixture SÍ trae código: aquí tiene que ser 0 y las granularidades por familia poblarse
+          assert.strictEqual(meta.sin_familia_legible, 0,
+            "el corpus de prueba trae código UNSPSC: ningún proceso puede quedarse sin familia");
+          assert.ok(meta.por_granularidad.entidad_familia.grupos > 0,
+            "con código legible, el nivel más específico de la cascada TIENE que poblarse");
+        }
       }
 
     /* 2. la entidad que baja 5-10 % se clasifica «alto» */
