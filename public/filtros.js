@@ -41,7 +41,14 @@
   /* ─── 2 · Cómo lo adjudican ──────────────────────────────────────────── */
   const MODALIDADES = Object.freeze([
     { id: "licitacion", etiqueta: "Licitación pública", ayuda: "La más grande y abierta: cualquiera se presenta" },
-    { id: "abreviada", etiqueta: "Proceso pequeño (hay que avisar antes de presentarse)", ayuda: "Selección abreviada de menor cuantía: primero se avisa que interesa, después se oferta" },
+    /* EL NOMBRE PROPIO DE LA MODALIDAD, Y NO UN APODO (encargo del ingeniero,
+       24-ago-2026). Decía «Proceso pequeño», que además de no ser su nombre
+       chocaba con «Mínima cuantía» —la de aquí abajo, que SÍ es la pequeña— y
+       escondía lo único que hay que saber: que aquí no se oferta sin avisar
+       antes, y que el plazo para avisar puede ser de horas. La regla de la
+       Fase 6 lo permite: los nombres propios de las modalidades no son jerga
+       de campo (la prueba de jerga solo barre las ETIQUETAS de los campos). */
+    { id: "abreviada", etiqueta: "Selección abreviada de menor cuantía · Manifestación de interés", ayuda: "Primero hay que avisar que le interesa y después se oferta. El plazo para avisar lo fija la entidad y puede ser de solo unas horas: la ley solo pone el techo de 3 días hábiles." },
     { id: "subasta", etiqueta: "Subasta inversa", ayuda: "Gana el precio más bajo en una puja" },
     { id: "meritos", etiqueta: "Concurso de méritos", ayuda: "Para consultoría e interventoría: pesa la experiencia, no el precio" },
     { id: "minima", etiqueta: "Mínima cuantía", ayuda: "Procesos pequeños y rápidos, gana el menor precio" },
@@ -163,8 +170,8 @@
   const ORDENES = Object.freeze([
     { id: "atractividad", etiqueta: "Las mejores para usted (recomendado)",
       concepto: "Primero las que pasan sus cuatro requisitos (registro de proponente, capacidad de contratación, caja y competencia); entre esas, las más cercanas a su zona; y dentro de cada zona, las de mayor contrato esperado (presupuesto oficial × opción estimada de ganar). Es un orden para mirar primero lo que más probablemente vale su tiempo, no una promesa de adjudicación." },
-    { id: "ganancia", etiqueta: "Lo que más deja",
-      concepto: "Lo que le queda del contrato si lo gana —precio al que suele adjudicar la entidad, menos su costo, su administración e imprevistos, y menos la contribución del 5 % de obra pública y las deducciones que haya cargado—, multiplicado por su opción de ganar, que es lo que hace comparable un contrato grande y difícil con uno mediano y ganable. Con el costo que usted ya calculó en Precios la cifra es suya; si todavía no lo calculó, se supone que arma la oferta con su estructura de precio actual y se dice. Sin presupuesto oficial publicado no hay cifra: se va al final, nunca en cero." },
+    { id: "ganancia", etiqueta: "Lo que más deja (solo las que ya costeó)",
+      concepto: "Solo las que ya costeó en Precios: ordena por lo que le queda del contrato si lo gana —precio al que suele adjudicar la entidad, menos su costo medido, su administración e imprevistos, y menos la contribución del 5 % de obra pública y las deducciones que haya cargado—, multiplicado por su opción de ganar, que es lo que hace comparable un contrato grande y difícil con uno mediano y ganable. Mientras no haya costeado el proceso no hay cifra que ordenar: el costo se cerraría con su propia estructura de precio y saldría la cuantía multiplicada por una constante, no un dato del proceso. Esas van al final, sin cifra. Para «cuánto dinero hay en juego» está «Mayor contrato esperado»." },
     { id: "margen", etiqueta: "Más recorrido de precio (solo las que ya costeó)",
       concepto: "Solo las que ya costeó en Precios: ordena por el RECORRIDO que le queda al precio entre su piso rentable (costo directo + administración, imprevistos y ganancia mínima + contribución) y el precio al que suele adjudicar la entidad. Es margen de maniobra para ofertar, NO la plata que deja el contrato: para eso está «Lo que más deja». Las demás van al final, sin cifra." },
     { id: "cierre", etiqueta: "Las que cierran antes",

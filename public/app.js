@@ -905,6 +905,14 @@
     }
     if (m.estado === "sin_fecha") return chip("Avisar que le interesa · fecha por confirmar en SECOP II", A, nota);
     if (m.estado === "por_confirmar") {
+      /* CON FECHA DEL PLIEGO, EL DÍA SÍ ESTÁ CONFIRMADO — lo que no consta es la
+         HORA (el cronograma publica el día, nunca la hora, y una ventana de 4 u
+         8 horas cierra a media jornada). Decir solo «verifique» tiraría un dato
+         duro que el usuario ya tiene; decir solo «vence HOY» se lee como «tiene
+         hasta medianoche». Se dicen las dos mitades. */
+      if (m.confirmada) {
+        return chip(`Avisar que le interesa · vence HOY (${esc(m.fecha_limite_legible || "")}) · puede haber cerrado ya`, R, nota);
+      }
       // la ventana está corriendo: puede seguir abierto o haber cerrado ya
       return chip("Avisar que le interesa · verifique HOY si sigue abierto", R, nota);
     }
@@ -922,8 +930,10 @@
        una segunda copia de la constante de lib/manifestacion */
     const tope = m.plazo_maximo_habiles || 3;
     let frase = "", rojo = true;
-    if (m.estado === "por_confirmar") {
-      frase = `el plazo para avisar que le interesa puede estar cerrando hoy o haber cerrado ya. La ley da un MÁXIMO de ${tope} días de oficina desde la apertura (${esc(m.apertura || "")}) y la entidad pudo poner menos en el pliego. Entre a SECOP II, mire el cronograma y avise antes de seguir: sin eso no podrá presentar oferta.`;
+    if (m.estado === "por_confirmar" && m.confirmada) {
+      frase = `el plazo para avisar que le interesa vence HOY (${esc(m.fecha_limite_legible || "")}), según el cronograma del pliego. El cronograma da el día, no la hora, así que puede haber cerrado ya: entre a SECOP II ahora. Sin eso no podrá presentar oferta a este proceso.`;
+    } else if (m.estado === "por_confirmar") {
+      frase = `el plazo para avisar que le interesa puede estar cerrando hoy o haber cerrado ya. La ley da un MÁXIMO de ${tope} días de oficina desde la apertura (${esc(m.apertura || "")}) y la entidad pudo poner menos en el pliego —a veces son solo unas horas—. Entre a SECOP II, mire el cronograma y avise antes de seguir: sin eso no podrá presentar oferta.`;
     } else if (m.estado === "abierta" && m.confirmada && m.dias_calendario != null && m.dias_calendario <= 1) {
       frase = m.dias_calendario === 0
         ? `el plazo para avisar que le interesa vence HOY (${esc(m.fecha_limite_legible || "")}). Sin eso no podrá presentar oferta a este proceso.`
@@ -1216,69 +1226,96 @@
      no duplicar la plantilla — es la misma franja y tiene que verse igual. */
   function bloqueGanancia(l, celda) {
     const g = l.ganancia;
-    /* Con `ve` pero sin ganancia (sin credencial, o sin presupuesto oficial) se
-       enseña el contrato esperado de siempre, diciendo que es un promedio por
-       intento: quitarle la cifra a quien entra sin llave dejaría la franja coja
-       por una razón que no es suya. */
+    /* Sin cifra de ganancia NO se resucita el valor esperado: era exactamente
+       la cifra que el dueño reportó como leída al revés («el cliente asume que
+       es lo que le queda de ganancia»), y devolverla por la puerta del
+       respaldo convertiría este arreglo en la regresión que vino a corregir.
+       `ve` sigue vivo: ordena la lista y tiene su propio orden con su nombre
+       («Mayor contrato esperado»). Aquí se dice qué falta. */
     if (!g || g.valor == null) {
       const motivo = g && g.frase ? g.frase : "";
-      return l.ve != null
-        ? celda(esc(fmtCorto(l.ve)), "de contrato esperado por intento",
-          "presupuesto × opción de ganar, contando las veces que no se gana · no es lo que queda",
-          `Presupuesto oficial multiplicado por la opción estimada de ganar: un promedio por intento, contando las veces que no se gana. NO es la plata que queda.${motivo ? ` ${motivo}` : ""}`)
-        : celda("—", "sin cifra de lo que deja", "",
-          motivo || "Sin presupuesto oficial publicado no hay con qué calcular lo que deja este contrato.");
+      return celda("—", "sin cifra de lo que deja", "",
+        motivo || "Sin presupuesto oficial publicado no hay con qué calcular lo que deja este contrato.");
     }
 
-    /* TRES VEREDICTOS, NO DOS — y esta es la corrección que costó la cifra.
-       La versión anterior pintaba «−$32M · de pérdida si gana el contrato» en
-       rojo, y esa pérdida NO se sostenía: aparecía solo si (a) se gastaba
-       entera la reserva para imprevistos —que `lib/apu/rentabilidad` dice
-       expresamente que NO es un costo cierto— y (b) la administración del
-       usuario no cubría los impuestos del contrato, que es una pregunta que
-       nadie le había hecho. En el mismo proceso el rango real iba de −$32M a
-       +$257M. Afirmar el extremo malo de un rango que cruza el cero, en rojo y
-       en la única pantalla que decide si se presenta, es la peor forma posible
-       de equivocarse en este módulo.
-       · `deja`    → ya deja plata en el PEOR de los casos: se enseña esa.
-       · `pierde`  → pierde aun en el MEJOR: se enseña la menos mala.
-       · `depende` → el rango cruza el cero: se enseñan LOS DOS extremos. */
+    /* ⚠️ SIN COSTO MEDIDO NO HAY CIFRA DE GANANCIA, Y ESA ES LA CORRECCIÓN
+       (24-ago-2026, reportada por el ingeniero: «no me gusta nada el valor
+       aproximado de ganancia»).
+
+       Lo que se pintaba era un rango —«−$32M a $257M · puede costarle o
+       dejarle»— y el problema no era la redacción: era que el número no
+       contenía ni un dato del proceso. Sin APU costeado, `lib/ganancia` cierra
+       el costo por la identidad del precio (CD = V / (1 + (A+I+U)/100)), así
+       que la cuenta se reduce algebraicamente a `V × k`, con
+       `k = U/(1+A+I+U) − τ`: una CONSTANTE que sale de la estructura que
+       tecleó el propio usuario y del tipo de trabajo. Medido: con la
+       estructura de referencia el rango es EXACTAMENTE −1,00 % a +8,00 % del
+       precio en todos los procesos —$50 M, $500 M, $3.216 M, $20.000 M—, con
+       correlación −1,0000 entre el extremo malo y la cuantía. Era la cuantía
+       reescalada, pintada al lado de la cuantía.
+
+       Es el defecto del chip constante de `nivel_competencia` y el de «18,2
+       oferentes sin base», en la tercera celda: una cifra idéntica en todas
+       las tarjetas no distingue ninguna. Y el veredicto tampoco era del
+       proceso: `depende` salía en toda obra con la estructura de referencia
+       —el 74 % de la lista— porque la ganancia declarada del 5 % no cubre la
+       contribución del 5 %.
+
+       Con costo MEDIDO la misma cuenta sí informa: sobre la misma cuantía y
+       costos directos de $2.000 M a $2.800 M el margen recorre +16,45 % →
+       −14,97 % y el veredicto pasa de `deja` a `pierde`. Por eso la celda se
+       parte por `base` y no por veredicto:
+       · `apu` → UNA cifra, la del peor caso, que con costo medido es un suelo
+         real y no un extremo retórico. El rango entero sigue en el detalle,
+         que ya existe, ya cuadra al peso y se abre pulsando la propia cifra.
+       · `estructura_de_precio` → la celda deja de fingir una medición y pide
+         lo único que la convierte en una: el costo. Es además lo único que
+         mejora la aplicación con el uso. */
+    if (g.base !== "apu") {
+      /* El hecho MEDIDO que sí es de este proceso viaja en el título: a qué
+         precio suele adjudicar esta entidad y sobre cuántos contratos. La
+         celda es el botón que abre el editor ya precargado con el proceso —el
+         mismo camino del botón «APU», con la misma cadena de parámetros—, así
+         que la acción está a un clic de la pregunta. */
+      const refPrecio = g.origen_precio === "mercado"
+        ? `Aquí se suele adjudicar a ${pesos(g.precio_esperado)}${g.baja_aplicada_pct != null ? ` (${nf2.format(g.baja_aplicada_pct)} % por debajo del presupuesto` : ""}${g.baja_procesos != null ? `, medido en ${fmt.format(g.baja_procesos)} contratos)` : g.baja_aplicada_pct != null ? ")" : ""}.`
+        : `Sin historial suficiente de esta entidad para saber a qué precio suele adjudicar: la referencia es el presupuesto oficial (${pesos(g.precio_esperado)}).`;
+      const titulo = [
+        "Para saber cuánta plata deja este contrato hace falta su costo, y todavía no lo ha calculado.",
+        refPrecio,
+        "Sin el costo, la cuenta se cerraría con su propia estructura de precio y el resultado sería la cuantía multiplicada por una constante: el mismo porcentaje en todas las licitaciones. No es un dato de este proceso, así que no se enseña.",
+        "Pulse para calcular el costo de este proceso en Precios.",
+      ].join("\n");
+      const boton = `<button type="button" class="btn-apu cifra-pulsable" data-apu-q="${esc(qApu(l))}"
+        aria-label="Calcular en Precios cuánto cuesta este proceso">Calcular</button>`;
+      return celda(boton, "cuánto deja: falta su costo", "se calcula en Precios", titulo);
+    }
+
+    /* CON COSTO MEDIDO: una sola cifra. El peor caso es el suelo —la reserva
+       de imprevistos gastada entera y la contribución descontada— y por eso es
+       el que se puede afirmar sin condiciones. El mejor caso y la cascada
+       completa viven en el detalle, a un clic. */
     const v = g.veredicto;
-    const cifra = v === "pierde" ? g.mejor : (v === "deja" ? g.peor : g.valor);
-    const valorTxt = v === "depende"
-      ? `${esc(copFirmado(g.peor))} a ${esc(copFirmado(g.mejor))}`
-      : esc(copFirmado(cifra));
-    const rotulo = v === "deja"
-      ? "le quedan si gana el contrato"
-      : v === "pierde" ? "de pérdida aun en el mejor caso" : "puede costarle o dejarle";
-    /* La NOTA dice DE DÓNDE sale la cifra en cinco palabras. OJO: en móvil está
-       oculta por CSS (`.metrica-nota{display:none}`), así que NUNCA puede
-       llevar la salvedad que sostiene el número — por eso la salvedad vive en
-       el RÓTULO y el detalle se abre pulsando la propia cifra. */
-    const nota = g.base === "apu"
-      ? "con el costo que usted calculó"
-      : v === "depende" ? "faltan dos datos suyos" : "con su estructura de precio";
+    const rotulo = v === "pierde" ? "de pérdida aun en el mejor caso" : "le quedan como mínimo si gana";
+    const cifra = v === "pierde" ? g.mejor : g.peor;
     const lineas = [
       g.frase,
       `Precio de referencia: ${pesos(g.precio_esperado)}${g.origen_precio === "mercado"
         ? ` — al que suele adjudicar esta entidad${g.baja_procesos != null ? ` (${fmt.format(g.baja_procesos)} contratos${g.baja_aplicada_pct != null ? `, ${nf2.format(g.baja_aplicada_pct)} % por debajo del presupuesto` : ""})` : ""}.`
         : " — el presupuesto oficial: no hay historial suficiente de esta entidad para saber cuánto se suele bajar."}`,
-      `Obra, administración e imprevistos: ${pesos(g.costo_sin_ganancia)}${g.base === "apu" ? " (con el costo que usted calculó en Precios)." : "."}`,
+      `Obra, administración e imprevistos: ${pesos(g.costo_sin_ganancia)} (con el costo que usted calculó en Precios).`,
+      g.mejor != null && g.mejor !== g.peor ? `Si no gasta la reserva para imprevistos: ${copFirmado(g.mejor)}.` : null,
       g.tau_pct > 0 ? `Le descuentan de las actas: ${pesos(g.descuentos)} (${nf2.format(g.tau_pct)} %).` : null,
       g.por_intento != null ? `Ganancia media por intento: ${copFirmado(g.por_intento)}.` : null,
       ...(g.supuestos || []),
       `Es una cota superior: ${(g.cota_superior_por || []).join("; ")}.`,
       "Pulse la cifra para ver la cuenta completa.",
     ].filter(Boolean);
-    /* La cifra ES el botón: un detalle que se esconde tras un enlace aparte no
-       lo encuentra nadie, y en móvil no hay `title` que valga (no hay puntero).
-       El rojo se reserva para `pierde`: pintar de rojo un rango que cruza el
-       cero volvería a afirmar lo que el veredicto acaba de dejar en duda. */
     const boton = `<button type="button" class="detalle-ganancia cifra-pulsable" data-id="${esc(l.id_del_proceso || "")}"
         data-objeto="${esc(l.nombre_del_procedimiento || l.id_del_proceso || "")}"
-        aria-label="Ver cómo se calcula lo que deja este contrato">${valorTxt}</button>`;
-    return celda(boton, rotulo, esc(nota), lineas.join("\n"),
-      (v === "pierde" ? "perdida" : "") + (v === "depende" ? " rango" : ""));
+        aria-label="Ver cómo se calcula lo que deja este contrato">${esc(copFirmado(cifra))}</button>`;
+    return celda(boton, rotulo, "con el costo que usted calculó", lineas.join("\n"),
+      v === "pierde" ? "perdida" : "");
   }
 
   function bloqueProbabilidad(l) {
@@ -5085,9 +5122,25 @@
     $("m-mes").textContent = d.parcial ? "Falta otra tanda" : "Al día";
     $("m-filas").textContent = cifra(d.ciclo_leidas);
     $("m-total").textContent = cifra(d.guardadas);
+    /* EL PANEL SIMPLE (encargo del ingeniero): la sensación de «va cargando
+       poco a poco» sale de los CONTEOS REALES que crecen tanda a tanda, no de
+       un porcentaje — el delta no tiene denominador y fabricarlo sería inventar
+       una medición en la pantalla que dice si los datos están al día. */
+    const cif = document.getElementById("act-cifras");
+    if (cif) {
+      const leidas = Number(d.ciclo_leidas), guardadas = Number(d.guardadas);
+      const partes = [];
+      if (Number.isFinite(leidas)) partes.push(`${fmt.format(leidas)} ${leidas === 1 ? "proceso revisado" : "procesos revisados"}`);
+      if (Number.isFinite(guardadas)) partes.push(`${fmt.format(guardadas)} ${guardadas === 1 ? "actualizado" : "actualizados"}`);
+      cif.textContent = partes.join(" · ");
+    }
+    const est = document.getElementById("act-estado");
+    if (est) est.textContent = d.parcial ? "Cargando datos de SECOP II…" : "Datos al día";
   }
 
   function completar(cuerpo) {
+    const estA = document.getElementById("act-estado");
+    if (estA) estA.textContent = "Datos al día";
     $("prog-barra").style.width = "100%";
     $("prog-pct").textContent = "100 %";
     $("prog-mes").textContent = "Carga completa";
@@ -5223,6 +5276,18 @@
     $("btn-al-dia").disabled = corriendo;
     $("btn-detener").disabled = !corriendo;
     $("f-presupuesto").disabled = corriendo;
+    /* EL BOTÓN ÚNICO SE GOBIERNA DESDE AQUÍ, que es el punto por el que ya
+       pasan las cinco transiciones (arranque, fin, detención, error, candado).
+       Cablearlo en cada una habría dejado alguna sin cubrir —y ese es
+       exactamente el botón que se queda deshabilitado para siempre—. Al
+       terminar, el panel NO se esconde: se queda con la última cifra y sin
+       giro, porque el resultado es la respuesta a la pulsación. */
+    const bA = document.getElementById("btn-actualizar-datos");
+    if (bA) bA.disabled = corriendo;
+    const sp = document.getElementById("act-spin");
+    if (sp) sp.hidden = !corriendo;
+    const ba = document.getElementById("act-barra");
+    if (ba) ba.classList.toggle("barra-indeterminada", corriendo);
   }
 
   function detener(motivo) {
@@ -5278,6 +5343,29 @@
     encadenar(true);
     return true;
   }
+  /* EL BOTÓN ÚNICO LLAMA A `iniciarAlDia`, no reimplementa nada. El encadenado
+     de tandas —candado, backoff, `let modo = "full"` una sola vez, la
+     invariante «1.ª full, siguientes auto»— vive en `encadenar` y una segunda
+     copia rompería justo lo que la suite vigila. Lo único propio del botón es
+     enseñar y esconder su panel. */
+  function actualizarDatos() {
+    const panel = document.getElementById("act-panel");
+    const est = document.getElementById("act-estado");
+    const cif = document.getElementById("act-cifras");
+    if (est) est.textContent = "Cargando datos de SECOP II…";
+    if (cif) cif.textContent = "";
+    if (panel) panel.hidden = false;
+    $("btn-actualizar-datos").disabled = true;
+    /* `iniciarAlDia` devuelve false si ya hay una tanda en curso: entonces no
+       se ha empezado nada y el botón tiene que volver a estar disponible —una
+       pulsación sin respuesta visible es peor que un error. */
+    if (!iniciarAlDia()) {
+      if (est) est.textContent = "Ya hay una actualización en curso.";
+      $("btn-actualizar-datos").disabled = false;
+    }
+  }
+  const btnAct = document.getElementById("btn-actualizar-datos");
+  if (btnAct) btnAct.addEventListener("click", actualizarDatos);
   $("btn-al-dia").addEventListener("click", iniciarAlDia);
   $("btn-iniciar").addEventListener("click", iniciarFull);
   $("btn-detener").addEventListener("click", () => detener("usuario"));
@@ -5314,7 +5402,15 @@
     caja.innerHTML = '<p class="text-gray-500">Buscándolo…</p>';
     let r, cuerpo;
     try {
-      r = await fetch(`/api/perfil?op=diagnostico&perfil=${encodeURIComponent($("ra-perfil").value)}&buscar=${encodeURIComponent(consulta)}`,
+      /* El ámbito y la modalidad viajan solo si el usuario los eligió: mandar
+         `campo=todo` y `modalidad=` sería ruido en la URL, y el servidor ya
+         tiene esos defectos. Las opciones de modalidad se rellenan desde
+         public/filtros.js — una segunda tabla de nombres se desincronizaría
+         del selector de la hoja de filtros. */
+      const campoRa = $("ra-campo").value, modRa = $("ra-modalidad").value;
+      r = await fetch(`/api/perfil?op=diagnostico&perfil=${encodeURIComponent($("ra-perfil").value)}&buscar=${encodeURIComponent(consulta)}`
+        + (campoRa && campoRa !== "todo" ? `&campo=${encodeURIComponent(campoRa)}` : "")
+        + (modRa ? `&modalidad=${encodeURIComponent(modRa)}` : ""),
         { headers: { "x-historico-token": TOKEN } });
     } catch {
       caja.innerHTML = '<p class="text-red-700">No se pudo contactar el servidor.</p>'; return;
@@ -5345,6 +5441,24 @@
         ${x.estado || x.fase ? `<p class="mt-1 text-xs text-gray-500">Estado publicado: ${esc(x.estado || "—")} · Fase: ${esc(x.fase || "—")}</p>` : ""}
       </div>`;
     }).join("");
+  }
+  /* Las modalidades salen de public/filtros.js, la MISMA lista que alimenta la
+     hoja de filtros del listado: escribirlas a mano aquí sería una segunda
+     tabla de nombres que se desincroniza a la primera corrección. */
+  (function poblarModalidadesRastreo() {
+    const sel = document.getElementById("ra-modalidad");
+    if (!sel || !window.Filtros) return;
+    for (const m of window.Filtros.MODALIDADES || []) {
+      const o = document.createElement("option");
+      o.value = m.id; o.textContent = m.etiqueta; o.title = m.ayuda || "";
+      sel.appendChild(o);
+    }
+  })();
+  for (const id of ["ra-campo", "ra-modalidad"]) {
+    const n = document.getElementById(id);
+    /* Cambiar un filtro con un resultado en pantalla lo dejaría contradiciendo
+       al selector: se invalida, como hace el panel de cobertura con su perfil. */
+    if (n) n.addEventListener("change", () => { const res = $("ra-resultado"); if (res) res.classList.add("hidden"); });
   }
   $("btn-rastrear").addEventListener("click", rastrearProceso);
   $("ra-consulta").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); rastrearProceso(); } });
@@ -7092,7 +7206,12 @@
     if (ev.target.closest("#cons-btn-ver")) {
       const btn = ev.target.closest("#cons-btn-ver"); btn.disabled = true;
       try {
-        const g = await api("/api/perfil?op=consorcio", { method: "POST", body: { integrantes: participacionesActuales() } });
+        /* El nombre viaja SOLO si el usuario escribió algo: el servidor cae a
+           «Consorcio N» con `null`, y mandar una cadena vacía sería pedirle que
+           guarde un nombre en blanco. Se recorta a los mismos 140 caracteres
+           que valida el handler para que el tope no sorprenda al enviar. */
+        const nombreCons = $("cons-nombre").value.trim().slice(0, 140);
+        const g = await api("/api/perfil?op=consorcio", { method: "POST", body: { integrantes: participacionesActuales(), nombre: nombreCons || null } });
         const sel = $("f-perfil");
         if (![...sel.options].some((o) => o.value === g.id)) { const o = document.createElement("option"); o.value = g.id; o.textContent = etiquetaConsorcio(g.nombre, g.id); sel.appendChild(o); }
         sel.value = g.id;

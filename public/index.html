@@ -201,6 +201,10 @@
        puntero, así que un `title` no la explica y un enlace aparte no lo
        encuentra nadie. Hereda el tamaño y el color de `.metrica-valor` para que
        siga leyéndose como una cifra y no como un control. */
+    /* BARRA INDETERMINADA: dice «está trabajando», nunca «va por el N %».
+       El delta no tiene denominador, así que un porcentaje sería inventado. */
+    @keyframes correr { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
+    .barra-indeterminada { animation: correr 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
     .cifra-pulsable { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
       text-align: left; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 4px;
       text-decoration-color: var(--text-secondary); }
@@ -361,6 +365,8 @@
       .panel-pestana { animation: none; }
       .panel-filtros-hoja { animation: none; }
       .spin { animation: none; }
+      /* la barra indeterminada tampoco corre: dice «trabajando» con opacidad */
+      .barra-indeterminada { animation: none; width: 100%; opacity: 0.45; }
       .tarjeta:hover, .btn-peligro:hover, .btn-vidrio-acento:hover, .btn-vidrio-acento:active, .puerta-entrada:hover { transform: none; }
     }
     @media (prefers-contrast: more) {
@@ -617,15 +623,92 @@
            Debajo, plegado, el MERCADO ENTERO (la portada de la Fase 9, que
            antes salía en la landing ANTES de elegir cómo entrar). -->
       <section id="pulso" class="hidden mb-6">
-        <div id="pu-hero" class="rounded-2xl p-6 sm:p-8" style="background: var(--bg-card); box-shadow: var(--shadow-sm);"></div>
+        <!-- ⚠️ TRANSLÚCIDO SIN BLUR ERA LO PEOR DE LOS DOS MUNDOS (24-ago-2026).
+             Estos siete recuadros fijaban `var(--bg-card)` —que es
+             `rgba(255,255,255,0.72)`— en un `style` en línea, y como no llevan
+             la clase `bg-white` NINGUNA regla les daba `backdrop-filter`: se
+             veía a través de ellos sin nada que difuminara el fondo, justo lo
+             que el vidrio existe para evitar. Las otras 31 tarjetas de la app sí
+             reciben `--bg-card` + `blur(20px)` por la capa de traducción.
+             Se pasan a las MISMAS clases que el resto: con ellas heredan el
+             blur, el borde y las tres preferencias del sistema (reducir
+             transparencia, reducir movimiento, más contraste) sin una regla
+             nueva. Un estilo en línea propio es una segunda definición de
+             «tarjeta de vidrio» que se despeina por su cuenta. -->
+        <div id="pu-hero" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 sm:p-8"></div>
+        <!-- LO URGENTE VA ANTES QUE LOS REPARTOS: en la selección abreviada de
+             menor cuantía no se puede ofertar sin avisar antes, y el plazo lo
+             fija la entidad —a veces son horas—. Nace oculto y solo aparece si
+             hay alguno: un recuadro que dice «0» se deja de mirar. -->
+        <div id="pu-manifestacion" class="mt-4 hidden"></div>
+        <!-- CUATRO REPARTOS, y cada barra es EXACTAMENTE un filtro del listado.
+             `min-w-0 overflow-hidden` es obligatorio: un SVG dentro de un ítem
+             de grid sin él ensancha la página 26 px en móvil, y eso no lo ve
+             ninguna prueba de Node. -->
         <div class="mt-4 grid gap-4 md:grid-cols-2">
-          <div id="pu-cierre" class="min-w-0 overflow-hidden rounded-2xl p-5" style="background: var(--bg-card);"></div>
-          <div id="pu-cuantia" class="min-w-0 overflow-hidden rounded-2xl p-5" style="background: var(--bg-card);"></div>
-          <div id="pu-departamentos" class="min-w-0 overflow-hidden rounded-2xl p-5" style="background: var(--bg-card);"></div>
-          <div id="pu-entidades" class="min-w-0 overflow-hidden rounded-2xl p-5" style="background: var(--bg-card);"></div>
+          <div id="pu-cierre" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
+          <div id="pu-cuantia" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
+          <div id="pu-tipo" class="min-w-0 overflow-hidden hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
+          <div id="pu-modalidad" class="min-w-0 overflow-hidden hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
+          <div id="pu-departamentos" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
+          <div id="pu-entidades" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
         </div>
         <p id="pu-nota" class="mt-2 text-[11px]" style="color: var(--text-secondary);"></p>
       </section>
+<!-- ══════ ACTUALIZAR DATOS · el botón único (encargo del ingeniero, 24-ago-2026) ══════
+         «Puede ser un botón de actualizar datos en tiempo real, con una
+         animación de carga que al ser lenta le dé la sensación de que va
+         cargando poco a poco, mostrando un texto como "Cargando datos de
+         SECOP II"».
+
+         ⚠️ SIN PORCENTAJE, Y ESO NO ES UN RECORTE: ES LA ÚNICA FORMA
+         HONESTA. Se midió antes de dibujar nada. «Ponerse al día» (el
+         delta, que es lo que el usuario normal necesita) barre por
+         `:updated_at` con keyset y NO PUBLICA NINGÚN DENOMINADOR: su
+         respuesta trae `ciclo_leidas`, `guardadas` y `parcial`, y ni un
+         solo campo de total esperado. Una barra de porcentaje ahí sería un
+         número inventado en la pantalla que le dice al dueño si sus datos
+         están al día. La sensación de avance que pide el ingeniero sale de
+         donde sí es real: los CONTEOS que crecen tanda a tanda. La barra es
+         indeterminada —dice «está trabajando», no «va por el 42 %»—.
+         La CARGA COMPLETA sí tiene denominador (`count(*)` por mes, ver
+         lib/socrata.contarMes) y conserva su barra con porcentaje real,
+         plegada abajo con el resto del instrumental. -->
+      <!-- MISMAS CLASES QUE EL RESTO DE TARJETAS, y no un estilo en línea
+         propio: `bg-white rounded-2xl` es la utilidad que la capa de piel
+         traduce a `var(--bg-card)` + blur + borde en `#app
+         .bg-white.rounded-2xl`, y con ella la tarjeta hereda sola las tres
+         preferencias del sistema (reducir transparencia, reducir
+         movimiento, más contraste). Un `style="background: var(--bg-card)"`
+         a mano se queda SIN blur y sin esas variantes: sería una segunda
+         definición de «tarjeta de vidrio» que se despeina por su cuenta. -->
+      <section id="actualizar" class="mt-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="min-w-0">
+          <h2 class="font-semibold tracking-tight">Actualizar datos</h2>
+          <p class="mt-1 text-sm" style="color: var(--text-secondary);">Trae de SECOP II lo publicado desde la última vez. Puede cerrar la pestaña: el avance queda guardado.</p>
+        </div>
+        <button id="btn-actualizar-datos" type="button"
+                class="shrink-0 rounded-xl px-6 py-3 text-sm font-semibold text-white transition disabled:opacity-40"
+                style="background: var(--accent);">
+          Actualizar datos
+        </button>
+        </div>
+        <!-- Nace oculto con el ATRIBUTO `hidden`, no con la clase de Tailwind:
+           el CDN está bloqueado en la red institucional del dueño y allí la
+           clase no existe — el defecto ya medido en Chromium. -->
+        <div id="act-panel" hidden class="mt-5">
+        <div class="flex items-center gap-3">
+          <span id="act-spin" class="h-4 w-4 shrink-0 rounded-full border-2 spin" style="border-color: var(--border); border-top-color: var(--accent);"></span>
+          <p id="act-estado" class="text-sm font-medium">Cargando datos de SECOP II…</p>
+        </div>
+        <div class="mt-3 h-1.5 overflow-hidden rounded-full" style="background: var(--bg-inset);">
+          <div id="act-barra" class="h-full w-1/3 rounded-full barra-indeterminada" style="background: var(--accent);"></div>
+        </div>
+        <p id="act-cifras" class="mt-2 text-xs tabular-nums" style="color: var(--text-secondary);"></p>
+        </div>
+      </section>
+
       <details id="mercado-completo" class="mb-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
         <summary class="cursor-pointer text-sm font-medium" style="color: var(--text-primary);">El mercado completo hoy (todas las empresas)</summary>
         <section id="portada" class="hidden mt-4 w-full text-left">
@@ -721,6 +804,18 @@
       <section id="seccion-consorcio" class="hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">Crear consorcio</h2>
         <p class="mt-1 text-sm text-gray-500">Para presentarse en compañía a lo que solo no alcanza. Los indicadores se ponderan por la parte de cada uno, como los lee el evaluador.</p>
+        <!-- EL NOMBRE DEL CONSORCIO, que lo pone el usuario (encargo del
+             ingeniero, 24-ago-2026). El servidor YA lo aceptaba desde la Fase 10
+             —`POST ?op=consorcio {nombre, integrantes}`— y el frontend nunca lo
+             mandaba, así que todos acababan llamándose «Consorcio N». Vacío
+             sigue cayendo a «Consorcio N»: el defecto no cambia. -->
+        <label class="mt-4 block">
+          <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">¿Cómo se va a llamar?</span>
+          <input id="cons-nombre" type="text" maxlength="140" autocomplete="off"
+                 placeholder="Consorcio Vías del Tolima (opcional)"
+                 aria-label="Nombre del consorcio"
+                 class="control-campo w-full rounded-xl px-4 py-2.5 text-sm">
+        </label>
         <p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">¿Quiénes van juntos?</p>
         <div id="cons-integrantes" class="mt-2 space-y-2"></div>
         <p class="mt-4 text-xs font-medium uppercase tracking-wide text-gray-500">¿Qué parte pone cada uno?</p>
@@ -757,175 +852,10 @@
       </div>
 
       <!-- ══════ Experiencia ejecutada ══════ -->
-<section id="seccion-experiencia" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight">Obra que ya ejecutaste</h2>
-        <p class="mt-1 text-sm text-gray-500">Sus contratos ejecutados: en qué <em>sabe</em> trabajar. Priorizan los códigos que le faltan.</p>
 
-        <!-- Lo que hay HOY va arriba y a la vista; la carga, plegada -->
-        <div id="exp-actual" class="mt-3 text-sm text-gray-600">—</div>
-
-        <details id="exp-gestion" class="mt-4">
-          <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">Cargar o actualizar la experiencia</summary>
-
-        <!-- carga por CSV (formato estándar) — la cablea onboarding.js -->
-        <div id="exp-panel" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-          <h3 class="text-sm font-semibold tracking-tight">Cargar experiencia desde CSV</h3>
-          <a href="/formato_experiencia.csv" download
-             class="mt-2 inline-block text-sm font-medium text-blue-600 hover:underline">Descargar formato (CSV) ↓</a>
-          <div class="mt-3 grid gap-2 sm:max-w-md">
-            <input id="exp-archivo" type="file" accept=".csv,text/csv" aria-label="Archivo CSV de experiencia"
-                   class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-gray-200">
-            <button id="btn-exp-cargar" type="button"
-                    class="rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">
-              Cargar experiencia (CSV)
-            </button>
-          </div>
-          <p id="exp-mensaje" class="mt-3 hidden rounded-lg px-3 py-2 text-xs"></p>
-        </div>
-
-        <!-- «Puesta en producción» (los 3 pasos de Génesis) vivía aquí y era
-             el residuo más técnico VISIBLE de la pestaña: cuatro botones de
-             operador con el nombre de otra empresa y un script de shell, al
-             lado de la carga de experiencia del usuario. Hoy vive dentro de
-             «Sistema», junto a la sincronización que su paso 3 dispara. -->
-
-        <label class="mt-4 block">
-          <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Contratos (JSON)</span>
-          <textarea id="exp-json" rows="8" spellcheck="false"
-                    class="w-full rounded-xl border border-gray-300 p-4 font-mono text-xs outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"
-                    placeholder='{"contratos": [{"no_contrato": "001-2024", "entidad": "ALCALDIA MUNICIPAL DE PURIFICACION", "objeto": "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL PORVENIR", "modalidad": "Licitacion publica", "participacion": 100, "valor_cop": 350000000, "fecha_inicio": "2024-03-15", "fecha_fin": "2024-09-15", "valor_smmlv": 450.5}]}'></textarea>
-        </label>
-
-        <div class="mt-3 flex flex-wrap items-center gap-3">
-          <button id="btn-exp-validar" type="button"
-                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-            Cargar experiencia (JSON)
-          </button>
-          <button id="btn-exp-descargar" type="button"
-                  class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
-            Descargar experiencia actual
-          </button>
-        </div>
-
-        <div id="exp-vista" class="mt-5 hidden">
-          <h3 class="text-sm font-semibold tracking-tight">Vista previa</h3>
-          <p id="exp-vista-nota" class="mt-0.5 text-xs text-gray-400"></p>
-          <div class="mt-2 overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
-                <tr><th class="py-1 pr-2">N.º</th><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2">Objeto</th><th class="py-1 pr-2 text-right">Valor</th><th class="py-1 text-right">Salarios mínimos</th></tr>
-              </thead>
-              <tbody id="exp-preview" class="divide-y divide-gray-100"></tbody>
-            </table>
-          </div>
-          <div class="mt-4 flex flex-wrap items-center gap-3">
-            <button id="btn-exp-confirmar" type="button"
-                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-              Confirmar carga
-            </button>
-            <button id="btn-exp-cancelar" type="button"
-                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
-              Cancelar
-            </button>
-          </div>
-        </div>
-
-        <p id="exp-json-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
-        <ul id="exp-errores" class="mt-3 hidden space-y-1 rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></ul>
-        </details>
-      </section>
 
       <!-- ══════ Códigos que le faltan en el RUP ══════ -->
-<section id="seccion-cobertura" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 class="font-semibold tracking-tight">Códigos que le faltan en su registro de proponente</h2>
-            <p class="mt-1 text-sm text-gray-500">Con qué códigos adjudica el mercado lo que usted hace, y cuáles no tiene inscritos. Se mira antes de renovar el registro (abril).</p>
-          </div>
-          <div class="flex flex-wrap items-end gap-3">
-            <label class="block">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
-              <select id="c-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-                <option value="helder">Helder</option>
-                <option value="genesis">Génesis</option>
-                <option value="consorcio">Consorcio</option>
-              </select>
-            </label>
-            <button id="btn-cobertura" type="button"
-                    class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-              <span id="c-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
-              Ejecutar auditoría
-            </button>
-            <button id="btn-cobertura-exportar" type="button" disabled
-                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
-              Exportar a JSON ↓
-            </button>
-          </div>
-        </div>
 
-        <label class="mt-4 inline-flex items-center gap-2 text-sm text-gray-600">
-          <input id="c-usar-experiencia" type="checkbox" checked
-                 class="rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
-          Usar mi experiencia para priorizar
-        </label>
-
-        <p id="c-aviso" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
-
-        <div id="c-skeleton" class="mt-6 hidden animate-pulse space-y-4">
-          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
-            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
-          </div>
-          <div class="h-56 rounded-2xl bg-gray-100"></div>
-        </div>
-
-        <div id="c-contenido" class="mt-6 hidden">
-          <p id="c-alerta" class="mb-4 hidden rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></p>
-
-          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div class="rounded-2xl bg-red-50 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-red-900/60">Críticos</p>
-              <p id="c-criticos" class="mt-1 text-3xl font-semibold tabular-nums text-red-950">—</p>
-              <p class="text-xs text-red-900/60">inscribir ya</p>
-            </div>
-            <div class="rounded-2xl bg-orange-50 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-orange-900/60">Altos</p>
-              <p id="c-altos" class="mt-1 text-3xl font-semibold tabular-nums text-orange-950">—</p>
-              <p class="text-xs text-orange-900/60">evaluar</p>
-            </div>
-            <div class="rounded-2xl bg-amber-50 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-amber-900/60">Medios</p>
-              <p id="c-medios" class="mt-1 text-3xl font-semibold tabular-nums text-amber-950">—</p>
-              <p class="text-xs text-amber-900/60">vigilar</p>
-            </div>
-            <div class="rounded-2xl bg-gray-100 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Bajos</p>
-              <p id="c-bajos" class="mt-1 text-3xl font-semibold tabular-nums text-gray-800">—</p>
-              <p class="text-xs text-gray-500">sin urgencia</p>
-            </div>
-          </div>
-
-          <p id="c-cobertura-nota" class="mt-4 text-sm text-gray-600"></p>
-
-          <div class="mt-4 overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
-                <tr>
-                  <th class="py-1 pr-2">Código</th><th class="py-1 pr-2">Criticidad</th>
-                  <th class="py-1 pr-2 text-right">Adjudicados</th><th class="py-1 pr-2 text-right">Muy similares</th>
-                  <th class="py-1 pr-2 text-right">Similitud</th><th class="py-1 pr-2 text-right">Cuantía media</th>
-                  <th class="py-1">Recomendación</th>
-                </tr>
-              </thead>
-              <tbody id="c-faltantes" class="divide-y divide-gray-100"></tbody>
-            </table>
-          </div>
-          <p class="mt-2 text-xs text-gray-400">Pulse una fila para ver los objetos de ejemplo y las entidades que más usan ese código.</p>
-
-          <div id="c-excluidos" class="mt-6"></div>
-          <p id="c-meta" class="mt-6 text-xs text-gray-400"></p>
-        </div>
-      </section>
 
       <!-- ══════════════ SISTEMA · mantenimiento, plegado ══════════════
            Nace CERRADO: nada de aquí hace falta para decidir a qué presentarse, y un
@@ -936,6 +866,9 @@
           <span class="ml-2 text-sm font-normal text-gray-500">— tablero, catálogo de precios y sincronización.
             No hace falta abrirlo para usar la aplicación.</span>
         </summary>
+
+        
+
 
         <!-- ══════ Dashboard de procesos ══════ -->
 <section id="dashboard" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
@@ -1258,6 +1191,191 @@
              pasos de otra empresa para usar su propia pestaña. El bloque NO
              nace `hidden` (la prueba lo exige: con el token integrado nadie
              lo desocultaría) — lo pliega su ancestro <details>, no una clase. -->
+        <!-- ══════ MOVIDAS A «SISTEMA» (encargo del ingeniero, 24-ago-2026) ══════
+             «Obra que ya ejecutaste» y «Códigos que le faltan en su registro de
+             proponente» ocupaban 137 de las 287 palabras que el cliente veía al
+             entrar —el 48 %— y son las dos únicas de la pestaña que NO responden
+             a «¿a qué me presento hoy?». El dueño: «eso casi no se usa o no se
+             usa de plano».
+
+             SE MUEVEN, NO SE RETIRAN, y la diferencia importa: `arrancarPaneles`
+             hace `$("c-perfil").value` SIN GUARDA antes de arrancar el tablero,
+             el RUP, el catálogo y los parámetros, así que borrar el nodo lanza
+             un TypeError y mata la pestaña entera EN SILENCIO. Dentro de un
+             <details> plegado el nodo sigue existiendo en el DOM y todo el
+             cableado sigue vivo. Además la auditoría de cobertura es lo que
+             responde «con qué códigos renuevo el RUP» antes del quinto día
+             hábil de abril: retirarla perdería una respuesta que no está en
+             ningún otro sitio. Ningún id cambia. -->
+<section id="seccion-experiencia" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Obra que ya ejecutaste</h2>
+        <p class="mt-1 text-sm text-gray-500">Sus contratos ejecutados: en qué <em>sabe</em> trabajar. Priorizan los códigos que le faltan.</p>
+
+        <!-- Lo que hay HOY va arriba y a la vista; la carga, plegada -->
+        <div id="exp-actual" class="mt-3 text-sm text-gray-600">—</div>
+
+        <details id="exp-gestion" class="mt-4">
+          <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">Cargar o actualizar la experiencia</summary>
+
+        <!-- carga por CSV (formato estándar) — la cablea onboarding.js -->
+        <div id="exp-panel" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+          <h3 class="text-sm font-semibold tracking-tight">Cargar experiencia desde CSV</h3>
+          <a href="/formato_experiencia.csv" download
+             class="mt-2 inline-block text-sm font-medium text-blue-600 hover:underline">Descargar formato (CSV) ↓</a>
+          <div class="mt-3 grid gap-2 sm:max-w-md">
+            <input id="exp-archivo" type="file" accept=".csv,text/csv" aria-label="Archivo CSV de experiencia"
+                   class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-gray-200">
+            <button id="btn-exp-cargar" type="button"
+                    class="rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">
+              Cargar experiencia (CSV)
+            </button>
+          </div>
+          <p id="exp-mensaje" class="mt-3 hidden rounded-lg px-3 py-2 text-xs"></p>
+        </div>
+
+        <!-- «Puesta en producción» (los 3 pasos de Génesis) vivía aquí y era
+             el residuo más técnico VISIBLE de la pestaña: cuatro botones de
+             operador con el nombre de otra empresa y un script de shell, al
+             lado de la carga de experiencia del usuario. Hoy vive dentro de
+             «Sistema», junto a la sincronización que su paso 3 dispara. -->
+
+        <label class="mt-4 block">
+          <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Contratos (JSON)</span>
+          <textarea id="exp-json" rows="8" spellcheck="false"
+                    class="w-full rounded-xl border border-gray-300 p-4 font-mono text-xs outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"
+                    placeholder='{"contratos": [{"no_contrato": "001-2024", "entidad": "ALCALDIA MUNICIPAL DE PURIFICACION", "objeto": "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL PORVENIR", "modalidad": "Licitacion publica", "participacion": 100, "valor_cop": 350000000, "fecha_inicio": "2024-03-15", "fecha_fin": "2024-09-15", "valor_smmlv": 450.5}]}'></textarea>
+        </label>
+
+        <div class="mt-3 flex flex-wrap items-center gap-3">
+          <button id="btn-exp-validar" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Cargar experiencia (JSON)
+          </button>
+          <button id="btn-exp-descargar" type="button"
+                  class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+            Descargar experiencia actual
+          </button>
+        </div>
+
+        <div id="exp-vista" class="mt-5 hidden">
+          <h3 class="text-sm font-semibold tracking-tight">Vista previa</h3>
+          <p id="exp-vista-nota" class="mt-0.5 text-xs text-gray-400"></p>
+          <div class="mt-2 overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                <tr><th class="py-1 pr-2">N.º</th><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2">Objeto</th><th class="py-1 pr-2 text-right">Valor</th><th class="py-1 text-right">Salarios mínimos</th></tr>
+              </thead>
+              <tbody id="exp-preview" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button id="btn-exp-confirmar" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              Confirmar carga
+            </button>
+            <button id="btn-exp-cancelar" type="button"
+                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+              Cancelar
+            </button>
+          </div>
+        </div>
+
+        <p id="exp-json-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <ul id="exp-errores" class="mt-3 hidden space-y-1 rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></ul>
+        </details>
+      </section>
+
+<section id="seccion-cobertura" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Códigos que le faltan en su registro de proponente</h2>
+            <p class="mt-1 text-sm text-gray-500">Con qué códigos adjudica el mercado lo que usted hace, y cuáles no tiene inscritos. Se mira antes de renovar el registro (abril).</p>
+          </div>
+          <div class="flex flex-wrap items-end gap-3">
+            <label class="block">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
+              <select id="c-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="helder">Helder</option>
+                <option value="genesis">Génesis</option>
+                <option value="consorcio">Consorcio</option>
+              </select>
+            </label>
+            <button id="btn-cobertura" type="button"
+                    class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              <span id="c-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
+              Ejecutar auditoría
+            </button>
+            <button id="btn-cobertura-exportar" type="button" disabled
+                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              Exportar a JSON ↓
+            </button>
+          </div>
+        </div>
+
+        <label class="mt-4 inline-flex items-center gap-2 text-sm text-gray-600">
+          <input id="c-usar-experiencia" type="checkbox" checked
+                 class="rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+          Usar mi experiencia para priorizar
+        </label>
+
+        <p id="c-aviso" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+
+        <div id="c-skeleton" class="mt-6 hidden animate-pulse space-y-4">
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
+            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
+          </div>
+          <div class="h-56 rounded-2xl bg-gray-100"></div>
+        </div>
+
+        <div id="c-contenido" class="mt-6 hidden">
+          <p id="c-alerta" class="mb-4 hidden rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></p>
+
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="rounded-2xl bg-red-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-red-900/60">Críticos</p>
+              <p id="c-criticos" class="mt-1 text-3xl font-semibold tabular-nums text-red-950">—</p>
+              <p class="text-xs text-red-900/60">inscribir ya</p>
+            </div>
+            <div class="rounded-2xl bg-orange-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-orange-900/60">Altos</p>
+              <p id="c-altos" class="mt-1 text-3xl font-semibold tabular-nums text-orange-950">—</p>
+              <p class="text-xs text-orange-900/60">evaluar</p>
+            </div>
+            <div class="rounded-2xl bg-amber-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-amber-900/60">Medios</p>
+              <p id="c-medios" class="mt-1 text-3xl font-semibold tabular-nums text-amber-950">—</p>
+              <p class="text-xs text-amber-900/60">vigilar</p>
+            </div>
+            <div class="rounded-2xl bg-gray-100 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Bajos</p>
+              <p id="c-bajos" class="mt-1 text-3xl font-semibold tabular-nums text-gray-800">—</p>
+              <p class="text-xs text-gray-500">sin urgencia</p>
+            </div>
+          </div>
+
+          <p id="c-cobertura-nota" class="mt-4 text-sm text-gray-600"></p>
+
+          <div class="mt-4 overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                <tr>
+                  <th class="py-1 pr-2">Código</th><th class="py-1 pr-2">Criticidad</th>
+                  <th class="py-1 pr-2 text-right">Adjudicados</th><th class="py-1 pr-2 text-right">Muy similares</th>
+                  <th class="py-1 pr-2 text-right">Similitud</th><th class="py-1 pr-2 text-right">Cuantía media</th>
+                  <th class="py-1">Recomendación</th>
+                </tr>
+              </thead>
+              <tbody id="c-faltantes" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <p class="mt-2 text-xs text-gray-400">Pulse una fila para ver los objetos de ejemplo y las entidades que más usan ese código.</p>
+
+          <div id="c-excluidos" class="mt-6"></div>
+          <p id="c-meta" class="mt-6 text-xs text-gray-400"></p>
+        </div>
+      </section>
+
         <div id="exp-produccion" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
           <h3 class="font-semibold tracking-tight">Puesta en producción, sin terminal</h3>
           <p class="mt-1 max-w-2xl text-sm text-gray-500">
@@ -1308,6 +1426,26 @@
               <input id="ra-consulta" type="text" placeholder="UPN-VAD-CP-011-2026"
                      class="control-campo w-full rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
             </label>
+            <!-- FILTROS (encargo del ingeniero, 24-ago-2026): la búsqueda ya
+                 miraba los cuatro campos, pero todos revueltos, así que
+                 «MOTAVITA» casaba también con un objeto que lo mencionara de
+                 pasada. Ahora se puede acotar. Un valor que no se reconoce es
+                 inerte: lo resuelve lib/rastreo, no esta pantalla. -->
+            <label class="block shrink-0">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dónde buscar</span>
+              <select id="ra-campo" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="todo">En todo</option>
+                <option value="entidad">Solo la entidad</option>
+                <option value="objeto">Solo el objeto del contrato</option>
+                <option value="proceso">Solo el número del proceso</option>
+              </select>
+            </label>
+            <label class="block shrink-0">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cómo lo adjudican</span>
+              <select id="ra-modalidad" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="">Cualquiera</option>
+              </select>
+            </label>
             <label class="block shrink-0">
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
               <select id="ra-perfil" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
@@ -1326,7 +1464,7 @@
         </details>
 
         <!-- ══════ Sincronización con SECOP II ══════ -->
-<details id="sync-wrap" open class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+<details id="sync-wrap" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <summary class="cursor-pointer font-semibold tracking-tight">Sincronización con SECOP II (avanzado)</summary>
         <section id="seccion-sync" class="mt-4">
           <div class="flex flex-wrap items-start justify-between gap-3">
@@ -1463,7 +1601,7 @@
           </label>
           <select id="f-ordenar" class="control-select max-w-full rounded-xl text-sm" aria-label="Ordenar por">
             <option value="atractividad">Las mejores para usted</option>
-            <option value="ganancia">Lo que más deja</option>
+            <option value="ganancia">Lo que más deja (solo las que ya costeó)</option>
             <option value="margen">Más recorrido de precio (solo las que ya costeó)</option>
             <option value="cierre">Las que cierran antes</option>
             <option value="ve">Mayor contrato esperado</option>

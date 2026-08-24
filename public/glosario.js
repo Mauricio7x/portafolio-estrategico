@@ -68,7 +68,10 @@
     adenda: { interno: "Adenda", visible: "Cambio en las reglas del proceso" },
     estado_procedimiento: { interno: "Estado del procedimiento", visible: "En qué va el proceso" },
     manifestacion_interes: { interno: "Manifestación de interés", visible: "Avisar que le interesa" },
-    seleccion_abreviada_menor_cuantia: { interno: "Selección abreviada de menor cuantía", visible: "Proceso pequeño — hay que avisar antes de presentarse" },
+    /* Es el NOMBRE PROPIO de la modalidad: se conserva entero, como «Licitación
+       pública» o «Mínima cuantía». El apodo «Proceso pequeño» se retiró en
+       ago-2026 — lo confundía con la mínima cuantía y callaba lo único urgente. */
+    seleccion_abreviada_menor_cuantia: { interno: "Selección abreviada de menor cuantía", visible: "Selección abreviada de menor cuantía · Manifestación de interés", corto: "Menor cuantía · avise antes" },
     modalidad: { interno: "Modalidad de contratación", visible: "Cómo lo adjudican" },
     cuantia: { interno: "Cuantía", visible: "Cuánto vale" },
     fecha_presentacion_ofertas: { interno: "Fecha de presentación de ofertas", visible: "Cuándo hay que entregar la oferta" },

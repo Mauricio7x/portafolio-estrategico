@@ -7758,12 +7758,23 @@ async function main() {
 
       /* 4-bis · «Lo que más deja»: ordena por la ganancia PONDERADA por la
          opción de ganar, descendente, y lo que no tiene cifra va AL FINAL —
-         nunca con un cero que se leería como «no deja nada». */
+         nunca con un cero que se leería como «no deja nada».
+
+         ⚠️ SOLO ENTRAN LAS QUE YA COSTEÓ (24-ago-2026). Esta prueba leía
+         `valor != null`, que era el contrato ANTERIOR, y con él pasaba en
+         verde sobre un orden INVERTIDO: sin APU costeado la ganancia se
+         reduce a `cuantía × k` con `k = U/(1+A+I+U) − τ`, negativa para OBRA
+         con la estructura de referencia (la ganancia declarada del 5 % no
+         cubre la contribución del 5 %), así que ordenar por ella ponía toda
+         interventoría por encima de toda obra y, dentro de la obra, el
+         contrato de $12.000 M el ÚLTIMO y el de $120 M el PRIMERO. Quien pide
+         «lo que más deja» recibía lo que menos deja. La clave sigue ahora la
+         doctrina que `margen` ya aplicaba encima: solo con costo MEDIDO. */
       {
         const ro = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=100&ordenar_por=ganancia", CAB_TOKEN);
         assert.strictEqual(ro.status, 200);
         assert.strictEqual(ro.cuerpo.ordenado_por, "ganancia");
-        const clave = (l) => (l.ganancia && l.ganancia.valor != null
+        const clave = (l) => (l.ganancia && l.ganancia.valor != null && l.ganancia.base === "apu"
           ? (l.ganancia.por_intento != null ? l.ganancia.por_intento : l.ganancia.valor) : null);
         const claves = ro.cuerpo.resultados.map(clave);
         const conCifra = claves.filter((v) => v != null);
@@ -7775,6 +7786,26 @@ async function main() {
           assert.ok(claves.slice(primerNulo).every((v) => v == null), "los procesos sin cifra van todos al final, juntos");
         }
         assert.ok(ro.cuerpo.total > 0);
+        /* LA CERRADURA DEL DEFECTO: ninguna cifra SIN costo medido puede entrar
+           al orden. Se comprueba ejecutando la clave real sobre un caso que la
+           invertía —obra grande contra interventoría pequeña—, porque una
+           aserción sobre el corpus (donde puede no haber borradores) sería la
+           prueba vacua que este repositorio tiene escrito que no hay que
+           escribir. Contra el árbol anterior, la interventoría de $120 M
+           quedaba por delante de la obra de $12.000 M. */
+        {
+          const Gz = require("../lib/ganancia.js");
+          const mk = (tipo, po) => Gz.gananciaDeProceso({ presupuesto_oficial: po, tipo_trabajo: tipo, baja: null, competencia: null,
+            costo_directo: null, borrador: null, aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" },
+            aiu_origen: null, deducciones_pct: null, contribucion_en_administracion: false, contribucion_declarada: false, p_ganar: 0.25 });
+          const obraGrande = mk("obra", 12000e6), intervChica = mk("interventoria", 120e6);
+          assert.ok(obraGrande.valor != null && obraGrande.base === "estructura_de_precio", "sin borrador el costo se cierra por la estructura de precio");
+          assert.ok(obraGrande.valor < 0 && intervChica.valor > 0,
+            "la constante es NEGATIVA para obra y positiva para consultoría: por eso ordenar por ella invertía la lista");
+          const claveOrden = (g) => (!g || g.valor == null || g.base !== "apu") ? -1e18 : (g.por_intento != null ? g.por_intento : g.valor);
+          assert.strictEqual(claveOrden(obraGrande), -1e18, "sin costo medido NO hay cifra que ordenar");
+          assert.strictEqual(claveOrden(intervChica), -1e18, "…tampoco para consultoría: la regla no depende del tipo");
+        }
       }
 
       /* 5 · un token PRESENTE pero inválido es un ERROR, no un modo público:
@@ -8564,8 +8595,21 @@ async function main() {
         const menor = { id_del_proceso: "CO1.MC.1", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: `${hoy}T08:00:00.000` };
         const cM = clas(menor);
         assert.ok(cM.manifestacion && cM.manifestacion.aplica, "menor cuantía → manifestación");
-        assert.strictEqual(cM.manifestacion.estado, "abierta", "publicado hoy: con certeza sigue abierta");
-        assert.strictEqual(cM.manifestacion.puede_cerrar_desde, H.sumarHabiles(hoy, 1), "puede cerrar desde el PRIMER hábil: la entidad fija el plazo, la ley solo el techo");
+        /* ⚠️ CAMBIO DE DOCTRINA (24-ago-2026) · ESTAS DOS ASERCIONES FIJABAN EL
+           DEFECTO. Decían «publicado hoy: con certeza sigue abierta» y «puede
+           cerrar desde el PRIMER hábil», que es un SUELO que la norma no fija:
+           el D. 1082 art. 2.2.1.2.1.2.20 num. 1 dice «no mayor a tres días
+           hábiles» y nada más. El ingeniero lo reportó desde el campo — «a
+           veces solo abren 4 horas, 8 horas» — y una entidad que abre a las
+           8:00 y cierra a las 16:00 del mismo día dejaba la app afirmando que
+           el plazo seguía abierto. Es Motavita en espejo: allí sobraba el
+           techo, aquí sobraba el suelo. Hoy la ventana empieza el día de la
+           apertura y ese día cae en `por_confirmar`, que es el de MÁXIMA
+           urgencia. Es la lección de la `fase` rezagada: la prueba que
+           existía fijaba justamente el comportamiento defectuoso. */
+        assert.strictEqual(cM.manifestacion.estado, "por_confirmar", "publicado hoy: el plazo YA puede estar corriendo (la entidad pudo abrir una ventana de horas)");
+        assert.strictEqual(cM.manifestacion.accion, "verifique_ya", "y por eso la acción es ir a SECOP II ahora, no «avise hoy»");
+        assert.strictEqual(cM.manifestacion.puede_cerrar_desde, hoy, "puede cerrar desde el DÍA DE LA APERTURA: la norma solo pone techo, no suelo");
         assert.strictEqual(cM.manifestacion.vence_a_mas_tardar, H.sumarHabiles(hoy, 3), "a más tardar = apertura + 3 hábiles (techo legal)");
         assert.strictEqual(cM.manifestacion.confirmada, false);
         assert.strictEqual(cM.manifestacion.quedan_habiles, null, "SIN fecha del cronograma NO hay cuenta atrás: un contador es una afirmación");
@@ -8594,26 +8638,92 @@ async function main() {
         assert.strictEqual(mot.accion, "verifique_ya");
         assert.strictEqual(mot.quedan_habiles, null, "NUNCA una cuenta atrás sin la fecha del cronograma");
         assert.strictEqual(mot.dias_calendario, null, "sin dias_calendario no se puede decir «vence mañana»");
-        assert.strictEqual(mot.puede_cerrar_desde, "2026-08-18", "el plazo podía cerrar desde el martes 18 — y cerró ese día");
+        assert.strictEqual(mot.puede_cerrar_desde, "2026-08-14", "podía cerrar desde el DÍA DE LA APERTURA (viernes 14): la norma no fija mínimo. Cerró el martes 18, dentro de la ventana");
         assert.ok(!("vencida" in mot) && !("vence" in mot) && !("vence_legible" in mot),
           "los tres campos que afirmaban el vencimiento no pueden volver: su `false` significaba «sigue abierta»");
         assert.ok(/M[ÁA]XIMO/.test(mot.nota) && /entidad puede haber puesto menos|entidad pudo poner menos/.test(mot.nota),
           `la nota dice que 3 días es un techo, no un plazo: ${mot.nota}`);
+
+        /* (2-ter) ══ EL SUELO INVENTADO · REGRESIÓN DEL 24-AGO-2026 ══
+           Reportado por el ingeniero desde el campo: «como la manifestación de
+           interés son tan cortos los plazos, a veces solo abren 4 horas, 8
+           horas». La norma (transcrita en `NORMA`, contrastada contra el
+           concepto CCE C-537/2025) dice «en un término NO MAYOR a tres (3)
+           días hábiles»: fija TECHO y ningún SUELO. Con
+           `PLAZO_MINIMO_HABILES = 1` la app respondía `abierta` —que este
+           módulo define como «con certeza sigue abierta»— el día mismo de la
+           apertura, y escribía «el plazo puede cerrar en cualquier momento
+           entre [mañana] y [el techo]». Falso para una ventana de 8 horas.
+
+           Estas aserciones EJECUTAN la máquina de estados en las cuatro
+           fronteras. Contra el árbol anterior, la primera falla: es lo que
+           separa una cerradura de un adorno. */
+        {
+          const APERTURA = "2026-08-24";                       // lunes hábil
+          const conApertura = (f) => ({ id_del_proceso: "CO1.MC.HORAS", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", fecha_de_publicacion_del: `${f}T08:00:00.000` });
+          const elDia = M.manifestacionDeFila(conApertura(APERTURA), APERTURA);
+          assert.strictEqual(elDia.estado, "por_confirmar",
+            "EL DÍA DE LA APERTURA NO SE CERTIFICA ABIERTO: la entidad pudo fijar una ventana de horas");
+          assert.strictEqual(elDia.puede_cerrar_desde, APERTURA,
+            "la ventana empieza el día de la apertura, no al día hábil siguiente");
+          assert.ok(!/entre el martes 25|entre el 2026-08-25/.test(elDia.nota),
+            `la nota no puede prometer que el plazo llega hasta mañana: ${elDia.nota}`);
+          assert.ok(/unas horas/.test(elDia.nota),
+            `la nota tiene que decir que el plazo puede ser de horas: ${elDia.nota}`);
+
+          // ANTES de la apertura sí se certifica: ahí no hay nada que dudar
+          const antes = M.manifestacionDeFila(conApertura("2026-08-26"), APERTURA);
+          assert.strictEqual(antes.estado, "abierta", "una apertura futura sí se puede certificar abierta");
+
+          /* LA FECHA DEL PLIEGO QUE CIERRA EL MISMO DÍA DE LA APERTURA ES
+             VÁLIDA, y con `<=` se descartaba justo esa —la única afirmable—
+             para caer a la ventana calculada: el suelo inventado colándose
+             por la puerta de atrás. */
+          const mismoDia = M.manifestacionDeFila(conApertura(APERTURA), APERTURA, { fechaCronograma: APERTURA });
+          assert.strictEqual(mismoDia.fecha_cronograma_descartada, null,
+            "una ventana de horas que cierra el día de la apertura es legítima: no se descarta");
+          assert.strictEqual(mismoDia.confirmada, true, "y se toma como la fecha límite del pliego");
+          assert.strictEqual(mismoDia.estado, "por_confirmar",
+            "el DÍA del vencimiento tampoco se certifica abierto: el cronograma da el día, nunca la hora");
+          // y una fecha ANTERIOR a la apertura sigue siendo imposible
+          const antesDeAbrir = M.manifestacionDeFila(conApertura(APERTURA), APERTURA, { fechaCronograma: "2026-08-21" });
+          assert.strictEqual(antesDeAbrir.fecha_cronograma_descartada, "2026-08-21", "una fecha anterior a la apertura sí se descarta");
+          assert.strictEqual(M.PLAZO_MINIMO_HABILES, 0, "la norma no fija plazo mínimo: el suelo es la apertura misma");
+        }
         // …y con la fecha REAL del cronograma del pliego, la respuesta correcta es «venció»
         const motReal = M.manifestacionDeFila(MOTAVITA, "2026-08-19", { fechaCronograma: "2026-08-18" });
         assert.strictEqual(motReal.estado, "vencida", "con el cronograma leído (18 de agosto) el plazo consta VENCIDO el 19");
         assert.strictEqual(motReal.origen, "cronograma");
-        // el día de la apertura sí se puede afirmar abierta; el primer hábil ya no
-        assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-14").estado, "abierta");
+        /* NI SIQUIERA EL DÍA DE LA APERTURA se puede afirmar abierta (corregido
+           el 24-ago-2026): esta aserción decía «abierta» y fijaba el suelo
+           inventado. Motavita abrió el viernes 14 a las 15:11 — una ventana de
+           horas la habría cerrado esa misma tarde. */
+        assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-14").estado, "por_confirmar", "el día de la apertura el plazo YA puede cerrar: la entidad pudo fijar horas");
+        assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-13").estado, "abierta", "la víspera sí: ahí el plazo no ha empezado");
         assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-18").estado, "por_confirmar", "el primer hábil el plazo YA puede cerrar");
         assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-21").estado, "vencida");
         /* coherencia con el dato PUBLICADO: si el cierre de ofertas no deja
            sitio al trámite (num. 3: las ofertas empiezan el día hábil siguiente
            al informe del sorteo), la apertura usada no es la buena → no se
            afirma nada. Un calculado que contradice a un publicado pierde. */
+        /* ⚠️ LA INCOHERENCIA TIENE SU PROPIO UMBRAL, SEPARADO DEL SUELO DE LA
+           VENTANA (24-ago-2026). Al bajar el suelo a 0 esta guarda dejó de
+           disparar aquí —`hasta < desde` ya no se cumplía— y el módulo pasaba
+           de decir «no se puede situar el plazo» a AFIRMAR «vencida». Un
+           calculado que contradice a un publicado tiene que CALLARSE, no
+           convertirse en una afirmación nueva. Lo cazó la revisión adversaria
+           de la propia corrección. La condición vive ahora en
+           `minimoParaQueQuepa` y el comportamiento vuelve a ser el correcto. */
         const apretado = M.manifestacionDeFila({ ...MOTAVITA, fecha_cierre: "2026-08-17T15:00:00.000" }, "2026-08-15");
         assert.strictEqual(apretado.estado, "sin_fecha");
         assert.strictEqual(apretado.motivo_sin_fecha, "cierre_de_ofertas_no_deja_sitio");
+        // y sigue disparando cuando las ofertas cierran el día de la apertura o antes
+        const imposible = M.manifestacionDeFila({ ...MOTAVITA, fecha_cierre: "2026-08-14T15:00:00.000" }, "2026-08-15");
+        assert.strictEqual(imposible.estado, "sin_fecha");
+        assert.strictEqual(imposible.motivo_sin_fecha, "cierre_de_ofertas_no_deja_sitio");
+        // …y NO dispara cuando el trámite sí cabe: el 21 deja sitio de sobra
+        assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-15").motivo_sin_fecha, null,
+          "con sitio suficiente la ventana se sitúa: la guarda no puede volverse indiscriminada");
         // una sola derivación del estado: la del handler es la MISMA función
         assert.strictEqual(require("../lib/portada.js").estadoDeVentana, M.estadoDeVentana, "portada re-exporta estadoDeVentana, no una copia");
         // (3) el filtro `manif`: abierta / todas / inerte
@@ -8627,7 +8737,14 @@ async function main() {
         assert.strictEqual(FLp.escribirEstado(FLp.leerEstado({ manif: "abierta" })).get("manif"), "abierta");
         assert.ok(FLp.fichas(FLp.leerEstado({ manif: "abierta" })).some((f) => f.filtro === "manif" && /le interesa/i.test(f.etiqueta)));
         const fac = FLs.facetas(filas, clas2).manifestacion;
-        assert.deepStrictEqual(fac, { total: 3, abiertas: 1, urgentes: 0, vencidas: 1, sin_fecha: 1 }, JSON.stringify(fac));
+        /* `urgentes: 1` desde el 24-ago-2026, y es el efecto BUSCADO: el proceso
+           publicado HOY pasó de `abierta` a `por_confirmar` al quitar el suelo
+           inventado, y `por_confirmar` es justamente el estado urgente. Antes,
+           un proceso abierto hoy —cuyo plazo puede ser de 4 horas— no contaba
+           como urgente en ninguna faceta. La invariante del proyecto se sigue
+           cumpliendo y se comprueba aparte: urgentes ⊂ abiertas. */
+        assert.deepStrictEqual(fac, { total: 3, abiertas: 1, urgentes: 1, vencidas: 1, sin_fecha: 1 }, JSON.stringify(fac));
+        assert.ok(fac.urgentes <= fac.abiertas, "urgentes ⊂ abiertas: una urgente sigue siendo una abierta");
         // (4) el listado real publica el campo por fila y las facetas; el filtro por URL funciona
         const liM = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200&tipo=todos&manif=todas", CAB_TOKEN)).cuerpo;
         assert.ok(liM.total > 0, "el corpus trae procesos de menor cuantía");
@@ -15551,7 +15668,7 @@ async function main() {
       const m1 = ag._manifestacion[0];
       assert.strictEqual(m1.proceso, "CO1.P.4");
       assert.strictEqual(m1.origenFecha, "ventana_calculada", "sin cronograma del pliego lo que se publica es la VENTANA, no una fecha límite");
-      assert.strictEqual(m1.puedeCerrarDesdeISO, "2026-08-13", "puede cerrar desde el PRIMER hábil (jueves 13): la entidad fija el plazo, la ley solo el techo");
+      assert.strictEqual(m1.puedeCerrarDesdeISO, "2026-08-12", "puede cerrar desde el DÍA DE LA APERTURA (miércoles 12): la norma solo pone techo");
       assert.strictEqual(m1.venceMaximoISO, "2026-08-18", "a más tardar: apertura 12 (mié) + 3 hábiles = jueves 13, viernes 14, martes 18 (el lunes 17 es festivo)");
       assert.strictEqual(m1.estado, "por_confirmar", "el jueves 13 la ventana ya está corriendo: no se puede afirmar que siga abierta");
       assert.strictEqual(m1.diasHabilesRestantes, null, "NO hay cuenta atrás sin la fecha del cronograma");
@@ -15617,7 +15734,7 @@ async function main() {
         assert.strictEqual(f.diasHabilesRestantes, null, "NINGUNA cuenta atrás sin la fecha del pliego");
         assert.ok(f.habilesHastaElTecho >= 1, "…pero sí una cota para ordenar por urgencia");
         assert.ok(f.venceMaximoISO >= m1.cuerpo.hoy && f.puedeCerrarDesdeISO <= f.venceMaximoISO, "la ventana está bien formada");
-        assert.strictEqual(m1.cuerpo.plazoMinimoHabiles, 1);
+        assert.strictEqual(m1.cuerpo.plazoMinimoHabiles, 0, "la norma solo pone techo: el plazo puede cerrar el día mismo de la apertura (ventanas de horas)");
         assert.ok(/M[ÁA]XIMO/.test(m1.cuerpo.como_leerlo.abierto), "la cabecera dice que 3 días es un techo, no un plazo");
         await redis.del(Portada.CLAVE_MANIFESTACION);
       }
@@ -16756,18 +16873,36 @@ async function main() {
           `el aviso manda a verificar y dice que 3 días es un techo → ${v19.aviso}`);
         assert.ok(/no podrá presentar oferta/.test(v19.aviso), "sigue diciendo lo que está en juego: sin avisar no se puede ofertar");
 
-        // el día de la apertura sí se puede empujar a avisar, sin inventar fecha
+        /* ⚠️ EL DÍA DE LA APERTURA CAMBIÓ DE LADO (24-ago-2026). Esta aserción
+           exigía «puede cerrar el martes 18 de agosto» el 14, que es el día en
+           que Motavita abrió a las 15:11: prometía tres días de margen sobre
+           una ventana que la entidad pudo cerrar esa misma tarde. El ingeniero
+           reportó ventanas de 4 y 8 horas. Hoy el chip manda a verificar. */
         const v14 = pinta(Mf.manifestacionDeFila(MOT, "2026-08-14"));
-        assert.ok(/puede cerrar el martes 18 de agosto/.test(v14.chip) && !/vence/.test(v14.chip), v14.chip);
-        assert.ok(/Hágalo hoy/.test(v14.aviso), "con la ventana entera por delante, la instrucción sigue siendo avisar hoy");
+        assert.ok(/verifique HOY si sigue abierto/i.test(v14.chip) && !/vence/.test(v14.chip),
+          `el día de la apertura el plazo YA puede estar cerrando: no se promete margen → ${v14.chip}`);
+        assert.ok(!/puede cerrar el martes 18/.test(v14.chip),
+          "no se puede prometer que el plazo llega hasta el techo legal");
+        // LA VÍSPERA sí se puede empujar a avisar, sin inventar fecha: ahí no ha empezado
+        const v13 = pinta(Mf.manifestacionDeFila(MOT, "2026-08-13"));
+        assert.ok(/puede cerrar el viernes 14 de agosto/.test(v13.chip) && !/vence/.test(v13.chip), v13.chip);
+        assert.ok(/Hágalo hoy/.test(v13.aviso), "con la ventana entera por delante, la instrucción sigue siendo avisar hoy");
 
         // con la fecha REAL del cronograma sí se afirma —y la verdad era «venció»
         const vReal = pinta(Mf.manifestacionDeFila(MOT, "2026-08-19", { fechaCronograma: "2026-08-18" }));
         assert.ok(/plazo vencido el martes 18 de agosto/.test(vReal.chip) && vReal.aviso === "",
           `con cronograma leído: vencido y sin aviso que empuje a un trámite imposible → ${vReal.chip}`);
+        /* EL DÍA DEL VENCIMIENTO, CON LA FECHA DEL PLIEGO: se dicen las DOS
+           mitades. El día está confirmado («vence HOY») y la hora no («puede
+           haber cerrado ya») — el cronograma publica el día, nunca la hora, y
+           una ventana de horas cierra a media jornada. Decir solo lo primero se
+           lee como «tiene hasta medianoche»; decir solo lo segundo tira un dato
+           duro que el usuario ya tiene. */
         const vHoy = pinta(Mf.manifestacionDeFila(MOT, "2026-08-18", { fechaCronograma: "2026-08-18" }));
         assert.ok(/vence HOY/.test(vHoy.chip) && /vence HOY/.test(vHoy.aviso) && /cronograma del pliego/.test(vHoy.aviso),
-          `con cronograma leído SÍ hay cuenta atrás, y declara su origen → ${vHoy.chip}`);
+          `con cronograma leído SÍ se afirma el día, y declara su origen → ${vHoy.chip}`);
+        assert.ok(/puede haber cerrado ya/.test(vHoy.chip) && /no la hora/.test(vHoy.aviso),
+          `…y no se promete que siga abierto: el cronograma da el día, no la hora → ${vHoy.chip}`);
 
         // y una vencida por el techo no puede empujar a nada
         assert.strictEqual(pinta(Mf.manifestacionDeFila(MOT, "2026-08-25")).aviso, "", "plazo vencido: ningún aviso rojo");
@@ -16980,8 +17115,24 @@ async function main() {
         const cuerpoGanancia = jsSin.slice(iG, jsSin.indexOf("\n  }", iG));
         assert.ok(/bloqueGanancia\(l, celda\)/.test(cuerpoBloque),
           "la franja tiene que pintar la ganancia con la MISMA plantilla de celda: dos plantillas se despeinan por separado");
-        assert.ok(/contando las veces que no se gana/.test(cuerpoGanancia),
-          "el valor esperado tiene que seguir diciendo que promedia también las veces que se pierde");
+        /* ⚠️ LA FRASE SE MUDÓ CON LA CIFRA (24-ago-2026), y el invariante se
+           REFUERZA en vez de relajarse. `bloqueGanancia` tenía un respaldo que,
+           cuando no había cifra de ganancia, volvía a pintar el VALOR ESPERADO
+           —«$1.183M de contrato esperado por intento»—, que es EXACTAMENTE la
+           cifra que el dueño reportó como leída al revés. Ese respaldo se
+           disparaba en toda tarjeta sin credencial o sin presupuesto oficial,
+           así que la cifra retirada seguía apareciendo por la puerta de atrás.
+           Hoy la celda dice qué falta y el VE vive donde se llama por su nombre:
+           el orden «Mayor contrato esperado». La guarda sigue a la cifra. */
+        assert.ok(!/contrato esperado por intento/.test(cuerpoGanancia),
+          "la celda de la ganancia NO puede resucitar el valor esperado: es la cifra que el dueño reportó como leída al revés");
+        {
+          const conceptoVe = require("../public/filtros.js").conceptoDe("ve");
+          assert.ok(/veces que no se gana/.test(conceptoVe),
+            "el valor esperado tiene que seguir diciendo que promedia también las veces que se pierde, allí donde se enuncia");
+          assert.ok(/NO es utilidad/.test(conceptoVe),
+            "…y que no es utilidad: es la confusión que originó todo este cambio");
+        }
         for (const cuerpo of [cuerpoBloque, cuerpoGanancia]) {
           assert.ok(!/[Ss]i te lo gan[áa]s/.test(cuerpo),
             "«si te lo ganás, te quedan X» sobre el VALOR ESPERADO lee un promedio por intento como si fuera condicional a ganar");
@@ -16989,15 +17140,28 @@ async function main() {
         /* «le quedan si gana» SÍ es correcto —y necesario— sobre la GANANCIA:
            esa cifra sí es condicional a ganar. Lo que no puede pasar es que la
            celda pinte `l.ve` con ese rótulo. */
-        assert.ok(/si gana el contrato/.test(cuerpoGanancia), "la celda tiene que decir que la cifra es si gana el contrato");
-        /* CORREGIDO (ago 2026): ya no se pinta SIEMPRE `g.valor`. Con el
-           veredicto de tres estados la celda pinta el extremo que corresponde
-           —el peor cuando ya deja, el mejor cuando pierde igual, y LOS DOS
-           cuando el rango cruza el cero—. Lo que sigue prohibido es lo de
-           antes: pintar `l.ve` con el rótulo de la ganancia. */
-        assert.ok(/copFirmado\(g\.peor\)/.test(cuerpoGanancia) && /copFirmado\(g\.mejor\)/.test(cuerpoGanancia)
-          && /copFirmado\(cifra\)/.test(cuerpoGanancia),
-          "lo que se pinta son los extremos de la ganancia, no el valor esperado disfrazado");
+        assert.ok(/si gana/.test(cuerpoGanancia), "la celda tiene que decir que la cifra es condicional a ganar el contrato");
+        /* ⚠️ UNA SOLA CIFRA, NO UN RANGO (24-ago-2026). La versión anterior
+           pintaba los DOS extremos cuando el rango cruzaba el cero —«−$32M a
+           $257M · puede costarle o dejarle»—, y el ingeniero reportó que no
+           le servía. Medido, tenía razón por una razón más dura que el gusto:
+           SIN costo medido ese rango es EXACTAMENTE −1,00 % a +8,00 % del
+           precio en todos los procesos (correlación −1,0000 con la cuantía),
+           porque `lib/ganancia` cierra el costo por la identidad del precio y
+           la cuenta se reduce a `cuantía × k`, con `k` sacada de la estructura
+           que tecleó el propio usuario. Era la cuantía reescalada, pintada al
+           lado de la cuantía: el defecto del chip constante de
+           `nivel_competencia`, en la tercera celda.
+           Hoy la celda se parte por `base`: con costo MEDIDO una sola cifra
+           —el peor caso, que ahí sí es un suelo real— y sin él la celda pide
+           el costo en vez de fingir una medición. El rango completo sigue en
+           el detalle, que ya existe y ya cuadra al peso. */
+        assert.ok(/copFirmado\(cifra\)/.test(cuerpoGanancia),
+          "lo que se pinta es la ganancia, no el valor esperado disfrazado");
+        assert.ok(/g\.base !== "apu"/.test(cuerpoGanancia),
+          "la celda tiene que partirse por si el costo está MEDIDO: sin él la cifra es la cuantía por una constante");
+        assert.ok(!/a \$\{esc\(copFirmado\(g\.mejor\)\)\}|puede costarle o dejarle/.test(cuerpoGanancia),
+          "no se pinta un rango que cruza el cero como si midiera este proceso");
         assert.ok(!/copFirmado\(l\.ve\)|fmtCorto\(l\.ve\)[\s\S]{0,200}le quedan/.test(cuerpoGanancia),
           "el valor esperado no puede pintarse con el rótulo de la ganancia");
         /* R1 · la ausencia jamás se convierte en cero: es la prueba hermana de
@@ -17898,7 +18062,7 @@ async function main() {
       }
       const bueno = clasificar({ modalidad_de_contratacion: "Selección abreviada menor cuantía", fecha_de_publicacion_del: "2026-08-14T00:00:00.000" });
       assert.strictEqual(bueno.manifestacion.apertura, "2026-08-14", "y una fecha normal sigue calculándose");
-      assert.strictEqual(bueno.manifestacion.puede_cerrar_desde, "2026-08-18", "extremo inferior: apertura + 1 hábil (el 17 es festivo trasladado)");
+      assert.strictEqual(bueno.manifestacion.puede_cerrar_desde, "2026-08-14", "extremo inferior: la APERTURA misma — la norma no fija plazo mínimo");
       assert.strictEqual(bueno.manifestacion.vence_a_mas_tardar, "2026-08-20", "techo legal: apertura + 3 hábiles, D. 1082 art. 2.2.1.2.1.2.20");
     }
 
@@ -18589,6 +18753,194 @@ async function main() {
       assert.strictEqual(c.modificaciones.length, 0,
         "una cantidad ilegible del pliego se denunciaba como «distinta a la del pliego» y era motivo de rechazo");
       assert.strictEqual(c.sin_leer_del_pliego.length, 1, "…va a su propia lista, que manda a confirmar contra el PDF");
+    }
+
+    /* ═══════════════ ENCARGO DEL INGENIERO · 24-ago-2026 ═══════════════
+       Mi empresa reformada, botón único de actualización, filtros del rastreo y
+       nombre de consorcio. Se EJECUTA lo que se pinta y se cruza contra el HTML
+       real: comprobar por regex que una función se llama no prueba que lo que
+       dice sea verdad — la lección que costó el defecto de Motavita. */
+    {
+      const htmlIng = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const appIng = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      const sinComHtml = htmlIng.replace(/<!--[\s\S]*?-->/g, "");
+      const tabAdmin = sinComHtml.slice(sinComHtml.indexOf('<main id="tab-admin"'), sinComHtml.indexOf("</main>", sinComHtml.indexOf('<main id="tab-admin"')));
+
+      /* (1) LA ESTRUCTURA DE LA PESTAÑA ESTÁ BALANCEADA. Un <details> sin
+         cerrar mete DENTRO del acordeón plegado todo lo que venga después, sin
+         lanzar ningún error: el fallo mudo. Se cuenta sobre el HTML SIN
+         COMENTARIOS — contarlo con ellos da un falso positivo, y esta sesión
+         estuvo a punto de «arreglar» un desbalance que no existía. */
+      const abre = (tabAdmin.match(/<details\b/g) || []).length;
+      const cierra = (tabAdmin.match(/<\/details>/g) || []).length;
+      assert.strictEqual(abre, cierra, `#tab-admin desbalanceado: ${abre} <details> abiertos y ${cierra} cerrados`);
+      const abreS = (tabAdmin.match(/<section\b/g) || []).length;
+      const cierraS = (tabAdmin.match(/<\/section>/g) || []).length;
+      assert.strictEqual(abreS, cierraS, "#tab-admin: <section> desbalanceadas");
+
+      /* (2) LO QUE CASI NO SE USA SE MUEVE, NO SE RETIRA. Borrar el nodo hace
+         que `arrancarPaneles` lance en `$("c-perfil").value` —sin guarda— y
+         mate el tablero, el RUP, el catálogo y los parámetros EN SILENCIO. */
+      const iSis = tabAdmin.indexOf('id="seccion-sistema"');
+      assert.ok(iSis > 0, "sigue existiendo el pliegue «Sistema»");
+      for (const id of ["seccion-experiencia", "seccion-cobertura"]) {
+        const i = tabAdmin.indexOf(`id="${id}"`);
+        assert.ok(i > 0, `#${id} NO se retira: borrarlo mata la pestaña entera (arrancarPaneles no tiene guarda)`);
+        assert.ok(i > iSis, `#${id} tiene que vivir DENTRO de «Sistema», fuera de la vista principal`);
+      }
+      /* …y las que responden «¿a qué me presento hoy?» siguen ARRIBA. */
+      for (const id of ["pulso", "seccion-rup", "seccion-consorcio", "seccion-socio", "actualizar"]) {
+        const i = tabAdmin.indexOf(`id="${id}"`);
+        assert.ok(i > 0 && i < iSis, `#${id} tiene que estar A LA VISTA, antes de «Sistema»`);
+      }
+
+      /* (3) EL BOTÓN ÚNICO REUTILIZA `iniciarAlDia`. Una segunda copia del
+         encadenado rompería la invariante «1.ª full, siguientes auto» que la
+         suite ya vigila, y el `let modo = "full"` tiene que seguir apareciendo
+         UNA sola vez. */
+      assert.ok(/id="btn-actualizar-datos"/.test(htmlIng), "falta el botón «Actualizar datos»");
+      assert.ok(/function actualizarDatos\(\)[\s\S]{0,900}iniciarAlDia\(\)/.test(appIng),
+        "el botón único tiene que LLAMAR a iniciarAlDia, no reimplementar el encadenado");
+      assert.strictEqual((appIng.match(/let modo = "full"/g) || []).length, 1,
+        "«let modo = \"full\"» sigue apareciendo UNA sola vez: una segunda copia rompe «1.ª full, siguientes auto»");
+
+      /* (4) NINGÚN PORCENTAJE INVENTADO EN LA ACTUALIZACIÓN. El delta barre por
+         keyset y NO publica denominador (`ciclo_leidas`, `guardadas`, `parcial`
+         y ni un total esperado), así que una barra de porcentaje ahí sería un
+         número fabricado en la pantalla que dice si los datos están al día. La
+         sensación de avance sale de los CONTEOS REALES que crecen. */
+      const panelAct = htmlIng.slice(htmlIng.indexOf('id="act-panel"'), htmlIng.indexOf('id="act-panel"') + 900);
+      assert.ok(!/%/.test(panelAct.replace(/[a-z-]+%/g, "")), "el panel de actualización no puede pintar un porcentaje: el delta no tiene denominador");
+      assert.ok(/barra-indeterminada/.test(panelAct), "la barra es INDETERMINADA: dice «trabajando», no «va por el N %»");
+      assert.ok(/Cargando datos de SECOP II/.test(htmlIng + appIng), "el texto que pidió el ingeniero");
+      /* …y el botón se gobierna desde `botones()`, el punto único por el que
+         pasan las cinco transiciones. Cablearlo en cada una deja alguna sin
+         cubrir, y ese es el botón que se queda muerto para siempre. */
+      const cuerpoBotones = appIng.slice(appIng.indexOf("function botones(corriendo)"), appIng.indexOf("function botones(corriendo)") + 900);
+      assert.ok(/btn-actualizar-datos/.test(cuerpoBotones), "el botón único se habilita/deshabilita desde botones(), no en cinco sitios");
+
+      /* (4-bis) NINGUNA SUPERFICIE TRANSLÚCIDA SIN BLUR. Siete recuadros del
+         pulso fijaban `var(--bg-card)` —que es `rgba(255,255,255,0.72)`— en un
+         `style` en línea y, al no llevar la clase `bg-white`, ninguna regla les
+         daba `backdrop-filter`: se veía a través de ellos sin nada que
+         difuminara el fondo, que es justo lo que el vidrio existe para evitar.
+         Dos de los siete se añadieron en esta misma sesión, así que el defecto
+         estaba CRECIENDO. La cerradura no enumera ids: busca el SÍNTOMA, para
+         cazar también el recuadro que alguien escriba mañana. */
+      {
+        const conToken = [...sinComHtml.matchAll(/<[a-z]+[^>]*\bid="([^"]+)"[^>]*style="[^"]*--bg-card[^"]*"[^>]*>/g)].map((m) => m[1]);
+        assert.deepStrictEqual(conToken, [],
+          `superficies que fijan --bg-card a mano y se quedan SIN blur: ${conToken.join(", ")}. `
+          + "Usa las clases del sistema (bg-white rounded-2xl), que además heredan las tres preferencias de accesibilidad.");
+      }
+
+      /* (5) EL NOMBRE DEL CONSORCIO VIAJA. El servidor lo aceptaba desde la
+         Fase 10 y el frontend nunca lo mandaba, así que todos se llamaban
+         «Consorcio N». Vacío sigue cayendo a ese defecto. */
+      assert.ok(/id="cons-nombre"/.test(htmlIng), "falta el campo del nombre del consorcio");
+      assert.ok(/op=consorcio[\s\S]{0,300}nombre:/.test(appIng), "el POST del consorcio tiene que mandar el nombre");
+      assert.ok(/nombreCons \|\| null/.test(appIng), "sin nombre viaja null (el servidor cae a «Consorcio N»), nunca una cadena vacía");
+    }
+
+    /* ── los filtros de «¿Por qué no está este proceso?», EJECUTADOS ── */
+    {
+      const R = require("../lib/rastreo.js");
+      const filas = [
+        { id_del_proceso: "UPN-VAD-CP-011-2026", referencia_del_proceso: "UPN-VAD-CP-011-2026", entidad: "UNIVERSIDAD PEDAGOGICA NACIONAL", nit_entidad: "899999124", modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "ADECUACION DE LA SEDE DE MOTAVITA", tipo_de_contrato: "Obra" },
+        { id_del_proceso: "MM-SA-MC-008-2026", referencia_del_proceso: "MM-SA-MC-008-2026", entidad: "MUNICIPIO DE MOTAVITA", nit_entidad: "800100200", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", descripci_n_del_procedimiento: "OPTIMIZACION PTAP", tipo_de_contrato: "Obra" },
+      ];
+      const ids = (o) => (R.rastrear("motavita", { filas, ...o }).resultados || []).map((x) => x.id_proceso);
+      assert.deepStrictEqual(ids({}), ["UPN-VAD-CP-011-2026", "MM-SA-MC-008-2026"], "sin ámbito busca en todo, como antes");
+      assert.deepStrictEqual(ids({ campo: "entidad" }), ["MM-SA-MC-008-2026"], "«solo la entidad» no casa un objeto que la mencione de pasada");
+      assert.deepStrictEqual(ids({ campo: "objeto" }), ["UPN-VAD-CP-011-2026"], "«solo el objeto» no casa el nombre de la entidad");
+      assert.deepStrictEqual(ids({ campo: "entidad", modalidad: "abreviada" }), ["MM-SA-MC-008-2026"], "ámbito y modalidad se combinan");
+      assert.deepStrictEqual(ids({ campo: "entidad", modalidad: "licitacion" }), [], "…y la modalidad filtra de verdad");
+      /* UN VALOR DESCONOCIDO ES INERTE, jamás una lista vacía: devolvería «no
+         consta» sobre un proceso que SÍ está, que es la peor forma posible de
+         equivocarse en la herramienta que existe para diagnosticar ausencias.
+         Es la regla de `?zona=` y `?tipo=zzz`. */
+      assert.deepStrictEqual(ids({ campo: "zzz" }), ["UPN-VAD-CP-011-2026", "MM-SA-MC-008-2026"], "ámbito desconocido = inerte, nunca vacía la respuesta");
+      assert.deepStrictEqual(ids({ modalidad: "zzz" }), [], "una modalidad que no casa ninguna fila devuelve vacío, que es un resultado, no un error");
+      assert.deepStrictEqual((R.rastrear("upn-vad", { filas, campo: "proceso" }).resultados || []).map((x) => x.id_proceso), ["UPN-VAD-CP-011-2026"], "«solo el número del proceso»");
+      const conAmbito = R.rastrear("motavita", { filas, campo: "entidad" });
+      assert.strictEqual(conAmbito.buscado_en, "entidad", "la respuesta DECLARA dónde buscó: un «no consta» sin ámbito no se puede interpretar");
+      /* La modalidad se resuelve con la regla que YA existe. Una segunda tabla
+         de literales de SECOP II sería la tercera definición de «esta
+         modalidad» y divergirían a la primera corrección. */
+      /* ⚠️ `encontrados` SON LAS COINCIDENCIAS REALES, NO EL TAMAÑO DE PÁGINA.
+         Con 120 filas que casaban respondía «20» —el tope de la página— y quien
+         busca no podía saber si eran 20 o 300. Es la familia de
+         `total_procesos`/`procesos_contados`, cometida en la herramienta que
+         existe para diagnosticar. */
+      {
+        const muchas = Array.from({ length: 120 }, (_, i) => ({ id_del_proceso: "P" + i, entidad: "MUNICIPIO DE PURIFICACION", modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "OBRA " + i }));
+        const rr = R.rastrear("purificacion", { filas: muchas });
+        assert.strictEqual(rr.encontrados, 120, "«encontrados» son las coincidencias reales, no el tamaño de página");
+        assert.ok(rr.devueltos < rr.encontrados && rr.truncado === true, "…y se dice cuántas se enseñan y que hay más");
+        const pocas = R.rastrear("purificacion", { filas: muchas.slice(0, 3) });
+        assert.strictEqual(pocas.encontrados, 3);
+        assert.strictEqual(pocas.truncado, false, "sin recorte no se anuncia recorte");
+      }
+      /* EL MOTIVO REAL DE AUSENCIA, no el genérico. Un proceso ya adjudicado
+         sale por la cascada de ESTADO —`evaluarRup` no publica motivo para
+         eso— y se respondía «no pasa el juicio para este perfil», que además es
+         falso: el objeto sí es suyo. La cubeta la publica
+         `filtrarProcesosVisibles` y se estaba tirando. */
+      {
+        const Ff = require("../lib/filtros.js");
+        const cerrado = { id_del_proceso: "ADJ-1", entidad: "MUNICIPIO X", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Adjudicado", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA", codigo_principal_de_categoria: "72141000", precio_base: 5e8, fecha_de_publicacion_del: "2026-01-05T08:00:00.000" };
+        const evaluarReal = (l) => {
+          const { visibles, veredictos, descartes } = Ff.filtrarProcesosVisibles([l], "helder", {});
+          const rup = veredictos.get(l);
+          if (!visibles.length) return { rup, puertas: null, visible: false, descarte: Object.keys(descartes || {}).find((k) => descartes[k] > 0) || null };
+          return { rup, puertas: null, visible: true };
+        };
+        const rc = R.rastrear("ADJ-1", { filas: [cerrado], evaluar: evaluarReal });
+        assert.ok(/cerrado, adjudicado/.test(rc.resultados[0].explicacion),
+          `un proceso adjudicado tiene que decir que ya no admite ofertas, no «no pasa el juicio»: ${rc.resultados[0].explicacion}`);
+      }
+      /* `no_consta` ENUMERA las causas, no afirma una. Decía «la app no lo ha
+         leído todavía», y eso es falso para el caso más corriente: un proceso
+         adjudicado sale del corpus ACTIVO y sigue en el histórico, que ninguna
+         purga toca. Afirmar «no lo ha leído» sobre algo que sí leyó es el error
+         que esta herramienta existe para no cometer. */
+      {
+        const nc = R.rastrear("zzzzzzz", { filas: [] });
+        assert.strictEqual(nc.donde, "no_consta");
+        assert.ok(!/quiere decir que la app no lo ha le[ií]do todav[ií]a/.test(nc.explicacion),
+          "«no consta» no puede AFIRMAR que no se ha leído: puede estar en el histórico");
+        assert.ok(/hist[óo]rico/.test(nc.explicacion), "…y tiene que nombrar esa posibilidad");
+      }
+      const fuenteRastreo = fs.readFileSync(path.join(__dirname, "..", "lib", "rastreo.js"), "utf8");
+      assert.ok(/require\("\.\/filtros_lista\.js"\)\.modalidadDe/.test(fuenteRastreo),
+        "la modalidad se resuelve con FiltrosLista.modalidadDe, no con una segunda lista de literales");
+    }
+
+    /* ── el pulso grafica llamando a la MISMA función que cuenta el listado ── */
+    {
+      const Pulso = require("../public/pulso.js");
+      const p = { porTipo: { obra: 12, consultoria: 3, interventoria: 5, suministro: 0, servicios: 0, sin_dato: 1 },
+        porModalidad: { licitacion: 8, abreviada: 6, subasta: 0, meritos: 4, minima: 2, directa: 0, especial: 0, otra: 0, sin_dato: 0 },
+        manifestacion: { total: 6, abiertas: 4, urgentes: 4, vencidas: 2, sin_fecha: 0 } };
+      const t = Pulso.htmlTipo(p), m = Pulso.htmlModalidad(p), mf = Pulso.htmlManifestacion(p);
+      assert.ok(/<svg/.test(t) && /<svg/.test(m), "tipo y modalidad se GRAFICAN");
+      /* CADA BARRA ES EXACTAMENTE UN FILTRO del listado: una partición más
+         bonita daría barras que no llevan a ninguna lista. */
+      const Fl = require("../public/filtros.js");
+      for (const f of [...t.matchAll(/data-filtro="([^"]+)"/g)].map((x) => x[1])) {
+        assert.ok(Fl.leerEstado(new URLSearchParams(f)).tipo, `la barra «${f}» tiene que ser un filtro válido del listado`);
+      }
+      for (const f of [...m.matchAll(/data-filtro="([^"]+)"/g)].map((x) => x[1])) {
+        assert.ok(Fl.leerEstado(new URLSearchParams(f)).modalidad, `la barra «${f}» tiene que ser un filtro válido del listado`);
+      }
+      assert.ok(/data-filtro="manif=abierta"/.test(mf), "el aviso de manifestación lleva a su lista");
+      /* CERO NO SE PINTA: un recuadro que dice «0» se deja de mirar. */
+      assert.strictEqual(Pulso.htmlManifestacion({ manifestacion: { urgentes: 0 } }), "", "sin manifestaciones urgentes no se pinta nada");
+      assert.strictEqual(Pulso.htmlTipo({}), "", "sin reparto no se inventa una gráfica");
+      /* Y el reparto sale de FiltrosLista.facetas, no de una cuenta propia. */
+      const fuenteEntrada = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "perfil", "entrada.js"), "utf8");
+      assert.ok(/FiltrosLista\.facetas\(procesos/.test(fuenteEntrada),
+        "los repartos del pulso salen de FiltrosLista.facetas: dos cuentas del mismo corpus divergirían");
     }
 
     console.log("· unidad AUDITORÍA INTEGRAL: 31 cerraduras de los defectos reproducidos "
