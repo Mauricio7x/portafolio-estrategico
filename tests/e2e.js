@@ -18714,6 +18714,135 @@ async function main() {
       assert.strictEqual(c.sin_leer_del_pliego.length, 1, "…va a su propia lista, que manda a confirmar contra el PDF");
     }
 
+    /* ═══════════════ ENCARGO DEL INGENIERO · 24-ago-2026 ═══════════════
+       Mi empresa reformada, botón único de actualización, filtros del rastreo y
+       nombre de consorcio. Se EJECUTA lo que se pinta y se cruza contra el HTML
+       real: comprobar por regex que una función se llama no prueba que lo que
+       dice sea verdad — la lección que costó el defecto de Motavita. */
+    {
+      const htmlIng = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const appIng = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      const sinComHtml = htmlIng.replace(/<!--[\s\S]*?-->/g, "");
+      const tabAdmin = sinComHtml.slice(sinComHtml.indexOf('<main id="tab-admin"'), sinComHtml.indexOf("</main>", sinComHtml.indexOf('<main id="tab-admin"')));
+
+      /* (1) LA ESTRUCTURA DE LA PESTAÑA ESTÁ BALANCEADA. Un <details> sin
+         cerrar mete DENTRO del acordeón plegado todo lo que venga después, sin
+         lanzar ningún error: el fallo mudo. Se cuenta sobre el HTML SIN
+         COMENTARIOS — contarlo con ellos da un falso positivo, y esta sesión
+         estuvo a punto de «arreglar» un desbalance que no existía. */
+      const abre = (tabAdmin.match(/<details\b/g) || []).length;
+      const cierra = (tabAdmin.match(/<\/details>/g) || []).length;
+      assert.strictEqual(abre, cierra, `#tab-admin desbalanceado: ${abre} <details> abiertos y ${cierra} cerrados`);
+      const abreS = (tabAdmin.match(/<section\b/g) || []).length;
+      const cierraS = (tabAdmin.match(/<\/section>/g) || []).length;
+      assert.strictEqual(abreS, cierraS, "#tab-admin: <section> desbalanceadas");
+
+      /* (2) LO QUE CASI NO SE USA SE MUEVE, NO SE RETIRA. Borrar el nodo hace
+         que `arrancarPaneles` lance en `$("c-perfil").value` —sin guarda— y
+         mate el tablero, el RUP, el catálogo y los parámetros EN SILENCIO. */
+      const iSis = tabAdmin.indexOf('id="seccion-sistema"');
+      assert.ok(iSis > 0, "sigue existiendo el pliegue «Sistema»");
+      for (const id of ["seccion-experiencia", "seccion-cobertura"]) {
+        const i = tabAdmin.indexOf(`id="${id}"`);
+        assert.ok(i > 0, `#${id} NO se retira: borrarlo mata la pestaña entera (arrancarPaneles no tiene guarda)`);
+        assert.ok(i > iSis, `#${id} tiene que vivir DENTRO de «Sistema», fuera de la vista principal`);
+      }
+      /* …y las que responden «¿a qué me presento hoy?» siguen ARRIBA. */
+      for (const id of ["pulso", "seccion-rup", "seccion-consorcio", "seccion-socio", "actualizar"]) {
+        const i = tabAdmin.indexOf(`id="${id}"`);
+        assert.ok(i > 0 && i < iSis, `#${id} tiene que estar A LA VISTA, antes de «Sistema»`);
+      }
+
+      /* (3) EL BOTÓN ÚNICO REUTILIZA `iniciarAlDia`. Una segunda copia del
+         encadenado rompería la invariante «1.ª full, siguientes auto» que la
+         suite ya vigila, y el `let modo = "full"` tiene que seguir apareciendo
+         UNA sola vez. */
+      assert.ok(/id="btn-actualizar-datos"/.test(htmlIng), "falta el botón «Actualizar datos»");
+      assert.ok(/function actualizarDatos\(\)[\s\S]{0,900}iniciarAlDia\(\)/.test(appIng),
+        "el botón único tiene que LLAMAR a iniciarAlDia, no reimplementar el encadenado");
+      assert.strictEqual((appIng.match(/let modo = "full"/g) || []).length, 1,
+        "«let modo = \"full\"» sigue apareciendo UNA sola vez: una segunda copia rompe «1.ª full, siguientes auto»");
+
+      /* (4) NINGÚN PORCENTAJE INVENTADO EN LA ACTUALIZACIÓN. El delta barre por
+         keyset y NO publica denominador (`ciclo_leidas`, `guardadas`, `parcial`
+         y ni un total esperado), así que una barra de porcentaje ahí sería un
+         número fabricado en la pantalla que dice si los datos están al día. La
+         sensación de avance sale de los CONTEOS REALES que crecen. */
+      const panelAct = htmlIng.slice(htmlIng.indexOf('id="act-panel"'), htmlIng.indexOf('id="act-panel"') + 900);
+      assert.ok(!/%/.test(panelAct.replace(/[a-z-]+%/g, "")), "el panel de actualización no puede pintar un porcentaje: el delta no tiene denominador");
+      assert.ok(/barra-indeterminada/.test(panelAct), "la barra es INDETERMINADA: dice «trabajando», no «va por el N %»");
+      assert.ok(/Cargando datos de SECOP II/.test(htmlIng + appIng), "el texto que pidió el ingeniero");
+      /* …y el botón se gobierna desde `botones()`, el punto único por el que
+         pasan las cinco transiciones. Cablearlo en cada una deja alguna sin
+         cubrir, y ese es el botón que se queda muerto para siempre. */
+      const cuerpoBotones = appIng.slice(appIng.indexOf("function botones(corriendo)"), appIng.indexOf("function botones(corriendo)") + 900);
+      assert.ok(/btn-actualizar-datos/.test(cuerpoBotones), "el botón único se habilita/deshabilita desde botones(), no en cinco sitios");
+
+      /* (5) EL NOMBRE DEL CONSORCIO VIAJA. El servidor lo aceptaba desde la
+         Fase 10 y el frontend nunca lo mandaba, así que todos se llamaban
+         «Consorcio N». Vacío sigue cayendo a ese defecto. */
+      assert.ok(/id="cons-nombre"/.test(htmlIng), "falta el campo del nombre del consorcio");
+      assert.ok(/op=consorcio[\s\S]{0,300}nombre:/.test(appIng), "el POST del consorcio tiene que mandar el nombre");
+      assert.ok(/nombreCons \|\| null/.test(appIng), "sin nombre viaja null (el servidor cae a «Consorcio N»), nunca una cadena vacía");
+    }
+
+    /* ── los filtros de «¿Por qué no está este proceso?», EJECUTADOS ── */
+    {
+      const R = require("../lib/rastreo.js");
+      const filas = [
+        { id_del_proceso: "UPN-VAD-CP-011-2026", referencia_del_proceso: "UPN-VAD-CP-011-2026", entidad: "UNIVERSIDAD PEDAGOGICA NACIONAL", nit_entidad: "899999124", modalidad_de_contratacion: "Licitación pública", descripci_n_del_procedimiento: "ADECUACION DE LA SEDE DE MOTAVITA", tipo_de_contrato: "Obra" },
+        { id_del_proceso: "MM-SA-MC-008-2026", referencia_del_proceso: "MM-SA-MC-008-2026", entidad: "MUNICIPIO DE MOTAVITA", nit_entidad: "800100200", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", descripci_n_del_procedimiento: "OPTIMIZACION PTAP", tipo_de_contrato: "Obra" },
+      ];
+      const ids = (o) => (R.rastrear("motavita", { filas, ...o }).resultados || []).map((x) => x.id_proceso);
+      assert.deepStrictEqual(ids({}), ["UPN-VAD-CP-011-2026", "MM-SA-MC-008-2026"], "sin ámbito busca en todo, como antes");
+      assert.deepStrictEqual(ids({ campo: "entidad" }), ["MM-SA-MC-008-2026"], "«solo la entidad» no casa un objeto que la mencione de pasada");
+      assert.deepStrictEqual(ids({ campo: "objeto" }), ["UPN-VAD-CP-011-2026"], "«solo el objeto» no casa el nombre de la entidad");
+      assert.deepStrictEqual(ids({ campo: "entidad", modalidad: "abreviada" }), ["MM-SA-MC-008-2026"], "ámbito y modalidad se combinan");
+      assert.deepStrictEqual(ids({ campo: "entidad", modalidad: "licitacion" }), [], "…y la modalidad filtra de verdad");
+      /* UN VALOR DESCONOCIDO ES INERTE, jamás una lista vacía: devolvería «no
+         consta» sobre un proceso que SÍ está, que es la peor forma posible de
+         equivocarse en la herramienta que existe para diagnosticar ausencias.
+         Es la regla de `?zona=` y `?tipo=zzz`. */
+      assert.deepStrictEqual(ids({ campo: "zzz" }), ["UPN-VAD-CP-011-2026", "MM-SA-MC-008-2026"], "ámbito desconocido = inerte, nunca vacía la respuesta");
+      assert.deepStrictEqual(ids({ modalidad: "zzz" }), [], "una modalidad que no casa ninguna fila devuelve vacío, que es un resultado, no un error");
+      assert.deepStrictEqual((R.rastrear("upn-vad", { filas, campo: "proceso" }).resultados || []).map((x) => x.id_proceso), ["UPN-VAD-CP-011-2026"], "«solo el número del proceso»");
+      const conAmbito = R.rastrear("motavita", { filas, campo: "entidad" });
+      assert.strictEqual(conAmbito.buscado_en, "entidad", "la respuesta DECLARA dónde buscó: un «no consta» sin ámbito no se puede interpretar");
+      /* La modalidad se resuelve con la regla que YA existe. Una segunda tabla
+         de literales de SECOP II sería la tercera definición de «esta
+         modalidad» y divergirían a la primera corrección. */
+      const fuenteRastreo = fs.readFileSync(path.join(__dirname, "..", "lib", "rastreo.js"), "utf8");
+      assert.ok(/require\("\.\/filtros_lista\.js"\)\.modalidadDe/.test(fuenteRastreo),
+        "la modalidad se resuelve con FiltrosLista.modalidadDe, no con una segunda lista de literales");
+    }
+
+    /* ── el pulso grafica llamando a la MISMA función que cuenta el listado ── */
+    {
+      const Pulso = require("../public/pulso.js");
+      const p = { porTipo: { obra: 12, consultoria: 3, interventoria: 5, suministro: 0, servicios: 0, sin_dato: 1 },
+        porModalidad: { licitacion: 8, abreviada: 6, subasta: 0, meritos: 4, minima: 2, directa: 0, especial: 0, otra: 0, sin_dato: 0 },
+        manifestacion: { total: 6, abiertas: 4, urgentes: 4, vencidas: 2, sin_fecha: 0 } };
+      const t = Pulso.htmlTipo(p), m = Pulso.htmlModalidad(p), mf = Pulso.htmlManifestacion(p);
+      assert.ok(/<svg/.test(t) && /<svg/.test(m), "tipo y modalidad se GRAFICAN");
+      /* CADA BARRA ES EXACTAMENTE UN FILTRO del listado: una partición más
+         bonita daría barras que no llevan a ninguna lista. */
+      const Fl = require("../public/filtros.js");
+      for (const f of [...t.matchAll(/data-filtro="([^"]+)"/g)].map((x) => x[1])) {
+        assert.ok(Fl.leerEstado(new URLSearchParams(f)).tipo, `la barra «${f}» tiene que ser un filtro válido del listado`);
+      }
+      for (const f of [...m.matchAll(/data-filtro="([^"]+)"/g)].map((x) => x[1])) {
+        assert.ok(Fl.leerEstado(new URLSearchParams(f)).modalidad, `la barra «${f}» tiene que ser un filtro válido del listado`);
+      }
+      assert.ok(/data-filtro="manif=abierta"/.test(mf), "el aviso de manifestación lleva a su lista");
+      /* CERO NO SE PINTA: un recuadro que dice «0» se deja de mirar. */
+      assert.strictEqual(Pulso.htmlManifestacion({ manifestacion: { urgentes: 0 } }), "", "sin manifestaciones urgentes no se pinta nada");
+      assert.strictEqual(Pulso.htmlTipo({}), "", "sin reparto no se inventa una gráfica");
+      /* Y el reparto sale de FiltrosLista.facetas, no de una cuenta propia. */
+      const fuenteEntrada = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "perfil", "entrada.js"), "utf8");
+      assert.ok(/FiltrosLista\.facetas\(procesos/.test(fuenteEntrada),
+        "los repartos del pulso salen de FiltrosLista.facetas: dos cuentas del mismo corpus divergirían");
+    }
+
     console.log("· unidad AUDITORÍA INTEGRAL: 31 cerraduras de los defectos reproducidos "
       + "(fuga sin token, presupuesto único, precio_manual, origen del precio, conectividad/mano de obra, "
       + "Number(null), año imposible, celda vacía, precio 0, unidades, cantidad ilegible, caja, hoja del Excel, "

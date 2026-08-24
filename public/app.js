@@ -5122,9 +5122,25 @@
     $("m-mes").textContent = d.parcial ? "Falta otra tanda" : "Al día";
     $("m-filas").textContent = cifra(d.ciclo_leidas);
     $("m-total").textContent = cifra(d.guardadas);
+    /* EL PANEL SIMPLE (encargo del ingeniero): la sensación de «va cargando
+       poco a poco» sale de los CONTEOS REALES que crecen tanda a tanda, no de
+       un porcentaje — el delta no tiene denominador y fabricarlo sería inventar
+       una medición en la pantalla que dice si los datos están al día. */
+    const cif = document.getElementById("act-cifras");
+    if (cif) {
+      const leidas = Number(d.ciclo_leidas), guardadas = Number(d.guardadas);
+      const partes = [];
+      if (Number.isFinite(leidas)) partes.push(`${fmt.format(leidas)} ${leidas === 1 ? "proceso revisado" : "procesos revisados"}`);
+      if (Number.isFinite(guardadas)) partes.push(`${fmt.format(guardadas)} ${guardadas === 1 ? "actualizado" : "actualizados"}`);
+      cif.textContent = partes.join(" · ");
+    }
+    const est = document.getElementById("act-estado");
+    if (est) est.textContent = d.parcial ? "Cargando datos de SECOP II…" : "Datos al día";
   }
 
   function completar(cuerpo) {
+    const estA = document.getElementById("act-estado");
+    if (estA) estA.textContent = "Datos al día";
     $("prog-barra").style.width = "100%";
     $("prog-pct").textContent = "100 %";
     $("prog-mes").textContent = "Carga completa";
@@ -5260,6 +5276,18 @@
     $("btn-al-dia").disabled = corriendo;
     $("btn-detener").disabled = !corriendo;
     $("f-presupuesto").disabled = corriendo;
+    /* EL BOTÓN ÚNICO SE GOBIERNA DESDE AQUÍ, que es el punto por el que ya
+       pasan las cinco transiciones (arranque, fin, detención, error, candado).
+       Cablearlo en cada una habría dejado alguna sin cubrir —y ese es
+       exactamente el botón que se queda deshabilitado para siempre—. Al
+       terminar, el panel NO se esconde: se queda con la última cifra y sin
+       giro, porque el resultado es la respuesta a la pulsación. */
+    const bA = document.getElementById("btn-actualizar-datos");
+    if (bA) bA.disabled = corriendo;
+    const sp = document.getElementById("act-spin");
+    if (sp) sp.hidden = !corriendo;
+    const ba = document.getElementById("act-barra");
+    if (ba) ba.classList.toggle("barra-indeterminada", corriendo);
   }
 
   function detener(motivo) {
@@ -5315,6 +5343,29 @@
     encadenar(true);
     return true;
   }
+  /* EL BOTÓN ÚNICO LLAMA A `iniciarAlDia`, no reimplementa nada. El encadenado
+     de tandas —candado, backoff, `let modo = "full"` una sola vez, la
+     invariante «1.ª full, siguientes auto»— vive en `encadenar` y una segunda
+     copia rompería justo lo que la suite vigila. Lo único propio del botón es
+     enseñar y esconder su panel. */
+  function actualizarDatos() {
+    const panel = document.getElementById("act-panel");
+    const est = document.getElementById("act-estado");
+    const cif = document.getElementById("act-cifras");
+    if (est) est.textContent = "Cargando datos de SECOP II…";
+    if (cif) cif.textContent = "";
+    if (panel) panel.hidden = false;
+    $("btn-actualizar-datos").disabled = true;
+    /* `iniciarAlDia` devuelve false si ya hay una tanda en curso: entonces no
+       se ha empezado nada y el botón tiene que volver a estar disponible —una
+       pulsación sin respuesta visible es peor que un error. */
+    if (!iniciarAlDia()) {
+      if (est) est.textContent = "Ya hay una actualización en curso.";
+      $("btn-actualizar-datos").disabled = false;
+    }
+  }
+  const btnAct = document.getElementById("btn-actualizar-datos");
+  if (btnAct) btnAct.addEventListener("click", actualizarDatos);
   $("btn-al-dia").addEventListener("click", iniciarAlDia);
   $("btn-iniciar").addEventListener("click", iniciarFull);
   $("btn-detener").addEventListener("click", () => detener("usuario"));
@@ -5351,7 +5402,15 @@
     caja.innerHTML = '<p class="text-gray-500">Buscándolo…</p>';
     let r, cuerpo;
     try {
-      r = await fetch(`/api/perfil?op=diagnostico&perfil=${encodeURIComponent($("ra-perfil").value)}&buscar=${encodeURIComponent(consulta)}`,
+      /* El ámbito y la modalidad viajan solo si el usuario los eligió: mandar
+         `campo=todo` y `modalidad=` sería ruido en la URL, y el servidor ya
+         tiene esos defectos. Las opciones de modalidad se rellenan desde
+         public/filtros.js — una segunda tabla de nombres se desincronizaría
+         del selector de la hoja de filtros. */
+      const campoRa = $("ra-campo").value, modRa = $("ra-modalidad").value;
+      r = await fetch(`/api/perfil?op=diagnostico&perfil=${encodeURIComponent($("ra-perfil").value)}&buscar=${encodeURIComponent(consulta)}`
+        + (campoRa && campoRa !== "todo" ? `&campo=${encodeURIComponent(campoRa)}` : "")
+        + (modRa ? `&modalidad=${encodeURIComponent(modRa)}` : ""),
         { headers: { "x-historico-token": TOKEN } });
     } catch {
       caja.innerHTML = '<p class="text-red-700">No se pudo contactar el servidor.</p>'; return;
@@ -5382,6 +5441,24 @@
         ${x.estado || x.fase ? `<p class="mt-1 text-xs text-gray-500">Estado publicado: ${esc(x.estado || "—")} · Fase: ${esc(x.fase || "—")}</p>` : ""}
       </div>`;
     }).join("");
+  }
+  /* Las modalidades salen de public/filtros.js, la MISMA lista que alimenta la
+     hoja de filtros del listado: escribirlas a mano aquí sería una segunda
+     tabla de nombres que se desincroniza a la primera corrección. */
+  (function poblarModalidadesRastreo() {
+    const sel = document.getElementById("ra-modalidad");
+    if (!sel || !window.Filtros) return;
+    for (const m of window.Filtros.MODALIDADES || []) {
+      const o = document.createElement("option");
+      o.value = m.id; o.textContent = m.etiqueta; o.title = m.ayuda || "";
+      sel.appendChild(o);
+    }
+  })();
+  for (const id of ["ra-campo", "ra-modalidad"]) {
+    const n = document.getElementById(id);
+    /* Cambiar un filtro con un resultado en pantalla lo dejaría contradiciendo
+       al selector: se invalida, como hace el panel de cobertura con su perfil. */
+    if (n) n.addEventListener("change", () => { const res = $("ra-resultado"); if (res) res.classList.add("hidden"); });
   }
   $("btn-rastrear").addEventListener("click", rastrearProceso);
   $("ra-consulta").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); rastrearProceso(); } });
@@ -7129,7 +7206,12 @@
     if (ev.target.closest("#cons-btn-ver")) {
       const btn = ev.target.closest("#cons-btn-ver"); btn.disabled = true;
       try {
-        const g = await api("/api/perfil?op=consorcio", { method: "POST", body: { integrantes: participacionesActuales() } });
+        /* El nombre viaja SOLO si el usuario escribió algo: el servidor cae a
+           «Consorcio N» con `null`, y mandar una cadena vacía sería pedirle que
+           guarde un nombre en blanco. Se recorta a los mismos 140 caracteres
+           que valida el handler para que el tope no sorprenda al enviar. */
+        const nombreCons = $("cons-nombre").value.trim().slice(0, 140);
+        const g = await api("/api/perfil?op=consorcio", { method: "POST", body: { integrantes: participacionesActuales(), nombre: nombreCons || null } });
         const sel = $("f-perfil");
         if (![...sel.options].some((o) => o.value === g.id)) { const o = document.createElement("option"); o.value = g.id; o.textContent = etiquetaConsorcio(g.nombre, g.id); sel.appendChild(o); }
         sel.value = g.id;

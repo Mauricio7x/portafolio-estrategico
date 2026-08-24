@@ -92,6 +92,13 @@
      properties del tema (style="fill: var(--accent)"), así que respeta el
      modo oscuro y «aumentar contraste» sin una regla más. Sin datos (todas
      las cubetas en 0) no se dibuja: una gráfica de ceros no informa nada. */
+  /* public/filtros.js es UMD igual que este módulo: en el navegador vive en
+     `window.Filtros` y en Node se requiere. Se resuelve en cada llamada y no en
+     tiempo de carga porque este archivo se carga ANTES en index.html. */
+  function raizFiltros() {
+    if (typeof window !== "undefined" && window.Filtros) return window.Filtros;
+    try { return require("./filtros.js"); } catch { return null; }
+  }
   function svgBarras(cubetas, { ancho = 320, alto = 150, filtroDe = () => null } = {}) {
     const n = cubetas.length;
     if (!n) return "";
@@ -134,6 +141,57 @@
     const svg = svgBarras(cubetas, { filtroDe: (c) => `min=${c.min || 0}${c.max != null ? `&max=${c.max}` : ""}` });
     if (!svg) return "";
     return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Cuánto valen</h2>${svg}${p.cuantiaSinDato ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(p.cuantiaSinDato)} sin presupuesto publicado.</p>` : ""}`;
+  }
+
+  /* ═══ QUÉ TIPO DE TRABAJO Y CÓMO LO ADJUDICAN (encargo del ingeniero, ago
+     2026) ═══ Los repartos llegan de `FiltrosLista.facetas`, la MISMA función
+     que cuenta las facetas del listado, así que el pulso y la lista no pueden
+     discrepar sobre el mismo corpus. Las etiquetas salen de public/filtros.js
+     —una segunda tabla de nombres se desincronizaría del selector— y cada barra
+     es literalmente su filtro. Las cubetas en cero se conservan: que una
+     modalidad no aparezca y que no tenga procesos son cosas distintas, y la
+     primera se lee como la segunda. `sin_dato` NO se grafica: no es un filtro
+     al que se pueda ir, y se declara aparte. */
+  function repartoAcubetas(reparto, catalogo, campo) {
+    if (!reparto) return { cubetas: [], sinDato: 0 };
+    const cubetas = catalogo
+      .filter((t) => Object.prototype.hasOwnProperty.call(reparto, t.id))
+      .map((t) => ({ id: t.id, etiqueta: t.etiqueta, corto: t.corto || t.etiqueta, titulo: t.ayuda || t.etiqueta, n: reparto[t.id] || 0, valor: null }));
+    return { cubetas, sinDato: reparto.sin_dato || 0, campo };
+  }
+  const CORTO_TIPO = { obra: "Obra", consultoria: "Consultoría", interventoria: "Interventoría", suministro: "Suministro", servicios: "Servicios" };
+  const CORTO_MODALIDAD = { licitacion: "Licitación", abreviada: "Menor cuantía", subasta: "Subasta", meritos: "Méritos", minima: "Mínima", directa: "Directa", especial: "Especial", otra: "Otra" };
+  function htmlTipo(p) {
+    const F = raizFiltros();
+    if (!F || !p.porTipo) return "";
+    const cat = (F.TIPOS_TRABAJO || []).map((t) => ({ ...t, corto: CORTO_TIPO[t.id] || t.etiqueta }));
+    const { cubetas, sinDato } = repartoAcubetas(p.porTipo, cat, "tipo");
+    const svg = svgBarras(cubetas, { filtroDe: (c) => `tipo=${c.id}` });
+    if (!svg) return "";
+    return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Qué tipo de trabajo es</h2>${svg}${sinDato ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(sinDato)} sin clasificar.</p>` : ""}`;
+  }
+  function htmlModalidad(p) {
+    const F = raizFiltros();
+    if (!F || !p.porModalidad) return "";
+    const cat = (F.MODALIDADES || []).map((t) => ({ ...t, corto: CORTO_MODALIDAD[t.id] || t.etiqueta }));
+    const { cubetas, sinDato } = repartoAcubetas(p.porModalidad, cat, "modalidad");
+    const svg = svgBarras(cubetas, { filtroDe: (c) => `modalidad=${c.id}` });
+    if (!svg) return "";
+    return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Cómo lo adjudican</h2>${svg}${sinDato ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(sinDato)} sin modalidad publicada.</p>` : ""}`;
+  }
+  /* EL AVISO MÁS ACCIONABLE DEL SISTEMA, y no estaba en la pestaña: en la
+     selección abreviada de menor cuantía no se puede ofertar sin avisar antes,
+     y el plazo lo fija la entidad —a veces son horas—. Se pinta SOLO si hay
+     alguno: un recuadro que dice «0» se deja de mirar. */
+  function htmlManifestacion(p) {
+    const m = p.manifestacion;
+    if (!m || !m.urgentes) return "";
+    const n = m.urgentes;
+    return `<a href="?manif=abierta#/licitaciones" data-filtro="manif=abierta" class="block rounded-xl px-4 py-3"
+      style="background: var(--danger-light); color: var(--text-primary);"
+      title="Selección abreviada de menor cuantía: primero hay que avisar que le interesa y después se oferta. El plazo lo fija la entidad en el pliego y puede ser de solo unas horas. Ver la lista.">
+      <span class="text-sm font-semibold">${num(n)} ${n === 1 ? "proceso donde hay que avisar HOY" : "procesos donde hay que avisar HOY"} que le interesa</span>
+      <span class="mt-0.5 block text-[11px]" style="color: var(--text-secondary);">Sin esa manifestación no puede presentar oferta. El plazo puede ser de unas horas.</span></a>`;
   }
 
   function htmlNota(p) {
@@ -198,6 +256,10 @@
     const cierre = d.getElementById("pu-cierre"), cuantia = d.getElementById("pu-cuantia");
     if (cierre) { cierre.innerHTML = htmlCierre(p); cierre.classList.toggle("hidden", !cierre.innerHTML); }
     if (cuantia) { cuantia.innerHTML = htmlCuantia(p); cuantia.classList.toggle("hidden", !cuantia.innerHTML); }
+    for (const [id, fn] of [["pu-tipo", htmlTipo], ["pu-modalidad", htmlModalidad], ["pu-manifestacion", htmlManifestacion]]) {
+      const nodo = d.getElementById(id);
+      if (nodo) { nodo.innerHTML = fn(p); nodo.classList.toggle("hidden", !nodo.innerHTML); }
+    }
     d.getElementById("pu-nota").textContent = htmlNota(p);
     // sin departamentos ni entidades (perfil sin licitaciones) las cajas se esconden
     d.getElementById("pu-departamentos").classList.toggle("hidden", !(p.porDepartamento || []).length);
@@ -208,5 +270,5 @@
   }
   const olvidar = () => { perfilPintado = null; };
 
-  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlCierre, htmlCuantia, svgBarras, htmlNota };
+  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlCierre, htmlCuantia, htmlTipo, htmlModalidad, htmlManifestacion, svgBarras, htmlNota };
 });

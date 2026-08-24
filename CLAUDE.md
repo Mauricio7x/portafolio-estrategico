@@ -4866,6 +4866,106 @@ remotas y todo el trabajo va desde ahora directo a `main`. Decisiones que no hay
   archivo a archivo— y fusionarlas habría devuelto los archivos retirados. Una PR abierta sobre
   trabajo ya integrado no es un pendiente: es ruido que la próxima sesión audita otra vez.
 
+### Encargo del ingeniero · 24-ago-2026 (Mi empresa, ganancia, manifestación, rastreo)
+
+- **⚠️ LA MANIFESTACIÓN PUEDE DURAR HORAS: EL SUELO TAMBIÉN ERA INVENTADO.** La corrección de
+  Motavita (20-ago) quitó el TECHO inventado y **dejó en pie el SUELO**, que es el mismo error en
+  espejo. `PLAZO_MINIMO_HABILES = 1` afirmaba que el plazo no podía cerrar antes del día hábil
+  siguiente, pero la norma transcrita en `docs/datos.md` §7 dice «en un término **NO MAYOR a** tres
+  (3) días hábiles»: fija techo y **ningún suelo**. Reportado desde el campo por el ingeniero: «a
+  veces solo abren 4 horas, 8 horas». Reproducido: con apertura hoy a las 8:00 la app respondía
+  `abierta` —«con certeza sigue abierta»— y escribía «puede cerrar entre [mañana] y [el techo]».
+  Hoy `PLAZO_MINIMO_HABILES = 0`: la ventana empieza el día de la apertura y ese día cae en
+  `por_confirmar`, el estado de MÁXIMA urgencia. `abierta` queda donde sí se certifica: apertura
+  futura o fecha del pliego futura.
+  · **Dos defectos más de la misma familia**, salidos al reproducir: `propuesta <= v.apertura`
+    DESCARTABA la fecha del pliego que cierra el mismo día —la única afirmable— y `estadoDeVentana`
+    certificaba `abierta` el DÍA del vencimiento confirmado (el cronograma publica el día, nunca la
+    hora). Con fecha del pliego de HOY se dicen las DOS mitades: «vence HOY (del cronograma) · puede
+    haber cerrado ya».
+  · **LA GUARDA DE VENTANA IMPOSIBLE NECESITÓ SU PROPIO UMBRAL.** Al bajar el suelo, `hasta < desde`
+    dejó de disparar y el módulo pasaba de «no se puede situar el plazo» a AFIRMAR «vencida» — un
+    calculado que contradice a un publicado tiene que CALLARSE. Vive en `minimoParaQueQuepa`. **Lo
+    cazó la revisión adversaria de la propia corrección**, junto con la rama «vence HOY» de
+    `lib/seguimiento` que quedó inalcanzable.
+  · Cinco cerraduras fijaban el comportamiento defectuoso y se actualizaron con su motivo (la
+    lección de la `fase` rezagada). `facetas.urgentes` pasa de 0 a 1: un proceso abierto hoy ES
+    urgente, y se comprueba aparte que `urgentes ⊂ abiertas`.
+- **«Proceso pequeño» → «Selección abreviada de menor cuantía · Manifestación de interés».** Además
+  de no ser su nombre, chocaba con «Mínima cuantía» —la que sí es pequeña— y callaba lo urgente. La
+  regla de la Fase 6 lo permite: los nombres propios de las modalidades no son jerga de campo, y la
+  prueba de jerga solo barre las etiquetas de los CAMPOS, no las opciones.
+
+- **⚠️ LA TERCERA CIFRA DE LA TARJETA ERA LA CUANTÍA REESCALADA.** «No me gusta nada el valor
+  aproximado de ganancia». MEDIDO: sin APU costeado, `lib/ganancia` cierra el costo por la identidad
+  del precio, así que la cuenta se reduce a `V × k` con `k = U/(1+A+I+U) − τ`, una CONSTANTE de la
+  estructura que tecleó el propio usuario. El rango era **exactamente −1,00 % a +8,00 % del precio**
+  en $50 M, $500 M, $3.216 M y $20.000 M, con correlación **−1,0000** con la cuantía. Es el chip
+  constante de `nivel_competencia` y «18,2 oferentes sin base», en la tercera celda. Con costo MEDIDO
+  la misma cuenta sí informa (+16,45 % → −14,97 % barriendo el costo directo).
+  · **La celda se parte por `base`, no por veredicto**: con costo medido UNA cifra (el peor caso, que
+    ahí sí es un suelo real) y el rango en el detalle; sin él, la celda **pide el costo** en vez de
+    fingir una medición — y es lo único que mejora la app con el uso.
+  · **NO SE RESUCITA EL VALOR ESPERADO.** El respaldo lo repintaba siempre que faltaba la ganancia
+    (sin credencial, sin presupuesto oficial): la cifra que el dueño reportó como leída al revés,
+    volviendo por la puerta de atrás.
+  · **DEFECTO SEPARABLE: `ordenar_por=ganancia` ORDENABA LA OBRA AL REVÉS.** Con `k` negativa para
+    obra, ponía las interventorías por delante de TODA la obra y, dentro de la obra, el contrato de
+    $12.000 M el ÚLTIMO y el de $120 M el PRIMERO. Ahora sigue la doctrina de `margen`: solo las que
+    ya costeó, el resto al final sin cifra. La prueba que lo vigilaba leía `valor != null` —el
+    contrato anterior— y pasaba en verde sobre el orden invertido.
+
+- **MI EMPRESA: SE MUEVE, NO SE RETIRA.** «Obra que ya ejecutaste» y «Códigos que le faltan» eran 137
+  de las 287 palabras a la vista (48 %) y son las dos únicas que no responden a «¿a qué me presento
+  hoy?». **Borrar el nodo mata la pestaña entera EN SILENCIO**: `arrancarPaneles` hace
+  `$("c-perfil").value` sin guarda antes de arrancar el tablero, el RUP, el catálogo y los
+  parámetros. Se movieron dentro de «Sistema»; ningún id cambió y el censo de ids sigue en los
+  mismos 9 falsos positivos preexistentes.
+- **EL PULSO GRAFICA LLAMANDO A `FiltrosLista.facetas`**, la MISMA función que cuenta las facetas del
+  listado: tipo de trabajo, modalidad y **manifestaciones urgentes** (el dato más accionable del
+  sistema, que no estaba en la pestaña). Cada barra es EXACTAMENTE un filtro y hay prueba que lo
+  ejecuta contra `leerEstado`. Un reparto en cero se conserva; `sin_dato` NO se grafica (no es un
+  filtro al que se pueda ir) y el aviso de manifestación no se pinta con 0.
+- **EL CONSORCIO YA PODÍA TENER NOMBRE Y EL FRONTEND NO LO MANDABA.** El servidor lo acepta desde la
+  Fase 10 (`POST ?op=consorcio {nombre, integrantes}`) y `app.js` enviaba solo `{integrantes}`, así
+  que todos acababan siendo «Consorcio N». Campo `#cons-nombre`; vacío sigue cayendo a ese defecto.
+
+- **«ACTUALIZAR DATOS» SIN PORCENTAJE, Y NO ES UN RECORTE.** El encargo pedía «una animación de carga
+  que dé la sensación de que va cargando poco a poco». **Medido antes de dibujar**: el delta barre por
+  `:updated_at` con keyset y **NO PUBLICA NINGÚN DENOMINADOR** —`ciclo_leidas`, `guardadas`,
+  `parcial` y ni un total esperado—, así que una barra de porcentaje ahí sería un número inventado en
+  la pantalla que dice si los datos están al día. La sensación de avance sale de donde SÍ es real:
+  los conteos que crecen tanda a tanda. La barra es **indeterminada**. La carga completa conserva su
+  porcentaje porque su denominador es un `count(*)` real (`lib/socrata.contarMes`).
+  · El botón **LLAMA a `iniciarAlDia()`**: una segunda copia del encadenado rompería la invariante
+    «1.ª full, siguientes auto». Se gobierna desde `botones()`, el punto único por el que pasan las
+    cinco transiciones — cablearlo en cada una deja alguna sin cubrir, y ese es el botón que se queda
+    muerto para siempre. Y vive en la zona VISIBLE, no dentro del acordeón: enterrado contradice
+    «simplifícalo al máximo» (lo cazó `checkVisibility()` en el navegador).
+- **RASTREO CON ÁMBITO Y MODALIDAD.** La búsqueda ya miraba los cuatro campos pero revueltos:
+  «MOTAVITA» casaba también con un objeto que lo mencionara de pasada. `campo` (todo · entidad ·
+  objeto · proceso) y `modalidad`, que se resuelve con `FiltrosLista.modalidadDe` —la regla que ya
+  existe, con require diferido— para no fabricar una tercera definición de «esta modalidad». Un valor
+  desconocido es **INERTE**: devolver vacío diría «no consta» sobre un proceso que SÍ está, la peor
+  forma de equivocarse en la herramienta que existe para diagnosticar ausencias. La respuesta
+  DECLARA `buscado_en` y `modalidad_pedida` — un «no consta» sin ámbito no se puede interpretar.
+
+- **DOS LECCIONES DE MÉTODO DE ESTA SESIÓN:**
+  · **UN HALLAZGO CONFIRMADO CON EL MISMO MÉTODO DEFECTUOSO NO ESTÁ CONFIRMADO.** Se reportó que
+    `#tab-admin` dejaba un `<details>` sin cerrar (22 aperturas / 21 cierres) y lo «confirmé» con mi
+    propia cuenta. **Las dos contaban `<details>` escritos dentro de comentarios HTML.** Sin
+    comentarios el árbol estaba balanceado 9/9, y «arreglarlo» habría INTRODUCIDO el defecto. Dos
+    mediciones equivocadas coincidiendo no son evidencia.
+  · **`getBoundingClientRect().height` NO SIRVE para saber si algo está dentro de un `<details>`
+    cerrado**: devolvió 137 px sobre secciones correctamente plegadas, y el control —secciones que ya
+    estaban dentro antes del cambio— dio lo mismo. Quien lo responde es **`checkVisibility()`**, y con
+    ella se descubrió que el botón de actualizar había quedado enterrado.
+- **Verificado en Chromium real** (390 px y 1280 px, arnés que sirve `public/` y responde `/api/*`
+  con la forma real): cero errores de consola, sin desborde móvil, 24 barras pintadas, cada
+  `data-filtro` válido contra `leerEstado`, vidrio `rgba(255,255,255,0.72)` + `blur(20px)`, y las
+  secciones movidas ocultas mientras las de decisión se ven. El `border-radius: 0` que se observa es
+  la degradación ya documentada del CDN de Tailwind bloqueado en este entorno, no un defecto nuevo.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).
