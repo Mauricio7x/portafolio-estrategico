@@ -2543,6 +2543,22 @@ async function main() {
            corpus histórico no se purga nunca y conserva lo que escribieron
            versiones anteriores de la proyección. Un 0 con dos causas posibles
            no es un diagnóstico; el contador las separa. */
+        /* 7 · «YA ESTABA» TIENE QUE DECIR CÓMO FORZAR. El corpus histórico no se
+           purga nunca, así que lo guardado puede venir de una proyección
+           anterior: en producción el 100 % de los registros no traía el código
+           UNSPSC. Reconstruir los derivados no lo arregla —hay que re-extraer—,
+           y una respuesta `yaEstaba: true` sin instrucción se lee como éxito y
+           pierde el intento. */
+        {
+          const fuenteH = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", "historico.js"), "utf8");
+          const i = fuenteH.indexOf("if (p.terminado)");
+          assert.ok(i > 0, "historico.js sin la rama de «ya estaba»");
+          const rama = fuenteH.slice(i, i + 1200);
+          assert.ok(/como_reextraer/.test(rama) && /reiniciar=1/.test(rama),
+            "la rama «ya estaba» tiene que publicar cómo forzar la re-extracción, con el parámetro real");
+          assert.ok(/yaEstaba: true/.test(rama), "y seguir declarando que no re-extrajo nada");
+        }
+
         {
           assert.ok(Object.prototype.hasOwnProperty.call(meta, "sin_familia_legible"),
             "la meta tiene que decir cuántos procesos analizados no traen familia legible");

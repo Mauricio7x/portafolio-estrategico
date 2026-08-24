@@ -4974,6 +4974,21 @@ provincias del INVIAS).
   mercado. Es el mismo movimiento que `por_modalidad` con el régimen especial y que
   `baja_exactamente_cero` con el cruce de columnas: **convertir un cero mudo en una cifra que se
   explica sola.** Hay prueba de que con código legible el nivel se puebla y el contador vale 0.
-- **Lo que este entorno no pudo verificar**: que la causa sea exactamente la proyección vieja. Es la
-  explicación compatible con todo lo medido, pero la fuente no se alcanza desde aquí (403). La
-  próxima reconstrucción publica `sin_familia_legible` y lo confirma o lo desmiente sola.
+- **CONFIRMADO EN PRODUCCIÓN EL MISMO DÍA: `sin_familia_legible = 46 013` de `procesos_analizados =
+  46 013`, el 100 %.** No es que pocos procesos no traigan código: **no lo trae NINGUNO**. El contador
+  convirtió el cero mudo en un diagnóstico en una sola reconstrucción.
+- **La causa queda acotada, reproduciendo la llamada EXACTA del backfill**
+  (`transformar(filas, { conservarCerradas: true, conAdjudicacion: true })`): el pipeline de hoy
+  guarda `codigo_principal_de_categoria` y la familia sale (7214). Luego lo que hay en Redis lo
+  escribió una versión anterior de `CAMPOS`, y `licitaciones:historico:mes:*` no se purga jamás.
+  **Re-extraer el rango SÍ lo arregla; reconstruir los derivados no.**
+- **⚠️ Y EL BACKFILL NO RE-EXTRAE SOLO PORQUE SE LE PIDA.** Lanzado con `?desde=2024-01&hasta=2025-12`
+  respondió `extraccion: {done: true, yaEstaba: true}` — vio el rango terminado y no bajó una sola
+  fila. El intento se perdió entero y la respuesta parecía un éxito. El parámetro que fuerza es
+  **`&reiniciar=1`**. Ahora la rama `yaEstaba` publica `nota` y `como_reextraer` con el parámetro
+  real: una respuesta que no hizo nada tiene que decir qué hacer, que es la regla de «ninguna
+  pulsación sin respuesta visible» aplicada a un endpoint.
+- **Lección de método**: `transformar` devuelve un **ARRAY**, no `{activo, historico}` (eso lo hace
+  `repartirDelta`). La primera reproducción de esta sesión leyó `r.historico` y acertó por un
+  *fallback*; la segunda leyó lo mismo y concluyó «0 registros», que era falso. Antes de declarar un
+  defecto a partir de una lectura, comprobar la FORMA que devuelve la función.
