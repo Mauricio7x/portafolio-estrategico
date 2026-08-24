@@ -1,0 +1,773 @@
+================================================================================
+CONSULTORÍA Y AUDITORÍA DEL MÓDULO APU DE DETEKTA
+================================================================================
+Objetivo del encargo: que el módulo sirva para CREAR EL APU DE UN CONTRATO DE
+SECOP — que se cargue el proceso y el APU se genere solo, y que se pueda
+comparar el precio que ya trae el pliego con el que sugiere la plataforma.
+
+Fecha:            24 de agosto de 2026
+Rama:             main
+Método:           Mental Framework ECC — Premise · Data · Domain · Architecture ·
+                  Security · UX · Adversary · Honesty
+Alcance medido:   12 731 líneas del módulo (lib/apu/*, lib/apu_*,
+                  lib/handlers/apu, lib/handlers/pliego, public/xlsx*,
+                  public/apu_libro.js) · 6 588 ítems con precio en 6 catálogos ·
+                  10,64 MB de bancos de precios en disco
+Estado del árbol: node tests/e2e.js → 4/4 iteraciones en verde (exit 0)
+                  node tests/apu_bench.js → suelos de regresión superados
+
+REGLA DE LECTURA: cada cifra de este documento se obtuvo EJECUTANDO el código
+del repositorio, no leyéndolo. La sección 10 separa MEDIDO, SUPUESTO y NO
+VERIFICABLE DESDE AQUÍ. Ningún supuesto se presenta como medición.
+
+
+================================================================================
+1. RESUMEN EJECUTIVO — LOS SEIS NÚMEROS QUE MANDAN
+================================================================================
+
+  70,8x   Diferencia entre los dos universos de reconocimiento del proyecto. El
+          lector de pliegos —el camino que el encargo pide— mapea contra 93
+          ítems SIN precio. El importador de Excel mapea contra 6 588 ítems CON
+          precio. Quien carga el pliego de SECOP recibe el peor de los dos.
+
+  17,2 %  Proporción de ítems con precio que pueden producir una hoja de APU CON
+          DESGLOSE (1 134 de 6 588). Los otros 5 448 dan el precio pero no lo
+          justifican. Un pliego exige el APU desglosado, no solo el unitario.
+
+  2,7x    Un ítem ofertado a 2,7 veces el precio unitario oficial del pliego pasa
+          hoy el guardián del Formulario 1 con semáforo «listo» y nadie lo
+          menciona. Reproducido ejecutando lib/formulario1.js.
+
+  2 de 5  Ítems que el camino del lector mapea en «firme» — y son firmes contra
+          un catálogo SIN precios, así que ni aun acertando producen presupuesto.
+          Los mismos cinco, por el camino del importador, dan 3 de 5 firmes CON
+          precio. La diferencia que manda no es el conteo: es que un camino
+          termina en un número y el otro no.
+
+  4 de 6  Objetos de obra civil bien escritos que la vía automática NO clasifica
+          (estado «no_determinada»), entre ellos «CONSTRUCCIÓN DE PAVIMENTO
+          RÍGIDO», existiendo la tipología VIA-RIG.
+
+  0       Líneas de código que unen el lector de pliegos con el editor de
+          precios. El lector exporta un .json que ningún módulo vuelve a leer;
+          el importador acepta .xlsx / .xls / .csv.
+
+DIAGNÓSTICO EN UNA FRASE
+  El módulo APU tiene las dos mitades del trabajo construidas y con calidad —un
+  lector de pliegos que extrae ítem, unidad y cantidad, y un motor de costeo
+  calibrado contra un contrato adjudicado real— pero NO están conectadas entre
+  sí. El encargo no pide construir un módulo nuevo: pide CERRAR EL CABLE que
+  falta entre dos piezas que ya existen y funcionan por separado.
+
+QUÉ SIGNIFICA HOY PARA EL CONTRATISTA
+  Para presupuestar una licitación el ingeniero lee el pliego en la pestaña
+  Precios, obtiene la lista de ítems, la exporta a un .json que no puede volver
+  a cargar, y transcribe A MANO los ítems al editor. Con un formulario de 150
+  ítems son horas de trabajo y una oportunidad de error de transcripción por
+  fila, en el documento con el que se fija el precio de una oferta. Con el cable
+  puesto, el mismo trabajo es un clic.
+
+
+================================================================================
+2. PREMISAS DEL ENCARGO, AUDITADAS (paso 0 del ciclo ECC)
+================================================================================
+
+P1. «Que se pueda cargar y el módulo lo genere automáticamente.»
+    PARCIALMENTE FALSA COMO AUSENCIA. Ya existen las dos vías de generación:
+      (a) automática desde el objeto — lib/apu/inferencia.js clasifica la
+          tipología y propone ítems. MEDIDO: acierta 2 de 6 objetos típicos.
+      (b) desde el pliego — lib/apu_pliego.js extrae ítem, unidad y cantidad.
+          MEDIDO: extrae los 5 ítems de un Formulario 1 con TAB sin fallar uno;
+          100 % de recall en el banco sintético.
+    Lo que NO existe es el paso entre (b) y el presupuesto. La generación
+    automática está construida hasta la penúltima estación.
+
+P2. «Comparar los precios que ya tiene el APU con los que sugiere la página.»
+    FALSA COMO EXISTENTE, y es el hueco de más valor. Verificado ejecutando: el
+    guardián compara descripción, unidad y cantidad, y el total contra el
+    presupuesto oficial. El PRECIO UNITARIO del pliego no se compara con nada.
+    Es alcanzable HOY con las piezas existentes: prototipo en la sección 6.
+
+P3. «Revisa qué competencia hace algo similar.»
+    CIERTA Y URGENTE. Hay al menos un competidor colombiano directo (PresuCosto)
+    que declara hacer exactamente lo que este encargo pide, incluida la
+    comparación ítem a ítem contra el presupuesto oficial. Sección 7.
+
+P4. Premisa implícita: «el módulo APU es uno solo».
+    FALSA. Son DOS módulos con dos catálogos, dos mapeos y dos vocabularios,
+    separados a propósito según CLAUDE.md («responden preguntas distintas»). La
+    separación es correcta en su intención y está mal ejecutada en su frontera:
+    el lector se quedó atado al catálogo pequeño cuando el grande ya existía.
+
+P5. Premisa implícita del propio repositorio: «el APU se arma eligiendo la
+    tipología de obra». FALSA cuando hay pliego. El pliego TRAE la lista literal
+    de ítems con sus cantidades: no hay nada que adivinar. Adivinar la tipología
+    es la vía correcta solo cuando el pliego todavía no existe (PAA, proyecto de
+    pliego). Hoy la pantalla tiene invertidas las prioridades (hallazgo H-5).
+
+
+================================================================================
+3. QUÉ ES UN APU Y CÓMO LO ELABORA UN INGENIERO (criterio de dominio)
+================================================================================
+
+3.1 LA ESTRUCTURA CANÓNICA
+    Un Análisis de Precio Unitario descompone el costo de UNA unidad de una
+    actividad (m2, m3, ml, kg, un) en cuatro capítulos; sobre el costo directo se
+    aplica el AIU para llegar al precio de venta:
+
+      COSTO DIRECTO   = MATERIALES + MANO DE OBRA + EQUIPO + TRANSPORTE
+      PRECIO DE VENTA = COSTO DIRECTO x (1 + A + I + U)
+
+      · MATERIALES   cantidad por unidad x precio, incrementada por desperdicio.
+      · MANO DE OBRA costo de la cuadrilla-día DIVIDIDO por el rendimiento
+                     (unidades/día), con factor prestacional sobre el jornal.
+      · EQUIPO       tarifa (día u hora) dividida por el rendimiento, más la
+                     herramienta menor como porcentaje de la mano de obra.
+      · TRANSPORTE   tarifa en $/m3-km x volumen x distancia.
+
+    VEREDICTO SOBRE EL MOTOR: lib/apu/calculo.js y lib/apu/catalogo.js
+    implementan esta estructura correctamente, con dos aciertos que no hay que
+    tocar: el rendimiento DIVIDE (error canónico del oficio, con prueba de
+    monotonía) y el AIU se SUMA en vez de componerse (15/5/5 = 25 % aditivo, que
+    es lo que cuadra contra el formulario del pliego; compuesto daría 26,8 %).
+
+3.2 EL RENDIMIENTO ES LA VARIABLE MÁS SENSIBLE
+    La práctica del oficio coincide con lo que el motor asume: el rendimiento
+    varía por región, clima, altitud, complejidad y experiencia de la cuadrilla.
+    Es el parámetro que más mueve el APU y el que ningún banco publica con
+    precisión.
+    VEREDICTO: el motor permite `rendimiento_override` y trabaja sobre una COPIA
+    del catálogo (correcto: mutarlo filtraría el override entre presupuestos de
+    la misma instancia caliente). Falta que el usuario tenga una forma guiada de
+    ajustarlo por obra; hoy es un campo suelto sin contexto.
+
+3.3 EL FACTOR PRESTACIONAL
+    Fuentes secundarias del oficio citan «52 %»; otras, 2,19 con dotación y FIC
+    incluidos. El repositorio aplica 55 % y lo contrasta contra fuentes primarias
+    (guía IDU GU-DP-017: 45,10 % exonerado / 58,90 % nominal), declarando que el
+    55 % NO se descompone en ninguna combinación legal exacta y cae entre las dos
+    cotas.
+    VEREDICTO: el repositorio es MÁS honesto que las fuentes secundarias del
+    mercado. NO cambiar el 55 % por una cifra de blog. Conservar la cerradura
+    existente (prueba de encierro entre cotas).
+
+3.4 EL DIVISOR DE HORAS
+    La metodología IDU/INVIAS usa 210 horas pagadas al mes (mes de 30 días
+    dividido por horas/día, con horas/día = jornada semanal / 6). El repositorio
+    lo verificó contra las dos fuentes primarias el 16-ago-2026. Los recargos
+    TPNL (22,5 %) y MVP (14,72 %) que circulan en el mercado NO aparecen en
+    ninguna de las dos fuentes oficiales y el repositorio los marca como
+    «referencia, sin fuente oficial».
+    VEREDICTO: correcto. No promoverlos a dato por presión de mercado.
+
+3.5 LO QUE UN PLIEGO EXIGE DE VERDAD
+    Una entidad no pide un precio: pide el APU desglosado, firmado por el
+    ingeniero de costos, con cantidades, rendimientos y precios de insumo
+    auditables. Un precio sin composición NO es un APU: es una cotización.
+    CONSECUENCIA DIRECTA: de los 6 588 ítems con precio, solo 1 134 (17,2 %)
+    traen composición. Con los otros 5 448 se puede presupuestar, pero NO se
+    puede entregar el anexo que el pliego pide.
+
+3.6 EL RIESGO QUE NADIE MIRA: LA OFERTA DESBALANCEADA
+    En un contrato a precios unitarios, las cantidades del pliego son un
+    ESTIMATIVO y las mayores cantidades ordenadas deben reconocerse. Eso hace que
+    el precio de CADA ítem importe por separado, no solo el total:
+      · un ítem muy por ENCIMA del unitario oficial puede ser causal de exclusión
+        cuando el pliego fija precios unitarios máximos, y es la huella clásica
+        de la oferta desbalanceada que los comités revisan;
+      · un ítem muy por DEBAJO es donde se pierde plata si la entidad ordena
+        mayores cantidades de ese ítem.
+    Detekta hoy no mira ninguna de las dos cosas (hallazgo H-3).
+
+
+================================================================================
+4. ESTADO REAL DEL MÓDULO (inventario medido, no supuesto)
+================================================================================
+
+4.1 LAS DOS MITADES
+
+  MITAD A — LECTOR DE PLIEGOS                    MITAD B — EDITOR DE PRECIOS
+  ------------------------------------           ---------------------------------
+  lib/apu_pliego.js (56 KB)                      lib/apu/calculo.js (69 KB)
+  lib/apu_mapeo.js  (18 KB)                      lib/apu/catalogo.js (35 KB)
+  lib/apu_ocr.js, lib/apu_extraer.js             lib/apu/precios.js (38 KB)
+  public/pliego.js  (50 KB)                      lib/apu/importar.js (32 KB)
+  data/catalogo_apu.json                         data/apu_catalogo.json + 5 bancos
+  93 ítems SIN precio                            6 588 ítems CON precio
+  Reconoce: ítem, unidad, cantidad,              Cotiza: cascada de 12 niveles,
+  unitario oficial, capítulos, AIU               composición, AIU, región
+  3 vías de parseo + semáforo 2 ejes             Excel de 2 hojas con fórmulas
+
+  PUENTE ENTRE LAS DOS: ninguno.
+
+4.2 LOS SEIS CATÁLOGOS DE PRECIO Y SU CAPACIDAD DE PRODUCIR UN APU REAL
+
+  BANCO     ÍTEMS   CON COMPOSICIÓN   %       ¿PRODUCE HOJA DE APU?
+  catálogo    174        174        100,0 %   SÍ — calibrado contra contrato real
+  INVIAS      526        520         98,9 %   SÍ — oficial, regionalizado
+  EPC         440        440        100,0 %   SÍ — oficial, aritmética medida
+  IDU       3 172          0          0,0 %   NO — solo precio total
+  FFIE      1 042          0          0,0 %   NO — solo precio total (y es TOPE)
+  ICCU      1 234          0          0,0 %   NO — solo precio total
+  TOTAL     6 588      1 134         17,2 %
+
+  Lectura: el 82,8 % del catálogo sirve para saber CUÁNTO cuesta, no para
+  DEMOSTRARLO. Es el hueco entre «presupuestar» y «entregar el anexo».
+
+4.3 COBERTURA DEL MAPEO SOBRE UN FORMULARIO TÍPICO
+  Se midió con 28 descripciones típicas de un formulario de cantidades
+  colombiano (preliminares, movimiento de tierras, pavimentos, concretos,
+  alcantarillado, mampostería, acabados, señalización, redes):
+
+      firmes         14  (50 %)  → se presupuestan solas
+      revisar        14  (50 %)  → exigen que el usuario confirme
+      personalizados  0  ( 0 %)  → sin candidato
+
+  Lectura doble, y la segunda mitad es una buena noticia: NINGUNA descripción se
+  quedó sin candidato, o sea que los 6 588 ítems cubren el vocabulario real del
+  oficio. Lo que falta no es catálogo: es afinar el corte entre «firme» y
+  «revisar» y darle al usuario una forma rápida de confirmar la mitad dudosa.
+
+
+================================================================================
+5. HALLAZGOS
+================================================================================
+Cada uno se reprodujo ejecutando código. Prioridad: P1 bloquea el objetivo del
+encargo; P2 produce cifras equivocadas; P3 es fricción o deuda.
+
+--------------------------------------------------------------------------------
+H-1 · P1 · EL CAMINO DEL PLIEGO MAPEA CONTRA EL CATÁLOGO EQUIVOCADO (70,8x)
+--------------------------------------------------------------------------------
+QUÉ PASA
+  lib/apu_mapeo.js mapea contra data/catalogo_apu.json: 93 ítems que son un
+  DICCIONARIO DE RECONOCIMIENTO sin precios de costeo. lib/apu/importar.js mapea
+  contra el catálogo propio más los cinco bancos oficiales: 6 588 ítems con
+  precio. Son 70,8 veces más ítems y son los que tienen el precio.
+
+REPRODUCCIÓN (misma fila, los dos caminos)
+  «SUB-BASE GRANULAR CLASE C · m3 · 420»
+    · por el lector      → LOC-AFI-BASE («Base granular»), 0,524, «revisar»
+    · por el importador  → INVIAS:320,6,1 («SUB-BASE GRANULAR ... CLASE C»),
+                           0,85, «firme», con precio
+  El lector no solo se queda sin precio: se equivoca de ítem. Base granular y
+  subbase granular son actividades distintas con precios distintos.
+
+  Sobre los cinco ítems del Formulario 1 de prueba:
+    · camino actual del lector   → 2 firmes de 5, NINGUNO con precio (el catálogo
+                                   del lector no los tiene)
+    · camino del importador      → 3 firmes de 5, los 5 con precio
+
+  NOTA DE MÉTODO, porque el propio informe estuvo a punto de afirmar de más: en
+  una primera pasada leí mal el nombre del campo del resultado y di «0 firmes».
+  El número correcto es 2. Se deja escrito porque el repositorio ya documenta esa
+  lección —comprobar la FORMA que devuelve la función antes de declarar nada— y
+  porque cambia el titular sin cambiar la conclusión: lo grave de este hallazgo
+  no es cuántos aciertan, sino que ninguno acaba en un precio y que los que
+  «aciertan» pueden estar acertando el ítem equivocado.
+
+POR QUÉ IMPORTA
+  Es el camino que el encargo pide («cargar el proceso y que genere el APU») y es
+  el que recibe la peor herramienta del proyecto.
+
+CORRECCIÓN
+  El lector debe mapear contra el universo grande. La API ya lo admite: la acción
+  `importar` acepta `filas: [{descripcion, unidad, cantidad, precio_archivo}]`,
+  que es EXACTAMENTE la forma que ya produce el lector en `window.__pliegoUltimo`.
+
+--------------------------------------------------------------------------------
+H-2 · P1 · NO EXISTE PUENTE LECTOR → EDITOR, Y EL EXPORTADO NO SE PUEDE REIMPORTAR
+--------------------------------------------------------------------------------
+QUÉ PASA
+  Cero ocurrencias en todo el frontend de «usar en el editor», «pasar al
+  presupuesto», «llevar al editor» o equivalente. El lector tiene dos botones:
+  añadir fila y exportar. El exportado es un .json (public/pliego.js:548) y el
+  importador acepta «.xlsx,.xls,.csv» (public/index.html:1753). El archivo que
+  produce el lector no lo vuelve a leer ningún módulo del proyecto.
+
+  `window.__pliegoUltimo` (public/pliego.js:583) sí publica los ítems con su
+  `unitario_oficial`, pero su único consumidor es el guardián del Formulario 1
+  (public/app.js:4038). El editor de precios nunca lo mira.
+
+POR QUÉ IMPORTA
+  El usuario transcribe a mano. Con 150 ítems son horas y un riesgo de error por
+  fila, en el documento con el que se fija el precio de la oferta. Contradice
+  frontalmente la filosofía declarada del producto («cero fricción»).
+
+CORRECCIÓN (barata y verificada)
+  Un botón «Usar estos ítems en mi presupuesto» que tome `__pliegoUltimo.items`,
+  los mande a `POST /api/apu?op=importar` y vuelque el resultado en la tabla del
+  paso 3. Se probó ejecutando la cadena completa y funciona hoy sin tocar el
+  servidor: el contrato ya lo admite.
+
+--------------------------------------------------------------------------------
+H-3 · P1 · UN ÍTEM A 2,7x EL PRECIO OFICIAL PASA EN VERDE
+--------------------------------------------------------------------------------
+QUÉ PASA
+  lib/formulario1.js compara descripción, unidad y cantidad contra el Formulario
+  1, y el TOTAL contra el presupuesto oficial. No compara el precio unitario.
+
+REPRODUCCIÓN
+  Ítem 2.1, unitario oficial $95.000, ofertado a $260.000 (2,7x), con el total de
+  la oferta por debajo del presupuesto oficial:
+      semáforo: «listo»
+      ¿aparece 95.000 en la respuesta?  NO
+      ¿aparece 260.000 en la respuesta? NO
+  El desvío es invisible mientras el total cuadre.
+
+POR QUÉ IMPORTA
+  Es la comparación que el encargo pide y la que más plata mueve (sección 3.6).
+  Un desbalance no detectado es a la vez un riesgo de exclusión y una pérdida
+  silenciosa si la entidad ordena mayores cantidades del ítem barato.
+
+CORRECCIÓN
+  Añadir una validación 8 al guardián: desvío por ítem contra el unitario
+  oficial, con dos umbrales y dos lecturas distintas (por encima: riesgo de
+  rechazo; por debajo: riesgo de mayores cantidades). Regla del proyecto: sin
+  unitario oficial en el pliego el veredicto es «sin_referencia», nunca «cumple».
+
+--------------------------------------------------------------------------------
+H-4 · P2 · UN MAPEO «FIRME» PUEDE PRODUCIR UN PRECIO DEL DOBLE Y NADA LO VIGILA
+--------------------------------------------------------------------------------
+QUÉ PASA
+  «CONCRETO CLASE D 3000 PSI» mapea en FIRME (0,856, margen 0,138) contra
+  «630.4 CONCRETOS CLASE D, f'c = 3000 psi (vigas en puentes)» del ICCU, a
+  $1.183.877/m3. El concreto de vigas de puente lleva encofrado, altura y bombeo;
+  un concreto de 3000 psi ordinario ronda la mitad. La cabecera antes del
+  paréntesis es idéntica y el paréntesis, aquí, no es una precisión de gradación:
+  es OTRA OBRA. Había 9 variantes y se tomó la primera.
+
+  El repositorio ya resolvió este patrón para INVIAS (la similitud de edición se
+  mide contra la cabecera antes del paréntesis). Ese tratamiento no se aplica al
+  ICCU, donde el paréntesis cambia el destino de la obra.
+
+POR QUÉ IMPORTA
+  Es el falso positivo caro del módulo: «firme» significa que se presupuesta sin
+  preguntar. Un factor 2 en un ítem de concreto mueve el precio de la oferta.
+
+CORRECCIÓN
+  Control de sanidad de magnitud: cuando dos bancos cotizan el mismo ítem y
+  difieren más de un factor declarado, el mapeo no puede ser «firme» — baja a
+  «revisar» y muestra las dos cifras. Y cuando el paréntesis cambia el DESTINO
+  («en puentes», «en muros», «bajo agua»), tratarlo como discriminante y no como
+  ruido.
+
+--------------------------------------------------------------------------------
+H-5 · P2 · LA VÍA AUTOMÁTICA NO CLASIFICA 4 DE 6 OBJETOS DE OBRA
+--------------------------------------------------------------------------------
+REPRODUCCIÓN (lib/apu/inferencia.js, con su firma real)
+  MEJORAMIENTO DE VÍAS TERCIARIAS ... PLACA HUELLA   verde           6 ítems
+  CONSTRUCCIÓN DE PAVIMENTO RÍGIDO EN LA CARRERA 5   no_determinada  0
+  CONSTRUCCIÓN DE ALCANTARILLADO SANITARIO FASE II   no_determinada  0
+  MANTENIMIENTO Y ADECUACIÓN DE LA I. E. SAN JOSÉ    no_determinada  0
+  CONSTRUCCIÓN DE MURO DE CONTENCIÓN EN CONCRETO     no_determinada  0
+  CONSTRUCCIÓN DE PARQUE BIOSALUDABLE Y ESP. PÚBLICO amarillo        3 ítems
+
+DIAGNÓSTICO EXACTO
+  «Pavimento rígido» da VIA-RIG como ÚNICA candidata, con margen máximo (3 contra
+  0) y puntaje absoluto 3. El umbral amarillo es 6 y el verde 8. El diseño exige
+  ACUMULAR anclas, y los objetos de SECOP son cortos: un objeto bien escrito y sin
+  ambigüedad se queda por debajo del umbral. El UNSPSC no desempata: 7214 declara
+  13 tipologías compatibles.
+
+POR QUÉ IMPORTA MENOS DE LO QUE PARECE, Y AUN ASÍ IMPORTA
+  Cuando hay pliego, no hay que adivinar: el pliego trae la lista literal. La vía
+  automática es para cuando el pliego todavía no existe (PAA, proyecto de pliego),
+  y ahí sí es lo único que hay. Hoy la pantalla tiene invertidas las prioridades:
+  el paso 1 es «¿Qué va a construir?» (adivinar) y el lector de pliegos está
+  PLEGADO dentro de ese paso (public/index.html:1826). La fuente más fiable está
+  escondida y la menos fiable en primer plano.
+
+CORRECCIÓN
+  (a) Invertir el orden de la pantalla: primero «¿Tiene el pliego?», y solo si no
+      lo tiene, la vía de adivinar.
+  (b) No bajar los umbrales a ciegas — eso convertiría amarillos en verdes y el
+      verde es el único estado que presupuesta sin pedir el pliego. Si se
+      recalibra, hacerlo midiendo sobre objetos reales del corpus, no sintéticos.
+
+--------------------------------------------------------------------------------
+H-6 · P2 · CALIDAD DE DATOS: 12,1 % DE LOS ÍTEMS DEL ICCU TRAEN LA UNIDAD ROTA
+--------------------------------------------------------------------------------
+MEDICIÓN (unidad no reconocible, sobre el total de cada banco)
+      ICCU     149 de 1 234  (12,1 %)   ← corrimiento real de columnas
+      IDU      163 de 3 172  ( 5,1 %)   ← mayoría legítimas raras («jornal»)
+      FFIE       8 de 1 042  ( 0,8 %)   ← legítimas («PULG/LINEAL», «JG»)
+      INVIAS     7 de   526  ( 1,3 %)   ← legítimas («tf-m», «m3 - E»)
+      EPC        2 de   440  ( 0,5 %)   ← legítimas («ML/MES», «M3/KM»)
+
+  En el ICCU hay corrimiento de verdad: ítems cuya unidad contiene PRECIOS
+  («1.222.065 1.225.019 ...»), otros cuya unidad contiene la DESCRIPCIÓN
+  («TRINCHO EN MADERA», «SUMINISTRO E INSTALACIÓN DE BOLSACRETO»), y otros con la
+  palabra pegada («CONSTRUCCIÓNML», «CONSTRUCCIÓNM2»).
+
+POR QUÉ IMPORTA
+  La unidad pesa en el mapeo. Un ítem con la unidad rota nunca casará por unidad,
+  y si se acepta igual, se toma su precio sin poder verificar que la unidad
+  corresponde. En este módulo eso es plata.
+
+CORRECCIÓN
+  Añadir al capturador del ICCU la misma cerradura que ya tienen los otros: una
+  unidad que no esté en el vocabulario canónico ABORTA la captura de esa fila y
+  se CUENTA, en vez de guardarse. Mientras tanto, excluir del mapeo los ítems con
+  unidad no reconocible y publicar el conteo.
+
+--------------------------------------------------------------------------------
+H-7 · P3 · LA CASCADA DE PRECIOS RESERVA UN NIVEL «PLIEGO» QUE NADIE LLENA
+--------------------------------------------------------------------------------
+QUÉ PASA
+  La cascada de lib/apu/precios.js publica, en cada ítem cotizado:
+      { nivel: "pliego", etiqueta: "Pliego adjudicado", respondio: false,
+        precio: null, motivo: "Fuente no disponible en este despliegue" }
+  El segundo escalón de la cascada —por debajo solo del precio propio del
+  usuario— está reservado para el precio del pliego y está vacío.
+
+POR QUÉ IMPORTA
+  La arquitectura ya previó exactamente lo que el encargo pide y dejó el sitio
+  hecho. Llenarlo con el `unitario_oficial` que el lector ya extrae es la
+  implementación más natural posible de la comparación: no hay que inventar
+  ninguna estructura nueva.
+
+--------------------------------------------------------------------------------
+H-8 · P3 · EL LECTOR EXPORTA UN FORMATO QUE EL PROYECTO NO LEE
+--------------------------------------------------------------------------------
+  Ya descrito en H-2. Se separa porque tiene corrección propia y trivial: que el
+  lector exporte también .xlsx con el escritor que el proyecto ya tiene
+  (public/xlsx.js), de modo que el archivo sea reimportable aunque el usuario
+  pase por disco. Hoy el .json es un callejón sin salida.
+
+
+================================================================================
+6. LA COMPARACIÓN DE PRECIOS QUE PIDE EL ENCARGO: PROTOTIPO MEDIDO
+================================================================================
+
+Se construyó la comparación ENCADENANDO PIEZAS QUE YA EXISTEN, sin escribir
+lógica nueva de negocio: lector → mapeo del importador → cascada de cotización →
+diferencia por ítem. Salida real de la ejecución:
+
+  PRECIO DEL PLIEGO  vs  PRECIO QUE SUGIERE DETEKTA (departamento 11)
+
+  ÍTEM                          PLIEGO      DETEKTA       DIF   FUENTE
+  LOCALIZACIÓN Y REPLANTEO       2.500       15.197      -84%   epc_apu
+  SUB-BASE GRANULAR CLASE C     95.000      123.584      -23%   invias_apu
+  CONCRETO CLASE D 3000 PSI    520.000    1.183.877      -56%   iccu_apu
+  ACERO DE REFUERZO 60000 PSI    4.800        6.975      -31%   ffie_apu
+
+ADVERTENCIA DE HONESTIDAD, Y ES IMPORTANTE
+  Los precios «del pliego» de esta tabla los escribí yo para la prueba: la
+  diferencia agregada NO es una medición del mercado y no debe citarse como tal.
+  Lo que SÍ está medido es que LA CADENA TÉCNICA FUNCIONA HOY: el lector extrae,
+  el mapeo resuelve contra los cinco bancos, la cascada cotiza y la diferencia se
+  calcula. Y dentro del prototipo apareció un defecto real: el concreto a
+  $1.183.877 es el mapeo malo de H-4.
+
+CÓMO DEBE PRESENTARSE (criterio de producto, no de cálculo)
+  El proyecto tiene una regla que manda sobre todas: «si para entender un número
+  hace falta leer un párrafo, el número está mal elegido». Aplicada aquí:
+
+  · NO mostrar «-23 %» a secas. Un porcentaje invita a compararlo entre ítems que
+    no son comparables.
+  · SÍ mostrar el HECHO y su consecuencia:
+      «El pliego paga $95.000/m3 por la subbase. La referencia oficial del INVIAS
+       para su departamento es $123.584. Si su costo real se parece al oficial,
+       este ítem se paga por debajo del costo.»
+  · Ordenar por PLATA EN JUEGO (diferencia x cantidad), no por porcentaje: un
+    -84 % en un ítem de $2.500 pesa menos que un -23 % en 420 m3.
+  · Distinguir SIEMPRE las dos direcciones, porque significan cosas opuestas:
+      por DEBAJO del oficial → el pliego presupuesta apretado: revise su costo
+                               antes de ofertar, y ojo con las mayores cantidades.
+      por ENCIMA del oficial → hay margen en ese ítem, y si el pliego fija
+                               unitarios máximos, verificar que no se supere.
+  · Sin unitario oficial en el pliego, la celda dice «—» con su motivo. Jamás 0.
+    Es la regla de «sin dato ≠ cero» del proyecto, aquí con consecuencia
+    económica directa.
+
+
+================================================================================
+7. COMPETENCIA: QUÉ HACEN, QUÉ COPIAR Y QUÉ NO
+================================================================================
+
+7.1 EL MAPA
+
+  PRESUCOSTO (Colombia) — EL COMPETIDOR MÁS CERCANO
+    Sincroniza contratos desde datos.gov.co, alerta por especialidad y
+    departamento, descarga los documentos del proceso, y —lo importante— LEE EL
+    PLIEGO CON IA (Gemini) y extrae la lista de ítems con cantidades, la fórmula
+    de ajuste y LOS MAPEA A LOS APU DEL USUARIO. Declara comparar automáticamente
+    el presupuesto oficial contra el APU construido e identificar los ítems por
+    encima y por debajo antes de entregar.
+    LECTURA: es exactamente el encargo, ya en el mercado. La ventaja de Detekta
+    no puede ser la idea; tiene que ser la TRAZABILIDAD (ver 7.2).
+
+  LICITIA (Colombia)
+    Agente de IA sobre SECOP I y II, tablero kanban de procesos, calculadora de
+    AIU, búsqueda semántica en documentos, API REST e integraciones.
+    LECTURA: compite en la capa de gestión, no en la de costeo. Su calculadora de
+    AIU es superficial comparada con el motor de Detekta.
+
+  ONEESTIMATE (LATAM)
+    Medición automática sobre planos (PDF, DWG, imagen), precios precargados por
+    país en 18 países, generación del formato AIU colombiano.
+    LECTURA: su diferencial es la medición sobre planos, que Detekta no hace y
+    NO debería intentar. Su base de precios es amplia y poco trazable.
+
+  OPUS / PRESTO / SINCO / CONSTRUDATA
+    Motores tradicionales de presupuesto. Construdata es la referencia de precios
+    del mercado colombiano.
+    LECTURA: son herramientas de escritorio para el ingeniero de costos. No
+    deciden a qué presentarse ni conocen SECOP. No compiten en el mismo eje.
+
+7.2 QUÉ TIENE DETEKTA QUE NINGUNO DECLARA TENER
+  · CINCO BANCOS OFICIALES CON PROCEDENCIA (INVIAS, IDU, EPC, FFIE, ICCU) más el
+    retail y un contrato adjudicado real. Cada precio viaja con su fuente,
+    vigencia, ámbito y nivel. Ningún competidor declara este nivel de
+    trazabilidad; la mayoría dice «precios actualizados» sin decir de dónde.
+  · CALIBRACIÓN CONTRA UN CONTRATO ADJUDICADO REAL: 149 de 157 ítems reproducidos
+    al peso. Eso no es una base de datos: es una prueba de que el motor calcula
+    como calculó quien ganó.
+  · LA CADENA DE DECISIÓN: probabilidad de ganar, baja de mercado por entidad,
+    piso y techo, valor esperado. Ningún competidor de costeo la tiene, y ningún
+    competidor de licitaciones tiene el motor de costo.
+  · LA DOCTRINA DE NO AFIRMAR LO QUE EL DATO NO SOSTIENE. Es un diferencial
+    comercial real frente a herramientas que rellenan huecos con estimaciones.
+
+7.3 QUÉ COPIAR
+  (1) La comparación ítem a ítem contra el presupuesto oficial, de PresuCosto. Es
+      el mayor valor por unidad de esfuerzo de todo este informe, y aquí sale más
+      barata que a ellos porque las piezas ya están (sección 6).
+  (2) El flujo «pegue el número del proceso y yo traigo todo», de PresuCosto.
+      Detekta ya tiene el corpus y el botón APU en la tarjeta; falta que ese
+      botón arrastre también los DOCUMENTOS del proceso.
+  (3) El tablero de estado por proceso, de LicitIA. Detekta ya tiene «Mis
+      procesos»; falta que el estado del APU aparezca ahí.
+
+7.4 QUÉ NO COPIAR, Y POR QUÉ
+  · LA MEDICIÓN SOBRE PLANOS (OneEstimate). Exige un visor CAD y un motor de
+    geometría. Rompe la regla de cero dependencias y no resuelve el problema del
+    usuario, que ya recibe las cantidades en el Formulario 1.
+  · LEER EL PLIEGO CON UN LLM EN LA RUTA DE LA PETICIÓN (PresuCosto usa Gemini).
+    Aquí hay una decisión estratégica que conviene tomar con los ojos abiertos y
+    que se desarrolla en 7.5.
+
+7.5 LA DECISIÓN ESTRATÉGICA DEL LLM: EL ANÁLISIS HONESTO
+  El repositorio decidió no implementar el «Nivel C» de desempate con LLM porque
+  el proyecto no tiene dependencias ni llamadas externas, y meter una en la ruta
+  de una petición añade latencia y un modo de fallo a un cálculo hoy
+  determinista. Esa decisión sigue siendo correcta PARA EL CÁLCULO.
+  Pero el competidor no usa el LLM para calcular: lo usa para LEER, que es
+  justamente donde Detekta es más débil (el mapeo deja el 50 % en «revisar»).
+  Son dos usos distintos y merecen dos decisiones distintas:
+
+      CALCULAR con LLM   → NO. El costo debe ser determinista, auditable y
+                           reproducible. Aquí el proyecto tiene razón y no hay
+                           nada que revisar.
+      LEER con LLM       → decisión abierta, con tres condiciones si algún día se
+                           toma: (a) fuera de la ruta de la petición, como paso
+                           opcional que el usuario dispara; (b) su salida entra
+                           como SUGERENCIA que el usuario confirma, nunca como
+                           dato; (c) el sistema sigue funcionando entero sin él.
+  RECOMENDACIÓN: no tomar esa decisión ahora. Primero cerrar el cable (H-2) y la
+  comparación (H-3), que no necesitan LLM y capturan la mayor parte del valor.
+  Medir entonces cuánto queda realmente en «revisar» con el catálogo grande. Si
+  ese resto sigue siendo grande, se reabre la discusión con una cifra encima de
+  la mesa en vez de con una intuición.
+
+
+================================================================================
+8. PLAN DE ACCIÓN PRIORIZADO
+================================================================================
+Ordenado por valor entregado sobre esfuerzo. Los tres primeros cierran el
+objetivo del encargo.
+
+  A1 · EL CABLE: «USAR ESTOS ÍTEMS EN MI PRESUPUESTO»            (H-2, H-1, H-8)
+       Botón en el lector que manda `__pliegoUltimo.items` a
+       `POST /api/apu?op=importar` y vuelca el resultado en la tabla del paso 3.
+       El servidor NO se toca: el contrato ya lo admite (verificado ejecutando).
+       Efecto medido: el mapeo de los ítems del pliego pasa de 2/5 firmes SIN
+       precio a 3/5 firmes CON precio, y de 93 ítems a 6 588.
+       Cerradura: prueba que ejecute la cadena lector → importar y exija que el
+       ítem mapee al banco correcto; debe FALLAR contra el árbol de hoy.
+
+  A2 · LA COMPARACIÓN CONTRA EL PRECIO OFICIAL                        (H-3, H-7)
+       Llenar el nivel «pliego» de la cascada con el `unitario_oficial` y añadir
+       la validación 8 al guardián del Formulario 1: desvío por ítem, con las dos
+       lecturas de la sección 6. Presentación según el criterio de producto de la
+       sección 6, ordenando por plata en juego.
+       Cerradura: el caso de las 2,7x debe dejar de salir «listo».
+
+  A3 · INVERTIR EL ORDEN DE LA PANTALLA DE PRECIOS                         (H-5)
+       El paso 1 pasa a ser «¿Tiene el pliego del proceso?» con el lector a la
+       vista; la vía de adivinar la tipología queda como alternativa para cuando
+       no hay pliego. Ningún id cambia — se MUEVEN los nodos, que es como el
+       proyecto ya resolvió la reorganización de Mi empresa.
+       Cerradura: prueba de orden, como la que ya existe para los tres pasos.
+
+  A4 · CONTROL DE SANIDAD DE MAGNITUD EN EL MAPEO                          (H-4)
+       Cuando dos bancos cotizan el mismo ítem con una diferencia mayor que un
+       factor declarado, el mapeo no puede ser «firme». Y el paréntesis que
+       cambia el DESTINO de la obra es discriminante, no ruido.
+       Cerradura: el concreto de vigas de puente no puede volver a salir firme
+       para «CONCRETO CLASE D 3000 PSI».
+
+  A5 · HIGIENE DE LA UNIDAD EN EL BANCO ICCU                               (H-6)
+       Cerradura en el capturador (unidad fuera del vocabulario canónico → aborta
+       y cuenta) y exclusión del mapeo mientras tanto, con el conteo publicado.
+
+  A6 · CERRAR EL HUECO DEL DESGLOSE (17,2 % → más)                    (sección 4.2)
+       Para los 5 448 ítems sin composición, el sistema puede entregar el precio
+       pero no el anexo. Dos caminos, y conviene decir cuál NO tomar:
+         · NO inventar una composición plausible. Sería exactamente el falso
+           positivo caro de este módulo, y encima firmado por un ingeniero.
+         · SÍ declararlo en pantalla y en el Excel: «este precio es de referencia
+           oficial y no trae composición publicada; para radicar el APU hay que
+           componerlo». Ya existe el estado visual; falta que el usuario entienda
+           la consecuencia ANTES de exportar.
+         · SÍ ofrecer, cuando exista un ítem equivalente CON composición en otro
+           banco, tomar la composición de ese y el precio del oficial, DECLARANDO
+           el cruce. Es derivación trazable, no invención.
+
+  A7 · MEDIR CONTRA PLIEGOS REALES
+       El banco da 100 % sobre un corpus sintético escrito por el autor del
+       parser: mide previsión, no cobertura. La tasa real sigue sin medir y así
+       está declarado en el repositorio. Está APARCADO por decisión del dueño
+       («cuando necesite arreglarlo te diré») y no se retoma aquí; se deja anotado
+       porque A1 y A2 aumentan lo que está en juego: cuanto más automático sea el
+       camino, más pesa saber cuánto acierta de verdad. Bastan 15-20 pliegos
+       reales para cerrarlo.
+
+
+================================================================================
+9. LO QUE NO SE DEBE HACER (y por qué)
+================================================================================
+  · NO fusionar los dos catálogos. Responden preguntas distintas —«¿qué ítem es
+    esta fila?» y «¿cuánto cuesta?»— y la separación es correcta. Lo que hay que
+    arreglar es a cuál apunta el lector, no fundirlos.
+  · NO bajar los umbrales del clasificador para que salgan más verdes. El verde
+    es el único estado que presupuesta sin pedir el pliego.
+  · NO inventar composiciones para los ítems que no la traen.
+  · NO cambiar el factor prestacional del 55 % por una cifra de fuente
+    secundaria. Está contrastado contra fuentes primarias y encerrado por prueba.
+  · NO meter un LLM en la ruta del cálculo. Ver 7.5.
+  · NO añadir un sexto banco de precios sin medir el peso de la respuesta: los
+    cinco actuales ocupan 2,23 MB de los 4,5 MB del límite de Vercel, y ese fallo
+    solo se ve en producción. Si hace falta espacio, se recortan CAMPOS, no ítems.
+  · NO crear un endpoint nuevo bajo api/. Se pliega como `op` del router de su
+    dominio. Hoy api/ está en 6 de 12 y la suite fija el conteo en 6.
+
+
+================================================================================
+10. MEDIDO · SUPUESTO · NO VERIFICABLE DESDE AQUÍ
+================================================================================
+
+MEDIDO (ejecutando código de este repositorio, 24-ago-2026)
+  · 93 ítems en el catálogo del lector; 6 588 en el del editor (ratio 70,8x).
+  · 1 134 de 6 588 ítems con composición (17,2 %). Por banco: catálogo 174/174,
+    INVIAS 520/526, EPC 440/440, IDU 0/3 172, FFIE 0/1 042, ICCU 0/1 234.
+  · La misma fila mapea a ítems distintos por los dos caminos, y el del lector se
+    equivoca (base granular en vez de subbase).
+  · 2 firmes de 5 por el camino del lector (ninguno con precio); 3 de 5 por el
+    del importador, los cinco con precio.
+  · Un ítem a 2,7x el unitario oficial sale «listo» y sus cifras no aparecen en
+    la respuesta del guardián.
+  · 4 de 6 objetos típicos de obra dan «no_determinada»; «pavimento rígido» saca
+    3 puntos contra un umbral amarillo de 6, siendo candidata única.
+  · Cobertura del mapeo sobre 28 descripciones típicas: 50 % firme, 50 % revisar,
+    0 % sin candidato.
+  · Unidad no reconocible: ICCU 149/1 234 (12,1 %), IDU 163/3 172, FFIE 8/1 042,
+    INVIAS 7/526, EPC 2/440. En el ICCU hay corrimiento real de columnas.
+  · La cascada publica un nivel «pliego / Pliego adjudicado» que responde vacío.
+  · El lector exporta .json; el importador acepta .xlsx/.xls/.csv.
+  · Cero ocurrencias de un puente lector→editor en todo el frontend.
+  · La cadena lector → importar → cotizar → diferencia por ítem funciona hoy.
+  · 12 731 líneas en el módulo; 10,64 MB de bancos en disco.
+  · Suite completa en verde (4/4) y banco del lector con los suelos superados.
+
+SUPUESTO (declarado como tal, no medido)
+  · Que un concreto de 3000 psi ordinario cuesta del orden de la mitad del de
+    vigas en puentes. Es criterio de oficio y sostiene el hallazgo H-4, pero no
+    se contrastó contra una cotización real.
+  · Que las 28 descripciones de prueba representan un formulario de cantidades
+    típico. Las escribí yo, igual que el corpus del banco: miden previsión, no
+    cobertura del universo real.
+  · Los precios «del pliego» del prototipo de la sección 6 son inventados para la
+    prueba. La diferencia agregada NO es una medición de mercado.
+  · Que el 50 % en «revisar» se reduciría afinando el corte. Es una hipótesis
+    razonable; hay que medirla después de A1.
+
+NO VERIFICABLE DESDE AQUÍ (y por qué)
+  · El proxy de esta sesión BLOQUEA presucosto.com y hubservice.io
+    (EGRESS_BLOCKED). La descripción de PresuCosto y OneEstimate procede de
+    resultados de búsqueda, no de sus páginas. Sus funcionalidades exactas y sus
+    precios NO están verificados de primera mano. Antes de tomar una decisión
+    comercial con esto, abrir esas páginas desde un navegador normal.
+  · No se pudo consultar datos.gov.co en esta sesión, así que no se contrastó el
+    prototipo contra un pliego real de SECOP II. Nota de método del repositorio:
+    un 403 anotado es una observación CON FECHA, no una propiedad del entorno;
+    volver a intentarlo antes de dar la fuente por perdida.
+  · Que un pliego colombiano fije precios unitarios MÁXIMOS cuya superación sea
+    causal de exclusión está documentado en fuentes españolas; en Colombia
+    depende del Documento Base de cada proceso. La validación 8 de A2 debe
+    redactarse como «verifique el numeral del pliego», nunca afirmando la norma.
+
+
+================================================================================
+11. TAREAS PENDIENTES Y PASO A PASO
+================================================================================
+Todo se ejecuta sobre la rama main, según la decisión del dueño del 21-ago-2026.
+
+  PASO 0 · SITUARSE (2 minutos)
+      git checkout main
+      git pull origin main
+      node tests/e2e.js            → debe decir 4/4 en verde antes de tocar nada
+
+  PASO 1 · A1, EL CABLE  (el de mayor valor por esfuerzo)
+      1.1  Escribir PRIMERO la prueba en tests/e2e.js: parsear un Formulario 1,
+           pasar sus ítems por `mapearFilasImportadas` y exigir que
+           «SUB-BASE GRANULAR CLASE C» resuelva a INVIAS y no a LOC-AFI-BASE.
+      1.2  Comprobar por MUTACIÓN que esa prueba FALLA contra el árbol de hoy.
+           Si pasa, la prueba no vale y hay que reescribirla.
+      1.3  Añadir en public/pliego.js el botón «Usar estos ítems en mi
+           presupuesto», que toma `__pliegoUltimo.items`, llama a
+           `POST /api/apu?op=importar` y entrega el resultado al paso 3.
+      1.4  node tests/e2e.js && node tests/apu_bench.js
+      1.5  ABRIR LA PÁGINA EN UN NAVEGADOR REAL. Es obligatorio al tocar public/:
+           este repositorio ya sufrió un fallo mudo que ninguna prueba de Node
+           podía ver. Medir también a 390 px de ancho.
+      1.6  git commit -m "El lector de pliegos alimenta el presupuesto"
+           git push -u origin main
+
+  PASO 2 · A2, LA COMPARACIÓN
+      2.1  Prueba primero: el caso de las 2,7x NO puede salir «listo».
+      2.2  Llenar el nivel «pliego» de la cascada con el `unitario_oficial`.
+      2.3  Validación 8 en lib/formulario1.js, con las dos lecturas y con
+           «sin_referencia» cuando el pliego no publique unitarios.
+      2.4  Pintar la comparación según el criterio de la sección 6: hecho y
+           consecuencia, ordenado por plata en juego, «—» cuando no hay dato.
+      2.5  Suite, banco, navegador, commit, push.
+
+  PASO 3 · A3, EL ORDEN DE LA PANTALLA
+      3.1  Mover los nodos sin renombrar un solo id.
+      3.2  Prueba de orden y de que los ids siguen existiendo.
+      3.3  Navegador real, commit, push.
+
+  PASO 4 · A4 Y A5, CALIDAD DEL MAPEO Y DE LOS DATOS
+      Sanidad de magnitud y unidad del ICCU. Cada uno con su cerradura y su
+      comprobación por mutación.
+
+  PASO 5 · CERRAR EL CICLO
+      5.1  Escribir en CLAUDE.md la DECISIÓN y su motivo, no el changelog.
+      5.2  Preguntarse qué otro sitio del repositorio tiene el mismo patrón: el
+           de H-1 (dos módulos que resuelven la misma pregunta con universos
+           distintos) es el que más conviene rastrear.
+
+  DECISIONES QUE NECESITAN AL DUEÑO, NO AL EQUIPO TÉCNICO
+      D1  ¿Se abre la puerta a leer el pliego con un LLM fuera de la ruta de la
+          petición? Recomendación: decidirlo DESPUÉS de A1 y A2, con la cifra de
+          cuánto queda en «revisar» encima de la mesa (7.5).
+      D2  ¿Se levanta el aparcamiento de A7 (medir contra pliegos reales)? Hacen
+          falta 15-20 pliegos que solo el dueño puede aportar. A1 y A2 aumentan lo
+          que está en juego en esa medición.
+      D3  ¿Se prioriza cerrar el hueco del desglose (A6) o ampliar cobertura? Son
+          dos productos distintos: «presupuestar rápido» y «radicar el anexo».
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================
