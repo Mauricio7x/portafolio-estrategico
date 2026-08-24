@@ -2446,6 +2446,77 @@ async function main() {
     assert.strictEqual(r.procesos_analizados, 8, `analizados: ${r.procesos_analizados}`);
     let idx = await indiceBaja.leerIndiceBaja(redis);
 
+      /* ══════ LA DISPERSIÓN DE LA BAJA SE MIDE, NO SE SUPONE (ago 2026) ══════
+         `multiplicadorPrecio` deriva su σ del IQR de la celda y, cuando el IQR
+         es 0, cae a `DISPERSION_DEFECTO` = 4 pp — una constante sin fuente que
+         DECIDE probabilidades: con mediana 35 % y baja máxima 20 %, σ = 4 lleva
+         el factor de precio al suelo de 0,01 (el proceso se va al fondo del
+         orden) mientras que con σ ≈ 25 pp el mismo caso da ≈ 0,56.
+
+         En 13 entidades de ejemplo de producción la σ medida iba de 2,2 a
+         43,7 pp con mediana 24,5 —seis veces el defecto—, pero eran los
+         EXTREMOS del índice, no una muestra: calibrar con eso sería la
+         suavización que este proyecto prohíbe. Se MIDE sobre el corpus entero
+         y se publica, igual que `baja_exactamente_cero` publica el cruce de
+         columnas. La constante no se toca hasta tener esa medición. */
+      {
+        const IB = require("../lib/indice_baja.js");
+        const R = require("../lib/apu/rentabilidad.js");
+
+        // 1 · UNA sola fuente de verdad del defecto: el índice lo IMPORTA, no lo copia
+        const fuenteIB = fs.readFileSync(path.join(__dirname, "..", "lib", "indice_baja.js"), "utf8");
+        assert.ok(/rentabilidad\.js"\)\.DISPERSION_DEFECTO/.test(fuenteIB),
+          "el índice tiene que importar el defecto de su dueño: copiar el número sería una segunda fuente de verdad");
+        assert.ok(!/DISPERSION_DEFECTO_MOTOR\s*=\s*[0-9]/.test(fuenteIB),
+          "el defecto no puede estar escrito a mano en el índice");
+        assert.strictEqual(typeof R.DISPERSION_DEFECTO, "number");
+
+        // 2 · la meta del índice publica la medición
+        const meta = r;   // la meta que acaba de devolver construirIndiceBaja
+        {
+          assert.ok(meta.dispersion && typeof meta.dispersion === "object",
+            "indice:baja:meta tiene que publicar `dispersion`");
+          const d = meta.dispersion;
+          for (const k of ["celdas", "iqr_cero", "medibles", "defecto_del_motor", "nota"]) {
+            assert.ok(Object.prototype.hasOwnProperty.call(d, k), `la medición tiene que publicar «${k}»`);
+          }
+          // INVARIANTE: nada se pierde entre las dos cubetas
+          assert.strictEqual(d.iqr_cero + d.medibles, d.celdas,
+            `iqr_cero (${d.iqr_cero}) + medibles (${d.medibles}) ≠ celdas (${d.celdas}): se perdió una celda`);
+          assert.strictEqual(d.defecto_del_motor, R.DISPERSION_DEFECTO,
+            "la meta tiene que publicar el defecto REAL del motor, no otro");
+          // sin celdas medibles los percentiles son null, JAMÁS 0
+          if (!d.medibles) {
+            for (const k of ["iqr_p25", "iqr_mediana", "iqr_p75", "sigma_mediana"]) {
+              assert.strictEqual(d[k], null, `sin celdas medibles «${k}» tiene que ser null, no 0`);
+            }
+          }
+          console.log(`  · dispersión de la baja MEDIDA: ${d.celdas} celdas · ${d.iqr_cero} sin dispersión medible `
+            + `· ${d.medibles} medibles${d.sigma_mediana != null ? ` · sigma mediana ${d.sigma_mediana} pp` : ""} `
+            + `· defecto del motor ${d.defecto_del_motor} pp`);
+        }
+
+        /* 3 · POR QUÉ IMPORTA, ejecutado: el mismo caso con la dispersión del
+           defecto y con la observada da dos probabilidades incomparables. */
+        const caso = (p25, p75) => R.multiplicadorPrecio({
+          baja_ofertada_pct: 20, baja_mediana_pct: 35, baja_p25: p25, baja_p75: p75,
+        });
+        const conDefecto = caso(35, 35);      // IQR 0 → cae al defecto
+        const conObservada = caso(22, 42);    // IQR 20 → sigma ≈ 14,8
+        assert.strictEqual(conDefecto.sigma, R.DISPERSION_DEFECTO,
+          "con IQR cero el motor tiene que usar su defecto, nunca sigma 0 (certeza absoluta donde menos se sabe)");
+        assert.ok(conObservada.sigma > conDefecto.sigma * 3,
+          "la dispersión observada es mucho mayor que el defecto: esa es la cifra que hay que medir");
+        assert.ok(conDefecto.multiplicador < conObservada.multiplicador / 100,
+          "el defecto estrecho hunde la probabilidad: por eso no se cambia a ojo ni se deja sin medir");
+
+        // 4 · un IQR NEGATIVO o ilegible no puede producir una sigma inventada
+        for (const [p25, p75] of [[42, 22], [null, 30], [30, null], ["a", "b"]]) {
+          assert.strictEqual(caso(p25, p75).sigma, R.DISPERSION_DEFECTO,
+            `IQR (${p25}, ${p75}) no es utilizable: tiene que caer al defecto declarado`);
+        }
+      }
+
     /* 2. la entidad que baja 5-10 % se clasifica «alto» */
     const bAgresiva = indiceBaja.bajaDeMercado(idx, { entidad: AGRESIVA, departamento_entidad: "ANTIOQUIA", codigo_principal_de_categoria: "72141100" });
     assert.strictEqual(bAgresiva.nivel, "alto", `AGRESIVA debía ser «alto»: ${JSON.stringify(bAgresiva)}`);

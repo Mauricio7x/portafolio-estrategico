@@ -3611,7 +3611,10 @@ vista pública «Cómo calculamos» en *Precios*. Metodología y estado de verif
   8, 7,33 ni 210. La Ley 2101 entra como **`factor_jornada` = horas de calibración ÷ horas
   vigentes (44/42)** sobre la CANTIDAD (días) de las líneas de MO —no sobre el jornal, que es el
   dato calibrado—; cada línea publica el factor y `cantidad × precio = valor` sigue cuadrando. NO se
-  aplica al equipo (alquiler por día calendario; extenderlo sería asumir): pendiente medible.
+  aplica al equipo (alquiler por día calendario; extenderlo sería asumir). **YA NO ES UN PENDIENTE:**
+  se midió y se cerró el 16-ago-2026 —ver «El factor de jornada NO se aplica al equipo» más abajo—,
+  con prueba que fija la medición. Esta línea decía «pendiente medible» y contradecía a aquella; una
+  memoria que se contradice a sí misma es fuente de error, igual que una que da por hecho lo que no está.
 - **Sin `parametros` el motor calcula EXACTAMENTE como antes** (`costoDirecto(item, cat, region,
   opciones)`, opciones neutras por defecto): así se prueba la calibración Nogal. El HANDLER de
   `calcular` y `cotizar` los carga SIEMPRE (`parametrosParaMotor`: Redis → DEFAULTS declarados en
@@ -4899,3 +4902,39 @@ procesos servidos**, `estado_del_procedimiento` vale «Publicado» en 1 133 y **
 - **La cerradura EJECUTA `lineaRequisitos`**, no comprueba por regex que se llame. De paso se reforzó
   la guarda preexistente de la tarjeta —que exigía la llamada literal `(puertas, l.manifestacion)` y
   se rompía con cualquier argumento nuevo— en vez de debilitarla para que pasara el cambio.
+
+### La dispersión de la baja se MIDE, no se supone (24-ago-2026)
+
+Salió de mirar el `indice:baja` de producción: entre los ejemplos de baja alta, la **ASOCIACIÓN DE
+MUNICIPIOS … BOSQUES** publica `p25 = mediana = p75 = 35` sobre **57 procesos** — IQR cero, la huella
+que esta memoria ya reconoce como sospechosa (caso de la emulsión CRL-0 idéntica en las 140
+provincias del INVIAS).
+
+- **`multiplicadorPrecio` deriva su σ del IQR de la celda** (`(p75 − p25) / 1.349`) y, cuando el IQR
+  no es utilizable, cae a `DISPERSION_DEFECTO = 4 pp`. **La hipótesis de una división por cero era
+  FALSA**: la guarda `p75 > p25` ya existe y el motor nunca usa σ = 0 — que sería certeza absoluta
+  justo donde menos se sabe, la lección que `rivales_desv` ya aprendió en el índice de competencia.
+- **Lo que sí es cierto: ese 4,0 es un SUPUESTO SIN FUENTE**, y era la única de las tres constantes
+  de ese módulo sin comentario que la justificara. Y **decide probabilidades**: con mediana 35 % y
+  baja máxima 20 %, σ = 4 lleva el factor de precio al suelo de **0,01** —el proceso se va al fondo
+  del orden— mientras que con σ ≈ 14,8 el mismo caso da **0,56**.
+- **Medido sobre las 13 entidades de ejemplo de producción**: σ de 2,2 a 43,7 pp, **mediana 24,5 —seis
+  veces el defecto—**, y 3 de 13 con IQR cero. **NO SE CAMBIÓ LA CONSTANTE**: esos 13 son los
+  EXTREMOS que publica la meta, no una muestra, y calibrar con ellos sería la «suavización» que este
+  proyecto prohíbe («los factores son supuestos con nombre, no coeficientes ajustados»).
+- **Lo que se hizo es que el índice lo MIDA solo** (`medirDispersion` → `indice:baja:meta.dispersion`):
+  celdas, cuántas sin dispersión medible, percentiles del IQR, σ mediana y cuántas celdas medibles
+  caen por debajo del defecto del motor. Es el mismo movimiento que `baja_exactamente_cero` con el
+  cruce de columnas, y el mismo que `por_modalidad` con el régimen especial: **convertir una sospecha
+  en una cifra que la próxima reconstrucción responde sola.** Con esa medición delante se decide.
+- **`iqr_cero` NO es «dispersión cero»: es «no se pudo medir»** —el histograma es de puntos
+  porcentuales enteros y una celda concentrada lo colapsa— y por eso se cuenta aparte y jamás entra
+  en los percentiles. Sin celdas medibles, los percentiles viajan en `null`, nunca en 0. Invariante
+  con prueba: `iqr_cero + medibles = celdas`.
+- **El defecto se IMPORTA de su dueño** (`lib/apu/rentabilidad.DISPERSION_DEFECTO`, `require`
+  diferido: este módulo no puede depender de `apu/` en tiempo de carga). Copiar el 4,0 en el índice
+  sería una segunda fuente de verdad de una cifra que multiplica probabilidades, y hay prueba que
+  prohíbe escribirlo a mano.
+- **Lo que este entorno no pudo medir**: la distribución real sobre las 2 766 entidades del índice de
+  producción. La suite solo ejercita una celda. La cifra llega con la próxima reconstrucción
+  (`/api/procesos?op=historico&reconstruir_baja=true`).
