@@ -33,6 +33,8 @@
 | **L-14** | Responsabilidad por la cifra | La aplicación produce un precio de oferta y una probabilidad | **PARA ABOGADO** | **NO**, pero es el riesgo más caro | Ver §3 |
 | **L-15** | Marca «Detekta» | Solicitud en línea ante la SIC: **$1.347.500** por clase; clase adicional **$674.000** (Resolución 77243 de 2025, vigente desde el 1-ene-2026). Hay tarifas reducidas acreditando MIPYME | **VERIFICADO** | **NO** | Búsqueda de antecedentes **antes** de imprimir el nombre |
 | **L-16** | Registro del software ante la DNDA | No obligatorio; da fecha cierta de autoría | **HIPÓTESIS** | **NO** | Opcional, barato, recomendable |
+| **L-17** | **El dueño es contratista por prestación de servicios de ENTerritorio** | Ver §7. La premisa de partida era falsa: ENTerritorio **no es sociedad de economía mixta**, es **Empresa Industrial y Comercial del Estado** vinculada al DNP (Decreto 495 de 2019) | **VERIFICADO** en la naturaleza y en el régimen general · **PARA ABOGADO** en el caso concreto | **NO** para vender software a privados | §7 |
+| **L-18** | Constitución de la sociedad | Documento privado, sin notaría; matrícula $75.000–$120.000 más formulario de $4.300; NIT gratis; 1–3 días hábiles | **VERIFICADO** | **SÍ** (es el vehículo que factura) | Paso a paso en `docs/EMPEZAR_AQUI.md` Parte 2 |
 
 ---
 
@@ -111,6 +113,7 @@ que la pantalla «se vea mejor» **aumenta la exposición jurídica**. No es sol
 
 ## 5. SECUENCIA (qué antes que qué)
 
+0. **Leer el propio contrato con ENTerritorio y avisar por escrito** (§7.5). Va antes que constituir.
 1. **Decidir el vehículo que factura.** Bloquea todo lo demás; es la pregunta 1 de `docs/PLAN_SAAS.md` §9.
 2. **Contratar Pro** (L-1) y **pedir la autorización al INVIAS** (L-7). Los dos el primer día: uno
    cuesta veinte dólares y el otro depende de un tercero.
@@ -121,10 +124,73 @@ que la pantalla «se vea mejor» **aumenta la exposición jurídica**. No es sol
 
 ---
 
-## 6. TRES COLUMNAS
+## 7. LA SITUACIÓN PARTICULAR DEL DUEÑO: CONTRATISTA POR OPS DE ENTERRITORIO
+
+> Se analiza aparte porque **no es un tema del producto: es un tema de la persona**, y porque la
+> premisa con la que llegó la pregunta era incorrecta.
+
+### 7.1 · Corrección de la premisa
+
+La consulta decía «una entidad de economía mixta como lo es ENTerritorio S.A.». **No lo es.**
+ENTerritorio es una **Empresa Industrial y Comercial del Estado**, de carácter financiero, con
+personería jurídica y patrimonio propio, **vinculada al Departamento Nacional de Planeación** y
+vigilada por la Superintendencia Financiera; nació de la transformación de FONADE por el **Decreto 495
+del 20 de marzo de 2019**. Una sociedad de economía mixta tiene capital privado junto al público;
+ENTerritorio es **íntegramente estatal**.
+
+**Importa porque decide qué régimen se analiza.** Llevarle al abogado una calificación equivocada le
+hace revisar normas que no son las del caso.
+
+### 7.2 · Lo que está establecido, y no admite mucha discusión
+
+| Afirmación | Estado |
+|---|---|
+| Un contratista de prestación de servicios **no es servidor público** ni titular de empleo público, y queda fuera del art. 128 de la Constitución | **VERIFICADO** |
+| Las inhabilidades e incompatibilidades son **taxativas y de interpretación restrictiva**: no admiten analogía ni extensión | **VERIFICADO** |
+| **No existe norma** que impida a un contratista tener varios contratos de prestación de servicios, con la misma entidad o con varias, siendo idóneo | **VERIFICADO** |
+| La **exclusividad no se presume**: debe pactarse expresamente | **VERIFICADO** |
+| La entidad **tiene el deber** de identificar conflictos de interés por «concurrencia de intereses antagónicos» en el contratista | **VERIFICADO** |
+| La **Ley 2013 de 2019** obliga a ciertos servidores **y contratistas** a declarar bienes, rentas y conflictos de interés, con actualización anual y comunicación de todo cambio en dos meses | **VERIFICADO** · el alcance para este contrato concreto, **PARA LA ENTIDAD** |
+
+### 7.3 · Por qué el régimen de inhabilidades casi no toca a este negocio
+
+Las inhabilidades regulan **quién puede contratar CON el Estado**. La sociedad que se va a constituir
+**no contrata con el Estado**: vende suscripciones de software a **empresas privadas**. No hay contrato
+estatal, luego no hay inhabilidad que analizar por esa vía.
+
+### 7.4 · Los cuatro riesgos que sí existen
+
+| # | Riesgo | Gravedad | Mitigación |
+|---|---|---|---|
+| **1** | **Información no pública de ENTerritorio.** La entidad **estructura y ejecuta proyectos de infraestructura**, es decir, **abre procesos de obra**; y el producto dice a qué procesos presentarse. Conocer procesos antes de su publicación —o que alguien pueda pensarlo razonablemente— toca el terreno de los acuerdos restrictivos de la competencia | **Alta** | **La defensa ya está construida:** el producto se alimenta **solo de fuentes públicas** y todo el repositorio documenta qué dato sale de dónde, con fecha y licencia. La tarea F1-2 lo pone **en pantalla**, que es lo que faltaba |
+| **2** | **Las cláusulas del propio contrato** (exclusividad, conflicto de intereses, reserva de información, código de integridad) | Media | **La respuesta está en su contrato.** Extraer las cláusulas y llevarlas al abogado |
+| **3** | **Presentarse a procesos de ENTerritorio** con su empresa de obra mientras dura el contrato | Media | **No es inhabilidad automática**, pero es el caso típico de intereses antagónicos. Recomendación: **abstenerse mientras dure el contrato**. A otras entidades, sin problema |
+| **4** | **Omitir la declaración de la Ley 2013 de 2019** si es sujeto obligado | Baja-media | Preguntar por escrito a la entidad si lo es; si lo es, registrar la sociedad. **Declarar no cuesta nada; omitir sí** |
+
+### 7.5 · La recomendación operativa
+
+**Avisar por escrito al supervisor del contrato antes de constituir la sociedad**, dejando constancia
+de que (i) la sociedad no contratará con ENTerritorio, (ii) el producto usa solo información pública,
+(iii) no se usará información conocida en razón del contrato y (iv) no interfiere con el objeto
+pactado. **Modelo de texto en `docs/EMPEZAR_AQUI.md` §1.4.**
+
+Un aviso previo con radicado convierte una sospecha futura en un papel que se mostró **antes** de que
+hubiera nada que ocultar. Es la regla que el propio manual del oficio ya fija: **«¿me incomodaría que
+esto se publicara?»** — y canal formal siempre.
+
+### 7.6 · Las cinco preguntas para el abogado
+
+Están redactadas, listas para copiar, en `docs/EMPEZAR_AQUI.md` §1.5. Lo que se le pide es **un
+concepto escrito de dos páginas**, no una asesoría por meses.
+
+---
+
+## 8. TRES COLUMNAS
 
 **VERIFICADO (buscador, 24-ago-2026)** — L-1 · L-2 · L-6 en lo esencial · L-10 · L-12 · L-13 en lo
-general · L-15 con cifras y resolución · L-3 en la exención de datos públicos.
+general · L-15 con cifras y resolución · L-3 en la exención de datos públicos · **L-17: naturaleza de
+ENTerritorio, condición no-servidor-público del contratista, taxatividad de las inhabilidades, no
+presunción de exclusividad, deber de la entidad de mirar conflictos de interés** · L-18 con tarifas.
 
 **HIPÓTESIS A CONFIRMAR** — L-4 · L-5 · L-11 · L-16 · el alcance del «CompartirIgual» · la tarifa de
 IVA aplicable al caso concreto.

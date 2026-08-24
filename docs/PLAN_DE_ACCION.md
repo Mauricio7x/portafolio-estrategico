@@ -3,6 +3,13 @@
 
 ---
 
+> ### 📖 ¿ES LA PRIMERA VEZ QUE LEE ESTO? EMPIECE POR OTRO LADO.
+>
+> Este documento es **técnico y está escrito para ejecutar**. Si lo que necesita es entender la
+> situación, saber cómo se crea una empresa paso a paso o cómo le afecta su contrato de prestación de
+> servicios con ENTerritorio, **lea primero `docs/EMPEZAR_AQUI.md`**: está escrito en lenguaje llano,
+> sin tecnicismos, y cubre desde el primer trámite. Vuelva aquí cuando llegue a la programación.
+
 ## CÓMO SE USA ESTE DOCUMENTO
 
 Este es el **plan ejecutable**. Los ocho anexos de la consultoría explican **por qué**; este dice
@@ -81,7 +88,18 @@ Bloquea F0-6, F1-1 y toda la fase 4.
 
 **Recomendación:** **sociedad**. Separa el patrimonio personal del riesgo del producto, y como toda
 sociedad comercial está obligada a facturar electrónicamente desde su primera venta, **no hay ninguna
-ventaja en aplazarlo**: el trámite habría que hacerlo igual.
+ventaja en aplazarlo**: el trámite habría que hacerlo igual, y migrar después obliga a rehacer términos,
+facturación, pasarela y a novar los contratos de los clientes que ya firmaron.
+
+**Cómo se hace, con clics y tarifas:** `docs/EMPEZAR_AQUI.md` **Parte 2** — siete pasos, de comprobar el
+nombre en el RUES a abrir la cuenta bancaria. Trámite de **1 a 3 días hábiles** y **$100.000 a $150.000**
+en la Cámara de Comercio; el NIT es gratis y no hay que ir a notaría.
+
+**⚠️ Antes de constituir, hay un paso previo que no está en esta ficha:** leer el propio contrato de
+prestación de servicios con ENTerritorio y **avisar por escrito al supervisor**. El análisis completo
+—incluida la corrección de que ENTerritorio **no es una sociedad de economía mixta** sino una Empresa
+Industrial y Comercial del Estado— está en `docs/LEGAL_COLOMBIA.md` §7, y el modelo del aviso en
+`docs/EMPEZAR_AQUI.md` §1.4.
 
 **Criterio de aceptación.** Existe un documento de una página con el vehículo elegido, su NIT (o la
 fecha prevista de constitución) y quién es el representante legal.
@@ -1333,6 +1351,7 @@ En este orden exacto:
 
 | Documento | Qué responde |
 |---|---|
+| **`docs/EMPEZAR_AQUI.md`** | **Por dónde empezar**, en lenguaje llano: la situación con ENTerritorio, cómo se crea la empresa paso a paso, las primeras cuatro semanas y un glosario |
 | **`docs/PLAN_DE_ACCION.md`** | **Este.** Qué se hace, en qué orden, cómo se comprueba |
 | `docs/PLAN_SAAS.md` | El diagnóstico y el resumen para el dueño |
 | `docs/LEGAL_COLOMBIA.md` | Qué habilita o impide vender, con estado de verificación |
