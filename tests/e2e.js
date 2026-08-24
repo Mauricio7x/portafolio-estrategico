@@ -8502,6 +8502,47 @@ async function main() {
            `pintarSeguimiento` ya se defendía con `r.procesos || []`. */
         assert.ok(/for \(const p of Array\.isArray\(r\.procesos\) \? r\.procesos : \[\]\)/.test(appSeg),
           "cargarSeguimiento comprueba lo que va a ITERAR, no solo `ok`: un ok:true sin `procesos` mataba la pestaña en silencio");
+        /* ═══ F0-7 · LA PREDICCIÓN QUE SE LE ENSEÑÓ SE CONGELA AL GUARDAR ═══
+           `P(ganar)` no es falsable hoy: el corpus dice quién ganó, no a qué se
+           presentó nadie. `estado` ya recoge presentado/ganado/perdido — es la
+           ETIQUETA que falta. Sin la predicción de aquel momento no hay nada
+           contra qué compararla, y cada día sin guardarla es un día de datos
+           que no vuelve. Cuatro cerraduras:
+           (1) la `p` congelada es EXACTAMENTE la que sirvió el listado — no es
+               un segundo cálculo (se obtiene llamando a `desgloseDeProceso`,
+               que ya tiene prueba de reproducir el listado);
+           (2) NO se mueve al cambiar de estado ni al re-guardar: es la cifra
+               del día en que decidió, no la última;
+           (3) la calcula el SERVIDOR — una `prediccion` en el cuerpo se IGNORA,
+               como ya se hace con `visto`: si el cliente la escribiera, el
+               registro de calibración nacería envenenado;
+           (4) viajan las ENTRADAS, no solo el número: sin ellas se sabría QUE
+               falló una predicción, no POR QUÉ. */
+        {
+          const gs = (await seg("&perfil=helder")).cuerpo.procesos.find((x) => x.id === fila.id_del_proceso);
+          assert.ok(gs && gs.prediccion, `al guardar se congela la predicción: ${JSON.stringify(gs && gs.prediccion)}`);
+          assert.strictEqual(gs.prediccion.p_ganar, fila.p_ganar,
+            `(1) la p congelada (${gs.prediccion.p_ganar}) es la que sirvió el listado (${fila.p_ganar})`);
+          assert.ok(gs.prediccion.congelada_el, "(1) la predicción lleva la fecha del día en que se guardó");
+          assert.strictEqual(gs.estado, "descartado", "el estado sí cambió (g3)");
+          assert.strictEqual(gs.prediccion.p_ganar, fila.p_ganar, "(2) cambiar de estado NO mueve la predicción");
+          // (4) las entradas del cálculo, no solo el número
+          for (const k of ["rivales_esperados", "fuente_del_promedio", "peso_datos_entidad", "banda_90", "p_sin_precio", "baja_maxima"]) {
+            assert.ok(k in gs.prediccion, `(4) falta la entrada «${k}» del cálculo`);
+          }
+          assert.strictEqual(gs.prediccion.desenlace, null,
+            "(4) un guardado sin desenlace responde null, JAMÁS «perdido»: no saber no es haber perdido");
+          // (3) la manda el servidor: una predicción del cliente se ignora
+          const otra = li.cuerpo.resultados.find((f) => f.id_del_proceso !== fila.id_del_proceso && f.p_ganar != null);
+          assert.ok(otra, "hace falta un segundo proceso del listado");
+          const gf = await seg("", { metodo: "POST", body: { perfil: "helder", id: otra.id_del_proceso, estado: "interesa", foto: otra,
+            prediccion: { p_ganar: 0.99, congelada_el: "1999-01-01T00:00:00.000Z", rivales_esperados: 0 } } });
+          assert.strictEqual(gf.status, 200);
+          assert.notStrictEqual(gf.cuerpo.guardado.prediccion.p_ganar, 0.99, "(3) la p del CLIENTE se ignora");
+          assert.strictEqual(gf.cuerpo.guardado.prediccion.p_ganar, otra.p_ganar, "(3) el servidor la recalcula y coincide con el listado");
+          await seg(`&perfil=helder&id=${encodeURIComponent(otra.id_del_proceso)}`, { metodo: "DELETE" });
+          console.log(`  · F0-7: predicción congelada al guardar · p=${gs.prediccion.p_ganar} ≡ listado · ${gs.prediccion.rivales_esperados} rivales (${gs.prediccion.fuente_del_promedio}) · sobrevive al cambio de estado · la del cliente se ignora`);
+        }
         console.log(`  · seguimiento: guardar/estado/quitar por perfil · fila viva (${abierto.dias_para_cierre} días al cierre, ${abierto.avisos.length} avisos) · .ics con alarmas · detalle: ${det.proponentes.length} proponentes, recurrente ${rec.ante_esta_entidad.veces_presentado} veces ante la entidad y ${rec.contratos_vigentes.contratos} vigentes por $${rec.contratos_vigentes.valor_cop}`);
       }
 

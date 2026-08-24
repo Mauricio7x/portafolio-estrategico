@@ -1856,6 +1856,53 @@ cascada de `lib/apu/precios.js`. Evidencia HTTP en el §11 del mismo doc.
   INVIAS prohíben el uso comercial sin autorización — si Detekta se comercializa con estos datos,
   pedirla (`preciosunitarios@invias.gov.co`).
 
+### F0-7 · La predicción que se le enseñó se CONGELA al guardar (24-ago-2026)
+
+`lib/handlers/perfil/seguimiento.congelarPrediccion` + `prediccion` en el registro guardado y en
+`lib/seguimiento.enriquecer` + `desenlaceDe` en el módulo puro. Era **la única tarea del repositorio
+con fecha límite absoluta** (`docs/PLAN_DE_ACCION.md:235`) y no dependía de nada: cada día sin
+guardarla es un día de datos que no vuelve.
+
+- **El problema no era de código, era de tiempo.** `P(ganar)` **no es falsable**: el corpus dice quién
+  GANÓ, no a qué se presentó nadie. `lib/seguimiento` ya recogía `presentado · ganado · perdido` —la
+  etiqueta que falta— pero **sin la predicción de aquel momento no hay nada contra qué compararla**.
+  Verificado antes de tocar nada: `fotoDe` guardaba once campos y **ninguno era la probabilidad**.
+- **NO ES UN SEGUNDO CÁLCULO, y ahí estaba la única decisión de arquitectura.** El contexto de
+  `estimarPDetalle` (índices de competencia y de baja, promedios por departamento, colisiones, b_max
+  de los borradores) se arma en ~170 líneas de `handlers/procesos/listar.js`, entrelazadas con el
+  handler. Reconstruirlo aquí habría sido **una segunda derivación de la probabilidad** —
+  `total_procesos`/`procesos_contados` otra vez, y en pesos. Se llama a **`desgloseDeProceso`**
+  (`lib/probabilidad_desglose`), que ya arma ese contexto y que **ya tenía prueba de reproducir
+  exactamente el `p_ganar` del listado**. Medido en la suite: `p = 0.0608 ≡ listado`.
+  · Se descartó extraer `evalDe` de `listar.js`: es cirugía en el endpoint más caliente de la app por
+    una razón lateral. El precedente del repositorio (`contextoDePresupuesto` «se EXTRAJO, no se
+    copió») aplica cuando no hay ya una función que responda; aquí la había.
+- **LA CALCULA EL SERVIDOR, JAMÁS EL CLIENTE.** La `foto` sí puede venir del cuerpo (es lo que el
+  usuario tenía en pantalla), pero una `p` propuesta por el cliente envenenaría el único registro con
+  el que se podrá validar el modelo, y un frontend viejo o cacheado mandaría la cifra de otro momento
+  sin que nadie lo notara. Mismo criterio que `visto`, que se toma del corpus. Hay prueba de que una
+  `prediccion` en el cuerpo **se ignora** y el servidor la recalcula.
+- **SOLO AL CREAR.** Es la cifra del día en que DECIDIÓ, no la última: recalcularla al cambiar de
+  estado reescribiría la predicción con el modelo de hoy y se perdería justo lo que esto conserva.
+  Lo único que se actualiza después es el **desenlace**.
+- **`desenlaceDe` vive en el módulo PURO, junto a `normalizarEstado`**, y solo `ganado`/`perdido` lo
+  fijan. «descartado» es una decisión del usuario, no un resultado del proceso, y «presentado» aún no
+  tiene desenlace: contar cualquiera de los dos como derrota metería una **etiqueta falsa** en el
+  registro de calibración. Es «sin dato ≠ cero» aplicado a la etiqueta, y aquí el cero sería un
+  fracaso inventado. Viaja `null`, jamás `false`.
+- **Viajan las ENTRADAS, no solo el número** (`rivales_esperados`, `fuente_del_promedio`,
+  `peso_datos_entidad`, `banda_90`, `p_sin_precio`, `baja_maxima`): sin ellas se sabría QUE falló una
+  predicción, no POR QUÉ. Es la trampa que el propio plan declaraba.
+- **Best-effort: si el desglose falla, se guarda `null` CON su motivo y el guardado sigue.** Perder el
+  proceso guardado por no poder calcular una cifra de instrumentación sería cambiar el producto por su
+  medición.
+- **Los guardados anteriores a esta versión se quedan sin predicción, y es lo correcto**: recalcularla
+  hoy y etiquetarla con la fecha de entonces sería inventar el dato que esto existe para conservar.
+- **`enriquecer` construye un objeto NUEVO, así que publicar el campo no era opcional.** La primera
+  implementación guardaba `prediccion` en Redis y la lista no la enseñaba: es «el veredicto de un
+  bloque no puede leer un campo que ese bloque no publica», y lo cazó la prueba, no la lectura.
+
+
 ### Mis procesos · guardar, seguir y estudiar a la competencia (18-ago-2026)
 
 `lib/seguimiento.js` (capa pura) + `lib/handlers/perfil/seguimiento.js` (`/api/perfil?op=seguimiento`, token) +
