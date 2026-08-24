@@ -5032,6 +5032,47 @@ remotas y todo el trabajo va desde ahora directo a `main`. Decisiones que no hay
   cita **no se pudo comprobar contra la fuente primaria desde este entorno**. No se reestructura el
   sistema visual entero sobre una cita sin verificar; queda anotado para quien pueda abrirla en un
   navegador normal.
+#### La revisión adversaria del propio diff, y los tres defectos que encontró
+
+Cuatro de los seis verificadores de la auditoría murieron por límite de sesión, así que el diff se
+atacó después, a mano. Los tres hallazgos son de familias que este repositorio ya conoce, y los tres
+estaban **dentro de la corrección**, no en el código viejo:
+
+- **⚠️ `fuera_estado` DISPARA POR DOS CAUSAS Y SOLO UNA ES «YA CERRÓ».** La cascada exige
+  `l.proceso_abierto && estado_abierto(l)`: el primero es un SELLO que puso la sincronización al
+  guardar, el segundo se re-clasifica al servir. Cuando falla el sello pero el estado VIGENTE dice
+  abierto, el mensaje nuevo afirmaba «ya no admite ofertas» — **FALSO**, y manda al usuario lejos de
+  un proceso que todavía puede ganar. Es exactamente el rezago de la `fase` que el ingeniero vivió
+  con las convocatorias de la UPN: la herramienta que existe para diagnosticar ausencias daba la
+  respuesta equivocada justo en su caso. Lo resuelve `refinarEstado` (require diferido de
+  `estado_abierto`; `rastreo` sigue siendo hoja) y el mensaje del sello DA LA INSTRUCCIÓN: relanzar
+  la actualización. Reproducido con las dos filas, una por causa.
+- **⚠️ EL RÓTULO DE LA GANANCIA SEGUÍA AL VEREDICTO Y NO AL SIGNO.** Con costo medido y veredicto
+  `depende` —peor caso negativo, mejor positivo: el caso normal cuando la reserva de imprevistos
+  decide— la tarjeta salía **«−$10.000.000 · le quedan como mínimo si gana»**: un número negativo
+  bajo un rótulo que promete plata, que es la lectura invertida que esa celda existe para corregir,
+  cometida dentro de la propia corrección. El rótulo lo decide ahora `Number(cifra) < 0`.
+- **⚠️ …Y ARREGLARLO INTRODUJO UNA ZONA MUERTA TEMPORAL.** `rotulo` quedó declarado ANTES que
+  `cifra`, que es la que lee: `ReferenceError` dentro del renderizado de la tarjeta, o sea **la lista
+  entera rota en producción**. La suite no lo habría visto: sus pruebas de esa celda son regex sobre
+  el fuente. Cuarta vez que este repositorio paga la zona muerta temporal (`app.js`, `admin.js`,
+  `apu.js`, y ahora dentro de una función).
+
+**LA CERRADURA QUE FALTABA ES LA QUE EJECUTA.** `bloqueGanancia` se extrae y se corre con sus SEIS
+ramas, y la invariante central es una sola frase: **una cifra negativa jamás bajo un rótulo que
+promete plata**. Ninguna de las guardas por regex que ya existían habría visto ninguno de los dos
+defectos de arriba. Es el patrón de `fraseProbabilidad` y el de la manifestación, aplicado donde más
+falta hacía.
+· **De paso, la extracción existente estaba TRUNCADA**: `slice(iG, indexOf("\n  }", iG))` dejaba
+  fuera las llaves de cierre —medido: 3 462 de 3 466 caracteres, **cuatro** de menos—. Es poco para
+  las regex (seguían cubriendo la función entera) y suficiente para que `new Function` no pueda
+  parsearla: el trozo servía para LEER y no para EJECUTAR. Se corta contando llaves y la extracción
+  LANZA si no encuentra el cierre, en vez de devolver un trozo.
+· **Lección de medición**: mi primer censo de guardas de nodo devolvió CERO para los nueve ids
+  —escapado de regex roto— y un cero uniforme es sospechoso, no tranquilizador. Con `grep` salieron
+  cuatro accesos con `$()` sin guarda, los cuatro dentro de manejadores de clic (rompen su acción,
+  no la pestaña, que es la diferencia que importa).
+
 - **DOS LECCIONES DE MÉTODO DE ESTA SESIÓN:**
   · **UN HALLAZGO CONFIRMADO CON EL MISMO MÉTODO DEFECTUOSO NO ESTÁ CONFIRMADO.** Se reportó que
     `#tab-admin` dejaba un `<details>` sin cerrar (22 aperturas / 21 cierres) y lo «confirmé» con mi
