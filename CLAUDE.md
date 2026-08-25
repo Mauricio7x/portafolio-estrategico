@@ -5042,6 +5042,63 @@ falta hacía.
   secciones movidas ocultas mientras las de decisión se ven. El `border-radius: 0` que se observa es
   la degradación ya documentada del CDN de Tailwind bloqueado en este entorno, no un defecto nuevo.
 
+### Gráficos de verdad y Mi empresa como tablero (encargo del ingeniero, ago 2026)
+
+«Los gráficos están como si fueran de niños de primaria; tenemos todos los datos habidos y por haber
+para mostrar estadísticas increíbles y muestras unas súper básicas. El tablero de procesos que tienes
+oculto podría ser el tablero principal de mi empresa… no quiero párrafos enormes, quiero datos
+representados en gráficos y datos reales siempre.»
+
+- **LA FORMA SE ELIGE POR EL TRABAJO DEL DATO, y el color va AL FINAL.** Tres primitivas en
+  `public/pulso.js` (una sola definición, la usan el pulso y el tablero): `columnas` (magnitud sobre
+  escala ORDENADA), `barrasRank` (magnitud con nombres largos → horizontal) y `apilada` (parte-todo en
+  UNA barra). La versión anterior era una fila de rectángulos sin eje, sin valores, sin hover y **sin
+  el DINERO, que ya viajaba en cada cubeta y no se pintaba**.
+- **EL COLOR SE COMPUTÓ, NO SE INTUYÓ.** Validado con el script de la guía contra las superficies
+  REALES de la app (#f5f5f7 / #000), no contra las de la referencia: magnitud usa `--accent` (#007AFF,
+  3,69:1 claro y 5,23:1 oscuro — pasa el suelo de 3:1 en los dos); composición usa cuatro slots
+  categóricos escalonados APARTE para cada tema —no un volteo automático— que pasan banda de
+  luminosidad, croma, separación CVD (ΔE 9,1 / 8,4) y suelo de visión normal (22,9 / 19,8). El claro
+  avisa de contraste bajo 3:1: **por eso las etiquetas directas de `apilada` no son opcionales**.
+  · **Una rampa ordinal de 6 pasos FALLÓ** contra #f5f5f7 (extremo claro a 1,94:1, saltos de L
+    demasiado juntos) y **no se forzó**: una sola serie no necesita identidad, la longitud ya codifica
+    la magnitud. Dos roles de color y ninguno más.
+- **DOS GRÁFICOS QUE DECIDEN Y NO ESTABAN EN NINGUNA PANTALLA**, los dos con datos que el tablero ya
+  recibía: «cuándo hay que entregar» (`por_urgencia`) y «contra cuánta gente compite»
+  (`por_nivel_competencia_entidad`, que es la tesis del producto). `sin_dato` se conserva como su
+  propio segmento: no saber cuánta gente compite no es saber que compite poca, y esconderlo inflaría
+  la parte buena. `ya_cerro` y `sin_fecha_cierre` salen del gráfico y se dicen aparte — no son
+  ventanas de entrega y deformarían la escala de las que sí lo son.
+- **«OTROS» SE PINTA PERO NO ENLAZA.** Es la cola del reparto, no un departamento: `?dep=OTROS` no
+  casa ninguno y llevaría a una lista vacía. Esconderlo haría que el reparto no sumara; enlazarlo
+  sería una barra que promete una lista y no la cumple. `filtroDe` devolviendo null existe para eso.
+- **`d-departamentos` DEJÓ DE SER UN `<tbody>`.** Conserva su id —renombrarlo mataría app.js— pero una
+  `<ul>` dentro de un `<tbody>` es HTML inválido y el navegador la expulsa fuera de la tabla: un fallo
+  mudo. La tabla entera se sustituyó por el contenedor.
+- **REORDEN**: el tablero abre Mi empresa (estaba plegado en «Sistema», con 156 palabras de prosa); el
+  catálogo de precios se fue a **Precios**, que es donde se usa; «¿Por qué no está este proceso?» salió
+  del acordeón técnico al final de Mi empresa —es herramienta de quien licita, no de quien mantiene—;
+  y **«El mercado completo hoy» se retiró**: en una pestaña que responde «¿a qué me presento YO hoy?»
+  el agregado nacional es ruido. `lib/portada` y `op=portada` NO se tocan: alimentan el TEASER de tres
+  cifras de la landing, que es otra pantalla y otra pregunta.
+- **⚠️ EL DESBORDE MÓVIL QUE SOLO SE VE ABRIENDO LA PÁGINA.** Al subir el tablero a la vista salieron
+  sus tablas anchas: medido a 390 px, el documento se iba a **506**. La causa es que `overflow-x-auto`
+  y `min-w-0` son **utilidades de Tailwind** y la red institucional del dueño BLOQUEA su CDN — sin él
+  no existen y la tabla empuja la página entera. Se resuelve con regla propia (`.tabla-scroll` +
+  `#tab-admin .grid > * { min-width: 0 }`), que es la misma doctrina de la red de seguridad de
+  `.hidden`: **lo que decide la maquetación no puede colgar de una hoja de estilos externa**.
+- **LA TERCERA CIFRA DE LA TARJETA, DECIDIDA (el ingeniero delegó el punto).** Sin APU costeado, en vez
+  de solo «Calcular» se enseña el único hecho MEDIDO y propio de ese proceso: **a qué precio suele
+  adjudicar esa entidad**, con su número de contratos (sale de `lib/indice_baja`, mínimo 5). Solo con
+  `origen_precio === "mercado"`: con «oficial» no hay medición —la referencia sería el presupuesto,
+  que ya está dos centímetros más arriba en la misma tarjeta— y repetirlo con otro rótulo sería fingir
+  un segundo dato; ahí la celda sigue pidiendo el costo. La cifra SIGUE siendo el botón que abre
+  Precios con el proceso precargado: el dato y la acción, en el mismo sitio.
+- **Verificado en Chromium real**: cero errores de consola, los cuatro gráficos del tablero pintados,
+  `scrollWidth === clientWidth` (la página ya no desborda), y cada `data-filtro` válido contra
+  `leerEstado`. Las cerraduras EJECUTAN las tres primitivas — comprobar por regex que existen no
+  prueba que dibujen lo que dicen.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).

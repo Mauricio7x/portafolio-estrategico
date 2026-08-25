@@ -60,29 +60,23 @@
   }
 
   function htmlDepartamentos(p) {
-    const deps = (p.porDepartamento || []).slice(0, 8);
-    if (!deps.length) return "";
-    const max = Math.max(...deps.map((d) => d.n || 0), 1);
-    return `
-      <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Dónde están</h2>
-      <ul class="mt-2 space-y-1.5">${deps.map((d) => `<li>
-        <a class="block" href="?dep=${encodeURIComponent(d.nombre)}#/licitaciones" data-filtro="dep=${esc(d.nombre)}" title="${esc(d.nombre)}: ${num(d.n)} para usted, ${esc(pesosCortos(d.valor) || "sin valor publicado")}. Ver la lista.">
-          <span class="flex justify-between text-xs" style="color: var(--text-primary);"><span>${esc(d.nombre)}</span><span style="color: var(--text-secondary);">${num(d.n)} · ${esc(pesosCortos(d.valor) || "—")}</span></span>
-          <span class="mt-0.5 block h-1.5 rounded-full" style="background: var(--bg-inset-2);"><span class="block h-1.5 rounded-full" style="width:${Math.max(3, Math.round(100 * (d.n || 0) / max))}%; background: var(--accent);"></span></span>
-        </a></li>`).join("")}</ul>
-      ${p.departamentosDistintos > deps.length ? `<p class="mt-2 text-[11px]" style="color: var(--text-secondary);">y ${num(p.departamentosDistintos - deps.length)} departamentos más.</p>` : ""}`;
+    const lista = p.porDepartamento || [];
+    if (!lista.length) return "";
+    const g = barrasRank(lista, { filtroDe: (x) => `dep=${encodeURIComponent(x.nombre)}` });
+    if (!g) return "";
+    const extra = p.departamentosDistintos;
+    return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Dónde están</h2>${g}`
+      + (extra > lista.length ? `<p class="mt-2 text-[11px]" style="color: var(--text-secondary);">${num(extra)} en total; ${lista.length === 1 ? "se muestra la que más procesos publica" : `se muestran las ${lista.length} con más procesos`}.</p>` : "");
   }
 
   function htmlEntidades(p) {
-    const filas = (p.topEntidades || []).slice(0, 8);
-    if (!filas.length) return "";
-    return `
-      <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Quién las publica</h2>
-      <ul class="mt-2 divide-y" style="border-color: var(--border);">${filas.map((e) => `<li class="flex items-baseline justify-between gap-3 py-1.5 text-xs">
-        <a class="min-w-0 truncate underline-offset-2 hover:underline" style="color: var(--text-primary);" href="?entidad=${encodeURIComponent(e.nit || e.nombre)}#/licitaciones" data-filtro="entidad=${esc(e.nit || e.nombre)}" title="${esc(e.nombre)}">${esc(e.nombre)}</a>
-        <span class="shrink-0 whitespace-nowrap" style="color: var(--text-secondary);">${num(e.n)} · ${esc(pesosCortos(e.valor) || "—")}</span>
-      </li>`).join("")}</ul>
-      ${p.entidadesDistintas > filas.length ? `<p class="mt-2 text-[11px]" style="color: var(--text-secondary);">y ${num(p.entidadesDistintas - filas.length)} entidades más.</p>` : ""}`;
+    const lista = p.topEntidades || [];
+    if (!lista.length) return "";
+    const g = barrasRank(lista, { filtroDe: (x) => x.nit ? `entidad=${encodeURIComponent(x.nit)}` : `entidad=${encodeURIComponent(x.nombre)}` });
+    if (!g) return "";
+    const extra = p.entidadesDistintas;
+    return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Quién las publica</h2>${g}`
+      + (extra > lista.length ? `<p class="mt-2 text-[11px]" style="color: var(--text-secondary);">${num(extra)} en total; ${lista.length === 1 ? "se muestra la que más procesos publica" : `se muestran las ${lista.length} con más procesos`}.</p>` : "");
   }
 
   /* ── gráfico de barras (SVG en línea, sin dependencias) ──
@@ -99,6 +93,162 @@
     if (typeof window !== "undefined" && window.Filtros) return window.Filtros;
     try { return require("./filtros.js"); } catch { return null; }
   }
+  /* ═══════════════════ GRÁFICOS DE VERDAD (ago 2026) ═══════════════════
+     Encargo del ingeniero: «los gráficos están como si fueran de niños de
+     primaria; tenemos todos los datos habidos y por haber para mostrar
+     estadísticas increíbles y muestras unas súper básicas». Tenía razón: la
+     versión anterior era una fila de rectángulos sin eje, sin valores fuera del
+     tope, sin el DINERO (que ya viajaba en cada cubeta y no se pintaba) y sin
+     nada al pasar el puntero.
+
+     Tres formas, y cada una se elige por el TRABAJO del dato, no por gusto:
+       · `columnas`  — magnitud sobre una escala ORDENADA (cuándo cierran,
+                       cuánto valen). Una sola serie ⇒ un solo tono: la longitud
+                       ya codifica la magnitud, el color no tiene que repetirlo.
+       · `barrasRank`— magnitud sobre categorías con NOMBRE LARGO (entidades,
+                       departamentos). Horizontal porque el nombre no cabe girado.
+       · `apilada`   — PARTE-TODO en una sola barra (de qué se compone su lista).
+                       Aquí sí hay identidad ⇒ paleta categórica, con leyenda
+                       SIEMPRE y etiquetas directas.
+
+     COLOR, VALIDADO CON EL SCRIPT Y NO A OJO (dataviz/scripts/validate_palette):
+       · magnitud → `--accent` (#007AFF), 3,69:1 sobre #f5f5f7 y 5,23:1 sobre
+         #000: pasa el suelo de 3:1 en LOS DOS temas.
+       · composición → cuatro slots categóricos, escalonados aparte para cada
+         tema (no es un volteo automático): claro #2a78d6/#eb6834/#1baf7a/#eda100,
+         oscuro #3987e5/#d95926/#199e70/#c98500. Ambos pasan banda de luminosidad,
+         suelo de croma, separación CVD (ΔE 9,1 claro / 8,4 oscuro) y suelo de
+         visión normal (22,9 / 19,8). El claro avisa de contraste bajo 3:1, y por
+         eso las etiquetas directas NO son opcionales aquí.
+     Los tonos viven en custom properties (`--viz-1…4`) para que el tema los
+     cambie en un solo sitio.
+
+     REGLAS DE MARCA que se respetan y conviene no «simplificar»: barra ≤ 24 px,
+     extremo redondeado 4 px y CUADRADO en la línea base, hueco de 2 px del color
+     de la superficie entre marcas que se tocan, rejilla de 1 px sólida y
+     recesiva, y EL TEXTO NUNCA LLEVA EL COLOR DE LA SERIE (va con los tokens de
+     texto; el color lo carga la marca que tiene al lado). */
+  const VIZ = { alto: 168, gap: 2, barraMax: 24, radio: 4 };
+  const miles = (n) => num(n);
+
+  /* Ticks REDONDOS: 0 / 50 / 100, nunca 0 / 37 / 74. Devuelve [valores, tope]. */
+  function ticksRedondos(max, cuantos = 3) {
+    if (!(max > 0)) return [[0], 1];
+    const bruto = max / cuantos;
+    const mag = Math.pow(10, Math.floor(Math.log10(bruto)));
+    const paso = [1, 2, 2.5, 5, 10].map((k) => k * mag).find((k) => k >= bruto) || mag * 10;
+    const tope = Math.ceil(max / paso) * paso;
+    const out = [];
+    for (let v = 0; v <= tope + 1e-9; v += paso) out.push(v);
+    return [out, tope];
+  }
+
+  /* Una marca puede ser un ENLACE a su lista filtrada. `envolver` centraliza el
+     patrón para que ninguna forma se olvide del `data-filtro`, que es lo que
+     hace que cada barra lleve a alguna parte. */
+  function envolver(filtro, titulo, dentro) {
+    if (!filtro) return `<g><title>${esc(titulo)}</title>${dentro}</g>`;
+    return `<a href="?${esc(filtro)}#/licitaciones" data-filtro="${esc(filtro)}" role="link" tabindex="0"><title>${esc(titulo)}</title>${dentro}</a>`;
+  }
+
+  /* ── COLUMNAS · magnitud sobre una escala ordenada ── */
+  function columnas(cubetas, { ancho = 340, alto = VIZ.alto, filtroDe = () => null, conValor = true } = {}) {
+    const n = (cubetas || []).length;
+    if (!n) return "";
+    const max = Math.max(...cubetas.map((c) => c.n || 0));
+    if (!max) return "";
+    const [ticks, tope] = ticksRedondos(max);
+    const M = { arriba: 18, abajo: 30, izq: 34, der: 6 };
+    const util = { w: ancho - M.izq - M.der, h: alto - M.arriba - M.abajo };
+    const paso = util.w / n;
+    const bw = Math.min(VIZ.barraMax, paso - VIZ.gap * 2);
+    const y0 = M.arriba + util.h;
+    const rejilla = ticks.map((t) => {
+      const y = y0 - (t / tope) * util.h;
+      return `<line x1="${M.izq}" y1="${y.toFixed(1)}" x2="${ancho - M.der}" y2="${y.toFixed(1)}" style="stroke: var(--viz-grid); stroke-width:1"></line>`
+        + `<text x="${M.izq - 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="10" style="fill: var(--text-secondary)">${miles(t)}</text>`;
+    }).join("");
+    const barras = cubetas.map((c, i) => {
+      const v = c.n || 0;
+      const h = v > 0 ? Math.max(2, (v / tope) * util.h) : 0;
+      const x = M.izq + paso * i + (paso - bw) / 2;
+      const y = y0 - h;
+      const cx = M.izq + paso * i + paso / 2;
+      /* Extremo redondeado ARRIBA y cuadrado en la línea base: el `path` lo hace
+         explícito (un `rect` con `rx` redondearía también la base, que es donde
+         la barra tiene que apoyarse). */
+      const cuerpo = h <= 0 ? "" : `<path d="M${x.toFixed(1)},${y0} L${x.toFixed(1)},${(y + VIZ.radio).toFixed(1)} Q${x.toFixed(1)},${y.toFixed(1)} ${(x + VIZ.radio).toFixed(1)},${y.toFixed(1)} L${(x + bw - VIZ.radio).toFixed(1)},${y.toFixed(1)} Q${(x + bw).toFixed(1)},${y.toFixed(1)} ${(x + bw).toFixed(1)},${(y + VIZ.radio).toFixed(1)} L${(x + bw).toFixed(1)},${y0} Z" style="fill: var(--accent)"></path>`;
+      const valor = conValor && v > 0
+        ? `<text x="${cx.toFixed(1)}" y="${(y - 5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" style="fill: var(--text-primary)">${miles(v)}</text>` : "";
+      const rot = `<text x="${cx.toFixed(1)}" y="${alto - 9}" text-anchor="middle" font-size="10" style="fill: var(--text-secondary)">${esc(String(c.corto || c.etiqueta || ""))}</text>`;
+      /* El área invisible ocupa la banda ENTERA: un objetivo de puntero del
+         tamaño de la barra deja fuera las cubetas pequeñas, que son justo las
+         que hay que poder consultar. */
+      const zona = `<rect x="${(M.izq + paso * i).toFixed(1)}" y="${M.arriba}" width="${paso.toFixed(1)}" height="${util.h}" style="fill:transparent"></rect>`;
+      const dinero = c.valor != null ? ` · ${pesosCortos(c.valor)}` : "";
+      return envolver(filtroDe(c), `${c.titulo || c.etiqueta}: ${miles(v)}${dinero}`, zona + cuerpo + valor + rot);
+    }).join("");
+    const base = `<line x1="${M.izq}" y1="${y0}" x2="${ancho - M.der}" y2="${y0}" style="stroke: var(--viz-grid); stroke-width:1"></line>`;
+    return `<svg viewBox="0 0 ${ancho} ${alto}" role="img" style="display:block;width:100%;height:auto;font-family:inherit">${rejilla}${base}${barras}</svg>`;
+  }
+
+  /* ── BARRAS HORIZONTALES · categorías con nombre largo, rankeadas ──
+     El nombre va ENCIMA de la barra y no en un eje lateral: «GOBERNACIÓN DEL
+     TOLIMA» no cabe en una columna de eje sin recortarlo, y un rótulo recortado
+     es peor que ninguno. El dinero viaja al lado del conteo porque ya está en el
+     dato y es la mitad de la respuesta a «¿dónde está la plata?». */
+  function barrasRank(items, { filtroDe = () => null, tope = 6 } = {}) {
+    const lista = (items || []).slice(0, tope);
+    if (!lista.length) return "";
+    const max = Math.max(...lista.map((x) => x.n || 0));
+    if (!max) return "";
+    return `<ul class="mt-2 space-y-2">${lista.map((x) => {
+      const pct = Math.max(2, ((x.n || 0) / max) * 100);
+      const filtro = filtroDe(x);
+      const dinero = x.valor != null ? pesosCortos(x.valor) : null;
+      const interior = `<div class="flex items-baseline justify-between gap-3">
+            <span class="truncate text-[13px]" style="color: var(--text-primary)" title="${esc(x.nombre || "")}">${esc(x.nombre || "")}</span>
+            <span class="shrink-0 text-[12px] tabular-nums" style="color: var(--text-secondary)">${miles(x.n)}${dinero ? ` · ${esc(dinero)}` : ""}</span>
+          </div>
+          <div class="mt-1 h-1.5 overflow-hidden rounded-full" style="background: var(--bg-inset)">
+            <div class="h-full rounded-full" style="width:${pct.toFixed(1)}%; background: var(--accent)"></div>
+          </div>`;
+      return `<li>${filtro
+        ? `<a href="?${esc(filtro)}#/licitaciones" data-filtro="${esc(filtro)}" class="block rounded-lg px-1 py-0.5 transition hover:opacity-80">${interior}</a>`
+        : interior}</li>`;
+    }).join("")}</ul>`;
+  }
+
+  /* ── APILADA · parte-todo en UNA barra ──
+     Leyenda SIEMPRE (identidad nunca solo por color) y etiqueta directa cuando
+     el segmento da de sí — MEDIDA antes de escribirla, no recortada con
+     `overflow:hidden`, que cortaría las primeras letras y es peor que no
+     ponerla. Los segmentos se separan con 2 px del color de la SUPERFICIE: es el
+     hueco quien separa, nunca un borde (un borde añade tinta que no es dato). */
+  function apilada(segmentos, { alto = 26 } = {}) {
+    const vivos = (segmentos || []).filter((s) => (s.n || 0) > 0);
+    const total = vivos.reduce((a, s) => a + s.n, 0);
+    if (!total) return "";
+    let x = 0;
+    const trozos = vivos.map((s, i) => {
+      const w = (s.n / total) * 100;
+      const izq = x; x += w;
+      const pct = Math.round((s.n / total) * 100);
+      /* ~7 px por carácter a 11 px: el rótulo solo entra si cabe con aire a los
+         dos lados. Si no cabe, lo llevan la leyenda y el `title`. */
+      const texto = `${pct} %`;
+      const cabe = (w / 100) * 320 > texto.length * 7 + 14;
+      return `<div class="absolute top-0 h-full" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); background: var(--viz-${(i % 4) + 1}); border-radius: ${i === 0 ? "6px 0 0 6px" : x >= 99.99 ? "0 6px 6px 0" : "0"}"
+          title="${esc(s.etiqueta)}: ${miles(s.n)} (${pct} %)"></div>`
+        + (cabe ? `<span class="absolute top-0 flex h-full items-center justify-center text-[11px] font-semibold" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); color:#fff">${texto}</span>` : "");
+    }).join("");
+    const leyenda = vivos.map((s, i) => `<li class="flex items-center gap-1.5">
+        <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style="background: var(--viz-${(i % 4) + 1})"></span>
+        <span class="text-[11px]" style="color: var(--text-secondary)">${esc(s.etiqueta)} · ${miles(s.n)}</span></li>`).join("");
+    return `<div class="relative mt-2 overflow-hidden rounded-md" style="height:${alto}px; background: var(--bg-inset)">${trozos}</div>
+      <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1">${leyenda}</ul>`;
+  }
+
   function svgBarras(cubetas, { ancho = 320, alto = 150, filtroDe = () => null } = {}) {
     const n = cubetas.length;
     if (!n) return "";
@@ -132,13 +282,13 @@
   const ROTULO_CUANTIA = { hasta_50m: "≤ $50 M", "50_200m": "$50–200 M", "200_1000m": "$200–1.000 M", mas_1000m: "> $1.000 M" };
   function htmlCierre(p) {
     const cubetas = (p.porCierre || []).map((c) => ({ ...c, corto: ROTULO_CIERRE[c.id] || c.etiqueta, titulo: c.etiqueta }));
-    const svg = svgBarras(cubetas, { filtroDe: (c) => `cierre=${c.id}` });
+    const svg = columnas(cubetas, { filtroDe: (c) => `cierre=${c.id}` });
     if (!svg) return "";
     return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Cuándo hay que entregar la oferta</h2>${svg}${p.cierreSinFecha ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(p.cierreSinFecha)} sin fecha de cierre publicada.</p>` : ""}`;
   }
   function htmlCuantia(p) {
     const cubetas = (p.porCuantia || []).map((c) => ({ ...c, corto: ROTULO_CUANTIA[c.id] || c.etiqueta, titulo: c.etiqueta }));
-    const svg = svgBarras(cubetas, { filtroDe: (c) => `min=${c.min || 0}${c.max != null ? `&max=${c.max}` : ""}` });
+    const svg = columnas(cubetas, { filtroDe: (c) => `min=${c.min || 0}${c.max != null ? `&max=${c.max}` : ""}` });
     if (!svg) return "";
     return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Cuánto valen</h2>${svg}${p.cuantiaSinDato ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(p.cuantiaSinDato)} sin presupuesto publicado.</p>` : ""}`;
   }
@@ -166,7 +316,7 @@
     if (!F || !p.porTipo) return "";
     const cat = (F.TIPOS_TRABAJO || []).map((t) => ({ ...t, corto: CORTO_TIPO[t.id] || t.etiqueta }));
     const { cubetas, sinDato } = repartoAcubetas(p.porTipo, cat, "tipo");
-    const svg = svgBarras(cubetas, { filtroDe: (c) => `tipo=${c.id}` });
+    const svg = columnas(cubetas, { filtroDe: (c) => `tipo=${c.id}` });
     if (!svg) return "";
     return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Qué tipo de trabajo es</h2>${svg}${sinDato ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(sinDato)} sin clasificar.</p>` : ""}`;
   }
@@ -175,7 +325,7 @@
     if (!F || !p.porModalidad) return "";
     const cat = (F.MODALIDADES || []).map((t) => ({ ...t, corto: CORTO_MODALIDAD[t.id] || t.etiqueta }));
     const { cubetas, sinDato } = repartoAcubetas(p.porModalidad, cat, "modalidad");
-    const svg = svgBarras(cubetas, { filtroDe: (c) => `modalidad=${c.id}` });
+    const svg = columnas(cubetas, { filtroDe: (c) => `modalidad=${c.id}` });
     if (!svg) return "";
     return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Cómo lo adjudican</h2>${svg}${sinDato ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(sinDato)} sin modalidad publicada.</p>` : ""}`;
   }
@@ -270,5 +420,5 @@
   }
   const olvidar = () => { perfilPintado = null; };
 
-  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlCierre, htmlCuantia, htmlTipo, htmlModalidad, htmlManifestacion, svgBarras, htmlNota };
+  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlCierre, htmlCuantia, htmlTipo, htmlModalidad, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, ticksRedondos, htmlNota };
 });

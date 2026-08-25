@@ -180,10 +180,9 @@
     const lista = $("lista");
     if (lista && lista.scrollIntoView) lista.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  const mercadoCompleto = document.getElementById("mercado-completo");
-  if (mercadoCompleto) mercadoCompleto.addEventListener("toggle", () => {
-    if (mercadoCompleto.open && window.Portada) window.Portada.arrancar();
-  });
+  /* El pliegue «El mercado completo hoy» se retiró de Mi empresa (encargo del
+     ingeniero): el agregado nacional no responde «¿a qué me presento YO hoy?».
+     `Portada.teaser()` sigue vivo para las tres cifras de la landing. */
   function bloquear() {
     $("gate").innerHTML =
       '<div class="text-center"><p class="text-2xl font-semibold">Acceso denegado</p>' +
@@ -1286,9 +1285,26 @@
         "Sin el costo, la cuenta se cerraría con su propia estructura de precio y el resultado sería la cuantía multiplicada por una constante: el mismo porcentaje en todas las licitaciones. No es un dato de este proceso, así que no se enseña.",
         "Pulse para calcular el costo de este proceso en Precios.",
       ].join("\n");
+      /* ⚠️ SIN COSTO, LA CELDA ENSEÑA EL HECHO MEDIDO EN VEZ DE UN HUECO
+         (encargo del ingeniero, ago 2026: «datos reales siempre», y la decisión
+         de qué poner aquí me la delegó). Lo único que se sabe de ESTE proceso y
+         es una MEDICIÓN es a qué precio suele adjudicar esta entidad: sale de
+         `lib/indice_baja` sobre contratos ya adjudicados, con mínimo de 5, y es
+         además el número con el que se decide a cuánto ofertar.
+         Solo se enseña con `origen_precio === "mercado"`. Con «oficial» no hay
+         medición —la referencia sería el presupuesto, que ya está en la tarjeta
+         dos centímetros más arriba— y repetirlo con otro rótulo sería fingir un
+         segundo dato. Ahí la celda sigue pidiendo el costo, que es lo honesto.
+         La cifra SIGUE siendo el botón que abre Precios con el proceso
+         precargado: el dato y la acción, en el mismo sitio. */
+      const hayMercado = g.origen_precio === "mercado" && g.precio_esperado != null;
+      const etiqueta = hayMercado ? esc(fmtCorto(g.precio_esperado)) : "Calcular";
       const boton = `<button type="button" class="btn-apu cifra-pulsable" data-apu-q="${esc(qApu(l))}"
-        aria-label="Calcular en Precios cuánto cuesta este proceso">Calcular</button>`;
-      return celda(boton, "cuánto deja: falta su costo", "se calcula en Precios", titulo);
+        aria-label="${hayMercado ? "Ver a qué precio suele adjudicar esta entidad y calcular su costo en Precios" : "Calcular en Precios cuánto cuesta este proceso"}">${etiqueta}</button>`;
+      return hayMercado
+        ? celda(boton, "es lo que suele pagar esta entidad",
+          g.baja_procesos != null ? `medido en ${fmt.format(g.baja_procesos)} contratos` : "medido en contratos ya adjudicados", titulo)
+        : celda(boton, "cuánto deja: falta su costo", "se calcula en Precios", titulo);
     }
 
     /* CON COSTO MEDIDO: una sola cifra. El peor caso es el suelo —la reserva
@@ -5686,17 +5702,45 @@
     $("d-semana").textContent = fmt.format((t.por_urgencia || {}).cierra_esta_semana || 0);
 
     /* barras: divs con width en %, sin librerías */
-    $("d-barras").innerHTML = BARRAS.map(([clave, etiqueta, color]) => {
-      const n = per[clave] || 0;
-      const p = pct(n, total);
-      return `<div class="flex items-center gap-3 text-sm">
-          <span class="w-32 shrink-0 text-gray-600">${etiqueta}</span>
-          <div class="h-3 flex-1 overflow-hidden rounded-full bg-gray-100">
-            <div class="barra h-full rounded-full ${color}" style="width:${p}%"></div>
-          </div>
-          <span class="w-24 shrink-0 text-right tabular-nums text-gray-500">${p} % (${fmt.format(n)})</span>
-        </div>`;
-    }).join("");
+    /* PARTE-TODO EN UNA SOLA BARRA, no cuatro filas: la pregunta es «de qué se
+       compone mi lista», y cuatro barras sueltas obligan a sumar de cabeza. Es
+       el único gráfico del tablero con paleta CATEGÓRICA —aquí las series SON el
+       sujeto—, con leyenda siempre y etiquetas directas (la paleta clara avisa
+       de contraste bajo 3:1, así que no son opcionales). */
+    $("d-barras").innerHTML = window.Pulso
+      ? window.Pulso.apilada(BARRAS.map(([clave, etiqueta]) => ({ etiqueta, n: per[clave] || 0 })))
+      : "";
+
+    /* CUÁNDO HAY QUE ENTREGAR · magnitud sobre una escala ORDENADA. El dato ya
+       venía en `por_urgencia` y no se pintaba en ninguna pantalla. `ya_cerro` y
+       `sin_fecha_cierre` se dejan FUERA del gráfico y se dicen aparte: no son
+       ventanas de entrega y meterlos deformaría la escala de las que sí lo son. */
+    const urg = c.totales.por_urgencia || {};
+    const cubetasUrg = [
+      { id: "7d", etiqueta: "Cierran esta semana", corto: "esta semana", n: urg.cierra_esta_semana || 0 },
+      { id: "15d", etiqueta: "Cierran en dos semanas", corto: "2 semanas", n: urg.cierra_proxima_semana || 0 },
+      { id: "", etiqueta: "Cierran este mes", corto: "este mes", n: urg.cierra_este_mes || 0 },
+      { id: "", etiqueta: "Más adelante", corto: "+ 1 mes", n: urg.mas_adelante || 0 },
+    ];
+    const sinVentana = (urg.sin_fecha_cierre || 0) + (urg.ya_cerro || 0);
+    $("d-urgencia").innerHTML = (window.Pulso
+      ? window.Pulso.columnas(cubetasUrg, { filtroDe: (x) => (x.id ? `cierre=${x.id}` : null) })
+      : "")
+      + (sinVentana > 0 ? `<p class="mt-1 text-[11px]" style="color: var(--text-secondary);">${fmt.format(sinVentana)} sin fecha de cierre publicada o ya cerradas.</p>` : "");
+
+    /* CONTRA CUÁNTA GENTE COMPITE · la tesis del producto, que tampoco se
+       pintaba. `sin_dato` se CONSERVA como su propio segmento: no saber cuánta
+       gente compite no es lo mismo que saber que compite poca, y esconderlo
+       inflaría la parte buena. */
+    const comp = c.totales.por_nivel_competencia_entidad || {};
+    $("d-competencia-mix").innerHTML = window.Pulso
+      ? window.Pulso.apilada([
+        { etiqueta: "Poca competencia", n: comp.baja || 0 },
+        { etiqueta: "Competencia media", n: comp.media || 0 },
+        { etiqueta: "Muy peleadas", n: comp.alta || 0 },
+        { etiqueta: "Sin histórico", n: comp.sin_dato || 0 },
+      ])
+      : "";
 
     /* entidades */
     const ent = (c.top_entidades || []).slice(0, 10);
@@ -5716,11 +5760,20 @@
     const hayDeps = deps.some(([k, n]) => n > 0 && k !== "SIN_DEPARTAMENTO");
     $("d-departamentos-box").classList.toggle("hidden", !hayDeps);
     if (hayDeps) {
-      $("d-departamentos").innerHTML = deps.map(([dep, n]) => `<tr>
-          <td class="py-2 pr-2">${esc(dep)}</td>
-          <td class="py-2 pr-2 text-right tabular-nums">${fmt.format(n)}</td>
-          <td class="py-2 text-right tabular-nums text-gray-500">${pct(n, total)} %</td>
-        </tr>`).join("");
+      /* BARRAS RANKEADAS en vez de una tabla de tres columnas: el trabajo del
+         dato es comparar magnitudes entre nombres largos, y para eso la barra
+         horizontal se lee de un vistazo y la tabla no. Cada fila lleva a su
+         lista filtrada por departamento. */
+      const filasDep = deps.filter(([k, n]) => n > 0 && k !== "SIN_DEPARTAMENTO")
+        .sort((a, b) => b[1] - a[1]).map(([nombre, n]) => ({ nombre, n }));
+      /* «OTROS» ES LA COLA, NO UN DEPARTAMENTO: se conserva la barra —esconderla
+         haría que el reparto no sumara— pero SIN enlace. `?dep=OTROS` no casa
+         ningún departamento y llevaría a una lista vacía, que es una barra que
+         promete algo y no lo cumple. `filtroDe` devolviendo null ya lo pinta sin
+         enlace: es para lo que existe. */
+      $("d-departamentos").innerHTML = window.Pulso
+        ? window.Pulso.barrasRank(filasDep, { tope: 8, filtroDe: (x) => (x.nombre === "OTROS" ? null : `dep=${encodeURIComponent(x.nombre)}`) })
+        : "";
     }
 
     /* destacados */

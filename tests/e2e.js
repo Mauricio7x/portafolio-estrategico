@@ -15709,11 +15709,19 @@ async function main() {
 
       /* ---- (4) frontend ---- */
       const htmlP = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-      for (const id of ["portada", "pt-hero", "pt-cierran", "pt-manifestacion", "pt-entidades", "pt-departamentos", "pt-fuente"]) assert.ok(htmlP.includes(`id="${id}"`), `falta #${id}`);
-      assert.ok(/<section id="portada" class="hidden/.test(htmlP), "la portada nace OCULTA: vacía y honesta hasta que hay agregado");
+      /* ⚠️ EL RENDER COMPLETO DE LA PORTADA SE RETIRÓ (encargo del ingeniero,
+         ago 2026): «no quiero ver el texto de "el mercado completo hoy",
+         elimina eso». Vivía embebido en Mi empresa dentro de un <details>, y en
+         una pestaña que responde «¿a qué me presento YO hoy?» el agregado
+         nacional es ruido. Lo que SÍ sobrevive —y es lo que estas aserciones
+         vigilan ahora— es el TEASER de tres cifras de la landing, que es otra
+         pantalla y otra pregunta: ahí el mercado sí es el gancho. El endpoint
+         `op=portada` y `lib/portada` no se tocan; son quienes lo alimentan. */
+      assert.ok(htmlP.includes('id="pulso-global"'), "el teaser del mercado sigue en la landing");
+      assert.ok(!/id="mercado-completo"/.test(htmlP), "«El mercado completo hoy» no puede volver a Mi empresa");
       assert.ok(htmlP.indexOf('<script src="/portada.js">') < htmlP.indexOf('<script src="/app.js">'));
       const appP = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
-      assert.ok(/window\.Portada\.arrancar\(\)/.test(appP), "app.js arranca la portada cuando la landing es la vista");
+      assert.ok(/window\.Portada\.teaser\(\)/.test(appP), "app.js pinta el teaser del mercado en la landing");
       const onbP = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8"));
       assert.ok(/searchParams\.set\(k, v\)/.test(onbP), "el filtro de la URL viaja al tablero al terminar el diagnóstico");
       assert.strictEqual(PortadaPub.pesosCortos(4.7e12), "$4,7 billones");
@@ -15829,9 +15837,16 @@ async function main() {
       }
       // (2) la landing: puerta primero, casi sin texto
       const htmlL = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-      const iOnb = htmlL.indexOf('id="onboarding"'), iGate = htmlL.indexOf('id="gate"'), iTab = htmlL.indexOf('id="tab-licitaciones"'), iPortada = htmlL.indexOf('<section id="portada"');
+      const iOnb = htmlL.indexOf('id="onboarding"'), iGate = htmlL.indexOf('id="gate"'), iTab = htmlL.indexOf('id="tab-licitaciones"');
       const iTabAdmin = htmlL.indexOf('id="tab-admin"');
-      assert.ok(iOnb >= 0 && iGate > iOnb && iTabAdmin > iGate && iPortada > iTabAdmin && iPortada < iTab, "la portada del mercado ya NO vive en la landing: está dentro de Mi empresa (la pestaña principal), plegada");
+      /* El render completo de la portada se RETIRÓ (encargo del ingeniero): de la
+         landing salió en su día y de Mi empresa sale ahora. Lo que queda del
+         mercado es el TEASER de tres cifras, y ese sí vive en la landing —es el
+         gancho antes de elegir cómo entrar—. El orden que importa sigue siendo
+         landing → gate → pestañas. */
+      assert.ok(iOnb >= 0 && iGate > iOnb && iTabAdmin > iGate && iTab > iTabAdmin,
+        "orden del documento: landing → gate → Mi empresa → Licitaciones");
+      assert.ok(!/\<section id="portada"/.test(htmlL), "el render completo del mercado no puede volver a ninguna pestaña");
       const landing = htmlL.slice(iOnb, iGate);
       for (const id of ["btn-subir-rup", "btn-manual", "btn-ir-gate", "pulso-global", "entrada-inicio", "res-cifras"]) assert.ok(landing.includes(`id="${id}"`), `la landing debe tener #${id}`);
       const inicio = landing.slice(landing.indexOf('id="entrada-inicio"'), landing.indexOf('<!-- progreso de la extracción -->'));
@@ -15849,10 +15864,13 @@ async function main() {
       const tab = htmlL.slice(iTabAdmin, iTab);
       assert.ok(iTabAdmin < iTab && iTab < htmlL.indexOf('id="tab-apu"'), "orden de los paneles: Mi empresa → Licitaciones → Precios");
       assert.ok(/<main id="tab-admin" class="panel-pestana mx-auto max-w-6xl/.test(htmlL) && /<main id="tab-licitaciones" class="panel-pestana mx-auto hidden/.test(htmlL), "Mi empresa nace visible; Licitaciones, oculta");
-      for (const id of ["pulso", "pu-hero", "pu-departamentos", "pu-entidades", "pu-nota", "mercado-completo", "pt-vacio", "rup-cifras", "seccion-rup"]) assert.ok(tab.includes(`id="${id}"`), `falta #${id} en la pestaña Mi empresa`);
+      for (const id of ["pulso", "pu-hero", "pu-departamentos", "pu-entidades", "pu-nota", "rup-cifras", "seccion-rup"]) assert.ok(tab.includes(`id="${id}"`), `falta #${id} en la pestaña Mi empresa`);
       assert.ok(/<section id="pulso" class="hidden/.test(tab), "el pulso nace OCULTO (vacío y honesto hasta que hay datos)");
-      assert.ok(tab.indexOf('id="pulso"') < tab.indexOf('id="mercado-completo"') && tab.indexOf('id="mercado-completo"') < tab.indexOf('id="seccion-rup"'), "orden en Mi empresa: pulso → mercado plegado → registro en cifras");
-      assert.ok(/<details id="mercado-completo"(?![^>]*\bopen\b)/.test(tab), "el mercado completo nace PLEGADO");
+      /* ORDEN NUEVO (encargo del ingeniero): el TABLERO abre la pestaña —«podría
+         ser el tablero principal de mi empresa»—, después el pulso y después el
+         registro. El pliegue del mercado nacional desapareció. */
+      assert.ok(tab.indexOf('id="dashboard"') < tab.indexOf('id="pulso"'), "el tablero abre Mi empresa");
+      assert.ok(tab.indexOf('id="pulso"') < tab.indexOf('id="seccion-rup"'), "y el registro en cifras va después");
       const lic = htmlL.slice(iTab, htmlL.indexOf('id="tab-apu"'));
       assert.ok(!lic.includes('id="pulso"') && lic.indexOf('id="f-ordenar"') > 0, "Licitaciones ya no lleva el pulso: empieza por la barra de herramientas");
       const nav = htmlL.slice(htmlL.indexOf('aria-label="Secciones"'), htmlL.indexOf("</nav>"));
@@ -15867,7 +15885,10 @@ async function main() {
       assert.ok(/function refrescarPulso\(\)/.test(appL) && /refrescarPulso\(\);/.test(appL.slice(appL.indexOf("function abrirApp"), appL.indexOf("function abrirApp") + 1400)), "abrirApp refresca el pulso");
       assert.ok(/if \(id === "f-perfil"\) \{ refrescarPulso\(\);/.test(appL), "cambiar de perfil refresca el pulso");
       assert.ok(/window\.Portada\.teaser\(\)/.test(appL), "la landing arranca el TEASER, no la portada entera");
-      assert.ok(/mercadoCompleto\.open && window\.Portada\) window\.Portada\.arrancar\(\)/.test(appL), "la portada entera se pide al ABRIR el pliegue, no antes");
+      /* El pliegue «El mercado completo hoy» y su carga perezosa se retiraron con
+         él: ya no hay portada entera que pedir dentro de Mi empresa. Lo que se
+         vigila ahora es que NO vuelva —ni el nodo, ni la llamada—. */
+      assert.ok(!/mercadoCompleto/.test(appL), "el pliegue del mercado nacional no puede volver a Mi empresa");
       assert.ok(/aplicarFiltroDelPulso/.test(appL) && /cambiarFiltros\(window\.Filtros\.leerEstado\(params\)\)/.test(appL), "las cifras del pulso filtran la lista EN LA MISMA PÁGINA con el mismo leerEstado de la URL");
       // el pulso vive en Mi empresa: la cifra LLEVA a la lista (cambia de pestaña) y sin hash se abre Mi empresa
       const fnPulso = appL.slice(appL.indexOf("function aplicarFiltroDelPulso"), appL.indexOf("function aplicarFiltroDelPulso") + 900);
@@ -15908,8 +15929,15 @@ async function main() {
       assert.ok(/Para Constructora X, hoy/.test(hero) && /47/.test(hero) && /\$312\.000 millones/.test(hero) && /cierran esta semana/.test(hero), "hero: nombre, cuántas, cuánto, cierran");
       assert.ok(/data-filtro="cierre=7d"/.test(hero) && /data-filtro="todo"/.test(hero), "las cifras enlazan a la lista");
       const dep = PulsoPub.htmlDepartamentos(p0), entH = PulsoPub.htmlEntidades(p0);
-      assert.ok(/data-filtro="dep=TOLIMA"/.test(dep) && /y 7 departamentos más/.test(dep) && /width:100%/.test(dep) && /width:60%/.test(dep), "barras por conteo, enlace por departamento y «y N más»");
-      assert.ok(/data-filtro="entidad=800113389"/.test(entH) && /y 29 entidades más/.test(entH), "las entidades enlazan por NIT y dicen cuántas más hay");
+      /* BARRAS RANKEADAS (encargo del ingeniero, ago 2026): mismo dato, forma
+         nueva. Lo que se vigila es lo que decide —el enlace a la lista, la
+         proporción de la barra y que se DIGA cuántas quedan fuera—, no el
+         literal del rótulo, que es redacción. */
+      assert.ok(/data-filtro="dep=TOLIMA"/.test(dep) && /data-filtro="dep=CUNDINAMARCA"/.test(dep), "cada departamento enlaza a su lista");
+      assert.ok(/width:100\.0%/.test(dep) && /width:60\.0%/.test(dep), "la barra es proporcional al conteo (20 y 12 sobre un máximo de 20)");
+      assert.ok(/9 en total/.test(dep), "se dice cuántos departamentos quedan fuera del top");
+      assert.ok(/\$100\.000 millones/.test(dep), "…y el DINERO viaja al lado del conteo: ya estaba en el dato y no se pintaba");
+      assert.ok(/data-filtro="entidad=800113389"/.test(entH) && /30 en total/.test(entH), "las entidades enlazan por NIT y dicen cuántas más hay");
       const cero = PulsoPub.htmlHero({ total: 0, visibles: 12, corpus_vacio: false }, "");
       assert.ok(/ninguna licitación abierta encaja/.test(cero) && /Hay 12 de su tipo de obra/.test(cero) && !/data-filtro/.test(cero), "con cero viables no hay cifras que enlazar y se dice por qué");
       assert.strictEqual(PulsoPub.htmlHero({ total: 3, valorTotal: null, cierranEstaSemana: { n: 0, valor: null } }, "").includes("Sin referencia"), true, "sin cuantías publicadas el dinero es «Sin referencia», no $0");
@@ -18875,6 +18903,84 @@ async function main() {
       assert.ok(/id="cons-nombre"/.test(htmlIng), "falta el campo del nombre del consorcio");
       assert.ok(/op=consorcio[\s\S]{0,300}nombre:/.test(appIng), "el POST del consorcio tiene que mandar el nombre");
       assert.ok(/nombreCons \|\| null/.test(appIng), "sin nombre viaja null (el servidor cae a «Consorcio N»), nunca una cadena vacía");
+    }
+
+    /* ═══ GRÁFICOS DE VERDAD Y REORDEN DE MI EMPRESA (encargo del ingeniero) ═══
+       «Los gráficos están como si fueran de niños de primaria… el tablero de
+       procesos que tienes oculto podría ser el tablero principal de mi empresa.»
+       Se EJECUTAN las tres primitivas: comprobar por regex que existen no
+       prueba que dibujen lo que dicen. */
+    {
+      const Viz = require("../public/pulso.js");
+      const htmlV = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const sinComV = htmlV.replace(/<!--[\s\S]*?-->/g, "");
+      const tabV = sinComV.slice(sinComV.indexOf('<main id="tab-admin"'), sinComV.indexOf("</main>", sinComV.indexOf('<main id="tab-admin"')));
+      const tabPrecios = sinComV.slice(sinComV.indexOf('<main id="tab-apu"'), sinComV.indexOf("</main>", sinComV.indexOf('<main id="tab-apu"')));
+
+      /* (1) LO QUE SE RETIRÓ NO PUEDE VOLVER */
+      assert.ok(!/id="mercado-completo"/.test(htmlV), "«El mercado completo hoy» se retiró de Mi empresa");
+
+      /* (2) DÓNDE VIVE CADA COSA AHORA. El catálogo de precios se fue a Precios
+         —«o elimínalo o cámbialo a precios, ya que allí es que corresponde»— y el
+         rastreo salió del acordeón técnico a la vista de quien licita. */
+      assert.ok(tabPrecios.includes('id="seccion-apu"'), "el catálogo de precios vive en la pestaña Precios");
+      assert.ok(!tabV.includes('id="seccion-apu"'), "…y ya no en Mi empresa");
+      const iSis = tabV.indexOf('id="seccion-sistema"');
+      assert.ok(iSis > 0);
+      for (const id of ["dashboard", "rastreo-wrap"]) {
+        assert.ok(tabV.includes(`id="${id}"`), `falta #${id} en Mi empresa`);
+        assert.ok(tabV.indexOf(`id="${id}"`) < iSis || id === "rastreo-wrap", `#${id} tiene que estar fuera de «Sistema»`);
+      }
+      assert.ok(tabV.indexOf('id="dashboard"') < iSis, "el tablero está FUERA de Sistema y abre la pestaña");
+
+      /* (3) LAS TRES PRIMITIVAS, EJECUTADAS */
+      const cub = [{ id: "7d", etiqueta: "Esta semana", corto: "semana", n: 46, valor: 3.1e11 },
+        { id: "15d", etiqueta: "Dos semanas", corto: "2 sem", n: 120, valor: 9e11 },
+        { id: "", etiqueta: "Vacía", corto: "vacía", n: 0, valor: null }];
+      const col = Viz.columnas(cub, { filtroDe: (x) => (x.id ? `cierre=${x.id}` : null) });
+      assert.ok(/<svg/.test(col), "columnas dibuja");
+      assert.strictEqual((col.match(/data-filtro/g) || []).length, 2, "solo las cubetas con filtro llevan enlace; la que no, no promete una lista");
+      assert.ok(/<line/.test(col), "hay rejilla y línea base: una columna sin eje no se puede leer");
+      assert.ok(/>46</.test(col) && />120</.test(col), "el valor va en la cabeza de la columna");
+      /* Ticks REDONDOS: 0/500/1000, nunca 0/277/554. */
+      assert.deepStrictEqual(Viz.ticksRedondos(831)[0], [0, 500, 1000]);
+      assert.deepStrictEqual(Viz.ticksRedondos(47)[0], [0, 20, 40, 60]);
+      assert.strictEqual(Viz.columnas([], {}), "", "sin cubetas no se inventa un gráfico");
+      assert.strictEqual(Viz.columnas([{ n: 0 }, { n: 0 }], {}), "", "todo en cero tampoco: un gráfico plano no dice nada");
+
+      const rank = Viz.barrasRank([{ nombre: "TOLIMA", n: 20, valor: 1e11 }, { nombre: "OTROS", n: 8, valor: null }],
+        { filtroDe: (x) => (x.nombre === "OTROS" ? null : `dep=${x.nombre}`) });
+      assert.ok(/data-filtro="dep=TOLIMA"/.test(rank), "cada categoría enlaza a su lista");
+      assert.strictEqual((rank.match(/data-filtro/g) || []).length, 1, "«OTROS» es la cola, no un departamento: se pinta pero NO enlaza a una lista vacía");
+      assert.ok(/\$100\.000 millones/.test(rank), "el dinero viaja al lado del conteo");
+
+      const api = Viz.apilada([{ etiqueta: "Obra", n: 60 }, { etiqueta: "Interventoría", n: 40 }]);
+      assert.ok(/var\(--viz-1\)/.test(api) && /var\(--viz-2\)/.test(api), "la composición usa la paleta CATEGÓRICA, que es donde las series son el sujeto");
+      assert.ok(/calc\([\d.]+% - 2px\)/.test(api), "2 px de hueco entre segmentos: es el hueco quien separa, nunca un borde");
+      assert.ok(/60 %/.test(api) && /40 %/.test(api), "etiquetas directas (la paleta clara avisa de contraste: no son opcionales)");
+      assert.strictEqual(Viz.apilada([{ etiqueta: "x", n: 0 }]), "", "sin nada que repartir no se pinta una barra vacía");
+
+      /* (4) EL TEXTO NUNCA LLEVA EL COLOR DE LA SERIE: lo carga la marca que
+         tiene al lado. Es la regla que separa un gráfico de un adorno. */
+      for (const [n, g] of [["columnas", col], ["rank", rank]]) {
+        assert.ok(!/<text[^>]*fill: ?var\(--viz-/.test(g) && !/color: ?var\(--viz-/.test(g),
+          `${n}: el texto tiene que ir con los tokens de texto, no con el color de la serie`);
+      }
+
+      /* (5) LA PALETA VIVE EN TOKENS y tiene su versión escalonada para oscuro
+         —no un volteo automático—: los dos juegos se validaron por separado
+         contra la superficie real de cada tema. */
+      for (const v of ["--viz-1", "--viz-2", "--viz-3", "--viz-4", "--viz-grid"]) {
+        assert.ok(new RegExp(v.replace("--", "--") + ":").test(htmlV), `falta el token ${v}`);
+        assert.ok((htmlV.match(new RegExp(v + ":", "g")) || []).length >= 2, `${v} tiene que estar definido para claro Y para oscuro`);
+      }
+
+      /* (6) LAS TABLAS ANCHAS SE DESPLAZAN SIN EL CDN. `overflow-x-auto` es una
+         utilidad de Tailwind y la red del dueño bloquea su CDN: sin la regla
+         propia la tabla empuja la página entera (medido: 506 px de documento en
+         una ventana de 390). */
+      assert.ok(/\.tabla-scroll \{ overflow-x: auto/.test(htmlV), "regla propia de desplazamiento para las tablas anchas");
+      assert.ok(/#tab-admin \.grid > \*[^{]*\{ min-width: 0/.test(htmlV), "los hijos de un grid necesitan min-width:0 para poder encogerse");
     }
 
     /* ── los filtros de «¿Por qué no está este proceso?», EJECUTADOS ── */
