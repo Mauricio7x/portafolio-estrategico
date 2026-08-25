@@ -16362,7 +16362,76 @@ async function main() {
           "ninguna fila trae precio del archivo: el precio sale de los bancos");
         console.log(`  · A1 · el cable: ${pA1.items.length} ítems del pliego → ${mA1.filas.length} mapeados contra los 6 588 (el catálogo del lector da precio en 0 de 93) · el unitario oficial NO entra como precio`);
       }
-      console.log(`  · Guardián del Formulario 1 (Fase 4): 7 validaciones con caso · adición/supresión/modificación (descripción, unidad, cantidad) · «${limpio.frase}» · rechazos citan 1.15/C-549, 4.1, 2.2.1.1.2.2.4 y Ley 1882 · sin «causal O»`);
+      /* ═══ A2 · VALIDACIÓN 8 · el precio unitario contra el del pliego ═══
+         Las siete validaciones comparaban descripción, unidad y cantidad contra
+         el Formulario 1, y el TOTAL contra el presupuesto oficial. El PRECIO
+         UNITARIO no se comparaba con nada: reproducido, un ítem ofertado a 2,74×
+         el unitario oficial daba semáforo «listo», 0 rechazos, y ni la cifra del
+         pliego ni la de la oferta aparecían en la respuesta.
+         Importa por las DOS direcciones y no son simétricas (docs/COMPLEMENTO
+         §V-03, verificado): en contrato a PRECIOS UNITARIOS las mayores
+         cantidades ordenadas DEBEN reconocerse, así que un ítem barato es donde
+         se pierde plata si la entidad ordena más; en PRECIO GLOBAL «en principio
+         no se reconocen». Y por encima, si el pliego fija unitarios máximos,
+         superarlos puede costar el proceso — pero eso depende del Documento Base
+         de cada uno, así que se manda a VERIFICARLO y no se afirma la norma.
+         NO es un rechazo: ofertar a otro precio es justamente lo que hace el
+         oferente. Es alerta, y ordenada por PLATA EN JUEGO, no por porcentaje. */
+      {
+        const F1 = require("../lib/formulario1.js");
+        const formA2 = { items: [
+          { numeral: "1.1", descripcion: "LOCALIZACION Y REPLANTEO", unidad: "m2", cantidad: 1200, unitario_oficial: 2500, total_oficial: 3000000 },
+          { numeral: "2.1", descripcion: "SUB-BASE GRANULAR CLASE C", unidad: "m3", cantidad: 420, unitario_oficial: 95000, total_oficial: 39900000 },
+        ] };
+        const ofertaA2 = (pu11, pu21) => ({
+          items: [
+            { numeral: "1.1", descripcion: "LOCALIZACION Y REPLANTEO", unidad: "m2", cantidad: 1200, precio_unitario: pu11, total: pu11 * 1200 },
+            { numeral: "2.1", descripcion: "SUB-BASE GRANULAR CLASE C", unidad: "m3", cantidad: 420, precio_unitario: pu21, total: pu21 * 420 },
+          ],
+          aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 },
+          total: pu11 * 1200 + pu21 * 420,
+        });
+        // (1) el caso testigo: 2,74× el oficial ya NO puede pasar en verde
+        const caso = F1.validarFormulario1({ oferta: ofertaA2(2000, 260000), formulario: formA2, presupuesto_oficial: 130000000, tope_aiu_pct: 30 });
+        const vu = caso.veredictos.find((v) => v.id === "unitarios");
+        assert.ok(vu, `existe la validación 8: ${caso.veredictos.map((v) => v.id).join(", ")}`);
+        assert.notStrictEqual(caso.semaforo, "listo", "un ítem a 2,74× el unitario oficial no puede salir «lista para presentar»");
+        assert.strictEqual(vu.nivel, "alerta", "es ALERTA, no rechazo: ofertar a otro precio es lo que hace el oferente");
+        assert.strictEqual(caso.rechazos, 0, "y no inventa un motivo de rechazo automático");
+        const sA2 = JSON.stringify(caso);
+        assert.ok(/260\.000/.test(sA2) && /95\.000/.test(sA2), "las DOS cifras aparecen: la del pliego y la ofertada");
+        // (2) ordenado por PLATA EN JUEGO, no por porcentaje
+        //     1.1: |2000−2500| × 1200 = 600.000 (−20 %)   ·   2.1: |260000−95000| × 420 = 69.300.000 (+174 %)
+        assert.strictEqual(vu.filas[0].numeral, "2.1", `manda la plata en juego: ${JSON.stringify(vu.filas.map((f) => [f.numeral, f.plata_en_juego_cop]))}`);
+        assert.strictEqual(vu.filas[0].plata_en_juego_cop, 69300000);
+        assert.strictEqual(vu.filas[0].direccion, "por_encima");
+        // (3) sin unitarios en el pliego NO se afirma que cumple
+        const sinU = F1.validarFormulario1({
+          oferta: ofertaA2(2000, 90000),
+          formulario: { items: formA2.items.map((i) => ({ ...i, unitario_oficial: null, total_oficial: null })) },
+          // el presupuesto va CERCA del total del caso: con uno muy alto, la validación 5
+          // (precio artificialmente bajo) dispararía sola y ensuciaría el semáforo que se mide
+          presupuesto_oficial: 44000000, tope_aiu_pct: 30,
+        });
+        assert.strictEqual(sinU.veredictos.find((v) => v.id === "unitarios").nivel, "sin_referencia",
+          "el pliego no publica unitarios: se dice, no se afirma «cumple»");
+        assert.ok(sinU.pendientes.includes("unitarios"));
+        // (4) dentro del umbral, ok — y el semáforo no se ensucia
+        const ok = F1.validarFormulario1({ oferta: ofertaA2(2400, 92000), formulario: formA2, presupuesto_oficial: 45000000, tope_aiu_pct: 30 });
+        assert.strictEqual(ok.veredictos.find((v) => v.id === "unitarios").nivel, "ok", "precios cerca del oficial: sin ruido");
+        assert.strictEqual(ok.semaforo, "listo");
+        // (5) por DEBAJO también avisa, y con la lectura correcta
+        const bajo = F1.validarFormulario1({ oferta: ofertaA2(2400, 30000), formulario: formA2, presupuesto_oficial: 17000000, tope_aiu_pct: 30 });
+        const vb = bajo.veredictos.find((v) => v.id === "unitarios");
+        assert.strictEqual(vb.nivel, "alerta");
+        assert.strictEqual(vb.filas[0].direccion, "por_debajo");
+        assert.ok(/mayores cantidades/i.test(vb.mensaje + vb.fundamento), "por debajo se nombra el riesgo de mayores cantidades");
+        assert.ok(/precios unitarios/i.test(vb.fundamento) && /global/i.test(vb.fundamento),
+          "el fundamento distingue precios unitarios de precio global: la lectura no es la misma");
+        assert.ok(!/causal\s+o\b/i.test(JSON.stringify(vb)), "sin jerga «causal O»");
+        console.log(`  · A2 · validación 8: el ítem a 2,74× el oficial pasa de «listo» a «${caso.frase}» · $${vu.filas[0].plata_en_juego_cop.toLocaleString("es-CO")} en juego en una fila · sin unitarios del pliego → sin referencia`);
+      }
+      console.log(`  · Guardián del Formulario 1 (Fase 4): 8 validaciones con caso · adición/supresión/modificación (descripción, unidad, cantidad) · «${limpio.frase}» · rechazos citan 1.15/C-549, 4.1, 2.2.1.1.2.2.4 y Ley 1882 · sin «causal O»`);
     }
 
     /* ═══════════ j-decies. VIGÍA DE ADENDAS Y CRONOGRAMA (Fase 5 del plan v3) ═══════════

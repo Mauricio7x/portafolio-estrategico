@@ -1856,6 +1856,50 @@ cascada de `lib/apu/precios.js`. Evidencia HTTP en el §11 del mismo doc.
   INVIAS prohíben el uso comercial sin autorización — si Detekta se comercializa con estos datos,
   pedirla (`preciosunitarios@invias.gov.co`).
 
+### A2 · Validación 8: su precio unitario contra el del pliego (24-ago-2026)
+
+`compararItems` publica `precios` y `validarFormulario1` añade la octava validación. Cierra el
+hallazgo H-3 de la auditoría, que era el que el encargo pedía de frente («comparar los precios que ya
+tiene el APU con los que sugiere la página»).
+
+- **EL DEFECTO, REPRODUCIDO ANTES DE TOCAR NADA**: las siete validaciones comparaban descripción,
+  unidad y cantidad contra el Formulario 1, y el TOTAL contra el presupuesto oficial. El **precio
+  unitario no se comparaba con nada**. Ejecutado: un ítem con unitario oficial $95.000 ofertado a
+  $260.000 (**2,74×**) daba `semaforo: "listo"`, «Su oferta está lista para presentar.», 0 rechazos, y
+  **ni 95.000 ni 260.000 aparecían en la respuesta**. Y tampoco se comparaba el TOTAL POR ÍTEM.
+- **EL DATO YA LLEGABA Y NADIE LO MIRABA.** `normalizarItems` (formulario1.js) lee
+  `it.precio_unitario ?? it.unitario ?? it.unitario_oficial`, así que el unitario del pliego ya
+  quedaba normalizado en `ref.precio_unitario` DENTRO de `compararItems`; y `revisarOferta`
+  (`public/app.js`) ya envía el formulario del lector al servidor. No hubo que transportar nada: solo
+  faltaba la validación. Por eso salió mucho más barata de lo que el informe suponía.
+- **EL CASADO NO SE REHACE: se aprovecha el que ya existe.** Los pares (oferta, pliego) salen del
+  MISMO bucle que decide qué ítem de la oferta corresponde a cuál del pliego. Calcularlos aparte
+  habría sido una segunda definición de «este ítem es este otro», que es el defecto que este
+  repositorio ya pagó caro.
+- **NO ES UN RECHAZO, Y ESO NO ES UN MATIZ.** Ofertar a un precio distinto del que estimó la entidad
+  es justamente lo que hace el oferente: si esto fuera «modificación del Formulario 1» (que sí es
+  motivo de rechazo automático) la app estaría denunciando como falta lo que es el trabajo del
+  contratista. Es **alerta**, y `rechazos` sigue en 0 — con prueba.
+- **SE ORDENA POR PLATA EN JUEGO, no por porcentaje**: `|desvío| × cantidad DEL PLIEGO`. Un −84 % en
+  un ítem de $2.500 pesa menos que un +23 % en 420 m³. La cantidad es la del PLIEGO porque es la que
+  la entidad va a pagar; si la de la oferta difiere, eso ya lo denuncia la validación 2.
+- **LAS DOS DIRECCIONES NO SON SIMÉTRICAS, y el fundamento lo dice** (`docs/COMPLEMENTO` §V-03,
+  Consejo de Estado, verificado): a **precios unitarios** las cantidades del pliego son un estimativo
+  y las mayores cantidades ordenadas **deben reconocerse**, así que un ítem por debajo del oficial
+  pierde plata en cada unidad de más; a **precio global** «en principio no se reconocen». Por encima
+  **se manda a VERIFICAR el Documento Base y no se afirma la norma**: que un pliego colombiano fije
+  precios unitarios máximos cuya superación sea causal de rechazo depende de cada proceso y no se
+  pudo contrastar. Es la diferencia entre avisar y afirmar.
+- **NO SE INVENTA UN UMBRAL**: reutiliza el `TEMERARIO_PCT` que la validación 5 ya declara
+  (lib/apu/piso_techo). Una cifra nueva puesta a ojo para esto habría sido un supuesto más.
+- **Sin unitarios en el pliego, `sin_referencia` — jamás «cumple»**: un pliego puede no publicarlos, y
+  entonces no hay contra qué comparar. El veredicto lo dice y entra en `pendientes`.
+- **Un fixture MÍO desvió la primera corrida y conviene anotarlo**: el caso «dentro del umbral» tenía
+  el presupuesto oficial muy por encima de su total, así que disparaba la validación 5 (precio
+  artificialmente bajo) y el semáforo que se medía no era el que se creía medir. El fallo era del
+  fixture, no del código. Los presupuestos de prueba van ahora cerca del total de cada caso.
+
+
 ### A1 · El cable: del pliego al presupuesto (24-ago-2026)
 
 Botón «Usar estos ítems en mi presupuesto» en el lector (`#pl-btn-usar`) + `filasDesdePliego` y
