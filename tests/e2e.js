@@ -8533,6 +8533,47 @@ async function main() {
            `pintarSeguimiento` ya se defendía con `r.procesos || []`. */
         assert.ok(/for \(const p of Array\.isArray\(r\.procesos\) \? r\.procesos : \[\]\)/.test(appSeg),
           "cargarSeguimiento comprueba lo que va a ITERAR, no solo `ok`: un ok:true sin `procesos` mataba la pestaña en silencio");
+        /* ═══ F0-7 · LA PREDICCIÓN QUE SE LE ENSEÑÓ SE CONGELA AL GUARDAR ═══
+           `P(ganar)` no es falsable hoy: el corpus dice quién ganó, no a qué se
+           presentó nadie. `estado` ya recoge presentado/ganado/perdido — es la
+           ETIQUETA que falta. Sin la predicción de aquel momento no hay nada
+           contra qué compararla, y cada día sin guardarla es un día de datos
+           que no vuelve. Cuatro cerraduras:
+           (1) la `p` congelada es EXACTAMENTE la que sirvió el listado — no es
+               un segundo cálculo (se obtiene llamando a `desgloseDeProceso`,
+               que ya tiene prueba de reproducir el listado);
+           (2) NO se mueve al cambiar de estado ni al re-guardar: es la cifra
+               del día en que decidió, no la última;
+           (3) la calcula el SERVIDOR — una `prediccion` en el cuerpo se IGNORA,
+               como ya se hace con `visto`: si el cliente la escribiera, el
+               registro de calibración nacería envenenado;
+           (4) viajan las ENTRADAS, no solo el número: sin ellas se sabría QUE
+               falló una predicción, no POR QUÉ. */
+        {
+          const gs = (await seg("&perfil=helder")).cuerpo.procesos.find((x) => x.id === fila.id_del_proceso);
+          assert.ok(gs && gs.prediccion, `al guardar se congela la predicción: ${JSON.stringify(gs && gs.prediccion)}`);
+          assert.strictEqual(gs.prediccion.p_ganar, fila.p_ganar,
+            `(1) la p congelada (${gs.prediccion.p_ganar}) es la que sirvió el listado (${fila.p_ganar})`);
+          assert.ok(gs.prediccion.congelada_el, "(1) la predicción lleva la fecha del día en que se guardó");
+          assert.strictEqual(gs.estado, "descartado", "el estado sí cambió (g3)");
+          assert.strictEqual(gs.prediccion.p_ganar, fila.p_ganar, "(2) cambiar de estado NO mueve la predicción");
+          // (4) las entradas del cálculo, no solo el número
+          for (const k of ["rivales_esperados", "fuente_del_promedio", "peso_datos_entidad", "banda_90", "p_sin_precio", "baja_maxima"]) {
+            assert.ok(k in gs.prediccion, `(4) falta la entrada «${k}» del cálculo`);
+          }
+          assert.strictEqual(gs.prediccion.desenlace, null,
+            "(4) un guardado sin desenlace responde null, JAMÁS «perdido»: no saber no es haber perdido");
+          // (3) la manda el servidor: una predicción del cliente se ignora
+          const otra = li.cuerpo.resultados.find((f) => f.id_del_proceso !== fila.id_del_proceso && f.p_ganar != null);
+          assert.ok(otra, "hace falta un segundo proceso del listado");
+          const gf = await seg("", { metodo: "POST", body: { perfil: "helder", id: otra.id_del_proceso, estado: "interesa", foto: otra,
+            prediccion: { p_ganar: 0.99, congelada_el: "1999-01-01T00:00:00.000Z", rivales_esperados: 0 } } });
+          assert.strictEqual(gf.status, 200);
+          assert.notStrictEqual(gf.cuerpo.guardado.prediccion.p_ganar, 0.99, "(3) la p del CLIENTE se ignora");
+          assert.strictEqual(gf.cuerpo.guardado.prediccion.p_ganar, otra.p_ganar, "(3) el servidor la recalcula y coincide con el listado");
+          await seg(`&perfil=helder&id=${encodeURIComponent(otra.id_del_proceso)}`, { metodo: "DELETE" });
+          console.log(`  · F0-7: predicción congelada al guardar · p=${gs.prediccion.p_ganar} ≡ listado · ${gs.prediccion.rivales_esperados} rivales (${gs.prediccion.fuente_del_promedio}) · sobrevive al cambio de estado · la del cliente se ignora`);
+        }
         console.log(`  · seguimiento: guardar/estado/quitar por perfil · fila viva (${abierto.dias_para_cierre} días al cierre, ${abierto.avisos.length} avisos) · .ics con alarmas · detalle: ${det.proponentes.length} proponentes, recurrente ${rec.ante_esta_entidad.veces_presentado} veces ante la entidad y ${rec.contratos_vigentes.contratos} vigentes por $${rec.contratos_vigentes.valor_cop}`);
       }
 
@@ -11694,15 +11735,52 @@ async function main() {
             { descripcion: "Escultura conmemorativa", unidad: "und", cantidad: 1 },
           ];
           const mv = impII.mapearFilasImportadas(filasVial, require("../lib/apu/catalogo.js").SEMILLA);
+          /* EL INVIAS ES EL ÚLTIMO RECURSO ENTRE BANCOS (24-ago-2026, encargo del
+             dueño), y esta cerradura NO cambió de valor: sigue exigiendo las
+             cuatro filas en INVIAS, y ahí está el matiz que costó entenderlo.
+             El motivo del cambio no es de calidad sino de LICENCIA (es el único
+             banco que prohíbe el uso comercial sin autorización, F0-3 del plan),
+             pero el INVIAS solo CEDE donde hay una alternativa LOCAL: fuera de
+             Bogotá y Cundinamarca es la única fuente regionalizada por provincia
+             y el IDU serviría precio de Bogotá «sin ajuste». Estas filas se
+             mapean SIN departamento, así que el INVIAS gana — y debe ganar.
+             Lo que el encargo sí cambia se prueba justo debajo, con Bogotá. */
           assert.deepStrictEqual(mv.filas.slice(0, 4).map((f) => [f.nivel_mapeo, f.fuente_mapeo]),
             [["firme", "invias"], ["firme", "invias"], ["firme", "invias"], ["firme", "invias"]],
-            `las cuatro filas viales mapean firme al INVIAS: ${JSON.stringify(mv.filas.map((f) => [f.nivel_mapeo, f.fuente_mapeo, f.item_id]))}`);
-          assert.strictEqual(mv.filas[0].item_id, "INVIAS:210,2,2");
+            `las cuatro filas viales siguen firmes; la subbase la gana OTRO banco porque el INVIAS es último recurso: ${JSON.stringify(mv.filas.map((f) => [f.nivel_mapeo, f.fuente_mapeo, f.item_id]))}`);
+          assert.strictEqual(mv.filas[0].item_id, "INVIAS:210,2,2", "sin alternativa de igual puntaje, el INVIAS SIGUE saliendo: «último recurso» no es «nunca»");
           assert.strictEqual(mv.filas[1].item_id, "INVIAS:320,3,1");
           assert.deepStrictEqual(mv.filas[1].variantes.map((v) => v.codigo), ["INVIAS:320,3,2"], "la variante de la misma cabecera se PUBLICA (SBG-50 / SBG-38)");
+          /* y la publicación de variantes INVIAS no se perdió: con la grafía que
+             sí gana el INVIAS, su hermana de gradación sigue viajando */
+          const mvGuion = impII.mapearFilasImportadas([{ descripcion: "SUB-BASE GRANULAR CLASE C", unidad: "m3", cantidad: 420 }], require("../lib/apu/catalogo.js").SEMILLA);
+          assert.strictEqual(mvGuion.filas[0].fuente_mapeo, "invias");
+          assert.ok(mvGuion.filas[0].variantes.every((v) => /^INVIAS:/.test(v.codigo)), "las variantes INVIAS de la misma cabecera se publican");
           assert.deepStrictEqual([mv.filas[4].nivel_mapeo, mv.filas[4].item_id], ["firme", "NOG-B2"], "el catálogo sigue mapeando lo suyo");
           assert.strictEqual(mv.filas[5].nivel_mapeo, "personalizado");
-          assert.strictEqual(mv.resumen_mapeo.mapeados_invias, 4);
+          assert.strictEqual(mv.resumen_mapeo.mapeados_invias, 4, "SIN departamento el INVIAS es la única fuente regionalizada: no cede");
+          /* ═══ el encargo, EJECUTADO: con alternativa local el INVIAS cede ═══
+             Medido antes de aplicarlo: sobre 300 filas típicas en Bogotá el
+             reparto pasa de `invias 30` a `invias 15` y `firmes/revisar` NO se
+             mueve (120/180) — cambia la fuente, no la calidad. La fila que se
+             mueve va al MISMO ítem servido por otro banco (IDU:4159 «SUBBASE
+             GRANULAR CLASE C (SBG_C)…»), no a uno peor. El coste declarado: el
+             IDU no publica composición (0/3172) y el INVIAS sí (520/526), así
+             que esa fila pierde su hoja de APU desglosada. */
+          const mvBog = impII.mapearFilasImportadas(filasVial, require("../lib/apu/catalogo.js").SEMILLA, { departamento: "Bogotá" });
+          assert.strictEqual(mvBog.filas[1].fuente_mapeo, "idu",
+            `en Bogotá hay banco local: el INVIAS cede el desempate (${mvBog.filas[1].fuente_mapeo} → ${mvBog.filas[1].item_id})`);
+          assert.ok(mvBog.resumen_mapeo.mapeados_invias < mv.resumen_mapeo.mapeados_invias,
+            `con alternativa local se usa MENOS INVIAS: ${mvBog.resumen_mapeo.mapeados_invias} < ${mv.resumen_mapeo.mapeados_invias}`);
+          assert.strictEqual(mvBog.filas[0].fuente_mapeo, "invias",
+            "«último recurso» no es «nunca»: sin alternativa de igual puntaje el INVIAS sigue saliendo");
+          // el código DANE tiene que valer lo mismo que el nombre (asimetría que sí existía: «25» valía, «11» no)
+          const mvDane = impII.mapearFilasImportadas(filasVial, require("../lib/apu/catalogo.js").SEMILLA, { departamento: "11" });
+          assert.strictEqual(mvDane.filas[1].fuente_mapeo, "idu", "el código DANE 11 vale igual que «Bogotá»");
+          // y fuera de Bogotá/Cundinamarca NO cede: ceder sería servir precio de otra ciudad como local
+          const mvAnt = impII.mapearFilasImportadas(filasVial, require("../lib/apu/catalogo.js").SEMILLA, { departamento: "Antioquia" });
+          assert.strictEqual(mvAnt.filas[1].fuente_mapeo, "invias",
+            "sin alternativa regionalizada el INVIAS se conserva: no se cambia un dato local por uno de Bogotá");
           assert.strictEqual(mv.filas[0].entrada_calculo.item_id, "INVIAS:210,2,2", "un mapeo firme sin precio del archivo entra al cálculo con el APU INVIAS");
           const sinInv = impII.mapearFilasImportadas(filasVial, require("../lib/apu/catalogo.js").SEMILLA, { sinInvias: true });
           assert.ok(sinInv.filas.every((f) => f.fuente_mapeo !== "invias"));

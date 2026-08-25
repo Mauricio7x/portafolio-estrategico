@@ -1856,6 +1856,122 @@ cascada de `lib/apu/precios.js`. Evidencia HTTP en el §11 del mismo doc.
   INVIAS prohíben el uso comercial sin autorización — si Detekta se comercializa con estos datos,
   pedirla (`preciosunitarios@invias.gov.co`).
 
+### El INVIAS es el ÚLTIMO recurso entre los bancos (24-ago-2026, encargo del dueño)
+
+`rango()` en `lib/apu/importar.js`: el INVIAS pasa de `1|2` a **2,8 donde hay banco local** (Bogotá y
+Cundinamarca) y **se queda en 1 fuera** — detrás de todos los bancos (catálogo 0 · IDU/EPC/ICCU 1|2 ·
+FFIE 2,5) y delante de una estimación propia (3).
+
+- **EL MOTIVO NO ES DE CALIDAD, ES DE LICENCIA, y conviene decirlo bien.** El dueño lo pidió como «no
+  uses tanto los precios de INVIAS». Medido, su premisa cuantitativa **no se sostiene**: sobre 300
+  filas típicas el INVIAS era el banco que MENOS salía (30 de 300 = 10 %, frente a IDU 90, EPC 60,
+  FFIE 60, ICCU 45). Lo que sí sostiene la decisión es otra cosa: **es el único banco cuyos documentos
+  «prohíben el uso comercial sin autorización previa»** (`lib/apu/invias_items.meta().licencia`) y esa
+  autorización **sigue sin pedirse** — es el BLOQUEADOR F0-3 del plan. Detekta se va a comercializar,
+  así que cuanto menos dependa de esa fuente, menos cuesta el día que haya que retirarla.
+- **`rango` SOLO DESEMPATA A PUNTAJE IGUAL**, y eso es deliberado: si el INVIAS es estrictamente
+  mejor, gana igual. Servir a sabiendas un ítem PEOR para no usar una fuente sería el falso positivo
+  caro de este módulo, que aquí se paga en pesos. «Solo cuando no hay más opciones» se implementa como
+  «cuando ninguna otra fuente es igual de buena», no como «cuando no queda ninguna».
+- **Y CEDE SOLO DONDE HAY ALTERNATIVA LOCAL — el primer intento fue un 2,8 FIJO y lo tumbó una
+  cerradura existente** («fuera de Bogotá gana el INVIAS (regionalizado)»), que tiene fundamento
+  técnico real: fuera de Bogotá y Cundinamarca el INVIAS es la ÚNICA fuente con precio regionalizado
+  por provincia, y el IDU sirve precio de Bogotá «sin ajuste». Preferirlo allí para usar menos INVIAS
+  sería **servir el precio de otra ciudad como si fuera local**, o sea inventar el dato. Medido:
+  `(ninguno)` → INVIAS · `Bogotá`/`11`/`25` → IDU · `Antioquia` → INVIAS.
+- **De paso, una asimetría real que sí existía**: `enCundinamarca` aceptaba el nombre **y** el código
+  DANE «25», y `enBogota` solo el nombre. El desplegable del editor manda el NOMBRE (`value` =
+  `r.departamentos`), así que **no era un defecto de producción** —se comprobó antes de reportarlo—,
+  pero `?departamento=` es público y un cliente puede mandar el código. Ahora «11» vale igual.
+- **Medido antes de aplicarlo, y por eso se aplicó**: el reparto de 300 filas pasa de `invias 30` a
+  `invias 15` (10 % → 5 %) y **`firmes/revisar` NO se mueve (120/180)**: cambia la fuente, no la
+  calidad. La fila que se mueve va a `IDU:4159 SUBBASE GRANULAR CLASE C (SBG_C) (SUMINISTRO,
+  EXTENDIDO, NIVELACIÓN, HUMEDECIMIENTO Y COMPACTACIÓN…)`, que es **el mismo ítem** que el
+  `INVIAS:320,3,1` que ganaba antes, con el alcance mejor descrito.
+- **EL COSTE, MEDIDO Y DECLARADO EN VEZ DE DISIMULADO**: el IDU no publica composición (0/3172) y el
+  INVIAS sí (520/526), así que **una fila que se mueve pierde su hoja de APU desglosada** — que es lo
+  que un pliego exige. Se acepta porque el hueco ya está declarado (82,8 % de los 6 588 ítems no traen
+  composición) y porque la excepción «salvo que pierda composición» dejaría al INVIAS ganando en casi
+  todo lo vial, o sea lo contrario del encargo. **Se revierte cambiando UN número** el día que llegue
+  la autorización.
+- **LA CASCADA DE `lib/apu/precios.js` NO ERA LA PALANCA, y comprobarlo evitó un cambio inútil.** Cada
+  banco tiene su propio espacio de códigos (`INVIAS:…`, `IDU:…`), así que **para un ítem dado solo
+  responde uno**: reordenar `invias_apu` ahí no cambia ni un precio. Lo que decide qué fuente se usa es
+  el MAPEO (qué ítem se elige), no la cotización.
+- **LA CERRADURA DE LAS CUATRO FILAS VIALES NO CAMBIÓ DE VALOR, y llegué a cambiarla por error.** Con
+  el 2,8 fijo la reescribí a «tres en INVIAS»; al refinar la regla volvió a ser correcta tal como
+  estaba (esas filas se mapean SIN departamento, donde el INVIAS no cede) y se revirtió. Queda escrito
+  porque el reflejo de tocar la prueba para que pase es justo lo que este repositorio persigue: **la
+  cerradura no se ajusta al código, es el código el que tiene que justificar el cambio.** Lo que sí se
+  añadió es la prueba del encargo, ejecutada con Bogotá, con el código DANE y con Antioquia.
+
+**TRES CORRECCIONES A `docs/AUDITORIA_MODULO_APU.txt`** (está citado más abajo en esta memoria y la
+próxima sesión partirá de él si no se dicen):
+- **Su H-4 diagnostica mal la causa.** Afirma que el tratamiento «cabecera antes del paréntesis» no se
+  aplica al ICCU. **Sí se aplica**: `lib/apu/importar.js:259` hace `descripcion.split("(")[0]`, igual
+  que INVIAS. El defecto real está en el DESEMPATE (`importar.js:421`): los 9 hermanos empatan
+  exactamente en 0,856 y decide `String(codigo).localeCompare`; con numerales de coma decimal
+  `4,10 < 4,6 < 4,7 < 4,8 < 4,9`, así que gana sistemáticamente *(vigas en puentes)*, el más caro
+  ($1.183.877 frente a $834.999, +42 %; $62.798.040 en una fila de 180 m³).
+- **Su H-6 no reproduce en 4 de 5 cifras.** Con el vocabulario del propio proyecto: ICCU 149/1234 ✓,
+  pero IDU **136** (no 163), FFIE **14** (no 8), INVIAS **0** (no 7), EPC **1** (no 2).
+- **Su H-1 presenta como acierto un mapeo que también está mal.** `INVIAS:320,6,1` es «SUB-BASE
+  GRANULAR PARA **BACHEO** CLASE C» —reparación de baches, no una capa estructural nueva— y el ítem
+  exacto existe (`320,3,1`). Lo decide **el guion**: `SUB-BASE` tokeniza a `sub`+`base` y casa con las
+  variantes con guion, mientras `SUBBASE` (junto) pierde la coincidencia. Los dos salen `firme` con
+  `mapeo_automatico: true`. Y su premisa de fondo («93 candidatos ⇒ se equivoca») es falsa: sin guion,
+  el lector con sus 93 ítems **acierta**. Lo que sí es cierto y basta para justificar el cable (A1) es
+  que **0 de 93 códigos del lector resuelven en el catálogo de precios** (todos `LOC-*`): no se
+  equivoca de precio, es que no puede dar ninguno.
+
+
+### F0-7 · La predicción que se le enseñó se CONGELA al guardar (24-ago-2026)
+
+`lib/handlers/perfil/seguimiento.congelarPrediccion` + `prediccion` en el registro guardado y en
+`lib/seguimiento.enriquecer` + `desenlaceDe` en el módulo puro. Era **la única tarea del repositorio
+con fecha límite absoluta** (`docs/PLAN_DE_ACCION.md:235`) y no dependía de nada: cada día sin
+guardarla es un día de datos que no vuelve.
+
+- **El problema no era de código, era de tiempo.** `P(ganar)` **no es falsable**: el corpus dice quién
+  GANÓ, no a qué se presentó nadie. `lib/seguimiento` ya recogía `presentado · ganado · perdido` —la
+  etiqueta que falta— pero **sin la predicción de aquel momento no hay nada contra qué compararla**.
+  Verificado antes de tocar nada: `fotoDe` guardaba once campos y **ninguno era la probabilidad**.
+- **NO ES UN SEGUNDO CÁLCULO, y ahí estaba la única decisión de arquitectura.** El contexto de
+  `estimarPDetalle` (índices de competencia y de baja, promedios por departamento, colisiones, b_max
+  de los borradores) se arma en ~170 líneas de `handlers/procesos/listar.js`, entrelazadas con el
+  handler. Reconstruirlo aquí habría sido **una segunda derivación de la probabilidad** —
+  `total_procesos`/`procesos_contados` otra vez, y en pesos. Se llama a **`desgloseDeProceso`**
+  (`lib/probabilidad_desglose`), que ya arma ese contexto y que **ya tenía prueba de reproducir
+  exactamente el `p_ganar` del listado**. Medido en la suite: `p = 0.0608 ≡ listado`.
+  · Se descartó extraer `evalDe` de `listar.js`: es cirugía en el endpoint más caliente de la app por
+    una razón lateral. El precedente del repositorio (`contextoDePresupuesto` «se EXTRAJO, no se
+    copió») aplica cuando no hay ya una función que responda; aquí la había.
+- **LA CALCULA EL SERVIDOR, JAMÁS EL CLIENTE.** La `foto` sí puede venir del cuerpo (es lo que el
+  usuario tenía en pantalla), pero una `p` propuesta por el cliente envenenaría el único registro con
+  el que se podrá validar el modelo, y un frontend viejo o cacheado mandaría la cifra de otro momento
+  sin que nadie lo notara. Mismo criterio que `visto`, que se toma del corpus. Hay prueba de que una
+  `prediccion` en el cuerpo **se ignora** y el servidor la recalcula.
+- **SOLO AL CREAR.** Es la cifra del día en que DECIDIÓ, no la última: recalcularla al cambiar de
+  estado reescribiría la predicción con el modelo de hoy y se perdería justo lo que esto conserva.
+  Lo único que se actualiza después es el **desenlace**.
+- **`desenlaceDe` vive en el módulo PURO, junto a `normalizarEstado`**, y solo `ganado`/`perdido` lo
+  fijan. «descartado» es una decisión del usuario, no un resultado del proceso, y «presentado» aún no
+  tiene desenlace: contar cualquiera de los dos como derrota metería una **etiqueta falsa** en el
+  registro de calibración. Es «sin dato ≠ cero» aplicado a la etiqueta, y aquí el cero sería un
+  fracaso inventado. Viaja `null`, jamás `false`.
+- **Viajan las ENTRADAS, no solo el número** (`rivales_esperados`, `fuente_del_promedio`,
+  `peso_datos_entidad`, `banda_90`, `p_sin_precio`, `baja_maxima`): sin ellas se sabría QUE falló una
+  predicción, no POR QUÉ. Es la trampa que el propio plan declaraba.
+- **Best-effort: si el desglose falla, se guarda `null` CON su motivo y el guardado sigue.** Perder el
+  proceso guardado por no poder calcular una cifra de instrumentación sería cambiar el producto por su
+  medición.
+- **Los guardados anteriores a esta versión se quedan sin predicción, y es lo correcto**: recalcularla
+  hoy y etiquetarla con la fecha de entonces sería inventar el dato que esto existe para conservar.
+- **`enriquecer` construye un objeto NUEVO, así que publicar el campo no era opcional.** La primera
+  implementación guardaba `prediccion` en Redis y la lista no la enseñaba: es «el veredicto de un
+  bloque no puede leer un campo que ese bloque no publica», y lo cazó la prueba, no la lectura.
+
+
 ### Mis procesos · guardar, seguir y estudiar a la competencia (18-ago-2026)
 
 `lib/seguimiento.js` (capa pura) + `lib/handlers/perfil/seguimiento.js` (`/api/perfil?op=seguimiento`, token) +
