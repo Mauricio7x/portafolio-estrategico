@@ -1856,6 +1856,57 @@ cascada de `lib/apu/precios.js`. Evidencia HTTP en el §11 del mismo doc.
   INVIAS prohíben el uso comercial sin autorización — si Detekta se comercializa con estos datos,
   pedirla (`preciosunitarios@invias.gov.co`).
 
+### A1 · El cable: del pliego al presupuesto (24-ago-2026)
+
+Botón «Usar estos ítems en mi presupuesto» en el lector (`#pl-btn-usar`) + `filasDesdePliego` y
+`mapearParaPrevisualizar` en `public/app.js`. Cierra el hueco que la auditoría del módulo APU señalaba
+como el de mayor valor por esfuerzo: **el lector y el editor eran dos mitades sin cable entre ellas**.
+
+- **EL PROBLEMA, MEDIDO: el catálogo del lector no puede dar NINGÚN precio.** `itemPorCodigo` devuelve
+  `null` en **los 93** códigos (todos `LOC-*`) y `cotizarItem` responde `fuente: "sin_precio"`. Es un
+  DICCIONARIO DE RECONOCIMIENTO, exactamente lo que esta memoria dice que es. El usuario leía el
+  pliego, exportaba un `.json` **que ningún módulo del proyecto vuelve a leer** (el importador acepta
+  `.xlsx/.xls/.csv`) y transcribía a mano: horas con un formulario de 150 filas, y una oportunidad de
+  error por fila en el documento con el que se fija el precio de una oferta.
+- **LO QUE NO SE PUEDE AFIRMAR, y el informe lo afirmaba: que «el importador mapee mejor».** Sobre 20
+  filas típicas el LECTOR saca más firmes (14) que el importador (11), y hay contraejemplos donde el
+  importador se equivoca y el lector no. Lo que cambia con el cable no es el acierto: es que al otro
+  lado hay un precio. Presentarlo como «93 candidatos ⇒ se equivoca» es una inferencia que la
+  ejecución desmiente — el caso testigo (SUB-BASE → BACHEO) falla por el GUION, en los dos universos.
+- **EL UNITARIO OFICIAL NO VIAJA COMO PRECIO, y es LA decisión de este cable.** Con `precio_archivo`,
+  `entrada_calculo` sale con `precio_manual: 95000` y `origen_precio: "archivo"`: el presupuesto del
+  contratista sería el presupuesto de **la entidad**, y la comparación pliego-contra-Detekta daría
+  **0 % por construcción** — la app comparándose consigo misma. El precio lo ponen los bancos; el del
+  pliego se conserva en `window.__pliegoUltimo`, que es de donde ya lo lee el guardián del Formulario 1.
+  Hay prueba de que ninguna fila lleva `precio_archivo` y de que `con_precio_archivo` es 0.
+- **SE REUTILIZA LA VISTA PREVIA, no se reimplementa**: el cable entra por la MISMA cadena
+  (`op=importar` → `abrirModalImportar`), así que hereda la puerta anti-falso-positivo del módulo — el
+  usuario ve el mapeo ANTES de que toque su tabla, y un ítem mal casado no entra solo. Eso importa
+  porque el mapeo tiene defectos conocidos (el paréntesis del ICCU, el guion del INVIAS).
+- **ERAN DOS COPIAS Y HABRÍAN SIDO TRES**: el POST se extrajo a `mapearParaPrevisualizar`, que ahora
+  usan las tres vías (archivo detectado, columnas mapeadas a mano y los ítems del pliego). La guarda
+  que contaba «2 llamadas a `/api/apu?op=importar`» pasa a exigir **1**, y la garantía es MÁS fuerte:
+  ya no es un conteo, es imposible por construcción que una vía use otro endpoint. Se añadió la
+  comprobación de que las tres pasan por esa función.
+- **La prueba EJECUTA la conversión**, no comprueba por regex que se llame: extrae `filasDesdePliego`
+  del fuente y la corre con la salida real de `parsearPliego` proyectada como lo hace
+  `public/pliego.js:583`. Es el patrón de `fraseProbabilidad`. Comprobada por MUTACIÓN: falla contra
+  el árbol anterior con «el lector tiene el botón que lleva sus ítems al presupuesto».
+- **VERIFICADO EN NAVEGADOR REAL** (Chromium 141 headless contra un arnés que sirve `public/` y
+  responde `/api/*` con los módulos reales), escritorio y móvil: el botón existe con su texto, sin
+  pliego leído **avisa** en vez de quedarse mudo («Primero lea un pliego…», la regla de que ninguna
+  pulsación se quede sin respuesta visible), con pliego abre la vista previa y **el modal menciona los
+  ítems del pliego**, y **cero errores de consola** en ambos anchos.
+  ⚠️ **Lo que este entorno NO puede verificar**: el proxy da **HTTP 000 a `cdn.tailwindcss.com`, así
+  que la página se mide DEGRADADA** — sin `overflow-auto` ni `min-w-[860px]`. El desborde horizontal
+  que aparece a 390 px con el modal abierto es de esa degradación, no del cambio: la tabla SÍ vive
+  dentro de un contenedor `overflow-auto` (`index.html:2695`) y, en las mismas condiciones,
+  `#c-faltantes` —una tabla que este cambio no toca— desborda más (671). El aspecto real con CDN
+  queda sin comprobar y hay que decirlo.
+- **`activarPestana("apu")` se retiró por redundante**: el botón vive DENTRO de la pestaña APU
+  (medido sobre el HTML). Un código que insinúa que podría no estarlo es documentación falsa.
+
+
 ### El INVIAS es el ÚLTIMO recurso entre los bancos (24-ago-2026, encargo del dueño)
 
 `rango()` en `lib/apu/importar.js`: el INVIAS pasa de `1|2` a **2,8 donde hay banco local** (Bogotá y

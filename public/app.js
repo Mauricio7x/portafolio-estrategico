@@ -4282,6 +4282,78 @@
      casilla queda marcada — nunca se usa automáticamente una lista a medias. */
   let importacion = null;
 
+  /* El POST + la asignación que las TRES vías de importación comparten (archivo
+     detectado, columnas mapeadas a mano y los ítems del lector de pliegos).
+     Eran dos copias y con el cable habrían sido tres: divergen a la primera
+     corrección que se aplique a una sola. Devuelve booleano y NO abre el modal —
+     la vía del mapeo manual tiene que cerrar el suyo antes, y sólo si el POST
+     salió bien. */
+  async function mapearParaPrevisualizar(filas, meta) {
+    const r = await api("/api/apu?op=importar", {
+      method: "POST",
+      body: { filas, departamento: $("departamento").value },
+    });
+    if (!r) return false;                   // canceló el diálogo del token
+    importacion = { ...r, avisos_lectura: (meta && meta.avisos) || [], cuadre: (meta && meta.cuadre) || null, nombre_archivo: meta && meta.origen };
+    return true;
+  }
+
+  /* ══════════════ A1 · EL CABLE: del pliego al presupuesto ══════════════
+     El lector extrae ítem, unidad y cantidad, y hasta ahora ahí se acababa: su
+     único botón de salida exportaba un .json que NINGÚN módulo del proyecto
+     vuelve a leer (el importador acepta .xlsx/.xls/.csv). El usuario transcribía
+     a mano — horas con un formulario de 150 filas, y una oportunidad de error
+     por fila en el documento con el que se fija el precio de una oferta.
+
+     POR QUÉ VALE, MEDIDO: **0 de 93** códigos del catálogo del lector resuelven
+     en el catálogo de precios (todos `LOC-*`). No es que el lector se equivoque
+     de precio: es que no puede dar NINGUNO — es un diccionario de
+     reconocimiento, no una biblioteca de costeo. Pasando sus filas por
+     `op=importar` el universo pasa a 6 588 ítems CON precio.
+     Lo que NO se puede afirmar: que el importador «mapee mejor». Sobre 20 filas
+     típicas el lector saca más firmes, y hay contraejemplos donde falla el
+     importador y acierta el lector. Lo que cambia es que al otro lado hay precio.
+
+     EL UNITARIO OFICIAL NO VIAJA COMO PRECIO, y es LA decisión de este cable.
+     Con `precio_archivo`, `entrada_calculo` sale con `precio_manual` y
+     `origen_precio: "archivo"`: el presupuesto del contratista sería el
+     presupuesto de LA ENTIDAD, y la comparación pliego-vs-Detekta daría 0 % por
+     construcción — la app comparándose consigo misma. El precio lo ponen los
+     bancos; el del pliego se conserva en `window.__pliegoUltimo`, que es de
+     donde ya lo lee el guardián del Formulario 1.
+
+     Se reutiliza la vista previa con casillas (`abrirModalImportar`), que es la
+     puerta anti-falso-positivo del módulo: el usuario ve el mapeo ANTES de que
+     toque su tabla, así que un ítem mal casado no entra solo. */
+  function filasDesdePliego(items) {
+    return (Array.isArray(items) ? items : []).map((i) => ({
+      codigo: i.numeral || null,
+      descripcion: i.descripcion,
+      unidad: i.unidad,
+      cantidad: i.cantidad,
+    }));
+  }
+
+  $("pl-btn-usar").addEventListener("click", async () => {
+    const leido = window.__pliegoUltimo;
+    const items = leido && Array.isArray(leido.items) ? leido.items : [];
+    if (!items.length) { msgApu("Primero lea un pliego: no hay ítems que llevar al presupuesto.", "error"); return; }
+    const btn = $("pl-btn-usar");
+    btn.disabled = true;
+    const antes = btn.textContent;
+    btn.textContent = "Llevando…";
+    try {
+      const filas = filasDesdePliego(items);
+      // el botón vive DENTRO de la pestaña APU, así que no hay que cambiar de pestaña
+      if (await mapearParaPrevisualizar(filas, { avisos: [`${filas.length} ítem(s) leídos del pliego. El precio lo ponen los bancos: el del pliego se compara aparte, no se cobra.`], origen: "el pliego leído" })) abrirModalImportar();
+    } catch (err) {
+      msgApu(`No se pudieron llevar los ítems: ${err.message}`, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = antes;
+    }
+  });
+
   $("btn-importar").addEventListener("click", () => $("archivo-importar").click());
 
   $("archivo-importar").addEventListener("change", async (e) => {
@@ -4305,13 +4377,7 @@
         }
         return;
       }
-      const r = await api("/api/apu?op=importar", {
-        method: "POST",
-        body: { filas: crudas.filas, departamento: $("departamento").value },
-      });
-      if (!r) return;                       // canceló el diálogo del token
-      importacion = { ...r, avisos_lectura: crudas.avisos || [], cuadre: crudas.cuadre || null, nombre_archivo: archivo.name };
-      abrirModalImportar();
+      if (await mapearParaPrevisualizar(crudas.filas, { avisos: crudas.avisos, cuadre: crudas.cuadre, origen: archivo.name })) abrirModalImportar();
     } catch (err) {
       msgApu(`No se pudo importar: ${err.message}`, "error");
     } finally {
@@ -4495,14 +4561,7 @@
     const btn = $("btn-mapeo-aplicar");
     btn.disabled = true;
     try {
-      const r = await api("/api/apu?op=importar", {
-        method: "POST",
-        body: { filas: filasMapeadas, departamento: $("departamento").value },
-      });
-      if (!r) return;
-      importacion = { ...r, avisos_lectura: [`Columnas mapeadas a mano sobre «${mapeoPendiente.nombre}».`], nombre_archivo: mapeoPendiente.nombre };
-      cerrarMapeo();
-      abrirModalImportar();
+      if (await mapearParaPrevisualizar(filasMapeadas, { avisos: [`Columnas mapeadas a mano sobre «${mapeoPendiente.nombre}».`], origen: mapeoPendiente.nombre })) { cerrarMapeo(); abrirModalImportar(); }
     } catch (err) {
       aviso(`No se pudo importar con ese mapeo: ${err.message}`);
     } finally {
