@@ -4457,8 +4457,25 @@
       };
       const banco = BANCOS[f.fuente_mapeo] || "catálogo";
       const desc = f.fuente_mapeo === "invias" ? String(f.descripcion_catalogo || "").split("(")[0].trim() : (f.descripcion_catalogo || "");
-      const variantes = (f.variantes || []).length
-        ? ` <span class="text-[10px] text-gray-400" title="${esc((f.variantes || []).map((v) => `${v.codigo}: ${v.descripcion}`).join("\n"))}">(+${f.variantes.length} variante${f.variantes.length === 1 ? "" : "s"} de la misma cabecera; se tomó la primera)</span>` : "";
+      /* A4 · EL PRECIO DE LAS VARIANTES, A LA VISTA. Antes decía «hay 9
+         variantes» y nada más: el usuario no podía saber que elegir otra cambia
+         el precio 1,46× ($62.798.040 en una fila de 180 m³ para el concreto del
+         ICCU, donde el paréntesis no es una gradación sino el ELEMENTO
+         ESTRUCTURAL). El rango va en el TEXTO, no solo en el `title`: en móvil
+         no hay tooltip, y esto es justo lo que hay que ver antes de aceptar.
+         Solo se destaca cuando los precios DIFIEREN de verdad (>5 %): con
+         precios iguales, elegir una u otra es indiferente y un aviso constante
+         se deja de mirar. Un precio ausente es «—», nunca 0. */
+      const vs = f.variantes || [];
+      const precios = vs.map((v) => v.precio).concat([f.precio_item]).filter((p) => Number.isFinite(p) && p > 0);
+      const vmin = precios.length ? Math.min(...precios) : null;
+      const vmax = precios.length ? Math.max(...precios) : null;
+      const difieren = vmin != null && vmax / vmin > 1.05;
+      const tituloVs = vs.map((v) => `${v.codigo}: ${v.descripcion} — ${Number.isFinite(v.precio) ? pesos(v.precio) : "sin precio"}`).join("\n");
+      const variantes = !vs.length ? ""
+        : difieren
+          ? ` <span class="text-[10px] text-amber-700" title="${esc(tituloVs)}">(+${vs.length} variante${vs.length === 1 ? "" : "s"} de la misma cabecera, de ${pesos(vmin)} a ${pesos(vmax)} · se tomó ${pesos(f.precio_item)})</span>`
+          : ` <span class="text-[10px] text-gray-400" title="${esc(tituloVs)}">(+${vs.length} variante${vs.length === 1 ? "" : "s"} de la misma cabecera; se tomó la primera)</span>`;
       return `<span class="text-xs text-gray-600">${esc(desc)}</span> <span class="text-[10px] text-gray-400">· ${banco}</span>${variantes}`;
     };
     const chip = (f) => {

@@ -1856,6 +1856,55 @@ cascada de `lib/apu/precios.js`. Evidencia HTTP en el §11 del mismo doc.
   INVIAS prohíben el uso comercial sin autorización — si Detekta se comercializa con estos datos,
   pedirla (`preciosunitarios@invias.gov.co`).
 
+### A4 · El precio de cada variante, a la vista (24-ago-2026)
+
+`precioDe` en `lib/apu/importar.js` + `precio` por variante y `precio_item` del elegido + el rango
+pintado en la vista previa de importación. Cierra el hallazgo H-4 de la auditoría — **pero no como el
+informe proponía, y esa diferencia es el contenido de esta sección.**
+
+- **EL DEFECTO, MEDIDO.** «CONCRETO CLASE D 3000 PSI» mapea FIRME (0,856) al ICCU y sus 9 hermanos
+  empatan **exactamente** en ese puntaje: decide `String(codigo).localeCompare` (`importar.js:421`), y
+  con numerales de coma decimal (`4,10 < 4,6 < 4,7 < 4,8 < 4,9`) gana sistemáticamente el numeral
+  alto, que en esa familia es *(vigas en puentes)* — **$1.183.877 frente a $834.999 de *(bases)*:
+  +42 %, y $62.798.040 en una fila de 180 m³**. En el ICCU el paréntesis no es una gradación del
+  material: es el ELEMENTO ESTRUCTURAL.
+- **EL INFORME DIAGNOSTICA MAL LA CAUSA**: dice que el tratamiento «cabecera antes del paréntesis» no
+  se aplica al ICCU. **Sí se aplica** (`importar.js:259`, `split("(")[0]`, igual que INVIAS).
+- **TRES ARREGLOS PROBADOS Y DESCARTADOS, cada uno por una medición.** Queda escrito para no
+  reintentarlos:
+  · **«empate exacto ⇒ nunca firme»** choca con una decisión ya tomada y fijada por prueba («las
+    variantes de la misma cabecera NO degradan a revisar y se publican»); sin ella, según esta misma
+    memoria, «todo lo vial caía a revisar».
+  · **«umbral de precio entre variantes»**: medido sobre las variantes REALES de todos los bancos —
+    INVIAS 72 familias (mediana 1,190 · p75 1,809), ICCU 127 (1,047 · 1,464)—, un umbral de 1,15
+    degradaría el **52,8 %** de las familias INVIAS y el 37 % de las ICCU: rompe justo lo que la
+    decisión anterior protege. (Una primera medición dio 2,92× en `INVIAS:210,2,1` vs `210,2,2` y
+    parecía tumbarlo: **no son variantes** —excavación en ROCA frente a MATERIAL COMÚN, cabeceras
+    distintas—, y el mapeo lo confirma publicando `variantes: []` para esa fila.)
+  · **usar el precio para decidir la CONFIANZA sería circular**: mezcla «¿qué ítem es?» con «¿cuánto
+    cuesta equivocarse?».
+- **LO QUE FALTABA ERA INFORMACIÓN, NO UNA REGLA.** El usuario veía «hay 9 variantes» y **no podía
+  saber** que elegir otra cambia el precio 1,46×. Ahora cada variante publica su `precio` y el ítem
+  elegido su `precio_item`, y el rango se **PINTA en el texto** («+9 variantes de la misma cabecera,
+  de $834.999 a $1.222.065 · se tomó $1.183.877»), no solo en el `title`: **en móvil no hay tooltip**,
+  y esto es justo lo que hay que ver antes de aceptar. No se toca el nivel de confianza ni el
+  desempate: con el precio delante, el usuario lo corrige en un clic desde la vista previa.
+- **Solo se destaca en ámbar cuando los precios DIFIEREN de verdad (>5 %)**: con precios iguales
+  elegir una u otra es indiferente, y un aviso constante se deja de mirar — es la lección del chip de
+  competencia que hubo que retirar.
+- **Se cotiza con `cotizarItem`, la definición ÚNICA**: un dispatcher propio por banco habría sido una
+  segunda («cómo se cotiza un ítem»), y los nombres difieren por banco (`precioParaDepartamento` en
+  INVIAS, `precioReferencia` en IDU/FFIE/ICCU, ninguno en EPC), que es justo la trampa. `require`
+  diferido y memoizado por código.
+- **EL COSTE, MEDIDO ANTES DE ACEPTARLO**: 720 cotizaciones en caliente cuestan **29 ms** frente a los
+  ~1 400 ms que tarda el mapeo de 300 filas, y el payload no crece (313 KB contra 315 KB). Un precio 0
+  o ausente viaja como `null`, jamás como cero (R1).
+- **Verificado en navegador real** (escritorio y móvil): el modal pinta «(+1 variante de la misma
+  cabecera, de $111.899 a $120.191 · se tomó $111.899)» en ámbar, con cero errores de consola. El
+  desborde horizontal a 390 px es la degradación conocida sin el CDN de Tailwind (HTTP 000 desde este
+  entorno), no del cambio.
+
+
 ### A2 · Validación 8: su precio unitario contra el del pliego (24-ago-2026)
 
 `compararItems` publica `precios` y `validarFormulario1` añade la octava validación. Cierra el

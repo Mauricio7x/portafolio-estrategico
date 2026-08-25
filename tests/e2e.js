@@ -11793,6 +11793,49 @@ async function main() {
           assert.ok(sinInv.filas.every((f) => f.fuente_mapeo !== "invias"));
           assert.strictEqual(sinInv.resumen_mapeo.mapeados_invias, 0);
           // el catálogo (Nogal/semilla) NO se coló ni cambió: la unidad canónica compuesta del INVIAS ya no cae en «ml»
+          /* ═══ A4 · EL PRECIO DE CADA VARIANTE, A LA VISTA ═══
+             «CONCRETO CLASE D 3000 PSI» mapea FIRME (0,856) al ICCU y los 9
+             hermanos empatan EXACTAMENTE en ese puntaje: decide
+             `String(codigo).localeCompare`, y con numerales de coma decimal
+             («4,10» < «4,6» < … < «4,9») gana sistemáticamente el numeral alto,
+             que en esa familia es *(vigas en puentes)*, el MÁS CARO — $1.183.877
+             frente a $834.999 de *(bases)*: +42 %, y $62.798.040 en una fila de
+             180 m³.
+             TRES ARREGLOS SE PROBARON Y SE DESCARTARON MIDIENDO, y conviene que
+             quede escrito para no reintentarlos:
+             (a) «empate exacto ⇒ nunca firme» choca con una decisión ya tomada y
+                 fijada por prueba («las variantes de la misma cabecera NO
+                 degradan a revisar y se publican»); sin ella «todo lo vial caía
+                 a revisar».
+             (b) «umbral de precio entre variantes»: sobre las variantes REALES
+                 de todos los bancos, INVIAS 72 familias con mediana 1,190 y p75
+                 1,809; ICCU 127 con 1,047 y 1,464. Un umbral de 1,15 degradaría
+                 el 52,8 % de las familias INVIAS: rompe lo que (a) protege.
+             (c) usar el precio para decidir la CONFIANZA sería circular.
+             Lo que sí faltaba: el usuario veía «hay 9 variantes» y NO podía
+             saber que elegir otra cambia el precio 1,46×. El precio de cada una
+             viaja ahora en la respuesta y el rango se PINTA (no solo en el
+             tooltip: en móvil no hay tooltip). No se toca el nivel ni el
+             desempate — con el precio delante se corrige en un clic. */
+          const mvA4 = impII.mapearFilasImportadas(
+            [{ descripcion: "CONCRETO CLASE D 3000 PSI", unidad: "m3", cantidad: 180 }],
+            require("../lib/apu/catalogo.js").SEMILLA, { departamento: "Cundinamarca" });
+          const fA4 = mvA4.filas[0];
+          assert.strictEqual(fA4.fuente_mapeo, "iccu");
+          assert.ok(fA4.variantes.length >= 8, `el caso testigo tiene sus hermanos: ${fA4.variantes.length}`);
+          assert.ok(fA4.variantes.every((v) => "precio" in v), "cada variante publica su precio");
+          const conP = fA4.variantes.filter((v) => Number.isFinite(v.precio));
+          assert.ok(conP.length >= 8, `y el banco los responde: ${conP.length}/${fA4.variantes.length}`);
+          assert.ok(Number.isFinite(fA4.precio_item), `el ítem ELEGIDO publica el suyo, para poder compararlo: ${fA4.precio_item}`);
+          const minA4 = Math.min(...conP.map((v) => v.precio), fA4.precio_item);
+          const maxA4 = Math.max(...conP.map((v) => v.precio), fA4.precio_item);
+          assert.ok(maxA4 / minA4 > 1.4, `las variantes NO cuestan lo mismo, y por eso hay que enseñarlo: ${minA4}–${maxA4}`);
+          assert.ok(fA4.precio_item > minA4, "el desempate por código eligió una cara: el usuario tiene que poder verlo");
+          /* un precio 0 del banco es SIN DATO, jamás «gratis» (R1) */
+          assert.ok(fA4.variantes.every((v) => v.precio == null || v.precio > 0), "un precio 0 viaja como null, no como cero");
+          // el frontend lo PINTA, no lo esconde en el title
+          const appA4 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+          assert.ok(/precio_item/.test(appA4) && /v\.precio/.test(appA4), "app.js pinta el precio de las variantes, no solo su nombre");
           assert.strictEqual(impII.unidadCanonica("m3-km"), "m3-km");
           assert.strictEqual(impII.unidadCanonica("M3 - Km"), "m3-km");
           assert.notStrictEqual(impII.unidadCanonica("m3-km"), impII.unidadCanonica("ml"));
