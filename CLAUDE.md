@@ -5215,6 +5215,48 @@ representados en gráficos y datos reales siempre.»
   `leerEstado`. Las cerraduras EJECUTAN las tres primitivas — comprobar por regex que existen no
   prueba que dibujen lo que dicen.
 
+#### La revisión adversaria de los gráficos, y los dos defectos que dejó dentro
+
+Los gráficos se empujaron antes de atacarlos. La pasada adversaria sobre el propio diff encontró
+dos defectos, los dos **en la parte nueva** y los dos contra reglas duras de la guía de dataviz:
+
+- **⚠️ LA PALETA SE CICLABA, y la identidad es lo ÚNICO que aporta una paleta categórica.** `apilada`
+  asignaba `var(--viz-${(i % 4) + 1})`, así que el quinto segmento recibía el tono del primero y la
+  leyenda enseñaba **dos cuadros idénticos con nombres distintos**. No mordía todavía porque los dos
+  llamadores pasan exactamente cuatro segmentos —o sea, era un defecto esperando al siguiente
+  reparto—. Se resuelve **plegando la cola** (`plegarCola`): con más de cuatro series, las de menor
+  peso se funden en «Otros» **y se dice cuántas** (`Otros (3)`), que es lo que impide que un «Otros»
+  mudo esconda el reparto. Reproducido: 6 segmentos → `{viz-1:4, viz-2:4, viz-3:2, viz-4:2}`, cuatro
+  tonos para seis series.
+- **⚠️ LA ETIQUETA OBLIGATORIA ERA ILEGIBLE.** La paleta clara avisa de contraste bajo 3:1 contra la
+  superficie, **y por eso las etiquetas directas de `apilada` no son opcionales**: son el alivio. Se
+  escribían en BLANCO, y medido sobre los OCHO rellenos (cuatro slots × dos temas) fallan el suelo
+  WCAG de 4,5:1 **los ocho**, peor caso **2,17:1** sobre el amarillo. El alivio incumplía la regla que
+  existe para aliviar. En negro pasan los ocho (4,76 a 9,70:1).
+  · **Y me equivoqué al corregirlo**: apliqué `#1d1d1f` —el gris de texto del sistema— que **mi
+    propia medición decía que falla** (3,81:1 sobre `--viz-1`). Es negro puro o no es. La lección es
+    la de siempre en este repositorio: una cifra medida no se puede desoír al aplicarla.
+
+**LAS DOS CERRADURAS TUVIERON QUE CORREGIRSE ANTES DE VALER, y las dos fallaban por su propio lector:**
+- **La de contraste caía con `NaN:1`.** `lum()` troceaba el hex en las posiciones 1/3/5 y la tinta es
+  `#000`, la **forma corta** que el CSS admite: la tercera posición daba `""`, `parseInt("")` es `NaN`
+  y `NaN >= 4.5` es `false`. La cerradura fallaba sobre un código correcto, que es tan inútil como
+  pasar sobre uno malo. El lector expande la forma corta y **afirma** que lo que lee es un hex.
+- **La anti-ciclado no discriminaba**: exigía «como mucho cuatro tonos distintos» y **con ciclado
+  también salen cuatro** —ahí está justamente el defecto—. La regla es «cada segmento DIBUJADO tiene
+  tono propio», y se cuenta con los `title` (uno por segmento de barra), porque cada tono aparece dos
+  veces en la salida (barra y cuadro de leyenda). Con la aserción corregida: mutación → 6 segmentos /
+  4 tonos, cazada; árbol bueno → 4 / 4.
+- **La de contraste RECALCULA desde los tokens del HTML**, no fija los ocho hex: así también cae si
+  alguien retoca un slot de la paleta. Las dos probadas por mutación contra el árbol anterior.
+
+- **Verificado en Chromium real, claro y oscuro**: relleno del segmento `rgb(42,120,214)` y tinta de
+  etiqueta `rgb(0,0,0)`; columnas en `rgb(0,122,255)`; texto de eje en `rgb(134,134,139)` —el token de
+  texto, **no** el color de la serie—; `ancho 1265 === scroll 1265`. En oscuro, `--viz-1: #3987e5`,
+  `--viz-4: #c98500`, rejilla `rgba(255,255,255,0.14)` y la tinta sigue en negro. El modo oscuro se
+  forzó **inyectando el bloque de tokens oscuros de la propia app**: `--force-prefers-color-scheme` lo
+  ignora este Chromium, y unos valores inventados no habrían probado nada.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).

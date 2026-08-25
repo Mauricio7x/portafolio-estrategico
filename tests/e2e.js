@@ -19038,6 +19038,65 @@ async function main() {
       assert.ok(/60 %/.test(api) && /40 %/.test(api), "etiquetas directas (la paleta clara avisa de contraste: no son opcionales)");
       assert.strictEqual(Viz.apilada([{ etiqueta: "x", n: 0 }]), "", "sin nada que repartir no se pinta una barra vacía");
 
+      /* (3-bis) ⚠️ LA PALETA NO SE CICLA. Con `(i % 4) + 1` un quinto segmento
+         recibía el tono del primero y la leyenda enseñaba DOS cuadros idénticos:
+         la identidad, que es lo ÚNICO que aporta una paleta categórica, se
+         destruye. Es la regla dura de la guía y no mordía solo porque los dos
+         llamadores pasan exactamente cuatro segmentos. */
+      {
+        const seis = [{ etiqueta: "A", n: 30 }, { etiqueta: "B", n: 25 }, { etiqueta: "C", n: 20 },
+          { etiqueta: "D", n: 15 }, { etiqueta: "E", n: 7 }, { etiqueta: "F", n: 3 }];
+        const h6 = Viz.apilada(seis);
+        const tonos = h6.match(/var\(--viz-\d\)/g) || [];
+        // La regla es «NINGÚN tono se repite», no «como mucho cuatro tonos»:
+        // con `(i % 4) + 1` también salen cuatro distintos —y ahí está el
+        // defecto—, así que contar los distintos no discrimina. Lo que separa
+        // ciclar de plegar es que CADA SEGMENTO DIBUJADO tenga tono propio.
+        // Los segmentos se cuentan por su `title` (uno por segmento de barra);
+        // los tonos aparecen dos veces cada uno —barra y cuadro de leyenda—.
+        const segmentos = (h6.match(/title="/g) || []).length;
+        assert.strictEqual(new Set(tonos).size, segmentos,
+          `la paleta se cicló: ${segmentos} segmentos con solo ${new Set(tonos).size} tonos, y dos series comparten cuadro en la leyenda`);
+        assert.ok(segmentos <= 4, "cuatro slots validados: no se dibuja un quinto sin medir su tono");
+        assert.ok(/Otros \(3\)/.test(h6), "la cola se pliega en «Otros» Y se dice cuántas se plegaron: un «Otros» mudo esconde el reparto");
+        const pcts = (h6.match(/>(\d+) %</g) || []).map((x) => Number(x.match(/\d+/)[0]));
+        assert.strictEqual(pcts.reduce((a, b) => a + b, 0), 100, "los porcentajes siguen sumando 100 tras plegar");
+        // y con cuatro o menos no se pliega nada
+        assert.ok(!/Otros/.test(Viz.apilada(seis.slice(0, 4))), "con cuatro segmentos no se inventa una cola");
+      }
+
+      /* (3-ter) ⚠️ LA ETIQUETA DIRECTA TIENE QUE SER LEGIBLE SOBRE SU RELLENO.
+         Se escribía en BLANCO y falla el suelo WCAG de 4,5:1 sobre LOS OCHO
+         rellenos —peor caso 2,17:1 sobre el amarillo—: una etiqueta obligatoria
+         (lo es, porque la paleta clara avisa de contraste contra la superficie)
+         e ilegible es la regla de alivio incumplida por el propio alivio.
+         La cerradura RECALCULA el contraste desde los tokens que hay en el HTML,
+         así que también cae si alguien cambia un slot de la paleta. */
+      {
+        // El CSS admite la forma corta (#000): expandirla es del lector, no del
+        // fuente. Sin esto `slice(5,7)` da "" y el contraste sale NaN, que
+        // `>= 4.5` lee como FALSO: una cerradura que falla por su propio lector
+        // no dice nada del código que vigila.
+        const lum = (hexCrudo) => {
+          const hex = /^#[0-9a-fA-F]{3}$/.test(hexCrudo)
+            ? "#" + hexCrudo.slice(1).split("").map((d) => d + d).join("")
+            : hexCrudo;
+          assert.ok(/^#[0-9a-fA-F]{6}$/.test(hex), `tinta o relleno ilegible: ${hexCrudo}`);
+          const c = [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16) / 255)
+            .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+          return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+        };
+        const razon = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+        const rellenos = [...htmlV.matchAll(/--viz-[1-4]:\s*(#[0-9a-fA-F]{6})/g)].map((m) => m[1]);
+        assert.strictEqual(rellenos.length, 8, "cuatro slots × dos temas: los dos juegos tienen que estar declarados");
+        const tinta = (Viz.apilada([{ etiqueta: "A", n: 1 }]).match(/color:(#[0-9a-fA-F]{3,6})/) || [])[1];
+        assert.ok(tinta, "la etiqueta directa declara su tinta");
+        for (const f of rellenos) {
+          assert.ok(razon(tinta, f) >= 4.5,
+            `la etiqueta (${tinta}) sobre el relleno ${f} da ${razon(tinta, f).toFixed(2)}:1, por debajo del suelo de 4,5:1`);
+        }
+      }
+
       /* (4) EL TEXTO NUNCA LLEVA EL COLOR DE LA SERIE: lo carga la marca que
          tiene al lado. Es la regla que separa un gráfico de un adorno. */
       for (const [n, g] of [["columnas", col], ["rank", rank]]) {

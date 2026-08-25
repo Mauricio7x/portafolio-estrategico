@@ -225,8 +225,26 @@
      `overflow:hidden`, que cortaría las primeras letras y es peor que no
      ponerla. Los segmentos se separan con 2 px del color de la SUPERFICIE: es el
      hueco quien separa, nunca un borde (un borde añade tinta que no es dato). */
+  /* ⚠️ LA PALETA NO SE CICLA NUNCA. Con `(i % 4) + 1` un quinto segmento
+     recibía el tono del primero y la leyenda enseñaba DOS cuadros idénticos:
+     la identidad, que es justo lo único que una paleta categórica aporta, se
+     destruye. Es la regla dura de la guía —«un noveno tono nunca se genera: se
+     pliega en Otros»— y hoy no mordía solo porque los dos llamadores pasan
+     exactamente cuatro. Se pliega la cola: los tres primeros conservan su tono
+     y el resto se suma en «Otros», que va SIEMPRE en el cuarto slot para que su
+     color signifique lo mismo pase lo que pase. `TONOS` es el techo, no una
+     sugerencia. */
+  const TONOS = 4;
+  function plegarCola(vivos) {
+    if (vivos.length <= TONOS) return vivos;
+    const cabeza = vivos.slice(0, TONOS - 1);
+    const cola = vivos.slice(TONOS - 1);
+    return cabeza.concat([{ etiqueta: "Otros", n: cola.reduce((a, s) => a + s.n, 0), _cola: cola.length }]);
+  }
+
   function apilada(segmentos, { alto = 26 } = {}) {
-    const vivos = (segmentos || []).filter((s) => (s.n || 0) > 0);
+    const crudos = (segmentos || []).filter((s) => (s.n || 0) > 0).sort((a, b) => b.n - a.n);
+    const vivos = plegarCola(crudos);
     const total = vivos.reduce((a, s) => a + s.n, 0);
     if (!total) return "";
     let x = 0;
@@ -235,16 +253,26 @@
       const izq = x; x += w;
       const pct = Math.round((s.n / total) * 100);
       /* ~7 px por carácter a 11 px: el rótulo solo entra si cabe con aire a los
-         dos lados. Si no cabe, lo llevan la leyenda y el `title`. */
+         dos lados. Si no cabe, lo llevan la leyenda y el `title`.
+         ⚠️ LA TINTA ES OSCURA EN LOS DOS TEMAS, y no es una decisión estética.
+         Medido: el texto BLANCO falla el suelo WCAG de 4,5:1 sobre LOS OCHO
+         rellenos —peor caso 2,17:1 sobre el amarillo del slot 4—, mientras que
+         el NEGRO pasa en los ocho (4,76:1 a 9,70:1). Y tiene que ser negro puro:
+         `#1d1d1f` —el token de texto de la app— se queda en 3,81:1 y tampoco vale. Las etiquetas directas son
+         obligatorias aquí precisamente porque la paleta clara avisa de contraste
+         bajo 3:1 contra la superficie: una etiqueta obligatoria e ilegible es la
+         regla de alivio incumplida por el propio alivio. Los rellenos son de
+         tono medio en AMBOS temas, así que la tinta NO se invierte con el tema:
+         invertirla a blanco en oscuro reabriría el defecto. */
       const texto = `${pct} %`;
       const cabe = (w / 100) * 320 > texto.length * 7 + 14;
-      return `<div class="absolute top-0 h-full" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); background: var(--viz-${(i % 4) + 1}); border-radius: ${i === 0 ? "6px 0 0 6px" : x >= 99.99 ? "0 6px 6px 0" : "0"}"
+      return `<div class="absolute top-0 h-full" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); background: var(--viz-${i + 1}); border-radius: ${i === 0 ? "6px 0 0 6px" : x >= 99.99 ? "0 6px 6px 0" : "0"}"
           title="${esc(s.etiqueta)}: ${miles(s.n)} (${pct} %)"></div>`
-        + (cabe ? `<span class="absolute top-0 flex h-full items-center justify-center text-[11px] font-semibold" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); color:#fff">${texto}</span>` : "");
+        + (cabe ? `<span class="absolute top-0 flex h-full items-center justify-center text-[11px] font-semibold" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); color:#000">${texto}</span>` : "");
     }).join("");
     const leyenda = vivos.map((s, i) => `<li class="flex items-center gap-1.5">
-        <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style="background: var(--viz-${(i % 4) + 1})"></span>
-        <span class="text-[11px]" style="color: var(--text-secondary)">${esc(s.etiqueta)} · ${miles(s.n)}</span></li>`).join("");
+        <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style="background: var(--viz-${i + 1})"></span>
+        <span class="text-[11px]" style="color: var(--text-secondary)">${esc(s.etiqueta)}${s._cola ? ` (${s._cola})` : ""} · ${miles(s.n)}</span></li>`).join("");
     return `<div class="relative mt-2 overflow-hidden rounded-md" style="height:${alto}px; background: var(--bg-inset)">${trozos}</div>
       <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1">${leyenda}</ul>`;
   }
