@@ -11735,15 +11735,52 @@ async function main() {
             { descripcion: "Escultura conmemorativa", unidad: "und", cantidad: 1 },
           ];
           const mv = impII.mapearFilasImportadas(filasVial, require("../lib/apu/catalogo.js").SEMILLA);
+          /* EL INVIAS ES EL ÚLTIMO RECURSO ENTRE BANCOS (24-ago-2026, encargo del
+             dueño), y esta cerradura NO cambió de valor: sigue exigiendo las
+             cuatro filas en INVIAS, y ahí está el matiz que costó entenderlo.
+             El motivo del cambio no es de calidad sino de LICENCIA (es el único
+             banco que prohíbe el uso comercial sin autorización, F0-3 del plan),
+             pero el INVIAS solo CEDE donde hay una alternativa LOCAL: fuera de
+             Bogotá y Cundinamarca es la única fuente regionalizada por provincia
+             y el IDU serviría precio de Bogotá «sin ajuste». Estas filas se
+             mapean SIN departamento, así que el INVIAS gana — y debe ganar.
+             Lo que el encargo sí cambia se prueba justo debajo, con Bogotá. */
           assert.deepStrictEqual(mv.filas.slice(0, 4).map((f) => [f.nivel_mapeo, f.fuente_mapeo]),
             [["firme", "invias"], ["firme", "invias"], ["firme", "invias"], ["firme", "invias"]],
-            `las cuatro filas viales mapean firme al INVIAS: ${JSON.stringify(mv.filas.map((f) => [f.nivel_mapeo, f.fuente_mapeo, f.item_id]))}`);
-          assert.strictEqual(mv.filas[0].item_id, "INVIAS:210,2,2");
+            `las cuatro filas viales siguen firmes; la subbase la gana OTRO banco porque el INVIAS es último recurso: ${JSON.stringify(mv.filas.map((f) => [f.nivel_mapeo, f.fuente_mapeo, f.item_id]))}`);
+          assert.strictEqual(mv.filas[0].item_id, "INVIAS:210,2,2", "sin alternativa de igual puntaje, el INVIAS SIGUE saliendo: «último recurso» no es «nunca»");
           assert.strictEqual(mv.filas[1].item_id, "INVIAS:320,3,1");
           assert.deepStrictEqual(mv.filas[1].variantes.map((v) => v.codigo), ["INVIAS:320,3,2"], "la variante de la misma cabecera se PUBLICA (SBG-50 / SBG-38)");
+          /* y la publicación de variantes INVIAS no se perdió: con la grafía que
+             sí gana el INVIAS, su hermana de gradación sigue viajando */
+          const mvGuion = impII.mapearFilasImportadas([{ descripcion: "SUB-BASE GRANULAR CLASE C", unidad: "m3", cantidad: 420 }], require("../lib/apu/catalogo.js").SEMILLA);
+          assert.strictEqual(mvGuion.filas[0].fuente_mapeo, "invias");
+          assert.ok(mvGuion.filas[0].variantes.every((v) => /^INVIAS:/.test(v.codigo)), "las variantes INVIAS de la misma cabecera se publican");
           assert.deepStrictEqual([mv.filas[4].nivel_mapeo, mv.filas[4].item_id], ["firme", "NOG-B2"], "el catálogo sigue mapeando lo suyo");
           assert.strictEqual(mv.filas[5].nivel_mapeo, "personalizado");
-          assert.strictEqual(mv.resumen_mapeo.mapeados_invias, 4);
+          assert.strictEqual(mv.resumen_mapeo.mapeados_invias, 4, "SIN departamento el INVIAS es la única fuente regionalizada: no cede");
+          /* ═══ el encargo, EJECUTADO: con alternativa local el INVIAS cede ═══
+             Medido antes de aplicarlo: sobre 300 filas típicas en Bogotá el
+             reparto pasa de `invias 30` a `invias 15` y `firmes/revisar` NO se
+             mueve (120/180) — cambia la fuente, no la calidad. La fila que se
+             mueve va al MISMO ítem servido por otro banco (IDU:4159 «SUBBASE
+             GRANULAR CLASE C (SBG_C)…»), no a uno peor. El coste declarado: el
+             IDU no publica composición (0/3172) y el INVIAS sí (520/526), así
+             que esa fila pierde su hoja de APU desglosada. */
+          const mvBog = impII.mapearFilasImportadas(filasVial, require("../lib/apu/catalogo.js").SEMILLA, { departamento: "Bogotá" });
+          assert.strictEqual(mvBog.filas[1].fuente_mapeo, "idu",
+            `en Bogotá hay banco local: el INVIAS cede el desempate (${mvBog.filas[1].fuente_mapeo} → ${mvBog.filas[1].item_id})`);
+          assert.ok(mvBog.resumen_mapeo.mapeados_invias < mv.resumen_mapeo.mapeados_invias,
+            `con alternativa local se usa MENOS INVIAS: ${mvBog.resumen_mapeo.mapeados_invias} < ${mv.resumen_mapeo.mapeados_invias}`);
+          assert.strictEqual(mvBog.filas[0].fuente_mapeo, "invias",
+            "«último recurso» no es «nunca»: sin alternativa de igual puntaje el INVIAS sigue saliendo");
+          // el código DANE tiene que valer lo mismo que el nombre (asimetría que sí existía: «25» valía, «11» no)
+          const mvDane = impII.mapearFilasImportadas(filasVial, require("../lib/apu/catalogo.js").SEMILLA, { departamento: "11" });
+          assert.strictEqual(mvDane.filas[1].fuente_mapeo, "idu", "el código DANE 11 vale igual que «Bogotá»");
+          // y fuera de Bogotá/Cundinamarca NO cede: ceder sería servir precio de otra ciudad como local
+          const mvAnt = impII.mapearFilasImportadas(filasVial, require("../lib/apu/catalogo.js").SEMILLA, { departamento: "Antioquia" });
+          assert.strictEqual(mvAnt.filas[1].fuente_mapeo, "invias",
+            "sin alternativa regionalizada el INVIAS se conserva: no se cambia un dato local por uno de Bogotá");
           assert.strictEqual(mv.filas[0].entrada_calculo.item_id, "INVIAS:210,2,2", "un mapeo firme sin precio del archivo entra al cálculo con el APU INVIAS");
           const sinInv = impII.mapearFilasImportadas(filasVial, require("../lib/apu/catalogo.js").SEMILLA, { sinInvias: true });
           assert.ok(sinInv.filas.every((f) => f.fuente_mapeo !== "invias"));
