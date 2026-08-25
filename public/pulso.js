@@ -197,8 +197,22 @@
      TOLIMA» no cabe en una columna de eje sin recortarlo, y un rótulo recortado
      es peor que ninguno. El dinero viaja al lado del conteo porque ya está en el
      dato y es la mitad de la respuesta a «¿dónde está la plata?». */
-  function barrasRank(items, { filtroDe = () => null, tope = 6 } = {}) {
-    const lista = (items || []).slice(0, tope);
+  /* ⚠️ LA COLA NO COMPITE POR UN PUESTO DEL RANKING. Un cubo residual («OTROS»,
+     «SIN DEPARTAMENTO») es la SUMA de muchas categorías, no una categoría: si se
+     ordena junto a las demás y resulta ser la mayor —cosa corriente cuando se
+     enseñan 3 de 24 departamentos— encabeza el gráfico y este pasa a AFIRMAR que
+     el departamento más grande se llama «OTROS». Es la doctrina que el panel ya
+     tenía escrita para `SIN_DEPARTAMENTO` («no compite por un puesto del top»),
+     sin aplicar aquí. La cola se aparta ANTES de recortar por `tope` —si no,
+     ocuparía un puesto que le quitaría a una categoría real— y se pinta AL FINAL.
+     Su barra conserva su longitud verdadera: acortarla para que no destaque sería
+     mentir sobre la magnitud, y lo que estaba mal era el ORDEN, no el tamaño.
+     Vive en la primitiva y no en el llamador para que el próximo cubo residual no
+     pueda olvidarse de la regla. */
+  function barrasRank(items, { filtroDe = () => null, tope = 6, esCola = () => false } = {}) {
+    const todos = items || [];
+    const cola = todos.filter((x) => esCola(x));
+    const lista = todos.filter((x) => !esCola(x)).slice(0, tope).concat(cola);
     if (!lista.length) return "";
     const max = Math.max(...lista.map((x) => x.n || 0));
     if (!max) return "";

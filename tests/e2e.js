@@ -19229,6 +19229,52 @@ async function main() {
       assert.strictEqual((rank.match(/data-filtro/g) || []).length, 1, "«OTROS» es la cola, no un departamento: se pinta pero NO enlaza a una lista vacía");
       assert.ok(/\$100\.000 millones/.test(rank), "el dinero viaja al lado del conteo");
 
+      /* (2-bis) ⚠️ LA COLA NO COMPITE POR UN PUESTO DEL RANKING. El fixture de
+         arriba da a «OTROS» el valor MENOR, así que nunca ejercitaba el caso: en
+         producción la cola de 21 departamentos es corrientemente la MAYOR (331
+         frente a los 320 del Tolima) y encabezaba el gráfico, que pasaba a
+         AFIRMAR que el departamento más grande se llama «OTROS». Es la doctrina
+         que el panel ya tenía escrita para `SIN_DEPARTAMENTO`. Un fixture cuyo
+         orden no ejercita la diferencia no prueba el orden. */
+      {
+        const esOtros = (x) => x.nombre === "OTROS";
+        const conCola = [{ nombre: "OTROS", n: 331 }, { nombre: "TOLIMA", n: 320 },
+          { nombre: "BOYACÁ", n: 180 }, { nombre: "CUNDINAMARCA", n: 96 }];
+        const orden = (h) => [...h.matchAll(/title="([^"]*)">/g)].map((m) => m[1]);
+        const conRegla = Viz.barrasRank(conCola, { tope: 8, esCola: esOtros });
+        assert.deepStrictEqual(orden(conRegla), ["TOLIMA", "BOYACÁ", "CUNDINAMARCA", "OTROS"],
+          "la cola se pinta AL FINAL aunque sea la mayor: es la suma de muchas categorías, no una categoría");
+        // …y se aparta ANTES de recortar por `tope`: si no, le robaría el puesto a una real
+        const muchos = [{ nombre: "OTROS", n: 900 }].concat("ABCDEFGH".split("")
+          .map((c, i) => ({ nombre: c, n: 100 - i })));
+        assert.deepStrictEqual(orden(Viz.barrasRank(muchos, { tope: 3, esCola: esOtros })),
+          ["A", "B", "C", "OTROS"], "la cola no ocupa uno de los `tope` puestos de las categorías reales");
+        // la longitud SÍ es la verdadera: lo que estaba mal era el orden, no el tamaño
+        const anchos = [...Viz.barrasRank(muchos, { tope: 3, esCola: esOtros }).matchAll(/width:([\d.]+)%/g)]
+          .map((m) => Number(m[1]));
+        assert.strictEqual(anchos[anchos.length - 1], 100,
+          "acortar la barra de la cola para que no destaque sería mentir sobre su magnitud");
+        // sin `esCola` el llamador conserva el comportamiento de siempre
+        assert.deepStrictEqual(orden(Viz.barrasRank(conCola, { tope: 8 }))[0], "OTROS",
+          "la regla la ACTIVA el llamador que declara su cola: la primitiva no adivina qué nombre es residual");
+      }
+
+      /* …y como la activa el llamador, hay que comprobar que el ÚNICO llamador
+         con cola la declara. La llamada vive dentro del IIFE de app.js y no se
+         puede ejecutar suelta, así que aquí la cerradura mira el fuente — es lo
+         que se puede, y por eso se ancla a la llamada concreta y no a que la
+         palabra aparezca en alguna parte del archivo. */
+      {
+        const appV = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8")
+          .replace(/\/\*[\s\S]*?\*\//g, "");
+        const llamada = (appV.match(/barrasRank\(filasDep[\s\S]{0,320}?\)\n/) || [])[0] || "";
+        assert.ok(llamada, "el tablero sigue pintando los departamentos con `barrasRank(filasDep`");
+        assert.ok(/esCola/.test(llamada),
+          "el tablero tiene la única cola del proyecto («OTROS») y tiene que declararla, o vuelve a encabezar el ranking");
+        assert.ok(/filtroDe[\s\S]*?null/.test(llamada),
+          "…y sigue sin enlazar: `?dep=OTROS` no casa ningún departamento");
+      }
+
       const api = Viz.apilada([{ etiqueta: "Obra", n: 60 }, { etiqueta: "Interventoría", n: 40 }]);
       assert.ok(/var\(--viz-1\)/.test(api) && /var\(--viz-2\)/.test(api), "la composición usa la paleta CATEGÓRICA, que es donde las series son el sujeto");
       assert.ok(/calc\([\d.]+% - 2px\)/.test(api), "2 px de hueco entre segmentos: es el hueco quien separa, nunca un borde");

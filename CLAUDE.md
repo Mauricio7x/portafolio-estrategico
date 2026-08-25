@@ -5394,6 +5394,25 @@ dos defectos, los dos **en la parte nueva** y los dos contra reglas duras de la 
 - **La de contraste RECALCULA desde los tokens del HTML**, no fija los ocho hex: así también cae si
   alguien retoca un slot de la paleta. Las dos probadas por mutación contra el árbol anterior.
 
+- **⚠️ Y ABRIR LA PÁGINA ENCONTRÓ UN TERCERO QUE NINGUNA PRUEBA VEÍA: «OTROS» ENCABEZABA EL
+  RANKING DE DEPARTAMENTOS.** El tablero ordenaba la cola junto a las categorías reales
+  (`app.js`, `.sort((a,b) => b[1]-a[1])`), y con 331 procesos frente a los 320 del Tolima quedaba
+  **primera**: el gráfico pasaba a AFIRMAR que el departamento más grande se llama «OTROS», que es la
+  suma de veintiuno. Es la doctrina que el panel **ya tenía escrita** para su hermano
+  —«`SIN_DEPARTAMENTO` no compite por un puesto del top»— sin aplicar al gráfico. Tres decisiones:
+  · **La regla vive en la PRIMITIVA** (`barrasRank`, opción `esCola`), no en el llamador: es el mismo
+    criterio que puso `plegarCola` dentro de `apilada`, y hace que el próximo cubo residual no pueda
+    olvidarse de ella. La cola se aparta **antes** de recortar por `tope` — si no, le quitaría un
+    puesto a una categoría real (medido: con `tope: 3` se enseñaban A y B en vez de A, B y C).
+  · **La primitiva NO adivina qué nombre es residual**: «OTROS» es un nombre de dominio y una entidad
+    real podría llamarse así. Lo declara quien construye los datos, y hay cerradura de que el único
+    llamador con cola lo declara.
+  · **La barra conserva su longitud VERDADERA** (900 de 900 → 100 %): lo que estaba mal era el ORDEN,
+    no el tamaño, y acortarla para que no destacara sería mentir sobre la magnitud.
+  · **EL FIXTURE TAPABA EL DEFECTO**: daba a «OTROS» el valor MENOR de la lista, así que el orden
+    nunca se ejercitaba y la cerradura que ya existía —«se pinta pero no enlaza»— pasaba en verde
+    sobre el ranking invertido. Es el fixture de `respuestas_al_procedimiento` otra vez: **un fixture
+    cuyo orden no ejercita la diferencia no prueba el orden.**
 - **Verificado en Chromium real, claro y oscuro**: relleno del segmento `rgb(42,120,214)` y tinta de
   etiqueta `rgb(0,0,0)`; columnas en `rgb(0,122,255)`; texto de eje en `rgb(134,134,139)` —el token de
   texto, **no** el color de la serie—; `ancho 1265 === scroll 1265`. En oscuro, `--viz-1: #3987e5`,

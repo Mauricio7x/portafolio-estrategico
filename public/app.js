@@ -5842,13 +5842,18 @@
          lista filtrada por departamento. */
       const filasDep = deps.filter(([k, n]) => n > 0 && k !== "SIN_DEPARTAMENTO")
         .sort((a, b) => b[1] - a[1]).map(([nombre, n]) => ({ nombre, n }));
-      /* «OTROS» ES LA COLA, NO UN DEPARTAMENTO: se conserva la barra —esconderla
-         haría que el reparto no sumara— pero SIN enlace. `?dep=OTROS` no casa
-         ningún departamento y llevaría a una lista vacía, que es una barra que
-         promete algo y no lo cumple. `filtroDe` devolviendo null ya lo pinta sin
-         enlace: es para lo que existe. */
+      /* «OTROS» ES LA COLA, NO UN DEPARTAMENTO, y eso son DOS consecuencias, no
+         una: (1) se conserva la barra —esconderla haría que el reparto no
+         sumara— pero SIN enlace, porque `?dep=OTROS` no casa ningún
+         departamento y llevaría a una lista vacía, que es una barra que promete
+         algo y no lo cumple; y (2) no compite por un puesto del ranking — con
+         331 procesos frente a los 320 del Tolima encabezaba el gráfico, que
+         entonces AFIRMABA que el departamento más grande se llama «OTROS».
+         `filtroDe` devolviendo null resuelve la primera y `esCola` la segunda. */
+      const esOtros = (x) => x.nombre === "OTROS";
       $("d-departamentos").innerHTML = window.Pulso
-        ? window.Pulso.barrasRank(filasDep, { tope: 8, filtroDe: (x) => (x.nombre === "OTROS" ? null : `dep=${encodeURIComponent(x.nombre)}`) })
+        ? window.Pulso.barrasRank(filasDep, { tope: 8, esCola: esOtros,
+            filtroDe: (x) => (esOtros(x) ? null : `dep=${encodeURIComponent(x.nombre)}`) })
         : "";
     }
 
