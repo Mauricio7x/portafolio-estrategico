@@ -1856,6 +1856,150 @@ cascada de `lib/apu/precios.js`. Evidencia HTTP en el §11 del mismo doc.
   INVIAS prohíben el uso comercial sin autorización — si Detekta se comercializa con estos datos,
   pedirla (`preciosunitarios@invias.gov.co`).
 
+### A4 · El precio de cada variante, a la vista (24-ago-2026)
+
+`precioDe` en `lib/apu/importar.js` + `precio` por variante y `precio_item` del elegido + el rango
+pintado en la vista previa de importación. Cierra el hallazgo H-4 de la auditoría — **pero no como el
+informe proponía, y esa diferencia es el contenido de esta sección.**
+
+- **EL DEFECTO, MEDIDO.** «CONCRETO CLASE D 3000 PSI» mapea FIRME (0,856) al ICCU y sus 9 hermanos
+  empatan **exactamente** en ese puntaje: decide `String(codigo).localeCompare` (`importar.js:421`), y
+  con numerales de coma decimal (`4,10 < 4,6 < 4,7 < 4,8 < 4,9`) gana sistemáticamente el numeral
+  alto, que en esa familia es *(vigas en puentes)* — **$1.183.877 frente a $834.999 de *(bases)*:
+  +42 %, y $62.798.040 en una fila de 180 m³**. En el ICCU el paréntesis no es una gradación del
+  material: es el ELEMENTO ESTRUCTURAL.
+- **EL INFORME DIAGNOSTICA MAL LA CAUSA**: dice que el tratamiento «cabecera antes del paréntesis» no
+  se aplica al ICCU. **Sí se aplica** (`importar.js:259`, `split("(")[0]`, igual que INVIAS).
+- **TRES ARREGLOS PROBADOS Y DESCARTADOS, cada uno por una medición.** Queda escrito para no
+  reintentarlos:
+  · **«empate exacto ⇒ nunca firme»** choca con una decisión ya tomada y fijada por prueba («las
+    variantes de la misma cabecera NO degradan a revisar y se publican»); sin ella, según esta misma
+    memoria, «todo lo vial caía a revisar».
+  · **«umbral de precio entre variantes»**: medido sobre las variantes REALES de todos los bancos —
+    INVIAS 72 familias (mediana 1,190 · p75 1,809), ICCU 127 (1,047 · 1,464)—, un umbral de 1,15
+    degradaría el **52,8 %** de las familias INVIAS y el 37 % de las ICCU: rompe justo lo que la
+    decisión anterior protege. (Una primera medición dio 2,92× en `INVIAS:210,2,1` vs `210,2,2` y
+    parecía tumbarlo: **no son variantes** —excavación en ROCA frente a MATERIAL COMÚN, cabeceras
+    distintas—, y el mapeo lo confirma publicando `variantes: []` para esa fila.)
+  · **usar el precio para decidir la CONFIANZA sería circular**: mezcla «¿qué ítem es?» con «¿cuánto
+    cuesta equivocarse?».
+- **LO QUE FALTABA ERA INFORMACIÓN, NO UNA REGLA.** El usuario veía «hay 9 variantes» y **no podía
+  saber** que elegir otra cambia el precio 1,46×. Ahora cada variante publica su `precio` y el ítem
+  elegido su `precio_item`, y el rango se **PINTA en el texto** («+9 variantes de la misma cabecera,
+  de $834.999 a $1.222.065 · se tomó $1.183.877»), no solo en el `title`: **en móvil no hay tooltip**,
+  y esto es justo lo que hay que ver antes de aceptar. No se toca el nivel de confianza ni el
+  desempate: con el precio delante, el usuario lo corrige en un clic desde la vista previa.
+- **Solo se destaca en ámbar cuando los precios DIFIEREN de verdad (>5 %)**: con precios iguales
+  elegir una u otra es indiferente, y un aviso constante se deja de mirar — es la lección del chip de
+  competencia que hubo que retirar.
+- **Se cotiza con `cotizarItem`, la definición ÚNICA**: un dispatcher propio por banco habría sido una
+  segunda («cómo se cotiza un ítem»), y los nombres difieren por banco (`precioParaDepartamento` en
+  INVIAS, `precioReferencia` en IDU/FFIE/ICCU, ninguno en EPC), que es justo la trampa. `require`
+  diferido y memoizado por código.
+- **EL COSTE, MEDIDO ANTES DE ACEPTARLO**: 720 cotizaciones en caliente cuestan **29 ms** frente a los
+  ~1 400 ms que tarda el mapeo de 300 filas, y el payload no crece (313 KB contra 315 KB). Un precio 0
+  o ausente viaja como `null`, jamás como cero (R1).
+- **Verificado en navegador real** (escritorio y móvil): el modal pinta «(+1 variante de la misma
+  cabecera, de $111.899 a $120.191 · se tomó $111.899)» en ámbar, con cero errores de consola. El
+  desborde horizontal a 390 px es la degradación conocida sin el CDN de Tailwind (HTTP 000 desde este
+  entorno), no del cambio.
+
+
+### A2 · Validación 8: su precio unitario contra el del pliego (24-ago-2026)
+
+`compararItems` publica `precios` y `validarFormulario1` añade la octava validación. Cierra el
+hallazgo H-3 de la auditoría, que era el que el encargo pedía de frente («comparar los precios que ya
+tiene el APU con los que sugiere la página»).
+
+- **EL DEFECTO, REPRODUCIDO ANTES DE TOCAR NADA**: las siete validaciones comparaban descripción,
+  unidad y cantidad contra el Formulario 1, y el TOTAL contra el presupuesto oficial. El **precio
+  unitario no se comparaba con nada**. Ejecutado: un ítem con unitario oficial $95.000 ofertado a
+  $260.000 (**2,74×**) daba `semaforo: "listo"`, «Su oferta está lista para presentar.», 0 rechazos, y
+  **ni 95.000 ni 260.000 aparecían en la respuesta**. Y tampoco se comparaba el TOTAL POR ÍTEM.
+- **EL DATO YA LLEGABA Y NADIE LO MIRABA.** `normalizarItems` (formulario1.js) lee
+  `it.precio_unitario ?? it.unitario ?? it.unitario_oficial`, así que el unitario del pliego ya
+  quedaba normalizado en `ref.precio_unitario` DENTRO de `compararItems`; y `revisarOferta`
+  (`public/app.js`) ya envía el formulario del lector al servidor. No hubo que transportar nada: solo
+  faltaba la validación. Por eso salió mucho más barata de lo que el informe suponía.
+- **EL CASADO NO SE REHACE: se aprovecha el que ya existe.** Los pares (oferta, pliego) salen del
+  MISMO bucle que decide qué ítem de la oferta corresponde a cuál del pliego. Calcularlos aparte
+  habría sido una segunda definición de «este ítem es este otro», que es el defecto que este
+  repositorio ya pagó caro.
+- **NO ES UN RECHAZO, Y ESO NO ES UN MATIZ.** Ofertar a un precio distinto del que estimó la entidad
+  es justamente lo que hace el oferente: si esto fuera «modificación del Formulario 1» (que sí es
+  motivo de rechazo automático) la app estaría denunciando como falta lo que es el trabajo del
+  contratista. Es **alerta**, y `rechazos` sigue en 0 — con prueba.
+- **SE ORDENA POR PLATA EN JUEGO, no por porcentaje**: `|desvío| × cantidad DEL PLIEGO`. Un −84 % en
+  un ítem de $2.500 pesa menos que un +23 % en 420 m³. La cantidad es la del PLIEGO porque es la que
+  la entidad va a pagar; si la de la oferta difiere, eso ya lo denuncia la validación 2.
+- **LAS DOS DIRECCIONES NO SON SIMÉTRICAS, y el fundamento lo dice** (`docs/COMPLEMENTO` §V-03,
+  Consejo de Estado, verificado): a **precios unitarios** las cantidades del pliego son un estimativo
+  y las mayores cantidades ordenadas **deben reconocerse**, así que un ítem por debajo del oficial
+  pierde plata en cada unidad de más; a **precio global** «en principio no se reconocen». Por encima
+  **se manda a VERIFICAR el Documento Base y no se afirma la norma**: que un pliego colombiano fije
+  precios unitarios máximos cuya superación sea causal de rechazo depende de cada proceso y no se
+  pudo contrastar. Es la diferencia entre avisar y afirmar.
+- **NO SE INVENTA UN UMBRAL**: reutiliza el `TEMERARIO_PCT` que la validación 5 ya declara
+  (lib/apu/piso_techo). Una cifra nueva puesta a ojo para esto habría sido un supuesto más.
+- **Sin unitarios en el pliego, `sin_referencia` — jamás «cumple»**: un pliego puede no publicarlos, y
+  entonces no hay contra qué comparar. El veredicto lo dice y entra en `pendientes`.
+- **Un fixture MÍO desvió la primera corrida y conviene anotarlo**: el caso «dentro del umbral» tenía
+  el presupuesto oficial muy por encima de su total, así que disparaba la validación 5 (precio
+  artificialmente bajo) y el semáforo que se medía no era el que se creía medir. El fallo era del
+  fixture, no del código. Los presupuestos de prueba van ahora cerca del total de cada caso.
+
+
+### A1 · El cable: del pliego al presupuesto (24-ago-2026)
+
+Botón «Usar estos ítems en mi presupuesto» en el lector (`#pl-btn-usar`) + `filasDesdePliego` y
+`mapearParaPrevisualizar` en `public/app.js`. Cierra el hueco que la auditoría del módulo APU señalaba
+como el de mayor valor por esfuerzo: **el lector y el editor eran dos mitades sin cable entre ellas**.
+
+- **EL PROBLEMA, MEDIDO: el catálogo del lector no puede dar NINGÚN precio.** `itemPorCodigo` devuelve
+  `null` en **los 93** códigos (todos `LOC-*`) y `cotizarItem` responde `fuente: "sin_precio"`. Es un
+  DICCIONARIO DE RECONOCIMIENTO, exactamente lo que esta memoria dice que es. El usuario leía el
+  pliego, exportaba un `.json` **que ningún módulo del proyecto vuelve a leer** (el importador acepta
+  `.xlsx/.xls/.csv`) y transcribía a mano: horas con un formulario de 150 filas, y una oportunidad de
+  error por fila en el documento con el que se fija el precio de una oferta.
+- **LO QUE NO SE PUEDE AFIRMAR, y el informe lo afirmaba: que «el importador mapee mejor».** Sobre 20
+  filas típicas el LECTOR saca más firmes (14) que el importador (11), y hay contraejemplos donde el
+  importador se equivoca y el lector no. Lo que cambia con el cable no es el acierto: es que al otro
+  lado hay un precio. Presentarlo como «93 candidatos ⇒ se equivoca» es una inferencia que la
+  ejecución desmiente — el caso testigo (SUB-BASE → BACHEO) falla por el GUION, en los dos universos.
+- **EL UNITARIO OFICIAL NO VIAJA COMO PRECIO, y es LA decisión de este cable.** Con `precio_archivo`,
+  `entrada_calculo` sale con `precio_manual: 95000` y `origen_precio: "archivo"`: el presupuesto del
+  contratista sería el presupuesto de **la entidad**, y la comparación pliego-contra-Detekta daría
+  **0 % por construcción** — la app comparándose consigo misma. El precio lo ponen los bancos; el del
+  pliego se conserva en `window.__pliegoUltimo`, que es de donde ya lo lee el guardián del Formulario 1.
+  Hay prueba de que ninguna fila lleva `precio_archivo` y de que `con_precio_archivo` es 0.
+- **SE REUTILIZA LA VISTA PREVIA, no se reimplementa**: el cable entra por la MISMA cadena
+  (`op=importar` → `abrirModalImportar`), así que hereda la puerta anti-falso-positivo del módulo — el
+  usuario ve el mapeo ANTES de que toque su tabla, y un ítem mal casado no entra solo. Eso importa
+  porque el mapeo tiene defectos conocidos (el paréntesis del ICCU, el guion del INVIAS).
+- **ERAN DOS COPIAS Y HABRÍAN SIDO TRES**: el POST se extrajo a `mapearParaPrevisualizar`, que ahora
+  usan las tres vías (archivo detectado, columnas mapeadas a mano y los ítems del pliego). La guarda
+  que contaba «2 llamadas a `/api/apu?op=importar`» pasa a exigir **1**, y la garantía es MÁS fuerte:
+  ya no es un conteo, es imposible por construcción que una vía use otro endpoint. Se añadió la
+  comprobación de que las tres pasan por esa función.
+- **La prueba EJECUTA la conversión**, no comprueba por regex que se llame: extrae `filasDesdePliego`
+  del fuente y la corre con la salida real de `parsearPliego` proyectada como lo hace
+  `public/pliego.js:583`. Es el patrón de `fraseProbabilidad`. Comprobada por MUTACIÓN: falla contra
+  el árbol anterior con «el lector tiene el botón que lleva sus ítems al presupuesto».
+- **VERIFICADO EN NAVEGADOR REAL** (Chromium 141 headless contra un arnés que sirve `public/` y
+  responde `/api/*` con los módulos reales), escritorio y móvil: el botón existe con su texto, sin
+  pliego leído **avisa** en vez de quedarse mudo («Primero lea un pliego…», la regla de que ninguna
+  pulsación se quede sin respuesta visible), con pliego abre la vista previa y **el modal menciona los
+  ítems del pliego**, y **cero errores de consola** en ambos anchos.
+  ⚠️ **Lo que este entorno NO puede verificar**: el proxy da **HTTP 000 a `cdn.tailwindcss.com`, así
+  que la página se mide DEGRADADA** — sin `overflow-auto` ni `min-w-[860px]`. El desborde horizontal
+  que aparece a 390 px con el modal abierto es de esa degradación, no del cambio: la tabla SÍ vive
+  dentro de un contenedor `overflow-auto` (`index.html:2695`) y, en las mismas condiciones,
+  `#c-faltantes` —una tabla que este cambio no toca— desborda más (671). El aspecto real con CDN
+  queda sin comprobar y hay que decirlo.
+- **`activarPestana("apu")` se retiró por redundante**: el botón vive DENTRO de la pestaña APU
+  (medido sobre el HTML). Un código que insinúa que podría no estarlo es documentación falsa.
+
+
 ### El INVIAS es el ÚLTIMO recurso entre los bancos (24-ago-2026, encargo del dueño)
 
 `rango()` en `lib/apu/importar.js`: el INVIAS pasa de `1|2` a **2,8 donde hay banco local** (Bogotá y

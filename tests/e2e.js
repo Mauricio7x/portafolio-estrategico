@@ -4618,7 +4618,14 @@ async function main() {
         assert.deepStrictEqual([elegida.resultado.cuadre.estado, elegida.resultado.cuadre.etiqueta_total, elegida.resultado.cuadre.total_declarado], ["cuadra", "COSTOS DIRECTOS", presuRT.resumen.costo_directo_total], "el libro exportado se reimporta y cuadra AL PESO contra su propio COSTOS DIRECTOS");
         assert.deepStrictEqual(elegida.resultado.filas.map((f) => f.capitulo), ["1. CUBIERTA", "1. CUBIERTA", "2. EXPLANACIONES"], "los SUBTOTAL por capítulo del libro exportado no nacen como capítulos");
         const appImp = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
-        assert.ok(/cuadre: crudas\.cuadre \|\| null/.test(appImp) && /cu\.estado === "cuadra"/.test(appImp), "la vista previa de importación enseña el cuadre cuando cuadra (y el aviso ámbar viaja en avisos_lectura cuando no)");
+        /* el literal cambió al extraer `mapearParaPrevisualizar` (A1: la tercera
+           vía de importación no podía ser una tercera copia), pero lo que esta
+           guarda protege NO cambió y se comprueba entero: la lectura PASA su
+           cuadre, la función lo ASIGNA a `importacion`, y la vista previa lo
+           PINTA cuando cuadra. */
+        assert.ok(/cuadre: crudas\.cuadre/.test(appImp), "la lectura del archivo sigue pasando su cuadre");
+        assert.ok(/cuadre: \(meta && meta\.cuadre\) \|\| null/.test(appImp), "y la vía compartida lo asigna a la importación");
+        assert.ok(/cu\.estado === "cuadra"/.test(appImp), "la vista previa de importación enseña el cuadre cuando cuadra (y el aviso ámbar viaja en avisos_lectura cuando no)");
         console.log(`  · Cuadre de control de la importación: «${ok.cuadre.etiqueta_total}» ${ok.cuadre.total_declarado} vs Σ ítems ${ok.cuadre.suma_items} → ${ok.cuadre.estado}; desviado → ${r2.cuadre.estado} (${r2.cuadre.desviacion_pct.toFixed(2)} %); TOTAL tras AIU ignorado; SUBTOTAL ya no es capítulo`);
       }
 
@@ -11786,6 +11793,49 @@ async function main() {
           assert.ok(sinInv.filas.every((f) => f.fuente_mapeo !== "invias"));
           assert.strictEqual(sinInv.resumen_mapeo.mapeados_invias, 0);
           // el catálogo (Nogal/semilla) NO se coló ni cambió: la unidad canónica compuesta del INVIAS ya no cae en «ml»
+          /* ═══ A4 · EL PRECIO DE CADA VARIANTE, A LA VISTA ═══
+             «CONCRETO CLASE D 3000 PSI» mapea FIRME (0,856) al ICCU y los 9
+             hermanos empatan EXACTAMENTE en ese puntaje: decide
+             `String(codigo).localeCompare`, y con numerales de coma decimal
+             («4,10» < «4,6» < … < «4,9») gana sistemáticamente el numeral alto,
+             que en esa familia es *(vigas en puentes)*, el MÁS CARO — $1.183.877
+             frente a $834.999 de *(bases)*: +42 %, y $62.798.040 en una fila de
+             180 m³.
+             TRES ARREGLOS SE PROBARON Y SE DESCARTARON MIDIENDO, y conviene que
+             quede escrito para no reintentarlos:
+             (a) «empate exacto ⇒ nunca firme» choca con una decisión ya tomada y
+                 fijada por prueba («las variantes de la misma cabecera NO
+                 degradan a revisar y se publican»); sin ella «todo lo vial caía
+                 a revisar».
+             (b) «umbral de precio entre variantes»: sobre las variantes REALES
+                 de todos los bancos, INVIAS 72 familias con mediana 1,190 y p75
+                 1,809; ICCU 127 con 1,047 y 1,464. Un umbral de 1,15 degradaría
+                 el 52,8 % de las familias INVIAS: rompe lo que (a) protege.
+             (c) usar el precio para decidir la CONFIANZA sería circular.
+             Lo que sí faltaba: el usuario veía «hay 9 variantes» y NO podía
+             saber que elegir otra cambia el precio 1,46×. El precio de cada una
+             viaja ahora en la respuesta y el rango se PINTA (no solo en el
+             tooltip: en móvil no hay tooltip). No se toca el nivel ni el
+             desempate — con el precio delante se corrige en un clic. */
+          const mvA4 = impII.mapearFilasImportadas(
+            [{ descripcion: "CONCRETO CLASE D 3000 PSI", unidad: "m3", cantidad: 180 }],
+            require("../lib/apu/catalogo.js").SEMILLA, { departamento: "Cundinamarca" });
+          const fA4 = mvA4.filas[0];
+          assert.strictEqual(fA4.fuente_mapeo, "iccu");
+          assert.ok(fA4.variantes.length >= 8, `el caso testigo tiene sus hermanos: ${fA4.variantes.length}`);
+          assert.ok(fA4.variantes.every((v) => "precio" in v), "cada variante publica su precio");
+          const conP = fA4.variantes.filter((v) => Number.isFinite(v.precio));
+          assert.ok(conP.length >= 8, `y el banco los responde: ${conP.length}/${fA4.variantes.length}`);
+          assert.ok(Number.isFinite(fA4.precio_item), `el ítem ELEGIDO publica el suyo, para poder compararlo: ${fA4.precio_item}`);
+          const minA4 = Math.min(...conP.map((v) => v.precio), fA4.precio_item);
+          const maxA4 = Math.max(...conP.map((v) => v.precio), fA4.precio_item);
+          assert.ok(maxA4 / minA4 > 1.4, `las variantes NO cuestan lo mismo, y por eso hay que enseñarlo: ${minA4}–${maxA4}`);
+          assert.ok(fA4.precio_item > minA4, "el desempate por código eligió una cara: el usuario tiene que poder verlo");
+          /* un precio 0 del banco es SIN DATO, jamás «gratis» (R1) */
+          assert.ok(fA4.variantes.every((v) => v.precio == null || v.precio > 0), "un precio 0 viaja como null, no como cero");
+          // el frontend lo PINTA, no lo esconde en el title
+          const appA4 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+          assert.ok(/precio_item/.test(appA4) && /v\.precio/.test(appA4), "app.js pinta el precio de las variantes, no solo su nombre");
           assert.strictEqual(impII.unidadCanonica("m3-km"), "m3-km");
           assert.strictEqual(impII.unidadCanonica("M3 - Km"), "m3-km");
           assert.notStrictEqual(impII.unidadCanonica("m3-km"), impII.unidadCanonica("ml"));
@@ -12560,11 +12610,21 @@ async function main() {
             "los ítems detectados llevan checkbox (data-inf) que quita y devuelve su fila en tiempo real");
           assert.ok(/Analizando…/.test(unoJs),
             "mientras la detección procesa debe verse el spinner con «Analizando…»");
-          /* el mapeo manual reutiliza /api/apu/importar: un segundo parser
-             «tolerante» en el frontend sería una segunda definición de la tabla.
+          /* TODAS las vías de importación entran por /api/apu?op=importar: un
+             segundo parser «tolerante» en el frontend sería una segunda
+             definición de la tabla. Eran DOS llamadas (archivo detectado y
+             columnas mapeadas a mano) y la guarda contaba 2; con el cable del
+             pliego (A1) habrían sido TRES copias, así que el POST se extrajo a
+             `mapearParaPrevisualizar` y ahora hay UNA sola llamada. La garantía
+             es más fuerte que antes —ya no es un conteo, es imposible por
+             construcción que una vía use otro endpoint— y por eso la guarda pasa
+             a exigir 1 y a comprobar que las TRES vías pasan por esa función.
              Se cuenta SIN comentarios: los comentarios también citan la ruta. */
-          assert.strictEqual((sinComentarios(unoJs).match(/\/api\/apu\?op=importar/g) || []).length, 2,
-            "la vía automática y el mapeo manual deben entrar por el MISMO endpoint de importación");
+          const unoSinCom = sinComentarios(unoJs);
+          assert.strictEqual((unoSinCom.match(/\/api\/apu\?op=importar/g) || []).length, 1,
+            "hay UN solo sitio que llama al endpoint de importación: las tres vías pasan por él");
+          assert.strictEqual((unoSinCom.match(/mapearParaPrevisualizar\(/g) || []).length, 4,
+            "la función compartida (1 declaración) y sus TRES llamadas: archivo detectado, columnas a mano y los ítems del pliego");
         }
 
         /* EL TOKEN VA INTEGRADO (decisión del dueño, ago 2026): no existe
@@ -16277,7 +16337,144 @@ async function main() {
       assert.ok(!/causal\s+o\b/i.test(appF4), "app.js no dice «causal O»");
       const pliegoF4 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8"));
       assert.ok(/window\.__pliegoUltimo = /.test(pliegoF4), "el lector expone los ítems leídos");
-      console.log(`  · Guardián del Formulario 1 (Fase 4): 7 validaciones con caso · adición/supresión/modificación (descripción, unidad, cantidad) · «${limpio.frase}» · rechazos citan 1.15/C-549, 4.1, 2.2.1.1.2.2.4 y Ley 1882 · sin «causal O»`);
+      /* ═══ A1 · EL CABLE: los ítems del pliego alimentan el presupuesto ═══
+         El lector extraía ítem, unidad y cantidad y ahí se acababa: exportaba un
+         .json que NINGÚN módulo del proyecto vuelve a leer (el importador acepta
+         .xlsx/.xls/.csv), así que el usuario TRANSCRIBÍA A MANO — horas con un
+         formulario de 150 filas, y una oportunidad de error por fila en el
+         documento con el que se fija el precio de una oferta.
+         Por qué el cable vale, MEDIDO y no supuesto: **0 de 93** códigos del
+         catálogo del lector resuelven en el catálogo de precios (todos `LOC-*`;
+         `itemPorCodigo` → null en los 93). No es que el lector se equivoque de
+         precio: es que no puede dar NINGUNO. Pasando sus filas por `op=importar`
+         el universo pasa a 6 588 ítems CON precio.
+         OJO: NO es «el importador mapea mejor» — sobre 20 filas típicas el lector
+         saca más firmes que el importador, y hay contraejemplos. Lo que cambia es
+         que al otro lado hay un precio. */
+      {
+        const { parsearPliego } = require("../lib/apu_pliego.js");
+        const { mapearFilasImportadas: mfiA1 } = require("../lib/apu/importar.js");
+        const { SEMILLA: semA1 } = require("../lib/apu/catalogo.js");
+        assert.ok(htmlF4.includes('id="pl-btn-usar"'), "el lector tiene el botón que lleva sus ítems al presupuesto");
+        assert.ok(/pl-btn-usar/.test(appF4) && /function filasDesdePliego/.test(appF4),
+          "app.js cablea el botón y convierte los ítems del lector");
+        /* la conversión se EJECUTA, no se comprueba por regex: una guarda que
+           mira que la función se LLAMA no prueba lo que ESCRIBE. */
+        const iF = appF4.indexOf("function filasDesdePliego");
+        assert.ok(iF > 0, "no se pudo extraer filasDesdePliego");
+        let prof = 0, fin = -1;
+        for (let k = appF4.indexOf("{", iF); k < appF4.length; k++) {
+          if (appF4[k] === "{") prof++;
+          else if (appF4[k] === "}" && --prof === 0) { fin = k + 1; break; }
+        }
+        assert.ok(fin > iF, "filasDesdePliego quedó truncada al extraerla");
+        const filasDesdePliego = new Function(`${appF4.slice(iF, fin)}; return filasDesdePliego;`)();
+        const T = "\t";
+        const textoA1 = [
+          ["ITEM", "DESCRIPCION", "UNIDAD", "CANTIDAD", "VR UNITARIO", "VR TOTAL"].join(T),
+          ["2.1", "SUBBASE GRANULAR CLASE C", "m3", "420", "95.000", "39.900.000"].join(T),
+          ["2.2", "CONCRETO CLASE D 3000 PSI", "m3", "180", "520.000", "93.600.000"].join(T),
+        ].join("\n");
+        const pA1 = parsearPliego(textoA1);
+        assert.strictEqual(pA1.items.length, 2, "el parser lee las dos filas del Formulario 1");
+        // la proyección LITERAL de public/pliego.js (window.__pliegoUltimo.items)
+        const itemsLector = pA1.items.map((f) => ({ numeral: f.numeral, pagina: f.pagina, descripcion: f.descripcion_original,
+          unidad: f.unidad, cantidad: f.cantidad, unitario_oficial: f.unitario_oficial, total_oficial: f.total_oficial }));
+        assert.strictEqual(itemsLector[0].unitario_oficial, 95000, "el lector sí extrae el unitario oficial del pliego");
+        const filasA1 = filasDesdePliego(itemsLector);
+        /* EL UNITARIO DEL PLIEGO NO ENTRA COMO PRECIO, y es LA decisión de este
+           cable. Con `precio_archivo`, `entrada_calculo` sale con
+           `precio_manual: 95000` y `origen_precio: "archivo"`: el presupuesto del
+           contratista sería el presupuesto de LA ENTIDAD, y la comparación que
+           pide el encargo daría 0 % por construcción — la app comparándose
+           consigo misma. El precio lo ponen los bancos; el del pliego se conserva
+           en `window.__pliegoUltimo` para compararlo (Formulario 1). */
+        assert.ok(filasA1.every((f) => !("precio_archivo" in f) || f.precio_archivo == null),
+          `el unitario del pliego NO viaja como precio: ${JSON.stringify(filasA1[0])}`);
+        assert.deepStrictEqual(filasA1.map((f) => [f.descripcion, f.unidad, f.cantidad]),
+          [["SUBBASE GRANULAR CLASE C", "m3", 420], ["CONCRETO CLASE D 3000 PSI", "m3", 180]],
+          "la conversión conserva descripción, unidad y cantidad, que es lo que `op=importar` exige");
+        // y la cadena entera resuelve contra los bancos, no contra los 93 del lector
+        const mA1 = mfiA1(filasA1, semA1);
+        assert.strictEqual(mA1.filas.length, 2);
+        assert.ok(mA1.filas.every((f) => f.item_id && /^(INVIAS|IDU|EPC|FFIE|ICCU|NOG|INV|LOC)/.test(String(f.item_id))),
+          `los ítems del pliego mapean al catálogo de PRECIOS: ${JSON.stringify(mA1.filas.map((f) => f.item_id))}`);
+        assert.strictEqual(mA1.filas[0].item_id, "INVIAS:320,3,1",
+          "la subbase resuelve al ítem exacto del banco (sin el guion no cae en la variante de BACHEO)");
+        assert.strictEqual(mA1.resumen_mapeo.con_precio_archivo, 0,
+          "ninguna fila trae precio del archivo: el precio sale de los bancos");
+        console.log(`  · A1 · el cable: ${pA1.items.length} ítems del pliego → ${mA1.filas.length} mapeados contra los 6 588 (el catálogo del lector da precio en 0 de 93) · el unitario oficial NO entra como precio`);
+      }
+      /* ═══ A2 · VALIDACIÓN 8 · el precio unitario contra el del pliego ═══
+         Las siete validaciones comparaban descripción, unidad y cantidad contra
+         el Formulario 1, y el TOTAL contra el presupuesto oficial. El PRECIO
+         UNITARIO no se comparaba con nada: reproducido, un ítem ofertado a 2,74×
+         el unitario oficial daba semáforo «listo», 0 rechazos, y ni la cifra del
+         pliego ni la de la oferta aparecían en la respuesta.
+         Importa por las DOS direcciones y no son simétricas (docs/COMPLEMENTO
+         §V-03, verificado): en contrato a PRECIOS UNITARIOS las mayores
+         cantidades ordenadas DEBEN reconocerse, así que un ítem barato es donde
+         se pierde plata si la entidad ordena más; en PRECIO GLOBAL «en principio
+         no se reconocen». Y por encima, si el pliego fija unitarios máximos,
+         superarlos puede costar el proceso — pero eso depende del Documento Base
+         de cada uno, así que se manda a VERIFICARLO y no se afirma la norma.
+         NO es un rechazo: ofertar a otro precio es justamente lo que hace el
+         oferente. Es alerta, y ordenada por PLATA EN JUEGO, no por porcentaje. */
+      {
+        const F1 = require("../lib/formulario1.js");
+        const formA2 = { items: [
+          { numeral: "1.1", descripcion: "LOCALIZACION Y REPLANTEO", unidad: "m2", cantidad: 1200, unitario_oficial: 2500, total_oficial: 3000000 },
+          { numeral: "2.1", descripcion: "SUB-BASE GRANULAR CLASE C", unidad: "m3", cantidad: 420, unitario_oficial: 95000, total_oficial: 39900000 },
+        ] };
+        const ofertaA2 = (pu11, pu21) => ({
+          items: [
+            { numeral: "1.1", descripcion: "LOCALIZACION Y REPLANTEO", unidad: "m2", cantidad: 1200, precio_unitario: pu11, total: pu11 * 1200 },
+            { numeral: "2.1", descripcion: "SUB-BASE GRANULAR CLASE C", unidad: "m3", cantidad: 420, precio_unitario: pu21, total: pu21 * 420 },
+          ],
+          aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 },
+          total: pu11 * 1200 + pu21 * 420,
+        });
+        // (1) el caso testigo: 2,74× el oficial ya NO puede pasar en verde
+        const caso = F1.validarFormulario1({ oferta: ofertaA2(2000, 260000), formulario: formA2, presupuesto_oficial: 130000000, tope_aiu_pct: 30 });
+        const vu = caso.veredictos.find((v) => v.id === "unitarios");
+        assert.ok(vu, `existe la validación 8: ${caso.veredictos.map((v) => v.id).join(", ")}`);
+        assert.notStrictEqual(caso.semaforo, "listo", "un ítem a 2,74× el unitario oficial no puede salir «lista para presentar»");
+        assert.strictEqual(vu.nivel, "alerta", "es ALERTA, no rechazo: ofertar a otro precio es lo que hace el oferente");
+        assert.strictEqual(caso.rechazos, 0, "y no inventa un motivo de rechazo automático");
+        const sA2 = JSON.stringify(caso);
+        assert.ok(/260\.000/.test(sA2) && /95\.000/.test(sA2), "las DOS cifras aparecen: la del pliego y la ofertada");
+        // (2) ordenado por PLATA EN JUEGO, no por porcentaje
+        //     1.1: |2000−2500| × 1200 = 600.000 (−20 %)   ·   2.1: |260000−95000| × 420 = 69.300.000 (+174 %)
+        assert.strictEqual(vu.filas[0].numeral, "2.1", `manda la plata en juego: ${JSON.stringify(vu.filas.map((f) => [f.numeral, f.plata_en_juego_cop]))}`);
+        assert.strictEqual(vu.filas[0].plata_en_juego_cop, 69300000);
+        assert.strictEqual(vu.filas[0].direccion, "por_encima");
+        // (3) sin unitarios en el pliego NO se afirma que cumple
+        const sinU = F1.validarFormulario1({
+          oferta: ofertaA2(2000, 90000),
+          formulario: { items: formA2.items.map((i) => ({ ...i, unitario_oficial: null, total_oficial: null })) },
+          // el presupuesto va CERCA del total del caso: con uno muy alto, la validación 5
+          // (precio artificialmente bajo) dispararía sola y ensuciaría el semáforo que se mide
+          presupuesto_oficial: 44000000, tope_aiu_pct: 30,
+        });
+        assert.strictEqual(sinU.veredictos.find((v) => v.id === "unitarios").nivel, "sin_referencia",
+          "el pliego no publica unitarios: se dice, no se afirma «cumple»");
+        assert.ok(sinU.pendientes.includes("unitarios"));
+        // (4) dentro del umbral, ok — y el semáforo no se ensucia
+        const ok = F1.validarFormulario1({ oferta: ofertaA2(2400, 92000), formulario: formA2, presupuesto_oficial: 45000000, tope_aiu_pct: 30 });
+        assert.strictEqual(ok.veredictos.find((v) => v.id === "unitarios").nivel, "ok", "precios cerca del oficial: sin ruido");
+        assert.strictEqual(ok.semaforo, "listo");
+        // (5) por DEBAJO también avisa, y con la lectura correcta
+        const bajo = F1.validarFormulario1({ oferta: ofertaA2(2400, 30000), formulario: formA2, presupuesto_oficial: 17000000, tope_aiu_pct: 30 });
+        const vb = bajo.veredictos.find((v) => v.id === "unitarios");
+        assert.strictEqual(vb.nivel, "alerta");
+        assert.strictEqual(vb.filas[0].direccion, "por_debajo");
+        assert.ok(/mayores cantidades/i.test(vb.mensaje + vb.fundamento), "por debajo se nombra el riesgo de mayores cantidades");
+        assert.ok(/precios unitarios/i.test(vb.fundamento) && /global/i.test(vb.fundamento),
+          "el fundamento distingue precios unitarios de precio global: la lectura no es la misma");
+        assert.ok(!/causal\s+o\b/i.test(JSON.stringify(vb)), "sin jerga «causal O»");
+        console.log(`  · A2 · validación 8: el ítem a 2,74× el oficial pasa de «listo» a «${caso.frase}» · $${vu.filas[0].plata_en_juego_cop.toLocaleString("es-CO")} en juego en una fila · sin unitarios del pliego → sin referencia`);
+      }
+      console.log(`  · Guardián del Formulario 1 (Fase 4): 8 validaciones con caso · adición/supresión/modificación (descripción, unidad, cantidad) · «${limpio.frase}» · rechazos citan 1.15/C-549, 4.1, 2.2.1.1.2.2.4 y Ley 1882 · sin «causal O»`);
     }
 
     /* ═══════════ j-decies. VIGÍA DE ADENDAS Y CRONOGRAMA (Fase 5 del plan v3) ═══════════
