@@ -44,7 +44,23 @@ sostenga**.
 
 ## 2. Protocolo de arranque · medir, no creer
 
-En este orden, antes de tocar nada:
+**Paso 0 · ¿Hay árbol?** Todo lo demás depende de esto, y ya falló una vez: el prompt corto se
+pegó en un chat normal de claude.ai (sandbox sin repositorio, `/home/claude` vacío) y la sesión
+no tenía nada que medir. La escalera, en orden:
+
+1. Localiza el repositorio: `git rev-parse --show-toplevel` desde el directorio de trabajo, o
+   busca `CLAUDE.md` (`ls ~ ; find / -maxdepth 4 -name CLAUDE.md -path "*portafolio*" 2>/dev/null`).
+2. Si no está clonado pero hay `git` y red: clónalo —
+   `git clone https://github.com/Mauricio7x/portafolio-estrategico && cd portafolio-estrategico`
+   (la URL es IDENTIDAD del proyecto, no estado: CLAUDE.md § «Fase 7 · Marca» fija que el
+   repositorio no cambia; si el clon exige credenciales que la sesión no tiene, es el caso 3).
+3. Si no se puede clonar (sin git, sin red, sin acceso): **DETENTE. Sin árbol no se trabaja.**
+   Trabajar «de memoria» produciría exactamente las afirmaciones sin respaldo que este protocolo
+   existe para impedir. La única salida válida de esa sesión es responder con las instrucciones
+   del **Apéndice B** (cómo abrir una sesión con el árbol), copiadas con sus rutas exactas — y
+   nada más: ni diagnósticos del proyecto, ni planes, ni código.
+
+Con árbol delante, en este orden, antes de tocar nada:
 
 1. **`node tests/estado.js`** — imprime el estado MEDIDO ahora: routers y sus operaciones
    (derivadas del fuente, con la vía declarada), conteos, vercel.json, puntos de llamada de
@@ -256,8 +272,11 @@ confirmado**.
      presentado como medición es el peor defecto que este proyecto puede producir.
    - **Verificación**: el resultado literal de la suite («4/4») y del bench/navegador si aplican.
    - **Pendientes**: qué queda por hacer, en orden, y **el paso a paso exacto** para hacerlo —
-     escrito para un dueño SIN terminal cuando el paso sea suyo (URLs para pegar en Chrome,
-     clics en la app), y con comandos cuando el paso sea de la próxima sesión.
+     escrito para un dueño SIN terminal cuando el paso sea suyo, y con comandos cuando el paso
+     sea de la próxima sesión. **Regla de rutas exactas**: cada paso dirigido al dueño lleva la
+     URL COMPLETA para pegar en Chrome, el nombre LITERAL del botón o pestaña que debe pulsar y
+     el campo exacto que debe rellenar — jamás «vaya a GitHub» ni «abra la configuración» a
+     secas. Un paso que el dueño no puede ejecutar con clics es un paso sin dar.
    - **Rama**: el trabajo va a **`main`** (decisión del dueño, 21-ago-2026: una sola rama). Si la
      sesión corre sobre una rama que el arnés impuso, se dice y se deja el paso de fusión a main
      en los Pendientes.
@@ -278,19 +297,48 @@ confirmado**.
 
 ---
 
-## Apéndice A · El prompt corto para pegar (no contiene hechos: no puede caducar)
+## Apéndice A · El prompt corto para pegar
+
+No contiene ESTADO (por eso no caduca); sí contiene dos PUNTEROS de identidad —la ruta de este
+documento y la URL del repositorio— porque una sesión sin árbol no puede leer el documento que
+le diría cómo conseguirlo: el respaldo tiene que viajar en el propio prompt.
 
 ```
-Lee y ejecuta docs/PROMPT_INICIAL.md del repositorio: es tu rol, tu método y tu protocolo de
+PASO 0 — el árbol: localiza el repositorio (git rev-parse --show-toplevel, o busca CLAUDE.md).
+Si no está clonado y tienes git y red: git clone
+https://github.com/Mauricio7x/portafolio-estrategico y entra al directorio. Si NO puedes
+conseguir el árbol (sin git, sin red, sin acceso — p. ej. esto es un chat normal y no Claude
+Code): DETENTE; no trabajes de memoria ni respondas nada sobre el proyecto. Tu única respuesta
+en ese caso: decir que esta sesión no tiene el repositorio y que hay que abrir una en Claude
+Code (https://claude.ai/code) con el repositorio Mauricio7x/portafolio-estrategico conectado,
+rama main.
+
+Con árbol: lee y ejecuta docs/PROMPT_INICIAL.md — es tu rol, tu método y tu protocolo de
 arranque. Arranca midiendo (node tests/estado.js) y leyendo las secciones más nuevas de
 CLAUDE.md antes de opinar. Regla de oro: ni este mensaje ni ningún documento contienen el
 ESTADO del sistema — el estado se mide contra el árbol; si un texto contradice al árbol, manda
 el árbol: dilo en una línea, corrige el texto en el mismo commit y sigue. Trabaja en main, con
-la suite en 4/4, y cierra la respuesta como manda el §10 (MEDIDO/SUPUESTO/NO VERIFICABLE +
-Pendientes con paso a paso).
+la suite en 4/4 (node tests/e2e.js, código de salida sin tuberías), y cierra la respuesta como
+manda el §10: MEDIDO / SUPUESTO / NO VERIFICABLE + Pendientes con paso a paso y la ruta exacta
+(URL completa, botón literal) de todo lo que se le pida al dueño.
 
 Encargo: [aquí va lo que se pide en esta sesión]
 ```
 
 Para encargos grandes (auditorías, barridos multi-módulo), añadir la palabra **ultracode** al
 mensaje activa la orquestación multi-agente del §9.
+
+## Apéndice B · Cómo abrir una sesión CON el árbol (rutas exactas para el dueño)
+
+El prompt corto solo funciona donde el repositorio está clonado. Dónde pegarlo:
+
+1. **Claude Code en la web**: abrir `https://claude.ai/code` en Chrome → botón **«New session»**
+   (o «Nueva sesión») → en el selector de repositorio elegir **`Mauricio7x/portafolio-estrategico`**
+   → rama **`main`** → pegar el prompt corto del Apéndice A como primer mensaje.
+2. **Dónde NO pegarlo**: en un chat normal de `https://claude.ai` (aunque tenga la herramienta de
+   código: ese sandbox no trae el repositorio — `/home/claude` vacío es la señal) ni en una sesión
+   de Claude Code abierta sobre OTRO repositorio. La sesión lo detectará en el Paso 0 y se
+   detendrá, pero el tiempo ya se perdió.
+3. Si el selector de repositorio no ofrece `Mauricio7x/portafolio-estrategico`: reconectar GitHub
+   en `https://claude.ai/customize/connectors` → fila **GitHub** → **«Connect»/«Reconnect»** y
+   autorizar el repositorio; después volver al paso 1.

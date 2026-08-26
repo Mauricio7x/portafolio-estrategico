@@ -5822,3 +5822,16 @@ un prompt no recibe los commits. Decisiones que no hay que re-aprender:
   «una corrección no está hecha hasta que alguien intenta romperla»: **una corrección tampoco está
   hecha si la cerradura se commitea sin correr la suite entera** — el ✘ estaba en la salida y el
   `exit 0` de la tubería con `tail` lo disfrazaba; el código de salida se mira sin tuberías.
+- **EL PROMPT CORTO SE PEGÓ EN UNA SESIÓN SIN ÁRBOL Y EL PROTOCOLO NO TENÍA RESPUESTA
+  (26-ago-2026, mismo día).** El dueño lo pegó en un chat normal de claude.ai (sandbox
+  `/home/claude` vacío, Node presente, sin git ni repositorio) y la sesión no podía ni leer
+  `docs/PROMPT_INICIAL.md` — el documento que le habría dicho qué hacer. La corrección tiene dos
+  mitades: el **Paso 0 · ¿Hay árbol?** del §2 (localizar → clonar → DETENERSE si no se puede:
+  sin árbol no se trabaja de memoria, la única salida es responder con las instrucciones de
+  apertura del Apéndice B) y el **respaldo autónomo dentro del propio prompt corto**, porque un
+  respaldo que vive en un archivo del repositorio no existe para la sesión que no tiene el
+  repositorio. El prompt corto pasó de «cero hechos» a «cero ESTADO más dos PUNTEROS de
+  identidad» (la ruta del documento y la URL del repo — que la Fase 7 fija como invariable):
+  un puntero no caduca, y sin él la sesión huérfana no tiene escalera. Y la regla de rutas
+  exactas entró al cierre del §10: cada paso dirigido al dueño lleva la URL completa, el botón
+  literal y el campo exacto — un paso que no se puede ejecutar con clics es un paso sin dar.
