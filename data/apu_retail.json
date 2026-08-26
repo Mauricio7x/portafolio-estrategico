@@ -709,6 +709,27 @@
       "capturado_el": "2026-08-13",
       "alcance": "nacional",
       "iva": "sin_iva"
+    },
+    {
+      "insumo_id": "nog_cable_cobre_no_12_awg_tc_ls_zh",
+      "producto": "Cable 12 AWG × 100 m Libre de Halógeno Amarillo (ExZhellent BW, Procables)",
+      "unidad_fuente": "rollo 100 m",
+      "correspondencia": "exacta",
+      "correspondencia_nota": "LS-ZH (libre de halógenos), el aislamiento que cotiza el catálogo — cierra la aproximación de la referencia THHN. Precio POR ROLLO: el por-metro-cortado (la otra referencia) es otro precio real, más caro.",
+      "fuente": "Homecenter",
+      "declaracion": "retail_con_iva",
+      "iva": "incluido",
+      "producto_id": "293463",
+      "url": "https://www.homecenter.com.co/homecenter-co/product/293463/",
+      "alcance": "bogota",
+      "precio": 264900,
+      "normalizacion": {
+        "divisor": 100,
+        "unidad": "ml",
+        "nota": "el rollo mide 100 m: dividir es exacto — la propia ficha imprime $2.649,00/metro"
+      },
+      "capturado_el": "2026-08-26",
+      "evidencia": "ficha abierta por el dueño en su navegador (captura de pantalla del 26-ago-2026); ubicación sin fijar — Bogotá por defecto. El nombre de catálogo dice «Cable 12 5M.» pero el empaque y el precio por metro impreso confirman 100 m."
     }
   ]
 }

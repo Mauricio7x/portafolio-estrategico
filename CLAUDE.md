@@ -5835,3 +5835,43 @@ un prompt no recibe los commits. Decisiones que no hay que re-aprender:
   un puntero no caduca, y sin él la sesión huérfana no tiene escalera. Y la regla de rutas
   exactas entró al cierre del §10: cada paso dirigido al dueño lleva la URL completa, el botón
   literal y el campo exacto — un paso que no se puede ejecutar con clics es un paso sin dar.
+
+### Banco de precios verificable · el informe retail del 26-ago-2026 (censo en docs/BANCO_PRECIOS_2026-08-26.md)
+
+El dueño aportó una investigación externa de precios retail (Homecenter/Interelectricas, DANE,
+INVIAS/IDU/SECOP) para los APU CPR Espinal y UPN El Nogal. Decisiones que no hay que re-aprender:
+
+- **NINGÚN precio del informe entró a `data/`**: todos salvo uno son `[S]` (snippet sin ficha
+  abierta) y la regla del capturador manda — un precio sin confirmar no se escribe. El único `[F]`
+  (tablero NTQT-418 $206.900) es Bogotá-default sin regionalizar y no tiene `insumo_id` al que
+  colgarse. La vía de integración es `tests/capturar_retail.js` con red, con los SKU candidatos
+  listados en el censo.
+- **Las dos «alertas» del informe se re-midieron contra `tests/electrico_nogal_filas.json`**: la
+  del cable 12 estaba mal planteada (el precio del ingeniero es «suministro e INSTALACIÓN»,
+  $17.552/ml instalado — compararlo contra rollo de vitrina compara dos cosas distintas; además
+  por-metro-cortado y por-rollo son dos precios reales distintos: $6.850/ml vs $2.489/ml); la del
+  **tablero de $3.129.564 SÍ se sostiene y con más fuerza** — su fila dice solo «Suministro», sin
+  instalación, y es 15× el precio de ficha confirmado. Desglosar antes de reutilizar ese APU.
+- **El informe CONFIRMA (no descubre) el estado ya integrado**: INVIAS 2026-1, IDU 29-jul-2026,
+  SECOP sin precios por ítem, Boyacá 2022 descartado. Y para los insumos que ambos cubren, **las
+  capturas del repo son mejor dato que el informe** (regionalizadas por capital; el informe no
+  pudo fijar ubicación y reporta Bogotá por defecto).
+- **Lo nuevo aprovechable**: el SKU del cable LS-ZH EXACTO en rollo (293463/293459 — cerraría la
+  correspondencia `aproximada` THHN vigente), Interelectricas como segunda fuente con SKU, el
+  patrón de URL de los boletines DANE ICOCED/ICOCIV (el número índice base dic-2021=100 sigue sin
+  leerse: el DANE bloquea bots), y el censo de proveedores del Tolima con teléfono (solo cotizan,
+  ninguno publica precios).
+- **El proxy de esta sesión bloqueó las cuatro fuentes (HTTP 000, medido 26-ago-2026)** —
+  observación con fecha, no propiedad del entorno: se reintentó antes de darlo por bloqueado.
+- **VERIFICACIÓN DEL DUEÑO EL MISMO DÍA (capturas de ficha, 26-ago-2026)**: el tablero NTQT-418
+  quedó confirmado en $206.900 y **sin stock** (precio de catálogo, no de compra) — la alerta del
+  15× se sostiene y el desglose del $3,1 M sigue siendo suyo—; y la ficha del cable 293463
+  confirmó el rollo LS-ZH de 100 m a **$264.900 = $2.649/ml impreso por la propia ficha**. Con esa
+  evidencia la referencia ENTRÓ a `data/apu_retail.json` (`correspondencia: "exacta"`,
+  `alcance: "bogota"`, divisor 100 declarado, evidencia = captura del dueño) **conviviendo con la
+  THHN por-metro-cortado, que no se retira**: rollo y metro cortado son dos precios reales
+  distintos y la THHN es la única regionalizada. El boletín DANE abre en SU navegador (el bloqueo
+  es a bots) pero las páginas vistas traen variaciones (feb-2026: 1,91 % mensual), no el número
+  índice — sigue pendiente en el anexo. Las cotizaciones locales del Tolima quedaron **APARCADAS
+  por decisión del dueño**: arena m³/ladrillo/perfiles/flanche siguen sin precio local y la
+  conversión saco→m³ sigue prohibida.
