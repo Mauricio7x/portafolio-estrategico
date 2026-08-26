@@ -5420,6 +5420,159 @@ dos defectos, los dos **en la parte nueva** y los dos contra reglas duras de la 
   forzó **inyectando el bloque de tokens oscuros de la propia app**: `--force-prefers-color-scheme` lo
   ignora este Chromium, y unos valores inventados no habrían probado nada.
 
+### Sesión APU del 26-ago-2026 · siete correcciones, y dos premisas mías eran falsas
+
+Todo sobre `main`, commit a commit, con la suite en 4/4 y el banco con los suelos superados.
+Cada hallazgo REPRODUCIDO ejecutando código antes de tocar nada, y cada cerradura probada por
+MUTACIÓN contra el árbol anterior.
+
+- **EL TOTAL DEL DOCUMENTO SE COMÍA EL SUBTOTAL DE UN CAPÍTULO, Y ADEMÁS SE PERDÍA.** Un
+  formulario con dos capítulos SIN subtotal propio y un «COSTO DIRECTO» al final dejaba ese total
+  en `capitulos[último].subtotal_declarado` → `no_cuadra` falso con la desviación exacta del
+  capítulo 1. El daño mayor era el otro: el total del documento **no se leía como tal**
+  (`documento.estado: "sin_datos"` sobre un pliego que SÍ declara su costo directo), así que el
+  nivel Documento solo sabía cuadrar contra el `precio_base` EXTERNO — que obliga a suponer cómo
+  presupuesta la entidad y exige una cifra que el documento no trae.
+  · **LA REGLA YA EXISTÍA, ENTERA Y CORRECTA, EN `public/xlsx_lectura.js`** («COSTO(S)
+    DIRECTO(S)» manda · un «TOTAL» seco vale solo antes del AIU · «SUBTOTAL» es de capítulo). Se
+    EXTRAJO a `clasificarRotuloTotal` y la comparten los dos lectores de formularios de cantidades:
+    no se copió. Canoniza internamente porque los dos llamadores normalizan distinto (`normCab`
+    sube a mayúsculas, el `norm` de semantica baja a minúsculas). **Lo que no reconoce devuelve
+    `null` y se sigue tratando como hasta hoy**: DESVÍA los casos inequívocos, no reclasifica el
+    resto — por eso «GRAN TOTAL» y «VALOR TOTAL» no cambian de comportamiento.
+  · **El cuadre interno habilita el VERDE**, y es evidencia MÁS limpia que la externa: compara la
+    suma contra la cifra que el propio pliego declara, sin AIU de por medio ni ninguna hipótesis.
+    Un pliego que cuadra al peso salía ámbar solo por no conocerse la cuantía. **Las tres guardas
+    del verde siguen intactas** (ninguna cantidad ilegible · ≥5 filas · ≥50 % de cobertura): son
+    las que impiden que un cuadre afortunado sobre cuatro filas se lea como «se usa
+    automáticamente».
+  · **EL MISMO DEFECTO POR LA OTRA PUERTA, que salió al probar el arreglo**: un «TOTAL» después
+    del AIU es el precio CON AIU, no la suma, y también acababa de subtotal del capítulo en curso.
+    `vistoAiu` se enciende en UN punto reutilizando `noEsCostoDirecto` (que ya distingue
+    «ADMINISTRACION 15 %» de «ADMINISTRACION DELEGADA DE OBRA»). Encenderla de más solo deja un
+    «no sé»; de menos, fabrica un «no cuadra»: **el error cae del lado bueno**.
+  · **Y mi cableado tenía un fallo propio**: pasaba la línea ENTERA con su cifra, así que `^TOTAL$`
+    —lo que separa el total seco de «TOTAL CAPITULO 1»— no podía casar nunca. El rótulo va sin la
+    cola numérica.
+
+- **⚠️ LA VALIDACIÓN 8 COMPARABA DOS BASES DISTINTAS, Y YO CONCLUÍ LO CONTRARIO A MEDIO CAMINO.**
+  El lado OFERTA llega **CON AIU** (`public/app.js:ofertaParaRevision` escala el costo directo por
+  `precio_final / costo_directo_total`) y el lado PLIEGO es **COSTO DIRECTO** (la convención del
+  lector: solo da `documento.estado="cuadra"` cuando `Σ total_oficial ≈ precio_base/(1+AIU)`). Se
+  restaban sin convertir.
+  · **MEDIDO**: un contratista que cuesta EXACTAMENTE lo que estimó la entidad salía con TODOS sus
+    ítems «+25 % por encima» y la alerta de «puede costar el proceso» — **en la misma respuesta en
+    que la validación 1 decía que su total coincide AL PESO con el presupuesto oficial**. Dos
+    afirmaciones incompatibles en la misma pantalla. Y al revés: con una baja del 20 % (el oferente
+    regala el AIU entero) el desvío daba 0 % y respondía «están cerca de los que estimó la
+    entidad», **callándose justo cuando debía gritar**. El sesgo vale exactamente (AIU − baja)
+    puntos y cruza el umbral del 20 % en casi toda la banda del manual.
+  · **LECCIÓN DE MÉTODO, y es mía**: comprobé que la oferta se escalaba, concluí «misma base» y
+    **no verifiqué la convención del OTRO lado**. Media premisa verificada no es una premisa
+    verificada; «arreglarlo» a partir de esa lectura habría INTRODUCIDO el defecto. Lo cazó un
+    auditor independiente ejecutando código.
+  · **Cada lado DECLARA su base** y el pliego se lleva a la de la oferta con el AIU que declara EL
+    PLIEGO —no el de la oferta: es lo que la entidad estimó facturar—. El unitario literal viaja al
+    lado del convertido para poder auditar la conversión. **Sin AIU con el que convertir NO se
+    compara**: `sin_referencia` con su motivo, porque un desvío entre dos bases distintas es una
+    cifra inventada. **Sin declaración se asume la misma base**, que es lo que hace un llamador que
+    construye los dos lados a mano — el contrato que ya fijaban las pruebas de A2, que siguen
+    pasando sin tocarlas.
+  · **LA NORMA, citada completa y sin afirmarla**: la causal de rechazo por superar el valor
+    unitario oficial EXISTE (Documentos Tipo de obra de infraestructura de transporte v4,
+    **Resolución 465 de 2024**, Documento Base CCE-EICP-GI-01) y para esa comparación el valor
+    unitario del Formulario 1 se entiende **CON AIU**. Pero es **FACULTATIVA** y solo aplica a
+    precios unitarios, así que se manda a leerla en el Documento Base — **y por su TEXTO, no por su
+    letra**: en pliegos mal diligenciados aparece corrida. Sigue siendo **alerta, nunca rechazo**.
+  · De paso, `base_precios` habría chocado con el campo homónimo del catálogo que ya lee
+    `public/app.js`: se llama `base_comparacion`.
+  · **Ninguna prueba ejercitaba el camino real** — la única que lo tocaba era una regex sobre el
+    fuente de `ofertaParaRevision`. La cerradura EJECUTA.
+
+- **DOS TEXTOS FALSOS DENTRO DEL MÓDULO QUE FIJA EL PRECIO DE UNA OFERTA.** La cabecera de
+  `lib/apu/precios.js` decía «LOS CINCO NIVELES» y enumeraba cinco cuando `NIVELES` ya tenía DOCE,
+  con `catalogo` en el puesto 4 (es el 6) y `sin_precio` en el 5 (es el 12): **quien la leyera para
+  saber el ORDEN de la cascada leía un orden FALSO**, y `retail` e `invias` no aparecían. Más tres
+  rótulos de sección con el número obsoleto y un cuarto texto en la suite. **La cerradura no fija
+  el texto: lo ATA a la estructura** —extrae la lista del comentario y la compara id a id y EN
+  ORDEN contra `NIVELES`—, así que añadir un banco sin tocar la cabecera cae en la suite.
+- **«PAVIMENTO FLEXIBLE» NO ESTABA EN EL LÉXICO DE LA TIPOLOGÍA QUE SE LLAMA «Pavimento flexible»**,
+  mientras su hermana VIA-RIG sí tiene «pavimento rigido» como ancla: una asimetría, no un
+  criterio. Medido, «CONSTRUCCION DE PAVIMENTO FLEXIBLE EN LA CARRERA 5» sacaba **CERO** puntos.
+  · **HABÍA UNA SEGUNDA COPIA DEL LÉXICO y la primera corrección se dejó la mitad**:
+    `lib/apu_catalogo.js` tiene su propia tabla de las 22 tipologías —lista plana, para
+    reconocerlas desde el TEXTO de un pliego— que también lo omitía, y `tipologiasProbables`
+    devolvía `[]` justo para el objeto del **caso 10 de `tests/apu_bench.js`**. **NO se fusionan**:
+    medido, las 22 divergen (aquélla separa anclas de apoyo con pesos distintos; ésta tiene
+    variantes propias como «box coulvert» y los singulares de VIA-MANT), y fundirlas cambiaría el
+    peso de todo el lector. Se ata lo que SÍ tiene que estar en las dos: el nombre canónico.
+  · **NO se generalizó a «toda tipología reconoce su nombre»**: medido, esa invariante marca
+    VIA-MANT y EDI-INST, que son frases-categoría y no términos que nadie escriba en un objeto de
+    SECOP. **Una cerradura demasiado ancha cuesta más que el defecto que cierra.**
+
+- **QUÉ ÍTEMS PUEDEN LLEVAR HOJA DE APU · cuatro estados** (`estadoComposicion` en
+  `public/apu_libro.js`, el UMD que comparten pantalla y Excel). Un pliego exige el anexo
+  DESGLOSADO y **medido sobre los seis orígenes solo 1.134 de 6.588 ítems (17,2 %) pueden
+  producirlo**: catálogo 174/174, INVIAS 520/526 y EPC 440/440 traen composición; IDU (3.172),
+  FFIE (1.042) e ICCU (1.234) publican precio total sin ella.
+  · `con_composicion_propia` · `composicion_derivada_declarada` · `solo_precio` · `sin_dato`. Solo
+    los dos primeros radican el anexo; `solo_precio` **suma al total** y avisa ANTES de exportar
+    (no bloquea: una herramienta que se niega a exportar acaba usándose por fuera); `sin_dato` no
+    suma, que ya era el comportamiento vigente.
+  · **NO basta con `clasificarOrigen`**, que responde «de dónde salió este precio»: los ítems
+    INVIAS sin composición salen con estado «invias», que promete desglose, cuando su hoja son
+    cuatro líneas de «Ajuste» con `insumo_id` nulo. **Lo que decide es si hay líneas con insumo
+    REAL, no de qué banco viene el precio.**
+
+- **LA UNIDAD DEL ICCU SE ROMPE POR CORRIMIENTO DE COLUMNAS: 142 de 1.234 (11,5 %).** El PDF
+  alterna dos formas de fila y el capturador tomaba la tercera columna como unidad SIN comprobar
+  que lo fuera; salen precios («1.222.065 1.225.019…»), descripciones enteras y texto pegado
+  («CONSTRUCCIÓNML»).
+  · **NO SE EXCLUYEN DEL MAPEO, y la medición es la razón**: 0 de 40 descripciones de ítems con la
+    unidad rota producen un mapeo FIRME —la unidad solo aporta 0,13 al puntaje, así que una unidad
+    basura no casa con nada y el ítem cae a «revisar»; **no fabrica un mapeo falso**—. Excluirlos
+    quitaría 142 ítems cuyo PRECIO es bueno.
+  · Se DECLARA (`meta().unidades`) y el capturador **IMPORTA la regla del módulo** —dos
+    definiciones divergirían— y **ABORTA antes de escribir** si una vigencia nueva empeora.
+  · **Los otros cuatro bancos están sanos con el mismo criterio: IDU 1, FFIE 1, EPC 0, INVIAS 6.**
+    El informe cifraba el IDU en 163; las otras 135 son unidades raras pero **legítimas** (jornal,
+    ml/mes, tramo, litro) y no se marcan.
+
+- **EL CAPÍTULO DE LA FILA DESEMPATA · herencia de contexto.** Ya viajaba hasta el mapeo
+  (`importar.js` lo copiaba a la salida y a `entrada_calculo`) y **no entraba en ninguna decisión**.
+  · **ENTRA COMO DESEMPATE, NO COMO PUNTAJE**, y ahí está toda la seguridad del cambio:
+    concatenarlo a la descripción subiría puntajes y podría empujar a «firme» a quien no lo estaba,
+    y aquí el falso positivo es el caro. Solo se mira cuando el puntaje **y** el rango de banco ya
+    empataron, así que `confianza`, `margen` y `nivel_mapeo` no se mueven un dígito.
+  · **MEDIDO sobre el caso que A4 documentó** —«CONCRETO CLASE D 3000 PSI» empata EXACTAMENTE con
+    sus 9 hermanos del ICCU, donde el paréntesis es el ELEMENTO ESTRUCTURAL—: `CIMENTACION Y BASES`
+    → (bases) $834.999 · `BOX COULVERT` → (box-coulvert) $862.829 · `ELEVACIONES` → (elevaciones)
+    $1.009.430 · `PLACAS` → (placas) $1.102.814 · `PUENTES` → (vigas en puentes) $1.183.877.
+    **1,42× de rango; en una fila de 180 m³ son $61,8 millones** que antes decidía `localeCompare`
+    sobre el código, o sea el azar alfabético. **Sin capítulo el comportamiento es el de antes.**
+  · **La premisa del encargo mezclaba dos problemas**: la «herencia de contexto» de los papers de
+    BoQ es sobre el mapeo de FILA a ítem (b), no sobre el clasificador de tipología del OBJETO (a)
+    —ahí el objeto ES la entrada y no hay contexto que heredar—. Aplicarla a (a) habría sido una
+    premisa mal usada.
+
+- **LA FUENTE MÁS FIABLE VA PRIMERO EN LA PANTALLA DE PRECIOS.** El lector de pliegos vivía PLEGADO
+  dentro del paso 1 (un `<details>` cerrado, último nodo de la sección), así que el dato más fiable
+  —el formulario de cantidades que publica la propia entidad— era el más escondido, y en primer
+  plano quedaba «describa la obra», que es adivinar. Va delante y ABIERTO, **sin número**: no es un
+  paso más, es la puerta por la que conviene entrar. Los tres pasos numerados conservan su orden
+  (hay prueba de que 1 < 2 < 3) y **ningún id cambió** (480 antes, 480 después).
+  · **Verificado en Chromium real**, escritorio y móvil: pestaña visible, lector visible en y≈300
+    (antes plegado), departamento y resultados después, `scrollWidth === clientWidth` y **cero
+    errores de consola**.
+
+**DOS PREMISAS DEL ENCARGO QUE ERAN FALSAS Y NO HAY QUE REINTRODUCIR:**
+- «A1, A2, A4 e INVIAS están entregados y en main» era **cierta**; la equivocada fue **mi primera
+  medición**, que leyó una referencia `origin/main` local desactualizada y concluyó que no estaban.
+  **Antes de declarar un estado de git, `git fetch`.**
+- «Si la validación 8 compara costo directo contra unitario con AIU, la alerta mide mal» apuntaba
+  al lado equivocado: el que lleva AIU es la OFERTA, no el pliego. Corregir el lado equivocado
+  habría invertido el defecto.
+
 ## Convenciones
 
 - Español en UI, comentarios y commits. Estética tipo Apple (Tailwind CDN, sobrio, claro).

@@ -17044,7 +17044,22 @@ async function main() {
         {
           const apu = html.slice(html.indexOf('<main id="tab-apu"'), html.indexOf("</main>", html.indexOf('<main id="tab-apu"')));
           const pos = (frag) => { const i = apu.indexOf(frag); assert.ok(i > 0, `no está: ${frag}`); return i; };
+          /* T4 · LA FUENTE MÁS FIABLE VA PRIMERO. El lector de pliegos vivía
+             PLEGADO dentro del paso 1 —un <details> cerrado, último nodo de la
+             sección—, así que el dato más fiable de la pantalla (el formulario
+             de cantidades que publica la propia entidad, con sus ítems,
+             unidades y cantidades) era el más escondido, y en primer plano
+             quedaba «describa la obra», que es adivinar. Va delante y ABIERTO,
+             sin número: no es un paso más, es la puerta por la que conviene
+             entrar. Verificado además en Chromium real (escritorio y móvil):
+             visible, cero errores de consola y sin desborde. */
+          const pliego = pos('id="seccion-pliego-wrap"');
           const p1 = pos('white">1</span>¿Qué vas a construir?');
+          assert.ok(pliego < p1, "el lector de pliegos va ANTES del paso 1: es la fuente más fiable");
+          assert.ok(/<section id="seccion-pliego-wrap"/.test(apu),
+            "…y ABIERTO: un <details> cerrado esconde justo lo que hay que usar primero");
+          assert.ok(/¿Tiene el pliego del proceso\?/.test(apu),
+            "el rótulo pregunta lo que el usuario puede responder, sin jerga");
           const p2 = pos('white">2</span>¿Dónde?');
           const p3 = pos('white">3</span>Calcular y exportar');
           assert.ok(p1 < p2 && p2 < p3, "los tres pasos tienen que ir en orden y seguidos");
@@ -19478,6 +19493,63 @@ async function main() {
         "los repartos del pulso salen de FiltrosLista.facetas: dos cuentas del mismo corpus divergirían");
     }
 
+    /* ── T7 · EL CAPÍTULO DE LA FILA DESEMPATA · herencia de contexto ──────
+       El capítulo YA VIAJABA hasta el mapeo (importar.js lo copia a la salida y
+       a `entrada_calculo`) y no entraba en ninguna decisión. Es el dato que la
+       literatura de BoQ usa para lo que este mapeo hace peor: «Excavación» no
+       significa lo mismo en ALCANTARILLADO que en VÍAS.
+       ENTRA COMO DESEMPATE, NO COMO PUNTAJE: concatenarlo a la descripción
+       subiría puntajes y podría empujar a «firme» a quien no lo estaba, y aquí
+       el falso positivo es el caro. Solo se mira cuando el puntaje Y el rango
+       de banco ya empataron.
+       MEDIDO sobre el caso que A4 documentó —«CONCRETO CLASE D 3000 PSI» empata
+       EXACTAMENTE con sus 9 hermanos del ICCU, donde el paréntesis es el
+       ELEMENTO ESTRUCTURAL— el capítulo elige una variante distinta en cada
+       caso, con un rango de 1,42× ($834.999 a $1.183.877): en una fila de
+       180 m³ son $61,8 millones que antes decidía `localeCompare` sobre el
+       código, o sea el azar alfabético. */
+    {
+      const Imp = require("../lib/apu/importar.js");
+      const Cat = require("../lib/apu/catalogo.js");
+      const conCapitulo = (capitulo) => {
+        const fila = { descripcion: "CONCRETO CLASE D 3000 PSI", unidad: "M3", cantidad: 180 };
+        if (capitulo) fila.capitulo = capitulo;
+        const r = Imp.mapearFilasImportadas([fila], Cat.SEMILLA, {});
+        return (r.filas || r)[0];
+      };
+      const casos = [["CIMENTACION Y BASES", "(bases)"], ["PLACAS DE ENTREPISO", "(placas)"],
+        ["BOX COULVERT", "(box-coulvert)"], ["ELEVACIONES Y MUROS", "(elevaciones)"],
+        ["PUENTES", "(vigas en puentes)"]];
+      const precios = [];
+      for (const [cap, esperado] of casos) {
+        const f = conCapitulo(cap);
+        assert.ok(String(f.descripcion_catalogo || "").indexOf(esperado) >= 0,
+          `con el capítulo «${cap}» el mapeo tiene que elegir ${esperado}, no ${f.descripcion_catalogo}`);
+        precios.push(f.precio_item);
+        /* EL DESEMPATE NO PUEDE MOVER LA CONFIANZA: si la moviera podría empujar
+           a «firme» a quien no lo estaba, que es el falso positivo caro. */
+        assert.strictEqual(f.confianza, conCapitulo(null).confianza,
+          "el capítulo desempata, no puntúa: la confianza no se mueve");
+        assert.strictEqual(f.nivel_mapeo, conCapitulo(null).nivel_mapeo,
+          "…ni el nivel del mapeo");
+      }
+      /* La plata que estaba en juego, para que el cambio no se lea como cosmético */
+      const min = Math.min(...precios), max = Math.max(...precios);
+      assert.ok(max / min > 1.3, `las variantes tienen que diferir de verdad (salió ${(max / min).toFixed(2)}×)`);
+
+      /* SIN CAPÍTULO, EL COMPORTAMIENTO ES EL DE ANTES: un archivo que no trae
+         capítulos no cambia de resultado por este cambio. */
+      const sinCap = conCapitulo(null);
+      assert.ok(String(sinCap.descripcion_catalogo || "").indexOf("(vigas en puentes)") >= 0,
+        "sin capítulo se conserva el desempate por código: la compatibilidad no se rompe");
+
+      /* Y UN CAPÍTULO QUE NO DICE NADA TAMPOCO ROMPE NADA */
+      const ajeno = conCapitulo("CAPITULO 1");
+      assert.strictEqual(ajeno.confianza, sinCap.confianza);
+      assert.strictEqual(ajeno.item_id, sinCap.item_id,
+        "un capítulo sin términos en común deja la elección como estaba");
+    }
+
     /* ── T5 · LA UNIDAD DEL ICCU SE ROMPE POR CORRIMIENTO DE COLUMNAS ──────
        El PDF alterna dos formas de fila y el capturador tomaba la tercera
        columna como unidad SIN comprobar que lo fuera: 142 de 1.234 ítems
@@ -19872,10 +19944,10 @@ async function main() {
         "las dos tablas cubren las MISMAS tipologías aunque su léxico difiera");
     }
 
-    console.log("· unidad AUDITORÍA INTEGRAL: 37 cerraduras de los defectos reproducidos "
+    console.log("· unidad AUDITORÍA INTEGRAL: 38 cerraduras de los defectos reproducidos "
       + "(fuga sin token, presupuesto único, precio_manual, origen del precio, conectividad/mano de obra, "
       + "Number(null), año imposible, celda vacía, precio 0, unidades, cantidad ilegible, caja, hoja del Excel, "
-      + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos, sello del offset, backfill, huérfanos, salto de página, Formulario 1, cascada de 12 niveles, pavimento flexible, total del documento, base de la validación 8, hoja de APU radicable, unidades del ICCU)");
+      + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos, sello del offset, backfill, huérfanos, salto de página, Formulario 1, cascada de 12 niveles, pavimento flexible, total del documento, base de la validación 8, hoja de APU radicable, unidades del ICCU, el capítulo desempata)");
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →

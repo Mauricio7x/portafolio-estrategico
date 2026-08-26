@@ -1855,113 +1855,17 @@
            a «Ajustes»: sus valores por defecto sirven para la mayoría de los
            procesos, y tenerlos delante obliga a decidir cuatro cosas antes de
            poder ver un precio. -->
-<section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">1</span>¿Qué vas a construir?</h2>
-        <p class="mt-1 text-sm text-gray-500">Describa la obra y el sistema detecta los ítems. O cargue su Excel, o busque un ítem por nombre.</p>
-
-        <!-- ══ Método principal: describir la obra y detectar ══
-             Es el más automático y por eso el más prominente: textarea grande y
-             botón de acento. Los otros dos métodos viven a la vista en la misma
-             pantalla (sin pestañas ni menús anidados) pero en tarjetas menores. -->
-        <div class="mt-4">
-          <textarea id="objeto" rows="3" placeholder="Ej: Construcción de placa huella de 2.5 km en el municipio de Jericó, Antioquia"
-                    class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"></textarea>
-          <div class="mt-3 flex flex-wrap items-center gap-3">
-            <button id="btn-inferir" type="button"
-                    class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-              <span id="inferir-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
-              <span id="inferir-texto">Detectar ítems</span>
-            </button>
-            <input id="codigos-unspsc" type="text" placeholder="Códigos del pliego (opcional): 72141100"
-                   class="min-w-[240px] flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 sm:max-w-xs">
-          </div>
-        </div>
-        <div id="inferencia" class="mt-4 hidden rounded-xl p-4 text-sm"></div>
-
-        <!-- ══ Métodos alternativos: Excel y búsqueda por nombre ══ -->
-        <div class="mt-5 grid gap-4 lg:grid-cols-2">
-          <div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-            <h3 class="text-sm font-medium">Cargar Excel con ítems</h3>
-            <p class="mt-1 text-xs text-gray-500">Columnas <strong>Descripción · Unidad · Cantidad</strong> (Ítem y Valor unitario, opcionales). Se lee en su navegador y verá una vista previa antes de añadir nada; un precio del archivo <strong>manda</strong>.</p>
-            <button id="btn-importar" type="button"
-                    class="mt-3 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
-              Elegir archivo (.xlsx, .xls o .csv)
-            </button>
-            <input id="archivo-importar" type="file" accept=".xlsx,.xls,.csv" class="hidden">
-          </div>
-          <div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-            <h3 class="text-sm font-medium">Buscar ítem por nombre</h3>
-            <p class="mt-1 text-xs text-gray-500">Catálogo propio, los 526 APU de referencia del INVIAS y los 3.172 del IDU (Bogotá). Al elegir uno, entra a la tabla del paso 3.</p>
-            <div class="mt-3 flex items-start gap-2">
-              <div class="relative flex-1">
-                <input id="buscar-item" type="text" autocomplete="off" spellcheck="false"
-                       placeholder="Ej: excavación, concreto, tubería…"
-                       class="w-full rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
-                <div id="buscar-lista"
-                     class="absolute inset-x-0 top-full z-30 mt-1 hidden max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl"></div>
-              </div>
-              <button id="btn-agregar" type="button"
-                      class="shrink-0 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
-                Añadir
-              </button>
-            </div>
-            <p id="buscar-nota" class="mt-2 hidden text-xs"></p>
-          </div>
-        </div>
-
-        <!-- ══ Mapeo manual de columnas: SOLO cuando la detección automática del
-             Excel no encuentra la cabecera. Panel en línea (no otro modal): el
-             usuario señala qué columna es qué y la importación sigue por el
-             MISMO camino de siempre (/api/apu/importar). ══ -->
-        <div id="mapeo-panel" class="mt-4 hidden rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <h3 class="text-sm font-medium text-amber-900">No se reconocieron las columnas del archivo</h3>
-          <p class="mt-1 text-xs text-amber-900/80">
-            Señale qué columna trae cada dato y pulse «Aplicar el mapeo». Solo la descripción es obligatoria;
-            una cantidad ilegible viaja vacía, nunca como 0.
-          </p>
-          <div class="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            <label class="block text-xs">
-              <span class="font-medium uppercase tracking-wide text-amber-900/70">Descripción</span>
-              <select id="mapeo-col-desc" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
-            </label>
-            <label class="block text-xs">
-              <span class="font-medium uppercase tracking-wide text-amber-900/70">Unidad</span>
-              <select id="mapeo-col-unidad" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
-            </label>
-            <label class="block text-xs">
-              <span class="font-medium uppercase tracking-wide text-amber-900/70">Cantidad</span>
-              <select id="mapeo-col-cant" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
-            </label>
-            <label class="block text-xs">
-              <span class="font-medium uppercase tracking-wide text-amber-900/70">Valor unitario</span>
-              <select id="mapeo-col-precio" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
-            </label>
-            <label class="block text-xs">
-              <span class="font-medium uppercase tracking-wide text-amber-900/70">Ítem / código</span>
-              <select id="mapeo-col-codigo" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
-            </label>
-          </div>
-          <label class="mt-3 flex items-center gap-2 text-xs text-amber-900">
-            <input id="mapeo-cabecera" type="checkbox" checked class="h-3.5 w-3.5 rounded border-amber-300">
-            La primera fila es la cabecera (no es un ítem)
-          </label>
-          <div class="mt-3 overflow-x-auto rounded-lg border border-amber-200 bg-white">
-            <table class="w-full text-xs">
-              <tbody id="mapeo-tabla" class="divide-y divide-gray-100"></tbody>
-            </table>
-          </div>
-          <p id="mapeo-aviso" class="mt-2 hidden text-xs font-medium text-red-700"></p>
-          <div class="mt-3 flex flex-wrap justify-end gap-2">
-            <button id="btn-mapeo-cancelar" type="button"
-                    class="rounded-lg border border-amber-300 px-4 py-2 text-sm font-medium transition hover:bg-amber-100">Cancelar</button>
-            <button id="btn-mapeo-aplicar" type="button"
-                    class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">Aplicar el mapeo</button>
-          </div>
-        </div>
-
-        <!-- ══════ Lector de pliegos (PDF), plegado ══════ -->
-        <details id="seccion-pliego-wrap" class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-          <summary class="cursor-pointer text-sm font-medium">Cargar pliego (PDF) — extraer el formulario de cantidades</summary>
+<!-- ══════════════ LA FUENTE MÁS FIABLE VA PRIMERO ══════════════
+           El lector de pliegos vivía PLEGADO dentro del paso 1, o sea que el
+           dato más fiable de la pantalla —el formulario de cantidades que
+           publica la propia entidad, con sus ítems, unidades y cantidades— era
+           el más escondido, y en primer plano quedaba «describa la obra», que
+           es adivinar. Va delante y ABIERTO, sin número: no es un paso más, es
+           la puerta por la que conviene entrar. Los tres pasos numerados
+           siguen en su orden (hay prueba de que 1 < 2 < 3). -->
+        <section id="seccion-pliego-wrap" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+          <h2 class="font-semibold tracking-tight">¿Tiene el pliego del proceso?</h2>
+          <p class="mt-1 text-sm text-gray-500">Súbalo y sus ítems, unidades y cantidades entran solos. Es la fuente más fiable que hay: el resto de la pantalla es para cuando no lo tiene.</p>
 
           <div id="seccion-pliego" class="mt-4">
             <p id="aviso-limitaciones" class="max-w-3xl rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20">
@@ -2108,7 +2012,113 @@
               <div id="r-diagnostico" class="mt-3 space-y-2 text-xs text-gray-600"></div>
             </details>
           </section>
-        </details>
+        </section>
+
+        <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">1</span>¿Qué vas a construir?</h2>
+        <p class="mt-1 text-sm text-gray-500">Describa la obra y el sistema detecta los ítems. O cargue su Excel, o busque un ítem por nombre.</p>
+
+        <!-- ══ Método principal: describir la obra y detectar ══
+             Es el más automático y por eso el más prominente: textarea grande y
+             botón de acento. Los otros dos métodos viven a la vista en la misma
+             pantalla (sin pestañas ni menús anidados) pero en tarjetas menores. -->
+        <div class="mt-4">
+          <textarea id="objeto" rows="3" placeholder="Ej: Construcción de placa huella de 2.5 km en el municipio de Jericó, Antioquia"
+                    class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"></textarea>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <button id="btn-inferir" type="button"
+                    class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              <span id="inferir-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
+              <span id="inferir-texto">Detectar ítems</span>
+            </button>
+            <input id="codigos-unspsc" type="text" placeholder="Códigos del pliego (opcional): 72141100"
+                   class="min-w-[240px] flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 sm:max-w-xs">
+          </div>
+        </div>
+        <div id="inferencia" class="mt-4 hidden rounded-xl p-4 text-sm"></div>
+
+        <!-- ══ Métodos alternativos: Excel y búsqueda por nombre ══ -->
+        <div class="mt-5 grid gap-4 lg:grid-cols-2">
+          <div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+            <h3 class="text-sm font-medium">Cargar Excel con ítems</h3>
+            <p class="mt-1 text-xs text-gray-500">Columnas <strong>Descripción · Unidad · Cantidad</strong> (Ítem y Valor unitario, opcionales). Se lee en su navegador y verá una vista previa antes de añadir nada; un precio del archivo <strong>manda</strong>.</p>
+            <button id="btn-importar" type="button"
+                    class="mt-3 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
+              Elegir archivo (.xlsx, .xls o .csv)
+            </button>
+            <input id="archivo-importar" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+          </div>
+          <div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+            <h3 class="text-sm font-medium">Buscar ítem por nombre</h3>
+            <p class="mt-1 text-xs text-gray-500">Catálogo propio, los 526 APU de referencia del INVIAS y los 3.172 del IDU (Bogotá). Al elegir uno, entra a la tabla del paso 3.</p>
+            <div class="mt-3 flex items-start gap-2">
+              <div class="relative flex-1">
+                <input id="buscar-item" type="text" autocomplete="off" spellcheck="false"
+                       placeholder="Ej: excavación, concreto, tubería…"
+                       class="w-full rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+                <div id="buscar-lista"
+                     class="absolute inset-x-0 top-full z-30 mt-1 hidden max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl"></div>
+              </div>
+              <button id="btn-agregar" type="button"
+                      class="shrink-0 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
+                Añadir
+              </button>
+            </div>
+            <p id="buscar-nota" class="mt-2 hidden text-xs"></p>
+          </div>
+        </div>
+
+        <!-- ══ Mapeo manual de columnas: SOLO cuando la detección automática del
+             Excel no encuentra la cabecera. Panel en línea (no otro modal): el
+             usuario señala qué columna es qué y la importación sigue por el
+             MISMO camino de siempre (/api/apu/importar). ══ -->
+        <div id="mapeo-panel" class="mt-4 hidden rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <h3 class="text-sm font-medium text-amber-900">No se reconocieron las columnas del archivo</h3>
+          <p class="mt-1 text-xs text-amber-900/80">
+            Señale qué columna trae cada dato y pulse «Aplicar el mapeo». Solo la descripción es obligatoria;
+            una cantidad ilegible viaja vacía, nunca como 0.
+          </p>
+          <div class="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <label class="block text-xs">
+              <span class="font-medium uppercase tracking-wide text-amber-900/70">Descripción</span>
+              <select id="mapeo-col-desc" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
+            </label>
+            <label class="block text-xs">
+              <span class="font-medium uppercase tracking-wide text-amber-900/70">Unidad</span>
+              <select id="mapeo-col-unidad" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
+            </label>
+            <label class="block text-xs">
+              <span class="font-medium uppercase tracking-wide text-amber-900/70">Cantidad</span>
+              <select id="mapeo-col-cant" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
+            </label>
+            <label class="block text-xs">
+              <span class="font-medium uppercase tracking-wide text-amber-900/70">Valor unitario</span>
+              <select id="mapeo-col-precio" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
+            </label>
+            <label class="block text-xs">
+              <span class="font-medium uppercase tracking-wide text-amber-900/70">Ítem / código</span>
+              <select id="mapeo-col-codigo" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
+            </label>
+          </div>
+          <label class="mt-3 flex items-center gap-2 text-xs text-amber-900">
+            <input id="mapeo-cabecera" type="checkbox" checked class="h-3.5 w-3.5 rounded border-amber-300">
+            La primera fila es la cabecera (no es un ítem)
+          </label>
+          <div class="mt-3 overflow-x-auto rounded-lg border border-amber-200 bg-white">
+            <table class="w-full text-xs">
+              <tbody id="mapeo-tabla" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+          <p id="mapeo-aviso" class="mt-2 hidden text-xs font-medium text-red-700"></p>
+          <div class="mt-3 flex flex-wrap justify-end gap-2">
+            <button id="btn-mapeo-cancelar" type="button"
+                    class="rounded-lg border border-amber-300 px-4 py-2 text-sm font-medium transition hover:bg-amber-100">Cancelar</button>
+            <button id="btn-mapeo-aplicar" type="button"
+                    class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">Aplicar el mapeo</button>
+          </div>
+        </div>
+
+        
       </section>
 
 <section class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
