@@ -4094,7 +4094,16 @@
         precio_unitario: pu, total: pu == null || !Number.isFinite(cant) ? null : Math.round(pu * cant) };
     });
     const cfg = leerConfig();
-    return { items, aiu: { administracion_pct: cfg.aiu_pct, imprevistos_pct: cfg.imprevistos_pct, utilidad_pct: cfg.utilidad_pct }, total: r ? Number(r.precio_final) : null };
+    /* SE DECLARA LA BASE. El unitario que va arriba es el costo directo ESCALADO
+       por precio_final/costo_directo_total, o sea CON AIU; y en la rama
+       degenerada (sin costo o sin precio) el factor es 1 y viaja en costo
+       directo. Son dos bases distintas y el servidor no puede adivinar cuál es:
+       sin declararla comparaba contra los unitarios del pliego —que son costo
+       directo— y le daba un «+25 % por encima» a quien costeó exactamente igual
+       que la entidad. */
+    return { items, aiu: { administracion_pct: cfg.aiu_pct, imprevistos_pct: cfg.imprevistos_pct, utilidad_pct: cfg.utilidad_pct },
+      base_precio: factor === 1 ? "costo_directo" : "con_aiu",
+      total: r ? Number(r.precio_final) : null };
   }
   async function revisarOferta() {
     const caja = $("revision-oferta");
@@ -4102,7 +4111,7 @@
     if (!filas.length) { caja.innerHTML = `<p class="text-sm text-gray-600">No hay ítems en el paso 3: no hay oferta que revisar.</p>`; return; }
     if (!ultimoCalculo) { caja.innerHTML = `<p class="text-sm text-gray-600">Primero pulse «Calcular cuánto me cuesta»: la revisión necesita el precio de cada ítem y el total.</p>`; return; }
     caja.innerHTML = `<p class="text-sm text-gray-500">Revisando…</p>`;
-    const formulario = window.__pliegoUltimo && Array.isArray(window.__pliegoUltimo.items) && window.__pliegoUltimo.items.length ? { items: window.__pliegoUltimo.items } : null;
+    const formulario = window.__pliegoUltimo && Array.isArray(window.__pliegoUltimo.items) && window.__pliegoUltimo.items.length ? { items: window.__pliegoUltimo.items, base_precio: window.__pliegoUltimo.base_precio || null, aiu_total_pct: window.__pliegoUltimo.aiu_total_pct != null ? window.__pliegoUltimo.aiu_total_pct : null } : null;
     const tope = $("rev-tope-aiu").value.trim(), secopTotal = $("rev-secop-total").value.trim();
     let r;
     try {

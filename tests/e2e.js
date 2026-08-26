@@ -11268,7 +11268,7 @@ async function main() {
       }
 
       /* ═══ j.7-ter · LA CASCADA DE PRECIOS Y EL APRENDIZAJE ═══════════════
-         Cinco niveles, del más fuerte al más débil, y el primero que responde
+         DOCE niveles, del más fuerte al más débil, y el primero que responde
          manda. Lo que se vigila aquí es (1) que el orden NO sea negociable,
          (2) que un nivel que no responde DIGA por qué —un hueco silencioso se
          confunde con «aquí no había nada»— y (3) que los precios que el
@@ -19478,6 +19478,103 @@ async function main() {
         "los repartos del pulso salen de FiltrosLista.facetas: dos cuentas del mismo corpus divergirían");
     }
 
+    /* ── T3 · LOS DOS LADOS DE LA VALIDACIÓN 8 NO ESTABAN EN LA MISMA BASE ──
+       El lado OFERTA llega CON AIU (public/app.js escala el costo directo
+       unitario por precio_final/costo_directo_total) y el lado PLIEGO es COSTO
+       DIRECTO (la convención del lector: solo da documento.estado="cuadra"
+       cuando Σ total_oficial ≈ precio_base/(1+AIU)). Se restaban sin convertir.
+       MEDIDO antes de tocar: un contratista que cuesta EXACTAMENTE lo que
+       estimó la entidad salía con TODOS sus ítems «+25 % por encima» y la
+       alerta de «puede costar el proceso» — en la misma respuesta en que la
+       validación 1 decía que su total coincide AL PESO con el presupuesto. Dos
+       afirmaciones incompatibles en la misma pantalla. Y al revés: con una baja
+       del 20 % el desvío daba 0 % y respondía «están cerca de los que estimó la
+       entidad», callándose justo cuando debía gritar.
+       NINGUNA prueba ejercitaba el camino real: la única que lo tocaba era una
+       REGEX sobre el fuente de ofertaParaRevision. Ésta EJECUTA. */
+    {
+      const F1 = require("../lib/formulario1.js");
+      const pliegoItems = [
+        { numeral: "1.1", descripcion: "EXCAVACION MANUAL", unidad: "M3", cantidad: 100, unitario_oficial: 95000, total_oficial: 9500000 },
+        { numeral: "1.2", descripcion: "RELLENO COMPACTADO", unidad: "M3", cantidad: 200, unitario_oficial: 40000, total_oficial: 8000000 },
+      ];
+      const revisar = (factor, form) => {
+        const items = [
+          { numeral: "1.1", descripcion: "EXCAVACION MANUAL", unidad: "M3", cantidad: 100, precio_unitario: Math.round(95000 * factor) },
+          { numeral: "1.2", descripcion: "RELLENO COMPACTADO", unidad: "M3", cantidad: 200, precio_unitario: Math.round(40000 * factor) },
+        ];
+        return F1.validarFormulario1({
+          oferta: { items, base_precio: "con_aiu", aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 },
+            total: items[0].precio_unitario * 100 + items[1].precio_unitario * 200 },
+          formulario: form, presupuesto_oficial: 21875000, tope_aiu_pct: 30,
+        });
+      };
+      const conBase = { items: pliegoItems, base_precio: "costo_directo", aiu_total_pct: 25 };
+      const nivel = (r) => r.veredictos.find((x) => x.id === "unitarios").nivel;
+
+      /* (1) costea EXACTAMENTE como la entidad ⇒ desvío 0, no una alerta */
+      const igual = revisar(1.25, conBase);
+      assert.strictEqual(nivel(igual), "ok",
+        "quien costea igual que la entidad no puede salir «+25 % por encima»");
+      assert.deepStrictEqual(igual.comparacion.precios.map((p) => p.desvio_pct), [0, 0]);
+      /* …y la validación 1 y la 8 no pueden contradecirse en la misma respuesta */
+      assert.strictEqual(igual.veredictos.find((x) => x.id === "presupuesto").nivel, "ok");
+      /* el literal del pliego viaja al lado del convertido: la conversión se audita */
+      assert.strictEqual(igual.comparacion.precios[0].unitario_pliego_literal, 95000);
+      assert.strictEqual(igual.comparacion.precios[0].unitario_pliego, 118750);
+      assert.strictEqual(igual.comparacion.base_comparacion.factor_pliego, 1.25);
+
+      /* (2) SE CALLABA JUSTO CUANDO DEBÍA GRITAR: por debajo del costo directo
+         de la entidad el desvío tiene que ser negativo y de verdad. */
+      const regala = revisar(1.25 * 0.7, conBase);   // baja 30 %
+      assert.ok(regala.comparacion.precios.every((p) => p.desvio_pct < -20),
+        "ofertar por debajo del costo directo oficial tiene que verse");
+      assert.strictEqual(nivel(regala), "alerta");
+
+      /* (3) SIN AIU CON EL QUE CONVERTIR NO SE INVENTA UN DESVÍO */
+      const sinAiu = revisar(1.25, { items: pliegoItems, base_precio: "costo_directo", aiu_total_pct: null });
+      assert.strictEqual(nivel(sinAiu), "sin_referencia",
+        "dos bases distintas sin AIU no se comparan: el desvío sería una cifra inventada");
+      assert.strictEqual(sinAiu.comparacion.precios.length, 0);
+
+      /* (4) SIN DECLARAR SE ASUME LA MISMA BASE: es lo que hace un llamador que
+         construye los dos lados a mano, y es el contrato que ya fijaban las
+         pruebas de A2. La base usada VIAJA SIEMPRE. */
+      const sinDeclarar = revisar(1.25, { items: pliegoItems });
+      assert.strictEqual(sinDeclarar.comparacion.base_comparacion.declarada, false);
+      assert.strictEqual(sinDeclarar.comparacion.base_comparacion.factor_pliego, 1);
+
+      /* (5) LA NORMA SE CITA COMPLETA Y NO SE AFIRMA. La causal existe (Res. 465
+         de 2024, Documentos Tipo v4), pero es FACULTATIVA: decir «esto le
+         rechaza la oferta» sin haber leído ESE pliego sería denunciar como falta
+         lo que muchas veces no lo es. Y la letra se lee del documento: en
+         pliegos mal diligenciados aparece corrida. */
+      const arriba = revisar(1.25 * 1.3, conBase);
+      const msg = arriba.veredictos.find((x) => x.id === "unitarios").mensaje;
+      assert.ok(/por su texto, no por su letra/.test(msg),
+        "la causal se busca por su TEXTO: su letra cambia entre pliegos");
+      assert.ok(!/literal [A-Z]\b/.test(msg), "…y no se nombra ninguna letra");
+      assert.ok(/Resoluci[óo]n 465 de 2024/.test(F1.FUNDAMENTO.unitarios)
+        && /FACULTATIVA/.test(F1.FUNDAMENTO.unitarios)
+        && /CON AIU/.test(F1.FUNDAMENTO.unitarios),
+        "el fundamento cita la norma, dice que es facultativa y en qué base compara");
+      /* Es ALERTA, nunca rechazo: si esto fuera «modificación del Formulario 1»
+         la app estaría denunciando como falta lo que es el trabajo del
+         contratista. (Se mira el veredicto de la 8, no `rechazos` de toda la
+         respuesta: con un +30 % el total se sale del presupuesto y la
+         validación 1 rechaza por su cuenta, con razón — un fixture que mezcle
+         las dos mediría otra cosa.) */
+      assert.strictEqual(nivel(arriba), "alerta", "ofertar más caro es alerta, no rechazo");
+
+      /* (6) los dos productores DECLARAN su base: sin eso el sesgo vuelve mudo */
+      const fApp = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const fPl = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+      assert.ok(/base_precio: factor === 1 \? "costo_directo" : "con_aiu"/.test(fApp),
+        "la oferta declara su base, y distingue la rama degenerada de factor 1");
+      assert.ok(/base_precio: aiuDoc != null \? "costo_directo" : null/.test(fPl),
+        "el pliego declara la suya, y sin AIU va en null: no se adivina");
+    }
+
     /* ── T1 · EL TOTAL DEL DOCUMENTO SE ABSORBÍA COMO SUBTOTAL DE CAPÍTULO ──
        Reproducido antes de tocar nada: un formulario con dos capítulos SIN
        subtotal propio y un «COSTO DIRECTO 15.000.000» al final dejaba ese total
@@ -19579,6 +19676,15 @@ async function main() {
         "la cabecera tiene que enumerar los MISMOS ids de NIVELES y en el MISMO orden");
       assert.ok(enumerados.every((x, i) => x[0] === i + 1), "…numerados 1..N, sin saltos");
       assert.ok(!/LOS CINCO NIVELES/.test(cabecera), "no puede volver el rótulo viejo");
+      /* Y LOS RÓTULOS DE SECCIÓN TAMBIÉN NUMERABAN MAL: «nivel 4 · el catálogo»
+         (es el 6), «nivel 6 · INVIAS» (el 7), «nivel 7 · IDU» (el 9). Llevan
+         ahora su id, que es lo que permite atarlos a la posición real. */
+      const secciones = [...src.matchAll(/nivel (\d+) · ([a-z_]+) ·/g)].map((m) => [Number(m[1]), m[2]]);
+      assert.ok(secciones.length >= 4, "los rótulos de sección llevan su id para poder atarlos");
+      for (const [n, id] of secciones) {
+        assert.strictEqual(P.NIVELES.findIndex((x) => x.id === id) + 1, n,
+          `el rótulo «nivel ${n} · ${id}» no corresponde a su posición en NIVELES`);
+      }
     }
 
     /* (b) «PAVIMENTO FLEXIBLE» no estaba en el léxico de la tipología que se
@@ -19614,12 +19720,27 @@ async function main() {
         assert.notStrictEqual(Inf.inferir(o).estado, "verde",
           `«${o.slice(0, 40)}…» no puede salir VERDE`);
       }
+      /* HABÍA UNA SEGUNDA COPIA DEL LÉXICO, y la primera corrección se dejó la
+         mitad: `lib/apu_catalogo.js` tiene su propia tabla de las 22 tipologías
+         —lista plana, para reconocerlas desde el TEXTO de un pliego— que también
+         omitía «pavimento flexible», así que `tipologiasProbables` devolvía []
+         justo para el objeto del caso 10 de tests/apu_bench.js.
+         NO se fusionan: medido, las 22 divergen (aquélla separa anclas de apoyo
+         con pesos distintos; ésta tiene variantes propias), y fundirlas cambiaría
+         el peso de todo el lector. Lo que se ata es lo que SÍ tiene que estar en
+         las dos: el nombre canónico de la tipología. */
+      const Cat = require("../lib/apu_catalogo.js");
+      const probables = Cat.tipologiasProbables("CONSTRUCCION DE PAVIMENTO FLEXIBLE");
+      assert.ok(probables.length && probables[0].tipologia === "VIA-FLEX",
+        "el diccionario del lector también tiene que reconocer «pavimento flexible»");
+      assert.strictEqual(Object.keys(Cat.TIPOLOGIAS).length, Object.keys(require("../lib/apu/tipologias.js").TIPOLOGIAS).length,
+        "las dos tablas cubren las MISMAS tipologías aunque su léxico difiera");
     }
 
-    console.log("· unidad AUDITORÍA INTEGRAL: 34 cerraduras de los defectos reproducidos "
+    console.log("· unidad AUDITORÍA INTEGRAL: 35 cerraduras de los defectos reproducidos "
       + "(fuga sin token, presupuesto único, precio_manual, origen del precio, conectividad/mano de obra, "
       + "Number(null), año imposible, celda vacía, precio 0, unidades, cantidad ilegible, caja, hoja del Excel, "
-      + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos, sello del offset, backfill, huérfanos, salto de página, Formulario 1, cascada de 12 niveles, pavimento flexible, total del documento)");
+      + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos, sello del offset, backfill, huérfanos, salto de página, Formulario 1, cascada de 12 niveles, pavimento flexible, total del documento, base de la validación 8)");
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →

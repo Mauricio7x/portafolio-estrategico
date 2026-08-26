@@ -580,7 +580,15 @@
     filas = (cuerpo.items || []).map(nuevaFila);
     // Fase 4 · el guardián del Formulario 1 (pestaña Precios) compara la oferta
     // con ESTOS ítems: se exponen tal cual salieron del lector
-    try { window.__pliegoUltimo = { items: filas.map((f) => ({ numeral: f.numeral, pagina: f.pagina, descripcion: f.descripcion_original, unidad: f.unidad, cantidad: f.cantidad, unitario_oficial: f.unitario_oficial, total_oficial: f.total_oficial })), leido_el: new Date().toISOString(), id_proceso: idProcesoActual() }; } catch { /* sin ventana */ }
+    /* LA BASE DE PRECIO VIAJA CON LOS ÍTEMS, y sin ella el guardián comparaba
+       peras con manzanas: los unitarios del lector son COSTO DIRECTO cuando el
+       pliego declara su AIU aparte (que es lo normal), mientras el editor manda
+       los suyos CON AIU. Restarlos sin convertir daba a TODO ítem bien costeado
+       un «+25 % por encima» y la alerta de «puede costar el proceso».
+       Sin AIU declarado la base va en `null` —no se adivina—, y entonces el
+       servidor responde «sin referencia» con el motivo en vez de una cifra. */
+    const aiuDoc = cuerpo.aiu_declarado && typeof cuerpo.aiu_declarado.total === "number" ? cuerpo.aiu_declarado.total : null;
+    try { window.__pliegoUltimo = { items: filas.map((f) => ({ numeral: f.numeral, pagina: f.pagina, descripcion: f.descripcion_original, unidad: f.unidad, cantidad: f.cantidad, unitario_oficial: f.unitario_oficial, total_oficial: f.total_oficial })), leido_el: new Date().toISOString(), id_proceso: idProcesoActual(), base_precio: aiuDoc != null ? "costo_directo" : null, aiu_total_pct: aiuDoc != null ? Math.round(aiuDoc * 1000) / 10 : null }; } catch { /* sin ventana */ }
     $("seccion-resultado").classList.remove("hidden");
 
     const [claseSem, textoSem] = SEMAFORO[(cuerpo.confianza && cuerpo.confianza.color) || "amarillo"] || SEMAFORO.amarillo;
