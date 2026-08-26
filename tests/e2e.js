@@ -19478,10 +19478,69 @@ async function main() {
         "los repartos del pulso salen de FiltrosLista.facetas: dos cuentas del mismo corpus divergirían");
     }
 
-    console.log("· unidad AUDITORÍA INTEGRAL: 31 cerraduras de los defectos reproducidos "
+    /* ── T2 · DOS TEXTOS INTERNOS FALSOS DENTRO DEL MÓDULO QUE FIJA PRECIOS ──
+       (a) La cabecera de `lib/apu/precios.js` decía «LOS CINCO NIVELES» y
+       enumeraba cinco cuando `NIVELES` ya tenía DOCE, con `catalogo` en el
+       puesto 4 (es el 6) y `sin_precio` en el 5 (es el 12): `retail` e `invias`
+       no aparecían. No es un número mal escrito — quien leyera esa cabecera
+       para saber el ORDEN de la cascada leía un orden FALSO.
+       La cerradura no fija el texto: lo ATA a la estructura. Extrae la lista
+       del comentario y la compara id a id y EN ORDEN contra NIVELES, así que
+       añadir un banco sin tocar la cabecera cae aquí. */
+    {
+      const P = require("../lib/apu/precios.js");
+      const src = fs.readFileSync(path.join(__dirname, "..", "lib", "apu", "precios.js"), "utf8");
+      const cabecera = src.slice(0, src.indexOf('"use strict"'));
+      const rotulo = /LA CASCADA · (\d+) NIVELES/.exec(cabecera);
+      assert.ok(rotulo, "la cabecera de la cascada tiene que declarar cuántos niveles hay");
+      assert.strictEqual(Number(rotulo[1]), P.NIVELES.length,
+        `el rótulo dice ${rotulo && rotulo[1]} niveles y NIVELES tiene ${P.NIVELES.length}`);
+      const enumerados = [...cabecera.matchAll(/^\s{4,5}(\d{1,2}) · ([a-z_]+)\s/gm)].map((m) => [Number(m[1]), m[2]]);
+      assert.deepStrictEqual(enumerados.map((x) => x[1]), P.NIVELES.map((n) => n.id),
+        "la cabecera tiene que enumerar los MISMOS ids de NIVELES y en el MISMO orden");
+      assert.ok(enumerados.every((x, i) => x[0] === i + 1), "…numerados 1..N, sin saltos");
+      assert.ok(!/LOS CINCO NIVELES/.test(cabecera), "no puede volver el rótulo viejo");
+    }
+
+    /* (b) «PAVIMENTO FLEXIBLE» no estaba en el léxico de la tipología que se
+       LLAMA «Pavimento flexible», mientras su hermana VIA-RIG sí tiene
+       «pavimento rigido» como ancla: una asimetría, no un criterio. Medido
+       antes de tocar: «CONSTRUCCION DE PAVIMENTO FLEXIBLE EN LA CARRERA 5»
+       sacaba CERO puntos — un objeto vial impecable, con el nombre exacto de
+       una tipología del catálogo, invisible para el clasificador.
+       NO se generaliza a «toda tipología reconoce su nombre»: medido, esa
+       invariante marca VIA-MANT y EDI-INST, que son frases-categoría y no
+       términos que nadie escriba en un objeto de SECOP. Una cerradura
+       demasiado ancha cuesta más que el defecto que cierra.
+       Y se EJECUTA el clasificador: comprobar por regex que el término está en
+       el JSON no prueba que el objeto acabe en la tipología correcta. */
+    {
+      const Inf = require("../lib/apu/inferencia.js");
+      for (const o of ["CONSTRUCCION DE PAVIMENTO FLEXIBLE EN LA CARRERA 5",
+        "REHABILITACION DE LA MALLA VIAL EN PAVIMENTO FLEXIBLE DEL MUNICIPIO",
+        "MANTENIMIENTO DE VIA EN PAVIMENTO FLEXIBLE Y OBRAS COMPLEMENTARIAS"]) {
+        const r = Inf.inferir(o);
+        const top = (r.ranking || [])[0];
+        assert.ok(top && top.codigo === "VIA-FLEX",
+          `«${o.slice(0, 40)}…» tiene que encabezar en VIA-FLEX, no en ${top ? top.codigo : "nada"}`);
+        assert.ok(top.puntaje >= Inf.PESO_ANCLA, "…con al menos el peso de un ancla");
+      }
+      /* EL FALSO POSITIVO ES EL CARO: verde es el único estado que presupuesta
+         sin pedir el pliego. Ninguna trampa puede moverse por este cambio. */
+      for (const o of ["ADIESTRAMIENTO DE CANINOS Y MANTENIMIENTO DE LA PLACA HUELLA",
+        "SUMINISTRO DE MATERIAL GRANULAR PARA EL MANTENIMIENTO DE VIAS",
+        "SERVICIO DE INTERNET DEDICADO E INTERVENTORIA",
+        "INTERVENTORIA AL CONTRATO DE PAVIMENTO FLEXIBLE DE LA VIA",
+        "COMPRAVENTA DE TUBERIA PVC"]) {
+        assert.notStrictEqual(Inf.inferir(o).estado, "verde",
+          `«${o.slice(0, 40)}…» no puede salir VERDE`);
+      }
+    }
+
+    console.log("· unidad AUDITORÍA INTEGRAL: 33 cerraduras de los defectos reproducidos "
       + "(fuga sin token, presupuesto único, precio_manual, origen del precio, conectividad/mano de obra, "
       + "Number(null), año imposible, celda vacía, precio 0, unidades, cantidad ilegible, caja, hoja del Excel, "
-      + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos, sello del offset, backfill, huérfanos, salto de página, Formulario 1)");
+      + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos, sello del offset, backfill, huérfanos, salto de página, Formulario 1, cascada de 12 niveles, pavimento flexible)");
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
