@@ -362,10 +362,10 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
 - **Índice publicado con swap atómico** (`indice:competencia:nuevo` → RENAME): nunca hay una
   ventana sin índice. Construcción mes a mes y reanudable; el acumulador que se persiste es por
   ENTIDAD (histograma), no por proceso — por eso cabe en un valor de Redis.
-- **La autorización vive en `lib/auth.js`, una sola vez**: siete endpoints la usan
-  (`/api/sync/historico`, `/api/diagnostico`, `/api/competencia-detalle` —sus DOS vistas, la de
-  entidad y la del desglose de probabilidad—, `/api/resumen`, `/api/admin/rup`,
-  `/api/admin/experiencia`, `/api/admin/cobertura-rup`). Una copia que se desincronice es un
+- **La autorización vive en `lib/auth.js`, una sola vez**: la usan todos los handlers que exigen
+  token (en jul 2026 eran siete endpoints; tras la consolidación a routers el censo vivo de puntos
+  de require lo imprime `node tests/estado.js` — un conteo escrito aquí quedaría mintiendo, y esta
+  línea llegó a decir «siete» cuando ya eran diecinueve). Una copia que se desincronice es un
   agujero.
 - **`HISTORICO_TOKEN` sin default**: si la variable no está, el endpoint responde 503. Nunca
   inventar una llave por defecto. El token viaja por header en la auto-reinvocación para no
@@ -5618,3 +5618,54 @@ ejecutando código; la suite quedó en verde 4/4 y el banco con sus suelos super
   lector leyendo mal el nombre del campo (`codigo_item` en vez de `item_id`); el número real es **2**.
   Es la lección de `transformar` otra vez, en el informe que la cita. Queda corregida en el documento
   y anotada allí a propósito: **comprobar la FORMA que devuelve la función antes de declarar nada**.
+
+### El prompt inicial vive en el repositorio y no puede contener estado (26-ago-2026)
+
+Encargo del dueño: el prompt inicial que pegaba al abrir sesión «se queda obsoleto» — afirmaba
+estado («23 documentos en docs/», «doce puntos de llamada de auth») y el árbol lo desmentía en
+semanas (34 y 19, medidos), así que las sesiones nuevas arrancaban discutiendo con su propio
+prompt. Auditado el prompt viejo afirmación por afirmación contra el árbol (4 lentes en paralelo,
+todo por ejecución): su doctrina resultó DURADERA casi entera, y de sus tablas de estado 3 de 8
+filas ya eran falsas — las tres caducaron el MISMO día (24-ago-2026), porque una tabla de estado en
+un prompt no recibe los commits. Decisiones que no hay que re-aprender:
+
+- **Un prompt no puede contener nada que el árbol pueda desmentir.** Los hechos HISTÓRICOS con
+  fecha (algo que pasó) son duraderos y pueden escribirse; los hechos de ESTADO (conteos, «está
+  hecho», «está pendiente», nombres de columnas, orden de pestañas) se MIDEN al arrancar, jamás se
+  afirman de memoria. Es la distinción que ya practicaba esta memoria («una observación CON FECHA,
+  no una propiedad del entorno»), aplicada al propio prompt.
+- **Tres piezas, tres papeles**: `docs/PROMPT_INICIAL.md` es el prompt real (doctrina, método,
+  cadena de precedencia y protocolo de arranque; vive en el repositorio para versionarse con el
+  código); `tests/estado.js` es la herramienta MANUAL sin red que imprime el estado MEDIDO
+  (routers y sus op derivadas del fuente con la vía declarada, conteos, vercel.json, puntos de
+  auth, dónde vive el token, guardas de la suite, y los títulos más nuevos de esta memoria); y lo
+  que el dueño pega es el prompt corto del Apéndice A, que apunta al documento y **no contiene ni
+  un hecho** — por eso no puede caducar.
+- **Cadena de precedencia explícita**: código ejecutado > suite > árbol leído > CLAUDE.md >
+  PROMPT_INICIAL.md > el prompt pegado > la memoria del modelo. Ante contradicción gana el nivel
+  superior, se reporta la deriva en una línea y se corrige el texto repo-hospedado **en el mismo
+  commit** — nunca se detiene la sesión por «el prompt dice algo falso».
+- **`estado.js` deriva las operaciones por capas y DECLARA la vía** (mapa `OPS` del router →
+  `ACCIONES` del handler → literales comparados + `VISTA_POR_OP`); lo no derivable se dice, no se
+  inventa. La primera versión perdió `consorcio-simular` porque su valor en el mapa es un
+  envoltorio (`() => (req, res) => require(...)`) y la regex exigía el `require` inmediato — la
+  clave con envoltorio es la forma que hay que recordar al leer mapas de routers.
+- **El linter mental de PROMPT_INICIAL.md** (§11): si una edición escribe un número que el árbol
+  puede cambiar, está en el sitio equivocado — el estado va aquí (con fecha, como evento) o se
+  deriva en `estado.js`. Y la línea de esta memoria que decía «siete endpoints la usan» se
+  reformuló por la misma regla: llegó a mentir por doce de diferencia.
+- **De paso, main estaba en ROJO con DOS cerraduras sin su arreglo, y lo cazó el propio
+  protocolo** (correr la suite antes de afirmar): el commit `9e58893` (26-ago) escribió (1) la
+  cerradura de los rótulos de sección de `lib/apu/precios.js` («llevan ahora su id») sin aplicar
+  el arreglo al fuente — los rótulos seguían con numeración vieja y dos sin número; se renumeraron
+  los siete con su id y su posición real en `NIVELES` (`nivel 6 · catalogo · …`)—, y (2) la de
+  «pavimento flexible» en el DICCIONARIO del lector: el ancla entró en `lib/apu/tipologias.js`
+  (el inferidor, que ya pasaba) pero no en la segunda copia de `lib/apu_catalogo.js`, así que
+  `tipologiasProbables("CONSTRUCCION DE PAVIMENTO FLEXIBLE")` seguía devolviendo `[]` — se añadió
+  el nombre canónico a las anclas de VIA-FLEX del lector, que es exactamente lo que esa cerradura
+  ata (las dos tablas no se fusionan a propósito; lo compartido es el nombre canónico). La suite se
+  detiene en el primer ✘, así que el segundo solo apareció al arreglar el primero: tras un rojo
+  ajeno, se re-corre entera hasta el 4/4. Lección hermana de
+  «una corrección no está hecha hasta que alguien intenta romperla»: **una corrección tampoco está
+  hecha si la cerradura se commitea sin correr la suite entera** — el ✘ estaba en la salida y el
+  `exit 0` de la tubería con `tail` lo disfrazaba; el código de salida se mira sin tuberías.
