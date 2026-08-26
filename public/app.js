@@ -4262,6 +4262,18 @@
      formato divergen a la primera corrección. */
   $("btn-exportar").addEventListener("click", () => {
     if (!ultimoCalculo) { msgApu("Calcule el presupuesto antes de exportarlo.", "error"); return; }
+    /* SE AVISA ANTES DE EXPORTAR, NO DESPUÉS. Un pliego exige el anexo de APU
+       DESGLOSADO y la mayor parte de los bancos oficiales (IDU, FFIE, ICCU)
+       publica precio total SIN composición: esos ítems se presupuestan bien
+       —el precio es bueno— pero no producen hoja de APU. Quien entrega la
+       oferta sin el anexo que el pliego exige se entera en la evaluación, así
+       que el aviso tiene que llegar mientras todavía se puede hacer algo.
+       NO bloquea: una herramienta que se niega a exportar acaba usándose por
+       fuera (R6). */
+    const comp = APULibro.resumenComposicion(ultimoCalculo.items || []);
+    if (comp.solo_precio > 0) {
+      msgApu(`Atención: ${comp.solo_precio} de ${comp.total} ítem${comp.total === 1 ? "" : "s"} llevan precio pero NO composición, así que no producen hoja de APU desglosada. Si el pliego exige el anexo, escriba su propio APU para esos ítems. Se exporta igual.`, "info");
+    }
     try {
       const hojas = APULibro.construirLibroNogal(ultimoCalculo, {
         titulo: $("nombre-presupuesto").value.trim() || "Presupuesto de obra",

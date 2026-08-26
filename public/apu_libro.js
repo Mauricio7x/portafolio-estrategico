@@ -820,10 +820,77 @@
     return ["APU", limpio || "presupuesto", dia].filter(Boolean).join("_") + ".xlsx";
   }
 
+  /* ══════ ¿PUEDO RADICAR EL ANEXO DE APU DE ESTE ÍTEM? · cuatro estados ══════
+     `clasificarOrigen` responde «de dónde salió este precio», que es OTRA
+     pregunta. Ésta responde la que decide si la oferta se puede presentar
+     completa: un pliego exige el APU DESGLOSADO, y MEDIDO sobre los seis
+     orígenes solo 1.134 de 6.588 ítems (17,2 %) pueden producirlo —catálogo
+     174/174, INVIAS 520/526, EPC 440/440, y IDU 0/3.172, FFIE 0/1.042,
+     ICCU 0/1.234, que publican precio total sin composición—. Con el 82,8 %
+     restante se presupuesta pero NO se radica el anexo, y eso hoy no se dice
+     en ninguna parte.
+
+     SE DERIVA, no se mide otra vez: sale de los campos que `calcular` ya
+     publica por ítem. Inventar una segunda fuente de esta verdad es el defecto
+     que este repositorio ya pagó caro.
+
+     Y NO BASTA CON `clasificarOrigen`: los 6 ítems INVIAS sin composición salen
+     con estado «invias», que promete desglose, cuando su hoja de APU son cuatro
+     líneas de «Ajuste» con `insumo_id` nulo. Lo que decide es si hay líneas con
+     insumo REAL, no de qué banco viene el precio.
+
+     `solo_precio` SÍ se presupuesta —el precio es bueno, lo que falta es el
+     desglose— y avisa antes de exportar. `sin_dato` no suma: un $0 sería un
+     precio inventado (R1), y eso YA es el comportamiento vigente. */
+  const ESTADOS_COMPOSICION = Object.freeze({
+    con_composicion_propia: { radica_anexo: true, suma: true },
+    composicion_derivada_declarada: { radica_anexo: true, suma: true },
+    solo_precio: { radica_anexo: false, suma: true },
+    sin_dato: { radica_anexo: false, suma: false },
+  });
+  function estadoComposicion(it) {
+    if (!it || it.incompleto || precioONull(it.costo_directo_unitario) == null) {
+      return { estado: "sin_dato", ...ESTADOS_COMPOSICION.sin_dato, lineas_con_insumo: 0,
+        motivo: (it && it.mensaje) || "No hay precio para este ítem. No suma al total ni puede llevar hoja de APU." };
+    }
+    const lineas = (it.detalle && Array.isArray(it.detalle.insumos)) ? it.detalle.insumos : [];
+    const conInsumo = lineas.filter((l) => l && l.insumo_id);
+    if (!conInsumo.length) {
+      return { estado: "solo_precio", ...ESTADOS_COMPOSICION.solo_precio, lineas_con_insumo: 0,
+        motivo: "Este precio viene sin composición publicada: sirve para presupuestar, pero NO produce la hoja de APU desglosada que pide el pliego. Escriba su propio APU si la entidad lo exige." };
+    }
+    /* DERIVADA = la composición es de otra provincia, llevada con un factor que
+       la propia línea publica (así trabaja el banco del INVIAS). Se puede
+       radicar, pero el origen tiene que ir dicho: no es el APU de esta obra. */
+    const derivadas = conInsumo.filter((l) => l.factor_provincia != null
+      || String(l.origen_precio || "").indexOf("referencia") >= 0);
+    if (derivadas.length) {
+      return { estado: "composicion_derivada_declarada", ...ESTADOS_COMPOSICION.composicion_derivada_declarada,
+        lineas_con_insumo: conInsumo.length,
+        motivo: "Lleva composición, pero derivada de la provincia de referencia del banco oficial y ajustada con un factor: se puede radicar declarando ese origen." };
+    }
+    return { estado: "con_composicion_propia", ...ESTADOS_COMPOSICION.con_composicion_propia,
+      lineas_con_insumo: conInsumo.length,
+      motivo: "Lleva su composición completa: produce la hoja de APU desglosada que pide el pliego." };
+  }
+
+  /* Cuántos ítems del presupuesto NO pueden llevar anexo. Es lo que hay que
+     decir ANTES de exportar, no después: quien entrega una oferta sin el anexo
+     que el pliego exige se entera en la evaluación. */
+  function resumenComposicion(items) {
+    const r = { con_composicion_propia: 0, composicion_derivada_declarada: 0, solo_precio: 0, sin_dato: 0 };
+    for (const it of (Array.isArray(items) ? items : [])) r[estadoComposicion(it).estado]++;
+    r.total = (Array.isArray(items) ? items : []).length;
+    r.radican_anexo = r.con_composicion_propia + r.composicion_derivada_declarada;
+    /* SIN ÍTEMS NO SE AFIRMA NADA: 0 de 0 no es «el 0 % puede radicar». */
+    r.pct_radican = r.total ? Math.round((r.radican_anexo / r.total) * 1000) / 10 : null;
+    return r;
+  }
+
   /* `lineaLegible` y `clasificarOrigen` se exportan a propósito: el editor
      pinta su desglose y su badge con ESTAS funciones, no con copias suyas. Dos
      definiciones de «de dónde sale este precio» divergirían a la primera
      corrección, y la divergencia sería entre lo que el dueño ve en pantalla y
      lo que entrega a la entidad. */
-  return { construirLibroNogal, lineaLegible, clasificarOrigen, nombreArchivo, recargoPrestacionalPct };
+  return { construirLibroNogal, lineaLegible, clasificarOrigen, estadoComposicion, resumenComposicion, ESTADOS_COMPOSICION, nombreArchivo, recargoPrestacionalPct };
 });

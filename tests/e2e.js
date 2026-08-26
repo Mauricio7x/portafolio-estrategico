@@ -19478,6 +19478,141 @@ async function main() {
         "los repartos del pulso salen de FiltrosLista.facetas: dos cuentas del mismo corpus divergirían");
     }
 
+    /* ── T5 · LA UNIDAD DEL ICCU SE ROMPE POR CORRIMIENTO DE COLUMNAS ──────
+       El PDF alterna dos formas de fila y el capturador tomaba la tercera
+       columna como unidad SIN comprobar que lo fuera: 142 de 1.234 ítems
+       (11,5 %) traen como «unidad» un precio, una descripción entera o texto
+       pegado («CONSTRUCCIÓNML»).
+       NO SE EXCLUYEN DEL MAPEO, y eso es lo que esta cerradura fija junto con
+       el censo: medido, ninguna descripción de ítem con la unidad rota produce
+       un mapeo FIRME —la unidad solo aporta 0,13 al puntaje, así que una unidad
+       basura no casa con nada—, y excluirlos quitaría 142 ítems cuyo PRECIO es
+       bueno. Una guarda más ancha que el defecto cuesta más que el defecto. */
+    {
+      const Iccu = require("../lib/apu/iccu_items.js");
+      const censo = Iccu.censoUnidades();
+      assert.strictEqual(censo.items, 1234);
+      assert.ok(censo.ilegibles > 100 && censo.ilegibles < 200,
+        `el censo de unidades rotas del ICCU se fue a ${censo.ilegibles}: el formato del PDF cambió o la regla se rompió`);
+      assert.ok(censo.pct > 0, "el porcentaje viaja para poder discutirlo");
+      assert.ok(censo.ejemplos.length > 0, "…y con ejemplos, para poder auditarlo");
+      assert.ok(Iccu.meta().unidades, "el censo viaja en la meta del banco: no es un dato privado");
+
+      /* LAS TRES HUELLAS MEDIDAS, y lo que NO se marca */
+      assert.strictEqual(Iccu.unidadIlegible("1.222.065 1.225.019"), true, "un precio no es una unidad");
+      assert.strictEqual(Iccu.unidadIlegible("689"), true, "un número suelto tampoco");
+      assert.strictEqual(Iccu.unidadIlegible("CONSTRUCCIÓNML"), true, "ni el texto pegado por el corrimiento");
+      assert.strictEqual(Iccu.unidadIlegible("DREN EN TUBERÍA PVC SANITARIA"), true, "ni una descripción entera");
+      for (const u of ["M3", "ML", "UN", "M2", "KG", "HA", "m3-km", "jornal", "tramo", "litro"]) {
+        assert.strictEqual(Iccu.unidadIlegible(u), false, `«${u}» es una unidad legítima y no se marca`);
+      }
+      assert.strictEqual(Iccu.unidadIlegible(""), false, "la ausencia no es rotura (R1)");
+      assert.strictEqual(Iccu.unidadIlegible(null), false);
+
+      /* LOS OTROS CUATRO BANCOS ESTÁN SANOS con el MISMO criterio: si alguno se
+         degrada, esto lo caza. (El informe cifraba el IDU en 163; medido con
+         este criterio es 1 — las otras 135 son unidades raras pero legítimas.) */
+      for (const [nombre, archivo, tope] of [["IDU", "apu_idu_items", 10], ["FFIE", "apu_ffie_items", 10],
+        ["EPC", "apu_epc_items", 10], ["INVIAS", "apu_invias_items", 15]]) {
+        const j = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", `${archivo}.json`), "utf8"));
+        const arr = Array.isArray(j.items) ? j.items : Object.values(j.items || {});
+        const malas = arr.filter((x) => Iccu.unidadIlegible(x.unidad)).length;
+        assert.ok(malas <= tope, `${nombre} tiene ${malas} unidades rotas (tope ${tope}): su captura se degradó`);
+      }
+
+      /* EL CAPTURADOR ABORTA en vez de adaptarse si una vigencia nueva empeora */
+      const fCap = fs.readFileSync(path.join(__dirname, "..", "tests", "capturar_iccu_apu.js"), "utf8");
+      assert.ok(/require\("\.\.\/lib\/apu\/iccu_items\.js"\)/.test(fCap),
+        "el capturador IMPORTA la regla del módulo: dos definiciones divergirían");
+      assert.ok(/process\.exit\(1\)/.test(fCap) && /ABORTA/.test(fCap),
+        "y aborta antes de escribir el banco, no después");
+      assert.ok(fCap.indexOf("TOPE_ILEGIBLES_PCT") < fCap.indexOf("fs.writeFileSync(salida"),
+        "la comprobación va ANTES de escribir: abortar después dejaría el banco malo en disco");
+    }
+
+    /* ── T6 · ¿QUÉ ÍTEMS PUEDEN LLEVAR HOJA DE APU? · cuatro estados ────────
+       Un pliego exige el anexo DESGLOSADO, y MEDIDO sobre los seis orígenes
+       solo 1.134 de 6.588 ítems (17,2 %) pueden producirlo: catálogo 174/174,
+       INVIAS 520/526 y EPC 440/440 traen composición; IDU (3.172), FFIE (1.042)
+       e ICCU (1.234) publican precio total sin ella. Se presupuesta igual —el
+       precio es bueno, lo que falta es el desglose— pero no se decía en ningún
+       sitio, y quien entrega la oferta sin el anexo se entera en la evaluación.
+       El estado se DERIVA de los campos que `calcular` ya publica; y NO basta
+       con `clasificarOrigen`, que responde «de dónde salió este precio». */
+    {
+      const L = require("../public/apu_libro.js");
+      const Cal = require("../lib/apu/calculo.js");
+      const Cat = require("../lib/apu/catalogo.js");
+
+      /* la cifra que justifica el estado, RECONTADA aquí sobre los JSON crudos */
+      const tieneComp = (x) => {
+        const c = x.composicion || x.insumos;
+        return Array.isArray(c) ? c.length > 0 : !!(c && typeof c === "object" && Object.keys(c).length);
+      };
+      let total = 0, conComposicion = 0;
+      for (const f of ["apu_invias_items", "apu_idu_items", "apu_ffie_items", "apu_epc_items", "apu_iccu_items"]) {
+        const j = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", `${f}.json`), "utf8"));
+        const arr = Array.isArray(j.items) ? j.items : Object.values(j.items || {});
+        total += arr.length; conComposicion += arr.filter(tieneComp).length;
+      }
+      total += Cat.SEMILLA.items.length;
+      conComposicion += Cat.SEMILLA.items.filter(tieneComp).length;
+      assert.strictEqual(total, 6588, "los seis orígenes suman 6.588 ítems");
+      assert.strictEqual(conComposicion, 1134, "y solo 1.134 traen composición: el 17,2 %");
+
+      /* los cuatro estados, EJECUTADOS sobre un presupuesto real */
+      const cods = Cat.SEMILLA.items.map((x) => x.codigo).slice(0, 12);
+      const r = Cal.calcularPresupuesto({
+        items: cods.map((c) => ({ item_id: c, cantidad: 10 })).concat([
+          { descripcion: "FILA SIN PRECIO NI CATALOGO", unidad: "m2", cantidad: 5 },
+          { descripcion: "FILA CON PRECIO TECLEADO", unidad: "m2", cantidad: 5, precio_manual: 120000 },
+        ]),
+        region: "bogota_sabana",
+      }, Cat.SEMILLA);
+      const est = r.items.map((it) => L.estadoComposicion(it).estado);
+      assert.ok(est.slice(0, 12).every((e) => e === "con_composicion_propia"),
+        "los ítems del catálogo llevan su composición completa");
+      assert.strictEqual(est[12], "sin_dato", "sin precio no se presupuesta: un $0 sería inventado");
+      assert.strictEqual(est[13], "solo_precio", "un precio tecleado presupuesta pero no produce hoja de APU");
+
+      /* SOLO LOS DOS PRIMEROS RADICAN EL ANEXO, y `sin_dato` tampoco suma */
+      assert.strictEqual(L.estadoComposicion(r.items[0]).radica_anexo, true);
+      assert.strictEqual(L.estadoComposicion(r.items[13]).radica_anexo, false);
+      assert.strictEqual(L.estadoComposicion(r.items[13]).suma, true, "«solo precio» SÍ suma al total");
+      assert.strictEqual(L.estadoComposicion(r.items[12]).suma, false, "«sin dato» no suma");
+      for (const k of Object.keys(L.ESTADOS_COMPOSICION)) {
+        assert.strictEqual(L.ESTADOS_COMPOSICION[k].radica_anexo,
+          k === "con_composicion_propia" || k === "composicion_derivada_declarada",
+          `solo la composición (propia o derivada declarada) radica el anexo; «${k}» no`);
+      }
+
+      /* SIN ÍTEMS NO SE AFIRMA NADA: 0 de 0 no es «el 0 % puede radicar» (R1) */
+      assert.strictEqual(L.resumenComposicion([]).pct_radican, null);
+      const resumen = L.resumenComposicion(r.items);
+      assert.strictEqual(resumen.total, 14);
+      assert.strictEqual(resumen.radican_anexo, 12);
+      assert.strictEqual(resumen.con_composicion_propia + resumen.composicion_derivada_declarada
+        + resumen.solo_precio + resumen.sin_dato, resumen.total,
+        "los cuatro estados suman los ítems: ninguno se pierde por el camino");
+
+      /* el aviso llega ANTES de exportar, y NO bloquea (R6) */
+      const fApp = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const iExp = fApp.indexOf('$("btn-exportar").addEventListener');
+      const bloqueExp = fApp.slice(iExp, fApp.indexOf("XLSXApu.construirLibro", iExp));
+      assert.ok(/resumenComposicion/.test(bloqueExp) && /hoja de APU desglosada/.test(bloqueExp),
+        "se avisa antes de exportar, no después");
+      /* NO BLOQUEA (R6): una herramienta que se niega a exportar acaba usándose
+         por fuera. Entre el aviso y la construcción del libro no puede haber
+         ninguna salida temprana. */
+      const trasAviso = bloqueExp.slice(bloqueExp.indexOf("comp.solo_precio > 0"));
+      assert.ok(trasAviso.length > 0 && !/\breturn\b/.test(trasAviso),
+        "el aviso de composición no puede bloquear la exportación");
+      /* y el handler lo publica con LA MISMA función, no con una segunda cuenta */
+      const fEd = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "apu", "editor.js"), "utf8");
+      assert.ok(/composicion: APULibro\.resumenComposicion\(r\.items\)/.test(fEd),
+        "la API publica el mismo resumen que pinta la pantalla");
+    }
+
     /* ── T3 · LOS DOS LADOS DE LA VALIDACIÓN 8 NO ESTABAN EN LA MISMA BASE ──
        El lado OFERTA llega CON AIU (public/app.js escala el costo directo
        unitario por precio_final/costo_directo_total) y el lado PLIEGO es COSTO
@@ -19737,10 +19872,10 @@ async function main() {
         "las dos tablas cubren las MISMAS tipologías aunque su léxico difiera");
     }
 
-    console.log("· unidad AUDITORÍA INTEGRAL: 35 cerraduras de los defectos reproducidos "
+    console.log("· unidad AUDITORÍA INTEGRAL: 37 cerraduras de los defectos reproducidos "
       + "(fuga sin token, presupuesto único, precio_manual, origen del precio, conectividad/mano de obra, "
       + "Number(null), año imposible, celda vacía, precio 0, unidades, cantidad ilegible, caja, hoja del Excel, "
-      + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos, sello del offset, backfill, huérfanos, salto de página, Formulario 1, cascada de 12 niveles, pavimento flexible, total del documento, base de la validación 8)");
+      + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos, sello del offset, backfill, huérfanos, salto de página, Formulario 1, cascada de 12 niveles, pavimento flexible, total del documento, base de la validación 8, hoja de APU radicable, unidades del ICCU)");
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
