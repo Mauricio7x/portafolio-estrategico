@@ -222,6 +222,29 @@ function recomponer(fila, crudas) {
     items,
   };
 
+  /* ═══ ABORTA-Y-CUENTA · la unidad rota no se cuela en silencio ═══════════
+     Este PDF alterna dos formas de fila y arriba se toma la tercera columna
+     como unidad SIN comprobar que lo sea: cuando el corrimiento mete un precio
+     o una descripción ahí, se guardaba tal cual. En la captura de 2026 son 142
+     de 1.234 (11,5 %), ya declarados en `_meta.unidades`.
+     La REGLA de qué es una unidad ilegible se IMPORTA del módulo que sirve el
+     banco: dos definiciones divergirían, y la del capturador es la que decide
+     si una vigencia nueva entra. Si el porcentaje EMPEORA respecto de lo ya
+     conocido, ABORTA en vez de adaptarse — es la doctrina que ya rige para los
+     códigos cuya unidad cambia entre vigencias. */
+  const { unidadIlegible } = require("../lib/apu/iccu_items.js");
+  const ilegibles = items.filter((x) => unidadIlegible(x.unidad));
+  const pctIleg = items.length ? (ilegibles.length / items.length) * 100 : 0;
+  doc._meta.unidades_ilegibles = { total: ilegibles.length, pct: Math.round(pctIleg * 10) / 10,
+    ejemplos: ilegibles.slice(0, 8).map((x) => ({ codigo: x.codigo || x.numeral, unidad: String(x.unidad).slice(0, 60) })) };
+  const TOPE_ILEGIBLES_PCT = 15;
+  if (pctIleg > TOPE_ILEGIBLES_PCT) {
+    console.error(`\n✘ ABORTA: ${ilegibles.length} de ${items.length} ítems (${pctIleg.toFixed(1)} %) tienen la unidad ilegible, `
+      + `por encima del ${TOPE_ILEGIBLES_PCT} % conocido. El formato del PDF cambió: revise el parseo de columnas ANTES de escribir el banco.`);
+    console.error("  ejemplos:", JSON.stringify(doc._meta.unidades_ilegibles.ejemplos.slice(0, 4)));
+    process.exit(1);
+  }
+
   fs.writeFileSync(salida, JSON.stringify(doc, null, 1));
   const kb = (fs.statSync(salida).size / 1024).toFixed(0);
   console.log(`provincias: ${detalleProvincias.length} · municipios: ${doc._meta.municipios}`);

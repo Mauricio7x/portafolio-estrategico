@@ -1872,6 +1872,27 @@ sumaban sus hijas juntas. **La lección de método es que el banco medía lo que
 la revisión adversaria medía lo que no** — y por eso la batería de regresión de esos diez casos vive
 ahora en `tests/e2e.js`.
 
+## Cambios del 26-ago-2026 · módulo APU
+
+Siete correcciones sobre `main`, cada una reproducida ejecutando código y fijada con una
+cerradura que falla contra el árbol anterior. Motivos y decisiones en `CLAUDE.md § «Sesión APU
+del 26-ago-2026»`.
+
+| Qué | Antes | Después |
+|---|---|---|
+| **Total del documento** (`lib/apu_pliego.js`) | «COSTO DIRECTO» acababa en `capitulos[último].subtotal_declarado` → `no_cuadra` falso, y el total se perdía (`documento: sin_datos`) | `clasificarRotuloTotal` —compartida con `public/xlsx_lectura.js`— lo separa; el cuadre interno (`validacion.cuadre_interno`) es ancla y habilita el verde sin cuantía externa |
+| **Validación 8** (`lib/formulario1.js`) | oferta CON AIU contra pliego en COSTO DIRECTO: **+25 % a quien costeó igual que la entidad**, y silencio con baja del 20 % | cada lado declara su `base_precio`; el pliego se convierte con su AIU; sin AIU → `sin_referencia`. `comparacion.base_comparacion` viaja siempre |
+| **Cascada de precios** (`lib/apu/precios.js`) | cabecera «LOS CINCO NIVELES» enumerando cinco de doce, con el ORDEN falso | 12 niveles, atados por prueba a `NIVELES` id a id y en orden |
+| **Tipologías** (`data/apu_tipologias.json` + `lib/apu_catalogo.js`) | «pavimento flexible» faltaba en **las dos** copias del léxico | añadido en ambas; `tipologiasProbables` ya no devuelve `[]` para el caso 10 del banco |
+| **Hoja de APU** (`public/apu_libro.js`) | no se decía qué ítems pueden radicar el anexo (solo **1.134 de 6.588**) | `estadoComposicion` con cuatro estados + aviso antes de exportar (no bloquea) |
+| **Unidades del ICCU** (`lib/apu/iccu_items.js`) | 142 de 1.234 rotas por corrimiento, sin declarar | `meta().unidades` las censa; el capturador **aborta** si una vigencia empeora. No se excluyen del mapeo: medido, no producen mapeos firmes |
+| **Mapeo** (`lib/apu/importar.js`) | a puntaje igual decidía `localeCompare`: elegía la variante más cara por azar alfabético | el **capítulo de la fila desempata** (no puntúa): 1,42× de rango entre variantes, $61,8 M en una fila de 180 m³ |
+| **Pantalla de Precios** (`public/index.html`) | el lector de pliegos, plegado dentro del paso 1 | delante y abierto, sin número: «¿Tiene el pliego del proceso?» |
+
+**Campos nuevos en la API** (todos aditivos; ningún contrato existente cambió):
+`parsearPliego(...).validacion.cuadre_interno` · `validarFormulario1(...).comparacion.base_comparacion`
+y `precios[].unitario_pliego_literal` · `POST /api/apu?op=calcular` → `composicion`.
+
 ## `GET /api/diagnostico` (protegido)
 
 El instrumento para responder «¿por qué solo salen N procesos?» con datos. Mismo token que el
