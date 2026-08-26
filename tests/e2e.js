@@ -19478,6 +19478,85 @@ async function main() {
         "los repartos del pulso salen de FiltrosLista.facetas: dos cuentas del mismo corpus divergirían");
     }
 
+    /* ── T1 · EL TOTAL DEL DOCUMENTO SE ABSORBÍA COMO SUBTOTAL DE CAPÍTULO ──
+       Reproducido antes de tocar nada: un formulario con dos capítulos SIN
+       subtotal propio y un «COSTO DIRECTO 15.000.000» al final dejaba ese total
+       en `capitulos[último].subtotal_declarado`, que salía «no_cuadra» con una
+       desviación de 500.000 —el subtotal del capítulo 1—; y encima el total del
+       documento se PERDÍA (`documento.estado: "sin_datos"`) sobre un documento
+       que SÍ declara su costo directo, así que la validación más importante
+       quedaba ciega.
+       La regla que lo separa YA EXISTÍA, entera y correcta, en
+       `public/xlsx_lectura.js` («COSTO(S) DIRECTO(S)» manda · un «TOTAL» seco
+       vale solo antes del AIU · «SUBTOTAL» es de capítulo). Se EXTRAJO a
+       `clasificarRotuloTotal` y la comparten los dos lectores: no se copió. */
+    {
+      const AP = require("../lib/apu_pliego.js");
+      const X = require("../public/xlsx_lectura.js");
+      const CAB = "ITEM\tDESCRIPCION\tUNIDAD\tCANTIDAD\tVR UNITARIO\tVR TOTAL";
+      const filas = (n) => Array.from({ length: n }, (_, k) =>
+        `1.${k + 1}\tACTIVIDAD NUMERO ${k + 1} DE OBRA\tM3\t${(k + 1) * 10},00\t1.000\t${(k + 1) * 10000}`);
+      const suma = (n) => Array.from({ length: n }, (_, k) => (k + 1) * 10000).reduce((a, b) => a + b, 0);
+
+      /* (1) el total del documento no ensucia ningún capítulo Y se recupera */
+      const a = AP.parsearPliego([CAB, "1\tPRELIMINARES",
+        "1.1\tLOCALIZACION Y REPLANTEO\tM2\t100,00\t2.000\t200.000",
+        "1.2\tDESCAPOTE MANUAL\tM3\t50,00\t6.000\t300.000", "2\tESTRUCTURA",
+        "2.1\tCONCRETO 3000 PSI\tM3\t20,00\t500.000\t10.000.000",
+        "2.2\tACERO DE REFUERZO\tKG\t1.000,00\t4.500\t4.500.000",
+        "\tCOSTO DIRECTO\t\t\t\t15.000.000"].join("\n"));
+      assert.deepStrictEqual(a.capitulos.map((c) => c.subtotal_declarado), [null, null],
+        "el total del DOCUMENTO no puede acabar en el subtotal de un capítulo");
+      assert.strictEqual(a.validacion.capitulos.filter((c) => c.estado === "no_cuadra").length, 0,
+        "…y por tanto ningún capítulo puede salir «no_cuadra» por esa causa");
+      assert.strictEqual(a.validacion.cuadre_interno.estado, "cuadra");
+      assert.strictEqual(a.validacion.cuadre_interno.total_declarado, 15000000,
+        "el «COSTO DIRECTO» que el documento declara se RECUPERA como ancla interna");
+
+      /* (2) ese ancla basta para el verde: no hace falta la cuantía externa */
+      const c = AP.parsearPliego([CAB, "1\tCAPITULO UNICO", ...filas(6),
+        `\tCOSTO DIRECTO\t\t\t\t${suma(6).toLocaleString("es-CO")}`].join("\n"));
+      assert.strictEqual(c.confianza.color, "verde",
+        "un pliego que cuadra al peso con su propia cifra no puede salir ámbar por no conocerse la cuantía");
+
+      /* (3) LAS TRES GUARDAS DEL VERDE SIGUEN INTACTAS: son las que impiden que
+         un cuadre afortunado se lea como «se usa automáticamente». */
+      const d = AP.parsearPliego([CAB, "1\tCAPITULO UNICO", ...filas(4),
+        `\tCOSTO DIRECTO\t\t\t\t${suma(4).toLocaleString("es-CO")}`].join("\n"));
+      assert.strictEqual(d.confianza.motivo, "muestra_insuficiente", "con 4 filas no hay verde");
+      const e = AP.parsearPliego([CAB, "1\tCAPITULO UNICO", ...filas(5),
+        "1.6\tACTIVIDAD NUMERO 6 DE OBRA\tM3\t\t1.000\t60000",
+        `\tCOSTO DIRECTO\t\t\t\t${suma(6).toLocaleString("es-CO")}`].join("\n"));
+      assert.strictEqual(e.confianza.motivo, "cantidades_ilegibles", "una cantidad ilegible no puede pasar desapercibida");
+
+      /* (4) UN «TOTAL» DESPUÉS DEL AIU NO ES LA SUMA DE LOS ÍTEMS: es el precio
+         con AIU. Ni sirve de ancla ni es el subtotal del capítulo en curso —el
+         mismo defecto por la otra puerta, que salió al probar el arreglo. */
+      const g = AP.parsearPliego([CAB, "1\tCAPITULO UNICO", ...filas(6),
+        "\tAIU 25%\t\t\t\t52.500", "\tTOTAL\t\t\t\t262.500"].join("\n"));
+      assert.strictEqual(g.validacion.cuadre_interno.estado, "sin_datos",
+        "el precio CON AIU no puede tomarse por el costo directo declarado");
+      assert.strictEqual(g.validacion.capitulos.filter((x) => x.estado === "no_cuadra").length, 0,
+        "…ni fabricarle un «no_cuadra» al capítulo en curso");
+
+      /* (5) sin total declarado no se inventa ninguno (R1) */
+      const h = AP.parsearPliego([CAB, "1\tCAPITULO UNICO", ...filas(6)].join("\n"));
+      assert.strictEqual(h.validacion.cuadre_interno.total_declarado, null);
+      assert.strictEqual(h.validacion.cuadre_interno.estado, "sin_datos");
+
+      /* (6) LA REGLA SE COMPARTE, no se copia: identidad de función, y el
+         lector de pliegos la REQUIERE del módulo hoja (patrón lib/costos.js). */
+      assert.strictEqual(typeof X.clasificarRotuloTotal, "function");
+      assert.strictEqual(X.clasificarRotuloTotal("COSTO DIRECTO"), "costo_directo");
+      assert.strictEqual(X.clasificarRotuloTotal("SUBTOTAL CAPITULO 1"), "subtotal_capitulo");
+      assert.strictEqual(X.clasificarRotuloTotal("TOTAL CAPITULO 1"), "subtotal_capitulo");
+      assert.strictEqual(X.clasificarRotuloTotal("TOTAL"), "total_documento");
+      assert.strictEqual(X.clasificarRotuloTotal("TOTAL", { vistoAiu: true }), "precio_con_aiu");
+      const fuenteAP = fs.readFileSync(path.join(__dirname, "..", "lib", "apu_pliego.js"), "utf8");
+      assert.ok(/require\("\.\.\/public\/xlsx_lectura\.js"\)/.test(fuenteAP),
+        "la regla se REQUIERE del módulo hoja: una segunda copia divergiría, y aquí serían pesos");
+    }
+
     /* ── T2 · DOS TEXTOS INTERNOS FALSOS DENTRO DEL MÓDULO QUE FIJA PRECIOS ──
        (a) La cabecera de `lib/apu/precios.js` decía «LOS CINCO NIVELES» y
        enumeraba cinco cuando `NIVELES` ya tenía DOCE, con `catalogo` en el
@@ -19537,10 +19616,10 @@ async function main() {
       }
     }
 
-    console.log("· unidad AUDITORÍA INTEGRAL: 33 cerraduras de los defectos reproducidos "
+    console.log("· unidad AUDITORÍA INTEGRAL: 34 cerraduras de los defectos reproducidos "
       + "(fuga sin token, presupuesto único, precio_manual, origen del precio, conectividad/mano de obra, "
       + "Number(null), año imposible, celda vacía, precio 0, unidades, cantidad ilegible, caja, hoja del Excel, "
-      + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos, sello del offset, backfill, huérfanos, salto de página, Formulario 1, cascada de 12 niveles, pavimento flexible)");
+      + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos, sello del offset, backfill, huérfanos, salto de página, Formulario 1, cascada de 12 niveles, pavimento flexible, total del documento)");
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →

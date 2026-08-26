@@ -336,6 +336,46 @@
     return numeroLocal(v);
   }
 
+  /* ══════════ QUÉ CLASE DE FILA DE TOTAL ES UN RÓTULO · REGLA ÚNICA ══════════
+     La comparten los DOS lectores de formularios de cantidades del proyecto:
+     este (celdas de una hoja) y `lib/apu_pliego.js` (líneas de texto de un PDF).
+     Sustratos distintos, MISMA pregunta. Estaba solo aquí, enterrada en
+     `detectarFilasApu`, y el lector de pliegos no la tenía: metía «COSTO
+     DIRECTO 15.000.000» como SUBTOTAL del último capítulo, que salía
+     «no_cuadra» por la diferencia con los demás capítulos, y de paso perdía el
+     total del documento. Dos definiciones de «esta fila es el total» divergen
+     a la primera corrección, y aquí serían pesos.
+
+     Canoniza internamente porque los dos llamadores normalizan distinto
+     (`normCab` sube a mayúsculas, el `norm` de lib/semantica baja a minúsculas):
+     una función compartida no puede depender de cuál de los dos la llame.
+
+     Devuelve:
+       "costo_directo"     COSTO(S) DIRECTO(S) — es la suma de ítems POR
+                           DEFINICIÓN, y manda sobre cualquier otro rótulo.
+       "total_documento"   un TOTAL a secas ANTES de que aparezca el AIU.
+       "precio_con_aiu"    ese mismo TOTAL pero DESPUÉS del AIU: ya no es la
+                           suma de los ítems, así que no sirve de ancla.
+       "subtotal_capitulo" SUBTOTAL, o un TOTAL que nombra su capítulo.
+       "aiu"               la fila que enciende `vistoAiu`.
+       null                no es una fila de total reconocible; el llamador
+                           decide, y así los rótulos que hoy trata de otra
+                           manera siguen tratándose igual. */
+  function clasificarRotuloTotal(texto, opciones) {
+    const d = String(texto == null ? "" : texto)
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+      .replace(/[^A-Z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+    if (!d) return null;
+    if (/^(A ?I ?U|ADMINISTRACION|IMPREVISTOS|UTILIDAD|IVA)\b/.test(d)) return "aiu";
+    if (/^(TOTAL |SUBTOTAL )?COSTOS? DIRECTOS?\b/.test(d)) return "costo_directo";
+    if (/^SUBTOTAL\b/.test(d)) return "subtotal_capitulo";
+    if (/^TOTAL(\s+GENERAL|\s+PRESUPUESTO)?$/.test(d)) {
+      return opciones && opciones.vistoAiu ? "precio_con_aiu" : "total_documento";
+    }
+    if (/^TOTAL\b/.test(d)) return "subtotal_capitulo";
+    return null;
+  }
+
   function detectarFilasApu(grid) {
     const avisos = [];
     if (!Array.isArray(grid) || !grid.length) {
@@ -548,7 +588,7 @@
   }
 
   return {
-    leerLibro, leerZip, parsearCsv, detectarFilasApu, elegirHoja,
+    leerLibro, leerZip, parsearCsv, detectarFilasApu, elegirHoja, clasificarRotuloTotal,
     numeroLocal, indiceColumna, desescaparXml,
   };
 });
