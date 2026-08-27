@@ -26,7 +26,11 @@ const VISTA_POR_OP = {
 module.exports = async function handler(req, res) {
   const q = req.query || {};
   if (q.op && !q.vista) {
-    const vista = VISTA_POR_OP[String(q.op).toLowerCase()];
+    /* `hasOwnProperty` como en los otros cinco routers: sin él, `?op=constructor`
+       resolvía por el prototipo (sin bypass — el handler revalida con 400 —,
+       pero un router no debe resolver claves que no declaró). */
+    const k = String(q.op).toLowerCase();
+    const vista = Object.prototype.hasOwnProperty.call(VISTA_POR_OP, k) ? VISTA_POR_OP[k] : undefined;
     /* Una op desconocida se deja pasar tal cual: el handler responde su 400
        con la lista de vistas, que es el contrato ya probado. */
     req.query = { ...q, vista: vista || String(q.op).toLowerCase() };

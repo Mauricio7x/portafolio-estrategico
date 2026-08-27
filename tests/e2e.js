@@ -8033,8 +8033,14 @@ async function main() {
         assert.strictEqual(c.indice.procesos_contados, 8);
         assert.strictEqual(c.indice.total_procesos_adjudicados, 10, "el total adjudicado incluye los que no cuentan");
         assert.strictEqual(c.indice.total_procesos_historico, 11, "…y el histórico total incluye además el desierto");
-        // 0 oferentes = SIN DATO, jamás «nadie se presentó»
-        for (const p of sinDato) assert.strictEqual(p.numero_ofertas, 0);
+        /* ⚠️ CAMBIO DE DOCTRINA APLICADO (27-ago-2026): esta aserción exigía
+           `numero_ofertas === 0` — o sea, fijaba el comportamiento defectuoso.
+           La propia cubeta dice «el dataset no dice cuántos se presentaron»:
+           un 0 afirmado ahí es «sin dato → cero» en el payload de la API
+           (cualquier consumidor con token lee un cero creíble); la cubeta
+           hermana `sin_adjudicacion` ya viajaba en null. Ahora las dos dicen
+           lo mismo: la ausencia no se rellena. */
+        for (const p of sinDato) assert.strictEqual(p.numero_ofertas, null, "sin dato de oferentes viaja null, jamás 0");
         // excluidos ordenados por fecha descendente
         for (let i = 1; i < c.excluidos.length; i++) {
           assert.ok(String(c.excluidos[i - 1].fecha_adjudicacion || "") >= String(c.excluidos[i].fecha_adjudicacion || ""),
@@ -8728,6 +8734,40 @@ async function main() {
         const imposible = M.manifestacionDeFila({ ...MOTAVITA, fecha_cierre: "2026-08-14T15:00:00.000" }, "2026-08-15");
         assert.strictEqual(imposible.estado, "sin_fecha");
         assert.strictEqual(imposible.motivo_sin_fecha, "cierre_de_ofertas_no_deja_sitio");
+
+        /* (2-quater) ══ EL AÑO IMPOSIBLE EN `fecha_cierre` TUMBABA EL LISTADO ══
+           (auditoría del 27-ago-2026). La guarda del 24-ago validó el año de la
+           APERTURA y se olvidó de las otras dos fechas que llegan a la misma
+           aritmética: `fecha_cierre` (el dataset trae `1970` de timestamp nulo
+           y el `2202` que esta memoria documenta) pasaba a
+           `sumarHabiles(cierre, −1)` y `lib/habiles.festivos` LANZA fuera de
+           su calendario — con UNA fila así en menor cuantía, el clasificador
+           del listado reventaba para TODOS los perfiles. Y la fecha del
+           CRONOGRAMA (que puede llegar de Redis sin apertura con la que
+           contrastar) entraba a `habilesEntre` por la misma puerta. Estas
+           aserciones EJECUTAN los dos caminos; contra el árbol anterior las
+           dos primeras LANZAN. */
+        {
+          const filaCierreLoco = (cierre) => ({ id_del_proceso: "CO1.MC.ANIO", entidad: "ENTIDAD A",
+            modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía",
+            estado: "Publicado", fecha_de_publicacion_del: "2026-08-14T09:00:00.000", fecha_cierre: cierre });
+          const c2202 = M.manifestacionDeFila(filaCierreLoco("2202-12-30T17:00:00"), "2026-08-26");
+          assert.ok(c2202 && c2202.aplica, "un cierre con año imposible NO tumba la fila: se trata como cierre no publicado");
+          assert.strictEqual(c2202.vence_a_mas_tardar, H.sumarHabiles("2026-08-14", 3),
+            "sin cierre operable, el techo es el legal (la ventana sigue completa)");
+          const c1970 = M.manifestacionDeFila(filaCierreLoco("1970-01-01T00:00:00"), "2026-08-26");
+          assert.ok(c1970 && c1970.aplica, "el 1970 de timestamp nulo tampoco tumba la fila");
+          // el clasificador del listado — el camino que reventaba en producción — tampoco lanza
+          const cClas = clas(filaCierreLoco("2202-12-30T17:00:00"));
+          assert.ok(cClas.manifestacion && cClas.manifestacion.aplica, "el clasificador sobrevive a la fila con año imposible");
+          // la fecha del cronograma con año imposible se DESCARTA, jamás se confirma ni se cuenta
+          const crLoco = M.manifestacionDeFila({ id_del_proceso: "CO1.MC.ANIO2",
+            modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía" }, "2026-08-26",
+          { fechaCronograma: "2202-06-30" });
+          assert.strictEqual(crLoco.confirmada, false, "una fecha de cronograma fuera del calendario no puede confirmarse");
+          assert.strictEqual(crLoco.fecha_cronograma_descartada, "2202-06-30", "se descarta Y SE DICE");
+          assert.strictEqual(crLoco.quedan_habiles, null, "y no produce ninguna cuenta atrás");
+        }
         // …y NO dispara cuando el trámite sí cabe: el 21 deja sitio de sobra
         assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-15").motivo_sin_fecha, null,
           "con sitio suficiente la ventana se sitúa: la guarda no puede volverse indiscriminada");
@@ -10738,6 +10778,23 @@ async function main() {
         assert.strictEqual(crp({ id: "x", utilidadOp: null, ingresoOp: null, liquidez: null, expSMMLV: 100, profesionales: 1, sce: [] }, 1e9), null);
         // el perfil del dueño sigue con K con dato
         assert.ok(crp(require("../lib/perfiles.js").PERFILES.helder, 1e9) > 0);
+        /* ══ AUDITORÍA DEL 27-AGO-2026 · LA REGLA DE FALTANTES VALE PARA LOS
+           TRES INDICADORES, NO SOLO PARA LA CO ══ `null >= 1` es false y
+           `null / x` es 0: una liquidez ilegible caía al factor 0 y una
+           experiencia ilegible al peor escalón — la K se recortaba hasta un
+           35 % EN SILENCIO y P2 podía cerrar por ignorancia. Un PDF con
+           patrimonio legible y la línea de liquidez ilegible entra exactamente
+           ahí (rup_pdf produce null y el modo aproximado lo acepta). Contra el
+           árbol anterior, estas tres aserciones FALLAN (daban una K menor, no
+           null). */
+        {
+          const conDatos = { id: "x", utilidadOp: 100e6, liquidez: 1.4, expSMMLV: 6000, profesionales: 3, sce: [] };
+          assert.ok(crp(conDatos, 500e6) > 0, "con los tres indicadores la K existe");
+          assert.strictEqual(crp({ ...conDatos, liquidez: null }, 500e6), null, "liquidez ausente → K sin dato, no un factor 0 mudo");
+          assert.strictEqual(crp({ ...conDatos, profesionales: null }, 500e6), null, "profesionales ausentes → K sin dato");
+          assert.strictEqual(crp({ ...conDatos, expSMMLV: null }, 500e6), null, "experiencia ausente → K sin dato");
+          assert.ok(crp({ ...conDatos, liquidez: 0 }, 500e6) >= 0, "una liquidez 0 REAL sí es un dato (factor 0 legítimo)");
+        }
 
         // ── camino 2 · OCR: sin clave configurada → siguiente: manual, jamás error ──
         const claveOcr = process.env.OCRSPACE_API_KEY; delete process.env.OCRSPACE_API_KEY;
@@ -11120,6 +11177,19 @@ async function main() {
           "componer el AIU tiene que dar más caro que sumarlo; si dieran igual, la corrección no estaría aplicada");
         assert.strictEqual(comp.resumen.costo_directo_total, adit.resumen.costo_directo_total,
           "el modo de AIU no puede alterar el costo DIRECTO");
+        /* ══ AUDITORÍA DEL 27-AGO-2026 · el desglose A/I/U del modo compuesto
+           tiene que SUMAR el recargo aplicado ══ Los tres valores se calculaban
+           siempre aditivos, así que `precio_venta − CD` dejaba plata que
+           ninguna línea explicaba (con CD $2.468.000 y 15/5/5, $44.115,50 sin
+           dueño): la «fila que no cuadra» del propio módulo. Ahora cada
+           componente se lleva su parte de la composición y la suma reproduce el
+           recargo al peso (tolerancia: el redondeo a 2 decimales de tres
+           sumandos). Contra el árbol anterior, esta aserción FALLA por ~$44 mil. */
+        const rc = comp.resumen;
+        const recargoComp = rc.precio_venta - rc.costo_directo_total;
+        const sumaComp = rc.administracion + rc.imprevistos + rc.utilidad;
+        assert.ok(Math.abs(recargoComp - sumaComp) <= 0.05,
+          `A+I+U del modo compuesto debe explicar el recargo entero: recargo ${recargoComp} vs suma ${sumaComp}`);
       }
 
       /* ---- j.5 monotonía: el rendimiento DIVIDE ---- */
@@ -11839,6 +11909,30 @@ async function main() {
           assert.strictEqual(impII.unidadCanonica("m3-km"), "m3-km");
           assert.strictEqual(impII.unidadCanonica("M3 - Km"), "m3-km");
           assert.notStrictEqual(impII.unidadCanonica("m3-km"), impII.unidadCanonica("ml"));
+
+          /* ══ AUDITORÍA DEL 27-AGO-2026 · LA VISTA PREVIA COTIZABA EL CATÁLOGO
+             EN BOGOTÁ AUNQUE EL USUARIO DECLARÓ SU DEPARTAMENTO ══
+             `precioDe` llamaba a `cotizarItem` sin `regionId`, así que el
+             nivel `catalogo` de la cascada caía a la región base: la vista
+             previa enseñaba un precio y «Calcular APU» otro del MISMO ítem
+             (hasta 10 % en la Costa), y ese precio es con el que se acepta el
+             mapeo y se elige variante. Ahora `precioDe` resuelve la región con
+             `regionDeDepartamento` — el punto único de paso — y el precio de la
+             vista previa REPRODUCE el del motor para ese departamento. Contra
+             el árbol anterior, la aserción de igualdad FALLA (20 160 ≠ 20 777). */
+          {
+            const catSem = require("../lib/apu/catalogo.js").SEMILLA;
+            const mvReg = impII.mapearFilasImportadas(
+              [{ descripcion: "Excavación mecánica de la explanación en material común", unidad: "m3", cantidad: 10 }],
+              catSem, { departamento: "Antioquia" });
+            const fReg = mvReg.filas[0];
+            assert.strictEqual(fReg.codigo_item || fReg.item_id, "INV-210.1",
+              `la fila mapea firme al ítem del catálogo: ${JSON.stringify({ c: fReg && fReg.codigo_item, i: fReg && fReg.item_id })}`);
+            const itSem = catSem.items.find((i) => i.codigo === (fReg.codigo_item || fReg.item_id));
+            const cdMotor = require("../lib/apu/catalogo.js").costoDirecto(itSem, catSem, "medellin_antioquia").total;
+            assert.strictEqual(fReg.precio_item, cdMotor,
+              `el precio de la vista previa es el del MOTOR para el departamento declarado (${fReg.precio_item} ≠ ${cdMotor})`);
+          }
 
           /* 6 · el catálogo que sirve la API trae los ítems INVIAS APARTE
              (`items_invias`), con la forma del catálogo, y app.js los junta. */
@@ -16303,6 +16397,34 @@ async function main() {
       assert.strictEqual(nivelDe(r3, "secop"), "rechazo"); assert.ok(/no es el del anexo/.test(r3.veredictos.find((v) => v.id === "secop").mensaje));
       const r3b = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000, tope_aiu_pct: 30, secop: { items: [{ numeral: "1.1", precio_unitario: 50001 }] } });
       assert.strictEqual(nivelDe(r3b, "secop"), "rechazo");
+      /* ══ AUDITORÍA DEL 27-AGO-2026 · EL COTEJO POSICIONAL BENDECÍA PRECIOS
+         INTERCAMBIADOS ══ Sin numeral, el par se hacía por POSICIÓN sin mirar
+         la descripción: con los ítems de SECOP en otro orden y los precios
+         CRUZADOS, el par posicional «cuadraba» y salía «Lo escrito en SECOP II
+         coincide con el anexo» — un falso OK en la única validación
+         insubsanable; y al revés, el mismo contenido solo REORDENADO salía
+         «rechazo». Ahora el par se hace numeral → descripción → posición (la
+         posición solo vale si la descripción no la desmiente). Contra el árbol
+         anterior, las dos aserciones siguientes FALLAN. */
+      const rCruzado = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000, tope_aiu_pct: 30,
+        secop: { items: [
+          { descripcion: "Concreto 3000 psi para placa", precio_unitario: 50000 },
+          { descripcion: "Excavación manual en material común", precio_unitario: 600000 },
+        ] } });
+      assert.strictEqual(nivelDe(rCruzado, "secop"), "rechazo", "precios CRUZADOS entre ítems no pueden salir «coincide»");
+      const rReordenado = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000, tope_aiu_pct: 30,
+        secop: { items: [
+          { descripcion: "Concreto 3000 psi para placa", precio_unitario: 600000 },
+          { descripcion: "Excavación manual en material común", precio_unitario: 50000 },
+        ] } });
+      assert.strictEqual(nivelDe(rReordenado, "secop"), "ok", "el mismo contenido REORDENADO no es una discrepancia");
+      // y el pegado de solo-precios (sin numeral ni descripción) sigue cotejando por posición
+      const rPosicional = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000, tope_aiu_pct: 30,
+        secop: { items: [{ precio_unitario: 50000 }, { precio_unitario: 600000 }, { precio_unitario: 6000 }] } });
+      assert.strictEqual(nivelDe(rPosicional, "secop"), "ok");
+      const rPosMal = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000, tope_aiu_pct: 30,
+        secop: { items: [{ precio_unitario: 99 }] } });
+      assert.strictEqual(nivelDe(rPosMal, "secop"), "rechazo");
       assert.strictEqual(nivelDe(F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000 }), "secop"), "sin_referencia", "sin lo escrito en SECOP II no se afirma nada");
       // 4 · AIU: sin discriminar → rechazo; sobre el tope → rechazo; sin tope → pendiente
       assert.strictEqual(nivelDe(F1.validarFormulario1({ oferta: { ...ofertaOk, aiu: { administracion_pct: 25 } }, formulario: form, presupuesto_oficial: 30000000 }), "aiu"), "rechazo");
@@ -18371,6 +18493,54 @@ async function main() {
         "obra vial con «conectividad rural» tiene que ENTRAR: la descartaba la ingesta, invisible al diagnóstico");
       const telecom = { ...vial, descripci_n_del_procedimiento: "PRESTACION DEL SERVICIO DE CONECTIVIDAD A INTERNET PARA LAS SEDES" };
       assert.strictEqual(filtros.admisibleParaIngesta(telecom), false, "…y la de telecomunicaciones sigue fuera");
+
+      /* ══ AUDITORÍA DEL 27-AGO-2026 · «servicio» como contexto de conectividad
+         reabría el falso negativo que la propia regla decía cerrar ══
+         El lookahead aceptaba «servicio» a ≤40 caracteres DESPUÉS de
+         «conectividad», y el fraseo de plantilla de la obra vial lo trae
+         («…PARA LA CONECTIVIDAD RURAL EN SERVICIO DE LA COMUNIDAD»): el
+         corazón del negocio moría otra vez en la INGESTA, invisible al
+         diagnóstico. El fraseo telecom real pone «servicio» ANTES
+         («PRESTACIÓN DEL SERVICIO DE CONECTIVIDAD…»), donde el lookahead no
+         mira — ese caso lo caza «internet», con prueba arriba. Contra el
+         árbol anterior, las dos primeras aserciones FALLAN. */
+      for (const d of [
+        "MEJORAMIENTO DE VIAS TERCIARIAS PARA LA CONECTIVIDAD RURAL EN SERVICIO DE LA COMUNIDAD",
+        "CONSTRUCCION DE PLACA HUELLA PARA LA CONECTIVIDAD DE LAS VEREDAS AL SERVICIO EDUCATIVO",
+      ]) {
+        assert.strictEqual(filtros.admisibleParaIngesta({ ...vial, descripci_n_del_procedimiento: d }), true,
+          `obra con «conectividad … servicio» tiene que ENTRAR: ${d.slice(0, 50)}`);
+      }
+      assert.strictEqual(filtros.admisibleParaIngesta({ ...vial,
+        descripci_n_del_procedimiento: "MEJORAMIENTO DE LA CONECTIVIDAD DIGITAL DE LAS INSTITUCIONES EDUCATIVAS" }), false,
+      "…«conectividad digital» (MinTIC) sigue fuera: el contexto que decide es el de telecom, no «servicio»");
+
+      /* ══ …Y TRES TÉRMINOS SUELTOS DE LA BLACKLIST MATABAN OBRA REAL ══
+         «biblioteca», «alojamiento» y «capacitación» descartaban en la ingesta
+         la construcción de una biblioteca, los alojamientos de un batallón y
+         la vía que incluye capacitación a la comunidad — con la contradicción
+         demostrable de que WHITELIST_OBRA declara obra la primera. Ahora los
+         tres exigen el contexto de COMPRA/SERVICIO que la lista ya usa para
+         «conectividad» y «logística». Contra el árbol anterior, las tres
+         primeras aserciones FALLAN. */
+      for (const d of [
+        "ADECUACION Y MEJORAMIENTO DE LA BIBLIOTECA PUBLICA MUNICIPAL",
+        "CONSTRUCCION DE ALOJAMIENTOS PARA EL PERSONAL DEL BATALLON",
+        "MEJORAMIENTO DE VIAS TERCIARIAS INCLUYE SOCIALIZACION Y CAPACITACION A LA COMUNIDAD",
+      ]) {
+        assert.strictEqual(filtros.admisibleParaIngesta({ ...vial, descripci_n_del_procedimiento: d }), true,
+          `obra real tiene que ENTRAR a la ingesta: ${d.slice(0, 50)}`);
+      }
+      for (const d of [
+        "ADQUISICION DE MATERIAL BIBLIOGRAFICO PARA LA BIBLIOTECA MUNICIPAL",
+        "DOTACION DE LA BIBLIOTECA ESCOLAR DEL MUNICIPIO",
+        "PRESTACION DE SERVICIOS DE ALOJAMIENTO Y ALIMENTACION PARA FUNCIONARIOS",
+        "PRESTACION DE SERVICIOS DE CAPACITACION EN LIDERAZGO PARA SERVIDORES PUBLICOS",
+        "CONTRATAR JORNADAS DE CAPACITACION EN SEGURIDAD Y SALUD EN EL TRABAJO",
+      ]) {
+        assert.strictEqual(filtros.admisibleParaIngesta({ ...vial, descripci_n_del_procedimiento: d }), false,
+          `la compra/servicio sigue FUERA de la ingesta: ${d.slice(0, 50)}`);
+      }
       const aseo = filtros.evaluarPertinencia(
         filtros.norm("SUMINISTRO DE MANO DE OBRA NO CALIFICADA PARA ASEO Y ORNATO DEL MUNICIPIO"), { codigos: ["80111600"] });
       assert.strictEqual(aseo.nivel, "rojo", "«mano de obra» no es un verbo de obra: el aseo salía VERDE «Obra civil»");
