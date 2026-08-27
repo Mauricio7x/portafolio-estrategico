@@ -5875,3 +5875,111 @@ INVIAS/IDU/SECOP) para los APU CPR Espinal y UPN El Nogal. Decisiones que no hay
   índice — sigue pendiente en el anexo. Las cotizaciones locales del Tolima quedaron **APARCADAS
   por decisión del dueño**: arena m³/ladrillo/perfiles/flanche siguen sin precio local y la
   conversión saco→m³ sigue prohibida.
+
+### Auditoría integral del 27-ago-2026 · verificar absolutamente todo
+
+Encargo del dueño: «auditoría y consultoría, verifica absolutamente todo, elimina lo que tengas que
+eliminar sin afectar el perfecto funcionamiento, robustece la filosofía». Método: fan-out de ocho
+auditores por subsistema (§9 del prompt) con las dos reglas duras —premisa verificada contra el
+código y una reproducción ejecutada por hallazgo—, cada hallazgo re-reproducido de forma
+INDEPENDIENTE en la sesión principal antes de tocar nada, y pasada adversaria sobre el propio diff.
+Los agentes cayeron TRES veces por límites de sesión y se reanudaron con su contexto; dos (ingesta y
+frontend) quedaron cancelados y sus frentes se cerraron a mano. Lo corregido, cada uno con cerradura
+probada por mutación:
+
+- **⚠️ LA GUARDA DE AÑO DEL 24-AGO CUBRIÓ LA APERTURA Y SE OLVIDÓ DE LAS OTRAS DOS FECHAS.**
+  `fecha_cierre` con año imposible (1970 de timestamp nulo, 2202) entraba a `sumarHabiles(cierre,−1)`
+  en `ventanaDe` y `lib/habiles.festivos` LANZA: una sola fila de menor cuantía así tumbaba el
+  clasificador del listado — 500 para todos los perfiles, la misma vía que la guarda a medias había
+  cerrado. Y la fecha del CRONOGRAMA (de Redis, sin apertura con la que contrastar) entraba a
+  `habilesEntre` por la misma puerta. `fechaOperable` (margen ±1 año por la aritmética que sigue)
+  trata la fecha imposible como AUSENTE; la del cronograma se descarta Y SE DICE, jamás se confirma
+  ni cuenta. Lección repetida: **una guarda de entrada tiene que cubrir TODAS las entradas de la
+  misma aritmética, no la primera que falló.**
+- **«servicio» como contexto de conectividad reabría el falso negativo que la regla decía cerrar**:
+  «…PARA LA CONECTIVIDAD RURAL EN SERVICIO DE LA COMUNIDAD» moría en la INGESTA, invisible al
+  diagnóstico. Salió de la lista: el fraseo telecom real pone «servicio» ANTES («PRESTACIÓN DEL
+  SERVICIO DE CONECTIVIDAD…»), donde el lookahead no mira, y ese caso lo caza «internet» (medido).
+- **`biblioteca`, `alojamiento` y `capacitación` sueltos en BLACKLIST_OBJETO mataban obra real** —la
+  construcción de una biblioteca (que la propia WHITELIST_OBRA declara obra: contradicción interna
+  demostrada), los alojamientos de un batallón, la vía que «incluye socialización y capacitación»—.
+  Van condicionados al contexto de compra/servicio con lookbehind acotado, el mecanismo que la lista
+  ya usaba para «conectividad» y «logística» (15/15 casos). Lo que ahora entre de más lo descarta el
+  JUICIO: la blacklist es la factura de Redis, no el veredicto. Queda un residuo declarado
+  («…AULAS PARA CURSOS DE CAPACITACIÓN» seguiría muriendo): el censo de ingesta lo vigila.
+- **La regla de faltantes de la K valía solo para la CO** (`lib/capacidad`): `null >= 1` es false y
+  `null / x` es 0, así que una liquidez ilegible caía al factor 0 y una experiencia ilegible al peor
+  escalón — la K se recortaba hasta un 35 % EN SILENCIO y P2 podía cerrar por ignorancia (alcanzable:
+  un PDF con la línea de liquidez ilegible pasa el modo aproximado). Ahora los tres indicadores
+  ausentes dan K sin dato, que P2 declara y deja pasar; un 0 REAL sigue siendo un dato.
+- **El cotejo de SECOP II (validación 3, la insubsanable) emparejaba por POSICIÓN sin mirar la
+  descripción**: con los ítems en otro orden y los precios CRUZADOS salía «Lo escrito en SECOP II
+  coincide con el anexo» (falso OK), y el mismo contenido solo REORDENADO salía «rechazo». El par va
+  numeral → descripción → posición, y la posición solo vale si la descripción no la desmiente (el
+  pegado de solo-precios conserva la vía posicional: ahí es la única señal).
+- **La vista previa de importación cotizaba el catálogo en Bogotá aunque el usuario declaró su
+  departamento** (`precioDe` sin `regionId`): la vista previa enseñaba un precio y «Calcular APU»
+  otro del MISMO ítem (hasta 10 % en la Costa), y `variantes[].precio` es la cifra con la que se
+  elige variante. Resuelve con `regionDeDepartamento`, el punto único de paso, y hay prueba de que la
+  vista previa REPRODUCE el precio del motor.
+- **En modo AIU compuesto el desglose A/I/U se calculaba aditivo**: `precio_venta − CD` dejaba
+  $44.115,50 sin dueño (CD $2,47 M, 15/5/5) — la «fila que no cuadra» — y el IVA se calculaba sobre
+  una U que no era la aplicada. Cada componente se lleva su parte de la composición (A → U → I) y la
+  suma cuadra a 0,0000. El modo aditivo (el default) no cambió un peso.
+- **⚠️ LOS CHUNKS HUÉRFANOS DEL HISTÓRICO SOBREVIVÍAN A TODA RE-EJECUCIÓN** — el patrón exacto que
+  la auditoría integral del 19-ago cerró en el corpus ACTIVO, vivo en el otro keyspace (paso 10 del
+  ciclo, literal): los DIEZ consumidores del histórico leen por SCAN pero el flip del backfill
+  borraba solo [viejoBase, viejoSig). Una corrida muerta dejaba chunks en índices superiores servidos
+  PARA SIEMPRE a los índices de competencia, baja, equivalencias y cobertura — en el keyspace «que
+  ninguna purga toca». La poda va ahora por SCAN del mes (fuera de [baseNueva, chunkIdx)), con el
+  rango como respaldo; la cerradura SIEMBRA el huérfano, re-extrae con `reiniciar=1` y exige que
+  muera — por mutación, contra el árbol viejo el huérfano sobrevive.
+- **LA FILOSOFÍA SE DEFIENDE CON CENSOS, NO CON LISTAS** (la lección de `.hidden`, aplicada al
+  lenguaje). La jerga volvió por los huecos exactos de las cercas: `pulso.js` —el módulo más nuevo y
+  la PRIMERA pantalla— quedó fuera de JERGA_JS y ya servía «cuatro puertas» y «capacidad residual»
+  (y prometía que la competencia bloquea, cosa que P4 no hace); el tuteo quedó fuera de VOSEO_RE y
+  del HTML, y sobrevivieron «Eliminarás», «Obra que ya ejecutaste», «¿Qué vas a construir?» (el
+  rótulo más visto de Precios) y un «tendrás»; y la hoja de filtros seguía afirmando «Plazo de 3 días
+  hábiles desde la apertura» — el plazo DEROGADO por la doctrina de Motavita, superviviente de la
+  Fase 8 en la única pantalla donde se filtra por ese trámite. Hoy JERGA_JS barre TODOS los
+  public/*.js menos seis excepciones DECLARADAS con su motivo (glosario define, frases enseña el
+  oficio, costos cita la ley, apu_libro/xlsx escriben Excel), VOSEO_RE suma el tuteo y barre el texto
+  visible de index.html, y una cerradura prohíbe que vuelva el plazo derogado. Cuatro textos de lib/
+  también servían voseo/tuteo a pantalla (contá/mirá/podrías/te resta) — la cerca solo miraba los JS
+  del navegador. Verificado en Chromium real (1280/390 px, 0 errores, sin desborde).
+- **Menores**: `numero_ofertas` de los excluidos «sin_dato_oferentes» viajaba 0 y ahora null (la
+  prueba que fijaba el 0 se reescribió con su motivo); `hasOwnProperty` en el router de inteligencia
+  como en los otros cinco; «Atención:» en vez de ⚠️ en las alertas que viajan por la API (la regla
+  del emoji vale también para los datos, no solo los fuentes); el `como_leerlo` del índice de baja
+  dejó de anunciar la granularidad `departamento` como parte de la cascada (se construye y NUNCA se
+  lee — ver decisiones pendientes).
+
+**Lo que se DECIDIÓ NO tocar, con su motivo** (para que la próxima sesión no lo «arregle»):
+- **La fecha del cronograma sin apertura se sigue aceptando como confirmada** (`lib/manifestacion`):
+  es decisión documentada en el propio código («viene del pliego, mejor evidencia que nada») y
+  cerrarla mataría el caso legítimo. La auditoría de seguridad señaló que un POST público puede
+  fijarla en filas sin apertura legible; el año imposible ya no pasa, el muro real es Vercel
+  Password Protection, y endurecer más es decisión de producto del dueño.
+- **La granularidad `departamento` del índice de baja se construye y ningún consumidor la lee**
+  (`candidatas` tiene 3 niveles; el hash existe): añadirla a la cascada movería probabilidades y
+  precios — decisión de producto pendiente, anotada en el `como_leerlo`.
+- **`valorEsperado` devuelve 0 sin cuantía** (inconsistente con `ve_conservador`, que viaja null):
+  la tarjeta ya no pinta el VE (pinta la ganancia), el 0 solo ordena al final — cambiarlo arriesga
+  los comparadores por nada visible.
+- **Exports sin consumidor externo** en lib/apu/inferencia, apu_mapeo, apu_catalogo, apu_ocr,
+  parametros (censados): superficie de API, no código muerto ejecutable; beneficio nulo de tocarlos.
+- **frases.js dice «habilitante» y costos.js «SMMLV»**: excepciones DECLARADAS de la cerca — enseñar
+  el término con su significado es el punto de las frases, y la sigla en la cita legal es la cita.
+
+**El árbol está excepcionalmente limpio y conviene no re-auditarlo a ciegas**: censo de higiene
+completo (27-ago) con 148 módulos alcanzados, 0 requires rotos, 0 huérfanos de grafo, 0 código vivo
+solo en tests, los 15 data/*.json y los docs referenciados, 222 archivos versionados = 222 en disco,
+0 basura. Los únicos eliminables reales: las **100 ramas remotas** (censadas TODAS en
+docs/RAMAS_RETIRADAS.md con el addendum del 27-ago; el borrado de refs sigue denegado desde el
+entorno — reintentado — y es clics del dueño en la página branches) y los 7 insumos del dueño que
+ningún capturador lee (~9,5 MB, PEDIR PERMISO — son suyos). El trabajo de la rama paralela
+`banco-precios-verificable` del 26-ago se RESCATÓ a main (censo retail + referencia LS-ZH + su
+sección de arriba) aplicando el diff — el relé deniega merge/cherry-pick además del borrado de refs.
+`docs/PROMPT_CONSULTORIA_SAAS.md` (rama del 24-ago) NO se rescató: es un prompt con tablas de ESTADO
+dentro (ya falsas), el patrón que la doctrina del 26-ago retiró; el encargo que contiene (vender por
+suscripción) se relanza desde docs/PROMPT_INICIAL.md si el dueño quiere.
