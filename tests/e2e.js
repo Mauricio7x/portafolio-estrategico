@@ -6057,6 +6057,46 @@ async function main() {
       assert.ok(!activo.some((r) => "nombre_del_proveedor" in r),
         "el corpus activo guardó datos de adjudicación (solo deben vivir en el histórico)");
 
+      /* ══ AUDITORÍA 27-AGO-2026 · CHUNKS HUÉRFANOS DEL HISTÓRICO ══
+         El mismo patrón que la auditoría integral cerró en el corpus ACTIVO,
+         vivo en el otro keyspace: los DIEZ consumidores del histórico leen por
+         SCAN (`patronChunksHist`), pero el flip del backfill borraba solo el
+         rango que recuerda el manifest ([viejoBase, viejoSig)). Una corrida
+         MUERTA deja chunks en índices superiores que ninguna re-ejecución
+         alcanzaba: procesos que ya no existen en la fuente (o duplicados)
+         servidos para siempre a los índices de competencia, baja,
+         equivalencias y cobertura — en el keyspace «que ninguna purga toca».
+         Se siembra el huérfano de una corrida muerta y se re-extrae con
+         `reiniciar=1`: la poda del flip tiene que retirarlo. Contra el árbol
+         anterior, la aserción del huérfano FALLA (sobrevivía). */
+      {
+        const mesHu = `${ANOS_HIST[0]}-01`;
+        const manHu = JSON.parse(await redis.get(CLAVES.histManifest(mesHu)));
+        assert.ok(manHu && manHu.sig > manHu.base, "el mes de la siembra tiene chunks vivos");
+        const kHuerfano = CLAVES.histChunk(mesHu, manHu.sig + 5);
+        await redis.set(kHuerfano, await redis.get(CLAVES.histChunk(mesHu, manHu.base)));
+        assert.ok((await leerHistorico()).length > totalHist,
+          "la siembra tiene que ser visible por SCAN — si no, la prueba no prueba nada");
+        let rHu = await invocar(historico, `/api/sync/historico?${rango}&reiniciar=1&presupuesto=20000&chain=0`, TOKEN);
+        let invHu = 1;
+        while (rHu.cuerpo.done === false) {
+          rHu = await invocar(historico, `/api/sync/historico?${rango}&presupuesto=20000&chain=0`, TOKEN);
+          assert.strictEqual(rHu.cuerpo.ok, true, `re-extracción falló: ${JSON.stringify(rHu.cuerpo).slice(0, 200)}`);
+          if (++invHu > 400) throw new Error("la re-extracción no converge");
+        }
+        assert.strictEqual(await redis.get(kHuerfano), null,
+          "el chunk huérfano de una corrida muerta tiene que morir en el flip del mes");
+        const manHu2 = JSON.parse(await redis.get(CLAVES.histManifest(mesHu)));
+        const clavesMes = (await redis.scan(CLAVES.patronChunksHist)).filter((k) => CLAVES.mesDeClaveHist(k) === mesHu);
+        for (const k of clavesMes) {
+          const i = parseInt(String(k).slice(String(k).lastIndexOf(":") + 1), 10);
+          assert.ok(i >= manHu2.base && i < manHu2.sig,
+            `tras el flip no puede quedar ningún chunk del mes fuera del manifest: ${k} vs [${manHu2.base}, ${manHu2.sig})`);
+        }
+        assert.strictEqual((await leerHistorico()).length, totalHist,
+          "re-extraer deja el histórico exactamente igual: ni duplicados ni huérfanos");
+      }
+
       /* índice construido automáticamente al terminar la extracción */
       const metaIdx = JSON.parse(await redis.get("indice:competencia:meta"));
       assert.ok(metaIdx && metaIdx.construido, "no se construyó el índice al terminar la extracción");
