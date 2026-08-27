@@ -16958,7 +16958,22 @@ async function main() {
         [/RUP ✓|RUP ✗|RUP ~|RUP ≈/, "RUP ✓/✗/~/≈"], [/\bK ✓/, "K ✓"], [/badgePuerta\("(?:RUP|K)"/, "badgePuerta con sigla"], [/\bN\/A\b/, "N/A"], [/evaluar esta puerta/, "puerta"],
         [/con RUP ✓/, "con RUP ✓"], [/códigos UNSPSC|Familias UNSPSC/, "códigos/Familias UNSPSC"], [/\bCRPC?\b(?!_)/, "CRP/CRPC"], [/"Calcular APU"|«Calcular APU»/, "Calcular APU"],
       ];
-      for (const archivo of ["app.js", "onboarding.js", "pliego.js", "portada.js", "filtros.js"]) {
+      /* ⚠️ LA CERCA CENSA, NO ENUMERA (auditoría 27-ago-2026): la jerga volvió
+         por el hueco exacto de la lista — `pulso.js`, el módulo más nuevo y la
+         PRIMERA pantalla del producto, quedó fuera y ya servía «cuatro
+         puertas» y «capacidad residual» (y prometía que la competencia
+         bloquea, cosa que P4 no hace). Ahora se barren TODOS los public/*.js
+         menos las excepciones DECLARADAS con su motivo: `glosario.js` define
+         los términos (su campo `interno` ES la jerga que traduce), `frases.js`
+         enseña el oficio y nombrar el término con su significado es el punto,
+         `costos.js` cita la ley con su sigla (E.T. 114-1), `apu_libro.js` y
+         `xlsx*.js` escriben el Excel (otro medio), y `ganancia.js` habla al
+         detalle de la tarjeta. Un módulo nuevo entra a la cerca solo. */
+      const EXCEPCIONES_JERGA = new Set(["glosario.js", "frases.js", "costos.js", "apu_libro.js", "xlsx.js", "xlsx_lectura.js"]);
+      const archivosJerga = fs.readdirSync(path.join(__dirname, "..", "public"))
+        .filter((f) => f.endsWith(".js") && !EXCEPCIONES_JERGA.has(f));
+      assert.ok(archivosJerga.includes("pulso.js") && archivosJerga.includes("app.js"), "el censo tiene que cubrir pulso.js y app.js");
+      for (const archivo of archivosJerga) {
         const fuente = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", archivo), "utf8"));
         for (const [re, nombre] of JERGA_JS) {
           const m = fuente.match(re);
@@ -17176,7 +17191,7 @@ async function main() {
              entrar. Verificado además en Chromium real (escritorio y móvil):
              visible, cero errores de consola y sin desborde. */
           const pliego = pos('id="seccion-pliego-wrap"');
-          const p1 = pos('white">1</span>¿Qué vas a construir?');
+          const p1 = pos('white">1</span>¿Qué va a construir?');
           assert.ok(pliego < p1, "el lector de pliegos va ANTES del paso 1: es la fuente más fiable");
           assert.ok(/<section id="seccion-pliego-wrap"/.test(apu),
             "…y ABIERTO: un <details> cerrado esconde justo lo que hay que usar primero");
@@ -17382,11 +17397,34 @@ async function main() {
           assert.ok(!/\b(Pod[ée]s|Cumpl[íi]s|Ten[ée]s|Quer[ée]s|Deb[ée]s|present[aá]rte|presentarte|pens[aá]|verific[aá]|revis[aá]|hac[ée]|pon[ée]|fijate)\b/.test(t),
             `registro formal (usted) en la tarjeta, sin voseo: «${t}»`);
         }
-        const VOSEO_RE = /\b(Pod[ée]s|Cumpl[íi]s|Ten[ée]s|Quer[ée]s|Deb[ée]s|Sab[ée]s|presentarte|pensá|verificá|revisá|hacé|poné|fijate|and[aá]|dale)\b/;
-        for (const arch of ["app.js", "portada.js", "pulso.js", "onboarding.js", "filtros.js", "pliego.js"]) {
+        /* ⚠️ EL TUTEO TAMBIÉN ENTRA A LA CERCA, Y EL HTML TAMBIÉN
+           (auditoría 27-ago-2026): la cerca barría solo VOSEO y solo los
+           módulos JS, así que «Eliminarás», «Obra que ya ejecutaste» y «¿Qué
+           vas a construir?» sobrevivieron en index.html —uno de ellos en el
+           rótulo más visto de Precios— contra el registro formal que el dueño
+           mandó. Las formas de tuteo van con frontera de palabra sobre el
+           fuente sin comentarios: ninguna colisiona con identificadores del
+           código (medido antes de añadirlas). */
+        const VOSEO_RE = /\b(Pod[ée]s|Cumpl[íi]s|Ten[ée]s|Quer[ée]s|Deb[ée]s|Sab[ée]s|presentarte|pensá|verificá|revisá|hacé|poné|fijate|and[aá]|dale|vas|ejecutaste|tendr[aá]s|Eliminar[aá]s|puedes|tienes|quieres|debes|hazlo)\b/;
+        for (const arch of ["app.js", "portada.js", "pulso.js", "onboarding.js", "filtros.js", "pliego.js", "ganancia.js", "justificacion.js"]) {
           const txt = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", arch), "utf8"));
           const m = txt.match(VOSEO_RE);
-          assert.ok(!m, `${arch}: registro formal (usted) — voseo encontrado: «${m && m[0]}»`);
+          assert.ok(!m, `${arch}: registro formal (usted) — voseo/tuteo encontrado: «${m && m[0]}»`);
+        }
+        {
+          const htmlV = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")
+            .replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "");
+          const m = htmlV.match(VOSEO_RE);
+          assert.ok(!m, `index.html (texto visible): registro formal — voseo/tuteo encontrado: «${m && m[0]}» …${htmlV.slice(Math.max(0, (m && m.index) - 60), (m && m.index) + 60).replace(/\s+/g, " ")}…`);
+          /* Y LA HOJA DE FILTROS NO PUEDE AFIRMAR EL PLAZO DEROGADO: decía
+             «Plazo de 3 días hábiles desde la apertura» — la doctrina de
+             Motavita dice que 3 es un TECHO y que la entidad puede cerrar en
+             horas. El texto de la Fase 8 era anterior a la corrección y
+             sobrevivió fuera de la cerca (auditoría 27-ago-2026). */
+          assert.ok(!/Plazo de 3 días hábiles/.test(htmlV),
+            "index.html no puede volver a afirmar que 3 días hábiles es EL plazo de la manifestación");
+          assert.ok(/máximo de 3 días de oficina/.test(htmlV) && /puede cerrarlo antes, incluso en horas/.test(htmlV),
+            "la casilla de manifestación dice la ventana: máximo legal, cierre posible en horas");
         }
 
         assert.deepStrictEqual([...vistos].sort(), ["abierta", "por_confirmar", "sin_fecha", "vencida"],

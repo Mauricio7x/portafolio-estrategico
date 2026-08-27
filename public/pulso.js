@@ -46,7 +46,7 @@
     const quien = nombrePerfil ? `Para ${esc(nombrePerfil)}, hoy` : "Para su empresa, hoy";
     if (!p.total) {
       return `<p class="text-[20px] leading-tight sm:text-[26px]" style="color: var(--text-primary); font-weight: 300;">${quien}: ninguna licitación abierta encaja con su perfil.</p>
-        <p class="mt-2 text-sm" style="color: var(--text-secondary);">${p.corpus_vacio ? "Todavía no hay licitaciones cargadas en el sistema." : `Hay ${num(p.visibles)} de su tipo de obra, pero ninguna pasa las cuatro puertas (registro, capacidad, caja, competencia). Suba un RUP más completo o revise Mi empresa.`}</p>`;
+        <p class="mt-2 text-sm" style="color: var(--text-secondary);">${p.corpus_vacio ? "Todavía no hay licitaciones cargadas en el sistema." : `Hay ${num(p.visibles)} de su tipo de obra, pero ninguna cumple hoy sus requisitos (registro de proponente, capacidad de facturar y caja). Suba un RUP más completo o revise Mi empresa.`}</p>`;
     }
     const c = p.cierranEstaSemana || { n: 0, valor: null };
     return `
@@ -408,7 +408,7 @@
     partes.push(e.contratos_acreditados != null ? cifra(num(e.contratos_acreditados), e.contratos_acreditados === 1 ? "contrato acreditado" : "contratos acreditados") : cifra("—", "contratos acreditados", "Sin dato en el registro"));
     if (e.finanzas_visibles) {
       partes.push(e.patrimonio != null ? cifra(pesosCortos(e.patrimonio) || "—", "de patrimonio", "Patrimonio del registro") : cifra("—", "de patrimonio", "Sin dato"));
-      partes.push(e.capacidad_contratacion != null ? cifra(pesosCortos(e.capacidad_contratacion) || "—", "capacidad de contratación", "Capacidad residual estimada con el registro") : cifra("—", "capacidad de contratación", "Falta la utilidad o el ingreso operacional"));
+      partes.push(e.capacidad_contratacion != null ? cifra(pesosCortos(e.capacidad_contratacion) || "—", "capacidad de contratación", "Estimada con su registro de proponente") : cifra("—", "capacidad de contratación", "Falta la utilidad o el ingreso operacional"));
     }
     if (e.tope_smmlv != null) partes.push(cifra(num(e.tope_smmlv), "salarios mínimos de tope", "Hasta dónde le interesa presentarse (apetito, no límite del registro)"));
     return `<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">${partes.join("")}</div>`;
