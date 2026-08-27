@@ -518,12 +518,19 @@
 
     const filaCD = cierre("COSTOS DIRECTOS", "resumenTexto", s.costo_directo_total, "resumenMoneda",
       refsCostoDirecto.length ? `=SUM(${refsCostoDirecto.join(",")})` : undefined);
+    /* ⚠️ EN MODO COMPUESTO, I y U VAN CON EL VALOR DEL MOTOR Y SIN FÓRMULA
+       (27-ago-2026): la fórmula aditiva `=CD×pct` recalcularía otro valor al
+       abrir el libro en Excel y el documento impreso dejaría de decir lo que
+       dice la app — la «fila que no cuadra», y en el artefacto que se radica.
+       Es el patrón ya sancionado de «VR COSTO DIRECTO con el valor del motor y
+       sin fórmula». La A es idéntica en los dos modos y conserva la suya. */
+    const compuesto = c.modo_aiu === "compuesto";
     const filaAdm = cierre(`Administración (A) — ${c.aiu_pct} %`, "totalTexto", s.administracion, "totalMoneda",
       `=G${filaCD}*${c.aiu_pct / 100}`);
     cierre(`Imprevistos (I) — ${c.imprevistos_pct} %`, "totalTexto", s.imprevistos, "totalMoneda",
-      `=G${filaCD}*${c.imprevistos_pct / 100}`);
+      compuesto ? undefined : `=G${filaCD}*${c.imprevistos_pct / 100}`);
     const filaUti = cierre(`Utilidad (U) — ${c.utilidad_pct} %`, "totalTexto", s.utilidad, "totalMoneda",
-      `=G${filaCD}*${c.utilidad_pct / 100}`);
+      compuesto ? undefined : `=G${filaCD}*${c.utilidad_pct / 100}`);
     const filaIva = cierre("IVA sobre la utilidad (19 %)", "totalTexto", s.iva_sobre_utilidad, "totalMoneda",
       `=G${filaUti}*0.19`);
     const filaCI = cierre("COSTOS INDIRECTOS", "resumenTexto",

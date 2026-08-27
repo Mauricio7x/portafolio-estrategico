@@ -5983,3 +5983,48 @@ sección de arriba) aplicando el diff — el relé deniega merge/cherry-pick ade
 `docs/PROMPT_CONSULTORIA_SAAS.md` (rama del 24-ago) NO se rescató: es un prompt con tablas de ESTADO
 dentro (ya falsas), el patrón que la doctrina del 26-ago retiró; el encargo que contiene (vender por
 suscripción) se relanza desde docs/PROMPT_INICIAL.md si el dueño quiere.
+
+#### La revisión adversaria del propio diff, y las CINCO regresiones que dejé dentro
+
+La pasada adversaria sobre los tres lotes (la regla del §9: «una corrección no está hecha hasta que
+alguien intenta romperla») encontró cinco defectos MÍOS, todos reproducidos y corregidos en el
+mismo día. Se dejan escritos porque cuatro son de familias que este repositorio ya conocía:
+
+- **El `regionId: null` explícito APAGABA el precio de la vista previa** para todos los ítems del
+  catálogo justo en el estado por defecto (sin departamento elegido) y en los 19 departamentos sin
+  factor regional — Tolima, el del dueño, incluido. `costoDirecto` solo aplica su default ante
+  `undefined`, no ante `null`: el arreglo del regionId introdujo el `null` donde antes no viajaba la
+  clave. Sin región mapeada se cae ahora a la región base EXPLÍCITA, como hace el motor. Lección:
+  **pasar `null` donde antes no viajaba la clave no es «lo mismo»** — undefined y null activan
+  defaults distintos.
+- **El cotejo por descripción fabricaba RECHAZOS falsos** en la validación insubsanable: una
+  descripción DUPLICADA en el anexo (dos capítulos con el mismo ítem) pisaba el `Map` y el contenido
+  idéntico salía «difiere»; y un anexo SIN descripciones contra un SECOP con ellas trataba la
+  AUSENCIA como contradicción. Las duplicadas caen al posicional (la única regla sana ahí) y una
+  ausencia no desmiente nada — «sin dato ≠ contradicción», en booleano de emparejamiento.
+- **La poda por SCAN del histórico podía borrar el chunk que el delta ACABA de escribir**: la cota
+  fija [baseNueva, chunkIdx) trataba como huérfano un índice ≥ chunkIdx que el delta registró entre
+  el flip y el scan — destruyendo la versión de transición que se escribe UNA vez, en el keyspace que
+  ninguna purga toca. La cota se toma ahora del manifest RELEÍDO tras el scan (la unión de lo que el
+  flip escribió y lo que el delta haya registrado); queda una ventana mínima entre dos comandos,
+  dicha y no disimulada. Lección: **una poda nueva en un keyspace compartido se diseña contra los
+  ESCRITORES concurrentes, no solo contra la basura que persigue.**
+- **El Excel del modo compuesto quedó contradiciéndose**: el motor ya derivaba I y U compuestos pero
+  las filas del cierre conservaban la fórmula ADITIVA — al recalcular en Excel, I y U caían a otros
+  valores y el TOTAL bajaba ~$52 000: la «fila que no cuadra», INTRODUCIDA por la corrección, en el
+  artefacto que se radica. En compuesto I y U van con el valor del motor y SIN fórmula (el patrón de
+  «VR COSTO DIRECTO»). Lección: **una corrección de aritmética se persigue hasta TODOS los artefactos
+  que la imprimen.**
+- **`p2K` daba la causa equivocada**: con la regla de faltantes extendida, la K sale null también con
+  la utilidad YA cargada (liquidez/experiencia/personal ilegibles) y el mensaje fijo «falta la
+  utilidad operacional» pedía cargar lo ya cargado — la familia `msg401`. El mensaje enumera ahora lo
+  que de verdad falta, recorriendo integrantes en un plural.
+
+Menores de la misma pasada: el comentario de la cerca de jerga declaraba a `ganancia.js` como
+excepción cuando NO lo es (documentación falsa — corregido); `\s{1,3}` en los lookbehind era una
+cota innecesaria (V8 admite lookbehind variable → `\s+`); y la cerradura del huérfano tenía las dos
+debilidades que este repositorio tiene escritas — un bucle sobre lista potencialmente vacía sin
+guarda y la primera invocación sin comprobar `ok` (diagnóstico mentiroso si el candado respondiera).
+Residuo DECLARADO de la blacklist condicionada: «…AULAS PARA CURSOS DE CAPACITACIÓN» o «SUMINISTRO E
+INSTALACIÓN DE CUBIERTA PARA LA BIBLIOTECA» (gap ≤40 tras «suministro») siguen muriendo en la
+ingesta — el censo (`por_motivo.blacklist`) es quien lo vigila con cifras reales.

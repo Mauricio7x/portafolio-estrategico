@@ -6078,6 +6078,8 @@ async function main() {
         assert.ok((await leerHistorico()).length > totalHist,
           "la siembra tiene que ser visible por SCAN — si no, la prueba no prueba nada");
         let rHu = await invocar(historico, `/api/sync/historico?${rango}&reiniciar=1&presupuesto=20000&chain=0`, TOKEN);
+        assert.strictEqual(rHu.cuerpo.ok, true,
+          `la primera invocación tiene que arrancar de verdad (candado o error harían mentir el diagnóstico del huérfano): ${JSON.stringify(rHu.cuerpo).slice(0, 200)}`);
         let invHu = 1;
         while (rHu.cuerpo.done === false) {
           rHu = await invocar(historico, `/api/sync/historico?${rango}&presupuesto=20000&chain=0`, TOKEN);
@@ -6088,6 +6090,8 @@ async function main() {
           "el chunk huérfano de una corrida muerta tiene que morir en el flip del mes");
         const manHu2 = JSON.parse(await redis.get(CLAVES.histManifest(mesHu)));
         const clavesMes = (await redis.scan(CLAVES.patronChunksHist)).filter((k) => CLAVES.mesDeClaveHist(k) === mesHu);
+        assert.ok(clavesMes.length > 0,
+          "el censo del mes no puede salir vacío: un bucle sobre lista vacía es una prueba que no existe");
         for (const k of clavesMes) {
           const i = parseInt(String(k).slice(String(k).lastIndexOf(":") + 1), 10);
           assert.ok(i >= manHu2.base && i < manHu2.sig,
@@ -16465,6 +16469,32 @@ async function main() {
       const rPosMal = F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000, tope_aiu_pct: 30,
         secop: { items: [{ precio_unitario: 99 }] } });
       assert.strictEqual(nivelDe(rPosMal, "secop"), "rechazo");
+      /* ══ …Y LA REVISIÓN ADVERSARIA DEL PROPIO ARREGLO cazó dos rechazos
+         FABRICADOS (27-ago-2026): (A) una descripción DUPLICADA en el anexo
+         (dos capítulos con el mismo ítem) pisaba el mapa y el contenido
+         IDÉNTICO salía «difiere»; (B) un anexo SIN descripciones contra un
+         SECOP con ellas trataba la AUSENCIA como contradicción. Las duplicadas
+         caen al posicional y una ausencia no desmiente nada. Contra el árbol
+         intermedio, las dos primeras aserciones FALLAN. */
+      {
+        const formDup = { items: [
+          { numeral: "1.1", descripcion_original: "CONCRETO 3000 PSI", unidad: "M3", cantidad: 10 },
+          { numeral: "2.1", descripcion_original: "CONCRETO 3000 PSI", unidad: "M3", cantidad: 5 },
+        ] };
+        const ofertaDup = { items: [
+          { numeral: "1.1", descripcion: "Concreto 3000 psi", unidad: "m3", cantidad: 10, precio_unitario: 100, total: 1000 },
+          { numeral: "2.1", descripcion: "Concreto 3000 psi", unidad: "m3", cantidad: 5, precio_unitario: 200, total: 1000 },
+        ], aiu: { administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5 }, total: 2500 };
+        const bDup = { oferta: ofertaDup, formulario: formDup, presupuesto_oficial: 3000, tope_aiu_pct: 30 };
+        const sDup = [{ descripcion: "Concreto 3000 psi", precio_unitario: 100 }, { descripcion: "Concreto 3000 psi", precio_unitario: 200 }];
+        assert.strictEqual(nivelDe(F1.validarFormulario1({ ...bDup, secop: { items: sDup } }), "secop"), "ok",
+          "descripciones duplicadas con contenido IDÉNTICO no pueden fabricar un rechazo");
+        const ofertaSinDesc = { ...ofertaDup, items: ofertaDup.items.map((i) => ({ ...i, descripcion: "" })) };
+        assert.strictEqual(nivelDe(F1.validarFormulario1({ ...bDup, oferta: ofertaSinDesc, secop: { items: sDup } }), "secop"), "ok",
+          "una descripción AUSENTE en el anexo no desmiente el par posicional");
+        assert.strictEqual(nivelDe(F1.validarFormulario1({ ...bDup, secop: { items: [sDup[1], sDup[0]] } }), "secop"), "rechazo",
+          "…y los duplicados con precios CRUZADOS sí caen (por posición, la única regla sana ahí)");
+      }
       assert.strictEqual(nivelDe(F1.validarFormulario1({ oferta: ofertaOk, formulario: form, presupuesto_oficial: 30000000 }), "secop"), "sin_referencia", "sin lo escrito en SECOP II no se afirma nada");
       // 4 · AIU: sin discriminar → rechazo; sobre el tope → rechazo; sin tope → pendiente
       assert.strictEqual(nivelDe(F1.validarFormulario1({ oferta: { ...ofertaOk, aiu: { administracion_pct: 25 } }, formulario: form, presupuesto_oficial: 30000000 }), "aiu"), "rechazo");
@@ -17006,9 +17036,10 @@ async function main() {
          menos las excepciones DECLARADAS con su motivo: `glosario.js` define
          los términos (su campo `interno` ES la jerga que traduce), `frases.js`
          enseña el oficio y nombrar el término con su significado es el punto,
-         `costos.js` cita la ley con su sigla (E.T. 114-1), `apu_libro.js` y
-         `xlsx*.js` escriben el Excel (otro medio), y `ganancia.js` habla al
-         detalle de la tarjeta. Un módulo nuevo entra a la cerca solo. */
+         `costos.js` cita la ley con su sigla (E.T. 114-1), y `apu_libro.js` y
+         `xlsx*.js` escriben el Excel (otro medio). `ganancia.js` y
+         `justificacion.js` NO son excepciones: entran al censo como cualquier
+         otro. Un módulo nuevo entra a la cerca solo. */
       const EXCEPCIONES_JERGA = new Set(["glosario.js", "frases.js", "costos.js", "apu_libro.js", "xlsx.js", "xlsx_lectura.js"]);
       const archivosJerga = fs.readdirSync(path.join(__dirname, "..", "public"))
         .filter((f) => f.endsWith(".js") && !EXCEPCIONES_JERGA.has(f));
