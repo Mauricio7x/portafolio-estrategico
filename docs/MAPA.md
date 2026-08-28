@@ -1,0 +1,209 @@
+<!-- GENERADO por `node tests/mapa.js --escribir` · NO editar a mano: se regenera y se pierde.
+     Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
+
+```
+== MAPA DE DETEKTA · generado del árbol el 2026-08-28 ==
+(no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
+ `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
+
+· SUPERFICIE HTTP — 25 op declaradas en los mapas de los routers:
+  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo
+  /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento
+  /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones
+  /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion
+  (api/apu.js e api/inteligencia.js despachan por accion/vista desde su handler:
+   `node tests/estado.js` los enumera midiendo)
+
+· api/ — 6 módulos:
+  admin.js                  Router del dominio ADMIN (Fase 0 · consolidación a 6 funciones)
+  apu.js                    Router del dominio APU (Fase 0 · consolidación a 6 funciones)
+  inteligencia.js           Router del dominio INTELIGENCIA (Fase 0 · 6 funciones)
+  perfil.js                 Router del dominio PERFIL (Fase 0 · consolidación a 6 funciones)
+  pliego.js                 Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
+  procesos.js               Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
+
+· lib/ — 60 módulos:
+  accesibilidad.js          Accesibilidad operativa de la zona de la obra
+  adendas.js                Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
+  almacen.js                Esquema de claves Redis + compresión de chunks
+  apu_catalogo.js           Tipologías de obra e ítems del catálogo APU
+  apu_descargar.js          Traer el PDF de un pliego para que pdf.js pueda leerlo
+  apu_extraer.js            Del texto de un pliego a la lista de ítems y cantidades
+  apu_mapeo.js              De la descripción del pliego al ítem del catálogo APU
+  apu_ocr.js                OCR de páginas escaneadas vía OCR.space (respaldo, no vía principal)
+  apu_pliego.js             Extraer ítem + unidad + cantidad de la tabla de un pliego
+  auth.js                   Un solo guardián para los endpoints protegidos
+  baja_maxima.js            hasta dónde puede bajar el dueño en CADA proceso (A4)
+  capacidad.js              K de contratación (capacidad residual) — FÓRMULA ÚNICA
+  censo_ingesta.js          Por qué NO entró un proceso al corpus
+  cobertura_rup.js          ¿Qué códigos UNSPSC le FALTAN al RUP?
+  columnas_historicas.js    ¿Qué columnas trae DE VERDAD el corpus histórico?
+  competencia_detalle.js    Los procesos que SOSTIENEN el badge de competencia
+  config_rup.js             Validación del RUP que sube el dueño (archivo JSON)
+  consorcio.js              Consorcio a la medida (Fase 10 · Detekta v4)
+  costos.js                 el motor de costo real vive en public/costos.js (UMD) y aquí
+  cronograma.js             Cronograma del proceso con avisos T-7 / T-3 / T-1 (Fase 5)
+  cuerpo.js                 Leer el cuerpo JSON de una petición, una sola vez
+  deducciones.js            Qué le van a descontar de cada pago, leído del PLIEGO
+  diff.js                   Vigía de adendas · texto del pliego (Fase 5 del plan v3)
+  ejecucion.js              Cómo EJECUTA sus contratos de obra una entidad (jbjy-vk9h)
+  equivalencias.js          Qué clases UNSPSC son AFINES en el mercado real
+  experiencia.js            La experiencia REALMENTE ejecutada como vocabulario
+  filtros.js                Filtros canónicos: estado, modalidad, objeto y PERTINENCIA
+  filtros_lista.js          Aplicación en el SERVIDOR de los siete filtros del
+  formulario1.js            Guardián del Formulario 1 (Fase 4 del plan v3)
+  ganancia.js               ¿CUÁNTA PLATA DEJA ESTE CONTRATO?
+  glosario.js               la marca y el glosario viven en public/glosario.js (UMD) y
+  habiles.js                Días hábiles y festivos de Colombia (Fase 9 · Detekta v4)
+  indice_baja.js            ¿Cuánto descuentan los ganadores frente al presupuesto?
+  indice_competencia.js     ¿En qué entidades se presenta menos gente?
+  manifestacion.js          La MANIFESTACIÓN DE INTERÉS de la selección abreviada de
+  negocio.js                Reglas de negocio: enriquecer(licitacion)
+  paa.js                    Plan Anual de Adquisiciones (dataset Socrata `9sue-ezhx`)
+  paa_acierto.js            ¿Cuánto de lo que el PAA anuncia acaba saliendo?
+  paginas.js                la PÁGINA viaja con el texto del pliego (ago 2026)
+  parametros.js             Parámetros normativos del costo real, VERSIONADOS (Fase 1)
+  perfil_dinamico.js        Perfiles creados por onboarding (RUP subido en PDF)
+  perfil_manual.js          Perfil APROXIMADO desde tres datos (Fase 2)
+  perfiles.js               FUENTE ÚNICA DE VERDAD de los tres perfiles del negocio
+  portada.js                El pulso del mercado y la manifestación de interés (Fase 9 · Detekta v4)
+  probabilidad.js           P(ganar) estimada con lo que YA hay en Redis
+  probabilidad_desglose.js  POR QUÉ ese 23 %, paso por paso
+  proponentes.js            Quiénes se PRESENTAN a los procesos de una entidad
+  proyeccion.js             De fila cruda de Socrata a registro guardable
+  publico.js                lib/publico · Qué puede ver un cliente SIN credencial
+  puertas.js                Las cuatro puertas de viabilidad de un proceso
+  rastreo.js                «¿Por qué no está este proceso?»
+  redis.js                  Cliente mínimo de Upstash Redis vía API REST — sin SDK ni deps
+  rup.js                    Validación RUP por perfil → rup_valido(licitacion, perfil)
+  rup_pdf.js                Extraer un perfil de RUP del TEXTO de un certificado en PDF
+  seguimiento.js            MIS PROCESOS: guardar, seguir y estudiar a la competencia (ago 2026)
+  semantica.js              Clasificación semántica del objeto contractual
+  socio.js                  Verifique a su socio antes de firmar (due diligence de 20 minutos)
+  socrata.js                Acceso al dataset p6dx-8zbt de SECOP II (API Socrata / SoQL)
+  texto_unspsc.js           El OBJETO como co-señal cuando el código no alcanza
+  unspsc.js                 Whitelists de los RUP + MATCHING JERÁRQUICO por niveles
+
+· lib/apu/ — 19 módulos:
+  calculo.js                Del costo directo al precio de oferta
+  catalogo.js               Catálogo de precios APU en Redis
+  epc_items.js              LOS APU DE EPC COMO ÍTEMS COSTEABLES (ago 2026)
+  ffie_items.js             EL PRECIO TOPE DE EDIFICACIÓN DEL FFIE (ago 2026)
+  fuentes.js                De dónde sale cada precio, con su URL y su vigencia
+  iccu_items.js             LA LISTA DE PRECIOS DEL ICCU (Cundinamarca, ago 2026)
+  idu_items.js              LOS PRECIOS DE REFERENCIA DEL IDU COMO ÍTEMS COSTEABLES (ago 2026)
+  importar.js               Filas de un Excel importado → ítems del catálogo de PRECIOS
+  inferencia.js             Del objeto del proceso a los ítems de obra
+  invias.js                 Referencia oficial INVIAS por insumo, por provincia
+  invias_items.js           LOS APU DE REFERENCIA DEL INVIAS COMO ÍTEMS COSTEABLES (ago 2026)
+  normativa.js              Qué hay DETRÁS de los factores que multiplican el APU
+  optimizador.js            ¿A QUÉ PRECIO HAY QUE OFERTAR?
+  piso_techo.js             (sin cabecera)
+  precios.js                La cascada de fuentes de precio
+  rentabilidad.js           Precio competitivo, flujo de caja, VEG y payback
+  retail.js                 Techo de tienda y de lista de fabricante, por insumo
+  tipologias.js             Las 22 tipologías de obra y el mapa departamento→región
+  validaciones.js           Las cinco puertas de control del presupuesto
+
+· lib/handlers/admin/ — 4 módulos:
+  cargar_catalogo.js        Puebla Redis con el catálogo de precios APU
+  cobertura.js              Qué códigos UNSPSC le faltan al RUP
+  experiencia.js            Los contratos que el dueño YA ejecutó
+  rup.js                    Cargar, consultar y eliminar el RUP del dueño (archivo JSON)
+
+· lib/handlers/apu/ — 1 módulos:
+  editor.js                 (sin cabecera)
+
+· lib/handlers/inteligencia/ — 1 módulos:
+  detalle.js                Consultas de SOLO LECTURA sobre el mercado
+
+· lib/handlers/perfil/ — 6 módulos:
+  consorcio.js              /api/perfil?op=consorcio | op=consorcio-simular (Fase 10)
+  diagnostico.js            ¿En qué paso de la cascada se pierden los procesos?
+  entrada.js                /api/perfil?op=diagnostico (POST) · PUERTA DE ENTRADA DE 60 SEGUNDOS (Fase 2)
+  pulso.js                  GET /api/perfil?op=pulso&perfil=… (ago 2026)
+  resumen.js                El dashboard: ¿qué SON los procesos que hoy se ven?
+  seguimiento.js            /api/perfil?op=seguimiento (ago 2026)
+
+· lib/handlers/pliego/ — 4 módulos:
+  cronograma.js             /api/pliego?op=cronograma (Fase 5)
+  deducciones.js            /api/pliego?op=deducciones · Qué le van a descontar, leído del pliego
+  diff.js                   /api/pliego?op=diff (Fase 5 · vigía del TEXTO del pliego)
+  formulario1.js            POST /api/pliego?op=formulario1 (Fase 4)
+
+· lib/handlers/procesos/ — 7 módulos:
+  baja.js                   El índice de baja de mercado, completo o por entidad
+  entidades.js              GET /api/procesos?op=entidades&q=alcald
+  historico.js              Backfill del corpus histórico + índice de competencia
+  listar.js                 Consulta de oportunidades viables desde la caché Redis
+  manifestacion.js          GET /api/procesos?op=manifestacion&estado=abierto|proximo
+  portada.js                GET /api/procesos?op=portada
+  sync.js                   Sincronización SECOP II → Upstash Redis (full + delta, reanudable)
+
+· FRONTEND public/ — 14 módulos:
+  app.js                    Frontend unificado (una página, tres pestañas)
+  apu_libro.js              El presupuesto calculado → libro Excel con formato Nogal
+  costos.js                 Motor de costo de mano de obra y costos indirectos (Fase 1)
+  filtros.js                Vocabulario y estado de los SIETE filtros (Fase 8 · Detekta v4)
+  frases.js                 LAS FRASES DE LA PORTADA (ago 2026)
+  ganancia.js               LA CUENTA DE «CUÁNTA PLATA DEJA ESTE CONTRATO»
+  glosario.js               Marca y glosario (Fase 7 · Detekta v4)
+  justificacion.js          Justificación del valor de la oferta — documento exportable (Fase 3, ago 2026).
+  onboarding.js             Onboarding — subir el RUP en PDF y salir con un perfil andando
+  pliego.js                 APU — lectura del formulario de cantidades de un pliego
+  portada.js                La portada: el pulso del mercado (Fase 9 · Detekta v4)
+  pulso.js                  EL PULSO PERSONALIZADO del tablero (ago 2026)
+  xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
+  xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
+
+· MEMORIA · docs/MEMORIA.md — 106 secciones. Las 10 más nuevas:
+  L  5594  Convenciones
+  L  5601  UN BORRADOR NO ADMITE OFERTAS, Y LA TARJETA DECÍA QUE SÍ (24-ago-2026)
+  L  5631  La dispersión de la baja se MIDE, no se supone (24-ago-2026)
+  L  5681  DOS DE LAS CUATRO GRANULARIDADES DE LA BAJA ESTÁN VACÍAS EN PRODUCCIÓN (24-ago-2026)
+  L  5721  Auditoría del módulo APU: las dos mitades no están conectadas (24-ago-2026)
+  L  5793  El prompt inicial vive en el repositorio y no puede contener estado (26-ago-2026)
+  L  5857  Banco de precios verificable · el informe retail del 26-ago-2026 (censo en docs/BANCO_PRECIO
+  L  5897  Auditoría integral del 27-ago-2026 · verificar absolutamente todo
+  L  6005  La revisión adversaria del propio diff, y las CINCO regresiones que dejé dentro
+  L  6050  El mapa: buscar coordenadas en vez de leer documentos (28-ago-2026)
+
+· DOCUMENTOS docs/ — 37:
+  ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)
+  ANALISIS_ESTRATEGICO.md               Análisis estratégico de Detekta · agosto 2026
+  APU_DIAGNOSTICO.md                    Diagnóstico del módulo APU frente a la especificación «APU profesional»
+  APU_FUENTES.md                        Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
+  APU_INFORME_COMPLETO.md               APU automatizado y rentabilidad real de contratos de obra pública en Colombia
+  APU_Y_RENTABILIDAD.md                 APU y rentabilidad — investigación de fuentes de precios
+  ARQUITECTURA_MULTITENANT.md           Anexo C · Arquitectura multi-inquilino, escalabilidad y datos
+  ATRACTIVIDAD.md                       Atractividad de una licitación — análisis iterativo y diseño
+  AUDITORIA_INTEGRAL.md                 Auditoría integral · Detekta
+  AUDITORIA_INVESTIGACION_EXTERNA.md    Auditoría de la investigación externa (ago 2026)
+  BANCO_PRECIOS_2026-08-26.md           Banco de Precios Verificable · censo y contraste del informe del 26-ago-2026
+  CALIBRACION_APU.md                    Calibración del catálogo APU con el Presupuesto Nogal 4 (ago 2026)
+  CHECKLIST_PRODUCCION.md               Anexo F · Lista de verificación previa a producción
+  COMPLEMENTO_ANALISTA_LICITACIONES.md  Complemento crítico al Manual del Analista de Licitaciones
+  CONFIGURACION_TOKENS.md               Tokens y variables de entorno · guía desde cero
+  datos.md                              Inventario de fuentes de datos y auditorías de la Fase 0
+  DIFERENCIAS_APU.md                    Diferencias declaradas · APU generado vs archivos de referencia (ago 2026)
+  EMPEZAR_AQUI.md                       EMPEZAR AQUÍ · Guía de cero para convertir Detekta en un negocio
+  GUIA_ANALISTA_LICITACIONES.md         Manual del Analista de Licitaciones
+  INSUMOS_2026.md                       Insumos de precios 2026 · censo, contraste y qué hacer con ellos
+  INVESTIGACION_COMPETENCIA_APU.md      Investigación de competencia del módulo APU · cómo operan, de dónde sacan los datos 
+  INVESTIGACION_PLATAFORMAS_LICITACIONES.mdInvestigación · Las cinco mejores plataformas de licitación pública del mundo
+  LEGAL_COLOMBIA.md                     Anexo A · Frente jurídico y regulatorio (Colombia)
+  MAPA.md                               
+  marca.md                              Marca · Detekta (Fase 7 del plan maestro v4 · ago 2026)
+  metodologia.md                        Metodología de cálculo del costo real (Fase 1 · Detekta v3)
+  PERFILES.md                           Perfiles del negocio — resumen técnico
+  PLAN_DE_ACCION.md                     PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
+  PLAN_SAAS.md                          PLAN SaaS · De herramienta interna a producto por suscripción
+  PRECIO_Y_UNIT_ECONOMICS.md            Anexo B · Modelo de negocio, precio y economía unitaria
+  PROBABILIDAD_MEJORADA.md              Probabilidad de ganar — auditoría de la fórmula vigente y propuesta de mejora
+  PROMPT_CONSULTORIA_SAAS.md            PROMPT MAESTRO · CONSEJO CONSULTOR DE DETEKTA
+  PROMPT_INICIAL.md                     PROMPT INICIAL DE DETEKTA · protocolo vivo
+  RAMAS_RETIRADAS.md                    Ramas superadas al unificar en `main` (21-ago-2026)
+  RIESGOS.md                            Anexo G · Registro de riesgos
+  SEGURIDAD_Y_CUENTAS.md                Anexo D · Identidad, autorización, seguridad y cobro
+  VALIDACION_MODELOS.md                 Anexo E · Ciencia de datos: calibración, validación y vigilancia
+```

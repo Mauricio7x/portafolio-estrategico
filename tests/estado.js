@@ -176,14 +176,19 @@ linea("· Guardas estructurales localizadas en la suite:");
 for (const g of guardasDeSuite()) linea("  " + g);
 linea("");
 
+// La crónica vive en docs/MEMORIA.md desde el 27-ago-2026 (antes era CLAUDE.md
+// entero, que se auto-cargaba en cada sesión); en un checkout anterior a la
+// mudanza se cae a CLAUDE.md — la herramienta mide el árbol que tiene delante.
+const rutaMemoria = ["docs/MEMORIA.md", "CLAUDE.md"].find((r) => fs.existsSync(path.join(RAIZ, r)));
 try {
-  const claude = fs.readFileSync(path.join(RAIZ, "CLAUDE.md"), "utf8");
-  const titulos = claude.split("\n").filter((l) => /^###? /.test(l));
-  linea("· CLAUDE.md: " + Math.round(claude.length / 1024) + " KB · " + titulos.length +
-    " secciones. Las 12 más nuevas (lo nuevo va al FINAL del archivo):");
+  const memoria = fs.readFileSync(path.join(RAIZ, rutaMemoria), "utf8");
+  const titulos = memoria.split("\n").filter((l) => /^###? /.test(l));
+  linea("· " + rutaMemoria + ": " + Math.round(memoria.length / 1024) + " KB · " + titulos.length +
+    " secciones. Las 12 más nuevas (lo nuevo va al FINAL del archivo; leer por secciones con" +
+    " grep -n \"^###\" + sed -n 'A,Bp', jamás entero):");
   for (const t of titulos.slice(-12)) linea("  " + t.replace(/^#+ /, "— "));
 } catch {
-  linea("· CLAUDE.md: no legible desde aquí");
+  linea("· memoria (" + rutaMemoria + "): no legible desde aquí");
 }
 linea("");
 linea("· Verificación que cuenta como hecho: node tests/e2e.js (debe terminar 4/4) · node tests/apu_bench.js");

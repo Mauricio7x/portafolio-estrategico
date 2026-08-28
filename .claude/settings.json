@@ -1,0 +1,30 @@
+{
+  "$comentario": [
+    "Permisos de PROYECTO para Claude Code. Solo lectura y verificación: nada que escriba,",
+    "despliegue ni llame a la red entra aquí — esas siguen pidiendo confirmación a propósito.",
+    "Motivo (28-ago-2026): cada confirmación es un turno perdido y el dueño no siempre está",
+    "mirando la sesión; las herramientas de orientación (mapa, estado) y la suite tienen que",
+    "poder correr solas, que es justo lo que el protocolo de CLAUDE.md manda hacer primero."
+  ],
+  "permissions": {
+    "allow": [
+      "Bash(node tests/mapa.js:*)",
+      "Bash(node tests/estado.js:*)",
+      "Bash(node tests/e2e.js:*)",
+      "Bash(node tests/apu_bench.js:*)",
+      "Bash(node -c:*)",
+      "Bash(grep:*)",
+      "Bash(sed -n:*)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(find:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git diff:*)",
+      "Bash(git branch:*)"
+    ]
+  }
+}
