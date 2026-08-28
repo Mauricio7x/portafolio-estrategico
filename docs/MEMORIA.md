@@ -6095,3 +6095,109 @@ fichero abierto «por si acaso» se paga entero. Decisiones:
   una lista** (la jerga y el tuteo volvieron por los huecos exactos de las cercas) y **un arreglo
   que solo cubre el caso reproducido deja hermanos vivos** (la guarda de año cubrió una fecha de
   tres). También `null >= 1 === false`, que es la trampa muda de la ausencia en comparaciones.
+
+### Mi empresa reordenada y la experiencia con dueño (encargo del dueño, 28-ago-2026)
+
+Encargo literal: «en la pestaña de "mi empresa" lo que dice "para helder (persona natural) hoy",
+remodélalo, y déjalo en la parte superior, que sea lo primero que vea el usuario cuando ingrese; la
+parte de "Cuándo hay que entregar la oferta" "Cuánto valen" "Qué tipo de trabajo es" "Cómo lo
+adjudican" elimínalo; en "su registro de proponentes" la información que está dando es en general,
+de génesis, no aplica a helder […] con helder aún no se carga la experiencia laboral que no venga
+del RUP a menos que esa información sí corresponda a helder; y lo de crear consorcio déjalo arriba,
+que es lo que el usuario más usa, al igual que el botón de actualizar datos; lo de "Cuánto suelen
+bajar el precio", la verdad, a menos que te vayas a presentar a un proceso en específico, ese dato
+no importa».
+
+- **EL ORDEN DE MI EMPRESA ES AHORA: titular → acciones → registro → socio → tablero → Sistema.**
+  El tablero abría la pestaña desde ago-2026 («podría ser el tablero principal de mi empresa») y
+  baja al quinto puesto: sus cifras son el DETALLE del titular. «Actualizar datos» y «Crear
+  consorcio» comparten fila justo bajo el titular, que es lo que pidió el encargo y lo que el dueño
+  más usa. Nada se retira ni cambia de id: `arrancarPaneles` hace `$("c-perfil").value` sin guarda y
+  borrar un nodo mata la pestaña entera EN SILENCIO. **La cerradura fija el orden COMPLETO como una
+  lista encadenada**, no dos parejas sueltas: dos comparaciones dejan libre justo el hueco por el
+  que se cuela el defecto siguiente.
+- **EL TITULAR, REMODELADO: una cifra que manda y dos de apoyo.** Eran tres del mismo tamaño en una
+  rejilla de tres columnas, con el mismo peso visual que las seis tarjetas de debajo; en móvil las
+  tres bajaban a 26 px y ninguna mandaba. Ahora la respuesta a «¿tengo trabajo hoy?» —a cuántas
+  puede presentarse— va en `clamp(38px, 8vw, 64px)` y las otras dos en `clamp(20px, 4vw, 28px)`.
+  · **El tamaño va en una CLASE PROPIA, no en dos utilidades de Tailwind**: el CDN está bloqueado en
+    la red institucional del dueño y allí las utilidades no existen (el precedente medido en
+    Chromium). Lo que decide la maquetación no puede colgar de una hoja externa.
+  · **`hero-empresa` NO redefine el vidrio**: la tarjeta ya hereda `--bg-card` + `blur(20px)` de
+    `.bg-white.rounded-2xl`, y la clase solo añade un velo de acento con `background-image`, que se
+    pinta SOBRE el `background-color` translúcido sin sustituirlo. Fijar `--bg-card` a mano es
+    exactamente el defecto de ago-2026 (translúcido sin blur), y la cerradura que lo vigila busca el
+    síntoma en los estilos en línea.
+  · **⚠️ UNA SOLA CONSULTA POR PREFERENCIA DEL SISTEMA.** Las dos reglas nuevas
+    (`prefers-reduced-transparency` y `prefers-reduced-motion`) se escribieron en bloques `@media`
+    PROPIOS y la suite cayó en las dos: la cerradura de accesibilidad lee `indexOf("@media (…)")`,
+    o sea el PRIMER bloque, así que un segundo bloque de la misma preferencia deja de comprobar el
+    que quita el blur y el que para las animaciones. No es un fallo del CSS —el navegador aplica los
+    dos—, es una cerca que se queda mirando al sitio equivocado. Las reglas se plegaron dentro del
+    bloque que ya existía.
+  · **El titular DICE DE QUIÉN son las cifras** (nombre y naturaleza del perfil, de `empresa`, que ya
+    viajaba y se tiraba). Con tres perfiles y un selector en la cabecera, un número sin dueño se lee
+    como el de quien mira.
+- **LOS CUATRO REPARTOS SE RETIRARON, y con ellos sus constructores.** «Cuándo hay que entregar la
+  oferta», «Cuánto valen», «Qué tipo de trabajo es» y «Cómo lo adjudican» repartían el MISMO corpus
+  del titular en cubetas: son el modelo, no el hecho. Se fueron los cuatro nodos del pulso y
+  `htmlCierre`/`htmlCuantia`/`htmlTipo`/`htmlModalidad` (una función que ya no pinta nadie diverge a
+  la primera corrección), y también el gemelo del tablero —`#d-urgencia` llevaba el MISMO título—:
+  dejar vivo un hermano con el nombre que el encargo mandó borrar es no haberlo borrado. Con el nodo
+  se fue su pintado en `app.js`, porque un `innerHTML` sobre un id inexistente lanza y se lleva por
+  delante el resto del tablero.
+  · **Se dejó de PINTAR un reparto, no de MEDIRLO**: `porCierre`, `porCuantia`, `porTipo`,
+    `porModalidad` y `por_urgencia` siguen viajando en las respuestas y siguen siendo filtros vivos
+    del listado, que es donde el usuario sí los usa. La prueba de que las cubetas suman el total
+    sigue en pie.
+  · **El censo mira los TÍTULOS (h1/h2/h3) de `#tab-admin`, no cualquier aparición del texto**, y la
+    excepción está declarada: los cuatro son también nombres de CAMPO —«Cómo lo adjudican» rotula el
+    `<select>` de `#ra-modalidad`, y los cuatro rotulan filtros en Licitaciones—. La primera versión
+    del censo barría el texto visible y cayó ahí. Un nombre de campo traducido por el glosario es
+    legítimo; lo que el encargo retiró son los bloques que encabezaban.
+  · `columnas` se conserva: es una de las tres primitivas del sistema visual (con `barrasRank` y
+    `apilada`), está probada ejecutándola y la usaría cualquier gráfico de escala ordenada que
+    vuelva. Hoy no la llama nadie, y eso es un hecho, no un pendiente.
+- **⚠️ LA EXPERIENCIA EJECUTADA NO TENÍA DUEÑO, Y ESE ERA EL DEFECTO QUE EL DUEÑO REPORTÓ.**
+  `config:experiencia` es UNA sola clave global, y lo cargado en producción son los 106 contratos de
+  `experiencia_genesis_106.json` —de Génesis—. Sin dueño escrito, toda pantalla que la leyera se la
+  atribuía a quien estuviera mirando: con Helder seleccionado, «Obra que ya ejecutó» le contaba 106
+  contratos que no son suyos y encendía el interruptor de la auditoría, y `cobertura-rup?perfil=
+  helder` le recomendaba INSCRIBIR códigos deducidos de obra que Helder no ha ejecutado — en la
+  pantalla que decide qué renovar en el RUP, donde el falso POSITIVO es el caro.
+  · **El dueño se guarda (`_meta.perfil`) y su ausencia es `null`, jamás «de todos»**: «no consta de
+    quién es» no es «es de este», que es la regla de «sin dato» ≠ «cero» aplicada a una atribución.
+    Una experiencia cargada antes de esta fecha no se le atribuye a nadie hasta que se recargue
+    diciendo de quién es, y la pantalla lo dice con esas palabras.
+  · **`?origen=repositorio` fija `genesis` sin preguntar**: el archivo es literalmente el suyo. La
+    carga manual pide `?perfil=`, **en la QUERY y no en el cuerpo**, por la razón ya medida en este
+    endpoint: `validarContratos` ignora las claves extra de la raíz del JSON, así que ahí dentro un
+    perfil mal escrito se guardaría como `null` con un 200 idéntico —dueño equivocado y sin
+    síntoma—; en la query, un perfil desconocido es un 400 ruidoso.
+  · **`experienciaAplica(dueño, perfil, perfilVivo)` es la ÚNICA definición de «esta experiencia es
+    suya»**, y el consorcio acepta la de CUALQUIERA de sus integrantes: el plural se presenta con la
+    experiencia de sus miembros (por eso `expSMMLV` del plural es la suma en `lib/perfiles`). Los
+    integrantes se leen del perfil VIGENTE, no de una lista de ids escrita en el módulo: un
+    consorcio cargado a mano con otros miembros sigue siendo correcto.
+  · **«No hay experiencia cargada» sería FALSO cuando sí la hay pero es de otro**, y ese es el caso
+    corriente en producción. La auditoría publica `experiencia_ajena` y enumera las tres razones con
+    sus palabras (no hay ninguna · es de Fulano · no dice de quién es). Es la misma lección de
+    `no_consta` en el rastreo: un «no lo usé» sin el motivo no se puede interpretar.
+  · La cerradura EJECUTA los tres casos contra el endpoint (del dueño → se usa; de otro → no, y se
+    dice de quién es; del consorcio → la de un integrante sí vale), no comprueba por regex que la
+    función exista.
+- **«PERFIL ACTUAL» ENSEÑABA LOS TRES.** Bajo un rótulo en singular, `#rup-actual` listaba Helder,
+  Génesis y el consorcio en el mismo tono, sin decir cuál está seleccionado arriba: el mismo defecto
+  que el dueño reportó, con el agravante de que el rótulo promete uno solo. El activo va primero y
+  marcado; los demás se declaran como lo que son. Y como ahora `#rup-actual` y `#exp-actual` leen
+  `f-perfil` al pintar, **cambiar de perfil los repinta** (`repintarPorPerfil`): sin eso quedarían
+  diciendo lo del perfil anterior, que es la lección de la guarda de carrera del pulso —la pantalla
+  mintiendo bajo un selector que dice otra cosa—.
+- **«CUÁNTO SUELEN BAJAR EL PRECIO» SE MUEVE A «SISTEMA», NO SE BORRA.** El dueño tiene razón en el
+  fondo: la mediana de descuento del mercado entero no decide nada mientras no haya un proceso
+  delante, y donde SÍ decide —hasta dónde se puede bajar en ESE proceso— ya vive, calculado por
+  `lib/baja_maxima` con el índice por entidad y segmento. Borrar el nodo era imposible: `app.js`
+  cablea `d-baja-box`, `d-baja-reconstruir` y `d-comp-reconstruir` SIN guarda. Dentro de «Sistema»
+  es lo que de verdad es: el estado de dos índices que se reconstruyen a mano. **La cerradura censa
+  el conjunto `d-baja-*`/`d-comp-*` que haya en el HTML**, no una lista escrita a mano: un id nuevo
+  entra al censo solo.

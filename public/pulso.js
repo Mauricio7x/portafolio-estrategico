@@ -8,11 +8,22 @@
    entero salía ANTES de que la persona eligiera cómo entrar; ahora primero se
    entra y después salen los datos, personalizados al RUP.
 
+   Desde el 28-ago-2026 es LO PRIMERO de la pestaña y de la app (antes abría el
+   tablero de procesos), con el titular remodelado: una cifra que manda —a
+   cuántas puede presentarse— y dos de apoyo. Los cuatro repartos que llevaba
+   debajo («Cuándo hay que entregar la oferta», «Cuánto valen», «Qué tipo de
+   trabajo es», «Cómo lo adjudican») se retiraron por encargo del dueño: son el
+   modelo, no el hecho. Quedan «Dónde están» y «Quién las publica», que dicen a
+   qué puerta tocar.
+
    Todo sale de `/api/perfil?op=pulso&perfil=…` (lib/handlers/perfil/pulso),
    que llama a la MISMA cascada del listado: `total` es exactamente el total
    de la lista sin filtros. Reglas:
-   · Máximo tres cifras grandes; cada visual es un enlace a la lista filtrada
+   · Máximo tres cifras arriba; cada visual es un enlace a la lista filtrada
      (`data-filtro` → app.js aplica el filtro EN LA MISMA PÁGINA, sin recargar).
+   · El titular DICE DE QUIÉN son las cifras (nombre y naturaleza del perfil):
+     con tres perfiles y un selector en la cabecera, un número sin dueño se lee
+     como el de quien mira.
    · Sin datos (perfil sin corpus, error de red) la sección queda OCULTA:
      vacía y honesta antes que bonita y falsa. `null` jamás se pinta como 0.
    · Sin prosa: un rótulo por cifra y una línea de fuente. La explicación
@@ -39,24 +50,56 @@
     return `$${num(v)}`;
   }
 
-  /* ── plantillas ── */
-  const cifraGrande = (v, rotulo, attrs = "") => `<div ${attrs}><p class="text-[26px] font-semibold tracking-tight sm:text-[40px]" style="color: var(--text-primary); letter-spacing: -1px;">${esc(v)}</p><p class="text-[11px] uppercase tracking-wide sm:text-xs" style="color: var(--text-secondary);">${esc(rotulo)}</p></div>`;
+  /* ── plantillas del TITULAR (remodelado 28-ago-2026) ──
+     Encargo del dueño: «lo que dice "para Helder (persona natural) hoy",
+     remodélalo, y déjalo en la parte superior». Antes eran tres cifras del
+     mismo tamaño en una rejilla de tres columnas, con el mismo peso visual que
+     las seis tarjetas de debajo; en móvil las tres bajaban a 26 px y ninguna
+     mandaba. Ahora hay UNA cifra que manda —a cuántas puede presentarse, que es
+     la respuesta a «¿tengo trabajo hoy?»— y dos de apoyo; el tamaño lo pone
+     `clamp` en una clase propia y no dos utilidades de Tailwind, porque el CDN
+     está bloqueado en la red del dueño y allí las utilidades no existen (el
+     precedente medido en Chromium).
+     LO QUE ENLAZA SE VE QUE ENLAZA: `cifra-enlace` da cursor, realce y foco
+     visible; la cifra que no lleva a ninguna lista —el dinero— no la lleva.
+     Ninguna pulsación sin respuesta visible. */
+  const cifraTitular = (v, rotulo, attrs = "") => `<div${attrs ? " " + attrs : ""}><p class="cifra-titular">${esc(v)}</p><p class="rotulo-cifra">${esc(rotulo)}</p></div>`;
+  const cifraApoyo = (v, rotulo, attrs = "") => `<div${attrs ? " " + attrs : ""}><p class="cifra-apoyo">${esc(v)}</p><p class="rotulo-cifra">${esc(rotulo)}</p></div>`;
+
+  /* DE QUIÉN SON ESTAS CIFRAS, DICHO ARRIBA (28-ago-2026). El dueño reportó que
+     lo que enseñaba «Su registro de proponente» «es en general, de Génesis, no
+     aplica a Helder»: la app trabaja con tres perfiles y ninguna pantalla decía
+     con todas las letras a cuál corresponde lo que se está mirando. El nombre y
+     la naturaleza YA viajaban en `empresa` y no se pintaban. Van aquí, en la
+     primera línea de la primera tarjeta, porque el perfil se cambia en un
+     selector de la cabecera y equivocarse de perfil es equivocarse de todo.
+     Si el servidor no los manda (perfil sin resolver), no se inventa ninguno:
+     manda el nombre del selector y punto. */
+  function identidad(p) {
+    const e = p && p.empresa;
+    if (!e) return "";
+    const partes = [e.nombre, e.naturaleza].filter((x) => x && String(x).trim());
+    if (!partes.length) return "";
+    return `<p class="rotulo-cifra hero-identidad">${esc(partes.join(" · "))}</p>`;
+  }
 
   function htmlHero(p, nombrePerfil) {
     const quien = nombrePerfil ? `Para ${esc(nombrePerfil)}, hoy` : "Para su empresa, hoy";
     if (!p.total) {
-      return `<p class="text-[20px] leading-tight sm:text-[26px]" style="color: var(--text-primary); font-weight: 300;">${quien}: ninguna licitación abierta encaja con su perfil.</p>
-        <p class="mt-2 text-sm" style="color: var(--text-secondary);">${p.corpus_vacio ? "Todavía no hay licitaciones cargadas en el sistema." : `Hay ${num(p.visibles)} de su tipo de obra, pero ninguna cumple hoy sus requisitos (registro de proponente, capacidad de facturar y caja). Suba un RUP más completo o revise Mi empresa.`}</p>`;
+      return `<p class="hero-titulo">${quien}: ninguna licitación abierta encaja con su perfil.</p>
+        ${identidad(p)}
+        <p class="hero-pie">${p.corpus_vacio ? "Todavía no hay licitaciones cargadas en el sistema." : `Hay ${num(p.visibles)} de su tipo de obra, pero ninguna cumple hoy sus requisitos (registro de proponente, capacidad de facturar y caja). Suba un RUP más completo o revise Mi empresa.`}</p>`;
     }
     const c = p.cierranEstaSemana || { n: 0, valor: null };
     return `
-      <p class="text-[20px] leading-tight sm:text-[26px]" style="color: var(--text-primary); font-weight: 300;">${quien}</p>
-      <div class="mt-4 grid grid-cols-3 gap-3">
-        ${cifraGrande(num(p.total), p.total === 1 ? "licitación a la que puede presentarse" : "licitaciones a las que puede presentarse", `class="cursor-pointer" data-filtro="todo" role="link" tabindex="0" title="Ver la lista completa"`)}
-        ${cifraGrande(pesosCortos(p.valorTotal) || "Sin referencia", "en juego (presupuestos oficiales)")}
-        ${cifraGrande(num(c.n), c.n === 1 ? "cierra esta semana" : "cierran esta semana", `class="cursor-pointer" data-filtro="cierre=7d" role="link" tabindex="0" title="Ver las que cierran en 7 días"`)}
+      <p class="hero-titulo">${quien}</p>
+      ${identidad(p)}
+      <div class="hero-cifras">
+        ${cifraTitular(num(p.total), p.total === 1 ? "licitación a la que puede presentarse" : "licitaciones a las que puede presentarse", `class="cifra-enlace" data-filtro="todo" role="link" tabindex="0" title="Ver la lista completa"`)}
+        ${cifraApoyo(pesosCortos(p.valorTotal) || "Sin referencia", "en juego (presupuestos oficiales)")}
+        ${cifraApoyo(num(c.n), c.n === 1 ? "cierra esta semana" : "cierran esta semana", `class="cifra-enlace" data-filtro="cierre=7d" role="link" tabindex="0" title="Ver las que cierran en 7 días"`)}
       </div>
-      ${c.n && c.valor ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">Las que cierran esta semana suman ${esc(pesosCortos(c.valor))}.</p>` : ""}`;
+      ${c.n && c.valor ? `<p class="hero-pie">Las que cierran esta semana suman ${esc(pesosCortos(c.valor))}.</p>` : ""}`;
   }
 
   function htmlDepartamentos(p) {
@@ -86,13 +129,6 @@
      properties del tema (style="fill: var(--accent)"), así que respeta el
      modo oscuro y «aumentar contraste» sin una regla más. Sin datos (todas
      las cubetas en 0) no se dibuja: una gráfica de ceros no informa nada. */
-  /* public/filtros.js es UMD igual que este módulo: en el navegador vive en
-     `window.Filtros` y en Node se requiere. Se resuelve en cada llamada y no en
-     tiempo de carga porque este archivo se carga ANTES en index.html. */
-  function raizFiltros() {
-    if (typeof window !== "undefined" && window.Filtros) return window.Filtros;
-    try { return require("./filtros.js"); } catch { return null; }
-  }
   /* ═══════════════════ GRÁFICOS DE VERDAD (ago 2026) ═══════════════════
      Encargo del ingeniero: «los gráficos están como si fueran de niños de
      primaria; tenemos todos los datos habidos y por haber para mostrar
@@ -320,57 +356,23 @@
     const linea = `<line x1="${margen.lados}" y1="${margen.arriba + altoUtil + 0.5}" x2="${ancho - margen.lados}" y2="${margen.arriba + altoUtil + 0.5}" style="stroke: var(--border); stroke-width: 1;"></line>`;
     return `<svg viewBox="0 0 ${ancho} ${alto}" role="img" aria-label="Distribución" style="display:block; width:100%; height:auto; max-height: ${alto + 40}px; font-family: inherit;">${linea}${barras}</svg>`;
   }
-  const ROTULO_CIERRE = { "3d": "≤ 3 días", "7d": "esta semana", "15d": "≤ 15 días", "+15d": "+ 15 días" };
-  const ROTULO_CUANTIA = { hasta_50m: "≤ $50 M", "50_200m": "$50–200 M", "200_1000m": "$200–1.000 M", mas_1000m: "> $1.000 M" };
-  function htmlCierre(p) {
-    const cubetas = (p.porCierre || []).map((c) => ({ ...c, corto: ROTULO_CIERRE[c.id] || c.etiqueta, titulo: c.etiqueta }));
-    const svg = columnas(cubetas, { filtroDe: (c) => `cierre=${c.id}` });
-    if (!svg) return "";
-    return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Cuándo hay que entregar la oferta</h2>${svg}${p.cierreSinFecha ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(p.cierreSinFecha)} sin fecha de cierre publicada.</p>` : ""}`;
-  }
-  function htmlCuantia(p) {
-    const cubetas = (p.porCuantia || []).map((c) => ({ ...c, corto: ROTULO_CUANTIA[c.id] || c.etiqueta, titulo: c.etiqueta }));
-    const svg = columnas(cubetas, { filtroDe: (c) => `min=${c.min || 0}${c.max != null ? `&max=${c.max}` : ""}` });
-    if (!svg) return "";
-    return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Cuánto valen</h2>${svg}${p.cuantiaSinDato ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(p.cuantiaSinDato)} sin presupuesto publicado.</p>` : ""}`;
-  }
-
-  /* ═══ QUÉ TIPO DE TRABAJO Y CÓMO LO ADJUDICAN (encargo del ingeniero, ago
-     2026) ═══ Los repartos llegan de `FiltrosLista.facetas`, la MISMA función
-     que cuenta las facetas del listado, así que el pulso y la lista no pueden
-     discrepar sobre el mismo corpus. Las etiquetas salen de public/filtros.js
-     —una segunda tabla de nombres se desincronizaría del selector— y cada barra
-     es literalmente su filtro. Las cubetas en cero se conservan: que una
-     modalidad no aparezca y que no tenga procesos son cosas distintas, y la
-     primera se lee como la segunda. `sin_dato` NO se grafica: no es un filtro
-     al que se pueda ir, y se declara aparte. */
-  function repartoAcubetas(reparto, catalogo, campo) {
-    if (!reparto) return { cubetas: [], sinDato: 0 };
-    const cubetas = catalogo
-      .filter((t) => Object.prototype.hasOwnProperty.call(reparto, t.id))
-      .map((t) => ({ id: t.id, etiqueta: t.etiqueta, corto: t.corto || t.etiqueta, titulo: t.ayuda || t.etiqueta, n: reparto[t.id] || 0, valor: null }));
-    return { cubetas, sinDato: reparto.sin_dato || 0, campo };
-  }
-  const CORTO_TIPO = { obra: "Obra", consultoria: "Consultoría", interventoria: "Interventoría", suministro: "Suministro", servicios: "Servicios" };
-  const CORTO_MODALIDAD = { licitacion: "Licitación", abreviada: "Menor cuantía", subasta: "Subasta", meritos: "Méritos", minima: "Mínima", directa: "Directa", especial: "Especial", otra: "Otra" };
-  function htmlTipo(p) {
-    const F = raizFiltros();
-    if (!F || !p.porTipo) return "";
-    const cat = (F.TIPOS_TRABAJO || []).map((t) => ({ ...t, corto: CORTO_TIPO[t.id] || t.etiqueta }));
-    const { cubetas, sinDato } = repartoAcubetas(p.porTipo, cat, "tipo");
-    const svg = columnas(cubetas, { filtroDe: (c) => `tipo=${c.id}` });
-    if (!svg) return "";
-    return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Qué tipo de trabajo es</h2>${svg}${sinDato ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(sinDato)} sin clasificar.</p>` : ""}`;
-  }
-  function htmlModalidad(p) {
-    const F = raizFiltros();
-    if (!F || !p.porModalidad) return "";
-    const cat = (F.MODALIDADES || []).map((t) => ({ ...t, corto: CORTO_MODALIDAD[t.id] || t.etiqueta }));
-    const { cubetas, sinDato } = repartoAcubetas(p.porModalidad, cat, "modalidad");
-    const svg = columnas(cubetas, { filtroDe: (c) => `modalidad=${c.id}` });
-    if (!svg) return "";
-    return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Cómo lo adjudican</h2>${svg}${sinDato ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(sinDato)} sin modalidad publicada.</p>` : ""}`;
-  }
+  /* ═══ LOS CUATRO REPARTOS SE RETIRARON (encargo del dueño, 28-ago-2026) ═══
+     «La parte de "Cuándo hay que entregar la oferta", "Cuánto valen", "Qué tipo
+     de trabajo es", "Cómo lo adjudican": elimínalo.» Aquí vivían `htmlCierre`,
+     `htmlCuantia`, `htmlTipo` y `htmlModalidad`: cuatro gráficos que repartían
+     el MISMO corpus del titular en cubetas. Repartir es describir el modelo; lo
+     que decide ya está arriba —cuántas hay, cuánto valen en total y cuántas
+     cierran esta semana— y cada una de esas tres cifras ES el enlace a su
+     lista. Con los nodos (`#pu-cierre`, `#pu-cuantia`, `#pu-tipo`,
+     `#pu-modalidad`) se fueron sus constructores: dejar funciones que ya no
+     pinta nadie es la clase de duplicado que diverge a la primera corrección.
+     LO QUE NO SE TOCÓ: `porCierre`, `porCuantia`, `porTipo` y `porModalidad`
+     SIGUEN viajando en /api/perfil?op=pulso y siguen siendo filtros vivos del
+     listado (public/filtros.js). Se dejó de PINTAR un reparto, no de medirlo, y
+     la prueba que comprueba que las cubetas suman el total sigue en pie.
+     `columnas` se conserva: es una de las tres primitivas del sistema visual
+     (junto a `barrasRank` y `apilada`), está probada ejecutándola y la usaría
+     cualquier gráfico de escala ordenada que vuelva; hoy no la llama nadie. */
   /* EL AVISO MÁS ACCIONABLE DEL SISTEMA, y no estaba en la pestaña: en la
      selección abreviada de menor cuantía no se puede ofertar sin avisar antes,
      y el plazo lo fija la entidad —a veces son horas—. Se pinta SOLO si hay
@@ -400,6 +402,18 @@
      solo cuando el servidor las mandó (token válido o perfil propio). «—» con
      motivo cuando falta el dato: jamás un 0 (R1). */
   const cifra = (v, rotulo, titulo = "") => `<div class="min-w-0"${titulo ? ` title="${esc(titulo)}"` : ""}><p class="text-[22px] font-semibold tracking-tight sm:text-[26px]" style="color: var(--text-primary); letter-spacing: -0.5px;">${esc(v)}</p><p class="text-[11px] uppercase tracking-wide" style="color: var(--text-secondary);">${esc(rotulo)}</p></div>`;
+  /* ⚠️ DE QUIÉN ES ESTE REGISTRO, DICHO CON SU NOMBRE (28-ago-2026).
+     El dueño: «en "su registro de proponentes" la información que está dando es
+     en general, de Génesis, no aplica a Helder». Estas seis cifras SÍ salían del
+     perfil pedido —`empresaEnCifras` las lee de `PERFILES[perfil]`, hay prueba—,
+     pero la tarjeta no decía de cuál: bajo un encabezado que dice «Su registro
+     de proponente» y con un selector de perfil en la cabecera, seis números sin
+     dueño se leen como los de quien mira. El nombre y la naturaleza YA viajaban
+     en `empresa` y se estaban tirando. Van arriba de las cifras, con la fecha de
+     corte cuando consta. Sin nombre no se inventa ninguno: la línea no se pinta.
+     Y se dice de dónde salen: TODAS son del registro de proponente. Lo que no
+     viene del RUP —los contratos ya ejecutados— vive en «Obra que ya ejecutó»,
+     lleva el nombre de su dueño desde esta misma fecha y no se mezcla aquí. */
   function htmlEmpresa(e) {
     if (!e) return "";
     const partes = [];
@@ -411,7 +425,13 @@
       partes.push(e.capacidad_contratacion != null ? cifra(pesosCortos(e.capacidad_contratacion) || "—", "capacidad de contratación", "Estimada con su registro de proponente") : cifra("—", "capacidad de contratación", "Falta la utilidad o el ingreso operacional"));
     }
     if (e.tope_smmlv != null) partes.push(cifra(num(e.tope_smmlv), "salarios mínimos de tope", "Hasta dónde le interesa presentarse (apetito, no límite del registro)"));
-    return `<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">${partes.join("")}</div>`;
+    const quien = [e.nombre, e.naturaleza].filter((x) => x && String(x).trim()).join(" · ");
+    const corte = e.corte ? ` · corte ${esc(String(e.corte))}` : "";
+    const cabecera = quien
+      ? `<p class="text-sm font-medium" style="color: var(--text-primary);">${esc(quien)}</p>
+         <p class="rotulo-cifra mt-0.5">Todas estas cifras salen de su registro de proponente${corte}.</p>`
+      : "";
+    return `${cabecera}<div class="${cabecera ? "mt-3 " : ""}grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">${partes.join("")}</div>`;
   }
 
   async function arrancar(perfil, opciones = {}) {
@@ -445,13 +465,8 @@
     d.getElementById("pu-hero").innerHTML = htmlHero(p, opciones.nombre || "");
     d.getElementById("pu-departamentos").innerHTML = htmlDepartamentos(p);
     d.getElementById("pu-entidades").innerHTML = htmlEntidades(p);
-    const cierre = d.getElementById("pu-cierre"), cuantia = d.getElementById("pu-cuantia");
-    if (cierre) { cierre.innerHTML = htmlCierre(p); cierre.classList.toggle("hidden", !cierre.innerHTML); }
-    if (cuantia) { cuantia.innerHTML = htmlCuantia(p); cuantia.classList.toggle("hidden", !cuantia.innerHTML); }
-    for (const [id, fn] of [["pu-tipo", htmlTipo], ["pu-modalidad", htmlModalidad], ["pu-manifestacion", htmlManifestacion]]) {
-      const nodo = d.getElementById(id);
-      if (nodo) { nodo.innerHTML = fn(p); nodo.classList.toggle("hidden", !nodo.innerHTML); }
-    }
+    const manif = d.getElementById("pu-manifestacion");
+    if (manif) { manif.innerHTML = htmlManifestacion(p); manif.classList.toggle("hidden", !manif.innerHTML); }
     d.getElementById("pu-nota").textContent = htmlNota(p);
     // sin departamentos ni entidades (perfil sin licitaciones) las cajas se esconden
     d.getElementById("pu-departamentos").classList.toggle("hidden", !(p.porDepartamento || []).length);
@@ -462,5 +477,5 @@
   }
   const olvidar = () => { perfilPintado = null; };
 
-  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlCierre, htmlCuantia, htmlTipo, htmlModalidad, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, ticksRedondos, htmlNota };
+  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, ticksRedondos, htmlNota };
 });

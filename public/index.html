@@ -290,6 +290,59 @@
       -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
     }
     #app .bg-white, #onboarding .bg-white { background-color: var(--bg-card); }
+
+    /* ── EL TITULAR DE MI EMPRESA (28-ago-2026) ─────────────────────────────
+       Es la primera superficie de la app y tenía el mismo peso visual que las
+       seis tarjetas de debajo. `hero-empresa` NO redefine el vidrio: la tarjeta
+       ya lo hereda de `.bg-white.rounded-2xl` (fondo translúcido + blur + borde +
+       las tres preferencias del sistema), y aquí solo se añade el velo de
+       acento POR ENCIMA. Fijar `--bg-card` a mano dejaría la tarjeta SIN blur,
+       que es exactamente el defecto de ago-2026; por eso va como clase y no
+       como estilo en línea. El velo es `background-image`, que se pinta sobre
+       el `background-color` translúcido sin sustituirlo. */
+    #app .hero-empresa.rounded-2xl {
+      background-image:
+        radial-gradient(130% 150% at 0% 0%, var(--accent-light) 0%, transparent 62%),
+        radial-gradient(90% 120% at 100% 0%, var(--accent-light) 0%, transparent 55%);
+      border-radius: var(--radius-lg, 1rem);
+      padding: clamp(20px, 3vw, 32px);
+    }
+    /* ⚠️ EL TITULAR SE MAQUETA SOLO, SIN TAILWIND. MEDIDO en Chromium con el CDN
+       caído —que es la red institucional del dueño—: sin `flex`, sin `gap-*` y
+       sin `mt-*`, las tres cifras se apilaban y entre «392» y su rótulo quedaba
+       el margen POR DEFECTO de un <p> a 64 px, o sea un hueco de un dedo. Con
+       las utilidades sí se veía bien, y por eso no lo caza ninguna prueba de
+       Node. Es la doctrina de `.tabla-scroll`: lo que decide la maquetación de
+       la PRIMERA pantalla no puede colgar de una hoja externa. Cada regla vive
+       aquí una sola vez; el HTML del titular ya no lleva utilidades de tamaño ni
+       de separación. */
+    .hero-titulo { margin: 0; font-size: clamp(20px, 3.4vw, 26px); line-height: 1.2;
+      font-weight: 300; color: var(--text-primary); }
+    .hero-identidad { margin: 6px 0 0; }
+    .hero-cifras { display: flex; flex-wrap: wrap; align-items: flex-end;
+      gap: 20px 40px; margin-top: 20px; }
+    .hero-pie { margin: 16px 0 0; font-size: 12px; color: var(--text-secondary); }
+    /* La cifra que manda del titular. `tabular-nums` para que no baile al
+       refrescar, y `clamp` en vez de dos utilidades de Tailwind: el CDN está
+       bloqueado en la red del dueño y allí las utilidades no existen. */
+    .cifra-titular { margin: 0; font-size: clamp(38px, 8vw, 64px); line-height: 1; letter-spacing: -0.03em;
+      font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+    .cifra-apoyo { margin: 0; font-size: clamp(20px, 4vw, 28px); line-height: 1.1; letter-spacing: -0.02em;
+      font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+    .rotulo-cifra { margin: 3px 0 0; font-size: 12px; line-height: 1.35; color: var(--text-secondary); }
+    /* Enlazable: toda cifra del titular que lleva a una lista se comporta como
+       tal (cursor, foco visible y realce al pasar por encima), y la que no, no.
+       ⚠️ EL REALCE NO PUEDE CAMBIAR LA CAJA. La primera versión usaba
+       `padding: 10px 12px; margin: -10px -12px` para que el fondo desbordara el
+       texto, y MEDIDO en Chromium a 390 px la página entera se iba a 394: con el
+       CDN de Tailwind bloqueado —la red del dueño— no existen `flex` ni los
+       `p-*`, los bloques ocupan el ancho completo y el margen negativo los saca
+       24 px fuera del contenedor. Es exactamente el desborde móvil de ago-2026,
+       por la misma puerta. El realce se hace con COLOR, que no ocupa sitio. */
+    .cifra-enlace { cursor: pointer; border-radius: 12px; transition: color 140ms ease; }
+    .cifra-enlace:hover .cifra-titular, .cifra-enlace:hover .cifra-apoyo,
+    .cifra-enlace:hover .rotulo-cifra { color: var(--accent); }
+    .cifra-enlace:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-light); }
     #app .shadow-sm { box-shadow: var(--shadow-md); }
     #app .shadow-xl, #modal-competencia .shadow-xl, #modal-importar .shadow-xl { box-shadow: var(--shadow-md); }
     #app .bg-gray-50, #onboarding .bg-gray-50, #modal-competencia .bg-gray-50, #modal-importar .bg-gray-50 { background-color: var(--bg-inset); }
@@ -382,6 +435,11 @@
         :root { --bg-card: #1c1c1e; --barra-bg: #000000; --campo-bg: #1c1c1e; }
       }
       .modal-velo { background: rgba(0,0,0,0.6); }
+      /* Con la tarjeta ya sólida, el velo de acento del titular solo baja el
+         contraste del texto que lleva encima: se retira. Va DENTRO de este
+         bloque y no en uno propio — dos consultas de la misma preferencia hacen
+         que la cerradura que la vigila lea la primera y deje de mirar la otra. */
+      #app .hero-empresa.rounded-2xl { background-image: none; }
     }
     @media (prefers-reduced-motion: reduce) {
       :root { --transition: 0s; }
@@ -394,6 +452,11 @@
       /* la barra indeterminada tampoco corre: dice «trabajando» con opacidad */
       .barra-indeterminada { animation: none; width: 100%; opacity: 0.45; }
       .tarjeta:hover, .btn-peligro:hover, .btn-vidrio-acento:hover, .btn-vidrio-acento:active, .puerta-entrada:hover { transform: none; }
+      /* Las cifras del titular que llevan a una lista: mismo bloque, no uno
+         propio — dos consultas de la misma preferencia hacen que la cerradura
+         que la vigila lea la primera y deje de mirar la otra. */
+      .cifra-enlace { transition: none; }
+      .cifra-enlace .cifra-titular, .cifra-enlace .cifra-apoyo, .cifra-enlace .rotulo-cifra { transition: none; }
     }
     @media (prefers-contrast: more) {
       :root { --bg-card: #ffffff; --barra-bg: #ffffff; --campo-bg: #ffffff;
@@ -622,8 +685,7 @@
     <!-- ════════════════════ PESTAÑA 1 · Mi empresa (principal) ════════════════════ -->
     <main id="tab-admin" class="panel-pestana mx-auto max-w-6xl px-5 py-8">
 
-      <!-- ══════ Perfiles y RUP ══════ -->
-            <!-- ══════════════ MI EMPRESA · lo único que un contratista toca ══════════════
+      <!-- ══════════════ MI EMPRESA · lo único que un contratista toca ══════════════
            Antes esta pestaña se llamaba «Administración» y ponía al mismo nivel seis
            cosas sin relación entre sí: el RUP, un tablero de procesos, la experiencia,
            una auditoría, la carga del catálogo de precios y la sincronización con
@@ -631,228 +693,87 @@
            mantiene el sistema — y mezclarlas obliga a entender el programa para poder
            usarlo. Arriba queda lo que describe a SU empresa; lo técnico vive plegado
            en «Sistema». Ningún id cambia: renombrarlos mataría app.js en silencio. -->
-      <!-- ══════ MI EMPRESA ES LA PESTAÑA PRINCIPAL (encargo del dueño, ago 2026) ══════
-           Lo primero que se ve al entrar son LAS CIFRAS DE ESTA EMPRESA: cuántas
-           licitaciones puede presentarse hoy, cuánto dinero, cuántas cierran esta
-           semana, dónde y quién (el pulso, que antes abría la pestaña Licitaciones
-           y ahora vive aquí; cada cifra lleva a la lista filtrada, en la pestaña
-           Licitaciones). Debajo, en cifras, su registro de proponente; y lo que
-           hay que TOCAR (subir un RUP, cargar experiencia) va plegado: la pestaña
-           motiva a licitar, no exige entender el programa. -->
+      <!-- ══════ EL ORDEN DE LA PESTAÑA (encargo del dueño, 28-ago-2026) ══════
+           «Déjalo en la parte superior, que sea lo primero que vea el usuario
+           cuando ingrese… y lo de crear consorcio déjalo arriba, que es lo que el
+           usuario más usa, al igual que el botón de actualizar datos.»
+
+             1. el TITULAR de la empresa (#pulso): de quién son las cifras y
+                cuántas licitaciones hay hoy para ese perfil;
+             2. lo que MÁS SE USA: «Actualizar datos» y «Crear consorcio», uno al
+                lado del otro y a un clic de la entrada;
+             3. su registro de proponente EN CIFRAS;
+             4. verificar al socio;
+             5. el tablero de procesos (el detalle, para quien lo quiera);
+             6. «Sistema», plegado, con el mantenimiento.
+
+           El tablero abría la pestaña desde ago-2026 y baja al quinto lugar: sus
+           cifras son el DETALLE del titular, y el encargo pide que lo primero sea
+           el titular. No se retira ni cambia un id: `arrancarPaneles` lo arranca
+           igual y borrarlo mataría la pestaña entera en silencio. -->
       <h1 class="sr-only">Mi empresa</h1>
-      <!-- ══════ EL PULSO PERSONALIZADO (ago 2026) ══════
-           Lo primero que se ve al entrar (vive en Mi empresa, la pestaña principal): las cifras DE ESTE PERFIL —cuántas
-           licitaciones puede presentarse hoy, cuánto dinero, cuántas cierran
-           esta semana, dónde están y quién las publica—, cada una enlazando a
-           la lista filtrada. Nace OCULTO y lo llena public/pulso.js con
-           /api/perfil?op=pulso&perfil=…; sin datos, ni una cifra inventada.
-           Debajo, plegado, el MERCADO ENTERO (la portada de la Fase 9, que
-           antes salía en la landing ANTES de elegir cómo entrar). -->
-      <!-- ══════ EL TABLERO ES LA PRIMERA PANTALLA (encargo del ingeniero, ago 2026) ══════
-           «El tablero de procesos que tienes oculto podría ser el tablero principal
-           de mi empresa… no quiero párrafos enormes, quiero datos representados en
-           gráficos y datos reales siempre.» Estaba plegado dentro de «Sistema»,
-           donde nadie lo veía, con 156 palabras de prosa. Sube arriba y se pinta
-           en cifras y gráficos. Ningún id cambia: renombrarlos mataría app.js. -->
-<section id="dashboard" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 class="font-semibold tracking-tight">Tablero de procesos</h2>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500">
-              Qué hay hoy sobre la mesa: los mismos procesos que sirve la app, agregados para decidir dónde
-              concentrar el esfuerzo. Los totales coinciden con los de la pestaña de licitaciones.
-            </p>
-          </div>
-          <div class="flex flex-wrap items-center gap-3">
-            <label class="block">
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
-              <select id="d-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
-                <option value="helder">Helder</option>
-                <option value="genesis">Génesis</option>
-                <option value="consorcio">Consorcio</option>
-              </select>
-            </label>
-            <button id="btn-actualizar" type="button"
-                    class="mt-5 inline-flex items-center gap-2 rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
-              <span id="d-spin" class="hidden h-3 w-3 rounded-full border-2 border-gray-300 border-t-gray-700 spin"></span>
-              Actualizar ahora
-            </button>
-          </div>
-        </div>
+      <!-- ══════ EL TITULAR DE MI EMPRESA · LO PRIMERO QUE SE VE AL ENTRAR
+           (encargo del dueño, 28-ago-2026) ══════
+           «Lo que dice "para Helder (persona natural) hoy", remodélalo, y déjalo
+           en la parte superior, que sea lo primero que vea el usuario cuando
+           ingrese.» Antes abría el TABLERO y este titular quedaba debajo. Ahora
+           es la primera superficie de la pestaña —y de la app, porque Mi empresa
+           es la pestaña principal—: DE QUIÉN son las cifras, cuántas licitaciones
+           puede presentarse hoy, cuánto hay en juego y cuántas cierran esta
+           semana, cada una enlazando a su lista.
 
-        <p id="d-aviso" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+           LOS CUATRO REPARTOS SE RETIRARON —«Cuándo hay que entregar la oferta»,
+           «Cuánto valen», «Qué tipo de trabajo es», «Cómo lo adjudican»—: son el
+           MODELO (cómo se reparte el corpus en cubetas), no el hecho que decide,
+           que ya está arriba en las tres cifras y en el enlace a la lista. Los
+           datos que los alimentaban (`porCierre`, `porCuantia`, `porTipo`,
+           `porModalidad`) SIGUEN viajando en la respuesta del pulso: se dejaron
+           de pintar, no de medir, y el listado los sigue usando como filtros.
+           «Dónde están» y «Quién las publica» se quedan: dicen a qué puerta
+           tocar, no cómo se reparte una cuenta.
 
-        <div id="d-skeleton" class="mt-6 hidden animate-pulse space-y-4">
-          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
-            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
-          </div>
-          <div class="h-32 rounded-2xl bg-gray-100"></div>
-          <div class="h-56 rounded-2xl bg-gray-100"></div>
-        </div>
-
-        <div id="d-contenido" class="mt-6 hidden">
-          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div class="rounded-2xl bg-blue-50 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-blue-900/60">Total visibles</p>
-              <p id="d-visibles" class="mt-1 text-3xl font-semibold tabular-nums text-blue-950">—</p>
-              <p class="text-xs text-blue-900/60">procesos</p>
-            </div>
-            <div class="rounded-2xl bg-green-50 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-green-900/60">Obra civil</p>
-              <p id="d-obra" class="mt-1 text-3xl font-semibold tabular-nums text-green-950">—</p>
-              <p id="d-obra-pct" class="text-xs text-green-900/60">— del total</p>
-            </div>
-            <div class="rounded-2xl bg-amber-50 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-amber-900/60">Consultoría</p>
-              <p id="d-consultoria" class="mt-1 text-3xl font-semibold tabular-nums text-amber-950">—</p>
-              <p id="d-consultoria-pct" class="text-xs text-amber-900/60">— del total</p>
-            </div>
-            <div class="rounded-2xl bg-red-50 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-red-900/60">Cierran esta semana</p>
-              <p id="d-semana" class="mt-1 text-3xl font-semibold tabular-nums text-red-950">—</p>
-              <p class="text-xs text-red-900/60">próximos 7 días</p>
-            </div>
-          </div>
-
-          <!-- índices: baja de mercado + competencia (reconstrucción colapsada) -->
-          <div id="d-baja-box" class="mt-6 hidden rounded-2xl border border-gray-200 p-5">
-            <div class="flex flex-wrap items-baseline justify-between gap-2">
-              <h3 class="text-sm font-semibold tracking-tight" data-glosario="baja_mercado"></h3>
-              <p id="d-baja-actualizado" class="text-xs text-gray-500"></p>
-            </div>
-            <p id="d-baja-msg" class="mt-2 hidden rounded-lg px-3 py-2 text-xs"></p>
-            <p id="d-baja-meta" class="mt-1 text-xs text-gray-500"></p>
-            <div id="d-baja-cifras" class="mt-3 grid gap-6 sm:grid-cols-3">
-              <div>
-                <p class="text-xs text-gray-500">Descuento típico del mercado</p>
-                <p id="d-baja-global" class="mt-1 text-3xl font-semibold tabular-nums">—</p>
-                <p id="d-baja-rango" class="text-xs text-gray-500"></p>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500">Entidades que más descuentan</p>
-                <ul id="d-baja-mas" class="mt-1 space-y-1 text-sm"></ul>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500">Entidades que menos descuentan</p>
-                <ul id="d-baja-menos" class="mt-1 space-y-1 text-sm"></ul>
-              </div>
-            </div>
-            <details class="mt-4">
-              <summary class="cursor-pointer text-xs text-gray-500 hover:text-gray-700">Reconstrucción de índices (avanzado)</summary>
-              <div class="mt-3 flex flex-wrap items-center gap-3">
-                <button id="d-baja-reconstruir" type="button"
-                  class="rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-50">
-                  Recalcular cuánto suelen bajar el precio
-                </button>
-                <button id="d-comp-reconstruir" type="button"
-                  class="rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-50">
-                  Recalcular qué tan peleadas están
-                </button>
-                <span id="d-comp-msg" class="text-xs text-gray-500"></span>
-              </div>
-              <p class="mt-2 text-[11px] text-gray-400">Recorren el histórico ya descargado: no vuelven a pedir nada a SECOP II.</p>
-            </details>
-          </div>
-
-          <!-- ══════ LO QUE DECIDE, EN GRÁFICOS (encargo del ingeniero, ago 2026) ══════
-               Los tres salen de datos que el tablero YA recibía y no pintaba.
-               «Cuándo hay que entregar» es la pregunta más accionable de la app y
-               no estaba en ninguna pantalla; «dónde compite menos gente» es la
-               tesis del producto (la Palanca 4) y tampoco. Cada barra lleva a su
-               lista filtrada. Los rótulos NO llevan jerga: ni «distribución», ni
-               «tipo de objeto», ni «pertinencia». -->
-          <div class="mt-6 grid gap-6 lg:grid-cols-2">
-            <div class="min-w-0 overflow-hidden">
-              <h3 class="text-sm font-semibold tracking-tight">Cuándo hay que entregar la oferta</h3>
-              <div id="d-urgencia" class="mt-1"></div>
-            </div>
-            <div class="min-w-0 overflow-hidden">
-              <h3 class="text-sm font-semibold tracking-tight">Contra cuánta gente compite</h3>
-              <div id="d-competencia-mix" class="mt-1"></div>
-              <p class="mt-1 text-[11px]" style="color: var(--text-secondary);">Medido sobre lo que se presentó a esa entidad en los dos últimos años.</p>
-            </div>
-          </div>
-
-          <div class="mt-6">
-            <h3 class="text-sm font-semibold tracking-tight">De qué se compone su lista</h3>
-            <div id="d-barras" class="mt-1"></div>
-          </div>
-
-          <div class="mt-6 grid gap-6 lg:grid-cols-2">
-            <div class="min-w-0 overflow-hidden">
-              <h3 class="text-sm font-semibold tracking-tight">Quién publica más</h3>
-              <p class="mt-0.5 text-xs text-gray-400">Pulse una fila para ver los procesos que sostienen su nivel de competencia.</p>
-              <div class="tabla-scroll mt-2 min-w-0 overflow-x-auto">
-                <table class="w-full text-sm">
-                  <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
-                    <tr><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2 text-right" title="Procesos visibles hoy para este perfil">Procesos<br><span class="font-normal normal-case text-gray-300">visibles hoy</span></th><th class="py-1 pr-2">Competencia</th><th class="py-1 text-right" title="Promedio de oferentes en el histórico de 2 años">Prom. oferentes<br><span class="font-normal normal-case text-gray-300">histórico 2 años</span></th></tr>
-                  </thead>
-                  <tbody id="d-entidades" class="divide-y divide-gray-100"></tbody>
-                </table>
-              </div>
-            </div>
-            <!-- La tabla de tres columnas se sustituye por barras rankeadas: el
-                 trabajo del dato es COMPARAR magnitudes entre nombres largos, y eso
-                 la barra lo resuelve de un vistazo. `d-departamentos` conserva su id
-                 —renombrarlo mataría app.js— pero deja de ser un <tbody>: una <ul>
-                 dentro de un <tbody> es HTML inválido y el navegador la expulsa
-                 fuera de la tabla, que es un fallo mudo. -->
-            <div id="d-departamentos-box" class="min-w-0 overflow-hidden">
-              <h3 class="text-sm font-semibold tracking-tight">Dónde están</h3>
-              <div id="d-departamentos" class="mt-1"></div>
-            </div>
-          </div>
-
-          <div class="mt-6">
-            <h3 id="d-destacados-titulo" class="text-sm font-semibold tracking-tight">Top 10 procesos más atractivos</h3>
-            <div class="tabla-scroll mt-2 min-w-0 overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
-                  <tr><th class="py-1 pr-2">Objeto</th><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2 text-right">Cuantía</th><th class="py-1 pr-2">Cierre</th><th class="py-1 pr-2">Competencia</th><th class="py-1 pr-2">Tipo de obra</th><th class="py-1">Mi precio</th></tr>
-                </thead>
-                <tbody id="d-destacados" class="divide-y divide-gray-100"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <p id="d-meta" class="mt-6 text-xs text-gray-400"></p>
-        </div>
-      </section>
-
+           Nace OCULTO y lo llena public/pulso.js con /api/perfil?op=pulso; sin
+           datos, ni una cifra inventada. -->
       <section id="pulso" class="hidden mb-6">
         <!-- ⚠️ TRANSLÚCIDO SIN BLUR ERA LO PEOR DE LOS DOS MUNDOS (24-ago-2026).
-             Estos siete recuadros fijaban `var(--bg-card)` —que es
+             Estos recuadros fijaban `var(--bg-card)` —que es
              `rgba(255,255,255,0.72)`— en un `style` en línea, y como no llevan
              la clase `bg-white` NINGUNA regla les daba `backdrop-filter`: se
              veía a través de ellos sin nada que difuminara el fondo, justo lo
-             que el vidrio existe para evitar. Las otras 31 tarjetas de la app sí
+             que el vidrio existe para evitar. Las otras tarjetas de la app sí
              reciben `--bg-card` + `blur(20px)` por la capa de traducción.
              Se pasan a las MISMAS clases que el resto: con ellas heredan el
              blur, el borde y las tres preferencias del sistema (reducir
              transparencia, reducir movimiento, más contraste) sin una regla
              nueva. Un estilo en línea propio es una segunda definición de
-             «tarjeta de vidrio» que se despeina por su cuenta. -->
-        <div id="pu-hero" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 sm:p-8"></div>
-        <!-- LO URGENTE VA ANTES QUE LOS REPARTOS: en la selección abreviada de
+             «tarjeta de vidrio» que se despeina por su cuenta.
+             `hero-empresa` NO es una excepción: solo añade el velo de acento
+             POR ENCIMA del vidrio que ya hereda de `bg-white rounded-2xl`. -->
+        <div id="pu-hero" class="hero-empresa rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5"></div>
+        <!-- LO URGENTE VA ANTES QUE TODO LO DEMÁS: en la selección abreviada de
              menor cuantía no se puede ofertar sin avisar antes, y el plazo lo
              fija la entidad —a veces son horas—. Nace oculto y solo aparece si
              hay alguno: un recuadro que dice «0» se deja de mirar. -->
         <div id="pu-manifestacion" class="mt-4 hidden"></div>
-        <!-- CUATRO REPARTOS, y cada barra es EXACTAMENTE un filtro del listado.
-             `min-w-0 overflow-hidden` es obligatorio: un SVG dentro de un ítem
-             de grid sin él ensancha la página 26 px en móvil, y eso no lo ve
-             ninguna prueba de Node. -->
+        <!-- DÓNDE ESTÁN y QUIÉN LAS PUBLICA: cada barra es EXACTAMENTE un filtro
+             del listado. `min-w-0 overflow-hidden` es obligatorio: un SVG dentro
+             de un ítem de grid sin él ensancha la página 26 px en móvil, y eso
+             no lo ve ninguna prueba de Node. -->
         <div class="mt-4 grid gap-4 md:grid-cols-2">
-          <div id="pu-cierre" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
-          <div id="pu-cuantia" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
-          <div id="pu-tipo" class="min-w-0 overflow-hidden hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
-          <div id="pu-modalidad" class="min-w-0 overflow-hidden hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
           <div id="pu-departamentos" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
           <div id="pu-entidades" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
         </div>
         <p id="pu-nota" class="mt-2 text-[11px]" style="color: var(--text-secondary);"></p>
       </section>
+
+      <!-- ══════ LO QUE MÁS SE USA, ARRIBA (encargo del dueño, 28-ago-2026) ══════
+           «Lo de crear consorcio déjalo arriba, que es lo que el usuario más usa,
+           al igual que el botón de actualizar datos.» Las dos acciones van juntas
+           en una fila, justo bajo el titular. «Crear consorcio» sigue naciendo
+           OCULTO (app.js lo enseña solo con DOS o más perfiles individuales
+           cargados) y en esa fila la columna simplemente no se pinta: nace
+           oculto por la MISMA razón de siempre, no por el sitio nuevo. -->
+      <div class="mt-4 grid gap-4 lg:grid-cols-2 lg:items-start">
 <!-- ══════ ACTUALIZAR DATOS · el botón único (encargo del ingeniero, 24-ago-2026) ══════
          «Puede ser un botón de actualizar datos en tiempo real, con una
          animación de carga que al ser lenta le dé la sensación de que va
@@ -880,7 +801,7 @@
          movimiento, más contraste). Un `style="background: var(--bg-card)"`
          a mano se queda SIN blur y sin esas variantes: sería una segunda
          definición de «tarjeta de vidrio» que se despeina por su cuenta. -->
-      <section id="actualizar" class="mt-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+      <section id="actualizar" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div class="flex flex-wrap items-center justify-between gap-4">
         <div class="min-w-0">
           <h2 class="font-semibold tracking-tight">Actualizar datos</h2>
@@ -906,6 +827,36 @@
         <p id="act-cifras" class="mt-2 text-xs tabular-nums" style="color: var(--text-secondary);"></p>
         </div>
       </section>
+
+      <!-- ══════ Fase 10 · Consorcio a la medida ══════
+           Nace OCULTO: app.js lo enseña solo cuando hay DOS o más perfiles
+           individuales cargados (Helder, Génesis, RUP subidos). Compara
+           CAPACIDAD, nunca precios (art. 410A del Código Penal). -->
+      <section id="seccion-consorcio" class="hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 class="font-semibold tracking-tight">Crear consorcio</h2>
+        <p class="mt-1 text-sm text-gray-500">Para presentarse en compañía a lo que solo no alcanza. Los indicadores se ponderan por la parte de cada uno, como los lee el evaluador.</p>
+        <!-- EL NOMBRE DEL CONSORCIO, que lo pone el usuario (encargo del
+             ingeniero, 24-ago-2026). El servidor YA lo aceptaba desde la Fase 10
+             —`POST ?op=consorcio {nombre, integrantes}`— y el frontend nunca lo
+             mandaba, así que todos acababan llamándose «Consorcio N». Vacío
+             sigue cayendo a «Consorcio N»: el defecto no cambia. -->
+        <label class="mt-4 block">
+          <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">¿Cómo se va a llamar?</span>
+          <input id="cons-nombre" type="text" maxlength="140" autocomplete="off"
+                 placeholder="Consorcio Vías del Tolima (opcional)"
+                 aria-label="Nombre del consorcio"
+                 class="control-campo w-full rounded-xl px-4 py-2.5 text-sm">
+        </label>
+        <p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">¿Quiénes van juntos?</p>
+        <div id="cons-integrantes" class="mt-2 space-y-2"></div>
+        <p class="mt-4 text-xs font-medium uppercase tracking-wide text-gray-500">¿Qué parte pone cada uno?</p>
+        <div id="cons-participaciones" class="mt-2 space-y-3"></div>
+        <p id="cons-suma" class="mt-2 text-sm"></p>
+        <div id="cons-resultado" class="mt-4 hidden rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5"></div>
+        <p id="cons-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <div id="cons-guardados" class="mt-4 text-sm"></div>
+      </section>
+      </div>
 
       <!-- ══════ «EL MERCADO COMPLETO HOY» SE RETIRÓ (encargo del ingeniero, ago 2026) ══════
            Era un <details> con la portada del mercado ENTERO embebida dentro de Mi
@@ -990,42 +941,12 @@
         </details>
       </section>
 
-      <!-- ══════ Fase 10 · Consorcio a la medida ══════
-           Nace OCULTO: app.js lo enseña solo cuando hay DOS o más perfiles
-           individuales cargados (Helder, Génesis, RUP subidos). Compara
-           CAPACIDAD, nunca precios (art. 410A del Código Penal). -->
-      <div class="mt-8 grid gap-6 lg:grid-cols-2 lg:items-start">
-      <section id="seccion-consorcio" class="hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight">Crear consorcio</h2>
-        <p class="mt-1 text-sm text-gray-500">Para presentarse en compañía a lo que solo no alcanza. Los indicadores se ponderan por la parte de cada uno, como los lee el evaluador.</p>
-        <!-- EL NOMBRE DEL CONSORCIO, que lo pone el usuario (encargo del
-             ingeniero, 24-ago-2026). El servidor YA lo aceptaba desde la Fase 10
-             —`POST ?op=consorcio {nombre, integrantes}`— y el frontend nunca lo
-             mandaba, así que todos acababan llamándose «Consorcio N». Vacío
-             sigue cayendo a «Consorcio N»: el defecto no cambia. -->
-        <label class="mt-4 block">
-          <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">¿Cómo se va a llamar?</span>
-          <input id="cons-nombre" type="text" maxlength="140" autocomplete="off"
-                 placeholder="Consorcio Vías del Tolima (opcional)"
-                 aria-label="Nombre del consorcio"
-                 class="control-campo w-full rounded-xl px-4 py-2.5 text-sm">
-        </label>
-        <p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">¿Quiénes van juntos?</p>
-        <div id="cons-integrantes" class="mt-2 space-y-2"></div>
-        <p class="mt-4 text-xs font-medium uppercase tracking-wide text-gray-500">¿Qué parte pone cada uno?</p>
-        <div id="cons-participaciones" class="mt-2 space-y-3"></div>
-        <p id="cons-suma" class="mt-2 text-sm"></p>
-        <div id="cons-resultado" class="mt-4 hidden rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5"></div>
-        <p id="cons-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
-        <div id="cons-guardados" class="mt-4 text-sm"></div>
-      </section>
-
       <!-- ══════ Verifique a su socio (due diligence de 20 minutos) ══════
            Truco #15 del manual: cinco fuentes públicas antes de firmar un
            consorcio. Dos las consulta la app sola (datos abiertos: SIRI y
            SECOP); las otras tres se abren desde acá con el enlace. Nace
            VISIBLE (el socio suele ser una empresa externa, no un perfil). -->
-      <section id="seccion-socio" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+      <section id="seccion-socio" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">Verifique a su socio antes de firmar</h2>
         <p class="mt-1 text-sm text-gray-500">Un integrante inhabilitado contamina al consorcio completo. La app revisa sola sanciones (Procuraduría) e historial en SECOP; las otras tres fuentes, con enlace.</p>
         <div class="mt-4 grid gap-2 sm:max-w-xl sm:grid-cols-[1fr_auto]">
@@ -1043,7 +964,141 @@
         <p id="socio-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
         <div id="socio-resultado" class="mt-4 hidden"></div>
       </section>
-      </div>
+
+      <!-- ══════ EL TABLERO DE PROCESOS · el DETALLE, bajo el titular ══════
+           Abría la pestaña desde ago-2026 («podría ser el tablero principal de mi
+           empresa»). Baja al quinto lugar por el encargo del 28-ago-2026: lo
+           primero tiene que ser el titular de la empresa y, tras él, lo que el
+           usuario más usa. Aquí siguen las cifras finas —de qué se compone la
+           lista, contra cuánta gente compite, quién publica más, dónde están y
+           los diez procesos más atractivos—. Ningún id cambia. -->
+<section id="dashboard" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Tablero de procesos</h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">
+              Qué hay hoy sobre la mesa: los mismos procesos que sirve la app, agregados para decidir dónde
+              concentrar el esfuerzo. Los totales coinciden con los de la pestaña de licitaciones.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="block">
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
+              <select id="d-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
+                <option value="helder">Helder</option>
+                <option value="genesis">Génesis</option>
+                <option value="consorcio">Consorcio</option>
+              </select>
+            </label>
+            <button id="btn-actualizar" type="button"
+                    class="mt-5 inline-flex items-center gap-2 rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              <span id="d-spin" class="hidden h-3 w-3 rounded-full border-2 border-gray-300 border-t-gray-700 spin"></span>
+              Actualizar ahora
+            </button>
+          </div>
+        </div>
+
+        <p id="d-aviso" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+
+        <div id="d-skeleton" class="mt-6 hidden animate-pulse space-y-4">
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
+            <div class="h-24 rounded-2xl bg-gray-100"></div><div class="h-24 rounded-2xl bg-gray-100"></div>
+          </div>
+          <div class="h-32 rounded-2xl bg-gray-100"></div>
+          <div class="h-56 rounded-2xl bg-gray-100"></div>
+        </div>
+
+        <div id="d-contenido" class="mt-6 hidden">
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="rounded-2xl bg-blue-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-blue-900/60">Total visibles</p>
+              <p id="d-visibles" class="mt-1 text-3xl font-semibold tabular-nums text-blue-950">—</p>
+              <p class="text-xs text-blue-900/60">procesos</p>
+            </div>
+            <div class="rounded-2xl bg-green-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-green-900/60">Obra civil</p>
+              <p id="d-obra" class="mt-1 text-3xl font-semibold tabular-nums text-green-950">—</p>
+              <p id="d-obra-pct" class="text-xs text-green-900/60">— del total</p>
+            </div>
+            <div class="rounded-2xl bg-amber-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-amber-900/60">Consultoría</p>
+              <p id="d-consultoria" class="mt-1 text-3xl font-semibold tabular-nums text-amber-950">—</p>
+              <p id="d-consultoria-pct" class="text-xs text-amber-900/60">— del total</p>
+            </div>
+            <div class="rounded-2xl bg-red-50 p-4">
+              <p class="text-xs font-medium uppercase tracking-wide text-red-900/60">Cierran esta semana</p>
+              <p id="d-semana" class="mt-1 text-3xl font-semibold tabular-nums text-red-950">—</p>
+              <p class="text-xs text-red-900/60">próximos 7 días</p>
+            </div>
+          </div>
+
+          <!-- ══════ «CUÁNDO HAY QUE ENTREGAR LA OFERTA» SE RETIRÓ DE MI EMPRESA
+               (encargo del dueño, 28-ago-2026) ══════
+               El reparto por ventana de cierre respondía «cuántas cierran en 3, 7
+               o 15 días» y el titular de arriba ya dice el HECHO que se usa —«N
+               cierran esta semana», que además ES el enlace a esa lista—. Cuatro
+               columnas para repetirlo eran el modelo, no el hecho. Se retiró
+               junto con las tres del pulso que llevaban ese mismo nombre; con el
+               nodo se fue su pintado en app.js, para no dejar un innerHTML
+               sobre un id que ya no existe. por_urgencia SIGUE viajando en la
+               respuesta del tablero: se dejó de pintar, no de medir.
+               «Contra cuánta gente compite» se queda: es la tesis del producto y
+               no la nombró el encargo. -->
+          <div class="mt-6 grid gap-6 lg:grid-cols-2">
+            <div class="min-w-0 overflow-hidden">
+              <h3 class="text-sm font-semibold tracking-tight">Contra cuánta gente compite</h3>
+              <div id="d-competencia-mix" class="mt-1"></div>
+              <p class="mt-1 text-[11px]" style="color: var(--text-secondary);">Medido sobre lo que se presentó a esa entidad en los dos últimos años.</p>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <h3 class="text-sm font-semibold tracking-tight">De qué se compone su lista</h3>
+            <div id="d-barras" class="mt-1"></div>
+          </div>
+
+          <div class="mt-6 grid gap-6 lg:grid-cols-2">
+            <div class="min-w-0 overflow-hidden">
+              <h3 class="text-sm font-semibold tracking-tight">Quién publica más</h3>
+              <p class="mt-0.5 text-xs text-gray-400">Pulse una fila para ver los procesos que sostienen su nivel de competencia.</p>
+              <div class="tabla-scroll mt-2 min-w-0 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                    <tr><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2 text-right" title="Procesos visibles hoy para este perfil">Procesos<br><span class="font-normal normal-case text-gray-300">visibles hoy</span></th><th class="py-1 pr-2">Competencia</th><th class="py-1 text-right" title="Promedio de oferentes en el histórico de 2 años">Prom. oferentes<br><span class="font-normal normal-case text-gray-300">histórico 2 años</span></th></tr>
+                  </thead>
+                  <tbody id="d-entidades" class="divide-y divide-gray-100"></tbody>
+                </table>
+              </div>
+            </div>
+            <!-- La tabla de tres columnas se sustituye por barras rankeadas: el
+                 trabajo del dato es COMPARAR magnitudes entre nombres largos, y eso
+                 la barra lo resuelve de un vistazo. `d-departamentos` conserva su id
+                 —renombrarlo mataría app.js— pero deja de ser un <tbody>: una <ul>
+                 dentro de un <tbody> es HTML inválido y el navegador la expulsa
+                 fuera de la tabla, que es un fallo mudo. -->
+            <div id="d-departamentos-box" class="min-w-0 overflow-hidden">
+              <h3 class="text-sm font-semibold tracking-tight">Dónde están</h3>
+              <div id="d-departamentos" class="mt-1"></div>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <h3 id="d-destacados-titulo" class="text-sm font-semibold tracking-tight">Top 10 procesos más atractivos</h3>
+            <div class="tabla-scroll mt-2 min-w-0 overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+                  <tr><th class="py-1 pr-2">Objeto</th><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2 text-right">Cuantía</th><th class="py-1 pr-2">Cierre</th><th class="py-1 pr-2">Competencia</th><th class="py-1 pr-2">Tipo de obra</th><th class="py-1">Mi precio</th></tr>
+                </thead>
+                <tbody id="d-destacados" class="divide-y divide-gray-100"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <p id="d-meta" class="mt-6 text-xs text-gray-400"></p>
+        </div>
+      </section>
+
 
       <!-- ══════ Experiencia ejecutada ══════ -->
 
@@ -1061,7 +1116,60 @@
             No hace falta abrirlo para usar la aplicación.</span>
         </summary>
 
-        
+        <!-- ══════ «CUÁNTO SUELEN BAJAR EL PRECIO» SE MUEVE AQUÍ
+             (encargo del dueño, 28-ago-2026) ══════
+             «La verdad, a menos que te vayas a presentar a un proceso en
+             específico, ese dato no importa.» Es exacto: la mediana de descuento
+             del mercado entero no decide nada mientras no haya un proceso
+             delante — y donde SÍ decide (hasta dónde se puede bajar en ESE
+             proceso) ya vive, en la ficha y en el editor de precios, calculada
+             por lib/baja_maxima con el índice por entidad y segmento.
+             SE MUEVE, NO SE RETIRA: los ids `d-baja-*` y `d-comp-*` los cablea
+             app.js SIN guarda (`$("d-baja-box")`, `$("d-baja-reconstruir")`,
+             `$("d-comp-reconstruir")`), así que borrar el nodo mataría el
+             tablero, el RUP y los parámetros EN SILENCIO — la misma lección que
+             mandó mover «Obra que ya ejecutó» en vez de borrarla. Aquí dentro
+             sigue siendo lo que de verdad es: el estado de dos índices que se
+             reconstruyen a mano, o sea mantenimiento. -->
+        <!-- índices: baja de mercado + competencia (reconstrucción colapsada) -->
+        <div id="d-baja-box" class="mt-6 hidden rounded-2xl border border-gray-200 p-5">
+          <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 class="text-sm font-semibold tracking-tight" data-glosario="baja_mercado"></h3>
+            <p id="d-baja-actualizado" class="text-xs text-gray-500"></p>
+          </div>
+          <p id="d-baja-msg" class="mt-2 hidden rounded-lg px-3 py-2 text-xs"></p>
+          <p id="d-baja-meta" class="mt-1 text-xs text-gray-500"></p>
+          <div id="d-baja-cifras" class="mt-3 grid gap-6 sm:grid-cols-3">
+            <div>
+              <p class="text-xs text-gray-500">Descuento típico del mercado</p>
+              <p id="d-baja-global" class="mt-1 text-3xl font-semibold tabular-nums">—</p>
+              <p id="d-baja-rango" class="text-xs text-gray-500"></p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500">Entidades que más descuentan</p>
+              <ul id="d-baja-mas" class="mt-1 space-y-1 text-sm"></ul>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500">Entidades que menos descuentan</p>
+              <ul id="d-baja-menos" class="mt-1 space-y-1 text-sm"></ul>
+            </div>
+          </div>
+          <details class="mt-4">
+            <summary class="cursor-pointer text-xs text-gray-500 hover:text-gray-700">Reconstrucción de índices (avanzado)</summary>
+            <div class="mt-3 flex flex-wrap items-center gap-3">
+              <button id="d-baja-reconstruir" type="button"
+                class="rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-50">
+                Recalcular cuánto suelen bajar el precio
+              </button>
+              <button id="d-comp-reconstruir" type="button"
+                class="rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-50">
+                Recalcular qué tan peleadas están
+              </button>
+              <span id="d-comp-msg" class="text-xs text-gray-500"></span>
+            </div>
+            <p class="mt-2 text-[11px] text-gray-400">Recorren el histórico ya descargado: no vuelven a pedir nada a SECOP II.</p>
+          </details>
+        </div>
 
 
         <!-- ══════ Dashboard de procesos ══════ -->

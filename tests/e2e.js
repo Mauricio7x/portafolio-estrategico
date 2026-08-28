@@ -9987,11 +9987,17 @@ async function main() {
           "una carga rechazada dejó experiencia guardada");
       }
 
-      /* 1. POST válido → 200 con el vocabulario extraído */
+      /* 1. POST válido → 200 con el vocabulario extraído.
+         DESDE EL 28-ago-2026 LA CARGA DICE DE QUIÉN ES (`?perfil=`): la clave
+         `config:experiencia` es una sola y global, y sin dueño escrito toda
+         pantalla se la atribuía a quien estuviera mirando — con Helder en el
+         selector, los 106 contratos de Génesis se leían como suyos. La auditoría
+         que viene después es de `helder`, así que aquí se carga a su nombre. */
       {
-        const r = await invocarPost(experiencia, "/api/admin/experiencia",
+        const r = await invocarPost(experiencia, "/api/admin/experiencia?perfil=helder",
           { contratos: CONTRATOS_EXPERIENCIA }, CAB_TOKEN);
         assert.strictEqual(r.status, 200, `carga válida rechazada: ${JSON.stringify(r.cuerpo).slice(0, 300)}`);
+        assert.strictEqual(r.cuerpo.perfil, "helder", "la carga tiene que declarar de quién es la experiencia");
         assert.strictEqual(r.cuerpo.ok, true);
         assert.strictEqual(r.cuerpo.contratos_cargados, CONTRATOS_EXPERIENCIA.length);
         assert.ok(r.cuerpo.terminos_extraidos > 0, "no se extrajo ningún término del objeto de los contratos");
@@ -10018,6 +10024,37 @@ async function main() {
         assert.strictEqual(r.cuerpo.contratos[0].objeto, CONTRATOS_EXPERIENCIA[0].objeto);
         assert.strictEqual(r.cuerpo.contratos[0].valor_smmlv, CONTRATOS_EXPERIENCIA[0].valor_smmlv);
         assert.ok(r.cuerpo.terminos_extraidos > 0, "el GET debe informar del vocabulario vigente");
+        // …y DE QUIÉN es: la pantalla no puede decir «sus contratos» sin saberlo
+        assert.strictEqual(r.cuerpo.perfil, "helder", "el GET tiene que decir de qué perfil es la experiencia");
+        assert.ok(/Helder/.test(r.cuerpo.perfil_nombre || ""), "…y con el nombre del perfil vigente");
+      }
+
+      /* ⚠️ LA EXPERIENCIA DE UN PERFIL NO AUDITA A OTRO (28-ago-2026).
+         Defecto reportado por el dueño: «la información que está dando es en
+         general, de Génesis, no aplica a Helder». `config:experiencia` es una
+         clave GLOBAL y lo cargado en producción son los 106 contratos de
+         Génesis; la auditoría de Helder los usaba como si fueran suyos y le
+         recomendaba inscribir códigos deducidos de obra que no ha ejecutado —en
+         la pantalla que decide qué renovar en el RUP, donde el falso POSITIVO es
+         el caro—. Aquí se EJECUTA la auditoría de los tres casos, no se busca la
+         función por regex: (a) del dueño, se usa; (b) de otro, no se usa y se
+         DICE de quién es; (c) del consorcio, la de un integrante SÍ vale (el
+         plural se presenta con la experiencia de sus miembros, por eso
+         `expSMMLV` del plural es la suma en lib/perfiles). */
+      {
+        const deOtro = await invocar(coberturaApi, "/api/admin/cobertura-rup?perfil=genesis", CAB_TOKEN);
+        assert.strictEqual(deOtro.status, 200);
+        assert.strictEqual(deOtro.cuerpo.experiencia_utilizada, false,
+          "la experiencia de Helder no puede priorizar la auditoría de Génesis");
+        assert.deepStrictEqual(deOtro.cuerpo.experiencia_ajena, { perfil: "helder" },
+          "…y hay que DECIR de quién es la que no se usó: «no hay experiencia cargada» sería falso");
+        assert.ok(/Helder/.test(deOtro.cuerpo.mensaje || "") && !/No hay experiencia cargada/.test(deOtro.cuerpo.mensaje || ""),
+          `el mensaje tiene que nombrar al dueño de la experiencia: «${deOtro.cuerpo.mensaje}»`);
+        const plural = await invocar(coberturaApi, "/api/admin/cobertura-rup?perfil=consorcio", CAB_TOKEN);
+        assert.strictEqual(plural.status, 200);
+        assert.strictEqual(plural.cuerpo.experiencia_utilizada, true,
+          "el consorcio SÍ se audita con la experiencia de sus integrantes");
+        assert.strictEqual(plural.cuerpo.experiencia_ajena, null);
       }
 
       /* 4 · 6 · 7. AUDITORÍA CON EXPERIENCIA: la priorización por similitud */
@@ -16142,11 +16179,23 @@ async function main() {
       assert.ok(/<main id="tab-admin" class="panel-pestana mx-auto max-w-6xl/.test(htmlL) && /<main id="tab-licitaciones" class="panel-pestana mx-auto hidden/.test(htmlL), "Mi empresa nace visible; Licitaciones, oculta");
       for (const id of ["pulso", "pu-hero", "pu-departamentos", "pu-entidades", "pu-nota", "rup-cifras", "seccion-rup"]) assert.ok(tab.includes(`id="${id}"`), `falta #${id} en la pestaña Mi empresa`);
       assert.ok(/<section id="pulso" class="hidden/.test(tab), "el pulso nace OCULTO (vacío y honesto hasta que hay datos)");
-      /* ORDEN NUEVO (encargo del ingeniero): el TABLERO abre la pestaña —«podría
-         ser el tablero principal de mi empresa»—, después el pulso y después el
-         registro. El pliegue del mercado nacional desapareció. */
-      assert.ok(tab.indexOf('id="dashboard"') < tab.indexOf('id="pulso"'), "el tablero abre Mi empresa");
-      assert.ok(tab.indexOf('id="pulso"') < tab.indexOf('id="seccion-rup"'), "y el registro en cifras va después");
+      /* ⚠️ ORDEN NUEVO (encargo del dueño, 28-ago-2026), y esta cerradura fijaba
+         el ANTERIOR. Decía «el tablero abre Mi empresa» (ago-2026: «podría ser el
+         tablero principal de mi empresa»); ahora abre EL TITULAR DE LA EMPRESA
+         —«déjalo en la parte superior, que sea lo primero que vea el usuario
+         cuando ingrese»— y detrás va lo que más se usa: «Actualizar datos» y
+         «Crear consorcio». El tablero NO se retira (borrarlo mataría la pestaña
+         entera: `arrancarPaneles` no tiene guarda): baja a después del registro.
+         Se fija el orden COMPLETO y no solo dos parejas: dos comparaciones
+         sueltas dejan libre justo el hueco por el que se coló el defecto. */
+      const ORDEN = ["pulso", "actualizar", "seccion-consorcio", "seccion-rup", "seccion-socio", "dashboard", "seccion-sistema"];
+      const posiciones = ORDEN.map((id) => [id, tab.indexOf(`id="${id}"`)]);
+      for (const [id, i] of posiciones) assert.ok(i > 0, `falta #${id} en Mi empresa`);
+      for (let k = 1; k < posiciones.length; k++) {
+        assert.ok(posiciones[k - 1][1] < posiciones[k][1],
+          `orden de Mi empresa: #${posiciones[k - 1][0]} tiene que ir antes de #${posiciones[k][0]} (${ORDEN.join(" → ")})`);
+      }
+      assert.ok(tab.indexOf('id="pu-hero"') < tab.indexOf('id="btn-actualizar-datos"'), "el titular es lo PRIMERO que se pinta");
       const lic = htmlL.slice(iTab, htmlL.indexOf('id="tab-apu"'));
       assert.ok(!lic.includes('id="pulso"') && lic.indexOf('id="f-ordenar"') > 0, "Licitaciones ya no lleva el pulso: empieza por la barra de herramientas");
       const nav = htmlL.slice(htmlL.indexOf('aria-label="Secciones"'), htmlL.indexOf("</nav>"));
@@ -16196,6 +16245,40 @@ async function main() {
         assert.ok(/>5</.test(h) && (h.match(/>—</g) || []).length === 2 && !/patrimonio/.test(h), "sin finanzas no se pintan; sin dato, «—»");
         const h2 = P.htmlEmpresa({ tipos_de_trabajo: 5, familias: 2, experiencia_smmlv: 100, contratos_acreditados: 3, tope_smmlv: 4000, finanzas_visibles: true, patrimonio: 1107252964, capacidad_contratacion: 5e9 });
         assert.ok(/1\.107 millones/.test(h2) && /5\.000 millones/.test(h2) && /4\.000/.test(h2), `con finanzas: ${h2.slice(0, 200)}`);
+        /* ⚠️ DE QUIÉN ES ESTE REGISTRO (28-ago-2026). Defecto reportado por el
+           dueño: «en "su registro de proponentes" la información que está dando
+           es en general, de Génesis, no aplica a Helder». Las cifras SÍ salían
+           del perfil pedido —lo prueban las tres lecturas de arriba—, pero la
+           tarjeta no decía de cuál: bajo un encabezado que dice «Su registro de
+           proponente» y con un selector de perfil en la cabecera, seis números
+           sin dueño se leen como los de quien mira. `nombre` y `naturaleza` ya
+           viajaban en `empresa` y se estaban tirando. */
+        const conNombre = P.htmlEmpresa({ nombre: "Helder Gustavo Rodríguez Santana", naturaleza: "Persona natural", corte: "31/12/2025", tipos_de_trabajo: 194, familias: 40, experiencia_smmlv: 6768.87, contratos_acreditados: 33, tope_smmlv: 4000, finanzas_visibles: false });
+        assert.ok(/Helder Gustavo Rodríguez Santana/.test(conNombre) && /Persona natural/.test(conNombre),
+          "las cifras del registro tienen que decir DE QUIÉN son");
+        assert.ok(/salen de su registro de proponente/.test(conNombre) && /31\/12\/2025/.test(conNombre),
+          "…de dónde salen y con qué corte: lo que NO viene del RUP no se mezcla aquí");
+        assert.ok(!/Helder/.test(P.htmlEmpresa({ tipos_de_trabajo: 5, finanzas_visibles: false })),
+          "sin nombre en la respuesta no se inventa ninguno");
+        /* Y el titular lo dice ARRIBA del todo, que es donde se mira primero. */
+        const heroQuien = PulsoPub.htmlHero({ total: 4, valorTotal: 1e9, cierranEstaSemana: { n: 1, valor: null }, empresa: { nombre: "Helder Gustavo Rodríguez Santana", naturaleza: "Persona natural" } }, "Helder (persona natural)");
+        assert.ok(/Para Helder \(persona natural\), hoy/.test(heroQuien) && /Helder Gustavo Rodríguez Santana · Persona natural/.test(heroQuien),
+          "el titular nombra al perfil cuyas cifras enseña");
+        assert.ok(!/·/.test(PulsoPub.htmlHero({ total: 4, valorTotal: 1e9, cierranEstaSemana: { n: 0, valor: null } }, "X").split("hoy")[1].slice(0, 40)),
+          "sin bloque «empresa» no se fabrica una identidad");
+        /* EL TITULAR REMODELADO: una cifra que MANDA y dos de apoyo (eran tres
+           iguales). El tamaño va en clases propias y no en utilidades de
+           Tailwind: el CDN está bloqueado en la red del dueño y allí no existen
+           —el mismo precedente que obligó a `.tabla-scroll`—. */
+        assert.ok(/class="cifra-titular"/.test(heroQuien) && (heroQuien.match(/class="cifra-apoyo"/g) || []).length === 2,
+          "el titular es UNA cifra que manda y dos de apoyo");
+        assert.ok(/class="cifra-enlace" data-filtro="todo"/.test(heroQuien) && /class="cifra-enlace" data-filtro="cierre=7d"/.test(heroQuien),
+          "lo que enlaza se ve que enlaza (cursor, realce y foco); lo que no, no");
+        for (const clase of ["cifra-titular", "cifra-apoyo", "cifra-enlace", "hero-empresa"]) {
+          assert.ok(new RegExp(`\\.${clase}\\b|#app \\.${clase}\\b`).test(htmlL), `falta la regla propia de .${clase} en index.html`);
+        }
+        assert.ok(/<div id="pu-hero" class="hero-empresa rounded-2xl bg-white/.test(htmlL),
+          "el titular hereda el vidrio de bg-white.rounded-2xl y solo AÑADE el velo de acento");
       }
       const onbL = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8"));
       assert.ok(/\$\("res-cifras"\)/.test(onbL) && /cierranEstaSemana/.test(onbL), "la pantalla de resultado pinta las cifras (cuántas · cuánto · cierran esta semana)");
@@ -16238,16 +16321,39 @@ async function main() {
         assert.ok(/function abrirPanelFiltros\(abrir\)/.test(appL) && /ev\.key === "Escape"/.test(appL) && /aria-expanded/.test(appL), "app.js abre/cierra la hoja (botón, Listo, velo, Esc) y marca aria-expanded");
         assert.ok(/nBadge\.textContent = String\(fichas\.length\)/.test(appL), "el botón Filtros lleva el número de filtros activos");
         assert.ok(!/Sin filtros: se muestran todas/.test(appL), "la frase «Sin filtros: se muestran todas…» se fue: sin filtros no hay nada que decir");
-        for (const id of ["pu-cierre", "pu-cuantia"]) assert.ok(tab.includes(`id="${id}"`), `falta el gráfico #${id}`);
-        const pCh = { porCierre: [{ id: "3d", etiqueta: "Cierra en 3 días o menos", n: 9, valor: 3e10 }, { id: "7d", etiqueta: "Cierra esta semana", n: 14, valor: 6.4e10 }, { id: "15d", etiqueta: "x", n: 61, valor: 2e11 }, { id: "+15d", etiqueta: "y", n: 290, valor: 1.5e12 }], cierreSinFecha: 18,
-          porCuantia: [{ id: "hasta_50m", etiqueta: "Hasta $50 millones", min: 0, max: 5e7, n: 120, valor: 3e9 }, { id: "50_200m", etiqueta: "b", min: 5e7, max: 2e8, n: 130, valor: 1e10 }, { id: "200_1000m", etiqueta: "c", min: 2e8, max: 1e9, n: 98, valor: 4e10 }, { id: "mas_1000m", etiqueta: "d", min: 1e9, max: null, n: 44, valor: 1.8e12 }], cuantiaSinDato: 0 };
-        const gC = PulsoPub.htmlCierre(pCh), gQ = PulsoPub.htmlCuantia(pCh);
-        assert.ok(/<svg /.test(gC) && /data-filtro="cierre=3d"/.test(gC) && /data-filtro="cierre=7d"/.test(gC) && /data-filtro="cierre=\+15d"/.test(gC), "cada barra del gráfico de cierre ES un filtro del listado");
-        assert.ok(/data-filtro="min=0&amp;max=50000000"/.test(gQ) && /data-filtro="min=1000000000"/.test(gQ), "cada barra del gráfico de cuantía ES un filtro (min/max)");
-        assert.ok(/18 sin fecha de cierre publicada/.test(gC), "lo que no cae en ninguna barra se dice, no se reparte");
-        assert.strictEqual(PulsoPub.htmlCierre({ porCierre: pCh.porCierre.map((c) => ({ ...c, n: 0 })) }), "", "una gráfica de ceros no se dibuja");
-        assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(gC + gQ), "sin emojis en los gráficos");
-        // el endpoint publica las distribuciones y suman con lo que no cae en cubeta
+        /* ⚠️ LOS CUATRO REPARTOS SE RETIRARON DE MI EMPRESA (encargo del dueño,
+           28-ago-2026): «la parte de "Cuándo hay que entregar la oferta",
+           "Cuánto valen", "Qué tipo de trabajo es", "Cómo lo adjudican":
+           elimínalo». Esta cerradura EXIGÍA que estuvieran; ahora exige que no
+           vuelvan, y CENSA por el título, no por la lista de ids: el mismo
+           reparto reaparecería con otro id y esta prueba pasaría en verde. El
+           censo se aplica al texto visible de #tab-admin —los mismos rótulos
+           siguen siendo legítimos en Licitaciones, donde son las etiquetas de
+           los FILTROS, y ahí no se tocan—. Se barre también el fuente de
+           pulso.js: un constructor que vuelva sin nodo no lo ve el HTML.
+           SE CENSAN LOS TÍTULOS (h1/h2/h3), no cualquier aparición del texto, y
+           la excepción está DECLARADA: los cuatro son también nombres de CAMPO
+           —«Cómo lo adjudican» rotula el `<select>` de `#ra-modalidad` en «¿Por
+           qué no está este proceso?», y los cuatro rotulan filtros en
+           Licitaciones—. Un nombre de campo traducido por el glosario es
+           legítimo; lo que el encargo retiró son los BLOQUES que encabezaban. */
+        const RETIRADOS = ["Cuándo hay que entregar la oferta", "Cuánto valen", "Qué tipo de trabajo es", "Cómo lo adjudican"];
+        const titulosTab = [...tab.replace(/<!--[\s\S]*?-->/g, "").matchAll(/<h[123][^>]*>([\s\S]*?)<\/h[123]>/g)]
+          .map((m) => m[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+        for (const titulo of RETIRADOS) {
+          assert.ok(!titulosTab.includes(titulo), `«${titulo}» volvió como título de un bloque de Mi empresa: el encargo del 28-ago-2026 lo retiró`);
+        }
+        for (const id of ["pu-cierre", "pu-cuantia", "pu-tipo", "pu-modalidad", "d-urgencia"]) {
+          assert.ok(!tab.includes(`id="${id}"`), `#${id} volvió a Mi empresa`);
+        }
+        const fuentePulso = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "pulso.js"), "utf8"));
+        for (const titulo of RETIRADOS) {
+          assert.ok(!fuentePulso.includes(titulo), `pulso.js volvió a construir «${titulo}»`);
+        }
+        /* …Y LO QUE SE CONSERVA: el reparto se dejó de PINTAR, no de MEDIR. El
+           endpoint sigue publicando las cuatro distribuciones y siguen cuadrando
+           con el total, que es la invariante que impide que el pulso y la lista
+           discrepen sobre el mismo corpus. */
         assert.ok(Array.isArray(pu.cuerpo.porCierre) && pu.cuerpo.porCierre.length === 4 && Array.isArray(pu.cuerpo.porCuantia) && pu.cuerpo.porCuantia.length === 4);
         assert.strictEqual(pu.cuerpo.porCierre.reduce((a, c) => a + c.n, 0) + pu.cuerpo.cierreSinFecha, pu.cuerpo.total, "cierre: las cubetas + sin fecha suman el total");
         assert.strictEqual(pu.cuerpo.porCuantia.reduce((a, c) => a + c.n, 0) + pu.cuerpo.cuantiaSinDato, pu.cuerpo.total, "cuantía: las cubetas + sin dato suman el total");
@@ -19421,9 +19527,26 @@ async function main() {
         assert.ok(i > iSis, `#${id} tiene que vivir DENTRO de «Sistema», fuera de la vista principal`);
       }
       /* …y las que responden «¿a qué me presento hoy?» siguen ARRIBA. */
-      for (const id of ["pulso", "seccion-rup", "seccion-consorcio", "seccion-socio", "actualizar"]) {
+      for (const id of ["pulso", "seccion-rup", "seccion-consorcio", "seccion-socio", "actualizar", "dashboard"]) {
         const i = tabAdmin.indexOf(`id="${id}"`);
         assert.ok(i > 0 && i < iSis, `#${id} tiene que estar A LA VISTA, antes de «Sistema»`);
+      }
+      /* ⚠️ «CUÁNTO SUELEN BAJAR EL PRECIO» SE MOVIÓ A «SISTEMA» (encargo del
+         dueño, 28-ago-2026): «a menos que te vayas a presentar a un proceso en
+         específico, ese dato no importa» — y donde SÍ decide (hasta dónde bajar
+         en ESE proceso) ya vive, calculado por lib/baja_maxima. SE MUEVE, NO SE
+         RETIRA: app.js cablea `d-baja-box`, `d-baja-reconstruir` y
+         `d-comp-reconstruir` SIN guarda, así que borrarlos mataría el tablero,
+         el RUP y los parámetros en silencio. Se comprueba el CONJUNTO de ids
+         `d-baja-*`/`d-comp-*` presentes en el HTML, no una lista escrita a mano:
+         uno nuevo entra al censo solo. */
+      {
+        const idsBaja = [...tabAdmin.matchAll(/id="(d-(?:baja|comp)-[a-z-]+)"/g)].map((m) => m[1]);
+        assert.ok(idsBaja.length >= 8, `se esperaban los ids del índice de baja y solo hay ${idsBaja.length}`);
+        for (const id of ["d-baja-box", ...idsBaja]) {
+          const i = tabAdmin.indexOf(`id="${id}"`);
+          assert.ok(i > iSis, `#${id} tiene que vivir DENTRO de «Sistema»: fuera de la vista principal`);
+        }
       }
 
       /* (3) EL BOTÓN ÚNICO REUTILIZA `iniciarAlDia`. Una segunda copia del
@@ -19745,27 +19868,26 @@ async function main() {
         "la modalidad se resuelve con FiltrosLista.modalidadDe, no con una segunda lista de literales");
     }
 
-    /* ── el pulso grafica llamando a la MISMA función que cuenta el listado ── */
+    /* ── el pulso: los cuatro repartos SE RETIRARON, el aviso urgente NO ──
+       Encargo del dueño (28-ago-2026): «la parte de "Cuándo hay que entregar la
+       oferta", "Cuánto valen", "Qué tipo de trabajo es", "Cómo lo adjudican":
+       elimínalo». Esta cerradura fijaba que los cuatro se GRAFICARAN; ahora fija
+       lo contrario, con su motivo, y lo que se conserva: (1) los cuatro
+       constructores no vuelven; (2) el aviso de manifestación —lo más accionable
+       del sistema— sigue pintándose y sigue llevando a su lista; (3) los repartos
+       SIGUEN viajando desde el servidor y saliendo de FiltrosLista.facetas, que
+       es lo que impide que el pulso y la lista discrepen: se dejó de PINTAR un
+       reparto, no de medirlo (`porTipo` y `porModalidad` alimentan los filtros
+       del listado, que es donde el usuario sí los usa). */
     {
       const Pulso = require("../public/pulso.js");
-      const p = { porTipo: { obra: 12, consultoria: 3, interventoria: 5, suministro: 0, servicios: 0, sin_dato: 1 },
-        porModalidad: { licitacion: 8, abreviada: 6, subasta: 0, meritos: 4, minima: 2, directa: 0, especial: 0, otra: 0, sin_dato: 0 },
-        manifestacion: { total: 6, abiertas: 4, urgentes: 4, vencidas: 2, sin_fecha: 0 } };
-      const t = Pulso.htmlTipo(p), m = Pulso.htmlModalidad(p), mf = Pulso.htmlManifestacion(p);
-      assert.ok(/<svg/.test(t) && /<svg/.test(m), "tipo y modalidad se GRAFICAN");
-      /* CADA BARRA ES EXACTAMENTE UN FILTRO del listado: una partición más
-         bonita daría barras que no llevan a ninguna lista. */
-      const Fl = require("../public/filtros.js");
-      for (const f of [...t.matchAll(/data-filtro="([^"]+)"/g)].map((x) => x[1])) {
-        assert.ok(Fl.leerEstado(new URLSearchParams(f)).tipo, `la barra «${f}» tiene que ser un filtro válido del listado`);
+      for (const fn of ["htmlCierre", "htmlCuantia", "htmlTipo", "htmlModalidad"]) {
+        assert.strictEqual(typeof Pulso[fn], "undefined", `${fn} se retiró con su tarjeta: un constructor que no pinta nadie diverge a la primera corrección`);
       }
-      for (const f of [...m.matchAll(/data-filtro="([^"]+)"/g)].map((x) => x[1])) {
-        assert.ok(Fl.leerEstado(new URLSearchParams(f)).modalidad, `la barra «${f}» tiene que ser un filtro válido del listado`);
-      }
+      const mf = Pulso.htmlManifestacion({ manifestacion: { total: 6, abiertas: 4, urgentes: 4, vencidas: 2, sin_fecha: 0 } });
       assert.ok(/data-filtro="manif=abierta"/.test(mf), "el aviso de manifestación lleva a su lista");
       /* CERO NO SE PINTA: un recuadro que dice «0» se deja de mirar. */
       assert.strictEqual(Pulso.htmlManifestacion({ manifestacion: { urgentes: 0 } }), "", "sin manifestaciones urgentes no se pinta nada");
-      assert.strictEqual(Pulso.htmlTipo({}), "", "sin reparto no se inventa una gráfica");
       /* Y el reparto sale de FiltrosLista.facetas, no de una cuenta propia. */
       const fuenteEntrada = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "perfil", "entrada.js"), "utf8");
       assert.ok(/FiltrosLista\.facetas\(procesos/.test(fuenteEntrada),

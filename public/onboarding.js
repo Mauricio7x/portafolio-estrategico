@@ -681,7 +681,10 @@
 
     let r = null, cuerpo = null;
     try {
-      r = await fetch("/api/admin?op=experiencia", {
+      /* DE QUIÉN ES LO QUE SE SUBE (28-ago-2026): el perfil del selector de la
+         cabecera. Igual que en la carga por JSON; el servidor lo valida. */
+      const duenoExp = $("f-perfil") ? $("f-perfil").value : "";
+      r = await fetch(`/api/admin?op=experiencia${duenoExp ? `&perfil=${encodeURIComponent(duenoExp)}` : ""}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-historico-token": token },
         body: JSON.stringify({ contratos: convertido.contratos }),

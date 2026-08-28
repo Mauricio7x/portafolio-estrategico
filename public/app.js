@@ -2561,8 +2561,22 @@
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
   for (const id of ["f-perfil", "f-cuantia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
     "f-sin-unspsc", "f-solo-viables", "f-zona"]) {
-    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") pintarConceptoOrden(); buscar(); if (id === "f-perfil") { refrescarPulso(); guardados.clear(); seguimientoCargadoPara = null; cargarSeguimiento({ forzar: true }); } });
+    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") pintarConceptoOrden(); buscar(); if (id === "f-perfil") { refrescarPulso(); guardados.clear(); seguimientoCargadoPara = null; cargarSeguimiento({ forzar: true }); repintarPorPerfil(); } });
   }
+  /* CAMBIAR DE PERFIL REPINTA LO QUE DEPENDE DEL PERFIL (28-ago-2026).
+     Desde esta fecha «Perfil actual» marca cuál se está viendo y «Obra que ya
+     ejecutó» dice de quién es la experiencia cargada: los dos leen `f-perfil` al
+     pintar, así que sin repintar quedarían diciendo lo del perfil anterior — el
+     mismo defecto de la guarda de carrera del pulso, donde la pantalla mentía
+     bajo un selector que decía otra cosa. Son dos GET pequeños y solo al
+     cambiar de perfil. Los fallos se tragan a propósito: los dos paneles ya
+     escriben su propio aviso en su caja, y una promesa rechazada aquí no puede
+     tumbar el cambio de perfil. */
+  function repintarPorPerfil() {
+    try { cargarRupActual(); } catch { /* la caja escribe su propio aviso */ }
+    try { cargarExperienciaActual(); } catch { /* ídem */ }
+  }
+
   /* «Ver PAA» NO re-consulta /api/oportunidades: son dos fuentes distintas y
      encender la previsión no puede cambiar la lista de lo que está abierto. Lo
      que sí hace es repintar las tarjetas activas, porque el badge «Activo»
@@ -5808,22 +5822,14 @@
       ? window.Pulso.apilada(BARRAS.map(([clave, etiqueta]) => ({ etiqueta, n: per[clave] || 0 })))
       : "";
 
-    /* CUÁNDO HAY QUE ENTREGAR · magnitud sobre una escala ORDENADA. El dato ya
-       venía en `por_urgencia` y no se pintaba en ninguna pantalla. `ya_cerro` y
-       `sin_fecha_cierre` se dejan FUERA del gráfico y se dicen aparte: no son
-       ventanas de entrega y meterlos deformaría la escala de las que sí lo son. */
-    const urg = c.totales.por_urgencia || {};
-    const cubetasUrg = [
-      { id: "7d", etiqueta: "Cierran esta semana", corto: "esta semana", n: urg.cierra_esta_semana || 0 },
-      { id: "15d", etiqueta: "Cierran en dos semanas", corto: "2 semanas", n: urg.cierra_proxima_semana || 0 },
-      { id: "", etiqueta: "Cierran este mes", corto: "este mes", n: urg.cierra_este_mes || 0 },
-      { id: "", etiqueta: "Más adelante", corto: "+ 1 mes", n: urg.mas_adelante || 0 },
-    ];
-    const sinVentana = (urg.sin_fecha_cierre || 0) + (urg.ya_cerro || 0);
-    $("d-urgencia").innerHTML = (window.Pulso
-      ? window.Pulso.columnas(cubetasUrg, { filtroDe: (x) => (x.id ? `cierre=${x.id}` : null) })
-      : "")
-      + (sinVentana > 0 ? `<p class="mt-1 text-[11px]" style="color: var(--text-secondary);">${fmt.format(sinVentana)} sin fecha de cierre publicada o ya cerradas.</p>` : "");
+    /* «CUÁNDO HAY QUE ENTREGAR LA OFERTA» SE RETIRÓ (encargo del dueño,
+       28-ago-2026): el reparto por ventana de cierre repetía en cuatro columnas
+       lo que el titular ya dice con el hecho que se usa —«N cierran esta
+       semana», que además es el enlace a esa lista—. Con el nodo `#d-urgencia`
+       se fue su pintado: un `innerHTML` sobre un id que ya no existe lanza y
+       mataría el resto del tablero EN SILENCIO, que es como se pierde una
+       pantalla entera. `por_urgencia` sigue viajando en la respuesta: se dejó
+       de pintar, no de medir. */
 
     /* CONTRA CUÁNTA GENTE COMPITE · la tesis del producto, que tampoco se
        pintaba. `sin_dato` se CONSERVA como su propio segmento: no saber cuánta
@@ -6247,8 +6253,20 @@
       caja.textContent = (cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`;
       return;
     }
-    const resumen = Object.entries(cuerpo.resumen || {})
-      .map(([k, v]) => `<li><span class="font-medium">${esc(v.nombre || k)}</span>: ${v.clases} tipos de trabajo inscritos (${v.familias} familias) · tope ${fmt.format(v.tope_smmlv || 0)} salarios mínimos</li>`)
+    /* ⚠️ «PERFIL ACTUAL» ENSEÑABA LOS TRES (28-ago-2026). Bajo un rótulo en
+       singular, la lista traía Helder, Génesis y el consorcio en el mismo tono,
+       sin decir cuál está seleccionado arriba: es el mismo defecto que reportó
+       el dueño en «Su registro de proponente» —«la información que está dando es
+       en general»—, con el agravante de que el rótulo promete uno solo. El
+       activo va PRIMERO y marcado; los otros se declaran como lo que son, los
+       demás perfiles cargados. Ninguno se esconde: siguen siendo suyos y desde
+       aquí se descargan y se borran. */
+    const activo = $("f-perfil") ? $("f-perfil").value : "";
+    const filas = Object.entries(cuerpo.resumen || {})
+      .map(([k, v]) => ({ k, v, suyo: k === activo || (k === "consorcio" && activo === "juntos") }))
+      .sort((a, b) => (b.suyo ? 1 : 0) - (a.suyo ? 1 : 0));
+    const resumen = filas
+      .map(({ k, v, suyo }) => `<li${suyo ? ' class="font-medium"' : ' class="text-gray-500"'}><span class="font-medium">${esc(v.nombre || k)}</span>${suyo ? " (el que está viendo)" : ""}: ${v.clases} tipos de trabajo inscritos (${v.familias} familias) · tope ${fmt.format(v.tope_smmlv || 0)} salarios mínimos</li>`)
       .join("");
     caja.innerHTML =
       `<p>Fuente: <span class="font-medium">${cuerpo.fuente === "redis" ? "archivo cargado (Redis)" : "valores por defecto del repositorio"}</span>`
@@ -6256,7 +6274,8 @@
       + (cuerpo.fuente === "hardcoded"
         ? '<p class="mt-2 rounded-xl bg-amber-50 px-4 py-3 text-amber-800 ring-1 ring-inset ring-amber-600/20">Usando perfiles por defecto. Cargue su RUP para mayor precisión.</p>'
         : "")
-      + (resumen ? `<ul class="mt-2 space-y-1">${resumen}</ul>` : "");
+      + (resumen ? `<ul class="mt-2 space-y-1">${resumen}</ul>` : "")
+      + (filas.length > 1 ? '<p class="mt-2 text-xs text-gray-500">Los demás son los otros perfiles cargados en esta aplicación: sus cifras no se mezclan con las del perfil que está viendo.</p>' : "");
   }
 
   $("btn-rup-descargar").addEventListener("click", async () => {
@@ -6476,7 +6495,15 @@
     erroresExp(null);
     let r = null, cuerpo = null;
     try {
-      r = await fetch("/api/admin?op=experiencia", {
+      /* DE QUIÉN ES LO QUE SE SUBE (28-ago-2026): el perfil del selector de la
+         cabecera, que es con el que se está trabajando en la pestaña. El
+         servidor lo valida y, sin él, guarda SIN dueño — y entonces no se lo
+         atribuye a nadie. El dueño va en la QUERY y no en el cuerpo:
+         `validarContratos` ignora las claves extra de la raíz del JSON, así que
+         ahí dentro un valor mal escrito se guardaría como `null` con un 200
+         idéntico; en la query, un perfil desconocido es un 400 ruidoso. */
+      const duenoExp = $("f-perfil") ? $("f-perfil").value : "";
+      r = await fetch(`/api/admin?op=experiencia${duenoExp ? `&perfil=${encodeURIComponent(duenoExp)}` : ""}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-historico-token": token },
         body: JSON.stringify(expPendiente),
@@ -6537,12 +6564,36 @@
       $("c-usar-experiencia").checked = false;
       return;
     }
-    $("c-usar-experiencia").checked = true;
+    /* ⚠️ ESTOS CONTRATOS TIENEN DUEÑO, Y LA PANTALLA NO LO DECÍA (28-ago-2026).
+       `config:experiencia` es UNA clave global y lo cargado en producción son los
+       106 contratos de Génesis. Con Helder en el selector, este recuadro decía
+       «106 contratos · N términos del oficio» bajo el título «Obra que ya
+       ejecutó» —en segunda persona— y encendía el interruptor de la auditoría:
+       obra de otro presentada como suya. Lo reportó el dueño: «la información
+       que está dando es en general, de Génesis, no aplica a Helder».
+       Ahora se dice DE QUIÉN es y, cuando no es del perfil activo, se dice
+       además lo que sí es cierto de ese perfil: que todavía no se le ha cargado
+       ninguna obra ejecutada aparte de la que ya trae su registro. Sin dueño
+       escrito no se atribuye a nadie: «no consta de quién es» no es «es suya».
+       El interruptor de la auditoría solo se enciende cuando la experiencia
+       aplica; el servidor lo comprueba otra vez por su cuenta (lib/experiencia.
+       experienciaAplica), así que esto es la pantalla, no la cerradura. */
+    const activo = $("f-perfil") ? $("f-perfil").value : "";
+    const activoNombre = $("f-perfil") && $("f-perfil").selectedOptions[0] ? $("f-perfil").selectedOptions[0].text : "este perfil";
+    const dueno = cuerpo.perfil || null;
+    const aplica = !!dueno && (dueno === activo || (activo === "juntos" && (dueno === "helder" || dueno === "genesis")));
+    $("c-usar-experiencia").checked = aplica;
+    const deQuien = dueno
+      ? `<span class="font-medium">${esc(cuerpo.perfil_nombre || dueno)}</span>`
+      : "un perfil que no consta";
     const ejemplos = (cuerpo.ejemplos_terminos || []).slice(0, 15).map((t) => `<code class="rounded bg-gray-100 px-1">${esc(t)}</code>`).join(" ");
     caja.innerHTML =
-      `<p><span class="font-medium">${fmt.format(cuerpo.contratos_cargados)} contratos</span> · `
+      `<p>${fmt.format(cuerpo.contratos_cargados)} contratos de ${deQuien} · `
       + `${fmt.format(cuerpo.terminos_extraidos)} términos del oficio`
       + (cuerpo.cargado ? ` · Cargado: ${esc(String(cuerpo.cargado).slice(0, 19).replace("T", " "))}` : "") + "</p>"
+      + (aplica ? "" : '<p class="mt-2 rounded-xl bg-amber-50 px-4 py-3 text-amber-800 ring-1 ring-inset ring-amber-600/20">'
+        + `No es obra de ${esc(activoNombre)}: de este perfil solo consta lo que trae su registro de proponente. `
+        + "Mientras no se carguen sus propios contratos ejecutados, la auditoría de códigos no los usa.</p>")
       + (ejemplos ? `<p class="mt-2 text-xs leading-6 text-gray-500">${ejemplos}</p>` : "");
   }
 
