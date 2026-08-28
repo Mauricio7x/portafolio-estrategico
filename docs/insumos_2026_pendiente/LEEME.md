@@ -54,3 +54,26 @@ con FFIE, ICCU y EPC, como el INVIAS ya obligó a dejar escrito en su `_meta`.
 Para las listas y los APU adjudicados que **no** deben versionarse (contratos del
 negocio, listas con restricción expresa) está la carpeta `entrada/` de la raíz,
 que sí está en `.gitignore`.
+
+## Decisión del 28-ago-2026 · SE CONSERVAN TODOS (pendiente cerrado)
+
+El dueño delegó la decisión sobre los 7 archivos que ningún capturador lee
+(«haz lo que mejor te parezca») y la decisión es **conservarlos**, por cuatro
+motivos medidos:
+
+1. **Dos son la EVIDENCIA de análisis citados en la memoria**: el
+   `Analisis_ManoDeObra…` es la fuente del factor 2,19 que CLAUDE.md discute, y
+   el `Visor_BPR…` es el documento fuente del banco IDU — los demás bancos
+   conservan su fuente en esta misma carpeta, y la URL del IDU puede morir
+   (los portales colombianos se reorganizan: ya pasó con INVIAS).
+2. **Tres son candidatos CON CONDICIÓN documentada** (Boyacá y APU-2023
+   esperan un índice oficial que los traiga a 2026; Herramientas y
+   EstudiosYDiseños son capas futuras): borrarlos cierra la opción para
+   ahorrar kilobytes.
+3. **El costo real es ~9 MB de clon y CERO de despliegue**: `docs/` no viaja a
+   Vercel (`includeFiles` apunta a `data/**`).
+4. La regla del censo de higiene: **un falso «borrar seguro» cuesta más que
+   diez «no borrar»**.
+
+Esta carpeta deja de ser un pendiente: es el archivo de fuentes del módulo de
+precios. Nada de aquí se borra sin una decisión nueva del dueño.

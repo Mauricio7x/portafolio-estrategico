@@ -6028,3 +6028,13 @@ guarda y la primera invocación sin comprobar `ok` (diagnóstico mentiroso si el
 Residuo DECLARADO de la blacklist condicionada: «…AULAS PARA CURSOS DE CAPACITACIÓN» o «SUMINISTRO E
 INSTALACIÓN DE CUBIERTA PARA LA BIBLIOTECA» (gap ≤40 tras «suministro») siguen muriendo en la
 ingesta — el censo (`por_motivo.blacklist`) es quien lo vigila con cifras reales.
+
+### El pendiente de los insumos, cerrado por delegación (28-ago-2026)
+
+El dueño fusionó la PR #129, relanzó la carga completa, la re-extracción del histórico y el borrado
+de ramas (medido: 101 → 42 referencias remotas al día siguiente), y delegó la decisión sobre los 7
+insumos que ningún capturador lee: **se conservan todos**, con el porqué escrito en
+`docs/insumos_2026_pendiente/LEEME.md` (dos son evidencia de análisis citados en esta memoria, tres
+son candidatos con condición documentada, el costo es ~9 MB de clon y cero de despliegue, y un falso
+«borrar seguro» cuesta más que diez «no borrar»). La carpeta deja de ser un pendiente: es el archivo
+de fuentes del módulo de precios, y nada de ahí se borra sin una decisión nueva del dueño.
