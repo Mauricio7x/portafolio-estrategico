@@ -12897,7 +12897,16 @@ async function main() {
           "el listado de borradores se consulta aparte de /api/resumen, que se cachea 300 s");
         assert.ok(limpio.indexOf("await cargarApuListos(perfil)") < limpio.indexOf("pintarDashboard(cuerpo,"),
           "el listado tiene que cargarse ANTES de pintar, o el badge saldría una pintada tarde");
-        assert.ok(unoHtml.includes("<th class=\"py-1\">Mi precio</th>"), "index.html sin la columna del precio (antes «APU»; Fase 6 la tradujo)");
+        /* ⚠️ YA NO HAY COLUMNA: HAY BOTÓN (28-ago-2026). Los diez destacados
+           pasaron de tabla de siete columnas a lista de dos líneas —«creo que es
+           mucho texto, simplifícalo»—, así que la cabecera «Mi precio» dejó de
+           existir. Lo que esta cerradura protegía no era el `<th>`: era que el
+           acceso a costear el proceso siguiera A LA VISTA, y eso ahora lo lleva
+           el botón de cada fila. Se vigila el botón, que es lo que se pulsa. */
+        assert.ok(/>Mi precio<\/button>/.test(limpio),
+          "el acceso a costear el proceso tiene que seguir en cada fila de los destacados");
+        assert.ok(/<ul class="lista-procesos">/.test(limpio) && !/id="d-destacados" class="divide-y/.test(unoHtml),
+          "los destacados son una LISTA: una lista dentro de un <tbody> es HTML inválido y el navegador la expulsa fuera de la tabla (fallo mudo)");
         assert.ok(limpio.includes('colspan="7"'),
           "el estado vacío de la tabla tiene que cubrir las 7 columnas, no 6");
 
@@ -14861,17 +14870,19 @@ async function main() {
          `|| 0` disfrazaba el `undefined` de cero, así que el conteo era 0
          SIEMPRE, con cualquier entidad y cualquier dato. */
       {
-        const i = admJs.indexOf('$("d-entidades").addEventListener');
-        // sin comentarios: lo que se vigila es el CÓDIGO. El comentario que
-        // explica el defecto cita el campo viejo a propósito.
-        const handler = sinComentarios(admJs.slice(i, admJs.indexOf("\n  });", i)));
-        assert.ok(i > 0, "no se encontró el detalle en línea del panel");
-        assert.ok(!/i\.total_procesos/.test(handler),
-          "el detalle del panel vuelve a leer `total_procesos`: ese campo NO existe en /api/competencia-detalle");
-        assert.ok(/i\.procesos_contados/.test(handler),
-          "el conteo del detalle se llama `procesos_contados` — es el nombre que devuelve el endpoint");
-        assert.ok(/const conBase = /.test(handler),
-          "el detalle del panel debe exigir base antes de pintar un promedio, igual que el badge");
+        /* ⚠️ EL DETALLE EN LÍNEA DEL PANEL SE FUE CON SU TABLA (28-ago-2026):
+           colgaba de `#d-entidades`, y el encargo retiró «Quién publica más» del
+           tablero por duplicar el ranking del pulso. La cerradura NO se borra
+           con él, porque lo que protegía no era ese bloque: era la regla que
+           costó el «promedio 18,2 oferentes en 0 procesos». Se convierte en un
+           CENSO del fuente entero —más fuerte que la versión anterior, que solo
+           miraba dentro de un handler—: `total_procesos` NO existe en la
+           respuesta de la entidad, así que ningún sitio puede leerlo de ahí, y
+           el conteo se llama `procesos_contados`. */
+        assert.ok(!/\bi\.total_procesos\b/.test(sinComentarios(admJs)),
+          "algún renderizador volvió a leer `i.total_procesos`: ese campo NO existe en la respuesta de la entidad y un `|| 0` lo disfrazaría de cero");
+        assert.ok(/i\.procesos_contados > 0/.test(sinComentarios(admJs)),
+          "el conteo de la entidad se llama `procesos_contados` y tiene que EXIGIRSE antes de pintar un promedio");
       }
       /* Y la regla que evita repetirlo: un conteo ausente NO se pinta como 0.
          Ningún renderizador puede convertir «no sé» en «cero» con un `|| 0`. */
@@ -15089,9 +15100,14 @@ async function main() {
          El input del RUP en JSON se llama `rup-json-archivo` desde la página
          única: `rup-archivo` es el PDF del onboarding (otra sección, otro
          formato) y dos inputs no pueden compartir id. */
+      /* `d-entidades` y `d-departamentos` salieron de esta lista el 28-ago-2026:
+         el encargo retiró «Quién publica más» y «Dónde están» DEL TABLERO porque
+         repetían lo que ya pinta el pulso. El reparto por departamento sigue vivo
+         —en `#pu-departamentos`, junto a «Crear consorcio»—; el de entidades se
+         retiró entero, con su gemelo del pulso. */
       for (const debe of ['id="dashboard"', 'id="d-perfil"', 'id="btn-actualizar"', 'id="d-visibles"',
-        'id="d-obra"', 'id="d-consultoria"', 'id="d-semana"', 'id="d-barras"', 'id="d-entidades"',
-        'id="d-departamentos"', 'id="d-destacados"', 'id="d-meta"', 'id="d-skeleton"',
+        'id="d-obra"', 'id="d-consultoria"', 'id="d-semana"', 'id="d-barras"',
+        'id="d-destacados"', 'id="d-meta"', 'id="d-skeleton"',
         'id="seccion-rup"', 'id="rup-json-archivo"', 'id="rup-preview"', 'id="btn-rup-cargar"',
         'id="btn-rup-cancelar"', 'id="btn-rup-descargar"', 'id="rup-actual"']) {
         assert.ok(admHtml.includes(debe), `index.html sin ${debe} (falta el dashboard o la carga de RUP)`);
@@ -16177,7 +16193,12 @@ async function main() {
       const tab = htmlL.slice(iTabAdmin, iTab);
       assert.ok(iTabAdmin < iTab && iTab < htmlL.indexOf('id="tab-apu"'), "orden de los paneles: Mi empresa → Licitaciones → Precios");
       assert.ok(/<main id="tab-admin" class="panel-pestana mx-auto max-w-6xl/.test(htmlL) && /<main id="tab-licitaciones" class="panel-pestana mx-auto hidden/.test(htmlL), "Mi empresa nace visible; Licitaciones, oculta");
-      for (const id of ["pulso", "pu-hero", "pu-departamentos", "pu-entidades", "pu-nota", "rup-cifras", "seccion-rup"]) assert.ok(tab.includes(`id="${id}"`), `falta #${id} en la pestaña Mi empresa`);
+      /* `pu-entidades` se retiró el 28-ago-2026 («elimina "quién las publica"»);
+         `pu-departamentos` sigue, pero YA NO dentro de `<section id="pulso">`:
+         vive emparejado con «Crear consorcio». Por eso se busca en la pestaña
+         entera y no dentro de la sección. */
+      for (const id of ["pulso", "pu-hero", "pu-manifestacion", "pu-departamentos", "pu-nota", "rup-cifras", "seccion-rup", "seccion-calendario", "cal-dias"]) assert.ok(tab.includes(`id="${id}"`), `falta #${id} en la pestaña Mi empresa`);
+      assert.ok(!tab.includes('id="pu-entidades"'), "«Quién las publica» se retiró: el encargo del 28-ago-2026 lo eliminó junto con su gemelo del tablero");
       assert.ok(/<section id="pulso" class="hidden/.test(tab), "el pulso nace OCULTO (vacío y honesto hasta que hay datos)");
       /* ⚠️ ORDEN NUEVO (encargo del dueño, 28-ago-2026), y esta cerradura fijaba
          el ANTERIOR. Decía «el tablero abre Mi empresa» (ago-2026: «podría ser el
@@ -16188,7 +16209,15 @@ async function main() {
          entera: `arrancarPaneles` no tiene guarda): baja a después del registro.
          Se fija el orden COMPLETO y no solo dos parejas: dos comparaciones
          sueltas dejan libre justo el hueco por el que se coló el defecto. */
-      const ORDEN = ["pulso", "actualizar", "seccion-consorcio", "seccion-rup", "seccion-socio", "dashboard", "seccion-sistema"];
+      /* ⚠️ SEGUNDA PASADA DEL 28-ago-2026, con el dueño mirando la pantalla. El
+         orden anterior (pulso → acciones → registro → socio → tablero) duró unas
+         horas: «el tablero de segundo», «actualizar datos y verifique a su socio
+         en paralelo», «dónde están y crear consorcio», «top 10», «un calendario»
+         y «su registro de proponente bájalo hasta el final». Se fija la CADENA
+         COMPLETA y no parejas sueltas: dos comparaciones dejan libre justo el
+         hueco por el que se cuela el defecto siguiente. */
+      const ORDEN = ["pulso", "dashboard", "actualizar", "seccion-socio", "pu-departamentos",
+        "seccion-consorcio", "seccion-destacados", "seccion-calendario", "seccion-rup", "seccion-sistema"];
       const posiciones = ORDEN.map((id) => [id, tab.indexOf(`id="${id}"`)]);
       for (const [id, i] of posiciones) assert.ok(i > 0, `falta #${id} en Mi empresa`);
       for (let k = 1; k < posiciones.length; k++) {
@@ -16196,6 +16225,31 @@ async function main() {
           `orden de Mi empresa: #${posiciones[k - 1][0]} tiene que ir antes de #${posiciones[k][0]} (${ORDEN.join(" → ")})`);
       }
       assert.ok(tab.indexOf('id="pu-hero"') < tab.indexOf('id="btn-actualizar-datos"'), "el titular es lo PRIMERO que se pinta");
+      /* ⚠️ «EN PARALELO» NO PUEDE COLGAR DEL CDN (28-ago-2026). El encargo pedía
+         literalmente que «Actualizar datos» y «Verifique a su socio» «sean
+         iguales y estén posicionados en paralelo», y con `lg:grid-cols-2` eso NO
+         se cumple en la red institucional del dueño: la utilidad no existe sin
+         el CDN de Tailwind y las dos tarjetas se apilan (medido en Chromium:
+         1264 px cada una, una debajo de la otra). Las dos filas dobles usan una
+         regla propia. `auto-fit` además resuelve la queja de raíz —«el espacio
+         de actualizar datos es la mitad del tamaño de lo normal»—: cuando el
+         compañero nace oculto, la pista se colapsa y la tarjeta que queda ocupa
+         el ancho entero. */
+      assert.strictEqual((tab.match(/class="fila-doble/g) || []).length, 2,
+        "las dos filas en paralelo (acciones · dónde están + consorcio) usan la regla propia, no `lg:grid-cols-2`");
+      const reglaFila = (htmlL.match(/\.fila-doble \{[^}]*\}/) || [""])[0];
+      assert.ok(/display:\s*grid/.test(reglaFila) && /auto-fit/.test(reglaFila) && /align-items:\s*stretch/.test(reglaFila),
+        `la fila doble se maqueta sola (grid + auto-fit + stretch): «${reglaFila.replace(/\s+/g, " ")}»`);
+      assert.ok(/\.fila-doble > \* \{[^}]*min-width:\s*0/.test(htmlL),
+        "…y sus hijos con `min-width: 0`, o una tabla o un SVG dentro ensancha la página (el desborde móvil de ago-2026)");
+      /* Y lo que nace OCULTO tiene que esconderse de verdad sin el CDN: la clase
+         `hidden` la sirve Tailwind, y la red de seguridad de este proyecto es
+         una lista DECLARADA por id, no una regla global. Una sección que promete
+         plazos y enseña un hueco vacío se lee como «no hay ninguno». */
+      for (const id of ["seccion-calendario", "seccion-consorcio", "pulso"]) {
+        assert.ok(new RegExp(`#${id}\\.hidden`).test(htmlL),
+          `#${id} nace oculto y no está en la red de seguridad de \`.hidden\`: sin el CDN de Tailwind se vería siempre`);
+      }
       const lic = htmlL.slice(iTab, htmlL.indexOf('id="tab-apu"'));
       assert.ok(!lic.includes('id="pulso"') && lic.indexOf('id="f-ordenar"') > 0, "Licitaciones ya no lleva el pulso: empieza por la barra de herramientas");
       const nav = htmlL.slice(htmlL.indexOf('aria-label="Secciones"'), htmlL.indexOf("</nav>"));
@@ -16278,7 +16332,19 @@ async function main() {
           assert.ok(new RegExp(`\\.${clase}\\b|#app \\.${clase}\\b`).test(htmlL), `falta la regla propia de .${clase} en index.html`);
         }
         assert.ok(/<div id="pu-hero" class="hero-empresa rounded-2xl bg-white/.test(htmlL),
-          "el titular hereda el vidrio de bg-white.rounded-2xl y solo AÑADE el velo de acento");
+          "el titular hereda el vidrio de bg-white.rounded-2xl");
+        /* ⚠️ SIN VELO DE COLOR (segunda pasada del 28-ago-2026). La primera
+           versión pintaba dos degradados radiales de acento sobre el vidrio y el
+           dueño los rechazó en cuanto los vio: «quita ese efecto, se ve horrible,
+           déjalo más limpio, más clean». La regla se vigila por el SÍNTOMA —un
+           degradado en la tarjeta del titular—, no por el literal que se borró:
+           el mismo efecto vuelve igual con otra función de color. */
+        const reglaHero = (htmlL.match(/#app \.hero-empresa\.rounded-2xl \{[^}]*\}/) || [""])[0];
+        assert.ok(reglaHero, "falta la regla propia del titular");
+        assert.ok(!/gradient|background-image/.test(reglaHero),
+          `el titular no puede llevar velo de color: «${reglaHero.replace(/\s+/g, " ")}»`);
+        assert.ok(/padding:/.test(reglaHero),
+          "…pero la clase SÍ pone el relleno propio: sin el CDN de Tailwind las utilidades no existen y la tarjeta quedaría pegada al borde");
       }
       const onbL = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8"));
       assert.ok(/\$\("res-cifras"\)/.test(onbL) && /cierranEstaSemana/.test(onbL), "la pantalla de resultado pinta las cifras (cuántas · cuánto · cierran esta semana)");
@@ -16287,7 +16353,9 @@ async function main() {
       const hero = PulsoPub.htmlHero(p0, "Constructora X");
       assert.ok(/Para Constructora X, hoy/.test(hero) && /47/.test(hero) && /\$312\.000 millones/.test(hero) && /cierran esta semana/.test(hero), "hero: nombre, cuántas, cuánto, cierran");
       assert.ok(/data-filtro="cierre=7d"/.test(hero) && /data-filtro="todo"/.test(hero), "las cifras enlazan a la lista");
-      const dep = PulsoPub.htmlDepartamentos(p0), entH = PulsoPub.htmlEntidades(p0);
+      const dep = PulsoPub.htmlDepartamentos(p0);
+      assert.strictEqual(typeof PulsoPub.htmlEntidades, "undefined",
+        "«Quién las publica» se retiró con su nodo: un constructor que no pinta nadie diverge a la primera corrección");
       /* BARRAS RANKEADAS (encargo del ingeniero, ago 2026): mismo dato, forma
          nueva. Lo que se vigila es lo que decide —el enlace a la lista, la
          proporción de la barra y que se DIGA cuántas quedan fuera—, no el
@@ -16296,12 +16364,71 @@ async function main() {
       assert.ok(/width:100\.0%/.test(dep) && /width:60\.0%/.test(dep), "la barra es proporcional al conteo (20 y 12 sobre un máximo de 20)");
       assert.ok(/9 en total/.test(dep), "se dice cuántos departamentos quedan fuera del top");
       assert.ok(/\$100\.000 millones/.test(dep), "…y el DINERO viaja al lado del conteo: ya estaba en el dato y no se pintaba");
-      assert.ok(/data-filtro="entidad=800113389"/.test(entH) && /30 en total/.test(entH), "las entidades enlazan por NIT y dicen cuántas más hay");
+      /* ══ EL CALENDARIO DE AVISOS DE INTERÉS (encargo del dueño, 28-ago-2026) ══
+         «Un calendario con los procesos que vencen pronto la manifestación de
+         interés.» Se EJECUTA con filas de la forma real que sirve
+         /api/procesos?op=listar (`manifestacion` en snake_case, la de
+         lib/manifestacion.manifestacionDeFila), no se comprueba por regex.
+         Lo que se fija es LA HONESTIDAD DE LA FECHA, que es donde este proyecto
+         ya se equivocó dos veces: la ley da un TECHO de tres días hábiles, no un
+         plazo, así que un proceso sin fecha del pliego NO puede aparecer bajo un
+         «vence el día X». Se comprueban las cuatro ramas: confirmada por el
+         cronograma, ventana calculada, ventana ya corriendo y sin situar. */
+      {
+        const filasCal = [
+          { nombre_del_procedimiento: "MEJORAMIENTO DE VÍA TERCIARIA", entidad: "ALCALDÍA DE PURIFICACIÓN", cuantia_cop: 350000000, urlproceso: "https://x",
+            manifestacion: { aplica: true, estado: "abierta", confirmada: false, puede_cerrar_desde: "2026-08-31", puede_cerrar_desde_legible: "31 de agosto", vence_a_mas_tardar: "2026-09-02", vence_a_mas_tardar_legible: "2 de septiembre", nota: "n" } },
+          { nombre_del_procedimiento: "CONSTRUCCIÓN PLACA HUELLA", entidad: "GOBERNACIÓN DEL TOLIMA", cuantia_cop: 900000000,
+            manifestacion: { aplica: true, estado: "abierta", confirmada: true, fecha_limite: "2026-08-29", fecha_limite_legible: "29 de agosto", nota: "n" } },
+          { nombre_del_procedimiento: "VENTANA CORRIENDO", entidad: "ALCALDÍA DE IBAGUÉ", cuantia_cop: null,
+            manifestacion: { aplica: true, estado: "por_confirmar", confirmada: false, nota: "n" } },
+          { nombre_del_procedimiento: "SIN APERTURA LEGIBLE", entidad: "OTRA",
+            manifestacion: { aplica: true, estado: "sin_fecha", confirmada: false, nota: "n" } },
+          { nombre_del_procedimiento: "NO ES DE MENOR CUANTÍA", entidad: "OTRA MÁS", manifestacion: null },
+        ];
+        const cal = PulsoPub.htmlCalendario(filasCal, { hoy: "2026-08-28", total: 9 });
+        assert.ok(/CONSTRUCCIÓN PLACA HUELLA[\s\S]*?vence el 29 de agosto/.test(cal.dias),
+          "con fecha del cronograma del pliego SÍ se afirma el vencimiento: un dato publicado gana a uno calculado");
+        assert.ok(/Fecha del pliego/.test(cal.dias) && /Ventana calculada/.test(cal.dias),
+          "cada fila dice de dónde sale su fecha");
+        assert.ok(/puede cerrar entre el 31 de agosto y el 2 de septiembre/.test(cal.dias),
+          "sin fecha del pliego se dice la VENTANA entera, nunca un vencimiento");
+        /* ⚠️ LA MUTACIÓN QUE ESTA PRUEBA TIENE QUE CAZAR: que la fila sin
+           confirmar diga «vence». La ley fija un máximo, no un plazo. */
+        const trozoSinConfirmar = cal.dias.slice(cal.dias.indexOf("MEJORAMIENTO DE VÍA TERCIARIA"));
+        const filaSinConfirmar = trozoSinConfirmar.slice(0, trozoSinConfirmar.indexOf("</li>"));
+        assert.ok(!/vence el/.test(filaSinConfirmar),
+          `una ventana calculada NO puede afirmar un vencimiento: «${filaSinConfirmar.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()}»`);
+        // la ventana ya corriendo es de HOY, el estado de máxima urgencia
+        const hoyBloque = cal.dias.slice(0, cal.dias.indexOf("</div>", cal.dias.indexOf("VENTANA CORRIENDO")));
+        assert.ok(/cal-dia-hoy/.test(cal.dias) && /VENTANA CORRIENDO/.test(hoyBloque) && /Hoy/.test(hoyBloque),
+          "un plazo que ya está corriendo va bajo HOY, no bajo una fecha futura");
+        // lo que no se puede situar SE CUENTA APARTE: repartirlo a ojo sería inventar la fecha
+        assert.ok(!/SIN APERTURA LEGIBLE/.test(cal.dias) && /1 sin fecha de apertura legible/.test(cal.nota),
+          "lo que no se puede situar no se cuelga de un día: se dice aparte");
+        assert.ok(!/NO ES DE MENOR CUANTÍA/.test(cal.dias),
+          "un proceso que no exige avisar no entra al calendario");
+        assert.ok(/máximo de tres días hábiles/.test(cal.nota) && /no un plazo/.test(cal.nota),
+          "la nota tiene que decir que tres días es el TECHO, no el plazo");
+        assert.ok(/Se leyeron 5 de 9/.test(cal.nota), "y cuántos se leyeron de cuántos hay");
+        assert.deepStrictEqual(PulsoPub.htmlCalendario([], { hoy: "2026-08-28" }).dias, "",
+          "sin avisos abiertos no se pinta un calendario vacío");
+        assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(cal.dias + cal.nota), "sin emojis en el calendario");
+        /* El cableado no se puede ejecutar fuera del navegador, así que de él se
+           fija lo que decide: que pide el MISMO listado del perfil al que lleva
+           el aviso del titular —y no un endpoint nuevo que pudiera discrepar—. */
+        const appCal = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+        assert.ok(/op=listar&perfil=\$\{encodeURIComponent\(perfil\)\}&manif=abierta/.test(appCal),
+          "el calendario se alimenta del listado del perfil con manif=abierta, que es adonde lleva el aviso del titular");
+        assert.ok(/window\.Pulso\.htmlCalendario/.test(appCal),
+          "…y lo construye pulso.js, que es lo que esta prueba puede ejecutar");
+      }
+
       const cero = PulsoPub.htmlHero({ total: 0, visibles: 12, corpus_vacio: false }, "");
       assert.ok(/ninguna licitación abierta encaja/.test(cero) && /Hay 12 de su tipo de obra/.test(cero) && !/data-filtro/.test(cero), "con cero viables no hay cifras que enlazar y se dice por qué");
       assert.strictEqual(PulsoPub.htmlHero({ total: 3, valorTotal: null, cierranEstaSemana: { n: 0, valor: null } }, "").includes("Sin referencia"), true, "sin cuantías publicadas el dinero es «Sin referencia», no $0");
       for (const v of [4.7e12, 312e9, 52.4e6, 850000, 0, null]) assert.strictEqual(PulsoPub.pesosCortos(v), PortadaPub2.pesosCortos(v), `pesosCortos difiere entre pulso y portada para ${v}`);
-      assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(hero + dep + entH + cero + PortadaPub2.htmlTeaser({ procesosAbiertos: 1306, valorTotal: 13.9e12, entidadesActivas: 573 })), "sin emojis");
+      assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(hero + dep + cero + PortadaPub2.htmlTeaser({ procesosAbiertos: 1306, valorTotal: 13.9e12, entidadesActivas: 573 })), "sin emojis");
       const teaser = PortadaPub2.htmlTeaser({ procesosAbiertos: 1306, valorTotal: 13.9e12, entidadesActivas: 573 });
       assert.ok(/1\.306/.test(teaser) && /\$13,9 billones/.test(teaser) && /573/.test(teaser) && (teaser.match(/<div class="cifra">/g) || []).length === 3, "el teaser son tres cifras");
       assert.ok(!/pt-btn-cuales/.test(PortadaPub2.htmlHero({ procesosAbiertos: 1, valorTotal: 1, entidadesActivas: 1, generado: new Date().toISOString() }, { conBoton: false })), "dentro del tablero el hero de la portada va sin el botón de entrada");
@@ -16337,18 +16464,32 @@ async function main() {
            qué no está este proceso?», y los cuatro rotulan filtros en
            Licitaciones—. Un nombre de campo traducido por el glosario es
            legítimo; lo que el encargo retiró son los BLOQUES que encabezaban. */
-        const RETIRADOS = ["Cuándo hay que entregar la oferta", "Cuánto valen", "Qué tipo de trabajo es", "Cómo lo adjudican"];
+        const RETIRADOS = ["Cuándo hay que entregar la oferta", "Cuánto valen", "Qué tipo de trabajo es", "Cómo lo adjudican",
+          /* 28-ago-2026, segunda pasada: «elimina "quién las publica"» y «del
+             tablero elimina "quién publica más" y "dónde están", estos datos se
+             repiten». El reparto por departamento NO está en esta lista: se
+             conserva UNA vez, en #pu-departamentos, junto a «Crear consorcio».
+             Lo que no puede volver es el DUPLICADO del tablero, y de eso se
+             encarga el censo de ids de aquí abajo. */
+          "Quién las publica", "Quién publica más"];
         const titulosTab = [...tab.replace(/<!--[\s\S]*?-->/g, "").matchAll(/<h[123][^>]*>([\s\S]*?)<\/h[123]>/g)]
           .map((m) => m[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
         for (const titulo of RETIRADOS) {
           assert.ok(!titulosTab.includes(titulo), `«${titulo}» volvió como título de un bloque de Mi empresa: el encargo del 28-ago-2026 lo retiró`);
         }
-        for (const id of ["pu-cierre", "pu-cuantia", "pu-tipo", "pu-modalidad", "d-urgencia"]) {
+        for (const id of ["pu-cierre", "pu-cuantia", "pu-tipo", "pu-modalidad", "d-urgencia",
+          "pu-entidades", "d-entidades", "d-departamentos-box", "d-departamentos"]) {
           assert.ok(!tab.includes(`id="${id}"`), `#${id} volvió a Mi empresa`);
         }
+        /* …y «Dónde están» sigue estando UNA vez: retirarlo del tablero no podía
+           llevarse por delante el que el encargo manda conservar. */
+        assert.strictEqual((tab.match(/id="pu-departamentos"/g) || []).length, 1,
+          "«Dónde están» tiene que seguir existiendo, exactamente una vez");
         const fuentePulso = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "pulso.js"), "utf8"));
+        const fuenteApp = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
         for (const titulo of RETIRADOS) {
           assert.ok(!fuentePulso.includes(titulo), `pulso.js volvió a construir «${titulo}»`);
+          assert.ok(!fuenteApp.includes(titulo), `app.js volvió a construir «${titulo}»`);
         }
         /* …Y LO QUE SE CONSERVA: el reparto se dejó de PINTAR, no de MEDIR. El
            endpoint sigue publicando las cuatro distribuciones y siguen cuadrando
@@ -17163,7 +17304,15 @@ async function main() {
       assert.ok(/Encaja con su registro ✓/.test(app6) && /No encaja con su registro ✗/.test(app6), "el encaje del registro se dice en llano");
       assert.ok(/cumplen sus requisitos/.test(app6) && /encajan con su registro de proponente/.test(app6), "el resumen del listado no habla de «puertas» ni de «RUP ✓»");
       assert.ok(/Calcular cuánto me cuesta/.test(visibleHtml) && /Descargar mi presupuesto/.test(visibleHtml), "botones en la voz del usuario (§7.2)");
-      assert.ok(/Su registro de proponente/.test(visibleHtml) && /Recalcular cuánto suelen bajar el precio/.test(visibleHtml) && /Tipo de obra/.test(visibleHtml), "Mi empresa traducido");
+      /* «Tipo de obra» salió de esta lista el 28-ago-2026: era la cabecera con
+         la que la Fase 6 tradujo `pertinencia` en el Top 10, y esa columna se
+         retiró al simplificar los destacados («creo que es mucho texto»). No se
+         perdió ninguna traducción: el término interno tampoco aparece. En su
+         lugar entra el rótulo del calendario nuevo, que es el que hoy traduce
+         «manifestación de interés» a lo que el usuario hace. */
+      assert.ok(/Su registro de proponente/.test(visibleHtml) && /Recalcular cuánto suelen bajar el precio/.test(visibleHtml)
+        && /Cuándo hay que avisar que le interesa/.test(visibleHtml), "Mi empresa traducido");
+      assert.ok(!/pertinencia/i.test(visibleHtml), "«pertinencia» es jerga interna: no puede volver a la pantalla");
       console.log("  · Traducción (Fase 6): index.html y los 5 módulos del navegador sin jerga del glosario (UNSPSC, CRP, SMMLV, habilitante, subsanable, causal O, tertil, puertas, «RUP ✓/K ✓», Baja típica) · rótulos por data-glosario y Glosario.corto()/VERBOS");
     }
 
@@ -19714,20 +19863,26 @@ async function main() {
           "la regla la ACTIVA el llamador que declara su cola: la primitiva no adivina qué nombre es residual");
       }
 
-      /* …y como la activa el llamador, hay que comprobar que el ÚNICO llamador
-         con cola la declara. La llamada vive dentro del IIFE de app.js y no se
-         puede ejecutar suelta, así que aquí la cerradura mira el fuente — es lo
-         que se puede, y por eso se ancla a la llamada concreta y no a que la
-         palabra aparezca en alguna parte del archivo. */
+      /* ⚠️ LA ÚNICA COLA DEL PROYECTO SE FUE CON SU BLOQUE (28-ago-2026). Esta
+         cerradura exigía que el tablero declarase `esCola` al pintar los
+         departamentos, porque su agregación plegaba el resto en un cubo «OTROS»
+         que —siendo la suma de 21 departamentos— encabezaba el ranking y hacía
+         que el gráfico AFIRMARA que el departamento más grande se llama OTROS.
+         El encargo retiró ese bloque («del tablero elimina "dónde están", estos
+         datos se repiten») y el reparto que queda es el del PULSO, que agrupa
+         por el nombre CRUDO del dataset y cuenta aparte lo que no trae
+         departamento (`sinDepartamento`): no fabrica ningún cubo residual, así
+         que no tiene cola que declarar. Lo que se vigila ahora es justo eso —que
+         el pulso no invente una cola— y `esCola` sigue probado ejecutándolo
+         directamente sobre la primitiva, aquí arriba. */
       {
+        const fuenteEntrada = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "perfil", "entrada.js"), "utf8");
+        assert.ok(/porDep\.set\(dep,/.test(fuenteEntrada) && !/"OTROS"|'OTROS'/.test(fuenteEntrada),
+          "el reparto por departamento del pulso agrupa por el nombre crudo y no fabrica un cubo «OTROS»: si algún día lo hiciera, necesitaría `esCola`");
         const appV = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8")
           .replace(/\/\*[\s\S]*?\*\//g, "");
-        const llamada = (appV.match(/barrasRank\(filasDep[\s\S]{0,320}?\)\n/) || [])[0] || "";
-        assert.ok(llamada, "el tablero sigue pintando los departamentos con `barrasRank(filasDep`");
-        assert.ok(/esCola/.test(llamada),
-          "el tablero tiene la única cola del proyecto («OTROS») y tiene que declararla, o vuelve a encabezar el ranking");
-        assert.ok(/filtroDe[\s\S]*?null/.test(llamada),
-          "…y sigue sin enlazar: `?dep=OTROS` no casa ningún departamento");
+        assert.ok(!/barrasRank\(filasDep/.test(appV),
+          "el tablero ya no pinta departamentos: su bloque se retiró el 28-ago-2026 por duplicar el del pulso");
       }
 
       const api = Viz.apilada([{ etiqueta: "Obra", n: 60 }, { etiqueta: "Interventoría", n: 40 }]);

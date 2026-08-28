@@ -13,8 +13,9 @@
    cuántas puede presentarse— y dos de apoyo. Los cuatro repartos que llevaba
    debajo («Cuándo hay que entregar la oferta», «Cuánto valen», «Qué tipo de
    trabajo es», «Cómo lo adjudican») se retiraron por encargo del dueño: son el
-   modelo, no el hecho. Quedan «Dónde están» y «Quién las publica», que dicen a
-   qué puerta tocar.
+   modelo, no el hecho. También se retiró «Quién las publica». Queda «Dónde
+   están», que dice a qué puerta tocar y que desde el 28-ago-2026 vive FUERA de
+   `<section id="pulso">`, emparejado con «Crear consorcio»: se busca por id.
 
    Todo sale de `/api/perfil?op=pulso&perfil=…` (lib/handlers/perfil/pulso),
    que llama a la MISMA cascada del listado: `total` es exactamente el total
@@ -112,15 +113,14 @@
       + (extra > lista.length ? `<p class="mt-2 text-[11px]" style="color: var(--text-secondary);">${num(extra)} en total; ${lista.length === 1 ? "se muestra la que más procesos publica" : `se muestran las ${lista.length} con más procesos`}.</p>` : "");
   }
 
-  function htmlEntidades(p) {
-    const lista = p.topEntidades || [];
-    if (!lista.length) return "";
-    const g = barrasRank(lista, { filtroDe: (x) => x.nit ? `entidad=${encodeURIComponent(x.nit)}` : `entidad=${encodeURIComponent(x.nombre)}` });
-    if (!g) return "";
-    const extra = p.entidadesDistintas;
-    return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Quién las publica</h2>${g}`
-      + (extra > lista.length ? `<p class="mt-2 text-[11px]" style="color: var(--text-secondary);">${num(extra)} en total; ${lista.length === 1 ? "se muestra la que más procesos publica" : `se muestran las ${lista.length} con más procesos`}.</p>` : "");
-  }
+  /* ═══ «QUIÉN LAS PUBLICA» SE RETIRÓ (encargo del dueño, 28-ago-2026) ═══
+     Aquí vivía `htmlEntidades`: el ranking de entidades que más procesos
+     publican. El dueño lo retiró junto con su gemelo del tablero («Quién publica
+     más»), que decía lo mismo con otra forma: «estos datos se repiten». Con el
+     nodo `#pu-entidades` se fue su constructor — una función que no pinta nadie
+     diverge a la primera corrección. `topEntidades` y `entidadesDistintas`
+     SIGUEN viajando en /api/perfil?op=pulso y `entidad=` sigue siendo un filtro
+     vivo del listado: se dejó de pintar un ranking, no de medirlo. */
 
   /* ── gráfico de barras (SVG en línea, sin dependencias) ──
      Cuatro o cinco cubetas con conteo encima y rótulo debajo; cada barra es
@@ -398,6 +398,115 @@
       <span class="mt-0.5 block text-[11px]" style="color: var(--text-secondary);">Sin esa manifestación no puede presentar oferta. El plazo puede ser de unas horas.</span></a>`;
   }
 
+
+  /* ═══════════ CUÁNDO HAY QUE AVISAR QUE LE INTERESA · el calendario ═══════════
+     (encargo del dueño, 28-ago-2026) «Un calendario con los procesos que vencen
+     pronto la manifestación de interés.» En la selección abreviada de menor
+     cuantía no se puede presentar oferta sin avisar antes, y ese plazo se pierde
+     por no mirarlo: el titular dice CUÁNTOS hay; esto dice CUÁNDO.
+
+     ⚠️ AGRUPA POR EL DÍA EN QUE PUEDE CERRAR, NO POR UN VENCIMIENTO INVENTADO.
+     La ley fija un MÁXIMO de tres días hábiles desde la apertura, no un plazo:
+     la entidad pone el suyo en el pliego y a veces son horas. Colgar cada
+     proceso de un «vence el día X» sería resucitar el plazo que este proyecto ya
+     borró dos veces —el techo en agosto y el suelo el 24—. Por eso:
+       · con fecha del cronograma del pliego → se agrupa por ELLA y se marca
+         «Fecha del pliego»: un dato PUBLICADO gana a uno CALCULADO;
+       · sin ella → se agrupa por el PRIMER día en que puede cerrar y la fila
+         dice la VENTANA entera («puede cerrar entre el X y el Y»). El
+         encabezado del día no afirma un vencimiento.
+     Los que ya están corriendo (`por_confirmar`) van bajo HOY, el estado de
+     máxima urgencia. Lo que no se puede situar SE CUENTA APARTE: repartirlo a
+     ojo sería inventar la fecha por la puerta de atrás.
+
+     Vive aquí y no en app.js porque este módulo sirve en Node: la suite lo
+     EJECUTA con filas reales. Recibe las filas TAL CUAL las sirve
+     /api/procesos?op=listar (`manifestacion` en snake_case, la forma de
+     lib/manifestacion.manifestacionDeFila), así que no hay una segunda
+     traducción que pueda divergir. */
+  const MAX_DIAS_CALENDARIO = 8;          // más allá de eso ya no es «pronto»
+
+  /* El día de HOY en Colombia. Se compara contra fechas ISO que el servidor ya
+     calculó en ese huso, así que tiene que leerse en el mismo: un `new Date()`
+     local compara mal a partir de las 19:00. */
+  function hoyColombiaISO(ahora) {
+    const d = ahora ? new Date(ahora) : new Date();
+    try { return d.toLocaleDateString("en-CA", { timeZone: "America/Bogota" }); }
+    catch { return d.toISOString().slice(0, 10); }
+  }
+  function diaLegible(iso) {
+    const d = new Date(iso + "T12:00:00Z");
+    if (isNaN(d)) return iso;
+    return d.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+  }
+
+  /* Una fila del calendario. Dice la VENTANA entera, nunca un vencimiento que no
+     consta, y marca aparte las que sí traen fecha del cronograma del pliego. */
+  function filaCalendario(l) {
+    const m = l.manifestacion || {};
+    const objeto = l.nombre_del_procedimiento || l.descripci_n_del_procedimiento || l.id_del_proceso || "Proceso sin objeto publicado";
+    const marca = m.confirmada
+      ? `<span class="cal-marca cal-marca-confirmada" title="Fecha tomada del cronograma del pliego">Fecha del pliego</span>`
+      : `<span class="cal-marca" title="${esc(m.nota || "")}">Ventana calculada</span>`;
+    const cuando = m.confirmada
+      ? `vence el ${esc(m.fecha_limite_legible || "")}`
+      : m.puede_cerrar_desde_legible && m.vence_a_mas_tardar_legible
+        ? `puede cerrar entre el ${esc(m.puede_cerrar_desde_legible)} y el ${esc(m.vence_a_mas_tardar_legible)}`
+        : "sin ventana que se pueda situar";
+    const datos = [
+      esc(l.entidad || ""),
+      l.cuantia_cop ? pesosCortos(l.cuantia_cop) : "sin presupuesto publicado",
+      cuando,
+    ].filter(Boolean).join(" · ");
+    return `<li class="fila-proceso${l.urlproceso ? " cursor-pointer" : ""}" data-url="${esc(l.urlproceso || "")}" title="${esc(m.nota || "")}">
+      <div class="proceso-fila">
+        <div class="proceso-texto">
+          <p class="proceso-objeto">${esc(objeto)}</p>
+          <p class="proceso-datos">${datos}</p>
+        </div>
+        <div class="proceso-accion">${marca}</div>
+      </div></li>`;
+  }
+
+  function htmlCalendario(filas, opciones = {}) {
+    const hoy = opciones.hoy || hoyColombiaISO(opciones.ahora);
+    const total = opciones.total;
+    const grupos = new Map();
+    let sinSituar = 0;
+    for (const l of filas || []) {
+      const m = l && l.manifestacion;
+      if (!m || !m.aplica) continue;
+      const clave = m.confirmada && m.fecha_limite
+        ? m.fecha_limite
+        : m.estado === "por_confirmar" ? hoy : (m.puede_cerrar_desde || null);
+      if (!clave) { sinSituar++; continue; }     // sin fecha legible: se cuenta, no se sitúa
+      if (!grupos.has(clave)) grupos.set(clave, []);
+      grupos.get(clave).push(l);
+    }
+    const dias = [...grupos.keys()].sort().slice(0, MAX_DIAS_CALENDARIO);
+    const fuera = grupos.size - dias.length;
+    const bloques = dias.map((iso) => {
+      const lista = grupos.get(iso).slice().sort((a, b) => (b.cuantia_cop || 0) - (a.cuantia_cop || 0));
+      /* Un día ya pasado o el de hoy se dicen «Hoy»: la ventana está corriendo y
+         lo único cierto es que HOY hay que mirarlo. */
+      const esHoy = iso <= hoy;
+      const cabeza = esHoy ? "Hoy" : diaLegible(iso);
+      return `<div class="cal-dia${esHoy ? " cal-dia-hoy" : ""}">
+        <div class="cal-dia-cabeza">
+          <span class="cal-dia-fecha">${esc(cabeza)}</span>
+          <span class="cal-dia-cuenta">${num(lista.length)} ${lista.length === 1 ? "proceso" : "procesos"}</span>
+        </div>
+        <ul class="lista-procesos">${lista.map(filaCalendario).join("")}</ul>
+      </div>`;
+    }).join("");
+    const partes = [];
+    if (fuera > 0) partes.push(`${num(fuera)} día${fuera === 1 ? "" : "s"} más adelante no se muestran.`);
+    if (sinSituar > 0) partes.push(`${num(sinSituar)} sin fecha de apertura legible: consúltelos en el cronograma de SECOP II.`);
+    if (total != null && total > (filas || []).length) partes.push(`Se leyeron ${num((filas || []).length)} de ${num(total)} procesos con aviso abierto.`);
+    partes.push("La ley fija un máximo de tres días hábiles desde la apertura, no un plazo: la entidad pone el suyo en el pliego y puede ser de unas horas.");
+    return { dias: bloques, nota: partes.join(" ") };
+  }
+
   function htmlNota(p) {
     const cuando = p.generado ? new Date(p.generado).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: "America/Bogota" }) : "";
     return `Calculado para su perfil sobre el SECOP II${cuando ? ` a las ${cuando.replace(/\.$/, "")}` : ""}. Cada cifra lleva a su lista.`;
@@ -469,23 +578,38 @@
       p = await r.json();
     } catch { p = null; }
     if (mio !== peticion) return false;                                        // llegó tarde: no pinta
-    if (!p || !p.ok) { raiz.classList.add("hidden"); perfilPintado = null; return false; }   // vacía y honesta
+    if (!p || !p.ok) {
+      /* ⚠️ «Dónde están» vive FUERA de `#pulso` desde el 28-ago-2026, así que el
+         `hidden` de la sección ya no lo tapa: sin esta línea se quedaría en
+         pantalla con el reparto del perfil ANTERIOR bajo un selector que dice
+         otra cosa — la misma mentira que la guarda de carrera de más abajo evita
+         en el camino feliz. Vacía y honesta antes que bonita y falsa. */
+      raiz.classList.add("hidden");
+      const depFuera = d.getElementById("pu-departamentos");
+      if (depFuera) depFuera.classList.add("hidden");
+      perfilPintado = null;
+      return false;
+    }
     const rc = d.getElementById("rup-cifras");
     if (rc) { rc.innerHTML = htmlEmpresa(p.empresa); rc.classList.toggle("hidden", !rc.innerHTML); }
     d.getElementById("pu-hero").innerHTML = htmlHero(p, opciones.nombre || "");
-    d.getElementById("pu-departamentos").innerHTML = htmlDepartamentos(p);
-    d.getElementById("pu-entidades").innerHTML = htmlEntidades(p);
+    /* ⚠️ «DÓNDE ESTÁN» YA NO VIVE DENTRO DE #pulso (28-ago-2026): el encargo lo
+       emparejó con «Crear consorcio», más abajo en la pestaña. Se busca por id,
+       que no cambia, así que da igual dónde esté en el DOM — pero AHORA PUEDE NO
+       ESTAR: si alguien retira el nodo, un `.innerHTML` sin guarda lanzaría y
+       se llevaría por delante el resto del pintado (el titular incluido). */
+    const dep = d.getElementById("pu-departamentos");
+    if (dep) dep.innerHTML = htmlDepartamentos(p);
     const manif = d.getElementById("pu-manifestacion");
     if (manif) { manif.innerHTML = htmlManifestacion(p); manif.classList.toggle("hidden", !manif.innerHTML); }
     d.getElementById("pu-nota").textContent = htmlNota(p);
-    // sin departamentos ni entidades (perfil sin licitaciones) las cajas se esconden
-    d.getElementById("pu-departamentos").classList.toggle("hidden", !(p.porDepartamento || []).length);
-    d.getElementById("pu-entidades").classList.toggle("hidden", !(p.topEntidades || []).length);
+    // sin departamentos (perfil sin licitaciones) la caja se esconde
+    if (dep) dep.classList.toggle("hidden", !(p.porDepartamento || []).length);
     raiz.classList.remove("hidden");
     perfilPintado = perfil;
     return true;
   }
   const olvidar = () => { perfilPintado = null; };
 
-  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, ticksRedondos, htmlNota };
+  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlManifestacion, htmlCalendario, filaCalendario, hoyColombiaISO, svgBarras, columnas, barrasRank, apilada, ticksRedondos, htmlNota };
 });

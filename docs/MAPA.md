@@ -156,9 +156,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 107 secciones. Las 10 más nuevas:
-  L  5601  UN BORRADOR NO ADMITE OFERTAS, Y LA TARJETA DECÍA QUE SÍ (24-ago-2026)
-  L  5631  La dispersión de la baja se MIDE, no se supone (24-ago-2026)
+· MEMORIA · docs/MEMORIA.md — 109 secciones. Las 10 más nuevas:
   L  5681  DOS DE LAS CUATRO GRANULARIDADES DE LA BAJA ESTÁN VACÍAS EN PRODUCCIÓN (24-ago-2026)
   L  5721  Auditoría del módulo APU: las dos mitades no están conectadas (24-ago-2026)
   L  5793  El prompt inicial vive en el repositorio y no puede contener estado (26-ago-2026)
@@ -167,6 +165,8 @@
   L  6005  La revisión adversaria del propio diff, y las CINCO regresiones que dejé dentro
   L  6050  El mapa: buscar coordenadas en vez de leer documentos (28-ago-2026)
   L  6099  Mi empresa reordenada y la experiencia con dueño (encargo del dueño, 28-ago-2026)
+  L  6205  Los gráficos se dibujaban VACÍOS en la red del dueño (28-ago-2026)
+  L  6240  Segunda pasada de Mi empresa, con el dueño mirando la pantalla (28-ago-2026)
 
 · DOCUMENTOS docs/ — 37:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)

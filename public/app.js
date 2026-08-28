@@ -123,6 +123,7 @@
     activarPestana(hash || (conFiltros ? "licitaciones" : "admin"), { empujarHash: false });
     buscar();
     refrescarPulso();
+    cargarCalendario();
     // los procesos guardados: un GET pequeño; pinta «Guardado ✓» en la lista y la sección de Mi empresa
     cargarSeguimiento();
   }
@@ -150,13 +151,22 @@
     const t = tokenGuardado();
     window.Pulso.arrancar(perfil, { nombre, headers: t ? { "x-historico-token": t } : null }).catch(() => {});
   }
-  document.getElementById("pulso").addEventListener("click", (ev) => {
+  /* ⚠️ EL MANEJADOR VIVE EN #tab-admin, NO EN #pulso (28-ago-2026).
+     Colgaba de `#pulso`, y el encargo sacó «Dónde están» de esa sección para
+     emparejarlo con «Crear consorcio»: sus barras habrían dejado de filtrar la
+     lista EN SILENCIO —el clic no hace nada y no hay error—, que es el peor
+     fallo posible en un elemento que se ve pulsable. Se sube al ancestro común
+     de TODO lo que puede llevar un `data-filtro` en esta pestaña, que es un
+     punto único; un segundo listener por sección sería una copia que algún día
+     se queda sin poner. */
+  const raizFiltrable = document.getElementById("tab-admin");
+  raizFiltrable.addEventListener("click", (ev) => {
     const el = ev.target.closest("[data-filtro]");
     if (!el) return;
     ev.preventDefault();
     aplicarFiltroDelPulso(el.getAttribute("data-filtro"));
   });
-  document.getElementById("pulso").addEventListener("keydown", (ev) => {
+  raizFiltrable.addEventListener("keydown", (ev) => {
     if (ev.key !== "Enter" && ev.key !== " ") return;
     const el = ev.target.closest("[data-filtro]");
     if (!el) return;
@@ -2575,6 +2585,8 @@
   function repintarPorPerfil() {
     try { cargarRupActual(); } catch { /* la caja escribe su propio aviso */ }
     try { cargarExperienciaActual(); } catch { /* ídem */ }
+    // los plazos de aviso son POR PERFIL: dejarlos sin repintar enseñaría los de otro
+    cargarCalendario({ forzar: true }).catch(() => {});
   }
 
   /* «Ver PAA» NO re-consulta /api/oportunidades: son dos fuentes distintas y
@@ -5845,63 +5857,50 @@
       ])
       : "";
 
-    /* entidades */
-    const ent = (c.top_entidades || []).slice(0, 10);
-    $("d-entidades").innerHTML = ent.length ? ent.map((e) => {
-      const d = COMPETENCIA_UI[e.competencia] || COMPETENCIA_UI.sin_dato;
-      return `<tr class="fila-entidad cursor-pointer align-top hover:bg-gray-50" data-entidad="${esc(e.entidad)}" title="Ver los procesos que sostienen este promedio">
-          <td class="py-2 pr-2">${esc(e.entidad)}</td>
-          <td class="py-2 pr-2 text-right tabular-nums">${fmt.format(e.procesos)}</td>
-          <td class="py-2 pr-2"><span class="rounded-lg px-2 py-0.5 text-xs font-medium ${d.clases}">${d.emoji} ${d.texto}</span></td>
-          <td class="py-2 text-right tabular-nums">${e.promedio_oferentes == null ? "—" : String(e.promedio_oferentes).replace(".", ",")}</td>
-        </tr>`;
-    }).join("") : '<tr><td colspan="4" class="py-3 text-gray-400">Sin entidades que mostrar.</td></tr>';
+    /* «QUIÉN PUBLICA MÁS» Y «DÓNDE ESTÁN» SE RETIRARON DEL TABLERO (encargo
+       del dueño, 28-ago-2026): «estos datos se repiten». El reparto por
+       departamento lo pinta el pulso —y sigue vivo, ahora junto a «Crear
+       consorcio»—, y el ranking de entidades se fue con su gemelo del pulso.
+       Con los nodos se fue su pintado: un `.innerHTML` sobre un id que ya no
+       existe lanza y se lleva por delante el resto del tablero EN SILENCIO.
+       `top_entidades` y `por_departamento` siguen viajando en la respuesta: se
+       dejaron de pintar, no de medir. */
 
-    /* departamentos: si el dataset no trae la columna, la tabla se OCULTA
-       entera (una tabla vacía no informa, confunde) */
-    const deps = Object.entries(c.totales.por_departamento || {});
-    const hayDeps = deps.some(([k, n]) => n > 0 && k !== "SIN_DEPARTAMENTO");
-    $("d-departamentos-box").classList.toggle("hidden", !hayDeps);
-    if (hayDeps) {
-      /* BARRAS RANKEADAS en vez de una tabla de tres columnas: el trabajo del
-         dato es comparar magnitudes entre nombres largos, y para eso la barra
-         horizontal se lee de un vistazo y la tabla no. Cada fila lleva a su
-         lista filtrada por departamento. */
-      const filasDep = deps.filter(([k, n]) => n > 0 && k !== "SIN_DEPARTAMENTO")
-        .sort((a, b) => b[1] - a[1]).map(([nombre, n]) => ({ nombre, n }));
-      /* «OTROS» ES LA COLA, NO UN DEPARTAMENTO, y eso son DOS consecuencias, no
-         una: (1) se conserva la barra —esconderla haría que el reparto no
-         sumara— pero SIN enlace, porque `?dep=OTROS` no casa ningún
-         departamento y llevaría a una lista vacía, que es una barra que promete
-         algo y no lo cumple; y (2) no compite por un puesto del ranking — con
-         331 procesos frente a los 320 del Tolima encabezaba el gráfico, que
-         entonces AFIRMABA que el departamento más grande se llama «OTROS».
-         `filtroDe` devolviendo null resuelve la primera y `esCola` la segunda. */
-      const esOtros = (x) => x.nombre === "OTROS";
-      $("d-departamentos").innerHTML = window.Pulso
-        ? window.Pulso.barrasRank(filasDep, { tope: 8, esCola: esOtros,
-            filtroDe: (x) => (esOtros(x) ? null : `dep=${encodeURIComponent(x.nombre)}`) })
-        : "";
-    }
-
-    /* destacados */
-    $("d-destacados-titulo").textContent = c.destacados_desde === "competencia_baja"
-      ? "Top 10 procesos más atractivos (entidades con poca competencia)"
-      : "Top 10 procesos más atractivos (aún sin histórico de competencia)";
+    /* ══ LOS DIEZ QUE MÁS LE CONVIENEN · lista, no tabla de siete columnas ══
+       «Creo que es mucho texto, simplifícalo» (28-ago-2026). Eran siete columnas
+       con cabecera; en un móvil eso es una tabla que se arrastra de lado. Ahora
+       son dos líneas por proceso: el objeto y, debajo, los hechos que deciden.
+       Se retiró «Tipo de obra» —la clasificación interna del objeto, que está
+       escrito completo justo encima— y la cabecera entera. NO se retiró ninguna
+       CIFRA: entidad, cuantía, cierre, contra cuánta gente compite y el botón de
+       precio siguen ahí. El título deja de anunciar el criterio en un paréntesis
+       y lo lleva al `title`: el criterio importa cuando se pregunta, no en el
+       encabezado de todos los días.
+       La lista NO va dentro de un `<tbody>`: es HTML inválido y el navegador la
+       expulsa fuera de la tabla, un fallo mudo (la lección de `d-departamentos`). */
+    $("d-destacados-titulo").title = c.destacados_desde === "competencia_baja"
+      ? "Ordenados dando prioridad a las entidades donde se presenta menos gente."
+      : "Todavía no hay histórico de competencia para ordenarlos por cuánta gente se presenta.";
     const dest = c.procesos_destacados || [];
-    $("d-destacados").innerHTML = dest.length ? dest.map((p) => {
-      const d = COMPETENCIA_UI[p.competencia] || COMPETENCIA_UI.sin_dato;
-      const cierre = p.cierre ? new Date(p.cierre) : null;
-      return `<tr class="fila-proceso align-top ${p.url ? "cursor-pointer hover:bg-gray-50" : ""}" data-url="${esc(p.url || "")}" title="${esc(p.badge || "")}">
-          <td class="py-2 pr-2">${esc(p.objeto)}</td>
-          <td class="py-2 pr-2 text-gray-500">${esc(p.entidad)}</td>
-          <td class="py-2 pr-2 text-right tabular-nums">${fmtCOP.format(p.cuantia_cop || 0)}</td>
-          <td class="py-2 pr-2 text-gray-500">${cierre && !isNaN(cierre) ? cierre.toLocaleDateString("es-CO", { day: "numeric", month: "short" }) : "—"}</td>
-          <td class="py-2 pr-2"><span class="rounded-lg px-2 py-0.5 text-xs font-medium ${d.clases}">${d.emoji} ${d.texto}</span></td>
-          <td class="py-2 pr-2 text-gray-500">${esc(p.pertinencia || "")}</td>
-          <td class="py-2 whitespace-nowrap">${celdaApuProceso(p)}</td>
-        </tr>`;
-    }).join("") : '<tr><td colspan="7" class="py-3 text-gray-400">Ningún proceso cumple los criterios de destacado.</td></tr>';
+    $("d-destacados").innerHTML = dest.length
+      ? `<ul class="lista-procesos">${dest.map((p) => {
+        const d = COMPETENCIA_UI[p.competencia] || COMPETENCIA_UI.sin_dato;
+        const cierre = p.cierre ? new Date(p.cierre) : null;
+        const datos = [
+          esc(p.entidad || ""),
+          p.cuantia_cop ? fmtCOP.format(p.cuantia_cop) : "sin presupuesto publicado",
+          cierre && !isNaN(cierre) ? `cierra el ${cierre.toLocaleDateString("es-CO", { day: "numeric", month: "long" })}` : "sin fecha de cierre",
+        ].filter(Boolean).join(" · ");
+        return `<li class="fila-proceso${p.url ? " cursor-pointer" : ""}" data-url="${esc(p.url || "")}" title="${esc(p.badge || "")}">
+          <div class="proceso-fila">
+            <div class="proceso-texto">
+              <p class="proceso-objeto">${esc(p.objeto)}</p>
+              <p class="proceso-datos">${datos} · <span class="chip-competencia ${d.clases}">${d.emoji} ${d.texto}</span></p>
+            </div>
+            <div class="proceso-accion">${celdaApuProceso(p)}</div>
+          </div></li>`;
+      }).join("")}</ul>`
+      : '<p class="text-sm" style="color: var(--text-secondary);">Ningún proceso cumple hoy los criterios para destacarlo.</p>';
 
     pintarMeta(c, cache);
   }
@@ -5958,58 +5957,14 @@
   /* Detalle de competencia de una entidad, en línea bajo su fila (el mismo
      /api/competencia-detalle que abre el modal de la app; aquí se despliega en
      la propia tabla en vez de duplicar el modal). */
-  $("d-entidades").addEventListener("click", async (e) => {
-    const fila = e.target.closest(".fila-entidad");
-    if (!fila) return;
-    const abierta = fila.nextElementSibling;
-    if (abierta && abierta.classList.contains("detalle-entidad")) return abierta.remove();
-    const entidad = fila.getAttribute("data-entidad");
-    const tr = document.createElement("tr");
-    tr.className = "detalle-entidad bg-gray-50";
-    tr.innerHTML = '<td colspan="4" class="px-2 py-3 text-xs text-gray-500">Cargando el detalle…</td>';
-    fila.after(tr);
-    const celda = tr.firstElementChild;
-    let r = null, cuerpo = null;
-    try {
-      r = await fetch(`/api/inteligencia?op=entidad&entidad=${encodeURIComponent(entidad)}`,
-        { headers: { "x-historico-token": leerToken() } });
-      cuerpo = await leerJson(r);
-    } catch {
-      celda.textContent = "No se pudo contactar el servidor.";
-      return;
-    }
-    if (!r.ok || !cuerpo || !cuerpo.ok) {
-      celda.textContent = (cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`;
-      return;
-    }
-    if (!cuerpo.encontrada) { celda.textContent = cuerpo.mensaje || "Sin procesos históricos de esta entidad."; return; }
-    const i = cuerpo.indice || {};
-    /* EL CAMPO ES `procesos_contados`, NO `total_procesos`.
-       Aquí nació el «promedio 18,2 oferentes en 0 procesos» que se vio en
-       producción: `/api/competencia-detalle` NUNCA ha devuelto `total_procesos`
-       —ese nombre pertenece al OTRO payload, el `competencia_entidad` que
-       embebe /api/oportunidades— así que `i.total_procesos || 0` valía 0
-       SIEMPRE, con cualquier dato y con cualquier entidad. No era un dato malo:
-       era un campo inexistente leído con un `|| 0` que lo disfrazaba de cero.
-       De ahí la regla: si el conteo no viene, NO se pinta un 0 — se dice que no
-       se sabe. Un `|| 0` sobre un campo ausente convierte «no sé» en «cero», y
-       ese es el error que hay que no repetir. */
-    const contados = Number(i.procesos_contados);
-    const promedio = i.promedio_oferentes == null ? null : Number(i.promedio_oferentes);
-    const conBase = Number.isFinite(contados) && contados > 0 && promedio != null && !isNaN(promedio);
-    const lista = (cuerpo.procesos || []).slice(0, 8)
-      .map((p) => `<li class="truncate">· ${esc(p.objeto)} — <span class="tabular-nums">${p.numero_ofertas}</span> oferente${p.numero_ofertas === 1 ? "" : "s"}</li>`)
-      .join("");
-    celda.innerHTML =
-      `<p class="font-medium text-gray-700">${esc(cuerpo.entidad)} · nivel ${esc(i.nivel || "sin_dato")}`
-      + (conBase
-        ? ` · promedio ${String(promedio).replace(".", ",")} oferentes en ${contados} proceso${contados === 1 ? "" : "s"}`
-        : " · sin procesos que sostengan un promedio")
-      + "</p>"
-      + (cuerpo.mensaje ? `<p class="mt-1 text-amber-700">${esc(cuerpo.mensaje)}</p>` : "")
-      + (lista ? `<ul class="mt-2 space-y-0.5">${lista}</ul>` : "")
-      + `<p class="mt-2 text-gray-400">${(cuerpo.excluidos || []).length} proceso(s) excluidos del promedio, con su motivo, en /api/competencia-detalle.</p>`;
-  });
+  /* EL DETALLE EN LÍNEA DE UNA ENTIDAD SE FUE CON SU TABLA (28-ago-2026).
+     Colgaba de `#d-entidades`, que el encargo retiró: `$("d-entidades")` sin
+     guarda habría lanzado aquí y matado TODO el cableado que viene después —el
+     de los destacados, el del RUP, el de los parámetros—, que es exactamente
+     cómo se pierde una pestaña entera sin un solo error visible.
+     `/api/inteligencia?op=entidad` no se toca: sigue sirviendo, y quien quiera
+     los procesos que sostienen un promedio los tiene en la ficha de cada
+     licitación, que es donde la pregunta se hace de verdad. */
 
   // una fila de destacados lleva al proceso en SECOP II (es la ficha real)
   $("d-destacados").addEventListener("click", (e) => {
@@ -6596,6 +6551,81 @@
         + "Mientras no se carguen sus propios contratos ejecutados, la auditoría de códigos no los usa.</p>")
       + (ejemplos ? `<p class="mt-2 text-xs leading-6 text-gray-500">${ejemplos}</p>` : "");
   }
+
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     CUÁNDO HAY QUE AVISAR QUE LE INTERESA · el calendario (28-ago-2026)
+     --------------------------------------------------------------------------
+     «Un calendario con los procesos que vencen pronto la manifestación de
+     interés.» En la selección abreviada de menor cuantía no se puede presentar
+     oferta sin avisar antes, y ese plazo se pierde por no mirarlo: el aviso del
+     titular dice CUÁNTOS hay; aquí se ve CUÁNDO.
+
+     ⚠️ AGRUPA POR EL DÍA EN QUE PUEDE CERRAR, NO POR UN VENCIMIENTO INVENTADO.
+     La ley fija un MÁXIMO de tres días hábiles desde la apertura, no un plazo:
+     la entidad pone el suyo en el pliego y a veces son horas. Colgar cada
+     proceso de un «vence el día X» sería resucitar el plazo que este proyecto ya
+     borró dos veces (el techo en agosto y el suelo el 24). Así que:
+       · con fecha del cronograma del pliego → se agrupa por ELLA y se marca
+         «confirmada»: un dato publicado gana a uno calculado;
+       · sin ella → se agrupa por el PRIMER día en que puede cerrar, y la fila
+         dice la ventana entera. El encabezado del día no dice «vence»: dice
+         «desde este día puede haber cerrado», que es el hecho accionable.
+     Los que ya están corriendo (`por_confirmar`) van bajo HOY, que es el estado
+     de máxima urgencia.
+
+     NO HAY ENDPOINT NUEVO: se llama al MISMO listado del perfil con
+     `manif=abierta`, que es exactamente adonde lleva el aviso del titular, así
+     que el calendario y la lista no pueden discrepar sobre el mismo corpus.
+     ══════════════════════════════════════════════════════════════════════════ */
+  let calendarioPintadoPara = null;
+  let peticionCalendario = 0;
+
+  async function cargarCalendario(opciones = {}) {
+    const caja = $("seccion-calendario");
+    if (!caja) return false;
+    const perfil = $("f-perfil").value;
+    if (calendarioPintadoPara === perfil && !opciones.forzar) return true;
+    /* GUARDA DE CARRERA, la misma del pulso: el selector de perfil dispara esto
+       en cada cambio y con dos cambios rápidos ganaría la respuesta que llegara
+       la última, dejando los plazos de OTRO perfil bajo el selector actual. La
+       comprobación va ANTES de tocar un solo nodo. */
+    const mio = ++peticionCalendario;
+    /* EL PARSEO VA APARTE DEL FETCH, y no es estilo: el muro del edge (Vercel
+       Password Protection) responde HTML, así que `r.json()` LANZA — con las dos
+       cosas en el mismo `try` ese muro se diagnostica como «sin conexión», que
+       es lo contrario de la verdad. `leerJson` marca ese caso con `sinJson`, y
+       tragarse el cuerpo en un catch tira el marcador. */
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch(`/api/procesos?op=listar&perfil=${encodeURIComponent(perfil)}&manif=abierta&por_pagina=100`,
+        { headers: { "x-historico-token": leerToken() } });
+    } catch { r = null; }
+    if (r) cuerpo = await leerJson(r);
+    if (mio !== peticionCalendario) return false;
+    if (!cuerpo || !cuerpo.ok) { caja.classList.add("hidden"); calendarioPintadoPara = null; return false; }
+    /* EL CONSTRUCTOR VIVE EN public/pulso.js, que es UMD y sirve en Node: así la
+       suite lo EJECUTA con filas reales en vez de comprobar por regex que
+       existe. Aquí queda solo el cableado —cuándo se pide, con qué perfil y
+       dónde se pinta—, que es lo que no se puede ejecutar fuera del navegador. */
+    if (!window.Pulso) return false;
+    const html = window.Pulso.htmlCalendario(cuerpo.resultados || [], { total: cuerpo.total });
+    $("cal-dias").innerHTML = html.dias;
+    $("cal-nota").textContent = html.nota;
+    // sin ningún aviso abierto no se pinta un calendario vacío: vacío y honesto
+    caja.classList.toggle("hidden", !html.dias);
+    calendarioPintadoPara = perfil;
+    return true;
+  }
+
+  /* Una fila lleva al proceso en SECOP II, igual que en los destacados. El
+     manejador se cablea una vez sobre la sección, no una por fila. */
+  $("cal-dias").addEventListener("click", (e) => {
+    const fila = e.target.closest(".fila-proceso");
+    if (!fila) return;
+    const url = fila.getAttribute("data-url");
+    if (url) window.open(url, "_blank", "noopener");
+  });
 
   /* ══════════════════════════════════════════════════════════════════════════
      PUESTA EN PRODUCCIÓN SIN TERMINAL

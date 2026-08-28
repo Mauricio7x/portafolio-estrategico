@@ -6236,3 +6236,91 @@ absoluto.
 - **MEDIDO después del arreglo** (Chromium, CDN caído, escritorio 1280 y móvil 390): riel 6 px,
   barra 6 px, apilada 26 px, segmentos 26 px, punto de leyenda 10×10; `scrollWidth === clientWidth`
   en los dos tamaños; cero errores de página. Antes, los mismos nodos medían 0.
+
+### Segunda pasada de Mi empresa, con el dueño mirando la pantalla (28-ago-2026)
+
+El reorden de esta misma mañana duró unas horas: en cuanto el dueño lo vio, llegó una segunda tanda
+de correcciones. Van juntas aquí porque es el mismo encargo, y porque la lección de método es que
+**una pantalla no está terminada hasta que su usuario la mira**.
+
+- **EL ORDEN, OTRA VEZ: titular → tablero → acciones → dónde están + consorcio → los diez →
+  calendario → registro → Sistema.** El registro de proponente **baja hasta el final**: describe a la
+  empresa —qué tiene inscrito, cuánta experiencia acredita— y eso no cambia de un día para otro, así
+  que no responde «¿a qué me presento HOY?», que es la pregunta de la pestaña. La cerradura fija la
+  CADENA COMPLETA, no parejas sueltas.
+- **EL VELO DE ACENTO DEL TITULAR SE RETIRÓ EN CUANTO SE VIO**: «quita ese efecto, se ve horrible,
+  déjalo más limpio, más clean». Eran dos degradados radiales sobre el vidrio. La tarjeta se queda con
+  el vidrio del sistema y nada más — el peso lo carga la TIPOGRAFÍA, no el fondo. La clase
+  `hero-empresa` NO se retira: sigue poniendo el relleno y el radio propios, que sin el CDN no
+  existirían. **La cerradura vigila el SÍNTOMA** (un degradado en la regla del titular), no el literal
+  que se borró: el mismo efecto vuelve igual con otra función de color.
+- **DOS RANKINGS DE ENTIDADES ERAN UNO REPETIDO.** «Elimina "quién las publica"» y «del tablero
+  elimina "quién publica más" y "dónde están", estos datos se repiten». Se fueron `#pu-entidades` y
+  `htmlEntidades`, y del tablero `#d-entidades` y `#d-departamentos-box` con su pintado. **«Dónde
+  están» sobrevive UNA vez** —la del pulso— y sube a emparejarse con «Crear consorcio».
+  · **El detalle en línea de una entidad se fue con su tabla**, y su cerradura NO se borró: lo que
+    protegía no era ese bloque, sino la regla que costó el «promedio 18,2 oferentes en 0 procesos».
+    Se convirtió en un CENSO del fuente entero —más fuerte que mirar dentro de un handler—:
+    `i.total_procesos` no puede aparecer en ningún sitio, porque ese campo no existe en la respuesta
+    de la entidad y un `|| 0` lo disfrazaría de cero.
+  · **La cola «OTROS» desapareció con su bloque.** `esCola` existía porque la agregación del TABLERO
+    plegaba el resto en un cubo residual que, siendo la suma de 21 departamentos, encabezaba el
+    ranking y hacía que el gráfico afirmara que el departamento más grande se llama OTROS. El reparto
+    que queda —el del pulso— agrupa por el nombre CRUDO del dataset y cuenta aparte lo que no trae
+    departamento: no fabrica ningún cubo, así que no tiene cola. La cerradura pasa a vigilar
+    exactamente eso, y `esCola` sigue probado ejecutándolo sobre la primitiva.
+- **⚠️ «EN PARALELO» NO PUEDE COLGAR DEL CDN, Y EL ENCARGO ERA LITERALMENTE ESO.** «Haz que sean
+  iguales y estén posicionados en paralelo.» Con `lg:grid-cols-2` **no se cumple en la red del
+  dueño**: sin el CDN de Tailwind la utilidad no existe y las dos tarjetas se apilan (medido en
+  Chromium: 1264 px cada una, una debajo de otra). Las dos filas usan una regla propia, `.fila-doble`.
+  · **`auto-fit` arregla la queja de raíz** —«el espacio de actualizar datos es la mitad del tamaño de
+    lo normal»—: cuando el compañero de fila nace oculto, la pista se colapsa y la tarjeta que queda
+    ocupa el ancho ENTERO en vez de quedarse a medias. `stretch` las deja de la misma altura, que es
+    la otra mitad de «iguales».
+  · **Y NACER OCULTO NO BASTA SIN EL CDN.** La red de seguridad de `.hidden` de este proyecto es una
+    lista DECLARADA por id, no una regla global (deliberadamente: una global pelearía con `md:flex`
+    de la barra de pestañas). `#seccion-calendario`, `#seccion-consorcio` y `#pulso` no estaban en
+    ella y se veían SIEMPRE en la red del dueño — el calendario, con su título y su explicación sobre
+    un hueco vacío, que se lee como «no tiene ningún plazo». Entran a la red con su motivo.
+- **LOS DIEZ MÁS ATRACTIVOS: LISTA, NO TABLA DE SIETE COLUMNAS.** «Creo que es mucho texto,
+  simplifícalo.» Dos líneas por proceso: el objeto y, debajo, los hechos que deciden (entidad,
+  cuantía, cierre y contra cuánta gente compite), con el botón de precio a la derecha. Se retiró
+  «Tipo de obra» —la clasificación interna del objeto, que está escrito completo justo encima— y la
+  cabecera entera. **No se retiró ninguna cifra.** `#d-destacados` conserva su id pero deja de ser un
+  `<tbody>`: una lista dentro de un `<tbody>` es HTML inválido y el navegador la expulsa fuera de la
+  tabla, que es un fallo mudo (la lección de `d-departamentos`).
+  · La cerradura que exigía el `<th>Mi precio</th>` se reescribió: lo que protegía no era la cabecera,
+    era que el acceso a costear el proceso siguiera a la vista. Ahora vigila el BOTÓN, que es lo que
+    se pulsa.
+- **⚠️ EL CALENDARIO DE AVISOS AGRUPA POR EL DÍA EN QUE PUEDE CERRAR, NO POR UN VENCIMIENTO QUE NO
+  EXISTE.** Es la trampa de este encargo: pedir «un calendario» invita a colgar cada proceso de una
+  fecha, y **la ley fija un MÁXIMO de tres días hábiles desde la apertura, no un plazo** — la entidad
+  pone el suyo en el pliego y a veces son horas. Hacerlo habría resucitado el plazo inventado que este
+  proyecto ya borró dos veces (el techo en agosto, el suelo el 24). Por eso:
+  · con fecha del cronograma del pliego → se agrupa por ELLA y se marca «Fecha del pliego»: un dato
+    PUBLICADO gana a uno CALCULADO, y solo ahí la fila dice «vence el…»;
+  · sin ella → se agrupa por el PRIMER día en que puede cerrar —a partir de ahí ya no se puede contar
+    con él, que es el hecho accionable— y la fila dice la VENTANA entera;
+  · lo que ya está corriendo va bajo HOY, el estado de máxima urgencia;
+  · lo que no se puede situar SE CUENTA APARTE: repartirlo a ojo sería inventar la fecha por la
+    puerta de atrás.
+  **La cerradura ejecuta las cuatro ramas y caza la mutación exacta**: que una ventana calculada diga
+  «vence».
+  · **NO HAY ENDPOINT NUEVO**: se llama al MISMO listado del perfil con `manif=abierta`, que es
+    exactamente adonde lleva el aviso del titular, así que el calendario y la lista no pueden
+    discrepar sobre el mismo corpus.
+  · **El constructor vive en `public/pulso.js`, no en `app.js`**, y eso no es dónde queda más bonito:
+    pulso.js es UMD y sirve en Node, así que la suite lo EJECUTA con filas reales. En app.js queda
+    solo el cableado —cuándo se pide, con qué perfil y dónde se pinta—, que es lo único que no se
+    puede ejecutar fuera del navegador.
+  · El `fetch` y el `r.json()` van SEPARADOS: la suite lo exige y con razón —el muro del edge responde
+    HTML, así que con los dos en el mismo `try` ese muro se diagnostica como «sin conexión»—.
+- **EL MANEJADOR DE `data-filtro` SUBIÓ A `#tab-admin`.** Colgaba de `#pulso`, y sacar «Dónde están»
+  de esa sección habría dejado sus barras sin filtrar la lista **en silencio**: el clic no hace nada y
+  no hay error, que es el peor fallo posible en algo que se ve pulsable. Un punto único en el ancestro
+  común, no una copia por sección.
+- **VERIFICADO EN CHROMIUM REAL** (escritorio 1280 y móvil 390, **con el CDN caído**): cero errores de
+  página, `scrollWidth === clientWidth` en los dos, el orden de las diez secciones, las dos filas
+  realmente en paralelo (620 px + 620 px a la misma altura) y a ancho completo cuando el compañero se
+  oculta, el titular sin degradado, el calendario con sus cuatro días y «vence el…» SOLO en la fila
+  confirmada por el pliego.
