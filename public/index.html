@@ -322,6 +322,47 @@
     .hero-cifras { display: flex; flex-wrap: wrap; align-items: flex-end;
       gap: 20px 40px; margin-top: 20px; }
     .hero-pie { margin: 16px 0 0; font-size: 12px; color: var(--text-secondary); }
+
+    /* ══ LAS PRIMITIVAS DE GRÁFICO SE MAQUETAN SOLAS (28-ago-2026) ══
+       ⚠️ MEDIDO en Chromium con el CDN de Tailwind caído —la red institucional
+       del dueño—: las barras de «Dónde están» y «Quién las publica» salían SIN
+       BARRA (solo el texto) y los segmentos de «De qué se compone su lista» y
+       «Contra cuánta gente compite» no se veían en absoluto. La causa: el riel
+       medía `h-1.5` y los segmentos `absolute top-0 h-full`, utilidades que
+       sin el CDN no existen, así que el alto quedaba en cero. Un gráfico que
+       no dibuja NADA no avisa de que le falta algo: se lee como «no hay datos»,
+       y aquí sí los hay. Con el CDN funcionaba, y por eso no lo veía ninguna
+       prueba de Node — solo el navegador.
+       Es la doctrina de `.tabla-scroll` y del titular: LO QUE DECIDE LA
+       GEOMETRÍA NO PUEDE COLGAR DE UNA HOJA EXTERNA. Cada valor es el que ya
+       tenía la utilidad que sustituye (h-1.5 = 6 px, gap-3 = 12 px, mt-2 = 8 px…),
+       así que el aspecto CON el CDN no cambia; lo que cambia es que ahora
+       también existe sin él. La magnitud (el ancho) sigue en un `style` en
+       línea: es dato, no maquetación. */
+    .viz-rank { margin: 8px 0 0; padding: 0; list-style: none; }
+    .viz-rank > li + li { margin-top: 8px; }
+    /* `var(--transition)` es el TOKEN COMPLETO del proyecto (duración + curva),
+       como en `.tarjeta`; escribir aquí una duración propia sería una segunda
+       definición y además se saltaría «reducir movimiento», que apaga el token
+       en un solo sitio. */
+    .viz-rank-enlace { display: block; border-radius: 8px; padding: 2px 4px; text-decoration: none;
+      transition: var(--transition); }
+    .viz-rank-enlace:hover { opacity: 0.8; }
+    .viz-rank-enlace:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-light); }
+    .viz-rank-fila { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .viz-rank-nombre { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      font-size: 13px; color: var(--text-primary); }
+    .viz-rank-cifra { flex-shrink: 0; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+    .viz-rank-riel { margin-top: 4px; height: 6px; overflow: hidden; border-radius: 999px; background: var(--bg-inset); }
+    .viz-rank-barra { height: 100%; border-radius: 999px; background: var(--accent); }
+    .viz-apilada { position: relative; margin-top: 8px; overflow: hidden; border-radius: 6px; background: var(--bg-inset); }
+    .viz-apilada-trozo { position: absolute; top: 0; height: 100%; }
+    .viz-apilada-rotulo { position: absolute; top: 0; height: 100%; display: flex; align-items: center;
+      justify-content: center; font-size: 11px; font-weight: 600; }
+    .viz-leyenda { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0 0; padding: 0; list-style: none; }
+    .viz-leyenda > li { display: flex; align-items: center; gap: 6px; }
+    .viz-leyenda-punto { display: inline-block; width: 10px; height: 10px; flex-shrink: 0; border-radius: 2px; }
+    .viz-leyenda-texto { font-size: 11px; color: var(--text-secondary); }
     /* La cifra que manda del titular. `tabular-nums` para que no baile al
        refrescar, y `clamp` en vez de dos utilidades de Tailwind: el CDN está
        bloqueado en la red del dueño y allí las utilidades no existen. */

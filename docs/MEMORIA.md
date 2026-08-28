@@ -6201,3 +6201,38 @@ no importa».
   es lo que de verdad es: el estado de dos índices que se reconstruyen a mano. **La cerradura censa
   el conjunto `d-baja-*`/`d-comp-*` que haya en el HTML**, no una lista escrita a mano: un id nuevo
   entra al censo solo.
+
+### Los gráficos se dibujaban VACÍOS en la red del dueño (28-ago-2026)
+
+Salió de mirar la pestaña reordenada en Chromium con el CDN de Tailwind caído —que no es un
+escenario de laboratorio: **es la red institucional del dueño**, y ya costó el desborde móvil de
+ago-2026—. Las barras de «Dónde están» y «Quién las publica» salían **sin barra**, solo el texto, y
+los segmentos de «De qué se compone su lista» y «Contra cuánta gente compite» no se veían en
+absoluto.
+
+- **La causa: la GEOMETRÍA colgaba de una hoja externa.** El riel de `barrasRank` medía `h-1.5` y
+  los segmentos de `apilada` iban con `absolute top-0 h-full`. Sin el CDN esas clases no existen, el
+  alto queda en **cero** y el gráfico se dibuja vacío. `columnas` no tenía el problema porque es SVG
+  con estilos en línea, y por eso el defecto no era evidente: dos de las tres primitivas rotas y la
+  tercera bien.
+- **UN GRÁFICO VACÍO NO AVISA DE QUE LE FALTA ALGO: se lee como «no hay datos».** Ahí está lo caro.
+  Un error de consola se ve; una tarjeta que no pinta nada se interpreta como una medición —«no hay
+  procesos en ningún departamento»— cuando lo que pasa es que la hoja de estilos no llegó. Es la
+  misma familia que `|| 0` sobre un conteo: convertir un fallo en una cifra creíble.
+- **Y CON EL CDN FUNCIONABA**, así que ninguna prueba de Node podía verlo. Lo cazó el navegador
+  real, que es exactamente para lo que la regla del proyecto lo exige al tocar `public/`.
+- **La geometría se mudó a clases propias** (`viz-rank*`, `viz-apilada*`, `viz-leyenda*`), cada valor
+  el mismo que tenía la utilidad que sustituye (`h-1.5` = 6 px, `gap-3` = 12 px, `mt-2` = 8 px…), así
+  que **el aspecto CON el CDN no cambia**; lo que cambia es que ahora también existe sin él. Lo que
+  sigue en `style=` es DATO —el ancho de la barra, el color de la serie, el alto que pide el
+  llamador—: eso, y solo eso, puede ir en línea. La transición usa `var(--transition)`, el token
+  completo del proyecto, para no escribir una segunda duración y para heredar «reducir movimiento».
+- **LA CERCA ES UNA LISTA BLANCA, NO UNA NEGRA.** Se ejecutan las tres primitivas y se exige que
+  **toda** clase que salga de ellas esté en el conjunto declarado `viz-*` —y que cada una de esas
+  clases exista de verdad en `index.html`—. Una lista de utilidades prohibidas dejaría entrar la
+  siguiente que alguien escriba; con la blanca, una clase nueva tiene que declararse en la prueba.
+  Se comprueba además que el riel y los segmentos tengan un alto **distinto de cero**, que es el
+  síntoma exacto del defecto.
+- **MEDIDO después del arreglo** (Chromium, CDN caído, escritorio 1280 y móvil 390): riel 6 px,
+  barra 6 px, apilada 26 px, segmentos 26 px, punto de leyenda 10×10; `scrollWidth === clientWidth`
+  en los dos tamaños; cero errores de página. Antes, los mismos nodos medían 0.

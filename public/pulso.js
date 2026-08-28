@@ -164,6 +164,16 @@
      de la superficie entre marcas que se tocan, rejilla de 1 px sólida y
      recesiva, y EL TEXTO NUNCA LLEVA EL COLOR DE LA SERIE (va con los tokens de
      texto; el color lo carga la marca que tiene al lado). */
+  /* ⚠️ LA GEOMETRÍA DE ESTAS TRES PRIMITIVAS VIVE EN index.html, en clases
+     propias (`viz-rank*`, `viz-apilada*`, `viz-leyenda*`), NO en utilidades de
+     Tailwind. Medido en Chromium con el CDN caído —la red del dueño—: el riel
+     de `barrasRank` medía `h-1.5` y los segmentos de `apilada` iban con
+     `absolute top-0 h-full`; sin el CDN esas clases no existen, el alto queda
+     en cero y el gráfico se dibuja VACÍO, que se lee como «no hay datos»
+     habiéndolos. `columnas` no tenía el problema porque es SVG con estilos en
+     línea. Lo que sigue en `style=` es DATO (el ancho, el color de la serie, el
+     alto pedido por el llamador), no maquetación: eso es lo único que puede ir
+     en línea. */
   const VIZ = { alto: 168, gap: 2, barraMax: 24, radio: 4 };
   const miles = (n) => num(n);
 
@@ -252,19 +262,19 @@
     if (!lista.length) return "";
     const max = Math.max(...lista.map((x) => x.n || 0));
     if (!max) return "";
-    return `<ul class="mt-2 space-y-2">${lista.map((x) => {
+    return `<ul class="viz-rank">${lista.map((x) => {
       const pct = Math.max(2, ((x.n || 0) / max) * 100);
       const filtro = filtroDe(x);
       const dinero = x.valor != null ? pesosCortos(x.valor) : null;
-      const interior = `<div class="flex items-baseline justify-between gap-3">
-            <span class="truncate text-[13px]" style="color: var(--text-primary)" title="${esc(x.nombre || "")}">${esc(x.nombre || "")}</span>
-            <span class="shrink-0 text-[12px] tabular-nums" style="color: var(--text-secondary)">${miles(x.n)}${dinero ? ` · ${esc(dinero)}` : ""}</span>
+      const interior = `<div class="viz-rank-fila">
+            <span class="viz-rank-nombre" title="${esc(x.nombre || "")}">${esc(x.nombre || "")}</span>
+            <span class="viz-rank-cifra">${miles(x.n)}${dinero ? ` · ${esc(dinero)}` : ""}</span>
           </div>
-          <div class="mt-1 h-1.5 overflow-hidden rounded-full" style="background: var(--bg-inset)">
-            <div class="h-full rounded-full" style="width:${pct.toFixed(1)}%; background: var(--accent)"></div>
+          <div class="viz-rank-riel">
+            <div class="viz-rank-barra" style="width:${pct.toFixed(1)}%"></div>
           </div>`;
       return `<li>${filtro
-        ? `<a href="?${esc(filtro)}#/licitaciones" data-filtro="${esc(filtro)}" class="block rounded-lg px-1 py-0.5 transition hover:opacity-80">${interior}</a>`
+        ? `<a href="?${esc(filtro)}#/licitaciones" data-filtro="${esc(filtro)}" class="viz-rank-enlace">${interior}</a>`
         : interior}</li>`;
     }).join("")}</ul>`;
   }
@@ -316,15 +326,15 @@
          invertirla a blanco en oscuro reabriría el defecto. */
       const texto = `${pct} %`;
       const cabe = (w / 100) * 320 > texto.length * 7 + 14;
-      return `<div class="absolute top-0 h-full" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); background: var(--viz-${i + 1}); border-radius: ${i === 0 ? "6px 0 0 6px" : x >= 99.99 ? "0 6px 6px 0" : "0"}"
+      return `<div class="viz-apilada-trozo" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); background: var(--viz-${i + 1}); border-radius: ${i === 0 ? "6px 0 0 6px" : x >= 99.99 ? "0 6px 6px 0" : "0"}"
           title="${esc(s.etiqueta)}: ${miles(s.n)} (${pct} %)"></div>`
-        + (cabe ? `<span class="absolute top-0 flex h-full items-center justify-center text-[11px] font-semibold" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); color:#000">${texto}</span>` : "");
+        + (cabe ? `<span class="viz-apilada-rotulo" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); color:#000">${texto}</span>` : "");
     }).join("");
-    const leyenda = vivos.map((s, i) => `<li class="flex items-center gap-1.5">
-        <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style="background: var(--viz-${i + 1})"></span>
-        <span class="text-[11px]" style="color: var(--text-secondary)">${esc(s.etiqueta)}${s._cola ? ` (${s._cola})` : ""} · ${miles(s.n)}</span></li>`).join("");
-    return `<div class="relative mt-2 overflow-hidden rounded-md" style="height:${alto}px; background: var(--bg-inset)">${trozos}</div>
-      <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1">${leyenda}</ul>`;
+    const leyenda = vivos.map((s, i) => `<li>
+        <span class="viz-leyenda-punto" style="background: var(--viz-${i + 1})"></span>
+        <span class="viz-leyenda-texto">${esc(s.etiqueta)}${s._cola ? ` (${s._cola})` : ""} · ${miles(s.n)}</span></li>`).join("");
+    return `<div class="viz-apilada" style="height:${alto}px">${trozos}</div>
+      <ul class="viz-leyenda">${leyenda}</ul>`;
   }
 
   function svgBarras(cubetas, { ancho = 320, alto = 150, filtroDe = () => null } = {}) {

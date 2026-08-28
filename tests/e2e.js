@@ -19640,6 +19640,44 @@ async function main() {
       assert.strictEqual(Viz.columnas([], {}), "", "sin cubetas no se inventa un gráfico");
       assert.strictEqual(Viz.columnas([{ n: 0 }, { n: 0 }], {}), "", "todo en cero tampoco: un gráfico plano no dice nada");
 
+      /* ⚠️ NINGUNA PRIMITIVA PUEDE COLGAR SU GEOMETRÍA DEL CDN DE TAILWIND
+         (28-ago-2026). MEDIDO en Chromium con el CDN caído —la red institucional
+         del dueño—: el riel de `barrasRank` medía `h-1.5` y los segmentos de
+         `apilada` iban con `absolute top-0 h-full`; sin el CDN esas clases no
+         existen, el alto queda en CERO y el gráfico se dibuja vacío. Un gráfico
+         que no dibuja nada no avisa de que le falta algo: se lee como «no hay
+         datos» habiéndolos, que es la peor forma de fallar de una pantalla que
+         existe para enseñar datos. Y con el CDN funcionaba, así que ninguna
+         prueba de Node lo veía.
+         LA CERCA ES UNA LISTA BLANCA, NO UNA NEGRA: se exige que TODA clase que
+         salgan de las tres primitivas sea una del proyecto (`viz-*`). Una lista
+         de utilidades prohibidas dejaría entrar la siguiente que alguien
+         escriba; con la blanca, una clase nueva tiene que declararse aquí. Los
+         `style` en línea que quedan son DATO —el ancho de la barra, el color de
+         la serie, el alto pedido— y eso sí puede ir en línea. */
+      {
+        const CLASES_VIZ = new Set(["viz-rank", "viz-rank-enlace", "viz-rank-fila", "viz-rank-nombre",
+          "viz-rank-cifra", "viz-rank-riel", "viz-rank-barra",
+          "viz-apilada", "viz-apilada-trozo", "viz-apilada-rotulo",
+          "viz-leyenda", "viz-leyenda-punto", "viz-leyenda-texto"]);
+        const salida = Viz.barrasRank([{ nombre: "TOLIMA", n: 20, valor: 1e11 }, { nombre: "BOYACÁ", n: 8, valor: 2e10 }], { filtroDe: (x) => `dep=${x.nombre}` })
+          + Viz.apilada([{ etiqueta: "Obra", n: 60 }, { etiqueta: "Interventoría", n: 40 }])
+          + Viz.columnas([{ id: "7d", etiqueta: "x", corto: "x", n: 4 }, { id: "3d", etiqueta: "y", corto: "y", n: 9 }], { filtroDe: (c) => `cierre=${c.id}` });
+        const clases = [...salida.matchAll(/class="([^"]+)"/g)].flatMap((m) => m[1].trim().split(/\s+/));
+        assert.ok(clases.length > 0, "las primitivas tienen que llevar sus propias clases");
+        for (const c of clases) {
+          assert.ok(CLASES_VIZ.has(c),
+            `«${c}» es una clase que las primitivas NO definen: si es una utilidad de Tailwind, el gráfico se dibuja vacío en la red del dueño (CDN bloqueado). La geometría va en index.html, en una clase viz-*`);
+        }
+        // …y las clases declaradas tienen que EXISTIR de verdad en la hoja del proyecto
+        for (const c of CLASES_VIZ) {
+          assert.ok(new RegExp(`\\.${c}\\b`).test(htmlV), `falta la regla .${c} en index.html: la clase se usa y no está definida`);
+        }
+        // el alto del riel y de los segmentos tiene que ser un valor REAL, no cero
+        assert.ok(/\.viz-rank-riel\s*\{[^}]*height:\s*[1-9]/.test(htmlV), "el riel de las barras necesita un alto propio");
+        assert.ok(/\.viz-apilada-trozo\s*\{[^}]*height:\s*100%/.test(htmlV), "los segmentos apilados necesitan alto propio");
+      }
+
       const rank = Viz.barrasRank([{ nombre: "TOLIMA", n: 20, valor: 1e11 }, { nombre: "OTROS", n: 8, valor: null }],
         { filtroDe: (x) => (x.nombre === "OTROS" ? null : `dep=${x.nombre}`) });
       assert.ok(/data-filtro="dep=TOLIMA"/.test(rank), "cada categoría enlaza a su lista");
