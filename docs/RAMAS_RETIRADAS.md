@@ -54,6 +54,23 @@ Resultado del barrido sobre las 95 ramas:
 Una PR abierta sobre trabajo ya integrado no es un pendiente: es ruido que la próxima sesión audita
 otra vez. Las dos llevan un comentario que explica por qué se cerraron.
 
+## Addendum del 27-ago-2026 · las ramas que nacieron DESPUÉS del censo
+
+Re-auditado con el mismo método (comparar ARCHIVOS contra `origin/main`, no commits). El borrado
+de referencias sigue denegado desde el entorno (reintentado el 27-ago-2026: sigue bloqueado), así
+que la vía sigue siendo la página *branches* de GitHub. Las cinco ramas posteriores al censo:
+
+| Última fecha | Rama | SHA | Veredicto |
+| --- | --- | --- | --- |
+| 2026-08-26 | `claude/banco-precios-verificable-e7j0si` | `2c89d4e6c15a` | **Rescatada a `main` el 27-ago-2026** (censo retail + referencia LS-ZH verificada por el dueño + sección de CLAUDE.md). Borrable |
+| 2026-08-26 | `claude/robust-claude-code-prompt-x0p26e` | `d0632989a59e` | Fusionada vía PR #128: diff 0 archivos añadidos. Borrable |
+| 2026-08-24 | `claude/web-subscription-consulting-g4g1or` | `9c87301b8f0c` | Añade solo `docs/PROMPT_CONSULTORIA_SAAS.md`, un prompt con tablas de ESTADO dentro (dice «23 docs», «12 puntos de auth» — ya falsas), el patrón que la doctrina del 26-ago retiró. NO se rescata; el encargo que contiene (vender por suscripción) se relanza desde `docs/PROMPT_INICIAL.md` si el dueño quiere. Borrable |
+| 2026-08-24 | `claude/detekta-web-prompt-pz0gh6` | `25245458dd53` | Su punta ES su merge-base: no añade nada propio. Borrable |
+| 2026-08-27 | `claude/audit-consultoria-repo-qbvdhj` | — | La rama de la sesión de auditoría del 27-ago; se borra DESPUÉS de fusionarla a `main` |
+
+Con esto, **las 100 ramas remotas distintas de `main` quedan censadas y borrables** (las 95 del
+censo original más estas cinco, con la última condicionada a su fusión).
+
 ## Cómo resucitar una rama
 
 Si algún día se borran, su commit sigue existiendo mientras GitHub no lo recoja. Para devolver

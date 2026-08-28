@@ -6309,7 +6309,7 @@
     const nombre = $("f-perfil").selectedOptions[0] ? $("f-perfil").selectedOptions[0].text : perfil;
     $("modal-eliminar-texto").textContent = ID_RUP_RE.test(perfil)
       ? "Perderá los filtros, los presupuestos guardados y los datos asociados a su RUP subido. "
-        + "Esta acción no se puede deshacer: para volver a usar la aplicación tendrás que subir el PDF de nuevo."
+        + "Esta acción no se puede deshacer: para volver a usar la aplicación tendrá que subir el PDF de nuevo."
       : `El perfil «${nombre}» volverá a los valores del repositorio (RUP corte 31/12/2025): se pierde el `
         + "archivo cargado y sus filtros derivados. Esta acción no se puede deshacer. Los presupuestos "
         + "guardados y la experiencia cargada no se tocan.";

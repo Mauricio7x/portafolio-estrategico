@@ -983,7 +983,7 @@
         <div class="mt-6 border-t border-gray-100 pt-4">
           <div class="flex flex-wrap items-center gap-4">
             <button id="btn-eliminar-rup" type="button" class="btn-peligro">Eliminar este perfil</button>
-            <span class="text-xs text-gray-500">Eliminarás todos los filtros y datos asociados al perfil activo.</span>
+            <span class="text-xs text-gray-500">Se eliminarán todos los filtros y datos asociados al perfil activo.</span>
           </div>
           <p id="eliminar-rup-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
         </div>
@@ -1183,7 +1183,7 @@
              nace `hidden` (la prueba lo exige: con el token integrado nadie
              lo desocultaría) — lo pliega su ancestro <details>, no una clase. -->
         <!-- ══════ MOVIDAS A «SISTEMA» (encargo del ingeniero, 24-ago-2026) ══════
-             «Obra que ya ejecutaste» y «Códigos que le faltan en su registro de
+             «Obra que ya ejecutó» y «Códigos que le faltan en su registro de
              proponente» ocupaban 137 de las 287 palabras que el cliente veía al
              entrar —el 48 %— y son las dos únicas de la pestaña que NO responden
              a «¿a qué me presento hoy?». El dueño: «eso casi no se usa o no se
@@ -1199,7 +1199,7 @@
              hábil de abril: retirarla perdería una respuesta que no está en
              ningún otro sitio. Ningún id cambia. -->
 <section id="seccion-experiencia" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight">Obra que ya ejecutaste</h2>
+        <h2 class="font-semibold tracking-tight">Obra que ya ejecutó</h2>
         <p class="mt-1 text-sm text-gray-500">Sus contratos ejecutados: en qué <em>sabe</em> trabajar. Priorizan los códigos que le faltan.</p>
 
         <!-- Lo que hay HOY va arriba y a la vista; la carga, plegada -->
@@ -1619,12 +1619,13 @@
         <!-- El CONCEPTO del orden elegido (18-ago-2026): qué hace ese orden y qué no
              promete. Lo pinta app.js desde Filtros.conceptoDe al cambiar #f-ordenar. -->
         <p id="orden-concepto" class="mt-2 text-xs" style="color: var(--text-secondary);"></p>
-        <!-- MANIFESTACIÓN DE INTERÉS (18-ago-2026): en la selección abreviada de menor
-             cuantía hay que manifestar interés en 3 días hábiles desde la apertura o
-             no se puede ofertar. El servidor cuenta cuántas siguen abiertas y cuántas
-             vencen hoy o mañana (facetas.manifestacion); app.js lo pinta aquí y el
-             botón aplica el filtro `manif=abierta`. Nace oculto: sin datos no se
-             enseña nada. -->
+        <!-- MANIFESTACIÓN DE INTERÉS: en la selección abreviada de menor cuantía hay
+             que manifestar interés o no se puede ofertar. OJO con la doctrina
+             (20/24-ago-2026): la ley fija un MÁXIMO de 3 días hábiles, NO un plazo —
+             la entidad puede cerrarlo antes, incluso en horas. El servidor cuenta
+             cuántas siguen abiertas y cuántas urgen (facetas.manifestacion); app.js lo
+             pinta aquí y el botón aplica el filtro `manif=abierta`. Nace oculto: sin
+             datos no se enseña nada. -->
         <div id="aviso-manifestacion" class="mt-2 hidden items-center justify-between gap-3 rounded-xl px-3 py-2 text-xs ring-1 ring-inset bg-amber-50 text-amber-900 ring-amber-600/20" role="status">
           <span id="aviso-manifestacion-texto"></span>
           <button type="button" id="aviso-manifestacion-ver" class="shrink-0 rounded-lg bg-white/70 px-2.5 py-1 font-medium ring-1 ring-inset ring-amber-600/30 hover:bg-white">Ver solo estas</button>
@@ -1705,7 +1706,7 @@
                 <input id="fl-manif" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
                 <span>Solo procesos de menor cuantía en los que <strong>todavía puedo manifestar interés</strong>
                   <span id="fl-manif-n" class="text-gray-500"></span>
-                  <span class="block text-xs text-gray-500">Plazo de 3 días hábiles desde la apertura (calculado; confírmelo en el cronograma del SECOP II).</span></span>
+                  <span class="block text-xs text-gray-500">La ley fija un máximo de 3 días de oficina desde la apertura, no un plazo: la entidad puede cerrarlo antes, incluso en horas. Confírmelo en el cronograma del SECOP II.</span></span>
               </label>
             </div>
             <div>
@@ -1845,7 +1846,7 @@
     <main id="tab-apu" class="panel-pestana mx-auto hidden max-w-7xl px-5 py-8">
       <div id="aviso-precios" class="mb-6 rounded-xl bg-amber-50 px-5 py-2.5 text-center text-xs text-amber-900 ring-1 ring-inset ring-amber-600/20"></div>
 
-      <!-- ══════ Paso 1 · ¿Qué vas a construir? ══════ -->
+      <!-- ══════ Paso 1 · ¿Qué va a construir? ══════ -->
             <!-- ══════════════ TRES PASOS, Y NADA MÁS A LA VISTA ══════════════
            Los tres pasos van SEGUIDOS y los resultados DESPUÉS. Antes, entre el
            paso 1 y el 2 se colaban la rentabilidad y el precio sugerido —dos
@@ -2015,7 +2016,7 @@
         </section>
 
         <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">1</span>¿Qué vas a construir?</h2>
+        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">1</span>¿Qué va a construir?</h2>
         <p class="mt-1 text-sm text-gray-500">Describa la obra y el sistema detecta los ítems. O cargue su Excel, o busque un ítem por nombre.</p>
 
         <!-- ══ Método principal: describir la obra y detectar ══
