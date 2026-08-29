@@ -6095,3 +6095,52 @@ fichero abierto «por si acaso» se paga entero. Decisiones:
   una lista** (la jerga y el tuteo volvieron por los huecos exactos de las cercas) y **un arreglo
   que solo cubre el caso reproducido deja hermanos vivos** (la guarda de año cubrió una fecha de
   tres). También `null >= 1 === false`, que es la trampa muda de la ausencia en comparaciones.
+
+### El cerebro digital en Obsidian: lo que sirve, lo que no, y la bitácora del dueño (29-ago-2026)
+
+Encargo del dueño: «cómo podemos crear un cerebro digital con Obsidian, para que Claude tenga
+mejor contexto en cada prompt, sepa dónde buscar y ahorremos tokens». El diagnóstico previo a
+tocar nada, y la parte que hay que no re-aprender:
+
+- **Obsidian, para el agente, NO EXISTE.** Un *vault* es una carpeta de ficheros `.md`; este
+  repositorio ya lo es. El grafo, los backlinks vivos, los tableros `.canvas` y los complementos
+  (Dataview y compañía) corren en la aplicación del dueño, no en la sesión. Lo que solo entiende
+  Obsidian es estructura que se paga en tokens y no responde nada. Regla que queda: **en el vault
+  solo se guarda información que sobreviva como texto plano y `grep`** — nombre de fichero,
+  título, frontmatter, etiquetas, `[[enlaces]]`. Lo demás es decoración legítima, pero no puede
+  ser el único sitio donde vive un dato.
+- **La mitad cara del «cerebro» ya estaba construida** (`tests/mapa.js`, 28-ago) y montar un
+  segundo índice dentro de Obsidian habría sido reescribir una regla que ya existe. Lo que
+  faltaba era **el canal de ENTRADA del dueño**: no tiene terminal, así que no podía escribir en
+  la crónica ni disparar ninguna herramienta, y todo lo que sabía había que contarlo por prompt.
+- **`docs/bitacora/` es ese canal.** Notas atómicas con frontmatter YAML mínimo (`fecha`,
+  `etiquetas`, `toca`) y un `#` de título. `tests/mapa.js` las indexa: al buscar un término
+  devuelve las notas que casan —por ruta, título, etiqueta, ruta tocada o cuerpo— con el `cat` ya
+  escrito, y en el mapa completo salen las diez más nuevas. El dueño escribe desde el celular con
+  el complemento Obsidian Git y la nota entra en el índice sin que nadie la copie a un prompt.
+- **`toca:` es la dependencia inversa DOCUMENTO→CÓDIGO**, la contraparte de `llamadoPor`. Es el
+  campo que más rinde: convierte la regla «antes de tocar un módulo hay que leer lo que ya se
+  decidió sobre él» en algo mecánico en vez de dejarlo a que el título case por casualidad.
+- **La cerca es un CENSO, no una lista**: la prueba barre TODA la carpeta y compara con lo que el
+  índice ve (`deepStrictEqual`), así que una nota que el índice no vea revienta la suite; exige
+  fecha con forma y título, y **verifica que cada ruta de `toca` exista en el árbol** — una nota
+  que apunta a un módulo borrado no es un enlace roto, es una mentira que manda a leer sobre algo
+  que ya no está. Excepción declarada: los ficheros `_*.md` son plantillas de Obsidian, no notas.
+  El fallo que se está previniendo es MUDO: una nota mal escrita se ve perfecta en Obsidian y el
+  índice no la encuentra, así que la decisión se pierde justo cuando hacía falta.
+- **`tests/mapa.js` requerido como módulo ya no imprime**: exporta el índice derivado
+  (`NOTAS`, `buscar`, `notasQueTocan`, `frontmatter`) tras `require.main !== module`. Se hizo para
+  que la prueba EJECUTE la función real en vez de mirar su salida por regex; de paso, esa es la
+  mutación que confirma la cerca (contra el árbol anterior, el `require` no devuelve nada y la
+  suite cae).
+- **Cuatro mutaciones ejecutadas antes de commitear**, todas rojas como debían: ruta de `toca`
+  inexistente, nota sin fecha, nota sin título y el árbol anterior sin exportación.
+- **`.obsidian/` va al `.gitignore`**: es configuración del equipo de cada quien, no del proyecto.
+- **Lo que se decidió NO hacer**: ni índice/MOC escrito a mano (sería estado en un fichero, la
+  misma mentira en incubación que un conteo en un prompt), ni partir `docs/MEMORIA.md` en 92 notas
+  atómicas —se ofreció y el dueño pidió no romper nada; el beneficio es de precisión, no de
+  tamaño, y el riesgo de perder texto en la partición no lo compensa hoy—, ni servidor vectorial,
+  que ya se descartó el 28-ago: el árbol es la base de datos y lo que faltaba era el índice.
+- **CLAUDE.md no cambia.** La bitácora no es una cuarta herramienta que memorizar: aparece sola en
+  la salida de `node tests/mapa.js`, que es el paso 1 del protocolo. `docs/CEREBRO_OBSIDIAN.md`
+  es la guía del dueño (abrir el vault, Obsidian Git en el celular, formato de la nota).

@@ -20229,6 +20229,87 @@ async function main() {
       + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos, sello del offset, backfill, huérfanos, salto de página, Formulario 1, cascada de 12 niveles, pavimento flexible, total del documento, base de la validación 8, hoja de APU radicable, unidades del ICCU, el capítulo desempata)");
   }
 
+  /* unidad: LA BITÁCORA DEL DUEÑO (docs/bitacora/, escrita desde Obsidian).
+     Es el canal de entrada de quien no tiene terminal, así que nadie va a
+     revisarla a mano: si una nota se escribe mal, el fallo es MUDO —la nota
+     existe, se ve bien en Obsidian y el índice no la encuentra— y la decisión
+     que contiene se pierde justo cuando hacía falta. Esta es la cerca.
+     Se ejecuta la FUNCIÓN REAL (`require` del mapa, que no imprime), no se
+     busca su texto por regex. */
+  {
+    const mapa = require("./mapa.js");
+    const RAIZ_M = path.join(__dirname, "..");
+
+    // (1) CENSO, no lista: se barre TODA la carpeta, no unas notas elegidas.
+    const dirBitacora = path.join(RAIZ_M, "docs", "bitacora");
+    assert.ok(fs.existsSync(dirBitacora), "docs/bitacora/ tiene que existir: es el canal de entrada del dueño");
+    const ficheros = [];
+    (function barrer(dir) {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (e.isDirectory()) barrer(path.join(dir, e.name));
+        else if (e.name.endsWith(".md")) ficheros.push(path.join(dir, e.name));
+      }
+    })(dirBitacora);
+    // EXCEPCIÓN DECLARADA: «_plantilla.md» y cualquier «_*.md» son plantillas de
+    // Obsidian, no notas; el índice las salta y el censo también, a propósito.
+    const esperadas = ficheros.filter((f) => !path.basename(f).startsWith("_"))
+      .map((f) => path.relative(RAIZ_M, f).replace(/\\/g, "/")).sort();
+    assert.deepStrictEqual(mapa.NOTAS.map((n) => n.ruta).sort(), esperadas,
+      "el índice tiene que ver EXACTAMENTE las notas del árbol (ni una de menos: una nota invisible es una decisión perdida)");
+    assert.ok(esperadas.length >= 1, "la bitácora no puede quedar vacía: sin una nota de ejemplo nadie sabe el formato");
+
+    for (const n of mapa.NOTAS) {
+      assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(String(n.fecha)) && !isNaN(Date.parse(n.fecha)),
+        `${n.ruta}: la fecha es obligatoria y con la forma 2026-08-29 (es lo que ordena la bitácora), y llegó «${n.fecha}»`);
+      assert.ok(n.titulo && n.titulo.length >= 3,
+        `${n.ruta}: falta el título (una línea que empiece por «# »); sin él la nota no se reconoce en el índice`);
+      /* Una ruta que ya no existe es UNA MENTIRA, no un enlace roto: mandaría a
+         leer sobre un módulo borrado. Se cae aquí, no en la sesión. */
+      for (const ruta of n.toca) {
+        assert.ok(fs.existsSync(path.join(RAIZ_M, ruta)),
+          `${n.ruta}: declara tocar «${ruta}», que no existe en el árbol`);
+      }
+    }
+
+    // (2) el frontmatter se lee de verdad: las tres formas que escribe Obsidian.
+    const fm = mapa.frontmatter("---\nfecha: 2026-08-29\netiquetas: [a, b]\ntoca:\n  - lib/ganancia.js\nvacio:\n---\n# T\ncuerpo\n");
+    assert.strictEqual(fm.fecha, "2026-08-29");
+    assert.deepStrictEqual(fm.etiquetas, ["a", "b"], "lista en línea");
+    assert.deepStrictEqual(fm.toca, ["lib/ganancia.js"], "lista en bloque con guiones");
+    assert.deepStrictEqual(fm.vacio, [], "un campo vacío es AUSENCIA, no un valor");
+    assert.strictEqual(mapa.frontmatter("# Nota suelta\ntexto"), null,
+      "sin bloque --- no hay frontmatter que inventar");
+
+    // (3) la nota se ENCUENTRA por los cuatro caminos por los que se va a buscar.
+    const muestra = mapa.NOTAS[0];
+    for (const [via, termino] of [["su título", muestra.titulo.split(" ").filter((w) => w.length > 5)[0]],
+      ["su ruta", path.basename(muestra.ruta, ".md").split("-").pop()],
+      ["una etiqueta", muestra.etiquetas[0]],
+      ["una ruta que declara tocar", muestra.toca[0]]]) {
+      if (!termino) continue; // la nota podría no tener etiquetas ni `toca`: no se exige
+      const hallada = mapa.buscar(termino).notas.some((n) => n.ruta === muestra.ruta);
+      assert.ok(hallada, `la bitácora tiene que encontrarse por ${via} («${termino}»)`);
+    }
+
+    // (4) dependencia inversa DOCUMENTO→CÓDIGO: la razón de ser del campo `toca`.
+    const conToca = mapa.NOTAS.find((n) => n.toca.length);
+    if (conToca) {
+      assert.ok(mapa.notasQueTocan(conToca.toca[0]).some((n) => n.ruta === conToca.ruta),
+        "al preguntar por un módulo tienen que salir las notas que dicen explicarlo");
+    }
+    assert.deepStrictEqual(mapa.notasQueTocan("lib/no_existe_este_modulo.js"), [],
+      "un módulo sin notas devuelve vacío, no la lista entera");
+
+    // (5) la guía del dueño existe y no puede prometer una carpeta que no está.
+    const guia = fs.readFileSync(path.join(RAIZ_M, "docs", "CEREBRO_OBSIDIAN.md"), "utf8");
+    assert.ok(/docs\/bitacora\//.test(guia), "la guía tiene que decir dónde van las notas");
+    assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(guia), "ni un emoji, tampoco en la guía");
+
+    console.log("· unidad bitácora Obsidian: censo de docs/bitacora/, fecha y título obligatorios, "
+      + "rutas de `toca` que existen, frontmatter en sus tres formas, hallazgo por título/ruta/etiqueta/módulo "
+      + "y dependencia inversa documento→código");
+  }
+
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →
      las 4 iteraciones corren contra los mocks locales con los handlers reales. */
   console.log(`Mock Socrata en :${puertoSocrata} · mock Upstash en :${puertoUpstash} · ${MESES.length} meses × 120 filas`);

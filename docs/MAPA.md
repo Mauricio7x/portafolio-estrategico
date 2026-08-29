@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-08-28 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-08-29 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -156,8 +156,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 106 secciones. Las 10 más nuevas:
-  L  5594  Convenciones
+· MEMORIA · docs/MEMORIA.md — 107 secciones. Las 10 más nuevas:
   L  5601  UN BORRADOR NO ADMITE OFERTAS, Y LA TARJETA DECÍA QUE SÍ (24-ago-2026)
   L  5631  La dispersión de la baja se MIDE, no se supone (24-ago-2026)
   L  5681  DOS DE LAS CUATRO GRANULARIDADES DE LA BAJA ESTÁN VACÍAS EN PRODUCCIÓN (24-ago-2026)
@@ -167,8 +166,9 @@
   L  5897  Auditoría integral del 27-ago-2026 · verificar absolutamente todo
   L  6005  La revisión adversaria del propio diff, y las CINCO regresiones que dejé dentro
   L  6050  El mapa: buscar coordenadas en vez de leer documentos (28-ago-2026)
+  L  6099  El cerebro digital en Obsidian: lo que sirve, lo que no, y la bitácora del dueño (29-ago-202
 
-· DOCUMENTOS docs/ — 37:
+· DOCUMENTOS docs/ — 38:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)
   ANALISIS_ESTRATEGICO.md               Análisis estratégico de Detekta · agosto 2026
   APU_DIAGNOSTICO.md                    Diagnóstico del módulo APU frente a la especificación «APU profesional»
@@ -181,6 +181,7 @@
   AUDITORIA_INVESTIGACION_EXTERNA.md    Auditoría de la investigación externa (ago 2026)
   BANCO_PRECIOS_2026-08-26.md           Banco de Precios Verificable · censo y contraste del informe del 26-ago-2026
   CALIBRACION_APU.md                    Calibración del catálogo APU con el Presupuesto Nogal 4 (ago 2026)
+  CEREBRO_OBSIDIAN.md                   El cerebro digital en Obsidian
   CHECKLIST_PRODUCCION.md               Anexo F · Lista de verificación previa a producción
   COMPLEMENTO_ANALISTA_LICITACIONES.md  Complemento crítico al Manual del Analista de Licitaciones
   CONFIGURACION_TOKENS.md               Tokens y variables de entorno · guía desde cero
@@ -206,4 +207,7 @@
   RIESGOS.md                            Anexo G · Registro de riesgos
   SEGURIDAD_Y_CUENTAS.md                Anexo D · Identidad, autorización, seguridad y cobro
   VALIDACION_MODELOS.md                 Anexo E · Ciencia de datos: calibración, validación y vigilancia
+
+· BITÁCORA docs/bitacora/ — 1 nota del dueño. Las 10 más nuevas:
+  2026-08-29  Cómo nació esta bitácora
 ```

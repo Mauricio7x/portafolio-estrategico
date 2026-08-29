@@ -5,3 +5,6 @@ ecc-tool/
 # fuentes de precios aportadas por el dueño (no se versionan)
 entrada/*
 !entrada/LEEME.md
+
+# carpeta de configuración de Obsidian (es del equipo de cada quien, no del proyecto)
+.obsidian/

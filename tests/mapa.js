@@ -14,6 +14,8 @@
                                         · op del router que llegan hasta ellos
                                         · secciones de la memoria, con el `sed`
                                           EXACTO ya escrito para pegarlo
+                                        · notas de la bitácora del dueño, con
+                                          el `cat` escrito
      node tests/mapa.js               → el mapa completo por dominios (~150
                                         líneas: mucho más barato que un `ls`
                                         seguido de diez lecturas)
@@ -28,7 +30,15 @@
        colisiones entre lib y lib/handlers); un require dinámico se omite.
      · op → handler: el mapa del router, igual que en tests/estado.js.
      · Secciones de la memoria: los títulos `##`/`###` y su rango de líneas.
-   Ninguna de estas vías adivina: lo que no case, se declara. */
+     · Bitácora: `docs/bitacora/**.md`, el canal de entrada del dueño (escribe
+       desde Obsidian, que no es más que una carpeta de ficheros de texto). De
+       cada nota se lee el frontmatter YAML —`fecha`, `etiquetas`, `toca`— y el
+       primer `#` como título. `toca` es la dependencia inversa DOCUMENTO→CÓDIGO:
+       al buscar un módulo salen las notas que dicen explicarlo.
+   Ninguna de estas vías adivina: lo que no case, se declara.
+
+   Requerido como módulo (`require`) no imprime nada: exporta el índice ya
+   derivado para que la suite ejecute la función real en vez de leer su salida. */
 
 "use strict";
 
@@ -37,6 +47,10 @@ const path = require("path");
 
 const RAIZ = path.join(__dirname, "..");
 const MEMORIA = ["docs/MEMORIA.md", "CLAUDE.md"].find((r) => fs.existsSync(path.join(RAIZ, r)));
+
+/* Comparación tolerante a mayúsculas y tildes: el dueño escribe «bitácora» y
+   quien busca teclea «bitacora». */
+const norm = (s) => String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 /* ── Recolección ─────────────────────────────────────────────────────────── */
 
@@ -140,10 +154,75 @@ for (const f of (fs.existsSync(path.join(RAIZ, "docs")) ? fs.readdirSync(path.jo
   DOCS.push({ ruta: "docs/" + f, titulo: titulo ? titulo.replace(/^#+\s*/, "").slice(0, 88) : null });
 }
 
-/* ── Consulta ────────────────────────────────────────────────────────────── */
+/* Bitácora del dueño: notas atómicas en docs/bitacora/ con frontmatter YAML.
+   Es el canal de ENTRADA de quien no tiene terminal — escribe la nota desde
+   Obsidian y entra en este índice sin que nadie la copie a un prompt.
+   EXCEPCIÓN DECLARADA: un fichero cuyo nombre empieza por «_» es plantilla de
+   Obsidian (docs/bitacora/_plantilla.md), no una nota, y no se indexa. */
 
-const norm = (s) => String(s).toLowerCase()
-  .normalize("NFD").replace(/[̀-ͯ]/g, "");
+const limpiar = (s) => String(s).trim().replace(/^["']|["']$/g, "");
+
+/* Frontmatter YAML MÍNIMO: `clave: valor`, lista en línea `[a, b]` y lista en
+   bloque `- a`. Es el subconjunto que escribe Obsidian por defecto; no se
+   pretende un analizador de YAML, y lo que no case queda ausente, no adivinado.
+   Sin bloque `---` al principio devuelve null (nota sin frontmatter). */
+function frontmatter(texto) {
+  const m = texto.match(/^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/);
+  if (!m) return null;
+  const campos = {};
+  let clave = null;
+  for (const linea of m[1].split("\n")) {
+    const enBloque = linea.match(/^\s*-\s+(.+?)\s*$/);
+    if (enBloque && clave) {
+      campos[clave] = [...(Array.isArray(campos[clave]) ? campos[clave] : []), limpiar(enBloque[1])];
+      continue;
+    }
+    const par = linea.match(/^([A-Za-z_][\w-]*)\s*:\s*(.*)$/);
+    if (!par) continue;
+    clave = par[1].toLowerCase();
+    const valor = par[2].trim();
+    if (valor === "") campos[clave] = [];
+    else if (/^\[[\s\S]*\]$/.test(valor)) campos[clave] = valor.slice(1, -1).split(",").map(limpiar).filter(Boolean);
+    else campos[clave] = limpiar(valor);
+  }
+  return campos;
+}
+
+const comoLista = (v) => (Array.isArray(v) ? v.map(limpiar).filter(Boolean) : typeof v === "string" && v ? [limpiar(v)] : []);
+
+const NOTAS = [];
+(function recolectarNotas(dirRel) {
+  const abs = path.join(RAIZ, dirRel);
+  if (!fs.existsSync(abs)) return; // sin bitácora la herramienta funciona igual: no se inventa
+  for (const e of fs.readdirSync(abs, { withFileTypes: true })) {
+    if (e.isDirectory()) { recolectarNotas(path.join(dirRel, e.name)); continue; }
+    if (!e.name.endsWith(".md") || e.name.startsWith("_")) continue;
+    const rel = path.join(dirRel, e.name).replace(/\\/g, "/");
+    const texto = fs.readFileSync(path.join(RAIZ, rel), "utf8");
+    const meta = frontmatter(texto) || {};
+    const cuerpo = texto.replace(/^---\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/, "");
+    const titulo = (cuerpo.split("\n").find((l) => /^#\s+/.test(l)) || "").replace(/^#\s*/, "").trim();
+    NOTAS.push({
+      ruta: rel,
+      titulo: titulo || null,          // sin `#` se dice «sin título», no se inventa uno del nombre
+      fecha: typeof meta.fecha === "string" ? meta.fecha : null,
+      etiquetas: comoLista(meta.etiquetas),
+      toca: comoLista(meta.toca),
+      lineas: texto.split("\n").length,
+      _busca: norm(texto),
+    });
+  }
+})("docs/bitacora");
+NOTAS.sort((a, b) => String(b.fecha || "").localeCompare(String(a.fecha || "")));
+
+/* Dependencia inversa DOCUMENTO→CÓDIGO: qué notas dicen explicar esta ruta.
+   Es la contraparte de `llamadoPor` y responde la pregunta que manda CLAUDE.md
+   antes de tocar un módulo: ¿qué se decidió ya sobre esto? */
+function notasQueTocan(ruta) {
+  return NOTAS.filter((n) => n.toca.some((r) => r.replace(/^\.\//, "") === ruta));
+}
+
+/* ── Consulta ────────────────────────────────────────────────────────────── */
 
 function buscar(termino) {
   const t = norm(termino);
@@ -153,7 +232,12 @@ function buscar(termino) {
   const ops = OPS.filter((o) => norm(o.op).includes(t) || norm(o.destino).includes(t));
   const secciones = SECCIONES.filter((s) => norm(s.titulo).includes(t));
   const docs = DOCS.filter((d) => norm(d.ruta).includes(t) || (d.titulo && norm(d.titulo).includes(t)));
-  return { modulos, ops, secciones, docs };
+  /* La bitácora se rastrea entera, cuerpo incluido: son notas cortas y el
+     acierto por etiqueta o por ruta tocada es justo el que no da un título. */
+  const notas = NOTAS.filter((n) => norm(n.ruta).includes(t) || (n.titulo && norm(n.titulo).includes(t)) ||
+    n.etiquetas.some((e) => norm(e).includes(t)) || n.toca.some((r) => norm(r).includes(t)) ||
+    n._busca.includes(t));
+  return { modulos, ops, secciones, docs, notas };
 }
 
 /* El cuerpo de la memoria se rastrea solo si los títulos no bastaron: es la
@@ -177,7 +261,11 @@ function enCuerpoDeMemoria(termino, tope) {
 const p = (s = "") => console.log(s);
 const termino = process.argv.slice(2).filter((a) => !a.startsWith("--")).join(" ");
 
-if (termino) {
+if (require.main !== module) {
+  /* Requerido por la suite: el índice ya está derivado arriba, no se imprime
+     nada. La prueba llama a la función REAL en vez de mirar su texto. */
+  module.exports = { MODULOS, OPS, SECCIONES, DOCS, NOTAS, buscar, notasQueTocan, frontmatter };
+} else if (termino) {
   const r = buscar(termino);
   p(`== COORDENADAS DE «${termino}» ==`);
   p("(derivado del árbol ahora; si nada casa, el término no existe con ese nombre — probar un sinónimo)");
@@ -191,6 +279,8 @@ if (termino) {
       if (i.exports.length) p("    exporta: " + i.exports.slice(0, 10).join(", "));
       if (i.llamadoPor.size) p("    lo llaman: " + [...i.llamadoPor].slice(0, 6).join(", ") +
         (i.llamadoPor.size > 6 ? ` (+${i.llamadoPor.size - 6})` : ""));
+      const comentan = notasQueTocan(rel);
+      if (comentan.length) p("    lo comenta la bitácora: " + comentan.map((n) => n.ruta).slice(0, 4).join(", "));
     }
     if (r.modulos.length > 12) p("  … y " + (r.modulos.length - 12) + " más (afinar el término)");
     p();
@@ -203,6 +293,18 @@ if (termino) {
   if (r.docs.length) {
     p("· DOCUMENTOS:");
     for (const d of r.docs.slice(0, 8)) p("  " + d.ruta + (d.titulo ? "  — " + d.titulo : ""));
+    p();
+  }
+
+  if (r.notas.length) {
+    p("· BITÁCORA DEL DUEÑO — notas cortas, se leen enteras:");
+    for (const n of r.notas.slice(0, 8)) {
+      p("  «" + (n.titulo || "sin título (la nota no tiene un # de primera línea)").slice(0, 88) + "»  " +
+        (n.fecha || "sin fecha") + " · " + n.lineas + " líneas" +
+        (n.etiquetas.length ? " · " + n.etiquetas.join(", ") : ""));
+      p("    cat " + n.ruta);
+    }
+    if (r.notas.length > 8) p("  … y " + (r.notas.length - 8) + (r.notas.length - 8 === 1 ? " nota más" : " notas más") + " (afinar el término)");
     p();
   }
 
@@ -220,7 +322,7 @@ if (termino) {
     }
     p();
   }
-  if (!r.modulos.length && !r.ops.length && !r.docs.length && !porTitulo.length && !porCuerpo.length) {
+  if (!r.modulos.length && !r.ops.length && !r.docs.length && !r.notas.length && !porTitulo.length && !porCuerpo.length) {
     p("SIN ACIERTOS. El término no aparece en nombres de módulo, propósitos, exports, op,");
     p("documentos ni títulos/cuerpo de la memoria. Probar un sinónimo del léxico (CLAUDE.md)");
     p("antes de dar por hecho que la función no existe: casi nada aquí se construye desde cero.");
@@ -267,9 +369,17 @@ if (termino) {
   for (const d of DOCS.sort((a, b) => a.ruta.localeCompare(b.ruta))) {
     p("  " + d.ruta.replace("docs/", "").padEnd(38) + (d.titulo || "").slice(0, 84));
   }
+  if (NOTAS.length) {
+    p();
+    p("· BITÁCORA docs/bitacora/ — " + NOTAS.length + (NOTAS.length === 1 ? " nota" : " notas") +
+      " del dueño. Las 10 más nuevas:");
+    for (const n of NOTAS.slice(0, 10)) {
+      p("  " + (n.fecha || "sin fecha") + "  " + (n.titulo || n.ruta).slice(0, 84));
+    }
+  }
 }
 
-if (process.argv.includes("--escribir")) {
+if (require.main === module && process.argv.includes("--escribir")) {
   const { execFileSync } = require("child_process");
   const salida = execFileSync(process.execPath, [__filename], { encoding: "utf8", cwd: RAIZ });
   fs.writeFileSync(path.join(RAIZ, "docs", "MAPA.md"),
