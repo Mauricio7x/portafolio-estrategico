@@ -16204,12 +16204,17 @@ async function main() {
          siendo un cambio de POSICIÓN y nada más — lo que el calendario hace no
          cambió—, pero el orden se fija entero para que no vuelva a moverse sin
          que alguien lea esto. */
-      const ORDEN_EMPRESA = ['id="pulso"', 'id="pulso-repartos"', 'id="dashboard"', 'id="seccion-rup"',
-        'id="calendario"', 'id="seccion-consorcio"', 'id="seccion-socio"'];
+      /* TERCERA PASADA DEL 31-ago-2026: «Actualizar datos» y «Su registro de
+         proponente» bajaron al pliegue «Sistema», así que salen de esta cadena
+         —su sitio lo fija la comprobación de más abajo, que exige que estén
+         DENTRO de Sistema— y lo que queda a la vista es lo que se mira a
+         diario. */
+      const ORDEN_EMPRESA = ['id="pulso"', 'id="pulso-repartos"', 'id="dashboard"',
+        'id="calendario"', 'id="seccion-consorcio"', 'id="seccion-socio"', 'id="seccion-sistema"'];
       const posiciones = ORDEN_EMPRESA.map((id) => ({ id, i: tab.indexOf(id) }));
       for (const { id, i } of posiciones) assert.ok(i > 0, `falta ${id} en la pestaña Mi empresa`);
       assert.deepStrictEqual([...posiciones].sort((a, b) => a.i - b.i).map((x) => x.id), ORDEN_EMPRESA,
-        "Mi empresa va: «Para Helder, hoy» → dónde/quién → tablero → su registro → calendario → consorcio y socio");
+        "Mi empresa va: «Para Helder, hoy» → dónde/quién → tablero → calendario → consorcio y socio → Sistema (con «Actualizar datos» y el registro dentro)");
       const lic = htmlL.slice(iTab, htmlL.indexOf('id="tab-apu"'));
       assert.ok(!lic.includes('id="pulso"') && lic.indexOf('id="f-ordenar"') > 0, "Licitaciones ya no lleva el pulso: empieza por la barra de herramientas");
       const nav = htmlL.slice(htmlL.indexOf('aria-label="Secciones"'), htmlL.indexOf("</nav>"));
@@ -16728,6 +16733,127 @@ async function main() {
       assert.ok(/^Actualizado hoy a las /.test(Port.textoActualizado("2026-08-31T14:35:00Z", ahoraM)),
         "la rama larga tiene que seguir intacta: es la que pinta la portada");
       console.log("  · La marca como botón de actualizar: flecha, corte, ámbar cuando no es de hoy, un solo `actualizarDatos` y el corte pedido al servidor");
+    }
+
+
+    /* ═══════════ j-undecies. EL CALENDARIO DEL PROCESO GUARDADO ═══════════
+       (encargo del ingeniero, 31-ago-2026: «al guardar un proceso en
+       Licitaciones para que aparezca en Mis procesos, un calendario adaptativo
+       para ver de manera gráfica cuándo se cumplen las distintas etapas del
+       proceso, según el calendario de SECOP II».)
+
+       Se EJECUTA con los hitos que produce `lib/cronograma` de verdad —no con
+       un objeto escrito a mano—, porque lo que hay que probar es la cadena
+       entera: el pliego se lee, los hitos salen, y el calendario los sitúa. */
+    {
+      const Cal = require("../public/calendario.js");
+      const Cron = require("../lib/cronograma.js");
+
+      /* (1) LOS HITOS SON LOS DE lib/cronograma, no una segunda extracción.
+         Se parte del cronograma REAL que el ingeniero mandó en su captura. */
+      const textoPliego = [
+        "Cronograma",
+        "Publicación del aviso de convocatoria pública 25/08/2026",
+        "Plazo para presentar observaciones al proyecto de Pliego de Condiciones 08/09/2026",
+        "Expedición y publicación acto administrativo de apertura del proceso de selección 11/09/2026",
+        "Plazo máximo para expedir adendas 17/09/2026",
+        "Presentación de Ofertas 23/09/2026",
+        "Publicación del informe de verificación o evaluación 28/09/2026",
+        "Audiencia de Adjudicación y apertura sobre económico 13/10/2026",
+        "Firma del Contrato 14/10/2026",
+      ].join("\n");
+      const delPliego = Cron.extraerHitos(textoPliego).hitos;
+      const delDataset = Cron.hitosDeFila({ fecha_de_publicacion_del: "2026-08-25T19:00:00.000", fecha_cierre: "2026-09-23T09:00:00.000" });
+      const hitos = Cron.combinarHitos(delDataset, delPliego);
+      assert.ok(hitos.length >= 7, `el pliego de ejemplo tiene que dar al menos 7 etapas, dio ${hitos.length}`);
+
+      const HOY_C = "2026-09-11";                       // el día del acto de apertura: hay pasado, hoy y futuro
+      const h = Cal.htmlCronograma(hitos, { hoy: HOY_C });
+
+      /* (2) CADA ETAPA SE SITÚA EN SU DÍA, en la MISMA rejilla de Mi empresa —
+         no en una segunda cuadrícula escrita a mano, que volvería a
+         equivocarse en la alineación. Y NADA de la rejilla del cronograma es
+         pulsable: no hay nada que abrir, y algo que parece un botón sin serlo
+         es una pulsación sin respuesta. */
+      assert.ok(/class="cal-rejilla"/.test(h), "el cronograma reusa la rejilla del calendario");
+      assert.ok(!/data-dia=/.test(h), "en el cronograma del proceso las casillas NO son botones: no hay nada que abrir al pulsarlas");
+      assert.strictEqual((h.match(/cron-mes-t/g) || []).length, 3,
+        "el tramo agosto→octubre se dibuja con tres meses: la rejilla se adapta a lo que dura el proceso");
+      assert.strictEqual((h.match(/class="cron-etapa/g) || []).length, hitos.length,
+        "todas las etapas se listan: una que no se pinta es una que el ingeniero se pierde");
+
+      /* (3) DÓNDE ESTÁ HOY: cumplidas, la de hoy y la PRÓXIMA, que es la única
+         que exige algo. La cuenta de días sí está permitida aquí —son fechas
+         PUBLICADAS, no una ventana deducida de un techo legal— y se comprueba
+         contra la aritmética, no contra el reloj de la máquina. */
+      assert.ok(/cron-cumplida/.test(h) && /cron-hoy/.test(h) && /cron-proxima/.test(h),
+        "el calendario tiene que decir qué ya pasó, qué es hoy y qué viene ahora");
+      assert.strictEqual((h.match(/cron-proxima/g) || []).length, 1, "solo hay UNA próxima etapa");
+      assert.strictEqual(Cal.cuandoEtapa("2026-09-11", HOY_C), "es HOY");
+      assert.strictEqual(Cal.cuandoEtapa("2026-09-12", HOY_C), "mañana");
+      assert.strictEqual(Cal.cuandoEtapa("2026-09-10", HOY_C), "ayer");
+      assert.strictEqual(Cal.cuandoEtapa("2026-09-23", HOY_C), "en 12 días");
+      assert.strictEqual(Cal.cuandoEtapa("2026-08-25", HOY_C), "hace 17 días");
+      assert.strictEqual(Cal.estadoEtapa("2026-09-11", HOY_C), "hoy");
+      assert.strictEqual(Cal.estadoEtapa("2026-09-10", HOY_C), "cumplida");
+      assert.strictEqual(Cal.estadoEtapa("2026-09-12", HOY_C), "pendiente");
+
+      /* (4) ADAPTATIVO DE VERDAD: con SOLO las dos fechas del dataset, el
+         calendario lo DICE y explica cómo conseguir el resto. Sin esa línea,
+         dos etapas se leen como «este proceso solo tiene dos», que es falso y
+         deja al ingeniero sin enterarse de la audiencia de adjudicación. */
+      const soloDataset = Cal.htmlCronograma(delDataset, { hoy: HOY_C });
+      assert.ok(/Solo se conocen las fechas que SECOP II publica/.test(soloDataset)
+        && /El cronograma completo/.test(soloDataset) && /pliego/.test(soloDataset),
+        "con solo las fechas del dataset hay que decirlo y decir cómo conseguir las demás");
+      assert.ok(/salen del cronograma del pliego/.test(h) && !/Solo se conocen las fechas/.test(h),
+        "con el pliego leído se dice cuántas etapas vienen de él");
+      /* Y el ORIGEN de cada etapa viaja a la pantalla: no es lo mismo una fecha
+         que publica SECOP II que una leída del texto de un pliego. */
+      assert.ok(/SECOP II/.test(h) && /cronograma del pliego/.test(h), "cada etapa dice de dónde salió su fecha");
+      assert.ok(/una adenda puede moverlas/.test(h),
+        "un cronograma publicado no es inmutable: la adenda lo mueve y eso se dice");
+
+      /* (5) LO QUE NO SE PUEDE SITUAR NO SE INVENTA. */
+      assert.ok(/no trae ninguna fecha que se pueda situar/.test(Cal.htmlCronograma([], { hoy: HOY_C })),
+        "sin ninguna fecha legible se dice, no se dibuja un calendario vacío");
+      const conBasura = Cal.htmlCronograma([{ id: "x", etiqueta: "Sin fecha", fecha: null, origen: "pliego" }, ...delDataset], { hoy: HOY_C });
+      assert.strictEqual((conBasura.match(/class="cron-etapa/g) || []).length, delDataset.length,
+        "un hito sin fecha legible se descarta del calendario en vez de colocarse en un día cualquiera");
+      // sin «hoy» no se afirma ni pasado ni futuro
+      const sinHoy = Cal.htmlCronograma(delDataset, {});
+      assert.ok(!/cron-cumplida|cron-hoy|cron-proxima/.test(sinHoy),
+        "sin el día del servidor no se puede decir qué ya pasó: no se usa el reloj del navegador");
+
+      /* (6) EL CABLEADO: la tarjeta de Mis procesos abre el calendario con lo
+         que ya tiene y lo enriquece con el pliego; el «hoy» viene del SERVIDOR. */
+      const appC = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      assert.ok(/data-seg-cron="/.test(appC) && /window\.Calendario\.htmlCronograma/.test(appC),
+        "la tarjeta de Mis procesos tiene que abrir el calendario del proceso");
+      assert.ok(!/h\.etiqueta\.split\(":"\)\[0\]/.test(appC),
+        "la fila de píldoras de hitos se retiró: era el mismo dato en la peor forma posible");
+      const bloqueCron = appC.slice(appC.indexOf('const cronBtn = ev.target.closest("[data-seg-cron]")'), appC.indexOf('const det = ev.target.closest("[data-seg-detalle]")'));
+      assert.ok(/guardado && guardado\.hitos/.test(bloqueCron),
+        "pinta primero con los hitos que la tarjeta YA trajo: una pulsación sin respuesta visible es peor que un error");
+      assert.ok(/op=cronograma&id_proceso=/.test(bloqueCron),
+        "…y enseguida pide el cronograma completo al endpoint que ya existe, en vez de reimplementar la lectura del pliego");
+      assert.ok(/\.length > \(\(guardado && guardado\.hitos\) \|\| \[\]\)\.length/.test(bloqueCron),
+        "solo se repinta si el pliego APORTA etapas: repintar lo mismo hace parpadear la pantalla sin decir nada");
+      /* El «hoy» sale del SERVIDOR, y la cerradura que lo defiende es la
+         NEGATIVA: comprobar que la variable del servidor se declara no prueba
+         que se USE — la mutación «pinta con `new Date()`» pasaba por delante de
+         la versión anterior de esta línea con la declaración intacta. Lo que no
+         puede aparecer en este bloque es el reloj del navegador. */
+      assert.ok(/ultimoSeguimiento && ultimoSeguimiento\.hoy/.test(bloqueCron),
+        "el «hoy» del calendario se toma del cuerpo que sirvió el servidor");
+      assert.ok(!/new Date\(\)|Date\.now\(\)/.test(bloqueCron),
+        "el calendario del proceso no puede fechar «hoy» con el reloj del navegador: cinco horas de diferencia corren el día entero");
+      assert.ok(/cronBtn\.textContent = `Cronograma · \$\{n\}/.test(bloqueCron),
+        "al llegar el cronograma del pliego, el botón tiene que corregir su cuenta: decía «2 etapas» con siete abiertas debajo, y dos cifras del mismo dato discrepando en la misma pantalla es el defecto que este proyecto no permite");
+      const segH = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "perfil", "seguimiento.js"), "utf8");
+      assert.ok(/hoy: hoyColombia\(ahora\)/.test(segH),
+        "el endpoint de Mis procesos tiene que publicar el día de Colombia: sin él el calendario no puede marcar hoy");
+      console.log(`  · Calendario del proceso guardado: ${hitos.length} etapas del cronograma real situadas en 3 meses · cumplida/hoy/próxima · con solo el dataset lo dice y explica cómo conseguir el resto`);
     }
 
     /* ═══════════ j-octies. CONSORCIO A LA MEDIDA (Fase 10 del plan v4) ═══════════
@@ -19941,10 +20067,22 @@ async function main() {
         assert.ok(i > 0, `#${id} NO se retira: borrarlo mata la pestaña entera (arrancarPaneles no tiene guarda)`);
         assert.ok(i > iSis, `#${id} tiene que vivir DENTRO de «Sistema», fuera de la vista principal`);
       }
-      /* …y las que responden «¿a qué me presento hoy?» siguen ARRIBA. */
-      for (const id of ["pulso", "seccion-rup", "seccion-consorcio", "seccion-socio", "actualizar"]) {
+      /* …y las que responden «¿a qué me presento hoy?» siguen ARRIBA.
+         ⚠️ DOS BAJARON A «Sistema» EL 31-ago-2026, por encargo del ingeniero:
+         `#actualizar` (el botón es hoy una segunda copia del de la marca de la
+         barra, que además lleva la fecha del corte delante) y `#seccion-rup`
+         (seis cifras que solo cambian al subir un RUP nuevo: es lo que hay que
+         TOCAR, no lo que hay que VER). Ninguno se RETIRA —borrarlos mata la
+         pestaña entera, porque `arrancarPaneles` los cablea sin guarda— y por
+         eso siguen vigilados aquí abajo, con la comprobación al revés. */
+      for (const id of ["pulso", "calendario", "seccion-consorcio", "seccion-socio"]) {
         const i = tabAdmin.indexOf(`id="${id}"`);
         assert.ok(i > 0 && i < iSis, `#${id} tiene que estar A LA VISTA, antes de «Sistema»`);
+      }
+      for (const id of ["actualizar", "seccion-rup"]) {
+        const i = tabAdmin.indexOf(`id="${id}"`);
+        assert.ok(i > iSis, `#${id} bajó a «Sistema» el 31-ago-2026: tiene que vivir DENTRO del pliegue`);
+        assert.ok(i > 0, `#${id} NO se retira: borrarlo mata la pestaña entera (arrancarPaneles no tiene guarda)`);
       }
 
       /* (3) EL BOTÓN ÚNICO REUTILIZA `iniciarAlDia`. Una segunda copia del

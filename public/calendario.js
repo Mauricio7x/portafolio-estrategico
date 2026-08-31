@@ -103,7 +103,23 @@
      día de hoy va marcado aunque no tenga ninguno («el día en el que estamos»
      es la mitad del encargo). Los días de otros meses no se rellenan: una
      casilla vacía es más legible que un número apagado que invita a pulsar. */
-  function htmlRejilla(cal, { mes, dia }) {
+  /* ⚠️ LA REJILLA SE REUSA CON DOS DATOS DISTINTOS, y por eso lo que cambia
+     entre uno y otro se PARAMETRIZA en vez de copiarse: los cierres del mes
+     (Mi empresa) y las etapas de un proceso guardado (Mis procesos) son la
+     misma cuadrícula con otro contenido. Una segunda rejilla escrita a mano
+     divergiría en la alineación —que es justo donde este calendario ya se
+     equivocó una vez— y habría que probarla dos veces.
+       · `pulsable`: en el cronograma de un proceso no hay nada que abrir al
+         pulsar un día, así que la casilla NO se pinta como botón. Ninguna
+         pulsación sin respuesta visible, también en su forma negativa: nada
+         que parezca pulsable sin serlo.
+       · `rotuloDe`: el texto del `title`/`aria-label` («2 procesos cierran» vs
+         «2 etapas»), que es lo único que sabe de qué va el dato.
+       · `etiqueta`: el rótulo del grupo para quien navega con lector. */
+  const ROTULO_CIERRES = (d, n, mesN, esHoy) => (d
+    ? `${n} de ${mesN}: ${miles(d.n)} ${d.n === 1 ? "proceso cierra" : "procesos cierran"}${esHoy ? ", y es hoy" : ""}`
+    : `${n} de ${mesN}: ningún cierre${esHoy ? ", y es hoy" : ""}`);
+  function htmlRejilla(cal, { mes, dia, pulsable = true, rotuloDe = ROTULO_CIERRES, etiqueta = null }) {
     const porFecha = new Map((cal.dias || []).map((d) => [d.fecha, d]));
     const hoy = cal.hoy || "";
     const huecos = diaSemanaLunes(`${mes}-01`);
@@ -121,16 +137,14 @@
       if (esHoy) clases.push("cal-hoy");
       if (abierto) clases.push("cal-abierto");
       if (pasado) clases.push("cal-pasado");
-      const rotulo = d
-        ? `${n} de ${MESES[partes(f)[1] - 1]}: ${miles(d.n)} ${d.n === 1 ? "proceso cierra" : "procesos cierran"}${esHoy ? ", y es hoy" : ""}`
-        : `${n} de ${MESES[partes(f)[1] - 1]}: ningún cierre${esHoy ? ", y es hoy" : ""}`;
-      celdas.push(d
+      const rotulo = rotuloDe(d, n, MESES[partes(f)[1] - 1], esHoy);
+      celdas.push(d && pulsable
         ? `<button type="button" class="${clases.join(" ")}" data-dia="${esc(f)}" aria-label="${esc(rotulo)}" aria-pressed="${abierto ? "true" : "false"}" title="${esc(rotulo)}">
              <span class="cal-num">${n}</span><span class="cal-n">${miles(d.n)}</span></button>`
-        : `<div class="${clases.join(" ")}" title="${esc(rotulo)}"><span class="cal-num">${n}</span></div>`);
+        : `<div class="${clases.join(" ")}" title="${esc(rotulo)}"><span class="cal-num">${n}</span>${d ? `<span class="cal-n">${miles(d.n)}</span>` : ""}</div>`);
     }
     const cabeza = DIAS_CORTOS.map((d) => `<div class="cal-dow">${d}</div>`).join("");
-    return `<div class="cal-rejilla" role="group" aria-label="Cierres de ${esc(mesLegible(mes))}">${cabeza}${celdas.join("")}</div>`;
+    return `<div class="cal-rejilla" role="group" aria-label="${esc(etiqueta || `Cierres de ${mesLegible(mes)}`)}">${cabeza}${celdas.join("")}</div>`;
   }
 
   /* ══ EL PLAZO PARA AVISAR QUE LE INTERESA ══
@@ -299,6 +313,127 @@
       <div class="cal-detalle">${dia ? htmlDia(cal, { dia, proceso }) : '<p class="cal-vacio">Pulse un día con cierres para ver los procesos.</p>'}</div>`;
   }
 
+  /* ══════════ EL CRONOGRAMA DE UN PROCESO GUARDADO (encargo del ingeniero,
+     31-ago-2026) ══════════
+     «Al guardar un proceso en Licitaciones para que aparezca en Mis procesos,
+     un calendario adaptativo para ver de manera gráfica cuándo se cumplen las
+     distintas etapas del proceso, según el calendario de SECOP II.»
+
+     ADAPTATIVO EN TRES SENTIDOS, y los tres importan:
+     1. AL NÚMERO DE ETAPAS QUE SE CONOCEN. Del dataset solo salen dos
+        —publicación y cierre— más la manifestación cuando aplica; el
+        cronograma completo (observaciones, adendas, evaluación, adjudicación,
+        firma…) vive en el PLIEGO, y solo se conoce si alguien lo leyó. Así que
+        la pantalla dice CUÁNTAS sabe y de dónde salió cada una, y cuando solo
+        hay las del dataset lo DICE y explica cómo conseguir el resto. Fingir
+        un cronograma completo que no se tiene sería el defecto de siempre.
+     2. AL TRAMO QUE ABARCA: se dibuja una rejilla por cada mes entre la
+        primera y la última etapa (con tope, que un proceso raro puede abrir en
+        enero y firmar en diciembre). La rejilla es la MISMA de Mi empresa,
+        parametrizada — no una segunda cuadrícula.
+     3. A DÓNDE ESTÁ HOY: cada etapa se marca cumplida, de hoy o pendiente, y
+        la PRÓXIMA se destaca, que es la única que exige algo.
+
+     LA CUENTA DE DÍAS SÍ ESTÁ PERMITIDA AQUÍ, y conviene decir por qué: estas
+     fechas son PUBLICADAS (el dataset de SECOP II o el cronograma del pliego),
+     no una ventana deducida de un techo legal como la de la manifestación. Lo
+     que no se puede es afirmar que no cambiarán: una adenda mueve el
+     cronograma, y eso se dice en pantalla (la app ya vigila las adendas). */
+  const CRON_MAX_MESES = 6;
+  const diasEntre = (desde, hasta) =>
+    Math.round((Date.parse(`${hasta}T00:00:00Z`) - Date.parse(`${desde}T00:00:00Z`)) / 86400000);
+  const ORIGEN_ETIQUETA = { dataset: "SECOP II", pliego: "cronograma del pliego", calculado: "calculado por la app" };
+
+  /* Los hitos, agrupados por día en la MISMA forma que `calendario.dias`, para
+     que la rejilla no tenga que saber de dónde viene el dato. */
+  function etapasPorDia(hitos) {
+    const porDia = new Map();
+    for (const h of hitos || []) {
+      const f = String((h && h.fecha) || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(f)) continue;           // una fecha ilegible no se sitúa
+      const d = porDia.get(f) || { fecha: f, n: 0, etapas: [] };
+      d.n++; d.etapas.push(h);
+      porDia.set(f, d);
+    }
+    return [...porDia.values()].sort((a, b) => a.fecha.localeCompare(b.fecha));
+  }
+
+  /* Los meses que hay que dibujar, del primero al último con etapa. */
+  function mesesDelTramo(dias, hoy) {
+    if (!dias.length) return [];
+    const primero = mesDe(dias[0].fecha);
+    const ultimo = mesDe(dias[dias.length - 1].fecha);
+    const out = [];
+    let m = primero;
+    for (let i = 0; i < CRON_MAX_MESES && m <= ultimo; i++) { out.push(m); m = mesVecino(m, 1); }
+    // el mes de hoy entra aunque no tenga etapas: «dónde estoy» es la mitad de la pregunta
+    if (hoy && !out.includes(mesDe(hoy)) && out.length < CRON_MAX_MESES) {
+      out.push(mesDe(hoy));
+      out.sort();
+    }
+    return out;
+  }
+
+  function estadoEtapa(fecha, hoy) {
+    if (!hoy) return "pendiente";
+    if (fecha < hoy) return "cumplida";
+    if (fecha === hoy) return "hoy";
+    return "pendiente";
+  }
+  function cuandoEtapa(fecha, hoy) {
+    if (!hoy) return "";
+    const d = diasEntre(hoy, fecha);
+    if (d === 0) return "es HOY";
+    if (d === 1) return "mañana";
+    if (d === -1) return "ayer";
+    return d > 0 ? `en ${miles(d)} días` : `hace ${miles(-d)} días`;
+  }
+
+  function htmlCronograma(hitos, { hoy = null, fuente = null } = {}) {
+    const lista = (hitos || []).filter((h) => h && /^\d{4}-\d{2}-\d{2}$/.test(String(h.fecha || "").slice(0, 10)))
+      .map((h) => ({ ...h, fecha: String(h.fecha).slice(0, 10) }))
+      .sort((a, b) => a.fecha.localeCompare(b.fecha) || String(a.id).localeCompare(String(b.id)));
+    if (!lista.length) {
+      return '<p class="cron-vacio">Este proceso no trae ninguna fecha que se pueda situar en el calendario.</p>';
+    }
+    const dias = etapasPorDia(lista);
+    const cal = { hoy: hoy || "", dias };
+    const meses = mesesDelTramo(dias, hoy);
+    const rotulo = (d, n, mesN, esHoy) => (d
+      ? `${n} de ${mesN}: ${miles(d.n)} ${d.n === 1 ? "etapa" : "etapas"} — ${d.etapas.map((e) => e.etiqueta).join("; ")}${esHoy ? " (y es hoy)" : ""}`
+      : `${n} de ${mesN}${esHoy ? ": hoy" : ""}`);
+    const rejillas = meses.map((m) => `<div class="cron-mes">
+        <p class="cron-mes-t">${esc(mesLegible(m))}</p>
+        ${htmlRejilla(cal, { mes: m, dia: null, pulsable: false, rotuloDe: rotulo, etiqueta: `Etapas de ${mesLegible(m)}` })}
+      </div>`).join("");
+
+    const proxima = hoy ? lista.find((h) => h.fecha >= hoy) : null;
+    const filas = lista.map((h) => {
+      const est = estadoEtapa(h.fecha, hoy);
+      const esProxima = !!(proxima && h === proxima);
+      const origen = ORIGEN_ETIQUETA[h.origen] || h.origen || "sin origen";
+      return `<li class="cron-etapa cron-${est}${esProxima ? " cron-proxima" : ""}"${h.evidencia ? ` title="${esc(h.evidencia)}"` : ""}>
+        <span class="cron-fecha">${esc(fechaLegible(h.fecha))}</span>
+        <span class="cron-que">${esc(h.etiqueta || h.id || "Etapa")}</span>
+        <span class="cron-cuando">${esc(cuandoEtapa(h.fecha, hoy))}</span>
+        <span class="cron-origen">${esc(origen)}</span>
+      </li>`;
+    }).join("");
+
+    const delPliego = lista.filter((h) => h.origen === "pliego").length;
+    /* CUÁNTAS ETAPAS SE CONOCEN Y DE DÓNDE: sin esta línea, dos etapas se leen
+       como «el proceso solo tiene dos», que es falso y deja al ingeniero sin
+       enterarse de la audiencia de adjudicación. */
+    const nota = delPliego
+      ? `${miles(delPliego)} de las ${miles(lista.length)} etapas salen del cronograma del pliego; el resto, de SECOP II.`
+      : "Solo se conocen las fechas que SECOP II publica en el listado. El cronograma completo —observaciones, adendas, evaluación, adjudicación y firma— está en el pliego: cárguelo en la pestaña Precios y estas etapas aparecerán aquí.";
+    return `<p class="cron-resumen">${miles(lista.length)} ${lista.length === 1 ? "etapa situada" : "etapas situadas"} · del ${esc(fechaLegible(lista[0].fecha))} al ${esc(fechaLegible(lista[lista.length - 1].fecha))}${fuente && fuente.version_texto ? ` · pliego versión ${esc(String(fuente.version_texto))}` : ""}</p>
+      <div class="cron-meses">${rejillas}</div>
+      <ol class="cron-lista">${filas}</ol>
+      <p class="cron-nota">${esc(nota)}</p>
+      <p class="cron-nota">Las fechas son las que publica la entidad: una adenda puede moverlas, y la aplicación avisa cuando eso pasa.</p>`;
+  }
+
   /* ══ QUÉ MES SE ABRE SOLO ══ (defecto de producción, 31-ago-2026)
      El calendario abría SIEMPRE el mes de hoy, y el ingeniero lo vio el 31 de
      agosto: agosto ya no tenía ni un cierre —todo lo suyo vencía en
@@ -391,6 +526,7 @@
 
   return {
     montar, olvidar, htmlMes, htmlRejilla, htmlDia, htmlFila, htmlFicha, lugarDeEjecucion,
-    plazoManifestacion, diaPorDefecto, mesPorDefecto, mesDe, mesVecino, mesLegible, fechaLegible, diaSemanaLunes, diasDelMes, pesos,
+    plazoManifestacion, htmlCronograma, etapasPorDia, mesesDelTramo, estadoEtapa, cuandoEtapa,
+    diaPorDefecto, mesPorDefecto, mesDe, mesVecino, mesLegible, fechaLegible, diaSemanaLunes, diasDelMes, pesos,
   };
 });

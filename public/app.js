@@ -2792,7 +2792,17 @@
           <ul class="mt-1 space-y-0.5">${p.cambios.map((c) => `<li>${esc(c.mensaje)}</li>`).join("")}</ul>
           <button type="button" data-seg-enterado="${esc(p.id)}" class="mt-1.5 rounded-lg border border-red-200 bg-white px-2 py-0.5 text-[11px] font-medium hover:bg-red-50">Enterado</button>
         </div>` : "";
-      const hitos = (p.hitos || []).map((h) => `<span class="rounded bg-gray-50 px-1.5 py-0.5 text-[11px] text-gray-600" title="${esc(h.evidencia || "")}">${esc(h.etiqueta.split(":")[0])}${h.origen === "calculado" ? " (calc.)" : ""}: ${esc(fechaCorta(h.fecha))}</span>`).join(" ");
+      /* LOS HITOS DEJAN DE SER UNA FILA DE PÍLDORAS (encargo del ingeniero,
+         31-ago-2026). Eran el mismo dato en la peor forma posible: cinco
+         etiquetas grises apretadas, sin orden legible, sin decir cuál viene
+         ahora ni cuáles ya pasaron. El dato no cambia; cambia la forma: un
+         botón abre el CALENDARIO del proceso (`Calendario.htmlCronograma`),
+         que las sitúa en la cuadrícula del mes y las lista con su estado. Se
+         dice CUÁNTAS hay en el botón para que no haya que abrirlo a ciegas. */
+      const nHitos = (p.hitos || []).length;
+      const cron = nHitos
+        ? `<button type="button" data-seg-cron="${esc(p.id)}" class="rounded-full border border-gray-300 px-2.5 py-0.5 text-[11px] font-medium transition hover:bg-gray-50" title="Ver en un calendario cuándo se cumple cada etapa de este proceso">Cronograma · ${nHitos} ${nHitos === 1 ? "etapa" : "etapas"}</button>`
+        : `<span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">Sin fechas que situar en el calendario</span>`;
       const estados = r.orden_estados || Object.keys(r.estados || {});
       return `<article class="rounded-xl border border-gray-100 p-4" data-seg-id="${esc(p.id)}">
         <div class="flex flex-wrap items-start justify-between gap-2">
@@ -2804,7 +2814,7 @@
             ${estados.map((e) => `<option value="${e}" ${p.estado === e ? "selected" : ""}>${esc(r.estados[e] || e)}</option>`).join("")}
           </select>
         </div>
-        <div class="mt-2 flex flex-wrap items-center gap-2">${cierre}${manif}${hitos}</div>
+        <div class="mt-2 flex flex-wrap items-center gap-2">${cierre}${manif}${cron}</div>
         ${aviso}
         ${cambios}
         <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
@@ -2812,6 +2822,7 @@
           ${p.proponentes_disponibles ? `<button type="button" data-seg-detalle="${esc(p.id)}" class="rounded-lg px-2.5 py-1 font-medium text-white transition" style="background: var(--accent);">Quiénes se presentaron</button>` : `<span class="text-gray-400" title="Los proponentes solo aparecen en la fuente pública tras la apertura de ofertas">Los proponentes se conocen cuando cierra</span>`}
           <button type="button" data-seg-quitar="${esc(p.id)}" class="ml-auto text-gray-400 hover:text-red-600">Quitar</button>
         </div>
+        <div data-seg-cron-caja="${esc(p.id)}" class="mt-3 hidden"></div>
         <div data-seg-caja="${esc(p.id)}" class="mt-3 hidden"></div>
       </article>`;
     }).join("");
@@ -2870,6 +2881,52 @@
           const blob = await r.blob(); const url = URL.createObjectURL(blob);
           const a = document.createElement("a"); a.href = url; a.download = `detekta_${id.replace(/[^A-Za-z0-9._-]/g, "_")}.ics`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
         } catch (e) { mensajeSeg(e.message, "error"); }
+        return;
+      }
+      /* ══════════ EL CALENDARIO DEL PROCESO (31-ago-2026) ══════════
+         Pinta DOS VECES a propósito, y esa es toda la gracia:
+         (1) al instante, con los hitos que `op=seguimiento` YA trajo con la
+             tarjeta (publicación, cierre y, en menor cuantía, la manifestación):
+             una pulsación sin respuesta visible es peor que un error, y aquí
+             la respuesta ya está en memoria;
+         (2) enseguida, con el cronograma COMPLETO del pliego, que se pide a
+             `/api/pliego?op=cronograma` — el mismo endpoint que ya existe, que
+             lo recompone del texto guardado. No se pide con el listado porque
+             releer hasta 400 KB de texto por proceso en cada carga de la
+             pestaña es inviable (la razón por la que la manifestación se
+             precalcula); aquí se pide UNO, y solo cuando se abre.
+         Si el pliego no se ha leído, el paso (2) no añade nada y la pantalla
+         lo dice: enseña las etapas que sí conoce y explica cómo conseguir el
+         resto. Nunca finge un cronograma que no tiene. */
+      const cronBtn = ev.target.closest("[data-seg-cron]");
+      if (cronBtn) {
+        const id = cronBtn.getAttribute("data-seg-cron");
+        const caja = secSeg.querySelector(`[data-seg-cron-caja="${CSS.escape(id)}"]`);
+        if (!caja || !window.Calendario) return;
+        if (!caja.classList.contains("hidden")) {   // volver a pulsar cierra
+          caja.classList.add("hidden"); caja.innerHTML = "";
+          cronBtn.setAttribute("aria-expanded", "false");
+          return;
+        }
+        const guardado = ((ultimoSeguimiento && ultimoSeguimiento.procesos) || []).find((x) => String(x.id) === String(id));
+        const hoySeg = (ultimoSeguimiento && ultimoSeguimiento.hoy) || null;
+        caja.classList.remove("hidden");
+        cronBtn.setAttribute("aria-expanded", "true");
+        caja.innerHTML = window.Calendario.htmlCronograma((guardado && guardado.hitos) || [], { hoy: hoySeg });
+        try {
+          const d = await api(`/api/pliego?op=cronograma&id_proceso=${encodeURIComponent(id)}`);
+          /* Solo se repinta si el pliego APORTA: con el mismo número de etapas,
+             volver a pintar haría parpadear la pantalla sin decir nada nuevo. */
+          if (d && d.ok && (d.hitos || []).length > ((guardado && guardado.hitos) || []).length) {
+            caja.innerHTML = window.Calendario.htmlCronograma(d.hitos, { hoy: d.hoy || hoySeg, fuente: d.fuentes });
+            /* Y EL BOTÓN SE CORRIGE: decía «2 etapas» —las que trajo la
+               tarjeta— con siete abiertas debajo. Dos cifras del mismo dato
+               discrepando en la misma pantalla es exactamente lo que este
+               proyecto no permite, aunque las dos sean ciertas por separado. */
+            const n = d.hitos.length;
+            cronBtn.textContent = `Cronograma · ${n} ${n === 1 ? "etapa" : "etapas"}`;
+          }
+        } catch { /* sin pliego leído o sin red: se queda lo que ya se pintó, que es verdad */ }
         return;
       }
       const det = ev.target.closest("[data-seg-detalle]");

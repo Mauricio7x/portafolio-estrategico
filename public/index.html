@@ -523,6 +523,32 @@
     .cal-ir { margin-top: 12px; display: inline-block; border-radius: var(--radius-sm); border: 1px solid var(--border);
               padding: 7px 14px; font-size: 12px; font-weight: 600; color: var(--text-primary); text-decoration: none; }
     @media (max-width: 640px) { .cal-celda { height: auto; aspect-ratio: 1 / 1; min-height: 38px; } }
+
+    /* ══════════ EL CRONOGRAMA DE UN PROCESO GUARDADO (31-ago-2026) ══════════
+       Reusa `.cal-*` para la rejilla (es la MISMA cuadrícula) y añade solo lo
+       propio: los meses en fila y la lista de etapas. La etapa PRÓXIMA lleva
+       barra de acento a la izquierda — es la única que exige algo hoy. */
+    .cron-resumen { font-size: 12px; color: var(--text-secondary); }
+    .cron-meses { margin-top: 10px; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+    .cron-mes-t { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+    .cron-mes-t::first-letter { text-transform: uppercase; }
+    .cron-mes .cal-celda { height: 34px; min-height: 30px; gap: 0; }
+    .cron-mes .cal-num { font-size: 10px; }
+    .cron-mes .cal-n { font-size: 9px; }
+    .cron-lista { margin-top: 14px; display: flex; flex-direction: column; gap: 2px; list-style: none; padding: 0; }
+    .cron-etapa { display: grid; grid-template-columns: 108px 1fr auto; gap: 2px 10px; align-items: baseline;
+                  padding: 6px 10px; border-radius: var(--radius-sm); border-left: 3px solid transparent; }
+    .cron-fecha { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+    .cron-que { font-size: 12px; color: var(--text-primary); overflow-wrap: anywhere; }
+    .cron-cuando { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+    .cron-origen { grid-column: 2 / -1; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
+    .cron-cumplida { opacity: 0.55; }
+    .cron-hoy { background: var(--accent-light); }
+    .cron-proxima { border-left-color: var(--accent); background: var(--bg-inset); }
+    .cron-proxima .cron-que { font-weight: 600; }
+    .cron-nota, .cron-vacio { margin-top: 8px; font-size: 11px; color: var(--text-secondary); }
+    @media (max-width: 480px) { .cron-etapa { grid-template-columns: 1fr auto; } .cron-que { grid-column: 1 / -1; } }
+
     @media (max-width: 480px) {
       .cal-celda { min-height: 34px; }
       .cal-num { font-size: 11px; }
@@ -1015,59 +1041,6 @@
           <p id="d-meta" class="mt-6 text-xs text-gray-400"></p>
         </div>
       </section>
-<!-- ══════ ACTUALIZAR DATOS · el botón único (encargo del ingeniero, 24-ago-2026) ══════
-         «Puede ser un botón de actualizar datos en tiempo real, con una
-         animación de carga que al ser lenta le dé la sensación de que va
-         cargando poco a poco, mostrando un texto como "Cargando datos de
-         SECOP II"».
-
-         ⚠️ SIN PORCENTAJE, Y ESO NO ES UN RECORTE: ES LA ÚNICA FORMA
-         HONESTA. Se midió antes de dibujar nada. «Ponerse al día» (el
-         delta, que es lo que el usuario normal necesita) barre por
-         `:updated_at` con keyset y NO PUBLICA NINGÚN DENOMINADOR: su
-         respuesta trae `ciclo_leidas`, `guardadas` y `parcial`, y ni un
-         solo campo de total esperado. Una barra de porcentaje ahí sería un
-         número inventado en la pantalla que le dice al dueño si sus datos
-         están al día. La sensación de avance que pide el ingeniero sale de
-         donde sí es real: los CONTEOS que crecen tanda a tanda. La barra es
-         indeterminada —dice «está trabajando», no «va por el 42 %»—.
-         La CARGA COMPLETA sí tiene denominador (`count(*)` por mes, ver
-         lib/socrata.contarMes) y conserva su barra con porcentaje real,
-         plegada abajo con el resto del instrumental. -->
-      <!-- MISMAS CLASES QUE EL RESTO DE TARJETAS, y no un estilo en línea
-         propio: `bg-white rounded-2xl` es la utilidad que la capa de piel
-         traduce a `var(--bg-card)` + blur + borde en `#app
-         .bg-white.rounded-2xl`, y con ella la tarjeta hereda sola las tres
-         preferencias del sistema (reducir transparencia, reducir
-         movimiento, más contraste). Un `style="background: var(--bg-card)"`
-         a mano se queda SIN blur y sin esas variantes: sería una segunda
-         definición de «tarjeta de vidrio» que se despeina por su cuenta. -->
-      <section id="actualizar" class="mt-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-        <div class="min-w-0">
-          <h2 class="font-semibold tracking-tight">Actualizar datos</h2>
-          <p class="mt-1 text-sm" style="color: var(--text-secondary);">Trae de SECOP II lo publicado desde la última vez. Puede cerrar la pestaña: el avance queda guardado.</p>
-        </div>
-        <button id="btn-actualizar-datos" type="button"
-                class="shrink-0 rounded-xl px-6 py-3 text-sm font-semibold text-white transition disabled:opacity-40"
-                style="background: var(--accent);">
-          Actualizar datos
-        </button>
-        </div>
-        <!-- Nace oculto con el ATRIBUTO `hidden`, no con la clase de Tailwind:
-           el CDN está bloqueado en la red institucional del dueño y allí la
-           clase no existe — el defecto ya medido en Chromium. -->
-        <div id="act-panel" hidden class="mt-5">
-        <div class="flex items-center gap-3">
-          <span id="act-spin" class="h-4 w-4 shrink-0 rounded-full border-2 spin" style="border-color: var(--border); border-top-color: var(--accent);"></span>
-          <p id="act-estado" class="text-sm font-medium">Cargando datos de SECOP II…</p>
-        </div>
-        <div class="mt-3 h-1.5 overflow-hidden rounded-full" style="background: var(--bg-inset);">
-          <div id="act-barra" class="h-full w-1/3 rounded-full barra-indeterminada" style="background: var(--accent);"></div>
-        </div>
-        <p id="act-cifras" class="mt-2 text-xs tabular-nums" style="color: var(--text-secondary);"></p>
-        </div>
-      </section>
 
       <!-- ══════ «EL MERCADO COMPLETO HOY» SE RETIRÓ (encargo del ingeniero, ago 2026) ══════
            Era un <details> con la portada del mercado ENTERO embebida dentro de Mi
@@ -1080,77 +1053,6 @@
            pantalla y otra pregunta. `arrancar()` ya devolvía false sin #portada,
            así que no queda ninguna llamada colgando. -->
 
-<section id="seccion-rup" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 class="font-semibold tracking-tight">Su registro de proponente</h2>
-            <p class="mt-1 text-sm text-gray-500">Decide a qué licitaciones puede presentarse.</p>
-          </div>
-          <button id="btn-nuevo-rup" type="button"
-                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">
-            + Nuevo RUP (PDF)
-          </button>
-        </div>
-
-        <!-- EL REGISTRO EN CIFRAS: lo pinta public/pulso.js con el bloque
-             `empresa` de /api/perfil?op=pulso (tipos de trabajo, experiencia
-             acreditada, contratos, tope; patrimonio y capacidad solo con
-             token). Nace oculto; sin datos no se pinta nada. -->
-        <div id="rup-cifras" class="mt-4 hidden"></div>
-
-        <!-- Alarma de renovación (quinto día hábil de abril): la pinta
-             pintarAlertaVigencia() al arrancar la pestaña; fuera de la
-             ventana febrero-abril permanece oculta -->
-        <p id="rup-alerta-vigencia" class="mt-4 hidden rounded-xl px-4 py-3 text-sm font-medium"></p>
-
-        <!-- Lo que hay que TOCAR va plegado: subir/descargar el archivo del
-             registro, ver el perfil vigente, eliminarlo. Ningún id cambia. -->
-        <details id="rup-gestion" class="mt-4">
-          <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">Actualizar, descargar o eliminar el registro</summary>
-        <p class="mt-3 max-w-2xl text-sm text-gray-500">Suba el certificado RUP en PDF (crea un perfil propio) o cargue el archivo JSON de los perfiles. El cambio surte efecto en la siguiente consulta.</p>
-        <div class="mt-4 flex flex-wrap items-center gap-3">
-          <input id="rup-json-archivo" type="file" accept=".json,application/json"
-                 class="block max-w-sm text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
-          <button id="btn-rup-descargar" type="button"
-                  class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
-            Descargar el perfil actual (JSON)
-          </button>
-        </div>
-
-        <div id="rup-vista" class="mt-5 hidden">
-          <h3 class="text-sm font-semibold tracking-tight">Vista previa</h3>
-          <ul id="rup-resumen" class="mt-2 space-y-1 text-sm text-gray-700"></ul>
-          <pre id="rup-preview" class="mt-3 max-h-72 overflow-auto rounded-xl bg-gray-50 p-4 font-mono text-xs text-gray-600 ring-1 ring-inset ring-gray-900/5"></pre>
-          <div class="mt-4 flex flex-wrap items-center gap-3">
-            <button id="btn-rup-cargar" type="button"
-                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-              Confirmar carga
-            </button>
-            <button id="btn-rup-cancelar" type="button"
-                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
-              Cancelar
-            </button>
-          </div>
-        </div>
-
-        <p id="rup-json-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
-        <ul id="rup-errores" class="mt-3 hidden space-y-1 rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></ul>
-
-        <div class="mt-6 border-t border-gray-100 pt-4">
-          <h3 class="text-sm font-semibold tracking-tight">Perfil actual</h3>
-          <div id="rup-actual" class="mt-2 text-sm text-gray-600">—</div>
-        </div>
-
-        <!-- Zona de riesgo: separada por un divisor y 16px, como manda el sistema -->
-        <div class="mt-6 border-t border-gray-100 pt-4">
-          <div class="flex flex-wrap items-center gap-4">
-            <button id="btn-eliminar-rup" type="button" class="btn-peligro">Eliminar este perfil</button>
-            <span class="text-xs text-gray-500">Se eliminarán todos los filtros y datos asociados al perfil activo.</span>
-          </div>
-          <p id="eliminar-rup-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
-        </div>
-        </details>
-      </section>
 
       <!-- ══════════ EL CALENDARIO DE CIERRES (encargo del ingeniero, 31-ago-2026) ══════════
            «Un calendario en el que se vea el mes actual, el día en el que
@@ -1244,6 +1146,146 @@
           <span class="ml-2 text-sm font-normal text-gray-500">— tablero, catálogo de precios y sincronización.
             No hace falta abrirlo para usar la aplicación.</span>
         </summary>
+
+        <!-- ══════ «ACTUALIZAR DATOS» Y «SU REGISTRO» SE PLIEGAN AQUÍ (encargo
+             del ingeniero, 31-ago-2026) ══════
+             «Esos dos datos podemos ocultarlos en Sistema.» Los dos habían
+             dejado de ganarse el sitio que ocupaban a la vista:
+               · «Actualizar datos» es HOY una segunda copia del botón que la
+                 marca de la barra superior ya ofrece en TODAS las pestañas y
+                 con la fecha del corte delante. Su panel de avance sigue
+                 viviendo aquí —es donde se ven los conteos tanda a tanda—, así
+                 que el botón de la barra sigue teniendo dónde escribir.
+               · «Su registro de proponente» son seis cifras que no cambian de
+                 un día para otro (las mueve subir un RUP nuevo, no el mercado):
+                 es la definición de lo que hay que TOCAR, no de lo que hay que
+                 VER. Sigue completo, a un clic.
+             Ningún id cambia: renombrarlos mataría app.js y media suite. -->
+<!-- ══════ ACTUALIZAR DATOS · el botón único (encargo del ingeniero, 24-ago-2026) ══════
+         «Puede ser un botón de actualizar datos en tiempo real, con una
+         animación de carga que al ser lenta le dé la sensación de que va
+         cargando poco a poco, mostrando un texto como "Cargando datos de
+         SECOP II"».
+
+         ⚠️ SIN PORCENTAJE, Y ESO NO ES UN RECORTE: ES LA ÚNICA FORMA
+         HONESTA. Se midió antes de dibujar nada. «Ponerse al día» (el
+         delta, que es lo que el usuario normal necesita) barre por
+         `:updated_at` con keyset y NO PUBLICA NINGÚN DENOMINADOR: su
+         respuesta trae `ciclo_leidas`, `guardadas` y `parcial`, y ni un
+         solo campo de total esperado. Una barra de porcentaje ahí sería un
+         número inventado en la pantalla que le dice al dueño si sus datos
+         están al día. La sensación de avance que pide el ingeniero sale de
+         donde sí es real: los CONTEOS que crecen tanda a tanda. La barra es
+         indeterminada —dice «está trabajando», no «va por el 42 %»—.
+         La CARGA COMPLETA sí tiene denominador (`count(*)` por mes, ver
+         lib/socrata.contarMes) y conserva su barra con porcentaje real,
+         plegada abajo con el resto del instrumental. -->
+      <!-- MISMAS CLASES QUE EL RESTO DE TARJETAS, y no un estilo en línea
+         propio: `bg-white rounded-2xl` es la utilidad que la capa de piel
+         traduce a `var(--bg-card)` + blur + borde en `#app
+         .bg-white.rounded-2xl`, y con ella la tarjeta hereda sola las tres
+         preferencias del sistema (reducir transparencia, reducir
+         movimiento, más contraste). Un `style="background: var(--bg-card)"`
+         a mano se queda SIN blur y sin esas variantes: sería una segunda
+         definición de «tarjeta de vidrio» que se despeina por su cuenta. -->
+      <section id="actualizar" class="mt-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="min-w-0">
+          <h2 class="font-semibold tracking-tight">Actualizar datos</h2>
+          <p class="mt-1 text-sm" style="color: var(--text-secondary);">Trae de SECOP II lo publicado desde la última vez. Puede cerrar la pestaña: el avance queda guardado.</p>
+        </div>
+        <button id="btn-actualizar-datos" type="button"
+                class="shrink-0 rounded-xl px-6 py-3 text-sm font-semibold text-white transition disabled:opacity-40"
+                style="background: var(--accent);">
+          Actualizar datos
+        </button>
+        </div>
+        <!-- Nace oculto con el ATRIBUTO `hidden`, no con la clase de Tailwind:
+           el CDN está bloqueado en la red institucional del dueño y allí la
+           clase no existe — el defecto ya medido en Chromium. -->
+        <div id="act-panel" hidden class="mt-5">
+        <div class="flex items-center gap-3">
+          <span id="act-spin" class="h-4 w-4 shrink-0 rounded-full border-2 spin" style="border-color: var(--border); border-top-color: var(--accent);"></span>
+          <p id="act-estado" class="text-sm font-medium">Cargando datos de SECOP II…</p>
+        </div>
+        <div class="mt-3 h-1.5 overflow-hidden rounded-full" style="background: var(--bg-inset);">
+          <div id="act-barra" class="h-full w-1/3 rounded-full barra-indeterminada" style="background: var(--accent);"></div>
+        </div>
+        <p id="act-cifras" class="mt-2 text-xs tabular-nums" style="color: var(--text-secondary);"></p>
+        </div>
+      </section>
+
+<section id="seccion-rup" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Su registro de proponente</h2>
+            <p class="mt-1 text-sm text-gray-500">Decide a qué licitaciones puede presentarse.</p>
+          </div>
+          <button id="btn-nuevo-rup" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">
+            + Nuevo RUP (PDF)
+          </button>
+        </div>
+
+        <!-- EL REGISTRO EN CIFRAS: lo pinta public/pulso.js con el bloque
+             `empresa` de /api/perfil?op=pulso (tipos de trabajo, experiencia
+             acreditada, contratos, tope; patrimonio y capacidad solo con
+             token). Nace oculto; sin datos no se pinta nada. -->
+        <div id="rup-cifras" class="mt-4 hidden"></div>
+
+        <!-- Alarma de renovación (quinto día hábil de abril): la pinta
+             pintarAlertaVigencia() al arrancar la pestaña; fuera de la
+             ventana febrero-abril permanece oculta -->
+        <p id="rup-alerta-vigencia" class="mt-4 hidden rounded-xl px-4 py-3 text-sm font-medium"></p>
+
+        <!-- Lo que hay que TOCAR va plegado: subir/descargar el archivo del
+             registro, ver el perfil vigente, eliminarlo. Ningún id cambia. -->
+        <details id="rup-gestion" class="mt-4">
+          <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">Actualizar, descargar o eliminar el registro</summary>
+        <p class="mt-3 max-w-2xl text-sm text-gray-500">Suba el certificado RUP en PDF (crea un perfil propio) o cargue el archivo JSON de los perfiles. El cambio surte efecto en la siguiente consulta.</p>
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <input id="rup-json-archivo" type="file" accept=".json,application/json"
+                 class="block max-w-sm text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
+          <button id="btn-rup-descargar" type="button"
+                  class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+            Descargar el perfil actual (JSON)
+          </button>
+        </div>
+
+        <div id="rup-vista" class="mt-5 hidden">
+          <h3 class="text-sm font-semibold tracking-tight">Vista previa</h3>
+          <ul id="rup-resumen" class="mt-2 space-y-1 text-sm text-gray-700"></ul>
+          <pre id="rup-preview" class="mt-3 max-h-72 overflow-auto rounded-xl bg-gray-50 p-4 font-mono text-xs text-gray-600 ring-1 ring-inset ring-gray-900/5"></pre>
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button id="btn-rup-cargar" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              Confirmar carga
+            </button>
+            <button id="btn-rup-cancelar" type="button"
+                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
+              Cancelar
+            </button>
+          </div>
+        </div>
+
+        <p id="rup-json-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <ul id="rup-errores" class="mt-3 hidden space-y-1 rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-inset ring-red-600/20"></ul>
+
+        <div class="mt-6 border-t border-gray-100 pt-4">
+          <h3 class="text-sm font-semibold tracking-tight">Perfil actual</h3>
+          <div id="rup-actual" class="mt-2 text-sm text-gray-600">—</div>
+        </div>
+
+        <!-- Zona de riesgo: separada por un divisor y 16px, como manda el sistema -->
+        <div class="mt-6 border-t border-gray-100 pt-4">
+          <div class="flex flex-wrap items-center gap-4">
+            <button id="btn-eliminar-rup" type="button" class="btn-peligro">Eliminar este perfil</button>
+            <span class="text-xs text-gray-500">Se eliminarán todos los filtros y datos asociados al perfil activo.</span>
+          </div>
+          <p id="eliminar-rup-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
+        </div>
+        </details>
+      </section>
 
         
 

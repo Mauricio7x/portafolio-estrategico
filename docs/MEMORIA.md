@@ -6349,3 +6349,66 @@ mano, flecha, corte en ámbar («Datos de ayer, 2:32 p. m. · Actualizar») y `a
 pulsarla la flecha gira y la línea dice «Trayendo datos de SECOP II…» —también desde otra pestaña,
 donde el panel de Mi empresa no se ve—. Las tres pasadas (1280 y 390 con Tailwind, 390 sin él)
 terminan con el orden de la pestaña verificado en píxeles y la consola limpia.
+
+### «Actualizar datos» y el registro se pliegan; el calendario del proceso guardado (31-ago-2026, cuarta pasada)
+
+**1 · DOS BLOQUES BAJAN A «Sistema».** «Esos dos datos podemos ocultarlos en Sistema.» Se mueven
+`#actualizar` y `#seccion-rup` dentro del pliegue, **sin retirarlos**: `arrancarPaneles` los cablea
+SIN guarda y borrar un nodo mata la pestaña entera en silencio. Los dos habían dejado de ganarse su
+sitio a la vista, y por motivos distintos que conviene distinguir:
+
+- **«Actualizar datos» es hoy una SEGUNDA COPIA** del botón que la marca de la barra superior
+  ofrece en todas las pestañas y con la fecha del corte delante. Su panel de avance sigue aquí —es
+  donde se ven los conteos tanda a tanda—, así que el botón de la barra sigue teniendo dónde
+  escribir. Cuando algo nuevo contesta mejor la misma pregunta, lo viejo se pliega o se retira;
+  dejar los dos es acumular.
+- **«Su registro de proponente» son seis cifras que no las mueve el mercado**, sino subir un RUP
+  nuevo. Es la definición de lo que hay que TOCAR, no de lo que hay que VER. La regla del proyecto
+  ya lo decía; solo faltaba aplicarla aquí.
+
+La cerradura del orden se dio vuelta: los dos siguen vigilados, ahora exigiendo que estén DENTRO de
+«Sistema». Una prueba que solo los quita de la lista de arriba deja la puerta abierta.
+
+**2 · EL CALENDARIO DEL PROCESO GUARDADO.** «Al guardar un proceso en Licitaciones para que
+aparezca en Mis procesos, un calendario adaptativo para ver de manera gráfica cuándo se cumplen las
+distintas etapas del proceso, según el calendario de SECOP II.»
+
+**El dato YA EXISTÍA entero y se pintaba en la peor forma posible**: `lib/cronograma` extrae los
+hitos desde la Fase 5, `lib/seguimiento.enriquecer` los publica por guardado, y la tarjeta los
+enseñaba como **una fila de píldoras grises apretadas** — sin orden legible, sin decir cuál viene
+ahora ni cuáles ya pasaron. No hizo falta un endpoint nuevo, ni un cálculo nuevo, ni persistir nada:
+hizo falta una forma. Es la lección que este día repitió tres veces: **cuando el dato ya está, el
+trabajo es de presentación, y buscarlo antes de construir ahorra el módulo entero.**
+
+- **ADAPTATIVO EN TRES SENTIDOS, y los tres se prueban.** (a) Al número de etapas que se CONOCEN:
+  del dataset salen dos —publicación y cierre— más la manifestación cuando aplica; el cronograma
+  completo (observaciones, adendas, evaluación, adjudicación, firma) vive en el PLIEGO y solo existe
+  si alguien lo leyó. Con solo las dos, la pantalla **lo dice y explica cómo conseguir el resto**:
+  sin esa línea, dos etapas se leen como «este proceso solo tiene dos» y el ingeniero se pierde la
+  audiencia de adjudicación. (b) Al TRAMO: una rejilla por cada mes entre la primera y la última
+  etapa (tope de seis). (c) A DÓNDE ESTÁ HOY: cumplida · hoy · pendiente, y la PRÓXIMA destacada,
+  que es la única que exige algo.
+- **LA REJILLA ES LA MISMA DE MI EMPRESA, parametrizada** (`pulsable`, `rotuloDe`, `etiqueta`). Una
+  segunda cuadrícula escrita a mano divergiría en la alineación —que es justo donde este calendario
+  ya se equivocó— y habría que probarla dos veces. En el cronograma las casillas **no son botones**:
+  no hay nada que abrir al pulsarlas, y algo que parece pulsable sin serlo es la forma negativa de
+  «ninguna pulsación sin respuesta visible». Hay mutación que lo caza.
+- **SE PINTA DOS VECES A PROPÓSITO**: al instante con los hitos que la tarjeta YA trajo (la
+  respuesta está en memoria; una pulsación sin respuesta es peor que un error), y enseguida con el
+  cronograma completo que sirve `/api/pliego?op=cronograma` —el endpoint que ya existe, que lo
+  recompone del texto guardado—. No se pide con el listado porque releer hasta 400 KB por proceso en
+  cada carga es inviable (la razón por la que la manifestación se precalcula). **Solo se repinta si
+  el pliego APORTA**: repintar lo mismo hace parpadear la pantalla sin decir nada.
+- **Y EL BOTÓN CORRIGE SU CUENTA**: decía «Cronograma · 2 etapas» —las de la tarjeta— con siete
+  abiertas debajo. Las dos cifras eran ciertas por separado y **discrepaban en la misma pantalla**,
+  que es exactamente lo que este proyecto no permite. Lo cazó la captura del navegador real.
+- **LA CUENTA DE DÍAS SÍ ESTÁ PERMITIDA AQUÍ, y conviene dejar escrito por qué** para que nadie la
+  borre creyendo que repite el defecto de Motavita: estas fechas son **PUBLICADAS** (el dataset o el
+  cronograma del pliego), no una ventana deducida de un techo legal. Lo que no se puede afirmar es
+  que no cambien: **una adenda las mueve**, y eso se dice en pantalla — la app ya vigila las adendas.
+- **EL «HOY» LO FIJA EL SERVIDOR.** `op=seguimiento` pasa a publicar `hoy: hoyColombia(ahora)`; sin
+  él, el calendario tendría que preguntarle la fecha al navegador y cinco horas corren el día
+  entero. La cerradura que lo defiende es **NEGATIVA** —`new Date()` no puede aparecer en ese
+  bloque— y hubo que aprenderlo dos veces: la versión anterior comprobaba que la variable del
+  servidor se DECLARARA, y la mutación «pinta con el reloj del navegador» pasó por delante con la
+  declaración intacta. **Comprobar que un dato se declara no prueba que se use.**
