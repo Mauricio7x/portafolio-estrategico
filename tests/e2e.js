@@ -16178,13 +16178,32 @@ async function main() {
       const tab = htmlL.slice(iTabAdmin, iTab);
       assert.ok(iTabAdmin < iTab && iTab < htmlL.indexOf('id="tab-apu"'), "orden de los paneles: Mi empresa → Licitaciones → Precios");
       assert.ok(/<main id="tab-admin" class="panel-pestana mx-auto max-w-6xl/.test(htmlL) && /<main id="tab-licitaciones" class="panel-pestana mx-auto hidden/.test(htmlL), "Mi empresa nace visible; Licitaciones, oculta");
-      for (const id of ["pulso", "pu-hero", "pu-departamentos", "pu-entidades", "pu-nota", "rup-cifras", "seccion-rup"]) assert.ok(tab.includes(`id="${id}"`), `falta #${id} en la pestaña Mi empresa`);
+      for (const id of ["pulso", "pulso-repartos", "pu-hero", "pu-departamentos", "pu-entidades", "pu-nota", "rup-cifras", "seccion-rup"]) assert.ok(tab.includes(`id="${id}"`), `falta #${id} en la pestaña Mi empresa`);
+      /* LAS DOS MITADES DEL PULSO SE ENSEÑAN Y SE ESCONDEN JUNTAS: `arrancar`
+         las toca con la misma función. Media pestaña visible con la otra media
+         oculta sería un pulso a medias sin decirlo. */
+      {
+        const pjs = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "pulso.js"), "utf8"));
+        assert.ok(/getElementById\("pulso-repartos"\)/.test(pjs) && /for \(const nodo of \[raiz, repartos\]\)/.test(pjs),
+          "pulso.js tiene que enseñar y esconder `#pulso` y `#pulso-repartos` a la vez");
+        assert.ok(!/raiz\.classList\.(add|remove)\("hidden"\)/.test(pjs),
+          "ninguna rama puede tocar solo `#pulso`: dejaría los repartos colgados en el estado contrario");
+      }
       assert.ok(/<section id="pulso" class="hidden/.test(tab), "el pulso nace OCULTO (vacío y honesto hasta que hay datos)");
       /* ORDEN NUEVO (encargo del ingeniero): el TABLERO abre la pestaña —«podría
          ser el tablero principal de mi empresa»—, después el pulso y después el
          registro. El pliegue del mercado nacional desapareció. */
-      assert.ok(tab.indexOf('id="dashboard"') < tab.indexOf('id="pulso"'), "el tablero abre Mi empresa");
-      assert.ok(tab.indexOf('id="pulso"') < tab.indexOf('id="seccion-rup"'), "y el registro en cifras va después");
+      /* ⚠️ EL ORDEN CAMBIÓ EL 31-ago-2026 (decisión del ingeniero: «la parte de
+         "para Helder" déjalo en la parte de arriba, de primeras»). Antes abría
+         el TABLERO; ahora abre el PULSO —las cifras de SU empresa— y enseguida
+         el calendario, que es lo que se vence. El tablero baja al tercer
+         puesto. El orden se fija entero, no por parejas: una cadena de
+         comparaciones sueltas deja pasar permutaciones. */
+      const ORDEN_EMPRESA = ['id="pulso"', 'id="calendario"', 'id="pulso-repartos"', 'id="dashboard"', 'id="seccion-rup"'];
+      const posiciones = ORDEN_EMPRESA.map((id) => ({ id, i: tab.indexOf(id) }));
+      for (const { id, i } of posiciones) assert.ok(i > 0, `falta ${id} en la pestaña Mi empresa`);
+      assert.deepStrictEqual([...posiciones].sort((a, b) => a.i - b.i).map((x) => x.id), ORDEN_EMPRESA,
+        "Mi empresa va: «Para Helder, hoy» → calendario → dónde/quién → tablero → su registro");
       const lic = htmlL.slice(iTab, htmlL.indexOf('id="tab-apu"'));
       assert.ok(!lic.includes('id="pulso"') && lic.indexOf('id="f-ordenar"') > 0, "Licitaciones ya no lleva el pulso: empieza por la barra de herramientas");
       const nav = htmlL.slice(htmlL.indexOf('aria-label="Secciones"'), htmlL.indexOf("</nav>"));
@@ -16239,6 +16258,12 @@ async function main() {
       assert.ok(/\$\("res-cifras"\)/.test(onbL) && /cierranEstaSemana/.test(onbL), "la pantalla de resultado pinta las cifras (cuántas · cuánto · cierran esta semana)");
       // (4) plantillas
       const p0 = { total: 47, valorTotal: 312e9, visibles: 60, cierranEstaSemana: { n: 6, valor: 4.2e10 }, porDepartamento: [{ nombre: "TOLIMA", n: 20, valor: 1e11 }, { nombre: "CUNDINAMARCA", n: 12, valor: 5e10 }], departamentosDistintos: 9, sinDepartamento: 1, topEntidades: [{ nombre: "ALCALDÍA DE IBAGUÉ", nit: "800113389", n: 5, valor: 3e10 }], entidadesDistintas: 30, generado: new Date().toISOString() };
+      /* LA CIFRA DEL TITULAR NECESITA LA PARADA INTERMEDIA: con `sm:text-[40px]`
+         a secas, «$312.000 millones» cabe en 1727 px y PARTE EN DOS en 1280, y
+         el bloque que desde el 31-ago-2026 abre la pestaña se ve descuadrado.
+         Medido en Chromium; aquí se fija el escalón para que no vuelva. */
+      assert.ok(/sm:text-\[34px\][^"]*2xl:text-\[40px\]/.test(PulsoPub.htmlHero(p0, "X")),
+        "el titular tiene que escalar 26 → 34 → 40 px: sin la parada de 34, la cifra del medio parte en dos a 1280 px");
       const hero = PulsoPub.htmlHero(p0, "Constructora X");
       assert.ok(/Para Constructora X, hoy/.test(hero) && /47/.test(hero) && /\$312\.000 millones/.test(hero) && /cierran esta semana/.test(hero), "hero: nombre, cuántas, cuánto, cierran");
       assert.ok(/data-filtro="cierre=7d"/.test(hero) && /data-filtro="todo"/.test(hero), "las cifras enlazan a la lista");
@@ -16289,8 +16314,8 @@ async function main() {
         }
         assert.ok(tab.includes('id="calendario"') && tab.includes('id="cal-cuerpo"'),
           "el calendario de cierres vive en Mi empresa: es lo que sustituye a «Cuándo hay que entregar la oferta»");
-        assert.ok(tab.indexOf('id="dashboard"') < tab.indexOf('id="calendario"') && tab.indexOf('id="calendario"') < tab.indexOf('id="pulso"'),
-          "el calendario va justo debajo del tablero: es lo único de la pestaña que no admite retraso");
+        assert.ok(/<section id="pulso-repartos"[^>]*\bhidden\b/.test(tab),
+          "los repartos del pulso nacen ocultos, como el titular: las dos mitades se enseñan juntas");
         assert.ok(/<section id="calendario"[^>]*\bhidden\b/.test(tab),
           "el calendario nace OCULTO: sin cierres que situar no se enseña (vacío y honesto antes que bonito y falso)");
         assert.ok(htmlL.indexOf('<script src="/calendario.js">') < htmlL.indexOf('<script src="/pulso.js">'),
@@ -16535,6 +16560,32 @@ async function main() {
         assert.strictEqual(tit("2026-09-13", 3), "3 procesos cierran el 13 de septiembre");
         assert.strictEqual(tit("2026-08-20", 2), "2 procesos cerraron el 20 de agosto");
         assert.strictEqual(tit("2026-09-01", 1), "1 proceso cerró el 1 de septiembre");
+      }
+
+      /* (4-ter) EL LUGAR DE EJECUCIÓN ES LA ENTIDAD, Y SE DECLARA (decisión del
+         ingeniero, 31-ago-2026). El dataset NO publica el sitio de la obra
+         —solo la sede de quien contrata—, así que enseñar la sede bajo ese
+         rótulo sería una inferencia presentada como medición. La salida que él
+         eligió («solo di en lugar de ejecución qué entidad es») es la honesta:
+         el valor del campo es la ENTIDAD, con su municipio detrás, y la ficha
+         dice en la misma pantalla que el sitio exacto no viene publicado. Sin
+         esa frase el rótulo volvería a afirmar lo que no se sabe. */
+      {
+        const conTodo = { id: "L", objeto: "o", entidad: "MUNICIPIO DE PLANETA RICA CORDOBA", valor: 1e9, ciudad: "PLANETA RICA", departamento: "Córdoba", modalidad: "abreviada", hora: "15:00", url: "https://x", manifestacion: null };
+        const f = Cal.htmlFila(conTodo, { abierto: true });
+        assert.ok(/Lugar de ejecución/.test(f), "el campo se llama como el ingeniero lo llama");
+        assert.ok(/MUNICIPIO DE PLANETA RICA CORDOBA — PLANETA RICA · Córdoba/.test(f),
+          "…y su valor es la ENTIDAD, con el municipio detrás: es lo que sitúa la obra sin inventarla");
+        assert.ok(/los datos abiertos de SECOP II no publican el sitio exacto de la obra/.test(f),
+          "y se declara en la misma ficha: el rótulo sin la declaración vuelve a afirmar lo que no se sabe");
+        assert.ok(!/Entidad que lo publica/.test(f),
+          "la fila «Entidad que lo publica» se va: era el mismo dato dos veces, y repetirlo es el ruido que el encargo vino a quitar");
+        assert.deepStrictEqual(Cal.lugarDeEjecucion({ entidad: "", ciudad: null, departamento: null }), null,
+          "sin entidad ni sede no se compone un lugar: se dirá «sin lugar publicado»");
+        assert.strictEqual(Cal.lugarDeEjecucion({ entidad: null, ciudad: "IBAGUÉ", departamento: "Tolima" }).corto, "IBAGUÉ · Tolima",
+          "sin nombre de entidad se cae al municipio, que es lo que sí hay");
+        assert.strictEqual(Cal.lugarDeEjecucion({ entidad: "ALCALDÍA DE IBAGUÉ", ciudad: null, departamento: null }).corto, "ALCALDÍA DE IBAGUÉ",
+          "y sin municipio, la entidad sola");
       }
 
       /* (5) EL MES ANTERIOR Y EL SIGUIENTE solo se ofrecen si hay algo que ver:

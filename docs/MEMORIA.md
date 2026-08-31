@@ -6200,3 +6200,72 @@ bloquea `cdn.tailwindcss.com` (403 en el CONNECT), así que la comprobación en 
 Tailwind en las tres pasadas. Es el caso más duro —el precedente de los paneles apilados con consola
 limpia— y el calendario lo pasa: se ve, es pulsable, no desborda a 390 px y la consola queda vacía;
 pero el aspecto CON las utilidades de Tailwind cargadas no se midió en este entorno.
+
+### El lugar de ejecución ES la entidad, «Para Helder» abre la pestaña, y Tailwind medido de verdad (31-ago-2026, segunda pasada)
+
+**Tres encargos del ingeniero sobre el trabajo del mismo día**, y el primero cierra una ambigüedad
+que yo había dejado abierta a propósito.
+
+**1 · «Solo di en lugar de ejecución qué entidad es».** Le dije que el dataset NO publica el sitio
+donde se ejecuta la obra —el censo de columnas (`docs/datos.md` §7) solo trae `ciudad_entidad` y
+`departamento_entidad`, que son la SEDE de quien contrata— y que por eso el campo se llamaba
+«Dónde». Su respuesta resuelve el problema mejor que mi rodeo: **el valor del campo es la ENTIDAD**,
+con su municipio detrás («MUNICIPIO DE PLANETA RICA CORDOBA — PLANETA RICA · Córdoba»), el rótulo
+vuelve a llamarse «Lugar de ejecución» —que es como el ingeniero lo llama— y la ficha DECLARA, en la
+misma pantalla, que los datos abiertos no publican el sitio exacto. Nada se afirma que el dato no
+sostenga y el campo responde la pregunta real: en la práctica, quién contrata dice dónde es la obra
+mejor que cualquier código. Con el cambio se fue la fila «Entidad que lo publica»: era el mismo dato
+dos veces, y repetirlo es exactamente el ruido que este encargo vino a quitar. Hay dos cerraduras
+por mutación: una si el valor deja de ser la entidad, otra si desaparece la declaración —el rótulo
+SIN la frase vuelve a afirmar lo que no se sabe—.
+
+**Lección de método, más general que este campo**: cuando el dato no permite contestar la pregunta
+tal como se formuló, la salida no es callar el campo ni rellenarlo con lo más parecido; es **decir
+qué dato SÍ hay, ponerlo bajo el nombre que el usuario usa, y declarar el límite al lado**.
+
+**2 · «La parte de "para Helder" déjalo en la parte de arriba, de primeras».** Mi empresa abría con
+el TABLERO. Ahora abre con el pulso, y el orden entero es: **«Para Helder, hoy» → calendario →
+dónde están · quién las publica → tablero → su registro**. El pulso se PARTE EN DOS a propósito y
+`#pulso` se queda con la mitad de arriba (el titular y el aviso de manifestación, lo que no admite
+retraso); los dos repartos bajan a `#pulso-repartos`, después del calendario, porque son contexto
+para elegir y no algo que se venza — dejarlos arriba empujaba el calendario media pantalla. Las dos
+secciones se enseñan y se esconden JUNTAS (`arrancar`, con una sola función): media pestaña visible
+con la otra media oculta sería un pulso a medias sin decirlo, y hay prueba de que ninguna rama toca
+solo una. **El orden se fija ENTERO en la suite, no por parejas**: una cadena de comparaciones
+sueltas deja pasar permutaciones.
+
+**3 · «Lo que no pudiste hacer, como sea, con datos reales».** Era la única cosa que quedó declarada
+como no verificable: la apariencia CON Tailwind cargado. Resuelto, y las dos mitades importan:
+
+- **El CSS de Tailwind se COMPILA de verdad.** `cdn.tailwindcss.com` responde 403 al CONNECT del
+  proxy, pero `registry.npmjs.org` responde 200: se instala `tailwindcss@3` fuera del árbol (el
+  repositorio sigue **sin package.json y sin dependencias**) y su propio CLI compila el CSS sobre
+  ESTE `public/` — 444 utilidades, que es lo mismo que el Play CDN genera en el navegador. El arnés
+  intercepta la petición al CDN y sirve ese CSS. La tercera pasada lo bloquea del todo a propósito:
+  es el caso que ya se vio en producción (paneles apilados con CERO errores en consola).
+- **El cuerpo del pulso lo produce la TUBERÍA REAL**: ya no es un JSON escrito a mano, sino
+  `agregarPulso` —la misma función que sirve producción— que llama a `manifestacionDeFila` y a
+  `lib/habiles` para la ventana de cada proceso. Lo único sintético son las FILAS, y no por gusto:
+  **`datos.gov.co` sigue devolviendo 403 a través del proxy, re-verificado hoy** (la regla de volver
+  a llamar a una fuente dada por perdida se cumplió, y el resultado se anota CON FECHA).
+
+**TRES DEFECTOS QUE SOLO VIO EL NAVEGADOR, y los tres con el Tailwind real puesto:**
+
+- **Siete islas en vez de un calendario.** Con `aspect-ratio: 1/1` más un `max-height: 76px`, en
+  1280 px la columna mide 170 px y la casilla 76: quedaban cuadrados separados por huecos enormes.
+  La casilla es ahora RECTANGULAR en escritorio (llena su columna, alto fijo de 62 px) y vuelve a
+  ser cuadrada por debajo de 640 px, que es donde el dedo la necesita (44 px de objetivo táctil).
+- **«Agosto De 2026».** `text-transform: capitalize` capitaliza cada palabra, y en español el mes va
+  en minúscula y la preposición nunca se toca. Se sube SOLO la primera letra con `::first-letter`,
+  y el texto sigue siendo el mismo que se usa dentro de las frases («ningún proceso cierra en agosto
+  de 2026»), donde tiene que ir en minúscula.
+- **La cifra del medio del titular partida en dos.** `sm:text-[40px]` a secas: «$218.623 millones»
+  cabe en los 1727 px del ingeniero y PARTE EN DOS en 1280, y entonces las tres cifras dejan de
+  alinearse — justo en el bloque que desde hoy abre la pestaña. Escalón nuevo: 26 → 34 → 40 px
+  (`2xl`). En 390 px sigue partiendo y es lo correcto: en una columna de 110 px no cabe por mucho
+  que se baje el cuerpo, y la comprobación del arnés se acota a ≥ 640 px por eso.
+
+**Ninguno de los tres lo veía una prueba de Node**, y los tres son de la misma familia que el
+precedente del CDN bloqueado: **fallos MUDOS de maquetación, con la consola limpia**. Es la
+confirmación número N de la regla, y ahora con el matiz que faltaba: **medir sin Tailwind prueba que
+la página no se rompe; solo medir CON Tailwind prueba que se ve bien**. Hacen falta las dos pasadas.

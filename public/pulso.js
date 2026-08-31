@@ -40,7 +40,14 @@
   }
 
   /* ── plantillas ── */
-  const cifraGrande = (v, rotulo, attrs = "") => `<div ${attrs}><p class="text-[26px] font-semibold tracking-tight sm:text-[40px]" style="color: var(--text-primary); letter-spacing: -1px;">${esc(v)}</p><p class="text-[11px] uppercase tracking-wide sm:text-xs" style="color: var(--text-secondary);">${esc(rotulo)}</p></div>`;
+  /* EL PASO DE 26 A 40 px NECESITA UNA PARADA INTERMEDIA (31-ago-2026). Con
+     `sm:text-[40px]` a secas, «$218.623 millones» cabe en una pantalla de 1727
+     px pero PARTE EN DOS LÍNEAS en 1280, y entonces las tres cifras dejan de
+     alinearse: la del medio baja y el bloque —que desde hoy abre la pestaña—
+     se ve descuadrado. Medido en Chromium. Con la parada en 34 px cabe en una
+     línea desde 640 px, y los 40 px vuelven en pantallas de 1536 en adelante,
+     que es donde el ingeniero trabaja. */
+  const cifraGrande = (v, rotulo, attrs = "") => `<div ${attrs}><p class="text-[26px] font-semibold tracking-tight sm:text-[34px] 2xl:text-[40px]" style="color: var(--text-primary); letter-spacing: -1px;">${esc(v)}</p><p class="text-[11px] uppercase tracking-wide sm:text-xs" style="color: var(--text-secondary);">${esc(rotulo)}</p></div>`;
 
   function htmlHero(p, nombrePerfil) {
     const quien = nombrePerfil ? `Para ${esc(nombrePerfil)}, hoy` : "Para su empresa, hoy";
@@ -382,6 +389,15 @@
     const d = opciones.doc || (typeof document !== "undefined" ? document : null);
     if (!d) return false;
     const raiz = d.getElementById("pulso");
+    /* EL PULSO VIVE EN DOS SECCIONES DESDE EL 31-ago-2026: `#pulso` (el
+       titular «Para Helder, hoy» y el aviso de manifestación) abre la pestaña,
+       y `#pulso-repartos` (dónde están · quién las publica) va DESPUÉS del
+       calendario. Se enseñan y se esconden JUNTAS: si una se quedara visible
+       con la otra oculta, la pestaña enseñaría medio pulso sin decirlo. */
+    const repartos = d.getElementById("pulso-repartos");
+    const mostrar = (visible) => {
+      for (const nodo of [raiz, repartos]) if (nodo) nodo.classList.toggle("hidden", !visible);
+    };
     if (!raiz || !perfil) return false;
     if (perfilPintado === perfil && !opciones.forzar) return true;
     let p = null;
@@ -403,7 +419,7 @@
       p = await r.json();
     } catch { p = null; }
     if (mio !== peticion) return false;                                        // llegó tarde: no pinta
-    if (!p || !p.ok) { raiz.classList.add("hidden"); perfilPintado = null; return false; }   // vacía y honesta
+    if (!p || !p.ok) { mostrar(false); perfilPintado = null; return false; }   // vacía y honesta
     const rc = d.getElementById("rup-cifras");
     if (rc) { rc.innerHTML = htmlEmpresa(p.empresa); rc.classList.toggle("hidden", !rc.innerHTML); }
     d.getElementById("pu-hero").innerHTML = htmlHero(p, opciones.nombre || "");
@@ -426,7 +442,7 @@
     // sin departamentos ni entidades (perfil sin licitaciones) las cajas se esconden
     d.getElementById("pu-departamentos").classList.toggle("hidden", !(p.porDepartamento || []).length);
     d.getElementById("pu-entidades").classList.toggle("hidden", !(p.topEntidades || []).length);
-    raiz.classList.remove("hidden");
+    mostrar(true);
     perfilPintado = perfil;
     return true;
   }

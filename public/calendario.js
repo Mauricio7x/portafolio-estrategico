@@ -186,19 +186,40 @@
     };
   }
 
+  /* ══ EL LUGAR DE EJECUCIÓN ES LA ENTIDAD, y así se dice (decisión del
+     ingeniero, 31-ago-2026) ══
+     El dataset de SECOP II NO publica el sitio donde se ejecuta la obra: el
+     censo de columnas (docs/datos.md §7) solo trae `ciudad_entidad` y
+     `departamento_entidad`, que son la SEDE de quien contrata. Enseñar eso
+     bajo el rótulo «lugar de ejecución» sería una inferencia presentada como
+     medición, en el sitio donde se decide a qué presentarse. Se lo dije al
+     ingeniero y su respuesta cerró la ambigüedad: «entonces solo di en lugar
+     de ejecución qué entidad es». Es la salida correcta y además la más útil
+     —«MUNICIPIO DE PLANETA RICA, Córdoba» le dice dónde es la obra mejor que
+     cualquier código—: el VALOR del campo es la ENTIDAD, con su municipio y
+     departamento debajo, y la línea de al lado declara que eso es lo que hay.
+     Nada se afirma que el dato no sostenga. */
+  function lugarDeEjecucion(p) {
+    const sede = [p.ciudad, p.departamento].filter(Boolean).join(" · ");
+    const entidad = (p.entidad || "").trim();
+    if (!entidad && !sede) return null;
+    return { entidad: entidad || null, sede: sede || null, corto: entidad || sede };
+  }
+
   /* ══ UNA FILA DE PROCESO ══ Lo que el ingeniero pidió para decidir si entra:
-     resumen del objeto, valor total del contrato y dónde queda. Nada más
-     arriba; el resto, al abrirla. */
+     resumen del objeto, valor total del contrato y el lugar (la entidad). Nada
+     más arriba; el resto, al abrirla. */
   function htmlFila(p, { abierto = false } = {}) {
     const plazo = plazoManifestacion(p.manifestacion);
-    const lugar = [p.ciudad, p.departamento].filter(Boolean).join(" · ");
+    const lugar = lugarDeEjecucion(p);
     const valor = pesos(p.valor);
     return `<li class="cal-fila${abierto ? " cal-fila-abierta" : ""}" data-proceso="${esc(p.id || "")}">
       <button type="button" class="cal-fila-cabeza" data-abrir="${esc(p.id || "")}" aria-expanded="${abierto ? "true" : "false"}">
         <span class="cal-objeto">${esc(p.objeto || "Sin objeto publicado")}</span>
         <span class="cal-meta">
           <span class="cal-valor">${valor ? esc(valor) : "Sin presupuesto publicado"}</span>
-          <span class="cal-lugar">${lugar ? esc(lugar) : "Sin lugar publicado"}</span>
+          <span class="cal-lugar">${lugar ? esc(lugar.corto) : "Sin lugar publicado"}</span>
+          ${lugar && lugar.entidad && lugar.sede ? `<span class="cal-sede">${esc(lugar.sede)}</span>` : ""}
         </span>
         ${plazo ? `<span class="cal-chip ${plazo.tono}">${esc(plazo.titular)}</span>` : ""}
       </button>
@@ -208,17 +229,24 @@
 
   function htmlFicha(p, plazo) {
     const modalidad = nombreModalidad(p.modalidad);
+    const lugar = lugarDeEjecucion(p);
     const filas = [
       ["Objeto del contrato", p.objeto || null],
-      ["Entidad que lo publica", p.entidad || null],
+      /* El lugar de ejecución ES la entidad (ver `lugarDeEjecucion`): el dato
+         abierto no publica el sitio de la obra, así que se nombra a quien
+         contrata —y su municipio debajo, que es lo que de verdad sitúa la
+         obra—. Por eso desaparece la fila «Entidad que lo publica»: era el
+         mismo dato dos veces, y repetirlo es el ruido que este encargo vino a
+         quitar. */
+      ["Lugar de ejecución", lugar ? [lugar.entidad, lugar.sede].filter(Boolean).join(" — ") : null],
       ["Valor total del contrato", pesos(p.valor)],
-      ["Dónde", [p.ciudad, p.departamento].filter(Boolean).join(" · ") || null],
       ["Cómo lo adjudican", modalidad],
-      ["Entrega de la oferta", p.hora ? `hasta las ${esc(p.hora)}` : null],
+      ["Entrega de la oferta", p.hora ? `hasta las ${p.hora}` : null],
     ];
     const cuerpo = filas.map(([r, v]) => `<div class="cal-dato"><dt>${esc(r)}</dt><dd>${v ? esc(v) : "Sin dato publicado"}</dd></div>`).join("");
     return `<div class="cal-ficha">
       <dl class="cal-datos">${cuerpo}</dl>
+      <p class="cal-nota">El lugar es la entidad que contrata y el municipio donde queda: los datos abiertos de SECOP II no publican el sitio exacto de la obra.</p>
       ${p.hora ? "" : '<p class="cal-nota">La hora de cierre no viene publicada en los datos abiertos: confírmela en el cronograma del proceso.</p>'}
       ${plazo ? `<div class="cal-plazo ${plazo.tono}"><p class="cal-plazo-t">${esc(plazo.titular)}</p><p class="cal-plazo-d">${esc(plazo.detalle)}</p>${p.manifestacion && p.manifestacion.nota ? `<p class="cal-plazo-n">${esc(p.manifestacion.nota)}</p>` : ""}</div>` : ""}
       ${p.url ? `<a class="cal-ir" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">Abrir el proceso en SECOP II</a>`
@@ -342,7 +370,7 @@
   const olvidar = () => { estado = { mes: null, dia: null, proceso: null }; ultimo = null; };
 
   return {
-    montar, olvidar, htmlMes, htmlRejilla, htmlDia, htmlFila, htmlFicha,
+    montar, olvidar, htmlMes, htmlRejilla, htmlDia, htmlFila, htmlFicha, lugarDeEjecucion,
     plazoManifestacion, diaPorDefecto, mesDe, mesVecino, mesLegible, fechaLegible, diaSemanaLunes, diasDelMes, pesos,
   };
 });

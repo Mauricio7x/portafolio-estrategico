@@ -426,18 +426,26 @@
        que ninguna prueba de Node ve. Los colores salen de las variables del
        tema: el semáforo es clase de color, jamás un emoji. */
     .cal-barra { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .cal-mes { font-size: 15px; font-weight: 600; color: var(--text-primary); text-transform: capitalize; }
+    /* `capitalize` ponía «Agosto De 2026»: en español el mes va en minúscula y
+       la preposición nunca se capitaliza. Se sube SOLO la primera letra, y el
+       texto sigue siendo el mismo que se usa dentro de las frases («ningún
+       proceso cierra en agosto de 2026»), que ahí tiene que ir en minúscula. */
+    .cal-mes { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+    .cal-mes::first-letter { text-transform: uppercase; }
     .cal-mes-btn { min-width: 34px; height: 34px; border-radius: var(--radius-sm); border: 1px solid var(--border);
                    background: transparent; color: var(--text-primary); font-size: 18px; line-height: 1; cursor: pointer; }
     .cal-mes-btn:disabled { opacity: 0.3; cursor: default; }
     .cal-resumen { margin-top: 6px; font-size: 12px; color: var(--text-secondary); }
     .cal-rejilla { margin-top: 12px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
     .cal-dow { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); text-align: center; padding-bottom: 2px; }
-    /* `max-height` acompaña al `aspect-ratio`: en una pantalla ancha —o si el
-       CDN de Tailwind no carga y el contenedor pierde su `max-w-6xl`— siete
-       casillas cuadradas se vuelven siete cuadrados de 180 px y el calendario
-       ocupa dos pantallas. Medido en Chromium a 1280 px. */
-    .cal-celda { position: relative; aspect-ratio: 1 / 1; min-height: 40px; max-height: 76px; display: flex; flex-direction: column;
+    /* LA CASILLA ES RECTANGULAR EN ESCRITORIO Y CUADRADA EN MÓVIL, y no es
+       estética: con `aspect-ratio: 1/1` y un `max-height`, en 1280 px la
+       columna mide 170 px y la casilla 76 — quedaban siete islas separadas por
+       huecos enormes, que no se lee como un calendario. Medido en Chromium con
+       el Tailwind real. En escritorio la casilla LLENA su columna con alto
+       fijo; por debajo de 640 px vuelve a ser cuadrada, que es donde el dedo la
+       necesita (44 px es el objetivo táctil mínimo). */
+    .cal-celda { position: relative; height: 62px; min-height: 44px; display: flex; flex-direction: column;
                  align-items: center; justify-content: center; gap: 2px; border-radius: var(--radius-sm);
                  border: 1px solid transparent; background: var(--bg-inset); color: var(--text-secondary);
                  font: inherit; padding: 0; }
@@ -462,7 +470,12 @@
     .cal-objeto { display: block; font-size: 13px; font-weight: 500; color: var(--text-primary); overflow-wrap: anywhere; }
     .cal-meta { margin-top: 3px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-secondary); }
     .cal-valor { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
-    .cal-lugar { overflow-wrap: anywhere; }
+    /* El lugar de ejecución es la ENTIDAD (decisión del 31-ago-2026), y su
+       municipio va debajo en una línea propia: los nombres de entidad de SECOP
+       II pasan de 60 caracteres y en 390 px comparten renglón con el valor
+       hasta volverlo ilegible. `flex-basis: 100%` la baja entera. */
+    .cal-lugar { overflow-wrap: anywhere; font-weight: 500; color: var(--text-primary); }
+    .cal-sede { flex-basis: 100%; overflow-wrap: anywhere; }
     .cal-chip { margin-top: 6px; display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: 600; }
     .cal-rojo { background: var(--danger-light); color: var(--danger); }
     .cal-ambar { background: var(--warn-light); color: var(--warn); }
@@ -478,8 +491,9 @@
     .cal-plazo-d, .cal-plazo-n { margin-top: 3px; font-size: 11px; color: var(--text-secondary); }
     .cal-ir { margin-top: 12px; display: inline-block; border-radius: var(--radius-sm); border: 1px solid var(--border);
               padding: 7px 14px; font-size: 12px; font-weight: 600; color: var(--text-primary); text-decoration: none; }
+    @media (max-width: 640px) { .cal-celda { height: auto; aspect-ratio: 1 / 1; min-height: 38px; } }
     @media (max-width: 480px) {
-      .cal-celda { min-height: 36px; }
+      .cal-celda { min-height: 34px; }
       .cal-num { font-size: 11px; }
       .cal-datos { grid-template-columns: 1fr; }
     }
@@ -717,10 +731,93 @@
            /api/perfil?op=pulso&perfil=…; sin datos, ni una cifra inventada.
            Debajo, plegado, el MERCADO ENTERO (la portada de la Fase 9, que
            antes salía en la landing ANTES de elegir cómo entrar). -->
-      <!-- ══════ EL TABLERO ES LA PRIMERA PANTALLA (encargo del ingeniero, ago 2026) ══════
+      <!-- ══════ «PARA HELDER, HOY» ABRE LA PESTAÑA (decisión del ingeniero, 31-ago-2026) ══════
+           «La parte de "para Helder" déjalo en la parte de arriba, de primeras.»
+           Es lo correcto y además lo que la memoria ya defendía sin haberlo
+           llevado hasta el final: la pestaña se llama MI EMPRESA y lo primero
+           que tiene que verse son LAS CIFRAS DE ESTA EMPRESA —cuántas puede
+           tomar, cuánto dinero, cuántas cierran esta semana—, no un tablero
+           genérico de procesos. El tablero baja; el pulso sube.
+
+           EL PULSO SE PARTE EN DOS A PROPÓSITO, y el id `#pulso` se queda con
+           la mitad de ARRIBA: el titular y el aviso de manifestación son lo que
+           no admite retraso, y los dos repartos («dónde están», «quién las
+           publica») son contexto — meterlos aquí empujaría el calendario media
+           pantalla hacia abajo. `public/pulso.js` pinta por id, así que la
+           partición no le cuesta nada; lo único que hay que mantener es que
+           las DOS secciones se enseñen y se escondan juntas (lo hace
+           `arrancar`, con `#pulso` y `#pulso-repartos`). -->
+      <section id="pulso" class="hidden mb-6">
+        <!-- ⚠️ TRANSLÚCIDO SIN BLUR ERA LO PEOR DE LOS DOS MUNDOS (24-ago-2026).
+             Estos siete recuadros fijaban `var(--bg-card)` —que es
+             `rgba(255,255,255,0.72)`— en un `style` en línea, y como no llevan
+             la clase `bg-white` NINGUNA regla les daba `backdrop-filter`: se
+             veía a través de ellos sin nada que difuminara el fondo, justo lo
+             que el vidrio existe para evitar. Las otras 31 tarjetas de la app sí
+             reciben `--bg-card` + `blur(20px)` por la capa de traducción.
+             Se pasan a las MISMAS clases que el resto: con ellas heredan el
+             blur, el borde y las tres preferencias del sistema (reducir
+             transparencia, reducir movimiento, más contraste) sin una regla
+             nueva. Un estilo en línea propio es una segunda definición de
+             «tarjeta de vidrio» que se despeina por su cuenta. -->
+        <div id="pu-hero" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 sm:p-8"></div>
+        <!-- LO URGENTE VA ANTES QUE LOS REPARTOS: en la selección abreviada de
+             menor cuantía no se puede ofertar sin avisar antes, y el plazo lo
+             fija la entidad —a veces son horas—. Nace oculto y solo aparece si
+             hay alguno: un recuadro que dice «0» se deja de mirar. -->
+        <div id="pu-manifestacion" class="mt-4 hidden"></div>
+      </section>
+
+
+
+      <!-- ══════════ EL CALENDARIO DE CIERRES (encargo del ingeniero, 31-ago-2026) ══════════
+           «Un calendario en el que se vea el mes actual, el día en el que
+           estamos y cuándo vencen los procesos de este mes, para poder darle
+           clic al que le interese y presentarse.» Va SEGUNDO, justo bajo el
+           titular «Para Helder, hoy» (31-ago-2026: el tablero bajó y el pulso
+           subió), porque es lo único de esta pestaña que no admite retraso: se
+           ve primero cuántas hay, y enseguida cuáles se vencen.
+
+           Nace OCULTO y lo llena public/calendario.js con el mismo agregado de
+           `/api/perfil?op=pulso` que ya alimenta el resto de Mi empresa (son
+           EXACTAMENTE los mismos procesos que cuenta la pestaña: un calendario
+           que enseñara otra lista sería un segundo juicio). Sin cierres que
+           situar no se enseña: vacío y honesto antes que bonito y falso. -->
+      <section id="calendario" class="mb-6 mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 sm:p-8">
+        <h2 class="text-sm font-semibold tracking-tight" style="color: var(--text-primary);">Cuándo se vence cada proceso</h2>
+        <p class="mt-1 text-xs" style="color: var(--text-secondary);">Los procesos a los que puede presentarse, en el día en que la entidad cierra la entrega de ofertas. Pulse un día y luego un proceso para ver de qué se trata, cuánto vale y dónde queda.</p>
+        <div id="cal-cuerpo" class="mt-4 min-w-0"></div>
+      </section>
+
+      <!-- LOS DOS REPARTOS, DESPUÉS DEL CALENDARIO: dicen dónde están y quién
+           las publica, que es contexto para elegir — no algo que se venza. -->
+      <section id="pulso-repartos" class="hidden mb-6">
+        <!-- DOS REPARTOS —dónde están y quién las publica—, y cada barra es
+             EXACTAMENTE un filtro del listado. Los otros cuatro gráficos
+             (cuándo cierran, cuánto valen, qué tipo de trabajo, cómo lo
+             adjudican) se retiraron el 31-ago-2026 por encargo del ingeniero:
+             cuatro rejillas de columnas que repetían lo que el tablero de
+             arriba ya dice en cifras, y «cuándo hay que entregar» lo contesta
+             ahora el calendario, con el día exacto en vez de una cubeta.
+             `min-w-0 overflow-hidden` es obligatorio: un SVG dentro de un ítem
+             de grid sin él ensancha la página 26 px en móvil, y eso no lo ve
+             ninguna prueba de Node. -->
+        <div class="mt-4 grid gap-4 md:grid-cols-2">
+          <div id="pu-departamentos" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
+          <div id="pu-entidades" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
+        </div>
+        <p id="pu-nota" class="mt-2 text-[11px]" style="color: var(--text-secondary);"></p>
+      </section>
+
+      <!-- ══════ EL TABLERO, AHORA DEBAJO (ago 2026 · reordenado el 31-ago-2026) ══════
            «El tablero de procesos que tienes oculto podría ser el tablero principal
            de mi empresa… no quiero párrafos enormes, quiero datos representados en
-           gráficos y datos reales siempre.» Estaba plegado dentro de «Sistema»,
+           gráficos y datos reales siempre.» Con ese encargo dejó de estar plegado
+           dentro de «Sistema» y pasó a abrir la pestaña. El 31-ago-2026 el
+           ingeniero pidió que lo primero fuera «para Helder, hoy», así que el
+           tablero baja al tercer lugar: sigue a la vista y sin prosa, pero ya no
+           es lo primero — lo primero son las cifras de SU empresa y lo que se
+           vence. Ningún id cambia: renombrarlos mataría app.js. Estaba plegado dentro de «Sistema»,
            donde nadie lo veía, con 156 palabras de prosa. Sube arriba y se pinta
            en cifras y gráficos. Ningún id cambia: renombrarlos mataría app.js. -->
 <section id="dashboard" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
@@ -867,60 +964,6 @@
                listado (pestaña Licitaciones). -->
           <p id="d-meta" class="mt-6 text-xs text-gray-400"></p>
         </div>
-      </section>
-
-
-      <!-- ══════════ EL CALENDARIO DE CIERRES (encargo del ingeniero, 31-ago-2026) ══════════
-           «Un calendario en el que se vea el mes actual, el día en el que
-           estamos y cuándo vencen los procesos de este mes, para poder darle
-           clic al que le interese y presentarse.» Va INMEDIATAMENTE debajo del
-           tablero porque es lo único de esta pestaña que no admite retraso: lo
-           que se necesita ver arriba es lo que se vence.
-
-           Nace OCULTO y lo llena public/calendario.js con el mismo agregado de
-           `/api/perfil?op=pulso` que ya alimenta el resto de Mi empresa (son
-           EXACTAMENTE los mismos procesos que cuenta la pestaña: un calendario
-           que enseñara otra lista sería un segundo juicio). Sin cierres que
-           situar no se enseña: vacío y honesto antes que bonito y falso. -->
-      <section id="calendario" class="mb-6 mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 sm:p-8">
-        <h2 class="text-sm font-semibold tracking-tight" style="color: var(--text-primary);">Cuándo se vence cada proceso</h2>
-        <p class="mt-1 text-xs" style="color: var(--text-secondary);">Los procesos a los que puede presentarse, en el día en que la entidad cierra la entrega de ofertas. Pulse un día y luego un proceso para ver de qué se trata, cuánto vale y dónde queda.</p>
-        <div id="cal-cuerpo" class="mt-4 min-w-0"></div>
-      </section>
-      <section id="pulso" class="hidden mb-6">
-        <!-- ⚠️ TRANSLÚCIDO SIN BLUR ERA LO PEOR DE LOS DOS MUNDOS (24-ago-2026).
-             Estos siete recuadros fijaban `var(--bg-card)` —que es
-             `rgba(255,255,255,0.72)`— en un `style` en línea, y como no llevan
-             la clase `bg-white` NINGUNA regla les daba `backdrop-filter`: se
-             veía a través de ellos sin nada que difuminara el fondo, justo lo
-             que el vidrio existe para evitar. Las otras 31 tarjetas de la app sí
-             reciben `--bg-card` + `blur(20px)` por la capa de traducción.
-             Se pasan a las MISMAS clases que el resto: con ellas heredan el
-             blur, el borde y las tres preferencias del sistema (reducir
-             transparencia, reducir movimiento, más contraste) sin una regla
-             nueva. Un estilo en línea propio es una segunda definición de
-             «tarjeta de vidrio» que se despeina por su cuenta. -->
-        <div id="pu-hero" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 sm:p-8"></div>
-        <!-- LO URGENTE VA ANTES QUE LOS REPARTOS: en la selección abreviada de
-             menor cuantía no se puede ofertar sin avisar antes, y el plazo lo
-             fija la entidad —a veces son horas—. Nace oculto y solo aparece si
-             hay alguno: un recuadro que dice «0» se deja de mirar. -->
-        <div id="pu-manifestacion" class="mt-4 hidden"></div>
-        <!-- DOS REPARTOS —dónde están y quién las publica—, y cada barra es
-             EXACTAMENTE un filtro del listado. Los otros cuatro gráficos
-             (cuándo cierran, cuánto valen, qué tipo de trabajo, cómo lo
-             adjudican) se retiraron el 31-ago-2026 por encargo del ingeniero:
-             cuatro rejillas de columnas que repetían lo que el tablero de
-             arriba ya dice en cifras, y «cuándo hay que entregar» lo contesta
-             ahora el calendario, con el día exacto en vez de una cubeta.
-             `min-w-0 overflow-hidden` es obligatorio: un SVG dentro de un ítem
-             de grid sin él ensancha la página 26 px en móvil, y eso no lo ve
-             ninguna prueba de Node. -->
-        <div class="mt-4 grid gap-4 md:grid-cols-2">
-          <div id="pu-departamentos" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
-          <div id="pu-entidades" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
-        </div>
-        <p id="pu-nota" class="mt-2 text-[11px]" style="color: var(--text-secondary);"></p>
       </section>
 <!-- ══════ ACTUALIZAR DATOS · el botón único (encargo del ingeniero, 24-ago-2026) ══════
          «Puede ser un botón de actualizar datos en tiempo real, con una
