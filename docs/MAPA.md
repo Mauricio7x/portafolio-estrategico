@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-08-28 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-08-31 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -140,9 +140,10 @@
   portada.js                GET /api/procesos?op=portada
   sync.js                   Sincronización SECOP II → Upstash Redis (full + delta, reanudable)
 
-· FRONTEND public/ — 14 módulos:
+· FRONTEND public/ — 15 módulos:
   app.js                    Frontend unificado (una página, tres pestañas)
   apu_libro.js              El presupuesto calculado → libro Excel con formato Nogal
+  calendario.js             EL CALENDARIO DE CIERRES (encargo del ingeniero, 31-ago-2026)
   costos.js                 Motor de costo de mano de obra y costos indirectos (Fase 1)
   filtros.js                Vocabulario y estado de los SIETE filtros (Fase 8 · Detekta v4)
   frases.js                 LAS FRASES DE LA PORTADA (ago 2026)
@@ -156,9 +157,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 106 secciones. Las 10 más nuevas:
-  L  5594  Convenciones
-  L  5601  UN BORRADOR NO ADMITE OFERTAS, Y LA TARJETA DECÍA QUE SÍ (24-ago-2026)
+· MEMORIA · docs/MEMORIA.md — 108 secciones. Las 10 más nuevas:
   L  5631  La dispersión de la baja se MIDE, no se supone (24-ago-2026)
   L  5681  DOS DE LAS CUATRO GRANULARIDADES DE LA BAJA ESTÁN VACÍAS EN PRODUCCIÓN (24-ago-2026)
   L  5721  Auditoría del módulo APU: las dos mitades no están conectadas (24-ago-2026)
@@ -167,6 +166,8 @@
   L  5897  Auditoría integral del 27-ago-2026 · verificar absolutamente todo
   L  6005  La revisión adversaria del propio diff, y las CINCO regresiones que dejé dentro
   L  6050  El mapa: buscar coordenadas en vez de leer documentos (28-ago-2026)
+  L  6099  El calendario de cierres, y tres bloques menos en Mi empresa (31-ago-2026)
+  L  6204  El lugar de ejecución ES la entidad, «Para Helder» abre la pestaña, y Tailwind medido de ver
 
 · DOCUMENTOS docs/ — 37:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)

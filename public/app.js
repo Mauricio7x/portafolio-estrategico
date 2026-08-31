@@ -5617,12 +5617,6 @@
      DASHBOARD de procesos (/api/resumen)
      ══════════════════════════════════════════════════════════════════════════ */
   const REFRESCO_MS = 300000;              // el mismo TTL de la caché del endpoint
-  const COMPETENCIA_UI = {
-    baja: { emoji: "●", texto: "Poca", clases: "bg-green-50 text-green-800" },
-    media: { emoji: "●", texto: "Media", clases: "bg-amber-50 text-amber-800" },
-    alta: { emoji: "●", texto: "Alta", clases: "bg-red-50 text-red-700" },
-    sin_dato: { emoji: "●", texto: "Sin dato", clases: "bg-gray-50 text-gray-500" },
-  };
   const BARRAS = [
     ["obra_civil", "Obra civil", "bg-green-500"],
     ["consultoria", "Consultoría", "bg-amber-500"],
@@ -5687,9 +5681,6 @@
     }
     avisoDashboard(cuerpo.mensaje ? esc(cuerpo.mensaje) : null, "aviso");
     ultimoResumen = cuerpo;
-    // ANTES de pintar: `celdaApuProceso` consulta `apuListos` al construir la
-    // fila, y si el listado llegara después el badge saldría una pintada tarde
-    await cargarApuListos(perfil);
     pintarDashboard(cuerpo, r.headers.get("X-Cache") || (cuerpo.cache ? "HIT" : "MISS"));
     programarRefresco();
   }
@@ -5839,64 +5830,17 @@
       ])
       : "";
 
-    /* entidades */
-    const ent = (c.top_entidades || []).slice(0, 10);
-    $("d-entidades").innerHTML = ent.length ? ent.map((e) => {
-      const d = COMPETENCIA_UI[e.competencia] || COMPETENCIA_UI.sin_dato;
-      return `<tr class="fila-entidad cursor-pointer align-top hover:bg-gray-50" data-entidad="${esc(e.entidad)}" title="Ver los procesos que sostienen este promedio">
-          <td class="py-2 pr-2">${esc(e.entidad)}</td>
-          <td class="py-2 pr-2 text-right tabular-nums">${fmt.format(e.procesos)}</td>
-          <td class="py-2 pr-2"><span class="rounded-lg px-2 py-0.5 text-xs font-medium ${d.clases}">${d.emoji} ${d.texto}</span></td>
-          <td class="py-2 text-right tabular-nums">${e.promedio_oferentes == null ? "—" : String(e.promedio_oferentes).replace(".", ",")}</td>
-        </tr>`;
-    }).join("") : '<tr><td colspan="4" class="py-3 text-gray-400">Sin entidades que mostrar.</td></tr>';
-
-    /* departamentos: si el dataset no trae la columna, la tabla se OCULTA
-       entera (una tabla vacía no informa, confunde) */
-    const deps = Object.entries(c.totales.por_departamento || {});
-    const hayDeps = deps.some(([k, n]) => n > 0 && k !== "SIN_DEPARTAMENTO");
-    $("d-departamentos-box").classList.toggle("hidden", !hayDeps);
-    if (hayDeps) {
-      /* BARRAS RANKEADAS en vez de una tabla de tres columnas: el trabajo del
-         dato es comparar magnitudes entre nombres largos, y para eso la barra
-         horizontal se lee de un vistazo y la tabla no. Cada fila lleva a su
-         lista filtrada por departamento. */
-      const filasDep = deps.filter(([k, n]) => n > 0 && k !== "SIN_DEPARTAMENTO")
-        .sort((a, b) => b[1] - a[1]).map(([nombre, n]) => ({ nombre, n }));
-      /* «OTROS» ES LA COLA, NO UN DEPARTAMENTO, y eso son DOS consecuencias, no
-         una: (1) se conserva la barra —esconderla haría que el reparto no
-         sumara— pero SIN enlace, porque `?dep=OTROS` no casa ningún
-         departamento y llevaría a una lista vacía, que es una barra que promete
-         algo y no lo cumple; y (2) no compite por un puesto del ranking — con
-         331 procesos frente a los 320 del Tolima encabezaba el gráfico, que
-         entonces AFIRMABA que el departamento más grande se llama «OTROS».
-         `filtroDe` devolviendo null resuelve la primera y `esCola` la segunda. */
-      const esOtros = (x) => x.nombre === "OTROS";
-      $("d-departamentos").innerHTML = window.Pulso
-        ? window.Pulso.barrasRank(filasDep, { tope: 8, esCola: esOtros,
-            filtroDe: (x) => (esOtros(x) ? null : `dep=${encodeURIComponent(x.nombre)}`) })
-        : "";
-    }
-
-    /* destacados */
-    $("d-destacados-titulo").textContent = c.destacados_desde === "competencia_baja"
-      ? "Top 10 procesos más atractivos (entidades con poca competencia)"
-      : "Top 10 procesos más atractivos (aún sin histórico de competencia)";
-    const dest = c.procesos_destacados || [];
-    $("d-destacados").innerHTML = dest.length ? dest.map((p) => {
-      const d = COMPETENCIA_UI[p.competencia] || COMPETENCIA_UI.sin_dato;
-      const cierre = p.cierre ? new Date(p.cierre) : null;
-      return `<tr class="fila-proceso align-top ${p.url ? "cursor-pointer hover:bg-gray-50" : ""}" data-url="${esc(p.url || "")}" title="${esc(p.badge || "")}">
-          <td class="py-2 pr-2">${esc(p.objeto)}</td>
-          <td class="py-2 pr-2 text-gray-500">${esc(p.entidad)}</td>
-          <td class="py-2 pr-2 text-right tabular-nums">${fmtCOP.format(p.cuantia_cop || 0)}</td>
-          <td class="py-2 pr-2 text-gray-500">${cierre && !isNaN(cierre) ? cierre.toLocaleDateString("es-CO", { day: "numeric", month: "short" }) : "—"}</td>
-          <td class="py-2 pr-2"><span class="rounded-lg px-2 py-0.5 text-xs font-medium ${d.clases}">${d.emoji} ${d.texto}</span></td>
-          <td class="py-2 pr-2 text-gray-500">${esc(p.pertinencia || "")}</td>
-          <td class="py-2 whitespace-nowrap">${celdaApuProceso(p)}</td>
-        </tr>`;
-    }).join("") : '<tr><td colspan="7" class="py-3 text-gray-400">Ningún proceso cumple los criterios de destacado.</td></tr>';
-
+    /* LAS TRES TABLAS DE ABAJO SE RETIRARON (encargo del ingeniero,
+       31-ago-2026): «Quién publica más» (#d-entidades) con su detalle en línea,
+       las barras «Dónde están» (#d-departamentos) y el «Top 10 procesos más
+       atractivos» (#d-destacados). Las dos primeras repetían, en la MISMA
+       pestaña, los dos repartos que el pulso ya publica sobre el mismo corpus;
+       la tercera era una lista densa que nunca se leía. Lo que hacía falta —a
+       qué proceso le doy clic para presentarme— lo resuelve el calendario, que
+       ordena por la fecha de cierre. `top_entidades`, `por_departamento` y
+       `procesos_destacados` siguen viniendo en /api/resumen: son parte de su
+       contrato y otros consumidores los usan; aquí, sencillamente, no se
+       pintan. */
     pintarMeta(c, cache);
   }
 
@@ -5949,132 +5893,13 @@
     cargarDashboard();
   });
 
-  /* Detalle de competencia de una entidad, en línea bajo su fila (el mismo
-     /api/competencia-detalle que abre el modal de la app; aquí se despliega en
-     la propia tabla en vez de duplicar el modal). */
-  $("d-entidades").addEventListener("click", async (e) => {
-    const fila = e.target.closest(".fila-entidad");
-    if (!fila) return;
-    const abierta = fila.nextElementSibling;
-    if (abierta && abierta.classList.contains("detalle-entidad")) return abierta.remove();
-    const entidad = fila.getAttribute("data-entidad");
-    const tr = document.createElement("tr");
-    tr.className = "detalle-entidad bg-gray-50";
-    tr.innerHTML = '<td colspan="4" class="px-2 py-3 text-xs text-gray-500">Cargando el detalle…</td>';
-    fila.after(tr);
-    const celda = tr.firstElementChild;
-    let r = null, cuerpo = null;
-    try {
-      r = await fetch(`/api/inteligencia?op=entidad&entidad=${encodeURIComponent(entidad)}`,
-        { headers: { "x-historico-token": leerToken() } });
-      cuerpo = await leerJson(r);
-    } catch {
-      celda.textContent = "No se pudo contactar el servidor.";
-      return;
-    }
-    if (!r.ok || !cuerpo || !cuerpo.ok) {
-      celda.textContent = (cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`;
-      return;
-    }
-    if (!cuerpo.encontrada) { celda.textContent = cuerpo.mensaje || "Sin procesos históricos de esta entidad."; return; }
-    const i = cuerpo.indice || {};
-    /* EL CAMPO ES `procesos_contados`, NO `total_procesos`.
-       Aquí nació el «promedio 18,2 oferentes en 0 procesos» que se vio en
-       producción: `/api/competencia-detalle` NUNCA ha devuelto `total_procesos`
-       —ese nombre pertenece al OTRO payload, el `competencia_entidad` que
-       embebe /api/oportunidades— así que `i.total_procesos || 0` valía 0
-       SIEMPRE, con cualquier dato y con cualquier entidad. No era un dato malo:
-       era un campo inexistente leído con un `|| 0` que lo disfrazaba de cero.
-       De ahí la regla: si el conteo no viene, NO se pinta un 0 — se dice que no
-       se sabe. Un `|| 0` sobre un campo ausente convierte «no sé» en «cero», y
-       ese es el error que hay que no repetir. */
-    const contados = Number(i.procesos_contados);
-    const promedio = i.promedio_oferentes == null ? null : Number(i.promedio_oferentes);
-    const conBase = Number.isFinite(contados) && contados > 0 && promedio != null && !isNaN(promedio);
-    const lista = (cuerpo.procesos || []).slice(0, 8)
-      .map((p) => `<li class="truncate">· ${esc(p.objeto)} — <span class="tabular-nums">${p.numero_ofertas}</span> oferente${p.numero_ofertas === 1 ? "" : "s"}</li>`)
-      .join("");
-    celda.innerHTML =
-      `<p class="font-medium text-gray-700">${esc(cuerpo.entidad)} · nivel ${esc(i.nivel || "sin_dato")}`
-      + (conBase
-        ? ` · promedio ${String(promedio).replace(".", ",")} oferentes en ${contados} proceso${contados === 1 ? "" : "s"}`
-        : " · sin procesos que sostengan un promedio")
-      + "</p>"
-      + (cuerpo.mensaje ? `<p class="mt-1 text-amber-700">${esc(cuerpo.mensaje)}</p>` : "")
-      + (lista ? `<ul class="mt-2 space-y-0.5">${lista}</ul>` : "")
-      + `<p class="mt-2 text-gray-400">${(cuerpo.excluidos || []).length} proceso(s) excluidos del promedio, con su motivo, en /api/competencia-detalle.</p>`;
-  });
-
-  // una fila de destacados lleva al proceso en SECOP II (es la ficha real)
-  $("d-destacados").addEventListener("click", (e) => {
-    // el botón «APU» vive DENTRO de la fila, así que su clic burbujea hasta
-    // aquí: la guarda va ANTES de resolver la fila — sin ella, pulsarlo
-    // abriría además la ficha de SECOP II en otra pestaña
-    const apuBtn = e.target.closest(".btn-apu");
-    if (apuBtn) {
-      abrirEditorConProceso(new URLSearchParams(apuBtn.getAttribute("data-apu-q") || ""));
-      return;
-    }
-    const fila = e.target.closest(".fila-proceso");
-    if (!fila) return;
-    const url = fila.getAttribute("data-url");
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
-  });
-
-
-  /* ══════════════════════════════════════════════════════════════════════════
-     APU por proceso · botón de la fila y badge «APU listo»
-     ──────────────────────────────────────────────────────────────────────────
-     El botón abre /apu.html con el proceso precargado; el badge dice si ese
-     proceso ya tiene un borrador guardado para el perfil elegido.
-
-     EL LISTADO SE PIDE APARTE DE /api/resumen, cuya respuesta se cachea 300 s:
-     un presupuesto recién guardado no puede tardar cinco minutos en encender el
-     badge — es la misma razón por la que una carga de RUP borra esa caché.
-     Aquí no hace falta borrar nada, porque no se cachea.
-
-     `procesos_con_presupuesto` es una lista de PERTENENCIA, no un conteo: la
-     pregunta es «¿este proceso tiene borrador?», y así el frontend no puede
-     convertir un «no sé» en un cero con un `|| 0`. */
-  let apuListos = new Set();
-
-  async function cargarApuListos(perfil) {
-    apuListos = new Set();
-    const token = leerToken();
-    if (!token) return;
-    try {
-      const r = await fetch(`/api/apu?op=listar&perfil=${encodeURIComponent(perfil)}`, {
-        headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store",
-      });
-      if (!r.ok) return; // el panel no puede caerse porque el listado de APU falle
-      const c = await r.json().catch(() => null);
-      if (c && c.ok && Array.isArray(c.procesos_con_presupuesto)) apuListos = new Set(c.procesos_con_presupuesto);
-    } catch { /* sin conexión: se pinta sin badges, no se rompe el panel */ }
-  }
-
-  function celdaApuProceso(p) {
-    const id = p.id_del_proceso;
-    const listo = id != null && apuListos.has(String(id));
-    const q = new URLSearchParams();
-    if (p.objeto) q.set("objeto", p.objeto);
-    if (p.entidad) q.set("entidad", p.entidad);
-    if (p.nit_entidad) q.set("entidad_nit", p.nit_entidad);
-    if (p.departamento_entidad) q.set("departamento", p.departamento_entidad);
-    if (p.unspsc) q.set("unspsc", p.unspsc);
-    if (p.cuantia_cop != null) q.set("cuantia", String(p.cuantia_cop));
-    if (id != null) q.set("id_proceso", String(id));
-    if (p.plazo_meses != null) q.set("plazo", String(p.plazo_meses));
-    // la modalidad decide QUÉ baja de mercado se usa para fijar el precio: sin
-    // ella el editor cotizaría contra la mediana mezclada de la entidad
-    if (p.modalidad) q.set("modalidad", p.modalidad);
-    q.set("perfil", $("d-perfil").value);
-    return `<button type="button" class="btn-apu rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50"`
-      + ` data-apu-q="${esc(q.toString())}" title="Calcular cuánto me cuesta y qué me deja este proceso, en la pestaña Precios">Mi precio</button>`
-      + (listo
-        ? ' <span class="rounded-lg px-2 py-0.5 text-xs font-medium bg-green-50 text-green-800"'
-          + ' title="Ya hay un presupuesto guardado para este proceso y perfil">● APU listo</span>'
-        : "");
-  }
+  /* EL BOTÓN «Mi precio» DE LA TABLA DE DESTACADOS SE FUE CON ELLA
+     (31-ago-2026), y con él su badge «APU listo» y el listado que lo alimentaba
+     (`cargarApuListos` / `celdaApuProceso`, que no tenían ningún otro llamante:
+     medido antes de borrarlos). La entrada a Precios por proceso NO se perdió —
+     vive en cada tarjeta del listado y en la ficha ampliada, que es donde el
+     ingeniero decide—; lo que desaparece es la copia que solo servía a diez
+     filas de una tabla que ya no existe. */
 
   /* ══════════════════════════════════════════════════════════════════════════
      CARGA DE RUP (/api/admin/rup)

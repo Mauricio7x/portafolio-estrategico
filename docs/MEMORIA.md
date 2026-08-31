@@ -6095,3 +6095,177 @@ fichero abierto «por si acaso» se paga entero. Decisiones:
   una lista** (la jerga y el tuteo volvieron por los huecos exactos de las cercas) y **un arreglo
   que solo cubre el caso reproducido deja hermanos vivos** (la guarda de año cubrió una fecha de
   tres). También `null >= 1 === false`, que es la trampa muda de la ausencia en comparaciones.
+
+### El calendario de cierres, y tres bloques menos en Mi empresa (31-ago-2026)
+
+**Encargo del ingeniero, con dos mitades.** (1) «Elimina de la pestaña Mi empresa lo que está
+subrayado en rojo: no se ve estético, mucho texto que no hace nada, solo ruido visual». (2) «Trabaja
+en un calendario en el cual se pueda ver el mes actual, el día en el que estamos y cuándo vencen los
+procesos de este mes, para que el ingeniero pueda darle clic al que le interese y pueda presentarse.
+Los datos de importancia: un resumen del objeto contractual, el valor total del contrato y el lugar
+de ejecución. Y si es selección abreviada de menor cuantía, decir cuándo podemos presentarnos —a
+veces le quedan horas—: hasta qué horas se puede uno presentar o enviar la manifestación de interés.
+Lo que quiere es no perderse ninguna oportunidad de manifestar interés y ningún contrato al que se
+pueda presentar.»
+
+**QUÉ SE FUE, y por qué las dos mitades son la misma decisión.** Los tres recuadros marcados eran:
+la tabla «Quién publica más» (`#d-entidades`, con su detalle en línea), las barras «Dónde están»
+(`#d-departamentos`) y el «Top 10 procesos más atractivos» (`#d-destacados`), los tres del tablero;
+y los cuatro gráficos del pulso —«Cuándo hay que entregar la oferta», «Cuánto valen», «Qué tipo de
+trabajo es», «Cómo lo adjudican»— (`#pu-cierre`, `#pu-cuantia`, `#pu-tipo`, `#pu-modalidad`).
+
+- **Los dos primeros eran una SEGUNDA COPIA en la misma pantalla**: el pulso ya publica «Quién las
+  publica» y «Dónde están» sobre el MISMO corpus, unos centímetros más abajo. Dos vistas del mismo
+  dato en la misma pestaña no informan el doble: se anulan.
+- **«Cuándo hay que entregar la oferta» contestaba la pregunta correcta con la respuesta
+  equivocada.** Es la pregunta más accionable de la app —por eso se construyó— pero la contestaba
+  con una CUBETA («≤ 15 días»: 90 procesos), y con eso no se puede hacer nada. La respuesta útil es
+  el DÍA y el proceso. El calendario no es un añadido: es esa barra hecha bien, y por eso la barra
+  se va con él. La lección general: **cuando algo nuevo contesta mejor la pregunta de algo viejo,
+  lo viejo se retira; dejar los dos es acumular, no mejorar.**
+- **Con las tablas se fue su código muerto**: `COMPETENCIA_UI`, `celdaApuProceso`, `cargarApuListos`
+  y `apuListos` en `public/app.js`, y los repartos `porCierre`/`porCuantia`/`porTipo`/`porModalidad`
+  del servidor (`agregarPulso`) con sus plantillas en `public/pulso.js`. Se midió antes de borrar
+  que no tenían otro llamante. El botón «Mi precio» NO se perdió: vive en la tarjeta del listado,
+  que es donde se decide. Un agregado que nadie pinta es peso muerto en la caché y en la respuesta.
+
+**EL CALENDARIO VIVE EN EL AGREGADO QUE YA SE PEDÍA, no en un endpoint propio.**
+`lib/handlers/perfil/entrada.agregarPulso` añade `calendario`, y `public/pulso.js` se lo entrega a
+`public/calendario.js` con la respuesta que ya trajo `/api/perfil?op=pulso`. Motivo: son
+EXACTAMENTE los mismos procesos que cuenta la pestaña (un calendario que enseñara otra lista sería
+un segundo juicio), y pedirlo aparte serían dos peticiones al mismo endpoint —y dos recorridos
+completos del corpus con la caché fría—. De paso se corrigió una divergencia que ya estaba ahí: la
+faceta `manifestacion` del pulso se calculaba SIN las fechas del cronograma del pliego, así que la
+lista y el pulso podían discrepar sobre el mismo proceso; ahora `contarOportunidades` lee
+`leerFechasCronograma` (un `HGETALL`, y solo si hay alguna de menor cuantía) y las pasa a las dos.
+
+**LAS SEIS DECISIONES DEL CALENDARIO que no hay que re-aprender:**
+
+- **LA HORA DE CIERRE SÍ SE PUEDE ENSEÑAR, Y SE LEE LITERAL.** El dataset publica el cierre de
+  ofertas como timestamp FLOTANTE sin zona (`2026-09-13T15:00:00.000`), o sea la hora de Colombia
+  que fijó la entidad: se extrae con una regex sobre la cadena y se enseña tal cual. Pasarla por
+  `Date` la movería 5 h. **Y `00:00` NO es una hora**: es un timestamp truncado, y «12:00 a. m.» en
+  pantalla es una hora límite inventada — quien llegue a las 11 de la mañana creyendo que le sobra
+  el día pierde el proceso. Va en `null` y se dice «no viene publicada». Es la regla R1 aplicada al
+  reloj. Hay prueba, y el caso se SIEMBRA a propósito: el corpus de la suite no trae ninguna fila
+  con medianoche, así que la aserción sobre la respuesta real no lo ejercitaba (la lección del bucle
+  sobre la lista vacía) — la mutación lo demostró: sin sembrarlo, quitar la guarda no rompía nada.
+- **LA MANIFESTACIÓN NO LLEVA HORA JAMÁS**, y esa es la respuesta honesta a lo que el ingeniero
+  preguntó. El plazo para avisar que le interesa lo fija la entidad en el pliego y **el cronograma
+  publica el DÍA, nunca la hora** (doctrina de Motavita, § «EL PLAZO DE MANIFESTACIÓN NO ES DE TRES
+  DÍAS»). Así que el calendario dice las dos mitades: la fecha o la ventana que sí se puede afirmar,
+  y que puede cerrar a media jornada. La cerradura es NEGATIVA y barre los cuatro estados con y sin
+  fecha confirmada: si en el texto del plazo aparece un reloj («5:00», «5 p. m.»), la suite cae. Lo
+  que sí se dice —y hay prueba de que se dice— es que «a veces son solo unas horas del mismo día»,
+  que es lo que el ingeniero reportó desde el campo.
+- **«DÓNDE» ES LA SEDE DE LA ENTIDAD, no el lugar de ejecución, y se rotula así.** El encargo pedía
+  «lugar de ejecución» y el dataset NO LO PUBLICA: el censo de columnas (`docs/datos.md` §7) solo
+  tiene `ciudad_entidad` y `departamento_entidad`. En la alcaldía de un municipio coinciden casi
+  siempre; en una gobernación o un ministerio, no. Rotularlo «lugar de ejecución» habría sido
+  exactamente la inferencia-presentada-como-medición que esta memoria lleva media crónica cerrando,
+  y en el sitio donde se decide a qué presentarse.
+- **EL DÍA SE COMPARA COMO CADENA `YYYY-MM-DD`**, nunca con `new Date("2026-09-13").getDate()`, que
+  se interpreta en UTC y devuelve el 12: el calendario pintaría los cierres un día antes, que en
+  esta app es la diferencia entre llegar y no llegar. El «hoy» lo fija el SERVIDOR
+  (`habiles.hoyColombia`), no el reloj del aparato. La alineación de la rejilla se comprueba en la
+  suite contra `Date.UTC`, que es una fuente independiente de la del módulo.
+- **UN PROCESO SIN FECHA DE CIERRE LEGIBLE NO SE SITÚA EN NINGÚN DÍA**: se cuenta aparte y se dice
+  («N sin fecha de cierre publicada»). Colocarlo en «hoy» lo inventaría. Y un día sin ningún
+  presupuesto publicado vale `null`, no `$0`.
+- **UN PLAZO VENCIDO NO ESCONDE EL PROCESO.** Pudo haber avisado a tiempo y la app no lo sabe:
+  esconderlo sería un falso negativo, que en oportunidades es el error caro. Se pinta en gris y dice
+  «solo puede presentar oferta si avisó a tiempo».
+
+**DOS CERCAS DE LENGUAJE ERAN LISTAS Y SE CONVIRTIERON EN CENSOS, en este mismo commit.** La de
+registro formal barría ocho módulos por su nombre y la de emojis cuatro archivos: `calendario.js`
+—el módulo nuevo y media primera pantalla— habría entrado sin vigilancia por el hueco EXACTO por el
+que la jerga volvió por `pulso.js` en la auditoría del 27-ago. Ahora las dos barren todos los
+`public/*.js`; la única excepción declarada es `apu_libro.js` en la de emojis (sus marcadores viajan
+al Excel, que es otro medio). Se midió antes: ningún otro módulo necesita excepción. Con la misma
+vara se convirtieron en censos la guarda de la cola «OTROS» de `barrasRank` (su único llamante era
+el gráfico retirado, así que la cerradura se habría ido con él) y la del campo fantasma
+`total_procesos`, que señalaba el handler de la tabla retirada y ahora barre a todos los
+consumidores de `?op=entidad`.
+
+**UN DEFECTO QUE SOLO VIO EL NAVEGADOR REAL.** Sobre un día ya pasado, el titular decía «3 procesos
+**cierran ya cerraron**»: la frase pegaba un complemento variable a un verbo fijo. No lo vio ninguna
+prueba de Node —todas miraban partes de la cadena, no la frase— sino la captura de Chromium. La
+frase se compone entera en cada rama (hoy / pasado / futuro) y hay prueba de las cinco formas. Es la
+enésima confirmación de la regla: **si se toca `public/`, navegador real, sin excepción.** En la
+misma pasada se acotó la altura de la casilla (`max-height: 76px`): con el contenedor a lo ancho,
+siete casillas cuadradas se vuelven siete cuadrados de 180 px y el calendario ocupa dos pantallas.
+
+**LO QUE NO SE PUDO VERIFICAR DESDE AQUÍ, dicho en vez de disimulado**: el proxy de esta sesión
+bloquea `cdn.tailwindcss.com` (403 en el CONNECT), así que la comprobación en Chromium corrió SIN
+Tailwind en las tres pasadas. Es el caso más duro —el precedente de los paneles apilados con consola
+limpia— y el calendario lo pasa: se ve, es pulsable, no desborda a 390 px y la consola queda vacía;
+pero el aspecto CON las utilidades de Tailwind cargadas no se midió en este entorno.
+
+### El lugar de ejecución ES la entidad, «Para Helder» abre la pestaña, y Tailwind medido de verdad (31-ago-2026, segunda pasada)
+
+**Tres encargos del ingeniero sobre el trabajo del mismo día**, y el primero cierra una ambigüedad
+que yo había dejado abierta a propósito.
+
+**1 · «Solo di en lugar de ejecución qué entidad es».** Le dije que el dataset NO publica el sitio
+donde se ejecuta la obra —el censo de columnas (`docs/datos.md` §7) solo trae `ciudad_entidad` y
+`departamento_entidad`, que son la SEDE de quien contrata— y que por eso el campo se llamaba
+«Dónde». Su respuesta resuelve el problema mejor que mi rodeo: **el valor del campo es la ENTIDAD**,
+con su municipio detrás («MUNICIPIO DE PLANETA RICA CORDOBA — PLANETA RICA · Córdoba»), el rótulo
+vuelve a llamarse «Lugar de ejecución» —que es como el ingeniero lo llama— y la ficha DECLARA, en la
+misma pantalla, que los datos abiertos no publican el sitio exacto. Nada se afirma que el dato no
+sostenga y el campo responde la pregunta real: en la práctica, quién contrata dice dónde es la obra
+mejor que cualquier código. Con el cambio se fue la fila «Entidad que lo publica»: era el mismo dato
+dos veces, y repetirlo es exactamente el ruido que este encargo vino a quitar. Hay dos cerraduras
+por mutación: una si el valor deja de ser la entidad, otra si desaparece la declaración —el rótulo
+SIN la frase vuelve a afirmar lo que no se sabe—.
+
+**Lección de método, más general que este campo**: cuando el dato no permite contestar la pregunta
+tal como se formuló, la salida no es callar el campo ni rellenarlo con lo más parecido; es **decir
+qué dato SÍ hay, ponerlo bajo el nombre que el usuario usa, y declarar el límite al lado**.
+
+**2 · «La parte de "para Helder" déjalo en la parte de arriba, de primeras».** Mi empresa abría con
+el TABLERO. Ahora abre con el pulso, y el orden entero es: **«Para Helder, hoy» → calendario →
+dónde están · quién las publica → tablero → su registro**. El pulso se PARTE EN DOS a propósito y
+`#pulso` se queda con la mitad de arriba (el titular y el aviso de manifestación, lo que no admite
+retraso); los dos repartos bajan a `#pulso-repartos`, después del calendario, porque son contexto
+para elegir y no algo que se venza — dejarlos arriba empujaba el calendario media pantalla. Las dos
+secciones se enseñan y se esconden JUNTAS (`arrancar`, con una sola función): media pestaña visible
+con la otra media oculta sería un pulso a medias sin decirlo, y hay prueba de que ninguna rama toca
+solo una. **El orden se fija ENTERO en la suite, no por parejas**: una cadena de comparaciones
+sueltas deja pasar permutaciones.
+
+**3 · «Lo que no pudiste hacer, como sea, con datos reales».** Era la única cosa que quedó declarada
+como no verificable: la apariencia CON Tailwind cargado. Resuelto, y las dos mitades importan:
+
+- **El CSS de Tailwind se COMPILA de verdad.** `cdn.tailwindcss.com` responde 403 al CONNECT del
+  proxy, pero `registry.npmjs.org` responde 200: se instala `tailwindcss@3` fuera del árbol (el
+  repositorio sigue **sin package.json y sin dependencias**) y su propio CLI compila el CSS sobre
+  ESTE `public/` — 444 utilidades, que es lo mismo que el Play CDN genera en el navegador. El arnés
+  intercepta la petición al CDN y sirve ese CSS. La tercera pasada lo bloquea del todo a propósito:
+  es el caso que ya se vio en producción (paneles apilados con CERO errores en consola).
+- **El cuerpo del pulso lo produce la TUBERÍA REAL**: ya no es un JSON escrito a mano, sino
+  `agregarPulso` —la misma función que sirve producción— que llama a `manifestacionDeFila` y a
+  `lib/habiles` para la ventana de cada proceso. Lo único sintético son las FILAS, y no por gusto:
+  **`datos.gov.co` sigue devolviendo 403 a través del proxy, re-verificado hoy** (la regla de volver
+  a llamar a una fuente dada por perdida se cumplió, y el resultado se anota CON FECHA).
+
+**TRES DEFECTOS QUE SOLO VIO EL NAVEGADOR, y los tres con el Tailwind real puesto:**
+
+- **Siete islas en vez de un calendario.** Con `aspect-ratio: 1/1` más un `max-height: 76px`, en
+  1280 px la columna mide 170 px y la casilla 76: quedaban cuadrados separados por huecos enormes.
+  La casilla es ahora RECTANGULAR en escritorio (llena su columna, alto fijo de 62 px) y vuelve a
+  ser cuadrada por debajo de 640 px, que es donde el dedo la necesita (44 px de objetivo táctil).
+- **«Agosto De 2026».** `text-transform: capitalize` capitaliza cada palabra, y en español el mes va
+  en minúscula y la preposición nunca se toca. Se sube SOLO la primera letra con `::first-letter`,
+  y el texto sigue siendo el mismo que se usa dentro de las frases («ningún proceso cierra en agosto
+  de 2026»), donde tiene que ir en minúscula.
+- **La cifra del medio del titular partida en dos.** `sm:text-[40px]` a secas: «$218.623 millones»
+  cabe en los 1727 px del ingeniero y PARTE EN DOS en 1280, y entonces las tres cifras dejan de
+  alinearse — justo en el bloque que desde hoy abre la pestaña. Escalón nuevo: 26 → 34 → 40 px
+  (`2xl`). En 390 px sigue partiendo y es lo correcto: en una columna de 110 px no cabe por mucho
+  que se baje el cuerpo, y la comprobación del arnés se acota a ≥ 640 px por eso.
+
+**Ninguno de los tres lo veía una prueba de Node**, y los tres son de la misma familia que el
+precedente del CDN bloqueado: **fallos MUDOS de maquetación, con la consola limpia**. Es la
+confirmación número N de la regla, y ahora con el matiz que faltaba: **medir sin Tailwind prueba que
+la página no se rompe; solo medir CON Tailwind prueba que se ve bien**. Hacen falta las dos pasadas.

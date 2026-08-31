@@ -40,7 +40,14 @@
   }
 
   /* ── plantillas ── */
-  const cifraGrande = (v, rotulo, attrs = "") => `<div ${attrs}><p class="text-[26px] font-semibold tracking-tight sm:text-[40px]" style="color: var(--text-primary); letter-spacing: -1px;">${esc(v)}</p><p class="text-[11px] uppercase tracking-wide sm:text-xs" style="color: var(--text-secondary);">${esc(rotulo)}</p></div>`;
+  /* EL PASO DE 26 A 40 px NECESITA UNA PARADA INTERMEDIA (31-ago-2026). Con
+     `sm:text-[40px]` a secas, «$218.623 millones» cabe en una pantalla de 1727
+     px pero PARTE EN DOS LÍNEAS en 1280, y entonces las tres cifras dejan de
+     alinearse: la del medio baja y el bloque —que desde hoy abre la pestaña—
+     se ve descuadrado. Medido en Chromium. Con la parada en 34 px cabe en una
+     línea desde 640 px, y los 40 px vuelven en pantallas de 1536 en adelante,
+     que es donde el ingeniero trabaja. */
+  const cifraGrande = (v, rotulo, attrs = "") => `<div ${attrs}><p class="text-[26px] font-semibold tracking-tight sm:text-[34px] 2xl:text-[40px]" style="color: var(--text-primary); letter-spacing: -1px;">${esc(v)}</p><p class="text-[11px] uppercase tracking-wide sm:text-xs" style="color: var(--text-secondary);">${esc(rotulo)}</p></div>`;
 
   function htmlHero(p, nombrePerfil) {
     const quien = nombrePerfil ? `Para ${esc(nombrePerfil)}, hoy` : "Para su empresa, hoy";
@@ -89,9 +96,9 @@
   /* public/filtros.js es UMD igual que este módulo: en el navegador vive en
      `window.Filtros` y en Node se requiere. Se resuelve en cada llamada y no en
      tiempo de carga porque este archivo se carga ANTES en index.html. */
-  function raizFiltros() {
-    if (typeof window !== "undefined" && window.Filtros) return window.Filtros;
-    try { return require("./filtros.js"); } catch { return null; }
+  function raizCalendario() {
+    if (typeof window !== "undefined" && window.Calendario) return window.Calendario;
+    try { return require("./calendario.js"); } catch { return null; }
   }
   /* ═══════════════════ GRÁFICOS DE VERDAD (ago 2026) ═══════════════════
      Encargo del ingeniero: «los gráficos están como si fueran de niños de
@@ -320,57 +327,21 @@
     const linea = `<line x1="${margen.lados}" y1="${margen.arriba + altoUtil + 0.5}" x2="${ancho - margen.lados}" y2="${margen.arriba + altoUtil + 0.5}" style="stroke: var(--border); stroke-width: 1;"></line>`;
     return `<svg viewBox="0 0 ${ancho} ${alto}" role="img" aria-label="Distribución" style="display:block; width:100%; height:auto; max-height: ${alto + 40}px; font-family: inherit;">${linea}${barras}</svg>`;
   }
-  const ROTULO_CIERRE = { "3d": "≤ 3 días", "7d": "esta semana", "15d": "≤ 15 días", "+15d": "+ 15 días" };
-  const ROTULO_CUANTIA = { hasta_50m: "≤ $50 M", "50_200m": "$50–200 M", "200_1000m": "$200–1.000 M", mas_1000m: "> $1.000 M" };
-  function htmlCierre(p) {
-    const cubetas = (p.porCierre || []).map((c) => ({ ...c, corto: ROTULO_CIERRE[c.id] || c.etiqueta, titulo: c.etiqueta }));
-    const svg = columnas(cubetas, { filtroDe: (c) => `cierre=${c.id}` });
-    if (!svg) return "";
-    return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Cuándo hay que entregar la oferta</h2>${svg}${p.cierreSinFecha ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(p.cierreSinFecha)} sin fecha de cierre publicada.</p>` : ""}`;
-  }
-  function htmlCuantia(p) {
-    const cubetas = (p.porCuantia || []).map((c) => ({ ...c, corto: ROTULO_CUANTIA[c.id] || c.etiqueta, titulo: c.etiqueta }));
-    const svg = columnas(cubetas, { filtroDe: (c) => `min=${c.min || 0}${c.max != null ? `&max=${c.max}` : ""}` });
-    if (!svg) return "";
-    return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Cuánto valen</h2>${svg}${p.cuantiaSinDato ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(p.cuantiaSinDato)} sin presupuesto publicado.</p>` : ""}`;
-  }
-
-  /* ═══ QUÉ TIPO DE TRABAJO Y CÓMO LO ADJUDICAN (encargo del ingeniero, ago
-     2026) ═══ Los repartos llegan de `FiltrosLista.facetas`, la MISMA función
-     que cuenta las facetas del listado, así que el pulso y la lista no pueden
-     discrepar sobre el mismo corpus. Las etiquetas salen de public/filtros.js
-     —una segunda tabla de nombres se desincronizaría del selector— y cada barra
-     es literalmente su filtro. Las cubetas en cero se conservan: que una
-     modalidad no aparezca y que no tenga procesos son cosas distintas, y la
-     primera se lee como la segunda. `sin_dato` NO se grafica: no es un filtro
-     al que se pueda ir, y se declara aparte. */
-  function repartoAcubetas(reparto, catalogo, campo) {
-    if (!reparto) return { cubetas: [], sinDato: 0 };
-    const cubetas = catalogo
-      .filter((t) => Object.prototype.hasOwnProperty.call(reparto, t.id))
-      .map((t) => ({ id: t.id, etiqueta: t.etiqueta, corto: t.corto || t.etiqueta, titulo: t.ayuda || t.etiqueta, n: reparto[t.id] || 0, valor: null }));
-    return { cubetas, sinDato: reparto.sin_dato || 0, campo };
-  }
-  const CORTO_TIPO = { obra: "Obra", consultoria: "Consultoría", interventoria: "Interventoría", suministro: "Suministro", servicios: "Servicios" };
-  const CORTO_MODALIDAD = { licitacion: "Licitación", abreviada: "Menor cuantía", subasta: "Subasta", meritos: "Méritos", minima: "Mínima", directa: "Directa", especial: "Especial", otra: "Otra" };
-  function htmlTipo(p) {
-    const F = raizFiltros();
-    if (!F || !p.porTipo) return "";
-    const cat = (F.TIPOS_TRABAJO || []).map((t) => ({ ...t, corto: CORTO_TIPO[t.id] || t.etiqueta }));
-    const { cubetas, sinDato } = repartoAcubetas(p.porTipo, cat, "tipo");
-    const svg = columnas(cubetas, { filtroDe: (c) => `tipo=${c.id}` });
-    if (!svg) return "";
-    return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Qué tipo de trabajo es</h2>${svg}${sinDato ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(sinDato)} sin clasificar.</p>` : ""}`;
-  }
-  function htmlModalidad(p) {
-    const F = raizFiltros();
-    if (!F || !p.porModalidad) return "";
-    const cat = (F.MODALIDADES || []).map((t) => ({ ...t, corto: CORTO_MODALIDAD[t.id] || t.etiqueta }));
-    const { cubetas, sinDato } = repartoAcubetas(p.porModalidad, cat, "modalidad");
-    const svg = columnas(cubetas, { filtroDe: (c) => `modalidad=${c.id}` });
-    if (!svg) return "";
-    return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Cómo lo adjudican</h2>${svg}${sinDato ? `<p class="text-[11px]" style="color: var(--text-secondary);">${num(sinDato)} sin modalidad publicada.</p>` : ""}`;
-  }
+  /* ⚠️ LOS CUATRO GRÁFICOS DE ESTA SECCIÓN SE RETIRARON (encargo del ingeniero,
+     31-ago-2026). «Cuándo hay que entregar la oferta», «Cuánto valen», «Qué
+     tipo de trabajo es» y «Cómo lo adjudican» eran cuatro rejillas de columnas
+     apiladas en la primera pantalla: «no se ve estético, mucho texto que no
+     hace nada, solo ruido visual». Las tres primeras repetían en forma de barra
+     cifras que el tablero de arriba ya da en números, y la pregunta que sí
+     importaba —«¿cuándo se me vence esto?»— la contestaban con una cubeta («≤
+     15 días») cuando lo que el ingeniero necesita es el DÍA: eso lo hace ahora
+     el calendario (public/calendario.js), con el proceso concreto y su plazo
+     para avisar que le interesa. Con ellos se fueron del servidor los repartos
+     que solo alimentaban estas barras (`porCierre`, `porCuantia`, `porTipo`,
+     `porModalidad` en lib/handlers/perfil/entrada.agregarPulso): un agregado
+     que nadie pinta es peso muerto en la caché y en la respuesta.
+     `columnas`, `apilada` y `barrasRank` SE QUEDAN: los tres gráficos del
+     tablero (public/app.js) los llaman. */
   /* EL AVISO MÁS ACCIONABLE DEL SISTEMA, y no estaba en la pestaña: en la
      selección abreviada de menor cuantía no se puede ofertar sin avisar antes,
      y el plazo lo fija la entidad —a veces son horas—. Se pinta SOLO si hay
@@ -418,6 +389,15 @@
     const d = opciones.doc || (typeof document !== "undefined" ? document : null);
     if (!d) return false;
     const raiz = d.getElementById("pulso");
+    /* EL PULSO VIVE EN DOS SECCIONES DESDE EL 31-ago-2026: `#pulso` (el
+       titular «Para Helder, hoy» y el aviso de manifestación) abre la pestaña,
+       y `#pulso-repartos` (dónde están · quién las publica) va DESPUÉS del
+       calendario. Se enseñan y se esconden JUNTAS: si una se quedara visible
+       con la otra oculta, la pestaña enseñaría medio pulso sin decirlo. */
+    const repartos = d.getElementById("pulso-repartos");
+    const mostrar = (visible) => {
+      for (const nodo of [raiz, repartos]) if (nodo) nodo.classList.toggle("hidden", !visible);
+    };
     if (!raiz || !perfil) return false;
     if (perfilPintado === perfil && !opciones.forzar) return true;
     let p = null;
@@ -439,28 +419,34 @@
       p = await r.json();
     } catch { p = null; }
     if (mio !== peticion) return false;                                        // llegó tarde: no pinta
-    if (!p || !p.ok) { raiz.classList.add("hidden"); perfilPintado = null; return false; }   // vacía y honesta
+    if (!p || !p.ok) { mostrar(false); perfilPintado = null; return false; }   // vacía y honesta
     const rc = d.getElementById("rup-cifras");
     if (rc) { rc.innerHTML = htmlEmpresa(p.empresa); rc.classList.toggle("hidden", !rc.innerHTML); }
     d.getElementById("pu-hero").innerHTML = htmlHero(p, opciones.nombre || "");
     d.getElementById("pu-departamentos").innerHTML = htmlDepartamentos(p);
     d.getElementById("pu-entidades").innerHTML = htmlEntidades(p);
-    const cierre = d.getElementById("pu-cierre"), cuantia = d.getElementById("pu-cuantia");
-    if (cierre) { cierre.innerHTML = htmlCierre(p); cierre.classList.toggle("hidden", !cierre.innerHTML); }
-    if (cuantia) { cuantia.innerHTML = htmlCuantia(p); cuantia.classList.toggle("hidden", !cuantia.innerHTML); }
-    for (const [id, fn] of [["pu-tipo", htmlTipo], ["pu-modalidad", htmlModalidad], ["pu-manifestacion", htmlManifestacion]]) {
-      const nodo = d.getElementById(id);
-      if (nodo) { nodo.innerHTML = fn(p); nodo.classList.toggle("hidden", !nodo.innerHTML); }
-    }
+    const manif = d.getElementById("pu-manifestacion");
+    if (manif) { manif.innerHTML = htmlManifestacion(p); manif.classList.toggle("hidden", !manif.innerHTML); }
+    /* ═══ EL CALENDARIO DE CIERRES ═══ Vive en su propia sección y en su propio
+       módulo, pero se pinta desde AQUÍ y con el agregado que ya vino en esta
+       misma respuesta: pedirlo por su cuenta serían dos peticiones al mismo
+       endpoint —y dos cálculos completos del corpus si la caché estuviera
+       fría—, y dos respuestas distintas podrían enseñar dos listas distintas de
+       la misma pestaña. Si el módulo no cargó, la sección se queda oculta: el
+       pulso no se cae por un gráfico. */
+    const Cal = raizCalendario();
+    const cuerpoCal = d.getElementById("cal-cuerpo"), seccionCal = d.getElementById("calendario");
+    if (Cal && cuerpoCal) Cal.montar(cuerpoCal, p.calendario, { seccion: seccionCal });
+    else if (seccionCal) seccionCal.classList.add("hidden");
     d.getElementById("pu-nota").textContent = htmlNota(p);
     // sin departamentos ni entidades (perfil sin licitaciones) las cajas se esconden
     d.getElementById("pu-departamentos").classList.toggle("hidden", !(p.porDepartamento || []).length);
     d.getElementById("pu-entidades").classList.toggle("hidden", !(p.topEntidades || []).length);
-    raiz.classList.remove("hidden");
+    mostrar(true);
     perfilPintado = perfil;
     return true;
   }
   const olvidar = () => { perfilPintado = null; };
 
-  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlCierre, htmlCuantia, htmlTipo, htmlModalidad, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, ticksRedondos, htmlNota };
+  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, ticksRedondos, htmlNota };
 });
