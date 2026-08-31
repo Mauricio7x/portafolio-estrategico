@@ -12850,19 +12850,27 @@ async function main() {
             "el reinicio tiene que correr ANTES de poner los valores nuevos, o se los llevaría por delante");
         }
 
-        /* ---- el enganche en el panel (mismo archivo, pestaña admin) ---- */
+        /* ---- el enganche en el LISTADO (la tabla de destacados se retiró) ----
+           El 31-ago-2026 se fue la tabla «Top 10 procesos más atractivos» del
+           tablero, y con ella su botón «Mi precio», su badge «APU listo» y el
+           `cargarApuListos` que lo alimentaba. La entrada a Precios por proceso
+           NO se perdió: vive en la tarjeta del listado, que es donde el
+           ingeniero decide — y ahí la guarda del botón sigue haciendo la misma
+           falta, porque el clic burbujea hasta el delegado de la tarjeta. */
         assert.ok(/closest\("\.btn-apu"\)/.test(limpio),
-          "el manejador de la fila debe resolver el botón APU, o abriría además SECOP II");
-        assert.ok(limpio.indexOf('e.target.closest(".btn-apu")', limpio.indexOf('$("d-destacados")')) <
-          limpio.indexOf('const fila = e.target.closest(".fila-proceso")'),
-          "la guarda del botón APU tiene que ir ANTES de resolver la fila");
-        assert.ok(limpio.includes("/api/apu?op=listar&perfil="),
-          "el listado de borradores se consulta aparte de /api/resumen, que se cachea 300 s");
-        assert.ok(limpio.indexOf("await cargarApuListos(perfil)") < limpio.indexOf("pintarDashboard(cuerpo,"),
-          "el listado tiene que cargarse ANTES de pintar, o el badge saldría una pintada tarde");
-        assert.ok(unoHtml.includes("<th class=\"py-1\">Mi precio</th>"), "index.html sin la columna del precio (antes «APU»; Fase 6 la tradujo)");
-        assert.ok(limpio.includes('colspan="7"'),
-          "el estado vacío de la tabla tiene que cubrir las 7 columnas, no 6");
+          "el manejador de la tarjeta debe resolver el botón APU, o abriría además el detalle");
+        {
+          const iDel = limpio.indexOf('$("lista").addEventListener');
+          assert.ok(iDel > 0, "el delegado del listado tiene que seguir ahí: las tarjetas se repintan en cada búsqueda");
+          const cuerpoDel = limpio.slice(iDel, limpio.indexOf("\n  });", iDel));
+          assert.ok(cuerpoDel.indexOf('closest(".btn-apu")') > 0
+            && cuerpoDel.indexOf('closest(".btn-apu")') < cuerpoDel.indexOf('closest(".banda-competencia")'),
+            "la guarda del botón «Mi precio» vive DENTRO del delegado de la lista y va antes que el `closest` más laxo, o el clic abriría además el detalle");
+        }
+        assert.ok(!/celdaApuProceso|cargarApuListos|apuListos/.test(limpio),
+          "el botón y el badge de la tabla retirada no pueden sobrevivir sin tabla: era código muerto sirviendo a diez filas que ya no existen");
+        assert.ok(!/id="d-destacados"|id="d-entidades"|id="d-departamentos"/.test(unoHtml),
+          "las tres tablas retiradas del tablero no pueden volver (encargo del 31-ago-2026)");
 
         // la sugerencia de baja exige BASE antes de interpolar una cifra
         assert.ok(/procesos\s*<\s*r\.min_procesos/.test(limpio),
@@ -14823,18 +14831,37 @@ async function main() {
          OTRO payload, el `competencia_entidad` de /api/oportunidades). El
          `|| 0` disfrazaba el `undefined` de cero, así que el conteo era 0
          SIEMPRE, con cualquier entidad y cualquier dato. */
+      /* ⚠️ LA CERCA CENSA, NO SEÑALA UN HANDLER (31-ago-2026). Hasta hoy esto
+         miraba el detalle en línea de la tabla «Quién publica más» del tablero
+         — y esa tabla se retiró con el encargo del ingeniero, así que la
+         cerradura se habría ido con ella y el campo fantasma podría volver por
+         cualquier otro renderizador. Se convierte en un CENSO de los módulos
+         del navegador: NINGUNO puede leer `total_procesos` del payload del
+         detalle de competencia (ese nombre pertenece al OTRO payload), y quien
+         pinte un promedio tiene que exigir base antes. */
       {
-        const i = admJs.indexOf('$("d-entidades").addEventListener');
-        // sin comentarios: lo que se vigila es el CÓDIGO. El comentario que
-        // explica el defecto cita el campo viejo a propósito.
-        const handler = sinComentarios(admJs.slice(i, admJs.indexOf("\n  });", i)));
-        assert.ok(i > 0, "no se encontró el detalle en línea del panel");
-        assert.ok(!/i\.total_procesos/.test(handler),
-          "el detalle del panel vuelve a leer `total_procesos`: ese campo NO existe en /api/competencia-detalle");
-        assert.ok(/i\.procesos_contados/.test(handler),
-          "el conteo del detalle se llama `procesos_contados` — es el nombre que devuelve el endpoint");
-        assert.ok(/const conBase = /.test(handler),
-          "el detalle del panel debe exigir base antes de pintar un promedio, igual que el badge");
+        /* El censo va sobre los CONSUMIDORES del endpoint, no sobre todo el
+           texto: `total_procesos` SÍ existe —y se lee bien— en el otro payload,
+           el `competencia_entidad` que embebe el listado, y prohibirlo en
+           bloque sería confundir los dos otra vez, que es el defecto original
+           en espejo. Se barren todos los módulos del navegador; en cada
+           llamada a `?op=entidad` se mira el cuerpo que la sigue. Que un
+           promedio exija BASE antes de pintarse lo vigilan las dos cerraduras
+           de arriba —`bandaCompetencia` con su `conBase` y el modal con su
+           comparación en línea—, que son los dos únicos sitios que lo pintan:
+           repetirlo aquí con otra forma sería una tercera regla que diverge. */
+        const modulosNav = fs.readdirSync(path.join(__dirname, "..", "public")).filter((f) => f.endsWith(".js"));
+        let consumidores = 0;
+        for (const f of modulosNav) {
+          const src = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8"));
+          for (const m of src.matchAll(/op=entidad&/g)) {
+            consumidores++;
+            const cuerpoC = src.slice(m.index, m.index + 2600);
+            assert.ok(!/\.total_procesos\b/.test(cuerpoC),
+              `${f} vuelve a leer \`total_procesos\` del detalle de competencia: ese campo NO existe ahí (se llama \`procesos_contados\`) y el \`|| 0\` lo disfrazaba de cero`);
+          }
+        }
+        assert.ok(consumidores >= 1, "ningún módulo consume ya `?op=entidad`: el censo se quedó ciego, revísalo");
       }
       /* Y la regla que evita repetirlo: un conteo ausente NO se pinta como 0.
          Ningún renderizador puede convertir «no sé» en «cero» con un `|| 0`. */
@@ -15053,11 +15080,22 @@ async function main() {
          única: `rup-archivo` es el PDF del onboarding (otra sección, otro
          formato) y dos inputs no pueden compartir id. */
       for (const debe of ['id="dashboard"', 'id="d-perfil"', 'id="btn-actualizar"', 'id="d-visibles"',
-        'id="d-obra"', 'id="d-consultoria"', 'id="d-semana"', 'id="d-barras"', 'id="d-entidades"',
-        'id="d-departamentos"', 'id="d-destacados"', 'id="d-meta"', 'id="d-skeleton"',
+        'id="d-obra"', 'id="d-consultoria"', 'id="d-semana"', 'id="d-barras"', 'id="d-meta"', 'id="d-skeleton"',
         'id="seccion-rup"', 'id="rup-json-archivo"', 'id="rup-preview"', 'id="btn-rup-cargar"',
         'id="btn-rup-cancelar"', 'id="btn-rup-descargar"', 'id="rup-actual"']) {
         assert.ok(admHtml.includes(debe), `index.html sin ${debe} (falta el dashboard o la carga de RUP)`);
+      }
+      /* ⚠️ Y LOS TRES QUE SE FUERON NO PUEDEN VOLVER (encargo del ingeniero,
+         31-ago-2026): «Quién publica más» (#d-entidades), las barras «Dónde
+         están» (#d-departamentos) y el «Top 10 procesos más atractivos»
+         (#d-destacados) se retiraron del tablero por ruido visual —los dos
+         primeros repetían, en la misma pestaña, los repartos que el pulso ya
+         publica—. Una prueba que solo quita el id de la lista de arriba deja la
+         puerta abierta: hace falta la negativa, y con ella el marcado no puede
+         reaparecer sin que alguien lea este comentario. */
+      for (const noDebe of ['id="d-entidades"', 'id="d-departamentos"', 'id="d-destacados"', 'id="d-destacados-titulo"']) {
+        assert.ok(!admHtml.includes(noDebe),
+          `${noDebe} volvió al tablero: se retiró el 31-ago-2026 y lo que hacía falta —a qué proceso presentarse— lo resuelve el calendario`);
       }
       // el formulario del token no existe en ninguna pestaña
       assert.ok(!admHtml.includes('id="seccion-token"') && !admHtml.includes('id="input-token-admin"'),
@@ -16238,22 +16276,290 @@ async function main() {
         assert.ok(/function abrirPanelFiltros\(abrir\)/.test(appL) && /ev\.key === "Escape"/.test(appL) && /aria-expanded/.test(appL), "app.js abre/cierra la hoja (botón, Listo, velo, Esc) y marca aria-expanded");
         assert.ok(/nBadge\.textContent = String\(fichas\.length\)/.test(appL), "el botón Filtros lleva el número de filtros activos");
         assert.ok(!/Sin filtros: se muestran todas/.test(appL), "la frase «Sin filtros: se muestran todas…» se fue: sin filtros no hay nada que decir");
-        for (const id of ["pu-cierre", "pu-cuantia"]) assert.ok(tab.includes(`id="${id}"`), `falta el gráfico #${id}`);
-        const pCh = { porCierre: [{ id: "3d", etiqueta: "Cierra en 3 días o menos", n: 9, valor: 3e10 }, { id: "7d", etiqueta: "Cierra esta semana", n: 14, valor: 6.4e10 }, { id: "15d", etiqueta: "x", n: 61, valor: 2e11 }, { id: "+15d", etiqueta: "y", n: 290, valor: 1.5e12 }], cierreSinFecha: 18,
-          porCuantia: [{ id: "hasta_50m", etiqueta: "Hasta $50 millones", min: 0, max: 5e7, n: 120, valor: 3e9 }, { id: "50_200m", etiqueta: "b", min: 5e7, max: 2e8, n: 130, valor: 1e10 }, { id: "200_1000m", etiqueta: "c", min: 2e8, max: 1e9, n: 98, valor: 4e10 }, { id: "mas_1000m", etiqueta: "d", min: 1e9, max: null, n: 44, valor: 1.8e12 }], cuantiaSinDato: 0 };
-        const gC = PulsoPub.htmlCierre(pCh), gQ = PulsoPub.htmlCuantia(pCh);
-        assert.ok(/<svg /.test(gC) && /data-filtro="cierre=3d"/.test(gC) && /data-filtro="cierre=7d"/.test(gC) && /data-filtro="cierre=\+15d"/.test(gC), "cada barra del gráfico de cierre ES un filtro del listado");
-        assert.ok(/data-filtro="min=0&amp;max=50000000"/.test(gQ) && /data-filtro="min=1000000000"/.test(gQ), "cada barra del gráfico de cuantía ES un filtro (min/max)");
-        assert.ok(/18 sin fecha de cierre publicada/.test(gC), "lo que no cae en ninguna barra se dice, no se reparte");
-        assert.strictEqual(PulsoPub.htmlCierre({ porCierre: pCh.porCierre.map((c) => ({ ...c, n: 0 })) }), "", "una gráfica de ceros no se dibuja");
-        assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(gC + gQ), "sin emojis en los gráficos");
-        // el endpoint publica las distribuciones y suman con lo que no cae en cubeta
-        assert.ok(Array.isArray(pu.cuerpo.porCierre) && pu.cuerpo.porCierre.length === 4 && Array.isArray(pu.cuerpo.porCuantia) && pu.cuerpo.porCuantia.length === 4);
-        assert.strictEqual(pu.cuerpo.porCierre.reduce((a, c) => a + c.n, 0) + pu.cuerpo.cierreSinFecha, pu.cuerpo.total, "cierre: las cubetas + sin fecha suman el total");
-        assert.strictEqual(pu.cuerpo.porCuantia.reduce((a, c) => a + c.n, 0) + pu.cuerpo.cuantiaSinDato, pu.cuerpo.total, "cuantía: las cubetas + sin dato suman el total");
-        assert.deepStrictEqual(pu.cuerpo.porCierre.map((c) => c.id), ["3d", "7d", "15d", "+15d"], "las cubetas de cierre son las VENTANAS del filtro");
+        /* ⚠️ LOS CUATRO GRÁFICOS DEL PULSO SE RETIRARON (encargo del ingeniero,
+           31-ago-2026): «Cuándo hay que entregar la oferta», «Cuánto valen»,
+           «Qué tipo de trabajo es» y «Cómo lo adjudican». Lo que aquí se
+           vigilaba —que cada barra FUERA un filtro del listado y que lo que no
+           cae en ninguna cubeta se DIGA en vez de repartirse a ojo— pasa al
+           calendario, que es lo que ocupa su sitio y responde la misma pregunta
+           con el día exacto en vez de una cubeta. La negativa se queda: sin
+           ella el marcado podría reaparecer sin que nadie lo note. */
+        for (const id of ["pu-cierre", "pu-cuantia", "pu-tipo", "pu-modalidad"]) {
+          assert.ok(!tab.includes(`id="${id}"`), `el gráfico #${id} volvió al pulso: se retiró el 31-ago-2026 por ruido visual`);
+        }
+        assert.ok(tab.includes('id="calendario"') && tab.includes('id="cal-cuerpo"'),
+          "el calendario de cierres vive en Mi empresa: es lo que sustituye a «Cuándo hay que entregar la oferta»");
+        assert.ok(tab.indexOf('id="dashboard"') < tab.indexOf('id="calendario"') && tab.indexOf('id="calendario"') < tab.indexOf('id="pulso"'),
+          "el calendario va justo debajo del tablero: es lo único de la pestaña que no admite retraso");
+        assert.ok(/<section id="calendario"[^>]*\bhidden\b/.test(tab),
+          "el calendario nace OCULTO: sin cierres que situar no se enseña (vacío y honesto antes que bonito y falso)");
+        assert.ok(htmlL.indexOf('<script src="/calendario.js">') < htmlL.indexOf('<script src="/pulso.js">'),
+          "calendario.js se carga antes que pulso.js, que es quien lo llama");
+        /* El endpoint dejó de publicar los cuatro repartos que solo alimentaban
+           esas barras: un agregado que nadie pinta es peso muerto en la caché. */
+        for (const campo of ["porCierre", "porCuantia", "porTipo", "porModalidad"]) {
+          assert.ok(!(campo in pu.cuerpo), `${campo} sigue viajando en el pulso y ya no lo pinta nadie`);
+        }
+        /* ═══ EL CALENDARIO, CONTRA EL ENDPOINT REAL ═══
+           No se comprueba que la función «se llame»: se mira lo que el handler
+           DEVUELVE sobre el corpus de la suite, que es lo que el ingeniero
+           acabaría leyendo en pantalla. */
+        {
+          const cal = pu.cuerpo.calendario;
+          assert.ok(cal && Array.isArray(cal.dias), "el pulso tiene que publicar el calendario de cierres");
+          assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(cal.hoy), "el «hoy» del calendario lo fija el servidor (hora Colombia), no el reloj del aparato");
+          assert.strictEqual(cal.dias.reduce((a, d) => a + d.n, 0) + cal.sinFechaCierre, pu.cuerpo.total,
+            "los días + los que no traen fecha de cierre legible tienen que sumar el total del pulso: ni se pierde ni se inventa un proceso");
+          assert.ok(cal.dias.every((d, i) => i === 0 || cal.dias[i - 1].fecha < d.fecha), "los días van en orden y sin repetirse");
+          const todos = cal.dias.flatMap((d) => d.procesos);
+          assert.ok(todos.length > 0, "el corpus de la suite tiene que dejar algún proceso con fecha de cierre, o esta prueba no prueba nada");
+          const estados = new Set();
+          for (const d of cal.dias) {
+            assert.strictEqual(d.n, d.procesos.length, `el día ${d.fecha} dice ${d.n} y trae ${d.procesos.length}`);
+            assert.ok(d.valor === null || d.valor > 0, "un día sin ningún presupuesto publicado vale `null`, jamás $0 (R1)");
+            for (const p of d.procesos) {
+              assert.notStrictEqual(p.valor, 0, "una cuantía no publicada es `null`: un $0 en pantalla es una cifra creíble y falsa");
+              assert.ok(p.hora === null || /^\d{2}:\d{2}$/.test(p.hora), `hora ilegible: ${p.hora}`);
+              assert.notStrictEqual(p.hora, "00:00", "la medianoche exacta es «hora no publicada», no un plazo: «12:00 a. m.» dejaría al ingeniero fuera creyendo que le sobra el día");
+              if (p.manifestacion) {
+                estados.add(p.manifestacion.estado);
+                assert.ok(["abierta", "por_confirmar", "vencida", "sin_fecha"].includes(p.manifestacion.estado));
+                assert.ok(!("vencida" in p.manifestacion), "`vencida` como BOOLEANO no puede volver: su `false` se leía como «sigue abierta»");
+                if (!p.manifestacion.confirmada) {
+                  assert.strictEqual(p.manifestacion.quedan_habiles, null, "no hay cuenta atrás sin fecha confirmada por el cronograma del pliego");
+                  assert.strictEqual(p.manifestacion.dias_calendario, null);
+                }
+              }
+            }
+          }
+          assert.ok(cal.norma.includes("2.2.1.2.1.2.20"), "la cita de la norma viaja una vez, a nivel del calendario, y no pegada a cada proceso");
+          console.log(`  · Calendario de cierres: ${cal.dias.length} días · ${todos.length} procesos situados · ${cal.sinFechaCierre} sin fecha · estados de manifestación vistos: ${[...estados].join(", ") || "ninguno"}`);
+        }
       }
       console.log(`  · Puerta primero, cifras después: pulso helder = ${pu.cuerpo.total} (= listado) · cierran esta semana ${pu.cuerpo.cierranEstaSemana.n} · ${pu.cuerpo.porDepartamento.length} dptos · ${pu.cuerpo.topEntidades.length} entidades · landing ${palabras} palabras · mercado plegado`);
+    }
+
+
+    /* ═══════════ j-nonies. EL CALENDARIO DE CIERRES, EJECUTADO ═══════════
+       (encargo del ingeniero, 31-ago-2026: «un calendario en el que se vea el
+       mes actual, el día en el que estamos y cuándo vencen los procesos de este
+       mes… y si es selección abreviada de menor cuantía, hasta cuándo se puede
+       uno presentar o enviar la manifestación de interés»).
+
+       Se EJECUTA lo que se pinta, no se comprueba por regex que una función se
+       llame: el defecto de Motavita lo hizo una CADENA de texto, y la lección
+       que este repositorio ya tiene escrita es que «comprobar por regex que una
+       función se llama no prueba que lo que dice sea verdad». La cerradura
+       central es negativa y vale para los cuatro estados: EL PLAZO PARA AVISAR
+       NO PUEDE LLEVAR HORA NUNCA — el cronograma del pliego publica el DÍA, y
+       una hora inventada deja al contratista fuera del proceso creyendo que
+       llegaba. */
+    {
+      const Cal = require("../public/calendario.js");
+
+      /* (1) LOS CUATRO ESTADOS SE DECLARAN Y SE EJERCITAN. Una prueba que
+         recorre lo que le pongan delante puede no ejercitar ninguno: aquí la
+         lista de estados es explícita y el conjunto visto tiene que ser
+         exactamente ese (la lección del bucle sobre un array vacío). */
+      const ESTADOS = ["abierta", "por_confirmar", "vencida", "sin_fecha"];
+      const casos = [];
+      for (const estado of ESTADOS) {
+        for (const confirmada of [true, false]) {
+          casos.push({
+            aplica: true, estado, confirmada,
+            fecha_limite_legible: confirmada ? "jueves 3 de septiembre" : null,
+            puede_cerrar_desde_legible: "lunes 31 de agosto",
+            vence_a_mas_tardar_legible: "jueves 3 de septiembre",
+            quedan_habiles: confirmada ? 2 : null,
+            dias_calendario: confirmada ? 2 : null,
+            plazo_maximo_habiles: 3,
+            nota: "nota del servidor",
+          });
+        }
+      }
+      const vistos = new Set();
+      /* Lo prohibido es un RELOJ («5:00», «5 p. m.»), no la palabra «horas»:
+         decir que el plazo puede durar unas horas es justamente lo que el
+         ingeniero reportó desde el campo y lo que hay que advertir. */
+      const HORA_RE = /\b\d{1,2}[:.]\d{2}\b|\b\d{1,2}\s*[ap]\.? ?m\.?/i;
+      for (const m of casos) {
+        const p = Cal.plazoManifestacion(m);
+        assert.ok(p && p.titular && p.detalle, `sin plazo para el estado ${m.estado}`);
+        vistos.add(m.estado);
+        const texto = `${p.titular} ${p.detalle}`;
+        /* ⚠️ LA CERRADURA CENTRAL: ni una hora, en ningún estado, con o sin
+           fecha confirmada del pliego. */
+        assert.ok(!HORA_RE.test(texto),
+          `el plazo para avisar enseña una hora («${(texto.match(HORA_RE) || [])[0]}») en el estado ${m.estado}: el cronograma publica el DÍA, jamás la hora`);
+        /* Y sin fecha CONFIRMADA no hay cuenta atrás: un contador es una
+           afirmación (la regla que cerró el defecto de Motavita). */
+        if (!m.confirmada) {
+          assert.ok(!/le quedan/i.test(texto),
+            `el estado ${m.estado} sin fecha del pliego cuenta días hacia atrás: eso vuelve a afirmar el vencimiento por la puerta de atrás`);
+        }
+      }
+      assert.deepStrictEqual([...vistos].sort(), [...ESTADOS].sort(), "la prueba tiene que ejercitar los cuatro estados");
+
+      /* (2) CADA ESTADO DICE LO SUYO, y ninguno dice lo del otro. */
+      const conEstado = (estado, extra = {}) => Cal.plazoManifestacion({ aplica: true, estado, confirmada: false, puede_cerrar_desde_legible: "lunes 31 de agosto", vence_a_mas_tardar_legible: "jueves 3 de septiembre", plazo_maximo_habiles: 3, ...extra });
+      const venc = conEstado("vencida");
+      assert.strictEqual(venc.tono, "cal-gris", "el plazo vencido no es una alarma: es un hecho consumado");
+      assert.ok(/vencido/.test(venc.titular) && /si avisó a tiempo/.test(venc.detalle),
+        "un plazo vencido tiene que decir que solo se puede ofertar si avisó a tiempo: el proceso NO se esconde (el falso negativo cuesta más)");
+      assert.ok(!/[Pp]uede avisar|[Aa]vise/.test(venc.titular + venc.detalle),
+        "no se puede empujar a un trámite imposible");
+      const porC = conEstado("por_confirmar");
+      assert.strictEqual(porC.tono, "cal-rojo", "«la ventana está corriendo» es el estado de MÁXIMA urgencia, no el de menor");
+      assert.ok(/HOY/.test(porC.titular), "…y manda ir HOY");
+      assert.ok(/nunca la hora/.test(porC.detalle),
+        "y dice justo lo que el ingeniero preguntó: la entidad publica el día, no la hora, y puede cerrar a media jornada");
+      const sinF = conEstado("sin_fecha");
+      assert.strictEqual(sinF.tono, "cal-ambar", "sin fecha situable se AVISA en ámbar: el rojo significa «actúe hoy» y aquí lo honesto es «verifíquelo»");
+      const abierta = conEstado("abierta");
+      assert.ok(/puede cerrar desde/.test(abierta.titular) && /techo de 3 días/.test(abierta.detalle),
+        "sin fecha del pliego se dice la VENTANA y que 3 es un techo, no un plazo (la doctrina de Motavita)");
+      assert.ok(/unas horas del mismo día/.test(abierta.detalle),
+        "«a veces solo abren 4 horas»: el ingeniero lo reportó desde el campo y tiene que estar dicho");
+      const abiertaConf = conEstado("abierta", { confirmada: true, fecha_limite_legible: "jueves 3 de septiembre", quedan_habiles: 2, dias_calendario: 2 });
+      assert.ok(/hasta el jueves 3 de septiembre/.test(abiertaConf.titular) && /Le quedan 2 días de oficina/.test(abiertaConf.detalle),
+        "con la fecha del pliego SÍ se puede contar hacia atrás, y se dice hasta cuándo");
+      assert.strictEqual(Cal.plazoManifestacion(null), null, "un proceso que no exige el trámite no lleva plazo (la licitación pública no manifiesta interés)");
+
+      /* (2-bis) LA HORA, SEMBRADA A PROPÓSITO EN EL SERVIDOR. El corpus de la
+         suite no trae ninguna fila con la medianoche exacta ni ninguna con la
+         ventana de manifestación abierta, así que las aserciones de arriba
+         sobre la respuesta real NO EJERCITAN esos casos: un bucle de
+         aserciones sobre una lista que puede no traerlos es una prueba que
+         puede no existir (la lección del bucle vacío que escondía un 500). Se
+         siembran aquí, contra `agregarPulso`, que es la función real.
+         La regla: `T15:00` es la hora que la entidad publicó y se enseña;
+         `T00:00` es un timestamp truncado y NO es una hora límite —«12:00
+         a. m.» dejaría al ingeniero fuera creyendo que le sobraba el día—; una
+         fecha sin parte horaria tampoco inventa una. */
+      {
+        const Entrada = require("../lib/handlers/perfil/entrada.js");
+        const AHORA_CAL = Date.parse("2026-09-02T15:00:00Z");
+        const base = {
+          entidad: "MUNICIPIO DE PRUEBA", nit_entidad: "800113389", tipo_de_contrato: "Obra",
+          estado_del_procedimiento: "Publicado", ciudad_entidad: "IBAGUÉ", departamento_entidad: "Tolima",
+          modalidad_de_contratacion: "Licitación pública",
+          nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL EDEN",
+        };
+        const sembradas = [
+          { ...base, id_del_proceso: "H-hora", fecha_cierre: "2026-09-09T15:00:00.000", precio_base: 1e9 },
+          { ...base, id_del_proceso: "H-medianoche", fecha_cierre: "2026-09-09T00:00:00.000", precio_base: 1e9 },
+          { ...base, id_del_proceso: "H-solofecha", fecha_cierre: "2026-09-09", precio_base: 0 },
+          { ...base, id_del_proceso: "H-sinfecha", precio_base: 1e9 },
+          /* menor cuantía con la apertura EN EL FUTURO: la única forma de que la
+             ventana se certifique abierta (`abierta`), que el corpus no produce. */
+          { ...base, id_del_proceso: "H-abierta", modalidad_de_contratacion: "Selección abreviada de menor cuantía",
+            fecha_de_publicacion_del: "2026-09-08T09:00:00.000", fecha_cierre: "2026-09-30T17:00:00.000", precio_base: 2e9 },
+        ];
+        const calS = Entrada.agregarPulso(sembradas, AHORA_CAL).calendario;
+        const porId = new Map(calS.dias.flatMap((d) => d.procesos).map((x) => [x.id, x]));
+        assert.strictEqual(porId.get("H-hora").hora, "15:00", "la hora publicada se lee LITERAL del dato (es hora de Colombia: el dataset publica timestamps flotantes)");
+        assert.strictEqual(porId.get("H-medianoche").hora, null, "la medianoche exacta es un timestamp truncado, no una hora límite: enseñarla como plazo deja al contratista fuera");
+        assert.strictEqual(porId.get("H-solofecha").hora, null, "una fecha sin parte horaria no inventa una hora");
+        assert.strictEqual(porId.get("H-solofecha").valor, null, "un `precio_base` de 0 es «sin presupuesto publicado», nunca $0 (R1)");
+        assert.ok(!porId.has("H-sinfecha") && calS.sinFechaCierre === 1,
+          "un proceso sin fecha de cierre legible NO se coloca en un día cualquiera: se cuenta aparte");
+        const mAb = porId.get("H-abierta").manifestacion;
+        assert.strictEqual(mAb.estado, "abierta", "con la apertura en el futuro la ventana se certifica abierta");
+        assert.strictEqual(mAb.quedan_habiles, null, "…y aun así no hay cuenta atrás: la fecha no viene del cronograma del pliego");
+        const plazoAb = Cal.plazoManifestacion(mAb);
+        assert.ok(!/\b\d{1,2}[:.]\d{2}\b/.test(`${plazoAb.titular} ${plazoAb.detalle}`),
+          "ni con la ventana abierta se enseña una hora para manifestar interés");
+        assert.strictEqual(porId.get("H-hora").manifestacion, null, "una licitación pública no exige manifestación: no se le inventa un plazo");
+      }
+
+      /* (3) LA REJILLA: el mes, el día de hoy y las casillas pulsables.
+         El alineamiento se comprueba contra `Date.UTC`, que es una fuente
+         independiente de la del módulo: un calendario desalineado enseña los
+         cierres el día equivocado, que en esta app es la diferencia entre
+         llegar y no llegar. */
+      const calFix = {
+        hoy: "2026-09-02",
+        sinFechaCierre: 4,
+        norma: "…",
+        dias: [
+          { fecha: "2026-09-02", n: 1, valor: 500000000, procesos: [{ id: "A", objeto: "CONSTRUCCIÓN DE PLACA HUELLA", entidad: "MUNICIPIO DE PLANETA RICA", valor: 500000000, ciudad: "PLANETA RICA", departamento: "Córdoba", modalidad: "abreviada", hora: "15:00", url: "https://community.secop.gov.co/x", manifestacion: casos.find((c) => c.estado === "por_confirmar" && !c.confirmada) }] },
+          { fecha: "2026-09-13", n: 2, valor: null, procesos: [
+            { id: "B", objeto: "MEJORAMIENTO URBANO", entidad: "GOBERNACIÓN", valor: null, ciudad: null, departamento: "Caquetá", modalidad: "licitacion", hora: null, url: null, manifestacion: null },
+            { id: "C", objeto: "OTRO", entidad: "E", valor: 100, ciudad: "IBAGUÉ", departamento: "Tolima", modalidad: "abreviada", hora: "17:00", url: "https://x", manifestacion: casos.find((c) => c.estado === "vencida" && c.confirmada) }] },
+          { fecha: "2026-10-05", n: 1, valor: 1, procesos: [{ id: "D", objeto: "DEL MES SIGUIENTE", entidad: "E", valor: 1, ciudad: "X", departamento: "Y", modalidad: "obra", hora: null, url: null, manifestacion: null }] },
+        ],
+      };
+      const rej = Cal.htmlRejilla(calFix, { mes: "2026-09", dia: "2026-09-13" });
+      const huecos = (rej.match(/cal-vacia/g) || []).length;
+      assert.strictEqual(huecos, (new Date(Date.UTC(2026, 8, 1)).getUTCDay() + 6) % 7,
+        "la rejilla arranca en el día de la semana equivocado: los cierres saldrían corridos");
+      assert.strictEqual((rej.match(/class="cal-celda[^"]*"/g) || []).length, huecos + 30, "septiembre tiene 30 días");
+      assert.ok(/cal-celda[^"]*cal-hoy/.test(rej) && /data-dia="2026-09-02"[^>]*aria-label="[^"]*y es hoy/.test(rej),
+        "el día en el que estamos tiene que estar marcado: es la mitad del encargo");
+      assert.ok(/data-dia="2026-09-13"[^>]*aria-pressed="true"/.test(rej), "el día abierto se marca como pulsado");
+      assert.ok(!/data-dia="2026-09-14"/.test(rej),
+        "un día sin cierres NO es pulsable: ninguna pulsación sin respuesta visible");
+      assert.ok(!/data-dia="2026-10-05"/.test(rej), "la rejilla de septiembre no puede traer días de octubre");
+
+      /* (4) LOS TRES DATOS QUE PIDIÓ EL ENCARGO, y el «sin dato» donde no hay. */
+      const pantalla = Cal.htmlMes(calFix, { mes: "2026-09", dia: "2026-09-13", proceso: "C" });
+      assert.ok(/OTRO/.test(pantalla) && /IBAGUÉ · Tolima/.test(pantalla) && /\$ 100/.test(pantalla),
+        "cada proceso enseña objeto, dónde queda y valor total: son los tres datos del encargo");
+      assert.ok(/Valor total del contrato/.test(pantalla) && /hasta las 17:00/.test(pantalla),
+        "la ficha abierta enseña el valor total y la hora de entrega publicada");
+      assert.ok(/Abrir el proceso en SECOP II/.test(pantalla) && /https:\/\/x/.test(pantalla),
+        "…y el clic tiene que llevar al proceso: es lo que el ingeniero pidió para poder presentarse");
+      const sinValor = Cal.htmlFila({ id: "B", objeto: "MEJORAMIENTO URBANO", valor: null, ciudad: null, departamento: "Caquetá", modalidad: "licitacion", hora: null, url: null, manifestacion: null }, { abierto: true });
+      assert.ok(/Sin presupuesto publicado/.test(sinValor) && !/\$ 0\b/.test(sinValor),
+        "una cuantía no publicada se DICE: un «$ 0» maquetado es una cifra creíble y falsa (R1)");
+      assert.ok(/hora de cierre no viene publicada/.test(sinValor),
+        "sin hora publicada se dice que falta, jamás se inventa «12:00 a. m.»");
+      assert.ok(/no trae enlace publicado/.test(sinValor), "un proceso sin enlace lo dice y explica qué hacer");
+      assert.ok(/Caquetá/.test(sinValor), "con departamento pero sin ciudad se enseña lo que sí hay");
+      const sinLugar = Cal.htmlFila({ id: "Z", objeto: "SIN NADA", valor: null, ciudad: null, departamento: null, modalidad: null, hora: null, url: null, manifestacion: null }, { abierto: true });
+      assert.ok(/Sin lugar publicado/.test(sinLugar), "sin ciudad ni departamento no se deja el hueco mudo");
+      assert.ok(/Sin dato publicado/.test(sinLugar), "…y en la ficha, cada campo vacío lo dice: un hueco en blanco se lee como un cero");
+
+      /* (4-bis) EL VERBO CAMBIA CON EL DÍA. La primera versión pegaba un
+         complemento a un verbo fijo y sobre un día pasado decía «3 procesos
+         CIERRAN YA CERRARON» — lo cazó la captura del navegador real, no
+         ninguna prueba de Node, así que aquí queda la cerradura. Un día vencido
+         se nombra en pasado: sigue en el calendario a propósito (esconderlo
+         sería un falso negativo), pero no puede leerse como si todavía se
+         pudiera entregar. */
+      {
+        const tit = (fecha, n) => Cal.htmlDia({ hoy: "2026-09-02", dias: [{ fecha, n, valor: null, procesos: Array.from({ length: n }, (_, k) => ({ id: `x${k}`, objeto: "o" })) }] }, { dia: fecha })
+          .match(/<p class="cal-dia-t">([^<]*)/)[1];
+        assert.strictEqual(tit("2026-09-02", 1), "1 proceso cierra hoy");
+        assert.strictEqual(tit("2026-09-02", 3), "3 procesos cierran hoy");
+        assert.strictEqual(tit("2026-09-13", 3), "3 procesos cierran el 13 de septiembre");
+        assert.strictEqual(tit("2026-08-20", 2), "2 procesos cerraron el 20 de agosto");
+        assert.strictEqual(tit("2026-09-01", 1), "1 proceso cerró el 1 de septiembre");
+      }
+
+      /* (5) EL MES ANTERIOR Y EL SIGUIENTE solo se ofrecen si hay algo que ver:
+         un botón que lleva a un mes vacío es una pulsación sin respuesta. */
+      assert.ok(/data-mes="2026-10"(?![^>]*disabled)/.test(pantalla), "octubre tiene cierres: el botón del mes siguiente se ofrece");
+      assert.ok(/data-mes="2026-08"[^>]*disabled/.test(pantalla), "agosto no tiene cierres: el botón del mes anterior va apagado");
+      assert.ok(/4 sin fecha de cierre publicada/.test(pantalla),
+        "lo que no se puede situar en ningún día se DICE, no se reparte a ojo ni se coloca en «hoy»");
+
+      /* (6) EL DÍA QUE SE ABRE SOLO: hoy si tiene cierres; si no, el próximo. */
+      assert.strictEqual(Cal.diaPorDefecto(calFix, "2026-09"), "2026-09-02", "con cierres hoy, se abre hoy");
+      assert.strictEqual(Cal.diaPorDefecto({ ...calFix, hoy: "2026-09-05" }, "2026-09"), "2026-09-13",
+        "sin cierres hoy se abre el PRÓXIMO: «¿qué es lo siguiente que se me vence?»");
+      assert.strictEqual(Cal.diaPorDefecto({ ...calFix, hoy: "2026-12-01" }, "2026-09"), "2026-09-13",
+        "si ya no queda nada por delante en ese mes, se abre el último que hubo");
+      assert.strictEqual(Cal.diaPorDefecto(calFix, "2026-11"), null, "un mes sin cierres no abre ningún día");
+      assert.strictEqual(Cal.htmlMes({ dias: [] }, {}), "", "sin ningún cierre no se dibuja un calendario vacío");
+
+      /* (7) SIN JERGA Y SIN EMOJIS en lo que de verdad se pinta (el censo del
+         fuente ya barre el módulo; esto mira la SALIDA con datos reales). */
+      assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(pantalla), "sin emojis en el calendario");
+      for (const jerga of [/\bpuertas\b/i, /capacidad residual/i, /UNSPSC/, /\bSMMLV\b/]) {
+        assert.ok(!jerga.test(pantalla), `el calendario enseña jerga: ${jerga}`);
+      }
+      console.log(`  · Calendario de cierres (ejecutado): rejilla alineada contra Date.UTC · 4 estados del plazo sin una sola hora inventada · «sin dato» en valor, hora, lugar y enlace · ${calFix.dias.length} días de fixture`);
     }
 
     /* ═══════════ j-octies. CONSORCIO A LA MEDIDA (Fase 10 del plan v4) ═══════════
@@ -17057,7 +17363,10 @@ async function main() {
       assert.ok(/Encaja con su registro ✓/.test(app6) && /No encaja con su registro ✗/.test(app6), "el encaje del registro se dice en llano");
       assert.ok(/cumplen sus requisitos/.test(app6) && /encajan con su registro de proponente/.test(app6), "el resumen del listado no habla de «puertas» ni de «RUP ✓»");
       assert.ok(/Calcular cuánto me cuesta/.test(visibleHtml) && /Descargar mi presupuesto/.test(visibleHtml), "botones en la voz del usuario (§7.2)");
-      assert.ok(/Su registro de proponente/.test(visibleHtml) && /Recalcular cuánto suelen bajar el precio/.test(visibleHtml) && /Tipo de obra/.test(visibleHtml), "Mi empresa traducido");
+      /* «Tipo de obra» era la cabecera de la tabla de destacados, que se retiró
+         el 31-ago-2026. La invariante es la MISMA —Mi empresa habla en llano—,
+         medida ahora sobre el bloque que ocupa su sitio: el calendario. */
+      assert.ok(/Su registro de proponente/.test(visibleHtml) && /Recalcular cuánto suelen bajar el precio/.test(visibleHtml) && /Cuándo se vence cada proceso/.test(visibleHtml), "Mi empresa traducido");
       console.log("  · Traducción (Fase 6): index.html y los 5 módulos del navegador sin jerga del glosario (UNSPSC, CRP, SMMLV, habilitante, subsanable, causal O, tertil, puertas, «RUP ✓/K ✓», Baja típica) · rótulos por data-glosario y Glosario.corto()/VERBOS");
     }
 
@@ -17102,7 +17411,20 @@ async function main() {
           + "\\u{26F5}\\u{26FA}\\u{26FD}\\u{2705}\\u{270A}\\u{270B}\\u{2728}\\u{274C}\\u{274E}"
           + "\\u{2753}-\\u{2755}\\u{2757}\\u{2795}-\\u{2797}\\u{27B0}\\u{27BF}\\u{2B1B}\\u{2B1C}"
           + "\\u{2B50}\\u{2B55}]", "gu");
-        for (const archivo of ["index.html", "app.js", "onboarding.js", "pliego.js"]) {
+        /* ⚠️ CENSO, NO LISTA (31-ago-2026): esta cerca nombraba cuatro archivos
+           y dejaba fuera los otros nueve módulos del navegador — incluido
+           `calendario.js`, que nace con un semáforo de tres colores y es donde
+           más tentador es poner un círculo de color. La ÚNICA excepción
+           declarada es `apu_libro.js`: sus marcadores viajan al Excel
+           exportado, que es otro medio y otra decisión (los demás módulos ya
+           pasan el censo sin excepción: medido). */
+        const EXCEPCIONES_EMOJI = new Set(["apu_libro.js"]);
+        const archivosEmoji = ["index.html"].concat(
+          fs.readdirSync(path.join(__dirname, "..", "public"))
+            .filter((f) => f.endsWith(".js") && !EXCEPCIONES_EMOJI.has(f)));
+        assert.ok(archivosEmoji.includes("calendario.js") && archivosEmoji.length >= 10,
+          "el censo de emojis se quedó corto: tiene que cubrir index.html y todos los módulos menos apu_libro.js");
+        for (const archivo of archivosEmoji) {
           const fuente = fs.readFileSync(path.join(__dirname, "..", "public", archivo), "utf8");
           const hallados = [...new Set(fuente.match(RE_EMOJI_UI) || [])];
           assert.deepStrictEqual(hallados, [],
@@ -17477,10 +17799,23 @@ async function main() {
            fuente sin comentarios: ninguna colisiona con identificadores del
            código (medido antes de añadirlas). */
         const VOSEO_RE = /\b(Pod[ée]s|Cumpl[íi]s|Ten[ée]s|Quer[ée]s|Deb[ée]s|Sab[ée]s|presentarte|pensá|verificá|revisá|hacé|poné|fijate|and[aá]|dale|vas|ejecutaste|tendr[aá]s|Eliminar[aá]s|puedes|tienes|quieres|debes|hazlo)\b/;
-        for (const arch of ["app.js", "portada.js", "pulso.js", "onboarding.js", "filtros.js", "pliego.js", "ganancia.js", "justificacion.js"]) {
-          const txt = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", arch), "utf8"));
-          const m = txt.match(VOSEO_RE);
-          assert.ok(!m, `${arch}: registro formal (usted) — voseo/tuteo encontrado: «${m && m[0]}»`);
+        /* ⚠️ Y ESTA CERCA TAMBIÉN ENUMERABA (31-ago-2026). Barría ocho módulos
+           por su nombre, así que el noveno —`calendario.js`, el más nuevo y el
+           que ocupa la mitad de la primera pantalla— habría entrado sin
+           vigilancia: es EXACTAMENTE el hueco por el que la jerga volvió por
+           `pulso.js` en la auditoría del 27-ago, y la lección escrita entonces
+           («una invariante se defiende con un CENSO, no con una lista») no se
+           había aplicado aquí. Ahora se barren TODOS los public/*.js: hoy
+           ninguno necesita excepción —medido—, y el módulo nuevo entra solo. */
+        {
+          const modulosVoseo = fs.readdirSync(path.join(__dirname, "..", "public")).filter((f) => f.endsWith(".js"));
+          assert.ok(modulosVoseo.includes("calendario.js") && modulosVoseo.includes("app.js"),
+            "el censo de registro formal tiene que cubrir el módulo más nuevo y el más grande");
+          for (const arch of modulosVoseo) {
+            const txt = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", arch), "utf8"));
+            const m = txt.match(VOSEO_RE);
+            assert.ok(!m, `${arch}: registro formal (usted) — voseo/tuteo encontrado: «${m && m[0]}»`);
+          }
         }
         {
           const htmlV = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")
@@ -18953,8 +19288,26 @@ async function main() {
       const enLista25 = filas25.filter((l) => filtrosLista.cumple(l, clasif25(l), estado25)).length;
       assert.strictEqual(pulso25.cierranEstaSemana.n, enLista25,
         "el pulso contaba con floor y todo lo demás con ceil: «N cierran esta semana» abría una lista con menos");
-      const barra7d = pulso25.porCierre.filter((c) => c.id === "3d" || c.id === "7d").reduce((a, c) => a + c.n, 0);
-      assert.strictEqual(barra7d, enLista25, "las barras del pulso son las cubetas del filtro: cada barra ES una lista");
+      /* LAS BARRAS `porCierre` SE RETIRARON con los cuatro gráficos del pulso
+         (31-ago-2026), y la invariante que vigilaban —«lo que el pulso cuenta
+         es lo que la lista abre»— pasa al CALENDARIO, que es quien ocupa su
+         sitio: ni un proceso se pierde ni se inventa al repartirlos por día, y
+         los que no tienen fecha legible se cuentan aparte en vez de caer en un
+         día cualquiera. Es más fuerte que la anterior: comprueba el CONJUNTO de
+         procesos, no solo el conteo de cuatro cubetas. */
+      const cal25 = pulso25.calendario;
+      const idsCal = cal25.dias.flatMap((d) => d.procesos.map((p) => p.id)).sort();
+      assert.deepStrictEqual(idsCal, filas25.map((l) => l.id_del_proceso).sort(),
+        "el calendario tiene que repartir EXACTAMENTE los procesos del pulso: ni uno de más, ni uno de menos");
+      assert.strictEqual(cal25.dias.reduce((a, d) => a + d.n, 0) + cal25.sinFechaCierre, pulso25.total,
+        "los días del calendario + los que no tienen fecha de cierre legible suman el total");
+      for (const d of cal25.dias) {
+        assert.strictEqual(d.n, d.procesos.length, `el día ${d.fecha} dice ${d.n} y trae ${d.procesos.length}`);
+        for (const p of d.procesos) {
+          assert.strictEqual(String(p.id && p.id).slice(0, 1), "P");
+        }
+      }
+      assert.ok(cal25.dias.every((d, i) => i === 0 || cal25.dias[i - 1].fecha < d.fecha), "los días van en orden ascendente");
     }
 
     // ── 26 · los cinco bancos se nombran en la vista previa del importador ───
@@ -19553,20 +19906,38 @@ async function main() {
           "la regla la ACTIVA el llamador que declara su cola: la primitiva no adivina qué nombre es residual");
       }
 
-      /* …y como la activa el llamador, hay que comprobar que el ÚNICO llamador
-         con cola la declara. La llamada vive dentro del IIFE de app.js y no se
-         puede ejecutar suelta, así que aquí la cerradura mira el fuente — es lo
-         que se puede, y por eso se ancla a la llamada concreta y no a que la
-         palabra aparezca en alguna parte del archivo. */
+      /* …y como la activa el llamador, hay que comprobar que NINGÚN llamador con
+         cola se la deje sin declarar. Hasta el 31-ago-2026 el único era el
+         gráfico «Dónde están» del tablero (`barrasRank(filasDep`), que se
+         retiró con las tres tablas del encargo; la cerradura NO se retira con
+         él —la primitiva sigue ahí y el próximo llamador reabriría el defecto—,
+         se convierte en un CENSO: se barren todos los módulos del navegador y,
+         si alguno construye un cubo residual («OTROS») Y llama a `barrasRank`,
+         cada una de sus llamadas tiene que declarar `esCola`. La lista de
+         sitios donde mirar deja huecos; el censo, no. */
       {
-        const appV = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8")
-          .replace(/\/\*[\s\S]*?\*\//g, "");
-        const llamada = (appV.match(/barrasRank\(filasDep[\s\S]{0,320}?\)\n/) || [])[0] || "";
-        assert.ok(llamada, "el tablero sigue pintando los departamentos con `barrasRank(filasDep`");
-        assert.ok(/esCola/.test(llamada),
-          "el tablero tiene la única cola del proyecto («OTROS») y tiene que declararla, o vuelve a encabezar el ranking");
-        assert.ok(/filtroDe[\s\S]*?null/.test(llamada),
-          "…y sigue sin enlazar: `?dep=OTROS` no casa ningún departamento");
+        const sinCom = (t) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+        const modulos = fs.readdirSync(path.join(__dirname, "..", "public")).filter((f) => f.endsWith(".js"));
+        let conCola = 0, conLlamada = 0;
+        for (const f of modulos) {
+          const src = sinCom(fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8"));
+          /* La «llamada» son los 320 caracteres que siguen a `barrasRank(`: los
+             paréntesis anidados de un `filtroDe: (x) => …` hacen que cualquier
+             regex que intente cerrar el paréntesis se equivoque, y equivocarse
+             aquí significa NO VER una llamada — que es exactamente como se
+             quedó ciega la versión anterior de esta cerradura. */
+          const llamadas = [...src.matchAll(/barrasRank\(/g)].map((m) => src.slice(m.index, m.index + 320));
+          if (llamadas.length) conLlamada++;
+          if (!/"OTROS"|'OTROS'/.test(src)) continue;
+          conCola++;
+          for (const ll of llamadas) {
+            assert.ok(/esCola/.test(ll),
+              `${f} construye una cola «OTROS» y llama a barrasRank sin declararla: volvería a encabezar el ranking — ${ll.slice(0, 90)}`);
+          }
+        }
+        assert.ok(conLlamada >= 1, "el censo de barrasRank no encontró ningún llamador: se quedó ciego");
+        assert.strictEqual(conCola, 0,
+          "hoy ningún módulo del navegador construye una cola «OTROS» (el gráfico que la tenía se retiró el 31-ago-2026); si vuelve, tiene que declarar `esCola`");
       }
 
       const api = Viz.apilada([{ etiqueta: "Obra", n: 60 }, { etiqueta: "Interventoría", n: 40 }]);
@@ -19745,31 +20116,42 @@ async function main() {
         "la modalidad se resuelve con FiltrosLista.modalidadDe, no con una segunda lista de literales");
     }
 
-    /* ── el pulso grafica llamando a la MISMA función que cuenta el listado ── */
+    /* ── el pulso y el calendario hablan el MISMO vocabulario que el listado ──
+       Los gráficos «Qué tipo de trabajo es» y «Cómo lo adjudican» se retiraron
+       el 31-ago-2026 (encargo del ingeniero) y con ellos `htmlTipo`/
+       `htmlModalidad`. Lo que aquellas cerraduras defendían —que lo que el
+       pulso enseña sea EXACTAMENTE una categoría del listado, y que salga de
+       `FiltrosLista`, no de una cuenta propia— sigue vigente sobre lo que hoy
+       se pinta: el aviso de manifestación y el calendario. */
     {
       const Pulso = require("../public/pulso.js");
-      const p = { porTipo: { obra: 12, consultoria: 3, interventoria: 5, suministro: 0, servicios: 0, sin_dato: 1 },
-        porModalidad: { licitacion: 8, abreviada: 6, subasta: 0, meritos: 4, minima: 2, directa: 0, especial: 0, otra: 0, sin_dato: 0 },
-        manifestacion: { total: 6, abiertas: 4, urgentes: 4, vencidas: 2, sin_fecha: 0 } };
-      const t = Pulso.htmlTipo(p), m = Pulso.htmlModalidad(p), mf = Pulso.htmlManifestacion(p);
-      assert.ok(/<svg/.test(t) && /<svg/.test(m), "tipo y modalidad se GRAFICAN");
-      /* CADA BARRA ES EXACTAMENTE UN FILTRO del listado: una partición más
-         bonita daría barras que no llevan a ninguna lista. */
+      const Cal = require("../public/calendario.js");
       const Fl = require("../public/filtros.js");
-      for (const f of [...t.matchAll(/data-filtro="([^"]+)"/g)].map((x) => x[1])) {
-        assert.ok(Fl.leerEstado(new URLSearchParams(f)).tipo, `la barra «${f}» tiene que ser un filtro válido del listado`);
-      }
-      for (const f of [...m.matchAll(/data-filtro="([^"]+)"/g)].map((x) => x[1])) {
-        assert.ok(Fl.leerEstado(new URLSearchParams(f)).modalidad, `la barra «${f}» tiene que ser un filtro válido del listado`);
-      }
+      assert.ok(!Pulso.htmlTipo && !Pulso.htmlModalidad && !Pulso.htmlCierre && !Pulso.htmlCuantia,
+        "los cuatro gráficos retirados no pueden volver por la puerta de atrás: si algún día se reponen, se repone también su cerradura");
+      const mf = Pulso.htmlManifestacion({ manifestacion: { total: 6, abiertas: 4, urgentes: 4, vencidas: 2, sin_fecha: 0 } });
       assert.ok(/data-filtro="manif=abierta"/.test(mf), "el aviso de manifestación lleva a su lista");
       /* CERO NO SE PINTA: un recuadro que dice «0» se deja de mirar. */
       assert.strictEqual(Pulso.htmlManifestacion({ manifestacion: { urgentes: 0 } }), "", "sin manifestaciones urgentes no se pinta nada");
-      assert.strictEqual(Pulso.htmlTipo({}), "", "sin reparto no se inventa una gráfica");
-      /* Y el reparto sale de FiltrosLista.facetas, no de una cuenta propia. */
+      /* La modalidad que el calendario enseña en la ficha SALE del catálogo de
+         public/filtros.js: una segunda tabla de nombres se desincronizaría del
+         selector del listado (la lección de `total_procesos`). Se comprueba
+         ejecutando la ficha con cada id que el servidor puede mandar. */
+      for (const m of Fl.MODALIDADES) {
+        const ficha = Cal.htmlFicha({ objeto: "o", entidad: "e", valor: 1, ciudad: "c", departamento: "d", modalidad: m.id, hora: "15:00", url: "https://x" }, null);
+        assert.ok(ficha.includes(m.etiqueta.replace(/&/g, "&amp;")),
+          `la ficha del calendario tiene que llamar a «${m.id}» como lo llama el listado («${m.etiqueta}»)`);
+      }
+      assert.ok(/Sin dato publicado/.test(Cal.htmlFicha({ modalidad: "no_existe" }, null)),
+        "una modalidad que el catálogo no conoce es «sin dato», nunca su identificador crudo en pantalla");
+      /* Y los repartos del pulso salen de FiltrosLista.facetas, no de una cuenta
+         propia; el calendario, de `manifestacionDeFila`, no de una segunda
+         derivación del plazo. */
       const fuenteEntrada = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "perfil", "entrada.js"), "utf8");
       assert.ok(/FiltrosLista\.facetas\(procesos/.test(fuenteEntrada),
         "los repartos del pulso salen de FiltrosLista.facetas: dos cuentas del mismo corpus divergirían");
+      assert.ok(/Manifestacion\.manifestacionDeFila\(l, hoy/.test(fuenteEntrada),
+        "el calendario llama a la regla de la manifestación que ya existe; no la reescribe");
     }
 
     /* ── T7 · EL CAPÍTULO DE LA FILA DESEMPATA · herencia de contexto ──────

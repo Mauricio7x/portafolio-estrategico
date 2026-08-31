@@ -415,6 +415,75 @@
       #modal-competencia { align-items: flex-end; padding: 0; }
       #modal-competencia > .relative { max-width: 100%; max-height: 92vh; border-radius: var(--radius-md) var(--radius-md) 0 0; }
     }
+
+    /* ══════════ CALENDARIO DE CIERRES (encargo del ingeniero, 31-ago-2026) ══════════
+       La rejilla es una `grid` de 7 columnas con casillas cuadradas: en móvil
+       una casilla mide ~44 px, que es el objetivo táctil mínimo, y por eso el
+       número del día y el conteo van apilados y no en línea. `min-width: 0`
+       en la lista y `overflow-wrap` en el objeto son obligatorios: un objeto
+       contractual de SECOP II es una sola línea de 200 caracteres SIN espacios
+       largos y sin ellos ensancha la página entera en 390 px, que es un fallo
+       que ninguna prueba de Node ve. Los colores salen de las variables del
+       tema: el semáforo es clase de color, jamás un emoji. */
+    .cal-barra { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .cal-mes { font-size: 15px; font-weight: 600; color: var(--text-primary); text-transform: capitalize; }
+    .cal-mes-btn { min-width: 34px; height: 34px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+                   background: transparent; color: var(--text-primary); font-size: 18px; line-height: 1; cursor: pointer; }
+    .cal-mes-btn:disabled { opacity: 0.3; cursor: default; }
+    .cal-resumen { margin-top: 6px; font-size: 12px; color: var(--text-secondary); }
+    .cal-rejilla { margin-top: 12px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+    .cal-dow { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); text-align: center; padding-bottom: 2px; }
+    /* `max-height` acompaña al `aspect-ratio`: en una pantalla ancha —o si el
+       CDN de Tailwind no carga y el contenedor pierde su `max-w-6xl`— siete
+       casillas cuadradas se vuelven siete cuadrados de 180 px y el calendario
+       ocupa dos pantallas. Medido en Chromium a 1280 px. */
+    .cal-celda { position: relative; aspect-ratio: 1 / 1; min-height: 40px; max-height: 76px; display: flex; flex-direction: column;
+                 align-items: center; justify-content: center; gap: 2px; border-radius: var(--radius-sm);
+                 border: 1px solid transparent; background: var(--bg-inset); color: var(--text-secondary);
+                 font: inherit; padding: 0; }
+    .cal-vacia { background: transparent; }
+    .cal-num { font-size: 12px; font-variant-numeric: tabular-nums; }
+    .cal-con { background: var(--accent-light); color: var(--text-primary); cursor: pointer; transition: transform var(--transition); }
+    .cal-con:hover { transform: translateY(-1px); }
+    .cal-con .cal-num { font-weight: 600; font-size: 13px; }
+    .cal-n { font-size: 10px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .cal-pasado { opacity: 0.45; }
+    .cal-hoy { border-color: var(--accent); }
+    .cal-hoy .cal-num { color: var(--accent); font-weight: 700; }
+    .cal-abierto { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .cal-detalle { margin-top: 16px; }
+    .cal-dia-t { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    .cal-vacio { font-size: 12px; color: var(--text-secondary); }
+    .cal-lista { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .cal-fila { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-inset); }
+    .cal-fila-abierta { border-color: var(--accent); }
+    .cal-fila-cabeza { display: block; width: 100%; text-align: left; padding: 10px 12px; background: transparent;
+                       border: 0; font: inherit; cursor: pointer; min-width: 0; }
+    .cal-objeto { display: block; font-size: 13px; font-weight: 500; color: var(--text-primary); overflow-wrap: anywhere; }
+    .cal-meta { margin-top: 3px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-secondary); }
+    .cal-valor { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+    .cal-lugar { overflow-wrap: anywhere; }
+    .cal-chip { margin-top: 6px; display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: 600; }
+    .cal-rojo { background: var(--danger-light); color: var(--danger); }
+    .cal-ambar { background: var(--warn-light); color: var(--warn); }
+    .cal-verde { background: var(--ok-light); color: var(--ok-texto); }
+    .cal-gris { background: var(--bg-inset); color: var(--text-secondary); }
+    .cal-ficha { border-top: 1px solid var(--border); padding: 10px 12px 12px; min-width: 0; }
+    .cal-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 18px; }
+    .cal-dato dt { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
+    .cal-dato dd { margin: 2px 0 0; font-size: 13px; color: var(--text-primary); overflow-wrap: anywhere; }
+    .cal-nota { margin-top: 10px; font-size: 11px; color: var(--text-secondary); }
+    .cal-plazo { margin-top: 10px; border-radius: var(--radius-sm); padding: 8px 10px; }
+    .cal-plazo-t { font-size: 12px; font-weight: 600; }
+    .cal-plazo-d, .cal-plazo-n { margin-top: 3px; font-size: 11px; color: var(--text-secondary); }
+    .cal-ir { margin-top: 12px; display: inline-block; border-radius: var(--radius-sm); border: 1px solid var(--border);
+              padding: 7px 14px; font-size: 12px; font-weight: 600; color: var(--text-primary); text-decoration: none; }
+    @media (max-width: 480px) {
+      .cal-celda { min-height: 36px; }
+      .cal-num { font-size: 11px; }
+      .cal-datos { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) { .cal-con:hover { transform: none; } }
   </style>
 </head>
 <body class="antialiased">
@@ -779,47 +848,45 @@
             <div id="d-barras" class="mt-1"></div>
           </div>
 
-          <div class="mt-6 grid gap-6 lg:grid-cols-2">
-            <div class="min-w-0 overflow-hidden">
-              <h3 class="text-sm font-semibold tracking-tight">Quién publica más</h3>
-              <p class="mt-0.5 text-xs text-gray-400">Pulse una fila para ver los procesos que sostienen su nivel de competencia.</p>
-              <div class="tabla-scroll mt-2 min-w-0 overflow-x-auto">
-                <table class="w-full text-sm">
-                  <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
-                    <tr><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2 text-right" title="Procesos visibles hoy para este perfil">Procesos<br><span class="font-normal normal-case text-gray-300">visibles hoy</span></th><th class="py-1 pr-2">Competencia</th><th class="py-1 text-right" title="Promedio de oferentes en el histórico de 2 años">Prom. oferentes<br><span class="font-normal normal-case text-gray-300">histórico 2 años</span></th></tr>
-                  </thead>
-                  <tbody id="d-entidades" class="divide-y divide-gray-100"></tbody>
-                </table>
-              </div>
-            </div>
-            <!-- La tabla de tres columnas se sustituye por barras rankeadas: el
-                 trabajo del dato es COMPARAR magnitudes entre nombres largos, y eso
-                 la barra lo resuelve de un vistazo. `d-departamentos` conserva su id
-                 —renombrarlo mataría app.js— pero deja de ser un <tbody>: una <ul>
-                 dentro de un <tbody> es HTML inválido y el navegador la expulsa
-                 fuera de la tabla, que es un fallo mudo. -->
-            <div id="d-departamentos-box" class="min-w-0 overflow-hidden">
-              <h3 class="text-sm font-semibold tracking-tight">Dónde están</h3>
-              <div id="d-departamentos" class="mt-1"></div>
-            </div>
-          </div>
-
-          <div class="mt-6">
-            <h3 id="d-destacados-titulo" class="text-sm font-semibold tracking-tight">Top 10 procesos más atractivos</h3>
-            <div class="tabla-scroll mt-2 min-w-0 overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
-                  <tr><th class="py-1 pr-2">Objeto</th><th class="py-1 pr-2">Entidad</th><th class="py-1 pr-2 text-right">Cuantía</th><th class="py-1 pr-2">Cierre</th><th class="py-1 pr-2">Competencia</th><th class="py-1 pr-2">Tipo de obra</th><th class="py-1">Mi precio</th></tr>
-                </thead>
-                <tbody id="d-destacados" class="divide-y divide-gray-100"></tbody>
-              </table>
-            </div>
-          </div>
-
+          <!-- ══════ LO QUE SE FUE DE AQUÍ, Y POR QUÉ (encargo del ingeniero, 31-ago-2026) ══════
+               «Elimina lo subrayado en rojo: no se ve estético, mucho texto que no
+               hace nada, solo ruido visual.» Se retiraron TRES bloques de este
+               tablero y de la sección del pulso:
+                 · la tabla «Quién publica más» (#d-entidades) con su detalle en
+                   línea, y las barras «Dónde están» (#d-departamentos): el pulso
+                   ya publica los dos repartos —«Quién las publica» y «Dónde
+                   están»— sobre el MISMO corpus, y dos copias del mismo dato en
+                   la misma pestaña son ruido, no información;
+                 · la tabla «Top 10 procesos más atractivos» (#d-destacados): una
+                   lista de diez filas de texto denso a la que el ingeniero nunca
+                   llegaba. Lo que necesitaba —a qué le da clic para presentarse—
+                   lo resuelve el CALENDARIO, que ordena por lo único que no
+                   admite retraso: la fecha de cierre.
+               No vuelven: hay prueba que censa el marcado y falla si reaparecen.
+               El botón «Mi precio» NO se perdió: vive en cada tarjeta del
+               listado (pestaña Licitaciones). -->
           <p id="d-meta" class="mt-6 text-xs text-gray-400"></p>
         </div>
       </section>
 
+
+      <!-- ══════════ EL CALENDARIO DE CIERRES (encargo del ingeniero, 31-ago-2026) ══════════
+           «Un calendario en el que se vea el mes actual, el día en el que
+           estamos y cuándo vencen los procesos de este mes, para poder darle
+           clic al que le interese y presentarse.» Va INMEDIATAMENTE debajo del
+           tablero porque es lo único de esta pestaña que no admite retraso: lo
+           que se necesita ver arriba es lo que se vence.
+
+           Nace OCULTO y lo llena public/calendario.js con el mismo agregado de
+           `/api/perfil?op=pulso` que ya alimenta el resto de Mi empresa (son
+           EXACTAMENTE los mismos procesos que cuenta la pestaña: un calendario
+           que enseñara otra lista sería un segundo juicio). Sin cierres que
+           situar no se enseña: vacío y honesto antes que bonito y falso. -->
+      <section id="calendario" class="mb-6 mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 sm:p-8">
+        <h2 class="text-sm font-semibold tracking-tight" style="color: var(--text-primary);">Cuándo se vence cada proceso</h2>
+        <p class="mt-1 text-xs" style="color: var(--text-secondary);">Los procesos a los que puede presentarse, en el día en que la entidad cierra la entrega de ofertas. Pulse un día y luego un proceso para ver de qué se trata, cuánto vale y dónde queda.</p>
+        <div id="cal-cuerpo" class="mt-4 min-w-0"></div>
+      </section>
       <section id="pulso" class="hidden mb-6">
         <!-- ⚠️ TRANSLÚCIDO SIN BLUR ERA LO PEOR DE LOS DOS MUNDOS (24-ago-2026).
              Estos siete recuadros fijaban `var(--bg-card)` —que es
@@ -839,15 +906,17 @@
              fija la entidad —a veces son horas—. Nace oculto y solo aparece si
              hay alguno: un recuadro que dice «0» se deja de mirar. -->
         <div id="pu-manifestacion" class="mt-4 hidden"></div>
-        <!-- CUATRO REPARTOS, y cada barra es EXACTAMENTE un filtro del listado.
+        <!-- DOS REPARTOS —dónde están y quién las publica—, y cada barra es
+             EXACTAMENTE un filtro del listado. Los otros cuatro gráficos
+             (cuándo cierran, cuánto valen, qué tipo de trabajo, cómo lo
+             adjudican) se retiraron el 31-ago-2026 por encargo del ingeniero:
+             cuatro rejillas de columnas que repetían lo que el tablero de
+             arriba ya dice en cifras, y «cuándo hay que entregar» lo contesta
+             ahora el calendario, con el día exacto en vez de una cubeta.
              `min-w-0 overflow-hidden` es obligatorio: un SVG dentro de un ítem
              de grid sin él ensancha la página 26 px en móvil, y eso no lo ve
              ninguna prueba de Node. -->
         <div class="mt-4 grid gap-4 md:grid-cols-2">
-          <div id="pu-cierre" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
-          <div id="pu-cuantia" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
-          <div id="pu-tipo" class="min-w-0 overflow-hidden hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
-          <div id="pu-modalidad" class="min-w-0 overflow-hidden hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
           <div id="pu-departamentos" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
           <div id="pu-entidades" class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5"></div>
         </div>
@@ -2735,6 +2804,7 @@
   <script src="/glosario.js"></script>
   <script src="/filtros.js"></script>
   <script src="/portada.js"></script>
+  <script src="/calendario.js"></script>
   <script src="/pulso.js"></script>
   <script src="/frases.js"></script>
   <script src="/onboarding.js"></script>
