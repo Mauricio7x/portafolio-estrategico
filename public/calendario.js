@@ -299,6 +299,26 @@
       <div class="cal-detalle">${dia ? htmlDia(cal, { dia, proceso }) : '<p class="cal-vacio">Pulse un día con cierres para ver los procesos.</p>'}</div>`;
   }
 
+  /* ══ QUÉ MES SE ABRE SOLO ══ (defecto de producción, 31-ago-2026)
+     El calendario abría SIEMPRE el mes de hoy, y el ingeniero lo vio el 31 de
+     agosto: agosto ya no tenía ni un cierre —todo lo suyo vencía en
+     septiembre— así que la pantalla enseñaba una rejilla vacía con 264
+     procesos esperando al otro lado de la flecha. La regla: se abre el mes de
+     HOY si tiene cierres; si no, el PRÓXIMO que los tenga (y si ya no queda
+     nada por delante, el último que hubo). El día de hoy se sigue marcando
+     cuando se navega a su mes: «ver el mes actual» no se pierde, se pierde
+     solo el mes vacío. Los últimos días de cada mes esto pasa SIEMPRE, así que
+     no es un caso raro: es una de cada diez visitas. */
+  function mesPorDefecto(cal) {
+    const dias = cal.dias || [];
+    if (!dias.length) return cal.hoy ? mesDe(cal.hoy) : null;
+    const hoy = cal.hoy || "";
+    const mesHoy = hoy ? mesDe(hoy) : null;
+    if (mesHoy && dias.some((d) => mesDe(d.fecha) === mesHoy)) return mesHoy;
+    const proximo = dias.find((d) => d.fecha > hoy);
+    return mesDe((proximo || dias[dias.length - 1]).fecha);
+  }
+
   /* ══ QUÉ DÍA SE ABRE SOLO ══ El de hoy si tiene cierres; si no, el primero
      que venga después (que es la pregunta siguiente: «¿qué es lo próximo que
      se me vence?»). Si ya no queda nada por delante, el último que hubo. */
@@ -334,7 +354,7 @@
       return false;
     }
     ultimo = cal;
-    estado = { mes: mesDe(cal.hoy || cal.dias[0].fecha), dia: null, proceso: null };
+    estado = { mes: mesPorDefecto(cal), dia: null, proceso: null };
     estado.dia = diaPorDefecto(cal, estado.mes);
     pintar(nodo, cal);
     if (seccion) seccion.classList.remove("hidden");
@@ -371,6 +391,6 @@
 
   return {
     montar, olvidar, htmlMes, htmlRejilla, htmlDia, htmlFila, htmlFicha, lugarDeEjecucion,
-    plazoManifestacion, diaPorDefecto, mesDe, mesVecino, mesLegible, fechaLegible, diaSemanaLunes, diasDelMes, pesos,
+    plazoManifestacion, diaPorDefecto, mesPorDefecto, mesDe, mesVecino, mesLegible, fechaLegible, diaSemanaLunes, diasDelMes, pesos,
   };
 });

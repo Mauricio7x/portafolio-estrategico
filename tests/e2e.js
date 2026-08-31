@@ -16199,11 +16199,17 @@ async function main() {
          el calendario, que es lo que se vence. El tablero baja al tercer
          puesto. El orden se fija entero, no por parejas: una cadena de
          comparaciones sueltas deja pasar permutaciones. */
-      const ORDEN_EMPRESA = ['id="pulso"', 'id="calendario"', 'id="pulso-repartos"', 'id="dashboard"', 'id="seccion-rup"'];
+      /* SEGUNDA PASADA DEL 31-ago-2026: el ingeniero movió el calendario abajo,
+         «arriba de donde dice crear consorcio y verifique a su socio». Sigue
+         siendo un cambio de POSICIÓN y nada más — lo que el calendario hace no
+         cambió—, pero el orden se fija entero para que no vuelva a moverse sin
+         que alguien lea esto. */
+      const ORDEN_EMPRESA = ['id="pulso"', 'id="pulso-repartos"', 'id="dashboard"', 'id="seccion-rup"',
+        'id="calendario"', 'id="seccion-consorcio"', 'id="seccion-socio"'];
       const posiciones = ORDEN_EMPRESA.map((id) => ({ id, i: tab.indexOf(id) }));
       for (const { id, i } of posiciones) assert.ok(i > 0, `falta ${id} en la pestaña Mi empresa`);
       assert.deepStrictEqual([...posiciones].sort((a, b) => a.i - b.i).map((x) => x.id), ORDEN_EMPRESA,
-        "Mi empresa va: «Para Helder, hoy» → calendario → dónde/quién → tablero → su registro");
+        "Mi empresa va: «Para Helder, hoy» → dónde/quién → tablero → su registro → calendario → consorcio y socio");
       const lic = htmlL.slice(iTab, htmlL.indexOf('id="tab-apu"'));
       assert.ok(!lic.includes('id="pulso"') && lic.indexOf('id="f-ordenar"') > 0, "Licitaciones ya no lleva el pulso: empieza por la barra de herramientas");
       const nav = htmlL.slice(htmlL.indexOf('aria-label="Secciones"'), htmlL.indexOf("</nav>"));
@@ -16215,7 +16221,13 @@ async function main() {
       assert.ok(palabrasEmpresa < 1400, `Mi empresa (con Sistema plegado incluido) tiene ${palabrasEmpresa} palabras en el HTML`);
       assert.ok(htmlL.indexOf('<script src="/pulso.js">') < htmlL.indexOf('<script src="/app.js">'), "pulso.js se carga antes que app.js");
       const appL = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
-      assert.ok(/function refrescarPulso\(\)/.test(appL) && /refrescarPulso\(\);/.test(appL.slice(appL.indexOf("function abrirApp"), appL.indexOf("function abrirApp") + 1400)), "abrirApp refresca el pulso");
+      /* `refrescarPulso` acepta `{ forzar }` desde el 31-ago-2026: al terminar una
+         actualización disparada desde la marca hay que saltarse la memoria del
+         módulo, que si no se queda con el corpus anterior y el corte nuevo no se
+         vería. La firma cambió; lo que se vigila sigue siendo lo mismo. */
+      assert.ok(/function refrescarPulso\(opciones = \{\}\)/.test(appL) && /refrescarPulso\(\);/.test(appL.slice(appL.indexOf("function abrirApp"), appL.indexOf("function abrirApp") + 1400)), "abrirApp refresca el pulso");
+      assert.ok(/refrescarPulso\(\{ forzar: true \}\)/.test(appL),
+        "tras una actualización el pulso se refresca FORZANDO: sin eso la memoria del módulo deja el corpus viejo en pantalla");
       assert.ok(/if \(id === "f-perfil"\) \{ refrescarPulso\(\);/.test(appL), "cambiar de perfil refresca el pulso");
       assert.ok(/window\.Portada\.teaser\(\)/.test(appL), "la landing arranca el TEASER, no la portada entera");
       /* El pliegue «El mercado completo hoy» y su carga perezosa se retiraron con
@@ -16588,6 +16600,27 @@ async function main() {
           "y sin municipio, la entidad sola");
       }
 
+      /* (4-quater) EL MES QUE SE ABRE SOLO — defecto de producción del
+         31-ago-2026, visto por el ingeniero en su pantalla: el calendario abría
+         SIEMPRE el mes de hoy, y ese día agosto ya no tenía un solo cierre
+         —todo lo suyo vencía en septiembre—, así que la pantalla enseñaba una
+         rejilla vacía con 264 procesos al otro lado de la flecha. Los últimos
+         días de cada mes eso pasa siempre: no es un caso raro. */
+      {
+        const dd = (f) => ({ fecha: f, n: 1, valor: null, procesos: [{ id: f, objeto: "o" }] });
+        assert.strictEqual(Cal.mesPorDefecto({ hoy: "2026-09-10", dias: [dd("2026-09-13"), dd("2026-10-05")] }), "2026-09",
+          "con cierres en el mes de hoy, se abre el mes de hoy");
+        assert.strictEqual(Cal.mesPorDefecto({ hoy: "2026-08-31", dias: [dd("2026-09-13"), dd("2026-10-05")] }), "2026-09",
+          "sin un solo cierre en el mes de hoy se abre el PRÓXIMO que los tenga: una rejilla vacía con 264 procesos detrás es la peor pantalla posible");
+        assert.strictEqual(Cal.mesPorDefecto({ hoy: "2026-12-01", dias: [dd("2026-09-13"), dd("2026-10-05")] }), "2026-10",
+          "si ya no queda nada por delante, el último mes que hubo");
+        assert.strictEqual(Cal.mesPorDefecto({ hoy: "2026-08-31", dias: [] }), "2026-08",
+          "sin ningún cierre en ningún mes, el de hoy (y la sección ni se enseña)");
+        // y el día de hoy se sigue marcando cuando se navega a su mes: no se pierde «ver el mes actual»
+        const rejAgosto = Cal.htmlRejilla({ hoy: "2026-08-31", dias: [dd("2026-09-13")] }, { mes: "2026-08", dia: null });
+        assert.ok(/cal-hoy/.test(rejAgosto), "al volver a agosto, el 31 sigue marcado como hoy");
+      }
+
       /* (5) EL MES ANTERIOR Y EL SIGUIENTE solo se ofrecen si hay algo que ver:
          un botón que lleva a un mes vacío es una pulsación sin respuesta. */
       assert.ok(/data-mes="2026-10"(?![^>]*disabled)/.test(pantalla), "octubre tiene cierres: el botón del mes siguiente se ofrece");
@@ -16611,6 +16644,90 @@ async function main() {
         assert.ok(!jerga.test(pantalla), `el calendario enseña jerga: ${jerga}`);
       }
       console.log(`  · Calendario de cierres (ejecutado): rejilla alineada contra Date.UTC · 4 estados del plazo sin una sola hora inventada · «sin dato» en valor, hora, lugar y enlace · ${calFix.dias.length} días de fixture`);
+    }
+
+
+    /* ═══════════ j-decies. LA MARCA ES EL BOTÓN DE ACTUALIZAR ═══════════
+       (encargo del ingeniero, 31-ago-2026: «que el logo y el nombre sea
+       interactivo, que puedas presionar sobre él para actualizar el corte de
+       los datos… que el usuario pueda saber con intuición que ahí se
+       actualizan los datos».)
+
+       Un logotipo pulsable que no PARECE pulsable no existe: lo que se vigila
+       aquí son las señales que lo delatan y —sobre todo— que el botón no
+       reimplemente el encadenado de tandas, que es donde vive la invariante
+       «1.ª full, siguientes auto». */
+    {
+      const htmlM2 = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const appM = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      const barra = htmlM2.slice(htmlM2.indexOf('<header class="barra-superior">'), htmlM2.indexOf("</header>"));
+
+      // (1) la marca ES un botón, y lleva dentro el nombre y el corte
+      assert.ok(/<button id="btn-marca" type="button"/.test(barra), "la marca de la barra superior tiene que ser un <button>");
+      assert.ok(barra.indexOf('id="btn-marca"') < barra.indexOf('data-marca="nombre"')
+        && barra.indexOf('data-marca="nombre"') < barra.indexOf('id="sello-sync"'),
+        "el nombre y el corte de los datos viven DENTRO del botón: el corte es lo que se actualiza y sin él el botón no dice qué hace");
+      assert.ok(!/<h1[^>]*data-marca/.test(barra),
+        "el nombre de la barra no puede ser un <h1> dentro del <button>: un encabezado no es contenido de frase (marcado inválido)");
+      // (2) las señales de que se puede pulsar: flecha circular, cursor, realce y foco
+      assert.ok(/class="marca-giro"/.test(barra) && /M21 3v6h-6/.test(barra),
+        "falta la flecha circular al lado del nombre: es el signo universal de recargar");
+      assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(barra), "la flecha es un SVG en línea, jamás un emoji");
+      for (const regla of [/\.marca-boton\s*\{[^}]*cursor:\s*pointer/, /\.marca-boton:hover\s*\{/, /\.marca-boton:focus-visible\s*\{[^}]*outline/]) {
+        assert.ok(regla.test(htmlM2), `la marca necesita la señal ${regla}: sin cursor, realce y foco no se lee como un botón`);
+      }
+      assert.ok(/\.marca-corte\.corte-viejo\s*\{[^}]*var\(--warn\)/.test(htmlM2),
+        "un corte que no es de hoy tiene que avisar en ÁMBAR: es lo que empuja a pulsar sin tener que acordarse");
+      assert.ok(/prefers-reduced-motion[\s\S]{0,320}marca-girando \.marca-giro \{ animation: none/.test(htmlM2),
+        "con movimiento reducido la flecha no gira");
+
+      // (3) NO reimplementa la sincronización: llama al mismo `actualizarDatos`
+      assert.ok(/btnMarca\.addEventListener\("click", \(\) => \{ marcaEsperandoCorte = true; actualizarDatos\(\); \}\)/.test(appM),
+        "la marca tiene que llamar a `actualizarDatos`, no a una copia del encadenado de tandas");
+      /* Y el camino compartido sigue siendo el DELTA, no la full: la marca es de
+         uso diario y `iniciarFull` vuelve a enero. Se comprueba sobre el cuerpo
+         de `actualizarDatos`, que es lo que la marca dispara — una regex de
+         PROXIMIDAD sobre el fuente casaba con los listeners de al lado y decía
+         que había un defecto donde no lo hay. */
+      const cuerpoAct = appM.slice(appM.indexOf("function actualizarDatos()"), appM.indexOf('const btnAct = document.getElementById("btn-actualizar-datos")'));
+      assert.ok(/iniciarAlDia\(\)/.test(cuerpoAct) && !/iniciarFull|encadenar\(/.test(cuerpoAct),
+        "la marca arranca el DELTA (`iniciarAlDia`): la carga completa vuelve a enero y es la excepción anual, no el botón de todos los días");
+      // (4) el indicador se gobierna en el ÚNICO punto por el que pasan las cinco transiciones
+      const cuerpoBotones = appM.slice(appM.indexOf("function botones(corriendo)"), appM.indexOf("function detener("));
+      assert.ok(/btn-marca/.test(cuerpoBotones) && /marca-girando/.test(cuerpoBotones),
+        "el estado de la marca va dentro de `botones(corriendo)`: cablearlo en cada transición deja alguna sin cubrir, y esa es la que deja la flecha girando para siempre");
+      assert.ok(/marcaEsperandoCorte/.test(cuerpoBotones), "y el refresco del corte cuelga de la misma transición");
+      // (5) la bandera NO puede vivir junto a su uso: `botones` la lee 5.000 líneas antes
+      assert.ok(appM.indexOf("let marcaEsperandoCorte") < appM.indexOf("function botones(corriendo)"),
+        "`let marcaEsperandoCorte` declarada después de `botones` es zona muerta temporal, y ese fallo es MUDO");
+
+      // (6) el corte que se enseña sale del SERVIDOR, nunca del reloj del navegador
+      const cuerpoRefresco = appM.slice(appM.indexOf("function refrescarTrasActualizar"), appM.indexOf("function actualizarDatos"));
+      assert.ok(/buscar\(\)/.test(cuerpoRefresco) && !/Date\.now\(\)|new Date\(\)/.test(cuerpoRefresco),
+        "tras actualizar se vuelve a PEDIR el corte: poner la hora local afirmaría una sincronización que pudo no traer nada");
+      assert.ok(/No se pudo confirmar el corte/.test(cuerpoRefresco),
+        "si la confirmación falla se dice, en vez de dejar la hora vieja como si fuera nueva");
+
+      // (7) la fecha la formatea la función que YA existía, con su reloj de Colombia
+      const cuerpoCorte = appM.slice(appM.indexOf("function pintarCorte"), appM.indexOf("function marcaTrabajando"));
+      assert.ok(/P\.textoActualizado\(iso, Date\.now\(\), \{ corto: true \}\)/.test(cuerpoCorte)
+        && /P\.desactualizado\(iso, Date\.now\(\)\)/.test(cuerpoCorte),
+        "la barra no puede tener su propia cuenta de «hoy/ayer»: usa la de portada.js o discreparán en la frontera de medianoche");
+      const Port = require("../public/portada.js");
+      const ahoraM = Date.parse("2026-08-31T20:00:00Z");
+      assert.strictEqual(Port.textoActualizado("2026-08-31T14:35:00Z", ahoraM, { corto: true }), "hoy, 9:35 a. m.");
+      assert.strictEqual(Port.textoActualizado("2026-08-30T14:35:00Z", ahoraM, { corto: true }), "ayer, 9:35 a. m.");
+      assert.ok(/^24 de agosto, /.test(Port.textoActualizado("2026-08-25T01:35:00Z", ahoraM, { corto: true })),
+        "la forma corta tiene que respetar la hora de Colombia (UTC−5), o el 25 a la 1:35 UTC se lee como día 25 y es el 24");
+      assert.strictEqual(Port.textoActualizado(null, ahoraM, { corto: true }), "sin fecha conocida",
+        "sin corte conocido se dice, jamás se inventa una hora");
+      assert.strictEqual(Port.desactualizado("2026-08-31T14:35:00Z", ahoraM), false);
+      assert.strictEqual(Port.desactualizado("2026-08-30T14:35:00Z", ahoraM), true);
+      assert.strictEqual(Port.desactualizado(null, ahoraM), true, "sin fecha, se trata como desactualizado: el ámbar manda a comprobar");
+      // la forma LARGA no cambió: la portada la sigue usando y hay prueba suya más arriba
+      assert.ok(/^Actualizado hoy a las /.test(Port.textoActualizado("2026-08-31T14:35:00Z", ahoraM)),
+        "la rama larga tiene que seguir intacta: es la que pinta la portada");
+      console.log("  · La marca como botón de actualizar: flecha, corte, ámbar cuando no es de hoy, un solo `actualizarDatos` y el corte pedido al servidor");
     }
 
     /* ═══════════ j-octies. CONSORCIO A LA MEDIDA (Fase 10 del plan v4) ═══════════

@@ -141,14 +141,58 @@
     if (/^consorcio\b/i.test(n)) return n;
     return `Consorcio · ${n || String(id || "").slice(0, 12)}`;
   }
-  function refrescarPulso() {
+  /* ══════════ EL CORTE DE LOS DATOS, EN LA MARCA (31-ago-2026) ══════════
+     La segunda línea del botón de la barra superior. Dice QUÉ hay («datos de
+     hoy, 8:35 p. m.») y QUÉ pasa si se pulsa («Actualizar», en color de
+     acento): sin las dos mitades, un logotipo pulsable es una adivinanza.
+
+     LA FECHA LA FORMATEA `Portada.textoActualizado`, que ya existía y ya está
+     probada con el «ahora» inyectado — dos cuentas del mismo corte discreparían
+     entre la barra y la portada justo en la frontera de medianoche, que es
+     donde este proyecto ya se quemó una vez. Aquí no se compara ni una fecha.
+
+     `null` es un estado legítimo y NO se disfraza: sin corte conocido la línea
+     invita a pulsar y no inventa una hora. */
+  let corteActual = null;
+  /* ⚠️ LA BANDERA SE DECLARA AQUÍ, NO JUNTO A SU USO (regla dura del proyecto).
+     `botones()` la lee y vive 5 000 líneas más abajo; con la `let` declarada
+     allí, cualquier llamada anterior a `botones` moriría en la zona muerta
+     temporal — y ese fallo es MUDO. Es la misma lección que puso el arranque
+     automático al final del IIFE. */
+  let marcaEsperandoCorte = false;
+  function pintarCorte(iso) {
+    const s = document.getElementById("sello-sync");
+    if (!s) return;
+    if (iso) corteActual = iso;
+    const P = window.Portada;
+    const cuando = iso && P ? P.textoActualizado(iso, Date.now(), { corto: true }) : null;
+    s.innerHTML = cuando
+      ? `Datos de ${esc(cuando)} · <span class="marca-accion">Actualizar</span>`
+      : '<span class="marca-accion">Pulse aquí para traer lo último de SECOP II</span>';
+    s.classList.toggle("corte-viejo", !!(iso && P && P.desactualizado(iso, Date.now())));
+    s.classList.remove("hidden");
+    const b = document.getElementById("btn-marca");
+    if (b) {
+      const largo = iso && P ? P.textoActualizado(iso, Date.now()) : "Todavía no consta cuándo se trajeron los datos";
+      b.title = `${largo}. Pulse para traer de SECOP II lo publicado desde entonces.`;
+      b.setAttribute("aria-label", `${largo}. Actualizar los datos de SECOP II.`);
+    }
+  }
+  /* Mientras corre, la marca ES el indicador: quien pulsa desde otra pestaña no
+     ve el panel de «Actualizar datos», que vive en Mi empresa. Una pulsación sin
+     respuesta visible es peor que un error. */
+  function marcaTrabajando(texto) {
+    const s = document.getElementById("sello-sync");
+    if (s) { s.textContent = texto; s.classList.remove("corte-viejo"); }
+  }
+  function refrescarPulso(opciones = {}) {
     if (!window.Pulso) return;
     const sel = $("f-perfil");
     const perfil = sel ? sel.value : "";
     const nombre = sel && sel.selectedOptions[0] ? sel.selectedOptions[0].text.replace(/^Consorcio · /, "") : "";
     // con el token viajan las cifras del perfil (patrimonio, capacidad) para «Tu registro»
     const t = tokenGuardado();
-    window.Pulso.arrancar(perfil, { nombre, headers: t ? { "x-historico-token": t } : null }).catch(() => {});
+    window.Pulso.arrancar(perfil, { nombre, headers: t ? { "x-historico-token": t } : null, forzar: !!opciones.forzar }).catch(() => {});
   }
   document.getElementById("pulso").addEventListener("click", (ev) => {
     const el = ev.target.closest("[data-filtro]");
@@ -751,11 +795,7 @@
     // refresco en segundo plano: con datos de >5 min el backend corre un
     // delta barato; si están frescos responde alDia sin tocar Socrata
     fetch("/api/procesos?op=sync&modo=auto").catch(() => {});
-    if (cuerpo.sincronizado) {
-      const s = $("sello-sync");
-      s.textContent = `Datos: ${new Date(cuerpo.sincronizado).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })}`;
-      s.classList.remove("hidden");
-    }
+    if (cuerpo.sincronizado) pintarCorte(cuerpo.sincronizado);
     ultimasFacetas = cuerpo.facetas || ultimasFacetas;
     pintarControlesFiltros();
     if (!cuerpo.total) return pintarVacio(cuerpo);
@@ -5411,6 +5451,18 @@
        giro, porque el resultado es la respuesta a la pulsación. */
     const bA = document.getElementById("btn-actualizar-datos");
     if (bA) bA.disabled = corriendo;
+    /* LA MARCA DE LA BARRA SE GOBIERNA DESDE AQUÍ POR LA MISMA RAZÓN que el
+       botón único: este es el punto por el que ya pasan las cinco transiciones
+       (arranque, fin, detención, error, candado). Cablearla en cada una dejaría
+       alguna sin cubrir, y esa es exactamente la que deja la flecha girando
+       para siempre. Al TERMINAR se vuelve a pedir la lista y el pulso: el corte
+       que se enseña sale del servidor, nunca del reloj del navegador — poner la
+       hora local sería afirmar una sincronización que puede no haber traído
+       nada. */
+    const bM = document.getElementById("btn-marca");
+    if (bM) { bM.disabled = corriendo; bM.classList.toggle("marca-girando", corriendo); }
+    if (corriendo) marcaTrabajando("Trayendo datos de SECOP II…");
+    else if (marcaEsperandoCorte) { marcaEsperandoCorte = false; refrescarTrasActualizar(); }
     const sp = document.getElementById("act-spin");
     if (sp) sp.hidden = !corriendo;
     const ba = document.getElementById("act-barra");
@@ -5475,6 +5527,19 @@
      invariante «1.ª full, siguientes auto»— vive en `encadenar` y una segunda
      copia rompería justo lo que la suite vigila. Lo único propio del botón es
      enseñar y esconder su panel. */
+  /* Tras una actualización, el corte nuevo se PIDE: `buscar()` lo trae en
+     `sincronizado` y `pintarCorte` lo escribe; el pulso se refresca forzando la
+     memoria del módulo, que si no se quedaría con el corpus anterior. Si algo
+     falla, la barra dice que la lectura no se pudo confirmar en vez de dejar la
+     hora vieja como si fuera nueva. */
+  function refrescarTrasActualizar() {
+    marcaTrabajando("Confirmando el corte…");
+    Promise.resolve()
+      .then(() => buscar())
+      .then(() => { refrescarPulso({ forzar: true }); if (!corteActual) pintarCorte(null); })
+      .catch(() => marcaTrabajando("No se pudo confirmar el corte: recargue la página."));
+  }
+
   function actualizarDatos() {
     const panel = document.getElementById("act-panel");
     const est = document.getElementById("act-estado");
@@ -5493,6 +5558,12 @@
   }
   const btnAct = document.getElementById("btn-actualizar-datos");
   if (btnAct) btnAct.addEventListener("click", actualizarDatos);
+  /* LA MARCA DISPARA LO MISMO, no una copia: `actualizarDatos` ya enseña el
+     panel de Mi empresa y llama a `iniciarAlDia`. Lo único propio de la marca
+     es su indicador en la barra, porque quien pulsa desde Licitaciones o
+     Precios no ve aquel panel. */
+  const btnMarca = document.getElementById("btn-marca");
+  if (btnMarca) btnMarca.addEventListener("click", () => { marcaEsperandoCorte = true; actualizarDatos(); });
   $("btn-al-dia").addEventListener("click", iniciarAlDia);
   $("btn-iniciar").addEventListener("click", iniciarFull);
   $("btn-detener").addEventListener("click", () => detener("usuario"));
