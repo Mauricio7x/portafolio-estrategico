@@ -157,8 +157,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 108 secciones. Las 10 más nuevas:
-  L  5631  La dispersión de la baja se MIDE, no se supone (24-ago-2026)
+· MEMORIA · docs/MEMORIA.md — 109 secciones. Las 10 más nuevas:
   L  5681  DOS DE LAS CUATRO GRANULARIDADES DE LA BAJA ESTÁN VACÍAS EN PRODUCCIÓN (24-ago-2026)
   L  5721  Auditoría del módulo APU: las dos mitades no están conectadas (24-ago-2026)
   L  5793  El prompt inicial vive en el repositorio y no puede contener estado (26-ago-2026)
@@ -168,6 +167,7 @@
   L  6050  El mapa: buscar coordenadas en vez de leer documentos (28-ago-2026)
   L  6099  El calendario de cierres, y tres bloques menos en Mi empresa (31-ago-2026)
   L  6204  El lugar de ejecución ES la entidad, «Para Helder» abre la pestaña, y Tailwind medido de ver
+  L  6273  La marca es el botón de actualizar, y el calendario baja junto al consorcio (31-ago-2026, te
 
 · DOCUMENTOS docs/ — 37:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)

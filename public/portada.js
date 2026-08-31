@@ -41,17 +41,36 @@
     if (v >= 1e6) return `$${num(v / 1e6, 1)} millones`;
     return `$${num(v)}`;
   }
-  /* «Actualizado hoy a las 6:00 a. m.» / «Última actualización: ayer 6:00 a. m.» */
-  function textoActualizado(iso, ahora = Date.now()) {
+  /* «Actualizado hoy a las 6:00 a. m.» / «Última actualización: ayer 6:00 a. m.»
+     ── y la forma CORTA, para la barra superior ──────────────────────────────
+     `{ corto: true }` devuelve «hoy, 6:00 a. m.» · «ayer, 6:00 a. m.» · «25 de
+     agosto, 6:00 a. m.». Es una RAMA de la misma función, no una función nueva,
+     y eso no es economía de líneas: el «hoy» y el «ayer» se calculan con el
+     mismo reloj de Colombia y con el mismo `ahora` inyectable, así que la barra
+     y la portada no pueden discrepar sobre qué día es el corte. Una segunda
+     copia divergiría a la primera corrección — y ya hubo una: esta cuenta
+     fallaba sola entre medianoche y las 02:00 antes de inyectar el «ahora».
+     `desactualizado` (true cuando el corte NO es de hoy) viaja aparte para que
+     la barra pueda avisar en ámbar sin volver a comparar fechas. */
+  function textoActualizado(iso, ahora = Date.now(), { corto = false } = {}) {
     const t = Date.parse(iso);
-    if (!Number.isFinite(t)) return "Fecha de actualización desconocida";
+    if (!Number.isFinite(t)) return corto ? "sin fecha conocida" : "Fecha de actualización desconocida";
     const hora = new Date(t).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: "America/Bogota" });
     const hoy = new Date(ahora).toLocaleDateString("es-CO", { timeZone: "America/Bogota" });
     const dia = new Date(t).toLocaleDateString("es-CO", { timeZone: "America/Bogota" });
     const ayer = new Date(ahora - 86400000).toLocaleDateString("es-CO", { timeZone: "America/Bogota" });
-    if (dia === hoy) return `Actualizado hoy a las ${hora} desde el SECOP II`;
-    if (dia === ayer) return `Última actualización: ayer ${hora} (SECOP II)`;
-    return `Última actualización: ${new Date(t).toLocaleDateString("es-CO", { day: "numeric", month: "long", timeZone: "America/Bogota" })}, ${hora} (SECOP II)`;
+    const largo = new Date(t).toLocaleDateString("es-CO", { day: "numeric", month: "long", timeZone: "America/Bogota" });
+    if (dia === hoy) return corto ? `hoy, ${hora}` : `Actualizado hoy a las ${hora} desde el SECOP II`;
+    if (dia === ayer) return corto ? `ayer, ${hora}` : `Última actualización: ayer ${hora} (SECOP II)`;
+    return corto ? `${largo}, ${hora}` : `Última actualización: ${largo}, ${hora} (SECOP II)`;
+  }
+  /* ¿El corte NO es de hoy? La barra lo pinta en ámbar: es lo que empuja a
+     pulsar. Comparte el reloj de arriba a propósito. */
+  function desactualizado(iso, ahora = Date.now()) {
+    const t = Date.parse(iso);
+    if (!Number.isFinite(t)) return true;
+    return new Date(t).toLocaleDateString("es-CO", { timeZone: "America/Bogota" })
+      !== new Date(ahora).toLocaleDateString("es-CO", { timeZone: "America/Bogota" });
   }
   const enlaceLista = (params) => `/?${params}#/licitaciones`;
 
@@ -213,5 +232,5 @@
     return true;
   }
 
-  return { arrancar, teaser, pesosCortos, textoActualizado, htmlHero, htmlTeaser, htmlCierran, htmlManifestacion, htmlEntidades, htmlDepartamentos, enlaceLista };
+  return { arrancar, teaser, pesosCortos, textoActualizado, desactualizado, htmlHero, htmlTeaser, htmlCierran, htmlManifestacion, htmlEntidades, htmlDepartamentos, enlaceLista };
 });

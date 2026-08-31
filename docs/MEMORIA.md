@@ -6269,3 +6269,83 @@ como no verificable: la apariencia CON Tailwind cargado. Resuelto, y las dos mit
 precedente del CDN bloqueado: **fallos MUDOS de maquetación, con la consola limpia**. Es la
 confirmación número N de la regla, y ahora con el matiz que faltaba: **medir sin Tailwind prueba que
 la página no se rompe; solo medir CON Tailwind prueba que se ve bien**. Hacen falta las dos pasadas.
+
+### La marca es el botón de actualizar, y el calendario baja junto al consorcio (31-ago-2026, tercera pasada)
+
+**Dos encargos y un defecto que se vio en la captura del ingeniero.**
+
+**1 · EL CALENDARIO CAMBIA DE SITIO, y nada más.** «Ponlo arriba de donde dice *crear consorcio* y
+*verifique a su socio*; es un cambio de posición, más nada.» Hecho: el bloque va entero, sin tocar
+una línea de lo que hace. Mi empresa queda **«Para Helder, hoy» → dónde están · quién las publica →
+tablero → su registro → calendario → consorcio y socio**. El orden se fija ENTERO en la suite (una
+cadena de comparaciones por parejas deja pasar permutaciones) y ya se ha movido dos veces en un día:
+si vuelve a moverse, que sea leyendo esto.
+
+**2 · EL MES VACÍO — defecto de producción, y estaba en la captura que él mandó.** El calendario
+abría SIEMPRE el mes de hoy. El 31 de agosto, agosto ya no tenía un solo cierre —todo lo suyo vencía
+en septiembre— así que la pantalla enseñaba **una rejilla vacía con 264 procesos al otro lado de la
+flecha**, y encima decía «Ningún proceso de su perfil cierra en agosto de 2026», que es verdad y es
+inútil. La regla ahora: se abre el mes de HOY si tiene cierres; si no, el PRÓXIMO que los tenga; y si
+ya no queda nada por delante, el último que hubo. **«Ver el mes actual» no se pierde**: al navegar a
+su mes, el día de hoy sigue marcado. Esto pasa los últimos días de CADA mes: no es un caso raro, es
+una de cada diez visitas. La lección: **un valor por defecto correcto en el caso medio puede ser el
+peor posible en el borde, y el borde llega solo.**
+
+**3 · LA MARCA ES EL BOTÓN DE ACTUALIZAR.** «Que el logo y el nombre sea interactivo, que puedas
+presionar sobre él para actualizar el corte de los datos; que se vea útil y que el usuario pueda
+saber con intuición que ahí se actualizan los datos.» Un logotipo pulsable que no PARECE pulsable no
+existe, así que la señal no es una: son **cuatro, y la de verdad es la quinta**.
+
+- **La flecha circular** al lado del nombre (SVG en línea con `currentColor`; ni un emoji: lo dibuja
+  el sistema operativo y no hereda el color del tema).
+- **La fecha del corte debajo del nombre** — que es LO QUE se actualiza. Sin ella el botón no dice
+  qué hace: «actualizar» a secas no significa nada para quien no sabe que hay un corte.
+- **La palabra «Actualizar» en el color de acento**, con aspecto de enlace, pegada a esa fecha.
+- **El comportamiento**: cursor de mano, realce al pasar por encima, foco visible con el teclado, y
+  mientras corre la flecha GIRA de verdad (con `prefers-reduced-motion`, no).
+- **Y la que hace el trabajo: cuando el corte NO es de hoy, la línea se pone en ÁMBAR.** El usuario
+  no tiene que acordarse de actualizar; la barra se lo dice. Es la misma doctrina que la regla de las
+  24 horas del cierre: el aviso vive donde se mira, no en un tooltip.
+
+Decisiones que no hay que re-aprender:
+
+- **NO REIMPLEMENTA NADA.** El clic llama a `actualizarDatos()`, el mismo que ya tenía el botón
+  «Actualizar datos» de Mi empresa, que a su vez llama a `iniciarAlDia`. Tres copias del encadenado
+  de tandas serían tres sitios donde romper la invariante «1.ª full, siguientes auto», y hay prueba
+  de que el camino compartido es el DELTA: `iniciarFull` vuelve a enero y es la excepción anual.
+- **EL INDICADOR SE GOBIERNA DENTRO DE `botones(corriendo)`**, que es el punto por el que ya pasan
+  las cinco transiciones (arranque, fin, detención, error, candado). Cablearlo en cada una habría
+  dejado alguna sin cubrir — y esa es exactamente la que deja la flecha girando para siempre. Es la
+  misma razón, escrita en el código desde el botón único, y aquí se aplicó tal cual.
+- **EL CORTE QUE SE ENSEÑA SALE DEL SERVIDOR, JAMÁS DEL RELOJ DEL NAVEGADOR.** Al terminar se vuelve
+  a llamar a `buscar()` —que trae `sincronizado`— y a `refrescarPulso({forzar:true})`. Poner la hora
+  local afirmaría una sincronización que pudo no traer nada; si la confirmación falla, la barra lo
+  DICE en vez de dejar la hora vieja con aspecto de nueva. Hay mutación que lo prueba.
+- **`refrescarPulso` acepta `{forzar}`** porque `Pulso.arrancar` memoiza el perfil pintado: sin
+  forzar, tras actualizar se quedaba el corpus anterior en pantalla con el corte nuevo debajo.
+- **LA FECHA LA FORMATEA `Portada.textoActualizado`, con una RAMA nueva (`{corto:true}`), no una
+  función nueva.** Devuelve «hoy, 8:35 p. m.» · «ayer, …» · «25 de agosto, …». Comparte el reloj de
+  Colombia y el «ahora» inyectable de la versión larga, así que la barra y la portada no pueden
+  discrepar sobre qué día es el corte — y en esa frontera este proyecto ya se quemó una vez (la
+  prueba que fallaba sola entre medianoche y las 02:00). `desactualizado()` viaja al lado por lo
+  mismo: para que la barra no vuelva a comparar fechas por su cuenta.
+- **`<span>` y no `<h1>` dentro del `<button>`**: un encabezado no es contenido de frase y el
+  marcado sería inválido; además cada pestaña ya lleva su propio `<h1>`. El nombre sigue saliendo de
+  `[data-marca]` + `glosario.js`.
+- **`let marcaEsperandoCorte` se declara al PRINCIPIO del IIFE**, no junto a su uso: `botones()` la
+  lee y vive 5 000 líneas más abajo; con la `let` allí, cualquier llamada anterior moriría en la zona
+  muerta temporal — y ese fallo es MUDO. Es la lección que puso el arranque automático al final del
+  IIFE, aplicada a una variable.
+- **La cerca de la marca barre también los COMENTARIOS del HTML**, y con razón: escribí el nombre
+  del producto dentro de un comentario al citar el encargo y la suite lo cazó. Un nombre escrito a
+  mano ahí acaba copiándose al marcado el día que alguien mueva el bloque.
+- **Una regex de PROXIMIDAD no es una cerradura.** La primera versión de la guarda «la marca no
+  arranca la full» buscaba `iniciarFull` dentro de los 400 caracteres siguientes a `btn-marca`, y
+  casaba con los listeners de al lado: afirmaba un defecto que no existía. Se sustituyó por el cuerpo
+  de `actualizarDatos`, que es lo que la marca dispara de verdad.
+
+**Medido en Chromium con el Tailwind real**: la marca es un objetivo de 229×50 px con cursor de
+mano, flecha, corte en ámbar («Datos de ayer, 2:32 p. m. · Actualizar») y `aria-label` completo; al
+pulsarla la flecha gira y la línea dice «Trayendo datos de SECOP II…» —también desde otra pestaña,
+donde el panel de Mi empresa no se ve—. Las tres pasadas (1280 y 390 con Tailwind, 390 sin él)
+terminan con el orden de la pestaña verificado en píxeles y la consola limpia.
