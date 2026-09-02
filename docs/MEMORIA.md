@@ -6489,7 +6489,7 @@ verificó el prompt solo contra el repositorio y diseñó; el dueño corrigió e
 una hipótesis suya, y la tarea era verificar qué tan cierta es y si está vigente contra fuentes
 externas, actualizarla, y solo después analizar cómo implementarla**. La investigación completa, en
 ese orden (verificación afirmación por afirmación con URL y fecha, cruce con el árbol, conclusión,
-diseño, prompt, contrato JSON, 22 pruebas y decisiones del dueño), está en
+diseño, prompt, contrato JSON, 21 pruebas y decisiones), está en
 `docs/DON_HECTOR_DICTAMEN_DEL_PLIEGO.md`. Aquí solo lo que no hay que volver a aprender:
 
 - **Lo que vale del prompt es la LECTURA del pliego, no el conocimiento del oficio.** Los requisitos
@@ -6519,12 +6519,11 @@ diseño, prompt, contrato JSON, 22 pruebas y decisiones del dueño), está en
   márgenes por tipo de obra (Supersociedades los publica por EMPRESA); «70 % quiebran», fiducia
   «2-3 %», multas «>5 %», «±20 %», «3 días», «6 meses» y «presupuesto redondo» no tienen fuente o
   invierten el manual. Un prompt de sistema con esas cifras es un `|| 0` con voz de experto. Lo que sí
-  quedó en pie entra por la ENTRADA del modelo: `NORMAS_CITABLES` (24 normas con URL oficial, cada una
+  quedó en pie entra por la ENTRADA del modelo: `NORMAS_CITABLES` (18 normas con URL oficial, cada una
   con `literal_leido: false` hasta que alguien abra la URL y confirme el artículo; el modelo solo
   recibe las leídas, y en esta entrega recibe cero), `CONTEXTO_PUBLICO` (relevo nacional 7-ago-2026,
   periodo territorial hasta 31-dic-2027, ventanas de la Ley de Garantías 8-nov-2025 / 31-ene-2026 /
-  21-jun-2026, ventana 2027 marcada «estimada») y `data/alertas_entidad.json` (hechos por entidad con
-  fecha y URL, a mano, sin sumar cifras de cortes distintos). Sus hashes van en la clave de caché; el
+  21-jun-2026, ventana 2027 marcada «estimada»). Sus hashes van en la clave de caché; el
   system sigue congelado y sin cifras; el censo de cifras los reconoce porque están en la entrada; y
   el veredicto nunca depende de ellos. La compuerta `literal_leido` existe porque toda la evidencia
   externa de la sesión fue el resumen del buscador: la salida a los dominios oficiales estaba
@@ -6630,3 +6629,47 @@ dos veces (`test` y `match`, `lib/filtros.js:462,494-495`).
 - **La lección**: un lookbehind de longitud variable es una cerradura hacia atrás que se paga en
   cada posición; se precede siempre de un lookahead con el literal. Vale para las nueve
   alternativas de hoy y para la siguiente que alguien añada con el mismo mecanismo.
+
+### Don Héctor · las decisiones del dueño y las tomadas con autonomía (2-sep-2026, misma tarde)
+
+El dueño leyó la sección 7 del documento (las decisiones que se le pedían) y respondió con tres
+cosas: tiene el plan Max (x20) de Claude y usa a diario Fable 5.1; «la tabla de días de pago por
+entidad» y «Santanderes +15-20 % y márgenes por sector» son importantes «pero tampoco un
+determinante» y pidió eliminar esa función y no gastar tiempo en ello; y para el resto delegó la
+decisión «sin preguntarme absolutamente nada». Las decisiones tomadas están, una a una y con motivo,
+en §7 de `docs/DON_HECTOR_DICTAMEN_DEL_PLIEGO.md`. Lo que no hay que volver a aprender:
+
+- **Cuando el dueño retira un tema, se retiran también sus prótesis.** La investigación había
+  sustituido la tabla de días de pago por tres piezas con fuente (techo legal de la Ley 2024 de 2020
+  según condición Mipyme, con un campo `es_mipyme` nuevo en el perfil; una tabla de alertas públicas
+  por entidad mantenida a mano en `data/alertas_entidad.json`; un bloque «Criterio del dueño»). Un
+  sustituto de una función que el dueño no quiere sigue siendo esa función, y las tres eran
+  mantenimiento a mano o esquema nuevo: se retiran las tres, no solo la cifra original. Las seis
+  normas de pago verificadas quedan en el documento como conocimiento con fuente, fuera de
+  `NORMAS_CITABLES` (que pasa de 24 a 18); la forma de pago se lee del pliego con página como
+  cualquier otro requisito y no se compara con ningún plazo «habitual» ni «legal». Las pruebas del
+  diseño pasan de 22 a 21 y desaparece el paso 7b del plan.
+- **Modelo: Opus 5 por defecto y Fable 5.1 se MIDE, no se supone.** Fable 5.1 está en la API
+  (`claude-fable-5-1`) a USD 10 / 50 por millón de tokens, el doble de Opus 5 (≈ USD 1,13 frente a
+  0,57 por dictamen con los supuestos del documento; techo mensual con la cuota de 15 al día ≈ USD
+  526 frente a 265). La skill de la API recomienda arrancar con Opus 5 «para la mayoría de las cargas
+  de agente» y reservar Fable 5.1 para el horizonte largo más difícil; leer un pliego es una pasada
+  única con verificación de citas en el servidor. Por eso el defecto es Opus 5 y el paso 15 del plan
+  corre los mismos pliegos con `DICTAMEN_MODELO=claude-fable-5-1` y compara `citas_verificadas /
+  citas_total`: el defecto cambia con esa cifra, no con la preferencia. El diseño ya cumple lo que
+  Fable 5.1 exige (sin prefill, sin parámetros de muestreo, `refusal` manejado, sin `tool_choice`
+  forzado), así que el cambio es solo una variable.
+- **El plan Max no paga la API.** Es una suscripción de claude.ai y de Claude Code; el servidor llama
+  a la API con una clave de la consola de Anthropic y se cobra por consumo aparte. La skill no dice
+  nada de suscripciones, así que queda como NO VERIFICABLE desde la sesión y como primer paso del
+  dueño antes del primer dictamen real: entrar en https://platform.claude.com/, comprobar saldo y
+  crear la clave. Sin clave, el 503 de la op lo dice en pantalla con qué hacer.
+- **Una decisión delegada se escribe como DECISIÓN con motivo, no como recomendación.** «Toma tú la
+  mejor decisión sin preguntarme» convierte la sección 7 de una lista de preguntas en una lista de
+  hechos: cada punto dice qué se decidió y por qué, y cambiarlo es un commit con su prueba. Lo único
+  que no puede decidir la sesión (el pronunciamiento del abogado sobre juicios a entidades públicas
+  nombradas, L-8) se convierte en condición: la función queda en uso propio con descargo y no sale de
+  ahí sin él.
+
+Estado: **solo documento**; no se tocó `api/`, `lib/`, `public/` ni la suite. Suite 4/4 antes del
+commit.
