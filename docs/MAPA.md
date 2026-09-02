@@ -157,8 +157,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 112 secciones. Las 10 más nuevas:
-  L  5857  Banco de precios verificable · el informe retail del 26-ago-2026 (censo en docs/BANCO_PRECIO
+· MEMORIA · docs/MEMORIA.md — 113 secciones. Las 10 más nuevas:
   L  5897  Auditoría integral del 27-ago-2026 · verificar absolutamente todo
   L  6005  La revisión adversaria del propio diff, y las CINCO regresiones que dejé dentro
   L  6050  El mapa: buscar coordenadas en vez de leer documentos (28-ago-2026)
@@ -167,7 +166,8 @@
   L  6273  La marca es el botón de actualizar, y el calendario baja junto al consorcio (31-ago-2026, te
   L  6353  Auditoría integral del 1-sep-2026 · trece frentes, dos auditores que llegaron y el resto a m
   L  6484  Don Héctor · la hipótesis verificada contra fuentes vigentes y el diseño del dictamen del pl
-  L  6609  El lookahead delante del lookbehind: la lista negra 19 veces más rápida y `main` vuelve a ve
+  L  6608  El lookahead delante del lookbehind: la lista negra 19 veces más rápida y `main` vuelve a ve
+  L  6633  Don Héctor · las decisiones del dueño y las tomadas con autonomía (2-sep-2026, misma tarde)
 
 · DOCUMENTOS docs/ — 38:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)
