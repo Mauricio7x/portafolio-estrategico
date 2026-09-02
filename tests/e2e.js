@@ -5740,6 +5740,37 @@ async function main() {
       assert.strictEqual(r.cuerpo.total, cH.total,
         `?nivel_competencia=${v} volvió a filtrar un campo que no tiene base en el corpus activo`);
     }
+    /* `?ubicacion_valida=` era el único filtro heredado sin lista blanca en las
+       DOS direcciones: «zzz», «TRUE» o el «si» de un enlace viejo se leían como
+       `false` = «fuera de mi zona» y escondían filas sin ficha ni aviso
+       (1-sep-2026). Contra el árbol anterior «zzz» y «si» FALLAN. `true` y
+       `false` siguen filtrando, y «TRUE» es `true`, no un filtro fantasma. */
+    for (const v of ["zzz", "si", ""]) {
+      const r = await invocar(oportunidades, `/api/oportunidades?perfil=helder&ubicacion_valida=${v}`, CAB_TOKEN);
+      assert.strictEqual(r.status, 200);
+      assert.strictEqual(r.cuerpo.total, cH.total, `?ubicacion_valida=${v} tiene que ser inerte`);
+    }
+    {
+      const rT = await invocar(oportunidades, "/api/oportunidades?perfil=helder&ubicacion_valida=true", CAB_TOKEN);
+      const rF = await invocar(oportunidades, "/api/oportunidades?perfil=helder&ubicacion_valida=false", CAB_TOKEN);
+      const rTT = await invocar(oportunidades, "/api/oportunidades?perfil=helder&ubicacion_valida=TRUE", CAB_TOKEN);
+      assert.ok(rT.cuerpo.total >= 1 && rF.cuerpo.total >= 1 && rT.cuerpo.total + rF.cuerpo.total <= cH.total,
+        "true y false parten el corpus, ninguno lo vacía ni lo duplica");
+      assert.strictEqual(rTT.cuerpo.total, rT.cuerpo.total, "«TRUE» es true (mayúsculas), no un filtro fantasma");
+    }
+    /* Y `ganancia` es su hermano (1-sep-2026): sin credencial todas las filas
+       llevan `ganancia: null`, el orden real era el desempate por VE y la
+       respuesta seguía diciendo `ordenado_por: "ganancia"`. EJECUTADO contra
+       el handler real; contra el árbol anterior FALLA. */
+    {
+      const rG = await invocar(oportunidades, "/api/oportunidades?perfil=helder&ordenar_por=ganancia");
+      assert.strictEqual(rG.status, 200);
+      assert.notStrictEqual(rG.cuerpo.ordenado_por, "ganancia", "sin credencial el orden por ganancia no existe y no puede declararse");
+      assert.ok(/credencial/.test(rG.cuerpo.ganancia_ignorada || ""), "…y se dice por qué, como con el margen");
+      const rGT = await invocar(oportunidades, "/api/oportunidades?perfil=helder&ordenar_por=ganancia", CAB_TOKEN);
+      assert.strictEqual(rGT.cuerpo.ordenado_por, "ganancia", "con credencial el orden por ganancia sigue existiendo");
+      assert.strictEqual(rGT.cuerpo.ganancia_ignorada, undefined);
+    }
     /* Y LA MEDIDA que sostiene todo lo anterior, sobre el corpus servido entero:
        cuántos valores DISTINTOS toma el campo. Si toma uno solo, no distingue
        nada y pintarlo era afirmar algo sin base. No se asierta el valor —el día
@@ -7556,6 +7587,18 @@ async function main() {
            la probabilidad en cero — otro número inventado, y encima el que peor
            decisión provoca (descartar la oportunidad). */
         assert.strictEqual(pelado.pasos[0].confianza, "Sin dato");
+        /* SIN CUANTÍA PUBLICADA la justificación copiable decía «Cuantía: $0 ·
+           Valor esperado: $0» (1-sep-2026): un cero creíble en el texto que se
+           pega en un informe, mientras el modal decía «No definida». Contra el
+           árbol anterior las cuatro FALLAN. */
+        assert.strictEqual(pelado.cuantia_cop, null, "sin cuantía publicada el desglose no afirma 0");
+        assert.strictEqual(pelado.valor_esperado_cop, null, "…ni un valor esperado de $0");
+        {
+          const { justificacionTexto, generarResumenEjecutivo } = require("../lib/probabilidad_desglose.js");
+          const txt = justificacionTexto(pelado, generarResumenEjecutivo(pelado, null));
+          assert.ok(!/\$\s?0\b/.test(txt), `la justificación no puede afirmar $0: ${(txt.match(/Cuantía:[^\n]*/) || [""])[0]}`);
+          assert.ok(/Cuantía: no publicada/.test(txt), "dice que la cuantía no está publicada");
+        }
         assert.strictEqual(pelado.pasos[0].aporte_pp, 16.67,
           "sin ningún histórico, la base tiene que ser el supuesto conservador 1/(1+5), no un cero");
         assert.strictEqual(pelado.probabilidad_final, 0.1667);
@@ -8811,6 +8854,29 @@ async function main() {
           assert.strictEqual(crLoco.confirmada, false, "una fecha de cronograma fuera del calendario no puede confirmarse");
           assert.strictEqual(crLoco.fecha_cronograma_descartada, "2202-06-30", "se descarta Y SE DICE");
           assert.strictEqual(crLoco.quedan_habiles, null, "y no produce ninguna cuenta atrás");
+          /* Y LA MISMA GUARDA VALE PARA EL CIERRE QUE DECIDE (1-sep-2026): el
+             1970 de timestamp nulo daba el proceso por VENCIDO en la ingesta y
+             en la lectura, `fechaCierre` lo prefería a la fecha real de la
+             columna siguiente, y las señales de prórroga lo tomaban por «cerraba
+             antes» (×1,2 en la probabilidad). Contra el árbol anterior las
+             cuatro FALLAN; se ejecutan las funciones reales. */
+          {
+            const { fechaCierre } = require("../lib/negocio.js");
+            const filtrosMod = require("../lib/filtros.js");
+            assert.strictEqual(fechaCierre({ fecha_de_recepcion_de: "1970-01-01T00:00:00.000", fecha_de_apertura_de_respuesta: "2026-09-30T17:00:00.000" }),
+              "2026-09-30T17:00:00.000", "un año imposible no es el cierre: se sigue con la siguiente columna");
+            assert.strictEqual(filtrosMod.estado_abierto({ estado_del_procedimiento: "Publicado", fecha_de_recepcion_de: "1970-01-01T00:00:00.000" }), true,
+              "el 1970 no vence el proceso");
+            assert.strictEqual(filtrosMod.cierre_vencido({ estado_del_procedimiento: "Publicado", fecha_de_recepcion_de: "1970-01-01T00:00:00.000" }), false);
+            const { comprimir, leerChunksDedup, CLAVES: CL } = require("../lib/almacen.js");
+            const k0 = CL.chunk("1999-01", 0), k1 = CL.chunk("1999-01", 1);
+            const base1970 = { _k: "P-1970", id_del_proceso: "P-1970", entidad: "E", modalidad_de_contratacion: "Licitación pública", estado_del_procedimiento: "Publicado" };
+            await redis.set(k0, comprimir([{ ...base1970, ":updated_at": "2026-08-01T00:00:00.000Z", fecha_cierre: "1970-01-01T00:00:00.000" }]));
+            await redis.set(k1, comprimir([{ ...base1970, ":updated_at": "2026-08-02T00:00:00.000Z", fecha_cierre: "2026-09-30T17:00:00.000" }]));
+            const [g1970] = await leerChunksDedup(redis, [k0, k1], { senales: true });
+            assert.strictEqual(g1970._cierre_prorrogado, false, "un 1970 en una versión anterior no es una prórroga");
+            await redis.del(k0, k1);
+          }
         }
         // …y NO dispara cuando el trámite sí cabe: el 21 deja sitio de sobra
         assert.strictEqual(M.manifestacionDeFila(MOTAVITA, "2026-08-15").motivo_sin_fecha, null,
@@ -14746,6 +14812,15 @@ async function main() {
           baja: { nivel: "medio", baja_mediana: 8, procesos_contados: 40 },
         });
         const pub = sinFinanzas({ p_ganar_detalle: detalle }).p_ganar_detalle;
+        /* El motivo público del ajuste «precio» afirmaba que el descuento
+           «ajusta la probabilidad» cuando sin credencial el factor es 1 por
+           construcción (1-sep-2026): se dice el hecho. */
+        {
+          const precioPub = pub.ajustes.find((a) => a.nombre === "precio");
+          assert.ok(precioPub, "el ajuste por precio tiene que estar en la lista pública");
+          assert.ok(/no ajusta la probabilidad/.test(precioPub.motivo), `el motivo público no puede afirmar un ajuste que no existe: «${precioPub.motivo}»`);
+          assert.strictEqual(detalle.p, detalle.p_sin_precio, "sin baja máxima declarada el precio no mueve la p (factor 1)");
+        }
         const linea = js.slice(js.indexOf("const ajustes = (d.ajustes"));
         const expr = linea.slice(linea.indexOf(".map("), linea.indexOf(".join("));
         const pintado = eval(`(${expr.slice(5, expr.lastIndexOf(")"))})`); // la lambda del fuente
@@ -15610,6 +15685,22 @@ async function main() {
       assert.strictEqual(T("CONSTRUCCIÓN DE PLACA HUELLA VEREDA X", "Prestación de servicios"), "obra", "el verbo de obra manda sobre un tipo_de_contrato mal puesto");
       assert.strictEqual(T("SUMINISTRO E INSTALACIÓN DE TUBERÍA PARA LA RED DE ACUEDUCTO", "Suministros"), "obra", "suministro CON verbo de obra es obra");
       assert.strictEqual(T("COMPRAVENTA DE COMPUTADORES PORTÁTILES", "Compraventa"), "suministro");
+      /* «SUPERVISIÓN TÉCNICA» es consultoría para el veredicto (TIPO_CONSULTORIA
+         de lib/semantica) y aquí vivía una COPIA de la regla sin ese término:
+         `tipoTrabajoDe(l)` decía «obra» y `tipoTrabajoDe(l, rup)` «consultoría»
+         del mismo proceso, y la baja máxima cobraba la contribución del 5 % que
+         la ganancia no cobraba —b_max 7,89 % en vez de 12,5 %— (1-sep-2026).
+         Contra el árbol anterior las tres FALLAN. */
+      {
+        const sup = { nombre_del_procedimiento: "SUPERVISIÓN TÉCNICA DE LAS OBRAS DE CONSTRUCCIÓN DEL PUENTE VEHICULAR",
+          descripci_n_del_procedimiento: "SUPERVISIÓN TÉCNICA DE LAS OBRAS DE CONSTRUCCIÓN DEL PUENTE VEHICULAR",
+          tipo_de_contrato: "Prestación de servicios", codigo_principal_de_categoria: "81101500", cuantia_cop: 1e9 };
+        assert.strictEqual(FL.tipoTrabajoDe(sup), "consultoria", "la supervisión técnica es consultoría con o sin veredicto");
+        assert.strictEqual(FL.tipoTrabajoDe(sup), FL.tipoTrabajoDe(sup, { pertinencia: { tipo: "consultoria" } }),
+          "el tipo de trabajo no puede depender de si se pasó el veredicto");
+        assert.strictEqual(require("../lib/baja_maxima.js").contribucionPctDe(sup), 0,
+          "a una consultoría no se le cobra la contribución de obra en la baja máxima");
+      }
       assert.strictEqual(T("ADQUISICIÓN DE UPS", "Suministros"), "suministro");
       assert.strictEqual(T("INTERVENTORÍA TÉCNICA A LA CONSTRUCCIÓN DEL PUENTE", "Interventoría"), "interventoria");
       assert.strictEqual(T("INTERVENTORIA A LA OBRA", "Prestación de servicios"), "interventoria");
@@ -18001,6 +18092,25 @@ async function main() {
             "la casilla de manifestación dice la ventana: máximo legal, cierre posible en horas");
         }
 
+        /* Y LOS TEXTOS QUE EL SERVIDOR MANDA A PANTALLA (1-sep-2026): listar.js
+           servía «todavía no calculaste el costo…» en `margen_estimado.motivo`,
+           que la tarjeta pinta tal cual — fuera de la cerca, que solo barría
+           public/. Se censan TODOS los .js de lib/ y api/ (sin comentarios), con
+           el pretérito del tuteo añadido; excepciones declaradas: ninguna. */
+        {
+          const TUTEO_PRETERITO_RE = /\b(?:calcul|guard|carg|sub|pus|hic|dij|elig|revis|pag|firm|gan|perd|present|ejecut)aste\b/;
+          const raizRepo = path.join(__dirname, "..");
+          const archivosLib = [];
+          const andar = (d) => { for (const f of fs.readdirSync(d)) { const q = path.join(d, f); if (fs.statSync(q).isDirectory()) andar(q); else if (f.endsWith(".js")) archivosLib.push(q); } };
+          andar(path.join(raizRepo, "lib")); andar(path.join(raizRepo, "api"));
+          assert.ok(archivosLib.length >= 60, "el censo de lib/ y api/ se quedó corto");
+          for (const arch of archivosLib) {
+            const txt = sinComentarios(fs.readFileSync(arch, "utf8"));
+            const m = txt.match(VOSEO_RE) || txt.match(TUTEO_PRETERITO_RE);
+            assert.ok(!m, `${path.relative(raizRepo, arch)}: registro formal (usted) — tuteo en texto servido: «${m && m[0]}»`);
+          }
+        }
+
         assert.deepStrictEqual([...vistos].sort(), ["abierta", "por_confirmar", "sin_fecha", "vencida"],
           `el barrido tiene que ejercitar los CUATRO estados, no tres: ${[...vistos]}`);
         assert.strictEqual(casos, 14 * 4 * 3);
@@ -18479,6 +18589,45 @@ async function main() {
           assert.deepStrictEqual(huerfanos, [],
             `sin el CDN de Tailwind estos contenedores se verían todos a la vez: ${huerfanos.join(", ")}`);
           assert.ok(ocultosPorClase.length >= 6, "el censo de contenedores ocultos por clase se quedó corto: revísalo");
+          /* LA PORTADA ENTERA QUEDABA DESPLEGADA SIN EL CDN (1-sep-2026): los
+             nodos que onboarding.js y el gate esconden con `.hidden` (selector
+             de archivo, «Preparando…», tres datos, completar, resultado, error
+             de clave) no estaban en la red de seguridad. El censo sale del
+             FUENTE que los toca —no de una lista escrita aquí— y exige además la
+             regla de descendiente `#onboarding .hidden`, que solo es segura si
+             nadie combina ahí `hidden` con una variante responsive. */
+          {
+            const onb = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
+            const tocados = new Set(["gate-error"]); // el gate de app.js
+            // (a) lo que el script esconde o muestra de forma directa…
+            for (const m of onb.matchAll(/\$\("([a-z0-9-]+)"\)\.classList\.(?:add|remove|toggle)\("hidden"/g)) tocados.add(m[1]);
+            // (b) …la lista de ocultarTodo…
+            const listaOcultar = onb.match(/for \(const id of \[([^\]]+)\]\) \{\s*const el = \$\(id\); if \(el\) el\.classList\.add\("hidden"\)/);
+            assert.ok(listaOcultar, "onboarding.js tiene que seguir escondiendo por lista en ocultarTodo (si cambia, actualice este censo)");
+            for (const m of listaOcultar[1].matchAll(/"([a-z0-9-]+)"/g)) tocados.add(m[1]);
+            // (c) …y todo nodo que el script ALCANZA ($("id")) y que NACE oculto en el HTML (los rup-* se
+            // esconden a través de una variable, no del $() directo: sin esta pata el censo no los veía)
+            for (const m of onb.matchAll(/\$\("([a-z0-9-]+)"\)/g)) {
+              const etiqueta = (html.match(new RegExp(`<[a-z]+[^>]*\\bid="${m[1]}"[^>]*>`)) || [""])[0];
+              if (/\bclass="[^"]*\bhidden\b/.test(etiqueta)) tocados.add(m[1]);
+            }
+            assert.ok(["rup-archivo", "rup-progreso", "rup-mensaje", "manual-form", "completar-form", "resultado-entrada"].every((id) => tocados.has(id)),
+              `el censo de nodos ocultables del onboarding se quedó corto: ${[...tocados].join(", ")}`);
+            const reglaOnb = (html.match(/#onboarding \.hidden[\s\S]*?\{\s*display:\s*none[^}]*\}/) || [""])[0];
+            assert.ok(reglaOnb, "index.html tiene que llevar la regla de descendientes `#onboarding .hidden`");
+            const sinRed = [...tocados].filter((id) => !reglaOnb.includes(`#${id}.hidden`) && !regla.includes(`#${id}.hidden`));
+            assert.deepStrictEqual(sinRed, [], `sin el CDN estos nodos del onboarding se verían siempre: ${sinRed.join(", ")}`);
+            const bloqueOnb = html.slice(html.indexOf('<div id="onboarding"'), html.indexOf('<div id="gate"'));
+            assert.ok(bloqueOnb.length > 1000, "el bloque del onboarding tiene que ir antes del gate en index.html");
+            const responsivos = [...bloqueOnb.matchAll(/class="([^"]*)"/g)].map((m) => m[1])
+              .filter((c) => /\bhidden\b/.test(c) && /\b(?:sm|md|lg|xl):(?:flex|block|grid|inline|inline-flex|inline-block)\b/.test(c));
+            assert.deepStrictEqual(responsivos, [],
+              "dentro de #onboarding no puede haber `hidden` + variante responsive de display: la regla de descendiente lo taparía con el CDN cargado");
+          }
+          /* Icono de la pestaña en línea: sin él cada carga pedía /favicon.ico,
+             el despliegue respondía 404 y la consola arrancaba en rojo (1-sep-2026). */
+          assert.ok(/<link rel="icon" href="data:image\/svg\+xml,/.test(html), "index.html declara el icono de la pestaña en línea (data: URI, SVG)");
+          assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test((html.match(/<link rel="icon"[^>]*>/) || [""])[0]), "el icono no es un emoji");
         }
 
         /* 1.6 · el título de la landing va en peso 250 (encargo). Tailwind no
@@ -18970,6 +19119,82 @@ async function main() {
     }
 
     const idx = JSON.parse(await redis.get("indice:competencia:meta"));
+    /* ══ CAMBIO DE AÑO: los procesos de diciembre que siguen ABIERTOS no se
+       purgan y el delta los sigue leyendo (1-sep-2026) ══
+       Se simula el 5 de enero del año siguiente con un proceso publicado en
+       diciembre que cierra el 25 de enero, con el handler REAL de sync sobre
+       los mocks. Contra el árbol anterior la full de enero lo borraba
+       (`purgadas`) y el $where del delta arrancaba el 1 de enero: FALLAN la
+       primera y la última aserción. Va al FINAL de la iteración porque deja el
+       corpus del año simulado; la siguiente iteración limpia Redis. */
+    {
+      const { enriquecer } = require("../lib/negocio.js");
+      const { proyectar } = require("../lib/proyeccion.js");
+      const { comprimir, leerChunksDedup } = require("../lib/almacen.js");
+      const { estado_abierto } = require("../lib/filtros.js");
+      const realNow = Date.now;
+      const ANO_SIG = ANO + 1;
+      let AHORA = Date.parse(`${ANO_SIG}-01-05T15:00:00.000Z`);
+      const pDic = { ":id": "row-cambio-ano-1", ":updated_at": `${ANO}-12-16T10:00:00.000Z`, id_del_proceso: "CO1.DIC.CAMBIO",
+        referencia_del_proceso: "LP-999-DIC", entidad: "ALCALDIA DE CAMBIO DE AÑO", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA VEREDA CAMBIO DE AÑO",
+        descripci_n_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA VEREDA CAMBIO DE AÑO", modalidad_de_contratacion: "Licitación pública",
+        estado_del_procedimiento: "Publicado", fase: "Presentación de oferta", fecha_de_publicacion_del: `${ANO}-12-15T09:00:00.000`,
+        fecha_de_recepcion_de: `${ANO_SIG}-01-25T17:00:00.000`, precio_base: "2500000000", codigo_principal_de_categoria: "V1.72141000",
+        departamento_entidad: "Tolima", ciudad_entidad: "Ibagué" };
+      const datasetAntes = socrata.getDataset();
+      const consultas = [];
+      const espia = (req) => { try { consultas.push(decodeURIComponent(req.url)); } catch { consultas.push(req.url); } };
+      socrata.server.on("request", espia);
+      try {
+        // diciembre del año que termina: guardado, ABIERTO, con la full del 28-dic y el delta al día
+        socrata.setDataset([...datasetAntes, pDic]);
+        await redis.set(CLAVES.manifest(`${ANO}-12`), JSON.stringify({ base: 0, sig: 1, count: 1 }));
+        await redis.set(CLAVES.chunk(`${ANO}-12`, 0), comprimir([enriquecer(proyectar(pDic))]));
+        const metaAntes = JSON.parse(await redis.get(CLAVES.meta));
+        await redis.set(CLAVES.meta, JSON.stringify({ ...metaAntes, ano: ANO, last_full: `${ANO}-12-28T08:00:00.000Z`, last_sync: `${ANO_SIG}-01-04T20:00:00.000Z` }));
+        Date.now = () => AHORA;
+        let r = await invocar(sync, "/api/sync?modo=auto&chain=0");
+        assert.strictEqual(r.cuerpo.ok, true, `la full de enero falló: ${JSON.stringify(r.cuerpo).slice(0, 200)}`);
+        let n = 1;
+        while (r.cuerpo.done === false) { r = await invocar(sync, "/api/sync?modo=auto&chain=0"); if (++n > 100) throw new Error("la full de enero no converge"); }
+        const chunksDic = await redis.scan(CLAVES.patronChunksMes(`${ANO}-12`));
+        assert.ok(chunksDic.length >= 1, "la full de enero NO puede purgar diciembre mientras tenga procesos abiertos");
+        const metaEnero = JSON.parse(await redis.get(CLAVES.meta));
+        /* Diciembre está entre los retenidos; y puede no ser el único: las filas
+           sintéticas sin fecha de cierre cuentan como ABIERTAS («sin dato deja
+           pasar»), así que sus meses también se quedan — en producción igual, hasta
+           que el delta (que ahora sí los lee) les traiga el cierre. Lo que no puede
+           haber es un mes retenido del año vigente. */
+        assert.ok(Array.isArray(metaEnero.meses_retenidos) && metaEnero.meses_retenidos.includes(`${ANO}-12`),
+          `la meta dice qué meses del año anterior se retuvieron: ${JSON.stringify(metaEnero.meses_retenidos)}`);
+        assert.ok(metaEnero.meses_retenidos.every((m) => m < `${ANO_SIG}-01`), "solo se retienen meses del año anterior");
+        const corpusEnero = await leerChunksDedup(redis, await redis.scan(CLAVES.patronChunks));
+        assert.ok(corpusEnero.some((f) => f.id_del_proceso === "CO1.DIC.CAMBIO" && estado_abierto(f)), "el proceso de diciembre sigue abierto y servido el 5 de enero");
+        /* Los sellos de la full salen de `new Date()` (reloj real) y el modo auto
+           los compara con `Date.now()` (aquí simulado): se alinean al reloj
+           simulado para que la segunda visita sea un DELTA, como en producción,
+           y no una full de higiene por «meses» de diferencia entre relojes. */
+        const metaFull = JSON.parse(await redis.get(CLAVES.meta));
+        await redis.set(CLAVES.meta, JSON.stringify({ ...metaFull, last_full: new Date(AHORA).toISOString(), last_sync: new Date(AHORA).toISOString() }));
+        // SECOP actualiza el proceso (adenda) → el delta lo vuelve a leer
+        consultas.length = 0;
+        AHORA += 10 * 60e3;
+        socrata.setDataset([...datasetAntes, { ...pDic, ":id": "row-cambio-ano-2", ":updated_at": `${ANO_SIG}-01-05T15:05:00.000Z` }]);
+        const r2 = await invocar(sync, "/api/sync?modo=auto&chain=0");
+        assert.strictEqual(r2.cuerpo.ok, true, `el delta de enero falló: ${JSON.stringify(r2.cuerpo).slice(0, 200)}`);
+        assert.ok(r2.cuerpo.delta && r2.cuerpo.delta.guardadas >= 1, `el delta tiene que guardar la adenda del proceso de diciembre: ${JSON.stringify(r2.cuerpo).slice(0, 400)}`);
+        const whereDelta = consultas.map((u) => (u.match(/\$where=([^&]*)/) || [])[1]).filter((w) => w && /:updated_at/.test(w)).pop();
+        assert.ok(whereDelta, "el delta tiene que haber consultado a Socrata");
+        const cota = (whereDelta.match(/fecha_de_publicacion_del >= '(\d{4}-\d{2})/) || [])[1];
+        assert.ok(cota && cota <= `${ANO}-12`, `la ventana del delta arranca en el mes retenido más antiguo (≤ ${ANO}-12), no el 1 de enero: ${whereDelta}`);
+        console.log(`  · cambio de año: diciembre con procesos abiertos se retiene en la full de enero (retenidos: ${metaEnero.meses_retenidos.join(", ")}) y el delta lo sigue leyendo`);
+      } finally {
+        Date.now = realNow;
+        socrata.server.removeListener("request", espia);
+        socrata.setDataset(datasetAntes);
+      }
+    }
+
     return {
       invocaciones, chunks: chunks.length, corpus: meta.total, leidas: meta.leidas,
       historico: (await leerHistorico()).length, entidades: idx.clasificadas, ms: Date.now() - t0,
@@ -19126,6 +19351,47 @@ async function main() {
       assert.strictEqual(filtros.admisibleParaIngesta({ ...vial,
         descripci_n_del_procedimiento: "MEJORAMIENTO DE LA CONECTIVIDAD DIGITAL DE LAS INSTITUCIONES EDUCATIVAS" }), false,
       "…«conectividad digital» (MinTIC) sigue fuera: el contexto que decide es el de telecom, no «servicio»");
+
+      /* ══ …Y OTROS SIETE SEGUÍAN SUELTOS (1-sep-2026) ══
+         «agropecuari», «seguro de», «automotor», «odontológic», «alimentación
+         escolar», «mercado campesino» y los animales mataban en la ingesta 10
+         de 18 objetos de obra de plantilla (medido con la función real). Cada
+         uno exige ahora el contexto de compra/servicio que lo hace suministro.
+         Contra el árbol anterior las diez primeras aserciones FALLAN; los doce
+         contra-casos de suministro siguen FUERA (la factura de Redis no crece
+         con pólizas, insumos ni raciones). */
+      for (const d of [
+        "MEJORAMIENTO DE VIAS TERCIARIAS PARA EL DESARROLLO AGROPECUARIO DEL MUNICIPIO",
+        "CONSTRUCCION DE PUENTE PEATONAL PARA EL PASO SEGURO DE LOS ESTUDIANTES DE LA INSTITUCION EDUCATIVA",
+        "REHABILITACION DE ANDENES Y ESPACIO PUBLICO PARA EL TRANSITO SEGURO DE PEATONES",
+        "CONSTRUCCION DEL COMEDOR ESCOLAR DE LA INSTITUCION EDUCATIVA PARA LA OPERACION DEL PROGRAMA DE ALIMENTACION ESCOLAR",
+        "CONSTRUCCION DE LA PLAZA DE MERCADO CAMPESINO DEL MUNICIPIO",
+        "ADECUACION DE LA INFRAESTRUCTURA FISICA DEL CONSULTORIO ODONTOLOGICO DEL CENTRO DE SALUD",
+        "CONSTRUCCION DEL DISTRITO DE RIEGO PARA LA PRODUCCION AGROPECUARIA DE LA VEREDA",
+        "CONSTRUCCION DEL CENTRO DE BIENESTAR ANIMAL PARA LA ATENCION DE CANINOS Y FELINOS DEL MUNICIPIO",
+        "CONSTRUCCION DE PUENTE VEHICULAR SOBRE LA QUEBRADA PARA EL TRAFICO AUTOMOTOR DE LA VIA",
+        "CONSTRUCCION DE PLACA HUELLA EN LA VIA QUE COMUNICA LAS VEREDAS PARA EL TRANSPORTE DE PRODUCTOS AGROPECUARIOS",
+      ]) {
+        assert.strictEqual(filtros.admisibleParaIngesta({ ...vial, descripci_n_del_procedimiento: d }), true,
+          `obra real tiene que ENTRAR a la ingesta: ${d.slice(0, 60)}`);
+      }
+      for (const d of [
+        "SUMINISTRO DE INSUMOS AGROPECUARIOS PARA PEQUEÑOS PRODUCTORES",
+        "SUMINISTRO DE PRODUCTOS AGROPECUARIOS PARA EL PROGRAMA",
+        "ADQUISICION DE SEGUROS DE VIDA PARA LOS FUNCIONARIOS",
+        "CONTRATAR EL SEGURO ESTUDIANTIL DE ACCIDENTES",
+        "MANTENIMIENTO PREVENTIVO Y CORRECTIVO DEL PARQUE AUTOMOTOR",
+        "SUMINISTRO DE INSUMOS ODONTOLOGICOS PARA LA ESE",
+        "SUMINISTRO DE ALIMENTACION ESCOLAR PAE VIGENCIA 2026",
+        "PRESTACION DEL SERVICIO DE ALIMENTACION ESCOLAR",
+        "ENTREGA DE MERCADOS FAMILIARES A POBLACION VULNERABLE",
+        "ADQUISICION DE CANINOS PARA LA POLICIA",
+        "COMPRA DE SEMOVIENTES BOVINOS PARA EL PROGRAMA",
+        "SUMINISTRO DE LIBROS PARA LA BIBLIOTECA",
+      ]) {
+        assert.strictEqual(filtros.admisibleParaIngesta({ ...vial, descripci_n_del_procedimiento: d }), false,
+          `suministro o servicio sigue FUERA de la ingesta: ${d.slice(0, 60)}`);
+      }
 
       /* ══ …Y TRES TÉRMINOS SUELTOS DE LA BLACKLIST MATABAN OBRA REAL ══
          «biblioteca», «alojamiento» y «capacitación» descartaban en la ingesta
@@ -19314,6 +19580,15 @@ async function main() {
       }
       assert.deepStrictEqual(Filtros.leerEstado(new URLSearchParams("max=500000000")).min, { min: null, max: 500000000 });
       assert.deepStrictEqual(Filtros.leerEstado(new URLSearchParams("min=1.000.000")).min, { min: 1000000, max: null });
+      /* Una fecha con la forma correcta pero inexistente («2026-13-45»,
+         «0000-00-00») vaciaba la lista con la ficha «desde 2026-13-45»
+         (1-sep-2026). Ilegible ⇒ inerte, como `min`/`max`. Contra el árbol
+         anterior las dos primeras FALLAN. */
+      assert.strictEqual(Filtros.leerEstado(new URLSearchParams("cierreDesde=2026-13-45")).cierre, null,
+        "una fecha que no existe no es un filtro: con ella la lista salía VACÍA");
+      assert.strictEqual(Filtros.leerEstado(new URLSearchParams("cierreHasta=0000-00-00")).cierre, null, "…tampoco el 0000-00-00");
+      assert.deepStrictEqual(Filtros.leerEstado(new URLSearchParams("cierreDesde=2026-02-28")).cierre, { desde: "2026-02-28", hasta: null },
+        "y una fecha real sigue leyéndose");
     }
 
     // ── 16 · el lector de cuerpos: bytes, multibyte y «nunca lanza» ──────────
@@ -20787,6 +21062,18 @@ async function main() {
     const r = await iteracion(i);
     resultados.push(r);
     console.log(`✔ iteración ${i}/${objetivo}: full en ${r.invocaciones} invocaciones reanudables · ${r.chunks} chunks · corpus ${r.corpus}/${r.leidas} filas · histórico ${r.historico} procesos → ${r.entidades} entidades clasificadas · ${r.ms} ms`);
+  }
+  /* Las dos herramientas de arranque cuentan las «secciones» de la memoria con
+     la MISMA definición (1-sep-2026: mapa.js decía 109 y estado.js 102 del
+     mismo archivo). Se EJECUTAN, no se leen por regex. */
+  {
+    const { execFileSync } = require("child_process");
+    const salidaMapa = execFileSync(process.execPath, [path.join(__dirname, "mapa.js")], { encoding: "utf8" });
+    const salidaEstado = execFileSync(process.execPath, [path.join(__dirname, "estado.js")], { encoding: "utf8" });
+    const nMapa = Number((salidaMapa.match(/— (\d+) secciones/) || [])[1]);
+    const nEstado = Number((salidaEstado.match(/(\d+) secciones/) || [])[1]);
+    assert.ok(nMapa > 0 && nEstado > 0, `las dos herramientas tienen que decir cuántas secciones hay (mapa ${nMapa}, estado ${nEstado})`);
+    assert.strictEqual(nEstado, nMapa, "mapa.js y estado.js no pueden contar «secciones» con definiciones distintas");
   }
   console.log(`\nTODAS LAS ITERACIONES PASARON (${objetivo}/${objetivo}) · peticiones Socrata simuladas: ${socrata.peticiones()}`);
   socrata.server.close();

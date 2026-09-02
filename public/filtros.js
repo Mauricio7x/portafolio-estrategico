@@ -228,7 +228,16 @@
     else if (/^\d+(\.\d+)?$/.test(s)) n = Number(s);
     return n != null && Number.isFinite(n) && n >= 0 ? n : null;
   };
-  const fechaISO = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || "")) ? String(v) : null);
+  /* Una fecha con la FORMA correcta pero que no existe («2026-13-45»,
+     «0000-00-00») pasaba y, como `cumple` compara cadenas, vaciaba la lista
+     con una ficha que la exhibía. Lo ilegible es inerte, como en `numero()`:
+     solo sobrevive lo que vuelve intacto del viaje por Date. */
+  const fechaISO = (v) => {
+    const s = String(v || "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+    const d = new Date(s + "T00:00:00Z");
+    return Number.isFinite(d.getTime()) && d.toISOString().slice(0, 10) === s ? s : null;
+  };
 
   /* De la query (objeto plano o URLSearchParams) al estado NORMALIZADO. Cada
      campo ausente vale null = «sin filtro». */

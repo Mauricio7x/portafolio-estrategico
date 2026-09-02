@@ -182,7 +182,10 @@ linea("");
 const rutaMemoria = ["docs/MEMORIA.md", "CLAUDE.md"].find((r) => fs.existsSync(path.join(RAIZ, r)));
 try {
   const memoria = fs.readFileSync(path.join(RAIZ, rutaMemoria), "utf8");
-  const titulos = memoria.split("\n").filter((l) => /^###? /.test(l));
+  // La definición de «sección» es la de tests/mapa.js (`^##+ `: ##, ### y ####):
+  // las dos herramientas contaban distinto (109 frente a 102 el 1-sep-2026) y
+  // dos cifras distintas con el mismo nombre son una mentira en incubación.
+  const titulos = memoria.split("\n").filter((l) => /^##+ /.test(l));
   linea("· " + rutaMemoria + ": " + Math.round(memoria.length / 1024) + " KB · " + titulos.length +
     " secciones. Las 12 más nuevas (lo nuevo va al FINAL del archivo; leer por secciones con" +
     " grep -n \"^###\" + sed -n 'A,Bp', jamás entero):");

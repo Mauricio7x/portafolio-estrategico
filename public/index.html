@@ -15,6 +15,10 @@
        exige que sean EXACTAMENTE lo que produce Glosario.titulo() y
        Glosario.descripcion(), para que no puedan separarse. -->
   <title>Detekta · Licitaciones de obra en Colombia</title>
+  <!-- Icono de la pestaña en línea (SVG por data: URI, sin archivo y sin emoji):
+       sin él cada carga pedía /favicon.ico, el despliegue respondía 404 y la
+       consola arrancaba con un error en rojo antes de la primera línea de la app. -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a84ff'/%3E%3Cpath d='M9 17l5 5 9-11' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <meta name="application-name" content="Detekta">
   <meta name="description" content="Detekta — inteligencia de licitaciones: a qué licitaciones de obra civil en Colombia puede presentarse, cuánto le cuesta ejecutarlas y a qué precio ofertar.">
   <meta property="og:site_name" content="Detekta">
@@ -278,6 +282,18 @@
     #onboarding.hidden, #app.hidden, #gate.hidden,
     .panel-pestana.hidden, [role="dialog"].hidden, .modal-velo.hidden,
     #mapeo-panel.hidden, #buscar-lista.hidden { display: none; }
+    /* LA PORTADA ENTERA QUEDABA DESPLEGADA SIN EL CDN (1-sep-2026): el selector
+       de archivo, «Preparando…», el formulario de tres datos y el de completar
+       se pintaban A LA VEZ debajo de las tres tarjetas de entrada, porque sus
+       `.hidden` los pone y quita public/onboarding.js y la regla de arriba solo
+       cubría los contenedores grandes. Dentro de #onboarding ningún nodo usa
+       `hidden` con una variante responsive (`md:flex`), así que aquí sí vale la
+       regla de descendiente; los ids van además explícitos porque la suite los
+       censa uno a uno contra los que onboarding.js y el gate tocan. */
+    #onboarding .hidden, #entrada-inicio.hidden, #rup-archivo.hidden, #rup-progreso.hidden,
+    #rup-mensaje.hidden, #rup-avisos.hidden, #rup-cifras.hidden, #completar-form.hidden,
+    #manual-form.hidden, #resultado-entrada.hidden, #gate-error.hidden,
+    #exp-mensaje.hidden { display: none; } /* el mensaje de experiencia lo toca onboarding.js y vive fuera de #onboarding */
 
     /* ── piel Apple sobre las utilidades de las plantillas existentes ──
        Tarjetas: vidrio (translúcido + blur + borde sutil). El blur va SOLO en
