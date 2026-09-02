@@ -6481,26 +6481,62 @@ la full no restaura `keyset` al cerrar el mes (el backfill sí); `redis.js` devu
 200 sin JSON; jerga («capacidad residual», «CRPC») en `p2_k.mensaje` que llega al `title` de la
 tarjeta; `ORDEN_CAMPOS.cierre` con `incluir_cerradas=1` pone la vencida primero.
 
-### Don Héctor · el dictamen del pliego: investigación y diseño, sin código todavía (2-sep-2026)
+### Don Héctor · la hipótesis verificada contra fuentes vigentes y el diseño del dictamen del pliego, sin código todavía (2-sep-2026)
 
 El dueño trajo un prompt de «Don Héctor», un ingeniero veterano que dictamina si presentarse a un
-proceso de SECOP II, y pidió investigar la mejor manera de meterlo en la app. La investigación
-completa, con el diseño, el prompt reescrito, el contrato JSON, las 19 pruebas y las decisiones que
-le tocan al dueño, está en `docs/DON_HECTOR_DICTAMEN_DEL_PLIEGO.md`. Aquí solo lo que no hay que
-volver a aprender:
+proceso de SECOP II, y pidió investigar la mejor manera de meterlo en la app. La primera entrega
+verificó el prompt solo contra el repositorio y diseñó; el dueño corrigió el orden: **el prompt era
+una hipótesis suya, y la tarea era verificar qué tan cierta es y si está vigente contra fuentes
+externas, actualizarla, y solo después analizar cómo implementarla**. La investigación completa, en
+ese orden (verificación afirmación por afirmación con URL y fecha, cruce con el árbol, conclusión,
+diseño, prompt, contrato JSON, 22 pruebas y decisiones del dueño), está en
+`docs/DON_HECTOR_DICTAMEN_DEL_PLIEGO.md`. Aquí solo lo que no hay que volver a aprender:
 
 - **Lo que vale del prompt es la LECTURA del pliego, no el conocimiento del oficio.** Los requisitos
   escondidos (experiencia específica, personal, equipos, certificaciones, forma de pago, garantías,
   multas, proveedor impuesto, marca sin «o equivalente», ítems sin valor) son exactamente el vacío
   que la memoria declara desde agosto («exigen el texto, que el dataset no trae»). Todo lo demás del
   prompt o ya existe como módulo (capacidad, puertas, ganancia, baja, ejecución de la entidad,
-  deducciones, cronograma, requisitos numéricos) o es cifra sin fuente.
-- **Ninguna cifra del prompt pasa al producto.** La tabla de días de pago por entidad no tiene
-  fuente y no es medible con jbjy-vk9h (no publica fechas de pago); «Santanderes +15-20 %» contradice
-  el índice regional 0,983 protegido por prueba; los márgenes por sector coinciden con la «A» del AIU,
-  no con la utilidad; «70 % quiebran», fiducia «2-3 %», seriedad «10 %», multas «>5 %», «±20 %»,
-  «3 días», «6 meses» y «presupuesto redondo» no aparecen en ningún documento o invierten el manual.
-  Un prompt de sistema con esas cifras es un `|| 0` con voz de experto.
+  deducciones, cronograma, requisitos numéricos), o es cifra sin fuente, o es una norma que hay que
+  citar con URL en vez de recordar.
+- **Verificar la hipótesis ANTES de diseñar, y contra fuentes externas, no contra el propio árbol.**
+  El resultado de las 45 afirmaciones (2-sep-2026): 2 confirmadas con norma vigente, 11 parcialmente
+  ciertas, 1 corregida, 1 contradicha por datos, 11 sin fuente pública, 4 juicio de oficio, 15 no
+  consultadas. La lección es de forma: la intuición del dueño acierta en los TEMAS y falla en los
+  NÚMEROS, y cuando la norma existe dice otra cosa (la seriedad es al menos el 10 % de la OFERTA, no
+  del presupuesto: Decreto 1082 art. 2.2.1.2.3.1.9; los 60 días de pago solo rigen para Mipyme y
+  sujetos al PAC: Ley 2024 de 2020 art. 12; el 20 % de Colombia Compra mide la OFERTA frente al costo
+  estimado y solo con menos de cinco ofertas; el DNP no multa entidades, suspende giros de regalías;
+  la Ley de Garantías restringe la contratación directa, no la licitación). INVIAS no paga a 45-60
+  días: en 2025-2026 pagó por cupo de PAC con facturas de hasta ocho meses (CCI, INVIAS, El Tiempo,
+  Semana, con fecha). «Sin fuente pública» y «no consultada» son veredictos DISTINTOS y el documento
+  los separa: el primero es un vacío estructural (nadie mide días de pago por entidad ni margen por
+  tipo de obra) y el segundo, un límite de la sesión.
+- **Ninguna cifra SIN FUENTE del prompt pasa al producto; lo que tiene fuente pasa como dato con fecha
+  y URL, nunca dentro del prompt de sistema.** La tabla de días de pago por entidad no la mide nadie
+  (jbjy-vk9h no publica fechas de pago); «Santanderes +15-20 %» contradice el índice regional 0,983
+  protegido por prueba y el APU regionalizado de Invías 2025-2 ya incorpora la geografía; nadie publica
+  márgenes por tipo de obra (Supersociedades los publica por EMPRESA); «70 % quiebran», fiducia
+  «2-3 %», multas «>5 %», «±20 %», «3 días», «6 meses» y «presupuesto redondo» no tienen fuente o
+  invierten el manual. Un prompt de sistema con esas cifras es un `|| 0` con voz de experto. Lo que sí
+  quedó en pie entra por la ENTRADA del modelo: `NORMAS_CITABLES` (24 normas con URL oficial, cada una
+  con `literal_leido: false` hasta que alguien abra la URL y confirme el artículo; el modelo solo
+  recibe las leídas, y en esta entrega recibe cero), `CONTEXTO_PUBLICO` (relevo nacional 7-ago-2026,
+  periodo territorial hasta 31-dic-2027, ventanas de la Ley de Garantías 8-nov-2025 / 31-ene-2026 /
+  21-jun-2026, ventana 2027 marcada «estimada») y `data/alertas_entidad.json` (hechos por entidad con
+  fecha y URL, a mano, sin sumar cifras de cortes distintos). Sus hashes van en la clave de caché; el
+  system sigue congelado y sin cifras; el censo de cifras los reconoce porque están en la entrada; y
+  el veredicto nunca depende de ellos. La compuerta `literal_leido` existe porque toda la evidencia
+  externa de la sesión fue el resumen del buscador: la salida a los dominios oficiales estaba
+  bloqueada y ningún texto de norma se leyó íntegro.
+- **El presupuesto de búsqueda web de una sesión son 200 consultas y se agota sin aviso.** Se acabó a
+  mitad de un fan-out de 19 agentes: tres verificadores y los nueve refutadores lo encontraron
+  agotado. La regla que salvó el resultado: un agente sin fuente DECLARA «no consultado» en vez de
+  responder de memoria, y el enum de veredictos lo distingue de «sin fuente». Antes de lanzar una
+  verificación externa se cuenta el presupuesto que queda; para repetirla, sesión nueva o
+  `CLAUDE_CODE_MAX_WEB_SEARCHES_PER_SESSION` más alto. `WebFetch` estuvo bloqueado a TODO dominio
+  externo (`EGRESS_BLOCKED`): la evidencia externa de una sesión es lo que devuelve el buscador,
+  nunca un documento leído, y el documento lo declara fila por fila.
 - **El modelo no devuelve NINGÚN número salvo la página.** El esquema JSON de salida no tiene campos
   de dinero ni de porcentaje; `dato_comparado` es un enum de claves del perfil y la cifra la pinta
   el servidor; el precio lo siguen dando `lib/apu/piso_techo`, `lib/baja_maxima`,
@@ -6557,12 +6593,15 @@ volver a aprender:
   el abogado no ha analizado para entidades públicas (L-8). El prompt prohíbe atribuir intenciones
   y exige las dos lecturas; el consejo de «preguntar informalmente a un conocido» contradice el
   mandamiento 18 y no entra en ningún texto.
-- **Método** (§9 de `PROMPT_INICIAL.md`): siete lectores con coordenadas resueltas, un lector de la
-  skill de la API, tres diseñadores (mínimo, riesgo, usuario), tres jueces, un sintetizador y una
-  pasada de 26 refutadores más tres críticos sobre el propio documento (23 confirmadas, 3
-  parciales). El lector de la API se cayó una vez por el límite de la sesión y el workflow se
-  reanudó con los siete lectores en caché: la reanudación por caché de agentes funciona y ahorra
-  media hora. La suite con la que se trabajó: 4/4 sobre el árbol sin tocar.
+- **Método** (§9 de `PROMPT_INICIAL.md`): primera pasada sobre el árbol con siete lectores con
+  coordenadas resueltas, un lector de la skill de la API, tres diseñadores (mínimo, riesgo, usuario),
+  tres jueces, un sintetizador y 26 refutadores más tres críticos sobre el propio documento (23
+  confirmadas, 3 parciales). Segunda pasada, tras la corrección del dueño, sobre la hipótesis: nueve
+  verificadores con búsqueda web (un tema cada uno, enum cerrado de veredictos, URL con fecha y
+  autoridad por fuente), nueve refutadores y un sintetizador; 19 agentes, 1,44 millones de tokens, 36
+  minutos. El lector de la API se cayó una vez por el límite de la sesión y el workflow se reanudó
+  con los siete lectores en caché: la reanudación por caché de agentes funciona y ahorra media hora.
+  La suite con la que se trabajó: 4/4 sobre el árbol sin tocar.
 
 Estado: **solo documento**; no se tocó `api/`, `lib/`, `public/` ni la suite. La rama de trabajo la
 impuso el arnés (`claude/don-hector-research-rnceh0`); la fusión a `main` es del dueño.
