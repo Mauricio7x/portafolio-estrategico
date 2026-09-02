@@ -6566,3 +6566,28 @@ volver a aprender:
 
 Estado: **solo documento**; no se tocó `api/`, `lib/`, `public/` ni la suite. La rama de trabajo la
 impuso el arnés (`claude/don-hector-research-rnceh0`); la fusión a `main` es del dueño.
+
+### El lookahead delante del lookbehind: la lista negra 19 veces más rápida y `main` vuelve a verde (2-sep-2026)
+
+Al fusionar `main` (PR #134, auditoría del 1-sep) en la rama de Don Héctor, la suite cayó tres veces
+seguidas en la misma aserción: «el juicio fino tardó 623 / 679 / 572 ms sobre 2 600 procesos (límite
+500 ms)» — la tercera sobre `origin/main` PURO en un worktree aparte, con la máquina sin carga
+(`load average 0.09`). No era contención ni era la rama: era `main`. La causa, medida con un
+micro-benchmark sobre los mismos 2 600 objetos: `BLACKLIST_OBJETO` pasó de 60 ms a 307 ms (5×)
+porque las siete alternativas nuevas del 1-sep llevan un lookbehind de longitud variable
+(`(?<=\b(?:suministro|…)\b[\s\S]{0,40})`) DELANTE de la palabra clave, y el motor lo evalúa hacia
+atrás en cada frontera de palabra aunque la palabra clave no esté; `evaluarObjeto` además la corre
+dos veces (`test` y `match`, `lib/filtros.js:462,494-495`).
+
+- **El arreglo, mecánico y sin cambiar el conjunto de aciertos**: cada alternativa `(?<=CONTEXTO)PALABRA`
+  pasa a `(?=PALABRA)(?<=CONTEXTO)PALABRA`. El lookahead con la propia palabra falla en el primer
+  carácter en casi todas las posiciones y el lookbehind solo corre donde la palabra está. Mismo
+  índice, mismo texto casado, mismo grupo 1 (el lookahead no captura): comprobado con `exec` sobre
+  70 558 cadenas (60 000 combinaciones aleatorias del vocabulario del propio regex más todos los
+  literales entre comillas de la suite, con y sin tildes), 26 198 aciertos, 0 diferencias.
+  Resultado: 307 → 16 ms por 2 600 textos; el juicio fino vuelve por debajo del límite.
+- **La cerradura ya existía**: la aserción de 500 ms de `tests/e2e.js:3006` es la que cazó la
+  regresión, y FALLA contra el árbol anterior (572-679 ms). No se toca el límite ni la prueba.
+- **La lección**: un lookbehind de longitud variable es una cerradura hacia atrás que se paga en
+  cada posición; se precede siempre de un lookahead con el literal. Vale para las nueve
+  alternativas de hoy y para la siguiente que alguien añada con el mismo mecanismo.
