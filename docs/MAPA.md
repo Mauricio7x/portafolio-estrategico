@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-08-31 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-02 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -157,8 +157,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 109 secciones. Las 10 más nuevas:
-  L  5681  DOS DE LAS CUATRO GRANULARIDADES DE LA BAJA ESTÁN VACÍAS EN PRODUCCIÓN (24-ago-2026)
+· MEMORIA · docs/MEMORIA.md — 110 secciones. Las 10 más nuevas:
   L  5721  Auditoría del módulo APU: las dos mitades no están conectadas (24-ago-2026)
   L  5793  El prompt inicial vive en el repositorio y no puede contener estado (26-ago-2026)
   L  5857  Banco de precios verificable · el informe retail del 26-ago-2026 (censo en docs/BANCO_PRECIO
@@ -168,6 +167,7 @@
   L  6099  El calendario de cierres, y tres bloques menos en Mi empresa (31-ago-2026)
   L  6204  El lugar de ejecución ES la entidad, «Para Helder» abre la pestaña, y Tailwind medido de ver
   L  6273  La marca es el botón de actualizar, y el calendario baja junto al consorcio (31-ago-2026, te
+  L  6353  Auditoría integral del 1-sep-2026 · trece frentes, dos auditores que llegaron y el resto a m
 
 · DOCUMENTOS docs/ — 37:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)

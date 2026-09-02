@@ -1335,10 +1335,11 @@ Notas:
 - Se puede pedir cualquier rango, incluido el año en curso
   (`?desde=2026-01&hasta=2026-12`), útil para recuperar los procesos que ya estaban cerrados la
   primera vez que la app los vio. Re-ejecutar un rango **reemplaza** esos meses, no los duplica.
-- **Una vez al año conviene repetir el año que termina.** El delta consulta solo publicaciones del
-  año vigente (`fecha_de_publicacion_del >= 1 de enero`), así que un proceso publicado en diciembre
-  y adjudicado en febrero del año siguiente no le llega: su copia histórica queda con el estado que
-  tenía al cerrar el año. Un `?desde=2026-01&hasta=2026-12&reiniciar=1` en enero lo deja al día.
+- **Una vez al año conviene repetir el año que termina.** Los meses del año anterior que todavía
+  tienen procesos ABIERTOS no se purgan en enero y el delta los sigue leyendo (su ventana arranca en
+  el mes retenido más antiguo, no el 1 de enero — desde el 1-sep-2026). Lo que sí queda con el
+  estado del cierre de año es la copia HISTÓRICA de los procesos que ya habían cerrado: un
+  `?desde=2026-01&hasta=2026-12&reiniciar=1` en enero la deja al día.
 - Para volver a extraer un rango ya terminado hay que pasar `&reiniciar=1` (sin él, una segunda
   llamada al mismo rango solo reconstruye el índice).
 - El histórico **no** se purga nunca: ni la full de higiene mensual ni la compactación lo tocan.
