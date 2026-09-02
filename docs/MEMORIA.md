@@ -6350,6 +6350,136 @@ pulsarla la flecha gira y la línea dice «Trayendo datos de SECOP II…» —ta
 donde el panel de Mi empresa no se ve—. Las tres pasadas (1280 y 390 con Tailwind, 390 sin él)
 terminan con el orden de la pestaña verificado en píxeles y la consola limpia.
 
+### Auditoría integral del 1-sep-2026 · trece frentes, dos auditores que llegaron y el resto a mano
+
+Encargo del dueño: «consultoría, auditoría y corrige todo lo que encuentren, con base en la filosofía
+de la página». Método del §9: catorce auditores por frente (diez de servidor/datos/suite, cuatro de
+interfaz sobre un arnés con Chromium real) con reproducción ejecutada por hallazgo, y tres
+refutadores por hallazgo. **El límite de sesión cortó los dos workflows**: terminaron `ingesta`
+(3 hallazgos, 7 menores, 11 comprobaciones en verde) y `listado` (7, 8, 14); los otros doce
+frentes se cerraron a mano en la sesión principal con la misma regla —cada hallazgo se
+re-reprodujo aquí antes de tocar nada— y los artefactos parciales de los auditores de interfaz
+(capturas y medidas JSON en el scratchpad) sirvieron de evidencia. Es la segunda vez que pasa
+(27-ago): **el fan-out no puede ser la única vía; lo que no llega se cierra a mano, y se dice.**
+
+**El arnés que faltaba, ahora descrito para no reconstruirlo a ciegas.** Fuera del repositorio
+(scratchpad de la sesión, no se versiona): un servidor Node que sirve `public/`, aplica los
+rewrites y redirects de `vercel.json`, y enruta `/api/*` a los SEIS routers reales con el mock
+de Upstash y el mock de Socrata **extraídos de `tests/e2e.js` por rango de líneas** (las
+funciones `crearMockSocrata`/`crearMockUpstash` y los generadores de datos, con `require("../`
+reescrito a ruta absoluta), cargando los datasets como lo hace `main()` (sin eso el corpus queda
+en cero: la sincronización responde `done:true, total:0` y el listado 503). Chromium real con
+`playwright-core` instalado en el scratchpad (`npm i playwright-core` funciona; los CDN no:
+`cdn.tailwindcss.com` responde `ERR_TUNNEL_CONNECTION_FAILED`, igual que la red del dueño), y el
+CSS de Tailwind v3 **compilado con su CLI sobre este `public/`** (444 utilidades) servido en lugar
+del script del CDN para la pasada «con Tailwind». Las dos pasadas siguen siendo obligatorias.
+
+**Lo corregido, cada uno con cerradura que FALLA contra el árbol anterior y ejecuta la función real:**
+
+- **⚠️ SIETE TÉRMINOS SUELTOS DE LA BLACKLIST DE INGESTA MATABAN OBRA CIVIL DE PLANTILLA.** Tras
+  condicionar «conectividad», «capacitación», «alojamiento» y «biblioteca» (27-ago) quedaron
+  sueltos `agropecuari`, `seguros? de`, `automotor`, `odontológic`, `alimentación escolar`,
+  `mercado campesino` y los animales: **10 de 18 objetos reales de obra morían ANTES de Redis**
+  —la vía terciaria «para el desarrollo agropecuario», el puente peatonal «para el paso seguro de
+  los estudiantes», el comedor escolar del PAE, la plaza de mercado campesino, el consultorio
+  odontológico del centro de salud, el distrito de riego, el centro de bienestar animal, el puente
+  vehicular «para el tráfico automotor»— invisibles al diagnóstico, que censa lo ya guardado. Cada
+  término exige ahora su contexto de compra o servicio (el mismo lookbehind acotado), «seguros»
+  solo con lo asegurado detrás (vida, bienes, responsabilidad…: «paso seguro de» no es una
+  póliza), y `libros`/`becas`/`ganado` cierran con `\b` (casaban «becarios»). 18/18 entran y los 12
+  contra-casos de suministro siguen fuera. **La lección, tercera vez**: la blacklist es la factura
+  de Redis, no el veredicto; un término suelto es un falso negativo esperando su fraseo.
+- **⚠️ CADA ENERO DESAPARECÍAN LAS LICITACIONES DE NOVIEMBRE-DICIEMBRE QUE SEGUÍAN ABIERTAS.** La
+  ventana del corpus activo es el año calendario de PUBLICACIÓN: la primera full de enero purgaba
+  los meses del año anterior enteros —con sus procesos abiertos hasta enero o febrero dentro— y el
+  delta (`fecha_de_publicacion_del >= 1 de enero`) no los volvía a leer jamás. Reproducido con el
+  handler real a un 5 de enero simulado: `purgadas: 2`, corpus servido sin el proceso de diciembre,
+  y la adenda posterior ignorada. Ahora la full **lee los chunks de cada mes del año anterior y lo
+  RETIENE si alguno sigue abierto** (`meta.meses_retenidos`), y la ventana del delta arranca en el
+  mes activo más antiguo presente en Redis (`inicioVentanaDelta`), no el 1 de enero; el
+  `mes_fuera_de_ventana` del delta usa la misma cota. La siguiente full retira el mes cuando ya no
+  quede nada abierto. Un mes con filas SIN fecha de cierre también se retiene («sin dato deja
+  pasar»), hasta que el delta —que ahora sí lo lee— le traiga el cierre. La cerradura va al FINAL
+  de la iteración de la suite porque deja el corpus del año simulado. README actualizado: la nota
+  del cambio de año describía la mitad histórica del efecto y callaba la activa.
+- **La guarda del año imposible del 27-ago se quedó en `manifestacion` y el 1970 seguía DECIDIENDO
+  el cierre.** `fechaCierre` elegía la PRIMERA columna que parseaba (el 1970 de timestamp nulo,
+  aunque la siguiente trajera la fecha real), `cierre_vencido` daba el proceso por vencido en la
+  ingesta y en la lectura, y si una versión posterior traía la fecha real, las señales de prórroga
+  (`leerChunksDedup`, `senalesDeCierre`) fabricaban una «prórroga» que multiplicaba la probabilidad
+  por 1,2. `fechaOperable` vive ahora en `lib/habiles` (junto a `ANIO_MIN/ANIO_MAX`) y la llaman
+  `fechaCierre`, las dos señales y `manifestacion` (que antes tenía la suya). Lección repetida por
+  tercera vez con la misma fecha: **una guarda de entrada cubre TODAS las entradas de la misma
+  aritmética** — y «todas» incluye las de otros módulos.
+- **Dos clasificaciones del mismo proceso**: `lib/filtros_lista.CONSULTORIA_RE` era una copia
+  reescrita de `lib/semantica.TIPO_CONSULTORIA` sin «supervisión técnica»; `tipoTrabajoDe(l)`
+  decía «obra» y `tipoTrabajoDe(l, rup)` «consultoría», así que la baja máxima cobraba la
+  contribución del 5 % que la ganancia no cobraba: b_max 7,89 % en pantalla en vez de 12,5 %, y la
+  probabilidad −38 %. La copia se retiró y se llama la regla exportada. Es el defecto que el
+  20-ago se corrigió para un caso y aquí volvió por la copia (regla dura: llamar, no reescribir).
+- **`?ubicacion_valida=zzz` no era inerte** (se leía como «fuera de mi zona» y escondía filas sin
+  ficha): lista blanca en las dos direcciones, como el resto de los filtros. **Una fecha imposible
+  en `cierreDesde`/`cierreHasta`** («2026-13-45») pasaba la lectura y vaciaba la lista con una
+  ficha que la exhibía: `fechaISO` exige una fecha que sobreviva al viaje por `Date`.
+- **Registro formal también en lo que el servidor manda a pantalla**: `listar.js` servía «todavía
+  no calculaste el costo…» en `margen_estimado.motivo`, que la tarjeta pinta tal cual con el orden
+  «Más recorrido de precio». La cerca de tuteo barría solo `public/`; ahora barre TODOS los `.js`
+  de `lib/` y `api/` (sin comentarios) con el pretérito del tuteo añadido; hoy sin excepciones.
+- **`ordenar_por=ganancia` sin credencial quedaba mudo** (todas las filas con `ganancia: null`,
+  orden real por VE y `ordenado_por: "ganancia"` intacto): se trata como `margen` y viaja
+  `ganancia_ignorada`. **La justificación copiable decía «Cuantía: $0 · Valor esperado: $0»** sin
+  cuantía publicada: el desglose publica null y el texto dice «no publicada»/«no calculable».
+  **El motivo público del ajuste «precio» afirmaba que el descuento «ajusta la probabilidad»**
+  cuando sin credencial el factor es 1 por construcción: dice el hecho.
+- **Sin cuantía no hay rango**: `cuantia_rango` salía «bajo» con el 0 de «no publicada» y
+  `?cuantia_rango=bajo` mezclaba «sin presupuesto» con «menos de 100 M»; ahora null (las puertas
+  ya trataban el 0 como sin_dato; el histograma del resumen sigue agrupándolo en «bajo»: decisión
+  pendiente de producto, no toca la lista).
+- **LA PORTADA ENTERA QUEDABA DESPLEGADA SIN EL CDN** —medido en Chromium a 1280 px: selector de
+  archivo, «Preparando…», el formulario de tres datos, el de completar y el resultado, todos
+  visibles a la vez bajo las tres tarjetas de entrada—: la red de seguridad de `.hidden` cubría los
+  contenedores grandes y no los nodos que `onboarding.js` y el gate esconden. Regla de descendiente
+  `#onboarding .hidden` (segura: medido, ningún nodo de ahí combina `hidden` con una variante
+  responsive de display; la suite lo exige) más los ids explícitos, y **la cerradura es un CENSO
+  del fuente**: todo id que `onboarding.js` alcanza y nace oculto tiene que estar en la regla — y
+  el censo cazó `exp-mensaje`, fuera de `#onboarding`, que se añadió. La misma medición confirmó
+  que el fallo de pdf.js por CDN ya cae al formulario de tres datos con el motivo escrito (el
+  «Preparando…» que se veía pegado era este mismo defecto de `.hidden`).
+- **El icono de la pestaña**: `index.html` no declaraba ninguno, cada carga pedía `/favicon.ico`,
+  el despliegue respondía 404 y la consola arrancaba en rojo. SVG en línea por `data:` URI.
+- **`tests/mapa.js` y `tests/estado.js` contaban «secciones» con dos definiciones** (109 frente a
+  102 del mismo archivo: `^##+ ` contra `^###? `). Una sola (la del mapa) y una cerradura que
+  EJECUTA las dos herramientas y compara.
+
+**Censos y verificaciones que quedaron en verde (para no re-auditarlos a ciegas):** superficie
+HTTP completa —43 operaciones × GET/POST × sin token / token inválido / token válido— ejecutada
+contra los seis routers: todo endpoint protegido responde 401 con token ausente o inválido, los
+públicos (portada, entidades, manifestación, entrada, parámetros en GET, sync del cron) no sirven
+cifras del perfil, `?op=constructor`/`__proto__`/`toString` responden 400/404 en los seis; ningún
+`fetch` del frontend lleva el token en la URL; la marca escrita a mano solo aparece en comentarios
+de cabecera; los símbolos ✓ ✗ ✔ ✘ ⚠ del frontend son texto (no emoji: la cerca lo distingue a
+propósito); el único `fetch(...).then(r => r.json())` acoplado es el de la portada pública, con
+`catch(() => null)` y sin cifra del perfil detrás; `docs/MAPA.md` solo derivaba en la fecha; las
+ops citadas en README existen (`api/apu.js` acepta `op` como sinónimo de `accion`).
+
+**Lo que se DECIDIÓ NO tocar, con motivo:** los endpoints públicos que ignoran un token inválido
+(`entrada`, `entidades`, `portada`, `manifestacion`, `cronograma`, `deducciones`, `parametros`
+en GET) — no tienen variante privilegiada, así que no hay degradación que callar; unificarlos a
+401 es decisión de producto del dueño. `cuantia_cop` sigue viajando 0 sin cuantía (el cambio a
+null cruza a docenas de consumidores; las puertas ya lo tratan como sin dato). El histograma
+`por_rango_cuantia` del resumen agrupa el null en «bajo» (cambiar la forma rompe al consumidor).
+
+**Pendientes de esta auditoría que no cupieron** (los frentes que el límite de sesión no dejó
+auditar con agente y no se cerraron aquí con reproducción): pliego (SSRF de `apu_descargar`,
+cantidades ilegibles), motor APU (cascada de precios y vigencias, normativa de cada factor),
+mercado (SoQL con texto del usuario en `entidades?q=` y `socio`, socio con error de red
+presentado como «sin sanciones»), perfil (RUP en PDF con números partidos, consorcio con
+porcentajes que no suman 100) y la suite (tabla regla dura → aserción). Menores anotados por los
+dos auditores que sí llegaron: `contarMes` publica `esperados: 0` con un count ilegible;
+`negocio.js` sigue con `ofertas ?? 0` (el nivel no decide); el fetch a Socrata sin `AbortSignal`;
+la full no restaura `keyset` al cerrar el mes (el backfill sí); `redis.js` devuelve null ante un
+200 sin JSON; jerga («capacidad residual», «CRPC») en `p2_k.mensaje` que llega al `title` de la
+tarjeta; `ORDEN_CAMPOS.cierre` con `incluir_cerradas=1` pone la vencida primero.
 
 ### Don Héctor · el dictamen del pliego: investigación y diseño, sin código todavía (2-sep-2026)
 
