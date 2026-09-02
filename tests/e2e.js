@@ -5614,6 +5614,8 @@ async function main() {
       ...(await redis.scan("pliego:*")), ...(await redis.scan("formulario1:*")),
       // Mis procesos (18-ago-2026): guardados por perfil y caché del detalle de competencia (1 h)
       ...(await redis.scan("seguimiento:*")), ...(await redis.scan("pulso:*")),
+      // Dictamen del pliego (2-sep-2026): caché por versión, candado, cuota diaria y uso mensual
+      ...(await redis.scan("dictamen:*")), ...(await redis.scan("lock:dictamen:*")),
     ];
     if (claves.length) await redis.del(...claves);
     for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*", "equivalencias:*",
@@ -17663,13 +17665,9 @@ async function main() {
            están en la lista y siguen permitidos: los pinta la fuente y heredan
            el color. Y `pliego.js` entra en la vigilancia: su semáforo se pinta
            en la misma pestaña que el resto. */
-        const RE_EMOJI_UI = new RegExp(
-          "[\\u{1F300}-\\u{1FAFF}\\u{231A}\\u{231B}\\u{23E9}-\\u{23FA}\\u{25FD}\\u{25FE}"
-          + "\\u{2614}\\u{2615}\\u{2648}-\\u{2653}\\u{267F}\\u{2693}\\u{26A1}\\u{26AA}\\u{26AB}"
-          + "\\u{26BD}\\u{26BE}\\u{26C4}\\u{26C5}\\u{26CE}\\u{26D4}\\u{26EA}\\u{26F2}\\u{26F3}"
-          + "\\u{26F5}\\u{26FA}\\u{26FD}\\u{2705}\\u{270A}\\u{270B}\\u{2728}\\u{274C}\\u{274E}"
-          + "\\u{2753}-\\u{2755}\\u{2757}\\u{2795}-\\u{2797}\\u{27B0}\\u{27BF}\\u{2B1B}\\u{2B1C}"
-          + "\\u{2B50}\\u{2B55}]", "gu");
+        /* Una sola copia (2-sep-2026): la cerca vive en lib/lenguaje_pantalla.js y
+           la comparte con el censo en tiempo de ejecución del dictamen del pliego. */
+        const { RE_EMOJI_UI } = require("../lib/lenguaje_pantalla.js");
         /* ⚠️ CENSO, NO LISTA (31-ago-2026): esta cerca nombraba cuatro archivos
            y dejaba fuera los otros nueve módulos del navegador — incluido
            `calendario.js`, que nace con un semáforo de tres colores y es donde
@@ -18057,7 +18055,8 @@ async function main() {
            mandó. Las formas de tuteo van con frontera de palabra sobre el
            fuente sin comentarios: ninguna colisiona con identificadores del
            código (medido antes de añadirlas). */
-        const VOSEO_RE = /\b(Pod[ée]s|Cumpl[íi]s|Ten[ée]s|Quer[ée]s|Deb[ée]s|Sab[ée]s|presentarte|pensá|verificá|revisá|hacé|poné|fijate|and[aá]|dale|vas|ejecutaste|tendr[aá]s|Eliminar[aá]s|puedes|tienes|quieres|debes|hazlo)\b/;
+        /* Una sola copia (2-sep-2026): misma referencia que usa lib/dictamen.js. */
+        const { VOSEO_RE } = require("../lib/lenguaje_pantalla.js");
         /* ⚠️ Y ESTA CERCA TAMBIÉN ENUMERABA (31-ago-2026). Barría ocho módulos
            por su nombre, así que el noveno —`calendario.js`, el más nuevo y el
            que ocupa la mitad de la primera pantalla— habría entrado sin
@@ -18096,7 +18095,8 @@ async function main() {
            servía «todavía no calculaste el costo…» en `margen_estimado.motivo`,
            que la tarjeta pinta tal cual — fuera de la cerca, que solo barría
            public/. Se censan TODOS los .js de lib/ y api/ (sin comentarios), con
-           el pretérito del tuteo añadido; excepciones declaradas: ninguna. */
+           el pretérito del tuteo añadido; excepción declarada: lib/lenguaje_pantalla.js,
+           que es la propia cerca. */
         {
           const TUTEO_PRETERITO_RE = /\b(?:calcul|guard|carg|sub|pus|hic|dij|elig|revis|pag|firm|gan|perd|present|ejecut)aste\b/;
           const raizRepo = path.join(__dirname, "..");
@@ -18104,7 +18104,9 @@ async function main() {
           const andar = (d) => { for (const f of fs.readdirSync(d)) { const q = path.join(d, f); if (fs.statSync(q).isDirectory()) andar(q); else if (f.endsWith(".js")) archivosLib.push(q); } };
           andar(path.join(raizRepo, "lib")); andar(path.join(raizRepo, "api"));
           assert.ok(archivosLib.length >= 60, "el censo de lib/ y api/ se quedó corto");
-          for (const arch of archivosLib) {
+          /* Excepción declarada (2-sep-2026): lib/lenguaje_pantalla.js ES la cerca —su
+             fuente contiene las palabras que caza— y no sirve texto a nadie. */
+          for (const arch of archivosLib.filter((q) => path.basename(q) !== "lenguaje_pantalla.js")) {
             const txt = sinComentarios(fs.readFileSync(arch, "utf8"));
             const m = txt.match(VOSEO_RE) || txt.match(TUTEO_PRETERITO_RE);
             assert.ok(!m, `${path.relative(raizRepo, arch)}: registro formal (usted) — tuteo en texto servido: «${m && m[0]}»`);
@@ -21052,6 +21054,561 @@ async function main() {
       + "(fuga sin token, presupuesto único, precio_manual, origen del precio, conectividad/mano de obra, "
       + "Number(null), año imposible, celda vacía, precio 0, unidades, cantidad ilegible, caja, hoja del Excel, "
       + "javascript:, filtros inertes, cuerpos, routers, índice, colisión, techo, ROIC, retail, calendario, RUP, días, bancos, sello del offset, backfill, huérfanos, salto de página, Formulario 1, cascada de 12 niveles, pavimento flexible, total del documento, base de la validación 8, hoja de APU radicable, unidades del ICCU, el capítulo desempata)");
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     unidad · DICTAMEN DEL PLIEGO (proyecto «Don Héctor», 2-sep-2026)
+     --------------------------------------------------------------------------
+     Las 21 cerraduras de docs/DON_HECTOR_DICTAMEN_DEL_PLIEGO.md §4.9. Cada una
+     dice contra qué mutación FALLA; una prueba que pasa contra el árbol anterior
+     es un adorno. Sin red: `global.fetch` se sustituye SOLO para
+     api.anthropic.com (el resto sigue yendo al mock de Upstash) y se restaura
+     en `finally`; ANTHROPIC_API_KEY no está definida al arrancar.
+     ═══════════════════════════════════════════════════════ */
+  {
+    const Dc = require("../lib/dictamen.js");
+    const Lp = require("../lib/lenguaje_pantalla.js");
+    const Dfx = require("../lib/diff.js");
+    const routerPliego = require("../api/pliego.js");
+    const { PERFILES: PERFILES_DC } = require("../lib/perfiles.js");
+    const RAIZ_DC = path.join(__dirname, "..");
+    const fuenteDe = (rel) => fs.readFileSync(path.join(RAIZ_DC, rel), "utf8");
+    const limpioDe = (rel) => sinComentarios(fuenteDe(rel));
+    const ID_DC = "CO1.DIC.1";
+    const URL_DC = "/api/pliego?op=dictamen";
+    const sha256 = (s) => require("crypto").createHash("sha256").update(String(s)).digest("hex");
+    const limpiarDictamen = async () => {
+      const ks = [...(await redis.scan("dictamen:*")), ...(await redis.scan("lock:dictamen:*")), ...(await redis.scan(`pliego:${ID_DC}:*`))];
+      if (ks.length) await redis.del(...ks);
+    };
+    await limpiarDictamen();
+    assert.strictEqual(process.env.ANTHROPIC_API_KEY, undefined, "la suite arranca sin clave de IA, como sin clave de OCR");
+
+    const TEXTO_DC = "\f1\nPLIEGO DE CONDICIONES\nObjeto: construcción de placa huella en la vereda\n\f2\nRequisitos financieros\n"
+      + "Índice de liquidez mayor o igual a 1,5\nCapital de trabajo mínimo exigido: $ 1.500.000.000\n\f3\nCapital de trabajo mínimo\n$ 1.500.000.000\nGarantía de seriedad del 10 % de la oferta\n"
+      + "\f4\nPlazo de ejecución: seis (6) meses\nAnticipo: no se otorga anticipo\n\f5\n";
+    const DICTAMEN_OK = {
+      veredicto: "presentarse_con_reservas", veredicto_frase: "Puede presentarse si confirma el capital de trabajo.",
+      motivos: [{ texto: "El pliego exige un capital de trabajo mínimo.", pagina: 3, cita: "Capital de trabajo mínimo $ 1.500.000.000" }],
+      requisitos_para_participar: [
+        { tipo: "financiero", texto: "Capital de trabajo mínimo exigido.", pagina: 3, cita: "Capital de trabajo mínimo $ 1.500.000.000", estado: "no_cumple", dato_comparado: "capital_trabajo_cop", motivo_estado: "El capital de trabajo del perfil es menor que el exigido." },
+        { tipo: "anticipo_o_pago_anticipado", texto: "No se otorga anticipo.", pagina: 4, cita: "no se otorga anticipo", estado: "sin_dato_del_perfil", dato_comparado: null, motivo_estado: "Depende de la caja disponible." },
+      ],
+      riesgos: [{ texto: "Plazo de seis meses para la obra.", gravedad: "alta", base: "pliego", referencia: null, pagina: 4, cita: "Plazo de ejecución: seis (6) meses", que_hacer: "Revise el rendimiento de sus cuadrillas." }],
+      puntos_a_favor: [], pendientes_de_verificar: [],
+      preguntas_para_la_entidad: ["¿La garantía de seriedad admite póliza bancaria?"], no_encontrado_en_el_pliego: ["multas"],
+      confianza: "media", confianza_motivo: "Se leyó el pliego completo.",
+    };
+    const respuestaModelo = (dict, extra = {}) => ({
+      model: "claude-opus-5", stop_reason: "end_turn",
+      content: [{ type: "text", text: typeof dict === "string" ? dict : JSON.stringify(dict) }],
+      usage: { input_tokens: 1234, output_tokens: 321 }, ...extra,
+    });
+    const fetchOriginal = global.fetch;
+    const entorno = {};
+    for (const k of ["ANTHROPIC_API_KEY", "DICTAMEN_CUOTA_DIA", "DICTAMEN_PRESUPUESTO_MS", "DICTAMEN_RESPALDO", "DICTAMEN_MODELO", "DICTAMEN_ESFUERZO"]) entorno[k] = process.env[k];
+    const poner = (k, v) => { if (v === undefined) delete process.env[k]; else process.env[k] = v; };
+    let llamadas = [];
+    const respuesta = (status, cuerpo, cabeceras = {}) => ({
+      ok: status < 300, status,
+      headers: { get: (k) => (Object.prototype.hasOwnProperty.call(cabeceras, String(k).toLowerCase()) ? cabeceras[String(k).toLowerCase()] : null) },
+      json: async () => { if (cuerpo === "<html>") throw new Error("no es JSON"); return cuerpo; },
+      text: async () => (typeof cuerpo === "string" ? cuerpo : JSON.stringify(cuerpo)),
+    });
+    /* el espía solo intercepta la API del modelo; Upstash sigue yendo al mock */
+    const espiar = (fn) => {
+      llamadas = [];
+      global.fetch = async (url, opciones) => {
+        const u = String(url);
+        if (!u.startsWith("https://api.anthropic.com")) return fetchOriginal(url, opciones);
+        llamadas.push({ url: u, opciones });
+        return fn(u, opciones, llamadas.length);
+      };
+    };
+    const pedirDictamen = (cuerpo, cab = CAB_TOKEN) => invocarPost(routerPliego, URL_DC, cuerpo, cab);
+    /* `invocar` resuelve al escribir la respuesta; el `finally` del handler (que
+       libera el candado) corre después: se le da hasta un segundo. */
+    const candadoLibre = async (k) => { for (let i = 0; i < 50 && (await redis.get(k)); i++) await new Promise((r) => setTimeout(r, 20)); return redis.get(k); };
+    const leerDictamen = (qs) => invocar(routerPliego, `${URL_DC}&${qs}`, CAB_TOKEN);
+    const pasaCercas = (s, donde) => {
+      assert.ok(typeof s === "string" && s.length > 0, `${donde}: vacío`);
+      assert.ok(!Lp.VOSEO_RE.test(s), `${donde}: tuteo «${(s.match(Lp.VOSEO_RE) || [])[0]}»`);
+      assert.ok(!s.match(Lp.RE_EMOJI_UI), `${donde}: emoji`);
+    };
+    try {
+      /* ── 1 · router y censo ── */
+      {
+        assert.strictEqual((await invocar(routerPliego, URL_DC)).status, 401, "el dictamen sin token tiene que ser 401 a través del router");
+        const mala = await invocar(routerPliego, "/api/pliego?op=inventada");
+        assert.strictEqual(mala.status, 404);
+        assert.ok(mala.cuerpo.operaciones.includes("dictamen"), "el 404 enseña la op dictamen");
+        assert.strictEqual(fs.readdirSync(path.join(RAIZ_DC, "api")).filter((f) => f.endsWith(".js")).length, 6, "el dictamen se pliega como op, jamás como función nueva");
+        const ops = [...fuenteDe("api/pliego.js").matchAll(/^\s*"?([a-z0-9_-]+)"?\s*:\s*\(\)\s*=>.*require\(["']([^"']+)["']/gm)].map((m) => [m[1], m[2]]);
+        assert.ok(ops.some(([op, dest]) => op === "dictamen" && /lib\/handlers\/pliego\/dictamen\.js$/.test(dest)), "tests/mapa.js tiene que ver la línea del dictamen en el mapa OPS");
+      }
+
+      /* ── 2 · sin pliego guardado: resultado, no error; el modelo no se llama; la cuota no se toca ── */
+      {
+        poner("ANTHROPIC_API_KEY", "clave-de-prueba-ia");
+        espiar(() => { throw new Error("no debía llamarse"); });
+        const r = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder" });
+        assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 200));
+        assert.strictEqual(r.cuerpo.hay_texto, false);
+        assert.strictEqual(r.cuerpo.hay_dictamen, false);
+        pasaCercas(r.cuerpo.error, "sin texto · error"); pasaCercas(r.cuerpo.que_hacer, "sin texto · que_hacer");
+        assert.strictEqual(llamadas.length, 0, "sin texto no se llama al modelo");
+        assert.strictEqual((await redis.scan("dictamen:cuota:*")).length, 0, "sin texto no se consume cuota");
+        poner("ANTHROPIC_API_KEY", undefined);
+      }
+
+      /* ── 3 · sin clave de IA: 503 con instrucción ANTES de tocar la red ── */
+      {
+        await Dfx.registrarVersion(redis, { idProceso: ID_DC, texto: TEXTO_DC, perfilId: "helder", origen: "prueba" });
+        espiar(() => { throw new Error("no debía llamarse"); });
+        const r = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder" });
+        assert.strictEqual(r.status, 503);
+        assert.strictEqual(r.cuerpo.ia_configurada, false);
+        assert.ok(/ANTHROPIC_API_KEY/.test(r.cuerpo.error), "el 503 nombra la variable que falta");
+        assert.strictEqual(llamadas.length, 0);
+      }
+
+      /* ── 4 · la entrada: null donde no hay dato, ninguna cifra de precio, la regla de cumplimiento LLAMADA ── */
+      {
+        const fila = { id_del_proceso: ID_DC, precio_base: null, cuantia_cop: 0, duracion: "abc", unidad_de_duracion: "Meses", anticipo_pct: 0, nombre_del_procedimiento: "PLACA HUELLA", entidad: "ALCALDIA", fecha_de_publicacion_del: "2026-07-10T00:00:00.000" };
+        const e = Dc.armarEntrada({ fila, perfil: PERFILES_DC.helder, perfilId: "helder", texto: TEXTO_DC, version: { version: 1 }, hoy: "2026-09-02" });
+        assert.strictEqual(e.proceso.presupuesto_oficial_cop, null, "cuantia_cop 0 es SIN DATO, no cero");
+        assert.strictEqual(e.proceso.anticipo_pct_segun_objeto, null, "anticipo 0 es sin dato");
+        assert.strictEqual(e.proceso.duracion, "abc", "la duración viaja CRUDA, nunca plazoMesesDe");
+        assert.ok(!("plazo_meses" in e.proceso) && !JSON.stringify(e.proceso).includes("plazo_meses"), "el proceso no lleva un plazo supuesto");
+        const js = JSON.stringify(e);
+        for (const prohibido of ["ganancia", "p_ganar", "\"ve\"", "baja_", "precio_esperado", "margen_estimado"]) assert.ok(!js.includes(prohibido), `la entrada no puede llevar ${prohibido}`);
+        assert.ok(e.perfil.capacidad_de_contratacion_disponible_cop > 0 && /cota superior/.test(e.perfil.nota_capacidad), "sin presupuesto la K viaja como cota superior con nota");
+        const sinCo = Dc.armarEntrada({ fila, perfil: { ...PERFILES_DC.helder, utilidadOp: null, ingresoOp: null }, perfilId: "helder", texto: TEXTO_DC, version: {}, hoy: "2026-09-02" });
+        assert.strictEqual(sinCo.perfil.capacidad_de_contratacion_disponible_cop, null, "sin capacidad de organización la K es null");
+        assert.ok(sinCo.sin_dato["perfil.capacidad_de_contratacion_disponible_cop"], "…con su motivo");
+        const sinSce = Dc.armarEntrada({ fila, perfil: { ...PERFILES_DC.helder, sce: undefined, unspsc: null }, perfilId: "helder", texto: TEXTO_DC, version: {}, hoy: "2026-09-02" });
+        assert.strictEqual(sinSce.perfil.contratos_en_ejecucion, null);
+        assert.strictEqual(sinSce.perfil.clases_unspsc_inscritas, null);
+        assert.strictEqual(e.lecturas_de_la_app.requisitos_numericos.liquidez.cumple_segun_la_app, "si", "liquidez 129 ≥ 1,5");
+        const liq12 = Dc.armarEntrada({ fila, perfil: { ...PERFILES_DC.helder, liquidez: 1.2 }, perfilId: "helder", texto: TEXTO_DC, version: {}, hoy: "2026-09-02" });
+        assert.strictEqual(liq12.lecturas_de_la_app.requisitos_numericos.liquidez.cumple_segun_la_app, "no");
+        const sinCap = Dc.armarEntrada({ fila, perfil: { ...PERFILES_DC.helder, capitalTrabajo: null }, perfilId: "helder", texto: TEXTO_DC, version: {}, hoy: "2026-09-02" });
+        assert.strictEqual(sinCap.lecturas_de_la_app.requisitos_numericos.capital_trabajo.cumple_segun_la_app, "sin_dato",
+          "capital de trabajo null es SIN DATO: Number(null) === 0 daría «no»");
+        assert.strictEqual(Dfx.cumpleRequisito({ sentido: "min" }, null, 5), "sin_dato");
+        assert.strictEqual(Dfx.cumpleRequisito({ sentido: "min" }, 4, 5), "no");
+        assert.strictEqual(Dfx.cumpleRequisito({ sentido: "max" }, 0.2, 0.7), "si");
+        const dictamenLimpio = limpioDe("lib/dictamen.js");
+        assert.ok(!/propio >=|propio <=/.test(dictamenLimpio) && /cumpleRequisito\(/.test(dictamenLimpio), "la regla de cumplimiento se LLAMA (lib/diff), no se copia");
+        assert.ok(/cumpleRequisito\(req, propioCrudo/.test(limpioDe("lib/diff.js")), "el vigía de adendas también la llama");
+      }
+
+      /* ── 5 · el presupuesto oficial en un solo sitio ── */
+      {
+        const listarLimpio = limpioDe("lib/handlers/procesos/listar.js");
+        assert.ok(/presupuestoOficialDe\(l\)/.test(listarLimpio), "listar llama a presupuestoOficialDe");
+        assert.ok(!/Number\(l\.cuantia_cop\) > 0 \? Number\(l\.cuantia_cop\) : null/.test(listarLimpio), "el ternario literal no puede volver a listar");
+        const { presupuestoOficialDe } = require("../lib/negocio.js");
+        assert.strictEqual(presupuestoOficialDe({ cuantia_cop: 0 }), null);
+        assert.strictEqual(presupuestoOficialDe({ cuantia_cop: "5000" }), 5000);
+      }
+
+      /* ── 6 · texto paginado ── */
+      {
+        const tp = Dc.textoPaginado("\f1\nhola\n\f\nadios\n\f14\nfin\n\f15\n");
+        for (const p of ["=== Página 1 ===", "=== Página 2 ===", "=== Página 14 ===", "=== Página 15 ==="]) assert.ok(tp.texto.includes(p), p);
+        assert.ok(!tp.texto.includes("\f"), "el modelo no recibe caracteres de control");
+        assert.deepStrictEqual(tp.paginas_vacias, [15], "la página sin ningún carácter visible se anota; las cortas no");
+      }
+
+      /* ── 7 · verificación EN SU PÁGINA, con la misma normalización que el vigía ── */
+      {
+        const idx = Dc.paginasDe(TEXTO_DC);
+        assert.deepStrictEqual(Dc.buscarCita("capital de trabajo MINIMO $ 1.500.000.000", 3, idx), { verificada: true, pagina_real: 3 }, "cruza el salto de línea, mayúsculas y tildes");
+        assert.deepStrictEqual(Dc.buscarCita("Plazo de ejecución: seis (6) meses", 3, idx), { verificada: false, pagina_real: 4 }, "está en otra página: se conserva con pagina_real");
+        assert.deepStrictEqual(Dc.buscarCita("anticipo del 30 %", 3, idx), { motivo: "cita_no_encontrada" });
+        assert.deepStrictEqual(Dc.buscarCita("lo que sea", 5, idx), { motivo: "pagina_ilegible" }, "la página 5 no tiene texto: culpa del escaneado");
+        assert.deepStrictEqual(Dc.buscarCita("de ejecución", 4, idx), { verificada: true, pagina_real: 4 }, "una cita corta presente en una sola página se acepta");
+        const idxDoble = Dc.paginasDe("\f1\nplazo de ejecución uno\n\f2\nplazo de ejecución dos\n");
+        assert.deepStrictEqual(Dc.buscarCita("de ejecución", 1, idxDoble), { motivo: "cita_ambigua" }, "corta y en dos páginas: ambigua");
+        const v = Dc.verificarDictamen({ ...DICTAMEN_OK, motivos: [{ texto: "x", pagina: 3, cita: null }, { texto: "y", pagina: 99, cita: "seis (6) meses" }] }, TEXTO_DC, Dc.armarEntrada({ fila: null, perfil: PERFILES_DC.helder, perfilId: "helder", texto: TEXTO_DC, version: {}, hoy: "2026-09-02" }));
+        assert.strictEqual(v.dictamen.motivos[0].motivo_verificacion, "sin_cita", "página numérica sin cita = afirmación sin respaldo");
+        assert.strictEqual(v.dictamen.motivos[0].pagina, null);
+        assert.strictEqual(v.verificacion.paginas_corregidas, 1, "una página fuera de rango se corrige y se cuenta");
+        assert.strictEqual(v.dictamen.motivos[1].pagina_real, 4);
+        const limpio = limpioDe("lib/dictamen.js");
+        assert.ok(!/function normalizar\(/.test(limpio) && /normalizarTexto/.test(limpio) && /require\("\.\/diff\.js"\)/.test(limpio), "una sola normalización: la de lib/diff");
+      }
+
+      /* ── 8 · censo de cifras ── */
+      {
+        const idx = Dc.paginasDe(TEXTO_DC);
+        const respaldo = new Set([...idx.paginas.get(3).numeros, ...Dc.numerosDe("45 días")]);
+        respaldo.add("1500000000");
+        assert.strictEqual(Dc.cifraSinRespaldo("$ 2.000.000.000 exigidos", respaldo), "$ 2.000.000.000");
+        assert.strictEqual(Dc.cifraSinRespaldo("$ 1.500.000.000 exigidos", respaldo), null, "la cifra de la entrada la respalda");
+        assert.strictEqual(Dc.cifraSinRespaldo("1.500 millones", respaldo), "1.500", "«1.500 millones» no es «1.500.000.000»");
+        assert.strictEqual(Dc.cifraSinRespaldo("plazo de 45 días", respaldo), null);
+        assert.strictEqual(Dc.cifraSinRespaldo("anticipo del 30 %", respaldo), "30 %");
+        assert.strictEqual(Dc.cifraSinRespaldo("Ley 80 de 1993, artículo 5, página 12 y numeral 3.2.1", new Set()), null, "leyes, artículos, páginas y numerales no son cifras");
+      }
+
+      /* ── 9 · censo recursivo: acusación, emoji y tuteo con las MISMAS cercas ── */
+      {
+        const entrada = Dc.armarEntrada({ fila: null, perfil: PERFILES_DC.helder, perfilId: "helder", texto: TEXTO_DC, version: {}, hoy: "2026-09-02" });
+        const sucio = {
+          ...DICTAMEN_OK,
+          veredicto_frase: "No se presente: el contrato deja $ 3.000.000.000",
+          motivos: [...DICTAMEN_OK.motivos, { texto: "pliego amañado a la medida de un amigo", pagina: 3, cita: "Capital de trabajo mínimo $ 1.500.000.000" }],
+          riesgos: [{ ...DICTAMEN_OK.riesgos[0], que_hacer: "🐕 Debes presentarse" }],
+          preguntas_para_la_entidad: ["¿Está amañado el proceso?", "¿Cuál es el plazo?"],
+        };
+        const v = Dc.verificarDictamen(sucio, TEXTO_DC, entrada);
+        assert.strictEqual(v.ok, true);
+        const motivos = v.no_verificados.map((n) => `${n.campo}:${n.motivo}`);
+        assert.ok(motivos.includes("motivos:frase_de_acusacion"), `la acusación se aparta: ${motivos}`);
+        assert.ok(motivos.includes("preguntas_para_la_entidad:frase_de_acusacion"), "también dentro de las preguntas (censo, no lista de campos)");
+        assert.ok(motivos.includes("riesgos:registro_informal"), "el tuteo se aparta, no solo se cuenta");
+        assert.strictEqual(v.verificacion.emojis_quitados, 1);
+        assert.strictEqual(v.dictamen.veredicto_frase, Dc.VEREDICTO_TEXTO[v.dictamen.veredicto], "la frase con cifra se sustituye por la traducción fija");
+        assert.ok(v.avisos.includes(Dc.MENSAJES.AVISO_FRASE));
+        assert.strictEqual(v.dictamen.motivos.length, 1, "el motivo limpio se conserva");
+        assert.deepStrictEqual(v.dictamen.preguntas_para_la_entidad, ["¿Cuál es el plazo?"]);
+        const limpio = limpioDe("lib/dictamen.js");
+        assert.ok(/require\("\.\/lenguaje_pantalla\.js"\)/.test(limpio) && !/const VOSEO_RE =/.test(limpio) && !/new RegExp\(\s*"\[\\\\u\{1F300\}/.test(limpio), "las cercas se requieren, no se copian");
+      }
+
+      /* ── 10 · la regla del veredicto vive en el servidor ── */
+      {
+        const entrada = Dc.armarEntrada({ fila: null, perfil: PERFILES_DC.helder, perfilId: "helder", texto: TEXTO_DC, version: {}, hoy: "2026-09-02" });
+        const conSustento = Dc.verificarDictamen({ ...DICTAMEN_OK, veredicto: "no_presentarse", veredicto_frase: "No conviene." }, TEXTO_DC, entrada);
+        assert.strictEqual(conSustento.dictamen.veredicto, "no_presentarse", "con un requisito no_cumple citado, verificado y comparado, el rojo se conserva");
+        const req = conSustento.dictamen.requisitos_para_participar[0];
+        assert.strictEqual(req.dato_comparado_valor, entrada.perfil.capital_trabajo_cop, "la cifra pintada es la del perfil, no la del modelo");
+        const sinSustento = Dc.verificarDictamen({ ...DICTAMEN_OK, veredicto: "no_presentarse", veredicto_frase: "No conviene.",
+          requisitos_para_participar: [{ ...DICTAMEN_OK.requisitos_para_participar[0], dato_comparado: null }] }, TEXTO_DC, entrada);
+        assert.strictEqual(sinSustento.dictamen.veredicto, "presentarse_con_reservas", "sin dato comparado el rojo se rebaja");
+        assert.ok(sinSustento.avisos.includes(Dc.MENSAJES.AVISO_REBAJA), "…con el aviso literal");
+        const nulo = Dc.verificarDictamen({ ...DICTAMEN_OK, requisitos_para_participar: [{ ...DICTAMEN_OK.requisitos_para_participar[0], dato_comparado: "contratos_inscritos_en_rup" }] }, TEXTO_DC,
+          { ...entrada, perfil: { ...entrada.perfil, contratos_inscritos_en_rup: null } });
+        assert.strictEqual(nulo.dictamen.requisitos_para_participar[0].estado, "sin_dato_del_perfil", "clave con valor null → sin dato del perfil");
+        const gris = Dc.verificarDictamen({ ...DICTAMEN_OK, motivos: [{ texto: "x", pagina: 2, cita: "no está en el pliego" }],
+          requisitos_para_participar: [{ ...DICTAMEN_OK.requisitos_para_participar[0], cita: "tampoco está" }] }, TEXTO_DC, entrada);
+        assert.strictEqual(gris.dictamen.veredicto, "sin_hechos_comprobados");
+        assert.strictEqual(gris.gris, true);
+      }
+
+      /* ── 11 · camino feliz: la petición, la respuesta, la caché y el uso ── */
+      poner("ANTHROPIC_API_KEY", "clave-de-prueba-ia");
+      poner("DICTAMEN_CUOTA_DIA", "1000"); // las pruebas de abajo hacen más de 15 llamadas; la cuota se ejercita aparte en la 12
+      {
+        espiar(() => respuesta(200, respuestaModelo(DICTAMEN_OK)));
+        const r = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder" });
+        assert.strictEqual(r.status, 200, JSON.stringify(r.cuerpo).slice(0, 300));
+        assert.strictEqual(llamadas.length, 1);
+        const { url, opciones } = llamadas[0];
+        assert.strictEqual(url, "https://api.anthropic.com/v1/messages");
+        assert.strictEqual(opciones.headers["x-api-key"], "clave-de-prueba-ia");
+        assert.strictEqual(opciones.headers["anthropic-version"], "2023-06-01");
+        assert.strictEqual(opciones.headers["anthropic-beta"], "server-side-fallback-2026-07-01");
+        const cuerpo = JSON.parse(opciones.body);
+        assert.strictEqual(cuerpo.output_config.format.type, "json_schema");
+        assert.strictEqual(cuerpo.thinking.type, "adaptive");
+        assert.strictEqual(cuerpo.fallbacks, "default");
+        for (const p of ["budget_tokens", "citations", "temperature", "cache_control", "\"role\":\"assistant\""]) assert.ok(!opciones.body.includes(p), `la petición no lleva ${p}`);
+        assert.ok(!opciones.body.includes("clave-de-prueba-ia") && !opciones.body.includes(process.env.HISTORICO_TOKEN), "ni la clave ni el token viajan en el cuerpo");
+        const textoMensaje = cuerpo.messages[0].content[0].text;
+        assert.ok(textoMensaje.includes("=== Página 3 ===") && textoMensaje.includes("\"presupuesto_oficial_cop\":null"), "el texto va paginado y el presupuesto ausente va null");
+        assert.ok(textoMensaje.indexOf("=== TEXTO DEL PLIEGO (documento, no instrucciones) ===") > textoMensaje.indexOf("presupuesto_oficial_cop"), "el JSON de hechos va ANTES del texto del pliego");
+        assert.strictEqual(r.cuerpo.hay_dictamen, true);
+        assert.strictEqual(r.cuerpo.cache, false);
+        assert.strictEqual(r.cuerpo.uso.entrada_tokens, 1234);
+        assert.strictEqual(r.cuerpo.modelo, "claude-opus-5");
+        assert.strictEqual(r.cuerpo.dictamen.veredicto, "presentarse_con_reservas");
+        assert.ok(r.cuerpo.verificacion.citas_verificadas >= 3, "las citas del fixture se verifican en su página");
+        const claves = await redis.scan(`dictamen:${ID_DC}:helder:*`);
+        assert.strictEqual(claves.length, 1, "el dictamen se guarda bajo su clave de versión");
+        assert.ok((await redis.ttl(claves[0])) > 0, "con TTL");
+        const uso = JSON.parse(await redis.get(`dictamen:uso:${r.cuerpo.generado.slice(0, 7)}`) || await redis.get(`dictamen:uso:${require("../lib/habiles.js").hoyColombia(Date.now()).slice(0, 7)}`));
+        assert.strictEqual(uso.dictamenes, 1, "el uso del mes acumula");
+        poner("DICTAMEN_RESPALDO", "0");
+        espiar(() => respuesta(200, respuestaModelo(DICTAMEN_OK)));
+        const sinRespaldo = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", refrescar: true });
+        assert.strictEqual(sinRespaldo.status, 200);
+        assert.strictEqual(llamadas[0].opciones.headers["anthropic-beta"], undefined, "con DICTAMEN_RESPALDO=0 no va la cabecera beta");
+        assert.ok(!("fallbacks" in JSON.parse(llamadas[0].opciones.body)), "…ni fallbacks");
+        poner("DICTAMEN_RESPALDO", undefined);
+      }
+
+      /* ── 12 · caché, versión, perfil, prompt, sello y cuota ── */
+      {
+        espiar(() => respuesta(200, respuestaModelo(DICTAMEN_OK)));
+        const cacheado = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder" });
+        assert.strictEqual(cacheado.cuerpo.cache, true, "el segundo POST idéntico sale de caché");
+        assert.strictEqual(llamadas.length, 0);
+        const get = await leerDictamen(`id_proceso=${ID_DC}&perfil=helder`);
+        assert.strictEqual(get.cuerpo.hay_dictamen, true, "el GET sirve la caché");
+        assert.strictEqual(llamadas.length, 0, "el GET nunca llama al modelo");
+        const usadosAntes = Number(await redis.get((await redis.scan("dictamen:cuota:*"))[0]));
+        await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", refrescar: true });
+        assert.strictEqual(llamadas.length, 1, "refrescar salta la caché");
+        await Dfx.registrarVersion(redis, { idProceso: ID_DC, texto: TEXTO_DC + "\nAdenda 1: se amplía el plazo\n", perfilId: "helder", origen: "prueba" });
+        const nuevaVersion = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder" });
+        assert.strictEqual(nuevaVersion.cuerpo.cache, false, "una versión nueva del pliego es otra clave");
+        assert.strictEqual(llamadas.length, 2);
+        const getVieja = await leerDictamen(`id_proceso=${ID_DC}&perfil=helder`);
+        assert.strictEqual(getVieja.cuerpo.hay_dictamen, true);
+        const otroPerfil = await pedirDictamen({ id_proceso: ID_DC, perfil: "genesis" });
+        assert.strictEqual(otroPerfil.cuerpo.cache, false, "otro perfil es otra clave");
+        assert.strictEqual(llamadas.length, 3);
+        assert.strictEqual(Number(await redis.get((await redis.scan("dictamen:cuota:*"))[0])), usadosAntes + 3, "la caché y el GET no gastan cuota; cada llamada al modelo sí");
+        // la clave lleva el hash del prompt, el de las constantes y el sello de la fila
+        assert.strictEqual(Dc.hashPrompt(), sha256(Dc.PROMPT_SISTEMA));
+        const limpio = limpioDe("lib/dictamen.js");
+        assert.ok(/hashPrompt\(\)/.test(limpio.slice(limpio.indexOf("function claveCache"))) && /hashConstantes\(\)/.test(limpio.slice(limpio.indexOf("function claveCache"))), "claveCache lleva el hash del prompt y de las constantes");
+        const fila = { fecha_cierre: "2026-09-10", precio_base: "1", duracion: "6", unidad_de_duracion: "Meses", nombre_del_procedimiento: "X", modalidad_de_contratacion: "L" };
+        const k1 = Dc.claveCache({ hashTexto: "h", modelo: "m", esfuerzo: "medium", perfilEntrada: { a: 1 }, fila });
+        assert.notStrictEqual(k1, Dc.claveCache({ hashTexto: "h", modelo: "m", esfuerzo: "medium", perfilEntrada: { a: 1 }, fila: { ...fila, fecha_cierre: "2026-09-20" } }), "un cambio del dataset (sello de la fila) invalida");
+        assert.notStrictEqual(k1, Dc.claveCache({ hashTexto: "h", modelo: "m", esfuerzo: "medium", perfilEntrada: { a: 2 }, fila }), "un cambio del perfil invalida");
+        assert.notStrictEqual(k1, Dc.claveCache({ hashTexto: "h2", modelo: "m", esfuerzo: "medium", perfilEntrada: { a: 1 }, fila }), "un texto nuevo invalida");
+        // cuota
+        poner("DICTAMEN_CUOTA_DIA", "1");
+        const agotada = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", refrescar: true });
+        assert.strictEqual(agotada.status, 429, "cuota agotada → 429 propio");
+        assert.strictEqual(agotada.cuerpo.cuota, 1);
+        assert.ok(agotada.cuerpo.usados >= 1);
+        pasaCercas(agotada.cuerpo.error, "cuota"); pasaCercas(agotada.cuerpo.que_hacer, "cuota · que_hacer");
+        assert.strictEqual(llamadas.length, 3, "con la cuota agotada no se llama al modelo");
+        poner("DICTAMEN_CUOTA_DIA", "1000");
+        for (const k of await redis.scan("dictamen:*")) {
+          assert.ok(!k.includes(process.env.HISTORICO_TOKEN), "ninguna clave lleva el token");
+          const v = await redis.get(k);
+          assert.ok(!String(v).includes("clave-de-prueba-ia"), "ningún valor guardado lleva la clave de IA");
+        }
+      }
+
+      /* ── 13 · candado ── */
+      {
+        const candado = `lock:dictamen:${ID_DC}:helder`;
+        await redis.set(candado, "otro-proceso", { nx: true, ex: 60 });
+        espiar(() => respuesta(200, respuestaModelo(DICTAMEN_OK)));
+        const ocupado = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", refrescar: true });
+        assert.strictEqual(ocupado.status, 200);
+        assert.strictEqual(ocupado.cuerpo.en_curso, true, "con candado ajeno responde en_curso, sin llamar al modelo");
+        assert.strictEqual(llamadas.length, 0);
+        assert.strictEqual(await redis.get(candado), "otro-proceso", "el candado ajeno no se toca");
+        await redis.del(candado);
+        let ttlDurante = null;
+        espiar(async () => { ttlDurante = await redis.ttl(candado); return respuesta(200, respuestaModelo(DICTAMEN_OK, { stop_reason: "max_tokens" })); });
+        const incompleto = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", refrescar: true });
+        assert.strictEqual(incompleto.status, 502);
+        assert.ok(ttlDurante > 0 && ttlDurante <= Math.ceil(Dc.presupuestoMs() / 1000) + 10, `el candado vive lo que el reloj + 10 s (${ttlDurante})`);
+        assert.strictEqual(await candadoLibre(candado), null, "tras un 502 el candado queda liberado (finally)");
+      }
+
+      /* ── 14 · respuestas defectuosas: ninguna se guarda, todas dicen qué hacer ── */
+      {
+        const clavesAntes = (await redis.scan("dictamen:CO1.DIC.1:*")).length;
+        const casos = [
+          ["refusal", () => respuesta(200, respuestaModelo("", { stop_reason: "refusal", content: [] })), 200, (c) => assert.strictEqual(c.hay_dictamen, false)],
+          ["max_tokens", () => respuesta(200, respuestaModelo(DICTAMEN_OK, { stop_reason: "max_tokens" })), 502, (c) => assert.strictEqual(c.motivo, "incompleto")],
+          ["no JSON", () => respuesta(200, respuestaModelo("esto no es JSON {")), 502, null],
+          ["enum inválido", () => respuesta(200, respuestaModelo({ ...DICTAMEN_OK, confianza: "altísima" })), 502, null],
+          ["clave extra", () => respuesta(200, respuestaModelo({ ...DICTAMEN_OK, precio_sugerido: 1 })), 502, null],
+          ["HTML", () => respuesta(200, "<html>"), 502, null],
+          ["400 remoto", () => respuesta(400, { type: "error", error: { type: "invalid_request_error", message: "bad apikey=clave-de-prueba-ia" } }), 502,
+            (c) => { assert.strictEqual(c.tipo_remoto, "invalid_request_error"); assert.ok(!JSON.stringify(c).includes("clave-de-prueba-ia"), "el mensaje remoto no se reenvía"); }],
+          ["401 remoto", () => respuesta(401, { error: { type: "authentication_error", message: "x" } }), 502, (c) => assert.ok(/ANTHROPIC_API_KEY/.test(c.error))],
+        ];
+        for (const [nombre, fn, status, extra] of casos) {
+          espiar(fn);
+          const r = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", refrescar: true });
+          assert.strictEqual(r.status, status, `${nombre}: ${JSON.stringify(r.cuerpo).slice(0, 200)}`);
+          pasaCercas(r.cuerpo.error, `${nombre} · error`); pasaCercas(r.cuerpo.que_hacer, `${nombre} · que_hacer`);
+          assert.strictEqual(llamadas.length, 1, `${nombre}: un 4xx o un defecto no se reintenta`);
+          if (extra) extra(r.cuerpo);
+        }
+        assert.strictEqual((await redis.scan("dictamen:CO1.DIC.1:*")).length, clavesAntes, "ninguna respuesta defectuosa se guarda");
+        // 529 con retry-after corto y presupuesto de sobra: UN reintento, luego 503
+        espiar(() => respuesta(529, { error: { type: "overloaded_error" } }, { "retry-after": "1" }));
+        const saturado = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", refrescar: true });
+        assert.strictEqual(saturado.status, 503);
+        assert.strictEqual(llamadas.length, 2, "529 con retry-after 1 s y presupuesto: se reintenta una vez");
+        pasaCercas(saturado.cuerpo.error, "saturado"); pasaCercas(saturado.cuerpo.que_hacer, "saturado · que_hacer");
+        // 429 sin presupuesto restante: una sola llamada
+        poner("DICTAMEN_PRESUPUESTO_MS", "20000");
+        espiar(() => respuesta(429, { error: { type: "rate_limit_error" } }, { "retry-after": "1" }));
+        const sinReloj = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", refrescar: true });
+        assert.strictEqual(sinReloj.status, 503);
+        assert.strictEqual(llamadas.length, 1, "sin 25 s de presupuesto no hay reintento");
+        poner("DICTAMEN_PRESUPUESTO_MS", undefined);
+        // respaldo del modelo: se pinta el modelo DEVUELTO y se registra el bloque
+        espiar(() => respuesta(200, respuestaModelo(DICTAMEN_OK, { model: "claude-opus-4-8", content: [{ type: "fallback", from: { model: "claude-opus-5" }, to: { model: "claude-opus-4-8" } }, { type: "text", text: JSON.stringify(DICTAMEN_OK) }] })));
+        const respaldado = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", refrescar: true });
+        assert.strictEqual(respaldado.status, 200);
+        assert.strictEqual(respaldado.cuerpo.modelo, "claude-opus-4-8", "el modelo que se registra es el que respondió");
+        assert.strictEqual(respaldado.cuerpo.verificacion.respaldo.length, 1);
+      }
+
+      /* ── 15 · reloj y esfuerzo ── */
+      {
+        poner("DICTAMEN_PRESUPUESTO_MS", "150");
+        espiar((u, o) => new Promise((resolve, reject) => {
+          const t = setTimeout(() => resolve(respuesta(200, respuestaModelo(DICTAMEN_OK))), 300);
+          if (o.signal) o.signal.addEventListener("abort", () => { clearTimeout(t); const e = new Error("tiempo"); e.name = "TimeoutError"; reject(e); });
+        }));
+        const tarde = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", refrescar: true });
+        assert.strictEqual(tarde.status, 504, JSON.stringify(tarde.cuerpo).slice(0, 200));
+        pasaCercas(tarde.cuerpo.que_hacer, "504 · que_hacer");
+        assert.strictEqual(await candadoLibre(`lock:dictamen:${ID_DC}:helder`), null, "tras el 504 el candado se libera");
+        poner("DICTAMEN_PRESUPUESTO_MS", undefined);
+        const vercel = JSON.parse(fuenteDe("vercel.json"));
+        assert.ok(Dc.PRESUPUESTO_MS_DEFECTO < vercel.functions["api/pliego.js"].maxDuration * 1000 - 5000,
+          "el presupuesto de reloj cabe con margen en el maxDuration declarado de api/pliego.js");
+        espiar(() => respuesta(200, respuestaModelo(DICTAMEN_OK)));
+        await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", refrescar: true, esfuerzo: "low" });
+        assert.strictEqual(JSON.parse(llamadas[0].opciones.body).output_config.effort, "low", "el esfuerzo pedido viaja");
+        espiar(() => respuesta(200, respuestaModelo(DICTAMEN_OK)));
+        const marciano = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", esfuerzo: "marciano" });
+        assert.strictEqual(marciano.status, 200, "un esfuerzo desconocido es inerte: el defecto, nunca 400");
+        assert.strictEqual(JSON.parse(llamadas[0] ? llamadas[0].opciones.body : "{\"output_config\":{\"effort\":\"medium\"}}").output_config.effort, "medium");
+      }
+
+      /* ── 16 · prompt, mensajes y lenguaje, ejecutados sobre las constantes ── */
+      {
+        pasaCercas(Dc.PROMPT_SISTEMA, "PROMPT_SISTEMA");
+        const recorrer = (v, ruta = "MENSAJES") => { if (typeof v === "string") pasaCercas(v, ruta); else if (v && typeof v === "object") for (const k of Object.keys(v)) recorrer(v[k], `${ruta}.${k}`); };
+        recorrer(Dc.MENSAJES);
+        assert.ok(!/CRITICAL|MUST|Don H[eé]ctor|perro viejo|20\d\d-\d\d/.test(Dc.PROMPT_SISTEMA), "el prompt no grita, no tiene persona en pantalla ni fecha");
+        assert.ok(!/\d+\s*%/.test(Dc.PROMPT_SISTEMA) && !/\$\s*\d/.test(Dc.PROMPT_SISTEMA), "el prompt no lleva ninguna cifra de porcentaje o dinero");
+        assert.ok(!/sin decidir cu[aá]l/.test(Dc.PROMPT_SISTEMA));
+        assert.ok(Dc.PROMPT_SISTEMA.includes(require("../lib/glosario.js").MARCA.nombre), "la marca sale de MARCA.nombre");
+        assert.ok(!/trampa|amañad|capacidad residual|\btier\b|puntaje|probabilidad/i.test(Dc.PROMPT_SISTEMA), "la prohibición se enuncia sin la palabra prohibida");
+        assert.ok(/^\d{4}-\d{2}-\d{2}\.\d+$/.test(Dc.PROMPT_VERSION));
+        /* Tabla versión → hash del prompt: SOLO se añaden filas. La vigente es la
+           última; cambiar el prompt sin añadir una fila rompe aquí. */
+        const VERSIONES_PROMPT = [
+          ["2026-09-02.2", "ffcc94724f246c64320ca46de093af0a4ad963bdc8b1bd9ec01e32cbee445195"],
+        ];
+        const ultima = VERSIONES_PROMPT[VERSIONES_PROMPT.length - 1];
+        assert.strictEqual(ultima[0], Dc.PROMPT_VERSION, "la versión vigente del prompt es la última fila de la tabla");
+        assert.strictEqual(sha256(Dc.PROMPT_SISTEMA), ultima[1], "el prompt cambió sin añadir una fila con su versión y su hash");
+        assert.ok(!VERSIONES_PROMPT.slice(0, -1).some(([, h]) => h === ultima[1]), "una versión nueva no puede repetir el hash de una anterior");
+        const objetos = [];
+        const censar = (s) => { if (!s || typeof s !== "object") return; if (s.type === "object" || (Array.isArray(s.type) && s.type.includes("object"))) objetos.push(s); for (const k of ["properties", "items"]) { const v = s[k]; if (k === "properties") for (const p of Object.values(v || {})) censar(p); else censar(v); } };
+        censar(Dc.ESQUEMA_SALIDA);
+        assert.ok(objetos.length >= 5 && objetos.every((o) => o.additionalProperties === false), "todo objeto del esquema cierra additionalProperties");
+        assert.ok(!/minLength|maxLength|minimum|maximum|\$ref/.test(JSON.stringify(Dc.ESQUEMA_SALIDA)), "sin restricciones que la salida estructurada no admite");
+        const campos = [...JSON.stringify(Dc.ESQUEMA_SALIDA).matchAll(/"([a-z_]+)":\{/g)].map((m) => m[1]);
+        assert.ok(!campos.some((c) => /precio|margen|utilidad|valor_cop|_pct$/.test(c)), "ningún campo de dinero ni porcentaje en la salida");
+        const entradaEj = Dc.armarEntrada({ fila: null, perfil: PERFILES_DC.helder, perfilId: "helder", texto: TEXTO_DC, version: {}, hoy: "2026-09-02" });
+        for (const k of Dc.CLAVES_COMPARABLES) assert.ok(k in entradaEj.perfil, `dato_comparado «${k}» tiene que existir en entrada.perfil`);
+        const enumTipos = Dc.ESQUEMA_SALIDA.properties.requisitos_para_participar.items.properties.tipo.enum;
+        assert.deepStrictEqual(Object.keys(Dc.ETIQUETAS_TIPO).sort(), [...enumTipos].sort(), "ETIQUETAS_TIPO cubre exactamente el enum");
+        for (const e of Object.values(Dc.ETIQUETAS_TIPO)) assert.ok(!/_/.test(e), "las etiquetas no llevan guiones bajos");
+      }
+
+      /* ── 17 · invariantes por fuente ── */
+      {
+        const h = limpioDe("lib/handlers/pliego/dictamen.js");
+        assert.ok(/textoGuardado/.test(h) && /filaDe/.test(h) && /require\("\.\/cronograma\.js"\)/.test(h), "el handler usa textoGuardado y filaDe de ./cronograma.js");
+        assert.ok(!/leerIndice|leerVersion|cargarCorpus\(/.test(h), "…y no tiene su propia copia de «conseguir el texto» ni la fila");
+        assert.ok(/ID_RE/.test(h) && /require\("\.\/diff\.js"\)/.test(h) && !/\/\^\[A-Za-z0-9\._-\]/.test(h), "usa ID_RE de ./diff.js, no un regex literal");
+        assert.ok(/hoyColombia/.test(h) && !/new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/.test(h), "la fecha de la cuota es hoyColombia");
+        assert.ok(/validarIdPerfil/.test(h) && /cargarPerfilResuelto/.test(h), "el perfil se resuelve por la misma vía que el listado");
+        assert.ok(/validarIdPerfil/.test(limpioDe("lib/handlers/procesos/listar.js")), "…y el listado también");
+        const front = limpioDe("public/pliego.js");
+        assert.ok(front.includes("/api/pliego?op=dictamen"), "el lector llama a la op canónica");
+        assert.ok(!/\/api\/dictamen/.test(front), "…y a ninguna URL legada");
+        assert.ok(/op=dictamen/.test(fuenteDe("docs/MEMORIA.md")), "la memoria tiene una entrada fechada del dictamen");
+      }
+
+      /* ── 18 · el pintado del dictamen, ejecutado sobre un fixture ── */
+      {
+        const fuenteFront = fuenteDe("public/pliego.js");
+        const i = fuenteFront.indexOf("function pintarDictamen(");
+        assert.ok(i > 0, "pintarDictamen existe en public/pliego.js");
+        const fin = fuenteFront.indexOf("\n  }", i);
+        const pintarDictamen = new Function(`${fuenteFront.slice(i, fin + 4)}; return pintarDictamen;`)();
+        const escF = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+        const MARCA = require("../public/glosario.js").MARCA;
+        const entrada = Dc.armarEntrada({ fila: null, perfil: PERFILES_DC.helder, perfilId: "helder", texto: TEXTO_DC, version: { version: 2 }, hoy: "2026-09-02" });
+        const v = Dc.verificarDictamen({ ...DICTAMEN_OK,
+          motivos: [...DICTAMEN_OK.motivos, { texto: "Plazo <script>alert(1)</script>", pagina: 3, cita: "Plazo de ejecución: seis (6) meses" }],
+          riesgos: [{ ...DICTAMEN_OK.riesgos[0], que_hacer: "Debes revisar <script>x</script>" }, DICTAMEN_OK.riesgos[0]],
+        }, TEXTO_DC, entrada);
+        const fixture = { ok: true, hay_texto: true, hay_dictamen: true, cache: true, generado: "2026-09-02T20:00:00.000Z", version_texto: 2, paginas: 5, paginas_vacias: [5], recortado: false,
+          advertencia: "ADVERTENCIA DE PRUEBA 7f3a", modelo: "claude-opus-5", version_instrucciones: Dc.PROMPT_VERSION, dictamen: v.dictamen, no_verificados: v.no_verificados, verificacion: v.verificacion, avisos: v.avisos, uso_mes: { dictamenes: 3 }, duracionMs: 61234 };
+        const html = pintarDictamen(fixture, { MARCA, esc: escF });
+        for (const esperado of ["● Puede presentarse, con reservas", "pág. 3", "está en la página 4", "ADVERTENCIA DE PRUEBA 7f3a", "Comparado con:", "Gravedad alta", "Anticipo o pago anticipado", "Redacción no admitida", "Volver a pedir el dictamen"]) {
+          assert.ok(html.includes(esperado), `el pintado tiene que contener «${esperado}»`);
+        }
+        assert.ok(!/<script/.test(html), "todo string del modelo pasa por esc()");
+        assert.ok(!/pág\. null|undefined|\bK\b|anticipo_o_pago_anticipado/.test(html), "sin «pág. null», «undefined», «K» ni valores crudos del enum");
+        const gris = pintarDictamen({ ...fixture, dictamen: { ...v.dictamen, veredicto: "sin_hechos_comprobados" }, que_hacer: Dc.MENSAJES.GRIS_QUE_HACER }, { MARCA, esc: escF });
+        assert.ok(/gray/.test(gris) && gris.includes("Falta información para opinar") && gris.includes(Dc.MENSAJES.GRIS_QUE_HACER), "el gris dice qué hacer");
+        const fn = sinComentarios(fuenteFront.slice(i, fin + 4));
+        assert.ok(!/Detekta|tokens|modelo|prompt/i.test(fn) && /MARCA\.nombre/.test(fn), "la marca sale de MARCA.nombre y no se habla de tokens ni del proveedor en pantalla");
+      }
+
+      /* ── 19 · una sola copia de las cercas ── */
+      {
+        const suiteFuente = fs.readFileSync(__filename, "utf8");
+        assert.strictEqual((suiteFuente.match(/require\("\.\.\/lib\/lenguaje_pantalla\.js"\)/g) || []).length >= 3, true, "la suite requiere las cercas de lib/lenguaje_pantalla.js");
+        assert.ok(!/const RE_EMOJI_UI = new RegExp\(/.test(suiteFuente) && !/const VOSEO_RE = \//.test(suiteFuente), "la suite no vuelve a declarar las cercas");
+        assert.ok(!/const RE_EMOJI_UI\b|const VOSEO_RE\b/.test(limpioDe("lib/dictamen.js")), "lib/dictamen tampoco");
+      }
+
+      /* ── 20 · normas con compuerta ── */
+      {
+        assert.ok(Dc.NORMAS_CITABLES.length >= 15, "al menos quince normas verificadas");
+        const ids = new Set();
+        for (const n of Dc.NORMAS_CITABLES) {
+          assert.ok(n.id && !ids.has(n.id), `id repetido o vacío: ${n.id}`); ids.add(n.id);
+          assert.ok(n.norma && n.regla, `${n.id} sin norma o sin regla`);
+          assert.ok(/^https?:\/\//.test(n.url), `${n.id} sin URL`);
+          const dominio = new URL(n.url).hostname;
+          assert.ok(/\.gov\.co$/.test(dominio), `${n.id}: la URL tiene que ser oficial (${dominio})`);
+          assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(n.verificada_el) && typeof n.literal_leido === "boolean", `${n.id} sin fecha o sin compuerta`);
+          pasaCercas(n.regla, `norma ${n.id}`);
+        }
+        for (const retirada of ["pago_mipyme_60", "pago_privado_45", "esp_derecho_privado", "derecho_de_turno", "factura_aceptacion_tacita", "intereses_mora"]) {
+          assert.ok(!ids.has(retirada), `la norma de pago «${retirada}» quedó fuera del producto por decisión del dueño`);
+        }
+        assert.deepStrictEqual(Dc.normasParaElModelo(), [], "sin literal leído ninguna norma viaja al modelo");
+        assert.deepStrictEqual(Dc.normasParaElModelo.call(null), Dc.NORMAS_CITABLES.filter((n) => n.literal_leido).map(({ id, norma, regla, url, verificada_el }) => ({ id, norma, regla, url, verificada_el })));
+      }
+
+      /* ── 21 · el calendario son fechas, no adjetivos ── */
+      {
+        const c = Dc.contextoPublicoDe({ fecha_de_publicacion_del: "2026-07-10T00:00:00.000", ordenentidad: "Nacional" }, null, "2026-09-02");
+        assert.strictEqual(c.publicado_en_ventana_de_transicion, true);
+        assert.strictEqual(c.publicado_en_ventana_de_garantias, false);
+        assert.strictEqual(c.nivel_entidad, "nacional");
+        const sinOrden = Dc.contextoPublicoDe({ fecha_de_publicacion_del: "2026-07-10T00:00:00.000", entidad: "INSTITUTO NACIONAL DE VIAS" }, null, "2026-09-02");
+        assert.strictEqual(sinOrden.nivel_entidad, null, "el orden no se adivina por el nombre de la entidad");
+        assert.strictEqual(sinOrden.meses_de_gobierno_de_la_entidad, null);
+        assert.strictEqual(sinOrden.ultimo_ano_de_periodo_territorial, null, "sin nivel, los derivados del nivel son null, nunca false");
+        const sinFecha = Dc.contextoPublicoDe({ ordenentidad: "Territorial" }, null, "2026-09-02");
+        assert.strictEqual(sinFecha.publicado_en_ventana_de_garantias, null);
+        assert.strictEqual(sinFecha.publicado_en_ventana_de_transicion, null);
+        const enGarantias = Dc.contextoPublicoDe({ fecha_de_publicacion_del: "2026-03-10", ordenentidad: "Territorial" }, null, "2026-09-02");
+        assert.strictEqual(enGarantias.publicado_en_ventana_de_garantias, true);
+        assert.ok(/no está restringida/.test(enGarantias.nota_garantias), "la nota dice que la licitación no está restringida");
+        assert.strictEqual(enGarantias.meses_de_gobierno_de_la_entidad, 26);
+        assert.strictEqual(Dc.contextoPublicoDe({ fecha_de_publicacion_del: "2027-02-01", ordenentidad: "Territorial" }, null, "2027-02-02").ultimo_ano_de_periodo_territorial, true);
+        assert.ok(Dc.CONTEXTO_PUBLICO.ventanas_garantias.find((v) => v.desde.startsWith("2027")).estimada === true, "la ventana de 2027 va marcada como estimada");
+        assert.ok(!/riesgo|problem[aá]tic|trampa/i.test(JSON.stringify(c)), "el contexto público no califica a la entidad");
+      }
+    } finally {
+      global.fetch = fetchOriginal;
+      for (const [k, v] of Object.entries(entorno)) poner(k, v);
+      await limpiarDictamen();
+    }
+    assert.strictEqual(Dc.hayClaveIa(), false, "la clave de prueba tiene que quedar retirada");
+    console.log("· unidad DICTAMEN DEL PLIEGO: 21 cerraduras (router y censo, sin pliego, sin clave, entrada sin || 0, presupuesto único, "
+      + "texto paginado, cita en su página, censo de cifras, acusación/emoji/tuteo, veredicto en servidor, camino feliz, caché por versión y cuota, "
+      + "candado, respuestas defectuosas, reloj, prompt y esquema, invariantes por fuente, pintado, cercas únicas, normas con compuerta, calendario)");
   }
 
   /* i. contexto: sin CLI de Vercel ni salida a datos.gov.co en este entorno →

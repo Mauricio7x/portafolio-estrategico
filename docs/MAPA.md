@@ -6,10 +6,10 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 25 op declaradas en los mapas de los routers:
+· SUPERFICIE HTTP — 26 op declaradas en los mapas de los routers:
   /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo
   /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento
-  /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones
+  /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion
   (api/apu.js e api/inteligencia.js despachan por accion/vista desde su handler:
    `node tests/estado.js` los enumera midiendo)
@@ -22,7 +22,7 @@
   pliego.js                 Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js               Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 60 módulos:
+· lib/ — 63 módulos:
   accesibilidad.js          Accesibilidad operativa de la zona de la obra
   adendas.js                Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                Esquema de claves Redis + compresión de chunks
@@ -45,6 +45,7 @@
   cronograma.js             Cronograma del proceso con avisos T-7 / T-3 / T-1 (Fase 5)
   cuerpo.js                 Leer el cuerpo JSON de una petición, una sola vez
   deducciones.js            Qué le van a descontar de cada pago, leído del PLIEGO
+  dictamen.js               Dictamen del pliego (proyecto «Don Héctor», 2-sep-2026) — PURO
   diff.js                   Vigía de adendas · texto del pliego (Fase 5 del plan v3)
   ejecucion.js              Cómo EJECUTA sus contratos de obra una entidad (jbjy-vk9h)
   equivalencias.js          Qué clases UNSPSC son AFINES en el mercado real
@@ -57,6 +58,7 @@
   habiles.js                Días hábiles y festivos de Colombia (Fase 9 · Detekta v4)
   indice_baja.js            ¿Cuánto descuentan los ganadores frente al presupuesto?
   indice_competencia.js     ¿En qué entidades se presenta menos gente?
+  lenguaje_pantalla.js      las DOS cercas de lenguaje de pantalla, en una sola copia
   manifestacion.js          La MANIFESTACIÓN DE INTERÉS de la selección abreviada de
   negocio.js                Reglas de negocio: enriquecer(licitacion)
   paa.js                    Plan Anual de Adquisiciones (dataset Socrata `9sue-ezhx`)
@@ -65,6 +67,7 @@
   parametros.js             Parámetros normativos del costo real, VERSIONADOS (Fase 1)
   perfil_dinamico.js        Perfiles creados por onboarding (RUP subido en PDF)
   perfil_manual.js          Perfil APROXIMADO desde tres datos (Fase 2)
+  perfil_resolver.js        el perfil que pide una petición, resuelto en UN solo sitio
   perfiles.js               FUENTE ÚNICA DE VERDAD de los tres perfiles del negocio
   portada.js                El pulso del mercado y la manifestación de interés (Fase 9 · Detekta v4)
   probabilidad.js           P(ganar) estimada con lo que YA hay en Redis
@@ -125,9 +128,10 @@
   resumen.js                El dashboard: ¿qué SON los procesos que hoy se ven?
   seguimiento.js            /api/perfil?op=seguimiento (ago 2026)
 
-· lib/handlers/pliego/ — 4 módulos:
+· lib/handlers/pliego/ — 5 módulos:
   cronograma.js             /api/pliego?op=cronograma (Fase 5)
   deducciones.js            /api/pliego?op=deducciones · Qué le van a descontar, leído del pliego
+  dictamen.js               /api/pliego?op=dictamen (proyecto «Don Héctor», 2-sep-2026)
   diff.js                   /api/pliego?op=diff (Fase 5 · vigía del TEXTO del pliego)
   formulario1.js            POST /api/pliego?op=formulario1 (Fase 4)
 
@@ -157,8 +161,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 113 secciones. Las 10 más nuevas:
-  L  5897  Auditoría integral del 27-ago-2026 · verificar absolutamente todo
+· MEMORIA · docs/MEMORIA.md — 114 secciones. Las 10 más nuevas:
   L  6005  La revisión adversaria del propio diff, y las CINCO regresiones que dejé dentro
   L  6050  El mapa: buscar coordenadas en vez de leer documentos (28-ago-2026)
   L  6099  El calendario de cierres, y tres bloques menos en Mi empresa (31-ago-2026)
@@ -168,6 +171,7 @@
   L  6484  Don Héctor · la hipótesis verificada contra fuentes vigentes y el diseño del dictamen del pl
   L  6608  El lookahead delante del lookbehind: la lista negra 19 veces más rápida y `main` vuelve a ve
   L  6633  Don Héctor · las decisiones del dueño y las tomadas con autonomía (2-sep-2026, misma tarde)
+  L  6677  Dictamen del pliego · `op=dictamen`, el código de la sección 6 (2-sep-2026, noche)
 
 · DOCUMENTOS docs/ — 38:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)

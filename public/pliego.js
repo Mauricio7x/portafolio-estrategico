@@ -739,11 +739,15 @@
     if (!caja) return;
     const id = idProcesoActual();
     let html = "";
+    /* el dictamen del pliego cuelga de aquí con su PROPIO try/catch: nada suyo
+       puede romper el pintado del vigía ni del cronograma */
+    let dictamenArgs = { id: "", cambio: false, falloVigia: null };
     if (!id) {
       html += `<p class="text-gray-600">Para vigilar las adendas de este pliego abra el proceso desde su tarjeta («Calcular mi precio»): así el lector sabe de qué proceso es el pliego y guarda cada versión.</p>`;
     } else {
       const r = await pedir("/api/pliego?op=diff", { id_proceso: id, texto, perfil: perfilActual(), origen: "lector" });
       const c = r.cuerpo || {};
+      dictamenArgs = { id, cambio: !!c.cambio, falloVigia: c.ok ? null : (c.error || `respuesta ${r.estado}`) };
       if (!c.ok) html += `<p class="text-gray-600">No se pudo guardar la versión del pliego: ${esc(c.error || `respuesta ${r.estado}`)}.</p>`;
       else {
         html += `<p class="font-medium" style="color: var(--text-primary);">${esc(c.mensaje || "")}</p>`;
@@ -769,6 +773,260 @@
     }
     caja.innerHTML = html;
     caja.classList.remove("hidden");
+    try { await cargarDictamen(dictamenArgs.id, { cambio: dictamenArgs.cambio, falloVigia: dictamenArgs.falloVigia }); } catch { /* el dictamen nunca tumba el vigía */ }
+  }
+
+  /* ══════════ Dictamen del pliego (proyecto «Don Héctor», 2-sep-2026) ══════════
+     El texto que el vigía acaba de guardar se manda a un modelo de lenguaje y
+     vuelve como HECHOS citados por página, verificados en el servidor
+     (lib/dictamen.js). Aquí solo se pinta: nada de lo que se ve sale de un
+     cálculo del navegador. `pintarDictamen` es una función AUTOCONTENIDA (recibe
+     `esc` y `MARCA` por parámetro) para que la suite la EJECUTE sobre un fixture
+     con `extraerFn`, igual que hace con `parsearCsv`. */
+  let dictamenAbort = null;
+  let dictamenReloj = null;
+  let dictamenUltimo = null;
+
+  async function pedirGet(ruta) {
+    let r = null, datos = null;
+    try {
+      r = await fetch(ruta, { headers: { "x-historico-token": leerToken(), Accept: "application/json" }, cache: "no-store" });
+    } catch (e) {
+      return { estado: 0, cuerpo: null, red: (e && e.message) || "sin conexión" };
+    }
+    try { datos = await r.json(); } catch { datos = null; }
+    return { estado: r.status, cuerpo: datos };
+  }
+
+  function pintarDictamen(r, ctx) {
+    const esc = ctx.esc;
+    const MARCA = ctx.MARCA;
+    const d = r.dictamen || {};
+    const ver = r.verificacion || {};
+    const apartadas = Array.isArray(r.no_verificados) ? r.no_verificados : [];
+    const dinero = (n) => `$${Math.round(Number(n)).toLocaleString("es-CO")}`;
+    const cifra = (n) => (Number.isFinite(Number(n)) ? Number(n).toLocaleString("es-CO", { maximumFractionDigits: 2 }) : "");
+    const valorDe = (clave, v) => (v == null ? "" : /_cop$/.test(clave) ? dinero(v) : cifra(v));
+    const fecha = (iso) => { const s = String(iso || "").slice(0, 10).split("-"); return s.length === 3 ? `${s[2]}/${s[1]}/${s[0]}` : ""; };
+    const veredicto = String(d.veredicto || "sin_hechos_comprobados");
+    const COLOR = { presentarse: "green", presentarse_con_reservas: "amber", no_presentarse: "red", sin_hechos_comprobados: "gray" };
+    const TEXTO = { presentarse: "Puede presentarse", presentarse_con_reservas: "Puede presentarse, con reservas", no_presentarse: "No conviene presentarse", sin_hechos_comprobados: "Falta información para opinar" };
+    const color = COLOR[veredicto] || "gray";
+    const gris = veredicto === "sin_hechos_comprobados";
+    const donde = (x) => {
+      if (x.pagina_real != null && x.pagina != null && x.pagina_real !== x.pagina) return `está en la página ${x.pagina_real}`;
+      if (x.pagina != null) return `pág. ${x.pagina}`;
+      if (x.pagina_real != null) return `está en la página ${x.pagina_real}`;
+      return "según los datos del proceso";
+    };
+    const item = (x) => `<li>${esc(x.texto)} <span class="text-xs text-gray-500">(${esc(donde(x))})</span>${x.cita ? `<br><span class="text-xs italic text-gray-500">«${esc(x.cita)}»</span>` : ""}</li>`;
+    const ETIQUETA = {
+      experiencia_especifica: "Experiencia específica", financiero: "Requisito financiero", capacidad_de_contratacion: "Capacidad de contratación",
+      personal: "Personal exigido", equipos_o_laboratorio: "Equipos o laboratorio", certificaciones: "Certificaciones", garantias: "Garantías",
+      forma_de_pago: "Forma de pago", anticipo_o_pago_anticipado: "Anticipo o pago anticipado", plazo: "Plazo", multas: "Multas",
+      item_sin_valor: "Ítem sin valor", subcontratista_o_proveedor_impuesto: "Proveedor o subcontratista impuesto",
+      marca_sin_equivalente: "Marca sin la fórmula “o equivalente”", licencia_o_permiso: "Licencia o permiso",
+      visita_obligatoria: "Visita obligatoria", causal_de_rechazo: "Causal de rechazo", adenda: "Adenda", otro: "Otro",
+    };
+    const ESTADO = { cumple: "Cumple", no_cumple: "No cumple", sin_dato_del_perfil: "Sin dato en su perfil: verifíquelo" };
+    const MOTIVO = {
+      cita_no_encontrada: "no está en la página citada", cita_ambigua: "cita demasiado corta", pagina_ilegible: "página ilegible", sin_cita: "sin cita",
+      cifra_sin_respaldo: "cifra sin respaldo", frase_de_acusacion: "atribuye intenciones", registro_informal: "redacción no admitida", referencia_desconocida: "norma no reconocida",
+    };
+    const requisitos = Array.isArray(d.requisitos_para_participar) ? d.requisitos_para_participar : [];
+    const riesgos = Array.isArray(d.riesgos) ? d.riesgos : [];
+    const motivos = Array.isArray(d.motivos) ? d.motivos : [];
+    const faltan = requisitos.filter((x) => x.estado === "sin_dato_del_perfil").length;
+    const lecturas = r.lecturas && typeof r.lecturas === "object" ? Object.values(r.lecturas) : [];
+    const CUMPLE = { si: "Cumple", no: "No cumple", sin_dato: "Sin dato en su perfil" };
+    let html = "";
+    html += `<p class="mt-3 text-sm font-medium text-${color}-700">● ${esc(TEXTO[veredicto] || TEXTO.sin_hechos_comprobados)} — ${esc(d.veredicto_frase || "")}</p>`;
+    if (gris) html += `<p class="mt-1 text-sm text-gray-600">${esc(r.que_hacer || "")}</p>`;
+    html += `<p class="mt-2 text-xs text-gray-500">${esc(r.advertencia || "")}</p>`;
+    html += `<p class="mt-1 text-xs text-gray-500">Sobre la versión ${esc(r.version_texto)} del pliego${r.paginas != null ? ` (${esc(r.paginas)} páginas)` : ""}. Para el precio use “Calcular mi precio”.`
+      + `${r.recortado ? " El texto guardado está recortado: el dictamen no vio el final del pliego." : ""}`
+      + `${Array.isArray(r.paginas_vacias) && r.paginas_vacias.length ? ` Las páginas ${esc(r.paginas_vacias.join(", "))} no se pudieron leer del escaneado.` : ""}`
+      + `${apartadas.length ? ` Se apartaron ${apartadas.length} frases que no se pudieron comprobar.` : ""}</p>`;
+    html += `<p class="mt-1 text-xs text-gray-500">Se comprobaron ${esc(ver.citas_verificadas || 0)} de ${esc(ver.citas_total || 0)} citas${r.paginas != null ? ` · ${esc(r.paginas - (Array.isArray(r.paginas_vacias) ? r.paginas_vacias.length : 0))} páginas leídas de ${esc(r.paginas)}` : ""} · faltan ${faltan} datos de su empresa</p>`;
+    if (motivos.length) html += `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">Por qué</p><ul class="mt-1 space-y-1">${motivos.map(item).join("")}</ul>`;
+    if (lecturas.length || r.capacidad_disponible_cop != null) {
+      html += `<p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">${esc(MARCA.nombre)} ya midió</p><ul class="mt-1 space-y-0.5 text-xs">`;
+      for (const l of lecturas) {
+        html += `<li>${esc(l.etiqueta)}: pide ${esc(l.tipo === "dinero" ? dinero(l.valor) : cifra(l.valor))}${l.valor_del_perfil != null ? ` · usted ${esc(l.tipo === "dinero" ? dinero(l.valor_del_perfil) : cifra(l.valor_del_perfil))}` : ""}${l.cumple_segun_la_app ? ` · ${esc(CUMPLE[l.cumple_segun_la_app] || "")}` : ""}${l.pagina != null ? ` <span class="text-gray-400">(pág. ${esc(l.pagina)})</span>` : ""}</li>`;
+      }
+      if (r.capacidad_disponible_cop != null) html += `<li>Capacidad de contratación disponible: ${esc(dinero(r.capacidad_disponible_cop))}${r.capacidad_nota ? ` <span class="text-gray-400">(${esc(r.capacidad_nota)})</span>` : ""}</li>`;
+      html += "</ul>";
+    }
+    html += `<details class="mt-3"${gris ? " open" : ""}><summary class="cursor-pointer text-sm font-medium">Ver el dictamen completo</summary><div class="mt-2 space-y-3 text-sm">`;
+    if (requisitos.length) {
+      html += `<div><p class="text-xs font-medium uppercase tracking-wide text-gray-500">Requisitos para poder participar</p><ul class="mt-1 space-y-1">`;
+      for (const x of requisitos) {
+        html += `<li><span class="font-medium">${esc(ETIQUETA[x.tipo] || ETIQUETA.otro)}</span> · ${esc(ESTADO[x.estado] || ESTADO.sin_dato_del_perfil)}<br>${esc(x.texto)} <span class="text-xs text-gray-500">(${esc(donde(x))})</span>`
+          + `${x.cita ? `<br><span class="text-xs italic text-gray-500">«${esc(x.cita)}»</span>` : ""}`
+          + `<br><span class="text-xs text-gray-600">${x.dato_comparado && x.dato_comparado_valor != null ? `Comparado con: ${esc(x.dato_comparado_etiqueta || x.dato_comparado)} ${esc(valorDe(x.dato_comparado, x.dato_comparado_valor))}` : `${esc(MARCA.nombre)} no tiene esa cifra`}${x.motivo_estado ? ` · ${esc(x.motivo_estado)}` : ""}</span></li>`;
+      }
+      html += "</ul></div>";
+    }
+    if (riesgos.length) {
+      html += `<div><p class="text-xs font-medium uppercase tracking-wide text-gray-500">Riesgos</p><ul class="mt-1 space-y-1">`;
+      let sinFuente = false;
+      for (const x of riesgos) {
+        if (x.base === "sin_fuente" && !sinFuente) { sinFuente = true; html += `<li class="text-xs font-medium text-gray-500">Criterio general, sin respaldo en el pliego</li>`; }
+        html += `<li><span class="font-medium">Gravedad ${esc(x.gravedad)}</span> · ${esc(x.texto)} <span class="text-xs text-gray-500">(${x.base === "datos_de_la_app" ? "Según los datos de la aplicación" : x.base === "norma" ? "Según la norma citada" : esc(donde(x))})</span>`
+          + `${x.cita ? `<br><span class="text-xs italic text-gray-500">«${esc(x.cita)}»</span>` : ""}${x.que_hacer ? `<br><span class="text-xs text-gray-600">Qué hacer: ${esc(x.que_hacer)}</span>` : ""}</li>`;
+      }
+      html += "</ul></div>";
+    }
+    const bloque = (titulo, lista, pinta) => (Array.isArray(lista) && lista.length ? `<div><p class="text-xs font-medium uppercase tracking-wide text-gray-500">${esc(titulo)}</p><ul class="mt-1 space-y-1">${lista.map(pinta).join("")}</ul></div>` : "");
+    html += bloque("A favor", d.puntos_a_favor, item);
+    html += bloque("Pendiente de verificar", d.pendientes_de_verificar, item);
+    html += bloque("Preguntas para la entidad (por escrito)", d.preguntas_para_la_entidad, (s) => `<li>${esc(s)}</li>`);
+    html += bloque(r.recortado || (Array.isArray(r.paginas_vacias) && r.paginas_vacias.length) ? "No apareció en las páginas leídas" : "No encontrado en el pliego", d.no_encontrado_en_el_pliego, (s) => `<li>${esc(s)}</li>`);
+    if (apartadas.length) {
+      html += `<details${gris ? " open" : ""}><summary class="cursor-pointer text-xs font-medium uppercase tracking-wide text-gray-500">Frases que no se pudieron comprobar (${apartadas.length})</summary>`
+        + `<p class="mt-1 text-xs text-gray-500">No las use como hechos.</p><ul class="mt-1 space-y-1 text-xs text-gray-500">`
+        + apartadas.map((a) => `<li>${esc(a.texto)} <span class="italic">— ${esc(a.motivo === "registro_informal" ? "Redacción no admitida" : (MOTIVO[a.motivo] || a.motivo))}</span></li>`).join("") + "</ul></details>";
+    }
+    if (d.confianza_motivo) html += `<p class="text-xs text-gray-500">${esc(d.confianza_motivo)}</p>`;
+    const seg = Number.isFinite(Number(r.duracionMs)) ? Math.round(Number(r.duracionMs) / 1000) : null;
+    const versionInstr = String(r.version_instrucciones || "").slice(0, 10);
+    html += `<p class="text-xs text-gray-400">Cómo se hizo: leído el ${esc(fecha(r.generado))}${r.paginas != null ? ` · ${esc(r.paginas)} páginas del pliego` : ""}, versión ${esc(r.version_texto)}${seg != null ? ` · ${seg} segundos` : ""}${versionInstr ? ` · instrucciones del ${esc(fecha(versionInstr))}` : ""}${r.uso_mes && r.uso_mes.dictamenes != null ? ` · este mes: ${esc(r.uso_mes.dictamenes)} dictámenes` : ""}${r.cache ? " · guardado" : ""}</p>`;
+    html += "</div></details>";
+    html += `<div class="mt-3 flex flex-wrap gap-2">`
+      + `<button type="button" id="btn-dictamen-pedir" class="rounded-lg px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300">Volver a pedir el dictamen</button>`
+      + `<button type="button" id="btn-dictamen-copiar" class="rounded-lg px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300">Copiar el dictamen</button>`
+      + `<button type="button" id="btn-dictamen-cancelar" class="hidden rounded-lg px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300">Cancelar</button>`
+      + `</div><p id="dictamen-estado" class="mt-2 text-xs text-gray-500"></p>`;
+    return html;
+  }
+
+  function textoPlanoDictamen(r) {
+    const d = r.dictamen || {};
+    const TEXTO = { presentarse: "Puede presentarse", presentarse_con_reservas: "Puede presentarse, con reservas", no_presentarse: "No conviene presentarse", sin_hechos_comprobados: "Falta información para opinar" };
+    const linea = (x) => `- ${x.texto}${x.pagina != null ? ` (pág. ${x.pagina})` : ""}${x.cita ? ` «${x.cita}»` : ""}`;
+    const partes = [`${TEXTO[d.veredicto] || TEXTO.sin_hechos_comprobados} — ${d.veredicto_frase || ""}`, r.advertencia || ""];
+    const seccion = (titulo, lista, f) => { if (Array.isArray(lista) && lista.length) partes.push(`\n${titulo}`, ...lista.map(f)); };
+    seccion("Por qué", d.motivos, linea);
+    seccion("Requisitos para poder participar", d.requisitos_para_participar, (x) => `${linea(x)} · ${x.estado === "cumple" ? "Cumple" : x.estado === "no_cumple" ? "No cumple" : "Sin dato en su perfil"}`);
+    seccion("Riesgos", d.riesgos, (x) => `${linea(x)} · gravedad ${x.gravedad}${x.que_hacer ? ` · qué hacer: ${x.que_hacer}` : ""}`);
+    seccion("A favor", d.puntos_a_favor, linea);
+    seccion("Pendiente de verificar", d.pendientes_de_verificar, linea);
+    seccion("Preguntas para la entidad (por escrito)", d.preguntas_para_la_entidad, (s) => `- ${s}`);
+    seccion("No encontrado en el pliego", d.no_encontrado_en_el_pliego, (s) => `- ${s}`);
+    return partes.join("\n");
+  }
+
+  function estadoDictamen(clase, texto, { boton = true, breve = false } = {}) {
+    const caja = clase === "error" ? "bg-red-50 text-red-700 ring-red-600/20" : clase === "aviso" ? "bg-amber-50 text-amber-800 ring-amber-600/20" : "bg-gray-50 text-gray-600 ring-gray-500/20";
+    return `<p class="rounded-lg px-3 py-2 text-sm ring-1 ring-inset ${caja}">${esc(texto)}</p>`
+      + `<div class="mt-3 flex flex-wrap gap-2">`
+      + `<button type="button" id="btn-dictamen-pedir" class="rounded-lg px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300"${boton ? "" : " disabled"}>Pedir el dictamen</button>`
+      + `${breve ? `<button type="button" id="btn-dictamen-breve" class="rounded-lg px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300">Pedir un dictamen más breve</button>` : ""}`
+      + `<button type="button" id="btn-dictamen-cancelar" class="hidden rounded-lg px-3 py-1.5 text-sm font-medium ring-1 ring-inset ring-gray-300">Cancelar</button>`
+      + `</div><p id="dictamen-estado" class="mt-2 text-xs text-gray-500"></p>`;
+  }
+
+  function pintarCajaDictamen(html, id) {
+    const caja = $("pl-dictamen");
+    if (!caja) return;
+    caja.innerHTML = `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">Dictamen del pliego</p><div class="mt-2">${html}</div>`;
+    caja.classList.remove("hidden");
+    const bPedir = document.getElementById("btn-dictamen-pedir");
+    if (bPedir) bPedir.addEventListener("click", () => pedirDictamenAlServidor(id, { refrescar: !!dictamenUltimo }));
+    const bBreve = document.getElementById("btn-dictamen-breve");
+    if (bBreve) bBreve.addEventListener("click", () => pedirDictamenAlServidor(id, { refrescar: true, esfuerzo: "low" }));
+    const bCopiar = document.getElementById("btn-dictamen-copiar");
+    if (bCopiar) bCopiar.addEventListener("click", async () => {
+      const estado = document.getElementById("dictamen-estado");
+      try { await navigator.clipboard.writeText(textoPlanoDictamen(dictamenUltimo || {})); if (estado) estado.textContent = "Dictamen copiado."; }
+      catch { if (estado) estado.textContent = "No se pudo copiar: seleccione el texto y cópielo a mano."; }
+    });
+  }
+
+  function mostrarDictamen(r, id) {
+    dictamenUltimo = r;
+    pintarCajaDictamen(pintarDictamen(r, { esc, MARCA: window.Glosario.MARCA }), id);
+    const estado = document.getElementById("dictamen-estado");
+    if (estado && r.cache && r.generado) estado.textContent = `Dictamen generado el ${String(r.generado).slice(0, 10).split("-").reverse().join("/")} (guardado)`;
+  }
+
+  /* La respuesta del servidor que no es un dictamen se traduce a un estado con
+     qué hacer: ninguna pulsación se queda sin respuesta visible. */
+  function respuestaDictamen(r, id, { cambio = false } = {}) {
+    if (r.red) return pintarCajaDictamen(estadoDictamen("error", `No se pudo contactar el servidor: ${r.red}.`), id);
+    if (r.estado === 401) return pintarCajaDictamen(estadoDictamen("error", MSG_401, { boton: false }), id);
+    const c = r.cuerpo || {};
+    if (r.estado === 503 && c.ia_configurada === false) return pintarCajaDictamen(estadoDictamen("aviso", c.error || "", { boton: false }), id);
+    if (r.estado === 400 && Array.isArray(c.perfiles)) return pintarCajaDictamen(estadoDictamen("error", `${c.error} ${c.que_hacer || ""}`, { boton: false }), id);
+    if (r.estado === 429) return pintarCajaDictamen(estadoDictamen("aviso", `${c.error} ${c.que_hacer || ""}`, { boton: false }), id);
+    if (c.ok && c.hay_dictamen) return mostrarDictamen(c, id);
+    if (c.ok && c.hay_texto === false) return pintarCajaDictamen(estadoDictamen("aviso", `${c.error} ${c.que_hacer || ""}`, { boton: false }), id);
+    if (c.ok && c.en_curso) return pintarCajaDictamen(estadoDictamen("aviso", `${c.error} ${c.que_hacer || ""}`), id);
+    if (c.ok && c.hay_dictamen === false && c.motivo === "rechazado_por_el_modelo") return pintarCajaDictamen(estadoDictamen("error", `${c.error} ${c.que_hacer || ""}`), id);
+    if (c.ok && c.hay_dictamen === false) {
+      const texto = cambio
+        ? "El pliego tiene una versión nueva y el dictamen guardado es de la anterior. Pulse «Pedir el dictamen» para leer la versión nueva."
+        : "Todavía no hay un dictamen de esta versión del pliego. Pulse «Pedir el dictamen»: se lee el pliego completo y tarda entre uno y tres minutos.";
+      return pintarCajaDictamen(estadoDictamen("info", texto), id);
+    }
+    const breve = c.motivo === "incompleto" || c.motivo === "tiempo";
+    return pintarCajaDictamen(estadoDictamen("error", `${c.error || `El servidor respondió ${r.estado}.`} ${c.que_hacer || ""}`, { breve }), id);
+  }
+
+  async function cargarDictamen(id, { cambio = false, falloVigia = null } = {}) {
+    if (!id) return pintarCajaDictamen(estadoDictamen("info", "Abra el pliego desde una tarjeta de proceso («Calcular mi precio») para poder pedir el dictamen.", { boton: false }), id);
+    if (falloVigia) return pintarCajaDictamen(estadoDictamen("aviso", `Primero hay que guardar el texto del pliego: ${falloVigia}.`, { boton: false }), id);
+    dictamenUltimo = null;
+    const r = await pedirGet(`/api/pliego?op=dictamen&id_proceso=${encodeURIComponent(id)}&perfil=${encodeURIComponent(perfilActual())}`);
+    respuestaDictamen(r, id, { cambio });
+  }
+
+  async function pedirDictamenAlServidor(id, { refrescar = false, esfuerzo = null } = {}) {
+    if (dictamenAbort) return;
+    const previo = dictamenUltimo;
+    if (refrescar && previo) {
+      const estado = document.getElementById("dictamen-estado");
+      if (estado) estado.textContent = "Se pedirá un dictamen nuevo a la inteligencia artificial; el anterior se reemplaza.";
+    }
+    const boton = document.getElementById("btn-dictamen-pedir");
+    const estado = document.getElementById("dictamen-estado");
+    if (boton) { boton.disabled = true; boton.textContent = "Leyendo el pliego…"; }
+    if (estado) estado.textContent = "Leyendo el pliego completo. Puede tardar entre uno y tres minutos.";
+    /* el botón de cancelar vive en el marcado (oculto) y se enseña mientras dura la lectura */
+    const cancelar = document.getElementById("btn-dictamen-cancelar");
+    dictamenAbort = new AbortController();
+    if (cancelar) {
+      cancelar.classList.remove("hidden");
+      if (!cancelar.dataset.cableado) { cancelar.dataset.cableado = "1"; cancelar.addEventListener("click", () => { if (dictamenAbort) dictamenAbort.abort(); }); }
+    }
+    const inicio = Date.now();
+    dictamenReloj = setInterval(() => {
+      const s = Math.round((Date.now() - inicio) / 1000);
+      if (boton) boton.textContent = s >= 90 ? "Todavía en ello: un pliego largo tarda más." : s >= 30 ? "Sigue leyendo…" : "Leyendo el pliego…";
+    }, 5000);
+    let r;
+    try {
+      const resp = await fetch("/api/pliego?op=dictamen", {
+        method: "POST", signal: dictamenAbort.signal,
+        headers: { "Content-Type": "application/json", "x-historico-token": leerToken() },
+        body: JSON.stringify({ id_proceso: id, perfil: perfilActual(), refrescar: !!refrescar, ...(esfuerzo ? { esfuerzo } : {}) }),
+      });
+      let datos = null;
+      try { datos = await resp.json(); } catch { datos = null; }
+      r = { estado: resp.status, cuerpo: datos };
+    } catch (e) {
+      r = e && e.name === "AbortError" ? null : { estado: 0, cuerpo: null, red: (e && e.message) || "sin conexión" };
+    } finally {
+      clearInterval(dictamenReloj); dictamenReloj = null;
+      dictamenAbort = null;
+      if (cancelar) cancelar.classList.add("hidden");
+    }
+    if (!r) {
+      if (previo) mostrarDictamen(previo, id);
+      else pintarCajaDictamen(estadoDictamen("info", "Petición cancelada. Pulse «Pedir el dictamen» cuando quiera leer el pliego."), id);
+      return;
+    }
+    respuestaDictamen(r, id);
   }
 
   function manejarRespuesta(r) {
@@ -923,4 +1181,8 @@
      contrato para quien nunca abre el lector. Va después de declarar todo lo
      que usa — la lección de la zona muerta temporal, intacta. */
   window.__pliegoArrancar = arrancarPanel;
+  /* Gancho para la comprobación en navegador real (Chromium con un arnés que
+     responde /api/*): permite disparar el vigía —y con él la caja del dictamen—
+     sin cargar pdf.js desde un CDN que el arnés no alcanza. No lo usa la app. */
+  window.__pliegoVigilar = vigilarPliego;
 })();

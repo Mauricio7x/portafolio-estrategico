@@ -6673,3 +6673,74 @@ en §7 de `docs/DON_HECTOR_DICTAMEN_DEL_PLIEGO.md`. Lo que no hay que volver a a
 
 Estado: **solo documento**; no se tocó `api/`, `lib/`, `public/` ni la suite. Suite 4/4 antes del
 commit.
+
+### Dictamen del pliego · `op=dictamen`, el código de la sección 6 (2-sep-2026, noche)
+
+El dueño pidió implementar el plan de `docs/DON_HECTOR_DICTAMEN_DEL_PLIEGO.md` §6 y avisó que su
+plan es el Max personal de USD 200 comprado desde el celular. Lo que se construyó y lo que no hay
+que volver a aprender:
+
+- **La op vive en `api/pliego.js` como `dictamen`** (`lib/handlers/pliego/dictamen.js`), y el módulo
+  puro es `lib/dictamen.js`: prompt de sistema CONGELADO sin cifras, esquema de salida sin campos de
+  dinero ni porcentaje, `armarEntrada` (todo ausente viaja `null` con motivo en `sin_dato`),
+  `textoPaginado` (`\f<n>` → «=== Página N ===»; página vacía = sin ningún carácter visible, no «menos
+  de 40»: el fixture «hola» de la prueba 6 lo decidió), `construirPeticion`, `interpretarRespuesta`
+  (`stop_reason` antes que `content`; nada remoto se reenvía), `verificarDictamen` (forma contra el
+  esquema con un validador propio; censo recursivo de TODO string; cita buscada EN SU PÁGINA con la
+  misma `normalizarTexto` de `lib/diff` más plegado de mayúsculas y tildes; cifras sin respaldo,
+  acusación, emoji y tuteo apartados; la rebaja del veredicto y el gris viven aquí), y `claveCache`
+  con cuatro sellos (hash del texto, hash del prompt y de las constantes, hash del perfil de la
+  entrada, sello de los seis campos que vigila `lib/adendas`).
+- **Tres reglas se extrajeron para llamarlas, no copiarlas**: `cumpleRequisito` en `lib/diff.js` (con
+  la guarda de null ANTES de `Number`: el vigía de adendas ya no convierte un perfil sin capital de
+  trabajo en «no cumple»), `presupuestoOficialDe` en `lib/negocio.js` (el listado la llama) y la
+  resolución del perfil en `lib/perfil_resolver.js` (`validarIdPerfil` solo formato, sin Redis;
+  `cargarPerfilResuelto` carga `rup_…` y `cons_…`), que el listado y el dictamen usan por la MISMA
+  vía. `filaDe` e `ID_RE` se exportaron de sus handlers; `textoGuardado` devuelve además
+  `recortado`, `hash` y `origen`, de forma aditiva.
+- **Las cercas de lenguaje tienen una sola copia**: `lib/lenguaje_pantalla.js` (`RE_EMOJI_UI`,
+  `VOSEO_RE`), que la suite requiere en sus dos censos y que el servidor aplica al texto del modelo
+  en tiempo de ejecución, que es lo que la cerca estática de `public/*.js` no ve. Es la excepción
+  declarada de la cerca, con este motivo. `RE_EMOJI_UI` lleva la bandera `g`: se usa con `match` y
+  `replace`, nunca con `test`.
+- **`api/pliego.js` declara `maxDuration: 300`** desde este commit (como `api/procesos.js` desde el
+  19-ago-2026); el presupuesto de reloj del dictamen es 290 s y la suite lo compara con `vercel.json`
+  leído del repositorio. Si el despliegue sale en rojo por el plan, el plan B es
+  `DICTAMEN_MODELO=claude-sonnet-5` + `DICTAMEN_ESFUERZO=low` + `DICTAMEN_PRESUPUESTO_MS=50000` con
+  `maxDuration` 60, sin tocar código.
+- **Las 21 cerraduras están en un bloque de unidad de `tests/e2e.js`** que corre una vez antes de las
+  iteraciones (como la auditoría integral), con `global.fetch` sustituido SOLO para
+  `api.anthropic.com` (el resto sigue yendo al mock de Upstash; sin esa distinción el cliente de
+  Redis que crea el handler capturaba el espía) y restaurado en `finally`; `limpiarRedis` purga
+  `dictamen:*` y `lock:dictamen:*`. La tabla versión → hash del prompt es de solo añadir filas: cambiar
+  el prompt sin añadir una fila rompe la prueba 16. `pintarDictamen` en `public/pliego.js` es una
+  función autocontenida (recibe `esc` y `MARCA` por parámetro) para que la suite la EJECUTE con
+  `extraerFn` sobre un fixture, y su fuente no puede decir «tokens», «modelo» ni «prompt».
+- **La cuota diaria cuenta toda llamada al modelo, también la fallida**, con `hoyColombia`; el candado
+  `lock:dictamen:{id}:{perfil}` vive lo que el reloj más diez segundos y se libera en `finally` solo
+  si el testigo sigue siendo el propio; el GET nunca llama al modelo, nunca toma el candado ni gasta
+  cuota. Un 4xx remoto no se reintenta; 429/529/5xx y red se reintentan UNA vez si la espera cabe en
+  20 s y quedan 25 s de presupuesto.
+- **El plan Max personal no paga la API, y da igual que sea personal o de empresa.** Es una
+  suscripción de claude.ai y de Claude Code; `api.anthropic.com/v1/messages` exige una clave de la
+  consola de Anthropic con su propio saldo por consumo. Sin la variable `ANTHROPIC_API_KEY` la op
+  responde 503 con la instrucción exacta y la pantalla lo dice en ámbar; el resto del lector sigue
+  funcionando. Es el primer paso del dueño antes del primer dictamen real, y no lo puede dar una
+  sesión.
+- **Verificado en Chromium real** (headless shell de `/opt/pw-browsers`, `playwright-core` instalado en
+  el scratchpad; arnés que sirve `public/` y responde `/api/*` con la forma real del handler), a 390 y
+  1280 px: la caja «Dictamen del pliego» pinta el dictamen de caché, el estado «sin clave» en ámbar con
+  la instrucción, y un dictamen nuevo tras «Pedir el dictamen»; cero errores de página, cero errores de
+  JavaScript en consola (solo los 503 del propio arnés para el listado) y sin desborde horizontal. Para
+  poder disparar el vigía sin pdf.js (el CDN no se alcanza desde el arnés) `public/pliego.js` expone
+  `window.__pliegoVigilar`, un gancho que la app no usa; y el botón «Cancelar» vive en el marcado
+  (oculto) porque la cerca de ids solo admite los nodos que el propio archivo escribe con `id="…"`.
+- **Dos cercas hubo que declararles su excepción**: el censo de tuteo sobre `lib/` y `api/` excluye
+  `lib/lenguaje_pantalla.js` (es la propia cerca: su fuente contiene las palabras que caza), y el campo
+  de la respuesta que el documento llamaba `prompt_version` se llama `version_instrucciones` porque la
+  función de pantalla no puede decir «prompt». Además, `lib/perfil_resolver.js` es donde la resolución
+  del perfil quedó extraída del listado (§4.1 lo dejaba abierto: «se extrae si hace falta»).
+- **Lo que NO se verificó desde aquí**: ninguna llamada real al modelo (el espía de la suite simula
+  la API); el `maxDuration` 300 en ejecución (declarado, no medido); el coste real por dictamen. La
+  primera medición en producción (paso 15 de §6) sigue pendiente y es la que decide entre Opus 5 y
+  Fable 5.1.

@@ -15,6 +15,12 @@ reglas duras (§3) y el diseño recomendado con su plan y sus pruebas (§4 a §6
 en §8. Toda afirmación sobre el árbol lleva archivo:línea medida el 2-sep-2026; toda afirmación
 externa lleva URL, fecha y nivel de evidencia. Si el árbol o la norma cambian, mandan ellos.
 
+**Estado (2-sep-2026, noche): la sección 6 está implementada** el mismo día (op `dictamen`,
+`lib/dictamen.js`, `lib/handlers/pliego/dictamen.js`, `lib/perfil_resolver.js`, `lib/lenguaje_pantalla.js`,
+las 21 pruebas y la caja en el lector). Lo que la implementación decidió distinto de lo escrito aquí
+está anotado en su sitio con «(implementado: …)» y en `docs/MEMORIA.md`. El estado vivo se mide con
+`node tests/estado.js`, no se lee aquí.
+
 ## 0. Qué pidió el dueño y qué se decidió
 
 1. **La hipótesis se verificó ANTES de diseñar.** De las 45 afirmaciones del prompt (tablas A, R y
@@ -686,7 +692,7 @@ respaldo: []}`, `avisos[]`.
 
 **Envoltorio del 200** (mismo para GET y POST): `{ok, id_proceso, perfil, hay_texto, hay_dictamen,
 en_curso, cache, generado, version_texto, paginas, paginas_vacias, recortado, modelo (el campo
-model DEVUELTO, no el pedido), esfuerzo, prompt_version, dictamen, no_verificados, verificacion,
+model DEVUELTO, no el pedido), esfuerzo, version_instrucciones (el documento la llamaba prompt_version; la pantalla no puede decir «prompt»), dictamen, no_verificados, verificacion,
 uso: {entrada_tokens, salida_tokens} (de usage; null si no vienen, nunca 0 inventado), uso_mes:
 {dictamenes, entrada_tokens, salida_tokens}, duracionMs, avisos, advertencia}`. El GET nunca toma
 candado ni consume cuota: con candado vivo responde `en_curso: true`; sin caché, `hay_dictamen:
@@ -1013,8 +1019,9 @@ Cada una dice contra qué mutación FALLA; una prueba que pasa contra el árbol 
    comprueba después del fetch.
 4. **Entrada ensamblada**: fila `{precio_base: null, cuantia_cop: 0, duracion: "abc",
    unidad_de_duracion: "Meses", anticipo_pct: 0}` → `presupuesto_oficial_cop === null`,
-   `anticipo_pct_segun_objeto === null`, `duracion === "abc"`; `JSON.stringify(entrada)` no contiene
-   `plazo_meses`, `ganancia`, `p_ganar`, `"ve"`, `baja_`; perfil con `utilidadOp: null` →
+   `anticipo_pct_segun_objeto === null`, `duracion === "abc"`; `JSON.stringify(entrada.proceso)` no contiene
+   `plazo_meses` (el requisito leído del pliego con ese id sí viaja en las lecturas: es una lectura
+   con página, no un supuesto) y `JSON.stringify(entrada)` no contiene `ganancia`, `p_ganar`, `"ve"`, `baja_`; perfil con `utilidadOp: null` →
    `capacidad_de_contratacion_disponible_cop === null`; con presupuesto null y CO conocida → la K
    lleva `nota` de cota superior; `sce` ausente → `contratos_en_ejecucion === null`; `unspsc` no Set
    → `clases_unspsc_inscritas === null`; requisito de liquidez 1,5 con perfil 1,2 →
@@ -1027,7 +1034,9 @@ Cada una dice contra qué mutación FALLA; una prueba que pasa contra el árbol 
    la función que usa `listar.js` (`sinComentarios(listar)` contiene la llamada y no contiene el
    ternario literal). FALLA si vuelve la copia.
 6. **Texto paginado**: `textoPaginado("\f1\nhola\n\f\nadios\n\f14\nfin\n\f15\n")` contiene `===
-   Página 1 ===`, `=== Página 2 ===`, `=== Página 14 ===`, ningún `\f`, y `paginas_vacias` es `[15]`.
+   Página 1 ===`, `=== Página 2 ===`, `=== Página 14 ===`, ningún `\f`, y `paginas_vacias` es `[15]`
+   (implementado: «vacía» = sin ningún carácter visible, no «menos de 40 caracteres»: el fixture
+   «hola» de esta misma prueba lo decidió).
    FALLA si el `\f` vacío se numera 1 o la página vacía no se anota.
 7. **Verificación por página**: texto `\f3\nCapital de trabajo mínimo\n$ 1.500.000.000\n\f4\nPlazo
    de ejecución: seis (6) meses\n\f5\n`; cita `{pagina: 3, cita: "capital de trabajo MINIMO $
@@ -1120,10 +1129,11 @@ Cada una dice contra qué mutación FALLA; una prueba que pasa contra el árbol 
 18. **Frontend por `extraerFn`** (`tests/e2e.js:4680-4685`): `pintarDictamen` con un fixture →
     contiene «● Puede presentarse, con reservas», «pág. 3», «está en la página 4», la `advertencia`
     del fixture, «Comparado con:», «Gravedad alta», la etiqueta «Anticipo o pago anticipado» (no el
-    valor con guiones bajos), «Redacción no admitida»; veredicto `sin_hechos_comprobados` → clase
+    valor con guiones bajos), «Redacción no admitida», «Volver a pedir el dictamen»; veredicto `sin_hechos_comprobados` → clase
     gris y la frase de qué hacer; `<script>` en cada string → no queda `<script` vivo; nunca «pág.
     null», «undefined» ni «K»; `sinComentarios(extraerFn("pintarDictamen"))` no contiene «Detekta»
-    ni «tokens» ni «modelo» y sí `MARCA.nombre`. FALLA sin `esc()`, sin guarda de página nula, con
+    ni «tokens» ni «modelo» y sí `MARCA.nombre` (implementado: la función recibe `esc` y `MARCA` por
+    parámetro para poder ejecutarse fuera del navegador). FALLA sin `esc()`, sin guarda de página nula, con
     la marca a mano o con un rótulo de jerga.
 19. **Una sola copia de las cercas**: `require("../lib/lenguaje_pantalla.js").RE_EMOJI_UI` y
     `.VOSEO_RE` son la MISMA referencia que usan los bloques de emoji y voseo de la suite y
@@ -1138,8 +1148,9 @@ Cada una dice contra qué mutación FALLA; una prueba que pasa contra el árbol 
     alguien añade una norma sin URL.
 21. **Calendario como fechas, no como adjetivos**: `contextoPublicoDe(fila, perfil, "2026-09-02")`
     con `fecha_publicacion` `2026-07-10` y orden nacional → `publicado_en_ventana_de_transicion: true`,
-    `publicado_en_ventana_de_garantias: false`; orden desconocido → `nivel_entidad: null` y todos los
-    derivados `null`, nunca `false`; una fecha entre `2026-01-31` y `2026-06-21` →
+    `publicado_en_ventana_de_garantias: false`; orden desconocido → `nivel_entidad: null` y los
+    derivados del nivel (`meses_de_gobierno_de_la_entidad`, `ultimo_ano_de_periodo_territorial`) `null`,
+    nunca `false`; una fecha entre `2026-01-31` y `2026-06-21` →
     `publicado_en_ventana_de_garantias: true` con la nota literal de que la licitación no está
     restringida; la ventana de 2027 lleva `estimada: true`; `JSON.stringify(contexto_publico)` no
     contiene «riesgo», «problemática» ni «trampa». FALLA si un `null` se vuelve `false`, si la
@@ -1241,7 +1252,9 @@ cerraduras se escriben ANTES y deben fallar contra el árbol anterior.
     con la aritmética de la caché de prompt, el muro de tiempo, el envío de cifras del perfil al
     proveedor, el censo en tiempo de ejecución y la corrección de `Number(null)` en el vigía).
     Cierra la prueba 17. Mismo commit.
-14. `node tests/e2e.js` → 4/4 sin tuberías. Commit en `main`.
+14. `node tests/e2e.js` → 4/4 sin tuberías. Commit en `main`. (Implementado el 2-sep-2026: los pasos
+    1 a 14 están hechos; el paso 0 sigue pendiente y no bloquea; la resolución del perfil se extrajo a
+    `lib/perfil_resolver.js` y el listado la llama.)
 15. Primera medición en producción: `ANTHROPIC_API_KEY`; `DICTAMEN_MODELO` y `DICTAMEN_ESFUERZO`
     sin fijar (Opus 5 / medium); 3-5 pliegos reales, y los mismos pliegos con
     `DICTAMEN_MODELO=claude-fable-5-1` para comparar (§7.1); anotar en MEMORIA `duracionMs`, `uso`,
