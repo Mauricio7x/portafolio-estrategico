@@ -6480,3 +6480,153 @@ dos auditores que sí llegaron: `contarMes` publica `esperados: 0` con un count 
 la full no restaura `keyset` al cerrar el mes (el backfill sí); `redis.js` devuelve null ante un
 200 sin JSON; jerga («capacidad residual», «CRPC») en `p2_k.mensaje` que llega al `title` de la
 tarjeta; `ORDEN_CAMPOS.cierre` con `incluir_cerradas=1` pone la vencida primero.
+
+### Don Héctor · la hipótesis verificada contra fuentes vigentes y el diseño del dictamen del pliego, sin código todavía (2-sep-2026)
+
+El dueño trajo un prompt de «Don Héctor», un ingeniero veterano que dictamina si presentarse a un
+proceso de SECOP II, y pidió investigar la mejor manera de meterlo en la app. La primera entrega
+verificó el prompt solo contra el repositorio y diseñó; el dueño corrigió el orden: **el prompt era
+una hipótesis suya, y la tarea era verificar qué tan cierta es y si está vigente contra fuentes
+externas, actualizarla, y solo después analizar cómo implementarla**. La investigación completa, en
+ese orden (verificación afirmación por afirmación con URL y fecha, cruce con el árbol, conclusión,
+diseño, prompt, contrato JSON, 22 pruebas y decisiones del dueño), está en
+`docs/DON_HECTOR_DICTAMEN_DEL_PLIEGO.md`. Aquí solo lo que no hay que volver a aprender:
+
+- **Lo que vale del prompt es la LECTURA del pliego, no el conocimiento del oficio.** Los requisitos
+  escondidos (experiencia específica, personal, equipos, certificaciones, forma de pago, garantías,
+  multas, proveedor impuesto, marca sin «o equivalente», ítems sin valor) son exactamente el vacío
+  que la memoria declara desde agosto («exigen el texto, que el dataset no trae»). Todo lo demás del
+  prompt o ya existe como módulo (capacidad, puertas, ganancia, baja, ejecución de la entidad,
+  deducciones, cronograma, requisitos numéricos), o es cifra sin fuente, o es una norma que hay que
+  citar con URL en vez de recordar.
+- **Verificar la hipótesis ANTES de diseñar, y contra fuentes externas, no contra el propio árbol.**
+  El resultado de las 45 afirmaciones (2-sep-2026): 2 confirmadas con norma vigente, 11 parcialmente
+  ciertas, 1 corregida, 1 contradicha por datos, 11 sin fuente pública, 4 juicio de oficio, 15 no
+  consultadas. La lección es de forma: la intuición del dueño acierta en los TEMAS y falla en los
+  NÚMEROS, y cuando la norma existe dice otra cosa (la seriedad es al menos el 10 % de la OFERTA, no
+  del presupuesto: Decreto 1082 art. 2.2.1.2.3.1.9; los 60 días de pago solo rigen para Mipyme y
+  sujetos al PAC: Ley 2024 de 2020 art. 12; el 20 % de Colombia Compra mide la OFERTA frente al costo
+  estimado y solo con menos de cinco ofertas; el DNP no multa entidades, suspende giros de regalías;
+  la Ley de Garantías restringe la contratación directa, no la licitación). INVIAS no paga a 45-60
+  días: en 2025-2026 pagó por cupo de PAC con facturas de hasta ocho meses (CCI, INVIAS, El Tiempo,
+  Semana, con fecha). «Sin fuente pública» y «no consultada» son veredictos DISTINTOS y el documento
+  los separa: el primero es un vacío estructural (nadie mide días de pago por entidad ni margen por
+  tipo de obra) y el segundo, un límite de la sesión.
+- **Ninguna cifra SIN FUENTE del prompt pasa al producto; lo que tiene fuente pasa como dato con fecha
+  y URL, nunca dentro del prompt de sistema.** La tabla de días de pago por entidad no la mide nadie
+  (jbjy-vk9h no publica fechas de pago); «Santanderes +15-20 %» contradice el índice regional 0,983
+  protegido por prueba y el APU regionalizado de Invías 2025-2 ya incorpora la geografía; nadie publica
+  márgenes por tipo de obra (Supersociedades los publica por EMPRESA); «70 % quiebran», fiducia
+  «2-3 %», multas «>5 %», «±20 %», «3 días», «6 meses» y «presupuesto redondo» no tienen fuente o
+  invierten el manual. Un prompt de sistema con esas cifras es un `|| 0` con voz de experto. Lo que sí
+  quedó en pie entra por la ENTRADA del modelo: `NORMAS_CITABLES` (24 normas con URL oficial, cada una
+  con `literal_leido: false` hasta que alguien abra la URL y confirme el artículo; el modelo solo
+  recibe las leídas, y en esta entrega recibe cero), `CONTEXTO_PUBLICO` (relevo nacional 7-ago-2026,
+  periodo territorial hasta 31-dic-2027, ventanas de la Ley de Garantías 8-nov-2025 / 31-ene-2026 /
+  21-jun-2026, ventana 2027 marcada «estimada») y `data/alertas_entidad.json` (hechos por entidad con
+  fecha y URL, a mano, sin sumar cifras de cortes distintos). Sus hashes van en la clave de caché; el
+  system sigue congelado y sin cifras; el censo de cifras los reconoce porque están en la entrada; y
+  el veredicto nunca depende de ellos. La compuerta `literal_leido` existe porque toda la evidencia
+  externa de la sesión fue el resumen del buscador: la salida a los dominios oficiales estaba
+  bloqueada y ningún texto de norma se leyó íntegro.
+- **El presupuesto de búsqueda web de una sesión son 200 consultas y se agota sin aviso.** Se acabó a
+  mitad de un fan-out de 19 agentes: tres verificadores y los nueve refutadores lo encontraron
+  agotado. La regla que salvó el resultado: un agente sin fuente DECLARA «no consultado» en vez de
+  responder de memoria, y el enum de veredictos lo distingue de «sin fuente». Antes de lanzar una
+  verificación externa se cuenta el presupuesto que queda; para repetirla, sesión nueva o
+  `CLAUDE_CODE_MAX_WEB_SEARCHES_PER_SESSION` más alto. `WebFetch` estuvo bloqueado a TODO dominio
+  externo (`EGRESS_BLOCKED`): la evidencia externa de una sesión es lo que devuelve el buscador,
+  nunca un documento leído, y el documento lo declara fila por fila.
+- **El modelo no devuelve NINGÚN número salvo la página.** El esquema JSON de salida no tiene campos
+  de dinero ni de porcentaje; `dato_comparado` es un enum de claves del perfil y la cifra la pinta
+  el servidor; el precio lo siguen dando `lib/apu/piso_techo`, `lib/baja_maxima`,
+  `lib/apu/optimizador` y `lib/ganancia`, y esos datos ni siquiera viajan al modelo (una cifra de
+  la entrada volvería en prosa maquetada). Los puntajes /100, el «precio mínimo sugerido», la
+  «confianza» como rótulo y las anécdotas del «perro viejo» se retiran: son el modelo, no el hecho.
+- **La cita se verifica EN SU PÁGINA, no en todo el texto**, con `lineasConPagina` de `lib/paginas`
+  y la misma `normalizarTexto` de `lib/diff` que normalizó el texto guardado (dos normalizaciones
+  divergen): una cita verdadera con página falsa es el dato creíble equivocado, porque la página es
+  lo que le permite al dueño comprobar en diez segundos. Lo que no se comprueba (cita no hallada,
+  cita ambigua, página ilegible, página sin cita, cifra sin respaldo, acusación, tuteo) se aparta y
+  se muestra en gris con su motivo, nunca se pinta como hecho; el censo recorre TODO string del
+  JSON, no una lista de campos. El veredicto rojo solo se conserva si lo sostiene un requisito
+  citado, verificado y comparado con un dato del perfil; con cero hechos comprobados el veredicto
+  es gris «Falta información para opinar» y se guarda solo una hora.
+- **`citations` de la API y JSON de esquema fijo son excluyentes (400)**, así que se eligió el JSON
+  y la verificación propia por página sobre el texto que la app ya guarda con marcadores `\f<n>`.
+  El PDF directo se descartó: el servidor no lo tiene (lo baja como proxy y el texto lo extrae el
+  navegador) y costaría más tokens.
+- **Sin caché de prompt de Anthropic, con aritmética**: el system (~3 000 tokens) supera el mínimo
+  cacheable, pero escribir la caché cuesta 1,25× y solo rinde si la siguiente petición llega en
+  menos de 5 minutos; a 3-5 dictámenes al día está fría y sale más caro que no cachear. El pliego,
+  que es el 75 % del coste, es distinto cada vez. Las palancas reales son el modelo (Opus 5 ≈ USD
+  0,57 por pliego de 120 páginas con los precios de la skill; Sonnet 5 ≈ 0,23) y la caché en Redis
+  por versión del pliego (segunda consulta: USD 0). El coste se mide con `usage`, no se supone.
+- **La clave de caché lleva cuatro sellos**: hash del texto, hash del PROMPT (no una versión que
+  alguien olvide subir), hash del PERFIL RESUELTO (cubre fijos, `rup_…` y consorcios, que
+  `config:perfiles:version` no cubre) y sello de los seis campos que vigila `lib/adendas` (una
+  adenda publicada en el dataset sin texto nuevo también invalida). `PROMPT_VERSION` queda como dato
+  para la pantalla, con una tabla versión → hash en la suite a la que solo se añaden filas.
+- **El muro de tiempo se resuelve subiendo `api/pliego.js` a `maxDuration` 300**, no recortando el
+  pliego: el extracto por léxico convierte «no encontrado» en una falsa ausencia y un pliego a la
+  medida se detecta por el conjunto. `api/procesos.js` DECLARA 300 desde el 19-ago-2026 y Vercel
+  rechaza en el build lo que el plan no admite (fallo visible, no mudo). Plan B sin tocar código:
+  Sonnet 5 a esfuerzo bajo con 60 s. Lo que no se pudo verificar desde la sesión: el plan vigente.
+  Un valor de `vercel.json` es un valor declarado, no una medición.
+- **El texto del modelo escapa a la cerca estática de lenguaje** (que barre `public/*.js`, no
+  respuestas en vivo): por eso el servidor censa la salida con las MISMAS `RE_EMOJI_UI` y `VOSEO_RE`
+  de la suite, movidas a `lib/lenguaje_pantalla.js` para que exista una sola copia. Excepción
+  declarada, con este motivo.
+- **Tres reglas se extraen para poder llamarlas** en vez de copiarlas: el ternario del presupuesto
+  oficial de `listar.js:750` pasa a `presupuestoOficialDe` en `lib/negocio.js`; la comparación
+  `min/max` en línea de `compararHabilitantes` pasa a `cumpleRequisito` con la guarda de null
+  ANTES de `Number` (hoy `Number(null) === 0` pasa `isFinite` y un perfil sin capital de trabajo
+  daría «no cumple»: se corrige en el vigía al llamarla); la fecha de la cuota es `hoyColombia` de
+  `lib/habiles`. `filaDe` (`cronograma.js:18`) e `ID_RE` (`handlers/pliego/diff.js:16`) se
+  exportan, no se reescriben. `lib/glosario.js` ya reexporta `public/glosario.js`: la marca del
+  prompt sale de `MARCA.nombre` sin excepción.
+- **Cada respuesta que no es un dictamen lleva `error` y `que_hacer` en usted y sin jerga**, y
+  ninguna manda al dueño a una variable de entorno como única salida: el cuerpo admite `esfuerzo`
+  (enum cerrado, valor desconocido inerte) y la pantalla tiene «Pedir un dictamen más breve».
+- **Legal**: calificar a una entidad nombrada («trampa», «amañado», «riesgo político», «multada»)
+  sin dato publicado es exposición que el repositorio ya identifica como la mayor (L-3b, R-11) y que
+  el abogado no ha analizado para entidades públicas (L-8). El prompt prohíbe atribuir intenciones
+  y exige las dos lecturas; el consejo de «preguntar informalmente a un conocido» contradice el
+  mandamiento 18 y no entra en ningún texto.
+- **Método** (§9 de `PROMPT_INICIAL.md`): primera pasada sobre el árbol con siete lectores con
+  coordenadas resueltas, un lector de la skill de la API, tres diseñadores (mínimo, riesgo, usuario),
+  tres jueces, un sintetizador y 26 refutadores más tres críticos sobre el propio documento (23
+  confirmadas, 3 parciales). Segunda pasada, tras la corrección del dueño, sobre la hipótesis: nueve
+  verificadores con búsqueda web (un tema cada uno, enum cerrado de veredictos, URL con fecha y
+  autoridad por fuente), nueve refutadores y un sintetizador; 19 agentes, 1,44 millones de tokens, 36
+  minutos. El lector de la API se cayó una vez por el límite de la sesión y el workflow se reanudó
+  con los siete lectores en caché: la reanudación por caché de agentes funciona y ahorra media hora.
+  La suite con la que se trabajó: 4/4 sobre el árbol sin tocar.
+
+Estado: **solo documento**; no se tocó `api/`, `lib/`, `public/` ni la suite. La rama de trabajo la
+impuso el arnés (`claude/don-hector-research-rnceh0`); la fusión a `main` es del dueño.
+
+### El lookahead delante del lookbehind: la lista negra 19 veces más rápida y `main` vuelve a verde (2-sep-2026)
+
+Al fusionar `main` (PR #134, auditoría del 1-sep) en la rama de Don Héctor, la suite cayó tres veces
+seguidas en la misma aserción: «el juicio fino tardó 623 / 679 / 572 ms sobre 2 600 procesos (límite
+500 ms)» — la tercera sobre `origin/main` PURO en un worktree aparte, con la máquina sin carga
+(`load average 0.09`). No era contención ni era la rama: era `main`. La causa, medida con un
+micro-benchmark sobre los mismos 2 600 objetos: `BLACKLIST_OBJETO` pasó de 60 ms a 307 ms (5×)
+porque las siete alternativas nuevas del 1-sep llevan un lookbehind de longitud variable
+(`(?<=\b(?:suministro|…)\b[\s\S]{0,40})`) DELANTE de la palabra clave, y el motor lo evalúa hacia
+atrás en cada frontera de palabra aunque la palabra clave no esté; `evaluarObjeto` además la corre
+dos veces (`test` y `match`, `lib/filtros.js:462,494-495`).
+
+- **El arreglo, mecánico y sin cambiar el conjunto de aciertos**: cada alternativa `(?<=CONTEXTO)PALABRA`
+  pasa a `(?=PALABRA)(?<=CONTEXTO)PALABRA`. El lookahead con la propia palabra falla en el primer
+  carácter en casi todas las posiciones y el lookbehind solo corre donde la palabra está. Mismo
+  índice, mismo texto casado, mismo grupo 1 (el lookahead no captura): comprobado con `exec` sobre
+  70 558 cadenas (60 000 combinaciones aleatorias del vocabulario del propio regex más todos los
+  literales entre comillas de la suite, con y sin tildes), 26 198 aciertos, 0 diferencias.
+  Resultado: 307 → 16 ms por 2 600 textos; el juicio fino vuelve por debajo del límite.
+- **La cerradura ya existía**: la aserción de 500 ms de `tests/e2e.js:3006` es la que cazó la
+  regresión, y FALLA contra el árbol anterior (572-679 ms). No se toca el límite ni la prueba.
+- **La lección**: un lookbehind de longitud variable es una cerradura hacia atrás que se paga en
+  cada posición; se precede siempre de un lookahead con el literal. Vale para las nueve
+  alternativas de hoy y para la siguiente que alguien añada con el mismo mecanismo.
