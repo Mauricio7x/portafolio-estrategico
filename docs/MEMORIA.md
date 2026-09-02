@@ -6349,3 +6349,90 @@ mano, flecha, corte en ámbar («Datos de ayer, 2:32 p. m. · Actualizar») y `a
 pulsarla la flecha gira y la línea dice «Trayendo datos de SECOP II…» —también desde otra pestaña,
 donde el panel de Mi empresa no se ve—. Las tres pasadas (1280 y 390 con Tailwind, 390 sin él)
 terminan con el orden de la pestaña verificado en píxeles y la consola limpia.
+
+
+### Don Héctor · el dictamen del pliego: investigación y diseño, sin código todavía (2-sep-2026)
+
+El dueño trajo un prompt de «Don Héctor», un ingeniero veterano que dictamina si presentarse a un
+proceso de SECOP II, y pidió investigar la mejor manera de meterlo en la app. La investigación
+completa, con el diseño, el prompt reescrito, el contrato JSON, las 19 pruebas y las decisiones que
+le tocan al dueño, está en `docs/DON_HECTOR_DICTAMEN_DEL_PLIEGO.md`. Aquí solo lo que no hay que
+volver a aprender:
+
+- **Lo que vale del prompt es la LECTURA del pliego, no el conocimiento del oficio.** Los requisitos
+  escondidos (experiencia específica, personal, equipos, certificaciones, forma de pago, garantías,
+  multas, proveedor impuesto, marca sin «o equivalente», ítems sin valor) son exactamente el vacío
+  que la memoria declara desde agosto («exigen el texto, que el dataset no trae»). Todo lo demás del
+  prompt o ya existe como módulo (capacidad, puertas, ganancia, baja, ejecución de la entidad,
+  deducciones, cronograma, requisitos numéricos) o es cifra sin fuente.
+- **Ninguna cifra del prompt pasa al producto.** La tabla de días de pago por entidad no tiene
+  fuente y no es medible con jbjy-vk9h (no publica fechas de pago); «Santanderes +15-20 %» contradice
+  el índice regional 0,983 protegido por prueba; los márgenes por sector coinciden con la «A» del AIU,
+  no con la utilidad; «70 % quiebran», fiducia «2-3 %», seriedad «10 %», multas «>5 %», «±20 %»,
+  «3 días», «6 meses» y «presupuesto redondo» no aparecen en ningún documento o invierten el manual.
+  Un prompt de sistema con esas cifras es un `|| 0` con voz de experto.
+- **El modelo no devuelve NINGÚN número salvo la página.** El esquema JSON de salida no tiene campos
+  de dinero ni de porcentaje; `dato_comparado` es un enum de claves del perfil y la cifra la pinta
+  el servidor; el precio lo siguen dando `lib/apu/piso_techo`, `lib/baja_maxima`,
+  `lib/apu/optimizador` y `lib/ganancia`, y esos datos ni siquiera viajan al modelo (una cifra de
+  la entrada volvería en prosa maquetada). Los puntajes /100, el «precio mínimo sugerido», la
+  «confianza» como rótulo y las anécdotas del «perro viejo» se retiran: son el modelo, no el hecho.
+- **La cita se verifica EN SU PÁGINA, no en todo el texto**, con `lineasConPagina` de `lib/paginas`
+  y la misma `normalizarTexto` de `lib/diff` que normalizó el texto guardado (dos normalizaciones
+  divergen): una cita verdadera con página falsa es el dato creíble equivocado, porque la página es
+  lo que le permite al dueño comprobar en diez segundos. Lo que no se comprueba (cita no hallada,
+  cita ambigua, página ilegible, página sin cita, cifra sin respaldo, acusación, tuteo) se aparta y
+  se muestra en gris con su motivo, nunca se pinta como hecho; el censo recorre TODO string del
+  JSON, no una lista de campos. El veredicto rojo solo se conserva si lo sostiene un requisito
+  citado, verificado y comparado con un dato del perfil; con cero hechos comprobados el veredicto
+  es gris «Falta información para opinar» y se guarda solo una hora.
+- **`citations` de la API y JSON de esquema fijo son excluyentes (400)**, así que se eligió el JSON
+  y la verificación propia por página sobre el texto que la app ya guarda con marcadores `\f<n>`.
+  El PDF directo se descartó: el servidor no lo tiene (lo baja como proxy y el texto lo extrae el
+  navegador) y costaría más tokens.
+- **Sin caché de prompt de Anthropic, con aritmética**: el system (~3 000 tokens) supera el mínimo
+  cacheable, pero escribir la caché cuesta 1,25× y solo rinde si la siguiente petición llega en
+  menos de 5 minutos; a 3-5 dictámenes al día está fría y sale más caro que no cachear. El pliego,
+  que es el 75 % del coste, es distinto cada vez. Las palancas reales son el modelo (Opus 5 ≈ USD
+  0,57 por pliego de 120 páginas con los precios de la skill; Sonnet 5 ≈ 0,23) y la caché en Redis
+  por versión del pliego (segunda consulta: USD 0). El coste se mide con `usage`, no se supone.
+- **La clave de caché lleva cuatro sellos**: hash del texto, hash del PROMPT (no una versión que
+  alguien olvide subir), hash del PERFIL RESUELTO (cubre fijos, `rup_…` y consorcios, que
+  `config:perfiles:version` no cubre) y sello de los seis campos que vigila `lib/adendas` (una
+  adenda publicada en el dataset sin texto nuevo también invalida). `PROMPT_VERSION` queda como dato
+  para la pantalla, con una tabla versión → hash en la suite a la que solo se añaden filas.
+- **El muro de tiempo se resuelve subiendo `api/pliego.js` a `maxDuration` 300**, no recortando el
+  pliego: el extracto por léxico convierte «no encontrado» en una falsa ausencia y un pliego a la
+  medida se detecta por el conjunto. `api/procesos.js` DECLARA 300 desde el 19-ago-2026 y Vercel
+  rechaza en el build lo que el plan no admite (fallo visible, no mudo). Plan B sin tocar código:
+  Sonnet 5 a esfuerzo bajo con 60 s. Lo que no se pudo verificar desde la sesión: el plan vigente.
+  Un valor de `vercel.json` es un valor declarado, no una medición.
+- **El texto del modelo escapa a la cerca estática de lenguaje** (que barre `public/*.js`, no
+  respuestas en vivo): por eso el servidor censa la salida con las MISMAS `RE_EMOJI_UI` y `VOSEO_RE`
+  de la suite, movidas a `lib/lenguaje_pantalla.js` para que exista una sola copia. Excepción
+  declarada, con este motivo.
+- **Tres reglas se extraen para poder llamarlas** en vez de copiarlas: el ternario del presupuesto
+  oficial de `listar.js:750` pasa a `presupuestoOficialDe` en `lib/negocio.js`; la comparación
+  `min/max` en línea de `compararHabilitantes` pasa a `cumpleRequisito` con la guarda de null
+  ANTES de `Number` (hoy `Number(null) === 0` pasa `isFinite` y un perfil sin capital de trabajo
+  daría «no cumple»: se corrige en el vigía al llamarla); la fecha de la cuota es `hoyColombia` de
+  `lib/habiles`. `filaDe` (`cronograma.js:18`) e `ID_RE` (`handlers/pliego/diff.js:16`) se
+  exportan, no se reescriben. `lib/glosario.js` ya reexporta `public/glosario.js`: la marca del
+  prompt sale de `MARCA.nombre` sin excepción.
+- **Cada respuesta que no es un dictamen lleva `error` y `que_hacer` en usted y sin jerga**, y
+  ninguna manda al dueño a una variable de entorno como única salida: el cuerpo admite `esfuerzo`
+  (enum cerrado, valor desconocido inerte) y la pantalla tiene «Pedir un dictamen más breve».
+- **Legal**: calificar a una entidad nombrada («trampa», «amañado», «riesgo político», «multada»)
+  sin dato publicado es exposición que el repositorio ya identifica como la mayor (L-3b, R-11) y que
+  el abogado no ha analizado para entidades públicas (L-8). El prompt prohíbe atribuir intenciones
+  y exige las dos lecturas; el consejo de «preguntar informalmente a un conocido» contradice el
+  mandamiento 18 y no entra en ningún texto.
+- **Método** (§9 de `PROMPT_INICIAL.md`): siete lectores con coordenadas resueltas, un lector de la
+  skill de la API, tres diseñadores (mínimo, riesgo, usuario), tres jueces, un sintetizador y una
+  pasada de 26 refutadores más tres críticos sobre el propio documento (23 confirmadas, 3
+  parciales). El lector de la API se cayó una vez por el límite de la sesión y el workflow se
+  reanudó con los siete lectores en caché: la reanudación por caché de agentes funciona y ahorra
+  media hora. La suite con la que se trabajó: 4/4 sobre el árbol sin tocar.
+
+Estado: **solo documento**; no se tocó `api/`, `lib/`, `public/` ni la suite. La rama de trabajo la
+impuso el arnés (`claude/don-hector-research-rnceh0`); la fusión a `main` es del dueño.

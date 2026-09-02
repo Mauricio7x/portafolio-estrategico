@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-08-31 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-02 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -157,8 +157,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 109 secciones. Las 10 más nuevas:
-  L  5681  DOS DE LAS CUATRO GRANULARIDADES DE LA BAJA ESTÁN VACÍAS EN PRODUCCIÓN (24-ago-2026)
+· MEMORIA · docs/MEMORIA.md — 110 secciones. Las 10 más nuevas:
   L  5721  Auditoría del módulo APU: las dos mitades no están conectadas (24-ago-2026)
   L  5793  El prompt inicial vive en el repositorio y no puede contener estado (26-ago-2026)
   L  5857  Banco de precios verificable · el informe retail del 26-ago-2026 (censo en docs/BANCO_PRECIO
@@ -168,8 +167,9 @@
   L  6099  El calendario de cierres, y tres bloques menos en Mi empresa (31-ago-2026)
   L  6204  El lugar de ejecución ES la entidad, «Para Helder» abre la pestaña, y Tailwind medido de ver
   L  6273  La marca es el botón de actualizar, y el calendario baja junto al consorcio (31-ago-2026, te
+  L  6354  Don Héctor · el dictamen del pliego: investigación y diseño, sin código todavía (2-sep-2026)
 
-· DOCUMENTOS docs/ — 37:
+· DOCUMENTOS docs/ — 38:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)
   ANALISIS_ESTRATEGICO.md               Análisis estratégico de Detekta · agosto 2026
   APU_DIAGNOSTICO.md                    Diagnóstico del módulo APU frente a la especificación «APU profesional»
@@ -187,6 +187,7 @@
   CONFIGURACION_TOKENS.md               Tokens y variables de entorno · guía desde cero
   datos.md                              Inventario de fuentes de datos y auditorías de la Fase 0
   DIFERENCIAS_APU.md                    Diferencias declaradas · APU generado vs archivos de referencia (ago 2026)
+  DON_HECTOR_DICTAMEN_DEL_PLIEGO.md     Don Héctor · el dictamen del pliego (investigación y diseño · 2-sep-2026)
   EMPEZAR_AQUI.md                       EMPEZAR AQUÍ · Guía de cero para convertir Detekta en un negocio
   GUIA_ANALISTA_LICITACIONES.md         Manual del Analista de Licitaciones
   INSUMOS_2026.md                       Insumos de precios 2026 · censo, contraste y qué hacer con ellos
