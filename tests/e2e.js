@@ -8679,6 +8679,118 @@ async function main() {
         console.log(`  · seguimiento: guardar/estado/quitar por perfil · fila viva (${abierto.dias_para_cierre} días al cierre, ${abierto.avisos.length} avisos) · .ics con alarmas · detalle: ${det.proponentes.length} proponentes, recurrente ${rec.ante_esta_entidad.veces_presentado} veces ante la entidad y ${rec.contratos_vigentes.contratos} vigentes por $${rec.contratos_vigentes.valor_cop}`);
       }
 
+      /* --- LA GUÍA «DON HÉCTOR» DE UN PROCESO GUARDADO (sep 2026): al guardar,
+         la plataforma dice qué es la obra, dónde, cómo pagan, qué necesita para
+         presentarse (verificado / por confirmar / por conseguir), el paso a paso
+         con fechas, los consejos para ESE proceso y la plata que nadie suma.
+         lib/guia_proceso es capa pura y NO reimplementa ningún juicio. --- */
+      {
+        const G = require("../lib/guia_proceso.js");
+        const { hoyColombia } = require("../lib/habiles.js");
+        const routerPerfilG = require("../api/perfil.js");
+        const seg = (qs, opts = {}) => invocar(routerPerfilG, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
+        const li = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200", CAB_TOKEN);
+        const fila = li.cuerpo.resultados.find((f) => f.fecha_cierre && f.precio_base);
+        assert.ok(fila, "hace falta un proceso del listado con cierre y presupuesto");
+        // (1) la guía viaja en la respuesta del GUARDADO (automático) y en el listado
+        await seg(`&perfil=helder&id=${encodeURIComponent(fila.id_del_proceso)}`, { metodo: "DELETE" }); // el bloque anterior lo dejó guardado
+        const g1 = await seg("", { metodo: "POST", body: { perfil: "helder", id: fila.id_del_proceso, estado: "interesa", foto: fila } });
+        assert.strictEqual(g1.status, 200);
+        assert.ok(g1.cuerpo.guia && g1.cuerpo.guia.completa === true, "al guardar por primera vez viaja la guía completa (fila viva)");
+        const g1b = await seg("", { metodo: "POST", body: { perfil: "helder", id: fila.id_del_proceso, estado: "preparando" } });
+        assert.strictEqual(g1b.cuerpo.guia, null, "cambiar de etapa no recalcula la guía");
+        const idIdu = generarDatasetHistorico().filter((f) => f.entidad === "IDU")[0].id_del_proceso;
+        await seg("", { metodo: "POST", body: { perfil: "helder", id: idIdu, estado: "presentado", foto: { nombre: "OBRA IDU CERRADA", entidad: "IDU", nit_entidad: "800100003", departamento_entidad: "Bogotá D.C.", modalidad_de_contratacion: "Licitación pública", fecha_cierre: `${ANO - 1}-06-01T00:00:00.000`, fecha_de_publicacion_del: `${ANO - 1}-05-01T00:00:00.000`, precio_base: "500000000" } } });
+        const lista = (await seg("&perfil=helder")).cuerpo;
+        const abierto = lista.procesos.find((p) => p.id === fila.id_del_proceso), cerrado = lista.procesos.find((p) => p.id === idIdu);
+        const g = abierto.guia;
+        assert.ok(g && g.completa === true && g.version === G.VERSION, "el guardado vivo trae su guía completa");
+        assert.strictEqual(g.obra.que_es, fila.nombre_del_procedimiento);
+        assert.strictEqual(g.obra.donde.entidad, fila.entidad);
+        assert.strictEqual(g.obra.cuanto.presupuesto_cop, Number(fila.precio_base));
+        assert.ok(g.obra.como_lo_adjudican.explicacion && g.obra.como_lo_adjudican.clave !== "desconocida", `la modalidad se explica en llano: ${g.obra.como_lo_adjudican.clave}`);
+        assert.strictEqual(g.obra.cierre.cerrado, false);
+        // (2) requisitos: estados del contrato; el registro se verificó (el listado lo sirvió, así que encaja o encaja por parecido)
+        assert.ok(g.requisitos.length >= 9, `requisitos: ${g.requisitos.length}`);
+        for (const r of g.requisitos) { assert.ok(G.ESTADOS_REQUISITO.includes(r.estado), `estado desconocido ${r.estado}`); assert.ok(r.titulo && r.detalle && r.donde, `requisito incompleto: ${r.clave}`); }
+        const reg = g.requisitos.find((r) => r.clave === "registro");
+        assert.ok(["cumple", "revisar"].includes(reg.estado), `el registro de un proceso servido encaja: ${reg.estado}`);
+        for (const clave of ["experiencia", "capacidad", "caja", "financieros", "garantia_seriedad", "firma_digital", "antecedentes", "carpeta"]) assert.ok(g.requisitos.some((r) => r.clave === clave), `falta el requisito ${clave}`);
+        assert.ok(g.requisitos.filter((r) => r.estado === "pendiente").length >= 4, "lo que la app no puede verificar viaja «pendiente», jamás «cumple»");
+        assert.strictEqual(g.resumen.cumple + g.resumen.revisar + g.resumen.no_cumple + g.resumen.pendiente + g.resumen.sin_dato, g.requisitos.length, "el resumen suma los requisitos");
+        // (3) paso a paso: empieza hoy, presenta el día ANTERIOR al cierre, y las fechas van en orden
+        const hoyC = hoyColombia();
+        assert.strictEqual(g.pasos[0].cuando, hoyC, "el primer paso es hoy: leer las causales de rechazo");
+        const presentar = g.pasos.find((s) => /PRESENTE la oferta/.test(s.titulo)), cierreP = g.pasos.find((s) => s.titulo === "Cierre del proceso");
+        assert.ok(presentar && cierreP && presentar.cuando < cierreP.cuando, `presentar (${presentar && presentar.cuando}) va ANTES del cierre (${cierreP && cierreP.cuando})`);
+        const fechas = g.pasos.map((s) => s.cuando).filter(Boolean);
+        assert.deepStrictEqual(fechas, [...fechas].sort(), "los pasos con fecha van en orden");
+        // (4) consejos y dinero: la regla de las 24 h, los errores de forma y la contribución del 5 % (obra)
+        for (const clave of ["regla_24h", "errores_forma", "estampillas", "mensajes_plataforma", "etica"]) assert.ok(g.consejos.some((c) => c.clave === clave), `falta el consejo ${clave}`);
+        assert.ok(g.consejos.some((c) => c.clave === "anticipo" || c.clave === "sin_anticipo"), "el anticipo siempre se comenta: existe o «no lo publica»");
+        assert.strictEqual(g.dinero.garantia_seriedad_asegurada_cop, Math.round(Number(fila.precio_base) * G.GARANTIA_SERIEDAD_PCT / 100));
+        if (g.obra.tipo_trabajo === "obra") assert.strictEqual(g.dinero.contribucion_obra_5pct_cop, Math.round(Number(fila.precio_base) * 0.05));
+        // (5) el proceso que ya no está en el corpus: guía PARCIAL, sin fingir veredictos
+        assert.strictEqual(cerrado.guia.completa, false);
+        assert.strictEqual(cerrado.guia.requisitos.find((r) => r.clave === "registro").estado, "sin_dato", "sin fila viva, el registro no se juzga");
+        assert.strictEqual(cerrado.guia.requisitos.find((r) => r.clave === "capacidad").estado, "sin_dato");
+        assert.strictEqual(cerrado.guia.obra.cierre.cerrado, true);
+        assert.ok(cerrado.guia.pasos.some((s) => /ya cerró/.test(s.titulo)));
+        // (6) ni jerga del glosario, ni voseo, ni emojis en NINGÚN texto de la guía
+        const textoGuia = JSON.stringify([g, cerrado.guia]);
+        for (const [re, nombre] of [[/UNSPSC/, "UNSPSC"], [/\bCRPC?\b/, "CRP/CRPC"], [/\bSMMLV\b/, "SMMLV"], [/habilitante/i, "habilitante"], [/subsanable/i, "subsanable"], [/\btertil/i, "tertil"], [/causal\s+O\b/, "causal O"], [/RUP ✓|K ✓/, "RUP ✓ / K ✓"], [/capacidad residual/i, "capacidad residual"], [/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u, "emoji"], [/\b(?:present[áa]|ten[ée]s|pod[ée]s|hac[ée]lo|confirmalo|verific[áa]\b|vos)\b/, "voseo"]]) {
+          const m = textoGuia.match(re);
+          assert.ok(!m, `la guía enseña «${nombre}»: …${textoGuia.slice(Math.max(0, (m && m.index) - 60), (m && m.index) + 60)}…`);
+        }
+        // (7) la capa pura, con filas sintéticas y el «ahora» INYECTADO: cada consejo sale por su causa
+        const ahoraG = Date.parse("2026-09-03T15:00:00Z");
+        const base = { id_del_proceso: "G1", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA EN LA VEREDA EL CARMEN", entidad: "ALCALDIA DE PURIFICACION", departamento_entidad: "Tolima", modalidad_de_contratacion: "Selección Abreviada de Menor Cuantía", precio_base: "850000000", duracion: "6", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "V1.72141000", fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-09-20T15:00:00.000", tipo_de_contrato: "Obra" };
+        const gm = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG } });
+        const manifR = gm.requisitos.find((r) => r.clave === "manifestacion");
+        assert.ok(manifR && manifR.estado === "revisar" && /4 de septiembre/.test(manifR.detalle) && /puede cerrar en cualquier momento/.test(manifR.detalle), `menor cuantía sin pliego leído: la ventana es un TECHO, no un plazo → «revisar» con la ventana: ${manifR && manifR.detalle}`);
+        assert.ok(gm.pasos.some((s) => /Avise que le interesa/.test(s.titulo) && s.cuando === "2026-09-03") && gm.consejos.some((c) => c.clave === "manifestacion"), "sin fecha del pliego el paso es HOY (un techo legal no es un plazo), y el consejo está");
+        const gmC = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, fechaManifestacionCronograma: "2026-09-04" } });
+        const manifC = gmC.requisitos.find((r) => r.clave === "manifestacion");
+        assert.ok(manifC.estado === "pendiente" && /leída del pliego/.test(manifC.detalle) && gmC.pasos.some((s) => /Avise que le interesa/.test(s.titulo) && s.cuando === "2026-09-04"), `con la fecha del pliego, la guía la usa (dato publicado > calculado): ${manifC.detalle}`);
+        assert.ok(gm.consejos.some((c) => c.clave === "sin_anticipo") && gm.dinero.anticipo_cop === null && gm.obra.pago.anticipo_pct === null, "sin anticipo en el texto: «no lo publica», nunca 0 %");
+        assert.ok(gm.consejos.some((c) => c.clave === "reajuste"), "6 meses desde septiembre cruzan diciembre: reajuste");
+        assert.strictEqual(gm.pasos.find((s) => /PRESENTE/.test(s.titulo)).cuando, "2026-09-18", "el cierre cae en domingo: se presenta el viernes anterior");
+        assert.strictEqual(gm.obra.donde.zona.nivel, "cerca");
+        const ga = G.guiaDe({ fila: { ...base, id_del_proceso: "G2", nombre_del_procedimiento: "CONSTRUCCION DE PUENTE VEHICULAR, ANTICIPO DEL 30 %, A PRECIO GLOBAL", departamento_entidad: "Vaupés", modalidad_de_contratacion: "Licitación pública", precio_base: "3100000000", duracion: "18", fecha_de_recepcion_de: "2026-11-20T15:00:00.000" }, perfil: "genesis", ctx: { ahoraMs: ahoraG, competencia: { nivel: "baja", promedio_oferentes: 2.4, total_procesos: 12 }, baja: { baja_mediana: 7, procesos_contados: 23, granularidad_utilizada: "entidad" } } });
+        assert.strictEqual(ga.obra.pago.anticipo_pct, 30); assert.strictEqual(ga.dinero.anticipo_cop, 930000000);
+        assert.ok(ga.consejos.some((c) => c.clave === "anticipo" && /fiducia/.test(c.detalle)), "con anticipo se explica la fiducia");
+        assert.ok(ga.consejos.some((c) => c.clave === "zona_lejos") && ga.obra.donde.zona.nivel === "lejos", "Vaupés: el costo de llegar");
+        assert.ok(ga.consejos.some((c) => c.clave === "precio_global"), "precio global: el riesgo de cantidades");
+        assert.ok(ga.consejos.some((c) => c.clave === "consorcio") && ga.requisitos.find((r) => r.clave === "caja").estado === "revisar", "Génesis ante 3.100 M: la caja no alcanza → socio");
+        const pnp = ga.consejos.find((c) => c.clave === "precio_no_al_piso");
+        assert.ok(pnp && /7 % por debajo/.test(pnp.detalle) && /23 contratos/.test(pnp.detalle), "licitación: el método se sortea, con lo que bajaron los ganadores de la entidad");
+        assert.ok(ga.consejos.some((c) => c.clave === "competencia" && /nicho ganable|a la medida/.test(c.detalle)), "poca competencia: las dos lecturas");
+        assert.strictEqual(ga.requisitos.find((r) => r.clave === "manifestacion"), undefined, "licitación: sin manifestación de interés");
+        assert.strictEqual(ga.dinero.contribucion_obra_5pct_cop, 155000000);
+        const gc = G.guiaDe({ fila: { ...base, id_del_proceso: "G3", nombre_del_procedimiento: "INTERVENTORIA TECNICA A LA CONSTRUCCION DE LA PLACA HUELLA", modalidad_de_contratacion: "Concurso de méritos abierto", tipo_de_contrato: "Interventoría", codigo_principal_de_categoria: "V1.81101500" }, perfil: "helder", ctx: { ahoraMs: ahoraG } });
+        assert.strictEqual(gc.obra.tipo_trabajo, "interventoria");
+        assert.ok(!gc.consejos.some((c) => c.clave === "contribucion_5") && gc.dinero.contribucion_obra_5pct_cop === null, "la contribución del 5 % es de OBRA: una interventoría no la lleva");
+        assert.ok(gc.consejos.some((c) => c.clave === "concurso"), "concurso: se compite por experiencia y equipo");
+        const gf = G.guiaDe({ fila: null, foto: { id: "F1", nombre: "OBRA VIEJA", entidad: "IDU", departamento: "Bogotá D.C.", modalidad: "Licitación pública", presupuesto_cop: 500000000, fecha_cierre: "2025-06-01T00:00:00" }, perfil: "helder", ctx: { ahoraMs: ahoraG } });
+        assert.ok(gf.completa === false && gf.requisitos.find((r) => r.clave === "financieros").estado === "revisar", "sin fila viva los indicadores del perfil SÍ se leen (el registro no se juzga)");
+        assert.strictEqual(G.modalidadEnLlano("Mínima cuantía").precio_decide, true);
+        assert.strictEqual(G.modalidadEnLlano("").clave, "desconocida");
+        // limpieza: el estado queda como lo dejó el bloque anterior (uno guardado, «descartado»)
+        await seg("", { metodo: "POST", body: { perfil: "helder", id: fila.id_del_proceso, estado: "descartado" } });
+        await seg(`&perfil=helder&id=${encodeURIComponent(idIdu)}`, { metodo: "DELETE" });
+        // (8) frontend cableado: la guía se pinta en la tarjeta y se abre sola al guardar
+        const appG = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        assert.ok(/function htmlGuia\(/.test(appG) && /data-seg-guia=/.test(appG) && /Qué necesita para presentarse/.test(appG) && /La plata que nadie suma/.test(appG), "la tarjeta de Mis procesos pinta la guía");
+        assert.ok(/segGuiaAbierta = id;[\s\S]{0,700}activarPestana\("seguimiento"\)/.test(appG), "al guardar, la guía del proceso se abre sola en Mis procesos");
+        assert.ok(!/guia\.[a-z_]+ \|\| 0/.test(appG), "ningún dato de la guía se convierte en 0 con «|| 0»");
+        // (9) el dictamen del pliego se pide desde la guía con el MISMO flujo de pliego.js (segunda entrega del plan de Don Héctor)
+        const pliegoG = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+        assert.ok(/window\.__pliegoDictamenEn = /.test(pliegoG) && /data-seg-dictamen-ver=/.test(appG) && /window\.__pliegoDictamenEn\(caja, id/.test(appG), "Mis procesos pide el dictamen por el gancho de pliego.js");
+        assert.ok(!/document\.getElementById\("(?:btn-dictamen-[a-z]+|dictamen-estado)"\)/.test(pliegoG), "los botones del dictamen se buscan DENTRO de la caja (dos cajas no se pisan los ids)");
+        assert.ok(/const enCaja = /.test(pliegoG) && /dictamenCaja = null; dictamenPerfil = null;/.test(pliegoG), "el lector vuelve a su propia caja y a su perfil al arrancar el vigía");
+        console.log(`  · guía Don Héctor: ${g.requisitos.length} requisitos (${g.resumen.cumple} verificados, ${g.resumen.pendiente} por conseguir), ${g.pasos.length} pasos, ${g.consejos.length} consejos · parcial sin fila viva · sintéticas: manifestación, anticipo/fiducia, zona, precio global, reajuste, consorcio, concurso`);
+      }
+
       /* --- MANIFESTACIÓN DE INTERÉS en la lista y en Mis procesos + la pestaña
          propia + cambios de cronograma + centro de alertas (18-ago-2026). --- */
       {

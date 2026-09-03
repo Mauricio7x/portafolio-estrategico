@@ -773,6 +773,7 @@
     }
     caja.innerHTML = html;
     caja.classList.remove("hidden");
+    dictamenCaja = null; dictamenPerfil = null; // el lector pinta en su propia caja, con el perfil de la barra
     try { await cargarDictamen(dictamenArgs.id, { cambio: dictamenArgs.cambio, falloVigia: dictamenArgs.falloVigia }); } catch { /* el dictamen nunca tumba el vigía */ }
   }
 
@@ -786,6 +787,17 @@
   let dictamenAbort = null;
   let dictamenReloj = null;
   let dictamenUltimo = null;
+  /* Dónde se pinta el dictamen y con qué perfil. Por defecto, la caja del lector
+     (#pl-dictamen) y el perfil de la barra; Mis procesos (app.js) puede pedir el
+     MISMO flujo en otra caja con `window.__pliegoDictamenEn(caja, id, perfil)`
+     — una segunda copia del flujo divergiría a la primera corrección. Los
+     botones se buscan DENTRO de la caja, no en el documento: así dos cajas no
+     se pisan los ids. */
+  let dictamenCaja = null;
+  let dictamenPerfil = null;
+  const cajaDictamen = () => dictamenCaja || $("pl-dictamen");
+  const enCaja = (id) => { const c = cajaDictamen(); return c ? c.querySelector(`#${id}`) : null; };
+  const perfilDictamen = () => dictamenPerfil || perfilActual();
 
   async function pedirGet(ruta) {
     let r = null, datos = null;
@@ -927,17 +939,17 @@
   }
 
   function pintarCajaDictamen(html, id) {
-    const caja = $("pl-dictamen");
+    const caja = cajaDictamen();
     if (!caja) return;
     caja.innerHTML = `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">Dictamen del pliego</p><div class="mt-2">${html}</div>`;
     caja.classList.remove("hidden");
-    const bPedir = document.getElementById("btn-dictamen-pedir");
+    const bPedir = enCaja("btn-dictamen-pedir");
     if (bPedir) bPedir.addEventListener("click", () => pedirDictamenAlServidor(id, { refrescar: !!dictamenUltimo }));
-    const bBreve = document.getElementById("btn-dictamen-breve");
+    const bBreve = enCaja("btn-dictamen-breve");
     if (bBreve) bBreve.addEventListener("click", () => pedirDictamenAlServidor(id, { refrescar: true, esfuerzo: "low" }));
-    const bCopiar = document.getElementById("btn-dictamen-copiar");
+    const bCopiar = enCaja("btn-dictamen-copiar");
     if (bCopiar) bCopiar.addEventListener("click", async () => {
-      const estado = document.getElementById("dictamen-estado");
+      const estado = enCaja("dictamen-estado");
       try { await navigator.clipboard.writeText(textoPlanoDictamen(dictamenUltimo || {})); if (estado) estado.textContent = "Dictamen copiado."; }
       catch { if (estado) estado.textContent = "No se pudo copiar: seleccione el texto y cópielo a mano."; }
     });
@@ -946,7 +958,7 @@
   function mostrarDictamen(r, id) {
     dictamenUltimo = r;
     pintarCajaDictamen(pintarDictamen(r, { esc, MARCA: window.Glosario.MARCA }), id);
-    const estado = document.getElementById("dictamen-estado");
+    const estado = enCaja("dictamen-estado");
     if (estado && r.cache && r.generado) estado.textContent = `Dictamen generado el ${String(r.generado).slice(0, 10).split("-").reverse().join("/")} (guardado)`;
   }
 
@@ -977,7 +989,7 @@
     if (!id) return pintarCajaDictamen(estadoDictamen("info", "Abra el pliego desde una tarjeta de proceso («Calcular mi precio») para poder pedir el dictamen.", { boton: false }), id);
     if (falloVigia) return pintarCajaDictamen(estadoDictamen("aviso", `Primero hay que guardar el texto del pliego: ${falloVigia}.`, { boton: false }), id);
     dictamenUltimo = null;
-    const r = await pedirGet(`/api/pliego?op=dictamen&id_proceso=${encodeURIComponent(id)}&perfil=${encodeURIComponent(perfilActual())}`);
+    const r = await pedirGet(`/api/pliego?op=dictamen&id_proceso=${encodeURIComponent(id)}&perfil=${encodeURIComponent(perfilDictamen())}`);
     respuestaDictamen(r, id, { cambio });
   }
 
@@ -985,15 +997,15 @@
     if (dictamenAbort) return;
     const previo = dictamenUltimo;
     if (refrescar && previo) {
-      const estado = document.getElementById("dictamen-estado");
+      const estado = enCaja("dictamen-estado");
       if (estado) estado.textContent = "Se pedirá un dictamen nuevo a la inteligencia artificial; el anterior se reemplaza.";
     }
-    const boton = document.getElementById("btn-dictamen-pedir");
-    const estado = document.getElementById("dictamen-estado");
+    const boton = enCaja("btn-dictamen-pedir");
+    const estado = enCaja("dictamen-estado");
     if (boton) { boton.disabled = true; boton.textContent = "Leyendo el pliego…"; }
     if (estado) estado.textContent = "Leyendo el pliego completo. Puede tardar entre uno y tres minutos.";
     /* el botón de cancelar vive en el marcado (oculto) y se enseña mientras dura la lectura */
-    const cancelar = document.getElementById("btn-dictamen-cancelar");
+    const cancelar = enCaja("btn-dictamen-cancelar");
     dictamenAbort = new AbortController();
     if (cancelar) {
       cancelar.classList.remove("hidden");
@@ -1009,7 +1021,7 @@
       const resp = await fetch("/api/pliego?op=dictamen", {
         method: "POST", signal: dictamenAbort.signal,
         headers: { "Content-Type": "application/json", "x-historico-token": leerToken() },
-        body: JSON.stringify({ id_proceso: id, perfil: perfilActual(), refrescar: !!refrescar, ...(esfuerzo ? { esfuerzo } : {}) }),
+        body: JSON.stringify({ id_proceso: id, perfil: perfilDictamen(), refrescar: !!refrescar, ...(esfuerzo ? { esfuerzo } : {}) }),
       });
       let datos = null;
       try { datos = await resp.json(); } catch { datos = null; }
@@ -1185,4 +1197,10 @@
      responde /api/*): permite disparar el vigía —y con él la caja del dictamen—
      sin cargar pdf.js desde un CDN que el arnés no alcanza. No lo usa la app. */
   window.__pliegoVigilar = vigilarPliego;
+  /* Mis procesos pide el dictamen de un proceso guardado en SU caja (la guía),
+     por el mismo flujo: GET de caché primero; «Pedir el dictamen» va al POST. */
+  window.__pliegoDictamenEn = async (caja, id, perfil) => {
+    dictamenCaja = caja || null; dictamenPerfil = perfil || null; dictamenUltimo = null;
+    try { await cargarDictamen(id); } catch (e) { if (caja) caja.textContent = `No se pudo consultar el dictamen: ${(e && e.message) || e}`; }
+  };
 })();

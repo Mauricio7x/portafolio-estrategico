@@ -2682,6 +2682,19 @@
         const l = filaDeLista(id);
         const r = await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil, id, estado: "interesa", foto: l || null } });
         guardados.set(id, (r && r.guardado && r.guardado.estado) || "interesa");
+        /* al guardar, la plataforma le dice qué necesita para presentarse: la
+           guía de ESE proceso se abre sola en Mis procesos (encargo del dueño:
+           «automáticamente», no con una segunda pulsación) */
+        segGuiaAbierta = id; segGuiaScroll = true;
+        if (r && r.guia) {
+          /* activar la pestaña YA recarga Mis procesos (`arrancadas`): una segunda
+             carga aquí repintaría encima y cerraría el pliegue recién abierto */
+          const l = filaDeLista(id);
+          if (btn && l) btn.outerHTML = botonGuardar(l);
+          seguimientoCargadoPara = null;
+          activarPestana("seguimiento");
+          return;
+        }
       }
       // repintar el botón de ESA tarjeta y la sección de Mi empresa (si ya arrancó;
       // si no, se invalida lo cargado para que la próxima apertura vuelva a pedir)
@@ -2724,6 +2737,63 @@
      sale ENTERO de la respuesta del servidor: aquí no se calcula ni un día. */
   let ultimoSeguimiento = null;
   let segFiltroEstado = "todos";
+  let segGuiaAbierta = null; // id del proceso cuya guía va abierta (el último guardado; sobrevive a los repintados)
+  let segGuiaScroll = false; // llevar la vista hasta ella UNA vez (no en cada repintado)
+  /* ── La guía «Don Héctor» de un proceso guardado ──
+     Todo sale de `p.guia` (lib/guia_proceso, servido por op=seguimiento): aquí
+     no se calcula ni un peso ni un día. Cinco bloques: la obra en una mirada,
+     lo que necesita (con el estado que la aplicación pudo verificar), el paso a
+     paso con fechas, los consejos para ESTE proceso y la plata que nadie suma.
+     El punto tipográfico hereda el color del tema; sin dato se dice, jamás 0. */
+  const ESTADO_REQ = { cumple: ["text-emerald-600", "Cumple"], revisar: ["text-amber-500", "Confirme en el pliego"], no_cumple: ["text-red-600", "No cumple"], pendiente: ["text-blue-500", "Por conseguir"], sin_dato: ["text-gray-400", "Sin dato"] };
+  function htmlGuia(p) {
+    const g = p.guia;
+    if (!g || !g.obra) return "";
+    const o = g.obra, r = g.resumen || {}, z = (o.donde && o.donde.zona) || {};
+    const donde = [o.donde && o.donde.entidad, [o.donde && o.donde.ciudad, o.donde && o.donde.departamento].filter(Boolean).join(", ")].filter(Boolean).join(" · ");
+    const zona = z.etiqueta ? `${esc(z.etiqueta)}${z.km != null && z.km > 0 && !/km/.test(z.etiqueta) ? ` (unos ${z.km} km desde ${esc(z.desde || "su base")})` : ""}${z.dificil_acceso ? " · difícil acceso" : ""}${z.verificar_orden_publico ? " · verifique la seguridad de la zona" : ""}` : "";
+    const cuanto = [o.cuanto && o.cuanto.legible ? `${esc(o.cuanto.legible)}${o.cuanto.tamano ? ` (${esc(o.cuanto.tamano)})` : ""}` : "Presupuesto no publicado", o.plazo && o.plazo.legible ? `plazo de ${esc(o.plazo.legible)}` : null].filter(Boolean).join(" · ");
+    const pago = [o.pago && o.pago.anticipo_legible, o.pago && o.pago.forma_precio === "global" ? "a precio global (el riesgo de cantidades es suyo)" : o.pago && o.pago.forma_precio === "unitarios" ? "a precios unitarios (las cantidades son un estimativo)" : null].filter(Boolean).map(esc).join(" · ");
+    const adj = o.como_lo_adjudican || {};
+    const dato = (rotulo, valor) => `<div class="min-w-0"><span class="text-[11px] uppercase tracking-wide text-gray-400">${rotulo}</span><p class="text-xs text-gray-700">${valor || "—"}</p></div>`;
+    const reqs = (g.requisitos || []).map((q) => { const [clr, eti] = ESTADO_REQ[q.estado] || ESTADO_REQ.sin_dato; return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(q.titulo)}</span> <span class="text-[11px] ${clr}">${eti}</span><p class="text-xs text-gray-600">${esc(q.detalle)}</p>${q.donde ? `<p class="text-[11px] text-gray-400">Dónde: ${esc(q.donde)}</p>` : ""}</div></li>`; }).join("");
+    const pasos = (g.pasos || []).map((s) => `<li class="flex gap-2"><span class="w-24 shrink-0 text-xs text-gray-500">${s.cuando_legible ? esc(s.cuando_legible) : "después"}</span><div class="min-w-0"><span class="font-medium">${esc(s.titulo)}</span><p class="text-xs text-gray-600">${esc(s.detalle)}</p></div></li>`).join("");
+    const consejos = (g.consejos || []).map((c) => `<li><span class="font-medium">${esc(c.titulo)}</span>${c.por_que_aqui ? ` <span class="text-[11px] text-gray-400">(${esc(c.por_que_aqui)})</span>` : ""}<p class="text-xs text-gray-600">${esc(c.detalle)}</p></li>`).join("");
+    const d = g.dinero || {};
+    const fila = (k, v) => (v != null ? `<tr><td class="py-1 pr-3 text-gray-600">${k}</td><td class="py-1 text-right num">${esc(fmtCorto(v))}</td></tr>` : "");
+    const dinero = `<table class="w-full text-xs"><tbody>${fila("Presupuesto oficial", d.presupuesto_oficial_cop)}${fila("Contribución de obra pública (5 %), descontada en cada pago", d.contribucion_obra_5pct_cop)}${fila("Garantía de seriedad: valor asegurado (10 %)", d.garantia_seriedad_asegurada_cop)}${fila("Anticipo (va a una fiducia)", d.anticipo_cop)}${fila("Plata suya antes del primer pago (estimado)", d.financiacion_antes_del_primer_pago_cop)}</tbody></table>
+      <ul class="mt-2 space-y-0.5 text-[11px] text-gray-500">${(d.otros_que_nadie_suma || []).map((x) => `<li>${esc(x.concepto)}: ${esc(x.tipico)} <span class="text-gray-400">(${esc(x.nota)})</span></li>`).join("")}</ul>
+      ${d.nota ? `<p class="mt-1 text-[11px] text-gray-400">${esc(d.nota)}</p>` : ""}`;
+    const abierta = segGuiaAbierta === p.id;
+    /* el dictamen del pliego (op=dictamen, el «Don Héctor» que lee el pliego
+       completo) se pide desde aquí con el MISMO flujo del lector: pliego.js lo
+       pinta en esta caja (`window.__pliegoDictamenEn`). Se pide al pulsar, no al
+       pintar: cada GET lee el texto guardado del pliego y con veinte guardados
+       serían veinte lecturas que nadie pidió. */
+    const dictamen = `<div class="rounded-xl bg-white p-3 ring-1 ring-inset ring-gray-900/5" data-seg-dictamen="${esc(p.id)}">
+        <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Dictamen del pliego</p>
+        <p class="mt-1 text-xs text-gray-600">Una lectura completa del pliego, con citas por página, que dice si conviene presentarse y por qué. Necesita que el PDF del pliego se haya cargado en Precios (botón «Calcular mi precio» de la tarjeta).</p>
+        <button type="button" data-seg-dictamen-ver="${esc(p.id)}" class="mt-2 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition" style="background: var(--accent);">Ver el dictamen del pliego</button>
+      </div>`;
+    return `<details class="mt-3 rounded-xl ring-1 ring-inset ring-gray-900/5" data-seg-guia="${esc(p.id)}" style="background: var(--bg-inset);"${abierta ? " open" : ""}>
+      <summary class="cursor-pointer px-3 py-2 text-sm font-medium">Qué necesita para presentarse${r.frase ? ` <span class="text-xs font-normal text-gray-500">· ${esc(r.frase)}</span>` : ""}${g.completa === false ? ` <span class="text-[11px] font-normal text-amber-900">· guía parcial: el proceso ya no está en la lista viva</span>` : ""}</summary>
+      <div class="space-y-4 px-3 pb-3 text-sm">
+        ${dictamen}
+        <div class="grid gap-3 sm:grid-cols-2">
+          ${dato("Qué es", o.que_es ? `${esc(o.que_es)}${o.tipo_trabajo_legible ? ` <span class="text-gray-400">· ${esc(o.tipo_trabajo_legible)}</span>` : ""}` : null)}
+          ${dato("Dónde", donde ? `${esc(donde)}${zona ? `<br><span class="text-gray-500">${zona}</span>` : ""}` : null)}
+          ${dato("Cuánto y por cuánto tiempo", cuanto)}
+          ${dato("Cómo pagan", pago)}
+          <div class="min-w-0 sm:col-span-2"><span class="text-[11px] uppercase tracking-wide text-gray-400">Cómo lo adjudican</span><p class="text-xs text-gray-700">${adj.nombre ? `<span class="font-medium">${esc(adj.nombre)}.</span> ` : ""}${esc(adj.explicacion || "")}</p></div>
+        </div>
+        <div><h4 class="font-semibold tracking-tight">Lo que necesita</h4><ul class="mt-1.5 space-y-2">${reqs}</ul></div>
+        <div><h4 class="font-semibold tracking-tight">Paso a paso</h4><ol class="mt-1.5 space-y-2">${pasos}</ol></div>
+        <div><h4 class="font-semibold tracking-tight">Consejos para este proceso</h4><ul class="mt-1.5 space-y-2">${consejos}</ul></div>
+        <div><h4 class="font-semibold tracking-tight">La plata que nadie suma</h4><div class="mt-1.5">${dinero}</div></div>
+        ${g.como_leerlo ? `<p class="text-[11px] text-gray-400">${esc(g.como_leerlo)}</p>` : ""}
+      </div>
+    </details>`;
+  }
   function pintarInsigniaSeguimiento(n) {
     for (const id of ["seg-insignia", "seg-insignia-movil"]) {
       const el = $(id); if (!el) continue;
@@ -2807,6 +2877,7 @@
         <div class="mt-2 flex flex-wrap items-center gap-2">${cierre}${manif}${hitos}</div>
         ${aviso}
         ${cambios}
+        ${htmlGuia(p)}
         <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
           <button type="button" data-seg-ics="${esc(p.id)}" class="rounded-lg border border-gray-300 px-2.5 py-1 font-medium transition hover:bg-gray-50" title="Descargar el cronograma con alarmas a 7, 3 y 1 días (formato de calendario)">Calendario (.ics)</button>
           ${p.proponentes_disponibles ? `<button type="button" data-seg-detalle="${esc(p.id)}" class="rounded-lg px-2.5 py-1 font-medium text-white transition" style="background: var(--accent);">Quiénes se presentaron</button>` : `<span class="text-gray-400" title="Los proponentes solo aparecen en la fuente pública tras la apertura de ofertas">Los proponentes se conocen cuando cierra</span>`}
@@ -2816,6 +2887,11 @@
       </article>`;
     }).join("");
     if (!ps.length && todos.length) lista.innerHTML = `<p class="text-sm text-gray-500">Ningún proceso en esa etapa.</p>`;
+    if (segGuiaAbierta && segGuiaScroll) {
+      const art = lista.querySelector(`[data-seg-id="${CSS.escape(segGuiaAbierta)}"]`);
+      segGuiaScroll = false;
+      if (art) { art.scrollIntoView({ block: "start" }); art.classList.add("ring-2", "ring-blue-300"); setTimeout(() => art.classList.remove("ring-2", "ring-blue-300"), 1600); }
+    }
   }
   function pintarDetalleCompetencia(caja, d) {
     if (!d || !d.ok) { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">${esc((d && d.motivo) || "No se pudo consultar.")}</p>`; return; }
@@ -2860,7 +2936,17 @@
         return;
       }
       const q = ev.target.closest("[data-seg-quitar]");
-      if (q) { await alternarGuardado(q.getAttribute("data-seg-quitar"), null); return; }
+      if (q) { if (segGuiaAbierta === q.getAttribute("data-seg-quitar")) segGuiaAbierta = null; await alternarGuardado(q.getAttribute("data-seg-quitar"), null); return; }
+      const dv = ev.target.closest("[data-seg-dictamen-ver]");
+      if (dv) {
+        const id = dv.getAttribute("data-seg-dictamen-ver");
+        const caja = secSeg.querySelector(`[data-seg-dictamen="${CSS.escape(id)}"]`);
+        if (!caja) return;
+        dv.disabled = true; dv.textContent = "Consultando…";
+        if (typeof window.__pliegoDictamenEn !== "function") { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">El lector de pliegos no cargó en esta página: recargue e intente de nuevo.</p>`; return; }
+        await window.__pliegoDictamenEn(caja, id, $("f-perfil").value);
+        return;
+      }
       const ics = ev.target.closest("[data-seg-ics]");
       if (ics) {
         const id = ics.getAttribute("data-seg-ics");

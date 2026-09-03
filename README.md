@@ -385,6 +385,30 @@ En la lista, cada fila lleva `manifestacion` (null si la modalidad no la exige),
 cuenta `total · abiertas · urgentes · vencidas · sin_fecha`, y `?manif=abierta|todas` filtra (otro valor
 es inerte). La regla vive en `lib/manifestacion.js` (hoja) y la re-exporta `lib/portada.js`.
 
+**La guía «Don Héctor» de cada proceso guardado (sep 2026).** Cada guardado de `GET
+/api/perfil?op=seguimiento` viaja con `guia` (`lib/guia_proceso.js`, capa pura), y el `POST` que guarda
+por primera vez la devuelve en la misma respuesta (al cambiar de etapa, `guia: null`): es lo que hace
+que, al guardar, la aplicación le diga al usuario todo lo que necesita para presentarse. Cinco bloques:
+`obra` (qué es, tipo de trabajo, dónde con la zona y los km, cuánto y de qué tamaño, plazo, cómo pagan
+—anticipo del texto o «no lo publica», precio global/unitarios—, cómo lo adjudican en llano con la
+manifestación de interés si aplica, cierre), `requisitos` (registro de proponente, experiencia,
+capacidad, caja, indicadores financieros, manifestación, garantía de seriedad, firma digital,
+antecedentes, equipo y visita, carpeta; cada uno con `estado` ∈ `cumple · revisar · no_cumple ·
+pendiente · sin_dato`, `detalle` y `donde`), `pasos` (con fecha: leer causales hoy, manifestar, observar
+el pliego, pedir la póliza, presentar el día ANTERIOR al cierre, verificar «Presentada», cierre,
+traslado, acta de inicio), `consejos` (condicionados al proceso: anticipo/fiducia, contribución del 5 %,
+estampillas, regla de las 24 h, los nueve errores de forma, precio según la modalidad, zona lejana,
+orden público, precio global/unitarios, reajuste, consorcio si la caja no alcanza, competencia,
+mensajes en la plataforma, canal formal) y `dinero` (contribución, garantía de seriedad asegurada,
+anticipo, plata antes del primer pago y la tabla de costos que nadie suma). No reimplementa ningún
+juicio (`evaluarRup`, `evaluarPuertas`, `evaluarZona`, `manifestacionDeFila`, `anticipoPct`,
+`tipoPrecio`); lo que la app no puede verificar viaja `pendiente`, jamás «cumple»; sin fila viva la guía
+es `completa:false` y el registro/capacidad quedan `sin_dato`. Sin jerga, sin voseo, sin emojis (con
+prueba). En la web, cada tarjeta de Mis procesos lleva el pliegue «Qué necesita para presentarse» y al
+guardar desde la lista se abre solo; dentro, el botón «Ver el dictamen del pliego» pide
+`/api/pliego?op=dictamen` para ese proceso con el mismo flujo del lector de pliegos
+(`window.__pliegoDictamenEn`), sin segunda copia.
+
 **Fases 4 y 5 del plan v3 (ago 2026) — guardián del Formulario 1 y vigía de adendas.**
 `POST /api/pliego?op=formulario1 {oferta:{items,aiu,total}, formulario:{items}, presupuesto_oficial,
 tope_aiu_pct?, secop?:{total,items}, id_proceso?, perfil?}` (token) devuelve un semáforo con frases

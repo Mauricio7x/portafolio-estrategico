@@ -6744,3 +6744,64 @@ que volver a aprender:
   la API); el `maxDuration` 300 en ejecución (declarado, no medido); el coste real por dictamen. La
   primera medición en producción (paso 15 de §6) sigue pendiente y es la que decide entre Opus 5 y
   Fable 5.1.
+
+### La guía «Don Héctor» de cada proceso guardado y el dictamen en Mis procesos (3-sep-2026)
+
+Encargo del dueño: «cuando guardamos un proceso, automáticamente la plataforma le diga al usuario
+todo lo que necesita para presentarse: contexto general de qué es la obra, dónde está, si existe
+anticipo, tips o consejos que una persona novata desconoce, qué necesita para presentarse, qué tiene
+que tener en cuenta». Es la «verdadera función» de Don Héctor en el módulo donde el usuario ya
+decidió (Mis procesos), y la «segunda entrega» que el plan del dictamen (§6.16 de
+`docs/DON_HECTOR_DICTAMEN_DEL_PLIEGO.md`) dejaba escrita: el dictamen del pliego se pide también
+desde Mis procesos. Lo que se construyó y lo que no hay que volver a aprender:
+
+- **`lib/guia_proceso.js` es capa PURA y NO reimplementa ningún juicio**: registro = `evaluarRup`
+  (tier exacto/producto/clase → «cumple»; familia/equivalente/texto → «revisar»; ninguno → «no
+  cumple»); capacidad y caja = `evaluarPuertas`; zona = `evaluarZona`; manifestación =
+  `manifestacionDeFila`; anticipo = `anticipoPct` de `lib/negocio` (por eso se EXPORTÓ: una foto
+  guardada no trae `anticipo_pct` resuelto y una segunda regex divergiría); plazo = `plazoMesesDe`;
+  forma de precio = `tipoPrecio`; tipo de trabajo = `tipoTrabajoDe`. El handler de seguimiento arma
+  el contexto UNA vez por petición (`contextoGuia`: perfil dinámico o consorcio cargado en
+  PERFILES, `cargarConocimiento`/`cargarIndice`/`cargarIndiceBaja` de listar —por eso se exportaron
+  los dos últimos: reutilizan la memoización—) y todo es best-effort: sin índices la guía no cita
+  competencia ni baja; nunca tumba Mis procesos.
+- **Cinco bloques y cada uno con su regla**: `obra` (qué es, tipo de trabajo en llano, dónde con la
+  zona y los km, cuánto y de qué tamaño, plazo con «Mes(es)» traducido, cómo pagan —anticipo del
+  texto o «el proceso no publica si hay anticipo», precio global/unitarios—, cómo lo adjudican
+  explicado por modalidad, manifestación si aplica, cierre); `requisitos` con estado ∈ `cumple ·
+  revisar · no_cumple · pendiente · sin_dato`; `pasos` con fecha (`lib/habiles`: presentar el día
+  ANTERIOR hábil al cierre —cierre en domingo → viernes—, póliza 5 hábiles antes, observaciones 7
+  días antes, orientativa); `consejos` condicionales con `por_que_aqui`; `dinero` (contribución del
+  5 % solo en obra —interventoría y consultoría no la llevan—, garantía de seriedad asegurada,
+  anticipo, plata antes del primer pago = la MISMA fracción 0,20 de P3, y la tabla del cap. 11).
+- **Lo que la app no puede verificar viaja `pendiente` o `sin_dato`, jamás «cumple»**: garantía de
+  seriedad, firma digital, antecedentes, equipo y visita, carpeta; los indicadores financieros se
+  comparan con los de REFERENCIA de los documentos tipo (liquidez ≥ 1,2, endeudamiento ≤ 65 %,
+  cobertura ≥ 2) y aun cumpliéndolos quedan en «revisar»: los fija el pliego. La experiencia es
+  SIEMPRE «revisar»: la app solo compara el mayor contrato acreditado con el valor del proceso.
+- **Sin fila viva (proceso purgado) la guía es `completa:false`**: registro, capacidad y caja en
+  `sin_dato`; los indicadores del perfil SÍ se leen (no dependen de la fila); el frontend la rotula
+  «guía parcial». El anticipo sigue la regla de `anticipo_pct = 0` = SIN DATO.
+- **La guía viaja en la respuesta del POST que guarda por primera vez** (al cambiar de etapa,
+  `guia: null`): el frontend fija `segGuiaAbierta` y cambia a Mis procesos con el pliegue abierto.
+  Defecto cazado en Chromium: `activarPestana("seguimiento")` ya recarga la lista, y la segunda
+  carga de `alternarGuardado` repintaba encima y CERRABA el pliegue recién abierto — la guía del
+  último guardado sobrevive a los repintados (`segGuiaAbierta` persiste) y la vista se lleva hasta
+  ella UNA vez (`segGuiaScroll`).
+- **El dictamen del pliego se pide desde la guía con el MISMO flujo de `pliego.js`**, no con una
+  copia: `window.__pliegoDictamenEn(caja, id, perfil)` fija la caja y el perfil; el flujo busca sus
+  botones DENTRO de la caja (`enCaja`), no en el documento, para que la caja del lector y la de Mis
+  procesos no se pisen los ids; el vigía del lector vuelve a su caja al arrancar. Se pide AL PULSAR,
+  no al pintar: cada GET lee el texto guardado del pliego y con veinte guardados serían veinte
+  lecturas que nadie pidió.
+- **La prueba barre la guía ENTERA** (JSON de las dos guías, viva y parcial) contra la jerga del
+  glosario, el voseo y los emojis, y las sintéticas con «ahora» inyectado cubren manifestación,
+  anticipo/fiducia, zona lejos, precio global, reajuste, consorcio, concurso y mínima cuantía. Al
+  probarlo salió voseo residual en `lib/accesibilidad` y `lib/socio` («confirmalo» → «confírmelo»).
+- **El encargo citaba `docs/PROMPT_INICIAL.md`, `tests/mapa.js` y `tests/estado.js` y el clon local
+  no los tenía**: el clon estaba en un `main` local con un commit del ICCU nunca empujado
+  (`efca6b0`), mientras `origin/main` había avanzado con otra solución del ICCU (PR #134) y con Don
+  Héctor (PR #135-#137). Se reconstruyó `main` desde `origin/main` y se cherry-pickeó solo la guía;
+  el commit local quedó en la rama `respaldo/iccu-local-efca6b0` por si algo hiciera falta rescatar.
+  Lección: `git fetch` antes de creer al `git status` de un clon que lleva días abierto.
+
