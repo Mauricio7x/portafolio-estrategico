@@ -2693,6 +2693,8 @@
           if (btn && l) btn.outerHTML = botonGuardar(l);
           seguimientoCargadoPara = null;
           activarPestana("seguimiento");
+          /* y la plataforma empieza a bajar y leer los documentos de ESE proceso */
+          encolarLecturaDocumentos(id, { manual: true });
           return;
         }
       }
@@ -2746,6 +2748,37 @@
      paso con fechas, los consejos para ESTE proceso y la plata que nadie suma.
      El punto tipográfico hereda el color del tema; sin dato se dice, jamás 0. */
   const ESTADO_REQ = { cumple: ["text-emerald-600", "Cumple"], revisar: ["text-amber-500", "Confirme en el pliego"], no_cumple: ["text-red-600", "No cumple"], pendiente: ["text-blue-500", "Por conseguir"], sin_dato: ["text-gray-400", "Sin dato"] };
+  const ESTADO_HECHO = { cumple: ["text-emerald-600", "Cumple"], no_cumple: ["text-red-600", "No cumple"], riesgo: ["text-amber-500", "Riesgo"], revisar: ["text-blue-500", "Confírmelo"], dato: ["text-gray-400", ""] };
+  /* ── Los documentos del proceso: en qué va la lectura, en una línea ──
+     Lo que se lee sale de `g.documentos` (servidor); el progreso de la lectura
+     en curso vive en `docsProgreso` (navegador) y sobrevive a los repintados. */
+  function htmlDocs(p) {
+    const d = (p.guia && p.guia.documentos) || null;
+    if (!d) return "";
+    const prog = docsProgreso.get(p.id);
+    const boton = (texto, refrescar) => `<button type="button" data-seg-docs-leer="${esc(p.id)}" data-seg-docs-leer-refrescar="${refrescar ? "1" : "0"}" class="underline">${texto}</button>`;
+    if (prog && !prog.error) return `<p class="text-xs text-gray-700">${esc(prog.texto)}</p>${prog.total ? `<div class="mt-1.5 h-1 w-full overflow-hidden rounded bg-gray-100"><div class="h-1 rounded" style="width:${Math.round(100 * prog.hecho / prog.total)}%; background: var(--accent);"></div></div>` : ""}`;
+    const enCola = docsCola.some((x) => x.id === p.id);
+    const accion = prog && prog.error ? boton("Reintentar", true) : enCola ? "en espera…" : d.estado === "sin_indice" || d.estado === "por_leer" ? boton("Leer los documentos ahora", false) : boton("Volver a buscar documentos (adendas nuevas)", true);
+    const enlace = d.enlace_secop && urlSegura(d.enlace_secop) ? ` · <a href="${esc(urlSegura(d.enlace_secop))}" target="_blank" rel="noopener noreferrer" class="underline">Abrir en SECOP II</a>` : "";
+    return `<p class="text-xs ${prog && prog.error ? "text-red-700" : "text-gray-700"}">${esc(prog && prog.error ? prog.texto : d.frase)}</p><p class="mt-1 text-[11px] text-gray-500">${accion}${enlace}${d.consultado_el ? ` · índice del ${esc(fechaCorta(d.consultado_el))}` : ""}</p>`;
+  }
+  function htmlListaDocs(d) {
+    const li = (x, extra) => `<li class="flex gap-2"><span class="text-gray-400" aria-hidden="true">●</span><span class="min-w-0"><span class="text-gray-700">${esc(x.tipo_legible || "Documento")}</span> <span class="text-gray-500">· ${esc(x.nombre || "")}</span>${extra ? ` <span class="text-gray-400">· ${extra}</span>` : ""}</span></li>`;
+    const bloque = (titulo, lista, extraDe) => (lista && lista.length ? `<p class="mt-2 text-[11px] uppercase tracking-wide text-gray-400">${titulo}</p><ul class="space-y-0.5 text-xs">${lista.map((x) => li(x, extraDe(x))).join("")}</ul>` : "");
+    return bloque("Leídos", d.leidos, (x) => (x.paginas ? `${x.paginas} pág.` : ""))
+      + bloque("Por leer", d.por_leer, () => "")
+      + bloque("No se pudieron leer", d.ilegibles, (x) => esc(x.motivo || ""))
+      + bloque("No legibles por la aplicación", d.no_legibles, (x) => `${esc(x.motivo || "")}${x.url && urlSegura(x.url) ? ` · <a href="${esc(urlSegura(x.url))}" target="_blank" rel="noopener noreferrer" class="underline">descargar</a>` : ""}`)
+      + (d.de_proponentes ? `<p class="mt-2 text-[11px] text-gray-400">${d.de_proponentes} archivo${d.de_proponentes === 1 ? "" : "s"} más son ofertas de otros proponentes: no son reglas del proceso.</p>` : "");
+  }
+  /* ── La guía «Don Héctor» de un proceso guardado ──
+     Todo sale de `p.guia` (lib/guia_proceso, servido por op=seguimiento): aquí
+     no se calcula ni un peso ni un día. Lo que hay que VER va arriba (en qué van
+     los documentos, la obra en una mirada, lo que dicen los documentos, lo que
+     necesita, el dictamen, el paso a paso); lo que hay que TOCAR va plegado
+     (consejos, la plata que nadie suma, la lista de documentos). El punto
+     tipográfico hereda el color del tema; sin dato se dice, jamás 0. */
   function htmlGuia(p) {
     const g = p.guia;
     if (!g || !g.obra) return "";
@@ -2757,6 +2790,7 @@
     const adj = o.como_lo_adjudican || {};
     const dato = (rotulo, valor) => `<div class="min-w-0"><span class="text-[11px] uppercase tracking-wide text-gray-400">${rotulo}</span><p class="text-xs text-gray-700">${valor || "—"}</p></div>`;
     const reqs = (g.requisitos || []).map((q) => { const [clr, eti] = ESTADO_REQ[q.estado] || ESTADO_REQ.sin_dato; return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(q.titulo)}</span> <span class="text-[11px] ${clr}">${eti}</span><p class="text-xs text-gray-600">${esc(q.detalle)}</p>${q.donde ? `<p class="text-[11px] text-gray-400">Dónde: ${esc(q.donde)}</p>` : ""}</div></li>`; }).join("");
+    const hechos = (g.lo_que_dicen || []).map((h) => { const [clr, eti] = ESTADO_HECHO[h.estado] || ESTADO_HECHO.dato; return `<li class="flex gap-2"${h.cita ? ` title="${esc(h.cita)}"` : ""}><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(h.titulo)}${h.valor_legible ? `: ${esc(h.valor_legible)}` : ""}</span>${eti ? ` <span class="text-[11px] ${clr}">${eti}</span>` : ""}<p class="text-xs text-gray-600">${esc(h.texto)}</p><p class="text-[11px] text-gray-400">${esc(h.documento || "")}${h.pagina != null ? `, pág. ${h.pagina}` : ""}</p></div></li>`; }).join("");
     const pasos = (g.pasos || []).map((s) => `<li class="flex gap-2"><span class="w-24 shrink-0 text-xs text-gray-500">${s.cuando_legible ? esc(s.cuando_legible) : "después"}</span><div class="min-w-0"><span class="font-medium">${esc(s.titulo)}</span><p class="text-xs text-gray-600">${esc(s.detalle)}</p></div></li>`).join("");
     const consejos = (g.consejos || []).map((c) => `<li><span class="font-medium">${esc(c.titulo)}</span>${c.por_que_aqui ? ` <span class="text-[11px] text-gray-400">(${esc(c.por_que_aqui)})</span>` : ""}<p class="text-xs text-gray-600">${esc(c.detalle)}</p></li>`).join("");
     const d = g.dinero || {};
@@ -2765,35 +2799,38 @@
       <ul class="mt-2 space-y-0.5 text-[11px] text-gray-500">${(d.otros_que_nadie_suma || []).map((x) => `<li>${esc(x.concepto)}: ${esc(x.tipico)} <span class="text-gray-400">(${esc(x.nota)})</span></li>`).join("")}</ul>
       ${d.nota ? `<p class="mt-1 text-[11px] text-gray-400">${esc(d.nota)}</p>` : ""}`;
     const abierta = segGuiaAbierta === p.id;
-    /* el dictamen del pliego (op=dictamen, el «Don Héctor» que lee el pliego
-       completo) se pide desde aquí con el MISMO flujo del lector: pliego.js lo
-       pinta en esta caja (`window.__pliegoDictamenEn`). Se pide al pulsar, no al
-       pintar: cada GET lee el texto guardado del pliego y con veinte guardados
-       serían veinte lecturas que nadie pidió. */
     /* La caja del dictamen la pinta pliego.js (window.__pliegoDictamenEn) cuando el
-       pliegue se abre; el botón «Cargar el pliego» abre Precios con ESTE proceso
-       precargado para que el lector guarde el texto bajo su id (qApu desde la foto). */
+       pliegue se abre (op=dictamen: el «Don Héctor» que lee el pliego completo, con
+       el MISMO flujo del lector). Se pide al abrir, no al pintar: cada GET lee el
+       texto guardado. «Cargar el pliego» abre Precios con ESTE proceso precargado
+       (qApu desde la foto) para quien tenga un pliego que no se leyó solo. */
     const dictamen = `<div class="rounded-xl bg-white p-3 ring-1 ring-inset ring-gray-900/5">
         <div data-seg-dictamen="${esc(p.id)}"><p class="text-xs font-medium uppercase tracking-wide text-gray-500">Dictamen del pliego</p>
-        <p class="mt-1 text-xs text-gray-600">Una lectura del pliego completo, con citas por página, que dice si conviene presentarse y por qué. Se consulta al abrir esta guía; necesita el texto del pliego guardado.</p>
+        <p class="mt-1 text-xs text-gray-600">Si conviene presentarse y por qué, con citas por página del pliego leído.</p>
         <button type="button" data-seg-dictamen-ver="${esc(p.id)}" class="mt-2 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition" style="background: var(--accent);">Ver el dictamen del pliego</button></div>
-        <p class="mt-2 text-[11px] text-gray-500">¿Todavía no cargó el pliego? <button type="button" data-seg-abrir-lector="${esc(p.id)}" class="underline">Cargar el pliego (PDF) de este proceso</button> lo abre en Precios con el proceso ya puesto; al terminar, vuelva aquí.</p>
+        <p class="mt-2 text-[11px] text-gray-500">¿El pliego no se leyó solo? <button type="button" data-seg-abrir-lector="${esc(p.id)}" class="underline">Cargar el pliego (PDF)</button> lo abre en Precios con el proceso ya puesto.</p>
       </div>`;
+    const docs = g.documentos || null;
+    const nDocs = docs ? (docs.leidos || []).length + (docs.por_leer || []).length + (docs.ilegibles || []).length + (docs.no_legibles || []).length : 0;
+    const plegado = (titulo, cuerpo) => `<details class="rounded-xl ring-1 ring-inset ring-gray-900/5"><summary class="cursor-pointer px-3 py-2 text-sm font-semibold tracking-tight">${titulo}</summary><div class="px-3 pb-3">${cuerpo}</div></details>`;
     return `<details class="mt-3 rounded-xl ring-1 ring-inset ring-gray-900/5" data-seg-guia="${esc(p.id)}" style="background: var(--bg-inset);"${abierta ? " open" : ""}>
       <summary class="cursor-pointer px-3 py-2 text-sm font-medium">Qué necesita para presentarse${r.frase ? ` <span class="text-xs font-normal text-gray-500">· ${esc(r.frase)}</span>` : ""}${g.completa === false ? ` <span class="text-[11px] font-normal text-amber-900">· guía parcial: el proceso ya no está en la lista viva</span>` : ""}</summary>
       <div class="space-y-4 px-3 pb-3 text-sm">
-        ${dictamen}
+        ${docs ? `<div class="rounded-xl bg-white p-3 ring-1 ring-inset ring-gray-900/5"><p class="text-xs font-medium uppercase tracking-wide text-gray-500">Los documentos del proceso</p><div class="mt-1" data-seg-docs="${esc(p.id)}">${htmlDocs(p)}</div></div>` : ""}
         <div class="grid gap-3 sm:grid-cols-2">
           ${dato("Qué es", o.que_es ? `${esc(o.que_es)}${o.tipo_trabajo_legible ? ` <span class="text-gray-400">· ${esc(o.tipo_trabajo_legible)}</span>` : ""}` : null)}
           ${dato("Dónde", donde ? `${esc(donde)}${zona ? `<br><span class="text-gray-500">${zona}</span>` : ""}` : null)}
           ${dato("Cuánto y por cuánto tiempo", cuanto)}
-          ${dato("Cómo pagan", pago)}
+          ${dato("Cómo pagan", pago ? `${pago}${o.pago && o.pago.fuente_anticipo && /pág\./.test(o.pago.fuente_anticipo) ? ` <span class="text-gray-400">· ${esc(o.pago.fuente_anticipo)}</span>` : ""}` : null)}
           <div class="min-w-0 sm:col-span-2"><span class="text-[11px] uppercase tracking-wide text-gray-400">Cómo lo adjudican</span><p class="text-xs text-gray-700">${adj.nombre ? `<span class="font-medium">${esc(adj.nombre)}.</span> ` : ""}${esc(adj.explicacion || "")}</p></div>
         </div>
+        ${hechos ? `<div><h4 class="font-semibold tracking-tight">Lo que dicen los documentos</h4><ul class="mt-1.5 space-y-2">${hechos}</ul></div>` : ""}
         <div><h4 class="font-semibold tracking-tight">Lo que necesita</h4><ul class="mt-1.5 space-y-2">${reqs}</ul></div>
+        ${dictamen}
         <div><h4 class="font-semibold tracking-tight">Paso a paso</h4><ol class="mt-1.5 space-y-2">${pasos}</ol></div>
-        <div><h4 class="font-semibold tracking-tight">Consejos para este proceso</h4><ul class="mt-1.5 space-y-2">${consejos}</ul></div>
-        <div><h4 class="font-semibold tracking-tight">La plata que nadie suma</h4><div class="mt-1.5">${dinero}</div></div>
+        ${plegado("Consejos para este proceso", `<ul class="space-y-2">${consejos}</ul>`)}
+        ${plegado("La plata que nadie suma", dinero)}
+        ${nDocs ? plegado(`Documentos del proceso (${nDocs})`, htmlListaDocs(docs)) : ""}
         ${g.como_leerlo ? `<p class="text-[11px] text-gray-400">${esc(g.como_leerlo)}</p>` : ""}
       </div>
     </details>`;
@@ -2896,6 +2933,12 @@
       segGuiaScroll = false;
       if (art) { art.scrollIntoView({ block: "start" }); art.classList.add("ring-2", "ring-blue-300"); setTimeout(() => art.classList.remove("ring-2", "ring-blue-300"), 1600); }
     }
+    /* los procesos ABIERTOS con documentos por leer se leen solos (uno a la vez,
+       como mucho una vez por carga de la página); los cerrados, al pulsar */
+    for (const p of ps) {
+      const de = p.guia && p.guia.documentos ? p.guia.documentos.estado : null;
+      if ((de === "sin_indice" || de === "por_leer") && p.cerrado !== true) encolarLecturaDocumentos(p.id);
+    }
   }
   /* Consulta el dictamen de un guardado en SU caja por el flujo de pliego.js.
      Se dispara al abrir el pliegue de la guía (una vez por pintado) y con el botón. */
@@ -2905,6 +2948,80 @@
     caja.dataset.consultado = "1";
     if (typeof window.__pliegoDictamenEn !== "function") { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">El lector de pliegos no cargó en esta página: recargue e intente de nuevo.</p>`; return; }
     await window.__pliegoDictamenEn(caja, id, $("f-perfil").value);
+  }
+  /* ── Los documentos del proceso se leen SOLOS (3-sep-2026) ──
+     Al guardar (y al abrir Mis procesos con documentos por leer) el navegador pide
+     el índice (op=documentos), baja cada PDF por el proxy (op=descargar), lo lee
+     con el pdf.js del lector (window.__pliegoLeerPdf) y devuelve el texto
+     (op=documentos POST); el servidor saca los hechos y rehace la guía. Un
+     proceso a la vez (cola) y cada uno como mucho UNA vez por carga de la página
+     salvo que el usuario lo pida (docsIntentados): un documento que falla siempre
+     no puede dejar la pestaña leyendo en bucle. El progreso vive en
+     `docsProgreso` y sobrevive a los repintados de la lista. */
+  const docsCola = [];
+  const docsIntentados = new Set();
+  const docsProgreso = new Map();
+  let docsEnCurso = null;
+  function pintarProgresoDocs(id) {
+    const c = secSeg && secSeg.querySelector(`[data-seg-docs="${CSS.escape(id)}"]`);
+    const p = ((ultimoSeguimiento && ultimoSeguimiento.procesos) || []).find((x) => x.id === id);
+    if (c && p) c.innerHTML = htmlDocs(p);
+  }
+  function encolarLecturaDocumentos(id, { manual = false, refrescar = false } = {}) {
+    if (!id || docsEnCurso === id || docsCola.some((x) => x.id === id)) return;
+    if (!manual && docsIntentados.has(id)) return;
+    docsIntentados.add(id);
+    docsProgreso.delete(id);
+    docsCola.push({ id, refrescar });
+    pintarProgresoDocs(id);
+    bombearLecturaDocumentos();
+  }
+  function bombearLecturaDocumentos() {
+    if (docsEnCurso || !docsCola.length) return;
+    const { id, refrescar } = docsCola.shift();
+    docsEnCurso = id;
+    leerDocumentos(id, { refrescar }).catch(() => {}).finally(() => { docsEnCurso = null; bombearLecturaDocumentos(); });
+  }
+  function bytesDeBase64(b64) { const bin = atob(String(b64 || "")); const datos = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) datos[i] = bin.charCodeAt(i); return datos; }
+  async function leerDocumentos(id, { refrescar = false } = {}) {
+    const avanzar = (texto, hecho, total) => { docsProgreso.set(id, { texto, hecho, total }); pintarProgresoDocs(id); };
+    const perfil = $("f-perfil").value;
+    let leidos = 0, fallidos = 0, buscado = false;
+    try {
+      avanzar("Buscando los documentos del proceso en SECOP II…", 0, 0);
+      const r = await api(`/api/pliego?op=documentos&id_proceso=${encodeURIComponent(id)}${refrescar ? "&refrescar=1" : ""}`);
+      buscado = true;
+      const pend = Array.isArray(r.pendientes) ? r.pendientes : [];
+      for (let i = 0; i < pend.length; i++) {
+        const a = pend[i];
+        avanzar(`Leyendo ${i + 1} de ${pend.length}: ${a.tipo_legible || "documento"} (${a.nombre || ""})…`, i, pend.length);
+        /* `definitivo` solo para el escaneo sin texto: una descarga que falla hoy se reintenta al «volver a buscar» */
+        const marcarIlegible = (motivo, definitivo) => api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, ilegible: true, definitivo: definitivo === true, motivo: String(motivo).slice(0, 200) } });
+        try {
+          const d = await api("/api/pliego?op=descargar", { method: "POST", body: { url: a.url } });
+          if (typeof window.__pliegoLeerPdf !== "function") throw new Error("el lector de pliegos no cargó en esta página");
+          const lect = await window.__pliegoLeerPdf(bytesDeBase64(d.base64));
+          if (lect.escaneado) { await marcarIlegible("sin capa de texto: parece un escaneo", true); fallidos++; continue; }
+          await api("/api/pliego?op=documentos", { method: "POST", body: { id_proceso: id, id_documento: a.id_documento, texto: lect.texto, perfil } });
+          leidos++;
+        } catch (e) {
+          fallidos++;
+          try { await marcarIlegible(`no se pudo leer: ${String((e && e.message) || e)}`, false); } catch { /* se reintenta la próxima vez */ }
+        }
+      }
+      docsProgreso.delete(id);
+    } catch (e) {
+      /* la búsqueda falló: se dice en la caja y queda el botón «Reintentar» */
+      docsProgreso.set(id, { texto: `No se pudieron buscar los documentos: ${String((e && e.message) || e)}`, hecho: 0, total: 0, error: true });
+    }
+    /* la guía se rehace en el servidor con lo leído: repintar Mis procesos y, si
+       esa guía está abierta, consultar el dictamen (ahora ya hay pliego) */
+    if (buscado) {
+      seguimientoCargadoPara = null;
+      await cargarSeguimiento({ forzar: true });
+      const det = secSeg && secSeg.querySelector(`details[data-seg-guia="${CSS.escape(id)}"]`);
+      if (det && det.open && (leidos || fallidos)) consultarDictamenGuardado(id);
+    } else pintarProgresoDocs(id);
   }
   function pintarDetalleCompetencia(caja, d) {
     if (!d || !d.ok) { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">${esc((d && d.motivo) || "No se pudo consultar.")}</p>`; return; }
@@ -2955,6 +3072,8 @@
       }
       const q = ev.target.closest("[data-seg-quitar]");
       if (q) { if (segGuiaAbierta === q.getAttribute("data-seg-quitar")) segGuiaAbierta = null; await alternarGuardado(q.getAttribute("data-seg-quitar"), null); return; }
+      const dl = ev.target.closest("[data-seg-docs-leer]");
+      if (dl) { dl.disabled = true; encolarLecturaDocumentos(dl.getAttribute("data-seg-docs-leer"), { manual: true, refrescar: dl.getAttribute("data-seg-docs-leer-refrescar") === "1" }); return; }
       const dv = ev.target.closest("[data-seg-dictamen-ver]");
       if (dv) { dv.disabled = true; dv.textContent = "Consultando…"; await consultarDictamenGuardado(dv.getAttribute("data-seg-dictamen-ver")); return; }
       const al = ev.target.closest("[data-seg-abrir-lector]");

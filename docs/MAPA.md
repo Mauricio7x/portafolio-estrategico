@@ -2,14 +2,14 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-02 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-03 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 26 op declaradas en los mapas de los routers:
+· SUPERFICIE HTTP — 27 op declaradas en los mapas de los routers:
   /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo
   /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento
-  /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen
+  /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion
   (api/apu.js e api/inteligencia.js despachan por accion/vista desde su handler:
    `node tests/estado.js` los enumera midiendo)
@@ -22,7 +22,7 @@
   pliego.js                 Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js               Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 63 módulos:
+· lib/ — 66 módulos:
   accesibilidad.js          Accesibilidad operativa de la zona de la obra
   adendas.js                Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                Esquema de claves Redis + compresión de chunks
@@ -46,7 +46,9 @@
   cuerpo.js                 Leer el cuerpo JSON de una petición, una sola vez
   deducciones.js            Qué le van a descontar de cada pago, leído del PLIEGO
   dictamen.js               Dictamen del pliego (proyecto «Don Héctor», 2-sep-2026) — PURO
+  dictamen_reglas.js        EL DICTAMEN POR REGLAS, SIN MODELO (proyecto «Don Héctor», 3-sep-2026)
   diff.js                   Vigía de adendas · texto del pliego (Fase 5 del plan v3)
+  documentos_proceso.js     LOS DOCUMENTOS DE UN PROCESO, LEÍDOS SOLOS (3-sep-2026)
   ejecucion.js              Cómo EJECUTA sus contratos de obra una entidad (jbjy-vk9h)
   equivalencias.js          Qué clases UNSPSC son AFINES en el mercado real
   experiencia.js            La experiencia REALMENTE ejecutada como vocabulario
@@ -55,6 +57,7 @@
   formulario1.js            Guardián del Formulario 1 (Fase 4 del plan v3)
   ganancia.js               ¿CUÁNTA PLATA DEJA ESTE CONTRATO?
   glosario.js               la marca y el glosario viven en public/glosario.js (UMD) y
+  guia_proceso.js           LA GUÍA «DON HÉCTOR» DE UN PROCESO GUARDADO (sep 2026)
   habiles.js                Días hábiles y festivos de Colombia (Fase 9 · Detekta v4)
   indice_baja.js            ¿Cuánto descuentan los ganadores frente al presupuesto?
   indice_competencia.js     ¿En qué entidades se presenta menos gente?
@@ -128,11 +131,12 @@
   resumen.js                El dashboard: ¿qué SON los procesos que hoy se ven?
   seguimiento.js            /api/perfil?op=seguimiento (ago 2026)
 
-· lib/handlers/pliego/ — 5 módulos:
+· lib/handlers/pliego/ — 6 módulos:
   cronograma.js             /api/pliego?op=cronograma (Fase 5)
   deducciones.js            /api/pliego?op=deducciones · Qué le van a descontar, leído del pliego
   dictamen.js               /api/pliego?op=dictamen (proyecto «Don Héctor», 2-sep-2026)
   diff.js                   /api/pliego?op=diff (Fase 5 · vigía del TEXTO del pliego)
+  documentos.js             /api/pliego?op=documentos (3-sep-2026)
   formulario1.js            POST /api/pliego?op=formulario1 (Fase 4)
 
 · lib/handlers/procesos/ — 7 módulos:
@@ -161,10 +165,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 114 secciones. Las 10 más nuevas:
-  L  6005  La revisión adversaria del propio diff, y las CINCO regresiones que dejé dentro
-  L  6050  El mapa: buscar coordenadas en vez de leer documentos (28-ago-2026)
-  L  6099  El calendario de cierres, y tres bloques menos en Mi empresa (31-ago-2026)
+· MEMORIA · docs/MEMORIA.md — 117 secciones. Las 10 más nuevas:
   L  6204  El lugar de ejecución ES la entidad, «Para Helder» abre la pestaña, y Tailwind medido de ver
   L  6273  La marca es el botón de actualizar, y el calendario baja junto al consorcio (31-ago-2026, te
   L  6353  Auditoría integral del 1-sep-2026 · trece frentes, dos auditores que llegaron y el resto a m
@@ -172,8 +173,11 @@
   L  6608  El lookahead delante del lookbehind: la lista negra 19 veces más rápida y `main` vuelve a ve
   L  6633  Don Héctor · las decisiones del dueño y las tomadas con autonomía (2-sep-2026, misma tarde)
   L  6677  Dictamen del pliego · `op=dictamen`, el código de la sección 6 (2-sep-2026, noche)
+  L  6748  La guía «Don Héctor» de cada proceso guardado y el dictamen en Mis procesos (3-sep-2026)
+  L  6808  Don Héctor sin clave de API: dictamen por REGLAS y dictamen desde una SESIÓN de Claude Code 
+  L  6861  Los documentos del proceso se leen solos al guardar en Mis procesos (3-sep-2026)
 
-· DOCUMENTOS docs/ — 38:
+· DOCUMENTOS docs/ — 39:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)
   ANALISIS_ESTRATEGICO.md               Análisis estratégico de Detekta · agosto 2026
   APU_DIAGNOSTICO.md                    Diagnóstico del módulo APU frente a la especificación «APU profesional»
@@ -190,6 +194,7 @@
   COMPLEMENTO_ANALISTA_LICITACIONES.md  Complemento crítico al Manual del Analista de Licitaciones
   CONFIGURACION_TOKENS.md               Tokens y variables de entorno · guía desde cero
   datos.md                              Inventario de fuentes de datos y auditorías de la Fase 0
+  DICTAMEN_DESDE_CLAUDE_CODE.md         Dictamen del pliego con la suscripción de Claude Code (sin clave de API) · 3-sep-202
   DIFERENCIAS_APU.md                    Diferencias declaradas · APU generado vs archivos de referencia (ago 2026)
   DON_HECTOR_DICTAMEN_DEL_PLIEGO.md     Don Héctor · el dictamen del pliego (investigación y diseño · 2-sep-2026)
   EMPEZAR_AQUI.md                       EMPEZAR AQUÍ · Guía de cero para convertir Detekta en un negocio

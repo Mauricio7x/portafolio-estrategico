@@ -18,6 +18,7 @@ const OPS = {
   cronograma: () => require("../lib/handlers/pliego/cronograma.js"),   // [v3-F5] hitos y avisos T-7/T-3/T-1 (+ .ics)
   deducciones: () => require("../lib/handlers/pliego/deducciones.js"), // qué le descuentan de cada pago, leído de la cláusula del pliego
   dictamen: () => require("../lib/handlers/pliego/dictamen.js"),       // el pliego guardado, leído por un modelo, con citas verificadas por página
+  documentos: () => require("../lib/handlers/pliego/documentos.js"),   // los documentos del proceso (índice de datos.gov.co), leídos solos al guardar en Mis procesos
 };
 
 function opDe(req) {

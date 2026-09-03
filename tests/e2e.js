@@ -8791,6 +8791,176 @@ async function main() {
         console.log(`  · guía Don Héctor: ${g.requisitos.length} requisitos (${g.resumen.cumple} verificados, ${g.resumen.pendiente} por conseguir), ${g.pasos.length} pasos, ${g.consejos.length} consejos · parcial sin fila viva · sintéticas: manifestación, anticipo/fiducia, zona, precio global, reajuste, consorcio, concurso`);
       }
 
+      /* --- LOS DOCUMENTOS DEL PROCESO, LEÍDOS SOLOS (3-sep-2026): al guardar, el
+         navegador pide el índice de archivos (datos.gov.co dmgg-8hin, por el
+         id_del_portafolio que da p6dx), baja cada PDF por el proxy, lo lee con el
+         pdf.js del lector y devuelve el texto; el servidor saca los HECHOS con los
+         lectores que ya existen (dictamen_reglas, diff, cronograma, deducciones) y
+         la guía de Mis procesos los enseña con documento y página. Contra el árbol
+         anterior: no existe lib/documentos_proceso, ni op=documentos, ni la guía
+         trae `documentos`/`lo_que_dicen`; «No se entregará anticipo» salía como
+         «hay anticipo» y la cifra de una adenda no sustituía a la del pliego. --- */
+      {
+        const Docs = require("../lib/documentos_proceso.js");
+        const G = require("../lib/guia_proceso.js");
+        const { SIN_ANTICIPO_RE: NIEGA_ANT } = require("../lib/dictamen_reglas.js");
+        const routerPliegoD = require("../api/pliego.js");
+        const routerPerfilD = require("../api/perfil.js");
+        const segD = (qs, opts = {}) => invocar(routerPerfilD, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
+        const URL_SECOP = (n) => ({ url: `https://community.secop.gov.co/Public/Archive/RetrieveFile/Index?DocumentId=${n}` });
+        // (1) la capa pura: qué es cada archivo, qué se lee (y en qué orden) y qué no, con su motivo
+        const filasIdx = [
+          { id_documento: "1", nombre_archivo: "PREPLIEGO DE CONDICIONES LP-001.pdf", extensi_n: "pdf", tamanno_archivo: "900000", fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(1) },
+          { id_documento: "2", nombre_archivo: "PLIEGO DE CONDICIONES DEFINITIVO LP-001.pdf", extensi_n: "pdf", tamanno_archivo: "950000", fecha_carga: "2026-04-15T00:00:00.000", url_descarga_documento: URL_SECOP(2) },
+          { id_documento: "3", nombre_archivo: "ADENDA No 1.pdf", extensi_n: "pdf", tamanno_archivo: "120000", fecha_carga: "2026-04-20T00:00:00.000", url_descarga_documento: URL_SECOP(3) },
+          { id_documento: "4", nombre_archivo: "PRESUPUESTO OFICIAL.xlsx", extensi_n: "xlsx", tamanno_archivo: "50000", fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(4) },
+          { id_documento: "5", nombre_archivo: "RUP CONSTRUCTORA XYZ.pdf", extensi_n: "pdf", tamanno_archivo: "3000000", fecha_carga: "2026-05-02T00:00:00.000", url_descarga_documento: URL_SECOP(5) },
+          { id_documento: "6", nombre_archivo: "Documento.pdf", extensi_n: "pdf", tamanno_archivo: "10000", fecha_carga: "2026-05-03T00:00:00.000", url_descarga_documento: URL_SECOP(6) },
+          { id_documento: "7", nombre_archivo: "RESOLUCION DE APERTURA.pdf", extensi_n: "pdf", tamanno_archivo: "80000", fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(7) },
+          { id_documento: "8", nombre_archivo: "ESTUDIOS PREVIOS.pdf", extensi_n: "pdf", tamanno_archivo: String(5 * 1024 * 1024), fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: URL_SECOP(8) },
+          { id_documento: "9", nombre_archivo: "ADENDA No 1.pdf", extensi_n: "pdf", tamanno_archivo: "120000", fecha_carga: "2026-04-20T00:00:00.000", url_descarga_documento: URL_SECOP(9) }, // el mismo archivo, subido dos veces
+          { id_documento: "10", nombre_archivo: "ANEXO TECNICO.pdf", extensi_n: "pdf", tamanno_archivo: "500000", fecha_carga: "2026-04-01T00:00:00.000", url_descarga_documento: "http://evil.example/x.pdf" },
+        ];
+        const planD = Docs.planDeLectura(filasIdx, { cierre: "2026-05-01" });
+        const arch = (id) => planD.archivos.find((a) => a.id_documento === id);
+        assert.deepStrictEqual(planD.plan, ["2", "9"], `se leen el pliego definitivo y la adenda (una sola vez), en ese orden: ${planD.plan}`);
+        assert.strictEqual(arch("3"), undefined, "el archivo subido dos veces se queda con el último id");
+        assert.ok(/no se lee solo/.test(arch("1").motivo_omision) && arch("1").tipo === "pliego_borrador", "con pliego definitivo el borrador no se lee");
+        assert.strictEqual(arch("4").motivo_omision, "hoja de cálculo"); assert.strictEqual(arch("4").de_la_entidad, true);
+        assert.strictEqual(arch("5").de_la_entidad, false, "el RUP lo sube un proponente con su oferta: no es una regla del proceso");
+        assert.strictEqual(arch("6").de_la_entidad, false, "un documento sin tipo subido DESPUÉS del cierre es una oferta");
+        assert.ok(/no se lee solo/.test(arch("7").motivo_omision), "una resolución no se lee sola");
+        assert.ok(/pesa más de 3 MB/.test(arch("8").motivo_omision), `más de lo que cabe en una respuesta de Vercel no se promete: ${arch("8").motivo_omision}`);
+        assert.strictEqual(arch("10").url, null, "una dirección fuera de community.secop.gov.co se descarta");
+        assert.deepStrictEqual(planD.resumen, { publicados: 10, distintos: 9, de_la_entidad: 7, de_proponentes: 2, en_plan: 2, no_legibles: 1, adendas: 1 });
+        assert.deepStrictEqual(Docs.planDeLectura(filasIdx.filter((f) => f.id_documento !== "2"), { cierre: "2026-05-01" }).plan, ["1", "9"], "sin pliego definitivo, el borrador ES el pliego que hay y va primero");
+        assert.deepStrictEqual(Docs.planDeLectura([], {}).plan, []);
+        // (2) los hechos de un texto salen de los lectores que ya existen, con página; la negación del anticipo se lee
+        for (const t of ["no se entregara anticipo", "no habra lugar a anticipo", "no se contempla el pago de anticipo", "no se otorgara anticipo alguno", "no se ha previsto anticipo"]) assert.ok(NIEGA_ANT.test(t), `niega el anticipo: «${t}»`);
+        for (const t of ["se entregara un anticipo del 30 %", "anticipo del 20 %"]) assert.ok(!NIEGA_ANT.test(t), `NO niega el anticipo: «${t}»`);
+        const textoPliegoD = ["\f1", "PLIEGO DE CONDICIONES LP-001-2026", "OBJETO: CONSTRUCCION DE PLACA HUELLA", "\f2", "FORMA DE PAGO: la entidad pagará mediante actas parciales mensuales. No se entregará anticipo.", "Índice de liquidez: mayor o igual a 1,5", "Plazo de ejecución: seis (6) meses", "\f3", "Se rechazará la oferta que no acompañe la garantía de seriedad.", "El proponente deberá realizar visita obligatoria al sitio de la obra."].join("\n");
+        const hP = Docs.hechosDeTexto(textoPliegoD, { tipo: "pliego" });
+        assert.strictEqual(hP.paginas, 3);
+        assert.deepStrictEqual({ estado: hP.anticipo.estado, pagina: hP.anticipo.pagina }, { estado: "no", pagina: 2 }, `un anticipo NEGADO es «no» con su página: ${JSON.stringify(hP.anticipo)}`);
+        assert.strictEqual(hP.requisitos_numericos.liquidez.valor, 1.5); assert.strictEqual(hP.requisitos_numericos.liquidez.pagina, 2);
+        assert.strictEqual(hP.requisitos_numericos.plazo_meses.valor, 6);
+        assert.strictEqual(hP.detecciones.visita_obligatoria[0].pagina, 3);
+        assert.strictEqual(Docs.hechosDeTexto("un texto que no dice nada de eso", {}).anticipo.estado, "sin_dato", "lo que no aparece es sin_dato, jamás «no» ni «sí»");
+        // (3) lo que dicen los documentos: la adenda MÁS RECIENTE manda sobre el pliego; sin cifra del perfil «revisar», nunca «no cumple»
+        const hA1 = Docs.hechosDeTexto("\f1\nADENDA 1. Se modifica el índice de liquidez: mayor o igual a 2,0", { tipo: "adenda" });
+        const hA2 = Docs.hechosDeTexto("\f1\nADENDA 2. Se modifica el índice de liquidez: mayor o igual a 1,7", { tipo: "adenda" });
+        const docsFalsos = { indice: { archivos: planD.archivos, plan: planD.plan, resumen: planD.resumen, consultado_el: "2026-09-03T10:00:00Z" }, ilegibles: {}, leidos: {
+          "2": { nombre: "PLIEGO.pdf", tipo: "pliego", tipo_legible: "Pliego de condiciones", fecha_carga: "2026-04-15", paginas: 3, leido_el: "2026-09-03T10:00:00Z", hechos: hP },
+          "9": { nombre: "ADENDA 1.pdf", tipo: "adenda", tipo_legible: "Adenda", fecha_carga: "2026-04-20", paginas: 1, leido_el: "2026-09-03T10:02:00Z", hechos: hA1 },
+          "11": { nombre: "ADENDA 2.pdf", tipo: "adenda", tipo_legible: "Adenda", fecha_carga: "2026-04-25", paginas: 1, leido_el: "2026-09-03T10:01:00Z", hechos: hA2 },
+        } };
+        const dicenD = Docs.loQueDicen(docsFalsos, { perfilObj: { liquidez: 1.8 } });
+        const hLiq = dicenD.hechos.find((x) => x.clave === "requisito_liquidez");
+        assert.ok(hLiq && hLiq.valor === 1.7 && hLiq.estado === "cumple" && /ADENDA 2/.test(hLiq.documento) && /antes era 1,5/.test(hLiq.texto) && hLiq.cambiado_por_adenda === true, `la adenda más reciente (por fecha de carga, no por orden de lectura) fija la cifra y se dice de dónde venía: ${JSON.stringify(hLiq)}`);
+        assert.strictEqual(Docs.loQueDicen(docsFalsos, { perfilObj: { liquidez: 1.6 } }).hechos.find((x) => x.clave === "requisito_liquidez").estado, "no_cumple", "1,6 < 1,7 de la adenda: no cumple (con 1,5 del pliego habría cumplido)");
+        assert.strictEqual(Docs.loQueDicen(docsFalsos, { perfilObj: {} }).hechos.find((x) => x.clave === "requisito_liquidez").estado, "revisar", "sin cifra del perfil: «revisar» (Number(null) === 0 no puede decir «no cumple»)");
+        assert.ok(dicenD.hechos.find((x) => x.clave === "anticipo").anticipo === "no" && dicenD.hechos.every((x) => x.documento), "cada hecho lleva su documento");
+        assert.deepStrictEqual(Docs.loQueDicen(null).hechos, []);
+        assert.strictEqual(Docs.resumenLectura(docsFalsos).estado, "leido"); assert.strictEqual(Docs.resumenLectura(null).estado, "sin_indice");
+        // (4) la guía: el pliego que NIEGA el anticipo gana al objeto que lo insinúa; los hechos entran con su cita
+        const ahoraD = Date.parse("2026-09-03T15:00:00Z");
+        const baseD = { id_del_proceso: "D1", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA, ANTICIPO DEL 30 %", entidad: "ALCALDIA DE PURIFICACION", departamento_entidad: "Tolima", modalidad_de_contratacion: "Licitación pública", precio_base: "850000000", duracion: "6", unidad_de_duracion: "Meses", codigo_principal_de_categoria: "V1.72141000", fecha_de_publicacion_del: "2026-09-01T10:00:00.000", fecha_de_recepcion_de: "2026-09-20T15:00:00.000", tipo_de_contrato: "Obra" };
+        const sinDocs = G.guiaDe({ fila: baseD, perfil: "helder", ctx: { ahoraMs: ahoraD } });
+        assert.strictEqual(sinDocs.obra.pago.anticipo_pct, 30, "sin documentos leídos, el objeto manda: anticipo del 30 %");
+        assert.strictEqual(sinDocs.documentos.estado, "sin_indice");
+        const conDocs = G.guiaDe({ fila: baseD, perfil: "helder", ctx: { ahoraMs: ahoraD, documentos: docsFalsos } });
+        assert.strictEqual(conDocs.obra.pago.anticipo_pct, null, "el pliego NIEGA el anticipo: el dato publicado gana al calculado del objeto");
+        assert.ok(/no hay anticipo/.test(conDocs.obra.pago.anticipo_legible) && /pág\. 2/.test(conDocs.obra.pago.fuente_anticipo), conDocs.obra.pago.fuente_anticipo);
+        assert.ok(conDocs.consejos.some((c) => c.clave === "sin_anticipo" && /pág\. 2/.test(c.por_que_aqui)) && !conDocs.consejos.some((c) => c.clave === "anticipo"), "el consejo es el de financiar el arranque, con la cita");
+        assert.strictEqual(conDocs.dinero.anticipo_cop, null);
+        const finD = conDocs.requisitos.find((r) => r.clave === "financieros");
+        assert.ok(/1,7/.test(finD.detalle) && /pág\./.test(finD.detalle) && ["cumple", "no_cumple", "revisar"].includes(finD.estado), `los indicadores exigidos (los de la adenda) salen con su página: ${finD.detalle}`);
+        const pvD = conDocs.requisitos.find((r) => r.clave === "personal_y_visita");
+        assert.ok(pvD.estado === "revisar" && /visita es obligatoria/.test(pvD.detalle) && /pág\. 3/.test(pvD.detalle), `la visita leída pasa de «pendiente» a «revisar» con su cita: ${pvD.detalle}`);
+        assert.ok(/causales de rechazo están en .*pág\. 3/.test(conDocs.requisitos.find((r) => r.clave === "carpeta").detalle));
+        assert.ok(conDocs.lo_que_dicen.length >= 5 && conDocs.resumen.hechos_de_documentos === conDocs.lo_que_dicen.length && conDocs.resumen.documentos_leidos === 3);
+        assert.ok(conDocs.documentos.estado === "leido" && /3 documentos leídos/.test(conDocs.documentos.frase) && /1 no legible/.test(conDocs.documentos.frase) && conDocs.documentos.de_proponentes === 2, conDocs.documentos.frase);
+        assert.ok(conDocs.documentos.adendas.length === 1 && conDocs.documentos.adendas[0].leida === true);
+        const textoD = JSON.stringify([conDocs, sinDocs, dicenD]);
+        for (const [re, nombre] of [[/UNSPSC/, "UNSPSC"], [/\bSMMLV\b/, "SMMLV"], [/habilitante/i, "habilitante"], [/subsanable/i, "subsanable"], [/capacidad residual/i, "capacidad residual"], [/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u, "emoji"], [/\b(?:present[áa]|ten[ée]s|pod[ée]s|hac[ée]lo|confirmalo|verific[áa]\b|vos)\b/, "voseo"]]) {
+          const m = textoD.match(re);
+          assert.ok(!m, `los hechos de los documentos enseñan «${nombre}»: …${textoD.slice(Math.max(0, (m && m.index) - 60), (m && m.index) + 60)}…`);
+        }
+        // (5) op=documentos por el router, con datos.gov.co simulado: índice por id_del_portafolio, guardado 12 h, POST del texto, ilegibles, y la guía de Mis procesos lo enseña
+        const liD = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200", CAB_TOKEN);
+        const filaD = liD.cuerpo.resultados.find((f) => f.fecha_cierre && f.precio_base);
+        const idD = filaD.id_del_proceso, qD = `id_proceso=${encodeURIComponent(idD)}`;
+        const fetchOriginalD = global.fetch;
+        const llamadasD = [];
+        let redCaida = false;
+        global.fetch = async (url, opciones) => {
+          const u = decodeURIComponent(String(url));
+          if (/id_del_portafolio|dmgg-8hin/.test(u)) llamadasD.push(u); // se cuentan solo las consultas del índice (Redis también pasa por fetch)
+          if (redCaida && /id_del_portafolio|dmgg-8hin/.test(u)) throw new Error("red caída (simulada)");
+          /* solo se simulan las dos consultas de op=documentos (p6dx por id_del_proceso con
+             $select id_del_portafolio, y dmgg-8hin); todo lo demás sigue yendo al Socrata de la suite */
+          const cuerpo = /p6dx-8zbt/.test(u) && /id_del_portafolio/.test(u) ? (new RegExp(`id_del_proceso='${idD.replace(/\./g, "\\.")}'`).test(u) ? [{ id_del_proceso: idD, id_del_portafolio: "CO1.BDOS.999", fecha_de_recepcion_de: "2026-05-01T00:00:00.000" }] : [])
+            : /dmgg-8hin/.test(u) ? (/proceso='CO1\.BDOS\.999'/.test(u) ? filasIdx : []) : null;
+          if (!cuerpo) return fetchOriginalD(url, opciones); // Redis simulado y el resto de Socrata: con sus opciones
+          return { ok: true, status: 200, headers: { get: () => "application/json" }, json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) };
+        };
+        try {
+          assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`)).status, 401, "sin token no hay documentos");
+          assert.strictEqual((await invocar(routerPliegoD, "/api/pliego?op=documentos&id_proceso=", CAB_TOKEN)).status, 400);
+          const i1 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN);
+          assert.strictEqual(i1.status, 200);
+          assert.strictEqual(i1.cuerpo.estado, "por_leer");
+          assert.deepStrictEqual(i1.cuerpo.pendientes.map((a) => a.id_documento), ["2", "9"], "los pendientes son el plan: lo que el navegador tiene que bajar y leer");
+          assert.ok(i1.cuerpo.pendientes.every((a) => /^https:\/\/community\.secop\.gov\.co\//.test(a.url)), "cada pendiente trae su dirección de descarga");
+          assert.strictEqual(i1.cuerpo.indice.id_del_portafolio, "CO1.BDOS.999"); assert.strictEqual(i1.cuerpo.indice.cierre_usado, String(filaD.fecha_cierre).slice(0, 10), "el cierre para separar ofertas es el PUBLICADO del corpus");
+          const nRed = llamadasD.length;
+          const i2 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN);
+          assert.ok(i2.cuerpo.cache === true && llamadasD.length === nRed, "el índice se guarda 12 h: la segunda petición no sale a la red");
+          // POST del pliego leído: hechos + versión en el vigía de adendas (lo que leerían dictamen, cronograma y deducciones)
+          assert.strictEqual((await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "77", texto: textoPliegoD }, CAB_TOKEN)).status, 404, "un id_documento fuera del índice no se guarda");
+          assert.strictEqual((await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "2", texto: "corto" }, CAB_TOKEN)).status, 400);
+          const p1 = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "2", texto: textoPliegoD, perfil: "helder" }, CAB_TOKEN);
+          assert.strictEqual(p1.status, 200, JSON.stringify(p1.cuerpo));
+          assert.ok(p1.cuerpo.version_pliego != null && p1.cuerpo.leidos["2"].hechos.anticipo.estado === "no" && p1.cuerpo.paginas === 3, `el pliego queda leído y registrado como versión: ${JSON.stringify({ v: p1.cuerpo.version_pliego, h: p1.cuerpo.hechos_n })}`);
+          assert.deepStrictEqual(p1.cuerpo.pendientes.map((a) => a.id_documento), ["9"]);
+          const dg = await invocar(routerPliegoD, `/api/pliego?op=diff&${qD}&perfil=helder`, CAB_TOKEN);
+          assert.ok(dg.status === 200 && /documentos:PLIEGO DE CONDICIONES/.test(JSON.stringify(dg.cuerpo)), "el vigía de adendas ve la versión que llegó por los documentos, con su origen");
+          // ilegible NO definitivo (la descarga falló): se reintenta al volver a buscar; el escaneado (definitivo) no
+          const p2 = await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "9", ilegible: true, motivo: "no se pudo leer: el proxy cortó" }, CAB_TOKEN);
+          assert.ok(p2.status === 200 && p2.cuerpo.estado === "leido" && p2.cuerpo.ilegibles["9"].definitivo === false);
+          const i3 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&refrescar=1`, CAB_TOKEN);
+          assert.deepStrictEqual(i3.cuerpo.pendientes.map((a) => a.id_documento), ["9"], "al volver a buscar, el que falló por la red vuelve a intentarse");
+          await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "9", ilegible: true, definitivo: true, motivo: "sin capa de texto: parece un escaneo" }, CAB_TOKEN);
+          const i4 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&refrescar=1`, CAB_TOKEN);
+          assert.ok(i4.cuerpo.estado === "leido" && i4.cuerpo.ilegibles["9"].definitivo === true && i4.cuerpo.leidos["2"], "el escaneado no se reintenta y el pliego leído no se pierde al refrescar");
+          // la guía de Mis procesos (el proceso quedó guardado «descartado» por el bloque de la guía) enseña lo leído
+          const sg = await segD("&perfil=helder");
+          assert.strictEqual(sg.status, 200, JSON.stringify(sg.cuerpo).slice(0, 200));
+          const gD = (sg.cuerpo.procesos.find((p) => p.id === idD) || {}).guia;
+          assert.ok(gD && gD.documentos && gD.documentos.estado === "leido" && gD.documentos.leidos.length === 1 && gD.documentos.ilegibles.length === 1, `la guía dice qué se leyó y qué no se pudo: ${JSON.stringify(gD && (gD.error || (gD.documentos && gD.documentos.frase) || Object.keys(gD)))}`);
+          assert.ok(/no hay anticipo/.test(gD.obra.pago.anticipo_legible) && gD.lo_que_dicen.some((h) => h.clave === "anticipo" && h.anticipo === "no"), "lo que dice el pliego llega a la pantalla de Mis procesos");
+          assert.ok(gD.documentos.no_legibles.some((x) => /PRESUPUESTO OFICIAL/.test(x.nombre) && x.motivo === "hoja de cálculo" && x.url), "lo no legible se lista con su motivo y su enlace, no se inventa");
+          // un proceso que datos.gov.co no publica: resultado con motivo, jamás error; y la red caída tampoco tumba nada
+          const i5 = await invocar(routerPliegoD, "/api/pliego?op=documentos&id_proceso=CO1.REQ.SINPORTAFOLIO", CAB_TOKEN);
+          assert.ok(i5.status === 200 && i5.cuerpo.ok === true && i5.cuerpo.estado === "sin_archivos" && /no publica/.test(i5.cuerpo.motivo), JSON.stringify(i5.cuerpo).slice(0, 300));
+          redCaida = true;
+          const i6 = await invocar(routerPliegoD, "/api/pliego?op=documentos&id_proceso=CO1.REQ.REDCAIDA", CAB_TOKEN);
+          assert.ok(i6.status === 200 && i6.cuerpo.ok === true && i6.cuerpo.estado === "sin_archivos" && /red caída/.test(i6.cuerpo.aviso) && i6.cuerpo.indice.transitorio === true, JSON.stringify(i6.cuerpo).slice(0, 300));
+          redCaida = false;
+          const i7 = await invocar(routerPliegoD, "/api/pliego?op=documentos&id_proceso=CO1.REQ.REDCAIDA", CAB_TOKEN);
+          assert.ok(i7.cuerpo.cache === false && !i7.cuerpo.indice.transitorio, "un índice que no se pudo pedir no se guarda: la siguiente petición vuelve a intentarlo");
+        } finally { global.fetch = fetchOriginalD; }
+        // (6) el navegador: se lee solo al guardar y al abrir Mis procesos, con el pdf.js del lector y sin «|| 0»
+        const appD = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const pliegoD = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+        assert.ok(/window\.__pliegoLeerPdf = async/.test(pliegoD) && /textoDelPdf\(doc, \(\) => \{\}\)/.test(pliegoD), "pliego.js presta su lector sin tocar la barra ni el documento del panel");
+        assert.ok(/encolarLecturaDocumentos\(id, \{ manual: true \}\)/.test(appD) && /op=documentos&id_proceso=/.test(appD) && /window\.__pliegoLeerPdf\(bytesDeBase64/.test(appD) && /op=descargar/.test(appD), "al guardar, la app pide el índice, baja y lee con el lector");
+        assert.ok(/data-seg-docs-leer=/.test(appD) && /Lo que dicen los documentos/.test(appD) && /ilegible: true, definitivo: definitivo === true/.test(appD), "botón de reintento, sección de hechos y el escaneo marcado como definitivo");
+        assert.ok(!/(?:docs|documentos|lo_que_dicen)\.[a-z_]+ \|\| 0/.test(appD), "ningún dato de los documentos se convierte en 0 con «|| 0»");
+        assert.ok(/busca los documentos de ese proceso en SECOP II/.test(fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")), "la pantalla vacía de Mis procesos lo anuncia");
+        console.log(`  · documentos del proceso: plan ${planD.plan.length}/${planD.resumen.publicados} archivos (${planD.resumen.de_proponentes} de proponentes, ${planD.resumen.no_legibles} no legibles), ${conDocs.lo_que_dicen.length} hechos con documento y página, la adenda más reciente manda, op=documentos GET/POST por el router y la guía de Mis procesos los enseña`);
+      }
+
       /* --- MANIFESTACIÓN DE INTERÉS en la lista y en Mis procesos + la pestaña
          propia + cambios de cronograma + centro de alertas (18-ago-2026). --- */
       {

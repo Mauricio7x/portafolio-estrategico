@@ -6857,3 +6857,91 @@ Lo que se construyó y lo que no hay que volver a aprender:
   resultado va en la sección siguiente, con la fecha. `WebFetch` a los dominios oficiales sigue
   fallando (TLS) y la evidencia es el resumen del buscador: `literal_leido` sigue en `false`.
 
+
+### Los documentos del proceso se leen solos al guardar en Mis procesos (3-sep-2026)
+
+Encargo del dueño: «toda la información de la página debe ser de ESE proceso: que la plataforma
+descargue y lea todos los documentos cuando el usuario guarda un proceso, los interprete, y ahí sí dé
+respuestas claras, verdaderas y personalizadas; y que se vea más limpio». Hasta hoy el único texto
+que la aplicación leía era el PDF que el usuario cargaba a mano en Precios. Lo que se construyó y
+lo que no hay que volver a aprender:
+
+- **Lo MEDIDO el 3-sep-2026 (observaciones con fecha, no leyes)**: la página pública del proceso en
+  SECOP II (`OpportunityDetail`) redirige a un reCAPTCHA, así que desde un servidor no se pueden
+  listar ahí los documentos; la descarga directa de cada archivo (`community.secop.gov.co/Public/
+  Archive/RetrieveFile/Index?DocumentId=…`) NO está detrás del reCAPTCHA (200 `application/pdf`);
+  y datos.gov.co publica el ÍNDICE de archivos por proceso en el dataset **`dmgg-8hin`** («SECOP II -
+  Archivos Descarga Desde 2025»: `id_documento, nombre_archivo, extensi_n, tamanno_archivo,
+  fecha_carga, url_descarga_documento{url}`), cuya columna `proceso` es el **`id_del_portafolio`**
+  (`CO1.BDOS.…`) de p6dx, que el corpus NO trae (se pide a p6dx por `id_del_proceso`, una vez, y
+  queda en el índice guardado). Cubre archivos cargados desde el 1-ene-2025 y va ~3 días por detrás.
+  Comprobado hoy con `CO1.REQ.10379092` → `CO1.BDOS.10154193` → 209 filas (150 distintas, 96 de la
+  entidad, 54 de proponentes, 17 no legibles, 1 adenda).
+- **La cadena**: `id_del_proceso` → p6dx (`id_del_portafolio`) → dmgg-8hin (la lista) →
+  `op=descargar` (el proxy SSRF-endurecido de `lib/apu_descargar`) → **pdf.js EN EL NAVEGADOR**
+  (`window.__pliegoLeerPdf`, el MISMO bucle de páginas y marcadores `\f<n>` del lector, con la
+  barra silenciada) → `POST op=documentos {id_proceso, id_documento, texto}` → el servidor guarda
+  el texto (`pliego:{id}:doc:{id_documento}`, 90 días), saca los HECHOS y los deja en el índice
+  (`pliego:{id}:docs`). Si el documento es el pliego, **entra en el vigía de adendas**
+  (`lib/diff.registrarVersion`, origen `documentos:<nombre>`): el dictamen, el cronograma y las
+  deducciones lo leen sin que nadie cargue nada.
+- **`lib/documentos_proceso.js` es capa PURA y NO reimplementa ningún lector**: `detectar` y
+  `SIN_ANTICIPO_RE` de `lib/dictamen_reglas` (por eso se exportó la regex), `extraerHabilitantes`
+  + `cumpleRequisito` + `fmtValorRequisito` de `lib/diff` (por eso se exportó `fmt`),
+  `extraerHitos` de `lib/cronograma`, `leerDeducciones` de `lib/deducciones`; los require van
+  DIFERIDOS (diff y cronograma viven en ciclos). Clasifica por nombre (`RE_TIPO`, en orden:
+  «respuesta a observaciones al pliego» es respuesta, no pliego), separa lo de la ENTIDAD de lo
+  que suben LOS PROPONENTES (por nombre —RUP, antecedentes, garantía de seriedad…— y por fecha:
+  un documento sin tipo subido DESPUÉS del cierre es una oferta), deduplica el mismo archivo subido
+  dos veces, y arma el plan: ≤12 documentos, ≤3 versiones del pliego (del más viejo al más nuevo:
+  cada una es una versión del vigía), tipos de orden ≤9 (resoluciones, análisis del sector,
+  informes y formatos NO se leen solos), **tope 3 MB por documento** (el PDF vuelve en base64
+  ×1,37 dentro de una respuesta de Vercel que se corta en 4,5 MB: prometer 12 MB era prometer un
+  fallo), y sin pliego definitivo **el borrador ES el pliego que hay** (muchas entidades nunca
+  renombran). Lo no legible (hoja de cálculo, Word, comprimido, imagen, plano) se lista con su
+  motivo y su enlace: no se inventa.
+- **Los hechos llevan documento y página; «sin dato» ≠ «cero»**: anticipo `no` (negado, con cita)
+  / `si` / `sin_dato`; requisitos con cifra juzgados con la regla de `lib/diff` (sin cifra del
+  perfil → «revisar», jamás «no cumple»); detecciones (causales, visita, personal, equipos,
+  garantías, multas, licencias…); descuentos; fechas. **La adenda MÁS RECIENTE manda** (por
+  `fecha_carga` de SECOP II, no por orden de lectura): sustituye la cifra del pliego, se juzga con
+  ella y el texto dice «antes era X (pliego, pág. N); vale la adenda».
+- **En la guía, los documentos mandan sobre el dataset** (`ctx.documentos`, VERSION 2): un pliego
+  que NIEGA el anticipo gana al objeto que lo insinúa (`anticipo_pct: null`, consejo
+  `sin_anticipo` con la cita); los indicadores exigidos se comparan con el perfil y salen con su
+  página; personal, visita y equipos pasan de «pendiente» a «revisar» CON su cita; las causales de
+  rechazo se citan en la carpeta. Lo que ningún documento dice sigue `pendiente`/`sin_dato`. El
+  bloque `documentos` (estado, frase, leídos, por leer, ilegibles, no legibles, adendas, de
+  proponentes) y `lo_que_dicen` viajan con la guía; `seguimiento` lee `pliego:{id}:docs`
+  best-effort (sin índice, la guía dice que los documentos están por leer y el navegador los pide).
+- **Dos defectos cazados al MEDIR con texto real, no por lectura**: (1) `SIN_ANTICIPO_RE` no cubría
+  el futuro ni «lugar a»: «No se entregará anticipo» (pliego real) salía como «hay anticipo» — se
+  amplió en `lib/dictamen_reglas` y en su gemela de `lib/negocio` (regla de los hermanos); (2)
+  `resumenLectura` contaba lo leído por el plan y un índice refrescado que sacara del plan un
+  documento ya leído lo hacía desaparecer: se cuenta TODO lo guardado; solo `pendientes` es el plan.
+- **El navegador**: al guardar (`alternarGuardado`) y al abrir Mis procesos con procesos ABIERTOS
+  por leer, se encola la lectura (`encolarLecturaDocumentos`): un proceso a la vez y cada uno
+  como mucho UNA vez por carga de la página salvo que el usuario pulse (un documento que falla
+  siempre no puede dejar la pestaña en bucle). El progreso vive en `docsProgreso` y sobrevive a
+  los repintados de la lista. Un escaneo sin capa de texto se marca `ilegible` **definitivo**;
+  un fallo de descarga se marca ilegible NO definitivo y «Volver a buscar documentos»
+  (`refrescar=1`) lo suelta para reintentarlo. Al terminar se recarga Mis procesos y, si esa guía
+  está abierta, se consulta el dictamen (ahora ya hay pliego).
+- **Más limpio**: en la tarjeta de Mis procesos lo que hay que VER va arriba (en qué van los
+  documentos, la obra en una mirada, «Lo que dicen los documentos», lo que necesita, el dictamen,
+  el paso a paso) y lo que hay que TOCAR va plegado (consejos, la plata que nadie suma, la lista
+  de documentos con sus motivos y enlaces).
+- **Lo que NO hace y no hay que prometer**: no lee hojas de cálculo ni Word ni comprimidos (el
+  presupuesto oficial suele ser un .xlsx: se enlaza); no lee escaneados (aquí no hay OCR); no lee
+  resoluciones ni análisis del sector solos; procesos sin índice (SECOP I, tienda virtual,
+  anteriores a 2025, o recién publicados con el índice atrasado) reciben un RESULTADO con motivo
+  y «cargue el pliego usted», nunca un error.
+- **La prueba** (bloque «LOS DOCUMENTOS DEL PROCESO, LEÍDOS SOLOS» de `tests/e2e.js`): la capa
+  pura con un índice sintético (plan, motivos, proponentes, duplicado, tope, dirección ajena),
+  los hechos con página, la negación del anticipo, la adenda más reciente, la guía con y sin
+  documentos, la cerca de jerga/voseo/emojis sobre los hechos, `op=documentos` GET/POST por el
+  router con datos.gov.co SIMULADO (solo las dos consultas del índice; Redis y el resto del
+  Socrata de la suite siguen su camino con sus opciones), el vigía viendo la versión, ilegibles
+  definitivos y transitorios, la guía de Mis procesos con lo leído, el proceso sin índice y la
+  red caída (200 con motivo), y el cableado del navegador. Falla contra el árbol anterior por
+  construcción (el módulo no existía) y por conducta (la regex y la adenda).

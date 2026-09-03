@@ -322,10 +322,13 @@
       .join("\n");
   };
 
-  async function textoDelPdf(doc) {
+  /* `avisar` es la barra del panel; la lectura SILENCIOSA de Mis procesos (los
+     documentos del proceso, 3-sep-2026) pasa una función vacía: el MISMO bucle,
+     las mismas líneas y los mismos marcadores, sin tocar la pantalla del lector. */
+  async function textoDelPdf(doc, avisar = progreso) {
     const trozos = [];
     for (let n = 1; n <= doc.numPages; n++) {
-      progreso(n - 1, doc.numPages, `Leyendo página ${n} de ${doc.numPages}…`);
+      avisar(n - 1, doc.numPages, `Leyendo página ${n} de ${doc.numPages}…`);
       // ceder el hilo: sin esto la barra no se repinta en documentos largos
       await new Promise((r) => setTimeout(r, 0));
       const pagina = await doc.getPage(n);
@@ -334,7 +337,7 @@
       trozos.push(marcadorPagina(n));
       if (lineas) trozos.push(lineas);
     }
-    progreso(doc.numPages, doc.numPages, `${doc.numPages} página(s) leídas.`);
+    avisar(doc.numPages, doc.numPages, `${doc.numPages} página(s) leídas.`);
     return trozos.join("\n");
   }
 
@@ -1205,5 +1208,21 @@
   window.__pliegoDictamenEn = async (caja, id, perfil) => {
     dictamenCaja = caja || null; dictamenPerfil = perfil || null; dictamenUltimo = null;
     try { await cargarDictamen(id); } catch (e) { if (caja) caja.textContent = `No se pudo consultar el dictamen: ${(e && e.message) || e}`; }
+  };
+  /* Mis procesos lee los documentos del proceso SIN pasar por el panel (3-sep-2026):
+     el mismo pdf.js, el mismo bucle de páginas y los mismos marcadores `\f<n>`, sin
+     tocar `docPdf`, el nombre ni la barra del lector. Devuelve el texto y si el
+     PDF parece escaneado con los MISMOS umbrales que `extraer` (sin capa de texto
+     útil): quien llama lo marca como ilegible en vez de mandar un texto vacío. */
+  window.__pliegoLeerPdf = async (datos) => {
+    const pdfjs = await cargarPdfJs();
+    const doc = await pdfjs.getDocument({ data: datos, isEvalSupported: false }).promise;
+    try {
+      if (!doc.numPages) throw new Error("El PDF no tiene páginas.");
+      const texto = await textoDelPdf(doc, () => {});
+      const largo = texto.trim().length;
+      const escaneado = largo < MIN_TEXTO_UTIL || largo / doc.numPages < MIN_CARACTERES_POR_PAGINA;
+      return { texto, paginas: doc.numPages, escaneado };
+    } finally { try { await doc.destroy(); } catch { /* ya liberado */ } }
   };
 })();
