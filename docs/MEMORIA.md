@@ -7010,3 +7010,9 @@ El pendiente 1 de la sesión anterior, resuelto el mismo día con el texto REAL 
   palabras entre el verbo y «anticipo» («la entidad no entregará al contratista a título de
   anticipo», Siete de Agosto, pág. 74): con eso los tres pliegos reales guardados quedan en «no hay
   anticipo» citando su cláusula. `REGLAS_VERSION` = `.3`; producción rehace los hechos sola.
+- **Verificado en producción (3-sep-2026, Chromium, consola limpia)**: al abrir Mis procesos, el
+  GET de `op=documentos` rehizo los hechos de los tres procesos con documentos (7 + 5 + 3, sin
+  descargar nada). Siete de Agosto: «El pliego dice que no hay anticipo» (pág. 74); Cali: ídem
+  (pág. 78); contención vehicular (solo estudios previos con la fórmula): «El pliego tiene un
+  apartado sobre el anticipo: léalo, la aplicación no leyó la cláusula» (pág. 61). Ninguna guía dice
+  ya «hay anticipo» por una línea que no lo afirma.
