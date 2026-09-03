@@ -21277,11 +21277,21 @@ async function main() {
       {
         await Dfx.registrarVersion(redis, { idProceso: ID_DC, texto: TEXTO_DC, perfilId: "helder", origen: "prueba" });
         espiar(() => { throw new Error("no debía llamarse"); });
+        /* 3-sep-2026: sin clave el defecto ya no es un 503 sino la LECTURA POR REGLAS (el dueño no va a
+           pagar una clave aparte de su suscripción); el 503 queda para quien pida el motor «modelo» a secas */
         const r = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder" });
-        assert.strictEqual(r.status, 503);
+        assert.strictEqual(r.status, 200);
         assert.strictEqual(r.cuerpo.ia_configurada, false);
-        assert.ok(/ANTHROPIC_API_KEY/.test(r.cuerpo.error), "el 503 nombra la variable que falta");
+        assert.strictEqual(r.cuerpo.motor, "reglas"); assert.strictEqual(r.cuerpo.hay_dictamen, true);
+        assert.ok(/sin inteligencia artificial/.test(r.cuerpo.origen_legible), "la pantalla dirá de dónde sale");
         assert.strictEqual(llamadas.length, 0);
+        const rm = await pedirDictamen({ id_proceso: ID_DC, perfil: "helder", motor: "modelo" });
+        assert.strictEqual(rm.status, 503);
+        assert.strictEqual(rm.cuerpo.ia_configurada, false);
+        assert.ok(/ANTHROPIC_API_KEY/.test(rm.cuerpo.error), "el 503 nombra la variable que falta");
+        assert.strictEqual(llamadas.length, 0);
+        // la lectura por reglas quedó guardada bajo SU clave; se retira para que la prueba 11 cuente solo la del modelo
+        for (const k of await redis.scan(`dictamen:${ID_DC}:*`)) await redis.del(k);
       }
 
       /* ── 4 · la entrada: null donde no hay dato, ninguna cifra de precio, la regla de cumplimiento LLAMADA ── */
@@ -21716,6 +21726,109 @@ async function main() {
       global.fetch = fetchOriginal;
       for (const [k, v] of Object.entries(entorno)) poner(k, v);
       await limpiarDictamen();
+    }
+
+    /* ═══════════ DICTAMEN SIN CLAVE DE API: por REGLAS y desde una SESIÓN (3-sep-2026) ═══════════
+       El dueño paga la suscripción de Claude Code, no una clave de API. Tres motores, un
+       contrato: lib/dictamen_reglas produce el mismo objeto que el modelo y pasa por la MISMA
+       verificación; una sesión de Claude Code recibe el expediente (GET &expediente=1) y
+       devuelve el dictamen por POST motor «sesion». Se prueba con el pliego de cinco páginas
+       del bloque anterior y con uno sintético con multas, marca sin equivalente y negación
+       del anticipo. */
+    {
+      const Dc = require("../lib/dictamen.js");
+      const Rg = require("../lib/dictamen_reglas.js");
+      const Lp = require("../lib/lenguaje_pantalla.js");
+      const Dfx = require("../lib/diff.js");
+      const { PERFILES } = require("../lib/perfiles.js");
+      const routerPliego = require("../api/pliego.js");
+      const ID_RG = "CO1.RGL.1";
+      const URL_DC = "/api/pliego?op=dictamen";
+      const limpiar = async () => { for (const k of [...(await redis.scan("dictamen:*")), ...(await redis.scan("lock:dictamen:*")), ...(await redis.scan(`pliego:${ID_RG}:*`))]) await redis.del(k); };
+      await limpiar();
+      let nApi = 0; const fetchOrig = global.fetch;
+      global.fetch = async (url, o) => { if (String(url).startsWith("https://api.anthropic.com")) { nApi++; throw new Error("no debía llamarse"); } return fetchOrig(url, o); };
+      const llamadasApi = () => nApi;
+      const pasaCercas = (t, donde) => { assert.ok(String(t || "").trim(), `${donde}: vacío`); assert.ok(!Lp.VOSEO_RE.test(String(t)), `${donde}: voseo/tuteo en «${t}»`); assert.ok(!String(t).match(Lp.RE_EMOJI_UI), `${donde}: emoji en «${t}»`); };
+      const TEXTO_RG = ["\f1", "PLIEGO DE CONDICIONES LICITACION PUBLICA LP-001-2026 ALCALDIA DE PURIFICACION", "Objeto: construccion de placa huella en la vereda El Carmen. El plazo de ejecucion sera de seis (6) meses contados desde el acta de inicio.",
+        "\f2", "3.1 REQUISITOS FINANCIEROS. Indice de liquidez mayor o igual a 1,2. Nivel de endeudamiento menor o igual a 65%. Capital de trabajo mayor o igual a $ 500.000.000.",
+        "3.2 EXPERIENCIA: el proponente debera acreditar experiencia en obras de pavimento por al menos 1.500 SMMLV en maximo tres (3) contratos.",
+        "\f3", "4. FORMA DE PAGO: la entidad pagara mediante actas parciales mensuales de obra ejecutada, previa aprobacion de la interventoria. No se contempla anticipo.",
+        "5. GARANTIAS: garantia de seriedad de la oferta por el diez por ciento (10%) del presupuesto oficial; garantia de cumplimiento del 20%; estabilidad de la obra por cinco (5) anos.",
+        "6. MULTAS: por cada dia de atraso se causara una multa del 0,5% del valor del contrato.",
+        "\f4", "7. PERSONAL MINIMO: director de obra ingeniero civil con diez (10) anos de experiencia general; residente de obra con cinco (5) anos.",
+        "8. Todos los ensayos de laboratorio de materiales seran por cuenta del contratista y no tendran costo adicional para la entidad.",
+        "9. La tuberia sera marca PAVCO referencia comercial 2 pulgadas RDE 21.", "10. CAUSALES DE RECHAZO: sera rechazada la oferta que no aporte la garantia de seriedad.", "\f5", ""].join("\n");
+      const filaRG = { id_del_proceso: ID_RG, nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA", entidad: "ALCALDIA DE PURIFICACION", departamento_entidad: "Tolima", modalidad_de_contratacion: "Licitación pública", precio_base: "850000000", cuantia_cop: 850000000, duracion: "6", unidad_de_duracion: "Meses", fecha_de_publicacion_del: "2026-09-01T10:00:00.000" };
+      // (1) la capa pura: forma exacta del esquema, todo verificado en su página, ninguna frase apartada
+      const entradaG = Dc.armarEntrada({ fila: filaRG, perfil: PERFILES.genesis, perfilId: "genesis", idProceso: ID_RG, texto: TEXTO_RG, version: { version: 1, recortado: false, origen: "prueba" }, hoy: "2026-09-03" });
+      const crudoG = Rg.generarDictamenPorReglas({ entrada: entradaG, texto: TEXTO_RG });
+      assert.deepStrictEqual(Dc.validarContraEsquema(crudoG, Dc.ESQUEMA_SALIDA), [], "el objeto por reglas tiene la forma EXACTA del esquema del modelo");
+      const vG = Dc.verificarDictamen(crudoG, TEXTO_RG, entradaG);
+      assert.ok(vG.ok && !vG.gris, "no queda gris: hay hechos citados");
+      assert.strictEqual(vG.no_verificados.length, 0, `ninguna frase apartada: ${JSON.stringify(vG.no_verificados.map((x) => x.motivo))}`);
+      assert.ok(vG.verificacion.citas_total >= 12 && vG.verificacion.citas_verificadas === vG.verificacion.citas_total, `todas las citas en su página: ${vG.verificacion.citas_verificadas}/${vG.verificacion.citas_total}`);
+      const reqG = vG.dictamen.requisitos_para_participar;
+      const capG = reqG.find((r) => r.dato_comparado === "capital_trabajo_cop");
+      assert.ok(capG && capG.estado === "no_cumple" && capG.cita_verificada && capG.dato_comparado_valor === entradaG.perfil.capital_trabajo_cop, "el capital de trabajo exigido supera el de Génesis y se compara con la cifra del perfil");
+      assert.strictEqual(vG.dictamen.veredicto, "no_presentarse", "el rojo lo sostiene un requisito numérico incumplido y citado (la misma regla que al modelo)");
+      for (const t of ["personal", "garantias", "multas", "forma_de_pago", "anticipo_o_pago_anticipado", "item_sin_valor", "marca_sin_equivalente", "causal_de_rechazo", "equipos_o_laboratorio"]) assert.ok(reqG.some((r) => r.tipo === t && r.cita_verificada), `detecta ${t} con cita verificada`);
+      assert.ok(vG.dictamen.riesgos.some((r) => /no hay anticipo/.test(r.texto) && r.base === "pliego" && r.cita_verificada), "«no se contempla anticipo» es un riesgo citado, no un punto a favor");
+      assert.ok(!vG.dictamen.puntos_a_favor.some((p) => /contempla anticipo/.test(p.texto)), "la negación del anticipo no se lee como anticipo");
+      assert.ok(vG.dictamen.riesgos.some((r) => r.gravedad === "alta" && /multas/i.test(r.texto)) && vG.dictamen.no_encontrado_en_el_pliego.some((s) => /visita/.test(s)), "multas como riesgo alto; lo no encontrado se lista por nombre");
+      for (const s of JSON.stringify(crudoG).match(/"(?:texto|motivo_estado|que_hacer|veredicto_frase|confianza_motivo)":"([^"]*)"/g) || []) pasaCercas(s, "texto por reglas");
+      assert.ok(!/\d/.test(crudoG.veredicto_frase) && !/\d/.test(crudoG.confianza_motivo), "los textos propios van sin cifras (las cifras viven en las citas y en el perfil)");
+      // Helder cumple el capital: el veredicto no puede ser rojo
+      const entradaH = Dc.armarEntrada({ fila: filaRG, perfil: PERFILES.helder, perfilId: "helder", idProceso: ID_RG, texto: TEXTO_RG, version: { version: 1, recortado: false, origen: "prueba" }, hoy: "2026-09-03" });
+      const vH = Dc.verificarDictamen(Rg.generarDictamenPorReglas({ entrada: entradaH, texto: TEXTO_RG }), TEXTO_RG, entradaH);
+      assert.strictEqual(vH.dictamen.veredicto, "presentarse_con_reservas", "sin incumplimiento numérico el veredicto queda «con reservas» (hay riesgo alto y pendientes)");
+      // (2) por el handler: sin clave, GET calcula al vuelo (no escribe), POST guarda; los cachés no se pisan
+      assert.strictEqual(process.env.ANTHROPIC_API_KEY, undefined);
+      await Dfx.registrarVersion(redis, { idProceso: ID_RG, texto: TEXTO_RG, perfilId: "genesis", origen: "prueba" });
+      const g1 = await invocar(routerPliego, `${URL_DC}&id_proceso=${ID_RG}&perfil=genesis`, CAB_TOKEN);
+      assert.strictEqual(g1.status, 200); assert.strictEqual(g1.cuerpo.motor, "reglas"); assert.strictEqual(g1.cuerpo.hay_dictamen, true); assert.strictEqual(g1.cuerpo.cache, false);
+      assert.strictEqual(g1.cuerpo.dictamen.veredicto, "no_presentarse"); assert.strictEqual(g1.cuerpo.modelo, Rg.REGLAS_VERSION);
+      assert.strictEqual((await redis.scan(`dictamen:${ID_RG}:*`)).length, 0, "el GET por reglas no escribe");
+      pasaCercas(g1.cuerpo.origen_legible, "origen"); pasaCercas(g1.cuerpo.advertencia, "advertencia por reglas");
+      assert.ok(/sin inteligencia artificial/i.test(g1.cuerpo.advertencia), "la advertencia por reglas no dice «generado por inteligencia artificial»");
+      const p1 = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis" }, CAB_TOKEN);
+      assert.strictEqual(p1.status, 200); assert.strictEqual(p1.cuerpo.motor, "reglas"); assert.strictEqual(p1.cuerpo.cache, false);
+      assert.strictEqual((await redis.scan(`dictamen:${ID_RG}:genesis:*`)).length, 1, "el POST por reglas guarda una clave");
+      const g2 = await invocar(routerPliego, `${URL_DC}&id_proceso=${ID_RG}&perfil=genesis`, CAB_TOKEN);
+      assert.strictEqual(g2.cuerpo.cache, true, "el GET siguiente sirve el guardado");
+      assert.strictEqual((await redis.scan("dictamen:cuota:*")).length, 0, "las reglas no consumen cuota");
+      // (3) el EXPEDIENTE para una sesión y el POST motor «sesion»
+      const ex = await invocar(routerPliego, `${URL_DC}&id_proceso=${ID_RG}&perfil=genesis&expediente=1`, CAB_TOKEN);
+      assert.strictEqual(ex.status, 200); assert.strictEqual(ex.cuerpo.expediente, true);
+      assert.strictEqual(ex.cuerpo.instrucciones, Dc.PROMPT_SISTEMA); assert.deepStrictEqual(ex.cuerpo.esquema, Dc.ESQUEMA_SALIDA);
+      assert.ok(/=== Página 3 ===/.test(ex.cuerpo.texto_paginado) && ex.cuerpo.entrada && ex.cuerpo.entrada.perfil.id === "genesis" && ex.cuerpo.como_devolver.cuerpo.motor === "sesion", "el expediente trae instrucciones, esquema, entrada y pliego paginado, y dice cómo devolverlo");
+      assert.ok(!JSON.stringify(ex.cuerpo).includes(process.env.HISTORICO_TOKEN), "el expediente no lleva el token");
+      const ps0 = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", motor: "sesion" }, CAB_TOKEN);
+      assert.strictEqual(ps0.status, 400); pasaCercas(ps0.cuerpo.error, "sesión sin dictamen"); pasaCercas(ps0.cuerpo.que_hacer, "sesión sin dictamen · qué hacer");
+      const ps1 = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", motor: "sesion", dictamen: { ...crudoG, precio_sugerido: 1 } }, CAB_TOKEN);
+      assert.strictEqual(ps1.status, 400); assert.strictEqual(ps1.cuerpo.motivo, "forma"); assert.ok(Array.isArray(ps1.cuerpo.detalle) && ps1.cuerpo.detalle.length, "una clave extra se rechaza con detalle");
+      const ps2 = await invocarPost(routerPliego, URL_DC, { id_proceso: ID_RG, perfil: "genesis", motor: "sesion", dictamen: { ...crudoG, veredicto_frase: "Un pliego amañado para un amigo de alguien." } }, CAB_TOKEN);
+      assert.strictEqual(ps2.status, 200); assert.strictEqual(ps2.cuerpo.motor, "sesion"); assert.strictEqual(ps2.cuerpo.modelo, "sesion:claude-code");
+      assert.ok(ps2.cuerpo.avisos.includes(Dc.MENSAJES.AVISO_FRASE) && ps2.cuerpo.dictamen.veredicto_frase === Dc.VEREDICTO_TEXTO.no_presentarse, "el dictamen de la sesión pasa por la MISMA verificación (la acusación se sustituye)");
+      assert.ok(/Claude Code/.test(ps2.cuerpo.origen_legible), "la pantalla dirá que vino de una sesión");
+      const claves = await redis.scan(`dictamen:${ID_RG}:genesis:*`);
+      assert.strictEqual(claves.length, 2, "reglas y sesión viven en claves distintas");
+      const gs = await invocar(routerPliego, `${URL_DC}&id_proceso=${ID_RG}&perfil=genesis&motor=sesion`, CAB_TOKEN);
+      assert.strictEqual(gs.cuerpo.cache, true); assert.strictEqual(gs.cuerpo.modelo, "sesion:claude-code");
+      assert.strictEqual(llamadasApi(), 0, "ningún motor sin clave toca la API");
+      // (4) la skill de Claude Code y el documento
+      const skill = fs.readFileSync(path.join(__dirname, "..", ".claude", "skills", "dictamen", "SKILL.md"), "utf8");
+      assert.ok(/^---\nname: dictamen\n/.test(skill) && /expediente=1/.test(skill) && /motor:"sesion"|motor: "sesion"/.test(skill) && /Calcular mi precio/.test(skill), "la skill pide el expediente, envía con motor sesión y dice cómo cargar el pliego");
+      assert.ok(fs.existsSync(path.join(__dirname, "..", "docs", "DICTAMEN_DESDE_CLAUDE_CODE.md")));
+      // (5) el frontend: la guía consulta el dictamen al abrirse y ofrece cargar el pliego con el proceso puesto
+      const appR = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+      const pliegoR = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
+      assert.ok(/addEventListener\("toggle"/.test(appR) && /consultarDictamenGuardado\(det\.getAttribute\("data-seg-guia"\)\)/.test(appR), "al abrir la guía se consulta el dictamen solo");
+      assert.ok(/data-seg-abrir-lector=/.test(appR) && /abrirEditorConProceso\(qApu\(\{ nombre_del_procedimiento: pr\.nombre/.test(appR), "«Cargar el pliego» abre Precios con la MISMA cadena que la tarjeta");
+      assert.ok(/r\.origen_legible/.test(pliegoR), "la pantalla enseña de qué motor viene el dictamen");
+      global.fetch = fetchOrig;
+      await limpiar();
+      console.log(`  · dictamen sin clave: por reglas (${vG.verificacion.citas_verificadas}/${vG.verificacion.citas_total} citas en su página, rojo sostenido por el capital de trabajo, Helder «con reservas») · GET calcula sin escribir, POST guarda, sin cuota · expediente + motor sesión verificado como el modelo · skill /dictamen · guía consulta sola y carga el pliego`);
     }
     assert.strictEqual(Dc.hayClaveIa(), false, "la clave de prueba tiene que quedar retirada");
     console.log("· unidad DICTAMEN DEL PLIEGO: 21 cerraduras (router y censo, sin pliego, sin clave, entrada sin || 0, presupuesto único, "

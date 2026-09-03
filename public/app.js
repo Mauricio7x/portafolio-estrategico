@@ -2770,10 +2770,14 @@
        pinta en esta caja (`window.__pliegoDictamenEn`). Se pide al pulsar, no al
        pintar: cada GET lee el texto guardado del pliego y con veinte guardados
        serían veinte lecturas que nadie pidió. */
-    const dictamen = `<div class="rounded-xl bg-white p-3 ring-1 ring-inset ring-gray-900/5" data-seg-dictamen="${esc(p.id)}">
-        <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Dictamen del pliego</p>
-        <p class="mt-1 text-xs text-gray-600">Una lectura completa del pliego, con citas por página, que dice si conviene presentarse y por qué. Necesita que el PDF del pliego se haya cargado en Precios (botón «Calcular mi precio» de la tarjeta).</p>
-        <button type="button" data-seg-dictamen-ver="${esc(p.id)}" class="mt-2 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition" style="background: var(--accent);">Ver el dictamen del pliego</button>
+    /* La caja del dictamen la pinta pliego.js (window.__pliegoDictamenEn) cuando el
+       pliegue se abre; el botón «Cargar el pliego» abre Precios con ESTE proceso
+       precargado para que el lector guarde el texto bajo su id (qApu desde la foto). */
+    const dictamen = `<div class="rounded-xl bg-white p-3 ring-1 ring-inset ring-gray-900/5">
+        <div data-seg-dictamen="${esc(p.id)}"><p class="text-xs font-medium uppercase tracking-wide text-gray-500">Dictamen del pliego</p>
+        <p class="mt-1 text-xs text-gray-600">Una lectura del pliego completo, con citas por página, que dice si conviene presentarse y por qué. Se consulta al abrir esta guía; necesita el texto del pliego guardado.</p>
+        <button type="button" data-seg-dictamen-ver="${esc(p.id)}" class="mt-2 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition" style="background: var(--accent);">Ver el dictamen del pliego</button></div>
+        <p class="mt-2 text-[11px] text-gray-500">¿Todavía no cargó el pliego? <button type="button" data-seg-abrir-lector="${esc(p.id)}" class="underline">Cargar el pliego (PDF) de este proceso</button> lo abre en Precios con el proceso ya puesto; al terminar, vuelva aquí.</p>
       </div>`;
     return `<details class="mt-3 rounded-xl ring-1 ring-inset ring-gray-900/5" data-seg-guia="${esc(p.id)}" style="background: var(--bg-inset);"${abierta ? " open" : ""}>
       <summary class="cursor-pointer px-3 py-2 text-sm font-medium">Qué necesita para presentarse${r.frase ? ` <span class="text-xs font-normal text-gray-500">· ${esc(r.frase)}</span>` : ""}${g.completa === false ? ` <span class="text-[11px] font-normal text-amber-900">· guía parcial: el proceso ya no está en la lista viva</span>` : ""}</summary>
@@ -2893,6 +2897,15 @@
       if (art) { art.scrollIntoView({ block: "start" }); art.classList.add("ring-2", "ring-blue-300"); setTimeout(() => art.classList.remove("ring-2", "ring-blue-300"), 1600); }
     }
   }
+  /* Consulta el dictamen de un guardado en SU caja por el flujo de pliego.js.
+     Se dispara al abrir el pliegue de la guía (una vez por pintado) y con el botón. */
+  async function consultarDictamenGuardado(id) {
+    const caja = secSeg.querySelector(`[data-seg-dictamen="${CSS.escape(id)}"]`);
+    if (!caja || caja.dataset.consultado === "1") return;
+    caja.dataset.consultado = "1";
+    if (typeof window.__pliegoDictamenEn !== "function") { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">El lector de pliegos no cargó en esta página: recargue e intente de nuevo.</p>`; return; }
+    await window.__pliegoDictamenEn(caja, id, $("f-perfil").value);
+  }
   function pintarDetalleCompetencia(caja, d) {
     if (!d || !d.ok) { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">${esc((d && d.motivo) || "No se pudo consultar.")}</p>`; return; }
     if (!d.proponentes.length) { caja.innerHTML = `<p class="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">${esc(d.motivo || "Sin proponentes publicados.")}</p>`; return; }
@@ -2916,6 +2929,11 @@
   }
   const secSeg = document.getElementById("tab-seguimiento") || document.getElementById("seccion-seguimiento");
   if (secSeg) {
+    /* al ABRIR la guía de un guardado se consulta su dictamen sin pulsar nada más */
+    secSeg.addEventListener("toggle", (ev) => {
+      const det = ev.target && ev.target.matches && ev.target.matches("details[data-seg-guia]") ? ev.target : null;
+      if (det && det.open) consultarDictamenGuardado(det.getAttribute("data-seg-guia"));
+    }, true);
     secSeg.addEventListener("change", async (ev) => {
       const sel = ev.target.closest("[data-seg-estado]");
       if (!sel) return;
@@ -2938,13 +2956,15 @@
       const q = ev.target.closest("[data-seg-quitar]");
       if (q) { if (segGuiaAbierta === q.getAttribute("data-seg-quitar")) segGuiaAbierta = null; await alternarGuardado(q.getAttribute("data-seg-quitar"), null); return; }
       const dv = ev.target.closest("[data-seg-dictamen-ver]");
-      if (dv) {
-        const id = dv.getAttribute("data-seg-dictamen-ver");
-        const caja = secSeg.querySelector(`[data-seg-dictamen="${CSS.escape(id)}"]`);
-        if (!caja) return;
-        dv.disabled = true; dv.textContent = "Consultando…";
-        if (typeof window.__pliegoDictamenEn !== "function") { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">El lector de pliegos no cargó en esta página: recargue e intente de nuevo.</p>`; return; }
-        await window.__pliegoDictamenEn(caja, id, $("f-perfil").value);
+      if (dv) { dv.disabled = true; dv.textContent = "Consultando…"; await consultarDictamenGuardado(dv.getAttribute("data-seg-dictamen-ver")); return; }
+      const al = ev.target.closest("[data-seg-abrir-lector]");
+      if (al) {
+        /* la MISMA cadena que el botón «Calcular mi precio» de la tarjeta, armada desde la foto del guardado */
+        const id = al.getAttribute("data-seg-abrir-lector");
+        const p = ((ultimoSeguimiento && ultimoSeguimiento.procesos) || []).find((x) => x.id === id) || {};
+        const pr = p.proceso || {};
+        abrirEditorConProceso(qApu({ nombre_del_procedimiento: pr.nombre, entidad: pr.entidad, nit_entidad: pr.nit_entidad, departamento_entidad: pr.departamento,
+          cuantia_cop: pr.presupuesto_cop, id_del_proceso: id, modalidad_de_contratacion: pr.modalidad }));
         return;
       }
       const ics = ev.target.closest("[data-seg-ics]");

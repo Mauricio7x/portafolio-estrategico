@@ -1345,6 +1345,17 @@ una conversación.
     siguiente encargo si los pliegos reales los exigen); el Índice de Desempeño Fiscal y las medidas
     del Sistema General de Regalías como datos de la entidad (caen con la decisión 7).
 
+### 7.15 · Decisión del dueño (3-sep-2026): sin clave de API — el dictamen se escribe con la suscripción o por reglas
+
+El dueño: «lo de api_key no se puede hacer, porque para eso ya pago la suscripción». La suscripción de
+claude.ai no paga la API del servidor (§7.1 sigue siendo cierto), así que el dictamen dejó de depender
+de ella: `motor=reglas` (`lib/dictamen_reglas.js`, sin red, defecto sin clave) y `motor=sesion` (una
+sesión de Claude Code recibe el expediente con `GET …&expediente=1` y devuelve el dictamen por POST;
+skill `/dictamen`). Los tres motores pasan por la misma `verificarDictamen`. La prueba 3 (§4.9) cambió
+de contrato: sin clave el POST responde 200 con la lectura por reglas y `ia_configurada:false`; el 503
+queda para `motor:"modelo"` explícito. Detalle y rutas en `docs/DICTAMEN_DESDE_CLAUDE_CODE.md` y en
+MEMORIA («Don Héctor sin clave de API», 3-sep-2026).
+
 ## 8. Lo que NO se verificó desde aquí
 
 - **El presupuesto de búsqueda web de la sesión se agotó** (200 de 200 consultas) a mitad de la

@@ -6805,3 +6805,55 @@ desde Mis procesos. Lo que se construyó y lo que no hay que volver a aprender:
   el commit local quedó en la rama `respaldo/iccu-local-efca6b0` por si algo hiciera falta rescatar.
   Lección: `git fetch` antes de creer al `git status` de un clon que lleva días abierto.
 
+### Don Héctor sin clave de API: dictamen por REGLAS y dictamen desde una SESIÓN de Claude Code (3-sep-2026)
+
+El dueño, sobre la primera entrega: «lo de api_key no se puede hacer, porque para eso ya pago la
+suscripción de 200 dólares», y «en Mis procesos no hay nada de lo que pedí». Lo primero es una
+decisión de producto que fija el diseño; lo segundo era literal: en producción no había ningún proceso
+guardado y la guía solo existe dentro de un guardado (la pestaña vacía lo dice, pero no lo enseña).
+Lo que se construyó y lo que no hay que volver a aprender:
+
+- **La suscripción de claude.ai NO paga la API del servidor, y eso no cambia; lo que cambia es DÓNDE
+  se escribe el dictamen.** Tres motores, UN contrato en `lib/handlers/pliego/dictamen.js`: `modelo`
+  (la API, solo si algún día hay clave), `reglas` (`lib/dictamen_reglas.js`, sin red ni clave ni
+  cuota, al instante) y `sesion` (una sesión de Claude Code —que la suscripción sí cubre— recibe el
+  EXPEDIENTE con `GET …&expediente=1`: las instrucciones de sistema, el esquema, la entrada y el
+  pliego paginado, escribe el dictamen y lo devuelve con `POST {motor:"sesion", dictamen}`). Los tres
+  pasan por la MISMA `verificarDictamen` y se guardan con la MISMA forma bajo claves distintas: el
+  «modelo» de `claveCache` es `reglas-<versión>`, `sesion` o el nombre del modelo. Sin clave el
+  motor por defecto es `reglas` (antes: 503 para siempre); el 503 queda para quien pida `motor:
+  "modelo"` a secas. La prueba 3 del dictamen cambió de contrato con este motivo.
+- **El motor por reglas produce el objeto EXACTO de `ESQUEMA_SALIDA`** (hay prueba con
+  `validarContraEsquema`) a partir de lo que la app YA lee: los requisitos numéricos de
+  `lecturas_de_la_app` (con la línea del pliego como cita y el dato del perfil como comparación) y
+  trece detectores por línea con página (personal, equipos o laboratorio, certificaciones, garantías,
+  multas, forma de pago, anticipo —y su NEGACIÓN: «no se contempla anticipo» es un riesgo citado, no
+  un punto a favor; la primera versión lo leyó al revés y la prueba lo fija—, obligaciones sin valor,
+  proveedor impuesto, marca sin «o equivalente», licencias, visita obligatoria, causales de rechazo).
+  **Los textos propios van SIN cifras**: la verificación solo admite números que estén en la cita o
+  en la entrada, y un texto con un número inventado se aparta entero. Lo no encontrado se lista por
+  nombre como RESULTADO («el pliego puede decirlo con otras palabras»). El veredicto solo baja a «no
+  conviene presentarse» con un requisito numérico incumplido y citado —la misma regla que la
+  verificación impone al modelo—; medido con el pliego sintético: Génesis rojo por el capital de
+  trabajo (33 citas de 33 verificadas, ninguna apartada) y Helder «con reservas».
+- **El GET por reglas calcula al vuelo y NO escribe** (la regla del GET); el POST guarda. El GET por
+  reglas cuesta una pasada de expresiones regulares sobre ≤ 400 KB: por eso la guía de Mis procesos
+  puede consultarlo SOLA al abrir el pliegue (`toggle` en captura sobre `details[data-seg-guia]`, una
+  vez por pintado). Y «Cargar el pliego (PDF) de este proceso» abre Precios con la MISMA cadena que
+  el botón «Calcular mi precio» de la tarjeta (`qApu` desde la foto del guardado): el lector guarda
+  el texto bajo ese id sin que el usuario tenga que volver a la lista.
+- **La skill `.claude/skills/dictamen/SKILL.md`** (`/dictamen <id> [perfil]`) es el camino con la
+  suscripción: pide el expediente con `curl`, obliga a leer el pliego entero y las instrucciones,
+  escribe el JSON y lo envía; si el servidor aparta citas, corrige y reenvía (cada envío reemplaza al
+  anterior). La pantalla dice de qué motor viene cada dictamen (`origen_legible`, pintado en
+  `pintarDictamen`, sin las palabras que la cerca prohíbe). Rutas para el dueño en
+  `docs/DICTAMEN_DESDE_CLAUDE_CODE.md`.
+- **Lo que las reglas NO hacen y no hay que prometer**: no interpretan; no leen tablas de experiencia
+  específica (solo la cifra en salarios mínimos); no distinguen «se exige para participar» de «da
+  puntaje»; su confianza es como mucho «media». Es el suelo gratuito; el dictamen completo es el de
+  la sesión.
+- **Verificación con buscador de las 15 afirmaciones «no consultadas» del prompt** (§1.1 del documento
+  de Don Héctor): se corrió en esta sesión con un verificador y un refutador por afirmación; el
+  resultado va en la sección siguiente, con la fecha. `WebFetch` a los dominios oficiales sigue
+  fallando (TLS) y la evidencia es el resumen del buscador: `literal_leido` sigue en `false`.
+

@@ -405,9 +405,18 @@ juicio (`evaluarRup`, `evaluarPuertas`, `evaluarZona`, `manifestacionDeFila`, `a
 `tipoPrecio`); lo que la app no puede verificar viaja `pendiente`, jamás «cumple»; sin fila viva la guía
 es `completa:false` y el registro/capacidad quedan `sin_dato`. Sin jerga, sin voseo, sin emojis (con
 prueba). En la web, cada tarjeta de Mis procesos lleva el pliegue «Qué necesita para presentarse» y al
-guardar desde la lista se abre solo; dentro, el botón «Ver el dictamen del pliego» pide
-`/api/pliego?op=dictamen` para ese proceso con el mismo flujo del lector de pliegos
-(`window.__pliegoDictamenEn`), sin segunda copia.
+guardar desde la lista se abre solo; al abrirlo consulta el dictamen del pliego de ese proceso con el
+mismo flujo del lector (`window.__pliegoDictamenEn`), y «Cargar el pliego (PDF) de este proceso» abre
+Precios con el proceso puesto para que el lector guarde el texto bajo su id.
+
+**Dictamen sin clave de API (3-sep-2026).** `/api/pliego?op=dictamen` tiene tres motores con un solo
+contrato y una sola verificación: `motor=reglas` (`lib/dictamen_reglas.js`: lectura por expresiones
+regulares con página; defecto cuando no hay `ANTHROPIC_API_KEY`; el GET la calcula sin escribir y el
+POST la guarda; sin cuota), `motor=sesion` (una sesión de Claude Code pide `GET …&expediente=1` —
+instrucciones, esquema, entrada y pliego paginado— y devuelve `POST {id_proceso, perfil, motor:"sesion",
+dictamen}`; skill `/dictamen <id> [perfil]` en `.claude/skills/dictamen/`) y `motor=modelo` (la API,
+solo con clave). La respuesta trae `motor`, `origen_legible` e `ia_configurada`. Rutas para el dueño en
+`docs/DICTAMEN_DESDE_CLAUDE_CODE.md`.
 
 **Fases 4 y 5 del plan v3 (ago 2026) — guardián del Formulario 1 y vigía de adendas.**
 `POST /api/pliego?op=formulario1 {oferta:{items,aiu,total}, formulario:{items}, presupuesto_oficial,

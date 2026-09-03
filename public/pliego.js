@@ -901,6 +901,7 @@
     }
     if (d.confianza_motivo) html += `<p class="text-xs text-gray-500">${esc(d.confianza_motivo)}</p>`;
     const seg = Number.isFinite(Number(r.duracionMs)) ? Math.round(Number(r.duracionMs) / 1000) : null;
+    if (r.origen_legible) html += `<p class="text-xs text-gray-500">${esc(r.origen_legible)}</p>`;
     const versionInstr = String(r.version_instrucciones || "").slice(0, 10);
     html += `<p class="text-xs text-gray-400">Cómo se hizo: leído el ${esc(fecha(r.generado))}${r.paginas != null ? ` · ${esc(r.paginas)} páginas del pliego` : ""}, versión ${esc(r.version_texto)}${seg != null ? ` · ${seg} segundos` : ""}${versionInstr ? ` · instrucciones del ${esc(fecha(versionInstr))}` : ""}${r.uso_mes && r.uso_mes.dictamenes != null ? ` · este mes: ${esc(r.uso_mes.dictamenes)} dictámenes` : ""}${r.cache ? " · guardado" : ""}</p>`;
     html += "</div></details>";
@@ -978,7 +979,9 @@
     if (c.ok && c.hay_dictamen === false) {
       const texto = cambio
         ? "El pliego tiene una versión nueva y el dictamen guardado es de la anterior. Pulse «Pedir el dictamen» para leer la versión nueva."
-        : "Todavía no hay un dictamen de esta versión del pliego. Pulse «Pedir el dictamen»: se lee el pliego completo y tarda entre uno y tres minutos.";
+        : c.ia_configurada === false
+          ? "Todavía no hay una lectura guardada de esta versión del pliego. Pulse «Pedir el dictamen»: la lectura por reglas es inmediata."
+          : "Todavía no hay un dictamen de esta versión del pliego. Pulse «Pedir el dictamen»: se lee el pliego completo y tarda entre uno y tres minutos.";
       return pintarCajaDictamen(estadoDictamen("info", texto), id);
     }
     const breve = c.motivo === "incompleto" || c.motivo === "tiempo";
