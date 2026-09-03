@@ -8846,6 +8846,16 @@ async function main() {
         assert.strictEqual(hP.requisitos_numericos.plazo_meses.valor, 6);
         assert.strictEqual(hP.detecciones.visita_obligatoria[0].pagina, 3);
         assert.strictEqual(Docs.hechosDeTexto("un texto que no dice nada de eso", {}).anticipo.estado, "sin_dato", "lo que no aparece es sin_dato, jamás «no» ni «sí»");
+        // (2b) LA CLÁUSULA GANA AL ÍNDICE (el pliego real de Cali, 3-sep-2026): el índice, el título, la fórmula y la mención van ANTES que la cláusula que niega
+        const { detectar: detectarR, pesoDeLinea } = require("../lib/dictamen_reglas.js");
+        assert.deepStrictEqual(["8.3. ANTICIPO Y/O PAGO ANTICIPADO 78", "Garantía de seriedad de la oferta ........ 12", "8.3. ANTICIPO Y/O PAGO ANTICIPADO", "POE − Anticipo y/o Pago anticipado", "CTd = (POE - Anticipo o Pago anticipado) x 33%", "La entidad decide no entregar anticipo y/o pago anticipado en el presente proceso"].map(pesoDeLinea), [0, 0, 1, 1, 1, 2], "índice 0, título o fórmula 1, frase 2");
+        const textoCali = ["\f6", "8.3. ANTICIPO Y/O PAGO ANTICIPADO 78", "\f20", "POE − Anticipo y/o Pago anticipado", "CTd = (POE - Anticipo o Pago anticipado) x 33%", "\f40", "Dentro de estas condiciones se incluye la forma de pago, anticipo y/o pago anticipado, obligaciones", "\f78", "8.3. ANTICIPO Y/O PAGO ANTICIPADO", "La entidad decide no entregar anticipo y/o pago anticipado en el presente proceso de contratación"].join("\n");
+        const antCali = detectarR(textoCali).get("anticipo_o_pago_anticipado");
+        assert.ok(antCali && antCali[0].pagina === 78 && /decide no entregar/.test(antCali[0].linea), `se cita la cláusula de la pág. 78, no el índice de la pág. 6 ni la fórmula: ${JSON.stringify(antCali)}`);
+        assert.deepStrictEqual({ e: Docs.hechosDeTexto(textoCali, { tipo: "pliego" }).anticipo.estado, p: Docs.hechosDeTexto(textoCali, { tipo: "pliego" }).anticipo.pagina }, { e: "no", p: 78 }, "«decide no entregar anticipo» (infinitivo) es NO anticipo");
+        const soloIndice = detectarR("\f6\n8.3. ANTICIPO Y/O PAGO ANTICIPADO 78\n\f7\nOtra cosa que no tiene que ver con nada de esto").get("anticipo_o_pago_anticipado");
+        assert.ok(soloIndice && soloIndice[0].pagina === 6, "si el pliego solo lo menciona en el índice, se cita el índice (último recurso)");
+        assert.strictEqual(require("../lib/negocio.js").anticipoPct({}, "la entidad decide no entregar anticipo y/o pago anticipado"), 0, "la gemela de negocio también lee el infinitivo");
         // (3) lo que dicen los documentos: la adenda MÁS RECIENTE manda sobre el pliego; sin cifra del perfil «revisar», nunca «no cumple»
         const hA1 = Docs.hechosDeTexto("\f1\nADENDA 1. Se modifica el índice de liquidez: mayor o igual a 2,0", { tipo: "adenda" });
         const hA2 = Docs.hechosDeTexto("\f1\nADENDA 2. Se modifica el índice de liquidez: mayor o igual a 1,7", { tipo: "adenda" });
@@ -8933,6 +8943,22 @@ async function main() {
           await invocarPost(routerPliegoD, "/api/pliego?op=documentos", { id_proceso: idD, id_documento: "9", ilegible: true, definitivo: true, motivo: "sin capa de texto: parece un escaneo" }, CAB_TOKEN);
           const i4 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}&refrescar=1`, CAB_TOKEN);
           assert.ok(i4.cuerpo.estado === "leido" && i4.cuerpo.ilegibles["9"].definitivo === true && i4.cuerpo.leidos["2"], "el escaneado no se reintenta y el pliego leído no se pierde al refrescar");
+          assert.strictEqual(i4.cuerpo.leidos["2"].hechos.version, Docs.hechosVersion(), "cada hecho guardado lleva la versión de las reglas con que se leyó");
+          // hechos de una versión ANTERIOR de las reglas: la guía los pone «por leer» y el GET los rehace desde el texto guardado, sin volver a bajar nada
+          {
+            const { crearRedis } = require("../lib/redis.js");
+            const H = require("../lib/handlers/pliego/documentos.js");
+            const rD = crearRedis({});
+            const viejo = await H.leerDocs(rD, idD);
+            viejo.leidos["2"].hechos = { ...viejo.leidos["2"].hechos, version: "0|reglas-antiguas", anticipo: { estado: "si", linea: "x", pagina: 1 } };
+            await H.escribirDocs(rD, idD, viejo);
+            assert.strictEqual(Docs.resumenLectura(viejo).estado, "por_leer"); assert.strictEqual(Docs.resumenLectura(viejo).por_actualizar, 1);
+            const gV = (await segD("&perfil=helder")).cuerpo.procesos.find((p) => p.id === idD).guia;
+            assert.ok(/actualizando con las reglas nuevas/.test(gV.documentos.frase), gV.documentos.frase);
+            const i8 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN);
+            assert.ok(i8.cuerpo.hechos_rehechos === 1 && i8.cuerpo.estado === "leido" && i8.cuerpo.leidos["2"].hechos.version === Docs.hechosVersion() && i8.cuerpo.leidos["2"].hechos.anticipo.estado === "no", `el GET rehace los hechos desde el texto guardado: ${JSON.stringify({ r: i8.cuerpo.hechos_rehechos, e: i8.cuerpo.estado, v: i8.cuerpo.leidos["2"].hechos.version })}`);
+            assert.strictEqual((await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN)).cuerpo.hechos_rehechos, 0, "al día: no se rehace nada");
+          }
           // la guía de Mis procesos (el proceso quedó guardado «descartado» por el bloque de la guía) enseña lo leído
           const sg = await segD("&perfil=helder");
           assert.strictEqual(sg.status, 200, JSON.stringify(sg.cuerpo).slice(0, 200));

@@ -6959,3 +6959,40 @@ lo que no hay que volver a aprender:
   Y/O PAGO ANTICIPADO 78», pág. 6) en vez de la cláusula: la guía lo deja en «confirme el
   porcentaje», pero el siguiente paso es que `detectar` salte las líneas de índice (terminan en un
   número de página) y prefiera la cláusula.
+
+### La cláusula gana al índice: el detector del pliego ya no cita la tabla de contenido (3-sep-2026)
+
+El pendiente 1 de la sesión anterior, resuelto el mismo día con el texto REAL del pliego de Cali
+(`CO1.REQ.10949686`, 79 páginas, sacado de producción con `op=dictamen&expediente=1`):
+
+- **El defecto medido**: `detectar` de `lib/dictamen_reglas` se quedaba con la PRIMERA línea que
+  casaba por tipo, y en un pliego la primera es la del índice («8.3. ANTICIPO Y/O PAGO ANTICIPADO
+  78», pág. 6). La cláusula de la pág. 78 dice «La entidad decide no entregar anticipo y/o pago
+  anticipado»: la guía enseñaba «Hay anticipo: confirme el porcentaje» y el dictamen lo listaba en
+  «por qué». Una cifra (o un hecho) creíble y equivocado: lo peor que este producto puede producir.
+- **El arreglo, en la regla que ya existe** (no una copia): cada línea candidata recibe un PESO
+  (`pesoDeLinea`, exportada): 0 índice (numerada o con puntos de guía y termina en número de
+  página, `INDICE_RE`), 1 título o fórmula (sin minúsculas, menos de seis palabras, o con `=`,
+  `−`, «x 33 %», `(POE` —las fórmulas de capacidad residual mencionan el anticipo—), 2 frase; y
+  para el anticipo la NEGACIÓN suma 1 (la mención «se incluye la forma de pago, anticipo…» va
+  antes en el pliego que «decide no entregar anticipo», y la que decide es la segunda). Se recogen
+  hasta 12 candidatas por tipo, se ordenan por peso (estable) y se quedan las 2 de siempre. El
+  índice sigue valiendo como último recurso: si el pliego solo lo menciona ahí, se cita ahí.
+- **La negación en INFINITIVO** («decide no entregar anticipo», «resuelve no otorgar pago
+  anticipado») entró en `SIN_ANTICIPO_RE` de `lib/dictamen_reglas` y en su gemela de `lib/negocio`
+  (la `r` opcional y «pago anticipado» como objeto). Es la tercera forma que faltaba en un día
+  (presente, futuro, infinitivo): la lista de verbos es un CENSO de cómo lo escriben las entidades,
+  y cada forma nueva se añade a las dos a la vez.
+- **`REGLAS_VERSION` sube a `reglas-2026-09-03.2`** y los hechos guardados por documento llevan
+  `hechos.version` (`Docs.hechosVersion()` = versión del módulo + versión de las reglas). Un hecho
+  con versión anterior pone la lectura en `por_leer` (`por_actualizar`, frase «lo que dicen se está
+  actualizando con las reglas nuevas»), el navegador pide el índice como siempre y el GET de
+  `op=documentos` **rehace los hechos desde el texto guardado** (`actualizarHechos`: 90 días de
+  vida; si el texto caducó, el documento sale de «leídos» y se vuelve a bajar). Así una corrección
+  de las reglas llega a todos los procesos guardados sin que nadie descargue nada ni se pierda
+  nada. Hay prueba: se envejece la versión a mano en Redis y el GET responde `hechos_rehechos: 1`
+  con el anticipo ya en «no».
+- **Con el pliego real**: causales citadas en la cláusula («Son causales de rechazo de las
+  propuestas las siguientes:») y no en el índice; garantías en la causal J; anticipo en la
+  cláusula de la pág. 78; el dictamen por reglas pasa de «contempla anticipo» a «El pliego dice que
+  no hay anticipo: usted financia el arranque de la obra».

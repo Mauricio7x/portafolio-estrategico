@@ -165,8 +165,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 117 secciones. Las 10 más nuevas:
-  L  6204  El lugar de ejecución ES la entidad, «Para Helder» abre la pestaña, y Tailwind medido de ver
+· MEMORIA · docs/MEMORIA.md — 118 secciones. Las 10 más nuevas:
   L  6273  La marca es el botón de actualizar, y el calendario baja junto al consorcio (31-ago-2026, te
   L  6353  Auditoría integral del 1-sep-2026 · trece frentes, dos auditores que llegaron y el resto a m
   L  6484  Don Héctor · la hipótesis verificada contra fuentes vigentes y el diseño del dictamen del pl
@@ -176,6 +175,7 @@
   L  6748  La guía «Don Héctor» de cada proceso guardado y el dictamen en Mis procesos (3-sep-2026)
   L  6808  Don Héctor sin clave de API: dictamen por REGLAS y dictamen desde una SESIÓN de Claude Code 
   L  6861  Los documentos del proceso se leen solos al guardar en Mis procesos (3-sep-2026)
+  L  6963  La cláusula gana al índice: el detector del pliego ya no cita la tabla de contenido (3-sep-2
 
 · DOCUMENTOS docs/ — 39:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)
