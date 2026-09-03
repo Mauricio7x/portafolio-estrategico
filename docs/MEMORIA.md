@@ -6945,3 +6945,17 @@ lo que no hay que volver a aprender:
   definitivos y transitorios, la guía de Mis procesos con lo leído, el proceso sin índice y la
   red caída (200 con motivo), y el cableado del navegador. Falla contra el árbol anterior por
   construcción (el módulo no existía) y por conducta (la regex y la adenda).
+- **Verificado en producción el 3-sep-2026 (Chromium headless, consola sin errores, 390 px sin
+  desborde)**: al abrir Mis procesos, el proceso guardado `CO1.REQ.10949686` (Santiago de Cali,
+  reductores de velocidad) se leyó solo: índice de 12 archivos, 3 leídos (proyecto de pliego de 79
+  páginas → versión 1 del vigía, estudios previos de 103, matriz de riesgos de 7), 3 no legibles
+  enlazados (dos .xlsx y un .zip), el anexo técnico fuera por pesar más de 3 MB; 9 hechos con
+  documento y página en la guía; el dictamen por reglas salió sin cargar nada (22 de 22 citas
+  comprobadas). `op=documentos` con `CO1.REQ.10379092` (vigilancia, fuera del corpus): 209
+  archivos, 12 en plan, `cierre_usado: null` porque p6dx no trae la fecha para ese proceso (la
+  separación por fecha no aplica; la de nombre sí). **Límite visto con datos reales**: ninguno de los
+  tres documentos dio requisitos con cifra (`extraerHabilitantes` no lee las tablas de indicadores
+  partidas en celdas) y el detector de anticipo citó la línea del ÍNDICE del pliego («8.3. ANTICIPO
+  Y/O PAGO ANTICIPADO 78», pág. 6) en vez de la cláusula: la guía lo deja en «confirme el
+  porcentaje», pero el siguiente paso es que `detectar` salte las líneas de índice (terminan en un
+  número de página) y prefiera la cláusula.
