@@ -8856,6 +8856,21 @@ async function main() {
         const soloIndice = detectarR("\f6\n8.3. ANTICIPO Y/O PAGO ANTICIPADO 78\n\f7\nOtra cosa que no tiene que ver con nada de esto").get("anticipo_o_pago_anticipado");
         assert.ok(soloIndice && soloIndice[0].pagina === 6, "si el pliego solo lo menciona en el índice, se cita el índice (último recurso)");
         assert.strictEqual(require("../lib/negocio.js").anticipoPct({}, "la entidad decide no entregar anticipo y/o pago anticipado"), 0, "la gemela de negocio también lee el infinitivo");
+        // (2c) una MENCIÓN no es «hay anticipo» (los pliegos reales de Siete de Agosto y de contención vehicular, 3-sep-2026)
+        assert.ok(NIEGA_ANT.test("en el presente proceso de contratacion la entidad no entregara al contratista a titulo de anticipo"), "hasta cinco palabras entre el verbo y «anticipo»");
+        assert.strictEqual(require("../lib/negocio.js").anticipoPct({}, "la entidad no entregará al contratista a título de anticipo"), 0);
+        const textoPlantilla = ["\f73", "Dentro de estas condiciones se incluye la forma de pago, anticipo y/o pago anticipado, obligaciones", "\f74", "8.3. ANTICIPO Y/O PAGO ANTICIPADO", "En el presente proceso de contratación la entidad no entregará al contratista a título de anticipo"].join("\n");
+        const antPl = detectarR(textoPlantilla).get("anticipo_o_pago_anticipado");
+        assert.ok(antPl[0].pagina === 74 && /no entregará al contratista/.test(antPl[0].linea) && !antPl.some((x) => /se incluye la forma de pago/.test(x.linea)), `la frase de plantilla de Colombia Compra no se cita: ${JSON.stringify(antPl)}`);
+        assert.strictEqual(Docs.hechosDeTexto(textoPlantilla, { tipo: "pliego" }).anticipo.estado, "no");
+        const textoFormula = ["\f61", "POE − Anticipo y/o Pago anticipado", "CTd = (POE - Anticipo o Pago anticipado) x 33%", "\f62", "Otra cosa sin relación con nada de esto, larga para que cuente"].join("\n");
+        const hFormula = Docs.hechosDeTexto(textoFormula, { tipo: "estudio_previo" });
+        assert.deepStrictEqual({ e: hFormula.anticipo.estado, p: hFormula.anticipo.pagina }, { e: "mencion", p: 61 }, "una fórmula de capacidad residual no afirma que haya anticipo: es una mención");
+        const dicF = Docs.loQueDicen({ indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { "5": { nombre: "EP.pdf", tipo: "estudio_previo", tipo_legible: "Estudios previos", hechos: hFormula } } }).hechos.find((x) => x.clave === "anticipo");
+        assert.ok(dicF && dicF.anticipo === "mencion" && dicF.estado === "revisar" && /apartado/.test(dicF.titulo), JSON.stringify(dicF));
+        const { generarDictamenPorReglas: dictamenR } = require("../lib/dictamen_reglas.js");
+        const dF = dictamenR({ entrada: { perfil: {} }, texto: textoFormula });
+        assert.ok(!(dF.puntos_a_favor || []).some((x) => /contempla anticipo/.test(x.texto)) && (dF.preguntas_para_la_entidad || []).some((q) => /solo lo menciona/.test(q)), "el dictamen por reglas pregunta en vez de afirmar cuando solo hay una mención");
         // (3) lo que dicen los documentos: la adenda MÁS RECIENTE manda sobre el pliego; sin cifra del perfil «revisar», nunca «no cumple»
         const hA1 = Docs.hechosDeTexto("\f1\nADENDA 1. Se modifica el índice de liquidez: mayor o igual a 2,0", { tipo: "adenda" });
         const hA2 = Docs.hechosDeTexto("\f1\nADENDA 2. Se modifica el índice de liquidez: mayor o igual a 1,7", { tipo: "adenda" });
@@ -8883,6 +8898,11 @@ async function main() {
         assert.ok(/no hay anticipo/.test(conDocs.obra.pago.anticipo_legible) && /pág\. 2/.test(conDocs.obra.pago.fuente_anticipo), conDocs.obra.pago.fuente_anticipo);
         assert.ok(conDocs.consejos.some((c) => c.clave === "sin_anticipo" && /pág\. 2/.test(c.por_que_aqui)) && !conDocs.consejos.some((c) => c.clave === "anticipo"), "el consejo es el de financiar el arranque, con la cita");
         assert.strictEqual(conDocs.dinero.anticipo_cop, null);
+        // (4b) una MENCIÓN en la guía (sigue de 2c)
+        const gMen = G.guiaDe({ fila: baseD, perfil: "helder", ctx: { ahoraMs: ahoraD, documentos: { indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { "5": { nombre: "EP.pdf", tipo: "estudio_previo", tipo_legible: "Estudios previos", hechos: hFormula } } } } });
+        assert.ok(gMen.obra.pago.anticipo_pct === 30 && /según el objeto/.test(gMen.obra.pago.anticipo_legible), `una mención no borra el 30 % del objeto ni lo confirma: ${gMen.obra.pago.anticipo_legible}`);
+        const gMen0 = G.guiaDe({ fila: { ...baseD, nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA" }, perfil: "helder", ctx: { ahoraMs: ahoraD, documentos: { indice: { archivos: [], plan: [] }, ilegibles: {}, leidos: { "5": { nombre: "EP.pdf", tipo: "estudio_previo", tipo_legible: "Estudios previos", hechos: hFormula } } } } });
+        assert.ok(gMen0.obra.pago.anticipo_pct === null && /apartado/.test(gMen0.obra.pago.anticipo_legible) && gMen0.consejos.some((c) => c.clave === "sin_anticipo" && /apartado/.test(c.titulo)) && !gMen0.consejos.some((c) => c.clave === "anticipo"), "sin cifra en el objeto, la mención manda a leer el apartado; nunca «hay anticipo»");
         const finD = conDocs.requisitos.find((r) => r.clave === "financieros");
         assert.ok(/1,7/.test(finD.detalle) && /pág\./.test(finD.detalle) && ["cumple", "no_cumple", "revisar"].includes(finD.estado), `los indicadores exigidos (los de la adenda) salen con su página: ${finD.detalle}`);
         const pvD = conDocs.requisitos.find((r) => r.clave === "personal_y_visita");

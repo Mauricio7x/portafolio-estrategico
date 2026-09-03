@@ -6996,3 +6996,17 @@ El pendiente 1 de la sesión anterior, resuelto el mismo día con el texto REAL 
   propuestas las siguientes:») y no en el índice; garantías en la causal J; anticipo en la
   cláusula de la pág. 78; el dictamen por reglas pasa de «contempla anticipo» a «El pliego dice que
   no hay anticipo: usted financia el arranque de la obra».
+- **Segunda vuelta con los OTROS pliegos guardados (mismo día)**: dos falsos «hay anticipo» más.
+  (1) La frase de PLANTILLA del Documento Base de Colombia Compra («Dentro de estas condiciones se
+  incluye la forma de pago, anticipo y/o pago anticipado, obligaciones…», pág. 73 en Siete de
+  Agosto) está en todos los pliegos y no afirma nada: va en `excluye` del detector. (2) Una FÓRMULA
+  de capacidad residual («POE − Anticipo y/o Pago anticipado», estudios previos de contención
+  vehicular) resta el anticipo aunque no lo haya. Regla nueva: **una mención no es una
+  afirmación**. Los hallazgos de `detectar` llevan `peso`, y un anticipo cuyo mejor hallazgo pesa
+  ≤ 1 (índice, título, fórmula) es `estado: "mencion"`: la guía dice «el pliego tiene un apartado
+  sobre el anticipo: léalo» (y conserva el porcentaje del objeto si lo hay, «según el objeto»), el
+  consejo manda a leer la cláusula, y el dictamen por reglas PREGUNTA en vez de poner el punto
+  «contempla anticipo». Solo una frase (peso 2) afirma «sí». Y la negación admite hasta cinco
+  palabras entre el verbo y «anticipo» («la entidad no entregará al contratista a título de
+  anticipo», Siete de Agosto, pág. 74): con eso los tres pliegos reales guardados quedan en «no hay
+  anticipo» citando su cláusula. `REGLAS_VERSION` = `.3`; producción rehace los hechos sola.
