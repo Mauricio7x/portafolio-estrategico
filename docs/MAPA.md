@@ -106,7 +106,7 @@
   optimizador.js            ¿A QUÉ PRECIO HAY QUE OFERTAR?
   piso_techo.js             (sin cabecera)
   precios.js                La cascada de fuentes de precio
-  precios_ia.js             Precios buscados por una SESIÓN de Claude Code (4-sep-2026)
+  precios_ia.js             Los APU generados por una SESIÓN de Claude Code (4-sep-2026)
   rentabilidad.js           Precio competitivo, flujo de caja, VEG y payback
   retail.js                 Techo de tienda y de lista de fabricante, por insumo
   tipologias.js             Las 22 tipologías de obra y el mapa departamento→región
@@ -166,8 +166,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 122 secciones. Las 10 más nuevas:
-  L  6633  Don Héctor · las decisiones del dueño y las tomadas con autonomía (2-sep-2026, misma tarde)
+· MEMORIA · docs/MEMORIA.md — 123 secciones. Las 10 más nuevas:
   L  6677  Dictamen del pliego · `op=dictamen`, el código de la sección 6 (2-sep-2026, noche)
   L  6748  La guía «Don Héctor» de cada proceso guardado y el dictamen en Mis procesos (3-sep-2026)
   L  6808  Don Héctor sin clave de API: dictamen por REGLAS y dictamen desde una SESIÓN de Claude Code 
@@ -177,6 +176,7 @@
   L  7110  La piel v3 · «Lino y tinta»: el color caro y el detalle, medidos (4-sep-2026)
   L  7211  La ficha «Lo que exige este pliego» en Mis procesos y los precios buscados por una sesión de
   L  7293  Segunda pasada del 4-sep-2026: la guía sin cuadros vacíos y Precios en tres pasos
+  L  7350  Tercera pasada del 4-sep-2026: el pliego CITADO y Precios como «cargue → Buscar → APU»
 
 · DOCUMENTOS docs/ — 41:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)
@@ -212,7 +212,7 @@
   PLAN_DE_ACCION.md                     PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
   PLAN_SAAS.md                          PLAN SaaS · De herramienta interna a producto por suscripción
   PRECIO_Y_UNIT_ECONOMICS.md            Anexo B · Modelo de negocio, precio y economía unitaria
-  PRECIOS_DESDE_CLAUDE_CODE.md          Precios buscados por inteligencia artificial · cómo se atienden desde Claude Code
+  PRECIOS_DESDE_CLAUDE_CODE.md          Precios · cómo funciona «Buscar» y quién lo atiende
   PROBABILIDAD_MEJORADA.md              Probabilidad de ganar — auditoría de la fórmula vigente y propuesta de mejora
   PROMPT_CONSULTORIA_SAAS.md            PROMPT MAESTRO · CONSEJO CONSULTOR DE DETEKTA
   PROMPT_INICIAL.md                     PROMPT INICIAL DE DETEKTA · protocolo vivo

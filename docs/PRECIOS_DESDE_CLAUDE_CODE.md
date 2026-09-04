@@ -1,68 +1,59 @@
-# Precios buscados por inteligencia artificial · cómo se atienden desde Claude Code
+# Precios · cómo funciona «Buscar» y quién lo atiende
 
-**Fecha:** 4-sep-2026. **Para:** el dueño de Detekta (sin terminal: todo son URL y clics).
+**Fecha:** 4-sep-2026 (tercera pasada). **Para:** el dueño de Detekta (sin terminal: todo son URL y clics).
 
-## Qué ve el usuario
+## Qué hace el usuario
 
-En la pestaña **Precios**, debajo del paso 3, hay una tarjeta **«Precios buscados por inteligencia
-artificial»** con el botón **«Pedir precios»**. Al pulsarlo:
+1. **Paso 1 · Cargue el pliego o su análisis de precios**: suelta el PDF del pliego o el Excel/CSV con su
+   APU (con o sin precios) en la zona «Suelte aquí el archivo». Los ítems entran a la lista.
+2. **Paso 2 · Buscar los precios y armar los APU**: revisa la lista, escribe dónde es la obra (departamento,
+   ciudad, qué obra es, condiciones del sitio) y pulsa **«Buscar»**. La pantalla dice «En cola…» y luego
+   **«Buscando… completado x % (n de m ítems)»** con una barra. Puede cerrar la página: el resultado queda
+   con el borrador.
+3. Cuando termina, aparece cada ítem con su **costo directo** y su desglose (materiales, mano de obra,
+   equipo, transporte, herramienta menor, con fuentes, rendimiento y supuestos), el **Análisis** (base de
+   precios, fuentes, alertas de mercado) y el botón **«Usar estos N precios y calcular»**, que aplica los
+   precios y muestra el **Paso 3 · Su precio** (con AIU, y el botón «Descargar mi presupuesto (Excel)»).
+   Un precio que ya venía en su archivo se respeta.
 
-1. El presupuesto se guarda como borrador (si no tenía nombre, «Presupuesto sin nombre»).
-2. La solicitud queda **en cola**. La tarjeta lo dice y puede cerrar la página.
-3. Cuando una sesión de Claude Code la atiende, la tarjeta enseña una tabla con cada ítem, el
-   **precio propuesto**, la **fuente** (con enlace), la **fecha de consulta**, si **incluye IVA** y la
-   **confianza**. Ningún precio entra al costo por su cuenta: hay que pulsar **«Usar»** en cada fila
-   (o «Usar los N precios con fuente»). Al usarlo, la fila queda marcada **«Buscado por la IA»** en
-   ámbar (es una referencia publicada, no una cotización de su proveedor) y, al guardar el borrador,
-   se recuerda como precio suyo.
+## Quién atiende «Buscar»
 
-Lo que la aplicación **aparta** y no enseña como precio: cualquier cifra sin dirección web, sin
-fecha, en otra unidad que la de la fila, o en cero. Se dice cuántas se apartaron y por qué.
+El servidor no tiene clave de API. La orden la ejecuta una **sesión de Claude Code** con la suscripción del
+dueño, siguiendo el prompt de ingeniero de costos (está en `lib/apu/precios_ia.js`, con el contexto de la
+obra puesto automáticamente: lugar, fecha, salario mínimo y factor prestacional). Hay dos caminos:
 
-## Cómo se atiende la cola (el dueño, con la suscripción de Claude Code)
-
-No hace falta clave de API. Abra una sesión de Claude Code con el repositorio conectado:
-
-1. Entre en **https://claude.ai/code** y abra el repositorio **Mauricio7x/portafolio-estrategico**,
-   rama **main**.
-2. Escriba en el cuadro de la sesión, literalmente: **`/precios`** (sin argumentos atiende TODAS las
-   solicitudes en cola) o **`/precios <id_del_borrador> helder`** para una sola.
-3. La sesión pide la cola, baja el expediente de cada solicitud (las filas con el precio que la
-   aplicación ya tiene y cuáles necesitan precio), **busca en la web** (listas oficiales de precios,
-   contratos adjudicados, fabricantes, tiendas), y devuelve la propuesta. La aplicación la verifica y
-   la guarda; la sesión cierra diciendo cuántos precios con fuente, cuántos sin precio y cuántos
-   apartados.
-4. El usuario abre el borrador en Precios (**«Guardar o abrir un borrador» → «Abrir un borrador…» →
-   el nombre**) y ve la tabla con los precios propuestos.
+- **Automático**: una rutina en la nube corre **cada hora** (el mínimo que permite el programador) y
+  atiende todo lo que esté en cola. Se ve, se pausa o se ejecuta a mano en
+  **https://claude.ai/code/routines** (nombre: «Detekta · atender la cola de Precios»).
+- **A mano, ya mismo**: abra https://claude.ai/code con el repositorio Mauricio7x/portafolio-estrategico
+  (rama main) y escriba `/precios`. Para un solo borrador: `/precios <id_del_borrador> helder`.
 
 ## Ver la cola sin abrir Claude Code
-
-Pegue en Chrome (con su token, como las demás URL de administración):
 
 ```
 https://portafolio-estrategico.vercel.app/api/apu?op=ia&pendientes=1&token=<SU_TOKEN>
 ```
 
-Responde `total`, `en_cola` y la lista de solicitudes con perfil, id, nombre, filas y fecha.
+Responde `total`, `en_cola` y cada solicitud con estado (`en_cola`, `buscando` con `progreso`, `listo`).
 
-## Para que se atienda sola (opcional, decisión del dueño)
+## Lo que la aplicación verifica antes de enseñar un APU
 
-La skill `/precios` puede programarse como **rutina en la nube** de Claude Code (por ejemplo cada
-hora): en la sesión escriba **`/schedule`** y pida «cada hora, ejecutar /precios». Es una decisión
-con costo (consume la suscripción) y por eso no se dejó programada: el dueño la activa cuando quiera.
+- La aritmética de cada componente y del subtotal (tolerancia 1,5 %): lo que no cuadra se aparta y el ítem
+  queda sin precio, con el motivo.
+- La unidad del ítem (un APU en m² para una fila en m³ se aparta).
+- Cada material trae la fuente de su precio (nombre; dirección web y fecha cuando existen).
+- Nada entra al costo hasta que el usuario pulsa «Usar estos precios y calcular».
 
-## Lo que NO hace, y no hay que prometer
+## Lo que NO hace
 
-- No busca precios desde el servidor: el servidor no llama a ninguna fuente externa en la ruta de una
-  petición. Busca la sesión.
-- No convierte unidades: si la fuente cotiza en otra unidad, el precio vuelve vacío con la nota.
-- No pone un precio en el costo sin que el usuario lo acepte fila a fila.
-- Los precios de tienda llevan IVA y margen de mostrador: son un techo para negociar, no su costo.
+- No busca precios desde el servidor: busca la sesión.
+- No inventa: lo que no se pudo calcular vuelve sin precio y con su supuesto.
+- No garantiza un precio de proveedor: son precios promedio de mercado con fuente; verifique antes de
+  presentar.
 
 ## Dónde vive en el código
 
-- `lib/apu/precios_ia.js`: instrucciones, esquema, expediente y verificación (capa pura).
-- `lib/handlers/apu/editor.js`, acción `ia` (`/api/apu?op=ia`): cola, expediente, propuesta, estado.
-- `public/app.js` (`pintarIa`, `usarPrecioIa`, `enrutarArchivoEntrada`) y `public/index.html`
-  (`#seccion-ia`, `#entrada-archivo`).
-- `.claude/skills/precios/SKILL.md`: la skill de la sesión.
+- `lib/apu/precios_ia.js`: el prompt con contexto, el esquema del APU, la verificación y el progreso.
+- `lib/handlers/apu/editor.js`, acción `ia` (`/api/apu?op=ia`): cola, expediente, progreso, propuesta.
+- `public/app.js` (`pintarIa`, `usarPrecioIa`) y `public/index.html` (`#seccion-items`).
+- `.claude/skills/precios/SKILL.md`: la skill de la sesión (y la rutina la invoca).

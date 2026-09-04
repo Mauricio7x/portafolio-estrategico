@@ -8804,12 +8804,12 @@ async function main() {
           assert.deepStrictEqual(sinDocs.exigencias.map((x) => x.clave), ORDEN, "siempre las ocho casillas, en orden");
           assert.ok(sinDocs.exigencias.every((x) => x.estado === "por_leer" && x.exige == null && x.suyo == null), "sin documentos: por leer, jamás una cifra inventada");
           assert.strictEqual(sinDocs.resumen.exigencias.por_leer, 8);
-          assert.strictEqual(sinDocs.version, 3);
+          assert.strictEqual(sinDocs.version, 4);
           // (2) con un pliego sintético leído: general y específica por separado (lib/diff), cumple/no cumple con la regla de lib/diff, anticipo negado como dato citado
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
           assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
-          assert.ok(h.version.startsWith("2|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          assert.ok(h.version.startsWith("3|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
           const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
           const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
           const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
@@ -8821,6 +8821,20 @@ async function main() {
           assert.ok(ex.cobertura.estado === "sin_dato" && ex.cobertura.exige == null && ex.cobertura.suyo == null && /tabla/.test(ex.cobertura.nota), "lo que el documento no fija se declara, no se rellena con la referencia de los pliegos tipo");
           assert.ok(ex.anticipo.estado === "dato" && ex.anticipo.exige === "No hay" && ex.anticipo.pagina === 2, "el anticipo negado es un dato citado");
           assert.ok(/no cumple/.test(con.resumen.exigencias.frase) && con.resumen.exigencias.no_cumple === 1 && con.resumen.exigencias.con_cifra === 7, `resumen: ${JSON.stringify(con.resumen.exigencias)}`);
+          // (2b) LAS CITAS LITERALES (4-sep-2026, noche): el párrafo real del pliego por tema, con página; el índice no cuenta
+          const tCit = ["\f1", "CONTENIDO", "3.2 EXPERIENCIA ESPECÍFICA ........ 45", "3.5 ANTICIPO ........ 78", "\f45", "3.2. EXPERIENCIA ESPECÍFICA", "El proponente deberá acreditar experiencia específica en máximo tres (3) contratos terminados de placa huella, cuya sumatoria sea igual o superior a 1.000 SMMLV.", "3.3. EXPERIENCIA GENERAL", "Se exige experiencia general en contratos de obra civil por valor igual o superior a 2.500 SMMLV.", "\f46", "3.4 CAPACIDAD FINANCIERA", "Índice de liquidez mayor o igual a 1,5. Nivel de endeudamiento menor o igual a 60%.", "\f78", "3.5 ANTICIPO", "La entidad no entregará anticipo al contratista."].join("\n");
+          const cit = D.citasDeTexto(tCit);
+          assert.ok(cit.experiencia_especifica && cit.experiencia_especifica.pagina === 45 && /máximo tres \(3\) contratos/.test(cit.experiencia_especifica.texto) && !/\.\.\.\./.test(cit.experiencia_especifica.texto), "la cita es la cláusula de la página 45, no la línea del índice");
+          assert.ok(cit.anticipo && cit.anticipo.pagina === 78 && /no entregará anticipo/.test(cit.anticipo.texto) && cit.financieros.pagina === 46 && cit.organizacional === null, `citas: ${JSON.stringify(cit).slice(0, 200)}`);
+          const hC = D.hechosDeTexto(tCit, { tipo: "pliego" });
+          const gC = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: hC, paginas: 78 } }, ilegibles: {} } } });
+          assert.deepStrictEqual(gC.citas_pliego.map((c) => c.clave), ["experiencia_especifica", "experiencia_general", "financieros", "organizacional", "anticipo"], "siempre los cinco temas, en orden");
+          const cEsp = gC.citas_pliego[0], cFin = gC.citas_pliego[2], cOrg = gC.citas_pliego[3];
+          assert.ok(cEsp.estado === "citado" && /Pliego/.test(cEsp.documento) && cEsp.pagina === 45 && cEsp.cifras.length === 1 && cEsp.cifras[0].exige === "1.000 salarios mínimos" && cEsp.cifras[0].estado === "revisar", "la cita lleva documento, página y la cifra comparada");
+          assert.ok(cFin.cifras.map((x) => x.clave).join(",") === "liquidez,endeudamiento" && cFin.cifras.every((x) => x.estado === "cumple"), "los indicadores leídos van bajo la cita de capacidad financiera");
+          assert.ok(cOrg.estado === "sin_mencion" && /lo menciona con esas palabras/.test(cOrg.nota) && cOrg.texto === null, "lo que el pliego no dice se declara, no se rellena");
+          assert.ok(sinDocs.citas_pliego.every((c) => c.estado === "por_leer"), "sin documentos: por leer");
+          assert.ok(/function htmlCitasPliego\(/.test(appG) && /<blockquote/.test(appG) && /Todo lo demás/.test(appG), "la tarjeta abre con las citas y pliega todo lo demás");
           // (3) sin índice de SECOP II (nada que leer): «sin dato», no «por leer» para siempre
           const sinIndice = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: { indice: { archivos: [], plan: [], motivo: "sin índice" }, leidos: {}, ilegibles: {} } } });
           assert.ok(sinIndice.exigencias.every((x) => x.estado === "sin_dato"), "sin archivos publicados la casilla dice «sin dato», no «leyendo»");
@@ -12800,68 +12814,77 @@ async function main() {
         assert.strictEqual(cz.cuerpo.items[0].total, 110000);
         assert.strictEqual(cz.cuerpo.precios_propios.consultados, true);
         assert.strictEqual(cz.cuerpo.precios_propios.cargados, 1);
-        /* ═══ PRECIOS BUSCADOS POR UNA SESIÓN DE CLAUDE CODE (op=ia, 4-sep-2026) ═══
-           El servidor no tiene clave de API: «Pedir precios» encola el borrador, la
-           skill /precios pide el expediente, busca y devuelve una propuesta que
-           lib/apu/precios_ia VERIFICA (sin dirección web, sin fecha, en otra unidad
-           o en cero se APARTA); en pantalla cada precio se acepta fila a fila y viaja
-           con origen «ia» y su fuente. Contra el árbol anterior: ni la acción ni el
-           módulo ni la skill existían, y el motor aplanaba «ia» a «manual». */
+        /* ═══ LOS APU POR UNA SESIÓN DE CLAUDE CODE (op=ia, 4-sep-2026, tercera pasada) ═══
+           «Buscar» encola el borrador; la sesión pide el expediente (el prompt del
+           dueño con el contexto puesto), manda PROGRESO y devuelve los APU por ítem;
+           lib/apu/precios_ia verifica aritmética, unidad y fuente de cada material y
+           APARTA lo que no cuadra; en pantalla cada APU se enseña con su desglose y
+           se aplica con un clic (origen «ia»). Contra el árbol anterior: ni la
+           acción ni el módulo ni la skill existían; el motor aplanaba «ia». */
         {
           const IA = require("../lib/apu/precios_ia.js");
-          // (1) exige token, admite GET y POST; sin borrador guardado → 404 con qué hacer
           assert.strictEqual((await invocar(apu, "/api/apu/ia", {}, { metodo: "GET" })).status, 401);
           assert.strictEqual((await invocar(apu, "/api/apu/ia", { "x-historico-token": "no" }, { metodo: "POST", body: {} })).status, 401);
           const sinB = await invocar(apu, "/api/apu/ia?id=no-existe&perfil=helder", CAB_TOKEN, { metodo: "GET" });
           assert.strictEqual(sinB.status, 404); assert.ok(/guarde el presupuesto/i.test(sinB.cuerpo.error), sinB.cuerpo.error);
-          // (2) borrador guardado → solicitud en cola → la cola la lista → el expediente trae la cascada actual
-          const gIa = await invocarPost(apu, "/api/apu/guardar", { perfil: "helder", nombre: "IA prueba", departamento: "ANTIOQUIA", items: [{ item_id: "NOG-A2", descripcion: "Excavación manual", unidad: "m3", cantidad: 4 }, { item_id: null, descripcion: "Cemento gris 50 kg", unidad: "saco", cantidad: 10 }] }, CAB_TOKEN);
+          // (1) borrador → solicitud en cola con ciudad → la cola la lista → el expediente trae el prompt con el contexto, el esquema y las filas
+          const gIa = await invocarPost(apu, "/api/apu/guardar", { perfil: "helder", nombre: "IA prueba", objeto: "Adecuación de oficinas", departamento: "ANTIOQUIA", items: [{ item_id: "NOG-A2", descripcion: "Excavación manual", unidad: "m3", cantidad: 4 }, { item_id: null, descripcion: "Cemento gris 50 kg", unidad: "saco", cantidad: 10 }, { item_id: null, descripcion: "PRELIMINARES", unidad: null, cantidad: 0 }, { item_id: null, descripcion: "Pintura", unidad: "m2", cantidad: 3, precio_manual: 9000, origen_precio: "archivo" }] }, CAB_TOKEN);
           assert.strictEqual(gIa.status, 200); const idIa = gIa.cuerpo.id;
-          const e0 = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
-          assert.strictEqual(e0.cuerpo.estado, "sin_solicitud");
-          const sol = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
-          assert.strictEqual(sol.status, 200); assert.strictEqual(sol.cuerpo.estado, "en_cola");
+          assert.strictEqual((await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" })).cuerpo.estado, "sin_solicitud");
+          const sol = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true, ciudad: "Medellín", condiciones_sitio: "urbano" }, CAB_TOKEN);
+          assert.strictEqual(sol.status, 200); assert.strictEqual(sol.cuerpo.estado, "en_cola"); assert.strictEqual(sol.cuerpo.solicitud.ciudad, "Medellín");
           const cola = await invocar(apu, "/api/apu/ia?pendientes=1", CAB_TOKEN, { metodo: "GET" });
-          assert.ok(cola.cuerpo.solicitudes.some((s) => s.id === idIa && s.estado === "en_cola" && s.perfil === "helder"), "la cola lista la solicitud");
+          assert.ok(cola.cuerpo.solicitudes.some((x) => x.id === idIa && x.estado === "en_cola"), "la cola lista la solicitud");
           const exp = await invocar(apu, `/api/apu/ia?expediente=1&id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
           assert.strictEqual(exp.status, 200);
-          assert.ok(exp.cuerpo.instrucciones && exp.cuerpo.esquema && exp.cuerpo.entrada.filas.length === 2 && exp.cuerpo.como_devolver, "el expediente trae instrucciones, esquema, filas y cómo devolverlo");
-          assert.ok(exp.cuerpo.entrada.filas[0].precio_actual === 27500 && exp.cuerpo.entrada.filas[0].fuente_actual === "Su precio" && exp.cuerpo.entrada.filas[0].necesita_precio === false, `la fila con precio propio no se vuelve a buscar: ${JSON.stringify(exp.cuerpo.entrada.filas[0])}`);
-          assert.ok(exp.cuerpo.entrada.filas[1].precio_actual === null && exp.cuerpo.entrada.filas[1].necesita_precio === true, "la fila sin precio es la que hay que buscar");
-          assert.ok(!/\b(?:vos|tenés|podés)\b/i.test(exp.cuerpo.instrucciones) && !/[\u{1F300}-\u{1FAFF}]/u.test(exp.cuerpo.instrucciones), "las instrucciones van de usted y sin emojis");
-          // (3) la propuesta: sin dirección web se APARTA (null, jamás la cifra); lo bueno se guarda y la solicitud pasa a «listo»
-          const prop = { generado_el: "2026-09-04", precios: [
-            { fila: 1, precio_unitario: 32900, unidad: "saco", incluye_iva: true, fuente: { nombre: "Homecenter", url: "https://www.homecenter.com.co/x", fecha: "2026-09-04", cita: "Cemento gris 50 kg $32.900" }, tipo_fuente: "tienda", confianza: "media" },
-            { fila: 0, precio_unitario: 41000, unidad: "m3", fuente: { nombre: "Lista sin web", fecha: "2026-09-04" } },
-          ] };
-          assert.strictEqual((await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "sesion", propuesta: { nada: 1 } }, CAB_TOKEN)).status, 400, "una propuesta sin «precios» es 400");
+          const ins = exp.cuerpo.instrucciones;
+          assert.ok(/quince años de experiencia/.test(ins) && /Medellín, ANTIOQUIA, Colombia/.test(ins) && /Adecuación de oficinas/.test(ins) && /\$1\.750\.905/.test(ins) && /factor prestacional: 58\.29 % nominal/.test(ins) && /METODOLOGÍA OBLIGATORIA/.test(ins) && /COSTO DIRECTO/.test(ins), "el prompt del dueño lleva el contexto de la aplicación: obra, lugar, salario mínimo y factor prestacional");
+          assert.ok(!/\b(?:vos|tenés|podés)\b/i.test(ins) && !/[\u{1F300}-\u{1FAFF}]/u.test(ins) && /Actúe/.test(ins), "de usted y sin emojis");
+          const fl = exp.cuerpo.entrada.filas;
+          assert.ok(fl.length === 4 && fl[2].es_titulo === true && fl[2].necesita_precio === false && fl[3].precio_del_archivo === 9000 && fl[3].necesita_precio === false && fl[1].necesita_precio === true && fl[0].precio_actual === 27500 && fl[0].necesita_precio === false, `títulos, precio del archivo y precio propio se declaran: ${JSON.stringify(fl.map((f) => [f.fila, f.es_titulo, f.precio_del_archivo, f.precio_actual, f.necesita_precio]))}`);
+          assert.ok(exp.cuerpo.esquema.items[0].componentes && exp.cuerpo.esquema.observaciones_generales, "el esquema es el APU completo");
+          // (2) el progreso: «buscando… completado x %»
+          const pg = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "sesion", progreso: { hecho: 1, total: 3, mensaje: "Cemento" } }, CAB_TOKEN);
+          assert.strictEqual(pg.status, 200); assert.strictEqual(pg.cuerpo.estado, "buscando"); assert.strictEqual(pg.cuerpo.progreso.pct, 33);
+          const eb = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+          assert.ok(eb.cuerpo.estado === "buscando" && eb.cuerpo.solicitud.progreso.hecho === 1, "el estado guarda el avance");
+          assert.strictEqual((await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "sesion", progreso: { hecho: "x" } }, CAB_TOKEN)).status, 400);
+          // (3) la propuesta: un APU que cuadra se guarda; uno que no cuadra se APARTA; el material sin fuente se aparta; el título va sin precio
+          const mo = { tipo: "mano_obra", insumo: "Cuadrilla 1 oficial + 2 ayudantes", unidad: "hora", cantidad: 2.5, desperdicio_pct: 0, cantidad_total: 2.5, precio_unitario: 18000, valor_total: 45000, fuente: { nombre: "Salario mínimo y factor prestacional del expediente" } };
+          const prop = { generado_el: "2026-09-04", items: [
+            { fila: 0, unidad: "m3", componentes: [mo, { tipo: "herramienta_menor", insumo: "Herramienta menor 5 %", unidad: "%", cantidad: 1, desperdicio_pct: 0, cantidad_total: 1, precio_unitario: 2250, valor_total: 2250 }], resumen: {}, subtotal_directo: 47250, rendimiento: "2,5 h por m3", supuestos: [], confianza: "media", incluye_iva_materiales: null },
+            { fila: 1, unidad: "saco", componentes: [{ tipo: "material", insumo: "Cemento gris 50 kg", unidad: "saco", cantidad: 1, desperdicio_pct: 2, cantidad_total: 1.02, precio_unitario: 32900, valor_total: 33558, fuente: { nombre: "Homecenter", url: "https://www.homecenter.com.co/x", fecha: "2026-09-04", cita: "Cemento gris 50 kg $32.900" } }], subtotal_directo: 33558, supuestos: ["[SUPUESTO: precio de vitrina con IVA]"], confianza: "media", incluye_iva_materiales: true },
+            { fila: 3, unidad: "m2", componentes: [{ tipo: "material", insumo: "Pintura", unidad: "gal", cantidad: 0.1, desperdicio_pct: 10, cantidad_total: 0.11, precio_unitario: 60000, valor_total: 6600 }], subtotal_directo: 6600 },
+            { fila: 2, unidad: null, componentes: [], subtotal_directo: null, supuestos: ["Título de capítulo"] },
+          ] , observaciones_generales: { base_de_precios: "Medellín, septiembre de 2026", fecha: "2026-09-04", fuentes: ["Homecenter"], criterios_rendimiento: "Cámara Colombiana de la Construcción", alertas_mercado: ["Alza del acero 😀"] } };
+          assert.strictEqual((await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "sesion", propuesta: { nada: 1 } }, CAB_TOKEN)).status, 400, "una propuesta sin «items» es 400");
           const okIa = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "sesion", propuesta: prop }, CAB_TOKEN);
-          assert.strictEqual(okIa.status, 200); assert.strictEqual(okIa.cuerpo.resumen.con_precio, 1); assert.strictEqual(okIa.cuerpo.apartados.length, 1); assert.ok(/dirección web/.test(okIa.cuerpo.apartados[0].motivo));
+          assert.strictEqual(okIa.status, 200, JSON.stringify(okIa.cuerpo).slice(0, 300));
+          assert.ok(okIa.cuerpo.resumen.con_precio === 2 && okIa.cuerpo.apartados.length === 1 && /sin fuente/.test(okIa.cuerpo.apartados[0].motivo) && okIa.cuerpo.apartados[0].fila === 3, `resumen ${JSON.stringify(okIa.cuerpo.resumen)} apartados ${JSON.stringify(okIa.cuerpo.apartados)}`);
+          assert.strictEqual(okIa.cuerpo.resumen.costo_directo_total, 47250 * 4 + 33558 * 10, "el costo directo total multiplica por la cantidad de la fila");
           const e1 = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
           assert.strictEqual(e1.cuerpo.estado, "listo");
-          const p1 = e1.cuerpo.propuesta.precios.find((p) => p.fila === 1);
-          assert.ok(p1.precio_unitario === 32900 && p1.fuente.url === "https://www.homecenter.com.co/x" && p1.incluye_iva === true, "la propuesta guardada trae precio y fuente");
-          assert.strictEqual(e1.cuerpo.propuesta.precios.find((p) => p.fila === 0).precio_unitario, null, "sin dirección web no hay precio: null, jamás la cifra");
-          // (4) el motor conserva el origen «ia» con su fuente, y el libro lo rotula referencia (ámbar), nunca verde
-          const calcIa = await invocarPost(apu, "/api/apu/calcular", { departamento: "ANTIOQUIA", items: [{ item_id: null, descripcion: "Cemento gris 50 kg", unidad: "saco", cantidad: 10, precio_manual: 32900, origen_precio: "ia", ia_fuente: { nombre: "Homecenter", url: "https://www.homecenter.com.co/x", fecha: "2026-09-04" } }] }, CAB_TOKEN);
+          const i1 = e1.cuerpo.propuesta.items.find((x) => x.fila === 1);
+          assert.ok(i1.costo_directo_unitario === 33558 && i1.componentes[0].fuente.url === "https://www.homecenter.com.co/x" && i1.resumen.materiales === 33558, "el APU guardado trae desglose, fuente y resumen");
+          assert.ok(!/😀/.test(JSON.stringify(e1.cuerpo.propuesta)) && e1.cuerpo.propuesta.observaciones_generales.alertas_mercado[0] === "Alza del acero", "el análisis viaja limpio de emojis");
+          // (4) la capa pura: aritmética que no cuadra y unidad distinta se apartan
+          const vIa = IA.verificarPropuesta({ items: [{ fila: 0, unidad: "m3", componentes: [{ ...mo, valor_total: 99 }], subtotal_directo: 99 }, { fila: 1, unidad: "m2", componentes: [mo], subtotal_directo: 45000 }, { fila: 0, unidad: "m3", componentes: [mo], subtotal_directo: 999 }] }, { items: [{ unidad: "m3" }, { unidad: "saco" }] });
+          assert.ok(vIa.ok && vIa.apartados.length === 3 && /no da el valor total/.test(vIa.apartados[0].motivo) && /unidad/.test(vIa.apartados[1].motivo) && /repetida/.test(vIa.apartados[2].motivo), JSON.stringify(vIa.apartados));
+          // (5) el motor conserva el origen «ia» y el libro lo rotula ámbar
+          const calcIa = await invocarPost(apu, "/api/apu/calcular", { departamento: "ANTIOQUIA", items: [{ item_id: null, descripcion: "Cemento gris 50 kg", unidad: "saco", cantidad: 10, precio_manual: 33558, origen_precio: "ia", ia_fuente: { nombre: "APU generado por la IA", url: null, fecha: "2026-09-04" } }] }, CAB_TOKEN);
           assert.strictEqual(calcIa.status, 200);
-          const itIa = calcIa.cuerpo.items[0];
-          assert.strictEqual(itIa.origen_precio, "ia"); assert.strictEqual(itIa.ia_fuente.nombre, "Homecenter");
-          const orgIa = require("../public/apu_libro.js").clasificarOrigen(itIa, calcIa.cuerpo);
-          assert.ok(orgIa.estado === "cotizado" && /Buscado por la IA/.test(orgIa.etiqueta) && /homecenter/.test(orgIa.motivo), `el precio de la IA es referencia ámbar con su fuente: ${orgIa.etiqueta}`);
-          // (5) la capa pura: unidad distinta, fila inexistente y cero se apartan; el emoji se limpia
-          const vIa = IA.verificarPropuesta({ precios: [{ fila: 0, precio_unitario: 5, unidad: "m2", fuente: { nombre: "x", url: "https://a.b/c", fecha: "2026-01-01" } }, { fila: 7, precio_unitario: 1 }, { fila: 1, precio_unitario: 0, fuente: { nombre: "x", url: "https://a.b", fecha: "2026-01-01" }, nota: "hola 😀" }] }, { items: [{ unidad: "m3" }, { unidad: "saco" }] });
-          assert.ok(vIa.ok && vIa.apartados.length === 3 && vIa.propuesta.precios.every((p) => p.precio_unitario == null) && !/😀/.test(JSON.stringify(vIa)), "unidad distinta, fila inexistente y cero se apartan; el emoji no entra");
+          const orgIa = require("../public/apu_libro.js").clasificarOrigen(calcIa.cuerpo.items[0], calcIa.cuerpo);
+          assert.ok(calcIa.cuerpo.items[0].origen_precio === "ia" && orgIa.estado === "cotizado" && /Buscado por la IA/.test(orgIa.etiqueta), `el precio de la IA es referencia ámbar: ${orgIa.etiqueta}`);
           // (6) frontend y skill cableados
           const appIa = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
           const htmlIa = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-          assert.ok(/op=ia/.test(appIa) && /data-ia-usar=/.test(appIa) && /origen_precio = "ia"/.test(appIa) && /function enrutarArchivoEntrada\(/.test(appIa), "Precios pide, pinta y acepta fila a fila, y la puerta única enruta el archivo");
-          assert.ok(/id="btn-ia-pedir"/.test(htmlIa) && /id="entrada-archivo-input"/.test(htmlIa) && /id="ia-propuesta"/.test(htmlIa), "el marcado del panel de IA y de la puerta única está en index.html");
-          assert.ok(!/\|\|\s*0\b/.test(appIa.slice(appIa.indexOf("function pintarIa("), appIa.indexOf("function consultarIa("))), "ningún precio de la IA se convierte en 0");
+          assert.ok(/op=ia/.test(appIa) && /data-ia-aplicar=/.test(appIa) && /origen_precio = "ia"/.test(appIa) && /Buscando… completado/.test(appIa) && /function enrutarArchivoEntrada\(/.test(appIa) && /await calcularApu\(\)/.test(appIa), "Precios pide, enseña el avance, aplica con un clic y calcula");
+          assert.ok(/id="btn-ia-pedir"/.test(htmlIa) && /id="ia-progreso-barra"/.test(htmlIa) && /id="ia-ciudad"/.test(htmlIa), "el marcado del paso 2 está en index.html");
+          assert.ok(!/\|\|\s*0\b/.test(appIa.slice(appIa.indexOf("function pintarIa("), appIa.indexOf("async function consultarIa("))), "ningún precio ni conteo de la IA se convierte en 0");
           const skillIa = fs.readFileSync(path.join(__dirname, "..", ".claude", "skills", "precios", "SKILL.md"), "utf8");
-          assert.ok(/op=ia&pendientes=1/.test(skillIa) && /motor:"sesion"/.test(skillIa) && /expediente=1/.test(skillIa), "la skill /precios recorre la cola, pide el expediente y devuelve la propuesta");
+          assert.ok(/op=ia&pendientes=1/.test(skillIa) && /progreso:\{hecho/.test(skillIa) && /motor:"sesion",propuesta:p/.test(skillIa) && /expediente=1/.test(skillIa), "la skill /precios recorre la cola, manda el avance y devuelve los APU");
           await redis.del(`apu:ia:solicitud:helder:${idIa}`, `apu:ia:propuesta:helder:${idIa}`, `apu:presupuesto:helder:${idIa}`);
-          console.log(`  · precios por sesión (op=ia): cola ${cola.cuerpo.en_cola} · expediente ${exp.cuerpo.entrada.filas.length} filas · propuesta ${okIa.cuerpo.resumen.con_precio} con fuente, ${okIa.cuerpo.apartados.length} apartado`);
+          console.log(`  · APU por sesión (op=ia): cola ${cola.cuerpo.en_cola} · expediente ${fl.length} filas · progreso ${pg.cuerpo.progreso.pct} % · propuesta ${okIa.cuerpo.resumen.con_precio} con APU, ${okIa.cuerpo.apartados.length} apartado`);
         }
 
         /* ═══ LA PROMESA DEL PANEL TIENE QUE SER CIERTA ══════════════════════
@@ -18260,33 +18283,33 @@ async function main() {
             "el nodo de la alarma debe existir en la sección Tu RUP");
         }
 
-        /* ═══ LA PESTAÑA DE PRECIOS SON TRES PASOS, Y NADA MÁS A LA VISTA (rediseño 4-sep-2026) ═══
-           Encargo del dueño: «demasiado difícil entender cómo funciona todo».
-           1 · Cargue (la puerta única del archivo; describir la obra va PLEGADO:
-           es adivinar) · 2 · Revise los ítems y calcule (la tabla, el departamento
-           a su lado, y tres botones: calcular, completar precios con la IA, Excel;
-           AIU, anticipo, deducciones, perfil, proceso y borradores PLEGADOS) ·
-           3 · Su precio (solo tras calcular). Revisar y el catálogo, al final y
-           plegados. Los ids no cambian: app.js los busca por id. */
+        /* ═══ LA PESTAÑA DE PRECIOS SON DOS PASOS Y UN RESULTADO (rediseño 4-sep-2026, tercera pasada) ═══
+           Encargo del dueño: «paso 1 adjunta el APU; paso 2 un botón Buscar que le
+           dé la orden a Claude; en pantalla "buscando… completado x %"; el resto
+           sobra». 1 · Cargue (la puerta única; describir la obra plegado) · 2 ·
+           Buscar (la tabla, el lugar de la obra, UN botón, el avance y el
+           resultado; calcular con el catálogo, añadir por nombre, ajustes,
+           borradores y cómo calculamos PLEGADOS en «Más herramientas») · 3 · Su
+           precio (con el Excel). Revisar y el catálogo, al final y plegados. */
         {
           const apu = html.slice(html.indexOf('<main id="tab-apu"'), html.indexOf("</main>", html.indexOf('<main id="tab-apu"')));
           const pos = (frag) => { const i = apu.indexOf(frag); assert.ok(i > 0, `no está: ${frag}`); return i; };
           const p1 = pos('white">1</span>Cargue el pliego o su análisis de precios');
-          const p2 = pos('white">2</span>Revise los ítems y calcule');
+          const p2 = pos('white">2</span>Buscar los precios y armar los APU');
           const p3 = pos('white">3</span>Su precio');
-          assert.ok(p1 < p2 && p2 < p3, "los tres pasos van en orden: cargar, revisar y calcular, su precio");
+          assert.ok(p1 < p2 && p2 < p3, "los pasos van en orden: cargar, buscar, su precio");
           assert.ok(pos('id="entrada-archivo"') > p1 && pos('id="entrada-archivo"') < p2, "la puerta única del archivo es el paso 1");
           assert.ok(/<details id="sin-archivo-wrap"/.test(apu) && pos('id="objeto"') > pos('id="sin-archivo-wrap"') && pos('id="objeto"') < p2, "describir la obra va PLEGADO dentro del paso 1: es adivinar");
           assert.ok(pos('id="mapeo-panel"') < p2 && pos('id="mapeo-panel"') > apu.indexOf("</details>", pos('id="sin-archivo-wrap"')), "el mapeo de columnas vive FUERA del pliegue: tiene que verse cuando salta");
-          for (const id of ["departamento", "tabla", "buscar-item", "btn-calcular", "btn-ia-pedir", "btn-exportar", "ia-estado", "ia-propuesta", "seccion-proceso"]) assert.ok(pos(`id="${id}"`) > p2 && pos(`id="${id}"`) < p3, `«${id}» vive en el paso 2`);
-          assert.ok(pos('id="btn-calcular"') < pos('id="btn-ia-pedir"') && pos('id="btn-ia-pedir"') < pos('id="btn-exportar"'), "calcular · completar con la IA · Excel, en ese orden");
-          assert.ok(pos('id="departamento"') < pos('id="tabla"'), "el departamento va antes de la tabla: de él salen los precios");
-          const ajustes = pos('<details id="ajustes-wrap"'); const finAjustes = apu.indexOf("</details>", ajustes);
-          for (const id of ["aiu", "anticipo", "deducciones", "ajuste-competitivo", "factor-baja", "perfil", "modo-aiu"]) { const i = pos(`id="${id}"`); assert.ok(i > ajustes && i < finAjustes, `«${id}» tiene que vivir dentro de «Ajustes», no en la vista principal`); }
-          const borr = apu.indexOf("Guardar o abrir un borrador"); assert.ok(borr > finAjustes && pos('id="btn-guardar"') > borr && pos('id="btn-guardar"') < p3, "los borradores van plegados en el paso 2");
-          for (const res of ["seccion-resumen", "seccion-piso-techo", "seccion-rentabilidad", "seccion-precio-sugerido"]) assert.ok(pos(`id="${res}"`) > p2 && pos(`id="${res}"`) >= p3 - 400, `«${res}» va en el paso 3: no se puede mirar antes de calcular`);
+          const mas = pos('<details id="mas-herramientas"');
+          for (const id of ["tabla", "departamento", "ia-ciudad", "ia-obra", "ia-condiciones", "btn-ia-pedir", "ia-estado", "ia-progreso", "ia-propuesta"]) { const i = pos(`id="${id}"`); assert.ok(i > p2 && i < mas, `«${id}» va a la vista en el paso 2, antes de «Más herramientas»`); }
+          assert.ok(pos('id="tabla"') < pos('id="departamento"') && pos('id="departamento"') < pos('id="btn-ia-pedir"'), "la lista, después el lugar, después el botón");
+          assert.ok(/id="btn-ia-pedir"[^>]*>\s*Buscar\s*</.test(apu), "el botón dice «Buscar» y nada más");
+          const finMas = apu.indexOf("</details>\n      </section>", mas);
+          for (const id of ["btn-calcular", "buscar-item", "ajustes-wrap", "aiu", "anticipo", "deducciones", "perfil", "btn-guardar", "normativa-wrap"]) { const i = pos(`id="${id}"`); assert.ok(i > mas && i < finMas, `«${id}» vive PLEGADO en «Más herramientas»`); }
+          assert.ok(pos('id="btn-exportar"') > p3 - 600 && pos('id="btn-exportar"') < pos('id="seccion-piso-techo"'), "el Excel va en el paso 3, con el resultado");
+          for (const res of ["seccion-piso-techo", "seccion-resumen", "seccion-rentabilidad", "seccion-precio-sugerido"]) assert.ok(pos(`id="${res}"`) > p3, `«${res}» va en el paso 3`);
           assert.ok(pos('id="seccion-revision"') > pos('id="seccion-precio-sugerido"') && pos('id="seccion-apu"') > pos('id="seccion-revision"'), "revisar y el catálogo van al final");
-          assert.ok(/<summary[^>]*>Revisar la oferta antes de subirla a SECOP II<\/summary>/.test(apu) && /<summary[^>]*>Catálogo de precios de referencia<\/summary>/.test(apu), "…y plegados");
         }
 
         const idsHtml = new Set([...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));

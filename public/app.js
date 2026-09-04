@@ -2796,18 +2796,33 @@
       + bloque("No legibles por la aplicación", d.no_legibles, (x) => `${esc(x.motivo || "")}${x.url && urlSegura(x.url) ? ` · <a href="${esc(urlSegura(x.url))}" target="_blank" rel="noopener noreferrer" class="underline">descargar</a>` : ""}`)
       + (d.de_proponentes ? `<p class="mt-2 text-[11px] text-gray-400">${d.de_proponentes} archivo${d.de_proponentes === 1 ? "" : "s"} más son ofertas de otros proponentes: no son reglas del proceso.</p>` : "");
   }
-  /* ── La guía «Don Héctor» de un proceso guardado (rediseño 4-sep-2026, segunda pasada) ──
-     Todo sale de `p.guia` (lib/guia_proceso, servido por op=seguimiento): aquí
-     no se calcula ni un peso ni un día. Encargo del dueño: «cuadros vacíos y
-     demasiado texto». Lo que un contratista busca al abrir el proceso, en este
-     orden y nada más a la vista: (1) ¿puedo presentarme? — el veredicto en una
-     línea de chips (registro, experiencia, capacidad, caja, indicadores, aviso);
-     (2) lo que FIJA el pliego — una fila por cifra, SOLO las que el pliego trae,
-     con la cifra de la empresa y la página; las que no aparecen se dicen en una
-     frase, no en siete cuadros vacíos; (3) «ojo con» — lo que el pliego exige o
-     castiga, citado; (4) el dictamen. Lo genérico —trámites y fechas, consejos,
-     la plata que nadie suma, la ficha de la obra, la lista de documentos— es
-     igual en todos los procesos y va PLEGADO. Sin dato se dice, jamás 0. */
+  /* ── La guía de un proceso guardado (rediseño 4-sep-2026, tercera pasada) ──
+     Encargo del dueño: «lo que necesita ver el usuario es la experiencia
+     específica y general, los estados financieros y si hay anticipo; cita qué
+     dice el pliego, y que lo que cites sea real; no te compliques creando mil
+     cosas». Así que la guía ABRE con eso y solo eso: cinco citas literales del
+     pliego (`g.citas_pliego`, lib/documentos_proceso.citasDeTexto) con su
+     documento y página, y debajo de cada una, si la aplicación además leyó la
+     cifra, la comparación con la empresa. Después el dictamen. TODO lo demás
+     (veredicto, documentos, ojo con, trámites, consejos, la plata, la obra) va
+     en UN solo pliegue «Todo lo demás». Sin dato se dice, jamás 0. */
+  const CITA_ESTADO = { citado: "", por_leer: "Se está leyendo el pliego", sin_mencion: "El pliego leído no lo menciona con esas palabras", sin_documentos: "No se ha leído ningún documento" };
+  function htmlCitasPliego(g) {
+    const lista = g.citas_pliego || [];
+    if (!lista.length) return "";
+    const docs = g.documentos || {};
+    const enlace = docs.enlace_secop && urlSegura(docs.enlace_secop) ? `<a href="${esc(urlSegura(docs.enlace_secop))}" target="_blank" rel="noopener noreferrer" class="underline">Abrir en SECOP II</a>` : "";
+    const bloque = (c) => {
+      const cifras = (c.cifras || []).map((x) => { const clr = EXIG_CLR[x.estado] || "text-gray-400"; return `<li class="flex flex-wrap items-baseline gap-x-2"><span class="${clr}" aria-hidden="true">●</span><span class="text-gray-600">${esc(x.titulo)}:</span><span class="num font-medium">${esc(x.exige)}</span>${x.suyo ? `<span class="text-gray-500">· usted ${esc(x.suyo)}</span>` : ""}${x.estado_legible ? `<span class="text-[11px] ${clr}">${esc(x.estado_legible)}</span>` : ""}</li>`; }).join("");
+      return `<div class="guia-caja p-3">
+        <p class="text-xs font-medium uppercase tracking-wide text-gray-500">${esc(c.titulo)}</p>
+        ${c.texto ? `<blockquote class="mt-1.5 text-sm leading-relaxed text-gray-800" style="border-left: 3px solid var(--accent); padding-left: 10px;">«${esc(c.texto)}»</blockquote><p class="mt-1.5 text-[11px] text-gray-400">${esc(c.documento || "")}${c.pagina != null ? `, pág. ${c.pagina}` : ""}</p>`
+          : `<p class="mt-1.5 text-sm text-gray-500">${esc(c.nota || CITA_ESTADO[c.estado] || "")}${c.estado === "sin_mencion" && enlace ? ` · ${enlace}` : ""}</p>`}
+        ${cifras ? `<ul class="mt-2 space-y-0.5 text-xs">${cifras}</ul>` : ""}
+      </div>`;
+    };
+    return `<div class="space-y-2">${lista.map(bloque).join("")}</div>`;
+  }
   const CHIP_REQ = { registro: "Registro", experiencia: "Experiencia", capacidad: "Capacidad", caja: "Caja", financieros: "Indicadores", manifestacion: "Aviso de interés" };
   const CHIP_ESTADO = { cumple: "cumple", revisar: "confírmelo", no_cumple: "no cumple", pendiente: "por hacer", sin_dato: "sin dato" };
   const EXIG_CLR = { cumple: "text-emerald-600", no_cumple: "text-red-600", revisar: "text-amber-500", dato: "text-blue-500", por_leer: "text-gray-400", sin_dato: "text-gray-400" };
@@ -2892,21 +2907,22 @@
     const plegado = (titulo, cuerpo) => `<details class="guia-caja"><summary class="cursor-pointer px-3 py-2 text-sm font-semibold tracking-tight">${titulo}</summary><div class="px-3 pb-3">${cuerpo}</div></details>`;
     const nPasos = (g.pasos || []).length + (g.requisitos || []).filter((q) => !CHIP_REQ[q.clave]).length;
     return `<details class="mt-3 rounded-xl ring-1 ring-inset ring-gray-900/5" data-seg-guia="${esc(p.id)}" style="background: var(--bg-inset);"${abierta ? " open" : ""}>
-      <summary class="cursor-pointer px-3 py-2 text-sm font-medium"><span>Qué necesita para presentarse${r.frase ? ` <span class="text-xs font-normal text-gray-500">· ${esc(r.frase)}</span>` : ""}${g.completa === false ? ` <span class="text-[11px] font-normal text-amber-900">· guía parcial: el proceso ya no está en la lista viva</span>` : ""}</span></summary>
+      <summary class="cursor-pointer px-3 py-2 text-sm font-medium"><span>Qué necesita para presentarse: lo que dice el pliego${r.frase ? ` <span class="text-xs font-normal text-gray-500">· ${esc(r.frase)}</span>` : ""}${g.completa === false ? ` <span class="text-[11px] font-normal text-amber-900">· guía parcial: el proceso ya no está en la lista viva</span>` : ""}</span></summary>
       <div class="space-y-4 px-3 pb-3 text-sm">
-        ${htmlVeredicto(g)}
-        ${docs ? `<div class="text-xs" data-seg-docs="${esc(p.id)}">${htmlDocs(p)}</div>` : ""}
-        ${htmlCifrasPliego(g)}
-        ${ojoHtml}
+        ${htmlCitasPliego(g)}
         ${dictamen}
-        <div class="space-y-2">
+        ${plegado("Todo lo demás", `<div class="space-y-4 pt-1">
+          ${htmlVeredicto(g)}
+          ${docs ? `<div class="text-xs" data-seg-docs="${esc(p.id)}">${htmlDocs(p)}</div>` : ""}
+          ${htmlCifrasPliego(g)}
+          ${ojoHtml}
           ${plegado(`Trámites y fechas (${nPasos})`, `<ol class="space-y-2">${pasos}</ol>${conseguir ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que tiene que conseguir</p><ul class="mt-1.5 space-y-2">${conseguir}</ul>` : ""}${verificados ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que la aplicación verificó</p><ul class="mt-1.5 space-y-2">${verificados}</ul>` : ""}`)}
           ${plegado(`Consejos para este proceso (${(g.consejos || []).length})`, `<ul class="space-y-2">${consejos}</ul>`)}
           ${plegado("La plata que nadie suma", dinero)}
           ${plegado("La obra en una mirada", obraHtml)}
           ${nDocs ? plegado(`Documentos del proceso (${nDocs})`, htmlListaDocs(docs)) : ""}
-        </div>
-        ${g.como_leerlo ? `<p class="text-[11px] text-gray-400">${esc(g.como_leerlo)}</p>` : ""}
+          ${g.como_leerlo ? `<p class="text-[11px] text-gray-400">${esc(g.como_leerlo)}</p>` : ""}
+        </div>`)}
       </div>
     </details>`;
   }
@@ -4528,24 +4544,28 @@
   }
   $("btn-guardar").addEventListener("click", () => guardarBorrador());
 
-  /* ══════════ PRECIOS BUSCADOS POR UNA SESIÓN DE CLAUDE CODE (4-sep-2026) ══════════
-     El servidor no tiene clave de API (decisión del dueño: paga la suscripción
-     de Claude Code), así que «Pedir precios» guarda el borrador y deja una
-     SOLICITUD en cola (op=ia); la skill /precios de una sesión de Claude Code la
-     atiende —busca en listas oficiales, contratos adjudicados, fabricantes y
-     tiendas— y devuelve una PROPUESTA que el servidor verifica fila por fila
-     (lib/apu/precios_ia: sin dirección web, sin fecha o en otra unidad, se
-     aparta). Aquí se pinta con fuente, fecha y enlace, y cada precio entra al
-     costo SOLO cuando el usuario pulsa «Usar» (origen «ia»). En APU el falso
-     caro es el positivo: nada entra solo. */
-  const TIPO_FUENTE_LEGIBLE = { oficial: "Lista oficial", tienda: "Tienda", lista_fabricante: "Lista de fabricante", contrato_adjudicado: "Contrato adjudicado", revista: "Revista del sector", otro: "Otra fuente" };
+  /* ══════════ LOS APU GENERADOS POR UNA SESIÓN DE CLAUDE CODE (4-sep-2026, tercera pasada) ══════════
+     Encargo del dueño: «paso 1 adjunta el APU; paso 2 un botón Buscar que le
+     dé la orden a Claude con mi prompt de ingeniero de costos; en pantalla
+     "buscando… completado x %"; después el análisis». El servidor no tiene
+     clave de API: «Buscar» guarda el borrador y deja la SOLICITUD en cola
+     (op=ia); una sesión de Claude Code (la skill /precios, a mano o como
+     rutina en la nube cada hora) manda su PROGRESO y devuelve los APU por
+     ítem, verificados por lib/apu/precios_ia. Aquí: el avance, el costo
+     directo por ítem con su desglose, el análisis, y UN botón que aplica esos
+     precios y calcula. Nada entra al costo sin ese clic. */
+  const TIPO_COMP_LEGIBLE = { material: "Material", mano_obra: "Mano de obra", equipo: "Equipo", transporte: "Transporte", herramienta_menor: "Herramienta menor" };
   function msgIa(texto, tipo = "info") {
     const el = $("ia-estado"); if (!el) return;
-    el.className = `mt-3 text-sm ${tipo === "error" ? "text-red-600" : tipo === "ok" ? "text-emerald-700" : "text-gray-500"}`;
+    el.className = `text-sm ${tipo === "error" ? "text-red-600" : tipo === "ok" ? "text-emerald-700" : "text-gray-500"}`;
     el.textContent = texto;
   }
-  /* la fila de la tabla a la que corresponde un precio propuesto: por índice si
-     la fila no cambió; si el usuario reordenó o quitó, por descripción y unidad */
+  function barraIa(pct) {
+    const caja = $("ia-progreso"), barra = $("ia-progreso-barra"); if (!caja) return;
+    if (pct == null) { caja.classList.add("hidden"); return; }
+    caja.classList.remove("hidden"); barra.style.width = `${Math.max(2, Math.min(100, pct))}%`;
+  }
+  /* la fila de la tabla a la que corresponde un APU: por índice si la fila no cambió; si no, por descripción y unidad */
   function filaDePropuesta(p) {
     const igual = (x) => x && (x.descripcion || "") === (p.descripcion || "") && (x.unidad || "") === (p.unidad || "");
     if (igual(filas[p.fila])) return p.fila;
@@ -4555,44 +4575,65 @@
   function actualizarEstadoIa() {
     const btn = $("btn-ia-pedir"), caja = $("ia-propuesta");
     if (!btn || !caja) return;
-    btn.disabled = filas.length === 0;
-    if (!filas.length) { msgIa("Añada ítems a la tabla (suba el pliego o su análisis de precios) para poder pedir precios."); caja.classList.add("hidden"); return; }
-    if (!iaEstado || iaEstado.id !== idActual) { msgIa(`${filas.length} ${filas.length === 1 ? "ítem" : "ítems"} en la tabla. Al pedir precios, el presupuesto se guarda como borrador y la solicitud queda en cola.`); caja.classList.add("hidden"); return; }
+    const ocupado = !!(iaEstado && iaEstado.id === idActual && (iaEstado.estado === "en_cola" || iaEstado.estado === "buscando"));
+    btn.disabled = filas.length === 0 || ocupado;
+    if (!filas.length) { msgIa("Añada ítems (suba el pliego o su análisis de precios) para poder buscar."); barraIa(null); caja.classList.add("hidden"); return; }
+    if (!iaEstado || iaEstado.id !== idActual) { msgIa(`${filas.length} ${filas.length === 1 ? "ítem" : "ítems"} en la lista. Al pulsar Buscar, el presupuesto se guarda como borrador y la solicitud queda en cola.`); barraIa(null); caja.classList.add("hidden"); return; }
     pintarIa(iaEstado);
+  }
+  function htmlApuItem(p, cantidad) {
+    const comps = (p.componentes || []).map((c) => `<tr><td class="py-1 pr-2 text-gray-500">${esc(TIPO_COMP_LEGIBLE[c.tipo] || c.tipo)}</td><td class="py-1 pr-2">${esc(c.insumo)}${c.observacion ? `<span class="block text-[11px] text-gray-400">${esc(c.observacion)}</span>` : ""}</td><td class="py-1 pr-2 text-gray-500">${esc(c.unidad || "")}</td><td class="py-1 pr-2 text-right num">${c.cantidad_total != null ? nf2.format(c.cantidad_total) : "—"}${c.desperdicio_pct ? `<span class="block text-[10px] text-gray-400">${nf2.format(c.desperdicio_pct)} % desp.</span>` : ""}</td><td class="py-1 pr-2 text-right num">${pesos(c.precio_unitario)}</td><td class="py-1 pr-2 text-right num font-medium">${pesos(c.valor_total)}</td><td class="py-1 text-[11px] text-gray-500">${c.fuente ? `${urlSegura(c.fuente.url) ? `<a href="${esc(urlSegura(c.fuente.url))}" target="_blank" rel="noopener noreferrer" class="underline">${esc(c.fuente.nombre)}</a>` : esc(c.fuente.nombre)}${c.fuente.fecha ? ` · ${esc(c.fuente.fecha)}` : ""}` : ""}</td></tr>`).join("");
+    const r = p.resumen || {};
+    const resumen = Object.keys(TIPO_COMP_LEGIBLE).map((k) => { const kk = k === "material" ? "materiales" : k; const v = r[kk]; return v ? `<span class="mr-3">${esc(TIPO_COMP_LEGIBLE[k])}: <span class="num font-medium">${pesos(v)}</span>${p.subtotal_directo ? ` <span class="text-gray-400">(${Math.round(100 * v / p.subtotal_directo)} %)</span>` : ""}</span>` : ""; }).join("");
+    return `<div class="mt-2 overflow-x-auto rounded-lg bg-white p-3 ring-1 ring-inset ring-gray-900/5"><table class="w-full text-xs"><thead class="text-left text-[10px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-2">Tipo</th><th class="pb-1 pr-2">Insumo o actividad</th><th class="pb-1 pr-2">Und.</th><th class="pb-1 pr-2 text-right">Cant. total</th><th class="pb-1 pr-2 text-right">Vr. unitario</th><th class="pb-1 pr-2 text-right">Valor</th><th class="pb-1">Fuente</th></tr></thead><tbody class="divide-y divide-gray-100">${comps}</tbody></table>
+      <p class="mt-2 text-xs text-gray-600">${resumen}</p>
+      ${p.rendimiento ? `<p class="mt-1 text-[11px] text-gray-500">Rendimiento: ${esc(p.rendimiento)}</p>` : ""}
+      ${(p.supuestos || []).length ? `<ul class="mt-1 space-y-0.5 text-[11px] text-amber-900">${p.supuestos.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : ""}
+      ${p.incluye_iva_materiales != null ? `<p class="mt-1 text-[11px] text-gray-400">Materiales ${p.incluye_iva_materiales ? "con" : "sin"} IVA.</p>` : ""}
+      ${cantidad != null && p.costo_directo_unitario != null ? `<p class="mt-1 text-[11px] text-gray-400">Costo directo por ${esc(p.unidad || "unidad")}: ${pesos(p.costo_directo_unitario)} × ${nf2.format(cantidad)} = ${pesos(p.costo_directo_unitario * cantidad)}.</p>` : ""}
+    </div>`;
   }
   function pintarIa(r) {
     const caja = $("ia-propuesta");
     if (iaSondeo) { clearTimeout(iaSondeo); iaSondeo = null; }
+    const s = r.solicitud || {};
     if (r.estado === "en_cola") {
-      const s = r.solicitud || {};
-      msgIa(`Solicitud en cola${s.solicitado_el ? ` desde el ${fechaCorta(s.solicitado_el)}` : ""}: la atiende una sesión de Claude Code y los precios aparecen aquí con su fuente. Puede cerrar esta página: quedan guardados con el borrador${s.nombre ? ` «${s.nombre}»` : ""}.`);
-      caja.classList.add("hidden");
-      if (iaSondeos < 40) iaSondeo = setTimeout(() => { iaSondeos++; consultarIa({ silencioso: true }); }, 90000);
+      msgIa(`En cola${s.solicitado_el ? ` desde el ${fechaCorta(s.solicitado_el)}` : ""}: una sesión de Claude toma la solicitud (suele ser en menos de una hora). Puede cerrar esta página: el resultado queda guardado con el borrador${s.nombre ? ` «${s.nombre}»` : ""}.`);
+      barraIa(2); caja.classList.add("hidden");
+      if (iaSondeos < 240) iaSondeo = setTimeout(() => { iaSondeos++; consultarIa({ silencioso: true }); }, 60000);
       return;
     }
-    if (r.estado !== "listo" || !r.propuesta) { msgIa("Todavía no se han pedido precios para este borrador."); caja.classList.add("hidden"); return; }
-    const pr = r.propuesta, res = pr.resumen || {};
-    // los que todavía se pueden usar: con precio, con fila en la tabla y no puestos ya
-    const conPrecio = (pr.precios || []).filter((p) => { const i = filaDePropuesta(p); return p.precio_unitario != null && i != null && !(filas[i].origen_precio === "ia" && filas[i].precio_manual === p.precio_unitario); });
-    msgIa(`Propuesta del ${fechaCorta(pr.guardada_el || pr.generado_el)}: ${res.con_precio != null ? res.con_precio : "—"} ${res.con_precio === 1 ? "precio" : "precios"} con fuente${res.sin_precio ? `, ${res.sin_precio} sin precio` : ""}${res.apartados ? `, ${res.apartados} ${res.apartados === 1 ? "apartado" : "apartados"} por no traer dirección web, fecha o unidad` : ""}. Ninguno entra al costo hasta que pulse «Usar».`, "ok");
-    const filasHtml = (pr.precios || []).map((p) => {
-      const i = filaDePropuesta(p);
-      const f = i != null ? filas[i] : null;
-      const usado = !!(f && f.origen_precio === "ia" && f.precio_manual === p.precio_unitario);
-      const fuente = p.fuente
-        ? `${urlSegura(p.fuente.url) ? `<a href="${esc(urlSegura(p.fuente.url))}" target="_blank" rel="noopener noreferrer" class="underline">${esc(p.fuente.nombre)}</a>` : esc(p.fuente.nombre)} <span class="text-gray-400">· ${esc(TIPO_FUENTE_LEGIBLE[p.tipo_fuente] || "Otra fuente")} · ${esc(p.fuente.fecha || "")}</span>${p.fuente.cita ? `<span class="block text-[11px] text-gray-400">«${esc(p.fuente.cita)}»</span>` : ""}`
-        : `<span class="text-gray-400">${esc(p.motivo_sin_precio || "Sin precio")}</span>`;
-      const precio = p.precio_unitario != null
-        ? `<span class="num font-medium">${pesos(p.precio_unitario)}</span>${p.incluye_iva === true ? ' <span class="text-[10px] text-gray-400">con IVA</span>' : p.incluye_iva === false ? ' <span class="text-[10px] text-gray-400">sin IVA</span>' : ""}`
-        : '<span class="text-gray-300">—</span>';
-      const accion = p.precio_unitario == null ? ""
-        : i == null ? '<span class="text-[11px] text-gray-400">La fila ya no está en la tabla</span>'
-          : usado ? '<span class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium" style="background: var(--ok-light); color: var(--ok-texto);">En uso</span>'
-            : `<button type="button" data-ia-usar="${p.fila}" class="rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50">Usar</button>`;
-      return `<tr><td class="py-2 pr-3"><span class="font-medium">${esc(p.descripcion || "—")}</span><span class="block text-[11px] text-gray-400">${esc(p.unidad || "")}${p.nota ? ` · ${esc(p.nota)}` : ""}</span></td><td class="py-2 pr-3 text-right">${precio}</td><td class="py-2 pr-3">${fuente}</td><td class="py-2 pr-3 text-xs text-gray-500">${p.confianza ? esc(p.confianza) : ""}</td><td class="py-2 text-right">${accion}</td></tr>`;
+    if (r.estado === "buscando") {
+      const p = s.progreso || {};
+      msgIa(`Buscando… completado ${p.pct != null ? p.pct : 0} %${p.total ? ` (${p.hecho} de ${p.total} ítems)` : ""}${p.mensaje ? ` · ${p.mensaje}` : ""}`);
+      barraIa(p.pct != null ? p.pct : 2); caja.classList.add("hidden");
+      if (iaSondeos < 600) iaSondeo = setTimeout(() => { iaSondeos++; consultarIa({ silencioso: true }); }, 20000);
+      return;
+    }
+    barraIa(null);
+    if (r.estado !== "listo" || !r.propuesta) { msgIa("Todavía no se han buscado precios para este borrador."); caja.classList.add("hidden"); return; }
+    const pr = r.propuesta, res = pr.resumen || {}, items = pr.items || [];
+    const aplicables = items.filter((p) => p.costo_directo_unitario != null && filaDePropuesta(p) != null);
+    msgIa(`Completado: ${res.con_precio != null ? res.con_precio : "—"} de ${res.filas_respondidas != null ? res.filas_respondidas : "—"} ítems con APU${res.sin_precio ? `, ${res.sin_precio} sin precio` : ""}${res.apartados ? `, ${res.apartados} ${res.apartados === 1 ? "apartado" : "apartados"} por no cuadrar` : ""} (${fechaCorta(pr.guardada_el || pr.generado_el)}).`, "ok");
+    const filasHtml = items.map((p) => {
+      const i = filaDePropuesta(p); const f = i != null ? filas[i] : null;
+      const cant = f && Number.isFinite(Number(f.cantidad)) ? Number(f.cantidad) : null;
+      const usado = !!(f && f.origen_precio === "ia" && f.precio_manual === p.costo_directo_unitario);
+      const delArchivo = !!(f && f.origen_precio === "archivo" && f.precio_manual > 0);
+      const cabeza = `<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1"><span class="min-w-0 font-medium">${esc(p.descripcion || "—")} <span class="text-xs font-normal text-gray-400">${esc(p.unidad || "")}${cant != null ? ` · ${nf2.format(cant)}` : ""}</span></span><span class="min-w-0 text-right">${p.costo_directo_unitario != null ? `<span class="num font-semibold whitespace-nowrap">${pesos(p.costo_directo_unitario)}</span> <span class="text-[11px] text-gray-400">por ${esc(p.unidad || "und")}${p.confianza ? ` · ${esc(p.confianza)}` : ""}</span>` : `<span class="text-xs text-gray-400">${esc(p.motivo_sin_precio || "Sin precio")}</span>`}${usado ? ' <span class="ml-2 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium" style="background: var(--ok-light); color: var(--ok-texto);">En uso</span>' : delArchivo ? ` <span class="ml-2 text-[11px] text-gray-400" title="Su archivo traía ${pesos(f.precio_manual)}: se respeta">del archivo</span>` : ""}</span></div>`;
+      return p.componentes && p.componentes.length ? `<details class="rounded-lg px-3 py-2"><summary class="cursor-pointer text-sm">${cabeza}</summary>${htmlApuItem(p, cant)}</details>` : `<div class="px-3 py-2 text-sm">${cabeza}</div>`;
     }).join("");
-    caja.innerHTML = `<div class="overflow-x-auto rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5"><table class="w-full text-sm"><thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-2 pr-3">Ítem</th><th class="pb-2 pr-3 text-right">Precio propuesto</th><th class="pb-2 pr-3">Fuente</th><th class="pb-2 pr-3">Confianza</th><th class="pb-2"></th></tr></thead><tbody class="divide-y divide-gray-100">${filasHtml}</tbody></table></div>
-      <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-500">${conPrecio.length ? `<button type="button" data-ia-usar-todos="1" class="rounded-lg px-3 py-1.5 text-xs font-medium text-white transition" style="background: var(--accent);">Usar los ${conPrecio.length} precios con fuente</button>` : ""}<span>Un precio de tienda lleva IVA y margen de mostrador: es un techo para negociar, no su costo. Cada precio usado se marca «Buscado por la IA» en la tabla y, al guardar, queda como precio suyo.</span></div>`;
+    const og = pr.observaciones_generales || {};
+    const analisis = `<div class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5 text-sm">
+        <h3 class="font-semibold tracking-tight">Análisis</h3>
+        ${res.costo_directo_total ? `<p class="mt-1">Costo directo estimado de los ítems con APU: <span class="num font-semibold">${pesos(res.costo_directo_total)}</span> <span class="text-xs text-gray-500">(sin AIU; el AIU y el precio final salen al aplicar y calcular)</span></p>` : ""}
+        ${og.base_de_precios ? `<p class="mt-2 text-xs text-gray-600"><span class="font-medium">Base de precios:</span> ${esc(og.base_de_precios)}${og.fecha ? ` (${esc(og.fecha)})` : ""}</p>` : ""}
+        ${og.criterios_rendimiento ? `<p class="mt-1 text-xs text-gray-600"><span class="font-medium">Rendimientos:</span> ${esc(og.criterios_rendimiento)}</p>` : ""}
+        ${(og.alertas_mercado || []).length ? `<p class="mt-2 text-xs font-medium text-amber-900">Alertas de mercado</p><ul class="mt-0.5 space-y-0.5 text-xs text-amber-900">${og.alertas_mercado.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+        ${(og.fuentes || []).length ? `<p class="mt-2 text-xs font-medium text-gray-500">Fuentes</p><ul class="mt-0.5 space-y-0.5 text-[11px] text-gray-500">${og.fuentes.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+      </div>`;
+    caja.innerHTML = `<div class="divide-y divide-gray-100 rounded-xl bg-gray-50 ring-1 ring-inset ring-gray-900/5">${filasHtml}</div>${analisis}
+      <div class="mt-4 flex flex-wrap items-center gap-3">${aplicables.length ? `<button type="button" data-ia-aplicar="1" class="rounded-xl px-6 py-3 text-base font-semibold text-white transition" style="background: var(--accent);">Usar estos ${aplicables.length} precios y calcular</button>` : ""}<span class="text-xs text-gray-500">Los precios que ya traía su archivo se respetan. Cada precio aplicado se marca «Buscado por la IA» y, al guardar, queda como precio suyo.</span></div>`;
     caja.classList.remove("hidden");
   }
   async function consultarIa({ silencioso = false } = {}) {
@@ -4608,42 +4649,44 @@
   }
   function usarPrecioIa(p) {
     const i = filaDePropuesta(p);
-    if (i == null || p.precio_unitario == null || !p.fuente) return false;
-    filas[i].precio_manual = p.precio_unitario;
+    if (i == null || p.costo_directo_unitario == null) return false;
+    if (filas[i].origen_precio === "archivo" && filas[i].precio_manual > 0) return false;   // el precio del archivo manda
+    filas[i].precio_manual = p.costo_directo_unitario;
     filas[i].origen_precio = "ia";
-    filas[i].ia_fuente = { nombre: p.fuente.nombre, url: p.fuente.url, fecha: p.fuente.fecha };
+    filas[i].ia_fuente = { nombre: "APU generado por la IA", url: null, fecha: (iaEstado && iaEstado.propuesta && iaEstado.propuesta.generado_el) || null };
     return true;
   }
   $("btn-ia-pedir").addEventListener("click", async () => {
     const btn = $("btn-ia-pedir");
-    if (!filas.length) { msgIa("No hay ítems en la tabla: suba el pliego o su análisis de precios primero.", "error"); return; }
+    if (!filas.length) { msgIa("No hay ítems en la lista: suba el pliego o su análisis de precios primero.", "error"); return; }
     btn.disabled = true;
     try {
+      /* lo que el usuario escribió sobre la obra va al borrador: el expediente lo lee de ahí */
+      if ($("ia-obra").value.trim()) $("objeto").value = $("ia-obra").value.trim();
+      if (!$("nombre-presupuesto").value.trim()) $("nombre-presupuesto").value = ($("ia-obra").value.trim() || "Presupuesto").slice(0, 80);
       const g = await guardarBorrador({ silencioso: true });
-      if (!g) { msgIa("No se pudo guardar el borrador, y sin él no hay dónde dejar los precios.", "error"); return; }
-      const r = await api("/api/apu?op=ia", { method: "POST", body: { id: idActual, perfil: $("perfil").value, solicitar: true } });
+      if (!g) { msgIa("No se pudo guardar el borrador, y sin él no hay dónde dejar los APU.", "error"); return; }
+      const r = await api("/api/apu?op=ia", { method: "POST", body: { id: idActual, perfil: $("perfil").value, solicitar: true, ciudad: $("ia-ciudad").value.trim() || null, condiciones_sitio: $("ia-condiciones").value.trim() || null } });
       if (!r) return;
       iaSondeos = 0;
       iaEstado = { ...r, id: idActual };
       actualizarEstadoIa();
-      msgApu(`Borrador guardado como «${g.nombre}» y precios pedidos.`, "ok");
     } catch (e) {
       msgIa(`No se pudo pedir: ${e.message}`, "error");
     } finally {
-      btn.disabled = filas.length === 0;
+      actualizarEstadoIa();
     }
   });
-  $("ia-propuesta").addEventListener("click", (e) => {
-    const uno = e.target.getAttribute("data-ia-usar");
-    const todos = e.target.getAttribute("data-ia-usar-todos");
-    if (uno === null && todos === null) return;
-    const precios = (iaEstado && iaEstado.propuesta && iaEstado.propuesta.precios) || [];
+  $("ia-propuesta").addEventListener("click", async (e) => {
+    if (e.target.getAttribute("data-ia-aplicar") === null) return;
+    const items = (iaEstado && iaEstado.propuesta && iaEstado.propuesta.items) || [];
     let n = 0;
-    for (const p of precios) if (todos !== null || String(p.fila) === uno) { if (usarPrecioIa(p)) n++; }
-    if (!n) { msgIa("Ese precio ya no corresponde a ninguna fila de la tabla.", "error"); return; }
+    for (const p of items) if (usarPrecioIa(p)) n++;
+    if (!n) { msgIa("Ningún APU corresponde ya a una fila de la lista.", "error"); return; }
     ultimoCalculo = null;
     pintarTabla();
-    msgApu(`${n} ${n === 1 ? "precio buscado por la IA puesto" : "precios buscados por la IA puestos"} en la tabla. Pulse «Calcular cuánto me cuesta» para ver los totales.`, "ok");
+    msgApu(`${n} ${n === 1 ? "precio de la IA puesto" : "precios de la IA puestos"} en la lista. Calculando el presupuesto…`, "ok");
+    await calcularApu();
   });
 
   /* ══════════ UNA SOLA PUERTA PARA EL ARCHIVO (4-sep-2026) ══════════

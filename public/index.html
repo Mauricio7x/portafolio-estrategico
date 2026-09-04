@@ -2601,18 +2601,17 @@
            («Calcular», «Completar precios con la IA», «Excel») van juntos. Todo
            lo demás —AIU, anticipo, deducciones, perfil, datos del proceso,
            borradores, cómo calculamos— vive plegado: los ids NO cambian. -->
+      <!-- ══════ PASO 2 · BUSCAR (rediseño 4-sep-2026, tercera pasada) ══════
+           Encargo del dueño: «olvida todo lo anterior: paso 1 adjunta el APU;
+           paso 2 un botón Buscar que le dé la orden a Claude con mi prompt de
+           ingeniero de costos; en pantalla "buscando… completado x %"; después
+           el análisis; el resto sobra». La tabla de ítems, el lugar de la obra y
+           UN botón. Todo lo demás (calcular con el catálogo, Excel, ajustes,
+           borradores, datos del proceso, cómo calculamos) vive plegado en «Más
+           herramientas»: los ids NO cambian, app.js los busca por id. -->
       <section id="seccion-items" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-start justify-between gap-4">
-          <div class="min-w-0 max-w-2xl">
-            <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">2</span>Revise los ítems y calcule</h2>
-            <p class="mt-1 text-sm text-gray-500">Corrija una cantidad o un precio si hace falta y pulse <strong>Calcular cuánto me cuesta</strong>. Pulse un ítem para ver su desglose; un precio que corrija queda guardado para la próxima vez.</p>
-          </div>
-          <label class="block w-full sm:w-64">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Departamento</span>
-            <select id="departamento" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"></select>
-            <span id="regional-nota" class="mt-1 block text-xs text-gray-400">Los factores de precio los trae el catálogo, por región.</span>
-          </label>
-        </div>
+        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">2</span>Buscar los precios y armar los APU</h2>
+        <p class="mt-1 max-w-3xl text-sm text-gray-500">Revise la lista, diga dónde es la obra y pulse <strong>Buscar</strong>: una sesión de Claude arma el análisis de precios unitarios de cada ítem con precios promedio de mercado, sus fuentes y sus supuestos, y aquí ve el avance. Un precio que ya venía en su archivo se respeta.</p>
         <div class="mt-4 overflow-x-auto">
           <table class="w-full min-w-[900px] text-sm">
             <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
@@ -2632,41 +2631,37 @@
           </table>
         </div>
         <p id="tabla-vacia" class="mt-6 text-center text-sm text-gray-400">Sin ítems todavía: vienen del paso 1.</p>
-        <div class="mt-4 max-w-xl">
-          <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Añadir un ítem por nombre</p>
-          <div class="mt-3 flex items-start gap-2">
-            <div class="relative flex-1">
-              <input id="buscar-item" type="text" autocomplete="off" spellcheck="false"
-                     placeholder="Ej: excavación, concreto, tubería…"
-                     class="w-full rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
-              <div id="buscar-lista"
-                   class="absolute inset-x-0 top-full z-30 mt-1 hidden max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl"></div>
-            </div>
-            <button id="btn-agregar" type="button"
-                    class="shrink-0 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
-              Añadir
-            </button>
-          </div>
-          <p id="buscar-nota" class="mt-2 hidden text-xs"></p>
+        <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Departamento</span>
+            <select id="departamento" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"></select>
+            <span id="regional-nota" class="mt-1 block text-xs text-gray-400">Los factores de precio los trae el catálogo, por región.</span>
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Ciudad o municipio</span>
+            <input id="ia-ciudad" type="text" placeholder="Ej: Medellín" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+          </label>
+          <label class="block lg:col-span-2">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Qué obra es (una línea)</span>
+            <input id="ia-obra" type="text" placeholder="Ej: adecuación de oficinas en edificio existente" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+          </label>
+          <label class="block sm:col-span-2 lg:col-span-4">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Condiciones del sitio (opcional)</span>
+            <input id="ia-condiciones" type="text" placeholder="Ej: zona rural a 40 km del centro de suministro, acceso por vía destapada" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+          </label>
         </div>
-        <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-5">
-          <button id="btn-calcular" type="button"
-                  class="rounded-xl bg-gray-900 px-8 py-3 text-base font-semibold text-white transition hover:bg-gray-700 disabled:opacity-40">
-            Calcular cuánto me cuesta
-          </button>
+        <div class="mt-5 flex flex-wrap items-center gap-3">
           <button id="btn-ia-pedir" type="button" disabled
-                  class="rounded-xl border border-gray-300 px-5 py-3 text-base font-medium transition hover:bg-gray-50 disabled:opacity-40"
-                  title="Para los ítems sin precio firme, una sesión de inteligencia artificial busca el precio en listas oficiales, contratos adjudicados, fabricantes y tiendas y lo trae con su fuente. Usted decide cuáles usar.">
-            Completar precios con la IA
+                  class="rounded-xl px-8 py-3 text-base font-semibold text-white transition disabled:opacity-40" style="background: var(--accent);">
+            Buscar
           </button>
-          <button id="btn-exportar" type="button"
-                  class="rounded-xl border border-gray-300 px-5 py-3 text-base font-medium transition hover:bg-gray-50 disabled:opacity-40">
-            Descargar mi presupuesto (Excel)
-          </button>
+          <p id="ia-estado" class="text-sm text-gray-500">Añada ítems (suba el pliego o su análisis de precios) para poder buscar.</p>
         </div>
-        <p id="accion-mensaje" class="mt-3 text-sm"></p>
-        <p id="ia-estado" class="mt-3 text-sm text-gray-500">Añada ítems a la tabla (suba el pliego o su análisis de precios) para poder pedir precios.</p>
+        <div id="ia-progreso" class="mt-3 hidden">
+          <div class="h-2 w-full overflow-hidden rounded-full bg-gray-100"><div id="ia-progreso-barra" class="barra h-2 w-0 rounded-full" style="background: var(--accent);"></div></div>
+        </div>
         <div id="ia-propuesta" class="mt-4 hidden"></div>
+        <p id="accion-mensaje" class="mt-3 text-sm"></p>
         <div id="lista-presupuestos" class="mt-4 hidden"></div>
         <section id="seccion-proceso" class="mt-5 hidden rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
         <h3 class="text-sm font-medium">Proceso de SECOP II</h3>
@@ -2693,142 +2688,164 @@
           <span class="text-xs text-gray-500">Consulta cuánto suelen bajar el precio y qué tan peleada está esta entidad.</span>
         </div>
       </section>
-        <details id="ajustes-wrap" class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Ajustes <span class="text-xs">— AIU, anticipo, deducciones y ajuste competitivo (los valores por defecto sirven casi siempre)</span></summary>
-          <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-<label class="block">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Administración (A) %</span>
-            <input id="aiu" type="number" min="0" max="100" step="0.5" value="15"
-                   class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-            <span class="mt-1 block text-xs text-gray-400">Típico 8–20 %</span>
-          </label>
-<label class="flex items-center gap-2 pt-5 text-sm">
-            <input id="ajuste-competitivo" type="checkbox" class="h-4 w-4 rounded border-gray-300">
-            <span class="font-medium">Ajuste competitivo</span>
-          </label>
-<label class="block">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Factor de baja %</span>
-            <div class="mt-1 flex gap-2">
-              <input id="factor-baja" type="number" min="0" max="60" step="0.1" value="0" disabled
-                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num disabled:bg-gray-100">
-              <button id="btn-sugerir-baja" type="button" disabled
-                      class="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-40">
-                Sugerir
+        <details id="mas-herramientas" class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Más herramientas <span class="text-xs">— calcular con el catálogo de referencia, añadir ítems por nombre, ajustes, borradores y cómo calculamos</span></summary>
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <button id="btn-calcular" type="button"
+                    class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+              Calcular cuánto me cuesta
+            </button>
+            <span class="text-xs text-gray-500">Sin esperar a la sesión: con los precios del catálogo de referencia y de los bancos oficiales, por ítem.</span>
+          </div>
+          <div class="mt-4 max-w-xl">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Añadir un ítem por nombre</p>
+            <div class="mt-3 flex items-start gap-2">
+              <div class="relative flex-1">
+                <input id="buscar-item" type="text" autocomplete="off" spellcheck="false"
+                       placeholder="Ej: excavación, concreto, tubería…"
+                       class="w-full rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+                <div id="buscar-lista"
+                     class="absolute inset-x-0 top-full z-30 mt-1 hidden max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl"></div>
+              </div>
+              <button id="btn-agregar" type="button"
+                      class="shrink-0 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
+                Añadir
               </button>
             </div>
-            <span id="baja-nota" class="mt-1 block text-xs text-gray-400">Banda típica en obra: 5–12 %.</span>
-          </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Cómo calcular la administración</span>
-              <select id="metodo-admin" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
-                <option value="porcentaje">Porcentaje del costo directo (licitación pública)</option>
-                <option value="tiempo">Por tiempo: gastos fijos al mes × duración</option>
-              </select>
-              <span class="mt-1 block text-xs text-gray-400">Con «por tiempo», la A % se calcula sola con los dos datos de abajo.</span>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Gastos fijos al mes ($)</span>
-              <input id="gastos-fijos" type="number" min="0" step="1000" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-              <span class="mt-1 block text-xs text-gray-400">Oficina, personal administrativo, pólizas: lo que se paga aunque no haya obra.</span>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Horas del proyecto</span>
-              <input id="horas-proyecto" type="number" min="0" step="1" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-              <span class="mt-1 block text-xs text-gray-400">Meses de plazo × horas de la jornada legal al mes.</span>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Imprevistos (I) %</span>
-              <input id="imprevistos" type="number" min="0" max="100" step="0.5" value="5"
-                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Utilidad (U) %</span>
-              <input id="utilidad" type="number" min="0" max="100" step="0.5" value="5"
-                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Utilidad mínima aceptable %</span>
-              <input id="utilidad-minima" type="number" min="0" max="100" step="0.5" placeholder="= la U"
-                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-              <span class="mt-1 block text-xs text-gray-400">Con esta utilidad se calcula su precio mínimo. Vacío = la U de arriba.</span>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Anticipo %</span>
-              <input id="anticipo" type="number" min="0" max="50" step="1" placeholder="sin dato"
-                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-              <span class="mt-1 block text-xs text-gray-400">Vacío = sin dato · techo legal 50 %</span>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Deducciones de acta %</span>
-              <input id="deducciones" type="number" min="0" max="30" step="0.1" placeholder="sin cargar"
-                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-              <span class="mt-1 block text-xs text-gray-400">Solo lo que se PIERDE: estampillas y ReteICA del pliego. No escriba aquí la retención en la fuente ni la de garantía —se las devuelven o se las cruzan en su declaración, aprietan la caja pero no el margen—. La contribución del 5 % ya se descuenta aparte.</span>
-            </label>
-            <label class="flex items-start gap-2 rounded-lg border border-gray-200 px-3 py-2 sm:col-span-2">
-              <input id="contribucion-en-admin" type="checkbox" class="mt-0.5">
-              <span class="text-sm">
-                <span class="block font-medium">Mi administración ya incluye los impuestos del contrato</span>
-                <span class="block text-xs text-gray-500">Márquela si dentro de su porcentaje de administración ya presupuestó la contribución del 5 % de obra pública y las estampillas. Si la deja sin marcar, se descuentan aparte, que es lo prudente. La diferencia son 5 puntos del valor del contrato: más que la ganancia entera, así que decida esto mirando su propio desglose.</span>
-              </span>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Entidad (para la baja)</span>
-              <input id="entidad" type="text" placeholder="Nombre de la entidad"
-                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
-            </label>
-            <label class="flex items-start gap-2 rounded-lg border border-gray-200 px-3 py-2">
-              <input id="aiu-sobre-sub" type="checkbox" checked class="mt-0.5">
-              <span class="text-sm">
-                <span class="block font-medium">Aplicar mi administración, imprevistos y ganancia también a lo subcontratado</span>
-                <span class="block text-xs text-gray-500">Un ítem marcado como subcontratado entra por el precio del subcontratista (que ya trae el suyo). Con la casilla apagada, ese ítem va al precio a costo, sin recargo propio.</span>
-              </span>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Cómo se suman administración, imprevistos y ganancia</span>
-              <select id="modo-aiu" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
-                <option value="aditivo">Aditivo (1 + A + I + U)</option>
-                <option value="compuesto">Compuesto (multiplicativo)</option>
-              </select>
-            </label>
-            <label class="block">
-              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Perfil del borrador</span>
-              <select id="perfil" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
-                <option value="helder">Helder</option>
-                <option value="genesis">Génesis</option>
-                <option value="juntos">Consorcio</option>
-              </select>
-            </label>
+            <p id="buscar-nota" class="mt-2 hidden text-xs"></p>
           </div>
-        </details>
-        <details class="mt-3 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
-          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Guardar o abrir un borrador</summary>
-          <div class="mt-3 flex flex-wrap items-center gap-3">
-            <input id="nombre-presupuesto" type="text" placeholder="Nombre del presupuesto"
-                   class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
-            <button id="btn-guardar" type="button"
-                    class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Guardar</button>
-            <button id="btn-listar" type="button"
-                    class="rounded-lg px-3 py-2 text-sm text-gray-500 transition hover:text-gray-900">Abrir un borrador…</button>
-          </div>
-        </details>
-        <!-- ══════ Normativa: qué hay detrás de los factores ══════
-             Plegado a propósito: es una referencia que se consulta, no algo que
-             haya que decidir en cada presupuesto. Lo pinta `pintarNormativa`
-             desde el bloque `normativa` de la respuesta del servidor — ninguna
-             tasa está escrita en el HTML, para que no haya dos fuentes. -->
-        <details id="normativa-wrap" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-          <summary class="cursor-pointer text-sm font-medium">Cómo calculamos · jornada, prestaciones, AIU, IVA y deducciones</summary>
-          <!-- Metodología PÚBLICA del costo (Fase 1): parámetros vigentes con su
-               estado de verificación y un ejemplo rehecho en el navegador con
-               public/costos.js — el MISMO módulo que usa el servidor. Nada de esto
-               está escrito en el HTML: lo pinta `pintarMetodologia` desde
-               /api/apu?op=parametros. -->
-          <div id="metodologia" class="mt-4 text-sm">
-            <p class="text-xs text-gray-400">Cargando los parámetros de costo…</p>
-          </div>
-          <div id="normativa" class="mt-6 text-sm">
-            <p class="text-xs text-gray-400">Cargando el catálogo…</p>
-          </div>
+          <details id="ajustes-wrap" class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Ajustes <span class="text-xs">— AIU, anticipo, deducciones y ajuste competitivo (los valores por defecto sirven casi siempre)</span></summary>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+<label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Administración (A) %</span>
+              <input id="aiu" type="number" min="0" max="100" step="0.5" value="15"
+                     class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+              <span class="mt-1 block text-xs text-gray-400">Típico 8–20 %</span>
+            </label>
+<label class="flex items-center gap-2 pt-5 text-sm">
+              <input id="ajuste-competitivo" type="checkbox" class="h-4 w-4 rounded border-gray-300">
+              <span class="font-medium">Ajuste competitivo</span>
+            </label>
+<label class="block">
+              <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Factor de baja %</span>
+              <div class="mt-1 flex gap-2">
+                <input id="factor-baja" type="number" min="0" max="60" step="0.1" value="0" disabled
+                       class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num disabled:bg-gray-100">
+                <button id="btn-sugerir-baja" type="button" disabled
+                        class="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium transition hover:bg-gray-50 disabled:opacity-40">
+                  Sugerir
+                </button>
+              </div>
+              <span id="baja-nota" class="mt-1 block text-xs text-gray-400">Banda típica en obra: 5–12 %.</span>
+            </label>
+              <label class="block">
+                <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Cómo calcular la administración</span>
+                <select id="metodo-admin" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+                  <option value="porcentaje">Porcentaje del costo directo (licitación pública)</option>
+                  <option value="tiempo">Por tiempo: gastos fijos al mes × duración</option>
+                </select>
+                <span class="mt-1 block text-xs text-gray-400">Con «por tiempo», la A % se calcula sola con los dos datos de abajo.</span>
+              </label>
+              <label class="block">
+                <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Gastos fijos al mes ($)</span>
+                <input id="gastos-fijos" type="number" min="0" step="1000" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+                <span class="mt-1 block text-xs text-gray-400">Oficina, personal administrativo, pólizas: lo que se paga aunque no haya obra.</span>
+              </label>
+              <label class="block">
+                <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Horas del proyecto</span>
+                <input id="horas-proyecto" type="number" min="0" step="1" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+                <span class="mt-1 block text-xs text-gray-400">Meses de plazo × horas de la jornada legal al mes.</span>
+              </label>
+              <label class="block">
+                <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Imprevistos (I) %</span>
+                <input id="imprevistos" type="number" min="0" max="100" step="0.5" value="5"
+                       class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+              </label>
+              <label class="block">
+                <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Utilidad (U) %</span>
+                <input id="utilidad" type="number" min="0" max="100" step="0.5" value="5"
+                       class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+              </label>
+              <label class="block">
+                <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Utilidad mínima aceptable %</span>
+                <input id="utilidad-minima" type="number" min="0" max="100" step="0.5" placeholder="= la U"
+                       class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+                <span class="mt-1 block text-xs text-gray-400">Con esta utilidad se calcula su precio mínimo. Vacío = la U de arriba.</span>
+              </label>
+              <label class="block">
+                <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Anticipo %</span>
+                <input id="anticipo" type="number" min="0" max="50" step="1" placeholder="sin dato"
+                       class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+                <span class="mt-1 block text-xs text-gray-400">Vacío = sin dato · techo legal 50 %</span>
+              </label>
+              <label class="block">
+                <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Deducciones de acta %</span>
+                <input id="deducciones" type="number" min="0" max="30" step="0.1" placeholder="sin cargar"
+                       class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+                <span class="mt-1 block text-xs text-gray-400">Solo lo que se PIERDE: estampillas y ReteICA del pliego. No escriba aquí la retención en la fuente ni la de garantía —se las devuelven o se las cruzan en su declaración, aprietan la caja pero no el margen—. La contribución del 5 % ya se descuenta aparte.</span>
+              </label>
+              <label class="flex items-start gap-2 rounded-lg border border-gray-200 px-3 py-2 sm:col-span-2">
+                <input id="contribucion-en-admin" type="checkbox" class="mt-0.5">
+                <span class="text-sm">
+                  <span class="block font-medium">Mi administración ya incluye los impuestos del contrato</span>
+                  <span class="block text-xs text-gray-500">Márquela si dentro de su porcentaje de administración ya presupuestó la contribución del 5 % de obra pública y las estampillas. Si la deja sin marcar, se descuentan aparte, que es lo prudente. La diferencia son 5 puntos del valor del contrato: más que la ganancia entera, así que decida esto mirando su propio desglose.</span>
+                </span>
+              </label>
+              <label class="block">
+                <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Entidad (para la baja)</span>
+                <input id="entidad" type="text" placeholder="Nombre de la entidad"
+                       class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+              </label>
+              <label class="flex items-start gap-2 rounded-lg border border-gray-200 px-3 py-2">
+                <input id="aiu-sobre-sub" type="checkbox" checked class="mt-0.5">
+                <span class="text-sm">
+                  <span class="block font-medium">Aplicar mi administración, imprevistos y ganancia también a lo subcontratado</span>
+                  <span class="block text-xs text-gray-500">Un ítem marcado como subcontratado entra por el precio del subcontratista (que ya trae el suyo). Con la casilla apagada, ese ítem va al precio a costo, sin recargo propio.</span>
+                </span>
+              </label>
+              <label class="block">
+                <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Cómo se suman administración, imprevistos y ganancia</span>
+                <select id="modo-aiu" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+                  <option value="aditivo">Aditivo (1 + A + I + U)</option>
+                  <option value="compuesto">Compuesto (multiplicativo)</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Perfil del borrador</span>
+                <select id="perfil" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+                  <option value="helder">Helder</option>
+                  <option value="genesis">Génesis</option>
+                  <option value="juntos">Consorcio</option>
+                </select>
+              </label>
+            </div>
+          </details>
+          <details class="mt-3 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
+            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Guardar o abrir un borrador</summary>
+            <div class="mt-3 flex flex-wrap items-center gap-3">
+              <input id="nombre-presupuesto" type="text" placeholder="Nombre del presupuesto"
+                     class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
+              <button id="btn-guardar" type="button"
+                      class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Guardar</button>
+              <button id="btn-listar" type="button"
+                      class="rounded-lg px-3 py-2 text-sm text-gray-500 transition hover:text-gray-900">Abrir un borrador…</button>
+            </div>
+          </details>
+          <details id="normativa-wrap" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+            <summary class="cursor-pointer text-sm font-medium">Cómo calculamos · jornada, prestaciones, AIU, IVA y deducciones</summary>
+            <!-- Metodología PÚBLICA del costo (Fase 1): parámetros vigentes con su
+                 estado de verificación y un ejemplo rehecho en el navegador con
+                 public/costos.js — el MISMO módulo que usa el servidor. Nada de esto
+                 está escrito en el HTML: lo pinta `pintarMetodologia` desde
+                 /api/apu?op=parametros. -->
+            <div id="metodologia" class="mt-4 text-sm">
+              <p class="text-xs text-gray-400">Cargando los parámetros de costo…</p>
+            </div>
+            <div id="normativa" class="mt-6 text-sm">
+              <p class="text-xs text-gray-400">Cargando el catálogo…</p>
+            </div>
+          </details>
         </details>
       </section>
 
@@ -2836,6 +2853,10 @@
       <div id="paso-3-cabecera" class="mt-8 hidden">
         <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">3</span>Su precio</h2>
         <p class="mt-1 text-sm text-gray-500">Cuánto le cuesta, cuánto le deja y, si el proceso está identificado, a cuánto conviene presentarse.</p>
+        <button id="btn-exportar" type="button"
+                class="mt-3 rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">
+          Descargar mi presupuesto (Excel)
+        </button>
       </div>
 <section id="seccion-piso-techo" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div class="flex flex-wrap items-baseline justify-between gap-3">

@@ -7346,3 +7346,67 @@ borrar capacidades ni inventar datos para llenar huecos —solo sacar del primer
   soltado → 4 ítems en la tabla → «Completar precios con la IA» (simulado) → «Usar» → badge «Buscado
   por la IA»; .txt → «3 ítem(s) extraídos». El proceso real de Pasto abre con seis chips de veredicto,
   una fila de cifras (anticipo «No hay», pág. 74) y la frase de las siete que faltan.
+
+### Tercera pasada del 4-sep-2026: el pliego CITADO y Precios como «cargue → Buscar → APU»
+
+Encargo del dueño, sobre las dos entregas anteriores: «no estoy entendiendo el tema de los APU; olvida
+todo lo anterior: paso 1 el usuario adjunta el PDF o el Excel con el APU que necesita; paso 2 un botón
+"Buscar" que le dé la orden a Claude como si un humano le hubiera pegado este prompt [el prompt de
+ingeniero de costos con quince años de experiencia, metodología por componentes, validación aritmética,
+formato de salida]; en pantalla "buscando… completado x %"; después el análisis; el resto sobra. Y en
+Mis procesos no estás solucionando nada: lo que necesita ver es la experiencia específica y general, los
+estados financieros y si hay anticipo; cita qué dice el pliego, y que lo que cites sea real; no te
+compliques creando mil cosas». Lo decidido:
+
+- **El pliego se CITA, no se resume** (`lib/documentos_proceso.citasDeTexto`, hechos VERSION 3 → los
+  hechos guardados se rehacen solos desde el texto). Cinco temas fijos (`TEMAS_CITA`: experiencia
+  específica, experiencia general, indicadores financieros, capacidad organizacional, anticipo o pago
+  anticipado); por tema se elige la LÍNEA ANCLA con más cara de cláusula (prosa de ocho palabras o más,
+  con cifras, «SMMLV», «%», «mayor o igual», «contratos»; la negación del anticipo suma) y se penaliza la
+  línea de índice (termina en número de página o lleva puntos suspensivos) y el título suelto; el pasaje
+  es la ancla más las líneas que siguen hasta 700 caracteres, ocho líneas o el siguiente encabezado
+  numerado. Se guarda literal, con página. Lo que el documento no dice con esas palabras es `null`:
+  ni se parafrasea ni se rellena. `loQueDicen` expone `citas` (el primer documento por prioridad que
+  las trae) y la guía publica `citas_pliego` (VERSION 4): por tema, `estado ∈ citado · por_leer ·
+  sin_mencion · sin_documentos`, el texto, el documento, la página y, debajo, las CIFRAS que la
+  aplicación además leyó (de `exigencias`), comparadas con la empresa.
+- **La guía abre con eso y solo eso**: cinco cajas con la cita entre comillas, «Pliego de condiciones
+  (archivo), pág. N» y la cifra comparada; después el dictamen; y TODO lo demás (veredicto, documentos,
+  tabla de cifras, «ojo con», trámites, consejos, la plata, la obra, documentos) en UN pliegue «Todo lo
+  demás». Nada se borró del árbol: se sacó del primer plano.
+- **Precios son «1 · Cargue el pliego o su análisis de precios» y «2 · Buscar los precios y armar los
+  APU»**: la lista de ítems, cuatro campos del lugar (departamento, ciudad, qué obra es, condiciones del
+  sitio) y UN botón «Buscar». Debajo: «En cola…» / «Buscando… completado x % (n de m ítems)» con barra /
+  el resultado. Calcular con el catálogo, añadir por nombre, ajustes, borradores, datos del proceso y
+  cómo calculamos viven plegados en «Más herramientas»; el Excel va en «3 · Su precio». Los ids no
+  cambian.
+- **El expediente lleva el prompt del dueño con el contexto puesto** (`lib/apu/precios_ia.instruccionesDe`):
+  país, obra, ciudad y departamento, fecha de precios (mes y año actuales), moneda, salario mínimo
+  (`lib/perfiles.SMMLV`) y factor prestacional nominal y exonerado (`lib/apu/normativa.desglosePrestacional`),
+  condiciones de sitio, tipo de contrato (público si hay proceso). Lo que no se sabe se pide como
+  `[SUPUESTO: …]`, nunca se inventa. El APU se entrega a COSTO DIRECTO: el AIU lo aplica el motor con
+  el porcentaje del usuario.
+- **El esquema es el APU completo por ítem** (componentes con tipo, insumo, unidad, cantidad, desperdicio,
+  cantidad total, precio unitario, valor total y fuente; resumen por componente; subtotal directo;
+  rendimiento; supuestos; confianza; IVA de materiales) más «observaciones_generales» (base de precios,
+  fuentes, criterios de rendimiento, alertas de mercado). **La verificación es aritmética, no de fe**
+  (`verificarPropuesta`): `cantidad_total = cantidad × (1 + desperdicio)`, `valor = cantidad_total ×
+  precio`, `subtotal = Σ valor`, con 1,5 % de tolerancia; unidad de la fila; todo material con fuente
+  (nombre; la dirección web es opcional porque una lista oficial o un distribuidor local también valen);
+  lo que no cuadra se APARTA con el motivo y el ítem queda sin precio. Los títulos de capítulo del
+  archivo (sin unidad ni cantidad) se declaran `es_titulo` y no se cotizan; un precio que traía el
+  archivo se declara `precio_del_archivo` y en pantalla se respeta al aplicar.
+- **El progreso es un POST más** (`{motor:"sesion", progreso:{hecho,total,mensaje}}` → solicitud
+  `buscando` con `pct`); la pantalla sondea cada 20 s mientras busca y cada 60 s en cola. «Usar estos N
+  precios y calcular» aplica el costo directo de cada APU como precio de la fila (origen «ia», nivel «su
+  precio» al guardar) y llama a `calcularApu()`: el paso 3 sale solo.
+- **Quién atiende la cola**: la skill `/precios` (reescrita: progreso, APU por ítem, dos solicitudes
+  iguales se atienden una vez) desde una sesión de Claude Code, y una RUTINA en la nube cada hora (el
+  mínimo que admite el programador de rutinas) creada con RemoteTrigger; su enlace y cómo pausarla van
+  en `docs/PRECIOS_DESDE_CLAUDE_CODE.md`. Decisión: el dueño pidió literalmente que la aplicación «abra
+  una nueva sesión»; sin clave de API, la rutina es la única forma de que ocurra sin que él escriba
+  nada. Consume la suscripción; se pausa desde https://claude.ai/code/routines.
+- **Medido**: la extracción de citas con un pliego sintético con índice (salta la línea del índice y
+  trae la cláusula de la página 45; el anticipo negado de la 78; capacidad organizacional ausente →
+  `null`); el expediente con el contexto; la verificación apartando material sin fuente, aritmética que
+  no cuadra, unidad distinta y fila repetida; el progreso; y en Chromium las cuatro combinaciones.
