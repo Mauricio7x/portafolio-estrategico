@@ -8789,6 +8789,51 @@ async function main() {
         assert.ok(!/document\.getElementById\("(?:btn-dictamen-[a-z]+|dictamen-estado)"\)/.test(pliegoG), "los botones del dictamen se buscan DENTRO de la caja (dos cajas no se pisan los ids)");
         assert.ok(/const enCaja = /.test(pliegoG) && /dictamenCaja = null; dictamenPerfil = null;/.test(pliegoG), "el lector vuelve a su propia caja y a su perfil al arrancar el vigía");
         console.log(`  · guía Don Héctor: ${g.requisitos.length} requisitos (${g.resumen.cumple} verificados, ${g.resumen.pendiente} por conseguir), ${g.pasos.length} pasos, ${g.consejos.length} consejos · parcial sin fila viva · sintéticas: manifestación, anticipo/fiducia, zona, precio global, reajuste, consorcio, concurso`);
+        /* --- LO QUE EXIGE ESTE PLIEGO (4-sep-2026): la ficha de ocho casillas de la guía
+           (experiencia general y específica, liquidez, endeudamiento, cobertura, capital
+           de trabajo, patrimonio, anticipo), SIEMPRE las ocho y en ese orden, cada una con
+           lo que el pliego exige (documento y página), la cifra de la empresa y un
+           estado. Contra el árbol anterior: `exigencias` no existía, lib/diff no separaba
+           la general de la específica, y la casilla vacía no decía por qué. */
+        {
+          const D = require("../lib/documentos_proceso.js");
+          const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+          const ORDEN = ["experiencia_general", "experiencia_especifica", "liquidez", "endeudamiento", "cobertura", "capital_trabajo", "patrimonio", "anticipo"];
+          // (1) sin documentos: las ocho «por leer», sin cifra inventada ni la referencia de los pliegos tipo
+          const sinDocs = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG } });
+          assert.deepStrictEqual(sinDocs.exigencias.map((x) => x.clave), ORDEN, "siempre las ocho casillas, en orden");
+          assert.ok(sinDocs.exigencias.every((x) => x.estado === "por_leer" && x.exige == null && x.suyo == null), "sin documentos: por leer, jamás una cifra inventada");
+          assert.strictEqual(sinDocs.resumen.exigencias.por_leer, 8);
+          assert.strictEqual(sinDocs.version, 3);
+          // (2) con un pliego sintético leído: general y específica por separado (lib/diff), cumple/no cumple con la regla de lib/diff, anticipo negado como dato citado
+          const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
+          const h = D.hechosDeTexto(texto, { tipo: "pliego" });
+          assert.ok(h.requisitos_numericos.experiencia_general && h.requisitos_numericos.experiencia_general.valor === 2500 && h.requisitos_numericos.experiencia_especifica && h.requisitos_numericos.experiencia_especifica.valor === 1000, "lib/diff separa la experiencia general de la específica");
+          assert.ok(h.version.startsWith("2|"), "los hechos guardados con las reglas viejas se rehacen: la versión del módulo subió");
+          const docs = { indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-04" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: h, paginas: 2 } }, ilegibles: {} };
+          const con = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: docs } });
+          const ex = Object.fromEntries(con.exigencias.map((x) => [x.clave, x]));
+          assert.strictEqual(ex.experiencia_general.exige, "2.500 salarios mínimos"); assert.strictEqual(ex.experiencia_especifica.exige, "1.000 salarios mínimos");
+          assert.ok(ex.experiencia_general.estado === "revisar" && ex.experiencia_especifica.estado === "revisar", "la experiencia nunca sale «cumple»: el tipo de obra y las condiciones los fija el pliego");
+          assert.ok(ex.experiencia_general.suyo && /salarios mínimos/.test(ex.experiencia_general.suyo) && ex.experiencia_general.pagina === 1 && /pliego\.pdf/.test(ex.experiencia_general.documento), "cada casilla lleva la cifra de la empresa y la página");
+          assert.strictEqual(ex.liquidez.estado, "cumple"); assert.strictEqual(ex.endeudamiento.exige, "60 %"); assert.strictEqual(ex.capital_trabajo.estado, "cumple");
+          assert.ok(ex.patrimonio.estado === "no_cumple" && ex.patrimonio.cita, "9.000 M de patrimonio exigido: Helder no llega → no cumple, con cita");
+          assert.ok(ex.cobertura.estado === "sin_dato" && ex.cobertura.exige == null && ex.cobertura.suyo == null && /tabla/.test(ex.cobertura.nota), "lo que el documento no fija se declara, no se rellena con la referencia de los pliegos tipo");
+          assert.ok(ex.anticipo.estado === "dato" && ex.anticipo.exige === "No hay" && ex.anticipo.pagina === 2, "el anticipo negado es un dato citado");
+          assert.ok(/no cumple/.test(con.resumen.exigencias.frase) && con.resumen.exigencias.no_cumple === 1 && con.resumen.exigencias.con_cifra === 7, `resumen: ${JSON.stringify(con.resumen.exigencias)}`);
+          // (3) sin índice de SECOP II (nada que leer): «sin dato», no «por leer» para siempre
+          const sinIndice = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: { indice: { archivos: [], plan: [], motivo: "sin índice" }, leidos: {}, ilegibles: {} } } });
+          assert.ok(sinIndice.exigencias.every((x) => x.estado === "sin_dato"), "sin archivos publicados la casilla dice «sin dato», no «leyendo»");
+          // (4) el frontend pinta la ficha y no repite sus hechos abajo; los estilos viven en index.html
+          assert.ok(/function htmlExigencias\(/.test(appG) && /Lo que exige este pliego/.test(appG) && /exig-grid/.test(appG) && /enFicha/.test(appG), "la tarjeta pinta la ficha y no duplica sus hechos");
+          assert.ok(/\.exig\[data-estado="no_cumple"\]/.test(html) && /\.exig-cifra/.test(html), "los estilos de la ficha viven en index.html");
+          // (5) cerca: ni jerga, ni voseo, ni emojis en la ficha
+          // la `cita` es la línea literal del documento (puede decir «SMMLV»): es del pliego, no de la aplicación
+          const sinCita = (l) => l.map(({ cita, ...x }) => x);
+          const textoEx = JSON.stringify([sinCita(sinDocs.exigencias), sinCita(con.exigencias), con.resumen.exigencias]);
+          for (const [re, nombre] of [[/UNSPSC/, "UNSPSC"], [/\bSMMLV\b/, "SMMLV"], [/habilitante/i, "habilitante"], [/\b(?:vos|tenés|podés|fijate|revisá)\b/i, "voseo"], [/[\u{1F300}-\u{1FAFF}]/u, "emoji"]]) assert.ok(!re.test(textoEx), `la ficha enseña «${nombre}»`);
+          console.log(`  · lo que exige este pliego: ${con.resumen.exigencias.con_cifra} de ${con.resumen.exigencias.total} cifras leídas · ${con.resumen.exigencias.no_cumple} no cumple · sin documentos ${sinDocs.resumen.exigencias.por_leer} por leer`);
+        }
       }
 
       /* --- LOS DOCUMENTOS DEL PROCESO, LEÍDOS SOLOS (3-sep-2026): al guardar, el
@@ -9001,7 +9046,7 @@ async function main() {
         const pliegoD = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
         assert.ok(/window\.__pliegoLeerPdf = async/.test(pliegoD) && /textoDelPdf\(doc, \(\) => \{\}\)/.test(pliegoD), "pliego.js presta su lector sin tocar la barra ni el documento del panel");
         assert.ok(/encolarLecturaDocumentos\(id, \{ manual: true \}\)/.test(appD) && /op=documentos&id_proceso=/.test(appD) && /window\.__pliegoLeerPdf\(bytesDeBase64/.test(appD) && /op=descargar/.test(appD), "al guardar, la app pide el índice, baja y lee con el lector");
-        assert.ok(/data-seg-docs-leer=/.test(appD) && /Lo que dicen los documentos/.test(appD) && /ilegible: true, definitivo: definitivo === true/.test(appD), "botón de reintento, sección de hechos y el escaneo marcado como definitivo");
+        assert.ok(/data-seg-docs-leer=/.test(appD) && /Lo demás que dicen los documentos/.test(appD) && /ilegible: true, definitivo: definitivo === true/.test(appD), "botón de reintento, sección de hechos y el escaneo marcado como definitivo");
         assert.ok(!/(?:docs|documentos|lo_que_dicen)\.[a-z_]+ \|\| 0/.test(appD), "ningún dato de los documentos se convierte en 0 con «|| 0»");
         assert.ok(/busca los documentos de ese proceso en SECOP II/.test(fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")), "la pantalla vacía de Mis procesos lo anuncia");
         console.log(`  · documentos del proceso: plan ${planD.plan.length}/${planD.resumen.publicados} archivos (${planD.resumen.de_proponentes} de proponentes, ${planD.resumen.no_legibles} no legibles), ${conDocs.lo_que_dicen.length} hechos con documento y página, la adenda más reciente manda, op=documentos GET/POST por el router y la guía de Mis procesos los enseña`);
@@ -12384,7 +12429,8 @@ async function main() {
           assert.ok(/CLASES_ORIGEN[\s\S]*invias:/.test(appJsII), "el badge tiene clase para el estado invias");
           const editorII = fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "apu", "editor.js"), "utf8");
           assert.ok(/items_invias: InviasItems\.comoItemsDeCatalogo\(\)/.test(editorII), "la acción catalogo publica items_invias");
-          assert.ok(/departamento: String\(datos\.departamento \|\| ""\) \|\| null,/.test(editorII), "cotizar pasa el departamento al nivel INVIAS");
+          // (4-sep-2026) la cotización vive en `cotizacionDe`, compartida por `cotizar` y por el expediente de `ia`
+          assert.ok(/async function cotizacionDe\([\s\S]*?departamento: String\(departamento \|\| ""\) \|\| null,/.test(editorII) && /cotizacionDe\(redis, perfil, items, datos\.departamento\)/.test(editorII), "cotizar pasa el departamento al nivel INVIAS");
           const busq = II.buscar("subbase granular clase c");
           assert.ok(busq.length && busq[0].codigo === "INVIAS:320,3,1", `buscar por nombre: ${busq[0] && busq[0].codigo}`);
 
@@ -12754,6 +12800,70 @@ async function main() {
         assert.strictEqual(cz.cuerpo.items[0].total, 110000);
         assert.strictEqual(cz.cuerpo.precios_propios.consultados, true);
         assert.strictEqual(cz.cuerpo.precios_propios.cargados, 1);
+        /* ═══ PRECIOS BUSCADOS POR UNA SESIÓN DE CLAUDE CODE (op=ia, 4-sep-2026) ═══
+           El servidor no tiene clave de API: «Pedir precios» encola el borrador, la
+           skill /precios pide el expediente, busca y devuelve una propuesta que
+           lib/apu/precios_ia VERIFICA (sin dirección web, sin fecha, en otra unidad
+           o en cero se APARTA); en pantalla cada precio se acepta fila a fila y viaja
+           con origen «ia» y su fuente. Contra el árbol anterior: ni la acción ni el
+           módulo ni la skill existían, y el motor aplanaba «ia» a «manual». */
+        {
+          const IA = require("../lib/apu/precios_ia.js");
+          // (1) exige token, admite GET y POST; sin borrador guardado → 404 con qué hacer
+          assert.strictEqual((await invocar(apu, "/api/apu/ia", {}, { metodo: "GET" })).status, 401);
+          assert.strictEqual((await invocar(apu, "/api/apu/ia", { "x-historico-token": "no" }, { metodo: "POST", body: {} })).status, 401);
+          const sinB = await invocar(apu, "/api/apu/ia?id=no-existe&perfil=helder", CAB_TOKEN, { metodo: "GET" });
+          assert.strictEqual(sinB.status, 404); assert.ok(/guarde el presupuesto/i.test(sinB.cuerpo.error), sinB.cuerpo.error);
+          // (2) borrador guardado → solicitud en cola → la cola la lista → el expediente trae la cascada actual
+          const gIa = await invocarPost(apu, "/api/apu/guardar", { perfil: "helder", nombre: "IA prueba", departamento: "ANTIOQUIA", items: [{ item_id: "NOG-A2", descripcion: "Excavación manual", unidad: "m3", cantidad: 4 }, { item_id: null, descripcion: "Cemento gris 50 kg", unidad: "saco", cantidad: 10 }] }, CAB_TOKEN);
+          assert.strictEqual(gIa.status, 200); const idIa = gIa.cuerpo.id;
+          const e0 = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+          assert.strictEqual(e0.cuerpo.estado, "sin_solicitud");
+          const sol = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, solicitar: true }, CAB_TOKEN);
+          assert.strictEqual(sol.status, 200); assert.strictEqual(sol.cuerpo.estado, "en_cola");
+          const cola = await invocar(apu, "/api/apu/ia?pendientes=1", CAB_TOKEN, { metodo: "GET" });
+          assert.ok(cola.cuerpo.solicitudes.some((s) => s.id === idIa && s.estado === "en_cola" && s.perfil === "helder"), "la cola lista la solicitud");
+          const exp = await invocar(apu, `/api/apu/ia?expediente=1&id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+          assert.strictEqual(exp.status, 200);
+          assert.ok(exp.cuerpo.instrucciones && exp.cuerpo.esquema && exp.cuerpo.entrada.filas.length === 2 && exp.cuerpo.como_devolver, "el expediente trae instrucciones, esquema, filas y cómo devolverlo");
+          assert.ok(exp.cuerpo.entrada.filas[0].precio_actual === 27500 && exp.cuerpo.entrada.filas[0].fuente_actual === "Su precio" && exp.cuerpo.entrada.filas[0].necesita_precio === false, `la fila con precio propio no se vuelve a buscar: ${JSON.stringify(exp.cuerpo.entrada.filas[0])}`);
+          assert.ok(exp.cuerpo.entrada.filas[1].precio_actual === null && exp.cuerpo.entrada.filas[1].necesita_precio === true, "la fila sin precio es la que hay que buscar");
+          assert.ok(!/\b(?:vos|tenés|podés)\b/i.test(exp.cuerpo.instrucciones) && !/[\u{1F300}-\u{1FAFF}]/u.test(exp.cuerpo.instrucciones), "las instrucciones van de usted y sin emojis");
+          // (3) la propuesta: sin dirección web se APARTA (null, jamás la cifra); lo bueno se guarda y la solicitud pasa a «listo»
+          const prop = { generado_el: "2026-09-04", precios: [
+            { fila: 1, precio_unitario: 32900, unidad: "saco", incluye_iva: true, fuente: { nombre: "Homecenter", url: "https://www.homecenter.com.co/x", fecha: "2026-09-04", cita: "Cemento gris 50 kg $32.900" }, tipo_fuente: "tienda", confianza: "media" },
+            { fila: 0, precio_unitario: 41000, unidad: "m3", fuente: { nombre: "Lista sin web", fecha: "2026-09-04" } },
+          ] };
+          assert.strictEqual((await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "sesion", propuesta: { nada: 1 } }, CAB_TOKEN)).status, 400, "una propuesta sin «precios» es 400");
+          const okIa = await invocarPost(apu, "/api/apu/ia", { perfil: "helder", id: idIa, motor: "sesion", propuesta: prop }, CAB_TOKEN);
+          assert.strictEqual(okIa.status, 200); assert.strictEqual(okIa.cuerpo.resumen.con_precio, 1); assert.strictEqual(okIa.cuerpo.apartados.length, 1); assert.ok(/dirección web/.test(okIa.cuerpo.apartados[0].motivo));
+          const e1 = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+          assert.strictEqual(e1.cuerpo.estado, "listo");
+          const p1 = e1.cuerpo.propuesta.precios.find((p) => p.fila === 1);
+          assert.ok(p1.precio_unitario === 32900 && p1.fuente.url === "https://www.homecenter.com.co/x" && p1.incluye_iva === true, "la propuesta guardada trae precio y fuente");
+          assert.strictEqual(e1.cuerpo.propuesta.precios.find((p) => p.fila === 0).precio_unitario, null, "sin dirección web no hay precio: null, jamás la cifra");
+          // (4) el motor conserva el origen «ia» con su fuente, y el libro lo rotula referencia (ámbar), nunca verde
+          const calcIa = await invocarPost(apu, "/api/apu/calcular", { departamento: "ANTIOQUIA", items: [{ item_id: null, descripcion: "Cemento gris 50 kg", unidad: "saco", cantidad: 10, precio_manual: 32900, origen_precio: "ia", ia_fuente: { nombre: "Homecenter", url: "https://www.homecenter.com.co/x", fecha: "2026-09-04" } }] }, CAB_TOKEN);
+          assert.strictEqual(calcIa.status, 200);
+          const itIa = calcIa.cuerpo.items[0];
+          assert.strictEqual(itIa.origen_precio, "ia"); assert.strictEqual(itIa.ia_fuente.nombre, "Homecenter");
+          const orgIa = require("../public/apu_libro.js").clasificarOrigen(itIa, calcIa.cuerpo);
+          assert.ok(orgIa.estado === "cotizado" && /Buscado por la IA/.test(orgIa.etiqueta) && /homecenter/.test(orgIa.motivo), `el precio de la IA es referencia ámbar con su fuente: ${orgIa.etiqueta}`);
+          // (5) la capa pura: unidad distinta, fila inexistente y cero se apartan; el emoji se limpia
+          const vIa = IA.verificarPropuesta({ precios: [{ fila: 0, precio_unitario: 5, unidad: "m2", fuente: { nombre: "x", url: "https://a.b/c", fecha: "2026-01-01" } }, { fila: 7, precio_unitario: 1 }, { fila: 1, precio_unitario: 0, fuente: { nombre: "x", url: "https://a.b", fecha: "2026-01-01" }, nota: "hola 😀" }] }, { items: [{ unidad: "m3" }, { unidad: "saco" }] });
+          assert.ok(vIa.ok && vIa.apartados.length === 3 && vIa.propuesta.precios.every((p) => p.precio_unitario == null) && !/😀/.test(JSON.stringify(vIa)), "unidad distinta, fila inexistente y cero se apartan; el emoji no entra");
+          // (6) frontend y skill cableados
+          const appIa = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+          const htmlIa = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+          assert.ok(/op=ia/.test(appIa) && /data-ia-usar=/.test(appIa) && /origen_precio = "ia"/.test(appIa) && /function enrutarArchivoEntrada\(/.test(appIa), "Precios pide, pinta y acepta fila a fila, y la puerta única enruta el archivo");
+          assert.ok(/id="btn-ia-pedir"/.test(htmlIa) && /id="entrada-archivo-input"/.test(htmlIa) && /id="seccion-ia"/.test(htmlIa), "el marcado del panel de IA y de la puerta única está en index.html");
+          assert.ok(!/\|\|\s*0\b/.test(appIa.slice(appIa.indexOf("function pintarIa("), appIa.indexOf("function consultarIa("))), "ningún precio de la IA se convierte en 0");
+          const skillIa = fs.readFileSync(path.join(__dirname, "..", ".claude", "skills", "precios", "SKILL.md"), "utf8");
+          assert.ok(/op=ia&pendientes=1/.test(skillIa) && /motor:"sesion"/.test(skillIa) && /expediente=1/.test(skillIa), "la skill /precios recorre la cola, pide el expediente y devuelve la propuesta");
+          await redis.del(`apu:ia:solicitud:helder:${idIa}`, `apu:ia:propuesta:helder:${idIa}`, `apu:presupuesto:helder:${idIa}`);
+          console.log(`  · precios por sesión (op=ia): cola ${cola.cuerpo.en_cola} · expediente ${exp.cuerpo.entrada.filas.length} filas · propuesta ${okIa.cuerpo.resumen.con_precio} con fuente, ${okIa.cuerpo.apartados.length} apartado`);
+        }
+
         /* ═══ LA PROMESA DEL PANEL TIENE QUE SER CIERTA ══════════════════════
            Al guardar, la aplicación dice: «se guardaron N precios corregidos en
            tu perfil: la próxima vez que uses esos ítems, mandan sobre el
@@ -18173,7 +18283,8 @@ async function main() {
           assert.ok(pliego < p1, "el lector de pliegos va ANTES del paso 1: es la fuente más fiable");
           assert.ok(/<section id="seccion-pliego-wrap"/.test(apu),
             "…y ABIERTO: un <details> cerrado esconde justo lo que hay que usar primero");
-          assert.ok(/¿Tiene el pliego del proceso\?/.test(apu),
+          // (4-sep-2026) el rótulo pasó de pregunta a instrucción cuando la tarjeta se volvió la puerta única del archivo
+          assert.ok(/Suba el pliego o su análisis de precios/.test(apu) && /id="entrada-archivo"/.test(apu),
             "el rótulo pregunta lo que el usuario puede responder, sin jerga");
           const p2 = pos('white">2</span>¿Dónde?');
           const p3 = pos('white">3</span>Calcular y exportar');

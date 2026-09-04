@@ -7207,3 +7207,85 @@ que hace que una interfaz se vea cara no es la maqueta sino la MATERIA —un neg
 de lino, un solo color de sello, sombras que casi no se ven— y la RESPUESTA de cada control,
 medida en milisegundos y en curvas, no en adjetivos. Las dos cosas se copian de hojas de estilo
 reales, y se comprueban en un navegador real antes de afirmarlas.
+
+### La ficha «Lo que exige este pliego» en Mis procesos y los precios buscados por una sesión de Claude Code en Precios (4-sep-2026)
+
+Encargo del dueño: seguir con la estética «cara, elegante, limpia»; en Mis procesos reformar cómo se
+da la información del proceso —«poder saber experiencia específica y general y estados financieros
+de los pliegos, son como 5 puntos que cambian en algunos pliegos excepto pliegos tipo, y si hay
+anticipo o pago anticipado»—; y en Precios «que funcione como cuando le pides a Claude que te genere un
+APU: subes tu APU, extrae el precio de la fuente que sea, hecho por IA; inventa una forma de hacerlo
+posible». Lo que se construyó y lo que no hay que volver a aprender:
+
+- **La ficha son OCHO casillas, siempre y en este orden** (`guia.exigencias`, `lib/guia_proceso.js`
+  `exigenciasDe`, VERSION 3): experiencia general, experiencia específica, liquidez mínima,
+  endeudamiento máximo, cobertura de intereses, capital de trabajo, patrimonio, anticipo o pago
+  anticipado. Cada una lleva lo que el pliego exige (`exige`, con documento, página y cita), la cifra
+  de la empresa (`suyo`, con el mismo `fmtValorRequisito` de `lib/diff`), un estado ∈ `cumple ·
+  no_cumple · revisar · por_leer · sin_dato · dato` y una nota. **La casilla vacía dice POR QUÉ está
+  vacía**: `por_leer` mientras los documentos se leen o están por leer; `sin_dato` cuando se leyó y no
+  está en una línea con cifra («búsquelo en el pliego»), y también cuando SECOP II no publica índice;
+  jamás se rellena con 0 ni con la referencia de los pliegos tipo (esa sigue en el requisito
+  `financieros` de la lista, donde se dice que es referencia). La experiencia **nunca sale «cumple»**
+  (la aplicación solo compara el mayor contrato acreditado; el tipo de obra lo fija el pliego). El
+  anticipo es un HECHO, no un requisito: estado `dato` cuando se sabe, `revisar` si solo se vio el
+  apartado o el objeto lo insinúa.
+- **`lib/diff` separa la general de la específica** con dos requisitos nuevos
+  (`experiencia_general`, `experiencia_especifica`, regex con la palabra) y conserva
+  `experiencia_smmlv` (cualquier línea de experiencia con cifra) porque el vigía, el dictamen por reglas
+  y la guía ya lo usaban. La casilla «general» cae a `experiencia_smmlv` si la línea no dice cuál es, y
+  lo declara en la nota. `lib/documentos_proceso` sube a VERSION 2 para que los hechos guardados se
+  rehagan solos desde el texto (el mecanismo del 3-sep). **Límite honesto**: las tablas de experiencia
+  (códigos, número de contratos, porcentaje del presupuesto) siguen sin leerse; la casilla lo dice.
+- **En la tarjeta la ficha va ARRIBA** (`htmlExigencias` en `public/app.js`; estilos `.exig*` en
+  `index.html`): casillas blancas sobre la caja hundida de la guía, rótulo en versalitas, cifra grande y
+  tabular (el dinero en forma corta con la cifra exacta en el título; los salarios mínimos con la
+  unidad en línea aparte), la cifra de la empresa debajo, punto de estado con su palabra, y la fuente al
+  pie; la que no cumple lleva un filo rojo a la izquierda. Los hechos que la ficha ya enseña no se
+  repiten en «Lo demás que dicen los documentos» (antes «Lo que dicen los documentos»; la cerradura de
+  la suite cambió de título con ella). En 390 px las casillas van a dos columnas con rótulo de 10 px:
+  medido, «EXPERIENCIA ESPECÍFICA» desbordaba con 11 px.
+- **Precios «por IA» sin clave de API: el MISMO camino que el dictamen** (`lib/apu/precios_ia.js`,
+  acción `ia` de `lib/handlers/apu/editor.js`, skill `.claude/skills/precios/SKILL.md`, rutas del
+  dueño en `docs/PRECIOS_DESDE_CLAUDE_CODE.md`). «Pedir precios» guarda el borrador (sin borrador no
+  hay dónde dejar la respuesta) y deja una SOLICITUD en cola (`apu:ia:solicitud:{perfil}:{id}`, TTL
+  del borrador; la cola se lista con SCAN, sin índice aparte, como los borradores). La sesión pide
+  `GET …op=ia&expediente=1` (instrucciones, esquema, las filas con el precio que la cascada de
+  `lib/apu/precios` YA da y `necesita_precio`), busca en la web y devuelve `POST {motor:"sesion",
+  propuesta}`. `verificarPropuesta` APARTA con motivo lo que no trae dirección web, nombre, fecha
+  (AAAA-MM-DD), lo que viene en otra unidad (`unidadCanonica` de `lib/apu/importar`) o en cero: el
+  precio queda `null`, jamás la cifra. Los emojis se limpian.
+- **Ningún precio de la sesión entra al costo solo**: en Precios la propuesta se pinta con fuente,
+  enlace, fecha, IVA y confianza, y cada fila se acepta con «Usar» (o «Usar los N con fuente», que
+  cuenta solo los que aún no están puestos). Al aceptar, la fila lleva `origen_precio: "ia"` y
+  `ia_fuente`; el motor (`lib/apu/calculo.js`) conserva ese origen (antes aplanaba todo lo manual a
+  «manual») y `clasificarOrigen` de `public/apu_libro.js` lo rotula **«Buscado por la IA · fuente»** en
+  el ÁMBAR de «cotizado»: es una referencia publicada, no un contrato adjudicado ni una cotización del
+  proveedor. Al guardar, el precio aceptado se aprende como precio suyo (nivel 1 de la cascada) por el
+  mecanismo que ya existía. Teclear encima borra el origen «ia».
+- **La cotización se factorizó** (`cotizacionDe` en el editor) para que `cotizar` y el expediente de
+  `ia` produzcan el MISMO unitario del mismo ítem: dos cálculos «equivalentes» es el defecto que este
+  proyecto ya pagó.
+- **Una sola puerta para el archivo en Precios** (`#entrada-archivo`, `enrutarArchivoEntrada`): PDF o
+  .txt van al lector de pliegos (pliego.js, el botón «Cargar pliego») y Excel o CSV a la importación
+  con vista previa; NO hay un segundo lector. Las «otras formas» (dirección web del PDF, objeto,
+  códigos, presupuesto oficial, avisos) quedan plegadas. Medido: un CSV soltado abre la vista previa
+  con 4 ítems; un .txt con la tabla llega al lector («3 ítem(s) extraídos»).
+- **Lo que queda en manos del dueño**: la cola se atiende escribiendo `/precios` en una sesión de
+  Claude Code (claude.ai/code con el repositorio). Programarla como rutina (`/schedule`, cada hora)
+  consume la suscripción y por eso no se dejó activada. El servidor sigue sin llamar a ninguna fuente
+  externa de precios en la ruta de una petición.
+- **La prueba** (dos bloques nuevos de `tests/e2e.js`): la ficha (ocho casillas en orden; sin
+  documentos `por_leer`; con un pliego sintético general y específica separadas, cumple/no cumple con
+  la regla de `lib/diff`, cobertura `sin_dato` sin rellenar, anticipo negado como dato citado; sin
+  índice `sin_dato`; cableado del frontend y de los estilos; cerca de jerga/voseo/emojis sobre la
+  ficha SIN la cita —la cita es del pliego y puede decir «SMMLV»—) y `op=ia` por el router (401 sin
+  token, 404 sin borrador, cola, expediente con la cascada y `necesita_precio`, propuesta con una fila
+  apartada por no traer dirección web, estado «listo», el motor conservando «ia» con su fuente, el
+  libro rotulándolo ámbar, la capa pura apartando unidad distinta, fila inexistente y cero, y la skill
+  y el frontend cableados). Falla contra el árbol anterior por construcción.
+- **Medido en Chromium** (arnés con el Tailwind real y datos de producción por proxy; la guía con
+  `exigencias` inyectadas desde el código local porque producción aún no las sirve): 1280 y 390, claro
+  y oscuro, cero desbordes y consola limpia; el proceso real de Pasto enseña 7 casillas «sin cifra en
+  lo leído» y el anticipo «No hay» citado (pliego, pág. 74) — es el límite real del extractor sobre
+  tablas, no un defecto de la ficha.

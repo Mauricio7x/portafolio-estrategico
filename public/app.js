@@ -2796,13 +2796,50 @@
       + bloque("No legibles por la aplicación", d.no_legibles, (x) => `${esc(x.motivo || "")}${x.url && urlSegura(x.url) ? ` · <a href="${esc(urlSegura(x.url))}" target="_blank" rel="noopener noreferrer" class="underline">descargar</a>` : ""}`)
       + (d.de_proponentes ? `<p class="mt-2 text-[11px] text-gray-400">${d.de_proponentes} archivo${d.de_proponentes === 1 ? "" : "s"} más son ofertas de otros proponentes: no son reglas del proceso.</p>` : "");
   }
-  /* ── La guía «Don Héctor» de un proceso guardado ──
+  /* ── La guía «Don Héctor» de un proceso guardado (piel v3, 4-sep-2026) ──
      Todo sale de `p.guia` (lib/guia_proceso, servido por op=seguimiento): aquí
-     no se calcula ni un peso ni un día. Lo que hay que VER va arriba (en qué van
-     los documentos, la obra en una mirada, lo que dicen los documentos, lo que
-     necesita, el dictamen, el paso a paso); lo que hay que TOCAR va plegado
-     (consejos, la plata que nadie suma, la lista de documentos). El punto
-     tipográfico hereda el color del tema; sin dato se dice, jamás 0. */
+     no se calcula ni un peso ni un día. Orden de lectura, de más a menos
+     decisivo: en qué van los documentos (una línea) · LO QUE EXIGE ESTE PLIEGO
+     (la ficha de ocho casillas: experiencia general y específica, los cinco
+     indicadores del registro y el anticipo, cada una con documento y página y
+     con la cifra de la empresa al lado) · la obra en una mirada · lo demás que
+     dicen los documentos · lo que necesita · el dictamen · el paso a paso; y
+     plegado lo que hay que TOCAR (consejos, la plata que nadie suma, la lista
+     de documentos). El punto tipográfico hereda el color del tema; sin dato se
+     dice, jamás 0: una casilla vacía dice por qué está vacía. */
+  const ESTADO_EXIG_CORTO = { por_leer: "Se lee de los documentos", sin_dato: "Búsquelo en el pliego" };
+  function htmlExigencias(g) {
+    const lista = g.exigencias || [];
+    if (!lista.length) return "";
+    const re = (g.resumen && g.resumen.exigencias) || null;
+    const casilla = (x) => {
+      const vacia = x.exige == null;
+      /* la casilla enseña la forma CORTA del dinero ($650 M) y la cifra exacta va en
+         el título; la unidad de los salarios mínimos va en línea aparte. Es solo
+         presentación: el estado lo decidió el servidor con la cifra completa. */
+      const esDinero = !vacia && x.tipo_valor === "dinero" && Number.isFinite(Number(x.exige_valor));
+      const esSalarios = !vacia && x.tipo_valor === "smmlv" && /salarios mínimos$/.test(x.exige);
+      const cifra = vacia ? (x.estado === "por_leer" ? "…" : "—") : esDinero ? esc(fmtCorto(Number(x.exige_valor))) : esSalarios ? esc(x.exige.replace(/\s*salarios mínimos$/, "")) : esc(x.exige);
+      const unidad = esSalarios ? `<p class="exig-unidad">salarios mínimos</p>` : "";
+      const fuente = x.documento ? `${esc(x.documento)}${x.pagina != null ? `, pág. ${x.pagina}` : ""}` : "";
+      const pie = fuente || esc(ESTADO_EXIG_CORTO[x.estado] || "");
+      const titulo = [esDinero ? `Exige ${x.exige}.` : "", x.nota, x.cita ? `«${x.cita}»` : ""].filter(Boolean).join(" ");
+      return `<div class="exig" data-estado="${esc(x.estado)}" title="${esc(titulo)}">
+        <p class="exig-titulo">${esc(x.titulo)}</p>
+        <p class="exig-cifra${vacia ? " vacia" : ""}">${cifra}</p>${unidad}
+        ${x.suyo ? `<p class="exig-suyo">${esc(x.suyo_rotulo || "Usted")}: <span class="font-medium">${esc(x.suyo)}</span></p>` : ""}
+        ${x.estado_legible ? `<p class="exig-estado"><span class="punto" aria-hidden="true"></span>${esc(x.estado_legible)}</p>` : ""}
+        ${pie ? `<p class="exig-fuente">${pie}${x.cambiado_por_adenda ? ` · cambió por adenda${x.valor_anterior ? ` (antes ${esc(x.valor_anterior)})` : ""}` : ""}</p>` : ""}
+      </div>`;
+    };
+    return `<div>
+      <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h4 class="font-semibold tracking-tight">Lo que exige este pliego</h4>
+        ${re && re.frase ? `<p class="text-xs text-gray-500">${esc(re.frase)}</p>` : ""}
+      </div>
+      <div class="exig-grid mt-2">${lista.map(casilla).join("")}</div>
+    </div>`;
+  }
   function htmlGuia(p) {
     const g = p.guia;
     if (!g || !g.obra) return "";
@@ -2814,7 +2851,9 @@
     const adj = o.como_lo_adjudican || {};
     const dato = (rotulo, valor) => `<div class="min-w-0"><span class="text-[11px] uppercase tracking-wide text-gray-400">${rotulo}</span><p class="text-xs text-gray-700">${valor || "—"}</p></div>`;
     const reqs = (g.requisitos || []).map((q) => { const [clr, eti] = ESTADO_REQ[q.estado] || ESTADO_REQ.sin_dato; return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(q.titulo)}</span> <span class="text-[11px] ${clr}">${eti}</span><p class="text-xs text-gray-600">${esc(q.detalle)}</p>${q.donde ? `<p class="text-[11px] text-gray-400">Dónde: ${esc(q.donde)}</p>` : ""}</div></li>`; }).join("");
-    const hechos = (g.lo_que_dicen || []).map((h) => { const [clr, eti] = ESTADO_HECHO[h.estado] || ESTADO_HECHO.dato; return `<li class="flex gap-2"${h.cita ? ` title="${esc(h.cita)}"` : ""}><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(h.titulo)}${h.valor_legible ? `: ${esc(h.valor_legible)}` : ""}</span>${eti ? ` <span class="text-[11px] ${clr}">${eti}</span>` : ""}<p class="text-xs text-gray-600">${esc(h.texto)}</p><p class="text-[11px] text-gray-400">${esc(h.documento || "")}${h.pagina != null ? `, pág. ${h.pagina}` : ""}</p></div></li>`; }).join("");
+    /* los hechos que YA están en la ficha (cifras exigidas y anticipo) no se repiten abajo */
+    const enFicha = (h) => (g.exigencias || []).length > 0 && (/^requisito_/.test(h.clave) || h.clave === "anticipo");
+    const hechos = (g.lo_que_dicen || []).filter((h) => !enFicha(h)).map((h) => { const [clr, eti] = ESTADO_HECHO[h.estado] || ESTADO_HECHO.dato; return `<li class="flex gap-2"${h.cita ? ` title="${esc(h.cita)}"` : ""}><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(h.titulo)}${h.valor_legible ? `: ${esc(h.valor_legible)}` : ""}</span>${eti ? ` <span class="text-[11px] ${clr}">${eti}</span>` : ""}<p class="text-xs text-gray-600">${esc(h.texto)}</p><p class="text-[11px] text-gray-400">${esc(h.documento || "")}${h.pagina != null ? `, pág. ${h.pagina}` : ""}</p></div></li>`; }).join("");
     const pasos = (g.pasos || []).map((s) => `<li class="flex gap-2"><span class="w-24 shrink-0 text-xs text-gray-500">${s.cuando_legible ? esc(s.cuando_legible) : "después"}</span><div class="min-w-0"><span class="font-medium">${esc(s.titulo)}</span><p class="text-xs text-gray-600">${esc(s.detalle)}</p></div></li>`).join("");
     const consejos = (g.consejos || []).map((c) => `<li><span class="font-medium">${esc(c.titulo)}</span>${c.por_que_aqui ? ` <span class="text-[11px] text-gray-400">(${esc(c.por_que_aqui)})</span>` : ""}<p class="text-xs text-gray-600">${esc(c.detalle)}</p></li>`).join("");
     const d = g.dinero || {};
@@ -2828,7 +2867,7 @@
        el MISMO flujo del lector). Se pide al abrir, no al pintar: cada GET lee el
        texto guardado. «Cargar el pliego» abre Precios con ESTE proceso precargado
        (qApu desde la foto) para quien tenga un pliego que no se leyó solo. */
-    const dictamen = `<div class="rounded-xl bg-white p-3 ring-1 ring-inset ring-gray-900/5">
+    const dictamen = `<div class="guia-caja">
         <div data-seg-dictamen="${esc(p.id)}"><p class="text-xs font-medium uppercase tracking-wide text-gray-500">Dictamen del pliego</p>
         <p class="mt-1 text-xs text-gray-600">Si conviene presentarse y por qué, con citas por página del pliego leído.</p>
         <button type="button" data-seg-dictamen-ver="${esc(p.id)}" class="mt-2 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition" style="background: var(--accent);">Ver el dictamen del pliego</button></div>
@@ -2836,22 +2875,24 @@
       </div>`;
     const docs = g.documentos || null;
     const nDocs = docs ? (docs.leidos || []).length + (docs.por_leer || []).length + (docs.ilegibles || []).length + (docs.no_legibles || []).length : 0;
-    const plegado = (titulo, cuerpo) => `<details class="rounded-xl ring-1 ring-inset ring-gray-900/5"><summary class="cursor-pointer px-3 py-2 text-sm font-semibold tracking-tight">${titulo}</summary><div class="px-3 pb-3">${cuerpo}</div></details>`;
+    const plegado = (titulo, cuerpo) => `<details class="guia-caja"><summary class="cursor-pointer px-3 py-2 text-sm font-semibold tracking-tight">${titulo}</summary><div class="px-3 pb-3">${cuerpo}</div></details>`;
+    const bloque = (titulo, cuerpo) => `<div><h4 class="font-semibold tracking-tight">${titulo}</h4>${cuerpo}</div>`;
     return `<details class="mt-3 rounded-xl ring-1 ring-inset ring-gray-900/5" data-seg-guia="${esc(p.id)}" style="background: var(--bg-inset);"${abierta ? " open" : ""}>
       <summary class="cursor-pointer px-3 py-2 text-sm font-medium">Qué necesita para presentarse${r.frase ? ` <span class="text-xs font-normal text-gray-500">· ${esc(r.frase)}</span>` : ""}${g.completa === false ? ` <span class="text-[11px] font-normal text-amber-900">· guía parcial: el proceso ya no está en la lista viva</span>` : ""}</summary>
-      <div class="space-y-4 px-3 pb-3 text-sm">
-        ${docs ? `<div class="rounded-xl bg-white p-3 ring-1 ring-inset ring-gray-900/5"><p class="text-xs font-medium uppercase tracking-wide text-gray-500">Los documentos del proceso</p><div class="mt-1" data-seg-docs="${esc(p.id)}">${htmlDocs(p)}</div></div>` : ""}
-        <div class="grid gap-3 sm:grid-cols-2">
+      <div class="space-y-5 px-3 pb-3 text-sm">
+        ${docs ? `<div class="guia-caja px-3 py-2" data-seg-docs="${esc(p.id)}">${htmlDocs(p)}</div>` : ""}
+        ${htmlExigencias(g)}
+        ${bloque("La obra en una mirada", `<div class="mt-2 grid gap-3 sm:grid-cols-2">
           ${dato("Qué es", o.que_es ? `${esc(o.que_es)}${o.tipo_trabajo_legible ? ` <span class="text-gray-400">· ${esc(o.tipo_trabajo_legible)}</span>` : ""}` : null)}
           ${dato("Dónde", donde ? `${esc(donde)}${zona ? `<br><span class="text-gray-500">${zona}</span>` : ""}` : null)}
           ${dato("Cuánto y por cuánto tiempo", cuanto)}
           ${dato("Cómo pagan", pago ? `${pago}${o.pago && o.pago.fuente_anticipo && /pág\./.test(o.pago.fuente_anticipo) ? ` <span class="text-gray-400">· ${esc(o.pago.fuente_anticipo)}</span>` : ""}` : null)}
           <div class="min-w-0 sm:col-span-2"><span class="text-[11px] uppercase tracking-wide text-gray-400">Cómo lo adjudican</span><p class="text-xs text-gray-700">${adj.nombre ? `<span class="font-medium">${esc(adj.nombre)}.</span> ` : ""}${esc(adj.explicacion || "")}</p></div>
-        </div>
-        ${hechos ? `<div><h4 class="font-semibold tracking-tight">Lo que dicen los documentos</h4><ul class="mt-1.5 space-y-2">${hechos}</ul></div>` : ""}
-        <div><h4 class="font-semibold tracking-tight">Lo que necesita</h4><ul class="mt-1.5 space-y-2">${reqs}</ul></div>
+        </div>`)}
+        ${hechos ? bloque("Lo demás que dicen los documentos", `<ul class="mt-1.5 space-y-2">${hechos}</ul>`) : ""}
+        ${bloque("Lo que necesita", `<ul class="mt-1.5 space-y-2">${reqs}</ul>`)}
         ${dictamen}
-        <div><h4 class="font-semibold tracking-tight">Paso a paso</h4><ol class="mt-1.5 space-y-2">${pasos}</ol></div>
+        ${bloque("Paso a paso", `<ol class="mt-1.5 space-y-2">${pasos}</ol>`)}
         ${plegado("Consejos para este proceso", `<ul class="space-y-2">${consejos}</ul>`)}
         ${plegado("La plata que nadie suma", dinero)}
         ${nDocs ? plegado(`Documentos del proceso (${nDocs})`, htmlListaDocs(docs)) : ""}
@@ -3159,6 +3200,9 @@
   let filas = [];           // [{item_id, descripcion, unidad, cantidad, rendimiento_override}]
   let ultimoCalculo = null; // respuesta de /api/apu/calcular
   let idActual = null;      // id del presupuesto cargado/guardado
+  let iaEstado = null;      // última respuesta de op=ia para idActual (precios buscados por una sesión de Claude Code)
+  let iaSondeo = null;      // temporizador del sondeo mientras la solicitud está en cola
+  let iaSondeos = 0;        // cuántas veces se sondeó (tope: no se sondea para siempre)
   let ultimoOptimizador = null; // bloque `optimizador` de /api/apu/rentabilidad
   let ultimaRentabilidad = null; // respuesta ENTERA de /api/apu?op=rentabilidad (presupuesto + piso_techo): alimenta la justificación
   /* Guarda de reentrada: «Calcular APU» dispara la rentabilidad sola cuando hay
@@ -3788,6 +3832,7 @@
     }).join("");
 
     if (ultimoCalculo) pintarCalculoEnTabla(ultimoCalculo);
+    actualizarEstadoIa();
   }
 
   /* Delegación: la tabla se repinta entera y unos manejadores por fila se
@@ -3808,9 +3853,11 @@
       filas[i].precio_manual = crudo === "" || !Number.isFinite(n) || n <= 0 ? null : n;
       if (filas[i].precio_manual != null && filas[i].origen_precio !== "archivo") {
         filas[i].origen_precio = "manual";
+        filas[i].ia_fuente = null;          // un precio tecleado encima ya no es el que buscó la IA
       }
-      if (filas[i].precio_manual == null && filas[i].origen_precio === "manual") {
+      if (filas[i].precio_manual == null && (filas[i].origen_precio === "manual" || filas[i].origen_precio === "ia")) {
         filas[i].origen_precio = null;
+        filas[i].ia_fuente = null;
       }
     } else {
       // vacío = usar el rendimiento del catálogo, no «rendimiento cero»
@@ -4104,6 +4151,8 @@
     // null = sin precio manual; el motor distingue null de 0 a propósito
     precio_manual: f.precio_manual == null ? null : f.precio_manual,
     origen_precio: f.origen_precio || null,
+    // «ia»: el precio lo encontró una sesión de Claude Code y el usuario lo aceptó; su fuente viaja con él
+    ia_fuente: f.origen_precio === "ia" && f.ia_fuente ? f.ia_fuente : null,
     subcontratado: f.subcontratado || false,
     aiu_subcontratista_pct: f.aiu_subcontratista_pct == null ? null : f.aiu_subcontratista_pct,
   }));
@@ -4428,8 +4477,10 @@
   $("btn-revisar-oferta").addEventListener("click", revisarOferta);
 
   /* ──────────────────────── guardar / cargar ───────────────────────── */
-  $("btn-guardar").addEventListener("click", async () => {
-    if (!filas.length) { msgApu("No hay ítems que guardar.", "error"); return; }
+  /* Guardar el borrador: lo pulsa el usuario, y también lo llama «Pedir precios»
+     (la solicitud necesita un borrador guardado donde dejar la respuesta). */
+  async function guardarBorrador({ silencioso = false } = {}) {
+    if (!filas.length) { msgApu("No hay ítems que guardar.", "error"); return null; }
     const btn = $("btn-guardar");
     btn.disabled = true;
     try {
@@ -4453,15 +4504,166 @@
           costo_directo: ultimoCalculo ? ultimoCalculo.resumen.costo_directo_total : null,
         },
       });
-      if (!r) return;
+      if (!r) return null;
       idActual = r.id;
-      msgApu(`Guardado como «${r.nombre}» (id ${r.id}). ${r.nota}`, "ok");
+      if (!silencioso) msgApu(`Guardado como «${r.nombre}» (id ${r.id}). ${r.nota}`, "ok");
+      return r;
     } catch (e) {
       msgApu(`No se pudo guardar: ${e.message}`, "error");
+      return null;
     } finally {
       btn.disabled = false;
     }
+  }
+  $("btn-guardar").addEventListener("click", () => guardarBorrador());
+
+  /* ══════════ PRECIOS BUSCADOS POR UNA SESIÓN DE CLAUDE CODE (4-sep-2026) ══════════
+     El servidor no tiene clave de API (decisión del dueño: paga la suscripción
+     de Claude Code), así que «Pedir precios» guarda el borrador y deja una
+     SOLICITUD en cola (op=ia); la skill /precios de una sesión de Claude Code la
+     atiende —busca en listas oficiales, contratos adjudicados, fabricantes y
+     tiendas— y devuelve una PROPUESTA que el servidor verifica fila por fila
+     (lib/apu/precios_ia: sin dirección web, sin fecha o en otra unidad, se
+     aparta). Aquí se pinta con fuente, fecha y enlace, y cada precio entra al
+     costo SOLO cuando el usuario pulsa «Usar» (origen «ia»). En APU el falso
+     caro es el positivo: nada entra solo. */
+  const TIPO_FUENTE_LEGIBLE = { oficial: "Lista oficial", tienda: "Tienda", lista_fabricante: "Lista de fabricante", contrato_adjudicado: "Contrato adjudicado", revista: "Revista del sector", otro: "Otra fuente" };
+  function msgIa(texto, tipo = "info") {
+    const el = $("ia-estado"); if (!el) return;
+    el.className = `mt-3 text-sm ${tipo === "error" ? "text-red-600" : tipo === "ok" ? "text-emerald-700" : "text-gray-500"}`;
+    el.textContent = texto;
+  }
+  /* la fila de la tabla a la que corresponde un precio propuesto: por índice si
+     la fila no cambió; si el usuario reordenó o quitó, por descripción y unidad */
+  function filaDePropuesta(p) {
+    const igual = (x) => x && (x.descripcion || "") === (p.descripcion || "") && (x.unidad || "") === (p.unidad || "");
+    if (igual(filas[p.fila])) return p.fila;
+    const j = filas.findIndex(igual);
+    return j >= 0 ? j : null;
+  }
+  function actualizarEstadoIa() {
+    const btn = $("btn-ia-pedir"), caja = $("ia-propuesta");
+    if (!btn || !caja) return;
+    btn.disabled = filas.length === 0;
+    if (!filas.length) { msgIa("Añada ítems a la tabla (suba el pliego o su análisis de precios) para poder pedir precios."); caja.classList.add("hidden"); return; }
+    if (!iaEstado || iaEstado.id !== idActual) { msgIa(`${filas.length} ${filas.length === 1 ? "ítem" : "ítems"} en la tabla. Al pedir precios, el presupuesto se guarda como borrador y la solicitud queda en cola.`); caja.classList.add("hidden"); return; }
+    pintarIa(iaEstado);
+  }
+  function pintarIa(r) {
+    const caja = $("ia-propuesta");
+    if (iaSondeo) { clearTimeout(iaSondeo); iaSondeo = null; }
+    if (r.estado === "en_cola") {
+      const s = r.solicitud || {};
+      msgIa(`Solicitud en cola${s.solicitado_el ? ` desde el ${fechaCorta(s.solicitado_el)}` : ""}: la atiende una sesión de Claude Code y los precios aparecen aquí con su fuente. Puede cerrar esta página: quedan guardados con el borrador${s.nombre ? ` «${s.nombre}»` : ""}.`);
+      caja.classList.add("hidden");
+      if (iaSondeos < 40) iaSondeo = setTimeout(() => { iaSondeos++; consultarIa({ silencioso: true }); }, 90000);
+      return;
+    }
+    if (r.estado !== "listo" || !r.propuesta) { msgIa("Todavía no se han pedido precios para este borrador."); caja.classList.add("hidden"); return; }
+    const pr = r.propuesta, res = pr.resumen || {};
+    // los que todavía se pueden usar: con precio, con fila en la tabla y no puestos ya
+    const conPrecio = (pr.precios || []).filter((p) => { const i = filaDePropuesta(p); return p.precio_unitario != null && i != null && !(filas[i].origen_precio === "ia" && filas[i].precio_manual === p.precio_unitario); });
+    msgIa(`Propuesta del ${fechaCorta(pr.guardada_el || pr.generado_el)}: ${res.con_precio != null ? res.con_precio : "—"} ${res.con_precio === 1 ? "precio" : "precios"} con fuente${res.sin_precio ? `, ${res.sin_precio} sin precio` : ""}${res.apartados ? `, ${res.apartados} ${res.apartados === 1 ? "apartado" : "apartados"} por no traer dirección web, fecha o unidad` : ""}. Ninguno entra al costo hasta que pulse «Usar».`, "ok");
+    const filasHtml = (pr.precios || []).map((p) => {
+      const i = filaDePropuesta(p);
+      const f = i != null ? filas[i] : null;
+      const usado = !!(f && f.origen_precio === "ia" && f.precio_manual === p.precio_unitario);
+      const fuente = p.fuente
+        ? `${urlSegura(p.fuente.url) ? `<a href="${esc(urlSegura(p.fuente.url))}" target="_blank" rel="noopener noreferrer" class="underline">${esc(p.fuente.nombre)}</a>` : esc(p.fuente.nombre)} <span class="text-gray-400">· ${esc(TIPO_FUENTE_LEGIBLE[p.tipo_fuente] || "Otra fuente")} · ${esc(p.fuente.fecha || "")}</span>${p.fuente.cita ? `<span class="block text-[11px] text-gray-400">«${esc(p.fuente.cita)}»</span>` : ""}`
+        : `<span class="text-gray-400">${esc(p.motivo_sin_precio || "Sin precio")}</span>`;
+      const precio = p.precio_unitario != null
+        ? `<span class="num font-medium">${pesos(p.precio_unitario)}</span>${p.incluye_iva === true ? ' <span class="text-[10px] text-gray-400">con IVA</span>' : p.incluye_iva === false ? ' <span class="text-[10px] text-gray-400">sin IVA</span>' : ""}`
+        : '<span class="text-gray-300">—</span>';
+      const accion = p.precio_unitario == null ? ""
+        : i == null ? '<span class="text-[11px] text-gray-400">La fila ya no está en la tabla</span>'
+          : usado ? '<span class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium" style="background: var(--ok-light); color: var(--ok-texto);">En uso</span>'
+            : `<button type="button" data-ia-usar="${p.fila}" class="rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium transition hover:bg-gray-50">Usar</button>`;
+      return `<tr><td class="py-2 pr-3"><span class="font-medium">${esc(p.descripcion || "—")}</span><span class="block text-[11px] text-gray-400">${esc(p.unidad || "")}${p.nota ? ` · ${esc(p.nota)}` : ""}</span></td><td class="py-2 pr-3 text-right">${precio}</td><td class="py-2 pr-3">${fuente}</td><td class="py-2 pr-3 text-xs text-gray-500">${p.confianza ? esc(p.confianza) : ""}</td><td class="py-2 text-right">${accion}</td></tr>`;
+    }).join("");
+    caja.innerHTML = `<div class="overflow-x-auto rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5"><table class="w-full text-sm"><thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-2 pr-3">Ítem</th><th class="pb-2 pr-3 text-right">Precio propuesto</th><th class="pb-2 pr-3">Fuente</th><th class="pb-2 pr-3">Confianza</th><th class="pb-2"></th></tr></thead><tbody class="divide-y divide-gray-100">${filasHtml}</tbody></table></div>
+      <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-500">${conPrecio.length ? `<button type="button" data-ia-usar-todos="1" class="rounded-lg px-3 py-1.5 text-xs font-medium text-white transition" style="background: var(--accent);">Usar los ${conPrecio.length} precios con fuente</button>` : ""}<span>Un precio de tienda lleva IVA y margen de mostrador: es un techo para negociar, no su costo. Cada precio usado se marca «Buscado por la IA» en la tabla y, al guardar, queda como precio suyo.</span></div>`;
+    caja.classList.remove("hidden");
+  }
+  async function consultarIa({ silencioso = false } = {}) {
+    if (!idActual) { iaEstado = null; actualizarEstadoIa(); return; }
+    try {
+      const r = await api(`/api/apu?op=ia&id=${encodeURIComponent(idActual)}&perfil=${encodeURIComponent($("perfil").value)}`);
+      if (!r) return;
+      iaEstado = { ...r, id: idActual };
+      actualizarEstadoIa();
+    } catch (e) {
+      if (!silencioso) msgIa(`No se pudo consultar la solicitud: ${e.message}`, "error");
+    }
+  }
+  function usarPrecioIa(p) {
+    const i = filaDePropuesta(p);
+    if (i == null || p.precio_unitario == null || !p.fuente) return false;
+    filas[i].precio_manual = p.precio_unitario;
+    filas[i].origen_precio = "ia";
+    filas[i].ia_fuente = { nombre: p.fuente.nombre, url: p.fuente.url, fecha: p.fuente.fecha };
+    return true;
+  }
+  $("btn-ia-pedir").addEventListener("click", async () => {
+    const btn = $("btn-ia-pedir");
+    if (!filas.length) { msgIa("No hay ítems en la tabla: suba el pliego o su análisis de precios primero.", "error"); return; }
+    btn.disabled = true;
+    try {
+      const g = await guardarBorrador({ silencioso: true });
+      if (!g) { msgIa("No se pudo guardar el borrador, y sin él no hay dónde dejar los precios.", "error"); return; }
+      const r = await api("/api/apu?op=ia", { method: "POST", body: { id: idActual, perfil: $("perfil").value, solicitar: true } });
+      if (!r) return;
+      iaSondeos = 0;
+      iaEstado = { ...r, id: idActual };
+      actualizarEstadoIa();
+      msgApu(`Borrador guardado como «${g.nombre}» y precios pedidos.`, "ok");
+    } catch (e) {
+      msgIa(`No se pudo pedir: ${e.message}`, "error");
+    } finally {
+      btn.disabled = filas.length === 0;
+    }
   });
+  $("ia-propuesta").addEventListener("click", (e) => {
+    const uno = e.target.getAttribute("data-ia-usar");
+    const todos = e.target.getAttribute("data-ia-usar-todos");
+    if (uno === null && todos === null) return;
+    const precios = (iaEstado && iaEstado.propuesta && iaEstado.propuesta.precios) || [];
+    let n = 0;
+    for (const p of precios) if (todos !== null || String(p.fila) === uno) { if (usarPrecioIa(p)) n++; }
+    if (!n) { msgIa("Ese precio ya no corresponde a ninguna fila de la tabla.", "error"); return; }
+    ultimoCalculo = null;
+    pintarTabla();
+    msgApu(`${n} ${n === 1 ? "precio buscado por la IA puesto" : "precios buscados por la IA puestos"} en la tabla. Pulse «Calcular cuánto me cuesta» para ver los totales.`, "ok");
+  });
+
+  /* ══════════ UNA SOLA PUERTA PARA EL ARCHIVO (4-sep-2026) ══════════
+     El usuario suelta lo que tenga —el PDF del pliego, su análisis de precios o
+     el formulario en Excel, un CSV— y se enruta al lector que YA existe; no hay
+     un segundo lector. PDF o texto → el lector de pliegos (pliego.js, «Cargar
+     pliego»); Excel o CSV → la importación con vista previa. */
+  function enrutarArchivoEntrada(archivo) {
+    if (!archivo) return;
+    const nombre = String(archivo.name || "").toLowerCase();
+    const dt = new DataTransfer(); dt.items.add(archivo);
+    if (/\.(xlsx|xls|csv)$/.test(nombre)) {
+      const inp = $("archivo-importar"); inp.files = dt.files; inp.dispatchEvent(new Event("change", { bubbles: true }));
+      return;
+    }
+    if (/\.(pdf|txt)$/.test(nombre)) {
+      const inp = $("pliego-archivo"); inp.files = dt.files; inp.dispatchEvent(new Event("change", { bubbles: true }));
+      $("btn-extraer").click();
+      return;
+    }
+    msgApu(`No se reconoce «${archivo.name}»: suba un PDF, un Excel (.xlsx, .xls), un CSV o un archivo de texto (.txt).`, "error");
+  }
+  {
+    const zona = $("entrada-archivo"), inp = $("entrada-archivo-input");
+    if (zona && inp) {
+      inp.addEventListener("change", () => { const a = inp.files && inp.files[0]; inp.value = ""; enrutarArchivoEntrada(a); });
+      for (const ev of ["dragenter", "dragover"]) zona.addEventListener(ev, (e) => { e.preventDefault(); zona.classList.add("sobre"); });
+      for (const ev of ["dragleave", "drop"]) zona.addEventListener(ev, (e) => { e.preventDefault(); zona.classList.remove("sobre"); });
+      zona.addEventListener("drop", (e) => { const a = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; enrutarArchivoEntrada(a); });
+    }
+  }
 
   $("btn-listar").addEventListener("click", async () => {
     const caja = $("lista-presupuestos");
@@ -4525,7 +4727,9 @@
           // los borradores guardados antes de la importación no traen estos
           // campos: `undefined` y `null` significan lo mismo aquí (sin precio manual)
           precio_manual: precioManual != null && precioManual > 0 ? precioManual : null,
-          origen_precio: f.origen_precio === "archivo" || f.origen_precio === "manual" ? f.origen_precio : null,
+          origen_precio: f.origen_precio === "archivo" || f.origen_precio === "manual" || f.origen_precio === "ia" ? f.origen_precio : null,
+          ia_fuente: f.origen_precio === "ia" && f.ia_fuente && typeof f.ia_fuente === "object"
+            ? { nombre: String(f.ia_fuente.nombre || "").slice(0, 120), url: String(f.ia_fuente.url || "").slice(0, 600), fecha: String(f.ia_fuente.fecha || "").slice(0, 10) } : null,
           subcontratado: f.subcontratado === true,
           aiu_subcontratista_pct: f.subcontratado === true ? numONull(f.aiu_subcontratista_pct) : null,
           sugerencia: f.sugerencia == null ? null : String(f.sugerencia).slice(0, 200),
@@ -4533,6 +4737,7 @@
       });
       ultimoCalculo = null;
       pintarTabla();
+      consultarIa({ silencioso: true });   // si este borrador ya pidió precios, se pintan
       $("seccion-resumen").classList.add("hidden");
       $("lista-presupuestos").classList.add("hidden");
       msgApu(r.catalogo_cambiado

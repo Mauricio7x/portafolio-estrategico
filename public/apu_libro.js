@@ -272,6 +272,22 @@
          antes y quedó guardado en su perfil. Es la fuente MÁS fuerte de la
          cascada —viene de su proveedor y de su región— y colapsarlo con
          «manual» escondería justo eso. */
+      /* «ia» (4-sep-2026): un precio que una sesión de Claude Code encontró en
+         una fuente publicada y el usuario ACEPTÓ. Comparte el ámbar de
+         «cotizado»: es una referencia publicada, no un contrato adjudicado ni
+         una cotización de su proveedor. La fuente va en el motivo. */
+      if (it.origen_precio === "ia") {
+        const f = it.ia_fuente || {};
+        return {
+          estado: "cotizado",
+          emoji: "🔎",
+          etiqueta: `Buscado por la IA${f.nombre ? ` · ${String(f.nombre).slice(0, 40)}` : ""}`,
+          suma: true,
+          motivo: `Precio que una sesión de inteligencia artificial encontró en ${f.nombre || "una fuente publicada"}`
+            + `${f.fecha ? ` (consultada el ${f.fecha})` : ""}${f.url ? `: ${f.url}` : ""}. Usted lo aceptó. `
+            + "Es una referencia publicada, no una cotización de su proveedor: verifique antes de presentar.",
+        };
+      }
       const propio = it.origen_precio === "propio";
       const delArchivo = it.origen_precio === "archivo";
       return {

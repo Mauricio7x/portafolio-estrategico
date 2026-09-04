@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-03 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-04 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -90,7 +90,7 @@
   texto_unspsc.js           El OBJETO como co-señal cuando el código no alcanza
   unspsc.js                 Whitelists de los RUP + MATCHING JERÁRQUICO por niveles
 
-· lib/apu/ — 19 módulos:
+· lib/apu/ — 20 módulos:
   calculo.js                Del costo directo al precio de oferta
   catalogo.js               Catálogo de precios APU en Redis
   epc_items.js              LOS APU DE EPC COMO ÍTEMS COSTEABLES (ago 2026)
@@ -106,6 +106,7 @@
   optimizador.js            ¿A QUÉ PRECIO HAY QUE OFERTAR?
   piso_techo.js             (sin cabecera)
   precios.js                La cascada de fuentes de precio
+  precios_ia.js             Precios buscados por una SESIÓN de Claude Code (4-sep-2026)
   rentabilidad.js           Precio competitivo, flujo de caja, VEG y payback
   retail.js                 Techo de tienda y de lista de fabricante, por insumo
   tipologias.js             Las 22 tipologías de obra y el mapa departamento→región
@@ -165,10 +166,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 118 secciones. Las 10 más nuevas:
-  L  6273  La marca es el botón de actualizar, y el calendario baja junto al consorcio (31-ago-2026, te
-  L  6353  Auditoría integral del 1-sep-2026 · trece frentes, dos auditores que llegaron y el resto a m
-  L  6484  Don Héctor · la hipótesis verificada contra fuentes vigentes y el diseño del dictamen del pl
+· MEMORIA · docs/MEMORIA.md — 121 secciones. Las 10 más nuevas:
   L  6608  El lookahead delante del lookbehind: la lista negra 19 veces más rápida y `main` vuelve a ve
   L  6633  Don Héctor · las decisiones del dueño y las tomadas con autonomía (2-sep-2026, misma tarde)
   L  6677  Dictamen del pliego · `op=dictamen`, el código de la sección 6 (2-sep-2026, noche)
@@ -176,8 +174,11 @@
   L  6808  Don Héctor sin clave de API: dictamen por REGLAS y dictamen desde una SESIÓN de Claude Code 
   L  6861  Los documentos del proceso se leen solos al guardar en Mis procesos (3-sep-2026)
   L  6963  La cláusula gana al índice: el detector del pliego ya no cita la tabla de contenido (3-sep-2
+  L  7020  La piel v2 · medida sobre las mejores páginas del mundo, no de memoria (4-sep-2026)
+  L  7110  La piel v3 · «Lino y tinta»: el color caro y el detalle, medidos (4-sep-2026)
+  L  7211  La ficha «Lo que exige este pliego» en Mis procesos y los precios buscados por una sesión de
 
-· DOCUMENTOS docs/ — 39:
+· DOCUMENTOS docs/ — 41:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)
   ANALISIS_ESTRATEGICO.md               Análisis estratégico de Detekta · agosto 2026
   APU_DIAGNOSTICO.md                    Diagnóstico del módulo APU frente a la especificación «APU profesional»
@@ -201,6 +202,7 @@
   GUIA_ANALISTA_LICITACIONES.md         Manual del Analista de Licitaciones
   INSUMOS_2026.md                       Insumos de precios 2026 · censo, contraste y qué hacer con ellos
   INVESTIGACION_COMPETENCIA_APU.md      Investigación de competencia del módulo APU · cómo operan, de dónde sacan los datos 
+  INVESTIGACION_DISENO_WEB.md           Investigación · Cómo están hechas las mejores páginas web del mundo (4-sep-2026)
   INVESTIGACION_PLATAFORMAS_LICITACIONES.mdInvestigación · Las cinco mejores plataformas de licitación pública del mundo
   LEGAL_COLOMBIA.md                     Anexo A · Frente jurídico y regulatorio (Colombia)
   MAPA.md                               
@@ -210,6 +212,7 @@
   PLAN_DE_ACCION.md                     PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
   PLAN_SAAS.md                          PLAN SaaS · De herramienta interna a producto por suscripción
   PRECIO_Y_UNIT_ECONOMICS.md            Anexo B · Modelo de negocio, precio y economía unitaria
+  PRECIOS_DESDE_CLAUDE_CODE.md          Precios buscados por inteligencia artificial · cómo se atienden desde Claude Code
   PROBABILIDAD_MEJORADA.md              Probabilidad de ganar — auditoría de la fórmula vigente y propuesta de mejora
   PROMPT_CONSULTORIA_SAAS.md            PROMPT MAESTRO · CONSEJO CONSULTOR DE DETEKTA
   PROMPT_INICIAL.md                     PROMPT INICIAL DE DETEKTA · protocolo vivo
