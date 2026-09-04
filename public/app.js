@@ -4613,6 +4613,8 @@
     barraIa(null);
     if (r.estado !== "listo" || !r.propuesta) { msgIa("Todavía no se han buscado precios para este borrador."); caja.classList.add("hidden"); return; }
     const pr = r.propuesta, res = pr.resumen || {}, items = pr.items || [];
+    /* un resultado guardado con el formato anterior (precio por fila, sin APU) no se pinta a medias: se pide de nuevo */
+    if (!Array.isArray(pr.items) && Array.isArray(pr.precios)) { msgIa("El resultado guardado es de una versión anterior de la búsqueda: pulse «Buscar» otra vez para obtener los APU con su desglose."); caja.classList.add("hidden"); return; }
     const aplicables = items.filter((p) => p.costo_directo_unitario != null && filaDePropuesta(p) != null);
     msgIa(`Completado: ${res.con_precio != null ? res.con_precio : "—"} de ${res.filas_respondidas != null ? res.filas_respondidas : "—"} ítems con APU${res.sin_precio ? `, ${res.sin_precio} sin precio` : ""}${res.apartados ? `, ${res.apartados} ${res.apartados === 1 ? "apartado" : "apartados"} por no cuadrar` : ""} (${fechaCorta(pr.guardada_el || pr.generado_el)}).`, "ok");
     const filasHtml = items.map((p) => {

@@ -24,7 +24,8 @@ obra puesto automáticamente: lugar, fecha, salario mínimo y factor prestaciona
 
 - **Automático**: una rutina en la nube corre **cada hora** (el mínimo que permite el programador) y
   atiende todo lo que esté en cola. Se ve, se pausa o se ejecuta a mano en
-  **https://claude.ai/code/routines** (nombre: «Detekta · atender la cola de Precios»).
+  **https://claude.ai/code/routines/trig_01TBAcC9aFA2QgHcmQDidyxL** (nombre: «Detekta · atender la cola de
+  Precios»; corre a los 15 minutos de cada hora, con el modelo Sonnet 5; creada el 4-sep-2026).
 - **A mano, ya mismo**: abra https://claude.ai/code con el repositorio Mauricio7x/portafolio-estrategico
   (rama main) y escriba `/precios`. Para un solo borrador: `/precios <id_del_borrador> helder`.
 
