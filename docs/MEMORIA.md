@@ -7289,3 +7289,60 @@ posible». Lo que se construyó y lo que no hay que volver a aprender:
   y oscuro, cero desbordes y consola limpia; el proceso real de Pasto enseña 7 casillas «sin cifra en
   lo leído» y el anticipo «No hay» citado (pliego, pág. 74) — es el límite real del extractor sobre
   tablas, no un defecto de la ficha.
+
+### Segunda pasada del 4-sep-2026: la guía sin cuadros vacíos y Precios en tres pasos
+
+Encargo del dueño, sobre la entrega de la mañana: «se me hace muy engorroso cómo muestras los datos
+en "qué necesita para presentarse": aparecen los cuadros vacíos y demasiado texto abajo; lo mismo en
+Precios, demasiado difícil entender cómo funciona todo; piensa como contratista qué buscaría, qué
+datos son basura y cuáles importan; propongo un botón cargar APU y un botón buscar en la web, el
+resto sobra». Diagnóstico con la lente de producto (quién: contratista sin formación técnica que opera
+con clics; dolor: ocho casillas vacías y ~120 líneas de texto en cada proceso; doce tarjetas y cuarenta
+controles antes de ver un precio; 10 estrellas: «abro el proceso y en cinco segundos sé si puedo, qué
+me exigen y qué me falta; suelto mi APU y en un minuto tengo costo, precio y Excel»; anti-objetivo: no
+borrar capacidades ni inventar datos para llenar huecos —solo sacar del primer plano—). Lo decidido:
+
+- **La ficha de ocho casillas duró medio día, y con razón**: con datos reales (el extractor no lee
+  tablas) siete de ocho salían «sin cifra en lo leído», y ocho cuadros vacíos son ruido con cara de
+  diseño. La misma información (`guia.exigencias`, sin cambios en el servidor) se pinta ahora como
+  **una fila por cifra, SOLO las que el pliego trae** (`htmlCifrasPliego`: requisito · pide el pliego ·
+  usted · estado · dónde), y las que faltan se dicen en UNA frase («las otras 7 (…) no están en una
+  línea legible de lo leído: búsquelas en el apartado de requisitos» + enlace a SECOP II; o «aparecen
+  cuando terminen de leerse»). El CSS `.exig-*` se retiró: código muerto no se deja.
+- **Orden de la guía, de más a menos decisivo y con lo genérico plegado**: (1) el VEREDICTO en una
+  línea de chips (`htmlVeredicto`: registro, experiencia, capacidad, caja, indicadores, aviso de
+  interés, con su estado en una palabra; el detalle largo va en el `title`); (2) los documentos en una
+  línea; (3) «Lo que fija el pliego»; (4) «Ojo con lo que dice el pliego» (los hechos citados que no
+  están en la tabla: causales, personal, equipos, garantías, multas…; cinco a la vista y el resto en
+  «N más»); (5) el dictamen. Plegados: «Trámites y fechas (N)» (los pasos con fecha + lo que hay que
+  conseguir + lo que la aplicación verificó, con sus detalles largos), «Consejos», «La plata que nadie
+  suma», «La obra en una mirada» (repetía el título de la tarjeta) y «Documentos». El `summary` de la
+  guía va envuelto en UN `span`: el `summary` es flex por el chevrón y en 390 px partía el título en
+  dos columnas.
+- **Precios son tres pasos y nada más a la vista** (`index.html`, reordenado por anclas con
+  `reordenar.js` de la sesión; los ids NO cambian, `app.js` los busca por id): **1 · Cargue el pliego o
+  su análisis de precios** (la puerta única; «¿No tiene archivo? Describa la obra» PLEGADO —era el
+  paso 1 con textarea grande y es adivinar—; el mapeo de columnas FUERA del pliegue porque tiene que
+  verse cuando salta); **2 · Revise los ítems y calcule** (la tabla es el paso, el departamento a su
+  lado, «Añadir un ítem por nombre» debajo, y tres botones: «Calcular cuánto me cuesta», «Completar
+  precios con la IA» —antes tarjeta propia— y «Descargar mi presupuesto (Excel)»; debajo el estado y la
+  propuesta de la IA; el bloque del proceso de SECOP II como caja interior cuando hay proceso; y
+  plegados «Ajustes», «Guardar o abrir un borrador» y «Cómo calculamos»); **3 · Su precio** (encabezado
+  propio `#paso-3-cabecera`, que `pintarResumen` enciende y el reinicio apaga; debajo, en este orden,
+  «¿Me presento, y a cuánto?» —la decisión va primero, cerradura de la Fase 3—, el resumen, la
+  rentabilidad y el precio sugerido). «Revisar la oferta antes de subirla» y «Catálogo de precios de
+  referencia» van al final, plegados: se consultan de vez en cuando.
+- **Lo que se ELIMINÓ del primer plano y por qué**: el paso «¿Dónde?» (un desplegable solo no es un
+  paso), «Cargar Excel con ítems» (lo hace la puerta única; el botón y el input siguen ocultos porque
+  app.js los usa), la tarjeta propia de la IA, el catálogo abierto, la revisión abierta. Nada se borró
+  del árbol: reducir capacidades es decisión del dueño.
+- **Las cerraduras de literal cambiaron con la estructura** (título de los tres pasos, «¿Dónde?»,
+  «Calcular y exportar», el panel de IA como sección): la nueva prueba fija el orden 1 < 2 < 3, la
+  puerta única en el 1, describir la obra plegado y el mapeo fuera del pliegue, la tabla, el
+  departamento, los tres botones en su orden y la IA en el 2, los ajustes y borradores plegados, los
+  resultados en el 3 y revisar/catálogo al final plegados.
+- **Medido en Chromium** (Tailwind real, datos de producción por proxy, la guía con `exigencias`
+  inyectadas desde el código local): 1280 y 390, claro y oscuro, cero desbordes y consola limpia; CSV
+  soltado → 4 ítems en la tabla → «Completar precios con la IA» (simulado) → «Usar» → badge «Buscado
+  por la IA»; .txt → «3 ítem(s) extraídos». El proceso real de Pasto abre con seis chips de veredicto,
+  una fila de cifras (anticipo «No hay», pág. 74) y la frase de las siete que faltan.

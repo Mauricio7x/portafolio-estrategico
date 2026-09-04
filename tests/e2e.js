@@ -8825,8 +8825,8 @@ async function main() {
           const sinIndice = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: { indice: { archivos: [], plan: [], motivo: "sin índice" }, leidos: {}, ilegibles: {} } } });
           assert.ok(sinIndice.exigencias.every((x) => x.estado === "sin_dato"), "sin archivos publicados la casilla dice «sin dato», no «leyendo»");
           // (4) el frontend pinta la ficha y no repite sus hechos abajo; los estilos viven en index.html
-          assert.ok(/function htmlExigencias\(/.test(appG) && /Lo que exige este pliego/.test(appG) && /exig-grid/.test(appG) && /enFicha/.test(appG), "la tarjeta pinta la ficha y no duplica sus hechos");
-          assert.ok(/\.exig\[data-estado="no_cumple"\]/.test(html) && /\.exig-cifra/.test(html), "los estilos de la ficha viven en index.html");
+          assert.ok(/function htmlCifrasPliego\(/.test(appG) && /Lo que fija el pliego/.test(appG) && /function htmlVeredicto\(/.test(appG) && /enFicha/.test(appG), "la tarjeta pinta el veredicto y la tabla de cifras, y no duplica sus hechos");
+          assert.ok(!/exig-grid|exig-cifra/.test(html) && !/exig-grid/.test(appG) && /x\.exige != null/.test(appG), "las casillas vacías se fueron: solo se pintan las cifras que el pliego trae, y el CSS muerto no queda");
           // (5) cerca: ni jerga, ni voseo, ni emojis en la ficha
           // la `cita` es la línea literal del documento (puede decir «SMMLV»): es del pliego, no de la aplicación
           const sinCita = (l) => l.map(({ cita, ...x }) => x);
@@ -9046,7 +9046,7 @@ async function main() {
         const pliegoD = fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8");
         assert.ok(/window\.__pliegoLeerPdf = async/.test(pliegoD) && /textoDelPdf\(doc, \(\) => \{\}\)/.test(pliegoD), "pliego.js presta su lector sin tocar la barra ni el documento del panel");
         assert.ok(/encolarLecturaDocumentos\(id, \{ manual: true \}\)/.test(appD) && /op=documentos&id_proceso=/.test(appD) && /window\.__pliegoLeerPdf\(bytesDeBase64/.test(appD) && /op=descargar/.test(appD), "al guardar, la app pide el índice, baja y lee con el lector");
-        assert.ok(/data-seg-docs-leer=/.test(appD) && /Lo demás que dicen los documentos/.test(appD) && /ilegible: true, definitivo: definitivo === true/.test(appD), "botón de reintento, sección de hechos y el escaneo marcado como definitivo");
+        assert.ok(/data-seg-docs-leer=/.test(appD) && /Ojo con lo que dice el pliego/.test(appD) && /ilegible: true, definitivo: definitivo === true/.test(appD), "botón de reintento, sección de hechos y el escaneo marcado como definitivo");
         assert.ok(!/(?:docs|documentos|lo_que_dicen)\.[a-z_]+ \|\| 0/.test(appD), "ningún dato de los documentos se convierte en 0 con «|| 0»");
         assert.ok(/busca los documentos de ese proceso en SECOP II/.test(fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")), "la pantalla vacía de Mis procesos lo anuncia");
         console.log(`  · documentos del proceso: plan ${planD.plan.length}/${planD.resumen.publicados} archivos (${planD.resumen.de_proponentes} de proponentes, ${planD.resumen.no_legibles} no legibles), ${conDocs.lo_que_dicen.length} hechos con documento y página, la adenda más reciente manda, op=documentos GET/POST por el router y la guía de Mis procesos los enseña`);
@@ -12856,7 +12856,7 @@ async function main() {
           const appIa = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
           const htmlIa = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
           assert.ok(/op=ia/.test(appIa) && /data-ia-usar=/.test(appIa) && /origen_precio = "ia"/.test(appIa) && /function enrutarArchivoEntrada\(/.test(appIa), "Precios pide, pinta y acepta fila a fila, y la puerta única enruta el archivo");
-          assert.ok(/id="btn-ia-pedir"/.test(htmlIa) && /id="entrada-archivo-input"/.test(htmlIa) && /id="seccion-ia"/.test(htmlIa), "el marcado del panel de IA y de la puerta única está en index.html");
+          assert.ok(/id="btn-ia-pedir"/.test(htmlIa) && /id="entrada-archivo-input"/.test(htmlIa) && /id="ia-propuesta"/.test(htmlIa), "el marcado del panel de IA y de la puerta única está en index.html");
           assert.ok(!/\|\|\s*0\b/.test(appIa.slice(appIa.indexOf("function pintarIa("), appIa.indexOf("function consultarIa("))), "ningún precio de la IA se convierte en 0");
           const skillIa = fs.readFileSync(path.join(__dirname, "..", ".claude", "skills", "precios", "SKILL.md"), "utf8");
           assert.ok(/op=ia&pendientes=1/.test(skillIa) && /motor:"sesion"/.test(skillIa) && /expediente=1/.test(skillIa), "la skill /precios recorre la cola, pide el expediente y devuelve la propuesta");
@@ -14758,7 +14758,7 @@ async function main() {
       assert.ok(htmlPT.includes('<script src="/justificacion.js">'), "index.html tiene que cargar justificacion.js");
       {
         const apuTab = htmlPT.slice(htmlPT.indexOf('<main id="tab-apu"'));
-        const p3 = apuTab.indexOf('white">3</span>Calcular y exportar');
+        const p3 = apuTab.indexOf('white">3</span>Su precio');
         const iPT = apuTab.indexOf('id="seccion-piso-techo"');
         const iRes = apuTab.indexOf('id="seccion-resumen"');
         assert.ok(p3 > 0 && iPT > p3 && iPT < iRes, "el panel va DESPUÉS del paso 3 y ANTES del resumen: es la decisión, lo demás es el detalle");
@@ -18260,54 +18260,33 @@ async function main() {
             "el nodo de la alarma debe existir en la sección Tu RUP");
         }
 
-        /* ═══ LA PESTAÑA DE PRECIOS SON TRES PASOS, Y NADA MÁS A LA VISTA ═════
-           Antes, entre el paso 1 y el 2 se colaban la rentabilidad y el precio
-           sugerido — dos bloques que no se pueden ni mirar hasta haber
-           calculado. La pantalla pedía entender el programa antes de poder
-           usarlo, que es justo lo contrario de la filosofía del producto.
-           Los tres pasos van SEGUIDOS y los resultados DESPUÉS. */
+        /* ═══ LA PESTAÑA DE PRECIOS SON TRES PASOS, Y NADA MÁS A LA VISTA (rediseño 4-sep-2026) ═══
+           Encargo del dueño: «demasiado difícil entender cómo funciona todo».
+           1 · Cargue (la puerta única del archivo; describir la obra va PLEGADO:
+           es adivinar) · 2 · Revise los ítems y calcule (la tabla, el departamento
+           a su lado, y tres botones: calcular, completar precios con la IA, Excel;
+           AIU, anticipo, deducciones, perfil, proceso y borradores PLEGADOS) ·
+           3 · Su precio (solo tras calcular). Revisar y el catálogo, al final y
+           plegados. Los ids no cambian: app.js los busca por id. */
         {
           const apu = html.slice(html.indexOf('<main id="tab-apu"'), html.indexOf("</main>", html.indexOf('<main id="tab-apu"')));
           const pos = (frag) => { const i = apu.indexOf(frag); assert.ok(i > 0, `no está: ${frag}`); return i; };
-          /* T4 · LA FUENTE MÁS FIABLE VA PRIMERO. El lector de pliegos vivía
-             PLEGADO dentro del paso 1 —un <details> cerrado, último nodo de la
-             sección—, así que el dato más fiable de la pantalla (el formulario
-             de cantidades que publica la propia entidad, con sus ítems,
-             unidades y cantidades) era el más escondido, y en primer plano
-             quedaba «describa la obra», que es adivinar. Va delante y ABIERTO,
-             sin número: no es un paso más, es la puerta por la que conviene
-             entrar. Verificado además en Chromium real (escritorio y móvil):
-             visible, cero errores de consola y sin desborde. */
-          const pliego = pos('id="seccion-pliego-wrap"');
-          const p1 = pos('white">1</span>¿Qué va a construir?');
-          assert.ok(pliego < p1, "el lector de pliegos va ANTES del paso 1: es la fuente más fiable");
-          assert.ok(/<section id="seccion-pliego-wrap"/.test(apu),
-            "…y ABIERTO: un <details> cerrado esconde justo lo que hay que usar primero");
-          // (4-sep-2026) el rótulo pasó de pregunta a instrucción cuando la tarjeta se volvió la puerta única del archivo
-          assert.ok(/Suba el pliego o su análisis de precios/.test(apu) && /id="entrada-archivo"/.test(apu),
-            "el rótulo pregunta lo que el usuario puede responder, sin jerga");
-          const p2 = pos('white">2</span>¿Dónde?');
-          const p3 = pos('white">3</span>Calcular y exportar');
-          assert.ok(p1 < p2 && p2 < p3, "los tres pasos tienen que ir en orden y seguidos");
-          for (const res of ["seccion-resumen", "seccion-rentabilidad", "seccion-precio-sugerido"]) {
-            assert.ok(pos(`id="${res}"`) > p3,
-              `«${res}» va DESPUÉS del paso 3: no se puede mirar antes de calcular`);
-          }
-          /* Y el AIU, el anticipo, las deducciones y el ajuste competitivo NO
-             están a la vista: sus valores por defecto sirven para la mayoría de
-             los procesos, y tenerlos delante obliga a decidir cuatro cosas
-             antes de poder ver un precio. */
-          const ajustes = apu.indexOf("<summary");
-          const finPaso2 = pos('id="normativa-wrap"');
-          for (const id of ["aiu", "anticipo", "deducciones", "ajuste-competitivo", "factor-baja"]) {
-            const i = pos(`id="${id}"`);
-            assert.ok(i > apu.indexOf("Ajustes <span") && i < finPaso2,
-              `«${id}» tiene que vivir dentro de «Ajustes», no en la vista principal`);
-          }
-          assert.ok(ajustes > 0);
-          // el paso 2 pide UNA cosa: el departamento
-          assert.ok(pos('id="departamento"') > p2 && pos('id="departamento"') < apu.indexOf("Ajustes <span"),
-            "el paso «¿Dónde?» tiene que ser el departamento y nada más");
+          const p1 = pos('white">1</span>Cargue el pliego o su análisis de precios');
+          const p2 = pos('white">2</span>Revise los ítems y calcule');
+          const p3 = pos('white">3</span>Su precio');
+          assert.ok(p1 < p2 && p2 < p3, "los tres pasos van en orden: cargar, revisar y calcular, su precio");
+          assert.ok(pos('id="entrada-archivo"') > p1 && pos('id="entrada-archivo"') < p2, "la puerta única del archivo es el paso 1");
+          assert.ok(/<details id="sin-archivo-wrap"/.test(apu) && pos('id="objeto"') > pos('id="sin-archivo-wrap"') && pos('id="objeto"') < p2, "describir la obra va PLEGADO dentro del paso 1: es adivinar");
+          assert.ok(pos('id="mapeo-panel"') < p2 && pos('id="mapeo-panel"') > apu.indexOf("</details>", pos('id="sin-archivo-wrap"')), "el mapeo de columnas vive FUERA del pliegue: tiene que verse cuando salta");
+          for (const id of ["departamento", "tabla", "buscar-item", "btn-calcular", "btn-ia-pedir", "btn-exportar", "ia-estado", "ia-propuesta", "seccion-proceso"]) assert.ok(pos(`id="${id}"`) > p2 && pos(`id="${id}"`) < p3, `«${id}» vive en el paso 2`);
+          assert.ok(pos('id="btn-calcular"') < pos('id="btn-ia-pedir"') && pos('id="btn-ia-pedir"') < pos('id="btn-exportar"'), "calcular · completar con la IA · Excel, en ese orden");
+          assert.ok(pos('id="departamento"') < pos('id="tabla"'), "el departamento va antes de la tabla: de él salen los precios");
+          const ajustes = pos('<details id="ajustes-wrap"'); const finAjustes = apu.indexOf("</details>", ajustes);
+          for (const id of ["aiu", "anticipo", "deducciones", "ajuste-competitivo", "factor-baja", "perfil", "modo-aiu"]) { const i = pos(`id="${id}"`); assert.ok(i > ajustes && i < finAjustes, `«${id}» tiene que vivir dentro de «Ajustes», no en la vista principal`); }
+          const borr = apu.indexOf("Guardar o abrir un borrador"); assert.ok(borr > finAjustes && pos('id="btn-guardar"') > borr && pos('id="btn-guardar"') < p3, "los borradores van plegados en el paso 2");
+          for (const res of ["seccion-resumen", "seccion-piso-techo", "seccion-rentabilidad", "seccion-precio-sugerido"]) assert.ok(pos(`id="${res}"`) > p2 && pos(`id="${res}"`) >= p3 - 400, `«${res}» va en el paso 3: no se puede mirar antes de calcular`);
+          assert.ok(pos('id="seccion-revision"') > pos('id="seccion-precio-sugerido"') && pos('id="seccion-apu"') > pos('id="seccion-revision"'), "revisar y el catálogo van al final");
+          assert.ok(/<summary[^>]*>Revisar la oferta antes de subirla a SECOP II<\/summary>/.test(apu) && /<summary[^>]*>Catálogo de precios de referencia<\/summary>/.test(apu), "…y plegados");
         }
 
         const idsHtml = new Set([...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));

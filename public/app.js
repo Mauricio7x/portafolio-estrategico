@@ -2796,48 +2796,50 @@
       + bloque("No legibles por la aplicación", d.no_legibles, (x) => `${esc(x.motivo || "")}${x.url && urlSegura(x.url) ? ` · <a href="${esc(urlSegura(x.url))}" target="_blank" rel="noopener noreferrer" class="underline">descargar</a>` : ""}`)
       + (d.de_proponentes ? `<p class="mt-2 text-[11px] text-gray-400">${d.de_proponentes} archivo${d.de_proponentes === 1 ? "" : "s"} más son ofertas de otros proponentes: no son reglas del proceso.</p>` : "");
   }
-  /* ── La guía «Don Héctor» de un proceso guardado (piel v3, 4-sep-2026) ──
+  /* ── La guía «Don Héctor» de un proceso guardado (rediseño 4-sep-2026, segunda pasada) ──
      Todo sale de `p.guia` (lib/guia_proceso, servido por op=seguimiento): aquí
-     no se calcula ni un peso ni un día. Orden de lectura, de más a menos
-     decisivo: en qué van los documentos (una línea) · LO QUE EXIGE ESTE PLIEGO
-     (la ficha de ocho casillas: experiencia general y específica, los cinco
-     indicadores del registro y el anticipo, cada una con documento y página y
-     con la cifra de la empresa al lado) · la obra en una mirada · lo demás que
-     dicen los documentos · lo que necesita · el dictamen · el paso a paso; y
-     plegado lo que hay que TOCAR (consejos, la plata que nadie suma, la lista
-     de documentos). El punto tipográfico hereda el color del tema; sin dato se
-     dice, jamás 0: una casilla vacía dice por qué está vacía. */
-  const ESTADO_EXIG_CORTO = { por_leer: "Se lee de los documentos", sin_dato: "Búsquelo en el pliego" };
-  function htmlExigencias(g) {
+     no se calcula ni un peso ni un día. Encargo del dueño: «cuadros vacíos y
+     demasiado texto». Lo que un contratista busca al abrir el proceso, en este
+     orden y nada más a la vista: (1) ¿puedo presentarme? — el veredicto en una
+     línea de chips (registro, experiencia, capacidad, caja, indicadores, aviso);
+     (2) lo que FIJA el pliego — una fila por cifra, SOLO las que el pliego trae,
+     con la cifra de la empresa y la página; las que no aparecen se dicen en una
+     frase, no en siete cuadros vacíos; (3) «ojo con» — lo que el pliego exige o
+     castiga, citado; (4) el dictamen. Lo genérico —trámites y fechas, consejos,
+     la plata que nadie suma, la ficha de la obra, la lista de documentos— es
+     igual en todos los procesos y va PLEGADO. Sin dato se dice, jamás 0. */
+  const CHIP_REQ = { registro: "Registro", experiencia: "Experiencia", capacidad: "Capacidad", caja: "Caja", financieros: "Indicadores", manifestacion: "Aviso de interés" };
+  const CHIP_ESTADO = { cumple: "cumple", revisar: "confírmelo", no_cumple: "no cumple", pendiente: "por hacer", sin_dato: "sin dato" };
+  const EXIG_CLR = { cumple: "text-emerald-600", no_cumple: "text-red-600", revisar: "text-amber-500", dato: "text-blue-500", por_leer: "text-gray-400", sin_dato: "text-gray-400" };
+  function htmlVeredicto(g) {
+    const chips = (g.requisitos || []).filter((q) => CHIP_REQ[q.clave]).map((q) => {
+      const [clr] = ESTADO_REQ[q.estado] || ESTADO_REQ.sin_dato;
+      return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);" title="${esc(q.detalle || "")}"><span class="${clr}" aria-hidden="true">●</span>${esc(CHIP_REQ[q.clave])}: <span class="${clr}">${esc(CHIP_ESTADO[q.estado] || q.estado)}</span></span>`;
+    });
+    return chips.length ? `<div class="flex flex-wrap gap-1.5">${chips.join("")}</div>` : "";
+  }
+  function htmlCifrasPliego(g) {
     const lista = g.exigencias || [];
     if (!lista.length) return "";
-    const re = (g.resumen && g.resumen.exigencias) || null;
-    const casilla = (x) => {
-      const vacia = x.exige == null;
-      /* la casilla enseña la forma CORTA del dinero ($650 M) y la cifra exacta va en
-         el título; la unidad de los salarios mínimos va en línea aparte. Es solo
-         presentación: el estado lo decidió el servidor con la cifra completa. */
-      const esDinero = !vacia && x.tipo_valor === "dinero" && Number.isFinite(Number(x.exige_valor));
-      const esSalarios = !vacia && x.tipo_valor === "smmlv" && /salarios mínimos$/.test(x.exige);
-      const cifra = vacia ? (x.estado === "por_leer" ? "…" : "—") : esDinero ? esc(fmtCorto(Number(x.exige_valor))) : esSalarios ? esc(x.exige.replace(/\s*salarios mínimos$/, "")) : esc(x.exige);
-      const unidad = esSalarios ? `<p class="exig-unidad">salarios mínimos</p>` : "";
-      const fuente = x.documento ? `${esc(x.documento)}${x.pagina != null ? `, pág. ${x.pagina}` : ""}` : "";
-      const pie = fuente || esc(ESTADO_EXIG_CORTO[x.estado] || "");
-      const titulo = [esDinero ? `Exige ${x.exige}.` : "", x.nota, x.cita ? `«${x.cita}»` : ""].filter(Boolean).join(" ");
-      return `<div class="exig" data-estado="${esc(x.estado)}" title="${esc(titulo)}">
-        <p class="exig-titulo">${esc(x.titulo)}</p>
-        <p class="exig-cifra${vacia ? " vacia" : ""}">${cifra}</p>${unidad}
-        ${x.suyo ? `<p class="exig-suyo">${esc(x.suyo_rotulo || "Usted")}: <span class="font-medium">${esc(x.suyo)}</span></p>` : ""}
-        ${x.estado_legible ? `<p class="exig-estado"><span class="punto" aria-hidden="true"></span>${esc(x.estado_legible)}</p>` : ""}
-        ${pie ? `<p class="exig-fuente">${pie}${x.cambiado_por_adenda ? ` · cambió por adenda${x.valor_anterior ? ` (antes ${esc(x.valor_anterior)})` : ""}` : ""}</p>` : ""}
-      </div>`;
+    const con = lista.filter((x) => x.exige != null), sin = lista.filter((x) => x.exige == null);
+    const porLeer = sin.length > 0 && sin.every((x) => x.estado === "por_leer");
+    const docs = g.documentos || {};
+    const enlace = docs.enlace_secop && urlSegura(docs.enlace_secop) ? ` <a href="${esc(urlSegura(docs.enlace_secop))}" target="_blank" rel="noopener noreferrer" class="underline">Abrir en SECOP II</a>` : "";
+    const fila = (x) => {
+      const clr = EXIG_CLR[x.estado] || "text-gray-400";
+      /* forma corta del dinero en la celda; la cifra exacta y la cita, en el título */
+      const cifra = x.tipo_valor === "dinero" && Number.isFinite(Number(x.exige_valor)) ? fmtCorto(Number(x.exige_valor)) : x.exige;
+      const titulo = [x.tipo_valor === "dinero" ? `Pide ${x.exige}.` : "", x.nota, x.cita ? `«${x.cita}»` : ""].filter(Boolean).join(" ");
+      return `<tr title="${esc(titulo)}"><td class="py-1.5 pr-3 text-gray-600">${esc(x.titulo)}</td><td class="py-1.5 pr-3 num font-semibold whitespace-nowrap">${esc(cifra)}</td><td class="py-1.5 pr-3 num whitespace-nowrap text-gray-500">${x.suyo ? esc(x.suyo) : "—"}</td><td class="py-1.5 pr-3 whitespace-nowrap ${clr}"><span aria-hidden="true">●</span> ${esc(x.estado_legible || "")}</td><td class="py-1.5 text-[11px] text-gray-400">${x.documento ? `${esc(x.documento)}${x.pagina != null ? `, pág. ${x.pagina}` : ""}` : ""}${x.cambiado_por_adenda ? " · cambió por adenda" : ""}</td></tr>`;
     };
+    const nombres = sin.map((x) => x.titulo.toLowerCase());
+    const pie = !sin.length ? ""
+      : porLeer ? `<p class="mt-2 text-xs text-gray-500">${con.length ? "Las demás cifras" : "Las cifras del pliego"} aparecen aquí cuando terminen de leerse los documentos.</p>`
+        : `<p class="mt-2 text-xs text-gray-500">${con.length ? `Las otras ${sin.length}` : `Estas ${sin.length}`} (${nombres.length <= 3 ? nombres.join(", ") : `${nombres.slice(0, 3).join(", ")} y ${nombres.length - 3} más`}) no están en una línea legible de lo leído: búsquelas en el apartado de requisitos del pliego.${enlace}</p>`;
     return `<div>
-      <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h4 class="font-semibold tracking-tight">Lo que exige este pliego</h4>
-        ${re && re.frase ? `<p class="text-xs text-gray-500">${esc(re.frase)}</p>` : ""}
-      </div>
-      <div class="exig-grid mt-2">${lista.map(casilla).join("")}</div>
+      <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1"><h4 class="font-semibold tracking-tight">Lo que fija el pliego</h4>${g.resumen && g.resumen.exigencias && con.length ? `<p class="text-xs text-gray-500">${esc(g.resumen.exigencias.frase)}</p>` : ""}</div>
+      ${con.length ? `<div class="mt-2 overflow-x-auto"><table class="w-full text-sm"><thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-3 font-medium">Requisito</th><th class="pb-1 pr-3 font-medium">Pide el pliego</th><th class="pb-1 pr-3 font-medium">Usted</th><th class="pb-1 pr-3 font-medium">Estado</th><th class="pb-1 font-medium">Dónde</th></tr></thead><tbody class="divide-y divide-gray-100">${con.map(fila).join("")}</tbody></table></div>` : ""}
+      ${pie}
     </div>`;
   }
   function htmlGuia(p) {
@@ -2850,24 +2852,36 @@
     const pago = [o.pago && o.pago.anticipo_legible, o.pago && o.pago.forma_precio === "global" ? "a precio global (el riesgo de cantidades es suyo)" : o.pago && o.pago.forma_precio === "unitarios" ? "a precios unitarios (las cantidades son un estimativo)" : null].filter(Boolean).map(esc).join(" · ");
     const adj = o.como_lo_adjudican || {};
     const dato = (rotulo, valor) => `<div class="min-w-0"><span class="text-[11px] uppercase tracking-wide text-gray-400">${rotulo}</span><p class="text-xs text-gray-700">${valor || "—"}</p></div>`;
-    const reqs = (g.requisitos || []).map((q) => { const [clr, eti] = ESTADO_REQ[q.estado] || ESTADO_REQ.sin_dato; return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(q.titulo)}</span> <span class="text-[11px] ${clr}">${eti}</span><p class="text-xs text-gray-600">${esc(q.detalle)}</p>${q.donde ? `<p class="text-[11px] text-gray-400">Dónde: ${esc(q.donde)}</p>` : ""}</div></li>`; }).join("");
-    /* los hechos que YA están en la ficha (cifras exigidas y anticipo) no se repiten abajo */
+    /* «ojo con»: lo que el pliego exige o castiga, citado; los hechos que ya están en la tabla de cifras no se repiten */
     const enFicha = (h) => (g.exigencias || []).length > 0 && (/^requisito_/.test(h.clave) || h.clave === "anticipo");
-    const hechos = (g.lo_que_dicen || []).filter((h) => !enFicha(h)).map((h) => { const [clr, eti] = ESTADO_HECHO[h.estado] || ESTADO_HECHO.dato; return `<li class="flex gap-2"${h.cita ? ` title="${esc(h.cita)}"` : ""}><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(h.titulo)}${h.valor_legible ? `: ${esc(h.valor_legible)}` : ""}</span>${eti ? ` <span class="text-[11px] ${clr}">${eti}</span>` : ""}<p class="text-xs text-gray-600">${esc(h.texto)}</p><p class="text-[11px] text-gray-400">${esc(h.documento || "")}${h.pagina != null ? `, pág. ${h.pagina}` : ""}</p></div></li>`; }).join("");
+    const ojo = (g.lo_que_dicen || []).filter((h) => !enFicha(h));
+    const liOjo = (h) => { const [clr, eti] = ESTADO_HECHO[h.estado] || ESTADO_HECHO.dato; return `<li class="flex gap-2" title="${esc([h.texto, h.cita ? `«${h.cita}»` : ""].filter(Boolean).join(" "))}"><span class="${clr}" aria-hidden="true">●</span><span class="min-w-0"><span class="font-medium">${esc(h.titulo)}${h.valor_legible ? `: ${esc(h.valor_legible)}` : ""}</span>${eti ? ` <span class="text-[11px] ${clr}">${eti}</span>` : ""}${h.clave === "deducciones" || h.clave === "fechas" ? `<span class="block text-xs text-gray-600">${esc(h.texto)}</span>` : ""}<span class="block text-[11px] text-gray-400">${esc(h.documento || "")}${h.pagina != null ? `, pág. ${h.pagina}` : ""}</span></span></li>`; };
+    const ojoVisible = ojo.slice(0, 5), ojoResto = ojo.slice(5);
+    const ojoHtml = ojo.length ? `<div><h4 class="font-semibold tracking-tight">Ojo con lo que dice el pliego</h4><ul class="mt-1.5 space-y-1.5">${ojoVisible.map(liOjo).join("")}</ul>${ojoResto.length ? `<details class="mt-1.5"><summary class="cursor-pointer text-xs text-gray-500">${ojoResto.length} más</summary><ul class="mt-1.5 space-y-1.5">${ojoResto.map(liOjo).join("")}</ul></details>` : ""}</div>` : "";
+    /* trámites y fechas: los pasos con fecha y, debajo, lo que hay que conseguir (lo que no está en los chips del veredicto) */
     const pasos = (g.pasos || []).map((s) => `<li class="flex gap-2"><span class="w-24 shrink-0 text-xs text-gray-500">${s.cuando_legible ? esc(s.cuando_legible) : "después"}</span><div class="min-w-0"><span class="font-medium">${esc(s.titulo)}</span><p class="text-xs text-gray-600">${esc(s.detalle)}</p></div></li>`).join("");
+    const conseguir = (g.requisitos || []).filter((q) => !CHIP_REQ[q.clave]).map((q) => { const [clr, eti] = ESTADO_REQ[q.estado] || ESTADO_REQ.sin_dato; return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(q.titulo)}</span> <span class="text-[11px] ${clr}">${eti}</span><p class="text-xs text-gray-600">${esc(q.detalle)}</p>${q.donde ? `<p class="text-[11px] text-gray-400">Dónde: ${esc(q.donde)}</p>` : ""}</div></li>`; }).join("");
+    const verificados = (g.requisitos || []).filter((q) => CHIP_REQ[q.clave]).map((q) => { const [clr, eti] = ESTADO_REQ[q.estado] || ESTADO_REQ.sin_dato; return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(q.titulo)}</span> <span class="text-[11px] ${clr}">${eti}</span><p class="text-xs text-gray-600">${esc(q.detalle)}</p>${q.donde ? `<p class="text-[11px] text-gray-400">Dónde: ${esc(q.donde)}</p>` : ""}</div></li>`; }).join("");
     const consejos = (g.consejos || []).map((c) => `<li><span class="font-medium">${esc(c.titulo)}</span>${c.por_que_aqui ? ` <span class="text-[11px] text-gray-400">(${esc(c.por_que_aqui)})</span>` : ""}<p class="text-xs text-gray-600">${esc(c.detalle)}</p></li>`).join("");
     const d = g.dinero || {};
     const fila = (k, v) => (v != null ? `<tr><td class="py-1 pr-3 text-gray-600">${k}</td><td class="py-1 text-right num">${esc(fmtCorto(v))}</td></tr>` : "");
     const dinero = `<table class="w-full text-xs"><tbody>${fila("Presupuesto oficial", d.presupuesto_oficial_cop)}${fila("Contribución de obra pública (5 %), descontada en cada pago", d.contribucion_obra_5pct_cop)}${fila("Garantía de seriedad: valor asegurado (10 %)", d.garantia_seriedad_asegurada_cop)}${fila("Anticipo (va a una fiducia)", d.anticipo_cop)}${fila("Plata suya antes del primer pago (estimado)", d.financiacion_antes_del_primer_pago_cop)}</tbody></table>
       <ul class="mt-2 space-y-0.5 text-[11px] text-gray-500">${(d.otros_que_nadie_suma || []).map((x) => `<li>${esc(x.concepto)}: ${esc(x.tipico)} <span class="text-gray-400">(${esc(x.nota)})</span></li>`).join("")}</ul>
       ${d.nota ? `<p class="mt-1 text-[11px] text-gray-400">${esc(d.nota)}</p>` : ""}`;
+    const obraHtml = `<div class="grid gap-3 sm:grid-cols-2">
+          ${dato("Qué es", o.que_es ? `${esc(o.que_es)}${o.tipo_trabajo_legible ? ` <span class="text-gray-400">· ${esc(o.tipo_trabajo_legible)}</span>` : ""}` : null)}
+          ${dato("Dónde", donde ? `${esc(donde)}${zona ? `<br><span class="text-gray-500">${zona}</span>` : ""}` : null)}
+          ${dato("Cuánto y por cuánto tiempo", cuanto)}
+          ${dato("Cómo pagan", pago ? `${pago}${o.pago && o.pago.fuente_anticipo && /pág\./.test(o.pago.fuente_anticipo) ? ` <span class="text-gray-400">· ${esc(o.pago.fuente_anticipo)}</span>` : ""}` : null)}
+          <div class="min-w-0 sm:col-span-2"><span class="text-[11px] uppercase tracking-wide text-gray-400">Cómo lo adjudican</span><p class="text-xs text-gray-700">${adj.nombre ? `<span class="font-medium">${esc(adj.nombre)}.</span> ` : ""}${esc(adj.explicacion || "")}</p></div>
+        </div>`;
     const abierta = segGuiaAbierta === p.id;
     /* La caja del dictamen la pinta pliego.js (window.__pliegoDictamenEn) cuando el
        pliegue se abre (op=dictamen: el «Don Héctor» que lee el pliego completo, con
        el MISMO flujo del lector). Se pide al abrir, no al pintar: cada GET lee el
        texto guardado. «Cargar el pliego» abre Precios con ESTE proceso precargado
        (qApu desde la foto) para quien tenga un pliego que no se leyó solo. */
-    const dictamen = `<div class="guia-caja">
+    const dictamen = `<div class="guia-caja p-3">
         <div data-seg-dictamen="${esc(p.id)}"><p class="text-xs font-medium uppercase tracking-wide text-gray-500">Dictamen del pliego</p>
         <p class="mt-1 text-xs text-gray-600">Si conviene presentarse y por qué, con citas por página del pliego leído.</p>
         <button type="button" data-seg-dictamen-ver="${esc(p.id)}" class="mt-2 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition" style="background: var(--accent);">Ver el dictamen del pliego</button></div>
@@ -2876,26 +2890,22 @@
     const docs = g.documentos || null;
     const nDocs = docs ? (docs.leidos || []).length + (docs.por_leer || []).length + (docs.ilegibles || []).length + (docs.no_legibles || []).length : 0;
     const plegado = (titulo, cuerpo) => `<details class="guia-caja"><summary class="cursor-pointer px-3 py-2 text-sm font-semibold tracking-tight">${titulo}</summary><div class="px-3 pb-3">${cuerpo}</div></details>`;
-    const bloque = (titulo, cuerpo) => `<div><h4 class="font-semibold tracking-tight">${titulo}</h4>${cuerpo}</div>`;
+    const nPasos = (g.pasos || []).length + (g.requisitos || []).filter((q) => !CHIP_REQ[q.clave]).length;
     return `<details class="mt-3 rounded-xl ring-1 ring-inset ring-gray-900/5" data-seg-guia="${esc(p.id)}" style="background: var(--bg-inset);"${abierta ? " open" : ""}>
-      <summary class="cursor-pointer px-3 py-2 text-sm font-medium">Qué necesita para presentarse${r.frase ? ` <span class="text-xs font-normal text-gray-500">· ${esc(r.frase)}</span>` : ""}${g.completa === false ? ` <span class="text-[11px] font-normal text-amber-900">· guía parcial: el proceso ya no está en la lista viva</span>` : ""}</summary>
-      <div class="space-y-5 px-3 pb-3 text-sm">
-        ${docs ? `<div class="guia-caja px-3 py-2" data-seg-docs="${esc(p.id)}">${htmlDocs(p)}</div>` : ""}
-        ${htmlExigencias(g)}
-        ${bloque("La obra en una mirada", `<div class="mt-2 grid gap-3 sm:grid-cols-2">
-          ${dato("Qué es", o.que_es ? `${esc(o.que_es)}${o.tipo_trabajo_legible ? ` <span class="text-gray-400">· ${esc(o.tipo_trabajo_legible)}</span>` : ""}` : null)}
-          ${dato("Dónde", donde ? `${esc(donde)}${zona ? `<br><span class="text-gray-500">${zona}</span>` : ""}` : null)}
-          ${dato("Cuánto y por cuánto tiempo", cuanto)}
-          ${dato("Cómo pagan", pago ? `${pago}${o.pago && o.pago.fuente_anticipo && /pág\./.test(o.pago.fuente_anticipo) ? ` <span class="text-gray-400">· ${esc(o.pago.fuente_anticipo)}</span>` : ""}` : null)}
-          <div class="min-w-0 sm:col-span-2"><span class="text-[11px] uppercase tracking-wide text-gray-400">Cómo lo adjudican</span><p class="text-xs text-gray-700">${adj.nombre ? `<span class="font-medium">${esc(adj.nombre)}.</span> ` : ""}${esc(adj.explicacion || "")}</p></div>
-        </div>`)}
-        ${hechos ? bloque("Lo demás que dicen los documentos", `<ul class="mt-1.5 space-y-2">${hechos}</ul>`) : ""}
-        ${bloque("Lo que necesita", `<ul class="mt-1.5 space-y-2">${reqs}</ul>`)}
+      <summary class="cursor-pointer px-3 py-2 text-sm font-medium"><span>Qué necesita para presentarse${r.frase ? ` <span class="text-xs font-normal text-gray-500">· ${esc(r.frase)}</span>` : ""}${g.completa === false ? ` <span class="text-[11px] font-normal text-amber-900">· guía parcial: el proceso ya no está en la lista viva</span>` : ""}</span></summary>
+      <div class="space-y-4 px-3 pb-3 text-sm">
+        ${htmlVeredicto(g)}
+        ${docs ? `<div class="text-xs" data-seg-docs="${esc(p.id)}">${htmlDocs(p)}</div>` : ""}
+        ${htmlCifrasPliego(g)}
+        ${ojoHtml}
         ${dictamen}
-        ${bloque("Paso a paso", `<ol class="mt-1.5 space-y-2">${pasos}</ol>`)}
-        ${plegado("Consejos para este proceso", `<ul class="space-y-2">${consejos}</ul>`)}
-        ${plegado("La plata que nadie suma", dinero)}
-        ${nDocs ? plegado(`Documentos del proceso (${nDocs})`, htmlListaDocs(docs)) : ""}
+        <div class="space-y-2">
+          ${plegado(`Trámites y fechas (${nPasos})`, `<ol class="space-y-2">${pasos}</ol>${conseguir ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que tiene que conseguir</p><ul class="mt-1.5 space-y-2">${conseguir}</ul>` : ""}${verificados ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que la aplicación verificó</p><ul class="mt-1.5 space-y-2">${verificados}</ul>` : ""}`)}
+          ${plegado(`Consejos para este proceso (${(g.consejos || []).length})`, `<ul class="space-y-2">${consejos}</ul>`)}
+          ${plegado("La plata que nadie suma", dinero)}
+          ${plegado("La obra en una mirada", obraHtml)}
+          ${nDocs ? plegado(`Documentos del proceso (${nDocs})`, htmlListaDocs(docs)) : ""}
+        </div>
         ${g.como_leerlo ? `<p class="text-[11px] text-gray-400">${esc(g.como_leerlo)}</p>` : ""}
       </div>
     </details>`;
@@ -4247,6 +4257,7 @@
   }
 
   function pintarResumen(r) {
+    $("paso-3-cabecera").classList.remove("hidden");
     $("seccion-resumen").classList.remove("hidden");
     const s = r.resumen;
 
@@ -5181,7 +5192,7 @@
     for (const id of ["objeto", "codigos-unspsc", "entidad", "id-proceso", "cuantia", "plazo-meses"]) {
       if ($(id)) $(id).value = "";
     }
-    for (const id of ["seccion-resumen", "seccion-rentabilidad", "seccion-precio-sugerido", "seccion-piso-techo", "r-validaciones"]) {
+    for (const id of ["paso-3-cabecera", "seccion-resumen", "seccion-rentabilidad", "seccion-precio-sugerido", "seccion-piso-techo", "r-validaciones"]) {
       if ($(id)) $(id).classList.add("hidden");
     }
     ultimaRentabilidad = null;

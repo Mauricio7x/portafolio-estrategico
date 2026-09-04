@@ -166,8 +166,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 121 secciones. Las 10 más nuevas:
-  L  6608  El lookahead delante del lookbehind: la lista negra 19 veces más rápida y `main` vuelve a ve
+· MEMORIA · docs/MEMORIA.md — 122 secciones. Las 10 más nuevas:
   L  6633  Don Héctor · las decisiones del dueño y las tomadas con autonomía (2-sep-2026, misma tarde)
   L  6677  Dictamen del pliego · `op=dictamen`, el código de la sección 6 (2-sep-2026, noche)
   L  6748  La guía «Don Héctor» de cada proceso guardado y el dictamen en Mis procesos (3-sep-2026)
@@ -177,6 +176,7 @@
   L  7020  La piel v2 · medida sobre las mejores páginas del mundo, no de memoria (4-sep-2026)
   L  7110  La piel v3 · «Lino y tinta»: el color caro y el detalle, medidos (4-sep-2026)
   L  7211  La ficha «Lo que exige este pliego» en Mis procesos y los precios buscados por una sesión de
+  L  7293  Segunda pasada del 4-sep-2026: la guía sin cuadros vacíos y Precios en tres pasos
 
 · DOCUMENTOS docs/ — 41:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)

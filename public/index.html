@@ -808,30 +808,8 @@
     #app .tarjeta .flex.items-center.gap-3 { flex-wrap: wrap; row-gap: 8px; }
     #app .campo-buscar { padding-left: 14px; }
 
-    /* ── Mis procesos · la ficha «Lo que exige este pliego» (4-sep-2026) ──
-       Ocho casillas sobre la caja hundida de la guía: rótulo pequeño en
-       versalitas, la cifra del pliego grande y tabular, la cifra de la empresa
-       debajo, un punto de estado y la fuente (documento, página) al pie. El
-       color solo en el punto y en su palabra: la casilla no grita; la que «no
-       cumple» lleva además un filo rojo a la izquierda. */
+    /* ── Mis procesos · la guía (4-sep-2026): la caja interior sobre el fondo hundido de la guía ── */
     .guia-caja { border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--filo); }
-    .exig-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-    @media (min-width: 640px) { .exig-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-    .exig { position: relative; min-width: 0; padding: 12px 14px 11px; border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--filo); }
-    .exig-titulo { font-size: 11px; line-height: 1.3; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-tertiary); }
-    .exig-cifra { margin-top: 6px; font-size: 20px; line-height: 1.15; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-    .exig-cifra.vacia { color: var(--text-tertiary); font-weight: 500; }
-    .exig-unidad { font-size: 12px; line-height: 1.3; color: var(--text-secondary); }
-    @media (max-width: 639px) { .exig { padding: 10px 12px 9px; } .exig-titulo { font-size: 10px; letter-spacing: 0.03em; overflow-wrap: anywhere; } .exig-cifra { font-size: 18px; } }
-    .exig-suyo { margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-    .exig-estado { margin-top: 8px; display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 1.3; font-weight: 500; color: var(--text-tertiary); }
-    .exig-estado .punto { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
-    .exig-fuente { margin-top: 3px; font-size: 11px; line-height: 1.35; color: var(--text-tertiary); }
-    .exig[data-estado="cumple"] .exig-estado { color: var(--ok-texto); }
-    .exig[data-estado="no_cumple"] .exig-estado { color: var(--danger); }
-    .exig[data-estado="no_cumple"] { border-left: 3px solid var(--danger); padding-left: 12px; }
-    .exig[data-estado="revisar"] .exig-estado { color: var(--warn); }
-    .exig[data-estado="dato"] .exig-estado { color: var(--accent); }
 
     /* ── Precios · la puerta única del archivo (4-sep-2026) ── */
     .zona-archivo { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 26px 16px; text-align: center; cursor: pointer;
@@ -2378,26 +2356,9 @@
         <p id="aviso-precios" class="nota-pestana"></p>
       </header>
 
-      <!-- ══════ Paso 1 · ¿Qué va a construir? ══════ -->
-            <!-- ══════════════ TRES PASOS, Y NADA MÁS A LA VISTA ══════════════
-           Los tres pasos van SEGUIDOS y los resultados DESPUÉS. Antes, entre el
-           paso 1 y el 2 se colaban la rentabilidad y el precio sugerido —dos
-           bloques que no se pueden ni mirar hasta haber calculado—, así que la
-           pantalla pedía entender el programa antes de poder usarlo.
-           El AIU, el anticipo, las deducciones y el ajuste competitivo se fueron
-           a «Ajustes»: sus valores por defecto sirven para la mayoría de los
-           procesos, y tenerlos delante obliga a decidir cuatro cosas antes de
-           poder ver un precio. -->
-<!-- ══════════════ LA FUENTE MÁS FIABLE VA PRIMERO ══════════════
-           El lector de pliegos vivía PLEGADO dentro del paso 1, o sea que el
-           dato más fiable de la pantalla —el formulario de cantidades que
-           publica la propia entidad, con sus ítems, unidades y cantidades— era
-           el más escondido, y en primer plano quedaba «describa la obra», que
-           es adivinar. Va delante y ABIERTO, sin número: no es un paso más, es
-           la puerta por la que conviene entrar. Los tres pasos numerados
-           siguen en su orden (hay prueba de que 1 < 2 < 3). -->
+      <!-- ══════ PASO 1 · CARGUE (rediseño 4-sep-2026): una sola puerta, y lo demás plegado ══════ -->
         <section id="seccion-pliego-wrap" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-          <h2 class="font-semibold tracking-tight">Suba el pliego o su análisis de precios</h2>
+          <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">1</span>Cargue el pliego o su análisis de precios</h2>
           <p class="mt-1 text-sm text-gray-500">Los ítems, las unidades y las cantidades entran solos; la aplicación les busca precio en sus bancos y, si lo pide, una sesión de inteligencia artificial completa los que falten con su fuente. El resto de la pantalla es para cuando no tiene ningún archivo.</p>
 
           <!-- ══════ UNA SOLA PUERTA (4-sep-2026) ══════
@@ -2563,130 +2524,176 @@
               <div id="r-diagnostico" class="mt-3 space-y-2 text-xs text-gray-600"></div>
             </details>
           </section>
+          <!-- Sin archivo: describir la obra y que la aplicación proponga los ítems.
+               Era el «paso 1» a la vista (textarea y botón de acento) y es lo menos
+               fiable de la pantalla: adivinar. Va plegado bajo la puerta única. -->
+          <details id="sin-archivo-wrap" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">¿No tiene archivo? Describa la obra y la aplicación propone los ítems</summary>
+            <div class="mt-4">
+              <textarea id="objeto" rows="3" placeholder="Ej: Construcción de placa huella de 2.5 km en el municipio de Jericó, Antioquia"
+                        class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"></textarea>
+              <div class="mt-3 flex flex-wrap items-center gap-3">
+                <button id="btn-inferir" type="button"
+                        class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+                  <span id="inferir-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
+                  <span id="inferir-texto">Detectar ítems</span>
+                </button>
+                <input id="codigos-unspsc" type="text" placeholder="Códigos del pliego (opcional): 72141100"
+                       class="min-w-[240px] flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 sm:max-w-xs">
+              </div>
+            </div>
+            <div id="inferencia" class="mt-4 hidden rounded-xl p-4 text-sm"></div>
+            <button id="btn-importar" type="button" class="hidden">Elegir archivo (.xlsx, .xls o .csv)</button>
+            <input id="archivo-importar" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+          </details>
+          <div id="mapeo-panel" class="mt-4 hidden rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <h3 class="text-sm font-medium text-amber-900">No se reconocieron las columnas del archivo</h3>
+            <p class="mt-1 text-xs text-amber-900/80">
+              Señale qué columna trae cada dato y pulse «Aplicar el mapeo». Solo la descripción es obligatoria;
+              una cantidad ilegible viaja vacía, nunca como 0.
+            </p>
+            <div class="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              <label class="block text-xs">
+                <span class="font-medium uppercase tracking-wide text-amber-900/70">Descripción</span>
+                <select id="mapeo-col-desc" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
+              </label>
+              <label class="block text-xs">
+                <span class="font-medium uppercase tracking-wide text-amber-900/70">Unidad</span>
+                <select id="mapeo-col-unidad" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
+              </label>
+              <label class="block text-xs">
+                <span class="font-medium uppercase tracking-wide text-amber-900/70">Cantidad</span>
+                <select id="mapeo-col-cant" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
+              </label>
+              <label class="block text-xs">
+                <span class="font-medium uppercase tracking-wide text-amber-900/70">Valor unitario</span>
+                <select id="mapeo-col-precio" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
+              </label>
+              <label class="block text-xs">
+                <span class="font-medium uppercase tracking-wide text-amber-900/70">Ítem / código</span>
+                <select id="mapeo-col-codigo" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
+              </label>
+            </div>
+            <label class="mt-3 flex items-center gap-2 text-xs text-amber-900">
+              <input id="mapeo-cabecera" type="checkbox" checked class="h-3.5 w-3.5 rounded border-amber-300">
+              La primera fila es la cabecera (no es un ítem)
+            </label>
+            <div class="mt-3 overflow-x-auto rounded-lg border border-amber-200 bg-white">
+              <table class="w-full text-xs">
+                <tbody id="mapeo-tabla" class="divide-y divide-gray-100"></tbody>
+              </table>
+            </div>
+            <p id="mapeo-aviso" class="mt-2 hidden text-xs font-medium text-red-700"></p>
+            <div class="mt-3 flex flex-wrap justify-end gap-2">
+              <button id="btn-mapeo-cancelar" type="button"
+                      class="rounded-lg border border-amber-300 px-4 py-2 text-sm font-medium transition hover:bg-amber-100">Cancelar</button>
+              <button id="btn-mapeo-aplicar" type="button"
+                      class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">Aplicar el mapeo</button>
+            </div>
+          </div>
         </section>
 
-        <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">1</span>¿Qué va a construir?</h2>
-        <p class="mt-1 text-sm text-gray-500">Describa la obra y el sistema detecta los ítems. O cargue su Excel, o busque un ítem por nombre.</p>
-
-        <!-- ══ Método principal: describir la obra y detectar ══
-             Es el más automático y por eso el más prominente: textarea grande y
-             botón de acento. Los otros dos métodos viven a la vista en la misma
-             pantalla (sin pestañas ni menús anidados) pero en tarjetas menores. -->
-        <div class="mt-4">
-          <textarea id="objeto" rows="3" placeholder="Ej: Construcción de placa huella de 2.5 km en el municipio de Jericó, Antioquia"
-                    class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"></textarea>
-          <div class="mt-3 flex flex-wrap items-center gap-3">
-            <button id="btn-inferir" type="button"
-                    class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-              <span id="inferir-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
-              <span id="inferir-texto">Detectar ítems</span>
-            </button>
-            <input id="codigos-unspsc" type="text" placeholder="Códigos del pliego (opcional): 72141100"
-                   class="min-w-[240px] flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 sm:max-w-xs">
+      <!-- ══════ PASO 2 · REVISE LOS ÍTEMS Y CALCULE (rediseño 4-sep-2026) ══════
+           Antes: paso 1 «¿qué va a construir?» (adivinar), paso 2 «¿dónde?» (un
+           desplegable solo) y paso 3 «calcular» con la tabla; la IA en su propia
+           tarjeta; y ocho tarjetas más. Ahora la tabla ES el paso 2, el
+           departamento va a su lado, y los tres botones que importan
+           («Calcular», «Completar precios con la IA», «Excel») van juntos. Todo
+           lo demás —AIU, anticipo, deducciones, perfil, datos del proceso,
+           borradores, cómo calculamos— vive plegado: los ids NO cambian. -->
+      <section id="seccion-items" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="min-w-0 max-w-2xl">
+            <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">2</span>Revise los ítems y calcule</h2>
+            <p class="mt-1 text-sm text-gray-500">Corrija una cantidad o un precio si hace falta y pulse <strong>Calcular cuánto me cuesta</strong>. Pulse un ítem para ver su desglose; un precio que corrija queda guardado para la próxima vez.</p>
           </div>
-        </div>
-        <div id="inferencia" class="mt-4 hidden rounded-xl p-4 text-sm"></div>
-
-        <!-- ══ Métodos alternativos: Excel y búsqueda por nombre ══ -->
-        <div class="mt-5 grid gap-4 lg:grid-cols-2">
-          <div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-            <h3 class="text-sm font-medium">Cargar Excel con ítems</h3>
-            <p class="mt-1 text-xs text-gray-500">Columnas <strong>Descripción · Unidad · Cantidad</strong> (Ítem y Valor unitario, opcionales). Se lee en su navegador y verá una vista previa antes de añadir nada; un precio del archivo <strong>manda</strong>.</p>
-            <button id="btn-importar" type="button"
-                    class="mt-3 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
-              Elegir archivo (.xlsx, .xls o .csv)
-            </button>
-            <input id="archivo-importar" type="file" accept=".xlsx,.xls,.csv" class="hidden">
-          </div>
-          <div class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-            <h3 class="text-sm font-medium">Buscar ítem por nombre</h3>
-            <p class="mt-1 text-xs text-gray-500">Catálogo propio, los 526 APU de referencia del INVIAS y los 3.172 del IDU (Bogotá). Al elegir uno, entra a la tabla del paso 3.</p>
-            <div class="mt-3 flex items-start gap-2">
-              <div class="relative flex-1">
-                <input id="buscar-item" type="text" autocomplete="off" spellcheck="false"
-                       placeholder="Ej: excavación, concreto, tubería…"
-                       class="w-full rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
-                <div id="buscar-lista"
-                     class="absolute inset-x-0 top-full z-30 mt-1 hidden max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl"></div>
-              </div>
-              <button id="btn-agregar" type="button"
-                      class="shrink-0 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
-                Añadir
-              </button>
-            </div>
-            <p id="buscar-nota" class="mt-2 hidden text-xs"></p>
-          </div>
-        </div>
-
-        <!-- ══ Mapeo manual de columnas: SOLO cuando la detección automática del
-             Excel no encuentra la cabecera. Panel en línea (no otro modal): el
-             usuario señala qué columna es qué y la importación sigue por el
-             MISMO camino de siempre (/api/apu/importar). ══ -->
-        <div id="mapeo-panel" class="mt-4 hidden rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <h3 class="text-sm font-medium text-amber-900">No se reconocieron las columnas del archivo</h3>
-          <p class="mt-1 text-xs text-amber-900/80">
-            Señale qué columna trae cada dato y pulse «Aplicar el mapeo». Solo la descripción es obligatoria;
-            una cantidad ilegible viaja vacía, nunca como 0.
-          </p>
-          <div class="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            <label class="block text-xs">
-              <span class="font-medium uppercase tracking-wide text-amber-900/70">Descripción</span>
-              <select id="mapeo-col-desc" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
-            </label>
-            <label class="block text-xs">
-              <span class="font-medium uppercase tracking-wide text-amber-900/70">Unidad</span>
-              <select id="mapeo-col-unidad" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
-            </label>
-            <label class="block text-xs">
-              <span class="font-medium uppercase tracking-wide text-amber-900/70">Cantidad</span>
-              <select id="mapeo-col-cant" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
-            </label>
-            <label class="block text-xs">
-              <span class="font-medium uppercase tracking-wide text-amber-900/70">Valor unitario</span>
-              <select id="mapeo-col-precio" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
-            </label>
-            <label class="block text-xs">
-              <span class="font-medium uppercase tracking-wide text-amber-900/70">Ítem / código</span>
-              <select id="mapeo-col-codigo" class="mt-1 w-full rounded-lg border border-amber-300 bg-white px-2 py-1.5 text-sm"></select>
-            </label>
-          </div>
-          <label class="mt-3 flex items-center gap-2 text-xs text-amber-900">
-            <input id="mapeo-cabecera" type="checkbox" checked class="h-3.5 w-3.5 rounded border-amber-300">
-            La primera fila es la cabecera (no es un ítem)
-          </label>
-          <div class="mt-3 overflow-x-auto rounded-lg border border-amber-200 bg-white">
-            <table class="w-full text-xs">
-              <tbody id="mapeo-tabla" class="divide-y divide-gray-100"></tbody>
-            </table>
-          </div>
-          <p id="mapeo-aviso" class="mt-2 hidden text-xs font-medium text-red-700"></p>
-          <div class="mt-3 flex flex-wrap justify-end gap-2">
-            <button id="btn-mapeo-cancelar" type="button"
-                    class="rounded-lg border border-amber-300 px-4 py-2 text-sm font-medium transition hover:bg-amber-100">Cancelar</button>
-            <button id="btn-mapeo-aplicar" type="button"
-                    class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700">Aplicar el mapeo</button>
-          </div>
-        </div>
-
-        
-      </section>
-
-<section class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">2</span>¿Dónde?</h2>
-        <p class="mt-1 text-sm text-gray-500">El departamento donde se ejecuta la obra: de él salen los precios.</p>
-        <div class="mt-4 max-w-sm">
-          <label class="block">
+          <label class="block w-full sm:w-64">
             <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Departamento</span>
             <select id="departamento" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"></select>
             <span id="regional-nota" class="mt-1 block text-xs text-gray-400">Los factores de precio los trae el catálogo, por región.</span>
           </label>
-          
-          
-          
         </div>
-
-        <details id="ajustes-wrap" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full min-w-[900px] text-sm">
+            <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
+              <tr>
+                <th class="py-2 pr-3">Ítem</th>
+                <th class="py-2 pr-3">Unidad</th>
+                <th class="py-2 pr-3 text-right">Cantidad</th>
+                <th class="py-2 pr-3 text-right">Precio manual</th>
+                <th class="py-2 pr-3 text-right">Precio unitario</th>
+                <th class="py-2 pr-3 text-right">Total</th>
+                <th class="py-2 pr-3" title="Cuánto vale ese material en Homecenter o en la lista del fabricante, con fuente y fecha: referencia para negociar, NO entra en el costo">Precio de tienda<br><span class="font-normal normal-case text-gray-300">referencia, no entra en el costo</span></th>
+                <th class="py-2 pr-3">Origen</th>
+                <th class="py-2"></th>
+              </tr>
+            </thead>
+            <tbody id="tabla" class="divide-y divide-gray-100"></tbody>
+          </table>
+        </div>
+        <p id="tabla-vacia" class="mt-6 text-center text-sm text-gray-400">Sin ítems todavía: vienen del paso 1.</p>
+        <div class="mt-4 max-w-xl">
+          <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Añadir un ítem por nombre</p>
+          <div class="mt-3 flex items-start gap-2">
+            <div class="relative flex-1">
+              <input id="buscar-item" type="text" autocomplete="off" spellcheck="false"
+                     placeholder="Ej: excavación, concreto, tubería…"
+                     class="w-full rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
+              <div id="buscar-lista"
+                   class="absolute inset-x-0 top-full z-30 mt-1 hidden max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl"></div>
+            </div>
+            <button id="btn-agregar" type="button"
+                    class="shrink-0 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
+              Añadir
+            </button>
+          </div>
+          <p id="buscar-nota" class="mt-2 hidden text-xs"></p>
+        </div>
+        <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-5">
+          <button id="btn-calcular" type="button"
+                  class="rounded-xl bg-gray-900 px-8 py-3 text-base font-semibold text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Calcular cuánto me cuesta
+          </button>
+          <button id="btn-ia-pedir" type="button" disabled
+                  class="rounded-xl border border-gray-300 px-5 py-3 text-base font-medium transition hover:bg-gray-50 disabled:opacity-40"
+                  title="Para los ítems sin precio firme, una sesión de inteligencia artificial busca el precio en listas oficiales, contratos adjudicados, fabricantes y tiendas y lo trae con su fuente. Usted decide cuáles usar.">
+            Completar precios con la IA
+          </button>
+          <button id="btn-exportar" type="button"
+                  class="rounded-xl border border-gray-300 px-5 py-3 text-base font-medium transition hover:bg-gray-50 disabled:opacity-40">
+            Descargar mi presupuesto (Excel)
+          </button>
+        </div>
+        <p id="accion-mensaje" class="mt-3 text-sm"></p>
+        <p id="ia-estado" class="mt-3 text-sm text-gray-500">Añada ítems a la tabla (suba el pliego o su análisis de precios) para poder pedir precios.</p>
+        <div id="ia-propuesta" class="mt-4 hidden"></div>
+        <div id="lista-presupuestos" class="mt-4 hidden"></div>
+        <section id="seccion-proceso" class="mt-5 hidden rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
+        <h3 class="text-sm font-medium">Proceso de SECOP II</h3>
+        <div class="mt-4 grid gap-4 sm:grid-cols-3">
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Id del proceso</span>
+            <input id="id-proceso" type="text" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Presupuesto oficial (COP)</span>
+            <input id="cuantia" type="number" min="0" step="1000" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+            <span class="mt-1 block text-xs text-gray-400">Es el techo: la baja se mide contra él.</span>
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Plazo (meses)</span>
+            <input id="plazo-meses" type="number" min="1" max="60" step="1" value="8" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
+          </label>
+        </div>
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <button id="btn-rentabilidad" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Calcular rentabilidad
+          </button>
+          <span class="text-xs text-gray-500">Consulta cuánto suelen bajar el precio y qué tan peleada está esta entidad.</span>
+        </div>
+      </section>
+        <details id="ajustes-wrap" class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
           <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Ajustes <span class="text-xs">— AIU, anticipo, deducciones y ajuste competitivo (los valores por defecto sirven casi siempre)</span></summary>
           <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 <label class="block">
@@ -2793,7 +2800,17 @@
             </label>
           </div>
         </details>
-
+        <details class="mt-3 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
+          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Guardar o abrir un borrador</summary>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <input id="nombre-presupuesto" type="text" placeholder="Nombre del presupuesto"
+                   class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
+            <button id="btn-guardar" type="button"
+                    class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Guardar</button>
+            <button id="btn-listar" type="button"
+                    class="rounded-lg px-3 py-2 text-sm text-gray-500 transition hover:text-gray-900">Abrir un borrador…</button>
+          </div>
+        </details>
         <!-- ══════ Normativa: qué hay detrás de los factores ══════
              Plegado a propósito: es una referencia que se consulta, no algo que
              haya que decidir en cada presupuesto. Lo pinta `pintarNormativa`
@@ -2815,201 +2832,11 @@
         </details>
       </section>
 
-<section id="seccion-proceso" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 class="font-semibold tracking-tight">Proceso de SECOP II</h2>
-        <div class="mt-4 grid gap-4 sm:grid-cols-3">
-          <label class="block">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Id del proceso</span>
-            <input id="id-proceso" type="text" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
-          </label>
-          <label class="block">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Presupuesto oficial (COP)</span>
-            <input id="cuantia" type="number" min="0" step="1000" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-            <span class="mt-1 block text-xs text-gray-400">Es el techo: la baja se mide contra él.</span>
-          </label>
-          <label class="block">
-            <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Plazo (meses)</span>
-            <input id="plazo-meses" type="number" min="1" max="60" step="1" value="8" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm num">
-          </label>
-        </div>
-        <div class="mt-4 flex flex-wrap items-center gap-3">
-          <button id="btn-rentabilidad" type="button"
-                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-            Calcular rentabilidad
-          </button>
-          <span class="text-xs text-gray-500">Consulta cuánto suelen bajar el precio y qué tan peleada está esta entidad.</span>
-        </div>
-      </section>
-
-<section class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">3</span>Calcular y exportar</h2>
-            <p class="mt-1 text-sm text-gray-500">Escriba las cantidades y pulse <strong>Calcular cuánto me cuesta</strong>. Pulse un ítem para ver su desglose; un precio que corrija queda guardado y manda la próxima vez.</p>
-          </div>
-        </div>
-
-        <div class="mt-4 overflow-x-auto">
-          <table class="w-full min-w-[900px] text-sm">
-            <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
-              <tr>
-                <th class="py-2 pr-3">Ítem</th>
-                <th class="py-2 pr-3">Unidad</th>
-                <th class="py-2 pr-3 text-right">Cantidad</th>
-                <th class="py-2 pr-3 text-right">Precio manual</th>
-                <th class="py-2 pr-3 text-right">Precio unitario</th>
-                <th class="py-2 pr-3 text-right">Total</th>
-                <th class="py-2 pr-3" title="Cuánto vale ese material en Homecenter o en la lista del fabricante, con fuente y fecha: referencia para negociar, NO entra en el costo">Precio de tienda<br><span class="font-normal normal-case text-gray-300">referencia, no entra en el costo</span></th>
-                <th class="py-2 pr-3">Origen</th>
-                <th class="py-2"></th>
-              </tr>
-            </thead>
-            <tbody id="tabla" class="divide-y divide-gray-100"></tbody>
-          </table>
-        </div>
-        <p id="tabla-vacia" class="mt-6 text-center text-sm text-gray-400">Sin ítems todavía: vienen del paso 1.</p>
-
-        <!-- ══ DOS BOTONES A LA VISTA, Y NADA MÁS ══
-             El flujo que la persona necesita es «Calcular → Exportar»; el
-             nombre del borrador y sus dos botones son administración y viven
-             plegados. Los ids NO cambian: renombrarlos mataría app.js en
-             silencio, que es el modo de fallo que la prueba de ids vigila. -->
-        <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-5">
-          <button id="btn-calcular" type="button"
-                  class="rounded-xl bg-gray-900 px-8 py-3 text-base font-semibold text-white transition hover:bg-gray-700 disabled:opacity-40">
-            Calcular cuánto me cuesta
-          </button>
-          <button id="btn-exportar" type="button"
-                  class="rounded-xl bg-gray-900 px-6 py-3 text-base font-semibold text-white transition hover:bg-gray-700 disabled:opacity-40">
-            Descargar mi presupuesto (Excel)
-          </button>
-        </div>
-        <details class="mt-3 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
-          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Guardar o abrir un borrador</summary>
-          <div class="mt-3 flex flex-wrap items-center gap-3">
-            <input id="nombre-presupuesto" type="text" placeholder="Nombre del presupuesto"
-                   class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
-            <button id="btn-guardar" type="button"
-                    class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Guardar</button>
-            <button id="btn-listar" type="button"
-                    class="rounded-lg px-3 py-2 text-sm text-gray-500 transition hover:text-gray-900">Abrir un borrador…</button>
-          </div>
-        </details>
-        <p id="accion-mensaje" class="mt-3 text-sm"></p>
-        <div id="lista-presupuestos" class="mt-4 hidden"></div>
-      </section>
-
-      <!-- ══════ PRECIOS BUSCADOS POR UNA SESIÓN DE CLAUDE CODE (4-sep-2026) ══════
-           Encargo del dueño: «que Precios funcione como cuando le pides a Claude
-           un APU: subes el tuyo y te trae el precio de la fuente que sea». El
-           servidor no tiene clave de API (el dueño paga la suscripción), así
-           que «Pedir precios» encola el borrador (op=ia) y una sesión de Claude
-           Code lo atiende con la skill /precios; la respuesta vuelve verificada
-           (lib/apu/precios_ia) y aquí cada precio se ACEPTA fila a fila con su
-           fuente. Nada entra al costo solo. -->
-      <section id="seccion-ia" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div class="min-w-0 max-w-3xl">
-            <h2 class="font-semibold tracking-tight">Precios buscados por inteligencia artificial</h2>
-            <p class="mt-1 text-sm text-gray-500">Para los ítems sin precio firme, una sesión de Claude busca el precio en listas oficiales, contratos ya adjudicados, fabricantes y tiendas, y lo trae con su fuente, su fecha y su enlace. Usted decide cuáles usar: ninguno entra al costo por su cuenta.</p>
-          </div>
-          <button id="btn-ia-pedir" type="button" disabled
-                  class="rounded-xl px-5 py-2.5 text-sm font-medium text-white transition disabled:opacity-40" style="background: var(--accent);">Pedir precios</button>
-        </div>
-        <p id="ia-estado" class="mt-3 text-sm text-gray-500">Añada ítems a la tabla (suba el pliego o su análisis de precios) para poder pedir precios.</p>
-        <div id="ia-propuesta" class="mt-4 hidden"></div>
-      </section>
-
-      <!-- ══════ Resultados · solo aparecen tras calcular ══════ -->
-      <!-- PANEL PISO / TECHO (Fase 3): la respuesta de una frase a «¿me presento
-           o no, y a cuánto?». Va PRIMERO entre los resultados porque es la
-           decisión; el resumen, la rentabilidad y el precio sugerido son el
-           detalle que la sostiene. Nace oculto: se pinta con la rentabilidad. -->
-<!-- ══════ Fase 4 (plan v3) · Guardián del Formulario 1: «Revisar antes de subir» ══════
-     Siete validaciones (total vs presupuesto, ítems del Formulario 1, lo escrito en
-     SECOP II, AIU discriminado y bajo el tope, precio artificialmente bajo,
-     aritmética, redondeo) con semáforo y frases, sin jerga. Compara la oferta del
-     paso 3 con el Formulario 1 leído en el lector de pliegos (más abajo). -->
-<!-- ══════ EL CATÁLOGO DE PRECIOS VIVE EN «PRECIOS» (encargo del ingeniero, ago 2026) ══════
-           «Lo de catálogo de APU, o elimínalo o cámbialo a "precios", ya que allí es
-           que corresponde.» Tenía razón: son los precios de referencia con los que
-           se costea, y estaban plegados dentro del acordeón técnico de Mi empresa.
-           No se elimina —es lo que alimenta el motor de costos— sino que se mueve a
-           donde se usa. `cargarEstadoApu()` lo sigue arrancando desde
-           `arrancarPaneles`, que la suite exige. -->
-<section id="seccion-apu" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 class="font-semibold tracking-tight">Catálogo de precios APU</h2>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500">
-              La base de precios con la que se costea un ítem de obra: insumos, ítems (INVIAS, edificación y
-              los 157 del contrato Nogal adjudicado) y factores por región. Son precios de
-              <b>referencia</b>, no cotizaciones.
-            </p>
-          </div>
-          <button id="btn-apu-cargar" type="button"
-                  class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-            <span id="apu-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
-            Cargar catálogo APU
-          </button>
-        </div>
-
-        <p id="apu-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
-
-        <div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div class="rounded-2xl bg-blue-50 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-blue-700/70">Insumos</p>
-            <p id="apu-insumos" class="mt-1 text-3xl font-semibold tabular-nums text-blue-900">—</p>
-            <p class="text-xs text-blue-700/70">materiales, mano de obra, equipo</p>
-          </div>
-          <div class="rounded-2xl bg-green-50 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-green-700/70">Ítems</p>
-            <p id="apu-items" class="mt-1 text-3xl font-semibold tabular-nums text-green-900">—</p>
-            <p class="text-xs text-green-700/70">actividades con composición</p>
-          </div>
-          <div class="rounded-2xl bg-amber-50 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-amber-700/70">Regiones</p>
-            <p id="apu-regiones" class="mt-1 text-3xl font-semibold tabular-nums text-amber-900">—</p>
-            <p class="text-xs text-amber-700/70">factores de ajuste</p>
-          </div>
-          <div class="rounded-2xl bg-gray-100 p-4">
-            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Base de precios</p>
-            <p id="apu-base" class="mt-1 text-3xl font-semibold tabular-nums text-gray-800">—</p>
-            <p id="apu-icociv" class="text-xs text-gray-500">—</p>
-          </div>
-        </div>
-
-        <div id="apu-detalle" class="mt-6 hidden overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
-              <tr>
-                <th class="py-1 pr-2">Región</th><th class="py-1 pr-2">Ciudad base</th>
-                <th class="py-1 pr-2 text-right">Materiales</th><th class="py-1 pr-2 text-right">Mano de obra</th>
-                <th class="py-1 pr-2 text-right">Equipo</th><th class="py-1 pr-2 text-right">Transporte</th>
-                <th class="py-1 text-right">AIU típico</th>
-              </tr>
-            </thead>
-            <tbody id="apu-regiones-tabla" class="divide-y divide-gray-100"></tbody>
-          </table>
-        </div>
-
-        <p id="apu-meta" class="mt-6 text-xs text-gray-400"></p>
-      </section>
-
-<section id="seccion-revision" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-  <h2 class="font-semibold tracking-tight">Revisar antes de subir</h2>
-  <p class="mt-1 max-w-2xl text-sm text-gray-500">Compara su oferta con el presupuesto oficial y con el Formulario 1 del pliego: qué es motivo de rechazo automático y qué solo conviene arreglar.</p>
-  <div class="mt-3 grid gap-3 sm:grid-cols-3">
-    <label class="block text-sm"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Tope de AIU del pliego (%)</span>
-      <input id="rev-tope-aiu" type="number" min="0" max="100" step="0.01" placeholder="Numeral 4.1 del pliego" class="w-full rounded-lg border-gray-300 text-sm"></label>
-    <label class="block text-sm"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Total que escribió en SECOP II ($)</span>
-      <input id="rev-secop-total" type="number" min="0" step="1" placeholder="Opcional" class="w-full rounded-lg border-gray-300 text-sm"></label>
-    <div class="flex items-end"><button id="btn-revisar-oferta" type="button" class="w-full rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">Revisar antes de subir</button></div>
-  </div>
-  <p id="rev-nota" class="mt-2 text-xs text-gray-500">Sin pliego leído (paso 1), la comparación con el Formulario 1 queda pendiente y se dice.</p>
-  <div id="revision-oferta" class="mt-4 hidden"></div>
-</section>
-
+      <!-- ══════ PASO 3 · SU PRECIO: solo aparece tras calcular; la decisión (piso/techo) va primero y el detalle después ══════ -->
+      <div id="paso-3-cabecera" class="mt-8 hidden">
+        <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">3</span>Su precio</h2>
+        <p class="mt-1 text-sm text-gray-500">Cuánto le cuesta, cuánto le deja y, si el proceso está identificado, a cuánto conviene presentarse.</p>
+      </div>
 <section id="seccion-piso-techo" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div class="flex flex-wrap items-baseline justify-between gap-3">
           <h2 class="font-semibold tracking-tight">¿Me presento, y a cuánto?</h2>
@@ -3131,6 +2958,8 @@
         <div id="r-alertas" class="mt-5 space-y-2"></div>
       </section>
 
+
+
 <section id="seccion-rentabilidad" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">Rentabilidad estimada</h2>
         <p class="mt-1 max-w-3xl text-sm text-gray-500">
@@ -3217,6 +3046,82 @@
         </div>
       </section>
 
+      <!-- ══════ Lo que se consulta de vez en cuando, al final: revisar antes de subir y el catálogo de precios ══════ -->
+      <details class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5"><summary class="cursor-pointer text-sm font-semibold tracking-tight">Revisar la oferta antes de subirla a SECOP II</summary>
+<section id="seccion-revision" class="mt-4">
+  <h2 class="font-semibold tracking-tight">Revisar antes de subir</h2>
+  <p class="mt-1 max-w-2xl text-sm text-gray-500">Compara su oferta con el presupuesto oficial y con el Formulario 1 del pliego: qué es motivo de rechazo automático y qué solo conviene arreglar.</p>
+  <div class="mt-3 grid gap-3 sm:grid-cols-3">
+    <label class="block text-sm"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Tope de AIU del pliego (%)</span>
+      <input id="rev-tope-aiu" type="number" min="0" max="100" step="0.01" placeholder="Numeral 4.1 del pliego" class="w-full rounded-lg border-gray-300 text-sm"></label>
+    <label class="block text-sm"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Total que escribió en SECOP II ($)</span>
+      <input id="rev-secop-total" type="number" min="0" step="1" placeholder="Opcional" class="w-full rounded-lg border-gray-300 text-sm"></label>
+    <div class="flex items-end"><button id="btn-revisar-oferta" type="button" class="w-full rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700">Revisar antes de subir</button></div>
+  </div>
+  <p id="rev-nota" class="mt-2 text-xs text-gray-500">Sin pliego leído (paso 1), la comparación con el Formulario 1 queda pendiente y se dice.</p>
+  <div id="revision-oferta" class="mt-4 hidden"></div>
+</section>
+      </details>
+      <details class="mt-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5"><summary class="cursor-pointer text-sm font-semibold tracking-tight">Catálogo de precios de referencia</summary>
+<section id="seccion-apu" class="mt-4">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="font-semibold tracking-tight">Catálogo de precios APU</h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">
+              La base de precios con la que se costea un ítem de obra: insumos, ítems (INVIAS, edificación y
+              los 157 del contrato Nogal adjudicado) y factores por región. Son precios de
+              <b>referencia</b>, no cotizaciones.
+            </p>
+          </div>
+          <button id="btn-apu-cargar" type="button"
+                  class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            <span id="apu-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
+            Cargar catálogo APU
+          </button>
+        </div>
+
+        <p id="apu-mensaje" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+
+        <div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div class="rounded-2xl bg-blue-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-blue-700/70">Insumos</p>
+            <p id="apu-insumos" class="mt-1 text-3xl font-semibold tabular-nums text-blue-900">—</p>
+            <p class="text-xs text-blue-700/70">materiales, mano de obra, equipo</p>
+          </div>
+          <div class="rounded-2xl bg-green-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-green-700/70">Ítems</p>
+            <p id="apu-items" class="mt-1 text-3xl font-semibold tabular-nums text-green-900">—</p>
+            <p class="text-xs text-green-700/70">actividades con composición</p>
+          </div>
+          <div class="rounded-2xl bg-amber-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-amber-700/70">Regiones</p>
+            <p id="apu-regiones" class="mt-1 text-3xl font-semibold tabular-nums text-amber-900">—</p>
+            <p class="text-xs text-amber-700/70">factores de ajuste</p>
+          </div>
+          <div class="rounded-2xl bg-gray-100 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Base de precios</p>
+            <p id="apu-base" class="mt-1 text-3xl font-semibold tabular-nums text-gray-800">—</p>
+            <p id="apu-icociv" class="text-xs text-gray-500">—</p>
+          </div>
+        </div>
+
+        <div id="apu-detalle" class="mt-6 hidden overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="text-left text-xs uppercase tracking-wide text-gray-400">
+              <tr>
+                <th class="py-1 pr-2">Región</th><th class="py-1 pr-2">Ciudad base</th>
+                <th class="py-1 pr-2 text-right">Materiales</th><th class="py-1 pr-2 text-right">Mano de obra</th>
+                <th class="py-1 pr-2 text-right">Equipo</th><th class="py-1 pr-2 text-right">Transporte</th>
+                <th class="py-1 text-right">AIU típico</th>
+              </tr>
+            </thead>
+            <tbody id="apu-regiones-tabla" class="divide-y divide-gray-100"></tbody>
+          </table>
+        </div>
+
+        <p id="apu-meta" class="mt-6 text-xs text-gray-400"></p>
+      </section>
+      </details>
     </main>
   </div>
 
