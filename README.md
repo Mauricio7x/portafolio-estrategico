@@ -178,7 +178,7 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 | `docs/PERFILES.md` | Resumen técnico de los tres perfiles (datos, estimaciones, limitaciones) |
 | `docs/AUDITORIA_INTEGRAL.md` | **Censo del sistema** (ago 2026): qué módulo hace qué, qué está probado, qué endpoint pide llave y por qué, qué está duplicado, qué está muerto y qué falta — con las correcciones pendientes ordenadas por impacto en las adjudicaciones |
 | `docs/INVESTIGACION_PLATAFORMAS_LICITACIONES.md` | **Benchmark competitivo** (ago 2026): las cinco mejores plataformas de licitación del mundo (SAM.gov, TED, Mercado Público, GovWin IQ, SECOP II) analizadas en diez dimensiones, y qué copiar, adaptar o evitar. Incluye dónde está esta app frente a ellas y las cinco funcionalidades a implementar primero. **No implementa nada: recomienda** |
-| `public/` | Frontend estático (Tailwind CDN, **diseño Apple Glass**: claro por defecto y oscuro por `prefers-color-scheme`, custom properties en `:root`, tarjetas translúcidas con `backdrop-filter`, paleta #f5f5f7/#1d1d1f/#86868b/#007AFF/#34C759/#FF9500/#FF3B30; gate de clave). **UNA sola página** desde ago 2026: `index.html` con tres pestañas (`#/licitaciones` · `#/apu` · `#/admin`) y `app.js` como único módulo principal. Las URLs viejas (`/admin.html`, `/apu.html`, `/pliego.html`) viven como `redirects` en `vercel.json` |
+| `public/` | Frontend estático (Tailwind CDN, **piel v2 medida sobre apple.com y los sitios más visitados** —`docs/INVESTIGACION_DISENO_WEB.md`—: claro por defecto y oscuro por `prefers-color-scheme`, custom properties en `:root`, tarjetas blancas y planas sobre #f5f5f7 sin sombra, vidrio con `backdrop-filter` solo en las dos barras, control segmentado centrado, título grande por pestaña, cifras en sans con `tabular-nums`, paleta #f5f5f7/#1d1d1f/#6e6e73/#007AFF/#34C759/#FF9500/#FF3B30; gate de clave). **UNA sola página** desde ago 2026: `index.html` con tres pestañas (`#/licitaciones` · `#/apu` · `#/admin`) y `app.js` como único módulo principal. Las URLs viejas (`/admin.html`, `/apu.html`, `/pliego.html`) viven como `redirects` en `vercel.json` |
 | `public/index.html` + `app.js` | La página única: landing de onboarding, gate, tablero de oportunidades, **editor de APU** (pestaña `#/apu`: inferencia, carga desde Excel/CSV, desglose por ítem plegable, badges de origen del precio, precio sugerido) y **administración** (pestaña `#/admin`: dashboard, carga de RUP —JSON o PDF—, experiencia, cobertura, catálogo APU y sincronización plegada). El token de escritura va INTEGRADO (`MiExtraccion2025`): el usuario nunca lo teclea — la seguridad real es Vercel Password Protection |
 | `public/pliego.js` | **Lector de pliegos** (sección de la pestaña APU): pdf.js en el navegador, columnas por coordenadas, progreso por página y respaldo por OCR. Sigue siendo archivo propio: sus funciones están atadas por pruebas que las extraen por archivo |
 | `public/onboarding.js` | La landing: RUP en PDF → perfil dinámico, y carga de experiencia por CSV (panel en la pestaña admin) |
@@ -2608,10 +2608,14 @@ ir por una promesa rechazada— lo haría en silencio. Hay una prueba que vigila
 
 ## Frontend
 
-`public/index.html` + `public/app.js`: estático, Tailwind por CDN, **diseño Apple Glass** (ago
-2026): claro por defecto y oscuro por `prefers-color-scheme`, custom properties en `:root`
-(`--bg-primary #f5f5f7`, `--accent #007AFF`, `--text-primary #1d1d1f`…), barra superior y tarjetas
-translúcidas con `backdrop-filter: blur`, pestañas tipo *pill*, barra inferior móvil con
+`public/index.html` + `public/app.js`: estático, Tailwind por CDN, **piel v2** (4-sep-2026,
+medida sobre las hojas de estilo reales de apple.com, su HIG y los sitios más visitados; el
+informe está en `docs/INVESTIGACION_DISENO_WEB.md` y las decisiones en MEMORIA.md § «La piel
+v2»): claro por defecto y oscuro por `prefers-color-scheme`, custom properties en `:root`
+(`--bg-primary #f5f5f7`, `--accent #007AFF`, `--text-primary #1d1d1f`, `--text-secondary
+#6e6e73`…), barra superior translúcida con `backdrop-filter: blur(20px)` y las cuatro secciones
+como control segmentado centrado, título grande por pestaña, tarjetas blancas y planas sin sombra,
+cifras en la sans del sistema con `tabular-nums`, botones píldora, barra inferior móvil con
 `safe-area-inset` y modales a hoja estilo iOS en móvil. Las plantillas que genera el JS siguen
 usando utilidades de Tailwind: una **capa de piel** en el `<style>` las re-mapea a la paleta con
 mayor especificidad, en vez de reescribir cientos de cadenas. Gate con la clave `231105` (tres

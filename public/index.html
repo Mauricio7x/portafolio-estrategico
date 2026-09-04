@@ -34,17 +34,30 @@
        CAPA DE PIEL las re-mapea a esta paleta con mayor especificidad
        (#app .bg-white gana a .bg-white sin importar el orden de los estilos que
        inyecta el CDN de Tailwind). Paleta permitida: #f5f5f7 · #000000 ·
-       #1d1d1f · #86868b · #98989d · #007AFF · #34C759 · #FF9500 · #FF3B30 ·
-       #FFCC00 y sus rgba. */
+       #1d1d1f · #6e6e73 · #86868b · #98989d · #a1a1a6 · #007AFF · #34C759 ·
+       #FF9500 · #FF3B30 · #FFCC00 y sus rgba.
+       PIEL v2 (4-sep-2026): medida sobre apple.com y sobre los treinta sitios
+       más visitados más una docena de SaaS limpios (Stripe, Linear, Vercel,
+       Notion, GitHub, Mercury…), con curl sobre su CSS real — el detalle y las
+       cifras viven en MEMORIA.md § «La piel v2». Lo que cambió de dirección:
+       · las tarjetas son BLANCAS Y PLANAS sobre el gris #f5f5f7 (Apple: cero
+         sombras; GitHub/Vercel/Stripe: bordes de 1 px, no sombra). El vidrio
+         (blur) queda SOLO en las dos barras, que es donde Apple lo usa;
+       · tres grises de texto y no más: #1d1d1f · #6e6e73 · #a1a1a6;
+       · las cifras van en la sans del sistema con «tabular-nums», no en
+         monoespaciada (ninguno de los sitios medidos usa mono para cifras);
+       · títulos 600 con tracking negativo, cuerpo 400; sin peso 300 (Apple no
+         lo usa en ninguna hoja). */
     :root {
       --bg-primary: #f5f5f7;
-      --bg-card: rgba(255,255,255,0.72);
+      --bg-card: #ffffff;
       --bg-card-dark: rgba(30,30,32,0.72);
       --bg-inset: rgba(0,0,0,0.03);
       --bg-inset-2: rgba(0,0,0,0.05);
       --campo-bg: rgba(255,255,255,0.85);
       --text-primary: #1d1d1f;
-      --text-secondary: #86868b;
+      --text-secondary: #6e6e73;
+      --text-tertiary: #a1a1a6;
       --accent: #007AFF;
       --accent-light: rgba(0,122,255,0.12);
       --ok: #34C759;
@@ -64,7 +77,7 @@
       --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
       --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
       --transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-      --barra-bg: rgba(245,245,247,0.72);
+      --barra-bg: rgba(250,250,252,0.8);
       /* ── PALETA DE GRÁFICOS, VALIDADA CON SCRIPT (no a ojo) ──
          Cuatro slots categóricos para COMPOSICIÓN (parte-todo). Verificados
          contra la superficie REAL de la app (#f5f5f7): banda de luminosidad,
@@ -79,12 +92,13 @@
     @media (prefers-color-scheme: dark) {
       :root {
         --bg-primary: #000000;
-        --bg-card: rgba(30,30,32,0.72);
+        --bg-card: #1c1c1e;
         --bg-inset: rgba(255,255,255,0.04);
         --bg-inset-2: rgba(255,255,255,0.07);
         --campo-bg: rgba(30,30,32,0.85);
         --text-primary: #f5f5f7;
         --text-secondary: #98989d;
+        --text-tertiary: #6e6e73;
         --accent-light: rgba(0,122,255,0.22);
         --ok-light: rgba(52,199,89,0.18);
         --ok-texto: rgba(255,255,255,0.88);
@@ -97,7 +111,7 @@
         --viz-1: #3987e5; --viz-2: #d95926; --viz-3: #199e70; --viz-4: #c98500;
         --viz-grid: rgba(255,255,255,0.14);
         --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
-        --barra-bg: rgba(0,0,0,0.72);
+        --barra-bg: rgba(22,22,23,0.8);
       }
     }
 
@@ -107,8 +121,9 @@
     @keyframes giro { to { transform: rotate(360deg); } }
     .barra { transition: width .4s ease; }
     .tarjeta { transition: var(--transition); }
-    .tarjeta:hover { transform: scale(1.004); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
-    .num, .tabular-nums, .font-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .tarjeta:hover { transform: none; }
+    .num, .tabular-nums { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
+    .font-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
     .edit { outline: none; border-radius: 4px; }
     .edit:focus { background: var(--accent-light); box-shadow: inset 0 -2px 0 var(--accent); }
     .celda-edit { min-width: 0; }
@@ -121,15 +136,22 @@
 
     /* barra superior fija con vidrio */
     .barra-superior { position: sticky; top: 0; z-index: 50;
-      -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
       background: var(--barra-bg); border-bottom: 1px solid var(--border); }
 
     /* pestañas: pills — la activa lleva el acento; el contenido entra suave */
-    .pestana { display: inline-flex; align-items: center; height: 32px; padding: 0 12px;
-      border-radius: 8px; font-size: 13px; font-weight: 400; color: var(--text-secondary);
+    /* Control SEGMENTADO (el de iOS): un carril hundido y la sección activa
+       como pastilla blanca con una sombra de 1 px. Las inactivas son texto gris
+       que sube a tinta al pasar el puntero — sin fondo, para que la única
+       pastilla de la barra sea la activa. */
+    .pestanas { gap: 2px; padding: 3px; border-radius: 980px; background: var(--bg-inset-2); }
+    .pestana { display: inline-flex; align-items: center; height: 30px; padding: 0 14px;
+      border-radius: 980px; font-size: 13px; font-weight: 500; color: var(--text-secondary);
       transition: var(--transition); }
-    .pestana:hover { color: var(--text-primary); background: var(--bg-inset-2); }
-    .pestana.activa { color: var(--text-primary); background: var(--accent-light); font-weight: 500; }
+    .pestana:hover { color: var(--text-primary); }
+    .pestana.activa { color: var(--text-primary); background: var(--bg-card);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.04); }
+    @media (prefers-color-scheme: dark) { .pestana.activa { background: #3a3a3c; box-shadow: none; } }
     .pestana-movil { color: var(--text-secondary); transition: color .15s ease; }
     .pestana-movil.activa { color: var(--accent); }
     /* la insignia de «Mis procesos»: cuántas cosas piden atención (cambios sin
@@ -303,10 +325,9 @@
     #modal-competencia .bg-white, #modal-importar .bg-white, #modal-eliminar .bg-white,
     details.bg-white {
       background: var(--bg-card);
-      -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
     }
     #app .bg-white, #onboarding .bg-white { background-color: var(--bg-card); }
-    #app .shadow-sm { box-shadow: var(--shadow-md); }
+    #app .shadow-sm { box-shadow: none; }
     #app .shadow-xl, #modal-competencia .shadow-xl, #modal-importar .shadow-xl { box-shadow: var(--shadow-md); }
     #app .bg-gray-50, #onboarding .bg-gray-50, #modal-competencia .bg-gray-50, #modal-importar .bg-gray-50 { background-color: var(--bg-inset); }
     #app .bg-gray-100, #onboarding .bg-gray-100, #modal-competencia .bg-gray-100, #modal-importar .bg-gray-100 { background-color: var(--bg-inset-2); }
@@ -331,7 +352,7 @@
     #app .border-gray-100, #app .divide-gray-100 > * + *, #app .border-gray-200,
     #onboarding .border-gray-200, #app .border-gray-300, #onboarding .border-gray-300,
     #modal-importar .border-gray-200 { border-color: var(--border); }
-    #app .ring-gray-900\/5, #onboarding .ring-gray-900\/5 { --tw-ring-color: var(--border); }
+    #app .ring-gray-900\/5, #onboarding .ring-gray-900\/5 { --tw-ring-color: transparent; }
     #app input:not([type=checkbox]):not([type=file]), #app select, #app textarea,
     #onboarding input:not([type=file]), #modal-competencia input, #modal-importar input {
       background-color: var(--campo-bg); color: var(--text-primary); border-color: var(--border); border-radius: var(--radius-sm); }
@@ -545,6 +566,90 @@
       .cal-datos { grid-template-columns: 1fr; }
     }
     @media (prefers-reduced-motion: reduce) { .cal-con:hover { transform: none; } }
+
+    /* ══════════ PIEL v2 · MEDIDA SOBRE LOS MEJORES (4-sep-2026) ══════════
+       Cada cifra de aquí viene de una hoja de estilos real descargada ese día
+       (apple.com y su HIG, más los sitios más visitados y una docena de SaaS
+       limpios; el informe vive en MEMORIA.md § «La piel v2»). Lo que se copia
+       es la ESTRUCTURA —jerarquía por posición y tamaño, una idea por bloque,
+       superficies planas—, no una marca. */
+    body { letter-spacing: -0.012em; }
+
+    /* ── El título grande de cada pestaña (Large Title de la HIG: 34/41, 600)
+       con una línea de subtítulo a 17 px (Body) y, si hace falta, una nota a
+       13 px (Footnote). Las cuatro pestañas lo llevan: sin él, la primera
+       pantalla de Licitaciones era una barra de herramientas sin nombre. ── */
+    .cabecera-pestana { margin-bottom: 28px; }
+    .titulo-pestana { font-size: 34px; line-height: 1.15; font-weight: 600; letter-spacing: -0.9px; color: var(--text-primary); }
+    .subtitulo-pestana { margin-top: 6px; max-width: 734px; font-size: 17px; line-height: 1.45; color: var(--text-secondary); }
+    .nota-pestana { margin-top: 10px; max-width: 734px; font-size: 13px; line-height: 1.4; color: var(--text-secondary); }
+    .nota-pestana:empty { display: none; }
+    @media (max-width: 640px) {
+      .cabecera-pestana { margin-bottom: 20px; }
+      .titulo-pestana { font-size: 28px; letter-spacing: -0.6px; }
+      .subtitulo-pestana { font-size: 15px; }
+    }
+
+    /* ── Encabezados de sección: Title 2 de la HIG (22/28) → 21 px, 600,
+       tracking −0,4. Los h2 que las plantillas marcan pequeños (text-sm) son
+       sub-bloques y se quedan en 17 px (Headline). ── */
+    #app h2 { font-size: 21px; line-height: 1.25; font-weight: 600; letter-spacing: -0.4px; }
+    #app h2.text-sm, #app h2.text-base, #app h2.text-xs, #app h2.text-\[15px\] { font-size: 17px; letter-spacing: -0.2px; }
+    #app h3 { letter-spacing: -0.2px; }
+    /* Un rótulo en versalitas es el «eyebrow» de todos los referentes: 11 px,
+       peso 500, gris secundario, tracking abierto. */
+    #app thead th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; color: var(--text-secondary); }
+    #app .text-gray-400, #onboarding .text-gray-400, #app .text-gray-300 { color: var(--text-tertiary); }
+
+    /* ── Tarjetas: radio 24 px las de primer nivel (Apple: 28 px en sus tiles,
+       12 en botones anchos), 16 px las anidadas. El espacio entre secciones
+       de una pestaña sube a 40 px: la separación la da el aire, no una sombra. ── */
+    #app .rounded-2xl.bg-white, #app details.bg-white { border-radius: var(--radius-lg); }
+    #app .rounded-2xl.bg-white .rounded-2xl { border-radius: 16px; }
+    #app main > section.mt-8, #app main > div.mt-8, #app main > details.mt-8 { margin-top: 40px; }
+    /* Las cajas interiores con borde pasan a superficie HUNDIDA sin borde (el
+       «grouped inset» de iOS): una caja con borde dentro de una tarjeta con
+       borde es la mitad del ruido que tenía la pantalla. */
+    #app .bg-white .border.border-gray-200.rounded-2xl, #app .bg-white .border.border-gray-200.rounded-xl,
+    #app .bg-white .border.border-gray-100.rounded-2xl, #app .bg-white .border.border-gray-100.rounded-xl {
+      background-color: var(--bg-inset); border-color: transparent; }
+
+    /* ── Los cuatro tiles del tablero: NEUTROS. Un fondo azul, verde, ámbar y
+       rojo para cuatro conteos que no son ni buenos ni malos convertía el
+       tablero en un semáforo sin significado; Stripe y Vercel pintan sus
+       «stat tiles» en gris con la cifra en tinta. El color se reserva para lo
+       que significa algo (el semáforo de la tarjeta, el plazo). ── */
+    #d-contenido .grid > .rounded-2xl { background-color: var(--bg-inset); }
+    #d-contenido .grid > .rounded-2xl p { color: var(--text-secondary); }
+    #d-contenido .grid > .rounded-2xl p.text-3xl { color: var(--text-primary); font-size: 28px; letter-spacing: -0.7px; line-height: 1.1; }
+
+    /* ── Botones: el primario es una PÍLDORA con el acento (Apple: radio 980,
+       14 px, 9×16 de relleno); el secundario, una píldora gris hundida sin
+       borde. Los dos del mismo alto, para que se lean como pareja. ── */
+    #app .bg-gray-900:not(.rounded-full), #modal-competencia .bg-gray-900, #modal-importar .bg-gray-900 { border-radius: 980px; font-weight: 500; }
+    #app button.border-gray-300, #app a.border-gray-300, #app label.border-gray-300 { background-color: var(--bg-inset-2); border-color: transparent; border-radius: 980px; font-weight: 500; }
+    #app button.border-gray-300:hover, #app a.border-gray-300:hover { background-color: var(--accent-light); color: var(--accent); }
+    #app .control-boton, #app .campo-buscar, #app .control-select { border-radius: 980px; }
+    /* Una píldora no se parte en tres renglones: los botones de la tarjeta
+       van en una línea cada uno y es la FILA la que se pliega (medido en
+       390 px: «Calcular mi precio» salía como una pastilla de tres pisos). */
+    #app .tarjeta .btn-guardar, #app .tarjeta .btn-apu, #app .tarjeta a[target="_blank"] { white-space: nowrap; }
+    #app .tarjeta .flex.items-center.gap-3 { flex-wrap: wrap; row-gap: 8px; }
+    #app .campo-buscar { padding-left: 14px; }
+
+    /* ── EL TITULAR DE MI EMPRESA EN 390 px: las tres cifras iban en tres
+       columnas de 110 px y «$297.228 millones» se montaba encima del «214» de
+       al lado (medido en Chromium con el Tailwind real, 4-sep-2026). En móvil
+       van en LISTA, una cifra por renglón con su rótulo debajo (la cifra al
+       lado del rótulo dejaba al rótulo una columna de 60 px). ── */
+    @media (max-width: 639px) {
+      #pu-hero .grid-cols-3 { grid-template-columns: 1fr; gap: 14px; }
+      #pu-hero .grid-cols-3 > div { min-width: 0; }
+      #pu-hero .grid-cols-3 > div > p { overflow-wrap: anywhere; }
+    }
+
+    /* ── Modales: la hoja también es plana (radio 24, sin anillo) ── */
+    #modal-competencia .rounded-2xl, #modal-importar .rounded-2xl, #modal-eliminar .rounded-2xl { border-radius: var(--radius-lg); }
   </style>
 </head>
 <body class="antialiased">
@@ -708,7 +813,7 @@
   <!-- ══════════ App unificada: una página, tres pestañas ══════════ -->
   <div id="app" class="hidden">
     <header class="barra-superior">
-      <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-2">
+      <div class="cabecera-fila mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-2">
         <!-- ══════ LA MARCA ES EL BOTÓN DE ACTUALIZAR (encargo del ingeniero, 31-ago-2026) ══════
              «Que el logo y el nombre del producto sea interactivo, que puedas
              presionar sobre él para actualizar el corte de los datos; que se vea
@@ -754,15 +859,19 @@
           <span id="sello-sync" class="marca-corte" aria-live="polite">Pulse aquí para traer lo último de SECOP II</span>
         </button>
 
-        <!-- pestañas (escritorio) -->
-        <nav class="order-3 hidden items-center gap-1 md:flex" aria-label="Secciones">
+        <!-- pestañas (escritorio): un CONTROL SEGMENTADO centrado, como el de
+             iOS — la sección activa es la pastilla blanca; las demás, texto gris.
+             Va en el centro de la barra (marca a la izquierda, perfil a la
+             derecha): es la estructura de barra que comparten apple.com, Stripe
+             y Linear, y la que el ojo espera. -->
+        <nav class="pestanas order-2 hidden items-center md:flex" aria-label="Secciones">
           <button type="button" data-tab="admin" class="pestana activa">Mi empresa</button>
           <button type="button" data-tab="licitaciones" class="pestana">Licitaciones</button>
           <button type="button" data-tab="seguimiento" class="pestana">Mis procesos<span id="seg-insignia" class="insignia-pestana hidden" aria-label="Cosas que piden atención"></span></button>
           <button type="button" data-tab="apu" class="pestana">Precios</button>
         </nav>
 
-        <div class="flex min-w-0 items-center gap-3">
+        <div class="order-3 flex min-w-0 items-center gap-3">
           <label class="flex min-w-0 items-center gap-2">
             <span class="hidden text-[11px] uppercase tracking-wide sm:inline" style="color: var(--text-secondary);">Perfil</span>
             <select id="f-perfil" class="control-select min-w-0 max-w-full rounded-xl text-sm">
@@ -805,7 +914,10 @@
            Licitaciones). Debajo, en cifras, su registro de proponente; y lo que
            hay que TOCAR (subir un RUP, cargar experiencia) va plegado: la pestaña
            motiva a licitar, no exige entender el programa. -->
-      <h1 class="sr-only">Mi empresa</h1>
+      <header class="cabecera-pestana">
+        <h1 class="titulo-pestana">Mi empresa</h1>
+        <p class="subtitulo-pestana">Qué puede ganar hoy con su perfil, y qué le falta para ganar más.</p>
+      </header>
       <!-- ══════ EL PULSO PERSONALIZADO (ago 2026) ══════
            Lo primero que se ve al entrar (vive en Mi empresa, la pestaña principal): las cifras DE ESTE PERFIL —cuántas
            licitaciones puede presentarse hoy, cuánto dinero, cuántas cierran
@@ -1745,10 +1857,10 @@
          avisos a 7/3/1 días) y filtros por etapa. Los ids de la sección original
          (seccion-seguimiento, seg-*) se conservan: la suite los mira. -->
     <main id="tab-seguimiento" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
-      <div class="flex flex-wrap items-end justify-between gap-3">
+      <div class="cabecera-pestana flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 class="text-2xl font-semibold tracking-tight">Mis procesos</h2>
-          <p class="mt-1 text-sm text-gray-500">Los que guardó desde la lista: qué necesita para presentarse a cada uno, en qué etapa va, qué viene en el cronograma y qué cambió desde la última vez que lo miró.</p>
+          <h1 class="titulo-pestana">Mis procesos</h1>
+          <p class="subtitulo-pestana">Los que guardó desde la lista: qué necesita para presentarse a cada uno, en qué etapa va, qué viene en el cronograma y qué cambió desde la última vez que lo miró.</p>
         </div>
         <div id="seg-resumen" class="flex flex-wrap gap-2 text-xs"></div>
       </div>
@@ -1783,6 +1895,10 @@
 
     <!-- ════════════════════ PESTAÑA 2 · Licitaciones ════════════════════ -->
     <main id="tab-licitaciones" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
+      <header class="cabecera-pestana">
+        <h1 class="titulo-pestana">Licitaciones</h1>
+        <p class="subtitulo-pestana">Los procesos abiertos en SECOP II que encajan con su perfil, ordenados para usted.</p>
+      </header>
       <!-- ══════ LA BARRA DE HERRAMIENTAS (ago 2026) ══════
            Una sola fila, estilo Apple: buscar · ordenar · «Filtros» (abre una
            HOJA con todo lo demás) · Buscar. Antes había DOS zonas de filtros a
@@ -2044,7 +2160,15 @@
 
     <!-- ════════════════════ PESTAÑA 2 · APU ════════════════════ -->
     <main id="tab-apu" class="panel-pestana mx-auto hidden max-w-7xl px-5 py-8">
-      <div id="aviso-precios" class="mb-6 rounded-xl bg-amber-50 px-5 py-2.5 text-center text-xs text-amber-900 ring-1 ring-inset ring-amber-600/20"></div>
+      <header class="cabecera-pestana">
+        <h1 class="titulo-pestana">Precios</h1>
+        <p class="subtitulo-pestana">Cuánto le cuesta la obra, cuánto le deja y a cuánto conviene presentarse.</p>
+        <!-- El aviso sobre el origen de los precios era una franja ámbar a todo
+             lo ancho, ENCIMA de todo: gritaba antes de que el usuario hubiera
+             pedido nada. Es una nota al pie del título —se lee, no asusta— y
+             conserva su id: app.js escribe el texto. -->
+        <p id="aviso-precios" class="nota-pestana"></p>
+      </header>
 
       <!-- ══════ Paso 1 · ¿Qué va a construir? ══════ -->
             <!-- ══════════════ TRES PASOS, Y NADA MÁS A LA VISTA ══════════════

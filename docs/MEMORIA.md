@@ -7016,3 +7016,93 @@ El pendiente 1 de la sesión anterior, resuelto el mismo día con el texto REAL 
   (pág. 78); contención vehicular (solo estudios previos con la fórmula): «El pliego tiene un
   apartado sobre el anticipo: léalo, la aplicación no leyó la cláusula» (pág. 61). Ninguna guía dice
   ya «hay anticipo» por una línea que no lo afirma.
+
+### La piel v2 · medida sobre las mejores páginas del mundo, no de memoria (4-sep-2026)
+
+**Encargo del dueño**: «visita las top 100 páginas web más visitadas del mundo, entiende la
+estructura y la distribución, y aplícalo a la nuestra inspirado en lo mejor de lo mejor; estilo
+Apple, limpio, minimalista; reforma toda la página; no me preguntes nada». Se hizo en tres partes y
+las tres están medidas: (1) dos investigaciones en paralelo que descargaron con `curl` el HTML y
+las hojas de estilo REALES de apple.com y su HIG, de los treinta sitios más visitados (ranking
+Similarweb de julio de 2026) y de una docena de SaaS limpios (Stripe, Linear, Vercel, Notion,
+GitHub, Airbnb, Mercury, Figma, Shopify…) — el informe entero, con cada valor y su archivo, vive en
+`docs/INVESTIGACION_DISENO_WEB.md`; (2) la reforma de `public/index.html`; (3) la verificación en
+Chromium con el Tailwind real compilado, datos reales de producción por proxy, en 1280 y 390 px,
+claro y oscuro, antes y después.
+
+**Lo que se midió y manda sobre lo que «se recuerda» de Apple**: la barra de apple.com mide 44 px
+(52 la local, que es la que se pega) con `rgba(250,250,252,.8)` + `blur(20px) saturate(180%)`; el
+cuerpo es SF Pro Text 17 px/1,47 con tracking −0,022 em; **no hay peso 300 en ninguna hoja de
+Apple** (600 titulares, 400 cuerpo); las tarjetas van a radio 28 px y relleno 28 sin sombra (una
+sola sombra en toda la portada); los botones son píldoras (radio 980 px); el texto secundario es
+`#6e6e73`; y la HIG fija Large Title 34/41, Title 2 22/28, Headline 17 semibold, Footnote 13. Los
+otros sitios coinciden en doce patrones (barra 44–80 px pegajosa con línea de 1 px, contenedor
+940–1200, cuerpo 14–17, tres grises, dos superficies, bordes de 1 px en vez de sombra, sombras casi
+invisibles, radios pequeños en controles, tracking negativo en títulos, pesos medios, pares de
+tokens para estados, y `tabular-nums` en seis de ellos).
+
+**Decisiones, cada una con su motivo (para no re-aprenderlas):**
+
+- **Tarjetas BLANCAS Y PLANAS sobre `#f5f5f7`, sin blur, sin sombra, sin anillo.** El vidrio con
+  `backdrop-filter` en cada tarjeta era la lectura de memoria de «Apple»; Apple lo usa en las
+  BARRAS y en los tiles no pone ni sombra. `--bg-card` pasa a sólido (`#ffffff` / `#1c1c1e`), la
+  regla de vidrio de las tarjetas pierde el blur y `--tw-ring-color` del anillo gris pasa a
+  transparente. Las dos barras (superior e inferior) conservan el vidrio, que es su sitio. La
+  suite exige que `backdrop-filter: blur(` siga en el documento y que el bloque de «reducir
+  transparencia» siga nombrando las tarjetas: las dos cosas siguen siendo ciertas.
+- **Control SEGMENTADO centrado** para las cuatro secciones (`.pestanas`): carril hundido y la
+  activa como pastilla blanca con sombra de 1 px (en oscuro `#3a3a3c` sin sombra). La barra queda
+  marca · pestañas · perfil, que es el reparto de apple.com, Stripe y Linear. El `nav` conserva
+  `hidden md:flex` y su `aria-label` porque la suite los lee; solo cambia de `order-3` a `order-2`
+  y el bloque del perfil pasa a `order-3`.
+- **Título grande por pestaña** (`.titulo-pestana`, 34 px/600/−0,9 px; 28 en móvil) con una línea
+  de subtítulo a 17 px. Mi empresa lo llevaba en `sr-only` y Licitaciones no lo tenía: la primera
+  pantalla de la lista era una barra de herramientas sin nombre. En Mis procesos el `<h2>` pasa a
+  `<h1>` (cada pestaña lleva el suyo). En Precios el aviso sobre el origen de los precios deja de
+  ser una franja ámbar a todo lo ancho ENCIMA de todo y pasa a ser la nota al pie del título
+  (`.nota-pestana`, 13 px, gris; conserva `id="aviso-precios"` porque app.js escribe su texto).
+- **Cifras en la sans del sistema con `tabular-nums`**: `.num` y `.tabular-nums` dejan la
+  monoespaciada (ninguno de los sitios medidos usa mono para cifras; era lo que hacía que la
+  app pareciera una herramienta de programador). `.font-mono` sigue siendo mono para códigos.
+- **Tres grises de texto y no más**: `--text-secondary` pasa de `#86868b` a `#6e6e73` (el que
+  apple.com usa para el texto de apoyo; 4,6:1 sobre blanco frente a 3,5:1) y nace
+  `--text-tertiary` (`#a1a1a6`) para `text-gray-400`. La paleta permitida del comentario se
+  amplía con los dos.
+- **Encabezados de sección a 21 px/600/−0,4** (`#app h2`; Title 2 de la HIG) y los `h2` que las
+  plantillas marcan pequeños (`text-sm`, `text-base`) a 17 px (Headline). Cabeceras de tabla como
+  «eyebrow»: 11 px, versalitas, peso 500, gris.
+- **Los cuatro tiles del tablero, NEUTROS**: azul, verde, ámbar y rojo para cuatro conteos que no
+  son ni buenos ni malos convertían el tablero en un semáforo sin significado; Stripe y Vercel
+  pintan sus «stat tiles» en gris con la cifra en tinta. El color se queda para lo que significa
+  algo (el semáforo de la tarjeta, el plazo, la manifestación).
+- **Botones**: el primario (`bg-gray-900` → acento) es píldora de radio 980 y peso 500; el
+  secundario (`border-gray-300`) es píldora gris hundida sin borde. **Una píldora no se parte en
+  tres renglones**: los botones de la tarjeta llevan `white-space: nowrap` y es la FILA la que se
+  pliega — en 390 px «Calcular mi precio» salía como una pastilla de tres pisos.
+- **Cajas interiores con borde → superficie hundida sin borde** (el «grouped inset» de iOS): una
+  caja con borde dentro de una tarjeta con borde era la mitad del ruido. Radio 24 px en las
+  tarjetas de primer nivel y 16 en las anidadas; 40 px entre secciones de una pestaña.
+- **El titular de Mi empresa en 390 px**: las tres cifras iban en tres columnas de 110 px y
+  «$297.228 millones» SE MONTABA ENCIMA del «214» de al lado — un defecto de producción que
+  ninguna prueba de Node veía y que la captura «antes» dejó documentado. En móvil van en lista,
+  una cifra por renglón con su rótulo debajo (la primera versión, cifra y rótulo en la misma
+  línea, le dejaba al rótulo una columna de 60 px; medido y descartado en la misma tarde).
+- **Se quita el zoom de la tarjeta al pasar el puntero** (`scale(1.004)` + sombra): ningún
+  referente lo hace y con las tarjetas planas era lo único que «flotaba».
+
+**Lo que NO se cambió, a propósito**: la landing (ya era la pantalla más Apple de la app y el
+peso 250 del titular está protegido por la suite); la técnica de la piel (las plantillas del JS
+siguen diciendo `bg-white`/`bg-gray-900` y el `<style>` las traduce — reescribir cientos de
+cadenas habría chocado con media suite); las clases y los ids que la suite lee; la altura de la
+barra móvil (64 px, dentro del rango medido).
+
+**Medido en Chromium con el Tailwind real y datos de producción (4-sep-2026)**: cuatro pestañas
+en 1280 y 390 px, claro y oscuro, `scrollWidth === clientWidth` en las ocho combinaciones (antes
+de las fotos y después) y **cero** mensajes de consola en todas; el titular móvil ya no se monta;
+los botones de la tarjeta se pliegan en fila. Suite 4/4. Lo que este entorno no puede ver: la
+página en el Chrome del dueño con SF Pro (aquí la fuente de respaldo es DejaVu, que es más ancha:
+todo lo que cabe aquí cabe allá).
+
+**Lección de método**: «estilo Apple» de memoria era vidrio en todas partes, sombras y
+monoespaciada; «estilo Apple» medido es superficies planas, una sombra en toda la portada, sans
+tabular y pesos 400/600. **Antes de imitar un referente, descargar su hoja de estilos.**
