@@ -271,6 +271,7 @@
     document.querySelectorAll("[data-tab]").forEach((b) => {
       b.classList.toggle("activa", b.getAttribute("data-tab") === destino);
     });
+    moverIndicadorPestanas();
     if (empujarHash) { try { history.replaceState(null, "", `#/${destino}`); } catch { /* entorno raro */ } }
     if (destino === "apu" && !arrancadas.apu) { arrancadas.apu = true; arrancar(); }
     if (destino === "apu" && !arrancadas.pliego && typeof window.__pliegoArrancar === "function") {
@@ -283,6 +284,29 @@
     if (destino === "seguimiento") { arrancadas.seguimiento = true; cargarSeguimiento({ forzar: true }); }
     try { window.scrollTo({ top: 0 }); } catch { /* sin scroll */ }
   }
+  /* ══════ LA PASTILLA QUE SE DESLIZA (piel v3, 4-sep-2026) ══════
+     El control segmentado de escritorio dibuja la pestaña activa con un
+     ::before del carril (.pestanas) que viaja de una sección a otra, como el
+     indicador de Radix/iOS. Aquí solo se MIDE: dónde está la activa y cuánto
+     mide, y se escribe en dos variables CSS; la curva y la duración viven en
+     la hoja. Sin medida (carril oculto en móvil: ancho 0) no se enciende
+     `con-indicador` y la activa se pinta a sí misma — la piel no depende del
+     JS para decir qué pestaña está abierta. ResizeObserver cubre el momento
+     en que #app deja de estar oculto (el carril nace con ancho 0) y los
+     cambios de ancho de la ventana. */
+  function moverIndicadorPestanas() {
+    const carril = document.querySelector("nav.pestanas");
+    const activa = carril && carril.querySelector(".pestana.activa");
+    if (!carril || !activa || !activa.offsetWidth) return;
+    carril.style.setProperty("--ind-x", activa.offsetLeft + "px");
+    carril.style.setProperty("--ind-w", activa.offsetWidth + "px");
+    carril.classList.add("con-indicador");
+  }
+  try {
+    const carril = document.querySelector("nav.pestanas");
+    if (carril && typeof ResizeObserver === "function") new ResizeObserver(moverIndicadorPestanas).observe(carril);
+    window.addEventListener("resize", moverIndicadorPestanas);
+  } catch { /* sin observador: la activa se pinta a sí misma */ }
   document.addEventListener("click", (e) => {
     const b = e.target.closest("[data-tab]");
     if (b) activarPestana(b.getAttribute("data-tab"));
@@ -5375,22 +5399,22 @@
     const actual = o.punto_actual;
     const dentro = actual && Number.isFinite(actual.descuento) && actual.descuento >= x0 && actual.descuento <= x1;
 
-    /* colores de la paleta Apple: acento #007AFF, textos #86868b — el SVG no
+    /* colores del TEMA por variable (acento y gris secundario): el SVG en línea
        hereda las custom properties del tema, así que van literales */
     return `<svg viewBox="0 0 ${W} ${H}" class="h-44 w-full min-w-[560px]" role="img"
       aria-label="Valor esperado de la ganancia según el descuento sobre el presupuesto oficial">
-      <line x1="${mL}" y1="${cero.toFixed(1)}" x2="${W - mR}" y2="${cero.toFixed(1)}" stroke="rgba(134,134,139,0.45)" stroke-dasharray="3 3"/>
-      <polyline points="${linea}" fill="none" stroke="#007AFF" stroke-width="2"/>
+      <line x1="${mL}" y1="${cero.toFixed(1)}" x2="${W - mR}" y2="${cero.toFixed(1)}" stroke="var(--viz-grid)" stroke-dasharray="3 3"/>
+      <polyline points="${linea}" fill="none" stroke="var(--accent)" stroke-width="2"/>
       <line x1="${px(op.descuento).toFixed(1)}" y1="${mT}" x2="${px(op.descuento).toFixed(1)}" y2="${H - mB}"
-            stroke="#007AFF" stroke-width="1" stroke-dasharray="2 3"/>
-      <circle cx="${px(op.descuento).toFixed(1)}" cy="${py(op.veg).toFixed(1)}" r="4" fill="#007AFF"/>
+            stroke="var(--accent)" stroke-width="1" stroke-dasharray="2 3"/>
+      <circle cx="${px(op.descuento).toFixed(1)}" cy="${py(op.veg).toFixed(1)}" r="4" fill="var(--accent)"/>
       ${dentro ? `<circle cx="${px(actual.descuento).toFixed(1)}" cy="${py(actual.veg).toFixed(1)}" r="4"
-            fill="none" stroke="#86868b" stroke-width="2"/>` : ""}
-      <text x="${mL}" y="${H - 10}" font-size="11" fill="#86868b">${esc(nf2.format(x0))} %</text>
-      <text x="${W - mR}" y="${H - 10}" font-size="11" fill="#86868b" text-anchor="end">${esc(nf2.format(x1))} %</text>
-      <text x="${px(op.descuento).toFixed(1)}" y="${H - 10}" font-size="11" fill="#007AFF" text-anchor="middle">óptimo ${esc(nf2.format(op.descuento))} %</text>
-      <text x="4" y="${(py(y1) + 4).toFixed(1)}" font-size="11" fill="#86868b">${esc(copRent(y1))}</text>
-      ${cero - py(y1) >= 14 ? `<text x="4" y="${(cero + 4).toFixed(1)}" font-size="11" fill="#86868b">$0</text>` : ""}
+            fill="none" stroke="var(--text-secondary)" stroke-width="2"/>` : ""}
+      <text x="${mL}" y="${H - 10}" font-size="11" fill="var(--text-secondary)">${esc(nf2.format(x0))} %</text>
+      <text x="${W - mR}" y="${H - 10}" font-size="11" fill="var(--text-secondary)" text-anchor="end">${esc(nf2.format(x1))} %</text>
+      <text x="${px(op.descuento).toFixed(1)}" y="${H - 10}" font-size="11" fill="var(--accent)" text-anchor="middle">óptimo ${esc(nf2.format(op.descuento))} %</text>
+      <text x="4" y="${(py(y1) + 4).toFixed(1)}" font-size="11" fill="var(--text-secondary)">${esc(copRent(y1))}</text>
+      ${cero - py(y1) >= 14 ? `<text x="4" y="${(cero + 4).toFixed(1)}" font-size="11" fill="var(--text-secondary)">$0</text>` : ""}
     </svg>`;
   }
 

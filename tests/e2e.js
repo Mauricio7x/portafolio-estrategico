@@ -18852,9 +18852,14 @@ async function main() {
       /* ---- pasos 1.1–1.4 · el sistema de diseño Apple Glass ---- */
       {
         // 1.1 · las custom properties del sistema existen, con su tema oscuro
-        for (const debe of ["--bg-primary: #f5f5f7", "--accent: #007AFF", "--text-primary: #1d1d1f",
-          "--transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1)", "prefers-color-scheme: dark",
-          "backdrop-filter: blur("]) {
+        /* PIEL v3 «Lino y tinta» (4-sep-2026): la paleta pasó de gris frío +
+           azul iOS a lino cálido + casi-negro cálido + azul tinta, medida sobre
+           las hojas reales de veintiséis sitios (docs/INVESTIGACION_DISENO_WEB.md).
+           La cerradura sigue siendo la misma —los tokens del sistema existen,
+           con su tema oscuro y su vidrio en las barras—; cambian los valores. */
+        for (const debe of ["--bg-primary: #f6f4f0", "--accent: #2b3f6b", "--text-primary: #1a1916",
+          "--transition: 0.18s cubic-bezier(0.2, 0, 0.38, 0.9)", "prefers-color-scheme: dark",
+          "backdrop-filter: blur(", "--ease-expo:", "--dur-1:"]) {
           assert.ok(html.includes(debe), `index.html sin «${debe}» (falta el sistema de diseño)`);
         }
         // 1.2 · los colores del tema oscuro anterior no pueden volver

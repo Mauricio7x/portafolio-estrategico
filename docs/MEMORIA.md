@@ -7106,3 +7106,104 @@ todo lo que cabe aquí cabe allá).
 **Lección de método**: «estilo Apple» de memoria era vidrio en todas partes, sombras y
 monoespaciada; «estilo Apple» medido es superficies planas, una sombra en toda la portada, sans
 tabular y pesos 400/600. **Antes de imitar un referente, descargar su hoja de estilos.**
+
+### La piel v3 · «Lino y tinta»: el color caro y el detalle, medidos (4-sep-2026)
+
+**Encargo del dueño**, la misma tarde de la piel v2: «lo hiciste bien, superficial, no hubo muchos
+cambios; quisiera que fueras más atrevido, un cambio total de la plataforma, que te arriesgues por
+un color elegante, un color que se vea caro, y súper detallado: que cada botón, cada animación,
+cada clic se sienta que alguien pensó en eso; investiga lo que necesites; no me preguntes nada».
+Se hizo con dos investigadores en paralelo que descargaron con `curl` las hojas de estilo reales
+de veintiséis sitios «caros» y de once sistemas de diseño con tablas de movimiento (los dos
+informes íntegros, con cada valor y su archivo, son las secciones 6 y 7 de
+`docs/INVESTIGACION_DISENO_WEB.md`; el resumen de lo aplicado es la sección 5), y con el arnés de
+Chromium + Tailwind compilado + datos de producción por proxy para medir antes y después.
+
+**Lo que se midió y manda sobre lo que «se recuerda»**: de 22 páginas claras, 20 usan un casi-negro
+(no `#000`) y diez de ellos son CÁLIDOS (B&O `#191817`, Superhuman `#141413`, Notion `#37352f`);
+el fondo tampoco es blanco puro (Hermès `#f6f1eb`, Superhuman `#fcfaf7`, Notion `#f6f5f4`) y la
+tarjeta va en blanco separada por un anillo del 4-8 %, no por sombra; la tinta principal está a
+12-18:1 y la secundaria JUSTO en AA (Apple 4,66, Notion 4,69); hay UN acento y en 11 de 26 sitios
+el botón principal es la propia tinta; **el `#007AFF` de iOS que llevaba Detekta era el acento más
+saturado y de menor contraste (3,69:1) de todos los medidos**; las sombras van al 2-10 % y teñidas
+de la tinta (Stripe, Attio, Clerk); en oscuro se sustituyen por un filo de luz (`inset 0 1px
+#ffffff1a`, Raycast). En movimiento: la curva más repetida en todo el material es la de Carbon
+`cubic-bezier(.2,0,.38,.9)` (153 apariciones), después `(.4,0,.2,1)` y `(.25,1,.5,1)`; la duración
+moda es 150 ms; el «press» es `scale(.98)` (11 apariciones) o `.97`; el foco es `outline: 2px
+solid` con `outline-offset: 2px` y SOLO con `:focus-visible` (11 de 11 sitios); Radix desliza el
+indicador del control segmentado con un `translateX`; Geist hace el esqueleto con un gradiente
+que recorre la caja; Vaul mueve las hojas con `cubic-bezier(.32,.72,0,1)`.
+
+**Decisiones, cada una con su motivo (para no re-aprenderlas):**
+
+- **Paleta «Lino y tinta» + azul tinta como único color.** Fondo `#f6f4f0`, tarjeta `#ffffff`,
+  hundido `#f5f3ef` / `#ece9e3`, tinta `#1a1916`, secundaria `#5c5952` (6,4:1), terciaria
+  `#6f6b62` (4,8:1), borde `rgba(26,25,22,.09)` y `.18` para el fuerte. El informe recomendaba la
+  paleta A pura (botón = tinta, sin color de marca); se tomó su base y se le puso como acento el
+  azul tinta `#2b3f6b` (9,4:1; linaje Stripe `#1a2c44`) que el informe reservaba a enlaces, porque
+  el dueño pidió literalmente «un color». Estados APAGADOS y lejos del acento: verde `#2e7a4b`,
+  ámbar `#9a5b0f`, rojo `#b8372f` (4,8-5,3:1, sirven como texto). Oscuro cálido: `#121110` /
+  `#1b1a18`, tinta `#f3f0ea`, acento `#9db3e8` con tinta oscura encima. La paleta de gráficos
+  (`--viz-*`) NO se tocó: se validó contra `#f5f5f7` y el lino tiene la misma luminancia (0,91).
+- **Serif de sistema SOLO en los títulos grandes** (`--font-display`: New York / Georgia): título
+  de pestaña a 40 px/500, titular de la portada (que conserva el `font-weight: 250` que la suite
+  protege: el serif lo redondea), la marca de la barra y del gate. Es el rasgo de Mercury, Attio,
+  Brex, Craft y Resend y lo que hace «despacho» en vez de «app». **Las cifras jamás en serif**: sus
+  números son de estilo antiguo y bailan en una columna. La marca de la portada va en versalitas
+  espaciadas (`.marca-portada`, 13 px, +0,22 em) encima del titular (Hermès, B&O).
+- **Tokens de movimiento** (`--dur-1…5` = 70/150/220/320/480 ms; `--ease-out` Carbon,
+  `--ease-expo` Radix, `--ease-sheet` Vaul; `--transition` pasa a `0.18s` con la curva de Carbon y
+  la suite se actualizó a ese literal). Un lenguaje para TODOS los botones: color en 150 ms, press
+  `scale(.98)` en 70 ms, deshabilitado al 50 % con `cursor: not-allowed`. El hover NUNCA mueve una
+  tarjeta de datos (solo sombra y anillo); las tres puertas de la portada sí suben 2 px porque son
+  marketing. El foco por teclado es un anillo de 2 px con 2 px de aire y el de ratón no se ve.
+- **La pastilla del control segmentado SE DESLIZA**: `app.js` (`moverIndicadorPestanas`) mide
+  `offsetLeft`/`offsetWidth` de la activa y escribe `--ind-x`/`--ind-w` en el carril; la pastilla
+  es el `::before` y viaja con expo-out en 320 ms. Sin medida (carril oculto en móvil, o antes de
+  que `#app` se muestre) no se enciende `con-indicador` y la activa se pinta a sí misma: la piel
+  no depende del JS para decir qué pestaña está abierta. Un `ResizeObserver` sobre el carril cubre
+  el instante en que deja de estar oculto (nace con ancho 0) y los cambios de ancho.
+- **Otros detalles que se notan**: chevrón de máscara SVG en los `<details>` que gira 90° al abrir
+  (la flecha del sistema no hereda color ni gira); flecha que se desliza en las puertas de la
+  portada al pasar; esqueleto con brillo que recorre la caja en vez del parpadeo de
+  `animate-pulse`; diálogos que entran desde `scale(.97)` con desvanecido y velo que se funde;
+  avisos (`#d-aviso`, `#c-aviso`, `#rup-mensaje`) que entran con el mismo desvanecido que las
+  pestañas; cascada de 20 ms en las ocho primeras tarjetas de la lista (el stagger de apple.com,
+  corto porque la lista se repinta con cada filtro); filas de tabla con realce; `::selection`,
+  barra de desplazamiento fina en escritorio, `-webkit-tap-highlight-color: transparent`, sin
+  selección de texto en botones. Las tres preferencias del sistema apagan TODO lo nuevo:
+  reduced-motion pone las cinco duraciones a 0, quita las animaciones de velo/diálogo/insignia/
+  avisos/tarjetas y el brillo del esqueleto; reduced-transparency y contrast: more siguen
+  nombrando las mismas superficies que la suite exige.
+- **El gráfico del optimizador de baja** (`app.js`, SVG en línea) pintaba `#007AFF` y `#86868b`
+  literales: pasa a `var(--accent)`, `var(--text-secondary)` y `var(--viz-grid)`. Un SVG en línea
+  hereda las variables del documento; un color literal en JS es un color que NO cambia de tema.
+- **Dos trampas del árbol para la próxima vez**: (1) la suite censa los nodos `data-marca` con una
+  regex sobre `index.html` y **el atributo no puede aparecer en un selector CSS** (`[data-marca=
+  "nombre"] { … }` hizo que el censo leyera la hoja entera como «contenido escrito a mano»): se
+  estilan por clase (`.marca-portada`, `.marca-gate`); (2) `.puerta-entrada` se declara DESPUÉS
+  de `.btn-vidrio-acento` y pinta fondo blanco: la puerta del RUP salió como una tarjeta blanca
+  vacía con letra blanca en la primera captura — la combinación repite el fondo.
+- **Ajustes que la captura «antes» dejó documentados**: el rótulo «aproximadamente» de la franja de
+  tres cifras medía 98 px en una columna de 82 en 390 px (`overflow-wrap: anywhere` en
+  `.metrica-rotulo` y `.metrica-nota`).
+
+**Lo que NO se cambió, a propósito**: la estructura (barra · control segmentado · perfil, título
+grande por pestaña, tarjetas planas: todo lo de la v2 sigue), las clases e ids que la suite lee,
+la técnica de traducir utilidades de Tailwind desde el `<style>`, el `font-weight: 250` del
+titular, y la paleta de gráficos validada.
+
+**Medido en Chromium con el Tailwind real y datos de producción (4-sep-2026)**: portada y cuatro
+pestañas en 1280 y 390 px, claro y oscuro, `scrollWidth === clientWidth` en las ocho
+combinaciones, ningún elemento desbordado dentro de `#app` (el de «aproximadamente» de la v2
+desapareció) y **cero** mensajes de consola; además «Más detalles» abierto (chevrón girado), el
+modal del desglose, la hoja de filtros, el gate y el hover de las puertas de la portada. La
+pastilla deslizante mide `--ind-x: 112px; --ind-w: 107px` sobre Licitaciones. Suite 4/4. Lo que
+este entorno no puede ver: el serif real (aquí es DejaVu Serif; en el Chrome del dueño será
+Georgia o New York, más estrechas), y el tacto de las transiciones, que solo se siente en vivo.
+
+**Lección de método**: la v2 copió la ESTRUCTURA de los mejores y quedó «bien, superficial»; lo
+que hace que una interfaz se vea cara no es la maqueta sino la MATERIA —un negro cálido, un fondo
+de lino, un solo color de sello, sombras que casi no se ven— y la RESPUESTA de cada control,
+medida en milisegundos y en curvas, no en adjetivos. Las dos cosas se copian de hojas de estilo
+reales, y se comprueban en un navegador real antes de afirmarlas.
