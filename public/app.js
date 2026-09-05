@@ -2900,7 +2900,7 @@
         <div data-seg-dictamen="${esc(p.id)}"><p class="text-xs font-medium uppercase tracking-wide text-gray-500">Dictamen del pliego</p>
         <p class="mt-1 text-xs text-gray-600">Si conviene presentarse y por qué, con citas por página del pliego leído.</p>
         <button type="button" data-seg-dictamen-ver="${esc(p.id)}" class="mt-2 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition" style="background: var(--accent);">Ver el dictamen del pliego</button></div>
-        <p class="mt-2 text-[11px] text-gray-500">¿El pliego no se leyó solo? <button type="button" data-seg-abrir-lector="${esc(p.id)}" class="underline">Cargar el pliego (PDF)</button> lo abre en Precios con el proceso ya puesto.</p>
+        <p class="mt-2 text-[13px] text-gray-500">¿El pliego no se leyó solo? <button type="button" data-seg-abrir-lector="${esc(p.id)}" class="underline">Cargar el pliego (PDF)</button> lo abre en Precios con el proceso ya puesto.</p>
       </div>`;
     const docs = g.documentos || null;
     const nDocs = docs ? (docs.leidos || []).length + (docs.por_leer || []).length + (docs.ilegibles || []).length + (docs.no_legibles || []).length : 0;
@@ -3131,9 +3131,9 @@
     caja.innerHTML = `
       <p class="text-xs text-gray-500">${esc(d.proponentes_totales)} proponente${d.proponentes_totales === 1 ? "" : "s"} en ${esc((d.entidad && d.entidad.nombre) || "la entidad")}${d.cache ? " · consultado hace menos de una hora" : ""}. ${esc(d.lectura || "")}</p>
       <div class="mt-2 overflow-x-auto"><table class="w-full text-xs">
-        <thead class="text-left text-[10px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-3">Proponente</th><th class="pb-1 pr-3 text-right">Veces ante esta entidad</th><th class="pb-1 pr-3 text-right">Ganadas · último</th><th class="pb-1 pr-3 text-right">Contratos vigentes</th><th class="pb-1"></th></tr></thead>
+        <thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-3">Proponente</th><th class="pb-1 pr-3 text-right">Veces ante esta entidad</th><th class="pb-1 pr-3 text-right">Ganadas · último</th><th class="pb-1 pr-3 text-right">Contratos vigentes</th><th class="pb-1"></th></tr></thead>
         <tbody class="divide-y divide-gray-100">${filas}</tbody></table></div>
-      <p class="mt-2 text-[11px] text-gray-400">«Contratos vigentes» es el valor que ese competidor ya tiene comprometido, no la capacidad que le queda: calcularla exige su registro de proponente, que no es público. Las ganadas se cruzan por NIT de la entidad, que a veces se comparte entre regionales.</p>`;
+      <p class="mt-2 text-[13px] text-gray-400">«Contratos vigentes» es el valor que ese competidor ya tiene comprometido, no la capacidad que le queda: calcularla exige su registro de proponente, que no es público. Las ganadas se cruzan por NIT de la entidad, que a veces se comparte entre regionales.</p>`;
   }
   const secSeg = document.getElementById("tab-seguimiento") || document.getElementById("seccion-seguimiento");
   if (secSeg) {
@@ -3393,7 +3393,7 @@
       return `<tr class="align-top">
         <td class="py-1 pr-2">${esc(ETIQUETA_PARAMETRO[id])}</td>
         <td class="py-1 pr-2 text-right num font-medium whitespace-nowrap">${esc(valorParametroLegible(id, p))}</td>
-        <td class="py-1 pr-2"><span class="inline-flex rounded-full px-2 py-0.5 text-[10px] ring-1 ring-inset ${e.clases}">${e.texto}</span></td>
+        <td class="py-1 pr-2"><span class="inline-flex rounded-full px-2 py-0.5 text-xs ring-1 ring-inset ${e.clases}">${e.texto}</span></td>
         <td class="py-1 text-xs text-gray-500">${esc((ver[id] || {}).fuente || "")}</td>
       </tr>`;
     }).join("");
@@ -3431,7 +3431,7 @@
         </table>
       </div>
       ${ejemploHtml}
-      <p class="mt-3 text-[11px] text-gray-400">Fórmulas completas y estado de verificación en docs/metodologia.md. Los valores de tiempo pagado no trabajado y su mayor valor prestacional vienen de metodologías públicas del sector (IDU e INVIAS) por fuentes secundarias: son referencia mientras no se contrasten con el manual original.</p>`;
+      <p class="mt-3 text-[13px] text-gray-400">Fórmulas completas y estado de verificación en docs/metodologia.md. Los valores de tiempo pagado no trabajado y su mayor valor prestacional vienen de metodologías públicas del sector (IDU e INVIAS) por fuentes secundarias: son referencia mientras no se contrasten con el manual original.</p>`;
   }
 
   /* ════════════════ Normativa: qué hay detrás de los factores ════════════════
@@ -3460,10 +3460,10 @@
 
     const filas = (p.componentes || []).map((c) => `
       <tr class="align-top">
-        <td class="py-1 pr-2">${esc(c.nombre)}${c.base === "cesantias" ? '<span class="block text-[10px] text-gray-400">12 % de las cesantías, ya convertido a % del salario</span>' : ""}</td>
+        <td class="py-1 pr-2">${esc(c.nombre)}${c.base === "cesantias" ? '<span class="block text-xs text-gray-400">12 % de las cesantías, ya convertido a % del salario</span>' : ""}</td>
         <td class="py-1 pr-2 text-right num font-medium">${pct(c.pct)}</td>
         <td class="py-1 pr-2 text-gray-500">${esc((p.grupos || {})[c.grupo] || c.grupo)}</td>
-        <td class="py-1 text-gray-500">${esc(c.norma)}<span class="block text-[10px] text-gray-400">${esc(c.detalle || "")}</span></td>
+        <td class="py-1 text-gray-500">${esc(c.norma)}<span class="block text-xs text-gray-400">${esc(c.detalle || "")}</span></td>
       </tr>`).join("");
 
     /* Los tres totales van SIEMPRE los tres: enseñar solo el aplicado escondería
@@ -3485,7 +3485,7 @@
       </p>
       <div class="mt-2 overflow-x-auto">
         <table class="w-full text-xs">
-          <thead class="text-left text-[10px] uppercase tracking-wide text-gray-400">
+          <thead class="text-left text-[11px] uppercase tracking-wide text-gray-400">
             <tr><th class="pb-1 pr-2">Componente</th><th class="pb-1 pr-2 text-right">Tasa</th>
                 <th class="pb-1 pr-2">Grupo</th><th class="pb-1">Norma</th></tr>
           </thead>
@@ -3495,7 +3495,7 @@
       <table class="mt-3 w-full max-w-md text-xs">
         <tbody class="divide-y divide-gray-100">${totales}</tbody>
       </table>
-      <p class="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-900">${esc(p.como_leerlo || "")}</p>
+      <p class="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[13px] text-amber-900">${esc(p.como_leerlo || "")}</p>
       <p class="mt-2 text-[11px] text-gray-500"><strong>Exoneración:</strong> ${esc(p.exoneracion.condicion)}
         <span class="block text-gray-400">${esc(p.exoneracion.norma)}</span></p>
       <p class="mt-2 text-[11px] text-gray-500"><strong>Procedencia del factor:</strong> ${esc(p.procedencia || "")}</p>
@@ -3505,7 +3505,7 @@
       <table class="mt-1 w-full text-xs">
         <tbody class="divide-y divide-gray-100">
           ${Object.values(n.aiu || {}).map((a) => `<tr class="align-top">
-            <td class="py-1 pr-2">${esc(a.nombre)}<span class="block text-[10px] text-gray-400">${esc(a.detalle)}</span></td>
+            <td class="py-1 pr-2">${esc(a.nombre)}<span class="block text-xs text-gray-400">${esc(a.detalle)}</span></td>
             <td class="py-1 pr-2 text-right num whitespace-nowrap">${num(a.banda.min)} – ${num(a.banda.max)} %</td>
             <td class="py-1 text-gray-500">${esc(a.fuente)}</td>
           </tr>`).join("")}
@@ -3522,13 +3522,13 @@
       <table class="mt-1 w-full text-xs">
         <tbody class="divide-y divide-gray-100">
           ${(n.deducciones || []).map((d) => `<tr class="align-top">
-            <td class="py-1 pr-2">${esc(d.nombre)}<span class="block text-[10px] text-gray-400">${esc(d.detalle)}</span></td>
+            <td class="py-1 pr-2">${esc(d.nombre)}<span class="block text-xs text-gray-400">${esc(d.detalle)}</span></td>
             <td class="py-1 pr-2 text-right num whitespace-nowrap">${d.pct == null ? "según la entidad" : pct(d.pct)}</td>
             <td class="py-1 text-gray-500">${esc(d.norma)}</td>
           </tr>`).join("")}
         </tbody>
       </table>
-      <p class="mt-3 rounded-lg bg-gray-100 px-3 py-2 text-[11px] text-gray-600"><strong>Atención:</strong> ${esc(p.advertencia || "")}</p>`;
+      <p class="mt-3 rounded-lg bg-gray-100 px-3 py-2 text-[13px] text-gray-600"><strong>Atención:</strong> ${esc(p.advertencia || "")}</p>`;
   }
 
   /* ────────────────────────── inferencia ───────────────────────────── */
@@ -3684,13 +3684,13 @@
       const cap = it.capitulo || "Sin capítulo";
       /* divisor sutil por capítulo: el primero sin borde superior */
       const cabecera = cap !== capAnterior
-        ? `<div class="${capAnterior == null ? "" : "mt-1 border-t border-gray-100 "}px-3 pb-0.5 pt-1.5 text-[10px] font-medium uppercase tracking-wide text-gray-400">${esc(cap)}</div>`
+        ? `<div class="${capAnterior == null ? "" : "mt-1 border-t border-gray-100 "}px-3 pb-0.5 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-gray-400">${esc(cap)}</div>`
         : "";
       capAnterior = cap;
       return `${cabecera}<button type="button" data-cod="${esc(it.codigo)}" data-n="${n}"
           class="block w-full px-3 py-1.5 text-left text-xs transition hover:bg-gray-100">
           <span class="font-medium">${esc(it.es_invias ? String(it.descripcion).split("(")[0].trim() : it.descripcion)}</span>
-          <span class="block text-[10px] text-gray-400">${it.es_invias ? `Ítem de pago INVIAS ${esc(it.item_de_pago)} · referencia oficial` : it.es_idu ? `APU IDU ${esc(it.codigo_idu)} · precio de referencia Bogotá` : esc(it.codigo)} · ${esc(it.unidad || "—")}</span>
+          <span class="block text-xs text-gray-400">${it.es_invias ? `Ítem de pago INVIAS ${esc(it.item_de_pago)} · referencia oficial` : it.es_idu ? `APU IDU ${esc(it.codigo_idu)} · precio de referencia Bogotá` : esc(it.codigo)} · ${esc(it.unidad || "—")}</span>
         </button>`;
     }).join("");
     lista.classList.remove("hidden");
@@ -3773,12 +3773,12 @@
     if (!ref || !Array.isArray(ref.refs) || !ref.refs.length) return '<span class="text-gray-300">—</span>';
     const r = ref.refs[0];
     const precio = r.precio_sin_iva != null && r.precio_con_iva != null
-      ? `${pesos(r.precio_con_iva)} <span class="text-[10px] text-gray-400">con IVA</span>`
-      : `${pesos(r.precio)}${r.iva === "sin_iva" ? ' <span class="text-[10px] text-gray-400">sin IVA</span>' : ""}`;
-    const norm = r.normalizado ? `<span class="text-[10px] text-gray-400"> (&asymp; ${pesos(r.normalizado.precio)}/${esc(r.normalizado.unidad)})</span>` : "";
+      ? `${pesos(r.precio_con_iva)} <span class="text-xs text-gray-400">con IVA</span>`
+      : `${pesos(r.precio)}${r.iva === "sin_iva" ? ' <span class="text-xs text-gray-400">sin IVA</span>' : ""}`;
+    const norm = r.normalizado ? `<span class="text-xs text-gray-400"> (&asymp; ${pesos(r.normalizado.precio)}/${esc(r.normalizado.unidad)})</span>` : "";
     const titulo = `${r.producto || ""} · ${r.unidad_fuente || ""}${r.correspondencia === "aproximada" ? ` · producto similar: ${r.correspondencia_nota || "verificar equivalencia"}` : ""}`;
     return `<span class="block num text-sm font-medium text-blue-950" title="${esc(titulo)}">${precio}${norm}</span>
-      <span class="block text-[10px] text-gray-500" title="${esc(titulo)}">${esc(r.fuente)} · ${esc(r.ambito)} · ${esc(r.vigencia_impresa ? `lista ${r.vigencia_impresa}` : r.capturado_el || "")}${
+      <span class="block text-xs text-gray-500" title="${esc(titulo)}">${esc(r.fuente)} · ${esc(r.ambito)} · ${esc(r.vigencia_impresa ? `lista ${r.vigencia_impresa}` : r.capturado_el || "")}${
       ref.via === "insumo" ? ` · ${esc(ref.insumo)}` : ""}${r.correspondencia === "aproximada" ? ' · <span class="text-amber-700">similar</span>' : ""}</span>`;
   }
 
@@ -3848,7 +3848,7 @@
             <div><span class="text-[11px] uppercase tracking-wide text-gray-400">Transporte</span>
               <p class="mt-1 num" data-celda="transporte-${i}">—</p></div>
           </div>
-          <p class="mt-2 text-[11px] text-gray-400">El rendimiento DIVIDE: bajarlo encarece la mano de obra sin tocar los materiales.</p>
+          <p class="mt-2 text-[13px] text-gray-400">El rendimiento DIVIDE: bajarlo encarece la mano de obra sin tocar los materiales.</p>
           <!-- El APU insumo por insumo se pinta AL EXPANDIR (ver pintarInsumos):
                con 200-300 items, meter aqui ~10 filas por item son miles de nodos
                que nadie esta mirando. -->
@@ -3953,7 +3953,7 @@
           : pesos(r.precio));
       const norm = r.normalizado ? ` <span class="text-gray-400">(&asymp; ${pesos(r.normalizado.precio)}/${esc(r.normalizado.unidad)})</span>` : "";
       const cuando = r.vigencia_impresa ? `lista ${esc(r.vigencia_impresa)}` : `capturado ${esc(r.capturado_el || "")}`;
-      return `<span class="block text-[10px] text-blue-900/70">Techo ${esc(r.fuente)} · ${precio}${norm} · ${esc(r.unidad_fuente)} · ${esc(r.ambito)} · ${cuando}${
+      return `<span class="block text-xs text-blue-900/70">Techo ${esc(r.fuente)} · ${precio}${norm} · ${esc(r.unidad_fuente)} · ${esc(r.ambito)} · ${cuando}${
         r.correspondencia === "aproximada" ? ` · <span class="text-amber-700">producto similar: ${esc(r.correspondencia_nota || "verificar equivalencia")}</span>` : ""}</span>`;
     }).join("");
   }
@@ -3971,7 +3971,7 @@
     const detalle = [r.codigo_invias + " · " + r.nombre_oficial]
       .concat((r.provincias || []).map((p) => `${p.provincia}: ${pesos(p.precio)}`))
       .join("\n");
-    return `<span class="block text-[10px] text-emerald-900/70" title="${esc(detalle)}">Oficial INVIAS ${esc(r.vigencia)} · ${pesos(r.precio)}${norm} · ${esc(r.unidad_fuente)} · ${esc(r.alcance)}${
+    return `<span class="block text-xs text-emerald-900/70" title="${esc(detalle)}">Oficial INVIAS ${esc(r.vigencia)} · ${pesos(r.precio)}${norm} · ${esc(r.unidad_fuente)} · ${esc(r.alcance)}${
       r.correspondencia === "aproximada" ? ` · <span class="text-amber-700">insumo similar: ${esc(r.correspondencia_nota || "verificar equivalencia")}</span>` : ""}</span>`;
   }
 
@@ -4011,7 +4011,7 @@
       const subtotal = lineas.reduce((a, l) => a + (Number(l.valor) || 0), 0) + (hm || 0);
       const filasHtml = lineas.map((l) => `
         <tr class="align-top">
-          <td class="py-1 pr-2">${esc(l.nombre)}${l.nota ? `<span class="block text-[10px] text-gray-400">${esc(l.nota)}</span>` : ""}${techoRetailHtml(l)}${referenciaInviasHtml(l)}</td>
+          <td class="py-1 pr-2">${esc(l.nombre)}${l.nota ? `<span class="block text-xs text-gray-400">${esc(l.nota)}</span>` : ""}${techoRetailHtml(l)}${referenciaInviasHtml(l)}</td>
           <td class="py-1 pr-2 text-gray-500">${esc(l.unidad)}</td>
           <td class="py-1 pr-2 text-right num">${l.cantidad == null ? "—" : num(l.cantidad)}</td>
           <td class="py-1 pr-2 text-right num">${pesos(l.precio)}</td>
@@ -4019,7 +4019,7 @@
         </tr>`).join("")
         + (hm == null ? "" : `
         <tr class="align-top">
-          <td class="py-1 pr-2">Herramienta menor<span class="block text-[10px] text-gray-400">${num(det.herramienta_menor_pct * 100)} % de la mano de obra</span></td>
+          <td class="py-1 pr-2">Herramienta menor<span class="block text-xs text-gray-400">${num(det.herramienta_menor_pct * 100)} % de la mano de obra</span></td>
           <td class="py-1 pr-2 text-gray-500">%</td>
           <td class="py-1 pr-2 text-right num">—</td>
           <td class="py-1 pr-2 text-right num">—</td>
@@ -4029,7 +4029,7 @@
         <div>
           <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">${esc(RUBROS_APU.find((x) => x[0] === tipo)[1])}</p>
           <table class="mt-1 w-full text-[11px]">
-            <thead class="text-left text-[10px] uppercase tracking-wide text-gray-400">
+            <thead class="text-left text-[11px] uppercase tracking-wide text-gray-400">
               <tr><th class="pb-1 pr-2">Insumo</th><th class="pb-1 pr-2">Und.</th>
                   <th class="pb-1 pr-2 text-right">Cant.</th><th class="pb-1 pr-2 text-right">Vr. unit.</th>
                   <th class="pb-1 text-right">Subtotal</th></tr>
@@ -4054,7 +4054,7 @@
 
     const ra = it && it.referencia_invias_apu;
     const notaInvias = ra
-      ? `<p class="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-[11px] text-sky-900">APU de referencia oficial INVIAS ${esc(ra.vigencia)} · ítem de pago ${esc(ra.item_de_pago)}${ra.articulo ? ` (${esc(ra.articulo)})` : ""}. `
+      ? `<p class="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-[13px] text-sky-900">APU de referencia oficial INVIAS ${esc(ra.vigencia)} · ítem de pago ${esc(ra.item_de_pago)}${ra.articulo ? ` (${esc(ra.articulo)})` : ""}. `
         + `Costo directo de la provincia ${esc(ra.provincia_representativa.provincia)} (${esc(ra.provincia_representativa.departamento)}), la de precio mediano entre las ${ra.provincias_usadas} `
         + `${ra.nivel === "nacional" ? "del país (su departamento no tiene libro INVIAS)" : "de su departamento"}. `
         + `Las cantidades y rendimientos son los oficiales; los precios de las líneas son los de ${esc(ra.provincia_referencia_composicion || "la provincia de referencia")} llevados al nivel de esa provincia. Es una referencia, no una cotización.</p>`
@@ -4062,7 +4062,7 @@
 
     const re = it && it.referencia_epc_apu;
     const notaEpc = re
-      ? `<p class="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-[11px] text-sky-900">APU de referencia oficial de Empresas Públicas de Cundinamarca ${esc(re.vigencia || "")} · actividad ${esc(re.numeral || "")}. `
+      ? `<p class="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-[13px] text-sky-900">APU de referencia oficial de Empresas Públicas de Cundinamarca ${esc(re.vigencia || "")} · actividad ${esc(re.numeral || "")}. `
         + `Costo directo con composición de la provincia ${esc(re.provincia || "—")}. `
         + `${re.ajuste_regional === "ninguno" ? "La obra no está en Cundinamarca y el precio va SIN ajuste regional. " : ""}`
         + "Es una referencia, no una cotización.</p>"
@@ -4582,10 +4582,10 @@
     pintarIa(iaEstado);
   }
   function htmlApuItem(p, cantidad) {
-    const comps = (p.componentes || []).map((c) => `<tr><td class="py-1 pr-2 text-gray-500">${esc(TIPO_COMP_LEGIBLE[c.tipo] || c.tipo)}</td><td class="py-1 pr-2">${esc(c.insumo)}${c.observacion ? `<span class="block text-[11px] text-gray-400">${esc(c.observacion)}</span>` : ""}</td><td class="py-1 pr-2 text-gray-500">${esc(c.unidad || "")}</td><td class="py-1 pr-2 text-right num">${c.cantidad_total != null ? nf2.format(c.cantidad_total) : "—"}${c.desperdicio_pct ? `<span class="block text-[10px] text-gray-400">${nf2.format(c.desperdicio_pct)} % desp.</span>` : ""}</td><td class="py-1 pr-2 text-right num">${pesos(c.precio_unitario)}</td><td class="py-1 pr-2 text-right num font-medium">${pesos(c.valor_total)}</td><td class="py-1 text-[11px] text-gray-500">${c.fuente ? `${urlSegura(c.fuente.url) ? `<a href="${esc(urlSegura(c.fuente.url))}" target="_blank" rel="noopener noreferrer" class="underline">${esc(c.fuente.nombre)}</a>` : esc(c.fuente.nombre)}${c.fuente.fecha ? ` · ${esc(c.fuente.fecha)}` : ""}` : ""}</td></tr>`).join("");
+    const comps = (p.componentes || []).map((c) => `<tr><td class="py-1 pr-2 text-gray-500">${esc(TIPO_COMP_LEGIBLE[c.tipo] || c.tipo)}</td><td class="py-1 pr-2">${esc(c.insumo)}${c.observacion ? `<span class="block text-[11px] text-gray-400">${esc(c.observacion)}</span>` : ""}</td><td class="py-1 pr-2 text-gray-500">${esc(c.unidad || "")}</td><td class="py-1 pr-2 text-right num">${c.cantidad_total != null ? nf2.format(c.cantidad_total) : "—"}${c.desperdicio_pct ? `<span class="block text-xs text-gray-400">${nf2.format(c.desperdicio_pct)} % desp.</span>` : ""}</td><td class="py-1 pr-2 text-right num">${pesos(c.precio_unitario)}</td><td class="py-1 pr-2 text-right num font-medium">${pesos(c.valor_total)}</td><td class="py-1 text-[11px] text-gray-500">${c.fuente ? `${urlSegura(c.fuente.url) ? `<a href="${esc(urlSegura(c.fuente.url))}" target="_blank" rel="noopener noreferrer" class="underline">${esc(c.fuente.nombre)}</a>` : esc(c.fuente.nombre)}${c.fuente.fecha ? ` · ${esc(c.fuente.fecha)}` : ""}` : ""}</td></tr>`).join("");
     const r = p.resumen || {};
     const resumen = Object.keys(TIPO_COMP_LEGIBLE).map((k) => { const kk = k === "material" ? "materiales" : k; const v = r[kk]; return v ? `<span class="mr-3">${esc(TIPO_COMP_LEGIBLE[k])}: <span class="num font-medium">${pesos(v)}</span>${p.subtotal_directo ? ` <span class="text-gray-400">(${Math.round(100 * v / p.subtotal_directo)} %)</span>` : ""}</span>` : ""; }).join("");
-    return `<div class="mt-2 overflow-x-auto rounded-lg bg-white p-3 ring-1 ring-inset ring-gray-900/5"><table class="w-full text-xs"><thead class="text-left text-[10px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-2">Tipo</th><th class="pb-1 pr-2">Insumo o actividad</th><th class="pb-1 pr-2">Und.</th><th class="pb-1 pr-2 text-right">Cant. total</th><th class="pb-1 pr-2 text-right">Vr. unitario</th><th class="pb-1 pr-2 text-right">Valor</th><th class="pb-1">Fuente</th></tr></thead><tbody class="divide-y divide-gray-100">${comps}</tbody></table>
+    return `<div class="mt-2 overflow-x-auto rounded-lg bg-white p-3 ring-1 ring-inset ring-gray-900/5"><table class="w-full text-xs"><thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-2">Tipo</th><th class="pb-1 pr-2">Insumo o actividad</th><th class="pb-1 pr-2">Und.</th><th class="pb-1 pr-2 text-right">Cant. total</th><th class="pb-1 pr-2 text-right">Vr. unitario</th><th class="pb-1 pr-2 text-right">Valor</th><th class="pb-1">Fuente</th></tr></thead><tbody class="divide-y divide-gray-100">${comps}</tbody></table>
       <p class="mt-2 text-xs text-gray-600">${resumen}</p>
       ${p.rendimiento ? `<p class="mt-1 text-[11px] text-gray-500">Rendimiento: ${esc(p.rendimiento)}</p>` : ""}
       ${(p.supuestos || []).length ? `<ul class="mt-1 space-y-0.5 text-[11px] text-amber-900">${p.supuestos.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : ""}
@@ -5045,9 +5045,9 @@
       const tituloVs = vs.map((v) => `${v.codigo}: ${v.descripcion} — ${Number.isFinite(v.precio) ? pesos(v.precio) : "sin precio"}`).join("\n");
       const variantes = !vs.length ? ""
         : difieren
-          ? ` <span class="text-[10px] text-amber-700" title="${esc(tituloVs)}">(+${vs.length} variante${vs.length === 1 ? "" : "s"} de la misma cabecera, de ${pesos(vmin)} a ${pesos(vmax)} · se tomó ${pesos(f.precio_item)})</span>`
-          : ` <span class="text-[10px] text-gray-400" title="${esc(tituloVs)}">(+${vs.length} variante${vs.length === 1 ? "" : "s"} de la misma cabecera; se tomó la primera)</span>`;
-      return `<span class="text-xs text-gray-600">${esc(desc)}</span> <span class="text-[10px] text-gray-400">· ${banco}</span>${variantes}`;
+          ? ` <span class="text-xs text-amber-700" title="${esc(tituloVs)}">(+${vs.length} variante${vs.length === 1 ? "" : "s"} de la misma cabecera, de ${pesos(vmin)} a ${pesos(vmax)} · se tomó ${pesos(f.precio_item)})</span>`
+          : ` <span class="text-xs text-gray-400" title="${esc(tituloVs)}">(+${vs.length} variante${vs.length === 1 ? "" : "s"} de la misma cabecera; se tomó la primera)</span>`;
+      return `<span class="text-xs text-gray-600">${esc(desc)}</span> <span class="text-xs text-gray-400">· ${banco}</span>${variantes}`;
     };
     const chip = (f) => {
       if (f.nivel_mapeo === "firme") {
@@ -5067,7 +5067,7 @@
     $("imp-tabla").innerHTML = importacion.filas.map((f) => `
       <tr class="${f.precio_archivo == null && !f.item_id ? "bg-red-50" : ""}">
         <td class="px-2 py-1.5 text-xs text-gray-500">${esc(f.codigo_archivo || "—")}</td>
-        <td class="px-2 py-1.5">${f.capitulo ? `<span class="block text-[10px] uppercase text-gray-400">${esc(f.capitulo)}</span>` : ""}${esc(f.descripcion)}</td>
+        <td class="px-2 py-1.5">${f.capitulo ? `<span class="block text-[11px] uppercase text-gray-400">${esc(f.capitulo)}</span>` : ""}${esc(f.descripcion)}</td>
         <td class="px-2 py-1.5 text-gray-500">${esc(f.unidad || "—")}</td>
         <td class="px-2 py-1.5 text-right num">${f.cantidad == null ? "—" : num(f.cantidad)}</td>
         <td class="px-2 py-1.5 text-right num">${f.precio_archivo == null ? "—" : pesos(f.precio_archivo)}</td>
@@ -5097,7 +5097,7 @@
     for (const id of ["mapeo-col-unidad", "mapeo-col-cant", "mapeo-col-precio", "mapeo-col-codigo"]) {
       $(id).innerHTML = opciones("— no viene —");
     }
-    $("mapeo-tabla").innerHTML = `<tr class="bg-gray-50 text-[10px] uppercase tracking-wide text-gray-400">`
+    $("mapeo-tabla").innerHTML = `<tr class="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-400">`
       + Array.from({ length: nCols }, (_, j) => `<th class="px-2 py-1 text-left font-medium">${letra(j)}</th>`).join("")
       + `</tr>`
       + grid.slice(0, 8).map((f) => `<tr>`

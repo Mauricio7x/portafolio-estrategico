@@ -470,7 +470,7 @@
       const sinCantidad = f.cantidad == null
         ? '<span class="text-xs text-amber-700">sin dato</span>' : "";
       return `<tr data-i="${i}" class="align-top">
-        <td class="py-1.5 pr-2 text-xs text-gray-400">${esc(f.numeral || "")}${f.pagina != null ? `<br><span class="text-[10px]" title="Página del PDF de la que salió esta fila">pág. ${f.pagina}</span>` : ""}</td>
+        <td class="py-1.5 pr-2 text-xs text-gray-400">${esc(f.numeral || "")}${f.pagina != null ? `<br><span class="text-xs" title="Página del PDF de la que salió esta fila">pág. ${f.pagina}</span>` : ""}</td>
         <td class="py-1.5 pr-2"><input data-campo="descripcion_original" value="${esc(f.descripcion_original)}"
              class="celda-edit w-full min-w-[16rem] rounded-lg border border-transparent px-2 py-1 text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none"></td>
         <td class="py-1.5 pr-2"><input data-campo="item_id" list="catalogo-items" value="${esc(f.item_id)}"

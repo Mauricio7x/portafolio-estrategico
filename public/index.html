@@ -375,7 +375,9 @@
     /* `overflow-wrap: anywhere` en el rótulo: «aproximadamente» medía 98 px en
        una columna de 82 y se salía de su tercio (medido a 390 px, 4-sep-2026) */
     .metrica-rotulo { margin-top: 3px; font-size: 11.5px; line-height: 1.25; color: var(--text-secondary); overflow-wrap: anywhere; }
-    .metrica-nota { margin-top: 2px; font-size: 10.5px; line-height: 1.25; color: var(--text-tertiary); overflow-wrap: anywhere; }
+    /* 11 px y no 10,5: la aplicación no baja de 11 px en ningún sitio (la suite
+       lo censa sobre este mismo <style>). En el teléfono esta nota no se pinta. */
+    .metrica-nota { margin-top: 2px; font-size: 11px; line-height: 1.25; color: var(--text-tertiary); overflow-wrap: anywhere; }
     /* La ganancia en NEGATIVO se pinta en rojo, con el token de la paleta (no un
        hex suelto: en modo oscuro el rojo cambia). Es la única cifra de la franja
        que puede tener signo, y el signo es lo primero que hay que ver. */
@@ -407,7 +409,7 @@
     #pulso-global .cifra + .cifra { border-left: 1px solid var(--border-fuerte); }
     #pulso-global .cifra b { display: block; font-size: 28px; font-weight: 600; letter-spacing: -0.8px; white-space: nowrap; color: var(--text-primary); font-variant-numeric: tabular-nums; }
     #pulso-global .cifra span { display: block; margin: 4px auto 0; max-width: 150px; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: var(--text-tertiary); }
-    @media (max-width: 640px) { #pulso-global { gap: 0; } #pulso-global .cifra { flex: 1 1 0; min-width: 0; padding: 0 8px; } #pulso-global .cifra b { font-size: 18px; white-space: normal; } #pulso-global .cifra span { font-size: 10px; } }
+    @media (max-width: 640px) { #pulso-global { gap: 0; } #pulso-global .cifra { flex: 1 1 0; min-width: 0; padding: 0 8px; } #pulso-global .cifra b { font-size: 18px; white-space: normal; } #pulso-global .cifra span { font-size: 11px; } }
 
     /* ── red de seguridad: qué VISTA se ve no puede depender de un CDN ──
        `abrirApp()` cambia de vista añadiendo y quitando la clase `hidden`, que
@@ -724,7 +726,9 @@
     .cal-mes-btn:disabled { opacity: 0.3; cursor: default; }
     .cal-resumen { margin-top: 6px; font-size: 12px; color: var(--text-secondary); }
     .cal-rejilla { margin-top: 12px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
-    .cal-dow { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); text-align: center; padding-bottom: 2px; }
+    /* los tres rótulos del calendario (día de la semana, conteo y etiqueta de la
+       ficha) suben de 10 a 11 px: el suelo de tamaño es 11 en toda la aplicación */
+    .cal-dow { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); text-align: center; padding-bottom: 2px; }
     /* LA CASILLA ES RECTANGULAR EN ESCRITORIO Y CUADRADA EN MÓVIL, y no es
        estética: con `aspect-ratio: 1/1` y un `max-height`, en 1280 px la
        columna mide 170 px y la casilla 76 — quedaban siete islas separadas por
@@ -742,7 +746,7 @@
     .cal-con:hover { box-shadow: inset 0 0 0 1px var(--accent); }
     .cal-con:active { transform: scale(0.96); }
     .cal-con .cal-num { font-weight: 600; font-size: 13px; }
-    .cal-n { font-size: 10px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .cal-n { font-size: 11px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
     .cal-pasado { opacity: 0.45; }
     .cal-hoy { border-color: var(--accent); }
     .cal-hoy .cal-num { color: var(--accent); font-weight: 700; }
@@ -772,7 +776,7 @@
     .cal-gris { background: var(--bg-inset-2); color: var(--text-secondary); }
     .cal-ficha { border-top: 1px solid var(--border); padding: 10px 12px 12px; min-width: 0; }
     .cal-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 18px; }
-    .cal-dato dt { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+    .cal-dato dt { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
     .cal-dato dd { margin: 2px 0 0; font-size: 13px; color: var(--text-primary); overflow-wrap: anywhere; }
     .cal-nota { margin-top: 10px; font-size: 11px; color: var(--text-secondary); }
     .cal-plazo { margin-top: 10px; border-radius: var(--radius-sm); padding: 8px 10px; }
@@ -909,6 +913,87 @@
       #pu-hero .grid-cols-3 > div { min-width: 0; }
       #pu-hero .grid-cols-3 > div > p { overflow-wrap: anywhere; }
     }
+
+    /* ══════════ EL TELÉFONO: LA OPORTUNIDAD PRIMERO (5-sep-2026) ══════════
+       Medido en Chromium a 390×844 con la hoja compilada: la primera licitación
+       empezaba a 702 px —barra 127, cabecera 87, caja de herramientas 298 (128
+       de ellos el párrafo que explica el orden), resumen 80 y 32 de relleno— y
+       de la tarjeta solo se veían 142 px. Lo que hay que VER va arriba; lo que
+       EXPLICA se pliega, sin perderse. Todas las reglas llevan prefijo de id
+       para ganar el empate contra la utilidad en cualquier orden de hoja. */
+
+    /* (1) el concepto del orden vive en un pliegue. En pantalla ancha no se
+       pierde nada: el resumen se oculta y el párrafo se enseña abierto — pero
+       SOLO si el navegador sabe abrirlo por CSS (::details-content). Donde no lo
+       sabe, el pliegue conserva su «¿Cómo se ordenan?» a la vista y la
+       explicación sigue a un clic: se degrada, no desaparece. */
+    #app #orden-detalle > summary { color: var(--text-secondary); }
+    @media (min-width: 768px) {
+      @supports selector(::details-content) {
+        #app #orden-detalle > summary { display: none; }
+        #app #orden-detalle::details-content { content-visibility: visible; }
+      }
+    }
+
+    /* (2) LO QUE SE PULSA, A UN TAMAÑO QUE SE PUEDE PULSAR. Medido a 390 px:
+       «Ver cómo se calcula» y «Más detalles» salían a 16 px de alto, «Ver en
+       SECOP II» a 20 y «Guardar»/«Calcular mi precio» a 26 — doce objetivos por
+       debajo de los 24 px de WCAG 2.5.8. DOS suelos y no uno: 32 px para las
+       tres acciones principales de la tarjeta y 24 px para los disparadores de
+       pliegue, porque un solo suelo de 32 devolvía 58 px de alto a CADA tarjeta
+       (medido) y se comía lo que gana el pliegue del orden.
+       `:not(.cifra-pulsable)` deja fuera la cifra de la franja de tres, que es
+       un dato y no un botón (MEMORIA § «Segunda pasada: acabado Apple…»). */
+    #lista .tarjeta .btn-guardar,
+    #lista .tarjeta .btn-apu:not(.cifra-pulsable),
+    #lista .tarjeta a[target="_blank"] {
+      min-height: 32px; display: inline-flex; align-items: center; padding: 6px 10px; }
+    #app summary { min-height: 24px; }
+    #lista .tarjeta summary, #lista .tarjeta .detalle-probabilidad { min-height: 24px; padding: 4px 0; }
+    /* la barra del teléfono pasa de 10 a 11 px: es el único texto de 10 px que
+       queda en la aplicación y es una barra tipo iOS, no una frase que leer */
+    #app .pestana-movil { font-size: 11px; }
+
+    @media (max-width: 639px) {
+      /* (3) LA BARRA SUPERIOR, EN UNA SOLA FILA. El selector de perfil caía a un
+         segundo renglón (flex-wrap) y la barra medía 127 px. Nada sale de la
+         pestaña: el `#f-perfil` sigue donde estaba, solo deja de envolver. */
+      #app .cabecera-fila { flex-wrap: nowrap; column-gap: 10px; }
+      #app .cabecera-fila > .order-3 { min-width: 0; flex: 0 1 auto; }
+      #app .marca-boton { max-width: none; min-width: 0; flex: 0 1 auto; }
+      /* el corte, en UNA línea: la frase entera sigue en el `title` y en el
+         `aria-label` del botón (bajo 380 px la hoja ya la ocultaba entera) */
+      #app .marca-corte { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      /* (4) el título de la pestaña y el aire de arriba: 32 → 28 px y 32 → 20 px
+         (piel v3, decisión del h1 móvil a 32 px: se rebaja solo en el teléfono) */
+      #app .cabecera-pestana h1 { font-size: 28px; }
+      #app main.panel-pestana { padding-top: 20px; }
+      /* (5) el texto de la tarjeta, de 12 a 13 px: es lo que se LEE para decidir */
+      #lista .tarjeta .text-xs { font-size: 13px; }
+      /* (6) los últimos 32 px de aire muerto entre la cabecera y la primera
+         licitación, sin quitar ni un dato: la fila de fichas de filtro VACÍA
+         dejaba su margen de 8 px, la cabecera de pestaña separaba 22 px y los
+         resultados abrían con 32. El resumen de resultados NO se toca: cuántas
+         pasan es un hecho que se quiere ver. */
+      #app #fl-fichas:empty { display: none; }
+      #app .cabecera-pestana { margin-bottom: 14px; }
+      #app #resultados { margin-top: 16px; }
+    }
+
+    /* ══════════ DESBORDES Y REMATES DE MAQUETACIÓN (5-sep-2026) ══════════
+       El `<select>` de «Cómo lo adjudican» medía 488 px por su opción más larga
+       dentro de una fila de 302: al abrir «¿Por qué no está este proceso?» el
+       documento se iba a 532 px y la página se desplazaba de lado. Hacen falta
+       LAS DOS COSAS (verificado pieza a pieza): que la etiqueta pueda encoger
+       (`min-w-0`, sin `shrink-0`, en la plantilla) y que el select no pase del
+       ancho de su caja. Se aplica a TODOS los select de la aplicación, no solo
+       al que se reprodujo: el hermano de al lado tenía el mismo defecto. */
+    #app select { max-width: 100%; }
+    #ra-modalidad, #ra-campo, #ra-perfil { width: 100%; }
+    /* Las tres puertas de la portada: el título de una sola línea dejaba su
+       subtítulo 23 px más arriba que el de las otras dos. Dos renglones de alto
+       mínimo (2 × 1,35 de interlínea) y las tres alinean. */
+    .puerta-entrada .block.text-\[17px\] { min-height: 2.7em; }
 
     /* ── Modales: la hoja también es plana (radio 20, sombra grande, sin anillo) ── */
     #modal-competencia .rounded-2xl, #modal-importar .rounded-2xl, #modal-eliminar .rounded-2xl { border-radius: var(--radius-lg); }
@@ -1361,7 +1446,7 @@
                 </button>
                 <span id="d-comp-msg" class="text-xs text-gray-500"></span>
               </div>
-              <p class="mt-2 text-[11px] text-gray-400">Recorren el histórico ya descargado: no vuelven a pedir nada a SECOP II.</p>
+              <p class="mt-2 text-[13px] text-gray-400">Recorren el histórico ya descargado: no vuelven a pedir nada a SECOP II.</p>
             </details>
           </div>
 
@@ -1634,9 +1719,9 @@
            acordeón abierto con seis paneles técnicos es lo que hacía que la pestaña
            pareciera imposible de manejar. -->
       <details id="seccion-sistema" class="mt-10 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <summary class="cursor-pointer font-semibold tracking-tight">Sistema
+        <summary class="cursor-pointer font-semibold tracking-tight"><span class="min-w-0 flex-1">Sistema
           <span class="ml-2 text-sm font-normal text-gray-500">— tablero, catálogo de precios y sincronización.
-            No hace falta abrirlo para usar la aplicación.</span>
+            No hace falta abrirlo para usar la aplicación.</span></span>
         </summary>
 
         
@@ -1995,7 +2080,7 @@
               <strong>Carga completa</strong> reinicia la ingesta desde enero: solo tras cambiar una regla
               de ingesta. Puede cerrar la pestaña y volver: el avance queda guardado.
             </p>
-            <label class="block shrink-0">
+            <label class="block min-w-0 max-w-full">
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Duración por tanda</span>
               <select id="f-presupuesto" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="45000">45 s (seguro)</option>
@@ -2081,7 +2166,7 @@
                  «MOTAVITA» casaba también con un objeto que lo mencionara de
                  pasada. Ahora se puede acotar. Un valor que no se reconoce es
                  inerte: lo resuelve lib/rastreo, no esta pantalla. -->
-            <label class="block shrink-0">
+            <label class="block min-w-0 max-w-full">
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dónde buscar</span>
               <select id="ra-campo" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="todo">En todo</option>
@@ -2090,13 +2175,13 @@
                 <option value="proceso">Solo el número del proceso</option>
               </select>
             </label>
-            <label class="block shrink-0">
+            <label class="block min-w-0 max-w-full">
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cómo lo adjudican</span>
               <select id="ra-modalidad" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="">Cualquiera</option>
               </select>
             </label>
-            <label class="block shrink-0">
+            <label class="block min-w-0 max-w-full">
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Perfil</span>
               <select id="ra-perfil" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="helder">Helder</option>
@@ -2199,8 +2284,17 @@
         </div>
         <div id="fl-fichas" class="mt-2 flex flex-wrap items-center gap-2 text-xs"></div>
         <!-- El CONCEPTO del orden elegido (18-ago-2026): qué hace ese orden y qué no
-             promete. Lo pinta app.js desde Filtros.conceptoDe al cambiar #f-ordenar. -->
-        <p id="orden-concepto" class="mt-2 text-xs" style="color: var(--text-secondary);"></p>
+             promete. Lo pinta app.js desde Filtros.conceptoDe al cambiar #f-ordenar.
+             EN EL TELÉFONO VA PLEGADO (5-sep-2026): medido a 390 px, este párrafo
+             ocupaba 128 px de los 702 que había que bajar para ver la primera
+             licitación. La explicación no se pierde —sigue a un toque de «¿Cómo se
+             ordenan?»—; lo que se pierde es el estorbo. En pantalla ancha la hoja
+             esconde el resumen y deja el párrafo abierto: el escritorio no cambia.
+             El id NO cambia: app.js lo escribe por id (pintarConceptoOrden). -->
+        <details id="orden-detalle" class="mt-2">
+          <summary class="cursor-pointer text-xs">¿Cómo se ordenan?</summary>
+          <p id="orden-concepto" class="mt-1 text-xs" style="color: var(--text-secondary);"></p>
+        </details>
         <!-- MANIFESTACIÓN DE INTERÉS: en la selección abreviada de menor cuantía hay
              que manifestar interés o no se puede ofertar. OJO con la doctrina
              (20/24-ago-2026): la ley fija un MÁXIMO de 3 días hábiles, NO un plazo —
@@ -2309,7 +2403,7 @@
           </div>
 
           <details id="filtros-avanzados" class="mt-5 rounded-xl p-4" style="background: var(--bg-inset);">
-            <summary class="cursor-pointer text-sm" style="color: var(--text-secondary);">Avanzados <span class="text-xs">— anticipo, tamaño, competencia, ubicación</span></summary>
+            <summary class="cursor-pointer text-sm" style="color: var(--text-secondary);"><span class="min-w-0 flex-1">Avanzados <span class="text-xs">— anticipo, tamaño, competencia, ubicación</span></span></summary>
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
               <label class="block">
                 <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Anticipo mínimo (%)</span>
@@ -2455,7 +2549,7 @@
 
           <div id="seccion-pliego" class="mt-4">
           <details class="rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Otras formas de cargar el pliego <span class="text-xs">— dirección web del PDF, objeto y códigos del proceso, presupuesto oficial, y lo que conviene saber</span></summary>
+            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700"><span class="min-w-0 flex-1">Otras formas de cargar el pliego <span class="text-xs">— dirección web del PDF, objeto y códigos del proceso, presupuesto oficial, y lo que conviene saber</span></span></summary>
             <p id="aviso-limitaciones" class="mt-3 max-w-3xl rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20">
               <strong>Atención: la extracción automática puede tener errores. Verifique siempre los datos contra el pliego
               original antes de usar el APU.</strong> El semáforo mide coherencia aritmética, no fidelidad; una
@@ -2478,7 +2572,7 @@
                 <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Archivo PDF</span>
                 <input id="pliego-archivo" type="file" accept=".pdf,application/pdf"
                        class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
-                <p class="mt-1 text-[11px] text-gray-400">También sirve un archivo de texto (.txt) con la tabla ya copiada.</p>
+                <p class="mt-1 text-[13px] text-gray-400">También sirve un archivo de texto (.txt) con la tabla ya copiada.</p>
               </div>
               <div>
                 <label class="block">
@@ -2769,7 +2863,7 @@
         </div>
       </section>
         <details id="mas-herramientas" class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Más herramientas <span class="text-xs">— calcular con el catálogo de referencia, añadir ítems por nombre, ajustes, borradores y cómo calculamos</span></summary>
+          <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700"><span class="min-w-0 flex-1">Más herramientas <span class="text-xs">— calcular con el catálogo de referencia, añadir ítems por nombre, ajustes, borradores y cómo calculamos</span></span></summary>
           <div class="mt-4 flex flex-wrap items-center gap-3">
             <button id="btn-calcular" type="button"
                     class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
@@ -2795,7 +2889,7 @@
             <p id="buscar-nota" class="mt-2 hidden text-xs"></p>
           </div>
           <details id="ajustes-wrap" class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Ajustes <span class="text-xs">— AIU, anticipo, deducciones y ajuste competitivo (los valores por defecto sirven casi siempre)</span></summary>
+            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700"><span class="min-w-0 flex-1">Ajustes <span class="text-xs">— AIU, anticipo, deducciones y ajuste competitivo (los valores por defecto sirven casi siempre)</span></span></summary>
             <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 <label class="block">
               <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Administración (A) %</span>

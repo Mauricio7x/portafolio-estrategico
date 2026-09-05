@@ -18302,6 +18302,156 @@ async function main() {
         console.log(`  · Contraste medido con la fórmula de WCAG sobre los tokens: ${medidas.join(" · ")}`);
       }
 
+      /* ═══ EL TELÉFONO: LA OPORTUNIDAD PRIMERO, Y LO QUE SE PULSA SE PULSA ═══
+         (5-sep-2026, medido en Chromium a 390×844 con la hoja compilada.)
+         Antes: la primera licitación empezaba a 702 px —barra 127, cabecera 87,
+         herramientas 298 de los que 128 eran el párrafo que explica el orden— y
+         doce objetivos de la tarjeta medían menos de los 24 px de WCAG 2.5.8.
+         Después: 480 px y cero objetivos por debajo de 24. Lo que el navegador
+         mide no cabe en una prueba de Node; lo que SÍ cabe es la estructura y
+         las reglas que la producen, que es lo que se cierra aquí. */
+      {
+        const consultas = (txt, cabecera) => {
+          const trozos = []; let i = 0;
+          for (;;) {
+            i = txt.indexOf(cabecera, i);
+            if (i < 0) break;
+            let prof = 0, j = txt.indexOf("{", i);
+            for (; j < txt.length; j++) { if (txt[j] === "{") prof++; else if (txt[j] === "}") { prof--; if (prof === 0) break; } }
+            trozos.push(txt.slice(i, j + 1)); i = j + 1;
+          }
+          return trozos.join("\n");
+        };
+        const telefono = sinComentariosCss(consultas(htmlPref, "@media (max-width: 639px)"));
+        assert.ok(telefono.length > 0, "no hay ninguna consulta de teléfono (max-width: 639px) en el <style> propio");
+
+        /* (1) LA EXPLICACIÓN DEL ORDEN SE PLIEGA, NO SE BORRA. El párrafo
+           #orden-concepto (que app.js escribe por id) tiene que vivir dentro de
+           un <details> cuyo resumen sea la pregunta que el usuario se hace. */
+        const iDet = htmlPref.indexOf('<details id="orden-detalle"');
+        assert.ok(iDet > 0, "el concepto del orden tiene que vivir en un <details id=\"orden-detalle\">: a 390 px ese párrafo eran 128 de los 702 px que había que bajar para ver la primera licitación");
+        const detOrden = htmlPref.slice(iDet, htmlPref.indexOf("</details>", iDet));
+        assert.ok(/<summary[^>]*>\s*¿Cómo se ordenan\?\s*<\/summary>/.test(detOrden),
+          "el pliegue del orden se abre con «¿Cómo se ordenan?»: un resumen que no hace la pregunta del usuario no invita a abrirlo");
+        assert.ok(/id="orden-concepto"/.test(detOrden),
+          "#orden-concepto va DENTRO del pliegue (app.js lo sigue escribiendo por id: pintarConceptoOrden)");
+        assert.ok(/#app #orden-detalle > summary \{ display: none; \}/.test(estiloPropio)
+          && /#app #orden-detalle::details-content \{ content-visibility: visible; \}/.test(estiloPropio)
+          && /@supports selector\(::details-content\)/.test(estiloPropio),
+          "en pantalla ancha el párrafo se enseña abierto y el resumen se esconde, y SOLO donde el navegador sabe hacerlo (@supports ::details-content): sin la guarda, un navegador viejo dejaría la explicación escondida sin nada que pulsar");
+        assert.ok(/pintarConceptoOrden/.test(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8")),
+          "quien pinta el concepto del orden sigue siendo pintarConceptoOrden: el pliegue cambia el envoltorio, no el escritor");
+
+        /* (2) LA BARRA SUPERIOR EN UNA SOLA FILA Y EL TÍTULO MÁS CORTO en el
+           teléfono: el selector de perfil caía a un segundo renglón y la barra
+           medía 127 px. El id #f-perfil no se mueve de la pestaña. */
+        assert.ok(/#app \.cabecera-fila \{[^}]*flex-wrap:\s*nowrap/.test(telefono),
+          "bajo 640 px la barra va en UNA fila (`#app .cabecera-fila { flex-wrap: nowrap }`): con el envoltorio medía 127 px en vez de 66");
+        assert.ok(/#app \.cabecera-pestana h1 \{[^}]*font-size:\s*28px/.test(telefono),
+          "el título de pestaña en el teléfono baja a 28 px (piel v3 lo dejó en 32)");
+        assert.ok(/#app main\.panel-pestana \{[^}]*padding-top:\s*20px/.test(telefono),
+          "el aire de arriba del panel baja a 20 px en el teléfono (la utilidad py-8 lo dejaba en 32)");
+        assert.ok(/id="f-perfil"/.test(htmlPref.slice(htmlPref.indexOf('<header class="barra-superior">'), htmlPref.indexOf("</header>"))),
+          "el selector de perfil sigue DENTRO de la barra superior: comprimirlo no es sacarlo de la pestaña");
+
+        /* (3) DOS SUELOS TÁCTILES, NO UNO. Un solo suelo de 32 px devolvía 58 px
+           de alto a cada tarjeta (medido) y se comía lo que gana el pliegue. La
+           cifra de la franja de tres queda FUERA: es un dato, no un botón. */
+        assert.ok(/#lista \.tarjeta \.btn-guardar,\s*#lista \.tarjeta \.btn-apu:not\(\.cifra-pulsable\),\s*#lista \.tarjeta a\[target="_blank"\] \{[^}]*min-height:\s*32px/.test(estiloPropio),
+          "las tres acciones de la tarjeta (Guardar, Calcular mi precio, Ver en SECOP II) necesitan 32 px de alto mínimo: medían 26, 26 y 20");
+        assert.ok(/#lista \.tarjeta \.btn-apu:not\(\.cifra-pulsable\)/.test(estiloPropio),
+          "la cifra pulsable de la franja de tres NO entra en el suelo de 32 px: es un dato de la franja, no un botón de la fila de acciones");
+        assert.ok(/#app summary \{ min-height: 24px; \}/.test(estiloPropio),
+          "TODO resumen de pliegue de la aplicación llega a los 24 px de WCAG 2.5.8 (medían 16)");
+        assert.ok(/#lista \.tarjeta summary, #lista \.tarjeta \.detalle-probabilidad \{[^}]*min-height:\s*24px/.test(estiloPropio),
+          "«Más detalles» y «Ver cómo se calcula» de la tarjeta, a 24 px");
+        assert.ok(/#app \.pestana-movil \{ font-size: 11px; \}/.test(estiloPropio),
+          "la barra del teléfono sube de 10 a 11 px");
+        assert.ok(/#lista \.tarjeta \.text-xs \{[^}]*font-size:\s*13px/.test(telefono),
+          "en el teléfono el texto de la tarjeta —lo que se LEE para decidir— sube de 12 a 13 px");
+
+        /* CENSO, NO LISTA: ningún tamaño de 10 px puede volver por otra puerta.
+           Se barren TODOS los atributos class de index.html y de los public/*.js
+           y todas las declaraciones font-size del <style> propio. La única
+           excepción declarada es la barra del teléfono, que conserva la clase
+           `text-[10px]` pero se pinta a 11 px por la regla de arriba. */
+        {
+          const dirUi2 = path.join(__dirname, "..", "public");
+          const fuentes = [["index.html", htmlPref], ...fs.readdirSync(dirUi2).filter((x) => x.endsWith(".js"))
+            .map((f) => [f, fs.readFileSync(path.join(dirUi2, f), "utf8")])];
+          const diez = [];
+          for (const [nombre, src] of fuentes) {
+            for (const m of src.matchAll(/class(?:Name)?=(["'`])([^"'`]*)\1/g)) {
+              if (!/text-\[10px\]/.test(m[2])) continue;
+              if (/\bpestana-movil\b/.test(m[2])) continue;           // excepción declarada: la barra tipo iOS
+              diez.push(`${nombre}: ${m[2].slice(0, 60)}`);
+            }
+          }
+          assert.deepStrictEqual(diez, [],
+            `texto de 10 px fuera de la barra del teléfono (en el aparato del dueño eso no se lee): ${diez.join(" | ")}`);
+          const pequenos = [...sinComentariosCss(estiloPropio).matchAll(/font-size:\s*([0-9.]+)px/g)]
+            .map((m) => +m[1]).filter((n) => n < 11);
+          assert.deepStrictEqual(pequenos, [],
+            `el <style> propio fija tamaños de letra por debajo de 11 px: ${pequenos.join(", ")}`);
+        }
+
+        /* (4) LOS DESBORDES DEL TELÉFONO. Dos censos de estructura, porque los
+           dos defectos nacieron de un patrón que se repite, no de un sitio. */
+        {
+          // (4a) ningún <label> que envuelva un <select> puede llevar `shrink-0`:
+          // el de «Cómo lo adjudican» medía 488 px en una fila de 302 y sacaba el
+          // documento a 532 px con desplazamiento lateral
+          const malos = [];
+          for (const m of htmlPref.matchAll(/<label\b([^>]*)>/g)) {
+            const fin = htmlPref.indexOf("</label>", m.index);
+            if (fin < 0) continue;
+            if (!/<select/.test(htmlPref.slice(m.index, fin))) continue;
+            if (/shrink-0/.test(m[1])) malos.push(`línea ${htmlPref.slice(0, m.index).split("\n").length}: ${m[0]}`);
+          }
+          assert.deepStrictEqual(malos, [],
+            `un <label> con shrink-0 alrededor de un <select> no puede encoger y saca la página de sitio en el teléfono: ${malos.join(" | ")}`);
+          assert.ok(/#app select \{ max-width: 100%; \}/.test(estiloPropio),
+            "hacen falta LAS DOS COSAS (verificado pieza a pieza): la etiqueta que encoge y el select que no pasa del ancho de su caja");
+
+          // (4b) ningún <summary> con chevrón puede llevar texto suelto junto a un
+          // elemento: el `#app summary` es flex y en 390 px el texto quedaba en una
+          // columna de 65 px partido en cuatro renglones (lo mismo que 23f35f3
+          // corrigió solo en Mis procesos)
+          const textoDirecto = (cuerpo) => {
+            let prof = 0, fuera = "";
+            for (let i = 0; i < cuerpo.length; i++) {
+              if (cuerpo[i] === "<") {
+                const fin = cuerpo.indexOf(">", i);
+                if (fin < 0) break;
+                const et = cuerpo.slice(i, fin + 1);
+                if (et[1] === "/") prof = Math.max(0, prof - 1);
+                else if (!/\/>$/.test(et) && !/^<(br|img|input|hr|source)\b/i.test(et)) prof++;
+                i = fin; continue;
+              }
+              if (prof === 0) fuera += cuerpo[i];
+            }
+            return fuera;
+          };
+          const dirUi3 = path.join(__dirname, "..", "public");
+          const sueltos = [];
+          for (const f of ["index.html", ...fs.readdirSync(dirUi3).filter((x) => x.endsWith(".js"))]) {
+            const src = fs.readFileSync(path.join(dirUi3, f), "utf8");
+            for (const m of src.matchAll(/<summary\b[^>]*>([\s\S]*?)<\/summary>/g)) {
+              if (!/<[a-zA-Z]/.test(m[1])) continue;                 // sin elementos no hay columnas que repartir
+              const suelto = textoDirecto(m[1]).replace(/[\s·—]/g, "").trim();
+              if (suelto) sueltos.push(`${f}:${src.slice(0, m.index).split("\n").length} «${textoDirecto(m[1]).trim().slice(0, 40)}»`);
+            }
+          }
+          assert.deepStrictEqual(sueltos, [],
+            `un <summary> con chevrón y texto suelto junto a un <span> reparte el título en dos columnas y en 390 px lo parte en cuatro renglones: ${sueltos.join(" | ")}`);
+
+          // (4c) las tres puertas de la portada alinean sus subtítulos
+          assert.ok(/\.puerta-entrada \.block\.text-\\\[17px\\\] \{ min-height: 2\.7em; \}/.test(estiloPropio),
+            "el título de las puertas de la portada necesita dos renglones de alto mínimo: con uno solo, «Subir mi RUP» dejaba su subtítulo 23 px por encima de los otros dos");
+        }
+        console.log("  · El teléfono: el concepto del orden plegado tras «¿Cómo se ordenan?» (abierto en escritorio con ::details-content), barra en una fila, h1 28 px y panel 20 px, suelos táctiles de 32/24 px, barra móvil 11 px, tarjeta 13 px, y los censos de 10 px, de <label shrink-0><select> y de <summary> con texto suelto");
+      }
+
       console.log("  · Preferencias del sistema: prefers-reduced-transparency (sin blur, fondo sólido claro/oscuro), prefers-reduced-motion (sin transición, animación ni zoom) y prefers-contrast: more (bordes y gris secundario) verificadas sobre index.html");
     }
 
