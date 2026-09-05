@@ -13248,9 +13248,15 @@ async function main() {
           'id="factor-baja"', 'id="btn-sugerir-baja"', 'id="tabla"', 'id="btn-calcular"', 'id="btn-agregar"',
           'id="btn-exportar"', 'id="btn-guardar"', 'id="btn-listar"', 'id="seccion-resumen"',
           'id="tab-apu"', 'data-tab="apu"',
-          "/app.js", "/xlsx.js", "cdn.tailwindcss.com"]) {
+          "/app.js", "/xlsx.js", "/tailwind.css"]) {
           assert.ok(unoHtml.includes(debe), `index.html sin ${debe}`);
         }
+        /* La piel se sirve del árbol desde el 5-sep-2026: el Play CDN compilaba
+           en el navegador y la red del dueño lo bloquea (el censo de clases y
+           el orden del enlace se vigilan en el bloque «h. la raíz sirve el
+           frontend»). */
+        assert.ok(!unoHtml.includes("cdn.tailwindcss.com"),
+          "el CDN de Tailwind no puede volver: sin él la app se veía rota y la consola no decía nada");
         assert.ok(unoJs.includes('"231105"'), "app.js sin la clave del gate");
 
         /* ═══ SIN LISTA DESPLEGABLE DE ÍTEMS (ago 2026) ═══════════════════════
@@ -15203,9 +15209,155 @@ async function main() {
     /* h. la raíz sirve el frontend (Vercel: /public es el output estático) */
     {
       const html = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
-      for (const debe of ['id="gate"', 'id="app"', "/app.js", "cdn.tailwindcss.com", 'id="btn-buscar"',
+      for (const debe of ['id="gate"', 'id="app"', "/app.js", "/tailwind.css", 'id="btn-buscar"',
         'id="f-entidad"', '<option value="atractividad">']) {
         assert.ok(html.includes(debe), `index.html sin ${debe}`);
+      }
+
+      /* ═══ LA PIEL SE SIRVE DEL ÁRBOL, NO DE UN CDN (5-sep-2026) ═══════════
+         Hasta hoy index.html cargaba `<script src="https://cdn.tailwindcss.com">`
+         y las utilidades se compilaban EN EL NAVEGADOR en cada visita. La red
+         institucional donde trabaja el dueño bloquea ese dominio, y sin él la
+         aplicación se ve rota con la consola LIMPIA: es el fallo mudo de
+         MEMORIA § «Verificación en NAVEGADOR REAL…» y § «Auditoría integral del
+         1-sep». Ahora la hoja es un archivo del repositorio y va enlazada ANTES
+         del <style> propio, de modo que el orden de la cascada deja de ser una
+         incógnita: las reglas propias ganan los empates.
+
+         SE REGENERA FUERA DEL ÁRBOL (el repositorio sigue sin build, sin
+         package.json y sin dependencias), con el CLI de Tailwind v3:
+
+           mkdir /tmp/tw && cd /tmp/tw && npm i tailwindcss@3
+           printf '@tailwind base;\n@tailwind components;\n@tailwind utilities;\n' > tw.in.css
+           tw.config.js = module.exports = { content: [el glob que recorre
+             <RUTA_DEL_REPO>/public en todos sus .html y .js],
+             corePlugins: { preflight: true } }
+           node node_modules/.bin/tailwindcss -c tw.config.js -i tw.in.css \
+             -o <RUTA_DEL_REPO>/public/tailwind.css --minify
+
+         REGLA DE TRABAJO: toda sesión que añada una utilidad de Tailwind
+         REGENERA public/tailwind.css. El censo de abajo es lo que impide la
+         deriva — sin él, una clase nueva sin regenerar es una clase que no
+         existe y nadie se entera hasta que el dueño ve la pantalla rota. */
+      {
+        assert.ok(!html.includes("cdn.tailwindcss.com"),
+          "el CDN de Tailwind no puede volver: la red del dueño lo bloquea y la app se ve rota con la consola limpia");
+        const rutaHoja = path.join(__dirname, "..", "public", "tailwind.css");
+        assert.ok(fs.existsSync(rutaHoja), "falta public/tailwind.css: la piel no puede colgar de una hoja externa");
+        const hoja = fs.readFileSync(rutaHoja, "utf8");
+        assert.ok(hoja.length > 20000, `public/tailwind.css mide ${hoja.length} B: se compiló vacío`);
+        const iEnlace = html.indexOf('<link rel="stylesheet" href="/tailwind.css">');
+        assert.ok(iEnlace > 0 && iEnlace < html.indexOf("<style>"),
+          "la hoja de utilidades va ANTES del <style> propio (si va después, las reglas propias pierden los empates)");
+
+        /* ---- EL CENSO: toda clase USADA tiene que estar DEFINIDA ----
+           No es una lista de utilidades a vigilar (una lista deja huecos y la
+           deriva vuelve por ellos): se barre TODO atributo `class`/`className`
+           y toda llamada a classList de index.html y de los public/*.js, y cada
+           clase tiene que existir en la hoja compilada, en el <style> propio,
+           en el <style> del documento que ese mismo módulo genera (el Excel/la
+           justificación llevan su hoja dentro), o ser un gancho del JS
+           (`closest(".x")`). Lo que no es nada de eso se DECLARA con motivo. */
+        const desescaparCss = (s) => s.replace(/\\([0-9a-fA-F]{1,6})[ \t\n]?|\\([\s\S])/g,
+          (m, hex, ch) => (hex ? String.fromCodePoint(parseInt(hex, 16)) : ch));
+        const selectoresDeClase = (css) => {
+          const s = new Set();
+          let i = 0;
+          for (;;) {
+            const l = css.indexOf("{", i); if (l < 0) break;
+            const ini = Math.max(css.lastIndexOf("}", l), css.lastIndexOf("{", l - 1)) + 1;
+            for (const m of css.slice(ini, l).matchAll(/\.((?:\\[0-9a-fA-F]{1,6}[ \t]?|\\[\s\S]|[a-zA-Z0-9_-])+)/g)) s.add(desescaparCss(m[1]));
+            i = l + 1;
+          }
+          return s;
+        };
+        /* Un `${…}` dentro de un atributo class se sustituye por una marca: así
+           se distingue la interpolación que añade una clase ENTERA de la que
+           pega un trozo al nombre (`text-${color}-700`), que el compilador no
+           puede ver. Hay que saltar los `${…}` para encontrar la comilla que
+           cierra: dentro de la interpolación hay comillas. */
+        const HUECO = "\u0001"; // marca interna: ningún nombre de clase la contiene
+        const RHUECO = new RegExp(HUECO, "g");
+        const atributosClase = (src) => {
+          const salida = [];
+          for (const m of src.matchAll(/class(?:Name)?=(["'`])/g)) {
+            const q = m[1];
+            let i = m.index + m[0].length, txt = "", roto = false;
+            const exprs = [];
+            while (i < src.length && src[i] !== q) {
+              if (src[i] === "$" && src[i + 1] === "{") {
+                let p = 0, j = i + 1;
+                for (; j < src.length; j++) { if (src[j] === "{") p++; else if (src[j] === "}") { p--; if (!p) break; } }
+                if (j >= src.length) { roto = true; break; }
+                exprs.push(src.slice(i + 2, j)); txt += HUECO; i = j + 1;
+              } else if (src[i] === "\n" && q !== "`") { roto = true; break; } else txt += src[i++];
+            }
+            if (!roto) salida.push([txt, exprs]);
+          }
+          return salida;
+        };
+        const dirPublic = path.join(__dirname, "..", "public");
+        const iEstilo = html.indexOf("<style>"), fEstilo = html.indexOf("</style>");
+        const clasesCompiladas = selectoresDeClase(hoja);
+        const clasesPropias = selectoresDeClase(html.slice(iEstilo, fEstilo));
+        const fuentesUi = [["index.html", html.slice(0, iEstilo) + html.slice(fEstilo), new Set()]];
+        for (const f of fs.readdirSync(dirPublic).filter((f) => f.endsWith(".js"))) {
+          const src = fs.readFileSync(path.join(dirPublic, f), "utf8");
+          const propiasDelModulo = new Set();
+          for (const m of src.matchAll(/<style>([\s\S]*?)<\/style>/g)) for (const c of selectoresDeClase(m[1])) propiasDelModulo.add(c);
+          fuentesUi.push([f, src, propiasDelModulo]);
+        }
+        const ganchosJs = new Set();
+        for (const [, src] of fuentesUi) for (const m of src.matchAll(/(?:closest|querySelector|querySelectorAll)\(\s*["'`]\.([A-Za-z0-9_-]+)/g)) ganchosJs.add(m[1]);
+        const clasesUsadas = new Map(), clasesArmadas = [];
+        for (const [nom, src] of fuentesUi) {
+          for (const [txt, exprs] of atributosClase(src)) {
+            let k = 0;
+            for (const t of txt.split(/\s+/)) {
+              if (!t) continue;
+              const n = (t.match(RHUECO) || []).length;
+              const mios = exprs.slice(k, k + n); k += n;
+              if (!n) { if (!clasesUsadas.has(t)) clasesUsadas.set(t, nom); continue; }
+              if (t === HUECO) continue; // la interpolación ES el token: añade clases enteras
+              let o = 0;
+              for (let p = 0; p < t.length; p++) {
+                if (t[p] !== HUECO) continue;
+                const e = mios[o++] || "";
+                const antes = p > 0, despues = p < t.length - 1;
+                const lit = [...e.matchAll(/(["'`])((?:\\.|(?!\1)[\s\S])*?)\1/g)].map((x) => x[2]);
+                // pega un trozo si no produce texto literal, o si lo que produce no empieza/termina en espacio
+                const pega = !lit.length
+                  || (antes && lit.some((v) => v !== "" && !/^\s/.test(v)))
+                  || (despues && lit.some((v) => v !== "" && !/\s$/.test(v)));
+                if (pega) clasesArmadas.push(`${nom}: ${t.replace(RHUECO, "${…}")}`);
+              }
+            }
+          }
+          for (const m of src.matchAll(/classList\.(?:add|remove|toggle)\(\s*((?:["'`][^"'`]*["'`]\s*,\s*)*["'`][^"'`]*["'`])/g))
+            for (const c of m[1].match(/(["'`])[^"'`]*\1/g) || []) {
+              const bruto = c.slice(1, -1); if (bruto.includes("${")) continue;
+              for (const t of bruto.split(/\s+/)) if (t && !clasesUsadas.has(t)) clasesUsadas.set(t, nom);
+            }
+        }
+        assert.deepStrictEqual(clasesArmadas, [],
+          `una clase de Tailwind armada en tiempo de ejecución NO la ve el compilador y no existe en la hoja: ${clasesArmadas.join(" | ")}`);
+        /* excepciones DECLARADAS con su motivo (la regla es el censo; lo que se
+           sale de él se justifica aquí, no se borra del barrido) */
+        const SIN_ESTILO = {
+          "barra-herramientas": "marca de posición de la barra de Licitaciones: no tiene estilo propio, la usa esta suite para localizar la sección",
+        };
+        const sinDefinir = [];
+        for (const [c, nom] of clasesUsadas) {
+          if (clasesCompiladas.has(c) || clasesPropias.has(c) || ganchosJs.has(c) || SIN_ESTILO[c]) continue;
+          const fuente = fuentesUi.find((x) => x[0] === nom);
+          if (fuente && fuente[2].has(c)) continue;
+          sinDefinir.push(`${c} (${nom})`);
+        }
+        assert.deepStrictEqual(sinDefinir, [],
+          `clases usadas que no existen en public/tailwind.css ni en ninguna hoja propia — regenere la hoja (el comando está arriba): ${sinDefinir.join(", ")}`);
+        assert.ok(clasesUsadas.size > 400, `el censo de clases se quedó corto (${clasesUsadas.size}): revíselo antes de fiarse de él`);
+        console.log(`  · La piel se sirve del árbol: public/tailwind.css (${Math.round(hoja.length / 1024)} KB, ${clasesCompiladas.size} selectores) enlazado antes del <style> propio, sin CDN · `
+          + `censo: ${clasesUsadas.size} clases usadas, todas definidas; ninguna armada en tiempo de ejecución`);
       }
       // el orden por defecto de la app debe ser el de atractividad: primera opción del selector
       const opciones = html.slice(html.indexOf('id="f-ordenar"')).match(/<option value="([^"]+)"/g) || [];
@@ -18000,6 +18152,156 @@ async function main() {
       assert.ok(/prefers-color-scheme: dark/.test(rt) && /prefers-color-scheme: dark/.test(rc), "las dos consultas de fondo sólido tienen su variante OSCURA (sin ella, blanco sobre negro al reducir transparencia en modo oscuro)");
       // los datos siguen sobre fondo sólido de alto contraste con independencia de la preferencia
       assert.ok(!/\.hidden\s*\{/.test(rt + rm + rc), "ninguna de las tres consultas puede tocar `.hidden` (la vista visible no puede depender de una preferencia)");
+
+      /* ═══ EL <style> PROPIO NO PUEDE EMPATAR CON UNA UTILIDAD (5-sep-2026) ═══
+         Desde que public/tailwind.css se enlaza ANTES del <style> propio, una
+         regla de clase sola gana los empates; antes los perdía. Las dos caras
+         del mismo defecto: la insignia de «Mis procesos» (`.insignia-pestana`
+         contra `.hidden`, 0,1,0 los dos) se pintaba como un «0» rojo permanente
+         avisando de NADA, y la reserva para la barra inferior del teléfono
+         (`main` a secas, 0,0,1) perdía SIEMPRE contra `py-8`: 32 px reales
+         donde la regla creía reservar 88 bajo una barra de 64 — en un estado
+         sin pie (lista vacía o error) el último control quedaba debajo. */
+      const sinComentariosCss = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "");
+      const estiloPropio = sinComentariosCss(htmlPref.slice(htmlPref.indexOf("<style>"), htmlPref.indexOf("</style>")));
+      {
+        /* la app tiene MÁS DE UNA consulta `max-width: 767px` (la hoja de
+           filtros y la de los modales): se juntan todas, que para eso es un
+           censo — mirar solo la primera fue el error de la primera versión */
+        const todasLasMovil = () => {
+          const trozos = []; let i = 0;
+          for (;;) {
+            i = htmlPref.indexOf("@media (max-width: 767px)", i);
+            if (i < 0) break;
+            let prof = 0, j = htmlPref.indexOf("{", i);
+            for (; j < htmlPref.length; j++) { if (htmlPref[j] === "{") prof++; else if (htmlPref[j] === "}") { prof--; if (prof === 0) break; } }
+            trozos.push(htmlPref.slice(i, j + 1)); i = j + 1;
+          }
+          assert.ok(trozos.length >= 2, `se esperaban varias consultas de teléfono y solo hay ${trozos.length}: revise este censo`);
+          return trozos.join("\n");
+        };
+        const movil = sinComentariosCss(todasLasMovil());
+        assert.ok(/main\.panel-pestana\s*\{[^}]*padding-bottom:/.test(movil),
+          "la reserva para la barra inferior va con selector `main.panel-pestana` (0,1,1): la etiqueta sola pierde contra la utilidad py-8 y el relleno real eran 32 px, no 88");
+        assert.ok(!/(?:^|[\s,;{}])main\s*\{/.test(movil),
+          "el selector de etiqueta `main` suelto no puede volver a la consulta del teléfono: pierde contra py-8 sin decirlo");
+        assert.ok(/padding-bottom:\s*calc\([^)]*env\(safe-area-inset-bottom/.test(movil),
+          "la reserva suma el borde inferior del aparato (env(safe-area-inset-bottom))");
+
+        /* CENSO, NO LISTA: se recorren TODAS las reglas de clase sola del
+           <style> propio que fijan `display`; para cada una se mira si esa
+           clase aparece en la plantilla junto a una utilidad de display, y si
+           aparece se exige la pareja `.clase.utilidad` (0,2,0), que gana en
+           cualquier orden de hoja. Una lista de «sitios donde mirar» dejaría
+           huecos y el patrón volvería por ellos. */
+        const reglasDisplay = new Map();
+        for (const m of estiloPropio.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
+          if (!/(?:^|;|\s)display\s*:/.test(m[2])) continue;
+          for (const s of m[1].split(",").map((x) => x.trim().replace(/\s+/g, " "))) {
+            const solo = s.match(/^\.([A-Za-z0-9_-]+)$/);
+            if (solo) reglasDisplay.set(solo[1], m[2].match(/display\s*:\s*([^;]+)/)[1].trim());
+          }
+        }
+        assert.ok(reglasDisplay.size >= 15, `el censo de reglas de display se quedó corto (${reglasDisplay.size}): revíselo`);
+        const UTIL_DISPLAY = /^(?:(?:sm|md|lg|xl|2xl):)?(?:hidden|block|inline-block|inline|flex|inline-flex|grid|inline-grid|table|contents|flow-root)$/;
+        const dirUi = path.join(__dirname, "..", "public");
+        const fuentesClase = [htmlPref.slice(0, htmlPref.indexOf("<style>")) + htmlPref.slice(htmlPref.indexOf("</style>"))];
+        for (const f of fs.readdirSync(dirUi).filter((x) => x.endsWith(".js"))) fuentesClase.push(fs.readFileSync(path.join(dirUi, f), "utf8"));
+        const empates = [];
+        for (const src of fuentesClase) {
+          for (const m of src.matchAll(/class(?:Name)?=(["'`])([^"'`]*)\1/g)) {
+            const toks = m[2].split(/\s+/).filter(Boolean);
+            for (const c of toks) {
+              if (!reglasDisplay.has(c)) continue;
+              for (const u of toks) if (UTIL_DISPLAY.test(u)) empates.push([c, u]);
+            }
+          }
+        }
+        const sinPareja = [];
+        for (const [c, u] of empates) {
+          const pareja = new RegExp(`\\.${c}\\.${u.replace(":", "\\:")}|\\.${u.replace(":", "\\:")}\\.${c}`);
+          if (!pareja.test(estiloPropio)) sinPareja.push(`.${c} + .${u}`);
+        }
+        assert.deepStrictEqual([...new Set(sinPareja)], [],
+          `estas clases del <style> propio fijan display y empatan con una utilidad de display en la plantilla: hace falta la pareja .clase.utilidad — ${[...new Set(sinPareja)].join(", ")}`);
+        assert.ok(empates.length > 0, "el censo no encontró ni un empate: si la insignia dejó de llevar `hidden`, revise este censo antes de fiarse de él");
+        assert.ok(/\.insignia-pestana\.hidden\s*\{\s*display:\s*none/.test(estiloPropio),
+          "la insignia de «Mis procesos» necesita su pareja `.insignia-pestana.hidden`: si no, con la hoja de utilidades delante se pinta un «0» rojo permanente que no avisa de nada");
+      }
+
+      /* ═══ EL MISMO ANCHO EN LAS CUATRO PESTAÑAS Y UN SOLO RADIO DE ACCIÓN ═══
+         Cada <main> llevaba su max-w-* (6xl / 5xl / 5xl / 7xl) y a 1280 px el
+         título saltaba de sitio al cambiar de pestaña. El ancho se fija por
+         regla propia con prefijo de id, SIN tocar las clases max-w-* que la
+         suite lee (MEMORIA § piel v3: no se reescriben las clases que la suite
+         lee). Y en la fila de acciones el MISMO botón cambiaba de forma al
+         pulsarlo («Guardar» píldora, «Guardado ✓» a 10 px): lo que se pulsa
+         tiene UN radio (--radius-accion). */
+      assert.ok(/#app main\.panel-pestana\s*\{[^}]*max-width:\s*72rem/.test(estiloPropio),
+        "las cuatro pestañas comparten ancho por regla propia `#app main.panel-pestana { max-width: 72rem }`");
+      assert.ok(/--radius-accion:\s*980px/.test(estiloPropio),
+        "el radio de lo que se pulsa es un token (--radius-accion), no un literal repetido");
+      assert.ok(/#app \.tarjeta \.btn-guardar[^{]*\{[^}]*border-radius:\s*var\(--radius-accion\)/.test(estiloPropio),
+        "la fila de acciones de la tarjeta va con un solo radio: «Guardado ✓» salía a 10 px y «Guardar»/«Calcular mi precio» como píldora — el mismo botón cambiaba de forma al pulsarlo");
+
+      /* ═══ CONTRASTE MEDIDO SOBRE LOS TOKENS, NO ESTIMADO (5-sep-2026) ═══════
+         El filo de los campos salía de --border-fuerte: 1,45:1 en claro y
+         1,76:1 en oscuro, cuando WCAG 1.4.11 pide 3:1 para el límite de un
+         componente de interfaz; y el gris terciario oscuro daba 4,38:1 sobre el
+         fondo hundido, que es AA solo si el texto es grande (aquí es de 11-12
+         px). El bloque `prefers-contrast: more` no vale como respuesta: solo
+         actúa si la persona activó la preferencia en su aparato.
+         La fórmula es la de WCAG (luminancia relativa) EJECUTADA sobre los
+         tokens leídos del HTML; el 0,32 de alfa que proponía el auditor da
+         2,05:1 y esta cerradura lo habría rechazado. */
+      {
+        const luminancia = (r, g, b) => {
+          const f = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+          return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+        };
+        const contraste = (a, b) => {
+          const la = luminancia(a[0], a[1], a[2]), lb = luminancia(b[0], b[1], b[2]);
+          return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+        };
+        const aColor = (v) => {
+          const h = v.match(/^#([0-9a-fA-F]{6})$/);
+          if (h) return [parseInt(h[1].slice(0, 2), 16), parseInt(h[1].slice(2, 4), 16), parseInt(h[1].slice(4, 6), 16), 1];
+          const r = v.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/);
+          assert.ok(r, `no sé leer el color «${v}»`);
+          return [+r[1], +r[2], +r[3], r[4] === undefined ? 1 : +r[4]];
+        };
+        const sobre = (c, fondo) => [0, 1, 2].map((i) => c[3] * c[i] + (1 - c[3]) * fondo[i]);
+        // el :root claro es el primero del <style>; el oscuro, el que vive en la primera consulta de tema oscuro
+        const raizDe = (txt) => {
+          const i = txt.indexOf(":root {");
+          assert.ok(i >= 0, "no se encontró el bloque :root");
+          return txt.slice(i, txt.indexOf("}", i));
+        };
+        const temas = { claro: raizDe(estiloPropio), oscuro: raizDe(sinComentariosCss(bloque("prefers-color-scheme: dark"))) };
+        const tk = (tema, nombre) => {
+          const m = temas[tema].match(new RegExp("--" + nombre + ":\\s*([^;]+);"));
+          assert.ok(m, `falta el token --${nombre} en el tema ${tema}`);
+          return aColor(m[1].trim());
+        };
+        const medidas = [];
+        for (const tema of ["claro", "oscuro"]) {
+          // el filo del campo tiene que verse por sus DOS lados: contra la tarjeta y contra el relleno del propio campo
+          for (const fondo of ["bg-card", "campo-bg"]) {
+            const f = tk(tema, fondo);
+            const r = contraste(sobre(tk(tema, "borde-campo"), f), f);
+            medidas.push(`borde-campo/${fondo} ${tema} ${r.toFixed(2)}:1`);
+            assert.ok(r >= 3, `--borde-campo sobre --${fondo} en ${tema} da ${r.toFixed(2)}:1 y WCAG 1.4.11 pide 3:1`);
+          }
+          const t = contraste(tk(tema, "text-tertiary"), tk(tema, "bg-inset"));
+          medidas.push(`terciario/hundido ${tema} ${t.toFixed(2)}:1`);
+          assert.ok(t >= 4.5, `--text-tertiary sobre --bg-inset en ${tema} da ${t.toFixed(2)}:1 y el texto pequeño pide 4,5:1`);
+        }
+        // el anillo decorativo de las tarjetas NO se toca: es otra cosa y se llama distinto (MEMORIA 4-sep)
+        assert.ok(/--border-fuerte:\s*rgba\(26,25,22,0\.18\)/.test(temas.claro),
+          "el anillo de las tarjetas se queda en el 18 %: lo que sube es el filo de los campos, no la decoración");
+        console.log(`  · Contraste medido con la fórmula de WCAG sobre los tokens: ${medidas.join(" · ")}`);
+      }
+
       console.log("  · Preferencias del sistema: prefers-reduced-transparency (sin blur, fondo sólido claro/oscuro), prefers-reduced-motion (sin transición, animación ni zoom) y prefers-contrast: more (bordes y gris secundario) verificadas sobre index.html");
     }
 

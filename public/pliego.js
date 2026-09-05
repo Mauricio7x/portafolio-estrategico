@@ -824,9 +824,16 @@
     const valorDe = (clave, v) => (v == null ? "" : /_cop$/.test(clave) ? dinero(v) : cifra(v));
     const fecha = (iso) => { const s = String(iso || "").slice(0, 10).split("-"); return s.length === 3 ? `${s[2]}/${s[1]}/${s[0]}` : ""; };
     const veredicto = String(d.veredicto || "sin_hechos_comprobados");
-    const COLOR = { presentarse: "green", presentarse_con_reservas: "amber", no_presentarse: "red", sin_hechos_comprobados: "gray" };
+    /* LAS CUATRO CLASES VAN COMPLETAS (5-sep-2026). Antes esto guardaba solo el
+       color («green») y la plantilla armaba `text-${color}-700`: una utilidad
+       construida en tiempo de ejecución que el compilador de Tailwind NO puede
+       ver. Desde que la hoja se compila fuera del navegador y se sirve desde
+       public/tailwind.css, una clase armada por trozos es una clase que no
+       existe — y el veredicto del pliego saldría en negro. La suite censa que
+       ninguna clase se arme mezclando literal e interpolación. */
+    const COLOR = { presentarse: "text-green-700", presentarse_con_reservas: "text-amber-700", no_presentarse: "text-red-700", sin_hechos_comprobados: "text-gray-700" };
     const TEXTO = { presentarse: "Puede presentarse", presentarse_con_reservas: "Puede presentarse, con reservas", no_presentarse: "No conviene presentarse", sin_hechos_comprobados: "Falta información para opinar" };
-    const color = COLOR[veredicto] || "gray";
+    const color = COLOR[veredicto] || "text-gray-700";
     const gris = veredicto === "sin_hechos_comprobados";
     const donde = (x) => {
       if (x.pagina_real != null && x.pagina != null && x.pagina_real !== x.pagina) return `está en la página ${x.pagina_real}`;
@@ -855,7 +862,7 @@
     const lecturas = r.lecturas && typeof r.lecturas === "object" ? Object.values(r.lecturas) : [];
     const CUMPLE = { si: "Cumple", no: "No cumple", sin_dato: "Sin dato en su perfil" };
     let html = "";
-    html += `<p class="mt-3 text-sm font-medium text-${color}-700">● ${esc(TEXTO[veredicto] || TEXTO.sin_hechos_comprobados)} — ${esc(d.veredicto_frase || "")}</p>`;
+    html += `<p class="mt-3 text-sm font-medium ${color}">● ${esc(TEXTO[veredicto] || TEXTO.sin_hechos_comprobados)} — ${esc(d.veredicto_frase || "")}</p>`;
     if (gris) html += `<p class="mt-1 text-sm text-gray-600">${esc(r.que_hacer || "")}</p>`;
     html += `<p class="mt-2 text-xs text-gray-500">${esc(r.advertencia || "")}</p>`;
     html += `<p class="mt-1 text-xs text-gray-500">Sobre la versión ${esc(r.version_texto)} del pliego${r.paginas != null ? ` (${esc(r.paginas)} páginas)` : ""}. Para el precio use “Calcular mi precio”.`

@@ -24,7 +24,30 @@
   <meta property="og:site_name" content="Detekta">
   <meta property="og:title" content="Detekta · Licitaciones de obra en Colombia">
   <meta property="og:type" content="website">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- LA PIEL SE SIRVE DESDE AQUÍ, NO DESDE UN CDN (5-sep-2026).
+       Hasta hoy esta línea era la etiqueta de guion del Play CDN de Tailwind
+       («designed for development purposes only»), que compilaba las
+       utilidades EN EL NAVEGADOR en cada visita. La red institucional donde
+       trabaja el dueño bloquea ese dominio (y la suite prohíbe que vuelva,
+       incluso escrito: por eso aquí no aparece), y sin él la aplicación se ve rota
+       con la consola limpia —el fallo MUDO que ya costó dos correcciones
+       (MEMORIA § «Verificación en NAVEGADOR REAL…» y § «Auditoría integral del
+       1-sep»): los tres estados de Licitaciones a la vez, la barra inferior
+       pasando a `static` y pintándose también en escritorio, la primera tarjeta
+       802 px más abajo y los controles en Arial de 13,3 px.
+       public/tailwind.css se genera FUERA del árbol con el CLI de Tailwind v3
+       (el repositorio sigue sin build, sin package.json y sin dependencias) y
+       se versiona en git. El comando exacto de regeneración está escrito en
+       tests/e2e.js, en el bloque «h. la raíz sirve el frontend»; toda sesión
+       que añada una utilidad tiene que regenerarlo, y ese mismo bloque lo
+       vigila con un censo de las clases usadas contra los selectores
+       compilados.
+       VA ANTES DE LA HOJA PROPIA DE ABAJO a propósito: así el orden de la cascada deja
+       de ser una incógnita (el CDN inyectaba su hoja al final del <head>, es
+       decir DESPUÉS de esta) y las reglas de abajo ganan siempre los empates.
+       Lo que empataba con una utilidad se prefijó por id o lleva su pareja
+       .clase.hidden. -->
+  <link rel="stylesheet" href="/tailwind.css">
   <style>
     /* ══════════ PIEL v3 · «Lino y tinta» (4-sep-2026) ══════════
        Encargo del dueño: un cambio total, un color elegante «que se vea caro» y
@@ -83,13 +106,25 @@
       --danger-light: rgba(184,55,47,0.10);
       --border: rgba(26,25,22,0.09);
       --border-fuerte: rgba(26,25,22,0.18);
+      /* BORDE DE CAMPO, SEPARADO DEL ANILLO DE TARJETA (5-sep-2026). Un control
+         donde se escribe o se elige tiene que distinguirse del fondo SIN que la
+         persona active ninguna preferencia del sistema: WCAG 1.4.11 pide 3:1
+         para el límite de un componente de interfaz. El anillo del 9-18 % de
+         las tarjetas se queda como está (es decoración, y a propósito: la
+         memoria del 4-sep lo fija en 4-8 % copiado de las hojas reales); lo que
+         sube es SOLO el filo de los campos. Medido con la fórmula de WCAG sobre
+         estos mismos tokens —y la suite lo recalcula—: 0,50 sobre blanco da
+         3,36:1 (el 0,18 anterior daba 1,45:1) y 0,48 sobre #1b1a18 da 4,90:1.
+         El 0,32 que proponía el auditor da 2,05:1: no llega. */
+      --borde-campo: rgba(26,25,22,0.50);
       --shadow-sm: 0 1px 2px rgba(26,25,22,0.05);
       --shadow-md: 0 1px 2px rgba(26,25,22,0.04), 0 8px 24px rgba(26,25,22,0.07);
       --shadow-lg: 0 2px 6px rgba(26,25,22,0.06), 0 24px 64px rgba(26,25,22,0.16);
       --filo: 0 0 0 0 transparent;
       --radius-sm: 10px;
       --radius-md: 14px;
-      --radius-lg: 20px;
+      --radius-lg: 20px;   /* superficies: tarjeta de primer nivel y <details> */
+      --radius-accion: 980px; /* lo que se pulsa: píldora, y una sola (5-sep-2026) */
       --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', system-ui, sans-serif;
       --font-display: ui-serif, 'New York', 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, 'Times New Roman', serif;
       --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
@@ -121,7 +156,10 @@
         --campo-bg: #161514;
         --text-primary: #f3f0ea;
         --text-secondary: #b1ada4;
-        --text-tertiary: #8a867e;
+        /* #8a867e daba 4,38:1 sobre el hundido #232220 (AA solo si el texto es
+           grande, y aquí es de 11-12 px). #948f86 da 4,94:1 y sigue siendo el
+           gris más apagado de los tres. */
+        --text-tertiary: #948f86;
         --accent: #9db3e8;
         --accent-hover: #b3c5f0;
         --accent-texto: #121110;
@@ -135,6 +173,7 @@
         --danger-light: rgba(240,122,114,0.16);
         --border: rgba(255,255,255,0.09);
         --border-fuerte: rgba(255,255,255,0.18);
+        --borde-campo: rgba(255,255,255,0.48);
         --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
         --shadow-md: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
         --shadow-lg: 0 2px 6px rgba(0,0,0,0.4), 0 24px 64px rgba(0,0,0,0.6);
@@ -221,6 +260,16 @@
     .insignia-pestana { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px;
       padding: 0 5px; margin-left: 6px; border-radius: 9px; font-size: 11px; font-weight: 600; line-height: 1;
       background: var(--danger); color: #fff; font-variant-numeric: tabular-nums; animation: insignia-entra var(--dur-4) var(--ease-expo); }
+    /* LA PAREJA .hidden GANA EN CUALQUIER ORDEN DE HOJA (5-sep-2026). La regla
+       de arriba y la utilidad `.hidden` empatan en especificidad (0,1,0): con la
+       hoja de utilidades DESPUÉS ganaba `.hidden` y la insignia se escondía; con
+       la hoja ANTES —que es como se sirve desde que public/tailwind.css se
+       enlaza en el <head>— ganaba `inline-flex` y el usuario veía un «0» rojo
+       permanente en «Mis procesos», avisando de nada. Con 0,2,0 no depende del
+       orden. La suite censa que TODA regla de clase sola de esta hoja que fije
+       `display` y cuya clase aparezca junto a una utilidad de display en la
+       plantilla lleve su pareja. */
+    .insignia-pestana.hidden { display: none; }
     @keyframes insignia-entra { from { transform: scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
     .pestana-movil { position: relative; }
     .pestana-movil .insignia-pestana { position: absolute; top: 4px; left: calc(50% + 6px); margin: 0; }
@@ -283,13 +332,18 @@
     /* ── la barra de herramientas y la hoja de filtros ──
        Controles blancos con anillo (Vercel, Attio), 38 px de alto, radio
        píldora; el énfasis lo pone el anillo de acento al enfocar. ── */
-    .campo-buscar { background: var(--campo-bg); min-height: 38px; box-shadow: inset 0 0 0 1px var(--border-fuerte);
+    /* El filo de los campos sale de --borde-campo (3:1 medido), no del anillo
+       decorativo de las tarjetas: son dos cosas distintas y se llaman distinto.
+       .control-boton comparte declaración con los otros dos controles y también
+       es un componente de interfaz: partir el bloque solo para dejarlo en
+       1,45:1 sería peor que incluirlo. */
+    .campo-buscar { background: var(--campo-bg); min-height: 38px; box-shadow: inset 0 0 0 1px var(--borde-campo);
       transition: box-shadow var(--dur-2) var(--ease-out); }
     .campo-buscar:focus-within { box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3px var(--accent-light); }
     .campo-buscar input { color: var(--text-primary); }
     .campo-buscar input::placeholder { color: var(--text-tertiary); }
     .control-select, .control-campo, .control-boton { background: var(--campo-bg); border: 0; color: var(--text-primary);
-      box-shadow: inset 0 0 0 1px var(--border-fuerte); min-height: 38px; padding: 0 12px; font-size: 14px; font-weight: 500;
+      box-shadow: inset 0 0 0 1px var(--borde-campo); min-height: 38px; padding: 0 12px; font-size: 14px; font-weight: 500;
       transition: box-shadow var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out), transform var(--dur-1) var(--ease-out); }
     .control-select { padding-right: 32px; -webkit-appearance: none; appearance: none;
       background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236f6b62' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
@@ -447,7 +501,7 @@
        para que no compita con lo escrito. ── */
     #app input:not([type=checkbox]):not([type=file]):not([type=radio]), #app select, #app textarea,
     #onboarding input:not([type=file]), #onboarding select, #modal-competencia input, #modal-importar input {
-      background-color: var(--campo-bg); color: var(--text-primary); border-color: var(--border-fuerte); border-radius: var(--radius-sm);
+      background-color: var(--campo-bg); color: var(--text-primary); border-color: var(--borde-campo); border-radius: var(--radius-sm);
       transition: border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out); }
     #app input::placeholder, #app textarea::placeholder, #onboarding input::placeholder { color: var(--text-tertiary); }
     #app input:focus, #app select:focus, #app textarea:focus, #onboarding input:focus, #onboarding select:focus {
@@ -601,7 +655,15 @@
 
     /* móvil: hoja estilo iOS para los modales y sitio para la barra inferior */
     @media (max-width: 767px) {
-      main { padding-bottom: 5.5rem; }
+      /* SITIO PARA LA BARRA INFERIOR, DE VERDAD (5-sep-2026). El selector era
+         la etiqueta `main` a secas (0,0,1) y PERDÍA siempre contra `py-8`, que
+         llevan los cuatro paneles: el relleno real en el teléfono era de 32 px,
+         no los 88 que esta regla creía reservar bajo una barra de 64. No tapaba
+         nada solo porque el pie levantaba la última tarjeta; en un estado sin
+         pie (lista vacía o error) el último control quedaba debajo de la barra.
+         Con la clase el selector sube a 0,1,1 y gana; el `env()` añade el borde
+         inferior del aparato, que la propia .barra-movil ya suma a su alto. */
+      main.panel-pestana { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
       #modal-competencia { align-items: flex-end; padding: 0; }
       #modal-competencia > .relative { max-width: 100%; max-height: 92vh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; animation-name: hojaSube; }
     }
@@ -769,6 +831,16 @@
     #app .rounded-2xl.bg-white .rounded-2xl { border-radius: 12px; }
     #app .rounded-xl { border-radius: 12px; }
     #app .rounded-lg { border-radius: 10px; }
+    /* EL MISMO ANCHO INTERIOR EN LAS CUATRO PESTAÑAS (5-sep-2026). Cada <main>
+       llevaba su propia utilidad —max-w-6xl en Mi empresa, max-w-5xl en Mis
+       procesos y Licitaciones, max-w-7xl en Precios—, así que a 1280 px el
+       título saltaba de sitio al cambiar de pestaña: medido en Chromium a
+       1280 px, x = 77 / 141 / 141 / 20, y ahora 77 en las cuatro.
+       El ancho se fija AQUÍ, con el prefijo de id, y no tocando las clases
+       max-w-*: la suite las lee y la memoria del 4-sep decidió no reescribir
+       las clases que la suite lee. 72rem = 1152 px, el ancho de en medio; la
+       tabla de Precios cabe porque tiene su propio overflow-x. */
+    #app main.panel-pestana { max-width: 72rem; }
     #app main > section.mt-8, #app main > div.mt-8, #app main > details.mt-8 { margin-top: 40px; }
     @media (min-width: 768px) { #app .tarjeta.p-5 { padding: 24px; } }
     #app .bg-white .border.border-gray-200.rounded-2xl, #app .bg-white .border.border-gray-200.rounded-xl,
@@ -796,11 +868,19 @@
     /* ── Botones: el primario es una PÍLDORA de azul tinta; el secundario, una
        píldora blanca con anillo que se hunde al pasar (Vercel, Attio). Los dos
        del mismo alto, para que se lean como pareja. ── */
-    #app .bg-gray-900:not(.rounded-full), #modal-competencia .bg-gray-900, #modal-importar .bg-gray-900 { border-radius: 980px; font-weight: 500; }
+    #app .bg-gray-900:not(.rounded-full), #modal-competencia .bg-gray-900, #modal-importar .bg-gray-900 { border-radius: var(--radius-accion); font-weight: 500; }
     #app button.border-gray-300, #app a.border-gray-300, #app label.border-gray-300, #modal-competencia button.border-gray-300, #modal-importar button.border-gray-300 {
-      background-color: var(--bg-card); border-color: var(--border-fuerte); border-radius: 980px; font-weight: 500; box-shadow: var(--shadow-sm), var(--filo); }
+      background-color: var(--bg-card); border-color: var(--border-fuerte); border-radius: var(--radius-accion); font-weight: 500; box-shadow: var(--shadow-sm), var(--filo); }
     #app button.border-gray-300:hover, #app a.border-gray-300:hover, #app label.border-gray-300:hover { background-color: var(--bg-inset); color: var(--text-primary); }
-    #app .control-boton, #app .campo-buscar, #app .control-select { border-radius: 980px; }
+    #app .control-boton, #app .campo-buscar, #app .control-select { border-radius: var(--radius-accion); }
+    /* UN SOLO RADIO EN LA FILA DE ACCIONES DE LA TARJETA (5-sep-2026). Medido en
+       Chromium con la hoja compilada: «Guardar» y «Calcular mi precio» salían a
+       980 px (llevan `border-gray-300`, que esta capa traduce a píldora) pero
+       «Guardado ✓» —el MISMO botón en su otro estado, sin ese borde— caía en la
+       traducción de `rounded-lg` y salía a 10 px: el botón cambiaba de FORMA al
+       pulsarlo. El radio de lo que se PULSA es uno solo (--radius-accion) y el
+       de las SUPERFICIES es --radius-lg. */
+    #app .tarjeta .btn-guardar, #app .tarjeta .btn-apu { border-radius: var(--radius-accion); }
     /* Una píldora no se parte en tres renglones: los botones de la tarjeta
        van en una línea cada uno y es la FILA la que se pliega (medido en
        390 px: «Calcular mi precio» salía como una pastilla de tres pisos). */
