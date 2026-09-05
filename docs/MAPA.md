@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-04 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-05 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -166,8 +166,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 123 secciones. Las 10 más nuevas:
-  L  6677  Dictamen del pliego · `op=dictamen`, el código de la sección 6 (2-sep-2026, noche)
+· MEMORIA · docs/MEMORIA.md — 124 secciones. Las 10 más nuevas:
   L  6748  La guía «Don Héctor» de cada proceso guardado y el dictamen en Mis procesos (3-sep-2026)
   L  6808  Don Héctor sin clave de API: dictamen por REGLAS y dictamen desde una SESIÓN de Claude Code 
   L  6861  Los documentos del proceso se leen solos al guardar en Mis procesos (3-sep-2026)
@@ -177,8 +176,9 @@
   L  7211  La ficha «Lo que exige este pliego» en Mis procesos y los precios buscados por una sesión de
   L  7293  Segunda pasada del 4-sep-2026: la guía sin cuadros vacíos y Precios en tres pasos
   L  7350  Tercera pasada del 4-sep-2026: el pliego CITADO y Precios como «cargue → Buscar → APU»
+  L  7414  Consultoría integral del 4/5-sep-2026 · qué es Detekta, qué aguanta, qué se ve, qué se cuent
 
-· DOCUMENTOS docs/ — 41:
+· DOCUMENTOS docs/ — 42:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)
   ANALISIS_ESTRATEGICO.md               Análisis estratégico de Detekta · agosto 2026
   APU_DIAGNOSTICO.md                    Diagnóstico del módulo APU frente a la especificación «APU profesional»
@@ -194,6 +194,7 @@
   CHECKLIST_PRODUCCION.md               Anexo F · Lista de verificación previa a producción
   COMPLEMENTO_ANALISTA_LICITACIONES.md  Complemento crítico al Manual del Analista de Licitaciones
   CONFIGURACION_TOKENS.md               Tokens y variables de entorno · guía desde cero
+  CONSULTORIA_2026-09-04_RESUMEN.md     Consultoría integral sobre Detekta · resumen para el dueño (antes → mejora)
   datos.md                              Inventario de fuentes de datos y auditorías de la Fase 0
   DICTAMEN_DESDE_CLAUDE_CODE.md         Dictamen del pliego con la suscripción de Claude Code (sin clave de API) · 3-sep-202
   DIFERENCIAS_APU.md                    Diferencias declaradas · APU generado vs archivos de referencia (ago 2026)
