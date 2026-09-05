@@ -8626,6 +8626,73 @@ async function main() {
         const htmlSeg = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
         const appSeg = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
         for (const id of ["seccion-seguimiento", "seg-lista", "seg-vacio", "seg-resumen", "seg-mensaje"]) assert.ok(htmlSeg.includes(`id="${id}"`), `falta #${id}`);
+        /* ═══ TRES ESTADOS Y NO UNO: CARGANDO, FALLO Y VACÍO (5-sep-2026) ═══
+           #seg-vacio nacía VISIBLE y solo lo tapaba `pintarSeguimiento`, a la
+           que la ruta de FALLO de `cargarSeguimiento` no llega (catch → mensaje
+           → return): con Redis o Vercel caídos el usuario leía el aviso rojo y,
+           debajo, «Todavía no ha guardado ningún proceso» con maquetación
+           creíble — una afirmación FALSA sobre sus propios datos. Y el vacío
+           verdadero era un párrafo de 66 palabras sin ninguna salida. */
+        {
+          const iVac = htmlSeg.indexOf('id="seg-vacio"');
+          const etiquetaVac = htmlSeg.slice(htmlSeg.lastIndexOf("<", iVac), htmlSeg.indexOf(">", iVac) + 1);
+          assert.ok(/\bhidden\b/.test(etiquetaVac),
+            `#seg-vacio tiene que NACER oculto (la ruta de fallo no pasa por pintarSeguimiento): ${etiquetaVac}`);
+          const cuerpoVac = htmlSeg.slice(iVac, htmlSeg.indexOf('id="seg-skeleton"', iVac));
+          assert.ok(/<button[^>]*data-tab="licitaciones"/.test(cuerpoVac),
+            "una pantalla vacía sin salida no sirve: el vacío verdadero lleva el botón que va a Licitaciones");
+          assert.ok(/<summary[^>]*>\s*Qué hace esta pestaña\s*<\/summary>/.test(cuerpoVac),
+            "el párrafo largo va PLEGADO: lo que hay que VER arriba, lo que hay que TOCAR plegado");
+          assert.ok(/id="seg-skeleton"[^>]*animate-pulse/.test(htmlSeg) && /id="seg-skeleton"[\s\S]{0,500}bg-gray-100/.test(htmlSeg),
+            "el esqueleto de la carga REUTILIZA el brillo ya definido (animate-pulse + bg-gray-100), no uno nuevo");
+
+          /* (1) la CONDICIÓN del vacío, EJECUTADA tal como vive en el fuente */
+          const mVac = appSeg.match(/vacio\.classList\.toggle\("hidden", ([^;]+)\);/);
+          assert.ok(mVac, "pintarSeguimiento decide el vacío con un toggle explícito");
+          const ocultaVacio = new Function("r", "todos", `return ${mVac[1]};`);
+          assert.strictEqual(ocultaVacio({ ok: true, procesos: [] }, []), false,
+            "respuesta CORRECTA y lista vacía: ese —y solo ese— es el vacío que se enseña");
+          assert.strictEqual(ocultaVacio(null, []), true,
+            "sin respuesta NO se le afirma al usuario que no ha guardado nada");
+          assert.strictEqual(ocultaVacio({ ok: false, error: "x" }, []), true, "con la respuesta en error, tampoco");
+          assert.strictEqual(ocultaVacio({ ok: true, procesos: [1] }, [1]), true, "con procesos guardados, el vacío se tapa");
+
+          /* (2) `cargandoSeguimiento`, EJECUTADA contra un DOM mínimo */
+          const nodoSeg = () => {
+            const cls = new Set();
+            const n = {
+              attrs: {},
+              classList: {
+                add: (...c) => c.forEach((x) => cls.add(x)),
+                remove: (...c) => c.forEach((x) => cls.delete(x)),
+                contains: (c) => cls.has(c),
+                toggle: (c, v) => { if (v) cls.add(c); else cls.delete(c); return cls.has(c); },
+              },
+              setAttribute: (k, v) => { n.attrs[k] = v; },
+              getAttribute: (k) => (k in n.attrs ? n.attrs[k] : null),
+            };
+            return n;
+          };
+          const iCS = appSeg.indexOf("function cargandoSeguimiento(");
+          assert.ok(iCS > 0, "app.js sin cargandoSeguimiento: el esqueleto y el tapado del vacío son suyos");
+          const nodosSeg = { "seg-skeleton": nodoSeg(), "seg-vacio": nodoSeg(), "seg-lista": nodoSeg() };
+          let mensajeSegVisto = "sin llamar";
+          const cargandoSeg = new Function("$", "mensajeSeg", "ultimoSeguimiento",
+            `${appSeg.slice(iCS, appSeg.indexOf("\n  }", iCS) + 4)}; return cargandoSeguimiento;`)(
+            (id) => nodosSeg[id] || null, (t) => { mensajeSegVisto = t; }, null);
+          cargandoSeg(true);
+          assert.ok(nodosSeg["seg-vacio"].classList.contains("hidden"), "mientras carga, el vacío está TAPADO");
+          assert.ok(!nodosSeg["seg-skeleton"].classList.contains("hidden"), "mientras carga, el esqueleto se ve (la espera se VE)");
+          assert.strictEqual(nodosSeg["seg-lista"].getAttribute("aria-busy"), "true", "y la lista se declara ocupada");
+          assert.strictEqual(mensajeSegVisto, null, "una carga nueva limpia el error de la anterior");
+          cargandoSeg(false);
+          assert.ok(nodosSeg["seg-skeleton"].classList.contains("hidden") && nodosSeg["seg-lista"].getAttribute("aria-busy") === "false",
+            "al terminar: ni esqueleto ni aria-busy");
+
+          /* (3) y la ruta de FALLO tapa el vacío por su cuenta, antes de hablar */
+          assert.ok(/catch \(e\) \{\s*\n\s*cargandoSeguimiento\(false\);\s*\n\s*\$\("seg-vacio"\)\.classList\.add\("hidden"\);/.test(appSeg),
+            "con el servidor caído, cargarSeguimiento tapa #seg-vacio antes de hablar: jamás una afirmación falsa sobre sus procesos");
+        }
         assert.ok(/class="btn-guardar/.test(appSeg) && /function alternarGuardado/.test(appSeg) && /op=seguimiento/.test(appSeg) && /data-seg-detalle/.test(appSeg) && /data-seg-ics/.test(appSeg) && /data-seg-verificar/.test(appSeg), "la tarjeta guarda y Mi empresa sigue, descarga el .ics, consulta el detalle y verifica el NIT");
         assert.ok(!/op=seguimiento[^`"']*token=/.test(appSeg), "el token no viaja en la URL: el .ics se baja con cabecera y Blob");
         /* `cargarSeguimiento` RECORRE `r.procesos`, así que comprobar `ok` no
@@ -14581,6 +14648,43 @@ async function main() {
           "aplicar el descuento tiene que recalcular el presupuesto por el mismo camino que el botón");
         // el recuadro nunca queda mudo: si no hay con qué sugerir, DICE por qué
         assert.ok(/ps-sin-datos/.test(js), "el estado «no aplicable» tiene que pintarse con su motivo");
+        /* ═══ EL VACÍO DE PRECIOS LLEVA EL PASO QUE FALTA (5-sep-2026) ═══
+           Los dos recuadros que no se pueden armar decían QUÉ falta y ahí
+           terminaban: el usuario tenía que deducir a dónde ir. Se ejecutan las
+           dos funciones reales — la que ELIGE el paso y la que PINTA. */
+        {
+          const extraerPS = (nombre) => { const i = js.indexOf(`function ${nombre}(`); assert.ok(i > 0, `app.js sin ${nombre}`); return js.slice(i, js.indexOf("\n  }", i) + 4); };
+          const botonPaso = (fls) => new Function("filas", `${extraerPS("botonPasoQueFalta")}; return botonPasoQueFalta;`)(fls)();
+          assert.ok(/<button[^>]*data-ir-paso="pliego"[^>]*>Cargue el pliego<\/button>/.test(botonPaso([])),
+            `sin ítems cargados el paso que falta es el 1 (cargar el pliego): ${botonPaso([])}`);
+          assert.ok(/<button[^>]*data-ir-paso="buscar"[^>]*>Buscar los precios<\/button>/.test(botonPaso([{ item_id: "x" }])),
+            `con ítems, el paso que falta es el 2 (buscar los precios): ${botonPaso([{ item_id: "x" }])}`);
+          const nodoPS = () => {
+            const n = { html: "", texto: "", cls: new Set() };
+            n.classList = { add: (c) => n.cls.add(c), remove: (c) => n.cls.delete(c), contains: (c) => n.cls.has(c), toggle: (c, v) => { if (v) n.cls.add(c); else n.cls.delete(c); } };
+            Object.defineProperty(n, "innerHTML", { get: () => n.html, set: (v) => { n.html = String(v); } });
+            Object.defineProperty(n, "textContent", { get: () => n.texto, set: (v) => { n.texto = String(v); } });
+            Object.defineProperty(n, "className", { get: () => "", set: () => {} });
+            return n;
+          };
+          const cajasPS = {};
+          const dolarPS = (id) => (cajasPS[id] || (cajasPS[id] = nodoPS()));
+          const pintarPS = new Function("$", "esc", "botonPasoQueFalta", "ultimoOptimizador",
+            `${extraerPS("pintarPrecioSugerido")}; return pintarPrecioSugerido;`)(
+            dolarPS, (x) => String(x == null ? "" : x), () => botonPaso([]), null);
+          pintarPS({ aplicable: false, mensaje: "Falta el presupuesto oficial del proceso." });
+          const sinDatos = cajasPS["ps-sin-datos"].innerHTML;
+          assert.ok(/Falta el presupuesto oficial del proceso\./.test(sinDatos),
+            `el motivo que manda el servidor se conserva literal: ${sinDatos}`);
+          assert.ok(/<button[^>]*data-ir-paso=/.test(sinDatos),
+            `y debajo va el paso siguiente, no un callejón sin salida: ${sinDatos}`);
+          assert.ok(/botonPasoQueFalta\(\)/.test(js.slice(js.indexOf("function pintarPisoTecho("), js.indexOf("function pintarPisoTecho(") + 1200)),
+            "el recuadro de piso y techo también termina en el paso que falta");
+          /* y la primera carga de Precios DICE que está cargando: hasta hoy la
+             pestaña se quedaba callada, igual que si ya hubiera terminado */
+          assert.ok(/msgApu\("Cargando su catálogo de precios…"\)/.test(js),
+            "la carga del catálogo se anuncia en #accion-mensaje mientras dura");
+        }
       }
 
       console.log(`  · optimizador de precio: ${o.curva.length} precios entre ${o.rango.desde_pct} % y `
@@ -16869,6 +16973,30 @@ async function main() {
       assert.ok(!/\<section id="portada"/.test(htmlL), "el render completo del mercado no puede volver a ninguna pestaña");
       const landing = htmlL.slice(iOnb, iGate);
       for (const id of ["btn-subir-rup", "btn-manual", "btn-ir-gate", "pulso-global", "entrada-inicio", "res-cifras"]) assert.ok(landing.includes(`id="${id}"`), `la landing debe tener #${id}`);
+      /* ═══ LA PANTALLA DE CLAVE TIENE VUELTA (5-sep-2026) ═══
+         Era la única pantalla sin salida de la aplicación: un botón «Entrar»,
+         ningún enlace, y al tercer intento `bloquear()` la sustituía por
+         «Acceso denegado / Este sitio es privado.» sin decir qué hacer. Solo
+         recargar devolvía las otras dos puertas. El bloqueo en sí y
+         MAX_INTENTOS_CLAVE no se tocan: son la seguridad. */
+      {
+        const gateHtml = htmlL.slice(iGate, iTabAdmin);
+        assert.ok(/id="gate-volver"/.test(gateHtml),
+          "#gate tiene que llevar «Volver al inicio»: nadie se queda atrapado en la pantalla de clave");
+        const onbGate = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
+        assert.ok(/closest\("#gate-volver"\)/.test(onbGate),
+          "el oyente de la vuelta va DELEGADO en #gate: bloquear() reemplaza el contenido y uno atado al enlace se iría con él justo cuando más falta hace");
+        const appGate = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const iBloq = appGate.indexOf("function bloquear(");
+        assert.ok(iBloq > 0, "app.js sin bloquear()");
+        const cajaGate = { html: "" };
+        Object.defineProperty(cajaGate, "innerHTML", { get: () => cajaGate.html, set: (v) => { cajaGate.html = String(v); } });
+        new Function("$", `${appGate.slice(iBloq, appGate.indexOf("\n  }", iBloq) + 4)}; return bloquear;`)(() => cajaGate)();
+        assert.ok(/Vuelva al inicio y suba su RUP o escriba tres datos/.test(cajaGate.innerHTML),
+          `el bloqueo tiene que decir QUÉ hacer: ${cajaGate.innerHTML}`);
+        assert.ok(/id="gate-volver"/.test(cajaGate.innerHTML),
+          "y dejar el mismo enlace de vuelta a las dos puertas reales");
+      }
       const inicio = landing.slice(landing.indexOf('id="entrada-inicio"'), landing.indexOf('<!-- progreso de la extracción -->'));
       assert.ok((inicio.match(/class="[^"]*puerta-entrada/g) || []).length === 3, "tres PUERTAS de entrada (RUP · tres datos · clave), en la primera pantalla");
       assert.ok(!/Para eso hace falta su RUP/.test(landing) && !/Acceso con clave \(perfiles existentes\)/.test(landing), "la prosa vieja de la landing se fue");
@@ -19567,6 +19695,89 @@ async function main() {
         }
         assert.ok(html.indexOf('<script src="/frases.js">') < html.indexOf('<script src="/onboarding.js">'), "frases.js se carga antes que onboarding.js");
         assert.ok(/classList\.contains\("hidden"\) \|\| document\.hidden\) return/.test(onbFr), "la rotación se detiene cuando la landing no se ve");
+        /* ═══ LO QUE SE MUEVE SOLO SE PUEDE PARAR; LO DECORATIVO NO SE ANUNCIA
+           (5-sep-2026) ═══ #frase-portada llevaba `aria-live="polite"` y
+           onboarding.js lo reescribe cada 15 s: un lector de pantalla recibía un
+           titular NUEVO cada quince segundos por encima de lo que la persona
+           estuviera leyendo. Y la rotación no miraba «reducir movimiento». */
+        assert.ok(!/aria-live/.test(h1Landing),
+          `el titular ROTA y es decorativo: con aria-live un lector recibe un titular nuevo cada 15 s — ${h1Landing}`);
+        assert.ok(/matchMedia\("\(prefers-reduced-motion: reduce\)"\)\.matches\) return;[\s\S]{0,120}setInterval\(paso, cada\)/.test(onbFr),
+          "la rotación del titular tiene que rendirse ante «reducir movimiento» ANTES de programarse");
+        /* CENSO (no lista) de todo lo que late solo en public/*.js: o su periodo
+           es de 60 s o más, o el módulo es una excepción DECLARADA con su motivo.
+           Una lista de sitios donde mirar deja huecos; el censo entra solo. */
+        {
+          const MOTIVOS_LATIDO = {
+            "onboarding.js": "rotación decorativa del titular de la portada, ya detenida por prefers-reduced-motion",
+            "pliego.js": "reloj de la espera de una lectura EN CURSO (dice cuánto lleva), no un adorno",
+          };
+          const finDeLlamada = (src, i) => {          // i = índice de «setInterval»
+            let p = 0, j = src.indexOf("(", i), ultimaComa = -1;
+            for (; j < src.length; j++) {
+              const c = src[j];
+              if (c === "(" || c === "[" || c === "{") p++;
+              else if (c === ")" || c === "]" || c === "}") { p--; if (!p) break; }
+              else if (c === "," && p === 1) ultimaComa = j;
+            }
+            return ultimaComa < 0 ? null : src.slice(ultimaComa + 1, j).trim();
+          };
+          const rapidos = [], usados = new Set();
+          for (const f of fs.readdirSync(path.join(__dirname, "..", "public")).filter((x) => x.endsWith(".js"))) {
+            const src = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8"));
+            for (const m of src.matchAll(/setInterval\s*\(/g)) {
+              const periodo = Number(finDeLlamada(src, m.index));
+              if (periodo >= 60000) continue;
+              if (MOTIVOS_LATIDO[f]) { usados.add(f); continue; }
+              rapidos.push(`${f}:${src.slice(0, m.index).split("\n").length} cada ${finDeLlamada(src, m.index)} ms`);
+            }
+          }
+          assert.deepStrictEqual(rapidos, [],
+            `algo reescribe la pantalla más de una vez por minuto sin estar declarado: ${rapidos.join(" | ")}`);
+          assert.deepStrictEqual([...usados].sort(), Object.keys(MOTIVOS_LATIDO).sort(),
+            "una excepción declarada que ya no hace falta es una lista que se pudre: sobra o falta un módulo en MOTIVOS_LATIDO");
+        }
+        /* Lo que CAMBIA se anuncia; lo que decora, no. */
+        {
+          const htmlRol = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+          const etiquetaDe = (id) => { const i = htmlRol.indexOf(`id="${id}"`); assert.ok(i > 0, `falta #${id}`); return htmlRol.slice(htmlRol.lastIndexOf("<", i), htmlRol.indexOf(">", i) + 1); };
+          for (const [id, rol] of [["resumen-resultados", "status"], ["estado-vacio", "status"], ["estado-error", "alert"],
+            ["d-aviso", "alert"], ["seg-mensaje", "alert"], ["accion-mensaje", "alert"]]) {
+            assert.ok(new RegExp(`role="${rol}"`).test(etiquetaDe(id)),
+              `#${id} tiene que llevar role="${rol}": es lo que cambia cuando el usuario toca algo o algo falla — ${etiquetaDe(id)}`);
+          }
+        }
+        /* El tablero deja de parpadear: el HECHO en vez de la cuenta atrás, un
+           repintado por minuto, y un interruptor. Las dos funciones, EJECUTADAS. */
+        {
+          const appRef = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+          const exRef = (n) => { const i = appRef.indexOf(`function ${n}(`); assert.ok(i > 0, `app.js sin ${n}`); return appRef.slice(i, appRef.indexOf("\n  }", i) + 4); };
+          const frase = new Function(`${exRef("fraseRefresco")}; return fraseRefresco;`)();
+          const t0 = Date.parse("2026-09-05T10:00:00Z");
+          assert.strictEqual(frase(false, t0, t0 + 4 * 60000), "Actualizado hace 4 min · se actualiza solo cada 5 min");
+          assert.strictEqual(frase(false, t0, t0 + 30000), "Actualizado hace un momento · se actualiza solo cada 5 min",
+            "medio minuto NO se redondea a «hace 0 min»");
+          assert.ok(/detenida/.test(frase(true, t0, t0 + 60000)), `con el refresco parado, la línea lo dice: ${frase(true, t0, t0 + 60000)}`);
+          assert.ok(!/\d+:\d\d/.test(frase(false, t0, t0 + 60000)), "se acabó la cuenta atrás mm:ss que reescribía la pantalla cada segundo");
+          const armar = (pausado) => {
+            const hechos = [];
+            new Function("clearTimeout", "clearInterval", "timerRefresco", "timerCuenta", "proximoRefresco",
+              "refrescoPausado", "pintarCuentaAtras", "setInterval", "setTimeout", "REFRESCO_MS", "document",
+              "cargarDashboard", "pendientePorVisibilidad", `${exRef("programarRefresco")}; return programarRefresco;`)(
+              () => {}, () => {}, null, null, 0, pausado, () => hechos.push("pinta"),
+              (f, ms) => hechos.push(`interval:${ms}`), (f, ms) => hechos.push(`timeout:${ms}`),
+              300000, { visibilityState: "visible" }, () => {}, false)();
+            return hechos;
+          };
+          assert.deepStrictEqual(armar(true), ["pinta"],
+            "con la actualización detenida no se programa NADA: ni el repintado ni la recarga (y la línea se repinta para decirlo)");
+          assert.deepStrictEqual(armar(false), ["pinta", "interval:60000", "timeout:300000"],
+            "en marcha: el texto se repinta cada 60 s —no cada segundo— y la recarga sigue a los 5 min");
+          assert.ok(/id="d-pausar"/.test(fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")),
+            "hace falta el interruptor: lo que se mueve solo se puede parar");
+          assert.ok(/localStorage\.setItem\(CLAVE_REFRESCO_PAUSADO/.test(appRef) && /try \{ return localStorage\.getItem\(CLAVE_REFRESCO_PAUSADO\)/.test(appRef),
+            "la preferencia se recuerda en este navegador, con try/catch (el almacenamiento puede lanzar)");
+        }
       }
 
       console.log("  · UI Apple Glass: pasos 0.1 (pestañas e ids), 0.2 (DELETE de RUP dinámico y fijo), "
@@ -20694,6 +20905,92 @@ async function main() {
       assert.ok(/sinJson: true/.test(leerJsonSrc), "leerJson tiene que marcar `sinJson` cuando el cuerpo no era JSON");
       const msg401Src = (app.match(/const msg401 = [^;]+;/) || [""])[0];
       assert.ok(/sinJson/.test(msg401Src), "msg401 tiene que decidir por `sinJson`, no por el status");
+    }
+    // ── 25-ter · un fallo se cuenta en castellano, no en jerga de navegador ──
+    /* (5-sep-2026) Con la API caída la pantalla decía «No se pudo contactar el
+       servidor: Failed to fetch.» y con un 500 en HTML, «El servidor respondió
+       algo que no es JSON (500)». Ni «fetch» ni «JSON» dicen qué pasó ni qué
+       hacer, y veintitrés sitios de los módulos del navegador interpolaban
+       `e.message` a mano, cada uno a su manera. Ahora la redacción es UNA
+       (public/glosario.js, el módulo del lenguaje de pantalla, que se carga
+       antes que los tres IIFE que la necesitan) y NINGÚN public/*.js vuelve a
+       meter el texto crudo de una excepción en una frase. Lo que NO cambia: la
+       distinción entre el muro del edge y la falta de conexión. */
+    {
+      const Gf = require("../public/glosario.js");
+      const red = Gf.mensajeDeFallo(new TypeError("Failed to fetch"), "cargar sus procesos guardados");
+      assert.ok(!/JSON|fetch/i.test(red), `un fallo de red no puede hablar de «fetch»: ${red}`);
+      assert.ok(/^No se pudo cargar sus procesos guardados\. /.test(red) && /Sin conexión con el servidor/.test(red),
+        `dice qué se intentaba y qué pasó: ${red}`);
+      const html500 = Gf.fraseDeFallo(new Response("<html><body>500</body></html>", { status: 500 }));
+      assert.ok(!/JSON|fetch/i.test(html500), `un 500 en HTML no puede hablar de «JSON»: ${html500}`);
+      assert.ok(/\(código 500\)/.test(html500), `el código de estado se conserva: es el único dato del fallo que sirve para pedir ayuda — ${html500}`);
+      assert.ok(/iniciar sesión/.test(Gf.fraseDeFallo({ status: 401 })) && /iniciar sesión/.test(Gf.fraseDeFallo({ status: 403 })),
+        "401/403 es el MURO de contraseña (hay conexión y falta iniciar sesión), no «sin conexión»: la distinción que costó cuatro lecciones no se toca");
+      assert.strictEqual(Gf.fraseDeFallo(new Error("El presupuesto oficial no está publicado.")),
+        "El presupuesto oficial no está publicado.", "un mensaje que YA viene redactado del servidor se respeta tal cual");
+      assert.strictEqual(Gf.fraseDeFallo(null), Gf.MSG_SIN_CONEXION,
+        "un fallo sin texto no se rellena con un diagnóstico alegre: se dice lo único que se sabe");
+
+      /* `leerJson` de app.js, EJECUTADA: el cuerpo que devuelve ya viene redactado */
+      const appFallo = fs.readFileSync(path.join(RAIZ, "public/app.js"), "utf8");
+      const iLJ = appFallo.indexOf("const leerJson = async (r) =>");
+      assert.ok(iLJ > 0, "app.js sin leerJson");
+      const leerJsonFn = new Function("fraseDeFallo",
+        `${appFallo.slice(iLJ, appFallo.indexOf("\n  };", iLJ) + 5)} return leerJson;`)(Gf.fraseDeFallo);
+      const cuerpo500 = await leerJsonFn({ status: 500, json: async () => { throw new SyntaxError("Unexpected token <"); } });
+      assert.strictEqual(cuerpo500.sinJson, true, "sigue marcando sinJson: el muro del edge depende de ese marcador");
+      assert.strictEqual(cuerpo500.status, 500);
+      assert.ok(!/JSON|fetch/i.test(cuerpo500.error) && /\(código 500\)/.test(cuerpo500.error), cuerpo500.error);
+      const cuerpoMuro = await leerJsonFn({ status: 401, json: async () => { throw new SyntaxError("Unexpected token <"); } });
+      assert.ok(/iniciar sesión/.test(cuerpoMuro.error), `el muro se sigue diagnosticando como muro: ${cuerpoMuro.error}`);
+
+      /* CENSO: ningún módulo del navegador vuelve a interpolar el texto crudo de
+         una excepción en una frase de pantalla. Se barren TODOS los public/*.js
+         (hoy ninguno necesita excepción: medido). */
+      const crudos = [];
+      for (const f of fs.readdirSync(path.join(RAIZ, "public")).filter((x) => x.endsWith(".js"))) {
+        const src = fs.readFileSync(path.join(RAIZ, "public", f), "utf8");
+        for (const m of src.matchAll(/\$\{[^}]*\.message[^}]*\}/g)) crudos.push(`${f}:${src.slice(0, m.index).split("\n").length} ${m[0]}`);
+      }
+      assert.deepStrictEqual(crudos, [],
+        `el texto crudo de una excepción no puede llegar a la pantalla (dice «Failed to fetch», no qué hacer): ${crudos.join(" | ")}`);
+      /* Y la frase vieja no puede sobrevivir COPIADA A MANO en los seis sitios
+         que inlineaban `leerJson`: eran seis textos «equivalentes hoy» que
+         divergen a la primera corrección, y ninguno decía qué hacer. */
+      const conJerga = [];
+      for (const f of fs.readdirSync(path.join(RAIZ, "public")).filter((x) => x.endsWith(".js"))) {
+        const src = sinComentarios(fs.readFileSync(path.join(RAIZ, "public", f), "utf8"));
+        if (/no es JSON/.test(src)) conJerga.push(`${f}:${src.slice(0, src.indexOf("no es JSON")).split("\n").length}`);
+      }
+      assert.deepStrictEqual(conJerga, [],
+        `«no es JSON» es jerga de navegador y su redacción es UNA sola (Glosario.fraseDeFallo): ${conJerga.join(" | ")}`);
+
+      /* El lector de pliegos guarda el fallo de red en un campo propio (`red`)
+         que después PINTA: si ese campo se llenara con `e.message`, la jerga
+         entraría por la puerta de atrás sin que el censo de arriba la viera.
+         Se redacta EN EL ORIGEN, que es donde no se puede olvidar. */
+      const pliegoF = fs.readFileSync(path.join(RAIZ, "public/pliego.js"), "utf8");
+      const redes = [...pliegoF.matchAll(/red:\s*([^,}]+)/g)].map((m) => m[1].trim());
+      assert.ok(redes.length >= 3, `pliego.js debería seguir teniendo su campo «red»: ${redes.length}`);
+      for (const r of redes) {
+        assert.ok(/Glosario\.fraseDeFallo\(e\)/.test(r),
+          `el campo «red» de pliego.js se redacta en el ORIGEN, no al pintarlo: ${r}`);
+      }
+
+      /* Y los tres botones de «Reintentar» que faltaban, cada uno repitiendo la
+         carga de SU pestaña: hasta hoy solo Licitaciones lo tenía y en las otras
+         tres la única salida era recargar la página. */
+      const htmlFallo = fs.readFileSync(path.join(RAIZ, "public/index.html"), "utf8");
+      for (const [boton, llamada] of [
+        ["d-reintentar", /\$\("d-reintentar"\)\.addEventListener\("click", \(\) => cargarDashboard/],
+        ["seg-reintentar", /\$\("seg-reintentar"\)\.addEventListener\("click", \(\) => cargarSeguimiento/],
+        ["accion-reintentar", /\$\("accion-reintentar"\)\.addEventListener\("click"/]]) {
+        assert.ok(htmlFallo.includes(`id="${boton}"`), `falta el botón #${boton}`);
+        assert.ok(llamada.test(appFallo), `#${boton} tiene que repetir la carga de su pestaña, sin recargar la página`);
+      }
+      console.log("  · Un fallo en castellano: una sola redacción (Glosario.mensajeDeFallo) para los tres módulos del navegador, "
+        + "código de estado conservado, muro del edge intacto, censo del texto crudo de la excepción en public/*.js a cero y «Reintentar» en las cuatro pestañas");
     }
 
     // ── 26-bis · NO puede haber una segunda copia del lector de cuerpos ─────

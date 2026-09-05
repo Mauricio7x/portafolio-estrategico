@@ -387,7 +387,7 @@
         body: JSON.stringify(cuerpo),
       });
     } catch (e) {
-      return { estado: 0, cuerpo: null, red: (e && e.message) || "sin conexión" };
+      return { estado: 0, cuerpo: null, red: window.Glosario.fraseDeFallo(e) };
     }
     try { datos = await r.json(); } catch { datos = null; }
     return { estado: r.status, cuerpo: datos };
@@ -662,7 +662,7 @@
     if (url) {
       chip("Descargando el PDF…", { girando: true });
       const r = await pedir("/api/pliego?op=descargar", { url });
-      if (r.red) throw new Error(`No se pudo contactar el servidor: ${r.red}.`);
+      if (r.red) throw new Error(r.red);   // `red` ya viene redactado (Glosario.fraseDeFallo)
       if (r.estado !== 200 || !r.cuerpo || !r.cuerpo.ok) {
         throw new Error((r.cuerpo && r.cuerpo.error) || `El servidor respondió ${r.estado}.`);
       }
@@ -807,7 +807,7 @@
     try {
       r = await fetch(ruta, { headers: { "x-historico-token": leerToken(), Accept: "application/json" }, cache: "no-store" });
     } catch (e) {
-      return { estado: 0, cuerpo: null, red: (e && e.message) || "sin conexión" };
+      return { estado: 0, cuerpo: null, red: window.Glosario.fraseDeFallo(e) };
     }
     try { datos = await r.json(); } catch { datos = null; }
     return { estado: r.status, cuerpo: datos };
@@ -976,7 +976,7 @@
   /* La respuesta del servidor que no es un dictamen se traduce a un estado con
      qué hacer: ninguna pulsación se queda sin respuesta visible. */
   function respuestaDictamen(r, id, { cambio = false } = {}) {
-    if (r.red) return pintarCajaDictamen(estadoDictamen("error", `No se pudo contactar el servidor: ${r.red}.`), id);
+    if (r.red) return pintarCajaDictamen(estadoDictamen("error", r.red), id);
     if (r.estado === 401) return pintarCajaDictamen(estadoDictamen("error", MSG_401, { boton: false }), id);
     const c = r.cuerpo || {};
     if (r.estado === 503 && c.ia_configurada === false) return pintarCajaDictamen(estadoDictamen("aviso", c.error || "", { boton: false }), id);
@@ -1040,7 +1040,7 @@
       try { datos = await resp.json(); } catch { datos = null; }
       r = { estado: resp.status, cuerpo: datos };
     } catch (e) {
-      r = e && e.name === "AbortError" ? null : { estado: 0, cuerpo: null, red: (e && e.message) || "sin conexión" };
+      r = e && e.name === "AbortError" ? null : { estado: 0, cuerpo: null, red: window.Glosario.fraseDeFallo(e) };
     } finally {
       clearInterval(dictamenReloj); dictamenReloj = null;
       dictamenAbort = null;
@@ -1055,7 +1055,7 @@
   }
 
   function manejarRespuesta(r) {
-    if (r.red) { chip("Sin conexión", {}); return mensaje(`No se pudo contactar el servidor: ${r.red}.`, "error"); }
+    if (r.red) { chip("Sin conexión", {}); return mensaje(r.red, "error"); }
     if (r.estado === 401) { chip("Sin acceso", {}); return mensaje(MSG_401, "error"); }
     if (!r.cuerpo || !r.cuerpo.ok) {
       chip("Error", {});
@@ -1112,7 +1112,7 @@
         const rt = await pedir("/api/pliego?op=extraer-texto", {
           texto_extraido: "", imagenes_base64: paginas, solo_reconocer: true,
         });
-        if (rt.red) { progreso(null); chip("Sin conexión", {}); return mensaje(`No se pudo contactar el servidor: ${rt.red}.`, "error"); }
+        if (rt.red) { progreso(null); chip("Sin conexión", {}); return mensaje(rt.red, "error"); }
         if (rt.estado === 401) { progreso(null); chip("Sin acceso", {}); return mensaje(MSG_401, "error"); }
         if (!rt.cuerpo || !rt.cuerpo.ok) {
           /* Una tanda que falla NO tira el documento entero: se registra y se
@@ -1214,7 +1214,7 @@
      por el mismo flujo: GET de caché primero; «Pedir el dictamen» va al POST. */
   window.__pliegoDictamenEn = async (caja, id, perfil) => {
     dictamenCaja = caja || null; dictamenPerfil = perfil || null; dictamenUltimo = null;
-    try { await cargarDictamen(id); } catch (e) { if (caja) caja.textContent = `No se pudo consultar el dictamen: ${(e && e.message) || e}`; }
+    try { await cargarDictamen(id); } catch (e) { if (caja) caja.textContent = window.Glosario.mensajeDeFallo(e, "consultar el dictamen"); }
   };
   /* Mis procesos lee los documentos del proceso SIN pasar por el panel (3-sep-2026):
      el mismo pdf.js, el mismo bucle de páginas y los mismos marcadores `\f<n>`, sin

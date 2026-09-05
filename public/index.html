@@ -1036,7 +1036,11 @@
            en el territorio, licitar no es privilegio de los grandes— que
            onboarding.js rota cada pocos segundos (FRASES_PORTADA; la primera
            va escrita aquí para que se vea aunque el JS no cargue). -->
-      <h1 id="frase-portada" class="max-w-[640px] min-h-[2.4em] text-[28px] leading-[1.15] tracking-[-0.5px] sm:text-[40px]" aria-live="polite"
+      <!-- SIN aria-live (5-sep-2026): el titular ROTA cada 15 s y es DECORATIVO.
+           Con `aria-live` un lector de pantalla recibía un titular nuevo cada
+           quince segundos, encima de lo que la persona estuviera leyendo. Lo
+           que cambia y SÍ importa (resultados, errores) es lo que se anuncia. -->
+      <h1 id="frase-portada" class="max-w-[640px] min-h-[2.4em] text-[28px] leading-[1.15] tracking-[-0.5px] sm:text-[40px]"
           style="color: var(--text-primary); font-weight: 250; transition: opacity .45s ease;">La obra pública es de todos. También de la empresa que la construye.</h1>
       <p class="mt-3 max-w-[480px] text-[15px] font-light leading-[1.5] sm:text-[17px]" style="color: var(--text-secondary);">
         Descubra en un minuto a cuántas licitaciones puede presentarse hoy. Elija cómo entrar.
@@ -1158,6 +1162,14 @@
         </button>
       </form>
       <p id="gate-error" class="mt-4 hidden text-sm font-medium" style="color: var(--danger);"></p>
+      <!-- NADIE SE QUEDA ATRAPADO EN LA PANTALLA DE CLAVE (5-sep-2026): esta era
+           la única pantalla sin salida —solo recargar devolvía la portada—, y al
+           tercer intento el bloqueo dejaba al usuario sin decirle qué hacer. El
+           enlace invierte lo que hizo «Entrar con clave» y devuelve las otras
+           dos puertas (subir el RUP o escribir tres datos). -->
+      <p class="mt-6 text-sm">
+        <a href="#" id="gate-volver" class="underline" style="color: var(--text-secondary);">Volver al inicio</a>
+      </p>
     </div>
   </div>
 
@@ -1375,7 +1387,16 @@
           </div>
         </div>
 
-        <p id="d-aviso" class="mt-5 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <!-- UN FALLO SE DICE Y SE PUEDE REINTENTAR (5-sep-2026): hasta hoy solo
+             Licitaciones tenía «Reintentar»; en las otras tres pestañas la única
+             salida era recargar la página. El botón nace oculto y solo aparece
+             cuando el aviso es un error; `role="alert"` hace que un lector de
+             pantalla lo lea cuando cambia. -->
+        <p id="d-aviso" class="mt-5 hidden rounded-xl px-4 py-3 text-sm" role="alert"></p>
+        <button id="d-reintentar" type="button"
+                class="mt-3 hidden rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
+          Reintentar
+        </button>
 
         <div id="d-skeleton" class="mt-6 hidden animate-pulse space-y-4">
           <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -1491,7 +1512,17 @@
                No vuelven: hay prueba que censa el marcado y falla si reaparecen.
                El botón «Mi precio» NO se perdió: vive en cada tarjeta del
                listado (pestaña Licitaciones). -->
+          <!-- LO QUE SE MUEVE SOLO SE PUEDE PARAR (5-sep-2026): esta línea se
+               reescribía CADA SEGUNDO con una cuenta atrás («Próxima
+               actualización en 04:37») que nadie podía detener. Ahora dice el
+               HECHO —cuándo se actualizó y cada cuánto se actualiza sola— se
+               repinta cada 60 s, y el botón detiene el refresco automático
+               (la preferencia se recuerda en este navegador). -->
           <p id="d-meta" class="mt-6 text-xs text-gray-400"></p>
+          <button id="d-pausar" type="button"
+                  class="mt-2 rounded-xl border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium transition hover:bg-gray-50">
+            Dejar de actualizar
+          </button>
         </div>
       </section>
 <!-- ══════ ACTUALIZAR DATOS · el botón único (encargo del ingeniero, 24-ago-2026) ══════
@@ -2237,9 +2268,41 @@
           <!-- filtros por etapa (chips); «Todos» por defecto -->
           <div id="seg-filtros" class="flex flex-wrap gap-1.5 text-xs"></div>
         </div>
-        <p id="seg-vacio" class="mt-4 text-sm text-gray-500">Todavía no ha guardado ningún proceso. En la lista de licitaciones, cada tarjeta tiene el botón «Guardar»; al guardarlo, la aplicación busca los documentos de ese proceso en SECOP II (pliego, adendas, estudios previos), los lee y le dice aquí qué es la obra, qué exigen esos documentos, qué necesita para presentarse, el paso a paso con fechas, los cambios y, cuando cierre, quiénes se presentaron.</p>
+        <!-- TRES ESTADOS DISTINTOS SE DICEN DISTINTO (5-sep-2026). Este bloque
+             nacía VISIBLE y solo lo escondía `pintarSeguimiento`, así que con el
+             servidor caído la ruta de fallo ni siquiera llegaba a esa línea: el
+             usuario leía el aviso rojo y, debajo, «Todavía no ha guardado ningún
+             proceso» con maquetación creíble — una afirmación FALSA sobre sus
+             propios datos. Ahora nace oculto (`hidden`) y solo se destapa cuando
+             la respuesta fue CORRECTA y la lista vino vacía; mientras carga se ve
+             el esqueleto y en fallo habla solo #seg-mensaje. Y un vacío
+             verdadero no es un párrafo de 66 palabras sin salida: es un título,
+             una frase y el botón que lleva al paso siguiente. -->
+        <div id="seg-vacio" class="mt-4 hidden">
+          <p class="text-[21px] font-semibold tracking-tight">Todavía no ha guardado ningún proceso</p>
+          <p class="mt-2 text-[17px] text-gray-500">Guarde una licitación y aquí le decimos qué exigen sus documentos y qué necesita para presentarse.</p>
+          <button id="seg-ir-licitaciones" type="button" data-tab="licitaciones"
+                  class="mt-4 rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
+            Ir a Licitaciones
+          </button>
+          <details class="mt-4">
+            <summary class="cursor-pointer text-sm text-gray-500">Qué hace esta pestaña</summary>
+            <p class="mt-2 text-sm text-gray-500">En la lista de licitaciones, cada tarjeta tiene el botón «Guardar»; al guardarlo, la aplicación busca los documentos de ese proceso en SECOP II (pliego, adendas, estudios previos), los lee y le dice aquí qué es la obra, qué exigen esos documentos, qué necesita para presentarse, el paso a paso con fechas, los cambios y, cuando cierre, quiénes se presentaron.</p>
+          </details>
+        </div>
+        <!-- el esqueleto de la carga: tres filas con el brillo que ya usa
+             #d-skeleton (una sola definición de la animación, en el <style>) -->
+        <div id="seg-skeleton" class="mt-4 hidden animate-pulse space-y-3" aria-hidden="true">
+          <div class="h-20 rounded-2xl bg-gray-100"></div>
+          <div class="h-20 rounded-2xl bg-gray-100"></div>
+          <div class="h-20 rounded-2xl bg-gray-100"></div>
+        </div>
         <div id="seg-lista" class="mt-4 space-y-3"></div>
-        <p id="seg-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm"></p>
+        <p id="seg-mensaje" class="mt-3 hidden rounded-xl px-4 py-3 text-sm" role="alert"></p>
+        <button id="seg-reintentar" type="button"
+                class="mt-3 hidden rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
+          Reintentar
+        </button>
       </section>
 
     </main>
@@ -2468,12 +2531,37 @@
       </div>
 
       <!-- Estados -->
-      <div id="estado-carga" class="mt-10 hidden text-center">
-        <div class="spin mx-auto h-8 w-8 rounded-full border-2" style="border-color: var(--border); border-top-color: var(--accent);"></div>
-        <p id="estado-carga-msg" class="mt-3 text-sm text-gray-500">Buscando oportunidades…</p>
+      <!-- LA ESPERA SE VE (5-sep-2026): la rueda sola no dice qué se está
+           armando. Debajo van TRES TARJETAS ESQUELETO con las alturas reales de
+           una tarjeta de licitación (título, franja de tres cifras, fila de
+           chips), con el mismo brillo de #d-skeleton, que `prefers-reduced-
+           motion` deja quieto. Es decorativo: `aria-hidden`, y lo que se anuncia
+           es la frase de estado. -->
+      <div id="estado-carga" class="mt-10 hidden">
+        <div class="text-center">
+          <div class="spin mx-auto h-8 w-8 rounded-full border-2" style="border-color: var(--border); border-top-color: var(--accent);"></div>
+          <p id="estado-carga-msg" class="mt-3 text-sm text-gray-500">Buscando oportunidades…</p>
+        </div>
+        <div id="estado-carga-esqueleto" class="mt-8 grid animate-pulse gap-4" aria-hidden="true">
+          <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
+            <div class="h-5 w-3/4 rounded bg-gray-100"></div>
+            <div class="mt-4 grid grid-cols-3 gap-3"><div class="h-12 rounded-xl bg-gray-100"></div><div class="h-12 rounded-xl bg-gray-100"></div><div class="h-12 rounded-xl bg-gray-100"></div></div>
+            <div class="mt-4 flex gap-2"><div class="h-6 w-24 rounded-full bg-gray-100"></div><div class="h-6 w-28 rounded-full bg-gray-100"></div><div class="h-6 w-20 rounded-full bg-gray-100"></div></div>
+          </div>
+          <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
+            <div class="h-5 w-2/3 rounded bg-gray-100"></div>
+            <div class="mt-4 grid grid-cols-3 gap-3"><div class="h-12 rounded-xl bg-gray-100"></div><div class="h-12 rounded-xl bg-gray-100"></div><div class="h-12 rounded-xl bg-gray-100"></div></div>
+            <div class="mt-4 flex gap-2"><div class="h-6 w-28 rounded-full bg-gray-100"></div><div class="h-6 w-20 rounded-full bg-gray-100"></div><div class="h-6 w-24 rounded-full bg-gray-100"></div></div>
+          </div>
+          <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
+            <div class="h-5 w-4/5 rounded bg-gray-100"></div>
+            <div class="mt-4 grid grid-cols-3 gap-3"><div class="h-12 rounded-xl bg-gray-100"></div><div class="h-12 rounded-xl bg-gray-100"></div><div class="h-12 rounded-xl bg-gray-100"></div></div>
+            <div class="mt-4 flex gap-2"><div class="h-6 w-20 rounded-full bg-gray-100"></div><div class="h-6 w-24 rounded-full bg-gray-100"></div><div class="h-6 w-28 rounded-full bg-gray-100"></div></div>
+          </div>
+        </div>
       </div>
 
-      <div id="estado-error" class="mt-10 hidden text-center">
+      <div id="estado-error" class="mt-10 hidden text-center" role="alert">
         <p id="estado-error-msg" class="mx-auto max-w-md text-sm text-gray-600"></p>
         <button id="btn-reintentar"
                 class="mt-4 rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
@@ -2481,7 +2569,7 @@
         </button>
       </div>
 
-      <div id="estado-vacio" class="mt-10 hidden text-center text-sm text-gray-500">
+      <div id="estado-vacio" class="mt-10 hidden text-center text-sm text-gray-500" role="status">
         No se encontraron oportunidades con estos filtros.
       </div>
 
@@ -2506,7 +2594,10 @@
 
       <!-- Resultados -->
       <section id="resultados" class="mt-8 hidden">
-        <p id="resumen-resultados" class="mb-4 text-sm text-gray-500"></p>
+        <!-- role="status": la línea «23 de 312 licitaciones…» cambia con cada
+             filtro y era el único sitio donde el resultado de tocar un control
+             se veía; quien no mira la pantalla ahora también lo oye. -->
+        <p id="resumen-resultados" class="mb-4 text-sm text-gray-500" role="status"></p>
         <div id="lista" class="grid gap-4"></div>
         <div id="paginacion" class="mt-6 flex items-center justify-center gap-3 text-sm"></div>
       </section>
@@ -2835,7 +2926,11 @@
           <div class="h-2 w-full overflow-hidden rounded-full bg-gray-100"><div id="ia-progreso-barra" class="barra h-2 w-0 rounded-full" style="background: var(--accent);"></div></div>
         </div>
         <div id="ia-propuesta" class="mt-4 hidden"></div>
-        <p id="accion-mensaje" class="mt-3 text-sm"></p>
+        <p id="accion-mensaje" class="mt-3 text-sm" role="alert"></p>
+        <button id="accion-reintentar" type="button"
+                class="mt-3 hidden rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
+          Reintentar
+        </button>
         <div id="lista-presupuestos" class="mt-4 hidden"></div>
         <section id="seccion-proceso" class="mt-5 hidden rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
         <h3 class="text-sm font-medium">Proceso de SECOP II</h3>

@@ -141,5 +141,52 @@
     return n;
   }
 
-  return { MARCA, TERMINOS, VERBOS, SIN_REFERENCIA, sinReferencia, traducir, corto, titulo, descripcion, estampar };
+  /* ══════════ CÓMO SE CUENTA UN FALLO (5-sep-2026) ══════════
+     Con la API caída la pantalla decía «No se pudo contactar el servidor:
+     Failed to fetch.» y con un 500 en HTML, «El servidor respondió algo que no
+     es JSON (500)». «JSON» y «fetch» son jerga de navegador: no dicen qué pasó
+     ni qué hacer, y cada uno de los veintitrés sitios que interpolaban
+     `e.message` decía lo suyo. Esta es la ÚNICA redacción de un fallo de la
+     aplicación, y vive aquí —y no en app.js— porque los tres módulos del
+     navegador que la necesitan (app.js, onboarding.js, pliego.js) son IIFE
+     separados: una copia por módulo son tres textos «equivalentes hoy» que
+     divergen a la primera corrección. glosario.js ya es el módulo del lenguaje
+     de pantalla y se carga ANTES que los tres.
+
+     NO cambia ninguna lógica: la distinción entre el MURO del edge (hay
+     conexión y lo que falta es iniciar sesión) y la falta de conexión —la
+     lección que este proyecto ha tenido que aprender cuatro veces— se conserva
+     entera; lo que cambia son las palabras. El CÓDIGO de estado se conserva
+     entre paréntesis: es el único dato del fallo que sirve para pedir ayuda.
+     Acepta un Error, una Response o el cuerpo que devuelve `leerJson`. */
+  const MSG_SIN_CONEXION = "Sin conexión con el servidor. Revise su red y vuelva a intentar.";
+  const MSG_MURO = "El sitio pidió iniciar sesión (protección por contraseña). Inicie sesión y reintente.";
+  function codigoDeFallo(e) {
+    const st = Number(e && e.status);
+    if (Number.isFinite(st) && st > 0) return st;
+    const m = String((e && e.message) || "").match(/\((\d{3})\)|respondió (\d{3})/);
+    return m ? Number(m[1] || m[2]) : null;
+  }
+  function fraseDeFallo(e) {
+    const codigo = codigoDeFallo(e);
+    if (codigo === 401 || codigo === 403) return MSG_MURO;
+    const texto = String((e && e.message) || (typeof e === "string" ? e : "") || "");
+    if (/iniciar sesión/i.test(texto)) return texto;   // el muro, ya redactado
+    if (codigo) return `El servidor no respondió como se esperaba (código ${codigo}). Si acaba de iniciar sesión, vuelva a intentar.`;
+    /* Sin código: o es el fallo de red del `fetch` (un TypeError cuyo texto
+       escribe cada navegador en su idioma) o es un mensaje que YA viene
+       redactado del servidor y se respeta tal cual. Un fallo sin texto no se
+       rellena con un diagnóstico alegre: se dice lo único que se sabe. */
+    if (!texto || e instanceof TypeError
+      || /failed to fetch|networkerror|network request failed|load failed|conexi[óo]n/i.test(texto)) return MSG_SIN_CONEXION;
+    return texto;
+  }
+  /* `contexto` es lo que se estaba intentando, en la voz del usuario y sin el
+     «No se pudo» delante: mensajeDeFallo(e, "guardar el presupuesto"). */
+  function mensajeDeFallo(e, contexto) {
+    return contexto ? `No se pudo ${contexto}. ${fraseDeFallo(e)}` : fraseDeFallo(e);
+  }
+
+  return { MARCA, TERMINOS, VERBOS, SIN_REFERENCIA, sinReferencia, traducir, corto, titulo, descripcion, estampar,
+    MSG_SIN_CONEXION, MSG_MURO, fraseDeFallo, mensajeDeFallo };
 });

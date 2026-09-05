@@ -55,12 +55,10 @@
      (La regla ya estaba escrita en el proyecto y se cumplía en 5 de 18 sitios.) */
   const leerJson = async (r) => {
     try { return await r.json(); } catch {
-      return {
-        ok: false, sinJson: true,
-        error: r.status === 401 || r.status === 403
-          ? "El sitio pidió iniciar sesión (protección por contraseña). Inicie sesión y reintente."
-          : `El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`,
-      };
+      /* La REDACCIÓN sale de `fraseDeFallo` (una sola en toda la aplicación);
+         aquí solo se decide QUÉ pasó. `status` viaja en el cuerpo para que
+         quien lo reciba pueda volver a redactarlo sin adivinar el código. */
+      return { ok: false, sinJson: true, status: r.status, error: fraseDeFallo({ status: r.status }) };
     }
   };
   /* UN 401 TIENE DOS CAUSAS Y SE DISTINGUEN POR EL CUERPO (ago 2026). El de la
@@ -72,6 +70,15 @@
      que distinto. `sinJson` lo marca `leerJson` y esta función es el único
      punto donde se decide cuál de los dos mensajes toca. */
   const msg401 = (cuerpo) => (cuerpo && cuerpo.sinJson ? cuerpo.error : MSG_401);
+  /* ══════════ UN FALLO SE CUENTA EN CASTELLANO (5-sep-2026) ══════════
+     La REDACCIÓN vive en public/glosario.js (`Glosario.mensajeDeFallo`), que es
+     el módulo del lenguaje de pantalla y se carga ANTES que este: app.js,
+     onboarding.js y pliego.js son IIFE separados y una copia por módulo serían
+     tres textos «equivalentes hoy» que divergen a la primera corrección. Aquí
+     solo quedan los dos atajos, con la búsqueda DIFERIDA (no al cargar) para
+     que un glosario que no llegue no mate el módulo entero. */
+  const fraseDeFallo = (e) => window.Glosario.fraseDeFallo(e);
+  const mensajeDeFallo = (e, contexto) => window.Glosario.mensajeDeFallo(e, contexto);
   const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
   const fmtNum = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
   const fmt = new Intl.NumberFormat("es-CO");
@@ -227,10 +234,18 @@
   /* El pliegue «El mercado completo hoy» se retiró de Mi empresa (encargo del
      ingeniero): el agregado nacional no responde «¿a qué me presento YO hoy?».
      `Portada.teaser()` sigue vivo para las tres cifras de la landing. */
+  /* EL BLOQUEO TAMBIÉN TIENE SALIDA (5-sep-2026). Decía «Acceso denegado / Este
+     sitio es privado.» y ahí terminaba: sin instrucción y sin vuelta, solo
+     recargar devolvía la portada. El bloqueo en sí y MAX_INTENTOS_CLAVE no
+     cambian (son la seguridad); lo que se añade es qué hacer y por dónde. El
+     enlace conserva el id #gate-volver: el oyente vive en #gate (onboarding.js)
+     y sobrevive a este reemplazo. */
   function bloquear() {
     $("gate").innerHTML =
       '<div class="text-center"><p class="text-2xl font-semibold">Acceso denegado</p>' +
-      '<p class="mt-2 text-sm text-gray-500">Este sitio es privado.</p></div>';
+      '<p class="mt-2 text-sm text-gray-500">Este sitio es privado.</p>' +
+      '<p class="mt-4 text-sm text-gray-500">Vuelva al inicio y suba su RUP o escriba tres datos.</p>' +
+      '<p class="mt-4 text-sm"><a href="#" id="gate-volver" class="underline">Volver al inicio</a></p></div>';
   }
   $("gate-form").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -389,6 +404,9 @@
     if (estado) $(estado).classList.remove("hidden");
     if (estado === "estado-carga" && msg) $("estado-carga-msg").textContent = msg;
     if (estado === "estado-error" && msg) $("estado-error-msg").textContent = msg;
+    /* `aria-busy` mientras se busca: quien no ve el esqueleto tiene que saber
+       que la lista está a medias y que lo que lea puede cambiar. */
+    $("resultados").setAttribute("aria-busy", estado === "estado-carga" ? "true" : "false");
   }
 
   /* ══════════ Consulta ══════════ */
@@ -773,12 +791,12 @@
       const token = tokenGuardado();
       r = await fetch(`/api/procesos?op=listar&${parametros()}`,
         token ? { headers: { "x-historico-token": token } } : undefined);
-    } catch {
+    } catch (e) {
       if (peticion !== peticionActual) return; // llegó tarde: ya hay otra búsqueda
       // durante la sincronización inicial un fallo transitorio no debe cortar
       // la espera automática
       if (reintentosSync > 0) return esperarSincronizacion();
-      return mostrar("estado-error", "No se pudo contactar el servidor. Revise su conexión e intente de nuevo.");
+      return mostrar("estado-error", mensajeDeFallo(e, "buscar oportunidades"));
     }
     /* el parseo va APARTE del fetch (cuarta vez que se aplica la lección): el
        muro del edge (Vercel Password Protection) responde HTML, así que
@@ -811,7 +829,7 @@
     if (!r.ok || !cuerpo || !cuerpo.ok) {
       return mostrar("estado-error", (cuerpo && cuerpo.error)
         || (cuerpo === null
-          ? `El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`
+          ? fraseDeFallo({ status: r.status })
           : `Error del servidor (${r.status}). Intente de nuevo.`));
     }
 
@@ -1733,7 +1751,7 @@
     if (!r.ok || !cuerpo || !cuerpo.ok) {
       $("paa-resumen").textContent = (cuerpo && cuerpo.error)
         || (cuerpo === null
-          ? `El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`
+          ? fraseDeFallo({ status: r.status })
           : `No se pudo consultar el PAA (${r.status}).`);
       return;
     }
@@ -2432,7 +2450,7 @@
        en el mismo `try`, ese muro se diagnosticaría como «sin conexión» —lo
        contrario de la verdad—. */
     try { cuerpo = await r.json(); } catch {
-      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.</p>`;
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc(fraseDeFallo({ status: r.status }))}</p>`;
       return;
     }
     if (r.status === 401) {
@@ -2662,7 +2680,7 @@
     try {
       r = await fetch(ruta, cfg);
     } catch (e) {
-      throw new Error(`Sin conexión con el servidor: revise su conexión e intente de nuevo. (${e.message})`);
+      throw new Error(fraseDeFallo(e));
     }
     /* el parseo va APARTE del fetch: el muro del edge responde HTML */
     const cuerpo = await leerJson(r);
@@ -2729,15 +2747,39 @@
       seguimientoCargadoPara = null;
       cargarSeguimiento({ forzar: true });
     } catch (e) {
-      if (btn) { btn.disabled = false; btn.textContent = "No se pudo"; btn.title = e.message; }
+      if (btn) { btn.disabled = false; btn.textContent = "No se pudo"; btn.title = mensajeDeFallo(e, "guardar el proceso"); }
     }
+  }
+  /* CARGANDO, FALLO Y VACÍO SON TRES ESTADOS Y SE DICEN DISTINTO (5-sep-2026).
+     Mientras se pide, el esqueleto (solo la primera vez: en un refresco, vaciar
+     la pantalla para repintar lo mismo es peor que no hacer nada) y el vacío
+     TAPADO; si falla, habla solo #seg-mensaje. Destapar «Todavía no ha guardado
+     ningún proceso» sobre un fallo era afirmarle al usuario algo FALSO sobre sus
+     propios datos, bien maquetado. */
+  function cargandoSeguimiento(v) {
+    const esq = $("seg-skeleton"), vac = $("seg-vacio"), lista = $("seg-lista");
+    if (esq) esq.classList.toggle("hidden", !(v && !ultimoSeguimiento));
+    if (lista) lista.setAttribute("aria-busy", v ? "true" : "false");
+    if (v) { if (vac) vac.classList.add("hidden"); mensajeSeg(null); }
   }
   async function cargarSeguimiento({ forzar = false } = {}) {
     const perfil = $("f-perfil").value;
     if (!forzar && seguimientoCargadoPara === perfil) return;
     let r = null;
-    try { r = await api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent(perfil)}`); } catch (e) { mensajeSeg(e.message, "error"); return; }
-    if (!r || !r.ok) return;
+    cargandoSeguimiento(true);
+    try { r = await api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent(perfil)}`); }
+    catch (e) {
+      cargandoSeguimiento(false);
+      $("seg-vacio").classList.add("hidden");
+      mensajeSeg(mensajeDeFallo(e, "cargar sus procesos guardados"), "error");
+      return;
+    }
+    cargandoSeguimiento(false);
+    if (!r || !r.ok) {
+      $("seg-vacio").classList.add("hidden");
+      mensajeSeg((r && r.error) || mensajeDeFallo(null, "cargar sus procesos guardados"), "error");
+      return;
+    }
     seguimientoCargadoPara = perfil;
     guardados.clear();
     /* `r.procesos` se RECORRE, así que un `ok:true` sin esa lista lanzaba y la
@@ -2751,6 +2793,9 @@
   }
   function mensajeSeg(texto, tipo) {
     const m = $("seg-mensaje"); if (!m) return;
+    // el botón de reintentar acompaña SOLO al error: un «Guardado» no se reintenta
+    const rein = $("seg-reintentar");
+    if (rein) rein.classList.toggle("hidden", !(texto && tipo === "error"));
     if (!texto) return m.classList.add("hidden");
     m.className = `mt-3 rounded-xl px-4 py-3 text-sm ${tipo === "error" ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-800"}`;
     m.textContent = texto; m.classList.remove("hidden");
@@ -2954,7 +2999,12 @@
     if (!lista) return;
     const todos = r.procesos || [];
     pintarInsigniaSeguimiento(r.resumen ? r.resumen.atencion : 0);
-    vacio.classList.toggle("hidden", todos.length > 0);
+    /* «Todavía no ha guardado ningún proceso» es una AFIRMACIÓN sobre los datos
+       del usuario: solo puede hacerse cuando la respuesta llegó BIEN y venía
+       vacía. Con `todos.length > 0` a secas, cualquier ruta que llamara aquí sin
+       respuesta válida la destapaba. */
+    vacio.classList.toggle("hidden", !(r && r.ok === true && todos.length === 0));
+    const esq = $("seg-skeleton"); if (esq) esq.classList.add("hidden");
     const rs = r.resumen || {};
     res.innerHTML = todos.length ? [
       `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${todos.length} guardado${todos.length === 1 ? "" : "s"}</span>`,
@@ -3097,13 +3147,13 @@
           leidos++;
         } catch (e) {
           fallidos++;
-          try { await marcarIlegible(`no se pudo leer: ${String((e && e.message) || e)}`, false); } catch { /* se reintenta la próxima vez */ }
+          try { await marcarIlegible(`no se pudo leer: ${fraseDeFallo(e)}`, false); } catch { /* se reintenta la próxima vez */ }
         }
       }
       docsProgreso.delete(id);
     } catch (e) {
       /* la búsqueda falló: se dice en la caja y queda el botón «Reintentar» */
-      docsProgreso.set(id, { texto: `No se pudieron buscar los documentos: ${String((e && e.message) || e)}`, hecho: 0, total: 0, error: true });
+      docsProgreso.set(id, { texto: mensajeDeFallo(e, "buscar los documentos de este proceso"), hecho: 0, total: 0, error: true });
     }
     /* la guía se rehace en el servidor con lo leído: repintar Mis procesos y, si
        esa guía está abierta, consultar el dictamen (ahora ya hay pliego) */
@@ -3135,6 +3185,10 @@
         <tbody class="divide-y divide-gray-100">${filas}</tbody></table></div>
       <p class="mt-2 text-[13px] text-gray-400">«Contratos vigentes» es el valor que ese competidor ya tiene comprometido, no la capacidad que le queda: calcularla exige su registro de proponente, que no es público. Las ganadas se cruzan por NIT de la entidad, que a veces se comparte entre regionales.</p>`;
   }
+  /* «Reintentar» repite la MISMA carga, sin recargar la página: hasta hoy la
+     única salida de un fallo en esta pestaña era el botón de recargar del
+     navegador, que además pierde la pestaña abierta. */
+  if ($("seg-reintentar")) $("seg-reintentar").addEventListener("click", () => cargarSeguimiento({ forzar: true }));
   const secSeg = document.getElementById("tab-seguimiento") || document.getElementById("seccion-seguimiento");
   if (secSeg) {
     /* al ABRIR la guía de un guardado se consulta su dictamen sin pulsar nada más */
@@ -3147,7 +3201,7 @@
       if (!sel) return;
       const id = sel.getAttribute("data-seg-estado");
       try { await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, estado: sel.value } }); guardados.set(id, sel.value); mensajeSeg("Estado actualizado.", "ok"); setTimeout(() => mensajeSeg(""), 2000); cargarSeguimiento({ forzar: true }); }
-      catch (e) { mensajeSeg(e.message, "error"); }
+      catch (e) { mensajeSeg(fraseDeFallo(e), "error"); }
     });
     secSeg.addEventListener("click", async (ev) => {
       const fe = ev.target.closest("[data-seg-filtro]");
@@ -3158,7 +3212,7 @@
       if (en) {
         const id = en.getAttribute("data-seg-enterado"); en.disabled = true;
         try { await api("/api/perfil?op=seguimiento", { method: "POST", body: { perfil: $("f-perfil").value, id, enterado: true } }); await cargarSeguimiento({ forzar: true }); }
-        catch (e) { en.disabled = false; mensajeSeg(e.message, "error"); }
+        catch (e) { en.disabled = false; mensajeSeg(fraseDeFallo(e), "error"); }
         return;
       }
       const q = ev.target.closest("[data-seg-quitar]");
@@ -3185,7 +3239,7 @@
           if (!r.ok) throw new Error(`El servidor respondió ${r.status}.`);
           const blob = await r.blob(); const url = URL.createObjectURL(blob);
           const a = document.createElement("a"); a.href = url; a.download = `detekta_${id.replace(/[^A-Za-z0-9._-]/g, "_")}.ics`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
-        } catch (e) { mensajeSeg(e.message, "error"); }
+        } catch (e) { mensajeSeg(fraseDeFallo(e), "error"); }
         return;
       }
       const det = ev.target.closest("[data-seg-detalle]");
@@ -3196,7 +3250,7 @@
         caja.classList.remove("hidden"); caja.innerHTML = `<p class="text-xs text-gray-500">Consultando quiénes se presentaron y sus contratos…</p>`;
         det.disabled = true;
         try { const d = await api(`/api/perfil?op=seguimiento&perfil=${encodeURIComponent($("f-perfil").value)}&detalle=${encodeURIComponent(id)}`); pintarDetalleCompetencia(caja, d); }
-        catch (e) { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">${esc(e.message)}</p>`; }
+        catch (e) { caja.innerHTML = `<p class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">${esc(fraseDeFallo(e))}</p>`; }
         det.disabled = false;
         return;
       }
@@ -3218,6 +3272,9 @@
     const colores = { info: "text-gray-600", ok: "text-emerald-700", error: "text-red-600" };
     el.className = `mt-3 text-sm ${colores[tipo] || colores.info}`;
     el.textContent = texto;
+    // «Reintentar» solo con el error, y repite lo que Precios necesita al entrar
+    const rein = $("accion-reintentar");
+    if (rein) rein.classList.toggle("hidden", !(texto && tipo === "error"));
   }
 
   /* ─────────────────────────── estado ──────────────────────────────── */
@@ -3576,7 +3633,7 @@
       }
       pintarInferencia(r);
     } catch (e) {
-      pintarInferencia({ estado: "no_determinada", mensaje: `No se pudo detectar: ${e.message}` });
+      pintarInferencia({ estado: "no_determinada", mensaje: mensajeDeFallo(e, "detectar el tipo de trabajo") });
     } finally {
       btn.disabled = false;
       $("inferir-spin").classList.add("hidden");
@@ -4206,7 +4263,7 @@
       msgApu("Presupuesto calculado.", "ok");
       return true;
     } catch (e) {
-      msgApu(`No se pudo calcular: ${e.message}`, "error");
+      msgApu(mensajeDeFallo(e, "calcular el presupuesto"), "error");
       return false;
     } finally {
       btn.disabled = filas.length === 0;
@@ -4434,7 +4491,7 @@
       $("baja-nota").textContent = `Mediana histórica: ${num(e.baja_mediana)} % sobre ${procesos} procesos`
         + (e.nivel ? ` (nivel ${e.nivel})` : "") + ". Es el descuento típico, no una recomendación.";
     } catch (err) {
-      $("baja-nota").textContent = `No se pudo consultar: ${err.message}`;
+      $("baja-nota").textContent = mensajeDeFallo(err, "consultar cuánto suelen bajar el precio");
     }
   });
 
@@ -4485,7 +4542,7 @@
         tope_aiu_pct: tope === "" ? null : Number(tope), secop: secopTotal === "" ? null : { total: Number(secopTotal) },
         id_proceso: $("id-proceso").value.trim() || null, perfil: $("perfil").value || null,
       } });
-    } catch (e) { caja.innerHTML = `<p class="text-sm text-red-700">${esc(e.message)}</p>`; return; }
+    } catch (e) { caja.innerHTML = `<p class="text-sm text-red-700">${esc(fraseDeFallo(e))}</p>`; return; }
     const color = { listo: "text-emerald-700", revisar: "text-red-700", precaucion: "text-amber-700" }[r.semaforo] || "text-gray-700";
     const punto = { listo: "bg-emerald-500", revisar: "bg-red-500", precaucion: "bg-amber-500" }[r.semaforo] || "bg-gray-400";
     const orden = { rechazo: 0, alerta: 1, informativo: 2, sin_referencia: 3, ok: 4 };
@@ -4536,7 +4593,7 @@
       if (!silencioso) msgApu(`Guardado como «${r.nombre}» (id ${r.id}). ${r.nota}`, "ok");
       return r;
     } catch (e) {
-      msgApu(`No se pudo guardar: ${e.message}`, "error");
+      msgApu(mensajeDeFallo(e, "guardar el presupuesto"), "error");
       return null;
     } finally {
       btn.disabled = false;
@@ -4646,7 +4703,7 @@
       iaEstado = { ...r, id: idActual };
       actualizarEstadoIa();
     } catch (e) {
-      if (!silencioso) msgIa(`No se pudo consultar la solicitud: ${e.message}`, "error");
+      if (!silencioso) msgIa(mensajeDeFallo(e, "consultar la solicitud"), "error");
     }
   }
   function usarPrecioIa(p) {
@@ -4674,7 +4731,7 @@
       iaEstado = { ...r, id: idActual };
       actualizarEstadoIa();
     } catch (e) {
-      msgIa(`No se pudo pedir: ${e.message}`, "error");
+      msgIa(mensajeDeFallo(e, "pedir los precios"), "error");
     } finally {
       actualizarEstadoIa();
     }
@@ -4747,7 +4804,7 @@
               class="rounded border border-gray-300 px-2 py-1 text-xs font-medium transition hover:bg-gray-50">Cargar</button></td>
         </tr>`).join("")}</tbody></table>`;
     } catch (e) {
-      msgApu(`No se pudo listar: ${e.message}`, "error");
+      msgApu(mensajeDeFallo(e, "listar sus presupuestos guardados"), "error");
     }
   });
 
@@ -4800,7 +4857,7 @@
         ? `Cargado «${p.nombre}». Atención: ${r.nota}`
         : `Cargado «${p.nombre}». Pulse «Calcular cuánto me cuesta» para ver los totales.`, r.catalogo_cambiado ? "error" : "ok");
     } catch (err) {
-      msgApu(`No se pudo cargar: ${err.message}`, "error");
+      msgApu(mensajeDeFallo(err, "cargar el presupuesto guardado"), "error");
     }
   });
 
@@ -4840,7 +4897,7 @@
         $("nombre-presupuesto").value.trim(), new Date().toISOString().slice(0, 10)));
       msgApu("Excel generado (formato APU profesional: presupuesto + análisis por ítem).", "ok");
     } catch (e) {
-      msgApu(`No se pudo generar el Excel: ${e.message}`, "error");
+      msgApu(mensajeDeFallo(e, "generar el Excel"), "error");
     }
   });
 
@@ -4918,7 +4975,7 @@
       // el botón vive DENTRO de la pestaña APU, así que no hay que cambiar de pestaña
       if (await mapearParaPrevisualizar(filas, { avisos: [`${filas.length} ítem(s) leídos del pliego. El precio lo ponen los bancos: el del pliego se compara aparte, no se cobra.`], origen: "el pliego leído" })) abrirModalImportar();
     } catch (err) {
-      msgApu(`No se pudieron llevar los ítems: ${err.message}`, "error");
+      msgApu(mensajeDeFallo(err, "llevar los ítems del pliego"), "error");
     } finally {
       btn.disabled = false;
       btn.textContent = antes;
@@ -4950,7 +5007,7 @@
       }
       if (await mapearParaPrevisualizar(crudas.filas, { avisos: crudas.avisos, cuadre: crudas.cuadre, origen: archivo.name })) abrirModalImportar();
     } catch (err) {
-      msgApu(`No se pudo importar: ${err.message}`, "error");
+      msgApu(mensajeDeFallo(err, "importar el archivo"), "error");
     } finally {
       btn.disabled = false;
       btn.textContent = antes;
@@ -5151,7 +5208,7 @@
     try {
       if (await mapearParaPrevisualizar(filasMapeadas, { avisos: [`Columnas mapeadas a mano sobre «${mapeoPendiente.nombre}».`], origen: mapeoPendiente.nombre })) { cerrarMapeo(); abrirModalImportar(); }
     } catch (err) {
-      aviso(`No se pudo importar con ese mapeo: ${err.message}`);
+      aviso(mensajeDeFallo(err, "importar con ese mapeo"));
     } finally {
       btn.disabled = false;
     }
@@ -5342,12 +5399,12 @@
       pintarPrecioSugerido(c.optimizador);
       msgApu(auto ? "Rentabilidad y precio sugerido actualizados." : "Rentabilidad actualizada.", "ok");
     } catch (e) {
-      msgApu(`No se pudo calcular la rentabilidad: ${e.message}`, "error");
+      msgApu(mensajeDeFallo(e, "calcular la ganancia"), "error");
       /* También en automático hay que dejar rastro visible: si no, tras pulsar
          «Calcular APU» el recuadro simplemente no aparecería y el dueño no
          tendría forma de distinguir «falló» de «este proceso no da para
          sugerir un precio». */
-      pintarPrecioSugerido({ aplicable: false, mensaje: `No se pudo calcular el precio sugerido: ${e.message}` });
+      pintarPrecioSugerido({ aplicable: false, mensaje: mensajeDeFallo(e, "calcular el precio sugerido") });
     } finally {
       rentabilidadEnVuelo = false;
       btn.disabled = false;
@@ -5368,6 +5425,22 @@
     no_presentarse_supera_presupuesto: { punto: "bg-red-500", caja: "bg-red-50 ring-red-600/20 text-red-950" },
     sin_referencia: { punto: "bg-gray-400", caja: "bg-gray-100 ring-gray-900/10 text-gray-900" },
   };
+  /* NINGUNA PANTALLA VACÍA SIN EL PASO SIGUIENTE (5-sep-2026). Los dos recuadros
+     de Precios que no se pueden armar decían QUÉ falta y ahí terminaban: el
+     usuario tenía que deducir a dónde ir. Sin ítems cargados el paso que falta
+     es el 1 (cargar el pliego); con ítems, el 2 (buscar los precios). */
+  function botonPasoQueFalta() {
+    const [paso, texto] = filas.length === 0 ? ["pliego", "Cargue el pliego"] : ["buscar", "Buscar los precios"];
+    return `<button type="button" data-ir-paso="${paso}" class="mt-3 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium transition hover:bg-gray-50">${texto}</button>`;
+  }
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest && ev.target.closest("[data-ir-paso]");
+    if (!b) return;
+    const aBuscar = b.getAttribute("data-ir-paso") === "buscar";
+    const destino = aBuscar ? $("btn-ia-pedir") : $("seccion-pliego-wrap");
+    if (destino && destino.scrollIntoView) destino.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (aBuscar && destino && destino.focus) destino.focus({ preventScroll: true });
+  });
   function pintarPisoTecho(c) {
     const pt = c && c.piso_techo;
     const sec = $("seccion-piso-techo");
@@ -5378,7 +5451,8 @@
     if (!pt || !pt.aplicable) {
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
-      sin.textContent = pt && pt.veredicto ? pt.veredicto : "No se pudo armar el panel: falta el presupuesto oficial del proceso o el costo.";
+      // el veredicto del servidor se conserva LITERAL; debajo, el paso que falta
+      sin.innerHTML = `<p>${esc(pt && pt.veredicto ? pt.veredicto : "No se pudo armar el panel: falta el presupuesto oficial del proceso o el costo.")}</p>${botonPasoQueFalta()}`;
       $("pt-origen").textContent = "";
       return;
     }
@@ -5552,7 +5626,7 @@
     if (!o || !o.aplicable) {
       cuerpo.classList.add("hidden");
       sin.classList.remove("hidden");
-      sin.textContent = `● ${(o && o.mensaje) || "No hay con qué sugerir un precio para este proceso."}`;
+      sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>${botonPasoQueFalta()}`;
       $("ps-origen").textContent = "";
       return;
     }
@@ -5725,15 +5799,35 @@
     if ($("btn-justificacion")) $("btn-justificacion").addEventListener("click", descargarJustificacion);
     sincronizarBaja();
     pintarTabla();
+    /* LA ESPERA SE DICE (5-sep-2026): la primera vez que se abre Precios el
+       catálogo tarda, y hasta hoy la pestaña se quedaba callada — igual que si
+       ya hubiera terminado. */
     try {
+      msgApu("Cargando su catálogo de precios…");
       await cargarCatalogo();
       pintarTabla(); // el catálogo aporta los rendimientos por defecto del placeholder
+      msgApu("");
     } catch (e) {
-      msgApu(`No se pudo cargar el catálogo: ${e.message}`, "error");
+      msgApu(mensajeDeFallo(e, "cargar su catálogo de precios"), "error");
     }
     // el departamento del proceso solo se puede fijar cuando el catálogo ya
     // llenó el desplegable: antes no existe la opción que hay que seleccionar
     if (hayProceso) precargarDesdeURL();
+  }
+  /* «Reintentar» de Precios: repite la carga del catálogo, que es de lo que
+     cuelga toda la pestaña. Se registra aquí (no dentro de `arrancar`) para
+     que exista aunque la primera carga sea la que falló. */
+  if ($("accion-reintentar")) {
+    $("accion-reintentar").addEventListener("click", async () => {
+      try {
+        msgApu("Cargando su catálogo de precios…");
+        await cargarCatalogo();
+        pintarTabla();
+        msgApu("");
+      } catch (e) {
+        msgApu(mensajeDeFallo(e, "cargar su catálogo de precios"), "error");
+      }
+    });
   }
 
 
@@ -5852,7 +5946,7 @@
         r = await fetch(`/api/procesos?op=sync&modo=${modo}&presupuesto=${presupuesto}`, { headers: { Accept: "application/json" } });
         cuerpo = await leerJson(r); // el muro del edge devuelve HTML
       } catch (e) {
-        fallo = e && e.message ? e.message : "sin conexión";
+        fallo = fraseDeFallo(e);
       }
       if (!activo) return null;
 
@@ -6210,10 +6304,23 @@
   let dashboardCargando = false;
   let ultimoResumen = null;
   let timerRefresco = null, timerCuenta = null, proximoRefresco = 0;
+  /* LO QUE SE MUEVE SOLO SE PUEDE PARAR (5-sep-2026). `#d-meta` se reescribía
+     CADA SEGUNDO con «Próxima actualización en 04:37» y no había ningún control
+     para detenerlo: una pantalla que parpadea sola, sin interruptor. Ahora dice
+     el HECHO —cuándo se actualizó y cada cuánto se actualiza sola—, se repinta
+     cada 60 s y la persona puede pararla. La preferencia se guarda en ESTE
+     navegador; el almacenamiento puede lanzar (modo restringido) y entonces la
+     preferencia sencillamente no se recuerda: nunca se cae la pestaña por eso. */
+  const CLAVE_REFRESCO_PAUSADO = "detekta-refresco-pausado";
+  let refrescoPausado = (() => { try { return localStorage.getItem(CLAVE_REFRESCO_PAUSADO) === "1"; } catch { return false; } })();
+  let ultimaCargaMs = 0;
   let pendientePorVisibilidad = false;
 
   function avisoDashboard(texto, tipo) {
     const p = $("d-aviso");
+    // «Reintentar» solo con el error: repetir un aviso de éxito no significa nada
+    const rein = $("d-reintentar");
+    if (rein) rein.classList.toggle("hidden", !(texto && tipo === "error"));
     if (!texto) return p.classList.add("hidden");
     p.className = "mt-5 rounded-xl px-4 py-3 text-sm " + ({
       ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
@@ -6247,7 +6354,7 @@
       cuerpo = await leerJson(r);
     } catch (e) {
       cargandoDashboard(false);
-      return avisoDashboard(`No se pudo contactar el servidor: ${esc((e && e.message) || "sin conexión")}.`, "error");
+      return avisoDashboard(esc(mensajeDeFallo(e, "actualizar el tablero")), "error");
     }
     cargandoDashboard(false);
 
@@ -6349,7 +6456,7 @@
         cargarDashboard({ forzar: true });   // los números del panel acaban de cambiar
       }
     } catch (e) {
-      decir(`Sin respuesta del servidor: ${e.message}`, "bg-red-50 text-red-700");
+      decir(mensajeDeFallo(e, "rehacer el cálculo"), "bg-red-50 text-red-700");
     } finally {
       btn.disabled = false;
     }
@@ -6434,29 +6541,52 @@
     ];
     if (c.corpus && c.corpus.sincronizado) partes.push(`Corpus sincronizado: ${String(c.corpus.sincronizado).slice(0, 16).replace("T", " ")}`);
     $("d-meta").dataset.base = partes.join(" · ");
+    ultimaCargaMs = Date.now();   // la marca de CUÁNDO llegó a esta pantalla
     pintarCuentaAtras();
   }
 
+  /* El HECHO, no la cuenta atrás: cuánto hace que se actualizó y cada cuánto se
+     actualiza sola. Sin redondear a cero — menos de un minuto es «hace un
+     momento», no «hace 0 min»— y sin marca todavía no se inventa ninguna. */
+  function fraseRefresco(pausado, desdeMs, ahoraMs) {
+    const minutos = desdeMs ? Math.floor((ahoraMs - desdeMs) / 60000) : null;
+    const cuando = desdeMs ? (minutos < 1 ? "Actualizado hace un momento" : `Actualizado hace ${minutos} min`) : "";
+    const modo = pausado ? "la actualización automática está detenida" : "se actualiza solo cada 5 min";
+    return cuando ? `${cuando} · ${modo}` : modo.charAt(0).toUpperCase() + modo.slice(1);
+  }
   function pintarCuentaAtras() {
-    const base = $("d-meta").dataset.base || "";
-    const restan = Math.max(0, Math.round((proximoRefresco - Date.now()) / 1000));
-    const mm = String(Math.floor(restan / 60)), ss = String(restan % 60).padStart(2, "0");
-    $("d-meta").textContent = proximoRefresco ? `${base} · Próxima actualización en ${mm}:${ss}` : base;
+    const el = $("d-meta"); if (!el) return;
+    const base = el.dataset.base || "";
+    const frase = fraseRefresco(refrescoPausado, ultimaCargaMs, Date.now());
+    el.textContent = base ? `${base} · ${frase}` : frase;
+    const b = $("d-pausar");
+    if (b) b.textContent = refrescoPausado ? "Volver a actualizar" : "Dejar de actualizar";
   }
 
   /* Refresco automático cada 5 min SOLO con la pestaña visible: refrescar en
      segundo plano gasta invocaciones de Vercel para que nadie lo mire. Si la
-     pestaña estaba oculta cuando tocaba, se refresca al volver a ella. */
+     pestaña estaba oculta cuando tocaba, se refresca al volver a ella. Y si la
+     persona lo detuvo, no se programa NADA: ni el refresco ni el repintado. */
   function programarRefresco() {
     clearTimeout(timerRefresco);
     clearInterval(timerCuenta);
+    timerRefresco = null; timerCuenta = null;
+    if (refrescoPausado) { proximoRefresco = 0; pintarCuentaAtras(); return; }
     proximoRefresco = Date.now() + REFRESCO_MS;
     pintarCuentaAtras();
-    timerCuenta = setInterval(pintarCuentaAtras, 1000);
+    timerCuenta = setInterval(pintarCuentaAtras, 60000);
     timerRefresco = setTimeout(() => {
       if (document.visibilityState === "visible") cargarDashboard();
       else pendientePorVisibilidad = true; // se hará al volver a la pestaña
     }, REFRESCO_MS);
+  }
+  if ($("d-pausar")) {
+    $("d-pausar").addEventListener("click", () => {
+      refrescoPausado = !refrescoPausado;
+      try { localStorage.setItem(CLAVE_REFRESCO_PAUSADO, refrescoPausado ? "1" : "0"); } catch { /* preferencia no recordada */ }
+      // ninguna pulsación sin respuesta visible: se reprograma Y se repinta el texto
+      programarRefresco();
+    });
   }
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible") return;
@@ -6467,6 +6597,7 @@
   });
 
   $("btn-actualizar").addEventListener("click", () => cargarDashboard({ forzar: true }));
+  if ($("d-reintentar")) $("d-reintentar").addEventListener("click", () => cargarDashboard({ forzar: true }));
   $("d-baja-reconstruir").addEventListener("click", reconstruirBaja);
   $("d-perfil").addEventListener("change", () => {
     guardarPerfil($("d-perfil").value);
@@ -6563,7 +6694,7 @@
       try { datos = JSON.parse(String(lector.result)); } catch (e) {
         rupPendiente = null;
         $("rup-vista").classList.add("hidden");
-        return mensajeRup(`El archivo no es JSON válido: ${e.message}`, "error");
+        return mensajeRup("El archivo no tiene el formato que la aplicación guarda. Vuelva a descargarlo y súbalo de nuevo.", "error");
       }
       rupPendiente = datos;
       $("rup-vista").classList.remove("hidden");
@@ -6605,7 +6736,7 @@
     } catch (e) {
       $("btn-rup-cargar").disabled = false;
       $("btn-rup-cargar").textContent = etiqueta;
-      return mensajeRup(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
+      return mensajeRup(mensajeDeFallo(e, "guardar su registro de proponente"), "error");
     }
     $("btn-rup-cargar").disabled = false;
     $("btn-rup-cargar").textContent = etiqueta;
@@ -6673,7 +6804,7 @@
       cuerpo = await leerJson(r);
       if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `HTTP ${r.status}`);
     } catch (e) {
-      return mensajeRup(`No se pudo descargar el RUP: ${(e && e.message) || "sin conexión"}.`, "error");
+      return mensajeRup(mensajeDeFallo(e, "descargar su RUP"), "error");
     }
     // `descargarJSON` está declarado más abajo (declaración de función: se
     // hoistea), y es el MISMO camino de descarga que usan la experiencia y la
@@ -6748,7 +6879,7 @@
       btn.disabled = false;
       btn.textContent = etiqueta;
       cerrarModalEliminar();
-      return mensajeEliminar(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
+      return mensajeEliminar(mensajeDeFallo(e, "eliminar el perfil"), "error");
     }
     /* el parseo va APARTE del fetch: el muro del edge responde HTML */
     cuerpo = await leerJson(r);
@@ -6763,7 +6894,7 @@
     if (!r.ok || !cuerpo || !cuerpo.ok) {
       return mensajeEliminar((cuerpo && cuerpo.error)
         || (cuerpo === null
-          ? `El servidor respondió algo que no es JSON (${r.status}). Si el sitio tiene protección por contraseña, inicie sesión y reintente.`
+          ? fraseDeFallo({ status: r.status })
           : `Error del servidor (${r.status}).`), "error");
     }
 
@@ -6846,7 +6977,7 @@
     try { datos = JSON.parse(crudo); } catch (e) {
       $("exp-vista").classList.add("hidden");
       expPendiente = null;
-      return mensajeExp(`El texto no es JSON válido: ${e.message}`, "error");
+      return mensajeExp("El texto pegado no tiene el formato que la aplicación espera. Revise que sea la lista de contratos completa, entre corchetes.", "error");
     }
     const lista = datos && Array.isArray(datos.contratos) ? datos.contratos
       : (Array.isArray(datos) ? datos : null);
@@ -6891,7 +7022,7 @@
     } catch (e) {
       $("btn-exp-confirmar").disabled = false;
       $("btn-exp-confirmar").textContent = etiqueta;
-      return mensajeExp(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
+      return mensajeExp(mensajeDeFallo(e, "guardar su experiencia"), "error");
     }
     $("btn-exp-confirmar").disabled = false;
     $("btn-exp-confirmar").textContent = etiqueta;
@@ -6991,7 +7122,7 @@
       });
     } catch (e) {
       bitacora("✘ 1/3 sin conexión con el servidor");
-      mensajeExp(`No se pudo contactar el servidor: ${(e && e.message) || "sin conexión"}.`, "error");
+      mensajeExp(mensajeDeFallo(e, "cargar la experiencia del repositorio"), "error");
       return false;
     }
     /* El parseo va APARTE del fetch: el muro del edge (Vercel Password
@@ -7148,7 +7279,7 @@
       cuerpo = await leerJson(r);
       if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `HTTP ${r.status}`);
     } catch (e) {
-      return mensajeExp(`No se pudo descargar la experiencia: ${(e && e.message) || "sin conexión"}.`, "error");
+      return mensajeExp(mensajeDeFallo(e, "descargar su experiencia"), "error");
     }
     if (!cuerpo.cargada) return mensajeExp("No hay experiencia cargada todavía: no hay nada que descargar.", "aviso");
     descargarJSON({ contratos: cuerpo.contratos }, `experiencia_${new Date().toISOString().slice(0, 10)}.json`);
@@ -7219,7 +7350,7 @@
       cuerpo = await leerJson(r);
     } catch (e) {
       cargandoCobertura(false);
-      avisoCobertura(`No se pudo contactar el servidor: ${esc((e && e.message) || "sin conexión")}.`, "error");
+      avisoCobertura(esc(mensajeDeFallo(e, "consultar a cuánto llega su experiencia")), "error");
       return false;
     }
     cargandoCobertura(false);
@@ -7500,7 +7631,7 @@
       else if (c.indice && c.indice.done === false) msg.textContent = "Reconstrucción a medias (presupuesto agotado): vuelva a pulsar, el avance queda guardado.";
       else msg.textContent = "Índice de competencia reconstruido.";
     } catch (e) {
-      msg.textContent = `Sin respuesta del servidor: ${e.message}`;
+      msg.textContent = mensajeDeFallo(e, "rehacer el índice");
     } finally {
       btn.disabled = false;
     }
@@ -7653,7 +7784,7 @@
         body: JSON.stringify({ parametros: leerParametrosForm() }),
       });
     } catch (e) {
-      msgPar(`Sin conexión con el servidor: ${e.message}`, "error");
+      msgPar(mensajeDeFallo(e, "guardar los parámetros"), "error");
       btn.disabled = false; $("par-spin").classList.add("hidden");
       return;
     }
@@ -7727,7 +7858,7 @@
     caja.innerHTML = `<p class="text-sm text-gray-500">Calculando cuántas licitaciones se abren…</p>`;
     let r;
     try { r = await api("/api/perfil?op=consorcio-simular", { method: "POST", body: { integrantes: participacionesActuales() } }); }
-    catch (e) { caja.innerHTML = `<p class="text-sm text-red-700">${esc(e.message)}</p>`; return; }
+    catch (e) { caja.innerHTML = `<p class="text-sm text-red-700">${esc(fraseDeFallo(e))}</p>`; return; }
     cons.ultimo = r;
     const ind = r.indicadores || {};
     const solo = r.capacidadMejorIntegrante;
@@ -7794,7 +7925,7 @@
         pintarConsorciosGuardados();
         activarPestana("licitaciones");
         pagina = 1; buscar();
-      } catch (e) { const m = $("cons-mensaje"); m.className = "mt-3 rounded-xl px-4 py-3 text-sm bg-red-50 text-red-700"; m.textContent = e.message; m.classList.remove("hidden"); }
+      } catch (e) { const m = $("cons-mensaje"); m.className = "mt-3 rounded-xl px-4 py-3 text-sm bg-red-50 text-red-700"; m.textContent = fraseDeFallo(e); m.classList.remove("hidden"); }
       finally { btn.disabled = false; }
       return;
     }
@@ -7841,7 +7972,7 @@
       out.innerHTML = pintarSocio(r);
       out.classList.remove("hidden");
     } catch (e) {
-      aviso(e.message, "bg-red-50 text-red-700");
+      aviso(fraseDeFallo(e), "bg-red-50 text-red-700");
     } finally {
       socioEnVuelo = false;
       $("btn-socio-verificar").disabled = false;
