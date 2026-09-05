@@ -63,6 +63,12 @@
     insubsanable: { interno: "Insubsanable", visible: "Si falla, queda por fuera de inmediato" },
     causal_o: { interno: "Causal O", visible: "Motivo de rechazo automático" },
     aiu: { interno: "AIU", visible: "Su administración, imprevistos y ganancia", corto: "Administración, imprevistos y ganancia" },
+    /* La sigla del modelo («VEG») decidía el precio en la pantalla de Precios y
+       no se explicaba en ninguna parte. El HECHO que hay detrás es el mismo que
+       ya enseña la tarjeta del listado: lo que queda por CADA oferta
+       presentada, contando las veces que no se gana. */
+    veg: { interno: "VEG", visible: "Lo que deja por intento", corto: "Deja por intento",
+      explicacion: "Lo que queda por cada oferta presentada: cuenta las veces que no se gana y descuenta lo que cuesta preparar la oferta, que se paga se gane o no." },
     apu: { interno: "APU", visible: "Cuánto le cuesta cada actividad" },
     smmlv: { interno: "SMMLV", visible: null, nota: "Convertir a pesos; la sigla no se muestra" },
     adenda: { interno: "Adenda", visible: "Cambio en las reglas del proceso" },
@@ -91,6 +97,38 @@
     aplicar_filtros: "Mostrar solo estas",
     manifestar_interes: "Avisar que me interesa",
     configurar_participacion: "¿Qué parte pone cada uno?",
+  });
+
+  /* ══════════ UN SOLO SEMÁFORO PARA TODA LA APLICACIÓN (5-sep-2026) ══════════
+     El MISMO concepto —«cumple / confírmelo / no cumple / sin dato»— tenía
+     cuatro tablas locales en `public/app.js` con colores y palabras propios, y
+     ya habían divergido: «revisar» era ÁMBAR en los requisitos de la guía y en
+     las cifras del pliego, pero AZUL en los hechos del pliego. El mismo color
+     significaba dos cosas y la misma cosa se pintaba de dos colores. Aquí vive
+     la única tabla; `app.js` la lee.
+
+     · `clase` es el color del punto tipográfico (●) que hereda el tema.
+     · `chip`  es la pareja fondo+texto de los badges de la tarjeta (otra forma
+       visual del MISMO estado: badge con fondo, no punto sobre el fondo de la
+       tarjeta).
+     · `corto` va en los chips de una palabra; `largo`, en las listas.
+     · `pendiente` NO es «no cumple»: es algo que todavía se puede conseguir
+       (un documento, un aval). Por eso conserva su azul y su palabra propia.
+
+     QUÉ NO SE UNIFICA, y por qué (son OTROS conceptos, no otro estilo):
+     · el semáforo de las validaciones de la oferta (`r.semaforo`, app.js):
+       dice si la propuesta se RECHAZA o si hay que mirarla, no si usted cumple
+       un requisito;
+     · el TONO del calendario (clases `cal-*`): mide PLAZO —cuánto falta para
+       cerrar—, no cumplimiento;
+     · el COLOR del veredicto del dictamen (`public/pliego.js`): presentarse /
+       con reservas / no presentarse, que es una recomendación, no un estado. */
+  const ESTADO = Object.freeze({
+    cumple: Object.freeze({ clase: "text-emerald-600", chip: "bg-green-100 text-green-800", corto: "cumple", largo: "Cumple" }),
+    revisar: Object.freeze({ clase: "text-amber-500", chip: "bg-amber-100 text-amber-800", corto: "confírmelo", largo: "Confirme en el pliego" }),
+    no_cumple: Object.freeze({ clase: "text-red-600", chip: "bg-red-100 text-red-700", corto: "no cumple", largo: "No cumple" }),
+    pendiente: Object.freeze({ clase: "text-blue-500", chip: "bg-blue-100 text-blue-800", corto: "por hacer", largo: "Por conseguir" }),
+    sin_dato: Object.freeze({ clase: "text-gray-500", chip: "bg-gray-100 text-gray-500", corto: "sin dato", largo: "Sin dato" }),
   });
 
   /* Frase única para «no hay dato»: nunca cero, nunca vacío, nunca «N/A». */
@@ -187,6 +225,6 @@
     return contexto ? `No se pudo ${contexto}. ${fraseDeFallo(e)}` : fraseDeFallo(e);
   }
 
-  return { MARCA, TERMINOS, VERBOS, SIN_REFERENCIA, sinReferencia, traducir, corto, titulo, descripcion, estampar,
+  return { MARCA, TERMINOS, VERBOS, ESTADO, SIN_REFERENCIA, sinReferencia, traducir, corto, titulo, descripcion, estampar,
     MSG_SIN_CONEXION, MSG_MURO, fraseDeFallo, mensajeDeFallo };
 });

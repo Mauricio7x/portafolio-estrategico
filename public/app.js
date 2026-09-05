@@ -870,7 +870,19 @@
     return `<span${t} class="rounded-full px-2.5 py-0.5 text-xs font-medium ${clases}">${texto}</span>`;
   }
 
-  function chipBaja(b) {
+  /* `cuantia` es el presupuesto oficial de ESTE proceso (`l.cuantia_cop`), que
+     la tarjeta ya enseña dos filas más arriba. Con él, «Suelen bajar 8 %» se
+     lee además en la unidad en la que se decide: «(unos $96M)».
+
+     Tres cuidados, y los tres son reglas viejas de esta casa:
+     · la cifra en pesos es APROXIMADA («unos») y solo SE MUESTRA: quien decide
+       sigue siendo la mediana exacta, que viaja intacta en el `title`;
+     · sin base (`procesos_contados` en 0 o mediana nula) no hay porcentaje que
+       traducir, y el chip dice «sin datos» como siempre;
+     · sin cuantía publicada NO sale ningún peso. `Number(null)` vale 0, así que
+       la ausencia se descarta ANTES de convertir: un «(unos $0M)» sería una
+       cifra creíble y falsa justo al lado de la que decide. */
+  function chipBaja(b, cuantia) {
     const nivel = (b && b.nivel) || "sin_dato";
     const procesos = Number(b && b.procesos_contados) || 0;
     const mediana = b && b.baja_mediana != null ? Number(b.baja_mediana) : null;
@@ -882,7 +894,10 @@
       return chip(`${window.Glosario.corto("baja_mercado")}: sin datos`, d.clases,
         (b && b.mensaje) || "No hay procesos adjudicados suficientes para estimar el descuento");
     }
-    return chip(`${window.Glosario.corto("baja_mercado")} ${fmtNum.format(mediana)} %`, d.clases, b.mensaje);
+    const base = cuantia == null || cuantia === "" ? null : Number(cuantia);
+    const enPesos = base != null && Number.isFinite(base) && base > 0 && mediana > 0
+      ? ` (unos ${fmtCorto(base * mediana / 100)})` : "";
+    return chip(`${window.Glosario.corto("baja_mercado")} ${fmtNum.format(mediana)} %${enPesos}`, d.clases, b.mensaje);
   }
 
   /* Chip de zona (lib/accesibilidad, encargo ago 2026): la etiqueta y el
@@ -1108,10 +1123,14 @@
      servido (docs/ATRACTIVIDAD.md). Cada puerta enseña su veredicto Y la cifra
      que lo sostiene en el `title`: una puerta cerrada sin su número no se puede
      discutir ni corregir. */
-  const VERDE = "bg-green-100 text-green-800";
-  const AMBAR = "bg-amber-100 text-amber-800";
-  const ROJO = "bg-red-100 text-red-700";
-  const GRIS = "bg-gray-100 text-gray-500";
+  /* Los cuatro colores de los badges de puerta salen del ÚNICO semáforo de la
+     aplicación (`Glosario.ESTADO`, 5-sep-2026): las mismas parejas fondo+texto
+     de siempre, pero decididas en un solo sitio. Un quinto tono nuevo aquí
+     volvería a partir el lenguaje de estado en dos. */
+  const VERDE = window.Glosario.ESTADO.cumple.chip;
+  const AMBAR = window.Glosario.ESTADO.revisar.chip;
+  const ROJO = window.Glosario.ESTADO.no_cumple.chip;
+  const GRIS = window.Glosario.ESTADO.sin_dato.chip;
 
   function badgePuerta(etiqueta, puerta) {
     const p = puerta || {};
@@ -1607,7 +1626,7 @@
         <div class="mt-2 flex flex-wrap gap-2">
           ${badgesPuertas(puertas)}
           ${chip(l.anticipo_pct > 0 ? `Anticipo ${l.anticipo_pct}%` : "Anticipo no declarado", l.anticipo_pct > 0 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-500")}
-          ${chipBaja(l.baja_mercado)}
+          ${chipBaja(l.baja_mercado, l.cuantia_cop)}
           ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
           ${badgesRup(rup)}
           ${rup.co_estimado ? chip("Capacidad calculada con ingreso estimado", "bg-gray-100 text-gray-500", "Cuánto puede facturar se calcula con un ingreso operacional estimado (no está en su registro): sirve para orientar, no para acreditar") : ""}
@@ -2325,7 +2344,7 @@
     "Sin dato": "bg-gray-100 text-gray-500",
   };
 
-  const signoPP = (n) => `${Number(n) > 0 ? "+" : Number(n) < 0 ? "−" : ""}${fmtNum.format(Math.abs(Number(n) || 0))} pp`;
+  const signoPP = (n) => `${Number(n) > 0 ? "+" : Number(n) < 0 ? "−" : ""}${fmtNum.format(Math.abs(Number(n) || 0))} puntos`;
 
   function filaPaso(s) {
     const datos = Object.entries(s.datos_entrada || {})
@@ -2416,7 +2435,7 @@
               <td></td>
               <td class="py-2 text-gray-500">Suma de los aportes</td>
               <td></td>
-              <td class="py-2 pr-3 text-right tabular-nums">${fmtNum.format(d.suma_aportes_pp)} pp</td>
+              <td class="py-2 pr-3 text-right tabular-nums">${fmtNum.format(d.suma_aportes_pp)} puntos</td>
               <td></td>
             </tr>
           </tfoot>
@@ -2816,8 +2835,17 @@
      lo que necesita (con el estado que la aplicación pudo verificar), el paso a
      paso con fechas, los consejos para ESTE proceso y la plata que nadie suma.
      El punto tipográfico hereda el color del tema; sin dato se dice, jamás 0. */
-  const ESTADO_REQ = { cumple: ["text-emerald-600", "Cumple"], revisar: ["text-amber-500", "Confirme en el pliego"], no_cumple: ["text-red-600", "No cumple"], pendiente: ["text-blue-500", "Por conseguir"], sin_dato: ["text-gray-400", "Sin dato"] };
-  const ESTADO_HECHO = { cumple: ["text-emerald-600", "Cumple"], no_cumple: ["text-red-600", "No cumple"], riesgo: ["text-amber-500", "Riesgo"], revisar: ["text-blue-500", "Confírmelo"], dato: ["text-gray-400", ""] };
+  /* UN SOLO SEMÁFORO (5-sep-2026): las cuatro tablas de esta pestaña ya no
+     deciden ni el color ni la palabra — los leen de `Glosario.ESTADO`, que es
+     el mismo que pintan los badges de la tarjeta de Licitaciones. Antes
+     «revisar» era ámbar en ESTADO_REQ y en EXIG_CLR y AZUL en ESTADO_HECHO:
+     el mismo estado, dos colores, en la misma pantalla. */
+  const EST = window.Glosario.ESTADO;
+  const ESTADO_REQ = { cumple: [EST.cumple.clase, EST.cumple.largo], revisar: [EST.revisar.clase, EST.revisar.largo], no_cumple: [EST.no_cumple.clase, EST.no_cumple.largo], pendiente: [EST.pendiente.clase, EST.pendiente.largo], sin_dato: [EST.sin_dato.clase, EST.sin_dato.largo] };
+  /* `riesgo` pinta el ÁMBAR de «confírmelo» con su propia palabra: es la misma
+     señal de «mírelo antes de firmar», no un sexto color. `dato` es un hecho
+     leído del pliego que no juzga nada: gris y sin etiqueta. */
+  const ESTADO_HECHO = { cumple: [EST.cumple.clase, EST.cumple.largo], no_cumple: [EST.no_cumple.clase, EST.no_cumple.largo], riesgo: [EST.revisar.clase, "Riesgo"], revisar: [EST.revisar.clase, "Confírmelo"], dato: [EST.sin_dato.clase, ""] };
   /* ── Los documentos del proceso: en qué va la lectura, en una línea ──
      Lo que se lee sale de `g.documentos` (servidor); el progreso de la lectura
      en curso vive en `docsProgreso` (navegador) y sobrevive a los repintados. */
@@ -2858,7 +2886,7 @@
     const docs = g.documentos || {};
     const enlace = docs.enlace_secop && urlSegura(docs.enlace_secop) ? `<a href="${esc(urlSegura(docs.enlace_secop))}" target="_blank" rel="noopener noreferrer" class="underline">Abrir en SECOP II</a>` : "";
     const bloque = (c) => {
-      const cifras = (c.cifras || []).map((x) => { const clr = EXIG_CLR[x.estado] || "text-gray-400"; return `<li class="flex flex-wrap items-baseline gap-x-2"><span class="${clr}" aria-hidden="true">●</span><span class="text-gray-600">${esc(x.titulo)}:</span><span class="num font-medium">${esc(x.exige)}</span>${x.suyo ? `<span class="text-gray-500">· usted ${esc(x.suyo)}</span>` : ""}${x.estado_legible ? `<span class="text-[11px] ${clr}">${esc(x.estado_legible)}</span>` : ""}</li>`; }).join("");
+      const cifras = (c.cifras || []).map((x) => { const clr = EXIG_CLR[x.estado] || EST.sin_dato.clase; return `<li class="flex flex-wrap items-baseline gap-x-2"><span class="${clr}" aria-hidden="true">●</span><span class="text-gray-600">${esc(x.titulo)}:</span><span class="num font-medium">${esc(x.exige)}</span>${x.suyo ? `<span class="text-gray-500">· usted ${esc(x.suyo)}</span>` : ""}${x.estado_legible ? `<span class="text-[11px] ${clr}">${esc(x.estado_legible)}</span>` : ""}</li>`; }).join("");
       return `<div class="guia-caja p-3">
         <p class="text-xs font-medium uppercase tracking-wide text-gray-500">${esc(c.titulo)}</p>
         ${c.texto ? `<blockquote class="mt-1.5 text-sm leading-relaxed text-gray-800" style="border-left: 3px solid var(--accent); padding-left: 10px;">«${esc(c.texto)}»</blockquote><p class="mt-1.5 text-[11px] text-gray-400">${esc(c.documento || "")}${c.pagina != null ? `, pág. ${c.pagina}` : ""}</p>`
@@ -2869,8 +2897,10 @@
     return `<div class="space-y-2">${lista.map(bloque).join("")}</div>`;
   }
   const CHIP_REQ = { registro: "Registro", experiencia: "Experiencia", capacidad: "Capacidad", caja: "Caja", financieros: "Indicadores", manifestacion: "Aviso de interés" };
-  const CHIP_ESTADO = { cumple: "cumple", revisar: "confírmelo", no_cumple: "no cumple", pendiente: "por hacer", sin_dato: "sin dato" };
-  const EXIG_CLR = { cumple: "text-emerald-600", no_cumple: "text-red-600", revisar: "text-amber-500", dato: "text-blue-500", por_leer: "text-gray-400", sin_dato: "text-gray-400" };
+  const CHIP_ESTADO = { cumple: EST.cumple.corto, revisar: EST.revisar.corto, no_cumple: EST.no_cumple.corto, pendiente: EST.pendiente.corto, sin_dato: EST.sin_dato.corto };
+  /* `dato` es una cifra leída que no juzga (azul, como «por conseguir»: hay que
+     hacer algo con ella) y `por_leer` es «todavía no lo sé», o sea sin dato. */
+  const EXIG_CLR = { cumple: EST.cumple.clase, no_cumple: EST.no_cumple.clase, revisar: EST.revisar.clase, dato: EST.pendiente.clase, por_leer: EST.sin_dato.clase, sin_dato: EST.sin_dato.clase };
   function htmlVeredicto(g) {
     const chips = (g.requisitos || []).filter((q) => CHIP_REQ[q.clave]).map((q) => {
       const [clr] = ESTADO_REQ[q.estado] || ESTADO_REQ.sin_dato;
@@ -2886,7 +2916,7 @@
     const docs = g.documentos || {};
     const enlace = docs.enlace_secop && urlSegura(docs.enlace_secop) ? ` <a href="${esc(urlSegura(docs.enlace_secop))}" target="_blank" rel="noopener noreferrer" class="underline">Abrir en SECOP II</a>` : "";
     const fila = (x) => {
-      const clr = EXIG_CLR[x.estado] || "text-gray-400";
+      const clr = EXIG_CLR[x.estado] || EST.sin_dato.clase;
       /* forma corta del dinero en la celda; la cifra exacta y la cita, en el título */
       const cifra = x.tipo_valor === "dinero" && Number.isFinite(Number(x.exige_valor)) ? fmtCorto(Number(x.exige_valor)) : x.exige;
       const titulo = [x.tipo_valor === "dinero" ? `Pide ${x.exige}.` : "", x.nota, x.cita ? `«${x.cita}»` : ""].filter(Boolean).join(" ");
@@ -2986,7 +3016,7 @@
     if (!as.length) return;
     n.textContent = `${as.length} en los próximos 7 días`;
     const clr = { alta: "bg-red-100 text-red-700", media: "bg-amber-100 text-amber-900", baja: "bg-gray-100 text-gray-700" };
-    const tipo = { cambio: "Cambió", manifestacion: "Manifestar interés", cierre: "Cierre", aviso: "Aviso" };
+    const tipo = { cambio: "Cambió", manifestacion: window.Glosario.corto("manifestacion_interes"), cierre: "Cierre", aviso: "Aviso" };
     ul.innerHTML = as.map((a) => `<li class="flex flex-wrap items-start gap-2 rounded-xl px-3 py-2 ring-1 ring-inset ring-gray-900/5" style="background: var(--bg-inset);">
         <span class="mt-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${clr[a.urgencia] || clr.baja}">${esc(tipo[a.tipo] || a.tipo)}</span>
         <span class="min-w-0 flex-1"><button type="button" data-seg-ir="${esc(a.id)}" class="titulo-tarjeta font-medium hover:underline text-left" title="${esc(a.proceso)}">${esc(a.proceso)}</button><br><span class="text-xs text-gray-600">${esc(a.mensaje)}</span></span>
@@ -3488,7 +3518,7 @@
         </table>
       </div>
       ${ejemploHtml}
-      <p class="mt-3 text-[13px] text-gray-400">Fórmulas completas y estado de verificación en docs/metodologia.md. Los valores de tiempo pagado no trabajado y su mayor valor prestacional vienen de metodologías públicas del sector (IDU e INVIAS) por fuentes secundarias: son referencia mientras no se contrasten con el manual original.</p>`;
+      <p class="mt-3 text-[13px] text-gray-400">Los valores de tiempo pagado no trabajado y su mayor valor prestacional vienen de metodologías públicas del sector (IDU e INVIAS) por fuentes secundarias: son referencia mientras no se contrasten con el manual original.</p>`;
   }
 
   /* ════════════════ Normativa: qué hay detrás de los factores ════════════════
@@ -5650,10 +5680,10 @@
     $("ps-prob-nota").textContent = comp && comp.diferencia_veg != null
       ? (comp.ya_esta_en_el_optimo
         ? "Su precio actual YA está en el óptimo."
-        : `Frente a su precio actual: ${copRent(comp.diferencia_veg)} de VEG`)
+        : `Frente a su precio actual: ${copRent(comp.diferencia_veg)} de ${window.Glosario.traducir("veg").toLowerCase()}`)
       : "";
 
-    // el color del VEG es información: en rojo cuando ni el mejor precio del
+    // el color de lo que deja por intento es información: en rojo cuando ni el mejor precio del
     // rango cubre el costo de preparar la oferta
     $("ps-veg").className = `mt-1 text-2xl font-semibold tabular-nums ${o.sin_punto_rentable ? "text-red-700" : ""}`;
 
@@ -5695,7 +5725,7 @@
       ? `El óptimo es agudo: moverse un solo paso cuesta más del ${num(meseta.tolerancia_pct)} % del valor esperado, `
         + "así que las tres opciones coinciden."
       : `Meseta del valor esperado: entre ${pctRent(meseta.desde_pct)} y ${pctRent(meseta.hasta_pct)} de baja `
-        + `(${num(meseta.ancho_pp)} pp) el VEG no cae más del ${num(meseta.tolerancia_pct)} %. Dentro de esa banda `
+        + `(${num(meseta.ancho_pp)} puntos) lo que deja por intento no cae más del ${num(meseta.tolerancia_pct)} %. Dentro de esa banda `
         + "la elección es de apetito de riesgo, no de aritmética.";
 
     /* ---- el botón principal ---- */
@@ -5711,7 +5741,7 @@
       .map((x) => `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">${esc(x)}</p>`).join("");
   }
 
-  /* Curva VEG vs descuento en SVG en línea. Sin librería: el proyecto no tiene
+  /* Curva de lo que deja por intento frente al descuento, en SVG en línea. Sin librería: el proyecto no tiene
      dependencias y una polilínea no justifica la primera. Marca el óptimo y
      —cuando cae dentro del rango— el precio vigente, que es lo que convierte la
      gráfica en «dónde estoy y a dónde debería moverme». */
@@ -6475,7 +6505,14 @@
     $("d-obra-pct").textContent = `${pct(per.obra_civil || 0, total)} % del total`;
     $("d-consultoria").textContent = fmt.format(per.consultoria || 0);
     $("d-consultoria-pct").textContent = `${pct(per.consultoria || 0, total)} % del total`;
+    /* ESTA CIFRA NO ES LA DEL PULSO, Y SE DICE (5-sep-2026): el pulso de arriba
+       cuenta lo que cierra esta semana entre las licitaciones a las que usted
+       PUEDE presentarse; `por_urgencia` cuenta sobre TODAS las visibles. Dos
+       bases, dos números; el rótulo del tile ya no repite la frase del pulso y
+       la nota declara de qué conjunto habla. Sin total conocido no se inventa
+       una N: se dice el conjunto en palabras. */
     $("d-semana").textContent = fmt.format((t.por_urgencia || {}).cierra_esta_semana || 0);
+    $("d-semana-base").textContent = total ? `de las ${fmt.format(total)} visibles` : "de todas las visibles";
 
     /* barras: divs con width en %, sin librerías */
     /* PARTE-TODO EN UNA SOLA BARRA, no cuatro filas: la pregunta es «de qué se
@@ -6502,7 +6539,7 @@
     $("d-urgencia").innerHTML = (window.Pulso
       ? window.Pulso.columnas(cubetasUrg, { filtroDe: (x) => (x.id ? `cierre=${x.id}` : null) })
       : "")
-      + (sinVentana > 0 ? `<p class="mt-1 text-[11px]" style="color: var(--text-secondary);">${fmt.format(sinVentana)} sin fecha de cierre publicada o ya cerradas.</p>` : "");
+      + `<p class="mt-1 text-[11px]" style="color: var(--text-secondary);">Sobre ${total ? `las ${fmt.format(total)} licitaciones visibles` : "todas las licitaciones visibles"}, no solo las que cumplen sus requisitos.${sinVentana > 0 ? ` ${fmt.format(sinVentana)} sin fecha de cierre publicada o ya cerradas.` : ""}</p>`;
 
     /* CONTRA CUÁNTA GENTE COMPITE · la tesis del producto, que tampoco se
        pintaba. `sin_dato` se CONSERVA como su propio segmento: no saber cuánta
@@ -7670,7 +7707,7 @@
       nivel: "rojo",
       frase: "Atención: el plazo para renovar el RUP (quinto día hábil de abril) ya venció o está encima. "
         + "Si todavía no lo renovó, hágalo HOY y verifique su estado en el RUES: los festivos pueden "
-        + "correr el plazo unos días, pero no contés con eso.",
+        + "correr el plazo unos días, pero no cuente con eso.",
     };
   }
   function pintarAlertaVigencia() {

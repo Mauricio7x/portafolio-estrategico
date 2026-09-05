@@ -1425,9 +1425,14 @@
               <p id="d-consultoria-pct" class="text-xs text-amber-900/60">— del total</p>
             </div>
             <div class="rounded-2xl bg-red-50 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-red-900/60">Cierran esta semana</p>
+              <!-- «Cierran esta semana» se decía DOS VECES en esta pestaña con dos
+                   bases distintas: arriba, sobre las licitaciones a las que usted puede
+                   presentarse (el pulso); aquí, sobre TODAS las visibles. Misma frase,
+                   dos números. Esta cifra se llama distinto y dice de qué conjunto
+                   habla (#d-semana-base, que app.js rellena con el total real). -->
+              <p class="text-xs font-medium uppercase tracking-wide text-red-900/60">Cierres en 7 días</p>
               <p id="d-semana" class="mt-1 text-3xl font-semibold tabular-nums text-red-950">—</p>
-              <p class="text-xs text-red-900/60">próximos 7 días</p>
+              <p id="d-semana-base" class="text-xs text-red-900/60">de todas las visibles</p>
             </div>
           </div>
 
@@ -2064,9 +2069,9 @@
         <div id="exp-produccion" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
           <h3 class="font-semibold tracking-tight">Puesta en producción, sin terminal</h3>
           <p class="mt-1 max-w-2xl text-sm text-gray-500">
-            Los 106 contratos de Génesis ya están en el repositorio: no hace falta pegarlos. Estos
-            tres pasos son los mismos de <code class="rounded bg-gray-50 px-1 py-0.5 text-xs">cargar_experiencia.sh</code>,
-            con clics. El avance se escribe en la <a href="#bitacora" class="font-medium underline">bitácora</a>.
+            Los 106 contratos de Génesis ya vienen con la aplicación: no hace falta pegarlos. Estos
+            tres pasos se hacen con los botones de abajo. El avance se escribe en la
+            <a href="#bitacora" class="font-medium underline">bitácora</a>.
           </p>
           <div class="mt-3 flex flex-wrap items-center gap-3">
             <button id="btn-exp-cadena" type="button"
@@ -2440,7 +2445,7 @@
               </div>
             </div>
             <div>
-              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Manifestación de interés</span>
+              <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500" data-glosario="manifestacion_interes"></span>
               <label class="flex items-start gap-2 text-sm">
                 <input id="fl-manif" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
                 <span>Solo procesos de menor cuantía en los que <strong>todavía puedo manifestar interés</strong>
@@ -3253,7 +3258,7 @@
 <section id="seccion-rentabilidad" class="mt-6 hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">Rentabilidad estimada</h2>
         <p class="mt-1 max-w-3xl text-sm text-gray-500">
-          El indicador de decisión es el <strong>VEG</strong>, no el margen: es el único que descuenta el
+          <strong data-glosario="veg"></strong> es lo que decide, no el margen: es lo único que descuenta el
           costo de preparar una oferta, que se paga se gane o no.
         </p>
         <div id="rentabilidad" class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
@@ -3289,7 +3294,7 @@
               <p class="text-xs text-gray-500">Sobre el presupuesto oficial</p>
             </div>
             <div class="rounded-2xl bg-gray-100 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">VEG esperado</p>
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500" data-glosario="veg"></p>
               <p id="ps-veg" class="mt-1 text-2xl font-semibold tabular-nums">—</p>
               <p id="ps-veg-nota" class="text-xs text-gray-500"></p>
             </div>
@@ -3318,7 +3323,7 @@
                   <th class="py-2 pr-3 text-right">Precio</th>
                   <th class="py-2 pr-3 text-right">Probabilidad</th>
                   <th class="py-2 pr-3 text-right">Margen</th>
-                  <th class="py-2 pr-3 text-right">VEG</th>
+                  <th class="py-2 pr-3 text-right" data-glosario="veg" data-glosario-corto></th>
                   <th class="py-2"></th>
                 </tr>
               </thead>

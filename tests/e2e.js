@@ -17207,6 +17207,47 @@ async function main() {
           console.log(`  · Calendario de cierres: ${cal.dias.length} días · ${todos.length} procesos situados · ${cal.sinFechaCierre} sin fecha · estados de manifestación vistos: ${[...estados].join(", ") || "ninguno"}`);
         }
       }
+      /* ══════ «CIERRAN ESTA SEMANA» NO PUEDE DECIR DOS CIFRAS (5-sep-2026) ══════
+         En Mi empresa el mismo rótulo salía dos veces con bases distintas: el
+         pulso lo cuenta sobre las licitaciones VIABLES (las que pasan las
+         puertas y el filtro por defecto) y el tile del tablero, sobre TODAS las
+         visibles. El fixture de esta suite daba 0 en las dos y por eso nadie lo
+         veía. Aquí se EJECUTA la función real del pulso (`agregarPulso`) sobre
+         las dos bases del mismo corpus sintético —una de ellas con un proceso
+         visible que NO pasa las puertas y cierra en tres días— y se comprueba
+         que dan números distintos; y, ya que son distintos, que la pantalla
+         los llama distinto y cada uno dice de qué conjunto habla. */
+      {
+        const Ent = require("../lib/handlers/perfil/entrada.js");
+        const ahoraB = Date.parse("2026-08-17T12:00:00-05:00");
+        const fila = (id, cierre) => ({ id_del_proceso: id, entidad: "ALCALDÍA DE PRUEBA", departamento_entidad: "TOLIMA",
+          precio_base: 1000000000, fecha_cierre: cierre, nombre_del_procedimiento: `Obra ${id}` });
+        const viables = [fila("V1", "2026-08-20T15:00:00.000"), fila("V2", "2026-09-30T15:00:00.000")];
+        const noViable = fila("N1", "2026-08-21T15:00:00.000");   // visible, cierra esta semana, NO pasa las puertas
+        const visibles = [...viables, noViable];
+        const pulsoViables = Ent.agregarPulso(viables, ahoraB);
+        const pulsoVisibles = Ent.agregarPulso(visibles, ahoraB);
+        assert.strictEqual(pulsoViables.cierranEstaSemana.n, 1, "el pulso cuenta sobre las viables");
+        assert.strictEqual(pulsoVisibles.cierranEstaSemana.n, 2, "sobre todas las visibles la cifra es otra");
+        assert.ok(pulsoViables.cierranEstaSemana.n < pulsoVisibles.cierranEstaSemana.n,
+          "las dos bases dan números distintos en cuanto hay un proceso visible que no pasa las puertas y cierra esta semana");
+        // …y por eso los dos rótulos de la pantalla no pueden ser el mismo
+        const htmlSem = htmlL.replace(/<!--[\s\S]*?-->/g, "");
+        const iTile = htmlSem.indexOf('id="d-semana"');
+        assert.ok(iTile > 0, "el tile del tablero sigue existiendo");
+        const cajaTile = htmlSem.slice(htmlSem.lastIndexOf("<div", iTile), htmlSem.indexOf("</div>", iTile));
+        assert.ok(!/[Cc]ierran esta semana/.test(cajaTile),
+          `el tile del tablero no puede repetir el rótulo del pulso con otra base: ${cajaTile.replace(/\s+/g, " ")}`);
+        assert.ok(/id="d-semana-base"/.test(cajaTile), "…y tiene que declarar de qué conjunto habla");
+        const pulsoJs = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "pulso.js"), "utf8"));
+        assert.ok(/"cierran esta semana"/.test(pulsoJs), "el rótulo del pulso se conserva: es el que habla de SU empresa");
+        assert.ok(/d-semana-base"\)\.textContent = total \? `de las \$\{fmt\.format\(total\)\} visibles`/.test(appL),
+          "app.js escribe la base real del tile (y sin total conocido no inventa una N)");
+        assert.ok(/no solo las que cumplen sus requisitos/.test(appL),
+          "el gráfico de «Cuándo hay que entregar la oferta» declara la misma base que el tile");
+        assert.ok(/por_urgencia \|\| \{\}\)\.cierra_esta_semana/.test(appL) && /cierranEstaSemana/.test(pulsoJs),
+          "las dos cifras siguen saliendo de dos campos distintos del servidor: no se pueden confundir por accidente");
+      }
       console.log(`  · Puerta primero, cifras después: pulso helder = ${pu.cuerpo.total} (= listado) · cierran esta semana ${pu.cuerpo.cierranEstaSemana.n} · ${pu.cuerpo.porDepartamento.length} dptos · ${pu.cuerpo.topEntidades.length} entidades · landing ${palabras} palabras · mercado plegado`);
     }
 
@@ -18618,12 +18659,49 @@ async function main() {
         return out.join("\n");
       })();
       assert.ok(html6.includes('data-glosario="baja_mercado"'), "el rótulo del tablero sale del glosario, no escrito a mano");
+
+      /* ══════ «VEG» Y «pp» SALEN DE LA PANTALLA DEL PRECIO (5-sep-2026) ══════
+         Los tres «VEG» de «3 · Su precio» (la frase que dice qué decide, el
+         rótulo de la cifra y la columna de las tres opciones) y los dos de
+         app.js eran siglas del MODELO en la pantalla donde se fija el precio de
+         una oferta. Ahora sale el HECHO —«Lo que deja por intento»— y sale del
+         glosario, que es quien lo define una sola vez. Los rótulos del marcado
+         nacen VACÍOS: quien mide el HTML estático no puede leerlos, así que lo
+         que se comprueba es el cableado (`data-glosario`) y que `estampar` —la
+         función real— los rellena. */
+      assert.strictEqual(Glo.traducir("veg"), "Lo que deja por intento");
+      assert.strictEqual(Glo.corto("veg"), "Deja por intento");
+      assert.ok(/preparar la oferta/.test(Glo.TERMINOS.veg.explicacion), "el término lleva su explicación en llano");
+      assert.strictEqual((html6.match(/data-glosario="veg"/g) || []).length, 3,
+        "los tres sitios que decían «VEG» en Precios (frase, rótulo de la cifra y columna) leen del glosario");
+      assert.ok(html6.includes('data-glosario="manifestacion_interes"'),
+        "el rótulo de la hoja de filtros deja de decir «Manifestación de interés» y lo pide al glosario");
+      {
+        const nodosV = [nodoG("veg", false), nodoG("veg", true), nodoG("manifestacion_interes", false)];
+        const docV = { title: "", querySelectorAll: (sel) => (sel === "[data-glosario]" ? nodosV : []) };
+        assert.strictEqual(Glo.estampar(docV), 3);
+        assert.strictEqual(nodosV[0].textContent, "Lo que deja por intento");
+        assert.strictEqual(nodosV[1].textContent, "Deja por intento", "la columna de la tabla usa la forma corta");
+        assert.strictEqual(nodosV[2].textContent, "Avisar que le interesa");
+      }
+
       const JERGA_HTML = [
         [/\bUNSPSC\b/, "UNSPSC"], [/\bCRPC?\b/, "CRP/CRPC"], [/capacidad residual|K residual/i, "capacidad residual"], [/\btertil/i, "tertil"],
         [/baja de mercado/i, "baja de mercado"], [/[ií]ndice de (?:baja|competencia)/i, "índice de baja/competencia"], [/habilitante/i, "habilitante"],
         [/subsanable/i, "subsanable"], [/causal\s+O\b/i, "causal O"], [/\bSMMLV\b/, "SMMLV"], [/estado del procedimiento/i, "estado del procedimiento"],
         [/\bpertinencia\b/i, "pertinencia"], [/\btier\b/i, "tier"], [/\bN\/A\b/, "N/A"], [/perfiles RUP/, "perfiles RUP"], [/Reconstruir índice/, "Reconstruir índice"],
         [/Modo AIU/i, "Modo AIU"], [/Calcular APU|Exportar Excel/, "Calcular APU / Exportar Excel"], [/Códigos UNSPSC/i, "Códigos UNSPSC"], [/\bK\s*✓/, "K ✓"],
+        /* La pantalla donde se FIJA EL PRECIO hablaba en siglas del modelo
+           (5-sep-2026): «VEG» tres veces —el rótulo de la cifra, la columna de
+           las tres opciones y la frase que dice cuál decide— y «pp» en la
+           meseta. Ninguna de las dos se explica en ninguna pantalla, y la
+           primera es EXACTAMENTE la cifra con la que se fija un precio. */
+        [/\bVEG\b/, "VEG"], [/\bpp\b/, "pp (puntos porcentuales)"],
+        /* Y la manifestación de interés tenía TRES nombres a la vez: el rótulo
+           de la hoja de filtros («Manifestación de interés»), el tipo de aviso
+           de Mis procesos («Manifestar interés») y el del glosario, que es el
+           que manda («Avisar que le interesa»). */
+        [/Manifestaci[óo]n de inter[ée]s/, "Manifestación de interés (el rótulo sale del glosario)"],
       ];
       for (const [re, nombre] of JERGA_HTML) {
         const m = visibleHtml.match(re);
@@ -18635,6 +18713,16 @@ async function main() {
         [/\btertil/i, "tertil"], [/capacidad residual/i, "capacidad residual"], [/(?<![.\w])habilitante/i, "habilitante"], [/subsanable/i, "subsanable"], [/causal\s+O\b/i, "causal O"],
         [/RUP ✓|RUP ✗|RUP ~|RUP ≈/, "RUP ✓/✗/~/≈"], [/\bK ✓/, "K ✓"], [/badgePuerta\("(?:RUP|K)"/, "badgePuerta con sigla"], [/\bN\/A\b/, "N/A"], [/evaluar esta puerta/, "puerta"],
         [/con RUP ✓/, "con RUP ✓"], [/códigos UNSPSC|Familias UNSPSC/, "códigos/Familias UNSPSC"], [/\bCRPC?\b(?!_)/, "CRP/CRPC"], [/"Calcular APU"|«Calcular APU»/, "Calcular APU"],
+        /* `\bpp\b` NO caza `ancho_pp` ni `aporte_pp` (el guion bajo es carácter
+           de palabra, así que no hay frontera antes de «pp»): lo que caza es la
+           sigla suelta en el texto, que es la que se leía en pantalla. */
+        [/\bVEG\b/, "VEG"], [/\bpp\b/, "pp (puntos porcentuales)"], [/"Manifestar interés"|«Manifestar interés»/, "Manifestar interés"],
+        /* «Manifestación de interés» PEGADO A LA MODALIDAD es el nombre propio
+           de la modalidad («Selección abreviada de menor cuantía · Manifestación
+           de interés», `filtros.js`, que es el mismo literal que el glosario
+           publica en `seleccion_abreviada_menor_cuantia.visible`): eso se
+           conserva. Lo que se prohíbe es la etiqueta SUELTA. */
+        [/(?<!·\s)Manifestación de interés/, "Manifestación de interés como etiqueta suelta"],
       ];
       /* ⚠️ LA CERCA CENSA, NO ENUMERA (auditoría 27-ago-2026): la jerga volvió
          por el hueco exacto de la lista — `pulso.js`, el módulo más nuevo y la
@@ -18660,6 +18748,114 @@ async function main() {
         }
       }
       const app6 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      /* ══════ UN SOLO SEMÁFORO PARA TODA LA APLICACIÓN (5-sep-2026) ══════
+         El MISMO concepto —cumple / confírmelo / no cumple / por conseguir /
+         sin dato— tenía CUATRO tablas locales en app.js, y ya habían divergido:
+         «revisar» era ámbar en `ESTADO_REQ` y en `EXIG_CLR` y AZUL en
+         `ESTADO_HECHO`, en la misma pestaña. Ahora la tabla vive en el glosario
+         y aquí se CENSA que ninguna otra vuelva a nacer: cualquier objeto de
+         los módulos del navegador con las tres claves del concepto tiene que
+         leerlas de `Glosario.ESTADO`.
+
+         NO entran al censo, y se comprueba que siguen VIVAS por separado,
+         porque significan otra cosa: el semáforo de las validaciones de la
+         oferta (rechazo/alerta: `listo|revisar|precaucion`), el TONO del
+         calendario (plazo: `cal-*`) y el veredicto del dictamen (recomendación:
+         `presentarse|…`). Unificarlas borraría tres distinciones reales. */
+      {
+        const E = Glo.ESTADO;
+        assert.deepStrictEqual(Object.keys(E).sort(), ["cumple", "no_cumple", "pendiente", "revisar", "sin_dato"]);
+        for (const k of Object.keys(E)) {
+          assert.ok(/^text-[a-z]+-\d{3}$/.test(E[k].clase), `${k}: clase de punto rara «${E[k].clase}»`);
+          assert.ok(/^bg-[a-z]+-\d{2,3} text-[a-z]+-\d{3}$/.test(E[k].chip), `${k}: pareja de badge rara «${E[k].chip}»`);
+          assert.ok(typeof E[k].corto === "string" && E[k].corto && typeof E[k].largo === "string", `${k}: sin palabras`);
+        }
+        assert.strictEqual(E.revisar.clase, "text-amber-500", "«confírmelo» es ÁMBAR en toda la aplicación (era azul en los hechos del pliego)");
+        assert.notStrictEqual(E.pendiente.clase, E.revisar.clase, "«por conseguir» no es «confírmelo»: se puede conseguir, no hay nada que confirmar");
+        // el censo: ninguna tabla local del concepto fuera del glosario
+        const tablasDeEstado = (fuente) => {
+          const res = [];
+          const re = /const\s+([A-Za-z_$][\w$]*)\s*=\s*\{/g;
+          let m;
+          while ((m = re.exec(fuente))) {
+            const abre = re.lastIndex - 1;
+            let prof = 0, fin = -1;
+            for (let j = abre; j < fuente.length; j++) {
+              if (fuente[j] === "{") prof++;
+              else if (fuente[j] === "}") { prof--; if (!prof) { fin = j; break; } }
+            }
+            if (fin < 0) continue;
+            const cuerpo = fuente.slice(abre, fin + 1);   // con las llaves: la PRIMERA clave también tiene que verse
+            const claves = new Set([...cuerpo.matchAll(/(?:^|[,{]\s*)([a-z_][a-z_0-9]*)\s*:/g)].map((x) => x[1]));
+            if (claves.has("cumple") && claves.has("revisar") && claves.has("no_cumple")) res.push({ nombre: m[1], cuerpo });
+          }
+          return res;
+        };
+        let censadas = 0;
+        for (const archivo of fs.readdirSync(path.join(__dirname, "..", "public")).filter((f) => f.endsWith(".js") && f !== "glosario.js")) {
+          const fuente = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", archivo), "utf8"));
+          for (const t of tablasDeEstado(fuente)) {
+            censadas++;
+            assert.ok(/\bEST\.|Glosario\.ESTADO/.test(t.cuerpo),
+              `${archivo}: la tabla «${t.nombre}» vuelve a decidir por su cuenta el color o la palabra de cumple/confírmelo/no cumple. Tiene que leer de Glosario.ESTADO: ${t.cuerpo.slice(0, 160)}`);
+          }
+        }
+        assert.strictEqual(censadas, 4, `el censo tiene que encontrar las cuatro tablas del concepto en app.js (encontró ${censadas}); si desaparece alguna, el censo se queda sin sujeto`);
+        // los badges de la tarjeta, EJECUTADOS con el glosario real
+        const iV = app6.indexOf("const VERDE = window.Glosario");
+        assert.ok(iV > 0, "los cuatro colores de badge tienen que salir de Glosario.ESTADO");
+        const finBP = app6.indexOf("\n  }", app6.indexOf("function badgePuerta(", iV)) + 4;
+        const iEsc = app6.indexOf("const esc = (s) =>");
+        assert.ok(iEsc > 0, "no se encontró `esc` en app.js");
+        const lineaEsc = app6.slice(iEsc, app6.indexOf("\n", iEsc));
+        const chipFn = new Function(`${lineaEsc}\n${app6.slice(app6.indexOf("function chip("), app6.indexOf("\n  }", app6.indexOf("function chip(")) + 4)}; return chip;`)();
+        const badgePuerta = new Function("chip", "window", `${app6.slice(iV, finBP)}; return badgePuerta;`)(chipFn, { Glosario: Glo });
+        assert.ok(badgePuerta("Caja", { pasa: true }).includes(E.cumple.chip), "la puerta que pasa lleva el verde del semáforo único");
+        assert.ok(badgePuerta("Caja", { pasa: true, advertencia: true }).includes(E.revisar.chip), "la advertencia lleva el ámbar de «confírmelo»");
+        assert.ok(badgePuerta("Caja", { pasa: false }).includes(E.no_cumple.chip));
+        assert.ok(badgePuerta("Caja", { sin_dato: true }).includes(E.sin_dato.chip), "«sin dato» no es «no cumple»: gris, no rojo");
+        // y los tres conceptos que NO se unifican siguen vivos, con sus palabras
+        const cal6 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "calendario.js"), "utf8"));
+        const plg6 = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "pliego.js"), "utf8"));
+        assert.ok(/const TONO = \{ rojo: "cal-rojo"/.test(cal6), "el TONO del calendario mide PLAZO, no cumplimiento: no se unifica");
+        assert.ok(/presentarse_con_reservas: "text-amber-700"/.test(plg6), "el veredicto del dictamen es una recomendación, no un estado: no se unifica");
+        assert.ok(/\{ listo: "text-emerald-700", revisar: "text-red-700", precaucion: "text-amber-700" \}/.test(app6),
+          "el semáforo de las validaciones dice si la OFERTA se rechaza (su «revisar» es rojo a propósito): no se unifica");
+      }
+
+      /* ══════ «SUELEN BAJAR 8 %» SE DICE TAMBIÉN EN PESOS (5-sep-2026) ══════
+         El chip escribía la mediana del índice de baja en porcentaje y la
+         cuantía del proceso estaba en la MISMA tarjeta, dos filas más arriba,
+         sin usarse. Ahora dice «Suelen bajar 8 % (unos $96M)» sobre ESTE
+         contrato. Se EJECUTA la función real (con el `fmtCorto` y el
+         `BAJA_MERCADO` reales de app.js y el glosario real), no se mira el
+         fuente: lo que hay que probar es que la cifra sale, que va marcada como
+         aproximada y —sobre todo— que la AUSENCIA no se convierte en $0. */
+      {
+        const trozo = (marca) => { const i = app6.indexOf(marca); assert.ok(i > 0, `no se encontró «${marca}» en app.js`); return app6.slice(i, app6.indexOf("\n  }", i) + 4); };
+        const iBM = app6.indexOf("const BAJA_MERCADO = {");
+        const escLinea = app6.slice(app6.indexOf("const esc = (s) =>"), app6.indexOf("\n", app6.indexOf("const esc = (s) =>")));
+        const chip6 = new Function(`${escLinea}\n${trozo("function chip(")}; return chip;`)();
+        const chipBaja = new Function("chip", "window", "fmtNum",
+          `${app6.slice(iBM, app6.indexOf("};", iBM) + 2)}\n${trozo("function fmtCorto(")}\n${trozo("function chipBaja(")}\nreturn chipBaja;`)(
+          chip6, { Glosario: Glo }, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }));
+        const conBase = { nivel: "alto", baja_mediana: 8, procesos_contados: 12, mensaje: "Mediana de 12 procesos" };
+        assert.ok(chipBaja(conBase, 1200000000).includes("Suelen bajar 8 % (unos $96M)"),
+          `la baja típica se traduce a pesos sobre la cuantía del proceso: ${chipBaja(conBase, 1200000000)}`);
+        assert.ok(/\(unos /.test(chipBaja(conBase, 1200000000)), "va marcada como aproximada: «unos»");
+        assert.ok(chipBaja(conBase, 1200000000).includes('title="Mediana de 12 procesos"'),
+          "la mediana EXACTA sigue viajando en el title: la cifra redondeada solo se muestra, no decide");
+        for (const cuantia of [null, undefined, 0, "", NaN]) {
+          const t = chipBaja(conBase, cuantia);
+          assert.ok(t.includes("Suelen bajar 8 %") && !/unos/.test(t) && !/\$0/.test(t),
+            `sin cuantía publicada no salen pesos, y JAMÁS «$0M» (cuantía ${JSON.stringify(cuantia)}): ${t}`);
+        }
+        assert.ok(chipBaja({ nivel: "alto", baja_mediana: 8, procesos_contados: 0 }, 1200000000).includes("sin datos"),
+          "sin base no hay porcentaje que traducir: el chip sigue diciendo «sin datos»");
+        assert.ok(!/unos/.test(chipBaja({ nivel: "sin_dato" }, 1200000000)), "«sin datos» no lleva pesos");
+        assert.ok(/chipBaja\(l\.baja_mercado, l\.cuantia_cop\)/.test(app6),
+          "el único sitio que pinta el chip tiene que pasarle la cuantía que la tarjeta ya tiene");
+      }
       assert.ok(/window\.Glosario\.corto\("rup"\)/.test(app6) && /window\.Glosario\.corto\("capacidad_contratacion"\)/.test(app6) && /window\.Glosario\.corto\("baja_mercado"\)/.test(app6), "las etiquetas de la tarjeta salen del glosario");
       assert.ok(/window\.Glosario\.VERBOS\.generar_apu/.test(app6), "el botón principal de Precios dice el verbo del glosario");
       assert.ok(/Encaja con su registro ✓/.test(app6) && /No encaja con su registro ✗/.test(app6), "el encaje del registro se dice en llano");
@@ -18669,7 +18865,63 @@ async function main() {
          el 31-ago-2026. La invariante es la MISMA —Mi empresa habla en llano—,
          medida ahora sobre el bloque que ocupa su sitio: el calendario. */
       assert.ok(/Su registro de proponente/.test(visibleHtml) && /Recalcular cuánto suelen bajar el precio/.test(visibleHtml) && /Cuándo se vence cada proceso/.test(visibleHtml), "Mi empresa traducido");
-      console.log("  · Traducción (Fase 6): index.html y los 5 módulos del navegador sin jerga del glosario (UNSPSC, CRP, SMMLV, habilitante, subsanable, causal O, tertil, puertas, «RUP ✓/K ✓», Baja típica) · rótulos por data-glosario y Glosario.corto()/VERBOS");
+      assert.ok(/window\.Glosario\.traducir\("veg"\)\.toLowerCase\(\)/.test(app6),
+        "«… de VEG» en la comparación con el precio actual sale del glosario, en minúscula dentro de la frase");
+      assert.ok(/window\.Glosario\.corto\("manifestacion_interes"\)/.test(app6),
+        "el tipo de aviso de Mis procesos deja de decir «Manifestar interés» y lo pide al glosario");
+      assert.ok(/lo que deja por intento no cae más del/.test(app6) && /puntos\)/.test(app6),
+        "la meseta habla de puntos y del hecho, no de «pp» ni de «el VEG»");
+      assert.strictEqual(Glo.TERMINOS.aiu.visible, "Su administración, imprevistos y ganancia",
+        "AIU se conserva como nombre del documento del pliego, con su traducción al lado (regla de la Fase 6)");
+
+      /* ══════ LA PANTALLA NO NOMBRA ARCHIVOS DEL REPOSITORIO (5-sep-2026) ══════
+         Tres textos mandaban al usuario —que no tiene terminal— a cosas que no
+         puede abrir: «Fórmulas completas … en docs/metodologia.md» (Precios →
+         Cómo calculamos), «Cárguelo desde /admin.html» (una página RETIRADA en
+         ago-2026, que solo sobrevive como redirect en vercel.json) y «los tres
+         pasos son los mismos de cargar_experiencia.sh» (Mi empresa). Se censa,
+         no se enumera: TODO el texto de los módulos del navegador y de lo que
+         el servidor manda a pantalla, sin comentarios (ahí sí puede citarse un
+         documento: no llega a nadie) y sin URLs (una URL externa que lleva
+         «/docs/» en su ruta —la del normograma de la DIAN— es una fuente que el
+         usuario SÍ puede abrir). */
+      {
+        const RUTAS_PROHIBIDAS = [[/docs\//, "una ruta del repositorio"], [/\/(admin|apu|pliego)\.html/, "una página retirada"], [/\b[\w-]+\.sh\b/, "un script de terminal"]];
+        const archivosPantalla = [];
+        const andarP = (d) => { for (const f of fs.readdirSync(d)) { const q = path.join(d, f); if (fs.statSync(q).isDirectory()) andarP(q); else if (f.endsWith(".js")) archivosPantalla.push(q); } };
+        andarP(path.join(__dirname, "..", "lib")); andarP(path.join(__dirname, "..", "api"));
+        for (const f of fs.readdirSync(path.join(__dirname, "..", "public"))) if (f.endsWith(".js")) archivosPantalla.push(path.join(__dirname, "..", "public", f));
+        assert.ok(archivosPantalla.length >= 70, "el censo de rutas del repositorio se quedó corto");
+        const sinUrls = (t) => t.replace(/https?:\/\/\S+/g, "");
+        for (const arch of archivosPantalla) {
+          const txt = sinUrls(sinComentarios(fs.readFileSync(arch, "utf8")));
+          for (const [re, nombre] of RUTAS_PROHIBIDAS) {
+            const m = txt.match(re);
+            assert.ok(!m, `${path.relative(path.join(__dirname, ".."), arch)}: el texto nombra ${nombre} que el usuario no puede abrir: …${txt.slice(Math.max(0, m && m.index - 70), (m && m.index) + 70).replace(/\s+/g, " ")}…`);
+          }
+        }
+        const htmlR = sinUrls(html6.replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, ""));
+        for (const [re, nombre] of RUTAS_PROHIBIDAS) {
+          const m = htmlR.match(re);
+          assert.ok(!m, `index.html nombra ${nombre}: …${htmlR.slice(Math.max(0, m && m.index - 70), (m && m.index) + 70).replace(/\s+/g, " ")}…`);
+        }
+        /* Y lo que ocupa su sitio DICE DÓNDE SE HACE, con el rótulo literal que
+           tiene el botón en pantalla: una instrucción que no se puede seguir es
+           peor que ninguna. */
+        const calcFuente = fs.readFileSync(path.join(__dirname, "..", "lib", "apu", "calculo.js"), "utf8");
+        const mAlerta = calcFuente.match(/"El catálogo de precios NO está cargado[^"]*"/);
+        assert.ok(mAlerta && /Mi empresa → Catálogo de precios de referencia → «Cargar catálogo APU»/.test(mAlerta[0]),
+          `la alerta del catálogo tiene que decir dónde se carga EN LA PANTALLA de hoy: ${mAlerta && mAlerta[0]}`);
+        for (const rotulo of ["Catálogo de precios de referencia", "Cargar catálogo APU"]) {
+          assert.ok(visibleHtml.includes(rotulo), `la alerta cita «${rotulo}» y ese rótulo tiene que existir tal cual en pantalla`);
+        }
+        assert.ok(/Estos\s+tres pasos se hacen con los botones de abajo/.test(html6),
+          "Mi empresa dice que los tres pasos se dan con los botones, no con un script de terminal");
+        assert.ok(JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"))
+          .redirects.some((r) => r.source === "/admin.html"),
+          "excepción declarada: el redirect de /admin.html en vercel.json se CONSERVA — rescata un enlace viejo y no es texto de pantalla");
+      }
+      console.log("  · Traducción (Fase 6): index.html y los 5 módulos del navegador sin jerga del glosario (UNSPSC, CRP, SMMLV, habilitante, subsanable, causal O, tertil, puertas, «RUP ✓/K ✓», Baja típica, VEG, pp) · un solo semáforo desde Glosario.ESTADO · ninguna ruta del repositorio en pantalla");
     }
 
     /* ═══════════ h-ter. Rediseño Apple Glass · pestañas · eliminación de RUP ·
@@ -19118,20 +19370,51 @@ async function main() {
            public/. Se censan TODOS los .js de lib/ y api/ (sin comentarios), con
            el pretérito del tuteo añadido; excepción declarada: lib/lenguaje_pantalla.js,
            que es la propia cerca. */
+        /* ⚠️ Y LA CERCA DEL SERVIDOR SEGUÍA SIENDO UNA LISTA (5-sep-2026). Aquí
+           vivía `TUTEO_PRETERITO_RE`, una lista de RAÍCES con «-aste»
+           (calcul|guard|carg|…). Con la suite en 4/4 el servidor servía
+           «Escribilo como porcentaje» e «…los contratos que inscribiste»
+           (lib/rup_pdf, en `faltan[].donde`), «el archivo que importaste» y
+           «Escribiste este precio a mano» (lib/apu/precios, en `motivo`) y la
+           pantalla, «no contés con eso» (public/app, la alerta de vigencia del
+           registro): ninguna raíz de la lista casaba. Ahora se censa la
+           TERMINACIÓN —lo que de verdad distingue el tuteo y el voseo del
+           registro de usted— y lo enumerado son las EXCEPCIONES, declaradas con
+           su motivo en lib/lenguaje_pantalla.js. La cerca es la MISMA función
+           (`tuteoEn`) en la suite y en cualquier censo futuro, no una copia. */
         {
-          const TUTEO_PRETERITO_RE = /\b(?:calcul|guard|carg|sub|pus|hic|dij|elig|revis|pag|firm|gan|perd|present|ejecut)aste\b/;
+          const Lp19 = require("../lib/lenguaje_pantalla.js");
+          assert.strictEqual(Lp19.tuteoEn("es el valor total de los contratos que inscribiste"), "inscribiste",
+            "la cerca por terminación caza el pretérito de tuteo aunque su raíz no esté en ninguna lista");
+          assert.strictEqual(Lp19.tuteoEn("Escribiste este precio a mano"), "Escribiste");
+          assert.strictEqual(Lp19.tuteoEn("no contés con eso"), "contés");
+          assert.strictEqual(Lp19.tuteoEn("Escribilo como porcentaje"), "Escribilo",
+            "el imperativo del voseo con pronombre pegado no tiene terminación de persona: va por su propia forma");
+          assert.strictEqual(Lp19.tuteoEn("corregilo cargando el RUP"), "corregilo");
+          assert.strictEqual(Lp19.tuteoEn("puede estar tranquilo, cerrarFila y limite_filas no son prosa"), null,
+            "los identificadores del código acaban igual y NO son texto: la cerca solo mira palabras de prosa");
+          assert.strictEqual(Lp19.tuteoEn("Además, después del contraste con el país: interés, jamás más de tres, y Vaupés"), null,
+            "las excepciones declaradas no pueden dar falso positivo");
+          assert.ok(Lp19.EXCEPCIONES_TUTEO.length >= 10 && Lp19.EXCEPCIONES_TUTEO.every((w) => w === w.toLowerCase()),
+            "las excepciones van declaradas y en minúscula (la comparación es insensible)");
           const raizRepo = path.join(__dirname, "..");
           const archivosLib = [];
           const andar = (d) => { for (const f of fs.readdirSync(d)) { const q = path.join(d, f); if (fs.statSync(q).isDirectory()) andar(q); else if (f.endsWith(".js")) archivosLib.push(q); } };
           andar(path.join(raizRepo, "lib")); andar(path.join(raizRepo, "api"));
-          assert.ok(archivosLib.length >= 60, "el censo de lib/ y api/ se quedó corto");
+          for (const f of fs.readdirSync(path.join(raizRepo, "public"))) if (f.endsWith(".js")) archivosLib.push(path.join(raizRepo, "public", f));
+          assert.ok(archivosLib.length >= 75, "el censo de lib/, api/ y public/ se quedó corto");
           /* Excepción declarada (2-sep-2026): lib/lenguaje_pantalla.js ES la cerca —su
              fuente contiene las palabras que caza— y no sirve texto a nadie. */
           for (const arch of archivosLib.filter((q) => path.basename(q) !== "lenguaje_pantalla.js")) {
             const txt = sinComentarios(fs.readFileSync(arch, "utf8"));
-            const m = txt.match(VOSEO_RE) || txt.match(TUTEO_PRETERITO_RE);
-            assert.ok(!m, `${path.relative(raizRepo, arch)}: registro formal (usted) — tuteo en texto servido: «${m && m[0]}»`);
+            const m = txt.match(VOSEO_RE);
+            assert.ok(!m, `${path.relative(raizRepo, arch)}: registro formal (usted) — voseo en texto servido: «${m && m[0]}»`);
+            const w = Lp19.tuteoEn(txt);
+            assert.ok(!w, `${path.relative(raizRepo, arch)}: registro formal (usted) — tuteo/voseo por terminación: «${w}» (si es una palabra correcta, declárela en EXCEPCIONES_TUTEO con su motivo)`);
           }
+          const htmlT = fs.readFileSync(path.join(raizRepo, "public", "index.html"), "utf8")
+            .replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "");
+          assert.strictEqual(Lp19.tuteoEn(htmlT), null, "index.html tampoco tutea por terminación");
         }
 
         assert.deepStrictEqual([...vistos].sort(), ["abierta", "por_confirmar", "sin_fecha", "vencida"],
