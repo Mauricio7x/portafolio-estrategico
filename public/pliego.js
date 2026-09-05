@@ -469,20 +469,24 @@
         ? `<span class="ml-1 text-amber-600" title="El catálogo la mide en ${esc(f.unidad_catalogo)}; no se convierte">⚠</span>` : "";
       const sinCantidad = f.cantidad == null
         ? '<span class="text-xs text-amber-700">sin dato</span>' : "";
+      /* CADA CELDA EDITABLE SE ANUNCIA POR SU NOMBRE (5-sep-2026): sin
+         `aria-label` el lector de pantalla leía «cuadro de edición» seis veces
+         por fila. El nombre lleva de qué fila es, que es lo que las distingue. */
+      const deLaFila = esc(f.descripcion_original || f.numeral || `fila ${i + 1}`);
       return `<tr data-i="${i}" class="align-top">
         <td class="py-1.5 pr-2 text-xs text-gray-400">${esc(f.numeral || "")}${f.pagina != null ? `<br><span class="text-xs" title="Página del PDF de la que salió esta fila">pág. ${f.pagina}</span>` : ""}</td>
-        <td class="py-1.5 pr-2"><input data-campo="descripcion_original" value="${esc(f.descripcion_original)}"
+        <td class="py-1.5 pr-2"><input data-campo="descripcion_original" value="${esc(f.descripcion_original)}" aria-label="Descripción de la ${deLaFila}"
              class="celda-edit w-full min-w-[16rem] rounded-lg border border-transparent px-2 py-1 text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none"></td>
-        <td class="py-1.5 pr-2"><input data-campo="item_id" list="catalogo-items" value="${esc(f.item_id)}"
+        <td class="py-1.5 pr-2"><input data-campo="item_id" list="catalogo-items" value="${esc(f.item_id)}" aria-label="Código del catálogo para ${deLaFila}"
              placeholder="(personalizado)"
              class="celda-edit w-40 rounded-lg border border-transparent px-2 py-1 font-mono text-xs hover:border-gray-300 focus:border-gray-900 focus:outline-none"></td>
-        <td class="py-1.5 pr-2"><input data-campo="unidad" value="${esc(f.unidad)}"
+        <td class="py-1.5 pr-2"><input data-campo="unidad" value="${esc(f.unidad)}" aria-label="Unidad de ${deLaFila}"
              class="celda-edit w-16 rounded-lg border border-transparent px-2 py-1 text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none">${disc}</td>
-        <td class="py-1.5 pr-2 text-right"><input data-campo="cantidad" value="${esc(celdaNumero(f.cantidad))}"
+        <td class="py-1.5 pr-2 text-right"><input data-campo="cantidad" value="${esc(celdaNumero(f.cantidad))}" aria-label="Cantidad de ${deLaFila}"
              class="celda-edit w-24 rounded-lg border border-transparent px-2 py-1 text-right text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none">${sinCantidad}</td>
-        <td class="py-1.5 pr-2 text-right"><input data-campo="unitario_oficial" value="${esc(celdaNumero(f.unitario_oficial))}"
+        <td class="py-1.5 pr-2 text-right"><input data-campo="unitario_oficial" value="${esc(celdaNumero(f.unitario_oficial))}" aria-label="Valor unitario del pliego para ${deLaFila}"
              class="celda-edit w-28 rounded-lg border border-transparent px-2 py-1 text-right text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none"></td>
-        <td class="py-1.5 pr-2 text-right"><input data-campo="total_oficial" value="${esc(celdaNumero(f.total_oficial))}"
+        <td class="py-1.5 pr-2 text-right"><input data-campo="total_oficial" value="${esc(celdaNumero(f.total_oficial))}" aria-label="Valor total del pliego para ${deLaFila}"
              class="celda-edit w-32 rounded-lg border border-transparent px-2 py-1 text-right text-sm hover:border-gray-300 focus:border-gray-900 focus:outline-none">${cuadre}</td>
         <td class="py-1.5 pr-2"><span class="rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${clase}">${etiqueta}</span>
             ${f.editada ? '<span class="ml-1 text-[11px] text-gray-400">editada</span>' : ""}</td>

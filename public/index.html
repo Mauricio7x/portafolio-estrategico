@@ -1043,7 +1043,7 @@
       <h1 id="frase-portada" class="max-w-[640px] min-h-[2.4em] text-[28px] leading-[1.15] tracking-[-0.5px] sm:text-[40px]"
           style="color: var(--text-primary); font-weight: 250; transition: opacity .45s ease;">La obra pública es de todos. También de la empresa que la construye.</h1>
       <p class="mt-3 max-w-[480px] text-[15px] font-light leading-[1.5] sm:text-[17px]" style="color: var(--text-secondary);">
-        Descubra en un minuto a cuántas licitaciones puede presentarse hoy. Elija cómo entrar.
+        Descubra a cuántas licitaciones puede presentarse hoy. Elija cómo entrar.
       </p>
 
       <div id="pulso-global" class="hidden mt-8 flex w-full max-w-lg items-stretch justify-center gap-6 sm:gap-10" aria-label="El mercado hoy"></div>
@@ -1052,7 +1052,7 @@
         <div class="grid gap-3 sm:grid-cols-3">
           <button id="btn-subir-rup" type="button" class="btn-vidrio-acento puerta-entrada">
             <span class="block text-[17px] font-medium">Subir mi RUP</span>
-            <span class="mt-1 block text-xs font-normal" style="color: var(--text-secondary);">PDF, foto o escaneo · 60 segundos</span>
+            <span class="mt-1 block text-xs font-normal" style="color: var(--text-secondary);">PDF, foto o escaneo</span>
           </button>
           <button id="btn-manual" type="button" class="puerta-entrada">
             <span class="block text-[17px] font-medium" style="color: var(--text-primary);">Escribir tres datos</span>
@@ -1227,11 +1227,11 @@
              Va en el centro de la barra (marca a la izquierda, perfil a la
              derecha): es la estructura de barra que comparten apple.com, Stripe
              y Linear, y la que el ojo espera. -->
-        <nav class="pestanas order-2 hidden items-center md:flex" aria-label="Secciones">
-          <button type="button" data-tab="admin" class="pestana activa">Mi empresa</button>
-          <button type="button" data-tab="licitaciones" class="pestana">Licitaciones</button>
-          <button type="button" data-tab="seguimiento" class="pestana">Mis procesos<span id="seg-insignia" class="insignia-pestana hidden" aria-label="Cosas que piden atención"></span></button>
-          <button type="button" data-tab="apu" class="pestana">Precios</button>
+        <nav class="pestanas order-2 hidden items-center md:flex" role="tablist" aria-label="Secciones">
+          <button type="button" data-tab="admin" role="tab" aria-selected="true" aria-controls="tab-admin" class="pestana activa">Mi empresa</button>
+          <button type="button" data-tab="licitaciones" role="tab" aria-selected="false" aria-controls="tab-licitaciones" class="pestana">Licitaciones</button>
+          <button type="button" data-tab="seguimiento" role="tab" aria-selected="false" aria-controls="tab-seguimiento" class="pestana">Mis procesos<span id="seg-insignia" class="insignia-pestana hidden" aria-label="Cosas que piden atención"></span></button>
+          <button type="button" data-tab="apu" role="tab" aria-selected="false" aria-controls="tab-apu" class="pestana">Precios</button>
         </nav>
 
         <div class="order-3 flex min-w-0 items-center gap-3">
@@ -1248,12 +1248,12 @@
     </header>
 
     <!-- pestañas (móvil): barra inferior estilo app nativa -->
-    <nav class="barra-movil fixed inset-x-0 bottom-0 z-20 md:hidden" aria-label="Secciones (móvil)">
+    <nav class="barra-movil fixed inset-x-0 bottom-0 z-20 md:hidden" role="tablist" aria-label="Secciones (móvil)">
       <div class="mx-auto grid h-full max-w-md grid-cols-4 items-center">
-        <button type="button" data-tab="admin" class="pestana-movil activa flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 14a1.6 1.6 0 0 0 .33 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.6 1.6 0 0 0 15 18.4a1.6 1.6 0 0 0-1 1.47V20a2 2 0 1 1-4 0v-.05A1.6 1.6 0 0 0 9 18.4a1.6 1.6 0 0 0-1.77.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 4.73 14a1.6 1.6 0 0 0-1.47-1H3a2 2 0 1 1 0-4h.05A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.33-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.6 1.6 0 0 0 9 4.73 1.6 1.6 0 0 0 10 3.26V3a2 2 0 1 1 4 0v.05A1.6 1.6 0 0 0 15 4.6a1.6 1.6 0 0 0 1.77-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.6 1.6 0 0 0 19.4 9v.05a1.6 1.6 0 0 0 1.47 1H21a2 2 0 1 1 0 4h-.05a1.6 1.6 0 0 0-1.47 1Z"/></svg>Mi empresa</button>
-        <button type="button" data-tab="licitaciones" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>Licitaciones</button>
-        <button type="button" data-tab="seguimiento" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12l2 2 4-4"/><path d="M9 17h6"/></svg>Mis procesos<span id="seg-insignia-movil" class="insignia-pestana hidden" aria-hidden="true"></span></button>
-        <button type="button" data-tab="apu" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><rect x="5" y="12" width="3.5" height="6" rx=".6"/><rect x="10.25" y="7" width="3.5" height="11" rx=".6"/><rect x="15.5" y="9.5" width="3.5" height="8.5" rx=".6"/></svg>Precios</button>
+        <button type="button" data-tab="admin" role="tab" aria-selected="true" aria-controls="tab-admin" class="pestana-movil activa flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 14a1.6 1.6 0 0 0 .33 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.6 1.6 0 0 0 15 18.4a1.6 1.6 0 0 0-1 1.47V20a2 2 0 1 1-4 0v-.05A1.6 1.6 0 0 0 9 18.4a1.6 1.6 0 0 0-1.77.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 4.73 14a1.6 1.6 0 0 0-1.47-1H3a2 2 0 1 1 0-4h.05A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.33-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.6 1.6 0 0 0 9 4.73 1.6 1.6 0 0 0 10 3.26V3a2 2 0 1 1 4 0v.05A1.6 1.6 0 0 0 15 4.6a1.6 1.6 0 0 0 1.77-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.6 1.6 0 0 0 19.4 9v.05a1.6 1.6 0 0 0 1.47 1H21a2 2 0 1 1 0 4h-.05a1.6 1.6 0 0 0-1.47 1Z"/></svg>Mi empresa</button>
+        <button type="button" data-tab="licitaciones" role="tab" aria-selected="false" aria-controls="tab-licitaciones" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>Licitaciones</button>
+        <button type="button" data-tab="seguimiento" role="tab" aria-selected="false" aria-controls="tab-seguimiento" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12l2 2 4-4"/><path d="M9 17h6"/></svg>Mis procesos<span id="seg-insignia-movil" class="insignia-pestana hidden" aria-hidden="true"></span></button>
+        <button type="button" data-tab="apu" role="tab" aria-selected="false" aria-controls="tab-apu" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><rect x="5" y="12" width="3.5" height="6" rx=".6"/><rect x="10.25" y="7" width="3.5" height="11" rx=".6"/><rect x="15.5" y="9.5" width="3.5" height="8.5" rx=".6"/></svg>Precios</button>
       </div>
     </nav>
 
@@ -1624,7 +1624,7 @@
           <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">Actualizar, descargar o eliminar el registro</summary>
         <p class="mt-3 max-w-2xl text-sm text-gray-500">Suba el certificado RUP en PDF (crea un perfil propio) o cargue el archivo JSON de los perfiles. El cambio surte efecto en la siguiente consulta.</p>
         <div class="mt-4 flex flex-wrap items-center gap-3">
-          <input id="rup-json-archivo" type="file" accept=".json,application/json"
+          <input id="rup-json-archivo" type="file" accept=".json,application/json" aria-label="Archivo JSON con los perfiles"
                  class="block max-w-sm text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
           <button id="btn-rup-descargar" type="button"
                   class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100">
@@ -2405,10 +2405,10 @@
             <div>
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Dónde queda</span>
               <div class="flex flex-wrap items-center gap-2">
-                <select id="fl-dep" class="control-select rounded-xl text-sm">
+                <select id="fl-dep" aria-label="Añadir un departamento al filtro" class="control-select rounded-xl text-sm">
                   <option value="">Añadir departamento…</option>
                 </select>
-                <input id="fl-ciudad" type="text" placeholder="Ciudad o municipio" autocomplete="off"
+                <input id="fl-ciudad" type="text" placeholder="Ciudad o municipio" aria-label="Ciudad o municipio" autocomplete="off"
                        class="control-campo w-44 rounded-xl text-sm">
               </div>
               <!-- Los departamentos ELEGIDOS se ven AQUÍ, dentro de la hoja. Antes el
@@ -2425,22 +2425,22 @@
             <div class="grid gap-4 sm:grid-cols-2">
               <div>
                 <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuánto vale</span>
-                <select id="fl-rango" class="control-select w-full rounded-xl text-sm">
+                <select id="fl-rango" aria-label="Cuánto vale el contrato" class="control-select w-full rounded-xl text-sm">
                   <option value="">Cualquier valor</option>
                 </select>
                 <div id="fl-rango-libre" class="mt-1.5 hidden gap-2">
-                  <input id="fl-min" type="number" min="0" step="1000000" placeholder="Desde $" class="control-campo w-1/2 rounded-xl text-sm">
-                  <input id="fl-max" type="number" min="0" step="1000000" placeholder="Hasta $" class="control-campo w-1/2 rounded-xl text-sm">
+                  <input id="fl-min" type="number" min="0" step="1000000" placeholder="Desde $" aria-label="Cuantía mínima en pesos" title="Cuantía mínima en pesos" class="control-campo w-1/2 rounded-xl text-sm">
+                  <input id="fl-max" type="number" min="0" step="1000000" placeholder="Hasta $" aria-label="Cuantía máxima en pesos" title="Cuantía máxima en pesos" class="control-campo w-1/2 rounded-xl text-sm">
                 </div>
               </div>
               <div>
                 <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cuándo hay que entregar la oferta</span>
-                <select id="fl-cierre" class="control-select w-full rounded-xl text-sm">
+                <select id="fl-cierre" aria-label="Cuándo hay que entregar la oferta" class="control-select w-full rounded-xl text-sm">
                   <option value="">Cualquier fecha</option>
                 </select>
                 <div id="fl-cierre-fechas" class="mt-1.5 hidden gap-2">
-                  <input id="fl-cierre-desde" type="date" class="control-campo w-1/2 rounded-xl text-sm">
-                  <input id="fl-cierre-hasta" type="date" class="control-campo w-1/2 rounded-xl text-sm">
+                  <input id="fl-cierre-desde" type="date" aria-label="Entregar la oferta desde esta fecha" class="control-campo w-1/2 rounded-xl text-sm">
+                  <input id="fl-cierre-hasta" type="date" aria-label="Entregar la oferta hasta esta fecha" class="control-campo w-1/2 rounded-xl text-sm">
                 </div>
               </div>
             </div>
@@ -2455,7 +2455,7 @@
             </div>
             <div>
               <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Buscar entidad</span>
-              <input id="fl-entidad" type="text" list="fl-entidades" placeholder="Alcaldía de…, Gobernación de…, INVÍAS" autocomplete="off"
+              <input id="fl-entidad" type="text" list="fl-entidades" placeholder="Alcaldía de…, Gobernación de…, INVÍAS" aria-label="Buscar entidad" autocomplete="off"
                      class="control-campo w-full rounded-xl text-sm">
               <datalist id="fl-entidades"></datalist>
               <button id="fl-entidad-historial" type="button" class="mt-1.5 hidden text-xs font-medium hover:underline" style="color: var(--accent);">Ver el historial de esta entidad ›</button>
@@ -2666,7 +2666,7 @@
             <div class="mt-5 grid gap-5 lg:grid-cols-2">
               <div>
                 <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Archivo PDF</span>
-                <input id="pliego-archivo" type="file" accept=".pdf,application/pdf"
+                <input id="pliego-archivo" type="file" accept=".pdf,application/pdf" aria-label="Pliego en PDF"
                        class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
                 <p class="mt-1 text-[13px] text-gray-400">También sirve un archivo de texto (.txt) con la tabla ya copiada.</p>
               </div>
@@ -2800,7 +2800,7 @@
           <details id="sin-archivo-wrap" class="mt-4 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
             <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">¿No tiene archivo? Describa la obra y la aplicación propone los ítems</summary>
             <div class="mt-4">
-              <textarea id="objeto" rows="3" placeholder="Ej: Construcción de placa huella de 2.5 km en el municipio de Jericó, Antioquia"
+              <textarea id="objeto" rows="3" placeholder="Ej: Construcción de placa huella de 2.5 km en el municipio de Jericó, Antioquia" aria-label="Describa la obra"
                         class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10"></textarea>
               <div class="mt-3 flex flex-wrap items-center gap-3">
                 <button id="btn-inferir" type="button"
@@ -2808,13 +2808,13 @@
                   <span id="inferir-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
                   <span id="inferir-texto">Detectar ítems</span>
                 </button>
-                <input id="codigos-unspsc" type="text" placeholder="Códigos del pliego (opcional): 72141100"
+                <input id="codigos-unspsc" type="text" placeholder="Códigos del pliego (opcional): 72141100" aria-label="Códigos de clasificación del pliego (opcional)"
                        class="min-w-[240px] flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-gray-900 sm:max-w-xs">
               </div>
             </div>
             <div id="inferencia" class="mt-4 hidden rounded-xl p-4 text-sm"></div>
             <button id="btn-importar" type="button" class="hidden">Elegir archivo (.xlsx, .xls o .csv)</button>
-            <input id="archivo-importar" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+            <input id="archivo-importar" type="file" accept=".xlsx,.xls,.csv" aria-label="Archivo de análisis de precios (.xlsx, .xls o .csv)" class="hidden">
           </details>
           <div id="mapeo-panel" class="mt-4 hidden rounded-xl border border-amber-200 bg-amber-50 p-4">
             <h3 class="text-sm font-medium text-amber-900">No se reconocieron las columnas del archivo</h3>
@@ -2881,7 +2881,7 @@
            herramientas»: los ids NO cambian, app.js los busca por id. -->
       <section id="seccion-items" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight"><span class="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">2</span>Buscar los precios y armar los APU</h2>
-        <p class="mt-1 max-w-3xl text-sm text-gray-500">Revise la lista, diga dónde es la obra y pulse <strong>Buscar</strong>: una sesión de Claude arma el análisis de precios unitarios de cada ítem con precios promedio de mercado, sus fuentes y sus supuestos, y aquí ve el avance. Un precio que ya venía en su archivo se respeta.</p>
+        <p class="mt-1 max-w-3xl text-sm text-gray-500">Revise la lista, diga dónde es la obra y pulse <strong>Buscar</strong>: el análisis de precios unitarios de cada ítem se arma con precios promedio de mercado, sus fuentes y sus supuestos, y aquí ve el avance. Un precio que ya venía en su archivo se respeta.</p>
         <div class="mt-4 overflow-x-auto">
           <table class="w-full min-w-[900px] text-sm">
             <thead class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
@@ -2975,7 +2975,7 @@
             <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Añadir un ítem por nombre</p>
             <div class="mt-3 flex items-start gap-2">
               <div class="relative flex-1">
-                <input id="buscar-item" type="text" autocomplete="off" spellcheck="false"
+                <input id="buscar-item" type="text" autocomplete="off" spellcheck="false" aria-label="Buscar un ítem por nombre"
                        placeholder="Ej: excavación, concreto, tubería…"
                        class="w-full rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10">
                 <div id="buscar-lista"
@@ -2989,7 +2989,10 @@
             <p id="buscar-nota" class="mt-2 hidden text-xs"></p>
           </div>
           <details id="ajustes-wrap" class="mt-5 rounded-xl bg-gray-50 p-4 ring-1 ring-inset ring-gray-900/5">
-            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700"><span class="min-w-0 flex-1">Ajustes <span class="text-xs">— AIU, anticipo, deducciones y ajuste competitivo (los valores por defecto sirven casi siempre)</span></span></summary>
+            <!-- «· N cambiados» lo escribe app.js (pintarResumenAjustes) contando los
+                 campos de ESTE pliegue que difieren de su valor por defecto: sin ninguno
+                 cambiado no dice nada. El nodo va DENTRO del span único del summary. -->
+            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700"><span class="min-w-0 flex-1">Ajustes<span id="ajustes-resumen"></span> <span class="text-xs">— AIU, anticipo, deducciones y ajuste competitivo (los valores por defecto sirven casi siempre)</span></span></summary>
             <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 <label class="block">
               <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Administración (A) %</span>
@@ -3096,9 +3099,9 @@
             </div>
           </details>
           <details class="mt-3 rounded-xl bg-gray-50 p-3 ring-1 ring-inset ring-gray-900/5">
-            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">Guardar o abrir un borrador</summary>
+            <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700"><span class="min-w-0 flex-1">Guardar o abrir un borrador<span id="borradores-resumen"></span></span></summary>
             <div class="mt-3 flex flex-wrap items-center gap-3">
-              <input id="nombre-presupuesto" type="text" placeholder="Nombre del presupuesto"
+              <input id="nombre-presupuesto" type="text" placeholder="Nombre del presupuesto" aria-label="Nombre del presupuesto"
                      class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
               <button id="btn-guardar" type="button"
                       class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Guardar</button>
@@ -3270,11 +3273,14 @@
         <div class="flex flex-wrap items-baseline justify-between gap-3">
           <div>
             <h2 class="font-semibold tracking-tight">Precio sugerido</h2>
+            <!-- El párrafo explicaba el MODELO («cuatro métodos de ponderación —que se
+                 sortean en la audiencia—»): para entender el número había que leerlo
+                 entero. Se dice el hecho, y el segundo renglón lo calcula app.js con la
+                 meseta que ya devuelve el servidor; sin meseta, no hay frase. -->
             <p class="mt-1 max-w-3xl text-sm text-gray-500">
-              El precio que <strong>maximiza el valor esperado</strong>. Bajar más allá del óptimo compra
-              probabilidad en uno solo de los cuatro métodos de ponderación —que se sortean en la audiencia—
-              y regala margen en los cuatro.
+              El precio que <strong>deja más plata a la larga</strong>, contando las veces que no se gana.
             </p>
+            <p id="ps-hecho" class="mt-1 max-w-3xl text-sm text-gray-500"></p>
           </div>
           <span id="ps-origen" class="text-xs text-gray-400"></span>
         </div>

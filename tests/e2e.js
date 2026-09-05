@@ -8902,6 +8902,53 @@ async function main() {
           assert.ok(cOrg.estado === "sin_mencion" && /lo menciona con esas palabras/.test(cOrg.nota) && cOrg.texto === null, "lo que el pliego no dice se declara, no se rellena");
           assert.ok(sinDocs.citas_pliego.every((c) => c.estado === "por_leer"), "sin documentos: por leer");
           assert.ok(/function htmlCitasPliego\(/.test(appG) && /<blockquote/.test(appG) && /Todo lo demás/.test(appG), "la tarjeta abre con las citas y pliega todo lo demás");
+          /* ═══ UN PLIEGUE DICE QUÉ GUARDA ANTES DE ABRIRLO (5-sep-2026) ═══
+             «Ajustes», «Trámites y fechas» o «Borradores» obligaban a abrirlos
+             para descubrir si había algo dentro. El patrón «Título (N)» ya
+             existía escrito dos veces (la guía y la cobertura de códigos): se
+             declara UNA —`resumenSummary`— y lo llaman los dos, más los dos
+             pliegues de Precios. Se EJECUTA la función real. */
+          {
+            const appR = sinComentarios(appG);
+            const trozo = (nombre) => {
+              const i = appR.indexOf(`function ${nombre}(`);
+              assert.ok(i > 0, `app.js sin ${nombre}`);
+              return appR.slice(i, appR.indexOf("\n  }", i) + 4);
+            };
+            const resumenSummary = new Function("esc", `${trozo("sufijoResumen")}\n${trozo("resumenSummary")}; return resumenSummary;`)(
+              (x) => String(x == null ? "" : x));
+            const sufijoResumen = new Function(`${trozo("sufijoResumen")}; return sufijoResumen;`)();
+            const ajustes3 = resumenSummary("Ajustes", null, "3 cambiados");
+            assert.ok(/>Ajustes · 3 cambiados</.test(ajustes3), `el pliegue dice cuántos ajustes cambió: ${ajustes3}`);
+            assert.strictEqual((ajustes3.match(/<span/g) || []).length, 1,
+              `el título del summary va en UN solo span: con texto suelto junto a un elemento se parte en dos columnas a 390 px — ${ajustes3}`);
+            assert.ok(/>Ajustes</.test(resumenSummary("Ajustes", null, "")), "sin nada cambiado el pliegue se queda con su nombre");
+            assert.strictEqual(sufijoResumen(null, ""), "", "…y sin sufijo: un «(0)» promete un cuadro vacío");
+            assert.strictEqual(sufijoResumen(0, ""), "", "cero no se cuenta");
+            assert.strictEqual(sufijoResumen(2, ""), " (2)");
+            assert.ok(/>Trámites y fechas \(4\) · el más próximo: 12 sept<\/span>$/.test(
+              resumenSummary("Trámites y fechas", 4, "el más próximo: 12 sept")),
+            `el conteo y el dato del contenido van en el mismo span: ${resumenSummary("Trámites y fechas", 4, "el más próximo: 12 sept")}`);
+            // y los cinco sitios que lo usan LLAMAN a la función, no repiten el formato
+            for (const llamada of ['resumenSummary("Trámites y fechas", nPasos,', 'resumenSummary("Consejos para este proceso"',
+              'resumenSummary("Documentos del proceso", nDocs', "resumenSummary(titulo, lista.length"]) {
+              assert.ok(appR.includes(llamada), `«${llamada}» tiene que salir de resumenSummary: dos formatos «iguales hoy» divergen`);
+            }
+            assert.ok(!/`Trámites y fechas \(\$\{/.test(appR) && !/\$\{titulo\} \(\$\{lista\.length\}\)/.test(appR),
+              "no puede quedar ningún «Título (N)» escrito a mano");
+            // «el más próximo» SOLO si el pliego trae la fecha: no se inventa un día
+            assert.ok(/const proximoPaso = \(g\.pasos \|\| \[\]\)\.map\(\(s\) => s\.cuando\)\.filter\(Boolean\)/.test(appR),
+              "la fecha del pliegue sale de `pasos[].cuando`, y sin ninguna publicada el pliegue va sin fecha");
+            // Precios: los ajustes se cuentan por CENSO de sus controles, no por lista
+            assert.ok(/caja\.querySelectorAll\("input, select, textarea"\)/.test(trozo("ajustesCambiados"))
+              && /defaultChecked/.test(trozo("ajustesCambiados")) && /defaultValue/.test(trozo("ajustesCambiados")),
+            "los ajustes cambiados se cuentan barriendo TODOS los controles del pliegue contra su valor por defecto: una lista se queda coja con la perilla siguiente");
+            assert.ok(/Number\.isFinite\(n\) \? sufijoResumen\(n, ""\) : ""/.test(trozo("pintarResumenBorradores")),
+              "sin dato de cuántos borradores hay, el pliegue no promete un «(0)»");
+            const htmlPl = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+            assert.ok(/id="ajustes-resumen"/.test(htmlPl) && /id="borradores-resumen"/.test(htmlPl),
+              "los dos pliegues de Precios necesitan su nodo de resumen");
+          }
           // (3) sin índice de SECOP II (nada que leer): «sin dato», no «por leer» para siempre
           const sinIndice = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: { indice: { archivos: [], plan: [], motivo: "sin índice" }, leidos: {}, ilegibles: {} } } });
           assert.ok(sinIndice.exigencias.every((x) => x.estado === "sin_dato"), "sin archivos publicados la casilla dice «sin dato», no «leyendo»");
@@ -11033,7 +11080,10 @@ async function main() {
         /* «Cargar experiencia laboral» vive desde ago 2026 en la pestaña de
            administración de la MISMA página (id="exp-panel"), no en la landing:
            la landing quedó en dos acciones (subir RUP / acceso con clave). */
-        for (const debe of ['id="onboarding"', "Descubra en un minuto a cuántas licitaciones puede presentarse hoy.", 'id="rup-archivo"',
+        /* Sin «en un minuto» desde el 5-sep-2026: era una promesa de tiempo que
+           nadie midió (M-IE-22). El censo que lo impide vive en la prueba
+           estructural de la landing. */
+        for (const debe of ['id="onboarding"', "Descubra a cuántas licitaciones puede presentarse hoy.", 'id="rup-archivo"',
           'id="btn-subir-rup"', "/onboarding.js", "formato_experiencia.csv",
           'id="exp-panel"', 'id="btn-exp-cargar"', 'id="rup-progreso"', 'id="btn-ir-gate"']) {
           assert.ok(html.includes(debe), `index.html sin ${debe}`);
@@ -12942,12 +12992,83 @@ async function main() {
           assert.strictEqual(calcIa.status, 200);
           const orgIa = require("../public/apu_libro.js").clasificarOrigen(calcIa.cuerpo.items[0], calcIa.cuerpo);
           assert.ok(calcIa.cuerpo.items[0].origen_precio === "ia" && orgIa.estado === "cotizado" && /Buscado por la IA/.test(orgIa.etiqueta), `el precio de la IA es referencia ámbar: ${orgIa.etiqueta}`);
+          /* ═══ LA SOLICITUD YA NO ENVEJECE MUDA (5-sep-2026) ═══
+             La cola la vacía una rutina que corre CADA HORA. Una solicitud en
+             cola se veía igual el primer minuto que al día siguiente: si la
+             rutina se paraba, envejecía en silencio y desaparecía a los 30 días
+             con el borrador. Tres pasadas perdidas (180 min) ya no son una
+             espera: son un fallo que hay que VER. Se mide en el SERVIDOR, que
+             es el reloj que escribió `solicitado_el`. */
+          {
+            const { escribirJSONComprimido, CLAVES: CL_IA } = require("../lib/almacen.js");
+            const claveSolIa = CL_IA.apuIaSolicitud("helder", idIa);
+            const enCola = (solicitadoEl) => escribirJSONComprimido(redis, claveSolIa,
+              { id: idIa, perfil: "helder", nombre: "IA prueba", estado: "en_cola", solicitado_el: solicitadoEl, respondida_el: null, progreso: null });
+            await enCola(new Date(Date.now() - 4 * 3600 * 1000).toISOString());
+            const vieja = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+            assert.strictEqual(vieja.cuerpo.estado, "sin_atender", "cuatro horas en cola son tres revisiones perdidas: eso se dice");
+            assert.strictEqual(vieja.cuerpo.umbral_sin_atender_min, 180, "el umbral son tres pasadas de la rutina horaria, y viaja para poder explicarlo");
+            assert.ok(vieja.cuerpo.edad_min >= 240 && vieja.cuerpo.edad_min < 250, `la edad la mide el servidor: ${vieja.cuerpo.edad_min}`);
+            // la cola que atiende la rutina NO cambia: allí sigue siendo «en_cola», que es lo que busca
+            const colaVieja = await invocar(apu, "/api/apu/ia?pendientes=1", CAB_TOKEN, { metodo: "GET" });
+            assert.ok(colaVieja.cuerpo.solicitudes.some((x) => x.id === idIa && x.estado === "en_cola"),
+              "cambiar el estado de la cola dejaría a la rutina sin trabajo que encontrar");
+            // recién entrada: ni «sin atender» ni alarma
+            await enCola(new Date().toISOString());
+            assert.strictEqual((await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" })).cuerpo.estado, "en_cola");
+            // sin fecha de entrada la edad es `null`, JAMÁS 0 (un 0 diría «acaba de llegar»)
+            await enCola(null);
+            const sinFecha = await invocar(apu, `/api/apu/ia?id=${idIa}&perfil=helder`, CAB_TOKEN, { metodo: "GET" });
+            assert.strictEqual(sinFecha.cuerpo.edad_min, null, "sin `solicitado_el` no hay edad: `null`, no 0");
+            assert.strictEqual(sinFecha.cuerpo.estado, "en_cola", "y sin edad no se puede AFIRMAR que está sin atender");
+          }
           // (6) frontend y skill cableados
           const appIa = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
           const htmlIa = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
           assert.ok(/op=ia/.test(appIa) && /data-ia-aplicar=/.test(appIa) && /origen_precio = "ia"/.test(appIa) && /Buscando… completado/.test(appIa) && /function enrutarArchivoEntrada\(/.test(appIa) && /await calcularApu\(\)/.test(appIa), "Precios pide, enseña el avance, aplica con un clic y calcula");
           assert.ok(/id="btn-ia-pedir"/.test(htmlIa) && /id="ia-progreso-barra"/.test(htmlIa) && /id="ia-ciudad"/.test(htmlIa), "el marcado del paso 2 está en index.html");
           assert.ok(!/\|\|\s*0\b/.test(appIa.slice(appIa.indexOf("function pintarIa("), appIa.indexOf("async function consultarIa("))), "ningún precio ni conteo de la IA se convierte en 0");
+          /* ═══ NI EL PLAZO QUE NADIE MIDIÓ NI EL VOCABULARIO DEL SISTEMA (5-sep-2026) ═══
+             La pantalla decía «una sesión de Claude toma la solicitud (suele
+             ser en menos de una hora)»: la cifra era el PERIODO del programador
+             —no hay ni mediana ni percentil de lo que tarda— y quién la atiende
+             es cómo está hecha la aplicación, no lo que le pasa a su solicitud.
+             Censo del texto VISIBLE de los quince public/*.js y de index.html;
+             excepción declarada: `apu_libro.js`, cuyos marcadores van al Excel
+             (otro medio). En los COMENTARIOS sigue permitido: es donde debe
+             vivir la trazabilidad. */
+          {
+            const dirIa = path.join(__dirname, "..", "public");
+            const nombraElSistema = [];
+            for (const f of fs.readdirSync(dirIa).filter((x) => x.endsWith(".js"))) {
+              if (f === "apu_libro.js") continue;
+              const src = sinComentarios(fs.readFileSync(path.join(dirIa, f), "utf8"));
+              const i = src.search(/\bClaude\b/);
+              if (i >= 0) nombraElSistema.push(`${f}:${src.slice(0, i).split("\n").length}`);
+            }
+            const htmlVis = fs.readFileSync(path.join(dirIa, "index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "");
+            if (/\bClaude\b/.test(htmlVis)) nombraElSistema.push("index.html");
+            assert.deepStrictEqual(nombraElSistema, [],
+              `ninguna pantalla nombra con qué está hecha la aplicación: ${nombraElSistema.join(", ")}`);
+            const appIaSin = sinComentarios(appIa);
+            const iPi = appIaSin.indexOf("function pintarIa(");
+            const cuerpoPi = appIaSin.slice(iPi, appIaSin.indexOf("async function consultarIa(", iPi));
+            assert.ok(!/menos de una hora/.test(cuerpoPi), "el plazo que nadie midió no puede volver a la pantalla");
+            assert.ok(/quedó registrada/.test(cuerpoPi) && /se revisa cada hora/.test(cuerpoPi),
+              "se dice el HECHO: la solicitud quedó registrada y la cola se revisa cada hora");
+            assert.ok(/sin_atender/.test(cuerpoPi) && /Vuelva a pulsar Buscar/.test(cuerpoPi),
+              "y la solicitud sin atender dice qué hacer: ninguna pantalla termina en un callejón");
+            // la edad en palabras, EJECUTADA: sin edad medida no se inventa ninguna
+            const edadEnPalabras = new Function(`${appIaSin.slice(appIaSin.indexOf("function edadEnPalabras("), appIaSin.indexOf("\n  }", appIaSin.indexOf("function edadEnPalabras(")) + 4)}; return edadEnPalabras;`)();
+            assert.strictEqual(edadEnPalabras(null), null, "sin edad no hay frase: `Number(null)` vale 0 y «hace 0 horas» sería creíble y falso");
+            assert.strictEqual(edadEnPalabras(240), "4 horas");
+            assert.strictEqual(edadEnPalabras(60), "1 hora");
+            assert.strictEqual(edadEnPalabras(20), "20 minutos");
+            // y el documento del circuito dice CÓMO se medirá el plazo antes de prometerlo
+            const docIa = fs.readFileSync(path.join(__dirname, "..", "docs", "PRECIOS_DESDE_CLAUDE_CODE.md"), "utf8");
+            assert.ok(/respondida_el/.test(docIa) && /percentil 90/.test(docIa),
+              "el documento tiene que decir con qué dos sellos se medirá el plazo antes de que ninguna cifra vuelva a la pantalla");
+          }
           const skillIa = fs.readFileSync(path.join(__dirname, "..", ".claude", "skills", "precios", "SKILL.md"), "utf8");
           assert.ok(/op=ia&pendientes=1/.test(skillIa) && /progreso:\{hecho/.test(skillIa) && /motor:"sesion",propuesta:p/.test(skillIa) && /expediente=1/.test(skillIa), "la skill /precios recorre la cola, manda el avance y devuelve los APU");
           await redis.del(`apu:ia:solicitud:helder:${idIa}`, `apu:ia:propuesta:helder:${idIa}`, `apu:presupuesto:helder:${idIa}`);
@@ -17003,6 +17124,26 @@ async function main() {
       const textoVisible = landing.replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
       const palabras = textoVisible.trim().split(" ").length;
       assert.ok(palabras < 260, `la landing tiene ${palabras} palabras (formularios plegados incluidos): el tope es 260 — era una página de 870`);
+      /* ══ NINGUNA PROMESA QUE LA APLICACIÓN NO HAYA MEDIDO (5-sep-2026) ══
+         La portada decía «Descubra en un minuto…» y «PDF, foto o escaneo · 60
+         segundos». «60 segundos» nombra una FASE del proyecto, no un tiempo
+         medido: no hay ni mediana ni percentil del camino RUP → resultado, y el
+         camino con reconocimiento de texto no se ha cronometrado nunca. La
+         cifra solo puede volver cuando exista una constante MEDIDA
+         (`PUERTA_P90_SEG`) en el código Y anotada con su fecha de medición en
+         la memoria; hasta entonces la portada dice lo que hace, no cuánto
+         tarda. */
+      {
+        const fuentesPuerta = ["app.js", "onboarding.js"]
+          .map((f) => fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8")).join("\n");
+        const medida = /PUERTA_P90_SEG\s*=/.test(fuentesPuerta)
+          && /PUERTA_P90_SEG/.test(fs.readFileSync(path.join(__dirname, "..", "docs", "MEMORIA.md"), "utf8"));
+        if (!medida) {
+          const landingVisible = landing.replace(/<!--[\s\S]*?-->/g, "");
+          assert.ok(!/60 segundos|en un minuto/i.test(landingVisible),
+            "la portada no puede prometer un tiempo que nadie midió: retire la cifra, o declare la constante PUERTA_P90_SEG y anote su fecha de medición en la memoria");
+        }
+      }
       assert.ok(/<div id="pulso-global" class="hidden/.test(landing), "el teaser nace oculto: solo aparece si el agregado existe");
       /* (3) MI EMPRESA ES LA PESTAÑA PRINCIPAL (ago 2026): el pulso vive arriba de
          Mi empresa (primer <main>, sin `hidden`), con el mercado plegado debajo;
@@ -17047,7 +17188,7 @@ async function main() {
       const lic = htmlL.slice(iTab, htmlL.indexOf('id="tab-apu"'));
       assert.ok(!lic.includes('id="pulso"') && lic.indexOf('id="f-ordenar"') > 0, "Licitaciones ya no lleva el pulso: empieza por la barra de herramientas");
       const nav = htmlL.slice(htmlL.indexOf('aria-label="Secciones"'), htmlL.indexOf("</nav>"));
-      assert.ok(nav.indexOf('data-tab="admin"') < nav.indexOf('data-tab="licitaciones"') && nav.indexOf('data-tab="licitaciones"') < nav.indexOf('data-tab="apu"') && /data-tab="admin" class="pestana activa"/.test(nav), "pestañas: Mi empresa (activa) · Licitaciones · Precios");
+      assert.ok(nav.indexOf('data-tab="admin"') < nav.indexOf('data-tab="licitaciones"') && nav.indexOf('data-tab="licitaciones"') < nav.indexOf('data-tab="apu"') && /data-tab="admin"[^>]*class="pestana activa"/.test(nav), "pestañas: Mi empresa (activa) · Licitaciones · Precios");
       // lo que hay que TOCAR en Mi empresa va plegado; lo que hay que VER, a la vista
       for (const id of ["rup-gestion", "exp-gestion"]) assert.ok(new RegExp(`<details id="${id}"(?![^>]*\\bopen\\b)`).test(tab), `#${id} nace plegado`);
       assert.ok(tab.indexOf('id="exp-actual"') < tab.indexOf('id="exp-gestion"'), "la experiencia cargada se ve ANTES del pliegue de carga");
@@ -17247,6 +17388,50 @@ async function main() {
           "el gráfico de «Cuándo hay que entregar la oferta» declara la misma base que el tile");
         assert.ok(/por_urgencia \|\| \{\}\)\.cierra_esta_semana/.test(appL) && /cierranEstaSemana/.test(pulsoJs),
           "las dos cifras siguen saliendo de dos campos distintos del servidor: no se pueden confundir por accidente");
+      }
+      /* ══════ CADA GRÁFICO DICE SU CONCLUSIÓN, NO SOLO SU PREGUNTA (5-sep-2026) ══════
+         Los dos gráficos del tablero se titulaban con la pregunta («Cuándo hay
+         que entregar la oferta», «Contra cuánta gente compite») y dejaban la
+         respuesta dentro de las barras: había que contarlas. Ahora, debajo del
+         título, va lo que el gráfico demuestra. Se EJECUTAN las dos funciones
+         reales sobre las MISMAS cubetas que se dibujan, y lo que se comprueba
+         es que la frase suma exactamente lo que suman las cubetas — si algún
+         día se recalculara por su cuenta, esta cerradura lo caza. */
+      {
+        const iSc = appL.indexOf("const sumaCubetas = ");
+        assert.ok(iSc > 0, "app.js sin `sumaCubetas`: la frase del gráfico tiene que salir de las cubetas que se dibujan");
+        const fnFrase = (nombre) => {
+          const i = appL.indexOf(`function ${nombre}(`);
+          assert.ok(i > 0, `app.js sin ${nombre}`);
+          return appL.slice(i, appL.indexOf("\n  }", i) + 4);
+        };
+        const cabeceraG = `${appL.slice(iSc, appL.indexOf(";\n", appL.indexOf(".reduce", iSc)) + 1)}\nconst fmt = new Intl.NumberFormat("es-CO");`;
+        const fraseUrgencia = new Function(`${cabeceraG}\n${fnFrase("fraseUrgencia")}; return fraseUrgencia;`)();
+        const fraseCompetencia = new Function(`${cabeceraG}\n${fnFrase("fraseCompetencia")}; return fraseCompetencia;`)();
+        const cu = [
+          { clave: "esta_semana", n: 3 }, { clave: "dos_semanas", n: 5 },
+          { clave: "este_mes", n: 6 }, { clave: "mas_adelante", n: 13 },
+        ];
+        const fU = fraseUrgencia(cu);
+        const nU = cu.reduce((a, x) => a + x.n, 0);
+        assert.ok(fU.includes(String(nU)), `la base de la frase es la suma de las cubetas (${nU}): ${fU}`);
+        assert.ok(fU.startsWith("14 de las 27"), `14 = 3 + 5 + 6 cierran este mes, sobre 27 con fecha: ${fU}`);
+        assert.ok(/3 esta semana/.test(fU), `y la cubeta más urgente se dice aparte: ${fU}`);
+        assert.strictEqual(fraseUrgencia([]), "", "sin cubetas no hay frase: jamás un «0 de 0»");
+        assert.strictEqual(fraseUrgencia(cu.map((x) => ({ ...x, n: 0 }))), "", "con todas las cubetas en cero tampoco hay nada que concluir");
+        const cc = [{ clave: "baja", n: 6 }, { clave: "media", n: 8 }, { clave: "alta", n: 9 }, { clave: "sin_dato", n: 4 }];
+        const fC = fraseCompetencia(cc);
+        assert.ok(fC.includes("6 de las 27"), `la competencia también declara su base (6 + 8 + 9 + 4 = 27): ${fC}`);
+        assert.ok(/9 están muy peleadas/.test(fC) && /de 4 no hay histórico/.test(fC),
+          `«sin histórico» no se esconde: esconderlo inflaría la parte buena — ${fC}`);
+        assert.strictEqual(fraseCompetencia([]), "");
+        assert.strictEqual(fraseCompetencia([{ clave: "baja", n: 0 }, { clave: "sin_dato", n: 0 }]), "");
+        // …y el tablero las PINTA, cada una en su gráfico, delante de las barras
+        assert.ok(/\$\("d-urgencia"\)\.innerHTML = parrafoConclusion\(fraseUrgencia\(cubetasUrg\)\)/.test(appL),
+          "el gráfico de urgencia tiene que pintar su conclusión, y con SUS cubetas");
+        assert.ok(/\$\("d-competencia-mix"\)\.innerHTML = parrafoConclusion\(fraseCompetencia\(cubetasComp\)\)/.test(appL)
+          && /window\.Pulso\.apilada\(cubetasComp\)/.test(appL),
+        "la frase de competencia y el gráfico leen la MISMA lista de cubetas: dos listas «iguales hoy» divergen a la primera corrección");
       }
       console.log(`  · Puerta primero, cifras después: pulso helder = ${pu.cuerpo.total} (= listado) · cierran esta semana ${pu.cuerpo.cierranEstaSemana.n} · ${pu.cuerpo.porDepartamento.length} dptos · ${pu.cuerpo.topEntidades.length} entidades · landing ${palabras} palabras · mercado plegado`);
     }
@@ -18617,6 +18802,72 @@ async function main() {
           // (4c) las tres puertas de la portada alinean sus subtítulos
           assert.ok(/\.puerta-entrada \.block\.text-\\\[17px\\\] \{ min-height: 2\.7em; \}/.test(estiloPropio),
             "el título de las puertas de la portada necesita dos renglones de alto mínimo: con uno solo, «Subir mi RUP» dejaba su subtítulo 23 px por encima de los otros dos");
+
+          /* ── (4d) CADA CAMPO SE ANUNCIA POR SU NOMBRE Y LAS PESTAÑAS SON
+                PESTAÑAS (5-sep-2026) ──
+             Dieciséis input/select/textarea no tenían más nombre que su
+             `placeholder` —que no es un nombre accesible y además desaparece al
+             escribir—, y las ocho pestañas eran botones sueltos: el lector de
+             pantalla decía «cuadro de edición» y «botón». Es un CENSO del
+             marcado, no una lista: un campo nuevo sin nombre pone la suite en
+             rojo con su id. Un `<label>` que ENVUELVE al control ya lo nombra, y
+             `type="hidden"` no se anuncia. */
+          {
+            const htmlA = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8")
+              .replace(/<!--[\s\S]*?-->/g, "")
+              .replace(/<style[\s\S]*?<\/style>/g, "").replace(/<script[\s\S]*?<\/script>/g, "");
+            const rangosLabel = [];
+            { let i = 0; while ((i = htmlA.indexOf("<label", i)) >= 0) { const f = htmlA.indexOf("</label>", i); if (f < 0) break; rangosLabel.push([i, f]); i = f + 8; } }
+            const conFor = new Set([...htmlA.matchAll(/<label\b[^>]*\bfor="([^"]+)"/g)].map((m) => m[1]));
+            const sinNombre = [];
+            for (const m of htmlA.matchAll(/<(input|select|textarea)\b[^>]*>/g)) {
+              const et = m[0];
+              if (/type="hidden"/.test(et)) continue;
+              if (/\baria-label(?:ledby)?="/.test(et)) continue;
+              if (rangosLabel.some(([a, b]) => m.index > a && m.index < b)) continue;
+              const id = (/\bid="([^"]+)"/.exec(et) || [])[1] || "";
+              if (id && conFor.has(id)) continue;
+              sinNombre.push(id || et.slice(0, 60));
+            }
+            assert.deepStrictEqual(sinNombre, [],
+              `un campo sin nombre accesible se anuncia «cuadro de edición»: póngale aria-label o envuélvalo en su <label> — ${sinNombre.join(", ")}`);
+            /* El censo NO se queda en index.html: los campos que más se tocan
+               —las celdas de la tabla de Precios y las del lector de pliegos—
+               los PINTA el navegador desde una plantilla, y ahí el marcado de
+               la página no llega. Se barren los quince public/*.js con la misma
+               regla. Contra el árbol del 5-sep salían nueve. */
+            const sinNombreJs = [];
+            const dirJs = path.join(__dirname, "..", "public");
+            for (const f of fs.readdirSync(dirJs).filter((x) => x.endsWith(".js"))) {
+              const src = sinComentarios(fs.readFileSync(path.join(dirJs, f), "utf8"));
+              const rangos = [];
+              { let i = 0; while ((i = src.indexOf("<label", i)) >= 0) { const fin = src.indexOf("</label>", i); if (fin < 0) break; rangos.push([i, fin]); i = fin + 8; } }
+              const paraJs = new Set([...src.matchAll(/<label\b[^>]*\bfor="([^"]+)"/g)].map((m) => m[1]));
+              for (const m of src.matchAll(/<(input|select|textarea)\b[^>]*>/g)) {
+                const et = m[0];
+                if (/type="hidden"/.test(et)) continue;
+                if (/\baria-label(?:ledby)?="/.test(et)) continue;
+                if (rangos.some(([a2, b2]) => m.index > a2 && m.index < b2)) continue;
+                const id = (/\bid="([^"]+)"/.exec(et) || [])[1] || "";
+                if (id && paraJs.has(id)) continue;
+                sinNombreJs.push(`${f}:${src.slice(0, m.index).split("\n").length}`);
+              }
+            }
+            assert.deepStrictEqual(sinNombreJs, [],
+              `los campos que pinta el navegador también se anuncian por su nombre: ${sinNombreJs.join(", ")}`);
+            assert.strictEqual((htmlA.match(/role="tablist"/g) || []).length, 2,
+              "las dos barras de pestañas (escritorio y móvil) tienen que ser `tablist`");
+            const botonesTab = [...htmlA.matchAll(/<button[^>]*role="tab"[^>]*>/g)];
+            assert.strictEqual(botonesTab.length, 8, "las cuatro pestañas, en las dos barras, llevan `role=tab`");
+            for (const m of botonesTab) {
+              assert.ok(/aria-selected="(?:true|false)"/.test(m[0]) && /aria-controls="tab-/.test(m[0]),
+                `una pestaña dice si está abierta y qué panel abre: ${m[0].slice(0, 100)}`);
+            }
+            assert.ok(/aria-label="Secciones"/.test(htmlA), "el nombre de la barra de escritorio se conserva");
+            const appA = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+            assert.ok(/if \(b\.getAttribute\("role"\) === "tab"\) b\.setAttribute\("aria-selected"/.test(appA),
+              "al cambiar de pestaña `aria-selected` se mueve, y SOLO en las que son pestaña: `[data-tab]` también caza atajos que NAVEGAN a una sin serlo");
+          }
         }
         console.log("  · El teléfono: el concepto del orden plegado tras «¿Cómo se ordenan?» (abierto en escritorio con ::details-content), barra en una fila, h1 28 px y panel 20 px, suelos táctiles de 32/24 px, barra móvil 11 px, tarjeta 13 px, y los censos de 10 px, de <label shrink-0><select> y de <summary> con texto suelto");
       }
@@ -19089,6 +19340,149 @@ async function main() {
             "el día del cierre recuerda que solo cuenta el estado «Presentada» — guardar no basta");
           assert.ok(/avisoCierre\(diasCierre\)/.test(cuerpoT), "la tarjeta debe pintar el aviso de cierre");
 
+          /* ═══ NADA DECISORIO SOLO EN EL `title` (5-sep-2026) ═══
+             La regla estaba escrita dos veces en la memoria y cerrada UNA sola
+             (el aviso de las 24 horas de aquí arriba). Dos cerraduras la
+             cierran de verdad: una EJECUTADA y un CENSO.
+
+             (1) EJECUTADA · `badgesPuertas` con una puerta cerrada de verdad.
+             La cifra que sostiene el veredicto —«le quedan $1.200 M y la obra
+             pide $980 M», que redacta lib/puertas— tiene que leerse en el
+             TEXTO, no solo al pasar el ratón: en el teléfono no hay tooltip.
+             Se mira el HTML SIN etiquetas, que es lo que el dedo puede leer. */
+          {
+            const GloBP = require("../lib/glosario.js");
+            const iVc = jsT.indexOf("const VERDE = window.Glosario");
+            assert.ok(iVc > 0, "los cuatro colores de badge siguen saliendo de Glosario.ESTADO");
+            const constesBP = jsT.slice(iVc, jsT.indexOf("function estadoPuerta(", iVc));
+            const badgesPuertas = new Function("chip", "esc", "window",
+              `${constesBP}\n${extraer("estadoPuerta")}\n${extraer("badgePuerta")}\n${extraer("badgesPuertas")}; return badgesPuertas;`)(
+              (t, c, ti) => `<span title="${ti || ""}" class="${c}">${t}</span>`,
+              (x) => String(x == null ? "" : x), { Glosario: GloBP });
+            const htmlBP = badgesPuertas({ p3_caja: { pasa: false, mensaje: "le quedan $1.200 M y la obra pide $980 M" } });
+            const textoBP = htmlBP.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
+            assert.ok(/le quedan \$1\.200 M y la obra pide \$980 M/.test(textoBP),
+              `la cifra que cierra la puerta tiene que leerse sin pasar el ratón: ${textoBP}`);
+            assert.ok(/title="le quedan \$1\.200 M/.test(htmlBP),
+              "…y el `title` del chip se conserva como redundancia de escritorio");
+            assert.ok(!/<ul/.test(badgesPuertas({})),
+              "sin mensaje del servidor no se inventa ningún renglón: no hay lista que pintar");
+            assert.ok(/text-red-600/.test(badgesPuertas({ p3_caja: { pasa: false, mensaje: "x" } })),
+              "el punto del renglón lee el MISMO semáforo que el chip (Glosario.ESTADO), no un color propio");
+          }
+
+          /* (2) CENSO · ningún campo de EVIDENCIA del servidor puede vivir solo
+             dentro de un `title` (ni del atributo, ni del tercer argumento de
+             `chip`). Se barren los quince public/*.js función por función; las
+             excepciones se DECLARAN con su motivo y se comprueban vivas. Contra
+             el árbol del 5-sep fallaba por `badgePuerta` (`p.mensaje`) y por la
+             guía de Mis procesos (`h.cita`). */
+          {
+            /* quita el contenido de todo atributo title="…", con ${} anidados */
+            const sinAtributoTitle = (txt) => {
+              let fuera = "", k = 0;
+              while (k < txt.length) {
+                const i = txt.indexOf('title="', k);
+                if (i < 0) { fuera += txt.slice(k); break; }
+                fuera += txt.slice(k, i);
+                let j = i + 7, prof = 0;
+                while (j < txt.length) {
+                  if (txt[j] === "$" && txt[j + 1] === "{") { prof++; j += 2; continue; }
+                  if (txt[j] === "}" && prof > 0) { prof--; j++; continue; }
+                  if (txt[j] === '"' && prof === 0) break;
+                  j++;
+                }
+                k = j + 1;
+              }
+              return fuera;
+            };
+            /* quita el TERCER argumento de cada chip(…), que es su title */
+            const sinTitleDeChip = (txt) => {
+              let fuera = "", k = 0;
+              while (k < txt.length) {
+                const i = txt.indexOf("chip(", k);
+                if (i < 0) { fuera += txt.slice(k); break; }
+                fuera += txt.slice(k, i + 5);
+                let j = i + 5, prof = 1, comas = 0, corte = -1;
+                const pila = [];
+                while (j < txt.length && prof > 0) {
+                  const c = txt[j];
+                  if (!pila.length) {
+                    if (c === "(") { prof++; pila.push(c); }
+                    else if (c === ")") { prof--; if (!prof) break; }
+                    else if (c === "[" || c === "{" || c === "`" || c === '"' || c === "'") pila.push(c);
+                    else if (c === "," && prof === 1) { comas++; if (comas === 2) corte = j; }
+                  } else {
+                    const top = pila[pila.length - 1];
+                    if ((top === "(" && c === ")") || (top === "[" && c === "]") || (top === "{" && c === "}")
+                      || (top === "`" && c === "`") || (top === '"' && c === '"') || (top === "'" && c === "'")) pila.pop();
+                    else if (top === "`" && c === "$" && txt[j + 1] === "{") { pila.push("{"); j++; }
+                    else if (c === "(" || c === "[" || c === "{" || c === "`" || c === '"' || c === "'") pila.push(c);
+                  }
+                  j++;
+                }
+                fuera += (corte >= 0 ? txt.slice(i + 5, corte) : txt.slice(i + 5, j)) + ")";
+                k = j + 1;
+              }
+              return fuera;
+            };
+            /* Las excepciones DECLARADAS. Cada una dice por qué el dato no
+               hace falta como texto; ninguna de ellas es una cifra que decida. */
+            const EXCEPCIONES_TITLE = new Map([
+              ["app.js:chipBaja:b.mensaje", "el chip ya dice el hecho («Suelen bajar 8 % (unos $96M)» o «sin datos»); `mensaje` es la redacción larga del servidor sobre la MISMA cifra"],
+              ["app.js:avisoManifestacion:m.nota", "la línea ámbar ya enuncia el plazo y qué hacer; `nota` repite la norma que la cabecera del filtro publica entera"],
+              ["app.js:pintarSeguimiento:m.nota", "el chip dice la fecha límite y los días que quedan, que es lo que decide; `nota` es la misma norma"],
+              ["app.js:pintarSeguimiento:h.evidencia", "el hito ya se marca «(calc.)» cuando es calculado; la evidencia es la línea del pliego de la que salió"],
+              ["app.js:badgePuerta:p.mensaje", "el mensaje entero sale como TEXTO en los renglones de `badgesPuertas`, en el mismo pliegue de la misma tarjeta"],
+              ["portada.js:htmlManifestacion:f.nota", "el chip de la portada dice el estado del plazo; `nota` es la misma norma del filtro"],
+            ]);
+            const CAMPOS_EVIDENCIA = /\b([a-z]\w*)\.(mensaje|cita|nota|evidencia|fundamento)\b/g;
+            const dirPub = path.join(__dirname, "..", "public");
+            const soloEnTitle = [], usadas = new Set();
+            for (const archivo of fs.readdirSync(dirPub).filter((f) => f.endsWith(".js"))) {
+              const fuente = sinComentarios(fs.readFileSync(path.join(dirPub, archivo), "utf8"));
+              const re = /\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g;
+              let m;
+              while ((m = re.exec(fuente))) {
+                const abre = fuente.indexOf("{", m.index + m[0].length - 1);
+                if (abre < 0) continue;
+                let prof = 0, j = abre;
+                for (; j < fuente.length; j++) { if (fuente[j] === "{") prof++; else if (fuente[j] === "}") { prof--; if (!prof) break; } }
+                const cuerpo = fuente.slice(abre, j + 1);
+                const visible = sinTitleDeChip(sinAtributoTitle(cuerpo));
+                const campos = new Set();
+                let c;
+                CAMPOS_EVIDENCIA.lastIndex = 0;
+                while ((c = CAMPOS_EVIDENCIA.exec(cuerpo))) campos.add(c[0]);
+                for (const campo of campos) {
+                  if (visible.includes(campo)) continue;
+                  const clave = `${archivo}:${m[1]}:${campo}`;
+                  if (EXCEPCIONES_TITLE.has(clave)) { usadas.add(clave); continue; }
+                  soloEnTitle.push(`${archivo}:${fuente.slice(0, m.index).split("\n").length} ${m[1]}() «${campo}»`);
+                }
+              }
+            }
+            assert.deepStrictEqual(soloEnTitle, [],
+              `en el teléfono no hay tooltip: la evidencia del servidor no puede vivir SOLO en un title. Declare la excepción con su motivo o píntela: ${soloEnTitle.join(" | ")}`);
+            const sobran = [...EXCEPCIONES_TITLE.keys()].filter((k) => !usadas.has(k));
+            assert.deepStrictEqual(sobran, [],
+              `excepciones declaradas que ya no existen: retírelas o el censo se queda sin sujeto — ${sobran.join(", ")}`);
+            // la excepción de `badgePuerta` está VIVA: el renglón la sostiene
+            const iBPs = jsT.indexOf("function badgesPuertas(");
+            assert.ok(/esc\(p\.mensaje\)/.test(jsT.slice(iBPs, jsT.indexOf("\n  }", iBPs))),
+              "la excepción de badgePuerta se sostiene en que badgesPuertas pinta `p.mensaje` como texto: si eso desaparece, la excepción miente");
+            // la guía de Mis procesos: el hecho y su cita se VEN, no se pasan con el ratón
+            const iOjo = jsT.indexOf("const liOjo = (h) =>");
+            const cuerpoOjo = jsT.slice(iOjo, jsT.indexOf("};", iOjo));
+            assert.ok(/block text-xs[^`]*\$\{esc\(h\.texto\)\}/.test(cuerpoOjo) && /<q[^>]*>\$\{esc\(h\.cita\)\}<\/q>/.test(cuerpoOjo),
+              "cada hecho de «Ojo con lo que dice el pliego» tiene que enseñar su texto y su cita literal, no solo en el title");
+            assert.ok(!/h\.clave === "deducciones" \|\| h\.clave === "fechas"/.test(cuerpoOjo),
+              "el texto ya no es privilegio de dos claves: lo enseñan todos los hechos");
+            const iCif = jsT.indexOf("function htmlCifrasPliego(");
+            assert.ok(/const secundaria = \[x\.nota, x\.cita/.test(jsT.slice(iCif, jsT.indexOf("\n  }", iCif))),
+              "la fila de «Lo que fija el pliego» tiene que sacar su nota y su cita a una línea visible");
+          }
+
           /* ── La alarma de renovación del RUP (quinto día hábil de abril) ──
              Perderla = un año sin poder licitar. El «ahora» va INYECTADO (una
              prueba de calendario calibrada contra el reloj real no prueba
@@ -19142,6 +19536,53 @@ async function main() {
           assert.ok(pos('id="btn-exportar"') > p3 - 600 && pos('id="btn-exportar"') < pos('id="seccion-piso-techo"'), "el Excel va en el paso 3, con el resultado");
           for (const res of ["seccion-piso-techo", "seccion-resumen", "seccion-rentabilidad", "seccion-precio-sugerido"]) assert.ok(pos(`id="${res}"`) > p3, `«${res}» va en el paso 3`);
           assert.ok(pos('id="seccion-revision"') > pos('id="seccion-precio-sugerido"') && pos('id="seccion-apu"') > pos('id="seccion-revision"'), "revisar y el catálogo van al final");
+
+          /* ═══ PRECIOS NO PUEDE VOLVER A CRECER, Y EL PRECIO SE DICE COMO
+                HECHO (5-sep-2026) ═══
+             Es la pantalla más densa de la aplicación: la tercera pasada del
+             4-sep puso lo decisivo primero, pero la densidad no bajó. Aquí se
+             fija el TOPE con la regla de corte escrita a la vista —desde
+             `<main id="tab-…">` hasta el siguiente `<main>`, sin comentarios,
+             sin `<script>` y sin `<style>`— y se mide con ella. Con esta misma
+             cuenta el árbol del 5-sep daba 1 368 palabras: el tope es lo medido
+             HOY, así que la pantalla ya solo puede adelgazar. */
+          {
+            const corte = (idPanel) => {
+              const a = html.indexOf(`<main id="${idPanel}"`);
+              assert.ok(a > 0, `index.html sin ${idPanel}`);
+              const b = html.indexOf("<main", a + 5);
+              return html.slice(a, b < 0 ? html.length : b)
+                .replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "");
+            };
+            const panelApu = corte("tab-apu");
+            const palabrasApu = (panelApu.replace(/<[^>]*>/g, " ").replace(/&[a-z]+;/g, " ").match(/[^\s]+/g) || [])
+              .filter((w) => /[\wÁÉÍÓÚÜÑáéíóúüñ0-9]/.test(w)).length;
+            const botonesApu = (panelApu.match(/<button\b/g) || []).length;
+            const camposApu = (panelApu.match(/<(?:input|select|textarea)\b/g) || []).length;
+            assert.ok(palabrasApu <= 1346, `#tab-apu tiene ${palabrasApu} palabras: el tope es 1346 y solo puede bajar`);
+            assert.ok(botonesApu <= 30, `#tab-apu tiene ${botonesApu} botones: el tope es 30`);
+            assert.ok(camposApu <= 42, `#tab-apu tiene ${camposApu} campos: el tope es 42`);
+            /* El párrafo del precio sugerido explicaba el MODELO: si para
+               entender un número hace falta leer un párrafo, el número está mal
+               elegido. Se dice el hecho, calculado con la meseta que el
+               servidor ya publica (`optimizador.meseta`). */
+            assert.ok(!/cuatro métodos de ponderación/.test(panelApu),
+              "«compra probabilidad en uno solo de los cuatro métodos de ponderación, que se sortean en la audiencia» es el modelo, no el hecho");
+            assert.ok(/id="ps-hecho"/.test(panelApu), "…y en su lugar va la frase que app.js calcula con la meseta");
+            const appD = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+            const iFm = appD.indexOf("function fraseMeseta(");
+            assert.ok(iFm > 0, "app.js sin fraseMeseta");
+            const fraseMeseta = new Function("num", `${appD.slice(iFm, appD.indexOf("\n  }", iFm) + 4)}; return fraseMeseta;`)(
+              (n) => (Number.isFinite(n) ? String(n) : "—"));
+            assert.strictEqual(fraseMeseta(null), "", "sin meseta no hay frase: jamás un literal inventado");
+            assert.strictEqual(fraseMeseta({ ancho_pp: null, tolerancia_pct: 2 }), "",
+              "`null` no se convierte en 0: «bajar más de 0 puntos» sería una orden falsa");
+            const fm = fraseMeseta({ ancho_pp: 3, tolerancia_pct: 2 });
+            assert.ok(/3 puntos/.test(fm) && /2 %/.test(fm) && !/\bpp\b/.test(fm) && !/\bVEG\b/.test(fm),
+              `la frase sale de la meseta del servidor y en palabras llanas: ${fm}`);
+            assert.ok(/\$\("ps-hecho"\)\.textContent = fraseMeseta\(meseta\)/.test(appD),
+              "y el recuadro la pinta con la MISMA meseta que ya usa la línea de abajo");
+          }
         }
 
         const idsHtml = new Set([...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));

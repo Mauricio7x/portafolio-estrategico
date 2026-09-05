@@ -284,7 +284,14 @@
       if (seccion) seccion.classList.toggle("hidden", p !== destino);
     }
     document.querySelectorAll("[data-tab]").forEach((b) => {
-      b.classList.toggle("activa", b.getAttribute("data-tab") === destino);
+      const suya = b.getAttribute("data-tab") === destino;
+      b.classList.toggle("activa", suya);
+      /* `aria-selected` SOLO donde hay `role="tab"` (5-sep-2026): los ocho
+         botones de las dos barras. `[data-tab]` también caza atajos que
+         NAVEGAN a una pestaña sin ser una («Ir a Licitaciones» del vacío de
+         Mis procesos), y marcarlos como pestaña seleccionada le mentiría al
+         lector de pantalla. */
+      if (b.getAttribute("role") === "tab") b.setAttribute("aria-selected", suya ? "true" : "false");
     });
     moverIndicadorPestanas();
     if (empujarHash) { try { history.replaceState(null, "", `#/${destino}`); } catch { /* entorno raro */ } }
@@ -870,6 +877,27 @@
     return `<span${t} class="rounded-full px-2.5 py-0.5 text-xs font-medium ${clases}">${texto}</span>`;
   }
 
+  /* ══════ EL RESUMEN DE UN PLIEGUE (5-sep-2026) ══════
+     Un pliegue cuyo título solo dice «Ajustes» o «Trámites y fechas» obliga a
+     abrirlo para saber si guarda algo. El patrón «Título (N)» ya existía en la
+     guía de Mis procesos y en la cobertura de códigos, escrito dos veces: aquí
+     se declara UNA y lo llaman los dos, más los pliegues de Precios.
+
+     Tres cosas que no son de adorno:
+     · el conteo sale SOLO si hay algo que contar — un «(0)» promete un cuadro
+       vacío, que es justo lo que este proyecto retiró el 4-sep;
+     · `extra` es un dato del contenido (la fecha más próxima, cuántos ajustes
+       cambió) y va detrás de un punto medio; sin dato, no va;
+     · todo cabe en UN solo `<span>`: el `summary` es flex por el chevrón y en
+       390 px el texto suelto junto a un elemento se parte en dos columnas
+       (decisión del 4-sep-2026, con su censo en la suite). */
+  function sufijoResumen(n, extra) {
+    return (Number.isFinite(n) && n > 0 ? ` (${n})` : "") + (extra ? ` · ${extra}` : "");
+  }
+  function resumenSummary(titulo, n, extra) {
+    return `<span class="min-w-0 flex-1">${esc(titulo)}${esc(sufijoResumen(n, extra))}</span>`;
+  }
+
   /* `cuantia` es el presupuesto oficial de ESTE proceso (`l.cuantia_cop`), que
      la tarjeta ya enseña dos filas más arriba. Con él, «Suelen bajar 8 %» se
      lee además en la unidad en la que se decide: «(unos $96M)».
@@ -1132,22 +1160,53 @@
   const ROJO = window.Glosario.ESTADO.no_cumple.chip;
   const GRIS = window.Glosario.ESTADO.sin_dato.chip;
 
+  /* El estado de una puerta se decide UNA sola vez: el chip de color y el
+     renglón de texto lo LEEN de aquí. Dos escaleras «equivalentes hoy»
+     divergen a la primera corrección (y esta ya tiene un `!pasa` que no es lo
+     mismo que `pasa === false`). */
+  function estadoPuerta(puerta) {
+    const p = puerta || {};
+    if (p.sin_dato) return "sin_dato";
+    if (!p.pasa) return "no_cumple";
+    if (p.advertencia) return "revisar";
+    return "cumple";
+  }
   function badgePuerta(etiqueta, puerta) {
     const p = puerta || {};
-    if (p.sin_dato) return chip(`● ${etiqueta} ?`, GRIS, p.mensaje || "Sin datos para evaluar este requisito");
-    if (!p.pasa) return chip(`● ${etiqueta} ✗`, ROJO, p.mensaje || "");
-    if (p.advertencia) return chip(`● ${etiqueta} ~`, AMBAR, p.mensaje || "");
+    const e = estadoPuerta(p);
+    if (e === "sin_dato") return chip(`● ${etiqueta} ?`, GRIS, p.mensaje || "Sin datos para evaluar este requisito");
+    if (e === "no_cumple") return chip(`● ${etiqueta} ✗`, ROJO, p.mensaje || "");
+    if (e === "revisar") return chip(`● ${etiqueta} ~`, AMBAR, p.mensaje || "");
     return chip(`● ${etiqueta} ✓`, VERDE, p.mensaje || "");
   }
 
+  /* ══════════ El PORQUÉ de cada puerta, en texto (5-sep-2026) ══════════
+     La cifra que sostiene el veredicto —«le quedan $1.200 M y la obra pide
+     $980 M»— vivía SOLO en el `title` del chip, y en el teléfono no hay
+     tooltip: la evidencia se perdía justo en el aparato donde más se consulta
+     (la misma lección que la regla de las 24 horas y la de las variantes de
+     precio). Ahora cada puerta es además un RENGLÓN con su mensaje entero,
+     dentro del mismo pliegue «Más detalles»; el `title` del chip se queda como
+     redundancia de escritorio.
+
+     El mensaje ya viene REDACTADO de lib/puertas (`evaluarPuertas`): se llama,
+     no se reescribe. Sin mensaje no hay renglón — jamás se inventa uno. */
   function badgesPuertas(puertas) {
     const g = puertas || {};
-    return [
-      badgePuerta(window.Glosario.corto("rup"), g.p1_rup),
-      badgePuerta(window.Glosario.corto("capacidad_contratacion"), g.p2_k),
-      badgePuerta("Caja", g.p3_caja),
-      badgePuerta("Competencia", g.p4_competencia),
-    ].join("");
+    const pares = [
+      [window.Glosario.corto("rup"), g.p1_rup],
+      [window.Glosario.corto("capacidad_contratacion"), g.p2_k],
+      ["Caja", g.p3_caja],
+      ["Competencia", g.p4_competencia],
+    ];
+    const chips = pares.map(([etiqueta, p]) => badgePuerta(etiqueta, p)).join("");
+    const renglones = pares.map(([etiqueta, p]) => {
+      if (!p || !p.mensaje) return "";
+      const clr = window.Glosario.ESTADO[estadoPuerta(p)].clase;
+      return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><span class="min-w-0"><span class="font-medium">${esc(etiqueta)}</span> · ${esc(p.mensaje)}</span></li>`;
+    }).join("");
+    return `<div class="mt-2 flex flex-wrap gap-2">${chips}</div>`
+      + (renglones ? `<ul class="mt-2 space-y-1 text-xs text-gray-600">${renglones}</ul>` : "");
   }
 
   /* ══════════ Los requisitos, en UNA línea ══════════
@@ -1623,8 +1682,8 @@
            La información no se pierde — deja de estorbar. -->
       <details class="mt-3">
         <summary class="cursor-pointer text-xs text-gray-400 transition hover:text-gray-600">Más detalles</summary>
+        ${badgesPuertas(puertas)}
         <div class="mt-2 flex flex-wrap gap-2">
-          ${badgesPuertas(puertas)}
           ${chip(l.anticipo_pct > 0 ? `Anticipo ${l.anticipo_pct}%` : "Anticipo no declarado", l.anticipo_pct > 0 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-500")}
           ${chipBaja(l.baja_mercado, l.cuantia_cop)}
           ${chip(esc(`${l.ciudad_entidad || l.departamento_entidad || "Ubicación n/d"}`) + (l.ubicacion_valida ? " ✓" : ""), l.ubicacion_valida ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600")}
@@ -2917,10 +2976,16 @@
     const enlace = docs.enlace_secop && urlSegura(docs.enlace_secop) ? ` <a href="${esc(urlSegura(docs.enlace_secop))}" target="_blank" rel="noopener noreferrer" class="underline">Abrir en SECOP II</a>` : "";
     const fila = (x) => {
       const clr = EXIG_CLR[x.estado] || EST.sin_dato.clase;
-      /* forma corta del dinero en la celda; la cifra exacta y la cita, en el título */
+      /* forma corta del dinero en la celda; la cifra exacta, en el título */
       const cifra = x.tipo_valor === "dinero" && Number.isFinite(Number(x.exige_valor)) ? fmtCorto(Number(x.exige_valor)) : x.exige;
       const titulo = [x.tipo_valor === "dinero" ? `Pide ${x.exige}.` : "", x.nota, x.cita ? `«${x.cita}»` : ""].filter(Boolean).join(" ");
-      return `<tr title="${esc(titulo)}"><td class="py-1.5 pr-3 text-gray-600">${esc(x.titulo)}</td><td class="py-1.5 pr-3 num font-semibold whitespace-nowrap">${esc(cifra)}</td><td class="py-1.5 pr-3 num whitespace-nowrap text-gray-500">${x.suyo ? esc(x.suyo) : "—"}</td><td class="py-1.5 pr-3 whitespace-nowrap ${clr}"><span aria-hidden="true">●</span> ${esc(x.estado_legible || "")}</td><td class="py-1.5 text-[11px] text-gray-400">${x.documento ? `${esc(x.documento)}${x.pagina != null ? `, pág. ${x.pagina}` : ""}` : ""}${x.cambiado_por_adenda ? " · cambió por adenda" : ""}</td></tr>`;
+      /* LA NOTA Y LA CITA SE VEN (5-sep-2026): eran el mejor argumento de esta
+         tabla y vivían solo en el `title`, que en el teléfono no existe. Van en
+         una segunda fila a todo el ancho —no en la celda del requisito, que
+         estrujaría las cifras— y el `title` se queda de redundancia. */
+      const secundaria = [x.nota, x.cita ? `«${x.cita}»` : ""].filter(Boolean).join(" ");
+      return `<tr class="border-t border-gray-100" title="${esc(titulo)}"><td class="py-1.5 pr-3 text-gray-600">${esc(x.titulo)}</td><td class="py-1.5 pr-3 num font-semibold whitespace-nowrap">${esc(cifra)}</td><td class="py-1.5 pr-3 num whitespace-nowrap text-gray-500">${x.suyo ? esc(x.suyo) : "—"}</td><td class="py-1.5 pr-3 whitespace-nowrap ${clr}"><span aria-hidden="true">●</span> ${esc(x.estado_legible || "")}</td><td class="py-1.5 text-[11px] text-gray-400">${x.documento ? `${esc(x.documento)}${x.pagina != null ? `, pág. ${x.pagina}` : ""}` : ""}${x.cambiado_por_adenda ? " · cambió por adenda" : ""}</td></tr>`
+        + (secundaria ? `<tr><td colspan="5" class="pb-1.5 text-xs text-gray-600">${esc(secundaria)}</td></tr>` : "");
     };
     const nombres = sin.map((x) => x.titulo.toLowerCase());
     const pie = !sin.length ? ""
@@ -2928,7 +2993,7 @@
         : `<p class="mt-2 text-xs text-gray-500">${con.length ? `Las otras ${sin.length}` : `Estas ${sin.length}`} (${nombres.length <= 3 ? nombres.join(", ") : `${nombres.slice(0, 3).join(", ")} y ${nombres.length - 3} más`}) no están en una línea legible de lo leído: búsquelas en el apartado de requisitos del pliego.${enlace}</p>`;
     return `<div>
       <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1"><h4 class="font-semibold tracking-tight">Lo que fija el pliego</h4>${g.resumen && g.resumen.exigencias && con.length ? `<p class="text-xs text-gray-500">${esc(g.resumen.exigencias.frase)}</p>` : ""}</div>
-      ${con.length ? `<div class="mt-2 overflow-x-auto"><table class="w-full text-sm"><thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-3 font-medium">Requisito</th><th class="pb-1 pr-3 font-medium">Pide el pliego</th><th class="pb-1 pr-3 font-medium">Usted</th><th class="pb-1 pr-3 font-medium">Estado</th><th class="pb-1 font-medium">Dónde</th></tr></thead><tbody class="divide-y divide-gray-100">${con.map(fila).join("")}</tbody></table></div>` : ""}
+      ${con.length ? `<div class="mt-2 overflow-x-auto"><table class="w-full text-sm"><thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-3 font-medium">Requisito</th><th class="pb-1 pr-3 font-medium">Pide el pliego</th><th class="pb-1 pr-3 font-medium">Usted</th><th class="pb-1 pr-3 font-medium">Estado</th><th class="pb-1 font-medium">Dónde</th></tr></thead><tbody>${con.map(fila).join("")}</tbody></table></div>` : ""}
       ${pie}
     </div>`;
   }
@@ -2945,7 +3010,12 @@
     /* «ojo con»: lo que el pliego exige o castiga, citado; los hechos que ya están en la tabla de cifras no se repiten */
     const enFicha = (h) => (g.exigencias || []).length > 0 && (/^requisito_/.test(h.clave) || h.clave === "anticipo");
     const ojo = (g.lo_que_dicen || []).filter((h) => !enFicha(h));
-    const liOjo = (h) => { const [clr, eti] = ESTADO_HECHO[h.estado] || ESTADO_HECHO.dato; return `<li class="flex gap-2" title="${esc([h.texto, h.cita ? `«${h.cita}»` : ""].filter(Boolean).join(" "))}"><span class="${clr}" aria-hidden="true">●</span><span class="min-w-0"><span class="font-medium">${esc(h.titulo)}${h.valor_legible ? `: ${esc(h.valor_legible)}` : ""}</span>${eti ? ` <span class="text-[11px] ${clr}">${eti}</span>` : ""}${h.clave === "deducciones" || h.clave === "fechas" ? `<span class="block text-xs text-gray-600">${esc(h.texto)}</span>` : ""}<span class="block text-[11px] text-gray-400">${esc(h.documento || "")}${h.pagina != null ? `, pág. ${h.pagina}` : ""}</span></span></li>`; };
+    /* EL HECHO Y SU CITA SE LEEN, NO SE PASAN CON EL RATÓN (5-sep-2026): hasta
+       hoy solo las deducciones y las fechas enseñaban su texto y la cita vivía
+       entera en el `title` — en el teléfono, donde más se consulta esta guía,
+       eso es no tenerla. Ahora todos los hechos enseñan su texto y su cita
+       literal; el `title` se conserva como redundancia de escritorio. */
+    const liOjo = (h) => { const [clr, eti] = ESTADO_HECHO[h.estado] || ESTADO_HECHO.dato; return `<li class="flex gap-2" title="${esc([h.texto, h.cita ? `«${h.cita}»` : ""].filter(Boolean).join(" "))}"><span class="${clr}" aria-hidden="true">●</span><span class="min-w-0"><span class="font-medium">${esc(h.titulo)}${h.valor_legible ? `: ${esc(h.valor_legible)}` : ""}</span>${eti ? ` <span class="text-[11px] ${clr}">${eti}</span>` : ""}${h.texto ? `<span class="block text-xs text-gray-600">${esc(h.texto)}</span>` : ""}${h.cita ? `<q class="block text-xs italic text-gray-500">${esc(h.cita)}</q>` : ""}<span class="block text-[11px] text-gray-400">${esc(h.documento || "")}${h.pagina != null ? `, pág. ${h.pagina}` : ""}</span></span></li>`; };
     const ojoVisible = ojo.slice(0, 5), ojoResto = ojo.slice(5);
     const ojoHtml = ojo.length ? `<div><h4 class="font-semibold tracking-tight">Ojo con lo que dice el pliego</h4><ul class="mt-1.5 space-y-1.5">${ojoVisible.map(liOjo).join("")}</ul>${ojoResto.length ? `<details class="mt-1.5"><summary class="cursor-pointer text-xs text-gray-500">${ojoResto.length} más</summary><ul class="mt-1.5 space-y-1.5">${ojoResto.map(liOjo).join("")}</ul></details>` : ""}</div>` : "";
     /* trámites y fechas: los pasos con fecha y, debajo, lo que hay que conseguir (lo que no está en los chips del veredicto) */
@@ -2981,6 +3051,11 @@
     const nDocs = docs ? (docs.leidos || []).length + (docs.por_leer || []).length + (docs.ilegibles || []).length + (docs.no_legibles || []).length : 0;
     const plegado = (titulo, cuerpo) => `<details class="guia-caja"><summary class="cursor-pointer px-3 py-2 text-sm font-semibold tracking-tight">${titulo}</summary><div class="px-3 pb-3">${cuerpo}</div></details>`;
     const nPasos = (g.pasos || []).length + (g.requisitos || []).filter((q) => !CHIP_REQ[q.clave]).length;
+    /* «el más próximo» SOLO si el pliego trae la fecha: aquí no se inventa un
+       día ni se deduce de un techo legal. Se toma la primera que no ha pasado;
+       si todas quedaron atrás, el pliegue va sin fecha. */
+    const proximoPaso = (g.pasos || []).map((s) => s.cuando).filter(Boolean).map((f) => String(f).slice(0, 10)).sort()
+      .find((f) => f >= new Date().toISOString().slice(0, 10)) || null;
     return `<details class="mt-3 rounded-xl ring-1 ring-inset ring-gray-900/5" data-seg-guia="${esc(p.id)}" style="background: var(--bg-inset);"${abierta ? " open" : ""}>
       <summary class="cursor-pointer px-3 py-2 text-sm font-medium"><span>Qué necesita para presentarse: lo que dice el pliego${r.frase ? ` <span class="text-xs font-normal text-gray-500">· ${esc(r.frase)}</span>` : ""}${g.completa === false ? ` <span class="text-[11px] font-normal text-amber-900">· guía parcial: el proceso ya no está en la lista viva</span>` : ""}</span></summary>
       <div class="space-y-4 px-3 pb-3 text-sm">
@@ -2991,11 +3066,11 @@
           ${docs ? `<div class="text-xs" data-seg-docs="${esc(p.id)}">${htmlDocs(p)}</div>` : ""}
           ${htmlCifrasPliego(g)}
           ${ojoHtml}
-          ${plegado(`Trámites y fechas (${nPasos})`, `<ol class="space-y-2">${pasos}</ol>${conseguir ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que tiene que conseguir</p><ul class="mt-1.5 space-y-2">${conseguir}</ul>` : ""}${verificados ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que la aplicación verificó</p><ul class="mt-1.5 space-y-2">${verificados}</ul>` : ""}`)}
-          ${plegado(`Consejos para este proceso (${(g.consejos || []).length})`, `<ul class="space-y-2">${consejos}</ul>`)}
+          ${plegado(resumenSummary("Trámites y fechas", nPasos, proximoPaso ? `el más próximo: ${fechaCorta(proximoPaso)}` : ""), `<ol class="space-y-2">${pasos}</ol>${conseguir ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que tiene que conseguir</p><ul class="mt-1.5 space-y-2">${conseguir}</ul>` : ""}${verificados ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que la aplicación verificó</p><ul class="mt-1.5 space-y-2">${verificados}</ul>` : ""}`)}
+          ${plegado(resumenSummary("Consejos para este proceso", (g.consejos || []).length, ""), `<ul class="space-y-2">${consejos}</ul>`)}
           ${plegado("La plata que nadie suma", dinero)}
           ${plegado("La obra en una mirada", obraHtml)}
-          ${nDocs ? plegado(`Documentos del proceso (${nDocs})`, htmlListaDocs(docs)) : ""}
+          ${nDocs ? plegado(resumenSummary("Documentos del proceso", nDocs, ""), htmlListaDocs(docs)) : ""}
           ${g.como_leerlo ? `<p class="text-[11px] text-gray-400">${esc(g.como_leerlo)}</p>` : ""}
         </div>`)}
       </div>
@@ -3082,7 +3157,7 @@
             <p class="font-medium leading-snug">${urlSegura(pr.url) ? `<a href="${esc(urlSegura(pr.url))}" target="_blank" rel="noopener noreferrer" class="hover:underline">${esc(pr.nombre || p.id)}</a>` : esc(pr.nombre || p.id)}</p>
             <p class="text-xs text-gray-500">${esc(pr.entidad || "—")}${pr.departamento ? ` · ${esc(pr.departamento)}` : ""}${pr.presupuesto_cop ? ` · ${esc(fmtCorto(pr.presupuesto_cop))}` : ""}${p.estado_secop ? ` · ${esc(p.estado_secop)}` : ""}${p.adjudicado ? " · adjudicado" : ""}</p>
           </div>
-          <select data-seg-estado="${esc(p.id)}" class="control-select rounded-lg text-xs" title="Etapa en su seguimiento">
+          <select data-seg-estado="${esc(p.id)}" class="control-select rounded-lg text-xs" aria-label="Etapa de este proceso en su seguimiento" title="Etapa en su seguimiento">
             ${estados.map((e) => `<option value="${e}" ${p.estado === e ? "selected" : ""}>${esc(r.estados[e] || e)}</option>`).join("")}
           </select>
         </div>
@@ -3313,7 +3388,8 @@
   let filas = [];           // [{item_id, descripcion, unidad, cantidad, rendimiento_override}]
   let ultimoCalculo = null; // respuesta de /api/apu/calcular
   let idActual = null;      // id del presupuesto cargado/guardado
-  let iaEstado = null;      // última respuesta de op=ia para idActual (precios buscados por una sesión de Claude Code)
+  // última respuesta de op=ia para idActual (los precios los busca una sesión de Claude Code)
+  let iaEstado = null;
   let iaSondeo = null;      // temporizador del sondeo mientras la solicitud está en cola
   let iaSondeos = 0;        // cuántas veces se sondeó (tope: no se sondea para siempre)
   let ultimoOptimizador = null; // bloque `optimizador` de /api/apu/rentabilidad
@@ -3898,11 +3974,13 @@
         <td class="py-2 pr-3 text-right">
           <input type="number" min="0" step="any" data-campo="cantidad" data-fila="${i}"
                  value="${f.cantidad || ""}" placeholder="0"
+                 aria-label="Cantidad de ${esc(f.descripcion || f.item_id || `la fila ${i + 1}`)}"
                  class="edit w-24 rounded border border-gray-200 px-2 py-1 text-right num">
         </td>
         <td class="py-2 pr-3 text-right">
           <input type="number" min="0" step="any" data-campo="precio" data-fila="${i}"
                  value="${f.precio_manual == null ? "" : f.precio_manual}"
+                 aria-label="Precio unitario de ${esc(f.descripcion || f.item_id || `la fila ${i + 1}`)}"
                  placeholder="${f.item_id ? (/^INVIAS:/.test(f.item_id) ? "ref. INVIAS" : /^IDU:/.test(f.item_id) ? "ref. IDU" : "del catálogo") : "requerido"}"
                  class="edit w-28 rounded border border-gray-200 px-2 py-1 text-right num">
         </td>
@@ -4621,6 +4699,7 @@
       if (!r) return null;
       idActual = r.id;
       if (!silencioso) msgApu(`Guardado como «${r.nombre}» (id ${r.id}). ${r.nota}`, "ok");
+      contarBorradores();   // el pliegue dice cuántos hay sin abrirlo: acaba de cambiar
       return r;
     } catch (e) {
       msgApu(mensajeDeFallo(e, "guardar el presupuesto"), "error");
@@ -4680,12 +4759,42 @@
       ${cantidad != null && p.costo_directo_unitario != null ? `<p class="mt-1 text-[11px] text-gray-400">Costo directo por ${esc(p.unidad || "unidad")}: ${pesos(p.costo_directo_unitario)} × ${nf2.format(cantidad)} = ${pesos(p.costo_directo_unitario * cantidad)}.</p>` : ""}
     </div>`;
   }
+  /* La edad de la solicitud, en palabras. Sin edad MEDIDA no se inventa una:
+     `Number(null)` vale 0 y «hace 0 horas» sería una cifra creíble y falsa. */
+  function edadEnPalabras(min) {
+    const m = min == null ? null : Number(min);
+    if (m == null || !Number.isFinite(m)) return null;
+    const h = Math.floor(m / 60);
+    if (h >= 1) return `${h} hora${h === 1 ? "" : "s"}`;
+    const q = Math.max(1, Math.round(m));
+    return `${q} minuto${q === 1 ? "" : "s"}`;
+  }
   function pintarIa(r) {
     const caja = $("ia-propuesta");
     if (iaSondeo) { clearTimeout(iaSondeo); iaSondeo = null; }
     const s = r.solicitud || {};
-    if (r.estado === "en_cola") {
-      msgIa(`En cola${s.solicitado_el ? ` desde el ${fechaCorta(s.solicitado_el)}` : ""}: una sesión de Claude toma la solicitud (suele ser en menos de una hora). Puede cerrar esta página: el resultado queda guardado con el borrador${s.nombre ? ` «${s.nombre}»` : ""}.`);
+    /* NI UN PLAZO QUE NADIE MIDIÓ NI EL VOCABULARIO DEL SISTEMA (5-sep-2026):
+       este renglón decía «una sesión de Claude toma la solicitud (suele ser en
+       menos de una hora)». «Menos de una hora» era el PERIODO con el que se
+       revisa la cola, no un tiempo medido —no hay ni mediana ni percentil de
+       lo que tarda—, y quién la atiende es cómo está hecha la aplicación, no
+       lo que le pasa a su solicitud. Se dice el HECHO: quedó registrada, la
+       cola se revisa cada hora, el resultado llega con su fuente. Cuando haya
+       tiempos MEDIDOS, la cifra vuelve.
+
+       Y la solicitud ya no envejece muda: el servidor la marca «sin_atender»
+       cuando se salta tres revisiones, y entonces la pantalla lo dice y dice
+       qué hacer. */
+    if (r.estado === "en_cola" || r.estado === "sin_atender") {
+      const guardado = `Puede cerrar esta página: el resultado queda guardado con el borrador${s.nombre ? ` «${s.nombre}»` : ""}.`;
+      const edad = edadEnPalabras(r.edad_min);
+      if (r.estado === "sin_atender") {
+        msgIa(`Sin atender${edad ? ` desde hace ${edad}` : ""}: la cola se revisa cada hora y esta solicitud se saltó varias revisiones. `
+          + `Vuelva a pulsar Buscar o avise a quien atiende la cola. ${guardado}`, "error");
+      } else {
+        msgIa(`Su solicitud quedó registrada${s.solicitado_el ? ` el ${fechaCorta(s.solicitado_el)}` : ""}. `
+          + `Los precios llegan aquí con su fuente cuando se atiende la cola, que se revisa cada hora. ${guardado}`);
+      }
       barraIa(2); caja.classList.add("hidden");
       if (iaSondeos < 240) iaSondeo = setTimeout(() => { iaSondeos++; consultarIa({ silencioso: true }); }, 60000);
       return;
@@ -4814,6 +4923,7 @@
       const r = await api(`/api/apu?op=listar&perfil=${encodeURIComponent($("perfil").value)}`);
       if (!r) return;
       caja.classList.remove("hidden");
+      pintarResumenBorradores(r.presupuestos.length);
       if (!r.presupuestos.length) {
         caja.innerHTML = `<p class="text-sm text-gray-500">No hay presupuestos guardados para este perfil. Los borradores viven ${r.ttl_dias} días.</p>`;
         return;
@@ -4851,6 +4961,10 @@
       $("departamento").value = p.departamento || "";
       $("entidad").value = p.entidad || "";
       aplicarConfig(p.config);
+      /* escribir un campo desde el código NO dispara `input` ni `change`: sin
+         esta llamada el resumen del pliegue seguiría diciendo lo de antes de
+         abrir el borrador */
+      pintarResumenAjustes();
       /* los NÚMEROS del borrador se COERCIONAN al cargar: van a parar dentro de
          atributos `value="…"` de la tabla, y un texto guardado a mano en el
          borrador no puede convertirse en marcado. Un valor ilegible cae a
@@ -5646,6 +5760,26 @@
      Coinciden solo si el APU da exactamente la cuantía publicada. El botón
      escribe SIEMPRE el segundo; escribir el primero produciría un precio
      distinto del recomendado sin que nada lo delatara. */
+  /* ══════ EL PRECIO SUGERIDO, DICHO COMO HECHO (5-sep-2026) ══════
+     La pantalla explicaba el MODELO —«bajar más allá del óptimo compra
+     probabilidad en uno solo de los cuatro métodos de ponderación, que se
+     sortean en la audiencia»—: para entender el número había que leerse un
+     párrafo entero, que es exactamente la señal de que el número está mal
+     elegido. Lo que decide es el HECHO, y el servidor ya lo calcula: la MESETA
+     dice cuántos puntos de baja caben antes de que lo que deja por intento
+     caiga más de su tolerancia. Se llama, no se reescribe.
+
+     Sin meseta medida no hay frase — nunca un literal inventado —, y `null` no
+     se convierte en 0: «bajar más de 0 puntos» sería una orden falsa. */
+  function fraseMeseta(meseta) {
+    const m = meseta || {};
+    const ancho = m.ancho_pp == null ? null : Number(m.ancho_pp);
+    if (ancho == null || !Number.isFinite(ancho) || ancho <= 0) return "";
+    const tol = m.tolerancia_pct == null ? null : Number(m.tolerancia_pct);
+    return `Bajar más de ${num(ancho)} puntos por debajo de este precio casi no sube su opción de ganar y sí le quita plata`
+      + (tol != null && Number.isFinite(tol) ? ` (lo que deja por intento cae más del ${num(tol)} %)` : "") + ".";
+  }
+
   function pintarPrecioSugerido(o) {
     const sec = $("seccion-precio-sugerido");
     const sin = $("ps-sin-datos");
@@ -5658,6 +5792,7 @@
       sin.classList.remove("hidden");
       sin.innerHTML = `<p><span aria-hidden="true">●</span> ${esc((o && o.mensaje) || "No hay con qué sugerir un precio para este proceso.")}</p>${botonPasoQueFalta()}`;
       $("ps-origen").textContent = "";
+      if ($("ps-hecho")) $("ps-hecho").textContent = "";
       return;
     }
     sin.classList.add("hidden");
@@ -5694,6 +5829,7 @@
        en pequeño y dentro de una función. */
     const opc = o.opciones || {};
     const meseta = opc.meseta || {};
+    if ($("ps-hecho")) $("ps-hecho").textContent = fraseMeseta(meseta);
     const fila = (clave, p) => {
       if (!p) return "";
       const destacada = clave === "optimo";
@@ -5821,6 +5957,47 @@
     aplicarDescuentoApu((ultimoOptimizador.opciones || {})[clave]);
   });
 
+  /* ══════ QUÉ GUARDAN LOS DOS PLIEGUES DE PRECIOS (5-sep-2026) ══════
+     «Ajustes» y «Guardar o abrir un borrador» no decían nada de su contenido:
+     había que abrirlos para descubrir que estaban intactos o vacíos.
+
+     Los ajustes se cuentan por CENSO, no por lista: se recorren TODOS los
+     controles del pliegue y cada uno se compara con SU valor por defecto (el
+     que trae el marcado). Una lista de campos a vigilar se queda coja en
+     cuanto alguien añade una perilla nueva — y este pliegue ya lleva dieciséis. */
+  function ajustesCambiados() {
+    const caja = $("ajustes-wrap");
+    if (!caja) return null;
+    let n = 0;
+    for (const el of caja.querySelectorAll("input, select, textarea")) {
+      if (el.type === "checkbox" || el.type === "radio") { if (el.checked !== el.defaultChecked) n++; continue; }
+      if (el.tagName === "SELECT") {
+        const d = Array.from(el.options).find((o) => o.defaultSelected) || el.options[0];
+        if (d && el.value !== d.value) n++;
+        continue;
+      }
+      if (el.value !== el.defaultValue) n++;
+    }
+    return n;
+  }
+  function pintarResumenAjustes() {
+    const nodo = $("ajustes-resumen"); if (!nodo) return;
+    const n = ajustesCambiados();
+    nodo.textContent = n == null ? "" : sufijoResumen(null, n > 0 ? `${n} cambiado${n === 1 ? "" : "s"}` : "");
+  }
+  /* «Sin dato» NO es «cero»: si la consulta de borradores falla, el pliegue se
+     queda con su nombre y no promete un «(0)» que sería falso. */
+  function pintarResumenBorradores(n) {
+    const nodo = $("borradores-resumen"); if (!nodo) return;
+    nodo.textContent = Number.isFinite(n) ? sufijoResumen(n, "") : "";
+  }
+  async function contarBorradores() {
+    try {
+      const r = await api(`/api/apu?op=listar&perfil=${encodeURIComponent($("perfil").value)}`);
+      if (r && Array.isArray(r.presupuestos)) pintarResumenBorradores(r.presupuestos.length);
+    } catch { /* sin dato: el pliegue se queda como estaba */ }
+  }
+
   async function arrancar() {
     const hayProceso = precargarDesdeURL();
     // envuelto en una flecha a propósito: pasarla directa le entregaría el
@@ -5843,6 +6020,12 @@
     // el departamento del proceso solo se puede fijar cuando el catálogo ya
     // llenó el desplegable: antes no existe la opción que hay que seleccionar
     if (hayProceso) precargarDesdeURL();
+    /* los dos pliegues dicen qué guardan ANTES de abrirlos, y los ajustes se
+       vuelven a contar en cuanto se toca cualquiera de sus controles */
+    const cajaAj = $("ajustes-wrap");
+    if (cajaAj) { for (const ev of ["input", "change"]) cajaAj.addEventListener(ev, pintarResumenAjustes); }
+    pintarResumenAjustes();
+    contarBorradores();
   }
   /* «Reintentar» de Precios: repite la carga del catálogo, que es de lo que
      cuelga toda la pestaña. Se registra aquí (no dentro de `arrancar`) para
@@ -6492,6 +6675,48 @@
     }
   }
 
+  /* ══════ LA CONCLUSIÓN DEL GRÁFICO, EN UNA FRASE (5-sep-2026) ══════
+     Los dos gráficos del tablero se titulaban con la PREGUNTA («Cuándo hay que
+     entregar la oferta», «Contra cuánta gente compite») y dejaban la respuesta
+     dentro de las barras: había que contarlas. Ahora, debajo del título, va lo
+     que el gráfico DEMUESTRA, con su base declarada.
+
+     Tres cuidados:
+     · la frase sale de las MISMAS cubetas que se dibujan (se llama, no se
+       recalcula): dos cuentas «iguales hoy» divergen a la primera corrección;
+     · la base NO es la del héroe («N cierran esta semana» cuenta sobre las
+       viables) ni la de las visibles: es la suma de las cubetas, que aquí son
+       las que tienen fecha de cierre publicada, y se dice con esas palabras;
+     · sin cubetas no hay frase — jamás un «0 de 0». */
+  const parrafoConclusion = (frase) => (frase
+    ? `<p class="mb-1 text-xs" style="color: var(--text-secondary);">${esc(frase)}</p>` : "");
+  const sumaCubetas = (cubetas, claves) => (cubetas || [])
+    .filter((x) => !claves || claves.includes(x.clave))
+    .reduce((a, x) => a + (Number.isFinite(x.n) ? x.n : 0), 0);
+  function fraseUrgencia(cubetas) {
+    const conFecha = sumaCubetas(cubetas);
+    if (!conFecha) return "";
+    const esteMes = sumaCubetas(cubetas, ["esta_semana", "dos_semanas", "este_mes"]);
+    const semana = sumaCubetas(cubetas, ["esta_semana"]);
+    const base = `de las ${fmt.format(conFecha)} con fecha de cierre publicada`;
+    return (esteMes
+      ? `${fmt.format(esteMes)} ${base} cierra${esteMes === 1 ? "" : "n"} este mes`
+      : `Ninguna ${base} cierra este mes`)
+      + (semana ? `; ${fmt.format(semana)} esta semana` : "") + ".";
+  }
+  function fraseCompetencia(cubetas) {
+    const total = sumaCubetas(cubetas);
+    if (!total) return "";
+    const poca = sumaCubetas(cubetas, ["baja"]);
+    const alta = sumaCubetas(cubetas, ["alta"]);
+    const sin = sumaCubetas(cubetas, ["sin_dato"]);
+    return (poca
+      ? `En ${fmt.format(poca)} de las ${fmt.format(total)} compite poca gente`
+      : `En ninguna de las ${fmt.format(total)} compite poca gente`)
+      + (alta ? `; ${fmt.format(alta)} están muy peleadas` : "")
+      + (sin ? `; de ${fmt.format(sin)} no hay histórico` : "") + ".";
+  }
+
   function pintarDashboard(c, cache) {
     const t = c.totales || {};
     const per = t.por_pertinencia || {};
@@ -6530,15 +6755,16 @@
        ventanas de entrega y meterlos deformaría la escala de las que sí lo son. */
     const urg = c.totales.por_urgencia || {};
     const cubetasUrg = [
-      { id: "7d", etiqueta: "Cierran esta semana", corto: "esta semana", n: urg.cierra_esta_semana || 0 },
-      { id: "15d", etiqueta: "Cierran en dos semanas", corto: "2 semanas", n: urg.cierra_proxima_semana || 0 },
-      { id: "", etiqueta: "Cierran este mes", corto: "este mes", n: urg.cierra_este_mes || 0 },
-      { id: "", etiqueta: "Más adelante", corto: "+ 1 mes", n: urg.mas_adelante || 0 },
+      { clave: "esta_semana", id: "7d", etiqueta: "Cierran esta semana", corto: "esta semana", n: urg.cierra_esta_semana || 0 },
+      { clave: "dos_semanas", id: "15d", etiqueta: "Cierran en dos semanas", corto: "2 semanas", n: urg.cierra_proxima_semana || 0 },
+      { clave: "este_mes", id: "", etiqueta: "Cierran este mes", corto: "este mes", n: urg.cierra_este_mes || 0 },
+      { clave: "mas_adelante", id: "", etiqueta: "Más adelante", corto: "+ 1 mes", n: urg.mas_adelante || 0 },
     ];
     const sinVentana = (urg.sin_fecha_cierre || 0) + (urg.ya_cerro || 0);
-    $("d-urgencia").innerHTML = (window.Pulso
-      ? window.Pulso.columnas(cubetasUrg, { filtroDe: (x) => (x.id ? `cierre=${x.id}` : null) })
-      : "")
+    $("d-urgencia").innerHTML = parrafoConclusion(fraseUrgencia(cubetasUrg))
+      + (window.Pulso
+        ? window.Pulso.columnas(cubetasUrg, { filtroDe: (x) => (x.id ? `cierre=${x.id}` : null) })
+        : "")
       + `<p class="mt-1 text-[11px]" style="color: var(--text-secondary);">Sobre ${total ? `las ${fmt.format(total)} licitaciones visibles` : "todas las licitaciones visibles"}, no solo las que cumplen sus requisitos.${sinVentana > 0 ? ` ${fmt.format(sinVentana)} sin fecha de cierre publicada o ya cerradas.` : ""}</p>`;
 
     /* CONTRA CUÁNTA GENTE COMPITE · la tesis del producto, que tampoco se
@@ -6546,14 +6772,18 @@
        gente compite no es lo mismo que saber que compite poca, y esconderlo
        inflaría la parte buena. */
     const comp = c.totales.por_nivel_competencia_entidad || {};
-    $("d-competencia-mix").innerHTML = window.Pulso
-      ? window.Pulso.apilada([
-        { etiqueta: "Poca competencia", n: comp.baja || 0 },
-        { etiqueta: "Competencia media", n: comp.media || 0 },
-        { etiqueta: "Muy peleadas", n: comp.alta || 0 },
-        { etiqueta: "Sin histórico", n: comp.sin_dato || 0 },
-      ])
-      : "";
+    /* Las cubetas se declaran UNA vez y las leen las dos cosas que hablan de
+       ellas: el gráfico y la frase de arriba. Dos listas «iguales hoy»
+       divergen a la primera corrección y la frase dejaría de sumar lo que el
+       gráfico dibuja. */
+    const cubetasComp = [
+      { clave: "baja", etiqueta: "Poca competencia", n: comp.baja || 0 },
+      { clave: "media", etiqueta: "Competencia media", n: comp.media || 0 },
+      { clave: "alta", etiqueta: "Muy peleadas", n: comp.alta || 0 },
+      { clave: "sin_dato", etiqueta: "Sin histórico", n: comp.sin_dato || 0 },
+    ];
+    $("d-competencia-mix").innerHTML = parrafoConclusion(fraseCompetencia(cubetasComp))
+      + (window.Pulso ? window.Pulso.apilada(cubetasComp) : "");
 
     /* LAS TRES TABLAS DE ABAJO SE RETIRARON (encargo del ingeniero,
        31-ago-2026): «Quién publica más» (#d-entidades) con su detalle en línea,
@@ -7457,7 +7687,7 @@
     const noPert = c.excluidos_por_no_pertinentes || [];
     const bajaRel = c.excluidos_por_baja_relevancia || [];
     const bloque = (titulo, lista, texto) => (lista.length
-      ? `<details class="mt-2"><summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">${titulo} (${lista.length})</summary>`
+      ? `<details class="mt-2"><summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700">${resumenSummary(titulo, lista.length, "")}</summary>`
         + `<ul class="mt-2 space-y-1 text-xs text-gray-500">`
         + lista.map((e) => `<li>· <code class="font-mono">${esc(e.codigo)}</code> — ${fmt.format(e.procesos)} proceso(s): ${esc(texto(e))}</li>`).join("")
         + "</ul></details>"
@@ -7870,7 +8100,7 @@
           <label class="text-sm text-gray-700">${esc(p.nombre)}
             <input type="range" min="1" max="99" step="1" value="${cons.part[p.id] ?? Math.floor(100 / elegidos.length)}" data-cons-rango="${esc(p.id)}" class="mt-1 w-full">
           </label>
-          <span class="flex items-center gap-1 text-sm"><input type="number" min="0.01" max="100" step="0.01" value="${cons.part[p.id] ?? Math.floor(100 / elegidos.length)}" data-cons-num="${esc(p.id)}" class="w-20 rounded-lg border-gray-300 text-sm">%</span>
+          <span class="flex items-center gap-1 text-sm"><input type="number" min="0.01" max="100" step="0.01" value="${cons.part[p.id] ?? Math.floor(100 / elegidos.length)}" data-cons-num="${esc(p.id)}" aria-label="Participación de ${esc(p.nombre)} en porcentaje" class="w-20 rounded-lg border-gray-300 text-sm">%</span>
         </div>`).join("");
     pintarSumaConsorcio();
   }
