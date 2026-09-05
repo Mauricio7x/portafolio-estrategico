@@ -7410,3 +7410,74 @@ compliques creando mil cosas». Lo decidido:
   trae la cláusula de la página 45; el anticipo negado de la 78; capacidad organizacional ausente →
   `null`); el expediente con el contexto; la verificación apartando material sin fuente, aritmética que
   no cuadra, unidad distinta y fila repetida; el progreso; y en Chromium las cuatro combinaciones.
+
+### Consultoría integral del 4/5-sep-2026 · qué es Detekta, qué aguanta, qué se ve, qué se cuenta y qué sobra
+
+Encargo del dueño: actuar como consultoría, «no dejar pasar nada»: (1) infraestructura firme que
+aguante 5 usuarios ya y llegue a 100 comprando suscripciones, sin reescribir; (2) estética
+«premium» y la mejor experiencia; (3) qué datos se convierten en gráficos e ilustraciones; más la
+auditoría de documentos (obsoletos, ambiguos, sin uso), la competencia con imparcialidad y el
+proceso. Entregables pedidos y entregados: **`docs/CONSULTORIA_2026-09-04.json`** (el documento
+técnico: 96 mejoras con antes/después, pasos con archivo y función, prueba que la cierra, esfuerzo,
+cifra medible con su origen, decisión previa de esta memoria; 71 descartes con motivo; 29 preguntas
+al dueño; escalera de coste; veredicto por documento; catálogo de visualizaciones; 188 fuentes con
+URL y fecha) y **`docs/CONSULTORIA_2026-09-04_RESUMEN.md`** (para el dueño: antes → mejora, hoja
+de ruta por peldaño, pendientes con URL y botón literal). Los dos se GENERAN por script desde los
+seis ejes consolidados (el guion quedó en el scratchpad de la sesión, no se versiona): ninguna
+cifra se copió a mano.
+
+**Método (§9 del prompt), con lo que falló y cómo se cerró.** Fase 1: doce auditores por frente
+(producto, backend, seguridad y multiusuario, datos y gráficos, documentación A y B, interfaz en
+Chromium real, proceso, competencia, mercado de infraestructura, referencias de diseño, fuentes
+públicas) con coordenadas resueltas por el orquestador y reproducción por hallazgo; cuatro cayeron
+por límite de sesión y se CONTINUARON con otro agente que re-verificó por muestreo sus artefactos
+parciales (capturas, medidas, informes). Fase 2: dos lentes adversarias por área (re-ejecución en
+el árbol o contraste con la fuente primaria; honestidad de severidad, esfuerzo y cifra) sobre los
+141 hallazgos → 139 confirmados o parciales en al menos una lente, 6 refutados, 3 ya decididos, y 76
+hallazgos nuevos, entre ellos los pendientes que la auditoría del 1-sep dejó sin reproducir: **no se
+reproducen** el SSRF de `apu_descargar` (defensa por capas, sin lista blanca por diseño), la
+inyección SoQL en `entidades?q=` y `socio` (no hablan SoQL o solo mandan dígitos) y el consorcio
+que no suma 100 (rechazado); **siguen abiertos** el RUP en PDF que guarda el TROZO de un número
+partido en dos líneas como patrimonio creíble (alta: es una cifra que decide), el socio con fuentes
+caídas cuyo semáforo sale verde, `socrata.pedir` sin AbortSignal, `redis.js` con un 200 sin JSON
+como clave inexistente, `ofertas ?? 0` en `negocio.js` y `esperados: 0` en `contarMes`. Fase 3:
+seis consolidadores por eje y cuatro redactores en cadena (JSON, resumen, crítico, corrector); dos
+consolidadores cayeron por límite y se relanzaron. **Límite de método, dicho**: el proxy de la
+sesión rechazó el CONNECT a datos.gov.co, Vercel, Upstash y unos cincuenta dominios (403 el
+4-sep-2026): producción NO se midió, los precios de proveedores y competidores son extractos de
+buscador con URL y fecha, y el plan de Vercel y el muro de contraseña son PREGUNTAS al dueño (Q-01
+del resumen), no hechos. Un 403 de hoy es una observación con fecha.
+
+**Lo que el árbol desmintió y se corrige aquí, no en la historia.** (a) Esta memoria decía (27-ago)
+que `docs/PROMPT_CONSULTORIA_SAAS.md` «NO se rescató»: está en main con dos commits del 24-ago
+(5a929da, 2c4dead); la afirmación queda superada por esta línea. (b) Una sección del 20-ago afirma
+que `/api/oportunidades` exige token y otra que es público: el código de hoy (`listar.js`) exige
+token y sirve las cifras del perfil solo con credencial; manda el código. (c) `CLAUDE.md` llevaba
+tres cifras de estado («~4k tokens», «~500 KB», «~18 KB») que su propia regla prohíbe y una ya era
+falsa (665 KB): se retiran en este commit, sin tocar ninguna regla. (d) El árbol auditado (23f35f3)
+quedó un commit por detrás de main a media sesión; la rama se puso al día (d569946) y las mejoras
+sobre Precios se re-comprobaron contra el árbol nuevo antes de consolidarlas.
+
+**Las doce primeras mejoras por prioridad global** (regla escrita en `meta.como_leer` del JSON:
+primero lo que corrige una cifra que decide o un fallo visible con esfuerzo ≤ 1 jornada): respaldo
+de Upstash (hoy ninguno documentado), medir el plan de Vercel y el muro y pasar a Pro sin pausa
+automática, la guía de dominio remitiendo a sus dos correcciones, un autómata entre el commit y
+producción (la suite en GitHub Actions), un solo tope de 3 MB para el PDF que vuelve al navegador,
+el RUP con número partido, la hoja de utilidades servida desde `public/` en vez del CDN (con las
+dos cerraduras de la suite que hoy exigen el literal del CDN reescritas), la primera licitación
+visible en el teléfono (hoy empieza a 702 px), Precios guardando bajo el perfil de quien usa la
+aplicación (hoy un visitante con RUP escribe en `apu:precios:helder`, el nivel 1 de la cascada),
+la vista de visitante por censo, el aviso diario por correo y la salud de la sincronización.
+
+**Lo que se DECIDIÓ NO tocar en esta sesión, con motivo.** Ningún módulo de `lib/`, `api/` ni
+`public/` cambia: la consultoría propone y el dueño decide; cada mejora lleva su prueba de cierre
+para la sesión que la implemente. Los seis refutados quedan escritos para que nadie los vuelva a
+proponer: la cascada de «cuánta plata deja» YA se pinta con barras a escala (`filaCascada`), la
+lista SÍ refresca por visita (`modo=auto`), los tiles del tablero no usan los colores del semáforo
+(regla CSS de la piel), `data/` no se carga todo por `require` (`tipologias.js` lee con
+`readFileSync`), «Licitum refresca cada 30 min» no cambia el hecho de que Detekta refresca por
+visita, y la insignia de Mis procesos solo falla en un orden de cascada que producción no tiene
+verificado. Las 43 ramas censadas en `docs/RAMAS_RETIRADAS.md` siguen siendo clics del dueño (49
+remotas medidas el 5-sep, 36 fuera del censo); los 7 insumos que ningún capturador lee (14,9 MB)
+siguen pidiendo su permiso. **Rama**: el arnés impuso `claude/infrastructure-optimization-review-
+mb8vts`; el trabajo va a main por fusión del dueño (paso en Pendientes del cierre).

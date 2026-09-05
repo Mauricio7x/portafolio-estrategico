@@ -20,16 +20,16 @@ antes de la primera línea de trabajo (medido, 27-ago-2026). Las tres herramient
    cualquier cosa: módulos que casan (con propósito, exports y **quién los llama**), las `op` que
    llegan hasta ellos, los documentos, y las secciones de la memoria **con el `sed` ya escrito**.
    Una llamada sustituye diez `grep` anchos y tres lecturas equivocadas. Sin argumentos imprime el
-   mapa completo por dominios (~4k tokens); `docs/MAPA.md` es esa foto para leer en GitHub.
+   mapa completo por dominios; `docs/MAPA.md` es esa foto para leer en GitHub.
 2. **`node tests/estado.js`** — el estado MEDIDO (routers y sus op, conteos, auth, token, guardas).
    Jamás se afirma estado de memoria.
-3. **`docs/MEMORIA.md`** (~500 KB) — la crónica completa de decisiones. **Se lee por secciones,
+3. **`docs/MEMORIA.md`** — la crónica completa de decisiones. **Se lee por secciones,
    nunca entera**: el `sed` lo da el mapa. **Antes de tocar un módulo, leer su(s) sección(es) es
    OBLIGATORIO**: casi todo lo que se te ocurra «mejorar» está ahí explicado con el motivo por el
    que es así, y cada regla de esa crónica costó un defecto real. Las citas «CLAUDE.md § X»
    anteriores al 27-ago-2026 apuntan allí.
 
-Después, y solo si el encargo lo toca: **`docs/PROMPT_INICIAL.md`** (~18 KB: rol, ciclo,
+Después, y solo si el encargo lo toca: **`docs/PROMPT_INICIAL.md`** (rol, ciclo,
 verificación, orquestación, formato de cierre) al empezar una sesión de trabajo · **`README.md`**
 por grep dirigido, no entero · **dominio** (`docs/GUIA_ANALISTA_LICITACIONES.md` +
 `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md`, que corrige dos errores del manual: van juntos;
