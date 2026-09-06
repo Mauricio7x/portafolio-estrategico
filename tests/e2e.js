@@ -20175,6 +20175,223 @@ async function main() {
         if (!/nunca por (?:número de )?línea/i.test(leerD("docs/PROMPT_INICIAL.md"))) hallazgosDoc.push("docs/PROMPT_INICIAL.md § 10 no dice que la memoria se cita por título y nunca por línea");
       }
 
+      /* (9) M-DOC-11 · LOS TEXTOS QUE LEE EL DUEÑO (y la sesión que le atiende) hablan de
+         USTED y nombran botones que existen. Dos censos sobre el mismo conjunto: las skills
+         de `.claude/skills/` y los documentos `*_DESDE_CLAUDE_CODE.md`.
+         (a) La MISMA cerca de lenguaje de `public/` (`lib/lenguaje_pantalla.js`: la función,
+             no una copia) más los pronombres y posesivos de segunda persona, que son
+             decidibles sin conocer el verbo: `tú`, `ti`, `contigo`, `tu`, `tus` y `te`
+             sueltos no existen en el registro de usted. LO QUE NO SE PUEDE CENSAR SE DECLARA:
+             el imperativo de tú SIN pronombre («Imprime», «Lee») no es distinguible con una
+             expresión regular del presente de indicativo de tercera persona («Responde
+             `total`…», «llama el servidor») ni del imperativo de usted de otra conjugación;
+             se censan las formas con pronombre enclítico de segunda persona, que sí lo son.
+         (b) Todo literal «Con Mayúscula Inicial» de esos textos existe en la pantalla
+             (`public/*.js` + `index.html`). Se comparan los TROZOS de 4 caracteres o más,
+             no la cadena entera: la pantalla arma el texto con plantillas anidadas
+             (`Buscando… completado ${p.pct} %${p.total ? ` (…)` : ""}`) y comparar entero
+             daba cuatro falsos positivos. Los placeholders del documento (N, n, m, x, una
+             cifra) y los `${…}` de la pantalla parten el literal en trozos. */
+      {
+        const { tuteoEn } = require("../lib/lenguaje_pantalla.js");
+        const textosDelDueno = [];
+        const dirSkills = path.join(raizD, ".claude", "skills");
+        if (fs.existsSync(dirSkills)) {
+          for (const d of fs.readdirSync(dirSkills)) {
+            const f = path.join(dirSkills, d, "SKILL.md");
+            if (fs.existsSync(f)) textosDelDueno.push(path.relative(raizD, f));
+          }
+        }
+        for (const f of fs.readdirSync(path.join(raizD, "docs"))) if (/_DESDE_CLAUDE_CODE\.md$/.test(f)) textosDelDueno.push(`docs/${f}`);
+        assert.ok(textosDelDueno.length >= 4, `el censo tiene que ver las skills y los documentos del dueño (vio ${textosDelDueno.length})`);
+        const RE_2A_PERSONA = /(?<![\wáéíóúñ])(tú|ti|contigo|tus?|te)(?![\wáéíóúñ])/g;
+        const RE_ENCLITICO_TU = /(?<![\wáéíóúñ])(?:det[eé]nte|léelo|léela|gu[áa]rdalo|gu[áa]rdala|hazlo|dilo|dímelo|m[íi]ralo|escr[íi]belo|f[íi]jate|ll[ée]vate|env[íi]alo|corr[íi]gelo|s[íi]guelo|ábrelo|ci[ée]rralo)(?![\wáéíóúñ])/gi;
+        let literalesCensados = 0;
+        let pantallaDoc = "";
+        for (const f of fs.readdirSync(path.join(raizD, "public"))) {
+          if (/\.(js|html)$/.test(f)) pantallaDoc += fs.readFileSync(path.join(raizD, "public", f), "utf8") + "\n";
+        }
+        pantallaDoc = pantallaDoc.replace(/\s+/g, " ");
+        /* Excepciones declaradas del censo de literales, con su motivo. */
+        const EXC_LITERAL = new Map([
+          ["Detekta · atender la cola de Precios", "nombre de la rutina en la nube del dueño (claude.ai/code/routines), no un texto de la pantalla"],
+        ]);
+        for (const rel of textosDelDueno) {
+          const texto = leerD(rel);
+          const tuteo = tuteoEn(texto);
+          if (tuteo) hallazgosDoc.push(`${rel} tutea: «${tuteo}» (registro de usted en todo lo que el dueño lee, CLAUDE.md § «Filosofía de producto»)`);
+          /* Las citas literales de un texto AJENO que el documento audita van entre «» y no
+             son voz del proyecto: se saltan (DON_HECTOR cita el prompt externo que critica). */
+          const sinCitas = texto.replace(/«[^»]*»/g, "«»");
+          for (const m of sinCitas.matchAll(RE_2A_PERSONA)) hallazgosDoc.push(`${rel} usa «${m[1]}» (segunda persona): el registro es de usted`);
+          for (const m of texto.matchAll(RE_ENCLITICO_TU)) hallazgosDoc.push(`${rel} usa «${m[0]}» (imperativo de tú con pronombre): el registro es de usted («léalo», «guárdelo», «deténgase»)`);
+          for (const m of new Set([...texto.matchAll(/«([A-ZÁÉÍÓÚÑ][^»]{2,80})»/g)].map((x) => x[1]))) {
+            if (EXC_LITERAL.has(m.replace(/\s+/g, " "))) continue;
+            const trozos = m.replace(/\s+/g, " ").split(/\$\{[^}]*\}|(?<![\wáéíóúñ])(?:\d+|[Nnmx])(?![\wáéíóúñ])/).map((x) => x.trim()).filter((x) => x.length >= 4);
+            if (!trozos.length) continue;
+            literalesCensados++;
+            const faltan = trozos.filter((x) => !pantallaDoc.includes(x));
+            if (faltan.length) hallazgosDoc.push(`${rel} nombra «${m.replace(/\s+/g, " ").slice(0, 60)}» y la pantalla no dice ${faltan.map((x) => `«${x}»`).join(" ni ")}: un paso del dueño no puede nombrar un botón que no existe`);
+          }
+        }
+        assert.ok(literalesCensados >= 10, `el censo de literales tiene que ver los de las skills y los documentos del dueño (vio ${literalesCensados})`);
+        /* Y esos documentos no repiten coordenadas del código, que son estado. */
+        if (/^- `lib\/apu\/precios_ia\.js`/m.test(leerD("docs/PRECIOS_DESDE_CLAUDE_CODE.md"))) {
+          hallazgosDoc.push("docs/PRECIOS_DESDE_CLAUDE_CODE.md § «Dónde vive en el código» vuelve a listar rutas y funciones: las da node tests/mapa.js ia (son estado)");
+        }
+      }
+
+      /* (10) M-COMP-06 y M-INF-21 · LO QUE EL DUEÑO PODRÍA IMPRIMIR. Dos documentos
+         fijan lo que se le dice a un contratista y lo que se calcula con ello, y los dos
+         afirmaban cosas que la propia memoria ya había desmentido o que nadie verificó:
+         «la única herramienta que se conoce» y «menos de la mitad de Licitum y hace el
+         APU» (PresuCosto hace el APU gratis: MEMORIA § «Auditoría del módulo APU…»,
+         24-ago-2026), y una comisión de pasarela «según la comparativa consultada», sin
+         URL ni fecha, con la que se calculaba un margen. Aquí: (a) toda afirmación de
+         superioridad lleva un pie FECHADO que remite a la memoria; (b) toda fila de la
+         tabla de mercado lleva su fecha de consulta; (c) ninguna comisión de pasarela se
+         afirma como verificada, y Stripe está declarado descartado con su motivo. */
+      {
+        const inv = leerD("docs/INVESTIGACION_PLATAFORMAS_LICITACIONES.md");
+        const RE_FECHA_PIE = /\d{1,2}-[a-z]{3}-20\d\d/;
+        for (const [doc, texto, frase] of [
+          ["docs/INVESTIGACION_PLATAFORMAS_LICITACIONES.md", inv, "única herramienta que se conoce"],
+          ["docs/PRECIO_Y_UNIT_ECONOMICS.md", leerD("docs/PRECIO_Y_UNIT_ECONOMICS.md"), "menos de la mitad de Licitum y hace el APU"],
+        ]) {
+          const i = texto.indexOf(frase);
+          if (i < 0) continue; // la frase ya no está: nada que fechar
+          const despues = texto.slice(i, i + 1200);
+          if (!RE_FECHA_PIE.test(despues) || !/MEMORIA\.md § «/.test(despues)) {
+            hallazgosDoc.push(`${doc} afirma «${frase}» sin un pie fechado que remita a la sección de docs/MEMORIA.md que ya decidió la respuesta: es lo que el dueño imprimiría y el primer contratista que conozca PresuCosto lo desmiente`);
+          }
+        }
+        const precioD = leerD("docs/PRECIO_Y_UNIT_ECONOMICS.md");
+        const tabla = precioD.split("\n");
+        const iCab = tabla.findIndex((l) => /^\| Plataforma \|/.test(l));
+        if (iCab < 0) hallazgosDoc.push("docs/PRECIO_Y_UNIT_ECONOMICS.md § 2 ya no tiene la tabla de lo que cobra el mercado");
+        else {
+          let filas = 0;
+          for (let k = iCab + 2; k < tabla.length && /^\| /.test(tabla[k]); k++) {
+            filas++;
+            if (!/\d{1,2}-[a-z]{3}-20\d\d|\b[a-z]{3}-20\d\d\b/.test(tabla[k])) {
+              hallazgosDoc.push(`docs/PRECIO_Y_UNIT_ECONOMICS.md: la fila «${tabla[k].slice(2, 40)}» de la tabla de mercado no dice cuándo se consultó: un precio de competidor sin fecha se imprime como si fuera de hoy`);
+            }
+          }
+          if (filas < 5) hallazgosDoc.push(`docs/PRECIO_Y_UNIT_ECONOMICS.md: la escalera de precios del mercado tiene ${filas} filas (el escalón bajo y PresuCosto son parte del argumento)`);
+        }
+        for (const doc of ["docs/PRECIO_Y_UNIT_ECONOMICS.md", "docs/SEGURIDAD_Y_CUENTAS.md"]) {
+          const t = leerD(doc);
+          for (const l of t.split("\n")) {
+            if (!/1,49\s*%/.test(l)) continue;
+            if (!/no verificad|discrepan|sin dato verificado/i.test(l) && !/no verificad|discrepan/i.test(t.slice(Math.max(0, t.indexOf(l) - 400), t.indexOf(l) + 600))) {
+              hallazgosDoc.push(`${doc} afirma la comisión «1,49 %» sin declararla no verificada: las secundarias discrepan y la que manda es la del contrato (M-INF-21)`);
+            }
+          }
+          if (!/Stripe/.test(t)) continue;
+          if (!/Stripe[^.]{0,120}(descartad|no opera|no admite)/i.test(t)) hallazgosDoc.push(`${doc} nombra Stripe sin decir que queda descartado para una empresa colombiana y por qué`);
+        }
+      }
+
+      /* (11) M-DOC-04 y M-DOC-10 · QUÉ SE RETIRA Y QUÉ SIRVE PARA QUÉ.
+         (a) Todo lo que hay en docs/archivo/ DECLARA su retiro con fecha en sus cinco
+             primeras líneas (en un .md, además, como primera línea y en forma de cita,
+             para que GitHub lo pinte como aviso; en un .html o un .sh, dentro del
+             comentario que su formato admita: un «>» ahí sería texto de la página).
+         (b) Ninguna ruta `docs/…` citada en el árbol apunta a un archivo que ya no está:
+             archivar mueve, y las referencias se actualizan en el MISMO commit. Censo
+             sobre docs/, lib/, api/, public/, tests/, .claude/, README y CLAUDE, con las
+             excepciones declaradas (la crónica, el insumo congelado de la consultoría y
+             su resumen, que citan rutas PROPUESTAS, y la guarda que comprueba que el
+             .txt de la auditoría del APU ya no existe).
+         (c) La ficha de cada documento existe y no lleva cifras de estado (serían
+             cuarenta y siete mentiras en incubación), y docs/INDICE.md es exactamente el
+             que el árbol genera. */
+      {
+        const dirArchivo = path.join(raizD, "docs", "archivo");
+        const RE_ARCHIVADO = /Archivado el \d{1,2}-[a-z]{3}-20\d\d: superado por /;
+        let archivados = 0;
+        if (fs.existsSync(dirArchivo)) {
+          const andarArch = (dir) => {
+            for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+              const abs = path.join(dir, e.name);
+              if (e.isDirectory()) { andarArch(abs); continue; }
+              archivados++;
+              const rel = path.relative(raizD, abs).replace(/\\/g, "/");
+              const cinco = fs.readFileSync(abs, "utf8").split("\n", 5);
+              if (!RE_ARCHIVADO.test(cinco.join("\n"))) hallazgosDoc.push(`${rel} no declara su retiro en sus cinco primeras líneas: «Archivado el dd-mmm-20dd: superado por …» (docs/PROMPT_INICIAL.md § 11)`);
+              else if (/\.md$/.test(e.name) && !/^> Archivado el \d{1,2}-[a-z]{3}-20\d\d: superado por /.test(cinco[0] || "")) {
+                hallazgosDoc.push(`${rel} declara su retiro pero no en la primera línea y como cita («> Archivado el …»), que es lo que GitHub pinta como aviso`);
+              }
+            }
+          };
+          andarArch(dirArchivo);
+        }
+        assert.ok(archivados >= 3, `el censo de docs/archivo/ tiene que ver lo retirado (vio ${archivados})`);
+        if (!/Archivado el dd-mmm-20dd: superado por/.test(leerD("docs/PROMPT_INICIAL.md")) || !/Regla de RETIRO/.test(leerD("docs/PROMPT_INICIAL.md"))) {
+          hallazgosDoc.push("docs/PROMPT_INICIAL.md § 11 no lleva la regla de retiro de un documento (las tres condiciones y la cabecera obligatoria)");
+        }
+        // (b) ninguna ruta docs/… citada apunta a un archivo que ya no está
+        const EXC_RUTA_DOC = new Map([
+          ["docs/MEMORIA.md", "crónica fechada: cita rutas que existían en su fecha"],
+          ["docs/CONSULTORIA_2026-09-04.json", "insumo congelado de la consultoría: propone rutas que aún no existen"],
+          ["docs/CONSULTORIA_2026-09-04_RESUMEN.md", "informe fechado: cita las rutas que la consultoría propuso"],
+          ["tests/e2e.js", "la guarda que comprueba que docs/AUDITORIA_MODULO_APU.txt YA NO existe nombra esa ruta a propósito"],
+        ]);
+        const archivosRuta = [];
+        const andarR = (dir, ext) => {
+          for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+            if (["worktrees", "node_modules", ".git"].includes(e.name)) continue;
+            const abs = path.join(dir, e.name);
+            if (e.isDirectory()) andarR(abs, ext); else if (ext.test(e.name)) archivosRuta.push(abs);
+          }
+        };
+        for (const d of ["docs", "lib", "api", "public", "tests"]) andarR(path.join(raizD, d), /\.(md|js|html|json|yml)$/);
+        if (fs.existsSync(path.join(raizD, ".claude"))) andarR(path.join(raizD, ".claude"), /\.md$/);
+        archivosRuta.push(path.join(raizD, "README.md"), path.join(raizD, "CLAUDE.md"));
+        let rutasDocCensadas = 0;
+        for (const f of archivosRuta) {
+          const rel = path.relative(raizD, f).replace(/\\/g, "/");
+          if (EXC_RUTA_DOC.has(rel)) continue;
+          const texto = fs.readFileSync(f, "utf8");
+          for (const m of new Set([...texto.matchAll(/(?<![\w\/.-])docs\/[\w.\/-]*[\w-]\.(?:md|txt|html|json)/g)].map((x) => x[0]))) {
+            rutasDocCensadas++;
+            if (!fs.existsSync(path.join(raizD, m))) hallazgosDoc.push(`${rel} cita ${m}, que no está en el árbol: archivar MUEVE (git mv) y las referencias se actualizan en el mismo commit`);
+          }
+        }
+        assert.ok(rutasDocCensadas >= 20, `el censo de rutas docs/ tiene que ver las citas del árbol (vio ${rutasDocCensadas})`);
+        // (c) la ficha de cada documento y el índice generado
+        const RE_FICHA_DOC = /^> Para: (.+?) · Estado: (.+?) · Sustituido por: (.+?)\s*$/;
+        const AUDIENCIAS = new Set(["dueño", "sesión", "ingeniero", "contratista"]);
+        const documentosFicha = [];
+        const juntar = (dirRel, niveles) => {
+          const abs = path.join(raizD, dirRel);
+          if (!fs.existsSync(abs)) return;
+          for (const e of fs.readdirSync(abs, { withFileTypes: true })) {
+            const rel = path.posix.join(dirRel, e.name);
+            if (e.isDirectory()) { if (niveles > 0) juntar(rel, niveles - 1); continue; }
+            if (/\.(md|txt)$/.test(e.name) && !["MAPA.md", "MEMORIA_INDICE.md", "INDICE.md"].includes(e.name)) documentosFicha.push(rel);
+          }
+        };
+        juntar("docs", 1);
+        documentosFicha.push("README.md", "CLAUDE.md");
+        let conFicha = 0;
+        for (const rel of documentosFicha) {
+          const m = fs.readFileSync(path.join(raizD, rel), "utf8").split("\n", 12).map((l) => RE_FICHA_DOC.exec(l)).find(Boolean);
+          if (!m) { hallazgosDoc.push(`${rel} no lleva su ficha «> Para: … · Estado: … · Sustituido por: …» entre las doce primeras líneas (docs/INDICE.md la lista, no la inventa)`); continue; }
+          conFicha++;
+          if (!AUDIENCIAS.has(m[1])) hallazgosDoc.push(`${rel}: la ficha dice «Para: ${m[1]}» y las audiencias son ${[...AUDIENCIAS].join(", ")}`);
+          if (/\d+\s*(KB|MB|B|líneas|secciones|documentos)\b/.test(m[0])) hallazgosDoc.push(`${rel}: la ficha lleva una cifra de estado («${m[0].slice(0, 70)}»): la ficha solo declara para quién es y si vale`);
+          if (m[3] !== "—" && !fs.existsSync(path.join(raizD, m[3]))) hallazgosDoc.push(`${rel}: la ficha dice «Sustituido por: ${m[3]}» y esa ruta no está en el árbol`);
+        }
+        assert.ok(conFicha >= 30, `el censo de fichas tiene que ver las del árbol (vio ${conFicha} de ${documentosFicha.length})`);
+        const { execFileSync: ejecMapa } = require("child_process");
+        const indiceDocs = ejecMapa(process.execPath, [path.join(__dirname, "mapa.js"), "--indice-docs"], { encoding: "utf8" });
+        const rutaIndiceDocs = path.join(raizD, "docs", "INDICE.md");
+        const enArbol = fs.existsSync(rutaIndiceDocs) ? fs.readFileSync(rutaIndiceDocs, "utf8") : null;
+        if (enArbol !== indiceDocs) hallazgosDoc.push("docs/INDICE.md " + (enArbol === null ? "no existe" : "no coincide con las fichas del árbol") + ": ejecute node tests/mapa.js --escribir y añádalo al commit");
+        if (!/docs\/INDICE\.md/.test(leerD("CLAUDE.md"))) hallazgosDoc.push("CLAUDE.md no remite a docs/INDICE.md (qué documento sirve para qué)");
+      }
+
       assert.deepStrictEqual(hallazgosDoc, [], `documentación desmentida por el árbol:\n  · ${hallazgosDoc.join("\n  · ")}`);
       console.log(`  · Documentación viva contra el árbol: guía+complemento, ocho fotos fechadas, ${variablesCensadas} variables del entorno descritas en la guía del dueño, `
         + "prompt del dictamen una sola vez, CLAUDE.md y PROMPT_INICIAL sin cifras de estado, suite.yml en GitHub Actions, "
@@ -29252,7 +29469,7 @@ async function main() {
       for (const en of fs.readdirSync(path.join(raizM, "docs"), { withFileTypes: true })) {
         if (en.isDirectory()) {
           for (const f of fs.readdirSync(path.join(raizM, "docs", en.name))) if (/\.(md|txt)$/.test(f)) (en.name === "archivo" ? archivados : propios).push(en.name + "/" + f);
-        } else if (/\.(md|txt)$/.test(en.name) && !["MEMORIA.md", "MAPA.md", "MEMORIA_INDICE.md"].includes(en.name)) propios.push(en.name);
+        } else if (/\.(md|txt)$/.test(en.name) && !["MEMORIA.md", "MAPA.md", "MEMORIA_INDICE.md", "INDICE.md"].includes(en.name)) propios.push(en.name);
       }
       for (const r of propios) if (!conTitulo(r)) sinTitulo.push(r);
       assert.ok(propios.some((r) => r.includes("/")) && archivados.length >= 1, "la prueba necesita un documento un nivel abajo de docs/ y uno en docs/archivo/");

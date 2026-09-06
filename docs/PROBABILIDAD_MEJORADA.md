@@ -1,5 +1,7 @@
 # Probabilidad de ganar — auditoría de la fórmula vigente y propuesta de mejora
 
+> Para: ingeniero · Estado: informe fechado · Sustituido por: —
+
 > Documento de **análisis y propuesta**, con su plan por fases. Se escribió antes de tocar el
 > código; **la Fase A (A1-A7) y B2 están en el código** — ver el bloque de ESTADO justo debajo, que es la
 > foto del 16-ago-2026 (el estado vivo se mide: `node tests/mapa.js probabilidad`).

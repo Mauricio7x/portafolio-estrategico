@@ -1,4 +1,6 @@
 # PLAN DE ACCIÓN · Detekta, de herramienta interna a producto por suscripción
+
+> Para: dueño · Estado: pendiente del dueño · Sustituido por: —
 ### Consultoría SaaS · 24-ago-2026 · plan ejecutable, tarea por tarea, de principio a fin
 
 ---

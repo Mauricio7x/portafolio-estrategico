@@ -1,5 +1,7 @@
 # Don Héctor · el dictamen del pliego (investigación y diseño · 2-sep-2026)
 
+> Para: ingeniero · Estado: referencia · Sustituido por: —
+
 Encargo del dueño: «tengo la siguiente idea, para implementarlo en la página web, realiza una
 investigación, determina la mejor manera de implementarlo». La idea es un dictamen experto sobre un
 proceso de SECOP II, generado por un modelo de lenguaje con la persona «Don Héctor» (ingeniero

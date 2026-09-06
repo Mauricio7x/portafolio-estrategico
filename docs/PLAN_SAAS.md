@@ -1,4 +1,6 @@
 # PLAN SaaS · De herramienta interna a producto por suscripción
+
+> Para: dueño · Estado: pendiente del dueño · Sustituido por: —
 ### Consultoría ejecutada con `docs/PROMPT_CONSULTORIA_SAAS.md` · 24-ago-2026
 ### Sillas aplicadas: premisa · jurídica · económico-financiera · arquitectura · ciencia de datos · seguridad · producto · adversaria · honestidad
 

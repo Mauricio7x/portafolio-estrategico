@@ -1,5 +1,7 @@
 # Banco de Precios Verificable · censo y contraste del informe del 26-ago-2026
 
+> Para: ingeniero · Estado: informe fechado · Sustituido por: —
+
 Informe aportado por el dueño (investigación externa con navegador, fecha de consulta
 26-ago-2026): precios retail de insumos de construcción y eléctricos para los APU **CPR Espinal**
 y **UPN El Nogal**, con marcas de verificación propias — `[F]` = precio confirmado en la ficha del

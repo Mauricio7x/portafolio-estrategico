@@ -1,5 +1,7 @@
 # Tokens y variables de entorno · guía desde cero
 
+> Para: dueño · Estado: referencia · Sustituido por: —
+
 **Para quién es esto:** para el dueño de Detekta, sin conocimientos técnicos y sin terminal. Todo se
 hace con clics en dos páginas web (Vercel y Upstash) y pegando URLs en Chrome. Nada de programar.
 

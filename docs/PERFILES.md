@@ -1,5 +1,7 @@
 # Perfiles del negocio — resumen técnico
 
+> Para: ingeniero · Estado: referencia · Sustituido por: —
+
 Fuente de código: `lib/perfiles.js` (datos) · `lib/unspsc.js` (whitelists) ·
 `lib/capacidad.js` (fórmula K). Origen de los datos: RUP con corte **31/12/2025**
 (certificados en firmeza al 07/05/2026), extraídos del `index.html` histórico del

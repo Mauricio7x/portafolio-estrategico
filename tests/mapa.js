@@ -205,9 +205,23 @@ function seccionPorTitulo(nombre) {
 
 /* Documentos temáticos: docs/*.md|txt y un nivel de subcarpetas. Los generados
    no se listan (son fotos de esta herramienta), docs/archivo/ va aparte. */
+/* La FICHA de un documento: una línea que escribe el autor con lo único que no se
+   puede derivar —para quién es y si vale— y nada más. Sin cifras ni tamaños: serían
+   cuarenta y siete mentiras en incubación (M-DOC-10, 6-sep-2026). Va entre las doce
+   primeras líneas, tras el título (o tras la cabecera de archivo, que ocupa varias).
+   Un documento SIN ficha no se inventa: sale declarado como «sin ficha». */
+const RE_FICHA = /^> Para: (.+?) · Estado: (.+?) · Sustituido por: (.+?)\s*$/;
+const fichaDe = (primeras) => {
+  for (const l of primeras) {
+    const m = RE_FICHA.exec(l);
+    if (m) return { para: m[1].trim(), estado: m[2].trim(), sustituido: m[3].trim() };
+  }
+  return null;
+};
+
 const DOCS = [];          // vivos
 const DOCS_ARCHIVO = [];  // docs/archivo/: superados, solo con --archivo
-const GENERADOS = new Set(["MAPA.md", "MEMORIA_INDICE.md"]);
+const GENERADOS = new Set(["MAPA.md", "MEMORIA_INDICE.md", "INDICE.md"]);
 function docsDe(dirRel, niveles) {
   const abs = path.join(RAIZ, dirRel);
   if (!fs.existsSync(abs)) return;
@@ -217,10 +231,85 @@ function docsDe(dirRel, niveles) {
     if (!/\.(md|txt)$/.test(e.name) || rel === MEMORIA || (dirRel === "docs" && GENERADOS.has(e.name))) continue;
     const primeras = fs.readFileSync(path.join(RAIZ, rel), "utf8").split("\n", 12);
     const titulo = primeras.find((l) => /^#+ /.test(l));
-    (rel.startsWith("docs/archivo/") ? DOCS_ARCHIVO : DOCS).push({ ruta: rel, titulo: titulo ? recortar(titulo.replace(/^#+\s*/, ""), 88) : null });
+    (rel.startsWith("docs/archivo/") ? DOCS_ARCHIVO : DOCS).push({ ruta: rel, titulo: titulo ? recortar(titulo.replace(/^#+\s*/, ""), 88) : null, ficha: fichaDe(primeras) });
   }
 }
 docsDe("docs", 1);
+
+/* Quién lo cita FUERA de docs/: se deriva leyendo el árbol (sin child_process), por
+   ruta y por nombre de archivo, para que la columna no haya que mantenerla a mano. */
+function citadoPor(rel) {
+  const nombre = rel.split("/").pop();
+  const quien = new Set();
+  const mirar = (dirRel) => {
+    const abs = path.join(RAIZ, dirRel);
+    if (!fs.existsSync(abs)) return;
+    for (const e of fs.readdirSync(abs, { withFileTypes: true })) {
+      if (["node_modules", ".git", "worktrees"].includes(e.name)) continue;
+      const r = path.join(dirRel, e.name).replace(/\\/g, "/");
+      if (e.isDirectory()) { mirar(r); continue; }
+      if (!/\.(js|md|html|json|yml)$/.test(e.name)) continue;
+      const t = fs.readFileSync(path.join(RAIZ, r), "utf8");
+      if (t.includes(rel) || t.includes(nombre)) quien.add(dirRel.split("/")[0]);
+    }
+  };
+  for (const d of ["lib", "api", "public", "tests", ".claude"]) mirar(d);
+  for (const f of ["README.md", "CLAUDE.md"]) {
+    if (fs.existsSync(path.join(RAIZ, f)) && fs.readFileSync(path.join(RAIZ, f), "utf8").includes(nombre)) quien.add(f);
+  }
+  return [...quien].sort();
+}
+
+/* El índice de DOCUMENTOS: qué documento sirve para qué. Lo que el autor declara
+   (para quién, si vale, qué lo sustituyó) sale de la ficha; lo demás se deriva del
+   árbol. Sin fecha de generación, como el índice de la memoria: la suite lo compara
+   con el que produce el árbol y una fecha lo haría distinto cada día. */
+function indiceDeDocumentos() {
+  const raiz = ["README.md", "CLAUDE.md"].filter((f) => fs.existsSync(path.join(RAIZ, f))).map((f) => {
+    const primeras = fs.readFileSync(path.join(RAIZ, f), "utf8").split("\n", 12);
+    const titulo = primeras.find((l) => /^#+ /.test(l));
+    return { ruta: f, titulo: titulo ? recortar(titulo.replace(/^#+\s*/, ""), 88) : null, ficha: fichaDe(primeras) };
+  });
+  const memoria = MEMORIA ? [(() => {
+    const primeras = fs.readFileSync(path.join(RAIZ, MEMORIA), "utf8").split("\n", 12);
+    const titulo = primeras.find((l) => /^#+ /.test(l));
+    return { ruta: MEMORIA, titulo: titulo ? recortar(titulo.replace(/^#+\s*/, ""), 88) : null, ficha: fichaDe(primeras) };
+  })()] : [];
+  const todos = [...raiz, ...memoria, ...DOCS, ...DOCS_ARCHIVO];
+  const esc = (t) => String(t).replace(/\|/g, "\\|");
+  const conFicha = todos.filter((d) => d.ficha);
+  const sinFicha = todos.filter((d) => !d.ficha);
+  const audiencias = [...new Set(conFicha.map((d) => d.ficha.para))].sort();
+  const lineas = [
+    "<!-- GENERADO por `node tests/mapa.js --escribir` · NO editar a mano: se regenera y se pierde.",
+    "     Lo que declara el autor (para quién, si vale, qué lo sustituyó) sale de la línea",
+    "     «> Para: … · Estado: … · Sustituido por: …» de cada documento; lo demás se deriva. -->",
+    "",
+    "# Qué documento sirve para qué",
+    "",
+    "Una fila por documento. **Para** dice a quién está escrito; **Estado** si es una referencia que se",
+    "mantiene, un informe fechado (una foto de su fecha), algo pendiente de una decisión del dueño o algo",
+    "archivado; **Citado desde** se deriva leyendo el árbol. El estado del sistema NO está aquí: se mide",
+    "con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <término>`.",
+    "",
+  ];
+  for (const para of audiencias) {
+    lineas.push(`## Para ${para}`, "", "| Documento | Estado | Sustituido por | Citado desde | Título |", "|---|---|---|---|---|");
+    const suyos = conFicha.filter((d) => d.ficha.para === para)
+      .sort((a, b) => a.ficha.estado.localeCompare(b.ficha.estado) || a.ruta.localeCompare(b.ruta));
+    for (const d of suyos) {
+      const citas = citadoPor(d.ruta);
+      lineas.push(`| \`${esc(d.ruta)}\` | ${esc(d.ficha.estado)} | ${esc(d.ficha.sustituido)} | ${citas.length ? citas.map((c) => "`" + c + "`").join(" · ") : "—"} | ${esc(d.titulo || "(sin título)")} |`);
+    }
+    lineas.push("");
+  }
+  if (sinFicha.length) {
+    lineas.push("## Sin ficha", "", "Estos documentos no declaran para quién son ni si valen (no se inventa: se dice).", "");
+    for (const d of sinFicha) lineas.push(`- \`${esc(d.ruta)}\` — ${esc(d.titulo || "(sin título)")}`);
+    lineas.push("");
+  }
+  return lineas.join("\n");
+}
 
 /* ── Consulta ────────────────────────────────────────────────────────────── */
 
@@ -307,7 +396,9 @@ function indiceDeMemoria() {
   ].join("\n");
 }
 
-if (process.argv.includes("--indice")) {
+if (process.argv.includes("--indice-docs")) {
+  process.stdout.write(indiceDeDocumentos());
+} else if (process.argv.includes("--indice")) {
   process.stdout.write(indiceDeMemoria());
 } else if (termino) {
   const r = buscar(termino);
@@ -419,4 +510,6 @@ if (process.argv.includes("--escribir")) {
   console.error("· escrito docs/MAPA.md");
   fs.writeFileSync(path.join(RAIZ, "docs", "MEMORIA_INDICE.md"), indiceDeMemoria());
   console.error("· escrito docs/MEMORIA_INDICE.md");
+  fs.writeFileSync(path.join(RAIZ, "docs", "INDICE.md"), indiceDeDocumentos());
+  console.error("· escrito docs/INDICE.md");
 }

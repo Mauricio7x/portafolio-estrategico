@@ -1,5 +1,7 @@
 # APU y rentabilidad — investigación de fuentes de precios
 
+> Para: ingeniero · Estado: referencia · Sustituido por: —
+
 > Foto del 4-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
 > (La fecha es la de su primer commit real, `3301c9e`; el «21-ago-2026» que decía hasta el 6-sep-2026 era
 > la del injerto del aplastamiento de la historia.)

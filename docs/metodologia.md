@@ -1,5 +1,7 @@
 # Metodología de cálculo del costo real (Fase 1 · Detekta v3)
 
+> Para: contratista · Estado: referencia · Sustituido por: —
+
 Documento público y auditable. Cada fórmula, porcentaje y norma que usa el editor de APU para
 costear la mano de obra y los costos indirectos, con el **estado de verificación** de cada
 parámetro. Los valores viven en `apu:parametros` (editables en *Mi empresa → Sistema →

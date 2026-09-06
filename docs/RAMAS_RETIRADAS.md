@@ -1,8 +1,20 @@
 # Ramas superadas al unificar en `main` (21-ago-2026)
 
+> Para: dueño · Estado: informe fechado · Sustituido por: —
+
 Encargo del dueño: **«Unifica todas las ramas y solo maneja en `main`»**. Este documento es el censo
 de las 95 ramas remotas: qué se comprobó de cada una, por qué ninguna queda pendiente de fusionar, y
 cómo borrarlas —o resucitar cualquiera— sin volver a auditarlas desde cero.
+
+> **MEDIDO el 6-sep-2026 (`git ls-remote --heads origin`, que sí responde desde esta sesión):
+> quedan 51 referencias remotas.** De los 100 nombres de rama que este documento censa, **57 ya no
+> existen** y **43 siguen**; y hay **7 ramas `claude/*` nuevas que este censo no nombra**
+> (`auditoria-portafolio-estrategico`, `don-hector-research`, `empresa-cleanup-process-calendar`,
+> `empresa-helder-reorganizar`, `infrastructure-optimization-review`, `obsidian-digital-brain` y la
+> de esta sesión), que se revisan antes de borrarlas: no están auditadas aquí. Así que el aviso de
+> abajo describe lo que pasaba el 21-ago-2026 y **ya no es cierto que «las 95 sigan existiendo»**;
+> lo que sigue siendo cierto es que el borrado no se ejecuta desde aquí y que la tabla de SHA de
+> este documento es la única vía de resucitar una rama si GitHub ya no ofrece «Restore».
 
 > ⚠️ **EL BORRADO NO SE PUDO EJECUTAR DESDE AQUÍ, y hay que decirlo en vez de darlo por hecho.**
 > El relé de git de este entorno **permite empujar commits pero deniega el borrado de referencias**:

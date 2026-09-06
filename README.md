@@ -1,5 +1,7 @@
 # Detekta · decidir a qué licitaciones de obra civil presentarse
 
+> Para: ingeniero · Estado: referencia · Sustituido por: —
+
 Aplicación privada, **en producción**, para que un contratista de obra civil en Colombia decida **a
 qué licitaciones presentarse y a qué precio**. Lee en vivo el dataset abierto de SECOP II
 (`p6dx-8zbt`, Colombia Compra Eficiente), guarda dos años de adjudicaciones como histórico, cruza

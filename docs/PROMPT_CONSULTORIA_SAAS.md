@@ -1,4 +1,6 @@
 # PROMPT MAESTRO · CONSEJO CONSULTOR DE DETEKTA
+
+> Para: sesión · Estado: pendiente del dueño · Sustituido por: —
 ## De herramienta interna a producto SaaS vendible por suscripción
 ### Mental Framework ECC v3 · modo CONSULTORÍA · calibrado contra el repositorio real (24-ago-2026)
 
@@ -41,7 +43,7 @@ En este orden, y **antes** de la primera recomendación:
    El complemento **audita el manual y corrige dos cosas que dice mal**: se leen juntos.
 4. `docs/INVESTIGACION_PLATAFORMAS_LICITACIONES.md` — competencia y plataformas ya investigadas.
    **Es tu línea de partida para el precio; no la reinventes, verifícala y actualízala.**
-5. `docs/ANALISIS_ESTRATEGICO.md`, `docs/AUDITORIA_INTEGRAL.md`, `docs/PROBABILIDAD_MEJORADA.md`,
+5. `docs/archivo/ANALISIS_ESTRATEGICO.md` (archivado el 6-sep-2026), `docs/AUDITORIA_INTEGRAL.md`, `docs/PROBABILIDAD_MEJORADA.md`,
    `docs/metodologia.md`, `docs/datos.md`, `docs/CONFIGURACION_TOKENS.md`, `docs/marca.md`.
 6. `vercel.json`, `lib/auth.js`, `tests/e2e.js` (cabecera y estructura de bloques).
 

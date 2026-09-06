@@ -1,5 +1,7 @@
 # Diagnóstico del módulo APU frente a la especificación «APU profesional»
 
+> Para: ingeniero · Estado: referencia · Sustituido por: —
+
 **Fecha:** 2026-08-12 · **Rama:** `feature/apu-profesional`
 
 > Foto del 12-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.

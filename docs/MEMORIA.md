@@ -1,5 +1,7 @@
 # MEMORIA.md · la crónica completa de decisiones de Detekta
 
+> Para: sesión · Estado: referencia · Sustituido por: —
+
 **Este archivo ES el CLAUDE.md histórico del proyecto, movido aquí el 27-ago-2026** para que deje
 de auto-cargarse entero en cada sesión (~150k tokens que se pagaban antes de la primera línea de
 trabajo). Nada se resumió ni se borró: es el contenido verbatim, y **se sigue escribiendo aquí** —
@@ -10351,3 +10353,144 @@ regla lo dejaba pasar porque su regex de nombres no admitía guiones—.
 
 **No verificable desde aquí (6-sep-2026).** Que el flujo de GitHub corra con `fetch-depth: 0` y mida
 el ritmo (sin push desde esta sesión). Sin pasos del dueño en estos remates.
+
+### Lote «B11-documentacion-2» de la consultoría del 4-sep · M-DOC-04, M-DOC-10, M-DOC-11, M-COMP-06, M-INF-21 (6-sep-2026)
+
+En una línea: un documento se retira por una REGLA medible y se mueve con `git mv` (nunca se borra), cada documento declara en una línea para quién es y si vale —de ahí sale `docs/INDICE.md`, generado—, los textos que lee el dueño hablan de usted y nombran botones que existen, y lo que se podría imprimir sobre precio y competencia lleva fecha, confianza y el pie que remite a lo que la memoria ya decidió.
+
+**Qué se decidió.**
+
+1. **Regla de retiro (M-DOC-04), escrita en `docs/PROMPT_INICIAL.md` § 11 y con cerradura.** Un
+documento pasa a `docs/archivo/` con su MISMO nombre cuando se cumplen **las tres**: (1) nadie vivo
+lo necesita —ningún archivo de `lib/`, `api/`, `public/`, `tests/`, `.claude/`, `README.md`,
+`CLAUDE.md` o `vercel.json` lo cita fuera de un comentario, y ninguna cita en comentario lo presenta
+como la explicación viva de lo que el código hace—; (2) el trabajo vivo no lo edita (ningún commit de
+los últimos 30 días cambia su contenido, salvo correcciones de censo, que se declaran); (3) es de
+ESTADO o de encargo cerrado y lo que sigue valiendo está en esta memoria con su sección fechada. La
+primera línea declara el retiro: `> Archivado el dd-mmm-20dd: superado por …` (en un `.html` o un
+`.sh`, dentro del comentario que su formato admita: un «>» ahí sería texto que el navegador pinta).
+**Se archivaron tres**: `ANALISIS_ESTRATEGICO.md`, `AUDITORIA_INVESTIGACION_EXTERNA.md` y
+`cargar_experiencia.sh` (que el dueño nunca pudo usar: no tiene terminal, y los tres pasos los hace
+el botón «Hacer los tres pasos» de Mi empresa). Ninguno se subdivide en carpetas por mes: el archivo
+del árbol es PLANO, y el sufijo de fecha de los dos archivados de la mañana no es convención —el
+nombre se conserva y la fecha va en la cabecera obligatoria—.
+
+2. **Lo que la ficha mandaba archivar y NO se archivó, con la medida.** `APU_INFORME_COMPLETO.md`
+(873 KB) **falla la condición (1)**: lo citan `lib/apu_ocr.js`, `lib/apu_extraer.js`,
+`lib/apu/normativa.js`, `lib/apu_pliego.js`, `lib/apu_catalogo.js`, `public/pliego.js` y
+`tests/apu_bench.js` como la explicación viva de la cascada de precios — exactamente el motivo por el
+que la propia ficha dice NO archivar `APU_FUENTES.md` ni `APU_DIAGNOSTICO.md`. Archivarlo y
+«actualizar las 8 citas» habría dejado el código apuntando a `docs/archivo/`, que por definición es
+lo que ya no rige: el tamaño no es criterio de retiro. `INVESTIGACION_PLATAFORMAS_LICITACIONES.md`
+**falla la (2)**: el trabajo vivo lo editó HOY dos veces (el cupo de datos.gov.co en el lote B4b y el
+pie de M-COMP-06 en este). El paquete SaaS (nueve documentos) y `RAMAS_RETIRADAS.md` esperan al
+dueño; el segundo, además, es la única vía de resucitar una rama borrada (guarda el SHA de cada una).
+
+3. **`RAMAS_RETIRADAS.md` dice lo MEDIDO, no lo de agosto.** `git ls-remote --heads origin` sí
+responde desde esta sesión (el que denegaba era el borrado de referencias): **51 referencias remotas
+el 6-sep-2026**. De los **100** nombres que el documento censa, **57 ya no existen** y **43 siguen**;
+y hay **7 ramas `claude/*` nuevas** que el censo no nombra y que no están auditadas. La frase «las 95
+ramas siguen existiendo en GitHub» era del 21-ago y quedó desmentida arriba, con fecha, sin reescribir
+el cuerpo.
+
+4. **`docs/INDICE.md` se GENERA (M-DOC-10).** Cada documento declara en una línea lo único que no se
+puede derivar: `> Para: dueño | sesión | ingeniero | contratista · Estado: referencia | informe
+fechado | pendiente del dueño | archivado · Sustituido por: <ruta o —>`. **Sin cifras**: un tamaño o
+un conteo en la ficha serían cuarenta y siete mentiras en incubación. Todo lo demás —el título, y
+desde dónde se cita— lo deriva `node tests/mapa.js --escribir` leyendo el árbol, y la suite compara
+el archivo con lo que el árbol genera. **«Pendiente del dueño» no es «aparcado»**: el encargo SaaS no
+tiene decisión y esta memoria no se la inventa. 47 documentos con ficha, ninguno «sin ficha»; el
+índice mide **7 767 bytes** (la ficha estimaba ≤ 6 000: 47 filas con la columna «Citado desde» pesan
+más de lo que estimó).
+
+5. **Los textos que lee el dueño hablan de usted (M-DOC-11), y lo que no se puede censar se
+DECLARA.** `.claude/skills/dictamen/SKILL.md` era el único texto del proyecto que tuteaba
+(«DETENTE», «Imprime», «léelo», «Guárdalo»): corregido. **La premisa de la ficha era falsa**:
+extender «la misma cerca de voseo/tuteo de `public/`» a las skills **NO habría fallado** —medido:
+`tuteoEn()` devuelve `null` sobre los cuatro textos del dueño, porque la cerca censa terminaciones
+(-aste, -iste, -ás, -és, -ís) y el imperativo de tú no tiene ninguna—. Lo que sí es decidible sin
+conocer el verbo, y es lo que se censa: **los pronombres y posesivos de segunda persona** (`tú`,
+`ti`, `contigo`, `tu`, `tus`, `te` sueltos) —que no existen en el registro de usted— y **el
+imperativo con pronombre enclítico de segunda persona**. Lo que **no** se censa, y se dice por qué:
+el imperativo de tú SIN pronombre («Imprime», «Lee») es indistinguible con una expresión regular del
+presente de indicativo de tercera persona —el árbol tiene «Responde `total`…» y «llama el
+servidor…», que son correctos— y del imperativo de usted de otra conjugación. Excepción declarada del
+censo de pronombres: las citas literales entre «» de un texto AJENO que el documento audita
+(DON_HECTOR cita cuatro veces el prompt externo que critica).
+
+6. **Y nombran botones que existen.** Censo de todo literal «Con Mayúscula Inicial» de las skills y
+de los `*_DESDE_CLAUDE_CODE.md` contra `public/*.js` + `index.html`. Se comparan los **trozos de 4
+caracteres o más**, no la cadena entera: la pantalla arma el texto con plantillas anidadas
+(`Buscando… completado ${p.pct} %${p.total ? \` (…)\` : ""}`) y comparar entero daba cuatro falsos
+positivos. Halló **cuatro divergencias reales**: «En cola…» (la pantalla dice «Su solicitud quedó
+registrada…» desde el remate del 5-sep), «Usar estos precios y calcular» (el botón lleva la cuenta en
+medio: «Usar estos N precios y calcular», en dos textos) y «Cargar el pliego (PDF) de este proceso»
+(el botón dice «Cargar el pliego (PDF)»). Excepción declarada: «Detekta · atender la cola de
+Precios» es el nombre de la rutina en la nube del dueño, no un texto de la pantalla. Y
+`PRECIOS_DESDE_CLAUDE_CODE § «Dónde vive en el código»` deja de listar rutas y funciones: las da
+`node tests/mapa.js ia`.
+
+7. **Precio y competencia alineados con lo que la memoria ya decidió (M-COMP-06).** «La única
+herramienta que se conoce que recorre la línea entera» y «menos de la mitad de Licitum y hace el APU»
+llevan pie fechado que remite a «Auditoría del módulo APU: las dos mitades no están conectadas
+(24-ago-2026)»: **PresuCosto hace el APU gratis**, así que «hace el APU» no es la ventaja — la
+ventaja es la **fuente y la vigencia de cada cifra**. El argumento pasa a «hace el APU con la fuente
+oficial de cada precio y le dice si le alcanza la plata». La tabla de mercado se rehace como
+**escalera fechada con confianza por fila**: LicitarUS por planes (Starter $290.000, Pro $690.000;
+su «IVA incluido» sin re-verificar), Licitum con 10 % trimestral y 20 % anual, y el escalón bajo que
+BAJÓ (Alicia $67.000, El País Licita $60.800, Colombia Licita $25.000). Consecuencia para el
+argumento, no solo para la tabla: **Esencial no se vende por «alertas»** —ahí hay gratis y hay
+$60.800— sino por decidir a cuál presentarse. Junto a cada «+ IVA» va el total entre paréntesis
+($226.100 / $499.800 / $1.011.500) porque el competidor de referencia publica con IVA; la política de
+mostrar sin IVA no cambia. Las cifras $190.000 / $420.000 / $850.000 tampoco. **Ninguna página se
+pudo abrir desde esta sesión** (el proxy responde 403 a esos dominios): todo son extractos con fecha,
+y el dueño los confirma en su navegador antes de imprimir un precio.
+
+8. **Las comisiones de cobro se marcan como no verificadas y Stripe queda descartado (M-INF-21).**
+`docs/SEGURIDAD_Y_CUENTAS.md` § 8 y `docs/PRECIO_Y_UNIT_ECONOMICS.md` afirmaban «≈ 2,5 % y 1,49 % por
+PSE» «según la comparativa consultada», sin URL ni fecha, y con esa cifra se calculaba un margen. Dos
+secundarias discrepan (2,65 % + $700 + IVA en tarjeta y 1,5 % Nequi; Mercado Pago 3,29 % + $800 +
+IVA) y ninguna es primaria: **la que manda es la del CONTRATO**, que negocia el dueño, y no se
+sustituye una secundaria por otra. Sobre un cobro de $80.000 la diferencia entre las dos secundarias
+es de 1,8 puntos ≈ $1.440 — el único cálculo honesto que se puede hacer hoy. **Stripe: descartado**,
+no admite cuentas domiciliadas en Colombia (tres secundarias concordantes de 2026; no se pudo abrir
+stripe.com desde aquí).
+
+**Medido antes → después (6-sep-2026).** Dos mutaciones. La primera devuelve al árbol anterior los
+dos skills y los cuatro documentos de dueño/precio: **dieciocho hallazgos de una pasada** (tres formas
+de tuteo enclítico, cuatro literales de pantalla que no existen, la sección de coordenadas de vuelta,
+la afirmación de superioridad sin pie fechado, cuatro filas de la tabla de mercado sin fecha, la
+escalera con 4 filas, y cuatro veces la comisión «1,49 %» sin declararla no verificada). La segunda
+deshace el retiro y el índice: **cuatro** (un archivado sin su cabecera de retiro, una referencia a la
+ruta anterior del documento movido, un documento sin ficha y `docs/INDICE.md` editado a mano).
+
+**Lo que las fichas decían y el árbol desmintió.** M-DOC-04: `APU_INFORME_COMPLETO.md` no cumple la
+regla que la propia ficha escribe (siete citas vivas), así que no se archiva —el ahorro de 873 KB que
+la ficha contaba como «hoy» no se realiza, y decirlo vale más que realizarlo—; la ficha pedía
+subcarpetas `docs/archivo/2026-08-fotos/` y el árbol ya tenía archivo PLANO (lote B6a), que no se
+duplica; la ficha contaba «61 ramas borradas de 104» y lo medido hoy es 57 de 100 con 51 refs
+remotas. M-DOC-10: la ficha estimaba «≤ 6 KB» y son 7 767 B con 47 fichas. M-DOC-11: la ficha decía
+que extender la cerca de lenguaje «debe fallar hoy con dictamen/SKILL.md» y **no falla** —la cerca
+censa terminaciones, no imperativos—; y el censo de literales «ingenuo» no daba seis falsos positivos
+sino cuatro, todos por plantilla anidada, resueltos comparando trozos. M-COMP-06: la ficha daba por
+buena la fila de LicitarUS a $150.000 por análisis «que hay que sustituir»; medido contra el extracto,
+ese cobro **ya no se publica**, así que la fila se conserva tachada y fechada en vez de borrarla (un
+precio que existió y dejó de existir es un dato, no un error).
+
+**No verificable desde aquí (6-sep-2026).** Las cinco cifras de competidor y la de PresuCosto (el
+proxy responde 403 a `licitarus.com`, `alicia.services`, `licitum.co`, `presucosto.com` y
+`elpais.com.co`); las comisiones reales de cualquier pasarela (dependen del contrato); que Stripe
+siga sin operar en Colombia (tres secundarias, ninguna abierta desde aquí).
+
+**Pasos del dueño (literales de las fichas).** (1) Responder si el plan SaaS del 24-ago sigue vigente
+o queda aparcado (basta una frase en la próxima sesión de https://claude.ai/code con el repositorio
+Mauricio7x/portafolio-estrategico). (2) Borrar las ramas viejas:
+https://github.com/Mauricio7x/portafolio-estrategico/branches → pestaña «Stale» → icono de papelera
+en cada fila (las 43 que `RAMAS_RETIRADAS.md` lista y que siguen existiendo; las 7 `claude/*` nuevas
+se revisan antes). (3) Completar la constancia de `autorizacion_helder.md` (fecha y firma) o decir que
+la autorización fue verbal y cuándo. (4) Abrir en Chrome https://licitarus.com y anotar si $290.000 /
+$690.000 dicen «IVA incluido». (5) Abrir https://alicia.services/planes y confirmar $67.000 /
+$150.000 / $300.000. (6) Abrir https://licitum.co y confirmar $890.000 y los descuentos trimestral
+(10 %) y anual (20 %). (7) Abrir https://presucosto.com y confirmar que el APU es gratis y que la
+extracción del pliego con IA es del plan Enterprise sin precio publicado. (8) Abrir
+https://www.elpais.com.co (sección Licita) y confirmar «desde $60.800/mes».

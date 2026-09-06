@@ -80,7 +80,7 @@ cola («en_cola» y «buscando» que lleven más de dos horas sin avance). El pe
 7. **Cerrar** diciéndole al dueño, por solicitud: ítems con APU, sin precio (y por qué), apartados, costo
    directo total y las alertas de mercado; y que el usuario lo ve en Precios: paso 2, el borrador se abre
    desde «Más herramientas» → «Guardar o abrir un borrador» → «Abrir un borrador…» → el nombre; el resultado
-   sale bajo el botón «Buscar» con «Usar estos precios y calcular».
+   sale bajo el botón «Buscar» con «Usar estos N precios y calcular».
 
 Reglas que no se negocian: nunca una cifra inventada; cada material con su fuente; la unidad de la fila se
 respeta; la aritmética cuadra. Con esto se fija el precio de una oferta real.

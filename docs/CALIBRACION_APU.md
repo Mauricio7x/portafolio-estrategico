@@ -1,5 +1,7 @@
 # Calibración del catálogo APU con el Presupuesto Nogal 4 (ago 2026)
 
+> Para: ingeniero · Estado: informe fechado · Sustituido por: —
+
 ## La fuente
 
 **«Presupuesto Nogal 4.xlsx»** — Proforma No. 4 del proceso **UPN-VAD-CP-009-2025**

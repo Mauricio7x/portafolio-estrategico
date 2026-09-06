@@ -1,5 +1,7 @@
 # Investigación · Las cinco mejores plataformas de licitación pública del mundo
 
+> Para: dueño · Estado: informe fechado · Sustituido por: —
+
 > Qué hace excelente a una plataforma de licitaciones, qué ofrecen las que mandan hoy, y qué
 > podemos copiar, adaptar o mejorar en **Portafolio Estratégico**.
 >
@@ -76,6 +78,14 @@ Las plataformas del mundo se reparten en tres capas que **casi no se tocan entre
 «esta licitación existe» a «encaja con tu RUP y tu K» a «cuesta esto» a «oferta a este precio». El
 lector de pliegos (`lib/apu_pliego.js`) es literalmente el puente que falta en el diagrama: convierte
 el Formulario 1 de la capa 1 en las cantidades que necesita la capa 3.
+
+> **Nota del 6-sep-2026 (M-COMP-06).** Esa frase ya no se sostiene sin matizarla y **no se imprime
+> tal cual**: PresuCosto cruza pliego → APU en su plan Enterprise (sin precio publicado), y la
+> respuesta está decidida en `docs/MEMORIA.md § «Auditoría del módulo APU: las dos mitades no están
+> conectadas (24-ago-2026)»`: **la ventaja no es la idea, es la FUENTE y la VIGENCIA de cada cifra**
+> (de dónde sale cada precio, de cuándo es, con qué se calibró y qué decisión se tomó con él). El
+> dato de PresuCosto es de un extracto del 5-sep-2026: no se pudo abrir la página desde esta sesión
+> (proxy), y el dueño lo confirma en su navegador antes de usarlo en cualquier argumento.
 
 Eso no es una ventaja de diseño: es una **ventaja de categoría**, y es lo que hay que proteger y
 comunicar. Todo lo demás de este informe son detalles de ejecución comparados con eso.

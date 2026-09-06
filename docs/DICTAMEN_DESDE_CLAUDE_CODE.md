@@ -1,5 +1,7 @@
 # Dictamen del pliego con la suscripción de Claude Code (sin clave de API) · 3-sep-2026
 
+> Para: dueño · Estado: referencia · Sustituido por: —
+
 El dueño paga el plan Max de Claude y no va a pagar además una clave de API para el servidor. La API que
 llama el servidor (`api.anthropic.com`) se cobra aparte y no la cubre ninguna suscripción de claude.ai:
 eso no cambia. Lo que sí cambia es DÓNDE se escribe el dictamen: en una sesión de Claude Code, que la
@@ -21,8 +23,8 @@ clave de caché es `reglas-<versión>`, `sesion` o el nombre del modelo). La pan
 
 1. Cargar el pliego una vez: en `https://portafolio-estrategico.vercel.app`, pestaña **Licitaciones**,
    botón **Calcular mi precio** de la tarjeta → pestaña **Precios** → sección del lector → subir el PDF
-   del pliego. (O desde **Mis procesos**: abrir la guía del proceso guardado → «Cargar el pliego (PDF) de
-   este proceso».) Al terminar, el texto queda guardado bajo el id del proceso.
+   del pliego. (O desde **Mis procesos**: abrir la guía del proceso guardado → «Cargar el pliego
+   (PDF)», que lo abre en Precios con el proceso ya puesto.) Al terminar, el texto queda guardado bajo el id del proceso.
 2. Abrir Claude Code sobre este repositorio (`https://claude.ai/code`, repositorio
    `Mauricio7x/portafolio-estrategico`, rama `main`) y escribir: `/dictamen CO1.REQ.123456 helder`
    (el id está en la tarjeta; el perfil es `helder`, `genesis`, `juntos` o el id de un consorcio).

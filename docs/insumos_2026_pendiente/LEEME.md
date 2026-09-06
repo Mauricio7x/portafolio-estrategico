@@ -1,5 +1,7 @@
 # Insumos de precios 2026 · las FUENTES de los bancos del módulo APU
 
+> Para: ingeniero · Estado: referencia · Sustituido por: —
+
 Los 22 archivos que aportó el dueño en agosto de 2026. **Esta carpeta no es un
 acopio pendiente: es la fuente de la que se regeneran tres bancos de precios de
 la app.** El censo, los contrastes y las decisiones están en

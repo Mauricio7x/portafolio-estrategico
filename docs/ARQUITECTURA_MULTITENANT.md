@@ -1,4 +1,6 @@
 # Anexo C · Arquitectura multi-inquilino, escalabilidad y datos
+
+> Para: dueño · Estado: pendiente del dueño · Sustituido por: —
 ### Consultoría SaaS Detekta · 24-ago-2026 · silla de arquitectura + datos + adversaria
 
 ---

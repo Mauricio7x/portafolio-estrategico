@@ -1,4 +1,6 @@
 # EMPEZAR AQUÍ · Guía de cero para convertir Detekta en un negocio
+
+> Para: dueño · Estado: pendiente del dueño · Sustituido por: —
 ### 24-ago-2026 · Escrita para leerse sin conocimientos técnicos ni jurídicos
 
 ---

@@ -1,4 +1,6 @@
 # Anexo A · Frente jurídico y regulatorio (Colombia)
+
+> Para: dueño · Estado: referencia · Sustituido por: —
 ### Consultoría SaaS Detekta · 24-ago-2026 · silla jurídica + honestidad
 
 > **ADVERTENCIA DE MÉTODO, y es la más importante de este documento.**

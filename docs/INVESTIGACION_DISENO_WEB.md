@@ -1,5 +1,7 @@
 # Investigación · Cómo están hechas las mejores páginas web del mundo (4-sep-2026)
 
+> Para: ingeniero · Estado: informe fechado · Sustituido por: —
+
 Encargo del dueño: mirar las páginas más visitadas del mundo y las mejores en estilo limpio y
 minimalista, entender su estructura y su reparto, y aplicarlo a Detekta. Este documento es el
 resultado de esa mirada, **con las cifras medidas sobre las hojas de estilo reales** (descargadas

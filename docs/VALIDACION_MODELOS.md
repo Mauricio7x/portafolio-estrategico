@@ -1,4 +1,6 @@
 # Anexo E · Ciencia de datos: calibración, validación y vigilancia
+
+> Para: ingeniero · Estado: pendiente del dueño · Sustituido por: —
 ### Consultoría SaaS Detekta · 24-ago-2026 · silla de ciencia de datos + honestidad
 
 ---

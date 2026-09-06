@@ -1,5 +1,7 @@
 # Accesibilidad de la zona · metodología (ago 2026)
 
+> Para: sesión · Estado: informe fechado · Sustituido por: —
+
 > Foto del 21-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
 
 Encargo del dueño: que salgan de primeras las oportunidades de mayor probabilidad que **además**
@@ -93,4 +95,4 @@ esto: menos horas de analista por oportunidad). Estado en Detekta:
 | Renovar RUP | Consultoría anual | Auditoría de cobertura con experiencia real | ✅ |
 
 Los dos ⬜ son las piezas que más plata operativa ahorran de lo que falta, y quedan priorizadas en
-`docs/ANALISIS_ESTRATEGICO.md` (#18 y nueva: alertas).
+`docs/archivo/ANALISIS_ESTRATEGICO.md` (#18 y nueva: alertas; archivado el 6-sep-2026).

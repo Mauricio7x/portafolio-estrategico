@@ -1,5 +1,7 @@
 # APU automatizado y rentabilidad real de contratos de obra pública en Colombia
 
+> Para: ingeniero · Estado: referencia · Sustituido por: —
+
 > Documento de **investigación y diseño**. No contiene código de implementación.
 > Es **ayuda a la decisión**: no es asesoría jurídica ni sustituye a un ingeniero de costos.
 > Agosto de 2026.

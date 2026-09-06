@@ -1,5 +1,7 @@
 # Manual del Analista de Licitaciones
 
+> Para: sesión · Estado: referencia · Sustituido por: —
+
 **Contratación Pública Colombiana y SECOP II — Curso completo de formación**
 Programa de Formación Profesional | Nivel Analista | Edición 2026
 

@@ -1,5 +1,7 @@
 # CLAUDE.md · Detekta
 
+> Para: sesión · Estado: referencia · Sustituido por: —
+
 **Detekta**: app privada, EN PRODUCCIÓN, para decidir a qué licitaciones de obra civil presentarse
 en Colombia. Su usuario es real, **no tiene terminal** (opera pegando URLs en Chrome) y fija el
 precio de una oferta con la cifra que se ponga en pantalla: una cifra equivocada, creíble y bien
@@ -28,6 +30,11 @@ antes de la primera línea de trabajo (medido, 27-ago-2026). Las tres herramient
    OBLIGATORIO**: casi todo lo que se te ocurra «mejorar» está ahí explicado con el motivo por el
    que es así, y cada regla de esa crónica costó un defecto real. Las citas «CLAUDE.md § X»
    anteriores al 27-ago-2026 apuntan allí.
+
+**Qué documento sirve para qué**: `docs/INDICE.md` (generado con `node tests/mapa.js --escribir`;
+una fila por documento, con para quién es y si vale). Lo retirado vive en `docs/archivo/` y no se
+borra: el mapa solo lo resuelve con `--archivo`, y un `grep` ancho por `docs/` lleva
+`--exclude-dir=archivo`.
 
 Después, y solo si el encargo lo toca: **`docs/PROMPT_INICIAL.md`** (rol, ciclo,
 verificación, orquestación, formato de cierre) al empezar una sesión de trabajo · **`README.md`**

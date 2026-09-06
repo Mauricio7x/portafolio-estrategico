@@ -1,5 +1,7 @@
 # Insumos de precios 2026 · censo, contraste y qué hacer con ellos
 
+> Para: ingeniero · Estado: informe fechado · Sustituido por: —
+
 Análisis de los 22 archivos que el dueño aportó y que quedaron guardados «para análisis posterior»
 en `docs/insumos_2026_pendiente/` (commits `8cb79fe`, `61d3c4c`, `5e2c3a6`, `9a26236`, `1a83491`).
 Ninguno estaba leído todavía: los commits solo los acopiaron.

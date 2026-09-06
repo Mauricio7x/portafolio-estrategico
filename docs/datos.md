@@ -1,5 +1,7 @@
 # Inventario de fuentes de datos y auditorías de la Fase 0
 
+> Para: sesión · Estado: referencia · Sustituido por: —
+
 Documento vivo. Cada fila responde «¿de dónde sale esto y en qué estado de verificación está?».
 Regla del proyecto: **un 403/404 anotado aquí es una observación CON FECHA, no una propiedad del
 entorno** — antes de dar una fuente por perdida, volver a llamarla.

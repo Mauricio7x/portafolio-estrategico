@@ -1,5 +1,7 @@
 # Investigación de competencia del módulo APU · cómo operan, de dónde sacan los datos y cómo superarlas
 
+> Para: ingeniero · Estado: informe fechado · Sustituido por: —
+
 **Fecha:** 2026-08-13 hora de Colombia (2026-08-14 UTC — el entorno marca hora universal; misma resta de 5 h que ya aplica la app a las fechas de SECOP). **Método:** cuatro investigaciones paralelas con lectura directa de los sitios
 (cada afirmación distingue hecho verificado con URL de inferencia). **Encargo del dueño:** los
 ingenieros no confían en los precios del APU frente al interventor; el módulo debe ser confiable,

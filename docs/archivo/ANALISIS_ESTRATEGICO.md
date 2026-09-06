@@ -1,4 +1,12 @@
+> Archivado el 6-sep-2026: superado por la consultoría del 4-sep-2026 (`docs/CONSULTORIA_2026-09-04.json`
+> y su resumen) y por lo que la memoria decidió después. Es una FOTO de agosto de 2026: su matriz «esta
+> semana» ya se ejecutó, habla de tú en varios sitios y nombra conteos del árbol de entonces. Se conserva
+> íntegro porque explica POR QUÉ se eligieron varias cosas que siguen vigentes; no se edita, se cita por
+> título de sección, y el estado de hoy se mide con `node tests/estado.js` y `node tests/mapa.js`.
+
 # Análisis estratégico de Detekta · agosto 2026
+
+> Para: dueño · Estado: archivado · Sustituido por: docs/CONSULTORIA_2026-09-04_RESUMEN.md
 
 Diagnóstico integral de producto contra la filosofía definitiva del dueño: **«problemas e
 incógnitas difíciles, simplificadas para personas normales, que no necesiten un curso académico

@@ -1,4 +1,6 @@
 # Anexo D · Identidad, autorización, seguridad y cobro
+
+> Para: dueño · Estado: pendiente del dueño · Sustituido por: —
 ### Consultoría SaaS Detekta · 24-ago-2026 · silla de seguridad + adversaria
 
 ---
@@ -159,10 +161,16 @@ alta → verificación del correo → elección de plan → tokenización de la 
 
 **Decisiones:**
 
-1. **Pasarela: Wompi.** Ofrece cobro recurrente con tokenización de tarjetas y de Nequi, comisión
-   aproximada del **2,5 %** y **1,49 % por PSE**, la mejor del mercado según la comparativa
-   consultada. **Verificar antes de integrar** que la recurrencia funciona sin intervención del
-   cliente cada mes: es el punto donde más fácil se asume de más.
+1. **Pasarela: Wompi.** Ofrece cobro recurrente con tokenización de tarjetas y de Nequi.
+   **Las comisiones NO están verificadas** (6-sep-2026, M-INF-21): las fuentes secundarias
+   consultadas discrepan entre sí —2,5 % y 1,49 % por PSE en una comparativa sin fecha; 2,65 % +
+   $700 + IVA en tarjeta y 1,5 % por Nequi/Bancolombia en otra; Mercado Pago 3,29 % + $800 + IVA al
+   instante— y ninguna es primaria. **La cifra que manda es la del CONTRATO con la pasarela**, que
+   negocia el dueño: hasta entonces no se calcula ningún margen con una comisión concreta, y aquí no
+   se sustituye una secundaria por otra. **Stripe queda descartado**: no admite cuentas domiciliadas
+   en Colombia (tres fuentes secundarias concordantes de 2026; no se pudo abrir stripe.com desde esta
+   sesión). **Verificar antes de integrar** que la recurrencia funciona sin intervención del cliente
+   cada mes: es el punto donde más fácil se asume de más.
 2. **El webhook de la pasarela se valida con su firma**, y el procesamiento es **idempotente**: un
    webhook repetido no puede cobrar ni activar dos veces.
 3. **La fuente de verdad del estado de la suscripción es Detekta, no la pasarela.** Un panel de
@@ -181,8 +189,11 @@ alta → verificación del correo → elección de plan → tokenización de la 
 query sin comprobación · doce puntos de llamada a `lib/auth.js` · tope de 300 perfiles y TTL de 45
 días · cuerpo máximo de 5 MB · los tres canales de inferencia ya documentados.
 
-**VERIFICADO CONTRA FUENTE EXTERNA** — Wompi admite cobros recurrentes con tokenización; comisión
-≈ 2,5 % y 1,49 % por PSE.
+**VERIFICADO CONTRA FUENTE EXTERNA** — Wompi admite cobros recurrentes con tokenización.
+
+**NO VERIFICADO (6-sep-2026)** — las comisiones de cualquier pasarela: dos fuentes secundarias
+discrepan (2,5 % / 1,49 % PSE frente a 2,65 % + $700 + IVA / 1,5 % Nequi) y la definitiva es la del
+contrato. Stripe: descartado para una empresa colombiana.
 
 **SUPUESTO** — que `scrypt` nativo basta sin dependencias · los plazos de gracia y borrado · que la
 verificación de correo frena el alta masiva · doce meses de conservación del registro de auditoría.

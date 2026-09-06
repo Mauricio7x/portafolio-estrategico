@@ -1,5 +1,7 @@
 # Consultoría integral sobre Detekta · resumen para el dueño (antes → mejora)
 
+> Para: dueño · Estado: informe fechado · Sustituido por: —
+
 > Redactado el 5 de septiembre de 2026 sobre el árbol de main del 4 de septiembre de 2026 (commit d569946). Este resumen acompaña al documento técnico `docs/CONSULTORIA_2026-09-04.json`, que contiene, para cada mejora, los pasos exactos con archivo y función, la prueba que la cierra y la evidencia ejecutada. Los identificadores de mejora (M-INF-nn, M-IE-nn, M-DGF-nn, M-DOC-nn, M-COMP-nn, M-SEG-nn) son los mismos en los dos documentos.
 >
 > Regla de lectura: toda cifra de este documento lleva su origen: **medido** (comando y fecha), **calculado** (fórmula visible), **fuente externa** (URL y fecha; cuando la página no se pudo abrir se dice «por extracto») o **no medible desde aquí**. Ningún porcentaje es a ojo. «Sin dato» nunca se presenta como cero. Producción no fue medida: el proxy de salida de la sesión respondió 403 a todo dominio salvo GitHub.

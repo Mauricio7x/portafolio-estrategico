@@ -1,5 +1,7 @@
 # Atractividad de una licitación — análisis iterativo y diseño
 
+> Para: ingeniero · Estado: informe fechado · Sustituido por: —
+
 > Foto del 31-jul-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
 > (La fecha es la de su primer commit real, `1777447`; el «21-ago-2026» que decía hasta el 6-sep-2026 era
 > la del injerto del aplastamiento de la historia, no la del análisis.)

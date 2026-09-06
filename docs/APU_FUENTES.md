@@ -1,5 +1,7 @@
 # Fuentes de precio del APU · qué se intentó, qué respondió y qué falta
 
+> Para: ingeniero · Estado: referencia · Sustituido por: —
+
 **Fecha de las pruebas:** 2026-08-12 · **Rama:** `feature/apu-precios`
 
 > Foto del 12-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.

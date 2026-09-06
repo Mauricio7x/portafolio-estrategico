@@ -1,5 +1,7 @@
 # PROMPT INICIAL DE DETEKTA · protocolo vivo
 
+> Para: sesión · Estado: referencia · Sustituido por: —
+
 Este documento ES el prompt inicial del proyecto. Vive en el repositorio —no en un archivo de
 texto del dueño— para que se versione con el código y no pueda divergir de él en silencio. Lo que
 el dueño pega al abrir una sesión es solo el **prompt corto del Apéndice A**, que apunta aquí y no
@@ -90,6 +92,10 @@ vale más que mil líneas leídas «por contexto».
 respondo con esto, y no la responde ya el mapa? Un `grep` con `-n` y contexto acotado le gana a un
 `Read` entero; el mapa le gana al `grep`. Un fichero de más de ~500 líneas se lee por rangos
 (`sed -n`), no entero, salvo que sea el módulo que se va a modificar.
+
+**Un documento retirado sigue en el árbol.** `docs/archivo/` guarda lo superado: `node tests/mapa.js`
+no lo resuelve salvo con `--archivo` (dice cuántos hay), y un `grep` ancho por `docs/` se escribe
+`grep -rn --exclude-dir=archivo` para no cribar lo muerto. Nada de lo archivado se borra.
 
 Dos búsquedas que ya ahorraron trabajo perdido, como reglas atemporales: **antes de construir lo
 que un encargo da por ausente, busca en el árbol y en la historia** (`git log --all --oneline --
@@ -233,6 +239,22 @@ devuelve hallazgos con evidencia ejecutada, no transcripciones de lo que leyó.
 - `tests/estado.js` se mantiene con la misma vara: todo lo que imprime debe estar MEDIDO al
   ejecutarlo; si una vía de derivación deja de casar con el fuente, la herramienta dice «no
   derivable» — nunca inventa — y arreglarla es parte del cambio que la rompió.
+- **Regla de RETIRO de un documento (6-sep-2026, con cerradura en la suite).** Un documento pasa a
+  `docs/archivo/<mismo nombre>` cuando se cumplen **las tres**:
+  **(1) nadie vivo lo necesita** — ningún archivo de `lib/`, `api/`, `public/`, `tests/`, `.claude/`,
+  `README.md`, `CLAUDE.md` o `vercel.json` lo cita fuera de un comentario, y ninguna cita en
+  comentario lo presenta como la explicación viva de lo que el código hace (esas se DECLARAN:
+  `APU_FUENTES.md`, `APU_DIAGNOSTICO.md` y `APU_INFORME_COMPLETO.md` lo son, y por eso no se
+  archivan por grandes que sean);
+  **(2) el trabajo vivo no lo edita** — ningún commit de los últimos 30 días cambia su contenido,
+  salvo correcciones de censo (citas, cabeceras, grafía), que se declaran al archivarlo;
+  **(3) es de ESTADO o de encargo cerrado** (tablas «medido el», planes por fases, censos de un
+  momento) y lo que sigue valiendo está en `docs/MEMORIA.md` con su sección fechada.
+  Se mueve con `git mv` —**nunca se borra**— conservando el nombre, y **la primera línea declara el
+  retiro**: `> Archivado el dd-mmm-20dd: superado por …` (en un `.html` o un `.sh`, dentro del
+  comentario que su formato admita, en las cinco primeras líneas). Las referencias que apunten al
+  documento se actualizan a su ruta nueva **en el mismo commit**. Un documento archivado **no se
+  edita**: se cita por título de sección.
 - **La memoria útil al crecer (convención del 6-sep-2026, con cerradura en la suite).** (1) Cada
   sección NUEVA de `docs/MEMORIA.md` empieza, justo bajo el título, por **«En una línea: …»** (lo
   que decidió, en una frase): es lo que `node tests/mapa.js <término>` imprime bajo el título, y

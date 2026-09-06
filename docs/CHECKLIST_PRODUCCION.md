@@ -1,4 +1,6 @@
 # Anexo F · Lista de verificación previa a producción
+
+> Para: dueño · Estado: pendiente del dueño · Sustituido por: —
 ### Consultoría SaaS Detekta · 24-ago-2026 · silla de calidad + adversaria
 
 > **Cómo se usa:** esta lista **no se lee, se firma**. Cada línea la comprueba una persona, anota la

@@ -1,5 +1,7 @@
 # Complemento crítico al Manual del Analista de Licitaciones
 
+> Para: sesión · Estado: referencia · Sustituido por: —
+
 **Auditoría de vacíos, investigación de cierre y correcciones · agosto 2026**
 
 Documento acompañante de [`GUIA_ANALISTA_LICITACIONES.md`](./GUIA_ANALISTA_LICITACIONES.md). El manual
