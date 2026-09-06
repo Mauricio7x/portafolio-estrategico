@@ -1,3 +1,16 @@
+# Consultoría y auditoría del módulo APU (24-ago-2026)
+
+> Foto del 24-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
+>
+> **Correcciones posteriores, hechas en `docs/MEMORIA.md` § «El INVIAS es el ÚLTIMO recurso entre los bancos
+> (24-ago-2026)» (localizar con `grep -n 'TRES CORRECCIONES' docs/MEMORIA.md`):** **H-4** diagnostica mal la
+> causa (la cabecera antes del paréntesis SÍ se aplica al ICCU; el defecto estaba en el desempate por
+> `localeCompare` de `lib/apu/importar.js`); **H-6** no reproduce en 4 de 5 cifras (IDU 136, FFIE 14, INVIAS 0,
+> EPC 1); **H-1** presenta como acierto un mapeo que también está mal (`320,6,1` es bacheo, no una capa nueva;
+> decide el guion de «SUB-BASE»). El cuerpo de abajo se conserva tal como se entregó, en texto plano; era
+> `docs/AUDITORIA_MODULO_APU.txt` hasta el 6-sep-2026 (invisible para `node tests/mapa.js`).
+
+```text
 ================================================================================
 CONSULTORÍA Y AUDITORÍA DEL MÓDULO APU DE DETEKTA
 ================================================================================
@@ -771,3 +784,4 @@ Todo se ejecuta sobre la rama main, según la decisión del dueño del 21-ago-20
 ================================================================================
 FIN DEL DOCUMENTO
 ================================================================================
+```

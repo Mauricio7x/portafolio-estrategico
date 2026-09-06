@@ -4,10 +4,14 @@
 Programa de Formación Profesional | Nivel Analista | Edición 2026
 
 > Este archivo es la **base de conocimiento de dominio** del proyecto *Detekta*.
-> Es autosuficiente: se puede leer de principio a fin sin ningún otro documento.
-> Las decisiones técnicas del repositorio deben estar informadas por él — el resumen
-> accionable y el mapeo a funcionalidades viven en `CLAUDE.md`, sección
-> «CONOCIMIENTO DE DOMINIO: CONTRATACIÓN PÚBLICA COLOMBIANA».
+> **Se lee JUNTO con `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md`**, que corrige dos puntos de
+> este manual —**§ V-05** (el efecto de firmar la liquidación sin salvedades, Capítulo 20.3 y
+> mandamiento 17) y **§ V-08** (el anticipo, Capítulo 11)— y llena vacíos que el manual no
+> cubre: **la corrección vive allí, no aquí**; este texto se conserva tal como se escribió y
+> cada pasaje corregido lleva una cita al complemento. Las decisiones técnicas del repositorio
+> deben estar informadas por los dos: el destilado accionable vive en `docs/MEMORIA.md`, sección
+> «CONOCIMIENTO DE DOMINIO: CONTRATACIÓN PÚBLICA COLOMBIANA» (`node tests/mapa.js dominio` da el
+> `sed`), y las derivadas de producto en `CLAUDE.md` § «Filosofía de producto».
 
 ---
 
@@ -766,6 +770,9 @@ precio**. Si el flujo acumulado se vuelve muy negativo en algún mes, o consigue
 precio, o **no te presentas**. *La empresa que quiebra ejecutando un contrato que ganó es un clásico
 colombiano, y siempre es la misma causa.*
 
+> **Corregido en `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` § V-08.** Lo que sigue sobre el
+> anticipo se queda corto y en un punto induce a error; la regla corregida vive allí, no aquí.
+
 🔧 **Sobre el anticipo:** si hay anticipo, va a **patrimonio autónomo (fiducia)** en contratos de
 licitación pública (Ley 1474/2011, art. 91). **No es plata tuya:** es plata amarrada con destinación
 específica y auditada. **Presupuesta el costo de la fiducia** y el tiempo que toma constituirla.
@@ -1433,6 +1440,9 @@ cuánto quedó pendiente. **Si firmas ese papel sin poner tus reclamos, ya no pu
 ⚖️ **Ley 1150, art. 11.** De común acuerdo dentro de los **4 meses** siguientes (o lo pactado); si no hay
 acuerdo, **unilateral por la entidad** dentro de los **2 meses** siguientes.
 
+> **Corregido en `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` § V-05.** Lo que sigue presenta
+> como absoluto el efecto de firmar sin salvedades; la regla corregida vive allí, no aquí.
+
 ☠️ **El error irreversible: firmar el acta de liquidación SIN SALVEDADES.**
 Al firmar sin salvedades, **renuncias a reclamar**. Si tienes cualquier reclamación pendiente —mayores
 cantidades, obras adicionales, sobrecostos por suspensión, intereses de mora— **debe quedar escrita como
@@ -1573,7 +1583,7 @@ Después de **cada** proceso —ganado o perdido— **una hoja, media hora, todo
 | **«Mejorar» la oferta** al subsanar | Rechazo + constancia de mejora extemporánea en el expediente | [13](#capítulo-13-subsanación-el-capítulo-que-salva-contratos) |
 | **Improvisar o acusar sin documento** en la audiencia | Queda grabado y puede usarse en tu contra | [15](#capítulo-15-la-audiencia-de-adjudicación) |
 | **Movilizar antes del acta de inicio** firmada | Nómina sin plazo corriendo ni facturación | [20](#capítulo-20-ganaste-ahora-empieza-el-riesgo-de-verdad) |
-| **Firmar el acta de liquidación sin salvedades** | **Irreversible:** se cierra la vía judicial | [20](#203-la-liquidación) |
+| **Firmar el acta de liquidación sin salvedades** | **Irreversible:** se cierra la vía judicial (matizado en COMPLEMENTO § V-05) | [20](#203-la-liquidación) |
 | **No firmar el contrato** tras la adjudicación | Pérdida de la garantía de seriedad + inhabilidad | [20](#capítulo-20-ganaste-ahora-empieza-el-riesgo-de-verdad) |
 
 ---
@@ -1595,7 +1605,7 @@ Después de **cada** proceso —ganado o perdido— **una hoja, media hora, todo
 | **Documentos tipo** | Pliegos estandarizados **obligatorios** (Ley 2022/2020) |
 | **Estampillas** | Tributos departamentales/municipales acumulables (0.5 %–5 %). Varían por entidad |
 | **Habilitante** | Requisito de **pasa/no pasa**. No da puntos. **Subsanable** |
-| **Liquidación** | Cierre de cuentas del contrato. **Sin salvedades = renuncia a reclamar** |
+| **Liquidación** | Cierre de cuentas del contrato. **Sin salvedades = renuncia a reclamar** (matizado en COMPLEMENTO § V-05) |
 | **Menor cuantía** | Umbral calculado sobre el **presupuesto anual de la entidad en SMMLV** |
 | **Ordenador del gasto** | Quien **adjudica**. Si se aparta del comité, debe motivarlo por escrito |
 | **PAA** | Plan Anual de Adquisiciones. **Tu bola de cristal legal.** Se publica a más tardar el 31 de enero |
@@ -1635,7 +1645,7 @@ Después de **cada** proceso —ganado o perdido— **una hoja, media hora, todo
 14. **Acreditar todos los factores de desempate** que legítimamente cumples.
 15. **No firmar el acta de inicio** si la entidad no entregó lo suyo.
 16. **Documentar cada hecho el día que ocurre**, con foto y radicado.
-17. **Nunca firmar el acta de liquidación sin salvedades.**
+17. **Nunca firmar el acta de liquidación sin salvedades.** (Su efecto, matizado en COMPLEMENTO § V-05.)
 18. **Usar siempre el canal formal.** Si te incomodaría que se publicara, no lo hagas.
 19. **Hacer el postmortem** de cada proceso, ganado o perdido.
 20. **Mantener la tasa de rechazo por forma en cero.** Es lo único que depende enteramente de ti.

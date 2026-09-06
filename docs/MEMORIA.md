@@ -2074,6 +2074,8 @@ FFIE 2,5) y delante de una estimación propia (3).
 
 **TRES CORRECCIONES A `docs/AUDITORIA_MODULO_APU.txt`** (está citado más abajo en esta memoria y la
 próxima sesión partirá de él si no se dicen):
+> Nota 6-sep-2026: el archivo es `docs/AUDITORIA_MODULO_APU.md` desde ese día (era `.txt`, invisible para
+> `tests/mapa.js`) y lleva estas tres correcciones en su cabecera.
 - **Su H-4 diagnostica mal la causa.** Afirma que el tratamiento «cabecera antes del paréntesis» no se
   aplica al ICCU. **Sí se aplica**: `lib/apu/importar.js:259` hace `descripcion.split("(")[0]`, igual
   que INVIAS. El defecto real está en el DESEMPATE (`importar.js:421`): los 9 hermanos empatan
@@ -3228,6 +3230,12 @@ por eso lo que descubrió se fijó como prueba en `tests/e2e.js`, que sí es del
   cortesía del navegador. La protección de servidor es `HISTORICO_TOKEN` (`lib/auth.js`) —que desde
   ago 2026 exige TAMBIÉN `/api/oportunidades`— y, encima, Vercel Password Protection. No debilitar
   ninguna de las dos sin permiso del dueño.
+  > Corrección 6-sep-2026 (M-DOC-03): en `/api/oportunidades` el token es **OPCIONAL** —sin él se
+  > sirve la lista con las cifras del perfil en `null` y `finanzas_visibles:false`; presente e inválido,
+  > 401— (`lib/handlers/procesos/listar.js`, y la sección siguiente, «Puertas, probabilidad y valor
+  > esperado»); las rutas con datos sensibles —`/api/competencia-detalle`, `/api/admin/rup`,
+  > `/api/sync/historico` y las demás que `lib/auth` guarda— sí lo exigen. La frase de arriba se queda
+  > como se escribió.
 
 ### Puertas, probabilidad y valor esperado (ago 2026)
 
@@ -5729,6 +5737,8 @@ Consultoría completa en **`docs/AUDITORIA_MODULO_APU.txt`** (encargo del dueño
 para crear el APU de un contrato de SECOP cargándolo, y para comparar el precio del pliego con el
 que sugiere la app). Se deja el resumen aquí para que nadie la repita desde cero. Todo MEDIDO
 ejecutando código; la suite quedó en verde 4/4 y el banco con sus suelos superados.
+> Nota 6-sep-2026: el archivo es `docs/AUDITORIA_MODULO_APU.md` desde ese día (era `.txt`), con la caja de
+> las tres correcciones de § «El INVIAS es el ÚLTIMO recurso entre los bancos (24-ago-2026)» en su cabecera.
 
 - **EL MÓDULO APU SON DOS MÓDULOS Y NO HAY CABLE ENTRE ELLOS.** El lector de pliegos
   (`lib/apu_mapeo` → `data/catalogo_apu.json`) mapea contra **93 ítems SIN precio**; el importador
@@ -6006,6 +6016,9 @@ sección de arriba) aplicando el diff — el relé deniega merge/cherry-pick ade
 `docs/PROMPT_CONSULTORIA_SAAS.md` (rama del 24-ago) NO se rescató: es un prompt con tablas de ESTADO
 dentro (ya falsas), el patrón que la doctrina del 26-ago retiró; el encargo que contiene (vender por
 suscripción) se relanza desde docs/PROMPT_INICIAL.md si el dueño quiere.
+> Corrección 6-sep-2026 (M-DOC-03): el archivo SÍ está en `main` desde `2c4dead` (24-ago-2026; también
+> `5a929da`). Ya lo desmintió § «Consultoría integral del 4/5-sep-2026»; la nota va aquí para quien lea
+> esta sección sola.
 
 #### La revisión adversaria del propio diff, y las CINCO regresiones que dejé dentro
 
@@ -8682,3 +8695,95 @@ se decidió y por qué no hay que re-aprenderlo:
 - **No verificable desde aquí**: producción con Redis real; con qué frecuencia real se guarda un
   borrador con la barra en un consorcio; la latencia real de SECOP II que decide cuánto dura el giro
   antes del texto nuevo del sello.
+
+### Lote «B5-documentacion-1» de la consultoría del 4-sep · M-DOC-02, M-DOC-03, M-DOC-07, M-DOC-09, M-DOC-12, M-INF-05 (6-sep-2026)
+
+**Qué se decidió.** (1) **La guía de dominio remite a sus dos correcciones y deja de declararse
+autosuficiente** (M-DOC-02): la cabecera de `docs/GUIA_ANALISTA_LICITACIONES.md` dice que se lee JUNTO
+con `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md` (§ V-05 salvedades, § V-08 anticipo) y que la corrección
+vive allí; el pasaje del anticipo (Capítulo 11) y el de la liquidación (20.3) llevan una cita de dos
+líneas al complemento, y sus HERMANOS —el mandamiento 17, la fila del índice de errores y la del
+glosario, hallados con un censo de «salvedad»— llevan «(matizado en COMPLEMENTO § V-05)». No se copia
+el texto corregido: dos copias divergen (regla «llamarla»). (2) **Lo que los documentos de análisis
+afirmaban contra el árbol se corrige EN SITIO con nota fechada, y cada uno abre con «> Foto del
+dd-mmm-20dd. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`»**
+(M-DOC-03; la fecha es la del propio documento o la de su primer commit): APU del INVIAS «disponibles
+desde ago 2026» (2 988 475 bytes medidos), la cascada de cinco niveles remite a la cabecera de
+`lib/apu/precios.js` (doce, comparada id a id por la suite) sin copiarla, `7966683` y `d69cfe8` «no son
+ancestros de main» (los dos viven en `origin/claude/apu-modulo-completo-p0lmwa` en este clon de tres refs
+remotas), «12 archivos en api/» remite a `estado.js`, las 18 citas de `api/sync.js` de ATRACTIVIDAD
+pasan a `lib/handlers/procesos/sync.js` con la nota de que las líneas son las del archivo de agosto,
+ACCESIBILIDAD nombra `/api/procesos?op=listar` con `/api/oportunidades` como su rewrite, PROBABILIDAD
+dice «la Fase A (A1-A7) y B2 están en el código» (lo que su propia tabla enseña), PERFILES dice que sus
+cifras son `PERFILES_FALLBACK` y que el RUP de `POST /api/admin/rup` manda. **`modulo_apu.html` se
+archiva en `docs/archivo/modulo_apu_2026-05.html`** (480 líneas + un comentario de procedencia; sin la
+grafía vieja de la marca, medido) porque `git show d69cfe8^:modulo_apu.html` exige una rama remota que
+el dueño va a borrar; la carpeta `docs/archivo/` nace aquí (M-DOC-04 no se había hecho). **La auditoría
+del módulo APU pasa de `.txt` a `.md`** (era invisible para `tests/mapa.js`, que solo lista `.md`) con
+título, cabecera fechada y la caja de las tres correcciones (H-1, H-4, H-6) que esta memoria le hizo el
+24-ago; el cuerpo va entero dentro de una valla `text`, sin tocar. En la memoria, dos notas fechadas BAJO
+la línea (sin reescribir el cuerpo): el token de `/api/oportunidades` es OPCIONAL (medido en
+`listar.js`; la frase «exige TAMBIÉN» de agosto se queda), y `PROMPT_CONSULTORIA_SAAS.md` SÍ está en
+main desde `2c4dead` y `5a929da` (24-ago). (3) **CLAUDE.md y PROMPT_INICIAL.md no llevan cifras de
+estado, y la regla tiene cerradura** (M-DOC-07): la suite censa las líneas de los dos con
+`/~?\d+ ?(KB|MB|k tokens|secciones|módulos)\b/` y exige una fecha `dd-mmm-20dd` en la misma línea o
+en la vecina —la excepción declarada: un hecho histórico fechado, y el texto va a 100 columnas, así que
+la cifra y su fecha pueden caer en líneas contiguas (CLAUDE.md:16-17)—; `tests/estado.js` imprime
+«CLAUDE.md: N bytes · docs/PROMPT_INICIAL.md: N bytes» y la suite comprueba que esa N es el tamaño real.
+(4) **La guía del dueño describe TODAS las variables que lib/ y api/ leen, vigilada por censo**
+(M-DOC-09): §3.7 explica `ANTHROPIC_API_KEY` como opcional y hoy apagada por decisión del dueño
+(3-sep-2026, DON_HECTOR §7.15), y el anexo describe las siete del dictamen y del lector de documentos con
+su valor por defecto leído del código (`DICTAMEN_MODELO`, `DICTAMEN_ESFUERZO` medium, `DICTAMEN_PRESUPUESTO_MS`
+290 000, `DICTAMEN_CUOTA_DIA` 15, `DICTAMEN_RESPALDO` encendido salvo «0», `DOCUMENTOS_TIEMPO_MS` 8 000,
+`ARCHIVOS_BASE_URL`). **Regla del censo: los alias también cuentan.** `lib/redis.js` lee `UPSTASH_*` y
+`KV_REST_*` a través de `const e = env || process.env`, y `lib/apu_ocr.js` lee una lista literal con
+`process.env[nombre]`: el censo busca las tres formas (lectura directa, alias declarado, lista) y halló
+37 nombres, todos en la guía; el `.txt`/`.md` no importa aquí, sí el `\b` del nombre. (5) **El prompt
+del dictamen vive una sola vez** (M-DOC-12): `DON_HECTOR_DICTAMEN_DEL_PLIEGO.md` §4.3 conserva el diseño
+y remite a `lib/dictamen.js`; se retiran los 22 párrafos copiados y el valor literal de `PROMPT_VERSION`
+(era un dato de estado que mentiría a la primera corrección). La cerradura censa los párrafos ≥ 80
+caracteres del prompt REAL (con la marca del glosario o con el marcador `{MARCA}` del borrador) contra
+el documento. (6) **La suite corre sola en GitHub** (M-INF-05): `.github/workflows/suite.yml` —Node 22,
+`node tests/e2e.js` y `node tests/apu_bench.js` a solas (sin tuberías: el código de salida es el
+veredicto), en push a `main`, pull request y a mano (`workflow_dispatch`, un clic del dueño), sin
+secretos ni dependencias, `timeout-minutes: 20`— y el propio YAML dice la verdad: en un push directo a
+main corre EN PARALELO al despliegue de Vercel y solo registra y avisa; bloquear un rojo es la
+protección de rama, clics del dueño. `.github/` vuelve tras el `sync.yml` que `c8160ff` (29-jul-2026)
+borró: aquel era un `curl` horario a `/api/sync` con secretos, nada que ver con la suite. README dice
+Node 22 (mínimo 18 por el `fetch` global; 18 sin soporte desde abril de 2025) y CLAUDE.md añade una
+línea de protocolo: el CI repite el 4/4, no sustituye correrla antes de commitear. La cerradura lee el
+YAML real sin comentarios.
+
+**Medido antes → después.** Una sola aserción acumulada en la suite (bloque «j-quinquies-bis») enseñó
+de una pasada los 24 hallazgos del árbol anterior: 0 menciones del complemento en la guía, 8 documentos
+sin cabecera fechada, `.txt`, sin `docs/archivo/`, 18 `api/sync.js`, «~4k tokens» en PROMPT_INICIAL:75,
+8 variables sin describir, 22 párrafos del prompt copiados y su versión escrita, sin `suite.yml`, README
+con «Node 18+», la guía diciendo «no tiene GitHub Actions». Después: 0 hallazgos, 37 variables censadas.
+Siete mutaciones por `git stash` de UN arreglo cada una (la prueba se queda) ponen la suite en rojo en la
+aserción nueva: la guía, PERFILES + APU_FUENTES + el HTML archivado, PROMPT_INICIAL, CONFIGURACION_TOKENS,
+DON_HECTOR, `suite.yml` + README, y `estado.js` sin la medición («estado.js tiene que medir el tamaño real
+de CLAUDE.md»). Una iteración de la suite tarda 55 s aquí; `apu_bench` 0,13 s.
+
+**Lo que las fichas decían y el árbol desmintió o no se adoptó.** M-DOC-02 pedía que la guía NO nombrara
+«CONOCIMIENTO DE DOMINIO»: esa sección EXISTE, en `docs/MEMORIA.md` (`node tests/mapa.js dominio` la da);
+lo falso era prometerla en CLAUDE.md, así que la guía la remite a la memoria y la cerradura exige que
+cualquier mención vaya con `MEMORIA.md` y que la sección exista (grep ejecutado). M-DOC-03 contaba «22
+citas a api/sync.js»: eran 18, todas en ATRACTIVIDAD; las 2 de AUDITORIA_INTEGRAL son la RUTA `/api/sync`
+(rewrite vigente), correctas; «Tu zona» en ACCESIBILIDAD ya no estaba (lo retiró el remate R2 de esta
+mañana) y la mención de `/api/oportunidades` estaba en la línea 24, no en la 18; la corrección de «NO se
+rescató» ya la había hecho la sección de la consultoría del 4/5-sep, y esa misma sección dice que
+`listar.js` «exige token»: es OPCIONAL (queda desmentido aquí, no reescrito). M-DOC-07: las tres cifras de
+CLAUDE.md ya no estaban (las retiró el commit de la consultoría); lo que quedaba era PROMPT_INICIAL:75, la
+medición en `estado.js` y la cerradura. M-DOC-09 contaba 36 nombres censando también `tests/`; lo que el
+despliegue lee es lib/ + api/, 37 con los alias. M-INF-05 proponía «push (branches: [main]) y
+pull_request»: se añade `workflow_dispatch` porque el dueño no tiene terminal y así puede lanzar la suite
+con un clic; el paso «Automatically delete head branches» y el panel de Vercel siguen siendo suyos.
+
+**No verificable desde aquí (6-sep-2026).** Que el flujo corra en GitHub (sin push desde esta sesión
+y con api.github.com fuera del proxy), la protección de la rama `main`, la versión de Node del panel de
+Vercel, y la ruta del menú de la consola de Anthropic para crear una clave (la guía lo declara).
+
+**Pasos del dueño (M-INF-05, literales de la ficha).** (1) https://github.com/Mauricio7x/portafolio-estrategico/settings/branches
+→ «Add branch ruleset» → main → «Require status checks to pass before merging» → check «Suite».
+(2) https://github.com/Mauricio7x/portafolio-estrategico/settings → «Automatically delete head
+branches». (3) https://vercel.com/ → proyecto → Settings → General → «Node.js Version» → 22.x.

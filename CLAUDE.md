@@ -40,7 +40,8 @@ pertinentes.
 el código de salida se mira SIN tuberías (un `| tail` lo enmascara y ya costó un main en rojo).
 `node tests/apu_bench.js` si se tocó el lector de pliegos. Si se tocó `public/`: navegador real
 obligatorio (hay fallos que ninguna prueba de Node ve, con consola limpia — el precedente del CDN
-de Tailwind bloqueado).
+de Tailwind bloqueado). GitHub repite el 4/4 en `.github/workflows/suite.yml` (push a main y pull
+request): registra y avisa, no sustituye correrla antes de commitear ni bloquea nada por sí solo.
 
 ## Reglas duras (una sola copia; cada una es una cicatriz real — el porqué vive en MEMORIA.md)
 

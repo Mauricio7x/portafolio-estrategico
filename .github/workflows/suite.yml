@@ -1,0 +1,39 @@
+# Detekta · la suite corre sola en GitHub (M-INF-05, 6-sep-2026).
+#
+# Qué hace: en cada push a main y en cada pull request ejecuta `node tests/e2e.js`
+# (4 iteraciones, sin red: imitaciones locales de datos.gov.co y de Upstash) y
+# `node tests/apu_bench.js`, con Node 22. Sin package.json, sin dependencias, sin
+# secretos: no hay nada que instalar ni que pegar.
+#
+# Qué NO hace: en un push directo a main este flujo corre EN PARALELO al despliegue
+# de Vercel; solo REGISTRA y AVISA (verde/rojo en la pestaña Actions). Que un rojo
+# no llegue a producción lo decide la protección de la rama main en GitHub
+# («Require status checks to pass before merging» con el check «Suite»), que es
+# un paso del dueño con clics. Y no sustituye correr la suite antes de commitear:
+# el código de salida se mira aquí sin tuberías, igual que en la sesión.
+name: Suite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  suite:
+    name: Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Código
+        uses: actions/checkout@v4
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Versión de Node
+        run: node --version
+      - name: Suite (4 iteraciones; el código de salida es el veredicto)
+        run: node tests/e2e.js
+      - name: Banco del lector de pliegos
+        run: node tests/apu_bench.js

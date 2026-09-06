@@ -168,19 +168,19 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 135 secciones. Las 10 más nuevas:
-  L  7591  Lote «servidor y cifras» de la consultoría del 4-sep · M-INF-09, M-INF-17, M-INF-07, M-DGF-1
-  L  7702  Lote «precios por perfil» de la consultoría del 4-sep · M-SEG-01, M-SEG-06 (6-sep-2026)
-  L  7809  Lote «zona y RUP en PDF» de la consultoría del 4-sep · M-SEG-10, M-INF-01 (6-sep-2026)
-  L  7890  Lote «salud y tiempos» de la consultoría del 4-sep · M-INF-04, M-INF-08 (6-sep-2026)
-  L  7965  Lote «B3b-sync-menor» de la consultoría del 4-sep · M-INF-10, M-INF-13, M-INF-14, M-SEG-08 (
-  L  8067  Lote «B4a-vista-de-visitante» de la consultoría del 4-sep · M-SEG-02 (6-sep-2026)
-  L  8186  Lote «B4b-pulso-cobertura» de la consultoría del 4-sep · M-DGF-03, M-DGF-04, M-DGF-12 (6-sep
-  L  8291  Remates «R1a-remates-servidor-B1-B2» de la ola 1 · H-01, H-02, H-03, H-04, H-05, V-B2a-03, B
-  L  8412  Remates «R1b-remates-servidor-B3-B4b» de la ola 1 · V-B3a-01, V-B3a-02, B3b-H1, B3b-H2, B4b-
-  L  8531  Remates «R2-remates-pantalla» de la ola 1 · H1, H2, V-B2a-01, V-B2a-02, B2b-H2, B2b-H3, B2b-
+· MEMORIA · docs/MEMORIA.md — 136 secciones. Las 10 más nuevas:
+  L  7715  Lote «precios por perfil» de la consultoría del 4-sep · M-SEG-01, M-SEG-06 (6-sep-2026)
+  L  7822  Lote «zona y RUP en PDF» de la consultoría del 4-sep · M-SEG-10, M-INF-01 (6-sep-2026)
+  L  7903  Lote «salud y tiempos» de la consultoría del 4-sep · M-INF-04, M-INF-08 (6-sep-2026)
+  L  7978  Lote «B3b-sync-menor» de la consultoría del 4-sep · M-INF-10, M-INF-13, M-INF-14, M-SEG-08 (
+  L  8080  Lote «B4a-vista-de-visitante» de la consultoría del 4-sep · M-SEG-02 (6-sep-2026)
+  L  8199  Lote «B4b-pulso-cobertura» de la consultoría del 4-sep · M-DGF-03, M-DGF-04, M-DGF-12 (6-sep
+  L  8304  Remates «R1a-remates-servidor-B1-B2» de la ola 1 · H-01, H-02, H-03, H-04, H-05, V-B2a-03, B
+  L  8425  Remates «R1b-remates-servidor-B3-B4b» de la ola 1 · V-B3a-01, V-B3a-02, B3b-H1, B3b-H2, B4b-
+  L  8544  Remates «R2-remates-pantalla» de la ola 1 · H1, H2, V-B2a-01, V-B2a-02, B2b-H2, B2b-H3, B2b-
+  L  8699  Lote «B5-documentacion-1» de la consultoría del 4-sep · M-DOC-02, M-DOC-03, M-DOC-07, M-DOC-
 
-· DOCUMENTOS docs/ — 42:
+· DOCUMENTOS docs/ — 43:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)
   ANALISIS_ESTRATEGICO.md               Análisis estratégico de Detekta · agosto 2026
   APU_DIAGNOSTICO.md                    Diagnóstico del módulo APU frente a la especificación «APU profesional»
@@ -191,6 +191,7 @@
   ATRACTIVIDAD.md                       Atractividad de una licitación — análisis iterativo y diseño
   AUDITORIA_INTEGRAL.md                 Auditoría integral · Detekta
   AUDITORIA_INVESTIGACION_EXTERNA.md    Auditoría de la investigación externa (ago 2026)
+  AUDITORIA_MODULO_APU.md               Consultoría y auditoría del módulo APU (24-ago-2026)
   BANCO_PRECIOS_2026-08-26.md           Banco de Precios Verificable · censo y contraste del informe del 26-ago-2026
   CALIBRACION_APU.md                    Calibración del catálogo APU con el Presupuesto Nogal 4 (ago 2026)
   CHECKLIST_PRODUCCION.md               Anexo F · Lista de verificación previa a producción

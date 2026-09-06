@@ -77,8 +77,10 @@ contraseñas no queden escritas en GitHub.
 
 Por qué, en concreto:
 
-- El repositorio **no tiene GitHub Actions** (no existe la carpeta `.github/workflows/`), así que no
-  hay ningún proceso automático de GitHub que necesite credenciales.
+- El repositorio tiene **un solo flujo de GitHub Actions** (`.github/workflows/suite.yml`, desde el
+  6-sep-2026): corre la suite de pruebas en cada cambio y enseña un veredicto verde o rojo en la
+  pestaña *Actions* y en cada *pull request*. **No necesita ninguna credencial**: las pruebas corren
+  sin red, con imitaciones locales de datos.gov.co y de Upstash, así que no hay que pegarle nada.
 - El repositorio **no tiene secretos** (*Settings → Secrets and variables*) y no hace falta que los
   tenga.
 - Lo único que conecta GitHub con Vercel es la **integración de Git de Vercel**: se autoriza una vez
@@ -113,6 +115,7 @@ Resumen de todo lo que existe. Solo las tres primeras son obligatorias.
 | `SOCRATA_APP_TOKEN` | Recomendada; necesaria en cuanto la usen varias personas a la vez | Sube el cupo de consultas a datos.gov.co: con token, 1 000 peticiones por hora móvil (dev.socrata.com, consultado el 5-sep-2026) | Funciona igual hasta que datos.gov.co limite: sin token Socrata no publica el cupo, y cuando lo agota la app dice «datos.gov.co limitó las consultas por unos minutos; vuelva a intentarlo» |
 | `OCRSPACE_API_KEY` | Opcional | Leer pliegos **escaneados** (fotos) | Los pliegos con texto se leen igual; los escaneados no |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | Solo si hay Password Protection | Que la sincronización pueda llamarse a sí misma | La extracción larga se corta a mitad |
+| `ANTHROPIC_API_KEY` | Opcional (hoy no se usa, por decisión del dueño) | Que el dictamen del pliego lo escriba un modelo de Anthropic desde el servidor | Nada se rompe: el dictamen sale por reglas o desde una sesión de Claude Code (§3.7) |
 
 ---
 
@@ -320,9 +323,30 @@ no estorba.
 
 ---
 
+### 3.7 · `ANTHROPIC_API_KEY` — el motor del dictamen del pliego (opcional; hoy no se usa)
+
+**Qué es.** El dictamen de un pliego (la caja «Lo que exige este pliego» de Mis procesos y del lector)
+puede escribirlo un modelo de Anthropic llamado desde el servidor. Para eso el servidor necesita una
+clave de API de Anthropic, que se paga por uso. **Hoy la aplicación trabaja sin ella, por decisión del
+dueño (3-sep-2026):** sin clave, el dictamen sale por reglas —lo que la aplicación ya mide y lee del
+pliego— o lo escribe una sesión de Claude Code con la suscripción, sin cobro por uso
+(`docs/DICTAMEN_DESDE_CLAUDE_CODE.md`). Ninguna pantalla se rompe sin la variable: la aplicación dice de
+qué motor viene cada dictamen.
+
+**Si algún día se quiere encender:** la clave se crea en la consola de Anthropic
+(<https://console.anthropic.com>, sección *API Keys*; la ruta del menú no se pudo confirmar desde este
+entorno) y es una contraseña de verdad: solo va en Vercel, nunca en un chat ni en el código. Nombre
+exacto: `ANTHROPIC_API_KEY`. Tras pegarla, **Redeploy** (§5). Para apagarlo otra vez basta con borrar la
+variable y redesplegar.
+
+Con la clave puesta entran en juego cinco variables más, **todas con un valor por defecto correcto que
+no hay que tocar** (están en el anexo del final, con lo que hace cada una).
+
+---
+
 ## 4. Parte C · Cómo pegar una variable en Vercel (con clics)
 
-Este procedimiento es el mismo para las seis.
+Este procedimiento es el mismo para todas.
 
 1. Entrar a <https://vercel.com> e iniciar sesión.
 2. En la lista de proyectos, clic en **portafolio-estrategico**.
@@ -541,6 +565,22 @@ solo existen para las pruebas automáticas.** No hay que crearlas en Vercel:
 
 Y dos que pone Vercel sola y no se tocan nunca: `VERCEL` y `NODE_ENV`.
 
+**Las del dictamen del pliego y del lector de documentos** (existen desde septiembre de 2026; solo
+importan si `ANTHROPIC_API_KEY` está puesta, salvo las dos últimas). Ninguna hay que crearla:
+
+| Nombre exacto | Para qué sirve | Si no está |
+| --- | --- | --- |
+| `DICTAMEN_MODELO` | Qué modelo de Anthropic escribe el dictamen | Se usa el modelo que trae el código |
+| `DICTAMEN_ESFUERZO` | Cuánto razona el modelo antes de escribir (`low`, `medium` o `high`; otro valor se ignora) | `medium` |
+| `DICTAMEN_PRESUPUESTO_MS` | Tiempo máximo, en milisegundos, que el servidor espera al modelo | 290 000 (por debajo del límite de la función de Vercel) |
+| `DICTAMEN_CUOTA_DIA` | Cuántos dictámenes por día puede pedir la aplicación al modelo (freno de gasto) | 15 |
+| `DICTAMEN_RESPALDO` | Si el modelo está saturado, dejar que Anthropic responda con un modelo de respaldo (`0` lo apaga) | Encendido |
+| `DOCUMENTOS_TIEMPO_MS` | Tiempo máximo, en milisegundos, para leer la lista de documentos de un proceso en datos.gov.co | 8 000 |
+| `ARCHIVOS_BASE_URL` | Dirección del listado de documentos de SECOP II en datos.gov.co (solo para las pruebas automáticas) | La dirección real |
+
+La suite automática **censa** cada variable que el código del servidor lee y exige que esté descrita
+en este documento: una variable nueva sin su fila aquí pone la suite en rojo.
+
 ---
 
 ## Hoja de ruta para copiar y pegar
@@ -550,7 +590,8 @@ Si tuviera que empezar hoy desde cero, en este orden y nada más:
 1. Upstash → copiar `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` (§3.1).
 2. Vercel → *Settings → Environment Variables* → pegar esas dos, las tres casillas marcadas (§4).
 3. Añadir `HISTORICO_TOKEN` = `MiExtraccion2025` (§3.2).
-4. *(Opcional)* Añadir `SOCRATA_APP_TOKEN` y `OCRSPACE_API_KEY` (§3.3, §3.4).
+4. *(Opcional)* Añadir `SOCRATA_APP_TOKEN` y `OCRSPACE_API_KEY` (§3.3, §3.4). `ANTHROPIC_API_KEY` (§3.7)
+   solo si el dueño decide encender el motor de pago del dictamen; hoy no.
 5. *(Si el sitio pide contraseña)* Generar `VERCEL_AUTOMATION_BYPASS_SECRET` (§3.5).
 6. *(Recomendado)* Añadir `CRON_SECRET` con una cadena aleatoria larga (§3.6).
 7. **Deployments → … → Redeploy**, sin caché (§5).

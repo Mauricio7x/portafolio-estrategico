@@ -18202,6 +18202,169 @@ async function main() {
         + "0 archivos con la grafía vieja, Excel y justificación firman desde el glosario, claves de almacenamiento intactas");
     }
 
+    /* ═══════════ j-quinquies-bis. DOCUMENTACIÓN VIVA CONTRA EL ÁRBOL (6-sep-2026, lote B5) ═══════════
+       Lo que un documento afirma del árbol se MIDE contra el árbol. Las reglas que
+       la memoria escribió —«la guía y el complemento van juntos», «CLAUDE.md no
+       contiene estado», «la guía del dueño describe todo lo que el despliegue lee»,
+       «el prompt del dictamen vive una sola vez», «un autómata corre la suite entre
+       el commit y producción»— no eran cerraduras hasta que una prueba las ejecuta.
+       Todas las lecturas son del archivo REAL; los censos quitan comentarios antes de
+       censar y declaran sus excepciones con motivo. Los hallazgos se acumulan y se
+       afirma UNA vez, para que un rojo enseñe todo lo que falta de una pasada. */
+    {
+      const raizD = path.join(__dirname, "..");
+      const leerD = (rel) => fs.readFileSync(path.join(raizD, rel), "utf8");
+      const hallazgosDoc = [];
+
+      /* (1) M-DOC-02 · la guía de dominio remite a sus dos correcciones (V-05 salvedades,
+         V-08 anticipo) y no se declara autosuficiente. La ficha pedía además que no
+         nombrara «CONOCIMIENTO DE DOMINIO»: el árbol desmiente esa premisa —la sección
+         EXISTE, en docs/MEMORIA.md (era CLAUDE.md antes de la mudanza del 27-ago-2026)—;
+         lo falso era prometerla en CLAUDE.md. */
+      {
+        const guia = leerD("docs/GUIA_ANALISTA_LICITACIONES.md");
+        const menciones = (guia.match(/COMPLEMENTO_ANALISTA_LICITACIONES\.md/g) || []).length;
+        if (menciones < 3) hallazgosDoc.push(`la guía nombra al complemento ${menciones} vez/veces (mínimo 3: cabecera, anticipo, salvedades)`);
+        if (!/V-08/.test(guia)) hallazgosDoc.push("la guía no remite a COMPLEMENTO § V-08 (anticipo)");
+        if (!/V-05/.test(guia)) hallazgosDoc.push("la guía no remite a COMPLEMENTO § V-05 (salvedades)");
+        if (/autosuficiente/i.test(guia)) hallazgosDoc.push("la guía se declara «autosuficiente»: se lee JUNTO con el complemento");
+        assert.ok(/^## CONOCIMIENTO DE DOMINIO: CONTRATACIÓN PÚBLICA COLOMBIANA/m.test(leerD("docs/MEMORIA.md")),
+          "la sección de dominio vive en docs/MEMORIA.md (si se muda, la guía y esta prueba cambian juntas)");
+        const lineasG = guia.split("\n");
+        lineasG.forEach((l, i) => {
+          if (!/CONOCIMIENTO DE DOMINIO/.test(l)) return;
+          const ventana = [lineasG[i - 1] || "", l, lineasG[i + 1] || ""].join(" ");
+          if (!/MEMORIA\.md/.test(ventana)) hallazgosDoc.push(`guía:${i + 1} promete la sección de dominio fuera de docs/MEMORIA.md, que es donde vive`);
+        });
+      }
+
+      /* (2) M-DOC-03 · lo que los documentos de análisis afirman contra el árbol, y la
+         cabecera fechada que dice de qué día es la foto. */
+      {
+        const perfilesDoc = leerD("docs/PERFILES.md");
+        if (!/PERFILES_FALLBACK/.test(perfilesDoc) || !/\/api\/admin\/rup/.test(perfilesDoc)) {
+          hallazgosDoc.push("docs/PERFILES.md no dice que sus cifras son PERFILES_FALLBACK ni que el RUP subido por POST /api/admin/rup manda");
+        }
+        assert.ok(fs.existsSync(path.join(raizD, "data", "apu_invias_items.json")) && fs.existsSync(path.join(raizD, "lib", "apu", "invias_items.js")),
+          "el banco INVIAS está en el árbol");
+        if (/NO DISPONIBLES/.test(leerD("docs/APU_DIAGNOSTICO.md"))) hallazgosDoc.push("docs/APU_DIAGNOSTICO.md sigue diciendo que los APU del INVIAS están «NO DISPONIBLES» y data/apu_invias_items.json está en el árbol");
+        if (/\bTu zona\b/.test(leerD("docs/ACCESIBILIDAD.md"))) hallazgosDoc.push("docs/ACCESIBILIDAD.md dice «Tu zona»: la pantalla dice «Su zona»");
+        const DOCS_FOTO = ["APU_Y_RENTABILIDAD", "APU_DIAGNOSTICO", "APU_FUENTES", "AUDITORIA_INTEGRAL", "ATRACTIVIDAD", "ACCESIBILIDAD", "AUDITORIA_MODULO_APU", "PROMPT_CONSULTORIA_SAAS"];
+        for (const d of DOCS_FOTO) {
+          const ruta = path.join(raizD, "docs", `${d}.md`);
+          if (!fs.existsSync(ruta)) { hallazgosDoc.push(`docs/${d}.md no existe (una foto de análisis es .md para que tests/mapa.js la vea)`); continue; }
+          const foto = fs.readFileSync(ruta, "utf8");
+          if (!/^> Foto del \d{1,2}-[a-z]{3}-20\d\d\b/m.test(foto)) hallazgosDoc.push(`docs/${d}.md sin cabecera «> Foto del dd-mmm-20dd»`);
+          else if (!/tests\/estado\.js/.test(foto) || !/tests\/mapa\.js/.test(foto)) hallazgosDoc.push(`docs/${d}.md: la cabecera no remite a node tests/estado.js y node tests/mapa.js`);
+        }
+        if (fs.existsSync(path.join(raizD, "docs", "AUDITORIA_MODULO_APU.txt"))) hallazgosDoc.push("docs/AUDITORIA_MODULO_APU.txt sigue como .txt: invisible para tests/mapa.js");
+        if (!fs.existsSync(path.join(raizD, "docs", "archivo", "modulo_apu_2026-05.html"))) {
+          hallazgosDoc.push("docs/archivo/modulo_apu_2026-05.html no está: la fuente de los precios base (git show d69cfe8^:modulo_apu.html) vive solo en ramas remotas que el dueño va a borrar");
+        }
+        /* `api/sync.js` no existe (es lib/handlers/procesos/sync.js, op=sync): ningún
+           documento vivo lo cita como ruta. Excepciones declaradas: crónica e informes
+           fechados, que dicen lo que había en su fecha. */
+        assert.ok(!fs.existsSync(path.join(raizD, "api", "sync.js")) && fs.existsSync(path.join(raizD, "lib", "handlers", "procesos", "sync.js")), "la ruta real del sync");
+        const EXC_SYNC = new Map([
+          ["MEMORIA.md", "crónica fechada: se desmiente al final, no se reescribe"],
+          ["RAMAS_RETIRADAS.md", "censo de las ramas anteriores a la consolidación: nombra los archivos que traían"],
+          ["APU_INFORME_COMPLETO.md", "informe fechado (verificó el vercel.json de su fecha)"],
+          ["CONSULTORIA_2026-09-04_RESUMEN.md", "informe fechado: cita la ruta como «antes»"],
+        ]);
+        for (const f of fs.readdirSync(path.join(raizD, "docs")).filter((x) => x.endsWith(".md")).sort()) {
+          if (EXC_SYNC.has(f)) continue;
+          const n = (leerD(`docs/${f}`).match(/\bapi\/sync\.js/g) || []).length;
+          if (n) hallazgosDoc.push(`docs/${f} cita api/sync.js ${n} veces: no existe (lib/handlers/procesos/sync.js, op=sync)`);
+        }
+      }
+
+      /* (3) M-DOC-07 · CLAUDE.md (lo único que se auto-carga) y PROMPT_INICIAL.md no llevan
+         cifras de estado. Excepción declarada: un hecho histórico con su fecha en la misma
+         frase (la línea o su vecina, porque el texto va a 100 columnas). */
+      {
+        const RE_ESTADO = /~?\d+ ?(KB|MB|k tokens|secciones|módulos)\b/;
+        const RE_FECHA = /\d{1,2}-[a-z]{3}-20\d\d/;
+        for (const rel of ["CLAUDE.md", "docs/PROMPT_INICIAL.md"]) {
+          const lineas = leerD(rel).split("\n");
+          lineas.forEach((l, i) => {
+            if (!RE_ESTADO.test(l)) return;
+            const ventana = [lineas[i - 1] || "", l, lineas[i + 1] || ""].join(" ");
+            if (!RE_FECHA.test(ventana)) hallazgosDoc.push(`${rel}:${i + 1} lleva una cifra de estado sin fecha: «${l.trim().slice(0, 90)}» (el estado se mide con node tests/estado.js)`);
+          });
+        }
+      }
+
+      /* (4) M-DOC-09 · CENSO de las variables de entorno que lib/ y api/ leen —lecturas
+         directas process.env.X, el alias `const e = env || process.env` de lib/redis.js
+         (sin él UPSTASH_* no aparece) y la lista literal que lib/apu_ocr.js lee con
+         process.env[nombre]— y cada nombre está en la guía del dueño. */
+      let variablesCensadas = 0;
+      {
+        const guiaVars = leerD("docs/CONFIGURACION_TOKENS.md");
+        const nombres = new Map();
+        const anotar = (n, donde) => { if (!nombres.has(n)) nombres.set(n, donde); };
+        const andarV = (dir) => {
+          for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+            const p = path.join(dir, e.name);
+            if (e.isDirectory()) { andarV(p); continue; }
+            if (!e.name.endsWith(".js")) continue;
+            const limpio = sinComentarios(fs.readFileSync(p, "utf8"));
+            const rel = path.relative(raizD, p);
+            for (const m of limpio.matchAll(/process\.env\.([A-Z][A-Z0-9_]+)/g)) anotar(m[1], rel);
+            for (const a of limpio.matchAll(/\b(?:const|let|var)\s+([a-z]\w*)\s*=\s*(?:\w+\s*\|\|\s*)?process\.env\s*[;,)]/g)) {
+              for (const m of limpio.matchAll(new RegExp(`\\b${a[1]}\\.([A-Z][A-Z0-9_]{3,})\\b`, "g"))) anotar(m[1], `${rel} (alias ${a[1]})`);
+            }
+            if (/process\.env\[/.test(limpio)) for (const m of limpio.matchAll(/"([A-Z][A-Z0-9_]{3,}_(?:TOKEN|KEY|SECRET))"/g)) anotar(m[1], `${rel} (lista)`);
+          }
+        };
+        for (const d of ["lib", "api"]) andarV(path.join(raizD, d));
+        variablesCensadas = nombres.size;
+        assert.ok(nombres.size >= 30, `el censo de variables tiene que encontrar decenas (halló ${nombres.size})`);
+        assert.ok(nombres.has("UPSTASH_REDIS_REST_URL") && nombres.has("KV_REST_API_TOKEN") && nombres.has("CRON_SECRET") && nombres.has("ANTHROPIC_API_KEY"),
+          "el censo ve el alias de lib/redis.js, la lista de lib/apu_ocr.js y las lecturas directas");
+        const sinDescribir = [...nombres].filter(([n]) => !new RegExp(`\\b${n}\\b`).test(guiaVars)).map(([n, d]) => `${n} (${d})`);
+        if (sinDescribir.length) hallazgosDoc.push(`variables que el despliegue lee y docs/CONFIGURACION_TOKENS.md no nombra: ${sinDescribir.join(", ")}`);
+      }
+
+      /* (5) M-DOC-12 · el prompt del dictamen vive UNA vez (lib/dictamen.js, vigilado por
+         hash en la suite): el documento de diseño remite y no copia; la versión vigente es
+         un dato del módulo, no del documento. Se censan los párrafos largos del prompt REAL
+         (con la marca del glosario o con el marcador {MARCA} que usaba el borrador). */
+      {
+        const Dc12 = require("../lib/dictamen.js");
+        const { MARCA: M12 } = require("../lib/glosario.js");
+        const docDh = leerD("docs/DON_HECTOR_DICTAMEN_DEL_PLIEGO.md");
+        const parrafos = String(Dc12.PROMPT_SISTEMA).split("\n").map((s) => s.trim()).filter((s) => s.length >= 80);
+        assert.ok(parrafos.length >= 10, "el prompt real tiene párrafos largos que censar");
+        const copiados = parrafos.filter((p) => docDh.includes(p) || docDh.includes(p.split(M12.nombre).join("{MARCA}")));
+        if (copiados.length) hallazgosDoc.push(`docs/DON_HECTOR_DICTAMEN_DEL_PLIEGO.md copia ${copiados.length} párrafo(s) del prompt del dictamen: «${copiados[0].slice(0, 60)}…»`);
+        if (!/PROMPT_SISTEMA/.test(docDh) || !/lib\/dictamen\.js/.test(docDh)) hallazgosDoc.push("el documento del dictamen no remite a PROMPT_SISTEMA en lib/dictamen.js");
+        if (new RegExp(`PROMPT_VERSION\\s*=\\s*"${Dc12.PROMPT_VERSION}"`).test(docDh)) hallazgosDoc.push("el documento del dictamen escribe el valor de PROMPT_VERSION: a la primera corrección miente");
+      }
+
+      /* (6) M-INF-05 · un autómata corre la suite entre el commit y producción: el flujo
+         existe, fija Node 22, corre la suite y el banco a solas (el código de salida es el
+         veredicto, sin tuberías), en push y en pull_request, sin secretos. */
+      {
+        const rutaYml = path.join(raizD, ".github", "workflows", "suite.yml");
+        if (!fs.existsSync(rutaYml)) hallazgosDoc.push(".github/workflows/suite.yml no existe: ningún autómata corre la suite entre el commit y producción");
+        else {
+          const yml = fs.readFileSync(rutaYml, "utf8").split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+          if (!/node-version:\s*["']?22\b/.test(yml)) hallazgosDoc.push("suite.yml no fija Node 22");
+          if (!/^\s*run:\s*node tests\/e2e\.js\s*$/m.test(yml)) hallazgosDoc.push("suite.yml no corre `node tests/e2e.js` a solas (sin tuberías: el código de salida es el veredicto)");
+          if (!/^\s*run:\s*node tests\/apu_bench\.js\s*$/m.test(yml)) hallazgosDoc.push("suite.yml no corre `node tests/apu_bench.js`");
+          if (!/^on:/m.test(yml) || !/^\s+push:/m.test(yml) || !/^\s+pull_request:/m.test(yml)) hallazgosDoc.push("suite.yml no corre en push y en pull_request");
+          if (/secrets\./.test(yml) || /npm (ci|install)/.test(yml)) hallazgosDoc.push("suite.yml pide secretos o instala dependencias: la suite corre sin red, sin credenciales y sin package.json");
+        }
+        if (!/Node 22/.test(leerD("README.md"))) hallazgosDoc.push("README.md no dice Node 22 (Node 18 está sin soporte desde abril de 2025)");
+        if (/no tiene GitHub Actions/.test(leerD("docs/CONFIGURACION_TOKENS.md"))) hallazgosDoc.push("docs/CONFIGURACION_TOKENS.md dice que no hay GitHub Actions y hay un flujo que corre la suite");
+      }
+
+      assert.deepStrictEqual(hallazgosDoc, [], `documentación desmentida por el árbol:\n  · ${hallazgosDoc.join("\n  · ")}`);
+      console.log(`  · Documentación viva contra el árbol: guía+complemento, ocho fotos fechadas, ${variablesCensadas} variables del entorno descritas en la guía del dueño, `
+        + "prompt del dictamen una sola vez, CLAUDE.md y PROMPT_INICIAL sin cifras de estado, suite.yml en GitHub Actions");
+    }
+
     /* ═══════════ j-sexies. LOS SIETE FILTROS (Fase 8 del plan maestro v4) ═══════════
        El vocabulario vive en public/filtros.js (UMD, lo cargan el navegador y
        lib/filtros_lista.js), la aplicación en el servidor y el estado en la
@@ -26490,6 +26653,12 @@ async function main() {
     const nEstado = Number((salidaEstado.match(/(\d+) secciones/) || [])[1]);
     assert.ok(nMapa > 0 && nEstado > 0, `las dos herramientas tienen que decir cuántas secciones hay (mapa ${nMapa}, estado ${nEstado})`);
     assert.strictEqual(nEstado, nMapa, "mapa.js y estado.js no pueden contar «secciones» con definiciones distintas");
+    /* El tamaño de CLAUDE.md y de PROMPT_INICIAL.md se MIDE aquí (M-DOC-07, 6-sep-2026):
+       escrito dentro de ellos era una cifra que caducaba («~500 KB» con 665 KB reales). */
+    for (const rel of ["CLAUDE.md", "docs/PROMPT_INICIAL.md"]) {
+      const m = salidaEstado.match(new RegExp(rel.replace(/[./]/g, "\\$&") + ": (\\d+) bytes"));
+      assert.ok(m && Number(m[1]) === fs.statSync(path.join(__dirname, "..", rel)).size, `estado.js tiene que medir el tamaño real de ${rel}`);
+    }
   }
   console.log(`\nTODAS LAS ITERACIONES PASARON (${objetivo}/${objetivo}) · peticiones Socrata simuladas: ${socrata.peticiones()}`);
   socrata.server.close();

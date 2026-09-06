@@ -194,4 +194,10 @@ try {
   linea("· memoria (" + rutaMemoria + "): no legible desde aquí");
 }
 linea("");
+// Los dos documentos de protocolo NO llevan su tamaño escrito (M-DOC-07, 6-sep-2026: «~500 KB»
+// con 665 KB reales): se mide aquí, en bytes del árbol que hay delante.
+linea("· " + ["CLAUDE.md", "docs/PROMPT_INICIAL.md"].map((rel) => {
+  try { return rel + ": " + fs.statSync(path.join(RAIZ, rel)).size + " bytes"; } catch { return rel + ": no legible desde aquí"; }
+}).join(" · "));
+linea("");
 linea("· Verificación que cuenta como hecho: node tests/e2e.js (debe terminar 4/4) · node tests/apu_bench.js");

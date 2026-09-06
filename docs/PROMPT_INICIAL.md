@@ -72,7 +72,8 @@ vale más que mil líneas leídas «por contexto».
    llama**), las `op` que llegan hasta ellos, los documentos, y las secciones de la memoria **con
    el `sed` ya escrito**. Una llamada sustituye diez `grep` anchos y tres lecturas equivocadas —
    que es donde se va el presupuesto de una sesión. Sin argumentos imprime el mapa completo por
-   dominios (~4k tokens) para orientarse en un repositorio desconocido.
+   dominios (cabe en una pantalla; su tamaño y el de este documento los mide `node tests/estado.js`)
+   para orientarse en un repositorio desconocido.
 2. `node tests/estado.js` — el estado MEDIDO (routers y sus op, conteos, auth, token, guardas, y
    los títulos más nuevos de la memoria). Sustituye a toda tabla de estado. Si alguna de las dos
    herramientas no existe en el árbol que tienes delante, deriva a mano (`ls api/`, `grep`).

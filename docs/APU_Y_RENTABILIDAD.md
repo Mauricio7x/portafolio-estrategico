@@ -1,5 +1,11 @@
 # APU y rentabilidad — investigación de fuentes de precios
 
+> Foto del 21-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
+> Las cifras «recuperadas» salen de `docs/archivo/modulo_apu_2026-05.html`, copia guardada el 6-sep-2026 del
+> `modulo_apu.html` anterior al commit `d69cfe8`, que no está en `main` (historia aplastada el 20-ago-2026) y
+> solo alcanzan ramas remotas anteriores a esa fecha (`origin/claude/apu-modulo-completo-p0lmwa`; la consultoría
+> del 4-sep-2026 contó cuatro, y el clon de la sesión del 6-sep, con tres refs remotas, ve esa).
+
 > **Cómo nació este documento.** El encargo de la base de datos de precios APU lo daba por
 > existente y obligatorio de leer. **No existía**: no está en `main`, no está en la historia de
 > `docs/` y no lo trae ninguna rama. Lo que sí existía —y se recuperó— es
@@ -9,7 +15,8 @@
 >
 > Este archivo consolida esa investigación recuperada y separa, línea por línea, **lo verificado de
 > lo estimado**. Cuando abajo se dice «recuperado» significa: el número estaba escrito en
-> `modulo_apu.html` y se puede volver a leer con `git show d69cfe8^:modulo_apu.html`.
+> `modulo_apu.html` y se puede volver a leer en `docs/archivo/modulo_apu_2026-05.html` (antes solo con
+> `git show d69cfe8^:modulo_apu.html`, que exige una rama remota que conserve ese commit).
 
 ---
 

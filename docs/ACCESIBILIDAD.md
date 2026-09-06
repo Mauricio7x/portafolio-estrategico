@@ -1,5 +1,7 @@
 # Accesibilidad de la zona · metodología (ago 2026)
 
+> Foto del 21-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
+
 Encargo del dueño: que salgan de primeras las oportunidades de mayor probabilidad que **además**
 estén a ≤250 km de Bogotá o Ibagué, o a ≤2h30 del aeropuerto más cercano, y que no sean zonas de
 difícil acceso ni de conflicto. Objetivo de fondo: **minimizar el costo operativo** de licitar —
@@ -21,7 +23,7 @@ la base.
   desde dónde operan y reciben `null` → «Distancia sin calcular: no sabemos desde dónde opera»
   (km `null`, banda «sin dato», y las alertas del destino se conservan). Sin base nunca se mide
   desde Bogotá: una distancia ajena y creíble es peor que una que falta.
-- **Integración** (`/api/oportunidades`): el campo `zona` viaja en cada fila; el orden por defecto
+- **Integración** (`/api/procesos?op=listar`; `/api/oportunidades` es su rewrite en `vercel.json`): el campo `zona` viaja en cada fila; el orden por defecto
   (`atractividad`) usa los puntos como **cubeta dentro de los viables** (el valor esperado sigue
   decidiendo dentro de cada cubeta); y `?zona=facil` — el desplegable «Acceso a la zona» de
   Filtros avanzados — retira lo lejano y lo alertado **solo si el usuario lo pide**.

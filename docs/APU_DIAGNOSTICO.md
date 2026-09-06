@@ -2,6 +2,10 @@
 
 **Fecha:** 2026-08-12 · **Rama:** `feature/apu-profesional`
 
+> Foto del 12-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
+> Corregido en sitio el 6-sep-2026 (M-DOC-03): los APU del INVIAS de §3 ya están en el árbol; la cita a
+> `d69cfe8` apunta a la copia de `docs/archivo/`.
+
 Este documento es el resultado de la FASE 1 del encargo: contrastar la especificación (Secciones A–G) contra
 el estado REAL del repositorio antes de escribir código. Se conserva porque cinco de las brechas que el
 encargo daba por abiertas **ya estaban cerradas**, y tres de las que pedía cerrar **no se pueden cerrar con
@@ -23,7 +27,8 @@ ni prometer lo que no hay.
 
 **Regla que esto deja escrita:** antes de dar por abierta una brecha que el encargo describe, mirarla. Y antes
 de dar por perdida una fuente que el encargo cita, mirar la historia de git (así se recuperó `modulo_apu.html`
-del commit `d69cfe8`).
+del commit `d69cfe8`; desde el 6-sep-2026 la copia vive en `docs/archivo/modulo_apu_2026-05.html`, porque ese
+commit no es ancestro de `main` y solo lo conservan ramas remotas).
 
 ---
 
@@ -121,7 +126,12 @@ declara como **cota inferior**.
 
 ## 3 · Lo que NO se puede cerrar con los datos disponibles
 
-### C.2 y D · APU Regionalizados de Referencia del INVIAS — **NO DISPONIBLES**
+### C.2 y D · APU Regionalizados de Referencia del INVIAS — **disponibles desde ago 2026**
+
+> **Corrección 6-sep-2026.** El banco existe en el árbol: `data/apu_invias_items.json` (≈ 3 MB; 2 988 475 bytes
+> medidos ese día) leído por `lib/apu/invias_items.js`, niveles `invias` e `invias_apu` de la cascada de
+> `lib/apu/precios.js`. Lo que sigue es el diagnóstico del 12-ago-2026, cuando no estaba, y se conserva porque
+> dice qué haría falta y por qué se decidió no inventar el rótulo.
 
 El encargo los da como opcionales («si se necesitan, documentar exactamente qué archivos se requieren»). Este
 entorno recibe **403** en `colombiacompra.gov.co`, `funcionpublica.gov.co` y los portales del INVIAS, y el

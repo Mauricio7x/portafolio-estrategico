@@ -3,6 +3,11 @@
 **Fecha:** agosto 2026 · **Alcance:** `lib/`, `api/`, `public/`, `data/`, `tests/`, `docs/`, `vercel.json`
 **Base:** `main` @ `7966683` + la rama de esta auditoría · **Suites en verde al cerrar:** `tests/e2e.js` 4/4 y `tests/apu_bench.js`
 
+> Foto del 21-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
+> `7966683` no es ancestro de `main` (historia aplastada el 20-ago-2026): sigue en ramas remotas anteriores a
+> esa fecha (`origin/claude/apu-modulo-completo-p0lmwa`, medido el 6-sep-2026). Los conteos de §0 son de esa
+> foto; la fila de endpoints públicos es correcta hoy (token OPCIONAL en `/api/oportunidades`).
+
 Este documento es el **censo** del sistema: qué hay, qué funciona, qué está probado, qué está
 duplicado, qué pide llave y qué falta. Todo lo que aquí se afirma se verificó **leyendo el código o
 ejecutándolo**, no la documentación. Donde la documentación y el código discrepaban, manda el código
@@ -18,7 +23,7 @@ tocó —porque altera lógica de negocio o exige una decisión del dueño— es
 | | |
 | --- | --- |
 | Tamaño | **30 744 líneas** de JS · 0 dependencias · 0 `package.json` · 0 build |
-| Reparto | `lib/` 12 682 (38 módulos) · `api/` 4 111 (12 archivos) · `public/` 4 889 · `tests/` 9 062 |
+| Reparto | `lib/` 12 682 (38 módulos) · `api/` 4 111 (12 archivos entonces; el conteo vivo lo da `node tests/estado.js`) · `public/` 4 889 · `tests/` 9 062 |
 | Funciones serverless | **6 de 12** del plan Hobby tras consolidar a routers por dominio (ago 2026). Quedan 6 huecos; plegar sigue siendo el default, ya no una obligación |
 | Endpoints públicos | 2 (`/api/oportunidades` sin finanzas, `/api/apu/catalogo`) |
 | Endpoints con token | 10 archivos exigen · 1 lo tiene opcional · 1 no pide · 8 de las 9 acciones del despachador APU |

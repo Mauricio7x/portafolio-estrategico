@@ -2,6 +2,10 @@
 ## De herramienta interna a producto SaaS vendible por suscripción
 ### Mental Framework ECC v3 · modo CONSULTORÍA · calibrado contra el repositorio real (24-ago-2026)
 
+> Foto del 24-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
+> Las tablas de estado que trae dentro describen el árbol del 24-ago-2026; se conserva como prompt de un
+> encargo (vender por suscripción) que se relanza desde `docs/PROMPT_INICIAL.md` si el dueño quiere.
+
 ---
 
 ## 0. TU ROL Y TU ENTREGABLE

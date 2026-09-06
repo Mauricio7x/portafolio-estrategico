@@ -84,7 +84,8 @@ corre **al servir la consulta**. Antes el matching vivía en la ingesta, así qu
 regla o cada RUP nuevo exigía volver a bajar el año entero, y lo que la regla vieja descartó nunca
 había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene efecto inmediato**.
 
-- **Vercel serverless** (Node 18+, CommonJS). Sin framework, sin `package.json`, sin build:
+- **Vercel serverless** (Node 22, CommonJS; mínimo 18 por el `fetch` global, y 18 está sin soporte
+  desde abril de 2025: el panel de Vercel y `.github/workflows/suite.yml` fijan 22). Sin framework, sin `package.json`, sin build:
   `public/` se sirve estático en la raíz y `/api/*.js` son funciones.
 - **Seis routers por dominio** (ago 2026, Fase 0): `api/` contiene exactamente
   `procesos.js` · `inteligencia.js` · `perfil.js` · `admin.js` · `apu.js` · `pliego.js`, que
@@ -2752,6 +2753,10 @@ anticipo, y hay un filtro por competencia de la entidad. Sin índice construido 
 ```
 node tests/e2e.js        # 4 iteraciones completas (requisito del encargo)
 ```
+
+Desde el 6-sep-2026 GitHub repite ese 4/4 solo (`.github/workflows/suite.yml`: Node 22, en cada push a
+`main` y en cada pull request, sin secretos ni dependencias) y lo enseña en la pestaña *Actions*; no
+sustituye correrla antes de commitear, y solo bloquea un rojo si la rama `main` exige ese check.
 
 Este entorno de desarrollo no tiene salida a `datos.gov.co` ni CLI de Vercel autenticada, así que
 el ciclo corre contra **mocks HTTP locales** de Socrata (SoQL con keyset, fallos 429/500

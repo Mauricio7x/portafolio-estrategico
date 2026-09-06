@@ -1,7 +1,8 @@
 # Probabilidad de ganar — auditoría de la fórmula vigente y propuesta de mejora
 
 > Documento de **análisis y propuesta**, con su plan por fases. Se escribió antes de tocar el
-> código; **dos de sus pasos ya están implementados** — ver el bloque de ESTADO justo debajo.
+> código; **la Fase A (A1-A7) y B2 están en el código** — ver el bloque de ESTADO justo debajo, que es la
+> foto del 16-ago-2026 (el estado vivo se mide: `node tests/mapa.js probabilidad`).
 > Los §1-§7 son el DIAGNÓSTICO tal como se levantó y se leen en pasado: dicen por qué se hizo cada
 > cosa, no cómo está el código hoy.
 >

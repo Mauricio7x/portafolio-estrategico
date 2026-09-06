@@ -2,6 +2,8 @@
 
 **Fecha de las pruebas:** 2026-08-12 · **Rama:** `feature/apu-precios`
 
+> Foto del 12-ago-2026. El estado se mide con `node tests/estado.js`; las rutas, con `node tests/mapa.js`.
+
 Este documento existe por una regla del dueño: **«nunca digas simplemente *no se puede*; siempre dejá el
 camino marcado para cuando se pueda»**. Cada fuente lleva la evidencia literal de lo que respondió, no un
 recuerdo de lo que respondía antes.
@@ -196,6 +198,11 @@ La referencia del catálogo viaja al lado (`cd_catalogo`) para poder discutir la
 ---
 
 ## Estado de la cascada tal como quedó
+
+> **Corrección 6-sep-2026.** Esta tabla es la foto del 12-ago-2026, con cinco niveles. Hoy la cascada tiene
+> **doce** y su orden vive en la cabecera «LA CASCADA · 12 NIVELES» de `lib/apu/precios.js`, que la suite
+> compara id a id con `NIVELES`: no se copia aquí. El nivel `pliego` sigue declarado y sin fuente
+> (`fuente_no_disponible` en `lib/apu/precios.js`).
 
 | Nivel | Estado | Nota |
 |---|---|---|
