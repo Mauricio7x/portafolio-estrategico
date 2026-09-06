@@ -262,7 +262,8 @@
       throw new Error(window.Glosario.fraseDeFallo({ status: r.status }));
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      throw new Error((cuerpo && (cuerpo.error || (cuerpo.campos && cuerpo.campos.map((c) => c.error).join(" · ")))) || `El servidor respondió ${r.status}.`);
+      // el «qué hacer» del servidor viaja con el error (Glosario.errorDelServidor, 6-sep-2026)
+      throw new Error(window.Glosario.errorDelServidor(cuerpo) || (cuerpo && cuerpo.campos && cuerpo.campos.map((c) => c.error).join(" · ")) || `El servidor respondió ${r.status}.`);
     }
     return cuerpo;
   }
@@ -439,7 +440,13 @@
       ].join("");
       cifras.classList.toggle("hidden", n === 0);
     }
-    $("res-valor").textContent = n > 0 && !o.valorTotal ? "Varias no publican presupuesto." : "";
+    /* «$X en juego» sale del MISMO agregarPulso que el hero del pulso y, como
+       él, dice cuántas quedan fuera de la suma con la misma redacción
+       (Pulso.fraseSinPresupuesto, 6-sep-2026, B4b-H2). Sin `agregados` (una
+       respuesta vieja en caché) queda la frase de antes, que solo sabía decir
+       «varias» cuando no había dinero alguno. */
+    const sinPresupuesto = ag && window.Pulso && typeof window.Pulso.fraseSinPresupuesto === "function" ? window.Pulso.fraseSinPresupuesto(ag.sinPresupuesto) : "";
+    $("res-valor").textContent = n > 0 && sinPresupuesto ? sinPresupuesto : (n > 0 && !o.valorTotal ? "Varias no publican presupuesto." : "");
     $("res-sobra").textContent = n > 0
       ? (o.conCapacidadSuficiente > 0 ? `En ${o.conCapacidadSuficiente} le sobra capacidad.` : "")
       : (o.corpus_vacio ? "Todavía no hay licitaciones cargadas en el sistema." : "Con el RUP a mano la lista puede cambiar.");

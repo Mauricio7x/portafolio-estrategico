@@ -7280,7 +7280,39 @@ async function main() {
           assert.strictEqual(sinBase.base, null);
           assert.ok(/sin calcular/i.test(sinBase.etiqueta) && !/Bogot|Ibagu/.test(sinBase.etiqueta + sinBase.mensaje),
             `sin base no puede nombrar la base del dueño: ${sinBase.etiqueta}`);
-          assert.ok(sinBase.verificar_orden_publico && /verificar zona/.test(sinBase.etiqueta), "la alerta de orden público es del destino, con o sin base");
+          assert.ok(sinBase.verificar_orden_publico && !/verificar zona/.test(sinBase.etiqueta),
+            "la alerta de orden público es del destino, con o sin base — como BANDERA: la etiqueta ya no la repite (B2b-H6)");
+          /* UNA ALERTA POR CHIP (6-sep-2026, B2b-H6). El servidor decía «· verificar zona» en la
+             etiqueta y la pantalla añadía «· verifique la seguridad de la zona» (medido en Chromium
+             a 390 px: tres líneas); «Acceso difícil · difícil acceso», igual. CENSO, no lista: todos
+             los departamentos de la tabla, con y sin base, por el chip de la tarjeta (chipZona) y por
+             la línea de zona de la guía de Mis procesos, EJECUTADOS: cada alerta sale exactamente
+             una vez, con las palabras de la guía, y «verificar zona» no sale nunca. */
+          {
+            const appH6 = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+            const cortarH6 = (nombre) => { const i = appH6.indexOf(`  function ${nombre}(`); assert.ok(i > 0, `app.js sin ${nombre}`); return appH6.slice(i, appH6.indexOf("\n  }", i) + 4); };
+            const fnsH6 = new Function("chip", "esc", `${cortarH6("chipZona")}; ${cortarH6("alertasZona")}; return { chipZona, alertasZona };`)((t) => t, (x) => String(x ?? ""));
+            const iG = appH6.indexOf("    const zona = z.etiqueta ?"), fG = appH6.indexOf("\n", iG);
+            assert.ok(iG > 0, "app.js sin la línea de zona de htmlGuia");
+            const zonaGuia = new Function("z", "esc", "alertasZona", `${appH6.slice(iG, fG)}; return zona;`);
+            const TABLA_H6 = require("../data/accesibilidad_departamentos.json");
+            const deptos = Object.keys(TABLA_H6).filter((k) => k !== "_meta");
+            assert.ok(deptos.length >= 30, `la tabla trae ${deptos.length} departamentos: ¿cambió de forma?`);
+            let conDificil = 0, conOrden = 0;
+            for (const dep of deptos) for (const base of [null, acc.BASE_DUENO]) {
+              const z = acc.evaluarZona({ departamento_entidad: dep }, base);
+              if (z.dificil_acceso) conDificil++;
+              if (z.verificar_orden_publico) conOrden++;
+              for (const [via, texto] of [["chip", fnsH6.chipZona(z)], ["guía", zonaGuia(z, (x) => String(x ?? ""), fnsH6.alertasZona)]]) {
+                const nDif = (texto.match(/acceso difícil|difícil acceso/gi) || []).length;
+                const nOrd = (texto.match(/verifique la seguridad de la zona/g) || []).length;
+                assert.strictEqual(nDif, z.dificil_acceso ? 1 : 0, `${dep} (${base ? "con base" : "sin base"}, ${via}): el difícil acceso se dice ${z.dificil_acceso ? "UNA vez" : "cero veces"} — «${texto}»`);
+                assert.strictEqual(nOrd, z.verificar_orden_publico ? 1 : 0, `${dep} (${base ? "con base" : "sin base"}, ${via}): la alerta de orden público se dice ${z.verificar_orden_publico ? "UNA vez" : "cero veces"} — «${texto}»`);
+                assert.ok(!/verificar zona/.test(texto), `${dep}: «verificar zona» es la copia vieja del servidor; la pantalla dice «verifique la seguridad de la zona» — «${texto}»`);
+              }
+            }
+            assert.ok(conDificil >= 2 && conOrden >= 2, `el censo tiene sujeto: ${conDificil} con difícil acceso y ${conOrden} con alerta de orden público`);
+          }
           assert.strictEqual(sinBase.puntos, 1, "sin base: banda «sin dato» (2) menos la alerta (1) — nunca 0 por no saber");
           const cundSinBase = acc.evaluarZona({ departamento_entidad: "Cundinamarca" }, null);
           assert.strictEqual(cundSinBase.puntos, 2);
@@ -7389,7 +7421,9 @@ async function main() {
             assert.ok(!/Solo cerca de mi zona \(Bogotá \/ Ibagué\)/.test(htmlZ.replace(/<!--[\s\S]*?-->/g, "")), "el HTML no puede fijar la base del dueño para todos");
             const iniZ = appZ.indexOf("function pintarBaseZona("), finZ = appZ.indexOf("function pintar(cuerpo)");
             assert.ok(iniZ > 0 && finZ > iniZ, "app.js sin pintarBaseZona antes de pintar(cuerpo)");
-            assert.ok(/pintarBaseZona\(cuerpo\.zona_base/.test(appZ), "pintar(cuerpo) tiene que rotular con zona_base de la respuesta");
+            /* como SENTENCIA y sin comentarios (B2b-H3): la mutación M8 del verificador
+               dejaba la llamada dentro de un comentario y la suite seguía en verde */
+            assert.ok(/^\s*pintarBaseZona\(cuerpo\.zona_base/m.test(sinComentarios(appZ)), "pintar(cuerpo) tiene que rotular con zona_base de la respuesta (una llamada comentada no cuenta)");
             const nodoZ = { textContent: "" };
             const pintarBaseZona = new Function("$", `${appZ.slice(iniZ, finZ)}; return pintarBaseZona;`)((id) => (id === "fl-zona-cerca-rotulo" ? nodoZ : null));
             pintarBaseZona("Bogotá / Ibagué");
@@ -12510,7 +12544,22 @@ async function main() {
             assert.strictEqual(dP.cuerpo.siguiente, "completar");
             assert.strictEqual(dP.cuerpo.necesita[0].campo, "patrimonio");
             assert.ok(/partida|incompleta/.test(dP.cuerpo.necesita[0].motivo || ""), `la puerta de entrada debe decir por qué pide un dato que el certificado trae: ${JSON.stringify(dP.cuerpo.necesita)}`);
-            assert.ok(/n\.motivo/.test(fuenteOnb), "onboarding.js pinta el motivo junto a la casilla");
+            /* EJECUTADA, no buscada por regex (B2b-H2): la mutación M7 del verificador
+               dejaba «n.motivo» en el fuente y dejaba de pintarlo, con la suite en verde.
+               pedirCompletar real sobre un DOM mínimo con la respuesta REAL de op=diagnostico. */
+            {
+              const iPC = fuenteOnb.indexOf("  function pedirCompletar(cuerpo, contexto) {"), fPC = fuenteOnb.indexOf("\n  }", iPC) + 4;
+              assert.ok(iPC > 0, "onboarding.js sin pedirCompletar");
+              const nodosPC = {};
+              const $pc = (id) => nodosPC[id] || (nodosPC[id] = { innerHTML: "", textContent: "", value: "", placeholder: "", classList: { remove() {}, add() {} }, focus() {} });
+              const escPC = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+              const pedirCompletar = new Function("$", "esc", "ocultarTodo", "mostrarManual", "contextoCompletar",
+                `${fuenteOnb.slice(iPC, fPC)}; return pedirCompletar;`)($pc, escPC, () => {}, () => "manual", null);
+              pedirCompletar(dP.cuerpo, {});
+              const intro = nodosPC["completar-intro"].innerHTML;
+              assert.ok(intro.includes(escPC(dP.cuerpo.necesita[0].motivo)), `onboarding.js pinta el motivo junto a la casilla: «${intro}»`);
+              assert.ok(/Solo falta un dato\./.test(intro) && nodosPC["completar-etiqueta"].textContent.length > 0, "y la casilla lleva su rótulo");
+            }
           }
         }
       }
@@ -12680,6 +12729,38 @@ async function main() {
         assert.ok(!/mensaje\(esc\(\(e && e\.message\) \|\| "Error desconocido al leer el RUP\."\), "error"\)/.test(obF2),
           "el catch del RUP ya no puede terminar en un mensaje de error sin salida");
         assert.ok(/pintarResultado\(/.test(obF2), "onboarding.js debe pintar la pantalla de resultado (conteo + 5 + Ver las N)");
+        /* EJECUTADA (6-sep-2026, B4b-H2): la pantalla de resultado pinta «$X en juego» desde
+           el MISMO agregarPulso que el hero del pulso y dice, con la MISMA redacción
+           (Pulso.fraseSinPresupuesto), cuántas no publican presupuesto; con 0 o null no
+           escribe nada; sin `agregados` (respuesta vieja en caché) queda la frase de antes. */
+        {
+          const obSrc = fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8");
+          const iPR = obSrc.indexOf("  function pintarResultado(cuerpo) {"), fPR = obSrc.indexOf("\n  }", iPR) + 4;
+          assert.ok(iPR > 0, "onboarding.js sin pintarResultado");
+          const { agregarPulso: agregarPulsoOnb } = require("../lib/handlers/perfil/entrada.js");
+          const PulsoOnb = require("../public/pulso.js");
+          const pintarRes = (oportunidades) => {
+            const nodos = {};
+            const $r = (id) => nodos[id] || (nodos[id] = { innerHTML: "", textContent: "", onclick: null, classList: { add() {}, remove() {}, toggle() {} } });
+            const fn = new Function("$", "esc", "ocultarTodo", "mensaje", "guardarPerfilRup", "fmtMillones", "fmtCOP", "avisos", "progreso", "window",
+              `${obSrc.slice(iPR, fPR)}; return pintarResultado;`)($r, (x) => String(x ?? ""), () => {}, () => {}, () => {}, (n) => String(n), { format: (n) => String(n) }, () => {}, () => {},
+              { Pulso: PulsoOnb, location: { origin: "http://localhost", search: "" } });
+            fn({ perfil_id: "rup_x", perfil: { nombre: "Constructora" }, origen: "texto", oportunidades });
+            return nodos["res-valor"].textContent;
+          };
+          const agOnb = agregarPulsoOnb([{ precio_base: "100" }, { precio_base: null }, { precio_base: "0" }]);
+          assert.strictEqual(agOnb.sinPresupuesto, 2, "agregarPulso cuenta las dos que no publican");
+          const conDos = pintarRes({ total: 3, valorTotal: agOnb.valorTotal, agregados: agOnb, muestra: [] });
+          assert.strictEqual(conDos, PulsoOnb.fraseSinPresupuesto(2), `la pantalla de resultado dice cuántas no publican presupuesto con la redacción del pulso: «${conDos}»`);
+          assert.ok(/: 2 no lo publican\.$/.test(conDos) && !/Varias/.test(conDos), conDos);
+          assert.strictEqual(pintarRes({ total: 3, valorTotal: 300, agregados: { ...agOnb, sinPresupuesto: 0 }, muestra: [] }), "", "con 0 no se escribe nada");
+          assert.strictEqual(pintarRes({ total: 3, valorTotal: 300, agregados: { ...agOnb, sinPresupuesto: null }, muestra: [] }), "", "con null tampoco: jamás como 0");
+          assert.strictEqual(pintarRes({ total: 3, valorTotal: 0, muestra: [] }), "Varias no publican presupuesto.", "sin agregados (respuesta vieja) queda la frase de antes");
+          assert.strictEqual(pintarRes({ total: 0, valorTotal: 0, muestra: [] }), "", "sin licitaciones no se escribe nada");
+          // y el hero del pulso usa la MISMA función: una redacción, no dos
+          assert.ok(/fraseSinPresupuesto\(p\.sinPresupuesto\)/.test(sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "pulso.js"), "utf8"))), "htmlHero llama a fraseSinPresupuesto");
+          assert.strictEqual(PulsoOnb.fraseSinPresupuesto(1), "El dinero en juego cuenta las que publican presupuesto: 1 no lo publica.", "en singular, singular");
+        }
         // las doce actividades del selector salen del servidor (o de la lista compartida), no de una segunda lista
         assert.ok(!/id="manual-actividad"[\s\S]{0,400}<option value="vias"/.test(htmlF2), "las opciones de actividad las pinta el JS desde el servidor, no el HTML");
 
@@ -14749,6 +14830,37 @@ async function main() {
         assert.ok(/asegurarOpcionPerfil\(perfil\)/.test(cuerpoPre) && !/some\(\(o\) => o\.value === perfil\)\) \$\("perfil"\)\.value/.test(cuerpoPre),
           "precargarDesdeURL asigna el perfil de la tarjeta SIN condicionarlo a que la opción exista");
         assert.ok(/id === "f-perfil"\) \{[^\n]*sincronizarPerfilBorrador\(\);/.test(sinComentarios(appP)), "cambiar el perfil de la barra tiene que sincronizar el del borrador");
+        /* TODA ESCRITURA DE LA BARRA POR CÓDIGO PASA POR fijarPerfilBarra (6-sep-2026, V-B2a-01).
+           Medido en Chromium con el botón real: tras «Guardar consorcio» la barra decía el
+           consorcio y el borrador se guardaba como «helder» (op=guardar respondía perfil=helder),
+           porque solo el evento `change` sincronizaba. fijarPerfilBarra EJECUTADA sobre el mismo
+           DOM mínimo, y un CENSO de app.js sin comentarios: dentro de cada sentencia de primer
+           nivel, ninguna asignación a `.value`/`.selectedIndex` de un nodo enlazado a #f-perfil
+           fuera de esa función. La reapertura de Precios se prueba con el arranque real (h-ter). */
+        {
+          nodos["f-perfil"] = selectFalso([["helder", "Helder"], ["cons_abc123", "Consorcio 1"]]);
+          const fnsFB = new Function("$", "document", `${appP.slice(iniS, finS)}; return { fijarPerfilBarra };`)((id) => nodos[id] || null, { createElement: () => ({ value: "", textContent: "" }) });
+          fnsFB.fijarPerfilBarra("cons_abc123");
+          assert.strictEqual(nodos["f-perfil"].value, "cons_abc123", "fijarPerfilBarra escribe la barra");
+          assert.strictEqual(nodos.perfil.value, "cons_abc123", "…y arrastra al borrador");
+          assert.ok(/Consorcio 1$/.test(nodos["perfil-borrador-rotulo"].textContent), "…y al rótulo");
+          const lineasFB = sinComentarios(appP).split("\n");
+          const asignaciones = [];
+          let enlazados = new Set(), dentroFijar = false;
+          lineasFB.forEach((l, i) => {
+            if (/^  \S/.test(l)) enlazados = new Set();   // una sentencia nueva de primer nivel: los enlaces no cruzan funciones
+            if (/^  function fijarPerfilBarra\(/.test(l)) dentroFijar = true;
+            else if (dentroFijar && /^  }/.test(l)) dentroFijar = false;
+            for (const m of l.matchAll(/(?:const|let|var)\s+(\w+)\s*=\s*(?:\$|document\.getElementById)\("([^"]+)"\)/g)) { if (m[2] === "f-perfil") enlazados.add(m[1]); else enlazados.delete(m[1]); }
+            if (dentroFijar) return;
+            if (/\$\("f-perfil"\)\.(value|selectedIndex)\s*=[^=]/.test(l)) asignaciones.push(`${i + 1}: ${l.trim()}`);
+            for (const v of enlazados) if (new RegExp(`\\b${v}\\.(value|selectedIndex)\\s*=[^=]`).test(l)) asignaciones.push(`${i + 1}: ${l.trim()}`);
+          });
+          assert.deepStrictEqual(asignaciones, [], `la barra se escribe por código fuera de fijarPerfilBarra y el borrador no la seguiría: ${asignaciones.join(" | ")}`);
+          for (const llamada of ["fijarPerfilBarra(p.id)", "fijarPerfilBarra(g.id)", "fijarPerfilBarra(perfilUrl)", "fijarPerfilBarra(sel.value)"]) {
+            assert.ok(lineasFB.some((l) => l.includes(llamada)), `el camino «${llamada}» (RUP del arranque, guardar consorcio, consorcio por URL, borrar consorcio) llama a la vía única`);
+          }
+        }
         console.log(`  · Precios por perfil (M-SEG-01): guardar con rup_ en instancia fría → 200 bajo apu:presupuesto:rup_… (TTL ${ttlBorrador} s) · precios en apu:precios:rup_ con TTL ${ttlPrecios} s y ninguno nuevo en helder · sin perfil 400 en 6 acciones · caducado 404 · cola sin perfil · cons_ entra · ${escrituras.length} escrituras con TTL · selector y rótulo ejecutados`);
       }
 
@@ -16242,8 +16354,9 @@ async function main() {
           "ps-opciones", "ps-curva", "btn-aplicar-descuento"]) {
           assert.ok(html.includes(`id="${debe}"`), `index.html sin #${debe}`);
         }
-        assert.ok(/pintarPrecioSugerido\(c\.optimizador\)/.test(js),
-          "app.js tiene que pintar el bloque «optimizador» de la respuesta");
+        assert.ok(/pintarPrecioSugerido\(c\.optimizador, c\.piso_techo\)/.test(js),
+          "app.js tiene que pintar el bloque «optimizador» de la respuesta, con `piso_techo` para que la curva marque el piso y el techo (DV-R2)");
+        assert.ok(/curvaSVG\(o, pisoTecho\)/.test(js), "pintarPrecioSugerido pasa el bloque piso_techo a la curva");
         /* EL BOTÓN ESCRIBE LA PERILLA DEL APU, NO LA BAJA DEL MERCADO. Es la
            confusión que cuesta un tercio del precio en este mismo corpus: el
            `descuento` se mide contra el presupuesto oficial y `factor-baja` se
@@ -16293,6 +16406,43 @@ async function main() {
             `y debajo va el paso siguiente, no un callejón sin salida: ${sinDatos}`);
           assert.ok(/botonPasoQueFalta\(\)/.test(js.slice(js.indexOf("function pintarPisoTecho("), js.indexOf("function pintarPisoTecho(") + 1200)),
             "el recuadro de piso y techo también termina en el paso que falta");
+          /* PISO Y TECHO EN LA CURVA (6-sep-2026, DV-R2), curvaSVG EJECUTADA con el optimizador
+             real `o`: dos <line data-ref="piso|techo"> cuando las cifras existen y caen dentro del
+             rango dibujado; ninguna sin cifras, sin panel aplicable o con una cifra fuera del rango
+             (una línea pegada al borde mentiría); y el eje vertical rotulado desde el glosario —el
+             hecho, nunca la sigla del modelo ni «valor esperado»—, con los rótulos del panel. */
+          {
+            const Gcv = require("../public/glosario.js");
+            const nf2cv = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 });
+            const curva = new Function("esc", "nf2", "copRent", "window", `${extraerPS("curvaSVG")}; return curvaSVG;`)(
+              (x) => String(x ?? ""), nf2cv, (v) => `$${Math.round(v)}`, { Glosario: Gcv });
+            const poCv = o.presupuesto_oficial;
+            assert.ok(Number.isFinite(poCv) && poCv > 0 && o.curva.length >= 2, "el optimizador real trae presupuesto y curva");
+            const d0 = o.rango.desde_pct, d1 = o.rango.hasta_pct;
+            const precioEn = (f) => poCv * (1 - (d0 + (d1 - d0) * f) / 100);
+            const ptCv = { aplicable: true, cifras: { piso_rentable: precioEn(0.8), techo_competitivo: precioEn(0.2) } };
+            const svg = curva(o, ptCv);
+            const refs = (s) => (s.match(/<line data-ref="(piso|techo)"/g) || []).map((x) => x.replace(/.*"(\w+)".*/, "$1")).sort();
+            assert.deepStrictEqual(refs(svg), ["piso", "techo"], `la curva marca el piso y el techo: ${svg.slice(0, 300)}`);
+            assert.ok(/<text data-ref="piso"[^>]*>por debajo pierde plata<\/text>/.test(svg) && /<text data-ref="techo"[^>]*>precio al que suele ganarse<\/text>/.test(svg), "cada línea dice el hecho, en las palabras del panel");
+            const rotulo = Gcv.traducir("veg");
+            assert.ok(new RegExp(`<text transform="rotate\\(-90 [^"]+\\)"[^>]*>${rotulo}</text>`).test(svg), `el eje vertical se rotula desde el glosario: «${rotulo}»`);
+            assert.ok(new RegExp(`aria-label="${rotulo} según el descuento`).test(svg), "y el nombre accesible también");
+            assert.ok(!/VEG|[Vv]alor esperado/.test(svg), "ni la sigla ni el nombre del modelo en la curva");
+            for (const [m] of svg.matchAll(/font-size="(\d+)"/g)) assert.ok(Number(m.match(/\d+/)[0]) >= 11, "letras de 11 px como mínimo");
+            assert.deepStrictEqual(refs(curva(o, null)), [], "sin bloque piso_techo, sin líneas");
+            assert.deepStrictEqual(refs(curva(o, { aplicable: false, cifras: ptCv.cifras })), [], "sin panel aplicable, sin líneas");
+            assert.deepStrictEqual(refs(curva(o, { aplicable: true, cifras: { piso_rentable: poCv * 2, techo_competitivo: null } })), [], "una cifra fuera del rango o ausente no se pinta pegada al borde");
+            // la línea de referencia y el óptimo no se confunden: el óptimo sigue en acento, las referencias en el gris del texto
+            assert.ok(/<line data-ref="piso"[^>]*stroke="var\(--text-secondary\)"/.test(svg) && /stroke="var\(--accent\)"/.test(svg), "tokens del tema, sin hex");
+            assert.ok(/<span data-glosario="veg"><\/span> según el descuento/.test(html), "el título de la curva en index.html sale del glosario, no de la sigla");
+            /* y los hermanos (la tarjeta de rentabilidad, la nota de la opción coincidente, las
+               dos frases de la meseta y el detalle de la tarjeta de Licitaciones) dejan de
+               escribir «valor esperado» a mano: CENSO de TODO app.js sin comentarios */
+            const aMano = js.split("\n").map((l, i) => [i + 1, l]).filter(([, l]) => /[Vv]alor esperado|\bVEG\b/.test(l)).map(([i, l]) => `${i}: ${l.trim().slice(0, 90)}`);
+            assert.deepStrictEqual(aMano, [], `«valor esperado»/«VEG» escritos a mano en pantalla (el término sale del glosario): ${aMano.join(" | ")}`);
+            assert.ok((js.match(/Glosario\.(traducir|corto)\("veg"\)/g) || []).length >= 6, "los sitios que nombran el término lo piden al glosario");
+          }
           /* y la primera carga de Precios DICE que está cargando: hasta hoy la
              pestaña se quedaba callada, igual que si ya hubiera terminado */
           /* La PRIMERA carga es la de `arrancar()`, y es esa la que hay que
@@ -19515,6 +19665,48 @@ async function main() {
         pintarCorteReal(null, null);
         assert.strictEqual(nodosPC["sello-sync"].innerHTML, "Datos de SECOP II", "sin corte, la marca informativa no dice «pulse aquí»");
         nodosPC["btn-marca"].clases.delete("marca-informativa");
+        /* LA PULSACIÓN QUE TERMINA EN ERROR DICE SU RESULTADO (6-sep-2026, V-B3a-03). Medido en
+           Chromium con SECOP caído: 36 s de «Trayendo datos…» y el sello volvía a la MISMA línea
+           de antes del clic; el motivo iba a #mensaje, en Mi empresa, invisible desde
+           Licitaciones. pintarCorte con `falloAhora` EJECUTADA (con corte y sin corte) y
+           `detener("error")` REAL con la marca esperando el corte: pinta el fallo de ESA
+           pulsación y NO manda a confirmar el corte (que la habría vuelto a tapar). */
+        {
+          const causa = "SECOP II no respondió; vuelva a intentarlo en unos minutos";
+          pintarCorteReal(isoHoy, { ts: new Date(ahoraPC).toISOString(), modo: "auto", texto: "x" }, { falloAhora: causa });
+          const conAhora = nodosPC["sello-sync"].innerHTML;
+          assert.ok(new RegExp(`^Datos de hoy, .* · no se pudo actualizar ahora: ${causa} · <span class="marca-accion">Actualizar</span>$`).test(conAhora),
+            `el sello dice el resultado de ESTA pulsación y qué hacer, y conserva «Actualizar»: «${conAhora}»`);
+          assert.ok(!/se reintenta con cada visita/.test(conAhora), "el fallo de ahora manda sobre el del cron");
+          assert.ok(nodosPC["sello-sync"].clases.has("corte-viejo") && nodosPC["sello-sync"].clases.has("corte-fallo"), "en ámbar y envolviendo en el teléfono");
+          assert.ok(/No se pudo actualizar ahora: SECOP II no respondió/.test(nodosPC["btn-marca"].title), `el título también: «${nodosPC["btn-marca"].title}»`);
+          pintarCorteReal(null, null, { falloAhora: "vuelva a intentarlo en unos minutos" });
+          assert.strictEqual(nodosPC["sello-sync"].innerHTML, 'No se pudo actualizar ahora: vuelva a intentarlo en unos minutos · <span class="marca-accion">Actualizar</span>', "sin corte conocido tampoco se calla");
+          pintarCorteReal(isoHoy, null);
+          assert.ok(/^Datos de hoy, .* · <span class="marca-accion">Actualizar<\/span>$/.test(nodosPC["sello-sync"].innerHTML), "sin opciones, el texto de siempre");
+          // detener() y botones() reales, extraídos juntos, con espías en lo que llaman
+          const iB = appPC.indexOf("  function botones(corriendo) {"), fB = appPC.indexOf("  /* Arranque de la full", iB);
+          assert.ok(iB > 0 && fB > iB, "app.js sin botones() … detener()");
+          const correr = (esperando, motivo) => {
+            const llamadas = [];
+            const nodosB = {};
+            const nodoB = (id) => nodosB[id] || (nodosB[id] = { disabled: false, hidden: false, classList: { toggle() {}, remove() {}, add() {} } });
+            new Function("$", "document", "pintarCorte", "refrescarTrasActualizar", "marcaTrabajando", "estado", "bitacora", "mensaje", "clearTimeout", "marcaEsperandoCorteInicial", "falloPulsacion",
+              `let activo = true, timerEspera = null, marcaEsperandoCorte = marcaEsperandoCorteInicial, corteActual = "2026-09-06T11:00:00.000Z"; ${appPC.slice(iB, fB)}; return { detener };`)(
+              nodoB, { getElementById: nodoB }, (iso, err, op) => llamadas.push(["pintarCorte", iso, err, op]), () => llamadas.push(["refrescarTrasActualizar"]),
+              (t) => llamadas.push(["marcaTrabajando", t]), () => {}, () => {}, () => {}, () => {}, esperando, causa).detener(motivo);
+            return llamadas;
+          };
+          assert.deepStrictEqual(correr(true, "error"), [["pintarCorte", "2026-09-06T11:00:00.000Z", null, { falloAhora: causa }]],
+            "tras un error con la marca esperando, se pinta el fallo de esa pulsación y NO se manda a confirmar el corte");
+          assert.deepStrictEqual(correr(true, "usuario"), [["refrescarTrasActualizar"]], "detenido por la persona, se confirma el corte como siempre");
+          assert.deepStrictEqual(correr(false, "error"), [], "sin pulsación desde la marca, el sello no se toca");
+          // y las tres causas de llamarConReintentos se escriben en palabras de persona, con su qué hacer
+          const cuerpoLCR = sinComentarios(appPC.slice(appPC.indexOf("  async function llamarConReintentos("), appPC.indexOf("  /* ══════════ Bucle principal")));
+          const causas = [...cuerpoLCR.matchAll(/falloPulsacion = "([^"]+)"/g)].map((m) => m[1]);
+          assert.strictEqual(causas.length, 3, `las tres salidas de llamarConReintentos fijan la causa: ${JSON.stringify(causas)}`);
+          for (const c of causas) assert.ok(/; (vuelva a intentarlo|el detalle está en Mi empresa)/.test(c) && !/fetch|HTTP|\d{3}/.test(c), `la causa dice qué hacer y no es jerga: «${c}»`);
+        }
         // y `buscar()` le pasa el fallo que viaja con `sincronizado` (cableado)
         assert.ok(/pintarCorte\(cuerpo\.sincronizado, cuerpo\.ultimo_error \|\| null\)/.test(appM), "buscar() tiene que pasar `ultimo_error` a pintarCorte");
       }
@@ -20908,8 +21100,8 @@ async function main() {
       assert.strictEqual(Glo.traducir("veg"), "Lo que deja por intento");
       assert.strictEqual(Glo.corto("veg"), "Deja por intento");
       assert.ok(/preparar la oferta/.test(Glo.TERMINOS.veg.explicacion), "el término lleva su explicación en llano");
-      assert.strictEqual((html6.match(/data-glosario="veg"/g) || []).length, 3,
-        "los tres sitios que decían «VEG» en Precios (frase, rótulo de la cifra y columna) leen del glosario");
+      assert.strictEqual((html6.match(/data-glosario="veg"/g) || []).length, 4,
+        "los cuatro sitios que decían «VEG» o «valor esperado» en Precios (frase, rótulo de la cifra, columna y el título de la curva, DV-R2) leen del glosario");
       assert.ok(html6.includes('data-glosario="manifestacion_interes"'),
         "el rótulo de la hoja de filtros deja de decir «Manifestación de interés» y lo pide al glosario");
       {
@@ -21145,8 +21337,9 @@ async function main() {
         "«… de VEG» en la comparación con el precio actual sale del glosario, en minúscula dentro de la frase");
       assert.ok(/window\.Glosario\.corto\("manifestacion_interes"\)/.test(app6),
         "el tipo de aviso de Mis procesos deja de decir «Manifestar interés» y lo pide al glosario");
-      assert.ok(/lo que deja por intento no cae más del/.test(app6) && /puntos\)/.test(app6),
-        "la meseta habla de puntos y del hecho, no de «pp» ni de «el VEG»");
+      // desde el 6-sep-2026 (DV-R2) el hecho lo pide al glosario en vez de inlinarlo: una sola copia
+      assert.ok(/\$\{window\.Glosario\.traducir\("veg"\)\.toLowerCase\(\)\} no cae más del/.test(app6) && /puntos\)/.test(app6),
+        "la meseta habla de puntos y del hecho (pedido al glosario), no de «pp» ni de «el VEG»");
       assert.strictEqual(Glo.TERMINOS.aiu.visible, "Su administración, imprevistos y ganancia",
         "AIU se conserva como nombre del documento del pliego, con su traducción al lado (regla de la Fase 6)");
 
@@ -22705,7 +22898,7 @@ async function main() {
             }
             porId.set(m[3], spec);
           }
-          const fetches = [], elementos = new Map();
+          const fetches = [], elementos = new Map(), historial = [];
           function nodo(spec) {
             const el = { id: spec.id || "", tagName: (spec.tag || "div").toUpperCase(), className: spec.className || "", hidden: !!spec.hidden,
               disabled: false, checked: false, open: false, value: "", _text: "", _html: "", dataset: {}, style: {}, attrs: {}, children: [], options: [],
@@ -22722,7 +22915,9 @@ async function main() {
               contains: (c) => clases().includes(c),
             };
             Object.defineProperty(el, "textContent", { get: () => el._text, set: (v) => { el._text = String(v ?? ""); el._html = el._text; } });
-            Object.defineProperty(el, "innerHTML", { get: () => el._html, set: (v) => { el._html = String(v ?? ""); el._text = el._html.replace(/<[^>]+>/g, ""); } });
+            /* `innerHTML = ""` VACÍA el nodo, como en el navegador (sincronizarPerfilBorrador
+               rehace así las opciones del borrador): sin esto las opciones se acumulaban */
+            Object.defineProperty(el, "innerHTML", { get: () => el._html, set: (v) => { el._html = String(v ?? ""); el._text = el._html.replace(/<[^>]+>/g, ""); if (el._html === "") { el.children = []; el.options = []; el.firstChild = null; el.lastChild = null; if (el.tagName === "SELECT") el.value = ""; } } });
             Object.defineProperty(el, "innerText", { get: () => el._text, set: (v) => { el._text = String(v ?? ""); } });
             Object.defineProperty(el, "text", { get: () => el._text, set: (v) => { el._text = String(v ?? ""); } });
             Object.defineProperty(el, "selectedOptions", { get: () => { const o = el.options.find((x) => x.value === el.value); return o ? [o] : []; } });
@@ -22775,7 +22970,8 @@ async function main() {
             setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1, cancelAnimationFrame() {},
             fetch: (url, opts) => { fetches.push({ url: String(url), opts: opts || null }); return Promise.resolve(respuesta()); },
             location: { search, hash, href: `http://localhost/${search}${hash}`, pathname: "/", origin: "http://localhost", host: "localhost", protocol: "http:", replace() {}, assign() {}, reload() {} },
-            history: { replaceState() {}, pushState() {}, back() {}, state: null },
+            // `historial` registra las URL que el arranque escribe (B4a-H2: «#/inicio» se consume)
+            history: { replaceState: (st, t, url) => { historial.push(String(url)); }, pushState: (st, t, url) => { historial.push(String(url)); }, back() {}, state: null },
             navigator: { language: "es-CO", languages: ["es-CO"], userAgent: "node", clipboard: { writeText: async () => {} }, onLine: true },
             sessionStorage: almacen(sesion), localStorage: almacen({}),
             matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }),
@@ -22803,7 +22999,7 @@ async function main() {
           for (const f of orden) vm.runInContext(fs.readFileSync(path.join(RAIZ_VV, "public", f), "utf8"), ctx, { filename: `public/${f}` });
           const esperar = async () => { for (let i = 0; i < 6; i++) await new Promise((r) => setImmediate(r)); };
           await esperar();
-          return { el, fetches, esperar, urls: () => fetches.map((f) => f.url) };
+          return { el, fetches, esperar, urls: () => fetches.map((f) => f.url), historial, doc: ctx.document };
         };
 
         /* el dueño con clave arranca PRIMERO: es la referencia contra la que se compara lo
@@ -22867,6 +23063,15 @@ async function main() {
         assert.ok(inicio.el("app").classList.contains("hidden") && !inicio.el("onboarding").classList.contains("hidden"), "#/inicio enseña la landing y no abre la aplicación");
         assert.deepStrictEqual(inicio.urls().filter((u) => /op=(listar|pulso|resumen|seguimiento)/.test(u)), [], "…y no pide nada de la aplicación");
         assert.ok(/location\.hash = "#\/inicio"; location\.reload\(\);/.test(sinComentarios(appVV)), "«Ir a la pantalla de inicio» recarga en #/inicio (cambiar solo el hash no vuelve a decidir la vista)");
+        /* …y «#/inicio» se CONSUME al atenderlo (6-sep-2026, B4a-H2): quien entra con su clave
+           desde esa landing se quedaba con el hash en la URL y cada recarga le devolvía la
+           landing y el gate aunque la sesión ya estuviera puesta (medido en Chromium). El
+           doble registra lo que el arranque escribe con history.replaceState. */
+        assert.ok(inicio.historial.some((u) => u === "/?perfil=rup_a1b2c3d4e5f6"),
+          `el arranque con #/inicio tiene que reescribir la URL sin el hash (pathname + search): ${JSON.stringify(inicio.historial)}`);
+        const recargaConSesion = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6", hash: "#/inicio", sesion: { "detecta-acceso": "1" } });
+        assert.ok(recargaConSesion.historial.some((u) => u === "/?perfil=rup_a1b2c3d4e5f6"),
+          "también con la sesión puesta se consume: la recarga siguiente ya decide por sesión y abre la aplicación (el arranque del dueño, arriba)");
 
         /* el consorcio a la medida por URL sin clave es visitante igual: el hermano del RUP */
         const cons = await arrancarAppEnNode({ search: "?perfil=cons_abc123def456" });
@@ -22891,6 +23096,68 @@ async function main() {
           const recordado = (v) => new Function("leerPerfil", "$", `${appVV.slice(iPR, fPR)}; return perfilRecordado();`)(() => v, () => selD);
           assert.strictEqual(recordado("consorcio"), "helder", "un perfil recordado que ya no es opción («consorcio») cae al primero, no a un value vacío");
           assert.strictEqual(recordado("juntos"), "juntos", "y uno vigente se conserva");
+        }
+
+        /* (e) `hidden` GANA A LAS CLASES DE DISPLAY (6-sep-2026, B4a-H1). Medido en Chromium
+           en las cuatro combinaciones (1280/390, claro/oscuro): «Cargar catálogo APU» tenía
+           hidden=true y display «flex», checkVisibility() true, y el clic del visitante
+           disparaba POST admin?op=cargar-catalogo. Causa: la hoja generada de Tailwind trae
+           `[hidden]{display:none}` ANTES y con la misma especificidad que `.inline-flex`.
+           El doble de DOM no tiene CSS, así que la cerradura es (1) la regla con !important en
+           el <style> de index.html, (2) un CENSO: ningún id del censo de la vista lleva una
+           utilidad de display en su class, ni ningún nodo que NAZCA con `hidden` en el marcado,
+           y (3) ejecutado: el clic del visitante no dispara la reescritura; el del dueño sí. */
+        {
+          const iSt = htmlVVSin.indexOf("<style>"), fSt = htmlVVSin.indexOf("</style>", iSt);
+          const estiloVV = htmlVVSin.slice(iSt, fSt).replace(/\/\*[\s\S]*?\*\//g, "");
+          assert.ok(/\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/.test(estiloVV),
+            "index.html: falta `[hidden] { display: none !important; }` en su <style> (la hoja generada de Tailwind no la trae y `.inline-flex` le gana a `hidden`)");
+          const DISPLAY_RE = /(?:^|\s)(?:(?:sm|md|lg|xl|2xl|hover|focus|group-hover|peer-checked):)*(block|inline-block|inline|flex|inline-flex|table|inline-table|table-[a-z-]+|flow-root|grid|inline-grid|contents|list-item)(?=\s|$)/;
+          const conDisplay = [];
+          for (const id of [...ids("soloDueno"), ...ids("soloVisitante")]) {
+            const m = htmlVVSin.match(new RegExp(`<[a-z]+\\b[^>]*\\sid="${id}"[^>]*>`));
+            const cls = m ? (m[0].match(/\sclass="([^"]*)"/) || [, ""])[1] : "";
+            if (DISPLAY_RE.test(cls)) conDisplay.push(`#${id} (${cls.match(DISPLAY_RE)[1]})`);
+          }
+          assert.deepStrictEqual(conDisplay, [], `un id de la vista de visitante lleva una utilidad de display que pisaría a \`hidden\` si la regla faltara: ${conDisplay.join(", ")}`);
+          const estaticos = [];
+          for (const m of htmlVVSin.matchAll(/<([a-z]+)\b([^>]*)>/g)) {
+            if (!/\shidden(\s|=|$)/.test(m[2].replace(/="[^"]*"/g, '=""'))) continue;
+            const cls = (m[2].match(/\sclass="([^"]*)"/) || [, ""])[1];
+            if (DISPLAY_RE.test(cls)) estaticos.push(`<${m[1]} id="${(m[2].match(/\sid="([^"]*)"/) || [, "?"])[1]}" … ${cls.match(DISPLAY_RE)[1]}>`);
+          }
+          assert.deepStrictEqual(estaticos, [], `nodos que nacen con \`hidden\` y llevan una utilidad de display: ${estaticos.join(", ")}`);
+          const antesCat = visitante.fetches.length;
+          visitante.el("btn-apu-cargar").click(); await visitante.esperar();
+          assert.deepStrictEqual(visitante.urls().slice(antesCat).filter((u) => /op=cargar-catalogo/.test(u)), [], "el clic del visitante en «Cargar catálogo APU» no puede disparar admin?op=cargar-catalogo");
+          const antesCatD = dueno.fetches.length;
+          dueno.el("btn-apu-cargar").click(); await dueno.esperar();
+          assert.ok(dueno.urls().slice(antesCatD).some((u) => /op=cargar-catalogo/.test(u)), "con clave el mismo clic sí lo dispara (si no, la prueba de arriba pasaría en vacío)");
+        }
+
+        /* (f) EL BORRADOR DE PRECIOS SIGUE A LA BARRA EN CADA APERTURA (6-sep-2026, V-B2a-01),
+           con el arranque real: el dueño abre Precios, vuelve a Licitaciones, la barra cambia
+           POR CÓDIGO (sin evento change, como tras «Guardar consorcio» o al borrar uno) y al
+           reabrir Precios el borrador y su rótulo la siguen. El clic de pestaña es el REAL
+           (delegado en document sobre `[data-tab]`). */
+        {
+          const clicPestana = async (destino) => {
+            const t = dueno.doc.createElement("button");
+            t.setAttribute("data-tab", destino);
+            t.closest = (s) => (s === "[data-tab]" ? t : null);
+            dueno.doc.dispatchEvent({ type: "click", target: t, preventDefault() {} });
+            await dueno.esperar();
+          };
+          await clicPestana("apu");
+          assert.ok(dueno.el("f-perfil").value, "la barra del dueño tiene perfil");
+          assert.strictEqual(dueno.el("perfil").value, dueno.el("f-perfil").value, "al abrir Precios el borrador es el de la barra");
+          await clicPestana("licitaciones");
+          dueno.el("f-perfil").value = "genesis";   // por código, sin evento change
+          await clicPestana("apu");
+          assert.strictEqual(dueno.el("perfil").value, "genesis", "reabrir Precios vuelve a tomar el perfil de la barra aunque haya cambiado por código");
+          const rotuloVV = dueno.el("perfil-borrador-rotulo").textContent;
+          assert.ok(/^Precios guardados para: /.test(rotuloVV) && /g[eé]nesis/i.test(rotuloVV), `y el rótulo lo dice: «${rotuloVV}»`);
+          assert.deepStrictEqual(dueno.el("perfil").options.map((o) => o.value), dueno.el("f-perfil").options.map((o) => o.value), "las opciones del borrador son las de la barra, sin duplicados");
         }
       }
 
@@ -24128,6 +24395,45 @@ async function main() {
       assert.ok(!/JSON|fetch/i.test(cuerpo500.error) && /\(código 500\)/.test(cuerpo500.error), cuerpo500.error);
       const cuerpoMuro = await leerJsonFn({ status: 401, json: async () => { throw new SyntaxError("Unexpected token <"); } });
       assert.strictEqual(cuerpoMuro.error, Gf.MSG_MURO, `el muro se sigue diagnosticando como MURO —la frase entera, no una palabra compartida—: ${cuerpoMuro.error}`);
+
+      /* EL «QUÉ HACER» DEL SERVIDOR LLEGA A LA PANTALLA (6-sep-2026, V-B2a-02). Medido en
+         Chromium con un 409 real de Mis procesos: la persona veía «…otra acción estaba en
+         curso sobre los mismos datos.» sin el «Espere unos segundos y vuelva a intentarlo.»
+         porque api() lanzaba solo `cuerpo.error`. api() de app.js EJECUTADA con un fetch que
+         responde 409 {error, que_hacer}; el hermano de onboarding.js (enviarEntrada) igual; y
+         un CENSO: ningún `new Error(` de public/*.js lee `.error` del cuerpo sin pasar por
+         Glosario.errorDelServidor (la vía única). */
+      {
+        const iApi = appFallo.indexOf("  async function api(ruta, opciones = {}) {"), fApi = appFallo.indexOf("\n  }", iApi) + 4;
+        assert.ok(iApi > 0, "app.js sin api()");
+        const respuestaDe = (status, cuerpo) => async () => ({ ok: status < 400, status, headers: { get: () => "application/json" }, json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) });
+        const armarApi = (fetchFalso) => new Function("fetch", "leerToken", "fraseDeFallo", "leerJson", "msg401", "errorDelServidor",
+          `${appFallo.slice(iApi, fApi)}; return api;`)(fetchFalso, () => "t", Gf.fraseDeFallo, leerJsonFn, () => "401", Gf.errorDelServidor);
+        const mensajeDe = async (fn) => { try { await fn("/api/x", { method: "POST", body: {} }); return null; } catch (e) { return e.message; } };
+        const c409 = { ok: false, error: "No se pudo guardar el proceso porque otra acción estaba en curso sobre los mismos datos.", que_hacer: "Espere unos segundos y vuelva a intentarlo." };
+        assert.strictEqual(await mensajeDe(armarApi(respuestaDe(409, c409))), `${c409.error} ${c409.que_hacer}`, "el 409 llega a la pantalla CON su «qué hacer»");
+        assert.strictEqual(await mensajeDe(armarApi(respuestaDe(400, { ok: false, error: "Perfil desconocido." }))), "Perfil desconocido.", "sin que_hacer, el error tal cual (sin espacio colgando)");
+        assert.strictEqual(await mensajeDe(armarApi(respuestaDe(500, {}))), "El servidor respondió 500.", "sin error en el cuerpo, el literal canónico que fraseDeFallo vuelve a leer");
+        assert.strictEqual(await mensajeDe(armarApi(respuestaDe(200, { ok: true }))), null, "un 200 no lanza");
+        const onbSrc = fs.readFileSync(path.join(RAIZ, "public/onboarding.js"), "utf8");
+        const iEE = onbSrc.indexOf("  async function enviarEntrada(cuerpoPeticion) {"), fEE = onbSrc.indexOf("\n  }", iEE) + 4;
+        assert.ok(iEE > 0, "onboarding.js sin enviarEntrada");
+        const enviar = (fetchFalso) => new Function("fetch", "window", "ENTRADA", `${onbSrc.slice(iEE, fEE)}; return enviarEntrada;`)(fetchFalso, { Glosario: Gf }, "/api/perfil?op=diagnostico");
+        let mOnb = null; try { await enviar(respuestaDe(409, c409))({}); } catch (e) { mOnb = e.message; }
+        assert.strictEqual(mOnb, `${c409.error} ${c409.que_hacer}`, "onboarding.js también lleva el «qué hacer» a la pantalla");
+        let mCampos = null; try { await enviar(respuestaDe(400, { ok: false, campos: [{ error: "patrimonio: solo números" }] }))({}); } catch (e) { mCampos = e.message; }
+        assert.strictEqual(mCampos, "patrimonio: solo números", "y sin `error`, los errores por campo siguen saliendo");
+        const sinQueHacer = [];
+        for (const f of fs.readdirSync(path.join(RAIZ, "public")).filter((x) => x.endsWith(".js"))) {
+          const src = sinComentarios(fs.readFileSync(path.join(RAIZ, "public", f), "utf8"));
+          src.split("\n").forEach((l, i) => { if (/new Error\(/.test(l) && /\.error\b/.test(l) && !/errorDelServidor\(/.test(l)) sinQueHacer.push(`${f}:${i + 1} ${l.trim().slice(0, 100)}`); });
+        }
+        assert.deepStrictEqual(sinQueHacer, [], `un new Error(cuerpo.error) deja el «qué hacer» en el cuerpo: ${sinQueHacer.join(" | ")}`);
+        assert.ok((appFallo.match(/errorDelServidor\(cuerpo\)/g) || []).length >= 3, "los tres sitios de app.js que leían cuerpo.error pasan por la vía única");
+        assert.strictEqual(Gf.errorDelServidor({ error: " A. ", que_hacer: " B. " }), "A. B.");
+        assert.strictEqual(Gf.errorDelServidor({ que_hacer: "B." }), null, "sin error no hay frase: manda el literal canónico");
+        assert.strictEqual(Gf.errorDelServidor(null), null);
+      }
 
       /* CENSO: ningún módulo del navegador vuelve a interpolar el texto crudo de
          una excepción en una frase de pantalla. Se barren TODOS los public/*.js

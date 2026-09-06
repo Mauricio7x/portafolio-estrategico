@@ -49,6 +49,15 @@
        .clase.hidden. -->
   <link rel="stylesheet" href="/tailwind.css">
   <style>
+    /* `hidden` GANA A CUALQUIER CLASE DE DISPLAY (6-sep-2026, B4a-H1). La hoja
+       generada de Tailwind trae `[hidden]{display:none}` con la misma
+       especificidad (0,1,0) que `.inline-flex{display:inline-flex}` y ANTES en el
+       orden: la utilidad ganaba, y «Cargar catálogo APU» —oculto al visitante con
+       `el.hidden = true`— seguía pintado y OPERATIVO (medido en Chromium: display
+       flex, clic → op=cargar-catalogo). Es la regla que el preflight de Tailwind
+       ≥ 3.3 lleva y esta hoja no. La segunda mitad de la lección de #act-panel:
+       `el.hidden` solo oculta si ninguna clase de display lo pisa. */
+    [hidden] { display: none !important; }
     /* ══════════ PIEL v3 · «Lino y tinta» (4-sep-2026) ══════════
        Encargo del dueño: un cambio total, un color elegante «que se vea caro» y
        que cada botón, animación y clic se sienta pensado. Todo lo de aquí sale
@@ -3456,7 +3465,8 @@
           <p id="ps-meseta" class="mt-2 text-xs text-gray-500"></p>
 
           <div class="mt-6">
-            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500">Valor esperado según el descuento</h3>
+            <!-- el rótulo sale del glosario (la sigla del modelo no se muestra) -->
+            <h3 class="text-xs font-medium uppercase tracking-wide text-gray-500"><span data-glosario="veg"></span> según el descuento</h3>
             <div id="ps-curva" class="mt-2 overflow-x-auto"></div>
           </div>
 
@@ -3491,10 +3501,12 @@
               <b>referencia</b>, no cotizaciones.
             </p>
           </div>
+          <!-- el botón NO lleva utilidad de display (`inline-flex`): es un id del
+               censo de la vista de visitante y se oculta con `hidden`; la
+               disposición del giro y el texto va en el <span> de dentro -->
           <button id="btn-apu-cargar" type="button"
-                  class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
-            <span id="apu-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>
-            Cargar catálogo APU
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            <span class="inline-flex items-center gap-2"><span id="apu-spin" class="hidden h-3 w-3 rounded-full border-2 border-white/40 border-t-white spin"></span>Cargar catálogo APU</span>
           </button>
         </div>
 

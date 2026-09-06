@@ -168,8 +168,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 134 secciones. Las 10 más nuevas:
-  L  7490  Estética premium y experiencia de uso · las 24 mejoras del encargo 2, implementadas (5/6-sep
+· MEMORIA · docs/MEMORIA.md — 135 secciones. Las 10 más nuevas:
   L  7591  Lote «servidor y cifras» de la consultoría del 4-sep · M-INF-09, M-INF-17, M-INF-07, M-DGF-1
   L  7702  Lote «precios por perfil» de la consultoría del 4-sep · M-SEG-01, M-SEG-06 (6-sep-2026)
   L  7809  Lote «zona y RUP en PDF» de la consultoría del 4-sep · M-SEG-10, M-INF-01 (6-sep-2026)
@@ -179,6 +178,7 @@
   L  8186  Lote «B4b-pulso-cobertura» de la consultoría del 4-sep · M-DGF-03, M-DGF-04, M-DGF-12 (6-sep
   L  8291  Remates «R1a-remates-servidor-B1-B2» de la ola 1 · H-01, H-02, H-03, H-04, H-05, V-B2a-03, B
   L  8412  Remates «R1b-remates-servidor-B3-B4b» de la ola 1 · V-B3a-01, V-B3a-02, B3b-H1, B3b-H2, B4b-
+  L  8531  Remates «R2-remates-pantalla» de la ola 1 · H1, H2, V-B2a-01, V-B2a-02, B2b-H2, B2b-H3, B2b-
 
 · DOCUMENTOS docs/ — 42:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)

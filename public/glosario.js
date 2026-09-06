@@ -241,6 +241,19 @@
     return contexto ? `No se pudo ${contexto}. ${fraseDeFallo(e)}` : fraseDeFallo(e);
   }
 
+  /* LO QUE EL SERVIDOR DIJO Y QUÉ HACER, EN UNA FRASE (6-sep-2026, V-B2a-02).
+     Los handlers responden `{ error, que_hacer }` y los módulos del navegador
+     lanzaban `new Error(cuerpo.error)`: el «qué hacer» se quedaba en el cuerpo
+     y la persona veía «…otra acción estaba en curso sobre los mismos datos.»
+     sin el «Espere unos segundos y vuelva a intentarlo.» (medido en Chromium
+     con un 409 real). Una sola vía para los cuatro sitios que leen el cuerpo
+     de un fallo: sin `error` devuelve null y el llamador cae al literal
+     canónico «El servidor respondió N.», que fraseDeFallo vuelve a leer. */
+  function errorDelServidor(cuerpo) {
+    if (!cuerpo || !cuerpo.error) return null;
+    return [cuerpo.error, cuerpo.que_hacer].map((x) => String(x || "").trim()).filter(Boolean).join(" ");
+  }
+
   return { MARCA, TERMINOS, VERBOS, ESTADO, SIN_REFERENCIA, sinReferencia, traducir, corto, titulo, descripcion, estampar,
-    MSG_SIN_CONEXION, MSG_MURO, MSG_LECTOR_PDF, fraseDeFallo, mensajeDeFallo };
+    MSG_SIN_CONEXION, MSG_MURO, MSG_LECTOR_PDF, fraseDeFallo, mensajeDeFallo, errorDelServidor };
 });

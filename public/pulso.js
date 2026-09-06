@@ -64,7 +64,16 @@
         ${cifraGrande(num(c.n), c.n === 1 ? "cierra esta semana" : "cierran esta semana", `class="cursor-pointer" data-filtro="cierre=7d" role="link" tabindex="0" title="Ver las que cierran en 7 días"`)}
       </div>
       ${c.n && c.valor ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">Las que cierran esta semana suman ${esc(pesosCortos(c.valor))}.</p>` : ""}
-      ${p.sinPresupuesto > 0 ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">El dinero en juego cuenta las que publican presupuesto: ${num(p.sinPresupuesto)} no lo publican.</p>` : ""}`;
+      ${p.sinPresupuesto > 0 ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">${esc(fraseSinPresupuesto(p.sinPresupuesto))}</p>` : ""}`;
+  }
+  /* UNA redacción para «cuántas no publican presupuesto» (6-sep-2026, B4b-H2):
+     la usa el hero del pulso y la pantalla de resultado del onboarding, que
+     pinta «$X en juego» desde el MISMO agregarPulso y decía «Varias» donde ya
+     había una cifra exacta. Sin cifra (0, null, undefined) devuelve "" — «0 no
+     lo publican» es ruido y null jamás se pinta como 0. */
+  function fraseSinPresupuesto(n) {
+    if (!(n > 0)) return "";
+    return `El dinero en juego cuenta las que publican presupuesto: ${num(n)} no lo ${n === 1 ? "publica" : "publican"}.`;
   }
 
   /* LA COBERTURA DE CADA REPARTO (6-sep-2026, M-DGF-03). Tres notas bajo las
@@ -464,5 +473,5 @@
   }
   const olvidar = () => { perfilPintado = null; };
 
-  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, ticksRedondos, htmlNota };
+  return { arrancar, olvidar, pesosCortos, htmlHero, htmlEmpresa, htmlDepartamentos, htmlEntidades, htmlManifestacion, svgBarras, columnas, barrasRank, apilada, ticksRedondos, htmlNota, fraseSinPresupuesto };
 });

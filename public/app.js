@@ -79,6 +79,8 @@
      que un glosario que no llegue no mate el módulo entero. */
   const fraseDeFallo = (e) => window.Glosario.fraseDeFallo(e);
   const mensajeDeFallo = (e, contexto) => window.Glosario.mensajeDeFallo(e, contexto);
+  // el error del servidor CON su «qué hacer», en una frase (6-sep-2026, V-B2a-02)
+  const errorDelServidor = (cuerpo) => window.Glosario.errorDelServidor(cuerpo);
   const fmtCOP = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
   const fmtNum = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
   const fmt = new Intl.NumberFormat("es-CO");
@@ -185,7 +187,7 @@
      no distingue «el cron aún no corrió» de «lleva días fallando». Si el fallo
      es de otro día se dice sin «hoy»; la fecha la juzga `Portada.desactualizado`,
      el mismo reloj del corte. La clase ámbar y «Actualizar» se conservan. */
-  function pintarCorte(iso, ultimoError) {
+  function pintarCorte(iso, ultimoError, opciones = {}) {
     const s = document.getElementById("sello-sync");
     if (!s) return;
     if (iso) corteActual = iso;
@@ -198,16 +200,23 @@
     const fallo = ultimoError && ultimoError.ts && P
       ? (P.desactualizado(ultimoError.ts, Date.now()) ? "la última actualización no se pudo hacer" : "hoy no se pudo actualizar")
       : null;
+    /* `falloAhora` (6-sep-2026, V-B3a-03): la pulsación desde la marca que acaba
+       de terminar en error dice SU resultado y qué hacer, no la línea de antes
+       del clic (que ya decía «hoy no se pudo actualizar» por el fallo del cron y
+       dejaba la pulsación sin respuesta visible). Manda sobre `ultimoError`. */
+    const ahora = opciones && opciones.falloAhora ? `no se pudo actualizar ahora: ${String(opciones.falloAhora)}` : null;
+    const accion = informativa ? "" : ' · <span class="marca-accion">Actualizar</span>';
     s.innerHTML = cuando
-      ? `Datos de ${esc(cuando)}${fallo ? ` · ${fallo}; se reintenta con cada visita` : ""}${informativa ? "" : ' · <span class="marca-accion">Actualizar</span>'}`
-      : (informativa ? "Datos de SECOP II" : '<span class="marca-accion">Pulse aquí para traer lo último de SECOP II</span>');
-    s.classList.toggle("corte-viejo", !!(fallo || (iso && P && P.desactualizado(iso, Date.now()))));
+      ? `Datos de ${esc(cuando)}${ahora ? ` · ${esc(ahora)}` : fallo ? ` · ${fallo}; se reintenta con cada visita` : ""}${accion}`
+      : ahora ? `${esc(ahora[0].toUpperCase() + ahora.slice(1))}${accion}`
+        : (informativa ? "Datos de SECOP II" : '<span class="marca-accion">Pulse aquí para traer lo último de SECOP II</span>');
+    s.classList.toggle("corte-viejo", !!(ahora || fallo || (iso && P && P.desactualizado(iso, Date.now()))));
     // en el teléfono el corte va en una línea recortada; con fallo envuelve para que se LEA entero
-    s.classList.toggle("corte-fallo", !!(fallo && cuando));
+    s.classList.toggle("corte-fallo", !!((fallo || ahora) && cuando));
     s.classList.remove("hidden");
     if (b) {
       const largo = iso && P ? P.textoActualizado(iso, Date.now()) : "Todavía no consta cuándo se trajeron los datos";
-      const aviso = fallo ? ` ${fallo[0].toUpperCase()}${fallo.slice(1)}; se reintenta con cada visita.` : "";
+      const aviso = ahora ? ` ${ahora[0].toUpperCase()}${ahora.slice(1)}.` : fallo ? ` ${fallo[0].toUpperCase()}${fallo.slice(1)}; se reintenta con cada visita.` : "";
       b.title = informativa ? `${largo}.${aviso}` : `${largo}.${aviso} Pulse para traer de SECOP II lo publicado desde entonces.`;
       b.setAttribute("aria-label", informativa ? `${largo}.${aviso}` : `${largo}.${aviso} Actualizar los datos de SECOP II.`);
     }
@@ -330,7 +339,14 @@
     });
     moverIndicadorPestanas();
     if (empujarHash) { try { history.replaceState(null, "", `#/${destino}`); } catch { /* entorno raro */ } }
+    /* En CADA apertura posterior de Precios el perfil del borrador se vuelve a
+       tomar de la barra (6-sep-2026, V-B2a-01): la barra cambia por código en
+       más sitios que el evento `change` (guardar o borrar un consorcio, el
+       arranque por URL) y un camino olvidado guardaba el borrador bajo «helder»
+       con la barra en el consorcio. La primera apertura lo hace `arrancar()`,
+       que además precarga el perfil de la tarjeta. */
     if (destino === "apu" && !arrancadas.apu) { arrancadas.apu = true; arrancar(); }
+    else if (destino === "apu") sincronizarPerfilBorrador();
     if (destino === "apu" && !arrancadas.pliego && typeof window.__pliegoArrancar === "function") {
       arrancadas.pliego = true;
       window.__pliegoArrancar();
@@ -456,7 +472,7 @@
     if (soloEste) {
       for (const o of [...sel.options]) { if (o.value !== p.id) o.remove(); }
     }
-    sel.value = p.id;
+    fijarPerfilBarra(p.id);
   }
 
   /* ══════════ LA VISTA DE VISITANTE (6-sep-2026, M-SEG-02) ══════════
@@ -1078,8 +1094,18 @@
        misma zona, no unas equivalentes. La redacción larga del servidor
        (`z.mensaje`, los kilómetros y de dónde salen) se queda en el `title`:
        la etiqueta ya lleva la distancia y la base. */
-    const alerta = `${z.dificil_acceso ? " · difícil acceso" : ""}${z.verificar_orden_publico ? " · verifique la seguridad de la zona" : ""}`;
-    return chip(esc(z.etiqueta) + alerta, clases, z.mensaje || "");
+    return chip(esc(z.etiqueta) + alertasZona(z), clases, z.mensaje || "");
+  }
+  /* UNA alerta por chip, con las palabras de la guía (6-sep-2026, B2b-H6): las
+     dos banderas del destino se ponen en texto AQUÍ, y el servidor ya no las
+     repite en la etiqueta. «Acceso difícil» sí es la etiqueta entera cuando la
+     zona es de difícil acceso (sustituye a la distancia, que allí no manda), y
+     por eso no se le añade «· difícil acceso» detrás. Lo usan el chip de la
+     tarjeta y la guía de Mis procesos; la suite recorre TODOS los departamentos
+     con y sin base y exige que cada alerta salga exactamente una vez. */
+  function alertasZona(z) {
+    const etiqueta = String(z.etiqueta || "");
+    return `${z.dificil_acceso && !/acceso difícil/i.test(etiqueta) ? " · difícil acceso" : ""}${z.verificar_orden_publico ? " · verifique la seguridad de la zona" : ""}`;
   }
 
   /* Cierre con CUENTA REGRESIVA: «Cierra 15 sept. 2026» obliga a calcular
@@ -2627,7 +2653,7 @@
         <p class="mt-1 text-xs text-gray-500">
           ${esc(p.entidad || "")}${p.departamento ? ` · ${esc(p.departamento)}` : ""}
           ${p.cuantia_cop ? ` · ${esc(fmtCorto(p.cuantia_cop))}` : ""}
-          · Valor esperado ${esc(fmtCorto((d.contexto || {}).valor_esperado_cop))}
+          · ${esc(window.Glosario.corto("veg"))} ${esc(fmtCorto((d.contexto || {}).valor_esperado_cop))}
         </p>
       </div>
 
@@ -2924,7 +2950,8 @@
       throw new Error(msg401(cuerpo));
     }
     if (!r.ok) {
-      throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
+      // el «qué hacer» del servidor viaja con el error, como en pliego.js (6-sep-2026, V-B2a-02)
+      throw new Error(errorDelServidor(cuerpo) || `El servidor respondió ${r.status}.`);
     }
     return cuerpo;
   }
@@ -3174,7 +3201,7 @@
     if (!g || !g.obra) return "";
     const o = g.obra, r = g.resumen || {}, z = (o.donde && o.donde.zona) || {};
     const donde = [o.donde && o.donde.entidad, [o.donde && o.donde.ciudad, o.donde && o.donde.departamento].filter(Boolean).join(", ")].filter(Boolean).join(" · ");
-    const zona = z.etiqueta ? `${esc(z.etiqueta)}${z.km != null && z.km > 0 && !/km/.test(z.etiqueta) ? ` (unos ${z.km} km desde ${esc(z.desde || "su base")})` : ""}${z.dificil_acceso ? " · difícil acceso" : ""}${z.verificar_orden_publico ? " · verifique la seguridad de la zona" : ""}` : "";
+    const zona = z.etiqueta ? `${esc(z.etiqueta)}${z.km != null && z.km > 0 && !/km/.test(z.etiqueta) ? ` (unos ${z.km} km desde ${esc(z.desde || "su base")})` : ""}${alertasZona(z)}` : "";
     const cuanto = [o.cuanto && o.cuanto.legible ? `${esc(o.cuanto.legible)}${o.cuanto.tamano ? ` (${esc(o.cuanto.tamano)})` : ""}` : "Presupuesto no publicado", o.plazo && o.plazo.legible ? `plazo de ${esc(o.plazo.legible)}` : null].filter(Boolean).join(" · ");
     const pago = [o.pago && o.pago.anticipo_legible, o.pago && o.pago.forma_precio === "global" ? "a precio global (el riesgo de cantidades es suyo)" : o.pago && o.pago.forma_precio === "unitarios" ? "a precios unitarios (las cantidades son un estimativo)" : null].filter(Boolean).map(esc).join(" · ");
     const adj = o.como_lo_adjudican || {};
@@ -5653,6 +5680,19 @@
     if ([...sel.options].some((o) => o.value === quiere)) sel.value = quiere;
     pintarRotuloPerfil();
   }
+  /* TODA escritura del perfil de la barra por código pasa por aquí (6-sep-2026,
+     V-B2a-01): asigna `#f-perfil` y arrastra al borrador, que es lo que el
+     evento `change` hace cuando la cambia la persona. Cuatro caminos la
+     cambiaban por código sin avisar (el RUP del arranque, el consorcio por URL,
+     «Guardar consorcio» y borrar uno): medido en Chromium, tras «Guardar
+     consorcio» la barra decía el consorcio y el borrador se guardaba como
+     «helder». La suite censa que no quede ninguna otra asignación. */
+  function fijarPerfilBarra(id) {
+    const barra = $("f-perfil");
+    if (!barra) return;
+    barra.value = id;
+    sincronizarPerfilBorrador();
+  }
   /* El perfil que llega en la URL de la tarjeta (el de la barra al abrirla) se
      asigna aunque la opción no exista todavía: antes se copiaba «solo si la
      opción existe» y por eso el visitante quedaba en «helder». */
@@ -5766,7 +5806,8 @@
       ultimaRentabilidad = c;
       pintarPisoTecho(c);
       pintarRentabilidad(c);
-      pintarPrecioSugerido(c.optimizador);
+      // el piso y el techo viajan en `piso_techo`, no en el optimizador: la curva los marca
+      pintarPrecioSugerido(c.optimizador, c.piso_techo);
       msgApu(auto ? "Rentabilidad y precio sugerido actualizados." : "Rentabilidad actualizada.", "ok");
     } catch (e) {
       msgApu(mensajeDeFallo(e, "calcular la ganancia"), "error");
@@ -5938,7 +5979,7 @@
       r.p_ganar_detalle && r.p_ganar_detalle.modulada
         ? `Base ${pctRent((r.p_ganar_detalle.p_base || 0) * 100)} × ${r.p_ganar_detalle.multiplicador} por precio`
         : "Sin baja histórica: no se modula por precio"));
-    t.push(tarjetaRent("Valor esperado de la ganancia", copRent(r.veg),
+    t.push(tarjetaRent(window.Glosario.traducir("veg"), copRent(r.veg),
       `P(ganar) × utilidad − ${copRent(r.costo_preparacion)} de preparar la oferta`,
       r.veg != null && r.veg <= 0 ? "mal" : "bien"));
     t.push(tarjetaRent("Utilidad esperada", copRent(r.utilidad_esperada), "Antes de impuesto de renta",
@@ -6006,7 +6047,7 @@
       + (tol != null && Number.isFinite(tol) ? ` (lo que deja por intento cae más del ${num(tol)} %)` : "") + ".";
   }
 
-  function pintarPrecioSugerido(o) {
+  function pintarPrecioSugerido(o, pisoTecho) {
     const sec = $("seccion-precio-sugerido");
     const sin = $("ps-sin-datos");
     const cuerpo = $("ps-cuerpo");
@@ -6064,7 +6105,7 @@
          decirlo es información: moverse en esa dirección ya cuesta caro. */
       const igual = !destacada && p.descuento === op.descuento;
       const nota = igual
-        ? `Coincide con el óptimo: moverse hacia ahí ya cuesta más del ${num(meseta.tolerancia_pct)} % del valor esperado.`
+        ? `Coincide con el óptimo: moverse hacia ahí ya cuesta más del ${num(meseta.tolerancia_pct)} % de ${window.Glosario.traducir("veg").toLowerCase()}.`
         : p.explicacion || "";
       return `<tr class="${destacada ? "bg-blue-50/60 font-medium" : igual ? "text-gray-400" : ""}">
         <td class="py-2 pr-3">${esc(p.etiqueta || clave)}
@@ -6084,10 +6125,10 @@
     $("ps-opciones").innerHTML = ["conservador", "optimo", "agresivo"].map((k) => fila(k, opc[k])).join("");
 
     $("ps-meseta").textContent = meseta.colapsada
-      ? `El óptimo es agudo: moverse un solo paso cuesta más del ${num(meseta.tolerancia_pct)} % del valor esperado, `
+      ? `El óptimo es agudo: moverse un solo paso cuesta más del ${num(meseta.tolerancia_pct)} % de ${window.Glosario.traducir("veg").toLowerCase()}, `
         + "así que las tres opciones coinciden."
-      : `Meseta del valor esperado: entre ${pctRent(meseta.desde_pct)} y ${pctRent(meseta.hasta_pct)} de baja `
-        + `(${num(meseta.ancho_pp)} puntos) lo que deja por intento no cae más del ${num(meseta.tolerancia_pct)} %. Dentro de esa banda `
+      : `Meseta: entre ${pctRent(meseta.desde_pct)} y ${pctRent(meseta.hasta_pct)} de baja `
+        + `(${num(meseta.ancho_pp)} puntos) ${window.Glosario.traducir("veg").toLowerCase()} no cae más del ${num(meseta.tolerancia_pct)} %. Dentro de esa banda `
         + "la elección es de apetito de riesgo, no de aritmética.";
 
     /* ---- el botón principal ---- */
@@ -6098,7 +6139,7 @@
         + `el APU dará ${copRent(op.precio_apu_resultante)}.`
       : "No aplicable: el precio óptimo está por encima de su precio de venta. El ajuste competitivo solo baja.";
 
-    $("ps-curva").innerHTML = curvaSVG(o);
+    $("ps-curva").innerHTML = curvaSVG(o, pisoTecho);
     $("ps-alertas").innerHTML = (o.alertas || [])
       .map((x) => `<p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">${esc(x)}</p>`).join("");
   }
@@ -6107,10 +6148,10 @@
      dependencias y una polilínea no justifica la primera. Marca el óptimo y
      —cuando cae dentro del rango— el precio vigente, que es lo que convierte la
      gráfica en «dónde estoy y a dónde debería moverme». */
-  function curvaSVG(o) {
+  function curvaSVG(o, pisoTecho) {
     const pts = (o.curva || []).filter((p) => Number.isFinite(p.veg) && Number.isFinite(p.descuento));
     if (pts.length < 2) return "";
-    const W = 720, H = 180, mL = 64, mR = 14, mT = 14, mB = 30;
+    const W = 720, H = 180, mL = 92, mR = 14, mT = 16, mB = 30;
     const xs = pts.map((p) => p.descuento);
     const ys = pts.map((p) => p.veg);
     const x0 = Math.min(...xs), x1 = Math.max(...xs);
@@ -6126,11 +6167,38 @@
     const actual = o.punto_actual;
     const dentro = actual && Number.isFinite(actual.descuento) && actual.descuento >= x0 && actual.descuento <= x1;
 
+    /* PISO Y TECHO EN LA CURVA (6-sep-2026, DV-R2): las dos cifras que el panel
+       de arriba ya enseña —«su precio mínimo para no perder plata» y «el precio
+       al que probablemente se gana»—, convertidas a descuento sobre el
+       presupuesto oficial (1 − precio ÷ presupuesto). Viajan en `piso_techo`
+       (lib/apu/piso_techo), no en el optimizador, y se pintan SOLO si existen y
+       caen dentro del rango dibujado: una línea pegada al borde diría que el
+       piso está donde no está. Sin dato, sin línea. */
+    const cf = pisoTecho && pisoTecho.aplicable && pisoTecho.cifras ? pisoTecho.cifras : null;
+    const po = Number(o.presupuesto_oficial);
+    const refs = [];
+    if (cf && Number.isFinite(po) && po > 0) {
+      for (const [ref, valor, rotulo] of [["piso", cf.piso_rentable, "por debajo pierde plata"], ["techo", cf.techo_competitivo, "precio al que suele ganarse"]]) {
+        if (!Number.isFinite(valor)) continue;
+        const d = (1 - valor / po) * 100;
+        if (d < x0 || d > x1) continue;
+        refs.push({ ref, d, rotulo });
+      }
+    }
+    /* el eje vertical se rotula con el glosario: el HECHO («lo que deja por
+       intento»), nunca la sigla del modelo */
+    const ejeY = window.Glosario.traducir("veg");
+    const medioY = ((mT + H - mB) / 2).toFixed(1);
+    const anclaRef = (x) => (x < mL + 90 ? "start" : x > W - mR - 90 ? "end" : "middle");
+
     /* colores del TEMA por variable (acento y gris secundario): el SVG en línea
        hereda las custom properties del tema, así que van literales */
     return `<svg viewBox="0 0 ${W} ${H}" class="h-44 w-full min-w-[560px]" role="img"
-      aria-label="Valor esperado de la ganancia según el descuento sobre el presupuesto oficial">
+      aria-label="${esc(ejeY)} según el descuento sobre el presupuesto oficial${refs.length ? "; con las líneas de referencia " + esc(refs.map((r) => r.rotulo).join(" y ")) : ""}">
+      <text transform="rotate(-90 12 ${medioY})" x="12" y="${medioY}" font-size="11" fill="var(--text-secondary)" text-anchor="middle">${esc(ejeY)}</text>
       <line x1="${mL}" y1="${cero.toFixed(1)}" x2="${W - mR}" y2="${cero.toFixed(1)}" stroke="var(--viz-grid)" stroke-dasharray="3 3"/>
+      ${refs.map((r) => `<line data-ref="${r.ref}" x1="${px(r.d).toFixed(1)}" y1="${mT}" x2="${px(r.d).toFixed(1)}" y2="${H - mB}" stroke="var(--text-secondary)" stroke-width="1" stroke-dasharray="4 3"/>
+      <text data-ref="${r.ref}" x="${px(r.d).toFixed(1)}" y="${mT - 4}" font-size="11" fill="var(--text-secondary)" text-anchor="${anclaRef(px(r.d))}">${esc(r.rotulo)}</text>`).join("\n      ")}
       <polyline points="${linea}" fill="none" stroke="var(--accent)" stroke-width="2"/>
       <line x1="${px(op.descuento).toFixed(1)}" y1="${mT}" x2="${px(op.descuento).toFixed(1)}" y2="${H - mB}"
             stroke="var(--accent)" stroke-width="1" stroke-dasharray="2 3"/>
@@ -6140,8 +6208,8 @@
       <text x="${mL}" y="${H - 10}" font-size="11" fill="var(--text-secondary)">${esc(nf2.format(x0))} %</text>
       <text x="${W - mR}" y="${H - 10}" font-size="11" fill="var(--text-secondary)" text-anchor="end">${esc(nf2.format(x1))} %</text>
       <text x="${px(op.descuento).toFixed(1)}" y="${H - 10}" font-size="11" fill="var(--accent)" text-anchor="middle">óptimo ${esc(nf2.format(op.descuento))} %</text>
-      <text x="4" y="${(py(y1) + 4).toFixed(1)}" font-size="11" fill="var(--text-secondary)">${esc(copRent(y1))}</text>
-      ${cero - py(y1) >= 14 ? `<text x="4" y="${(cero + 4).toFixed(1)}" font-size="11" fill="var(--text-secondary)">$0</text>` : ""}
+      <text x="24" y="${(py(y1) + 4).toFixed(1)}" font-size="11" fill="var(--text-secondary)">${esc(copRent(y1))}</text>
+      ${cero - py(y1) >= 14 ? `<text x="24" y="${(cero + 4).toFixed(1)}" font-size="11" fill="var(--text-secondary)">$0</text>` : ""}
     </svg>`;
   }
 
@@ -6380,8 +6448,13 @@
 
   /* Una llamada, con reintentos ante fallo de red o 5xx. Devuelve el cuerpo
      JSON, o null si se agotaron los reintentos (o se detuvo el bucle). */
+  /* Lo que la pulsación desde la marca le dirá al sello si termina en error
+     (6-sep-2026, V-B3a-03): la causa en palabras de persona y qué hacer. El
+     detalle técnico sigue yendo a `mensaje()` en Mi empresa. */
+  let falloPulsacion = null;
   async function llamarConReintentos(modo) {
     const presupuesto = $("f-presupuesto").value;
+    falloPulsacion = null;
     for (let intento = 0; intento <= BACKOFF_MS.length; intento++) {
       if (!activo) return null;
       let r = null, cuerpo = null, fallo = null;
@@ -6395,6 +6468,7 @@
 
       if (r && (r.status === 401 || r.status === 403)) {
         mensaje(fraseDeFallo({ status: r.status }), "error");
+        falloPulsacion = "la clave del servidor no coincide; el detalle está en Mi empresa";
         return null;
       }
       if (r && r.ok && cuerpo && cuerpo.ok) return cuerpo;
@@ -6402,6 +6476,7 @@
       // 4xx con cuerpo: error de uso, no se reintenta
       if (r && !r.ok && r.status < 500 && cuerpo && cuerpo.error) {
         mensaje(`El servidor rechazó la sincronización: ${cuerpo.error}`, "error");
+        falloPulsacion = "el servidor no aceptó la petición; el detalle está en Mi empresa";
         return null;
       }
 
@@ -6409,6 +6484,7 @@
       if (intento === BACKOFF_MS.length) {
         mensaje(`La sincronización falló tras ${BACKOFF_MS.length} reintentos: ${detalle}. El avance quedó guardado: puede volver a iniciar.`, "error");
         bitacora(`✘ ${detalle} — reintentos agotados`);
+        falloPulsacion = "SECOP II no respondió; vuelva a intentarlo en unos minutos";
         return null;
       }
       bitacora(`⚠ ${detalle} — reintento ${intento + 1}/${BACKOFF_MS.length}`);
@@ -6519,6 +6595,16 @@
   function detener(motivo) {
     activo = false;
     clearTimeout(timerEspera);
+    /* La pulsación desde la marca que termina en ERROR dice su resultado en el
+       sello (6-sep-2026, V-B3a-03). Antes `botones(false)` mandaba a confirmar
+       el corte y la barra volvía a la MISMA línea de antes del clic —36 s de
+       giro sin respuesta visible— mientras el motivo iba a #mensaje, que vive
+       en Mi empresa y no se ve desde Licitaciones ni Precios. Hay que hacerlo
+       ANTES de botones(false), que es quien lanza la confirmación. */
+    if (motivo === "error" && marcaEsperandoCorte) {
+      marcaEsperandoCorte = false;
+      pintarCorte(corteActual, null, { falloAhora: falloPulsacion || "vuelva a intentarlo en unos minutos" });
+    }
     botones(false);
     if (motivo === "error") { estado("Error"); return; }
     estado("Detenido");
@@ -7314,7 +7400,7 @@
     try {
       const r = await fetch("/api/admin?op=rup", { headers: { "x-historico-token": token }, cache: "no-store" });
       cuerpo = await leerJson(r);
-      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
+      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error(errorDelServidor(cuerpo) || `El servidor respondió ${r.status}.`);
     } catch (e) {
       return mensajeRup(mensajeDeFallo(e, "descargar su RUP"), "error");
     }
@@ -7789,7 +7875,7 @@
     try {
       const r = await fetch("/api/admin?op=experiencia", { headers: { "x-historico-token": token }, cache: "no-store" });
       cuerpo = await leerJson(r);
-      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
+      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error(errorDelServidor(cuerpo) || `El servidor respondió ${r.status}.`);
     } catch (e) {
       return mensajeExp(mensajeDeFallo(e, "descargar su experiencia"), "error");
     }
@@ -8066,6 +8152,10 @@
 
   async function cargarCatalogoApu() {
     if (apuCargando) return;
+    /* el visitante no ve este botón (VISTA_VISITANTE.soloDueno), y aunque un
+       script lo pulsara, la reescritura del catálogo compartido no sale de su
+       navegador: la guarda va en la FUENTE, no en el botón (6-sep-2026, B4a-H1) */
+    if (vistaVisitanteActiva) return mensajeApu("El catálogo lo carga quien administra el sitio.", "aviso");
     const token = leerToken();
     apuCargando = true;
     // doble clic: el botón se deshabilita durante el envío o se carga dos veces
@@ -8437,7 +8527,7 @@
         const g = await api("/api/perfil?op=consorcio", { method: "POST", body: { integrantes: participacionesActuales(), nombre: nombreCons || null } });
         const sel = $("f-perfil");
         if (![...sel.options].some((o) => o.value === g.id)) { const o = document.createElement("option"); o.value = g.id; o.textContent = etiquetaConsorcio(g.nombre, g.id); sel.appendChild(o); }
-        sel.value = g.id;
+        fijarPerfilBarra(g.id); // y el borrador de Precios sigue a la barra (V-B2a-01)
         try { localStorage.setItem("detekta_consorcio", JSON.stringify({ id: g.id, nombre: g.nombre })); } catch { /* sin almacenamiento */ }
         pintarConsorciosGuardados();
         activarPestana("licitaciones");
@@ -8451,6 +8541,9 @@
       const id = del.getAttribute("data-cons-borrar");
       try { await api(`/api/perfil?op=consorcio&id=${encodeURIComponent(id)}`, { method: "DELETE" }); } catch { /* se repinta igual */ }
       const sel = $("f-perfil"); for (const o of [...sel.options]) if (o.value === id) o.remove();
+      /* quitar la opción activa deja la barra en la primera SIN evento change:
+         se fija por la vía única para que el borrador la siga (V-B2a-01) */
+      fijarPerfilBarra(sel.value);
       pintarConsorciosGuardados();
     }
   });
@@ -8609,6 +8702,12 @@
   try { pideInicio = location.hash === "#/inicio"; } catch { pideInicio = false; }
   if (pideInicio) {
     if (window.Portada) window.Portada.teaser();
+    /* El hash se CONSUME al atenderlo (6-sep-2026, B4a-H2): quien entra con su
+       clave desde esta landing se quedaba con «#/inicio» en la URL y cada
+       recarga lo devolvía a la landing y al gate aunque la sesión ya estuviera
+       puesta (medido en Chromium). Sin el hash, la siguiente recarga vuelve a
+       decidir por sesión o por RUP, como siempre. */
+    try { history.replaceState(null, "", `${location.pathname}${location.search}`); } catch { /* entorno raro */ }
   } else if (perfilRup) {
     // sin gate pasado, el selector queda SOLO con el perfil del RUP: entrar
     // por URL no puede regalar los perfiles del dueño — y la vista de
@@ -8624,7 +8723,7 @@
     const sel = $("f-perfil");
     if (![...sel.options].some((o) => o.value === perfilUrl)) { const o = document.createElement("option"); o.value = perfilUrl; o.textContent = etiquetaConsorcio(nombreCons, perfilUrl); sel.appendChild(o); }
     if (!sesionConClave) for (const o of [...sel.options]) { if (o.value !== perfilUrl) o.remove(); }
-    sel.value = perfilUrl;
+    fijarPerfilBarra(perfilUrl);
     vistaDeVisitante(!sesionConClave);
     abrirApp();
   } else if (sesionConClave) {

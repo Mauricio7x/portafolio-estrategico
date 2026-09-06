@@ -670,7 +670,8 @@
       const r = await pedir("/api/pliego?op=descargar", { url });
       if (r.red) throw new Error(r.red);   // `red` ya viene redactado (Glosario.fraseDeFallo)
       if (r.estado !== 200 || !r.cuerpo || !r.cuerpo.ok) {
-        throw new Error((r.cuerpo && r.cuerpo.error) || `El servidor respondió ${r.estado}.`);
+        // el «qué hacer» del servidor viaja con el error (Glosario.errorDelServidor, 6-sep-2026)
+        throw new Error(window.Glosario.errorDelServidor(r.cuerpo) || `El servidor respondió ${r.estado}.`);
       }
       const bin = atob(r.cuerpo.base64);
       const datos = new Uint8Array(bin.length);

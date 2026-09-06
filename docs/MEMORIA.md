@@ -8527,3 +8527,158 @@ nueva. Lo que se decidió y por qué no hay que re-aprenderlo:
 - **No verificable desde aquí.** El comportamiento real de datos.gov.co ante un 429 con
   `Retry-After` (proxy 403 el 6-sep-2026) y los tiempos de una página de 5 000 filas en producción,
   que son los que fijan si 45 s alcanzan para más de una página con la fuente lenta.
+
+### Remates «R2-remates-pantalla» de la ola 1 · H1, H2, V-B2a-01, V-B2a-02, B2b-H2, B2b-H3, B2b-H6, V-B3a-03, B4b-H2, DV-R2 (6-sep-2026)
+
+Diez hallazgos de pantalla que los verificadores adversarios devolvieron con reproducción ejecutada
+sobre los lotes B4a, B2a, B2b, B3a, B4b y el resto de M-DGF-02 (B1). Los diez se reprodujeron de
+nuevo en el árbol actual antes de tocar nada —siete en Node con la función real extraída del fuente
+y tres en Chromium con los routers reales sobre el Upstash falso—, ninguno se refutó, cada arreglo
+tiene su cerradura en `tests/e2e.js` y quince mutaciones dirigidas (aplicadas y restauradas una a una
+sobre el árbol de trabajo, con la prueba dentro) ponen la suite en rojo por la aserción nueva. Lo que
+se decidió y por qué no hay que re-aprenderlo:
+
+- **`hidden` gana a cualquier clase de display, y se declara en el `<style>` (H1, alta).** Medido en
+  Chromium en las cuatro combinaciones (1280/390, claro/oscuro), entrando por `/?perfil=rup_…` sin
+  clave: «Cargar catálogo APU» tenía `hidden=true` y `display: flex`, `checkVisibility()` true, 181 × 40
+  px, y el clic disparaba `POST /api/admin?op=cargar-catalogo&forzar=true`: la reescritura del catálogo
+  compartido, operativa para el visitante. Causa: la hoja generada de Tailwind trae
+  `[hidden]{display:none}` en el byte 4698 y `.inline-flex{display:inline-flex}` en el 6063, misma
+  especificidad (0,1,0): gana la utilidad. Es la regla que el preflight de Tailwind ≥ 3.3 lleva y esta
+  hoja no. Ahora `index.html` abre su `<style>` con `[hidden] { display: none !important; }`, el botón
+  deja de llevar `inline-flex` (la disposición del giro y el texto va en un `<span>` de dentro) y
+  `cargarCatalogoApu` tiene la guarda en la FUENTE (`vistaVisitanteActiva` → «El catálogo lo carga quien
+  administra el sitio», sin fetch), como los nueve llamadores del tablero. **La segunda mitad de la
+  lección de `#act-panel`**: `el.hidden` solo oculta si ninguna clase de display lo pisa; el doble de DOM
+  de la suite no tiene CSS y por eso `hidden === true` pasaba con el botón pintado. La cerradura es
+  triple: la regla con `!important` en el `<style>` (comentarios fuera), un CENSO de que ningún id de
+  `soloDueno`/`soloVisitante` ni ningún nodo que NAZCA con `hidden` en el marcado lleve una utilidad de
+  display (con sus variantes `sm:`/`md:`…), y el clic ejecutado: el del visitante no pide
+  `op=cargar-catalogo`, el del dueño sí (si no, la prueba pasaría en vacío). Después, en Chromium:
+  `display: none`, `checkVisibility()` false, el clic no es posible y no viaja ninguna petición, en las
+  cuatro combinaciones, cero desbordes y cero externas.
+- **«#/inicio» se consume al atenderlo (H2).** Medido en Chromium: visitante → «Ir a la pantalla de
+  inicio» → gate → clave → la aplicación abre con la sesión puesta y el hash SIGUE en `#/inicio`;
+  `reload()` → landing otra vez, gate en el DOM, y el formulario del gate compara solo con la clave. Ahora
+  la rama `pideInicio` hace `history.replaceState(null, "", pathname + search)` tras el teaser: la
+  siguiente recarga vuelve a decidir por sesión o por RUP, como siempre (medido después: tras la clave
+  `hash: ""`, y la recarga abre la aplicación con el onboarding oculto). El doble de la suite registra lo
+  que el arranque escribe en `history` y exige la URL sin el hash, con y sin sesión.
+- **Toda escritura de la barra por código pasa por `fijarPerfilBarra`, y Precios se re-sincroniza en
+  CADA apertura (V-B2a-01).** Medido con el botón real («Guardar consorcio»): la barra quedaba en
+  `cons_…` y el borrador en «helder» (`op=guardar` respondía `perfil=helder`), porque el lote B2a
+  sincronizaba en el evento `change` y en el arranque de Precios, y la barra cambia por código en cuatro
+  sitios (el RUP del arranque, el consorcio por URL, guardar un consorcio y borrar uno, que al quitar la
+  opción activa deja la barra en la primera SIN evento). `fijarPerfilBarra(id)` asigna y llama a
+  `sincronizarPerfilBorrador`, los cuatro sitios la llaman, y `activarPestana("apu")` vuelve a
+  sincronizar en cada apertura POSTERIOR a la primera (la primera la hace `arrancar()`, que además
+  precarga el perfil de la tarjeta): así un quinto camino que se olvide queda cubierto en cuanto la
+  persona abre Precios. Se descartó sincronizar solo en los cuatro sitios: es exactamente la lista que
+  deja huecos. La cerradura ejecuta `fijarPerfilBarra` sobre el DOM mínimo de j.8-bis, censa en
+  `app.js` sin comentarios que dentro de cada sentencia de primer nivel no quede ninguna asignación a
+  `.value`/`.selectedIndex` de un nodo enlazado a `#f-perfil` fuera de esa función (la mutación
+  `sel.value = g.id` la caza; contra el árbol anterior cazaba las tres asignaciones), y en el bloque
+  h-ter abre Precios con el clic REAL de pestaña (delegado en `document` sobre `[data-tab]`), cambia la
+  barra por código, reabre y exige que el borrador y su rótulo la sigan. El doble aprendió que
+  `innerHTML = ""` vacía las opciones (acumulaba duplicados) y devuelve `doc` e `historial`. Medido
+  después en Chromium: borrador = barra tras guardar el consorcio y tras borrarlo.
+- **El «qué hacer» del servidor llega a la pantalla por UNA vía (V-B2a-02).** Medido con un 409 real de
+  Mis procesos: «…otra acción estaba en curso sobre los mismos datos.» sin el «Espere unos segundos y
+  vuelva a intentarlo.». `Glosario.errorDelServidor(cuerpo)` compone `error` + `que_hacer` (null sin
+  `error`, y entonces manda el literal canónico «El servidor respondió N.» que `fraseDeFallo` vuelve a
+  leer); la usan `api()`, la descarga del RUP y de la experiencia en app.js, `enviarEntrada` de
+  onboarding.js y la descarga del PDF de pliego.js. La ficha de M-SEG-06 daba por hecho que «el
+  frontend ya muestra el error de la API sin hacer nada más»: solo pliego.js componía `que_hacer`. La
+  cerradura ejecuta `api()` con un fetch que responde 409, 400 sin `que_hacer` (sin espacio colgando),
+  500 sin cuerpo y 200; ejecuta `enviarEntrada` (409 y errores por campo); y censa que ningún
+  `new Error(` de `public/*.js` lea `.error` del cuerpo sin pasar por `errorDelServidor(`.
+- **Dos cerraduras que eran adornos (B2b-H2, B2b-H3).** La del motivo de la cifra partida comprobaba
+  `/n\.motivo/` sobre el fuente: la mutación M7 del verificador dejaba el texto y dejaba de pintarlo,
+  suite en verde (reproducido: el regex pasa con M7, `pedirCompletar` ejecutada pinta «Solo falta un
+  dato.» sin el motivo). Ahora `pedirCompletar` se EJECUTA sobre un DOM mínimo con la respuesta REAL de
+  `op=diagnostico` y se exige el motivo escapado en `#completar-intro`. La del cableado
+  `pintarBaseZona(cuerpo.zona_base)` corría sobre el fuente CON comentarios: la M8 (llamada comentada)
+  pasaba. Ahora es una sentencia (`^\s*pintarBaseZona(`) sobre `sinComentarios`.
+- **Una alerta por chip, con las palabras de la guía (B2b-H6).** El servidor decía «· verificar zona» en
+  la etiqueta y la pantalla añadía «· verifique la seguridad de la zona»; «Acceso difícil · difícil
+  acceso», igual (medido: Nariño y Cauca sin base, Nariño con base «Lejos, pero se llega volando ·
+  verificar zona · verifique…», Amazonas). La alerta de orden público viaja como BANDERA
+  (`verificar_orden_publico`) y la etiqueta es el hecho de la distancia; `alertasZona(z)` en app.js la
+  pone en palabras UNA vez para el chip y para la guía de Mis procesos, y no repite «difícil acceso»
+  cuando la etiqueta ya ES «Acceso difícil» (allí sustituye a la distancia por diseño, y cambiar eso
+  habría movido tres pruebas y la docencia de la etiqueta). El `mensaje` largo sigue contando la alerta,
+  porque va al `title`. `docs/ACCESIBILIDAD.md` lo dice; la aserción del lote B2b que exigía «verificar
+  zona» EN la etiqueta se invirtió (la alerta se conserva, como bandera). Cerradura: CENSO de TODOS los
+  departamentos de la tabla × {sin base, base del dueño} por `chipZona` y por la línea de zona de
+  `htmlGuia`, ejecutados: cada alerta exactamente una vez, «verificar zona» nunca, con sujeto (≥ 2 de
+  cada). Se probó que restituir el sufijo en el servidor o el «· difícil acceso» incondicional en la
+  pantalla ponen la suite en rojo.
+- **La pulsación desde la marca que termina en error dice SU resultado (V-B3a-03).** Medido en Chromium
+  con SECOP caído y el corte de hace 10 min: 36 s de «Trayendo datos de SECOP II…», cuatro
+  `op=sync&modo=auto` con 502, y el sello volvía a la MISMA línea de antes del clic («hoy no se pudo
+  actualizar; se reintenta con cada visita»); el motivo iba a `#mensaje`, que vive en Mi empresa y no
+  se ve desde Licitaciones. Ahora `llamarConReintentos` deja en `falloPulsacion` la causa en palabras de
+  persona con su qué hacer —«SECOP II no respondió; vuelva a intentarlo en unos minutos», «el servidor
+  no aceptó la petición; el detalle está en Mi empresa», «la clave del servidor no coincide; el detalle
+  está en Mi empresa»— y `detener("error")`, ANTES de `botones(false)` (que es quien manda a confirmar
+  el corte y habría vuelto a tapar el sello), pinta `pintarCorte(corteActual, null, { falloAhora })`:
+  «Datos de hoy, 6:35 a. m. · no se pudo actualizar ahora: SECOP II no respondió; vuelva a intentarlo en
+  unos minutos · Actualizar», en ámbar y envolviendo en el teléfono; sin corte, «No se pudo actualizar
+  ahora: …». El detalle técnico sigue en `mensaje()`. `pintarCorte` conserva su firma y gana el tercer
+  argumento; `falloAhora` manda sobre `ultimoError`. **No se adoptó** acortar la escalera de reintentos
+  (5 + 10 + 20 s) para la pulsación desde la marca: la comparte el encadenado de tandas (una segunda
+  escalera es el patrón que este repositorio ya pagó), el giro ES la respuesta visible mientras dura, y
+  un 5xx de una función fría merece el reintento. Cerradura: `pintarCorte` ejecutada con `falloAhora`
+  con y sin corte, `botones` + `detener` reales extraídos juntos con espías (error + marca esperando →
+  solo `pintarCorte` con `falloAhora`; usuario → `refrescarTrasActualizar`; sin marca → nada), y las
+  tres causas censadas con qué hacer y sin jerga. Medido después: el sello cambia a los 36,2 s al texto
+  nuevo con «Actualizar» dentro.
+- **La pantalla de resultado del onboarding dice cuántas no publican presupuesto con la MISMA función
+  que el hero (B4b-H2).** `agregarPulso` con {100, null, «0»} → `sinPresupuesto: 2`, `valorTotal: 100`, y
+  `pintarResultado` escribía "" (solo decía «Varias» sin dinero alguno). `Pulso.fraseSinPresupuesto(n)`
+  es la única redacción (la usa `htmlHero` y la llama onboarding.js; «1 no lo publica» en singular; ""
+  con 0/null/undefined) y sin `agregados` (respuesta vieja en caché) queda la frase de antes. Cerradura:
+  `pintarResultado` EJECUTADA sobre un DOM mínimo con `agregarPulso` real (2, 0, null, sin agregados,
+  sin licitaciones) y `htmlHero` llamando a la función.
+- **La curva de precio marca el techo y el piso y su eje sale del glosario (DV-R2, resto de
+  M-DGF-02).** `curvaSVG(o, pisoTecho)` recibe el bloque `piso_techo` (viaja aparte del optimizador, como
+  anotó el lote B1) y dibuja `<line data-ref="piso|techo">` con su rótulo en las palabras del panel
+  («por debajo pierde plata», «precio al que suele ganarse»), SOLO si la cifra existe, el panel aplica y
+  el descuento equivalente (1 − precio ÷ presupuesto) cae dentro del rango dibujado: una línea pegada al
+  borde diría que el piso está donde no está. El eje vertical lleva `Glosario.traducir("veg")` rotado
+  («Lo que deja por intento»), el `aria-label` también, y el `<h3>` del bloque pide el término con
+  `data-glosario="veg"` (cuarto sitio; la prueba de los tres se actualizó). Margen izquierdo 64 → 92 y
+  los rótulos del eje a x = 24 para que quepa el rótulo rotado. **Lo que la ficha decía y no se
+  adoptó**: `stroke="var(--viz-grid)"` para las referencias (es el tono tenue de la rejilla: en oscuro
+  no se distinguiría de ella) → `var(--text-secondary)`, distinto del acento del óptimo; rótulos
+  «piso»/«techo» (vocabulario interno) → las palabras del panel; el rótulo «Valor esperado de la
+  ganancia» → el glosario, que es la regla de la casa desde el encargo 2. Los hermanos que decían «valor
+  esperado» a mano en la misma pestaña (tarjeta de rentabilidad, nota de la opción coincidente, las dos
+  frases de la meseta) y en el detalle de la tarjeta de Licitaciones pasan al glosario, con un CENSO de
+  todo app.js sin comentarios (cero «valor esperado»/«VEG» en código). Medido en Chromium con un arnés
+  COMPLETO (corpus, histórico 2024-2025, índice de baja reconstruido y catálogo cargado: sin histórico el
+  optimizador responde «sin centro de mercado» y no hay curva) entrando en Precios con la cadena de la
+  tarjeta del caso de la suite (GOBERNACIÓN DEL TOLIMA, 1.500 M, Antioquia) y un ítem de 600 m³: la
+  línea del techo (5 % de baja) pintada en rgb(92,89,82) claro / rgb(177,173,164) oscuro, rótulo y eje a
+  11 px dentro del SVG, título «Lo que deja por intento según el descuento», cero desbordes, consola
+  limpia; el piso (16,5 M frente a 1.500 M, 98,9 % de baja) queda fuera del rango 0-10 % y NO se dibuja,
+  que es lo decidido. Cerradura: `curvaSVG` ejecutada con el optimizador real de la suite y cifras
+  dentro del rango (dos líneas), sin bloque, sin panel aplicable y con una cifra fuera (ninguna).
+  **Observado y NO tocado**: en la misma sección quedan dos nodos con «valor esperado» que vienen del
+  SERVIDOR —«El máximo valor esperado de la ganancia.» (explicación de la opción óptima) y la alerta
+  del óptimo en el borde del rango—: son ocho cadenas de lib/ (seis en `lib/apu/optimizador.js`,
+  `lib/apu/rentabilidad.js:601` y el desglose de probabilidad), la copia del término en el servidor.
+  Cambiarlas es una decisión de lenguaje del servidor (`lib/lenguaje_pantalla` no conoce el glosario
+  del navegador) que excede este remate y toca tres módulos; queda dicho aquí con la medición, no
+  resuelto a medias.
+- **Tres lecciones de método.** (1) Un doble de DOM sin CSS no ve la cascada: cuando el defecto es
+  «una regla le gana a otra», la cerradura es la regla + un censo del marcado + el navegador real; el
+  `hidden === true` de la suite era verdad y el botón estaba pintado. (2) Un diseño «sincronizar en el
+  evento» deja fuera las escrituras por código: la vía única de escritura más la re-sincronización en
+  el punto de LECTURA (abrir la pestaña) cubre el camino que nadie listó. (3) Para medir la curva hace
+  falta un optimizador aplicable, y eso exige histórico + índice de baja + catálogo en el arnés: la
+  cadena de parámetros de la tarjeta del caso de la suite es la receta (queda en
+  `scratchpad/r2_nav_curva.js` de esta sesión, no en el repositorio).
+- **No verificable desde aquí**: producción con Redis real; con qué frecuencia real se guarda un
+  borrador con la barra en un consorcio; la latencia real de SECOP II que decide cuánto dura el giro
+  antes del texto nuevo del sello.
