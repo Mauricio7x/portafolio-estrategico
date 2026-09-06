@@ -469,10 +469,11 @@ texto del pliego con avisos a T-7, T-3 y T-1 y exportación a calendario (.ics c
 
 Respuesta: `{ ok, total, viables, no_viables, solo_viables, resultados, pagina, por_pagina, perfil,
 sincronizado, sincronizado_fresco, ordenado_por, por_match, indice_competencia, conocimiento }`.
-`sincronizado_fresco` (6-sep-2026) es el HECHO que decide el navegador: `true` = el corte tiene
-menos de `FRESCO_MS` del sync (5 min) y `op=sync&modo=auto` respondería «al día» tras tomar y soltar
-el candado, así que no se dispara; `false` = toca disparar; `null` = sin corte conocido (se dispara
-como siempre). `por_match` reparte el
+`sincronizado_fresco` (6-sep-2026) es el HECHO que decide el navegador: `true` = `op=sync&modo=auto`
+respondería «al día» tras tomar y soltar el candado —es la MISMA decisión del sync (`decidirAuto`,
+llamada desde el listado): ninguna full a medias, `meta.ano` del año vigente, full de higiene con
+menos de un mes y corte con menos de `FRESCO_MS` (5 min)—, así que no se dispara; `false` = toca
+disparar; `null` = sin corte conocido (se dispara como siempre). `por_match` reparte el
 total por solidez del match (cuántas son «RUP ✓» y cuántas hay que verificar). Cada resultado trae
 los campos de negocio, `rup` con el **veredicto graduado** —`tier`, `unspsc {codigo_proceso,
 codigo_rup, mensaje}`, `pertinencia {nivel, etiqueta, motivo}`, `capacidad_ok`, `k_cop`, `crpc_cop`—

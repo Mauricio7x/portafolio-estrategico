@@ -497,8 +497,10 @@ ser el literal público de hoy, habría que rotarlo después de cada uso de esa 
 
 El valor vive en **seis sitios** y tienen que cambiar juntos; si no, la aplicación «se sirve a medias
 y sin error visible» (§0). Desde el 6-sep-2026 la suite automática ya no fija el literal: lo LEE de
-los tres archivos de `public/`, exige que los tres coincidan y que este documento y el `README.md`
-lleven el mismo valor. Una rotación a medias pone la suite en rojo antes de llegar a producción.
+los tres archivos de `public/`, exige que los tres coincidan y CENSA este documento y el `README.md`:
+cada `token=<valor>` de URL y cada valor con forma de token en una línea que hable del token (o que
+sea el valor a solas) tiene que ser el integrado. Una rotación a medias —una sola URL con el valor
+viejo— pone la suite en rojo antes de llegar a producción (remate B3b-H2, 6-sep-2026).
 
 | # | Sitio | Qué cambiar |
 | --- | --- | --- |

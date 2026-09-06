@@ -8409,3 +8409,121 @@ en rojo una a una por la aserción nueva. Lo que se decidió y por qué no hay q
   final de la línea), el hermano vive en la posición espejo (al principio de la siguiente).
 - **No verificable desde aquí**: la frecuencia real de la partición en PDFs de RUP (sin
   certificados del dueño); el texto del auto del 9-jul-2026 (proxy 403); producción.
+### Remates «R1b-remates-servidor-B3-B4b» de la ola 1 · V-B3a-01, V-B3a-02, B3b-H1, B3b-H2, B4b-H1 (6-sep-2026)
+
+Cinco hallazgos que los verificadores adversarios devolvieron con reproducción ejecutada sobre los
+lotes «salud y tiempos», «B3b-sync-menor» y «B4b-pulso-cobertura» de esta mañana. Los cinco se
+reprodujeron de nuevo en el árbol actual con la función real antes de tocar nada: `crearCliente({})`
+con Socrata colgado pedía cinco topes de 20 000 ms y dormía 800 + 1 600 + 3 200 + 6 400 + 12 000 ms
+(124 s por página, y ningún llamador de lib/ ni api/ pasaba `timeoutMs`); el error de la prueba de
+la salud medía 41 caracteres sin secretos, con los que `tacharClave(x).slice(0, 200) ===
+String(x).slice(0, 200) === tacharClave(x)`; con los handlers reales sobre los mocks, tres estados
+del corpus daban `sincronizado_fresco: true` y `op=sync&modo=auto` corría una full (125, 125 y 26
+comandos); `docs/CONFIGURACION_TOKENS.md` con UNA URL vieja seguía cumpliendo `includes(TOKEN)`; y
+`pedir` con 503×5 y con 429×4 + 503 decía «p6dx-8zbt: agotados 5 intentos (HTTP 503 en p6dx-8zbt)»
+mientras `detalleCompetencia` devolvía «no se pudo consultar hgi6-6wh3: …». Cada arreglo tiene su
+cerradura en `tests/e2e.js` y diecinueve mutaciones dirigidas (una por regla, aplicadas y
+restauradas con un guion sobre el árbol de trabajo) ponen la suite en rojo una a una por la aserción
+nueva. Lo que se decidió y por qué no hay que re-aprenderlo:
+
+- **El plazo del llamador manda sobre el tope por intento (V-B3a-01).** `crearCliente` acepta
+  `plazoDe()` —los milisegundos que le quedan a la invocación— y `pedir(params, etiqueta,
+  { plazoMs })` da su tiempo a una consulta suelta. Dentro del bucle: el tope de cada intento es
+  `min(20 s, lo que queda)`, un retroceso mayor que lo que queda no se duerme (`sinTiempo`), y tras
+  el quinto intento no se duerme nada (eran hasta 12 s tirados). Los dos clientes que paginan
+  (`sync.js`, `historico.js`) pasan `plazoDe` con el `t0` de la invocación; el PAA (`consultarPaa`
+  y `medirAcierto`) con su presupuesto de 20/25 s, que antes solo miraba ENTRE páginas y con la
+  fuente colgada moría a los 60 s de `maxDuration` sin responder; documentos y seguimiento pasan
+  `{ plazoMs: TIEMPO_MAX_MS }`; y los hermanos que el verificador daba por acotados (socio ×4,
+  proponentes, ejecucion) también, porque su `conTiempo` acotaba al LLAMADOR pero la promesa
+  perdida seguía reintentando contra el cupo de datos.gov.co hasta 124 s. **La distinción que el
+  arreglo obligó a inventar:** «el presupuesto cortó los reintentos» no es lo mismo que «la fuente
+  no responde». La primera versión trataba todo corte como fallo y la suite la desmintió sola
+  (`502 !== 200` en la full de 150 ms con los 429 inyectados del mock: cada 429 sin tiempo para
+  reintentar mataba la full en vez de dejarla reanudable); la versión contraria —todo corte es un
+  «parcial»— habría convertido una fuente colgada en un parcial ETERNO sin `ultimo_error` (con 45 s
+  de presupuesto, cada invocación se cortaría y encadenaría la siguiente para siempre). La regla que
+  quedó: si algún intento arrancó con el tope ENTERO (le quedaban al llamador más de 20 s) y aun así
+  falló, la fuente no responde y es un fallo (`presupuesto_agotado: false` → 502 con rastro; con el
+  presupuesto real de 45 s son dos intentos de 20 s); si TODOS los intentos iban recortados y el
+  tiempo se acabó, es un corte (`presupuesto_agotado: true`) y los tres reanudables lo tratan como
+  el corte entre páginas —`cortar()` en la full (una sola salida para las tres puertas: entre
+  páginas, dentro del count y dentro de la página; un count cortado se vuelve a pedir), `completo =
+  false` en el delta, y el progreso guardado en el histórico—. Medido en la suite: con 1 s de
+  presupuesto y Socrata colgado, sync e histórico responden parciales en 1 005 y 1 006 ms (antes 124 s
+  por página); el PAA con 400 ms responde 502 en menos de 2 s. Límite declarado, no arreglado: un
+  presupuesto menor que lo que tarda UNA página ya no avanza (antes la primera página siempre
+  terminaba porque el tope no miraba el presupuesto); con los 45 s de producción y páginas de 5 000
+  filas no se da, y la suite lo ejerce con el mock local.
+- **El rastro del fallo es una función pura y su cerradura come secretos (V-B3a-02).**
+  `registroDeFallo(error, modo, ahora)` arma `{ts, modo, texto}` en `sync.js`, exportada; el
+  handler la LLAMA en su `catch`. Tachar va ANTES del corte a 200: al revés, un secreto partido por
+  la posición 200 sobreviviría a medias (la cerradura pone uno cruzándola y exige que el texto sea
+  190 «a» y el principio de «clave tachada»). La prueba fija en `process.env` un valor distinto para
+  CADA nombre de `SECRETOS_DEL_ENTORNO`, mete los ocho en un error de 500 caracteres y exige
+  `texto.length === 200` sin que sobreviva ninguno ni su principio; y en el handler real se ESPÍA
+  `tacharClave` en `require.cache` (sync la pide diferida) para saber que el catch pasó por ella y
+  que lo escrito es exactamente lo que devuelve la función. **El censo encontró un hueco real:**
+  `CRON_SECRET` se leía en `lib/auth` desde el lote B3b de esta misma mañana y no estaba en el
+  censo de secretos; ahora está, y la cerradura barre lib/ y api/ sin comentarios por todo
+  identificador `*_TOKEN | *_KEY | *_SECRET` y exige que esté en `SECRETOS_DEL_ENTORNO` (excepción
+  declarada y comprobada: `MIN_LARGO_TOKEN`, una constante de `apu_mapeo` que nadie lee del
+  entorno); a la inversa, ningún nombre del censo puede sobrevivir sin que algún módulo lo use. Se
+  probó que una guarda de tamaño (`length >= 8`) tapaba al censo en la mutación —moría por la lista,
+  no por el barrido— y se retiró: la cerradura tiene que morir por la regla que defiende. Residuo
+  declarado: un handler que inlinee «tachar y cortar» sin llamar a la función es indistinguible por
+  comportamiento; el espía solo caza el inlineado SIN tachar.
+- **El listado publica la MISMA decisión que ejecuta el sync (B3b-H1).** `decidirAuto({meta,
+  progreso, ahora})` → `"continuar_full" | "full" | "delta" | "al_dia"`, pura y exportada en
+  `sync.js`, usada por el propio handler; `listar.js` publica `sincronizado_fresco = decidirAuto(...)
+  === "al_dia"` y conserva `null` sin corte o con corte ilegible (el navegador dispara como hasta
+  hoy). El progreso hace falta para la primera rama, y se lee con `meta` en UN `MGET`
+  (`almacen.leerVariosJSON`, la misma regla de parseo): la pareja listar + decisión sigue costando 9
+  comandos, medido. La cerradura ejecuta la función pura con los cuatro estados, el listado real con
+  los cuatro (false, false, false, true) y el sync real en los dos baratos (a medias → no «al día»;
+  sana → «al día»); las dos fulls de higiene y de año no se ejecutan en la suite porque reescriben el
+  corpus (la función pura y el listado ya las cubren). README y el comentario de `listar.js` dicen
+  ahora las cuatro condiciones. La sección del lote B3b de arriba («true = el sync respondería
+  alDia») era verdad solo en una de las cuatro ramas: queda desmentida aquí, no reescrita.
+- **La rotación del token se comprueba por CENSO de menciones, no por presencia (B3b-H2).** En
+  `README.md` y `docs/CONFIGURACION_TOKENS.md` cuentan TODAS: cada `token=<valor>` de URL y cada
+  palabra con forma de token (≥ 8 caracteres con minúscula, mayúscula y dígito) en una línea que
+  hable de «token» o que sea el valor a solas; todas tienen que ser el integrado y tiene que haber al
+  menos dos por documento. Se midió antes de fijar la forma: barrer TODAS las palabras con esa forma
+  cazaba `validarFormulario1` y dos avisos `GHSA-…` del README, que no están en líneas de token; los
+  marcadores `token=…` (puntos suspensivos) no cuentan porque no son valores. La mutación del
+  verificador (una sola URL con `TokenViejo2024`) pone la suite en rojo con la línea; y un README con
+  el valor viejo entre acentos graves, también.
+- **Cuando la culpa es de la fuente, el mensaje es de persona; y el id del dataset sale del texto
+  (B4b-H1).** `pedir` lanza «datos.gov.co no respondió o limitó las consultas; vuelva a intentarlo en
+  unos minutos» cuando hubo cualquier 429 en la tanda o el último estado fue 5xx (`status` y `detalle`
+  técnico aparte, como antes); un fallo de red o un tiempo de espera agotado siguen diciendo su causa
+  técnica porque pueden ser de este lado (y a `op=salud` le sirve). El lote B4b había dejado el 429
+  como único caso y el prefijo «fuera del alcance de la ficha»: era el mismo patrón, así que los
+  nueve sitios «no se pudo consultar {dataset}: …» dicen ahora QUÉ se consultaba (la lista de
+  proponentes, el registro de sanciones (SIRI), el registro de multas y sanciones de SECOP I, el
+  historial de contratos / adjudicaciones en SECOP II, el historial de contratos de la entidad, el
+  índice de archivos) y el id viaja en `fuente` —la clave ya existía en las bases de cada módulo;
+  `documentos` la gana en su fallo—; el prefijo «no se pudo consultar» se conserva porque
+  `socio.semaforo` lo usa para contar fuentes caídas. Hermanos que el censo destapó y se cambiaron:
+  el motivo «hgi6-6wh3 no publica proponentes…» de la ficha del competidor (ahora «datos.gov.co no
+  publica…»), y los `error` del PAA («… (dataset 9sue-ezhx)») y de su medición, que llevan el id en
+  `dataset`. Tres aserciones de la suite exigían el id DENTRO del motivo («…y nombra el dataset que
+  no respondió»): se invirtieron, porque el hecho que defendían —saber qué fuente falló— vive en
+  `fuente`. Cerraduras: `pedir` con 503×5, 429×4 + 503, 502×5 y 500/429/500…; los ocho motivos
+  ejecutados con la fuente en 503 (socio ×4, proponentes y ejecucion con `fetchImpl`; seguimiento y
+  documentos con el `fetch` global sustituido) sin id, sin código y con «vuelva a intentarlo»; y un
+  censo del fuente de lib/ sin comentarios sobre los literales de `motivo:` y `error:` (id de dataset
+  o `${DATASET`). Observado y no tocado: `public/app.js` sigue diciendo «no se pudo consultar el
+  dataset de proponentes de SECOP II» y «…el dataset de contratos…» alrededor de este motivo (jerga
+  en pantalla; es de public/ y exige navegador real: queda para un lote de interfaz).
+- **Tres lecciones de método.** (1) Un cambio en el transporte cambia lo que significa
+  «presupuesto» para TODOS los llamadores: la primera versión pasó la unidad y la desmintió la full
+  reanudable de la propia suite; antes de decidir qué es un corte hay que ejecutar a los reanudables.
+  (2) Una aserción vale lo que su entrada: con 41 caracteres sin secretos, «tachado y cortado a 200»
+  no se puede demostrar; la cerradura tiene que fabricar la entrada que separa las mutaciones
+  (500 caracteres, un secreto cruzando el corte). (3) Copiar UNA rama de una decisión de cuatro es
+  reescribir la regla, aunque se llame a la constante: se extrae la decisión entera y se llama.
+- **No verificable desde aquí.** El comportamiento real de datos.gov.co ante un 429 con
+  `Retry-After` (proxy 403 el 6-sep-2026) y los tiempos de una página de 5 000 filas en producción,
+  que son los que fijan si 45 s alcanzan para más de una página con la fuente lenta.

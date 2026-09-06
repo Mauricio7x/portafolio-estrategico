@@ -1479,6 +1479,78 @@ async function main() {
       const cliRed = crearCliente({ appToken: "", fetchImpl: async () => { throw new Error("fetch failed"); }, dormir: async () => {} });
       await assert.rejects(() => cliRed.pedir({ "$limit": "1" }, "delta"), (e) => e.status === undefined && /^delta: agotados 5 intentos \(fetch failed\)$/.test(e.message));
     }
+    /* CULPA DE LA FUENTE, EN LENGUAJE DE USUARIO (remate B4b-H1, 6-sep-2026). El 429 era el ÚNICO
+       agotamiento con mensaje propio: con 503×5 la persona veía «{etiqueta}: agotados 5 intentos
+       (HTTP 503 en {etiqueta})» y con 429×4 + 503 el mensaje volvía al técnico porque solo se miraba
+       el último intento (medido con la función real). Ahora cualquier 429 en la tanda, o un 5xx al
+       final, dicen qué hacer; un fallo de red o un tiempo de espera siguen diciendo su causa (pueden
+       ser de este lado) y `detalle` conserva siempre el texto técnico. */
+    {
+      const respuesta = (status) => ({ ok: false, status, headers: { get: (h) => (h === "Retry-After" ? "0" : null) }, text: async () => "" });
+      const agotar = async (secuencia, etiqueta) => {
+        let i = 0;
+        const cli = crearCliente({ appToken: "", fetchImpl: async () => respuesta(secuencia[i++]), dormir: async () => {} });
+        try { await cli.pedir({ "$limit": "1" }, etiqueta); } catch (e) { return e; }
+        throw new Error("tenía que agotarse");
+      };
+      for (const [secuencia, statusFinal] of [[[503, 503, 503, 503, 503], 503], [[429, 429, 429, 429, 503], 503], [[502, 502, 502, 502, 502], 502], [[500, 429, 500, 500, 500], 500]]) {
+        const e = await agotar(secuencia, "contratos vigentes (jbjy-vk9h)");
+        assert.strictEqual(e.status, statusFinal, `el estado final viaja: ${e.message}`);
+        assert.ok(!/HTTP|jbjy|agotados|vigentes/.test(e.message), `con ${secuencia.join("/")} el mensaje no puede llevar código, dataset ni etiqueta: «${e.message}»`);
+        assert.ok(/vuelva a intentarlo/.test(e.message) && /datos\.gov\.co/.test(e.message), `dice qué hacer y quién no respondió: «${e.message}»`);
+        assert.ok(/agotados 5 intentos/.test(e.detalle) && new RegExp(`HTTP ${statusFinal}`).test(e.detalle), `el detalle técnico sigue aparte: ${e.detalle}`);
+      }
+      /* …y los NUEVE sitios que pegan ese mensaje al `motivo` que la persona ve ya no lo encabezan
+         con el id del dataset («no se pudo consultar hgi6-6wh3: …»), que ella no puede abrir: el id
+         viaja en `fuente` y el motivo dice QUÉ se consultaba. Funciones reales con la fuente en 503
+         (socio ×4, proponentes, ejecucion con fetchImpl; seguimiento y documentos con el fetch global). */
+      const fetch503 = async () => respuesta(503);
+      const ID_DATASET = /\b(?=[a-z0-9-]{9}\b)(?=[a-z-]*\d)[a-z0-9]{4}-[a-z0-9]{4}\b/;
+      const motivosVistos = [];
+      const { proponentesDeProcesos } = require("../lib/proponentes.js");
+      const pr503 = await proponentesDeProcesos(["CO1.X.1"], { fetchImpl: fetch503, tiempoMs: 2000 });
+      motivosVistos.push(["proponentes", pr503.fuente, pr503.motivo]);
+      const { ejecucionDeEntidad } = require("../lib/ejecucion.js");
+      const ej503 = await ejecucionDeEntidad({ nit: "899999061", nombre: "IDU" }, { fetchImpl: fetch503, tiempoMs: 2000 });
+      motivosVistos.push(["ejecucion", ej503.fuente, ej503.motivo]);
+      const { verificarSocio } = require("../lib/socio.js");
+      const so503 = await verificarSocio({ identificacion: "79000001" }, { fetchImpl: fetch503, tiempoMs: 2000 });
+      for (const [k, f] of Object.entries(so503.fuentes)) motivosVistos.push([`socio/${k}`, f.fuente, f.motivo]);
+      const fetchGlobal = globalThis.fetch;
+      globalThis.fetch = async (u) => (/dmgg-8hin/.test(String(u)) ? respuesta(503) : /id_del_portafolio/.test(String(u)) ? { ok: true, status: 200, json: async () => [{ id_del_portafolio: "PF-1" }] } : respuesta(503));
+      try {
+        const { detalleCompetencia } = require("../lib/handlers/perfil/seguimiento.js");
+        const dc503 = await detalleCompetencia("CO1.PCCNTR.1", null);
+        motivosVistos.push(["seguimiento", dc503.fuente, dc503.motivo]);
+        const { consultarIndice } = require("../lib/handlers/pliego/documentos.js");
+        const ci503 = await consultarIndice(null, "CO1.BDOS.1");
+        motivosVistos.push(["documentos", ci503.fuente, ci503.motivo]);
+      } finally { globalThis.fetch = fetchGlobal; }
+      assert.strictEqual(motivosVistos.length, 8, "proponentes, ejecucion, las cuatro fuentes del socio, seguimiento y documentos");
+      for (const [sitio, fuente, motivo] of motivosVistos) {
+        assert.ok(/^no se pudo consultar /.test(motivo), `${sitio}: el motivo empieza diciendo el hecho: «${motivo}»`);
+        assert.ok(!ID_DATASET.test(motivo) && !/HTTP|agotados/.test(motivo), `${sitio}: el motivo no puede encabezarse con un id de dataset ni llevar código: «${motivo}»`);
+        assert.ok(/vuelva a intentarlo/.test(motivo), `${sitio}: el motivo dice qué hacer: «${motivo}»`);
+        assert.ok(/^[a-z0-9]{4}-[a-z0-9]{4}$/.test(fuente), `${sitio}: el id del dataset viaja en \`fuente\` (${fuente})`);
+      }
+      // CENSO del fuente (sin comentarios): ningún texto de `motivo:` ni `error:` en lib/ lleva un id de dataset ni ${DATASET
+      const hallazgosId = [];
+      const andarId = (d) => {
+        for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+          const p = path.join(d, e.name);
+          if (e.isDirectory()) andarId(p);
+          else if (e.name.endsWith(".js")) {
+            const src = sinComentarios(fs.readFileSync(p, "utf8"));
+            for (const m of src.matchAll(/\b(?:motivo|error)\s*:\s*(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|`((?:[^`\\]|\\.)*)`)/g)) {
+              const texto = m[1] ?? m[2] ?? m[3] ?? "";
+              if (ID_DATASET.test(texto) || /\$\{DATASET/.test(texto)) hallazgosId.push(`${path.relative(path.join(__dirname, ".."), p)}: ${texto.slice(0, 90)}`);
+            }
+          }
+        }
+      };
+      andarId(path.join(__dirname, "..", "lib"));
+      assert.deepStrictEqual(hallazgosId, [], `textos servidos como motivo/error con un id de dataset dentro:\n${hallazgosId.join("\n")}`);
+    }
     /* LAS CIFRAS DEL CUPO, VERACES Y CON FUENTE (6-sep-2026, M-DGF-04). «~100
        peticiones/hora sin token» y «200 filas por petición» vivían en seis sitios de
        la documentación más el código, sin fuente: Socrata NO publica el cupo sin
@@ -1581,6 +1653,56 @@ async function main() {
     const senales = [];
     await crearClienteT({ appToken: "", fetchImpl: async (u, o) => { senales.push(o.signal); return { ok: true, status: 200, json: async () => [] }; }, dormir: async () => {}, timeoutMs: 999999 }).pedir({ "$limit": "1" }, "x");
     assert.ok(senales.length === 1 && senales[0] instanceof AbortSignal, "cada intento de Socrata lleva su propio AbortSignal");
+    /* EL PLAZO DEL LLAMADOR MANDA SOBRE EL TOPE (remate V-B3a-01, 6-sep-2026). Ningún consumidor
+       pasaba timeoutMs, así que con Socrata colgado UNA página costaba 5 × 20 s + 24 s de retroceso
+       = 124 s (medido) dentro de presupuestos de 45 s (sync), 20 s (paa: la función de 60 s moría sin
+       responder), 6-8 s (documentos, seguimiento). `plazoDe()` dice cuánto le queda al llamador y
+       `{ plazoMs }` da su tiempo a una consulta suelta: ningún intento ni retroceso dura más que lo que
+       queda, y tras el último intento no se duerme. Funciones reales con el reloj de verdad. */
+    {
+      const t1 = Date.now();
+      const cliPlazo = crearClienteT({ appToken: "", fetchImpl: colgado, plazoDe: () => 300 - (Date.now() - t1) });
+      await assert.rejects(() => conPlazo(cliPlazo.pedir({ "$limit": "1" }, "página 2026-01"), 3000),
+        (e) => { assert.ok(!/PLAZO/.test(e.message), "con 300 ms de presupuesto del llamador pedir seguía pendiente: el tope por intento no mira lo que le queda"); return /agotados \d intentos/.test(e.message) && /sin tiempo para reintentar/.test(e.detalle); });
+      assert.ok(Date.now() - t1 < 1500, `un presupuesto de 300 ms no puede costar ${Date.now() - t1} ms`);
+      const t2 = Date.now();
+      await assert.rejects(() => conPlazo(crearClienteT({ appToken: "", fetchImpl: colgado }).pedir({ "$limit": "1" }, "SIRI", { plazoMs: 200 }), 3000),
+        (e) => { assert.ok(!/PLAZO/.test(e.message), "el plazo por consulta ({ plazoMs }) no se respeta"); return /agotados/.test(e.message); });
+      assert.ok(Date.now() - t2 < 1500);
+      // tras el ÚLTIMO intento no se duerme (eran hasta 12 s tirados): cinco fallos, cuatro esperas
+      const esperas = [];
+      await assert.rejects(() => crearClienteT({ appToken: "", fetchImpl: async () => { throw new Error("fetch failed"); }, dormir: async (ms) => { esperas.push(ms); } }).pedir({ "$limit": "1" }, "x"), /agotados 5 intentos/);
+      assert.strictEqual(esperas.length, 4, `cinco intentos fallidos duermen cuatro veces, no ${esperas.length}`);
+      // …ni se duerme un retroceso mayor que lo que queda: presupuesto en 0 tras el primer intento → un intento, ninguna espera
+      let queda = 1000; const esperas2 = [];
+      const e1 = await crearClienteT({ appToken: "", fetchImpl: async () => { queda = 0; throw new Error("fetch failed"); }, dormir: async (ms) => { esperas2.push(ms); }, plazoDe: () => queda }).pedir({ "$limit": "1" }, "delta").catch((e) => e);
+      assert.strictEqual(e1.message, "delta: agotados 1 intentos (fetch failed); sin tiempo para reintentar");
+      assert.deepStrictEqual(esperas2, [], "sin tiempo no se duerme ningún retroceso");
+      assert.strictEqual(e1.presupuesto_agotado, true, "cuando lo que quedaba cortó los reintentos, el error lo dice: los reanudables guardan el cursor");
+      /* …pero una fuente COLGADA no es un corte de presupuesto: si un intento arrancó con el tope
+         entero y aun así no respondió, es un fallo que se publica (con 45 s de presupuesto y 20 s de
+         tope, dos intentos enteros y 502 con rastro; sin esto sería un «parcial» eterno sin error). A
+         escala: tope 50 ms, presupuesto 120 ms → el primer intento va entero. */
+      const t4 = Date.now();
+      const eColgado = await crearClienteT({ appToken: "", fetchImpl: colgado, timeoutMs: 50, plazoDe: () => 120 - (Date.now() - t4) }).pedir({ "$limit": "1" }, "delta").catch((e) => e);
+      assert.ok(/agotados/.test(eColgado.message), eColgado.message);
+      assert.strictEqual(eColgado.presupuesto_agotado, false, `una fuente que no responde con el tope entero es un fallo, no un corte: ${eColgado.detalle}`);
+      assert.ok(Date.now() - t4 < 1000);
+      /* y el PAA, que mira su presupuesto solo ENTRE páginas: con la fuente colgada su sonda tardaba
+         124 s (la función de 60 s moría sin responder); con el presupuesto en el transporte, 502 a tiempo
+         y sin el id del dataset dentro del texto (viaja en `dataset`). Se recarga el módulo con un
+         presupuesto corto porque lo lee del entorno al cargar. */
+      const envPaa = process.env.PAA_PRESUPUESTO_MS; process.env.PAA_PRESUPUESTO_MS = "400";
+      const rutaPaa = require.resolve("../lib/paa.js"); delete require.cache[rutaPaa];
+      try {
+        const { consultarPaa: consultarPaaCorto } = require("../lib/paa.js");
+        const t3 = Date.now();
+        const rPaa = await conPlazo(consultarPaaCorto({ fetchImpl: colgado }), 4000);
+        assert.strictEqual(rPaa.estado, 502, JSON.stringify(rPaa.cuerpo).slice(0, 200));
+        assert.ok(Date.now() - t3 < 2000, `el PAA con 400 ms de presupuesto tardó ${Date.now() - t3} ms`);
+        assert.ok(!/9sue-ezhx|dataset/.test(rPaa.cuerpo.error) && rPaa.cuerpo.dataset === "9sue-ezhx", `el id del dataset viaja aparte del texto: ${rPaa.cuerpo.error}`);
+      } finally { if (envPaa === undefined) delete process.env.PAA_PRESUPUESTO_MS; else process.env.PAA_PRESUPUESTO_MS = envPaa; delete require.cache[rutaPaa]; }
+    }
     // 200 sin JSON: se lanza diciendo qué llegó (40 caracteres), jamás «clave inexistente»
     const sinJson = crearRedisT({ url: "http://x", token: "t", fetchImpl: async () => ({ ok: true, status: 200, text: async () => "<html><body>muro del edge</body></html>" }) });
     await assert.rejects(() => sinJson.get("licitaciones:meta"), /Upstash: respuesta no JSON \(<html><body>muro del edge/,
@@ -8833,7 +8955,8 @@ async function main() {
           assert.strictEqual(caido.encontrada, true, "con hgi6 caído el detalle de la entidad sigue saliendo");
           assert.strictEqual(caido.indice.procesos_contados, 12);
           assert.strictEqual(caido.proponentes.ok, false, "el bloque declara el fallo…");
-          assert.ok(/hgi6/.test(caido.proponentes.motivo), "…y nombra el dataset que no respondió");
+          assert.strictEqual(caido.proponentes.fuente, "hgi6-6wh3", "…el dataset que no respondió viaja en `fuente`…");
+          assert.ok(/^no se pudo consultar /.test(caido.proponentes.motivo) && !/hgi6/.test(caido.proponentes.motivo), `…y el motivo habla de lo consultado, no del id (remate B4b-H1): ${caido.proponentes.motivo}`);
           assert.deepStrictEqual(caido.proponentes.top, [], "sin dato no hay top inventado");
         } finally {
           process.env.PROPONENTES_BASE_URL = antesUrl;
@@ -8886,7 +9009,8 @@ async function main() {
           const caido = (await detalle("IDU", "&refrescar=1")).cuerpo;
           assert.strictEqual(caido.encontrada, true);
           assert.strictEqual(caido.ejecucion.ok, false);
-          assert.ok(/jbjy/.test(caido.ejecucion.motivo));
+          assert.strictEqual(caido.ejecucion.fuente, "jbjy-vk9h");
+          assert.ok(/^no se pudo consultar /.test(caido.ejecucion.motivo) && !/jbjy/.test(caido.ejecucion.motivo), caido.ejecucion.motivo);
           assert.strictEqual(caido.ejecucion.contratos, null, "sin dato no hay conteo inventado");
         } finally {
           process.env.EJECUCION_BASE_URL = antesEj;
@@ -9060,7 +9184,8 @@ async function main() {
           const caido = (await socio(`&id=${SOCIO_NIT}`)).cuerpo;
           assert.strictEqual(caido.ok, true);
           assert.strictEqual(caido.fuentes.siri.ok, false);
-          assert.ok(/iaeu-rcn6/.test(caido.fuentes.siri.motivo));
+          assert.strictEqual(caido.fuentes.siri.fuente, "iaeu-rcn6");
+          assert.ok(/^no se pudo consultar /.test(caido.fuentes.siri.motivo) && !/iaeu-rcn6/.test(caido.fuentes.siri.motivo), caido.fuentes.siri.motivo);
           assert.strictEqual(caido.fuentes.multas_secop1.ok, true, "las demás fuentes salen igual");
           assert.deepStrictEqual(caido.semaforo.fuentes_caidas, ["iaeu-rcn6"]);
           assert.strictEqual(caido.checklist.find((f) => f.clave === "siri").estado, "no_consultada");
@@ -10473,9 +10598,14 @@ async function main() {
       // un puerto CERRADO: los 5 intentos se agotan en milisegundos (uno colgado sería lo mismo con más espera)
       const cerrado = http.createServer(); const puertoCerrado = await escuchar(cerrado); await new Promise((r) => cerrado.close(r));
       process.env.SECOP_BASE_URL = `http://127.0.0.1:${puertoCerrado}/resource/p6dx-8zbt.json`;
+      /* el rastro que se guarda pasa por tacharClave: se ESPÍA la función real en require.cache (sync
+         la pide diferida) para saber que el handler la llamó con el error, y lo guardado tiene que ser
+         EXACTAMENTE lo que arma registroDeFallo (remate V-B3a-02) */
+      const modOcr = require("../lib/apu_ocr.js"); const tacharReal = modOcr.tacharClave; const tachados = [];
+      modOcr.tacharClave = (t) => { tachados.push(String(t)); return tacharReal(t); };
       let rCaido;
       try { rCaido = await invocar(rProcesosS, "/api/procesos?op=sync&modo=delta&chain=0"); }
-      finally { process.env.SECOP_BASE_URL = baseSocrata; }
+      finally { process.env.SECOP_BASE_URL = baseSocrata; modOcr.tacharClave = tacharReal; }
       assert.strictEqual(rCaido.status, 502, `con Socrata caído el sync responde 502: ${JSON.stringify(rCaido.cuerpo)}`);
       assert.ok(/agotados/.test(rCaido.cuerpo.error));
       assert.strictEqual(await redis.get(CLS.lock), null, "el candado queda libre tras el fallo");
@@ -10485,6 +10615,53 @@ async function main() {
       assert.strictEqual(metaCaida.ultimo_error.modo, "delta");
       assert.strictEqual(metaCaida.ultimo_error.texto, tacharS(rCaido.cuerpo.error).slice(0, 200), "el texto guardado es el error real pasado por tacharClave y cortado a 200");
       assert.ok(Number.isFinite(Date.parse(metaCaida.ultimo_error.ts)));
+      const S_ = require("../lib/handlers/procesos/sync.js");
+      assert.ok(tachados.includes(rCaido.cuerpo.error), `el handler pasa el error por tacharClave (el censo de secretos) antes de guardarlo: ${JSON.stringify(tachados)}`);
+      assert.deepStrictEqual(metaCaida.ultimo_error, S_.registroDeFallo(rCaido.cuerpo.error, "delta", Date.parse(metaCaida.ultimo_error.ts)), "lo guardado es exactamente el rastro que arma registroDeFallo");
+      /* registroDeFallo con un error de 500 caracteres que lleva el valor de CADA secreto del censo,
+         uno de ellos cruzando la posición 200 (remate V-B3a-02): la cerradura de arriba solo veía 41
+         caracteres sin secretos (medido), con los que tachar, cortar o borrar un nombre del censo daban
+         el mismo verde. El corte va DESPUÉS del tachado: un secreto partido por el corte no sobrevive. */
+      {
+        const { SECRETOS_DEL_ENTORNO } = modOcr;
+        const guardadosEnv = SECRETOS_DEL_ENTORNO.map((n) => [n, process.env[n]]);
+        const valores = SECRETOS_DEL_ENTORNO.map((n, i) => `sEcReTo${i}_${n.toLowerCase()}_fin${i}`);
+        try {
+          SECRETOS_DEL_ENTORNO.forEach((n, i) => { process.env[n] = valores[i]; });
+          let cuerpo = "a".repeat(190) + valores.join(" · ");
+          while (cuerpo.length < 500) cuerpo += " relleno";
+          cuerpo = cuerpo.slice(0, 500);
+          const reg = S_.registroDeFallo(new Error(cuerpo), "delta", Date.parse("2026-09-06T12:00:00.000Z"));
+          assert.strictEqual(reg.ts, "2026-09-06T12:00:00.000Z"); assert.strictEqual(reg.modo, "delta");
+          assert.strictEqual(reg.texto.length, 200, `el texto guardado se corta a 200 (mide ${reg.texto.length})`);
+          for (const [i, v] of valores.entries()) {
+            assert.ok(!reg.texto.includes(v) && !reg.texto.includes(v.slice(0, 8)), `el valor de ${SECRETOS_DEL_ENTORNO[i]} (o su principio) sobrevive en lo que op=salud publica sin token: ${reg.texto}`);
+          }
+          // el secreto que cruzaba la posición 200 se tachó ENTERO y después se cortó: el texto es 190 «a» y el principio de «clave tachada»
+          assert.ok(reg.texto.startsWith("a".repeat(190) + "«clave tachada»".slice(0, 10)), `el corte tiene que ir después del tachado: ${reg.texto.slice(180)}`);
+          assert.strictEqual(S_.registroDeFallo("texto plano", "full", 0).texto, "texto plano", "una cadena entra tal cual");
+        } finally { for (const [n, v] of guardadosEnv) { if (v === undefined) delete process.env[n]; else process.env[n] = v; } }
+        /* CENSO, no lista: todo nombre *_TOKEN | *_KEY | *_SECRET que lib/ o api/ mencionen (sin
+           comentarios) tiene que estar en SECRETOS_DEL_ENTORNO —un secreto nuevo no puede quedar fuera
+           del tachado: CRON_SECRET llevaba una mañana leyéndose en lib/auth sin estar—, salvo las
+           excepciones declaradas, que tienen que seguir existiendo y no leerse del entorno. */
+        const EXCEPCIONES_SECRETO = new Map([["MIN_LARGO_TOKEN", "lib/apu_mapeo.js: largo mínimo de una palabra del mapeo, no una variable del entorno"]]);
+        const nombresSecreto = new Map();
+        const andarSec = (d) => {
+          for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+            const p = path.join(d, e.name);
+            if (e.isDirectory()) andarSec(p);
+            else if (e.name.endsWith(".js")) for (const m of sinComentarios(fs.readFileSync(p, "utf8")).matchAll(/\b[A-Z][A-Z0-9_]*(?:TOKEN|KEY|SECRET)\b/g)) nombresSecreto.set(m[0], (nombresSecreto.get(m[0]) || 0) + 1);
+          }
+        };
+        for (const d of ["lib", "api"]) andarSec(path.join(__dirname, "..", d));
+        const fueraDelCenso = [...nombresSecreto.keys()].filter((n) => !SECRETOS_DEL_ENTORNO.includes(n) && !EXCEPCIONES_SECRETO.has(n)).sort();
+        assert.deepStrictEqual(fueraDelCenso, [], `nombres de secreto que lib/ o api/ usan y tacharClave no tacha: ${fueraDelCenso.join(", ")}`);
+        for (const n of EXCEPCIONES_SECRETO.keys()) assert.ok(nombresSecreto.has(n), `la excepción ${n} ya no existe en lib/ ni api/: retírela`);
+        const fuentesLibApi = ["lib", "api"].flatMap((d) => { const out = []; const andar = (x) => { for (const e of fs.readdirSync(x, { withFileTypes: true })) { const p = path.join(x, e.name); if (e.isDirectory()) andar(p); else if (e.name.endsWith(".js")) out.push(fs.readFileSync(p, "utf8")); } }; andar(path.join(__dirname, "..", d)); return out; }).join("\n");
+        for (const n of EXCEPCIONES_SECRETO.keys()) assert.ok(!new RegExp(`env(?:\\.|\\[["'])${n}\\b`).test(fuentesLibApi), `${n} se lee del entorno: ya no puede ser excepción`);
+        for (const n of SECRETOS_DEL_ENTORNO) assert.ok(nombresSecreto.has(n), `el censo tacha ${n}, que ya ningún módulo lee: decida si retirarlo`);
+      }
 
       const antesCmd = upstash.peticiones();
       const rSalud = await invocar(rProcesosS, "/api/procesos?op=salud");
@@ -10528,6 +10705,44 @@ async function main() {
       const rSalud2 = await invocar(rProcesosS, "/api/procesos?op=salud");
       assert.strictEqual(rSalud2.cuerpo.medicion_listado.filas_corpus, rLista2.cuerpo.medicion.filas_corpus, "op=salud repite la última medición del listado de la instancia");
       assert.strictEqual(rSalud2.cuerpo.medicion_listado.instancia_caliente, true);
+
+      /* SOCRATA COLGADO: EL PRESUPUESTO MANDA (remate V-B3a-01). Un servidor que acepta y no responde:
+         antes, con presupuesto de 1 s, la invocación tardaba 5 × 20 s + retrocesos (124 s medidos) porque
+         ningún llamador pasaba su plazo al cliente; ahora responde 502 dentro del presupuesto, con el
+         candado libre y el fallo escrito. El mismo cliente con presupuesto lleva el histórico. */
+      {
+        const conPlazoS = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(`PLAZO: seguía pendiente tras ${ms} ms`)), ms))]);
+        const colgadoSrv = http.createServer(() => { /* nunca responde */ });
+        const enchufes = new Set(); colgadoSrv.on("connection", (s) => { enchufes.add(s); s.on("close", () => enchufes.delete(s)); });
+        const puertoColgado = await escuchar(colgadoSrv);
+        const progHistAntes = await redis.get(CLS.progresoHistorico), metaHistAntes = await redis.get(CLS.metaHistorico);
+        process.env.SECOP_BASE_URL = `http://127.0.0.1:${puertoColgado}/resource/p6dx-8zbt.json`;
+        let rColgado, rHistColgado; const tC = Date.now(); let tH;
+        try {
+          rColgado = await conPlazoS(invocar(rProcesosS, "/api/procesos?op=sync&modo=delta&presupuesto=1000&chain=0"), 8000);
+          tH = Date.now();
+          rHistColgado = await conPlazoS(invocar(rProcesosS, "/api/procesos?op=historico&desde=2024-03&hasta=2024-03&reiniciar=1&presupuesto=1000&chain=0", CAB_TOKEN), 8000);
+        } finally {
+          process.env.SECOP_BASE_URL = baseSocrata;
+          for (const s of enchufes) s.destroy();
+          await new Promise((r) => colgadoSrv.close(r));
+          if (progHistAntes == null) await redis.del(CLS.progresoHistorico); else await redis.set(CLS.progresoHistorico, progHistAntes);
+          if (metaHistAntes == null) await redis.del(CLS.metaHistorico); else await redis.set(CLS.metaHistorico, metaHistAntes);
+        }
+        const duracionC = tH - tC, duracionH = Date.now() - tH;
+        /* con 1 s de presupuesto (menos que el tope de 20 s) el intento va recortado: es un CORTE
+           por presupuesto —cursor guardado, done:false, la siguiente invocación continúa—, no un
+           fallo; con el presupuesto real de 45 s el intento entero de 20 s sí es fallo (unidad arriba) */
+        assert.strictEqual(rColgado.status, 200, JSON.stringify(rColgado.cuerpo).slice(0, 200));
+        assert.strictEqual(rColgado.cuerpo.done, false, `el delta cortado por presupuesto queda parcial: ${JSON.stringify(rColgado.cuerpo).slice(0, 200)}`);
+        assert.ok(duracionC < 4000, `con 1 s de presupuesto y Socrata colgado el sync tardó ${duracionC} ms`);
+        assert.strictEqual(await redis.get(CLS.lock), null, "el candado queda libre");
+        assert.strictEqual(rHistColgado.status, 200, JSON.stringify(rHistColgado.cuerpo).slice(0, 200));
+        assert.strictEqual(rHistColgado.cuerpo.done, false, "el histórico cortado por presupuesto queda parcial");
+        assert.ok(duracionH < 4000, `con 1 s de presupuesto y Socrata colgado el histórico tardó ${duracionH} ms`);
+        assert.strictEqual(await redis.get(CLS.lockHistorico), null, "el candado del histórico queda libre");
+        console.log(`  · Socrata colgado con presupuesto de 1 s: sync parcial en ${duracionC} ms, histórico parcial en ${duracionH} ms (antes, 124 s por página)`);
+      }
 
       /* la corrida BUENA siguiente borra el fallo: op=salud vuelve a ok y el listado deja de avisar */
       const rBien = await invocar(sync, "/api/sync?modo=delta&presupuesto=20000&chain=0");
@@ -10687,10 +10902,45 @@ async function main() {
         assert.strictEqual(viejo.r.cuerpo.sincronizado_fresco, false, "pasado FRESCO_MS el dato NO es fresco");
         assert.strictEqual((await conCorte(undefined)).r.cuerpo.sincronizado_fresco, null, "sin corte conocido es null, no false");
         assert.strictEqual((await conCorte("no-es-fecha")).r.cuerpo.sincronizado_fresco, null, "corte ilegible = sin dato, no false");
+        /* LAS CUATRO RAMAS, NO UNA (remate B3b-H1, 6-sep-2026). El listado copiaba solo «corte < FRESCO_MS»
+           y decía «fresco» —el navegador no disparaba— en tres estados en los que op=sync&modo=auto REAL
+           lanzaba una full (medido: 125, 125 y 26 comandos): full de higiene vencida, meta.ano de otro
+           año y full a medias con la cadena muerta. Ahora publica `decidirAuto(...) === "al_dia"`, la
+           MISMA función que el handler ejecuta. Se prueba la función pura con los cuatro estados, el
+           listado real con los cuatro, y el sync real en los dos baratos (a medias → NO al día; sana → al día). */
+        const progresoOriginal = await redis.get(CLF.progreso);
+        const ahoraF = Date.now(), fresco1s = new Date(ahoraF - 1000).toISOString();
+        const metaSana = { ...metaOriginal, last_sync: fresco1s, last_full: new Date(ahoraF - 3600e3).toISOString(), ano: require("../lib/socrata.js").anoVigente() };
+        const progresoSano = JSON.parse(progresoOriginal || "null");
+        assert.ok(progresoSano && progresoSano.tipo === "full" && progresoSano.terminado === true, `hace falta una full terminada para medir: ${String(progresoOriginal).slice(0, 80)}`);
+        const estados = [
+          ["full de higiene vencida (40 días)", { ...metaSana, last_full: new Date(ahoraF - 40 * 86400e3).toISOString() }, progresoSano, "full", false],
+          ["full de otro año", { ...metaSana, ano: metaSana.ano - 1 }, progresoSano, "full", false],
+          ["full a medias (cadena muerta)", metaSana, { ...progresoSano, terminado: false }, "continuar_full", false],
+          ["corte fresco y full sana", metaSana, progresoSano, "al_dia", true],
+        ];
+        try {
+          for (const [nombre, m, p, decisionEsperada, frescoEsperado] of estados) {
+            assert.strictEqual(S.decidirAuto({ meta: m, progreso: p, ahora: ahoraF }), decisionEsperada, `decidirAuto con ${nombre}`);
+            await escribirF(redis, CLF.meta, m); await escribirF(redis, CLF.progreso, p);
+            await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN);
+            const antesL = upstash.peticiones();
+            const rL = await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN);
+            assert.strictEqual(rL.cuerpo.sincronizado_fresco, frescoEsperado, `listar con ${nombre}: el sync ${frescoEsperado ? "respondería" : "NO respondería"} «al día»`);
+            assert.strictEqual(upstash.peticiones() - antesL, fresco.comandos, `leer el progreso no puede costar un comando más (${nombre})`);
+          }
+          // y el sync REAL en los dos estados baratos: la decisión publicada es la que ejecuta
+          await escribirF(redis, CLF.meta, metaSana); await escribirF(redis, CLF.progreso, { ...progresoSano, terminado: false });
+          const rMedias = await invocar(S, "/api/sync?modo=auto&chain=0&baja=0", CAB_TOKEN);
+          assert.notStrictEqual(rMedias.cuerpo.alDia, true, `con la full a medias el sync NO responde «al día»: ${JSON.stringify(rMedias.cuerpo).slice(0, 120)}`);
+          await escribirF(redis, CLF.meta, metaSana); await escribirF(redis, CLF.progreso, progresoSano);
+          const rSana = await invocar(S, "/api/sync?modo=auto&chain=0&baja=0", CAB_TOKEN);
+          assert.strictEqual(rSana.cuerpo.alDia, true, JSON.stringify(rSana.cuerpo).slice(0, 120));
+        } finally { await escribirF(redis, CLF.meta, metaOriginal); if (progresoOriginal == null) await redis.del(CLF.progreso); else await redis.set(CLF.progreso, progresoOriginal); }
       } finally { await escribirF(redis, CLF.meta, metaOriginal); }
-      // listar no copia el umbral: LLAMA a FRESCO_MS del sync
+      // listar no copia la decisión ni el umbral: LLAMA a decidirAuto del sync
       const srcListar = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", "listar.js"), "utf8"));
-      assert.ok(/FRESCO_MS/.test(srcListar) && !/5 \* 60e3|300000|300e3/.test(srcListar), "listar.js llama a FRESCO_MS del sync, no copia los 5 minutos");
+      assert.ok(/decidirAuto\(/.test(srcListar) && !/FRESCO_MS|5 \* 60e3|300000|300e3/.test(srcListar), "listar.js llama a decidirAuto del sync, no copia los 5 minutos ni una de sus ramas");
       // y el navegador decide con el campo: la llamada tras la lista está condicionada y lleva la llave
       const appSrcF = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
       assert.ok(/if \(cuerpo\.sincronizado_fresco !== true\) fetch\("\/api\/procesos\?op=sync&modo=auto", opcionesSync\(\)\)/.test(appSrcF),
@@ -14635,9 +14885,22 @@ async function main() {
         for (const x of tokensIntegrados) {
           assert.strictEqual(x.token, TOKEN_INTEGRADO, `public/${x.archivo} lleva otro token integrado que app.js: una rotación a medias sirve la aplicación a medias`);
         }
+        /* CENSO, no presencia (remate B3b-H2, 6-sep-2026): `includes(TOKEN_INTEGRADO)` daba verde con un
+           documento rotado A MEDIAS (una URL con el valor viejo y las demás con el vigente: medido, la
+           suite pasaba y el dueño pegaría esa URL y recibiría 401). Ahora TODAS las menciones cuentan:
+           cada `token=<valor>` de URL, y cada palabra con forma de token (≥ 8 caracteres con minúscula,
+           mayúscula y dígito) en una línea que hable de token o que sea el valor a solas. §10 exige
+           «todas las menciones del valor viejo»: esto es lo que lo comprueba. */
+        const FORMA_TOKEN = /(?<![\w.\/-])(?=[A-Za-z0-9_-]{8,}(?![\w.\/-]))(?=[A-Za-z0-9_-]*[a-z])(?=[A-Za-z0-9_-]*[A-Z])(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]+/g;
         for (const doc of ["README.md", "docs/CONFIGURACION_TOKENS.md"]) {
-          assert.ok(fs.readFileSync(path.join(__dirname, "..", doc), "utf8").includes(TOKEN_INTEGRADO),
-            `${doc} no lleva el token integrado vigente: el dueño pegaría en Vercel un valor viejo`);
+          const menciones = [];
+          fs.readFileSync(path.join(__dirname, "..", doc), "utf8").split("\n").forEach((l, i) => {
+            for (const m of l.matchAll(/[?&]token=([A-Za-z0-9_-]+)/g)) menciones.push({ linea: i + 1, valor: m[1] });
+            if (/token/i.test(l) || /^\s*[A-Za-z0-9_-]{8,}\s*$/.test(l)) for (const m of l.matchAll(FORMA_TOKEN)) menciones.push({ linea: i + 1, valor: m[0] });
+          });
+          assert.ok(menciones.length >= 2, `${doc} tiene que mencionar el token integrado (el dueño lo pega desde ahí)`);
+          const viejas = [...new Map(menciones.filter((m) => m.valor !== TOKEN_INTEGRADO).map((m) => [`${m.linea}:${m.valor}`, m])).values()];
+          assert.deepStrictEqual(viejas, [], `${doc} rotado a medias: menciones con otro valor que el integrado (${TOKEN_INTEGRADO}): ${JSON.stringify(viejas)}`);
         }
         assert.ok(unoJs.includes(`const TOKEN = "${TOKEN_INTEGRADO}"`), "app.js sin el token integrado");
         assert.ok(!unoHtml.includes('id="modal-token"') && !unoHtml.includes('id="form-token"'),
