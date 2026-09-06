@@ -10057,3 +10057,166 @@ verdad en la caja de búsqueda. Y el efecto de todo esto en producción con Redi
 **Pasos del dueño.** Ninguno: los cuatro lotes ya estaban desplegados o pendientes de despliegue y
 estos remates no añaden nada que pulsar. Si ya había pulsado «Cargar catálogo APU» (paso del lote
 B7a), el panel enseñará la frase nueva sin volver a cargarlo: solo cambió el texto de la pantalla.
+
+### Remates «R4-remates-inteligencia» de la ola 2 · B9a-H1/H2/H3, B9b-H1/H2/H3/H4/H5 (6-sep-2026)
+
+En una línea: el desenlace de un proceso cerrado lo decide el hecho PUBLICADO y no una fecha suelta
+(un «Desierto» con fecha de adjudicación entraba en la base de ADJUDICADOS y su falso plazo en la
+mediana), la fecha de adjudicación del pliego anterior o igual al cierre deja de afirmarse y se dice
+por qué, el perfil del competidor identificado solo por nombre da la razón REAL de que no haya cifra
+(y no «hay 0» con seis ganados), una baja mediana ≤ 0 se dice como hecho y no como «−2 % por debajo
+del presupuesto oficial», y «adjudicados» deja de nombrar a los procesos CON DATO DE OFERENTES en
+las dos pantallas que lo hacían.
+
+Ocho hallazgos de dos verificadores adversarios sobre los lotes B9a y B9b de hoy, todos con
+reproducción ejecutada. Los ocho se reprodujeron en el árbol y los ocho se arreglaron. Ninguno pidió
+relajar una regla dura; el que rozaba una (B9b-H2, la regla de identidad del índice de baja) se
+resolvió sin tocarla — se cambió lo que se DICE, no lo que se mide.
+
+- **El desenlace lo decide el hecho publicado (B9b-H3, media).** `acumular` hacía
+  `esAdjudicado(lic) ? "adjudicado" : esDesierto(lic) ? "desierto" : null`, y `esAdjudicado` se
+  contenta con una FECHA de adjudicación — que un declarado desierto también trae, porque es el día
+  en que se declaró. Medido con `construirIndice` real sobre 6 adjudicados + 2 desiertos (uno con
+  `fecha_adjudicacion`): el hash publicaba `{adjudicados: 7, desiertos: 1}` en vez de 6 y 2, el
+  «plazo» del desierto entraba en la mediana y el modal decía «Declaró desierto 1 de sus 8»; con un
+  solo desierto habría dicho «No declaró desierto ninguno», creíble y falso. **Un dato PUBLICADO
+  gana a uno CALCULADO**: `esDesierto` lee el estado y la fase, que son campos publicados; la fecha
+  sola es una inferencia. Se extrajo `adjudicacionAfirmada(lic)` —la parte dura de `esAdjudicado`:
+  `adjudicado=Si`, ganador real o valor > 0— y nació `desenlaceDe(lic)`, la ÚNICA regla:
+  `desierto` cuando el estado o la fase lo dicen y nada afirma la adjudicación; `adjudicado` con la
+  regla de siempre; y un tercer valor, `desierto_con_adjudicacion`, para la CONTRADICCIÓN (dice las
+  dos cosas: pasa en procesos por lotes, donde un lote se declara desierto y otro se adjudica), que
+  **no entra en ninguna de las dos bases** y solo se cuenta en la meta para poder medirla en
+  producción tras desplegar. Ante la duda no se inventa un desenlace. **Cuatro llamadores más pasan
+  a preguntar por el desenlace, no por `esAdjudicado`**: `cuentaParaCompetencia` (el desierto con
+  fecha engordaba `total_procesos_adjudicados` del detalle, que es cifra de pantalla),
+  `lib/columnas_historicas` (el censo que DIAGNOSTICA el índice: con dos órdenes distintos
+  diagnosticaría otra cosa), `lib/cobertura_rup` (cuyo propio comentario ya decía «un desierto no
+  dice con qué código se contrata») y `lib/apu/precios.referenciaDeMercado` (módulo de precios: el
+  falso caro es el POSITIVO). **Hermano guardado**: `lib/proyeccion.marcarHistorico` estampaba
+  `fue_adjudicado: esAdjudicado(registro)` en el corpus, o sea un «sí hubo ganador» falso esperando
+  a su primer lector; ahora sale de `desenlaceDe`. **Dos llamadores se dejan como están, y se
+  declara por qué**: `lib/equivalencias` y `competencia_detalle` (el perfil del competidor) piden
+  `esAdjudicado` y acto seguido `claveAdjudicatario`, que exige un ganador real — un desierto con
+  solo la fecha nunca pasa; y para uno que además nombre a un ganador, sacarlo del perfil
+  INFRAVALORARÍA lo que esa empresa ganó, que es el error contrario en un módulo que solo describe.
+- **La fecha del pliego anterior al cierre no se afirma (B9b-H1, media).** `plazoAdjudicacionDe` del
+  índice ya rechazaba ese par como `no_posterior_al_cierre` («adjudicar el mismo día del cierre o
+  antes no es un plazo») y `adjudicacionDeFila` tomaba la del pliego sin mirar el cierre: hermano
+  vivo de la guarda. Medido: cierre 25-ago con pliego 20-ago → `{fecha: "2026-08-20", origen:
+  "pliego"}` y la ficha decía «20 de agosto de 2026 (fecha del cronograma del pliego)». Escenario
+  real: la entidad prorroga el cierre después de que el usuario leyó el pliego —la propia
+  aplicación mide esas prórrogas (M-DGF-06)— y la fecha guardada queda atrás. Ahora, con `<=` (el
+  mismo umbral del índice, no uno nuevo), la del pliego no se toma; se cae al histórico si lo hay y
+  la fila lleva `pliego_desfasado` con la fecha descartada, que `textoAdjudicacion` dice: «La fecha
+  de adjudicación del cronograma del pliego (20 de agosto de 2026) quedó antes del cierre:
+  verifíquela en el cronograma del proceso», sola o detrás de la estimación. **Callarlo no era una
+  opción**: el usuario ya leyó esa fecha en el pliego y tiene que saber que dejó de valer. Sin día
+  de cierre no hay con qué comparar y la del pliego sigue siendo lo único que hay. El hermano de
+  esta guarda en la fecha de MANIFESTACIÓN ya estaba cubierto (`fecha_cronograma_descartada`, que
+  audita el descarte por fuera del rango legal): se comprobó y no hacía falta tocarlo.
+- **La razón de que no haya cifra tiene que ser la de verdad (B9b-H2, media).** Un competidor que
+  SECOP identifica SOLO POR NOMBRE —sin NIT, caso que la propia app declara frecuente— salía con
+  «Baja media con la que gana: sin dato (hacen falta 5 procesos ganados con presupuesto y valor
+  adjudicado; hay 0)» justo debajo de «6 contratos». Medido con `detalleAdjudicatario` real:
+  `total_ganados: 6`, `procesos_con_valor: 6`, `descartados.adjudicatario_no_definido: 6`. Los seis
+  traían las dos cifras; lo que los deja fuera es la regla de identidad del índice de baja
+  (`adjudicatarioReal` exige NIT). **La regla NO se relaja** —es el lado conservador del módulo de
+  precios y la memoria del 6-sep lo decidió así—: lo que cambia es lo que se dice. El servidor
+  redacta el motivo con la causa real («SECOP no publica el NIT del ganador en 6 de los procesos que
+  ganó, y esta medida solo cuenta los que sí lo traen», más «con los N restantes no se llega a los 5
+  que hacen falta» si hay algunos utilizables) y **la pantalla pinta `bm.motivo` en vez de
+  reescribirlo**: había dos redacciones del mismo motivo, la del servidor y la de app.js, y solo la
+  del servidor sabe por qué. El mismo arreglo cubre el hermano que el lote anterior declaró («No
+  Definido» + `codigoproveedor`, el caso GPS S.A.S de producción), cuya cerradura exigía
+  literalmente el «hay 0» falso: se corrigió.
+- **Una baja mediana ≤ 0 no es «−2 % por debajo del presupuesto oficial» (B9b-H4, baja).** El índice
+  admite bajas negativas hasta −10 (`BAJA_MIN`) y `subRegistro` devuelve mediana −2 sin problema.
+  `mensajeDe` y `mensajeDepartamento` del servidor ya tienen su rama («aquí se gana sin bajar el
+  precio»), pero las dos frases nuevas del lote no la llamaban: la tarjeta decía «Cómo se adjudica
+  en TOLIMA: −2 % de baja» y a renglón seguido, en el MISMO párrafo, la frase del servidor decía
+  «se gana sin bajar el precio». Las dos funciones de pantalla ganan la rama ≤ 0 con las MISMAS
+  palabras del servidor («sin bajar el precio»), y en el perfil del competidor la mitad central
+  tampoco se pinta: un intervalo de bajas negativas se volvería a leer como descuento.
+- **«Adjudicados» no es «con dato de oferentes» (B9a-H1, media, y su hermano).**
+  `reparto_por_anio[a].procesos` se alimenta DESPUÉS del descarte por conteo de oferentes
+  (`competencia_detalle`), así que cuenta los procesos del año con ese dato, no los adjudicados.
+  Medido sobre el mismo modal: «En 2024 compitieron 5,5 oferentes por proceso (6 adjudicados) · 11
+  procesos con dato de oferentes» dos líneas encima de «Quién gana aquí (15 procesos con ganador
+  identificado)», con el servidor diciendo `total_procesos_adjudicados: 15`. **Dos cosas distintas
+  no pueden llevar nombres parecidos, y menos el nombre de la otra**: el paréntesis pasa a contar
+  «procesos» y la magnitud la nombra la base, una sola vez y al lado; sin ningún año con base el
+  título es «Procesos con dato de oferentes por año». El **hermano** vivía en el tablero
+  (`htmlMercadoPeriodos`, M-DGF-14): `periodos.por_anio[].procesos` de la meta del índice se
+  alimenta del mismo acumulador y también decía «(2.345 adjudicados)»; misma corrección, y su nota
+  de pie pasa a decir «los procesos del histórico en que se publicó cuánta gente se presentó». La
+  cerradura vieja fijaba literalmente «(12 adjudicados)» —defendía el sustantivo equivocado— y
+  ahora, además de la frase, hay una cerradura sobre el SERVIDOR: la suma de `reparto_por_anio` es
+  `procesos_contados` (8) y NO `total_procesos_adjudicados` (10), sobre el fixture que mezcla las
+  dos cosas a propósito.
+- **El dinero de cada mes del plan, visible (B9a-H2, baja).** La frase prometía «el valor previsto
+  de cada mes se ve al señalar la columna» y en el teléfono no hay puntero: medido en Chromium a
+  390 px, `matchMedia("(hover: none)")` da true y la pulsación sobre la columna no cambiaba nada
+  (mismo HTML antes y después, cero `[role=tooltip]`). El dinero mensual solo existía dentro del
+  `<title>` del SVG — y es media respuesta a «¿cuándo debo tener caja?». Se quita la promesa de
+  puntero y el valor sale en un `<details>` «Ver el valor previsto de cada mes» con un renglón por
+  mes («octubre de 2026 · 20 procesos · $9.300 millones · 4 sin valor publicado»): lo que hay que
+  VER arriba, lo que se TOCA plegado, y ninguna pulsación sin respuesta visible.
+- **`sin_fecha` en pantalla, otra vez (B9a-H3, baja).** El lote B9a dio por «cazado» que la clave
+  interna llegara al texto, pero lo arregló en UN sitio. `lib/socio.js` publica
+  `por_anio[].anio = "sin_fecha"` con la misma convención y `pintarSocio` lo escribía tal cual:
+  «Procesos que ha ganado (SECOP II) … sin_fecha: 3 · 2025: 2», reproducido con `verificarSocio`
+  real (un grupo con `anio` nulo, forma que el `date_trunc_y` del dataset sí produce) y la función
+  real de app.js. **Una invariante se defiende con un CENSO, no con una lista**: la traducción vive
+  ahora en UNA función (`anioLegible`), la llaman las dos pantallas, y la cerradura EJECUTA las dos
+  con el agregado real y exige que ninguna emita un identificador con guion bajo, más un censo del
+  fuente (sin comentarios) de que nadie rotule un año a mano. La convención del servidor se
+  conserva —una sola, en los dos módulos— porque cambiarla a `null` habría dejado dos formas del
+  mismo dato conviviendo.
+- **Dos cerraduras que caían mudas (B9b-H5, baja).** La de la línea del departamento pasaba como
+  mensaje la propia salida (`""` al mutar, o sea «✘ FALLO:» y nada más) y la del conteo de desiertos
+  no llevaba mensaje («0 !== 1» sin decir qué se comparó). Las dos lo tienen ahora, y con la cifra
+  de los dos lados.
+- **Cerraduras (tests/e2e.js)**: `desenlaceDe` y `adjudicacionAfirmada` ejecutados sobre las cuatro
+  formas (desierto con fecha → «desierto»; desierto + `adjudicado=Si` + ganador →
+  `desierto_con_adjudicacion`; adjudicado; cancelado → null), `cuentaParaCompetencia` del desierto
+  con fecha en false y `marcarHistorico(...).fue_adjudicado` en false; **el fixture del desierto de
+  la Gobernación del Tolima trae ya `fecha_adjudicacion`** (es la forma real y sin ella la cerradura
+  no veía nada) y el recálculo desde las filas CRUDAS re-implementa el ORDEN y LLAMA a
+  `adjudicacionAfirmada` para la señal dura; censo = índice sigue exacto; `adjudicacionDeFila` con
+  pliego anterior, igual y sin base, más `textoAdjudicacion` diciendo la fecha descartada y qué
+  hacer; el perfil por clave `n:…` con 6 ganados → motivo con «NIT» y sin «hay 0»; las funciones
+  reales de app.js con mediana −2 y 0, con el motivo del servidor, con «(12 procesos)» y sin
+  «adjudicad» en ninguna de las dos pantallas; el PAA sin «señalar la columna», con el `<details>`
+  y con el dinero fuera del `<title>` (doce renglones); y el censo del guion bajo ejecutando
+  `pintarSocio` y `htmlEntidadPorAnio`.
+- **Mutaciones** (cada una con la prueba dentro, `node tests/e2e.js 1`): revertidos los cinco
+  fuentes del índice cae en «un desierto no puede figurar como adjudicado»; solo `acumular` al orden
+  viejo cae en «desiertos: la meta dice 0 y las filas crudas 1»; `cuentaParaCompetencia` a
+  `esAdjudicado` cae en «un proceso adjudicado sin conteo de oferentes debe quedar contado como
+  descarte» (138 ≠ 137); el censo con su propio orden cae en «censo e índice discrepan sobre los
+  desiertos»; `entrada.js` revertido cae en «una fecha del pliego anterior al cierre no se afirma»;
+  `calendario.js` revertido cae en «la ficha tiene que decir que la fecha del pliego quedó atrás»;
+  `competencia_detalle.js` revertido cae en «"hay 0" con 6 ganados con presupuesto y valor es
+  falso»; y siete mutaciones FINAS de una línea en app.js caen cada una en su aserción («(12
+  adjudicados)», la rama ≤ 0 del competidor, el motivo local, la rama ≤ 0 de la tarjeta, «señalar
+  la columna», `anioLegible` devolviendo la clave cruda, y «(2.345 adjudicados)» del tablero).
+- **Lo que los informes decían y el árbol matizó.** B9b-H3 proponía «si `esDesierto` → desierto
+  aunque traiga fecha o valor» o, alternativamente, excluirlo de las dos bases: se hicieron las DOS,
+  cada una en su caso (la fecha sola pierde contra el estado; una adjudicación afirmada es una
+  contradicción y no se resuelve a la brava). B9a-H3 proponía que `lib/socio.js` publicara
+  `anio: null`: se arregla en la pantalla, que es donde se ve, para no dejar dos convenciones. B9b-H2
+  proponía que «hay X» contara `procesos_con_valor`: se prefirió no decir «hay X» en ese caso — la
+  cifra que falta no es la que bloquea. Las líneas citadas por los informes (app.js:2738, :7462,
+  tests:9046, :9398, :6848) estaban desplazadas por los commits de hoy; mandó el árbol.
+- **No verificable desde aquí (6-sep-2026)**: cuántos procesos del histórico REAL son «Desierto» con
+  fecha de adjudicación (se medirá con `/api/diagnostico` →
+  `columnas_historicas.plazo_adjudicacion.desierto_con_adjudicacion` y con la meta del índice tras
+  reconstruirlo) y cuántas fechas de adjudicación de pliego quedarán desfasadas por prórroga
+  (datos.gov.co y upstash.com responden 403 en el proxy de esta sesión).
+- **Pasos del dueño**: ninguno nuevo. Los dos del lote B9b siguen en pie y ahora importan más:
+  reconstruir el índice de competencia tras desplegar
+  (`https://<su-dominio>/api/sync/historico?reconstruir_indice=true&token=<su token>`, pegando la URL
+  en Chrome) para que el hash publique el desenlace corregido — hasta entonces el hash conserva los
+  desiertos contados como adjudicados —, y leer el cronograma de un proceso (Mis procesos →
+  Cronograma) para que exista su fecha de adjudicación del pliego.

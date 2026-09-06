@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 917536 bytes · 146 secciones · 4 con marcador de superación.
+Derivado del árbol: 932699 bytes · 147 secciones · 4 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -156,4 +156,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Lote «B9a-entidad-graficos» de la consultoría del 4-sep · M-DGF-06, M-DGF-10 (6-sep-2026) | 6-sep-2026 | 9412-9547 | 13456 |  |
 | Lote «B9b-competencia-departamento» de la consultoría del 4-sep · M-COMP-01, M-DGF-08 (6-sep-2026) | 6-sep-2026 | 9548-9718 | 16588 |  |
 | Lote «B10a-exportar-importar» de la consultoría del 4-sep · M-INF-15 (6-sep-2026) | 6-sep-2026 | 9719-9836 | 10748 |  |
-| Remates «R3-remates-pantalla» de la ola 2 · B7a-H1/H2/H3, B7b-H1/H2/H3, B8a-H1/H2/H3/H4, B8b-H1/H2/H3/H4 (6-sep-2026) | 6-sep-2026 | 9837-10060 | 20589 |  |
+| Remates «R3-remates-pantalla» de la ola 2 · B7a-H1/H2/H3, B7b-H1/H2/H3, B8a-H1/H2/H3/H4, B8b-H1/H2/H3/H4 (6-sep-2026) | 6-sep-2026 | 9837-10060 | 20590 |  |
+| Remates «R4-remates-inteligencia» de la ola 2 · B9a-H1/H2/H3, B9b-H1/H2/H3/H4/H5 (6-sep-2026) | 6-sep-2026 | 10061-10223 | 15162 |  |

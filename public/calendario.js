@@ -95,13 +95,23 @@
                     tardó en adjudicar la mitad de sus procesos (el índice de
                     competencia; solo con la base mínima) — y se dice que es
                     una estimación y de dónde sale;
-       null       · ni lo uno ni lo otro: se dice, no se inventa. */
+       null       · ni lo uno ni lo otro: se dice, no se inventa.
+     Y un cuarto (remate B9b-H1, 6-sep-2026): la fecha del pliego que quedó
+     ANTES del cierre vigente —la entidad prorrogó el cierre después de que se
+     leyó el pliego— no se pinta como si fuera el día de la adjudicación; se
+     dice que quedó atrás y que hay que verificarla, con o sin estimación
+     detrás. Callarlo sería enseñar una fecha creíble y falsa. */
   function textoAdjudicacion(a) {
-    if (!a || typeof a !== "object" || !a.fecha) return "Sin fecha publicada ni historial suficiente de la entidad para estimarla";
+    if (!a || typeof a !== "object") return "Sin fecha publicada ni historial suficiente de la entidad para estimarla";
+    const atrasada = a.pliego_desfasado
+      ? `La fecha de adjudicación del cronograma del pliego (${fechaLegibleAnio(a.pliego_desfasado)}) quedó antes del cierre: verifíquela en el cronograma del proceso`
+      : null;
+    if (!a.fecha) return atrasada || "Sin fecha publicada ni historial suficiente de la entidad para estimarla";
     if (a.origen === "pliego") return `${fechaLegibleAnio(a.fecha)} (fecha del cronograma del pliego)`;
     const d = Number(a.dias_habiles);
     const dias = Number.isFinite(d) ? `${miles(d)} ${d === 1 ? "día de oficina" : "días de oficina"}` : "los días de oficina";
-    return `Alrededor del ${fechaLegibleAnio(a.fecha)}, estimado por el histórico: la mitad de los ${miles(a.base)} procesos de esta entidad con fecha de cierre y de adjudicación se adjudicó a más tardar ${dias} después del cierre`;
+    const est = `Alrededor del ${fechaLegibleAnio(a.fecha)}, estimado por el histórico: la mitad de los ${miles(a.base)} procesos de esta entidad con fecha de cierre y de adjudicación se adjudicó a más tardar ${dias} después del cierre`;
+    return atrasada ? `${est}. ${atrasada}` : est;
   }
 
   /* Pesos completos: en el calendario la cifra que decide es el VALOR TOTAL del

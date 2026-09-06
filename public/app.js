@@ -1189,10 +1189,17 @@
      redactada del servidor (`mensaje`) con su n dentro; sin dato dice que
      hacen falta procesos, y sin departamento en el proceso (o sin credencial,
      que la anula) no se pinta nada — «sin dato» no es «cero». */
+  /* B9b-H4 (remate del 6-sep-2026, reproducido): con mediana ≤ 0 la línea decía
+     «−2 % de baja» y a renglón seguido la frase del servidor decía «se gana sin
+     bajar el precio» — dos lecturas contrarias en el mismo renglón. La cifra se
+     sustituye por el hecho, con las MISMAS palabras que ya usa el servidor. */
   function lineaBajaDepartamento(bd) {
     if (!bd || typeof bd !== "object" || !bd.departamento) return "";
-    const conBase = bd.nivel !== "sin_dato" && bd.baja_mediana != null && Number(bd.procesos_contados) > 0;
-    const cifra = conBase ? `<strong>${fmtNum.format(Number(bd.baja_mediana))} %</strong> de baja · ${Number(bd.procesos_contados)} contratos` : "sin dato";
+    const mediana = bd.baja_mediana == null ? null : Number(bd.baja_mediana);
+    const conBase = bd.nivel !== "sin_dato" && mediana != null && Number.isFinite(mediana) && Number(bd.procesos_contados) > 0;
+    const cifra = !conBase ? "sin dato"
+      : mediana <= 0 ? `<strong>sin bajar el precio</strong> · ${Number(bd.procesos_contados)} contratos`
+        : `<strong>${fmtNum.format(mediana)} %</strong> de baja · ${Number(bd.procesos_contados)} contratos`;
     return `<p class="mt-2 text-xs text-gray-600">Cómo se adjudica en ${esc(bd.departamento)}: ${cifra}.
       <span class="text-gray-500">${esc(bd.mensaje || "")}</span></p>`;
   }
@@ -2141,9 +2148,29 @@
       ? ` Suman ${window.Pulso.pesosCortos(suma)} en ${conValor == null ? "los que publican valor" : `${conValor === 1 ? "el que publica" : `los ${conValor} que publican`} valor${sinValor > 0 ? ` (${sinValor} sin valor publicado)` : ""}`}.`
       : (sinValor > 0 ? " Ninguno publica valor." : "");
     const fuera = sinFecha > 0 ? ` ${sinFecha} del plan sin fecha legible ${sinFecha === 1 ? "queda" : "quedan"} fuera del gráfico.` : "";
+    /* EL DINERO DE CADA MES, VISIBLE (remate B9a-H2, 6-sep-2026 · reproducido en
+       Chromium a 390 px). La frase prometía «el valor previsto de cada mes se ve
+       al señalar la columna» y en el teléfono no hay puntero que señalar
+       (`matchMedia("(hover: none)")` da true y la pulsación sobre la columna no
+       cambiaba nada): el dinero mensual solo existía dentro del `<title>` del
+       dibujo. Es media respuesta a «¿cuándo debo tener caja?», así que sale del
+       `<title>` y se puede leer — plegado, porque es lo que se TOCA, y con el
+       mes, el conteo y lo que no publica valor en cada renglón. Ninguna
+       pulsación sin respuesta visible, y ninguna promesa de puntero. */
+    const detalleMeses = cubetas
+      .map((c, i) => ({ c, m: meses[i] }))
+      .filter(({ c }) => c.n != null && c.n > 0)
+      .map(({ c, m }) => {
+        const sinValor = entero(m.sin_cuantia);
+        const plata = m.valor != null && Number.isFinite(Number(m.valor)) && Number(m.valor) > 0
+          ? window.Pulso.pesosCortos(Number(m.valor)) : "sin valor publicado";
+        return `<li>${esc(c.titulo)} · ${c.n} proceso${c.n === 1 ? "" : "s"} · ${esc(plata)}${sinValor > 0 ? ` · ${sinValor} sin valor publicado` : ""}</li>`;
+      }).join("");
     return `<p class="text-sm font-medium">Lo que ${quien} publicar, mes a mes</p>
-      <p class="mt-1 text-xs text-gray-500">Cada columna cuenta procesos previstos; el valor previsto de cada mes se ve al señalar la columna.${dinero}${fuera}</p>
-      ${window.Pulso.columnas(cubetas, { conValor: true })}`;
+      <p class="mt-1 text-xs text-gray-500">Cada columna cuenta procesos previstos.${dinero}${fuera}</p>
+      ${window.Pulso.columnas(cubetas, { conValor: true })}
+      ${detalleMeses ? `<details class="mt-2"><summary class="cursor-pointer text-xs text-gray-500">Ver el valor previsto de cada mes</summary>
+        <ul class="mt-1 space-y-0.5 text-xs text-gray-600">${detalleMeses}</ul></details>` : ""}`;
   }
 
   async function buscarPaa() {
@@ -2753,6 +2780,20 @@
      · la prórroga → una frase literal, solo con los dos grupos: con uno solo no
        se afirma nada («sin dato» no es «nunca» ni «siempre»).
      Son funciones PURAS: la suite las ejecuta con el Pulso real. */
+  /* UNA SOLA REGLA PARA ROTULAR UN AÑO (remate B9a-H3, 6-sep-2026 · defecto
+     reproducido). Varios agregados del servidor agrupan por año y ponen la
+     clave interna `sin_fecha` en la cubeta de lo que no trae fecha: el índice
+     de competencia (`anioDe`) y también `lib/socio.js` (`por_anio[].anio`).
+     `htmlEntidadPorAnio` ya lo traducía en su sitio, pero `pintarSocio` escribía
+     la clave tal cual y «Verifique a su socio» decía «sin_fecha: 3» en pantalla
+     — el hermano vivo del que el lote anterior dio por cazado. Una invariante se
+     defiende con un CENSO, no con una lista: la traducción vive en UNA función
+     que llaman las dos pantallas, y la suite censa que ninguna emita un
+     identificador con guion bajo. */
+  function anioLegible(anio) {
+    const a = String(anio == null ? "" : anio);
+    return /^\d{4}$/.test(a) ? a : "sin fecha";
+  }
   function htmlEntidadPorAnio(rep, minProcesos) {
     const filas = rep && typeof rep === "object"
       ? Object.entries(rep).filter(([, x]) => x && x.procesos != null && Number.isFinite(Number(x.procesos)) && Number(x.procesos) > 0)
@@ -2761,14 +2802,23 @@
     const conPromedio = (x) => x.promedio_oferentes != null && Number.isFinite(Number(x.promedio_oferentes));
     const conBase = filas.filter(([anio, x]) => /^\d{4}$/.test(anio) && conPromedio(x));
     const total = filas.reduce((s, [, x]) => s + Number(x.procesos), 0);
+    /* «ADJUDICADOS» NO ES ESTA MAGNITUD (remate B9a-H1, 6-sep-2026 · defecto
+       reproducido). `reparto_por_anio[a].procesos` cuenta los procesos de ese
+       año CON DATO DE OFERENTES —el servidor lo alimenta después del descarte
+       por conteo—, no los adjudicados: en el mismo modal salían «6 adjudicados»
+       y «15 procesos con ganador identificado» sobre la misma entidad, y el
+       servidor decía `total_procesos_adjudicados: 15`. Dos cosas distintas no
+       pueden llevar nombres parecidos (regla dura), y menos el nombre de la
+       otra: el paréntesis cuenta procesos y la base, una sola vez y al lado,
+       dice de qué procesos habla. */
     const titulo = conBase.length
       ? `En ${conBase.map(([anio, x], k) => (k === 0
-        ? `${esc(anio)} compitieron ${fmtNum.format(x.promedio_oferentes)} oferentes por proceso (${x.procesos} adjudicados)`
+        ? `${esc(anio)} compitieron ${fmtNum.format(x.promedio_oferentes)} oferentes por proceso (${x.procesos} proceso${Number(x.procesos) === 1 ? "" : "s"})`
         : `en ${esc(anio)}, ${fmtNum.format(x.promedio_oferentes)} (${x.procesos})`)).join("; ")}.`
-      : "Procesos adjudicados por año";
+      : "Procesos con dato de oferentes por año";
     const minimo = minProcesos != null && Number.isFinite(Number(minProcesos)) ? `menos de ${minProcesos} procesos` : "pocos procesos";
     const cubetas = filas.map(([anio, x]) => ({
-      etiqueta: /^\d{4}$/.test(anio) ? anio : "sin fecha", // la clave interna del índice no llega a la pantalla
+      etiqueta: anioLegible(anio),   // la clave interna del índice no llega a la pantalla (una sola regla: anioLegible)
       n: Number(x.procesos),
       nota: conPromedio(x) ? `promedio ${fmtNum.format(x.promedio_oferentes)} oferentes` : `sin promedio (${minimo})`,
     }));
@@ -3054,14 +3104,32 @@
      valor adjudicado, con la regla del índice de baja— o «sin dato» con lo que
      falta. Nunca «probabilidad», nunca «ofrezca X %»: es lo que hizo el
      competidor, junto a la baja de la entidad, para que usted decida. */
+  /* Dos remates del 6-sep-2026, los dos reproducidos:
+     · B9b-H2 · el MOTIVO lo redacta el servidor, que es quien sabe por qué no
+       hay cifra: aquí se pintaba siempre «hacen falta 5 …; hay 0» aunque el
+       competidor hubiera ganado 6 con presupuesto y valor (los descartaba la
+       regla de identidad, no la falta de cifras). Una razón creíble y falsa es
+       peor que ninguna. La frase local queda de respaldo para una respuesta
+       vieja sin `motivo`.
+     · B9b-H4 · una mediana ≤ 0 (ganó ofertando POR el presupuesto oficial o por
+       encima; el índice lo admite) no puede decirse «−2 % por debajo del
+       presupuesto oficial»: es la misma rama que `mensajeDe` ya tiene en el
+       servidor, y se dice con sus palabras. La mitad central tampoco se pinta:
+       un intervalo de bajas negativas se leería otra vez como descuento. */
   function htmlBajaAdjudicatario(bm) {
     if (!bm || typeof bm !== "object") return "";
     const n = Number(bm.n), minimo = Number(bm.min_procesos) || 5;
     const med = bm.mediana_pct == null ? null : Number(bm.mediana_pct);
     if (med == null || !Number.isFinite(med) || !Number.isFinite(n) || n <= 0) {
-      return `<p class="mt-1 text-sm text-gray-600">Baja media con la que gana: sin dato (hacen falta ${minimo} procesos ganados con presupuesto y valor adjudicado; hay ${Number.isFinite(n) ? n : 0}).</p>`;
+      const motivo = bm.motivo ? String(bm.motivo)
+        : `hacen falta ${minimo} procesos ganados con presupuesto y valor adjudicado; hay ${Number.isFinite(n) ? n : 0}`;
+      return `<p class="mt-1 text-sm text-gray-600">Baja media con la que gana: sin dato (${esc(motivo)}).</p>`;
     }
-    return `<p class="mt-1 text-sm text-gray-600">Baja media con la que gana: <strong>${fmtNum.format(med)} %</strong> por debajo del presupuesto oficial (${n} procesos ganados con presupuesto y valor adjudicado${bm.p25_pct != null && bm.p75_pct != null ? `; entre ${fmtNum.format(Number(bm.p25_pct))} % y ${fmtNum.format(Number(bm.p75_pct))} % en la mitad central` : ""}).</p>`;
+    const base = `${n} procesos ganados con presupuesto y valor adjudicado`;
+    if (med <= 0) {
+      return `<p class="mt-1 text-sm text-gray-600">Baja media con la que gana: <strong>sin bajar el precio</strong> — ganó ofertando prácticamente por el presupuesto oficial (${base}).</p>`;
+    }
+    return `<p class="mt-1 text-sm text-gray-600">Baja media con la que gana: <strong>${fmtNum.format(med)} %</strong> por debajo del presupuesto oficial (${base}${bm.p25_pct != null && bm.p75_pct != null ? `; entre ${fmtNum.format(Number(bm.p25_pct))} % y ${fmtNum.format(Number(bm.p75_pct))} % en la mitad central` : ""}).</p>`;
   }
 
   function pintarAdjudicatario(d) {
@@ -7625,16 +7693,20 @@
       .filter(([anio, a]) => /^\d{4}$/.test(anio) && a && Number.isInteger(a.procesos) && a.procesos >= suelo && Number.isFinite(a.promedio_oferentes))
       .sort(([a], [b]) => a.localeCompare(b));
     if (conBase.length < 2) return "";
+    /* HERMANO de B9a-H1 (6-sep-2026): `por_anio[a].procesos` del índice también
+       cuenta solo los procesos con conteo de oferentes, así que «(12
+       adjudicados)» nombraba aquí la misma magnitud equivocada. Se dice
+       «procesos» y la nota de abajo dice, una vez, de cuáles habla. */
     const partes = conBase.map(([anio, a], i) => (i === 0
-      ? `En ${anio} compitieron ${fmt1.format(a.promedio_oferentes)} oferentes por proceso (${fmt.format(a.procesos)} adjudicados)`
+      ? `En ${anio} compitieron ${fmt1.format(a.promedio_oferentes)} oferentes por proceso (${fmt.format(a.procesos)} ${a.procesos === 1 ? "proceso" : "procesos"})`
       : `en ${anio}, ${fmt1.format(a.promedio_oferentes)} (${fmt.format(a.procesos)})`));
     const v = cp.ventana_garantias_2026;
     const ventana = v && Number.isInteger(v.procesos_dentro) && v.procesos_dentro >= suelo && Number.isFinite(v.promedio_dentro) && v.desde && v.hasta
-      ? `<p class="mt-1 text-sm">Durante el período electoral (${esc(diaLegible(v.desde))} a ${esc(diaLegible(v.hasta))}) compitieron ${fmt1.format(v.promedio_dentro)} oferentes por proceso (${fmt.format(v.procesos_dentro)} adjudicados).</p>`
+      ? `<p class="mt-1 text-sm">Durante el período electoral (${esc(diaLegible(v.desde))} a ${esc(diaLegible(v.hasta))}) compitieron ${fmt1.format(v.promedio_dentro)} oferentes por proceso (${fmt.format(v.procesos_dentro)} ${v.procesos_dentro === 1 ? "proceso" : "procesos"}).</p>`
       : "";
     return `<h3 class="text-sm font-semibold tracking-tight">Cuánta gente compitió, año a año</h3>
       <p class="mt-1 text-sm">${partes.join("; ")}.</p>${ventana}
-      <p class="mt-1 text-[11px]" style="color: var(--text-secondary);">Medido sobre los procesos adjudicados del histórico; solo se cuenta un año con ${fmt.format(suelo)} o más.</p>`;
+      <p class="mt-1 text-[11px]" style="color: var(--text-secondary);">Medido sobre los procesos del histórico en que se publicó cuánta gente se presentó; solo se cuenta un año con ${fmt.format(suelo)} o más.</p>`;
   }
 
   function pintarDashboard(c, cache) {
@@ -9389,7 +9461,7 @@
         ${filaFuente("Sanciones de la Procuraduría (SIRI)", siri.ok, siri.motivo, `<p class="mt-1 text-sm">${siri.n ? `<strong>${siri.n}</strong> sanción(es) sobre ${esc((siri.consultados || []).join(", "))}` : `Sin coincidencias para ${esc((siri.consultados || []).join(", ") || "—")}`}</p>${listaSiri ? `<ul class="mt-1 list-disc pl-5 text-xs text-gray-700">${listaSiri}</ul>` : ""}<p class="mt-2 text-xs text-gray-500">${esc(siri.nota || "")}</p>`)}
         ${filaFuente("Multas y sanciones (SECOP I)", mu.ok, mu.motivo, `<p class="mt-1 text-sm">${mu.multas ? `<strong>${mu.multas}</strong> multa(s)${mu.valor_total_cop ? ` · ${pesos(mu.valor_total_cop)} en total` : ""}` : "Sin multas registradas"}</p>${ir.lectura ? `<p class="mt-1 text-xs ${ir.senal === "posible_inhabilidad" ? "text-red-700" : ir.senal ? "text-amber-700" : "text-gray-600"}">${esc(ir.lectura)}</p>` : ""}${listaMultas ? `<ul class="mt-1 list-disc pl-5 text-xs text-gray-700">${listaMultas}</ul>` : ""}<p class="mt-2 text-xs text-gray-500">${esc(mu.nota || "")}</p>`)}
         ${filaFuente("Contratos firmados en SECOP II", co.ok, co.motivo, `<p class="mt-1 text-sm">${co.contratos ? `<strong>${co.contratos}</strong> contrato(s) con ${co.entidades_distintas} entidad(es) · ${fecha(co.primera_firma)} → ${fecha(co.ultima_firma)}` : "Sin contratos electrónicos"}</p>${co.contratos ? `<p class="mt-1 text-xs text-gray-700">${co.cancelados.contratos ? `<span class="text-amber-700">${co.cancelados.contratos} cancelado(s)</span> · ` : ""}${co.suspendidos.contratos ? `<span class="text-amber-700">${co.suspendidos.contratos} suspendido(s)</span> · ` : ""}${co.cedidos.contratos ? `<span class="text-amber-700">${co.cedidos.contratos} cedido(s)</span> · ` : ""}${co.prorrogas.contratos ? `${co.prorrogas.contratos} con prórroga (mediana ${co.prorrogas.mediana_dias} días)` : "ninguno con prórroga"}${co.pagos && co.pagos.registra && co.pagos.pct_pagado_de_terminados != null ? ` · ${co.pagos.pct_pagado_de_terminados} % pagado en los terminados con pago registrado` : ""}</p><p class="mt-1 text-xs text-gray-500">${esc(estados)}</p>` : ""}<p class="mt-2 text-xs text-gray-500">${esc(co.nota || "")}</p>`)}
-        ${filaFuente("Procesos que ha ganado (SECOP II)", ad.ok, ad.motivo, `<p class="mt-1 text-sm">${ad.adjudicaciones ? `<strong>${ad.adjudicaciones}</strong> adjudicación(es)${ad.valor_total_cop ? ` · ${pesos(ad.valor_total_cop)}` : ""} · última ${fecha(ad.ultima_adjudicacion)}` : "Sin adjudicaciones registradas"}</p>${(ad.por_anio || []).length ? `<p class="mt-1 text-xs text-gray-700">${ad.por_anio.map((a) => `${esc(a.anio)}: ${a.procesos}`).join(" · ")}</p>` : ""}`)}
+        ${filaFuente("Procesos que ha ganado (SECOP II)", ad.ok, ad.motivo, `<p class="mt-1 text-sm">${ad.adjudicaciones ? `<strong>${ad.adjudicaciones}</strong> adjudicación(es)${ad.valor_total_cop ? ` · ${pesos(ad.valor_total_cop)}` : ""} · última ${fecha(ad.ultima_adjudicacion)}` : "Sin adjudicaciones registradas"}</p>${(ad.por_anio || []).length ? `<p class="mt-1 text-xs text-gray-700">${ad.por_anio.map((a) => `${esc(anioLegible(a.anio))}: ${a.procesos}`).join(" · ")}</p>` : ""}`)}
       </div>
       <p class="mt-4 text-xs font-medium uppercase tracking-wide text-gray-500">Las cinco fuentes antes de firmar</p>
       <ol class="mt-2 space-y-2 text-sm">

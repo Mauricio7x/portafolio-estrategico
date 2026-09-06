@@ -721,6 +721,12 @@ function generarDatasetDetalle() {
         estado_del_procedimiento: e.desierto ? "Declarado desierto" : "Adjudicado",
         fase: e.desierto ? "Declarado desierto" : "Adjudicación",
         ...(e.desierto ? {} : { adjudicado: "Si" }),
+        /* EL DESIERTO TRAE LA FECHA EN QUE SE DECLARÓ (remate B9b-H3, 6-sep-2026).
+           Es la forma real del dataset y es la que rompía el desenlace: con ella
+           `esAdjudicado` daba true y el desierto entraba en la base de ADJUDICADOS
+           (y su «plazo» en la mediana). Sin esta fecha en el fixture, la cerradura
+           de los desiertos no veía nada. */
+        ...(e.desierto ? { fecha_adjudicacion: `${mes}-25T10:00:00.000` } : {}),
         precio_base: String(800e6 + i),
         duracion: "6", unidad_de_duracion: "Meses",
         nombre_del_procedimiento: e.desierto
@@ -3061,6 +3067,32 @@ async function main() {
       assert.ok(/baja_media/.test(cuatro.que_es), "el alcance de la cifra viaja declarado en que_es");
       // sin ranking de adjudicatarios por baja: cada cifra va con su n y el perfil es de UNO
       assert.ok(!("ranking" in seis) && !("posicion" in seis.baja_media), "no hay ranking de empresas: cada cifra viaja con su n");
+      /* ── B9b-H2 (remate del 6-sep-2026 · defecto reproducido): el competidor que
+         SECOP identifica SOLO POR NOMBRE. Ganó 6 con presupuesto y valor, y el
+         motivo decía «hacen falta 5 procesos con presupuesto y valor adjudicado y
+         hay 0»: los descarta la regla de identidad del índice de baja
+         (`adjudicatarioReal` exige NIT), no la falta de cifras. La regla NO se
+         relaja —es el lado conservador del módulo de precios—; lo que no puede
+         seguir es la razón falsa. */
+      {
+        const soloNombre = [10, 11, 12, 13, 14, 16].map((b, i) => proc(160 + i, "ALCALDIA DONDE GANA", b, {
+          depto: "TOLIMA", codigo: "72141100",
+          // sin NIT ni código interno: SECOP solo publica el nombre — el caso que la app dice frecuente
+          campos: { id_del_proceso: `CO1.NOM.${i}`, nit_del_proveedor_adjudicado: undefined, nombre_del_proveedor: "CONSTRUCTORA SOLO NOMBRE SAS", adjudicado: "Si" },
+        }));
+        const rsNom = redisFalso({ "2025-03": [...corpusAdj, ...soloNombre] });
+        await indiceBaja.construirIndiceBaja(rsNom);
+        const nom = (await detalleAdjudicatario(rsNom, "n:constructora solo nombre sas", { usarCache: false })).cuerpo;
+        assert.strictEqual(nom.total_ganados, 6, "premisa: el perfil por nombre encuentra los 6 que ganó");
+        assert.strictEqual(nom.procesos_con_valor, 6, "premisa: los 6 traen valor adjudicado, y el presupuesto va en cada fila");
+        assert.strictEqual(nom.baja_media.mediana_pct, null, "la regla de identidad del índice sigue en pie: sin NIT no entra en la baja");
+        assert.strictEqual(nom.baja_media.descartados.adjudicatario_no_definido, 6);
+        assert.ok(!/hay 0/.test(nom.baja_media.motivo), `«hay 0» con 6 ganados con presupuesto y valor es falso: ${nom.baja_media.motivo}`);
+        assert.ok(/NIT/.test(nom.baja_media.motivo) && /6/.test(nom.baja_media.motivo),
+          `el motivo tiene que ser el de verdad —la identidad del ganador— y con su conteo: ${nom.baja_media.motivo}`);
+        assert.strictEqual(tuteoDep(nom.baja_media.motivo), null, `el motivo habla de usted: ${nom.baja_media.motivo}`);
+        assert.ok(!/indice|hash|redis|dataset|\.js/i.test(nom.baja_media.motivo), `sin infraestructura en pantalla: ${nom.baja_media.motivo}`);
+      }
     }
 
     /* 6. adjudicado < 30 % del oficial → fuera (lotes parciales) */
@@ -7075,12 +7107,19 @@ async function main() {
         const { habilesEntre } = require("../lib/habiles.js");
         const filasHist = await leerHistorico();
         const esperado = new Map();   // clave canónica → {plazos: [], adjudicados, desiertos}
-        let ambasTotal = 0, desiertosTotal = 0, adjudicadosTotal = 0;
+        let ambasTotal = 0, desiertosTotal = 0, adjudicadosTotal = 0, contradictoriosTotal = 0;
         for (const f of filasHist) {
           const k = indiceComp.claveCanonica(f.entidad);
           const e = esperado.get(k) || { plazos: [], adjudicados: 0, desiertos: 0 };
           esperado.set(k, e);
-          if (/desierto/i.test(String(f.estado_del_procedimiento || ""))) { e.desiertos++; desiertosTotal++; continue; }
+          /* EL ORDEN DEL DESENLACE, RECALCULADO AQUÍ (remate B9b-H3, 6-sep-2026):
+             el estado publicado manda sobre una fecha suelta. Se re-implementa el
+             ORDEN —que es lo que se cierra— y se LLAMA a `adjudicacionAfirmada`
+             para la señal dura, que es una regla del índice y no se copia. */
+          if (/desierto/i.test(String(f.estado_del_procedimiento || "")) || /desierto/i.test(String(f.fase || ""))) {
+            if (indiceComp.adjudicacionAfirmada(f)) { contradictoriosTotal++; continue; }  // ni una base ni la otra
+            e.desiertos++; desiertosTotal++; continue;
+          }
           if (!indiceComp.esAdjudicado(f)) continue;
           e.adjudicados++; adjudicadosTotal++;
           const cierre = String(f.fecha_de_recepcion_de || "").slice(0, 10), adj = String(f.fecha_adjudicacion || "").slice(0, 10);
@@ -7091,7 +7130,10 @@ async function main() {
         const pa = metaIdx.plazo_adjudicacion;
         assert.ok(pa && typeof pa === "object", "la meta del índice no publica la cobertura de la pareja de fechas (plazo_adjudicacion)");
         assert.strictEqual(pa.con_ambas_fechas, ambasTotal, `cobertura de la pareja: la meta dice ${pa.con_ambas_fechas} y las filas crudas ${ambasTotal}`);
-        assert.strictEqual(pa.desiertos, desiertosTotal);
+        assert.strictEqual(pa.desiertos, desiertosTotal,
+          `desiertos: la meta dice ${pa.desiertos} y las filas crudas ${desiertosTotal} (un «Desierto» con fecha de adjudicación tiene que seguir siendo desierto: el estado publicado gana a la fecha)`);
+        assert.strictEqual(pa.desierto_con_adjudicacion, contradictoriosTotal,
+          `desierto_con_adjudicacion: la meta dice ${pa.desierto_con_adjudicacion} y las filas crudas ${contradictoriosTotal}`);
         assert.strictEqual(pa.adjudicados, adjudicadosTotal, "los adjudicados de la meta son los de esAdjudicado sobre el corpus entero, tengan o no oferentes");
         assert.ok(pa.sin_fecha_cierre > 0, "los adjudicados sin fecha de cierre (el bloque sin oferentes) se cuentan, no se rellenan con 0 días");
         assert.strictEqual(pa.min_procesos, indiceComp.MIN_PROCESOS);
@@ -7148,6 +7190,27 @@ async function main() {
         assert.deepStrictEqual(indiceComp.plazoAdjudicacionDe({ fecha_de_recepcion_de: "2025-03-10T15:00:00.000", fecha_adjudicacion: "2025-03-10T18:00:00.000" }), { dias: null, motivo: "no_posterior_al_cierre" }, "adjudicar el mismo día del cierre no es un plazo medible");
         assert.strictEqual(indiceComp.esDesierto({ estado_del_procedimiento: "Desierto" }), true);
         assert.strictEqual(indiceComp.esDesierto({ estado_del_procedimiento: "Cancelado" }), false, "cancelado no es desierto: no entra en la base");
+        /* EL DESENLACE lo decide el hecho PUBLICADO (remate B9b-H3, 6-sep-2026 ·
+           defecto reproducido: 6 adjudicados + 2 desiertos, uno con fecha, salían
+           7 y 1, y el «plazo» del desierto entraba en la mediana). */
+        {
+          const desiertoConFecha = { estado_del_procedimiento: "Desierto", fase: "Declarado desierto", adjudicado: "No", fecha_adjudicacion: "2025-03-20T10:00:00.000" };
+          assert.strictEqual(indiceComp.esAdjudicado(desiertoConFecha), true, "premisa del defecto: una fecha suelta basta para esAdjudicado");
+          assert.strictEqual(indiceComp.desenlaceDe(desiertoConFecha), "desierto",
+            "un «Desierto» con fecha de adjudicación sigue siendo DESIERTO: el estado publicado gana a la fecha (un publicado gana a un calculado)");
+          assert.strictEqual(indiceComp.cuentaParaCompetencia(desiertoConFecha), false,
+            "…y tampoco aporta un conteo de competencia: engordaba total_procesos_adjudicados del detalle");
+          assert.strictEqual(indiceComp.desenlaceDe({ estado_del_procedimiento: "Desierto", adjudicado: "Si", nombre_del_proveedor: "GANADORA SAS", nit_del_proveedor_adjudicado: "901234567" }), "desierto_con_adjudicacion",
+            "desierto Y adjudicación afirmada es una contradicción: fuera de las dos bases, contada para poder medirla");
+          assert.strictEqual(indiceComp.desenlaceDe({ estado_del_procedimiento: "Adjudicado", adjudicado: "Si" }), "adjudicado");
+          assert.strictEqual(indiceComp.desenlaceDe({ estado_del_procedimiento: "Cancelado" }), null, "cancelado no tiene desenlace con nombre");
+          assert.strictEqual(indiceComp.adjudicacionAfirmada({ fecha_adjudicacion: "2025-03-20" }), false, "una FECHA no afirma que hubo ganador");
+          assert.strictEqual(indiceComp.adjudicacionAfirmada({ valor_total_adjudicacion: "950000000" }), true);
+          assert.strictEqual(indiceComp.adjudicacionAfirmada({ nombre_del_proveedor: "No Definido" }), false, "un relleno del dataset no es un ganador");
+          // el hermano guardado: lo que el corpus histórico marca como adjudicado
+          const marcado = require("../lib/proyeccion.js").marcarHistorico(desiertoConFecha);
+          assert.strictEqual(marcado.fue_adjudicado, false, "el histórico no puede guardar un desierto marcado como adjudicado");
+        }
         const pubHechos = indiceComp.registroPublicado({ nombre: "X", nit: null, procesos: 0, oferentes_total: 0, promedio: null, mediana: null, nivel: "sin_dato", hechos: { adjudicados: 6, desiertos: 1, plazo: { n: 6, hist: { 5: 2, 7: 3, 30: 1 } } } });
         assert.deepStrictEqual(pubHechos.plazo_adjudicacion, { base: 6, adjudicados: 6, min_procesos: 5, mediana_dias_habiles: 7, p75_dias_habiles: 7 });
         assert.deepStrictEqual(pubHechos.desiertos, { n: 1, adjudicados: 6, base: 7, min_procesos: 5, pct: 14 });
@@ -9341,6 +9404,19 @@ async function main() {
         assert.strictEqual(c.excluidos.length, 3);
         assert.strictEqual(c.indice.procesos_contados, 8);
         assert.strictEqual(c.indice.total_procesos_adjudicados, 10, "el total adjudicado incluye los que no cuentan");
+        /* B9a-H1 (remate del 6-sep-2026): `reparto_por_anio` y
+           `total_procesos_adjudicados` son DOS MAGNITUDES DISTINTAS y aquí se ve
+           con la función real: la suma de los años es la de los procesos con dato
+           de oferentes (8), no la de los adjudicados (10). La pantalla no puede
+           llamar «adjudicados» a la primera —lo hacía— porque en el mismo modal
+           sale la segunda. */
+        {
+          const sumaAnios = Object.values(c.indice.reparto_por_anio || {}).reduce((a, x) => a + Number(x.procesos || 0), 0);
+          assert.strictEqual(sumaAnios, c.indice.procesos_contados,
+            `el reparto por año suma los procesos CON DATO DE OFERENTES (${sumaAnios} vs procesos_contados ${c.indice.procesos_contados})`);
+          assert.notStrictEqual(sumaAnios, c.indice.total_procesos_adjudicados,
+            "este fixture mezcla adjudicados con y sin conteo a propósito: si las dos magnitudes coincidieran, la cerradura del nombre no probaría nada");
+        }
         assert.strictEqual(c.indice.total_procesos_historico, 11, "…y el histórico total incluye además el desierto");
         /* ⚠️ CAMBIO DE DOCTRINA APLICADO (27-ago-2026): esta aserción exigía
            `numero_ofertas === 0` — o sea, fijaba el comportamiento defectuoso.
@@ -9495,7 +9571,12 @@ async function main() {
         assert.strictEqual(perfilCS.baja_media.n, 0, "con NIT «No Definido» la regla del índice no toma la fila: n 0, no 1");
         assert.strictEqual(perfilCS.baja_media.descartados.adjudicatario_no_definido, 1, "…y el descarte se dice con la clave de la meta del índice");
         assert.strictEqual(perfilCS.baja_media.mediana_pct, null);
-        assert.ok(/hacen falta/.test(perfilCS.baja_media.motivo) && /hay 0/.test(perfilCS.baja_media.motivo));
+        /* B9b-H2 (remate del 6-sep-2026): el motivo dice la causa REAL. Aquí es la
+           misma que en el perfil por nombre —SECOP no publica el NIT del ganador—
+           y no «hacen falta 5 … hay 0», que sería falso: la fila trae presupuesto
+           y valor y lo que la deja fuera es la regla de identidad del índice. */
+        assert.ok(/NIT/.test(perfilCS.baja_media.motivo) && !/hay 0/.test(perfilCS.baja_media.motivo),
+          `el motivo tiene que nombrar la identidad del ganador, no una falta de cifras que no existe: ${perfilCS.baja_media.motivo}`);
         assert.deepStrictEqual(perfilCS.identificacion, { tipo: "codigo_secop", valor: "701000123" });
         // clave que no ganó nada: encontrado false, jamás un error
         const nadie = (await invocar(detalleComp,
@@ -9524,7 +9605,7 @@ async function main() {
           };
           const escAdj = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
           const fnsAdj = new Function("window", "esc", "fmtNum", "fmtCorto", "fmtUltima",
-            `${cortarAdj("htmlEntidadPorAnio")}\n${cortarAdj("htmlProrrogaEntidad")}\n${cortarAdj("bloqueAdjudicatarios")}; return { htmlEntidadPorAnio, htmlProrrogaEntidad, bloqueAdjudicatarios };`)(
+            `${cortarAdj("anioLegible")}\n${cortarAdj("htmlEntidadPorAnio")}\n${cortarAdj("htmlProrrogaEntidad")}\n${cortarAdj("bloqueAdjudicatarios")}; return { anioLegible, htmlEntidadPorAnio, htmlProrrogaEntidad, bloqueAdjudicatarios };`)(
             { Pulso: require("../public/pulso.js") }, escAdj, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }),
             (n) => `${n}`, (f) => (f ? String(f).slice(0, 10) : null));
           const { RE_EMOJI_UI: emojiAdj, tuteoEn: tuteoAdj } = require("../lib/lenguaje_pantalla.js");
@@ -9540,7 +9621,13 @@ async function main() {
           assert.ok(/<title>2024: 12 · promedio 3,1 oferentes<\/title>/.test(hA), "el promedio del año con base va en el título de su columna");
           assert.ok(/<title>2025: 4 · sin promedio \(menos de 5 procesos\)<\/title>/.test(hA), "un año con menos procesos que el mínimo dice que no tiene promedio, en vez de inventarlo");
           assert.ok(/<title>sin fecha: 1/.test(hA) && !/sin_fecha/.test(hA), "la clave interna «sin_fecha» no llega a la pantalla");
-          assert.ok(/En 2024 compitieron 3,1 oferentes por proceso \(12 adjudicados\)\./.test(hA), "el título del gráfico es el hecho medido, con la misma redacción que el tablero");
+          /* B9a-H1 (remate del 6-sep-2026, defecto reproducido): esta cifra son los
+             procesos del año CON DATO DE OFERENTES, no los adjudicados —el
+             servidor publica `total_procesos_adjudicados` aparte y es otra—. Dos
+             cosas distintas no pueden llevar nombres parecidos, y menos el nombre
+             de la otra: la magnitud la nombra la base, una sola vez. */
+          assert.ok(/En 2024 compitieron 3,1 oferentes por proceso \(12 procesos\)\./.test(hA), `el título del gráfico es el hecho medido, con la misma redacción que el tablero: ${hA}`);
+          assert.ok(!/adjudicad/i.test(hA), `«adjudicados» nombra otra magnitud (los del hash son los que traen conteo de oferentes): ${hA}`);
           assert.ok(!/2025,/.test(hA) && !/en 2025/.test(hA), "el año sin base no entra en la frase del hecho");
           assert.ok(/17 procesos con dato de oferentes/.test(hA), "la base (n procesos) va al lado del título");
           assert.ok(!/data-filtro/.test(hA), "las columnas del histórico no prometen una lista de procesos abiertos");
@@ -9549,8 +9636,9 @@ async function main() {
           }
           const hSinProm = fnsAdj.htmlEntidadPorAnio({ 2025: { procesos: 3, promedio_oferentes: null } }, 5);
           salidas.push(hSinProm);
-          assert.ok(/<svg/.test(hSinProm) && !/compitieron/.test(hSinProm) && /Procesos adjudicados por año/.test(hSinProm),
-            "sin ningún año con base el título es el conteo, no un promedio");
+          assert.ok(/<svg/.test(hSinProm) && !/compitieron/.test(hSinProm) && /Procesos con dato de oferentes por año/.test(hSinProm),
+            `sin ningún año con base el título es el conteo —y dice de qué conteo habla—, no un promedio: ${hSinProm}`);
+          assert.ok(!/adjudicad/i.test(hSinProm), `tampoco aquí la magnitud se llama «adjudicados»: ${hSinProm}`);
 
           /* (2) quién gana: la barra apilada con «Otros» al FINAL aunque sea la mayor, y la tabla plegada */
           const topAdj = [["ALFA SAS", 6], ["BETA SAS", 5], ["GAMMA SAS", 4], ["DELTA SAS", 3], ["EPSILON SAS", 2]].map(([nombre, ganados], i) => ({
@@ -9638,15 +9726,44 @@ async function main() {
             assert.ok(!/7,6/.test(hB), "lo que se ENSEÑA es la medida, no la encogida (que solo alimenta el factor de precio)");
             assert.ok(!/probabilidad|ofrezca|oferte/i.test(hB), "es un hecho con su n, no una recomendación de precio");
             const hBsin = fnsB9.htmlBajaAdjudicatario({ mediana_pct: null, n: 4, min_procesos: 5, origen: null, motivo: "hacen falta 5 procesos con presupuesto y valor adjudicado y hay 4" });
-            assert.ok(/Baja media con la que gana: sin dato/.test(hBsin) && /hacen falta 5/.test(hBsin) && /hay 4/.test(hBsin), hBsin);
-            assert.strictEqual(fnsB9.htmlBajaAdjudicatario(null), "");
+            assert.ok(/Baja media con la que gana: sin dato/.test(hBsin) && /hacen falta 5/.test(hBsin) && /hay 4/.test(hBsin), `sin dato con lo que falta: ${hBsin}`);
+            assert.strictEqual(fnsB9.htmlBajaAdjudicatario(null), "", "sin baja_media no se pinta nada");
+            /* B9b-H2 (remate del 6-sep-2026, defecto reproducido): el competidor
+               que SECOP identifica solo por NOMBRE ganó 6 con presupuesto y valor
+               y la pantalla decía «hacen falta 5 …; hay 0» — una razón creíble y
+               FALSA (los descarta la regla de identidad). El motivo lo redacta el
+               servidor y la pantalla lo pinta; «hay 0» no aparece. */
+            const hBnom = fnsB9.htmlBajaAdjudicatario({ mediana_pct: null, n: 0, min_procesos: 5, origen: null,
+              motivo: "SECOP no publica el NIT del ganador en 6 de los procesos que ganó, y esta medida solo cuenta los que sí lo traen",
+              descartados: { adjudicatario_no_definido: 6 } });
+            assert.ok(/SECOP no publica el NIT del ganador en 6 de los procesos que ganó/.test(hBnom),
+              `la pantalla dice la causa REAL que redactó el servidor, no una inventada: ${hBnom}`);
+            assert.ok(!/hay 0/.test(hBnom) && !/hacen falta 5/.test(hBnom),
+              `con 6 procesos ganados con presupuesto y valor, «hacen falta 5 … hay 0» es falso: ${hBnom}`);
+            /* B9b-H4 (remate del 6-sep-2026, reproducido): mediana ≤ 0 —ganó por el
+               presupuesto oficial o por encima, que el índice admite hasta −10— no
+               puede decirse «−2 % por debajo del presupuesto oficial». */
+            const hBneg = fnsB9.htmlBajaAdjudicatario({ mediana_pct: -2, promedio_pct: -1.5, p25_pct: -4, p75_pct: 1, n: 6, min_procesos: 5, origen: "medida", motivo: null, encogida: null });
+            assert.ok(!/-2|−2/.test(hBneg.replace(/<[^>]+>/g, " ")) && !/por debajo/.test(hBneg), `una baja negativa no es «−2 % por debajo del presupuesto oficial»: ${hBneg}`);
+            assert.ok(/sin bajar el precio/.test(hBneg) && /6 procesos ganados/.test(hBneg), `se dice el hecho, con las palabras del servidor, y con su n: ${hBneg}`);
+            const hB0 = fnsB9.htmlBajaAdjudicatario({ mediana_pct: 0, p25_pct: 0, p75_pct: 2, n: 7, min_procesos: 5, origen: "medida", motivo: null });
+            assert.ok(/sin bajar el precio/.test(hB0) && !/0 %/.test(hB0.replace(/<[^>]+>/g, " ")) && !/por debajo/.test(hB0), `«0 % por debajo del presupuesto oficial» tampoco: ${hB0}`);
             const lD = fnsB9.lineaBajaDepartamento({ departamento: "TOLIMA", nivel: "alto", baja_mediana: 6, procesos_contados: 12, mensaje: "En TOLIMA los que ganaron descontaron cerca de 6% del presupuesto oficial (12 contratos ya adjudicados en todos los tipos de obra)." });
-            assert.ok(/Cómo se adjudica en TOLIMA: <strong>6 %<\/strong> de baja · 12 contratos/.test(lD), lD);
-            assert.ok(/En TOLIMA los que ganaron/.test(lD), "la frase del servidor viaja entera");
+            /* B9b-H5: el mensaje de la aserción era `lD`, o sea la salida VACÍA
+               cuando la función se muta — caía sin decir nada. Ahora dice qué
+               faltó y qué se pintó en su lugar. */
+            assert.ok(/Cómo se adjudica en TOLIMA: <strong>6 %<\/strong> de baja · 12 contratos/.test(lD),
+              `la tarjeta no pinta la lectura del departamento: ${JSON.stringify(lD)}`);
+            assert.ok(/En TOLIMA los que ganaron/.test(lD), `la frase del servidor viaja entera: ${JSON.stringify(lD)}`);
             const lDsin = fnsB9.lineaBajaDepartamento({ departamento: "CALDAS", nivel: "sin_dato", baja_mediana: null, procesos_contados: 3, mensaje: "Sin dato en CALDAS: hacen falta 5 contratos adjudicados con presupuesto y valor adjudicado y hay 3." });
-            assert.ok(/Cómo se adjudica en CALDAS: sin dato\./.test(lDsin) && /hay 3/.test(lDsin), lDsin);
+            assert.ok(/Cómo se adjudica en CALDAS: sin dato\./.test(lDsin) && /hay 3/.test(lDsin), `sin base, «sin dato» con el conteo: ${JSON.stringify(lDsin)}`);
+            /* B9b-H4 en la tarjeta: decía «−2 % de baja» y a renglón seguido la
+               frase del servidor decía «se gana sin bajar el precio». */
+            const lDneg = fnsB9.lineaBajaDepartamento({ departamento: "TOLIMA", nivel: "bajo", baja_mediana: -2, procesos_contados: 6, mensaje: "En TOLIMA se gana sin bajar el precio: los que ganaron ofertaron prácticamente por el presupuesto oficial (6 contratos ya adjudicados en todos los tipos de obra)." });
+            assert.ok(!/-2|−2/.test(lDneg.replace(/<[^>]+>/g, " ")), `la cifra no puede contradecir a la frase del servidor en el mismo renglón: ${JSON.stringify(lDneg)}`);
+            assert.ok(/Cómo se adjudica en TOLIMA: <strong>sin bajar el precio<\/strong> · 6 contratos/.test(lDneg), `se dice el hecho: ${JSON.stringify(lDneg)}`);
             assert.strictEqual(fnsB9.lineaBajaDepartamento(null), "", "sin lectura (sin departamento o sin credencial) no se pinta nada");
-            textos.push(hP, hP1, hPsin, hD, hD0, hDsin, hB, hBsin, lD, lDsin);
+            textos.push(hP, hP1, hPsin, hD, hD0, hDsin, hB, hBsin, hBnom, hBneg, hB0, lD, lDsin, lDneg);
             const textoB9 = textos.join("\n").replace(/<[^>]+>/g, " ");
             assert.ok(!textoB9.match(emojiAdj), "sin emoji");
             assert.strictEqual(tuteoAdj(textoB9), null, "las frases hablan de usted");
@@ -9949,6 +10066,58 @@ async function main() {
           assert.ok(!/emerald|green/.test(clrDe(nivel)) && /amber/.test(clrDe(nivel)),
             `pintarSocio pintaba «${nivel}» en verde: el verde no puede ser la rama por omisión`);
           assert.ok(/amber/.test(puntoDe(nivel)) && !/emerald/.test(puntoDe(nivel)));
+        }
+
+        /* ══ CENSO: NINGUNA CLAVE INTERNA LLEGA A PANTALLA (remate B9a-H3,
+           6-sep-2026 · defecto reproducido). Varios agregados del servidor rotulan
+           «lo que no tiene fecha» con la clave `sin_fecha`: el índice de
+           competencia (`anioDe`) y `lib/socio.js` (`por_anio[].anio`).
+           `htmlEntidadPorAnio` lo traducía en su sitio y `pintarSocio` escribía la
+           clave tal cual: «Procesos que ha ganado … sin_fecha: 3». Una invariante
+           se defiende con un CENSO, no con una lista: se barren TODAS las
+           pantallas que reciben ese agregado, ejecutándolas, y ninguna puede
+           emitir un identificador con guion bajo. La traducción es UNA
+           (`anioLegible`), llamada por las dos. */
+        {
+          const iAL = jsPintar.indexOf("function anioLegible(");
+          assert.ok(iAL > 0, "app.js sin anioLegible: la traducción de la clave interna no puede vivir en dos sitios");
+          const fnAL = new Function(`${jsPintar.slice(iAL, jsPintar.indexOf("\n  }", iAL) + 4)}; return anioLegible;`)();
+          for (const crudo of ["sin_fecha", null, undefined, "", "no definido", "2025-01-01"]) {
+            assert.strictEqual(fnAL(crudo), "sin fecha", `«${crudo}» no es un año: se rotula «sin fecha», sin guion bajo`);
+          }
+          assert.strictEqual(fnAL("2025"), "2025");
+          assert.strictEqual(fnAL(2026), "2026", "el año puede llegar como número");
+          // la pantalla del socio, EJECUTADA con la forma REAL que publica lib/socio.js
+          const rSocio = await verificarSocioReal({ identificacion: "900123456" }, {
+            tiempoMs: 500,
+            fetchImpl: async (url) => (/p6dx-8zbt/.test(String(url)) && /date_trunc_y/.test(String(url))
+              ? { ok: true, status: 200, headers: { get: () => null }, json: async () => [
+                { anio: null, n: "3", entidades: "2", valor: "1500000000", ultima: null },
+                { anio: "2025-01-01T00:00:00.000", n: "2", entidades: "1", valor: "900000000", ultima: "2025-06-01T00:00:00.000" }] }
+              : { ok: true, status: 200, headers: { get: () => null }, json: async () => [] }),
+          });
+          const porAnioSocio = rSocio.fuentes.adjudicaciones_secop2.por_anio || [];
+          assert.ok(porAnioSocio.some((a) => a.anio === "sin_fecha"), `premisa: el servidor agrupa lo que no trae fecha bajo la clave interna: ${JSON.stringify(porAnioSocio)}`);
+          const iPS = jsPintar.indexOf("function pintarSocio(r) {");
+          const fnSocio = new Function("esc", "pesos", "urlSegura", "anioLegible",
+            `${jsPintar.slice(iPS, jsPintar.indexOf("\n  }", iPS) + 4)}; return pintarSocio;`)(
+            (x) => String(x ?? ""), (n) => `$${n}`, () => null, fnAL);
+          const htmlSocio = fnSocio(rSocio);
+          const iEPA = jsPintar.indexOf("function htmlEntidadPorAnio(");
+          const fnEPA = new Function("window", "esc", "fmtNum", "anioLegible",
+            `${jsPintar.slice(iEPA, jsPintar.indexOf("\n  }", iEPA) + 4)}; return htmlEntidadPorAnio;`)(
+            { Pulso: require("../public/pulso.js") }, (x) => String(x ?? ""), new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }), fnAL);
+          const htmlEnt = fnEPA({ 2025: { procesos: 6, promedio_oferentes: 4 }, sin_fecha: { procesos: 2, promedio_oferentes: null } }, 5);
+          for (const [quien, html] of [["pintarSocio", htmlSocio], ["htmlEntidadPorAnio", htmlEnt]]) {
+            const visible = html.replace(/<[^>]+>/g, " ");
+            const identificador = /[a-z]+_[a-z]+/.exec(visible);
+            assert.ok(!identificador, `${quien} escribe una clave interna en pantalla: «${identificador && identificador[0]}»`);
+            assert.ok(/sin fecha/.test(visible), `${quien} tiene que rotular la cubeta sin fecha: ${visible.slice(0, 200)}`);
+          }
+          // y NADIE rotula un año a mano: la traducción es una sola función
+          const sinCom = sinComentarios(jsPintar);
+          const aMano = /\$\{esc\(\s*[a-z]\.anio\s*\)\}|\$\{\s*[a-z]\.anio\s*\}/.exec(sinCom);
+          assert.ok(!aMano, `un año se rotula SIEMPRE con anioLegible, nunca a mano: ${aMano && aMano[0]}`);
         }
 
         // una fuente caída: las demás salen, el semáforo lo dice y nada lanza
@@ -12264,11 +12433,16 @@ async function main() {
         const cpProd = { por_anio: { 2024: { procesos: 2345, promedio_oferentes: 4.35 }, 2025: { procesos: 1800, promedio_oferentes: 4.08 }, 2026: { procesos: 900, promedio_oferentes: 4.11 }, 2027: { procesos: 1, promedio_oferentes: 34 } },
           ventana_garantias_2026: { desde: "2025-11-08", hasta: "2026-05-31", procesos_dentro: 1100, promedio_dentro: 3.74 }, min_procesos: 30 };
         const hCP = notaCP(cpProd);
-        assert.ok(/En 2024 compitieron 4,4 oferentes por proceso \(2\.345 adjudicados\); en 2025, 4,1 \(1\.800\); en 2026, 4,1 \(900\)\./.test(hCP), `dos cifras por año con su base: ${hCP.replace(/\s+/g, " ").slice(0, 300)}`);
+        /* HERMANO de B9a-H1 (6-sep-2026): `por_anio[].procesos` del índice cuenta
+           los procesos con conteo de oferentes, no los adjudicados; llamarlos
+           «adjudicados» aquí era el mismo nombre equivocado del modal. */
+        assert.ok(/En 2024 compitieron 4,4 oferentes por proceso \(2\.345 procesos\); en 2025, 4,1 \(1\.800\); en 2026, 4,1 \(900\)\./.test(hCP), `dos cifras por año con su base: ${hCP.replace(/\s+/g, " ").slice(0, 300)}`);
+        assert.ok(!/adjudicad/i.test(hCP), `esta magnitud son los procesos con conteo de oferentes, no los adjudicados: ${hCP.replace(/\s+/g, " ").slice(0, 400)}`);
         assert.ok(!/2027/.test(hCP), "el 2027 de un solo proceso (34 oferentes) existe en el dato y NO sale como un año: sin base no hay cifra");
-        assert.ok(/período electoral \(8 de noviembre de 2025 a 31 de mayo de 2026\) compitieron 3,7 oferentes por proceso \(1\.100 adjudicados\)/.test(hCP), `la ventana dice el hecho con sus fechas y su base: ${hCP.slice(-400)}`);
+        assert.ok(/período electoral \(8 de noviembre de 2025 a 31 de mayo de 2026\) compitieron 3,7 oferentes por proceso \(1\.100 procesos\)/.test(hCP), `la ventana dice el hecho con sus fechas y su base: ${hCP.slice(-400)}`);
         assert.ok(!/probabilidad|garant[íi]as|ley de/i.test(hCP), "ni «probabilidad» ni «ley de garantías»: se dice «el período electoral»");
         assert.ok(/solo se cuenta un año con 30 o más/.test(hCP), "la nota declara el suelo que aplica");
+        assert.ok(/procesos del histórico en que se publicó cuánta gente se presentó/.test(hCP), `la nota nombra la magnitud UNA vez y bien: ${hCP.slice(-300)}`);
         assert.strictEqual(notaCP({ ...cpProd, por_anio: { 2026: cpProd.por_anio[2026] } }), "", "con un solo año con base no hay «año a año»");
         assert.strictEqual(notaCP({ ...cpProd, por_anio: { 2025: { procesos: 29, promedio_oferentes: 4 }, 2026: { procesos: 29, promedio_oferentes: 4 } } }), "", "dos años por debajo del suelo: nada");
         assert.strictEqual(notaCP({ ...cpProd, ventana_garantias_2026: { ...cpProd.ventana_garantias_2026, procesos_dentro: 12 } }).includes("período electoral"), false, "la ventana sin base se calla y los años siguen");
@@ -22306,6 +22480,33 @@ async function main() {
           assert.strictEqual(Ent8.adjudicacionDeFila("2026-08-25", { plazo: { ...plazo8, base: 4, mediana_dias_habiles: null } }), null, "bajo el mínimo no se estima");
           assert.strictEqual(Ent8.adjudicacionDeFila("2026-08-25", { plazo: { ...plazo8, base: 4, mediana_dias_habiles: 10 } }), null, "el lector también exige la base: el hash no se purga nunca");
           assert.strictEqual(Ent8.adjudicacionDeFila("2026-08-25", { fechaPliego: "30/10/2026", plazo: null }), null, "una fecha ilegible del pliego no se toma");
+          /* ── B9b-H1 (remate del 6-sep-2026 · defecto reproducido): la fecha del
+             pliego ANTERIOR O IGUAL al cierre vigente. El índice rechaza ese mismo
+             par como «no_posterior_al_cierre» y aquí se tomaba y se pintaba como
+             publicada: hermano vivo de la guarda. Pasa cuando la entidad prorroga
+             el cierre después de que se leyó el pliego. */
+          {
+            const antes = Ent8.adjudicacionDeFila("2026-08-25", { fechaPliego: "2026-08-20", plazo: plazo8 });
+            assert.strictEqual(indiceComp.plazoAdjudicacionDe({ fecha_de_recepcion_de: "2026-08-25", fecha_adjudicacion: "2026-08-20" }).motivo, "no_posterior_al_cierre",
+              "premisa: el índice ya rechaza ese par");
+            assert.notStrictEqual(antes.origen, "pliego", `una fecha del pliego anterior al cierre no se afirma: ${JSON.stringify(antes)}`);
+            assert.deepStrictEqual(antes, { fecha: "2026-09-08", origen: "historico", dias_habiles: 10, base: 8, adjudicados: 10, pliego_desfasado: "2026-08-20" },
+              `se cae al histórico y se dice que la del pliego quedó atrás: ${JSON.stringify(antes)}`);
+            const igual = Ent8.adjudicacionDeFila("2026-08-25", { fechaPliego: "2026-08-25", plazo: plazo8 });
+            assert.strictEqual(igual.origen, "historico", `adjudicar el MISMO día del cierre tampoco es un plazo (misma guarda del índice): ${JSON.stringify(igual)}`);
+            const soloDesfase = Ent8.adjudicacionDeFila("2026-08-25", { fechaPliego: "2026-08-20", plazo: { ...plazo8, base: 4, mediana_dias_habiles: null } });
+            assert.deepStrictEqual(soloDesfase, { fecha: null, origen: null, pliego_desfasado: "2026-08-20" }, `sin histórico detrás, la fila lo dice igual: ${JSON.stringify(soloDesfase)}`);
+            // sin día de cierre no hay con qué comparar: la del pliego es lo único que hay
+            assert.deepStrictEqual(Ent8.adjudicacionDeFila(null, { fechaPliego: "2026-08-20", plazo: plazo8 }), { fecha: "2026-08-20", origen: "pliego" });
+            // y la FICHA lo dice, con la fecha y qué hacer: ninguna cifra creíble y falsa en pantalla
+            const tAntes = Cal8.textoAdjudicacion(antes), tSolo = Cal8.textoAdjudicacion(soloDesfase);
+            for (const t of [tAntes, tSolo]) {
+              assert.ok(/20 de agosto de 2026/.test(t) && /quedó antes del cierre/.test(t) && /verifíquela en el cronograma/.test(t),
+                `la ficha tiene que decir que la fecha del pliego quedó atrás y qué hacer: ${t}`);
+            }
+            assert.ok(/Alrededor del 8 de septiembre de 2026/.test(tAntes), `…sin perder la estimación que sí se puede afirmar: ${tAntes}`);
+            assert.ok(!/8 de septiembre/.test(tSolo) && !/Sin fecha publicada/.test(tSolo), `sin estimación no se inventa ni se calla el desfase: ${tSolo}`);
+          }
           assert.strictEqual(Ent8.adjudicacionDeFila(null, { plazo: plazo8 }), null, "sin día de cierre no hay desde dónde contar");
           // el calendario entero, con la fila del pliego y una sin pliego pero con historial de la entidad
           const filasCal = [
@@ -25599,6 +25800,16 @@ async function main() {
         assert.ok(/3 del plan sin fecha legible quedan fuera del gráfico/.test(hPm), "las que no tienen fecha se dicen, fuera del gráfico, nunca en un mes inventado");
         assert.ok(/Suman \$16\.400 millones en los 164 que publican valor \(41 sin valor publicado\)/.test(hPm), "el total previsto dice sobre cuántas se suma");
         assert.ok(!/data-filtro/.test(hPm), "una previsión no enlaza a la lista de procesos abiertos");
+        /* B9a-H2 (remate del 6-sep-2026 · reproducido en Chromium a 390 px): el
+           dinero de cada mes vivía SOLO dentro del `<title>` del dibujo y la frase
+           prometía «se ve al señalar la columna» — en el teléfono no hay puntero
+           que señalar y la pulsación no cambiaba nada. Ahora se lee, plegado. */
+        const fueraDeTitle = hPm.replace(/<title>[^<]*<\/title>/g, "");
+        assert.ok(!/señalar la columna/.test(hPm), `no se promete una acción de puntero que en el teléfono no existe: ${hPm.slice(0, 400)}`);
+        assert.ok(/Ver el valor previsto de cada mes/.test(hPm) && /<details/.test(hPm), `lo que se TOCA va plegado, pero tiene que existir: ${hPm.slice(0, 400)}`);
+        assert.ok(/\$1\.400 millones/.test(fueraDeTitle), `el dinero de cada mes se lee FUERA del <title>: ${fueraDeTitle.slice(-700)}`);
+        assert.strictEqual((fueraDeTitle.match(/· \d+ procesos? · /g) || []).length, 12, `un renglón por mes con procesos, con su conteo y su dinero: ${fueraDeTitle.slice(-700)}`);
+        assert.ok(/4 sin valor publicado<\/li>/.test(fueraDeTitle), "y cuántos de ese mes no publican valor");
         assert.ok(/Lo que «ALCALDÍA DE IBAGUÉ» planea publicar, mes a mes/.test(htmlPaaMeses(pm, "ALCALDÍA DE IBAGUÉ")), "con entidad, el rótulo la nombra");
         assert.strictEqual(htmlPaaMeses({ meses: pm.meses.map((m) => ({ ...m, n: 0, valor: null, sin_cuantia: 0 })), sin_fecha: 0 }, null), "", "sin nada previsto no hay gráfico");
         for (const sinDato of [null, undefined, {}, { meses: "x" }]) assert.strictEqual(htmlPaaMeses(sinDato, null), "", `sin agregado no hay gráfico: ${JSON.stringify(sinDato)}`);
