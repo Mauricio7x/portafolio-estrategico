@@ -168,8 +168,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 130 secciones. Las 10 más nuevas:
-  L  7216  La ficha «Lo que exige este pliego» en Mis procesos y los precios buscados por una sesión de
+· MEMORIA · docs/MEMORIA.md — 131 secciones. Las 10 más nuevas:
   L  7298  Segunda pasada del 4-sep-2026: la guía sin cuadros vacíos y Precios en tres pasos
   L  7355  Tercera pasada del 4-sep-2026: el pliego CITADO y Precios como «cargue → Buscar → APU»
   L  7419  Consultoría integral del 4/5-sep-2026 · qué es Detekta, qué aguanta, qué se ve, qué se cuent
@@ -179,6 +178,7 @@
   L  7809  Lote «zona y RUP en PDF» de la consultoría del 4-sep · M-SEG-10, M-INF-01 (6-sep-2026)
   L  7890  Lote «salud y tiempos» de la consultoría del 4-sep · M-INF-04, M-INF-08 (6-sep-2026)
   L  7965  Lote «B3b-sync-menor» de la consultoría del 4-sep · M-INF-10, M-INF-13, M-INF-14, M-SEG-08 (
+  L  8067  Lote «B4a-vista-de-visitante» de la consultoría del 4-sep · M-SEG-02 (6-sep-2026)
 
 · DOCUMENTOS docs/ — 42:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)

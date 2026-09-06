@@ -18948,7 +18948,8 @@ async function main() {
         const nodoPC = () => {
           const clases = new Set();
           return { innerHTML: "", title: "", atributos: {}, clases,
-            classList: { toggle: (c, on) => { if (on) clases.add(c); else clases.delete(c); }, remove: (c) => clases.delete(c) },
+            // `contains`: pintarCorte pregunta si la marca es informativa (vista de visitante, M-SEG-02)
+            classList: { toggle: (c, on) => { if (on) clases.add(c); else clases.delete(c); }, remove: (c) => clases.delete(c), contains: (c) => clases.has(c) },
             setAttribute(k, v) { this.atributos[k] = v; } };
         };
         const nodosPC = { "sello-sync": nodoPC(), "btn-marca": nodoPC() };
@@ -18979,6 +18980,19 @@ async function main() {
         pintarCorteReal(null, { ts: new Date(ahoraPC).toISOString() });
         assert.ok(/^<span class="marca-accion">Pulse aquí/.test(nodosPC["sello-sync"].innerHTML), "sin corte conocido no se inventa ni fecha ni fallo");
         assert.ok(!nodosPC["sello-sync"].clases.has("corte-fallo"));
+        /* LA MARCA INFORMATIVA (6-sep-2026, M-SEG-02): con la clase que pone la vista de
+           visitante, el mismo pintarCorte dice el hecho —de cuándo son los datos, y el fallo—
+           sin «Actualizar», sin «Pulse aquí» y sin «pulse» en el título. Ejecutado con corte y
+           con fallo, y sin corte. */
+        nodosPC["btn-marca"].clases.add("marca-informativa");
+        pintarCorteReal(isoHoy, { ts: new Date(ahoraPC).toISOString(), modo: "auto", texto: "x" });
+        assert.ok(/^Datos de hoy, .* · hoy no se pudo actualizar; se reintenta con cada visita$/.test(nodosPC["sello-sync"].innerHTML),
+          `la marca informativa dice el hecho sin invitar a pulsar: «${nodosPC["sello-sync"].innerHTML}»`);
+        assert.ok(!/[Pp]ulse|Actualizar/.test(nodosPC["btn-marca"].title) && /Hoy no se pudo actualizar/.test(nodosPC["btn-marca"].title),
+          `y su título tampoco: «${nodosPC["btn-marca"].title}»`);
+        pintarCorteReal(null, null);
+        assert.strictEqual(nodosPC["sello-sync"].innerHTML, "Datos de SECOP II", "sin corte, la marca informativa no dice «pulse aquí»");
+        nodosPC["btn-marca"].clases.delete("marca-informativa");
         // y `buscar()` le pasa el fallo que viaja con `sincronizado` (cableado)
         assert.ok(/pintarCorte\(cuerpo\.sincronizado, cuerpo\.ultimo_error \|\| null\)/.test(appM), "buscar() tiene que pasar `ultimo_error` a pintarCorte");
       }
@@ -22035,9 +22049,316 @@ async function main() {
         }
       }
 
+      /* (9) LA VISTA DE VISITANTE (6-sep-2026, M-SEG-02): EL ARRANQUE REAL DE public/app.js,
+         EJECUTADO. Antes, quien entraba por /?perfil=rup_… sin la clave del sitio veía el
+         tablero de los perfiles del dueño, «Actualizar datos», el JSON de sus perfiles,
+         «Sistema» entero y el rastreo, y su navegador pedía op=resumen&perfil=helder, op=rup,
+         op=experiencia y op=consorcio —cuyos consorcios guardados además volvían a la barra
+         como opciones, deshaciendo la poda—; la marca de la barra disparaba op=sync. Medido en
+         Node (este mismo arnés) y en Chromium el 6-sep-2026: 9 bloques del dueño visibles y
+         4 peticiones con sus datos.
+
+         El arnés carga los quince módulos de public/ en el orden de los <script> de
+         index.html sobre un doble de DOM construido DESDE index.html (ids, clases, atributo
+         `hidden`, opciones de cada <select>) con un fetch que registra las URL y timers que
+         no disparan; jsdom no existe en este repositorio. Un DOM API que app.js use y el
+         doble no tenga se ve como un TypeError con su nombre: se añade al doble, no se
+         relaja la prueba.
+
+         La cerradura es un CENSO, no una lista: (a) todo bloque de primer nivel de Mi
+         empresa está declarado en VISTA_VISITANTE con su motivo; (b) todo control que
+         escribe configuración compartida (derivado por grep de public/*.js, no a mano) vive
+         dentro de un bloque `soloDueno` o es una excepción declarada; (c) el arranque
+         real como visitante deja `hidden` lo de `soloDueno`, no pide nada del dueño y sí
+         pide lo suyo; con clave, nada de esto se aplica. */
+      {
+        const RAIZ_VV = path.join(__dirname, "..");
+        const htmlVV = fs.readFileSync(path.join(RAIZ_VV, "public/index.html"), "utf8");
+        const htmlVVSin = htmlVV.replace(/<!--[\s\S]*?-->/g, "");
+        const appVV = fs.readFileSync(path.join(RAIZ_VV, "public/app.js"), "utf8");
+        const { tuteoEn } = require("../lib/lenguaje_pantalla.js");
+        const iCenso = appVV.indexOf("  const VISTA_VISITANTE = {"), fCenso = appVV.indexOf("\n  };", iCenso) + 5;
+        assert.ok(iCenso > 0 && fCenso > iCenso, "app.js sin el censo VISTA_VISITANTE");
+        const CENSO = new Function(`${appVV.slice(iCenso, fCenso)} return VISTA_VISITANTE;`)();
+        const ids = (g) => Object.keys(CENSO[g] || {});
+        assert.ok(ids("soloDueno").length >= 6 && ids("soloVisitante").length >= 2 && ids("deTodos").length >= 5, "el censo tiene sus tres listas");
+        for (const g of ["soloDueno", "soloVisitante", "deTodos"]) for (const id of ids(g)) {
+          assert.ok(htmlVV.includes(`id="${id}"`), `VISTA_VISITANTE.${g} nombra #${id}, que no existe en index.html`);
+          assert.ok(typeof CENSO[g][id] === "string" && CENSO[g][id].length > 10, `#${id} va en el censo sin motivo`);
+        }
+        const declarados = new Set([...ids("soloDueno"), ...ids("soloVisitante"), ...ids("deTodos")]);
+
+        /* (a) todo bloque de primer nivel de Mi empresa está en el censo */
+        {
+          const i = htmlVVSin.indexOf('<main id="tab-admin"'), f = htmlVVSin.indexOf("</main>", i);
+          const tab = htmlVVSin.slice(i, f);
+          const re = /<(\/?)(section|details)\b([^>]*)>/g; let m, prof = 0; const primerNivel = [];
+          while ((m = re.exec(tab))) {
+            if (m[1]) { prof--; continue; }
+            if (prof === 0) primerNivel.push((m[3].match(/\sid="([^"]+)"/) || [])[1] || "(sin id)");
+            prof++;
+          }
+          assert.strictEqual(prof, 0, "Mi empresa: <section>/<details> desbalanceados");
+          assert.ok(primerNivel.length >= 10, `Mi empresa tiene ${primerNivel.length} bloques de primer nivel: ¿se movió el marcado?`);
+          const fuera = primerNivel.filter((id) => !declarados.has(id));
+          assert.deepStrictEqual(fuera, [],
+            `bloques de Mi empresa fuera del censo de la vista de visitante (declárelos en VISTA_VISITANTE con su motivo): ${fuera.join(", ")}`);
+        }
+
+        /* (b) todo control que escribe configuración compartida vive dentro de `soloDueno`.
+           El CONJUNTO de escrituras sale de public/*.js por grep (todas las op del router
+           admin, más op=sync, las dos reconstrucciones y el POST de parámetros); una op
+           nueva o retirada rompe la igualdad y obliga a declarar su control. */
+        {
+          const fuentes = fs.readdirSync(path.join(RAIZ_VV, "public")).filter((f) => f.endsWith(".js"))
+            .map((f) => sinComentarios(fs.readFileSync(path.join(RAIZ_VV, "public", f), "utf8"))).join("\n");
+          const escrituras = new Set();
+          for (const m of fuentes.matchAll(/\/api\/admin\?op=([a-z-]+)/g)) escrituras.add(`admin?op=${m[1]}`);
+          for (const m of fuentes.matchAll(/\/api\/procesos\?op=(sync|historico&reconstruir_indice|baja&reconstruir)/g)) escrituras.add(`procesos?op=${m[1]}`);
+          if (/"\/api\/apu\?op=parametros",\s*\{\s*method: "POST"/.test(fuentes)) escrituras.add("apu?op=parametros (POST)");
+          const CONTROLES = {
+            "admin?op=rup": ["btn-rup-cargar", "btn-rup-descargar", "rup-actual",
+              { id: "btn-eliminar-rup", excepcion: "borra el perfil ACTIVO de la barra, que para el visitante es el suyo (rup_…); va con confirmación" },
+              { id: "rup-archivo", excepcion: "la subida del RUP en PDF es el alta pública del onboarding (sin token, por diseño)" }],
+            "admin?op=experiencia": ["btn-exp-confirmar", "btn-exp-cargar", "btn-exp-repo", "btn-exp-cadena", "exp-actual"],
+            "admin?op=cobertura": ["btn-cobertura", "btn-exp-cobertura"],
+            "admin?op=cargar-catalogo": ["btn-apu-cargar"],
+            "procesos?op=sync": ["btn-actualizar-datos", "btn-al-dia", "btn-iniciar", "btn-exp-full", "btn-exp-cadena",
+              { id: "btn-marca", excepcion: "la marca se vuelve informativa para el visitante y su clic no dispara nada: se EJECUTA abajo" },
+              { id: null, excepcion: "op=sync&modo=auto tras la lista no es un control: es la cortesía al corpus, con la llave y el candado (M-SEG-08)" }],
+            "procesos?op=historico&reconstruir_indice": ["d-comp-reconstruir"],
+            "procesos?op=baja&reconstruir": ["d-baja-reconstruir"],
+            "apu?op=parametros (POST)": ["btn-par-guardar"],
+          };
+          assert.deepStrictEqual(Object.keys(CONTROLES).sort(), [...escrituras].sort(),
+            "una escritura de configuración compartida nueva (o retirada) sin su control declarado en la prueba de la vista de visitante");
+          const rangoDe = (id) => {
+            const i = htmlVVSin.indexOf(`id="${id}"`); assert.ok(i > 0, `falta #${id}`);
+            const ini = htmlVVSin.lastIndexOf("<", i);
+            const tag = (htmlVVSin.slice(ini).match(/^<([a-z0-9]+)/) || [])[1];
+            const re = new RegExp(`<(\\/?)${tag}\\b`, "g"); re.lastIndex = ini;
+            let prof = 0, m;
+            while ((m = re.exec(htmlVVSin))) { if (m[1]) { prof--; if (prof === 0) return [ini, m.index]; } else prof++; }
+            assert.fail(`#${id}: <${tag}> sin cierre`);
+          };
+          const rangos = ids("soloDueno").map((id) => [id, rangoDe(id)]);
+          for (const [op, controles] of Object.entries(CONTROLES)) for (const c of controles) {
+            if (typeof c !== "string") { assert.ok(c.excepcion && c.excepcion.length > 20, `${op}: excepción sin motivo`); continue; }
+            const pos = htmlVVSin.indexOf(`id="${c}"`);
+            assert.ok(pos > 0, `${op}: el control #${c} no existe en index.html`);
+            assert.ok(rangos.some(([id, [a, b]]) => id === c || (pos > a && pos < b)),
+              `${op}: el control #${c} queda A LA VISTA del visitante (no está en ningún bloque de VISTA_VISITANTE.soloDueno)`);
+          }
+        }
+
+        /* (c) el arranque real, ejecutado: visitante · dueño con clave · #/inicio · consorcio por URL */
+        const arrancarAppEnNode = async ({ search = "", hash = "", sesion = {} } = {}) => {
+          const vm = require("vm");
+          const porId = new Map();
+          const reId = /<(\w+)([^>]*?)\sid="([^"]+)"([^>]*)>/g; let m;
+          while ((m = reId.exec(htmlVVSin))) {
+            const attrs = ` ${m[2]} ${m[4]} `;
+            /* el ATRIBUTO hidden se busca con los valores entrecomillados tachados: `class="… hidden …"` es
+               la clase de Tailwind (que la red del dueño no carga), no el atributo */
+            const spec = { id: m[3], tag: m[1].toLowerCase(), className: (attrs.match(/\sclass="([^"]*)"/) || [, ""])[1], hidden: /\shidden(\s|=|$)/.test(attrs.replace(/="[^"]*"/g, '=""')), attrs };
+            if (spec.tag === "select") {
+              const trozo = htmlVVSin.slice(m.index, htmlVVSin.indexOf("</select>", m.index));
+              spec.opciones = [...trozo.matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map((o) => ({ value: o[1], text: o[2].trim() }));
+            }
+            porId.set(m[3], spec);
+          }
+          const fetches = [], elementos = new Map();
+          function nodo(spec) {
+            const el = { id: spec.id || "", tagName: (spec.tag || "div").toUpperCase(), className: spec.className || "", hidden: !!spec.hidden,
+              disabled: false, checked: false, open: false, value: "", _text: "", _html: "", dataset: {}, style: {}, attrs: {}, children: [], options: [],
+              parentNode: null, parentElement: null, firstChild: null, lastChild: null, nextElementSibling: null, previousElementSibling: null,
+              offsetWidth: 0, offsetHeight: 0, scrollWidth: 0, clientWidth: 0, scrollHeight: 0, clientHeight: 0, offsetLeft: 0, offsetTop: 0,
+              files: [], title: "", href: "", src: "", name: "", type: "", placeholder: "", tabIndex: 0, selected: false, _oyentes: {} };
+            for (const a of (spec.attrs || "").matchAll(/\s([a-zA-Z-]+)="([^"]*)"/g)) el.attrs[a[1]] = a[2];
+            let proxy = null;
+            const clases = () => el.className.split(/\s+/).filter(Boolean);
+            el.classList = {
+              add: (...c) => { el.className = [...new Set([...clases(), ...c])].join(" "); },
+              remove: (...c) => { el.className = clases().filter((x) => !c.includes(x)).join(" "); },
+              toggle: (c, f) => { const on = f === undefined ? !clases().includes(c) : !!f; if (on) el.classList.add(c); else el.classList.remove(c); return on; },
+              contains: (c) => clases().includes(c),
+            };
+            Object.defineProperty(el, "textContent", { get: () => el._text, set: (v) => { el._text = String(v ?? ""); el._html = el._text; } });
+            Object.defineProperty(el, "innerHTML", { get: () => el._html, set: (v) => { el._html = String(v ?? ""); el._text = el._html.replace(/<[^>]+>/g, ""); } });
+            Object.defineProperty(el, "innerText", { get: () => el._text, set: (v) => { el._text = String(v ?? ""); } });
+            Object.defineProperty(el, "text", { get: () => el._text, set: (v) => { el._text = String(v ?? ""); } });
+            Object.defineProperty(el, "selectedOptions", { get: () => { const o = el.options.find((x) => x.value === el.value); return o ? [o] : []; } });
+            Object.defineProperty(el, "selectedIndex", { get: () => el.options.findIndex((x) => x.value === el.value), set: (i) => { if (el.options[i]) el.value = el.options[i].value; } });
+            Object.defineProperty(el, "childNodes", { get: () => el.children });
+            const bordes = () => { el.firstChild = el.children[0] || null; el.lastChild = el.children[el.children.length - 1] || null; };
+            const meter = (child, ref) => {
+              if (!child || typeof child !== "object") return child;
+              child.parentNode = proxy; child.parentElement = proxy;
+              const i = ref ? el.children.indexOf(ref) : -1;
+              if (i >= 0) el.children.splice(i, 0, child); else el.children.push(child);
+              if (child.tagName === "OPTION") { const j = ref ? el.options.indexOf(ref) : -1; if (j >= 0) el.options.splice(j, 0, child); else el.options.push(child); if (el.options.length === 1) el.value = child.value; }
+              bordes(); return child;
+            };
+            Object.assign(el, {
+              addEventListener: (t, f) => { (el._oyentes[t] = el._oyentes[t] || []).push(f); }, removeEventListener: () => {},
+              dispatchEvent: (ev) => { for (const f of el._oyentes[(ev && ev.type) || ""] || []) f(ev); return true; },
+              click: () => el.dispatchEvent({ type: "click", target: proxy, preventDefault() {} }),
+              setAttribute: (k, v) => { el.attrs[k] = String(v); if (k === "hidden") el.hidden = true; }, getAttribute: (k) => (k in el.attrs ? el.attrs[k] : null),
+              hasAttribute: (k) => k in el.attrs, removeAttribute: (k) => { delete el.attrs[k]; if (k === "hidden") el.hidden = false; },
+              toggleAttribute: (k, f) => { const on = f === undefined ? !(k in el.attrs) : !!f; if (on) el.setAttribute(k, ""); else el.removeAttribute(k); return on; },
+              appendChild: (c) => meter(c), append: (...cs) => cs.forEach((c) => meter(c)), prepend: (...cs) => cs.forEach((c) => meter(c, el.children[0])),
+              insertBefore: (c, ref) => meter(c, ref), insertAdjacentElement: (p, c) => meter(c), insertAdjacentHTML: (p, h) => { el._html += String(h); },
+              removeChild: (c) => { const i = el.children.indexOf(c); if (i >= 0) el.children.splice(i, 1); const j = el.options.indexOf(c); if (j >= 0) el.options.splice(j, 1);
+                if (el.tagName === "SELECT" && !el.options.some((o) => o.value === el.value)) el.value = el.options[0] ? el.options[0].value : ""; bordes(); return c; },
+              remove: () => { if (el.parentNode) el.parentNode.removeChild(proxy); },
+              replaceChildren: (...cs) => { el.children = []; el.options = []; cs.forEach((c) => meter(c)); bordes(); },
+              closest: () => null, matches: () => false, contains: () => false, querySelector: () => nodo({}), querySelectorAll: () => [],
+              getElementsByTagName: () => [], getElementsByClassName: () => [], getBoundingClientRect: () => ({ top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0 }),
+              focus: () => {}, blur: () => {}, scrollIntoView: () => {}, select: () => {}, cloneNode: () => nodo({ tag: spec.tag }), getContext: () => null,
+              animate: () => ({ finished: Promise.resolve() }), setCustomValidity: () => {}, reportValidity: () => true, checkValidity: () => true, showModal: () => {}, close: () => {},
+            });
+            /* lo que el doble no conoce responde con una función vacía: un DOM API nuevo no
+               puede tumbar el arranque entero, pero un DATO que falte sí se nota en la aserción */
+            proxy = new Proxy(el, { get: (t, k) => (k in t ? t[k] : (typeof k === "string" ? () => undefined : undefined)) });
+            if (spec.opciones) {
+              for (const o of spec.opciones) { const op = nodo({ tag: "option" }); op.value = o.value; op.textContent = o.text; op.parentNode = proxy; op.parentElement = proxy; el.options.push(op); el.children.push(op); }
+              if (el.options[0]) el.value = el.options[0].value;
+              bordes();
+            }
+            return proxy;
+          }
+          const el = (id) => { if (elementos.has(id)) return elementos.get(id); const spec = porId.get(id); if (!spec) return null; const n = nodo(spec); elementos.set(id, n); return n; };
+          const almacen = (inicial) => { const m = new Map(Object.entries(inicial)); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), clear: () => m.clear() }; };
+          const respuesta = () => { const cuerpo = JSON.stringify({ ok: false, error: "arnés sin API" }); return { ok: false, status: 503, headers: { get: () => null }, json: async () => JSON.parse(cuerpo), text: async () => cuerpo, arrayBuffer: async () => new ArrayBuffer(0) }; };
+          const oyentes = (dest) => { const l = {}; dest.addEventListener = (t, f) => { (l[t] = l[t] || []).push(f); }; dest.removeEventListener = () => {}; dest.dispatchEvent = (ev) => { for (const f of l[(ev && ev.type) || ""] || []) f(ev); return true; }; };
+          const ctx = {
+            console, URL, URLSearchParams, TextEncoder, TextDecoder, AbortController, Intl, structuredClone, queueMicrotask,
+            atob: (s) => Buffer.from(s, "base64").toString("binary"), btoa: (s) => Buffer.from(s, "binary").toString("base64"), crypto: require("crypto").webcrypto,
+            setTimeout: () => 1, setInterval: () => 1, clearTimeout() {}, clearInterval() {}, requestAnimationFrame: () => 1, cancelAnimationFrame() {},
+            fetch: (url, opts) => { fetches.push({ url: String(url), opts: opts || null }); return Promise.resolve(respuesta()); },
+            location: { search, hash, href: `http://localhost/${search}${hash}`, pathname: "/", origin: "http://localhost", host: "localhost", protocol: "http:", replace() {}, assign() {}, reload() {} },
+            history: { replaceState() {}, pushState() {}, back() {}, state: null },
+            navigator: { language: "es-CO", languages: ["es-CO"], userAgent: "node", clipboard: { writeText: async () => {} }, onLine: true },
+            sessionStorage: almacen(sesion), localStorage: almacen({}),
+            matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }),
+            getComputedStyle: () => ({ getPropertyValue: () => "" }), scrollTo() {}, scroll() {}, open() {}, alert() {}, confirm: () => true, focus() {},
+            innerWidth: 1280, innerHeight: 800, devicePixelRatio: 1, screen: { width: 1280, height: 800 }, scrollY: 0, performance: { now: () => Date.now() },
+            IntersectionObserver: class { observe() {} unobserve() {} disconnect() {} }, ResizeObserver: class { observe() {} unobserve() {} disconnect() {} }, MutationObserver: class { observe() {} disconnect() {} },
+            Event: class { constructor(t, o) { this.type = t; Object.assign(this, o || {}); } preventDefault() {} stopPropagation() {} },
+            CustomEvent: class { constructor(t, o) { this.type = t; this.detail = o && o.detail; } preventDefault() {} },
+            KeyboardEvent: class { constructor(t, o) { this.type = t; Object.assign(this, o || {}); } },
+            Blob: class { constructor(p, o) { this.parts = p; this.type = (o && o.type) || ""; this.size = 0; } }, File: class { constructor(p, n) { this.name = n; this.size = 0; } },
+            FileReader: class { readAsText() {} readAsArrayBuffer() {} addEventListener() {} }, FormData: class { append() {} }, Image: class {}, DOMParser: class { parseFromString() { return nodo({}); } },
+            CSS: { supports: () => false, escape: (s) => s },
+          };
+          oyentes(ctx);
+          const body = nodo({ tag: "body" });
+          ctx.document = { getElementById: el, querySelector: (s) => { const m = s.match(/^#([\w-]+)$/); return m ? el(m[1]) : nodo({}); }, querySelectorAll: () => [],
+            createElement: (tag) => nodo({ tag }), createTextNode: (t) => ({ textContent: String(t), nodeType: 3 }), createDocumentFragment: () => nodo({ tag: "fragment" }),
+            body, documentElement: nodo({ tag: "html" }), head: nodo({ tag: "head" }), title: "", visibilityState: "visible", hidden: false, readyState: "complete", activeElement: body,
+            fonts: { ready: Promise.resolve() }, hasFocus: () => true };
+          oyentes(ctx.document);
+          ctx.window = ctx; ctx.self = ctx; ctx.globalThis = ctx;
+          vm.createContext(ctx);
+          const orden = [...htmlVV.matchAll(/<script src="\/([a-z_]+\.js)"><\/script>/g)].map((x) => x[1]);
+          assert.ok(orden.includes("app.js") && orden.length >= 10, "index.html sin sus <script>");
+          for (const f of orden) vm.runInContext(fs.readFileSync(path.join(RAIZ_VV, "public", f), "utf8"), ctx, { filename: `public/${f}` });
+          const esperar = async () => { for (let i = 0; i < 6; i++) await new Promise((r) => setImmediate(r)); };
+          await esperar();
+          return { el, fetches, esperar, urls: () => fetches.map((f) => f.url) };
+        };
+
+        /* el dueño con clave arranca PRIMERO: es la referencia contra la que se compara lo
+           «de todos» (un módulo puede ocultar lo suyo por falta de datos —el calendario sin
+           cierres—, y eso no es la vista de visitante: tiene que pasar igual con y sin clave) */
+        const dueno = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6", sesion: { "detecta-acceso": "1" } });
+        const visitante = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6" });
+        for (const id of ids("soloDueno")) assert.strictEqual(visitante.el(id).hidden, true, `visitante: #${id} (${CENSO.soloDueno[id]}) tiene que quedar oculto con hidden`);
+        for (const id of ids("soloVisitante")) assert.strictEqual(visitante.el(id).hidden, false, `visitante: #${id} tiene que verse`);
+        for (const id of ids("deTodos")) {
+          /* solo el atributo, que es lo que toca vistaDeVisitante: las clases las gobierna cada
+             módulo con sus datos («Crear consorcio» se pliega sola con un solo perfil en la barra) */
+          assert.strictEqual(visitante.el(id).hidden, dueno.el(id).hidden, `visitante: #${id} es de todos y tiene que quedar como para el dueño`);
+        }
+        const ajenas = visitante.urls().filter((u) => /op=(resumen|rup|experiencia|consorcio|parametros)(&|$)/.test(u) || /perfil=(helder|genesis|juntos)\b/.test(u));
+        assert.deepStrictEqual(ajenas, [], `el navegador del visitante pidió datos del dueño: ${ajenas.join(" · ")}`);
+        for (const op of ["listar", "pulso", "seguimiento"]) {
+          assert.ok(visitante.urls().some((u) => new RegExp(`op=${op}&perfil=rup_a1b2c3d4e5f6`).test(u)), `el arranque tiene que pedir op=${op} con SU perfil (si no, la prueba pasaría en vacío)`);
+        }
+        assert.deepStrictEqual(visitante.el("f-perfil").options.map((o) => o.value), ["rup_a1b2c3d4e5f6"], "la barra sigue podada a su perfil");
+        const marca = visitante.el("btn-marca");
+        assert.ok(marca.classList.contains("marca-informativa") && marca.getAttribute("aria-disabled") === "true", "para el visitante la marca de la barra es informativa, no un control");
+        const sello = visitante.el("sello-sync").textContent;
+        assert.ok(/^Datos de/.test(sello) && !/Pulse|Actualizar/.test(sello), `el sello del visitante no invita a pulsar: «${sello}»`);
+        assert.ok(!/Pulse/.test(marca.title), `el título de la marca del visitante no dice «pulse»: «${marca.title}»`);
+        const antesMarca = visitante.fetches.length;
+        marca.click(); await visitante.esperar();
+        assert.deepStrictEqual(visitante.urls().slice(antesMarca).filter((u) => /op=sync/.test(u)), [], "pulsar la marca como visitante no puede disparar op=sync");
+        /* los nueve llamadores del tablero pasan por UNA guarda: ni el botón lo pide */
+        visitante.el("btn-actualizar").click(); await visitante.esperar();
+        assert.ok(!visitante.urls().some((u) => /op=resumen/.test(u)), "«Actualizar ahora» tampoco pide el tablero en la vista de visitante");
+        /* el aviso dice a quién pertenece y qué hacer, de usted */
+        const iAv = htmlVVSin.indexOf('id="aviso-visitante"');
+        const textoAviso = htmlVVSin.slice(iAv, htmlVVSin.indexOf("</section>", iAv)).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+        assert.ok(/administra el sitio/.test(textoAviso) && /su perfil no los usa/.test(textoAviso) && /entre con su clave/.test(textoAviso), `el aviso del visitante dice a quién pertenece lo que no ve y qué hacer: «${textoAviso.trim()}»`);
+        assert.strictEqual(tuteoEn(textoAviso), null, "el aviso habla de usted");
+        assert.ok(/id="aviso-visitante-inicio"/.test(htmlVVSin.slice(iAv, htmlVVSin.indexOf("</section>", iAv))), "y da la salida: «Ir a la pantalla de inicio»");
+        /* lo del dueño lo DICE la pantalla (la memoria de ago-2026 lo daba por hecho y no estaba) */
+        for (const [id, sec] of [["exp-aviso-empresa", "seccion-experiencia"], ["par-aviso-empresa", "seccion-parametros"]]) {
+          const iS = htmlVVSin.indexOf(`id="${sec}"`), iP = htmlVVSin.indexOf(`id="${id}"`);
+          assert.ok(iS > 0 && iP > iS && iP < htmlVVSin.indexOf("</section>", iS), `#${id} tiene que vivir dentro de #${sec}`);
+          const t = htmlVVSin.slice(iP, htmlVVSin.indexOf("</p>", iP)).replace(/<[^>]+>/g, "");
+          assert.ok(/administra el sitio/.test(t) && /todos sus perfiles/.test(t), `#${id} dice de quién es esta configuración: «${t}»`);
+        }
+
+        /* con clave, nada de esto se aplica: todo a la vista y el tablero y la configuración se piden */
+        for (const id of ids("soloDueno")) assert.strictEqual(dueno.el(id).hidden, false, `con clave #${id} se ve`);
+        for (const id of ids("soloVisitante")) assert.strictEqual(dueno.el(id).hidden, true, `con clave #${id} no se ve`);
+        for (const re of [/op=resumen&perfil=helder/, /op=rup(&|$)/, /op=experiencia(&|$)/, /op=consorcio(&|$)/]) {
+          assert.ok(dueno.urls().some((u) => re.test(u)), `con clave se pide ${re}: el arranque del dueño no cambió`);
+        }
+        assert.ok(!dueno.el("btn-marca").classList.contains("marca-informativa") && /Pulse aquí|Actualizar/.test(dueno.el("sello-sync").innerHTML), "con clave la marca sigue siendo el botón de actualizar");
+        assert.strictEqual(dueno.el("f-perfil").options.length, 4, "con clave la barra trae los tres perfiles del dueño más el RUP");
+        const antesSync = dueno.fetches.length;
+        dueno.el("btn-marca").click(); await dueno.esperar();
+        assert.ok(dueno.urls().slice(antesSync).some((u) => /op=sync/.test(u)), "con clave la marca sí dispara la sincronización");
+
+        /* «#/inicio» pide la landing aunque haya RUP en la URL: la salida de quien administra
+           el sitio y entró sin su clave (la landing conserva el gate, que abrirApp retira) */
+        const inicio = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6", hash: "#/inicio" });
+        assert.ok(inicio.el("app").classList.contains("hidden") && !inicio.el("onboarding").classList.contains("hidden"), "#/inicio enseña la landing y no abre la aplicación");
+        assert.deepStrictEqual(inicio.urls().filter((u) => /op=(listar|pulso|resumen|seguimiento)/.test(u)), [], "…y no pide nada de la aplicación");
+        assert.ok(/location\.hash = "#\/inicio"; location\.reload\(\);/.test(sinComentarios(appVV)), "«Ir a la pantalla de inicio» recarga en #/inicio (cambiar solo el hash no vuelve a decidir la vista)");
+
+        /* el consorcio a la medida por URL sin clave es visitante igual: el hermano del RUP */
+        const cons = await arrancarAppEnNode({ search: "?perfil=cons_abc123def456" });
+        for (const id of ids("soloDueno")) assert.strictEqual(cons.el(id).hidden, true, `consorcio por URL sin clave: #${id} oculto`);
+        assert.deepStrictEqual(cons.urls().filter((u) => /op=(resumen|rup|experiencia|consorcio)(&|$)/.test(u)), [], "el consorcio por URL tampoco pide datos del dueño");
+
+        /* (d) los cinco selectores de perfil hablan el mismo idioma: «juntos», el id de la
+           barra y del servidor; «consorcio» queda solo como alias de la API. Censo de TODOS
+           los <select> de perfil del HTML, no lista. Y el perfil recordado del tablero que ya
+           no exista es INERTE (cae al primero), ejecutando la función real. */
+        {
+          const selectores = [...htmlVVSin.matchAll(/<select id="([a-z-]*perfil)"[^>]*>([\s\S]*?)<\/select>/g)];
+          assert.ok(selectores.length >= 5, `hay ${selectores.length} selectores de perfil; se esperaban al menos cinco`);
+          for (const [, id, cuerpo] of selectores) {
+            const valores = [...cuerpo.matchAll(/<option value="([^"]*)"/g)].map((x) => x[1]);
+            assert.ok(!valores.includes("consorcio"), `#${id} sigue usando «consorcio»: el id canónico es «juntos»`);
+            assert.ok(valores.every((v) => ["helder", "genesis", "juntos"].includes(v)), `#${id} trae valores fuera de los tres perfiles: ${valores.join(", ")}`);
+          }
+          const iPR = appVV.indexOf("  function perfilRecordado()"), fPR = appVV.indexOf("\n  }", iPR) + 4;
+          assert.ok(iPR > 0, "app.js sin perfilRecordado()");
+          const selD = { options: [{ value: "helder" }, { value: "genesis" }, { value: "juntos" }] };
+          const recordado = (v) => new Function("leerPerfil", "$", `${appVV.slice(iPR, fPR)}; return perfilRecordado();`)(() => v, () => selD);
+          assert.strictEqual(recordado("consorcio"), "helder", "un perfil recordado que ya no es opción («consorcio») cae al primero, no a un value vacío");
+          assert.strictEqual(recordado("juntos"), "juntos", "y uno vigente se conserva");
+        }
+      }
+
       console.log("  · UI Apple Glass: pasos 0.1 (pestañas e ids), 0.2 (DELETE de RUP dinámico y fijo), "
         + "0.3 (probabilidad en frases, ejecutada), 1.1–1.6 (paleta, retiradas, límite de funciones, "
-        + "vista sin CDN y peso del título) verificados");
+        + "vista sin CDN y peso del título) verificados · la vista de visitante (M-SEG-02) con el arranque real ejecutado");
     }
 
     /* ── k · PLAN ANUAL DE ADQUISICIONES ─────────────────────────────────────

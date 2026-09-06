@@ -712,6 +712,14 @@
     .marca-boton:active { transform: scale(0.98); }
     .marca-boton:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
     .marca-boton:disabled { cursor: default; }
+    /* LA MARCA DEL VISITANTE NO ES UN CONTROL (6-sep-2026, M-SEG-02): quien entra
+       por su RUP sin clave no dispara la sincronización del corpus compartido, así
+       que la marca pierde las señales de «esto se pulsa» —la mano, el realce y la
+       flecha— y se queda con el nombre y el corte de los datos. */
+    .marca-boton.marca-informativa { cursor: default; }
+    .marca-boton.marca-informativa:hover { background: transparent; }
+    .marca-boton.marca-informativa:active { transform: none; }
+    .marca-boton.marca-informativa .marca-giro { display: none; }
     .marca-linea { display: flex; align-items: center; gap: 7px; }
     .marca-nombre { font-family: var(--font-display); font-size: 21px; font-weight: 600; letter-spacing: -0.02em; color: var(--text-primary); line-height: 1; }
     .marca-giro { flex-shrink: 0; color: var(--text-tertiary); transition: color var(--dur-2) var(--ease-out), transform var(--dur-4) var(--ease-expo); }
@@ -1426,7 +1434,7 @@
               <select id="d-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="helder">Helder</option>
                 <option value="genesis">Génesis</option>
-                <option value="consorcio">Consorcio</option>
+                <option value="juntos">Consorcio</option>
               </select>
             </label>
             <button id="btn-actualizar" type="button"
@@ -1675,7 +1683,13 @@
         <!-- Lo que hay que TOCAR va plegado: subir/descargar el archivo del
              registro, ver el perfil vigente, eliminarlo. Ningún id cambia. -->
         <details id="rup-gestion" class="mt-4">
-          <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">Actualizar, descargar o eliminar el registro</summary>
+          <!-- EL PLIEGUE DICE LO QUE HAY DENTRO SEGÚN QUIÉN MIRA (6-sep-2026, M-SEG-02):
+               quien entra por su RUP sin la clave del sitio solo puede ELIMINAR su
+               registro; subir o descargar el JSON de los perfiles es del dueño y
+               vive en #rup-gestion-dueno, que la vista de visitante oculta. Los dos
+               rótulos van en el HTML y app.js solo alterna `hidden`. -->
+          <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900"><span id="rup-gestion-titulo-dueno">Actualizar, descargar o eliminar el registro</span><span id="rup-gestion-titulo-visitante" hidden>Eliminar su registro</span></summary>
+        <div id="rup-gestion-dueno">
         <p class="mt-3 max-w-2xl text-sm text-gray-500">Suba el certificado RUP en PDF (crea un perfil propio) o cargue el archivo JSON de los perfiles. El cambio surte efecto en la siguiente consulta.</p>
         <div class="mt-4 flex flex-wrap items-center gap-3">
           <input id="rup-json-archivo" type="file" accept=".json,application/json" aria-label="Archivo JSON con los perfiles"
@@ -1708,6 +1722,7 @@
         <div class="mt-6 border-t border-gray-100 pt-4">
           <h3 class="text-sm font-semibold tracking-tight">Perfil actual</h3>
           <div id="rup-actual" class="mt-2 text-sm text-gray-600">—</div>
+        </div>
         </div>
 
         <!-- Zona de riesgo: separada por un divisor y 16px, como manda el sistema -->
@@ -1804,6 +1819,27 @@
       <!-- ══════ Códigos que le faltan en el RUP ══════ -->
 
 
+      <!-- ══════ LO QUE EL VISITANTE NO VE, DICHO (6-sep-2026, M-SEG-02) ══════
+           Quien entra por su RUP sin la clave del sitio no ve el tablero, la
+           actualización de datos, el JSON de los perfiles, «Sistema» ni el
+           rastreo: son de la empresa que administra el sitio. En su lugar, esta
+           línea dice qué falta y a quién pertenece, y da la salida a quien sí
+           administra el sitio y entró sin su clave. Nace oculto con el ATRIBUTO
+           `hidden` (el CDN de Tailwind está bloqueado en la red del dueño) y lo
+           enseña vistaDeVisitante() en app.js. -->
+      <section id="aviso-visitante" hidden class="mt-10 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <p class="text-sm" style="color: var(--text-secondary);">
+          Aquí no se muestran el tablero de procesos, la actualización de datos, los parámetros de costo,
+          los contratos ejecutados, la auditoría del registro ni la sincronización: configuran la empresa
+          que administra el sitio y su perfil no los usa. Si usted administra el sitio, entre con su clave
+          desde la pantalla de inicio.
+        </p>
+        <button id="aviso-visitante-inicio" type="button"
+                class="mt-3 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium transition hover:bg-gray-100">
+          Ir a la pantalla de inicio
+        </button>
+      </section>
+
       <!-- ══════════════ SISTEMA · mantenimiento, plegado ══════════════
            Nace CERRADO: nada de aquí hace falta para decidir a qué presentarse, y un
            acordeón abierto con seis paneles técnicos es lo que hacía que la pestaña
@@ -1837,6 +1873,9 @@
               prestaciones, riesgos laborales, tiempo pagado no trabajado, herramienta menor y protección personal.
               Cada cambio queda guardado con su fecha de vigencia. <span id="par-fuente" class="text-gray-400"></span>
             </p>
+            <!-- A QUIÉN PERTENECE (6-sep-2026, M-SEG-02): estos valores son de la empresa
+                 que administra el sitio y los usan sus tres perfiles; no son de un perfil. -->
+            <p id="par-aviso-empresa" class="mt-2 text-xs text-gray-500">Esta configuración es de la empresa que administra el sitio y vale para todos sus perfiles.</p>
           </div>
           <button id="btn-par-guardar" type="button"
                   class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
@@ -1954,6 +1993,9 @@
 <section id="seccion-experiencia" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <h2 class="font-semibold tracking-tight">Obra que ya ejecutó</h2>
         <p class="mt-1 text-sm text-gray-500">Sus contratos ejecutados: en qué <em>sabe</em> trabajar. Priorizan los códigos que le faltan.</p>
+        <!-- A QUIÉN PERTENECE (6-sep-2026, M-SEG-02): la memoria de ago-2026 decía que «la UI
+             lo dice» y solo lo decía un comentario del código. Se dice aquí, en pantalla. -->
+        <p id="exp-aviso-empresa" class="mt-1 text-xs text-gray-500">Esta carga es de la empresa que administra el sitio y vale para todos sus perfiles.</p>
 
         <!-- Lo que hay HOY va arriba y a la vista; la carga, plegada -->
         <div id="exp-actual" class="mt-3 text-sm text-gray-600">—</div>
@@ -2041,7 +2083,7 @@
               <select id="c-perfil" class="rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="helder">Helder</option>
                 <option value="genesis">Génesis</option>
-                <option value="consorcio">Consorcio</option>
+                <option value="juntos">Consorcio</option>
               </select>
             </label>
             <button id="btn-cobertura" type="button"
@@ -2276,7 +2318,7 @@
               <select id="ra-perfil" class="control-select rounded-lg border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900/10">
                 <option value="helder">Helder</option>
                 <option value="genesis">Génesis</option>
-                <option value="consorcio">Consorcio</option>
+                <option value="juntos">Consorcio</option>
               </select>
             </label>
             <button id="btn-rastrear" type="button"

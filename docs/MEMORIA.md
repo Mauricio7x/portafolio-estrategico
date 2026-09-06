@@ -8063,3 +8063,122 @@ larga (la sesión se la genera), entorno Production → «Save» → «Deploymen
 siguiente pegar en Chrome `/api/procesos?op=salud` y comprobar la hora de la última sincronización.
 Y desde ese momento, las URL pegadas en Chrome `/api/sync?modo=full` y `/api/sync?modo=auto` llevan
 `&token=MiExtraccion2025` (CONFIGURACION_TOKENS.md §3.6 y §8).
+
+### Lote «B4a-vista-de-visitante» de la consultoría del 4-sep · M-SEG-02 (6-sep-2026)
+
+Una sola vista de visitante, por censo: quien entra por su RUP subido (o por un consorcio a la
+medida) sin la clave del sitio ve SOLO lo suyo. Lo que se decidió y por qué no hay que
+re-aprenderlo:
+
+- **Medido antes de tocar nada, con el arranque REAL de `public/app.js`** (en Node, con un doble
+  de DOM construido desde `index.html`, y en Chromium con un arnés que sirve `public/` y contesta
+  `/api/*` con 503 registrando las URL): entrando por `/?perfil=rup_…` sin clave, la pestaña Mi
+  empresa enseñaba **9 bloques del dueño** (tablero, «Actualizar datos», subir/descargar el JSON de
+  los perfiles, «Sistema» con parámetros de costo, contratos ejecutados, auditoría, catálogo y
+  sincronización, y el rastreo con su selector de tres nombres) y el navegador pedía **4 cosas del
+  dueño**: `op=resumen&perfil=helder`, `op=rup`, `op=experiencia` y `op=consorcio` —y los
+  consorcios guardados de esa última respuesta **volvían a la barra como opciones**, deshaciendo
+  la poda del selector por la puerta de atrás—. Pulsar la marca de la barra disparaba
+  `op=sync&modo=auto`. La ficha listaba lo primero; el hermano de los consorcios y la marca (que es
+  del encargo 2, posterior a la ficha) los encontró el censo.
+- **La vista es un CENSO declarado en el código, no una función sobre un selector.**
+  `VISTA_VISITANTE` en `app.js` tiene tres listas con motivo por entrada: `soloDueno` (queda
+  `hidden` para el visitante: `dashboard`, `actualizar`, `rup-gestion-dueno`,
+  `rup-gestion-titulo-dueno`, `seccion-sistema`, `rastreo-wrap`, `btn-apu-cargar`),
+  `soloVisitante` (`aviso-visitante`, `rup-gestion-titulo-visitante`) y `deTodos` (pulso, sus
+  repartos, el registro en cifras, el calendario, «Crear consorcio» —que se pliega sola con un solo
+  perfil en la barra— y «Verifique a su socio»). La suite recorre TODOS los `<section>`/`<details>`
+  de primer nivel de `#tab-admin` y exige que cada uno esté en una de las tres listas: un bloque
+  nuevo sin declarar pone la suite en rojo. Se aplica con el ATRIBUTO `hidden`, no con clases: el
+  CDN de Tailwind está bloqueado en la red del dueño (la lección de `#act-panel`).
+- **Lo que no se enseña tampoco se pide, y la guarda va en la FUENTE, no en cada llamador.**
+  `cargarDashboard` tiene nueve llamadores (arranque, refresco, visibilidad, «Actualizar ahora»,
+  «Reintentar», tras cargar o eliminar un RUP, tras reconstruir el índice…): una guarda
+  `if (vistaVisitanteActiva) return;` en la función cubre a los nueve; condicionar
+  `arrancarPaneles` habría dejado ocho vivos. Igual en `cargarRupActual`,
+  `cargarExperienciaActual`, `cargarParametrosAdmin`, `pintarConsorciosGuardados` y
+  `actualizarDatos` (el camino que comparten la marca y el botón de Mi empresa). El catálogo APU
+  (`op=catalogo`) sigue pidiéndose: es público y sus cifras se ven en Precios; lo que se oculta es
+  el botón que lo REESCRIBE. La sincronización automática tras la lista (`op=sync&modo=auto`) NO
+  se toca: no es un control, es la cortesía al corpus con la llave y el candado de M-SEG-08, y así
+  queda declarada como excepción en la prueba.
+- **La marca de la barra se vuelve informativa, no desaparece ni se pone gris.** Para el
+  visitante, `btn-marca` lleva la clase `marca-informativa` y `aria-disabled="true"`: sin mano, sin
+  realce, sin flecha (CSS en `index.html`), y `pintarCorte` —que lo sabe POR LA CLASE, porque la
+  prueba que lo extrae y ejecuta no tiene acceso a las variables del IIFE— pinta «Datos de hoy,
+  8:30» sin el «· Actualizar», o «Datos de SECOP II» sin corte, y un título sin «pulse». Se
+  descartó `disabled`: el `#app button:disabled { opacity: .5 }` dejaría la marca del producto en
+  gris permanente. El doble `nodoPC` de la prueba de `pintarCorte` ganó `classList.contains` y la
+  prueba un caso más: la marca informativa con corte y con fallo, y sin corte. Por la misma regla,
+  el aviso de «catálogo no cargado» de Precios ya no manda al visitante a pulsar un botón que no
+  ve: «Lo carga quien administra el sitio».
+- **El pliegue del registro se parte en dos.** «Eliminar este perfil» es una acción legítima del
+  visitante (borra el perfil ACTIVO de la barra, el suyo) y vivía dentro de `#rup-gestion` junto a
+  subir/descargar el JSON de los perfiles del dueño. Lo del dueño va ahora en `#rup-gestion-dueno`
+  (oculto al visitante) y el rótulo del pliegue tiene dos versiones EN EL HTML («Actualizar,
+  descargar o eliminar el registro» / «Eliminar su registro»): `app.js` solo alterna `hidden`.
+- **Los cinco selectores de perfil hablan el mismo idioma: «juntos».** `d-perfil`, `c-perfil` y
+  `ra-perfil` decían `consorcio` (el alias de la API) mientras la barra y el editor decían
+  `juntos`. Se unifican en el HTML (censo de TODOS los `<select id="…perfil">` en la suite) y
+  `ALIAS_PERFIL` se conserva para los enlaces viejos. **NO se adoptó** alimentar esos tres
+  selectores desde `#f-perfil` (paso 3 de la ficha): `op=resumen` solo admite los perfiles fijos
+  (`PERFILES_VALIDOS`, que la propia ficha manda no ampliar en este peldaño) y `op=cobertura` y
+  `op=diagnostico&buscar` resuelven `PERFILES[id]` en la instancia caliente —no determinista para
+  `rup_…`—: ofrecer el RUP en esos selectores sería ofrecer un 400. Para el visitante los tres
+  bloques están ocultos, que es lo que importaba. Y el perfil recordado del tablero
+  (`sessionStorage`, que puede traer `consorcio` de una pestaña abierta antes del cambio) pasa por
+  `perfilRecordado()`: un valor que ya no es opción es INERTE y cae al primero, nunca a un `value`
+  vacío que el servidor rechazaría.
+- **Lo que queda dice a quién pertenece.** UN aviso (`#aviso-visitante`, donde estaba «Sistema»)
+  dice qué no se muestra, que configura la empresa que administra el sitio y que su perfil no lo
+  usa, y da la salida a quien sí administra el sitio y entró por su RUP sin clave: **«Ir a la
+  pantalla de inicio»** recarga en `#/inicio`, que el arranque atiende ANTES que el RUP guardado o
+  la sesión y enseña la landing con sus tres puertas (el gate sigue en el DOM porque `abrirApp`,
+  que lo retira, no corrió). Se descartó abrir el gate encima de la aplicación: `abrirApp` ya lo
+  había retirado y pasar de visitante a dueño en la misma página exigiría volver a lanzar los
+  cargadores que la vista saltó; una recarga es más simple y la puerta no cambia. El párrafo que
+  la ficha pedía DENTRO de `#seccion-experiencia` y `#seccion-parametros` no tiene sentido para el
+  visitante (esos bloques están ocultos): allí van dos líneas para el dueño —«Esta carga/
+  configuración es de la empresa que administra el sitio y vale para todos sus perfiles»—, que es
+  lo que la memoria de ago-2026 («la UI LO DICE», sección del onboarding) daba por hecho y solo
+  decía un comentario del código. Desde hoy lo dice la pantalla.
+- **NO se movió la carga de experiencia fuera de «Sistema»** (P-07, paso 4 de la ficha): el
+  encargo 2 (5/6-sep-2026) decidió lo contrario —«lo que casi no se usa se mueve, no se retira»,
+  `#seccion-experiencia` DENTRO de «Sistema»— y tiene cerradura. La ficha se escribió sobre
+  d569946, antes de esa decisión; manda el árbol. Si el dueño quiere la carga junto a su registro,
+  es una decisión suya, no de este lote.
+- **Ocultar no es seguridad, y se deja escrito donde se decide.** El token va integrado y quien
+  lea el fuente sigue pudiendo llamar `op=experiencia`, `op=sync` o `op=rup`: la cerradura del
+  servidor son las cuentas por usuario (M-SEG-04). Esta mejora decide qué se ENSEÑA y qué se pide
+  desde el navegador del visitante, que es lo que la primera pantalla de un contratista nuevo
+  necesitaba: sus licitaciones, su pulso, sus precios, y no las cifras ni los nombres del dueño.
+- **La cerradura ejecuta el arranque real, no lo busca por regex.** El bloque (9) del apartado
+  h-ter de `tests/e2e.js` construye un doble de DOM DESDE `index.html` (ids, clases, atributo
+  `hidden` y las opciones de cada `<select>`), carga los quince módulos de `public/` en el orden de
+  los `<script>` del HTML dentro de un `vm` con `fetch` que registra URL y timers que no disparan,
+  y arranca cuatro veces: dueño con clave (referencia), visitante `rup_…`, `#/inicio` y consorcio
+  `cons_…` por URL. Exige lo de `soloDueno` oculto, lo `deTodos` igual que para el dueño, cero
+  peticiones con `op=resumen|rup|experiencia|consorcio` o `perfil=helder`, y SÍ `op=listar`,
+  `op=pulso` y `op=seguimiento` con el perfil del visitante (sin eso la prueba pasaría en vacío);
+  la marca informativa y su clic sin `op=sync`; «Actualizar ahora» sin `op=resumen`; el aviso de
+  usted (`tuteoEn` de `lib/lenguaje_pantalla`); y, además, el censo de bloques y el censo de
+  CONTROLES DE ESCRITURA: el conjunto de escrituras compartidas sale por grep de `public/*.js`
+  (todas las `op` del router admin, `op=sync`, las dos reconstrucciones y el POST de parámetros),
+  cada una declara sus controles en la prueba y cada control tiene que estar dentro de un bloque
+  `soloDueno` o ser una excepción con motivo (`btn-eliminar-rup`: el perfil activo es el suyo;
+  `rup-archivo`: alta pública; la marca: se ejecuta; el sync automático: no es un control).
+  jsdom no existe en el repositorio: un DOM API que app.js use y el doble no tenga sale como
+  TypeError con su nombre y se AÑADE al doble, nunca se relaja la prueba. La primera versión del
+  doble leía `class="… hidden …"` como el atributo `hidden`: los valores entrecomillados se tachan
+  antes de buscarlo. Mutaciones: con el fuente guardado en `git stash` (prueba dentro) la suite
+  cae en el censo; devolviendo `vistaDeVisitante(false)` en el arranque cae en «#dashboard tiene
+  que quedar oculto»; quitando la guarda de `cargarDashboard` cae en «pidió datos del dueño»;
+  quitando la de `actualizarDatos` cae en «pulsar la marca…»; devolviendo `consorcio` a un
+  selector cae en el censo de selectores.
+- **Medido en Chromium** (1280 y 390, claro y oscuro, entrando por `/?perfil=rup_…` sin clave con
+  el arnés de 503): 4 peticiones —las tres suyas más el catálogo público—, ningún bloque del dueño
+  visible, la marca sin mano ni flecha con «Datos de SECOP II», cero peticiones externas, cero
+  desbordes, en consola solo los 503 del propio arnés; «Ir a la pantalla de inicio» deja la
+  landing con sus tres puertas y «Entrar con clave» abre el gate. Con clave: los nueve bloques a
+  la vista, las nueve peticiones de siempre y la marca dispara `op=sync`. **No verificable desde
+  aquí**: producción con Redis real y usuarios reales.

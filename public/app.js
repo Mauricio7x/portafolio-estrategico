@@ -189,24 +189,27 @@
     const s = document.getElementById("sello-sync");
     if (!s) return;
     if (iso) corteActual = iso;
+    const b = document.getElementById("btn-marca");
+    /* para el visitante la marca no es un control (6-sep-2026, M-SEG-02): ni
+       «pulse aquí», ni «Actualizar»; solo el hecho: de cuándo son los datos */
+    const informativa = !!(b && b.classList.contains("marca-informativa"));
     const P = window.Portada;
     const cuando = iso && P ? P.textoActualizado(iso, Date.now(), { corto: true }) : null;
     const fallo = ultimoError && ultimoError.ts && P
       ? (P.desactualizado(ultimoError.ts, Date.now()) ? "la última actualización no se pudo hacer" : "hoy no se pudo actualizar")
       : null;
     s.innerHTML = cuando
-      ? `Datos de ${esc(cuando)}${fallo ? ` · ${fallo}; se reintenta con cada visita` : ""} · <span class="marca-accion">Actualizar</span>`
-      : '<span class="marca-accion">Pulse aquí para traer lo último de SECOP II</span>';
+      ? `Datos de ${esc(cuando)}${fallo ? ` · ${fallo}; se reintenta con cada visita` : ""}${informativa ? "" : ' · <span class="marca-accion">Actualizar</span>'}`
+      : (informativa ? "Datos de SECOP II" : '<span class="marca-accion">Pulse aquí para traer lo último de SECOP II</span>');
     s.classList.toggle("corte-viejo", !!(fallo || (iso && P && P.desactualizado(iso, Date.now()))));
     // en el teléfono el corte va en una línea recortada; con fallo envuelve para que se LEA entero
     s.classList.toggle("corte-fallo", !!(fallo && cuando));
     s.classList.remove("hidden");
-    const b = document.getElementById("btn-marca");
     if (b) {
       const largo = iso && P ? P.textoActualizado(iso, Date.now()) : "Todavía no consta cuándo se trajeron los datos";
       const aviso = fallo ? ` ${fallo[0].toUpperCase()}${fallo.slice(1)}; se reintenta con cada visita.` : "";
-      b.title = `${largo}.${aviso} Pulse para traer de SECOP II lo publicado desde entonces.`;
-      b.setAttribute("aria-label", `${largo}.${aviso} Actualizar los datos de SECOP II.`);
+      b.title = informativa ? `${largo}.${aviso}` : `${largo}.${aviso} Pulse para traer de SECOP II lo publicado desde entonces.`;
+      b.setAttribute("aria-label", informativa ? `${largo}.${aviso}` : `${largo}.${aviso} Actualizar los datos de SECOP II.`);
     }
   }
   /* Mientras corre, la marca ES el indicador: quien pulsa desde otra pestaña no
@@ -455,6 +458,78 @@
     }
     sel.value = p.id;
   }
+
+  /* ══════════ LA VISTA DE VISITANTE (6-sep-2026, M-SEG-02) ══════════
+     Quien entra por su RUP subido (o por un consorcio a la medida) sin la clave
+     del sitio ve SOLO lo suyo. Hasta hoy la única poda era la del selector de
+     la barra: la pestaña abría con el tablero de los perfiles del dueño
+     (op=resumen&perfil=helder), pedía el JSON de sus perfiles, sus contratos
+     ejecutados y sus consorcios guardados —que además volvían a la barra como
+     opciones— y enseñaba los botones que reescriben todo eso. Medido con el
+     arranque real (Node y Chromium, 6-sep-2026): 9 bloques del dueño visibles y
+     4 peticiones con sus datos.
+
+     ES UN CENSO, NO UNA LISTA DE SITIOS: cada bloque de primer nivel de Mi
+     empresa está en `soloDueno`, en `soloVisitante` o en `deTodos`, con su
+     motivo, y la suite exige que el HTML no tenga ninguno fuera de las tres
+     listas y que lo de `soloDueno` quede oculto al arrancar como visitante. Se aplica con
+     `el.hidden`, no con clases (el CDN de Tailwind está bloqueado en la red del
+     dueño). Lo que no se enseña tampoco se PIDE: los cargadores de esos bloques
+     vuelven sin llamar al servidor.
+
+     OCULTAR NO ES SEGURIDAD: el token va integrado y quien lea el fuente sigue
+     pudiendo llamar op=experiencia o op=sync; la cerradura del servidor son
+     las cuentas por usuario (otra mejora). Aquí se decide qué se ENSEÑA y qué
+     se pide, y lo que queda dice a quién pertenece. */
+  const VISTA_VISITANTE = {
+    /* lo que solo ve quien pasó el gate: `hidden` para el visitante */
+    soloDueno: {
+      dashboard: "el tablero de los tres perfiles del dueño: op=resumen no admite otro perfil",
+      actualizar: "«Actualizar datos» dispara op=sync sobre el corpus compartido",
+      "rup-gestion-dueno": "subir, descargar y ver el JSON de los perfiles del dueño (op=rup)",
+      "rup-gestion-titulo-dueno": "el rótulo del pliegue promete subir y descargar el registro",
+      "seccion-sistema": "parámetros de costo, contratos ejecutados, auditoría, sincronización y reconstrucciones: configuración de la empresa que administra el sitio",
+      "rastreo-wrap": "su selector de perfil solo conoce los tres perfiles del dueño",
+      "btn-apu-cargar": "op=cargar-catalogo reescribe el catálogo de precios compartido (pestaña Precios)",
+    },
+    /* lo que solo ve el visitante */
+    soloVisitante: {
+      "aviso-visitante": "dice qué no se enseña, a quién pertenece y cómo entra quien sí administra el sitio",
+      "rup-gestion-titulo-visitante": "el pliegue del visitante solo elimina su propio registro",
+    },
+    /* lo que ven los dos, con el motivo por el que no enseña nada del dueño */
+    deTodos: {
+      pulso: "cifras de SU perfil (op=pulso con el perfil de la barra, ya podada)",
+      "pulso-repartos": "la otra mitad del pulso: mismo perfil",
+      "seccion-rup": "su registro en cifras (op=pulso) y la eliminación de su propio perfil",
+      calendario: "los cierres de sus procesos guardados (seguimiento del perfil de la barra)",
+      "seccion-consorcio": "se oculta sola con menos de dos perfiles individuales en la barra, y la del visitante trae uno",
+      "seccion-socio": "consulta fuentes públicas sobre un tercero; no lleva cifras del dueño",
+    },
+  };
+  let vistaVisitanteActiva = false;
+  function vistaDeVisitante(activa) {
+    vistaVisitanteActiva = !!activa;
+    for (const id of Object.keys(VISTA_VISITANTE.soloDueno)) { const el = $(id); if (el) el.hidden = vistaVisitanteActiva; }
+    for (const id of Object.keys(VISTA_VISITANTE.soloVisitante)) { const el = $(id); if (el) el.hidden = !vistaVisitanteActiva; }
+    /* la marca de la barra dispara la misma sincronización que «Actualizar
+       datos»: para el visitante deja de ser un control (sin mano, sin flecha,
+       sin «Actualizar»), y pintarCorte lo sabe por la clase */
+    const marca = $("btn-marca");
+    if (marca) {
+      marca.classList.toggle("marca-informativa", vistaVisitanteActiva);
+      marca.setAttribute("aria-disabled", vistaVisitanteActiva ? "true" : "false");
+    }
+    pintarCorte(corteActual);
+  }
+  /* «Ir a la pantalla de inicio»: la landing con sus tres puertas también para
+     quien tiene un RUP guardado —sin esto el arranque lo devolvería a la
+     aplicación—. Se RECARGA a propósito: cambiar solo el hash no vuelve a
+     decidir la vista, y el arranque entiende «#/inicio». */
+  const irAlInicio = $("aviso-visitante-inicio");
+  if (irAlInicio) irAlInicio.addEventListener("click", () => {
+    try { location.hash = "#/inicio"; location.reload(); } catch { /* entorno raro */ }
+  });
 
   /* ══════════ Estados de la vista ══════════ */
   function mostrar(estado, msg) {
@@ -6513,6 +6588,10 @@
   }
 
   function actualizarDatos() {
+    /* en la vista de visitante la sincronización no se dispara desde el
+       navegador (M-SEG-02): la marca es un rótulo y el panel está oculto. La
+       guarda va aquí, en el camino que comparten los dos, no en cada botón. */
+    if (vistaVisitanteActiva) { marcaEsperandoCorte = false; return; }
     const panel = document.getElementById("act-panel");
     const est = document.getElementById("act-estado");
     const cif = document.getElementById("act-cifras");
@@ -6708,6 +6787,7 @@
   }
 
   async function cargarDashboard({ forzar = false } = {}) {
+    if (vistaVisitanteActiva) return;   // lo que no se enseña no se pide (M-SEG-02)
     if (dashboardCargando) return;
     const token = leerToken();
     const perfil = $("d-perfil").value;
@@ -7201,6 +7281,7 @@
   });
 
   async function cargarRupActual() {
+    if (vistaVisitanteActiva) return;   // el JSON de los perfiles es del dueño (M-SEG-02)
     const caja = $("rup-actual");
     const token = leerToken();
     let r = null, cuerpo = null;
@@ -7484,6 +7565,7 @@
   });
 
   async function cargarExperienciaActual() {
+    if (vistaVisitanteActiva) return;   // los contratos ejecutados son del dueño (M-SEG-02)
     const caja = $("exp-actual");
     const token = leerToken();
     let r = null, cuerpo = null;
@@ -7974,8 +8056,9 @@
     const c = await leerJson(r);
     if (!r.ok || !c || !c.ok) {
       $("apu-detalle").classList.add("hidden");
+      // el visitante no ve el botón (M-SEG-02): no se le manda a pulsarlo
       return mensajeApu((c && c.error ? esc(c.error) : "El catálogo APU no está cargado.")
-        + " Pulse «Cargar catálogo APU» para poblarlo.", "aviso");
+        + (vistaVisitanteActiva ? " Lo carga quien administra el sitio." : " Pulse «Cargar catálogo APU» para poblarlo."), "aviso");
     }
     mensajeApu("");
     pintarApu(c);
@@ -8192,6 +8275,7 @@
     };
   }
   async function cargarParametrosAdmin() {
+    if (vistaVisitanteActiva) return;   // el formulario vive en «Sistema», oculto al visitante (M-SEG-02)
     if (!$("par-vigencia")) return;
     let r = null;
     try {
@@ -8371,6 +8455,9 @@
     }
   });
   async function pintarConsorciosGuardados() {
+    /* los consorcios guardados son del dueño y VOLVÍAN A LA BARRA como opciones:
+       deshacían la poda del visitante por la puerta de atrás (M-SEG-02) */
+    if (vistaVisitanteActiva) return;
     let r = null;
     try { r = await api("/api/perfil?op=consorcio"); } catch { r = null; }
     const lista = (r && r.consorcios) || [];
@@ -8457,13 +8544,22 @@
       <p class="mt-3 text-xs text-gray-500">${esc((r.normas && r.normas.solidaridad && r.normas.solidaridad.regla) || "")}</p>`;
   }
 
+  /* El perfil recordado se valida contra las opciones del selector: un valor que
+     ya no existe («consorcio» fue el valor de estos selectores hasta el
+     6-sep-2026; hoy es «juntos», el mismo id que la barra) es INERTE y cae al
+     primero, nunca a un value vacío que el servidor rechazaría con 400. */
+  function perfilRecordado() {
+    const v = leerPerfil();
+    const sel = $("d-perfil");
+    return [...sel.options].some((o) => o.value === v) ? v : sel.options[0].value;
+  }
   function arrancarPaneles() {
     pintarConsorcio();
     pintarConsorciosGuardados();
     $("btn-socio-verificar").addEventListener("click", verificarSocio);
     for (const id of ["socio-id", "socio-representante"]) $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); verificarSocio(); } });
-    $("d-perfil").value = leerPerfil();
-    $("c-perfil").value = leerPerfil();
+    $("d-perfil").value = perfilRecordado();
+    $("c-perfil").value = perfilRecordado();
     pintarAlertaVigencia();
     cargarDashboard();
     cargarRupActual();
@@ -8506,10 +8602,19 @@
      morir por eso (la landing quedaría muda con la consola como único aviso) */
   let sesionConClave = false;
   try { sesionConClave = sessionStorage.getItem("detecta-acceso") === "1"; } catch { sesionConClave = false; }
-  if (perfilRup) {
+  /* «#/inicio» pide la LANDING aunque haya un RUP guardado o sesión (6-sep-2026,
+     M-SEG-02): es la salida de quien administra el sitio y entró por su RUP sin
+     la clave —sin ella, el arranque lo devolvía a la aplicación una y otra vez—. */
+  let pideInicio = false;
+  try { pideInicio = location.hash === "#/inicio"; } catch { pideInicio = false; }
+  if (pideInicio) {
+    if (window.Portada) window.Portada.teaser();
+  } else if (perfilRup) {
     // sin gate pasado, el selector queda SOLO con el perfil del RUP: entrar
-    // por URL no puede regalar los perfiles del dueño
+    // por URL no puede regalar los perfiles del dueño — y la vista de
+    // visitante oculta (y deja de pedir) lo que es del dueño
     activarPerfilRup(perfilRup, { soloEste: !sesionConClave });
+    vistaDeVisitante(!sesionConClave);
     abrirApp();
   } else if (/^cons_[a-z0-9]{6,24}$/.test(perfilUrl)) {
     /* Fase 10 · un consorcio a la medida por URL («Ver su lista»): misma regla
@@ -8520,6 +8625,7 @@
     if (![...sel.options].some((o) => o.value === perfilUrl)) { const o = document.createElement("option"); o.value = perfilUrl; o.textContent = etiquetaConsorcio(nombreCons, perfilUrl); sel.appendChild(o); }
     if (!sesionConClave) for (const o of [...sel.options]) { if (o.value !== perfilUrl) o.remove(); }
     sel.value = perfilUrl;
+    vistaDeVisitante(!sesionConClave);
     abrirApp();
   } else if (sesionConClave) {
     abrirApp();
