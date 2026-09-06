@@ -178,6 +178,59 @@
       <p class="mt-2 text-[11px]" style="color: var(--text-secondary);">Barras por dinero en juego. Clic en un departamento para ver su lista.${(p.porDepartamento || []).some((d) => d.cod === "sin_dato") ? " Los procesos sin departamento publicado no se reparten a ojo." : ""}</p>`;
   }
 
+  /* ══ LA HISTORIA DEL MERCADO, SOLO CON BASE (6-sep-2026, M-DGF-20) ══
+     El servidor guarda un punto por día (procesos abiertos, dinero, entidades,
+     y el sello de la regla de ingesta). Aquí se pinta UNA columna por día de
+     los últimos 90 —con `Pulso.columnas`, la primitiva de magnitud sobre escala
+     ordenada— SOLO cuando en esa ventana hay al menos HISTORIA_MIN_PUNTOS
+     mediciones y todas llevan el MISMO sello: con menos base, o con la regla
+     cambiada a mitad de ventana, no se dibuja nada que parezca tendencia (sin
+     dato no es «plano»). Los días sin medición quedan en blanco y se cuentan:
+     una columna vacía no es «cero procesos». La ventana la fija `ahora`
+     (inyectable, hora de Colombia), no el último punto: «últimos 90 días»
+     tiene que ser verdad el día que se lee. */
+  const HISTORIA_VENTANA_DIAS = 90;
+  const HISTORIA_MIN_PUNTOS = 30;
+  const MES_CORTO = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const MES_LARGO = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  const diaColombia = (ms) => new Date(ms).toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+  const FECHA_RE = /^\d{4}-\d{2}-\d{2}$/;
+  const sumarDiasISO = (iso, n) => { const [a, m, d] = iso.split("-").map(Number); return new Date(Date.UTC(a, m - 1, d) + n * 86400000).toISOString().slice(0, 10); };
+  function raizPulso() {
+    if (typeof window !== "undefined" && window.Pulso) return window.Pulso;
+    try { return require("./pulso.js"); } catch { return null; }
+  }
+  function htmlHistoria(historia, { ahora = Date.now() } = {}) {
+    if (!Array.isArray(historia)) return "";
+    const Viz = raizPulso();
+    if (!Viz || typeof Viz.columnas !== "function") return "";
+    const hoy = diaColombia(ahora);
+    const desde = sumarDiasISO(hoy, -(HISTORIA_VENTANA_DIAS - 1));
+    const porFecha = new Map();
+    for (const p of historia) {
+      if (!p || !FECHA_RE.test(String(p.fecha || "")) || !Number.isInteger(p.procesosAbiertos) || p.procesosAbiertos < 0) continue;
+      if (p.fecha < desde || p.fecha > hoy) continue;
+      porFecha.set(p.fecha, p);
+    }
+    if (porFecha.size < HISTORIA_MIN_PUNTOS) return "";
+    const sellos = new Set([...porFecha.values()].map((p) => (p.sello == null ? "" : String(p.sello))));
+    if (sellos.size !== 1) return "";                 // la regla cambió a mitad de ventana: la vista calla
+    const cubetas = [];
+    for (let f = desde; f <= hoy; f = sumarDiasISO(f, 1)) {
+      const [a, m, d] = f.split("-").map(Number);
+      const p = porFecha.get(f);
+      cubetas.push({
+        n: p ? p.procesosAbiertos : null,
+        corto: `${d} ${MES_CORTO[m - 1]}`,
+        titulo: `${d} de ${MES_LARGO[m - 1]} de ${a}`,
+      });
+    }
+    const sinMedir = cubetas.length - porFecha.size;
+    const g = Viz.columnas(cubetas, { alto: 120, conValor: false, rotularCada: 30 });
+    if (!g) return "";
+    return `${g}<p class="mt-1 text-[11px]" style="color: var(--text-secondary);">Una columna por día, medida al cierre de cada sincronización.${sinMedir > 0 ? ` ${num(sinMedir)} ${sinMedir === 1 ? "día sin medición queda" : "días sin medición quedan"} en blanco.` : ""}</p>`;
+  }
+
   /* ── arranque ── */
   /* una sola petición del agregado por página, compartida por el teaser de la
      landing y la portada del tablero */
@@ -199,6 +252,13 @@
     caja.innerHTML = htmlTeaser(p);
     caja.title = textoActualizado(p.generado);
     caja.classList.remove("hidden");
+    /* la tendencia, plegada bajo las tres cifras y solo con base: sin ella la
+       caja sigue oculta y no hay nada que parezca una tendencia */
+    const hist = d.getElementById("pulso-historia"), cuerpoHist = d.getElementById("pulso-historia-cuerpo");
+    if (hist && cuerpoHist) {
+      cuerpoHist.innerHTML = htmlHistoria(p.historia);
+      hist.classList.toggle("hidden", !cuerpoHist.innerHTML);
+    }
     teaserPintado = true;
     return true;
   }
@@ -232,5 +292,5 @@
     return true;
   }
 
-  return { arrancar, teaser, pesosCortos, textoActualizado, desactualizado, htmlHero, htmlTeaser, htmlCierran, htmlManifestacion, htmlEntidades, htmlDepartamentos, enlaceLista };
+  return { arrancar, teaser, pesosCortos, textoActualizado, desactualizado, htmlHero, htmlTeaser, htmlCierran, htmlManifestacion, htmlEntidades, htmlDepartamentos, enlaceLista, htmlHistoria, HISTORIA_VENTANA_DIAS, HISTORIA_MIN_PUNTOS };
 });

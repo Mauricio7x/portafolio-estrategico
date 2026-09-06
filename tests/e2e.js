@@ -11272,6 +11272,58 @@ async function main() {
       const rOp = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=1", CAB_TOKEN);
       assert.strictEqual(c.totales.visibles, rOp.cuerpo.total,
         `el panel dice ${c.totales.visibles} visibles y la app ${rOp.cuerpo.total}: son dos cálculos distintos`);
+
+      /* ═══ CUÁNTA GENTE COMPITIÓ, AÑO A AÑO (6-sep-2026, M-DGF-14) ═══
+         El índice mide `periodos` (oferentes por año y en la ventana electoral)
+         en cada reconstrucción y solo lo servía op=historico, el endpoint del
+         dueño. Ahora viaja en /api/resumen TAL COMO lo publicó el índice (sin
+         recalcular ni redondear) con el suelo de procesos que el índice ya usa
+         para un departamento; y la nota del tablero —función real de app.js—
+         solo escribe con dos años con base, sin «probabilidad» ni «ley de
+         garantías», y con la base al lado de cada cifra. */
+      {
+        const cp = c.competencia_periodos;
+        assert.ok(cp && cp.por_anio && typeof cp.por_anio === "object", `/api/resumen tiene que traer competencia_periodos.por_anio: ${JSON.stringify(cp)}`);
+        const metaCP = JSON.parse(await redis.get("indice:competencia:meta"));
+        assert.ok(metaCP && metaCP.periodos, "el índice de la suite publica periodos");
+        assert.deepStrictEqual(cp.por_anio, metaCP.periodos.por_anio, "por_anio viaja tal como lo midió el índice");
+        assert.deepStrictEqual(cp.ventana_garantias_2026, metaCP.periodos.ventana_garantias_2026, "…y la ventana también");
+        assert.strictEqual(cp.min_procesos, require("../lib/indice_competencia.js").MIN_PROCESOS_DEPTO, "el suelo para pintar un año es el que el índice exige a un departamento, no un número nuevo");
+        for (const [anio, a] of Object.entries(cp.por_anio)) {
+          assert.ok(/^\d{4}$/.test(anio) && Number.isInteger(a.procesos) && a.procesos > 0, `año ${anio} con procesos enteros`);
+          assert.ok(a.promedio_oferentes === null || Number.isFinite(a.promedio_oferentes), `promedio del ${anio}: número o null, jamás NaN`);
+        }
+        assert.strictEqual(cp.ventana_garantias_2026.desde, "2025-11-08");
+        // la nota del tablero, EJECUTADA (la función pura de app.js con los formateadores reales)
+        const appCP = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const iCP = appCP.indexOf("function htmlMercadoPeriodos("), iFC = appCP.indexOf("function diaLegible(");
+        assert.ok(iCP > 0 && iFC > 0, "app.js sin htmlMercadoPeriodos/diaLegible: el tablero no enseña cuánta gente compitió");
+        const notaCP = new Function("fmt", "fmt1", "esc", "MESES_ES",
+          `${appCP.slice(iCP, appCP.indexOf("\n  }", iCP) + 4)}\n${appCP.slice(iFC, appCP.indexOf("\n  }", iFC) + 4)}; return htmlMercadoPeriodos;`)(
+          new Intl.NumberFormat("es-CO"), new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }), (x) => String(x ?? ""),
+          ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]);
+        const cpProd = { por_anio: { 2024: { procesos: 2345, promedio_oferentes: 4.35 }, 2025: { procesos: 1800, promedio_oferentes: 4.08 }, 2026: { procesos: 900, promedio_oferentes: 4.11 }, 2027: { procesos: 1, promedio_oferentes: 34 } },
+          ventana_garantias_2026: { desde: "2025-11-08", hasta: "2026-05-31", procesos_dentro: 1100, promedio_dentro: 3.74 }, min_procesos: 30 };
+        const hCP = notaCP(cpProd);
+        assert.ok(/En 2024 compitieron 4,4 oferentes por proceso \(2\.345 adjudicados\); en 2025, 4,1 \(1\.800\); en 2026, 4,1 \(900\)\./.test(hCP), `dos cifras por año con su base: ${hCP.replace(/\s+/g, " ").slice(0, 300)}`);
+        assert.ok(!/2027/.test(hCP), "el 2027 de un solo proceso (34 oferentes) existe en el dato y NO sale como un año: sin base no hay cifra");
+        assert.ok(/período electoral \(8 de noviembre de 2025 a 31 de mayo de 2026\) compitieron 3,7 oferentes por proceso \(1\.100 adjudicados\)/.test(hCP), `la ventana dice el hecho con sus fechas y su base: ${hCP.slice(-400)}`);
+        assert.ok(!/probabilidad|garant[íi]as|ley de/i.test(hCP), "ni «probabilidad» ni «ley de garantías»: se dice «el período electoral»");
+        assert.ok(/solo se cuenta un año con 30 o más/.test(hCP), "la nota declara el suelo que aplica");
+        assert.strictEqual(notaCP({ ...cpProd, por_anio: { 2026: cpProd.por_anio[2026] } }), "", "con un solo año con base no hay «año a año»");
+        assert.strictEqual(notaCP({ ...cpProd, por_anio: { 2025: { procesos: 29, promedio_oferentes: 4 }, 2026: { procesos: 29, promedio_oferentes: 4 } } }), "", "dos años por debajo del suelo: nada");
+        assert.strictEqual(notaCP({ ...cpProd, ventana_garantias_2026: { ...cpProd.ventana_garantias_2026, procesos_dentro: 12 } }).includes("período electoral"), false, "la ventana sin base se calla y los años siguen");
+        assert.strictEqual(notaCP({ ...cpProd, por_anio: { 2025: { procesos: 100, promedio_oferentes: null }, 2026: { procesos: 100, promedio_oferentes: 4 } } }), "", "un promedio null no es 0: sin él ese año no cuenta");
+        for (const sinDato of [null, undefined, {}, { por_anio: null }, { por_anio: cpProd.por_anio }, { ...cpProd, min_procesos: null }]) assert.strictEqual(notaCP(sinDato), "", `sin dato o sin suelo declarado no se escribe nada: ${String(JSON.stringify(sinDato)).slice(0, 60)}`);
+        const { tuteoEn: tuteoCP, RE_EMOJI_UI: emojiCP } = require("../lib/lenguaje_pantalla.js");
+        const textoCP = hCP.replace(/<[^>]+>/g, " ");
+        assert.strictEqual(tuteoCP(textoCP), null, "habla de usted"); assert.ok(!textoCP.match(emojiCP), "sin emoji");
+        // y está CABLEADA: el nodo nace oculto, va al final del tablero (después de la composición) y pintarDashboard lo llena
+        const htmlCP = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "");
+        assert.ok(/id="d-mercado-periodos"[^>]*\bhidden\b/.test(htmlCP), "#d-mercado-periodos nace oculto: sin base no hay caja vacía");
+        assert.ok(htmlCP.indexOf('id="d-mercado-periodos"') > htmlCP.indexOf('id="d-barras"') && htmlCP.indexOf('id="d-mercado-periodos"') < htmlCP.indexOf('id="d-meta"'), "el contexto del mercado va al FINAL del tablero, sin gráfico");
+        assert.ok(/periodos\.innerHTML = htmlMercadoPeriodos\(c\.competencia_periodos\)/.test(sinComentarios(appCP)), "pintarDashboard pinta la nota con el campo del resumen");
+      }
       // …y también el mismo que el embudo del diagnóstico
       const rDia = await invocar(diagnostico, "/api/diagnostico?perfil=helder&muestra=1", CAB_TOKEN);
       assert.strictEqual(c.totales.visibles, rDia.cuerpo.embudo.visibles,
@@ -19226,6 +19278,74 @@ async function main() {
       // sin reconstruir se lee lo guardado
       const p2 = await invocar(routerP, "/api/procesos?op=portada");
       assert.strictEqual(p2.cuerpo.generado, p1.cuerpo.generado, "op=portada solo LEE");
+
+      /* ═══ LA HISTORIA DEL MERCADO (6-sep-2026, M-DGF-20) ═══
+         Cada reconstrucción SOBRESCRIBÍA `portada:resumen` y no quedaba rastro:
+         ahora anexa a `portada:historia` un punto por día (hora de Colombia) con
+         las tres cifras del teaser y el sello de la regla de ingesta, uno por
+         fecha (la última reconstrucción del día sustituye), acotado a 120;
+         op=portada lo sirve; y la landing solo pinta la tendencia con ≥ 30
+         puntos de la misma regla en los últimos 90 días —con menos, o con el
+         sello cambiado, nada—. Con la función real y el corpus real. */
+      {
+        const { cargarCorpus: cargarCorpusH } = require("../lib/handlers/procesos/listar.js");
+        const { selloReglaIngesta } = require("../lib/filtros.js");
+        const dia = (iso, h = 15) => Date.parse(`${iso}T${String(h).padStart(2, "0")}:00:00-05:00`);
+        await redis.del(Portada.CLAVE_HISTORIA);
+        assert.deepStrictEqual((await invocar(routerP, "/api/procesos?op=portada")).cuerpo.historia, [], "sin historia viaja una lista vacía: ningún punto no es «cero procesos»");
+        const r1 = await Portada.reconstruirPortada(redis, { cargarCorpus: cargarCorpusH, ahora: dia("2026-08-20") });
+        const r2 = await Portada.reconstruirPortada(redis, { cargarCorpus: cargarCorpusH, ahora: dia("2026-08-21") });
+        let hist = await Portada.leerHistoria(redis);
+        assert.strictEqual(hist.length, 2, "dos reconstrucciones en días distintos → dos puntos");
+        assert.deepStrictEqual(hist.map((x) => x.fecha), ["2026-08-20", "2026-08-21"], "un punto por fecha de Colombia, en orden");
+        assert.strictEqual(hist[1].procesosAbiertos, r2.procesosAbiertos, "el punto lleva los procesos abiertos de ESA reconstrucción");
+        assert.strictEqual(hist[0].procesosAbiertos, r1.procesosAbiertos);
+        assert.ok(Number.isInteger(hist[1].valorTotal) && Number.isInteger(hist[1].entidadesActivas), "…y el dinero y las entidades");
+        assert.strictEqual(hist[1].sello, selloReglaIngesta(), "cada punto lleva el sello de la regla de ingesta vigente");
+        assert.ok(/^[0-9a-f]{12}$/.test(hist[1].sello), "el sello es la huella de la regla, no una fecha");
+        // misma fecha (a las 22:00 de Colombia sigue siendo el 21) → sustituye, no duplica
+        await Portada.reconstruirPortada(redis, { cargarCorpus: cargarCorpusH, ahora: dia("2026-08-21", 22) });
+        hist = await Portada.leerHistoria(redis);
+        assert.strictEqual(hist.length, 2, "la misma fecha sustituye el punto del día: no se duplica");
+        // op=portada sirve la historia junto a la foto
+        const pH = await invocar(routerP, "/api/procesos?op=portada");
+        assert.strictEqual(pH.cuerpo.historia.length, 2, "op=portada sirve la historia sin op nueva");
+        assert.strictEqual(pH.cuerpo.historia[1].fecha, "2026-08-21");
+        // tope 120 por el principio (función pura, con lista sintética)
+        let larga = [];
+        for (let i = 0; i < 125; i++) larga = Portada.anexarPunto(larga, { fecha: new Date(Date.UTC(2026, 0, 1) + i * 864e5).toISOString().slice(0, 10), procesosAbiertos: i, sello: "s" });
+        assert.strictEqual(larga.length, Portada.HISTORIA_MAX, "la historia se recorta a 120 puntos");
+        assert.strictEqual(larga[0].fecha, "2026-01-06", "…y se quedan los últimos");
+        assert.deepStrictEqual(Portada.anexarPunto([{ fecha: "no es fecha", procesosAbiertos: 1 }, null, { fecha: "2026-02-02", procesosAbiertos: 3 }], { fecha: "2026-02-01", procesosAbiertos: 2 }).map((x) => x.fecha), ["2026-02-01", "2026-02-02"], "lo ilegible no entra y el orden es por fecha");
+        // la portada del navegador: tendencia SOLO con base
+        const ahoraH = dia("2026-09-06", 12);
+        const fechaH = (n) => new Date(Date.UTC(2026, 8, 6) - n * 864e5).toISOString().slice(0, 10);
+        const puntos = (n, sello = "s") => Array.from({ length: n }, (_, i) => ({ fecha: fechaH(i), procesosAbiertos: 1300 + i, sello }));
+        assert.strictEqual(PortadaPub.htmlHistoria(puntos(29), { ahora: ahoraH }), "", "con 29 puntos no se dibuja nada que parezca tendencia");
+        const hOk = PortadaPub.htmlHistoria(puntos(30), { ahora: ahoraH });
+        assert.ok(/<svg/.test(hOk), "con 30 puntos del mismo sello sí se dibuja");
+        assert.strictEqual((hOk.match(/<title>/g) || []).length, PortadaPub.HISTORIA_VENTANA_DIAS, "una columna por día de la ventana de 90, también los días sin medir");
+        assert.strictEqual((hOk.match(/: sin dato<\/title>/g) || []).length, 60, "los 60 días sin medición se declaran «sin dato» en su columna, no como 0");
+        assert.ok(/60 días sin medición quedan en blanco/.test(hOk), "…y se cuentan en la nota");
+        assert.ok((hOk.match(/<path /g) || []).length === 30, "solo los días medidos tienen barra");
+        assert.ok(/6 de septiembre de 2026: 1\.300</.test(hOk), "cada columna dice su día y su cifra");
+        assert.ok(!/font-weight="600"/.test(hOk), "sin cifra encima de cada columna (el valor va en negrita en `columnas`): 90 números no se leen");
+        assert.strictEqual((hOk.match(/<text[^>]*y="111"/g) || []).length, 4, "un rótulo de día cada 30 columnas y el último: cuatro, no noventa");
+        assert.ok(/text-anchor="end"[^>]*>6 sep</.test(hOk) && /text-anchor="start"[^>]*>9 jun</.test(hOk), "el primero y el último se anclan al borde: centrados sobre una columna de 2 px se salían del lienzo (Chromium, 390 px)");
+        assert.ok(/data-filtro/.test(hOk) === false, "la tendencia no promete una lista: no hay filtro por día");
+        assert.strictEqual(PortadaPub.htmlHistoria(puntos(30).map((p, i) => (i === 5 ? { ...p, sello: "otra regla" } : p)), { ahora: ahoraH }), "", "un sello distinto dentro de la ventana calla la tendencia: una serie que se mueve por la regla no es el mercado");
+        assert.strictEqual(PortadaPub.htmlHistoria(puntos(40).map((p, i) => ({ ...p, fecha: fechaH(i + 100) })), { ahora: ahoraH }), "", "40 puntos fuera de la ventana de 90 días no son base");
+        for (const v of [null, undefined, "x", [], [{ fecha: "2026-09-06" }]]) assert.strictEqual(PortadaPub.htmlHistoria(v, { ahora: ahoraH }), "", `sin historia legible no se dibuja: ${JSON.stringify(v)}`);
+        const { tuteoEn: tuteoH, RE_EMOJI_UI: emojiH } = require("../lib/lenguaje_pantalla.js");
+        assert.strictEqual(tuteoH(hOk.replace(/<[^>]+>/g, " ")), null, "habla de usted"); assert.ok(!hOk.replace(/<[^>]+>/g, " ").match(emojiH), "sin emoji");
+        // cableado: el plegado nace oculto bajo el teaser y teaser() lo llena solo con base
+        const htmlH = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "");
+        assert.ok(/<details id="pulso-historia"[^>]*\bhidden\b/.test(htmlH), "#pulso-historia es un <details> que nace oculto: lo que hay que TOCAR va plegado");
+        assert.ok(htmlH.indexOf('id="pulso-historia"') > htmlH.indexOf('id="pulso-global"') && htmlH.indexOf('id="pulso-historia"') < htmlH.indexOf('id="entrada-inicio"'), "va bajo las tres cifras del mercado y antes de las puertas");
+        assert.ok(/Licitaciones abiertas, día a día \(últimos 90 días\)/.test(htmlH), "el rótulo dice el hecho con el vocabulario del teaser");
+        assert.ok(/cuerpoHist\.innerHTML = htmlHistoria\(p\.historia\)/.test(sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "portada.js"), "utf8"))), "teaser() pinta la historia con la respuesta que ya trajo");
+        await redis.del(Portada.CLAVE_HISTORIA);
+      }
       const m0 = await invocar(routerP, "/api/procesos?op=manifestacion&estado=abierto");
       assert.strictEqual(m0.status, 200);
       assert.strictEqual(m0.cuerpo.disponible, true);
@@ -19361,6 +19481,34 @@ async function main() {
       assert.ok(pu.cuerpo.cierranEstaSemana && pu.cuerpo.cierranEstaSemana.n <= pu.cuerpo.total);
       const sumDep = pu.cuerpo.porDepartamento.reduce((a, d) => a + d.n, 0);
       assert.ok(sumDep + pu.cuerpo.sinDepartamento <= pu.cuerpo.total && sumDep > 0, "los departamentos del top no pueden sumar más que el total");
+      /* LA LISTA VIAJA COMPLETA (6-sep-2026, M-DGF-13): antes `porDepartamento` y
+         `topEntidades` llegaban recortados a 8 y un departamento fuera de los 8
+         no se alcanzaba desde el reparto. Censo: los departamentos publicados
+         suman EXACTAMENTE el total menos las que no traen departamento, y son
+         tantos como `departamentosDistintos`; las entidades, hasta el tope
+         declarado (`topeEntidades`), y si caben todas también suman el total. */
+      {
+        const Ent13 = require("../lib/handlers/perfil/entrada.js");
+        assert.strictEqual(sumDep + pu.cuerpo.sinDepartamento, pu.cuerpo.total, `los departamentos publicados (${pu.cuerpo.porDepartamento.length}) + sin departamento (${pu.cuerpo.sinDepartamento}) tienen que sumar el total ${pu.cuerpo.total}: la lista llega recortada`);
+        assert.strictEqual(pu.cuerpo.porDepartamento.length, pu.cuerpo.departamentosDistintos, "viajan TODOS los departamentos presentes, no solo los 8 primeros");
+        /* el corpus de la suite puede no pasar de 8 departamentos para Helder, y
+           entonces la igualdad de arriba no ejercita el recorte: la función real
+           sobre 10 departamentos y 10 entidades sintéticas sí lo hace */
+        const filas13 = Array.from({ length: 10 }, (_, i) => ({ precio_base: String(1000 * (10 - i)), entidad: `ENTIDAD ${i}`, nit_entidad: `90000000${i}`, departamento_entidad: `DEPARTAMENTO ${i}` }));
+        for (let k = 0; k < 9; k++) filas13.push({ precio_base: "5", entidad: "ENTIDAD 0", nit_entidad: "900000000", departamento_entidad: "DEPARTAMENTO 0" });
+        const ag13 = Ent13.agregarPulso(filas13, Date.parse("2026-09-06T12:00:00-05:00"));
+        assert.strictEqual(ag13.porDepartamento.length, 10, `agregarPulso publica los 10 departamentos, no 8: ${ag13.porDepartamento.length}`);
+        assert.strictEqual(ag13.topEntidades.length, 10, "…y las 10 entidades (tope 40)");
+        assert.strictEqual(ag13.porDepartamento.reduce((a, d) => a + d.n, 0), ag13.total, "los departamentos completos suman el total (censo)");
+        const { TOP_PULSO: topP, TOPE_ENTIDADES_PULSO: topeE } = Ent13;
+        assert.strictEqual(pu.cuerpo.top, topP, "`top` dice cuántas se pintan sin plegar");
+        assert.strictEqual(pu.cuerpo.topeEntidades, topeE, "`topeEntidades` dice hasta cuántas entidades viajan");
+        assert.strictEqual(pu.cuerpo.topEntidades.length, Math.min(pu.cuerpo.entidadesDistintas, topeE), "las entidades viajan hasta el tope declarado (40), no 8");
+        if (pu.cuerpo.entidadesDistintas <= topeE) {
+          assert.strictEqual(pu.cuerpo.topEntidades.reduce((a, e) => a + e.n, 0) + pu.cuerpo.sinEntidad, pu.cuerpo.total, "con todas las entidades a bordo, entidades + sin entidad = total");
+        }
+        pu.cuerpo._ag13 = ag13;   // las plantillas de abajo pintan este mismo agregado
+      }
       /* LA COBERTURA DEL PULSO (6-sep-2026, M-DGF-03): cuántas de las viables NO
          publican presupuesto viaja como entero acotado por el total; sin él, «$N
          en juego» se leía como suma completa donde hay una cota inferior. */
@@ -19610,6 +19758,37 @@ async function main() {
          nueva. Lo que se vigila es lo que decide —el enlace a la lista, la
          proporción de la barra y que se DIGA cuántas quedan fuera—, no el
          literal del rótulo, que es redacción. */
+      /* LAS PRIMERAS A LA VISTA, EL RESTO PLEGADO (6-sep-2026, M-DGF-13). Con la
+         función real sobre 10 departamentos y 10 entidades: se pintan las 10
+         (antes seis: `barrasRank` recortaba a 6 mientras la nota decía «se
+         muestran las 8»), las 8 primeras a la vista y 2 dentro de un <details>
+         «Ver los 2 departamentos restantes» / «Ver las 2 entidades restantes»,
+         con la MISMA escala que las de arriba; con 8 o menos no hay <details>;
+         cada barra plegada sigue siendo un filtro. El agregado sale de la
+         función real (`agregarPulso`), no de un fixture a mano. */
+      {
+        const ag13 = pu.cuerpo._ag13;
+        assert.ok(ag13 && ag13.porDepartamento.length === 10, "el agregado sintético de 10 departamentos viene del bloque del endpoint");
+        const d13 = PulsoPub.htmlDepartamentos(ag13), e13 = PulsoPub.htmlEntidades(ag13);
+        assert.strictEqual((d13.match(/<li>/g) || []).length, 10, `se pintan las 10 barras de departamento (antes 6 de 8): ${(d13.match(/<li>/g) || []).length}`);
+        assert.strictEqual((d13.match(/<details/g) || []).length, 1, "las que sobran van en UN <details>");
+        assert.ok(/<summary[^>]*>Ver los 2 departamentos restantes<\/summary>/.test(d13), `el rótulo del plegado dice cuántos quedan: ${(d13.match(/<summary[^>]*>[^<]*/) || [""])[0]}`);
+        assert.strictEqual(d13.slice(0, d13.indexOf("<details")).match(/<li>/g).length, 8, "ocho a la vista, las de más licitaciones");
+        assert.ok(/<summary[^>]*>Ver las 2 entidades restantes<\/summary>/.test(e13) && (e13.match(/<li>/g) || []).length === 10, "hermano: las entidades pliegan igual, en femenino");
+        // la escala es UNA: el departamento 0 tiene 10 licitaciones y los otros 1 → 100 % y 10 %, también dentro del plegado
+        const anchos13 = [...d13.matchAll(/width:([\d.]+)%/g)].map((m) => Number(m[1]));
+        assert.deepStrictEqual(anchos13, [100].concat(Array(9).fill(10)), `misma escala arriba y plegado: ${anchos13.join(" ")}`);
+        const plegado13 = d13.slice(d13.indexOf("<details"));
+        assert.strictEqual((plegado13.match(/data-filtro="dep=/g) || []).length, 2, "cada barra plegada sigue siendo un filtro");
+        assert.ok(!/en total; se muestran/.test(d13), "con la lista completa la nota ya no dice «se muestran las 8»: no hay nada fuera");
+        const d8 = PulsoPub.htmlDepartamentos({ ...ag13, porDepartamento: ag13.porDepartamento.slice(0, 8), departamentosDistintos: 8 });
+        assert.ok(!/<details/.test(d8) && (d8.match(/<li>/g) || []).length === 8, "con 8 o menos no hay plegado y se pintan las 8 (antes 6)");
+        const d9 = PulsoPub.htmlDepartamentos({ ...ag13, porDepartamento: ag13.porDepartamento.slice(0, 9), departamentosDistintos: 9 });
+        assert.ok(/Ver el departamento restante</.test(d9), "con uno solo el rótulo va en singular");
+        const { tuteoEn: tuteo13, RE_EMOJI_UI: emoji13 } = require("../lib/lenguaje_pantalla.js");
+        const texto13 = (d13 + e13).replace(/<[^>]+>/g, " ");
+        assert.strictEqual(tuteo13(texto13), null, "el plegado habla de usted"); assert.ok(!texto13.match(emoji13), "sin emoji");
+      }
       assert.ok(/data-filtro="dep=TOLIMA"/.test(dep) && /data-filtro="dep=CUNDINAMARCA"/.test(dep), "cada departamento enlaza a su lista");
       assert.ok(/width:100\.0%/.test(dep) && /width:60\.0%/.test(dep), "la barra es proporcional al conteo (20 y 12 sobre un máximo de 20)");
       assert.ok(/9 en total/.test(dep), "se dice cuántos departamentos quedan fuera del top");

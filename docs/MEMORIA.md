@@ -9091,3 +9091,135 @@ Tres mejoras del eje «datos y gráficos», sobre el árbol de `d829d87`. Las fi
   `node tests/capturar_icociv.js --mes AAAA-MM --indice-base N --indice-vigente N --url <boletín>`
   (primero en seco, luego con `--escribir`), correr la suite, desplegar y volver a cargar el catálogo;
   y registrar «Ganado»/«Perdido» en Mis procesos para que la barra tenga qué enseñar.
+
+### Lote «B7b-tablero-mercado» de la consultoría del 4-sep · M-DGF-13, M-DGF-14, M-DGF-20 (6-sep-2026)
+
+En una línea: el pulso publica TODOS los departamentos y hasta 40 entidades y pinta las 8 primeras con el resto plegado a la MISMA escala («Ver los N departamentos restantes»); `/api/resumen` sirve `competencia_periodos` tal como lo midió el índice y el tablero dice «En 2025 compitieron 4,1 oferentes por proceso (1.800 adjudicados)…» solo con dos años con base; y la portada guarda `portada:historia` (un punto por día, 120 como máximo, con el sello de la regla de ingesta) que la landing pinta plegada bajo las tres cifras únicamente con 30 o más mediciones de la misma regla en los últimos 90 días.
+
+Tres mejoras del eje «datos y gráficos», sobre el árbol de `6149dca`. Las fichas se escribieron sobre
+`d569946`; donde citaban un sello, un sitio o una línea que el árbol desmiente, mandó el árbol.
+
+- **El reparto del pulso viaja completo y se pliega, no se recorta (M-DGF-13).** `agregarPulso`
+  (lib/handlers/perfil/entrada.js) recortaba `porDepartamento` y `topEntidades` a `TOP_PULSO = 8`, y un
+  departamento fuera de los 8 solo se alcanzaba por la hoja de filtros. **Y había un defecto que la ficha
+  no vio, reproducido con la función real**: `htmlDepartamentos` llamaba a `barrasRank` sin `tope`, cuyo
+  tope por defecto es 6, así que con 8 en la lista pintaba SEIS barras mientras la nota decía «se muestran
+  las 8 con más procesos» — una cifra creíble y falsa en la pantalla que abre la pestaña. Ahora: (1) el
+  servidor publica todos los departamentos (33 como máximo) y las entidades hasta `TOPE_ENTIDADES_PULSO =
+  40` (573 entidades en producción no caben en una caché de 10 min sin motivo; 40 sí, y la nota «N en
+  total; se muestran las 40» sigue diciendo la verdad); `top` pasa a significar «cuántas se pintan sin
+  plegar» y `topeEntidades` dice el tope, los dos en la respuesta. (2) La regla del plegado vive en la
+  primitiva —`barrasRank(items, { tope, plegarResto })`— y no en los llamadores: lo que queda detrás de
+  `tope` va en UN `<details>` cuyo rótulo escribe el llamador con el número («Ver los 4 departamentos
+  restantes» / «Ver las 4 entidades restantes», en singular con uno), **con la misma escala que las de
+  arriba**: una segunda llamada a `barrasRank` con el resto recalcularía su propio máximo y el último
+  departamento (1 licitación) mediría lo mismo que el primero (12). La cola (`esCola`) sigue apartada y
+  al final de lo visible; sin `plegarResto` la primitiva recorta como siempre y el censo de llamadores
+  con «OTROS» no cambia. (3) Cada barra plegada sigue siendo un filtro: medido en Chromium, pulsar «CESAR»
+  dentro del plegado lleva a `?dep=CESAR#/licitaciones` con la pestaña Licitaciones y el chip «Dónde
+  queda: Cesar». Con 8 o menos no hay `<details>` y se pintan las 8 (antes 6). La nota «N en total; se
+  muestran las 8» desaparece sola con la lista completa (`departamentosDistintos === lista.length`) y se
+  conserva para las entidades por encima de 40 y para una caché `pulso:{perfil}` anterior a este cambio
+  (10 min), que sigue trayendo 8. La respuesta de la entrada (`agregados`) crece con las listas; la
+  pantalla de resultado del onboarding no las pinta. Cerraduras (bloque del pulso): en el endpoint,
+  departamentos publicados + `sinDepartamento` = `total` y `length === departamentosDistintos`, entidades
+  = `min(entidadesDistintas, 40)`; con la función real sobre 10 departamentos y 10 entidades sintéticas
+  (el corpus de la suite puede no pasar de 8 para Helder y la igualdad no ejercitaría el recorte): 10
+  publicados; el HTML real pinta 10 `<li>`, 8 a la vista y 2 en un `<details>` con el rótulo exacto,
+  anchos `[100, 10 × 9]` también dentro del plegado, dos `data-filtro` plegados, singular con uno, ni
+  tuteo ni emoji.
+- **El tablero dice cuánta gente compitió, año a año (M-DGF-14).** `indice:competencia:meta.periodos`
+  (sección «B2 MEDIDO Y CERRADO SIN SEGMENTAR») solo lo servía `op=historico`; `grep periodos public/*.js`
+  daba 0. Ahora `/api/resumen` publica `competencia_periodos` = `{ por_anio, ventana_garantias_2026,
+  min_procesos, construido }` **tal como lo midió el índice** (sin recalcular ni redondear; la suite lo
+  compara `deepStrictEqual` contra la meta) y `null` sin índice o sin medición. **El suelo para pintar un
+  año NO es un número nuevo**: la ficha decía «n ≥ MIN_PROCESOS», que en el índice es el suelo de UNA
+  entidad (5) y para un promedio del mercado entero es ruido; se llama a `MIN_PROCESOS_DEPTO = 30`, el
+  suelo que el índice ya exige a un departamento —un agregado de la misma clase—, y viaja en la
+  respuesta para que la pantalla no lo duplique. `htmlMercadoPeriodos(cp)` (public/app.js, función pura
+  con el patrón de `htmlDesenlaceSeguimiento`) escribe SOLO con dos o más años con base y promedio
+  medido: «En 2024 compitieron 4,4 oferentes por proceso (2.345 adjudicados); en 2025, 4,1 (1.800); en
+  2026, 4,1 (900).» y, con base propia, «Durante el período electoral (8 de noviembre de 2025 a 31 de mayo
+  de 2026) compitieron 3,7 oferentes por proceso (1.100 adjudicados).» — el hecho pooled de la ventana,
+  no el cociente frente a lo «esperado» (eso es el modelo, y se queda en op=historico); ni «probabilidad»
+  ni «ley de garantías»; el 2027 de un solo proceso con 34 oferentes existe en el dato y NO sale como un
+  año. Va al FINAL del tablero (después de «De qué se compone su lista», antes de la marca de
+  actualización), sin gráfico —es contexto, no decisión—, en `#d-mercado-periodos` que nace `hidden`. La
+  fecha se escribe con `diaLegible` (hermano con día de `mesLegible`, sobre `MESES_ES`, sin `new Date`):
+  **el primer intento definió `fechaCorta` y app.js ya tenía una** —la suite cayó en «Identifier
+  'fechaCorta' has already been declared»—; es la regla «no reescribir una regla que ya existe» cazada
+  por la propia cerradura de sintaxis. El 4,35 del índice se enseña «4,4» (una decimal, `fmt1`): redondeo
+  para MOSTRAR; el dato viaja entero. Cerraduras (bloque g-bis del resumen): el campo y su igualdad con
+  la meta, el suelo, la función real ejecutada con la forma de producción (tres años, la ventana, el
+  2027 fuera, la ventana sin base callada y los años en pie, un promedio `null` que no cuenta como 0,
+  seis formas de «sin dato» → ""), registro de usted y sin emoji, el nodo oculto y su posición, y que
+  `pintarDashboard` lo pinta con el campo.
+- **La portada guarda historia y solo enseña tendencia con base (M-DGF-20).** `reconstruirPortada`
+  (lib/portada.js) anexa a `portada:historia` el punto del día (hora de Colombia: `habiles.hoyColombia`)
+  con `procesosAbiertos`, `valorTotal`, `entidadesActivas` y `sello`; uno por fecha (la última
+  reconstrucción del día sustituye), ordenado, acotado a `HISTORIA_MAX = 120` por el principio, con su
+  propio `try` (una historia que no se pudo escribir no tumba la portada que sí se escribió);
+  `op=portada` lo sirve como `historia` (lista vacía sin puntos: ningún punto no es «cero procesos»), sin
+  op nueva. **Tres cosas que la ficha decía y el árbol desmintió**: (1) **El sello `meta.last_full` está
+  muerto al nacer**: `decidirAuto` (sync.js, `FULL_HIGIENE_MS`) lanza una carga completa cada 30 días,
+  así que dentro de una ventana de 90 días el sello cambiaría dos o tres veces y la tendencia no se
+  dibujaría jamás. El sello es `lib/filtros.selloReglaIngesta()`: sha1 (12 hex) de los DATOS de la regla
+  —las cuatro listas de modalidades y estados, las dos expresiones de convenio, la lista negra y blanca
+  de objeto y los tres verbos de obra, el rango de segmentos UNSPSC y las familias de la unión de los
+  RUP—, que es lo que `modalidad_competitiva`, `es_convenio`, `admisibleParaIngesta` y `estado_abierto`
+  consultan. No es el fuente entero (un comentario nuevo no cambia la regla) ni una constante de versión
+  que alguien tendría que acordarse de subir. Lo que NO mueve el sello, declarado: las reglas de
+  `lib/proyeccion.transformar` que no pasan por esas listas y la ventana de meses retenidos del corpus.
+  (2) **«Plegado dentro del mercado» no tiene dónde**: `#mercado-completo` y la `<section id="portada">`
+  se retiraron por encargo del ingeniero (ago 2026) y la suite lo prohíbe; `Portada.arrancar` no corre
+  en ninguna pantalla. Lo que queda del mercado es el teaser de tres cifras de la landing, y ahí va la
+  tendencia: `<details id="pulso-historia">` bajo `#pulso-global`, `hidden` de nacimiento, que
+  `Portada.teaser()` llena con la respuesta que ya trajo. Es lo que hay que TOCAR, plegado; la landing
+  queda en 133 palabras (tope 260). (3) El rótulo dice «Licitaciones abiertas, día a día (últimos 90
+  días)», no «Procesos abiertos»: es la misma cifra que el teaser llama «licitaciones abiertas hoy», y dos
+  nombres para una cosa es lo que la regla de nombres prohíbe. **La ventana son 90 días de calendario
+  desde `ahora`** (inyectable, hora de Colombia), no «los últimos 90 puntos»: un día sin sincronización es
+  una columna en blanco cuyo `title` dice «sin dato» y la nota cuenta cuántos hay («45 días sin medición
+  quedan en blanco»); con puntos comprimidos «últimos 90 días» sería mentira. Se dibuja SOLO con
+  `HISTORIA_MIN_PUNTOS = 30` mediciones en la ventana y UN solo sello entre ellas; con 29, con un sello
+  distinto o con 40 puntos fuera de la ventana, `""` — nada que parezca tendencia. Sin `data-filtro` por
+  día: la tendencia no promete una lista. `Pulso.columnas` se extendió en vez de escribir otro gráfico:
+  `rotularCada` (un rótulo cada N y el último; el primero y el último anclados al borde del área útil
+  porque centrados sobre una columna de 2 px se salían del lienzo —«6 se» en vez de «6 sep», medido en
+  Chromium a 390 px—), el hueco se encoge con el paso y la barra nunca baja de 1 px (con 90 columnas el
+  ancho salía NEGATIVO), el radio se acota a la mitad del ancho, y una cubeta con `n` en `null` no dibuja
+  barra y su título dice «sin dato»; las cuatro columnas de «cuándo hay que entregar» no cambian (sus
+  aserciones siguen iguales). La primera tendencia se verá, como mínimo, 30 días después del despliegue.
+  Cerraduras (bloque Portada, Fase 9): dos reconstrucciones con `ahora` distinto → dos puntos en orden
+  con los procesos abiertos de CADA una y el sello vigente (12 hex); la misma fecha a las 22:00 sustituye
+  (siguen dos); `op=portada` los sirve; `anexarPunto` recorta a 120 y descarta lo ilegible; `htmlHistoria`
+  con 29 → "", con 30 → SVG de 90 `<title>`, 30 `<path>`, 60 «sin dato», la nota con el conteo, cuatro
+  rótulos anclados, sin cifra encima de cada columna, sin filtro; sello mixto y puntos fuera de ventana →
+  ""; el nodo `hidden` bajo el teaser y `teaser()` que lo pinta.
+- **Mutaciones** (cada una con la prueba dentro y el fuente quitado, `node tests/e2e.js 1`): sin
+  entrada.js cae en «agregarPulso publica los 10 departamentos, no 8: 8»; con `const resto = []` en
+  `barrasRank` cae en «se pintan las 10 barras de departamento (antes 6 de 8): 8 !== 10»; sin resumen.js
+  ni app.js cae en «/api/resumen tiene que traer competencia_periodos.por_anio: undefined»; sin
+  lib/portada.js, su handler y public/portada.js cae en «sin historia viaja una lista vacía» (undefined).
+  La primera mutación de pulso.js entero cayó antes en el bloque de la portada («sin dato» de
+  `columnas`, M-DGF-20): por eso la de M-DGF-13 se hizo sobre la línea del plegado, no sobre el archivo.
+- **Medido en Chromium** (http-server sobre public/, `op=pulso`/`op=resumen`/`op=portada` contestados
+  con fixtures generados por `agregarPulso` y `anexarPunto` reales, 503 al resto; 1280 y 390, claro y
+  oscuro): landing con el `<details>` visible (16 px cerrado, 512/342 px de ancho), rótulo exacto,
+  90 `<title>` y 45 `<path>`, al abrirlo SVG de 512×181 / 342×121 con las barras en `--accent`
+  (rgb(43,63,107) claro / rgb(157,179,232) oscuro), rótulos «9 jun · 9 jul · 8 ago · 6 sep» con el
+  primero y el último dentro del lienzo, nota en `--text-secondary`; con 20 puntos el `<details>` sigue
+  `hidden` y su cuerpo vacío; tablero con 12 `<li>` por reparto, `<details>` cerrado de 24 px con las 4
+  plegadas `checkVisibility() === false` (la primera medida con `getBoundingClientRect` decía «12
+  visibles» con el plegado cerrado: `content-visibility` conserva la caja; se midió con `checkVisibility`
+  y con la altura de la caja, 449 → 615 px al abrir), rótulos «Ver los 4 departamentos restantes» / «Ver
+  las 4 entidades restantes» en `--text-secondary`, pulsación de una barra plegada → `?dep=CESAR#/licitaciones`
+  con la pestaña Licitaciones; `#d-mercado-periodos` pintado con las dos frases después de `#d-barras` y
+  antes de `#d-meta`; cero desbordes, cero peticiones externas y en consola solo los 503 del propio arnés.
+- **No verificable desde aquí (6-sep-2026)**: cuántos departamentos y entidades trae el pulso real de cada
+  perfil en producción (la caché de 10 min anterior a este cambio sigue trayendo 8 hasta renovarse); los
+  valores reales de `periodos` en producción (la memoria del 16-ago cita 4,35 · 4,08 · 4,11 y la ventana
+  0,95); y la tendencia misma: `portada:historia` empieza a llenarse con la primera sincronización tras
+  el despliegue y la landing no enseña nada hasta 30 mediciones con el mismo sello.
+- **Pasos del dueño**: ninguno en las fichas. Tras desplegar, nada que pulsar: el pulso y el tablero se
+  renuevan solos (cachés de 10 y 5 min) y la historia se acumula con cada sincronización.

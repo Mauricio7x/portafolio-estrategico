@@ -168,8 +168,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 139 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L  7985  Lote «B3b-sync-menor» de la consultoría del 4-sep · M-INF-10, M-INF-13, M-INF-14, M-SEG-08 (
+· MEMORIA · docs/MEMORIA.md — 140 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L  8087  Lote «B4a-vista-de-visitante» de la consultoría del 4-sep · M-SEG-02 (6-sep-2026)
   L  8206  Lote «B4b-pulso-cobertura» de la consultoría del 4-sep · M-DGF-03, M-DGF-04, M-DGF-12 (6-sep
   L  8311  Remates «R1a-remates-servidor-B1-B2» de la ola 1 · H-01, H-02, H-03, H-04, H-05, V-B2a-03, B
@@ -179,6 +178,7 @@
   L  8798  Lote «B6a-readme-y-citas» de la consultoría del 4-sep · M-DOC-05, M-DOC-08 (6-sep-2026)
   L  8879  Lote «B6b-memoria-util» de la consultoría del 4-sep · M-DOC-06 (6-sep-2026)
   L  8966  Lote «B7a-tablero-mis-procesos» de la consultoría del 4-sep · M-DGF-09, M-DGF-11, M-DGF-15 (
+  L  9095  Lote «B7b-tablero-mercado» de la consultoría del 4-sep · M-DGF-13, M-DGF-14, M-DGF-20 (6-sep
 
 · DOCUMENTOS docs/ — 43 (y 1 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

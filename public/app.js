@@ -1947,6 +1947,13 @@
     if (!m) return null;
     return `${MESES_ES[Number(m[2]) - 1]} de ${m[1]}`;
   }
+  /* «2025-11-08» → «8 de noviembre de 2025»: el hermano con día de `mesLegible`,
+     por la misma razón (sin `new Date`). Sin fecha legible devuelve la cadena. */
+  function diaLegible(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+    if (!m) return String(iso || "");
+    return `${Number(m[3])} de ${MESES_ES[Number(m[2]) - 1] || m[2]} de ${m[1]}`;
+  }
 
   function tarjetaPaa(p) {
     const mes = mesLegible(p.fecha_estimada_publicacion);
@@ -7100,6 +7107,37 @@
       + (sin ? `; de ${fmt.format(sin)} no hay histórico` : "") + ".";
   }
 
+  /* CUÁNTA GENTE COMPITIÓ, AÑO A AÑO (M-DGF-14, 6-sep-2026). El índice mide en
+     cada reconstrucción los oferentes por proceso de cada año y dentro del
+     período electoral, y hasta hoy solo lo leía el dueño por su endpoint. Es
+     CONTEXTO del mercado, no una decisión: va al final del tablero, sin
+     gráfico, en dos cifras con su base. Reglas: un año se pinta SOLO con al
+     menos `min_procesos` procesos adjudicados (el suelo que el servidor manda,
+     el mismo que el índice exige a un departamento) y con promedio medido;
+     hacen falta dos años con base para hablar de «año a año»; sin base no se
+     escribe nada (el año 2027 con un solo proceso de 34 oferentes existe en el
+     dato y no puede salir como si fuera un año). No dice «probabilidad» ni
+     «ley de garantías»: dice el hecho. Función pura: la suite la ejecuta. */
+  function htmlMercadoPeriodos(cp) {
+    if (!cp || typeof cp !== "object" || !cp.por_anio || typeof cp.por_anio !== "object") return "";
+    const suelo = Number.isInteger(cp.min_procesos) && cp.min_procesos > 0 ? cp.min_procesos : null;
+    if (suelo === null) return "";
+    const conBase = Object.entries(cp.por_anio)
+      .filter(([anio, a]) => /^\d{4}$/.test(anio) && a && Number.isInteger(a.procesos) && a.procesos >= suelo && Number.isFinite(a.promedio_oferentes))
+      .sort(([a], [b]) => a.localeCompare(b));
+    if (conBase.length < 2) return "";
+    const partes = conBase.map(([anio, a], i) => (i === 0
+      ? `En ${anio} compitieron ${fmt1.format(a.promedio_oferentes)} oferentes por proceso (${fmt.format(a.procesos)} adjudicados)`
+      : `en ${anio}, ${fmt1.format(a.promedio_oferentes)} (${fmt.format(a.procesos)})`));
+    const v = cp.ventana_garantias_2026;
+    const ventana = v && Number.isInteger(v.procesos_dentro) && v.procesos_dentro >= suelo && Number.isFinite(v.promedio_dentro) && v.desde && v.hasta
+      ? `<p class="mt-1 text-sm">Durante el período electoral (${esc(diaLegible(v.desde))} a ${esc(diaLegible(v.hasta))}) compitieron ${fmt1.format(v.promedio_dentro)} oferentes por proceso (${fmt.format(v.procesos_dentro)} adjudicados).</p>`
+      : "";
+    return `<h3 class="text-sm font-semibold tracking-tight">Cuánta gente compitió, año a año</h3>
+      <p class="mt-1 text-sm">${partes.join("; ")}.</p>${ventana}
+      <p class="mt-1 text-[11px]" style="color: var(--text-secondary);">Medido sobre los procesos adjudicados del histórico; solo se cuenta un año con ${fmt.format(suelo)} o más.</p>`;
+  }
+
   function pintarDashboard(c, cache) {
     const t = c.totales || {};
     const per = t.por_pertinencia || {};
@@ -7107,6 +7145,12 @@
     $("d-contenido").classList.remove("hidden");
 
     pintarBaja(c.baja_mercado);
+    /* el contexto del mercado, al final y solo con base */
+    const periodos = $("d-mercado-periodos");
+    if (periodos) {
+      periodos.innerHTML = htmlMercadoPeriodos(c.competencia_periodos);
+      periodos.classList.toggle("hidden", !periodos.innerHTML);
+    }
 
     $("d-visibles").textContent = fmt.format(total);
     $("d-obra").textContent = fmt.format(per.obra_civil || 0);

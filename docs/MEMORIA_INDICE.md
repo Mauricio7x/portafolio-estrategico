@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 824024 bytes · 139 secciones · 4 con marcador de superación.
+Derivado del árbol: 837793 bytes · 140 secciones · 4 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -149,4 +149,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Lote «B5-documentacion-1» de la consultoría del 4-sep · M-DOC-02, M-DOC-03, M-DOC-07, M-DOC-09, M-DOC-12, M-INF-05 (6-sep-2026) | 6-sep-2026 | 8706-8797 | 8930 |  |
 | Lote «B6a-readme-y-citas» de la consultoría del 4-sep · M-DOC-05, M-DOC-08 (6-sep-2026) | 6-sep-2026 | 8798-8878 | 7745 |  |
 | Lote «B6b-memoria-util» de la consultoría del 4-sep · M-DOC-06 (6-sep-2026) | 6-sep-2026 | 8879-8965 | 8221 |  |
-| Lote «B7a-tablero-mis-procesos» de la consultoría del 4-sep · M-DGF-09, M-DGF-11, M-DGF-15 (6-sep-2026) | 6-sep-2026 | 8966-9094 | 13049 |  |
+| Lote «B7a-tablero-mis-procesos» de la consultoría del 4-sep · M-DGF-09, M-DGF-11, M-DGF-15 (6-sep-2026) | 6-sep-2026 | 8966-9094 | 13050 |  |
+| Lote «B7b-tablero-mercado» de la consultoría del 4-sep · M-DGF-13, M-DGF-14, M-DGF-20 (6-sep-2026) | 6-sep-2026 | 9095-9226 | 13768 |  |

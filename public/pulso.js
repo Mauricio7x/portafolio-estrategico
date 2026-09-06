@@ -93,10 +93,25 @@
     return `<p class="mt-2 text-[11px]" style="color: var(--text-secondary);">${notas.join(" ")}</p>`;
   };
 
+  /* LA LISTA COMPLETA, LAS PRIMERAS A LA VISTA Y EL RESTO PLEGADO (6-sep-2026,
+     M-DGF-13). El servidor publica todos los departamentos (y hasta 40
+     entidades); aquí se pintan las `top` primeras —el servidor dice cuántas—
+     y las demás van dentro de un <details> «Ver los N restantes» con la MISMA
+     escala (la barra de un departamento con 3 licitaciones mide lo mismo
+     arriba que plegada): lo que hay que VER arriba, lo que hay que TOCAR
+     plegado. Antes la lista llegaba recortada a 8 y `barrasRank` —con su tope
+     por defecto de 6— pintaba seis mientras la nota decía «se muestran las 8»:
+     una cifra creíble y falsa. Cada barra sigue siendo un filtro. */
+  const VISIBLES_REPARTO = 8;
+  const visiblesDe = (p) => (Number.isInteger(p.top) && p.top > 0 ? p.top : VISIBLES_REPARTO);
+
   function htmlDepartamentos(p) {
     const lista = p.porDepartamento || [];
     if (!lista.length) return "";
-    const g = barrasRank(lista, { filtroDe: (x) => `dep=${encodeURIComponent(x.nombre)}` });
+    const g = barrasRank(lista, {
+      filtroDe: (x) => `dep=${encodeURIComponent(x.nombre)}`, tope: visiblesDe(p),
+      plegarResto: (n) => `Ver ${n === 1 ? "el departamento restante" : `los ${num(n)} departamentos restantes`}`,
+    });
     if (!g) return "";
     return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Dónde están</h2>${g}`
       + notasReparto(lista, p.departamentosDistintos, p.sinDepartamento, "sin departamento publicado");
@@ -105,7 +120,10 @@
   function htmlEntidades(p) {
     const lista = p.topEntidades || [];
     if (!lista.length) return "";
-    const g = barrasRank(lista, { filtroDe: (x) => x.nit ? `entidad=${encodeURIComponent(x.nit)}` : `entidad=${encodeURIComponent(x.nombre)}` });
+    const g = barrasRank(lista, {
+      filtroDe: (x) => x.nit ? `entidad=${encodeURIComponent(x.nit)}` : `entidad=${encodeURIComponent(x.nombre)}`, tope: visiblesDe(p),
+      plegarResto: (n) => `Ver ${n === 1 ? "la entidad restante" : `las ${num(n)} entidades restantes`}`,
+    });
     if (!g) return "";
     return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Quién las publica</h2>${g}`
       + notasReparto(lista, p.entidadesDistintas, p.sinEntidad, "sin entidad publicada");
@@ -183,8 +201,13 @@
     return `<a href="?${esc(filtro)}#/licitaciones" data-filtro="${esc(filtro)}" role="link" tabindex="0"><title>${esc(titulo)}</title>${dentro}</a>`;
   }
 
-  /* ── COLUMNAS · magnitud sobre una escala ordenada ── */
-  function columnas(cubetas, { ancho = 340, alto = VIZ.alto, filtroDe = () => null, conValor = true } = {}) {
+  /* ── COLUMNAS · magnitud sobre una escala ordenada ──
+     `rotularCada` (6-sep-2026, M-DGF-20): con muchas columnas —la historia del
+     mercado trae hasta 90, una por día— los rótulos se pisarían; se escribe uno
+     cada N y siempre el último. Con pocas columnas (las cuatro de «cuándo hay
+     que entregar») no cambia nada. Una cubeta con `n` en null es «sin dato»: no
+     dibuja barra y su título lo dice, en vez de contar como 0. */
+  function columnas(cubetas, { ancho = 340, alto = VIZ.alto, filtroDe = () => null, conValor = true, rotularCada = 1 } = {}) {
     const n = (cubetas || []).length;
     if (!n) return "";
     const max = Math.max(...cubetas.map((c) => c.n || 0));
@@ -193,7 +216,11 @@
     const M = { arriba: 18, abajo: 30, izq: 34, der: 6 };
     const util = { w: ancho - M.izq - M.der, h: alto - M.arriba - M.abajo };
     const paso = util.w / n;
-    const bw = Math.min(VIZ.barraMax, paso - VIZ.gap * 2);
+    /* con 90 columnas el paso baja de 4 px: el hueco se encoge con él y la barra
+       nunca queda por debajo de 1 px (antes el ancho salía NEGATIVO) */
+    const gap = Math.min(VIZ.gap, paso / 4);
+    const bw = Math.max(1, Math.min(VIZ.barraMax, paso - gap * 2));
+    const radio = Math.min(VIZ.radio, bw / 2);
     const y0 = M.arriba + util.h;
     const rejilla = ticks.map((t) => {
       const y = y0 - (t / tope) * util.h;
@@ -209,16 +236,21 @@
       /* Extremo redondeado ARRIBA y cuadrado en la línea base: el `path` lo hace
          explícito (un `rect` con `rx` redondearía también la base, que es donde
          la barra tiene que apoyarse). */
-      const cuerpo = h <= 0 ? "" : `<path d="M${x.toFixed(1)},${y0} L${x.toFixed(1)},${(y + VIZ.radio).toFixed(1)} Q${x.toFixed(1)},${y.toFixed(1)} ${(x + VIZ.radio).toFixed(1)},${y.toFixed(1)} L${(x + bw - VIZ.radio).toFixed(1)},${y.toFixed(1)} Q${(x + bw).toFixed(1)},${y.toFixed(1)} ${(x + bw).toFixed(1)},${(y + VIZ.radio).toFixed(1)} L${(x + bw).toFixed(1)},${y0} Z" style="fill: var(--accent)"></path>`;
+      const cuerpo = h <= 0 ? "" : `<path d="M${x.toFixed(1)},${y0} L${x.toFixed(1)},${(y + radio).toFixed(1)} Q${x.toFixed(1)},${y.toFixed(1)} ${(x + radio).toFixed(1)},${y.toFixed(1)} L${(x + bw - radio).toFixed(1)},${y.toFixed(1)} Q${(x + bw).toFixed(1)},${y.toFixed(1)} ${(x + bw).toFixed(1)},${(y + radio).toFixed(1)} L${(x + bw).toFixed(1)},${y0} Z" style="fill: var(--accent)"></path>`;
       const valor = conValor && v > 0
         ? `<text x="${cx.toFixed(1)}" y="${(y - 5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" style="fill: var(--text-primary)">${miles(v)}</text>` : "";
-      const rot = `<text x="${cx.toFixed(1)}" y="${alto - 9}" text-anchor="middle" font-size="11" style="fill: var(--text-secondary)">${esc(String(c.corto || c.etiqueta || ""))}</text>`;
+      const conRotulo = rotularCada <= 1 || i % rotularCada === 0 || i === n - 1;
+      /* con rótulos espaciados, el primero y el último se anclan al borde del
+         área útil: centrados sobre una columna de 2 px se salían del lienzo
+         («6 se» en vez de «6 sep», medido en Chromium a 390 px) */
+      const ancla = rotularCada > 1 && i === n - 1 ? ["end", ancho - M.der] : rotularCada > 1 && i === 0 ? ["start", M.izq] : ["middle", cx];
+      const rot = conRotulo ? `<text x="${ancla[1].toFixed(1)}" y="${alto - 9}" text-anchor="${ancla[0]}" font-size="11" style="fill: var(--text-secondary)">${esc(String(c.corto || c.etiqueta || ""))}</text>` : "";
       /* El área invisible ocupa la banda ENTERA: un objetivo de puntero del
          tamaño de la barra deja fuera las cubetas pequeñas, que son justo las
          que hay que poder consultar. */
       const zona = `<rect x="${(M.izq + paso * i).toFixed(1)}" y="${M.arriba}" width="${paso.toFixed(1)}" height="${util.h}" style="fill:transparent"></rect>`;
       const dinero = c.valor != null ? ` · ${pesosCortos(c.valor)}` : "";
-      return envolver(filtroDe(c), `${c.titulo || c.etiqueta}: ${miles(v)}${dinero}`, zona + cuerpo + valor + rot);
+      return envolver(filtroDe(c), `${c.titulo || c.etiqueta}: ${c.n == null ? "sin dato" : miles(v)}${dinero}`, zona + cuerpo + valor + rot);
     }).join("");
     const base = `<line x1="${M.izq}" y1="${y0}" x2="${ancho - M.der}" y2="${y0}" style="stroke: var(--viz-grid); stroke-width:1"></line>`;
     return `<svg viewBox="0 0 ${ancho} ${alto}" role="img" style="display:block;width:100%;height:auto;font-family:inherit">${rejilla}${base}${barras}</svg>`;
@@ -241,14 +273,22 @@
      mentir sobre la magnitud, y lo que estaba mal era el ORDEN, no el tamaño.
      Vive en la primitiva y no en el llamador para que el próximo cubo residual no
      pueda olvidarse de la regla. */
-  function barrasRank(items, { filtroDe = () => null, tope = 6, esCola = () => false } = {}) {
+  /* `plegarResto` (6-sep-2026, M-DGF-13): en vez de RECORTAR por `tope`, lo que
+     queda detrás se pinta dentro de un <details> cuyo rótulo lo escribe el
+     llamador con el número («Ver los 25 departamentos restantes»), con la MISMA
+     escala que las de arriba —un `max` propio del resto haría que la última
+     categoría pareciera tan grande como la primera—. La cola sigue apartada y
+     al final de lo visible; sin `plegarResto` la primitiva recorta como siempre. */
+  function barrasRank(items, { filtroDe = () => null, tope = 6, esCola = () => false, plegarResto = null } = {}) {
     const todos = items || [];
     const cola = todos.filter((x) => esCola(x));
-    const lista = todos.filter((x) => !esCola(x)).slice(0, tope).concat(cola);
+    const reales = todos.filter((x) => !esCola(x));
+    const lista = reales.slice(0, tope).concat(cola);
+    const resto = plegarResto ? reales.slice(tope) : [];
     if (!lista.length) return "";
-    const max = Math.max(...lista.map((x) => x.n || 0));
+    const max = Math.max(...lista.concat(resto).map((x) => x.n || 0));
     if (!max) return "";
-    return `<ul class="mt-2 space-y-2">${lista.map((x) => {
+    const fila = (x) => {
       const pct = Math.max(2, ((x.n || 0) / max) * 100);
       const filtro = filtroDe(x);
       const dinero = x.valor != null ? pesosCortos(x.valor) : null;
@@ -262,7 +302,11 @@
       return `<li>${filtro
         ? `<a href="?${esc(filtro)}#/licitaciones" data-filtro="${esc(filtro)}" class="block rounded-lg px-1 py-0.5 transition hover:opacity-80">${interior}</a>`
         : interior}</li>`;
-    }).join("")}</ul>`;
+    };
+    const plegado = resto.length
+      ? `<details class="mt-2"><summary class="cursor-pointer text-[12px]" style="color: var(--text-secondary)">${esc(plegarResto(resto.length))}</summary><ul class="mt-2 space-y-2">${resto.map(fila).join("")}</ul></details>`
+      : "";
+    return `<ul class="mt-2 space-y-2">${lista.map(fila).join("")}</ul>${plegado}`;
   }
 
   /* ── APILADA · parte-todo en UNA barra ──

@@ -1122,6 +1122,14 @@
       </p>
 
       <div id="pulso-global" class="hidden mt-8 flex w-full max-w-lg items-stretch justify-center gap-6 sm:gap-10" aria-label="El mercado hoy"></div>
+      <!-- LA HISTORIA DEL MERCADO, PLEGADA Y SOLO CON BASE (6-sep-2026, M-DGF-20):
+           una columna por día de los últimos 90. Nace oculta y portada.js la
+           enseña únicamente con 30 o más mediciones de la misma regla de
+           ingesta; sin base no se dibuja nada que parezca una tendencia. -->
+      <details id="pulso-historia" class="hidden mt-3 w-full max-w-lg text-left">
+        <summary class="cursor-pointer text-xs" style="color: var(--text-secondary);">Licitaciones abiertas, día a día (últimos 90 días)</summary>
+        <div id="pulso-historia-cuerpo" class="mt-2"></div>
+      </details>
 
       <div id="entrada-inicio" class="mt-8 w-full max-w-2xl">
         <div class="grid gap-3 sm:grid-cols-3">
@@ -1579,6 +1587,12 @@
             <h3 class="text-sm font-semibold tracking-tight">De qué se compone su lista</h3>
             <div id="d-barras" class="mt-1"></div>
           </div>
+
+          <!-- CUÁNTA GENTE COMPITIÓ, AÑO A AÑO (6-sep-2026, M-DGF-14): contexto
+               del mercado que el índice ya medía y nadie veía. Nace oculto y
+               app.js lo llena SOLO con base (dos años con el suelo de procesos);
+               sin base no se escribe nada. Sin gráfico: es contexto, no decisión. -->
+          <div id="d-mercado-periodos" class="mt-6 hidden"></div>
 
           <!-- ══════ LO QUE SE FUE DE AQUÍ, Y POR QUÉ (encargo del ingeniero, 31-ago-2026) ══════
                «Elimina lo subrayado en rojo: no se ve estético, mucho texto que no
