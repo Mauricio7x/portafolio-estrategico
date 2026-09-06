@@ -2484,8 +2484,16 @@
             Filtros<span id="btn-filtros-n" class="hidden bg-gray-900 rounded-full px-1.5 text-[11px] font-semibold"></span>
           </button>
           <button id="btn-buscar" class="rounded-xl bg-gray-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-700">Buscar</button>
+          <!-- LA LISTA SALE EN EXCEL (6-sep-2026, M-COMP-04): las mismas filas y
+               cifras que la pantalla, con las celdas vacías donde no hay dato. El
+               resultado de pulsarlo se lee en #lista-excel-estado, debajo. -->
+          <button id="btn-lista-excel" type="button" class="control-boton inline-flex items-center gap-2 rounded-xl text-sm" title="Descargar la lista tal como está en pantalla, en una hoja de cálculo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 4v11"></path><path d="m7 10 5 5 5-5"></path><path d="M5 19h14"></path></svg>
+            Excel
+          </button>
         </div>
         <div id="fl-fichas" class="mt-2 flex flex-wrap items-center gap-2 text-xs"></div>
+        <p id="lista-excel-estado" class="mt-2 hidden text-xs" role="status"></p>
         <!-- El CONCEPTO del orden elegido (18-ago-2026): qué hace ese orden y qué no
              promete. Lo pinta app.js desde Filtros.conceptoDe al cambiar #f-ordenar.
              EN EL TELÉFONO VA PLEGADO (5-sep-2026): medido a 390 px, este párrafo
@@ -3663,6 +3671,7 @@
   <script src="/frases.js"></script>
   <script src="/onboarding.js"></script>
   <script src="/xlsx.js"></script>
+  <script src="/lista_libro.js"></script>
   <script src="/xlsx_lectura.js"></script>
   <script src="/apu_libro.js"></script>
   <script src="/costos.js"></script>

@@ -151,7 +151,7 @@
   salud.js                    ¿La sincronización está viva? (GET /api/procesos?op=salud · público, solo lee)
   sync.js                     Sincronización SECOP II → Upstash Redis (full + delta, reanudable)
 
-· FRONTEND public/ — 15 módulos:
+· FRONTEND public/ — 16 módulos:
   app.js                      Frontend unificado (una página, tres pestañas)
   apu_libro.js                El presupuesto calculado → libro Excel con formato Nogal
   calendario.js               EL CALENDARIO DE CIERRES (encargo del ingeniero, 31-ago-2026)
@@ -161,6 +161,7 @@
   ganancia.js                 LA CUENTA DE «CUÁNTA PLATA DEJA ESTE CONTRATO»
   glosario.js                 Marca y glosario (Fase 7 · Detekta v4)
   justificacion.js            Justificación del valor de la oferta — documento exportable (Fase 3, ago 2026).
+  lista_libro.js              La lista filtrada de licitaciones → libro Excel
   onboarding.js               Onboarding — subir el RUP en PDF y salir con un perfil andando
   pliego.js                   APU — lectura del formulario de cantidades de un pliego
   portada.js                  La portada: el pulso del mercado (Fase 9 · Detekta v4)
@@ -168,8 +169,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 140 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L  8087  Lote «B4a-vista-de-visitante» de la consultoría del 4-sep · M-SEG-02 (6-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 141 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L  8206  Lote «B4b-pulso-cobertura» de la consultoría del 4-sep · M-DGF-03, M-DGF-04, M-DGF-12 (6-sep
   L  8311  Remates «R1a-remates-servidor-B1-B2» de la ola 1 · H-01, H-02, H-03, H-04, H-05, V-B2a-03, B
   L  8432  Remates «R1b-remates-servidor-B3-B4b» de la ola 1 · V-B3a-01, V-B3a-02, B3b-H1, B3b-H2, B4b-
@@ -179,6 +179,7 @@
   L  8879  Lote «B6b-memoria-util» de la consultoría del 4-sep · M-DOC-06 (6-sep-2026)
   L  8966  Lote «B7a-tablero-mis-procesos» de la consultoría del 4-sep · M-DGF-09, M-DGF-11, M-DGF-15 (
   L  9095  Lote «B7b-tablero-mercado» de la consultoría del 4-sep · M-DGF-13, M-DGF-14, M-DGF-20 (6-sep
+  L  9227  Lote «B8a-consorcio-y-excel» de la consultoría del 4-sep · M-COMP-02, M-COMP-04 (6-sep-2026)
 
 · DOCUMENTOS docs/ — 43 (y 1 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

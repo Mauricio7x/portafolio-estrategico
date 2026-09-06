@@ -998,6 +998,73 @@
     pintar(cuerpo);
   }
 
+  /* ══════════ LA LISTA SALE EN EXCEL (6-sep-2026, M-COMP-04) ══════════
+     El botón «Excel» de la barra descarga la lista TAL CUAL la sirve op=listar:
+     las mismas filas (todas las páginas, con los mismos filtros, orden y perfil
+     que están en pantalla) y las mismas cifras, crudas; lo que viaja en null va
+     como celda vacía. Las hojas las arma public/lista_libro.js (que la suite
+     ejecuta) y los bytes public/xlsx.js, el escritor propio que ya usa el
+     presupuesto. El token, si hay, va por cabecera como en `buscar()`; jamás en
+     la URL. Ninguna pulsación queda sin respuesta: la línea de estado dice
+     «preparando», qué se descargó, o qué hacer si no hay nada que descargar. */
+  const EXCEL_POR_PAGINA = 100;            // el tope de op=listar (por_pagina máx.)
+  const EXCEL_MAX_PAGINAS = 10;            // × 100 = MAX_FILAS de lista_libro
+  function estadoExcel(texto, tono) {
+    const el = $("lista-excel-estado");
+    el.textContent = texto;
+    el.className = `mt-2 text-xs ${tono === "error" ? "text-red-700" : tono === "ok" ? "text-emerald-700" : tono === "aviso" ? "text-amber-900" : "text-gray-500"}`;
+  }
+  async function filasParaExcel(total) {
+    const paginas = Math.min(EXCEL_MAX_PAGINAS, Math.max(1, Math.ceil(total / EXCEL_POR_PAGINA)));
+    const filas = [];
+    for (let pg = 1; pg <= paginas; pg++) {
+      const p = parametros();
+      p.set("pagina", String(pg)); p.set("por_pagina", String(EXCEL_POR_PAGINA));
+      const token = tokenGuardado();
+      let r;
+      try { r = await fetch(`/api/procesos?op=listar&${p}`, token ? { headers: { "x-historico-token": token } } : undefined); }
+      catch (e) { throw new Error(mensajeDeFallo(e, "descargar la lista")); }
+      /* el parseo va APARTE del fetch: el muro del edge responde HTML */
+      const cuerpo = await leerJson(r);
+      /* un token guardado que ya no vale se olvida y la página se vuelve a pedir
+         sin él, como hace la lista: la descarga pública no se bloquea */
+      if (r.status === 401 && token) { olvidarToken(); pg--; continue; }
+      // el «qué hacer» del servidor viaja con el error, como en api() (V-B2a-02)
+      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error(errorDelServidor(cuerpo) || fraseDeFallo({ status: r.status }));
+      filas.push(...(cuerpo.resultados || []));
+      if (!cuerpo.resultados || !cuerpo.resultados.length || filas.length >= cuerpo.total) break;
+    }
+    return filas;
+  }
+  async function descargarListaExcel() {
+    const btn = $("btn-lista-excel");
+    if (!ultimaBusqueda || !ultimaBusqueda.total || $("resultados").classList.contains("hidden")) {
+      estadoExcel("Nada que descargar: cambie los filtros o el perfil hasta tener licitaciones en la lista.", "aviso");
+      return;
+    }
+    btn.disabled = true;
+    estadoExcel("Preparando el archivo…");
+    try {
+      const total = ultimaBusqueda.total;
+      const filas = await filasParaExcel(total);
+      if (!filas.length) { estadoExcel("La lista cambió y ya no tiene licitaciones: vuelva a buscar.", "aviso"); return; }
+      const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+      const meta = {
+        fecha: hoy, perfil: $("f-perfil").selectedOptions[0] ? $("f-perfil").selectedOptions[0].text : null,
+        filtros: FL.fichas(estadoFiltros).map((f) => f.etiqueta),
+        orden: $("f-ordenar").selectedOptions[0] ? $("f-ordenar").selectedOptions[0].text : null,
+        corte: ultimaBusqueda.sincronizado ? String(ultimaBusqueda.sincronizado).slice(0, 16).replace("T", " ") : null,
+        total, finanzas_visibles: ultimaBusqueda.finanzas_visibles,
+      };
+      const nombre = ListaLibro.nombreArchivo(hoy);
+      XLSXApu.descargar(XLSXApu.construirLibro(ListaLibro.libroDeLista(filas, meta)), nombre);
+      estadoExcel(`Descargado «${nombre}» con ${filas.length} licitaci${filas.length === 1 ? "ón" : "ones"}${filas.length < total ? `: son las primeras ${filas.length} de ${total}; para las demás, afine los filtros` : ""}.`, "ok");
+    } catch (e) {
+      estadoExcel(`No se pudo preparar el archivo: ${fraseDeFallo(e)}`, "error");
+    } finally { btn.disabled = false; }
+  }
+  $("btn-lista-excel").addEventListener("click", descargarListaExcel);
+
   /* Primera visita con Redis vacío: el backend ya disparó /api/sync. Aquí se
      refuerza (por si el fire-and-forget del servidor murió) y se reintenta. */
   function esperarSincronizacion() {
@@ -3173,7 +3240,7 @@
     const docs = g.documentos || {};
     const enlace = docs.enlace_secop && urlSegura(docs.enlace_secop) ? `<a href="${esc(urlSegura(docs.enlace_secop))}" target="_blank" rel="noopener noreferrer" class="underline">Abrir en SECOP II</a>` : "";
     const bloque = (c) => {
-      const T = TSEM(); const cifras = (c.cifras || []).map((x) => { const clr = T.EXIG_CLR[x.estado] || T.EST.sin_dato.clase; return `<li class="flex flex-wrap items-baseline gap-x-2"><span class="${clr}" aria-hidden="true">●</span><span class="text-gray-600">${esc(x.titulo)}:</span><span class="num font-medium">${esc(x.exige)}</span>${x.suyo ? `<span class="text-gray-500">· usted ${esc(x.suyo)}</span>` : ""}${x.estado_legible ? `<span class="text-[11px] ${clr}">${esc(x.estado_legible)}</span>` : ""}</li>`; }).join("");
+      const T = TSEM(); const cifras = (c.cifras || []).map((x) => { const clr = T.EXIG_CLR[x.estado] || T.EST.sin_dato.clase; return `<li class="flex flex-wrap items-baseline gap-x-2"><span class="${clr}" aria-hidden="true">●</span><span class="text-gray-600">${esc(x.titulo)}:</span><span class="num font-medium">${esc(x.exige)}</span>${x.suyo ? `<span class="text-gray-500">· usted ${esc(x.suyo)}</span>` : ""}${x.estado_legible ? `<span class="text-[11px] ${clr}">${esc(x.estado_legible)}</span>` : ""}${x.accion && x.accion.tipo === "consorcio" ? `<span class="text-[11px] text-gray-600">${enlaceSocio(x.accion)}</span>` : ""}</li>`; }).join("");
       return `<div class="guia-caja p-3">
         <p class="text-xs font-medium uppercase tracking-wide text-gray-500">${esc(c.titulo)}</p>
         ${c.texto ? `<blockquote class="mt-1.5 text-sm leading-relaxed text-gray-800" style="border-left: 3px solid var(--accent); padding-left: 10px;">«${esc(c.texto)}»</blockquote><p class="mt-1.5 text-[11px] text-gray-400">${esc(c.documento || "")}${c.pagina != null ? `, pág. ${c.pagina}` : ""}</p>`
@@ -3189,7 +3256,8 @@
       const T = TSEM(); const [clr] = T.ESTADO_REQ[q.estado] || T.ESTADO_REQ.sin_dato;
       return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);" title="${esc(q.detalle || "")}"><span class="${clr}" aria-hidden="true">●</span>${esc(CHIP_REQ[q.clave])}: <span class="${clr}">${esc(T.CHIP_ESTADO[q.estado] || q.estado)}</span></span>`;
     });
-    return chips.length ? `<div class="flex flex-wrap gap-1.5">${chips.join("")}</div>` : "";
+    const conSocio = (g.requisitos || []).find((q) => q.accion && q.accion.tipo === "consorcio");
+    return chips.length ? `<div class="flex flex-wrap gap-1.5">${chips.join("")}</div>${conSocio ? `<p class="mt-1.5 text-xs text-gray-600">Lo que está en rojo puede cubrirlo un socio.${enlaceSocio({ ...conSocio.accion, frase: null })}</p>` : ""}` : "";
   }
   function htmlCifrasPliego(g) {
     const lista = g.exigencias || [];
@@ -3208,8 +3276,13 @@
          una segunda fila a todo el ancho —no en la celda del requisito, que
          estrujaría las cifras— y el `title` se queda de redundancia. */
       const secundaria = [x.nota, x.cita ? `«${x.cita}»` : ""].filter(Boolean).join(" ");
+      /* DE LA CASILLA EN ROJO AL SOCIO (6-sep-2026, M-COMP-02): la casilla que no
+         cumple dice cuánto falta (cifra del servidor, la misma resta que decidió
+         el estado) y ofrece ver si con un socio cumple; el simulador se abre
+         debajo de la ficha con ESTE proceso ya puesto. */
+      const socio = enlaceSocio(x.accion);
       return `<tr class="border-t border-gray-100" title="${esc(titulo)}"><td class="py-1.5 pr-3 text-gray-600">${esc(x.titulo)}</td><td class="py-1.5 pr-3 num font-semibold whitespace-nowrap">${esc(cifra)}</td><td class="py-1.5 pr-3 num whitespace-nowrap text-gray-500">${x.suyo ? esc(x.suyo) : "—"}</td><td class="py-1.5 pr-3 whitespace-nowrap ${clr}"><span aria-hidden="true">●</span> ${esc(x.estado_legible || "")}</td><td class="py-1.5 text-[11px] text-gray-400">${x.documento ? `${esc(x.documento)}${x.pagina != null ? `, pág. ${x.pagina}` : ""}` : ""}${x.cambiado_por_adenda ? " · cambió por adenda" : ""}</td></tr>`
-        + (secundaria ? `<tr><td colspan="5" class="pb-1.5 text-xs text-gray-600">${esc(secundaria)}</td></tr>` : "");
+        + (secundaria || socio ? `<tr><td colspan="5" class="pb-1.5 text-xs text-gray-600">${esc(secundaria)}${socio}</td></tr>` : "");
     };
     const nombres = sin.map((x) => x.titulo.toLowerCase());
     const pie = !sin.length ? ""
@@ -3220,6 +3293,13 @@
       ${con.length ? `<div class="mt-2 overflow-x-auto"><table class="w-full text-sm"><thead class="text-left text-[11px] uppercase tracking-wide text-gray-400"><tr><th class="pb-1 pr-3 font-medium">Requisito</th><th class="pb-1 pr-3 font-medium">Pide el pliego</th><th class="pb-1 pr-3 font-medium">Usted</th><th class="pb-1 pr-3 font-medium">Estado</th><th class="pb-1 font-medium">Dónde</th></tr></thead><tbody>${con.map(fila).join("")}</tbody></table></div>` : ""}
       ${pie}
     </div>`;
+  }
+  /* El enlace «Ver si con un socio cumple» de una casilla o un requisito en rojo:
+     solo con la acción `consorcio` que manda el servidor (lib/guia_proceso), que
+     es quien sabe si un socio puede cubrirlo; la frase de cuánto falta va delante. */
+  function enlaceSocio(accion) {
+    if (!accion || accion.tipo !== "consorcio" || !accion.proceso) return "";
+    return `${accion.frase ? ` ${esc(accion.frase)}` : ""} <button type="button" data-seg-socio="${esc(accion.proceso)}" class="underline font-medium">Ver si con un socio cumple</button>`;
   }
   function htmlGuia(p) {
     const g = p.guia;
@@ -3297,6 +3377,7 @@
           ${htmlVeredicto(g)}
           ${docs ? `<div class="text-xs" data-seg-docs="${esc(p.id)}">${htmlDocs(p)}</div>` : ""}
           ${htmlCifrasPliego(g)}
+          <div data-seg-socio-caja="${esc(p.id)}" class="guia-caja hidden p-3"></div>
           ${ojoHtml}
           ${plegado(resumenSummary("Trámites y fechas", nPasos, proximoPaso ? `el más próximo: ${fechaCorta(proximoPaso)}` : ""), `<ol class="space-y-2">${pasos}</ol>${conseguir ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que tiene que conseguir</p><ul class="mt-1.5 space-y-2">${conseguir}</ul>` : ""}${verificados ? `<p class="mt-3 text-[11px] uppercase tracking-wide text-gray-400">Lo que la aplicación verificó</p><ul class="mt-1.5 space-y-2">${verificados}</ul>` : ""}`)}
           ${plegado(resumenSummary("Consejos para este proceso", (g.consejos || []).length, ""), `<ul class="space-y-2">${consejos}</ul>`)}
@@ -3561,6 +3642,106 @@
      única salida de un fallo en esta pestaña era el botón de recargar del
      navegador, que además pierde la pestaña abierta. */
   if ($("seg-reintentar")) $("seg-reintentar").addEventListener("click", () => cargarSeguimiento({ forzar: true }));
+  /* ══════════ ¿Y CON UN SOCIO? (6-sep-2026, M-COMP-02) ══════════
+     La casilla en rojo de «Lo que fija el pliego» abre AQUÍ, bajo la ficha, el
+     mismo simulador de consorcio de Mi empresa (op=consorcio-simular) con ESTE
+     proceso ya puesto: el usuario elige con quién (los otros perfiles cargados
+     en la barra) y el servidor vuelve a pasar las ocho casillas del pliego con
+     las dos empresas juntas —la misma función que armó la ficha—. Aquí no se
+     compara ninguna cifra: se pinta lo que responde el servidor. Ninguna
+     pulsación queda sin respuesta: sin segundo perfil, sin fila viva o con un
+     perfil que ya es un consorcio, la caja dice qué hacer. */
+  const PARTE_SOCIO_DEFECTO = 50;
+  function cajaSocioDe(id) { return secSeg.querySelector(`[data-seg-socio-caja="${CSS.escape(id)}"]`); }
+  function guiaGuardadaDe(id) { const p = ((ultimoSeguimiento && ultimoSeguimiento.procesos) || []).find((x) => x.id === id); return (p && p.guia) || null; }
+  const esPerfilIndividual = (id) => !!id && id !== "juntos" && !/^cons_/.test(id);
+  const avisoSocio = (texto, boton) => `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">¿Y con un socio?</p><p class="mt-1 text-sm text-gray-700">${esc(texto)}</p>${boton || ""}`;
+  const botonIr = (seccion, texto) => `<button type="button" data-seg-socio-ir="${esc(seccion)}" class="mt-2 rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-gray-50">${esc(texto)}</button>`;
+  function abrirSimuladorSocio(id) {
+    const caja = cajaSocioDe(id);
+    if (!caja) return;
+    caja.classList.remove("hidden");
+    const actual = $("f-perfil").value;
+    const otros = perfilesIndividuales().filter((x) => x.id !== actual);
+    if (!esPerfilIndividual(actual)) {
+      caja.innerHTML = avisoSocio("Este perfil ya reúne varias empresas. Para probar otra combinación, arme el consorcio en Mi empresa.", botonIr("seccion-consorcio", "Ir a Mi empresa"));
+    } else if (!otros.length) {
+      caja.innerHTML = avisoSocio("Para saber si con un socio cumple, cargue en Mi empresa el registro de proponente del socio; al volver aquí podrá elegirlo.", botonIr("seccion-rup", "Ir a Mi empresa"));
+    } else {
+      caja.innerHTML = `<p class="text-xs font-medium uppercase tracking-wide text-gray-500">¿Y con un socio?</p>
+        <p class="mt-1 text-sm text-gray-700">Elija con quién. La aplicación vuelve a pasar las cifras de este pliego con las dos empresas juntas; los indicadores se ponderan por la parte que pone cada una.</p>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+          ${otros.map((x) => `<button type="button" data-seg-socio-con="${esc(x.id)}" data-seg-socio-proceso="${esc(id)}" class="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-gray-50">Con ${esc(x.nombre)}</button>`).join("")}
+          <label class="flex items-center gap-1 text-xs text-gray-600">Parte del socio <input type="number" min="1" max="99" step="1" value="${PARTE_SOCIO_DEFECTO}" data-seg-socio-parte="${esc(id)}" aria-label="Parte del socio en porcentaje" class="w-16 rounded-lg border-gray-300 text-xs">%</label>
+        </div>
+        <div data-seg-socio-resultado="${esc(id)}" class="mt-2"></div>`;
+    }
+    caja.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  async function simularConSocio(id, socioId, parteSocio) {
+    const caja = cajaSocioDe(id);
+    if (!caja) return;
+    const res = caja.querySelector("[data-seg-socio-resultado]") || caja;
+    const actual = $("f-perfil").value;
+    const parte = Number.isFinite(parteSocio) && parteSocio >= 1 && parteSocio <= 99 ? Math.round(parteSocio) : PARTE_SOCIO_DEFECTO;
+    const socio = perfilesIndividuales().find((x) => x.id === socioId);
+    if (!socio || socioId === actual) { res.innerHTML = `<p class="text-sm text-red-700">Ese perfil ya no está en la barra: vuelva a elegir el socio.</p>`; return; }
+    res.innerHTML = `<p class="text-sm text-gray-500">Pasando las cifras del pliego con ${esc(socio.nombre)}…</p>`;
+    let r;
+    try {
+      r = await api("/api/perfil?op=consorcio-simular", { method: "POST", body: { integrantes: [{ perfilId: actual, participacion: 100 - parte }, { perfilId: socioId, participacion: parte }], proceso: id, origen: "guia" } });
+    } catch (e) { res.innerHTML = `<p class="text-sm text-red-700">${esc(fraseDeFallo(e))}</p>`; return; }
+    res.innerHTML = htmlResultadoSocio(id, r, socio, parte);
+  }
+  function htmlResultadoSocio(id, r, socio, parte) {
+    const T = TSEM();
+    const guia = guiaGuardadaDe(id) || {};
+    const rojas = (guia.exigencias || []).filter((x) => x.accion && x.accion.tipo === "consorcio");
+    const juntas = r.exigencias || [];
+    const encabezado = `<p class="text-sm font-medium">Con ${esc(socio.nombre)} (${100 - parte} % y ${parte} %)</p>`;
+    if (r.proceso_encontrado === false) return `${encabezado}<p class="mt-1 text-sm text-gray-700">El proceso ya no está en la lista viva: la aplicación no puede volver a pasar sus cifras. Compárelas usted con las de la ficha.</p>`;
+    if (!juntas.length) return `${encabezado}<p class="mt-1 text-sm text-gray-700">La aplicación no pudo volver a pasar las cifras de este pliego con el socio. Compárelas usted con las de la ficha, o inténtelo de nuevo en un momento.</p>`;
+    const sinLectura = juntas.every((x) => x.exige == null);
+    const filas = rojas.map((x) => {
+      const j = juntas.find((y) => y.clave === x.clave) || null;
+      const clr = j ? (T.EXIG_CLR[j.estado] || T.EST.sin_dato.clase) : T.EST.sin_dato.clase;
+      const sigue = j && j.accion && j.accion.tipo === "consorcio" && j.accion.frase ? ` <span class="text-gray-500">· ${esc(j.accion.frase.replace(/:.*$/, "").replace(/^./, (c) => c.toLowerCase()))}</span>` : "";
+      return `<li class="flex flex-wrap items-baseline gap-x-2"><span class="${clr}" aria-hidden="true">●</span><span class="text-gray-600">${esc(x.titulo)}:</span><span class="num">pide ${esc(x.exige)}</span>${j && j.suyo ? `<span class="num text-gray-700">· juntos ${esc(j.suyo)}</span>` : ""}${j && j.estado_legible ? `<span class="text-[11px] ${clr}">${esc(j.estado_legible)}</span>` : ""}${sigue}</li>`;
+    }).join("");
+    const cubiertas = rojas.filter((x) => { const j = juntas.find((y) => y.clave === x.clave); return j && j.estado !== "no_cumple"; }).length;
+    const n = rojas.length, resto = n - cubiertas;
+    const frase = !n ? "En la ficha no hay ninguna cifra en rojo que un socio tenga que cubrir."
+      : sinLectura ? "Los documentos de este proceso todavía no se han leído: cuando la ficha tenga las cifras, aquí se pasan con el socio."
+        : cubiertas === n ? `Juntos cubren ${n === 1 ? "la cifra" : `las ${n} cifras`} que hoy no cumple. Lo que dice «confírmelo» lo fija el pliego: léalo.`
+          : cubiertas === 0 ? (n === 1 ? "Juntos tampoco cubren la cifra que hoy no cumple: sigue en rojo. Pruebe con otra parte o con otro socio." : `Juntos no cubren ninguna de las ${n} cifras que hoy no cumple: siguen en rojo. Pruebe con otra parte o con otro socio.`)
+            : `Juntos cubren ${cubiertas} de las ${n} cifras que hoy no cumple; ${resto === 1 ? "una sigue" : `${resto} siguen`} en rojo.`;
+    const pa = r.puertas_app || null;
+    const chip = (rotulo, pasa) => { const [clr, eti] = T.ESTADO_REQ[pasa ? "cumple" : "no_cumple"]; return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);"><span class="${clr}" aria-hidden="true">●</span>${rotulo}: <span class="${clr}">${esc(eti)}</span></span>`; };
+    const verificado = pa ? `<div class="mt-2 flex flex-wrap gap-1.5">${chip(CHIP_REQ.registro, pa.p1_rup)}${chip(CHIP_REQ.capacidad, pa.p2_k)}${chip(CHIP_REQ.caja, pa.p3_caja)}</div><p class="mt-1 text-[11px] text-gray-500">Lo que la aplicación verifica con los dos registros juntos; no son los requisitos del pliego.</p>` : "";
+    const avisos = (r.advertencias || []).filter((a) => /porcentaje mínimo/.test(a)).map((a) => `<li>Atención: ${esc(a)}</li>`).join("");
+    return `${encabezado}
+      ${filas ? `<ul class="mt-1.5 space-y-1 text-sm">${filas}</ul>` : ""}
+      <p class="mt-2 text-sm font-medium">${esc(frase)}</p>
+      ${verificado}
+      ${avisos ? `<ul class="mt-2 space-y-1 text-[11px] text-gray-500">${avisos}</ul>` : ""}
+      <div class="mt-2 flex flex-wrap items-center gap-2">
+        <button type="button" data-seg-socio-armar="${esc(socio.id)}" data-seg-socio-parte-armar="${parte}" class="rounded-lg bg-gray-900 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-gray-700">Armar este consorcio en Mi empresa</button>
+        <span class="text-[11px] text-gray-500">Allí se guarda y se ve cuántas licitaciones más se abren.</span>
+      </div>`;
+  }
+  /* «Armar este consorcio»: lleva al bloque «Crear consorcio» de Mi empresa con los
+     dos integrantes marcados y sus partes puestas — el MISMO bloque, con su
+     simulación y su botón de guardar; no hay un segundo flujo. */
+  function armarConsorcioEnMiEmpresa(socioId, parteSocio) {
+    const actual = $("f-perfil").value;
+    const parte = Number.isFinite(parteSocio) && parteSocio >= 1 && parteSocio <= 99 ? parteSocio : PARTE_SOCIO_DEFECTO;
+    cons.integrantes = [actual, socioId];
+    cons.part[actual] = 100 - parte; cons.part[socioId] = parte;
+    activarPestana("admin");
+    pintarConsorcio(); programarSimulacion();
+    const sec = $("seccion-consorcio"); if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   const secSeg = document.getElementById("tab-seguimiento") || document.getElementById("seccion-seguimiento");
   if (secSeg) {
     /* al ABRIR la guía de un guardado se consulta su dictamen sin pulsar nada más */
@@ -3626,6 +3807,19 @@
         det.disabled = false;
         return;
       }
+      const socioAbrir = ev.target.closest("[data-seg-socio]");
+      if (socioAbrir) { abrirSimuladorSocio(socioAbrir.getAttribute("data-seg-socio")); return; }
+      const socioCon = ev.target.closest("[data-seg-socio-con]");
+      if (socioCon) {
+        const idP = socioCon.getAttribute("data-seg-socio-proceso");
+        const parte = secSeg.querySelector(`[data-seg-socio-parte="${CSS.escape(idP)}"]`);
+        await simularConSocio(idP, socioCon.getAttribute("data-seg-socio-con"), parte ? Number(parte.value) : 50);
+        return;
+      }
+      const socioArmar = ev.target.closest("[data-seg-socio-armar]");
+      if (socioArmar) { armarConsorcioEnMiEmpresa(socioArmar.getAttribute("data-seg-socio-armar"), Number(socioArmar.getAttribute("data-seg-socio-parte-armar"))); return; }
+      const socioIr = ev.target.closest("[data-seg-socio-ir]");
+      if (socioIr) { activarPestana("admin"); const sec = $(socioIr.getAttribute("data-seg-socio-ir")); if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
       const ver = ev.target.closest("[data-seg-verificar]");
       if (ver) {
         // reutiliza «Verifique a su socio»: mismo flujo, mismo NIT — vive en Mi empresa

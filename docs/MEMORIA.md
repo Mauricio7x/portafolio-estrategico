@@ -9223,3 +9223,111 @@ Tres mejoras del eje «datos y gráficos», sobre el árbol de `6149dca`. Las fi
   el despliegue y la landing no enseña nada hasta 30 mediciones con el mismo sello.
 - **Pasos del dueño**: ninguno en las fichas. Tras desplegar, nada que pulsar: el pulso y el tablero se
   renuevan solos (cachés de 10 y 5 min) y la historia se acumula con cada sincronización.
+
+### Lote «B8a-consorcio-y-excel» de la consultoría del 4-sep · M-COMP-02, M-COMP-04 (6-sep-2026)
+
+En una línea: la casilla en rojo de «Lo que fija el pliego» dice cuánto falta y abre, bajo la ficha, el mismo simulador de consorcio con ESTE proceso puesto (el servidor vuelve a pasar las ocho casillas con el perfil derivado por la MISMA `guiaDe`), y la lista filtrada sale en Excel con las mismas filas y cifras que sirve op=listar, crudas y vacías donde no hay dato.
+
+**Qué se decidió (M-COMP-02).** (1) **La acción viaja con la casilla, la decide el servidor.**
+`exigenciasDe` (`lib/guia_proceso`) añade `accion` a cada una de las ocho casillas: `{tipo:"consorcio",
+proceso, sentido, diferencia, diferencia_legible, frase}` cuando NO cumple y hay cifra propia; `null` en
+las demás. `diferencia` es la MISMA resta que decidió el estado —`cumpleRequisito` de `lib/diff`
+comparó la cifra propia con la exigida en el `sentido` del requisito (`REQUISITOS`)—: cruda para decidir
+y con su forma legible al lado (`fmtValorRequisito`, el mismo fmt de la ficha). Con sentido «máximo»
+(endeudamiento) la frase dice «Se pasa X…», no «le falta». Los `requisitos` en rojo que un socio puede
+cubrir (`REQUISITOS_CON_SOCIO`: registro, experiencia, capacidad, indicadores) llevan la misma acción
+sin cifra; el aviso de interés vencido y lo que hay que conseguir (pólizas, firma, antecedentes) no la
+llevan: ningún socio los arregla. Las cifras bajo las citas literales (`citas_pliego[].cifras`) llevan
+la acción también (hermano del mismo patrón). `VERSION` de la guía sube a 5. (2) **«¿Con un socio
+cumple?» lo responde el simulador, no la pantalla.** `C.simular` acepta `documentos` y, con `proceso`,
+inyecta el perfil derivado del consorcio como temporal y llama a `guiaDe` con la fila viva y los
+documentos ya leídos del proceso: `exigencias`, `exigencias_resumen` y `documentos_leidos` viajan en
+la respuesta junto a `puertas_app` (best-effort como en Mis procesos: si la guía no se pudiera armar,
+viajan `null` con `exigencias_motivo` y la pantalla manda a comparar con la ficha en vez de afirmar
+que «tampoco cubren»). Es la MISMA función que armó la ficha: hay prueba que ejecuta las
+dos (simulador y `guiaDe` con `derivarConsorcio` + `conPerfilTemporal`) y las compara enteras; y la
+cifra que se juzga para el consorcio es la PONDERADA por participación (lo que lee el evaluador, Fase
+10), no la suma. El handler carga `pliego:{id}:docs` con `leerDocs` (best-effort: sin ellos las ocho
+casillas dicen «por leer»/«sin cifra en lo leído», jamás una cifra) y acepta `origen` («guia» o
+«mi_empresa», cualquier otro valor es INERTE → null) que solo se anota en el registro del servidor: no
+hay contador, la ficha pedía dejar el gancho para medir después. (3) **En pantalla: la casilla en rojo
+lleva la frase y «Ver si con un socio cumple»**, que abre una caja bajo la ficha (`data-seg-socio-caja`,
+plegada en «Todo lo demás» con la ficha: lo que se toca va plegado) con un botón por cada otro perfil
+individual de la barra («Con Génesis…») y la parte del socio (50 % por defecto, editable). Al pulsar,
+`op=consorcio-simular` con `proceso` y `origen:"guia"`; se pinta lo que responde el servidor: por cada
+casilla que estaba en rojo, «pide X · juntos Y · estado» y cuánto sigue faltando; una frase de cierre
+(«Juntos cubren N de las M cifras…» / «Juntos tampoco cubren…: pruebe con otra parte o con otro
+socio»); los tres veredictos de la aplicación (registro, capacidad, caja) con las palabras del
+semáforo único; la advertencia del porcentaje mínimo; y «Armar este consorcio en Mi empresa», que lleva
+al bloque «Crear consorcio» con los dos marcados y sus partes puestas (el MISMO bloque, con su
+simulación y su guardar: no hay un segundo flujo). Ninguna pulsación sin respuesta: con un solo perfil
+en la barra la caja dice «cargue en Mi empresa el registro de proponente del socio» con el botón para
+ir; con un perfil que ya es consorcio, «arme el consorcio en Mi empresa»; con el proceso fuera de la
+lista viva, que la aplicación no puede volver a pasar sus cifras. (4) **Lo que NO se hizo, con motivo.**
+«Empresas que ganaron en esta entidad» bajo la ficha (paso 4, C-N3): la respuesta de `op=entidad` no se
+pide desde Mis procesos ni vive en caché del navegador (la ficha decía que «ya se pide para la ficha de
+competencia»: es el modal de la lista, `cargarDetalle`, sin caché), así que sería una petición nueva por
+tarjeta; y la tarjeta ya ofrece «Quiénes se presentaron» (`detalleCompetencia`, con «Verificar» por
+NIT hacia «Verifique a su socio»). Queda fuera de este lote, declarado. Ni «subsanar» ni
+«verificar_pliego»: ver abajo.
+
+**Qué se decidió (M-COMP-04).** (5) **`public/lista_libro.js`, UMD como `apu_libro.js`**: arma las
+hojas desde las filas de op=listar y la suite lo EJECUTA (se escribe con `xlsx.js` y se vuelve a leer con
+`xlsx_lectura.js`: la cuantía 1.234.567.891 sobrevive exacta). Dieciocho columnas con las cabeceras del
+glosario (`TERMINOS.modalidad/cuantia/rup/capacidad_contratacion/indice_competencia/baja_mercado`) y
+los veredictos con las palabras de `ESTADO`; entra al censo de jerga, voseo, emojis, rutas y `window.`
+de `public/*.js` como cualquier módulo (medido: pasa sin excepción). Reglas: cuantía CRUDA con formato
+de moneda solo para leerla; null → celda VACÍA; anticipo 0 → vacía (es «sin dato», regla de
+`lib/negocio`); `sin_dato:true` en un veredicto → «Sin dato» (es un estado declarado, se escribe);
+`baja_entidad` en null sin credencial → vacía y la hoja «Cómo leer» lo dice («solo se descarga con la
+clave del sitio»), además de «una celda vacía no es un cero», el corte, el perfil, los filtros, el
+orden, y «las primeras N de M» cuando recorta (`MAX_FILAS` 1 000 = 10 páginas del tope de op=listar).
+No lleva probabilidad ni valor esperado: son el modelo, no el hecho. (6) **El botón «Excel» vive en la
+barra de herramientas** de la lista (siempre visible, junto a «Buscar») con su línea de estado
+`#lista-excel-estado` (`role="status"`): «Preparando…», «Descargado «archivo» con N licitaciones» (y
+«son las primeras N de M» si recortó), «Nada que descargar: cambie los filtros o el perfil…» con la
+lista vacía, y el fallo con el «qué hacer» del servidor (`errorDelServidor`, la cerca V-B2a-02 lo cazó en
+la primera mutación). Las páginas restantes se piden a op=listar con los mismos `parametros()`
+(perfil, filtros, orden), `por_pagina=100` y el token guardado POR CABECERA, jamás en la URL; un 401 con
+token guardado lo olvida y repite sin él, como `buscar()`. Los bytes los hace `XLSXApu.construirLibro`
+y la descarga `XLSXApu.descargar` (Blob, como el .ics): ningún escritor nuevo. El nombre sale de
+`MARCA.nombre` y la fecha de Colombia (`Detekta_licitaciones_AAAA-MM-DD.xlsx`).
+
+**Lo que la ficha decía y el árbol desmintió.** «La brecha sale de la MISMA regla de `lib/consorcio.js`
+que usa simular (resumenIndicadores / la comparación contra el pliego que hace simular con proceso)»:
+`simular` NO compara nada contra el pliego (`cumple: null` desde la Fase 10: el dataset no publica los
+requisitos); la comparación vive en `lib/diff.cumpleRequisito` a través de `lib/documentos_proceso`, y
+por eso la diferencia se calcula donde se decidió el estado (`exigenciasDe`) y el simulador REUTILIZA
+`guiaDe`. «Casillas de documento → `subsanar` con página o `verificar_pliego`»: ninguna casilla de
+documento llega a `no_cumple` (registro, experiencia, capacidad e indicadores los cubre un socio; el
+aviso vencido no lo cubre nadie; pólizas, firma, antecedentes y carpeta viajan `pendiente`), y ningún
+hecho leído afirma la subsanabilidad con página: `subsanar` y `verificar_pliego` serían código muerto
+que promete una regla sin fuente, y la prueba exige que ninguna acción sea otra cosa que `consorcio` o
+`null`. «`accion` con `integrantes: [{perfil actual, 100}]`»: `validarIntegrantes` exige dos o más, así
+que el enlace pide elegir al socio antes de simular. «public/app.js:7729»: hoy la llamada de Mi empresa
+está en otra línea y sigue sin `proceso`, a propósito (allí no hay proceso). «Dos líneas de app.js donde
+se pinta g.exigencias (L2837-2871)»: hoy es `htmlCifrasPliego`; se cita por nombre.
+
+**Medido (6-sep-2026).** Premisa ejecutada: la casilla de patrimonio en rojo no traía `accion`;
+`C.simular` con proceso devolvía 15 claves sin `exigencias`; `lista_libro.js` no existía y el único
+consumidor de `construirLibro` era `apu_libro.js`. Mutaciones con la prueba en pie: sin el módulo →
+«Cannot find module lista_libro»; sin los tres archivos del servidor → cae en `version 4 !== 5`; con
+`x.accion = null` → «la casilla en rojo lleva la acción «consorcio»… null»; con `documentos: null` en
+`simular` → «las casillas del consorcio salen de guiaDe… la MISMA función» (deepStrictEqual); con
+`|| 0` en la cuantía → «sin cuantía la celda va VACÍA, jamás 0: 0 !== null». Chromium (arnés con los
+routers reales, corpus sintético de 684 filas, un guardado de helder con pliego «leído» que exige
+patrimonio ≥ $9.000 M), 1280 y 390, claro y oscuro: la fila de patrimonio dice «Le falta
+$7.892.747.036 para lo que exige el pliego: un socio puede aportarla · Ver si con un socio cumple» (tres
+enlaces: fila, cita y chips); la caja abre con «Con Génesis GIC SAS»; al 50/50 «juntos $659.296.926 ·
+No cumple · le falta $8.340.703.074» (Génesis tiene menos patrimonio que Helder: la ponderación baja) y al
+70/30 «juntos $838.479.341»; «Armar este consorcio» deja Mi empresa con helder y genesis marcados,
+70/30, «100 % ● Correcto» y la simulación del bloque corriendo; sin segundo perfil la caja dice qué
+hacer. Las tres peticiones al simulador van sin token en la URL. «Excel» descarga
+`Detekta_licitaciones_2026-09-06.xlsx` (550 644 bytes, 432 filas = las 432 de la lista, dos hojas,
+primera fila con la cuantía cruda 800001071) y la línea dice «Descargado … con 432 licitaciones»; con la
+lista vacía, «Nada que descargar…». Cero desbordes, cero peticiones externas; en consola solo el 503 del
+propio arnés.
+
+**No verificable desde aquí.** Producción (Redis real, documentos leídos de verdad, Excel abierto en
+el Excel del dueño: el lector propio lo lee, y LibreOffice/Excel abren el mismo formato del presupuesto).
+Sin pasos del dueño en las fichas. Sin red hacia datos.gov.co.

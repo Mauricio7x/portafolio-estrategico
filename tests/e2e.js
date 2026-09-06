@@ -5089,6 +5089,71 @@ async function main() {
       }
     })();
 
+    /* ---- 3-ter · LA LISTA FILTRADA SALE EN EXCEL (6-sep-2026, M-COMP-04) ----
+       public/lista_libro.js arma las hojas con las MISMAS filas que sirve op=listar:
+       la cuantía cruda (una cifra redondeada para mostrar no decide), null → celda
+       vacía (sin dato ≠ 0), el anticipo 0 vacío (es «sin dato»), los veredictos con
+       las palabras del semáforo único y las cabeceras sin jerga. Se EJECUTA, se
+       escribe con xlsx.js y se vuelve a leer con el lector propio. Contra el árbol
+       anterior: el módulo no existía y la lista no salía de la pantalla. */
+    await (async () => {
+      const ListaLibro = require("../public/lista_libro.js");
+      const Glo3 = require("../lib/glosario.js");
+      const { tuteoEn: tuteo3 } = require("../lib/lenguaje_pantalla.js");
+      const filas = [
+        { id_del_proceso: "P-1", entidad: "ALCALDIA DE X", departamento_entidad: "Tolima", nombre_del_procedimiento: "PLACA HUELLA", modalidad_de_contratacion: "Licitación pública", cuantia_cop: 850000000, fecha_cierre: "2026-09-20T15:00:00.000", anticipo_pct: 0, puertas: { p1_rup: { pasa: true }, p2_k: { pasa: true }, p3_caja: { pasa: false } }, competencia_entidad: { nivel: "baja", promedio_oferentes: 2.4 }, baja_entidad: 7.5, viable: false, zona: { etiqueta: "Cerca de su base" }, urlproceso: "https://community.secop.gov.co/x", filtro: { dias_cierre: 14 } },
+        { id_del_proceso: "P-2", entidad: "GOBERNACION", departamento_entidad: "Huila", nombre_del_procedimiento: "PUENTE & <VIA>", modalidad_de_contratacion: "Selección abreviada", cuantia_cop: 1234567891, fecha_cierre: "2026-10-01T10:00:00.000", anticipo_pct: 30, puertas: { p1_rup: { pasa: true }, p2_k: { pasa: true, sin_dato: true }, p3_caja: { pasa: true } }, competencia_entidad: { nivel: "sin_dato", promedio_oferentes: null }, baja_entidad: null, viable: true, zona: null, urlproceso: null, filtro: { dias_cierre: 25 } },
+        { id_del_proceso: "P-3", entidad: "IDU", departamento_entidad: "Bogotá D.C.", nombre_del_procedimiento: "VIA", modalidad_de_contratacion: "Mínima cuantía", cuantia_cop: null, fecha_cierre: null, puertas: {}, competencia_entidad: null, baja_entidad: null, viable: null, filtro: null },
+      ];
+      const hojas = ListaLibro.libroDeLista(filas, { fecha: "2026-09-06", perfil: "Helder", filtros: ["Dónde queda: Tolima"], orden: "Las mejores para usted", corte: "2026-09-06 08:30", total: 3, finanzas_visibles: false });
+      assert.deepStrictEqual(hojas.map((h) => h.nombre), ["Licitaciones", "Cómo leer"]);
+      assert.strictEqual(hojas[0].filas.length, 4, "cabecera + las 3 filas de op=listar");
+      const cab = hojas[0].filas[0].map((c) => c.v);
+      const col = (re) => { const i = cab.findIndex((t) => re.test(t)); assert.ok(i >= 0, `falta la columna ${re}`); return i; };
+      const celda = (f, i) => { const c = hojas[0].filas[f][i]; return c && typeof c === "object" ? c.v : c; };
+      const iCuantia = col(/^Cuánto vale/), iAnt = col(/^Anticipo/), iBaja = col(/suelen bajar/), iCaja = col(/^Plata para arrancar/), iCap = col(/^Capacidad de facturar/), iReg = col(/^Registro de proponente/), iComp = col(/^Competencia/), iCierre = col(/^Cierre$/), iViable = col(/^Cumple los requisitos/);
+      assert.strictEqual(celda(2, iCuantia), 1234567891, "la cuantía viaja CRUDA: una cifra redondeada para mostrar no decide");
+      assert.strictEqual(hojas[0].filas[2][iCuantia].s, "moneda", "…con formato de moneda solo para leerla");
+      assert.strictEqual(celda(3, iCuantia), null, "sin cuantía la celda va VACÍA, jamás 0");
+      assert.strictEqual(celda(1, iAnt), null, "anticipo 0 es «sin dato» (regla de lib/negocio): vacío");
+      assert.strictEqual(celda(2, iAnt), 30);
+      assert.strictEqual(celda(1, iBaja), 7.5); assert.strictEqual(celda(2, iBaja), null, "lo que llega en null (sin credencial) va vacío");
+      assert.deepStrictEqual([celda(1, iReg), celda(1, iCap), celda(1, iCaja)], [Glo3.ESTADO.cumple.largo, Glo3.ESTADO.cumple.largo, Glo3.ESTADO.no_cumple.largo], "los veredictos con las palabras del semáforo único");
+      assert.strictEqual(celda(2, iCap), Glo3.ESTADO.sin_dato.largo, "`sin_dato: true` es un estado declarado, se escribe");
+      assert.deepStrictEqual([celda(3, iReg), celda(3, iCap), celda(3, iCaja), celda(3, iComp)], Array(4).fill(Glo3.ESTADO.sin_dato.largo), "sin veredicto: «Sin dato», no vacío ni «cumple»");
+      assert.deepStrictEqual([celda(1, iCierre), celda(3, iCierre)], ["2026-09-20 15:00", null]);
+      assert.deepStrictEqual([celda(1, iViable), celda(2, iViable), celda(3, iViable)], ["No", "Sí", null]);
+      assert.strictEqual(celda(1, iComp), "Baja");
+      for (const t of cab) for (const [re, n] of [[/\bK\b/, "K"], [/\bVEG\b/, "VEG"], [/puerta/i, "puerta"], [/UNSPSC|SMMLV|\bCRPC?\b|habilitante/i, "sigla o jerga"], [/probabilidad|valor esperado/i, "modelo"]]) assert.ok(!re.test(t), `cabecera con «${n}»: ${t}`);
+      assert.ok(cab.includes(Glo3.TERMINOS.modalidad.visible) && cab.includes(Glo3.TERMINOS.rup.corto), "las cabeceras salen del glosario");
+      // el libro se escribe con xlsx.js y se vuelve a leer con el lector propio: la cifra sobrevive exacta
+      const libroL = await XLSXLectura.leerLibro(XLSXApu.construirLibro(hojas));
+      assert.strictEqual(libroL.hojas[0].filas[2][iCuantia], 1234567891, "ida y vuelta: 1.234.567.891 exacto");
+      assert.strictEqual(libroL.hojas[0].filas[1][3], "PLACA HUELLA");
+      assert.ok(libroL.hojas[0].filas[2][3] === "PUENTE & <VIA>", "el escape XML sobrevive");
+      assert.ok(libroL.hojas[0].filas[3][iCuantia] == null || libroL.hojas[0].filas[3][iCuantia] === "", `la celda sin cuantía vuelve vacía: ${JSON.stringify(libroL.hojas[0].filas[3][iCuantia])}`);
+      // «Cómo leer» dice que vacío no es cero y que sin clave una columna va vacía; todo en registro de usted
+      const comoLeer = JSON.stringify(hojas[1].filas);
+      assert.ok(/no es un cero/.test(comoLeer) && /clave del sitio/.test(comoLeer) && /las primeras/.test(JSON.stringify(ListaLibro.libroDeLista(filas, { total: 50 })[1].filas)), "la hoja «Cómo leer» declara el recorte, el vacío y la credencial");
+      assert.strictEqual(tuteo3(JSON.stringify(hojas)), null, "el libro habla de usted");
+      assert.strictEqual(ListaLibro.nombreArchivo("2026-09-06"), `${Glo3.MARCA.nombre}_licitaciones_2026-09-06.xlsx`, "el nombre sale de la marca del glosario y la fecha");
+      assert.strictEqual(ListaLibro.libroDeLista(Array.from({ length: ListaLibro.MAX_FILAS + 5 }, (_, i) => ({ id_del_proceso: `X${i}` })), { total: ListaLibro.MAX_FILAS + 5 })[0].filas.length, ListaLibro.MAX_FILAS + 1, "el archivo se corta en MAX_FILAS y lo dice");
+      // cableado: el módulo se carga tras el glosario y el escritor y antes de app.js; el botón responde siempre; el token va por cabecera
+      const htmlL = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      const posL = (src) => htmlL.indexOf(`<script src="/${src}"></script>`);
+      assert.ok(posL("glosario.js") < posL("lista_libro.js") && posL("xlsx.js") < posL("lista_libro.js") && posL("lista_libro.js") < posL("app.js"), "lista_libro.js se carga tras glosario.js y xlsx.js y antes que app.js");
+      assert.ok(/id="btn-lista-excel"/.test(htmlL) && /id="lista-excel-estado"[^>]*role="status"/.test(htmlL), "el botón «Excel» y su línea de estado están en la barra de la lista");
+      const appL = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      const iD = appL.indexOf("async function descargarListaExcel("), fD = appL.indexOf("$(\"btn-lista-excel\").addEventListener", iD);
+      assert.ok(iD > 0 && fD > iD, "app.js cablea el botón a descargarListaExcel");
+      const cuerpoD = appL.slice(appL.indexOf("async function filasParaExcel("), fD);
+      assert.ok(/ListaLibro\.libroDeLista\(/.test(cuerpoD) && /XLSXApu\.descargar\(XLSXApu\.construirLibro\(/.test(cuerpoD), "las hojas las arma lista_libro y los bytes xlsx.js: no hay un segundo escritor");
+      assert.ok(/Nada que descargar/.test(cuerpoD) && /Preparando el archivo/.test(cuerpoD) && /Descargado «/.test(cuerpoD) && /No se pudo preparar el archivo/.test(cuerpoD), "ninguna pulsación sin respuesta: vacío, preparando, descargado y fallo");
+      assert.ok(/"x-historico-token": token/.test(cuerpoD) && !/token=/.test(cuerpoD), "el token va por cabecera, jamás en la URL");
+      assert.ok(/por_pagina", String\(EXCEL_POR_PAGINA\)/.test(cuerpoD) && /EXCEL_POR_PAGINA = 100/.test(appL) && /const cuerpo = await leerJson\(r\)/.test(cuerpoD), "las páginas restantes se piden con el tope de la paginación y el parseo va aparte del fetch");
+      console.log(`  · lista en Excel: ${hojas[0].filas.length - 1} filas · ${cab.length} columnas · cuantía cruda ${celda(2, iCuantia)} · vacío donde no hay dato`);
+    })();
+
     /* ---- 4 · el libro con formato Nogal: fórmulas, marcadores y cierre AIU ---- */
     await (async () => {
       const calc = calculoApu.calcularPresupuesto({
@@ -9653,7 +9718,7 @@ async function main() {
           assert.deepStrictEqual(sinDocs.exigencias.map((x) => x.clave), ORDEN, "siempre las ocho casillas, en orden");
           assert.ok(sinDocs.exigencias.every((x) => x.estado === "por_leer" && x.exige == null && x.suyo == null), "sin documentos: por leer, jamás una cifra inventada");
           assert.strictEqual(sinDocs.resumen.exigencias.por_leer, 8);
-          assert.strictEqual(sinDocs.version, 4);
+          assert.strictEqual(sinDocs.version, 5, "5: cada casilla lleva su acción (6-sep-2026)");
           // (2) con un pliego sintético leído: general y específica por separado (lib/diff), cumple/no cumple con la regla de lib/diff, anticipo negado como dato citado
           const texto = "\f1\nPLIEGO\nExperiencia general: 2.500 SMMLV\nExperiencia específica: 1.000 SMMLV\nÍndice de liquidez mayor o igual a 1,5\nNivel de endeudamiento menor o igual a 60%\nCapital de trabajo: mayor o igual a $650.000.000\nPatrimonio: mayor o igual a $9.000.000.000\n\f2\nNo se entregará anticipo al contratista.";
           const h = D.hechosDeTexto(texto, { tipo: "pliego" });
@@ -9670,6 +9735,68 @@ async function main() {
           assert.ok(ex.cobertura.estado === "sin_dato" && ex.cobertura.exige == null && ex.cobertura.suyo == null && /tabla/.test(ex.cobertura.nota), "lo que el documento no fija se declara, no se rellena con la referencia de los pliegos tipo");
           assert.ok(ex.anticipo.estado === "dato" && ex.anticipo.exige === "No hay" && ex.anticipo.pagina === 2, "el anticipo negado es un dato citado");
           assert.ok(/no cumple/.test(con.resumen.exigencias.frase) && con.resumen.exigencias.no_cumple === 1 && con.resumen.exigencias.con_cifra === 7, `resumen: ${JSON.stringify(con.resumen.exigencias)}`);
+          /* ═══ DE LA CASILLA EN ROJO AL SOCIO QUE LA CUBRE (6-sep-2026, M-COMP-02) ═══
+             La casilla que no cumple lleva `accion: {tipo:"consorcio", proceso, diferencia}`
+             con la resta CRUDA que decidió el estado; y op=consorcio-simular con el
+             proceso vuelve a pasar las ocho casillas con el perfil derivado del
+             consorcio por la MISMA `guiaDe` (se ejecutan las dos y se comparan). Contra el
+             árbol anterior: no había `accion` y la simulación no traía `exigencias`. */
+          {
+            const C2 = require("../lib/consorcio.js");
+            const Dff2 = require("../lib/diff.js");
+            const { PERFILES: PF2 } = require("../lib/perfiles.js");
+            const acc = ex.patrimonio.accion;
+            assert.ok(acc && acc.tipo === "consorcio" && acc.proceso === "G1", `la casilla en rojo lleva la acción «consorcio» con el id del proceso: ${JSON.stringify(acc)}`);
+            assert.strictEqual(acc.diferencia, 9e9 - Number(PF2.helder.patrimonio), "la diferencia es la resta CRUDA exige − suyo: decide, no se redondea");
+            assert.strictEqual(acc.sentido, "min");
+            assert.strictEqual(acc.diferencia_legible, Dff2.fmtValorRequisito(acc.diferencia, "dinero"), "la forma legible sale del MISMO fmt que la ficha");
+            assert.ok(/^Le falta \$[\d.]+ para lo que exige el pliego/.test(acc.frase) && /socio/.test(acc.frase), acc.frase);
+            assert.strictEqual(ex.liquidez.accion, null, "una casilla que cumple no lleva acción");
+            assert.strictEqual(ex.cobertura.accion, null, "sin cifra leída no hay acción");
+            assert.strictEqual(ex.anticipo.accion, null, "el anticipo es un hecho, no un requisito");
+            assert.ok(con.exigencias.every((x) => x.accion === null || x.accion.tipo === "consorcio") && con.requisitos.every((q) => q.accion === null || q.accion.tipo === "consorcio"),
+              "ninguna casilla ni requisito promete «subsanar»: ningún documento leído lo afirma con página, y sin fuente no se inventa la regla");
+            assert.ok(con.requisitos.find((q) => q.clave === "financieros").accion.tipo === "consorcio" && con.requisitos.find((q) => q.clave === "financieros").accion.proceso === "G1", "el requisito de indicadores en rojo lleva la misma acción (hermano de la casilla)");
+            assert.ok(con.requisitos.filter((q) => q.estado !== "no_cumple").every((q) => q.accion === null), "solo lo que está en rojo lleva acción");
+            assert.strictEqual(con.citas_pliego[2].cifras.find((c) => c.clave === "liquidez").accion, null, "las cifras bajo las citas llevan la acción (aquí null: cumple)");
+            // sentido «máximo» (endeudamiento): la diferencia es lo que se PASA, no lo que falta
+            const hMax = D.hechosDeTexto("\f3\nPLIEGO\nNivel de endeudamiento menor o igual a 2%", { tipo: "pliego" });
+            const gMax = G.guiaDe({ fila: base, perfil: "helder", ctx: { ahoraMs: ahoraG, documentos: { ...docs, leidos: { d1: { ...docs.leidos.d1, hechos: hMax } } } } });
+            const accMax = gMax.exigencias.find((x) => x.clave === "endeudamiento").accion;
+            assert.ok(accMax && accMax.sentido === "max" && Math.abs(accMax.diferencia - (Number(PF2.helder.endeudamiento) - 0.02)) < 1e-12 && /^Se pasa /.test(accMax.frase), `endeudamiento: ${JSON.stringify(accMax)}`);
+            // el simulador con el proceso y los documentos: las ocho casillas del CONSORCIO, por la misma función
+            const integ = [{ perfilId: "helder", participacion: 50 }, { perfilId: "genesis", participacion: 50 }];
+            const simG = await C2.simular(null, { integrantes: integ, proceso: base, documentos: docs, ahora: ahoraG });
+            assert.ok(simG.ok && Array.isArray(simG.exigencias), "la simulación con proceso trae las casillas del pliego");
+            assert.deepStrictEqual(simG.exigencias.map((x) => x.clave), ORDEN, "las ocho, en orden");
+            const perfilCons = C2.derivarConsorcio("sim", null, C2.validarIntegrantes(integ).integrantes);
+            const esperado = await C2.conPerfilTemporal(perfilCons, async (id) => G.guiaDe({ fila: base, perfil: id, ctx: { ahoraMs: ahoraG, documentos: docs } }).exigencias);
+            assert.deepStrictEqual(simG.exigencias, esperado, "las casillas del consorcio salen de guiaDe con el perfil derivado: la MISMA función que la ficha, no una segunda comparación");
+            const patC = simG.exigencias.find((x) => x.clave === "patrimonio");
+            assert.strictEqual(patC.suyo, Dff2.fmtValorRequisito(perfilCons.patrimonio, "dinero"), "la cifra del consorcio es el patrimonio PONDERADO (lo que lee el evaluador), no la suma");
+            assert.strictEqual(patC.estado, perfilCons.patrimonio >= 9e9 ? "cumple" : "no_cumple");
+            assert.ok(simG.exigencias_resumen && Number.isInteger(simG.exigencias_resumen.no_cumple) && simG.documentos_leidos === 1);
+            assert.ok(simG.puertas_app && typeof simG.puertas_app.pasa_todas === "boolean", "las puertas de la app siguen viajando");
+            const simSin = await C2.simular(null, { integrantes: integ, proceso: base, ahora: ahoraG });
+            assert.ok(simSin.exigencias.every((x) => x.exige == null && x.accion === null && ["por_leer", "sin_dato"].includes(x.estado)), "sin documentos: las ocho dicen por qué están vacías, jamás una cifra");
+            // el frontend: la casilla en rojo enseña la frase y el enlace, el enlace abre el simulador con ESTE proceso, y sin segundo perfil dice qué hacer
+            const appS = sinComentarios(appG);
+            assert.ok(/function enlaceSocio\(/.test(appS) && /data-seg-socio=/.test(appS) && /Ver si con un socio cumple/.test(appS), "la casilla en rojo lleva «Ver si con un socio cumple»");
+            assert.ok(/enlaceSocio\(x\.accion\)/.test(appS) && /data-seg-socio-caja=/.test(appS), "el enlace sale de la acción del servidor y hay una caja bajo la ficha");
+            const iSim = appS.indexOf("async function simularConSocio("), fSim = appS.indexOf("function htmlResultadoSocio(", iSim);
+            const cuerpoSim = appS.slice(iSim, fSim);
+            assert.ok(/proceso: id/.test(cuerpoSim) && /origen: "guia"/.test(cuerpoSim) && /op=consorcio-simular/.test(cuerpoSim), "el simulador se pide con el proceso ya puesto y declara desde dónde");
+            const iAbrir = appS.indexOf("function abrirSimuladorSocio("), fAbrir = appS.indexOf("async function simularConSocio(", iAbrir);
+            const cuerpoAbrir = appS.slice(iAbrir, fAbrir);
+            assert.ok(/registro de proponente del socio/.test(cuerpoAbrir) && /Mi empresa/.test(cuerpoAbrir), "sin segundo perfil la pulsación dice qué hacer: cargar el registro del socio en Mi empresa");
+            assert.ok(/ya reúne varias empresas/.test(cuerpoAbrir), "con un perfil que ya es consorcio, la pulsación también responde");
+            const trozoSocio = appS.slice(appS.indexOf("const PARTE_SOCIO_DEFECTO"), appS.indexOf("const secSeg = "));
+            for (const [re, nombre] of [[/\bbrecha\b/i, "brecha"], [/\bK\b/, "K"], [/\bpuertas?\b/i, "puerta"], [/\bVEG\b/, "VEG"]]) {
+              assert.ok(!re.test(trozoSocio), `el simulador de socio enseña jerga «${nombre}»`);
+            }
+            assert.strictEqual(require("../lib/lenguaje_pantalla.js").tuteoEn(JSON.stringify([acc.frase, accMax.frase])), null, "las frases hablan de usted");
+            console.log(`  · casilla en rojo → socio: patrimonio falta ${acc.diferencia_legible}; consorcio 50/50 → patrimonio ponderado ${patC.suyo} (${patC.estado}); ${simG.exigencias_resumen.no_cumple} en rojo con el socio`);
+          }
           // (2b) LAS CITAS LITERALES (4-sep-2026, noche): el párrafo real del pliego por tema, con página; el índice no cuenta
           const tCit = ["\f1", "CONTENIDO", "3.2 EXPERIENCIA ESPECÍFICA ........ 45", "3.5 ANTICIPO ........ 78", "\f45", "3.2. EXPERIENCIA ESPECÍFICA", "El proponente deberá acreditar experiencia específica en máximo tres (3) contratos terminados de placa huella, cuya sumatoria sea igual o superior a 1.000 SMMLV.", "3.3. EXPERIENCIA GENERAL", "Se exige experiencia general en contratos de obra civil por valor igual o superior a 2.500 SMMLV.", "\f46", "3.4 CAPACIDAD FINANCIERA", "Índice de liquidez mayor o igual a 1,5. Nivel de endeudamiento menor o igual a 60%.", "\f78", "3.5 ANTICIPO", "La entidad no entregará anticipo al contratista."].join("\n");
           const cit = D.citasDeTexto(tCit);
@@ -20574,6 +20701,24 @@ async function main() {
       assert.strictEqual(simP.cuerpo.cumple, null);
       assert.ok(simP.cuerpo.puertas_app && typeof simP.cuerpo.puertas_app.pasa_todas === "boolean" && /NO son los requisitos del pliego/.test(simP.cuerpo.puertas_app.nota));
       assert.ok(simP.cuerpo.presupuestoReferencia > 0);
+      /* con el proceso, las ocho casillas del pliego para el consorcio (6-sep-2026,
+         M-COMP-02): el handler carga los documentos ya leídos de pliego:{id}:docs */
+      assert.ok(Array.isArray(simP.cuerpo.exigencias) && simP.cuerpo.exigencias.length === 8 && simP.cuerpo.exigencias.every((x) => x.exige == null), "sin documentos leídos: ocho casillas vacías que dicen por qué");
+      assert.strictEqual(simP.cuerpo.origen, null, "sin origen declarado, null");
+      {
+        const DocsH = require("../lib/handlers/pliego/documentos.js");
+        const DocsP = require("../lib/documentos_proceso.js");
+        const hP = DocsP.hechosDeTexto("\f1\nPLIEGO\nÍndice de liquidez mayor o igual a 1,5\nPatrimonio: mayor o igual a $9.000.000.000", { tipo: "pliego" });
+        await DocsH.escribirDocs(redis, idProc, { version: DocsP.VERSION, id_proceso: idProc, indice: { archivos: [{ id_documento: "d1", nombre: "pliego.pdf", tipo: "pliego", de_la_entidad: true, legible: true }], plan: ["d1"], consultado_el: "2026-09-06" }, leidos: { d1: { nombre: "pliego.pdf", tipo: "pliego", tipo_legible: "Pliego", hechos: hP, paginas: 1 } }, ilegibles: {} });
+        const simD = await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [{ perfilId: "helder", participacion: 50 }, { perfilId: "genesis", participacion: 50 }], proceso: idProc, origen: "guia" }, CAB_TOKEN);
+        assert.strictEqual(simD.status, 200, JSON.stringify(simD.cuerpo).slice(0, 200));
+        const patD = simD.cuerpo.exigencias.find((x) => x.clave === "patrimonio");
+        assert.ok(patD.exige === "$9.000.000.000" && patD.suyo && ["cumple", "no_cumple"].includes(patD.estado), `el handler pasa los documentos guardados al simulador: ${JSON.stringify(patD)}`);
+        assert.strictEqual(simD.cuerpo.origen, "guia");
+        const simX = await invocarPost(routerPerfil, "/api/perfil?op=consorcio-simular", { integrantes: [{ perfilId: "helder", participacion: 50 }, { perfilId: "genesis", participacion: 50 }], proceso: idProc, origen: "otra_cosa" }, CAB_TOKEN);
+        assert.ok(simX.status === 200 && simX.cuerpo.origen === null, "un origen desconocido es INERTE");
+        await redis.del(DocsP.claveDocs(idProc));
+      }
       // guardar → cons_ → el listado lo sirve → borrar → 404
       const g1 = await invocarPost(routerPerfil, "/api/perfil?op=consorcio", { nombre: "Prueba H+G", integrantes: [{ perfilId: "helder", participacion: 60 }, { perfilId: "genesis", participacion: 40 }] }, CAB_TOKEN);
       assert.strictEqual(g1.status, 200);
