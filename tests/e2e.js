@@ -19289,6 +19289,124 @@ async function main() {
         assert.ok(appF8.includes(debe), `app.js perdió «${debe}»`);
       }
       assert.ok(/costo_directo: ultimoCalculo \? ultimoCalculo\.resumen\.costo_directo_total : null/.test(appF8), "guardar manda el costo directo (sin él no hay orden por margen)");
+      /* ---- (8) LA CAJA ENTIENDE FRASES (6-sep-2026 · M-COMP-05) ----
+         `Filtros.traducirConsulta` es una TABLA determinista (sin modelo, sin
+         servidor) que lleva una frase a los siete filtros que ya existen y deja
+         lo no entendido como palabra. Se EJECUTA la función real sobre una
+         batería de frases y se compara el estado ENTERO (lo reconocido Y el
+         resto). Lo que se vigila: un término desconocido es INERTE
+         («Cundinamarcaaa» sigue siendo palabra, jamás un filtro); la cuantía
+         solo se fija con unidad explícita Y dirección («500», «hasta 500» y
+         «500 millones» a secas no son nada — mutación: aceptar cifras sin unidad
+         rompe estos casos); la ambigüedad (dos topes, suelo > tope, dos
+         ventanas) no fija nada y devuelve las palabras ENTERAS; el departamento
+         casa del más largo al más corto («Norte de Santander» no es
+         «Santander»); cada alias de la tabla resuelve por `claveDepartamento`
+         al mismo departamento (censo, no lista); cada tipo, modalidad y ventana
+         tiene frase y cada frase apunta a un id que existe; las fichas de
+         siempre dicen lo entendido; el estado traducido sobrevive a la URL; y
+         el servidor devuelve LAS MISMAS filas con la frase traducida que con
+         los selectores puestos a mano. */
+      {
+        const tc = (s) => FiltrosPub.traducirConsulta(s);
+        const bateria = [
+          // [frase, estado parcial esperado (solo las claves reconocidas), resto]
+          ["vías en Tolima hasta 2.000 millones", { dep: ["73"], min: { min: null, max: 2000e6 } }, "vías"],
+          ["vías en Tolima hasta 2.000 millones que cierren esta semana", { dep: ["73"], min: { min: null, max: 2000e6 }, cierre: { ventana: "7d" } }, "vías"],
+          ["puentes en Tolima, hasta 1.500 millones, esta semana", { dep: ["73"], min: { min: null, max: 1500e6 }, cierre: { ventana: "7d" } }, "puentes"],
+          ["500", {}, "500"],
+          ["hasta 500", {}, "hasta 500"],
+          ["500 millones", {}, "500 millones"],
+          ["$ 300 millones", {}, "$ 300 millones"],
+          ["hasta 300000000", {}, "hasta 300000000"],
+          ["vías 500 mil", {}, "vías 500 mil"],
+          ["Cundinamarcaaa", {}, "Cundinamarcaaa"],
+          ["Alcaldía de Ibagué", {}, "Alcaldía de Ibagué"],
+          ["cierre perimetral", {}, "cierre perimetral"],
+          ["estudios y diseños en Bogotá D.C.", { dep: ["11"] }, "estudios y diseños"],
+          ["obra en Bogotá DC", { dep: ["11"], tipo: ["obra"] }, null],
+          ["obras en Norte de Santander", { dep: ["54"], tipo: ["obra"] }, null],
+          ["placa huella en Valle del Cauca y Cauca", { dep: ["76", "19"] }, "placa huella"],
+          ["obra en San Andrés", { dep: ["88"], tipo: ["obra"] }, null],
+          ["urgente en La Guajira", { dep: ["44"], cierre: { ventana: "3d" } }, null],
+          ["interventoría en el Meta desde 500 millones", { dep: ["50"], tipo: ["interventoria"], min: { min: 500e6, max: null } }, null],
+          ["obras de drenaje de más de mil millones", { tipo: ["obra"], min: { min: 1000e6, max: null } }, "drenaje"],
+          ["hasta 2 mil millones de pesos", { min: { min: null, max: 2000e6 } }, null],
+          ["hasta 1,5 mil millones", { min: { min: null, max: 1500e6 } }, null],
+          ["hasta $500.000.000", { min: { min: null, max: 500e6 } }, null],
+          ["hasta 300.000.000 pesos", { min: { min: null, max: 300e6 } }, null],
+          ["entre 200 y 1.000 millones", { min: { min: 200e6, max: 1000e6 } }, null],
+          ["de 200 a 1.000 millones en Huila", { dep: ["41"], min: { min: 200e6, max: 1000e6 } }, null],
+          ["hasta 500 millones y hasta 800 millones", {}, "hasta 500 millones y hasta 800 millones"],
+          ["desde 900 millones hasta 300 millones", {}, "desde 900 millones hasta 300 millones"],
+          ["licitación pública en Antioquia", { dep: ["05"], modalidad: ["licitacion"] }, null],
+          ["licitaciones en Tolima", { dep: ["73"] }, null],
+          ["mínima cuantía en Boyacá que cierre hoy", { dep: ["15"], modalidad: ["minima"], cierre: { ventana: "3d" } }, null],
+          ["concurso de méritos Nariño", { dep: ["52"], modalidad: ["meritos"] }, null],
+          ["subasta inversa suministros Atlántico", { dep: ["08"], modalidad: ["subasta"], tipo: ["suministro"] }, null],
+          ["obra e interventoría en Santander", { dep: ["68"], tipo: ["obra", "interventoria"] }, null],
+          ["acueducto en 3 días", { cierre: { ventana: "3d" } }, "acueducto"],
+          ["vías hasta 15 días", { cierre: { ventana: "15d" } }, "vías"],
+          ["en los próximos 15 días", { cierre: { ventana: "15d" } }, null],
+          ["mas de 15 dias", { cierre: { ventana: "+15d" } }, null],
+          ["que cierren hoy y esta semana", {}, "cierren hoy y esta semana"],
+          ["Tolima", { dep: ["73"] }, null],
+          ["en de la", {}, null],
+          ["", {}, null],
+        ];
+        assert.ok(bateria.length >= 30, "la batería tiene al menos 30 frases");
+        for (const [fraseQ, estadoEsperado, restoEsperado] of bateria) {
+          const t = tc(fraseQ);
+          assert.deepStrictEqual(t.estado, estadoEsperado, `«${fraseQ}»: estado ${JSON.stringify(t.estado)} ≠ ${JSON.stringify(estadoEsperado)}`);
+          assert.strictEqual(t.resto, restoEsperado, `«${fraseQ}»: resto «${t.resto}» ≠ «${restoEsperado}»`);
+        }
+        // censo: cada alias de departamento resuelve por la MISMA claveDepartamento al mismo código
+        assert.ok(FiltrosPub.ALIAS_DEP.size >= FiltrosPub.DEPARTAMENTOS.length);
+        for (const [alias, codigo] of FiltrosPub.ALIAS_DEP) assert.strictEqual((FiltrosPub.departamento(alias) || {}).codigo, codigo, `el alias «${alias}» no resuelve por claveDepartamento al departamento ${codigo}`);
+        for (const d of FiltrosPub.DEPARTAMENTOS) assert.deepStrictEqual(tc(d.nombre).estado, { dep: [d.codigo] }, `el nombre «${d.nombre}» tiene que fijar su departamento`);
+        // censo: cada frase apunta a un id que existe y cada id tiene al menos una frase
+        for (const [tabla, ids, nombre] of [[FiltrosPub.TIPO_FRASES, FiltrosPub.TIPOS_TRABAJO, "tipo"], [FiltrosPub.MODALIDAD_FRASES, FiltrosPub.MODALIDADES, "modalidad"], [FiltrosPub.CIERRE_FRASES, FiltrosPub.VENTANAS_CIERRE, "cierre"]]) {
+          const conocidos = new Set(ids.map((x) => x.id)), usados = new Set(tabla.values());
+          for (const v of usados) assert.ok(conocidos.has(v), `la tabla de ${nombre} apunta a «${v}», que no existe`);
+          for (const id of conocidos) assert.ok(usados.has(id), `el ${nombre} «${id}» no tiene ninguna frase que lo fije`);
+        }
+        // las fichas de siempre dicen lo entendido, en el orden de la barra
+        const baseQ = FiltrosPub.leerEstado({});
+        const tF = tc("vías en Tolima hasta 2.000 millones que cierren esta semana");
+        const estadoF = { ...baseQ, ...tF.estado, q: tF.resto };
+        assert.deepStrictEqual(FiltrosPub.fichas(estadoF).map((f) => f.etiqueta),
+          ["Dónde queda: Tolima", "Cuánto vale: hasta $2.000.000.000", "Cuándo hay que entregar la oferta: cierra esta semana", "Palabra: vías"]);
+        assert.deepStrictEqual(FiltrosPub.fichas({ ...baseQ, ...tc("Cundinamarcaaa").estado, q: tc("Cundinamarcaaa").resto }).map((f) => f.etiqueta), ["Palabra: Cundinamarcaaa"], "sin nada reconocido, la ficha dice qué palabra se busca");
+        // lo reconocido PISA solo sus claves: lo demás del estado se conserva
+        const previo = { ...baseQ, modalidad: ["licitacion"], entidad: "INVIAS" };
+        assert.deepStrictEqual({ ...previo, ...tc("vías en Tolima").estado, q: "vías" }, { ...previo, dep: ["73"], q: "vías" });
+        // el estado traducido sobrevive a la URL sin pérdida
+        assert.deepStrictEqual(FiltrosPub.leerEstado(FiltrosPub.escribirEstado(estadoF, new URLSearchParams())), estadoF);
+        // el servidor: las MISMAS filas con la frase traducida que con los selectores a mano
+        const idsDe8 = (r) => r.cuerpo.resultados.map((f) => f.id_del_proceso);
+        const porFrase = async (fraseQ) => { const t = tc(fraseQ); return L(FiltrosPub.escribirEstado({ ...baseQ, ...t.estado, q: t.resto }, new URLSearchParams()).toString()); };
+        for (const [fraseQ, mano] of [["obras en Tolima", "tipo=obra&dep=73"], ["licitación pública en Tolima", "dep=73&modalidad=licitacion"], ["placa en Tolima", "dep=73&q=placa"], ["Tolima de más de 100 millones", "dep=73&min=100000000"]]) {
+          const rF = await porFrase(fraseQ), rH = await L(mano);
+          assert.strictEqual(rF.cuerpo.total, rH.cuerpo.total, `«${fraseQ}» ≠ ${mano}: ${rF.cuerpo.total} vs ${rH.cuerpo.total}`);
+          assert.deepStrictEqual(idsDe8(rF), idsDe8(rH), `«${fraseQ}» no devuelve las mismas filas que ${mano}`);
+          assert.deepStrictEqual(rF.cuerpo.filtrosAplicados, rH.cuerpo.filtrosAplicados);
+        }
+        assert.ok((await porFrase("obras en Tolima")).cuerpo.total > 0, "la frase traducida trae filas del corpus de prueba");
+        const rInerte = await porFrase("Cundinamarcaaa");
+        assert.deepStrictEqual(rInerte.cuerpo.filtrosAplicados.map((f) => f.filtro), ["q"], "un término desconocido viaja como palabra, nunca como filtro");
+        assert.strictEqual(rInerte.status, 200);
+        // el cableado: la caja llama al traductor y aplica la frase con Intro
+        assert.ok(appF8.includes("FL.traducirConsulta("), "app.js tiene que traducir la frase de la caja");
+        assert.ok(/\$\("fl-q"\)\.addEventListener\("keydown"/.test(appF8) && /ev\.key === "Enter"/.test(appF8.slice(appF8.indexOf('$("fl-q").addEventListener("keydown"'))), "Intro en la caja aplica la frase");
+        /* la corrección de lo entendido es la × de la ficha: #fl-fichas vive en la
+           barra de herramientas, FUERA de #filtros-barra, y la delegación de la
+           hoja no la alcanzaba (medido en Chromium el 6-sep-2026: pulsar la × no
+           pedía nada ni cambiaba la URL). La escucha tiene que estar en #fl-fichas. */
+        assert.ok(!htmlF8.slice(htmlF8.indexOf('id="filtros-barra"')).includes('id="fl-fichas"') || htmlF8.indexOf('id="fl-fichas"') < htmlF8.indexOf('id="filtros-barra"'), "las fichas viven en la barra de herramientas, antes de la hoja");
+        assert.ok(/\$\("fl-fichas"\)\.addEventListener\("click", quitarDesdeFicha\)/.test(appF8) && /function quitarDesdeFicha\(ev\)[\s\S]*data-fl-quitar[\s\S]*fl-quitar-todos/.test(appF8),
+          "la × de una ficha y «Quitar todos» tienen que escucharse en #fl-fichas, donde las fichas viven");
+        console.log(`  · La caja entiende frases: ${bateria.length} frases → estado ejecutadas, ${FiltrosPub.ALIAS_DEP.size} alias de departamento por claveDepartamento, mismas filas que los selectores en 4 pares`);
+      }
       console.log(`  · Filtros (Fase 8): base ${r0.cuerpo.totalSinFiltros} → ${r0.cuerpo.total} por defecto (${fac.tipo.suministro} suministros apagados) · dep=73 ${rDep.cuerpo.total} · licitación ${rLic.cuerpo.total} · `
         + `cero resultados sugiere «${rCero.cuerpo.sugerencia.filtro}» (+${rCero.cuerpo.sugerencia.siLoQuita}) · margen ≡ techo − piso verificado · entidades ${rEt.cuerpo.total_entidades} · ${ms0} ms sin filtros, ${msF} ms con seis`);
     }

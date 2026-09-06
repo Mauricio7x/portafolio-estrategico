@@ -9331,3 +9331,80 @@ propio arnés.
 **No verificable desde aquí.** Producción (Redis real, documentos leídos de verdad, Excel abierto en
 el Excel del dueño: el lector propio lo lee, y LibreOffice/Excel abren el mismo formato del presupuesto).
 Sin pasos del dueño en las fichas. Sin red hacia datos.gov.co.
+
+### Lote «B8b-busqueda-frases» de la consultoría del 4-sep · M-COMP-05 (6-sep-2026)
+
+En una línea: la caja de búsqueda entiende frases —«vías en Tolima hasta 2.000 millones que cierren esta semana» pone el departamento, el tope y la ventana en los filtros que ya existen y deja «vías» como palabra— con una TABLA determinista en `public/filtros.js` (`traducirConsulta`, sin modelo ni servidor), lo entendido se ve y se corrige en las fichas de siempre, un término desconocido sigue siendo palabra (inerte), la cuantía solo se fija con unidad Y dirección, y de paso se arregló que la × de las fichas de la barra no hacía nada.
+
+**Qué se decidió y por qué.** (1) **Traductor determinista, sin modelo, en el navegador.** Una tabla
+de frases (departamentos, direcciones de cuantía, ventanas de cierre, tipos, modalidades) recorre las
+palabras de izquierda a derecha, casa siempre la entrada MÁS LARGA («Norte de Santander» antes que
+«Santander», «Valle del Cauca» antes que «Cauca»; mutación «del más corto al más largo» → «Bogotá D.C.»
+deja «D.C.» suelto y la prueba cae) y devuelve `{ estado, resto }` con la MISMA forma que `leerEstado`,
+para que el navegador haga `{ ...estadoFiltros, ...estado, q: resto }` y todo lo demás —URL, fichas,
+contador, servidor— siga siendo lo de la Fase 8. Ningún cambio en `lib/filtros_lista.js`: `q` sigue
+siendo la subcadena de siempre, y por eso lo no entendido es inerte por construcción («Cundinamarcaaa»
+viaja como «Palabra: Cundinamarcaaa», jamás como filtro). No hay ningún modelo en la ruta de una petición
+(INVESTIGACION_PLATAFORMAS §9.5). (2) **La cuantía SOLO con unidad explícita Y dirección.** «500» no es
+nada, «hasta 500» tampoco (mutación: aceptar cifras sin unidad → «hasta 500» fija un tope de $500 y la
+prueba cae), y «500 millones» a secas tampoco: sin «hasta / desde / más de / entre A y B / de A a B» no
+se sabe si es tope, suelo o aproximado, así que se queda como palabra. Dos topes, dos suelos o un suelo
+por encima del tope son ambigüedad: no se fija nada y las palabras vuelven ENTERAS al resto (mutación:
+«fijar el primero» → la prueba cae). «N mil» sin «millones» ni «pesos» no se interpreta: en una obra
+«500 mil» lo mismo es medio millón que quinientos mil millones según quien hable. La cifra la lee el
+mismo `numero()` de la URL (agrupación colombiana, coma decimal): no hay un segundo lector. (3) **El
+departamento por su nombre o por el apodo que ya entiende `claveDepartamento`** («Valle», «Bogotá»,
+«San Andrés»): la tabla de alias es un censo que la suite recorre entero comprobando que cada alias
+resuelve por `departamento()` —o sea por `claveDepartamento`— al mismo código. «Meta», «Cesar» o «Sucre»
+se leen como departamento: en una búsqueda casi siempre lo son, y si no, la ficha lo enseña con su ×.
+(4) **El tipo de trabajo casa por el nombre de los cinco tipos y su plural, nada más.** «Construcción»
+o «mantenimiento» NO fijan «obra»: son palabras del objeto que la persona quiere buscar tal cual
+(«placa huella en Tolima» → «Palabra: placa huella»). (5) **«Licitación» a secas es relleno, no
+modalidad.** En el habla del oficio «licitaciones en Tolima» es «procesos en Tolima»; fijar la modalidad
+escondería mínima cuantía y menor cuantía. Desaparece (con «proceso», «oportunidad», «convocatoria»);
+«licitación pública» sí la fija. (6) **Las preposiciones pegadas a lo reconocido se van con ello, las de
+los bordes del resto se recortan, las del medio se quedan** («estudios y diseños» se busca tal cual). Los
+verbos de cierre («cierra», «vence») solo se van pegados a una ventana: «cierre perimetral» es un objeto
+real y se busca entero. (7) **Lo entendido se enseña con las fichas de siempre, no con una frase
+nueva** (la ficha lo prohibía y tenía razón: «Dónde queda: Tolima ×» ya dice qué se entendió y dónde se
+corrige); si no se entendió nada, «Palabra: …» dice qué se busca. (8) **Intro y «Buscar» aplican la
+frase una sola vez**: `keydown Enter` la aplica y el `change` que Chrome dispara después se salta si la
+frase es la misma (mutación: sin el Intro → la prueba cae). (9) **La × de las fichas no funcionaba** —
+y es la corrección de esta mejora—: `#fl-fichas` vive en la barra de herramientas, FUERA de
+`#filtros-barra`, desde que la hoja de filtros se plegó (ago 2026), y la delegación de clics seguía
+solo en la hoja: en Chromium, pulsar la × o «Quitar todos» no pedía nada ni cambiaba la URL (0
+peticiones, `?dep=73&q=placa` intacto). Una sola función `quitarDesdeFicha`, escuchada en los dos
+sitios; la cerradura exige la escucha en `#fl-fichas` (mutación: sin ella → cae). Un arreglo que solo
+cubriera «la caja» habría dejado vivo el hermano que la hace corregible.
+
+**Lo que la ficha decía y el árbol desmintió.** «public/filtros.js:103 claveDepartamento, :130
+rangoCuantiaDe, :196 PARAMS»: viven en otras líneas; se llaman por nombre. «Vocabulario de obra desde
+lib/texto_unspsc.js si se carga en el navegador»: no se carga y no hace falta —el tipo casa por el nombre
+de los cinco tipos, y una tabla de «esto es obra» sería la tercera lista que la Fase 8 prohibió—.
+«`rangoCuantiaDe` como pieza del traductor»: no sirve, porque devuelve el RANGO de una cifra y la frase
+trae un tope o un suelo exactos (`{min, max}` como el «Elegir el rango» de la hoja). «Tipo = vías»: «vías»
+no es un tipo de trabajo; queda como palabra, que es lo que la ficha admitía como alternativa. «Bloque
+nuevo junto a ~L1858 y ~L9060»: el bloque va en «j-sexies · LOS SIETE FILTROS», que es donde viven las
+pruebas de `public/filtros.js` y del handler, y desde allí compara filas del servidor.
+
+**Medido (6-sep-2026).** Premisa ejecutada: `traducirConsulta` no existía y `leerEstado({q:"vías en
+Tolima hasta 2.000 millones"})` devolvía la frase entera como `q`. La batería: 42 frases → estado
+(y resto) ejecutadas sobre la función real, 38 alias de departamento recorridos por `claveDepartamento`,
+censo de que cada tipo, modalidad y ventana tiene frase y cada frase apunta a un id que existe, ida y
+vuelta por la URL sin pérdida, y el servidor devuelve LAS MISMAS filas (ids y fichas) con la frase
+traducida que con los selectores a mano en 4 pares («obras en Tolima» ≡ `tipo=obra&dep=73`, «licitación
+pública en Tolima» ≡ `dep=73&modalidad=licitacion`, «placa en Tolima» ≡ `dep=73&q=placa`, «Tolima de más
+de 100 millones» ≡ `dep=73&min=100000000`). Cinco mutaciones con la prueba en pie, todas caen por la
+aserción nueva. Chromium (arnés con los routers reales y el corpus sintético de 684 filas; 1280 y 390,
+claro y oscuro): Intro con «obras en Tolima de más de 100 millones» → tres fichas («Qué tipo de trabajo
+es: Obra», «Dónde queda: Tolima», «Cuánto vale: desde $100.000.000»), URL `?tipo=obra&dep=73&min=100000000`,
+UNA petición, «351 de 432 licitaciones»; Intro repetido, una petición y nada roto; «Cundinamarcaaa» →
+«Palabra: Cundinamarcaaa» y «Ningún proceso cumple los 4 filtros. Si quita palabra, aparecen 351 ·
+Quitar ese filtro»; «Buscar» con «vías … que cierren esta semana» → cinco fichas y la caja queda en
+«vías»; la × de «Dónde queda» quita el departamento y conserva la palabra. Cero desbordes, consola
+limpia, cero peticiones externas. Observado y no tocado: «Buscar» tras escribir dispara dos peticiones
+iguales (el `change` del foco perdido y el clic), como antes de este lote.
+
+**No verificable desde aquí.** Producción (Redis real, corpus real: qué frases escribe de verdad el
+dueño y cuántas entran por la caja —la ficha lo daba por no medible—). Sin pasos del dueño en la ficha.
+Sin red hacia datos.gov.co.

@@ -737,8 +737,21 @@
   $("panel-filtros-velo").addEventListener("click", () => abrirPanelFiltros(false));
   $("panel-filtros-limpiar").addEventListener("click", () => cambiarFiltros(FL.leerEstado({})));
   document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !$("panel-filtros").classList.contains("hidden")) abrirPanelFiltros(false); });
-  /* Delegación de clics de la barra: chips de tipo y modalidad, X de las
-     fichas y «Quitar todos». */
+  /* La × de una ficha y «Quitar todos»: las fichas viven en la barra de
+     herramientas (#fl-fichas), FUERA de #filtros-barra, desde que la hoja de
+     filtros se plegó (ago 2026), y la delegación de clics seguía solo en la
+     hoja: pulsar la × no hacía nada (medido en Chromium el 6-sep-2026, con la
+     caja que entiende frases, cuya corrección es justamente esa ×). Una sola
+     función, escuchada en los dos sitios. */
+  function quitarDesdeFicha(ev) {
+    const x = ev.target.closest("[data-fl-quitar]");
+    if (x) { cambiarFiltros(FL.sinFiltro(estadoFiltros, x.getAttribute("data-fl-quitar"))); return true; }
+    if (ev.target.closest("#fl-quitar-todos")) { cambiarFiltros(FL.leerEstado({})); return true; }
+    return false;
+  }
+  $("fl-fichas").addEventListener("click", quitarDesdeFicha);
+  /* Delegación de clics de la hoja: chips de tipo y modalidad, × de los
+     departamentos elegidos, y la × de las fichas si alguna vez vuelven aquí. */
   $("filtros-barra").addEventListener("click", (ev) => {
     const t = ev.target.closest("[data-fl-tipo]");
     if (t) {
@@ -762,9 +775,7 @@
       const resto = (estadoFiltros.dep || []).filter((c) => c !== xd.getAttribute("data-fl-quitar-dep"));
       return cambiarFiltros({ ...estadoFiltros, dep: resto.length ? resto : null });
     }
-    const x = ev.target.closest("[data-fl-quitar]");
-    if (x) return cambiarFiltros(FL.sinFiltro(estadoFiltros, x.getAttribute("data-fl-quitar")));
-    if (ev.target.closest("#fl-quitar-todos")) return cambiarFiltros(FL.leerEstado({}));
+    if (quitarDesdeFicha(ev)) return;
     if (ev.target.closest("#fl-entidad-historial") && estadoFiltros.entidad) {
       abrirModal(estadoFiltros.entidad, "Historial de la entidad");
       cargarDetalle(estadoFiltros.entidad);
@@ -808,7 +819,24 @@
     });
   }
   $("fl-entidad").addEventListener("change", () => cambiarFiltros({ ...estadoFiltros, entidad: $("fl-entidad").value.trim() || null }));
-  $("fl-q").addEventListener("change", () => cambiarFiltros({ ...estadoFiltros, q: $("fl-q").value.trim() || null }));
+  /* LA CAJA ENTIENDE FRASES (6-sep-2026, M-COMP-05): «vías en Tolima hasta
+     2.000 millones que cierren esta semana» pone el departamento, el tope y la
+     ventana en los filtros que ya existen y deja «vías» como palabra. Lo hace
+     `Filtros.traducirConsulta` (tabla de frases, sin modelo ni servidor); lo
+     reconocido PISA solo esas claves del estado y lo demás se conserva. Lo que
+     entendió se ve en las fichas de siempre —«Dónde queda: Tolima ×»—, que es
+     también donde se corrige; si no entendió nada, la ficha «Palabra: …» dice
+     qué se está buscando. Intro y «Buscar» (que quita el foco y dispara
+     `change`) aplican la misma frase una sola vez. */
+  let fraseAplicada = null;
+  function aplicarConsulta() {
+    const frase = $("fl-q").value.trim();
+    fraseAplicada = frase;
+    const t = FL.traducirConsulta(frase);
+    cambiarFiltros({ ...estadoFiltros, ...t.estado, q: t.resto });
+  }
+  $("fl-q").addEventListener("change", () => { if ($("fl-q").value.trim() !== fraseAplicada) aplicarConsulta(); });
+  $("fl-q").addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); aplicarConsulta(); } });
   /* Sugerencias de entidad mientras se escribe: el catálogo REAL de entidades
      con procesos abiertos (/api/procesos?op=entidades), con espera de 250 ms
      para no pedir en cada tecla. */
