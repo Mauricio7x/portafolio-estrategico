@@ -729,7 +729,7 @@ segundo desglose.
 > aplica **seis**: faltaban los dos de baja de mercado, que son los que convierten la respuesta en
 > «P(ganar *a un precio que valga la pena*)».
 
-#### Vista `socio` — verificá a tu socio antes de firmar (ago 2026)
+#### Vista `socio` — verifique a su socio antes de firmar (ago 2026)
 
 ```
 GET /api/inteligencia?op=socio&id=<NIT o cédula>[&representante=<cédula>]   ← canónica (token)
@@ -750,7 +750,7 @@ no respondió, desde el 6-sep-2026— · sin_hallazgos — **nunca «limpio»**:
 certificados), `fuentes`, y `checklist` con las **cinco** fuentes del
 manual (las tres sin dataset —Contraloría, Policía, RNMC— con enlace verificado y qué mirar). Un
 `id` ilegible es 400; una fuente caída → `ok:false` con motivo y las demás salen. No toca Redis.
-Se pinta en *Mi empresa → Verificá a tu socio antes de firmar*.
+Se pinta en *Mi empresa → Verifique a su socio antes de firmar*.
 
 #### Vista `paa` — el Plan Anual de Adquisiciones (ago 2026)
 

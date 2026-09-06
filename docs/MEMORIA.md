@@ -8287,3 +8287,125 @@ Tres mejoras del eje «datos y gráficos», sobre el árbol de `fff3b31`. Las fi
   bloqueado por el proxy el 6-sep-2026), si SOCRATA_APP_TOKEN está puesta en Vercel, y la fracción
   real de viables sin presupuesto en producción (comparar `pulso.sinPresupuesto` con
   `portada.procesosSinCuantia` cuando el dueño abra la aplicación).
+
+### Remates «R1a-remates-servidor-B1-B2» de la ola 1 · H-01, H-02, H-03, H-04, H-05, V-B2a-03, B2b-H1, B2b-H4 (6-sep-2026)
+
+Ocho hallazgos que tres verificadores adversarios devolvieron con reproducción ejecutada sobre los
+lotes «servidor y cifras», «precios por perfil» y «zona y RUP en PDF» de esta mañana. Los ocho se
+reprodujeron de nuevo en el árbol actual con la función real antes de tocar nada; cada arreglo
+tiene su cerradura en `tests/e2e.js` y once mutaciones (siete `git stash` de los fuentes dejando
+la prueba, la P5 del verificador aplicada a mano sobre sync y sobre historico, y dos reposiciones
+dirigidas de un solo texto: el tuteo del tope y la advertencia con clave interna) ponen la suite
+en rojo una a una por la aserción nueva. Lo que se decidió y por qué no hay que re-aprenderlo:
+
+- **La guarda del count ilegible pasa de regex a EJECUCIÓN (H-01).** La cerradura del lote B1
+  comprobaba con `/\(await socrata\.contarMes\(mes\)\) \?\? -1/` que el fuente de `sync.js` e
+  `historico.js` llevara el texto; el verificador dejó ese texto intacto y añadió detrás
+  `if (p.esperadosMes === -1) p.esperadosMes = null` (su mutación P5) y la suite pasó en verde
+  (reproducido aquí: exit=0, 1/1, 547 peticiones). Era un adorno, exactamente lo que CLAUDE.md
+  dice que no es una cerradura. Ahora `extraerFull` y `extraerHistorico` se exportan y la
+  iteración los EJECUTA (bloque «a-bis», tras `limpiarRedis`) con un Socrata cuyo `contarMes`
+  devuelve null y un mes de dos páginas, cortando el presupuesto tras la primera: al reanudar,
+  `contarMes` no se vuelve a pedir, el progreso guardado lleva **-1** y el manifest y `porMes`
+  publican **null**. Dos cosas que el código enseñó y la ficha no: (1) dentro de UNA invocación
+  el count se pide una sola vez aunque la guarda esté rota, porque el bucle de páginas no la
+  re-evalúa; el defecto solo aparece al REANUDAR con el progreso persistido, y por eso la prueba
+  agota el presupuesto a mitad de mes y vuelve a llamar; (2) en `historico.js` la guarda del
+  count es `chunkIdx == null`, no `esperadosMes == null`, así que allí la propiedad «una llamada
+  por mes» aguanta incluso la P5; lo que la prueba cierra en el histórico es el **-1 persistido**
+  (la mutación P5 sobre historico también pone la suite en rojo, por esa aserción). Las filas del
+  Socrata falso son mínimas y el prefiltro las descarta: lo que se mide es el count, no la carga.
+- **El 413 del PDF entre 3 MB + 1 byte y 3,05 MB dice «algo más de 3 MB» (H-02).** El lote B1
+  puso un decimal para que «declara 3 MB … hasta 3 MB» dejara de contradecirse, pero todo lo
+  que redondea a «3,0 MB» (3.145.729–3.198.975 bytes) seguía diciendo «declara 3,0 MB … hasta 3
+  MB» (medido con el handler real). `hechoDelPeso` compara el peso ya redondeado con el tope ya
+  redondeado —la MISMA función `mbLegible` para los dos— y solo entonces cambia la frase. De
+  paso «declara» pasa a «pesa»: la persona ve el tamaño en su explorador de archivos y «declara»
+  es la cabecera HTTP, que puede mentir pero que ella no puede accionar. Descartado: dar el peso
+  en KB («3.146 KB») —dos unidades en la misma frase que dice «3 MB»—.
+- **`contarMes` solo acepta un entero ≥ 0 o una cadena de dígitos (H-03).** Descartar
+  undefined/null/"" y convertir el resto dejaba pasar `Number(" ") === Number([]) ===
+  Number(false) === 0` y `Number("0x10") === 16`: ceros y cifras creíbles a partir de basura
+  (medido: « », «\n», [], false → 0; true → 1; [5] → 5; «0x10» → 16). Ahora `typeof` decide:
+  número entero ≥ 0 tal cual; cadena que tras `trim` cumple `/^\d+$/`; todo lo demás null.
+  «1e3» → null a propósito: un count de Socrata jamás llega en notación científica, y aceptarlo
+  sería inventar un lector para una forma que no existe.
+- **La nota del SMMLV fecha el auto y dice lo que hizo (H-04).** Dos búsquedas web ejecutadas
+  el 6-sep-2026 (Infobae 17-jul-2026, La República, Forbes, Noticias RCN, Crónica del Quindío)
+  coinciden: auto del **9-jul-2026**, Sección Segunda, ponente Jorge Iván Duque Gutiérrez, que
+  revocó el auto del 12-feb-2026, negó la medida cautelar y **dejó sin efecto el Decreto 159 de
+  2026** —lo que el lote B1 suavizaba como «sin efecto práctico»—. `lib/parametros.js` y las
+  dos filas de `docs/metodologia.md` lo dicen así; el auto SIGUE sin leerse desde aquí (el proxy
+  bloquea la prensa y al Consejo de Estado: observación con fecha) y el radicado NO se anota. La
+  cerradura exige la fecha, la frase «dejó sin efecto el Decreto 159 de 2026», prohíbe «sin
+  efecto práctico» y prohíbe un radicado. Sigue pendiente, con salida a Internet: leer el auto.
+- **README.md manda a una pantalla que existe y en registro de usted (H-05), y la cerca de
+  voseo estaba ciega.** «Mi empresa → Verificá a tu socio antes de firmar» (:753) y la cabecera
+  «Vista `socio` — verificá a tu socio» (:732) pasan a «Verifique a su socio antes de firmar»,
+  que es el `<h2>` real. Al escribir la cerradura se descubrió por qué nadie lo vio: `VOSEO_RE`
+  termina sus imperativos en vocal acentuada seguida de `\b`, y en JavaScript `\b` es ASCII —«á»
+  no es `\w`—, así que `verificá\b` seguido de espacio o punto JAMÁS casaba: la cerca era ciega a
+  «pensá», «verificá», «revisá», «hacé», «poné» y «andá» en TODO lo que censa (public/*.js,
+  index.html, lib/, api/, el dictamen). La frontera pasa a `(?<![\wáéíóúñÁÉÍÓÚÑ])…(?![…])` con
+  la bandera `i` (el imperativo que abre una frase). Medido con la frontera corregida sobre lib/,
+  api/, public/ e index.html sin comentarios: cero hallazgos nuevos salvo la propia cerca (la
+  excepción ya declarada); lo único vivo eran las dos líneas del README. Tres comentarios de
+  código y `docs/ACCESIBILIDAD.md:38` citan el texto viejo «verificá la zona» (el texto SERVIDO
+  ya dice «verifique»): los comentarios no son pantalla y el documento queda anotado aquí, no se
+  tocó. La cerradura nueva censa el README: toda ruta «Mi empresa → X» tiene que ser un texto
+  que index.html pinte tal cual, ninguna línea puede casar `VOSEO_RE`, y la propia cerca tiene
+  que ver «Verificá a tu socio.» y «pensá bien» sin ver «verificáis».
+- **El 400 «sin perfil» del editor deja de hablar de la petición HTTP (V-B2a-03).** «Se manda
+  como «perfil» en el cuerpo o en la dirección» llegaba a `#accion-mensaje` (medido por el
+  verificador en Chromium): la persona opera pegando URL en Chrome y no puede hacer nada con
+  «cuerpo». El texto de usuario termina en «vuelva a intentarlo» y cómo viaja el perfil va en un
+  campo aparte, `como_mandar`, para quien llama a la API a mano (la skill `/precios`, un curl).
+  La cerradura prohíbe cuerpo/dirección/query/JSON/HTTP en el `error` de las seis acciones y
+  exige `como_mandar`. Censo de hermanos en lib/ y api/: ninguna otra respuesta de usuario
+  nombra «cuerpo o dirección» (`lib/auth.js` dice «como parámetro «token» en la URL» en una
+  instrucción para el dueño, que sí opera con URL: se deja).
+- **El separador de un número partido puede caer a cualquier lado del corte (B2b-H1).** El
+  arreglo de M-INF-01 solo veía el separador colgando al FINAL de la línea; con el separador al
+  PRINCIPIO de la siguiente, medido con `extraerRupDeTexto`: «2» + «,5» → liquidez 2; «1.234.567»
+  + «.890» → patrimonio 1.234.567 sin motivo (por encima de PLAUSIBLE_MIN y sin colgante); «12» +
+  «.500 SMMLV» → 500; y «SMMLV: 12.» + «5000 contratos» → 12. Tres defensas, llamando a la regla
+  que ya existía: (1) `unionCandidata` funde los dos lados con la MISMA condición de número
+  colombiano bien formado (`RE_NUMERO_BIEN_FORMADO`), y `unirNumerosPartidos` la aplica en bucle
+  (un número en tres líneas sigue uniéndose); (2) `leerIndicador` mira la línea siguiente: si la
+  cifra cierra la línea sin separador y la siguiente empieza por separador + dígitos sin que la
+  unión fuera bien formada («1.234.567» / «.89»), se pide con motivo, como el colgante; (3)
+  `leerExperienciaYK` reconoce tres formas —la anterior termina colgando, la anterior termina en
+  dígitos y esta empieza por el separador, y la cifra DESPUÉS de la unidad que cierra la línea
+  colgando— y en la tercera el punto solo es corte si la línea siguiente empieza por dígitos (si
+  no, es el punto final de una frase: «SMMLV: 850.» + «Fecha de expedición…» sigue valiendo 850,
+  la regla de `numerosDe`). **Lo que el verificador pedía y NO se adoptó**: pedir con motivo
+  también cuando el separador se pierde en el corte («12» + «500 SMMLV»). Una línea que termina
+  en dígitos seguida de otra que empieza por un número es la forma NORMAL de una tabla (código o
+  año al final de una fila, valor al principio de la siguiente), pdf.js no pierde glifos al
+  partir un texto —el separador cae a un lado o al otro— y sin certificados reales para medir la
+  tasa de falsas alarmas (el paso del dueño sigue abierto) esa regla habría pedido la experiencia
+  en casi todo RUP con tabla. Queda declarado junto al «artículo 5.» + «100 SMMLV», en el mismo
+  párrafo del módulo.
+- **Lo servido por el extractor habla como la pantalla (B2b-H4).** `ETIQUETAS` es la única
+  copia del nombre de cada campo (la usan `CAMPOS_PEDIBLES` y las advertencias: antes la
+  advertencia decía «experiencia_smmlv: «12. / 5000»», con la clave interna y dos trozos
+  separados por una barra, y el motivo que `onboarding.js` pinta junto a la casilla decía «se
+  leyó «12. / 5000»»). Un trozo viaja como `{leido, siguiente}` y `trozoLeido` lo cuenta en
+  palabras: «la línea termina en «12.» y la siguiente empieza por «5000»». La cerradura es un
+  censo sobre TODO lo que devuelve el extractor (`textosDe`): sin `clave_interna:` ni « / »
+  entre comillas, y en registro de usted. Ese censo destapó un hermano: el aviso del tope
+  estratégico decía «ajustalo si tu apetito es otro» en TODO certificado completo, y `tuteoEn`
+  no lo veía (el enclítico `-alo` del tuteo no es el `-ilo` del voseo que `VOSEO_ENCLITICO_RE`
+  caza, y «tu» no tiene terminación): pasa a «ajústelo desde la pestaña «Mi empresa» si quiere
+  ver contratos mayores». No se generalizó la cerca a `-alo`/`-elo` porque casa sustantivos
+  («regalo», «modelo», «suelo»); el hueco queda declarado y la cerradura del extractor mira
+  además `\b(tu|tus)\b`.
+- **Tres lecciones de método.** (1) Una guarda por regex sobre el fuente es un adorno aunque
+  falle contra la mutación «quitar la línea»: hay que probarla contra la mutación que deja el
+  texto y cambia el comportamiento, y la prueba ejecutada tiene que cubrir el camino donde el
+  defecto vive (aquí, la REANUDACIÓN, no la primera pasada). (2) Una cerca se mide contra el
+  texto que debería cazar antes de confiar en ella: `verificá\b` no casaba «verificá » y nadie lo
+  había comprobado en un año. (3) Cuando un arreglo depende de una POSICIÓN (el separador al
+  final de la línea), el hermano vive en la posición espejo (al principio de la siguiente).
+- **No verificable desde aquí**: la frecuencia real de la partición en PDFs de RUP (sin
+  certificados del dueño); el texto del auto del 9-jul-2026 (proxy 403); producción.

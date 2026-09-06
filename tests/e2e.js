@@ -1536,15 +1536,18 @@ async function main() {
        ausencia se descarta ANTES de convertir y lo que no es un entero es null. Función real. */
     const cuenta = (cuerpo) => crearCliente({ appToken: "", fetchImpl: async () => ({ ok: true, status: 200, json: async () => cuerpo }), dormir: async () => {} }).contarMes("2026-03");
     for (const [cuerpo, esperado] of [[[], null], [[{}], null], [[{ n: "abc" }], null], ["<html>", null], [[{ n: "" }], null],
-      [[{ n: null }], null], [[{ n: "1.5" }], null], [[{ n: "-3" }], null], [[{ n: "12" }], 12], [[{ count: "7" }], 7], [[{ n: "0" }], 0]]) {
+      [[{ n: null }], null], [[{ n: "1.5" }], null], [[{ n: "-3" }], null], [[{ n: "12" }], 12], [[{ count: "7" }], 7], [[{ n: "0" }], 0],
+      /* remate H-03 (6-sep-2026): solo un entero ≥ 0 o una cadena de dígitos. Number(" ") ===
+         Number([]) === Number(false) === 0 y Number("0x10") === 16 publicaban ceros y cifras creíbles */
+      [[{ n: " " }], null], [[{ n: "\n" }], null], [[{ n: [] }], null], [[{ n: false }], null], [[{ n: true }], null], [[{ n: [5] }], null],
+      [[{ n: "0x10" }], null], [[{ n: "1e3" }], null], [[{ n: {} }], null], [[{ n: 2.5 }], null], [[{ n: -1 }], null], [[{ n: " 12 " }], 12], [[{ n: 7 }], 7], [[{ n: 1000 }], 1000]]) {
       assert.strictEqual(await cuenta(cuerpo), esperado, `contarMes con ${JSON.stringify(cuerpo)} debía dar ${esperado}: «sin dato» no es 0 ni NaN`);
     }
     /* y sus dos consumidores guardan el null como -1 («sin auditar», el mismo estado del
-       catch) para no volver a pedir el count en cada página del mes; se publica como null */
-    for (const f of ["lib/handlers/procesos/sync.js", "lib/handlers/procesos/historico.js"]) {
-      assert.ok(/\(await socrata\.contarMes\(mes\)\) \?\? -1/.test(fs.readFileSync(path.join(__dirname, "..", f), "utf8")),
-        `${f}: un count null se guarda como -1 (sin auditar) y no se vuelve a pedir en cada página`);
-    }
+       catch) para no volver a pedir el count al reanudar el mes; se publica como null. La
+       cerradura EJECUTA extraerFull y extraerHistorico (bloque «a-bis» de la iteración): la
+       guarda por regex que vivió aquí era un adorno —una mutación que dejaba el texto intacto y
+       devolvía el null pasó la suite en verde (remate H-01, medido el 6-sep-2026)—. */
     console.log("· unidad socrata: token inválido → 403 con token, 200 sin él, se descarta y se cuenta; 403 sin token sigue siendo bloqueo; $select del keyset con * primero; count ilegible → null, jamás 0; 429 agotado → «vuelva a intentarlo» con status y detalle aparte; censo del cupo en docs/lib/api/public/README sin cifras desmentidas ni sin fuente");
   }
 
@@ -4406,6 +4409,16 @@ async function main() {
           assert.ok(/3,1 MB/.test(grande.cuerpo.error) && /hasta 3 MB/.test(grande.cuerpo.error) && /«Archivo PDF»/.test(grande.cuerpo.error),
             `el 413 dice cuánto pesa, cuál es el tope y qué hacer: «${grande.cuerpo.error}»`);
           assert.strictEqual(grande.cuerpo.max_mb, 3);
+          /* remate H-02 (6-sep-2026): entre 3 MB + 1 byte y 3,05 MB el decimal tampoco separa el peso
+             del tope —«declara 3,0 MB … hasta 3 MB» era la misma contradicción con una coma (medido con
+             este handler)—: se dice «algo más de 3 MB» */
+          for (const extra of [1, 50 * 1024]) {
+            cuerpoRemoto = pdfDe(TOPE_PDF_BASE64 + extra);
+            const justo = await bajar();
+            assert.strictEqual(justo.status, 413, `3 MB + ${extra} B tiene que ser 413`);
+            assert.ok(!/3,0 MB|declara 3 MB|pesa 3 MB\b/.test(justo.cuerpo.error) && /algo más de 3 MB/.test(justo.cuerpo.error) && /hasta 3 MB/.test(justo.cuerpo.error) && /«Archivo PDF»/.test(justo.cuerpo.error),
+              `un peso que redondea al tope no puede decir «3,0 MB … hasta 3 MB»: «${justo.cuerpo.error}»`);
+          }
           conLongitud = false;   // sin Content-Length: el tope se aplica al LEER, no al declarar
           cuerpoRemoto = pdfDe(Math.round(3.4 * 1024 * 1024));
           const sinDeclarar = await bajar();
@@ -5928,6 +5941,46 @@ async function main() {
 
     /* a. limpiar Redis */
     await limpiarRedis();
+
+    /* a-bis. EL COUNT ILEGIBLE SE PIDE UNA VEZ POR MES, EJECUTADO (remate H-01, 6-sep-2026).
+       La guarda anterior era un regex sobre el fuente («?? -1»): una mutación que dejaba ese texto
+       intacto y devolvía el null a `esperadosMes` pasó la suite en verde (medido: exit=0, 1/1).
+       Aquí se llaman extraerFull y extraerHistorico REALES con un Socrata cuyo count es null y un
+       mes de dos páginas, cortando el presupuesto tras la primera: al reanudar, contarMes NO se
+       vuelve a pedir, el progreso guardó -1 («sin auditar») y la respuesta publica esperados: null.
+       Las filas son mínimas (el prefiltro las descarta: lo que se mide es el count, no la carga). */
+    {
+      const { extraerFull } = require("../lib/handlers/procesos/sync.js");
+      const { extraerHistorico } = require("../lib/handlers/procesos/historico.js");
+      const { leerJSON, escribirJSON } = require("../lib/almacen.js");
+      const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
+      const fila = (mes, i) => ({ ":id": `row-${mes}-${i}`, ":updated_at": `${mes}-15T00:00:00.000Z`, id_del_proceso: `P-${mes}-${i}` });
+      const socrataNulo = (llamadas) => ({
+        contarMes: async (mes) => { llamadas.push(mes); return null; },
+        paginaMes: async (mes, cursor, { pagina }) => { await dormir(15); return cursor.lastId ? [] : Array.from({ length: pagina }, (_, i) => fila(mes, i)); },
+      });
+      const llamadasFull = [];
+      await escribirJSON(redis, CLAVES.progreso, { tipo: "full", iniciado: new Date().toISOString(), meses: ["2026-03"], mesIdx: 0, cursor: {}, keyset: true, chunkIdx: 0, leidasMes: 0, guardadasMes: 0, esperadosMes: null, viejoSig: null, porMes: {}, terminado: false });
+      const tanda1 = await extraerFull(redis, socrataNulo(llamadasFull), { presupuestoMs: 5, reiniciar: false });
+      assert.strictEqual(tanda1.done, false, "la primera tanda agota el presupuesto a mitad del mes (dos páginas de 15 ms contra 5 ms)");
+      assert.strictEqual((await leerJSON(redis, CLAVES.progreso)).esperadosMes, -1, "sync: un count ilegible se guarda como -1 («sin auditar»), no como null");
+      const tanda2 = await extraerFull(redis, socrataNulo(llamadasFull), { presupuestoMs: 60000, reiniciar: false });
+      assert.strictEqual(tanda2.done, true, JSON.stringify(tanda2).slice(0, 200));
+      assert.deepStrictEqual(llamadasFull, ["2026-03"], `sync: contarMes se pide UNA vez por mes aunque la carga se reanude: ${JSON.stringify(llamadasFull)}`);
+      assert.strictEqual(tanda2.porMes["2026-03"].esperados, null, "sync: un count ilegible se publica como null, jamás 0 ni -1");
+      assert.strictEqual((await leerJSON(redis, CLAVES.manifest("2026-03"))).esperados, null, "sync: el manifest del mes publica null");
+      const llamadasHist = [];
+      const h1 = await extraerHistorico(redis, socrataNulo(llamadasHist), { presupuestoMs: 5, desde: "2024-03", hasta: "2024-03", reiniciar: true });
+      assert.strictEqual(h1.done, false, "historico: la primera tanda agota el presupuesto a mitad del mes");
+      assert.strictEqual((await leerJSON(redis, CLAVES.progresoHistorico)).esperadosMes, -1, "historico: un count ilegible se guarda como -1, no como null");
+      const h2 = await extraerHistorico(redis, socrataNulo(llamadasHist), { presupuestoMs: 60000, desde: "2024-03", hasta: "2024-03", reiniciar: false });
+      assert.strictEqual(h2.done, true, JSON.stringify(h2).slice(0, 200));
+      assert.deepStrictEqual(llamadasHist, ["2024-03"], `historico: contarMes una vez por mes: ${JSON.stringify(llamadasHist)}`);
+      assert.strictEqual(h2.porMes["2024-03"].esperados, null, "historico: publicado como null");
+      assert.strictEqual((await leerJSON(redis, CLAVES.histManifest("2024-03"))).esperados, null);
+      await limpiarRedis();
+      console.log("  · a-bis: count ilegible → una sola llamada por mes en sync e historico (ejecutado), progreso -1, publicado null");
+    }
 
     /* a'. Redis vacío → 503 con mensaje de sincronización */
     {
@@ -12147,6 +12200,58 @@ async function main() {
           assert.deepStrictEqual(numerosDe("1.234. "), [{ valor: 1234, pct: false, colgante: "." }]);
           assert.strictEqual(numerosDe("850.000.000 a corte 2025.")[0].colgante, null, "solo cuelga el token que cierra la línea");
 
+          /* ═══ EL HERMANO DEL CORTE: el separador al PRINCIPIO de la línea siguiente (remate B2b-H1, 6-sep-2026) ═══
+             Medido antes con esta función: «2» + «,5» → liquidez 2; «1.234.567» + «.890» → 1234567;
+             «12» + «.500 SMMLV» → 500; «SMMLV: 12.» + «5000 contratos» → 12; y «1.234.567» + «.89»
+             (no unible) → 1.234.567 creíble y sin motivo. Se unen si son un número bien formado; lo
+             que no se puede unir se pide con motivo, nunca se guarda el trozo. */
+          const conFin = (l) => [...cabecera, ...l, "Fecha de renovacion 2026-03-15"];
+          const rS = extraerRupDeTexto(conFin(["Indice de liquidez 2", ",5", "Nivel de endeudamiento 4,00%", "Patrimonio $ 1.234.567", ".890",
+            "Utilidad operacional $ 198.810.000", "Experiencia acreditada 12", ".500 SMMLV"]).join("\n"));
+          assert.strictEqual(rS.config.indicadores.liquidez, 2.5, "«2» + «,5» es 2,5, no 2");
+          assert.strictEqual(rS.config.indicadores.patrimonio, 1234567890, "«1.234.567» + «.890» es 1.234.567.890, no 1.234.567");
+          assert.strictEqual(rS.config.experiencia_smmlv, 12500, "«12» + «.500 SMMLV» es 12.500, no 500");
+          assert.deepStrictEqual(rS.faltan, []);
+          const rNS = extraerRupDeTexto(conFin(["Indice de liquidez 2,5", "Nivel de endeudamiento 4,00%", "Patrimonio $ 1.234.567", ".89",
+            "Utilidad operacional $ 198.810.000", "Experiencia acreditada 12", ".5000 SMMLV"]).join("\n"));
+          assert.strictEqual(rNS.config.indicadores.patrimonio, null, "«1.234.567» + «.89» no se une y no es un dato: se pide");
+          assert.strictEqual(rNS.config.experiencia_smmlv, null, "«12» + «.5000 SMMLV» no se une: se pide, no se guarda 5000");
+          assert.deepStrictEqual(rNS.faltan.map((f) => f.campo).sort(), ["experiencia_smmlv", "patrimonio"]);
+          assert.ok(/«1\.234\.567»/.test(rNS.faltan.find((f) => f.campo === "patrimonio").motivo) && /«\.89»/.test(rNS.faltan.find((f) => f.campo === "patrimonio").motivo),
+            `el motivo enseña los dos trozos tal como están en el certificado: ${rNS.faltan.find((f) => f.campo === "patrimonio").motivo}`);
+          const rD = extraerRupDeTexto(conFin(["Indice de liquidez 2,5", "Nivel de endeudamiento 4,00%", "Patrimonio $ 850.000.000",
+            "Utilidad operacional $ 198.810.000", "SMMLV: 12.", "5000 contratos"]).join("\n"));
+          assert.strictEqual(rD.config.experiencia_smmlv, null, "la cifra tras la unidad que cuelga al final de la línea («SMMLV: 12.» / «5000») no es 12");
+          assert.ok(/«12\.»/.test(rD.faltan.find((f) => f.campo === "experiencia_smmlv").motivo));
+          const rPF = extraerRupDeTexto(conFin(["Indice de liquidez 2,5", "Nivel de endeudamiento 4,00%", "Patrimonio $ 850.000.000",
+            "Utilidad operacional $ 198.810.000", "Experiencia total SMMLV: 850.", "Fecha de expedicion 2026-03-15"]).join("\n"));
+          assert.strictEqual(rPF.config.experiencia_smmlv, 850, "un punto final de frase tras la cifra (la línea siguiente no empieza por dígitos) no la convierte en trozo");
+          assert.deepStrictEqual(unirNumerosPartidos(["liq 2", ",5", "patr 1.234.567", ".890", "exp 12", ".500 smmlv", "nit 900.123.456-7", "corte 2025", ".5 algo", "a 1", ".234", ".567 fin"]),
+            ["liq 2,5", "patr 1.234.567.890", "exp 12.500 smmlv", "nit 900.123.456-7", "corte 2025", ".5 algo", "a 1.234.567 fin"],
+            "la unión con el separador delante exige el mismo número bien formado (y un año no se une con «.5»)");
+
+          /* ═══ LO SERVIDO HABLA COMO LA PANTALLA (remate B2b-H4, 6-sep-2026) ═══
+             Las advertencias decían «experiencia_smmlv: «12. / 5000»» y el motivo que onboarding.js
+             pinta junto a la casilla, «se leyó «12. / 5000»»: clave interna y dos trozos con una barra.
+             Censo sobre TODO lo que devuelve el extractor: sin claves con guion bajo seguidas de dos
+             puntos ni « / » entre comillas; el campo se nombra con la etiqueta de CAMPOS_PEDIBLES y el
+             trozo en palabras. Y el registro de usted, también con el certificado completo: el aviso del
+             tope decía «ajustalo si tu apetito es otro» y la cerca de terminaciones no lo veía. */
+          {
+            const { tuteoEn: tuteoRup } = require("../lib/lenguaje_pantalla.js");
+            for (const r of [rN, rNS, rD, rP, completo]) {
+              const feos = textosDe(r).filter((t) => /\b[a-z]+_[a-z]+:/.test(t) || /«[^»]* \/ [^»]*»/.test(t));
+              assert.deepStrictEqual(feos, [], "ningún texto servido por el extractor lleva una clave interna ni dos trozos con barra");
+              const tuteos = textosDe(r).filter((t) => tuteoRup(t) || /\b(tu|tus)\b/i.test(t));
+              assert.deepStrictEqual(tuteos, [], "el extractor habla de usted en todo lo que sirve");
+            }
+            assert.ok(rN.advertencias.some((a) => /Experiencia acreditada \(SMMLV\): la línea termina en «12\.» y la siguiente empieza por «5000»/.test(a) && /Patrimonio \(pesos\): se leyó «1\.234\.»/.test(a)),
+              `la advertencia nombra el campo como la pantalla y cuenta el corte en palabras: ${JSON.stringify(rN.advertencias)}`);
+            assert.ok(/la línea termina en «12\.» y la siguiente empieza por «5000»/.test(rN.faltan.find((f) => f.campo === "experiencia_smmlv").motivo),
+              "el motivo que se pinta junto a la casilla cuenta el corte en palabras");
+            assert.ok(completo.advertencias.some((a) => /Tope estratégico por defecto/.test(a) && /ajústelo/.test(a)), "el aviso del tope existe y está en registro de usted");
+          }
+
           // la puerta de entrada lo dice: `necesita[0].motivo` viaja y onboarding.js lo pinta
           {
             const routerPerfilP = require("../api/perfil.js");
@@ -14305,10 +14410,16 @@ async function main() {
         const sinPerfil = await invocarPost(apu, "/api/apu/guardar", { nombre: "x", items: itemsRup }, CAB_TOKEN);
         assert.strictEqual(sinPerfil.status, 400, `guardar sin perfil tiene que ser 400, fue ${sinPerfil.status}`);
         assert.ok(/perfil/i.test(sinPerfil.cuerpo.error) && /barra|RUP/i.test(sinPerfil.cuerpo.error), `el 400 dice qué hacer: ${sinPerfil.cuerpo.error}`);
+        /* remate V-B2a-03 (6-sep-2026): el texto que ve la persona no nombra la petición HTTP («se manda
+           como «perfil» en el cuerpo o en la dirección» llegaba a #accion-mensaje, medido en Chromium);
+           cómo viaja el perfil va en un campo aparte para quien llama a la API a mano */
+        assert.ok(!/cuerpo|direcci[oó]n|query|JSON|HTTP/i.test(sinPerfil.cuerpo.error), `el 400 sin perfil no puede hablar de cuerpo/dirección: ${sinPerfil.cuerpo.error}`);
+        assert.ok(/perfil/.test(sinPerfil.cuerpo.como_mandar || ""), "cómo se manda el perfil viaja en como_mandar, no en el texto de usuario");
         for (const [ruta, metodo, body] of [["cargar?id=abc", "GET"], ["listar", "GET"], ["cotizar", "POST", { items: itemsRup }], ["ia", "POST", { id: "abc", solicitar: true }], ["ia?id=abc", "GET"]]) {
           const sp = await invocar(apu, `/api/apu/${ruta}`, CAB_TOKEN, { metodo, body: body || {} });
           assert.strictEqual(sp.status, 400, `/api/apu/${ruta} sin perfil tiene que ser 400 (fue ${sp.status}: ${JSON.stringify(sp.cuerpo).slice(0, 120)})`);
           assert.ok(/perfil/i.test(sp.cuerpo.error), `/api/apu/${ruta}: ${sp.cuerpo.error}`);
+          assert.ok(!/cuerpo|direcci[oó]n|query/i.test(sp.cuerpo.error), `/api/apu/${ruta}: el 400 no nombra la petición HTTP: ${sp.cuerpo.error}`);
         }
         // …pero calcular y rentabilidad (la excepción DECLARADA en el módulo) responden sin perfil
         for (const ruta of ["calcular", "rentabilidad"]) {
@@ -14934,6 +15045,15 @@ async function main() {
         assert.ok(/1469\/2025 VIGENTE/.test(P.VERIFICACION.smmlv.fuente) && /revocó/.test(P.VERIFICACION.smmlv.fuente) && /159 de 2026/.test(P.VERIFICACION.smmlv.fuente),
           "la fuente dice que rige el D. 1469/2025, que la suspensión se revocó y qué pasa con el D. 159/2026");
         assert.ok(/auto no se leyó/.test(P.VERIFICACION.smmlv.fuente), "lo que no se leyó se declara, no se cita como leído");
+        /* remate H-04 (6-sep-2026): la fecha del auto (9-jul-2026) la publica la misma prensa citada, y el
+           auto DEJÓ SIN EFECTO el D. 159/2026 de forma expresa («sin efecto práctico» lo suavizaba); el
+           radicado sigue sin anotarse porque el auto no se leyó */
+        assert.ok(/auto del 9-jul-2026/.test(P.VERIFICACION.smmlv.fuente) && /dejó sin efecto el Decreto 159 de 2026/.test(P.VERIFICACION.smmlv.fuente)
+          && !/sin efecto práctico/.test(P.VERIFICACION.smmlv.fuente), `la nota fecha el auto y dice lo que hizo con el D. 159/2026: ${P.VERIFICACION.smmlv.fuente}`);
+        assert.ok(!/radicado\s*[:\d]|11001/.test(P.VERIFICACION.smmlv.fuente), "el radicado no se inventa: el auto no se leyó desde aquí");
+        const metodSmmlv = fs.readFileSync(path.join(__dirname, "..", "docs", "metodologia.md"), "utf8");
+        assert.ok((metodSmmlv.match(/9-jul-2026/g) || []).length >= 2 && !/sin efecto práctico/.test(metodSmmlv),
+          "docs/metodologia.md fecha el auto en sus dos filas y no suaviza lo que hizo con el D. 159/2026");
         assert.strictEqual(P.DEFAULTS.smmlv, 1750905, "el valor no cambia: el decreto transitorio traía el mismo");
         assert.ok(!/suspendido provisionalmente\*\* por el Consejo/.test(fs.readFileSync(path.join(__dirname, "..", "docs", "metodologia.md"), "utf8")),
           "docs/metodologia.md publica la misma etiqueta que la API: tampoco puede citar la suspensión como vigente");
@@ -21461,6 +21581,22 @@ async function main() {
             .replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "");
           const m = htmlV.match(VOSEO_RE);
           assert.ok(!m, `index.html (texto visible): registro formal — voseo/tuteo encontrado: «${m && m[0]}» …${htmlV.slice(Math.max(0, (m && m.index) - 60), (m && m.index) + 60).replace(/\s+/g, " ")}…`);
+          /* EL README MANDA A PANTALLAS QUE EXISTEN Y EN REGISTRO DE USTED (remate H-05, 6-sep-2026).
+             README.md decía «Mi empresa → Verificá a tu socio antes de firmar» —una pantalla que no
+             existe, en voseo— con la suite en verde: el README no es pantalla, pero es lo que el dueño
+             lee para llegar a ella. Censo: toda ruta «Mi empresa → X» tiene que ser un texto que
+             index.html pinta tal cual, y VOSEO_RE (con su frontera propia, ver lenguaje_pantalla) no
+             puede casar en ninguna línea. */
+          {
+            const readmeV = fs.readFileSync(path.join(__dirname, "..", "README.md"), "utf8");
+            const rutasReadme = [...readmeV.matchAll(/Mi empresa → ([^*»\n]+)/g)].map((x) => x[1].trim());
+            assert.ok(rutasReadme.length >= 2, "el README cita al menos dos rutas «Mi empresa → …»");
+            for (const r of rutasReadme) assert.ok(htmlV.includes(r), `README.md cita «Mi empresa → ${r}», que no es un texto que index.html pinte`);
+            const voseoReadme = readmeV.split("\n").map((l, i) => ({ i: i + 1, m: VOSEO_RE.exec(l) })).filter((x) => x.m).map((x) => `${x.i}: ${x.m[0]}`);
+            assert.deepStrictEqual(voseoReadme, [], "README.md en registro de usted");
+            assert.ok(VOSEO_RE.test("Mi empresa → Verificá a tu socio.") && VOSEO_RE.test("pensá bien") && !VOSEO_RE.test("verificáis"),
+              "la cerca ve el imperativo del voseo terminado en vocal acentuada seguido de espacio o punto (\\b es ASCII en JavaScript)");
+          }
           /* Y LA HOJA DE FILTROS NO PUEDE AFIRMAR EL PLAZO DEROGADO: decía
              «Plazo de 3 días hábiles desde la apertura» — la doctrina de
              Motavita dice que 3 es un TECHO y que la entidad puede cerrar en
