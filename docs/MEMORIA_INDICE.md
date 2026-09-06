@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 985532 bytes · 153 secciones · 4 con marcador de superación.
+Derivado del árbol: 989715 bytes · 154 secciones · 4 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -163,4 +163,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Lote «B12-aviso-por-correo» de la consultoría del 4-sep · M-COMP-03, M-INF-16 y la cerradura C-N1 (6-sep-2026) | 6-sep-2026 | 10498-10633 | 11980 |  |
 | Cuota por conexión en las dos altas públicas · M-SEG-07 (6-sep-2026) | 6-sep-2026 | 10634-10723 | 7471 |  |
 | El corpus conserva la llave de cruce `id_del_portafolio` · M-DGF-05 (6-sep-2026) | 6-sep-2026 | 10724-10775 | 3968 |  |
-| pdf.js se sirve desde el propio sitio, con cdnjs solo de respaldo · M-INF-18 (6-sep-2026) | 6-sep-2026 | 10776-10840 | 4768 |  |
+| pdf.js se sirve desde el propio sitio, con cdnjs solo de respaldo · M-INF-18 (6-sep-2026) | 6-sep-2026 | 10776-10841 | 4769 |  |
+| Escape por censo y política de contenido en modo informe · M-SEG-09 (6-sep-2026) | 6-sep-2026 | 10842-10892 | 4182 |  |

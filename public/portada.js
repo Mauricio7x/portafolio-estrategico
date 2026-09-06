@@ -156,7 +156,7 @@
       <table class="w-full text-left text-sm">
         <thead><tr class="text-[11px] uppercase tracking-wide" style="color: var(--text-secondary);"><th class="py-1 pr-2 font-medium">Entidad</th><th class="py-1 pr-2 text-right font-medium">Abiertos</th><th class="py-1 pr-2 text-right font-medium">En juego</th><th class="py-1 text-right font-medium">Suele bajar</th></tr></thead>
         <tbody>${filas.map((e) => `<tr class="border-t" style="border-color: var(--border);">
-          <td class="py-2 pr-2"><a class="underline-offset-2 hover:underline" style="color: var(--text-primary);" href="${enlaceLista("entidad=" + encodeURIComponent(e.nit || e.nombre))}">${esc(e.nombre)}</a></td>
+          <td class="py-2 pr-2"><a class="underline-offset-2 hover:underline" style="color: var(--text-primary);" href="${esc(enlaceLista("entidad=" + encodeURIComponent(e.nit || e.nombre)))}">${esc(e.nombre)}</a></td>
           <td class="py-2 pr-2 text-right" style="color: var(--text-primary);">${num(e.abiertos)}</td>
           <td class="py-2 pr-2 text-right whitespace-nowrap" style="color: var(--text-primary);">${esc(pesosCortos(e.valor) || "Sin referencia")}</td>
           <td class="py-2 text-right whitespace-nowrap" style="color: var(--text-secondary);" title="${e.baja == null ? `Sin referencia: hacen falta ${p.bajaMinimoProcesos || 5} adjudicaciones conocidas de esta entidad${e.nBaja ? ` y hay ${e.nBaja}` : ""}` : `Mediana de lo que descontaron los ganadores en ${e.nBaja} contratos adjudicados de esta entidad`}">${e.baja == null ? "Sin referencia" : `${num(e.baja, 1)} %`}</td>
@@ -171,7 +171,7 @@
     return `
       <h2 class="text-base font-semibold" style="color: var(--text-primary);">Dónde hay más movimiento</h2>
       <ul class="mt-2 space-y-1.5">${deps.map((d) => `<li>
-        <a class="block" href="${enlaceLista("dep=" + encodeURIComponent(d.cod))}" title="${esc(d.nombre)}: ${num(d.n)} procesos abiertos, ${esc(pesosCortos(d.valor) || "sin valor publicado")}. Ver la lista.">
+        <a class="block" href="${esc(enlaceLista("dep=" + encodeURIComponent(d.cod)))}" title="${esc(d.nombre)}: ${num(d.n)} procesos abiertos, ${esc(pesosCortos(d.valor) || "sin valor publicado")}. Ver la lista.">
           <span class="flex justify-between text-xs" style="color: var(--text-primary);"><span>${esc(d.nombre)}</span><span style="color: var(--text-secondary);">${num(d.n)} · ${esc(pesosCortos(d.valor) || "—")}</span></span>
           <span class="mt-0.5 block h-1.5 rounded-full" style="background: var(--bg-inset-2);"><span class="block h-1.5 rounded-full" style="width:${Math.max(2, Math.round(100 * (d.valor || 0) / max))}%; background: var(--accent);"></span></span>
         </a></li>`).join("")}</ul>

@@ -13852,6 +13852,219 @@ async function main() {
           }
           console.log(`  · pdf.js desde el propio sitio (M-INF-18): public/vendor/ con las 2 huellas fijadas, versión ${vOb[1]} atada al código, cdnjs solo como respaldo declarado y censo de dominios ajenos en los ${fs.readdirSync(path.join(__dirname, "..", "public")).filter((x) => x.endsWith(".js")).length} archivos de public/`);
         }
+
+      /* ═══════════ ESCAPE POR CENSO Y POLÍTICA DE CONTENIDO (M-SEG-09, 6-sep-2026) ═══════════
+         No hay ninguna inyección reproducida: el barrido de la consultoría halló 147 sitios que
+         pintan HTML y ninguna vía abierta. Lo que faltaba era la CERRADURA: hoy nadie impide que
+         un pintador nuevo interpole el nombre de un proceso de SECOP sin `esc(`, y ese nombre lo
+         escribe la entidad, no nosotros. Dos cercas, y ninguna es una lista de sitios donde mirar:
+
+           (1) CENSO ESTRUCTURAL — se recorren TODAS las plantillas con etiquetas HTML de TODOS
+               los public/*.js (y las anidadas, recursivamente) y se exige que cada interpolación
+               que NOMBRE un campo de texto de SECOP o escrito por una persona pase por `esc(`.
+               La condición de un ternario y el lado izquierdo de un `&&` no se imprimen: se
+               prueban, y por eso no cuentan. En `a.b.c` el dato es `c`, no los contenedores.
+           (2) CENSO EJECUTADO — la cerca (1) confía en que `esc` escapa; hay SIETE copias de
+               `esc` en public/ (una por módulo, por el patrón de IIFE de este proyecto) y una
+               copia que se quedara corta las volvería a todas mentira. Se EJECUTAN las siete
+               con un texto hostil y se exige que ninguna deje pasar `<`, `>`, `"`, `'` ni `&`.
+
+         Y la POLÍTICA DE CONTENIDO entra en modo INFORME (`Content-Security-Policy-Report-Only`),
+         no en bloqueo: el precedente del CDN de Tailwind bloqueado —la aplicación rota con la
+         consola limpia— manda medir en producción antes de bloquear. Medida antes de escribirla,
+         en Chromium a 1280 y 390 px con la política EN BLOQUEO: 0 violaciones y el lector de PDF
+         sigue leyendo. `'unsafe-inline'` en `style-src` no es una precaución: sin él se midieron
+         55 violaciones (los tres <style> de index.html y los atributos `style=`). */
+      {
+        const RAIZ_SEG = path.join(__dirname, "..");
+        const publicos = fs.readdirSync(path.join(RAIZ_SEG, "public")).filter((f) => f.endsWith(".js"));
+
+        /* ── (2) primero lo ejecutado: las siete copias de `esc`, contra un texto hostil ── */
+        {
+          const HOSTIL = `<script>alert(1)</script>" onerror='x' & <img src=x onerror=alert(2)>`;
+          const copias = [];
+          /* Se toman LÍNEAS desde la declaración hasta que el trozo compila y define `esc`:
+             el fuente ya es JavaScript válido, así que no hace falta analizarlo, y da igual
+             que la expresión regular de dentro lleve comillas. `const esc = ctx.esc;` no
+             compila a una función propia: es un alias, y se salta. */
+          const fnEsc = (fuente, i) => {
+            const lineas = fuente.slice(i).split("\n");
+            for (let k = 1; k <= 25 && k <= lineas.length; k++) {
+              const trozo = lineas.slice(0, k).join("\n");
+              if (!/replace/.test(trozo)) continue;
+              try {
+                const fn = new Function(`${trozo}\n; return esc;`)();
+                if (typeof fn === "function") return fn;
+              } catch { /* aún incompleto: una línea más */ }
+            }
+            return null;
+          };
+          for (const f of publicos) {
+            const fuente = fs.readFileSync(path.join(RAIZ_SEG, "public", f), "utf8");
+            for (const m of fuente.matchAll(/^\s*(?:const esc = |function esc\b)/gm)) {
+              const fn = fnEsc(fuente, m.index);
+              if (!fn) continue;                       // alias de otro módulo, no una copia
+              const salida = String(fn(HOSTIL));
+              assert.ok(!/[<>]/.test(salida), `la copia de esc de ${f} deja pasar < o >: «${salida}»`);
+              assert.ok(!/["']/.test(salida), `la copia de esc de ${f} deja pasar comillas: «${salida}»`);
+              assert.ok(!/&(?!(amp|lt|gt|quot|#39|apos);)/.test(salida), `la copia de esc de ${f} deja un & sin escapar: «${salida}»`);
+              assert.strictEqual(fn(null), "", "esc(null) es cadena vacía, no «null» impreso en la pantalla");
+              assert.strictEqual(fn(undefined), "", "esc(undefined) es cadena vacía");
+              copias.push(f);
+            }
+          }
+          assert.ok(copias.length >= 7, `el censo tiene que ver las copias de esc de public/ (vio ${copias.length}: ${copias.join(", ")})`);
+        }
+
+        /* ── (1) el censo estructural ── */
+        {
+          /* Los campos que llegan de SECOP o los escribe una persona. La lista se DECLARA
+             aquí con su origen: es lo que un atacante controla, no una heurística. Un campo
+             nuevo de texto que llegue a la pantalla se añade aquí. */
+          const CAMPOS_HOSTILES = /\b(nombre_del_procedimiento|descripci_n_del_procedimiento|descripcion_original|descripcion|objeto|entidad|nombre_entidad|nombre_del_proponente|proveedor_adjudicado|proveedor|adjudicatario|razon_social|referencia_del_proceso|id_del_proceso|modalidad_de_contratacion|departamento_entidad|ciudad_entidad|urlproceso|nombre_archivo|nombre|notas|alias|cita)\b/;
+          /* Excepciones DECLARADAS con su motivo, que es la única forma de que un censo
+             admita un caso sin dejar de ser un censo. Son dos, y las dos se comprobaron
+             ejecutando el código, no leyéndolo. */
+          const EXC_ESCAPE = new Map([
+            ["app.js::bandaCompetencia(l.competencia_entidad, l.entidad)",
+              "DELEGA: la función está en este mismo archivo y su plantilla —que este censo también recorre— escapa las dos cosas que imprime (`esc(entidad || \"\")` en data-entidad y `esc(texto)` en el cuerpo). Escapar aquí además rompería el HTML que devuelve."],
+            ["xlsx.js::f.nombre",
+              "NO ES UN DATO: `f` recorre FUENTES, la tabla de estilos del propio módulo (seis filas fijas, todas con nombre «Calibri»), y el destino es la hoja de estilos del Excel, no la pantalla. Lo que sí viene de fuera en este módulo pasa por su propio `esc`, que la parte ejecutada de esta cerca comprueba."],
+          ]);
+
+          const plantillasEn = (fuente) => {
+            const out = [];
+            for (let i = 0; i < fuente.length; i++) {
+              if (fuente[i] !== "`") continue;
+              let j = i + 1, prof = 0;
+              for (; j < fuente.length; j++) {
+                if (fuente[j] === "\\") { j++; continue; }
+                if (fuente[j] === "$" && fuente[j + 1] === "{") { prof++; j++; continue; }
+                if (prof > 0 && fuente[j] === "}") { prof--; continue; }
+                if (prof === 0 && fuente[j] === "`") break;
+              }
+              out.push(fuente.slice(i, j + 1));
+              i = j;
+            }
+            return out;
+          };
+          const interpolaciones = (t) => {
+            const out = [];
+            for (let i = 0; i < t.length - 1; i++) {
+              if (t[i] === "$" && t[i + 1] === "{") {
+                let prof = 1, j = i + 2;
+                for (; j < t.length && prof > 0; j++) { if (t[j] === "{") prof++; else if (t[j] === "}") prof--; }
+                out.push(t.slice(i + 2, j - 1));
+                i = j - 1;
+              }
+            }
+            return out;
+          };
+          /* Lo que de verdad SE IMPRIME de una expresión: sin cadenas (el texto de una frase no
+             es el nombre de un campo), sin plantillas anidadas (se analizan por separado), sin la
+             condición del ternario ni la guarda del `&&` (se prueban, no salen), y de `a.b.c`
+             solo `c`, que es el dato; `b` es el contenedor por donde se llega a él. */
+          /* Las plantillas anidadas se borran CONTÁNDOLAS, no con una expresión regular:
+             `` /`(?:[^`\\]|\\.)*`/ `` corta en la primera comilla invertida que ve, así que
+             en `${a ? `texto ${b ? `más texto` : ""}` : ""}` deja fuera la mitad del texto de
+             la frase — y una palabra suelta de ese texto («entidad», «nombre») se confundía
+             con el nombre de un campo. Medido: dos de las cinco interpolaciones que este
+             censo señalaba como abiertas eran eso, texto de frases ya escapadas. Un censo con
+             un defecto silencioso es peor que no tenerlo, y aquí el defecto empujaba a
+             declarar excepciones falsas. */
+          const sinPlantillas = (t) => {
+            let out = "", i = 0;
+            while (i < t.length) {
+              if (t[i] !== "`") { out += t[i++]; continue; }
+              let prof = 0;
+              i++;
+              for (; i < t.length; i++) {
+                if (t[i] === "\\") { i++; continue; }
+                if (t[i] === "$" && t[i + 1] === "{") { prof++; i++; continue; }
+                if (prof > 0 && t[i] === "}") { prof--; continue; }
+                if (prof === 0 && t[i] === "`") { i++; break; }
+              }
+              out += "``";
+            }
+            return out;
+          };
+          const loQueSeImprime = (e) => {
+            let t = sinPlantillas(String(e)).replace(/"(?:[^"\\]|\\.)*"/g, '""').replace(/'(?:[^'\\]|\\.)*'/g, "''");
+            let prof = 0;
+            for (let i = 0; i < t.length; i++) {
+              const c = t[i];
+              if ("([{".includes(c)) prof++;
+              else if (")]}".includes(c)) prof--;
+              else if (c === "?" && prof === 0 && t[i + 1] !== "." && t[i + 1] !== "?") { t = t.slice(i + 1); break; }
+            }
+            return t.replace(/^[^&|]*&&/, "").replace(/\b[A-Za-z_$][\w$]*\s*\./g, "");
+          };
+
+          let analizadas = 0, conCampo = 0;
+          const abiertas = [];
+          for (const f of publicos) {
+            const fuente = sinComentarios(fs.readFileSync(path.join(RAIZ_SEG, "public", f), "utf8"));
+            const pend = plantillasEn(fuente).filter((t) => /<[a-zA-Z/!]/.test(t));
+            while (pend.length) {
+              const t = pend.pop();
+              for (const e of interpolaciones(t)) {
+                for (const anidada of plantillasEn(e)) if (/<[a-zA-Z/!]/.test(anidada)) pend.push(anidada);
+                analizadas++;
+                if (!CAMPOS_HOSTILES.test(loQueSeImprime(e))) continue;
+                conCampo++;
+                // el `esc(` que vale es el de ESTA expresión, no el de una plantilla anidada
+                if (/\besc\(/.test(String(e).replace(/`(?:[^`\\]|\\.)*`/g, "``"))) continue;
+                const corta = e.replace(/\s+/g, " ").slice(0, 120);
+                if (EXC_ESCAPE.has(`${f}::${corta}`)) continue;
+                abiertas.push(`${f}: ${corta}`);
+              }
+            }
+          }
+          assert.ok(analizadas > 900 && conCampo >= 40,
+            `el censo tiene que ver las plantillas de public/ (analizó ${analizadas} interpolaciones, ${conCampo} con un campo de texto): ¿cambió la forma de pintar?`);
+          assert.deepStrictEqual(abiertas, [],
+            `interpolaciones de un campo de texto de SECOP dentro de HTML SIN esc(): o se escapan, o se declaran en EXC_ESCAPE con su motivo\n- ${abiertas.join("\n- ")}`);
+          for (const k of EXC_ESCAPE.keys()) {
+            const [arch] = k.split("::");
+            assert.ok(publicos.includes(arch), `la excepción de escape nombra ${arch}, que ya no existe: retírela`);
+          }
+
+          /* ── LA POLÍTICA DE CONTENIDO, en modo INFORME ── */
+          {
+            const vc = JSON.parse(fs.readFileSync(path.join(RAIZ_SEG, "vercel.json"), "utf8"));
+            const cabeceras = vc.headers[0].headers;
+            const csp = cabeceras.find((h) => h.key === "Content-Security-Policy-Report-Only");
+            assert.ok(csp, "vercel.json no declara la política de contenido en modo informe");
+            assert.ok(!cabeceras.some((h) => h.key === "Content-Security-Policy"),
+              "la política pasa a BLOQUEO solo después de medir en producción (precedente del CDN de Tailwind): hoy va en modo informe");
+            const dirs = Object.fromEntries(csp.value.split(";").map((d) => d.trim()).filter(Boolean)
+              .map((d) => { const [k, ...v] = d.split(/\s+/); return [k, v]; }));
+            assert.deepStrictEqual(dirs["default-src"], ["'self'"], "todo lo no declarado sale del propio sitio");
+            assert.deepStrictEqual(dirs["object-src"], ["'none'"]);
+            assert.deepStrictEqual(dirs["frame-ancestors"], ["'none'"], "gemela de X-Frame-Options, que las cabeceras ya traen");
+            assert.deepStrictEqual(dirs["base-uri"], ["'self'"], "sin esto, una etiqueta <base> inyectada redirige todas las rutas relativas");
+            /* Lo que el CENSO DE DOMINIOS midió que public/ usa de verdad, y nada más: cdnjs
+               solo como respaldo de pdf.js (M-INF-18), y por partida doble porque el worker se
+               trae por fetch. Ningún origen se apunta «por si acaso». */
+            assert.deepStrictEqual(dirs["script-src"], ["'self'", "https://cdnjs.cloudflare.com"]);
+            assert.deepStrictEqual(dirs["connect-src"], ["'self'", "https://cdnjs.cloudflare.com"],
+              "el worker del respaldo se trae por fetch: sin cdnjs en connect-src el respaldo sería código muerto");
+            assert.deepStrictEqual(dirs["worker-src"], ["'self'", "blob:"], "el worker de pdf.js es un blob del propio origen");
+            /* MEDIDO, no supuesto: sin 'unsafe-inline' en style-src, Chromium contó 55
+               violaciones (los tres <style> de index.html y los atributos style= que la
+               piel usa). Se declara con esa medida, no como precaución. */
+            assert.ok(dirs["style-src"].includes("'unsafe-inline'"), "style-src necesita 'unsafe-inline': medido, 55 violaciones sin él");
+            assert.ok(!(dirs["script-src"] || []).includes("'unsafe-inline'") && !(dirs["script-src"] || []).includes("'unsafe-eval'"),
+              "script-src no puede aflojarse: index.html no tiene ni un <script> en línea (censado abajo) y pdf.js se carga con isEvalSupported:false");
+            const htmlSeg = fs.readFileSync(path.join(RAIZ_SEG, "public", "index.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "");
+            assert.strictEqual((htmlSeg.match(/<script(?![^>]*\ssrc=)/g) || []).length, 0,
+              "un <script> en línea en index.html obligaría a aflojar script-src: los guiones van en archivos de public/");
+            assert.strictEqual((htmlSeg.match(/\son(?:click|load|error|change|input|submit)\s*=/gi) || []).length, 0,
+              "un manejador en el marcado obligaría a aflojar script-src: se cablean desde los módulos");
+          }
+          console.log(`  · escape por censo y política de contenido (M-SEG-09): ${analizadas} interpolaciones de ${publicos.length} archivos de public/ recorridas, ${conCampo} nombran un campo de texto y todas pasan por esc() (${EXC_ESCAPE.size} excepciones declaradas con su motivo), las 7 copias de esc ejecutadas contra un texto hostil, y la política en modo INFORME medida en Chromium con 0 violaciones en bloqueo`);
+        }
+      }
         // la misma prohibición que ya vigila los conteos en los demás frontends
         assert.ok(!/\.(unspsc_count|contratos_cargados|terminos_extraidos)\s*\|\|\s*0/.test(obSin),
           "un `|| 0` sobre un conteo convierte «no sé» en «cero»");

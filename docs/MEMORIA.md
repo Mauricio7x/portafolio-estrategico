@@ -10838,3 +10838,55 @@ sigue intacta.
 tiene que cargar pdf.js del propio sitio». (b) Añadiendo UN byte a `public/vendor/pdf.min.js`, cae en
 `320005 !== 320004` y, tras el tamaño, la huella. (c) En navegador real, la versión anterior con los
 dominios ajenos bloqueados no lee el PDF y pide a cdnjs; la nueva lee y no pide nada.
+
+### Escape por censo y política de contenido en modo informe · M-SEG-09 (6-sep-2026)
+
+En una línea: no había ninguna inyección que reproducir, así que lo que se construye no es un
+arreglo sino la CERRADURA que hoy falta —que ningún pintador nuevo interpole en HTML un texto que
+escribe la entidad, no nosotros—, más la política de contenido en modo INFORME, porque bloquear sin
+medir en producción es exactamente lo que ya rompió la aplicación una vez.
+
+**Por qué la política entra sin bloquear.** El precedente manda: con el CDN de Tailwind bloqueado
+por la red del dueño, la aplicación salía apilada **con la consola limpia**. Una política en bloqueo
+que se equivoque en un origen produce el mismo daño mudo. Entra como
+`Content-Security-Policy-Report-Only` en `vercel.json` y la cerradura prohíbe que aparezca la
+cabecera de bloqueo hasta que haya medición en producción. Los orígenes no se apuntan «por si
+acaso»: son los que el censo de dominios de `public/` midió, y `cdnjs` está en `script-src` **y** en
+`connect-src` porque el worker del respaldo de pdf.js se trae con `fetch` — sin lo segundo, el
+respaldo sería código muerto. `'unsafe-inline'` en `style-src` es una MEDICIÓN, no una precaución:
+sin él Chromium contó 55 violaciones (los tres `<style>` de `index.html` y los atributos `style=` de
+la piel). `script-src` no se afloja, y dos aserciones lo sostienen: `index.html` no tiene ni un
+`<script>` en línea ni un manejador en el marcado.
+
+**Las dos cercas, ninguna una lista.** (1) Un censo ESTRUCTURAL recorre todas las plantillas con
+etiquetas HTML de todos los `public/*.js` —y las anidadas— y exige que cada interpolación que
+nombre un campo de texto de SECOP pase por `esc(`. (2) Un censo EJECUTADO, porque la primera confía
+en que `esc` escapa: hay siete copias de `esc` en `public/` (una por módulo, por el patrón de IIFE
+del proyecto) y una copia corta las volvería a todas mentira; las siete se ejecutan con un texto
+hostil y ninguna puede dejar pasar `<`, `>`, comillas ni un `&` suelto.
+
+**El censo llegó con un defecto silencioso, y eso es la lección.** Su borrado de plantillas era la
+expresión regular ``/`(?:[^`\\]|\\.)*`/``, que corta en la primera comilla invertida: en
+`` ${a ? `texto ${b ? `más texto` : ""}` : ""} `` deja dentro la mitad del texto de la frase, y una
+palabra suelta de ese texto —«entidad», «nombre»— se confunde con el nombre de un campo. De las
+cinco interpolaciones que señalaba como abiertas, **dos eran eso**: texto de frases ya escapadas.
+Se sustituye por un recorrido que CUENTA las anidadas. La consecuencia importa más que el defecto:
+un censo que señala en falso empuja a la sesión siguiente a declarar excepciones falsas, y entonces
+la cerca protege menos que si no existiera.
+
+**Lo que sí había que cambiar, y lo que se declara.** Los dos enlaces de la portada que meten un
+nombre de entidad o un código de departamento en un `href` pasan ahora por `esc(`: `encodeURIComponent`
+percent-codifica `<`, `>`, `"` y `&`, pero **no** el apóstrofo, así que solo protege dentro de un
+atributo con comillas dobles; depender de esa sutileza es dejar una trampa para quien edite la
+plantilla. El tercer `enlaceLista` de ese archivo no lleva dato (`"cierre=7d"`) y se queda como
+está. Y quedan DOS excepciones declaradas, las dos comprobadas ejecutando: `bandaCompetencia(...)`
+en `app.js` DELEGA —su plantilla, que este mismo censo recorre, escapa las dos cosas que imprime, y
+escapar en el sitio de la llamada rompería el HTML que devuelve—, y el `f.nombre` de `xlsx.js` no es
+un dato sino la tabla de fuentes del propio módulo (seis filas fijas, todas «Calibri») camino de la
+hoja de estilos del Excel, no de la pantalla.
+
+**Medido.** Suite 4/4 sin tuberías. En Chromium a 1280 y 390 px, sirviendo `public/` con la política
+**en bloqueo** (que es lo que se quiere saber antes de proponerla): **cero violaciones**, cero
+errores de consola, cero peticiones a dominios ajenos y sin desborde horizontal. Mutación: con el
+borrado de plantillas viejo, el censo vuelve a señalar en falso; sin el `esc(` de la portada, la
+suite cae nombrando el enlace.

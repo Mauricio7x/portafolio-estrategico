@@ -176,8 +176,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 153 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L  9619  Lote «B9b-competencia-departamento» de la consultoría del 4-sep · M-COMP-01, M-DGF-08 (6-se…
+· MEMORIA · docs/MEMORIA.md — 154 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L  9790  Lote «B10a-exportar-importar» de la consultoría del 4-sep · M-INF-15 (6-sep-2026)
   L  9908  Remates «R3-remates-pantalla» de la ola 2 · B7a-H1/H2/H3, B7b-H1/H2/H3, B8a-H1/H2/H3/H4, B8…
   L 10132  Remates «R4-remates-inteligencia» de la ola 2 · B9a-H1/H2/H3, B9b-H1/H2/H3/H4/H5 (6-sep-202…
@@ -187,6 +186,7 @@
   L 10634  Cuota por conexión en las dos altas públicas · M-SEG-07 (6-sep-2026)
   L 10724  El corpus conserva la llave de cruce `id_del_portafolio` · M-DGF-05 (6-sep-2026)
   L 10776  pdf.js se sirve desde el propio sitio, con cdnjs solo de respaldo · M-INF-18 (6-sep-2026)
+  L 10842  Escape por censo y política de contenido en modo informe · M-SEG-09 (6-sep-2026)
 
 · DOCUMENTOS docs/ — 41 (y 3 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)
