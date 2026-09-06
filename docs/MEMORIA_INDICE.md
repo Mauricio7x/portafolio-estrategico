@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 869610 bytes · 143 secciones · 4 con marcador de superación.
+Derivado del árbol: 886198 bytes · 144 secciones · 4 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -153,4 +153,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Lote «B7b-tablero-mercado» de la consultoría del 4-sep · M-DGF-13, M-DGF-14, M-DGF-20 (6-sep-2026) | 6-sep-2026 | 9095-9226 | 13769 |  |
 | Lote «B8a-consorcio-y-excel» de la consultoría del 4-sep · M-COMP-02, M-COMP-04 (6-sep-2026) | 6-sep-2026 | 9227-9334 | 10524 |  |
 | Lote «B8b-busqueda-frases» de la consultoría del 4-sep · M-COMP-05 (6-sep-2026) | 6-sep-2026 | 9335-9411 | 7837 |  |
-| Lote «B9a-entidad-graficos» de la consultoría del 4-sep · M-DGF-06, M-DGF-10 (6-sep-2026) | 6-sep-2026 | 9412-9547 | 13455 |  |
+| Lote «B9a-entidad-graficos» de la consultoría del 4-sep · M-DGF-06, M-DGF-10 (6-sep-2026) | 6-sep-2026 | 9412-9547 | 13456 |  |
+| Lote «B9b-competencia-departamento» de la consultoría del 4-sep · M-COMP-01, M-DGF-08 (6-sep-2026) | 6-sep-2026 | 9548-9718 | 16587 |  |

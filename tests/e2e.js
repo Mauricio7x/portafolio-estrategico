@@ -2957,6 +2957,112 @@ async function main() {
     assert.strictEqual(bDepto.procesos_contados, 5);
     assert.ok(/CHOCO/.test(bDepto.mensaje), "el mensaje debe decir que la cifra es del departamento, no de la entidad");
 
+    /* ══ M-COMP-01 (6-sep-2026): «CÓMO SE ADJUDICA EN SU DEPARTAMENTO» SE EXPONE,
+       NO DECIDE. El hash `departamento` se construía desde ago 2026 y ningún
+       consumidor lo leía. `bajaDepartamentoDe` lo lee con la MISMA regla de base
+       (`utilizable`, mismo mínimo) y `bajaDeMercado` sigue sin mirarlo: cinco
+       alcaldías del mismo departamento con familias DISTINTAS no dan base a
+       ningún `departamento_familia`, así que la cascada que decide el precio
+       responde «sin dato» mientras la lectura del departamento sí tiene sus 5. */
+    {
+      const { tuteoEn: tuteoDep, RE_EMOJI_UI: emojiDep } = require("../lib/lenguaje_pantalla.js");
+      const familias = ["72141100", "72151200", "72101500", "81101500", "80101500"];
+      const nariño = familias.map((codigo, i) => proc(40 + i, `ALCALDIA NARINENSE ${i}`, 6, { depto: "Nariño", codigo }));
+      const rsN = redisFalso({ "2025-03": nariño });
+      await indiceBaja.construirIndiceBaja(rsN);
+      const idxN = await indiceBaja.leerIndiceBaja(rsN);
+      const licN = { entidad: "ALCALDIA NUEVA", departamento_entidad: "Nariño", codigo_principal_de_categoria: "72141100" };
+      const decide = indiceBaja.bajaDeMercado(idxN, licN);
+      assert.strictEqual(decide.nivel, "sin_dato", "la cascada que DECIDE no lee el hash departamento (decisión del 24-ago-2026)");
+      assert.strictEqual(decide.granularidad_utilizada, null);
+      const lee = indiceBaja.bajaDepartamentoDe(idxN, licN);
+      assert.ok(lee, "bajaDepartamentoDe no existe o devuelve null con departamento: la lectura del departamento no se expone");
+      assert.strictEqual(lee.granularidad_utilizada, "departamento", `sin familia con base se lee el departamento entero: ${JSON.stringify(lee)}`);
+      assert.strictEqual(lee.procesos_contados, 5);
+      assert.strictEqual(lee.baja_mediana, 6);
+      assert.strictEqual(lee.departamento, "NARIÑO");
+      assert.ok(/En NARIÑO/.test(lee.mensaje) && /5 contratos ya adjudicados/.test(lee.mensaje) && /todos los tipos de obra/.test(lee.mensaje),
+        `la frase dice el departamento, la n y el alcance: ${lee.mensaje}`);
+      assert.ok(!/Para tener opción/.test(lee.mensaje), "la lectura del departamento es contexto, no la instrucción de precio de la entidad");
+      // con familia con base, la familia del departamento manda y lo dice
+      const leeFam = indiceBaja.bajaDepartamentoDe(idxD, nueva);
+      assert.strictEqual(leeFam.granularidad_utilizada, "departamento_familia");
+      assert.strictEqual(leeFam.procesos_contados, 5);
+      assert.ok(/en este tipo de obra/.test(leeFam.mensaje), leeFam.mensaje);
+      // bajo el mínimo: «sin dato» CON el conteo, jamás se rebaja el umbral (CALDAS tiene 3)
+      const leePoco = indiceBaja.bajaDepartamentoDe(idx, { entidad: "OTRA", departamento_entidad: "CALDAS", codigo_principal_de_categoria: "72141100" });
+      assert.strictEqual(leePoco.nivel, "sin_dato");
+      assert.strictEqual(leePoco.baja_mediana, null, "3 procesos no dan mediana ni en el departamento");
+      assert.strictEqual(leePoco.procesos_contados, 3, "el conteo sí viaja: explica el sin dato");
+      assert.ok(/hacen falta 5/.test(leePoco.mensaje) && /hay 3/.test(leePoco.mensaje), leePoco.mensaje);
+      // departamento sin ningún proceso: sin dato y lo dice; sin departamento en el proceso: null (sin dato ≠ cero)
+      assert.strictEqual(indiceBaja.bajaDepartamentoDe(idx, { entidad: "X", departamento_entidad: "VICHADA" }).procesos_contados, 0);
+      assert.strictEqual(indiceBaja.bajaDepartamentoDe(idx, { entidad: "X" }), null, "sin departamento no hay lectura: null, no un sin_dato de VACÍO");
+      assert.strictEqual(indiceBaja.bajaDepartamentoDe(null, licN), null);
+      for (const t of [lee.mensaje, leeFam.mensaje, leePoco.mensaje]) {
+        assert.strictEqual(tuteoDep(t), null, `la frase del departamento habla de usted: ${t}`);
+        assert.ok(!emojiDep.test(t), "sin emoji");
+      }
+
+      /* ── LA BAJA MEDIA CON LA QUE GANA EL ADJUDICATARIO sale de la MISMA regla
+         del índice (`bajaDeFila` + `subRegistro` + `encogerBaja`), no de una
+         segunda aritmética. Corpus: tres entidades con base y dispersión (para
+         que el índice estime un `m` finito) y un ganador con 6 procesos de bajas
+         10-16 % → mediana 12 con n 6; el mismo ganador con otra identidad, 5 con
+         valor + 1 SIN valor adjudicado → n 5, no 6; y otro con 4 → sin dato. */
+      const { detalleAdjudicatario } = require("../lib/competencia_detalle.js");
+      const ganador = (id, entidad, baja, nit, extra = {}) => proc(id, entidad, baja, {
+        depto: "TOLIMA", codigo: "72141100",
+        campos: { id_del_proceso: `CO1.ADJ.${id}`, nit_del_proveedor_adjudicado: nit, nombre_del_proveedor: `GANADOR ${nit} SAS`, adjudicado: "Si", ...extra },
+      });
+      const disp = (base, entidad, centro) => [-4, -2, 0, 2, 4].map((d, i) => proc(base + i, entidad, centro + d, { depto: "TOLIMA", codigo: "72141100" }));
+      const corpusAdj = [
+        ...disp(100, "ENTIDAD CENTRO OCHO", 8), ...disp(110, "ENTIDAD CENTRO CUATRO", 4), ...disp(120, "ENTIDAD CENTRO DOCE", 12),
+        ...[10, 11, 12, 13, 14, 16].map((b, i) => ganador(130 + i, "ALCALDIA DONDE GANA", b, "901000777")),
+        ...[5, 6, 7, 8, 9].map((b, i) => ganador(140 + i, "ALCALDIA DONDE GANA", b, "901000888")),
+        ganador(145, "ALCALDIA DONDE GANA", 7, "901000888", { valor_total_adjudicacion: "" }),  // ganó, pero sin valor adjudicado publicado
+        ...[3, 4, 5, 6].map((b, i) => ganador(150 + i, "ALCALDIA DONDE GANA", b, "901000999")),
+      ];
+      const rsAdj = redisFalso({ "2025-03": corpusAdj });
+      const metaAdj = await indiceBaja.construirIndiceBaja(rsAdj);
+      assert.ok(metaAdj.encogimiento && metaAdj.encogimiento.m > 0, `el corpus tiene que dar un m finito para que el encogimiento sea visible: ${JSON.stringify(metaAdj.encogimiento)}`);
+      const perfil = async (nit) => (await detalleAdjudicatario(rsAdj, `nit:${nit}`, { usarCache: false })).cuerpo;
+      const seis = await perfil("901000777");
+      assert.strictEqual(seis.total_ganados, 6);
+      assert.ok(seis.baja_media, "el perfil del adjudicatario no publica baja_media");
+      assert.strictEqual(seis.baja_media.n, 6);
+      assert.strictEqual(seis.baja_media.mediana_pct, 12, `mediana de 10,11,12,13,14,16 por el histograma del índice: ${JSON.stringify(seis.baja_media)}`);
+      assert.strictEqual(seis.baja_media.promedio_pct, 12.7);
+      assert.strictEqual(seis.baja_media.origen, "medida");
+      assert.strictEqual(seis.baja_media.motivo, null);
+      assert.strictEqual(seis.baja_media.min_procesos, indiceBaja.MIN_PROCESOS);
+      // la ENCOGIDA se calcula con encogerBaja y la meta del índice: w = n/(n+m) hacia la global
+      const w = 6 / (6 + metaAdj.encogimiento.m);
+      const esperada = Math.round((w * 12 + (1 - w) * metaAdj.baja_mediana_global) * 10) / 10;
+      assert.ok(seis.baja_media.encogida, "sin la mediana encogida el factor de precio no tendría con qué trabajar");
+      assert.strictEqual(seis.baja_media.encogida.mediana_pct, esperada, `encogida ${seis.baja_media.encogida.mediana_pct} ≠ ${esperada} (w=${w}, global ${metaAdj.baja_mediana_global})`);
+      assert.notStrictEqual(seis.baja_media.encogida.mediana_pct, seis.baja_media.mediana_pct, "la encogida tiene que diferir de la cruda: si no, no se está encogiendo");
+      assert.strictEqual(seis.baja_media.encogida.referencia, "global");
+      assert.strictEqual(seis.baja_media.encogida.peso_datos, Math.round(w * 1000) / 1000);
+      // 5 con valor + 1 sin valor: la fila sin valor NO cuenta (n = 5, no 6) y se dice por qué
+      const cinco = await perfil("901000888");
+      assert.strictEqual(cinco.total_ganados, 6, "ganó 6: la fila sin valor sigue siendo una adjudicación");
+      assert.strictEqual(cinco.baja_media.n, 5, "la fila sin valor adjudicado no aporta baja: n = 5, no 6");
+      assert.strictEqual(cinco.baja_media.mediana_pct, 7);
+      assert.strictEqual(cinco.baja_media.descartados.sin_adjudicado, 1, "el descarte se cuenta con la clave de la meta del índice");
+      // 4 → sin dato con el motivo, jamás una mediana de 4
+      const cuatro = await perfil("901000999");
+      assert.strictEqual(cuatro.total_ganados, 4);
+      assert.strictEqual(cuatro.baja_media.mediana_pct, null, "4 procesos no dan base");
+      assert.strictEqual(cuatro.baja_media.n, 4, "el conteo sí viaja");
+      assert.strictEqual(cuatro.baja_media.origen, null);
+      assert.strictEqual(cuatro.baja_media.encogida, null);
+      assert.ok(/hacen falta 5 procesos/.test(cuatro.baja_media.motivo) && /hay 4/.test(cuatro.baja_media.motivo), cuatro.baja_media.motivo);
+      assert.ok(/baja_media/.test(cuatro.que_es), "el alcance de la cifra viaja declarado en que_es");
+      // sin ranking de adjudicatarios por baja: cada cifra va con su n y el perfil es de UNO
+      assert.ok(!("ranking" in seis) && !("posicion" in seis.baja_media), "no hay ranking de empresas: cada cifra viaja con su n");
+    }
+
     /* 6. adjudicado < 30 % del oficial → fuera (lotes parciales) */
     const conLotes = redisFalso({ "2025-03": [
       ...filas.slice(0, 5),
@@ -6712,6 +6818,103 @@ async function main() {
       assert.strictEqual(JSON.parse(hash[filtros.norm("GOBERNACIÓN DEL TOLIMA")]).nivel, "media");
       assert.strictEqual(JSON.parse(hash[filtros.norm("IDU")]).nivel, "alta");
 
+      /* ══ M-DGF-08 (6-sep-2026): CUÁNTO TARDA EN ADJUDICAR Y CUÁNTOS DECLARA
+         DESIERTOS, por entidad y desde el índice. La cerradura recalcula el plazo
+         desde las FILAS CRUDAS del histórico (fecha de cierre y de adjudicación
+         tal como vienen, `habilesEntre` de lib/habiles) sin pasar por el
+         acumulador, y exige que el hash publique exactamente eso: Σ bases =
+         cobertura de la meta, mediana por el mismo percentil, un proceso sin
+         alguna fecha NO cuenta ni como 0, y bajo el mínimo nada derivado. */
+      {
+        const { habilesEntre } = require("../lib/habiles.js");
+        const filasHist = await leerHistorico();
+        const esperado = new Map();   // clave canónica → {plazos: [], adjudicados, desiertos}
+        let ambasTotal = 0, desiertosTotal = 0, adjudicadosTotal = 0;
+        for (const f of filasHist) {
+          const k = indiceComp.claveCanonica(f.entidad);
+          const e = esperado.get(k) || { plazos: [], adjudicados: 0, desiertos: 0 };
+          esperado.set(k, e);
+          if (/desierto/i.test(String(f.estado_del_procedimiento || ""))) { e.desiertos++; desiertosTotal++; continue; }
+          if (!indiceComp.esAdjudicado(f)) continue;
+          e.adjudicados++; adjudicadosTotal++;
+          const cierre = String(f.fecha_de_recepcion_de || "").slice(0, 10), adj = String(f.fecha_adjudicacion || "").slice(0, 10);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(cierre) || !/^\d{4}-\d{2}-\d{2}$/.test(adj) || adj <= cierre) continue;
+          e.plazos.push(habilesEntre(cierre, adj)); ambasTotal++;
+        }
+        assert.ok(desiertosTotal >= 1, "el fixture trae al menos un desierto (el de la Gobernación del Tolima)");
+        const pa = metaIdx.plazo_adjudicacion;
+        assert.ok(pa && typeof pa === "object", "la meta del índice no publica la cobertura de la pareja de fechas (plazo_adjudicacion)");
+        assert.strictEqual(pa.con_ambas_fechas, ambasTotal, `cobertura de la pareja: la meta dice ${pa.con_ambas_fechas} y las filas crudas ${ambasTotal}`);
+        assert.strictEqual(pa.desiertos, desiertosTotal);
+        assert.strictEqual(pa.adjudicados, adjudicadosTotal, "los adjudicados de la meta son los de esAdjudicado sobre el corpus entero, tengan o no oferentes");
+        assert.ok(pa.sin_fecha_cierre > 0, "los adjudicados sin fecha de cierre (el bloque sin oferentes) se cuentan, no se rellenan con 0 días");
+        assert.strictEqual(pa.min_procesos, indiceComp.MIN_PROCESOS);
+        const pctl = (arr, q) => { const s = [...arr].sort((a, b) => a - b); return s[Math.max(0, Math.ceil(q * s.length) - 1)]; };
+        let conPlazo = 0, publicadas = 0;
+        for (const [k, e] of esperado) {
+          if (!e.adjudicados && !e.desiertos) continue;
+          const crudo = hash[k];
+          assert.ok(crudo, `${k}: una entidad con desenlace (adjudicado o desierto) tiene que estar en el hash aunque no tenga oferentes`);
+          const m = JSON.parse(crudo);
+          publicadas++;
+          assert.ok(m.plazo_adjudicacion && m.desiertos, `${k}: el hash no publica plazo_adjudicacion/desiertos`);
+          assert.strictEqual(m.plazo_adjudicacion.base, e.plazos.length, `${k}: base del plazo (solo procesos con las DOS fechas)`);
+          assert.strictEqual(m.plazo_adjudicacion.adjudicados, e.adjudicados, `${k}: adjudicados sobre los que se buscó la pareja`);
+          assert.deepStrictEqual({ n: m.desiertos.n, adjudicados: m.desiertos.adjudicados, base: m.desiertos.base },
+            { n: e.desiertos, adjudicados: e.adjudicados, base: e.desiertos + e.adjudicados }, `${k}: conteos de desiertos`);
+          if (e.plazos.length >= indiceComp.MIN_PROCESOS) {
+            conPlazo++;
+            assert.strictEqual(m.plazo_adjudicacion.mediana_dias_habiles, pctl(e.plazos, 0.5), `${k}: mediana de días hábiles`);
+            assert.strictEqual(m.plazo_adjudicacion.p75_dias_habiles, pctl(e.plazos, 0.75), `${k}: p75 de días hábiles`);
+          } else {
+            assert.strictEqual(m.plazo_adjudicacion.mediana_dias_habiles, null, `${k}: bajo el mínimo no hay mediana (base ${e.plazos.length})`);
+            assert.strictEqual(m.plazo_adjudicacion.p75_dias_habiles, null);
+          }
+          assert.strictEqual(m.desiertos.pct, (e.desiertos + e.adjudicados) >= indiceComp.MIN_PROCESOS ? Math.round(e.desiertos / (e.desiertos + e.adjudicados) * 100) : null,
+            `${k}: el porcentaje de desiertos solo con base ≥ ${indiceComp.MIN_PROCESOS}`);
+        }
+        assert.ok(conPlazo >= 1, "al menos una entidad del fixture tiene base para el plazo (Tolima: 8 con las dos fechas)");
+        assert.strictEqual(pa.entidades_con_plazo, conPlazo);
+        const registrosReales = Object.values(hash).filter((v) => !JSON.parse(v).ref).length;
+        assert.strictEqual(metaIdx.entidades_publicadas, registrosReales, "entidades_publicadas cuenta todos los registros del hash que no son alias");
+        assert.ok(publicadas <= registrosReales, "ninguna entidad con desenlace puede faltar del hash");
+        const tolima = JSON.parse(hash[filtros.norm("GOBERNACIÓN DEL TOLIMA")]);
+        assert.strictEqual(tolima.desiertos.n, 1, "la Gobernación del Tolima declaró desierto 1");
+        assert.strictEqual(tolima.desiertos.adjudicados, 10, "…de 10 adjudicados (8 con oferentes + 2 sin)");
+        assert.strictEqual(tolima.desiertos.pct, 9);
+        assert.ok(tolima.plazo_adjudicacion.base < tolima.plazo_adjudicacion.adjudicados,
+          "los 2 adjudicados sin fecha de cierre NO entran a la base del plazo: sin dato no es 0 días");
+        // la entidad SOLO con hechos de cierre (sin proceso con oferentes) existe en el hash con procesos 0 y sin ninguna cifra de competencia
+        const car = JSON.parse(hash[indiceComp.claveCanonica(ENTIDAD_CAR)]);
+        assert.strictEqual(car.procesos, 0); assert.strictEqual(car.nivel, "sin_dato"); assert.strictEqual(car.promedio, null);
+        assert.strictEqual(car.desiertos.adjudicados, 2);
+        assert.strictEqual(indiceComp.competenciaDe(await indiceComp.leerIndice(redis), { entidad: ENTIDAD_CAR }).nivel, "sin_dato", "una entidad solo con hechos sigue sin dato para la competencia");
+        assert.strictEqual(metaIdx.plazo_adjudicacion.entidades_solo_hechos, metaIdx.entidades_publicadas - metaIdx.entidades);
+        // el lector ÚNICO del hash y la unidad del plazo
+        const hechosT = indiceComp.hechosDeRegistro(tolima);
+        assert.deepStrictEqual(hechosT.plazo_adjudicacion, tolima.plazo_adjudicacion);
+        assert.deepStrictEqual(hechosT.desiertos, tolima.desiertos);
+        assert.deepStrictEqual(indiceComp.hechosDeRegistro({ procesos: 5 }), { plazo_adjudicacion: null, desiertos: null }, "un hash anterior al campo da null, no ceros");
+        assert.deepStrictEqual(indiceComp.hechosDeRegistro({ plazo_adjudicacion: { base: 3, mediana_dias_habiles: 9 } }).plazo_adjudicacion.mediana_dias_habiles, null, "el LECTOR también anula la mediana bajo el mínimo: el hash no se purga nunca");
+        assert.deepStrictEqual(indiceComp.plazoAdjudicacionDe({ fecha_de_recepcion_de: "2025-03-10T15:00:00.000", fecha_adjudicacion: "2025-03-25T10:00:00.000" }), { dias: 10, motivo: null }, "del 10 al 25 de marzo de 2025 hay 10 días hábiles (el 24 es festivo)");
+        assert.deepStrictEqual(indiceComp.plazoAdjudicacionDe({ fecha_adjudicacion: "2025-03-25T10:00:00.000" }), { dias: null, motivo: "sin_fecha_cierre" });
+        assert.deepStrictEqual(indiceComp.plazoAdjudicacionDe({ fecha_de_recepcion_de: "2025-03-10T15:00:00.000" }), { dias: null, motivo: "sin_fecha_adjudicacion" });
+        assert.deepStrictEqual(indiceComp.plazoAdjudicacionDe({ fecha_de_recepcion_de: "2025-03-10T15:00:00.000", fecha_adjudicacion: "2025-03-10T18:00:00.000" }), { dias: null, motivo: "no_posterior_al_cierre" }, "adjudicar el mismo día del cierre no es un plazo medible");
+        assert.strictEqual(indiceComp.esDesierto({ estado_del_procedimiento: "Desierto" }), true);
+        assert.strictEqual(indiceComp.esDesierto({ estado_del_procedimiento: "Cancelado" }), false, "cancelado no es desierto: no entra en la base");
+        const pubHechos = indiceComp.registroPublicado({ nombre: "X", nit: null, procesos: 0, oferentes_total: 0, promedio: null, mediana: null, nivel: "sin_dato", hechos: { adjudicados: 6, desiertos: 1, plazo: { n: 6, hist: { 5: 2, 7: 3, 30: 1 } } } });
+        assert.deepStrictEqual(pubHechos.plazo_adjudicacion, { base: 6, adjudicados: 6, min_procesos: 5, mediana_dias_habiles: 7, p75_dias_habiles: 7 });
+        assert.deepStrictEqual(pubHechos.desiertos, { n: 1, adjudicados: 6, base: 7, min_procesos: 5, pct: 14 });
+        assert.strictEqual(indiceComp.registroPublicado({ nombre: "X", nit: null, procesos: 3 }).plazo_adjudicacion, null, "sin acumulador de hechos, null (jamás {0, 0})");
+        // el CENSO (lib/columnas_historicas) sobre el MISMO corpus dice exactamente lo mismo que el índice: si no, no diagnosticaría nada
+        const censoPa = (await require("../lib/columnas_historicas.js").censarColumnasHistoricas(redis)).plazo_adjudicacion;
+        assert.strictEqual(censoPa.con_ambas_fechas, pa.con_ambas_fechas, "censo e índice discrepan sobre cuántos procesos traen las dos fechas");
+        assert.strictEqual(censoPa.desiertos, pa.desiertos, "censo e índice discrepan sobre los desiertos");
+        assert.strictEqual(censoPa.adjudicados, pa.adjudicados, "censo e índice discrepan sobre los adjudicados");
+        assert.strictEqual(censoPa.sin_fecha_cierre, pa.sin_fecha_cierre);
+        console.log(`  · M-DGF-08: pareja de fechas en ${pa.con_ambas_fechas} de ${pa.adjudicados} adjudicados · ${pa.desiertos} desierto(s) · ${conPlazo} entidad(es) con plazo publicable · ${metaIdx.plazo_adjudicacion.entidades_solo_hechos} solo con hechos`);
+      }
+
       /* ═══ IDENTIDAD DE LA ENTIDAD, sobre el índice REAL ═══ */
       {
         const clave = indiceComp.claveCanonica;
@@ -6981,6 +7184,7 @@ async function main() {
           assert.strictEqual(l.baja_entidad, null, "baja_entidad salió sin token");
           assert.strictEqual(l.baja_segmento, null, "baja_segmento salió sin token");
           assert.strictEqual(l.baja_mercado, null, "baja_mercado salió sin token");
+          assert.strictEqual(l.baja_departamento, null, "baja_departamento salió sin token (M-COMP-01: es la misma inteligencia de precio un nivel arriba)");
         }
         // y el texto tampoco puede llevar la cifra dentro (lección de p3_caja)
         assert.ok(!/[Dd]escuento t[íi]pico del/.test(JSON.stringify(rPub.cuerpo)),
@@ -7062,7 +7266,7 @@ async function main() {
 
         /* con token vuelven, y baja_entidad coincide con la mediana del objeto */
         const rPriv = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=25", CAB_TOKEN);
-        let conBaja = 0;
+        let conBaja = 0, conDepto = 0;
         for (const l of rPriv.cuerpo.resultados) {
           if (l.baja_mercado && l.baja_mercado.baja_mediana != null) {
             conBaja++;
@@ -7075,8 +7279,20 @@ async function main() {
             assert.ok(l.baja_segmento.procesos >= 3 && l.baja_segmento.baja_mediana != null,
               `segmento sin base: ${JSON.stringify(l.baja_segmento)}`);
           }
+          /* M-COMP-01: la lectura del departamento viaja con token en toda fila
+             con departamento, con base (≥ mínimo y mediana) o como sin_dato con
+             su conteo; sin departamento en el proceso, null. */
+          assert.ok("baja_departamento" in l, "op=listar no publica baja_departamento");
+          if (String(l.departamento_entidad || "").trim()) {
+            assert.ok(l.baja_departamento && l.baja_departamento.departamento, `con departamento tiene que haber lectura: ${JSON.stringify(l.baja_departamento)}`);
+            if (l.baja_departamento.nivel !== "sin_dato") {
+              assert.ok(l.baja_departamento.procesos_contados >= 5 && l.baja_departamento.baja_mediana != null, `departamento sin base: ${JSON.stringify(l.baja_departamento)}`);
+              conDepto++;
+            } else assert.strictEqual(l.baja_departamento.baja_mediana, null);
+          } else assert.strictEqual(l.baja_departamento, null);
         }
         assert.ok(conBaja > 0, "con token ninguna tarjeta trajo baja: el gating no se estaría probando");
+        assert.ok(conDepto > 0, "con token ninguna tarjeta trajo la lectura del departamento con base (Tolima tiene > 5 pares)");
 
         /* la forma de pago viaja en TODAS las filas servidas — con valor o con
            null («el objeto no lo dice»), pero el campo existe: un frontend que
@@ -8709,6 +8925,16 @@ async function main() {
         assert.strictEqual(publicado.prorroga, null, `${e.entidad}: sin señal en el histórico la prórroga publicada es null, no un par de ceros`);
         assert.ok("prorroga" in c.indice, `${e.entidad}: op=entidad no publica prorroga`);
         assert.strictEqual(c.indice.prorroga, null, `${e.entidad}: el detalle espeja el null del hash`);
+        /* M-DGF-08 (6-sep-2026): el plazo de adjudicación y los desiertos también
+           se ESPEJAN del hash con el lector único (`hechosDeRegistro`): ningún
+           segundo predicado de «desierto» ni segunda cuenta de días hábiles. */
+        assert.ok("plazo_adjudicacion" in c.indice && "desiertos" in c.indice, `${e.entidad}: op=entidad no publica plazo_adjudicacion/desiertos`);
+        assert.deepStrictEqual(c.indice.plazo_adjudicacion, indiceComp.hechosDeRegistro(publicado).plazo_adjudicacion, `${e.entidad}: el detalle no espeja el plazo del hash`);
+        assert.deepStrictEqual(c.indice.desiertos, indiceComp.hechosDeRegistro(publicado).desiertos, `${e.entidad}: el detalle no espeja los desiertos del hash`);
+        if (e.entidad === "GOBERNACIÓN DEL TOLIMA") {
+          assert.strictEqual(c.indice.desiertos.n, 1);
+          assert.ok(c.indice.plazo_adjudicacion.mediana_dias_habiles >= 0, "Tolima tiene base para el plazo");
+        }
         if (e.ofertas.length >= 5) {
           assert.strictEqual(c.indice.promedio_oferentes, publicado.promedio,
             `${e.entidad}: el promedio del detalle no reproduce el del badge`);
@@ -9003,10 +9229,27 @@ async function main() {
         assert.deepStrictEqual(perfilR.identificacion, { tipo: "nit", valor: GANADOR_RECURRENTE.nit });
         assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(perfilR.entidades[0].ultima_adjudicacion));
         assert.ok(/cota inferior/i.test(perfilR.que_es), "el alcance del corpus tiene que viajar declarado");
+        /* M-COMP-01 (6-sep-2026): la baja media con la que gana, con la regla del
+           índice de baja. El recurrente ganó 5 con presupuesto 800M+i y valor
+           790M+i → ~1,25 % en los cinco → mediana 1 con n 5 (la regla completa
+           se cierra en el bloque del índice de baja). */
+        assert.ok(perfilR.baja_media, "el perfil del competidor no trae baja_media");
+        assert.strictEqual(perfilR.baja_media.n, 5);
+        assert.strictEqual(perfilR.baja_media.mediana_pct, 1, JSON.stringify(perfilR.baja_media));
+        assert.strictEqual(perfilR.baja_media.origen, "medida");
         // el ganador identificado solo por código interno también tiene perfil, con su tipo
         const perfilCS = (await invocar(detalleComp,
           "/api/competencia-detalle?vista=adjudicatario&adjudicatario=nit%3A701000123&refrescar=1", TOKEN)).cuerpo;
         assert.strictEqual(perfilCS.total_ganados, 1);
+        /* la baja_media viaja también bajo el mínimo, con su conteo y sus descartes:
+           este ganador llega con NIT «No Definido» y solo el código interno, y la
+           regla del índice de baja (`adjudicatarioReal`) NO toma esa fila como
+           precio de mercado — la misma exclusión, aquí también, y dicha */
+        assert.ok(perfilCS.baja_media, "el perfil sin base también trae baja_media");
+        assert.strictEqual(perfilCS.baja_media.n, 0, "con NIT «No Definido» la regla del índice no toma la fila: n 0, no 1");
+        assert.strictEqual(perfilCS.baja_media.descartados.adjudicatario_no_definido, 1, "…y el descarte se dice con la clave de la meta del índice");
+        assert.strictEqual(perfilCS.baja_media.mediana_pct, null);
+        assert.ok(/hacen falta/.test(perfilCS.baja_media.motivo) && /hay 0/.test(perfilCS.baja_media.motivo));
         assert.deepStrictEqual(perfilCS.identificacion, { tipo: "codigo_secop", valor: "701000123" });
         // clave que no ganó nada: encontrado false, jamás un error
         const nadie = (await invocar(detalleComp,
@@ -9111,6 +9354,63 @@ async function main() {
           assert.ok(/htmlEntidadPorAnio\(i\.reparto_por_anio, i\.min_procesos\)/.test(srcPD), "pintarDetalle pinta el reparto por año con el mínimo que publica el servidor");
           assert.ok(/htmlProrrogaEntidad\(i\.prorroga\)/.test(srcPD), "pintarDetalle pinta la prórroga desde indice.prorroga");
           assert.ok(!/Por año: /.test(srcPD), "la frase corrida «Por año: …» se sustituyó por el gráfico");
+
+          /* ══ M-DGF-08 y M-COMP-01 (6-sep-2026): las CUATRO frases nuevas, con las
+             funciones reales de app.js. Cuánto tarda en adjudicar (frecuencia
+             natural, base al lado, «sin dato» con lo que falta bajo el mínimo,
+             nada sin base), cuántos declara desiertos, la baja media con la que
+             gana el competidor (hecho + n, sin «probabilidad») y cómo se adjudica
+             en el departamento (plegada, con la frase del servidor). */
+          {
+            const fnsB9 = new Function("window", "esc", "fmtNum",
+              `${cortarAdj("htmlPlazoAdjudicacion")}\n${cortarAdj("htmlDesiertos")}\n${cortarAdj("htmlBajaAdjudicatario")}\n${cortarAdj("lineaBajaDepartamento")}; return { htmlPlazoAdjudicacion, htmlDesiertos, htmlBajaAdjudicatario, lineaBajaDepartamento };`)(
+              {}, escAdj, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }));
+            const textos = [];
+            const hP = fnsB9.htmlPlazoAdjudicacion({ base: 8, adjudicados: 10, min_procesos: 5, mediana_dias_habiles: 7, p75_dias_habiles: 12 });
+            assert.ok(/Suele tardar <strong>7 días de oficina<\/strong> en adjudicar/.test(hP), hP);
+            assert.ok(/la mitad de sus procesos/.test(hP) && /tres de cada cuatro en 12 días de oficina/.test(hP), "mediana y p75 como frecuencias naturales");
+            assert.ok(/de 10 procesos adjudicados, 8 traen la fecha de cierre y la de adjudicación/.test(hP), "la base y la cobertura van al lado");
+            assert.ok(!/mediana|p75|percentil|hábiles/i.test(hP), `sin jerga estadística ni «hábiles» en pantalla: ${hP}`);
+            const hP1 = fnsB9.htmlPlazoAdjudicacion({ base: 5, adjudicados: 5, min_procesos: 5, mediana_dias_habiles: 1, p75_dias_habiles: 1 });
+            assert.ok(/1 día de oficina/.test(hP1) && !/1 días/.test(hP1), "singular con 1");
+            const hPsin = fnsB9.htmlPlazoAdjudicacion({ base: 3, adjudicados: 9, min_procesos: 5, mediana_dias_habiles: null, p75_dias_habiles: null });
+            assert.ok(/sin dato/.test(hPsin) && /hacen falta 5/.test(hPsin) && /hay 3/.test(hPsin), `bajo el mínimo: sin dato con lo que falta: ${hPsin}`);
+            assert.strictEqual(fnsB9.htmlPlazoAdjudicacion(null), "", "sin hechos no se dice nada");
+            assert.strictEqual(fnsB9.htmlPlazoAdjudicacion({ base: 0, adjudicados: 4, mediana_dias_habiles: null }), "", "sin ningún proceso con las dos fechas no se dice nada (sin dato ≠ nunca)");
+            const hD = fnsB9.htmlDesiertos({ n: 1, adjudicados: 10, base: 11, min_procesos: 5, pct: 9 });
+            assert.ok(/Declaró desierto <strong>1<\/strong> de sus 11 procesos/.test(hD), hD);
+            assert.ok(!/9 ?%/.test(hD), "frecuencia natural, no porcentaje");
+            const hD0 = fnsB9.htmlDesiertos({ n: 0, adjudicados: 12, base: 12, min_procesos: 5, pct: 0 });
+            assert.ok(/No declaró desierto ninguno de sus 12/.test(hD0), hD0);
+            const hDsin = fnsB9.htmlDesiertos({ n: 1, adjudicados: 2, base: 3, min_procesos: 5, pct: null });
+            assert.ok(/sin dato/.test(hDsin) && /hay 3/.test(hDsin), `«1 de 3» se leería como un tercio: sin dato: ${hDsin}`);
+            assert.strictEqual(fnsB9.htmlDesiertos(null), "");
+            const hB = fnsB9.htmlBajaAdjudicatario({ mediana_pct: 8, promedio_pct: 8.2, p25_pct: 6, p75_pct: 10, n: 6, min_procesos: 5, origen: "medida", motivo: null, encogida: { mediana_pct: 7.6 } });
+            assert.ok(/Baja media con la que gana: <strong>8 %<\/strong>/.test(hB), hB);
+            assert.ok(/6 procesos ganados con presupuesto y valor adjudicado/.test(hB), "el n va detrás de la cifra");
+            assert.ok(/entre 6 % y 10 %/.test(hB), "la mitad central acompaña");
+            assert.ok(!/7,6/.test(hB), "lo que se ENSEÑA es la medida, no la encogida (que solo alimenta el factor de precio)");
+            assert.ok(!/probabilidad|ofrezca|oferte/i.test(hB), "es un hecho con su n, no una recomendación de precio");
+            const hBsin = fnsB9.htmlBajaAdjudicatario({ mediana_pct: null, n: 4, min_procesos: 5, origen: null, motivo: "hacen falta 5 procesos con presupuesto y valor adjudicado y hay 4" });
+            assert.ok(/Baja media con la que gana: sin dato/.test(hBsin) && /hacen falta 5/.test(hBsin) && /hay 4/.test(hBsin), hBsin);
+            assert.strictEqual(fnsB9.htmlBajaAdjudicatario(null), "");
+            const lD = fnsB9.lineaBajaDepartamento({ departamento: "TOLIMA", nivel: "alto", baja_mediana: 6, procesos_contados: 12, mensaje: "En TOLIMA los que ganaron descontaron cerca de 6% del presupuesto oficial (12 contratos ya adjudicados en todos los tipos de obra)." });
+            assert.ok(/Cómo se adjudica en TOLIMA: <strong>6 %<\/strong> de baja · 12 contratos/.test(lD), lD);
+            assert.ok(/En TOLIMA los que ganaron/.test(lD), "la frase del servidor viaja entera");
+            const lDsin = fnsB9.lineaBajaDepartamento({ departamento: "CALDAS", nivel: "sin_dato", baja_mediana: null, procesos_contados: 3, mensaje: "Sin dato en CALDAS: hacen falta 5 contratos adjudicados con presupuesto y valor adjudicado y hay 3." });
+            assert.ok(/Cómo se adjudica en CALDAS: sin dato\./.test(lDsin) && /hay 3/.test(lDsin), lDsin);
+            assert.strictEqual(fnsB9.lineaBajaDepartamento(null), "", "sin lectura (sin departamento o sin credencial) no se pinta nada");
+            textos.push(hP, hP1, hPsin, hD, hD0, hDsin, hB, hBsin, lD, lDsin);
+            const textoB9 = textos.join("\n").replace(/<[^>]+>/g, " ");
+            assert.ok(!textoB9.match(emojiAdj), "sin emoji");
+            assert.strictEqual(tuteoAdj(textoB9), null, "las frases hablan de usted");
+            assert.ok(!/indice|hash|redis|dataset|\.js/i.test(textoB9), "sin infraestructura en pantalla");
+            // y están CABLEADAS: el modal de la entidad, el perfil del competidor y la tarjeta
+            assert.ok(/htmlPlazoAdjudicacion\(i\.plazo_adjudicacion\)/.test(srcPD) && /htmlDesiertos\(i\.desiertos\)/.test(srcPD), "pintarDetalle pinta el plazo y los desiertos desde op=entidad");
+            const iPA = jsAdj.indexOf("function pintarAdjudicatario(");
+            assert.ok(/htmlBajaAdjudicatario\(d\.baja_media\)/.test(jsAdj.slice(iPA, jsAdj.indexOf("\n  }", iPA) + 4)), "pintarAdjudicatario pinta la baja media desde baja_media");
+            assert.ok(/lineaBajaDepartamento\(l\.baja_departamento\)/.test(jsAdj), "la tarjeta pinta la lectura del departamento desde baja_departamento");
+          }
         }
       }
 
@@ -11472,6 +11772,25 @@ async function main() {
         "el veredicto de la baja no coincide con los pares realmente contados");
       assert.ok(ch.conclusion.veredicto && ch.conclusion.siguiente_paso,
         "el censo debe decir en castellano qué pasa y cuál es el siguiente paso");
+
+      /* M-DGF-08 (6-sep-2026): el censo mide la OTRA mitad del plazo (la fecha de
+         cierre, con las candidatas de `fechaCierre`) y la PAREJA en la misma
+         fila, con los mismos predicados del índice: censo e índice tienen que
+         decir el mismo número, o el diagnóstico no diagnosticaría nada. */
+      assert.ok(ch.grupos.fecha_cierre, "el censo no censa la fecha de cierre");
+      assert.ok(ch.grupos.fecha_cierre.con_dato_util > 0, "el fixture trae fecha_de_recepcion_de: el censo tiene que verla");
+      assert.ok(ch.plazo_adjudicacion && typeof ch.plazo_adjudicacion === "object", "el censo no publica la cobertura de la pareja de fechas");
+      /* El índice se construyó ANTES de las extracciones posteriores de la suite y
+         el corpus solo crece: el censo de hoy no puede ver MENOS que el índice de
+         ayer. La igualdad exacta sobre el mismo corpus se cierra en el bloque del
+         índice, justo tras reconstruirlo. */
+      if (idxMeta && idxMeta.plazo_adjudicacion) {
+        assert.ok(ch.plazo_adjudicacion.con_ambas_fechas >= idxMeta.plazo_adjudicacion.con_ambas_fechas, "el censo ve menos parejas de fechas que el índice construido sobre un corpus más pequeño");
+        assert.ok(ch.plazo_adjudicacion.desiertos >= idxMeta.plazo_adjudicacion.desiertos, "el censo ve menos desiertos que el índice");
+        assert.ok(ch.plazo_adjudicacion.adjudicados >= idxMeta.plazo_adjudicacion.adjudicados);
+      }
+      assert.ok(ch.plazo_adjudicacion.desiertos >= 1, "si el histórico conserva desiertos, el censo los cuenta (denominador de la tasa)");
+      assert.strictEqual(ch.plazo_adjudicacion.base_desiertos, ch.plazo_adjudicacion.adjudicados + ch.plazo_adjudicacion.desiertos);
 
       /* ── baja_de_mercado: el bloque existe y su reparto CUADRA ──
          `cobertura_visibles_por_granularidad` describe el conjunto visible, así
@@ -19856,6 +20175,17 @@ async function main() {
       assert.ok(pu.cuerpo.cierranEstaSemana && pu.cuerpo.cierranEstaSemana.n <= pu.cuerpo.total);
       const sumDep = pu.cuerpo.porDepartamento.reduce((a, d) => a + d.n, 0);
       assert.ok(sumDep + pu.cuerpo.sinDepartamento <= pu.cuerpo.total && sumDep > 0, "los departamentos del top no pueden sumar más que el total");
+      /* M-DGF-08: cada fila del calendario dice cuándo adjudican o que no se sabe
+         (`adjudicacion` presente siempre: null, o {fecha, origen} con origen
+         pliego|historico). El pulso real carga el índice para eso. */
+      {
+        const filasCal = (pu.cuerpo.calendario && pu.cuerpo.calendario.dias || []).flatMap((d) => d.procesos);
+        assert.ok(filasCal.length > 0, "el calendario del pulso trae filas");
+        for (const p of filasCal) {
+          assert.ok("adjudicacion" in p, "la fila del calendario no trae adjudicacion");
+          if (p.adjudicacion) assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(p.adjudicacion.fecha) && ["pliego", "historico"].includes(p.adjudicacion.origen), JSON.stringify(p.adjudicacion));
+        }
+      }
       /* LA LISTA VIAJA COMPLETA (6-sep-2026, M-DGF-13): antes `porDepartamento` y
          `topEntidades` llegaban recortados a 8 y un departamento fuera de los 8
          no se alcanzaba desde el reparto. Censo: los departamentos publicados
@@ -21447,6 +21777,72 @@ async function main() {
         assert.deepStrictEqual(await Mn.leerFechasCronograma(null), {});
         await redis.del(Mn.CLAVE_CRONOGRAMA);
         console.log("  · peldaño 1: leer el pliego guarda la fecha límite real y la tarjeta pasa de «verifique HOY» a «vence mañana, martes 18»");
+
+        /* ══ M-DGF-08 (6-sep-2026): CUÁNDO ADJUDICAN, en el calendario de cierres.
+           Un publicado gana a un calculado: la fecha de adjudicación del PLIEGO
+           se guarda al leer el cronograma (misma vía y misma poda que la de la
+           manifestación, otro hash) y el calendario la prefiere; sin ella, el
+           cierre + la mediana de días hábiles que la ENTIDAD tardó en adjudicar
+           (solo con la base mínima del índice), rotulada como estimación; sin
+           ninguna, se dice que no se sabe. */
+        {
+          const Ent8 = require("../lib/handlers/perfil/entrada.js");
+          const Cal8 = require("../public/calendario.js");
+          const idAdj = "CO1.ADJ.PLIEGO.1";
+          const textoAdj = ["CRONOGRAMA DEL PROCESO",
+            "Cierre: presentación de las ofertas: 25 de agosto de 2026",
+            "Audiencia de adjudicación: 30 de octubre de 2026"].join("\n");
+          assert.strictEqual(await redis.hget(Mn.CLAVE_CRONOGRAMA_ADJUDICACION, idAdj), null);
+          const rAdj = await invocarPost(routerPliego, "/api/pliego?op=cronograma", { id_proceso: idAdj, texto: textoAdj });
+          assert.strictEqual(rAdj.status, 200);
+          assert.strictEqual(rAdj.cuerpo.adjudicacion_fecha_guardada, "2026-10-30", "leer el pliego guarda la fecha de adjudicación publicada");
+          assert.strictEqual(rAdj.cuerpo.manifestacion_fecha_guardada, null, "…sin inventar una manifestación que el pliego no trae");
+          const mapaAdj = await Mn.leerFechasCronograma(redis, { clave: Mn.CLAVE_CRONOGRAMA_ADJUDICACION });
+          assert.strictEqual(mapaAdj[idAdj], "2026-10-30");
+          assert.deepStrictEqual(await Mn.leerFechasCronograma(redis), {}, "el hash de la manifestación no se contamina con la adjudicación");
+          const plazo8 = { base: 8, adjudicados: 10, min_procesos: 5, mediana_dias_habiles: 10, p75_dias_habiles: 14 };
+          // pliego > histórico > null
+          assert.deepStrictEqual(Ent8.adjudicacionDeFila("2026-08-25", { fechaPliego: "2026-10-30", plazo: plazo8 }), { fecha: "2026-10-30", origen: "pliego" }, "la fecha del pliego gana a la estimada");
+          const est = Ent8.adjudicacionDeFila("2026-08-25", { plazo: plazo8 });
+          assert.deepStrictEqual(est, { fecha: "2026-09-08", origen: "historico", dias_habiles: 10, base: 8, adjudicados: 10 }, `cierre 25-ago + 10 hábiles = 8-sep (el 17-ago no cuenta: ya pasó; sin festivos entre medias): ${JSON.stringify(est)}`);
+          assert.strictEqual(Ent8.adjudicacionDeFila("2026-08-25", { plazo: { ...plazo8, base: 4, mediana_dias_habiles: null } }), null, "bajo el mínimo no se estima");
+          assert.strictEqual(Ent8.adjudicacionDeFila("2026-08-25", { plazo: { ...plazo8, base: 4, mediana_dias_habiles: 10 } }), null, "el lector también exige la base: el hash no se purga nunca");
+          assert.strictEqual(Ent8.adjudicacionDeFila("2026-08-25", { fechaPliego: "30/10/2026", plazo: null }), null, "una fecha ilegible del pliego no se toma");
+          assert.strictEqual(Ent8.adjudicacionDeFila(null, { plazo: plazo8 }), null, "sin día de cierre no hay desde dónde contar");
+          // el calendario entero, con la fila del pliego y una sin pliego pero con historial de la entidad
+          const filasCal = [
+            { id_del_proceso: idAdj, entidad: "ALCALDIA CON PLIEGO", fecha_cierre: "2026-08-25T15:00:00.000", precio_base: "5", nombre_del_procedimiento: "A", modalidad_de_contratacion: "Licitación pública" },
+            { id_del_proceso: "CO1.ADJ.HIST.1", entidad: "ALCALDIA CON HISTORIAL", fecha_cierre: "2026-08-25T15:00:00.000", precio_base: "5", nombre_del_procedimiento: "B", modalidad_de_contratacion: "Licitación pública" },
+            { id_del_proceso: "CO1.ADJ.NADA.1", entidad: "ALCALDIA SIN NADA", fecha_cierre: "2026-08-25T15:00:00.000", precio_base: "5", nombre_del_procedimiento: "C", modalidad_de_contratacion: "Licitación pública" },
+          ];
+          const cal8 = Ent8.calendarioDeCierres(filasCal, Date.parse("2026-08-17T17:00:00Z"), {
+            fechasAdjudicacion: mapaAdj,
+            plazoDe: (l) => (l.entidad === "ALCALDIA SIN NADA" ? null : plazo8),
+          });
+          const porId = Object.fromEntries(cal8.dias[0].procesos.map((p) => [p.id, p]));
+          assert.deepStrictEqual(porId[idAdj].adjudicacion, { fecha: "2026-10-30", origen: "pliego" }, "con pliego leído, el calendario enseña la publicada aunque la entidad tenga historial");
+          assert.strictEqual(porId["CO1.ADJ.HIST.1"].adjudicacion.origen, "historico");
+          assert.strictEqual(porId["CO1.ADJ.NADA.1"].adjudicacion, null);
+          // y agregarPulso la pasa entera (es la vía del pulso real)
+          const ag8 = Ent8.agregarPulso(filasCal, Date.parse("2026-08-17T17:00:00Z"), { fechasAdjudicacion: mapaAdj, plazoDe: () => plazo8 });
+          assert.strictEqual(ag8.calendario.dias[0].procesos.find((p) => p.id === idAdj).adjudicacion.origen, "pliego");
+          // la pantalla: tres textos, y ninguno afirma más de lo que sabe
+          const tPliego = Cal8.textoAdjudicacion(porId[idAdj].adjudicacion);
+          const tHist = Cal8.textoAdjudicacion(porId["CO1.ADJ.HIST.1"].adjudicacion);
+          const tNada = Cal8.textoAdjudicacion(null);
+          assert.strictEqual(tPliego, "30 de octubre de 2026 (fecha del cronograma del pliego)");
+          assert.ok(/^Alrededor del 8 de septiembre de 2026, estimado por el histórico/.test(tHist), tHist);
+          assert.ok(/la mitad de los 8 procesos de esta entidad/.test(tHist) && /10 días de oficina después del cierre/.test(tHist), "la estimación dice de dónde sale y sobre cuántos");
+          assert.ok(/Sin fecha publicada ni historial suficiente/.test(tNada), tNada);
+          for (const [p, debe] of [[porId[idAdj], "cronograma del pliego"], [porId["CO1.ADJ.HIST.1"], "estimado por el histórico"], [porId["CO1.ADJ.NADA.1"], "Sin fecha publicada"]]) {
+            const ficha = Cal8.htmlFicha(p, null);
+            assert.ok(/<dt>Adjudicación<\/dt>/.test(ficha) && ficha.includes(debe), `la ficha del calendario dice cuándo adjudican («${debe}»): ${ficha.slice(0, 400)}`);
+          }
+          const { tuteoEn: tuteo8, RE_EMOJI_UI: emoji8 } = require("../lib/lenguaje_pantalla.js");
+          for (const t of [tPliego, tHist, tNada]) { assert.strictEqual(tuteo8(t), null); assert.ok(!emoji8.test(t)); assert.ok(!/mediana|hábiles|índice/i.test(t), `sin jerga: ${t}`); }
+          await redis.del(Mn.CLAVE_CRONOGRAMA_ADJUDICACION);
+          console.log("  · M-DGF-08: la fecha de adjudicación del pliego se guarda y gana a la estimada; sin pliego, cierre + días hábiles de la entidad; sin nada, se dice");
+        }
       }
 
       // frontend
@@ -24962,6 +25358,8 @@ async function main() {
       const pub = publico.sinFinanzas(fila);
       assert.strictEqual(pub.margen_estimado, null, "sin token no puede salir el margen: su techo despeja la baja tapada");
       assert.strictEqual(pub.baja_entidad, null);
+      assert.strictEqual(publico.sinFinanzas({ baja_departamento: { departamento: "TOLIMA", baja_mediana: 6 } }).baja_departamento, null,
+        "la lectura del departamento (M-COMP-01) se anula sin token como los otros tres baja_*");
       assert.strictEqual(pub.baja_maxima.valor, null);
       const listar = fs.readFileSync(path.join(RAIZ, "lib/handlers/procesos/listar.js"), "utf8");
       assert.ok(/if \(filas && conFinanzas\)/.test(listar),

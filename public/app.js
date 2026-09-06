@@ -1170,6 +1170,21 @@
     return chip(`${window.Glosario.corto("baja_mercado")} ${fmtNum.format(mediana)} %${enPesos}`, d.clases, b.mensaje);
   }
 
+  /* «CÓMO SE ADJUDICA EN SU DEPARTAMENTO» (M-COMP-01, 6-sep-2026): la lectura
+     del departamento que el índice ya calculaba y nadie enseñaba. Va PLEGADA
+     bajo «Más detalles», junto al chip de la baja que decide, y nunca en su
+     lugar: es contexto de la zona, no la instrucción de precio. La frase llega
+     redactada del servidor (`mensaje`) con su n dentro; sin dato dice que
+     hacen falta procesos, y sin departamento en el proceso (o sin credencial,
+     que la anula) no se pinta nada — «sin dato» no es «cero». */
+  function lineaBajaDepartamento(bd) {
+    if (!bd || typeof bd !== "object" || !bd.departamento) return "";
+    const conBase = bd.nivel !== "sin_dato" && bd.baja_mediana != null && Number(bd.procesos_contados) > 0;
+    const cifra = conBase ? `<strong>${fmtNum.format(Number(bd.baja_mediana))} %</strong> de baja · ${Number(bd.procesos_contados)} contratos` : "sin dato";
+    return `<p class="mt-2 text-xs text-gray-600">Cómo se adjudica en ${esc(bd.departamento)}: ${cifra}.
+      <span class="text-gray-500">${esc(bd.mensaje || "")}</span></p>`;
+  }
+
   /* Chip de zona (lib/accesibilidad, encargo ago 2026): la etiqueta y el
      mensaje llegan REDACTADOS del servidor — con «estimado» y «verificá la
      zona» donde tocan, porque las distancias son aproximadas y las alertas
@@ -1960,6 +1975,7 @@
           ${l.tipo_precio === "global" ? chip("Precio global", "bg-amber-100 text-amber-800",
     "El riesgo de cantidades es del contratista: no se reconocen mayores cantidades. Verifique el formulario del pliego antes de fijar el precio") : ""}
         </div>
+        ${lineaBajaDepartamento(l.baja_departamento)}
       </details>
 
       <div class="mt-4 flex items-center justify-between gap-3 text-sm">
@@ -2755,6 +2771,39 @@
     if (!Number.isFinite(p) || !Number.isFinite(n) || p <= 0 || n <= 0) return "";
     return `<p class="mt-2 text-sm">Movió la fecha de cierre en <strong>${p}</strong> de los ${p + n} procesos adjudicados en que la aplicación pudo comprobarlo.</p>`;
   }
+  /* CUÁNTO TARDA EN ADJUDICAR (M-DGF-08, 6-sep-2026): el plazo en días de
+     oficina entre el cierre y la adjudicación, como lo publica el índice. La
+     mediana se dice como frecuencia natural («la mitad de sus procesos en N o
+     menos»), el p75 como «tres de cada cuatro», y la base al lado: de A
+     adjudicados, B traen las dos fechas. Bajo el mínimo, «sin dato» con lo
+     que falta; sin ningún proceso con las dos fechas no se dice nada. */
+  function htmlPlazoAdjudicacion(pl) {
+    if (!pl || typeof pl !== "object") return "";
+    const base = Number(pl.base), adj = Number(pl.adjudicados), minimo = Number(pl.min_procesos) || 5;
+    if (!Number.isFinite(base) || base <= 0) return "";
+    const med = pl.mediana_dias_habiles == null ? null : Number(pl.mediana_dias_habiles);
+    const p75 = pl.p75_dias_habiles == null ? null : Number(pl.p75_dias_habiles);
+    const dias = (n) => `${n} ${n === 1 ? "día de oficina" : "días de oficina"}`;
+    const cobertura = Number.isFinite(adj) && adj > 0 ? `de ${adj} procesos adjudicados, ${base} traen la fecha de cierre y la de adjudicación` : `${base} procesos con las dos fechas`;
+    if (med == null || !Number.isFinite(med)) {
+      return `<p class="mt-2 text-sm">Cuánto tarda en adjudicar: sin dato (hacen falta ${minimo} procesos con fecha de cierre y de adjudicación; hay ${base}).</p>`;
+    }
+    return `<p class="mt-2 text-sm">Suele tardar <strong>${dias(med)}</strong> en adjudicar desde el cierre: la mitad de sus procesos en ese plazo o menos${p75 != null && Number.isFinite(p75) ? `, tres de cada cuatro en ${dias(p75)} o menos` : ""} (${cobertura}).</p>`;
+  }
+  /* CUÁNTOS DECLARA DESIERTOS (M-DGF-08): frecuencia natural sobre la base de
+     adjudicados + desiertos; bajo el mínimo, «sin dato» — «1 de 3» se lee
+     como un tercio y no es una medición. */
+  function htmlDesiertos(ds) {
+    if (!ds || typeof ds !== "object") return "";
+    const n = Number(ds.n), base = Number(ds.base), minimo = Number(ds.min_procesos) || 5;
+    if (!Number.isFinite(n) || !Number.isFinite(base) || base <= 0) return "";
+    if (base < minimo) {
+      return `<p class="mt-2 text-sm">Procesos declarados desiertos: sin dato (hacen falta ${minimo} procesos cerrados con resultado; hay ${base}).</p>`;
+    }
+    return n > 0
+      ? `<p class="mt-2 text-sm">Declaró desierto <strong>${n}</strong> de sus ${base} procesos cerrados con resultado (adjudicados o desiertos).</p>`
+      : `<p class="mt-2 text-sm">No declaró desierto ninguno de sus ${base} procesos cerrados con resultado (adjudicados o desiertos).</p>`;
+  }
 
   function pintarDetalle(d) {
     const i = d.indice || {};
@@ -2773,6 +2822,9 @@
        del cierre —los conteos del índice— una frase. */
     const porAnio = htmlEntidadPorAnio(i.reparto_por_anio, i.min_procesos);
     const prorroga = htmlProrrogaEntidad(i.prorroga);
+    // M-DGF-08: cuánto tarda en adjudicar y cuántos declara desiertos, del índice
+    const plazo = htmlPlazoAdjudicacion(i.plazo_adjudicacion);
+    const desiertos = htmlDesiertos(i.desiertos);
     /* Y cuánto pesan los datos propios en los rivales que usa la probabilidad
        (encogimiento): con pocos procesos manda el promedio general. */
     const enc = i.encogimiento && i.encogimiento.rivales_estimados != null
@@ -2782,7 +2834,7 @@
       <p class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${banda.clases}">
         <span aria-hidden="true">${banda.emoji}</span>${esc(banda.titulo)}
       </p>
-      ${resumen}${porAnio}${prorroga}${enc}
+      ${resumen}${porAnio}${prorroga}${plazo}${desiertos}${enc}
       ${d.mensaje ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">${esc(d.mensaje)}</p>` : ""}
       ${bloqueAdjudicatarios(d.adjudicatarios)}
       ${bloqueProponentes(d.proponentes)}
@@ -2985,6 +3037,21 @@
      Desde la tabla «Quién gana aquí»: clic en un ganador → dónde más gana,
      cuántas veces, por cuánto y cuándo fue su último contrato. La «base de
      datos de la competencia» del manual, a un clic. */
+  /* BAJA MEDIA CON LA QUE GANA (M-COMP-01, 6-sep-2026): hecho medido con su n
+     —la mediana de lo que descontó en los procesos que ganó con presupuesto y
+     valor adjudicado, con la regla del índice de baja— o «sin dato» con lo que
+     falta. Nunca «probabilidad», nunca «ofrezca X %»: es lo que hizo el
+     competidor, junto a la baja de la entidad, para que usted decida. */
+  function htmlBajaAdjudicatario(bm) {
+    if (!bm || typeof bm !== "object") return "";
+    const n = Number(bm.n), minimo = Number(bm.min_procesos) || 5;
+    const med = bm.mediana_pct == null ? null : Number(bm.mediana_pct);
+    if (med == null || !Number.isFinite(med) || !Number.isFinite(n) || n <= 0) {
+      return `<p class="mt-1 text-sm text-gray-600">Baja media con la que gana: sin dato (hacen falta ${minimo} procesos ganados con presupuesto y valor adjudicado; hay ${Number.isFinite(n) ? n : 0}).</p>`;
+    }
+    return `<p class="mt-1 text-sm text-gray-600">Baja media con la que gana: <strong>${fmtNum.format(med)} %</strong> por debajo del presupuesto oficial (${n} procesos ganados con presupuesto y valor adjudicado${bm.p25_pct != null && bm.p75_pct != null ? `; entre ${fmtNum.format(Number(bm.p25_pct))} % y ${fmtNum.format(Number(bm.p75_pct))} % en la mitad central` : ""}).</p>`;
+  }
+
   function pintarAdjudicatario(d) {
     if (!d.encontrado) {
       $("modal-cuerpo").innerHTML = '<p class="py-6 text-center text-gray-500">No hay adjudicaciones de este proveedor en el corpus (desde 2024).</p>';
@@ -3010,6 +3077,7 @@
         <p class="mt-1 text-sm text-gray-600">${d.total_ganados} contrato${d.total_ganados === 1 ? "" : "s"} en ${nEnt} entidad${nEnt === 1 ? "" : "es"}
           · ${d.valor_adjudicado_cop == null ? "valor sin dato" : esc(fmtCorto(d.valor_adjudicado_cop))}
           · último: ${fmtUltima(d.ultima_adjudicacion) || "sin fecha"}</p>
+        ${htmlBajaAdjudicatario(d.baja_media)}
       </div>
       <div class="mt-4 overflow-x-auto">
         <table class="w-full text-left text-sm">

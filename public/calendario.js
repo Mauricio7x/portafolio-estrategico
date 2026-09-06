@@ -80,6 +80,29 @@
     const [, m, d] = partes(fecha);
     return `${d} de ${MESES[m - 1]}`;
   }
+  // con el año: la adjudicación puede caer meses después del cierre
+  function fechaLegibleAnio(fecha) {
+    const [a, m, d] = partes(fecha);
+    return `${d} de ${MESES[m - 1]} de ${a}`;
+  }
+
+  /* ══ CUÁNDO ADJUDICAN (M-DGF-08, 6-sep-2026) ══
+     La fecha que el contratista necesita para saber cuánto tiempo quedan
+     comprometidos la garantía de seriedad y el capital. Tres casos, y el orden
+     es la regla «un publicado gana a un calculado»:
+       pliego     · la fecha del cronograma del pliego, leída al abrir el pliego;
+       historico  · sin ella, cierre + los días de oficina que esta entidad
+                    tardó en adjudicar la mitad de sus procesos (el índice de
+                    competencia; solo con la base mínima) — y se dice que es
+                    una estimación y de dónde sale;
+       null       · ni lo uno ni lo otro: se dice, no se inventa. */
+  function textoAdjudicacion(a) {
+    if (!a || typeof a !== "object" || !a.fecha) return "Sin fecha publicada ni historial suficiente de la entidad para estimarla";
+    if (a.origen === "pliego") return `${fechaLegibleAnio(a.fecha)} (fecha del cronograma del pliego)`;
+    const d = Number(a.dias_habiles);
+    const dias = Number.isFinite(d) ? `${miles(d)} ${d === 1 ? "día de oficina" : "días de oficina"}` : "los días de oficina";
+    return `Alrededor del ${fechaLegibleAnio(a.fecha)}, estimado por el histórico: la mitad de los ${miles(a.base)} procesos de esta entidad con fecha de cierre y de adjudicación se adjudicó a más tardar ${dias} después del cierre`;
+  }
 
   /* Pesos completos: en el calendario la cifra que decide es el VALOR TOTAL del
      contrato, no una escala redondeada — una cifra redondeada para mostrar no
@@ -242,6 +265,8 @@
       ["Valor total del contrato", pesos(p.valor)],
       ["Cómo lo adjudican", modalidad],
       ["Entrega de la oferta", p.hora ? `hasta las ${p.hora}` : null],
+      // M-DGF-08: cuándo adjudican (pliego > histórico > se dice que no se sabe)
+      ["Adjudicación", textoAdjudicacion(p.adjudicacion)],
     ];
     const cuerpo = filas.map(([r, v]) => `<div class="cal-dato"><dt>${esc(r)}</dt><dd>${v ? esc(v) : "Sin dato publicado"}</dd></div>`).join("");
     return `<div class="cal-ficha">
@@ -390,7 +415,7 @@
   const olvidar = () => { estado = { mes: null, dia: null, proceso: null }; ultimo = null; };
 
   return {
-    montar, olvidar, htmlMes, htmlRejilla, htmlDia, htmlFila, htmlFicha, lugarDeEjecucion,
-    plazoManifestacion, diaPorDefecto, mesPorDefecto, mesDe, mesVecino, mesLegible, fechaLegible, diaSemanaLunes, diasDelMes, pesos,
+    montar, olvidar, htmlMes, htmlRejilla, htmlDia, htmlFila, htmlFicha, lugarDeEjecucion, textoAdjudicacion,
+    plazoManifestacion, diaPorDefecto, mesPorDefecto, mesDe, mesVecino, mesLegible, fechaLegible, fechaLegibleAnio, diaSemanaLunes, diasDelMes, pesos,
   };
 });

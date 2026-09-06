@@ -9544,3 +9544,174 @@ Dos mejoras del eje «datos y gráficos», sobre el árbol de `d988956`. Las fic
   el índice (`/api/sync/historico?reconstruir_indice=true` con el token, la URL de siempre) para que
   el hash publique `prorroga`; hasta entonces el modal no dice nada de la prórroga, y solo la dirá en
   las entidades cuya señal el delta haya acumulado desde el 16-ago-2026.
+
+### Lote «B9b-competencia-departamento» de la consultoría del 4-sep · M-COMP-01, M-DGF-08 (6-sep-2026)
+
+En una línea: la lectura del departamento que el índice de baja ya calculaba se EXPONE (`baja_departamento` en la tarjeta, plegada, sin entrar en la cascada que decide) y el perfil del competidor gana «Baja media con la que gana: X % (n procesos)» con la MISMA regla del índice de baja (`bajaDeFila` extraída de `acumular`, `subRegistro`, `encogerBaja`); y el índice de competencia publica por entidad cuánto tarda en adjudicar (días hábiles entre cierre y adjudicación, mediana y p75 solo con base) y cuántos declara desiertos, que el detalle espeja, el modal enseña como frecuencia natural y el calendario de cierres usa para decir cuándo adjudican —la fecha del pliego, si se leyó, gana a la estimada—.
+
+Dos mejoras de los ejes «competencia» y «datos y gráficos», sobre el árbol de `df82f0d`. Las fichas
+se escribieron sobre `d569946`; donde citaban una línea o un campo que el árbol desmiente, mandó el
+árbol.
+
+- **La lectura del departamento se expone, no decide (M-COMP-01).** `bajaDeMercado` sigue leyendo
+  TRES niveles y el hash `departamento` sigue sin entrar en su cascada (decisión del 24-ago-2026,
+  «solo para consulta»); lo nuevo es `bajaDepartamentoDe(indice, lic)`, que recorre
+  `departamento_familia` → `departamento` con el MISMO recorrido que la cascada —`resolverCascada`,
+  extraído de `bajaDeMercado` para que los dos bucles no puedan divergir—, el mismo `utilizable`
+  (mismo mínimo de 5, misma anulación) y el mismo refinamiento por modalidad. Devuelve `null` sin
+  departamento en el proceso (sin dato ≠ cero) y «sin dato» CON el conteo cuando no alcanza: el
+  umbral no se rebaja. La frase es un HECHO de la zona («En TOLIMA los que ganaron descontaron cerca
+  de 8% del presupuesto oficial (8 contratos ya adjudicados en este tipo de obra)»), no la
+  instrucción «Para tener opción hay que ofertar…» que da `mensajeDe`: dos instrucciones de precio en
+  la misma tarjeta se contradirían, y esta lectura acompaña a la que decide. Viaja en `op=listar`
+  como `baja_departamento` y **se anula sin token** con los otros tres `baja_*` (lib/publico): de
+  ella se despeja la mediana de la zona, que es la misma inteligencia de precio un nivel arriba. En
+  la tarjeta va bajo «Más detalles» (lo que se TOCA va plegado), después de los chips. **Medido en
+  producción según la memoria del 24-ago**: `departamento_familia` tiene 0 grupos (el corpus no trae
+  UNSPSC) y `departamento` 34, así que en producción la lectura saldrá casi siempre del departamento
+  entero («en todos los tipos de obra»), y así lo dice la frase.
+- **La baja media del adjudicatario sale de la regla del índice, y lo que se ENSEÑA es la medida
+  (M-COMP-01).** `acumular` de lib/indice_baja no era llamable sin mutar el acumulador: se extrajo
+  `bajaDeFila(lic)` → `{baja, descarte}` con los cinco filtros de higiene en el orden en que se
+  cuentan (misma clave que la meta: `sin_precio_base`, `sin_adjudicado`,
+  `adjudicatario_no_definido`, `bajo_30_pct`, `sobre_110_pct`), y `acumular` la llama. El perfil del
+  competidor acumula `{n, suma, hist}` por fila y publica `baja_media` con `subRegistro` (mínimo,
+  anulación, nivel) y, aparte, `encogida` con `encogerBaja` y la meta del índice. **La ficha pedía
+  «misma exclusión, mismo encogimiento, mismo umbral» y una aserción sobre el valor encogido; se
+  cumple, pero la cifra de pantalla es la MEDIDA**: la memoria del 16-ago fija que el encogimiento
+  «solo alimenta el factor de precio» y que «la tarjeta sigue con la mediana medida» — enseñar la
+  encogida sería enseñar el modelo y no el hecho. `encogida.mediana_pct` viaja para quien la
+  necesite y la cerradura exige que difiera de la cruda cuando el índice estimó un `m`. Sin ranking
+  de empresas: es el perfil de UNO con su n. **Hermano observado, no tocado**: `adjudicatarioReal`
+  toma el PRIMER candidato de NIT y «No Definido» delante de un `codigoproveedor` real deja la fila
+  fuera del índice de baja (el ganador identificado solo por código interno, caso GPS S.A.S de
+  producción). Es el lado conservador del módulo de precios (el falso positivo es el caro) y cambiarlo
+  movería las cifras del índice de producción: se deja como está y el perfil lo dice en
+  `descartados.adjudicatario_no_definido`.
+- **El plazo de adjudicación y los desiertos nacen en el índice de competencia, ANTES del descarte
+  por oferentes (M-DGF-08).** La ficha decía «junto a `dias` y `prorroga` en el acumulador» y el
+  árbol lo desmiente a medias: ese acumulador solo ve procesos con conteo final de oferentes, y un
+  desierto (o un adjudicado sin conteo) se descartaba en `sin_adjudicacion` antes de tocar la
+  entidad. Ahora `acumular` decide primero el DESENLACE (`esAdjudicado` → «adjudicado»,
+  `esDesierto` → «desierto», predicado nuevo y único: estado o fase con «desierto»; cancelado y
+  revocado no entran en ninguna base) y acumula en `e.hechos` `{adjudicados, desiertos, plazo:
+  {n, hist}}` — el plazo en DÍAS HÁBILES (`habilesEntre` de lib/habiles, se llama) entre
+  `diaCierreDe` y la fecha de adjudicación legible (`fechaOperable`), como histograma para que quepa
+  en el progreso reanudable. **Un proceso sin alguna fecha no entra ni como 0** y se cuenta en la
+  meta (`sin_fecha_cierre`, `sin_fecha_adjudicacion`, `sin_ninguna_fecha`); **una adjudicación el
+  mismo día del cierre o antes no es un plazo** (`no_posterior_al_cierre`). No se puso tope a los
+  plazos largos: un tope sería un umbral inventado, y la mediana y el p75 no lo necesitan.
+  `registroPublicado` publica `plazo_adjudicacion {base, adjudicados, mediana_dias_habiles,
+  p75_dias_habiles, min_procesos}` (derivados null bajo 5) y `desiertos {n, adjudicados, base,
+  pct, min_procesos}` (pct null bajo 5; los conteos siempre: son hechos), y `null` sin acumulador
+  (jamás {0, 0}). Consecuencia: **una entidad con desenlaces pero sin ningún proceso con conteo de
+  oferentes ahora existe en el hash con `procesos: 0`** (antes no existía): `competenciaDe` la
+  sigue tratando como «sin dato» (hay cerradura), `encogerEntidad` devuelve null con n = 0,
+  `meta.entidades` conserva su significado (entidades con oferentes) y la meta añade
+  `entidades_publicadas` y `plazo_adjudicacion.entidades_solo_hechos`. `percentilHistograma` se MOVIÓ
+  de lib/indice_baja a lib/indice_competencia (el módulo de abajo) y la baja lo importa y re-exporta:
+  una sola copia para dos histogramas de la misma forma. El lector es ÚNICO (`hechosDeRegistro`, con
+  `maquina` estricto y la guarda del mínimo también al LEER, porque el hash no se purga nunca) y la
+  búsqueda del registro se extrajo a `registroDe` para que `competenciaDe` y `hechosDeEntidad`
+  resuelvan la entidad por el mismo orden canónica → legado → alias.
+- **El detalle espeja, el censo cuadra (M-DGF-08).** `op=entidad` publica `plazo_adjudicacion` y
+  `desiertos` con `hechosDeRegistro(publicado)` — el dato publicado gana al calculado y no hay un
+  segundo predicado de «desierto» ni una segunda cuenta de días—; la caché del detalle sube a `v7`
+  (también la del perfil del competidor, que comparte la clave). `lib/columnas_historicas` censa la
+  fecha de cierre con `CIERRE_CANDIDATOS` de lib/negocio (la lista de quien la lee) y publica
+  `plazo_adjudicacion` con los mismos predicados del índice; hay cerradura de igualdad exacta censo =
+  índice sobre el mismo corpus (en el diagnóstico solo `≥`, porque el índice de la suite se construyó
+  antes de las extracciones posteriores y el corpus solo crece: la primera corrida lo enseñó,
+  285 ≠ 176).
+- **La pantalla dice frecuencias naturales y «sin dato» con lo que falta (M-DGF-08).** Modal de la
+  entidad: «Suele tardar **7 días de oficina** en adjudicar desde el cierre: la mitad de sus
+  procesos en ese plazo o menos, tres de cada cuatro en 9 días de oficina o menos (de 8 procesos
+  adjudicados, 8 traen la fecha de cierre y la de adjudicación)» y «Declaró desierto **1** de sus 9
+  procesos cerrados con resultado (adjudicados o desiertos)» / «No declaró desierto ninguno de…».
+  «Días de oficina» es el vocabulario que el calendario ya usaba para «hábiles»; ni «mediana» ni
+  «p75» ni «hábiles» llegan a la pantalla (hay cerradura). Bajo el mínimo: «sin dato (hacen falta 5
+  procesos …; hay 3)» — «1 de 3» se leería como un tercio y no es una medición—; sin ningún proceso
+  con las dos fechas no se dice nada («sin dato» no es «nunca»).
+- **Cuándo adjudican, en el calendario: pliego > histórico > se dice que no se sabe (M-DGF-08).** La
+  ficha pedía la estimación en public/calendario.js «SOLO si el cronograma del pliego no trae la
+  fecha», y el árbol no guardaba esa fecha en ningún sitio: `guardarFechaCronograma` solo
+  persistía la de manifestación. Se generalizó con `clave` (mismo hash de forma, misma poda; nueva
+  `CLAVE_CRONOGRAMA_ADJUDICACION = cronograma:adjudicacion`) y `op=cronograma` guarda también el
+  hito «adjudicación» del pliego (`adjudicacion_fecha_guardada`). `calendarioDeCierres` recibe
+  `fechasAdjudicacion` y `plazoDe` (el índice ya cargado por `cargarIndice` del listado, memoizado
+  por instancia; best-effort: sin índice, sin fecha) y cada fila lleva `adjudicacion`: `{fecha,
+  origen: "pliego"}`, o `{fecha: cierre + mediana con sumarHabiles, origen: "historico",
+  dias_habiles, base, adjudicados}` solo con la base mínima (también en el lector), o `null`. La
+  ficha del calendario gana la fila «Adjudicación»: «20 de noviembre de 2026 (fecha del cronograma
+  del pliego)» / «Alrededor del 6 de octubre de 2026, estimado por el histórico: la mitad de los 8
+  procesos de esta entidad con fecha de cierre y de adjudicación se adjudicó a más tardar 7 días de
+  oficina después del cierre» / «Sin fecha publicada ni historial suficiente de la entidad para
+  estimarla». La fecha lleva el AÑO (la adjudicación puede caer meses después). **No se añadió el
+  hito estimado al cronograma de Mis procesos ni al .ics**: una alarma a −7/−3/−1 días sobre una
+  estimación sería una alarma sobre un supuesto; queda declarado como hermano fuera de alcance. La
+  caché del pulso (`pulso:{perfil}`, 10 min) no lleva versión: el campo aparece solo al vencer.
+- **Cerraduras (tests/e2e.js)**: en el bloque del índice de baja, cinco alcaldías de Nariño con
+  familias distintas → `bajaDeMercado` sin dato y `bajaDepartamentoDe` con 5 por el departamento
+  entero, la familia del departamento cuando tiene base, CALDAS con 3 → sin dato y «hay 3», Vichada
+  → 0, sin departamento → null, usted y sin emoji; el perfil del adjudicatario sobre un corpus con
+  `m` finito: 6 procesos → mediana 12 y n 6, encogida = w·12 + (1−w)·global (w = 6/(6+m)) y ≠ 12,
+  5 con valor + 1 sin valor → n 5 y `descartados.sin_adjudicado` 1, 4 → null con «hacen falta 5»;
+  en el bloque del índice de competencia, el plazo recalculado desde las filas CRUDAS del histórico
+  con `habilesEntre` (sin pasar por el acumulador): Σ bases = `con_ambas_fechas` de la meta, mediana
+  y p75 por el mismo percentil entidad por entidad, Tolima {desierto 1 de 10 adjudicados, base del
+  plazo 8 < 10 porque los 2 sin cierre no cuentan}, la CAR con `procesos: 0` y sin dato para
+  `competenciaDe`, `hechosDeRegistro` sobre hash viejo → null, el lector anula bajo el mínimo,
+  `plazoAdjudicacionDe` (10 hábiles del 10 al 25-mar-2025 con el festivo del 24; sin cierre; sin
+  adjudicación; mismo día), `esDesierto`, `registroPublicado` con hechos, y censo = índice sobre el
+  mismo corpus; en el detalle, espejo exacto de `hechosDeRegistro(publicado)` por entidad; en el
+  listado, `baja_departamento` null sin token y con base con token (Tolima); en lib/publico, la
+  anulación; en el cronograma, el pliego con «Audiencia de adjudicación: 30 de octubre de 2026» →
+  guardado y leído del hash nuevo sin contaminar el de manifestación, `adjudicacionDeFila` (pliego
+  gana; 25-ago + 10 hábiles = 8-sep; bajo el mínimo null también en el lector; fecha ilegible del
+  pliego no se toma; sin cierre null), `calendarioDeCierres` con las tres filas y `agregarPulso`,
+  `textoAdjudicacion` y `htmlFicha` con los tres textos; en el pulso real, toda fila del calendario
+  trae `adjudicacion`; y las cuatro funciones reales de app.js (`htmlPlazoAdjudicacion`,
+  `htmlDesiertos`, `htmlBajaAdjudicatario`, `lineaBajaDepartamento`) con sus casos, sin jerga, sin
+  «probabilidad», usted, sin emoji, sin infraestructura, y su cableado en `pintarDetalle`,
+  `pintarAdjudicatario` y la tarjeta.
+- **Mutaciones** (con la prueba dentro; `node tests/e2e.js 1`): sin los once fuentes del lote (git
+  stash) cae en «indiceBaja.bajaDepartamentoDe is not a function»; `encogerBaja` sustituida por la
+  mediana cruda cae en «encogida 12 ≠ 11.2 (w=0.806, global 8)»; todo plazo contado como 0 días
+  («sin dato → cero») cae en «idu: mediana de días hábiles 0 !== 8»; la fecha del pliego sin
+  prioridad cae en «la fecha del pliego gana a la estimada».
+- **Medido en Chromium** (arnes_servidor del scratchpad: seis routers reales sobre el Upstash falso
+  y el corpus del mock; lo nuevo inyectado por `page.route` con la salida REAL de `detalleEntidad`,
+  `detalleAdjudicatario`, `bajaDepartamentoDe` y `adjudicacionDeFila` sobre un corpus sembrado; 1280
+  y 390, claro y oscuro): la tarjeta pinta «Cómo se adjudica en TOLIMA: 8 % de baja · 8 contratos.
+  En TOLIMA los que ganaron…» al abrir «Más detalles» (color rgb(92,89,82) sobre blanco / (177,173,164)
+  sobre (27,26,24)), el modal de la entidad las dos frases (plazo y desiertos) sin desborde, la
+  pulsación sobre el ganador pide `op=competidor` y el perfil pinta «Baja media con la que gana:
+  8 % …» con el 8 % en `<strong>`, y la ficha del calendario de Mi empresa los tres textos de
+  «Adjudicación» visibles; `scrollWidth === clientWidth` (1280/390), cero peticiones externas, usted,
+  sin emoji, sin infraestructura en pantalla, y en consola solo el 503 de `/api/apu?op=catalogo` del
+  propio arnés (no carga el catálogo APU), ajeno a este lote.
+- **Lo que las fichas decían y el árbol desmintió.** M-COMP-01: «la ficha del adjudicatario… en
+  lib/competencia_detalle.js:515» hoy ~L560; «lista blanca de campos publicados (L85)» no existe
+  como tal en `detalleAdjudicatario` (el cuerpo se construye entero; se añadió `baja_media` y
+  `que_es` lo declara); «agrupar por codigo_entidad donde el NIT sea compartido» no aplica al perfil
+  (agrupa por nombre de entidad, como ya hacía; la identidad del ganador sigue siendo
+  `claveAdjudicatario`); «pantalla ~L7781» hoy ~L3020; el encogimiento no puede ser la cifra de
+  pantalla (arriba). M-DGF-08: «columnas_historicas.js:69» hoy ~L75; el acumulador de la ficha
+  descartaba los desiertos antes (arriba); «lib/competencia_detalle.js:88-103 usa la fecha de
+  adjudicación solo para ordenar» seguía cierto; el pliego no guardaba su fecha de adjudicación
+  (hubo que guardarla); la ficha no listaba lib/manifestacion.js, lib/handlers/pliego/cronograma.js,
+  lib/handlers/perfil/entrada.js ni lib/publico.js, y los cuatro hicieron falta.
+- **No verificable desde aquí (6-sep-2026)**: la cobertura real de la pareja de fechas en el
+  histórico de producción (el paso 1 de la ficha se mide con `/api/diagnostico` →
+  `columnas_historicas.plazo_adjudicacion` tras desplegar), cuántas entidades tendrán plazo
+  publicable y cuántos desiertos conserva el histórico real, la baja media real de ningún
+  adjudicatario, y los grupos por departamento de producción (datos.gov.co y upstash.com responden
+  403 en el proxy de esta sesión).
+- **Pasos del dueño**: la ficha M-COMP-01 no trae ninguno. M-DGF-08 trae uno y del trabajo sale otro:
+  (1) tras desplegar, reconstruir el índice de COMPETENCIA para que el hash publique
+  `plazo_adjudicacion` y `desiertos` (`/api/sync/historico?reconstruir_indice=true` con el token, la
+  URL de siempre; hasta entonces el modal, el detalle y el calendario no dicen nada de esto — «sin
+  dato» no es «nunca»); la ficha citaba `/api/indice-baja?reconstruir=true`, que reconstruye el
+  índice de BAJA y no toca este; (2) las fechas de adjudicación del pliego solo existen para los
+  procesos cuyo cronograma se lea después de desplegar (Mis procesos → Cronograma), igual que la de
+  manifestación.
