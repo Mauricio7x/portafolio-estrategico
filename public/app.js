@@ -291,7 +291,15 @@
          NAVEGAN a una pestaña sin ser una («Ir a Licitaciones» del vacío de
          Mis procesos), y marcarlos como pestaña seleccionada le mentiría al
          lector de pantalla. */
-      if (b.getAttribute("role") === "tab") b.setAttribute("aria-selected", suya ? "true" : "false");
+      if (b.getAttribute("role") === "tab") {
+        b.setAttribute("aria-selected", suya ? "true" : "false");
+        /* FOCO MÓVIL (5-sep-2026): en un control de pestañas el tabulador entra
+           UNA vez —a la pestaña abierta— y dentro se mueve con las flechas. Sin
+           esto, el tabulador recorría los OCHO botones de las dos barras y las
+           flechas no hacían nada: se anunciaba «pestaña, 1 de 4» y el control no
+           respondía como tal, que es peor que no anunciar nada. */
+        b.tabIndex = suya ? 0 : -1;
+      }
     });
     moverIndicadorPestanas();
     if (empujarHash) { try { history.replaceState(null, "", `#/${destino}`); } catch { /* entorno raro */ } }
@@ -332,6 +340,25 @@
   document.addEventListener("click", (e) => {
     const b = e.target.closest("[data-tab]");
     if (b) activarPestana(b.getAttribute("data-tab"));
+  });
+  /* Las FLECHAS mueven entre las pestañas de SU barra (WAI-ARIA: un tablist se
+     recorre con ArrowLeft/ArrowRight/Home/End, no con el tabulador). Cada barra
+     es un anillo cerrado: las dos pintan las mismas cuatro secciones, pero el
+     foco no salta de la de escritorio a la del teléfono. */
+  document.addEventListener("keydown", (e) => {
+    const t = e.target && e.target.closest ? e.target.closest('[role="tab"]') : null;
+    const barra = t && t.closest('[role="tablist"]');
+    if (!barra) return;
+    const tabs = [...barra.querySelectorAll('[role="tab"]')];
+    const i = tabs.indexOf(t);
+    const j = e.key === "ArrowRight" ? (i + 1) % tabs.length
+      : e.key === "ArrowLeft" ? (i - 1 + tabs.length) % tabs.length
+        : e.key === "Home" ? 0
+          : e.key === "End" ? tabs.length - 1 : -1;
+    if (j < 0 || i < 0) return;
+    e.preventDefault();
+    activarPestana(tabs[j].getAttribute("data-tab"));
+    try { tabs[j].focus(); } catch { /* sin foco: la pestaña ya cambió */ }
   });
   window.addEventListener("hashchange", () => {
     let hash = "";
@@ -837,7 +864,7 @@
       return mostrar("estado-error", (cuerpo && cuerpo.error)
         || (cuerpo === null
           ? fraseDeFallo({ status: r.status })
-          : `Error del servidor (${r.status}). Intente de nuevo.`));
+          : fraseDeFallo({ status: r.status })));
     }
 
     reintentosSync = 0;
@@ -941,7 +968,14 @@
         : z.nivel === "cerca" ? "bg-green-100 text-green-800"
           : z.nivel === "lejos" ? "bg-amber-100 text-amber-800"
             : "bg-gray-100 text-gray-600";
-    return chip(esc(z.etiqueta), clases, z.mensaje || "");
+    /* Lo que DECIDE va en el texto, no en el `title` (en el teléfono no hay
+       tooltip): el color ámbar por orden público no dice por qué es ámbar. Se
+       usan las MISMAS palabras que la guía de Mis procesos ya pinta para la
+       misma zona, no unas equivalentes. La redacción larga del servidor
+       (`z.mensaje`, los kilómetros y de dónde salen) se queda en el `title`:
+       la etiqueta ya lleva la distancia y la base. */
+    const alerta = `${z.dificil_acceso ? " · difícil acceso" : ""}${z.verificar_orden_publico ? " · verifique la seguridad de la zona" : ""}`;
+    return chip(esc(z.etiqueta) + alerta, clases, z.mensaje || "");
   }
 
   /* Cierre con CUENTA REGRESIVA: «Cierra 15 sept. 2026» obliga a calcular
@@ -1155,10 +1189,15 @@
      aplicación (`Glosario.ESTADO`, 5-sep-2026): las mismas parejas fondo+texto
      de siempre, pero decididas en un solo sitio. Un quinto tono nuevo aquí
      volvería a partir el lenguaje de estado en dos. */
-  const VERDE = window.Glosario.ESTADO.cumple.chip;
-  const AMBAR = window.Glosario.ESTADO.revisar.chip;
-  const ROJO = window.Glosario.ESTADO.no_cumple.chip;
-  const GRIS = window.Glosario.ESTADO.sin_dato.chip;
+  /* SE BUSCA AL USARLO, NO AL CARGAR (5-sep-2026). Leer
+     `window.Glosario.ESTADO.cumple.chip` a nivel de módulo hacía que un
+     glosario que no llegara (404, red institucional que corta el archivo, un
+     error de sintaxis) lanzara un TypeError MIENTRAS SE EVALÚA el IIFE: la
+     aplicación entera moría con la pantalla limpia y la consola limpia. Es la
+     misma clase de fallo mudo que costó el incidente del CDN, y contradecía el
+     comentario que este mismo módulo lleva escrito arriba. Diferido, un
+     glosario ausente rompe la función que lo necesita, no el módulo. */
+  const EST_ = () => window.Glosario.ESTADO;
 
   /* El estado de una puerta se decide UNA sola vez: el chip de color y el
      renglón de texto lo LEEN de aquí. Dos escaleras «equivalentes hoy»
@@ -1174,10 +1213,11 @@
   function badgePuerta(etiqueta, puerta) {
     const p = puerta || {};
     const e = estadoPuerta(p);
-    if (e === "sin_dato") return chip(`● ${etiqueta} ?`, GRIS, p.mensaje || "Sin datos para evaluar este requisito");
-    if (e === "no_cumple") return chip(`● ${etiqueta} ✗`, ROJO, p.mensaje || "");
-    if (e === "revisar") return chip(`● ${etiqueta} ~`, AMBAR, p.mensaje || "");
-    return chip(`● ${etiqueta} ✓`, VERDE, p.mensaje || "");
+    const EST = EST_();
+    if (e === "sin_dato") return chip(`● ${etiqueta} ?`, EST.sin_dato.chip, p.mensaje || "Sin datos para evaluar este requisito");
+    if (e === "no_cumple") return chip(`● ${etiqueta} ✗`, EST.no_cumple.chip, p.mensaje || "");
+    if (e === "revisar") return chip(`● ${etiqueta} ~`, EST.revisar.chip, p.mensaje || "");
+    return chip(`● ${etiqueta} ✓`, EST.cumple.chip, p.mensaje || "");
   }
 
   /* ══════════ El PORQUÉ de cada puerta, en texto (5-sep-2026) ══════════
@@ -1830,7 +1870,7 @@
       $("paa-resumen").textContent = (cuerpo && cuerpo.error)
         || (cuerpo === null
           ? fraseDeFallo({ status: r.status })
-          : `No se pudo consultar el PAA (${r.status}).`);
+          : fraseDeFallo({ status: r.status }));
       return;
     }
 
@@ -2536,7 +2576,7 @@
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`)}</p>`;
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }))}</p>`;
       return;
     }
     pintarDesglose(cuerpo);
@@ -2561,7 +2601,7 @@
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`)}</p>`;
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }))}</p>`;
       return;
     }
     pintarDetalle(cuerpo);
@@ -2631,7 +2671,7 @@
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`)}</p>`;
+      $("modal-cuerpo").innerHTML = `<p class="py-6 text-center text-red-600">${esc((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }))}</p>`;
       return;
     }
     pintarAdjudicatario(cuerpo);
@@ -2783,7 +2823,7 @@
     if (!id) return "";
     const est = guardados.get(id);
     return est
-      ? `<button type="button" class="btn-guardar rounded-lg px-3 py-1 text-xs font-semibold text-white transition" style="background: var(--accent);" data-id="${esc(id)}" title="Guardado en Mis procesos (${esc(est === "presentado" ? "me presenté" : est === "descartado" ? "descartado" : "me interesa")}). Pulse para quitarlo.">Guardado ✓</button>`
+      ? `<button type="button" class="btn-guardar bg-gray-900 px-3 py-1 text-xs font-semibold transition" data-id="${esc(id)}" title="Guardado en Mis procesos (${esc(est === "presentado" ? "me presenté" : est === "descartado" ? "descartado" : "me interesa")}). Pulse para quitarlo.">Guardado ✓</button>`
       : `<button type="button" class="btn-guardar rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold transition hover:bg-gray-50" data-id="${esc(id)}" title="Guardar en Mis procesos para seguirle el cronograma y, cuando cierre, ver quiénes se presentaron">Guardar</button>`;
   }
   function filaDeLista(id) {
@@ -2898,13 +2938,27 @@
      deciden ni el color ni la palabra — los leen de `Glosario.ESTADO`, que es
      el mismo que pintan los badges de la tarjeta de Licitaciones. Antes
      «revisar» era ámbar en ESTADO_REQ y en EXIG_CLR y AZUL en ESTADO_HECHO:
-     el mismo estado, dos colores, en la misma pantalla. */
-  const EST = window.Glosario.ESTADO;
-  const ESTADO_REQ = { cumple: [EST.cumple.clase, EST.cumple.largo], revisar: [EST.revisar.clase, EST.revisar.largo], no_cumple: [EST.no_cumple.clase, EST.no_cumple.largo], pendiente: [EST.pendiente.clase, EST.pendiente.largo], sin_dato: [EST.sin_dato.clase, EST.sin_dato.largo] };
-  /* `riesgo` pinta el ÁMBAR de «confírmelo» con su propia palabra: es la misma
-     señal de «mírelo antes de firmar», no un sexto color. `dato` es un hecho
-     leído del pliego que no juzga nada: gris y sin etiqueta. */
-  const ESTADO_HECHO = { cumple: [EST.cumple.clase, EST.cumple.largo], no_cumple: [EST.no_cumple.clase, EST.no_cumple.largo], riesgo: [EST.revisar.clase, "Riesgo"], revisar: [EST.revisar.clase, "Confírmelo"], dato: [EST.sin_dato.clase, ""] };
+     el mismo estado, dos colores, en la misma pantalla.
+
+     Las cuatro se ARMAN AL USARLAS, no al cargar el módulo (5-sep-2026):
+     `const EST = window.Glosario.ESTADO` a nivel de IIFE mataba app.js entero
+     —TypeError durante la evaluación, pantalla y consola limpias— si
+     /glosario.js no llegaba. Se arman una vez y se recuerdan. */
+  let _tablasSemaforo = null;
+  function tablasDelSemaforo() {
+    const EST = window.Glosario.ESTADO;
+    const ESTADO_REQ = { cumple: [EST.cumple.clase, EST.cumple.largo], revisar: [EST.revisar.clase, EST.revisar.largo], no_cumple: [EST.no_cumple.clase, EST.no_cumple.largo], pendiente: [EST.pendiente.clase, EST.pendiente.largo], sin_dato: [EST.sin_dato.clase, EST.sin_dato.largo] };
+    /* `riesgo` pinta el ÁMBAR de «confírmelo» con su propia palabra: es la misma
+       señal de «mírelo antes de firmar», no un sexto color. `dato` es un hecho
+       leído del pliego que no juzga nada: gris y sin etiqueta. */
+    const ESTADO_HECHO = { cumple: [EST.cumple.clase, EST.cumple.largo], no_cumple: [EST.no_cumple.clase, EST.no_cumple.largo], riesgo: [EST.revisar.clase, "Riesgo"], revisar: [EST.revisar.clase, "Confírmelo"], dato: [EST.sin_dato.clase, ""] };
+    const CHIP_ESTADO = { cumple: EST.cumple.corto, revisar: EST.revisar.corto, no_cumple: EST.no_cumple.corto, pendiente: EST.pendiente.corto, sin_dato: EST.sin_dato.corto };
+    /* `dato` es una cifra leída que no juzga (azul, como «por conseguir»: hay que
+       hacer algo con ella) y `por_leer` es «todavía no lo sé», o sea sin dato. */
+    const EXIG_CLR = { cumple: EST.cumple.clase, no_cumple: EST.no_cumple.clase, revisar: EST.revisar.clase, dato: EST.pendiente.clase, por_leer: EST.sin_dato.clase, sin_dato: EST.sin_dato.clase };
+    return { EST, ESTADO_REQ, ESTADO_HECHO, CHIP_ESTADO, EXIG_CLR };
+  }
+  const TSEM = () => (_tablasSemaforo || (_tablasSemaforo = tablasDelSemaforo()));
   /* ── Los documentos del proceso: en qué va la lectura, en una línea ──
      Lo que se lee sale de `g.documentos` (servidor); el progreso de la lectura
      en curso vive en `docsProgreso` (navegador) y sobrevive a los repintados. */
@@ -2945,7 +2999,7 @@
     const docs = g.documentos || {};
     const enlace = docs.enlace_secop && urlSegura(docs.enlace_secop) ? `<a href="${esc(urlSegura(docs.enlace_secop))}" target="_blank" rel="noopener noreferrer" class="underline">Abrir en SECOP II</a>` : "";
     const bloque = (c) => {
-      const cifras = (c.cifras || []).map((x) => { const clr = EXIG_CLR[x.estado] || EST.sin_dato.clase; return `<li class="flex flex-wrap items-baseline gap-x-2"><span class="${clr}" aria-hidden="true">●</span><span class="text-gray-600">${esc(x.titulo)}:</span><span class="num font-medium">${esc(x.exige)}</span>${x.suyo ? `<span class="text-gray-500">· usted ${esc(x.suyo)}</span>` : ""}${x.estado_legible ? `<span class="text-[11px] ${clr}">${esc(x.estado_legible)}</span>` : ""}</li>`; }).join("");
+      const T = TSEM(); const cifras = (c.cifras || []).map((x) => { const clr = T.EXIG_CLR[x.estado] || T.EST.sin_dato.clase; return `<li class="flex flex-wrap items-baseline gap-x-2"><span class="${clr}" aria-hidden="true">●</span><span class="text-gray-600">${esc(x.titulo)}:</span><span class="num font-medium">${esc(x.exige)}</span>${x.suyo ? `<span class="text-gray-500">· usted ${esc(x.suyo)}</span>` : ""}${x.estado_legible ? `<span class="text-[11px] ${clr}">${esc(x.estado_legible)}</span>` : ""}</li>`; }).join("");
       return `<div class="guia-caja p-3">
         <p class="text-xs font-medium uppercase tracking-wide text-gray-500">${esc(c.titulo)}</p>
         ${c.texto ? `<blockquote class="mt-1.5 text-sm leading-relaxed text-gray-800" style="border-left: 3px solid var(--accent); padding-left: 10px;">«${esc(c.texto)}»</blockquote><p class="mt-1.5 text-[11px] text-gray-400">${esc(c.documento || "")}${c.pagina != null ? `, pág. ${c.pagina}` : ""}</p>`
@@ -2956,14 +3010,10 @@
     return `<div class="space-y-2">${lista.map(bloque).join("")}</div>`;
   }
   const CHIP_REQ = { registro: "Registro", experiencia: "Experiencia", capacidad: "Capacidad", caja: "Caja", financieros: "Indicadores", manifestacion: "Aviso de interés" };
-  const CHIP_ESTADO = { cumple: EST.cumple.corto, revisar: EST.revisar.corto, no_cumple: EST.no_cumple.corto, pendiente: EST.pendiente.corto, sin_dato: EST.sin_dato.corto };
-  /* `dato` es una cifra leída que no juzga (azul, como «por conseguir»: hay que
-     hacer algo con ella) y `por_leer` es «todavía no lo sé», o sea sin dato. */
-  const EXIG_CLR = { cumple: EST.cumple.clase, no_cumple: EST.no_cumple.clase, revisar: EST.revisar.clase, dato: EST.pendiente.clase, por_leer: EST.sin_dato.clase, sin_dato: EST.sin_dato.clase };
   function htmlVeredicto(g) {
     const chips = (g.requisitos || []).filter((q) => CHIP_REQ[q.clave]).map((q) => {
-      const [clr] = ESTADO_REQ[q.estado] || ESTADO_REQ.sin_dato;
-      return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);" title="${esc(q.detalle || "")}"><span class="${clr}" aria-hidden="true">●</span>${esc(CHIP_REQ[q.clave])}: <span class="${clr}">${esc(CHIP_ESTADO[q.estado] || q.estado)}</span></span>`;
+      const T = TSEM(); const [clr] = T.ESTADO_REQ[q.estado] || T.ESTADO_REQ.sin_dato;
+      return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);" title="${esc(q.detalle || "")}"><span class="${clr}" aria-hidden="true">●</span>${esc(CHIP_REQ[q.clave])}: <span class="${clr}">${esc(T.CHIP_ESTADO[q.estado] || q.estado)}</span></span>`;
     });
     return chips.length ? `<div class="flex flex-wrap gap-1.5">${chips.join("")}</div>` : "";
   }
@@ -2975,7 +3025,7 @@
     const docs = g.documentos || {};
     const enlace = docs.enlace_secop && urlSegura(docs.enlace_secop) ? ` <a href="${esc(urlSegura(docs.enlace_secop))}" target="_blank" rel="noopener noreferrer" class="underline">Abrir en SECOP II</a>` : "";
     const fila = (x) => {
-      const clr = EXIG_CLR[x.estado] || EST.sin_dato.clase;
+      const T = TSEM(); const clr = T.EXIG_CLR[x.estado] || T.EST.sin_dato.clase;
       /* forma corta del dinero en la celda; la cifra exacta, en el título */
       const cifra = x.tipo_valor === "dinero" && Number.isFinite(Number(x.exige_valor)) ? fmtCorto(Number(x.exige_valor)) : x.exige;
       const titulo = [x.tipo_valor === "dinero" ? `Pide ${x.exige}.` : "", x.nota, x.cita ? `«${x.cita}»` : ""].filter(Boolean).join(" ");
@@ -3015,13 +3065,13 @@
        entera en el `title` — en el teléfono, donde más se consulta esta guía,
        eso es no tenerla. Ahora todos los hechos enseñan su texto y su cita
        literal; el `title` se conserva como redundancia de escritorio. */
-    const liOjo = (h) => { const [clr, eti] = ESTADO_HECHO[h.estado] || ESTADO_HECHO.dato; return `<li class="flex gap-2" title="${esc([h.texto, h.cita ? `«${h.cita}»` : ""].filter(Boolean).join(" "))}"><span class="${clr}" aria-hidden="true">●</span><span class="min-w-0"><span class="font-medium">${esc(h.titulo)}${h.valor_legible ? `: ${esc(h.valor_legible)}` : ""}</span>${eti ? ` <span class="text-[11px] ${clr}">${eti}</span>` : ""}${h.texto ? `<span class="block text-xs text-gray-600">${esc(h.texto)}</span>` : ""}${h.cita ? `<q class="block text-xs italic text-gray-500">${esc(h.cita)}</q>` : ""}<span class="block text-[11px] text-gray-400">${esc(h.documento || "")}${h.pagina != null ? `, pág. ${h.pagina}` : ""}</span></span></li>`; };
+    const liOjo = (h) => { const T = TSEM(); const [clr, eti] = T.ESTADO_HECHO[h.estado] || T.ESTADO_HECHO.dato; return `<li class="flex gap-2" title="${esc([h.texto, h.cita ? `«${h.cita}»` : ""].filter(Boolean).join(" "))}"><span class="${clr}" aria-hidden="true">●</span><span class="min-w-0"><span class="font-medium">${esc(h.titulo)}${h.valor_legible ? `: ${esc(h.valor_legible)}` : ""}</span>${eti ? ` <span class="text-[11px] ${clr}">${eti}</span>` : ""}${h.texto ? `<span class="block text-xs text-gray-600">${esc(h.texto)}</span>` : ""}${h.cita ? `<q class="block text-xs italic text-gray-500">${esc(h.cita)}</q>` : ""}<span class="block text-[11px] text-gray-400">${esc(h.documento || "")}${h.pagina != null ? `, pág. ${h.pagina}` : ""}</span></span></li>`; };
     const ojoVisible = ojo.slice(0, 5), ojoResto = ojo.slice(5);
     const ojoHtml = ojo.length ? `<div><h4 class="font-semibold tracking-tight">Ojo con lo que dice el pliego</h4><ul class="mt-1.5 space-y-1.5">${ojoVisible.map(liOjo).join("")}</ul>${ojoResto.length ? `<details class="mt-1.5"><summary class="cursor-pointer text-xs text-gray-500">${ojoResto.length} más</summary><ul class="mt-1.5 space-y-1.5">${ojoResto.map(liOjo).join("")}</ul></details>` : ""}</div>` : "";
     /* trámites y fechas: los pasos con fecha y, debajo, lo que hay que conseguir (lo que no está en los chips del veredicto) */
     const pasos = (g.pasos || []).map((s) => `<li class="flex gap-2"><span class="w-24 shrink-0 text-xs text-gray-500">${s.cuando_legible ? esc(s.cuando_legible) : "después"}</span><div class="min-w-0"><span class="font-medium">${esc(s.titulo)}</span><p class="text-xs text-gray-600">${esc(s.detalle)}</p></div></li>`).join("");
-    const conseguir = (g.requisitos || []).filter((q) => !CHIP_REQ[q.clave]).map((q) => { const [clr, eti] = ESTADO_REQ[q.estado] || ESTADO_REQ.sin_dato; return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(q.titulo)}</span> <span class="text-[11px] ${clr}">${eti}</span><p class="text-xs text-gray-600">${esc(q.detalle)}</p>${q.donde ? `<p class="text-[11px] text-gray-400">Dónde: ${esc(q.donde)}</p>` : ""}</div></li>`; }).join("");
-    const verificados = (g.requisitos || []).filter((q) => CHIP_REQ[q.clave]).map((q) => { const [clr, eti] = ESTADO_REQ[q.estado] || ESTADO_REQ.sin_dato; return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(q.titulo)}</span> <span class="text-[11px] ${clr}">${eti}</span><p class="text-xs text-gray-600">${esc(q.detalle)}</p>${q.donde ? `<p class="text-[11px] text-gray-400">Dónde: ${esc(q.donde)}</p>` : ""}</div></li>`; }).join("");
+    const conseguir = (g.requisitos || []).filter((q) => !CHIP_REQ[q.clave]).map((q) => { const T = TSEM(); const [clr, eti] = T.ESTADO_REQ[q.estado] || T.ESTADO_REQ.sin_dato; return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(q.titulo)}</span> <span class="text-[11px] ${clr}">${eti}</span><p class="text-xs text-gray-600">${esc(q.detalle)}</p>${q.donde ? `<p class="text-[11px] text-gray-400">Dónde: ${esc(q.donde)}</p>` : ""}</div></li>`; }).join("");
+    const verificados = (g.requisitos || []).filter((q) => CHIP_REQ[q.clave]).map((q) => { const T = TSEM(); const [clr, eti] = T.ESTADO_REQ[q.estado] || T.ESTADO_REQ.sin_dato; return `<li class="flex gap-2"><span class="${clr}" aria-hidden="true">●</span><div class="min-w-0"><span class="font-medium">${esc(q.titulo)}</span> <span class="text-[11px] ${clr}">${eti}</span><p class="text-xs text-gray-600">${esc(q.detalle)}</p>${q.donde ? `<p class="text-[11px] text-gray-400">Dónde: ${esc(q.donde)}</p>` : ""}</div></li>`; }).join("");
     const consejos = (g.consejos || []).map((c) => `<li><span class="font-medium">${esc(c.titulo)}</span>${c.por_que_aqui ? ` <span class="text-[11px] text-gray-400">(${esc(c.por_que_aqui)})</span>` : ""}<p class="text-xs text-gray-600">${esc(c.detalle)}</p></li>`).join("");
     const d = g.dinero || {};
     const fila = (k, v) => (v != null ? `<tr><td class="py-1 pr-3 text-gray-600">${k}</td><td class="py-1 text-right num">${esc(fmtCorto(v))}</td></tr>` : "");
@@ -3044,7 +3094,7 @@
     const dictamen = `<div class="guia-caja p-3">
         <div data-seg-dictamen="${esc(p.id)}"><p class="text-xs font-medium uppercase tracking-wide text-gray-500">Dictamen del pliego</p>
         <p class="mt-1 text-xs text-gray-600">Si conviene presentarse y por qué, con citas por página del pliego leído.</p>
-        <button type="button" data-seg-dictamen-ver="${esc(p.id)}" class="mt-2 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition" style="background: var(--accent);">Ver el dictamen del pliego</button></div>
+        <button type="button" data-seg-dictamen-ver="${esc(p.id)}" class="mt-2 bg-gray-900 px-3 py-1.5 text-xs font-medium transition">Ver el dictamen del pliego</button></div>
         <p class="mt-2 text-[13px] text-gray-500">¿El pliego no se leyó solo? <button type="button" data-seg-abrir-lector="${esc(p.id)}" class="underline">Cargar el pliego (PDF)</button> lo abre en Precios con el proceso ya puesto.</p>
       </div>`;
     const docs = g.documentos || null;
@@ -3054,8 +3104,16 @@
     /* «el más próximo» SOLO si el pliego trae la fecha: aquí no se inventa un
        día ni se deduce de un techo legal. Se toma la primera que no ha pasado;
        si todas quedaron atrás, el pliegue va sin fecha. */
+    /* EL «HOY» ES EL DE COLOMBIA, NO EL DE GREENWICH (5-sep-2026). Con
+       `toISOString()` la fecha UTC ya es la de mañana desde las 19:00 en Bogotá
+       (UTC−5), que es justo cuando el dueño revisa: un trámite que vence HOY se
+       descartaba por «pasado» y el pliegue anunciaba el siguiente, o ninguno.
+       Es el mismo cuidado que `fechaCorta` toma con el `T12:00:00` y el que ya
+       usa public/portada.js. «en-CA» da la fecha en YYYY-MM-DD, que es el
+       formato con el que se comparan las del servidor. */
+    const hoyCol = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
     const proximoPaso = (g.pasos || []).map((s) => s.cuando).filter(Boolean).map((f) => String(f).slice(0, 10)).sort()
-      .find((f) => f >= new Date().toISOString().slice(0, 10)) || null;
+      .find((f) => f >= hoyCol) || null;
     return `<details class="mt-3 rounded-xl ring-1 ring-inset ring-gray-900/5" data-seg-guia="${esc(p.id)}" style="background: var(--bg-inset);"${abierta ? " open" : ""}>
       <summary class="cursor-pointer px-3 py-2 text-sm font-medium"><span>Qué necesita para presentarse: lo que dice el pliego${r.frase ? ` <span class="text-xs font-normal text-gray-500">· ${esc(r.frase)}</span>` : ""}${g.completa === false ? ` <span class="text-[11px] font-normal text-amber-900">· guía parcial: el proceso ya no está en la lista viva</span>` : ""}</span></summary>
       <div class="space-y-4 px-3 pb-3 text-sm">
@@ -3114,7 +3172,7 @@
     res.innerHTML = todos.length ? [
       `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${todos.length} guardado${todos.length === 1 ? "" : "s"}</span>`,
       `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${rs.abiertos} abierto${rs.abiertos === 1 ? "" : "s"}</span>`,
-      rs.presentados ? `<span class="rounded-full px-2.5 py-1 text-white" style="background: var(--accent);">${rs.presentados} presentado${rs.presentados === 1 ? "" : "s"}</span>` : "",
+      rs.presentados ? `<span class="bg-gray-900 rounded-full px-2.5 py-1">${rs.presentados} presentado${rs.presentados === 1 ? "" : "s"}</span>` : "",
       rs.cambios_pendientes ? `<span class="rounded-full bg-red-100 px-2.5 py-1 text-red-700">${rs.cambios_pendientes} cambio${rs.cambios_pendientes === 1 ? "" : "s"} sin ver</span>` : "",
       rs.manifestaciones_abiertas ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${rs.manifestaciones_abiertas} en los que todavía puede avisar que le interesa</span>` : "",
       rs.avisos_proximos ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${rs.avisos_proximos} aviso${rs.avisos_proximos === 1 ? "" : "s"} esta semana</span>` : "",
@@ -3157,7 +3215,7 @@
             <p class="font-medium leading-snug">${urlSegura(pr.url) ? `<a href="${esc(urlSegura(pr.url))}" target="_blank" rel="noopener noreferrer" class="hover:underline">${esc(pr.nombre || p.id)}</a>` : esc(pr.nombre || p.id)}</p>
             <p class="text-xs text-gray-500">${esc(pr.entidad || "—")}${pr.departamento ? ` · ${esc(pr.departamento)}` : ""}${pr.presupuesto_cop ? ` · ${esc(fmtCorto(pr.presupuesto_cop))}` : ""}${p.estado_secop ? ` · ${esc(p.estado_secop)}` : ""}${p.adjudicado ? " · adjudicado" : ""}</p>
           </div>
-          <select data-seg-estado="${esc(p.id)}" class="control-select rounded-lg text-xs" aria-label="Etapa de este proceso en su seguimiento" title="Etapa en su seguimiento">
+          <select data-seg-estado="${esc(p.id)}" class="control-select rounded-lg" aria-label="Etapa de este proceso en su seguimiento" title="Etapa en su seguimiento">
             ${estados.map((e) => `<option value="${e}" ${p.estado === e ? "selected" : ""}>${esc(r.estados[e] || e)}</option>`).join("")}
           </select>
         </div>
@@ -3167,7 +3225,7 @@
         ${htmlGuia(p)}
         <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
           <button type="button" data-seg-ics="${esc(p.id)}" class="rounded-lg border border-gray-300 px-2.5 py-1 font-medium transition hover:bg-gray-50" title="Descargar el cronograma con alarmas a 7, 3 y 1 días (formato de calendario)">Calendario (.ics)</button>
-          ${p.proponentes_disponibles ? `<button type="button" data-seg-detalle="${esc(p.id)}" class="rounded-lg px-2.5 py-1 font-medium text-white transition" style="background: var(--accent);">Quiénes se presentaron</button>` : `<span class="text-gray-400" title="Los proponentes solo aparecen en la fuente pública tras la apertura de ofertas">Los proponentes se conocen cuando cierra</span>`}
+          ${p.proponentes_disponibles ? `<button type="button" data-seg-detalle="${esc(p.id)}" class="bg-gray-900 px-2.5 py-1 font-medium transition">Quiénes se presentaron</button>` : `<span class="text-gray-400" title="Los proponentes solo aparecen en la fuente pública tras la apertura de ofertas">Los proponentes se conocen cuando cierra</span>`}
           <button type="button" data-seg-quitar="${esc(p.id)}" class="ml-auto text-gray-400 hover:text-red-600">Quitar</button>
         </div>
         <div data-seg-caja="${esc(p.id)}" class="mt-3 hidden"></div>
@@ -4831,7 +4889,7 @@
         ${(og.fuentes || []).length ? `<p class="mt-2 text-xs font-medium text-gray-500">Fuentes</p><ul class="mt-0.5 space-y-0.5 text-[11px] text-gray-500">${og.fuentes.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
       </div>`;
     caja.innerHTML = `<div class="divide-y divide-gray-100 rounded-xl bg-gray-50 ring-1 ring-inset ring-gray-900/5">${filasHtml}</div>${analisis}
-      <div class="mt-4 flex flex-wrap items-center gap-3">${aplicables.length ? `<button type="button" data-ia-aplicar="1" class="rounded-xl px-6 py-3 text-base font-semibold text-white transition" style="background: var(--accent);">Usar estos ${aplicables.length} precios y calcular</button>` : ""}<span class="text-xs text-gray-500">Los precios que ya traía su archivo se respetan. Cada precio aplicado se marca «Buscado por la IA» y, al guardar, queda como precio suyo.</span></div>`;
+      <div class="mt-4 flex flex-wrap items-center gap-3">${aplicables.length ? `<button type="button" data-ia-aplicar="1" class="bg-gray-900 px-6 py-3 text-base font-semibold transition">Usar estos ${aplicables.length} precios y calcular</button>` : ""}<span class="text-xs text-gray-500">Los precios que ya traía su archivo se respetan. Cada precio aplicado se marca «Buscado por la IA» y, al guardar, queda como precio suyo.</span></div>`;
     caja.classList.remove("hidden");
   }
   async function consultarIa({ silencioso = false } = {}) {
@@ -6164,7 +6222,7 @@
       if (!activo) return null;
 
       if (r && (r.status === 401 || r.status === 403)) {
-        mensaje("El despliegue rechazó la petición (401/403). Si tiene Password Protection activa, inicie sesión en Vercel en esta misma pestaña y reintente.", "error");
+        mensaje(fraseDeFallo({ status: r.status }), "error");
         return null;
       }
       if (r && r.ok && cuerpo && cuerpo.ok) return cuerpo;
@@ -6175,7 +6233,7 @@
         return null;
       }
 
-      const detalle = fallo || (cuerpo && cuerpo.error) || (r ? `HTTP ${r.status}` : "respuesta ilegible");
+      const detalle = fallo || (cuerpo && cuerpo.error) || (r ? fraseDeFallo({ status: r.status }) : "respuesta ilegible");
       if (intento === BACKOFF_MS.length) {
         mensaje(`La sincronización falló tras ${BACKOFF_MS.length} reintentos: ${detalle}. El avance quedó guardado: puede volver a iniciar.`, "error");
         bitacora(`✘ ${detalle} — reintentos agotados`);
@@ -6578,7 +6636,7 @@
       return avisoDashboard(`${esc((cuerpo && cuerpo.error) || "Servicio no disponible")}. Puede iniciar una carga en la sección de sincronización, arriba.`, "error");
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      return avisoDashboard(esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`), "error");
+      return avisoDashboard(esc((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status })), "error");
     }
     avisoDashboard(cuerpo.mensaje ? esc(cuerpo.mensaje) : null, "aviso");
     ultimoResumen = cuerpo;
@@ -6656,7 +6714,7 @@
         { headers: { "x-historico-token": token, Accept: "application/json" }, cache: "no-store" });
       const c = await leerJson(r);
       if (!r.ok || !c.ok) {
-        decir(r.status === 401 ? msg401(c) : (c.error || `Error ${r.status}`), "bg-red-50 text-red-700");
+        decir(r.status === 401 ? msg401(c) : (c.error || fraseDeFallo({ status: r.status })), "bg-red-50 text-red-700");
       } else if (c.reconstruido && c.reconstruido.enCurso) {
         decir("Ya hay una reconstrucción en curso: espere a que termine.", "bg-amber-50 text-amber-800");
       } else if (c.reconstruido && c.reconstruido.done === false) {
@@ -6693,16 +6751,25 @@
   const sumaCubetas = (cubetas, claves) => (cubetas || [])
     .filter((x) => !claves || claves.includes(x.clave))
     .reduce((a, x) => a + (Number.isFinite(x.n) ? x.n : 0), 0);
+  /* LA FRASE DICE LO QUE LAS CUBETAS CUENTAN (corregido el 5-sep-2026). Decía
+     «de las N con fecha de cierre publicada»: los procesos YA CERRADOS también
+     la publican y viven en OTRA cubeta (`ya_cerro`), fuera de estas cuatro; la
+     base es «las que todavía no han cerrado». Y decía «cierran este mes»
+     sumando dos ventanas RODANTES (7 y 14 días) con una tercera topada por el
+     fin de mes del CALENDARIO (lib/handlers/perfil/resumen.js): cerca de fin de
+     mes contaba como «de este mes» cierres del siguiente. Se dicen ahora las
+     dos ventanas que están definidas sin ambigüedad —los próximos 7 días y los
+     7 que les siguen—, que además son las únicas urgentes. */
   function fraseUrgencia(cubetas) {
     const conFecha = sumaCubetas(cubetas);
     if (!conFecha) return "";
-    const esteMes = sumaCubetas(cubetas, ["esta_semana", "dos_semanas", "este_mes"]);
     const semana = sumaCubetas(cubetas, ["esta_semana"]);
-    const base = `de las ${fmt.format(conFecha)} con fecha de cierre publicada`;
-    return (esteMes
-      ? `${fmt.format(esteMes)} ${base} cierra${esteMes === 1 ? "" : "n"} este mes`
-      : `Ninguna ${base} cierra este mes`)
-      + (semana ? `; ${fmt.format(semana)} esta semana` : "") + ".";
+    const dosSemanas = sumaCubetas(cubetas, ["dos_semanas"]);
+    const base = `de las ${fmt.format(conFecha)} que todavía no han cerrado`;
+    return (semana
+      ? `${fmt.format(semana)} ${base} cierra${semana === 1 ? "" : "n"} en los próximos 7 días`
+      : `Ninguna ${base} cierra en los próximos 7 días`)
+      + (dosSemanas ? `; otras ${fmt.format(dosSemanas)}, en los 7 siguientes` : "") + ".";
   }
   function fraseCompetencia(cubetas) {
     const total = sumaCubetas(cubetas);
@@ -7016,7 +7083,7 @@
       return erroresRup(cuerpo.errores);
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      return mensajeRup((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`, "error");
+      return mensajeRup((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }), "error");
     }
     mensajeRup(`RUP cargado correctamente (${cuerpo.perfiles_cargados.join(", ")}). Los cambios surten efecto inmediato.`, "ok");
     // las advertencias NO bloquean: se enseñan y ya está
@@ -7048,7 +7115,7 @@
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      caja.textContent = (cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`;
+      caja.textContent = (cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status });
       return;
     }
     const resumen = Object.entries(cuerpo.resumen || {})
@@ -7069,7 +7136,7 @@
     try {
       const r = await fetch("/api/admin?op=rup", { headers: { "x-historico-token": token }, cache: "no-store" });
       cuerpo = await leerJson(r);
-      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `HTTP ${r.status}`);
+      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
     } catch (e) {
       return mensajeRup(mensajeDeFallo(e, "descargar su RUP"), "error");
     }
@@ -7162,7 +7229,7 @@
       return mensajeEliminar((cuerpo && cuerpo.error)
         || (cuerpo === null
           ? fraseDeFallo({ status: r.status })
-          : `Error del servidor (${r.status}).`), "error");
+          : fraseDeFallo({ status: r.status })), "error");
     }
 
     if (cuerpo.tipo === "dinamico" || cuerpo.sin_perfiles) {
@@ -7302,7 +7369,7 @@
       return erroresExp(cuerpo.errores);
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      return mensajeExp((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`, "error");
+      return mensajeExp((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }), "error");
     }
     const ejemplos = (cuerpo.ejemplos_terminos || []).slice(0, 12).join(", ");
     mensajeExp(`Experiencia cargada: ${fmt.format(cuerpo.contratos_cargados)} contratos, `
@@ -7331,7 +7398,7 @@
       return;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      caja.textContent = (cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`;
+      caja.textContent = (cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status });
       return;
     }
     if (!cuerpo.cargada) {
@@ -7404,9 +7471,8 @@
        muro del edge caía al mensaje del token. La señal correcta es `sinJson`,
        que es justo lo que marca cuando el cuerpo no era JSON. */
     if (cuerpo.sinJson && (r.status === 401 || r.status === 403)) {
-      bitacora(`✘ 1/3 el despliegue rechazó la petición (${r.status})`);
-      mensajeExp("El despliegue rechazó la petición (401/403). Si tiene Password Protection activa, "
-        + "inicie sesión en Vercel en esta misma pestaña y reintente.", "error");
+      bitacora(`✘ 1/3 ${fraseDeFallo({ status: r.status })}`);
+      mensajeExp(fraseDeFallo({ status: r.status }), "error");
       return false;
     }
     if (r.status === 401) {
@@ -7421,8 +7487,8 @@
       return false;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      bitacora(`✘ 1/3 error del servidor (${r.status})`);
-      mensajeExp((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`, "error");
+      bitacora(`✘ 1/3 ${fraseDeFallo({ status: r.status })}`);
+      mensajeExp((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status }), "error");
       return false;
     }
     /* Los conteos se pintan como VIENEN. Un `|| 0` aquí convertiría un «no sé»
@@ -7544,7 +7610,7 @@
     try {
       const r = await fetch("/api/admin?op=experiencia", { headers: { "x-historico-token": token }, cache: "no-store" });
       cuerpo = await leerJson(r);
-      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `HTTP ${r.status}`);
+      if (!r.ok || !cuerpo || !cuerpo.ok) throw new Error((cuerpo && cuerpo.error) || `El servidor respondió ${r.status}.`);
     } catch (e) {
       return mensajeExp(mensajeDeFallo(e, "descargar su experiencia"), "error");
     }
@@ -7627,7 +7693,7 @@
       return false;
     }
     if (!r.ok || !cuerpo || !cuerpo.ok) {
-      avisoCobertura(esc((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`), "error");
+      avisoCobertura(esc((cuerpo && cuerpo.error) || fraseDeFallo({ status: r.status })), "error");
       return false;
     }
     if (cuerpo.mensaje) avisoCobertura(esc(cuerpo.mensaje), "aviso");
@@ -7894,7 +7960,7 @@
         { headers: { "x-historico-token": leerToken(), Accept: "application/json" }, cache: "no-store" });
       const c = await leerJson(r);
       if (r.status === 401) msg.textContent = msg401(c);
-      else if (!r.ok || !c || !c.ok) msg.textContent = (c && c.error) || `Error ${r.status}.`;
+      else if (!r.ok || !c || !c.ok) msg.textContent = (c && c.error) || fraseDeFallo({ status: r.status });
       else if (c.indice && c.indice.done === false) msg.textContent = "Reconstrucción a medias (presupuesto agotado): vuelva a pulsar, el avance queda guardado.";
       else msg.textContent = "Índice de competencia reconstruido.";
     } catch (e) {
@@ -8057,7 +8123,10 @@
     }
     try { r = await resp.json(); } catch { r = null; }
     btn.disabled = false; $("par-spin").classList.add("hidden");
-    if (!r) { msgPar(`El servidor respondió ${resp.status} sin JSON (¿inicio de sesión de Vercel?).`, "error"); return; }
+    /* La redacción sale de la ÚNICA fuente (Glosario): decía «401 sin JSON
+       (¿inicio de sesión de Vercel?)» —jerga de navegador y de infraestructura,
+       y ninguna instrucción que el dueño pueda seguir. */
+    if (!r) { msgPar(mensajeDeFallo({ status: resp.status }, "guardar los parámetros"), "error"); return; }
     if (!r.ok) {
       msgPar(r.errores ? `No se guardó: ${r.errores.join(" · ")}` : (r.error || "No se guardó."), "error");
       return;

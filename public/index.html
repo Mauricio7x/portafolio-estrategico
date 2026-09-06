@@ -104,6 +104,12 @@
       --warn-light: rgba(154,91,15,0.12);
       --danger: #b8372f;
       --danger-light: rgba(184,55,47,0.10);
+      /* --danger tiene DOS usos que NO comparten el mismo par (5-sep-2026): como
+         TEXTO sobre la tarjeta y como FONDO de la insignia de «Mis procesos».
+         En oscuro el token es un salmón claro y el blanco encima daba 2,72:1
+         cuando el mínimo es 4,5:1. Este es el color del texto que va ENCIMA del
+         fondo de peligro, igual que --accent-texto lo es del acento. */
+      --danger-texto: #ffffff;
       --border: rgba(26,25,22,0.09);
       --border-fuerte: rgba(26,25,22,0.18);
       /* BORDE DE CAMPO, SEPARADO DEL ANILLO DE TARJETA (5-sep-2026). Un control
@@ -171,6 +177,7 @@
         --warn-light: rgba(228,168,74,0.16);
         --danger: #f07a72;
         --danger-light: rgba(240,122,114,0.16);
+        --danger-texto: #1a1916;
         --border: rgba(255,255,255,0.09);
         --border-fuerte: rgba(255,255,255,0.18);
         --borde-campo: rgba(255,255,255,0.48);
@@ -259,7 +266,7 @@
        ver + alertas urgentes); nace oculta y solo aparece con cifra > 0 */
     .insignia-pestana { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px;
       padding: 0 5px; margin-left: 6px; border-radius: 9px; font-size: 11px; font-weight: 600; line-height: 1;
-      background: var(--danger); color: #fff; font-variant-numeric: tabular-nums; animation: insignia-entra var(--dur-4) var(--ease-expo); }
+      background: var(--danger); color: var(--danger-texto); font-variant-numeric: tabular-nums; animation: insignia-entra var(--dur-4) var(--ease-expo); }
     /* LA PAREJA .hidden GANA EN CUALQUIER ORDEN DE HOJA (5-sep-2026). La regla
        de arriba y la utilidad `.hidden` empatan en especificidad (0,1,0): con la
        hoja de utilidades DESPUÉS ganaba `.hidden` y la insignia se escondía; con
@@ -350,6 +357,17 @@
       background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
     .control-select:hover, .control-boton:hover { background-color: var(--bg-inset); }
     .control-select:focus, .control-campo:focus { outline: none; box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3px var(--accent-light); }
+    /* PAREJAS DE 0,2,0 PARA LO QUE EMPATA Y COINCIDE (5-sep-2026). Desde que la
+       hoja de utilidades va ANTES, una regla de clase sola gana el empate con
+       una utilidad de la plantilla: `display` no fue lo único que cambió de
+       mano, también el TAMAÑO DE LETRA y el RELLENO. Aquí los dos valores
+       coinciden (text-sm son los mismos 14 px del control), y la pareja lo deja
+       escrito para que no dependa del orden de las hojas. Donde NO coincidían
+       —`py-3 text-sm` del botón del acceso, `px-4 py-2.5` y `px-3 py-2` de los
+       controles y `text-xs` del selector de etapa— se quitó la utilidad de la
+       plantilla: mandaba la clase y el marcado decía otra cosa. */
+    .control-select.text-sm, .control-campo.text-sm, .control-boton.text-sm { font-size: 14px; }
+    .edit.rounded { border-radius: 4px; }
     .control-boton { cursor: pointer; }
     .control-boton:active { transform: scale(0.98); }
     .control-boton[aria-expanded="true"] { background: var(--accent-light); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
@@ -542,7 +560,19 @@
     #app .text-amber-800, #app .text-amber-700, #app .text-amber-900, #app .text-amber-950,
     #app .text-orange-800, #app .text-orange-950 { color: var(--text-primary); }
     #app .text-amber-900\/60, #app .text-orange-900\/60, #app .text-amber-700\/70 { color: var(--warn); }
-    #app .text-red-700, #app .text-red-600, #app .text-red-800, #app .text-red-950 { color: var(--danger); }
+    #app .text-red-700, #app .text-red-600, #app .text-red-800, #app .text-red-950, #app .text-red-500 { color: var(--danger); }
+    /* ── EL SEMÁFORO SE LEE EN LOS DOS TEMAS (5-sep-2026) ──────────────────
+       Los tonos MEDIOS de la paleta de utilidades (500/600) son fijos: el que
+       se lee sobre el blanco no se lee sobre la tarjeta oscura y al revés.
+       Medido con la fórmula de WCAG contra --bg-card: text-amber-500 daba
+       2,15:1 en claro (con él se pintaban «Confírmelo» y «Riesgo» a 11-14 px),
+       text-emerald-600 3,77:1 y text-blue-500 3,68:1; y los tonos 700 que
+       arreglarían el claro caen a 3,2-3,5:1 en oscuro. La respuesta no es otro
+       tono fijo sino el TOKEN del tema, que ya está afinado para los dos:
+       --warn 5,42 / 8,28 · --ok 5,25 / 8,45 · --accent 10,37 / 8,32. */
+    #app .text-emerald-600, #app .text-emerald-500, #app .text-green-600, #app .text-green-500 { color: var(--ok); }
+    #app .text-amber-500, #app .text-amber-600, #app .text-orange-500 { color: var(--warn); }
+    #app .text-blue-500 { color: var(--accent); }
     #app .text-red-900\/60 { color: var(--danger); opacity: 0.8; }
     #app .text-blue-800, #app .text-blue-900, #app .text-blue-950, #app .text-purple-800, #app .text-indigo-800 { color: var(--accent); }
     #app .text-blue-900\/60, #app .text-blue-700\/70 { color: var(--accent); opacity: 0.8; }
@@ -990,6 +1020,21 @@
        al que se reprodujo: el hermano de al lado tenía el mismo defecto. */
     #app select { max-width: 100%; }
     #ra-modalidad, #ra-campo, #ra-perfil { width: 100%; }
+    /* ── SUELO TÁCTIL TRANSVERSAL DE 24 px (WCAG 2.5.8), 5-sep-2026 ─────────
+       La ronda anterior midió la TARJETA de Licitaciones y dio el suelo por
+       conseguido. El censo por pestañas lo desmintió: tres <select> de 18 px de
+       alto en Mi empresa (#d-perfil, #c-perfil, #f-presupuesto), dos
+       <input type=number> de 20 px en Precios y cuatro objetivos de 13-20 px en
+       Mis procesos. Un suelo por REGLA vale para los que hay y para los que
+       vengan; una lista de identificadores solo para los que se miraron.
+       Las CASILLAS se miden por su <label> —que es el objetivo real— y por eso
+       el suelo va ahí y no en el <input>, que mide 16 px por diseño.
+       Queda FUERA, por la excepción «en línea» de la propia norma: un enlace
+       dentro de una frase, cuyo alto lo fija la interlínea del texto que lo
+       rodea (hoy, «Abrir en SECOP II» y «bitácora»). */
+    #app button, #app summary, #app select, #app textarea,
+    #app input:not([type=checkbox]):not([type=radio]):not([type=file]),
+    #app label:has(> input[type=checkbox]) { min-height: 24px; }
     /* Las tres puertas de la portada: el título de una sola línea dejaba su
        subtítulo 23 px más arriba que el de las otras dos. Dos renglones de alto
        mínimo (2 × 1,35 de interlínea) y las tres alinean. */
@@ -1157,7 +1202,7 @@
         <input id="gate-clave" type="password" inputmode="numeric" autocomplete="off" autofocus
                class="campo-gate w-full px-4 py-3 text-center text-lg tracking-widest outline-none"
                placeholder="••••••" aria-label="Clave de acceso">
-        <button type="submit" class="btn-vidrio-acento mt-3 w-full py-3 text-sm">
+        <button type="submit" class="btn-vidrio-acento mt-3 w-full">
           Entrar
         </button>
       </form>
@@ -1228,10 +1273,10 @@
              derecha): es la estructura de barra que comparten apple.com, Stripe
              y Linear, y la que el ojo espera. -->
         <nav class="pestanas order-2 hidden items-center md:flex" role="tablist" aria-label="Secciones">
-          <button type="button" data-tab="admin" role="tab" aria-selected="true" aria-controls="tab-admin" class="pestana activa">Mi empresa</button>
-          <button type="button" data-tab="licitaciones" role="tab" aria-selected="false" aria-controls="tab-licitaciones" class="pestana">Licitaciones</button>
-          <button type="button" data-tab="seguimiento" role="tab" aria-selected="false" aria-controls="tab-seguimiento" class="pestana">Mis procesos<span id="seg-insignia" class="insignia-pestana hidden" aria-label="Cosas que piden atención"></span></button>
-          <button type="button" data-tab="apu" role="tab" aria-selected="false" aria-controls="tab-apu" class="pestana">Precios</button>
+          <button type="button" id="pest-admin" data-tab="admin" role="tab" aria-selected="true" tabindex="0" aria-controls="tab-admin" class="pestana activa">Mi empresa</button>
+          <button type="button" id="pest-licitaciones" data-tab="licitaciones" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-licitaciones" class="pestana">Licitaciones</button>
+          <button type="button" id="pest-seguimiento" data-tab="seguimiento" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-seguimiento" class="pestana">Mis procesos<span id="seg-insignia" class="insignia-pestana hidden" aria-label="Cosas que piden atención"></span></button>
+          <button type="button" id="pest-apu" data-tab="apu" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-apu" class="pestana">Precios</button>
         </nav>
 
         <div class="order-3 flex min-w-0 items-center gap-3">
@@ -1250,15 +1295,15 @@
     <!-- pestañas (móvil): barra inferior estilo app nativa -->
     <nav class="barra-movil fixed inset-x-0 bottom-0 z-20 md:hidden" role="tablist" aria-label="Secciones (móvil)">
       <div class="mx-auto grid h-full max-w-md grid-cols-4 items-center">
-        <button type="button" data-tab="admin" role="tab" aria-selected="true" aria-controls="tab-admin" class="pestana-movil activa flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 14a1.6 1.6 0 0 0 .33 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.6 1.6 0 0 0 15 18.4a1.6 1.6 0 0 0-1 1.47V20a2 2 0 1 1-4 0v-.05A1.6 1.6 0 0 0 9 18.4a1.6 1.6 0 0 0-1.77.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 4.73 14a1.6 1.6 0 0 0-1.47-1H3a2 2 0 1 1 0-4h.05A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.33-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.6 1.6 0 0 0 9 4.73 1.6 1.6 0 0 0 10 3.26V3a2 2 0 1 1 4 0v.05A1.6 1.6 0 0 0 15 4.6a1.6 1.6 0 0 0 1.77-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.6 1.6 0 0 0 19.4 9v.05a1.6 1.6 0 0 0 1.47 1H21a2 2 0 1 1 0 4h-.05a1.6 1.6 0 0 0-1.47 1Z"/></svg>Mi empresa</button>
-        <button type="button" data-tab="licitaciones" role="tab" aria-selected="false" aria-controls="tab-licitaciones" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>Licitaciones</button>
-        <button type="button" data-tab="seguimiento" role="tab" aria-selected="false" aria-controls="tab-seguimiento" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12l2 2 4-4"/><path d="M9 17h6"/></svg>Mis procesos<span id="seg-insignia-movil" class="insignia-pestana hidden" aria-hidden="true"></span></button>
-        <button type="button" data-tab="apu" role="tab" aria-selected="false" aria-controls="tab-apu" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><rect x="5" y="12" width="3.5" height="6" rx=".6"/><rect x="10.25" y="7" width="3.5" height="11" rx=".6"/><rect x="15.5" y="9.5" width="3.5" height="8.5" rx=".6"/></svg>Precios</button>
+        <button type="button" data-tab="admin" role="tab" aria-selected="true" tabindex="0" aria-controls="tab-admin" class="pestana-movil activa flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 14a1.6 1.6 0 0 0 .33 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.6 1.6 0 0 0 15 18.4a1.6 1.6 0 0 0-1 1.47V20a2 2 0 1 1-4 0v-.05A1.6 1.6 0 0 0 9 18.4a1.6 1.6 0 0 0-1.77.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 4.73 14a1.6 1.6 0 0 0-1.47-1H3a2 2 0 1 1 0-4h.05A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.33-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.6 1.6 0 0 0 9 4.73 1.6 1.6 0 0 0 10 3.26V3a2 2 0 1 1 4 0v.05A1.6 1.6 0 0 0 15 4.6a1.6 1.6 0 0 0 1.77-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.6 1.6 0 0 0 19.4 9v.05a1.6 1.6 0 0 0 1.47 1H21a2 2 0 1 1 0 4h-.05a1.6 1.6 0 0 0-1.47 1Z"/></svg>Mi empresa</button>
+        <button type="button" data-tab="licitaciones" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-licitaciones" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>Licitaciones</button>
+        <button type="button" data-tab="seguimiento" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-seguimiento" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12l2 2 4-4"/><path d="M9 17h6"/></svg>Mis procesos<span id="seg-insignia-movil" class="insignia-pestana hidden" aria-hidden="true"></span></button>
+        <button type="button" data-tab="apu" role="tab" aria-selected="false" tabindex="-1" aria-controls="tab-apu" class="pestana-movil flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-normal"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><rect x="5" y="12" width="3.5" height="6" rx=".6"/><rect x="10.25" y="7" width="3.5" height="11" rx=".6"/><rect x="15.5" y="9.5" width="3.5" height="8.5" rx=".6"/></svg>Precios</button>
       </div>
     </nav>
 
     <!-- ════════════════════ PESTAÑA 1 · Mi empresa (principal) ════════════════════ -->
-    <main id="tab-admin" class="panel-pestana mx-auto max-w-6xl px-5 py-8">
+    <main id="tab-admin" role="tabpanel" tabindex="0" aria-labelledby="pest-admin" class="panel-pestana mx-auto max-w-6xl px-5 py-8">
 
       <!-- ══════ Perfiles y RUP ══════ -->
             <!-- ══════════════ MI EMPRESA · lo único que un contratista toca ══════════════
@@ -1563,9 +1608,13 @@
           <h2 class="font-semibold tracking-tight">Actualizar datos</h2>
           <p class="mt-1 text-sm" style="color: var(--text-secondary);">Trae de SECOP II lo publicado desde la última vez. Puede cerrar la pestaña: el avance queda guardado.</p>
         </div>
+        <!-- El fondo y el color del texto salen de la MISMA regla (`bg-gray-900`
+             → --accent + --accent-texto): escribir `background: var(--accent)` a
+             mano con `text-white` dejaba letra blanca sobre el azul CLARO del
+             tema oscuro (2,09:1 medido; el mínimo es 4,5:1) y se saltaba el
+             radio del sistema. -->
         <button id="btn-actualizar-datos" type="button"
-                class="shrink-0 rounded-xl px-6 py-3 text-sm font-semibold text-white transition disabled:opacity-40"
-                style="background: var(--accent);">
+                class="shrink-0 bg-gray-900 px-6 py-3 text-sm font-semibold transition disabled:opacity-40">
           Actualizar datos
         </button>
         </div>
@@ -1707,7 +1756,7 @@
           <input id="cons-nombre" type="text" maxlength="140" autocomplete="off"
                  placeholder="Consorcio Vías del Tolima (opcional)"
                  aria-label="Nombre del consorcio"
-                 class="control-campo w-full rounded-xl px-4 py-2.5 text-sm">
+                 class="control-campo w-full rounded-xl text-sm">
         </label>
         <p class="mt-3 text-xs font-medium uppercase tracking-wide text-gray-500">¿Quiénes van juntos?</p>
         <div id="cons-integrantes" class="mt-2 space-y-2"></div>
@@ -2243,7 +2292,7 @@
          manifestación de interés que vence, cambios de cronograma, cierres,
          avisos a 7/3/1 días) y filtros por etapa. Los ids de la sección original
          (seccion-seguimiento, seg-*) se conservan: la suite los mira. -->
-    <main id="tab-seguimiento" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
+    <main id="tab-seguimiento" role="tabpanel" tabindex="0" aria-labelledby="pest-seguimiento" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
       <div class="cabecera-pestana flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 class="titulo-pestana">Mis procesos</h1>
@@ -2313,7 +2362,7 @@
     </main>
 
     <!-- ════════════════════ PESTAÑA 2 · Licitaciones ════════════════════ -->
-    <main id="tab-licitaciones" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
+    <main id="tab-licitaciones" role="tabpanel" tabindex="0" aria-labelledby="pest-licitaciones" class="panel-pestana mx-auto hidden max-w-5xl px-5 py-8">
       <header class="cabecera-pestana">
         <h1 class="titulo-pestana">Licitaciones</h1>
         <p class="subtitulo-pestana">Los procesos abiertos en SECOP II que encajan con su perfil, ordenados para usted.</p>
@@ -2344,9 +2393,9 @@
             <option value="competencia">Las menos peleadas</option>
             <option value="anticipo">Mayor anticipo</option>
           </select>
-          <button id="btn-filtros" type="button" class="control-boton inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm" aria-haspopup="dialog" aria-controls="panel-filtros" aria-expanded="false">
+          <button id="btn-filtros" type="button" class="control-boton inline-flex items-center gap-2 rounded-xl text-sm" aria-haspopup="dialog" aria-controls="panel-filtros" aria-expanded="false">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>
-            Filtros<span id="btn-filtros-n" class="hidden rounded-full px-1.5 text-[11px] font-semibold" style="background: var(--accent); color: #fff;"></span>
+            Filtros<span id="btn-filtros-n" class="hidden bg-gray-900 rounded-full px-1.5 text-[11px] font-semibold"></span>
           </button>
           <button id="btn-buscar" class="rounded-xl bg-gray-900 px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-700">Buscar</button>
         </div>
@@ -2615,7 +2664,7 @@
     </main>
 
     <!-- ════════════════════ PESTAÑA 2 · APU ════════════════════ -->
-    <main id="tab-apu" class="panel-pestana mx-auto hidden max-w-7xl px-5 py-8">
+    <main id="tab-apu" role="tabpanel" tabindex="0" aria-labelledby="pest-apu" class="panel-pestana mx-auto hidden max-w-7xl px-5 py-8">
       <header class="cabecera-pestana">
         <h1 class="titulo-pestana">Precios</h1>
         <p class="subtitulo-pestana">Cuánto le cuesta la obra, cuánto le deja y a cuánto conviene presentarse.</p>
@@ -2922,7 +2971,7 @@
         </div>
         <div class="mt-5 flex flex-wrap items-center gap-3">
           <button id="btn-ia-pedir" type="button" disabled
-                  class="rounded-xl px-8 py-3 text-base font-semibold text-white transition disabled:opacity-40" style="background: var(--accent);">
+                  class="bg-gray-900 px-8 py-3 text-base font-semibold transition disabled:opacity-40">
             Buscar
           </button>
           <p id="ia-estado" class="text-sm text-gray-500">Añada ítems (suba el pliego o su análisis de precios) para poder buscar.</p>

@@ -196,14 +196,16 @@
       s.async = true;
       s.onload = () => {
         if (!window.pdfjsLib) {
-          return reject(new Error("pdf.js se cargó pero no expuso «pdfjsLib»: probablemente la versión "
-            + "del CDN ya no trae build UMD. Fije una versión 3.x."));
+          return reject(Object.assign(new Error("pdf.js se cargó pero no expuso «pdfjsLib»: probablemente la versión "
+            + "del CDN ya no trae build UMD. Fije una versión 3.x."), { recurso: "lector-pdf" }));
         }
         resolve(window.pdfjsLib);
       };
-      s.onerror = () => reject(new Error(
-        "No se pudo cargar pdf.js desde el CDN. Sin él el PDF no se puede leer en el navegador. "
-        + "Compruebe la conexión, o pegue la tabla en un archivo .txt y súbala."));
+      /* Gemelo del de onboarding.js: el fallo se marca con un CAMPO
+         (`recurso`), no con palabras, para que `Glosario.fraseDeFallo` no lo
+         confunda con una caída de red por llevar la palabra «conexión». */
+      s.onerror = () => reject(Object.assign(new Error(
+        "No se pudo cargar pdf.js desde el CDN. Sin él el PDF no se puede leer en el navegador."), { recurso: "lector-pdf" }));
       document.head.appendChild(s);
     }).then(async (lib) => {
       const modo = await fijarWorker(lib);
@@ -754,8 +756,8 @@
     } else {
       const r = await pedir("/api/pliego?op=diff", { id_proceso: id, texto, perfil: perfilActual(), origen: "lector" });
       const c = r.cuerpo || {};
-      dictamenArgs = { id, cambio: !!c.cambio, falloVigia: c.ok ? null : (c.error || `respuesta ${r.estado}`) };
-      if (!c.ok) html += `<p class="text-gray-600">No se pudo guardar la versión del pliego: ${esc(c.error || `respuesta ${r.estado}`)}.</p>`;
+      dictamenArgs = { id, cambio: !!c.cambio, falloVigia: c.ok ? null : (c.error || window.Glosario.fraseDeFallo({ status: r.estado })) };
+      if (!c.ok) html += `<p class="text-gray-600">No se pudo guardar la versión del pliego: ${esc(c.error || window.Glosario.fraseDeFallo({ status: r.estado }))}.</p>`;
       else {
         html += `<p class="font-medium" style="color: var(--text-primary);">${esc(c.mensaje || "")}</p>`;
         const cambios = (c.diff && c.diff.habilitantes && c.diff.habilitantes.cambios) || [];
@@ -999,7 +1001,7 @@
       return pintarCajaDictamen(estadoDictamen("info", texto), id);
     }
     const breve = c.motivo === "incompleto" || c.motivo === "tiempo";
-    return pintarCajaDictamen(estadoDictamen("error", `${c.error || `El servidor respondió ${r.estado}.`} ${c.que_hacer || ""}`, { breve }), id);
+    return pintarCajaDictamen(estadoDictamen("error", `${c.error || window.Glosario.fraseDeFallo({ status: r.estado })} ${c.que_hacer || ""}`, { breve }), id);
   }
 
   async function cargarDictamen(id, { cambio = false, falloVigia = null } = {}) {
@@ -1063,7 +1065,7 @@
     if (r.estado === 401) { chip("Sin acceso", {}); return mensaje(MSG_401, "error"); }
     if (!r.cuerpo || !r.cuerpo.ok) {
       chip("Error", {});
-      return mensaje((r.cuerpo && r.cuerpo.error) || `El servidor respondió ${r.estado}.`, "error");
+      return mensaje((r.cuerpo && r.cuerpo.error) || window.Glosario.fraseDeFallo({ status: r.estado }), "error");
     }
     if (!r.cuerpo.items || !r.cuerpo.items.length) {
       chip("Sin filas reconocidas", {});
@@ -1123,7 +1125,7 @@
              sigue. 35 páginas leídas valen mucho más que un error global — y si
              el problema es la clave o la cuota, `pedir` ya habrá devuelto 401/503
              y se corta arriba. */
-          fallos.push(`páginas ${desde}-${hasta}: ${(rt.cuerpo && rt.cuerpo.error) || `error ${rt.estado}`}`);
+          fallos.push(`páginas ${desde}-${hasta}: ${(rt.cuerpo && rt.cuerpo.error) || window.Glosario.fraseDeFallo({ status: rt.estado })}`);
           continue;
         }
         // el servidor marca las páginas con su índice DENTRO del lote (\f1, \f2…):

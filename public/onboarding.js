@@ -149,11 +149,16 @@
       s.async = true;
       s.onload = () => {
         if (!window.pdfjsLib) {
-          return reject(new Error("pdf.js se cargó pero no expuso «pdfjsLib»: probablemente la versión del CDN ya no trae build UMD."));
+          return reject(Object.assign(new Error("pdf.js se cargó pero no expuso «pdfjsLib»: probablemente la versión del CDN ya no trae build UMD."), { recurso: "lector-pdf" }));
         }
         resolve(window.pdfjsLib);
       };
-      s.onerror = () => reject(new Error("No se pudo cargar pdf.js desde el CDN: sin él el PDF no se puede leer en el navegador. Revise su conexión y reintente."));
+      /* El fallo se marca con un CAMPO, no con palabras: `Glosario.fraseDeFallo`
+         no puede distinguir «falta un dominio de terceros» de «no hay red» por
+         el texto —la palabra «conexión» del propio mensaje lo convertía en el
+         genérico «Sin conexión con el servidor», que manda al dueño a arreglar
+         una red que funciona (5-sep-2026). */
+      s.onerror = () => reject(Object.assign(new Error("No se pudo cargar pdf.js desde el CDN: sin él el PDF no se puede leer en el navegador."), { recurso: "lector-pdf" }));
       document.head.appendChild(s);
     }).then(async (lib) => {
       const modo = await fijarWorker(lib);
@@ -285,8 +290,12 @@
     ocultarTodo();
     mensaje(null); avisos(null);
     const intro = $("manual-intro");
+    /* NINGUNA CIFRA DE TIEMPO SIN MEDICIÓN (5-sep-2026). La rama con motivo
+       prometía «en 30 segundos» —nadie lo midió— y encima aparecía justo
+       después de un fallo, que es cuando menos se puede prometer nada. Es la
+       misma frase de la rama sin motivo, sin la cifra. */
     intro.textContent = motivo
-      ? `${motivo} Dígame tres datos y le muestro lo mismo en 30 segundos.`
+      ? `${motivo} Dígame tres datos y le muestro a cuántas licitaciones puede presentarse hoy.`
       : "Dígame tres datos y le muestro a cuántas licitaciones puede presentarse hoy.";
     const sel = $("manual-actividad");
     const lista = await cargarActividades();
@@ -721,7 +730,7 @@
     if (!r.ok || !cuerpo.ok) {
       const detalle = cuerpo && cuerpo.errores && cuerpo.errores.length
         ? ` Primer error: ${cuerpo.errores[0].campo} — ${cuerpo.errores[0].error}.` : "";
-      return mensajeExp(((cuerpo && cuerpo.error) || `Error del servidor (${r.status}).`) + detalle, "error");
+      return mensajeExp(((cuerpo && cuerpo.error) || window.Glosario.fraseDeFallo({ status: r.status })) + detalle, "error");
     }
     mensajeExp(`Experiencia cargada: ${cuerpo.contratos_cargados} contratos, ${cuerpo.terminos_extraidos} términos extraídos. Se usará para afinar las recomendaciones.`, "ok");
   });

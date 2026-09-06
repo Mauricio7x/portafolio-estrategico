@@ -199,13 +199,29 @@
      Acepta un Error, una Response o el cuerpo que devuelve `leerJson`. */
   const MSG_SIN_CONEXION = "Sin conexión con el servidor. Revise su red y vuelva a intentar.";
   const MSG_MURO = "El sitio pidió iniciar sesión (protección por contraseña). Inicie sesión y reintente.";
+  /* «Revise su red» cuando la red FUNCIONA es una instrucción imposible: lo que
+     falta es un dominio de TERCEROS (el lector de PDF se descarga de un CDN que
+     la red institucional del dueño bloquea, que es la razón de ser de la hoja
+     servida del árbol). Se distingue por el campo `recurso` del error, no por
+     su texto: el texto llevaba la palabra «conexión» y caía en el genérico. */
+  const MSG_LECTOR_PDF = "No se pudo traer el lector de PDF: su red puede estar bloqueando el sitio desde donde se descarga. Pruebe desde otra red o escriba los datos a mano.";
+  /* EL CÓDIGO SE LEE DE DONDE ES UN CÓDIGO (5-sep-2026). Buscar «(\d{3})» en
+     el TEXTO de la excepción convertía cualquier mensaje de negocio con un
+     número de tres cifras entre paréntesis en un código HTTP y lo TIRABA: el
+     servidor responde «Demasiados ítems (401). El tope es 400.» (editor.js) y
+     la pantalla decía «El sitio pidió iniciar sesión», mandando al dueño a
+     arreglar algo que no estaba roto. El código sale de `e.status` —Response o
+     cuerpo de `leerJson`— y, como mucho, del literal que ESTA aplicación
+     genera cuando no hay cuerpo («El servidor respondió 404.», anclado entero
+     para que no case dentro de una frase más larga). */
   function codigoDeFallo(e) {
     const st = Number(e && e.status);
     if (Number.isFinite(st) && st > 0) return st;
-    const m = String((e && e.message) || "").match(/\((\d{3})\)|respondió (\d{3})/);
-    return m ? Number(m[1] || m[2]) : null;
+    const m = String((e && e.message) || "").match(/^El servidor respondió (\d{3})\.$/);
+    return m ? Number(m[1]) : null;
   }
   function fraseDeFallo(e) {
+    if (e && e.recurso === "lector-pdf") return MSG_LECTOR_PDF;   // ANTES que la regla de red
     const codigo = codigoDeFallo(e);
     if (codigo === 401 || codigo === 403) return MSG_MURO;
     const texto = String((e && e.message) || (typeof e === "string" ? e : "") || "");
@@ -226,5 +242,5 @@
   }
 
   return { MARCA, TERMINOS, VERBOS, ESTADO, SIN_REFERENCIA, sinReferencia, traducir, corto, titulo, descripcion, estampar,
-    MSG_SIN_CONEXION, MSG_MURO, fraseDeFallo, mensajeDeFallo };
+    MSG_SIN_CONEXION, MSG_MURO, MSG_LECTOR_PDF, fraseDeFallo, mensajeDeFallo };
 });
