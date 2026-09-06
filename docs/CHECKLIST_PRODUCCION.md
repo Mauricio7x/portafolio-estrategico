@@ -77,6 +77,7 @@ Traducido a criterios que puede comprobar un tercero:
 | # | Criterio | Estado |
 |---|---|---|
 | D-1 | **Respaldo del histórico restaurado de verdad**, con fecha anotada | ☐ |
+| D-1b | **Copia de los datos de usuario restaurada de verdad en producción**, con fecha anotada (la vía existe desde el 6-sep-2026: Mi empresa → Sistema → Copia de sus datos, `op=exportar`/`op=importar`; la ida y vuelta está probada contra el Upstash falso, no contra el real) | ☐ |
 | D-2 | Objetivo de recuperación declarado en los términos | ☐ |
 | D-3 | La comparación diaria del censo de ingesta avisa si un motivo salta | ☐ |
 | D-4 | Retro-pruebas 9.1 y 9.2 ejecutadas, con su resultado escrito | ☐ |

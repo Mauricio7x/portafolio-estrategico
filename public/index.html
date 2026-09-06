@@ -2307,6 +2307,55 @@
           </p>
         </section>
       </details>
+
+        <!-- ══════ Copia de sus datos (6-sep-2026, M-INF-15) ══════
+             Todo lo que el usuario introduce a mano (registro y perfiles, contratos
+             ejecutados, consorcios, precios corregidos, borradores, procesos guardados
+             y parámetros de costo) sale en UN archivo y vuelve a entrar desde aquí; las
+             licitaciones no van, se rehacen desde SECOP. Vive DENTRO de «Sistema»
+             (VISTA_VISITANTE.soloDueno): la copia es de toda la configuración, no del
+             perfil de la barra. Lo que se pinta lo redacta el servidor (apartados con
+             nombre, nunca claves); app.js solo lo enseña. -->
+<details id="seccion-copia" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <summary class="cursor-pointer font-semibold tracking-tight"><span class="min-w-0 flex-1">Copia de sus datos
+          <span class="ml-2 text-sm font-normal text-gray-500">— descargar o restaurar todo lo que usted cargó.</span></span>
+        </summary>
+        <!-- Mi empresa tiene un presupuesto de palabras en la suite (< 1 400 con Sistema
+             incluido): este pliegue cuesta 73; lo que sobra se dice en los mensajes. -->
+        <p class="mt-3 max-w-2xl text-sm text-gray-500">
+          Trae todo lo que usted ha cargado: registro y perfiles, contratos ejecutados, consorcios, precios
+          corregidos, borradores, procesos guardados y parámetros de costo. Las licitaciones no van: se rehacen
+          desde SECOP.
+        </p>
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <button id="btn-copia-descargar" type="button"
+                  class="rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-700 disabled:opacity-40">
+            Descargar una copia de mis datos
+          </button>
+        </div>
+        <p id="copia-descarga-mensaje" class="mt-4 hidden rounded-xl px-4 py-3 text-sm"></p>
+
+        <div class="mt-6 border-t border-gray-100 pt-4">
+          <h3 class="text-sm font-semibold tracking-tight">Restaurar desde una copia</h3>
+          <p class="mt-1 max-w-2xl text-sm text-gray-500">
+            Elija un archivo descargado aquí. Lo que ya existe no se toca, salvo que marque la casilla.
+          </p>
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <input id="copia-archivo" type="file" accept=".detekta" aria-label="Archivo de la copia de sus datos"
+                   class="block max-w-sm text-sm text-gray-600 file:mr-3 file:rounded-xl file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-700">
+            <label class="flex items-center gap-2 text-sm text-gray-700">
+              <input id="copia-reemplazar" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
+              Reemplazar lo que ya existe
+            </label>
+            <button id="btn-copia-restaurar" type="button" disabled
+                    class="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100 disabled:opacity-40">
+              Restaurar
+            </button>
+          </div>
+          <p id="copia-mensaje" class="mt-4 hidden rounded-xl px-4 py-3 text-sm"></p>
+          <ul id="copia-detalle" class="mt-3 hidden space-y-1 text-sm text-gray-700"></ul>
+        </div>
+</details>
       </details>
 
     

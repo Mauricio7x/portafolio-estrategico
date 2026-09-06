@@ -3741,6 +3741,252 @@ async function main() {
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
+     IDA Y VUELTA · la copia de los datos del usuario (M-INF-15, 6-sep-2026)
+     ──────────────────────────────────────────────────────────────────────────
+     op=exportar / op=importar de api/admin.js contra el Upstash falso, con los
+     handlers y el router REALES: se siembra una clave por apartado (texto, hash,
+     con TTL, sellos) MÁS un señuelo de cada cosa que no puede viajar
+     (corpus, índice, candado, catálogo, cola de la sesión, dos cachés), se
+     exporta, se borra todo, se importa, y lo que vuelve es lo mismo: valor,
+     tipo y TTL. Contra el árbol anterior op=exportar respondía 404 «Operación
+     «exportar» desconocida». Además: sin sobrescritura lo que existe se salta y
+     el «qué hacer» lo dice; con ella se reemplaza entero (un hash pierde los
+     campos que la copia no traía); los sellos se escriben AL FINAL y los
+     JSON compartidos bajo su candado (espía sobre el cliente real); un
+     candado ajeno vivo deja la clave sin tocar y lo dice, sin tumbar el
+     resto; y un archivo con una clave que no es de usuario se rechaza ENTERO.
+     Los textos que llegan a pantalla hablan de usted, sin emoji y sin claves.
+     ══════════════════════════════════════════════════════════════════════════ */
+  {
+    const zlib = require("zlib");
+    const rAdminCopia = require("../api/admin.js");
+    const CD = require("../lib/copia_datos.js");
+    const { comprimir: comprimirCD } = require("../lib/almacen.js");
+    const { tuteoEn: tuteoCD, RE_EMOJI_UI: emojiCD } = require("../lib/lenguaje_pantalla.js");
+    const inflar = (buf) => JSON.parse(zlib.inflateSync(buf).toString("utf8"));
+    const desinflar = (obj) => zlib.deflateSync(Buffer.from(JSON.stringify(obj), "utf8")).toString("base64");
+
+    // el «antes» de la ficha, medido: el router de hoy conoce las dos op
+    const sinOp = await invocar(rAdminCopia, "/api/admin");
+    for (const op of ["exportar", "importar"]) assert.ok(sinOp.cuerpo.operaciones.includes(op), `api/admin.js tiene que plegar op=${op} (antes: 404 «Operación «${op}» desconocida»)`);
+
+    /* semilla: una clave por apartado, con un registro de proponente VÁLIDO
+       (op=importar recarga los perfiles de la instancia caliente) */
+    const configCopia = { perfiles: perfilesMod.perfilesComoConfig(), _meta: { version: "v-copia", cargado: "2026-09-06T00:00:00.000Z" } };
+    configCopia.perfiles.helder.nombre = "Helder (copia de prueba)";
+    const TEXTOS = {
+      "config:perfiles": comprimirCD(configCopia),
+      "config:perfiles:version": "v-copia",
+      "config:unspsc:helder:clases": JSON.stringify(["72101500"]),
+      "config:perfiles:rup_copia01": comprimirCD({ id: "rup_copia01", nombre: "RUP de prueba" }),
+      "config:unspsc:rup_copia01:clases": JSON.stringify(["72141000"]),
+      "config:experiencia": comprimirCD({ contratos: [{ objeto: "PLACA HUELLA", valor_smmlv: 100 }] }),
+      "config:experiencia:terminos": comprimirCD({ terminos: { placa: 1 } }),
+      "config:experiencia:version": JSON.stringify({ version: "e-copia", contratos: 1 }),
+      "config:consorcios": JSON.stringify({ cons_copia0: { nombre: "Consorcio de prueba", integrantes: ["helder", "genesis"] } }),
+      "config:otra_cosa_futura": "1",
+      "apu:parametros": JSON.stringify({ vigencia: "2026", smmlv: 1 }),
+      "apu:parametros:v:2026": JSON.stringify({ vigencia: "2026", smmlv: 1 }),
+      "apu:presupuesto:helder:copia01": comprimirCD({ id: "copia01", items: [] }),
+      "seguimiento:helder": JSON.stringify({ procesos: { "CO1.COPIA": { id: "CO1.COPIA", estado: "interesa" } } }),
+      "seguimiento:rup_copia01": JSON.stringify({ procesos: {} }),
+    };
+    const HASHES = {
+      "apu:precios:helder": { "ITEM-1": JSON.stringify({ precio: 1234, fuente: "usuario" }) },
+      "apu:precios:rup_copia01": { "ITEM-2": JSON.stringify({ precio: 99 }) },
+    };
+    const CON_TTL = { "config:perfiles:rup_copia01": 3000, "config:unspsc:rup_copia01:clases": 3000, "apu:presupuesto:helder:copia01": 2000, "apu:precios:rup_copia01": 3000 };
+    const SENUELOS = {
+      "licitaciones:meta": JSON.stringify({ last_full: "x" }), "lock:sync": "ajeno", "apu:catalogo:meta": "{}",
+      "apu:ia:solicitud:helder:copia01": "{}", "seguimiento:detalle:v1:CO1.COPIA": "{}", "consorcio:sim:abc": "{}", "indice:baja:meta": "{}",
+    };
+    const MIAS = [...Object.keys(TEXTOS), ...Object.keys(HASHES)];
+    const TODAS = [...MIAS, ...Object.keys(SENUELOS), "indice:competencia", "lock:seguimiento:helder", "lock:consorcios"];
+    const antesRegistro = perfilesMod.PERFILES.helder.nombre;
+    const sembrar = async () => {
+      for (const [k, v] of Object.entries(TEXTOS)) await redis.set(k, v, CON_TTL[k] ? { ex: CON_TTL[k] } : {});
+      for (const [k, v] of Object.entries(HASHES)) { await redis.hset(k, v); if (CON_TTL[k]) await redis.expire(k, CON_TTL[k]); }
+      for (const [k, v] of Object.entries(SENUELOS)) await redis.set(k, v);
+      await redis.hset("indice:competencia", { ENTIDAD: "{}" });
+    };
+    const limpiarCopia = async () => {
+      await redis.del(...TODAS);
+      perfilesMod.restablecerPerfiles(); perfilesMod.invalidarCachePerfiles();
+    };
+    try {
+      await sembrar();
+
+      /* 1 · exportar: adjunto, cabeceras, y SOLO las claves de usuario */
+      const exp = await invocar(rAdminCopia, "/api/admin?op=exportar", CAB_TOKEN);
+      assert.strictEqual(exp.status, 200, `exportar: ${JSON.stringify(exp.cuerpo).slice(0, 200)}`);
+      assert.ok(Buffer.isBuffer(exp.cuerpo), "la copia viaja como binario (zlib), no como JSON");
+      assert.strictEqual(exp.cabeceras["content-type"], "application/octet-stream");
+      assert.ok(/^attachment; filename="copia_detekta_\d{4}-\d{2}-\d{2}\.detekta"$/.test(exp.cabeceras["content-disposition"]), `adjunto con fecha: ${exp.cabeceras["content-disposition"]}`);
+      assert.strictEqual(exp.cabeceras["cache-control"], "no-store");
+      const copia = inflar(exp.cuerpo);
+      assert.strictEqual(copia.aplicacion, "Detekta"); assert.strictEqual(copia.formato, 1);
+      assert.ok(/^\d{4}-\d{2}-\d{2}T/.test(copia.exportado_el), "la copia lleva su fecha");
+      assert.strictEqual(exp.cabeceras["x-copia-elementos"], String(copia.claves.length), "la cabecera cuenta lo mismo que la copia");
+      const porClave = new Map(copia.claves.map((e) => [e.clave, e]));
+      for (const k of MIAS) assert.ok(porClave.has(k), `la copia tiene que traer ${k}`);
+      for (const [k, v] of Object.entries(TEXTOS)) { assert.strictEqual(porClave.get(k).tipo, "texto"); assert.strictEqual(porClave.get(k).valor, v, `valor de ${k}`); }
+      for (const [k, v] of Object.entries(HASHES)) { assert.strictEqual(porClave.get(k).tipo, "hash"); assert.deepStrictEqual(porClave.get(k).valor, v, `hash ${k}`); }
+      for (const k of MIAS) {
+        const t = porClave.get(k).ttl_seg;
+        if (CON_TTL[k]) assert.ok(Number.isInteger(t) && t > 0 && t <= CON_TTL[k], `${k} viaja con el TTL que le quedaba (${t})`);
+        else assert.strictEqual(t, null, `${k} sin TTL viaja con ttl_seg null, nunca 0`);
+      }
+      const prohibidas = copia.claves.map((e) => e.clave).filter((k) => /^(licitaciones|indice|lock|apu:catalogo|apu:ia|seguimiento:detalle|consorcio):/.test(k));
+      assert.deepStrictEqual(prohibidas, [], `ninguna clave del corpus, de los índices, de los candados, del catálogo, de la cola ni de las cachés puede viajar: ${prohibidas.join(", ")}`);
+      assert.strictEqual(copia.resumen.excluidas, 1, "la caché del detalle se cuenta como excluida (declarada), no se calla");
+      assert.strictEqual(porClave.get("config:otra_cosa_futura").apartado, "configuracion", "una clave config:* que ningún apartado conoce viaja igual (censo, no lista)");
+      const nombresApartado = copia.resumen.por_apartado.map((a) => a.nombre);
+      for (const n of ["Registro de proponente y perfiles", "Contratos ejecutados", "Consorcios guardados", "Parámetros de costo", "Precios corregidos", "Borradores de precios", "Mis procesos", "Otros datos de configuración"]) assert.ok(nombresApartado.includes(n), `apartado «${n}» en el resumen`);
+
+      // credencial y método
+      assert.strictEqual((await invocar(rAdminCopia, "/api/admin?op=exportar")).status, 401, "sin token: 401");
+      assert.strictEqual((await invocar(rAdminCopia, "/api/admin?op=exportar", { "x-historico-token": "otro" })).status, 401, "token presente e inválido: 401, jamás degradación");
+      assert.strictEqual((await invocar(rAdminCopia, `/api/admin?op=exportar&token=${process.env.HISTORICO_TOKEN}`)).status, 200, "&token= en la URL vale (el dueño pega la URL en Chrome)");
+      assert.strictEqual((await invocar(rAdminCopia, "/api/admin?op=exportar", CAB_TOKEN, { metodo: "POST" })).status, 405, "exportar solo por GET");
+      const getImp = await invocar(rAdminCopia, "/api/admin?op=importar", CAB_TOKEN);
+      assert.strictEqual(getImp.status, 405, "un GET no restaura nada (pegar la URL no puede escribir)");
+      assert.ok(getImp.cuerpo.como_hacerlo && !tuteoCD(getImp.cuerpo.como_hacerlo), "el 405 dice cómo hacerlo, de usted");
+      assert.strictEqual((await invocarPost(rAdminCopia, "/api/admin?op=importar", { copia: "x" })).status, 401, "importar sin token: 401");
+
+      /* 2 · pérdida total → importar: todo vuelve con su valor, tipo y TTL, y
+         la instancia caliente ve el registro restaurado */
+      await redis.del(...MIAS);
+      perfilesMod.restablecerPerfiles(); perfilesMod.invalidarCachePerfiles();
+      assert.strictEqual((await redis.scan("config:*")).length, 0, "base vacía antes de restaurar");
+      const b64 = exp.cuerpo.toString("base64");
+      const imp = await invocarPost(rAdminCopia, "/api/admin?op=importar", { copia: b64 }, CAB_TOKEN);
+      assert.strictEqual(imp.status, 200, `importar: ${JSON.stringify(imp.cuerpo).slice(0, 300)}`);
+      assert.strictEqual(imp.cuerpo.escritas, MIAS.length, `todas las claves de la copia se escriben: ${JSON.stringify(imp.cuerpo.detalle)}`);
+      assert.strictEqual(imp.cuerpo.saltadas, 0); assert.strictEqual(imp.cuerpo.no_cargadas, 0);
+      for (const [k, v] of Object.entries(TEXTOS)) assert.strictEqual(await redis.get(k), v, `restaurado ${k}`);
+      for (const [k, v] of Object.entries(HASHES)) assert.deepStrictEqual(await redis.hgetall(k), v, `hash restaurado ${k}`);
+      for (const k of MIAS) {
+        const t = await redis.ttl(k);
+        if (CON_TTL[k]) assert.ok(t > 0 && t <= CON_TTL[k], `${k} vuelve con TTL (${t})`);
+        else assert.strictEqual(t, -1, `${k} vuelve SIN TTL (${t}): un precio o un registro del dueño no caduca`);
+      }
+      for (const k of Object.keys(SENUELOS)) assert.strictEqual(await redis.get(k), SENUELOS[k], `el señuelo ${k} no se toca`);
+      assert.strictEqual(perfilesMod.PERFILES.helder.nombre, "Helder (copia de prueba)", "la instancia caliente recarga el registro restaurado (mismo gesto que la carga del RUP)");
+      assert.strictEqual(perfilesMod.fuentePerfiles().fuente, "redis", "los perfiles se sirven desde el registro restaurado");
+      // los textos de pantalla: de usted, sin emoji, con nombres de apartado y sin claves
+      const textosImp = [imp.cuerpo.mensaje, imp.cuerpo.que_hacer, ...imp.cuerpo.apartados.map((a) => a.nombre)].filter(Boolean).join(" ");
+      assert.strictEqual(tuteoCD(textosImp), null, `la respuesta habla de usted: ${textosImp}`);
+      assert.ok(!emojiCD.test(textosImp), "sin emoji");
+      assert.ok(!/config:|apu:|seguimiento:/.test(textosImp), `el mensaje nombra apartados, no claves: ${textosImp}`);
+      assert.ok(/^Se restauraron: /.test(imp.cuerpo.mensaje) && /Mis procesos/.test(imp.cuerpo.mensaje), `el mensaje dice qué se restauró: ${imp.cuerpo.mensaje}`);
+      assert.deepStrictEqual(imp.cuerpo.detalle.escritas.slice(-2), ["config:perfiles:version", "config:experiencia:version"], "los dos sellos se escriben AL FINAL, en ese orden");
+
+      /* 3 · lo que existe se salta sin sobrescritura (y se dice qué hacer);
+         con sobrescritura se reemplaza ENTERO */
+      await redis.set("seguimiento:helder", JSON.stringify({ procesos: { OTRO: { id: "OTRO" } } }));
+      await redis.hset("apu:precios:helder", { "ITEM-EXTRA": JSON.stringify({ precio: 5 }) });
+      const imp2 = await invocarPost(rAdminCopia, "/api/admin?op=importar", { copia: b64 }, CAB_TOKEN);
+      assert.strictEqual(imp2.status, 200);
+      assert.strictEqual(imp2.cuerpo.escritas, 0, "sin sobrescritura no se escribe lo que ya existe");
+      assert.strictEqual(imp2.cuerpo.saltadas, MIAS.length);
+      assert.ok(/No se cargó nada/.test(imp2.cuerpo.mensaje) && /Reemplazar lo que ya existe/.test(imp2.cuerpo.que_hacer), `una respuesta que no hizo nada dice qué hacer: ${imp2.cuerpo.mensaje} | ${imp2.cuerpo.que_hacer}`);
+      assert.strictEqual(JSON.parse(await redis.get("seguimiento:helder")).procesos.OTRO.id, "OTRO", "el guardado posterior sobrevive sin sobrescritura");
+      const imp3 = await invocarPost(rAdminCopia, "/api/admin?op=importar", { copia: b64, sobrescribir: true }, CAB_TOKEN);
+      assert.strictEqual(imp3.status, 200);
+      assert.strictEqual(imp3.cuerpo.escritas, MIAS.length, "con sobrescritura se reescribe todo");
+      assert.strictEqual(imp3.cuerpo.que_hacer, null);
+      assert.strictEqual(await redis.get("seguimiento:helder"), TEXTOS["seguimiento:helder"], "la copia manda con sobrescritura");
+      assert.deepStrictEqual(await redis.hgetall("apu:precios:helder"), HASHES["apu:precios:helder"], "un hash sobrescrito pierde los campos que la copia no traía");
+      assert.strictEqual((await invocarPost(rAdminCopia, "/api/admin?op=importar", { copia: b64, sobrescribir: "true" }, CAB_TOKEN)).cuerpo.escritas, 0, "«sobrescribir» solo vale como booleano true (explícito)");
+
+      /* 4 · los sellos al final y los JSON compartidos bajo su candado: espía
+         sobre el cliente real, ejecutando la función de la biblioteca */
+      const registro = [];
+      const espia = new Proxy(redis, { get: (t, k) => (typeof t[k] === "function" ? (...a) => { registro.push([k, a[0]]); return t[k](...a); } : t[k]) });
+      const rr = await CD.restaurarCopia(espia, copia, { sobrescribir: true });
+      assert.strictEqual(rr.escritas.length, MIAS.length);
+      const escrituras = registro.filter(([c]) => ["set", "hset"].includes(c)).map(([, k]) => k);
+      const iVer = escrituras.lastIndexOf("config:perfiles:version"), iExpVer = escrituras.lastIndexOf("config:experiencia:version");
+      for (const k of ["config:perfiles", "config:unspsc:helder:clases", "config:perfiles:rup_copia01"]) assert.ok(escrituras.indexOf(k) < iVer, `${k} se escribe ANTES del sello de perfiles`);
+      for (const k of ["config:experiencia", "config:experiencia:terminos"]) assert.ok(escrituras.indexOf(k) < iExpVer, `${k} se escribe ANTES del sello de experiencia`);
+      assert.ok(escrituras.indexOf("lock:consorcios") >= 0 && escrituras.indexOf("lock:consorcios") < escrituras.indexOf("config:consorcios"), "config:consorcios se escribe bajo lock:consorcios");
+      assert.ok(escrituras.indexOf("lock:seguimiento:helder") >= 0 && escrituras.indexOf("lock:seguimiento:helder") < escrituras.indexOf("seguimiento:helder"), "seguimiento:{perfil} se escribe bajo su candado");
+      assert.strictEqual(await redis.get("lock:consorcios"), null, "el candado se libera al terminar");
+
+      /* 5 · un candado ajeno vivo: esa clave no se toca, se dice, y el resto sí carga */
+      await redis.set("lock:seguimiento:helder", "ajeno", { ex: 30 });
+      await redis.set("seguimiento:helder", "{\"procesos\":{\"AJENO\":{}}}");
+      const imp4 = await invocarPost(rAdminCopia, "/api/admin?op=importar", { copia: b64, sobrescribir: true }, CAB_TOKEN);
+      assert.strictEqual(imp4.status, 200, `candado ajeno: ${JSON.stringify(imp4.cuerpo).slice(0, 200)}`);
+      assert.strictEqual(imp4.cuerpo.no_cargadas, 1);
+      assert.deepStrictEqual(imp4.cuerpo.detalle.no_cargadas.map((x) => x.clave), ["seguimiento:helder"]);
+      assert.strictEqual(imp4.cuerpo.escritas, MIAS.length - 1, "lo demás sí se carga");
+      assert.ok(/AJENO/.test(await redis.get("seguimiento:helder")), "la clave bajo candado ajeno no se pisa");
+      assert.ok(/No se pudieron cargar: Mis procesos/.test(imp4.cuerpo.mensaje) && /Espere unos segundos/.test(imp4.cuerpo.que_hacer), `lo dice y dice qué hacer: ${imp4.cuerpo.mensaje} | ${imp4.cuerpo.que_hacer}`);
+      await redis.del("lock:seguimiento:helder");
+
+      /* 6 · forma: un archivo con una clave que no es de usuario se rechaza ENTERO */
+      const antesMeta = await redis.get("licitaciones:meta");
+      await redis.del("config:consorcios");
+      for (const [nombre, mala, re] of [
+        ["clave del corpus", (c) => c.claves.push({ clave: "licitaciones:meta", tipo: "texto", valor: "pisado" }), /licitaciones:meta.*no es un dato de usuario/],
+        ["caché", (c) => c.claves.push({ clave: "seguimiento:detalle:v1:X", tipo: "texto", valor: "x" }), /no es un dato de usuario/],
+        ["candado", (c) => c.claves.push({ clave: "lock:sync", tipo: "texto", valor: "x" }), /no es un dato de usuario/],
+        ["tipo que no cuadra", (c) => c.claves.push({ clave: "apu:precios:genesis", tipo: "texto", valor: "x" }), /tipo «hash»/],
+        ["valor de hash vacío", (c) => c.claves.push({ clave: "apu:precios:genesis", tipo: "hash", valor: {} }), /objeto de textos, no vacío/],
+        ["ttl negativo", (c) => { c.claves[0].ttl_seg = -5; }, /ttl_seg/],
+        ["clave repetida", (c) => c.claves.push({ ...c.claves[0] }), /repetida/],
+        ["formato desconocido", (c) => { c.formato = 2; }, /formato/],
+        ["otra aplicación", (c) => { c.aplicacion = "Otra"; }, /aplicacion/],
+      ]) {
+        const c = JSON.parse(JSON.stringify(copia)); mala(c);
+        const r = await invocarPost(rAdminCopia, "/api/admin?op=importar", { copia: desinflar(c), sobrescribir: true }, CAB_TOKEN);
+        assert.strictEqual(r.status, 400, `${nombre}: 400 (${JSON.stringify(r.cuerpo).slice(0, 200)})`);
+        assert.ok(r.cuerpo.errores.some((e) => re.test(e)), `${nombre}: el motivo se dice (${r.cuerpo.errores.join(" | ")})`);
+        assert.ok(r.cuerpo.que_hacer && !tuteoCD(r.cuerpo.error + " " + r.cuerpo.que_hacer), `${nombre}: de usted y con qué hacer`);
+      }
+      assert.strictEqual(await redis.get("licitaciones:meta"), antesMeta, "un archivo rechazado no escribe NADA en el corpus");
+      assert.strictEqual(await redis.get("config:consorcios"), null, "…ni las claves válidas que traía (todo o nada en la forma)");
+      for (const [nombre, cuerpo, re] of [
+        ["sin copia", {}, /Falta «copia»/],
+        ["basura", { copia: "esto no es base64 de zlib" }, /no es una copia de Detekta/],
+        ["zlib de un no-JSON", { copia: zlib.deflateSync(Buffer.from("hola")).toString("base64") }, /no se pudo leer/],
+        ["JSON que no es objeto", { copia: desinflar([1, 2]) }, /forma de una copia/],
+      ]) {
+        const r = await invocarPost(rAdminCopia, "/api/admin?op=importar", cuerpo, CAB_TOKEN);
+        assert.strictEqual(r.status, 400, `${nombre}: 400`);
+        assert.ok(re.test(r.cuerpo.error), `${nombre}: ${r.cuerpo.error}`);
+        assert.ok(r.cuerpo.que_hacer, `${nombre}: dice qué hacer`);
+      }
+      // el tope del cuerpo es el de lib/cuerpo (4 MB), no el de la plataforma
+      const gordo = await invocarPost(rAdminCopia, "/api/admin?op=importar", { copia: "A".repeat(4 * 1024 * 1024 + 10) }, CAB_TOKEN);
+      assert.strictEqual(gordo.status, 413, "más de 4 MB: 413");
+
+      // una copia vacía restaura vacío y lo dice (nunca «0 elementos» como éxito mudo)
+      const vacia = await invocarPost(rAdminCopia, "/api/admin?op=importar", { copia: desinflar({ aplicacion: "Detekta", formato: 1, claves: [] }) }, CAB_TOKEN);
+      assert.strictEqual(vacia.status, 200); assert.strictEqual(vacia.cuerpo.escritas, 0);
+      assert.ok(/no trae datos/.test(vacia.cuerpo.mensaje) && vacia.cuerpo.que_hacer, `copia vacía: ${vacia.cuerpo.mensaje}`);
+
+      /* 7 · la pantalla: el pliegue vive dentro de «Sistema» (solo el dueño) y
+         sus tres controles existen; el censo de la vista de visitante (bloque
+         h-ter) exige que estén declarados */
+      const htmlCopia = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+      // sin comentarios: la cabecera del módulo CITA la vía «&token=» que explica
+      const appCopia = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      const iSisC = htmlCopia.indexOf('id="seccion-sistema"'), iCop = htmlCopia.indexOf('id="seccion-copia"');
+      assert.ok(iCop > iSisC && iSisC > 0, "«Copia de sus datos» vive dentro de «Sistema»");
+      for (const id of ["btn-copia-descargar", "copia-archivo", "copia-reemplazar", "btn-copia-restaurar", "copia-mensaje", "copia-descarga-mensaje"]) assert.ok(htmlCopia.includes(`id="${id}"`), `falta #${id}`);
+      assert.ok(/accept="\.detekta"/.test(htmlCopia), "el selector de archivo solo ofrece la extensión de la copia");
+      assert.ok(/fetch\("\/api\/admin\?op=exportar",\s*\{\s*headers:\s*\{\s*"x-historico-token"/.test(appCopia) && !/op=exportar[^`"']*token=/.test(appCopia), "la descarga va con la cabecera del token y un Blob, jamás con el token en la URL");
+      assert.ok(/"\/api\/admin\?op=importar"/.test(appCopia) && /sobrescribir: \$\("copia-reemplazar"\)\.checked/.test(appCopia), "la sobrescritura la decide la casilla, explícita");
+      assert.ok(/x-copia-elementos/.test(appCopia) && /descargó vacía/.test(appCopia), "una copia vacía se avisa (no es un éxito mudo)");
+      console.log(`· copia de datos (M-INF-15): ida y vuelta de ${MIAS.length} claves (texto, hash, TTL, sellos al final, candados), ${Object.keys(SENUELOS).length + 1} señuelos fuera, sobrescritura explícita, candado ajeno declarado, 9 archivos mal formados rechazados enteros`);
+    } finally {
+      await limpiarCopia();
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
      UNIDAD · APU: parseo de la tabla de cantidades de un pliego
      ──────────────────────────────────────────────────────────────────────────
      Todo lo de este bloque es FUNCIÓN PURA sobre texto sintético: ni Redis, ni
@@ -24398,6 +24644,8 @@ async function main() {
             "admin?op=experiencia": ["btn-exp-confirmar", "btn-exp-cargar", "btn-exp-repo", "btn-exp-cadena", "exp-actual"],
             "admin?op=cobertura": ["btn-cobertura", "btn-exp-cobertura"],
             "admin?op=cargar-catalogo": ["btn-apu-cargar"],
+            "admin?op=exportar": ["btn-copia-descargar"],
+            "admin?op=importar": ["copia-archivo", "copia-reemplazar", "btn-copia-restaurar"],
             "procesos?op=sync": ["btn-actualizar-datos", "btn-al-dia", "btn-iniciar", "btn-exp-full", "btn-exp-cadena",
               { id: "btn-marca", excepcion: "la marca se vuelve informativa para el visitante y su clic no dispara nada: se EJECUTA abajo" },
               { id: null, excepcion: "op=sync&modo=auto tras la lista no es un control: es la cortesía al corpus, con la llave y el candado (M-SEG-08)" }],

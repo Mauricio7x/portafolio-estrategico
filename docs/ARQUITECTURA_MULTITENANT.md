@@ -197,6 +197,12 @@ pregunta por qué no está su licitación.
 **No consta ningún respaldo.** El histórico es el activo: dos años de procesos adjudicados que
 ninguna purga toca, y de él salen el índice de competencia y el de baja.
 
+> Nota del 6-sep-2026 (M-INF-15): lo que el usuario introduce a mano —registro y perfiles,
+> contratos ejecutados, consorcios, precios corregidos, borradores, procesos guardados, parámetros—
+> SÍ tiene desde hoy exportación e importación en un archivo (`/api/admin?op=exportar` y
+> `op=importar`, `lib/copia_datos.js`, con zlib nativo como pide §7). El HISTÓRICO sigue sin
+> respaldo: es un keyspace distinto y esta vía lo excluye a propósito.
+
 Lo mínimo, y en este orden:
 1. **Exportación completa a un archivo fuera de Upstash**, semanal.
 2. **Una restauración de verdad, con fecha anotada.** Un respaldo que nunca se restauró no es un respaldo.

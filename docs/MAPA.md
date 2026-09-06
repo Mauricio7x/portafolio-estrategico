@@ -6,8 +6,8 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 28 op declaradas en los mapas de los routers:
-  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo
+· SUPERFICIE HTTP — 30 op declaradas en los mapas de los routers:
+  /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo · exportar · importar
   /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento
   /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
   /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · salud
@@ -22,7 +22,7 @@
   pliego.js                   Router del dominio PLIEGO (Fase 0 · consolidación a 6 funciones)
   procesos.js                 Router del dominio PROCESOS (Fase 0 · consolidación a 6 funciones)
 
-· lib/ — 67 módulos:
+· lib/ — 68 módulos:
   accesibilidad.js            Accesibilidad operativa de la zona de la obra
   adendas.js                  Vigía de adendas · lo que el DATASET dice que cambió (Fase 5)
   almacen.js                  Esquema de claves Redis + compresión de chunks
@@ -41,6 +41,7 @@
   competencia_detalle.js      Los procesos que SOSTIENEN el badge de competencia
   config_rup.js               Validación del RUP que sube el dueño (archivo JSON)
   consorcio.js                Consorcio a la medida (Fase 10 · Detekta v4)
+  copia_datos.js              Copia de los datos que introduce el usuario (6-sep-2026, M-INF-15)
   costos.js                   el motor de costo real vive en public/costos.js (UMD) y aquí
   cronograma.js               Cronograma del proceso con avisos T-7 / T-3 / T-1 (Fase 5)
   cuerpo.js                   Leer el cuerpo JSON de una petición, una sola vez
@@ -113,10 +114,12 @@
   tipologias.js               Las 22 tipologías de obra y el mapa departamento→región
   validaciones.js             Las cinco puertas de control del presupuesto
 
-· lib/handlers/admin/ — 4 módulos:
+· lib/handlers/admin/ — 6 módulos:
   cargar_catalogo.js          Puebla Redis con el catálogo de precios APU
   cobertura.js                Qué códigos UNSPSC le faltan al RUP
   experiencia.js              Los contratos que el dueño YA ejecutó
+  exportar.js                 (sin cabecera)
+  importar.js                 (sin cabecera)
   rup.js                      Cargar, consultar y eliminar el RUP del dueño (archivo JSON)
 
 · lib/handlers/apu/ — 1 módulos:
@@ -169,8 +172,7 @@
   xlsx.js                     Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js             Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 144 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
-  L  8551  Remates «R2-remates-pantalla» de la ola 1 · H1, H2, V-B2a-01, V-B2a-02, B2b-H2, B2b-H3, B2b-
+· MEMORIA · docs/MEMORIA.md — 145 secciones (4 con marcador de superación; el índice entero, derivado: docs/MEMORIA_INDICE.md). Las 10 más nuevas:
   L  8706  Lote «B5-documentacion-1» de la consultoría del 4-sep · M-DOC-02, M-DOC-03, M-DOC-07, M-DOC-
   L  8798  Lote «B6a-readme-y-citas» de la consultoría del 4-sep · M-DOC-05, M-DOC-08 (6-sep-2026)
   L  8879  Lote «B6b-memoria-util» de la consultoría del 4-sep · M-DOC-06 (6-sep-2026)
@@ -180,6 +182,7 @@
   L  9335  Lote «B8b-busqueda-frases» de la consultoría del 4-sep · M-COMP-05 (6-sep-2026)
   L  9412  Lote «B9a-entidad-graficos» de la consultoría del 4-sep · M-DGF-06, M-DGF-10 (6-sep-2026)
   L  9548  Lote «B9b-competencia-departamento» de la consultoría del 4-sep · M-COMP-01, M-DGF-08 (6-sep
+  L  9719  Lote «B10a-exportar-importar» de la consultoría del 4-sep · M-INF-15 (6-sep-2026)
 
 · DOCUMENTOS docs/ — 43 (y 1 en docs/archivo/, superados: `--archivo` los lista):
   ACCESIBILIDAD.md                        Accesibilidad de la zona · metodología (ago 2026)

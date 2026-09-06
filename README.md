@@ -102,7 +102,7 @@ con esa medición (toda `op` real está aquí; nada de aquí es inventado):
 - `/api/procesos?op=` sync · historico · listar · baja · entidades · portada · manifestacion · salud
 - `/api/perfil?op=` resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento
 - `/api/pliego?op=` extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
-- `/api/admin?op=` rup · experiencia · cobertura · cargar-catalogo
+- `/api/admin?op=` rup · experiencia · cobertura · cargar-catalogo · exportar · importar
 - `/api/apu?accion=` catalogo · inferir · calcular · cotizar · rentabilidad · guardar · cargar · listar · importar · extraer-texto · descargar · parametros · ia
 - `/api/inteligencia?vista=` adjudicatario · competidor · entidad · paa · probabilidad · socio
 

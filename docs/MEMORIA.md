@@ -9715,3 +9715,120 @@ se escribieron sobre `d569946`; donde citaban una línea o un campo que el árbo
   índice de BAJA y no toca este; (2) las fechas de adjudicación del pliego solo existen para los
   procesos cuyo cronograma se lea después de desplegar (Mis procesos → Cronograma), igual que la de
   manifestación.
+
+### Lote «B10a-exportar-importar» de la consultoría del 4-sep · M-INF-15 (6-sep-2026)
+
+En una línea: todo lo que el usuario introduce a mano (registro y perfiles, contratos ejecutados, consorcios, precios corregidos, borradores, procesos guardados, parámetros de costo) sale en UN archivo con `/api/admin?op=exportar` y vuelve con `op=importar` (sobrescritura explícita, forma validada antes de escribir, sellos al final, candados de la casa), desde el pliegue «Copia de sus datos» de Sistema en Mi empresa; el corpus y los índices no viajan porque se reconstruyen.
+
+**Medido antes de tocar nada.** `op=exportar` y `op=importar` contra `api/admin.js` respondían
+**404 «Operación «exportar» desconocida»** (invocación real del router, 6-sep-2026), y ningún
+handler ni `lib/` traía exportación de datos de usuario (`grep exportar|importar` solo daba la
+importación de Excel del editor de precios: otra cosa). El Upstash falso de la suite ya sabía
+`EXISTS`, `TTL`, `EXPIRE`, `SCAN`, `HGETALL` y `lib/redis.js` ya exponía `exists`: no hubo que
+tocar ni el cliente ni el mock.
+
+**Qué se decidió y por qué.**
+- **Lo que viaja es un CENSO de prefijos, no una lista de claves** (`lib/copia_datos.js`):
+  `PATRONES` barre `config:*`, `apu:parametros(:*)`, `apu:precios:*`, `apu:presupuesto:*` y
+  `seguimiento:*`; `APARTADOS` les pone nombre de pantalla («Registro de proponente y perfiles»,
+  «Contratos ejecutados», «Consorcios guardados», «Parámetros de costo», «Precios corregidos»,
+  «Borradores de precios», «Mis procesos») y una cola «Otros datos de configuración» recoge
+  cualquier `config:*` que ningún apartado conozca: una clave de configuración nueva viaja sin
+  que nadie la haya listado (hay cerradura con `config:otra_cosa_futura`). Lo EXCLUIDO se declara con
+  motivo: `seguimiento:detalle:*` (caché de la ficha del competidor, 1 h) y, por no estar bajo
+  ningún prefijo de usuario, `licitaciones:*`, `indice:*`, `lock:*`, `apu:catalogo:*` (se carga
+  del archivo del repositorio con `op=cargar-catalogo`), `apu:ia:*` (la cola de la sesión de
+  Claude Code: 30 días y no la escribe el usuario) y `consorcio:sim:*` (caché de simulación, 1 h).
+  La exportación cuenta las excluidas (`resumen.excluidas`) en vez de callarlas.
+- **Un archivo con UNA clave fuera del censo se rechaza ENTERO** (400 con la lista de motivos, y
+  nada se escribe): un archivo así no salió de `op=exportar`, y «escribir solo lo válido» sería
+  adivinar qué quería quien lo fabricó. Lo mismo para tipo que no cuadra, hash vacío, `ttl_seg`
+  que no es entero positivo, clave repetida, `formato` o `aplicacion` distintos. En cambio,
+  «ya existía» NO es un error: sin `sobrescribir: true` (booleano, explícito; `"true"` no vale)
+  se salta y la respuesta dice qué hacer («marque «Reemplazar lo que ya existe» y vuelva a
+  restaurar»); con él se reemplaza ENTERO —un hash se borra antes de reescribirse para no
+  conservar campos que la copia no traía (medido: `ITEM-EXTRA` desaparece)—.
+- **El TTL que tenía la clave al exportar se vuelve a poner tal cual**, sin descontar el tiempo
+  transcurrido. Alternativa descartada: restar los días desde la exportación —una copia
+  restaurada un mes después habría vuelto VACÍA de borradores (30 d) y de perfiles `rup_` (45 d),
+  que es lo contrario de lo que se pide a una copia—. Y una clave sin TTL vuelve SIN TTL (los
+  precios y el registro del dueño no caducan: `apu:precios` sin TTL, decisión de ago-2026 que la
+  ficha manda no tocar). En la copia «sin TTL» es `ttl_seg: null`, nunca 0.
+- **Las reglas de los módulos dueños se LLAMAN, no se copian**: los sellos
+  `config:perfiles:version` y `config:experiencia:version` se escriben AL FINAL y en ese orden
+  (`ordenDeEscritura`; cerradura con un espía sobre el cliente real); `config:consorcios` va bajo
+  `lock:consorcios` (`CLAVE_CANDADO_CONSORCIOS` de `lib/consorcio`) y `seguimiento:{perfil}`
+  bajo `lock:seguimiento:{perfil}` (`claveCandado`, que el handler de seguimiento EXPORTA desde
+  hoy: una sola fuente de la clave), con `conCandado` de `lib/almacen`. Un candado ajeno vivo
+  deja ESA clave sin tocar, la lista en `no_cargadas` con el «Espere unos segundos…» del candado,
+  y el resto se carga (medido: 15 de 16). Tras escribir el registro, `op=importar` hace lo
+  mismo que la carga del RUP: `restablecerPerfiles` + `recargarPerfiles(forzar)` en ESTA
+  instancia y borra `resumen:*`, `cobertura:*`, `pulso:*` (cerradura: `PERFILES.helder.nombre`
+  cambia al de la copia). Los requires de consorcio y del handler van DIFERIDOS dentro de
+  `candadoDe`: exportar no los necesita y cargarlos arriba arrastraría medio proyecto.
+- **El archivo es un JSON con deflate de zlib (ARQ §7, sin dependencias)**, adjunto
+  `copia_detekta_AAAA-MM-DD.detekta` con `Content-Disposition`, descargable pegando la URL con
+  `&token=` (medido 200) o desde el botón, que manda la cabecera y baja un Blob (el token JAMÁS
+  en la URL: regla de la casa, cerrada sobre `app.js` sin comentarios). La restauración sube el
+  archivo en base64 dentro de un JSON `{copia, sobrescribir}` por `lib/cuerpo` con tope de
+  **4 MB** (413 medido por encima), que son ~3 MB de zlib: la copia de la suite con 16 claves
+  pesa ~500 B y la del navegador con un registro completo 2 946 B. Se descartó mandar el binario
+  crudo: `leerCuerpo` es de JSON y la casilla de sobrescribir viaja en el mismo cuerpo.
+- **La pantalla no inventa ni un conteo.** `mensaje`, `que_hacer` y los apartados los redacta
+  el SERVIDOR (`fraseDeRestauracion`), con nombres de apartado y sin claves: «Se restauraron:
+  Registro de proponente y perfiles, Mis procesos.» / «Ya existían y no se tocaron: …» / «No se
+  pudieron cargar: …». Se descartó pintar «Registro de proponente (7)»: siete son CLAVES de
+  Redis y ese número exige un párrafo. Las claves van aparte en `detalle` para quien lee la
+  respuesta cruda. La descarga vacía se avisa («La copia se descargó vacía…») gracias a la
+  cabecera `X-Copia-Elementos`; sin cabecera `parseInt` da NaN, no 0, y no se avisa nada falso.
+- **Dónde vive**: `<details id="seccion-copia">` al final de «Sistema» (Mi empresa), plegado, y
+  por tanto dentro de `VISTA_VISITANTE.soloDueno`: el censo de controles de escritura de la
+  suite (bloque h-ter) exige que `btn-copia-descargar`, `copia-archivo`, `copia-reemplazar` y
+  `btn-copia-restaurar` estén en un bloque del dueño, y así quedan declarados. Medido en
+  Chromium como visitante `rup_…` sin clave: el pliegue mide 0×0 y no se pide `op=exportar`.
+  **Ocultar no es seguridad** (M-SEG-02): el token va integrado y quien lea el fuente puede
+  llamar `op=exportar` y llevarse TODA la configuración, igual que hoy `op=rup` en GET; la
+  cerradura real son las cuentas por usuario (M-SEG-04, pendiente). No se construyó un
+  `?perfil=` para una copia SOLO del perfil del visitante: no está en la ficha y es decisión de
+  producto. Mi empresa tiene presupuesto de palabras en la suite (< 1 400 con Sistema incluido):
+  el pliegue cuesta 73 y deja la pestaña en 1 380; el siguiente lote que escriba allí tiene que
+  recortar o renegociar el presupuesto, y lo que sobra se dice en los mensajes.
+- **Cerraduras y mutación.** Un bloque nuevo en `tests/e2e.js` tras «unidad
+  experiencia/cobertura» (hoy línea ~3742; la ficha decía ~3314) que EJECUTA router y biblioteca
+  sobre el Upstash falso: 16 claves sembradas (texto, hash, cuatro con TTL, dos sellos, un
+  `config:*` sin apartado) más 8 señuelos; exportar → borrar → importar → mismos valores, tipos y
+  TTL; 401 sin token y con token inválido; `&token=` en la URL vale; 405 en POST/GET cruzados
+  con «cómo hacerlo» de usted; saltar/sobrescribir; espía de orden y candados; candado ajeno;
+  9 archivos mal formados rechazados enteros sin tocar `licitaciones:meta`; 4 cuerpos inválidos;
+  413; copia vacía; y la pantalla (pliegue dentro de Sistema, controles, cabecera y no URL,
+  casilla explícita, aviso de copia vacía). Mutaciones, cada una en rojo por SU aserción: sin
+  las dos op en el router → «api/admin.js tiene que plegar op=exportar»; sellos sin ir al final
+  → «los dos sellos se escriben AL FINAL»; cachés que viajan → «ninguna clave … puede viajar:
+  seguimiento:detalle:v1:…»; sobrescritura implícita → «sin sobrescritura no se escribe lo que
+  ya existe». Y sin la biblioteca entera, la suite cae al requerirla.
+- **Medido en Chromium** (1280 y 390, claro y oscuro, dueño con clave, arnés con los routers
+  reales sobre el Upstash falso y datos sembrados): el pliegue pinta y abre; «Descargar una copia
+  de mis datos» produce una descarga real `copia_detekta_2026-09-06.detekta` (2 946 B) y el aviso
+  verde; tras borrar las claves por el arnés, elegir el archivo habilita «Restaurar», la
+  restauración pinta «Se restauraron: …» con el detalle por apartado y las claves vuelven con su
+  TTL (borrador ~1 800 s); la segunda vez sin la casilla pinta «No se cargó nada… marque
+  «Reemplazar…»» en ámbar y con la casilla vuelve a restaurar; 0 desbordes, 0 peticiones
+  externas, el token siempre por cabecera; en consola solo los 503 del listado sin corpus
+  (excepción declarada del arnés, como en los lotes anteriores).
+
+**Lo que la ficha decía y el árbol desmintió.** (1) «consorcio:*» como dato de usuario: en el
+árbol `consorcio:sim:*` es la caché de simulación (1 h) y los consorcios viven en
+`config:consorcios`; la caché se excluye. (2) «añadir a tests/estado.js»: `estado.js` deriva las
+op del mapa `OPS` del router, y las dos aparecen sin tocarlo (medido). (3) «En /admin.html,
+plegado, «Más herramientas»»: `/admin.html` no existe desde la página única (ago-2026) y «Más
+herramientas» es un pliegue de Precios; el sitio es «Sistema» de Mi empresa, que además es lo
+que la vista de visitante (M-SEG-02, posterior a la ficha) exige. (4) «tests/e2e.js línea
+~3314»: hoy ~3742. (5) «lib/redis.js» no necesitaba `exists`: ya lo tenía.
+
+**No verificable desde aquí (6-sep-2026).** Una restauración contra el Upstash REAL de producción
+y el tamaño real de la configuración del dueño (la suite y el arnés miden copias de prueba);
+`vercel.com` y `upstash.com` responden 403 en el proxy. **Paso del dueño** (derivado del paso 5 de
+la ficha, que pide «una restauración real anotada con fecha»): tras desplegar, en Mi empresa →
+Sistema → Copia de sus datos, descargar una copia, guardarla fuera de la aplicación y hacer UNA
+restauración de verdad (con «Reemplazar lo que ya existe»), anotando la fecha en
+`docs/CHECKLIST_PRODUCCION.md` D-1b. Un respaldo que nunca se restauró no es un respaldo.

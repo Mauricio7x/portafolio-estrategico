@@ -5,7 +5,8 @@
    (contratos ejecutados, con `?origen=repositorio` para la carga sin cuerpo
    — era /api/admin/experiencia), `cobertura` (la auditoría de códigos que
    faltan en el RUP — era /api/admin/cobertura-rup) y `cargar-catalogo` (el
-   catálogo de precios APU — era /api/admin/apu/cargar-catalogo).
+   catálogo de precios APU — era /api/admin/apu/cargar-catalogo), y desde el
+   6-sep-2026 `exportar` e `importar` (la copia de los datos del usuario).
 
    La autorización sigue viviendo en cada handler (lib/auth una sola vez), y
    la única escritura sin token del repositorio —el RUP por PDF del
@@ -17,6 +18,11 @@ const OPS = {
   experiencia: () => require("../lib/handlers/admin/experiencia.js"),
   cobertura: () => require("../lib/handlers/admin/cobertura.js"),
   "cargar-catalogo": () => require("../lib/handlers/admin/cargar_catalogo.js"),
+  /* la copia de los datos del usuario (6-sep-2026, M-INF-15): `exportar` la
+     descarga (GET, también pegando la URL con &token=) e `importar` la
+     restaura (POST, sobrescritura explícita). Plegadas aquí, no como archivo. */
+  exportar: () => require("../lib/handlers/admin/exportar.js"),
+  importar: () => require("../lib/handlers/admin/importar.js"),
 };
 
 function opDe(req) {

@@ -8381,9 +8381,8 @@
     mensajeExp("Archivo descargado. Edítelo y vuelva a pegarlo para actualizar la experiencia.", "ok");
   });
 
-  /* Descarga común (experiencia y auditoría): un Blob y un <a> temporal. */
-  function descargarJSON(objeto, nombre) {
-    const blob = new Blob([JSON.stringify(objeto, null, 2)], { type: "application/json" });
+  /* Descarga común (experiencia, auditoría y la copia de datos): un Blob y un <a> temporal. */
+  function descargarBlob(blob, nombre) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -8393,6 +8392,134 @@
     a.remove();
     URL.revokeObjectURL(url);
   }
+  function descargarJSON(objeto, nombre) {
+    descargarBlob(new Blob([JSON.stringify(objeto, null, 2)], { type: "application/json" }), nombre);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     COPIA DE SUS DATOS (/api/admin?op=exportar · op=importar, 6-sep-2026, M-INF-15)
+     --------------------------------------------------------------------------
+     Un archivo con todo lo que el usuario introdujo y su restauración. La
+     descarga va con la cabecera del token y un Blob (el token no viaja en la
+     URL; la vía de pegar la URL con &token= queda para quien no tiene esta
+     pantalla). Lo que se pinta lo redacta el servidor (`mensaje`, `que_hacer`
+     y los apartados con nombre de pantalla): aquí no se inventa ni un conteo.
+     ══════════════════════════════════════════════════════════════════════════ */
+  function mensajeCopia(id, texto, tipo) {
+    const p = $(id);
+    if (!texto) return p.classList.add("hidden");
+    p.className = "mt-4 rounded-xl px-4 py-3 text-sm " + ({
+      ok: "bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20",
+      error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
+      aviso: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20",
+    }[tipo] || "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/20");
+    p.textContent = texto;
+  }
+  function detalleCopia(lineas) {
+    const ul = $("copia-detalle");
+    if (!lineas || !lineas.length) return ul.classList.add("hidden");
+    ul.classList.remove("hidden");
+    ul.innerHTML = lineas.map((l) => `<li>• ${esc(l)}</li>`).join("");
+  }
+  /* El nombre lo pone el servidor (Content-Disposition, con la fecha); si no
+     llegara, uno con la fecha de hoy y la misma extensión. */
+  function nombreDeAdjunto(r, porDefecto) {
+    const m = /filename="([^"]+)"/.exec(r.headers.get("content-disposition") || "");
+    return m ? m[1] : porDefecto;
+  }
+
+  $("btn-copia-descargar").addEventListener("click", async () => {
+    const btn = $("btn-copia-descargar");
+    const etiqueta = btn.textContent;
+    btn.disabled = true; btn.textContent = "Preparando la copia…";
+    mensajeCopia("copia-descarga-mensaje", null);
+    let r;
+    try {
+      r = await fetch("/api/admin?op=exportar", { headers: { "x-historico-token": leerToken() } });
+    } catch (e) {
+      btn.disabled = false; btn.textContent = etiqueta;
+      return mensajeCopia("copia-descarga-mensaje", mensajeDeFallo(e, "descargar la copia"), "error");
+    }
+    btn.disabled = false; btn.textContent = etiqueta;
+    if (!r.ok) {
+      /* el parseo va APARTE del fetch: el muro del edge responde HTML */
+      const cuerpo = await leerJson(r);
+      return mensajeCopia("copia-descarga-mensaje", r.status === 401 ? msg401(cuerpo) : (errorDelServidor(cuerpo) || fraseDeFallo({ status: r.status })), "error");
+    }
+    /* la cabecera dice cuántos elementos viajan: «sin cabecera» no es cero */
+    const elementos = parseInt(r.headers.get("x-copia-elementos") || "", 10);
+    const nombre = nombreDeAdjunto(r, `copia_detekta_${new Date().toISOString().slice(0, 10)}.detekta`);
+    descargarBlob(await r.blob(), nombre);
+    if (elementos === 0) {
+      return mensajeCopia("copia-descarga-mensaje", `La copia se descargó vacía (${nombre}): todavía no hay nada cargado en la aplicación.`, "aviso");
+    }
+    mensajeCopia("copia-descarga-mensaje", `Copia descargada: ${nombre}. Guárdela en un lugar seguro; con ella puede restaurar sus datos desde esta misma pantalla.`, "ok");
+  });
+
+  let copiaPendiente = null; // { nombre, base64 } del archivo elegido
+  $("copia-archivo").addEventListener("change", () => {
+    const f = $("copia-archivo").files && $("copia-archivo").files[0];
+    copiaPendiente = null;
+    $("btn-copia-restaurar").disabled = true;
+    mensajeCopia("copia-mensaje", null); detalleCopia(null);
+    if (!f) return;
+    const lector = new FileReader();
+    lector.onerror = () => mensajeCopia("copia-mensaje", "No se pudo leer el archivo.", "error");
+    lector.onload = () => {
+      const base64 = String(lector.result || "").replace(/^data:[^,]*,/, "");
+      if (!base64) return mensajeCopia("copia-mensaje", "El archivo está vacío: elija el que descargó con «Descargar una copia de mis datos».", "error");
+      copiaPendiente = { nombre: f.name, base64 };
+      $("btn-copia-restaurar").disabled = false;
+      mensajeCopia("copia-mensaje", `Archivo listo: ${f.name}. Pulse «Restaurar».`, "aviso");
+    };
+    lector.readAsDataURL(f);
+  });
+
+  $("btn-copia-restaurar").addEventListener("click", async () => {
+    if (!copiaPendiente) return mensajeCopia("copia-mensaje", "Elija primero el archivo de la copia.", "aviso");
+    const btn = $("btn-copia-restaurar");
+    const etiqueta = btn.textContent;
+    btn.disabled = true; btn.textContent = "Restaurando…";
+    detalleCopia(null);
+    let r = null, cuerpo = null;
+    try {
+      r = await fetch("/api/admin?op=importar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-historico-token": leerToken() },
+        body: JSON.stringify({ copia: copiaPendiente.base64, sobrescribir: $("copia-reemplazar").checked }),
+      });
+      cuerpo = await leerJson(r);
+    } catch (e) {
+      btn.disabled = false; btn.textContent = etiqueta;
+      return mensajeCopia("copia-mensaje", mensajeDeFallo(e, "restaurar la copia"), "error");
+    }
+    btn.disabled = false; btn.textContent = etiqueta;
+    if (r.status === 401) return mensajeCopia("copia-mensaje", msg401(cuerpo), "error");
+    if (!r.ok || !cuerpo || !cuerpo.ok) {
+      mensajeCopia("copia-mensaje", errorDelServidor(cuerpo) || fraseDeFallo({ status: r.status }), "error");
+      return detalleCopia(cuerpo && Array.isArray(cuerpo.errores) ? cuerpo.errores : null);
+    }
+    mensajeCopia("copia-mensaje", [cuerpo.mensaje, cuerpo.que_hacer].filter(Boolean).join(" "), cuerpo.escritas > 0 ? "ok" : "aviso");
+    /* por apartado, en palabras: qué se restauró, qué ya existía, qué no entró */
+    detalleCopia((cuerpo.apartados || []).map((a) => {
+      const estado = a.no_cargadas > 0 ? "no se pudo cargar"
+        : a.escritas > 0 && a.saltadas > 0 ? "restaurado en parte (lo que ya existía no se tocó)"
+          : a.escritas > 0 ? "restaurado" : "ya existía en la aplicación; no se tocó";
+      return `${a.nombre}: ${estado}`;
+    }));
+    if (cuerpo.escritas > 0) {
+      /* lo que hay en pantalla se calculó contra los datos anteriores */
+      copiaPendiente = null; $("copia-archivo").value = "";
+      $("btn-copia-restaurar").disabled = true;
+      await cargarRupActual();
+      cargarExperienciaActual();
+      cargarParametrosAdmin();
+      pintarConsorciosGuardados();
+      ultimoResumen = null;
+      cargarDashboard({ forzar: true });
+      seguimientoCargadoPara = null;
+    }
+  });
 
   /* ══════════════════════════════════════════════════════════════════════════
      AUDITORÍA DE COBERTURA RUP (/api/admin/cobertura-rup)
