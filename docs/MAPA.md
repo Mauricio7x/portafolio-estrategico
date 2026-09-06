@@ -167,8 +167,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 126 secciones. Las 10 más nuevas:
-  L  6861  Los documentos del proceso se leen solos al guardar en Mis procesos (3-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 127 secciones. Las 10 más nuevas:
   L  6963  La cláusula gana al índice: el detector del pliego ya no cita la tabla de contenido (3-sep-2
   L  7020  La piel v2 · medida sobre las mejores páginas del mundo, no de memoria (4-sep-2026)
   L  7110  La piel v3 · «Lino y tinta»: el color caro y el detalle, medidos (4-sep-2026)
@@ -178,6 +177,7 @@
   L  7414  Consultoría integral del 4/5-sep-2026 · qué es Detekta, qué aguanta, qué se ve, qué se cuent
   L  7485  Estética premium y experiencia de uso · las 24 mejoras del encargo 2, implementadas (5/6-sep
   L  7586  Lote «servidor y cifras» de la consultoría del 4-sep · M-INF-09, M-INF-17, M-INF-07, M-DGF-1
+  L  7697  Lote «precios por perfil» de la consultoría del 4-sep · M-SEG-01, M-SEG-06 (6-sep-2026)
 
 · DOCUMENTOS docs/ — 42:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)

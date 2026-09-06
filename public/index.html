@@ -2673,6 +2673,10 @@
              pedido nada. Es una nota al pie del título —se lee, no asusta— y
              conserva su id: app.js escribe el texto. -->
         <p id="aviso-precios" class="nota-pestana"></p>
+        <!-- Para quién se guardan los borradores y los precios corregidos: lo
+             escribe app.js desde el selector de la barra (6-sep-2026). Va aquí
+             arriba porque es lo que hay que VER; el selector sigue plegado. -->
+        <p id="perfil-borrador-rotulo" class="nota-pestana"></p>
       </header>
 
       <!-- ══════ PASO 1 · CARGUE (rediseño 4-sep-2026): una sola puerta, y lo demás plegado ══════ -->
@@ -3141,11 +3145,10 @@
               </label>
               <label class="block">
                 <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Perfil del borrador</span>
-                <select id="perfil" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
-                  <option value="helder">Helder</option>
-                  <option value="genesis">Génesis</option>
-                  <option value="juntos">Consorcio</option>
-                </select>
+                <!-- SIN opciones escritas (6-sep-2026): se alimenta del selector de la
+                     barra (#f-perfil, ya podado para el visitante). Tres nombres fijos
+                     aquí hacían que quien entraba con su RUP guardara como «helder». -->
+                <select id="perfil" class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"></select>
               </label>
             </div>
           </details>

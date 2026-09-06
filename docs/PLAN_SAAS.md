@@ -85,7 +85,11 @@ consulta al panel, y cambia cuánto tarda la carga completa.**
 **Lo que sí está bien y no hay que tocar:** `licitaciones:*`, `indice:competencia*`, `indice:baja:*`,
 `paa:acierto` son **el mercado**, no el cliente: compartirlos es correcto y es lo que hace barato el
 producto. `apu:precios:{perfil}`, `apu:presupuesto:{perfil}:{id}`, `seguimiento:{perfil}` y
-`cobertura:{perfil}:{modo}` **ya están aislados**. El trabajo es acotado, no una reescritura.
+`cobertura:{perfil}:{modo}` **ya están aislados** — con una salvedad medida el 5-sep-2026 y cerrada el
+6-sep-2026 (M-SEG-01): `apu:*` solo lo estaba para los tres perfiles del dueño, porque el editor de
+Precios caía a «helder» con cualquier otro id y el selector del borrador traía tres nombres fijos; desde
+entonces resuelve `rup_…`/`cons_…` por `lib/perfil_resolver` y exige perfil explícito en toda escritura.
+El trabajo es acotado, no una reescritura.
 
 ### B3 · No hay cuentas, y la llave está a la vista
 `const TOKEN = "MiExtraccion2025"` vive en `public/app.js`, `public/onboarding.js` y

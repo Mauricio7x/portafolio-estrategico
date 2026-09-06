@@ -1270,6 +1270,13 @@ function crearMockUpstash() {
         return Math.max(0, Math.ceil((expiras.get(k) - Date.now()) / 1000));
       }
       case "EXISTS": return viva(cmd[1]) || hashes.has(cmd[1]) ? 1 : 0;
+      /* EXPIRE: la única vía para poner TTL a un hash ya escrito (apu:precios:{rup_…}) */
+      case "EXPIRE": {
+        const k = cmd[1];
+        if (!viva(k) && !hashes.has(k)) return 0;
+        expiras.set(k, Date.now() + parseInt(cmd[2], 10) * 1000);
+        return 1;
+      }
       case "SCAN": {
         const iMatch = cmd.map((x) => String(x).toUpperCase()).indexOf("MATCH");
         const re = globRe(cmd[iMatch + 1]);
@@ -5726,6 +5733,9 @@ async function main() {
       ...(await redis.scan("seguimiento:*")), ...(await redis.scan("pulso:*")),
       // Dictamen del pliego (2-sep-2026): caché por versión, candado, cuota diaria y uso mensual
       ...(await redis.scan("dictamen:*")), ...(await redis.scan("lock:dictamen:*")),
+      // candados cortos de Mis procesos y consorcios (6-sep-2026): se liberan solos, pero un
+      // bloque abortado a mitad no puede dejar a la iteración siguiente esperando 5 s
+      ...(await redis.scan("lock:seguimiento:*")), ...(await redis.scan("lock:consorcios")),
     ];
     if (claves.length) await redis.del(...claves);
     for (const patron of ["licitaciones:*", "indice:*", "sync:historico:*", "equivalencias:*",
@@ -8901,6 +8911,49 @@ async function main() {
           assert.strictEqual(gf.cuerpo.guardado.prediccion.p_ganar, otra.p_ganar, "(3) el servidor la recalcula y coincide con el listado");
           await seg(`&perfil=helder&id=${encodeURIComponent(otra.id_del_proceso)}`, { metodo: "DELETE" });
           console.log(`  · F0-7: predicción congelada al guardar · p=${gs.prediccion.p_ganar} ≡ listado · ${gs.prediccion.rivales_esperados} rivales (${gs.prediccion.fuente_del_promedio}) · sobrevive al cambio de estado · la del cliente se ignora`);
+        }
+        /* ---- Dos guardados a la vez no se pisan (M-SEG-06, 6-sep-2026) ----
+           seguimiento:{perfil} es UN JSON leído y reescrito entero. Medido ANTES del
+           arreglo, con estos mismos dos POST en Promise.all contra el handler real:
+           200 y 200, sobrevivía UNO. Ahora cada leer → modificar → escribir va bajo
+           lock:seguimiento:{perfil} (SET NX EX 5 s con reintento breve, lo pesado
+           fuera); si el candado no se obtiene, 409 con qué hacer. La regla que se
+           vigila: TODO 200 está escrito, y lo que no se escribió lo dice. */
+        {
+          const { tuteoEn } = require("../lib/lenguaje_pantalla.js");
+          const idsPar = ["CO1.CARRERA.A", "CO1.CARRERA.B"];
+          const fotoPar = (n) => ({ nombre: `OBRA CARRERA ${n}`, entidad: "E", nit_entidad: "800100003", fecha_cierre: `${ANO + 1}-06-01T00:00:00.000`, precio_base: "1000" });
+          const [ra, rb] = await Promise.all(idsPar.map((id, i) => seg("", { metodo: "POST", body: { perfil: "genesis", id, estado: "interesa", foto: fotoPar(i) } })));
+          const idsTras = (await seg("&perfil=genesis")).cuerpo.procesos.map((p) => p.id);
+          const comprobar = (r, id) => {
+            if (r.status === 200) { assert.strictEqual(r.cuerpo.ok, true); assert.ok(idsTras.includes(id), `«guardado» sin escritura: ${id} respondió 200 y no está en el perfil (quedó ${idsTras.join(",")})`); return; }
+            assert.strictEqual(r.status, 409, `la respuesta que no escribió tiene que ser 409, no ${r.status}: ${JSON.stringify(r.cuerpo).slice(0, 200)}`);
+            assert.strictEqual(r.cuerpo.ok, false); assert.ok(r.cuerpo.que_hacer, "el 409 dice qué hacer");
+            assert.ok(!idsTras.includes(id), `respondió «no se pudo» y sin embargo escribió: ${id}`);
+          };
+          comprobar(ra, idsPar[0]); comprobar(rb, idsPar[1]);
+          assert.ok(ra.status === 200 && rb.status === 200, `con reintento los dos caben (${ra.status}/${rb.status}): la sección crítica son dos comandos`);
+          // quitar A mientras se guarda C: el DELETE y el POST tampoco se pisan
+          const [rd, rc] = await Promise.all([
+            seg(`&perfil=genesis&id=${encodeURIComponent(idsPar[0])}`, { metodo: "DELETE" }),
+            seg("", { metodo: "POST", body: { perfil: "genesis", id: "CO1.CARRERA.C", estado: "interesa", foto: fotoPar(2) } }),
+          ]);
+          const idsTras2 = (await seg("&perfil=genesis")).cuerpo.procesos.map((p) => p.id);
+          assert.strictEqual(rd.status, 200, JSON.stringify(rd.cuerpo).slice(0, 200)); assert.strictEqual(rc.status, 200, JSON.stringify(rc.cuerpo).slice(0, 200));
+          assert.ok(!idsTras2.includes(idsPar[0]) && idsTras2.includes(idsPar[1]) && idsTras2.includes("CO1.CARRERA.C"), `quitar A y guardar C a la vez: quedó ${idsTras2.join(",")}`);
+          // el candado se libera al terminar, y ocupado responde 409 honesto (sin escribir, hablando de usted)
+          assert.strictEqual(await redis.get("lock:seguimiento:genesis"), null, "el candado se libera al terminar");
+          await redis.set("lock:seguimiento:genesis", "ajeno", { nx: true, ex: 3 });
+          const ocupado = await seg("", { metodo: "POST", body: { perfil: "genesis", id: "CO1.CARRERA.D", estado: "interesa", foto: fotoPar(3) } });
+          assert.strictEqual(ocupado.status, 409, `con el candado ocupado la respuesta es 409, fue ${ocupado.status}: ${JSON.stringify(ocupado.cuerpo).slice(0, 200)}`);
+          assert.strictEqual(ocupado.cuerpo.ok, false); assert.ok(/otra acción|en curso/i.test(ocupado.cuerpo.error), ocupado.cuerpo.error); assert.ok(/intent/i.test(ocupado.cuerpo.que_hacer));
+          assert.strictEqual(tuteoEn(`${ocupado.cuerpo.error} ${ocupado.cuerpo.que_hacer}`), null, "el 409 habla de usted");
+          assert.ok(!(await seg("&perfil=genesis")).cuerpo.procesos.some((p) => p.id === "CO1.CARRERA.D"), "el 409 NO escribió");
+          assert.ok((await redis.ttl("lock:seguimiento:genesis")) > 0, "un candado sin TTL bloquearía para siempre");
+          await redis.del("lock:seguimiento:genesis");
+          for (const id of [idsPar[1], "CO1.CARRERA.C"]) await seg(`&perfil=genesis&id=${encodeURIComponent(id)}`, { metodo: "DELETE" });
+          assert.strictEqual((await seg("&perfil=genesis")).cuerpo.procesos.length, 0);
+          console.log(`  · carrera en Mis procesos (M-SEG-06): dos POST a la vez → ${ra.status}/${rb.status} y los dos escritos · DELETE+POST a la vez sin pérdida · candado ocupado → 409 con qué hacer y sin escribir`);
         }
         console.log(`  · seguimiento: guardar/estado/quitar por perfil · fila viva (${abierto.dias_para_cierre} días al cierre, ${abierto.avisos.length} avisos) · .ics con alarmas · detalle: ${det.proponentes.length} proponentes, recurrente ${rec.ante_esta_entidad.veces_presentado} veces ante la entidad y ${rec.contratos_vigentes.contratos} vigentes por $${rec.contratos_vigentes.valor_cop}`);
       }
@@ -13574,6 +13627,126 @@ async function main() {
         assert.ok(lc.cuerpo.presupuestos.some((p) => p.id === id), "el resto del listado debe seguir sirviéndose");
       }
 
+      /* ---- j.8-bis · Precios guarda bajo el perfil de quien usa la aplicación (M-SEG-01, 6-sep-2026) ----
+         Medido ANTES del arreglo con este mismo handler: guardar con perfil rup_ respondía
+         400 «Perfil desconocido» en instancia fría y 200 en caliente (según qué handler
+         hubiera inyectado antes el perfil), sin perfil caía a «helder», y el precio
+         tecleado por el visitante acababa en apu:precios:helder —el nivel 1 de la
+         cascada del dueño— sin TTL. El editor resuelve ahora el perfil por
+         lib/perfil_resolver, la misma vía que el listado y el dictamen. */
+      {
+        const PD = require("../lib/perfil_dinamico.js");
+        const { PERFIL_DINAMICO_TTL_SEG } = require("../lib/almacen.js");
+        const { ERROR_RUP_CADUCADO } = require("../lib/perfil_resolver.js");
+        const creado = await PD.crearPerfilDinamico(redis, { perfil: { nombre: "Constructora de prueba", unspsc: ["72101500"], liquidez: 2, endeudamiento: 0.3, patrimonio: 100e6, utilidadOp: 10e6, expSMMLV: 500 } });
+        assert.ok(creado.ok, `no se pudo crear el perfil dinámico: ${JSON.stringify(creado)}`);
+        const idRup = creado.id;
+        PD.olvidarPerfilesDinamicos();   // instancia FRÍA: ningún handler inyectó el perfil antes
+        const itemsRup = [{ item_id: "NOG-A2", descripcion: "Excavación manual", unidad: "m3", cantidad: 2, precio_manual: 777777 }];
+        const helderAntes = await redis.hgetall(CLAVES.apuPreciosUsuario("helder"));
+        const gRup = await invocarPost(apu, "/api/apu/guardar", { perfil: idRup, nombre: "Del visitante", departamento: "ANTIOQUIA", items: itemsRup }, CAB_TOKEN);
+        assert.strictEqual(gRup.status, 200, `instancia fría: guardar con perfil rup_ tiene que responder 200: ${JSON.stringify(gRup.cuerpo)}`);
+        assert.strictEqual(gRup.cuerpo.perfil, idRup, "el borrador se guarda bajo el perfil del visitante, no bajo helder");
+        const claveRup = CLAVES.apuPresupuesto(idRup, gRup.cuerpo.id);
+        assert.strictEqual(await redis.exists(claveRup), 1, "la clave escrita es apu:presupuesto:rup_…:<id>");
+        const ttlBorrador = await redis.ttl(claveRup);
+        assert.ok(ttlBorrador > 0 && ttlBorrador <= PERFIL_DINAMICO_TTL_SEG, `el borrador del visitante lleva TTL (${ttlBorrador})`);
+        // sus precios corregidos: bajo SU perfil, con TTL, y ninguno nuevo en el hash del dueño
+        const ttlPrecios = await redis.ttl(CLAVES.apuPreciosUsuario(idRup));
+        assert.ok(ttlPrecios > 0 && ttlPrecios <= PERFIL_DINAMICO_TTL_SEG, `apu:precios:rup_… tiene que caducar con el perfil (TTL=${ttlPrecios})`);
+        assert.deepStrictEqual(await redis.hgetall(CLAVES.apuPreciosUsuario("helder")), helderAntes, "el precio tecleado por el visitante NO puede caer en apu:precios:helder");
+        assert.ok(Object.values(await redis.hgetall(CLAVES.apuPreciosUsuario(idRup))).some((v) => /777777/.test(v)), "el precio corregido queda en el perfil del visitante");
+        assert.ok((await redis.ttl(CLAVES.apuPreciosUsuario("helder"))) < 0, "los precios de los perfiles del dueño siguen sin caducidad (conocimiento, no borrador)");
+        // sin perfil, toda escritura o lectura de borradores es 400 que dice qué hacer — jamás «helder» por omisión
+        const sinPerfil = await invocarPost(apu, "/api/apu/guardar", { nombre: "x", items: itemsRup }, CAB_TOKEN);
+        assert.strictEqual(sinPerfil.status, 400, `guardar sin perfil tiene que ser 400, fue ${sinPerfil.status}`);
+        assert.ok(/perfil/i.test(sinPerfil.cuerpo.error) && /barra|RUP/i.test(sinPerfil.cuerpo.error), `el 400 dice qué hacer: ${sinPerfil.cuerpo.error}`);
+        for (const [ruta, metodo, body] of [["cargar?id=abc", "GET"], ["listar", "GET"], ["cotizar", "POST", { items: itemsRup }], ["ia", "POST", { id: "abc", solicitar: true }], ["ia?id=abc", "GET"]]) {
+          const sp = await invocar(apu, `/api/apu/${ruta}`, CAB_TOKEN, { metodo, body: body || {} });
+          assert.strictEqual(sp.status, 400, `/api/apu/${ruta} sin perfil tiene que ser 400 (fue ${sp.status}: ${JSON.stringify(sp.cuerpo).slice(0, 120)})`);
+          assert.ok(/perfil/i.test(sp.cuerpo.error), `/api/apu/${ruta}: ${sp.cuerpo.error}`);
+        }
+        // …pero calcular y rentabilidad (la excepción DECLARADA en el módulo) responden sin perfil
+        for (const ruta of ["calcular", "rentabilidad"]) {
+          const sc = await invocarPost(apu, `/api/apu/${ruta}`, { items: itemsRup, departamento: "ANTIOQUIA", config: cfgBase }, CAB_TOKEN);
+          assert.strictEqual(sc.status, 200, `${ruta} sin perfil: ${JSON.stringify(sc.cuerpo).slice(0, 200)}`);
+        }
+        const fuenteEditor = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "apu", "editor.js"), "utf8"));
+        const excepcion = /ACCIONES_CON_DEFECTO_HELDER = (\[[^\]]*\])/.exec(fuenteEditor);
+        assert.ok(excepcion, "la excepción de «helder» por omisión tiene que estar declarada en editor.js");
+        assert.deepStrictEqual(JSON.parse(excepcion[1]), ["calcular", "rentabilidad"], "la excepción es SOLO para las dos acciones que no leen finanzas del perfil");
+        // listar con rup_ → SOLO sus borradores; el listado del dueño no los ve; cargar responde el suyo
+        const lRup = await invocar(apu, `/api/apu/listar?perfil=${idRup}`, CAB_TOKEN);
+        assert.strictEqual(lRup.status, 200, JSON.stringify(lRup.cuerpo).slice(0, 200));
+        assert.deepStrictEqual(lRup.cuerpo.presupuestos.map((p) => p.id), [gRup.cuerpo.id], "listar con rup_ sirve solo sus borradores");
+        assert.ok(!(await invocar(apu, "/api/apu/listar?perfil=helder", CAB_TOKEN)).cuerpo.presupuestos.some((p) => p.id === gRup.cuerpo.id), "el borrador del visitante no aparece en la lista del dueño");
+        const cRup = await invocar(apu, `/api/apu/cargar?id=${gRup.cuerpo.id}&perfil=${idRup}`, CAB_TOKEN);
+        assert.strictEqual(cRup.status, 200); assert.strictEqual(cRup.cuerpo.presupuesto.perfil, idRup);
+        // «Buscar» encola bajo rup_, y la cola de la sesión (de TODOS los perfiles) no exige perfil
+        const enc = await invocarPost(apu, "/api/apu/ia", { perfil: idRup, id: gRup.cuerpo.id, solicitar: true }, CAB_TOKEN);
+        assert.strictEqual(enc.status, 200, JSON.stringify(enc.cuerpo).slice(0, 200));
+        assert.strictEqual(await redis.exists(CLAVES.apuIaSolicitud(idRup, gRup.cuerpo.id)), 1, "la solicitud se encola bajo el perfil del visitante");
+        const cola = await invocar(apu, "/api/apu/ia?pendientes=1", CAB_TOKEN);
+        assert.strictEqual(cola.status, 200, `la cola de la sesión no pide perfil (la skill /precios la llama sin él): ${JSON.stringify(cola.cuerpo).slice(0, 120)}`);
+        assert.ok(cola.cuerpo.solicitudes.some((s) => s.perfil === idRup && s.id === gRup.cuerpo.id), "la cola trae la solicitud del visitante");
+        // el perfil caducó (o nunca existió): 404 con el mensaje del resolver, no «helder» ni 400
+        await redis.del(...PD.clavesDePerfilDinamico(idRup)); PD.olvidarPerfilesDinamicos();
+        const cad = await invocarPost(apu, "/api/apu/guardar", { perfil: idRup, nombre: "x", items: itemsRup }, CAB_TOKEN);
+        assert.strictEqual(cad.status, 404, `perfil caducado → 404 (fue ${cad.status})`);
+        assert.strictEqual(cad.cuerpo.perfil_caducado, true, "la web olvida el perfil solo con perfil_caducado:true");
+        assert.strictEqual(cad.cuerpo.error, ERROR_RUP_CADUCADO, "el mensaje es el de perfil_resolver, no uno nuevo");
+        assert.strictEqual((await invocar(apu, `/api/apu/listar?perfil=${idRup}`, CAB_TOKEN)).status, 404);
+        // un consorcio a la medida (cons_…) también entra, y sus precios caducan (se puede borrar); un id malformado es 400
+        const C2 = require("../lib/consorcio.js");
+        const consId = C2.generarId();
+        await C2.guardarConsorcio(redis, { id: consId, nombre: "Prueba precios", integrantes: [{ perfilId: "helder", participacion: 50 }, { perfilId: "genesis", participacion: 50 }] });
+        const gCons = await invocarPost(apu, "/api/apu/guardar", { perfil: consId, nombre: "Del consorcio", items: itemsRup }, CAB_TOKEN);
+        assert.strictEqual(gCons.status, 200, `guardar con cons_: ${JSON.stringify(gCons.cuerpo).slice(0, 200)}`);
+        assert.ok((await redis.ttl(CLAVES.apuPreciosUsuario(consId))) > 0, "los precios de un consorcio borrable también caducan");
+        await C2.borrarConsorcio(redis, consId);
+        assert.strictEqual((await invocarPost(apu, "/api/apu/guardar", { perfil: "marciano", nombre: "x", items: itemsRup }, CAB_TOKEN)).status, 400, "un id malformado es 400, no «helder»");
+        // CENSO (no lista de dos sitios): ninguna escritura del editor va sin TTL
+        const escrituras = fuenteEditor.match(/escribirJSONComprimido\([^;]*?\);/g) || [];
+        assert.ok(escrituras.length >= 5, `el censo esperaba las escrituras del editor (${escrituras.length})`);
+        for (const e of escrituras) assert.ok(/ttl:/.test(e), `escritura sin TTL en editor.js: ${e.slice(0, 120)}`);
+        assert.ok(!/PERFILES\[|idCanonico\(/.test(fuenteEditor), "el editor no resuelve el perfil por su cuenta: llama a lib/perfil_resolver");
+        // PANTALLA: el selector del borrador ya no trae tres nombres escritos, el rótulo existe,
+        // y la sincronización con la barra se EJECUTA sobre un DOM mínimo
+        const htmlP = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        const selP = /<select id="perfil"[^>]*>([\s\S]*?)<\/select>/.exec(htmlP);
+        assert.ok(selP, "index.html sin <select id=\"perfil\">");
+        assert.ok(!/<option/.test(selP[1]), "el selector «Perfil del borrador» no puede traer nombres escritos: se alimenta del selector de la barra");
+        assert.ok(/id="perfil-borrador-rotulo"/.test(htmlP), "falta el rótulo «Precios guardados para: …»");
+        const appP = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const iniS = appP.indexOf("function sincronizarPerfilBorrador()"), finS = appP.indexOf("/* ── fin del perfil del borrador ── */");
+        assert.ok(iniS > 0 && finS > iniS, "app.js sin sincronizarPerfilBorrador … fin del perfil del borrador");
+        const selectFalso = (opciones) => {
+          const s = { options: opciones.map((o) => ({ value: o[0], textContent: o[1] })), _v: opciones.length ? opciones[0][0] : "" };
+          Object.defineProperty(s, "value", { get() { return s.options.some((o) => o.value === s._v) ? s._v : ""; }, set(v) { s._v = v; } });
+          Object.defineProperty(s, "selectedIndex", { get() { return s.options.findIndex((o) => o.value === s._v); } });
+          Object.defineProperty(s, "innerHTML", { set(v) { if (v === "") s.options = []; } });
+          s.appendChild = (o) => { s.options.push(o); };
+          return s;
+        };
+        const nodos = { "f-perfil": selectFalso([["rup_abc123", "Mi RUP · Constructora"], ["cons_xyz789", "Consorcio 1"]]), perfil: selectFalso([]), "perfil-borrador-rotulo": { textContent: "" } };
+        const fns = new Function("$", "document", `${appP.slice(iniS, finS)}; return { sincronizarPerfilBorrador, asegurarOpcionPerfil, pintarRotuloPerfil };`)((id) => nodos[id] || null, { createElement: () => ({ value: "", textContent: "" }) });
+        fns.sincronizarPerfilBorrador();
+        assert.deepStrictEqual(nodos.perfil.options.map((o) => o.value), ["rup_abc123", "cons_xyz789"], "el selector del borrador se llena con los perfiles de la barra");
+        assert.strictEqual(nodos.perfil.value, "rup_abc123", "y queda en el perfil activo de la barra");
+        assert.strictEqual(nodos["perfil-borrador-rotulo"].textContent, "Precios guardados para: Mi RUP · Constructora");
+        nodos["f-perfil"].value = "cons_xyz789"; fns.sincronizarPerfilBorrador();
+        assert.strictEqual(nodos.perfil.value, "cons_xyz789", "cambiar la barra arrastra al borrador"); assert.ok(/Consorcio 1$/.test(nodos["perfil-borrador-rotulo"].textContent));
+        fns.asegurarOpcionPerfil("rup_nuevo1");
+        assert.ok(nodos.perfil.options.some((o) => o.value === "rup_nuevo1"), "un perfil que llega por la URL de la tarjeta se añade aunque la barra no lo tenga");
+        nodos["f-perfil"].options = []; nodos["f-perfil"].value = ""; fns.sincronizarPerfilBorrador();
+        assert.strictEqual(nodos.perfil.value, ""); assert.ok(/elija|barra/i.test(nodos["perfil-borrador-rotulo"].textContent), "sin perfil el rótulo dice qué hacer");
+        const cuerpoPre = appP.slice(appP.indexOf("function precargarDesdeURL()"), appP.indexOf("\n  function ", appP.indexOf("function precargarDesdeURL()") + 10));
+        assert.ok(/asegurarOpcionPerfil\(perfil\)/.test(cuerpoPre) && !/some\(\(o\) => o\.value === perfil\)\) \$\("perfil"\)\.value/.test(cuerpoPre),
+          "precargarDesdeURL asigna el perfil de la tarjeta SIN condicionarlo a que la opción exista");
+        assert.ok(/id === "f-perfil"\) \{[^\n]*sincronizarPerfilBorrador\(\);/.test(sinComentarios(appP)), "cambiar el perfil de la barra tiene que sincronizar el del borrador");
+        console.log(`  · Precios por perfil (M-SEG-01): guardar con rup_ en instancia fría → 200 bajo apu:presupuesto:rup_… (TTL ${ttlBorrador} s) · precios en apu:precios:rup_ con TTL ${ttlPrecios} s y ninguno nuevo en helder · sin perfil 400 en 6 acciones · caducado 404 · cola sin perfil · cons_ entra · ${escrituras.length} escrituras con TTL · selector y rótulo ejecutados`);
+      }
+
       /* ---- j.9 con el catálogo YA cargado: la vía cambia y el precio también --
          Es la prueba de que el editor consume el catálogo de Redis y no se queda
          pegado a la semilla del repositorio. Al terminar se borra todo `apu:*`
@@ -14247,7 +14420,9 @@ async function main() {
         assert.strictEqual(calcPar.cuerpo.parametros_costo.fuente, "redis");
         assert.ok(Math.abs(calcPar.cuerpo.parametros_costo.factor_jornada - 46 / 42) < 1e-6, "calcular usa los parámetros guardados");
         // cotizar y calcular no pueden dar dos unitarios distintos del mismo ítem
-        const cot = await invocarPost(apu, "/api/apu/cotizar", { items: [{ item_id: "NOG-A2", cantidad: 1 }], departamento: "BOGOTA D.C." }, CAB_TOKEN);
+        // `cotizar` exige el perfil explícito desde el 6-sep-2026 (lee los precios corregidos de UN perfil);
+        // `calcular` cae a «helder» por la excepción declarada, así que aquí se nombra para comparar lo mismo
+        const cot = await invocarPost(apu, "/api/apu/cotizar", { perfil: "helder", items: [{ item_id: "NOG-A2", cantidad: 1 }], departamento: "BOGOTA D.C." }, CAB_TOKEN);
         assert.strictEqual(cot.status, 200);
         assert.strictEqual(cot.cuerpo.items[0].precio_unitario ?? cot.cuerpo.items[0].precio, calcPar.cuerpo.items[0].costo_directo_unitario,
           "cotizar y calcular deben dar el MISMO unitario con los mismos parámetros");
@@ -18247,6 +18422,38 @@ async function main() {
       const rBorrado = await invocar(oportunidades, `/api/oportunidades?perfil=${g1.cuerpo.id}`, CAB_TOKEN);
       assert.strictEqual(rBorrado.status, 404); assert.strictEqual(rBorrado.cuerpo.perfil_caducado, true);
       assert.strictEqual((await invocar(oportunidades, "/api/oportunidades?perfil=cons_noexiste1", CAB_TOKEN)).status, 404);
+
+      /* ---- (4-bis) dos consorcios a la vez no se pisan (M-SEG-06, 6-sep-2026) ----
+         config:consorcios es UN JSON y además GLOBAL (la carrera es entre cualquier
+         par de usuarios). Medido ANTES del arreglo con estos dos POST en Promise.all:
+         500 y 200 (el primero releía su registro ya pisado por el segundo) y
+         sobrevivía uno. Ahora guardar y borrar van bajo lock:consorcios, y la
+         numeración «Consorcio N» se hace DENTRO del candado. */
+      {
+        const dosCons = [[60, 40], [50, 50]].map((p) => ({ integrantes: [{ perfilId: "helder", participacion: p[0] }, { perfilId: "genesis", participacion: p[1] }] }));
+        const nAntes = (await invocar(routerPerfil, "/api/perfil?op=consorcio", CAB_TOKEN)).cuerpo.consorcios.length;
+        const [c1, c2] = await Promise.all(dosCons.map((b) => invocarPost(routerPerfil, "/api/perfil?op=consorcio", b, CAB_TOKEN)));
+        const guardadosC = (await invocar(routerPerfil, "/api/perfil?op=consorcio", CAB_TOKEN)).cuerpo.consorcios;
+        for (const r of [c1, c2]) {
+          assert.strictEqual(r.status, 200, `dos consorcios a la vez: ${r.status} ${JSON.stringify(r.cuerpo).slice(0, 200)}`);
+          assert.ok(guardadosC.some((c) => c.id === r.cuerpo.id), `«guardado» sin escritura: ${r.cuerpo.id} respondió 200 y no está (quedaron ${guardadosC.map((c) => c.id).join(",")})`);
+        }
+        assert.notStrictEqual(c1.cuerpo.nombre, c2.cuerpo.nombre, `dos guardados a la vez sin nombre sacaron el mismo «Consorcio N»: ${c1.cuerpo.nombre}`);
+        assert.ok(/^Consorcio \d+$/.test(c1.cuerpo.nombre) && /^Consorcio \d+$/.test(c2.cuerpo.nombre), `${c1.cuerpo.nombre} / ${c2.cuerpo.nombre}`);
+        const [d1, d2] = await Promise.all([c1, c2].map((r) => invocar(routerPerfil, `/api/perfil?op=consorcio&id=${r.cuerpo.id}`, CAB_TOKEN, { metodo: "DELETE" })));
+        assert.strictEqual(d1.cuerpo.borrado, true); assert.strictEqual(d2.cuerpo.borrado, true);
+        const quedanC = (await invocar(routerPerfil, "/api/perfil?op=consorcio", CAB_TOKEN)).cuerpo.consorcios;
+        assert.ok(!quedanC.some((c) => c.id === c1.cuerpo.id || c.id === c2.cuerpo.id), "dos DELETE a la vez: los dos se borran");
+        assert.strictEqual(quedanC.length, nAntes);
+        assert.strictEqual(await redis.get("lock:consorcios"), null, "el candado se libera");
+        await redis.set("lock:consorcios", "ajeno", { nx: true, ex: 3 });
+        const oc = await invocarPost(routerPerfil, "/api/perfil?op=consorcio", dosCons[0], CAB_TOKEN);
+        assert.strictEqual(oc.status, 409, `candado ocupado → 409 (fue ${oc.status}: ${JSON.stringify(oc.cuerpo).slice(0, 200)})`);
+        assert.strictEqual(oc.cuerpo.ok, false); assert.ok(oc.cuerpo.que_hacer, "el 409 dice qué hacer");
+        assert.strictEqual((await invocar(routerPerfil, "/api/perfil?op=consorcio", CAB_TOKEN)).cuerpo.consorcios.length, nAntes, "el 409 no escribió");
+        await redis.del("lock:consorcios");
+        console.log(`  · carrera en consorcios (M-SEG-06): dos POST a la vez → ${c1.status}/${c2.status}, «${c1.cuerpo.nombre}» y «${c2.cuerpo.nombre}» escritos · dos DELETE a la vez · candado ocupado → 409`);
+      }
 
       /* ---- (5) frontend ---- */
       const htmlC = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");

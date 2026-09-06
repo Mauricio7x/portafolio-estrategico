@@ -2761,7 +2761,7 @@
   $("btn-reintentar").addEventListener("click", () => { reintentosSync = 0; buscar(); });
   for (const id of ["f-perfil", "f-cuantia", "f-entidad", "f-ubicacion", "f-ordenar", "f-orden",
     "f-sin-unspsc", "f-solo-viables", "f-zona"]) {
-    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") pintarConceptoOrden(); buscar(); if (id === "f-perfil") { refrescarPulso(); guardados.clear(); seguimientoCargadoPara = null; cargarSeguimiento({ forzar: true }); } });
+    $(id).addEventListener("change", () => { pagina = 1; if (id === "f-ordenar" || id === "f-zona") { escribirFiltrosEnURL(); pintarControlesFiltros(); } if (id === "f-ordenar") pintarConceptoOrden(); buscar(); if (id === "f-perfil") { refrescarPulso(); sincronizarPerfilBorrador(); guardados.clear(); seguimientoCargadoPara = null; cargarSeguimiento({ forzar: true }); } });
   }
   /* «Ver PAA» NO re-consulta /api/oportunidades: son dos fuentes distintas y
      encender la previsión no puede cambiar la lista de lo que está abierto. Lo
@@ -5512,6 +5512,50 @@
     msgApu("Se abrió otro proceso: el editor quedó limpio. Los borradores guardados no se tocan.", "info");
   }
 
+  /* ══ EL PERFIL DEL BORRADOR ES EL DE LA BARRA (6-sep-2026) ══
+     El selector «Perfil del borrador» traía tres nombres escritos en el HTML
+     (Helder / Génesis / Consorcio): quien entraba con su RUP costeaba y guardaba
+     como «helder», y sus precios corregidos caían en el perfil del dueño (medido
+     en el servidor: apu:precios:helder con el precio del visitante). Ahora se
+     alimenta del selector de la barra (#f-perfil, ya podado para el visitante),
+     lo sigue cuando cambia, y un rótulo dice arriba para quién se guarda. Sin
+     perfil en la barra el selector queda vacío: `.value` es "" y el servidor
+     responde 400 diciendo qué falta — nunca un perfil ajeno por omisión. */
+  function sincronizarPerfilBorrador() {
+    const sel = $("perfil"), barra = $("f-perfil");
+    if (!sel || !barra) return;
+    sel.innerHTML = "";
+    for (const o of [...barra.options]) {
+      if (!o.value) continue;
+      const op = document.createElement("option");
+      op.value = o.value; op.textContent = o.textContent;
+      sel.appendChild(op);
+    }
+    const quiere = barra.value;
+    if ([...sel.options].some((o) => o.value === quiere)) sel.value = quiere;
+    pintarRotuloPerfil();
+  }
+  /* El perfil que llega en la URL de la tarjeta (el de la barra al abrirla) se
+     asigna aunque la opción no exista todavía: antes se copiaba «solo si la
+     opción existe» y por eso el visitante quedaba en «helder». */
+  function asegurarOpcionPerfil(id) {
+    const sel = $("perfil");
+    if (!sel || !id || [...sel.options].some((o) => o.value === id)) return;
+    const enBarra = $("f-perfil") ? [...$("f-perfil").options].find((o) => o.value === id) : null;
+    const op = document.createElement("option");
+    op.value = id; op.textContent = enBarra ? enBarra.textContent : id;
+    sel.appendChild(op);
+  }
+  function pintarRotuloPerfil() {
+    const rotulo = $("perfil-borrador-rotulo"), sel = $("perfil");
+    if (!rotulo) return;
+    const o = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
+    rotulo.textContent = o
+      ? `Precios guardados para: ${String(o.textContent || o.value).trim()}`
+      : "Precios guardados para: ningún perfil. Elija uno en la barra de Licitaciones o entre con su RUP.";
+  }
+  /* ── fin del perfil del borrador ── */
+
   function precargarDesdeURL() {
     let p = paramsProceso;
     if (!p) { try { p = new URLSearchParams(location.search); } catch { return false; } }
@@ -5531,7 +5575,7 @@
     tipoProceso = p.get("tipo") || "";
     poner("plazo-meses", "plazo");
     const perfil = p.get("perfil");
-    if (perfil && $("perfil") && [...$("perfil").options].some((o) => o.value === perfil)) $("perfil").value = perfil;
+    if (perfil && $("perfil")) { asegurarOpcionPerfil(perfil); $("perfil").value = perfil; pintarRotuloPerfil(); }
     // el NIT viaja aparte: el índice de baja se consulta por NOMBRE, y el NIT
     // solo sirve de puente cuando la entidad no viene (ver /api/apu/rentabilidad)
     nitProceso = p.get("entidad_nit") || "";
@@ -6063,6 +6107,10 @@
   }
 
   async function arrancar() {
+    /* el selector del borrador nace vacío en el HTML: se llena desde la barra
+       ANTES de leer la URL de la tarjeta, que puede traer el perfil */
+    sincronizarPerfilBorrador();
+    if ($("perfil")) $("perfil").addEventListener("change", () => { pintarRotuloPerfil(); contarBorradores(); });
     const hayProceso = precargarDesdeURL();
     // envuelto en una flecha a propósito: pasarla directa le entregaría el
     // MouseEvent como opciones y `{auto}` se leería de un objeto que no lo es

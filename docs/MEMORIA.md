@@ -7693,3 +7693,110 @@ arreglo (mutación por `git stash` de los fuentes, dejando la prueba). Lo que se
   código delante, no con la ficha: el bucle de `contarMes` en sync/historico habría pedido el
   count en cada página. (3) Una ficha puede nombrar un botón que no existe: el mensaje nombra el
   control como se VE en la pantalla, y se comprueba en `index.html` antes de escribirlo.
+
+### Lote «precios por perfil» de la consultoría del 4-sep · M-SEG-01, M-SEG-06 (6-sep-2026)
+
+Dos mejoras de seguridad del mismo eje: que lo que se guarda quede bajo el perfil de quien lo
+guarda, y que dos guardados a la vez no se pisen. Lo que se decidió y por qué no hay que
+re-aprenderlo:
+
+- **Precios guarda bajo el perfil de quien usa la aplicación (M-SEG-01).** Medido con el handler
+  real antes de tocar nada: `guardar` con `perfil=rup_…` respondía **400 «Perfil desconocido» en
+  instancia fría y 200 en caliente** (según qué handler hubiera inyectado antes el perfil en
+  `PERFILES`: no determinista), sin perfil caía a **«helder»**, y el precio tecleado por el
+  visitante quedaba en **`apu:precios:helder`** —el nivel 1 de la cascada, «manda sobre todo lo
+  demás»— y **sin TTL**. El editor ya no resuelve el perfil por su cuenta (`perfilDe` con
+  `PERFILES[idCanonico(…)]` desapareció): **llama a `lib/perfil_resolver`** (`validarIdPerfil` +
+  `cargarPerfilResuelto`), la misma vía que el listado y el dictamen, releída de Redis en cada
+  petición. Reglas del módulo, declaradas en su cabecera: las acciones que escriben o leen
+  borradores de UN perfil (`guardar`, `cargar`, `listar`, `cotizar`, `ia`) exigen perfil explícito
+  —sin él, 400 que dice qué hacer (`ERROR_SIN_PERFIL`); con forma inválida, 400; caducado, **404
+  `perfil_caducado:true`** con `ERROR_RUP_CADUCADO`/`ERROR_CONSORCIO_CADUCADO` de perfil_resolver,
+  que la web ya sabe interpretar—; **`calcular` y `rentabilidad` son la EXCEPCIÓN declarada**
+  (`ACCIONES_CON_DEFECTO_HELDER`, y la suite exige que la lista sea exactamente esa): siguen
+  cayendo a «helder» sin perfil y no van a Redis por él, porque el perfil allí solo es la CLAVE de
+  los precios corregidos, que sin credencial no se leen. Un Redis caído en instancia fría responde
+  **502**, no 404: `cargarPerfilDinamico` propaga el error a propósito y un 404 haría que la web
+  olvidara el perfil del visitante.
+- **La cola de la sesión (`ia&pendientes=1`) se despacha ANTES de resolver el perfil.** Es de
+  todos los perfiles por diseño (tercera pasada del 4-sep) y la skill `/precios` y
+  `docs/PRECIOS_DESDE_CLAUDE_CODE.md` la llaman sin perfil: con la exigencia nueva habría pasado
+  a 400 y la rutina horaria habría dejado de atender. Hay cerradura.
+- **TTL: el hash de precios corregidos caduca con el perfil que puede desaparecer; el borrador
+  sigue en 30 días para todos.** La ficha pedía «apu:presupuesto:{rup_…} y apu:precios:{rup_…} con
+  el TTL del perfil dinámico (45 días)». El borrador YA tenía TTL (30 días, requerimiento) y darle
+  45 al visitante y 30 al dueño sería una segunda regla sin motivo: un borrador que sobrevive al
+  perfil es inútil, y 30 ≤ 45 cumple la cerradura. Lo que NO tenía TTL era el hash
+  `apu:precios:{perfil}`, y ese sí lo lleva ahora para `rup_…` (caduca a los 45 días) y `cons_…`
+  (se borra): `PERFIL_DINAMICO_TTL_SEG`, renovado en cada guardado, vía `guardarPreciosUsuario(…,
+  { ttl })` y el comando **`expire`** nuevo en `lib/redis.js` (HSET no admite EX). Los tres perfiles
+  del dueño siguen sin caducidad: sus precios son conocimiento. Hay censo de que ninguna
+  `escribirJSONComprimido` del editor va sin `ttl:`.
+- **En pantalla, el selector «Perfil del borrador» nace VACÍO y se alimenta de la barra.** Traía
+  tres nombres escritos (Helder / Génesis / Consorcio) y `precargarDesdeURL` copiaba el perfil de
+  la tarjeta «solo si la opción existe»: por eso el visitante costeaba como «helder».
+  `sincronizarPerfilBorrador` lo llena desde `#f-perfil` (ya podado para el visitante) al arrancar
+  Precios y cada vez que la barra cambia; `asegurarOpcionPerfil` añade el perfil que llega en la
+  URL de la tarjeta aunque la barra no lo tenga; y el rótulo **«Precios guardados para: …»** va en
+  la cabecera de la pestaña (lo que hay que VER va arriba; el selector sigue plegado en Ajustes).
+  Sin perfil en la barra el selector queda vacío, `.value` es `""` y el servidor responde 400
+  diciendo qué falta: nunca un perfil ajeno por omisión. La suite EJECUTA las tres funciones sobre
+  un DOM mínimo (selects falsos con `options`/`value`/`selectedIndex`), no las busca por regex.
+  Medido en Chromium a 1280 y 390, claro y oscuro, entrando por `/?perfil=rup_…` sin clave con un
+  arnés que sirve `public/` y contesta `/api/*` con los routers reales sobre un Upstash en memoria
+  (catálogo semilla cargado por el handler de admin, sin corpus): el rótulo pinta el nombre del RUP,
+  el selector trae solo ese perfil y «guardar» desde la página viaja y responde con `perfil=rup_…`.
+- **Una prueba vieja dependía del defecto**: la comparación `cotizar` ≡ `calcular` (mismo unitario)
+  llamaba a `cotizar` sin perfil. Se le puso `perfil:"helder"` explícito —su intención se conserva—
+  y se anotó allí por qué. Y **`docs/PLAN_SAAS.md` §B2 decía que `apu:*` «ya estaba aislado»**:
+  solo lo estaba para los tres perfiles del dueño; corregido en el mismo commit.
+- **Mis procesos y consorcios no pierden guardados cuando dos peticiones coinciden (M-SEG-06).**
+  Medido con dos POST en `Promise.all` contra los handlers reales: seguimiento respondía **200 y
+  200 y sobrevivía uno**; consorcios respondía **500 y 200** —peor que lo que decía la ficha: el
+  primero relee su registro con `cargarConsorcio` y ya estaba pisado, `perfil.nombre` de null—.
+  `lib/almacen.conCandado(redis, clave, ttlSeg, fn, { reintentos, esperaMs, accion })` es UNA
+  implementación del patrón de la casa (SET NX EX con testigo, TTL siempre, liberación en `finally`
+  solo si el testigo es el propio) más lo que este caso necesita: **reintento** (4, con espera
+  40·80·120·160 ms: la sección crítica son dos comandos de Redis) y un **error tipado** (`ocupado`,
+  `status` 409, `que_hacer`) que los handlers traducen a **409 `{ok:false, error, que_hacer}`** con
+  `cuerpoCandadoOcupado` (una sola redacción, de usted; `api()` de la web la muestra tal cual).
+  Claves: `lock:seguimiento:{perfil}` y `lock:consorcios` (global, como el JSON que protege), TTL
+  `CANDADO_CORTO_TTL_SEG` = 5 s, documentadas en el esquema de `lib/almacen`.
+- **Lo pesado va FUERA del candado, y por eso el TTL puede ser de 5 s.** En el POST de seguimiento
+  la fila viva del corpus (`filaViva`, memoizada por sello), la predicción a congelar y la guía se
+  calculan antes o después; el candado cubre leer → modificar → escribir. Envolverlo todo habría
+  obligado a un TTL largo (un `cargarCorpus` en instancia fría tarda segundos) o dejado expirar
+  el candado a mitad, que es peor que no tenerlo. Consecuencia declarada: `filaViva` se llama en
+  todo POST (antes solo al crear o sin foto): un GET + un SCAN. La predicción se calcula fuera solo
+  si una lectura previa dice que el proceso no existía; si apareció entre esa lectura y el candado,
+  manda la suya (`existente.prediccion`); si desapareció, se calcula dentro (caso raro, dicho).
+- **«Consorcio N» se numera DENTRO del candado** (`siguienteNombre` en `lib/consorcio`, la regla
+  del 18-ago-2026 se movió del handler a la librería sin cambiarla): fuera, dos guardados sin nombre
+  a la vez sacaban el mismo N. Es el «hermano» del mismo patrón que la ficha no listaba; hay cerradura.
+- **Los candados de sync, histórico, dictamen e índice de baja NO se rehicieron sobre
+  `conCandado`**, y se declara el motivo: cada uno tiene una política propia (sync reencadena y
+  responde `enCurso` sin reintentar; el dictamen ata el TTL al reloj del modelo y su GET
+  inspecciona el candado para decir «en curso»; el histórico e índice de baja son trabajos largos
+  de 600 s). `conCandado` es para la sección crítica CORTA de un JSON compartido. Extraerlos es
+  un refactor aparte, no de este lote.
+- **Diseñado contra los ESCRITORES concurrentes** (lección de la poda del histórico, «una poda
+  nueva en un keyspace compartido…»), conservando la forma decidida el 18-ago-2026: un JSON por
+  perfil, ≤ 200 procesos. La opción «documento por proceso» sigue descartada.
+- **Cerraduras y mutación.** Tres bloques nuevos en `tests/e2e.js` (j.8-bis en el editor; la
+  carrera en «Mis procesos»; la carrera en «Consorcio (Fase 10)»), todos ejecutando los handlers
+  reales: guardar con `rup_` en instancia fría (con `olvidarPerfilesDinamicos` antes), TTL medidos
+  con `TTL`, el hash del dueño intacto, 400 sin perfil en seis acciones, caducado 404, cola sin
+  perfil, `cons_` entra, censo de TTL, las tres funciones de pantalla ejecutadas; dos POST en
+  `Promise.all` con la regla «todo 200 está escrito», DELETE+POST a la vez, candado ajeno vivo →
+  409 sin escribir y de usted, TTL del candado > 0; dos consorcios a la vez con nombres distintos
+  y dos DELETE a la vez. Tres mutaciones por `git stash` (solo `seguimiento.js`; solo
+  `consorcio.js` + su handler; editor + precios + pantalla) ponen la suite en rojo una a una por
+  la aserción nueva. El Upstash falso de la suite aprendió `EXPIRE` y `limpiarRedis` purga los
+  dos candados nuevos.
+- **Lo que las fichas decían y el árbol desmintió.** (1) Consorcios no respondía 200/200: era
+  500/200. (2) `fase1/repro_carrera.js` y `fase2/repro_*.js` no están en el árbol: las
+  reproducciones se rehicieron en el scratchpad con el mismo Upstash falso. (3) El TTL de 45 días
+  para `apu:presupuesto:{rup_…}` no se adoptó (arriba). (4) El `no_tocar` de la ficha protegía el
+  candado `lock:sync` («se llama o se extrae»): se optó por no extraerlo, con el motivo dicho.
+  **No verificable desde aquí**: Redis y producción reales; el listado en el arnés de navegador
+  responde 503 por falta de corpus (excepción declarada, como en el arnés del dictamen).
