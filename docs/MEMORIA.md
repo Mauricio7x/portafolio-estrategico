@@ -10720,3 +10720,55 @@ traía: una alta con el tope lleno cuesta **308 comandos** (delta medido), no lo
 puesta, la suite cae en `«tres altas de tres datos con tope 1 desde una conexión: alguna tiene que ser
 429, salieron [200,200,200]»` — literalmente el árbol anterior. (b) Aceptando `CUOTA_ALTAS_HORA=0`
 como válido, cae en `«CUOTA_ALTAS_HORA=«0» debe ser INERTE, no cerrar la puerta de entrada»`.
+
+### El corpus conserva la llave de cruce `id_del_portafolio` · M-DGF-05 (6-sep-2026)
+
+En una línea: `lib/proyeccion.CAMPOS` conserva `id_del_portafolio` (CO1.BDOS.…), la columna con la que
+p6dx se une a **todos** los datasets satélite, de modo que leer los documentos de un proceso guardado
+deja de costar una consulta previa a p6dx; **el respaldo por p6dx no se retira** y hay prueba de que un
+corpus anterior a la full sigue funcionando igual.
+
+**Reproducido antes de tocar nada.** `proyectar(fila_con_id_del_portafolio)` devolvía `undefined` en la
+proyección ACTIVA y en la HISTÓRICA (ejecutado el 6-sep-2026). La consecuencia estaba en
+`lib/handlers/pliego/documentos.js`: por cada lectura de documentos salía una consulta a p6dx cuyo único
+propósito era traducir `id_del_proceso` → `id_del_portafolio`, la llave con la que se consulta el índice
+de archivos (dmgg-8hin) y con la que se cruzan la ejecución del contrato (jbjy-vk9h) y lo que venga.
+
+**Dónde estaba de verdad la consulta.** La ficha situaba la petición a p6dx en `lib/documentos_proceso.js`
+(«cadena L16-22»). **Manda el árbol**: ese módulo es la capa PURA y no toca la red; la consulta vive en
+`consultarIndice` de `lib/handlers/pliego/documentos.js`. Las líneas 16-22 de la capa pura son el
+comentario que DESCRIBE la cadena, no la cadena.
+
+**No se reescribió nada que ya existiera.** `consultarIndice` ya leía la fila del corpus más abajo (para
+la fecha de cierre, con `filaDe`). El cambio es moverla ARRIBA y preguntarle por la llave antes de salir
+a la red: cero funciones nuevas.
+
+**LA CONDICIÓN DURA: DESPLEGAR NUNCA PUEDE EXIGIR RECONSTRUIR.** El día del despliegue conviven dos
+corpus: los registros reingeridos (con la llave) y los que quedaron de antes (sin ella). Los segundos
+siguen resolviéndose por p6dx exactamente como hasta hoy. Eso no se supone: el fixture de la suite
+emite la columna solo en la mitad de las filas —a propósito— y las pruebas recorren **las dos vías**:
+con llave en el registro, **cero** consultas a p6dx (contadas contra el mock) y `id_del_portafolio_desde:
+"corpus"`; sin ella, la consulta a p6dx sale como siempre y `id_del_portafolio_desde: "p6dx"`. Si todas
+las filas del fixture trajeran la llave, la compatibilidad sería una creencia.
+
+**El índice guardado declara de dónde salió la llave** (`id_del_portafolio_desde`, `null` cuando no hay
+llave —jamás «corpus» por omisión—). Un dato PUBLICADO en el corpus y uno pedido a la fuente no son lo
+mismo, y cuando dentro de un año alguien se pregunte por qué un proceso viejo tarda más, la respuesta
+está en el propio índice en vez de en una sesión de lectura.
+
+**Por qué la llave entra en la proyección ACTIVA y no solo en la histórica.** Es un IDENTIFICADOR
+público —el mismo proceso, otro nombre—, no un dato de adjudicación: no toca la regla de que el corpus
+activo no puede llevar adjudicatario, NIT ni valor adjudicado. `CAMPOS_SOLO_HISTORICO` se calcula por
+diferencia y no se tocó; hay aserción de que `id_del_portafolio` NO está en `CAMPOS_ADJUDICACION`.
+Tampoco se sirve en el listado: es identidad entre fuentes, no algo que nadie mire en pantalla.
+
+**Lo que falta y no depende de esta sesión.** El corpus solo tendrá la llave en los registros que se
+reingieran. Para que la traiga entero hay que correr la full del año en curso y la del histórico; los
+pasos literales del dueño están en `docs/CONFIGURACION_TOKENS.md` §8 y se repiten en el informe de esta
+sesión. Mientras no se corran, todo funciona igual —por el respaldo— y la mejora se nota proceso a
+proceso a medida que se reingieren.
+
+**Cómo mordió la mutación.** Con `lib/proyeccion.js` y el handler revertidos y la cerradura puesta, la
+suite cae en «el fixture tiene que traer los DOS estados del corpus el día del despliegue» (ningún
+registro conserva la llave). Revirtiendo SOLO el handler, cae en `id_del_portafolio_desde`:
+`undefined` contra `'p6dx'`.

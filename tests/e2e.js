@@ -253,6 +253,14 @@ function generarDataset() {
         urlproceso: { url: `https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=CO1.NTC.${n}` },
         tipo_de_contrato: "Obra",
       };
+      /* LA LLAVE DE CRUCE, SOLO EN LA MITAD DE LAS FILAS (M-DGF-05, 6-sep-2026).
+         El fixture reproduce los DOS estados que conviven en producción el día
+         del despliegue: los registros reingeridos tras la full traen
+         `id_del_portafolio` (y la lectura de documentos no consulta p6dx) y los
+         que quedaron de antes no lo traen (y siguen resolviéndose por p6dx).
+         Si todas lo trajeran, la compatibilidad del corpus viejo sería un
+         supuesto en vez de una prueba. */
+      if (n % 2 === 0) f.id_del_portafolio = `CO1.BDOS.${n}`;
       /* EL CONTEO DE OFERENTES ES EX-POST y el fixture tiene que reproducirlo
          (ago 2026). SECOP II NO publica `respuestas_al_procedimiento` mientras
          el proceso está abierto: solo aparece cuando ya cerró. El fixture lo
@@ -11021,7 +11029,18 @@ async function main() {
         }
         // (5) op=documentos por el router, con datos.gov.co simulado: índice por id_del_portafolio, guardado 12 h, POST del texto, ilegibles, y la guía de Mis procesos lo enseña
         const liD = await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200", CAB_TOKEN);
-        const filaD = liD.cuerpo.resultados.find((f) => f.fecha_cierre && f.precio_base);
+        /* M-DGF-05: la llave de cruce NO se sirve en el listado (es identidad interna
+           entre datasets, no algo que nadie mire en pantalla): para saber qué registro
+           la trae se mira el CORPUS, que es lo que el handler consulta. Este bloque
+           prueba la vía del corpus VIEJO —el registro sin la llave— y por eso elige a
+           propósito una fila sin ella; el sub-bloque de abajo prueba la vía nueva. */
+        const corpusD = await require("../lib/handlers/procesos/listar.js").cargarCorpus(redis, await require("../lib/almacen.js").leerJSON(redis, CLAVES.meta));
+        const llavesD = new Map(corpusD.map((r) => [r.id_del_proceso, String(r.id_del_portafolio || "").trim()]));
+        const conLlaveD = (f) => Boolean(llavesD.get(f && f.id_del_proceso));
+        assert.ok([...llavesD.values()].some(Boolean) && [...llavesD.values()].some((v) => !v),
+          "el fixture tiene que traer los DOS estados del corpus el día del despliegue: registros con la llave y registros de antes de la full");
+        const filaD = liD.cuerpo.resultados.find((f) => f.fecha_cierre && f.precio_base && !conLlaveD(f));
+        assert.ok(filaD, "el fixture tiene que ofrecer una fila SIN id_del_portafolio (el corpus anterior a la full)");
         const idD = filaD.id_del_proceso, qD = `id_proceso=${encodeURIComponent(idD)}`;
         const fetchOriginalD = global.fetch;
         const llamadasD = [];
@@ -11033,7 +11052,7 @@ async function main() {
           /* solo se simulan las dos consultas de op=documentos (p6dx por id_del_proceso con
              $select id_del_portafolio, y dmgg-8hin); todo lo demás sigue yendo al Socrata de la suite */
           const cuerpo = /p6dx-8zbt/.test(u) && /id_del_portafolio/.test(u) ? (new RegExp(`id_del_proceso='${idD.replace(/\./g, "\\.")}'`).test(u) ? [{ id_del_proceso: idD, id_del_portafolio: "CO1.BDOS.999", fecha_de_recepcion_de: "2026-05-01T00:00:00.000" }] : [])
-            : /dmgg-8hin/.test(u) ? (/proceso='CO1\.BDOS\.999'/.test(u) ? filasIdx : []) : null;
+            : /dmgg-8hin/.test(u) ? (/proceso='CO1\.BDOS\.(999|\d+)'/.test(u) ? filasIdx : []) : null;
           if (!cuerpo) return fetchOriginalD(url, opciones); // Redis simulado y el resto de Socrata: con sus opciones
           return { ok: true, status: 200, headers: { get: () => "application/json" }, json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) };
         };
@@ -11046,6 +11065,47 @@ async function main() {
           assert.deepStrictEqual(i1.cuerpo.pendientes.map((a) => a.id_documento), ["2", "9"], "los pendientes son el plan: lo que el navegador tiene que bajar y leer");
           assert.ok(i1.cuerpo.pendientes.every((a) => /^https:\/\/community\.secop\.gov\.co\//.test(a.url)), "cada pendiente trae su dirección de descarga");
           assert.strictEqual(i1.cuerpo.indice.id_del_portafolio, "CO1.BDOS.999"); assert.strictEqual(i1.cuerpo.indice.cierre_usado, String(filaD.fecha_cierre).slice(0, 10), "el cierre para separar ofertas es el PUBLICADO del corpus");
+          /* COMPATIBILIDAD DEL CORPUS VIEJO, PROBADA (M-DGF-05, 6-sep-2026): este registro
+             no trae la llave —es de antes de la full— y se resuelve por p6dx exactamente
+             como hasta hoy. Desplegar no puede exigir reconstruir el corpus, y «sigue
+             funcionando» no es algo que se pueda suponer. */
+          assert.strictEqual(i1.cuerpo.indice.id_del_portafolio_desde, "p6dx", "sin la llave en el registro, el respaldo de p6dx sigue vivo");
+          assert.ok(llamadasD.some((u) => /p6dx-8zbt/.test(u) && /id_del_portafolio/.test(u)), "y esa vía SÍ consulta p6dx, como antes");
+          /* LA CAPA PURA, EJECUTADA: la clave sobrevive a las DOS proyecciones. Medido
+             antes del arreglo con esta misma función: `undefined` en las dos. Y una
+             fila que NO la trae sigue sin inventarla —«sin dato» no es una cadena
+             vacía— ni la convierte en campo solo-histórico. */
+          {
+            const { proyectar: proyectarQ, CAMPOS: CAMPOS_Q } = require("../lib/proyeccion.js");
+            const { CAMPOS_ADJUDICACION: CA_Q } = require("../lib/indice_competencia.js");
+            const filaLlave = { ":id": "zzz", id_del_proceso: "CO1.REQ.PORTA", id_del_portafolio: "CO1.BDOS.7654321", entidad: "ALCALDÍA", precio_base: "1000000000" };
+            assert.strictEqual(proyectarQ(filaLlave).id_del_portafolio, "CO1.BDOS.7654321", "la proyección ACTIVA conserva la llave de cruce");
+            assert.strictEqual(proyectarQ(filaLlave, { conAdjudicacion: true }).id_del_portafolio, "CO1.BDOS.7654321", "y la HISTÓRICA también");
+            assert.ok(CAMPOS_Q.includes("id_del_portafolio"));
+            assert.ok(!CA_Q.includes("id_del_portafolio"), "es un identificador público, no un dato de adjudicación: no puede entrar en las columnas que el corpus activo borra");
+            const sinLlave = { ":id": "zzz", id_del_proceso: "CO1.REQ.PORTA", entidad: "ALCALDÍA" };
+            assert.strictEqual("id_del_portafolio" in proyectarQ(sinLlave), false, "una fila sin la llave no la inventa vacía");
+          }
+
+          /* ═══ LA LLAVE SALE DEL CORPUS Y SOBRA LA CONSULTA A p6dx (M-DGF-05) ═══
+             Medido antes con `proyectar()`: una fila que trae `id_del_portafolio`
+             perdía la clave en la proyección activa Y en la histórica, así que cada
+             lectura de documentos gastaba una consulta a p6dx solo para traducir el
+             id. Aquí se cuenta contra el mock: con la llave en el registro, CERO. */
+          {
+            /* se elige del CORPUS (no del listado: el listado pagina y lo que asoma
+               arriba son otras filas del fixture) un registro que traiga la llave */
+            const filaConLlave = corpusD.find((r) => llavesD.get(r.id_del_proceso) && r.fecha_de_recepcion_de);
+            assert.ok(filaConLlave, "el corpus tiene que conservar id_del_portafolio: proyeccion.CAMPOS lo trae");
+            const antesP6dx = llamadasD.filter((u) => /p6dx-8zbt/.test(u) && /id_del_portafolio/.test(u)).length;
+            const iC = await invocar(routerPliegoD, `/api/pliego?op=documentos&id_proceso=${encodeURIComponent(filaConLlave.id_del_proceso)}`, CAB_TOKEN);
+            assert.strictEqual(iC.status, 200, JSON.stringify(iC.cuerpo).slice(0, 200));
+            assert.strictEqual(iC.cuerpo.indice.id_del_portafolio, llavesD.get(filaConLlave.id_del_proceso), "la llave servida es la del registro, no una traducida");
+            assert.strictEqual(iC.cuerpo.indice.id_del_portafolio_desde, "corpus", "y se declara de dónde salió");
+            const despuesP6dx = llamadasD.filter((u) => /p6dx-8zbt/.test(u) && /id_del_portafolio/.test(u)).length;
+            assert.strictEqual(despuesP6dx, antesP6dx, `leer los documentos de un proceso cuyo registro trae la llave no puede consultar p6dx: ${despuesP6dx - antesP6dx} consulta(s)`);
+            assert.ok(llamadasD.some((u) => /dmgg-8hin/.test(u) && u.includes(`proceso='${llavesD.get(filaConLlave.id_del_proceso)}'`)), "y el índice de archivos se pide con esa misma llave");
+          }
           const nRed = llamadasD.length;
           const i2 = await invocar(routerPliegoD, `/api/pliego?op=documentos&${qD}`, CAB_TOKEN);
           assert.ok(i2.cuerpo.cache === true && llamadasD.length === nRed, "el índice se guarda 12 h: la segunda petición no sale a la red");
