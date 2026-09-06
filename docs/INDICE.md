@@ -31,7 +31,7 @@ con `node tests/estado.js`, y las coordenadas las da `node tests/mapa.js <térmi
 | `docs/PRECIO_Y_UNIT_ECONOMICS.md` | pendiente del dueño | — | `tests` | Anexo B · Modelo de negocio, precio y economía unitaria |
 | `docs/RIESGOS.md` | pendiente del dueño | — | — | Anexo G · Registro de riesgos |
 | `docs/SEGURIDAD_Y_CUENTAS.md` | pendiente del dueño | — | `tests` | Anexo D · Identidad, autorización, seguridad y cobro |
-| `docs/CONFIGURACION_TOKENS.md` | referencia | — | `README.md` · `tests` | Tokens y variables de entorno · guía desde cero |
+| `docs/CONFIGURACION_TOKENS.md` | referencia | — | `README.md` · `lib` · `tests` | Tokens y variables de entorno · guía desde cero |
 | `docs/DICTAMEN_DESDE_CLAUDE_CODE.md` | referencia | — | `README.md` · `tests` | Dictamen del pliego con la suscripción de Claude Code (sin clave de API) · 3-sep-2026 |
 | `docs/LEGAL_COLOMBIA.md` | referencia | — | — | Anexo A · Frente jurídico y regulatorio (Colombia) |
 | `docs/PRECIOS_DESDE_CLAUDE_CODE.md` | referencia | — | `README.md` · `tests` | Precios · cómo funciona «Buscar» y quién lo atiende |

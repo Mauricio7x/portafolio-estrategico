@@ -4,7 +4,7 @@
 
 # Índice de docs/MEMORIA.md
 
-Derivado del árbol: 957344 bytes · 149 secciones · 4 con marcador de superación.
+Derivado del árbol: 969324 bytes · 150 secciones · 4 con marcador de superación.
 Una sección se lee con `sed -n 'A,Bp' docs/MEMORIA.md` (A-B es la columna «Líneas»). Una sección superada
 remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe). La fecha sale del título;
 «—» es que el título no la lleva. `node tests/mapa.js <término>` da estas mismas coordenadas por término.
@@ -159,4 +159,5 @@ remite a la que la sustituye y conserva su cuerpo (la crónica no se reescribe).
 | Remates «R3-remates-pantalla» de la ola 2 · B7a-H1/H2/H3, B7b-H1/H2/H3, B8a-H1/H2/H3/H4, B8b-H1/H2/H3/H4 (6-sep-2026) | 6-sep-2026 | 9908-10131 | 20590 |  |
 | Remates «R4-remates-inteligencia» de la ola 2 · B9a-H1/H2/H3, B9b-H1/H2/H3/H4/H5 (6-sep-2026) | 6-sep-2026 | 10132-10294 | 15163 |  |
 | Remates «R5-remates-documentacion» de la ola 2 · B5-H1/H2, B6a-H1…H8, B6b-H1…H6 (6-sep-2026) | 6-sep-2026 | 10295-10356 | 5521 |  |
-| Lote «B11-documentacion-2» de la consultoría del 4-sep · M-DOC-04, M-DOC-10, M-DOC-11, M-COMP-06, M-INF-21 (6-sep-2026) | 6-sep-2026 | 10357-10496 | 12420 |  |
+| Lote «B11-documentacion-2» de la consultoría del 4-sep · M-DOC-04, M-DOC-10, M-DOC-11, M-COMP-06, M-INF-21 (6-sep-2026) | 6-sep-2026 | 10357-10497 | 12421 |  |
+| Lote «B12-aviso-por-correo» de la consultoría del 4-sep · M-COMP-03, M-INF-16 y la cerradura C-N1 (6-sep-2026) | 6-sep-2026 | 10498-10632 | 11979 |  |

@@ -6457,6 +6457,9 @@ async function main() {
       ...(await redis.scan("pliego:*")), ...(await redis.scan("formulario1:*")),
       // Mis procesos (18-ago-2026): guardados por perfil y caché del detalle de competencia (1 h)
       ...(await redis.scan("seguimiento:*")), ...(await redis.scan("pulso:*")),
+      /* la marca del aviso diario por correo vive 48 h (M-COMP-03, 6-sep-2026): sin
+         borrarla, la iteración siguiente creería que el aviso de hoy ya salió */
+      ...(await redis.scan("avisos:*")),
       // Dictamen del pliego (2-sep-2026): caché por versión, candado, cuota diaria y uso mensual
       ...(await redis.scan("dictamen:*")), ...(await redis.scan("lock:dictamen:*")),
       // candados cortos de Mis procesos y consorcios (6-sep-2026): se liberan solos, pero un
@@ -11427,6 +11430,205 @@ async function main() {
         console.log(`  · avisar que le interesa + Mis procesos: ventana ${cM.manifestacion.puede_cerrar_desde}..${cM.manifestacion.vence_a_mas_tardar} (${cM.manifestacion.estado}) · regresión Motavita clavada · filtro manif abierta/todas/inerte · listado ${liM.total} de menor cuantía (${JSON.stringify(liM.facetas.manifestacion)}) · hito calculado en el cronograma · cambio de cierre detectado y «Enterado» lo cierra · ${l3.alertas.length} alertas · pestaña propia con insignia`);
       }
 
+      /* --- EL AVISO DIARIO POR CORREO (6-sep-2026, M-COMP-03) --------------
+         Antes: el centro de alertas solo existía DENTRO de la aplicación (no
+         había una sola llamada a un proveedor de correo en lib/, api/ ni
+         public/, y vercel.json traía un único cron): si el usuario no abría la
+         aplicación ese día, no se enteraba de que un proceso guardado cerraba
+         mañana o de que una adenda había movido la fecha.
+         Lo que se cierra aquí, con el handler REAL y un transporte simulado:
+         (1) la op está plegada en el router (jamás un archivo nuevo en api/) y
+             EXIGE credencial —manda correo y su respuesta lleva los procesos
+             guardados del dueño—, con las dos llaves que ya existen;
+         (2) el cuerpo del correo dice lo que dice el corpus: las MISMAS frases
+             de `alertasDe` (lo que cierra y lo que cambió), no una segunda
+             redacción;
+         (3) manda la fecha civil de Bogotá, no la hora del disparo (el reloj se
+             inyecta a las 02:30 UTC, que en Colombia son las 21:30 del día
+             ANTERIOR: la marca del día y el «cierra mañana» tienen que salir
+             del día colombiano);
+         (4) sin las variables del proveedor NO revienta: 200 que dice qué falta,
+             qué hacer y qué se habría enviado, y ni una llamada al proveedor;
+         (5) el mismo día no se envía dos veces (marca en Redis con NX), y si el
+             proveedor falla la marca se borra para poder reintentar;
+         (6) el cuerpo de error del proveedor no publica la clave;
+         (7) los perfiles se CENSAN por la clave `seguimiento:{perfil}`: un
+             perfil creado por el onboarding también recibe su aviso. */
+      {
+        const routerPerfilAv = require("../api/perfil.js");
+        const avisos = require("../lib/handlers/perfil/avisos.js");
+        const Correo = require("../lib/correo.js");
+        const Hav = require("../lib/habiles.js");
+        const Sav = require("../lib/seguimiento.js");
+        const Lp = require("../lib/lenguaje_pantalla.js");
+        /* 02:30 UTC del 11 = 21:30 del 10 en Colombia: si algo calculara con la
+           hora del disparo, el día saldría 2026-09-11 y todo lo de abajo caería. */
+        const AHORA = Date.parse("2026-09-11T02:30:00.000Z");
+        const DIA_BOGOTA = "2026-09-10";
+        assert.strictEqual(Hav.hoyColombia(AHORA), DIA_BOGOTA);
+        assert.notStrictEqual(new Date(AHORA).toISOString().slice(0, 10), DIA_BOGOTA, "la prueba necesita un instante en el que el día UTC y el colombiano NO coinciden");
+        const PERFIL_AV = "empresa-de-prueba";           // ni helder, ni genesis, ni juntos: el censo por clave tiene que verlo
+        const ID_CIERRE = "CO1.AVISO.CIERRE.1";
+        const CIERRE_MANANA = "2026-09-11T17:00:00.000"; // mañana en Colombia respecto de AHORA
+        const ponerAv = (k, v) => { if (v === undefined) delete process.env[k]; else process.env[k] = v; };
+        const guardadosEnvAv = ["CORREO_API_KEY", "CORREO_REMITENTE", "CORREO_DESTINO", "CORREO_API_URL", "CRON_SECRET"].map((n) => [n, process.env[n]]);
+        const CLAVE_AV = "clave-del-proveedor-de-prueba";
+        const segAv = (qs, opts = {}) => invocar(routerPerfilAv, `/api/perfil?op=seguimiento${qs}`, CAB_TOKEN, opts);
+        let mandados = [];
+        const transporte = async (url, o) => {
+          mandados.push({ url, headers: o.headers, cuerpo: JSON.parse(o.body) });
+          return { ok: true, status: 200, text: async () => JSON.stringify({ id: `envio-${mandados.length}` }) };
+        };
+        const pedirAvisos = (qs = "", cab = CAB_TOKEN, extra = {}) =>
+          invocar((rq, rs) => avisos(rq, rs, { ahora: AHORA, fetchImpl: transporte, ...extra }), `/api/perfil?op=avisos${qs}`, cab);
+        try {
+          // (1) el router lo despacha y sin credencial no hay nada — por el ROUTER, no por el módulo
+          const mala = await invocar(routerPerfilAv, "/api/perfil?op=inventada");
+          assert.strictEqual(mala.status, 404, "una op inventada del router de perfil es 404");
+          assert.ok(mala.cuerpo.operaciones.includes("avisos"), "el 404 del router enseña la op «avisos»");
+          const sinLlave = await invocar(routerPerfilAv, "/api/perfil?op=avisos");
+          assert.strictEqual(sinLlave.status, 401, `sin credencial el aviso no responde nada: ${JSON.stringify(sinLlave.cuerpo).slice(0, 200)}`);
+          assert.ok(/CRON_SECRET no está definida/.test(sinLlave.cuerpo.error), `sin CRON_SECRET el 401 lo DICE (el cron no tendría cómo identificarse): ${sinLlave.cuerpo.error}`);
+          assert.ok(!Lp.VOSEO_RE.test(sinLlave.cuerpo.error) && !sinLlave.cuerpo.error.match(Lp.RE_EMOJI_UI), "el 401 habla de usted y sin pictogramas");
+          assert.strictEqual((await invocar(routerPerfilAv, "/api/perfil?op=avisos", { "x-historico-token": "mala" })).status, 401, "una llave equivocada no abre el aviso");
+          assert.strictEqual((await invocar(routerPerfilAv, "/api/perfil?op=avisos", CAB_TOKEN, { metodo: "POST" })).status, 405, "el aviso solo se consulta");
+
+          // el proceso que cierra MAÑANA en Colombia, guardado en un perfil que no es ninguno de los tres
+          const gAv = await segAv("", { metodo: "POST", body: { perfil: PERFIL_AV, id: ID_CIERRE, estado: "interesa", foto: { nombre: "PAVIMENTACIÓN DE LA VÍA DE PRUEBA", entidad: "ALCALDÍA DE PRUEBA", fecha_cierre: CIERRE_MANANA, precio_base: "120000000" } } });
+          assert.strictEqual(gAv.status, 200, JSON.stringify(gAv.cuerpo).slice(0, 200));
+          // y un proceso del corpus VIVO guardado con el cierre movido: eso es una adenda vista desde la aplicación
+          const liAv = (await invocar(oportunidades, "/api/oportunidades?perfil=helder&por_pagina=200&tipo=todos", CAB_TOKEN)).cuerpo;
+          const filaAv = liAv.resultados.find((f) => f.fecha_cierre);
+          const gAv2 = await segAv("", { metodo: "POST", body: { perfil: PERFIL_AV, id: filaAv.id_del_proceso, estado: "interesa", foto: { ...filaAv, fecha_cierre: `${Hav.sumarDias(String(filaAv.fecha_cierre).slice(0, 10), -5)}T10:00:00` } } });
+          assert.strictEqual(gAv2.status, 200);
+
+          // (7) el censo por clave ve el perfil nuevo (una lista de los tres perfiles del negocio lo dejaría sin aviso)
+          const { perfilesGuardados, alertasDelPerfil } = require("../lib/handlers/perfil/seguimiento.js");
+          const censados = await perfilesGuardados(redis);
+          assert.ok(censados.includes(PERFIL_AV), `el censo de perfiles con procesos guardados tiene que ver «${PERFIL_AV}»: ${JSON.stringify(censados)}`);
+          assert.ok(!censados.some((p) => /:/.test(p)), `la caché seguimiento:detalle:… no es un perfil: ${JSON.stringify(censados)}`);
+
+          // (4) SIN configurar: 200, dice qué falta y qué hacer, no llama al proveedor y enseña lo que saldría
+          for (const [n] of guardadosEnvAv) ponerAv(n, undefined);
+          mandados = [];
+          const sinCfg = await pedirAvisos(`&perfil=${PERFIL_AV}`);
+          assert.strictEqual(sinCfg.status, 200, `sin proveedor configurado NO es un error del servidor: ${JSON.stringify(sinCfg.cuerpo).slice(0, 200)}`);
+          assert.strictEqual(sinCfg.cuerpo.enviados, 0, "sin proveedor configurado no puede salir ningún correo");
+          assert.strictEqual(mandados.length, 0, "sin configuración no se llama al proveedor");
+          assert.deepStrictEqual(sinCfg.cuerpo.correo.falta, ["CORREO_API_KEY", "CORREO_REMITENTE", "CORREO_DESTINO"], JSON.stringify(sinCfg.cuerpo.correo));
+          assert.ok(sinCfg.cuerpo.correo.que_hacer && /Environment Variables/.test(sinCfg.cuerpo.correo.que_hacer) && /vuelva a desplegar/i.test(sinCfg.cuerpo.correo.que_hacer),
+            `una respuesta que no hizo nada dice qué hacer: ${sinCfg.cuerpo.correo.que_hacer}`);
+          assert.strictEqual(sinCfg.cuerpo.fecha, DIA_BOGOTA, `el día del aviso sale del reloj INYECTADO y en hora de Colombia (esperaba ${DIA_BOGOTA} para el disparo ${new Date(AHORA).toISOString()}, y dio ${sinCfg.cuerpo.fecha})`);
+          assert.ok(sinCfg.cuerpo.vista_previa.length >= 1, "sin configurar se puede LEER lo que habría salido, y no salió ninguna vista previa");
+          assert.ok(/Cierra mañana/.test(sinCfg.cuerpo.vista_previa[0].texto),
+            `la vista previa tiene que llevar las frases de alertasDe sobre el reloj inyectado (${new Date(AHORA).toISOString()} = ${DIA_BOGOTA} en Colombia, con un cierre el ${CIERRE_MANANA}); dio: ${sinCfg.cuerpo.vista_previa[0].texto.replace(/\n/g, " · ").slice(0, 240)}`);
+          assert.strictEqual((await redis.get(`avisos:enviado:${PERFIL_AV}:${DIA_BOGOTA}`)), null, "sin envío no se quema el día");
+
+          // (2) y (3) CON configuración: un correo con las frases del corpus, y el día es el colombiano
+          ponerAv("CORREO_API_KEY", CLAVE_AV); ponerAv("CORREO_REMITENTE", "avisos@ejemplo.test"); ponerAv("CORREO_DESTINO", "ingeniero@ejemplo.test");
+          mandados = [];
+          const env1 = await pedirAvisos(`&perfil=${PERFIL_AV}`);
+          assert.strictEqual(env1.status, 200, JSON.stringify(env1.cuerpo).slice(0, 300));
+          assert.strictEqual(env1.cuerpo.ok, true, JSON.stringify(env1.cuerpo.fallos));
+          assert.strictEqual(env1.cuerpo.fecha, DIA_BOGOTA, "la fecha del aviso es la civil de Colombia, no la del disparo");
+          assert.strictEqual(env1.cuerpo.enviados, 1, JSON.stringify(env1.cuerpo).slice(0, 300));
+          assert.strictEqual(mandados.length, 1, `un perfil con avisos = UN correo, y salieron ${mandados.length}`);
+          assert.strictEqual(mandados[0].url, Correo.URL_DEFECTO, "el punto final por defecto es el del proveedor documentado");
+          assert.strictEqual(mandados[0].headers.Authorization, `Bearer ${CLAVE_AV}`, "la clave del proveedor viaja como Bearer, leída de CORREO_API_KEY");
+          assert.deepStrictEqual(mandados[0].cuerpo.to, ["ingeniero@ejemplo.test"], "el destinatario sale de CORREO_DESTINO");
+          assert.strictEqual(mandados[0].cuerpo.from, "avisos@ejemplo.test", "el remitente sale de CORREO_REMITENTE");
+          /* EL CUERPO DICE LO QUE DICE EL CORPUS: las frases son las de
+             `alertasDe` sobre ESTE perfil, no una segunda redacción. */
+          const { alertas: alertasReales } = await alertasDelPerfil(redis, PERFIL_AV, AHORA);
+          assert.ok(alertasReales.length >= 2, `la prueba necesita un cierre y un cambio: ${JSON.stringify(alertasReales.map((a) => a.tipo))}`);
+          for (const a of alertasReales) {
+            assert.ok(mandados[0].cuerpo.text.includes(a.mensaje), `el correo tiene que llevar la frase que la pantalla enseña: «${a.mensaje.slice(0, 60)}»`);
+          }
+          assert.ok(/Cierra mañana/.test(mandados[0].cuerpo.text), "el proceso que cierra el día civil siguiente en Colombia se anuncia como «cierra mañana»");
+          assert.ok(/Cambió: /.test(mandados[0].cuerpo.text), "lo que cambió en el pliego también viaja en el correo");
+          assert.ok(mandados[0].cuerpo.text.includes("https://" + require("../lib/glosario.js").MARCA.dominio + "/#/mis-procesos"), "el correo enlaza a Mis procesos");
+          assert.ok(/cada mañana/.test(mandados[0].cuerpo.text) && !/\b\d{1,2}:\d{2}\b/.test(mandados[0].cuerpo.text),
+            `el correo dice «cada mañana» y NO promete una hora (en el plan Hobby el cron cae en cualquier minuto de su hora): ${mandados[0].cuerpo.text}`);
+          for (const [donde, txt] of [["asunto", mandados[0].cuerpo.subject], ["texto", mandados[0].cuerpo.text], ["html", mandados[0].cuerpo.html]]) {
+            assert.ok(txt && txt.length, `${donde}: vacío`);
+            assert.ok(!Lp.VOSEO_RE.test(txt), `${donde}: tuteo «${(txt.match(Lp.VOSEO_RE) || [])[0]}»`);
+            assert.ok(!txt.match(Lp.RE_EMOJI_UI), `${donde}: pictograma`);
+            assert.ok(!/\bRUP\b|UNSPSC|capacidad residual|cuatro puertas|JSON/.test(txt), `${donde}: jerga`);
+          }
+          assert.strictEqual(mandados[0].cuerpo.subject, `Detekta: ${alertasReales.length} avisos de sus procesos guardados`, mandados[0].cuerpo.subject);
+          // la marca del día lleva el día COLOMBIANO
+          assert.ok(await redis.get(`avisos:enviado:${PERFIL_AV}:${DIA_BOGOTA}`), "la marca del día se escribe con la fecha civil de Colombia");
+          assert.strictEqual(await redis.get(`avisos:enviado:${PERFIL_AV}:${new Date(AHORA).toISOString().slice(0, 10)}`), null, "y no con la fecha UTC del disparo");
+
+          // (5) el mismo día no se envía dos veces
+          mandados = [];
+          const env2 = await pedirAvisos(`&perfil=${PERFIL_AV}`);
+          assert.strictEqual(env2.cuerpo.enviados, 0, `el mismo día no se envía dos veces (la marca en Redis se toma con NX): ${JSON.stringify(env2.cuerpo.detalle_enviados)}`);
+          assert.strictEqual(mandados.length, 0, "el segundo disparo del mismo día no manda nada");
+          assert.ok(env2.cuerpo.omitidos.some((o) => o.perfil === PERFIL_AV && /ya se había enviado/.test(o.motivo)), JSON.stringify(env2.cuerpo.omitidos));
+
+          // (5 bis) y (6) el proveedor falla: la marca se borra para poder reintentar, y la clave NO viaja en el motivo
+          await redis.del(`avisos:enviado:${PERFIL_AV}:${DIA_BOGOTA}`);
+          const roto = async () => ({ ok: false, status: 500, text: async () => `{"message":"Bad request for apikey=${CLAVE_AV}"}` });
+          const env3 = await pedirAvisos(`&perfil=${PERFIL_AV}`, CAB_TOKEN, { fetchImpl: roto });
+          assert.strictEqual(env3.status, 200, "un proveedor caído no es un 500 de la aplicación");
+          assert.strictEqual(env3.cuerpo.ok, false, "con el proveedor caído la op no puede decir que todo fue bien");
+          assert.strictEqual(env3.cuerpo.enviados, 0, "un envío que el proveedor rechazó no se cuenta como enviado");
+          assert.ok(env3.cuerpo.fallos.some((f) => f.perfil === PERFIL_AV && /500/.test(f.motivo)), JSON.stringify(env3.cuerpo.fallos));
+          assert.ok(!JSON.stringify(env3.cuerpo).includes(CLAVE_AV), `la clave del proveedor no puede volver en la respuesta: ${JSON.stringify(env3.cuerpo.fallos)}`);
+          assert.strictEqual(await redis.get(`avisos:enviado:${PERFIL_AV}:${DIA_BOGOTA}`), null, "tras el fallo la marca se borra: el aviso puede reintentarse hoy mismo");
+
+          // (5 ter) `enviar=no` enseña sin mandar ni marcar; un valor desconocido es INERTE (envía)
+          mandados = [];
+          const ver = await pedirAvisos(`&perfil=${PERFIL_AV}&enviar=no`);
+          assert.strictEqual(mandados.length, 0, "«enviar=no» no manda nada al proveedor");
+          assert.ok(ver.cuerpo.vista_previa.some((v) => v.perfil === PERFIL_AV && /Cierra mañana/.test(v.texto)));
+          assert.strictEqual(await redis.get(`avisos:enviado:${PERFIL_AV}:${DIA_BOGOTA}`), null, "«enviar=no» tampoco quema el día");
+          mandados = [];
+          const inerte = await pedirAvisos(`&perfil=${PERFIL_AV}&enviar=marciano`);
+          assert.strictEqual(inerte.cuerpo.enviados, 1, "un valor desconocido de «enviar» es inerte: se comporta como el defecto");
+          await redis.del(`avisos:enviado:${PERFIL_AV}:${DIA_BOGOTA}`);
+
+          // un perfil sin nada que avisar no genera correo (y lo dice)
+          mandados = [];
+          const vacio = await pedirAvisos("&perfil=perfil-sin-nada");
+          assert.strictEqual(vacio.cuerpo.enviados, 0, "un perfil sin nada que avisar no genera correo");
+          assert.strictEqual(mandados.length, 0, "un perfil sin nada que avisar no llama al proveedor");
+          assert.ok(vacio.cuerpo.omitidos.some((o) => /nada que avisar/.test(o.motivo)), JSON.stringify(vacio.cuerpo.omitidos));
+          // un perfil ilegible es INERTE: se revisan todos y se dice, jamás un 400
+          const raro = await pedirAvisos("&perfil=perfil%20raro!");
+          assert.strictEqual(raro.status, 200, "un valor de filtro ilegible es INERTE: jamás un 400");
+          assert.strictEqual(raro.cuerpo.perfil, null, "el perfil ilegible no se adopta como filtro");
+          assert.ok(/no se pudo leer/.test(raro.cuerpo.nota), raro.cuerpo.nota);
+          for (const p of [PERFIL_AV, "helder"]) await redis.del(`avisos:enviado:${p}:${DIA_BOGOTA}`);
+
+          /* CENSO de lenguaje sobre TODO lo que la op devuelve —no una lista de
+             campos: la jerga vuelve por el que no se miró—, en las cuatro
+             respuestas que produce (sin configurar, enviado, fallo y vista). */
+          for (const [donde, cuerpo] of [["sin configurar", sinCfg.cuerpo], ["enviado", env1.cuerpo], ["fallo del proveedor", env3.cuerpo], ["vista previa", ver.cuerpo], ["perfil ilegible", raro.cuerpo]]) {
+            for (const t of textosDe(cuerpo)) {
+              assert.ok(!Lp.VOSEO_RE.test(t), `respuesta «${donde}»: tuteo «${(t.match(Lp.VOSEO_RE) || [])[0]}» en «${t.slice(0, 90)}»`);
+              assert.ok(!t.match(Lp.RE_EMOJI_UI), `respuesta «${donde}»: pictograma en «${t.slice(0, 90)}»`);
+              assert.ok(!/\bUNSPSC\b|capacidad residual|cuatro puertas|\bJSON\b|\bRedis\b/.test(t), `respuesta «${donde}»: jerga en «${t.slice(0, 90)}»`);
+            }
+          }
+
+          // (1 bis) la OTRA llave: con CRON_SECRET puesto pasa el Bearer del cron, que es como llamará Vercel
+          ponerAv("CRON_SECRET", "secreto-del-cron-de-avisos");
+          assert.strictEqual((await invocar(routerPerfilAv, "/api/perfil?op=avisos")).status, 401, "con la guarda puesta, sin cabecera tampoco");
+          const porCron = await pedirAvisos(`&perfil=${PERFIL_AV}&enviar=no`, { authorization: "Bearer secreto-del-cron-de-avisos" });
+          assert.strictEqual(porCron.status, 200, JSON.stringify(porCron.cuerpo).slice(0, 200));
+          assert.strictEqual((await invocar(routerPerfilAv, "/api/perfil?op=avisos", { authorization: "Bearer otro" })).status, 401, "un Bearer que no es el CRON_SECRET no abre el aviso");
+          ponerAv("CRON_SECRET", undefined);
+
+          // limpieza: ni procesos ni marcas de esta prueba sobreviven a la iteración
+          for (const id of [ID_CIERRE, filaAv.id_del_proceso]) await segAv(`&perfil=${PERFIL_AV}&id=${encodeURIComponent(id)}`, { metodo: "DELETE" });
+          console.log(`  · aviso diario por correo: op plegada en /api/perfil (401 sin credencial, Bearer del cron y llave), ${alertasReales.length} frases de alertasDe en el correo del día colombiano ${DIA_BOGOTA} (disparo ${new Date(AHORA).toISOString()}), sin configurar 200 con «falta ${sinCfg.cuerpo.correo.falta.join(", ")}», segundo disparo 0 envíos, proveedor caído sin clave en el motivo y con la marca borrada`);
+        } finally {
+          for (const [n, v] of guardadosEnvAv) ponerAv(n, v);
+        }
+      }
+
       /* --- (c) entidad inexistente: respuesta explícita, no un vacío mudo --- */
       {
         const r = await detalle("ALCALDIA DE UN MUNICIPIO QUE NO EXISTE");
@@ -11858,7 +12060,13 @@ async function main() {
       assert.strictEqual(await redis.get(CLS.lock), null, "op=salud no toma el candado ni sincroniza");
       // es PÚBLICA: exactamente estos campos, ninguna cifra del perfil ni del corpus (solo conteos)
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo).sort(),
-        ["candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "medicion_listado", "motivo", "ok", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+        ["aviso_por_correo", "candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "medicion_listado", "motivo", "ok", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+      /* EL AVISO POR CORREO NO PUEDE FALLAR EN SILENCIO (6-sep-2026, M-COMP-03): si le falta una
+         variable, el cron de cada mañana recibe 401 o no encuentra proveedor y nadie lo ve nunca.
+         op=salud publica QUÉ FALTA —nombres de variables, jamás valores— y no cambia `ok`. */
+      assert.deepStrictEqual(rSalud.cuerpo.aviso_por_correo,
+        { configurado: false, falta: ["CORREO_API_KEY", "CORREO_REMITENTE", "CORREO_DESTINO", "CRON_SECRET"] },
+        `op=salud tiene que decir qué le falta al aviso diario: ${JSON.stringify(rSalud.cuerpo.aviso_por_correo)}`);
       assert.ok(!textosDe(rSalud.cuerpo).some((t) => /token-de-prueba|CO1\.|precio|patrimonio/i.test(t)), "op=salud no puede filtrar secretos ni datos del corpus");
       // candado ajeno: se ve como «sincronizando» con sus segundos, sin estorbar
       await redis.set(CLS.lock, "otro-proceso", { nx: true, ex: 60 });
@@ -11929,6 +12137,8 @@ async function main() {
       assert.strictEqual(rBien.cuerpo.ok, true, `el delta tras restaurar Socrata falló: ${JSON.stringify(rBien.cuerpo)}`);
       const rSalud3 = await invocar(rProcesosS, "/api/procesos?op=salud");
       assert.strictEqual(rSalud3.cuerpo.ok, true, `tras una corrida buena la salud es ok: ${rSalud3.cuerpo.motivo}`);
+      assert.strictEqual(rSalud3.cuerpo.aviso_por_correo.configurado, false, "en la suite el aviso por correo no está configurado: es la condición de la comprobación de abajo");
+      assert.strictEqual(rSalud3.cuerpo.ok, true, "el aviso por correo sin configurar NO pone `ok` en false: no es un fallo de la sincronización y el monitor no debe sonar por ello");
       assert.strictEqual(rSalud3.cuerpo.ultimo_error, null, "la corrida buena borra el fallo");
       assert.strictEqual((await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN)).cuerpo.ultimo_error, null);
       console.log(`· salud de la sincronización: Socrata caído → 502 con rastro en meta, op=salud (${gastados} comandos) lo publica, el listado lo repite con su medición (${med.filas_corpus} filas, ${med.chunks} chunks, ${med.duracion_ms} ms) y la corrida buena lo borra`);
@@ -19533,7 +19743,31 @@ async function main() {
       assert.ok(semilla.familias && Object.keys(semilla.familias).length >= 5, "semilla de vocabulario vacía");
       assert.ok(/semilla/i.test(semilla._meta.origen),
         "el archivo debe declarar que es una semilla curada, no una estadística del histórico");
-      assert.ok(vercel.crons.some((c) => c.path === "/api/sync"), "falta el cron de /api/sync");
+      /* LOS CRONS: los dos DIARIOS y apuntando a algo real (6-sep-2026, C-N1 y
+         M-COMP-03). Antes esta línea solo miraba el `path` de la sincronización:
+         una expresión de cada media hora, o de cada hora, pasaba en verde y se llevaba
+         por delante el despliegue —en el plan Hobby el cron es diario como
+         máximo (documentación de Vercel leída el 5-sep-2026; no releída el 6:
+         el proxy responde 403)— sin que ninguna prueba lo dijera. Se exige la
+         FORMA diaria entera: minuto y hora fijos y los tres campos de fecha en
+         «*». Y el path de cada cron tiene que ser un rewrite real: apuntar un
+         cron a una URL con «?» no aporta nada y arriesga el despliegue. */
+      {
+        const rewritesCron = new Map((vercel.rewrites || []).map((r) => [r.source, r.destination]));
+        assert.ok(Array.isArray(vercel.crons) && vercel.crons.length >= 1, "vercel.json no declara crons");
+        for (const c of vercel.crons) {
+          assert.ok(/^\d{1,2} \d{1,2} \* \* \*$/.test(c.schedule),
+            `el cron de ${c.path} tiene la expresión «${c.schedule}»: en este proyecto TODO cron es diario con minuto y hora fijos (el plan gratuito de Vercel no admite más de uno al día y una expresión más frecuente tumba el despliegue)`);
+          assert.ok(rewritesCron.has(c.path), `el cron apunta a ${c.path}, que no es un rewrite de vercel.json: un cron con «?» en la ruta arriesga el despliegue`);
+          const m = /^\/api\/([a-z]+)\?op=([a-z0-9-]+)$/.exec(rewritesCron.get(c.path));
+          assert.ok(m, `el rewrite del cron ${c.path} lleva a «${rewritesCron.get(c.path)}», que no es una op de un router`);
+          assert.ok(fs.existsSync(path.join(__dirname, "..", "api", `${m[1]}.js`)), `el cron ${c.path} termina en api/${m[1]}.js, que no existe`);
+          assert.ok(new RegExp(`^\\s*"?${m[2]}"?\\s*:`, "m").test(sinComentarios(fs.readFileSync(path.join(__dirname, "..", "api", `${m[1]}.js`), "utf8"))),
+            `el cron ${c.path} pide ?op=${m[2]} y api/${m[1]}.js no despacha esa operación`);
+        }
+        assert.ok(vercel.crons.some((c) => c.path === "/api/sync"), "falta el cron de /api/sync");
+        assert.ok(vercel.crons.some((c) => c.path === "/api/avisos"), "falta el cron del aviso diario por correo (/api/avisos)");
+      }
     }
 
     /* ═══════════ j-quinquies. MARCA · DETEKTA (Fase 7 del plan maestro v4) ═══════════
@@ -19882,6 +20116,33 @@ async function main() {
         }
         if (!/Node 22/.test(leerD("README.md"))) hallazgosDoc.push("README.md no dice Node 22 (Node 18 está sin soporte desde abril de 2025)");
         if (/no tiene GitHub Actions/.test(leerD("docs/CONFIGURACION_TOKENS.md"))) hallazgosDoc.push("docs/CONFIGURACION_TOKENS.md dice que no hay GitHub Actions y hay un flujo que corre la suite");
+        /* (6 bis) M-INF-16 · EL SEGUNDO DISPARO DIARIO DE LA ACTUALIZACIÓN. Antes había
+           un solo disparo (08:30 UTC) y, sin visitas, el dato podía envejecer 24 h. No
+           va como tercer cron de vercel.json porque cuántos admite el plan no se pudo
+           comprobar desde la sesión (vercel.com responde 403) y un cron de más rompería
+           el despliegue de una aplicación en producción: va en GitHub, que es gratis y
+           no gasta ningún cron. Lo que se fija: existe, es diario, pide el modo `auto`
+           (idempotente), manda el Bearer del cron —desde M-SEG-08 la sincronización lo
+           exige— y su URL es la MISMA que publica MARCA.dominio (una segunda copia del
+           dominio en un YAML se separaría a la primera mudanza). */
+        {
+          const rutaSync = path.join(raizD, ".github", "workflows", "sync.yml");
+          if (!fs.existsSync(rutaSync)) hallazgosDoc.push(".github/workflows/sync.yml no existe: la actualización se dispara una sola vez al día y sin visitas el dato envejece 24 h");
+          else {
+            const yml = fs.readFileSync(rutaSync, "utf8");
+            const activo = yml.split("\n").filter((l) => !/^\s*#/.test(l)).join("\n");
+            const cronYml = (/^\s*-\s*cron:\s*['"]([^'"]+)['"]/m.exec(activo) || [, ""])[1];
+            if (!/^\d{1,2} \d{1,2} \* \* \*$/.test(cronYml)) hallazgosDoc.push(`.github/workflows/sync.yml programa «${cronYml}»: el segundo disparo es DIARIO con minuto y hora fijos, como los crons de vercel.json`);
+            const urlYml = (/https:\/\/[^"'\s]+\/api\/sync\?modo=auto/.exec(activo) || [""])[0];
+            if (!urlYml) hallazgosDoc.push(".github/workflows/sync.yml no llama a /api/sync?modo=auto: el modo auto es el que hace que llegar tarde no cueste trabajo");
+            else if (!urlYml.startsWith(`https://${require("../lib/glosario.js").MARCA.dominio}/`)) hallazgosDoc.push(`.github/workflows/sync.yml llama a «${urlYml}» y la aplicación vive en ${require("../lib/glosario.js").MARCA.dominio} (MARCA.dominio, public/glosario.js)`);
+            if (!/Authorization: Bearer \$\{CRON_SECRET\}/.test(activo)) hallazgosDoc.push(".github/workflows/sync.yml no manda «Authorization: Bearer» con CRON_SECRET: desde M-SEG-08 la sincronización lo exige y el disparo respondería 401");
+            if (!/secrets\.CRON_SECRET/.test(activo)) hallazgosDoc.push(".github/workflows/sync.yml no lee el secreto CRON_SECRET de GitHub");
+            if (!/exit 1/.test(activo)) hallazgosDoc.push(".github/workflows/sync.yml no falla cuando la llamada no responde 200: un disparo que no dispara nada no puede quedar en verde");
+            const vercelSync = JSON.parse(leerD("vercel.json"));
+            if ((vercelSync.crons || []).filter((c) => c.path === "/api/sync").length !== 1) hallazgosDoc.push("vercel.json declara el cron de /api/sync más de una vez: el segundo disparo vive en .github/workflows/sync.yml para no gastar un cron del plan");
+          }
+        }
       }
 
       /* (7) M-DOC-05 · el README es BREVE y remite a lo que mide (node tests/estado.js, node

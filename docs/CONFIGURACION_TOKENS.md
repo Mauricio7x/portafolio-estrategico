@@ -73,18 +73,24 @@ contraseñas no queden escritas en GitHub.
 
 ---
 
-## 2. Parte A · GitHub: no necesita ningún token
+## 2. Parte A · GitHub: un solo secreto, y solo si quiere el segundo disparo
 
-**En GitHub no hay que crear, pegar ni configurar ningún token.** Punto.
+**En GitHub no hay ningún token que crear para que la aplicación funcione.** Hay un único secreto
+opcional, y es una copia de una variable que ya tiene en Vercel.
 
 Por qué, en concreto:
 
-- El repositorio tiene **un solo flujo de GitHub Actions** (`.github/workflows/suite.yml`, desde el
-  6-sep-2026): corre la suite de pruebas en cada cambio y enseña un veredicto verde o rojo en la
-  pestaña *Actions* y en cada *pull request*. **No necesita ninguna credencial**: las pruebas corren
-  sin red, con imitaciones locales de datos.gov.co y de Upstash, así que no hay que pegarle nada.
-- El repositorio **no tiene secretos** (*Settings → Secrets and variables*) y no hace falta que los
-  tenga.
+- El repositorio tiene **dos flujos de GitHub Actions** (desde el 6-sep-2026):
+  `.github/workflows/suite.yml` corre la suite de pruebas en cada cambio y enseña un veredicto verde
+  o rojo en la pestaña *Actions* y en cada *pull request* — **no necesita ninguna credencial**: las
+  pruebas corren sin red, con imitaciones locales de datos.gov.co y de Upstash. Y
+  `.github/workflows/sync.yml` pide la actualización de los datos una vez por la tarde (20:30 UTC,
+  las 15:30 en Colombia), para que sin visitas el dato no envejezca 24 horas sino 12.
+- **El único secreto** es el del segundo disparo: si usted creó `CRON_SECRET` en Vercel (§3.6), el
+  mismo valor tiene que estar en GitHub → el repositorio → **Settings** → **Secrets and variables**
+  → **Actions** → **New repository secret**, nombre `CRON_SECRET`, valor: el mismo de Vercel →
+  **Add secret**. Sin él ese flujo sale rojo cada tarde con el motivo escrito, y la actualización de
+  la mañana sigue funcionando igual.
 - Lo único que conecta GitHub con Vercel es la **integración de Git de Vercel**: se autoriza una vez
   con la cuenta de GitHub y a partir de ahí cada `push` a la rama principal despliega solo. Eso no es
   un token que haya que copiar y pegar: se autoriza con un botón.
@@ -346,6 +352,61 @@ no hay que tocar** (están en el anexo del final, con lo que hace cada una).
 
 ---
 
+### 3.8 · `CORREO_API_KEY`, `CORREO_REMITENTE` y `CORREO_DESTINO` — el aviso diario por correo (opcional)
+
+**Qué es.** Cada mañana la aplicación puede mandarle un correo con lo que cierra hoy o mañana, lo que
+cambió en un pliego y el plazo para avisar que le interesa: exactamente lo mismo que le enseña el
+centro de alertas de la pestaña Mis procesos. Lo dispara un segundo cron de Vercel
+(`/api/avisos`, 11:00 UTC ≈ 6 de la mañana en Colombia). El correo solo sale cuando hay algo que
+avisar: un día sin correo es un día sin avisos.
+
+**Sin estas variables no se rompe nada**: la aplicación funciona igual, el centro de alertas sigue
+en su sitio y la dirección `/api/avisos` responde diciendo qué falta y qué se habría enviado.
+
+**De dónde salen.** De un proveedor de correo por interfaz web (la aplicación habla con Resend; su
+plan gratuito y sus condiciones los confirma usted en la página del proveedor, porque desde la
+sesión de trabajo no se pudo abrir ninguna página de precios). Los pasos:
+
+1. Abrir <https://resend.com> → **Sign up** y crear la cuenta.
+2. En el panel del proveedor, **Domains** → **Add Domain**: escriba el dominio desde el que quiere
+   que salga el correo y siga las instrucciones que le dé para verificarlo. Si no tiene dominio
+   propio, el proveedor le indica una dirección de pruebas que sirve para empezar; ese es el valor
+   de `CORREO_REMITENTE` y hay que copiarlo tal cual del panel, sin inventarlo.
+3. En **API Keys** → **Create API Key**: nombre `Detekta`, permiso de envío → **Add**. Copie la
+   clave: solo se enseña una vez.
+
+**Cómo se pegan en Vercel** (§4 lo explica con clics): <https://vercel.com/dashboard> → el proyecto
+→ **Settings** → **Environment Variables** → **Add New**, una por una:
+
+- **`CORREO_API_KEY`** — la clave que acaba de copiar. Es una contraseña: no va en el código ni en
+  ningún chat.
+- **`CORREO_REMITENTE`** — la dirección desde la que sale el aviso, copiada del panel del proveedor
+  (por ejemplo `avisos@sudominio.com`). El proveedor rechaza cualquier otra.
+- **`CORREO_DESTINO`** — su dirección de correo, a la que quiere que llegue el aviso.
+- **`CRON_SECRET`** (§3.6) — **hace falta también para esto**: el aviso exige credencial siempre
+  (manda correo y su respuesta enseña sus procesos guardados), y sin `CRON_SECRET` el cron de cada
+  mañana no tiene cómo identificarse. Si ya la creó, no hay que hacer nada más.
+
+Entorno *Production* → **Save** → **Deployments** → **Redeploy** (§5): las variables de entorno solo
+entran en despliegues nuevos.
+
+**Cómo se comprueba que quedó bien.** Pegue en Chrome, con su llave al final:
+
+```
+https://portafolio-estrategico.vercel.app/api/avisos?enviar=no&token=MiExtraccion2025
+```
+
+`enviar=no` calcula el aviso y le enseña el texto SIN mandarlo, en `vista_previa`. Si en `correo`
+aparece `"configurado": false`, la lista `falta` dice qué variable no llegó y `que_hacer` qué hacer.
+Quitando `&enviar=no` el correo sale de verdad; el mismo día no se envía dos veces, y si el
+proveedor falla la respuesta lo cuenta en `fallos` y el aviso se puede reintentar.
+
+**Una advertencia sobre la hora.** En el plan gratuito de Vercel el cron cae en cualquier minuto de
+la hora programada, así que el correo dice «cada mañana» y no promete una hora exacta. El día que
+cuenta («cierra hoy», «cierra mañana») es siempre el día de Colombia, no la hora del disparo.
+
+---
+
 ## 4. Parte C · Cómo pegar una variable en Vercel (con clics)
 
 Este procedimiento es el mismo para todas.
@@ -563,7 +624,8 @@ solo existen para las pruebas automáticas.** No hay que crearlas en Vercel:
 `MULTAS_BASE_URL` · `SECOP_PAGE` · `SECOP_BACKOFF_MS` · `PAA_PAGE` · `PAA_MAX_FILAS` ·
 `PAA_PRESUPUESTO_MS` · `PAA_ACIERTO_MAX_FILAS` · `PAA_ACIERTO_PRESUPUESTO_MS` · `SOCIO_TIEMPO_MS` ·
 `PROPONENTES_TIEMPO_MS` · `EJECUCION_TIEMPO_MS` · `SEGUIMIENTO_TIEMPO_MS` · `UBICACION_VALIDA` ·
-`E2E_STACK` · `DUMP`
+`E2E_STACK` · `DUMP` · `CORREO_API_URL` (el punto final del proveedor de correo; sin ella se usa el
+del proveedor documentado en §3.8)
 
 Y dos que pone Vercel sola y no se tocan nunca: `VERCEL` y `NODE_ENV`.
 

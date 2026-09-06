@@ -1,6 +1,7 @@
 {
   "crons": [
-    { "path": "/api/sync", "schedule": "30 8 * * *" }
+    { "path": "/api/sync", "schedule": "30 8 * * *" },
+    { "path": "/api/avisos", "schedule": "0 11 * * *" }
   ],
   "redirects": [
     { "source": "/admin.html", "destination": "/#/admin", "permanent": false },
@@ -13,6 +14,7 @@
     { "source": "/api/apu/:accion", "destination": "/api/apu?accion=:accion" },
     { "source": "/api/sync/historico", "destination": "/api/procesos?op=historico" },
     { "source": "/api/sync", "destination": "/api/procesos?op=sync" },
+    { "source": "/api/avisos", "destination": "/api/perfil?op=avisos" },
     { "source": "/api/oportunidades", "destination": "/api/procesos?op=listar" },
     { "source": "/api/indice-baja", "destination": "/api/procesos?op=baja" },
     { "source": "/api/competencia-detalle", "destination": "/api/inteligencia" },

@@ -10494,3 +10494,139 @@ $150.000 / $300.000. (6) Abrir https://licitum.co y confirmar $890.000 y los des
 (10 %) y anual (20 %). (7) Abrir https://presucosto.com y confirmar que el APU es gratis y que la
 extracción del pliego con IA es del plan Enterprise sin precio publicado. (8) Abrir
 https://www.elpais.com.co (sección Licita) y confirmar «desde $60.800/mes».
+
+### Lote «B12-aviso-por-correo» de la consultoría del 4-sep · M-COMP-03, M-INF-16 y la cerradura C-N1 (6-sep-2026)
+
+En una línea: cada mañana sale un correo con lo que cierra y lo que cambió —el MISMO camino que
+pinta el centro de alertas, no una segunda lista—, disparado por un segundo cron diario que apunta
+al rewrite `/api/avisos`; la op exige credencial SIEMPRE (a diferencia de `op=sync`), sin las
+variables del proveedor responde qué falta en vez de reventar, y el segundo disparo de la
+sincronización va en GitHub para no arriesgar un cron que nadie pudo contar.
+
+**Lo que había, medido.** `cat vercel.json`: un solo cron (`/api/sync`, `30 8 * * *`).
+`grep -rniE "resend|sendgrid|mailgun|postmark|brevo" lib api public`: ni una llamada funcional a un
+proveedor de correo (las dos apariciones de «Resend» en `public/index.html` son una referencia de
+diseño). Y la ÚNICA aserción de la suite sobre los crons era `vercel.crons.some(c => c.path ===
+"/api/sync")`: ejecutada contra `30 8 * * *`, `*/30 * * * *`, `0 * * * *` y `* * * * *`, **pasaba en
+las cuatro** (C-N1 reproducido). Si el usuario no abría la aplicación ese día, no se enteraba de que
+un proceso guardado cerraba mañana ni de que una adenda había movido la fecha.
+
+**Qué se decidió.**
+
+1. **UNA op plegada en el router, y el cron apunta a un rewrite.** `avisos` entra en el mapa `OPS` de
+   `api/perfil.js` (`lib/handlers/perfil/avisos.js`); `vercel.json` gana el rewrite
+   `/api/avisos → /api/perfil?op=avisos` y el cron `{ "path": "/api/avisos", "schedule": "0 11 * * *" }`
+   (11:00 UTC ≈ las 6 de la mañana en Colombia). La ficha proponía apuntar el cron directamente a
+   `/api/perfil?op=avisos`: **no**, porque el árbol ya lo había decidido para la sincronización —la
+   suite lo dice desde entonces: «el cron SÍ sigue en `/api/sync` (por rewrite): apuntarlo a una URL
+   con query no aporta nada y arriesga el deploy»—. Se llama a lo que existe.
+2. **Credencial SIEMPRE, y ahí esta op se separa de `op=sync` a propósito.** M-SEG-08 dejó la
+   sincronización pública cuando no hay `CRON_SECRET`, porque el cron de un despliegue sin la
+   variable no manda cabecera y exigirla lo habría dejado en 401 cada mañana sin que nadie lo viera.
+   Copiar eso aquí habría dejado ABIERTA una op que **manda correo** y cuya respuesta lleva los
+   nombres de los procesos guardados del dueño. La guarda es una COMPOSICIÓN de las dos funciones
+   que ya existen, sin una tercera copia de ninguna comparación: con `CRON_SECRET` puesto,
+   `autorizarSincronizacion` (Bearer del cron o llave de la aplicación); sin él, `autorizarToken` a
+   secas. Y el 401 de ese segundo caso DICE que `CRON_SECRET` no está, para que la ausencia no sea
+   muda: sin ella el cron no tiene cómo identificarse y el aviso solo sale con la llave. Por eso
+   `CRON_SECRET` pasa de «recomendada» a **necesaria si se quiere el correo**, y así lo dice
+   `docs/CONFIGURACION_TOKENS.md` §3.8.
+3. **El correo es el ESPEJO del centro de alertas, no otra lista.** El tramo «guardados → fila viva →
+   enriquecido → alertas» se extrajo del GET de Mis procesos a `alertasDelPerfil(redis, perfil,
+   ahora, {conGuia, guardados})` en el mismo `lib/handlers/perfil/seguimiento.js`, y lo llaman los
+   dos. `S.alertasDe` y `avisosDe` no se tocaron: se llaman. `conGuia` es lo caro (guía por proceso,
+   con índices y documentos) y solo lo pide la pantalla; `guardados` se pasa cuando el llamador ya
+   los leyó, para no gastar un GET de más. La suite comprueba que **cada frase** de `alertasDe` está
+   en el cuerpo del correo: si alguien redactara el aviso por su cuenta, se cae.
+4. **Los perfiles se CENSAN por la clave, no se listan.** `perfilesGuardados(redis)` recorre
+   `seguimiento:*` y se queda con `seguimiento:{perfil}` (la caché `seguimiento:detalle:…` no es un
+   perfil: la misma frontera que ya declara `lib/copia_datos`). Una lista de los tres perfiles del
+   negocio habría dejado sin aviso a cualquier perfil creado por el onboarding; la prueba usa un
+   perfil que no es ninguno de los tres.
+5. **`lib/correo.js`: transporte por REST y nada más.** Patrón de `lib/redis.js`: `fetch` nativo,
+   punto final y clave en variables de entorno, tiempo de espera, y **el parseo del JSON aparte del
+   fetch** (un 200 con HTML no es un envío hecho). Proveedor: Resend, por tener el REST más corto;
+   `CORREO_API_URL` permite cambiarlo sin tocar código. **FALTA ≠ FALLO**: sin `CORREO_API_KEY`,
+   `CORREO_REMITENTE` o `CORREO_DESTINO` la op responde 200 con `falta`, `que_hacer` y la
+   `vista_previa` de lo que habría salido — nunca un 500, nunca un silencio. El cuerpo de error del
+   proveedor pasa por `tacharClave` (censo de secretos de `lib/apu_ocr`, donde entra
+   `CORREO_API_KEY`): hay servicios que repiten la clave en el mensaje, y la suite lo ejecuta con un
+   proveedor que responde `Bad request for apikey=…`.
+6. **El destinatario sale de una variable de entorno, no del perfil.** La ficha decía «campo `correo`
+   en el perfil (lib/perfiles.js)»: **ese campo no existe hoy** en `lib/perfiles.js` ni en
+   `lib/perfil_dinamico.js`. Inventarlo habría sido un esquema nuevo, una migración y una pantalla;
+   `CORREO_DESTINO` es lo que el árbol permite hoy y queda documentado. Cuando el perfil tenga
+   correo, esta es la única línea que cambia.
+7. **La fecha civil de Colombia manda, la hora del disparo no.** La marca de «ya se envió» es
+   `avisos:enviado:{perfil}:{fecha}` con NX y 48 h de vida, y `{fecha}` es `hoyColombia(ahora)`. La
+   ficha pedía además «calcular el cierra hoy / mañana con la fecha civil de Bogotá»: **el árbol ya
+   lo hacía** — `diasHasta` (lib/seguimiento) resta `OFFSET_COLOMBIA_MS` antes de comparar, medido —,
+   así que no se reescribió nada; lo que la cerradura añade es que el aviso reciba `ahora`
+   INYECTADO en vez de leer su propio reloj, y se ejecuta a las 02:30 UTC, que en Colombia son las
+   21:30 del día ANTERIOR: si algo usara el día del disparo, la marca saldría con otra fecha y el
+   «cierra mañana» se convertiría en «cierra hoy».
+8. **La plantilla dice el hecho y no promete hora.** Texto plano y HTML mínimo con las frases que ya
+   produce `alertasDe`, registro de usted, sin jerga y sin pictogramas, la marca desde
+   `MARCA.nombre` y un solo enlace, a Mis procesos. Dice «cada mañana» y **ninguna hora**: en el plan
+   gratuito de Vercel el cron cae en cualquier minuto de la hora programada. Un perfil sin nada que
+   avisar no genera correo, y la respuesta lo dice: «un día sin correo es un día sin avisos».
+9. **La respuesta de la op es el instrumento de medición** (`enviados`, `omitidos` con motivo,
+   `fallos`, `correo`, `vista_previa`), porque «cierres perdidos» no se medía antes ni se mide solo.
+   `&enviar=no` calcula y enseña el aviso SIN mandarlo ni quemar el día — así el dueño, que no tiene
+   terminal, comprueba el texto pegando una URL en Chrome. Un valor desconocido de `enviar` es
+   INERTE (envía), como `?zona=`.
+
+10. **El fallo del aviso no puede ser MUDO, y su sitio es `op=salud`.** El cron falla en silencio por
+    naturaleza: nadie lee su respuesta. `/api/procesos?op=salud` —que el dueño ya pega en Chrome y que
+    un monitor consulta cada 15 minutos— publica ahora `aviso_por_correo: {configurado, falta}` con los
+    NOMBRES de las variables que faltan (`CRON_SECRET` incluida cuando no está), jamás un valor. No
+    cambia `ok`, por el mismo motivo que `sincronizacion_protegida`: no es un fallo de la
+    sincronización y el monitor no debe sonar por ello. La suite fija la lista exacta de campos que
+    esa respuesta pública puede llevar, así que el campo nuevo tuvo que declararse ahí.
+11. **Lo que NO se hizo, a propósito.** La marca `avisos:enviado:*` **no** entra en el censo de
+    prefijos de `lib/copia_datos`: no es un dato que el usuario introduzca, se rehace sola y caduca en
+    48 h — una copia que la restaurara silenciaría el aviso del día. Y no se leyó el corpus una vez
+    por perfil: `cargarCorpus` memoiza por sello en la instancia caliente, así que el segundo perfil
+    ya no vuelve a leer los chunks (por eso el aviso usa UN cliente de Redis para todos).
+
+**M-INF-16 · el segundo disparo diario, y por qué NO es un tercer cron.** Cuántos crons admite el
+plan no se pudo comprobar desde esta sesión (`vercel.com` responde 403 en el CONNECT del proxy, medido
+el 6-sep-2026) y la propia ficha lo deja como paso del dueño. Con el aviso ocupando ya el segundo
+cron, un tercero que el plan no admitiera rompería el despliegue de una aplicación **en producción**:
+el disparo de la tarde va en `.github/workflows/sync.yml` (20:30 UTC = 15:30 en Colombia), que es
+gratis, no gasta ningún cron y no toca una línea de la aplicación. La ventana máxima sin datos
+frescos cuando nadie visita pasa de 24 h a 12 h (aritmética entre horas de disparo; la edad real en
+producción no consta). Del `sync.yml` anterior (borrado en `c8160ff` el 29-jul-2026 sin motivo en la
+memoria) queda escrito por qué no vuelve igual: llamaba a `modo=full` **cada hora** con secretos que
+hoy no existen, y una full horaria es justo lo que el delta y la cadena hacen innecesario —además,
+desde M-SEG-08 esa llamada sin cabecera respondería 401—. El nuevo pide `modo=auto` (idempotente:
+con dato fresco cuesta unos pocos comandos), manda `Authorization: Bearer <CRON_SECRET>` desde un
+secreto de GitHub y **falla con el motivo escrito** si no recibe 200: un disparo que no dispara nada
+no puede quedar en verde. Dos avisos para el dueño: GitHub solo ejecuta los `schedule` de la rama por
+defecto, y deshabilita los flujos programados de un repositorio sin actividad durante 60 días.
+
+**C-N1 · la cerradura del cron.** La aserción de `tests/e2e.js` que solo miraba el `path` se cambió
+por una que exige, para CADA entrada de `vercel.crons`: expresión diaria con minuto y hora fijos
+(`^\d{1,2} \d{1,2} \* \* \*$`), `path` que sea un rewrite real de `vercel.json`, destino con la forma
+`/api/<router>?op=<op>`, router existente en `api/` y op despachada por ese router. Y la misma forma
+diaria se exige al `cron:` de `sync.yml`. Una expresión de cada media hora ya no llega al despliegue.
+
+**Medido antes → después.** Con los handlers reales y un transporte simulado: sin las tres variables
+del proveedor, `200` con `falta: ["CORREO_API_KEY","CORREO_REMITENTE","CORREO_DESTINO"]`, cero
+llamadas al proveedor y la vista previa legible; con ellas, **un** correo con las frases exactas de
+`alertasDe` (el proceso que cierra el día civil siguiente y el cambio de cronograma del proceso
+guardado con la foto vieja), `to` y `from` de las variables, `Authorization: Bearer` con la clave, y
+la marca escrita con el día colombiano `2026-09-10` y **no** con el día UTC del disparo
+(`2026-09-11`); segundo disparo del mismo día: 0 envíos y el motivo; proveedor con 500 que repite la
+clave: `fallos` con el 500, **la clave no aparece en la respuesta** y la marca queda borrada para
+poder reintentar hoy mismo; `enviar=no` no manda ni marca; un perfil ilegible es inerte y la
+respuesta lo dice. Cinco mutaciones ponen la suite en rojo por separado (ver el commit): expresión de
+cron no diaria, op fuera del router, guarda inerte, el correo redactado aparte de `alertasDe`, y el
+día calculado con la hora del disparo.
+
+**Lo que queda en manos del dueño y no se puede dar por hecho.** Dar de alta el proveedor, crear la
+clave y pegar las tres variables en Vercel (más `CRON_SECRET` si aún no está) y volver a desplegar;
+copiar `CRON_SECRET` como secreto de GitHub para el disparo de la tarde; y responder la pregunta que
+sigue abierta desde la consultoría (Q-01): qué plan tiene el proyecto en Vercel y cuántos crons
+admite —en el plan Hobby el uso comercial está fuera de términos—. Hasta que eso se responda,
+`vercel.json` declara dos crons y ni uno más.
