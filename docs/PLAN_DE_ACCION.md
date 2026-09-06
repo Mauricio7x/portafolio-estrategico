@@ -240,7 +240,7 @@ ingresos. Para persona natural depende de topes y del RUT. No se cobra sin esto.
 de los datos, factor de precio, banda). Añadir la **fecha de cada cambio de estado**, y distinguir «no
 me presenté» de «no lo marqué».
 
-**Por qué.** `docs/PROBABILIDAD_MEJORADA.md:98` demuestra que `P(ganar)` **no es falsable** hoy: el
+**Por qué.** docs/PROBABILIDAD_MEJORADA.md § «0.2 Los ~11 667 procesos con par completo» demuestra que `P(ganar)` **no es falsable** hoy: el
 corpus dice quién ganó, no a qué se presentó nadie. `lib/seguimiento.js:44` ya recoge
 `presentado · ganado · perdido` — **es exactamente la etiqueta que falta**. Pero sin la predicción de
 aquel momento no hay nada contra qué compararla.
@@ -403,7 +403,7 @@ retirarlo después de haberlo vendido, no.**
 ### F1-5 · Ejecutar la retro-prueba temporal de rivales (§9.1)
 **Frente:** G · **Clase:** NECESARIO · **Esfuerzo:** 1,5–2 j · **Depende de:** nada
 
-**Qué se hace.** Ejecutar el protocolo **ya escrito** en `docs/PROBABILIDAD_MEJORADA.md:716`: partir el
+**Qué se hace.** Ejecutar el protocolo **ya escrito** en docs/PROBABILIDAD_MEJORADA.md § «9.1 · Backtest temporal de los rivales (el importante)»: partir el
 histórico por tiempo, estimar los rivales esperados de cada entidad con los datos anteriores al corte y
 compararlos con los oferentes realmente observados después. **Corre sobre el corpus ya bajado, sin
 extraer una sola fila de SECOP.**

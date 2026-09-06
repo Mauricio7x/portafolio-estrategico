@@ -202,7 +202,11 @@ devuelve hallazgos con evidencia ejecutada, no transcripciones de lo que leyó.
 
 1. **Lenguaje imperativo.** «Se elimina X», «se sustituye Y por Z». Nada de «podrías».
 2. **Cita la fuente exacta** (`lib/probabilidad.js:trazaP`, `MEMORIA.md § «…»`, `docs/datos.md
-   §7`). Un argumento sin ancla en el repositorio es una opinión.
+   §7`). Un argumento sin ancla en el repositorio es una opinión. **Un documento del árbol se cita
+   por TÍTULO de sección, nunca por número de línea** (una cita a la línea 1323 de la memoria
+   apuntaba a «0 es sin dato» y dos días después a otro mandamiento): el `sed` que da el mapa es
+   para leer, no para citar; la suite censa las citas por línea y comprueba que cada título citado
+   exista (6-sep-2026).
 3. **Mide el impacto con cifras** — y si no puedes medirlo, **dilo** en vez de estimar a ojo.
 4. **Traduce el beneficio técnico a valor para el contratista.**
 5. **Español**; cambios pequeños y directos.

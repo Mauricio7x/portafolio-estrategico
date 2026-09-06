@@ -18360,9 +18360,194 @@ async function main() {
         if (/no tiene GitHub Actions/.test(leerD("docs/CONFIGURACION_TOKENS.md"))) hallazgosDoc.push("docs/CONFIGURACION_TOKENS.md dice que no hay GitHub Actions y hay un flujo que corre la suite");
       }
 
+      /* (7) M-DOC-05 · el README es BREVE y remite a lo que mide (node tests/estado.js, node
+         tests/mapa.js); lo que afirma del árbol se censa en los dos sentidos. El README de
+         222 KB (medido el 4-sep-2026) documentaba trece rutas /api/… como archivos que eran
+         rewrites, contaba «nueve» y «diez» acciones donde había trece, citaba public/apu.js
+         (no existe) y no nombraba seis op reales. Aquí: (a) toda ruta /api/… que el README
+         nombra es un router real, un source de vercel.json o /api/apu/<accion> real; (b) todo
+         `?op=|accion=|vista=` que nombra es una op real de su router; (c) toda op real de los
+         seis routers aparece en la línea del README que enumera la superficie de ese router
+         —la lista es a mano, pero vigilada—; (d) todo source de rewrites de vercel.json está
+         en el README; (e) toda ruta de archivo del árbol que cita existe; (f) remite a las dos
+         herramientas; (g) ningún conteo de estado sin fecha (misma regla que CLAUDE.md, punto
+         3); (h) cabe en 32 KiB: lo largo va a docs/, y el README de agosto vive íntegro en
+         docs/archivo/README_2026-09.md. Las op salen de EJECUTAR estado.js, no de un regex
+         propio, para que README y herramienta no puedan discrepar en silencio. */
+      let opsCensadasReadme = 0;
+      {
+        const readmeD = leerD("README.md");
+        const lineasR = readmeD.split("\n");
+        const { execFileSync: ejecutar } = require("child_process");
+        const salidaE = ejecutar(process.execPath, [path.join(__dirname, "estado.js")], { encoding: "utf8" });
+        const opsPorRouter = new Map();
+        const lineasE = salidaE.split("\n");
+        lineasE.forEach((l, i) => {
+          const r = /^\s+api\/([a-z]+)\.js\s+\[despacha por/.exec(l);
+          const o = r && /^\s+operaciones \(.+?\): (.+)$/.exec(lineasE[i + 1] || "");
+          if (r && o && !/no derivable/.test(lineasE[i + 1])) opsPorRouter.set(r[1], o[1].split(" · ").map((s) => s.trim()).filter(Boolean));
+        });
+        const routersReales = fs.readdirSync(path.join(raizD, "api")).filter((f) => f.endsWith(".js")).map((f) => f.replace(/\.js$/, "")).sort();
+        assert.deepStrictEqual([...opsPorRouter.keys()].sort(), routersReales, "estado.js enumera las op de TODOS los routers (si uno queda «no derivable», se arregla estado.js, no esta prueba)");
+        for (const [r, ops] of opsPorRouter) assert.ok(ops.length >= 4, `estado.js tiene que enumerar varias op para api/${r}.js (dio ${ops.length})`);
+        opsCensadasReadme = [...opsPorRouter.values()].reduce((n, o) => n + o.length, 0);
+        const vercelD = JSON.parse(leerD("vercel.json"));
+        const sources = (vercelD.rewrites || []).map((x) => x.source);
+        const rutaReal = (ruta) => {
+          if (routersReales.includes(ruta.replace(/^\/api\//, ""))) return true;
+          if (sources.includes(ruta)) return true;
+          const m = /^\/api\/apu\/([a-z0-9_-]+)$/.exec(ruta);
+          return !!(m && sources.includes("/api/apu/:accion") && (opsPorRouter.get("apu") || []).includes(m[1]));
+        };
+        // (a) rutas nombradas → reales
+        const rutasReadme = [...new Set([...readmeD.matchAll(/\/api\/[a-z0-9_-]+(?:\/[a-z0-9_-]+)*/g)].map((m) => m[0]))];
+        assert.ok(rutasReadme.length >= 6, `el README nombra las rutas de la superficie HTTP (halló ${rutasReadme.length})`);
+        for (const ruta of rutasReadme) if (!rutaReal(ruta)) hallazgosDoc.push(`README.md nombra ${ruta}, que no es un router de api/, ni un source de vercel.json, ni /api/apu/<accion> real`);
+        // (b) op nombradas → reales, en su router cuando lo dice
+        for (const m of readmeD.matchAll(/(?:\/api\/([a-z]+))?\?(op|accion|vista)=([a-z0-9_-]+)/g)) {
+          const [, router, , op] = m;
+          const donde = router ? (opsPorRouter.get(router) || []) : [...opsPorRouter.values()].flat();
+          if (!donde.includes(op)) hallazgosDoc.push(`README.md nombra ${m[0]}, que no es una op real${router ? ` de api/${router}.js` : ""} según node tests/estado.js`);
+        }
+        // (c) toda op real aparece en la línea del README que enumera ese router
+        for (const [r, ops] of opsPorRouter) {
+          const enumeracion = lineasR.filter((l) => l.includes(`/api/${r}?`)).join("\n");
+          if (!enumeracion) { hallazgosDoc.push(`README.md no tiene ninguna línea que enumere la superficie de /api/${r}?…`); continue; }
+          const faltan = ops.filter((op) => !new RegExp(`(?<![\\w-])${op}(?![\\w-])`).test(enumeracion));
+          if (faltan.length) hallazgosDoc.push(`README.md no enumera estas op reales de api/${r}.js: ${faltan.join(", ")} (node tests/estado.js las mide)`);
+        }
+        // (d) todo rewrite de vercel.json está en el README
+        for (const s of sources) if (!readmeD.includes(s)) hallazgosDoc.push(`README.md no nombra el rewrite ${s} de vercel.json`);
+        // (e) toda ruta de archivo del árbol que cita existe
+        for (const m of readmeD.matchAll(/(?<![\w\/.-])((?:public|lib|api|tests|docs|data|\.github)\/[\w.\/-]*?\.(?:js|md|json|html|yml))(?![\w-])/g)) {
+          if (!fs.existsSync(path.join(raizD, m[1]))) hallazgosDoc.push(`README.md cita ${m[1]}, que no existe en el árbol`);
+        }
+        // (f) remite a las herramientas que miden
+        if (!/node tests\/estado\.js/.test(readmeD) || !/node tests\/mapa\.js/.test(readmeD)) hallazgosDoc.push("README.md no remite a node tests/estado.js y node tests/mapa.js");
+        // (g) un conteo de estado sin fecha es una mentira en incubación
+        const RE_CONTEO = /\b(?:\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince)\s+(?:acciones|pestañas|rutas|rewrites|funciones|handlers|módulos|routers|op|endpoints|documentos|archivos)\b/i;
+        const RE_FECHA_R = /\d{1,2}-[a-z]{3}-20\d\d|\b[a-z]{3} 20\d\d\b/;
+        lineasR.forEach((l, i) => {
+          if (!RE_CONTEO.test(l)) return;
+          const ventana = [lineasR[i - 1] || "", l, lineasR[i + 1] || ""].join(" ");
+          if (!RE_FECHA_R.test(ventana)) hallazgosDoc.push(`README.md:${i + 1} lleva un conteo de estado sin fecha: «${l.trim().slice(0, 90)}» (el estado se mide con node tests/estado.js)`);
+        });
+        // (h) breve
+        const bytesR = Buffer.byteLength(readmeD);
+        if (bytesR > 32 * 1024) hallazgosDoc.push(`README.md pesa ${bytesR} bytes: el tope es 32 KiB; lo largo va a docs/ y se busca con node tests/mapa.js`);
+        if (!fs.existsSync(path.join(raizD, "docs", "archivo", "README_2026-09.md"))) hallazgosDoc.push("docs/archivo/README_2026-09.md no está: el README de agosto se archiva íntegro, no se pierde");
+        else if (!/^> Archivado el \d{1,2}-[a-z]{3}-20\d\d: superado por/m.test(leerD("docs/archivo/README_2026-09.md"))) hallazgosDoc.push("docs/archivo/README_2026-09.md no abre con «> Archivado el dd-mmm-20dd: superado por …»");
+      }
+
+      /* (8) M-DOC-08 · LAS CITAS NO SE PUDREN. La memoria crece por el final y se edita: una
+         cita a la línea 1323 de la memoria apuntaba a «0 es sin dato» el 2-sep-2026 y dos días
+         después a «18. Canal formal siempre». Se cita por TÍTULO de sección (el `sed` del mapa
+         es para leer, no para citar), y vale para cualquier documento del árbol: (a) ningún
+         archivo vivo cita un .md del árbol por número de línea, en ninguna de sus formas
+         (dos puntos, #L, «L», «l.» o «línea» seguidos del número, con o sin el .md en el caso
+         de MEMORIA, README y CLAUDE); (b) toda cita «X.md § «título»»
+         nombra un título que existe en X (exacto o como prefijo, porque los títulos son
+         largos, y sin el pictograma con el que algún título de agosto empieza; una cita a
+         CLAUDE.md puede resolver en MEMORIA.md por la mudanza del 27-ago-2026 que CLAUDE.md
+         mismo declara); (c) la numeración de los encabezados de
+         cada docs/*.md es inequívoca: entre hermanos va creciendo y el hijo cuelga del padre
+         (7.2.1 bajo 7.2) —INVESTIGACION_DISENO_WEB tenía 7.7 antes de 7.1 y 2.1-2.11 colgando
+         de 7.2—, y sus §5, §6 y §7 se conservan porque la memoria y un mensaje de commit los
+         citan. Excepciones declaradas: docs/MEMORIA.md como CITADORA (crónica fechada: se
+         desmiente al final, no se reescribe) y las citas a documentos que no están en el
+         árbol (la skill claude-api), que no tienen título estable que citar desde aquí. */
+      let citasPorTitulo = 0;
+      {
+        const archivosCita = [];
+        const andarC = (dir, ext) => {
+          for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+            if (e.name === "worktrees" || e.name === "node_modules" || e.name === ".git") continue;
+            const p = path.join(dir, e.name);
+            if (e.isDirectory()) andarC(p, ext); else if (ext.test(e.name)) archivosCita.push(p);
+          }
+        };
+        for (const d of ["docs", "lib", "api", "public", "tests"]) andarC(path.join(raizD, d), /\.(md|js)$/);
+        if (fs.existsSync(path.join(raizD, ".claude"))) andarC(path.join(raizD, ".claude"), /\.md$/);
+        archivosCita.push(path.join(raizD, "README.md"), path.join(raizD, "CLAUDE.md"));
+        const EXC_CITADORA = new Map([[path.join(raizD, "docs", "MEMORIA.md"), "crónica fechada: cita lo que había en su fecha y se desmiente al final"]]);
+        const rutaDoc = (nombre) => {
+          const candidatos = nombre.includes("/") ? [path.join(raizD, nombre)] : [path.join(raizD, "docs", nombre), path.join(raizD, nombre)];
+          return candidatos.find((c) => fs.existsSync(c)) || null;
+        };
+        const titulosDe = new Map();
+        const titulos = (ruta) => {
+          if (!titulosDe.has(ruta)) titulosDe.set(ruta, fs.readFileSync(ruta, "utf8").split("\n").filter((l) => /^#+ /.test(l)).map((l) => sinPictogramaInicial(l.replace(/^#+\s*/, "").trim())));
+          return titulosDe.get(ruta);
+        };
+        const sinPictogramaInicial = (t) => t.replace(/^[^\p{L}\p{N}«"'(`]+/u, "");
+        /* La forma «MEMORIA NNNN-NNNN» (solo espacio) también cuenta, pero «MEMORIA NNN NNN B» es
+           un tamaño y «MEMORIA d-mmm» una fecha: se excluye lo que sigue con otro dígito, un guion
+           de fecha, un decimal («216,9 KB») o una «B» (con o sin espacio: «222 104 B», «216 KB»). */
+        const RE_MEMORIA_LINEA = /\b(?:MEMORIA|README|CLAUDE)(?:\.md)?(?:(?::|#L| L| l\. | línea |, línea )\d+| \d+(?:-\d+)?(?![ \d,.-]|\s?[kK]?B\b))/g;
+        const RE_DOC_LINEA = /(?<![\w\/.-])([\w.\/-]*[\w-]\.md)(?::|#L)\d+/g;
+        const RE_DOC_TITULO = /(?<![\w\/.-])([\w.\/-]*[\w-]\.md) § «([^»]+)»/g;
+        let externas = 0;
+        for (const f of archivosCita) {
+          if (EXC_CITADORA.has(f)) continue;
+          const rel = path.relative(raizD, f);
+          const lineasF = fs.readFileSync(f, "utf8").split("\n");
+          lineasF.forEach((l, i) => {
+            for (const m of l.matchAll(RE_MEMORIA_LINEA)) hallazgosDoc.push(`${rel}:${i + 1} cita por línea («${m[0]}»): se cita por título de sección, «X.md § «…»»`);
+            for (const m of l.matchAll(RE_DOC_LINEA)) {
+              if (/^(?:MEMORIA|README|CLAUDE)\.md$/.test(path.basename(m[1]))) continue; // ya contada arriba
+              if (!rutaDoc(m[1])) { externas++; continue; }
+              hallazgosDoc.push(`${rel}:${i + 1} cita ${m[0]} por línea: se cita por título, «${m[1]} § «…»»`);
+            }
+            for (const m of l.matchAll(RE_DOC_TITULO)) {
+              const [, doc, titulo] = m;
+              if (titulo === "…") return; // la regla misma (PROMPT_INICIAL § 10)
+              const ruta = rutaDoc(doc);
+              if (!ruta) { externas++; continue; }
+              const donde = [ruta];
+              if (path.basename(ruta) === "CLAUDE.md") donde.push(path.join(raizD, "docs", "MEMORIA.md"));
+              const buscado = sinPictogramaInicial(titulo);
+              const existe = donde.some((r) => titulos(r).some((t) => t === buscado || (buscado.length >= 8 && t.startsWith(buscado))));
+              citasPorTitulo++;
+              if (!existe) hallazgosDoc.push(`${rel}:${i + 1} cita ${doc} § «${titulo}», y ese título no existe en ${path.relative(raizD, ruta)}${donde.length > 1 ? " ni en docs/MEMORIA.md" : ""}`);
+            }
+          });
+        }
+        assert.ok(citasPorTitulo >= 5, `el censo tiene que ver las citas por título del árbol (vio ${citasPorTitulo})`);
+        assert.ok(externas >= 1, `el censo distingue las citas a documentos fuera del árbol (vio ${externas}; DON_HECTOR cita decenas de la skill claude-api)`);
+        // (c) numeración inequívoca en cada docs/*.md (fuera de las vallas de código)
+        const cmpNum = (a, b) => { for (let k = 0; k < Math.max(a.length, b.length); k++) { const x = a[k] ?? -1, y = b[k] ?? -1; if (x !== y) return x - y; } return 0; };
+        for (const f of fs.readdirSync(path.join(raizD, "docs")).filter((x) => x.endsWith(".md")).sort()) {
+          const lineasN = leerD(`docs/${f}`).split("\n");
+          const pila = [];
+          let enValla = false;
+          lineasN.forEach((l, i) => {
+            if (/^\s*```/.test(l)) { enValla = !enValla; return; }
+            if (enValla) return;
+            const h = /^(#{1,6}) (.*)$/.exec(l);
+            if (!h) return;
+            const nivel = h[1].length;
+            const num = /^(\d+(?:\.\d+)*)( bis)?\.?(?=\s)/.exec(h[2]);
+            const t = num ? num[1].split(".").map(Number).concat(num[2] ? [0.5] : []) : null;
+            while (pila.length && pila[pila.length - 1].nivel >= nivel) pila.pop();
+            const padre = pila[pila.length - 1] || null;
+            const hermano = padre ? padre.ultimoHijo : null;
+            if (t && hermano && hermano.t && cmpNum(t, hermano.t) <= 0) hallazgosDoc.push(`docs/${f}:${i + 1} «${l.slice(0, 50)}» no sigue a «${hermano.l.slice(0, 40)}»: la numeración de los encabezados es creciente entre hermanos`);
+            if (t && padre && padre.t && t.length > padre.t.length && cmpNum(t.slice(0, padre.t.length), padre.t) !== 0) hallazgosDoc.push(`docs/${f}:${i + 1} «${l.slice(0, 50)}» no cuelga de «${padre.l.slice(0, 40)}»: el número del hijo empieza por el del padre`);
+            const nodo = { nivel, t, l, ultimoHijo: null };
+            if (padre) padre.ultimoHijo = nodo;
+            pila.push(nodo);
+          });
+        }
+        const inv = leerD("docs/INVESTIGACION_DISENO_WEB.md");
+        if ((inv.match(/^# /gm) || []).length !== 1) hallazgosDoc.push("docs/INVESTIGACION_DISENO_WEB.md tiene más de un título de nivel 1: la segunda investigación es una sección, no otro documento");
+        for (const n of [5, 6, 7]) if (!new RegExp(`^## ${n}\\. `, "m").test(inv)) hallazgosDoc.push(`docs/INVESTIGACION_DISENO_WEB.md sin «## ${n}. …»: la memoria y el commit 49789fa citan §5-7 y no se renumeran`);
+        if (!/nunca por (?:número de )?línea/i.test(leerD("docs/PROMPT_INICIAL.md"))) hallazgosDoc.push("docs/PROMPT_INICIAL.md § 10 no dice que la memoria se cita por título y nunca por línea");
+      }
+
       assert.deepStrictEqual(hallazgosDoc, [], `documentación desmentida por el árbol:\n  · ${hallazgosDoc.join("\n  · ")}`);
       console.log(`  · Documentación viva contra el árbol: guía+complemento, ocho fotos fechadas, ${variablesCensadas} variables del entorno descritas en la guía del dueño, `
-        + "prompt del dictamen una sola vez, CLAUDE.md y PROMPT_INICIAL sin cifras de estado, suite.yml en GitHub Actions");
+        + "prompt del dictamen una sola vez, CLAUDE.md y PROMPT_INICIAL sin cifras de estado, suite.yml en GitHub Actions, "
+        + `README breve con ${opsCensadasReadme} op censadas en los dos sentidos contra estado.js y vercel.json, ${citasPorTitulo} citas por título resueltas y ninguna por línea`);
     }
 
     /* ═══════════ j-sexies. LOS SIETE FILTROS (Fase 8 del plan maestro v4) ═══════════

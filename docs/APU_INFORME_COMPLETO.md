@@ -4966,7 +4966,7 @@ cambia entre corridas y cada consulta extra es una invocacion serverless y una e
 de cero informacion. El diseño correcto es **mensual como latido, con tres o cuatro excepciones
 declaradas**, y un disparador manual para cuando el dueño necesite refrescar antes de cotizar.
 
-#### 3.1 Nota sobre el ACPM (nivel de confianza: bajo)
+#### 2.1 Nota sobre el ACPM (nivel de confianza: bajo)
 
 Hay que separar dos cosas que se confunden:
 
@@ -6087,7 +6087,7 @@ añádase algo que ocurre **antes** de cualquier inhabilidad formal: un siniestr
 
 **Encaje con la doctrina que el repo ya tiene escrita.** Detekta ya declaró, para las equivalencias
 funcionales, que son «**una AYUDA a la decisión, no una habilitación jurídica: quien decide si el
-RUP alcanza es el pliego**» (`lib/equivalencias.js:10` y `README.md:671-672`)
+RUP alcanza es el pliego**» (`lib/equivalencias.js:10` y docs/archivo/README_2026-09.md § «Equivalencias funcionales aprendidas del histórico (`lib/equivalencias.js`)»)
 [VERIFICADO-REPO]. **El APU automático debe llevar exactamente la misma etiqueta, con la misma
 literalidad y en el mismo sitio de la tarjeta**: es una ayuda a la decisión, no un presupuesto de
 oferta, y quien firma la propuesta económica es el ingeniero, no la app. Reusar la frase ya

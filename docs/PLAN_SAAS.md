@@ -50,7 +50,7 @@ Mis procesos— y nadie lo está usando. Vender convierte el modelo en medible p
 |---|---|---|
 | «Que la página funcione al 100 %» | **Reformulada.** «Cero errores» no es prometible; sí lo es «ningún cambio sale sin pasar el protocolo». Traducido a criterios en `docs/CHECKLIST_PRODUCCION.md` | Doctrina del repositorio: la suite es la única fuente de verdad automática |
 | «Que se pueda vender por suscripción» | **Falso hoy.** Cinco bloqueadores, cuatro técnicos y uno jurídico | §2 de este documento |
-| «Todo lo que no tenemos hay que crearlo» | **Cierto, con un matiz caro:** parte de lo que parece faltar **ya existe sin usar** (embudo gratuito, registro de resultados, protocolos de calibración escritos) | `lib/perfil_dinamico.js:95`, `lib/seguimiento.js:44`, `docs/PROBABILIDAD_MEJORADA.md:712` |
+| «Todo lo que no tenemos hay que crearlo» | **Cierto, con un matiz caro:** parte de lo que parece faltar **ya existe sin usar** (embudo gratuito, registro de resultados, protocolos de calibración escritos) | `lib/perfil_dinamico.js:95`, `lib/seguimiento.js:44`, docs/PROBABILIDAD_MEJORADA.md § «9. Cómo se calibra de verdad — protocolos concretos» |
 | «No pueden existir errores» | **Inalcanzable como promesa, alcanzable como método** | §12 del prompt de consultoría |
 | «Vercel Hobby limita a 12 funciones y eso ata» | **Falso.** `api/` está en **6 de 12** | `ls api/` → 6 archivos; `tests/e2e.js` fija el conteo |
 | «El token protege la API» | **Falso.** Está integrado en el frontend a la vista de cualquiera; la protección real es Password Protection de Vercel | `CLAUDE.md § «Página única y token integrado»` |
@@ -139,7 +139,7 @@ Una consultoría floja mete estos cuatro por defecto. **Ninguno aplica:**
 |---|---|---|
 | **Embudo gratuito completo** | `lib/perfil_dinamico.js`, tope 300 perfiles vivos, TTL 45 días (`lib/almacen.js:231`) | Cualquiera sube su certificado y obtiene su diagnóstico **sin credencial**. Es una prueba gratuita en producción a la que solo le falta un final y un precio |
 | **Registro del resultado real** | `lib/seguimiento.js:44` → `interesa · preparando · presentado · ganado · perdido · descartado` | Es **la etiqueta que hoy no existe** para validar la probabilidad. Ver §6 |
-| **Protocolos de calibración escritos** | `docs/PROBABILIDAD_MEJORADA.md:712` §9.1–9.3 | Tres retro-pruebas que corren **sobre el corpus ya bajado**, sin extraer una fila |
+| **Protocolos de calibración escritos** | docs/PROBABILIDAD_MEJORADA.md § «9. Cómo se calibra de verdad — protocolos concretos» (9.1–9.3) | Tres retro-pruebas que corren **sobre el corpus ya bajado**, sin extraer una fila |
 | **Censo de ingesta y caja de diagnóstico** | `lib/censo_ingesta.js`, `lib/rastreo.js` | Soporte al cliente: «¿por qué no está este proceso?» ya tiene respuesta auditable |
 | **Cinco bancos oficiales de precios** | 10,2 MB en `data/`, servidos en 2,2 MB | Es lo que ninguna plataforma de alertas tiene, y justifica el plan alto |
 
@@ -167,7 +167,7 @@ de incidentes · documentación de usuario.
 
 ## 6. LA PIEZA ESTRATÉGICA QUE NADIE HA VISTO
 
-`docs/PROBABILIDAD_MEJORADA.md:98` lo dice con todas sus letras: los 11 667 procesos con par completo
+docs/PROBABILIDAD_MEJORADA.md § «0.2 Los ~11 667 procesos con par completo» lo dice con todas sus letras: los 11 667 procesos con par completo
 **no son un conjunto de validación**, porque *«el corpus dice quién ganó, no a qué procesos se
 presentó el dueño. Sin denominador no hay tasa de victoria, y sin tasa de victoria `P(ganar)` no es
 falsable»*. La tabla de ese documento marca la validación de `P(ganar)` en **rojo: imposible sin

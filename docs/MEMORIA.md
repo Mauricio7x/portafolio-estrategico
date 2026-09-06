@@ -8787,3 +8787,84 @@ Vercel, y la ruta del menú de la consola de Anthropic para crear una clave (la 
 → «Add branch ruleset» → main → «Require status checks to pass before merging» → check «Suite».
 (2) https://github.com/Mauricio7x/portafolio-estrategico/settings → «Automatically delete head
 branches». (3) https://vercel.com/ → proyecto → Settings → General → «Node.js Version» → 22.x.
+
+### Lote «B6a-readme-y-citas» de la consultoría del 4-sep · M-DOC-05, M-DOC-08 (6-sep-2026)
+
+**Qué se decidió.** (1) **El README es breve y remite a lo que mide** (M-DOC-05): 14 375 bytes
+frente a los 226 543 del README de la mañana (222 104 el 4-sep; creció con los lotes de hoy), con
+qué es la aplicación y para quién, cómo se ejecuta, se prueba y se despliega, la arquitectura en una
+página, la superficie HTTP, las reglas que mandan y cómo se lee la documentación. **No lleva tabla de
+módulos** (`node tests/mapa.js <término>` y `docs/MAPA.md`) ni la descripción de cada ruta, y no
+lleva conteos de estado sin fecha (la misma regla que CLAUDE.md, con su cerradura). La superficie
+HTTP es **una línea por router con sus `op`** —a mano, pero vigilada en los dos sentidos contra
+`node tests/estado.js` EJECUTADO—, más la tabla de `rewrites` de `vercel.json` (todo `source` tiene
+que estar). El README de agosto se conserva íntegro en `docs/archivo/README_2026-09.md`, plano como
+`modulo_apu_2026-05.html` (la ficha pedía una subcarpeta `2026-09-readme/`; el archivo del árbol es
+plano y no se abre otra convención), con la cabecera «> Archivado el 6-sep-2026: superado por …» que
+M-DOC-04 exigirá cuando se haga; el índice de M-DOC-10 no existe, así que el README remite a la lista
+de documentos que imprime `node tests/mapa.js`. Los requisitos que la suite ya imponía al README
+siguen en pie y el breve los cumple: Node 22, dos rutas «Mi empresa → …» que la página pinta, registro
+de usted, dos menciones del token integrado (`MiExtraccion2025`) y ninguna cifra del cupo de
+datos.gov.co. El tope es **32 KiB**: lo largo va a `docs/`. (2) **Las citas no se pudren** (M-DOC-08):
+cualquier documento del árbol se cita por TÍTULO de sección (`X.md § «título»`), nunca por número de
+línea, en PROMPT_INICIAL § 10 y con cerradura por censo. Las 57 citas por línea que había en siete
+documentos se resolvieron **contra la versión del documento citado en el commit de la cita** (`git
+show <commit>:ruta`, 466fb75 para DON_HECTOR, 74823bc para el resumen de la consultoría, 878d748 y
+51daa31 para los documentos del SaaS, 275ebc9 para el informe APU) y, cuando la línea ya apuntaba a
+otra cosa en esa misma versión, **por contenido**: la cita a la línea 1323 de la memoria («0 es sin
+dato») era ya el mandamiento 18 en el commit que la escribió; la afirmación vive en «Decisiones que
+no hay que re-aprender (costaron caro)»; la fórmula CRP citada como 1319 está en la tabla de
+«APLICACIÓN EN EL PROYECTO»; el párrafo de los pagos (845 de 1 752 entidades) citado como 677-681 está
+en «Verifique a su socio antes de firmar (ago 2026)». Las citas al README de agosto pasan al archivo
+(`docs/archivo/README_2026-09.md § «…»`), que no se edita. `docs/INVESTIGACION_DISENO_WEB.md` queda con
+un solo título de nivel 1 (la segunda investigación es `##`), el «7.7» que iba antes de 7.1 era la
+introducción de la tercera investigación y no había ningún «## 7.»: pasa a ser ese título; 7.1-7.4
+son `###`, los sitios medidos cuelgan de 7.1 como `####`, «2.1-2.11» son 7.2.1-7.2.11 y «3.1-3.5»
+(que la ficha no vio) son 7.3.1-7.3.5. §5, §6 y §7 no cambian de número: los citan «La piel v2…»,
+«La piel v3…» y el commit 49789fa. La misma cerradura de numeración halló «#### 3.1 Nota sobre el
+ACPM» colgando de «### 2. Cadencia propuesta» en `APU_INFORME_COMPLETO.md`: pasa a 2.1 (un número de
+encabezado no es contenido del informe).
+
+**La cerradura (bloque «j-quinquies-bis», puntos 7 y 8).** README: (a) toda ruta `/api/…` nombrada
+es un router real, un `source` de `vercel.json` o `/api/apu/<accion>` real; (b) toda `?op=|accion=|
+vista=` es una op real de su router; (c) toda op real de cada router aparece en la línea que enumera
+`/api/<router>?`; (d) todo `source` de `rewrites` está; (e) toda ruta de archivo del árbol citada
+existe (`public/apu.js` no existía); (f) remite a las dos herramientas; (g) ningún conteo de estado
+sin fecha; (h) ≤ 32 KiB y el archivo con su cabecera. Las op salen de ejecutar `estado.js` y de
+parsear sus líneas «operaciones (…): a · b» (el paréntesis anidado de «literales comparados (router +
+handlers)» rompió la primera versión del parseo: se lee con `\(.+?\): `). Citas: censo de docs/**,
+lib/, api/, public/, tests/, .claude/ (sin worktrees), README y CLAUDE; toda forma de cita por línea a
+un .md del árbol —`X.md:12`, `X.md#L12`, `MEMORIA:12`, `MEMORIA L12`, `MEMORIA l. 12`, «línea 12» y
+«MEMORIA 12-14», excluyendo «MEMORIA 665 060 B» (un tamaño) y «MEMORIA 4-sep» (una fecha)—; y toda
+cita `X.md § «título»` nombra un título que existe (exacto o como prefijo de ≥ 8 caracteres, sin el
+pictograma inicial que algún título de agosto lleva: el censo halló que `public/calendario.js` cita
+«EL PLAZO DE MANIFESTACIÓN NO ES DE TRES DÍAS» y el título real empieza por «⚠️ »; se normaliza el
+título en vez de meter un pictograma en `public/`). Una cita a CLAUDE.md resuelve también en
+MEMORIA.md (la mudanza del 27-ago-2026 que CLAUDE.md declara). Numeración: en cada `docs/*.md`, fuera
+de las vallas de código, los encabezados numerados crecen entre hermanos y el hijo empieza por el
+número del padre («4 bis» cuenta como 4,5). Excepciones declaradas: `docs/MEMORIA.md` como CITADORA
+(crónica: cita CLAUDE.md:16-17, ACCESIBILIDAD.md:38 y PLAN_DE_ACCION.md:235 con la fecha de cada
+cosa), las citas a documentos que no están en el árbol (la skill `claude-api`: `models.md:73` y
+compañía, decenas en DON_HECTOR, sin título estable que citar desde aquí; la suite exige ver al menos
+veinte para saber que las distingue), y `docs/CONSULTORIA_2026-09-04.json` (no es .md: insumo
+congelado de la consultoría). NO se adopta una regla general de «un solo título de nivel 1» porque
+siete documentos son compilaciones por partes (EMPEZAR_AQUI, GUIA, PLAN_DE_ACCION, ATRACTIVIDAD…):
+solo se exige a INVESTIGACION_DISENO_WEB, junto con la existencia de «## 5.», «## 6.» y «## 7.».
+
+**Medido antes → después.** El «antes», con las cerraduras y el árbol de la mañana (una iteración):
+31 hallazgos del README (una ruta inexistente nombrada —`/api/baja-mercado`, en prosa que decía que
+no existía, pero el censo no distingue prosa de afirmación—, 29 op reales sin nombrar en cinco
+routers y `api/admin` sin línea de superficie, dos rewrites sin nombrar, `public/apu.js`, sin remisión
+a las herramientas, dieciocho conteos sin fecha, 226 543 bytes, sin archivo), 57 citas por línea
+(73 hallazgos en la primera pasada porque dos patrones contaban dos veces `docs/MEMORIA.md:N`; entre ellas seis formas distintas de citar la memoria y citas a LEGAL_COLOMBIA, APU_Y_RENTABILIDAD,
+GUIA, COMPLEMENTO, PROBABILIDAD_MEJORADA, PLAN_DE_ACCION y PRECIOS_DESDE_CLAUDE_CODE que la ficha no
+contaba: 13 y 2 en la ficha, 57 en el árbol), una cita por título rota (`calendario.js`), cinco
+encabezados fuera de orden en dos documentos, dos títulos de nivel 1 y PROMPT_INICIAL sin la regla.
+Después: 0 hallazgos. Lo que las fichas decían y el árbol desmintió: «13 rutas que son rewrites
+presentadas como archivos» —el censo no mide «presentado como archivo», mide existencia y la tabla
+de rewrites—; «6 op sin mención» eran 29 por router; el README de M-DOC-05 «≈ 20 KB» quedó en 14 KB;
+«7.7 pasa a ir tras 7.6» no aplicaba (no existían 7.5 ni 7.6); «`tests/e2e.js:18970` cita el archivo
+por nombre» —era la línea 22874 y sigue igual—.
+
+**No verificable desde aquí (6-sep-2026).** Que el flujo de GitHub repita el 4/4 con este árbol
+(sin push desde esta sesión); ningún paso del dueño en estas dos fichas.

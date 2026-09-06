@@ -93,7 +93,7 @@ semáforo que una fila de 44 px no puede contener sin volver a la jerga.
 
 ---
 
-# Segunda investigación · el color «caro» y el detalle de interacción (4-sep-2026)
+## Segunda investigación · el color «caro» y el detalle de interacción (4-sep-2026)
 
 Encargo del dueño después de la piel v2: «que fueras más atrevido, un cambio total, un color
 elegante que se vea caro, y súper detallado: que cada botón, cada animación, cada clic se sienta
@@ -329,7 +329,7 @@ for (const [n, a, b] of M) console.log(n.padEnd(40) + r(a, b) + ':1');
 ```
 
 
-#### 7.7. Investigación de detalle de interacción (4-sep-2026)
+## 7. Investigación de detalle de interacción (4-sep-2026)
 
 Medido con `curl` (User-Agent de Chrome, 20 s) sobre el HTML, las hojas de estilo enlazadas y, donde
 fue viable, los paquetes npm reales, de 21 sitios y sistemas de diseño. Los conteos son `grep | uniq -c`
@@ -347,11 +347,11 @@ SPA sin texto en el HTML: sus tablas salieron de los paquetes npm (`@material/we
 
 ---
 
-#### 7.1. Tabla de easing y duraciones por sitio
+### 7.1. Tabla de easing y duraciones por sitio
 
 Formato: valor (apariciones) - dónde se usa. Fuente entre corchetes.
 
-### Linear (linear.app, 54 hojas en static.linear.app/web/_next/static/css/)
+#### Linear (linear.app, 54 hojas en static.linear.app/web/_next/static/css/)
 Tokens declarados [`css/linear/*.css`]: `--ease-out-quad: cubic-bezier(.25,.46,.45,.94)` (el que usa
 casi todo), `--ease-out-quint: cubic-bezier(.23,1,.32,1)`, `--ease-out-expo: cubic-bezier(.19,1,.22,1)`,
 `--ease-in-out-quad: cubic-bezier(.455,.03,.515,.955)` y toda la familia Penner (quad/cubic/quart/quint/
@@ -364,7 +364,7 @@ Literal del botón [`Button.dcAi4KbO.css`]: `transition: .16s var(--ease-out-qua
 transition-property: border, background-color, color, box-shadow, opacity, filter`.
 Curvas literales: `cubic-bezier(.32,.72,0,1)` (2, hojas de carrusel), `cubic-bezier(.45,1.45,.8,1)` (1).
 
-### Vercel + Geist (vercel.com, vercel.com/geist/*)
+#### Vercel + Geist (vercel.com, vercel.com/geist/*)
 Tokens [`css/geist_button/0ggp-66pwlt2m.css`]: `--ds-motion-timing-swift: cubic-bezier(.175,.885,.32,1.1)`
 (un ligero rebasamiento: termina en 1.1), `--ds-motion-popover-duration: .2s`,
 `--ds-motion-overlay-duration: .3s`, `--ds-motion-overlay-scale: .96`, `--ease-out: cubic-bezier(0,0,.2,1)`,
@@ -378,20 +378,20 @@ Clases del botón real de Geist [`geist_button.html`]: `transition-[border-color
 box-shadow] duration-[time:150ms] ease-in-out`, `data-[focus]:transition-none`,
 `data-[focus]:shadow-[var(--ds-focus-ring)]`.
 
-### Raycast (raycast.com)
+#### Raycast (raycast.com)
 Duraciones: `.3s` 100, `.2s` 59, `.15s` 29, `.1s` 23, `.4s` 12. Curvas: `ease-in-out` 38, `ease-out` 20,
 `cubic-bezier(.23,1,.32,1)` 21 (out-quint), `cubic-bezier(.4,0,.22,.96)` 10, `cubic-bezier(.16,1,.3,1)` 8,
 `cubic-bezier(.215,.61,.355,1)` 9 (out-cubic), `cubic-bezier(.34,1.56,.64,1)` 2 (rebote, marketing),
 y una `linear(...)` de 100 puntos que reproduce un muelle. Tarjetas: `transition: background-color .15s
 ease-in-out`; enlaces `.3s`. [`css/raycast/*.css`]
 
-### Stripe (stripe.com)
+#### Stripe (stripe.com)
 Curva de casa: `cubic-bezier(.25,1,.5,1)` 41 apariciones (out-quart suavizado). Botón
 [`css/stripe/f5d7a...css`]: `.hds-button{transition: background-color .3s cubic-bezier(.25,1,.5,1),
 color .3s ..., outline-color .3s ..., border .3s ...}`. Duraciones: `.3s` 50, `.5s` 14, `.15s` 10,
 `.2s` 8. Otras: `cubic-bezier(.4,0,.2,1)` 8, `cubic-bezier(.33,1,.68,1)` 5, `cubic-bezier(.16,1,.3,1)` 4.
 
-### Apple (apple.com: globalheader, localnav, home, footer)
+#### Apple (apple.com: globalheader, localnav, home, footer)
 Curvas: `cubic-bezier(.4,0,.6,1)` 78+44 (TODO el header y la cortina), `cubic-bezier(.28,.11,.32,1)` 8
 (localnav: color, fondo y el subrayado de la pestaña actual), `cubic-bezier(.25,.1,.3,1)` 13 (bolsa),
 `ease-in-out` 84 (galería), `ease` 18. Duraciones: `320ms` 73, `.24s` 66, `80ms` 35 (retardo base),
@@ -400,23 +400,23 @@ Tokens: `--r-globalnav-search-base-duration: calc(.24s - 80ms)`, `--r-localnav-m
 duration: 320ms` con retardos escalonados 260..400 ms por `nth-child`. Botón `.button`: solo cambia
 `background` en hover/active (`#0071e3 -> #0076DF -> #006EDB`), sin transform. [`css/apple/*.css`]
 
-### Framer (framer.com)
+#### Framer (framer.com)
 Sitio generado; casi todo el movimiento está en JS. CSS: `750ms` 16 (appear), `transition: color .2s
 cubic-bezier(.44,0,.56,1)`, `.15s`. Sin hover/active de botón en CSS. [`framer.html`]
 
-### Family (family.co)
+#### Family (family.co)
 Botones y enlaces [`family.html`, styled-components]: `transition: 100ms ease; transition-property:
 background, transform`, `transition: box-shadow 0.1s ease`, tarjeta `transition: 100ms ease;
 transition-property: box-shadow, background`, chevron `transform 200ms ease`. Curva de marca:
 `cubic-bezier(0.19,1,0.22,1)` 7 (out-expo). Duraciones: `200ms` 37, `100ms` 36, `220ms` 6, `180ms` 3.
 
-### Arc (arc.net)
+#### Arc (arc.net)
 Botón principal `.c-bCeQxv{transition: transform 150ms ease, box-shadow 0.15s ease-out; will-change:
 transform}`; `:hover,:focus{transform:scale(1.02)}`, `:active{transform:scale(0.98)}`. Botón secundario
 `.c-bsQNRu` hover `scale(1.05)`, active `scale(1.00)`. Duraciones: `0.2s` 11, `150ms` 3, `0.1s` 3.
 Solo `ease`/`ease-out`/`ease-in-out`. [`arc.html`, `css/arc/*.css`]
 
-### GitHub + Primer (github.com, primer.style, @primer/css 21, @primer/primitives)
+#### GitHub + Primer (github.com, primer.style, @primer/css 21, @primer/primitives)
 Curvas: `cubic-bezier(.33,1,.68,1)` 8+10 (out-cubic: diálogos), `cubic-bezier(.165,.84,.44,1)` 10
 (out-quart), `cubic-bezier(.25,1,.5,1)` 2 (ActionList), `cubic-bezier(.11,0,.5,0)` (checkmark, in),
 `cubic-bezier(.65,0,.35,1)` 2. Duraciones: `.2s` 27, `.25s` 17, `.12s` 8, `80ms` 6 (primer), `.16s`.
@@ -431,50 +431,50 @@ el archivo `base/motion` no se descargó.
 (el reposo no transiciona; el hover sí; el active es instantáneo). Primer React: UnderlineItem
 `:hover{background-color: neutral-muted; transition: background-color .12s ease-out}`.
 
-### shadcn/ui (ui.shadcn.com, Tailwind 4)
+#### shadcn/ui (ui.shadcn.com, Tailwind 4)
 Tokens: `--default-transition-duration: .15s`, `--default-transition-timing-function:
 cubic-bezier(.4,0,.2,1)`, `--ease-out: cubic-bezier(0,0,.2,1)`, `--animate-pulse: pulse 2s
 cubic-bezier(.4,0,.6,1) infinite`. Duraciones: `.15s` 24, `.4s` 8, `.3s` 8, `.2s` 8. Curvas literales:
 `cubic-bezier(.22,1,.36,1)` 3, `cubic-bezier(.32,.72,0,1)` 2 (drawer), `cubic-bezier(.23,1,.32,1)` 2.
 `.animate-in{animation: enter var(--tw-duration,.15s) var(--tw-ease,ease)}`; `zoom-in-95`, `fade-in-0`.
 
-### Radix Themes (radix-ui.com/themes, `css/radix/f226671f.css`, 685 KB)
+#### Radix Themes (radix-ui.com/themes, `css/radix/f226671f.css`, 685 KB)
 Curva de casa: `cubic-bezier(.16,1,.3,1)` 12 (out-expo suave): popovers, tooltips, diálogos.
 `cubic-bezier(.445,.05,.55,.95)` (in-out-sine): control segmentado y pulgar del switch.
 `cubic-bezier(.87,0,.13,1)` 3. Duraciones: `.12s` 16 (tarjetas), `40ms` 12 (hover/active de tarjeta
 clásica), `.1s` 11 (control segmentado, cierre de popover), `.14s` 9 (tooltip, switch), `.16s` 5
 (apertura de popover), `.2s` (diálogo), `30ms`, `60ms`, `80ms`.
 
-### Sonner (sonner.emilkowal.ski, `sonner@2/dist/styles.css`, `index.mjs`)
+#### Sonner (sonner.emilkowal.ski, `sonner@2/dist/styles.css`, `index.mjs`)
 `[data-sonner-toast]{transition: transform 400ms, opacity 400ms, height 400ms, box-shadow 200ms}`
 (curva por defecto `ease`), hijos `opacity 400ms`, salida `transform 500ms, opacity 200ms`, swipe-out
 `.2s ease-out`, icono de promesa `sonner-fade-in 300ms ease`. Constantes: `TOAST_LIFETIME = 4000`,
 `VISIBLE_TOASTS_AMOUNT = 3`, `GAP = 14`, `TOAST_WIDTH = 356`, `VIEWPORT_OFFSET = '24px'`,
 `MOBILE_VIEWPORT_OFFSET = '16px'`, `SWIPE_THRESHOLD = 45`, `TIME_BEFORE_UNMOUNT = 200`.
 
-### Vaul (vaul.emilkowal.ski, `vaul@1/dist/index.mjs`)
+#### Vaul (vaul.emilkowal.ski, `vaul@1/dist/index.mjs`)
 `TRANSITIONS = {DURATION: 0.5, EASE: [0.32, 0.72, 0, 1]}` -> `cubic-bezier(.32,.72,0,1)`;
 `CLOSE_THRESHOLD = 0.25`, `VELOCITY_THRESHOLD = 0.4`, `BORDER_RADIUS = 8`, `WINDOW_TOP_OFFSET = 26`,
 `NESTED_DISPLACEMENT = 16`; fondo escalado `scale(...) translate3d(0, calc(env(safe-area-inset-top) +
 14px), 0)`. Es la misma curva que Vercel y shadcn usan para drawers.
 
-### cmdk (repositorio pacocoursey/cmdk, `website/styles/cmdk/*.scss`)
+#### cmdk (repositorio pacocoursey/cmdk, `website/styles/cmdk/*.scss`)
 `[cmdk-item]{transition: all 150ms ease; transition-property: none; &[data-selected='true']{background:
 var(--gray4)} &:active{transition-property: background; background: var(--gray4)}}`,
 `[cmdk-root]{transition: transform 100ms ease}`. La selección por teclado NO transiciona (property
 none); solo el `:active` con ratón lo hace.
 
-### Emil Kowalski (emilkowal.ski)
+#### Emil Kowalski (emilkowal.ski)
 Su sitio: `cubic-bezier(.25,.46,.45,.94)` 8 (out-quad, el mismo de Linear), `cubic-bezier(.19,1,.22,1)`
 4, `.2s` 24, `.15s` 16, `.4s` 12. Ejemplo «hold to delete»: `transition: transform .16s
 cubic-bezier(.25,.46,.45,.94)`, `:active{transform:scale(.97)}`.
 
-### Rauno (rauno.me/craft/interaction-design)
+#### Rauno (rauno.me/craft/interaction-design)
 `cubic-bezier(.2,.8,.2,1)`, `250ms` 2, `150ms` 2, `100ms` 2, `200ms` 1; foco `outline: 2px solid
 var(--colors-focus); outline-offset: var(--outline-offset)`; lista `li:hover, li[data-active=true]
 {background: gray5}`.
 
-### Material 3 (`@material/web@2.3.0/tokens/v0_192/_md-sys-motion.scss`)
+#### Material 3 (`@material/web@2.3.0/tokens/v0_192/_md-sys-motion.scss`)
 Duraciones: short1 50, short2 100, short3 150, short4 200, medium1 250, medium2 300, medium3 350,
 medium4 400, long1 450, long2 500, long3 550, long4 600, extra-long1..4 700/800/900/1000 ms.
 Curvas: `standard: cubic-bezier(.2,0,0,1)`, `standard-decelerate: cubic-bezier(0,0,0,1)`,
@@ -484,7 +484,7 @@ versión completa es una `path()`), `emphasized-decelerate: cubic-bezier(.05,.7,
 publicada «emphasized 500 ms / standard 300 ms» viene de la página, que aquí no devolvió texto (SPA):
 no medido aquí.
 
-### Carbon (carbondesignsystem.com/elements/motion/overview + `@carbon/motion`)
+#### Carbon (carbondesignsystem.com/elements/motion/overview + `@carbon/motion`)
 Texto medido de la página: `duration-fast-01 70ms` (botón, toggle), `fast-02 110ms` (fade),
 `moderate-01 150ms` (expansión pequeña), `moderate-02 240ms` (expansión, toast), `slow-01 400ms`
 (expansión grande), `slow-02 700ms` (oscurecer fondo). Curvas: productivo standard
@@ -494,7 +494,7 @@ expresivo standard `cubic-bezier(.4,.14,.3,1)`, entrance `cubic-bezier(0,0,.3,1)
 entrada del usuario? ¿Caen en una duración estática de 90-120 ms?». En su CSS real: `.1s` 295,
 `.11s` 119, `70ms` 93, `.15s` 40, `.24s` 24; `cubic-bezier(.2,0,.38,.9)` 153.
 
-### Atlassian (atlassian.design/foundations/motion, texto medido)
+#### Atlassian (atlassian.design/foundations/motion, texto medido)
 «Interactions (50-150 ms): hover y press. List item hover, 50 ms.» «Transitions (150-400 ms): entrar,
 salir, moverse. Dropdown entrance 150 ms, modal entrance 250 ms.» Curvas: ease-out bold
 `cubic-bezier(0,.4,0,1)` (panel, flag entrando), ease-in-out bold `cubic-bezier(.4,0,0,1)` (escalar
@@ -504,29 +504,29 @@ al día, manténlo por debajo de 150 ms.» «Las salidas más rápidas que las e
 focal: cuando varios elementos deben animarse, uno lidera y los otros acompañan.» «Con reduced motion
 activo, el movimiento está apagado e instantáneo.» En su CSS: `0.2s` 22, `.15s` 4, `50ms` 3, `250ms` 3.
 
-### Polaris (`@shopify/polaris-tokens/dist/css/styles.css`)
+#### Polaris (`@shopify/polaris-tokens/dist/css/styles.css`)
 `--p-motion-duration-0/50/100/150/200/250/300/350/400/450/500/5000`; `--p-motion-ease:
 cubic-bezier(.25,.1,.25,1)`, `ease-in: cubic-bezier(.42,0,1,1)`, `ease-out: cubic-bezier(.19,.91,.38,1)`,
 `ease-in-out: cubic-bezier(.42,0,.58,1)`, `linear`. Keyframes `appear-above` (`translateY(space-100)
 + opacity 0 -> none/1`), `fade-in`, `pulse`, `bounce` (`scale(1) -> .85 -> 1`).
 
-### Spectrum (`@spectrum-css/tokens/dist/css/global-vars.css`)
+#### Spectrum (`@spectrum-css/tokens/dist/css/global-vars.css`)
 `--spectrum-animation-duration-100: 130ms`, `200: 160ms`, `300: 190ms`, `400: 220ms`, `500: 250ms`,
 `600: 300ms`, `700: 350ms`, `800: 400ms`, `900: 450ms`, `1000: 500ms`, `2000: 1000ms`. Curvas:
 `ease-in-out: cubic-bezier(.45,0,.4,1)`, `ease-in: cubic-bezier(.5,0,1,1)`, `ease-out:
 cubic-bezier(0,0,.4,1)`. Foco: `--spectrum-focus-indicator-thickness: 2px`, `gap: 2px`, color blue-800.
 En su CSS real `.13s` domina (22).
 
-### Apple HIG, Motion (developer.apple.com/tutorials/data/.../motion.json, texto medido)
+#### Apple HIG, Motion (developer.apple.com/tutorials/data/.../motion.json, texto medido)
 Sin cifras. Reglas: «añade movimiento con propósito; hazlo opcional; brevedad y precisión en la
 retroalimentación; en apps, evita añadir movimiento a interacciones que ocurren con frecuencia; deja
 que la gente cancele el movimiento; no hagas esperar a que termine una animación».
 
 ---
 
-#### 7.2. Catálogo de micro-interacciones medidas (CSS literal y fuente)
+### 7.2. Catálogo de micro-interacciones medidas (CSS literal y fuente)
 
-#### 2.1 Botón
+#### 7.2.1 Botón
 - Linear [`Button.dcAi4KbO.css`]: `transition: .16s cubic-bezier(.25,.46,.45,.94); transition-property:
   border, background-color, color, box-shadow, opacity, filter`. Hover primario `filter:
   brightness(115%)`; active de TODAS las variantes `transform: scale(.97)` (primario además
@@ -563,7 +563,7 @@ que la gente cancele el movimiento; no hagas esperar a que termine una animació
 - Sonner [`styles.css`]: `.toast-button:active{scale .98}`; el botón del toast `focus-visible
   {box-shadow: 0 0 0 2px rgba(0,0,0,.4)}`.
 
-#### 2.2 Campo de texto
+#### 7.2.2 Campo de texto
 - Stripe: `:where(.hds-input-group):not([aria-invalid=true]):focus-within{border-color: input-border-
   selected; outline: var(--hds-space-input-focus-shadowOuter) solid var(--hds-color-action-focus-
   outerSubdued)}`; inválido `outline ... outerError (#d8280f80); border-color: errorFocus`. El input
@@ -581,7 +581,7 @@ que la gente cancele el movimiento; no hagas esperar a que termine una animació
 - Linear: `.wOrUyW_input:focus-visible{outline: none}` (el campo del menú de comandos no muestra
   anillo: el contenedor ya es el foco visible).
 
-#### 2.3 Pestaña y control segmentado
+#### 7.2.3 Pestaña y control segmentado
 - Radix SegmentedControl [`f226671f.css`]: el indicador es UN elemento absoluto detrás de los ítems:
   `.rt-SegmentedControlIndicator{z-index:-1; pointer-events:none; height:100%; transition-property:
   transform; transition-timing-function: cubic-bezier(.445,.05,.55,.95); transition-duration:
@@ -613,7 +613,7 @@ que la gente cancele el movimiento; no hagas esperar a que termine una animació
 - Emil [`great-animations`]: la pestaña activa del dashboard de Vercel se animaba con «shared layout»
   y perdía frames al cargar la página; se pasó a CSS puro.
 
-#### 2.4 Tarjeta y fila
+#### 7.2.4 Tarjeta y fila
 - Radix Card clásica: `transition: box-shadow .12s`; `:hover`/`:active`/`[data-state=open]` cambian
   la sombra y bajan la duración a `40ms`; ghost `:hover{background: gray-a3}` `:active{gray-a4}`.
 - Linear fila: `.RamgbG_row:after{content:""; opacity:0; background:#ffffff08; border-radius:8px;
@@ -636,7 +636,7 @@ que la gente cancele el movimiento; no hagas esperar a que termine una animació
 - Family tarjeta: `box-shadow: inset 0 0 0 1px var(--gray-light); transition: 100ms ease; transition-
   property: box-shadow, background` -> hover `background: beige; box-shadow: inset 0 0 0 0 beige`.
 
-#### 2.5 Diálogo y hoja
+#### 7.2.5 Diálogo y hoja
 - Radix: `.rt-BaseDialogContent[data-state=open]{animation: .2s cubic-bezier(.16,1,.3,1)
   rt-dialog-content-show}` con `@keyframes rt-dialog-content-show{0%{opacity:0; transform:
   translateY(5px) scale(.97)} to{opacity:1; transform: translateY(0) scale(1)}}`; cierre `.1s` con
@@ -667,7 +667,7 @@ que la gente cancele el movimiento; no hagas esperar a que termine una animació
   origen con transform-origin»; «180 ms se siente más rápido que 400 ms»; «tooltips: retardo la
   primera vez, sin retardo ni animación las siguientes (`&[data-instant]{transition-duration:0ms}`)».
 
-#### 2.6 Toast
+#### 7.2.6 Toast
 - Sonner [`styles.css`, `index.mjs`]: abajo a la derecha por defecto, `width 356px`, `offset 24px`
   (16 px en móvil), `gap 14px`, `3` visibles, vida `4000 ms`, desmontaje `200 ms` tras la salida.
   Entrada: `[data-sonner-toast]{--y: translateY(100%); opacity:0; transition: transform 400ms, opacity
@@ -687,7 +687,7 @@ que la gente cancele el movimiento; no hagas esperar a que termine una animació
   flujo: uno al final; una frase, sentence case, sin punto final; `aria-live="polite"`».
 - Carbon: toast = `moderate-02 240ms`, entrance `cubic-bezier(0,0,.38,.9)`, exit `cubic-bezier(.2,0,1,.9)`.
 
-#### 2.7 Esqueleto de carga
+#### 7.2.7 Esqueleto de carga
 - Geist [`geist_skeleton.html`]: `<span class="block rounded-[5px] relative overflow-hidden
   after:animate-loading-skeleton after:content-[''] after:absolute after:inset-0 after:right-[-200%]
   after:bg-gradient-to-r after:from-gray-100 after:via-gray-200 after:to-gray-100
@@ -709,7 +709,7 @@ que la gente cancele el movimiento; no hagas esperar a que termine una animació
   reduced-motion (`background-image:none; animation:none`).
 - Raycast: bloques planos `background: rgba(lines, .1); border-radius: 4px` sin animación.
 
-#### 2.8 Lista con stagger
+#### 7.2.8 Lista con stagger
 - Apple globalnav [`globalheader.css`]: `.globalnav-flyout-item{opacity:0; transform: translateY(-4px);
   transition: opacity .32s cubic-bezier(.4,0,.6,1) calc(var(--r-globalnav-flyout-item-number) * 20ms +
   (var(--r-globalnav-flyout-group-number,0) + 1) * 80ms), transform .32s ...}` (20 ms por ítem, 80 ms
@@ -724,7 +724,7 @@ que la gente cancele el movimiento; no hagas esperar a que termine una animació
 - Ninguno de los productos (Linear app, Geist, Radix, cmdk) escalona listas de DATOS; el stagger vive
   en marketing y en menús de navegación.
 
-#### 2.9 Foco
+#### 7.2.9 Foco
 - Vercel: `--ds-focus-ring: 0 0 0 2px var(--ds-background-100), 0 0 0 4px var(--ds-focus-color)`
   (doble anillo: 2 px de fondo + 2 px de color = offset sin `outline-offset`), `--ds-focus-ring-
   outline: 2px solid var(--ds-focus-color)`; en `<a>`: `focus-visible:outline-2` 155 veces y
@@ -757,7 +757,7 @@ que la gente cancele el movimiento; no hagas esperar a que termine una animació
   acento, SOLO con `:focus-visible`; el foco por ratón no pinta nada en 11 de 11 sitios que lo
   declaran; GitHub y Primer además reservan el hueco del borde en hover para que el foco no mueva nada.
 
-#### 2.10 Propiedades de «tacto» (censo)
+#### 7.2.10 Propiedades de «tacto» (censo)
 - `-webkit-tap-highlight-color: transparent`: Linear 1, Vercel 5, Geist 1, Raycast 8, Apple 5 (`rgba(0,0,0,0)`),
   Family 1, Framer 2, GitHub 3, Radix 10, shadcn 1, Sonner 1, Vaul 1, Emil 3, Primer 1, Spectrum 1.
 - `touch-action: manipulation`: Vercel 2, Geist 3, Raycast 1, GitHub 2, shadcn 2, Emil 1, Carbon 1,
@@ -778,7 +778,7 @@ que la gente cancele el movimiento; no hagas esperar a que termine una animació
   e instantáneo»; Emil: «anima solo la opacidad cuando el usuario prefiere menos movimiento».
   Apple, Family, Arc, Stripe y Framer no declaran nada en CSS (Framer lo consulta en JS).
 
-#### 2.11 Sombras (número de `box-shadow` distintos, sin `none` ni `var()`)
+#### 7.2.11 Sombras (número de `box-shadow` distintos, sin `none` ni `var()`)
 Apple 1 · Primer 1 · Sonner 3 · Rauno 3 · Linear 4 · Family 5 · Radix 5 · Vercel 6 · Geist 7 · Arc 8 ·
 Emil 9 · Carbon 13 · GitHub 14 · Framer 17 · Stripe 32 · Raycast 93 (tema oscuro con bordes de luz).
 Escalas declaradas: Linear `--shadow-low: 0 1px 4px -1px #00000017`, `medium: 0 3px 12px #00000017`,
@@ -789,13 +789,13 @@ de 1 px en la sombra + capas de 2-6 % de opacidad).
 
 ---
 
-#### 7.3. Propuesta de tokens de movimiento para Detekta
+### 7.3. Propuesta de tokens de movimiento para Detekta
 
 Restricciones de partida: una sola página, CSS propio + Tailwind por CDN, sin JS de animación; el
 usuario repite las mismas pulsaciones muchas veces al día (Atlassian: «por debajo de 150 ms»; Emil:
 «las acciones frecuentes no se animan o casi»). Las cifras salen de la moda medida arriba.
 
-#### 3.1 Duraciones (cinco)
+#### 7.3.1 Duraciones (cinco)
 | Token | Valor | Uso | Respaldo |
 |---|---|---|---|
 | `--dur-instant` | `0ms` | Selección por teclado, cambio de pestaña, `:active` | cmdk `transition-property:none`; @primer/css `.btn:active{transition:none}`; Geist «seleccionar una pestaña es instantáneo» |
@@ -807,7 +807,7 @@ usuario repite las mismas pulsaciones muchas veces al día (Atlassian: «por deb
 
 Techo absoluto: 300 ms (Emil, Carbon «90-120 ms para micro»). Nada por encima salvo el toast.
 
-#### 3.2 Curvas (cuatro)
+#### 7.3.2 Curvas (cuatro)
 | Token | Valor | Uso | Respaldo |
 |---|---|---|---|
 | `--ease-out` | `cubic-bezier(.25,.46,.45,.94)` | TODO lo que responde a una acción: hover, foco, entradas | Linear `--ease-out-quad` (uso mayoritario), Emil |
@@ -819,7 +819,7 @@ Sin `ease-in` en entradas nunca (Emil: «ease-in es lo contrario de lo que quere
 sobreimpulso (Carbon: «no bounce, stretch ni paradas bruscas»); la única excepción medida es
 `--ds-motion-timing-swift` de Vercel (termina en 1.1) y no se adopta.
 
-#### 3.3 Reglas por componente
+#### 7.3.3 Reglas por componente
 - Anillo de foco: `:focus-visible{outline: 2px solid var(--acento); outline-offset: 2px}` en botones y
   enlaces; `outline-offset: -2px` dentro de filas y segmentos (Linear, Radix); campos por
   `:focus-within` en el contenedor con `box-shadow: 0 0 0 1px var(--acento), 0 0 0 4px
@@ -862,7 +862,7 @@ sobreimpulso (Carbon: «no bounce, stretch ni paradas bruscas»); la única exce
 - Listas de datos: sin stagger. El stagger (20 ms por ítem, 80 ms por grupo, 4 px de recorrido: Apple)
   queda reservado a un menú de navegación si algún día lo hay.
 
-#### 3.4 Qué se apaga con `prefers-reduced-motion: reduce`
+#### 7.3.4 Qué se apaga con `prefers-reduced-motion: reduce`
 Se apaga TODO `transform` y toda `animation` (toast, esqueleto, diálogo, indicador de pestañas, press);
 se conservan las transiciones de color/opacidad/sombra en `--dur-hover` (Emil: «anima solo la
 opacidad»; Atlassian: «apagado e instantáneo»; Sonner: `transition:none!important`). Implementación:
@@ -870,7 +870,7 @@ un solo bloque al final de la hoja que redefine `--dur-enter`, `--dur-exit`, `--
 `--dur-press` a `0ms` y pone `transform:none` en los estados `:active`; y `scroll-behavior: smooth`
 solo bajo `no-preference` (Linear).
 
-#### 3.5 Regla de «una animación por evento»
+#### 7.3.5 Regla de «una animación por evento»
 Cada evento del usuario dispara COMO MÁXIMO una animación visible, y la lidera el elemento que
 cambió (Atlassian: «un solo punto focal; los demás acompañan»; Apple HIG: «brevedad y precisión»;
 Carbon: «¿se nota el movimiento con frecuencia? entonces quítalo»). Derivadas: al pulsar un botón se
@@ -882,7 +882,7 @@ repite decenas de veces al día (teclado, filas, pestañas) no se anima (Emil, A
 
 ---
 
-#### 7.4. Diez reglas de «se nota que alguien lo pensó», con la medición que las respalda
+### 7.4. Diez reglas de «se nota que alguien lo pensó», con la medición que las respalda
 
 1. El hover nunca mueve el layout. Ningún sitio medido cambia `padding`, `border-width` ni
    `font-weight` sin compensar en hover: GitHub reserva `outline: 1px solid transparent` y `box-shadow:

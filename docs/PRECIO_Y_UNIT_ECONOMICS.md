@@ -186,7 +186,7 @@ El piloto de la Fase 5 existe **para esto**, no para «ver qué tal».
 ## 8. LO QUE NO SE PUEDE PROMETER EN LA PÁGINA DE PRECIOS
 
 **Ni una palabra que diga o insinúe que Detekta predice si va a ganar.** El propio repositorio
-demuestra que `P(ganar)` no es falsable todavía (`docs/PROBABILIDAD_MEJORADA.md:98`, y
+demuestra que `P(ganar)` no es falsable todavía (docs/PROBABILIDAD_MEJORADA.md § «0.2 Los ~11 667 procesos con par completo», y
 `docs/VALIDACION_MODELOS.md` de esta consultoría). Lo que sí se puede escribir, porque está medido:
 
 - «Le dice **cuántas empresas suelen competir** en esa entidad, y sobre cuántos procesos lo mide.»

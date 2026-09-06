@@ -36,7 +36,7 @@ está anotado en su sitio con «(implementado: …)» y en `docs/MEMORIA.md`. El
    escondidos en el texto del pliego y sus anexos (experiencia específica, personal clave, equipos,
    certificaciones, forma y plazo de pago, garantías, multas, subcontratación obligatoria, marca
    única, ítems sin valor). La memoria lo declara vacío explícito: «exigen el texto, que el dataset
-   no trae» (`docs/MEMORIA.md:1332`). La verificación lo confirma por el otro lado: casi todo lo que
+   no trae» (docs/MEMORIA.md § «APLICACIÓN EN EL PROYECTO»). La verificación lo confirma por el otro lado: casi todo lo que
    el prompt «sabe» de esos temas es, en realidad, un valor que el pliego de cada proceso fija y que
    hay que LEER, no recordar.
 3. Se decide construir **una op nueva, `/api/pliego?op=dictamen`**, que manda al modelo el texto del
@@ -172,15 +172,15 @@ coordenadas, completado donde la verificación externa de §1.1 añadió algo.
 | `perfil_cliente.antiguedad`, `equipos`, `certificaciones`, `personal_clave` | **No existen.** Lo más cercano es `profesionales` (entero, insumo del factor CT de la K). | `lib/perfiles.js:77`, `lib/config_rup.js:186` |
 | «Analiza un proceso de SECOP II» con un modelo de lenguaje | **No hay ninguna integración con un modelo en el árbol** (`node tests/mapa.js anthropic` → sin aciertos). El precedente de API externa con clave es el OCR: `lib/apu_ocr.js` (clave solo en servidor, 503 con mensaje cuando falta, tachado del secreto en los errores, timeout 25 s, 3 intentos con backoff, fetch falso en la suite). | `lib/apu_ocr.js:55-73,143-197`, `tests/e2e.js:3878-3995` |
 | Un dictamen «con puntajes /100» y «precio mínimo sugerido» | **Choca con dos reglas duras** (§3): «una cifra para MOSTRAR no puede DECIDIR» y «el precio lo dan los módulos que ya existen». | `CLAUDE.md` reglas duras; `lib/apu/piso_techo.js:2,32-33,103-135`, `lib/baja_maxima.js:123-132` |
-| «INVIAS paga a 45-60 días, IDU 30-45, gobernaciones 60-90…» | **Sin fuente en el repositorio y no medible con las fuentes que la app usa**: el dataset de ejecución (jbjy-vk9h) no publica fechas de pago; lo único medible es el porcentaje pagado en contratos terminados, y solo en las entidades que registran pagos (845 de 1 752; el IDU registra 0 en 64 contratos). La verificación externa (A1, §1.1) añade lo que SÍ se mide: la mora documentada de INVIAS en 2025-2026, con fecha y fuente. | `lib/ejecucion.js:98-107,138`, `docs/MEMORIA.md:677-681` |
-| «Santanderes: +15-20 % de costo» | **Contradice el banco de precios**: el índice regional de los Santanderes es 0,983 (por debajo de Bogotá = 1,000), y ese factor está protegido por prueba. Fuera del árbol, el APU regionalizado de Invías 2025-2 ya incorpora altitud, clima y rendimientos (R2). | `docs/APU_Y_RENTABILIDAD.md:156,168` |
-| «Márgenes típicos por sector: vías 12-18 %, edificaciones 15-25 %…» | **Contradice el manual**: la utilidad típica es U 5-10 %; el 12-20 % coincide con la «A» de administración. El documento de precios advierte que publicar gradientes por sector «sería fabricar una precisión que nadie midió». Fuera del árbol, Supersociedades publica márgenes por EMPRESA (9,42 % neto en 2025), no por obra (M1-M5). | `docs/GUIA_ANALISTA_LICITACIONES.md:739-741`, `docs/APU_Y_RENTABILIDAD.md:171-176` |
-| «Capacidad residual = patrimonio − contingentes − ejecución» | **Contradice la fórmula oficial implementada** (CRP = CO × (E+CT+CF)/100 − SCE). Si se quiere una regla de prudencia interna, lleva otro nombre: dos cosas distintas no pueden llamarse parecido. | `lib/capacidad.js:1-152`, `docs/MEMORIA.md:1319` |
-| «Adendas que cambian la experiencia en los últimos 3 días» | **El manual fija 24 horas** (señal #6). El vigía de texto solo compara habilitantes NUMÉRICOS; la experiencia textual no está cubierta. La regla legal de los tres días (Ley 1474 de 2011 art. 89) quedó sin consultar (C8b). | `docs/MEMORIA.md:1166`, `lib/diff.js:92-127` |
-| «Presupuesto redondo = armado sin estudio» | **Invierte el manual**: lo «redondo» es la señal BUENA, y se refiere a los indicadores financieros, no al presupuesto. | `docs/GUIA_ANALISTA_LICITACIONES.md:1187`, `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md:384-388` |
-| «Si conoce a alguien en la entidad, pregunte informalmente» | **Contradice el mandamiento 18** («canal formal siempre; si incomodaría que se publicara, no se hace»). No entra en ningún texto del producto. | `docs/MEMORIA.md:1321`, `docs/GUIA_ANALISTA_LICITACIONES.md:773-775` |
-| «Entidad multada por el DNP» | **Sin fuente**: ninguna fuente del proyecto registra sanciones A entidades; el DNP no sanciona entidades en ninguna cita del repositorio. Fuera del árbol existe una figura parecida y distinta: las medidas del Sistema General de Regalías, que suspenden giros y no son multas (B5a). Lo que existe son multas que las entidades IMPONEN a contratistas (4n4q-k399), consultadas solo para el socio. | `lib/socio.js:8-19,63-86`, `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md:444,615` |
-| «Cambio de gobierno en los últimos 6 meses = altísimo riesgo» | **Medido al revés en competencia** (efecto ~1 %, «no se segmenta»); sobre impago o cancelación no hay dato ni módulo; «6 meses» no aparece en ningún documento. Lo documentado en 2026 va en la dirección contraria: la contratación de última hora del gobierno SALIENTE y su revisión por el entrante (B4). | `docs/MEMORIA.md:1365-1372`, `docs/COMPLEMENTO_ANALISTA_LICITACIONES.md:102-138` |
+| «INVIAS paga a 45-60 días, IDU 30-45, gobernaciones 60-90…» | **Sin fuente en el repositorio y no medible con las fuentes que la app usa**: el dataset de ejecución (jbjy-vk9h) no publica fechas de pago; lo único medible es el porcentaje pagado en contratos terminados, y solo en las entidades que registran pagos (845 de 1 752; el IDU registra 0 en 64 contratos). La verificación externa (A1, §1.1) añade lo que SÍ se mide: la mora documentada de INVIAS en 2025-2026, con fecha y fuente. | `lib/ejecucion.js:98-107,138`, docs/MEMORIA.md § «Verifique a su socio antes de firmar (ago 2026)» |
+| «Santanderes: +15-20 % de costo» | **Contradice el banco de precios**: el índice regional de los Santanderes es 0,983 (por debajo de Bogotá = 1,000), y ese factor está protegido por prueba. Fuera del árbol, el APU regionalizado de Invías 2025-2 ya incorpora altitud, clima y rendimientos (R2). | docs/APU_Y_RENTABILIDAD.md § «Lo derivado: cuatro factores por región» |
+| «Márgenes típicos por sector: vías 12-18 %, edificaciones 15-25 %…» | **Contradice el manual**: la utilidad típica es U 5-10 %; el 12-20 % coincide con la «A» de administración. El documento de precios advierte que publicar gradientes por sector «sería fabricar una precisión que nadie midió». Fuera del árbol, Supersociedades publica márgenes por EMPRESA (9,42 % neto en 2025), no por obra (M1-M5). | docs/GUIA_ANALISTA_LICITACIONES.md § «Capítulo 11. El precio: cómo costear de verdad», docs/APU_Y_RENTABILIDAD.md § «AIU: no se regionaliza, y decir lo contrario sería inventar precisión» |
+| «Capacidad residual = patrimonio − contingentes − ejecución» | **Contradice la fórmula oficial implementada** (CRP = CO × (E+CT+CF)/100 − SCE). Si se quiere una regla de prudencia interna, lleva otro nombre: dos cosas distintas no pueden llamarse parecido. | `lib/capacidad.js:1-152`, docs/MEMORIA.md § «APLICACIÓN EN EL PROYECTO» |
+| «Adendas que cambian la experiencia en los últimos 3 días» | **El manual fija 24 horas** (señal #6). El vigía de texto solo compara habilitantes NUMÉRICOS; la experiencia textual no está cubierta. La regla legal de los tres días (Ley 1474 de 2011 art. 89) quedó sin consultar (C8b). | docs/MEMORIA.md § «Las 12 señales de pliego sastre», `lib/diff.js:92-127` |
+| «Presupuesto redondo = armado sin estudio» | **Invierte el manual**: lo «redondo» es la señal BUENA, y se refiere a los indicadores financieros, no al presupuesto. | docs/GUIA_ANALISTA_LICITACIONES.md § «Palanca 3 — Detección de pliegos direccionados (impacto: alto)», docs/COMPLEMENTO_ANALISTA_LICITACIONES.md § «V-10 · Los indicadores habilitantes tienen valores de referencia (y eso hace usable la señal #3)» |
+| «Si conoce a alguien en la entidad, pregunte informalmente» | **Contradice el mandamiento 18** («canal formal siempre; si incomodaría que se publicara, no se hace»). No entra en ningún texto del producto. | docs/MEMORIA.md § «Los 20 mandamientos del analista» (mandamiento 18), docs/GUIA_ANALISTA_LICITACIONES.md § «Y ahora, lo que casi nadie suma — los costos que aparecen después de firmar» |
+| «Entidad multada por el DNP» | **Sin fuente**: ninguna fuente del proyecto registra sanciones A entidades; el DNP no sanciona entidades en ninguna cita del repositorio. Fuera del árbol existe una figura parecida y distinta: las medidas del Sistema General de Regalías, que suspenden giros y no son multas (B5a). Lo que existe son multas que las entidades IMPONEN a contratistas (4n4q-k399), consultadas solo para el socio. | `lib/socio.js:8-19,63-86`, docs/COMPLEMENTO_ANALISTA_LICITACIONES.md § «V-11 · Matriz de riesgos previsibles (CONPES 3714)» y docs/COMPLEMENTO_ANALISTA_LICITACIONES.md § «V-16 · Interventoría: el otro lado del mostrador» |
+| «Cambio de gobierno en los últimos 6 meses = altísimo riesgo» | **Medido al revés en competencia** (efecto ~1 %, «no se segmenta»); sobre impago o cancelación no hay dato ni módulo; «6 meses» no aparece en ningún documento. Lo documentado en 2026 va en la dirección contraria: la contratación de última hora del gobierno SALIENTE y su revisión por el entrante (B4). | docs/MEMORIA.md § «Investigación de contraste (ago 2026) — correcciones al manual y hallazgos verificados», docs/COMPLEMENTO_ANALISTA_LICITACIONES.md § «V-02 · El ciclo electoral y la ley de garantías: el vacío más grande» |
 | «NUNCA inventes información» y, a la vez, «Una vez vi un caso similar donde [historia]» | **El prompt se contradice a sí mismo**: la sección 7 pide anécdotas que el modelo no puede tener sin inventarlas. Se retira. | prompt original, secciones «Restricciones» y «Notas del perro viejo» |
 
 ### 1.3 Conclusión de la verificación
@@ -242,7 +242,7 @@ contradice a lo publicado se manda a verificar.
 |---|---|---|
 | «¿Cumple la experiencia / RUP?» | `lib/rup.js` + `lib/unspsc.js` (match jerárquico hasta familia) → `puertas.p1_rup` | `{pasa, tier: clase\|familia\|equivalente\|texto\|ninguno, advertencia, mensaje}` (`lib/puertas.js:87-99`) |
 | «Capacidad residual» | `lib/capacidad.crp` → `puertas.p2_k` | `{pasa, sin_dato?, crp, crpc, dentro_de_tope, tope, mensaje}`; K = null cuando falta CO, experiencia, profesionales o liquidez, NUNCA 0 (`lib/capacidad.js:113-145`, `lib/puertas.js:102-166`) |
-| «Sin anticipo → capital de trabajo» | `lib/negocio.anticipoPct` + `puertas.p3_caja` (patrimonio ≥ (cuantía − anticipo) × 0,20) + `lib/apu/rentabilidad` (K_max, costo financiero) | `p3_caja: {pasa, sin_dato?, patrimonio, financiacion_requerida, anticipo_pct, mensaje}`; `anticipo_pct = 0` significa «sin dato» (`lib/puertas.js:169-197`, `docs/MEMORIA.md:1323-1324`) |
+| «Sin anticipo → capital de trabajo» | `lib/negocio.anticipoPct` + `puertas.p3_caja` (patrimonio ≥ (cuantía − anticipo) × 0,20) + `lib/apu/rentabilidad` (K_max, costo financiero) | `p3_caja: {pasa, sin_dato?, patrimonio, financiacion_requerida, anticipo_pct, mensaje}`; `anticipo_pct = 0` significa «sin dato» (`lib/puertas.js:169-197`, docs/MEMORIA.md § «Decisiones que no hay que re-aprender (costaron caro)») |
 | «Cuántos se presentan / uno o dos oferentes» (señal #11) | `lib/indice_competencia.competenciaDe` → `competencia_entidad`; `lib/competencia_detalle` (ganador recurrente, concentración con las DOS lecturas) | `{nivel, promedio_oferentes, mediana_oferentes, total_procesos}` o `sin_dato` con menos de 5 procesos (`lib/indice_competencia.js:925-958`, `lib/competencia_detalle.js:368-426`) |
 | «Cómo paga / cómo ejecuta la entidad» | `lib/ejecucion.ejecucionDeEntidad` (jbjy-vk9h, 24 meses, obra) | `{contratos, prorrogas:{pct, mediana_dias, max_dias}, modificados, suspendidos, pagos:{registra, pct_pagado_de_terminados}}`; `valor_pagado = 0` es SIN DATO (`lib/ejecucion.js:58-108`) |
 | «Presupuesto >20 % por debajo del costo → NO» y «precio mínimo sugerido» | `lib/apu/piso_techo` (piso de costo = cota inferior; techo = presupuesto × (1 − baja mediana) con n ≥ 5; temeraria = 0,80 × presupuesto), `lib/baja_maxima`, `lib/apu/optimizador`, `lib/ganancia.gananciaDeProceso` | `ganancia: {valor, veredicto: deja\|depende\|pérdida, es_cota_superior:true, cota_superior_por[], supuestos[]}` o `{valor:null, motivo}` (`lib/ganancia.js:164-215,372-412`) |
@@ -251,8 +251,8 @@ contradice a lo publicado se manda a verificar.
 | «Indicadores financieros exigidos» (liquidez, endeudamiento, patrimonio, capital de trabajo, experiencia en SMMLV, plazo) | `lib/diff.extraerHabilitantes(texto)` + `compararHabilitantes(antes, después, perfil)` | `{[id]: {valor, tipo, evidencia, pagina}}`; «ya no cumple» ≠ «no cumple» ≠ «no le afecta» (`lib/diff.js:92-165`) |
 | «Adendas» | `lib/adendas.evaluarAdendas` (6 campos del dataset, reevalúa P1-P3 con la fila anterior) y `pliego:{id}:diff:{n}` (texto) | `adendas: {n, cambios[], le_afecta, cumplia_antes, cumple_ahora, resumen}` (`lib/adendas.js:29-105`) |
 | «Ítems no financiados» | `lib/apu/validaciones` (avisa si los ítems SIN PRECIO superan el 5 %) sobre el presupuesto del USUARIO; sobre el presupuesto OFICIAL del pliego no se lee hoy | `{hallazgos[]}`, ninguno bloquea (`lib/apu/validaciones.js:35-58`) |
-| «Zona / acceso» (Costa, Orinoquía, Amazonía) | `lib/accesibilidad.evaluarZona` + factores regionales del banco de precios | `zona: {nivel, km, dificil_acceso, verificar_orden_publico, etiqueta}`; índice regional medido, no adjetivos (`lib/accesibilidad.js:65-139`, `docs/APU_Y_RENTABILIDAD.md:128-160`) |
-| «Sanciones» | `lib/socio.verificarSocio` (SIRI + multas SECOP I) — sobre el SOCIO, no la entidad | semáforo del socio que «nunca dice limpio» (`lib/socio.js:427-464`, `docs/LEGAL_COLOMBIA.md:64-70`) |
+| «Zona / acceso» (Costa, Orinoquía, Amazonía) | `lib/accesibilidad.evaluarZona` + factores regionales del banco de precios | `zona: {nivel, km, dificil_acceso, verificar_orden_publico, etiqueta}`; índice regional medido, no adjetivos (`lib/accesibilidad.js:65-139`, docs/APU_Y_RENTABILIDAD.md § «Lo recuperado: índice de costo por ciudad, relativo a Bogotá = 1,00») |
+| «Sanciones» | `lib/socio.verificarSocio` (SIRI + multas SECOP I) — sobre el SOCIO, no la entidad | semáforo del socio que «nunca dice limpio» (`lib/socio.js:427-464`, docs/LEGAL_COLOMBIA.md § «3.1 · La ficha del socio y del competidor (L-3b)») |
 
 Lo que **no** calcula nadie hoy y el modelo SÍ puede leer del texto, con página: la definición de
 experiencia específica y cuántos contratos exige; personal clave (perfil, años, dedicación, si
@@ -267,8 +267,8 @@ del cronograma iguales al mínimo legal; versión de los documentos tipo. Eso es
 
 | Pieza del prompt | Regla que choca (y qué dijo la verificación) | Qué se hace en su lugar |
 |---|---|---|
-| Tabla de días de pago por entidad; «riesgo político»; «exigencia» | «Nunca inventar una norma, precio o porcentaje: sin fuente va null con su motivo». A1-A6: ningún dato público mide días de pago por entidad; el único plazo con fuente es el techo legal de la Ley 2024 de 2020 (art. 12: 60 días calendario, solo Mipyme, sujeto a PAC), que INVIAS incumplió de forma documentada en 2025-2026. Además riesgo legal: calificar a una entidad nombrada sin dato publicado (`docs/LEGAL_COLOMBIA.md:22,64-70`, `docs/RIESGOS.md` R-11). | La tabla NO entra, ni «exigencia» ni «riesgo político». Lo que el pliego diga de la forma de pago (días pactados, actas, anticipo) se lee con página como cualquier otro requisito. El techo legal por condición Mipyme y la tabla de alertas por entidad se diseñaron y se retiraron por decisión del dueño (§7): importantes, no determinantes. |
-| Márgenes por sector; «+15-20 %» Santanderes; «70 % quiebran»; fiducia «2-3 %»; multas «>5 % mensual»; «200 páginas y 5 días»; «3 días»; «6 meses»; «5 km en 6 meses» | Misma regla (cifra sin fuente). M1-M5 y R2: nadie publica márgenes por tipo de obra ni porcentajes regionales; el APU regionalizado de Invías 2025-2 ya incorpora altitud, clima y rendimientos; el banco de precios de la app da 0,983 a los Santanderes (`docs/APU_Y_RENTABILIDAD.md:156,168`). C3a, C3b, C7a, C8a, C8b, C4: no consultadas, y los umbrales son de oficio. | Fuera del prompt. Lo que el pliego DIGA (AIU, garantías, multas, anticipo, plazos, fechas de adendas) se extrae con cita; el precio de referencia de Invías por provincia y el índice regional del banco de precios son los datos publicados sobre región (§7). |
+| Tabla de días de pago por entidad; «riesgo político»; «exigencia» | «Nunca inventar una norma, precio o porcentaje: sin fuente va null con su motivo». A1-A6: ningún dato público mide días de pago por entidad; el único plazo con fuente es el techo legal de la Ley 2024 de 2020 (art. 12: 60 días calendario, solo Mipyme, sujeto a PAC), que INVIAS incumplió de forma documentada en 2025-2026. Además riesgo legal: calificar a una entidad nombrada sin dato publicado (docs/LEGAL_COLOMBIA.md § «1. TABLA MAESTRA», fila L-3b, y docs/LEGAL_COLOMBIA.md § «3.1 · La ficha del socio y del competidor (L-3b)», `docs/RIESGOS.md` R-11). | La tabla NO entra, ni «exigencia» ni «riesgo político». Lo que el pliego diga de la forma de pago (días pactados, actas, anticipo) se lee con página como cualquier otro requisito. El techo legal por condición Mipyme y la tabla de alertas por entidad se diseñaron y se retiraron por decisión del dueño (§7): importantes, no determinantes. |
+| Márgenes por sector; «+15-20 %» Santanderes; «70 % quiebran»; fiducia «2-3 %»; multas «>5 % mensual»; «200 páginas y 5 días»; «3 días»; «6 meses»; «5 km en 6 meses» | Misma regla (cifra sin fuente). M1-M5 y R2: nadie publica márgenes por tipo de obra ni porcentajes regionales; el APU regionalizado de Invías 2025-2 ya incorpora altitud, clima y rendimientos; el banco de precios de la app da 0,983 a los Santanderes (docs/APU_Y_RENTABILIDAD.md § «Lo derivado: cuatro factores por región»). C3a, C3b, C7a, C8a, C8b, C4: no consultadas, y los umbrales son de oficio. | Fuera del prompt. Lo que el pliego DIGA (AIU, garantías, multas, anticipo, plazos, fechas de adendas) se extrae con cita; el precio de referencia de Invías por provincia y el índice regional del banco de precios son los datos publicados sobre región (§7). |
 | Seriedad «10 % del presupuesto»; garantía del anticipo «100 %»; estabilidad «5 años» | «Citar la norma vigente, no inventarla»; «un dato publicado gana a uno calculado». C2b: la seriedad es AL MENOS el 10 % de la OFERTA (Decreto 1082 de 2015, art. 2.2.1.2.3.1.9; 10 % del presupuesto solo en subasta y concurso de méritos), verificado por buscador; C7b y C7c no se consultaron. | El pliego fija el porcentaje real y se lee con cita. El mínimo legal se muestra como nota con URL únicamente cuando la norma está en `NORMAS_CITABLES` con `literal_leido: true` (§4.2); mientras no, la nota no existe, y la app no dice «mínimo legal» de memoria. |
 | Puntajes «Técnica XX/100 · Económica · Jurídica · Riesgo · Global» | Filosofía: «se muestra el HECHO, no el modelo»; «una cifra para mostrar no puede decidir». Un 63/100 es un modelo sin unidad que el dueño no puede verificar y que compite con las cuatro puertas (que «no se promedian»). | El titular es un HECHO de tres valores («Puede presentarse» · «con reservas» · «No conviene»), que el servidor rebaja a «con reservas» si el rojo no se apoya en un requisito citado, verificado en su página y comparado con un dato del perfil; debajo, la lista de requisitos con su página y su estado. Sin puntajes. |
 | «Precio mínimo de oferta sugerido: $[Valor]» y «Margen estimado: [%]» | Regla del módulo APU: el falso POSITIVO es el caro; el precio lo dan `piso_techo`, `baja_maxima`, `optimizador` y `ganancia`. Una cifra de precio del modelo, creíble y bien maquetada, es exactamente el defecto que CLAUDE.md describe. | El modelo NO devuelve precios ni márgenes. Recibe `ganancia` y `baja_maxima` como dato y solo puede señalar costos que el pliego impone y el presupuesto del usuario no contempla (ensayos, pólizas, fiducia, visita), como HECHOS con página, para que el dueño los meta en Precios. |
@@ -284,7 +284,7 @@ del cronograma iguales al mínimo legal; versión de los documentos tipo. Eso es
 | «Documentos analizados: N · Tiempo de análisis: N s · Confianza: Alta/Media/Baja» | «Sin dato ≠ cero» y «una cifra que decide se mide»: el modelo no sabe cuánto tardó ni cuántos documentos hubo. | El servidor pone lo medido: versión del pliego, fecha, páginas leídas, origen (`pdf_nativo`/`ocr`), `recortado`, y los milisegundos reales. |
 | «Aprendizaje continuo: si el usuario te da nuevos patrones, intégralos» | El prompt de sistema es CÓDIGO versionado (como `PROMPT_INICIAL.md`): cambia por commit con su prueba, no por conversación. | Los «tips» nuevos del dueño se añaden a `NORMAS_CITABLES` con fecha, URL y prueba; el hash del prompt y de esas constantes forma parte de la clave de caché para que un cambio invalide lecturas viejas. |
 | «El usuario te proporcionará este JSON» (`perfil_cliente.equipos`, `certificaciones`, `personal_clave`) | «Sin dato ≠ cero»: si el perfil no lo tiene, no se manda `[]` ni «No». | Viaja `null` con motivo («el perfil no registra equipos»), y el requisito extraído queda «por verificar» hasta que el dueño lo declare (decisión §7: ampliar el esquema del RUP cargado). |
-| «Acta de preliquidación»; «pregunte informalmente a un conocido»; «un puente de 50 m no es uno de 10 m: se verifica por UNSPSC» | C8d: la figura legal es la liquidación, no la preliquidación. C9c: contradice el mandamiento 18 (`docs/MEMORIA.md:1321`). C1c: el código de clasificación no captura magnitud, y el cruce ya existe en `lib/rup.js`. | Contratos de la entidad terminados sin liquidar (SECOP) como dato de una entrega posterior; el canal formal de observaciones como única vía; el cruce UNSPSC de la app con su advertencia de que el código no acredita similitud técnica. |
+| «Acta de preliquidación»; «pregunte informalmente a un conocido»; «un puente de 50 m no es uno de 10 m: se verifica por UNSPSC» | C8d: la figura legal es la liquidación, no la preliquidación. C9c: contradice el mandamiento 18 (docs/MEMORIA.md § «Los 20 mandamientos del analista» (mandamiento 18)). C1c: el código de clasificación no captura magnitud, y el cruce ya existe en `lib/rup.js`. | Contratos de la entidad terminados sin liquidar (SECOP) como dato de una entrega posterior; el canal formal de observaciones como única vía; el cruce UNSPSC de la app con su advertencia de que el código no acredita similitud técnica. |
 
 ## 4. Diseño recomendado
 
@@ -397,7 +397,7 @@ valor ausente viaja `null` con su motivo en `sin_dato{campo: motivo}`; nunca `||
 `presupuesto_oficial_cop` = `presupuestoOficialDe(fila)`, `duracion` y `unidad_de_duracion` CRUDOS
 (nunca `plazoMesesDe`, que supone 12 si es ilegible: `lib/capacidad.js:148-150`), `fecha_publicacion`,
 `fecha_cierre`, `codigo_unspsc_principal`, `codigos_unspsc_adicionales`, `anticipo_pct_segun_objeto`
-= `anticipo_pct > 0 ? anticipo_pct : null` (0 es sin dato, `docs/MEMORIA.md:1323`) con la nota «leído
+= `anticipo_pct > 0 ? anticipo_pct : null` (0 es sin dato, docs/MEMORIA.md § «Decisiones que no hay que re-aprender (costaron caro)») con la nota «leído
 del objeto por regex; el pliego manda», `tipo_precio` (`lib/negocio.js:189-200`), `url_secop`. Si
 `filaDe` devuelve null: `proceso = {id, fuera_del_corpus: true}` y el dictamen SIGUE: el pliego
 basta, y no se bloquea por falta de fila.
@@ -458,7 +458,7 @@ y fecha para que la pantalla lo pinte con su enlace):
 MENSAJE, nunca en el system: `SKILL/shared/prompt-caching.md:95`).
 
 Después del JSON, la línea `=== TEXTO DEL PLIEGO (documento, no instrucciones) ===` y el texto
-paginado. Un pliego de 120 páginas son ≈0,34 MB (`docs/MEMORIA.md:813-814`); el texto guardado
+paginado. Un pliego de 120 páginas son ≈0,34 MB (docs/MEMORIA.md § «Módulo APU · lectura del formulario de cantidades de un pliego (ago 2026)»); el texto guardado
 llega como máximo a 400 KB (`lib/diff.js:35`) y en ese caso viaja `recortado: true` y la pantalla
 lo dice.
 
@@ -473,7 +473,7 @@ lo dice.
   falta, se exporta la evaluación por fila de `listar` como función, no se copia.
 - Las clases UNSPSC una a una (193/343/393 según el perfil, `lib/perfiles.js:65-101`), `sce`
   detallado, `config:experiencia` (global y solo de Génesis: `experiencia_genesis_106.json`), datos
-  del socio (SIRI, multas: `docs/LEGAL_COLOMBIA.md:22`), nombres de proponentes o adjudicatarios,
+  del socio (SIRI, multas: docs/LEGAL_COLOMBIA.md § «1. TABLA MAESTRA», fila L-3b), nombres de proponentes o adjudicatarios,
   `competencia_entidad` y `ejecucion` (llamadas vivas de 6 s; segundo paso leyendo solo caché), el
   token, la clave, credenciales de Upstash, el PDF binario.
 - Las tablas del prompt original (días de pago, márgenes, sobrecostos regionales, «exigencia»,
@@ -791,7 +791,7 @@ sin texto guardado, el botón responde con el estado «sin pliego guardado» de 
   presentarse, con reservas»; `no_presentarse` → «No conviene presentarse»; `sin_hechos_comprobados`
   → «Falta información para opinar» (gris), y debajo «No se pudo comprobar ninguna frase en el
   pliego. Revise las frases apartadas o vuelva a pedir el dictamen.».
-- Descargo SIEMPRE visible (`docs/LEGAL_COLOMBIA.md:87`): la `advertencia` del servidor tal cual, y
+- Descargo SIEMPRE visible (docs/LEGAL_COLOMBIA.md § «3.2 · La cifra con la que el cliente fija su oferta (L-14)»): la `advertencia` del servidor tal cual, y
   una línea propia con lo medido: «Sobre la versión {n} del pliego ({m} páginas). Para el precio
   use “Calcular mi precio”.» Si `recortado`: «El texto guardado está recortado: el dictamen no vio
   el final del pliego.» Si `paginas_vacias`: «Las páginas {lista} no se pudieron leer del
@@ -910,7 +910,7 @@ cada vez. Se revisa si la cadencia supera ≈12 dictámenes por hora. Un assert 
 **Coste por dictamen** (precios de la skill, que ordena confirmarlos en la página viva antes de
 decidir: `SKILL/shared/cost-optimization.md:28,94`; Opus 5 USD 5 / 25 por millón de tokens de
 entrada / salida, `SKILL/shared/models.md:76`; Fable 5.1 USD 10 / 50, `SKILL/shared/models.md:73`; Sonnet 5 USD 2 / 10, `SKILL/shared/model-migration.md:1159,1204`;
-Haiku 4.5 USD 1 / 5, solo como comentario de un ejemplo, `SKILL/python/claude-api/README.md:509`).
+Haiku 4.5 USD 1 / 5, solo como comentario de un ejemplo, `SKILL/python/claude-api/README.md`, el comentario del ejemplo de precios).
 Supuestos declarados: pliego de 120 páginas ≈ 0,34 MB ≈ 90 000 tokens (el cociente caracteres/token
 es un supuesto: se mide con `count_tokens`, `SKILL/shared/token-counting.md:3-22`; Sonnet 5
 tokeniza ≈30 % más que Sonnet 4.6, `SKILL/shared/model-migration.md:1204`); system 3 000; salida
@@ -940,7 +940,7 @@ USD 0 (caché en Redis).
   presente e inválido 401. No hay dictamen «sin cifras» para quien no tiene credencial. El 401
   atraviesa el router (`tests/e2e.js:12953-13010`).
 - **Cifras del perfil**: viajan al proveedor del modelo (decisión del dueño, §7); no viaja ganancia
-  ni precio, ni ningún dato de terceros (SIRI, multas, proponentes: `docs/LEGAL_COLOMBIA.md:22`).
+  ni precio, ni ningún dato de terceros (SIRI, multas, proponentes: docs/LEGAL_COLOMBIA.md § «1. TABLA MAESTRA», fila L-3b).
 - **Inyección desde el pliego**: el texto va DESPUÉS del JSON tras un separador; el system lo
   declara documento; la salida está encerrada por el esquema (`additionalProperties: false`) y por
   `verificarDictamen`; ninguna cadena del modelo se interpreta ni se sigue; la cabecera de pantalla
@@ -954,7 +954,7 @@ USD 0 (caché en Redis).
 - **Doble gasto y bucles**: candado NX EX atado al reloj, caché por versión, cuota diaria (también
   para las llamadas fallidas), un reintento con reloj, sin cadena servidor-a-servidor, sin
   reintento automático del navegador.
-- **Responsabilidad**: descargo visible junto al veredicto (`docs/LEGAL_COLOMBIA.md:87`,
+- **Responsabilidad**: descargo visible junto al veredicto (docs/LEGAL_COLOMBIA.md § «3.2 · La cifra con la que el cliente fija su oferta (L-14)»,
   `docs/RIESGOS.md` R-4); el prompt prohíbe intenciones y exige las dos lecturas; el censo de
   acusación y la regla estructural (sin cita verificada no hay «sale del pliego») apartan lo que se
   cuele. Los juicios sobre pliegos de entidades públicas nombradas no están analizados por el
@@ -1124,7 +1124,7 @@ aplica (no se toca el lector de tablas); navegador real a 390 px con consola lim
 
 - **PDF directo con `citations` de la API** en vez de texto extraído: el servidor no tiene el PDF
   (lo descarga en base64 como proxy, `lib/apu_descargar.js:187-298`; el texto lo extrae el navegador,
-  `docs/MEMORIA.md:809-815`); `citations` es incompatible con `output_config.format` (400); la
+  docs/MEMORIA.md § «Módulo APU · lectura del formulario de cantidades de un pliego (ago 2026)»); `citations` es incompatible con `output_config.format` (400); la
   forma de las citas de la API no está en la skill (`SKILL/shared/live-sources.md:88`); un PDF
   cuesta más tokens que su texto; y el texto guardado ya trae marcadores de página verificables con
   `lib/paginas.js`. Queda el texto con citas verificadas por el servidor.
@@ -1142,14 +1142,14 @@ aplica (no se toca el lector de tablas); navegador real a 390 px con consola lim
   en el prompt; el rótulo es «Dictamen del pliego» y el criterio sin fuente se llama «Criterio
   general, sin respaldo en el pliego».
 - **Puntajes /100, probabilidad por riesgo y «confianza» del modelo como rótulo**: números y
-  autonotas sin hecho medido; filosofía del producto y `docs/MEMORIA.md:3596-3677`. La pantalla
+  autonotas sin hecho medido; filosofía del producto y docs/MEMORIA.md § «FILOSOFÍA DEL PRODUCTO (ago 2026) · la regla que manda sobre las demás». La pantalla
   muestra lo medido (citas comprobadas, páginas leídas, datos que faltan).
 - **Precio sugerido y margen por el modelo**: el modelo no tiene los costos; el precio lo dan
   `lib/apu/piso_techo.js`, `lib/baja_maxima.js`, `lib/ganancia.js`; en precios el falso caro es el
   positivo.
 - **Extracto del pliego por léxico** (propuesta «riesgo primero», para caber en 60 s): sacrifica la
   cobertura, que es el producto: un pliego a la medida «se detecta por el conjunto, no por la
-  pieza» (`docs/MEMORIA.md:1172-1174`), y un «no encontrado» sobre páginas no leídas es una falsa
+  pieza» (docs/MEMORIA.md § «Las 12 señales de pliego sastre»), y un «no encontrado» sobre páginas no leídas es una falsa
   ausencia con maquetación de dictamen. Descartado; se prefiere el muro de tiempo a 300 s.
 - **Re-evaluar la fila fuera de `listar`** (propuesta «usuario primero»: puertas, ganancia, baja,
   competencia y ejecución viva dentro del handler): duplica el mapeo de `listar.js:740-771`,
