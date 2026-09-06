@@ -2468,7 +2468,10 @@
               <div id="fl-dep-elegidos" class="mt-2 flex flex-wrap gap-1.5"></div>
               <label class="mt-2 flex items-center gap-2 text-xs" style="color: var(--text-secondary);">
                 <input id="fl-zona-cerca" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/10">
-                Solo cerca de mi zona (Bogotá / Ibagué)
+                <!-- el rótulo lo escribe app.js con `zona_base` de cada respuesta: la base es del
+                     PERFIL (Bogotá / Ibagué solo para los del dueño); sin base, el filtro solo
+                     retira las alertas de acceso y lo dice (6-sep-2026, M-SEG-10) -->
+                <span id="fl-zona-cerca-rotulo">Solo cerca de mi zona</span>
               </label>
             </div>
             <div class="grid gap-4 sm:grid-cols-2">
@@ -2559,7 +2562,7 @@
               <label class="block">
                 <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Acceso a la zona</span>
                 <select id="f-zona" class="control-select w-full rounded-xl text-sm"
-                        title="Cerca = a ~250 km de Bogotá o Ibagué, o con aeropuerto en la capital. Las zonas de difícil acceso o con alertas de orden público se van al final del orden aunque no filtres.">
+                        title="Cerca = a unos 250 km de la ciudad desde la que opera su empresa, o con aeropuerto en la capital. Si la aplicación no sabe desde dónde opera, la distancia no se calcula y este filtro solo retira las zonas de difícil acceso o con alertas de orden público, que se van al final del orden aunque no filtre.">
                   <option value="">Todas (las lejanas van al final)</option>
                   <option value="facil">Solo fácil acceso</option>
                 </select>

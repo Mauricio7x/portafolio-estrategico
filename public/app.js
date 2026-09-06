@@ -1749,9 +1749,23 @@
     </article>`;
   }
 
+  /* El rótulo de «Solo cerca de mi zona» dice DESDE DÓNDE se midió (6-sep-2026,
+     M-SEG-10): «(Bogotá / Ibagué)» solo cuando el servidor lo dice en
+     `zona_base`; con null —un RUP subido o un consorcio a la medida no han
+     dicho desde dónde operan— el filtro sigue retirando las alertas de acceso
+     y el rótulo lo dice, en vez de prometer una cercanía que no se calculó. */
+  function pintarBaseZona(zonaBase) {
+    const rotulo = $("fl-zona-cerca-rotulo");
+    if (!rotulo) return;
+    rotulo.textContent = zonaBase
+      ? `Solo cerca de mi zona (${zonaBase})`
+      : "Solo zonas sin alertas de acceso — la distancia no se calcula porque no sabemos desde dónde opera su empresa";
+  }
+
   function pintar(cuerpo) {
     ultimaBusqueda = cuerpo;
     mostrar("resultados");
+    pintarBaseZona(cuerpo.zona_base == null ? null : String(cuerpo.zona_base));
     // el reparto por solidez del match dice de un vistazo cuántas son «RUP ✓»
     // y cuántas hay que verificar en el pliego
     const m = cuerpo.por_match || {};

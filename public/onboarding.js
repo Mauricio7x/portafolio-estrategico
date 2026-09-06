@@ -336,8 +336,11 @@
     if (!n) return mostrarManual("Nos faltó un dato y no supimos cuál.");
     contextoCompletar = { ...contexto, campo: n.campo };
     const d = cuerpo.leido_detalle || {};
+    /* `motivo` llega cuando el servidor descartó una cifra partida en el salto
+       de línea del certificado: se dice, porque el certificado sí la trae */
     $("completar-intro").innerHTML = `<strong>Leímos su certificado</strong>${d.nombre ? ` (${esc(d.nombre)})` : ""}: `
-      + `${esc(d.codigos_unspsc ?? "varios")} tipos de obra inscritos. Solo falta un dato.`;
+      + `${esc(d.codigos_unspsc ?? "varios")} tipos de obra inscritos. Solo falta un dato.`
+      + (n.motivo ? ` ${esc(n.motivo)}` : "");
     $("completar-etiqueta").textContent = n.etiqueta || n.campo;
     $("completar-campo").value = "";
     $("completar-campo").placeholder = n.campo === "experiencia_smmlv" ? "En salarios mínimos (o pesos: lo convertimos)" : "Solo números, en pesos";

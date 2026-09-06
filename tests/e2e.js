@@ -6880,7 +6880,8 @@ async function main() {
           `entrada incompleta en la tabla de accesibilidad: ${k}`);
           assert.ok(d.km_bogota === null || Number.isFinite(d.km_bogota), `km_bogota ilegible en ${k}`);
         }
-        const z = (depto) => acc.evaluarZona({ departamento_entidad: depto });
+        // desde la base del DUEÑO (Bogotá/Ibagué): la base es del perfil desde el 6-sep-2026
+        const z = (depto) => acc.evaluarZona({ departamento_entidad: depto }, acc.BASE_DUENO);
         assert.strictEqual(z("Tolima").nivel, "cerca", "Tolima es la base de Ibagué");
         assert.strictEqual(z("Tolima").puntos, 3);
         assert.strictEqual(z("Distrito Capital de Bogotá").puntos, 3, "el nombre largo del dataset debe resolver");
@@ -6915,6 +6916,146 @@ async function main() {
         // valor desconocido → inerte, jamás 400 ni lista vacía
         const inerte = await todasLasOportunidades("perfil=juntos&zona=marciana");
         assert.strictEqual(inerte.length, sinFiltro.length, "un valor desconocido de zona debe ser inerte");
+
+        /* ═══ LA BASE ES DEL PERFIL, NO DE LA APLICACIÓN (M-SEG-10, 6-sep-2026) ═══
+           Medido ANTES del arreglo con la función real: evaluarZona.length === 1
+           y toda fila de cualquier perfil se medía desde Ibagué/Bogotá — un
+           RUP subido desde Cali veía «Su zona (Bogotá)» y «~610 km de Ibagué»
+           como cifras creíbles en la primera pantalla. Ahora la base la decide
+           lib/perfil_resolver.baseDelPerfil (Bogotá/Ibagué SOLO para los tres
+           perfiles del dueño) y sin base la distancia se DECLARA sin calcular:
+           km null —jamás 0 ni el de otra base—, banda «sin dato», y las
+           alertas del destino (difícil acceso, orden público) se conservan. */
+        {
+          const { baseDelPerfil } = require("../lib/perfil_resolver.js");
+          const nar = { departamento_entidad: "Nariño" };
+          const sinBase = acc.evaluarZona(nar, null);
+          assert.strictEqual(sinBase.nivel, "sin_dato", "sin base la zona es «sin dato», no una distancia ajena");
+          assert.strictEqual(sinBase.km, null, "sin base el km es null, jamás 0 ni el de otra base");
+          assert.strictEqual(sinBase.base, null);
+          assert.ok(/sin calcular/i.test(sinBase.etiqueta) && !/Bogot|Ibagu/.test(sinBase.etiqueta + sinBase.mensaje),
+            `sin base no puede nombrar la base del dueño: ${sinBase.etiqueta}`);
+          assert.ok(sinBase.verificar_orden_publico && /verificar zona/.test(sinBase.etiqueta), "la alerta de orden público es del destino, con o sin base");
+          assert.strictEqual(sinBase.puntos, 1, "sin base: banda «sin dato» (2) menos la alerta (1) — nunca 0 por no saber");
+          const cundSinBase = acc.evaluarZona({ departamento_entidad: "Cundinamarca" }, null);
+          assert.strictEqual(cundSinBase.puntos, 2);
+          assert.ok(!/Su zona/.test(cundSinBase.etiqueta), "Cundinamarca no es «su zona» de quien no ha dicho dónde opera");
+          assert.ok(/Acceso difícil/.test(acc.evaluarZona({ departamento_entidad: "Amazonas" }, null).etiqueta), "el difícil acceso es del destino, con o sin base");
+          // olvidar la base NO cae en la del dueño: el fallo seguro es «sin calcular»
+          assert.strictEqual(acc.evaluarZona(nar).km, null, "sin segundo argumento la distancia no puede salir desde Ibagué");
+          // con la base del dueño, lo de siempre; con una sola ciudad se mide desde esa ciudad
+          const conBase = acc.evaluarZona(nar, acc.BASE_DUENO);
+          assert.strictEqual(conBase.km, 610); assert.strictEqual(conBase.base, "Ibagué");
+          assert.strictEqual(acc.evaluarZona(nar, ["Bogotá"]).km, 800, "una base de una sola ciudad mide desde ella");
+          assert.strictEqual(acc.evaluarZona(nar, "Cali").km, null, "una ciudad sin columna en la tabla no se aproxima por Bogotá");
+          assert.strictEqual(acc.nombreDeBase(acc.BASE_DUENO), "Bogotá / Ibagué");
+          assert.strictEqual(acc.nombreDeBase(null), null);
+          // la regla del perfil: fijos (y su alias) → base del dueño; rup_/cons_/sim_ → null
+          for (const id of ["helder", "genesis", "juntos", "consorcio"]) assert.deepStrictEqual(baseDelPerfil(id), [...acc.BASE_DUENO], `${id} opera desde la base del dueño`);
+          for (const id of ["rup_ab12cd34", "cons_x1y2", "sim_abc", null, ""]) assert.strictEqual(baseDelPerfil(id), null, `${id} no ha dicho desde dónde opera`);
+
+          /* CENSO: toda llamada a evaluarZona( fuera de lib/accesibilidad pasa la
+             base (un segundo argumento). Sin ella el dueño vería «sin calcular»
+             — es el fallo seguro, pero sería un defecto igual. */
+          {
+            const archivos = [];
+            const barrer = (dir) => { for (const f of fs.readdirSync(dir)) { const r = path.join(dir, f); if (fs.statSync(r).isDirectory()) barrer(r); else if (r.endsWith(".js")) archivos.push(r); } };
+            barrer(path.join(__dirname, "..", "lib"));
+            let llamadas = 0;
+            for (const f of archivos) {
+              if (f.endsWith("accesibilidad.js")) continue;
+              const src = sinComentarios(fs.readFileSync(f, "utf8"));
+              const re = /evaluarZona\(/g; let m;
+              while ((m = re.exec(src)) !== null) {
+                llamadas++;
+                let prof = 1, i = m.index + m[0].length, coma = false;
+                for (; i < src.length && prof > 0; i++) { const c = src[i]; if (c === "(") prof++; else if (c === ")") prof--; else if (c === "," && prof === 1) coma = true; }
+                assert.ok(coma, `${path.relative(path.join(__dirname, ".."), f)}: evaluarZona( sin la base del perfil`);
+              }
+            }
+            assert.ok(llamadas >= 3, `el censo debía ver al menos las dos llamadas del listado y la de la guía (vio ${llamadas})`);
+          }
+
+          // la guía de Mis procesos pasa la base del perfil
+          {
+            const G = require("../lib/guia_proceso.js");
+            const filaG = { id_del_proceso: "Z1", nombre_del_procedimiento: "CONSTRUCCION DE PLACA HUELLA", departamento_entidad: "Nariño", entidad: "ALCALDIA", modalidad_de_contratacion: "Licitación pública", precio_base: "500000000" };
+            const zRup = G.guiaDe({ fila: filaG, perfil: "rup_ab12cd34", ctx: { ahoraMs: Date.now() } }).obra.donde.zona;
+            assert.strictEqual(zRup.km, null); assert.strictEqual(zRup.desde, null);
+            assert.ok(!/Ibagu|Bogot/.test(zRup.etiqueta + zRup.mensaje), `la guía de un rup_ no puede medir desde la base del dueño: ${zRup.etiqueta}`);
+            const zH = G.guiaDe({ fila: filaG, perfil: "helder", ctx: { ahoraMs: Date.now() } }).obra.donde.zona;
+            assert.strictEqual(zH.km, 610); assert.strictEqual(zH.desde, "Ibagué");
+          }
+
+          /* el LISTADO real con un perfil dinámico: ninguna fila mide desde
+             Bogotá/Ibagué, `zona_base` viaja null y `zona=facil` solo retira
+             las filas con alertas de acceso (las únicas que se saben) */
+          {
+            const PD = require("../lib/perfil_dinamico.js");
+            // el MISMO esquema y el MISMO validador que la carga por PDF (lib/config_rup)
+            const vCali = require("../lib/config_rup.js").validarPerfilDinamico("rup", {
+              nombre: "Constructora de Cali", tipo: "persona_juridica", nit: null, unspsc: ["72141000"],
+              indicadores: { liquidez: 3.25, endeudamiento: 0.35, cobertura_intereses: 8.4, patrimonio: 850000000, utilidad_operacional: 120000000, ingreso_operacional: null },
+              profesionales: 1, experiencia_smmlv: 5000, tope_smmlv: 10000,
+            });
+            assert.ok(vCali.ok, `el perfil de prueba no pasa el validador: ${JSON.stringify(vCali.errores)}`);
+            const creado = await PD.crearPerfilDinamico(redis, { perfil: vCali.perfil });
+            assert.ok(creado.ok, JSON.stringify(creado));
+            PD.olvidarPerfilesDinamicos();
+            try {
+              const lst = await invocar(oportunidades, `/api/oportunidades?perfil=${creado.id}&por_pagina=100`);
+              assert.strictEqual(lst.status, 200, JSON.stringify(lst.cuerpo).slice(0, 200));
+              assert.ok(lst.cuerpo.resultados.length > 0, "el perfil de prueba debía ver procesos");
+              assert.strictEqual(lst.cuerpo.zona_base, null, "un rup_ no tiene base: zona_base viaja null");
+              for (const l of lst.cuerpo.resultados) {
+                assert.strictEqual(l.zona.km, null, `${l.id_del_proceso}: km calculado para un perfil sin base`);
+                assert.strictEqual(l.zona.nivel, "sin_dato");
+                // la etiqueta no nombra la base del dueño; el mensaje puede nombrar el DESTINO
+                // («la zona de Bogotá» para una obra en Bogotá) pero nunca una distancia desde una base
+                assert.ok(!/Bogot|Ibagu/.test(l.zona.etiqueta), `${l.id_del_proceso}: «${l.zona.etiqueta}» nombra la base del dueño`);
+                assert.ok(!/km (de|desde) |desde (Bogotá|Ibagué)|su base/.test(l.zona.mensaje), `${l.id_del_proceso}: el mensaje mide desde una base ajena: ${l.zona.mensaje}`);
+              }
+              // sobre TODAS las páginas (total 441 en el arnés, no las 100 de una página)
+              const todasRup = await todasLasOportunidades(`perfil=${creado.id}`);
+              const sinAlerta = todasRup.filter((l) => l.zona.puntos >= 2).length;
+              /* el corpus del arnés no trae departamentos con alertas (medido: 0 de 441),
+                 así que la exclusión por alerta la fija arriba la función pura (Nariño y
+                 Amazonas sin base → puntos 1 < 2); aquí se fija que el filtro NO retire
+                 nada por distancia cuando no hay distancia */
+              const facilRup = await todasLasOportunidades(`perfil=${creado.id}&zona=facil`);
+              assert.strictEqual(facilRup.length, sinAlerta, "sin base, zona=facil solo retira las filas con alertas de acceso");
+              assert.ok(facilRup.every((l) => l.zona.km === null && l.zona.puntos >= 2), "sin base, lo servido con zona=facil sigue sin distancia y sin alertas");
+              const lstJ = await invocar(oportunidades, "/api/oportunidades?perfil=juntos&por_pagina=1", CAB_TOKEN);
+              assert.strictEqual(lstJ.cuerpo.zona_base, "Bogotá / Ibagué", "el dueño sigue midiendo desde sus dos ciudades");
+            } finally {
+              await redis.del(...PD.clavesDePerfilDinamico(creado.id));
+              PD.olvidarPerfilesDinamicos();
+            }
+          }
+
+          /* pantalla: el rótulo del filtro sale de `zona_base` (pintarBaseZona
+             EJECUTADA sobre un DOM mínimo), el HTML no fija la base del dueño
+             para todos, y el orden «recomendado» no promete cercanía a quien
+             no ha dicho dónde opera */
+          {
+            const appZ = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+            const htmlZ = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+            assert.ok(/id="fl-zona-cerca-rotulo"/.test(htmlZ), "el rótulo del filtro de zona tiene que ser un nodo propio");
+            assert.ok(!/Solo cerca de mi zona \(Bogotá \/ Ibagué\)/.test(htmlZ.replace(/<!--[\s\S]*?-->/g, "")), "el HTML no puede fijar la base del dueño para todos");
+            const iniZ = appZ.indexOf("function pintarBaseZona("), finZ = appZ.indexOf("function pintar(cuerpo)");
+            assert.ok(iniZ > 0 && finZ > iniZ, "app.js sin pintarBaseZona antes de pintar(cuerpo)");
+            assert.ok(/pintarBaseZona\(cuerpo\.zona_base/.test(appZ), "pintar(cuerpo) tiene que rotular con zona_base de la respuesta");
+            const nodoZ = { textContent: "" };
+            const pintarBaseZona = new Function("$", `${appZ.slice(iniZ, finZ)}; return pintarBaseZona;`)((id) => (id === "fl-zona-cerca-rotulo" ? nodoZ : null));
+            pintarBaseZona("Bogotá / Ibagué");
+            assert.strictEqual(nodoZ.textContent, "Solo cerca de mi zona (Bogotá / Ibagué)");
+            pintarBaseZona(null);
+            assert.ok(/no sabemos desde dónde opera/.test(nodoZ.textContent) && !/Bogot|Ibagu/.test(nodoZ.textContent), `sin base el rótulo lo dice: ${nodoZ.textContent}`);
+            const FLz = require("../public/filtros.js");
+            const atrac = FLz.ORDENES.find((o) => o.id === "atractividad");
+            assert.ok(/sabe desde qué ciudad opera/.test(atrac.concepto), "el concepto del orden recomendado declara cuándo ordena por distancia");
+          }
+        }
       }
 
       // atractividad es el orden POR DEFECTO (lo que ve el dueño al abrir la app)
@@ -11514,6 +11655,87 @@ async function main() {
           "la web tiene que distinguir «falta un dato» de «no se pudo leer» (siguiente: completar | manual)");
         assert.ok(/completar:/.test(fuenteOnb),
           "sin reenviar `completar` el usuario se quedaría mirando un formulario que no guarda nada");
+
+        /* ═══ UN NÚMERO PARTIDO EN DOS LÍNEAS NO ES UNA CIFRA (M-INF-01, 6-sep-2026) ═══
+           Medido ANTES del arreglo con esta misma función: «Patrimonio 1.234.» +
+           «567.890» → patrimonio 1234; «2,» + «5» → liquidez 2; «12.» +
+           «500 SMMLV» → experiencia 500. Tres cifras equivocadas, creíbles y
+           sin aviso, que deciden la puerta de capacidad. Ahora: se unen si el
+           resultado es un número colombiano bien formado; lo que no se puede
+           unir va a `faltan` con motivo (se pide, nunca se guarda el trozo). */
+        {
+          const { unirNumerosPartidos, numerosDe } = require("../lib/rup_pdf.js");
+          const cabecera = CERTIFICADO.slice(0, 8); // hasta «INFORMACION FINANCIERA»
+          const partido = [...cabecera,
+            "Indice de liquidez 2,", "5",
+            "Nivel de endeudamiento 4,00%",
+            "Patrimonio $ 1.234.", "567.890",
+            "Utilidad operacional $ 198.810.000",
+            "Experiencia acreditada 12.", "500 SMMLV",
+            "Fecha de renovacion 2026-03-15"];
+          const rP = extraerRupDeTexto(partido.join("\n"));
+          assert.strictEqual(rP.ok, true, JSON.stringify(rP).slice(0, 300));
+          assert.strictEqual(rP.config.indicadores.patrimonio, 1234567890, "un patrimonio partido en el salto de línea se une; el trozo (1.234) no es un dato");
+          assert.strictEqual(rP.config.indicadores.liquidez, 2.5, "una liquidez «2,» + «5» es 2,5, no 2");
+          assert.strictEqual(rP.config.experiencia_smmlv, 12500, "una experiencia «12.» + «500 SMMLV» es 12.500, no 500");
+          assert.deepStrictEqual(rP.faltan, []);
+
+          // lo que NO se puede unir se PIDE con motivo, jamás se guarda el trozo
+          const noUnible = [...cabecera,
+            "Indice de liquidez 2,", "Razon corriente",
+            "Nivel de endeudamiento 4,00%",
+            "Patrimonio $ 1.234.", "5678",
+            "Utilidad operacional $ 198.810.000",
+            "Experiencia acreditada 12.", "5000 SMMLV",
+            "Fecha de renovacion 2026-03-15"];
+          const rN = extraerRupDeTexto(noUnible.join("\n"));
+          assert.strictEqual(rN.ok, true, "una cifra partida no invalida el certificado: se pide");
+          assert.strictEqual(rN.config.indicadores.patrimonio, null, "un patrimonio de 1.234 pesos colgando en el salto de línea no es un dato");
+          assert.strictEqual(rN.config.indicadores.liquidez, null, "una liquidez «2,» colgando no es 2");
+          assert.strictEqual(rN.config.experiencia_smmlv, null, "un contrato cuyo valor quedó partido no puede fijar la experiencia");
+          assert.deepStrictEqual(rN.faltan.map((f) => f.campo).sort(), ["experiencia_smmlv", "liquidez", "patrimonio"]);
+          for (const f of rN.faltan) assert.ok(f.motivo && /partida|incompleta/.test(f.motivo) && /escríbala usted/.test(f.motivo), `el faltante debe decir por qué se pide: ${JSON.stringify(f)}`);
+          assert.ok(rN.faltan.find((f) => f.campo === "patrimonio").motivo.includes("«1.234.»"), "el motivo enseña el trozo leído para que la persona lo ubique");
+          assert.deepStrictEqual([...rN.diagnostico.cifras_partidas].sort(), ["experiencia_smmlv", "liquidez", "patrimonio"]);
+          assert.ok(rN.advertencias.some((a) => /partida/.test(a)), "las advertencias lo declaran");
+
+          // regresión: el punto final de frase sigue sin ser separador, y una fecha en
+          // la línea siguiente no se pega al número
+          const frase = [...cabecera,
+            "Indice de liquidez 129,12", "Nivel de endeudamiento 4,00%",
+            "Patrimonio $ 850.000.000.", "31/12/2025 corte contable",
+            "Utilidad operacional $ 198.810.000.", "Nota: cifras en pesos",
+            "Experiencia acreditada 6.768,87 SMMLV", "Fecha de renovacion 2026-03-15"];
+          const rF = extraerRupDeTexto(frase.join("\n"));
+          assert.strictEqual(rF.config.indicadores.patrimonio, 850000000, "«850.000.000.» + fecha en la línea siguiente: se conserva la cifra y no se une la fecha");
+          assert.strictEqual(rF.config.indicadores.utilidad_operacional, 198810000, "el punto final de frase no es un separador (la regla de numerosDe)");
+          assert.deepStrictEqual(rF.faltan, []);
+          // el umbral vale aunque el trozo ya no cuelgue (una unión falsa deja un número corto);
+          // el 0 y las pérdidas NO son trozos y pasan como siempre
+          const conUtilidad = (u) => extraerRupDeTexto(frase.map((l) => (/^Utilidad operacional/.test(l) ? `Utilidad operacional ${u}` : l)).join("\n"));
+          assert.strictEqual(conUtilidad("$ 850.000").config.indicadores.utilidad_operacional, null, "una utilidad de 850.000 pesos es un trozo: se pide");
+          assert.ok(/850000|850\.000/.test(conUtilidad("$ 850.000").faltan.find((f) => f.campo === "utilidad_operacional").motivo));
+          assert.strictEqual(conUtilidad("$ -12.000.000").config.indicadores.utilidad_operacional, -12000000, "una pérdida operacional es un dato real, no un trozo");
+          assert.strictEqual(conUtilidad("0").config.indicadores.utilidad_operacional, 0, "un 0 impreso en el certificado se conserva como antes");
+          assert.strictEqual(completo.config.indicadores.patrimonio, 1107252964, "el certificado sin partir se lee igual que antes");
+
+          // la unión, caso a caso: solo números bien formados (grupos de tres tras el punto)
+          assert.deepStrictEqual(unirNumerosPartidos(["patrimonio 1.234.", "567.890", "liq 2,", "5", "k 850.000.000.", "31/12/2025", "x 2025.", "31 de marzo", "a 1.", "234.", "567 fin"]),
+            ["patrimonio 1.234.567.890", "liq 2,5", "k 850.000.000.", "31/12/2025", "x 2025.", "31 de marzo", "a 1.234.567 fin"]);
+          assert.deepStrictEqual(numerosDe("1.234. "), [{ valor: 1234, pct: false, colgante: "." }]);
+          assert.strictEqual(numerosDe("850.000.000 a corte 2025.")[0].colgante, null, "solo cuelga el token que cierra la línea");
+
+          // la puerta de entrada lo dice: `necesita[0].motivo` viaja y onboarding.js lo pinta
+          {
+            const routerPerfilP = require("../api/perfil.js");
+            const dP = await invocarPost(routerPerfilP, "/api/perfil?op=diagnostico", { texto: noUnible.join("\n") });
+            assert.strictEqual(dP.status, 200, JSON.stringify(dP.cuerpo).slice(0, 200));
+            assert.strictEqual(dP.cuerpo.siguiente, "completar");
+            assert.strictEqual(dP.cuerpo.necesita[0].campo, "patrimonio");
+            assert.ok(/partida|incompleta/.test(dP.cuerpo.necesita[0].motivo || ""), `la puerta de entrada debe decir por qué pide un dato que el certificado trae: ${JSON.stringify(dP.cuerpo.necesita)}`);
+            assert.ok(/n\.motivo/.test(fuenteOnb), "onboarding.js pinta el motivo junto a la casilla");
+          }
+        }
       }
 
       console.log(`  · onboarding RUP por PDF: 4 códigos leídos, TTL puesto, perfil dinámico servido sin tocar a los fijos, errores accionables y cableado del frontend verificados`);

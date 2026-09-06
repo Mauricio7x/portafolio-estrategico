@@ -7800,3 +7800,84 @@ re-aprenderlo:
   candado `lock:sync` («se llama o se extrae»): se optó por no extraerlo, con el motivo dicho.
   **No verificable desde aquí**: Redis y producción reales; el listado en el arnés de navegador
   responde 503 por falta de corpus (excepción declarada, como en el arnés del dictamen).
+
+### Lote «zona y RUP en PDF» de la consultoría del 4-sep · M-SEG-10, M-INF-01 (6-sep-2026)
+
+- **La base desde la que se mide «cuánto cuesta llegar» es del PERFIL, no de la aplicación
+  (M-SEG-10).** Medido antes con la función real: `evaluarZona.length === 1` y toda fila de
+  cualquier perfil se medía desde Ibagué o Bogotá — un RUP subido desde Cali veía «Su zona
+  (Bogotá)» y «~610 km de Ibagué» como cifras creíbles en la primera pantalla, y su lista
+  «ordenada para usted» estaba ordenada para el dueño. Ahora `evaluarZona(fila, base)` y la base
+  la decide `lib/perfil_resolver.baseDelPerfil(id)`: `BASE_DUENO` (Bogotá/Ibagué, la más cercana)
+  SOLO para los tres perfiles fijos y su alias; `rup_…`, `cons_…` y `sim_…` → `null`. Sin base la
+  distancia se DECLARA sin calcular: nivel `sin_dato`, km `null` (jamás 0 ni el de otra base),
+  etiqueta «Distancia sin calcular: no sabemos desde dónde opera», y las alertas del destino
+  (difícil acceso, orden público) se conservan porque no dependen de dónde esté la base. El
+  listado publica `zona_base` («Bogotá / Ibagué» o `null`) y la pantalla rotula con eso el filtro
+  «Solo cerca de mi zona» (`pintarBaseZona`); la guía de Mis procesos pasa la misma base.
+- **Por qué el parámetro NO tiene la base del dueño por defecto** (la ficha proponía
+  `base = BASE_DUENO`): quien olvide pasarla obtendría una distancia AJENA y creíble — el peor
+  fallo de la casa. Con `null` por defecto el olvido produce «sin calcular», que se ve y se
+  corrige; la cerradura es un CENSO de toda llamada a `evaluarZona(` en `lib/` (dos argumentos
+  obligatorios) y una prueba que llama con un solo argumento y exige km `null`.
+- **Por qué el orden por defecto NO deja de desempatar por zona sin base** (la ficha pedía
+  omitir el desempate cuando `nivel === sin_dato`): sin base todas las filas comparten la banda
+  «sin dato» (2 puntos) y solo difieren por la alerta del destino (−1), que es un hecho de la
+  obra y vale para cualquiera. Así el desempate sin base es únicamente «sin alertas antes que con
+  alertas», y `zona=facil` retira solo esas — nunca por una distancia que no existe. No se cuenta
+  como 0 puntos: sin dato ≠ cero. El corpus del arnés no trae departamentos con alertas (0 de 441
+  medidos), así que la exclusión por alerta la fija la función pura y el listado fija que no
+  retire nada por distancia.
+- **Sin base el filtro no se deshabilita: se rotula con lo que hace.** «Solo zonas sin alertas de
+  acceso — la distancia no se calcula porque no sabemos desde dónde opera su empresa». Un control
+  vivo que dice la verdad vale más que uno apagado con explicación, y el servidor ya hacía
+  exactamente eso. El HTML deja de fijar «(Bogotá / Ibagué)» para todos; el concepto del orden
+  recomendado dice cuándo ordena por distancia; el `title` del desplegable «Acceso a la zona»
+  pierde un tuteo («aunque no filtres») que el censo no veía por estar en un atributo.
+- **Hermano detectado y NO tocado:** el desplegable «Ubicación · Solo mi zona / Fuera de mi zona»
+  (`f-ubicacion` → `ubicacion_valida` de `lib/negocio`, entidad en `UBICACION_VALIDA`, variable
+  de entorno con «BOGOTÁ D.C.» por defecto) también dice «mi zona» a todo visitante. Es otra
+  regla (la cascada de juicio, no la accesibilidad) y su rótulo depende de un valor de entorno
+  que desde aquí no se ve: queda como decisión pendiente, no se adivina.
+- **Peldaño 25 de la ficha (la ciudad del perfil dinámico) NO se hizo:** ninguna pantalla pide la
+  ciudad y nada la guarda; `baseDelPerfil` es el único sitio que hay que enseñar cuando exista
+  (`BASES` de `lib/accesibilidad` solo sabe medir desde Bogotá e Ibagué: una ciudad ajena a la
+  tabla es «sin base», no se aproxima por Bogotá — probado con «Cali»).
+- **Un número partido en dos líneas ya no es una cifra (M-INF-01).** Medido antes con
+  `extraerRupDeTexto` real: «Patrimonio 1.234.» + «567.890» → 1234; «2,» + «5» → liquidez 2;
+  «12.» + «500 SMMLV» → experiencia 500 — tres cifras equivocadas, creíbles y sin aviso, que
+  deciden la puerta de capacidad. Dos defensas en `lib/rup_pdf`: (1) `unirNumerosPartidos` funde
+  la línea que termina en un token numérico con separador colgando con la siguiente si empieza
+  por dígitos Y la unión es un número colombiano bien formado (grupos de tres tras el punto; uno o
+  dos decimales tras la coma, o tras un punto sin grupos de miles) — «850.000.000.» + «31/12/2025»
+  no se une, «2025.» + «31 de marzo» tampoco, y la regla del punto final de frase de `numerosDe`
+  no cambia; (2) `numerosDe` marca el token que sigue colgando al final de la línea (`colgante`)
+  y `leerIndicador` lo trata como NO leído: con coma siempre (ninguna frase termina en coma), con
+  punto si queda bajo `PLAUSIBLE_MIN` del campo o si el campo es una razón sin umbral posible
+  (liquidez «2.» cortada era «2.50»). `PLAUSIBLE_MIN` (patrimonio y utilidad: 1.000.000 pesos)
+  vale además para todo valor POSITIVO aunque no cuelgue —una unión falsa («5.» + «12» → 5.12)
+  también deja un número corto—; el 0 y los negativos pasan como siempre: una pérdida operacional
+  es un dato real y no podría teclearse después (`completar` exige > 0). En la experiencia la
+  señal es de adyacencia: la línea con «SMMLV» EMPIEZA por el número y la anterior termina
+  colgando → la cifra se pide, no se guarda el trozo ni el máximo de los demás contratos (un
+  máximo corto esconde procesos: el falso negativo caro de oportunidades). El modo de fallo es
+  `faltan[].motivo` («…aparece partida o incompleta en un salto de línea (se leyó «1.234.»):
+  escríbala usted…»), `advertencias` y `diagnostico.cifras_partidas`; `op=diagnostico` lo pasa en
+  `necesita[0].motivo` y `onboarding.js` lo pinta junto a la casilla. Nunca un 0 ni un ok:false.
+- **Lo que la ficha decía y no se adoptó:** el umbral «experiencia < 10 SMMLV» no se puso — un
+  contrato máximo de 5-9 SMMLV existe en contratistas pequeños y la partición real la caza la
+  adyacencia; el umbral de patrimonio se aplica a persona natural y jurídica por igual (la ficha
+  lo limitaba a jurídica): un patrimonio bajo un millón en un RUP es un trozo con casi toda
+  seguridad y el fallo es pedir, no bloquear. Riesgo declarado sin solución sintáctica: «artículo
+  5.» + «100 SMMLV» se uniría en 5.100.
+- **Lo no verificable:** la frecuencia de la partición en PDFs reales (pdf.js sobre los RUP del
+  dueño) — el paso del dueño de la ficha sigue abierto: enviar dos certificados reales para medir.
+- Cerraduras: bloque de accesibilidad (evaluarZona con null / BASE_DUENO / una ciudad / sin
+  segundo argumento, baseDelPerfil para siete ids, censo de dos argumentos en lib/, guiaDe con
+  rup_ y helder, listado real con un perfil dinámico creado con el validador de config_rup —
+  `zona_base` null, km null en 441 filas, `zona=facil` no retira nada por distancia—,
+  `pintarBaseZona` ejecutada sobre un DOM mínimo, concepto del orden) y bloque de RUP por PDF
+  (tres certificados sintéticos: partido → unido; no unible → null + motivo; frase con punto final
+  y fecha en la línea siguiente → intacto; `unirNumerosPartidos` y `numerosDe` caso a caso;
+  `op=diagnostico` real → `necesita[0].motivo`). Dos mutaciones por `git stash` (fuentes de zona;
+  fuentes de RUP) ponen la suite en rojo una a una por la aserción nueva.

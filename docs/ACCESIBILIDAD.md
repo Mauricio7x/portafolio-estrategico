@@ -13,9 +13,14 @@ la base.
   capital tiene aeropuerto comercial, si el acceso predominante es aéreo/fluvial/insular
   (`dificil_acceso`) y si hay alertas de orden público documentadas en partes del departamento
   (`verificar_orden_publico`).
-- **`lib/accesibilidad.js` · `evaluarZona(fila)`**: clasifica cada proceso por su
+- **`lib/accesibilidad.js` · `evaluarZona(fila, base)`**: clasifica cada proceso por su
   `departamento_entidad` en `cerca / media / lejos / sin_dato` y produce `puntos` 0–3, una
-  `etiqueta` y un `mensaje` ya redactados en lenguaje de personas.
+  `etiqueta` y un `mensaje` ya redactados en lenguaje de personas. **La base es del perfil**
+  (6-sep-2026): `lib/perfil_resolver.baseDelPerfil` da Bogotá/Ibagué (`BASE_DUENO`) solo para los
+  tres perfiles del dueño; un RUP subido, un consorcio a la medida o una simulación no han dicho
+  desde dónde operan y reciben `null` → «Distancia sin calcular: no sabemos desde dónde opera»
+  (km `null`, banda «sin dato», y las alertas del destino se conservan). Sin base nunca se mide
+  desde Bogotá: una distancia ajena y creíble es peor que una que falta.
 - **Integración** (`/api/oportunidades`): el campo `zona` viaja en cada fila; el orden por defecto
   (`atractividad`) usa los puntos como **cubeta dentro de los viables** (el valor esperado sigue
   decidiendo dentro de cada cubeta); y `?zona=facil` — el desplegable «Acceso a la zona» de
