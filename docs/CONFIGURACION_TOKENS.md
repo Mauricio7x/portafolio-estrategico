@@ -46,8 +46,10 @@ protección real del sitio es **Vercel Password Protection** (el muro que pide c
 entrar) más el gate de clave `231105` del navegador. No hay que angustiarse por él; hay que hacer
 que **cuadre**.
 
-Si algún día se quiere cambiar por otro valor, hay que cambiarlo **en los cuatro sitios a la vez**:
-la variable de Vercel y las tres líneas del código. Cambiarlo solo en Vercel rompe la aplicación.
+Si algún día se quiere cambiar por otro valor, hay que cambiarlo **en los seis sitios a la vez** —las
+tres líneas del código, este documento, el `README.md` y la variable de Vercel— y en el orden que
+explica §10 («Rotar `HISTORICO_TOKEN`»). Cambiarlo solo en Vercel rompe la aplicación; la suite
+automática exige que los tres archivos y los dos documentos lleven el mismo valor.
 
 ---
 
@@ -275,6 +277,44 @@ cadena continúa sola.
 
 ---
 
+### 3.6 · `CRON_SECRET` — la guarda de la sincronización (opcional, recomendada)
+
+**Qué es.** La sincronización diaria (`/api/sync`, que Vercel dispara con un cron a las 08:30 UTC)
+nació pública: cualquiera que conociera la URL podía lanzarla contra SECOP II y gastar el cupo de
+Redis y de Vercel del proyecto. Con esta variable puesta, `/api/sync` solo acepta tres llamadores:
+el cron de Vercel (que, según la documentación de Vercel, envía la cabecera
+`Authorization: Bearer <CRON_SECRET>` a cada invocación cuando la variable existe), quien lleve la
+llave de la aplicación (la marca y «Actualizar datos» ya la mandan) y la propia cadena de tandas. A
+todo lo demás responde `401` diciendo qué hacer.
+
+**Sin la variable no cambia nada**: la sincronización sigue pública como hasta hoy, y
+`/api/procesos?op=salud` lo dice con `"sincronizacion_protegida": false`.
+
+**De dónde sale.** De ningún sitio: la elige usted. Una cadena larga y aleatoria (32 caracteres o
+más; sirve cualquier generador de contraseñas). Esta sí es una contraseña: no va en el código ni en
+ningún chat.
+
+- **Nombre de la variable:** `CRON_SECRET` (exactamente así: es el nombre que Vercel reconoce para
+  enviarlo al cron).
+- **Valor:** la cadena aleatoria.
+- Entorno *Production* (y los demás si quiere) → **Save** → **Redeploy** (§5).
+
+**Cómo se comprueba que quedó bien:**
+
+1. Pegar en Chrome `https://portafolio-estrategico.vercel.app/api/procesos?op=salud`: tiene que
+   decir `"sincronizacion_protegida": true`.
+2. Pegar `https://portafolio-estrategico.vercel.app/api/sync?modo=auto` **sin** `&token=`: tiene
+   que responder `401` (antes respondía `200`).
+3. Al día siguiente, otra vez `op=salud`: `ultima_sincronizacion` tiene que ser de esa mañana. Si
+   no lo es, el cron no está pasando la guarda: quite la variable, vuelva a desplegar y avise —la
+   marca (que lleva la llave) sigue sincronizando mientras tanto.
+
+**Efecto en las URL que tenga pegadas en Chrome:** `/api/sync?modo=full` y `/api/sync?modo=auto`
+necesitan ahora `&token=MiExtraccion2025` al final (§8 ya lo trae). Sin la variable, ese `&token=`
+no estorba.
+
+---
+
 ## 4. Parte C · Cómo pegar una variable en Vercel (con clics)
 
 Este procedimiento es el mismo para las seis.
@@ -406,10 +446,11 @@ Una sola vez, cuando las tres variables obligatorias ya estén bien y el sitio r
 reglas de ingesta):
 
 ```
-https://portafolio-estrategico.vercel.app/api/sync?modo=full
+https://portafolio-estrategico.vercel.app/api/sync?modo=full&token=MiExtraccion2025
 ```
 
-Se auto-encadena en tandas. Desde el panel de Mi empresa → *Sistema* → **Iniciar sincronización**
+(El `&token=` es la llave de la aplicación: hace falta si `CRON_SECRET` está puesto —§3.6— y no
+estorba si no lo está.) Se auto-encadena en tandas. Desde el panel de Mi empresa → *Sistema* → **Iniciar sincronización**
 hace lo mismo con un botón, y encadena las tandas siguientes solo.
 
 **Disparo 2 — bajar los dos años de histórico** (es lo que hace que la app ordene por probabilidad
@@ -447,6 +488,39 @@ ser el literal público de hoy, habría que rotarlo después de cada uso de esa 
 
 ---
 
+## 10. Rotar `HISTORICO_TOKEN` (los seis sitios, en orden)
+
+El valor vive en **seis sitios** y tienen que cambiar juntos; si no, la aplicación «se sirve a medias
+y sin error visible» (§0). Desde el 6-sep-2026 la suite automática ya no fija el literal: lo LEE de
+los tres archivos de `public/`, exige que los tres coincidan y que este documento y el `README.md`
+lleven el mismo valor. Una rotación a medias pone la suite en rojo antes de llegar a producción.
+
+| # | Sitio | Qué cambiar |
+| --- | --- | --- |
+| 1 | `public/app.js` | la línea `const TOKEN = "…";` |
+| 2 | `public/onboarding.js` | la misma línea |
+| 3 | `public/pliego.js` | la misma línea |
+| 4 | `docs/CONFIGURACION_TOKENS.md` (este documento) y `README.md` | todas las menciones del valor viejo |
+| 5 | Vercel → *Settings → Environment Variables* → `HISTORICO_TOKEN` | el valor nuevo |
+| 6 | El despliegue | **Redeploy** (§5): la variable solo entra en despliegues nuevos |
+
+**El orden importa**, porque cada despliegue lleva el valor del código Y el de la variable, y tienen
+que coincidir en el mismo despliegue:
+
+1. Cambiar la variable en Vercel al valor nuevo **sin** redesplegar todavía (no entra en vigor hasta
+   el próximo despliegue).
+2. En una sesión de Claude Code: cambiar los sitios 1-4, correr `node tests/e2e.js` (tiene que
+   terminar 4/4: si un archivo o un documento se quedó con el valor viejo, la suite lo dice) y hacer
+   el commit.
+3. El push a `main` despliega solo, ya con los dos valores nuevos a la vez.
+4. Comprobar con la **Prueba 3** de §6 usando el valor nuevo en `&token=`.
+
+Si se hace al revés (código primero, variable después), entre los dos pasos la aplicación entera
+responde `401` y no sale ninguna cifra. Y el valor viejo queda en la historia pública de git para
+siempre: por eso el literal no es un secreto y la puerta real sigue siendo el muro de Vercel (§9).
+
+---
+
 ## Anexo · Variables que existen en el código pero NO hay que tocar
 
 Aparecen si alguien lee el código y pueden asustar. **Todas tienen un valor por defecto correcto y
@@ -471,6 +545,7 @@ Si tuviera que empezar hoy desde cero, en este orden y nada más:
 3. Añadir `HISTORICO_TOKEN` = `MiExtraccion2025` (§3.2).
 4. *(Opcional)* Añadir `SOCRATA_APP_TOKEN` y `OCRSPACE_API_KEY` (§3.3, §3.4).
 5. *(Si el sitio pide contraseña)* Generar `VERCEL_AUTOMATION_BYPASS_SECRET` (§3.5).
-6. **Deployments → … → Redeploy**, sin caché (§5).
-7. Correr las cuatro pruebas de §6.
-8. Disparar la sincronización completa y el histórico (§8).
+6. *(Recomendado)* Añadir `CRON_SECRET` con una cadena aleatoria larga (§3.6).
+7. **Deployments → … → Redeploy**, sin caché (§5).
+8. Correr las cuatro pruebas de §6.
+9. Disparar la sincronización completa y el histórico (§8).

@@ -201,6 +201,12 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 
 - **Candado**: `lock:sync` con `SET NX EX 300`. El TTL garantiza que un candado jamás quede
   atascado (la vieja causa del «enCurso eterno»); se libera al terminar solo si el token coincide.
+- **Quién puede llamarlo** (6-sep-2026): con `CRON_SECRET` en el despliegue, solo el cron de Vercel
+  (`Authorization: Bearer <CRON_SECRET>`), la llave de la aplicación (`x-historico-token` o
+  `&token=`, la que ya mandan la marca y «Actualizar datos») y la propia cadena de tandas; a lo demás
+  responde `401` con `como_autenticar`. La guarda corre ANTES del candado (un 401 jamás lo deja
+  puesto) y vive en `lib/auth.autorizarSincronizacion`, no en el router. Sin la variable, público
+  como nació; `op=salud` lo publica en `sincronizacion_protegida`.
 - **Reanudable**: el cursor (mes, último `:id`, chunk) persiste en `licitaciones:progreso` tras cada
   página; al agotar el presupuesto la función **se re-invoca sola** (fire-and-forget) hasta terminar.
 - Cada licitación se **enriquece antes de guardarse** (nunca entra sin campos de negocio) y pasa la
@@ -219,7 +225,7 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
 ¿Está viva la sincronización? Existe para un **monitor externo** (un GET cada 15 minutos con la
 palabra clave `"ok":true`, avisando al correo del dueño) y para leerlo desde Chrome cuando algo va
 mal. Responde `{ok, motivo, ultima_sincronizacion, edad_horas, edad_maxima_horas, ultimo_error,
-sincronizando, candado_segundos, historico_hace_dias, medicion_listado}`:
+sincronizando, candado_segundos, historico_hace_dias, medicion_listado, sincronizacion_protegida}`:
 
 - `ultimo_error` es el **último intento de sincronizar que falló** (`{ts, modo, texto}`; el texto
   pasa por `tacharClave` y se corta a 200 caracteres). Lo escribe `/api/sync` en su `catch` y lo
@@ -462,7 +468,11 @@ objeto, modalidad; `_cambios` del dedup) con «le afecta / no le afecta» reeval
 texto del pliego con avisos a T-7, T-3 y T-1 y exportación a calendario (.ics con alarmas).
 
 Respuesta: `{ ok, total, viables, no_viables, solo_viables, resultados, pagina, por_pagina, perfil,
-sincronizado, ordenado_por, por_match, indice_competencia, conocimiento }`. `por_match` reparte el
+sincronizado, sincronizado_fresco, ordenado_por, por_match, indice_competencia, conocimiento }`.
+`sincronizado_fresco` (6-sep-2026) es el HECHO que decide el navegador: `true` = el corte tiene
+menos de `FRESCO_MS` del sync (5 min) y `op=sync&modo=auto` respondería «al día» tras tomar y soltar
+el candado, así que no se dispara; `false` = toca disparar; `null` = sin corte conocido (se dispara
+como siempre). `por_match` reparte el
 total por solidez del match (cuántas son «RUP ✓» y cuántas hay que verificar). Cada resultado trae
 los campos de negocio, `rup` con el **veredicto graduado** —`tier`, `unspsc {codigo_proceso,
 codigo_rup, mensaje}`, `pertinencia {nivel, etiqueta, motivo}`, `capacidad_ok`, `k_cop`, `crpc_cop`—
@@ -1327,7 +1337,10 @@ Una sola vez, después de desplegar:
    en el frontend desde ago 2026 (`public/app.js`, `onboarding.js`, `pliego.js`): con cualquier
    otro valor la aplicación se sirve a medias y **sin error visible**. No es un secreto —está en
    el fuente— y la protección real es Vercel Password Protection. Para cambiarlo hay que tocar
-   los CUATRO sitios a la vez. Guía completa sin terminal: `docs/CONFIGURACION_TOKENS.md`.
+   los SEIS sitios a la vez (los tres archivos de `public/`, este README y
+   `docs/CONFIGURACION_TOKENS.md`, la variable de Vercel y el redespliegue): la suite lee el
+   valor de `public/` y exige que los tres archivos y los dos documentos coincidan. Guía y orden
+   sin terminal: `docs/CONFIGURACION_TOKENS.md` §10 («Rotar `HISTORICO_TOKEN`»).
 2. Lanzarla. **Con terminal** (preferido: el token va por header y no queda en los logs de acceso):
 
    ```bash
@@ -2500,12 +2513,14 @@ y una norma inventada aquí acabaría en el precio de una oferta.
 | `SOCRATA_APP_TOKEN` | No | Más cuota en datos.gov.co (header `X-App-Token`): ~1 000 peticiones/hora frente a ~100 sin él |
 | `OCRSPACE_API_KEY` | No | Respaldo por OCR para pliegos escaneados (`/api/apu/extraer-texto`). Sin ella ese respaldo responde 503 explicando cómo configurarla; el resto del módulo APU funciona igual (los PDF con capa de texto no la necesitan) |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | No | Atraviesa **Vercel Deployment Protection** en las llamadas que la app se hace a sí misma: la auto-reinvocación de `/api/sync` y de `/api/sync/historico`, y el disparo en frío desde `/api/oportunidades`. Con Password Protection activo y sin ella, el muro del edge responde HTML a la propia función y **la cadena de sincronización muere en silencio** — es la causa típica de una full que no termina |
+| `CRON_SECRET` | No (recomendada) | **La guarda de la sincronización** (6-sep-2026): con ella, `/api/sync` solo acepta el cron de Vercel (que envía `Authorization: Bearer <CRON_SECRET>` cuando la variable existe), la llave de la aplicación (`x-historico-token` o `&token=`) y la propia cadena de tandas; a lo demás responde 401 diciendo qué hacer. Sin ella la sincronización sigue pública como nació, y `op=salud` lo publica (`sincronizacion_protegida: false`). Guía: `docs/CONFIGURACION_TOKENS.md` §3.6 |
 | `UBICACION_VALIDA` | No | Ubicación objetivo (default `BOGOTÁ D.C.`; admite lista separada por comas) |
 | `SECOP_BASE_URL`, `SECOP_PAGE`, `SECOP_BACKOFF_MS` | No | Solo pruebas/ajustes: base del dataset, tamaño de página y backoff |
 | `NODE_ENV`, `VERCEL` | — | Las pone la plataforma. Solo deciden si se emiten los `logDev` (`!VERCEL && NODE_ENV !== "production"`) |
 
-`DETECTA_URL` y `DETECTA_CRON_SECRET` ya no se usan (el sync no necesita secreto: es idempotente,
-barato en reposo y auto-limitado por el candado).
+`DETECTA_URL` y `DETECTA_CRON_SECRET` ya no se usan. El secreto del cron es `CRON_SECRET` (el nombre
+que Vercel envía por su cuenta) y es opcional: sin él el sync sigue público (idempotente, barato en
+reposo y auto-limitado por el candado); con él solo lo disparan el cron, la llave y la cadena.
 
 > Las variables de entorno de Vercel **solo entran en despliegues nuevos**: añadir una y no volver
 > a desplegar deja el 503 en pie. El mensaje de `lib/auth.js` lo dice, porque es el error que más

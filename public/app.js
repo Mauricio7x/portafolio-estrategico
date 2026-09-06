@@ -107,6 +107,17 @@
   const tokenGuardado = () => (tokenRechazado ? "" : TOKEN);
   const leerToken = () => TOKEN;
   function olvidarToken() { tokenRechazado = true; }
+  /* Las TRES llamadas del navegador a op=sync —el refresco tras la lista, la
+     espera de la primera carga y el panel «Actualizar datos»— van con la misma
+     llave que la lista (6-sep-2026, M-SEG-08): con CRON_SECRET en el
+     despliegue, un sync sin llave responde 401. Una sola función: tres copias
+     divergen a la primera corrección. */
+  function opcionesSync(extra) {
+    const headers = { ...(extra || {}) };
+    const t = tokenGuardado();
+    if (t) headers["x-historico-token"] = t;
+    return Object.keys(headers).length ? { headers } : undefined;
+  }
 
   /* ══════════ Gate (una sola copia para toda la página) ══════════ */
   let intentosClave = 0;
@@ -881,9 +892,14 @@
     }
 
     reintentosSync = 0;
-    // refresco en segundo plano: con datos de >5 min el backend corre un
-    // delta barato; si están frescos responde alDia sin tocar Socrata
-    fetch("/api/procesos?op=sync&modo=auto").catch(() => {});
+    /* Refresco en segundo plano SOLO si el corte no es fresco (6-sep-2026,
+       M-INF-10): con `sincronizado_fresco: true` el servidor respondería «al
+       día» tras tomar y soltar el candado y correr el índice de baja —decenas
+       de comandos de Redis por cada filtro pulsado; la suite imprime la
+       cifra—. Con false, o sin el campo (respuesta de una versión
+       vieja, o sin corte conocido porque la cadena de la full pudo morir), se
+       dispara como hasta hoy: el umbral vive en el servidor, no aquí. */
+    if (cuerpo.sincronizado_fresco !== true) fetch("/api/procesos?op=sync&modo=auto", opcionesSync()).catch(() => {});
     if (cuerpo.sincronizado) pintarCorte(cuerpo.sincronizado, cuerpo.ultimo_error || null);
     ultimasFacetas = cuerpo.facetas || ultimasFacetas;
     pintarControlesFiltros();
@@ -898,7 +914,7 @@
     if (reintentosSync > MAX_REINTENTOS_SYNC) {
       return mostrar("estado-error", "La sincronización con SECOP II está tardando más de lo normal. Intente de nuevo en unos minutos.");
     }
-    fetch("/api/procesos?op=sync&modo=auto").catch(() => {});
+    fetch("/api/procesos?op=sync&modo=auto", opcionesSync()).catch(() => {});
     let restante = REINTENTO_SYNC_SEG;
     const tic = () => {
       mostrar("estado-carga",
@@ -6295,7 +6311,7 @@
       if (!activo) return null;
       let r = null, cuerpo = null, fallo = null;
       try {
-        r = await fetch(`/api/procesos?op=sync&modo=${modo}&presupuesto=${presupuesto}`, { headers: { Accept: "application/json" } });
+        r = await fetch(`/api/procesos?op=sync&modo=${modo}&presupuesto=${presupuesto}`, opcionesSync({ Accept: "application/json" }));
         cuerpo = await leerJson(r); // el muro del edge devuelve HTML
       } catch (e) {
         fallo = fraseDeFallo(e);

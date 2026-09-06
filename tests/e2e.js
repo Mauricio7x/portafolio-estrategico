@@ -10375,7 +10375,7 @@ async function main() {
       assert.strictEqual(await redis.get(CLS.lock), null, "op=salud no toma el candado ni sincroniza");
       // es PÚBLICA: exactamente estos campos, ninguna cifra del perfil ni del corpus (solo conteos)
       assert.deepStrictEqual(Object.keys(rSalud.cuerpo).sort(),
-        ["candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "medicion_listado", "motivo", "ok", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+        ["candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "medicion_listado", "motivo", "ok", "sincronizacion_protegida", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
       assert.ok(!textosDe(rSalud.cuerpo).some((t) => /token-de-prueba|CO1\.|precio|patrimonio/i.test(t)), "op=salud no puede filtrar secretos ni datos del corpus");
       // candado ajeno: se ve como «sincronizando» con sus segundos, sin estorbar
       await redis.set(CLS.lock, "otro-proceso", { nx: true, ex: 60 });
@@ -10411,6 +10411,167 @@ async function main() {
       assert.strictEqual(rSalud3.cuerpo.ultimo_error, null, "la corrida buena borra el fallo");
       assert.strictEqual((await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN)).cuerpo.ultimo_error, null);
       console.log(`· salud de la sincronización: Socrata caído → 502 con rastro en meta, op=salud (${gastados} comandos) lo publica, el listado lo repite con su medición (${med.filas_corpus} filas, ${med.chunks} chunks, ${med.duracion_ms} ms) y la corrida buena lo borra`);
+    }
+
+    /* g-quater. LA GUARDA DE LA SINCRONIZACIÓN (6-sep-2026, M-SEG-08). op=sync era pública:
+       cualquiera con la URL tomaba el candado y lanzaba la ingesta contra Socrata (medido el
+       6-sep con el handler real: sin cabecera, SET lock:sync y 10 comandos). Con CRON_SECRET en
+       el entorno solo pasan el cron de Vercel (Authorization: Bearer), la llave de la aplicación
+       (header o ?token=, la doble vía del dueño sin terminal) y la propia cadena, que manda el
+       Bearer (`cabecerasDeAutoLlamada`, observado en un servidor que captura la auto-llamada
+       REAL de un delta cortado por presupuesto). SIN la variable la operación sigue abierta como
+       hasta hoy —el cron de un despliegue sin ella no manda cabecera— y op=salud lo publica.
+       Handlers reales a través del router; contra el árbol anterior la llamada sin cabecera
+       responde 200 con el candado tomado. */
+    {
+      const Auth = require("../lib/auth.js");
+      const { CLAVES: CLG } = require("../lib/almacen.js");
+      const ponerG = (k, v) => { if (v === undefined) delete process.env[k]; else process.env[k] = v; };
+      const rProcesosG = require("../api/procesos.js");
+      const SECRETO = "secreto-cron-de-prueba";
+      const URL_AUTO = "/api/procesos?op=sync&modo=auto&chain=0";
+      // sin la variable: abierta, sin cabeceras de auto-llamada, y salud lo dice
+      assert.strictEqual(Auth.hayGuardaDeSincronizacion(), false);
+      assert.deepStrictEqual(Auth.autorizarSincronizacion({ headers: {} }, {}), { ok: true, via: "abierta" });
+      assert.strictEqual(Auth.cabecerasDeAutoLlamada(), undefined, "sin secretos la auto-llamada no manda cabeceras, como hasta hoy");
+      assert.strictEqual((await invocar(rProcesosG, "/api/procesos?op=salud")).cuerpo.sincronizacion_protegida, false);
+      ponerG("CRON_SECRET", SECRETO);
+      let capturadas = [];
+      try {
+        // candado ajeno puesto: quien PASA la guarda lo ve («enCurso»); quien no, 401 antes de mirarlo
+        await redis.set(CLG.lock, "otro-proceso", { nx: true, ex: 60 });
+        const sinNada = await invocar(rProcesosG, URL_AUTO);
+        assert.strictEqual(sinNada.status, 401, `sin cabecera ni llave: ${JSON.stringify(sinNada.cuerpo)}`);
+        assert.ok(/protegida/.test(sinNada.cuerpo.error) && /CRON_SECRET/.test(sinNada.cuerpo.error) && /x-historico-token/.test(sinNada.cuerpo.error)
+          && /Token ausente/.test(sinNada.cuerpo.error), sinNada.cuerpo.error);
+        assert.ok(sinNada.cuerpo.como_autenticar && /Bearer/.test(sinNada.cuerpo.como_autenticar.cron) && sinNada.cuerpo.como_autenticar.header && sinNada.cuerpo.como_autenticar.url,
+          "el 401 dice las TRES formas de autenticarse");
+        assert.ok(!/\b(tú|vos|tu |te )\b/i.test(sinNada.cuerpo.error), "el 401 habla de usted");
+        const bearerMalo = await invocar(rProcesosG, URL_AUTO, { authorization: "Bearer otro-secreto" });
+        assert.strictEqual(bearerMalo.status, 401);
+        assert.ok(/no coincide con CRON_SECRET/.test(bearerMalo.cuerpo.error), bearerMalo.cuerpo.error);
+        assert.strictEqual((await invocar(rProcesosG, URL_AUTO, { authorization: `Bearer ${SECRETO}x` })).status, 401, "un secreto de otra longitud tampoco pasa");
+        assert.strictEqual((await invocar(rProcesosG, URL_AUTO, { authorization: SECRETO })).status, 401, "sin el esquema Bearer no vale");
+        const tokenMalo = await invocar(rProcesosG, URL_AUTO, { "x-historico-token": "mala" });
+        assert.strictEqual(tokenMalo.status, 401);
+        assert.ok(/Token inválido/.test(tokenMalo.cuerpo.error), tokenMalo.cuerpo.error);
+        for (const [nombre, url, cab] of [
+          ["Bearer del cron", URL_AUTO, { authorization: `Bearer ${SECRETO}` }],
+          ["Bearer del cron (cabecera capitalizada)", URL_AUTO, { Authorization: `bearer ${SECRETO}` }],
+          ["llave por header", URL_AUTO, CAB_TOKEN],
+          ["llave en la URL (el dueño pega la URL en Chrome)", `${URL_AUTO}&token=${process.env.HISTORICO_TOKEN}`, {}],
+        ]) {
+          const r = await invocar(rProcesosG, url, cab);
+          assert.strictEqual(r.status, 200, `${nombre}: ${JSON.stringify(r.cuerpo)}`);
+          assert.strictEqual(r.cuerpo.enCurso, true, `${nombre} pasa la guarda y llega hasta el candado`);
+        }
+        assert.strictEqual(await redis.get(CLG.lock), "otro-proceso", "ninguna llamada tocó el candado ajeno");
+        await redis.del(CLG.lock);
+        assert.strictEqual((await invocar(rProcesosG, "/api/procesos?op=salud")).cuerpo.sincronizacion_protegida, true, "op=salud publica que la guarda está");
+        /* la AUTO-LLAMADA REAL lleva el Bearer: un delta con presupuesto de 1 ms se corta antes de
+           la primera página (done:false) y se re-invoca contra ESTE servidor, que captura la petición */
+        const captura = http.createServer((req, res) => {
+          capturadas.push({ url: req.url, headers: req.headers });
+          res.writeHead(200, { "Content-Type": "application/json" }); res.end("{}");
+        });
+        const puertoCaptura = await escuchar(captura);
+        const llegada = new Promise((resolve) => captura.on("request", () => setImmediate(resolve)));
+        const rCorto = await invocar(sync, "/api/sync?modo=delta&presupuesto=1", { ...CAB_TOKEN, host: `127.0.0.1:${puertoCaptura}`, "x-forwarded-proto": "http" });
+        assert.strictEqual(rCorto.status, 200, JSON.stringify(rCorto.cuerpo).slice(0, 200));
+        assert.strictEqual(rCorto.cuerpo.done, false, "el delta de 1 ms se corta por presupuesto y encadena");
+        await Promise.race([llegada, new Promise((_, rej) => setTimeout(() => rej(new Error("la auto-llamada no llegó en 3 s")), 3000))]);
+        await new Promise((r) => captura.close(r));
+        assert.strictEqual(capturadas.length, 1, JSON.stringify(capturadas));
+        assert.strictEqual(capturadas[0].url, "/api/procesos?op=sync&modo=auto");
+        assert.strictEqual(capturadas[0].headers.authorization, `Bearer ${SECRETO}`, "la cadena se llama a sí misma con el Bearer del cron");
+        assert.ok(!capturadas[0].headers["x-historico-token"], "la auto-llamada no reenvía la llave del dueño");
+        // y la cadena continúa: el delta completo cierra el ciclo que quedó a medias
+        const rCierre = await invocar(sync, "/api/sync?modo=delta&presupuesto=20000&chain=0", CAB_TOKEN);
+        assert.strictEqual(rCierre.cuerpo.done, true, JSON.stringify(rCierre.cuerpo).slice(0, 200));
+        // con el pase del muro puesto van los dos, y lo propio de cada disparo se suma
+        ponerG("VERCEL_AUTOMATION_BYPASS_SECRET", "pase");
+        assert.deepStrictEqual(Auth.cabecerasDeAutoLlamada({ "x-historico-token": "t" }),
+          { authorization: `Bearer ${SECRETO}`, "x-vercel-protection-bypass": "pase", "x-historico-token": "t" });
+        ponerG("VERCEL_AUTOMATION_BYPASS_SECRET", undefined);
+      } finally { ponerG("CRON_SECRET", undefined); }
+      // sin la variable vuelve a ser abierta: la misma llamada responde 200 (el cron actual no manda cabecera)
+      const abierta = await invocar(rProcesosG, URL_AUTO);
+      assert.strictEqual(abierta.status, 200, `sin CRON_SECRET el sync sigue público: ${JSON.stringify(abierta.cuerpo)}`);
+      /* CENSO: toda auto-llamada de lib/ a un endpoint del dominio procesos (op=sync, op=historico)
+         va con `cabecerasDeAutoLlamada`, no con una copia de las cabeceras */
+      for (const h of ["sync.js", "listar.js", "historico.js"]) {
+        const src = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", h), "utf8"));
+        const disparos = src.match(/fetch\(`\$\{proto\}:\/\/\$\{host\}\/api\/procesos\?op=[^`]*`[^\n]*/g) || [];
+        assert.ok(disparos.length >= 1, `${h}: no se encontró ninguna auto-llamada`);
+        assert.ok(!/x-vercel-protection-bypass/.test(src), `${h} construye a mano la cabecera del muro: debe llamar a cabecerasDeAutoLlamada`);
+        assert.strictEqual((src.match(/cabecerasDeAutoLlamada\(/g) || []).length, disparos.length, `${h}: cada auto-llamada (${disparos.length}) pide sus cabeceras a lib/auth`);
+      }
+      console.log(`· guarda de la sincronización: sin CRON_SECRET abierta (como el cron actual); con ella 401 sin tocar el candado, pasan Bearer/header/?token=, y la auto-llamada real llegó con «${capturadas[0].headers.authorization.replace(SECRETO, "…")}»`);
+    }
+
+    /* g-quinquies. EL NAVEGADOR NO DISPARA EL SYNC CON DATO FRESCO (6-sep-2026, M-INF-10). Cada
+       buscar() —cargar, cambiar de perfil, cada filtro, cada página— disparaba op=sync&modo=auto
+       y el servidor tomaba y soltaba el candado para responder «al día». El listado publica el
+       HECHO `sincronizado_fresco` con la MISMA constante del sync (FRESCO_MS exportada, no
+       copiada): true/false, y null sin corte o con corte ilegible (el navegador dispara como
+       hasta hoy). Medido con el contador del mock: listar + decisión del navegador cuesta lo de
+       listar; el sync «al día» que se ahorra cuesta lo que se imprime. Contra el árbol anterior
+       el campo no existe y la constante no se exporta. */
+    {
+      const S = require("../lib/handlers/procesos/sync.js");
+      const { CLAVES: CLF, leerJSON: leerF, escribirJSON: escribirF } = require("../lib/almacen.js");
+      assert.ok(Number.isInteger(S.FRESCO_MS) && S.FRESCO_MS > 0, "sync.js exporta FRESCO_MS");
+      const metaOriginal = await leerF(redis, CLF.meta);
+      assert.ok(metaOriginal && metaOriginal.last_sync, "hace falta un corte para medir");
+      /* escribe el corte pedido y mide la SEGUNDA petición del listado (instancia caliente: el
+         sello del corpus cambia con last_sync, así que la primera relee los chunks) */
+      const conCorte = async (lastSync) => {
+        const m = { ...metaOriginal };
+        if (lastSync === undefined) delete m.last_sync; else m.last_sync = lastSync;
+        await escribirF(redis, CLF.meta, m);
+        await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN);
+        const antes = upstash.peticiones();
+        const r = await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN);
+        return { r, comandos: upstash.peticiones() - antes };
+      };
+      let fresco, costoAlDia, costoSoloSync;
+      try {
+        fresco = await conCorte(new Date(Date.now() - 1000).toISOString());
+        assert.strictEqual(fresco.r.status, 200);
+        assert.strictEqual(fresco.r.cuerpo.sincronizado_fresco, true, "con corte de hace 1 s el dato es fresco");
+        // la decisión del navegador (app.js buscar): solo dispara si NO es true → aquí no dispara
+        let total = fresco.comandos;
+        if (fresco.r.cuerpo.sincronizado_fresco !== true) {
+          const a = upstash.peticiones(); await invocar(S, "/api/sync?modo=auto&chain=0", CAB_TOKEN); total += upstash.peticiones() - a;
+        }
+        assert.strictEqual(total, fresco.comandos, "con dato fresco la pareja listar + decisión no gasta ni un comando más que listar");
+        // lo que se ahorra: el sync «al día» cuesta comandos aunque no haga nada (toma y suelta el candado)
+        const a2 = upstash.peticiones();
+        const alDia = await invocar(S, "/api/sync?modo=auto&chain=0", CAB_TOKEN);
+        costoAlDia = upstash.peticiones() - a2;
+        assert.strictEqual(alDia.cuerpo.alDia, true, JSON.stringify(alDia.cuerpo).slice(0, 200));
+        assert.ok(costoAlDia >= 5, `el sync «al día» gastó ${costoAlDia} comandos: es lo que el navegador deja de provocar`);
+        // de esos, lo que cuesta el sync SOLO (candado, meta, progreso), sin el índice de baja que corre tras «al día»
+        const a3 = upstash.peticiones();
+        await invocar(S, "/api/sync?modo=auto&chain=0&baja=0", CAB_TOKEN);
+        costoSoloSync = upstash.peticiones() - a3;
+        // el borde lo fija la MISMA constante en los dos lados
+        assert.strictEqual((await conCorte(new Date(Date.now() - S.FRESCO_MS + 5000).toISOString())).r.cuerpo.sincronizado_fresco, true, "justo dentro de FRESCO_MS sigue fresco");
+        const viejo = await conCorte(new Date(Date.now() - S.FRESCO_MS - 5000).toISOString());
+        assert.strictEqual(viejo.r.cuerpo.sincronizado_fresco, false, "pasado FRESCO_MS el dato NO es fresco");
+        assert.strictEqual((await conCorte(undefined)).r.cuerpo.sincronizado_fresco, null, "sin corte conocido es null, no false");
+        assert.strictEqual((await conCorte("no-es-fecha")).r.cuerpo.sincronizado_fresco, null, "corte ilegible = sin dato, no false");
+      } finally { await escribirF(redis, CLF.meta, metaOriginal); }
+      // listar no copia el umbral: LLAMA a FRESCO_MS del sync
+      const srcListar = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "procesos", "listar.js"), "utf8"));
+      assert.ok(/FRESCO_MS/.test(srcListar) && !/5 \* 60e3|300000|300e3/.test(srcListar), "listar.js llama a FRESCO_MS del sync, no copia los 5 minutos");
+      // y el navegador decide con el campo: la llamada tras la lista está condicionada y lleva la llave
+      const appSrcF = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8"));
+      assert.ok(/if \(cuerpo\.sincronizado_fresco !== true\) fetch\("\/api\/procesos\?op=sync&modo=auto", opcionesSync\(\)\)/.test(appSrcF),
+        "buscar() dispara el sync solo cuando el corte no es fresco (o no se sabe), y con la llave");
+      assert.strictEqual((appSrcF.match(/op=sync&modo=/g) || []).length, (appSrcF.match(/op=sync&modo=[^\n]*opcionesSync\(/g) || []).length,
+        "TODAS las llamadas del navegador a op=sync piden sus cabeceras a opcionesSync (M-SEG-08)");
+      console.log(`· dato fresco: listar publica sincronizado_fresco; listar + decisión = ${fresco.comandos} comandos frente a ${fresco.comandos + costoAlDia} con el sync «al día» de antes (−${costoAlDia}: ${costoSoloSync} del propio sync y ${costoAlDia - costoSoloSync} del índice de baja que corre tras «al día»)`);
     }
 
     /* g-bis. /api/diagnostico: el embudo cuadra con lo que sirve la app */
@@ -14272,7 +14433,29 @@ async function main() {
            ningún formulario ni modal que lo pida — Vercel Password Protection
            es la capa de seguridad real y el token solo guarda las escrituras
            de Redis y las cifras del perfil. */
-        assert.ok(unoJs.includes('const TOKEN = "MiExtraccion2025"'), "app.js sin el token integrado");
+        /* ROTARLO NO PUEDE DEJAR LA APLICACIÓN A MEDIAS (6-sep-2026, M-INF-13): el literal vive
+           en TRES archivos de public/ y la suite fijaba el valor en dos (app.js y pliego.js):
+           onboarding.js podía quedarse con otro token sin que nada se pusiera en rojo, y una
+           rotación hecha según el README dejaba la suite en rojo por el literal. CENSO de todos
+           los public/*.js: cada `const TOKEN = "…"` presente, no trivial e idéntico a los demás,
+           y los dos documentos que le dicen al dueño qué pegar en Vercel llevan el mismo valor.
+           El valor sale del censo (TOKEN_INTEGRADO), no de la suite: rotar es cambiar los tres
+           archivos y los dos documentos (docs/CONFIGURACION_TOKENS.md §10). */
+        const tokensIntegrados = fs.readdirSync(path.join(__dirname, "..", "public")).filter((f) => f.endsWith(".js")).sort()
+          .map((f) => ({ archivo: f, m: /const TOKEN = "([^"]*)"/.exec(fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8")) }))
+          .filter((x) => x.m).map((x) => ({ archivo: x.archivo, token: x.m[1] }));
+        assert.deepStrictEqual(tokensIntegrados.map((x) => x.archivo), ["app.js", "onboarding.js", "pliego.js"],
+          "los archivos de public/ con token integrado son exactamente esos tres (uno nuevo se declara aquí y en la guía de rotación)");
+        const TOKEN_INTEGRADO = tokensIntegrados[0].token;
+        assert.ok(TOKEN_INTEGRADO.length >= 8, "el token integrado no puede estar vacío ni ser trivial");
+        for (const x of tokensIntegrados) {
+          assert.strictEqual(x.token, TOKEN_INTEGRADO, `public/${x.archivo} lleva otro token integrado que app.js: una rotación a medias sirve la aplicación a medias`);
+        }
+        for (const doc of ["README.md", "docs/CONFIGURACION_TOKENS.md"]) {
+          assert.ok(fs.readFileSync(path.join(__dirname, "..", doc), "utf8").includes(TOKEN_INTEGRADO),
+            `${doc} no lleva el token integrado vigente: el dueño pegaría en Vercel un valor viejo`);
+        }
+        assert.ok(unoJs.includes(`const TOKEN = "${TOKEN_INTEGRADO}"`), "app.js sin el token integrado");
         assert.ok(!unoHtml.includes('id="modal-token"') && !unoHtml.includes('id="form-token"'),
           "el formulario del token no puede reaparecer en la página");
 
@@ -16722,8 +16905,9 @@ async function main() {
         assert.ok(iAuto > iEstado,
           "el gancho de arranque del lector se expone antes de declarar su estado: morirá en la zona muerta temporal");
       }
-      // el token va integrado también aquí: ni formulario ni sessionStorage
-      assert.ok(apuJs.includes('const TOKEN = "MiExtraccion2025"'), "pliego.js sin el token integrado");
+      // el token va integrado también aquí (el VALOR lo fija el censo de public/*.js, M-INF-13):
+      // ni formulario ni sessionStorage
+      assert.ok(/const TOKEN = "[^"]+"/.test(apuJs), "pliego.js sin el token integrado");
       assert.ok(!/sessionStorage\.(?:get|set|remove)Item/.test(sinComentarios(apuJs)),
         "pliego.js ya no guarda nada en sessionStorage: el token va integrado y el gate es de app.js");
 
@@ -17189,6 +17373,52 @@ async function main() {
         for (const fn of bajoApi) {
           assert.ok(vercel.functions[fn],
             `${fn} es una función serverless y no está declarada en vercel.json: se desplegaría sin data/** y con el maxDuration por defecto`);
+        }
+      }
+      /* EL PRESUPUESTO DE LA SINCRONIZACIÓN CABE EN LO DECLARADO (6-sep-2026, M-INF-14). El
+         comentario de sync.js decía «cabe en el plan Hobby (60 s)» mientras api/procesos.js
+         declara maxDuration 300: un límite falso bien explicado es una trampa para la próxima
+         sesión. Orden fijado con las constantes REALES: DEFAULT ≤ MAX < TTL del candado ≤
+         maxDuration de api/procesos.js (con 30 s de margen para la página en curso). */
+      {
+        const S = require("../lib/handlers/procesos/sync.js");
+        const { LOCK_TTL_SEG } = require("../lib/almacen.js");
+        assert.ok(Number.isInteger(S.PRESUPUESTO_DEFAULT_MS) && Number.isInteger(S.PRESUPUESTO_MAX_MS), "sync.js exporta sus presupuestos");
+        assert.ok(S.PRESUPUESTO_DEFAULT_MS <= S.PRESUPUESTO_MAX_MS, "el presupuesto por defecto no supera el máximo");
+        assert.ok(S.PRESUPUESTO_MAX_MS < LOCK_TTL_SEG * 1000, "una tanda muere antes de que expire el candado");
+        assert.ok(LOCK_TTL_SEG <= vercel.functions["api/procesos.js"].maxDuration, "el candado no puede durar más que la función");
+        assert.ok(S.PRESUPUESTO_MAX_MS <= vercel.functions["api/procesos.js"].maxDuration * 1000 - 30000,
+          "el presupuesto máximo cabe con 30 s de margen en el maxDuration declarado de api/procesos.js");
+      }
+      /* NINGÚN `require` CON VARIABLE EN lib/ NI api/ (6-sep-2026, M-INF-14): el trazador de
+         Vercel solo empaqueta lo que se pide con un literal; con variable el archivo no viaja y
+         el fallo sale SOLO en producción. tipologias.js pedía sus dos JSON así y solo
+         includeFiles los salvaba. Censo con excepciones DECLARADAS con su motivo, no lista. */
+      {
+        const EXCEPCIONES_REQUIRE_DINAMICO = {
+          "lib/apu/fuentes.js": "require(b.modulo): los cinco bancos son módulos hermanos que lib/handlers/apu/editor.js ya pide con literal (viajan); la tabla BANCOS solo los enumera",
+        };
+        const dinamicos = [];
+        const recorrerReq = (rel) => {
+          for (const e of fs.readdirSync(path.join(__dirname, "..", rel), { withFileTypes: true })) {
+            if (e.isDirectory()) { recorrerReq(`${rel}/${e.name}`); continue; }
+            if (!e.name.endsWith(".js")) continue;
+            const src = sinComentarios(fs.readFileSync(path.join(__dirname, "..", rel, e.name), "utf8"));
+            const re = /require\(\s*([^"'\s)][^)]*)\)/g;
+            let m;
+            while ((m = re.exec(src))) dinamicos.push({ archivo: `${rel}/${e.name}`, llamada: m[0] });
+          }
+        };
+        recorrerReq("lib"); recorrerReq("api");
+        const sinDeclarar = dinamicos.filter((d) => !EXCEPCIONES_REQUIRE_DINAMICO[d.archivo]);
+        assert.deepStrictEqual(sinDeclarar, [], `require con variable sin declarar (no viajaría al despliegue): ${JSON.stringify(sinDeclarar)}`);
+        for (const a of Object.keys(EXCEPCIONES_REQUIRE_DINAMICO)) {
+          assert.ok(dinamicos.some((d) => d.archivo === a), `la excepción ${a} ya no hace falta: retírela`);
+        }
+        // y el motivo de la excepción es VERDAD: los cinco bancos se piden con literal en editor.js
+        const editorSrc = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "lib", "handlers", "apu", "editor.js"), "utf8"));
+        for (const b of ["invias", "idu", "epc", "ffie", "iccu"]) {
+          assert.ok(editorSrc.includes(`require("../../apu/${b}_items.js")`), `${b}_items.js no se pide con literal en editor.js: no viajaría al despliegue`);
         }
       }
       /* El catálogo de ítems APU es la otra semilla que viaja en `data/**`, y le
@@ -18726,7 +18956,10 @@ async function main() {
           `let corteActual = null; ${appPC.slice(iniPC, finPC)}; return pintarCorte;`)(
           { getElementById: (id) => nodosPC[id] || null }, { Portada: Port }, (x) => String(x));
         const ahoraPC = Date.now();
-        const isoHoy = new Date(ahoraPC - 3600e3).toISOString(), isoAnteayer = new Date(ahoraPC - 2 * 864e5).toISOString();
+        /* «hoy» lo decide el reloj de Colombia dentro de pintarCorte (Date.now()), así que el
+           corte de prueba va a 1 s del presente: con «hace una hora» la suite fallaba cada día
+           entre las 00:00 y la 01:00 de Colombia (medido el 6-sep-2026 a las 05:02 UTC) */
+        const isoHoy = new Date(ahoraPC - 1000).toISOString(), isoAnteayer = new Date(ahoraPC - 2 * 864e5).toISOString();
         pintarCorteReal(isoHoy, null);
         assert.ok(/^Datos de hoy, /.test(nodosPC["sello-sync"].innerHTML) && !/no se pudo/.test(nodosPC["sello-sync"].innerHTML), "sin fallo, el texto de siempre");
         assert.ok(!nodosPC["sello-sync"].clases.has("corte-viejo"), "un corte de hoy sin fallo no va en ámbar");

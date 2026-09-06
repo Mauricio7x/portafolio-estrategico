@@ -262,9 +262,14 @@ menos gente. El «para qué» es literal: abrir la app en la mañana y ver arrib
   (D. 1082), pero K del plural = SUMA de las CRP de los integrantes (Guía CCE). No «promediar» K.
 - **NIT en null**: no consta en el repositorio; jamás inventarlo. CT de Génesis = 3 (estimado
   conservador): confirmar con el dueño antes de subirlo.
-- **Límites Vercel/Upstash**: respuesta ≤4.5 MB; valor Redis ≤1 MB (chunks deflate ≤500 KB antes
-  del base64); crons Hobby solo diarios — por eso la full se auto-encadena y cada visita
-  refresca vía delta.
+- **Límites Vercel/Upstash (corregido el 6-sep-2026, M-INF-14)**: respuesta de una función
+  ≤ 4,5 MB —es lo que de verdad acota el chunk—; Upstash admite 10 MB por petición y 100 MB por
+  registro según su documentación primaria (leída el 4-sep-2026; el «valor Redis ≤ 1 MB» que decía
+  esta línea ya no existe); los chunks siguen en deflate ≤ 500 KB antes del base64; con Fluid
+  Compute la función dura hasta 300 s en Hobby (`api/procesos.js` declara `maxDuration` 300) y el
+  cron de Hobby es solo diario y dispara en cualquier minuto de la hora programada — por eso la
+  full se auto-encadena y cada visita con llave refresca vía delta cuando el corte no es fresco
+  (`sincronizado_fresco`, M-INF-10).
 
 ### Ingesta ancha / juicio fino y pertinencia (jul 2026)
 
@@ -7956,3 +7961,105 @@ monitor» → HTTP → https://portafolio-estrategico.vercel.app/api/procesos?op
 prueba: https://vercel.com/ → el proyecto → «Settings» → «General» → «Pause project» un minuto →
 cronometrar el correo → «Resume». Si el muro del edge está activo, cabecera
 `x-vercel-protection-bypass` con el secreto de CONFIGURACION_TOKENS.md §3.5; jamás un token en la URL.
+
+### Lote «B3b-sync-menor» de la consultoría del 4-sep · M-INF-10, M-INF-13, M-INF-14, M-SEG-08 (6-sep-2026)
+
+**Qué se decidió.** (1) **La sincronización tiene guarda de dos llaves, y solo existe cuando
+`CRON_SECRET` está en el entorno** (`lib/auth.autorizarSincronizacion`, llamada por `sync.js` ANTES
+del candado): pasan el cron de Vercel (`Authorization: Bearer <CRON_SECRET>`, comparado en tiempo
+constante con el mismo `mismoSecreto` que la llave de siempre), la llave de la aplicación
+(`x-historico-token` o `?token=`: la doble vía del dueño sin terminal, intacta) y la propia cadena;
+a lo demás, 401 con las tres formas en `como_autenticar`. **Sin la variable la operación sigue
+pública como nació**: el cron de un despliegue sin `CRON_SECRET` no manda ninguna cabecera y
+exigirla lo habría dejado en 401 cada mañana sin que nadie lo viera; `op=salud` publica
+`sincronizacion_protegida` para que la ausencia no sea muda (no cambia `ok`: no es un fallo de la
+sincronización y el monitor no debe sonar por ello). (2) **La aplicación se identifica cuando se
+llama a sí misma con `lib/auth.cabecerasDeAutoLlamada`** —el Bearer del cron cuando existe, el pase
+del muro cuando existe, y lo propio del disparo (la llave para `op=historico`)—, una sola copia en
+vez de las tres que construían `x-vercel-protection-bypass` a mano (`sync.js` ×2, `listar.js`,
+`historico.js`); la suite censa que ninguna auto-llamada de `lib/handlers/procesos/` la construya a
+mano y ejecuta un delta cortado a 1 ms cuya re-invocación real llega a un servidor de captura con
+`Authorization: Bearer …` y sin la llave del dueño. Las tres llamadas del navegador a `op=sync`
+(refresco tras la lista, espera de la primera carga, panel «Actualizar datos») piden sus cabeceras
+a `opcionesSync` (app.js) con la misma llave que la lista; antes el panel iba solo con `Accept`.
+(3) **El listado publica el HECHO `sincronizado_fresco`** (`true`/`false`/`null` = sin corte o corte
+ilegible, jamás `false` por ausencia) con `FRESCO_MS` exportada de `sync.js` y LLAMADA desde
+`listar.js` (require diferido: servir la lista no carga el módulo del sync hasta que hace falta), y
+`buscar()` dispara `op=sync&modo=auto` **solo si no es `true`**: con `false` o sin el campo (versión
+vieja en caché, cadena de la full muerta) dispara como hasta hoy. (4) **El presupuesto de la
+sincronización queda en 45 s y se DOCUMENTA como está**: el comentario «cabe en el plan Hobby
+(60 s)» describía un tope que ya no existe (`api/procesos.js` declara `maxDuration` 300; con Fluid
+Compute, 300 s Hobby / 800 s Pro según Vercel, 25-jun-2025); la ficha pedía un presupuesto por modo
+tras medir una tanda real (M-INF-03, aún sin medir) y subirlo sin esa medición sería adivinar. La
+suite fija con las constantes reales `DEFAULT ≤ MAX < TTL del candado ≤ maxDuration` (con 30 s de
+margen). Los comentarios «≤ 1 MB por valor» de `lib/redis.js` y `lib/almacen.js` (×2) y la línea
+«Límites Vercel/Upstash» de «Decisiones que no hay que re-aprender» dicen ahora lo vigente: Upstash
+10 MB por petición y 100 MB por registro; lo que acota el chunk de 500 KB es la respuesta de 4,5 MB
+de Vercel. (5) **`lib/apu/tipologias.js` pide sus dos JSON con `require` literal** (antes
+`cargar(ruta)` con la ruta como variable: solo `includeFiles: "data/**"` los salvaba, y ese fallo se
+ve SOLO en producción); `includeFiles` se conserva como cinturón declarado. Cerradura: CENSO de todo
+`lib/` y `api/` sin comentarios que falla ante cualquier `require(` cuyo argumento no sea un literal,
+con una única excepción declarada con su motivo (`lib/apu/fuentes.js`: `require(b.modulo)` sobre
+cinco bancos que `editor.js` ya pide con literal; la suite comprueba que ese motivo sigue siendo
+verdad). (6) **Rotar `HISTORICO_TOKEN`**: la suite ya no fija el literal en dos aserciones sino que
+lo LEE de `public/*.js` (censo: exactamente `app.js`, `onboarding.js`, `pliego.js`, presentes, no
+triviales e idénticos) y exige que `README.md` y `docs/CONFIGURACION_TOKENS.md` lleven el mismo
+valor; los seis sitios (tres archivos, dos documentos, la variable y el redespliegue) y su ORDEN
+(variable primero sin redesplegar, código después, un solo despliegue con los dos valores) viven en
+CONFIGURACION_TOKENS.md §10; `CRON_SECRET` en §3.6 y en la tabla del README.
+
+**Medido antes → después.** Handler real con un Upstash falso y Socrata en un puerto cerrado: sin
+cabecera ni llave `op=sync&modo=auto` tomaba el candado (`SET lock:sync … NX EX 300`, 10 comandos) y
+lanzaba la ingesta INCLUSO con `CRON_SECRET` en el entorno; ahora, con la variable: 401 con 0
+comandos (Bearer malo igual), y con Bearer bueno o llave, candado tomado; sin la variable, idéntico
+al árbol anterior. En la suite (contador del mock): listar caliente + decisión del navegador con
+corte fresco = 9 comandos; el `op=sync&modo=auto` «al día» que cada búsqueda provocaba cuesta **87**
+comandos en la suite —no los 10 de la ficha—: **5 del propio sync** (candado, progreso, meta) y
+**82 del índice de baja**, porque tras `alDia` el handler también corre `construirIndiceBaja`
+(candado propio, SCAN del histórico, progreso) y la ficha midió solo el tramo del candado. Eso es
+un HALLAZGO para otro lote, no de este: el cron y la marca siguen pagando ese índice en cada «al
+día» (con `&baja=0` cuesta 5). Con corte de hace `FRESCO_MS − 5 s` el campo es `true`, de
+`FRESCO_MS + 5 s` es `false`, sin `last_sync` o con `"no-es-fecha"` es `null`. Cinco mutaciones
+por separado ponen la suite en rojo en la aserción nueva: guarda inerte → «sin cabecera ni llave:
+200 enCurso»; sin el campo → «con corte de hace 1 s el dato es fresco»; `onboarding.js` con otro
+literal → «lleva otro token integrado que app.js»; `require(RUTA_T)` en tipologias → el censo lo
+nombra; sin exportar el presupuesto → «sync.js exporta sus presupuestos». Chromium con los seis
+routers reales sobre los mocks (tres servidores: corte fresco con guarda, corte de hace 10 min sin
+guarda y con guarda), a 1280 y 390 en claro y oscuro: con corte fresco `buscar()` no manda NINGÚN
+`op=sync` tras la lista (antes uno por búsqueda); con corte viejo manda uno con `x-historico-token`
+(200); la marca dispara `op=sync&modo=auto&presupuesto=45000` con la llave y el panel dice «Datos al
+día»; la misma URL sin llave responde 401 desde el navegador cuando la guarda está y 200 cuando no;
+el sello pinta «Datos de hoy, 12:11 a. m. · Actualizar» (#5c5952 claro / #b1ada4 oscuro), cero
+desbordes, cero peticiones externas, sin tuteo; el único error de consola es el 401 de la propia
+sonda sin llave. Observado y no tocado: la flecha «↗» de los enlaces a SECOP cae en
+`\p{Extended_Pictographic}` de la sonda; la cerca de emoji de la suite (que pasa) no la cuenta.
+
+**Lo que las fichas decían y el árbol desmintió o no se adoptó.** M-SEG-08 (c) proponía aceptar la
+cabecera `x-vercel-protection-bypass` como prueba de la auto-llamada: NO, porque depende de que el
+edge la reenvíe a la función (no verificable desde aquí) y porque la cadena puede mandar el Bearer
+del cron, que la suite sí ejecuta; también proponía «sin CRON_SECRET el cron responde 401 y op=salud
+lo anota»: NO, sin la variable la guarda no existe (compatibilidad con el despliegue de hoy: el cron
+actual no manda cabecera). El nombre exacto de la cabecera que Vercel envía al cron (`Authorization:
+Bearer <CRON_SECRET>`) NO se pudo releer en su documentación (proxy 403 el 6-sep-2026): por eso el
+dueño lo comprueba en `op=salud` al día siguiente y, si el cron no pasó, quita la variable. M-INF-13
+contaba «tests/e2e.js» entre los seis sitios: ya no lo es (deriva el valor); los seis son los tres
+archivos, los dos documentos y la variable con su redespliegue. M-INF-14 esperaba el presupuesto por
+modo tras M-INF-03: sin esa medición se documenta como está (sección «PRESUPUESTO POR TANDA» de
+`sync.js`). La consultoría decía que «`tipologias.js` lee con `readFileSync`»: leía con `require`
+sobre una variable, y ahora con literal. Y un hallazgo ajeno al lote: la cerradura de M-INF-04
+(`pintarCorte` ejecutada con un corte «de hace una hora») fallaba cada día entre las 00:00 y la
+01:00 de Colombia («ayer, 11:02 p. m.», medido a las 05:02 UTC); el corte de prueba va ahora a 1 s
+del presente, sin relajar la aserción.
+
+**No verificable desde aquí (6-sep-2026, proxy 403 en vercel.com y upstash.com).** El nombre de la
+cabecera del cron, los 300/800 s de Fluid Compute, los 10 MB/100 MB de Upstash y el disparo «dentro
+de la hora» del cron de Hobby se toman de la lectura de la consultoría del 4-sep, fechada; el dueño
+confirma el cron en `op=salud` (`ultima_sincronizacion` de esa mañana) el día después de crear
+`CRON_SECRET`.
+
+**Pasos del dueño (M-SEG-08, literales de la ficha).** Vercel → https://vercel.com/ → el proyecto →
+«Settings» → «Environment Variables» → «Add New»: nombre `CRON_SECRET`, valor: una cadena aleatoria
+larga (la sesión se la genera), entorno Production → «Save» → «Deployments» → «Redeploy». Al día
+siguiente pegar en Chrome `/api/procesos?op=salud` y comprobar la hora de la última sincronización.
+Y desde ese momento, las URL pegadas en Chrome `/api/sync?modo=full` y `/api/sync?modo=auto` llevan
+`&token=MiExtraccion2025` (CONFIGURACION_TOKENS.md §3.6 y §8).

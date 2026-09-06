@@ -168,17 +168,17 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 129 secciones. Las 10 más nuevas:
-  L  7110  La piel v3 · «Lino y tinta»: el color caro y el detalle, medidos (4-sep-2026)
-  L  7211  La ficha «Lo que exige este pliego» en Mis procesos y los precios buscados por una sesión de
-  L  7293  Segunda pasada del 4-sep-2026: la guía sin cuadros vacíos y Precios en tres pasos
-  L  7350  Tercera pasada del 4-sep-2026: el pliego CITADO y Precios como «cargue → Buscar → APU»
-  L  7414  Consultoría integral del 4/5-sep-2026 · qué es Detekta, qué aguanta, qué se ve, qué se cuent
-  L  7485  Estética premium y experiencia de uso · las 24 mejoras del encargo 2, implementadas (5/6-sep
-  L  7586  Lote «servidor y cifras» de la consultoría del 4-sep · M-INF-09, M-INF-17, M-INF-07, M-DGF-1
-  L  7697  Lote «precios por perfil» de la consultoría del 4-sep · M-SEG-01, M-SEG-06 (6-sep-2026)
-  L  7804  Lote «zona y RUP en PDF» de la consultoría del 4-sep · M-SEG-10, M-INF-01 (6-sep-2026)
-  L  7885  Lote «salud y tiempos» de la consultoría del 4-sep · M-INF-04, M-INF-08 (6-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 130 secciones. Las 10 más nuevas:
+  L  7216  La ficha «Lo que exige este pliego» en Mis procesos y los precios buscados por una sesión de
+  L  7298  Segunda pasada del 4-sep-2026: la guía sin cuadros vacíos y Precios en tres pasos
+  L  7355  Tercera pasada del 4-sep-2026: el pliego CITADO y Precios como «cargue → Buscar → APU»
+  L  7419  Consultoría integral del 4/5-sep-2026 · qué es Detekta, qué aguanta, qué se ve, qué se cuent
+  L  7490  Estética premium y experiencia de uso · las 24 mejoras del encargo 2, implementadas (5/6-sep
+  L  7591  Lote «servidor y cifras» de la consultoría del 4-sep · M-INF-09, M-INF-17, M-INF-07, M-DGF-1
+  L  7702  Lote «precios por perfil» de la consultoría del 4-sep · M-SEG-01, M-SEG-06 (6-sep-2026)
+  L  7809  Lote «zona y RUP en PDF» de la consultoría del 4-sep · M-SEG-10, M-INF-01 (6-sep-2026)
+  L  7890  Lote «salud y tiempos» de la consultoría del 4-sep · M-INF-04, M-INF-08 (6-sep-2026)
+  L  7965  Lote «B3b-sync-menor» de la consultoría del 4-sep · M-INF-10, M-INF-13, M-INF-14, M-SEG-08 (
 
 · DOCUMENTOS docs/ — 42:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)
