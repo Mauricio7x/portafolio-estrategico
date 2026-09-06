@@ -2,7 +2,7 @@
      Es una FOTO para leer en GitHub; la fuente de verdad es ejecutar la herramienta. -->
 
 ```
-== MAPA DE DETEKTA · generado del árbol el 2026-09-05 ==
+== MAPA DE DETEKTA · generado del árbol el 2026-09-06 ==
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
@@ -166,8 +166,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 124 secciones. Las 10 más nuevas:
-  L  6748  La guía «Don Héctor» de cada proceso guardado y el dictamen en Mis procesos (3-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 125 secciones. Las 10 más nuevas:
   L  6808  Don Héctor sin clave de API: dictamen por REGLAS y dictamen desde una SESIÓN de Claude Code 
   L  6861  Los documentos del proceso se leen solos al guardar en Mis procesos (3-sep-2026)
   L  6963  La cláusula gana al índice: el detector del pliego ya no cita la tabla de contenido (3-sep-2
@@ -177,6 +176,7 @@
   L  7293  Segunda pasada del 4-sep-2026: la guía sin cuadros vacíos y Precios en tres pasos
   L  7350  Tercera pasada del 4-sep-2026: el pliego CITADO y Precios como «cargue → Buscar → APU»
   L  7414  Consultoría integral del 4/5-sep-2026 · qué es Detekta, qué aguanta, qué se ve, qué se cuent
+  L  7485  Estética premium y experiencia de uso · las 24 mejoras del encargo 2, implementadas (5/6-sep
 
 · DOCUMENTOS docs/ — 42:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)

@@ -2895,7 +2895,11 @@
     cargandoSeguimiento(false);
     if (!r || !r.ok) {
       $("seg-vacio").classList.add("hidden");
-      mensajeSeg((r && r.error) || mensajeDeFallo(null, "cargar sus procesos guardados"), "error");
+      // El servidor RESPONDIÓ (hubo r) pero sin la lista: decir «revise su red» sería inventar el
+      // diagnóstico, que es justo lo que M-IE-04 vino a quitar. Sin r sí es fallo de transporte.
+      mensajeSeg((r && r.error)
+        || (r ? "No se pudo cargar sus procesos guardados: el servidor respondió, pero sin la lista. Vuelva a intentar."
+              : mensajeDeFallo(null, "cargar sus procesos guardados")), "error");
       return;
     }
     seguimientoCargadoPara = perfil;
@@ -3434,6 +3438,8 @@
     const el = $("accion-mensaje");
     const colores = { info: "text-gray-600", ok: "text-emerald-700", error: "text-red-600" };
     el.className = `mt-3 text-sm ${colores[tipo] || colores.info}`;
+    // El nodo es role="status" (un éxito no interrumpe la lectura); solo el ERROR sube a assertive.
+    el.setAttribute("aria-live", tipo === "error" ? "assertive" : "polite");
     el.textContent = texto;
     // «Reintentar» solo con el error, y repite lo que Precios necesita al entrar
     const rein = $("accion-reintentar");

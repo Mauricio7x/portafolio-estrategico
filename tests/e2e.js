@@ -19257,6 +19257,10 @@ async function main() {
         assert.strictEqual(Glo.estampar(docV), 3);
         assert.strictEqual(nodosV[0].textContent, "Lo que deja por intento");
         assert.strictEqual(nodosV[1].textContent, "Deja por intento", "la columna de la tabla usa la forma corta");
+        // …y que el MARCADO real la pida: sin `data-glosario-corto` la cabecera estrecha recibiría
+        // «Lo que deja por intento». El nodo fabricado de arriba prueba la función, no la pantalla.
+        assert.ok(/<th[^>]*data-glosario="veg"[^>]*data-glosario-corto/.test(html6),
+          "la columna de las tres opciones pide la forma CORTA en el marcado: la larga no cabe en la cabecera");
         assert.strictEqual(nodosV[2].textContent, "Avisar que le interesa");
       }
 
@@ -20831,9 +20835,26 @@ async function main() {
           const htmlRol = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
           const etiquetaDe = (id) => { const i = htmlRol.indexOf(`id="${id}"`); assert.ok(i > 0, `falta #${id}`); return htmlRol.slice(htmlRol.lastIndexOf("<", i), htmlRol.indexOf(">", i) + 1); };
           for (const [id, rol] of [["resumen-resultados", "status"], ["estado-vacio", "status"], ["estado-error", "alert"],
-            ["d-aviso", "alert"], ["seg-mensaje", "alert"], ["accion-mensaje", "alert"]]) {
+            ["d-aviso", "alert"], ["seg-mensaje", "alert"], ["accion-mensaje", "status"]]) {
             assert.ok(new RegExp(`role="${rol}"`).test(etiquetaDe(id)),
               `#${id} tiene que llevar role="${rol}": es lo que cambia cuando el usuario toca algo o algo falla — ${etiquetaDe(id)}`);
+          }
+          /* #accion-mensaje es el MISMO nodo para «Guardado como…» y para un fallo: por eso es
+             `status` y no `alert` (un éxito rutinario no interrumpe la lectura). La urgencia la
+             sube msgApu SOLO en error. Se ejecuta la función real del fuente. */
+          {
+            const appMsg = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+            const iM = appMsg.indexOf("function msgApu(");
+            assert.ok(iM > 0, "app.js sin msgApu");
+            const fn = new Function("$", `${appMsg.slice(iM, appMsg.indexOf("\n  }", iM) + 4)} return msgApu;`);
+            const nodo = { className: "", textContent: "", attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, classList: { toggle() {} } };
+            const msgApu = fn((id) => (id === "accion-mensaje" ? nodo : null));
+            msgApu("Guardado como «Vía terciaria».", "ok");
+            assert.strictEqual(nodo.attrs["aria-live"], "polite",
+              "un guardado correcto se anuncia sin interrumpir: aria-live=polite");
+            msgApu("No se pudo guardar el presupuesto. El servidor respondió 500.", "error");
+            assert.strictEqual(nodo.attrs["aria-live"], "assertive",
+              "el fallo sí interrumpe: es lo que impide seguir");
           }
         }
         /* El tablero deja de parpadear: el HECHO en vez de la cuenta atrás, un
@@ -22071,8 +22092,28 @@ async function main() {
       assert.strictEqual(Gf.fraseDeFallo(null), Gf.MSG_SIN_CONEXION,
         "un fallo sin texto no se rellena con un diagnóstico alegre: se dice lo único que se sabe");
 
+
       /* `leerJson` de app.js, EJECUTADA: el cuerpo que devuelve ya viene redactado */
       const appFallo = fs.readFileSync(path.join(RAIZ, "public/app.js"), "utf8");
+      /* Y el corolario: una RESPUESTA que llegó sin la lista NO es falta de conexión. La rama
+         `!r || !r.ok` de cargarSeguimiento distinguía las dos cosas o afirmaba «revise su red»
+         con el servidor respondiendo — la afirmación falsa que esta misma ronda vino a quitar.
+         Se ejecuta la expresión REAL extraída del fuente con las dos formas de `r`. */
+      {
+        const iCS = appFallo.indexOf("mensajeSeg((r && r.error)");
+        assert.ok(iCS > 0, "app.js sin la rama de fallo de cargarSeguimiento");
+        const expr = appFallo.slice(appFallo.indexOf("(", iCS + 11), appFallo.indexOf(', "error")', iCS));
+        const decidir = new Function("r", "mensajeDeFallo", `return ${expr};`);
+        const conRespuesta = decidir({ ok: false }, Gf.mensajeDeFallo);
+        const sinRespuesta = decidir(null, Gf.mensajeDeFallo);
+        assert.ok(!/conexión|red\b/i.test(conRespuesta),
+          `el servidor respondió (hay r): no se puede culpar a la red — ${conRespuesta}`);
+        assert.ok(/servidor respondió/.test(conRespuesta), `y sí se dice lo que pasó — ${conRespuesta}`);
+        assert.strictEqual(sinRespuesta, Gf.mensajeDeFallo(null, "cargar sus procesos guardados"),
+          "sin respuesta sí es fallo de transporte, y usa la redacción única");
+        assert.strictEqual(decidir({ ok: false, error: "Perfil desconocido." }, Gf.mensajeDeFallo), "Perfil desconocido.",
+          "el motivo que da el servidor manda sobre cualquier redacción del navegador");
+      }
       const iLJ = appFallo.indexOf("const leerJson = async (r) =>");
       assert.ok(iLJ > 0, "app.js sin leerJson");
       const leerJsonFn = new Function("fraseDeFallo",

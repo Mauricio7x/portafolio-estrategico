@@ -2980,7 +2980,9 @@
           <div class="h-2 w-full overflow-hidden rounded-full bg-gray-100"><div id="ia-progreso-barra" class="barra h-2 w-0 rounded-full" style="background: var(--accent);"></div></div>
         </div>
         <div id="ia-propuesta" class="mt-4 hidden"></div>
-        <p id="accion-mensaje" class="mt-3 text-sm" role="alert"></p>
+        <!-- role="status": el mismo nodo dice «Guardado como…» y «Presupuesto calculado.»; interrumpir
+             la lectura por un éxito rutinario es ruido. msgApu sube la urgencia a assertive SOLO en error. -->
+        <p id="accion-mensaje" class="mt-3 text-sm" role="status"></p>
         <button id="accion-reintentar" type="button"
                 class="mt-3 hidden rounded-xl border border-gray-300 bg-white px-5 py-2 text-sm font-medium transition hover:bg-gray-50">
           Reintentar
