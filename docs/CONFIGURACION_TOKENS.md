@@ -110,7 +110,7 @@ Resumen de todo lo que existe. Solo las tres primeras son obligatorias.
 | `UPSTASH_REDIS_REST_URL` | **SÍ** | Dirección de la base de datos | La app no guarda ni lee nada: `503 Faltan UPSTASH…` |
 | `UPSTASH_REDIS_REST_TOKEN` | **SÍ** | Contraseña de la base de datos | Igual que la anterior |
 | `HISTORICO_TOKEN` | **SÍ** | Llave de todo lo protegido | `503` en todo lo protegido; la app se ve a medias |
-| `SOCRATA_APP_TOKEN` | Recomendada | Sube el cupo de descargas de datos.gov.co | Funciona igual, pero ~100 peticiones/hora en vez de ~1.000 |
+| `SOCRATA_APP_TOKEN` | Recomendada; necesaria en cuanto la usen varias personas a la vez | Sube el cupo de consultas a datos.gov.co: con token, 1 000 peticiones por hora móvil (dev.socrata.com, consultado el 5-sep-2026) | Funciona igual hasta que datos.gov.co limite: sin token Socrata no publica el cupo, y cuando lo agota la app dice «datos.gov.co limitó las consultas por unos minutos; vuelva a intentarlo» |
 | `OCRSPACE_API_KEY` | Opcional | Leer pliegos **escaneados** (fotos) | Los pliegos con texto se leen igual; los escaneados no |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | Solo si hay Password Protection | Que la sincronización pueda llamarse a sí misma | La extracción larga se corta a mitad |
 
@@ -185,12 +185,17 @@ https://portafolio-estrategico.vercel.app/api/resumen?perfil=helder&token=MiExtr
 ### 3.3 · `SOCRATA_APP_TOKEN` — el cupo de datos.gov.co
 
 **Qué es.** Todos los datos de licitaciones salen de `datos.gov.co`, que funciona sobre una
-plataforma llamada Socrata. Sin token, Socrata deja hacer **unas 100 peticiones por hora**; con
-token, **unas 1.000**. No es una contraseña de nada suyo: es un identificador de aplicación para que
-no lo confundan con tráfico anónimo.
+plataforma llamada Socrata. Con token, Socrata deja hacer **1 000 peticiones por hora móvil**
+(dev.socrata.com, consultado el 5-sep-2026); **sin token no publica el cupo** —las cifras «unas 100
+por hora» que circulaban antes no tenían fuente—. No es una contraseña de nada suyo: es un
+identificador de aplicación para que no lo confundan con tráfico anónimo.
 
-**Es opcional.** Sin ella la app funciona, solo que la sincronización puede quedarse corta en días de
-mucho movimiento.
+**Es opcional mientras la use una sola persona.** Sin ella la app funciona; cuando datos.gov.co
+limita, la pantalla dice «datos.gov.co limitó las consultas por unos minutos; vuelva a intentarlo».
+Pero cada proceso guardado que se abre en Mis procesos cuesta hasta 4 consultas (quiénes se presentaron,
+veces ante la entidad, ganadas y contratos vigentes; medido en el código el 6-sep-2026) y la
+sincronización diaria baja páginas de 5 000 filas: **en cuanto la usen varias personas a la vez,
+configúrela**.
 
 **De dónde se saca:**
 

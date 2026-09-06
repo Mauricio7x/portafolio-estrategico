@@ -899,11 +899,19 @@
     #app .tarjeta:nth-child(6) { animation-delay: 100ms; } #app .tarjeta:nth-child(7) { animation-delay: 120ms; }
     #app .tarjeta:nth-child(8) { animation-delay: 140ms; }
 
-    /* ── Los cuatro tiles del tablero: NEUTROS, hundidos, con filete. El color
-       se reserva para lo que significa algo (el semáforo, el plazo). ── */
-    #d-contenido .grid > .rounded-2xl { background-color: var(--bg-inset); box-shadow: inset 0 0 0 1px var(--border); }
-    #d-contenido .grid > .rounded-2xl p { color: var(--text-secondary); }
-    #d-contenido .grid > .rounded-2xl p.text-3xl { color: var(--text-primary); font-size: 30px; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    /* ── Los cuatro tiles del tablero: NEUTROS, hundidos, con filete, y lo
+       DECLARA el marcado (`.tile`), no una regla que anule clases de semáforo
+       que siguieran en el HTML (6-sep-2026, M-DGF-12: llevaban bg-blue-50,
+       bg-green-50, bg-amber-50, bg-red-50 y text-*-950, las mismas que
+       COMPETENCIA_ENTIDAD usa como semáforo, y se veían neutros solo por la
+       anulación; mover un tile devolvía el color en silencio). El color se
+       reserva para lo que significa algo: la ÚNICA excepción declarada es
+       «Cierres en 7 días» (`.tile-urgente`), que es un plazo y va en --danger.
+       La suite hace censo del bloque entero. ── */
+    #d-contenido .tile { background-color: var(--bg-inset); box-shadow: inset 0 0 0 1px var(--border); }
+    #d-contenido .tile p { color: var(--text-secondary); }
+    #d-contenido .tile p.text-3xl { color: var(--text-primary); font-size: 30px; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    #d-contenido .tile-urgente p.text-3xl { color: var(--danger); }
     /* las cifras grandes del titular de Mi empresa */
     #pu-hero p.text-3xl, #pu-hero p.text-4xl, #pu-hero .text-\[34px\], #pu-hero .text-\[32px\] { letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 
@@ -1467,30 +1475,35 @@
 
         <div id="d-contenido" class="mt-6 hidden">
           <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div class="rounded-2xl bg-blue-50 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-blue-900/60">Total visibles</p>
-              <p id="d-visibles" class="mt-1 text-3xl font-semibold tabular-nums text-blue-950">—</p>
-              <p class="text-xs text-blue-900/60">procesos</p>
+            <!-- Los cuatro tiles son NEUTROS y lo dicen ellos mismos (`.tile`):
+                 sin clases de color de la paleta de utilidades, que aquí
+                 significarían un semáforo que no hay (6-sep-2026, M-DGF-12).
+                 La única excepción, declarada: «Cierres en 7 días» es un plazo y
+                 lleva `.tile-urgente` (la cifra en --danger). -->
+            <div class="tile rounded-2xl p-4">
+              <p class="text-xs font-medium uppercase tracking-wide">Total visibles</p>
+              <p id="d-visibles" class="mt-1 text-3xl font-semibold tabular-nums">—</p>
+              <p class="text-xs">procesos</p>
             </div>
-            <div class="rounded-2xl bg-green-50 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-green-900/60">Obra civil</p>
-              <p id="d-obra" class="mt-1 text-3xl font-semibold tabular-nums text-green-950">—</p>
-              <p id="d-obra-pct" class="text-xs text-green-900/60">— del total</p>
+            <div class="tile rounded-2xl p-4">
+              <p class="text-xs font-medium uppercase tracking-wide">Obra civil</p>
+              <p id="d-obra" class="mt-1 text-3xl font-semibold tabular-nums">—</p>
+              <p id="d-obra-pct" class="text-xs">— del total</p>
             </div>
-            <div class="rounded-2xl bg-amber-50 p-4">
-              <p class="text-xs font-medium uppercase tracking-wide text-amber-900/60">Consultoría</p>
-              <p id="d-consultoria" class="mt-1 text-3xl font-semibold tabular-nums text-amber-950">—</p>
-              <p id="d-consultoria-pct" class="text-xs text-amber-900/60">— del total</p>
+            <div class="tile rounded-2xl p-4">
+              <p class="text-xs font-medium uppercase tracking-wide">Consultoría</p>
+              <p id="d-consultoria" class="mt-1 text-3xl font-semibold tabular-nums">—</p>
+              <p id="d-consultoria-pct" class="text-xs">— del total</p>
             </div>
-            <div class="rounded-2xl bg-red-50 p-4">
+            <div class="tile tile-urgente rounded-2xl p-4">
               <!-- «Cierran esta semana» se decía DOS VECES en esta pestaña con dos
                    bases distintas: arriba, sobre las licitaciones a las que usted puede
                    presentarse (el pulso); aquí, sobre TODAS las visibles. Misma frase,
                    dos números. Esta cifra se llama distinto y dice de qué conjunto
                    habla (#d-semana-base, que app.js rellena con el total real). -->
-              <p class="text-xs font-medium uppercase tracking-wide text-red-900/60">Cierres en 7 días</p>
-              <p id="d-semana" class="mt-1 text-3xl font-semibold tabular-nums text-red-950">—</p>
-              <p id="d-semana-base" class="text-xs text-red-900/60">de todas las visibles</p>
+              <p class="text-xs font-medium uppercase tracking-wide">Cierres en 7 días</p>
+              <p id="d-semana" class="mt-1 text-3xl font-semibold tabular-nums">—</p>
+              <p id="d-semana-base" class="text-xs">de todas las visibles</p>
             </div>
           </div>
 

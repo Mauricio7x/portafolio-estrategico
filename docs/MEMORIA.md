@@ -8182,3 +8182,108 @@ re-aprenderlo:
   landing con sus tres puertas y «Entrar con clave» abre el gate. Con clave: los nueve bloques a
   la vista, las nueve peticiones de siempre y la marca dispara `op=sync`. **No verificable desde
   aquí**: producción con Redis real y usuarios reales.
+
+### Lote «B4b-pulso-cobertura» de la consultoría del 4-sep · M-DGF-03, M-DGF-04, M-DGF-12 (6-sep-2026)
+
+Tres mejoras del eje «datos y gráficos», sobre el árbol de `fff3b31`. Las fichas se escribieron sobre
+`d569946`; donde citaban líneas que ya se movieron mandó el árbol.
+
+- **El pulso declara su cobertura (M-DGF-03).** `agregarPulso` (lib/handlers/perfil/entrada.js) suma
+  `Number(precio_base) || 0` —excepción declarada: una cuantía ausente suma 0 al dinero pero cuenta
+  como proceso— y NO decía cuántas quedaban fuera de la suma: «$312.000 millones en juego» se leía
+  como suma completa donde hay una cota inferior. Ahora publica `sinPresupuesto` con la MISMA regla que
+  el dinero y que `sinCuantia` en lib/portada (ausente, ilegible o 0 no suma → cuenta como sin
+  presupuesto), con la guarda `> 0` y no `|| 0` (Number(null) === 0). Medido antes con la función real
+  sobre tres filas sintéticas: `sinPresupuesto` no existía en la respuesta. En pantalla
+  (public/pulso.js) el hero dice «El dinero en juego cuenta las que publican presupuesto: N no lo
+  publican» —la redacción de la portada, en femenino porque aquí son licitaciones— SOLO con N > 0;
+  `sinDepartamento` viajaba desde ago 2026 y no se pintaba: «Dónde están» dice ahora «N sin
+  departamento publicado; no se reparten a ojo» y, siempre, «Barras por número de licitaciones; el
+  dinero, al lado». **No se unifica el criterio de orden con la portada**: el pulso responde «cuántas»
+  y la portada «dónde hay más plata», y cada pantalla dice el suyo. Hermano revisado: «Quién las
+  publica» lleva la misma nota de orden y «N sin entidad publicada» con `sinEntidad` (ya viajaba). Con
+  0, null o undefined no se escribe nada: «0 sin departamento» es ruido y null jamás se pinta como 0;
+  la caché `pulso:{perfil}` de 10 min anterior a este cambio no trae el campo y por eso no pinta nada
+  hasta renovarse. Las notas se factorizaron en `notasReparto` (una plantilla para los dos repartos).
+  Cerraduras (tests/e2e.js, bloque del pulso): el endpoint publica `sinPresupuesto` entero en
+  [0, total]; las plantillas reales con `sinPresupuesto: 2`, `sinDepartamento: 1`, `sinEntidad: 3`
+  pintan los tres textos y con 0/null/undefined no; y un censo sobre siete filas sintéticas (null, «0»,
+  «abc», undefined, «», dos positivas): `sinPresupuesto + las que publican === total`, dinero 1 250.
+- **Cupo de datos.gov.co (M-DGF-04).** Cuatro cosas, y una que ya estaba: (1) `lib/socrata.crearCliente`
+  LEE `SOCRATA_APP_TOKEN` y manda `X-App-Token` desde ago 2026 (probado en la suite con el token
+  rechazado): el código no cambió; configurar el token en Vercel es paso del dueño y el valor no se
+  puede comprobar desde aquí. (2) Al agotar los cinco intentos con último estado 429, `pedir` lanza
+  «datos.gov.co limitó las consultas por unos minutos; vuelva a intentarlo» con `status = 429` y el
+  texto técnico en `detalle`; cualquier otro agotamiento (403 sin token, red, tiempo de espera) sigue
+  diciendo «{etiqueta}: agotados 5 intentos (…)». Los cinco módulos que pegan `e.message` al motivo
+  (socio ×4, ejecucion, proponentes, documentos ×2, seguimiento) lo HEREDAN sin tocarse —una lista de
+  sitios dejaría huecos—; el prefijo «no se pudo consultar {dataset}:» de esos motivos se queda (fuera
+  del alcance de la ficha). Medido antes con la función real y un fetch que responde 429 cinco veces:
+  `status` undefined y el mensaje «contratos vigentes 901000001: agotados 5 intentos (HTTP 429 en …)».
+  (3) Las cifras «~100 peticiones/hora sin token» y «200 filas por petición» no tenían fuente:
+  Socrata NO publica el cupo sin token, con token son **1 000 peticiones por hora móvil**
+  (dev.socrata.com, consultado el 5-sep-2026 por la consultoría; desde este entorno NO es reproducible:
+  el 6-sep-2026 `curl` recibió «CONNECT tunnel failed, response 403» del proxy y WebFetch
+  `EGRESS_BLOCKED` — observación con fecha, no propiedad del entorno) y producción pagina a **5 000
+  filas** (`SECOP_PAGE` en sync e historico). El censo las encontró en SIETE sitios más el código, no
+  seis: docs/CONFIGURACION_TOKENS.md ×2, INVESTIGACION_PLATAFORMAS, COMPLEMENTO_ANALISTA,
+  AUDITORIA_INTEGRAL, **README.md (que la ficha no listaba)** y lib/paa.js (`siguiente_paso` del 502).
+  Todos corregidos con el mismo texto y la fuente al lado; la cerradura barre README, CLAUDE.md,
+  docs/**.md, lib, api y public con dos regex (la cifra desmentida; y «1 000 peticiones» sin
+  «socrata.com» a menos de dos líneas) y DOS excepciones declaradas: docs/MEMORIA.md (crónica fechada:
+  la línea de ago 2026 que decía «~100 sin él, 200 filas por petición» se desmiente aquí, no se
+  reescribe) y docs/CONSULTORIA_2026-09-04_RESUMEN.md (informe fechado que ya lleva la cifra en su
+  tabla de SUPUESTOS como fuente externa por búsqueda). La ficha pedía documentar el token como
+  «necesario a partir de 5 usuarios»: **no se adoptó esa cifra** —sin el cupo sin token no hay de dónde
+  derivar un umbral— y CONFIGURACION_TOKENS dice «necesaria en cuanto la usen varias personas a la
+  vez», con el hecho medido en el código: abrir un proceso guardado cuesta hasta 4 consultas
+  (proponentes, veces, ganadas, vigentes; caché 1 h). (4) `detalleCompetencia`
+  (lib/handlers/perfil/seguimiento.js) pedía los contratos vigentes de jbjy con UN `pedir` por NIT:
+  3 + P peticiones por proceso guardado (P = 8 → 11). Ahora es UNA `documento_proveedor in (…)` con
+  `$limit` = 200 × NIT, ordenada por fecha de firma, repartida por NIT en el cliente (`resumirVigentes`),
+  y la salida por NIT (cuántos, valor, entidades distintas, cinco firmas) no cambia: la aserción vieja
+  de la suite sigue igual. **No va con `$group`, como decía la ficha**: el agregado del servidor no
+  puede devolver ni las firmas ni las entidades distintas que app.js pinta, y la prueba que exige dos
+  firmas habría caído. Lo que sí cambia es el tope: antes 200 por NIT, ahora 200 × P compartidos (un
+  competidor con más de 200 vigentes puede ocupar el sitio de otro); son contratistas de obra y hoy
+  ningún NIT del corpus se acerca, se anota como riesgo conocido. Medido en la suite con el contador
+  por dataset nuevo del mock (`socrata.peticionesA("jbjy-vk9h")`): 2 → 1 peticiones con dos NIT; la
+  fórmula pasa de 3 + P a 4. (5) **Riesgo fechado, SIN construir nada**: Socrata publica SODA 3 y no ha
+  anunciado fecha de retiro de la 2.1 que usa Detekta (hasta donde la consultoría pudo leer el
+  5-sep-2026); no hay «sonda v3» porque sería código sin necesidad medida. Si un día `pedir` empieza
+  a recibir 4xx en todas las consultas con el mismo cuerpo, el primer sitio donde mirar es ese.
+- **Los tiles del tablero declaran su estado neutro (M-DGF-12).** Los cuatro tiles de #d-contenido
+  llevaban `bg-blue-50/green-50/amber-50/red-50` y `text-*-950` —las mismas clases que
+  COMPETENCIA_ENTIDAD usa como semáforo— y se veían neutros solo porque la piel v3 los anulaba con
+  `#d-contenido .grid > .rounded-2xl { … }`, sin cerradura: mover un tile o cambiar `rounded-2xl`
+  devolvía el semáforo en silencio (el propio auditor de fase 1 leyó el marcado y lo dio por visible).
+  Ahora el marcado lo dice: `class="tile …"` sin una sola clase de color, la regla vive en
+  `#d-contenido .tile` (fondo `--bg-inset`, filete `--border`, cifra `--text-primary`) y la anulación
+  vieja no existe. **Única excepción, declarada en el CSS y en el marcado**: «Cierres en 7 días» es un
+  plazo y lleva `.tile-urgente` (la cifra en `--danger`) — antes de la piel v3 esa cifra iba en
+  `text-red-950` y la anulación la había apagado sin decidirlo; el color vuelve a significar UNA
+  cosa. Cerradura por censo del bloque entero (entre `#d-contenido` y `#d-baja-box`, comentarios
+  fuera): cero clases `bg|text|border|ring-{blue|green|emerald|amber|orange|red|lime|indigo|purple}-N`,
+  exactamente cuatro `.tile`, un solo `.tile-urgente` y que sea el de `#d-semana`, y las tres reglas
+  CSS con sus tokens. Medido en Chromium (1280 y 390, claro y oscuro, con el arnés de 503): fondo
+  rgb(245,243,239) / rgb(35,34,32) = `--bg-inset`, cifras rgb(26,25,22) / rgb(243,240,234) =
+  `--text-primary`, `#d-semana` rgb(184,55,47) / rgb(240,122,114) = `--danger`; las notas del pulso se
+  pintan (display block, 33-50 px de alto, color `--text-secondary`); cero desbordes, cero peticiones
+  externas y en consola solo el 503 del propio arnés.
+- **Mutaciones** (cada una con la prueba dentro y el fuente en `git stash`): sin lib/socrata.js la
+  suite cae en 0,2 s en «el error lleva el estado» (status undefined, mensaje con HTTP 429 y
+  etiqueta); sin las correcciones de docs/README/paa cae en el censo del cupo con las siete líneas;
+  sin lib/handlers/perfil/seguimiento.js cae en «UNA petición a jbjy para 2 NIT» (medía 2); sin
+  entrada.js y pulso.js cae en «el pulso publica sinPresupuesto como entero» (undefined); sin
+  public/index.html cae en el censo de clases de color de los tiles: dieciséis clases, no las seis
+  de la ficha (que contaba solo bg-*-50 y text-*-950 de tres tiles; el censo cuenta también los rótulos
+  text-*-900/60 y el cuarto tile).
+- **Lo que las fichas decían y el árbol desmintió**: M-DGF-03 citaba `htmlDepartamentos` en
+  public/pulso.js:69-76 y el bloque de pruebas en ~16831; hoy viven en 87-94 y ~18139. M-DGF-04
+  contaba «seis módulos» que pegan el error y «seis sitios» de documentación: son cinco módulos en
+  nueve sitios, y siete sitios de documentación (README.md faltaba en la lista; el censo lo cazó).
+  M-DGF-12 citaba index.html:790-792 y 1226-1243; hoy 902-913 y 1470-1508.
+- **No verificable desde aquí**: la cifra de 1 000 peticiones/hora con token (dev.socrata.com
+  bloqueado por el proxy el 6-sep-2026), si SOCRATA_APP_TOKEN está puesta en Vercel, y la fracción
+  real de viables sin presupuesto en producción (comparar `pulso.sinPresupuesto` con
+  `portada.procesosSinCuantia` cuando el dueño abra la aplicación).

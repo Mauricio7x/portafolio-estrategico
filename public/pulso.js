@@ -63,17 +63,34 @@
         ${cifraGrande(pesosCortos(p.valorTotal) || "Sin referencia", "en juego (presupuestos oficiales)")}
         ${cifraGrande(num(c.n), c.n === 1 ? "cierra esta semana" : "cierran esta semana", `class="cursor-pointer" data-filtro="cierre=7d" role="link" tabindex="0" title="Ver las que cierran en 7 días"`)}
       </div>
-      ${c.n && c.valor ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">Las que cierran esta semana suman ${esc(pesosCortos(c.valor))}.</p>` : ""}`;
+      ${c.n && c.valor ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">Las que cierran esta semana suman ${esc(pesosCortos(c.valor))}.</p>` : ""}
+      ${p.sinPresupuesto > 0 ? `<p class="mt-2 text-xs" style="color: var(--text-secondary);">El dinero en juego cuenta las que publican presupuesto: ${num(p.sinPresupuesto)} no lo publican.</p>` : ""}`;
   }
+
+  /* LA COBERTURA DE CADA REPARTO (6-sep-2026, M-DGF-03). Tres notas bajo las
+     barras, y solo las que tienen algo que decir: cuántas categorías quedan
+     fuera del top, cuántas licitaciones no traen el dato (viajaba en la
+     respuesta y no se pintaba: repartirlas a ojo sería inventar) y qué mide
+     la barra. Aquí las barras van por NÚMERO de licitaciones y el dinero al
+     lado; en la portada del mercado van por dinero. No se unifica: el pulso
+     responde «cuántas» y la portada «dónde hay más plata», y cada pantalla
+     lo dice. Con 0 o sin dato no se escribe nada: «0 sin departamento» es
+     ruido y null jamás se pinta como 0. */
+  const notasReparto = (lista, extra, sinDato, ausencia) => {
+    const notas = [];
+    if (extra > lista.length) notas.push(`${num(extra)} en total; ${lista.length === 1 ? "se muestra la que más procesos publica" : `se muestran las ${lista.length} con más procesos`}.`);
+    if (sinDato > 0) notas.push(`${num(sinDato)} ${ausencia}; no se reparten a ojo.`);
+    notas.push("Barras por número de licitaciones; el dinero, al lado.");
+    return `<p class="mt-2 text-[11px]" style="color: var(--text-secondary);">${notas.join(" ")}</p>`;
+  };
 
   function htmlDepartamentos(p) {
     const lista = p.porDepartamento || [];
     if (!lista.length) return "";
     const g = barrasRank(lista, { filtroDe: (x) => `dep=${encodeURIComponent(x.nombre)}` });
     if (!g) return "";
-    const extra = p.departamentosDistintos;
     return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Dónde están</h2>${g}`
-      + (extra > lista.length ? `<p class="mt-2 text-[11px]" style="color: var(--text-secondary);">${num(extra)} en total; ${lista.length === 1 ? "se muestra la que más procesos publica" : `se muestran las ${lista.length} con más procesos`}.</p>` : "");
+      + notasReparto(lista, p.departamentosDistintos, p.sinDepartamento, "sin departamento publicado");
   }
 
   function htmlEntidades(p) {
@@ -81,9 +98,8 @@
     if (!lista.length) return "";
     const g = barrasRank(lista, { filtroDe: (x) => x.nit ? `entidad=${encodeURIComponent(x.nit)}` : `entidad=${encodeURIComponent(x.nombre)}` });
     if (!g) return "";
-    const extra = p.entidadesDistintas;
     return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Quién las publica</h2>${g}`
-      + (extra > lista.length ? `<p class="mt-2 text-[11px]" style="color: var(--text-secondary);">${num(extra)} en total; ${lista.length === 1 ? "se muestra la que más procesos publica" : `se muestran las ${lista.length} con más procesos`}.</p>` : "");
+      + notasReparto(lista, p.entidadesDistintas, p.sinEntidad, "sin entidad publicada");
   }
 
   /* ── gráfico de barras (SVG en línea, sin dependencias) ──

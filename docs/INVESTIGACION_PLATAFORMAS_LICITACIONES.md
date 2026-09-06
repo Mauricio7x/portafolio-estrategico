@@ -497,8 +497,9 @@ implementarlo justo antes de las elecciones de 2026.
 
 **6. Datos que muestra** · Objeto, entidad, modalidad, estado y fase, cuantía/presupuesto oficial,
 plazo, ubicación, cronograma, códigos UNSPSC, documentos, y —tras el cierre— adjudicatario y valor
-adjudicado. El dataset abierto tiene **59 campos**, con límites de ~1 000 peticiones/hora con App
-Token y 200 filas por petición.
+adjudicado. El dataset abierto tiene **59 campos**; con App Token el cupo es de 1 000 peticiones por
+hora móvil (dev.socrata.com, consultado el 5-sep-2026), sin token Socrata no publica el cupo, y
+Detekta pagina a 5 000 filas por petición (corregido el 6-sep-2026: antes decía «200 filas», sin fuente).
 
 **7. Herramientas de análisis** · **Ninguna para el proveedor.** Hay datos abiertos y tableros de
 transparencia, pero cero apoyo a la decisión de «a qué me presento». Toda la analítica que existe en

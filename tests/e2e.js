@@ -1149,9 +1149,12 @@ function crearMockSocrata() {
     return v < valor;
   };
 
+  const porDataset = new Map(); // peticiones que llegaron a CADA dataset (por path), fallos inyectados incluidos
   const server = http.createServer((req, res) => {
     setTimeout(() => { // latencia simulada: fuerza el corte por presupuesto
       contadorPeticiones++;
+      const ds = (req.url.match(/resource\/([a-z0-9-]+)\.json/) || [])[1] || "?";
+      porDataset.set(ds, (porDataset.get(ds) || 0) + 1);
       if (inyectarFallos && contadorPeticiones % 29 === 3) {
         res.writeHead(429, { "Retry-After": "0.05" }); return res.end("rate limited");
       }
@@ -1226,6 +1229,7 @@ function crearMockSocrata() {
     getDataset: () => dataset,
     setFallos: (v) => { inyectarFallos = v; },
     peticiones: () => contadorPeticiones,
+    peticionesA: (dataset) => porDataset.get(dataset) || 0,
   };
 }
 
@@ -1454,6 +1458,65 @@ async function main() {
     const cli403 = crearCliente({ appToken: "", fetchImpl: async () => ({ ok: false, status: 403, headers: { get: () => null }, text: async () => "" }), dormir: async () => {} });
     await assert.rejects(() => cli403.pedir({ "$limit": "1" }, "bloqueo"), /agotados/);
     assert.strictEqual(cli403.appTokenRechazado(), false);
+    /* CUOTA AGOTADA EN LENGUAJE DE USUARIO (6-sep-2026, M-DGF-04). Al agotar los
+       intentos con un 429 el error decía «{etiqueta}: agotados 5 intentos (HTTP 429 en
+       {etiqueta})» y cinco módulos (nueve sitios) lo pegaban al motivo que ve la persona: un id de
+       dataset y un código HTTP en vez de «vuelva a intentarlo». Ahora lleva status=429,
+       el mensaje dice qué hacer y el detalle técnico viaja aparte (para el registro).
+       Función real con un fetch que responde 429 y Retry-After: 0 las cinco veces. */
+    {
+      let veces429 = 0;
+      const cli429 = crearCliente({ appToken: "", fetchImpl: async () => { veces429++; return { ok: false, status: 429, headers: { get: (h) => (h === "Retry-After" ? "0" : null) }, text: async () => "" }; }, dormir: async () => {} });
+      await assert.rejects(() => cli429.pedir({ "$limit": "1" }, "contratos vigentes 901000001 (jbjy-vk9h)"), (e) => {
+        assert.strictEqual(e.status, 429, `el error lleva el estado para quien lo quiera distinguir: ${e.message}`);
+        assert.ok(!/HTTP|jbjy|901000001|agotados/.test(e.message), `el mensaje no puede llevar código, dataset ni etiqueta: «${e.message}»`);
+        assert.ok(/vuelva a intentarlo/.test(e.message) && /datos\.gov\.co/.test(e.message), `dice qué hacer y quién limita: «${e.message}»`);
+        assert.ok(/agotados 5 intentos/.test(e.detalle) && /HTTP 429/.test(e.detalle), `el detalle técnico sigue existiendo, aparte: ${e.detalle}`);
+        return true;
+      });
+      assert.strictEqual(veces429, 5, "se agotaron los cinco intentos honrando Retry-After");
+      // y un fallo de red sigue diciendo «agotados» con su causa: el 429 es el ÚNICO con mensaje de cuota
+      const cliRed = crearCliente({ appToken: "", fetchImpl: async () => { throw new Error("fetch failed"); }, dormir: async () => {} });
+      await assert.rejects(() => cliRed.pedir({ "$limit": "1" }, "delta"), (e) => e.status === undefined && /^delta: agotados 5 intentos \(fetch failed\)$/.test(e.message));
+    }
+    /* LAS CIFRAS DEL CUPO, VERACES Y CON FUENTE (6-sep-2026, M-DGF-04). «~100
+       peticiones/hora sin token» y «200 filas por petición» vivían en seis sitios de
+       la documentación más el código, sin fuente: Socrata NO publica el cupo sin
+       token, y producción pagina a 5 000 (SECOP_PAGE en sync e historico). Censo de
+       TODO lo que se lee (README, CLAUDE, docs/**.md, lib, api, public), no una lista
+       de sitios; docs/MEMORIA.md queda fuera con motivo: es una crónica FECHADA que
+       se desmiente añadiendo al final, no reescribiendo. Y donde se afirme el cupo
+       con token tiene que estar la fuente (dev.socrata.com) a menos de dos líneas. */
+    {
+      const raizC = path.join(__dirname, "..");
+      const archivosC = [];
+      const andar = (d) => {
+        for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+          if (["node_modules", ".git", ".claude", "tests"].includes(e.name)) continue;
+          const p = path.join(d, e.name);
+          if (e.isDirectory()) andar(p); else if (/\.(md|js)$/.test(e.name)) archivosC.push(p);
+        }
+      };
+      for (const d of ["docs", "lib", "api", "public"]) andar(path.join(raizC, d));
+      archivosC.push(path.join(raizC, "README.md"), path.join(raizC, "CLAUDE.md"));
+      const EXCEPCIONES_CUPO = new Map([
+        [path.join(raizC, "docs", "MEMORIA.md"), "crónica fechada: lo que decía en su fecha no se reescribe, se desmiente al final"],
+        [path.join(raizC, "docs", "CONSULTORIA_2026-09-04_RESUMEN.md"), "informe fechado de la consultoría: la cifra va en su tabla de SUPUESTOS, marcada como fuente externa por búsqueda"],
+      ]);
+      const RE_CUPO_FALSO = /(?:~|unas |de ~?)100 (?:peticiones|pet\.|consultas)|~100 (?:sin él|sin token)|frente a ~100|~100 a ~?1[ .]?000|200 (?:filas|resultados)\**\s?(?:por|\/)\s?petici/i;
+      const RE_CUPO_CON_TOKEN = /1[ .]?000 (?:peticiones|pet\.|consultas)/i;
+      const hallazgosCupo = [];
+      for (const f of archivosC) {
+        if (EXCEPCIONES_CUPO.has(f)) continue;
+        const lineas = fs.readFileSync(f, "utf8").split("\n");
+        lineas.forEach((l, i) => {
+          if (RE_CUPO_FALSO.test(l)) hallazgosCupo.push(`${path.relative(raizC, f)}:${i + 1}: ${l.trim().slice(0, 110)}`);
+          if (RE_CUPO_CON_TOKEN.test(l) && !/socrata\.com/.test(lineas.slice(Math.max(0, i - 2), i + 3).join("\n"))) hallazgosCupo.push(`${path.relative(raizC, f)}:${i + 1}: cupo con token sin fuente: ${l.trim().slice(0, 110)}`);
+        });
+      }
+      assert.deepStrictEqual(hallazgosCupo, [], `cifras del cupo de datos.gov.co desmentidas o sin fuente:\n${hallazgosCupo.join("\n")}`);
+      assert.strictEqual(EXCEPCIONES_CUPO.size, 2, "las únicas excepciones del censo son los dos documentos fechados");
+    }
     /* Y EL `*` VA PRIMERO en el $select del keyset: el 16-ago-2026 Socrata empezó
        a rechazar `:id,:updated_at,*` con 400 «Star selections must come at the
        start of the select-list» y producción degradó a $offset (donde se
@@ -1482,7 +1545,7 @@ async function main() {
       assert.ok(/\(await socrata\.contarMes\(mes\)\) \?\? -1/.test(fs.readFileSync(path.join(__dirname, "..", f), "utf8")),
         `${f}: un count null se guarda como -1 (sin auditar) y no se vuelve a pedir en cada página`);
     }
-    console.log("· unidad socrata: token inválido → 403 con token, 200 sin él, se descarta y se cuenta; 403 sin token sigue siendo bloqueo; $select del keyset con * primero; count ilegible → null, jamás 0");
+    console.log("· unidad socrata: token inválido → 403 con token, 200 sin él, se descarta y se cuenta; 403 sin token sigue siendo bloqueo; $select del keyset con * primero; count ilegible → null, jamás 0; 429 agotado → «vuelva a intentarlo» con status y detalle aparte; censo del cupo en docs/lib/api/public/README sin cifras desmentidas ni sin fuente");
   }
 
   /* unidad: TIEMPO DE ESPERA Y 200 SIN JSON (6-sep-2026, M-INF-08). Sin `signal`, una
@@ -9007,9 +9070,19 @@ async function main() {
         const ics = await seg(`&perfil=helder&ics=${encodeURIComponent(fila.id_del_proceso)}`);
         assert.strictEqual(ics.status, 200); assert.ok(/BEGIN:VCALENDAR/.test(ics.cuerpo) && /BEGIN:VALARM/.test(ics.cuerpo) && /Cierre/.test(ics.cuerpo), "el .ics trae los hitos con alarmas");
         // detalle de competencia del cerrado (hgi6 → ficha por proponente)
+        /* UNA CONSULTA POR LISTA DE NIT, NO UNA POR NIT (6-sep-2026, M-DGF-04): los
+           contratos vigentes de jbjy se pedían en un bucle —3 + P peticiones a
+           datos.gov.co por proceso guardado; con P = 8, once— y el cupo sin token, que
+           Socrata no publica, se agota entre varias personas. Ahora es una sola
+           `documento_proveedor in (…)` repartida en el cliente, y la salida por NIT
+           (cuántos, valor, firmas) no cambia: las aserciones de abajo siguen iguales. */
+        const jbjyAntes = socrata.peticionesA("jbjy-vk9h");
         const det = (await seg(`&perfil=helder&detalle=${encodeURIComponent(idIdu)}&refrescar=1`)).cuerpo;
         assert.strictEqual(det.ok, true, JSON.stringify(det).slice(0, 300));
         assert.ok(det.proponentes.length >= 2, `proponentes del proceso: ${det.proponentes.length}`);
+        const conNit = det.proponentes.filter((p) => p.nit).length;
+        assert.ok(conNit >= 2, `el proceso de prueba trae al menos dos proponentes con NIT: ${conNit}`);
+        assert.strictEqual(socrata.peticionesA("jbjy-vk9h") - jbjyAntes, 1, `contratos vigentes: UNA petición a jbjy para ${conNit} NIT (antes, una por NIT)`);
         const rec = det.proponentes.find((p) => p.nit === PROPONENTES_IDU.nitRecurrente);
         assert.ok(rec, "el recurrente está");
         assert.ok(rec.ante_esta_entidad.veces_presentado >= 2, `veces ante la entidad (hgi6 por codigo_entidad): ${rec.ante_esta_entidad.veces_presentado}`);
@@ -17051,6 +17124,38 @@ async function main() {
         'id="btn-rup-cancelar"', 'id="btn-rup-descargar"', 'id="rup-actual"']) {
         assert.ok(admHtml.includes(debe), `index.html sin ${debe} (falta el dashboard o la carga de RUP)`);
       }
+      /* LOS CUATRO TILES DEL TABLERO DECLARAN SU ESTADO NEUTRO EN EL MARCADO
+         (6-sep-2026, M-DGF-12). Llevaban bg-blue-50/green-50/amber-50/red-50 y
+         text-*-950 —las mismas clases que COMPETENCIA_ENTIDAD usa como
+         semáforo— y se veían neutros solo porque una regla CSS por
+         `#d-contenido .grid > .rounded-2xl` los anulaba, sin cerradura: mover
+         los tiles o renombrar la clase devolvía el semáforo en silencio (el
+         auditor de fase 1 leyó el marcado y lo dio por visible). Censo del
+         bloque entero, no lista de ids: ni una clase de color de la paleta de
+         utilidades; la ÚNICA excepción declarada es «Cierres en 7 días» (un
+         plazo) con `.tile-urgente`, que pinta con el token --danger, y solo ese. */
+      {
+        const htmlSinCom = admHtml.replace(/<!--[\s\S]*?-->/g, "");
+        const ini = htmlSinCom.indexOf('<div id="d-contenido"');
+        const fin = htmlSinCom.indexOf('id="d-baja-box"', ini);
+        assert.ok(ini > 0 && fin > ini, "el bloque de tiles del tablero sigue entre #d-contenido y #d-baja-box");
+        const tiles = htmlSinCom.slice(ini, fin);
+        const colores = tiles.match(/\b(?:bg|text|border|ring)-(?:blue|green|emerald|amber|orange|red|lime|indigo|purple)-\d+(?:\/\d+)?/g) || [];
+        assert.deepStrictEqual(colores, [], `clases de color del semáforo en el marcado de los tiles (el neutro se declara, no se anula por CSS): ${colores.join(" ")}`);
+        const tileDivs = tiles.match(/<div class="tile[^"]*"/g) || [];
+        assert.strictEqual(tileDivs.length, 4, `cuatro tiles con la clase .tile declarada: ${tileDivs.join(" | ") || "ninguno"}`);
+        for (const id of ["d-visibles", "d-obra", "d-consultoria", "d-semana"]) assert.ok(tiles.includes(`id="${id}"`), `${id} vive en el bloque de tiles`);
+        const urgentes = tileDivs.filter((d) => /\btile-urgente\b/.test(d));
+        assert.strictEqual(urgentes.length, 1, "una sola excepción de color: el tile del plazo");
+        const iUrg = tiles.indexOf(urgentes[0]);
+        const cajaUrg = tiles.slice(iUrg, tiles.indexOf("</div>", iUrg));
+        assert.ok(/id="d-semana"/.test(cajaUrg) && !/id="d-(visibles|obra|consultoria)"/.test(cajaUrg), "…y es exactamente el de «Cierres en 7 días»");
+        // la piel: .tile declara el neutro con tokens, .tile-urgente el plazo con --danger, y la anulación vieja ya no existe
+        assert.ok(/#d-contenido \.tile \{[^}]*var\(--bg-inset\)/.test(admHtml), "la regla .tile pinta el fondo hundido con el token del tema");
+        assert.ok(/#d-contenido \.tile p\.text-3xl \{[^}]*var\(--text-primary\)/.test(admHtml), "…la cifra con --text-primary");
+        assert.ok(/\.tile-urgente p\.text-3xl \{[^}]*var\(--danger\)/.test(admHtml), "…y la cifra del plazo con --danger (la única excepción)");
+        assert.ok(!/#d-contenido \.grid > \.rounded-2xl/.test(admHtml), "la regla que ANULABA colores del marcado desapareció: el neutro se declara, no se impone");
+      }
       /* ⚠️ Y LOS TRES QUE SE FUERON NO PUEDEN VOLVER (encargo del ingeniero,
          31-ago-2026): «Quién publica más» (#d-entidades), las barras «Dónde
          están» (#d-departamentos) y el «Top 10 procesos más atractivos»
@@ -18147,6 +18252,11 @@ async function main() {
       assert.ok(pu.cuerpo.cierranEstaSemana && pu.cuerpo.cierranEstaSemana.n <= pu.cuerpo.total);
       const sumDep = pu.cuerpo.porDepartamento.reduce((a, d) => a + d.n, 0);
       assert.ok(sumDep + pu.cuerpo.sinDepartamento <= pu.cuerpo.total && sumDep > 0, "los departamentos del top no pueden sumar más que el total");
+      /* LA COBERTURA DEL PULSO (6-sep-2026, M-DGF-03): cuántas de las viables NO
+         publican presupuesto viaja como entero acotado por el total; sin él, «$N
+         en juego» se leía como suma completa donde hay una cota inferior. */
+      assert.ok(Number.isInteger(pu.cuerpo.sinPresupuesto) && pu.cuerpo.sinPresupuesto >= 0 && pu.cuerpo.sinPresupuesto <= pu.cuerpo.total,
+        `el pulso publica sinPresupuesto como entero entre 0 y total: ${JSON.stringify(pu.cuerpo.sinPresupuesto)}`);
       assert.ok(pu.cuerpo.topEntidades.length > 0 && pu.cuerpo.topEntidades.every((e) => e.nombre && e.n >= 1 && (e.valor == null || e.valor >= 0)));
       assert.ok(pu.cuerpo.porDepartamento.every((d, i, arr) => i === 0 || arr[i - 1].n >= d.n), "el reparto por departamento va de más a menos");
       for (const k of ["patrimonio", "k_cop", "crpc", "utilidad"]) assert.ok(!(k in pu.cuerpo), `el pulso es público: no puede publicar «${k}»`);
@@ -18376,7 +18486,7 @@ async function main() {
       const onbL = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "onboarding.js"), "utf8"));
       assert.ok(/\$\("res-cifras"\)/.test(onbL) && /cierranEstaSemana/.test(onbL), "la pantalla de resultado pinta las cifras (cuántas · cuánto · cierran esta semana)");
       // (4) plantillas
-      const p0 = { total: 47, valorTotal: 312e9, visibles: 60, cierranEstaSemana: { n: 6, valor: 4.2e10 }, porDepartamento: [{ nombre: "TOLIMA", n: 20, valor: 1e11 }, { nombre: "CUNDINAMARCA", n: 12, valor: 5e10 }], departamentosDistintos: 9, sinDepartamento: 1, topEntidades: [{ nombre: "ALCALDÍA DE IBAGUÉ", nit: "800113389", n: 5, valor: 3e10 }], entidadesDistintas: 30, generado: new Date().toISOString() };
+      const p0 = { total: 47, valorTotal: 312e9, visibles: 60, cierranEstaSemana: { n: 6, valor: 4.2e10 }, porDepartamento: [{ nombre: "TOLIMA", n: 20, valor: 1e11 }, { nombre: "CUNDINAMARCA", n: 12, valor: 5e10 }], departamentosDistintos: 9, sinDepartamento: 1, sinPresupuesto: 2, topEntidades: [{ nombre: "ALCALDÍA DE IBAGUÉ", nit: "800113389", n: 5, valor: 3e10 }], entidadesDistintas: 30, sinEntidad: 0, generado: new Date().toISOString() };
       /* LA CIFRA DEL TITULAR NECESITA LA PARADA INTERMEDIA: con `sm:text-[40px]`
          a secas, «$312.000 millones» cabe en 1727 px y PARTE EN DOS en 1280, y
          el bloque que desde el 31-ago-2026 abre la pestaña se ve descuadrado.
@@ -18396,6 +18506,35 @@ async function main() {
       assert.ok(/9 en total/.test(dep), "se dice cuántos departamentos quedan fuera del top");
       assert.ok(/\$100\.000 millones/.test(dep), "…y el DINERO viaja al lado del conteo: ya estaba en el dato y no se pintaba");
       assert.ok(/data-filtro="entidad=800113389"/.test(entH) && /30 en total/.test(entH), "las entidades enlazan por NIT y dicen cuántas más hay");
+      /* EL PULSO DECLARA SU COBERTURA (6-sep-2026, M-DGF-03). Tres cosas que se
+         callaban: cuántas no publican presupuesto (el hero decía «en juego» como
+         si fuera la suma completa), cuántas no traen departamento (viajaba en la
+         respuesta y no se pintaba) y por qué una barra es larga (aquí por NÚMERO
+         de licitaciones; en la portada por dinero — dos preguntas distintas, dos
+         órdenes, y cada pantalla dice el suyo). Con 0 o sin dato no se pinta
+         nada: «0 sin departamento» es ruido y null jamás se pinta como 0. */
+      assert.ok(/publican presupuesto/.test(hero) && /\b2 no lo publican/.test(hero), `el hero dice cuántas no publican presupuesto: ${hero.replace(/\s+/g, " ").slice(-260)}`);
+      assert.ok(/\b1 sin departamento publicado; no se reparten a ojo/.test(dep), `«Dónde están» dice cuántas quedan fuera del reparto: ${dep.slice(-300)}`);
+      assert.ok(/Barras por número de licitaciones; el dinero, al lado/.test(dep), "«Dónde están» dice qué mide la barra (número, no dinero)");
+      assert.ok(/Barras por número de licitaciones; el dinero, al lado/.test(entH) && !/sin entidad/.test(entH), "«Quién las publica» también dice qué mide la barra, y con sinEntidad 0 no habla de ausencias");
+      assert.ok(/\b3 sin entidad publicada; no se reparten a ojo/.test(PulsoPub.htmlEntidades({ ...p0, sinEntidad: 3 })), "…y con ausencias de entidad las declara (hermano del departamento)");
+      for (const v of [0, null, undefined]) {
+        assert.ok(!/publican presupuesto|no lo publican/.test(PulsoPub.htmlHero({ ...p0, sinPresupuesto: v }, "X")), `con sinPresupuesto=${v} el hero no habla de ausencias`);
+        assert.ok(!/sin departamento/.test(PulsoPub.htmlDepartamentos({ ...p0, sinDepartamento: v })), `con sinDepartamento=${v} no se pinta «0 sin departamento»`);
+      }
+      /* …y el conteo lo hace la función real con la MISMA regla que el dinero (ausente,
+         ilegible o 0 no suma → cuenta como sin presupuesto): censo sobre filas sintéticas,
+         sinPresupuesto + las que sí publican = total, y Number(null) no cuela como 0. */
+      {
+        const Ent3 = require("../lib/handlers/perfil/entrada.js");
+        const filasCob = [{ precio_base: "1000" }, { precio_base: null }, { precio_base: "0" }, { precio_base: "abc" }, { precio_base: undefined }, { precio_base: "" }, { precio_base: 250 }]
+          .map((f, i) => ({ ...f, entidad: `E${i}`, departamento_entidad: i % 2 ? "TOLIMA" : "" }));
+        const agC = Ent3.agregarPulso(filasCob, Date.parse("2026-08-17T12:00:00-05:00"));
+        assert.strictEqual(agC.sinPresupuesto, 5, "sin presupuesto: null, «0», «abc», undefined y «» (la ausencia se descarta ANTES de convertir: Number(null) no es un presupuesto de 0)");
+        assert.strictEqual(agC.sinPresupuesto + filasCob.filter((f) => Number(f.precio_base) > 0).length, agC.total, "sinPresupuesto + las que publican = total (censo, no lista)");
+        assert.strictEqual(agC.valorTotal, 1250, "…y el dinero sigue siendo la suma de las que publican (la excepción declarada del || 0 se conserva)");
+        assert.strictEqual(agC.sinDepartamento, 4);
+      }
       const cero = PulsoPub.htmlHero({ total: 0, visibles: 12, corpus_vacio: false }, "");
       assert.ok(/ninguna licitación abierta encaja/.test(cero) && /Hay 12 de su tipo de obra/.test(cero) && !/data-filtro/.test(cero), "con cero viables no hay cifras que enlazar y se dice por qué");
       assert.strictEqual(PulsoPub.htmlHero({ total: 3, valorTotal: null, cierranEstaSemana: { n: 0, valor: null } }, "").includes("Sin referencia"), true, "sin cuantías publicadas el dinero es «Sin referencia», no $0");

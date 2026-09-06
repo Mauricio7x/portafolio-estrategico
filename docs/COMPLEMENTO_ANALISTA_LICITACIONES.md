@@ -546,7 +546,7 @@ Ni el manual ni el repositorio documentan el dataset. `lib/indice_competencia.js
 | **Tamaño del esquema** | El dataset tiene **59 campos** y existe un diccionario de datos oficial con nombre de columna, tipo, ejemplo y mapeo al campo de API |
 | **Enumeración de `fase`** | Planeación · Selección · Evaluación · Adjudicación · Contratación · Ejecución |
 | **Enumeración de `estado`** | **Activo** · Adjudicado · Desierto · Celebrado |
-| **Límites de la API** | ~**1.000 peticiones/hora con App Token**; ~100 sin él. Máx. **200 resultados** por petición |
+| **Límites de la API** | **1 000 peticiones por hora móvil con App Token** (dev.socrata.com, consultado el 5-sep-2026); sin token Socrata no publica el cupo. Detekta pagina a **5 000 filas** por petición (corregido el 6-sep-2026: las dos cifras anteriores no tenían fuente) |
 | **NITs compartidos** | El equipo de analítica de la propia CCE advierte que **«no hay bases maestras de entidades y proveedores; las entidades pueden compartir NIT entre departamentos, lo que exige limpieza»** |
 | **Fechas poco fiables** | «Los campos de fecha en las tablas de SECOP II tienen en general **muchos valores nulos**» |
 | **Procesos ≠ contratos** | Identificadores distintos (`id_proceso` vs. `id_contrato`) y datasets distintos |

@@ -219,7 +219,7 @@ Las siete eliminadas: `experiencia.borrarExperiencia`, `filtros.esSegmentoDeBien
 | Respuesta de una función | 4,5 MB | Holgado: el texto de un pliego de 120 páginas son ~0,34 MB |
 | Valor de Redis (Upstash) | 1 MB | Respetado: chunks deflate ≤ 500 KB antes del base64 |
 | Crons (Hobby) | solo diarios | Por eso la full se auto-encadena y cada visita refresca vía delta |
-| Cuota Socrata | ~1 000 pet./h con token, 200 filas/petición | Respetada con keyset + backoff |
+| Cuota Socrata | 1 000 pet./h móvil con token (dev.socrata.com, 5-sep-2026); sin token no publicada; páginas de 5 000 filas (corregido el 6-sep-2026) | Respetada con keyset + backoff |
 | `maxDuration` | 300 s en los 3 endpoints con presupuesto | ✔ tras D1 |
 
 **Dos límites del entorno de desarrollo que condicionan todo lo demás y hay que repetirlos:** este
