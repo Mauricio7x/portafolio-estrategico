@@ -10171,6 +10171,37 @@ async function main() {
             assert.ok(htmlSeg.indexOf('id="seg-desenlace"') < htmlSeg.indexOf('id="seg-filtros"'), "el resultado va ARRIBA de los chips-filtro");
             assert.ok(/desenlace\.innerHTML = htmlDesenlaceSeguimiento\(r\.resumen \? r\.resumen\.por_estado : null\);\s*\n\s*desenlace\.classList\.toggle\("hidden", !desenlace\.innerHTML\);/.test(appSeg),
               "pintarSeguimiento pinta el desenlace desde resumen.por_estado y esconde la caja cuando no hay nada que decir");
+
+            /* (4-bis) B7a-H1 (6-sep-2026) · UNA PALABRA POR CONCEPTO EN LA MISMA CAJA.
+               El chip de conteo decía «1 presentado» contando SOLO `por_estado.presentado`
+               —las que esperan resultado— a dos filas de «Ganó 1 de 3 presentadas», que
+               suma ganadas + perdidas + pendientes: dos cosas distintas con nombres
+               parecidos, en la misma pantalla y con el mismo dato detrás. Se ejecutan LAS
+               DOS funciones con el MISMO `por_estado` y se compara el vocabulario: la raíz
+               «presentad» es de la frase (las ofertas ENTREGADAS) y no puede aparecer en
+               los chips de conteo; el chip llama a su cifra con las mismas palabras que la
+               leyenda de la barra y la cláusula de la frase. El chip-FILTRO sigue diciendo
+               «Me presenté (N)»: ese es el mando de la etapa, y por eso vive en #seg-filtros
+               y no aquí. */
+            const iRes = appSeg.indexOf("function htmlResumenSeguimiento(");
+            assert.ok(iRes > 0, "app.js sin htmlResumenSeguimiento: los chips de conteo no son una función que se pueda ejecutar");
+            const resumenChips = new Function(`${appSeg.slice(iRes, appSeg.indexOf("\n  }", iRes) + 4)}; return htmlResumenSeguimiento;`)();
+            const porEstadoB7a = { ganado: 1, perdido: 1, presentado: 1, interesa: 1 };
+            const chips = resumenChips({ abiertos: 2, presentados: porEstadoB7a.presentado, cambios_pendientes: 1 }, 4);
+            const fraseB7a = desenlace(porEstadoB7a);
+            const textoChips = chips.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+            const textoFrase = fraseB7a.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+            assert.ok(/3 presentadas/.test(textoFrase), `la frase habla de las ofertas entregadas: ${textoFrase}`);
+            assert.ok(!/presentad/i.test(textoChips),
+              `«presentad» significa «entregadas» en la frase de arriba: el chip de conteo no puede usar esa raíz para otra cifra (${textoChips})`);
+            assert.ok(/1 sin resultado todavía/.test(textoChips) && /1 sin resultado todavía/.test(textoFrase),
+              `el chip y la frase llaman igual a la MISMA cifra (${porEstadoB7a.presentado} esperando resultado): ${textoChips}`);
+            assert.strictEqual(resumenChips({ abiertos: 0, presentados: 0 }, 0), "", "sin guardados no hay chips de conteo");
+            assert.ok(!/ 0 /.test(` ${resumenChips({ abiertos: 1, presentados: 0, cambios_pendientes: 0, avisos_proximos: 0 }, 1).replace(/<[^>]+>/g, " ")} `.replace(/\s+/g, " ")),
+              "un conteo en 0 no se pinta como chip: «0 sin resultado» es ruido");
+            assert.ok(/res\.innerHTML = htmlResumenSeguimiento\(rs, todos\.length\);/.test(appSeg), "pintarSeguimiento pinta los chips con esa función, no con una segunda copia");
+            const { tuteoEn: tuteoChips } = require("../lib/lenguaje_pantalla.js");
+            assert.strictEqual(tuteoChips(textoChips), null, "los chips hablan de usted");
           }
         }
         assert.ok(/class="btn-guardar/.test(appSeg) && /function alternarGuardado/.test(appSeg) && /op=seguimiento/.test(appSeg) && /data-seg-detalle/.test(appSeg) && /data-seg-ics/.test(appSeg) && /data-seg-verificar/.test(appSeg), "la tarjeta guarda y Mi empresa sigue, descarga el .ics, consulta el detalle y verifica el NIT");
@@ -10471,6 +10502,112 @@ async function main() {
               assert.ok(!re.test(trozoSocio), `el simulador de socio enseña jerga «${nombre}»`);
             }
             assert.strictEqual(require("../lib/lenguaje_pantalla.js").tuteoEn(JSON.stringify([acc.frase, accMax.frase])), null, "las frases hablan de usted");
+
+            /* ── B8a-H1 (6-sep-2026) · LA PULSACIÓN DE LA CITA TIENE QUE VERSE ──
+               El enlace más visible («Ver si con un socio cumple» bajo la cita literal)
+               vive FUERA del pliegue «Todo lo demás», y la caja que abre vive DENTRO:
+               quitarle la clase `hidden` y desplazarse no la enseña. Medido en Chromium
+               sobre este mismo árbol: `checkVisibility` false, `content-visibility:
+               hidden`, los mismos 79 nodos visibles antes y después. Aquí se EJECUTA
+               `abrirSimuladorSocio` sobre un doble con la caja dentro de dos <details>
+               cerrados y anidados: los dos tienen que quedar abiertos. */
+            {
+              const iAP = appS.indexOf("function abrirPliegues(");
+              assert.ok(iAP > 0, "app.js sin abrirPliegues: la caja del socio se abre dentro de un pliegue cerrado");
+              const iAS = appS.indexOf("function abrirSimuladorSocio(");
+              const fuenteSocio = appS.slice(iAS, appS.indexOf("\n  }", iAS) + 4) + "\n" + appS.slice(iAP, appS.indexOf("\n  }", iAP) + 4);
+              const nodoDet = (padre) => { const d = { tagName: "DETAILS", open: false, parentElement: padre, closest(s) { return s === "details" ? d : null; } }; return d; };
+              const fuera = nodoDet(null), dentro = nodoDet(fuera);
+              const cajaDoble = {
+                _html: "", classList: { _c: new Set(["hidden"]), remove(...c) { c.forEach((x) => this._c.delete(x)); }, add(...c) { c.forEach((x) => this._c.add(x)); }, contains(c) { return this._c.has(c); } },
+                set innerHTML(v) { this._html = v; }, get innerHTML() { return this._html; },
+                parentElement: dentro, closest: (s) => (s === "details" ? dentro : null), scrollIntoView() { this.desplazada = true; },
+              };
+              const abrir = new Function("cajaSocioDe", "$", "perfilesIndividuales", "esPerfilIndividual", "avisoSocio", "botonIr", "esc", "PARTE_SOCIO_DEFECTO",
+                `${fuenteSocio}; return abrirSimuladorSocio;`)(
+                () => cajaDoble, () => ({ value: "helder" }), () => [{ id: "helder", nombre: "Helder" }, { id: "genesis", nombre: "Génesis" }],
+                (id) => !!id && id !== "juntos" && !/^cons_/.test(id), (t, b) => `<p>${t}</p>${b || ""}`, (s, t) => `<button>${t}</button>`, (s) => String(s), 50);
+              abrir("G1");
+              assert.strictEqual(cajaDoble.classList.contains("hidden"), false, "la caja deja de estar oculta");
+              assert.ok(/¿Y con un socio\?/.test(cajaDoble.innerHTML) && /Con Génesis/.test(cajaDoble.innerHTML), "…y se pinta con el socio elegible");
+              assert.strictEqual(dentro.open, true, "el <details> que CONTIENE la caja tiene que quedar abierto: si no, la pulsación no tiene respuesta visible");
+              assert.strictEqual(fuera.open, true, "…y todos los de encima: un arreglo de un solo nivel deja vivo el pliegue anidado");
+              assert.strictEqual(cajaDoble.desplazada, true, "…y después se desplaza hasta ella");
+            }
+
+            /* ── B8a-H2 · LA FRASE DE CIERRE NO PUEDE NEGAR EL CHIP ROJO DE AL LADO ──
+               Con lo único en rojo en un REQUISITO (capacidad de facturar) y ninguna
+               casilla con cifra, la respuesta decía «En la ficha no hay ninguna cifra en
+               rojo que un socio tenga que cubrir»: contradecía la invitación que llevó
+               hasta ahí y dejaba la respuesta en un chip sin palabras (medido en
+               Chromium con un proceso de $950.000 M que Helder no puede facturar). La
+               frase es ahora una función PURA que se ejecuta con las dos entradas. */
+            {
+              const iFC = appS.indexOf("  const REQ_PUERTA_APP = ");
+              const fFC = appS.indexOf("\n  }", appS.indexOf("function fraseCierreSocio(")) + 4;
+              assert.ok(iFC > 0 && fFC > iFC, "app.js sin fraseCierreSocio: la frase de cierre no se puede ejecutar");
+              /* se recorta con su tabla de correspondencias: si la prueba la inyectara,
+                 estaría comprobando su propia idea de qué campo mira cada requisito */
+              const frase = new Function(`${appS.slice(iFC, fFC)}; return fraseCierreSocio;`)();
+              const P = { cumple: "cumple", no_cumple: "no cumple" };
+              const reqCap = { clave: "capacidad", titulo: "Capacidad de facturar este contrato", estado: "no_cumple", accion: { tipo: "consorcio", proceso: "G1" } };
+              const reqReg = { clave: "registro", titulo: "Registro de proponente vigente", estado: "no_cumple", accion: { tipo: "consorcio", proceso: "G1" } };
+              const reqExp = { clave: "experiencia", titulo: "Experiencia acreditada", estado: "no_cumple", accion: { tipo: "consorcio", proceso: "G1" } };
+              const fCap = frase({ casillasRojas: [], requisitosRojos: [reqCap], respuesta: { exigencias: con.exigencias, puertas_app: { p1_rup: true, p2_k: false, p3_caja: false } }, palabras: P });
+              assert.ok(!/ninguna cifra en rojo/.test(fCap), `con un requisito en rojo la frase no puede negar que haya algo en rojo: ${fCap}`);
+              assert.ok(/capacidad de facturar este contrato/i.test(fCap) && /no cumple/.test(fCap), `…tiene que nombrarlo y decir qué pasó con el socio: ${fCap}`);
+              const fCapOk = frase({ casillasRojas: [], requisitosRojos: [reqCap], respuesta: { exigencias: con.exigencias, puertas_app: { p1_rup: true, p2_k: true, p3_caja: true } }, palabras: P });
+              assert.ok(/capacidad de facturar este contrato, con el socio cumple/i.test(fCapOk), `…y el veredicto sale de puertas_app, no de la pantalla: ${fCapOk}`);
+              const fDos = frase({ casillasRojas: [], requisitosRojos: [reqReg, reqCap], respuesta: { puertas_app: { p1_rup: false, p2_k: true, p3_caja: true } }, palabras: P });
+              assert.ok(/registro de proponente vigente, con el socio no cumple/i.test(fDos) && /capacidad de facturar este contrato, con el socio cumple/i.test(fDos), `los dos con veredicto propio: ${fDos}`);
+              /* de la experiencia y de los indicadores el simulador NO devuelve veredicto:
+                 no se afirma nada — inventar un «cumple» ahí sería la cifra creíble y falsa */
+              const fExp = frase({ casillasRojas: [], requisitosRojos: [reqExp], respuesta: { puertas_app: { p1_rup: true, p2_k: true, p3_caja: true } }, palabras: P });
+              assert.ok(/no vuelve a decidir con el socio/.test(fExp) && !/cumple/.test(fExp.replace(/no vuelve a decidir[^.]*\./, "")), `sin veredicto propio no se afirma ninguno: ${fExp}`);
+              /* y las frases de las CIFRAS siguen exactamente como estaban */
+              const rojaPat = { clave: "patrimonio", titulo: "Patrimonio", exige: "$9.000.000.000" };
+              assert.ok(/Juntos tampoco cubren la cifra que hoy no cumple/.test(frase({ casillasRojas: [rojaPat], requisitosRojos: [], respuesta: { exigencias: [{ clave: "patrimonio", estado: "no_cumple", exige: "x" }] }, palabras: P })));
+              assert.ok(/Juntos cubren la cifra que hoy no cumple/.test(frase({ casillasRojas: [rojaPat], requisitosRojos: [], respuesta: { exigencias: [{ clave: "patrimonio", estado: "cumple", exige: "x" }] }, palabras: P })));
+              assert.ok(/todavía no se han leído/.test(frase({ casillasRojas: [rojaPat], requisitosRojos: [reqCap], respuesta: { exigencias: [{ clave: "patrimonio", estado: "por_leer", exige: null }] }, sinLectura: true, palabras: P })));
+              /* y con las dos cosas en rojo se habla de las dos: un arreglo que solo
+                 cubriera el caso reproducido dejaría vivo el hermano */
+              const fMixto = frase({ casillasRojas: [rojaPat], requisitosRojos: [reqCap], respuesta: { exigencias: [{ clave: "patrimonio", estado: "no_cumple", exige: "x" }], puertas_app: { p1_rup: true, p2_k: true, p3_caja: true } }, palabras: P });
+              assert.ok(/Juntos tampoco cubren la cifra/.test(fMixto) && /capacidad de facturar este contrato, con el socio cumple/i.test(fMixto), `con cifras Y requisitos en rojo se dice de los dos: ${fMixto}`);
+              assert.strictEqual(frase({ casillasRojas: [], requisitosRojos: [], respuesta: { exigencias: con.exigencias } }), "En la ficha no hay ninguna cifra en rojo que un socio tenga que cubrir.",
+                "…y sin nada en rojo la frase de siempre");
+              assert.ok(/requisitosRojos: requisitosConSocio\(guia\)/.test(appS) && /const rojas = \(guia\.exigencias \|\| \[\]\)/.test(appS), "htmlResultadoSocio le pasa las casillas Y los requisitos");
+              assert.strictEqual(require("../lib/lenguaje_pantalla.js").tuteoEn([fCap, fCapOk, fDos, fExp, fMixto].join(" ")), null, "la frase de cierre habla de usted");
+            }
+
+            /* ── B8a-H4 · UNA PARTE FUERA DE RANGO SE DICE, NO SE SUSTITUYE ──
+               Escribir «150» simulaba con 50 % sin decirlo: había respuesta, pero no la
+               que se pidió ni el motivo (medido en Chromium a 1280 y 390). */
+            {
+              const iPD = appS.indexOf("function parteDelSocio(");
+              assert.ok(iPD > 0, "app.js sin parteDelSocio");
+              const parteDelSocio = new Function("PARTE_SOCIO_MIN", "PARTE_SOCIO_MAX", `${appS.slice(iPD, appS.indexOf("\n  }", iPD) + 4)}; return parteDelSocio;`)(1, 99);
+              for (const malo of [150, 0, -5, 100, NaN, null, undefined, "", "abc"]) {
+                const v = parteDelSocio(malo);
+                assert.strictEqual(v.ok, false, `${JSON.stringify(malo)} no es una parte válida`);
+                assert.strictEqual(v.parte, null, "…y no se sustituye por un 50 % en silencio");
+                assert.ok(/1 a 99 %/.test(v.aviso) && /corríjala/.test(v.aviso), `…y la respuesta dice qué hacer: ${v.aviso}`);
+              }
+              for (const [bueno, esperado] of [[1, 1], [50, 50], [99, 99], [30.4, 30], ["70", 70]]) assert.deepStrictEqual(parteDelSocio(bueno), { ok: true, parte: esperado, aviso: null }, `${bueno} es válida`);
+              assert.ok(/if \(!v\.ok\) \{ res\.innerHTML = /.test(cuerpoSim) && /return; \}/.test(cuerpoSim), "el simulador PINTA el aviso y no simula con otra cifra");
+              assert.ok(!/parteSocio >= 1 && parteSocio <= 99/.test(appS), "una sola lectura del campo: la sustitución silenciosa no puede volver por otro sitio");
+            }
+
+            /* ── B8a-H3 · el gancho de medición lo declaran LAS DOS llamadas ── */
+            {
+              const iMi = appS.indexOf("async function simularConsorcio(");
+              assert.ok(iMi > 0, "app.js sin simularConsorcio");
+              const cuerpoMi = appS.slice(iMi, appS.indexOf("\n  }", iMi) + 4);
+              assert.ok(/op=consorcio-simular/.test(cuerpoMi) && /origen: "mi_empresa"/.test(cuerpoMi),
+                "la simulación de Mi empresa declara su origen: sin él no se puede comparar con las de la guía, que es para lo que existe el gancho");
+              for (const m of sinComentarios(appS).matchAll(/op=consorcio-simular[\s\S]{0,320}?\}\s*\)/g)) {
+                assert.ok(/origen: "(guia|mi_empresa)"/.test(m[0]), `una llamada a op=consorcio-simular sin origen: ${m[0].slice(0, 160)}`);
+              }
+            }
             console.log(`  · casilla en rojo → socio: patrimonio falta ${acc.diferencia_legible}; consorcio 50/50 → patrimonio ponderado ${patC.suyo} (${patC.estado}); ${simG.exigencias_resumen.no_cumple} en rojo con el socio`);
           }
           // (2b) LAS CITAS LITERALES (4-sep-2026, noche): el párrafo real del pliego por tema, con página; el índice no cuenta
@@ -15210,7 +15347,7 @@ async function main() {
           const textoIcociv = new Function("nf2", "fmt", `${appIco.slice(iTI, appIco.indexOf("\n  }", iTI) + 4)}; return textoIcociv;`)(
             new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 }), new Intl.NumberFormat("es-CO"));
           const tIco = textoIcociv(icv, semIco.items.length);
-          assert.ok(/^13 insumos recuperados llevados de marzo de 2025 a marzo de 2026/.test(tIco), `la ficha dice cuántos y de cuándo a cuándo: ${tIco}`);
+          assert.ok(/^13 precios de materiales, jornales y equipos tomados de un presupuesto de marzo de 2025 se llevaron a marzo de 2026/.test(tIco), `la ficha dice cuántos y de cuándo a cuándo: ${tIco}`);
           assert.ok(/\(\+4,7 %\)/.test(tIco) && !/4\.7/.test(tIco), "el porcentaje va en castellano (coma), no «4.7»");
           /* tras una captura del índice la variación anual viaja null y el porcentaje sale del factor, del mes base al capturado */
           const tCap = textoIcociv({ ...icv, boletin: "Junio 2026", variacion_anual_general_pct: null, factor_aplicado: 1.048 }, 174);
@@ -15222,9 +15359,24 @@ async function main() {
           const tViejo = textoIcociv({ boletin: "Marzo 2026", variacion_anual_general_pct: 4.7, factor_aplicado: 1.047 }, 174);
           assert.ok(/alcance por confirmar/.test(tViejo) && /vuelva a cargar el catálogo/.test(tViejo) && !/13 insumos/.test(tViejo),
             "con la meta anterior cargada en el servidor no se inventa el alcance: se dice qué hacer");
+          /* B7a-H2 (6-sep-2026) · `Number(null) === 0`: SIN el total del catálogo la
+             frase decía «los usan 15 de los 0 ítems», un cero creíble donde no hay dato;
+             y con la meta a null en sus dos conteos la guarda `=== null` no tenía
+             cerradura (la mutación que la quitaba pasaba en verde y la frase decía «0
+             insumos … de los 174 ítems»). Las dos, ejecutadas sobre la función real. */
+          const tSinTotal = textoIcociv(icv, null);
+          assert.ok(/los usan 15 ítems/.test(tSinTotal) && !/de los 0/.test(tSinTotal) && !/\b0\b/.test(tSinTotal),
+            `sin el total del catálogo no se inventa un cero: la frase cuenta los ítems que lo llevan y calla el resto: ${tSinTotal}`);
+          for (const vacio of [null, undefined, ""]) assert.ok(!/de los 0/.test(textoIcociv(icv, vacio)), `totalItems ${JSON.stringify(vacio)} no es «0 ítems»`);
+          const tMetaNula = textoIcociv({ ...icv, insumos_reajustados: null, items_con_insumo_reajustado: null }, 174);
+          assert.ok(/alcance por confirmar/.test(tMetaNula) && !/^0 /.test(tMetaNula) && !/ 0 de los /.test(tMetaNula),
+            `una meta con los conteos en null es «sin dato», jamás «0 insumos»: ${tMetaNula}`);
           const { tuteoEn: tuteoIco } = require("../lib/lenguaje_pantalla.js");
           assert.strictEqual(tuteoIco(tIco + " " + tViejo), null, "la ficha habla de usted");
-          assert.ok(!/apu_catalogo|_meta|\.json|recuperado"|fuente=/.test(tIco + tViejo), "sin nombres de archivo ni campos en pantalla");
+          /* B7a-H3 · «recuperado» es la categoría INTERNA del catálogo (`fuente`), no una
+             palabra de pantalla: la frase dice de dónde salieron los precios. El veto
+             cubre la raíz entera, no solo `recuperado"` con comilla. */
+          assert.ok(!/apu_catalogo|_meta|\.json|recuperad|fuente=/i.test(tIco + tViejo + tSinTotal + tMetaNula), "sin nombres de archivo, campos ni categorías internas en pantalla");
           console.log(`· ICOCIV: reajuste declarado sobre ${icv.insumos_reajustados}/${semIco.insumos.length} insumos y ${icv.items_con_insumo_reajustado}/${semIco.items.length} ítems (0 del Nogal) · la herramienta reproduce la semilla al peso desde marzo de 2025 · la ficha del panel dice el hecho`);
         }
 
@@ -16753,6 +16905,36 @@ async function main() {
         assert.strictEqual(pub.cuerpo.icociv && pub.cuerpo.icociv.insumos_reajustados, S._meta.icociv.insumos_reajustados,
           "…y el reajuste del DANE con su alcance: el panel lo pinta de aquí, no del GET de administración");
         assert.ok(typeof pub.cuerpo.cargado_el === "string" && pub.cuerpo.cargado_el, "…y cuándo se cargó");
+        /* B7a-H2 (6-sep-2026) · «sin dato» ≠ «cero», DE PUNTA A PUNTA. El «jamás 0»
+           que promete el comentario del handler no tenía cerradura: con `entero =
+           (v) => Number.isInteger(v) ? v : 0` la suite pasaba en verde, porque solo
+           se probaba la meta con los tres conteos presentes. Se siembra una meta a la
+           que le falta `items` (lo que deja una carga anterior a este campo) y se
+           exige `null` en el campo Y «—» en la pantalla que lo pinta, ejecutando el
+           `num` real de `pintarApu` — donde `Number(null) === 0` lo convertía en un
+           «0 ítems» creíble. */
+        const alm = require("../lib/almacen.js");
+        const metaOrig = await alm.leerJSON(redis, alm.CLAVES.apuMeta);
+        const metaCoja = { ...metaOrig, insumos: null }; delete metaCoja.items;
+        await alm.escribirJSON(redis, alm.CLAVES.apuMeta, metaCoja);
+        const pubSin = await invocar(require("../lib/handlers/apu/editor.js"), "/api/apu/catalogo");
+        assert.strictEqual(pubSin.status, 200);
+        assert.strictEqual(pubSin.cuerpo.totales.items, null, "un conteo que la meta no trae viaja null, jamás 0");
+        assert.strictEqual(pubSin.cuerpo.totales.insumos, null, "…y uno explícitamente null tampoco es 0");
+        assert.strictEqual(pubSin.cuerpo.totales.regiones, S.regiones.length, "…y el que sí está sigue siendo su entero");
+        await alm.escribirJSON(redis, alm.CLAVES.apuMeta, metaOrig);
+        {
+          const appPA = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+          const iPA = appPA.indexOf("  function pintarApu(c) {");
+          assert.ok(iPA > 0, "app.js sin pintarApu");
+          const lineaNum = (appPA.slice(iPA, appPA.indexOf("\n    const t = c.totales", iPA)).match(/const num = \(v\) => [^\n]+;/) || [])[0];
+          assert.ok(lineaNum, "pintarApu sin su `num`: el panel del catálogo pinta los conteos con él");
+          const numPA = new Function("fmt", `${lineaNum} return num;`)(new Intl.NumberFormat("es-CO"));
+          for (const vacio of [null, undefined, "", NaN, "abc"]) assert.strictEqual(numPA(vacio), "—", `el panel pinta «—» sin dato, no un cero creíble: ${JSON.stringify(vacio)}`);
+          assert.strictEqual(numPA(0), "0", "…y un cero MEDIDO sí se pinta");
+          assert.strictEqual(numPA(437), "437");
+          assert.strictEqual(numPA(pubSin.cuerpo.totales.items), "—", "el null que acaba de servir el handler se pinta «—»");
+        }
       }
 
       /* --- el catálogo NO toca el corpus: vive en `apu:*` y ninguna purga de
@@ -20048,6 +20230,27 @@ async function main() {
           ["Tolima", { dep: ["73"] }, null],
           ["en de la", {}, null],
           ["", {}, null],
+          /* B8b-H3 (6-sep-2026) · UNA COMA SEGUIDA DE TRES DÍGITOS NO DECIDE. «hasta
+             2,000 millones» se leía como 2 con decimales y fijaba un tope de
+             $2.000.000: mil veces menor, creíble y bien maquetado en la ficha
+             («Cuánto vale: hasta $2.000.000») y con la lista vacía detrás. La
+             agrupación anglosajona y la coma decimal colombiana son la misma cadena,
+             y este proyecto no puede elegir por el que escribe: la cantidad queda
+             INERTE y las palabras vuelven enteras al resto, que es lo que la pantalla
+             enseña como «Palabra: …». La coma decimal corta sigue viva. */
+          ["hasta 2,000 millones", {}, "hasta 2,000 millones"],
+          ["hasta 1,5 millones", { min: { min: null, max: 1500000 } }, null],
+          ["entre 2,000 y 5.000 millones", {}, "entre 2,000 y 5.000 millones"],
+          ["obras en Tolima hasta 2,000 millones", { dep: ["73"], tipo: ["obra"] }, "hasta 2,000 millones"],
+          ["hasta 12,345,678 pesos", {}, "hasta 12,345,678 pesos"],
+          /* B8b-H4 · «desde A y hasta B millones» es un par, no media frase: se leía
+             solo el tope y «desde 100» quedaba de palabra —una subcadena que no casa
+             con ningún objeto— por una cuantía que la persona dijo entera. */
+          ["desde 100 y hasta 500 millones", { min: { min: 100e6, max: 500e6 } }, null],
+          ["desde 100 hasta 500 millones", { min: { min: 100e6, max: 500e6 } }, null],
+          ["hasta 500 y desde 100 millones", { min: { min: 100e6, max: 500e6 } }, null],
+          ["obras en Tolima desde 100 y hasta 500 millones", { dep: ["73"], tipo: ["obra"], min: { min: 100e6, max: 500e6 } }, null],
+          ["desde 100 y hasta 500", {}, "desde 100 y hasta 500"],
         ];
         assert.ok(bateria.length >= 30, "la batería tiene al menos 30 frases");
         for (const [fraseQ, estadoEsperado, restoEsperado] of bateria) {
@@ -20274,6 +20477,32 @@ async function main() {
         assert.ok(/text-anchor="end"[^>]*>6 sep</.test(hOk) && /text-anchor="start"[^>]*>9 jun</.test(hOk), "el primero y el último se anclan al borde: centrados sobre una columna de 2 px se salían del lienzo (Chromium, 390 px)");
         assert.ok(/data-filtro/.test(hOk) === false, "la tendencia no promete una lista: no hay filtro por día");
         assert.strictEqual(PortadaPub.htmlHistoria(puntos(30).map((p, i) => (i === 5 ? { ...p, sello: "otra regla" } : p)), { ahora: ahoraH }), "", "un sello distinto dentro de la ventana calla la tendencia: una serie que se mueve por la regla no es el mercado");
+        /* B7b-H1 (6-sep-2026) · EL TRAMO VIGENTE, NO TODA LA VENTANA. Exigir un solo
+           sello en los 90 días enmudecía la tendencia 90 días por cada cambio de la
+           regla, y la regla se movió CINCO veces en los 16 días de historial (medido
+           reconstruyendo lib/ de cada commit que la tocó; una de ellas, c5d5f2d, era
+           una reescritura de rendimiento que no cambió ni un acierto). A ese ritmo la
+           tendencia no se dibujaría nunca. Ahora se dibuja el tramo FINAL con sello
+           constante si tiene base propia, los días de la regla anterior quedan en
+           blanco y la nota dice desde cuándo. */
+        {
+          const conSello = (n, sello, desde = 0) => Array.from({ length: n }, (_, i) => ({ fecha: fechaH(desde + n - 1 - i), procesosAbiertos: 1300 + i, sello }));
+          const roto = PortadaPub.htmlHistoria([...conSello(10, "regla vieja", 30), ...conSello(30, "regla nueva")], { ahora: ahoraH });
+          assert.ok(/<svg/.test(roto), "con 30 mediciones de la regla VIGENTE se dibuja aunque antes hubiera otra: si no, cada cambio son 90 días de silencio");
+          assert.strictEqual((roto.match(/<path /g) || []).length, 30, `solo las del tramo vigente tienen barra: ${(roto.match(/<path /g) || []).length}`);
+          assert.ok(/La forma de contar las licitaciones cambió el 8 de agosto: aquí se ve desde entonces\./.test(roto),
+            `la ruptura se declara con su día, para que el primer punto del tramo no se lea como un salto del mercado: ${(roto.match(/<p class="mt-1[^>]*>([^<]*)</) || [])[1]}`);
+          assert.ok(/60 días sin medición quedan en blanco/.test(roto), "…y los días de la regla anterior se cuentan como días sin medición, no como ceros");
+          assert.strictEqual(PortadaPub.htmlHistoria([...conSello(40, "regla vieja", 5), ...conSello(5, "regla nueva")], { ahora: ahoraH }), "",
+            "con cinco mediciones de la regla vigente la vista sigue callada: cinco puntos no son una tendencia, por muchos que hubiera antes");
+          assert.ok(!/cambió el/.test(hOk), "sin ruptura la nota no habla de ninguna");
+          /* B7b-H3 · la nota habla con el vocabulario del teaser («Actualizado hoy … desde
+             el SECOP II»), no con el de la máquina: «sincronización» no se puede abrir. */
+          assert.ok(/tomada cada vez que se actualizan los datos del SECOP II/.test(hOk), "la nota dice de dónde y cuándo sale la columna, en palabras del visitante");
+          const portadaSrcH = sinComentarios(fs.readFileSync(path.join(__dirname, "..", "public", "portada.js"), "utf8"));
+          const textosPortada = [...portadaSrcH.matchAll(/`([^`]*)`/g)].map((m) => m[1]).concat([...portadaSrcH.matchAll(/"([^"]{4,})"/g)].map((m) => m[1])).join(" ");
+          assert.ok(!/sincroniz/i.test(textosPortada), `la landing no nombra la «sincronización»: es vocabulario de infraestructura que el visitante no puede abrir (${(textosPortada.match(/[^ ]*sincroniz[^ ]*/i) || [""])[0]})`);
+        }
         assert.strictEqual(PortadaPub.htmlHistoria(puntos(40).map((p, i) => ({ ...p, fecha: fechaH(i + 100) })), { ahora: ahoraH }), "", "40 puntos fuera de la ventana de 90 días no son base");
         for (const v of [null, undefined, "x", [], [{ fecha: "2026-09-06" }]]) assert.strictEqual(PortadaPub.htmlHistoria(v, { ahora: ahoraH }), "", `sin historia legible no se dibuja: ${JSON.stringify(v)}`);
         const { tuteoEn: tuteoH, RE_EMOJI_UI: emojiH } = require("../lib/lenguaje_pantalla.js");
@@ -20732,6 +20961,29 @@ async function main() {
         const plegado13 = d13.slice(d13.indexOf("<details"));
         assert.strictEqual((plegado13.match(/data-filtro="dep=/g) || []).length, 2, "cada barra plegada sigue siendo un filtro");
         assert.ok(!/en total; se muestran/.test(d13), "con la lista completa la nota ya no dice «se muestran las 8»: no hay nada fuera");
+        /* B7b-H2 (6-sep-2026) · LA NOTA CUENTA LO QUE EL OJO VE. Con 45 entidades el
+           servidor publica 40 y la pantalla pinta 8 con 32 plegadas, y la nota decía
+           «45 en total; se muestran las 40 con más procesos»: la misma forma del
+           defecto que este lote corrigió («pintaba 6 mientras la nota decía 8»). Se
+           ejecuta la función real y se compara la nota con las barras CONTADAS antes
+           del <details>; el verbo «se muestran» no puede reaparecer sobre una cifra
+           que no está a la vista. */
+        {
+          const muchas = { ...ag13, topEntidades: Array.from({ length: 40 }, (_, k) => ({ nombre: `ENTIDAD ${k + 1}`, nit: `900${k}`, n: 100 - k, valor: 1e9 })), entidadesDistintas: 45, sinEntidad: 0 };
+          const e45 = PulsoPub.htmlEntidades(muchas);
+          const vistas = (e45.slice(0, e45.indexOf("<details")).match(/<li>/g) || []).length;
+          const nota45 = (e45.match(/<p class="mt-2 text-\[11px\][^>]*>([^<]*)</) || [])[1] || "";
+          assert.strictEqual(vistas, 8, `a la vista van 8 barras: ${vistas}`);
+          assert.strictEqual((e45.match(/<li>/g) || []).length, 40, "…y las 40 publicadas están, plegadas");
+          assert.ok(/45 en total/.test(nota45) && /40 con más procesos/.test(nota45), `la nota dice cuántas hay y cuántas trajo: ${nota45}`);
+          assert.ok(new RegExp(`${vistas} a la vista y 32 plegadas`).test(nota45), `…y cuántas se VEN, que es lo que el ojo cuenta: ${nota45}`);
+          assert.ok(!/se muestran/.test(nota45), `«se muestran las 40» con 8 a la vista es una cifra creíble y falsa: ${nota45}`);
+          const e10 = PulsoPub.htmlEntidades({ ...ag13, topEntidades: muchas.topEntidades.slice(0, 10), entidadesDistintas: 10, sinEntidad: 0 });
+          assert.ok(/8 a la vista y 2 plegadas/.test(e10) && !/en total/.test((e10.match(/<p class="mt-2 text-\[11px\][^>]*>([^<]*)</) || [])[1] || ""),
+            "sin nada fuera del top la nota solo cuenta el plegado");
+          const e6 = PulsoPub.htmlEntidades({ ...ag13, topEntidades: muchas.topEntidades.slice(0, 6), entidadesDistintas: 6, sinEntidad: 0 });
+          assert.ok(!/a la vista/.test(e6), "sin plegado no hay nada que contar: la nota calla");
+        }
         const d8 = PulsoPub.htmlDepartamentos({ ...ag13, porDepartamento: ag13.porDepartamento.slice(0, 8), departamentosDistintos: 8 });
         assert.ok(!/<details/.test(d8) && (d8.match(/<li>/g) || []).length === 8, "con 8 o menos no hay plegado y se pintan las 8 (antes 6)");
         const d9 = PulsoPub.htmlDepartamentos({ ...ag13, porDepartamento: ag13.porDepartamento.slice(0, 9), departamentosDistintos: 9 });
@@ -24869,6 +25121,78 @@ async function main() {
         const cons = await arrancarAppEnNode({ search: "?perfil=cons_abc123def456" });
         for (const id of ids("soloDueno")) assert.strictEqual(cons.el(id).hidden, true, `consorcio por URL sin clave: #${id} oculto`);
         assert.deepStrictEqual(cons.urls().filter((u) => /op=(resumen|rup|experiencia|consorcio)(&|$)/.test(u)), [], "el consorcio por URL tampoco pide datos del dueño");
+
+        /* (c-bis) EL CABLEADO DE LA CAJA DE BÚSQUEDA Y DE LAS FICHAS, EJECUTADO
+           (6-sep-2026, B8b-H1 y B8b-H2). Las dos cerraduras del lote B8b eran REGEX
+           sobre el fuente: con `function quitarDesdeFicha(ev) { return false;` (todas
+           las cadenas que el regex busca seguían ahí) y con el Intro reducido a
+           `ev.preventDefault()`, la suite pasaba en verde mientras la × y el Intro no
+           hacían nada — el defecto que ese mismo lote acababa de arreglar. Aquí se
+           DESPACHAN los eventos sobre la app real arrancada en el doble y se mira la
+           URL que pide op=listar. Viven en este bloque, y no en «j-sexies», porque el
+           doble de DOM (`arrancarAppEnNode`) se construye aquí; en j-sexies quedan los
+           regex como aviso secundario.
+
+           El doble no parsea `innerHTML`, así que la × se localiza en el HTML que la
+           app ACABA de pintar y el nodo del clic se arma con SUS atributos: si la app
+           deja de pintar `data-fl-quitar`, o le cambia el nombre, `closest` devuelve
+           null, el manejador no hace nada y la aserción cae. */
+        {
+          const app = await arrancarAppEnNode({ search: "?perfil=rup_a1b2c3d4e5f6&dep=73&q=placa", hash: "#/licitaciones", sesion: { "detecta-acceso": "1" } });
+          const listar = () => app.urls().filter((u) => u.includes("op=listar"));
+          const ultima = () => listar()[listar().length - 1] || "";
+          const fichas = app.el("fl-fichas"), caja = app.el("fl-q");
+          assert.ok(/dep=73/.test(ultima()) && /q=placa/.test(ultima()), `el arranque con filtros en la URL los pide: ${ultima()}`);
+          /* el nodo de la × sale del HTML pintado por la propia app */
+          const nodoPintado = (selectorAttr, valor) => {
+            const re = new RegExp(`<[a-z]+[^>]*\\s${selectorAttr}="${valor}"[^>]*>`);
+            const etiqueta = (fichas.innerHTML.match(re) || [])[0];
+            assert.ok(etiqueta, `#fl-fichas no pintó ${selectorAttr}="${valor}"; pintó: ${fichas.innerHTML.slice(0, 200)}`);
+            const attrs = Object.fromEntries([...etiqueta.matchAll(/\s([a-zA-Z-]+)="([^"]*)"/g)].map((a) => [a[1], a[2]]));
+            const n = {
+              getAttribute: (k) => (k in attrs ? attrs[k] : null),
+              closest: (sel) => {
+                const porAttr = sel.match(/^\[([\w-]+)\]$/); if (porAttr) return porAttr[1] in attrs ? n : null;
+                const porId = sel.match(/^#([\w-]+)$/); return porId && attrs.id === porId[1] ? n : null;
+              },
+            };
+            return n;
+          };
+          const antesX = listar().length;
+          fichas.dispatchEvent({ type: "click", target: nodoPintado("data-fl-quitar", "dep"), preventDefault() {} });
+          await app.esperar();
+          assert.ok(listar().length > antesX, "la × de una ficha tiene que PEDIR la lista otra vez: si no hace nada, es una pulsación sin respuesta");
+          assert.ok(!/dep=73/.test(ultima()) && /q=placa/.test(ultima()), `la × quita SU filtro y conserva los demás: ${ultima()}`);
+          const antesTodos = listar().length;
+          fichas.dispatchEvent({ type: "click", target: nodoPintado("id", "fl-quitar-todos"), preventDefault() {} });
+          await app.esperar();
+          assert.ok(listar().length > antesTodos && !/[?&]q=|[?&]dep=/.test(ultima()), `«Quitar todos» deja la lista sin filtros: ${ultima()}`);
+          /* Intro aplica la frase, ejecutado */
+          const antesIntro = listar().length;
+          caja.value = "obras en Tolima";
+          caja.dispatchEvent({ type: "keydown", key: "Enter", preventDefault() {}, target: caja });
+          await app.esperar();
+          assert.ok(listar().length > antesIntro, "Intro en la caja tiene que aplicar la frase: sin petición es una pulsación sin respuesta");
+          assert.ok(/tipo=obra/.test(ultima()) && /dep=73/.test(ultima()), `Intro traduce la frase a los filtros que ya existen: ${ultima()}`);
+          /* B8b-H1: el `change` posterior no repite la petición… */
+          const trasIntro = listar().length;
+          caja.dispatchEvent({ type: "change", target: caja });
+          await app.esperar();
+          assert.strictEqual(listar().length, trasIntro, "el `change` que Chrome dispara tras el Intro no repite la misma consulta");
+          /* …pero con los filtros QUITADOS la misma frase vuelve a aplicarse: la caja
+             compara contra el ESTADO, no contra la última frase escrita. Este es el
+             recorrido natural que se rompía: buscar → quitar → volver a buscar lo mismo. */
+          fichas.dispatchEvent({ type: "click", target: nodoPintado("id", "fl-quitar-todos"), preventDefault() {} });
+          await app.esperar();
+          assert.ok(!/tipo=obra/.test(ultima()), `«Quitar todos» quitó lo que la frase puso: ${ultima()}`);
+          const antesRepetir = listar().length;
+          caja.value = "obras en Tolima";
+          caja.dispatchEvent({ type: "change", target: caja });
+          await app.esperar();
+          assert.ok(listar().length > antesRepetir, "volver a escribir la MISMA frase tras quitar los filtros tiene que aplicarla: la frase no es el estado");
+          assert.ok(/tipo=obra/.test(ultima()) && /dep=73/.test(ultima()), `…y con los mismos filtros que la primera vez: ${ultima()}`);
+          assert.ok(!/fraseAplicada/.test(sinComentarios(appVV)), "`fraseAplicada` guardaba la última frase escrita en vez del estado: no puede volver");
+        }
 
         /* (d) los cinco selectores de perfil hablan el mismo idioma: «juntos», el id de la
            barra y del servidor; «consorcio» queda solo como alias de la API. Censo de TODOS

@@ -9832,3 +9832,228 @@ la ficha, que pide «una restauración real anotada con fecha»): tras desplegar
 Sistema → Copia de sus datos, descargar una copia, guardarla fuera de la aplicación y hacer UNA
 restauración de verdad (con «Reemplazar lo que ya existe»), anotando la fecha en
 `docs/CHECKLIST_PRODUCCION.md` D-1b. Un respaldo que nunca se restauró no es un respaldo.
+
+
+### Remates «R3-remates-pantalla» de la ola 2 · B7a-H1/H2/H3, B7b-H1/H2/H3, B8a-H1/H2/H3/H4, B8b-H1/H2/H3/H4 (6-sep-2026)
+
+En una línea: catorce remates sobre los cuatro lotes de pantalla de hoy —la pulsación de la cita que no enseñaba nada, la caja de búsqueda que borraba lo escrito, «2,000 millones» leído como dos millones y once más—, con las dos cerraduras de regex del cableado convertidas en EJECUCIÓN sobre el doble de DOM.
+
+**Cómo llegó el encargo.** Cuatro verificadores adversarios independientes devolvieron 15 hallazgos
+con reproducción ejecutada sobre B7a (Mis procesos y catálogo), B7b (pulso y portada), B8a (consorcio
+y Excel) y B8b (búsqueda por frases). Los 15 se reprodujeron ANTES de tocar nada; 14 se arreglaron y
+uno se declaró NO APLICADO con su motivo. Lo que sigue es qué se decidió y por qué.
+
+**Lo primero: dos cerraduras que eran un adorno (B8b-H2).** Las dos aserciones del cableado de la
+caja de búsqueda eran regex sobre el fuente. Medido en este árbol: con `function quitarDesdeFicha(ev)
+{ return false;` —todas las cadenas que el regex busca siguen ahí— la suite pasaba **1/1, exit 0**, y
+con el Intro reducido a `ev.preventDefault()` también. Es decir, la × que no hace nada (el defecto que
+el lote B8b acababa de arreglar) y un Intro inerte pasaban en verde: la cerradura protegía el TEXTO,
+no la conducta. Ahora el cableado se EJECUTA con `arrancarAppEnNode` (el doble de DOM que la suite ya
+tenía): se arranca la app con `?dep=73&q=placa#/licitaciones`, se despacha el clic sobre `#fl-fichas`
+con un nodo armado a partir del HTML que la app ACABA de pintar —si deja de pintar `data-fl-quitar`,
+o le cambia el nombre, `closest` devuelve null, el manejador no hace nada y la aserción cae— y se mira
+la URL de la siguiente `op=listar`. Las dos mutaciones caen ahora por la aserción nueva. La cerradura
+vive en el bloque de la vista de visitante, que es donde está el doble; en «j-sexies» los regex quedan
+como aviso secundario. **La lección de método**: un regex sobre el fuente prueba que alguien escribió
+una línea, no que la línea haga algo; y la propia regla de CLAUDE.md («la cerradura debe EJECUTAR la
+función real») se había cumplido a medias en el lote que la citaba.
+
+**La frase no es el estado (B8b-H1, alta).** `fraseAplicada` guardaba la ÚLTIMA frase escrita y el
+`change` de la caja se saltaba si coincidía. Después de quitar los filtros (la × de una ficha,
+«Quitar todos», la hoja) el estado ya no llevaba nada pero la frase seguía siendo «la última
+aplicada»: volver a escribir LO MISMO y pulsar «Buscar» no aplicaba nada y además dejaba la caja
+vacía. Reproducido con la app real en el doble: `Intro «obras en Tolima»` → `tipo=obra&dep=73`;
+`Quitar todos` → sin filtros; la MISMA frase + `change` → **ninguna petición nueva** y la URL sin
+filtros. Una pulsación sin respuesta —y destructiva— en la puerta principal, en un recorrido natural
+(buscar → quitar → volver a buscar lo mismo). Ahora se compara el ESTADO que resultaría de aplicar lo
+escrito (`FL.escribirEstado` sobre unos `URLSearchParams` vacíos, la misma serialización de la URL):
+si es idéntico, el `change` posterior al Intro no repite la petición —que es para lo que existía el
+guardián—; si difiere, se aplica. **Intro y «Buscar» aplican SIEMPRE**: una pulsación deliberada no
+puede quedarse sin respuesta, y por eso la comparación se quedó en el `change` y no se metió dentro de
+`aplicarConsulta`, que era la propuesta del informe.
+
+**La pulsación de la cita no enseñaba nada (B8a-H1, alta).** El enlace más visible («Ver si con un
+socio cumple» bajo la cita literal) vive FUERA del pliegue «Todo lo demás» y la caja que abre vive
+DENTRO. Quitarle la clase `hidden` y hacer `scrollIntoView` no la enseña: medido en Chromium sobre
+este árbol, `checkVisibility` false, `content-visibility: hidden`, los MISMOS 79 nodos visibles antes
+y después, y la página solo se desplazaba. Los otros dos enlaces (fila y chips) están dentro del mismo
+pliegue y por eso sí respondían. La medición del lote no lo vio porque su guion abría todos los
+`<details>` a mano antes de pulsar. Ahora `abrirSimuladorSocio` llama a `abrirPliegues(caja)`, que
+sube por `closest("details")` abriendo TODOS los de encima, no solo el primero: el pliegue puede
+anidarse y un arreglo de un solo nivel dejaría vivo el hermano. Se descartó sacar la caja fuera del
+pliegue: lo que se TOCA va plegado, y la decisión del lote B8a es correcta; lo que faltaba era abrirlo.
+Cerradura ejecutada sobre un doble con la caja dentro de dos `<details>` anidados y cerrados.
+
+**La frase de cierre no puede negar el chip rojo de al lado (B8a-H2).** `rojas` salía solo de
+`guia.exigencias` (las casillas con cifra), pero el enlace lo llevan también los REQUISITOS que la
+aplicación verifica. Con lo único en rojo en «Capacidad de facturar este contrato» —un proceso de
+$950.000 M que Helder no puede facturar—, la respuesta decía «En la ficha no hay ninguna cifra en rojo
+que un socio tenga que cubrir» mientras el chip de al lado decía «Capacidad: no cumple» y el enlace
+había prometido «Lo que está en rojo puede cubrirlo un socio». La respuesta a lo que se preguntó solo
+estaba en un chip pequeño y sin palabras. Ahora la frase es `fraseCierreSocio`, función PURA (el patrón
+de `htmlCascada` y `htmlDesenlaceSeguimiento`: app.js no es UMD y la suite la recorta del fuente), que
+nombra lo que estaba en rojo y qué pasó con el socio. **De dónde sale cada veredicto, y de dónde no**:
+`puertas_app.p1_rup` para el registro y `puertas_app.p2_k` para la capacidad, que es lo ÚNICO que el
+simulador devuelve; de la experiencia y de los indicadores no devuelve veredicto propio, así que no se
+afirma nada —se dice que la aplicación no vuelve a decidirlo y dónde compararlo—: inventar un «cumple»
+ahí sería la cifra creíble y falsa de siempre. Con cifras Y requisitos en rojo se habla de los dos, para
+no dejar vivo el hermano del caso reproducido.
+
+**Una parte fuera de rango se dice, no se sustituye (B8a-H4).** Escribir «150» y pulsar «Con
+Génesis…» simulaba con 50 % y ninguna línea lo decía: había respuesta, pero no la que se pidió ni el
+motivo. `parteDelSocio(v)` devuelve `{ok, parte, aviso}` y el simulador PINTA el aviso sin simular; la
+regla es UNA y la llama también «Armar este consorcio», que tenía su propia copia de la misma
+condición. La cerradura recorre los dos lados (150, 0, −5, 100, NaN, null, "", "abc" y 1, 50, 99,
+30.4, "70") y prohíbe que la comparación vuelva a escribirse suelta en app.js.
+
+**El gancho de medición lo declaran las dos llamadas (B8a-H3).** La simulación de Mi empresa no
+mandaba `origen`, así que no se distinguía de las que no lo mandan y la comparación «desde la guía
+frente a desde Mi empresa» —para lo que existe el gancho— no se podía hacer. Se añadió
+`origen: "mi_empresa"`, y la cerradura es un CENSO de las llamadas a `op=consorcio-simular` en app.js:
+cualquiera nueva sin origen la tumba, en vez de una lista de las dos que hay hoy.
+
+**Una palabra por concepto en la misma caja (B7a-H1).** El chip de conteo decía «1 presentado»
+contando SOLO `por_estado.presentado` —las que esperan resultado— a dos filas de «Ganó 1 de 3
+presentadas», que suma ganadas + perdidas + pendientes. Dos cosas distintas con nombres parecidos, en
+la misma pantalla. Se cambió el CHIP y no la frase, porque la frase literal de la ficha es una decisión
+fechada de este mismo día («presentadas» son las ofertas ENTREGADAS) y porque el chip nombraba mal
+justamente lo que cuenta: ahora dice «1 sin resultado todavía», las MISMAS palabras que ya usan la
+leyenda de la barra y la cláusula de la frase para esa MISMA cifra. El chip-filtro sigue diciendo «Me
+presenté (N)»: ese es el mando de la etapa, no un conteo, y por eso vive en `#seg-filtros`. Los chips
+se extrajeron a `htmlResumenSeguimiento` para que la cerradura ejecute LAS DOS funciones con el mismo
+`por_estado` y compare el vocabulario: la raíz «presentad» no puede aparecer en los chips de conteo.
+
+**«Sin dato» ≠ «cero», de punta a punta (B7a-H2).** `num(null)` de `pintarApu` pintaba «0» y
+`textoIcociv(ic, null)` decía «los usan 15 de los 0 ítems»: `Number(null) === 0` otra vez, y las dos
+guardas que sí existían (`entero()` en el servidor, `=== null` en `textoIcociv`) no tenían cerradura —
+las dos mutaciones pasaban en verde—. La ausencia se descarta ANTES de convertir en los dos sitios, y
+la cerradura va de punta a punta: se siembra una meta a la que le falta `items`, se invoca `op=catalogo`
+y se exige `null` en el campo Y «—» en la pantalla, ejecutando el `num` real. Un cero MEDIDO sí se
+pinta. Con el cargador de hoy la rama no se alcanza en producción; la cerradura existe para que siga
+sin alcanzarse cuando cambie.
+
+**El hecho, con las palabras del contratista (B7a-H3).** «13 insumos recuperados» nombraba una
+categoría INTERNA del catálogo (`fuente = "recuperado"`) que no aparece en ninguna otra pantalla:
+para entender el número había que saber «recuperados de dónde». Ahora: «13 precios de materiales,
+jornales y equipos tomados de un presupuesto de marzo de 2025 se llevaron a marzo de 2026 con el
+índice del DANE (+4,7 %)…». El veto de la cerradura pasa de `recuperado"` (con comilla, que solo
+cazaba el nombre del campo) a la raíz `recuperad` entera: una lista de cadenas exactas deja huecos por
+los que la jerga vuelve.
+
+**El tramo vigente, no toda la ventana (B7b-H1).** Exigir UN SOLO sello de la regla de ingesta en los
+90 días enmudecía la tendencia 90 días por cada cambio. Medido reconstruyendo `lib/` de cada commit
+que tocó `lib/filtros.js`, `lib/unspsc.js` o `lib/semantica.js` y serializando las MISMAS listas que
+`selloReglaIngesta`: **cinco sellos distintos en los 16 días de historial disponible** (21-ago,
+27-ago ×2, 2-sep ×2, 6-sep), y uno de esos cambios es `c5d5f2d`, «La lista negra corre 19 veces más
+rápida», que no cambió ni un acierto —el sello es la huella de los DATOS de la regla, y reordenar una
+expresión regular los cambia—. A ese ritmo la tendencia no se dibujaría nunca: la ficha decía
+«mitigado con el sello y el silencio»; medido, era silencio permanente. Ahora se toma el tramo FINAL
+con sello constante, se dibuja solo si ese tramo tiene base propia (30 mediciones), los días de la
+regla anterior quedan en blanco como cualquier día sin medir —los midió otra regla y mezclarlos sería
+una serie que se mueve por el contador— y la nota dice desde cuándo, para que la subida del primer día
+del tramo no se lea como un salto del mercado. Con un cambio a cinco días de hoy la vista sigue
+callada. **Lo que NO se hizo, con motivo**: sellar una huella de RESULTADOS (qué ids de una muestra
+fija pasan `admisibleParaIngesta`) haría que `lib/filtros.js` dependiera del corpus de la suite —una
+capa por debajo dependiendo de una por encima— y costaría un barrido en cada reconstrucción; queda
+escrito aquí que una reescritura de rendimiento sobre esas listas REINICIA la tendencia, que con este
+arreglo cuesta 30 días de nueva base y no 90 de silencio.
+
+**La nota cuenta lo que el ojo ve (B7b-H2).** Con 45 entidades el servidor publica 40, la pantalla
+pinta 8 y pliega 32, y la nota decía «45 en total; se muestran las 40 con más procesos»: la misma
+forma del defecto que el lote B7b acababa de corregir («pintaba 6 mientras la nota decía 8»). Ahora
+`notasReparto` recibe cuántas quedan a la vista —el tope real de `barrasRank`, no un número nuevo— y
+dice «45 en total; aquí las 40 con más procesos: 8 a la vista y 32 plegadas»; sin nada fuera del top
+solo cuenta el plegado; sin plegado, calla. El verbo «se muestran» desaparece del módulo.
+
+**La landing no nombra la «sincronización» (B7b-H3).** La nota de la tendencia decía «medida al cierre
+de cada sincronización» —vocabulario de infraestructura que el visitante no puede abrir, y un segundo
+nombre para lo que la misma caja llama «Actualizado hoy … desde el SECOP II»—. Ahora: «tomada cada vez
+que se actualizan los datos del SECOP II». La cerradura no es una lista de frases: es un CENSO de
+todos los literales de `public/portada.js` sin comentarios, y no admite ninguna mención de
+«sincroniz» como texto de pantalla; había otras dos vivas (el aviso de dato viejo del hero y el vacío
+de la portada) que el censo cazó y se corrigieron con él.
+
+**Una coma seguida de tres dígitos no decide (B8b-H3).** `traducirConsulta("hasta 2,000 millones")`
+fijaba un tope de **$2.000.000**: mil veces menor, creíble y bien maquetado en la ficha («Cuánto vale:
+hasta $2.000.000») y con la lista vacía detrás. La agrupación anglosajona y la coma decimal colombiana
+son la MISMA cadena, y este proyecto no puede elegir por el que escribe: la cantidad queda INERTE,
+las palabras vuelven enteras al resto y la pantalla dice qué entendió («Palabra: hasta 2,000
+millones»). La coma decimal corta («1,5 millones» → 1.500.000) sigue viva: solo cae la forma de
+agrupación. Se arregló en `cifraDeFrase`, que llaman los TRES sitios del traductor que convierten un
+token en cifra —`leerPesos` y las dos lecturas sueltas de `leerCuantia`—, porque «entre 2,000 y 5.000
+millones» era el hermano vivo del caso reproducido. **`numero()` no cambia**: es el lector de la URL,
+que la escribe la propia aplicación y donde «2,000» es la coma decimal colombiana; la ambigüedad
+nace de que en una FRASE escribe una persona. Excepción declarada, no olvido.
+
+**«Desde A y hasta B millones» es un par, no media frase (B8b-H4).** Con la unidad escrita una vez al
+final se fijaba solo el tope y «desde 100» quedaba de PALABRA —una subcadena que no casa con ningún
+objeto: lista vacía y callejón «Si quita palabra…»— por una cuantía que la persona dijo entera. Es el
+mismo caso que «entre 200 y 1.000 millones» con las dos direcciones escritas, así que se resuelve con
+la MISMA regla (la unidad de B vale para A) en `leerParDirecciones`, que exige las dos direcciones y
+distintas; sin unidad en ninguna no se fija nada y las DOS piezas vuelven al resto, nunca una sola.
+«hasta 500 y desde 100 millones» (el orden inverso) sale igual: el hermano entra en la batería.
+
+**Lo que NO se aplicó, con su motivo (B8b-H5).** «Santander de Quilichao» fija Santander y deja
+«Quilichao» de palabra; también «Valle de San Juan» (76), «San Andrés de Sotavento» (88) y «río
+Magdalena» (47). Está reproducido y el riesgo es real, pero el arreglo propuesto —entradas del
+catálogo DIVIPOLA de municipios cuyo nombre contiene el de otro departamento— **no se puede hacer
+desde aquí sin inventar**: no hay catálogo de municipios en el árbol (`data/accesibilidad_departamentos.json`
+es por departamento, y lo dice en su propio `_meta`) y `datos.gov.co` responde 403 en el CONNECT del
+proxy (observación con fecha, 6-sep-2026). Escribir a mano las cinco que el verificador encontró sería
+una LISTA, no un censo: dejaría vivos los hermanos que nadie miró y daría la apariencia de arreglado.
+La regla general alternativa («nombre de departamento seguido de “de” + palabra») rompe frases
+legítimas («obras en Santander de más de 100 millones» comparte la forma). El riesgo ya está declarado
+en la memoria y la ficha lo enseña con su × para corregirlo en un clic, que es la mitigación que este
+proyecto usa cuando no puede decidir. Queda anotado para cuando haya catálogo.
+
+**Mutaciones** (cada una deshace UN arreglo con su cerradura en pie, `node tests/e2e.js 1`):
+`quitarDesdeFicha` con `return false` → «la × de una ficha tiene que PEDIR la lista otra vez»; Intro
+sin `aplicarConsulta()` → «Intro en la caja tiene que aplicar la frase»; `fraseAplicada` de vuelta →
+«el `change` que Chrome dispara tras el Intro no repite la misma consulta»; `cifraDeFrase = numero` →
+«hasta 2,000 millones»: `{max:2000000}` ≠ `{}`; sin `leerParDirecciones` → «desde 100 y hasta 500
+millones» pierde el suelo; sin `abrirPliegues(caja)` → «el <details> que CONTIENE la caja tiene que
+quedar abierto»; la frase de cierre vieja → «con un requisito en rojo la frase no puede negar que haya
+algo en rojo»; sin `origen: "mi_empresa"` → «la simulación de Mi empresa declara su origen»;
+`parteDelSocio` devolviendo 50 → «150 no es una parte válida»; el chip «1 presentado» de vuelta →
+«“presentad” significa “entregadas” en la frase de arriba»; `num` sin descartar la ausencia → «el panel
+pinta “—” sin dato, no un cero creíble»; `entero = … : 0` → «un conteo que la meta no trae viaja null,
+jamás 0»; `textoIcociv` sin la guarda `=== null` → «una meta con los conteos en null es “sin dato”,
+jamás “0 insumos”»; «insumos recuperados» de vuelta → cae la frase del panel; `sellos.size !== 1` de
+vuelta → «con 30 mediciones de la regla VIGENTE se dibuja»; `notasReparto` sin `visibles` → «…y
+cuántas se VEN, que es lo que el ojo cuenta»; «medida al cierre de cada sincronización» de vuelta →
+«la nota dice de dónde y cuándo sale la columna, en palabras del visitante». **Diecisiete mutaciones,
+diecisiete caídas por la aserción nueva** — y las dos primeras pasaban en verde antes de esta pasada.
+
+**Medido en Chromium** (arnés con los seis routers reales sobre el Upstash falso, corpus sintético de
+685 filas, dos guardados de helder —uno en «Me presenté» con pliego que exige patrimonio ≥ $9.000 M y
+otro de $950.000 M que helder no puede facturar— y el catálogo APU cargado; 1280 y 390, claro y
+oscuro, las cuatro combinaciones): la pulsación del enlace de la CITA con «Todo lo demás» cerrado abre
+el pliegue y la caja (`checkVisibility` true, 980×128 px a 1280 y 218×276 a 390, **79 → 179 nodos
+visibles**, el punto central de la caja la recibe); con la parte en «150», «La parte del socio va de 1
+a 99 %: corríjala y vuelva a elegir el socio.» en `--danger` (rgb(184,55,47) claro / rgb(240,122,114)
+oscuro) y NINGUNA simulación; con 50, «juntos $659.296.926 · No cumple · le falta $8.340.703.074»; en
+el proceso cuyo único rojo es el chip «Capacidad: no cumple», la frase dice «Lo que estaba en rojo:
+capacidad para facturar este contrato sin pasarse, con el socio no cumple»; «Armar este consorcio en
+Mi empresa» manda `{"integrantes":[…],"origen":"mi_empresa"}`; los chips de Mis procesos, «2 guardados
+· 2 abiertos · 1 sin resultado todavía · 8 avisos esta semana» con el filtro «Me presenté (1)» al
+lado; el panel de Precios, «13 precios de materiales, jornales y equipos… los usan 15 de los 174
+ítems» con 437 · 174 · 5 · 2026-08; buscar «obras en Tolima» → `?tipo=obra&dep=73` con sus dos fichas,
+«Quitar todos» → `?perfil=helder` sin fichas, y la MISMA frase + «Buscar» → **otra vez
+`?tipo=obra&dep=73`, dos fichas y 20 resultados** (antes: nada y la caja vacía); «vías en Tolima hasta
+2,000 millones» → «Palabra: vías hasta 2,000 millones ×» y ninguna cuantía fijada. Landing: la nota de
+la tendencia dice «tomada cada vez que se actualizan los datos del SECOP II», SVG de 512×181 / 342×121
+con 45 barras y 90 columnas. Tablero: 13 departamentos y 14 entidades con 8 a la vista y las demás
+plegadas (`checkVisibility` false), y la nota «8 a la vista y 5 plegadas» / «8 a la vista y 6
+plegadas». Cero desbordes (`scrollWidth === clientWidth` en las cuatro), ningún `[hidden]` perdiendo
+contra una clase de display, cero peticiones a dominios externos, consola sin errores en la landing y
+en Mis procesos (en el tablero, solo los 503 del propio arnés).
+
+**No verificable desde aquí (6-sep-2026).** El catálogo DIVIPOLA de municipios (`datos.gov.co` da 403
+en el CONNECT del proxy), y por eso B8b-H5 queda sin arreglar. Cuántas veces cambiará de verdad el
+sello de la regla en producción a partir de hoy —la medida es sobre los 16 días de historial que hay—
+y, por tanto, cuántas veces se reiniciará la tendencia de la landing. Qué frases escribe el dueño de
+verdad en la caja de búsqueda. Y el efecto de todo esto en producción con Redis real.
+
+**Pasos del dueño.** Ninguno: los cuatro lotes ya estaban desplegados o pendientes de despliegue y
+estos remates no añaden nada que pulsar. Si ya había pulsado «Cargar catálogo APU» (paso del lote
+B7a), el panel enseñará la frase nueva sin volver a cargarlo: solo cambió el texto de la pantalla.

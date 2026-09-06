@@ -827,15 +827,27 @@
      entendió se ve en las fichas de siempre —«Dónde queda: Tolima ×»—, que es
      también donde se corrige; si no entendió nada, la ficha «Palabra: …» dice
      qué se está buscando. Intro y «Buscar» (que quita el foco y dispara
-     `change`) aplican la misma frase una sola vez. */
-  let fraseAplicada = null;
-  function aplicarConsulta() {
-    const frase = $("fl-q").value.trim();
-    fraseAplicada = frase;
-    const t = FL.traducirConsulta(frase);
-    cambiarFiltros({ ...estadoFiltros, ...t.estado, q: t.resto });
-  }
-  $("fl-q").addEventListener("change", () => { if ($("fl-q").value.trim() !== fraseAplicada) aplicarConsulta(); });
+     `change`) aplican la misma frase una sola vez.
+
+     LA FRASE NO ES EL ESTADO (6-sep-2026). El «una sola vez» se guardaba en
+     `fraseAplicada`, la ÚLTIMA frase escrita, y comparaba contra ella: después
+     de quitar los filtros (la × de una ficha, «Quitar todos», la hoja) el
+     estado ya no llevaba nada, pero la frase seguía siendo «la última
+     aplicada», así que volver a escribir LO MISMO y pulsar «Buscar» no aplicaba
+     nada y además dejaba la caja vacía —una pulsación sin respuesta, y
+     destructiva, en la puerta principal, en un recorrido natural (buscar →
+     quitar → volver a buscar lo mismo)—. Ahora la comparación es contra el
+     ESTADO que resultaría de aplicar lo escrito: si es el mismo, el `change`
+     posterior al Intro (o al perder el foco) no repite la petición; si difiere
+     —porque los filtros se quitaron— se aplica. Intro y «Buscar» aplican
+     SIEMPRE: una pulsación deliberada nunca se queda sin respuesta. */
+  const estadoDeLaCaja = () => {
+    const t = FL.traducirConsulta($("fl-q").value.trim());
+    return { ...estadoFiltros, ...t.estado, q: t.resto };
+  };
+  const claveDeEstado = (e) => FL.escribirEstado(e, new URLSearchParams()).toString();
+  function aplicarConsulta() { cambiarFiltros(estadoDeLaCaja()); }
+  $("fl-q").addEventListener("change", () => { if (claveDeEstado(estadoDeLaCaja()) !== claveDeEstado(estadoFiltros)) aplicarConsulta(); });
   $("fl-q").addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); aplicarConsulta(); } });
   /* Sugerencias de entidad mientras se escribe: el catálogo REAL de entidades
      con procesos abiertos (/api/procesos?op=entidades), con espera de 250 ms
@@ -3646,6 +3658,30 @@
     return `<p class="text-[11px] uppercase tracking-wide text-gray-400">Cómo le va</p>
       <p class="mt-1 text-sm font-semibold">Ganó ${g} de ${total} presentadas${s > 0 ? ` · ${s} sin resultado todavía` : ""}</p>${barra}`;
   }
+  /* UNA PALABRA POR CONCEPTO EN LA MISMA CAJA (6-sep-2026). Los chips de
+     conteo decían «1 presentado» contando SOLO la etapa «Me presenté» —las que
+     esperan resultado— mientras dos filas más arriba «Ganó 1 de 3 presentadas»
+     contaba ganadas + perdidas + las que esperan. A diez centímetros, «3
+     presentadas» y «1 presentado» no cuadran sin leer la cláusula de al lado:
+     es la regla «dos cosas distintas no pueden tener nombres parecidos». La
+     frase de la ficha se conserva literal (decisión del 6-sep: «presentadas»
+     son las ofertas ENTREGADAS) y el chip pasa a decir lo que de verdad cuenta,
+     con las MISMAS palabras que ya usa la leyenda de la barra y la cláusula de
+     la frase: «sin resultado todavía». El chip-filtro sigue diciendo «Me
+     presenté (N)»: ese es el mando de la etapa, no un conteo. Función PURA para
+     que la suite ejecute las dos y compare el vocabulario. */
+  function htmlResumenSeguimiento(rs, nGuardados) {
+    const r = rs || {};
+    if (!nGuardados) return "";
+    return [
+      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${nGuardados} guardado${nGuardados === 1 ? "" : "s"}</span>`,
+      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${r.abiertos} abierto${r.abiertos === 1 ? "" : "s"}</span>`,
+      r.presentados ? `<span class="bg-gray-900 rounded-full px-2.5 py-1">${r.presentados} sin resultado todavía</span>` : "",
+      r.cambios_pendientes ? `<span class="rounded-full bg-red-100 px-2.5 py-1 text-red-700">${r.cambios_pendientes} cambio${r.cambios_pendientes === 1 ? "" : "s"} sin ver</span>` : "",
+      r.manifestaciones_abiertas ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${r.manifestaciones_abiertas} en los que todavía puede avisar que le interesa</span>` : "",
+      r.avisos_proximos ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${r.avisos_proximos} aviso${r.avisos_proximos === 1 ? "" : "s"} esta semana</span>` : "",
+    ].filter(Boolean).join("");
+  }
   function pintarSeguimiento(r) {
     ultimoSeguimiento = r;
     const lista = $("seg-lista"), vacio = $("seg-vacio"), res = $("seg-resumen"), filtros = $("seg-filtros");
@@ -3665,14 +3701,7 @@
     vacio.classList.toggle("hidden", !(r && r.ok === true && todos.length === 0));
     const esq = $("seg-skeleton"); if (esq) esq.classList.add("hidden");
     const rs = r.resumen || {};
-    res.innerHTML = todos.length ? [
-      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${todos.length} guardado${todos.length === 1 ? "" : "s"}</span>`,
-      `<span class="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">${rs.abiertos} abierto${rs.abiertos === 1 ? "" : "s"}</span>`,
-      rs.presentados ? `<span class="bg-gray-900 rounded-full px-2.5 py-1">${rs.presentados} presentado${rs.presentados === 1 ? "" : "s"}</span>` : "",
-      rs.cambios_pendientes ? `<span class="rounded-full bg-red-100 px-2.5 py-1 text-red-700">${rs.cambios_pendientes} cambio${rs.cambios_pendientes === 1 ? "" : "s"} sin ver</span>` : "",
-      rs.manifestaciones_abiertas ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${rs.manifestaciones_abiertas} en los que todavía puede avisar que le interesa</span>` : "",
-      rs.avisos_proximos ? `<span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">${rs.avisos_proximos} aviso${rs.avisos_proximos === 1 ? "" : "s"} esta semana</span>` : "",
-    ].filter(Boolean).join("") : "";
+    res.innerHTML = htmlResumenSeguimiento(rs, todos.length);
     // filtros por etapa
     if (filtros) {
       const orden = ["todos", ...(r.orden_estados || Object.keys(r.estados || {}))];
@@ -3882,14 +3911,43 @@
         </div>
         <div data-seg-socio-resultado="${esc(id)}" class="mt-2"></div>`;
     }
+    abrirPliegues(caja);
     caja.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  /* QUITAR LA CLASE `hidden` NO BASTA SI LA CAJA VIVE DENTRO DE UN PLIEGUE
+     CERRADO (6-sep-2026). La caja del socio se pinta dentro de «Todo lo demás»
+     —lo que se toca va plegado—, pero el enlace más visible, el de la CITA
+     literal, está FUERA de ese pliegue: al pulsarlo la página solo se
+     desplazaba y no aparecía nada (medido en Chromium: `checkVisibility` false,
+     `content-visibility: hidden`, los mismos 79 nodos visibles antes y
+     después). Es «ninguna pulsación sin respuesta visible». Se abren TODOS los
+     <details> por encima del destino, no solo el primero: el pliegue puede
+     anidarse y un arreglo de un solo nivel dejaría el hermano vivo. */
+  function abrirPliegues(destino) {
+    for (let d = destino && destino.closest ? destino.closest("details") : null; d; d = d.parentElement && d.parentElement.closest("details")) d.open = true;
+  }
+  /* UNA PARTE FUERA DE RANGO NO SE SUSTITUYE EN SILENCIO (6-sep-2026). Escribir
+     «150» y pulsar «Con Génesis…» simulaba con 50 % —otra cifra que la escrita—
+     y ninguna línea lo decía: había respuesta, pero no la que se pidió ni el
+     motivo. Ahora se valida y se dice; la regla vive en UNA función que llaman
+     el simulador y «Armar este consorcio», para que no haya dos lecturas del
+     mismo campo que puedan divergir. */
+  const PARTE_SOCIO_MIN = 1, PARTE_SOCIO_MAX = 99;
+  function parteDelSocio(v) {
+    const n = Number(v);
+    if (v == null || v === "" || !Number.isFinite(n) || n < PARTE_SOCIO_MIN || n > PARTE_SOCIO_MAX) {
+      return { ok: false, parte: null, aviso: `La parte del socio va de ${PARTE_SOCIO_MIN} a ${PARTE_SOCIO_MAX} %: corríjala y vuelva a elegir el socio.` };
+    }
+    return { ok: true, parte: Math.round(n), aviso: null };
   }
   async function simularConSocio(id, socioId, parteSocio) {
     const caja = cajaSocioDe(id);
     if (!caja) return;
     const res = caja.querySelector("[data-seg-socio-resultado]") || caja;
     const actual = $("f-perfil").value;
-    const parte = Number.isFinite(parteSocio) && parteSocio >= 1 && parteSocio <= 99 ? Math.round(parteSocio) : PARTE_SOCIO_DEFECTO;
+    const v = parteDelSocio(parteSocio);
+    if (!v.ok) { res.innerHTML = `<p class="text-sm text-red-700">${esc(v.aviso)}</p>`; return; }
+    const parte = v.parte;
     const socio = perfilesIndividuales().find((x) => x.id === socioId);
     if (!socio || socioId === actual) { res.innerHTML = `<p class="text-sm text-red-700">Ese perfil ya no está en la barra: vuelva a elegir el socio.</p>`; return; }
     res.innerHTML = `<p class="text-sm text-gray-500">Pasando las cifras del pliego con ${esc(socio.nombre)}…</p>`;
@@ -3898,6 +3956,52 @@
       r = await api("/api/perfil?op=consorcio-simular", { method: "POST", body: { integrantes: [{ perfilId: actual, participacion: 100 - parte }, { perfilId: socioId, participacion: parte }], proceso: id, origen: "guia" } });
     } catch (e) { res.innerHTML = `<p class="text-sm text-red-700">${esc(fraseDeFallo(e))}</p>`; return; }
     res.innerHTML = htmlResultadoSocio(id, r, socio, parte);
+  }
+  /* LA FRASE DE CIERRE HABLA DE TODO LO QUE ESTABA EN ROJO, NO SOLO DE LAS
+     CIFRAS (6-sep-2026). `rojas` sale de `guia.exigencias` —las casillas del
+     pliego con cifra—, pero el enlace «Ver si con un socio cumple» también lo
+     llevan los REQUISITOS que la aplicación verifica (registro, experiencia,
+     capacidad de facturar, indicadores). Cuando lo único en rojo era uno de
+     ellos, la frase decía «En la ficha no hay ninguna cifra en rojo que un socio
+     tenga que cubrir»: negaba lo que el chip rojo acababa de decir y dejaba la
+     respuesta a «¿con un socio cumple la capacidad?» en un chip pequeño y sin
+     palabras. Ahora se nombra lo que estaba en rojo y qué pasó con el socio,
+     usando SOLO lo que el servidor devuelve: `puertas_app.p1_rup` para el
+     registro y `puertas_app.p2_k` para la capacidad. De la experiencia y de los
+     indicadores el simulador NO devuelve veredicto propio, así que no se afirma
+     nada: se dice que la aplicación no vuelve a decidirlo y dónde compararlo —
+     inventar un «cumple» ahí sería la cifra creíble y falsa de siempre. Función
+     PURA (el patrón de `htmlCascada` y `htmlDesenlaceSeguimiento`): la suite la
+     ejecuta con casillas y requisitos sembrados. */
+  const REQ_PUERTA_APP = { registro: "p1_rup", capacidad: "p2_k" };
+  const requisitosConSocio = (guia) => ((guia && guia.requisitos) || []).filter((q) => q && q.accion && q.accion.tipo === "consorcio");
+  const PALABRAS_ESTADO = () => { const E = TSEM().EST; return { cumple: E.cumple.corto, no_cumple: E.no_cumple.corto }; };
+  function fraseCierreSocio({ casillasRojas = [], requisitosRojos = [], respuesta = null, sinLectura = false, palabras = { cumple: "cumple", no_cumple: "no cumple" } }) {
+    const juntas = (respuesta && respuesta.exigencias) || [];
+    const n = casillasRojas.length;
+    if (n && sinLectura) return "Los documentos de este proceso todavía no se han leído: cuando la ficha tenga las cifras, aquí se pasan con el socio.";
+    const partes = [];
+    if (n) {
+      const cubiertas = casillasRojas.filter((x) => { const j = juntas.find((y) => y.clave === x.clave); return j && j.estado !== "no_cumple"; }).length;
+      const resto = n - cubiertas;
+      partes.push(cubiertas === n ? `Juntos cubren ${n === 1 ? "la cifra" : `las ${n} cifras`} que hoy no cumple. Lo que dice «confírmelo» lo fija el pliego: léalo.`
+        : cubiertas === 0 ? (n === 1 ? "Juntos tampoco cubren la cifra que hoy no cumple: sigue en rojo. Pruebe con otra parte o con otro socio." : `Juntos no cubren ninguna de las ${n} cifras que hoy no cumple: siguen en rojo. Pruebe con otra parte o con otro socio.`)
+          : `Juntos cubren ${cubiertas} de las ${n} cifras que hoy no cumple; ${resto === 1 ? "una sigue" : `${resto} siguen`} en rojo.`);
+    }
+    const pa = (respuesta && respuesta.puertas_app) || null;
+    const conVeredicto = [], sinVeredicto = [];
+    for (const q of requisitosRojos) {
+      const campo = REQ_PUERTA_APP[q && q.clave];
+      const titulo = String((q && q.titulo) || "").replace(/^./, (c) => c.toLowerCase());
+      if (!titulo) continue;
+      const v = campo && pa && typeof pa[campo] === "boolean" ? pa[campo] : null;
+      if (v === null) sinVeredicto.push(titulo);
+      else conVeredicto.push(`${titulo}, con el socio ${v ? palabras.cumple : palabras.no_cumple}`);
+    }
+    if (conVeredicto.length) partes.push(`${partes.length ? "Y en lo demás que estaba en rojo" : "Lo que estaba en rojo"}: ${conVeredicto.join("; ")}.`);
+    if (sinVeredicto.length) partes.push(`De ${sinVeredicto.join(" y ")} la aplicación no vuelve a decidir con el socio: revíselo usted en la ficha.`);
+    if (!partes.length) return "En la ficha no hay ninguna cifra en rojo que un socio tenga que cubrir.";
+    return partes.join(" ");
   }
   function htmlResultadoSocio(id, r, socio, parte) {
     const T = TSEM();
@@ -3914,13 +4018,7 @@
       const sigue = j && j.accion && j.accion.tipo === "consorcio" && j.accion.frase ? ` <span class="text-gray-500">· ${esc(j.accion.frase.replace(/:.*$/, "").replace(/^./, (c) => c.toLowerCase()))}</span>` : "";
       return `<li class="flex flex-wrap items-baseline gap-x-2"><span class="${clr}" aria-hidden="true">●</span><span class="text-gray-600">${esc(x.titulo)}:</span><span class="num">pide ${esc(x.exige)}</span>${j && j.suyo ? `<span class="num text-gray-700">· juntos ${esc(j.suyo)}</span>` : ""}${j && j.estado_legible ? `<span class="text-[11px] ${clr}">${esc(j.estado_legible)}</span>` : ""}${sigue}</li>`;
     }).join("");
-    const cubiertas = rojas.filter((x) => { const j = juntas.find((y) => y.clave === x.clave); return j && j.estado !== "no_cumple"; }).length;
-    const n = rojas.length, resto = n - cubiertas;
-    const frase = !n ? "En la ficha no hay ninguna cifra en rojo que un socio tenga que cubrir."
-      : sinLectura ? "Los documentos de este proceso todavía no se han leído: cuando la ficha tenga las cifras, aquí se pasan con el socio."
-        : cubiertas === n ? `Juntos cubren ${n === 1 ? "la cifra" : `las ${n} cifras`} que hoy no cumple. Lo que dice «confírmelo» lo fija el pliego: léalo.`
-          : cubiertas === 0 ? (n === 1 ? "Juntos tampoco cubren la cifra que hoy no cumple: sigue en rojo. Pruebe con otra parte o con otro socio." : `Juntos no cubren ninguna de las ${n} cifras que hoy no cumple: siguen en rojo. Pruebe con otra parte o con otro socio.`)
-            : `Juntos cubren ${cubiertas} de las ${n} cifras que hoy no cumple; ${resto === 1 ? "una sigue" : `${resto} siguen`} en rojo.`;
+    const frase = fraseCierreSocio({ casillasRojas: rojas, requisitosRojos: requisitosConSocio(guia), respuesta: r, sinLectura, palabras: PALABRAS_ESTADO() });
     const pa = r.puertas_app || null;
     const chip = (rotulo, pasa) => { const [clr, eti] = T.ESTADO_REQ[pasa ? "cumple" : "no_cumple"]; return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs" style="background: var(--bg-card); border: 1px solid var(--border);"><span class="${clr}" aria-hidden="true">●</span>${rotulo}: <span class="${clr}">${esc(eti)}</span></span>`; };
     const verificado = pa ? `<div class="mt-2 flex flex-wrap gap-1.5">${chip(CHIP_REQ.registro, pa.p1_rup)}${chip(CHIP_REQ.capacidad, pa.p2_k)}${chip(CHIP_REQ.caja, pa.p3_caja)}</div><p class="mt-1 text-[11px] text-gray-500">Lo que la aplicación verifica con los dos registros juntos; no son los requisitos del pliego.</p>` : "";
@@ -3940,7 +4038,8 @@
      simulación y su botón de guardar; no hay un segundo flujo. */
   function armarConsorcioEnMiEmpresa(socioId, parteSocio) {
     const actual = $("f-perfil").value;
-    const parte = Number.isFinite(parteSocio) && parteSocio >= 1 && parteSocio <= 99 ? parteSocio : PARTE_SOCIO_DEFECTO;
+    const v = parteDelSocio(parteSocio);         // la MISMA regla del simulador, no una segunda lectura
+    const parte = v.ok ? v.parte : PARTE_SOCIO_DEFECTO;
     cons.integrantes = [actual, socioId];
     cons.part[actual] = 100 - parte; cons.part[socioId] = parte;
     activarPestana("admin");
@@ -8743,15 +8842,27 @@
     if (!Number.isFinite(n) || !Number.isFinite(m) || ic.insumos_reajustados === null || ic.items_con_insumo_reajustado === null) {
       return `Índice del DANE ${boletin}${pct}: alcance por confirmar, vuelva a cargar el catálogo`;
     }
-    const items = Number.isFinite(Number(totalItems)) ? `${m} de los ${fmt.format(Number(totalItems))} ítems` : `${m} ítems`;
-    return `${n} insumos recuperados llevados de marzo de 2025 a ${boletin} con el índice del DANE${pct}; los usan ${items}. Los demás precios son de un contrato adjudicado en 2025, sin reajuste.`;
+    /* «de los 0 ítems» era el mismo `Number(null) === 0` (6-sep-2026): sin el
+       total del catálogo la frase decía un cero creíble en vez de callarse. */
+    const hayTotal = totalItems !== null && totalItems !== undefined && totalItems !== "" && Number.isFinite(Number(totalItems));
+    const items = hayTotal ? `${m} de los ${fmt.format(Number(totalItems))} ítems` : `${m} ítems`;
+    /* EL HECHO, CON LAS PALABRAS DEL CONTRATISTA (6-sep-2026). «13 insumos
+       recuperados» nombraba una categoría INTERNA del catálogo (`fuente =
+       "recuperado"`) que no aparece en ninguna otra pantalla y que nadie puede
+       abrir: para entender el número había que saber «recuperados de dónde». Lo
+       que se dice ahora es de dónde salieron y a qué se llevaron. */
+    return `${n} precios de materiales, jornales y equipos tomados de un presupuesto de marzo de 2025 se llevaron a ${boletin} con el índice del DANE${pct}; los usan ${items}. Los demás precios son de un contrato adjudicado en 2025, sin reajuste.`;
   }
 
   function pintarApu(c) {
     /* los conteos salen del payload del catálogo, NUNCA con `|| 0`: un
        «undefined || 0» convierte «no sé» en «cero» y lo hace creíble — es
        exactamente el defecto del «en 0 procesos» que costó caro. Sin dato, «—». */
-    const num = (v) => (Number.isFinite(Number(v)) ? fmt.format(Number(v)) : "—");
+    /* …y `Number(null) === 0`: la AUSENCIA se descarta ANTES de convertir. Sin
+       esto, un `totales.items` que el servidor manda en null —que es lo que
+       manda cuando la meta no trae el conteo— se pintaba «0», no «—»
+       (6-sep-2026). */
+    const num = (v) => (v === null || v === undefined || v === "" || !Number.isFinite(Number(v)) ? "—" : fmt.format(Number(v)));
     const t = c.totales || {};
     $("apu-insumos").textContent = num(t.insumos);
     $("apu-items").textContent = num(t.items);
@@ -9110,7 +9221,11 @@
     caja.classList.remove("hidden");
     caja.innerHTML = `<p class="text-sm text-gray-500">Calculando cuántas licitaciones se abren…</p>`;
     let r;
-    try { r = await api("/api/perfil?op=consorcio-simular", { method: "POST", body: { integrantes: participacionesActuales() } }); }
+    /* `origen` es el gancho de medición del simulador (el handler acepta «guia» y
+       «mi_empresa», y cualquier otro valor es inerte): sin declararlo aquí, las
+       simulaciones de Mi empresa no se distinguían de las que no lo mandan y la
+       comparación con las de la guía no se podía hacer. */
+    try { r = await api("/api/perfil?op=consorcio-simular", { method: "POST", body: { integrantes: participacionesActuales(), origen: "mi_empresa" } }); }
     catch (e) { caja.innerHTML = `<p class="text-sm text-red-700">${esc(fraseDeFallo(e))}</p>`; return; }
     cons.ultimo = r;
     const ind = r.indicadores || {};

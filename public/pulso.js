@@ -85,9 +85,18 @@
      responde «cuántas» y la portada «dónde hay más plata», y cada pantalla
      lo dice. Con 0 o sin dato no se escribe nada: «0 sin departamento» es
      ruido y null jamás se pinta como 0. */
-  const notasReparto = (lista, extra, sinDato, ausencia) => {
+  /* LA NOTA CUENTA LO QUE EL OJO VE, NO LO QUE VIAJA (6-sep-2026). Decía «573 en
+     total; se muestran las 40 con más procesos» mientras a la vista había 8
+     barras y 32 dentro del pliegue: la misma forma del defecto que este lote
+     corrigió («pintaba 6 mientras la nota decía 8»). Ahora la nota recibe
+     cuántas quedan A LA VISTA y dice las dos cifras, o ninguna cuando no hay
+     pliegue. `visibles` es el tope real de `barrasRank`, no un número nuevo. */
+  const notasReparto = (lista, extra, sinDato, ausencia, visibles) => {
     const notas = [];
-    if (extra > lista.length) notas.push(`${num(extra)} en total; ${lista.length === 1 ? "se muestra la que más procesos publica" : `se muestran las ${lista.length} con más procesos`}.`);
+    const aLaVista = Number.isInteger(visibles) && visibles > 0 ? Math.min(visibles, lista.length) : lista.length;
+    const plegadas = lista.length - aLaVista;
+    if (extra > lista.length) notas.push(`${num(extra)} en total; aquí ${lista.length === 1 ? "la que más procesos publica" : `las ${lista.length} con más procesos`}${plegadas > 0 ? `: ${num(aLaVista)} a la vista y ${num(plegadas)} plegada${plegadas === 1 ? "" : "s"}` : ""}.`);
+    else if (plegadas > 0) notas.push(`${num(aLaVista)} a la vista y ${num(plegadas)} plegada${plegadas === 1 ? "" : "s"}.`);
     if (sinDato > 0) notas.push(`${num(sinDato)} ${ausencia}; no se reparten a ojo.`);
     notas.push("Barras por número de licitaciones; el dinero, al lado.");
     return `<p class="mt-2 text-[11px]" style="color: var(--text-secondary);">${notas.join(" ")}</p>`;
@@ -114,7 +123,7 @@
     });
     if (!g) return "";
     return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Dónde están</h2>${g}`
-      + notasReparto(lista, p.departamentosDistintos, p.sinDepartamento, "sin departamento publicado");
+      + notasReparto(lista, p.departamentosDistintos, p.sinDepartamento, "sin departamento publicado", visiblesDe(p));
   }
 
   function htmlEntidades(p) {
@@ -126,7 +135,7 @@
     });
     if (!g) return "";
     return `<h2 class="text-sm font-semibold" style="color: var(--text-primary);">Quién las publica</h2>${g}`
-      + notasReparto(lista, p.entidadesDistintas, p.sinEntidad, "sin entidad publicada");
+      + notasReparto(lista, p.entidadesDistintas, p.sinEntidad, "sin entidad publicada", visiblesDe(p));
   }
 
   /* ── gráfico de barras (SVG en línea, sin dependencias) ──

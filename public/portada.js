@@ -88,7 +88,7 @@
         ${cifra(pesosCortos(p.valorTotal) || "Sin referencia", "en juego")}
         ${cifra(num(p.entidadesActivas), "entidades")}
       </div>
-      <p class="mt-3 text-xs" style="color: var(--text-secondary);">${esc(textoActualizado(p.generado))}${p.desactualizada ? " — el dato tiene más de un día; la próxima sincronización lo renueva." : ""}${p.procesosSinCuantia ? ` · el dinero en juego cuenta los que publican presupuesto: ${num(p.procesosSinCuantia)} no lo publican` : ""}</p>
+      <p class="mt-3 text-xs" style="color: var(--text-secondary);">${esc(textoActualizado(p.generado))}${p.desactualizada ? " — el dato tiene más de un día; se renueva con la próxima actualización de los datos del SECOP II." : ""}${p.procesosSinCuantia ? ` · el dinero en juego cuenta los que publican presupuesto: ${num(p.procesosSinCuantia)} no lo publican` : ""}</p>
       ${conBoton ? `<button id="pt-btn-cuales" type="button" class="btn-vidrio-acento mt-5 w-full sm:w-auto">Ver a cuáles puedo presentarme</button>
       <p class="mt-2 text-xs" style="color: var(--text-secondary);">Para eso hace falta su RUP o tres datos de su empresa: toma menos de un minuto y no guardamos el documento.</p>` : ""}`;
   }
@@ -213,22 +213,46 @@
       porFecha.set(p.fecha, p);
     }
     if (porFecha.size < HISTORIA_MIN_PUNTOS) return "";
-    const sellos = new Set([...porFecha.values()].map((p) => (p.sello == null ? "" : String(p.sello))));
-    if (sellos.size !== 1) return "";                 // la regla cambió a mitad de ventana: la vista calla
+    /* EL TRAMO VIGENTE, NO TODA LA VENTANA (6-sep-2026). Exigir UN SOLO sello en
+       los 90 días enmudecía la tendencia 90 días por cada cambio de la regla, y
+       la regla se movió CINCO veces en los 16 días de historial disponible (una
+       de ellas por una reescritura de rendimiento que no cambió ni un acierto:
+       el sello es la huella de los DATOS de la regla, y reordenar una expresión
+       los cambia). A ese ritmo no se dibujaría nunca: silencio permanente, no
+       «mitigado con el silencio». Ahora se toma el tramo FINAL con sello
+       constante —los puntos más recientes hasta el primer cambio hacia atrás—,
+       se dibuja solo si ese tramo tiene base propia (30 mediciones) y los días
+       anteriores quedan en blanco como cualquier día sin medir, porque los midió
+       otra regla y mezclarlos sería una serie que se mueve por el contador. La
+       nota dice desde cuándo, para que la subida del primer día del tramo no se
+       lea como un salto del mercado. Con un cambio a cinco días de hoy la vista
+       sigue callada: cinco puntos no son una tendencia. */
+    const fechas = [...porFecha.keys()].sort();
+    const selloDe = (f) => { const p = porFecha.get(f); return p && p.sello != null ? String(p.sello) : ""; };
+    const selloVigente = selloDe(fechas[fechas.length - 1]);
+    let corte = 0;
+    for (let k = fechas.length - 1; k >= 0; k--) if (selloDe(fechas[k]) !== selloVigente) { corte = k + 1; break; }
+    const delTramo = new Set(fechas.slice(corte));
+    if (delTramo.size < HISTORIA_MIN_PUNTOS) return "";
+    const rupturaEl = corte > 0 ? fechas[corte] : null;
     const cubetas = [];
     for (let f = desde; f <= hoy; f = sumarDiasISO(f, 1)) {
       const [a, m, d] = f.split("-").map(Number);
-      const p = porFecha.get(f);
+      const p = delTramo.has(f) ? porFecha.get(f) : null;
       cubetas.push({
         n: p ? p.procesosAbiertos : null,
         corto: `${d} ${MES_CORTO[m - 1]}`,
         titulo: `${d} de ${MES_LARGO[m - 1]} de ${a}`,
       });
     }
-    const sinMedir = cubetas.length - porFecha.size;
+    const sinMedir = cubetas.length - delTramo.size;
     const g = Viz.columnas(cubetas, { alto: 120, conValor: false, rotularCada: 30 });
     if (!g) return "";
-    return `${g}<p class="mt-1 text-[11px]" style="color: var(--text-secondary);">Una columna por día, medida al cierre de cada sincronización.${sinMedir > 0 ? ` ${num(sinMedir)} ${sinMedir === 1 ? "día sin medición queda" : "días sin medición quedan"} en blanco.` : ""}</p>`;
+    /* «medida al cierre de cada sincronización» era vocabulario de máquina que el
+       visitante no puede abrir, y un segundo nombre para lo que la misma caja
+       llama «Actualizado hoy … desde el SECOP II» (6-sep-2026). */
+    const cuandoRuptura = rupturaEl ? `${Number(rupturaEl.slice(8))} de ${MES_LARGO[Number(rupturaEl.slice(5, 7)) - 1]}` : null;
+    return `${g}<p class="mt-1 text-[11px]" style="color: var(--text-secondary);">Una columna por día, tomada cada vez que se actualizan los datos del SECOP II.${sinMedir > 0 ? ` ${num(sinMedir)} ${sinMedir === 1 ? "día sin medición queda" : "días sin medición quedan"} en blanco.` : ""}${cuandoRuptura ? ` La forma de contar las licitaciones cambió el ${cuandoRuptura}: aquí se ve desde entonces.` : ""}</p>`;
   }
 
   /* ── arranque ── */
@@ -272,7 +296,7 @@
     let p = null, m = null;
     p = await agregado();
     const vacio = d.getElementById("pt-vacio");
-    if (!p) { arrancada = false; if (vacio) vacio.textContent = "Todavía no hay un agregado del mercado calculado (lo escribe la primera sincronización con datos)."; return false; } // vacía y honesta: la sección sigue oculta
+    if (!p) { arrancada = false; if (vacio) vacio.textContent = "Todavía no hay un agregado del mercado calculado (lo escribe la primera actualización de los datos del SECOP II)."; return false; } // vacía y honesta: la sección sigue oculta
     try { const r = await fetch("/api/procesos?op=manifestacion&estado=abierto"); m = await r.json(); } catch { m = null; }
     // dentro del tablero el botón «Ver a cuáles puedo presentarme» sobra: ya entró
     d.getElementById("pt-hero").innerHTML = htmlHero(p, { conBoton: !!d.getElementById("entrada-inicio") && !d.getElementById("pulso") });

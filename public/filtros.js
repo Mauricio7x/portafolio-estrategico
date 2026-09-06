@@ -419,6 +419,22 @@
     }
     return null;
   }
+  /* UNA COMA SEGUIDA DE TRES DÍGITOS ES AMBIGUA Y NO DECIDE (6-sep-2026).
+     `numero()` lee la URL, que la escribe la propia aplicación, y allí «2,000»
+     es la coma decimal colombiana = 2. En una FRASE la escribe una persona, y
+     «hasta 2,000 millones» tanto puede ser dos mil millones (agrupación
+     anglosajona) como dos millones con decimales: mil veces de diferencia en la
+     cifra que fija el tope. Un tope mil veces menor, creíble y bien maquetado,
+     es exactamente el daño que esta aplicación no puede hacer, así que la
+     cantidad se queda INERTE: `null`, las palabras vuelven enteras al resto y la
+     ficha «Palabra: hasta 2,000 millones» dice qué se entendió y dónde
+     corregirlo. La coma decimal corta («1,5 millones») sigue viva: solo cae la
+     forma de agrupación (uno a tres dígitos y grupos de exactamente tres).
+     Vale para TODOS los sitios del traductor que convierten un token en cifra
+     —`leerPesos` y las dos lecturas sueltas de `leerCuantia`—, no solo para el
+     que se reprodujo. `numero()` no cambia: es el lector de la URL. */
+  const AGRUPACION_AMBIGUA = /^\d{1,3}(,\d{3})+$/;
+  const cifraDeFrase = (t) => (AGRUPACION_AMBIGUA.test(String(t ?? "").trim()) ? null : numero(t));
   /* una cantidad en pesos a partir de i: {n, pesos} solo con unidad explícita */
   function leerPesos(crudos, claves, i) {
     let j = i, conPeso = false, factor = 1;
@@ -427,7 +443,7 @@
     if (t.startsWith("$")) { conPeso = true; t = t.slice(1); }
     if (t === "mil" && /^millon(es)?$/.test(claves[j + 1] || "")) { factor = 1e9; j += 2; }
     else {
-      const v = numero(t);
+      const v = cifraDeFrase(t);
       if (v == null || v <= 0) return null;
       factor = v; j++;
       if (claves[j] === "mil") { factor *= 1000; j++; }
@@ -444,7 +460,7 @@
       const a = leerPesos(crudos, claves, i + 1);
       const a2 = a ? a : (() => { // «entre 200 y 1.000 millones»: la unidad va al final
         const t = String(crudos[i + 1] || "").replace(/^\$/, "").replace(/[.,;:]+$/, "");
-        const v = numero(t); return v != null && v > 0 ? { n: 1, pesos: v, sinUnidad: true } : null;
+        const v = cifraDeFrase(t); return v != null && v > 0 ? { n: 1, pesos: v, sinUnidad: true } : null;
       })();
       if (!a2) return null;
       const k = i + 1 + a2.n;
@@ -454,7 +470,7 @@
       let minV = a2.pesos, maxV = b.pesos;
       if (a2.sinUnidad) { // la unidad de B vale para A: «entre 200 y 1.000 millones»
         const tB = String(crudos[k + 1] || "").replace(/^\$/, "").replace(/[.,;:]+$/, "");
-        const vB = numero(tB); if (vB == null || vB <= 0) return null;
+        const vB = cifraDeFrase(tB); if (vB == null || vB <= 0) return null;
         minV = a2.pesos * (b.pesos / vB);
       }
       return { n: k + 1 + b.n - i, min: minV, max: maxV };
@@ -462,8 +478,37 @@
     const d = casar(DIRECCION_FRASES, claves, i);
     if (!d) return null;
     const c = leerPesos(crudos, claves, i + d.n);
-    if (!c) return null;
-    return d.valor === "max" ? { n: d.n + c.n, min: null, max: c.pesos } : { n: d.n + c.n, min: c.pesos, max: null };
+    if (c) return d.valor === "max" ? { n: d.n + c.n, min: null, max: c.pesos } : { n: d.n + c.n, min: c.pesos, max: null };
+    return leerParDirecciones(crudos, claves, i, d);
+  }
+  /* «DESDE A Y HASTA B MILLONES» ES UN PAR, NO MEDIA FRASE (6-sep-2026). Con la
+     unidad escrita UNA vez al final, `leerPesos` no podía leer «100» y la pieza
+     se perdía: se fijaba solo el tope y «desde 100» quedaba de PALABRA, una
+     subcadena que no casa con ningún objeto → lista vacía por una cuantía que la
+     persona sí dijo entera. Es el mismo caso que «entre 200 y 1.000 millones»,
+     con las dos direcciones escritas, así que se resuelve con la misma regla: la
+     unidad de B vale para A. Si tampoco así hay unidad, no se fija NADA y las
+     dos piezas vuelven enteras al resto (ambigüedad), nunca una sola. */
+  function leerParDirecciones(crudos, claves, i, d) {
+    const cifraSuelta = (k) => {
+      const t = String(crudos[k] || "").replace(/^\$/, "").replace(/[.,;:]+$/, "");
+      const v = cifraDeFrase(t);
+      return v != null && v > 0 ? v : null;
+    };
+    const vA = cifraSuelta(i + d.n);
+    if (vA == null) return null;
+    let k = i + d.n + 1;
+    if (claves[k] === "y" || claves[k] === "e") k++;      // la «y» es opcional: «desde A hasta B millones»
+    const d2 = casar(DIRECCION_FRASES, claves, k);
+    if (!d2 || d2.valor === d.valor) return null;         // hacen falta las DOS direcciones, y distintas
+    const b = leerPesos(crudos, claves, k + d2.n);
+    if (!b) return null;
+    const vB = cifraSuelta(k + d2.n);
+    if (vB == null) return null;
+    const A = vA * (b.pesos / vB), B = b.pesos;
+    const min = d.valor === "min" ? A : B, max = d.valor === "min" ? B : A;
+    if (!(Number.isFinite(min) && Number.isFinite(max) && min > 0 && max > 0)) return null;
+    return { n: k + d2.n + b.n - i, min, max };
   }
   function traducirConsulta(texto) {
     const crudos = String(texto ?? "").trim().split(/\s+/).filter(Boolean);
