@@ -8962,3 +8962,132 @@ tests/estado.js` dé más de 1,5 MB, o cuando una búsqueda por el cuerpo tarde 
 
 **No verificable desde aquí (6-sep-2026).** Nada de red: todo es git local y ejecución de las
 herramientas. Sin pasos del dueño en la ficha.
+
+### Lote «B7a-tablero-mis-procesos» de la consultoría del 4-sep · M-DGF-09, M-DGF-11, M-DGF-15 (6-sep-2026)
+
+En una línea: Mis procesos enseña «Ganó g de N presentadas» con la barra de composición del pulso solo con tres o más presentadas; la cascada de «cuánta plata deja» es una función pura (`htmlCascada`) que la suite ejecuta con el desglose real; y el reajuste del DANE declara su alcance medido (13 insumos recuperados más una cuadrilla derivada, 15 de 174 ítems, ninguno del Nogal), la consulta pública del catálogo publica por fin la meta que el panel pinta —enseñaba «—» y «sin ajuste sectorial»— y `tests/capturar_icociv.js` guarda el número índice el día que alguien lo lea.
+
+Tres mejoras del eje «datos y gráficos», sobre el árbol de `d829d87`. Las fichas se escribieron sobre
+`d569946`; donde citaban líneas o caminos que ya no existen mandó el árbol.
+
+- **Mis procesos enseña cómo le va de verdad (M-DGF-09).** `resumen.por_estado` viajaba desde el
+  18-ago-2026 y la pestaña solo lo usaba en los chips-filtro «Ganado (2)»: la persona nunca veía su
+  resultado y no tenía motivo para registrar «Ganado» o «Perdido», que es la única etiqueta que le
+  falta al dueño para calibrar (sección «Puertas, probabilidad y valor esperado»). Ahora
+  `htmlDesenlaceSeguimiento(porEstado)` (public/app.js, función PURA) pinta en `#seg-desenlace`
+  —caja nueva de index.html que nace `hidden`, arriba de la fila del título con los chips— el rótulo
+  «Cómo le va», la frase literal **«Ganó g de N presentadas»** y `Pulso.apilada` con ganadas ·
+  perdidas · sin resultado. Decisiones: (1) **solo con tres o más presentadas** (ganadas + perdidas +
+  sin resultado): un porcentaje sobre uno o dos casos es ruido con aspecto de medición, y con menos la
+  caja se esconde en vez de decir «0 %». (2) **Sin dato no es 0**: si falta el conteo de cualquiera
+  de los tres estados, o viene null o vacío, no se pinta nada; nueve guardados sin presentar tampoco
+  son un resultado. (3) La frase de la ficha se conserva literal y, SOLO cuando hay presentadas sin
+  resultado, añade «· s sin resultado todavía»: «Ganó 1 de 3 presentadas» a secas se lee como dos
+  perdidas. (4) **No pasa por `frecuenciaNatural`**: aquella recibe una probabilidad con suelo 2 y
+  habla de «procesos como este»; esto es un conteo propio. (5) Los tonos de `apilada` son la paleta
+  categórica del pulso por RANGO (`--viz-1…3`), no un semáforo: «Ganadas» no va en verde porque el
+  verde de la aplicación significa «deja plata/cumple» y aquí las tres series son el sujeto; la
+  leyenda nombra cada una. (6) La ficha decía «svg con tres segmentos»: `apilada` pinta `div` con
+  `var(--viz-N)`, no SVG; la cerradura mira los tres tonos y los `title` de segmento. (7) index.html
+  se tocó (la ficha listaba solo app.js): la caja necesita un nodo propio que nazca oculto, y ponerla
+  dentro de `#seg-resumen` (chips de conteo) o de `#seg-filtros` (el mando) mezclaría un hecho con un
+  control. Medido en Chromium con cuatro guardados (ganado · perdido · presentado · interesa) a 1280
+  y 390, claro y oscuro: caja visible (1064×99 / 302×119), tres segmentos de 353 / 99 px con fondo
+  rgb(42,120,214) · rgb(235,104,52) · rgb(27,175,122) en claro y rgb(57,135,229) · rgb(217,89,38) ·
+  rgb(25,158,112) en oscuro (los tokens `--viz-1…3`), la caja termina antes de que empiecen los chips,
+  cero desbordes, consola limpia y ninguna petición externa.
+- **La cascada de «cuánta plata deja» gana su cerradura (M-DGF-11).** `filaCascada` y las siete
+  filas vivían dentro de `pintarDetalleGanancia` y ninguna aserción tocaba su HTML (`grep -c
+  'filaCascada\|htmlCascada' tests/e2e.js` → 0 antes). Se extrajo **`htmlCascada(d, g)`** (public/app.js,
+  junto a `filaCascada`; las tintas pasaron a `VERDE_CUENTA` / `ROJO_CUENTA` / `GRIS_CUENTA` de nivel
+  de módulo porque la cascada y el veredicto las comparten) y `pintarDetalleGanancia` solo la coloca
+  (`const cascada = htmlCascada(d, g)`). **La ficha pedía exponerla «por el camino UMD que ya usan
+  Pulso/Ganancia»: app.js no es UMD** —es el IIFE de la página— y la suite ya ejecuta sus funciones
+  recortándolas del fuente con `new Function` (`cargandoSeguimiento`, `resumenSummary`, `curvaSVG`,
+  `pintarBaseZona`…): se siguió ese patrón. Se descartó llevarla a public/ganancia.js (es la
+  aritmética que el servidor requiere; HTML allí sería mezclar capas) y a public/pulso.js (una
+  cascada de siete filas con los textos de la cuenta no es una primitiva de gráfico). La cerradura
+  (bloque «lo que deja el contrato») ejecuta la función real con `Ganancia.desglose` real y comprueba
+  lo PINTADO: 7 filas con contribución y estampillas, 6 sin contribución, 5 sin deducciones; los
+  rótulos en su orden; las cifras en pesos completos con signo iguales a `d.*`; que **lo pintado
+  cuadra al peso** (precio − descuentos − obra − administración − imprevistos = lo que queda, leído
+  de los textos); anchos entre 1 y 100 con el precio en 100 y el suelo de 1 % para una línea de menos
+  del 0,5 %; «Le queda» última y con `--danger` en rojo / `--ok` en verde según el signo; sin `|| 0`;
+  registro de usted y sin emoji. Medido en Chromium con un borrador de APU sembrado (costo directo
+  $700 M sobre un precio de $800.001.071): seis filas —no hay estampillas— con anchos 100 · 5 · 87 ·
+  13 · 4 · 10 %, tintas rgb(184,55,47) / rgb(154,91,15) en claro y rgb(240,122,114) / rgb(228,168,74)
+  en oscuro, «Le queda −$79.998.983» última.
+- **El reajuste del DANE declara su alcance real (M-DGF-15).** Medido sobre `data/apu_catalogo.json`:
+  el factor 1,047 se aplicó UNA vez, en la semilla, y SOLO a los 13 insumos `fuente="recuperado"`;
+  **los usan 15 de los 174 ítems** (los 3 recuperados y 12 estimados que llevan cemento, arena,
+  triturado, acero, agua o jornales recuperados) y **ningún ítem NOG-*** — la ficha decía «3 de 174
+  ítems» porque contaba los ítems con `fuente=recuperado`, no los que llevan el factor en el precio;
+  y la cuadrilla «derivada» `mo_cuadrilla_1of_5ay` (oficial + 5 ayudantes) lleva el reajuste dentro
+  aunque su fuente no lo diga. Consecuencia medible: **actualizar el ICOCIV no mueve un peso** de un
+  presupuesto hecho solo con ítems del Nogal; el «≈ $15 M en $800 M» del auditor de fase 1 era una
+  cifra a ojo. Decisiones: (1) cada recuperado conserva **`precio_marzo_2025`**, recuperado de
+  `git show d69cfe8^:modulo_apu.html` y verificado uno a uno (`round(x × 1,047)` reproduce los 13
+  precios; las cuadrillas, como suma de sus jornales), para que una actualización reaplique el factor
+  desde la base y nunca sobre el ya reajustado. (2) `_meta.icociv` declara `insumos_reajustados: 13`,
+  `derivados_de_recuperados: ["mo_cuadrilla_1of_5ay"]`, `items_con_insumo_reajustado: 15`, `alcance`,
+  `resto_del_catalogo`, y `indice_base` / `indice_vigente` en **null con `por_que_sin_indice`**: el
+  boletín se leyó como variación anual y el número índice (base dic-2021 = 100) no se capturó; el
+  6,61 % de junio de 2026 (Studocu) sigue fuera por fuente secundaria. La suite hace el CENSO
+  (transitivo por `componentes`) contra el catálogo: añadir un recuperado sin tocar la meta la tumba.
+  (3) **`_meta.version` 2.0.0 → 2.1.0**: la carga en Redis compara esa versión y sin cambio no
+  reescribe; la meta nueva solo llega al panel cuando el dueño pulse «Cargar catálogo APU». (4) La
+  ficha del panel (`textoIcociv`, public/app.js) dice el hecho: «13 insumos recuperados llevados de
+  marzo de 2025 a marzo de 2026 con el índice del DANE (+4,7 %); los usan 15 de los 174 ítems. Los
+  demás precios son de un contrato adjudicado en 2025, sin reajuste.» — el porcentaje en castellano
+  (antes salía «4.7»), **sin la palabra «anual»** (tras una captura el factor va de marzo de 2025 al
+  mes capturado, y la primera corrida de la suite cazó ese «anual» en mi propio texto), y con una meta
+  anterior a estos campos no inventa el alcance: «alcance por confirmar, vuelva a cargar el catálogo».
+  (5) **`tests/capturar_icociv.js`** (herramienta manual, patrón de los siete `capturar_*.js`):
+  `--mes AAAA-MM --indice-base N --indice-vigente N --url <boletín> [--escribir]`; el factor es el
+  cociente con cuatro decimales; reaplica SOLO a los recuperados desde `precio_marzo_2025` y recompone
+  TODAS las cuadrillas que lleven un jornal cambiado (la primera corrida en seco abortó porque
+  `validarCatalogo` —que se llama ANTES de escribir— vio a `mo_cuadrilla_1of_5ay` descuadrada: el
+  «hermano» que una lista de recuperados habría dejado vivo); sin `--escribir` solo enseña (el falso
+  caro en precios es el positivo); un cociente fuera de [0,5; 2] o un índice ilegible abortan; sube la
+  versión menor; y **no descarga el boletín**: dane.gov.co respondió 403 desde este entorno el
+  6-sep-2026 (observación con fecha) y un lector escrito a ciegas sobre un PDF no visto daría un
+  número inventado con aspecto de medición — los dos índices los teclea quien los lee y quedan con su
+  URL. La suite ejecuta `reajustar` con 104,7/100 y exige que reproduzca los 13 precios al peso sin
+  tocar los otros 424, y con 110/100 que cambien exactamente los recuperados y la cuadrilla derivada
+  y el catálogo siga válido. (6) **Hallazgo fuera de la ficha, arreglado aquí porque su «antes» era
+  falso**: la ficha afirmaba que el panel enseñaba «ICOCIV Marzo 2026 · +4,7 % anual». Ese texto
+  estaba en el fuente, pero `cargarEstadoApu` pide `/api/apu?op=catalogo` —ya en `d569946`— y esa
+  respuesta solo publicaba `version` y `generado`: en pantalla salían «—» en insumos, ítems, regiones y
+  base de precios y **«sin ajuste sectorial»**, una afirmación falsa con maquetación creíble (medido en
+  Chromium sobre el arnés con el catálogo recién cargado). `lib/handlers/apu/editor.js` publica ahora
+  `version_catalogo`, `cargado_el`, `base_precios`, `icociv` y `totales {insumos, items, regiones}`
+  desde la meta (datos del catálogo, no cifras del perfil: nada que redactar; sin meta viaja null,
+  jamás 0), y hay cerradura por el handler real. Medido después: 437 · 174 · 5 · 2026-08 y la frase
+  del hecho, a 1280 y 390, claro y oscuro. docs/APU_Y_RENTABILIDAD.md §3 dice el alcance y cómo se
+  actualiza.
+- **Mutaciones** (cada una con la prueba dentro y el fuente quitado, `node tests/e2e.js 1`):
+  M1 (sin public/app.js ni index.html nuevos) cae en «app.js sin
+  htmlDesenlaceSeguimiento: Mis procesos no enseña cómo le va»; M2 (con «Le queda» intercambiada con la
+  reserva en `htmlCascada`) cae en «el orden de la cuenta: se cobra, se descuenta, cuesta, y al final
+  lo que queda»; M3 (sin la meta nueva de data/apu_catalogo.json) cae en «_meta.icociv.insumos_reajustados
+  (undefined) no es el censo de fuente=recuperado (13)»; M4 (sin el editor.js nuevo) cae en «op=catalogo
+  publica la versión del catálogo cargado». Y la primera corrida de la suite con todo dentro cayó en
+  «el factor no se presenta como «anual» del catálogo»: la cerradura mordió el texto de su propio lote.
+- **Lo que las fichas decían y el árbol desmintió.** M-DGF-09: «svg con tres segmentos» (son `div`
+  con tokens); «solo app.js» (hizo falta el nodo en index.html); `frecuenciaNatural` en 1222-1228
+  (hoy ~1250, y no se usa). M-DGF-11: «el camino UMD de app.js» no existe; `filaCascada` en 1877 y las
+  filas en 1967-1990 (hoy 2157 y 2247-2270 antes del cambio). M-DGF-15: «3 de 174 ítems» (son 15, más
+  la cuadrilla derivada); «la ficha enseña ICOCIV Marzo 2026 · +4,7 % anual» (enseñaba «sin ajuste
+  sectorial»: la meta no viajaba); «app.js:7383-7384» (hoy `textoIcociv` junto a `pintarApu`, ~8160);
+  «descarga el boletín y extrae los dos índices» (no se hace: ver (5)).
+- **No verificable desde aquí (6-sep-2026).** El formato del boletín y del anexo del DANE (403 en el
+  proxy); el número índice real de marzo de 2025 y del mes vigente; el efecto en pesos sobre un
+  presupuesto REAL del dueño (cero si solo lleva ítems del Nogal; para uno con ítems recuperados: ítems
+  usados × (factor nuevo − 1,047)); y cuántos procesos guardados en producción tienen ya «ganado» o
+  «perdido» (la métrica de la ficha solo se mide allí, comparando `por_estado` antes y después).
+- **Pasos del dueño.** Tras desplegar, pulsar «Cargar catálogo APU» en Precios › «Catálogo de precios
+  de referencia» (la versión 2.1.0 hace que escriba sin forzar) para que el panel enseñe el alcance;
+  cuando quiera actualizar el índice: leer los dos números índice del anexo del DANE y correr
+  `node tests/capturar_icociv.js --mes AAAA-MM --indice-base N --indice-vigente N --url <boletín>`
+  (primero en seco, luego con `--escribir`), correr la suite, desplegar y volver a cargar el catálogo;
+  y registrar «Ganado»/«Perdido» en Mis procesos para que la barra tenga qué enseñar.

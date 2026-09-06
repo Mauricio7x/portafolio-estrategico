@@ -9394,6 +9394,43 @@ async function main() {
           /* (3) y la ruta de FALLO tapa el vacío por su cuenta, antes de hablar */
           assert.ok(/catch \(e\) \{\s*\n\s*cargandoSeguimiento\(false\);\s*\n\s*\$\("seg-vacio"\)\.classList\.add\("hidden"\);/.test(appSeg),
             "con el servidor caído, cargarSeguimiento tapa #seg-vacio antes de hablar: jamás una afirmación falsa sobre sus procesos");
+
+          /* (4) CÓMO LE VA DE VERDAD (M-DGF-09, 6-sep-2026). `por_estado` viajaba
+             desde ago 2026 y solo alimentaba los chips-filtro: la persona no veía
+             su resultado. La función real, EJECUTADA con el Pulso real: barra de
+             composición ganadas · perdidas · sin resultado y la frase literal,
+             SOLO con tres o más presentadas; sin dato, nada (no «0 %»). */
+          {
+            const iDes = appSeg.indexOf("function htmlDesenlaceSeguimiento(");
+            assert.ok(iDes > 0, "app.js sin htmlDesenlaceSeguimiento: Mis procesos no enseña cómo le va");
+            const desenlace = new Function("window",
+              `${appSeg.slice(iDes, appSeg.indexOf("\n  }", iDes) + 4)}; return htmlDesenlaceSeguimiento;`)({ Pulso: require("../public/pulso.js") });
+            for (const sinDato of [null, undefined, "x", { ganado: 2, perdido: 1 }, { ganado: null, perdido: 1, presentado: 2 }, { ganado: "", perdido: 1, presentado: 2 }]) {
+              assert.strictEqual(desenlace(sinDato), "", `sin el conteo completo no hay dato, y «sin dato» no es 0: ${JSON.stringify(sinDato)}`);
+            }
+            assert.strictEqual(desenlace({ ganado: 1, perdido: 1, presentado: 0 }), "", "con dos presentadas no hay barra ni frase: un porcentaje sobre dos casos es ruido");
+            assert.strictEqual(desenlace({ ganado: 0, perdido: 0, presentado: 0, interesa: 9 }), "", "nueve guardados sin presentar tampoco son un resultado");
+            const h3 = desenlace({ ganado: 1, perdido: 1, presentado: 1, interesa: 9, preparando: 2, descartado: 4 });
+            assert.ok(/Ganó 1 de 3 presentadas/.test(h3), `la frase literal con el conteo: ${h3.slice(0, 200)}`);
+            assert.ok(/1 sin resultado todavía/.test(h3), "la presentada sin resultado se dice, no se cuenta como perdida en silencio");
+            for (const t of [1, 2, 3]) assert.ok(h3.includes(`var(--viz-${t})`), `tres segmentos con la paleta categórica del pulso (slot ${t})`);
+            assert.ok(!h3.includes("var(--viz-4)"), "solo tres series: ganadas, perdidas, sin resultado");
+            assert.ok(/Ganadas/.test(h3) && /Perdidas/.test(h3) && /Sin resultado/.test(h3), "la leyenda nombra las tres");
+            assert.ok(/Cómo le va/.test(h3), "el rótulo dice de qué es la barra");
+            const h7 = desenlace({ ganado: 2, perdido: 5, presentado: 0 });
+            assert.ok(/Ganó 2 de 7 presentadas/.test(h7) && !/sin resultado todavía/.test(h7), "sin pendientes la frase no habla de ellas");
+            assert.strictEqual((h7.match(/title="/g) || []).length, 2, "un estado en 0 no pinta segmento");
+            assert.ok(!/probabilidad|procesos como este|%\s*de probabilidad/.test(h3 + h7), "es un conteo propio: no pasa por frecuenciaNatural ni habla de probabilidad");
+            const { RE_EMOJI_UI: emojiDes, tuteoEn: tuteoDes } = require("../lib/lenguaje_pantalla.js");
+            const textoDes = (h3 + h7).replace(/<[^>]+>/g, " ");
+            assert.ok(!textoDes.match(emojiDes), "sin emoji");
+            assert.strictEqual(tuteoDes(textoDes), null, "habla de usted");
+            /* y está CABLEADA: la caja existe, nace oculta, va arriba de los chips y la pinta pintarSeguimiento */
+            assert.ok(/id="seg-desenlace"[^>]*\bhidden\b/.test(htmlSeg), "#seg-desenlace nace oculta: sin tres presentadas no hay caja vacía");
+            assert.ok(htmlSeg.indexOf('id="seg-desenlace"') < htmlSeg.indexOf('id="seg-filtros"'), "el resultado va ARRIBA de los chips-filtro");
+            assert.ok(/desenlace\.innerHTML = htmlDesenlaceSeguimiento\(r\.resumen \? r\.resumen\.por_estado : null\);\s*\n\s*desenlace\.classList\.toggle\("hidden", !desenlace\.innerHTML\);/.test(appSeg),
+              "pintarSeguimiento pinta el desenlace desde resumen.por_estado y esconde la caja cuando no hay nada que decir");
+          }
         }
         assert.ok(/class="btn-guardar/.test(appSeg) && /function alternarGuardado/.test(appSeg) && /op=seguimiento/.test(appSeg) && /data-seg-detalle/.test(appSeg) && /data-seg-ics/.test(appSeg) && /data-seg-verificar/.test(appSeg), "la tarjeta guarda y Mi empresa sigue, descarga el .ics, consulta el detalle y verifica el NIT");
         assert.ok(!/op=seguimiento[^`"']*token=/.test(appSeg), "el token no viaja en la URL: el .ics se baja con cabecera y Blob");
@@ -14213,6 +14250,110 @@ async function main() {
           console.log(`· los cinco bancos oficiales en una respuesta: ${detalle.join(" · ")} → ${mb.toFixed(2)} MB (tope Vercel 4,5)`);
         }
 
+        /* ═══ EL REAJUSTE DEL DANE DECLARA SU ALCANCE (M-DGF-15, 6-sep-2026) ═══
+           El factor 1,047 se aplicó UNA vez, en la semilla, y SOLO a los insumos
+           recuperados; la pantalla decía «ICOCIV Marzo 2026 · +4.7 % anual» como
+           si fuera del catálogo entero. `_meta.icociv` declara ahora cuántos
+           insumos y cuántos ítems lleva el reajuste, y la cifra se MIDE aquí
+           contra el catálogo (censo, no lista): si alguien añade un insumo
+           recuperado sin actualizar la meta, esto cae. La herramienta manual
+           tests/capturar_icociv.js reaplica el factor SOLO a los recuperados
+           desde su precio_marzo_2025, y con el factor de la semilla tiene que
+           reproducir los 13 precios al peso. */
+        {
+          const Ico = require("../tests/capturar_icociv.js");
+          const semIco = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "apu_catalogo.json"), "utf8"));
+          const icv = semIco._meta.icociv;
+          const recIco = semIco.insumos.filter((i) => i.fuente === "recuperado");
+          /* el alcance es TRANSITIVO: una cuadrilla «derivada» compuesta de jornales
+             recuperados lleva el reajuste dentro aunque su fuente no lo diga */
+          const idsIco = new Set(recIco.map((i) => i.id));
+          for (let hubo = true; hubo;) {
+            hubo = false;
+            for (const i of semIco.insumos) {
+              if (idsIco.has(i.id) || !i.componentes || !Object.keys(i.componentes).some((k) => idsIco.has(k))) continue;
+              idsIco.add(i.id); hubo = true;
+            }
+          }
+          const derivadosIco = [...idsIco].filter((id) => !recIco.some((i) => i.id === id));
+          const usanIco = semIco.items.filter((it) => (it.insumos || []).some((l) => idsIco.has(l.insumo_id)));
+          assert.strictEqual(icv.insumos_reajustados, recIco.length, `_meta.icociv.insumos_reajustados (${icv.insumos_reajustados}) no es el censo de fuente=recuperado (${recIco.length})`);
+          assert.deepStrictEqual(icv.derivados_de_recuperados, derivadosIco, "las cuadrillas derivadas de jornales recuperados se declaran (llevan el reajuste dentro)");
+          assert.strictEqual(icv.items_con_insumo_reajustado, usanIco.length, `_meta.icociv.items_con_insumo_reajustado (${icv.items_con_insumo_reajustado}) no es el censo de ítems que usan uno (${usanIco.length})`);
+          for (const id of derivadosIco) {
+            const d = semIco.insumos.find((i) => i.id === id);
+            assert.strictEqual(d.precio_base, Object.entries(d.componentes).reduce((a, [k, n]) => a + semIco.insumos.find((i) => i.id === k).precio_base * n, 0), `${id} es la suma de sus jornales reajustados`);
+          }
+          assert.ok(recIco.length > 0 && recIco.length < semIco.insumos.length / 10, "el reajuste alcanza a una fracción pequeña del catálogo: por eso hay que decirlo");
+          assert.strictEqual(usanIco.filter((it) => /^NOG-/.test(it.codigo)).length, 0, "ningún ítem del Nogal usa un insumo reajustado: actualizar el índice no mueve un presupuesto del Nogal");
+          assert.ok(recIco.every((i) => Number(i.precio_marzo_2025) > 0), "cada recuperado conserva su precio de marzo de 2025: sin él se reajustaría sobre el ya reajustado");
+          assert.ok(semIco.insumos.filter((i) => i.fuente !== "recuperado").every((i) => i.precio_marzo_2025 === undefined), "solo los recuperados tienen precio de marzo de 2025 (los demás no vienen de allí)");
+          assert.strictEqual(icv.indice_base, null, "el número índice no se capturó y no se inventa: null con motivo");
+          assert.ok(/no se captur/.test(icv.por_que_sin_indice || "") && /capturar_icociv/.test(icv.por_que_sin_indice || ""), "el null lleva su motivo y el camino para llenarlo");
+
+          /* la herramienta reproduce la semilla desde marzo de 2025 con el factor declarado */
+          const urlIco = "https://www.dane.gov.co/files/operaciones/ICOCIV/bol-ICOCIV-mar2026.pdf";
+          const re1 = Ico.reajustar(semIco, { mes: "2026-03", indice_base: 100, indice_vigente: 104.7, url: urlIco, capturado_el: "2026-09-06" });
+          assert.deepStrictEqual(re1.insumos.map((i) => [i.id, i.precio_base]), semIco.insumos.map((i) => [i.id, i.precio_base]),
+            "con el factor de la semilla (104,7 / 100) la herramienta reproduce los 13 precios al peso y no toca los otros 424");
+          assert.strictEqual(re1._meta.icociv.factor_aplicado, 1.047);
+          assert.deepStrictEqual([re1._meta.icociv.indice_base, re1._meta.icociv.indice_vigente, re1._meta.icociv.indice_vigente_mes, re1._meta.icociv.url, re1._meta.icociv.capturado_el],
+            [100, 104.7, "2026-03", urlIco, "2026-09-06"], "la captura guarda los dos índices, el mes, la URL y la fecha");
+          assert.strictEqual(re1._meta.icociv.variacion_anual_general_pct, null, "la variación anual del boletín ya no describe el factor: se anula, no se deja como si fuera el cociente");
+          assert.strictEqual(re1._meta.icociv.variacion_pct_desde_marzo_2025, 4.7);
+          assert.notStrictEqual(re1._meta.version, semIco._meta.version, "la versión sube para que la carga en Redis lo note");
+          assert.strictEqual(semIco.insumos.find((i) => i.id === "cemento_gris_50kg").precio_base, 33504, "el catálogo recibido no se toca");
+          /* con otro índice cambian SOLO los recuperados, las cuadrillas son la suma de sus jornales y el catálogo sigue válido */
+          const re2 = Ico.reajustar(semIco, { mes: "2026-06", indice_base: 100, indice_vigente: 110, url: urlIco });
+          const cambiados = re2.insumos.filter((i, k) => i.precio_base !== semIco.insumos[k].precio_base);
+          assert.deepStrictEqual(cambiados.map((i) => i.id).sort(), [...idsIco].sort(), "cambian exactamente los recuperados y las cuadrillas compuestas de ellos, ninguno más");
+          assert.ok(cambiados.every((i) => i.fuente === "recuperado" || i.componentes), "ningún adjudicado ni estimado simple se reajusta");
+          const buscar = (id) => re2.insumos.find((i) => i.id === id);
+          assert.strictEqual(buscar("cemento_gris_50kg").precio_base, Math.round(32000 * 1.1), "desde el precio de marzo de 2025, no sobre el ya reajustado");
+          assert.strictEqual(buscar("mo_cuadrilla_1of_3ay").precio_base, buscar("mo_oficial_construccion").precio_base + 3 * buscar("mo_ayudante_construccion").precio_base,
+            "la cuadrilla es la suma de sus jornales reajustados (la regla del catálogo), no un redondeo aparte");
+          assert.strictEqual(buscar("mo_cuadrilla_1of_5ay").precio_base, buscar("mo_oficial_construccion").precio_base + 5 * buscar("mo_ayudante_construccion").precio_base,
+            "la cuadrilla DERIVADA también se recompone: dejarla quieta rompía el cuadre del catálogo (cazado en la primera corrida en seco)");
+          assert.deepStrictEqual(re2._meta.icociv.derivados_de_recuperados, derivadosIco, "y la captura declara cuáles recompuso");
+          assert.strictEqual(require("../lib/apu/catalogo.js").validarCatalogo(re2).ok, true, "el catálogo reajustado pasa la validación del catálogo (cuadre de cuadrillas incluido)");
+          assert.strictEqual(re2._meta.icociv.items_con_insumo_reajustado, usanIco.length, "el alcance se recuenta en cada captura");
+          /* guardas: un índice ilegible o disparatado no produce un precio */
+          assert.throws(() => Ico.reajustar(semIco, { mes: "2026-06", indice_base: 0, indice_vigente: 110, url: urlIco }), /mayores que 0/, "un índice en 0 no existe");
+          assert.throws(() => Ico.reajustar(semIco, { mes: "2026-06", indice_base: 100, indice_vigente: 330, url: urlIco }), /fuera de toda razón/, "un cociente de 3,3 es un dedo que resbaló");
+          assert.throws(() => Ico.reajustar(semIco, { mes: "junio", indice_base: 100, indice_vigente: 110, url: urlIco }), /AAAA-MM/, "el mes va como AAAA-MM");
+          assert.throws(() => Ico.reajustar(semIco, { mes: "2026-06", indice_base: 100, indice_vigente: 110 }), /--url/, "sin la URL del boletín no hay origen que discutir");
+          assert.strictEqual(Ico.numeroLocal("118,43"), 118.43); assert.strictEqual(Ico.numeroLocal("1.118,43"), 1118.43); assert.strictEqual(Ico.numeroLocal("abc"), null); assert.strictEqual(Ico.numeroLocal(""), null);
+          assert.strictEqual(Ico.factorDe(118.43, 124.11), 1.048);
+          /* el capturador valida ANTES de escribir, no corre nada al importarse y no llama a la red */
+          const srcIco = fs.readFileSync(path.join(__dirname, "..", "tests", "capturar_icociv.js"), "utf8");
+          assert.ok(srcIco.indexOf("validarCatalogo(nuevo)") > 0 && srcIco.indexOf("validarCatalogo(nuevo)") < srcIco.indexOf("fs.writeFileSync("), "la validación va ANTES de escribir");
+          assert.ok(/require\.main === module/.test(srcIco) && !/\bfetch\(/.test(srcIco), "es una herramienta manual sin red: los índices se teclean con su URL");
+
+          /* y la PANTALLA dice el hecho: textoIcociv de app.js, ejecutada */
+          const appIco = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+          const iTI = appIco.indexOf("function textoIcociv(");
+          assert.ok(iTI > 0, "app.js sin textoIcociv: el panel sigue diciendo «+4.7 % anual» del catálogo entero");
+          const textoIcociv = new Function("nf2", "fmt", `${appIco.slice(iTI, appIco.indexOf("\n  }", iTI) + 4)}; return textoIcociv;`)(
+            new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 }), new Intl.NumberFormat("es-CO"));
+          const tIco = textoIcociv(icv, semIco.items.length);
+          assert.ok(/^13 insumos recuperados llevados de marzo de 2025 a marzo de 2026/.test(tIco), `la ficha dice cuántos y de cuándo a cuándo: ${tIco}`);
+          assert.ok(/\(\+4,7 %\)/.test(tIco) && !/4\.7/.test(tIco), "el porcentaje va en castellano (coma), no «4.7»");
+          /* tras una captura del índice la variación anual viaja null y el porcentaje sale del factor, del mes base al capturado */
+          const tCap = textoIcociv({ ...icv, boletin: "Junio 2026", variacion_anual_general_pct: null, factor_aplicado: 1.048 }, 174);
+          assert.ok(/a junio de 2026 con el índice del DANE \(\+4,8 %\)/.test(tCap) && !/anual|\(\)/.test(tCap), `con el índice capturado la ficha dice el mes y el porcentaje del factor, sin «anual» ni paréntesis vacío: ${tCap}`);
+          assert.ok(/los usan 15 de los 174 ítems/.test(tIco), "y cuántos ítems lo llevan, contra el total");
+          assert.ok(/sin reajuste/.test(tIco) && /adjudicado en 2025/.test(tIco), "y que el resto son precios adjudicados en 2025 sin reajuste");
+          assert.ok(!/anual/.test(tIco), "el factor no se presenta como «anual» del catálogo");
+          assert.strictEqual(textoIcociv(null, 174), "sin ajuste sectorial");
+          const tViejo = textoIcociv({ boletin: "Marzo 2026", variacion_anual_general_pct: 4.7, factor_aplicado: 1.047 }, 174);
+          assert.ok(/alcance por confirmar/.test(tViejo) && /vuelva a cargar el catálogo/.test(tViejo) && !/13 insumos/.test(tViejo),
+            "con la meta anterior cargada en el servidor no se inventa el alcance: se dice qué hacer");
+          const { tuteoEn: tuteoIco } = require("../lib/lenguaje_pantalla.js");
+          assert.strictEqual(tuteoIco(tIco + " " + tViejo), null, "la ficha habla de usted");
+          assert.ok(!/apu_catalogo|_meta|\.json|recuperado"|fuente=/.test(tIco + tViejo), "sin nombres de archivo ni campos en pantalla");
+          console.log(`· ICOCIV: reajuste declarado sobre ${icv.insumos_reajustados}/${semIco.insumos.length} insumos y ${icv.items_con_insumo_reajustado}/${semIco.items.length} ítems (0 del Nogal) · la herramienta reproduce la semilla al peso desde marzo de 2025 · la ficha del panel dice el hecho`);
+        }
+
         /* --- la referencia de mercado: sobre el CONTRATO, con mínimo --- */
         const mk = (n, dep, fam, base) => Array.from({ length: n }, (_, i) => ({
           departamento_entidad: dep, codigo_principal_de_categoria: `${fam}1500`,
@@ -15723,6 +15864,23 @@ async function main() {
         }
       }
 
+      /* LA META VIAJA CON LOS PRECIOS EN LA CONSULTA PÚBLICA (M-DGF-15, 6-sep-2026).
+         El panel «Catálogo de precios de referencia» pinta conteos, base de
+         precios y reajuste del DANE desde /api/apu?op=catalogo, que solo
+         publicaba `version`: en pantalla salían «—» y «sin ajuste sectorial»
+         (medido en Chromium el 6-sep-2026 con el catálogo recién cargado). */
+      {
+        const pub = await invocar(require("../lib/handlers/apu/editor.js"), "/api/apu/catalogo");
+        assert.strictEqual(pub.status, 200);
+        assert.strictEqual(pub.cuerpo.version_catalogo, S._meta.version, "op=catalogo publica la versión del catálogo cargado");
+        assert.deepStrictEqual(pub.cuerpo.totales, { insumos: S.insumos.length, items: S.items.length, regiones: S.regiones.length },
+          "…y los tres conteos, enteros (sin meta serían null, jamás 0)");
+        assert.strictEqual(pub.cuerpo.base_precios, S._meta.base_precios, "…y la base de precios");
+        assert.strictEqual(pub.cuerpo.icociv && pub.cuerpo.icociv.insumos_reajustados, S._meta.icociv.insumos_reajustados,
+          "…y el reajuste del DANE con su alcance: el panel lo pinta de aquí, no del GET de administración");
+        assert.ok(typeof pub.cuerpo.cargado_el === "string" && pub.cuerpo.cargado_el, "…y cuándo se cargó");
+      }
+
       /* --- el catálogo NO toca el corpus: vive en `apu:*` y ninguna purga de
          la ingesta lo alcanza, ni él a ella --- */
       assert.strictEqual(await clavesCorpus(), corpusAntes,
@@ -17080,6 +17238,76 @@ async function main() {
           "el editor tiene que importar la regla, no reescribirla");
         assert.ok(!/interventoria/i.test(sinComentarios(fuenteEd)),
           "una segunda lista de tipos exentos en el editor sería una segunda definición de «obra»");
+      }
+
+      /* ═══ LA CASCADA QUE SE PINTA, EJECUTADA (M-DGF-11, 6-sep-2026) ═══════
+         `htmlCascada(d, g)` de public/app.js es la pantalla que el dueño lee
+         como «la plata que le queda». Hasta hoy ninguna aserción tocaba su
+         HTML: una barra al revés, una contribución pintada con 0 o «Le queda»
+         fuera de sitio pasaban mudas. Se ejecuta la función real con el
+         desglose real de public/ganancia.js (la MISMA aritmética del servidor)
+         y se comprueba lo PINTADO: filas según contribución y estampillas,
+         cifras iguales a las de `d` al peso y con su signo, anchos entre 1 y
+         100, «Le queda» última y con el color de su signo. */
+      {
+        const GU2 = require("../public/ganancia.js");
+        const appC = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const i0 = appC.indexOf("  const gPesos = ");
+        const iH = appC.indexOf("function htmlCascada(", i0);
+        assert.ok(i0 > 0 && iH > i0, "app.js sin htmlCascada: la cascada de «cuánta plata deja» no es una función que la suite pueda ejecutar");
+        const finH = appC.indexOf("\n  }\n", iH) + 5;
+        const escC = (x) => String(x ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+        const fmtNumC = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
+        const htmlCascada = new Function("esc", "fmtNum", "nf2", `${appC.slice(i0, finH)}; return htmlCascada;`)(
+          escC, fmtNumC, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 }));
+        assert.ok(!/\|\|\s*0\b/.test(appC.slice(i0, finH)), "ni un «|| 0» en la cascada: «no sé» no se pinta como cero");
+        const filasDe = (h) => [...h.matchAll(/<div class="cascada-fila">\s*<div><p class="font-medium">([^<]*)<\/p>[\s\S]*?whitespace-nowrap">([^<]*)<\/p>\s*<div class="cascada-barra"><span style="width:(\d+)%; background:([^;]*);/g)]
+          .map((m) => ({ rotulo: m[1], texto: m[2], ancho: Number(m[3]), color: m[4] }));
+        const pesosC = (n) => `${n < 0 ? "−" : ""}$${fmtNumC.format(Math.abs(Math.round(n)))}`;
+        const leerPesos = (t) => Number(t.replace(/[^\d−]/g, "").replace("−", "-"));
+        const baseC = { precio: 3216328994, costo_directo: 2573063195, administracion_pct: 15, imprevistos_pct: 5, utilidad_pct: 5, modo: "aditivo" };
+
+        const d7 = GU2.desglose({ ...baseC, descuentos_pct: 7, contribucion_pct: 5 });
+        assert.ok(d7 && d7.contribucion > 0 && d7.otras_deducciones > 0, "el fixture tiene contribución Y estampillas");
+        const h7 = htmlCascada(d7, { origen_precio: "mercado", base: "estructura_de_precio" });
+        const f7 = filasDe(h7);
+        assert.strictEqual(f7.length, 7, `siete filas con contribución y estampillas, no ${f7.length}`);
+        assert.deepStrictEqual(f7.map((f) => f.rotulo),
+          ["Le pagan por la obra", "Le descuentan de cada acta", "Estampillas y retenciones", "Hacer la obra le cuesta", "Manejar la obra le cuesta", "Reserva para imprevistos", "Le queda"],
+          "el orden de la cuenta: se cobra, se descuenta, cuesta, y al final lo que queda");
+        assert.deepStrictEqual(f7.map((f) => f.texto),
+          [pesosC(d7.precio), pesosC(-d7.contribucion), pesosC(-d7.otras_deducciones), pesosC(-d7.obra), pesosC(-d7.administracion), pesosC(-d7.imprevistos), pesosC(d7.valor)],
+          "las cifras pintadas son las de Ganancia.desglose, en pesos completos y con su signo");
+        const leidos = f7.map((f) => leerPesos(f.texto));
+        assert.strictEqual(leidos.slice(0, 6).reduce((a, b) => a + b, 0), leidos[6],
+          "lo PINTADO cuadra al peso: precio − descuentos − obra − administración − imprevistos = lo que queda");
+        assert.strictEqual(leidos[6], d7.valor, "y lo que queda es exactamente d.valor");
+        assert.ok(f7.every((f) => f.ancho >= 1 && f.ancho <= 100), `anchos entre 1 y 100: ${f7.map((f) => f.ancho)}`);
+        assert.strictEqual(f7[0].ancho, 100, "el precio es la escala: barra entera");
+        assert.strictEqual(f7[f7.length - 1].rotulo, "Le queda", "«Le queda» cierra la lista");
+        assert.ok(d7.valor < 0 && /var\(--danger\)/.test(f7[6].color), "con la cuenta en rojo, «Le queda» va en rojo");
+        assert.ok(/suele adjudicar/.test(h7), "con precio de mercado la explicación lo dice");
+
+        const d6 = GU2.desglose({ ...baseC, descuentos_pct: 2, contribucion_pct: 0 });
+        const f6 = filasDe(htmlCascada(d6, { origen_precio: "oficial", base: "apu" }));
+        assert.strictEqual(f6.length, 6, "sin contribución (interventoría o casilla marcada) la fila no se pinta con 0");
+        assert.ok(!f6.some((f) => f.rotulo === "Le descuentan de cada acta"));
+        const d5 = GU2.desglose({ ...baseC, descuentos_pct: 0, contribucion_pct: 0 });
+        const h5 = htmlCascada(d5, { origen_precio: "oficial", base: "apu" });
+        const f5 = filasDe(h5);
+        assert.strictEqual(f5.length, 5, "sin ninguna deducción, cinco filas");
+        assert.ok(d5.valor > 0 && /var\(--ok/.test(f5[4].color), "con la cuenta en verde, «Le queda» va en verde");
+        assert.ok(/usted mismo calculó/.test(h5) && /presupuesto oficial publicado/.test(h5), "con APU y presupuesto oficial las explicaciones son las suyas");
+        /* el suelo del 1 %: una línea pequeña no desaparece de la barra */
+        const dPeq = GU2.desglose({ ...baseC, descuentos_pct: 0.001, contribucion_pct: 0.001 });
+        const fPeq = filasDe(htmlCascada(dPeq, {}));
+        assert.ok(dPeq.contribucion > 0 && dPeq.contribucion / dPeq.precio < 0.005, "el fixture es una contribución por debajo del 0,5 %");
+        assert.strictEqual(fPeq.find((f) => f.rotulo === "Le descuentan de cada acta").ancho, 1, "una línea de menos del 0,5 % se pinta con 1 %, no con 0");
+        /* la pantalla usa ESTA función (no una copia) y habla de usted, sin emoji */
+        assert.ok(/const cascada = htmlCascada\(d, g\);/.test(appC), "pintarDetalleGanancia coloca las filas de htmlCascada, no las rehace");
+        const { RE_EMOJI_UI: emojiCas, tuteoEn: tuteoCas } = require("../lib/lenguaje_pantalla.js");
+        const textoCas = (h7 + h5).replace(/<[^>]+>/g, " ");
+        assert.ok(!textoCas.match(emojiCas) && tuteoCas(textoCas) === null, `la cascada habla de usted y sin emoji: ${tuteoCas(textoCas)}`);
       }
 
       console.log(`  · lo que deja el contrato (lib/ganancia): identidad y punto de equilibrio verificados · `

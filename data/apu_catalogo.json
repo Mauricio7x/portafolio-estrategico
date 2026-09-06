@@ -1,6 +1,6 @@
 {
  "_meta": {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "base_precios": "2026-08",
   "moneda": "COP",
   "region_base": "bogota_sabana",
@@ -10,7 +10,18 @@
    "fuente": "DANE · Índice de Costos de la Construcción de Infraestructura de Ingeniería Civil",
    "variacion_anual_general_pct": 4.7,
    "factor_aplicado": 1.047,
-   "base_original_precios_recuperados": "2025-03"
+   "base_original_precios_recuperados": "2025-03",
+   "alcance": "SOLO los insumos fuente=\"recuperado\" llevan el factor, aplicado UNA vez en la semilla sobre su precio_marzo_2025 (que cada uno conserva); las cuadrillas compuestas de esos jornales (derivados_de_recuperados) son su suma y lo llevan dentro. Ningún módulo de lib/ reajusta en tiempo de ejecución.",
+   "insumos_reajustados": 13,
+   "derivados_de_recuperados": [
+    "mo_cuadrilla_1of_5ay"
+   ],
+   "items_con_insumo_reajustado": 15,
+   "resto_del_catalogo": "los insumos fuente=\"adjudicado\" (contrato Nogal 4, 2025) y fuente=\"estimado\" NO llevan reajuste; ningún ítem NOG-* usa un insumo reajustado, así que actualizar el índice no mueve un peso de un presupuesto hecho solo con ítems del Nogal.",
+   "indice_base": null,
+   "indice_vigente": null,
+   "por_que_sin_indice": "El boletín se leyó como variación anual (4,7 %); el NÚMERO ÍNDICE (base dic-2021 = 100) de marzo de 2025 y del mes vigente no se capturó. Sin él el factor no se recompone como cociente: tests/capturar_icociv.js lo escribe cuando alguien lo lea del anexo del DANE. Aquí no se inventa.",
+   "como_actualizar": "node tests/capturar_icociv.js --mes AAAA-MM --indice-base N --indice-vigente N --url <boletín del DANE> --escribir (reaplica el factor SOLO a los recuperados desde precio_marzo_2025; los demás no se tocan)."
   },
   "prestacional": 1.55,
   "prestacional_nota": "Prestaciones sociales, parafiscales y ARL sobre el jornal base. Lo fija la ley, no el mercado: NO varía por región.",
@@ -162,6 +173,7 @@
    "unidad": "saco 50 kg",
    "tipo": "material",
    "precio_base": 33504,
+   "precio_marzo_2025": 32000,
    "fuente": "recuperado"
   },
   {
@@ -170,6 +182,7 @@
    "unidad": "m3",
    "tipo": "material",
    "precio_base": 81666,
+   "precio_marzo_2025": 78000,
    "fuente": "recuperado"
   },
   {
@@ -178,6 +191,7 @@
    "unidad": "m3",
    "tipo": "material",
    "precio_base": 96324,
+   "precio_marzo_2025": 92000,
    "fuente": "recuperado"
   },
   {
@@ -186,6 +200,7 @@
    "unidad": "kg",
    "tipo": "material",
    "precio_base": 4397,
+   "precio_marzo_2025": 4200,
    "fuente": "recuperado",
    "densidad_kg_m3": 7850
   },
@@ -195,6 +210,7 @@
    "unidad": "m3",
    "tipo": "material",
    "precio_base": 9423,
+   "precio_marzo_2025": 9000,
    "fuente": "recuperado"
   },
   {
@@ -203,6 +219,7 @@
    "unidad": "und",
    "tipo": "material",
    "precio_base": 890,
+   "precio_marzo_2025": 850,
    "fuente": "recuperado"
   },
   {
@@ -372,6 +389,7 @@
    "unidad": "dia",
    "tipo": "mano_obra",
    "precio_base": 99465,
+   "precio_marzo_2025": 95000,
    "fuente": "recuperado"
   },
   {
@@ -380,6 +398,7 @@
    "unidad": "dia",
    "tipo": "mano_obra",
    "precio_base": 71196,
+   "precio_marzo_2025": 68000,
    "fuente": "recuperado"
   },
   {
@@ -388,6 +407,7 @@
    "unidad": "dia",
    "tipo": "mano_obra",
    "precio_base": 170661,
+   "precio_marzo_2025": 163000,
    "fuente": "recuperado",
    "componentes": {
     "mo_oficial_construccion": 1,
@@ -400,6 +420,7 @@
    "unidad": "dia",
    "tipo": "mano_obra",
    "precio_base": 313053,
+   "precio_marzo_2025": 299000,
    "fuente": "recuperado",
    "componentes": {
     "mo_oficial_construccion": 1,
@@ -456,6 +477,7 @@
    "unidad": "dia",
    "tipo": "equipo",
    "precio_base": 88995,
+   "precio_marzo_2025": 85000,
    "fuente": "recuperado"
   },
   {
@@ -464,6 +486,7 @@
    "unidad": "dia",
    "tipo": "equipo",
    "precio_base": 68055,
+   "precio_marzo_2025": 65000,
    "fuente": "recuperado"
   },
   {
@@ -544,6 +567,7 @@
    "unidad": "m3-km",
    "tipo": "transporte",
    "precio_base": 1256,
+   "precio_marzo_2025": 1200,
    "fuente": "recuperado"
   },
   {

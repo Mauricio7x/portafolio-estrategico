@@ -2161,6 +2161,51 @@
         <div class="cascada-barra"><span style="width:${Math.max(1, Math.min(100, ancho))}%; background:${color};"></span></div>
       </div>`;
   }
+  /* Las tintas de la cuenta: verde = lo que queda, rojo = lo que se va, gris =
+     el punto de partida. Viven fuera de `pintarDetalleGanancia` porque la
+     cascada y el veredicto las comparten. */
+  const VERDE_CUENTA = "var(--ok, #34c759)", ROJO_CUENTA = "var(--danger)", GRIS_CUENTA = "var(--text-secondary)";
+
+  /* LA CASCADA, COMO FUNCIÓN PURA DE LA CUENTA (M-DGF-11, 6-sep-2026). Recibe el
+     desglose `d` que devuelve `Ganancia.desglose` —la MISMA aritmética del
+     servidor— y el origen `g` de la tarjeta, y devuelve las filas: siete si hay
+     contribución y estampillas, seis sin contribución, cinco sin ninguna de las
+     dos. Vive aparte del pintado para que la suite la EJECUTE con un desglose
+     real y compruebe que lo que se pinta son las cifras de `d` al peso, que las
+     barras quedan entre 1 y 100 y que «Le queda» cierra la lista: es la
+     pantalla que el dueño lee como «la plata que le queda», y antes ninguna
+     prueba tocaba su HTML. La escala es el precio (tope 100 %, suelo 1 % para
+     que una línea pequeña no desaparezca). */
+  function htmlCascada(d, g) {
+    const tope = Math.max(d.precio, 1);
+    const barra = (n) => Math.round((Math.abs(n) / tope) * 100);
+    return [
+      filaCascada("Le pagan por la obra", d.precio,
+        g.origen_precio === "mercado"
+          ? "El precio al que esta entidad suele adjudicar (su presupuesto, menos lo que descontó quien ganó)."
+          : "El presupuesto oficial publicado. No hay historial suficiente de esta entidad para saber cuánto se suele bajar.",
+        100, GRIS_CUENTA),
+      d.contribucion > 0 ? filaCascada("Le descuentan de cada acta", -d.contribucion,
+        `Contribución de obra pública: ${nf2.format(d.contribucion_pct)} % de todo lo que le paguen. Es de ley y no se negocia.`,
+        barra(d.contribucion), ROJO_CUENTA) : "",
+      d.otras_deducciones > 0 ? filaCascada("Estampillas y retenciones", -d.otras_deducciones,
+        "Las que usted cargó del pliego.", barra(d.otras_deducciones), ROJO_CUENTA) : "",
+      filaCascada("Hacer la obra le cuesta", -d.obra,
+        g.base === "apu"
+          ? "El costo que usted mismo calculó para este proceso en Precios: materiales, mano de obra, equipo y transporte."
+          : "Todavía no ha costeado este proceso. Se calcula al revés: del precio, quitando su administración, sus imprevistos y su ganancia.",
+        barra(d.obra), ROJO_CUENTA),
+      filaCascada("Manejar la obra le cuesta", -d.administracion,
+        `Su administración: ${nf2.format(d.aiu.administracion_pct)} % — director, residente, oficina, pólizas.`,
+        barra(d.administracion), ROJO_CUENTA),
+      filaCascada("Reserva para imprevistos", -d.imprevistos,
+        `${nf2.format(d.aiu.imprevistos_pct)} %. Es un seguro, no un gasto seguro: si la obra sale bien, esta plata se queda con usted.`,
+        barra(d.imprevistos), "var(--warn, #ff9f0a)"),
+      filaCascada("Le queda", d.valor,
+        "Si gasta la reserva entera. Es la cuenta más prudente de las dos.",
+        barra(d.valor), d.valor >= 0 ? VERDE_CUENTA : ROJO_CUENTA),
+    ].filter(Boolean).join("");
+  }
 
   /* La estructura de precio que el usuario haya declarado en este detalle. Vive
      en el navegador y viaja al servidor como parámetros de la búsqueda (el
@@ -2230,45 +2275,18 @@
        convierte un cero LEGÍTIMO en «no sé», que es la misma confusión de
        siempre por el otro lado. */
     const contribEnJuego = d.contribucion > 0 ? d.contribucion : Math.round(d.precio * contribPct / 100);
-    const tope = Math.max(d.precio, 1);
-    const barra = (n) => Math.round((Math.abs(n) / tope) * 100);
-    const VERDE = "var(--ok, #34c759)", ROJO = "var(--danger)", GRIS = "var(--text-secondary)";
 
     const veredictoTxt = d.veredicto === "deja"
-      ? `<p class="text-lg font-semibold" style="color: ${VERDE};">Le quedan ${esc(gPesos(d.valor))}</p>
+      ? `<p class="text-lg font-semibold" style="color: ${VERDE_CUENTA};">Le quedan ${esc(gPesos(d.valor))}</p>
          <p class="text-sm" style="color: var(--text-secondary);">Y hasta ${esc(gPesos(d.mejor))} si no gasta la reserva para imprevistos.</p>`
       : d.veredicto === "pierde"
-        ? `<p class="text-lg font-semibold" style="color: ${ROJO};">Pierde ${esc(gPesos(-d.mejor))}, aun en el mejor de los casos</p>
+        ? `<p class="text-lg font-semibold" style="color: ${ROJO_CUENTA};">Pierde ${esc(gPesos(-d.mejor))}, aun en el mejor de los casos</p>
            <p class="text-sm" style="color: var(--text-secondary);">Con este precio y este costo, no hay escenario en que este contrato deje plata.</p>`
         : `<p class="text-lg font-semibold">Entre ${esc(gPesos(d.peor))} y ${esc(gPesos(d.mejor))}</p>
            <p class="text-sm" style="color: var(--text-secondary);">Puede dejarle plata o costarle: depende de las dos cosas de abajo. Nadie lo sabe todavía, y por eso no le decimos un número solo.</p>`;
 
-    const cascada = [
-      filaCascada("Le pagan por la obra", d.precio,
-        g.origen_precio === "mercado"
-          ? "El precio al que esta entidad suele adjudicar (su presupuesto, menos lo que descontó quien ganó)."
-          : "El presupuesto oficial publicado. No hay historial suficiente de esta entidad para saber cuánto se suele bajar.",
-        100, GRIS),
-      d.contribucion > 0 ? filaCascada("Le descuentan de cada acta", -d.contribucion,
-        `Contribución de obra pública: ${nf2.format(d.contribucion_pct)} % de todo lo que le paguen. Es de ley y no se negocia.`,
-        barra(d.contribucion), ROJO) : "",
-      d.otras_deducciones > 0 ? filaCascada("Estampillas y retenciones", -d.otras_deducciones,
-        "Las que usted cargó del pliego.", barra(d.otras_deducciones), ROJO) : "",
-      filaCascada("Hacer la obra le cuesta", -d.obra,
-        g.base === "apu"
-          ? "El costo que usted mismo calculó para este proceso en Precios: materiales, mano de obra, equipo y transporte."
-          : "Todavía no ha costeado este proceso. Se calcula al revés: del precio, quitando su administración, sus imprevistos y su ganancia.",
-        barra(d.obra), ROJO),
-      filaCascada("Manejar la obra le cuesta", -d.administracion,
-        `Su administración: ${nf2.format(d.aiu.administracion_pct)} % — director, residente, oficina, pólizas.`,
-        barra(d.administracion), ROJO),
-      filaCascada("Reserva para imprevistos", -d.imprevistos,
-        `${nf2.format(d.aiu.imprevistos_pct)} %. Es un seguro, no un gasto seguro: si la obra sale bien, esta plata se queda con usted.`,
-        barra(d.imprevistos), "var(--warn, #ff9f0a)"),
-      filaCascada("Le queda", d.valor,
-        "Si gasta la reserva entera. Es la cuenta más prudente de las dos.",
-        barra(d.valor), d.valor >= 0 ? VERDE : ROJO),
-    ].filter(Boolean).join("");
+    /* las filas salen de la función pura de arriba: aquí solo se colocan */
+    const cascada = htmlCascada(d, g);
 
     const pendientes = [];
     if (d.imprevistos > 0) {
@@ -3305,12 +3323,47 @@
         ${a.tipo === "cambio" ? `<button type="button" data-seg-enterado="${esc(a.id)}" class="rounded-lg border border-gray-300 bg-white px-2 py-0.5 text-[11px] font-medium hover:bg-gray-50" title="Dar por visto: el próximo aviso será solo si vuelve a cambiar">Enterado</button>` : ""}
       </li>`).join("");
   }
+  /* CÓMO LE VA DE VERDAD (M-DGF-09, 6-sep-2026). `resumen.por_estado` viajaba
+     desde ago 2026 y la pestaña solo lo usaba en los chips-filtro: la persona
+     nunca veía su resultado y no tenía motivo para registrar «Ganado» o
+     «Perdido», que es la única etiqueta que le falta al dueño para calibrar.
+     Aquí se enseña el HECHO —la barra de composición del pulso (`Pulso.apilada`)
+     y la frase literal «Ganó 1 de 3 presentadas»— y solo con TRES o más
+     presentadas (ganadas + perdidas + sin resultado): un porcentaje sobre uno o
+     dos casos es ruido con aspecto de medición. Sin `por_estado`, o con un
+     conteo ausente, no se pinta nada: «sin dato» no es «0 %». No pasa por
+     `frecuenciaNatural`: aquella recibe una probabilidad y habla de «procesos
+     como este»; esto es un conteo propio. Función pura: la suite la ejecuta. */
+  function htmlDesenlaceSeguimiento(porEstado) {
+    if (!porEstado || typeof porEstado !== "object" || !window.Pulso) return "";
+    const conteo = (k) => {
+      const v = porEstado[k];
+      if (v === null || v === undefined || v === "") return null;
+      const n = Number(v);
+      return Number.isFinite(n) && n >= 0 ? n : null;
+    };
+    const g = conteo("ganado"), p = conteo("perdido"), s = conteo("presentado");
+    if (g === null || p === null || s === null) return "";
+    const total = g + p + s;
+    if (total < 3) return "";
+    const barra = window.Pulso.apilada([
+      { etiqueta: "Ganadas", n: g }, { etiqueta: "Perdidas", n: p }, { etiqueta: "Sin resultado", n: s },
+    ]);
+    return `<p class="text-[11px] uppercase tracking-wide text-gray-400">Cómo le va</p>
+      <p class="mt-1 text-sm font-semibold">Ganó ${g} de ${total} presentadas${s > 0 ? ` · ${s} sin resultado todavía` : ""}</p>${barra}`;
+  }
   function pintarSeguimiento(r) {
     ultimoSeguimiento = r;
     const lista = $("seg-lista"), vacio = $("seg-vacio"), res = $("seg-resumen"), filtros = $("seg-filtros");
     if (!lista) return;
     const todos = r.procesos || [];
     pintarInsigniaSeguimiento(r.resumen ? r.resumen.atencion : 0);
+    /* el resultado propio, arriba de los chips; sin tres presentadas la caja se esconde */
+    const desenlace = $("seg-desenlace");
+    if (desenlace) {
+      desenlace.innerHTML = htmlDesenlaceSeguimiento(r.resumen ? r.resumen.por_estado : null);
+      desenlace.classList.toggle("hidden", !desenlace.innerHTML);
+    }
     /* «Todavía no ha guardado ningún proceso» es una AFIRMACIÓN sobre los datos
        del usuario: solo puede hacerse cuando la respuesta llegó BIEN y venía
        vacía. Con `todos.length > 0` a secas, cualquier ruta que llamara aquí sin
@@ -8099,6 +8152,30 @@
     p.innerHTML = texto;
   }
 
+  /* EL REAJUSTE DEL DANE DECLARA SU ALCANCE (M-DGF-15, 6-sep-2026). La línea
+     decía «ICOCIV Marzo 2026 · +4.7 % anual» como si describiera el catálogo
+     entero, y el factor se aplicó UNA vez, en la semilla, y SOLO a los insumos
+     recuperados (13 de 437; los usan 15 de 174 ítems): los 389 precios del
+     contrato adjudicado en 2025 no llevan reajuste. Se dice el hecho con las
+     cifras que viajan en `_meta.icociv` (medidas por la suite contra el
+     catálogo, no escritas a mano). Si la meta cargada en el servidor es anterior
+     a esos campos, no se inventa el alcance: se dice qué hacer. */
+  function textoIcociv(ic, totalItems) {
+    if (!ic) return "sin ajuste sectorial";
+    const n = Number(ic.insumos_reajustados), m = Number(ic.items_con_insumo_reajustado);
+    /* el porcentaje sale del FACTOR aplicado (única fuente): tras una captura del
+       número índice la variación anual del boletín viaja null y el factor va de
+       marzo de 2025 al mes capturado, así que aquí no se dice «anual» */
+    const factor = Number(ic.factor_aplicado);
+    const pct = Number.isFinite(factor) && factor > 0 ? ` (${factor >= 1 ? "+" : "−"}${nf2.format(Math.abs(factor - 1) * 100)} %)` : "";
+    const boletin = String(ic.boletin || "").toLowerCase().replace(/^(\S+) (\d{4})$/, "$1 de $2");
+    if (!Number.isFinite(n) || !Number.isFinite(m) || ic.insumos_reajustados === null || ic.items_con_insumo_reajustado === null) {
+      return `Índice del DANE ${boletin}${pct}: alcance por confirmar, vuelva a cargar el catálogo`;
+    }
+    const items = Number.isFinite(Number(totalItems)) ? `${m} de los ${fmt.format(Number(totalItems))} ítems` : `${m} ítems`;
+    return `${n} insumos recuperados llevados de marzo de 2025 a ${boletin} con el índice del DANE${pct}; los usan ${items}. Los demás precios son de un contrato adjudicado en 2025, sin reajuste.`;
+  }
+
   function pintarApu(c) {
     /* los conteos salen del payload del catálogo, NUNCA con `|| 0`: un
        «undefined || 0» convierte «no sé» en «cero» y lo hace creíble — es
@@ -8109,9 +8186,7 @@
     $("apu-items").textContent = num(t.items);
     $("apu-regiones").textContent = num(t.regiones);
     $("apu-base").textContent = c.base_precios || "—";
-    $("apu-icociv").textContent = c.icociv
-      ? `ICOCIV ${c.icociv.boletin} · +${c.icociv.variacion_anual_general_pct} % anual`
-      : "sin ajuste sectorial";
+    $("apu-icociv").textContent = textoIcociv(c.icociv, t.items);
 
     const regiones = c.regiones || [];
     $("apu-detalle").classList.toggle("hidden", !regiones.length);

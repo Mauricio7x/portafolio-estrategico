@@ -2386,6 +2386,9 @@
            salen de /api/perfil?op=seguimiento; nace oculto y aparece con el
            primer proceso guardado (o con el resumen si ya hay). -->
       <section id="seccion-seguimiento" class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <!-- cómo le va de verdad: ganadas · perdidas · sin resultado, solo con
+             tres o más presentadas; nace oculto y lo pinta pintarSeguimiento -->
+        <div id="seg-desenlace" class="mb-4 hidden"></div>
         <div class="flex flex-wrap items-center justify-between gap-3">
           <h3 class="font-semibold tracking-tight">Lista de seguimiento</h3>
           <!-- filtros por etapa (chips); «Todos» por defecto -->
