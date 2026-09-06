@@ -9408,3 +9408,139 @@ iguales (el `change` del foco perdido y el clic), como antes de este lote.
 **No verificable desde aquí.** Producción (Redis real, corpus real: qué frases escribe de verdad el
 dueño y cuántas entran por la caja —la ficha lo daba por no medible—). Sin pasos del dueño en la ficha.
 Sin red hacia datos.gov.co.
+
+### Lote «B9a-entidad-graficos» de la consultoría del 4-sep · M-DGF-06, M-DGF-10 (6-sep-2026)
+
+En una línea: el detalle de la entidad enseña tres hechos que ya viajaban como texto —columnas por año que MIDEN el conteo (el promedio con base va en la frase del hecho y en el título de su columna), la barra apilada de «quién gana» con «Otros» declarado como cola que no compite y la tabla plegada debajo, y la frase «Movió la fecha de cierre en p de los p+n procesos…» con los conteos que el índice publica por entidad desde hoy—, y el plan anual se ve en el tiempo: `por_mes` (doce cubetas desde el mes en curso, calculadas sobre TODO el barrido y no sobre los 200 de la respuesta, con `sin_fecha` aparte) pintado en columnas encima de las tarjetas.
+
+Dos mejoras del eje «datos y gráficos», sobre el árbol de `d988956`. Las fichas se escribieron sobre
+`d569946`; donde citaban un sitio, una línea o un campo que el árbol desmiente, mandó el árbol.
+
+- **La prórroga por entidad no estaba PUBLICADA en ningún sitio (M-DGF-06).** La ficha decía «leer
+  el acumulador ya guardado en el registro de la entidad (indice_competencia.js:742 lo publica como
+  `prorroga`)». Medido con la función real: esa línea es la lista EN MEMORIA que alimenta
+  `medirProrroga` (la meta); `registroPublicado` —lo que se escribe en el hash `indice:competencia`—
+  publicaba `nombre, nit, procesos, procesos_contados, min_procesos, oferentes_total, promedio,
+  mediana, nivel, por_anio` y ningún `prorroga`. Así que el cambio empieza en el índice, que la ficha
+  no listaba: `registroPublicado` publica `prorroga: { prorrogados: n, no_prorrogados: n }` —SOLO
+  los conteos: las sumas de oferentes son para calibrar el ×1,20 y viven en la meta—, también bajo
+  el mínimo (es un hecho, no una cifra derivada) y `null` sin acumulador (jamás `{0, 0}`). El detalle
+  (`lib/competencia_detalle.js`) lo ESPEJA con `prorrogaPublicada(publicado)` —el dato publicado gana
+  al calculado, y aquí no hay un segundo predicado que pudiera divergir— y la caché del detalle sube
+  a `v6` (sin el sufijo, una hora de respuestas sin el campo tras desplegar; R11). **Consecuencia
+  declarada**: el par solo aparece cuando el índice se reconstruye (`/api/sync/historico?
+  reconstruir_indice=true`, a mano, paso del dueño) y solo en entidades con la señal, que el delta
+  estampa desde el 16-ago-2026 y el backfill no trae: hasta entonces `null` y la pantalla no dice
+  nada —«sin dato» no es «nunca»—. La frase se escribe SOLO con los dos grupos (la ficha lo decidió y
+  se respeta: con uno solo no se afirma «nunca» ni «siempre») y dice «Movió la fecha de cierre en p
+  de los p+n procesos adjudicados en que la aplicación pudo comprobarlo», no «de sus p+n procesos
+  cerrados» como proponía la ficha: la base son los adjudicados con dato de oferentes Y con la señal
+  del delta, no todos los cerrados de la entidad, y una base inflada haría creíble un porcentaje que
+  no se midió.
+- **La barra mide el conteo; el promedio no se pone encima de una barra que no lo mide (M-DGF-06).**
+  La ficha pedía «el promedio de oferentes como rótulo en la cabeza» de una columna cuya altura es el
+  número de procesos. Un «3,1» encima de una barra de 12 es una cifra creíble sobre una magnitud que
+  no es la suya —la familia de «una cifra equivocada, creíble y bien maquetada»—. Decisión: la
+  columna lleva su conteo encima (`conValor: true`), el promedio del año con base va en el TÍTULO de
+  su columna («2024: 12 · promedio 3,1 oferentes»; sin base, «sin promedio (menos de 5 procesos)»
+  con el `min_procesos` que publica el servidor, no un 5 cableado) y en la FRASE que titula el
+  gráfico, con la redacción que el tablero ya usa desde M-DGF-14 («En 2024 compitieron 3,8 oferentes
+  por proceso (12 adjudicados); en 2025, 4,4 (15).»), con la base al lado («· 31 procesos con dato
+  de oferentes»). Sin ningún año con base el título es «Procesos adjudicados por año». **No lleva
+  adjetivo** («compite más gente que antes»): la serie de producción es plana (4,35 · 4,08 · 4,11) y
+  una diferencia de tres décimas redondeada para mostrar no puede decidir. Para eso `Pulso.columnas`
+  ganó `nota` (texto que la cubeta añade a su título; `envolver` lo escapa) en vez de un segundo
+  gráfico. **Hermano cazado**: la clave `sin_fecha` de `anioDe` (procesos sin fecha de adjudicación
+  ni de publicación) llegaba a la frase vieja tal cual, con guion bajo; ahora su columna se rotula
+  «sin fecha» y no entra en la frase del hecho. Sin `data-filtro`: el histórico no promete una
+  lista de procesos abiertos.
+- **La cola declarada tampoco compite en la apilada (M-DGF-06).** `apilada` ordenaba TODOS los
+  segmentos por tamaño: «Otros» = ganadores fuera del top 5 —lo corriente son 20 de 30— habría
+  encabezado la barra con el primer tono, que es «OTROS encabezaba el ranking» otra vez. La regla
+  vive en la primitiva, como en `barrasRank`: el llamador declara la cola (`esCola: true` en el
+  segmento, o la opción `esCola`; la primitiva no adivina por el nombre), la cola va AL FINAL y
+  SIEMPRE en el cuarto tono (`_tono`, para que su color signifique lo mismo aunque haya dos
+  reales), absorbe lo que se pliega por falta de tonos (5 del top + cola → 3 con tono propio y
+  «Otros» = 4.º + 5.º + resto) y dice cuántas categorías suma SOLO si el llamador lo declaró
+  (`cuantos` = `distintos` − top; sin él, «Otros · 16» sin «(k)»: un conteo a medias es una cifra
+  falsa). Sin cola declarada nada cambia (las pruebas de la paleta que no se cicla siguen iguales).
+  En `bloqueAdjudicatarios` la barra sale SOLO con `concentracion` (el servidor la anula bajo
+  MIN_PROCESOS: un reparto sobre 2 procesos sería el «100 %» sin base); la tabla —cada fila abre el
+  perfil del competidor: lo que se TOCA— pasa a un `<details>` («Ver los 5 adjudicatarios que más
+  ganan») solo cuando hay barra; sin barra queda a la vista. La frase de concentración y la lectura
+  con las dos interpretaciones se conservan. Y un matiz que la primera corrida de la suite me
+  enseñó: cuando el top cubre a todos los ganadores no se añade cola, pero `apilada` pliega igual el
+  4.º y el 5.º en «Otros (2)» por falta de tonos — mi aserción esperaba «sin Otros» y estaba
+  equivocada; la corregida exige exactamente ese plegado.
+- **El plan anual, mes a mes, sobre TODO el barrido (M-DGF-10).** `lib/paa.agregarPorMes(resultados,
+  ventana, sinFecha)` corre ANTES del `slice(0, MAX_RESULTADOS)`: doce cubetas `{mes: "AAAA-MM", n,
+  valor, sin_cuantia}` desde `ventana.desde`, calculadas con aritmética sobre «AAAA-MM» (sin `new
+  Date`, la regla de `mesLegible`); `valor` suma solo cuantías legibles y es `null` si ninguna (no
+  $0); `sin_cuantia` cuenta las ausentes. **La ficha decía «mes ilegible → cubeta “sin fecha”» y el
+  árbol lo desmiente a medias**: el módulo descarta las filas sin fecha legible ANTES de
+  `resultados` (decisión de ago 2026: «una fila con fecha ilegible NO entra en los próximos 12
+  meses», con la invariante `total + Σ descartados = filas_leidas`), así que «sin fecha» no puede ser
+  una decimotercera columna sin romper `Σ meses.n = total`. Viaja como `por_mes.sin_fecha` =
+  `descartados.fecha_ilegible` y la pantalla lo dice junto al gráfico («3 del plan sin fecha legible
+  quedan fuera del gráfico»), nunca en un mes inventado. `fuera_de_cubeta` solo existe si una fila
+  dentro de la ventana no cayera en ninguna cubeta (no puede pasar: se filtró con las mismas
+  cadenas; si pasara, se vería en vez de perderse). La respuesta vacía por columnas irreconocibles
+  también trae las doce cubetas en cero. En pantalla, `htmlPaaMeses(por_mes, entidad)` (función pura
+  en app.js) pinta `Pulso.columnas` con el conteo encima, meses de tres letras en el eje y el título
+  «octubre de 2026: 20 · $9.300 millones · 4 sin valor publicado» (`nota` otra vez), el rótulo «Lo
+  que las entidades planean publicar, mes a mes» —«Lo que «GOBERNACI» planea publicar» con el texto
+  del filtro, que es un fragmento y se enseña como tal, igual que el resumen— y la frase «Suman
+  $89.319 millones en los 192 que publican valor (38 sin valor publicado)»: el dinero del plan es
+  la mitad de «¿cuándo debo tener caja?» y en el móvil no hay `title` que señalar. **Sin
+  `data-filtro`**: una previsión no enlaza a la lista de procesos abiertos (previsión ≠ proceso
+  abierto). La nota de la tasa de acierto NO se duplica: `#paa-aviso` ya pinta la frase del servidor
+  en la misma función. `#paa-meses` nace `hidden` en index.html (que la ficha no listaba) entre
+  `#paa-aviso` —el aviso de que un plan no es un compromiso va ANTES del gráfico— y `#paa-lista`, y
+  `buscarPaa` lo vacía al empezar y lo pinta o esconde con la respuesta.
+- **Cerraduras (tests/e2e.js)**: en el bucle del detalle contra el hash, `prorroga` existe y es
+  `null` en los dos sitios (el fixture no trae la señal); `registroPublicado` con acumulador → los
+  conteos, sin él → null, bajo el mínimo → igual; el registro real de la Gobernación reescrito en el
+  hash con `{3, 5}` → `op=entidad` lo espeja (y se restaura); las tres funciones reales de app.js con
+  el Pulso real (columnas por año con títulos exactos, «sin fecha» sin guion bajo, la frase del
+  hecho sin el año sin base, la base, cinco «sin dato» → «»; la apilada con `["ALFA SAS: 6 (15 %)",
+  …, "Otros: 25 (63 %)"]` en ese orden, `--viz-4`, «Otros (4)», `<details>` con su rótulo, cinco
+  `data-adjudicatario`, sin concentración ni barra ni `<details>`; la prórroga literal y ocho formas
+  de «sin ambos» → «»; registro de usted y sin emoji; el cableado en `pintarDetalle` y la frase
+  «Por año:» desaparecida); en las primitivas, la cola declarada al final y en el cuarto tono, el
+  plegado dentro de la cola con conteo, sin `cuantos` sin «(k)», la opción `esCola`, y `nota` en el
+  título; en el PAA, 206 filas (una ilegible entre las 5 que ve la sonda para que el rango no se
+  delegue) → `total` 205, 200 en la respuesta, Σ meses.n = 205, 18 y 17 por mes, `sin_fecha` = 3 =
+  `fecha_ilegible`, 41 sin cuantía, `valor` = (n − sin_cuantia) × 10⁸ por mes, y dos filas sin valor
+  → `valor: null`; `htmlPaaMeses` real con doce `<title>`, el rótulo, el título con dinero y «sin
+  valor», la frase del total, «sin fecha» fuera, sin `data-filtro`, sin infraestructura en pantalla,
+  usted, sin emoji; el nodo oculto y su sitio, y el cableado.
+- **Mutaciones** (cada una con la prueba dentro y el fuente en `git stash`, `node tests/e2e.js 1`):
+  sin lib/indice_competencia.js ni lib/competencia_detalle.js cae en «ALCALDÍA DE PURIFICACIÓN: el
+  hash del índice no publica prorroga»; sin public/app.js ni index.html cae en «app.js sin
+  htmlEntidadPorAnio: el detalle de la entidad no enseña el hecho como gráfico»; sin public/pulso.js
+  cae en «la cola declarada va AL FINAL aunque sea la mayor»; sin lib/paa.js cae en «el PAA publica
+  por_mes.meses».
+- **Medido en Chromium** (v_servidor del scratchpad con los routers reales sobre el Upstash falso;
+  `vista=paa` y `op=entidad` contestados con fixtures de la forma real, `por_mes` generado con
+  `agregarPorMes` real sobre 230 filas; 1280 y 390, claro y oscuro): `#paa-meses` visible (1072×586 /
+  310×277) entre el aviso y las tarjetas, un SVG con doce `<title>`, columnas en `--accent`
+  (rgb(43,63,107) claro / rgb(157,179,232) oscuro), texto del eje en `--text-secondary`, cero
+  `data-filtro`; el modal con un SVG de tres títulos, la frase del hecho, la prórroga, cuatro
+  segmentos con `--viz-1…4` (Otros: rgb(237,161,0) / rgb(201,133,0), el último y el más ancho:
+  380 px de 720), «Otros (9) · 21», el `<details>` cerrado con la tabla invisible, sin «Por año:» ni
+  `sin_fecha`; `scrollWidth === clientWidth` en la página y en el modal, cero peticiones externas y
+  en consola solo el 503 de `op=listar` del propio arnés (SECOP apunta al puerto 9).
+- **Lo que las fichas decían y el árbol desmintió.** M-DGF-06: `prorroga` no estaba en el hash
+  (arriba); «Pulso.apilada existe y app.js ya la llama» —sí, pero sin regla de cola—; «SVG en línea»
+  para la apilada (son `div` con tokens, B7a ya lo anotó); app.js:2262-2265 y 2209-2257 hoy ~2662 y
+  ~2609; tests ~7987 y ~8201 hoy ~8696 y ~8910. M-DGF-10: la cubeta «sin fecha» (arriba);
+  app.js:1671-1747 hoy ~2082-2153; «solo app.js» (hizo falta el nodo en index.html); «nota con
+  paa:acierto» ya la pintaba la misma función.
+- **No verificable desde aquí (6-sep-2026)**: cuántas entidades de producción tienen ya la señal de
+  prórroga (el par se verá tras reconstruir el índice), los valores reales de `reparto_por_anio` y
+  de `por_mes` en producción (datos.gov.co responde 403 en el proxy de esta sesión), y si la
+  apilada con nombres largos de consorcios cabe bien en la leyenda del móvil con datos reales.
+- **Pasos del dueño**: las fichas no traen ninguno. Del trabajo sale uno: tras desplegar, reconstruir
+  el índice (`/api/sync/historico?reconstruir_indice=true` con el token, la URL de siempre) para que
+  el hash publique `prorroga`; hasta entonces el modal no dice nada de la prórroga, y solo la dirá en
+  las entidades cuya señal el delta haya acumulado desde el 16-ago-2026.

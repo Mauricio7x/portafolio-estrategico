@@ -8701,6 +8701,14 @@ async function main() {
           assert.strictEqual(x.procesos, publicado.por_anio[anio].n, `${e.entidad} ${anio}: el detalle y el hash discrepan en el conteo del año`);
           if (x.procesos < 5) assert.strictEqual(x.promedio_oferentes, null, `${e.entidad} ${anio}: promedio de un año con <5 procesos`);
         }
+        /* M-DGF-06 (6-sep-2026): la PRÓRROGA por entidad viaja desde el hash del
+           índice (publicado gana a calculado) y el detalle la ESPEJA sin recontar.
+           El fixture del histórico no trae la señal: el campo existe y vale null
+           —«sin dato», jamás {0, 0}— en los dos sitios. */
+        assert.ok(Object.prototype.hasOwnProperty.call(publicado, "prorroga"), `${e.entidad}: el hash del índice no publica prorroga`);
+        assert.strictEqual(publicado.prorroga, null, `${e.entidad}: sin señal en el histórico la prórroga publicada es null, no un par de ceros`);
+        assert.ok("prorroga" in c.indice, `${e.entidad}: op=entidad no publica prorroga`);
+        assert.strictEqual(c.indice.prorroga, null, `${e.entidad}: el detalle espeja el null del hash`);
         if (e.ofertas.length >= 5) {
           assert.strictEqual(c.indice.promedio_oferentes, publicado.promedio,
             `${e.entidad}: el promedio del detalle no reproduce el del badge`);
@@ -8721,6 +8729,37 @@ async function main() {
           }
         }
       }
+      /* ── M-DGF-06 · LA PRÓRROGA DEL HASH LLEGA AL DETALLE TAL CUAL (6-sep-2026) ──
+         `registroPublicado` publica por entidad SOLO los conteos del acumulador
+         `{prorrogados: [n, Σof], no_prorrogados: [n, Σof]}` (las sumas quedan para
+         la calibración del ×1,20 en la meta), también bajo el mínimo (es un hecho,
+         no una cifra derivada), y null sin acumulador. El detalle espeja ese par:
+         se escribe en el hash el registro real de la Gobernación con una prórroga
+         y `op=entidad` tiene que devolverla sin recontar nada. */
+      {
+        const { registroPublicado: regPub } = require("../lib/indice_competencia.js");
+        const { claveIndice: clavePro } = require("../lib/competencia_detalle.js");
+        const basePro = { clave: "x", nombre: "X", nit: "1", procesos: 6, oferentes_total: 30, promedio: 5, mediana: 5, nivel: "media" };
+        assert.deepStrictEqual(regPub({ ...basePro, prorroga: { prorrogados: [3, 12], no_prorrogados: [5, 25] } }).prorroga,
+          { prorrogados: 3, no_prorrogados: 5 }, "el hash publica los CONTEOS de la prórroga, no las sumas de oferentes");
+        assert.strictEqual(regPub({ ...basePro }).prorroga, null, "sin acumulador, null: sin dato no es cero");
+        assert.deepStrictEqual(regPub({ ...basePro, procesos: 2, prorroga: { prorrogados: [1, 2], no_prorrogados: [1, 3] } }).prorroga,
+          { prorrogados: 1, no_prorrogados: 1 }, "bajo el mínimo el conteo se publica igual: es un hecho, no una cifra derivada");
+        const campoTol = clavePro("GOBERNACIÓN DEL TOLIMA");
+        const crudoTol = await redis.hget("indice:competencia", campoTol);
+        assert.ok(typeof crudoTol === "string" && crudoTol.length, "el hash tiene a la Gobernación con su clave canónica");
+        await redis.hset("indice:competencia", { [campoTol]: JSON.stringify({ ...JSON.parse(crudoTol), prorroga: { prorrogados: 3, no_prorrogados: 5 } }) });
+        try {
+          const cTol = (await detalle("GOBERNACIÓN DEL TOLIMA", "&refrescar=1")).cuerpo;
+          assert.deepStrictEqual(cTol.indice.prorroga, { prorrogados: 3, no_prorrogados: 5 },
+            "el detalle espeja la prórroga publicada en el hash: llama, no recuenta");
+          assert.strictEqual(cTol.indice.procesos_contados, 8, "…y el resto del detalle no cambia por ello");
+        } finally {
+          await redis.hset("indice:competencia", { [campoTol]: crudoTol });
+          await detalle("GOBERNACIÓN DEL TOLIMA", "&refrescar=1"); // deja la caché del detalle con el hash real
+        }
+      }
+
       /* ── A7 · LA COLISIÓN DE CIERRES SE MIDE, no se supone (ago 2026) ──
          La meta del índice publica el estadístico del §9.3 estratificado por
          entidad; aquí se compara con el cálculo A MANO sobre el fixture. El
@@ -8981,6 +9020,97 @@ async function main() {
         const jsAdj = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
         for (const debe of ["data-adjudicatario", "cargarAdjudicatario", "op=competidor&adjudicatario=", "Dónde gana este competidor"]) {
           assert.ok(jsAdj.includes(debe), `app.js sin ${debe} (perfil del competidor)`);
+        }
+
+        /* ── M-DGF-06 (6-sep-2026): EL MODAL ENSEÑA TRES HECHOS COMO GRÁFICO O FRASE ──
+           Columnas por año (el conteo mide; el promedio con base va en el título y
+           en la frase del hecho), la barra de «quién gana» con «Otros» como cola
+           declarada que NO compite por un puesto, y la frase literal de la
+           prórroga solo con los dos grupos. Funciones reales, Pulso real. */
+        {
+          const cortarAdj = (nombre) => {
+            const i = jsAdj.indexOf(`function ${nombre}(`);
+            assert.ok(i > 0, `app.js sin ${nombre}: el detalle de la entidad no enseña el hecho como gráfico`);
+            return jsAdj.slice(i, jsAdj.indexOf("\n  }", i) + 4);
+          };
+          const escAdj = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+          const fnsAdj = new Function("window", "esc", "fmtNum", "fmtCorto", "fmtUltima",
+            `${cortarAdj("htmlEntidadPorAnio")}\n${cortarAdj("htmlProrrogaEntidad")}\n${cortarAdj("bloqueAdjudicatarios")}; return { htmlEntidadPorAnio, htmlProrrogaEntidad, bloqueAdjudicatarios };`)(
+            { Pulso: require("../public/pulso.js") }, escAdj, new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }),
+            (n) => `${n}`, (f) => (f ? String(f).slice(0, 10) : null));
+          const { RE_EMOJI_UI: emojiAdj, tuteoEn: tuteoAdj } = require("../lib/lenguaje_pantalla.js");
+          const salidas = [];
+
+          /* (1) procesos por año: columnas que MIDEN el conteo; el promedio solo donde hay base */
+          const repA = { 2024: { procesos: 12, promedio_oferentes: 3.1 }, 2025: { procesos: 4, promedio_oferentes: null }, sin_fecha: { procesos: 1, promedio_oferentes: null } };
+          const hA = fnsAdj.htmlEntidadPorAnio(repA, 5);
+          salidas.push(hA);
+          assert.ok(/<svg/.test(hA), "el reparto por año se dibuja en columnas");
+          assert.strictEqual((hA.match(/<title>/g) || []).length, 3, "una columna por año, y otra para lo que no tiene fecha");
+          assert.ok(/>12</.test(hA) && />4</.test(hA), "el conteo va en la cabeza de cada columna: la barra mide procesos, y el número de encima es el de la barra");
+          assert.ok(/<title>2024: 12 · promedio 3,1 oferentes<\/title>/.test(hA), "el promedio del año con base va en el título de su columna");
+          assert.ok(/<title>2025: 4 · sin promedio \(menos de 5 procesos\)<\/title>/.test(hA), "un año con menos procesos que el mínimo dice que no tiene promedio, en vez de inventarlo");
+          assert.ok(/<title>sin fecha: 1/.test(hA) && !/sin_fecha/.test(hA), "la clave interna «sin_fecha» no llega a la pantalla");
+          assert.ok(/En 2024 compitieron 3,1 oferentes por proceso \(12 adjudicados\)\./.test(hA), "el título del gráfico es el hecho medido, con la misma redacción que el tablero");
+          assert.ok(!/2025,/.test(hA) && !/en 2025/.test(hA), "el año sin base no entra en la frase del hecho");
+          assert.ok(/17 procesos con dato de oferentes/.test(hA), "la base (n procesos) va al lado del título");
+          assert.ok(!/data-filtro/.test(hA), "las columnas del histórico no prometen una lista de procesos abiertos");
+          for (const sinDato of [null, undefined, {}, "x", { 2025: { procesos: 0, promedio_oferentes: null } }]) {
+            assert.strictEqual(fnsAdj.htmlEntidadPorAnio(sinDato, 5), "", `sin reparto no hay gráfico: ${JSON.stringify(sinDato)}`);
+          }
+          const hSinProm = fnsAdj.htmlEntidadPorAnio({ 2025: { procesos: 3, promedio_oferentes: null } }, 5);
+          salidas.push(hSinProm);
+          assert.ok(/<svg/.test(hSinProm) && !/compitieron/.test(hSinProm) && /Procesos adjudicados por año/.test(hSinProm),
+            "sin ningún año con base el título es el conteo, no un promedio");
+
+          /* (2) quién gana: la barra apilada con «Otros» al FINAL aunque sea la mayor, y la tabla plegada */
+          const topAdj = [["ALFA SAS", 6], ["BETA SAS", 5], ["GAMMA SAS", 4], ["DELTA SAS", 3], ["EPSILON SAS", 2]].map(([nombre, ganados], i) => ({
+            clave: `nit:90${i}`, nombre, nit: `90${i}`, identificacion: { tipo: "nit", valor: `90${i}` },
+            ganados, valor_adjudicado_cop: 1e8 * ganados, procesos_con_valor: ganados, ultima_adjudicacion: "2026-01-15",
+          }));
+          const adjA = { top: topAdj, distintos: 7, procesos_con_ganador: 40, sin_adjudicatario: 1, min_procesos: 5,
+            concentracion: { lider: "ALFA SAS", ganados: 6, base: 40, pct: 15 }, lectura: null };
+          const hG = fnsAdj.bloqueAdjudicatarios(adjA);
+          salidas.push(hG);
+          const segmentosDe = (h) => [...h.matchAll(/title="([^"]*)"/g)].map((m) => m[1]).filter((t) => /: \d+ \(\d+ %\)$/.test(t));
+          assert.deepStrictEqual(segmentosDe(hG), ["ALFA SAS: 6 (15 %)", "BETA SAS: 5 (13 %)", "GAMMA SAS: 4 (10 %)", "Otros: 25 (63 %)"],
+            "tres ganadores con tono propio y «Otros» AL FINAL aunque sume más que el líder (40 − 6 − 5 − 4 = 25): la cola no compite por un puesto");
+          assert.ok(/var\(--viz-4\)[^>]*title="Otros: 25 \(63 %\)"/.test(hG), "«Otros» va siempre en el cuarto tono");
+          assert.ok(/Otros \(4\) · 25/.test(hG), "la leyenda dice cuántos ganadores suma la cola: 2 fuera del top y 2 plegados del top");
+          assert.ok(/ALFA SAS se lleva 6 de 40 \(15 %\)\./.test(hG), "la frase de concentración del servidor se conserva");
+          assert.ok(/<details[^>]*>\s*<summary[^>]*>Ver los 5 adjudicatarios que más ganan<\/summary>[\s\S]*<table/.test(hG),
+            "la tabla (lo que se toca) va plegada debajo de la barra (lo que se ve)");
+          assert.strictEqual((hG.match(/data-adjudicatario=/g) || []).length, 5, "las cinco filas siguen abriendo el perfil del competidor");
+          const hSinCola = fnsAdj.bloqueAdjudicatarios({ ...adjA, distintos: 5, procesos_con_ganador: 20, concentracion: { lider: "ALFA SAS", ganados: 6, base: 20, pct: 30 } });
+          // el top cubre a todos: el único «Otros» es el plegado por falta de tonos (4.º y 5.º), y dice que son 2
+          assert.deepStrictEqual(segmentosDe(hSinCola), ["ALFA SAS: 6 (30 %)", "BETA SAS: 5 (25 %)", "GAMMA SAS: 4 (20 %)", "Otros: 5 (25 %)"],
+            "cuando el top cubre a todos los ganadores no se añade una cola: solo se pliegan los que no caben en tres tonos");
+          assert.ok(/Otros \(2\) · 5/.test(hSinCola), "…y la leyenda cuenta exactamente los dos plegados");
+          const hLect = fnsAdj.bloqueAdjudicatarios({ ...adjA, lectura: "Alguien ganó 5 de 6. Dos lecturas: nicho o pliego a la medida." });
+          salidas.push(hLect);
+          assert.ok(/Atención:<\/strong> Alguien ganó 5 de 6/.test(hLect), "la lectura con las dos interpretaciones se conserva debajo");
+          const hSinConc = fnsAdj.bloqueAdjudicatarios({ ...adjA, top: topAdj.slice(0, 2), distintos: 2, procesos_con_ganador: 4, concentracion: null });
+          salidas.push(hSinConc);
+          assert.ok(!/var\(--viz-/.test(hSinConc) && !/<details/.test(hSinConc) && /<table/.test(hSinConc),
+            "sin base para la concentración no hay barra (sería un reparto sobre 4) y la tabla queda a la vista");
+
+          /* (3) la prórroga: la frase solo con los dos grupos; sin ambos, nada (sin dato no es «nunca») */
+          const hP = fnsAdj.htmlProrrogaEntidad({ prorrogados: 3, no_prorrogados: 5 });
+          salidas.push(hP);
+          assert.ok(/Movió la fecha de cierre en <strong>3<\/strong> de los 8 procesos/.test(hP), `la frase literal con el conteo: ${hP}`);
+          for (const sinAmbos of [null, undefined, {}, { prorrogados: 3 }, { prorrogados: 0, no_prorrogados: 5 }, { prorrogados: 3, no_prorrogados: 0 }, { prorrogados: null, no_prorrogados: 5 }, { prorrogados: "x", no_prorrogados: 5 }]) {
+            assert.strictEqual(fnsAdj.htmlProrrogaEntidad(sinAmbos), "", `sin los dos grupos no se afirma nada: ${JSON.stringify(sinAmbos)}`);
+          }
+
+          const textoAdj = salidas.join(" ").replace(/<[^>]+>/g, " ");
+          assert.ok(!textoAdj.match(emojiAdj), "sin emoji en el detalle de la entidad");
+          assert.strictEqual(tuteoAdj(textoAdj), null, "el detalle habla de usted");
+          /* y está CABLEADO en pintarDetalle: las tres funciones con los campos de op=entidad, y la frase vieja «Por año:» ya no existe */
+          const iPD = jsAdj.indexOf("function pintarDetalle(");
+          const srcPD = jsAdj.slice(iPD, jsAdj.indexOf("\n  }", iPD) + 4);
+          assert.ok(/htmlEntidadPorAnio\(i\.reparto_por_anio, i\.min_procesos\)/.test(srcPD), "pintarDetalle pinta el reparto por año con el mínimo que publica el servidor");
+          assert.ok(/htmlProrrogaEntidad\(i\.prorroga\)/.test(srcPD), "pintarDetalle pinta la prórroga desde indice.prorroga");
+          assert.ok(!/Por año: /.test(srcPD), "la frase corrida «Por año: …» se sustituyó por el gráfico");
         }
       }
 
@@ -24437,6 +24567,85 @@ async function main() {
         assert.ok(c.cuerpo.censo.claves_observadas.includes("columna_marciana"),
           "se publican las claves REALES del dataset: es lo que permite arreglarlo en una línea");
       }
+      /* k.4g · POR MES (M-DGF-10, 6-sep-2026): el agregado se calcula sobre TODO el
+         barrido (205 filas > MAX_RESULTADOS = 200), no sobre lo que cabe en la
+         respuesta; una fila sin fecha legible va a «sin fecha» (contada aparte,
+         jamás a un mes inventado); una cuantía ausente no suma ni cuenta como $0.
+         La sonda ve las 5 de menor `:id`: una ilegible entre ellas hace que el
+         rango NO se delegue y todas las filas lleguen al cliente, que es donde se
+         cuentan las que no tienen fecha. */
+      {
+        const filasMes = [filaPaa(0, { ":id": "pm-000", fecha_estimada_de_inicio_de: "Por definir" })];
+        for (let i = 1; i <= 205; i++) {
+          filasMes.push(filaPaa(i, {
+            ":id": `pm-${String(i).padStart(3, "0")}`,
+            fecha_estimada_de_inicio_de: `${mas(i % 12)}T00:00:00.000`,
+            // cada quinta línea sin valor publicado; las demás, 100 millones
+            valor_total_estimado: i % 5 === 0 ? "" : "100000000",
+          }));
+        }
+        filasMes.push(filaPaa(301, { ":id": "pm-301", fecha_estimada_de_inicio_de: "" }));
+        filasMes.push(filaPaa(302, { ":id": "pm-302", fecha_estimada_de_inicio_de: "Marzo" }));
+        filasMes.push(filaPaa(303, { ":id": "pm-303", fecha_estimada_de_inicio_de: `${mas(14)}T00:00:00.000` }));
+        socrata.setDatasetPaa(filasMes);
+        const pmR = await pedirPaa();
+        assert.strictEqual(pmR.status, 200, `el PAA por mes debía responder 200: ${JSON.stringify(pmR.cuerpo).slice(0, 300)}`);
+        const pm = pmR.cuerpo.por_mes;
+        assert.ok(pm && Array.isArray(pm.meses), "el PAA publica por_mes.meses");
+        assert.strictEqual(pmR.cuerpo.total, 205);
+        assert.strictEqual(pmR.cuerpo.resultados.length, 200, "la respuesta se sigue recortando a MAX_RESULTADOS");
+        assert.strictEqual(pmR.cuerpo.recortados_en_la_respuesta, 5);
+        assert.strictEqual(pm.meses.length, 12, "doce cubetas: una por mes de la ventana");
+        assert.strictEqual(pm.meses.reduce((a, m) => a + m.n, 0), pmR.cuerpo.total, "Σ por_mes.n = total del barrido, no el recorte de la respuesta");
+        assert.strictEqual(pm.meses[0].mes, v.desde.slice(0, 7), "la primera cubeta es el mes en curso");
+        assert.strictEqual(pm.meses[11].mes, mas(11).slice(0, 7), "la última, el duodécimo mes");
+        assert.deepStrictEqual(pm.meses.map((m) => m.n), pm.meses.map((m, k) => (k === 1 ? 18 : 17)), "205 filas repartidas por i % 12: 18 en el segundo mes y 17 en los demás");
+        assert.strictEqual(pm.sin_fecha, pmR.cuerpo.descartados.fecha_ilegible, "«sin fecha» es exactamente lo descartado por fecha ilegible");
+        assert.strictEqual(pm.sin_fecha, 3, "las tres sin fecha legible no se sitúan en ningún mes");
+        assert.strictEqual(pm.meses.reduce((a, m) => a + m.sin_cuantia, 0), 41, "41 múltiplos de 5 sin valor publicado, contados aparte");
+        for (const m of pm.meses) {
+          assert.strictEqual(m.valor, (m.n - m.sin_cuantia) * 1e8, `${m.mes}: el dinero del mes suma solo las cuantías legibles`);
+        }
+        assert.ok(!("fuera_de_cubeta" in pm), "ninguna fila dentro de la ventana se queda sin mes");
+        // dos filas en el mes en curso, ninguna con valor: el dinero del mes es null, no $0
+        socrata.setDatasetPaa([filaPaa(1, { valor_total_estimado: "" }), filaPaa(2, { valor_total_estimado: "0" })]
+          .map((f) => ({ ...f, fecha_estimada_de_inicio_de: `${mas(0)}T00:00:00.000` })));
+        const pm0 = (await pedirPaa()).cuerpo.por_mes;
+        assert.deepStrictEqual(pm0.meses[0], { mes: v.desde.slice(0, 7), n: 2, valor: null, sin_cuantia: 2 }, "sin ninguna cuantía legible el valor del mes es null");
+        assert.strictEqual(pm0.sin_fecha, 0);
+
+        /* la PANTALLA: la función real de app.js con el Pulso real */
+        const jsPm = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const htmlPm = fs.readFileSync(path.join(__dirname, "..", "public", "index.html"), "utf8");
+        const cortarPm = (nombre) => { const i = jsPm.indexOf(`function ${nombre}(`); assert.ok(i > 0, `app.js sin ${nombre}: el PAA no se ve en el tiempo`); return jsPm.slice(i, jsPm.indexOf("\n  }", i) + 4); };
+        const mesesEs = jsPm.match(/const MESES_ES = \[[^\]]*\];/);
+        assert.ok(mesesEs, "app.js sin MESES_ES");
+        const escPm = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+        const htmlPaaMeses = new Function("window", "esc",
+          `${mesesEs[0]}\n${cortarPm("mesLegible")}\n${cortarPm("htmlPaaMeses")}; return htmlPaaMeses;`)({ Pulso: require("../public/pulso.js") }, escPm);
+        const hPm = htmlPaaMeses(pm, null);
+        assert.ok(/<svg/.test(hPm), "el plan se dibuja en columnas por mes");
+        assert.strictEqual((hPm.match(/<title>/g) || []).length, 12, "doce columnas");
+        assert.ok(/Lo que las entidades planean publicar, mes a mes/.test(hPm), "el rótulo dice que es lo PLANEADO");
+        assert.ok(/: 18 · \$1\.400 millones · 4 sin valor publicado<\/title>/.test(hPm), `el título de cada mes lleva el conteo, el dinero previsto y cuántas no publican valor: ${hPm.match(/<title>[^<]*<\/title>/g).slice(0, 3)}`);
+        assert.ok(/3 del plan sin fecha legible quedan fuera del gráfico/.test(hPm), "las que no tienen fecha se dicen, fuera del gráfico, nunca en un mes inventado");
+        assert.ok(/Suman \$16\.400 millones en los 164 que publican valor \(41 sin valor publicado\)/.test(hPm), "el total previsto dice sobre cuántas se suma");
+        assert.ok(!/data-filtro/.test(hPm), "una previsión no enlaza a la lista de procesos abiertos");
+        assert.ok(/Lo que «ALCALDÍA DE IBAGUÉ» planea publicar, mes a mes/.test(htmlPaaMeses(pm, "ALCALDÍA DE IBAGUÉ")), "con entidad, el rótulo la nombra");
+        assert.strictEqual(htmlPaaMeses({ meses: pm.meses.map((m) => ({ ...m, n: 0, valor: null, sin_cuantia: 0 })), sin_fecha: 0 }, null), "", "sin nada previsto no hay gráfico");
+        for (const sinDato of [null, undefined, {}, { meses: "x" }]) assert.strictEqual(htmlPaaMeses(sinDato, null), "", `sin agregado no hay gráfico: ${JSON.stringify(sinDato)}`);
+        const { RE_EMOJI_UI: emojiPm, tuteoEn: tuteoPm } = require("../lib/lenguaje_pantalla.js");
+        const textoPm = hPm.replace(/<[^>]+>/g, " ");
+        assert.ok(!textoPm.match(emojiPm), "sin emoji");
+        assert.strictEqual(tuteoPm(textoPm), null, "habla de usted");
+        assert.ok(!/9sue|dataset|Socrata/i.test(textoPm), "nada de infraestructura en pantalla");
+        // cableado: el nodo nace oculto entre el aviso y las tarjetas, y buscarPaa lo pinta o lo esconde
+        assert.ok(/id="paa-meses"[^>]*\bhidden\b/.test(htmlPm), "#paa-meses nace oculto");
+        assert.ok(htmlPm.indexOf('id="paa-aviso"') < htmlPm.indexOf('id="paa-meses"') && htmlPm.indexOf('id="paa-meses"') < htmlPm.indexOf('id="paa-lista"'),
+          "el gráfico va después del aviso (un plan no es un compromiso) y antes de las tarjetas");
+        assert.ok(/meses\.innerHTML = htmlPaaMeses\(cuerpo\.por_mes, ent \|\| null\);\s*\n\s*meses\.classList\.toggle\("hidden", !meses\.innerHTML\);/.test(jsPm),
+          "buscarPaa pinta el gráfico con por_mes y esconde la caja cuando no hay nada que decir");
+      }
       socrata.setDatasetPaa(DATASET_PAA); // se deja como estaba para la siguiente iteración
 
       /* k.5 · la vista desconocida sigue muriendo antes de autorizar, y ahora
@@ -26180,6 +26389,37 @@ async function main() {
         assert.strictEqual(pcts.reduce((a, b) => a + b, 0), 100, "los porcentajes siguen sumando 100 tras plegar");
         // y con cuatro o menos no se pliega nada
         assert.ok(!/Otros/.test(Viz.apilada(seis.slice(0, 4))), "con cuatro segmentos no se inventa una cola");
+      }
+
+      /* (3-quater) ⚠️ LA COLA DECLARADA NO COMPITE TAMPOCO EN LA APILADA (M-DGF-06,
+         6-sep-2026). `apilada` ordenaba TODOS los segmentos por tamaño, así que un
+         «Otros» residual mayor que el líder —lo corriente en «quién gana aquí»—
+         habría encabezado la barra con el primer tono: el defecto de «OTROS
+         encabezaba el ranking» otra vez. La regla vive en la primitiva: quien
+         construye los datos declara la cola (`esCola: true` en el segmento, o la
+         opción `esCola`), y la cola va AL FINAL, en el cuarto tono, absorbe lo
+         que se pliega y dice cuántas suma solo si lo sabe (`cuantos`). */
+      {
+        const segs = (h) => [...h.matchAll(/title="([^"]*)"/g)].map((m) => m[1]);
+        const hc = Viz.apilada([{ etiqueta: "A", n: 6 }, { etiqueta: "B", n: 5 }, { etiqueta: "Otros", n: 20, esCola: true, cuantos: 9 }]);
+        assert.deepStrictEqual(segs(hc), ["A: 6 (19 %)", "B: 5 (16 %)", "Otros: 20 (65 %)"], "la cola declarada va AL FINAL aunque sea la mayor");
+        assert.ok(/var\(--viz-4\)[^>]*title="Otros: 20/.test(hc), "…y siempre en el cuarto tono, para que su color signifique lo mismo pase lo que pase");
+        assert.ok(/Otros \(9\) · 20/.test(hc), "la leyenda dice cuántas categorías suma la cola declarada");
+        // 5 reales + cola declarada: las dos que no caben en tres tonos se pliegan DENTRO de la cola, y se cuentan
+        const cinco = "ABCDE".split("").map((c, i) => ({ etiqueta: c, n: 10 - i }));
+        const hp = Viz.apilada(cinco.concat([{ etiqueta: "Otros", n: 3, esCola: true, cuantos: 4 }]));
+        assert.deepStrictEqual(segs(hp).map((s) => s.split(":")[0]), ["A", "B", "C", "Otros"], "tres reales con tono propio y una sola cola");
+        assert.ok(/title="Otros: 16 /.test(hp), "D (7) + E (6) + la cola declarada (3) = 16");
+        assert.ok(/Otros \(6\) · 16/.test(hp), "4 declaradas + 2 plegadas");
+        // sin `cuantos` la cola no inventa un conteo: se pliega pero no afirma «(k)» a medias
+        const hs = Viz.apilada(cinco.concat([{ etiqueta: "Otros", n: 3, esCola: true }]));
+        assert.ok(/Otros · 16/.test(hs) && !/Otros \(\d+\)/.test(hs), "una cola sin conteo declarado no afirma cuántas suma");
+        // la cola también se declara por opción, como en barrasRank
+        const hOp = Viz.apilada([{ etiqueta: "X", n: 1 }, { etiqueta: "RESTO", n: 9, residual: true }], { esCola: (s) => s.residual === true });
+        assert.deepStrictEqual(segs(hOp).map((s) => s.split(":")[0]), ["X", "RESTO"]);
+        // `nota` en columnas: viaja al título de la columna; sin nota no se añade nada
+        const cn = Viz.columnas([{ etiqueta: "2024", n: 12, nota: "promedio 3,1 oferentes" }, { etiqueta: "2025", n: 4 }], { conValor: true });
+        assert.ok(/<title>2024: 12 · promedio 3,1 oferentes<\/title>/.test(cn) && /<title>2025: 4<\/title>/.test(cn), `la nota de la cubeta se añade al título: ${cn.match(/<title>[^<]*<\/title>/g)}`);
       }
 
       /* (3-ter) ⚠️ LA ETIQUETA DIRECTA TIENE QUE SER LEGIBLE SOBRE SU RELLENO.

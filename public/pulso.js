@@ -250,7 +250,11 @@
          que hay que poder consultar. */
       const zona = `<rect x="${(M.izq + paso * i).toFixed(1)}" y="${M.arriba}" width="${paso.toFixed(1)}" height="${util.h}" style="fill:transparent"></rect>`;
       const dinero = c.valor != null ? ` · ${pesosCortos(c.valor)}` : "";
-      return envolver(filtroDe(c), `${c.titulo || c.etiqueta}: ${c.n == null ? "sin dato" : miles(v)}${dinero}`, zona + cuerpo + valor + rot);
+      /* `nota` (6-sep-2026, M-DGF-06/10): lo que la cubeta quiera decir de sí
+         misma en el título —«promedio 3,1 oferentes», «4 sin valor publicado»—
+         sin que la primitiva tenga que saber de qué habla. `envolver` escapa. */
+      const nota = c.nota ? ` · ${c.nota}` : "";
+      return envolver(filtroDe(c), `${c.titulo || c.etiqueta}: ${c.n == null ? "sin dato" : miles(v)}${dinero}${nota}`, zona + cuerpo + valor + rot);
     }).join("");
     const base = `<line x1="${M.izq}" y1="${y0}" x2="${ancho - M.der}" y2="${y0}" style="stroke: var(--viz-grid); stroke-width:1"></line>`;
     return `<svg viewBox="0 0 ${ancho} ${alto}" role="img" style="display:block;width:100%;height:auto;font-family:inherit">${rejilla}${base}${barras}</svg>`;
@@ -324,17 +328,43 @@
      y el resto se suma en «Otros», que va SIEMPRE en el cuarto slot para que su
      color signifique lo mismo pase lo que pase. `TONOS` es el techo, no una
      sugerencia. */
+  /* ⚠️ Y LA COLA DECLARADA NO COMPITE TAMPOCO AQUÍ (6-sep-2026, M-DGF-06). La
+     apilada ordenaba TODOS los segmentos por tamaño, así que un «Otros» residual
+     mayor que el líder —lo corriente en «quién gana aquí», donde el top son 5
+     de 30 ganadores— habría encabezado la barra con el PRIMER tono: el defecto
+     de «OTROS encabezaba el ranking» otra vez. La misma doctrina que en
+     `barrasRank`: quien construye los datos declara la cola (`esCola: true` en
+     el segmento, o la opción `esCola`; la primitiva no adivina por el nombre),
+     la cola va AL FINAL y SIEMPRE en el cuarto tono, absorbe lo que se pliega
+     por falta de tonos, y dice cuántas categorías suma solo si el llamador lo
+     declaró (`cuantos`): un conteo a medias sería una cifra falsa. */
   const TONOS = 4;
-  function plegarCola(vivos) {
-    if (vivos.length <= TONOS) return vivos;
-    const cabeza = vivos.slice(0, TONOS - 1);
-    const cola = vivos.slice(TONOS - 1);
-    return cabeza.concat([{ etiqueta: "Otros", n: cola.reduce((a, s) => a + s.n, 0), _cola: cola.length }]);
+  function plegarCola(reales, colas = []) {
+    const declarada = colas.length
+      ? {
+        etiqueta: colas[0].etiqueta || "Otros",
+        n: colas.reduce((a, s) => a + s.n, 0),
+        _cola: colas.every((s) => Number.isFinite(s.cuantos)) ? colas.reduce((a, s) => a + s.cuantos, 0) : null,
+        _tono: TONOS,
+      }
+      : null;
+    const sitio = TONOS - (declarada ? 1 : 0);
+    if (reales.length <= sitio) return declarada ? reales.concat([declarada]) : reales;
+    const cabeza = reales.slice(0, TONOS - 1);
+    const cola = reales.slice(TONOS - 1);
+    return cabeza.concat([{
+      etiqueta: declarada ? declarada.etiqueta : "Otros",
+      n: cola.reduce((a, s) => a + s.n, 0) + (declarada ? declarada.n : 0),
+      _cola: declarada ? (declarada._cola == null ? null : declarada._cola + cola.length) : cola.length,
+      _tono: TONOS,
+    }]);
   }
 
-  function apilada(segmentos, { alto = 26 } = {}) {
-    const crudos = (segmentos || []).filter((s) => (s.n || 0) > 0).sort((a, b) => b.n - a.n);
-    const vivos = plegarCola(crudos);
+  function apilada(segmentos, { alto = 26, esCola = (s) => s.esCola === true } = {}) {
+    const conDato = (segmentos || []).filter((s) => (s.n || 0) > 0);
+    const reales = conDato.filter((s) => !esCola(s)).sort((a, b) => b.n - a.n);
+    const vivos = plegarCola(reales, conDato.filter((s) => esCola(s)));
+    const tono = (s, i) => s._tono || i + 1;
     const total = vivos.reduce((a, s) => a + s.n, 0);
     if (!total) return "";
     let x = 0;
@@ -356,12 +386,12 @@
          invertirla a blanco en oscuro reabriría el defecto. */
       const texto = `${pct} %`;
       const cabe = (w / 100) * 320 > texto.length * 7 + 14;
-      return `<div class="absolute top-0 h-full" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); background: var(--viz-${i + 1}); border-radius: ${i === 0 ? "6px 0 0 6px" : x >= 99.99 ? "0 6px 6px 0" : "0"}"
+      return `<div class="absolute top-0 h-full" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); background: var(--viz-${tono(s, i)}); border-radius: ${i === 0 ? "6px 0 0 6px" : x >= 99.99 ? "0 6px 6px 0" : "0"}"
           title="${esc(s.etiqueta)}: ${miles(s.n)} (${pct} %)"></div>`
         + (cabe ? `<span class="absolute top-0 flex h-full items-center justify-center text-[11px] font-semibold" style="left:${izq.toFixed(2)}%; width:calc(${w.toFixed(2)}% - ${VIZ.gap}px); color:#000">${texto}</span>` : "");
     }).join("");
     const leyenda = vivos.map((s, i) => `<li class="flex items-center gap-1.5">
-        <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style="background: var(--viz-${i + 1})"></span>
+        <span class="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style="background: var(--viz-${tono(s, i)})"></span>
         <span class="text-[11px]" style="color: var(--text-secondary)">${esc(s.etiqueta)}${s._cola ? ` (${s._cola})` : ""} · ${miles(s.n)}</span></li>`).join("");
     return `<div class="relative mt-2 overflow-hidden rounded-md" style="height:${alto}px; background: var(--bg-inset)">${trozos}</div>
       <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1">${leyenda}</ul>`;

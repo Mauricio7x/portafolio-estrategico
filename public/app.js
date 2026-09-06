@@ -2079,6 +2079,45 @@
     </article>`;
   }
 
+  /* ══════════ Lo previsto, mes a mes (M-DGF-10, 6-sep-2026) ══════════
+     El servidor agrega TODO el barrido en `por_mes` (doce cubetas desde el mes
+     en curso, más `sin_fecha`: lo que no tiene fecha legible no se sitúa en un
+     mes inventado); aquí solo se pinta. Cada columna cuenta procesos previstos
+     y su título lleva el dinero previsto (solo el de los que publican valor) y
+     cuántos no lo publican. Sin `data-filtro`: una previsión no enlaza a la
+     lista de procesos abiertos. Sin ningún mes con procesos, nada. */
+  function htmlPaaMeses(pm, entidad) {
+    const meses = pm && Array.isArray(pm.meses) ? pm.meses : [];
+    if (!meses.some((m) => m && Number(m.n) > 0)) return "";
+    const entero = (v) => (v == null || !Number.isFinite(Number(v)) ? null : Number(v));
+    const cubetas = meses.map((m) => {
+      const mesNum = Number(String(m.mes || "").slice(5, 7));
+      const sinValor = entero(m.sin_cuantia);
+      return {
+        etiqueta: (MESES_ES[mesNum - 1] || String(m.mes || "")).slice(0, 3),
+        titulo: mesLegible(m.mes) || String(m.mes || ""),
+        n: entero(m.n),
+        valor: m.valor,
+        nota: sinValor > 0 ? `${sinValor} sin valor publicado` : null,
+      };
+    });
+    // una cuantía ausente no suma (es «sin dato», no $0) y se cuenta aparte
+    const suma = meses.reduce((s, m) => s + (m.valor != null && Number.isFinite(Number(m.valor)) ? Number(m.valor) : 0), 0);
+    const total = meses.reduce((s, m) => s + (entero(m.n) != null ? entero(m.n) : 0), 0);
+    const sinValorTodos = meses.every((m) => entero(m.sin_cuantia) != null);
+    const sinValor = sinValorTodos ? meses.reduce((s, m) => s + entero(m.sin_cuantia), 0) : null;
+    const conValor = sinValorTodos ? total - sinValor : null;
+    const sinFecha = entero(pm.sin_fecha);
+    const quien = entidad ? `«${esc(entidad)}» planea` : "las entidades planean";
+    const dinero = suma > 0
+      ? ` Suman ${window.Pulso.pesosCortos(suma)} en ${conValor == null ? "los que publican valor" : `${conValor === 1 ? "el que publica" : `los ${conValor} que publican`} valor${sinValor > 0 ? ` (${sinValor} sin valor publicado)` : ""}`}.`
+      : (sinValor > 0 ? " Ninguno publica valor." : "");
+    const fuera = sinFecha > 0 ? ` ${sinFecha} del plan sin fecha legible ${sinFecha === 1 ? "queda" : "quedan"} fuera del gráfico.` : "";
+    return `<p class="text-sm font-medium">Lo que ${quien} publicar, mes a mes</p>
+      <p class="mt-1 text-xs text-gray-500">Cada columna cuenta procesos previstos; el valor previsto de cada mes se ve al señalar la columna.${dinero}${fuera}</p>
+      ${window.Pulso.columnas(cubetas, { conValor: true })}`;
+  }
+
   async function buscarPaa() {
     const seccion = $("paa");
     if (!paaEncendido) { seccion.classList.add("hidden"); return; }
@@ -2088,6 +2127,7 @@
     $("paa-lista").innerHTML = "";
     $("paa-aviso").textContent = "";
     $("paa-censo").textContent = "";
+    if ($("paa-meses")) { $("paa-meses").innerHTML = ""; $("paa-meses").classList.add("hidden"); }
 
     const qs = new URLSearchParams({ vista: "paa" });
     const ent = $("f-paa-entidad").value.trim();
@@ -2138,6 +2178,12 @@
       ? `${cuerpo.advertencia || ""} Tasa de acierto del PAA: sin medir por esta app.`
       : `${cuerpo.advertencia || ""} ${cuerpo.tasa_de_acierto_nota || `Tasa de acierto del PAA: ${cuerpo.tasa_de_acierto} %.`}`;
     $("paa-lista").innerHTML = cuerpo.resultados.map(tarjetaPaa).join("");
+    /* lo previsto mes a mes, arriba de las tarjetas: es el agregado del barrido ENTERO */
+    const meses = $("paa-meses");
+    if (meses) {
+      meses.innerHTML = htmlPaaMeses(cuerpo.por_mes, ent || null);
+      meses.classList.toggle("hidden", !meses.innerHTML);
+    }
 
     /* Pie técnico: lo que el endpoint NO pudo hacer. Se pinta solo cuando hay
        algo que contar, pero `verificado:false` va siempre mientras nadie haya
@@ -2631,19 +2677,83 @@
         <td class="py-2 text-right tabular-nums whitespace-nowrap">${fmtUltima(g.ultima_adjudicacion) == null ? '<span class="text-gray-400">sin dato</span>' : esc(fmtUltima(g.ultima_adjudicacion))}</td>
       </tr>`).join("");
     const conc = a.concentracion;
-    return `
-      <h3 class="mt-5 mb-1 text-sm font-semibold">Quién gana aquí (${base} proceso${base === 1 ? "" : "s"} con ganador identificado)</h3>
-      ${conc ? `<p class="mb-2 text-xs text-gray-600">${esc(conc.lider)} se lleva ${conc.ganados} de ${conc.base} (${conc.pct} %).</p>` : ""}
-      <div class="overflow-x-auto">
+    /* LA BARRA DE REPARTO (M-DGF-06, 6-sep-2026): solo con base para la
+       concentración (el servidor la anula bajo MIN_PROCESOS: un reparto sobre 2
+       procesos sería el «100 %» sin base). Los del top con su tono; el resto de
+       ganadores va en «Otros», DECLARADO como cola —es la suma de muchos, no un
+       competidor— para que no encabece la barra aunque sume más que el líder, y
+       con cuántos son (`distintos` − top) para que la leyenda lo diga. Un
+       conteo ilegible no entra: no se suma como 0. */
+    const entero = (v) => (v == null || !Number.isFinite(Number(v)) ? null : Number(v));
+    const top = (a.top || []).filter((g) => entero(g.ganados) != null);
+    const ganadosTop = top.reduce((s, g) => s + entero(g.ganados), 0);
+    const otros = base - ganadosTop;
+    const cuantosOtros = entero(a.distintos) != null ? entero(a.distintos) - top.length : null;
+    const segmentos = top.map((g) => ({ etiqueta: g.nombre, n: entero(g.ganados) }));
+    if (otros > 0) segmentos.push({ etiqueta: "Otros", n: otros, esCola: true, cuantos: cuantosOtros != null && cuantosOtros > 0 ? cuantosOtros : null });
+    const reparto = conc && window.Pulso ? window.Pulso.apilada(segmentos) : "";
+    const tabla = `<div class="overflow-x-auto">
         <table class="w-full text-left text-sm">
           <thead class="text-xs uppercase tracking-wide text-gray-400">
             <tr><th class="pb-1">Adjudicatario</th><th class="pb-1 text-right">Ganados</th><th class="pb-1 text-right">Valor adjudicado</th><th class="pb-1 text-right">Último contrato</th></tr>
           </thead>
           <tbody>${filas}</tbody>
         </table>
-      </div>
+      </div>`;
+    // lo que se VE (la barra) arriba; lo que se TOCA (la tabla: cada fila abre un perfil) plegado debajo
+    const plegada = `<details class="mt-3"><summary class="cursor-pointer text-xs text-gray-500">Ver ${top.length === 1 ? "el adjudicatario que más gana" : `los ${top.length} adjudicatarios que más ganan`}</summary>${tabla}</details>`;
+    return `
+      <h3 class="mt-5 mb-1 text-sm font-semibold">Quién gana aquí (${base} proceso${base === 1 ? "" : "s"} con ganador identificado)</h3>
+      ${conc ? `<p class="mb-2 text-xs text-gray-600">${esc(conc.lider)} se lleva ${conc.ganados} de ${conc.base} (${conc.pct} %).</p>` : ""}
+      ${reparto}
+      ${reparto ? plegada : tabla}
       ${Number(a.sin_adjudicatario) > 0 ? `<p class="mt-2 text-xs text-gray-400">${a.sin_adjudicatario} proceso(s) adjudicados sin nombre de ganador en el dataset.</p>` : ""}
       ${a.lectura ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800"><strong>Atención:</strong> ${esc(a.lectura)}</p>` : ""}`;
+  }
+
+  /* ══════════ Tres hechos de la entidad, como gráfico o frase (M-DGF-06, 6-sep-2026) ══════════
+     Lo que ya viajaba en op=entidad y se leía en texto corrido —o no se leía—:
+     · procesos por año → columnas. La barra MIDE el conteo y el número de
+       encima es el de la barra; el promedio del año, solo con base (el
+       servidor lo anula bajo el mínimo), va en la frase del hecho y en el
+       título de su columna, nunca como rótulo de una barra que mide otra cosa
+       (una cifra creíble encima de una barra que no la mide es una cifra
+       falsa con buena maquetación). El título del gráfico es el hecho, con la
+       redacción del tablero («compitieron N oferentes por proceso»), y la base
+       (n procesos) al lado.
+     · quién gana → la barra apilada de `bloqueAdjudicatarios`.
+     · la prórroga → una frase literal, solo con los dos grupos: con uno solo no
+       se afirma nada («sin dato» no es «nunca» ni «siempre»).
+     Son funciones PURAS: la suite las ejecuta con el Pulso real. */
+  function htmlEntidadPorAnio(rep, minProcesos) {
+    const filas = rep && typeof rep === "object"
+      ? Object.entries(rep).filter(([, x]) => x && x.procesos != null && Number.isFinite(Number(x.procesos)) && Number(x.procesos) > 0)
+      : [];
+    if (!filas.length) return "";
+    const conPromedio = (x) => x.promedio_oferentes != null && Number.isFinite(Number(x.promedio_oferentes));
+    const conBase = filas.filter(([anio, x]) => /^\d{4}$/.test(anio) && conPromedio(x));
+    const total = filas.reduce((s, [, x]) => s + Number(x.procesos), 0);
+    const titulo = conBase.length
+      ? `En ${conBase.map(([anio, x], k) => (k === 0
+        ? `${esc(anio)} compitieron ${fmtNum.format(x.promedio_oferentes)} oferentes por proceso (${x.procesos} adjudicados)`
+        : `en ${esc(anio)}, ${fmtNum.format(x.promedio_oferentes)} (${x.procesos})`)).join("; ")}.`
+      : "Procesos adjudicados por año";
+    const minimo = minProcesos != null && Number.isFinite(Number(minProcesos)) ? `menos de ${minProcesos} procesos` : "pocos procesos";
+    const cubetas = filas.map(([anio, x]) => ({
+      etiqueta: /^\d{4}$/.test(anio) ? anio : "sin fecha", // la clave interna del índice no llega a la pantalla
+      n: Number(x.procesos),
+      nota: conPromedio(x) ? `promedio ${fmtNum.format(x.promedio_oferentes)} oferentes` : `sin promedio (${minimo})`,
+    }));
+    return `<div class="mt-3">
+      <p class="text-sm font-medium">${titulo} <span class="text-xs font-normal text-gray-500">· ${total} proceso${total === 1 ? "" : "s"} con dato de oferentes</span></p>
+      ${window.Pulso ? window.Pulso.columnas(cubetas, { conValor: true }) : ""}
+    </div>`;
+  }
+  function htmlProrrogaEntidad(pr) {
+    if (!pr || typeof pr !== "object" || pr.prorrogados == null || pr.no_prorrogados == null) return "";
+    const p = Number(pr.prorrogados), n = Number(pr.no_prorrogados);
+    if (!Number.isFinite(p) || !Number.isFinite(n) || p <= 0 || n <= 0) return "";
+    return `<p class="mt-2 text-sm">Movió la fecha de cierre en <strong>${p}</strong> de los ${p + n} procesos adjudicados en que la aplicación pudo comprobarlo.</p>`;
   }
 
   function pintarDetalle(d) {
@@ -2658,11 +2768,11 @@
     /* Reparto POR AÑO (ago 2026): el promedio de dos años puede mezclar un
        período atípico (la ley de garantías 2026 obligó a competir entre nov-2025
        y may-2026). Se enseña el conteo de cada año siempre y el promedio solo
-       cuando ese año tiene base (el servidor ya lo anula por debajo de 5). */
-    const rep = i.reparto_por_anio && typeof i.reparto_por_anio === "object" ? Object.entries(i.reparto_por_anio) : [];
-    const porAnio = rep.length
-      ? `<p class="mt-1 text-xs text-gray-500">Por año: ${rep.map(([a, x]) => `${esc(a)} · ${x.procesos} proceso${x.procesos === 1 ? "" : "s"}${x.promedio_oferentes != null ? ` (promedio ${fmtNum.format(x.promedio_oferentes)})` : ""}`).join(" · ")}</p>`
-      : "";
+       cuando ese año tiene base (el servidor ya lo anula por debajo del mínimo
+       que él mismo publica). Desde el 6-sep-2026 es un gráfico, y la prórroga
+       del cierre —los conteos del índice— una frase. */
+    const porAnio = htmlEntidadPorAnio(i.reparto_por_anio, i.min_procesos);
+    const prorroga = htmlProrrogaEntidad(i.prorroga);
     /* Y cuánto pesan los datos propios en los rivales que usa la probabilidad
        (encogimiento): con pocos procesos manda el promedio general. */
     const enc = i.encogimiento && i.encogimiento.rivales_estimados != null
@@ -2672,7 +2782,7 @@
       <p class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${banda.clases}">
         <span aria-hidden="true">${banda.emoji}</span>${esc(banda.titulo)}
       </p>
-      ${resumen}${porAnio}${enc}
+      ${resumen}${porAnio}${prorroga}${enc}
       ${d.mensaje ? `<p class="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">${esc(d.mensaje)}</p>` : ""}
       ${bloqueAdjudicatarios(d.adjudicatarios)}
       ${bloqueProponentes(d.proponentes)}
