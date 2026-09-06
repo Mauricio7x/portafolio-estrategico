@@ -6,11 +6,11 @@
 (no editar a mano: sale de `node tests/mapa.js --escribir`. Para ir a un sitio concreto,
  `node tests/mapa.js <término>` da la ruta, la línea y el sed exacto — más barato que leer esto)
 
-· SUPERFICIE HTTP — 27 op declaradas en los mapas de los routers:
+· SUPERFICIE HTTP — 28 op declaradas en los mapas de los routers:
   /api/admin?op=  rup · experiencia · cobertura · cargar-catalogo
   /api/perfil?op=  resumen · diagnostico · entrada · pulso · consorcio · consorcio-simular · seguimiento
   /api/pliego?op=  extraer-texto · parsear · descargar · formulario1 · diff · cronograma · deducciones · dictamen · documentos
-  /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion
+  /api/procesos?op=  sync · historico · listar · baja · entidades · portada · manifestacion · salud
   (api/apu.js e api/inteligencia.js despachan por accion/vista desde su handler:
    `node tests/estado.js` los enumera midiendo)
 
@@ -141,13 +141,14 @@
   documentos.js             /api/pliego?op=documentos (3-sep-2026)
   formulario1.js            POST /api/pliego?op=formulario1 (Fase 4)
 
-· lib/handlers/procesos/ — 7 módulos:
+· lib/handlers/procesos/ — 8 módulos:
   baja.js                   El índice de baja de mercado, completo o por entidad
   entidades.js              GET /api/procesos?op=entidades&q=alcald
   historico.js              Backfill del corpus histórico + índice de competencia
   listar.js                 Consulta de oportunidades viables desde la caché Redis
   manifestacion.js          GET /api/procesos?op=manifestacion&estado=abierto|proximo
   portada.js                GET /api/procesos?op=portada
+  salud.js                  ¿La sincronización está viva? (GET /api/procesos?op=salud · público, solo lee)
   sync.js                   Sincronización SECOP II → Upstash Redis (full + delta, reanudable)
 
 · FRONTEND public/ — 15 módulos:
@@ -167,8 +168,7 @@
   xlsx.js                   Escritor .xlsx (OOXML) propio, sin dependencias
   xlsx_lectura.js           Lector .xlsx / .csv propio, sin dependencias
 
-· MEMORIA · docs/MEMORIA.md — 128 secciones. Las 10 más nuevas:
-  L  7020  La piel v2 · medida sobre las mejores páginas del mundo, no de memoria (4-sep-2026)
+· MEMORIA · docs/MEMORIA.md — 129 secciones. Las 10 más nuevas:
   L  7110  La piel v3 · «Lino y tinta»: el color caro y el detalle, medidos (4-sep-2026)
   L  7211  La ficha «Lo que exige este pliego» en Mis procesos y los precios buscados por una sesión de
   L  7293  Segunda pasada del 4-sep-2026: la guía sin cuadros vacíos y Precios en tres pasos
@@ -178,6 +178,7 @@
   L  7586  Lote «servidor y cifras» de la consultoría del 4-sep · M-INF-09, M-INF-17, M-INF-07, M-DGF-1
   L  7697  Lote «precios por perfil» de la consultoría del 4-sep · M-SEG-01, M-SEG-06 (6-sep-2026)
   L  7804  Lote «zona y RUP en PDF» de la consultoría del 4-sep · M-SEG-10, M-INF-01 (6-sep-2026)
+  L  7885  Lote «salud y tiempos» de la consultoría del 4-sep · M-INF-04, M-INF-08 (6-sep-2026)
 
 · DOCUMENTOS docs/ — 42:
   ACCESIBILIDAD.md                      Accesibilidad de la zona · metodología (ago 2026)

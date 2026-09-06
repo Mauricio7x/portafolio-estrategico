@@ -214,6 +214,29 @@ había entrado a Redis. Ahora **afinar el matching o cargar un RUP nuevo tiene e
   oferentes). Es el único momento en que se ve la transición abierto → cerrado; lo anterior a la
   puesta en marcha lo cubre el backfill de `/api/sync/historico`.
 
+### `GET /api/procesos?op=salud` (público)
+
+¿Está viva la sincronización? Existe para un **monitor externo** (un GET cada 15 minutos con la
+palabra clave `"ok":true`, avisando al correo del dueño) y para leerlo desde Chrome cuando algo va
+mal. Responde `{ok, motivo, ultima_sincronizacion, edad_horas, edad_maxima_horas, ultimo_error,
+sincronizando, candado_segundos, historico_hace_dias, medicion_listado}`:
+
+- `ultimo_error` es el **último intento de sincronizar que falló** (`{ts, modo, texto}`; el texto
+  pasa por `tacharClave` y se corta a 200 caracteres). Lo escribe `/api/sync` en su `catch` y lo
+  borra la siguiente corrida que termina bien. El listado lo repite junto a `sincronizado` y la
+  barra dice «hoy no se pudo actualizar; se reintenta con cada visita» en vez de un ámbar mudo.
+- `ok` es `false` si hay `ultimo_error`, si nunca se completó una sincronización o si el corte tiene
+  más de `edad_maxima_horas` (30: el cron diario más margen). Se decide sobre milisegundos crudos;
+  `edad_horas` es para mostrar y es `null` sin corte, jamás 0.
+- **≤ 2 comandos de Redis** (MGET de `licitaciones:meta` + `sync:historico:meta`, y TTL de
+  `lock:sync`), sin tomar el candado, sin sincronizar y sin ninguna cifra del perfil: por eso no
+  exige token. No apuntar el monitor a `op=sync&modo=auto` (dispararía trabajo contra SECOP).
+- `medicion_listado` es la última medición del listado servida por la instancia caliente
+  (`{filas_corpus, chunks, duracion_ms, instancia_caliente}`; `null` si no sirvió ninguna): es la
+  métrica del `SCAN` que ARQUITECTURA_MULTITENANT §4.3 pide vigilar antes de optimizar.
+- Responde 200 con `ok:false` cuando Redis contestó (el diagnóstico va en `motivo`); 502 si Redis
+  no respondió; 503 sin credenciales.
+
 ### `GET /api/sync/historico` (protegido)
 
 Backfill de una vez de los años que la app nunca guardó, y construcción del índice de competencia.

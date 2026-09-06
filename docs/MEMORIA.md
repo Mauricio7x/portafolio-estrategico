@@ -7881,3 +7881,78 @@ re-aprenderlo:
   y fecha en la línea siguiente → intacto; `unirNumerosPartidos` y `numerosDe` caso a caso;
   `op=diagnostico` real → `necesita[0].motivo`). Dos mutaciones por `git stash` (fuentes de zona;
   fuentes de RUP) ponen la suite en rojo una a una por la aserción nueva.
+
+### Lote «salud y tiempos» de la consultoría del 4-sep · M-INF-04, M-INF-08 (6-sep-2026)
+
+**Qué se decidió.** (1) El fallo de la sincronización se GUARDA: `sync.js` escribe en su `catch`
+`meta.ultimo_error = {ts, modo, texto}` (texto pasado por `tacharClave` y cortado a 200) y lo borra
+la siguiente corrida que termina bien (la full al escribir `last_full`, el delta al escribir su meta,
+completo o cortado por presupuesto). (2) `op=salud`, plegada en `api/procesos.js`
+(`lib/handlers/procesos/salud.js`), es PÚBLICA y solo lee: `{ok, motivo, ultima_sincronizacion,
+edad_horas, edad_maxima_horas, ultimo_error, sincronizando, candado_segundos, historico_hace_dias,
+medicion_listado}` con **2 comandos** (MGET de `licitaciones:meta` + `sync:historico:meta`, y TTL del
+candado: `almacen.leerVariosJSON` comparte la regla de parseo de `leerJSON`), sin tomar el candado ni
+sincronizar. `ok` se decide sobre milisegundos crudos (hay `ultimo_error`, nunca se completó una
+sincronización, o el corte tiene más de 30 h: el cron diario más 6 h de margen); `edad_horas` es para
+mostrar y es `null` sin corte. Responde 200 con `ok:false` cuando Redis contestó (el monitor busca la
+palabra clave `"ok":true`), 502 si Redis no respondió. (3) El listado publica `ultimo_error` junto a
+`sincronizado` y `medicion {filas_corpus, chunks, duracion_ms, instancia_caliente}` (cero comandos:
+`cargarCorpus` acepta un objeto opcional donde deja chunks y si sirvió de memoria); la instancia
+guarda la última y `op=salud` la repite (`null` si esa instancia no sirvió ningún listado). (4)
+`pintarCorte(iso, ultimoError)`: con fallo de hoy la barra dice «Datos de hoy, 11:29 p. m. · hoy no se
+pudo actualizar; se reintenta con cada visita · Actualizar» en ámbar; de otro día, «la última
+actualización no se pudo hacer»; el día lo juzga `Portada.desactualizado`, el mismo reloj del corte.
+(5) `redis.cmd` lleva `signal: AbortSignal.timeout(10 s)` y lee el cuerpo UNA vez como texto y lo
+parsea aparte: un 200 sin JSON lanza «Upstash: respuesta no JSON (40 caracteres)» en vez de valer
+«clave inexistente». `socrata.pedir` lleva un tope de 20 s por intento en sus dos `fetch`
+(`opts.timeoutMs` solo puede bajarlo); el abort cae en la misma rama de retroceso que un fallo de
+red, sin reintento nuevo; los nueve consumidores de `crearCliente` lo heredan. (6) `tacharClave`
+(lib/apu_ocr) tacha ahora un CENSO de secretos del entorno (`SECRETOS_DEL_ENTORNO`: OCR, Socrata,
+Upstash, KV, HISTORICO_TOKEN, ANTHROPIC, bypass de Vercel): el texto que guarda sync.js lo publica
+una op sin token.
+
+**Medido antes → después.** Socrata caído: `op=sync&modo=full` 502 «agotados 5 intentos», en Redis
+solo `licitaciones:progreso`, meta null, `op=salud` 404 → 502 igual, meta con `ultimo_error`,
+`op=salud` 200 `ok:false` con el texto y `motivo`, 2 comandos medidos con el contador nuevo del mock.
+`redis.get` con un servidor que acepta y no responde: pendiente tras 1 000 ms → lanza a los 51 ms con
+tope de 50; `socrata.pedir` igual → agota 5 intentos en 254 ms. 200 sin JSON: `get` null y `scan`
+«Cannot read properties of null» → los dos lanzan con los 40 caracteres. Chromium con los routers
+reales sobre los mocks de la suite (arnés del scratchpad, Socrata muerto tras cargar el corpus): a
+1280 y 390, claro y oscuro, cero desbordes, consola limpia, cero peticiones externas, el sello en
+`--warn` (#9a5b0f / #e4a84a) con el texto completo y «Actualizar» dentro del sello. A 390 px la
+regla móvil «el corte en una línea con puntos suspensivos» lo recortaba a «hoy no s…» con el
+«Actualizar» fuera: **solo con fallo** (`corte-fallo`) el corte envuelve —tres líneas, cabecera de
+64,5 → 95,5 px— porque ese es el hecho que hay que VER. Observado y NO tocado: con la sincronización
+sana a 390 px el sello ya se recortaba en el árbol anterior («Datos de hoy, 11:33 p. m. · Actualizar»
+mide más que los 215 px del sello): decisión del encargo 2 (la frase entera vive en `title` y
+`aria-label`), no de este lote.
+
+**Lo que las fichas decían y el árbol desmintió o no se adoptó.** M-INF-08 pedía que app.js
+distinguiera 5xx/504 de la contraseña: YA ESTABA desde el 5-sep (`Glosario.fraseDeFallo({status:504})`
+responde «El servidor no respondió como se esperaba (código 504)…», no el muro; hay prueba) y no se
+añade una segunda redacción. M-INF-04 pedía que `listar` guardara la medición en `meta`: NO, porque
+`listar` corre fuera del candado y escribir `meta` podría pisar el cursor `delta_ciclo` (el motivo por
+el que el throttle del histórico tampoco toca meta); la medición vive en la instancia. Pedía
+`historico_hace_dias` «si viene en la misma lectura»: no viene (otra clave), por eso el MGET. Pedía
+ampliar «unidad rendimiento» con la medición: ese bloque no toca Redis; la cerradura va en el bloque
+del sync con el handler real. `tests/estado.js` no necesitó cambio: deriva las op del mapa del router.
+
+**Excepciones declaradas.** Los cuatro `fetch` de disparo (sync ×2, listar, historico:
+`.catch(() => {})` en la misma línea) van sin `signal`: no se esperan, la función responde y se
+congela; el censo de la suite los salta por ese rasgo. `historico.js` no escribe `ultimo_error`
+(es el backfill manual y el refresco mensual, no la sincronización diaria; su deriva se ve en
+`historico_hace_dias`). Una full cortada por presupuesto no toca meta: un `ultimo_error` anterior
+sigue publicado hasta que la cadena termina (minutos), y si la cadena muere, sigue siendo verdad.
+
+**No verificable desde aquí.** Las condiciones del plan gratuito de Better Stack y el «personal,
+non-commercial» de UptimeRobot Free (dos secundarias de 2026 en la consultoría): el proxy de la
+sesión no sale a Internet; el dueño confirma en la página del proveedor antes de crear la cuenta.
+El tope de 10 s de Redis ante una latencia real alta añadiría 502 donde hoy hay espera: se ajusta
+con `medicion_listado.duracion_ms` de `op=salud`.
+
+**Pasos del dueño (M-INF-04, literales de la ficha).** https://betterstack.com/ → cuenta → «Create
+monitor» → HTTP → https://portafolio-estrategico.vercel.app/api/procesos?op=salud → keyword
+`"ok":true` → 15 min → correo · segundo monitor sobre https://portafolio-estrategico.vercel.app/ ·
+prueba: https://vercel.com/ → el proyecto → «Settings» → «General» → «Pause project» un minuto →
+cronometrar el correo → «Resume». Si el muro del edge está activo, cabecera
+`x-vercel-protection-bypass` con el secreto de CONFIGURACION_TOKENS.md §3.5; jamás un token en la URL.

@@ -994,6 +994,11 @@
       /* el corte, en UNA línea: la frase entera sigue en el `title` y en el
          `aria-label` del botón (bajo 380 px la hoja ya la ocultaba entera) */
       #app .marca-corte { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      /* …salvo cuando la última actualización FALLÓ (6-sep-2026, M-INF-04): ese es el
+         hecho que hay que VER, y en una línea se recortaba a «hoy no s…» con el
+         «Actualizar» fuera. Solo en ese estado el corte envuelve (medido a 390 px: tres
+         líneas, cabecera de 64,5 → 95,5 px). */
+      #app .marca-corte.corte-fallo { white-space: normal; overflow: visible; text-overflow: clip; }
       /* (4) el título de la pestaña y el aire de arriba: 32 → 28 px y 32 → 20 px
          (piel v3, decisión del h1 móvil a 32 px: se rebaja solo en el teléfono) */
       #app .cabecera-pestana h1 { font-size: 28px; }

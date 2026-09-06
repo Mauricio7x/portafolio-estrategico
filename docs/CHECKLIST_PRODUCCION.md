@@ -111,8 +111,8 @@ Traducido a criterios que puede comprobar un tercero:
 | # | Criterio | Estado |
 |---|---|---|
 | O-1 | Canal de soporte publicado, con tiempo de respuesta realista para una persona | ☐ |
-| O-2 | Página de estado | ☐ |
-| O-3 | Procedimiento de incidentes escrito: detectar, avisar, corregir, analizar | ☐ |
+| O-2 | Página de estado | ◐ 6-sep-2026: la página de estado ES `/api/procesos?op=salud` (pública, `"ok":true` cuando la sincronización está viva). Falta el monitor externo que la llame cada 15 min y avise por correo (paso del dueño, M-INF-04) |
+| O-3 | Procedimiento de incidentes escrito: detectar, avisar, corregir, analizar | ◐ 6-sep-2026: **detectar** = el monitor sobre `op=salud` y sobre la página principal; **avisar** = correo del monitor; **corregir** = abrir `/admin.html` → «Actualizar»; si persiste, en Vercel → Deployments → Redeploy de la versión anterior (O-6, pendiente de probar una vez); **analizar** = `ultimo_error.texto` de `op=salud` dice el fallo y `modo`. Falta configurar el monitor |
 | O-4 | Documentación mínima de usuario | ☐ |
 | O-5 | **Todo procedimiento de operación se ejecuta desde el navegador** | ☐ |
 | O-6 | Reversión de un despliegue malo probada una vez | ☐ |

@@ -34,6 +34,7 @@ const OPS = {
   entidades: () => require("../lib/handlers/procesos/entidades.js"), // [v4] Fase 8 · buscador de entidades
   portada: () => require("../lib/handlers/procesos/portada.js"),     // [v4] Fase 9 · el pulso del mercado (público)
   manifestacion: () => require("../lib/handlers/procesos/manifestacion.js"), // [v4] Fase 9 · avisar que le interesa
+  salud: () => require("../lib/handlers/procesos/salud.js"),         // M-INF-04 · ¿la sincronización está viva? (público, ≤ 2 comandos)
 };
 
 function opDe(req) {

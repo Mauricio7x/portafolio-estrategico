@@ -167,22 +167,35 @@
      temporal — y ese fallo es MUDO. Es la misma lección que puso el arranque
      automático al final del IIFE. */
   let marcaEsperandoCorte = false;
-  function pintarCorte(iso) {
+  /* `ultimoError` viaja con `sincronizado` en el listado (6-sep-2026, M-INF-04):
+     es el último intento de sincronizar que FALLÓ (sync.js lo escribe y la
+     siguiente corrida buena lo borra). Con él la barra dice el HECHO —«hoy no
+     se pudo actualizar; se reintenta con cada visita»— en vez de un ámbar que
+     no distingue «el cron aún no corrió» de «lleva días fallando». Si el fallo
+     es de otro día se dice sin «hoy»; la fecha la juzga `Portada.desactualizado`,
+     el mismo reloj del corte. La clase ámbar y «Actualizar» se conservan. */
+  function pintarCorte(iso, ultimoError) {
     const s = document.getElementById("sello-sync");
     if (!s) return;
     if (iso) corteActual = iso;
     const P = window.Portada;
     const cuando = iso && P ? P.textoActualizado(iso, Date.now(), { corto: true }) : null;
+    const fallo = ultimoError && ultimoError.ts && P
+      ? (P.desactualizado(ultimoError.ts, Date.now()) ? "la última actualización no se pudo hacer" : "hoy no se pudo actualizar")
+      : null;
     s.innerHTML = cuando
-      ? `Datos de ${esc(cuando)} · <span class="marca-accion">Actualizar</span>`
+      ? `Datos de ${esc(cuando)}${fallo ? ` · ${fallo}; se reintenta con cada visita` : ""} · <span class="marca-accion">Actualizar</span>`
       : '<span class="marca-accion">Pulse aquí para traer lo último de SECOP II</span>';
-    s.classList.toggle("corte-viejo", !!(iso && P && P.desactualizado(iso, Date.now())));
+    s.classList.toggle("corte-viejo", !!(fallo || (iso && P && P.desactualizado(iso, Date.now()))));
+    // en el teléfono el corte va en una línea recortada; con fallo envuelve para que se LEA entero
+    s.classList.toggle("corte-fallo", !!(fallo && cuando));
     s.classList.remove("hidden");
     const b = document.getElementById("btn-marca");
     if (b) {
       const largo = iso && P ? P.textoActualizado(iso, Date.now()) : "Todavía no consta cuándo se trajeron los datos";
-      b.title = `${largo}. Pulse para traer de SECOP II lo publicado desde entonces.`;
-      b.setAttribute("aria-label", `${largo}. Actualizar los datos de SECOP II.`);
+      const aviso = fallo ? ` ${fallo[0].toUpperCase()}${fallo.slice(1)}; se reintenta con cada visita.` : "";
+      b.title = `${largo}.${aviso} Pulse para traer de SECOP II lo publicado desde entonces.`;
+      b.setAttribute("aria-label", `${largo}.${aviso} Actualizar los datos de SECOP II.`);
     }
   }
   /* Mientras corre, la marca ES el indicador: quien pulsa desde otra pestaña no
@@ -871,7 +884,7 @@
     // refresco en segundo plano: con datos de >5 min el backend corre un
     // delta barato; si están frescos responde alDia sin tocar Socrata
     fetch("/api/procesos?op=sync&modo=auto").catch(() => {});
-    if (cuerpo.sincronizado) pintarCorte(cuerpo.sincronizado);
+    if (cuerpo.sincronizado) pintarCorte(cuerpo.sincronizado, cuerpo.ultimo_error || null);
     ultimasFacetas = cuerpo.facetas || ultimasFacetas;
     pintarControlesFiltros();
     if (!cuerpo.total) return pintarVacio(cuerpo);

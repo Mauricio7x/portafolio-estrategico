@@ -1314,10 +1314,12 @@ function crearMockUpstash() {
     }
   }
 
+  let contadorPeticiones = 0; // comandos recibidos: op=salud tiene que gastar ≤ 2 por latido
   const server = http.createServer((req, res) => {
     let cuerpo = "";
     req.on("data", (c) => { cuerpo += c; });
     req.on("end", () => {
+      contadorPeticiones++;
       try {
         const r = ejecutar(JSON.parse(cuerpo));
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -1328,7 +1330,7 @@ function crearMockUpstash() {
       }
     });
   });
-  return { server, tamano: () => datos.size + hashes.size };
+  return { server, tamano: () => datos.size + hashes.size, peticiones: () => contadorPeticiones };
 }
 
 /* ════════════════ invocador de handlers estilo Vercel ════════════════
@@ -1481,6 +1483,83 @@ async function main() {
         `${f}: un count null se guarda como -1 (sin auditar) y no se vuelve a pedir en cada página`);
     }
     console.log("· unidad socrata: token inválido → 403 con token, 200 sin él, se descarta y se cuenta; 403 sin token sigue siendo bloqueo; $select del keyset con * primero; count ilegible → null, jamás 0");
+  }
+
+  /* unidad: TIEMPO DE ESPERA Y 200 SIN JSON (6-sep-2026, M-INF-08). Sin `signal`, una
+     conexión que Upstash o Socrata aceptan y nunca responden vivía hasta el maxDuration de
+     la función (300 s): los presupuestos de los llamadores se miran ENTRE páginas, no
+     dentro de la petición. Y un 200 sin JSON de Upstash valía «clave inexistente» (get →
+     null, scan → TypeError): sync tomaba meta = {} y lanzaba una full por un HTML del
+     muro. Funciones reales con un fetch que solo termina cuando lo abortan; contra el
+     árbol anterior la promesa no resuelve y la prueba cae por su propio plazo. */
+  {
+    const { crearRedis: crearRedisT, TIMEOUT_MS: topeRedis } = require("../lib/redis.js");
+    const { crearCliente: crearClienteT, TIMEOUT_MS: topeSocrata } = require("../lib/socrata.js");
+    const colgado = (u, o) => new Promise((_, rej) => {
+      if (!o || !o.signal || typeof o.signal.addEventListener !== "function") return; // sin `signal` no termina nunca
+      o.signal.addEventListener("abort", () => rej(o.signal.reason));
+    });
+    const conPlazo = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(`PLAZO: seguía pendiente tras ${ms} ms`)), ms))]);
+    let t = Date.now();
+    await assert.rejects(() => conPlazo(crearRedisT({ url: "http://x", token: "t", fetchImpl: colgado, timeoutMs: 50 }).get("k"), 1000),
+      (e) => { assert.ok(!/PLAZO/.test(e.message), "redis.get con un servidor que acepta y no responde seguía pendiente: falta el tiempo de espera"); return /abort|timeout/i.test(e.message); },
+      "redis.get tiene que lanzar por tiempo de espera");
+    assert.ok(Date.now() - t < 1000, "…y en menos de un segundo");
+    t = Date.now();
+    await assert.rejects(() => conPlazo(crearClienteT({ appToken: "", fetchImpl: colgado, dormir: async () => {}, timeoutMs: 50 }).pedir({ "$limit": "1" }, "colgado"), 2000),
+      (e) => { assert.ok(!/PLAZO/.test(e.message), "socrata.pedir con un servidor que acepta y no responde seguía pendiente: falta el tiempo de espera"); return /agotados 5 intentos/.test(e.message); },
+      "socrata.pedir agota sus intentos por tiempo de espera, por la MISMA rama que un fallo de red (sin reintento nuevo)");
+    assert.ok(Date.now() - t < 2000);
+    // los topes son los de la ficha: 10 s Redis, 20 s por intento Socrata; el llamador solo puede pedir MENOS
+    assert.strictEqual(topeRedis, 10000); assert.strictEqual(topeSocrata, 20000);
+    const senales = [];
+    await crearClienteT({ appToken: "", fetchImpl: async (u, o) => { senales.push(o.signal); return { ok: true, status: 200, json: async () => [] }; }, dormir: async () => {}, timeoutMs: 999999 }).pedir({ "$limit": "1" }, "x");
+    assert.ok(senales.length === 1 && senales[0] instanceof AbortSignal, "cada intento de Socrata lleva su propio AbortSignal");
+    // 200 sin JSON: se lanza diciendo qué llegó (40 caracteres), jamás «clave inexistente»
+    const sinJson = crearRedisT({ url: "http://x", token: "t", fetchImpl: async () => ({ ok: true, status: 200, text: async () => "<html><body>muro del edge</body></html>" }) });
+    await assert.rejects(() => sinJson.get("licitaciones:meta"), /Upstash: respuesta no JSON \(<html><body>muro del edge/,
+      "un 200 sin JSON no es «clave inexistente» (habría disparado una full por un HTML del muro)");
+    await assert.rejects(() => sinJson.scan("licitaciones:*"), /respuesta no JSON/, "scan tampoco puede morir con un TypeError");
+    await assert.rejects(() => crearRedisT({ url: "http://x", token: "t", fetchImpl: async () => ({ ok: true, status: 200, text: async () => "" }) }).get("k"), /respuesta no JSON \(\)/, "un cuerpo vacío tampoco es null");
+    // y el contrato de siempre sigue: {result:null} es «no existe», un error de Upstash se dice con su status
+    assert.strictEqual(await crearRedisT({ url: "http://x", token: "t", fetchImpl: async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ result: null }) }) }).get("k"), null);
+    await assert.rejects(() => crearRedisT({ url: "http://x", token: "t", fetchImpl: async () => ({ ok: false, status: 401, text: async () => JSON.stringify({ error: "Unauthorized" }) }) }).get("k"), /Upstash 401: Unauthorized/);
+    await assert.rejects(() => crearRedisT({ url: "http://x", token: "t", fetchImpl: async () => ({ ok: false, status: 502, text: async () => "<html>bad gateway</html>" }) }).get("k"), /^Error: Upstash 502$/);
+    /* CENSO, no lista: ningún fetch de lib/ ni api/ sale sin `signal`. Excepción declarada:
+       los cuatro DISPAROS fire-and-forget (`.catch(() => {})` en la misma línea) que
+       re-invocan al propio despliegue y no se esperan — la función responde y se congela. */
+    const sitios = [];
+    for (const dir of ["lib", "api"]) {
+      const pila = [path.join(__dirname, "..", dir)];
+      while (pila.length) {
+        const d = pila.pop();
+        for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+          const ruta = path.join(d, e.name);
+          if (e.isDirectory()) pila.push(ruta);
+          else if (e.name.endsWith(".js")) {
+            // fuente CRUDO: `sinComentarios` lee el comodín de tipos «pdf, cualquiera» del Accept de
+            // apu_descargar como si abriera un comentario; las líneas que son comentario se saltan por su inicio
+            const src = fs.readFileSync(ruta, "utf8");
+            for (const m of src.matchAll(/\b(?:fetch|fetchImpl)\(/g)) {
+              const linea = src.slice(src.lastIndexOf("\n", m.index) + 1, src.indexOf("\n", m.index));
+              if (/^\s*(?:\/\/|\*|\/\*)/.test(linea)) continue;             // comentario
+              if (/\.catch\(\(\) => \{\}\)/.test(linea)) continue; // disparo declarado
+              // la llamada hasta el paréntesis que la cierra (contando anidados)
+              let prof = 0, fin = m.index;
+              for (let k = m.index + m[0].length - 1; k < src.length; k++) {
+                if (src[k] === "(") prof++;
+                else if (src[k] === ")" && --prof === 0) { fin = k + 1; break; }
+              }
+              const llamada = src.slice(m.index, fin);
+              sitios.push({ archivo: path.relative(path.join(__dirname, ".."), ruta), llamada, conSignal: /signal/.test(llamada) });
+            }
+          }
+        }
+      }
+    }
+    assert.ok(sitios.length >= 6, `el censo esperaba los fetch de redis, socrata (2), apu_descargar, apu_ocr y dictamen: ${sitios.length}`);
+    for (const x of sitios) assert.ok(x.conSignal, `${x.archivo}: un fetch sin \`signal\` vive hasta el maxDuration: ${x.llamada.slice(0, 100)}`);
+    console.log(`· unidad tiempo de espera: redis.get y socrata.pedir cortan un servidor que no responde; 200 sin JSON lanza (no null); ${sitios.length} fetch con signal y 4 disparos declarados`);
   }
 
   /* unidad: el empaquetador respeta los 500 KB comprimidos y no pierde filas */
@@ -5795,6 +5874,21 @@ async function main() {
       assert.strictEqual(r.cuerpo.ok, false);
     }
 
+    /* a'''. op=salud con Redis vacío (6-sep-2026, M-INF-04): pública, a través del ROUTER real;
+       «sin dato» es null —jamás 0— y `ok:false` dice por qué. */
+    {
+      const rS = await invocar(require("../api/procesos.js"), "/api/procesos?op=salud");
+      assert.strictEqual(rS.status, 200, `op=salud con Redis vacío: ${JSON.stringify(rS.cuerpo)}`);
+      assert.strictEqual(rS.cuerpo.ok, false);
+      assert.strictEqual(rS.cuerpo.edad_horas, null, "sin corte la edad es null, jamás 0");
+      assert.strictEqual(rS.cuerpo.ultima_sincronizacion, null);
+      assert.strictEqual(rS.cuerpo.ultimo_error, null);
+      assert.strictEqual(rS.cuerpo.historico_hace_dias, null);
+      assert.ok(/ninguna sincronización/.test(rS.cuerpo.motivo), `el motivo dice el hecho: ${rS.cuerpo.motivo}`);
+      assert.strictEqual(rS.cuerpo.sincronizando, false);
+      assert.strictEqual(await redis.get("lock:sync"), null, "op=salud no toma el candado");
+    }
+
     /* a-bis. /api/resumen sobre un corpus VACÍO: no puede ser un 500 ni un
        503 críptico. Responde 200 con visibles=0 y dice qué hacer. */
     {
@@ -5816,6 +5910,10 @@ async function main() {
       await redis.del("lock:sync");
     }
 
+    /* un fallo ANTERIOR guardado en meta (un despliegue cuya primera full murió): la
+       full que termina bien tiene que borrarlo (M-INF-04) — se comprueba tras b. */
+    await redis.set(CLAVES.meta, JSON.stringify({ ultimo_error: { ts: "2026-09-05T08:31:00.000Z", modo: "auto", texto: "fallo anterior de prueba" } }));
+
     /* b. carga completa con presupuesto corto (reanudable) + fallos inyectados */
     let r = await invocar(sync, "/api/sync?modo=full&presupuesto=150&chain=0");
     assert.strictEqual(r.status, 200);
@@ -5827,6 +5925,15 @@ async function main() {
       if (++invocaciones > 400) throw new Error("la carga completa no converge");
     }
     assert.ok(invocaciones >= 2, "el presupuesto corto debía forzar varias invocaciones (reanudable)");
+    {
+      const metaTrasFull = JSON.parse(await redis.get(CLAVES.meta));
+      assert.strictEqual(metaTrasFull.ultimo_error, undefined, "la full que termina bien borra el fallo anterior de meta");
+      assert.ok(metaTrasFull.last_full && metaTrasFull.last_sync, "…y conserva el sello de siempre");
+      const rS = await invocar(require("../api/procesos.js"), "/api/procesos?op=salud");
+      assert.strictEqual(rS.cuerpo.ok, true, `tras la full la salud es ok: ${rS.cuerpo.motivo}`);
+      assert.strictEqual(rS.cuerpo.ultimo_error, null);
+      assert.strictEqual(typeof rS.cuerpo.edad_horas, "number");
+    }
     const chunks = await redis.scan(CLAVES.patronChunks);
     assert.ok(chunks.length >= MESES.length, `esperaba ≥${MESES.length} chunks activos, hay ${chunks.length}`);
     assert.strictEqual((await redis.scan(CLAVES.patronChunksHist)).length, 0,
@@ -10223,6 +10330,87 @@ async function main() {
       assert.ok(/decidirRefrescoHistorico\(\{ metaHist/.test(fuenteSync) && /sync:kick:historico/.test(fuenteSync)
         && /x-historico-token/.test(fuenteSync), "el disparo del refresco no está cableado en el handler");
       console.log("· refresco mensual del histórico: primer backfill jamás automático, cadena muerta se reanuda, mes en hora Colombia");
+    }
+
+    /* g-ter. LA SALUD DE LA SINCRONIZACIÓN (6-sep-2026, M-INF-04). Con Socrata caído el sync
+       respondía 502 y no escribía nada: el cron de las 08:30 lo recibe y nadie lo lee (14 h sin
+       sincronizar en ago 2026, descubiertas por un cliente). Ahora el fallo se guarda en meta,
+       op=salud —pública, sin token, ≤ 2 comandos, sin tomar el candado— lo publica, el listado
+       lo repite junto a `sincronizado` con su medición, y la corrida buena siguiente lo borra.
+       Handlers reales a través del ROUTER real; contra el árbol anterior op=salud es 404 y meta
+       no tiene ultimo_error. */
+    {
+      const rProcesosS = require("../api/procesos.js");
+      const { leerJSON: leerJsonS, CLAVES: CLS } = require("../lib/almacen.js");
+      const { tacharClave: tacharS } = require("../lib/apu_ocr.js");
+      const baseSocrata = process.env.SECOP_BASE_URL;
+      // un puerto CERRADO: los 5 intentos se agotan en milisegundos (uno colgado sería lo mismo con más espera)
+      const cerrado = http.createServer(); const puertoCerrado = await escuchar(cerrado); await new Promise((r) => cerrado.close(r));
+      process.env.SECOP_BASE_URL = `http://127.0.0.1:${puertoCerrado}/resource/p6dx-8zbt.json`;
+      let rCaido;
+      try { rCaido = await invocar(rProcesosS, "/api/procesos?op=sync&modo=delta&chain=0"); }
+      finally { process.env.SECOP_BASE_URL = baseSocrata; }
+      assert.strictEqual(rCaido.status, 502, `con Socrata caído el sync responde 502: ${JSON.stringify(rCaido.cuerpo)}`);
+      assert.ok(/agotados/.test(rCaido.cuerpo.error));
+      assert.strictEqual(await redis.get(CLS.lock), null, "el candado queda libre tras el fallo");
+      const metaCaida = await leerJsonS(redis, CLS.meta);
+      assert.ok(metaCaida && metaCaida.last_full && metaCaida.last_sync, "el fallo no puede borrar el sello de la última corrida buena");
+      assert.ok(metaCaida.ultimo_error, "el fallo tiene que quedar escrito en meta");
+      assert.strictEqual(metaCaida.ultimo_error.modo, "delta");
+      assert.strictEqual(metaCaida.ultimo_error.texto, tacharS(rCaido.cuerpo.error).slice(0, 200), "el texto guardado es el error real pasado por tacharClave y cortado a 200");
+      assert.ok(Number.isFinite(Date.parse(metaCaida.ultimo_error.ts)));
+
+      const antesCmd = upstash.peticiones();
+      const rSalud = await invocar(rProcesosS, "/api/procesos?op=salud");
+      const gastados = upstash.peticiones() - antesCmd;
+      assert.ok(gastados <= 2, `op=salud gastó ${gastados} comandos de Redis: el monitor la llama 2 880 veces al mes`);
+      assert.strictEqual(rSalud.status, 200);
+      assert.strictEqual(rSalud.cuerpo.ok, false, "con el último intento fallido la salud es ok:false");
+      assert.ok(rSalud.cuerpo.ultimo_error && /agotados/.test(rSalud.cuerpo.ultimo_error.texto), `op=salud publica el fallo: ${JSON.stringify(rSalud.cuerpo.ultimo_error)}`);
+      assert.ok(rSalud.cuerpo.ultimo_error.texto.length <= 200);
+      assert.ok(/falló/.test(rSalud.cuerpo.motivo), `el motivo dice el hecho: ${rSalud.cuerpo.motivo}`);
+      assert.ok(typeof rSalud.cuerpo.edad_horas === "number" && rSalud.cuerpo.edad_horas >= 0, "con corte conocido la edad es un número");
+      assert.strictEqual(rSalud.cuerpo.ultima_sincronizacion, metaCaida.last_sync, "el corte publicado es el de la última corrida BUENA");
+      assert.strictEqual(rSalud.cuerpo.sincronizando, false); assert.strictEqual(rSalud.cuerpo.candado_segundos, null);
+      assert.strictEqual(await redis.get(CLS.lock), null, "op=salud no toma el candado ni sincroniza");
+      // es PÚBLICA: exactamente estos campos, ninguna cifra del perfil ni del corpus (solo conteos)
+      assert.deepStrictEqual(Object.keys(rSalud.cuerpo).sort(),
+        ["candado_segundos", "edad_horas", "edad_maxima_horas", "historico_hace_dias", "medicion_listado", "motivo", "ok", "sincronizando", "ultima_sincronizacion", "ultimo_error"]);
+      assert.ok(!textosDe(rSalud.cuerpo).some((t) => /token-de-prueba|CO1\.|precio|patrimonio/i.test(t)), "op=salud no puede filtrar secretos ni datos del corpus");
+      // candado ajeno: se ve como «sincronizando» con sus segundos, sin estorbar
+      await redis.set(CLS.lock, "otro-proceso", { nx: true, ex: 60 });
+      const rConCandado = await invocar(rProcesosS, "/api/procesos?op=salud");
+      assert.strictEqual(rConCandado.cuerpo.sincronizando, true);
+      assert.ok(rConCandado.cuerpo.candado_segundos > 0 && rConCandado.cuerpo.candado_segundos <= 60);
+      assert.strictEqual(await redis.get(CLS.lock), "otro-proceso", "op=salud no toca el candado ajeno");
+      await redis.del(CLS.lock);
+
+      /* el LISTADO repite el fallo junto a `sincronizado` (la barra lo pinta) y publica su
+         medición con nombres distintos de `total`/`totalSinFiltros` */
+      const rLista = await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN);
+      assert.strictEqual(rLista.status, 200);
+      assert.deepStrictEqual(rLista.cuerpo.ultimo_error, rSalud.cuerpo.ultimo_error, "el listado repite el mismo fallo que op=salud");
+      assert.strictEqual(rLista.cuerpo.sincronizado, metaCaida.last_sync);
+      const med = rLista.cuerpo.medicion;
+      assert.strictEqual(med.filas_corpus, (await oportunidades.cargarCorpus(redis, metaCaida)).length, "filas_corpus es el corpus real que se cargó");
+      assert.strictEqual(med.chunks, (await redis.scan(CLS.patronChunks)).length, "chunks son los que el SCAN devolvió");
+      assert.ok(Number.isInteger(med.duracion_ms) && med.duracion_ms >= 0, "duracion_ms es un entero medido");
+      assert.strictEqual(typeof med.instancia_caliente, "boolean");
+      assert.ok(!("total" in med) && !("totalSinFiltros" in med), "la medición no reutiliza los nombres de los conteos de la lista");
+      const rLista2 = await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN);
+      assert.strictEqual(rLista2.cuerpo.medicion.instancia_caliente, true, "la segunda petición sirve el corpus desde la memoria de la instancia");
+      const rSalud2 = await invocar(rProcesosS, "/api/procesos?op=salud");
+      assert.strictEqual(rSalud2.cuerpo.medicion_listado.filas_corpus, rLista2.cuerpo.medicion.filas_corpus, "op=salud repite la última medición del listado de la instancia");
+      assert.strictEqual(rSalud2.cuerpo.medicion_listado.instancia_caliente, true);
+
+      /* la corrida BUENA siguiente borra el fallo: op=salud vuelve a ok y el listado deja de avisar */
+      const rBien = await invocar(sync, "/api/sync?modo=delta&presupuesto=20000&chain=0");
+      assert.strictEqual(rBien.cuerpo.ok, true, `el delta tras restaurar Socrata falló: ${JSON.stringify(rBien.cuerpo)}`);
+      const rSalud3 = await invocar(rProcesosS, "/api/procesos?op=salud");
+      assert.strictEqual(rSalud3.cuerpo.ok, true, `tras una corrida buena la salud es ok: ${rSalud3.cuerpo.motivo}`);
+      assert.strictEqual(rSalud3.cuerpo.ultimo_error, null, "la corrida buena borra el fallo");
+      assert.strictEqual((await invocar(oportunidades, "/api/oportunidades?perfil=helder", CAB_TOKEN)).cuerpo.ultimo_error, null);
+      console.log(`· salud de la sincronización: Socrata caído → 502 con rastro en meta, op=salud (${gastados} comandos) lo publica, el listado lo repite con su medición (${med.filas_corpus} filas, ${med.chunks} chunks, ${med.duracion_ms} ms) y la corrida buena lo borra`);
     }
 
     /* g-bis. /api/diagnostico: el embudo cuadra con lo que sirve la app */
@@ -18519,6 +18707,48 @@ async function main() {
       // la forma LARGA no cambió: la portada la sigue usando y hay prueba suya más arriba
       assert.ok(/^Actualizado hoy a las /.test(Port.textoActualizado("2026-08-31T14:35:00Z", ahoraM)),
         "la rama larga tiene que seguir intacta: es la que pinta la portada");
+      /* (8) EL FALLO SE DICE, NO SE INSINÚA (6-sep-2026, M-INF-04): `pintarCorte` EJECUTADA
+         sobre un DOM mínimo con el `ultimo_error` que viaja con `sincronizado`. Un fallo de
+         hoy dice «hoy no se pudo actualizar; se reintenta con cada visita»; uno de otro día lo
+         dice sin «hoy»; sin fallo el texto es el de siempre; sin corte no se inventa nada. */
+      {
+        const appPC = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+        const iniPC = appPC.indexOf("  function pintarCorte("), finPC = appPC.indexOf("\n  }", iniPC) + 4;
+        assert.ok(iniPC > 0, "app.js sin pintarCorte");
+        const nodoPC = () => {
+          const clases = new Set();
+          return { innerHTML: "", title: "", atributos: {}, clases,
+            classList: { toggle: (c, on) => { if (on) clases.add(c); else clases.delete(c); }, remove: (c) => clases.delete(c) },
+            setAttribute(k, v) { this.atributos[k] = v; } };
+        };
+        const nodosPC = { "sello-sync": nodoPC(), "btn-marca": nodoPC() };
+        const pintarCorteReal = new Function("document", "window", "esc",
+          `let corteActual = null; ${appPC.slice(iniPC, finPC)}; return pintarCorte;`)(
+          { getElementById: (id) => nodosPC[id] || null }, { Portada: Port }, (x) => String(x));
+        const ahoraPC = Date.now();
+        const isoHoy = new Date(ahoraPC - 3600e3).toISOString(), isoAnteayer = new Date(ahoraPC - 2 * 864e5).toISOString();
+        pintarCorteReal(isoHoy, null);
+        assert.ok(/^Datos de hoy, /.test(nodosPC["sello-sync"].innerHTML) && !/no se pudo/.test(nodosPC["sello-sync"].innerHTML), "sin fallo, el texto de siempre");
+        assert.ok(!nodosPC["sello-sync"].clases.has("corte-viejo"), "un corte de hoy sin fallo no va en ámbar");
+        assert.ok(!nodosPC["sello-sync"].clases.has("corte-fallo"), "sin fallo el corte sigue en una línea en el teléfono");
+        pintarCorteReal(isoHoy, { ts: new Date(ahoraPC).toISOString(), modo: "auto", texto: "delta: agotados 5 intentos (fetch failed)" });
+        const conFallo = nodosPC["sello-sync"].innerHTML;
+        assert.ok(/^Datos de hoy, .* · hoy no se pudo actualizar; se reintenta con cada visita · <span class="marca-accion">Actualizar<\/span>$/.test(conFallo),
+          `con un fallo de hoy la barra dice el hecho y conserva «Actualizar»: «${conFallo}»`);
+        assert.ok(!/agotados|fetch/.test(conFallo), "el texto técnico del fallo no llega a la pantalla");
+        assert.ok(nodosPC["sello-sync"].clases.has("corte-viejo"), "un fallo pinta la barra en ámbar aunque el corte sea de hoy");
+        assert.ok(nodosPC["sello-sync"].clases.has("corte-fallo"), "con fallo el corte lleva la clase que en el teléfono lo deja envolver (si no, se recorta a «hoy no s…»)");
+        assert.ok(/#app \.marca-corte\.corte-fallo \{ white-space: normal;/.test(htmlM2), "index.html: la regla móvil que deja envolver el corte con fallo");
+        assert.ok(/Hoy no se pudo actualizar; se reintenta con cada visita\./.test(nodosPC["btn-marca"].title), `el título del botón también lo dice: «${nodosPC["btn-marca"].title}»`);
+        pintarCorteReal(isoAnteayer, { ts: isoAnteayer, modo: "auto", texto: "x" });
+        assert.ok(/ · la última actualización no se pudo hacer; se reintenta con cada visita · /.test(nodosPC["sello-sync"].innerHTML),
+          `un fallo de otro día se dice sin «hoy»: «${nodosPC["sello-sync"].innerHTML}»`);
+        pintarCorteReal(null, { ts: new Date(ahoraPC).toISOString() });
+        assert.ok(/^<span class="marca-accion">Pulse aquí/.test(nodosPC["sello-sync"].innerHTML), "sin corte conocido no se inventa ni fecha ni fallo");
+        assert.ok(!nodosPC["sello-sync"].clases.has("corte-fallo"));
+        // y `buscar()` le pasa el fallo que viaja con `sincronizado` (cableado)
+        assert.ok(/pintarCorte\(cuerpo\.sincronizado, cuerpo\.ultimo_error \|\| null\)/.test(appM), "buscar() tiene que pasar `ultimo_error` a pintarCorte");
+      }
       console.log("  · La marca como botón de actualizar: flecha, corte, ámbar cuando no es de hoy, un solo `actualizarDatos` y el corte pedido al servidor");
     }
 
